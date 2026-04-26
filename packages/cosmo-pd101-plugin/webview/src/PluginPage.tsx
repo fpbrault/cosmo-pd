@@ -1,5 +1,6 @@
 import {
 	DEFAULT_SYNTH_PRESETS,
+	getSynthRuntimeCapabilities,
 	SynthRenderer,
 	useLcdControlReadout,
 	useNoteHandling,
@@ -17,26 +18,49 @@ import {
 } from "react";
 import { usePluginParamBridge } from "./hooks/usePluginParamBridge";
 
+const UI_SCALE_KEY = "cz-plugin-ui-scale";
+const PLUGIN_RUNTIME_CAPABILITIES = getSynthRuntimeCapabilities("plugin");
+type UiScale = (typeof PLUGIN_RUNTIME_CAPABILITIES.uiScaleOptions)[number];
+
 type PluginPageProps = {
 	utilityExtra?: ReactNode;
 };
+
+function readStoredUiScale(): UiScale {
+	try {
+		const saved = globalThis.localStorage?.getItem(UI_SCALE_KEY);
+		const parsed = saved ? Number(saved) : 70;
+		return (
+			PLUGIN_RUNTIME_CAPABILITIES.uiScaleOptions.includes(parsed) ? parsed : 70
+		) as UiScale;
+	} catch {
+		return 70 as UiScale;
+	}
+}
+
+function persistUiScale(value: UiScale): void {
+	try {
+		globalThis.localStorage?.setItem(UI_SCALE_KEY, String(value));
+	} catch {
+		// Ignore storage write failures in restricted plugin WebViews.
+	}
+}
 
 export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	const gatherState = useSynthStore((s) => s.gatherState);
 	const applyPreset = useSynthStore((s) => s.applyPreset);
 	const velocityCurve = useSynthStore((s) => s.velocityCurve);
 	const presetStateKey = useSynthStore((s) => JSON.stringify(s.gatherState()));
+
+	const [uiScale, setUiScale] = useState<UiScale>(() => readStoredUiScale());
 	const [scopeActiveHz, setScopeActiveHz] = useState(220);
 	const analyserNodeRef = useRef<AnalyserNode | null>(null);
 	const audioCtxRef = useRef<AudioContext | null>(null);
 	const activeAsidePanel = useSynthUiStore((s) => s.activeAsidePanel);
 	const setActiveAsidePanel = useSynthUiStore((s) => s.setActiveAsidePanel);
 	const { lcdControlReadout, pushLcdControlReadout } = useLcdControlReadout();
-	const { activeNotes, sendNoteOn, sendNoteOff, panic } = useNoteHandling({
+	const { activeNotes, sendNoteOn, sendNoteOff } = useNoteHandling({
 		velocityCurve,
-		eventSink: (type, payload) => {
-			window.__BEAMER__?.emit?.(type, payload);
-		},
 	});
 
 	usePluginParamBridge();
@@ -69,25 +93,24 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		[],
 	);
 
+	useEffect(() => {
+		persistUiScale(uiScale);
+	}, [uiScale]);
+
+	const shouldLoadCurrentState = useCallback(() => !window.ipc, []);
+
 	const {
-		visiblePresetEntries,
-		showLibraryPresets,
+		allPresetEntries,
 		activePresetId,
-		activePresetNameBase,
 		activePresetName,
-		loadedPresetFingerprint,
 		pendingPresetChange,
 		handleLoadLocal,
 		handleLoadBuiltin,
 		handleLoadLibrary,
 		handleStepPreset,
-		handleToggleLibraryPresets,
 		handleSavePreset,
 		handleDeletePreset,
 		handleRenamePreset,
-		handleSetPresetFavorite,
-		handleSetPresetCategory,
-		handleSetPresetTags,
 		handleInitPreset,
 		handleExportPreset,
 		handleImportPreset,
@@ -99,25 +122,9 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		builtinPresets: DEFAULT_SYNTH_PRESETS,
 		gatherState,
 		applyPreset,
-		onBeforeApplyPreset: panic,
-		shouldLoadCurrentState: () => true,
+		shouldLoadCurrentState,
 		presetStateKey,
 	});
-
-	// Sync preset session to plugin host whenever it changes
-	useEffect(() => {
-		if (window.ipc) {
-			window.ipc.postMessage(
-				JSON.stringify({
-					preset_session: {
-						activePresetId,
-						activePresetNameBase,
-						loadedPresetFingerprint,
-					},
-				}),
-			);
-		}
-	}, [activePresetId, activePresetNameBase, loadedPresetFingerprint]);
 
 	const lcdPrimaryText = useMemo(
 		() => `PRESET ${activePresetName.toUpperCase()}`,
@@ -127,9 +134,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	return (
 		<SynthRenderer
 			headerProps={{
-				allEntries: visiblePresetEntries,
-				showLibraryPresets,
-				onToggleLibraryPresets: handleToggleLibraryPresets,
+				allEntries: allPresetEntries,
 				activeEntryId: activePresetId,
 				activePresetName,
 				pendingPresetChange,
@@ -140,9 +145,6 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 				onSavePreset: handleSavePreset,
 				onDeletePreset: handleDeletePreset,
 				onRenamePreset: handleRenamePreset,
-				onSetPresetFavorite: handleSetPresetFavorite,
-				onSetPresetCategory: handleSetPresetCategory,
-				onSetPresetTags: handleSetPresetTags,
 				onInitPreset: handleInitPreset,
 				onExportPreset: handleExportPreset,
 				onExportCurrentState: handleExportCurrentState,
@@ -152,7 +154,32 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 				onCancelPendingPresetChange: handleCancelPendingPresetChange,
 			}}
 			frameClassName="h-full bg-cz-panel flex flex-col overflow-hidden w-full"
-			bottomBarExtra={utilityExtra}
+			frameStyle={{ zoom: `${uiScale}%` }}
+			bottomBarExtra={
+				<>
+					{PLUGIN_RUNTIME_CAPABILITIES.showUiScaleControl ? (
+						<div className="flex items-center gap-1.5">
+							<span className="text-cz-cream/65">Scale</span>
+							<select
+								value={uiScale}
+								onChange={(event) =>
+									setUiScale(Number(event.target.value) as UiScale)
+								}
+								className="h-6 rounded-sm border border-cz-border bg-black/30 px-1.5 text-[0.56rem] font-mono tracking-[0.12em] text-cz-cream/85"
+							>
+								{PLUGIN_RUNTIME_CAPABILITIES.uiScaleOptions.map(
+									(scaleOption) => (
+										<option key={scaleOption} value={scaleOption}>
+											{scaleOption}%
+										</option>
+									),
+								)}
+							</select>
+						</div>
+					) : null}
+					{utilityExtra}
+				</>
+			}
 			lcdPrimaryText={lcdPrimaryText}
 			lcdSecondaryText={""}
 			lcdTransientReadout={lcdControlReadout}
