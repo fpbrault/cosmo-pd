@@ -370,7 +370,7 @@ export default function PresetLibrary({
 								<div className="mt-2 grid grid-cols-2 gap-2">
 									<Button
 										type="button"
-										className="btn btn-primary"
+									className="btn btn-sm bg-cz-gold text-white hover:brightness-110"
 										disabled={!activeLocalEntry}
 										onClick={handleSave}
 									>
@@ -509,7 +509,7 @@ export default function PresetLibrary({
 						</Button>
 						<Button
 							type="button"
-							className="btn btn-error"
+							className="btn bg-red-700 text-white"
 							aria-label="Confirm delete"
 							onClick={commitDelete}
 						>
@@ -550,7 +550,7 @@ export default function PresetLibrary({
 						</Button>
 						<Button
 							type="button"
-							className="btn btn-primary"
+							className="btn bg-cz-gold text-white"
 							aria-label="Confirm save as"
 							disabled={!saveAsName.trim()}
 							onClick={commitSaveAs}
