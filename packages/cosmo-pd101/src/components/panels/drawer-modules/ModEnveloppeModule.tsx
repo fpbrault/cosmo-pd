@@ -1,8 +1,13 @@
+import { useState } from "react";
 import ControlKnob from "@/components/controls/ControlKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
+import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
+import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { MOD_ENV_PRESETS } from "@/lib/synth/modulePresets";
 
 export default function ModEnveloppeModule() {
+	const [selectedPreset, setSelectedPreset] = useState<string>("");
 	const { value: modEnvAttack, setValue: setModEnvAttack } =
 		useSynthParam("modEnvAttack");
 	const { value: modEnvDecay, setValue: setModEnvDecay } =
@@ -12,8 +17,40 @@ export default function ModEnveloppeModule() {
 	const { value: modEnvRelease, setValue: setModEnvRelease } =
 		useSynthParam("modEnvRelease");
 
+	const handlePresetChange = (presetId: string) => {
+		setSelectedPreset(presetId);
+		const preset = MOD_ENV_PRESETS.find((entry) => entry.id === presetId);
+		if (!preset) {
+			return;
+		}
+
+		setModEnvAttack(preset.patch.modEnv.attack);
+		setModEnvDecay(preset.patch.modEnv.decay);
+		setModEnvSustain(preset.patch.modEnv.sustain);
+		setModEnvRelease(preset.patch.modEnv.release);
+		requestApplyModulePreset({
+			module: "modEnv",
+			preset: preset.id,
+			patch: preset.patch,
+		});
+	};
+
 	return (
-		<ModuleFrame title="Mod Env" color="#c24587" enabled showLed={false}>
+		<ModuleFrame
+			title="Mod Env"
+			color="#c24587"
+			enabled
+			showLed={false}
+			headerControl={
+				<ModulePresetPopover
+					title="Mod Env Presets"
+					accentColor="#c24587"
+					value={selectedPreset}
+					options={MOD_ENV_PRESETS}
+					onChange={handlePresetChange}
+				/>
+			}
+		>
 			<ControlKnob
 				value={modEnvAttack}
 				onChange={setModEnvAttack}

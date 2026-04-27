@@ -1,8 +1,13 @@
+import { useState } from "react";
 import ControlKnob from "@/components/controls/ControlKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
+import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
+import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { CHORUS_PRESETS } from "@/lib/synth/modulePresets";
 
 export default function ChorusModule() {
+	const [selectedPreset, setSelectedPreset] = useState<string>("");
 	const { value: chorusEnabled, setValue: setChorusEnabled } =
 		useSynthParam("chorusEnabled");
 	const { value: chorusRate, setValue: setChorusRate } =
@@ -12,12 +17,38 @@ export default function ChorusModule() {
 	const { value: chorusMix, setValue: setChorusMix } =
 		useSynthParam("chorusMix");
 
+	const handlePresetChange = (presetId: string) => {
+		setSelectedPreset(presetId);
+		const preset = CHORUS_PRESETS.find((entry) => entry.id === presetId);
+		if (!preset) {
+			return;
+		}
+
+		setChorusEnabled(preset.patch.chorus.enabled);
+		setChorusRate(preset.patch.chorus.rate);
+		setChorusDepth(preset.patch.chorus.depth);
+		setChorusMix(preset.patch.chorus.mix);
+		requestApplyModulePreset({
+			module: "chorus",
+			preset: preset.id,
+			patch: preset.patch,
+		});
+	};
+
 	return (
 		<ModuleFrame
 			title="Chorus"
 			color="#818cf8"
 			columns={3}
-			meta="Stereo"
+			headerControl={
+				<ModulePresetPopover
+					title="Chorus Presets"
+					accentColor="#818cf8"
+					value={selectedPreset}
+					options={CHORUS_PRESETS}
+					onChange={handlePresetChange}
+				/>
+			}
 			enabled={chorusEnabled}
 			onToggle={() => setChorusEnabled(!chorusEnabled)}
 		>

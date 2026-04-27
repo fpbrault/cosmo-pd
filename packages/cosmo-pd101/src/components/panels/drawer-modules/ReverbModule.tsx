@@ -1,8 +1,13 @@
+import { useState } from "react";
 import ControlKnob from "@/components/controls/ControlKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
+import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
+import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { REVERB_PRESETS } from "@/lib/synth/modulePresets";
 
 export default function ReverbModule() {
+	const [selectedPreset, setSelectedPreset] = useState<string>("");
 	const { value: reverbEnabled, setValue: setReverbEnabled } =
 		useSynthParam("reverbEnabled");
 	const { value: reverbSpace, setValue: setReverbSpace } =
@@ -15,11 +20,41 @@ export default function ReverbModule() {
 		useSynthParam("reverbCharacter");
 	const { value: reverbMix, setValue: setReverbMix } =
 		useSynthParam("reverbMix");
+
+	const handlePresetChange = (presetId: string) => {
+		setSelectedPreset(presetId);
+
+		const preset = REVERB_PRESETS.find((entry) => entry.id === presetId);
+		if (!preset) {
+			return;
+		}
+
+		setReverbEnabled(preset.patch.reverb.enabled);
+		setReverbMix(preset.patch.reverb.mix);
+		setReverbSpace(preset.patch.reverb.space);
+		setReverbPredelay(preset.patch.reverb.predelay);
+		setReverbDistance(preset.patch.reverb.distance);
+		setReverbCharacter(preset.patch.reverb.character);
+		requestApplyModulePreset({
+			module: "reverb",
+			preset: preset.id,
+			patch: preset.patch,
+		});
+	};
 	return (
 		<ModuleFrame
 			title="Reverb"
 			color="#f97316"
 			columns={3}
+			headerControl={
+				<ModulePresetPopover
+					title="Reverb Presets"
+					accentColor="#f97316"
+					value={selectedPreset}
+					options={REVERB_PRESETS}
+					onChange={handlePresetChange}
+				/>
+			}
 			meta="FDN"
 			enabled={reverbEnabled}
 			onToggle={() => setReverbEnabled(!reverbEnabled)}

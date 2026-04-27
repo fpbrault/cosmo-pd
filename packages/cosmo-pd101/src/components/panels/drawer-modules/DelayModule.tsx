@@ -1,8 +1,13 @@
+import { useState } from "react";
 import ControlKnob from "@/components/controls/ControlKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
+import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
+import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { DELAY_PRESETS } from "@/lib/synth/modulePresets";
 
 export default function DelayModule() {
+	const [selectedPreset, setSelectedPreset] = useState<string>("");
 	const { value: delayEnabled, setValue: setDelayEnabled } =
 		useSynthParam("delayEnabled");
 	const { value: delayTime, setValue: setDelayTime } =
@@ -15,10 +20,40 @@ export default function DelayModule() {
 	const { value: delayWarmth, setValue: setDelayWarmth } =
 		useSynthParam("delayWarmth");
 	const delayModeLabel = delayTapeMode ? "Tape Echo" : "Digital";
+
+	const handlePresetChange = (presetId: string) => {
+		setSelectedPreset(presetId);
+		const preset = DELAY_PRESETS.find((entry) => entry.id === presetId);
+		if (!preset) {
+			return;
+		}
+
+		setDelayEnabled(preset.patch.delay.enabled);
+		setDelayTime(preset.patch.delay.time);
+		setDelayFeedback(preset.patch.delay.feedback);
+		setDelayMix(preset.patch.delay.mix);
+		setDelayTapeMode(preset.patch.delay.tapeMode);
+		setDelayWarmth(preset.patch.delay.warmth);
+		requestApplyModulePreset({
+			module: "delay",
+			preset: preset.id,
+			patch: preset.patch,
+		});
+	};
+
 	return (
 		<ModuleFrame
 			title="Delay"
 			color="#fbbf24"
+			headerControl={
+				<ModulePresetPopover
+					title="Delay Presets"
+					accentColor="#d4aa2a"
+					value={selectedPreset}
+					options={DELAY_PRESETS}
+					onChange={handlePresetChange}
+				/>
+			}
 			meta={delayModeLabel}
 			columns={delayTapeMode ? 4 : 3}
 			enabled={delayEnabled}

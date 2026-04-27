@@ -1,9 +1,14 @@
+import { useState } from "react";
 import ControlKnob from "@/components/controls/ControlKnob";
 import CompactButton from "@/components/primitives/CompactButton";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
+import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
+import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { VIBRATO_PRESETS } from "@/lib/synth/modulePresets";
 
 export default function VibratoModule() {
+	const [selectedPreset, setSelectedPreset] = useState<string>("");
 	const { value: vibratoEnabled, setValue: setVibratoEnabled } =
 		useSynthParam("vibratoEnabled");
 	const { value: vibratoWave, setValue: setVibratoWave } =
@@ -15,10 +20,38 @@ export default function VibratoModule() {
 	const { value: vibratoDelay, setValue: setVibratoDelay } =
 		useSynthParam("vibratoDelay");
 
+	const handlePresetChange = (presetId: string) => {
+		setSelectedPreset(presetId);
+		const preset = VIBRATO_PRESETS.find((entry) => entry.id === presetId);
+		if (!preset) {
+			return;
+		}
+
+		setVibratoEnabled(preset.patch.vibrato.enabled);
+		setVibratoWave(preset.patch.vibrato.waveform);
+		setVibratoRate(preset.patch.vibrato.rate);
+		setVibratoDepth(preset.patch.vibrato.depth);
+		setVibratoDelay(preset.patch.vibrato.delay);
+		requestApplyModulePreset({
+			module: "vibrato",
+			preset: preset.id,
+			patch: preset.patch,
+		});
+	};
+
 	return (
 		<ModuleFrame
 			title="Vibrato"
 			color="#307948"
+			headerControl={
+				<ModulePresetPopover
+					title="Vibrato Presets"
+					accentColor="#307948"
+					value={selectedPreset}
+					options={VIBRATO_PRESETS}
+					onChange={handlePresetChange}
+				/>
+			}
 			enabled={vibratoEnabled}
 			columns={3}
 			onToggle={() => setVibratoEnabled(!vibratoEnabled)}

@@ -1,8 +1,13 @@
+import { useState } from "react";
 import ControlKnob from "@/components/controls/ControlKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
+import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
+import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { PHASER_PRESETS } from "@/lib/synth/modulePresets";
 
 export default function PhaserModule() {
+	const [selectedPreset, setSelectedPreset] = useState<string>("");
 	const { value: phaserEnabled, setValue: setPhaserEnabled } =
 		useSynthParam("phaserEnabled");
 	const { value: phaserRate, setValue: setPhaserRate } =
@@ -14,10 +19,38 @@ export default function PhaserModule() {
 	const { value: phaserMix, setValue: setPhaserMix } =
 		useSynthParam("phaserMix");
 
+	const handlePresetChange = (presetId: string) => {
+		setSelectedPreset(presetId);
+		const preset = PHASER_PRESETS.find((entry) => entry.id === presetId);
+		if (!preset) {
+			return;
+		}
+
+		setPhaserEnabled(preset.patch.phaser.enabled);
+		setPhaserRate(preset.patch.phaser.rate);
+		setPhaserDepth(preset.patch.phaser.depth);
+		setPhaserFeedback(preset.patch.phaser.feedback);
+		setPhaserMix(preset.patch.phaser.mix);
+		requestApplyModulePreset({
+			module: "phaser",
+			preset: preset.id,
+			patch: preset.patch,
+		});
+	};
+
 	return (
 		<ModuleFrame
 			title="Phaser"
 			color="#a78bfa"
+			headerControl={
+				<ModulePresetPopover
+					title="Phaser Presets"
+					accentColor="#a78bfa"
+					value={selectedPreset}
+					options={PHASER_PRESETS}
+					onChange={handlePresetChange}
+				/>
+			}
 			meta="4-Stage"
 			enabled={phaserEnabled}
 			onToggle={() => setPhaserEnabled(!phaserEnabled)}
