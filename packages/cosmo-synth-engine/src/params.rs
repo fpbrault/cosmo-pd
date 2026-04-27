@@ -1131,6 +1131,18 @@ pub(crate) fn default_fx_slots() -> [FxSlotType; 6] {
 fn default_fx_slot_compressors() -> [CompressorParams; 6] {
     core::array::from_fn(|_| CompressorParams::default())
 }
+fn default_fx_slot_choruses() -> [ChorusParams; 6] {
+    core::array::from_fn(|_| ChorusParams::default())
+}
+fn default_fx_slot_delays() -> [DelayParams; 6] {
+    core::array::from_fn(|_| DelayParams::default())
+}
+fn default_fx_slot_reverbs() -> [ReverbParams; 6] {
+    core::array::from_fn(|_| ReverbParams::default())
+}
+fn default_fx_slot_phasers() -> [PhaserParams; 6] {
+    core::array::from_fn(|_| PhaserParams::default())
+}
 fn default_fx_slot_eqs() -> [EqParams; 6] {
     core::array::from_fn(|_| EqParams::default())
 }
@@ -1186,6 +1198,16 @@ pub struct SynthParams {
     pub reverb: ReverbParams,
     pub phaser: PhaserParams,
     pub vibrato: VibratoParams,
+    pub compressor: CompressorParams,
+    pub eq: EqParams,
+    pub grain_delay: GrainDelayParams,
+    pub bitcrusher: BitcrusherParams,
+    pub shimmer_verb: ShimmerVerbParams,
+    pub distortion: DistortionParams,
+    pub juno_chorus: JunoChorusParams,
+    pub ring_mod: RingModParams,
+    pub tremolo: TremoloParams,
+    pub wavefolder: WavefolderParams,
     pub portamento: PortamentoParams,
     pub lfo: LfoParams,
     #[serde(default)]
@@ -1210,6 +1232,14 @@ pub struct SynthParams {
     /// Which effect type occupies each of the 6 FX slots.
     #[serde(default = "default_fx_slots")]
     pub fx_slots: [FxSlotType; 6],
+    #[serde(default = "default_fx_slot_choruses")]
+    pub fx_slot_choruses: [ChorusParams; 6],
+    #[serde(default = "default_fx_slot_delays")]
+    pub fx_slot_delays: [DelayParams; 6],
+    #[serde(default = "default_fx_slot_reverbs")]
+    pub fx_slot_reverbs: [ReverbParams; 6],
+    #[serde(default = "default_fx_slot_phasers")]
+    pub fx_slot_phasers: [PhaserParams; 6],
     #[serde(default = "default_fx_slot_compressors")]
     pub fx_slot_compressors: [CompressorParams; 6],
     #[serde(default = "default_fx_slot_eqs")]
@@ -1263,6 +1293,16 @@ impl Default for SynthParams {
             reverb: ReverbParams::default(),
             phaser: PhaserParams::default(),
             vibrato: VibratoParams::default(),
+            compressor: CompressorParams::default(),
+            eq: EqParams::default(),
+            grain_delay: GrainDelayParams::default(),
+            bitcrusher: BitcrusherParams::default(),
+            shimmer_verb: ShimmerVerbParams::default(),
+            distortion: DistortionParams::default(),
+            juno_chorus: JunoChorusParams::default(),
+            ring_mod: RingModParams::default(),
+            tremolo: TremoloParams::default(),
+            wavefolder: WavefolderParams::default(),
             portamento: PortamentoParams::default(),
             lfo: LfoParams::default(),
             lfo2: LfoParams::default(),
@@ -1273,6 +1313,10 @@ impl Default for SynthParams {
             random: RandomParams::default(),
             mod_env: ModEnvParams::default(),
             fx_slots: default_fx_slots(),
+            fx_slot_choruses: default_fx_slot_choruses(),
+            fx_slot_delays: default_fx_slot_delays(),
+            fx_slot_reverbs: default_fx_slot_reverbs(),
+            fx_slot_phasers: default_fx_slot_phasers(),
             fx_slot_compressors: default_fx_slot_compressors(),
             fx_slot_eqs: default_fx_slot_eqs(),
             fx_slot_grain_delays: default_fx_slot_grain_delays(),

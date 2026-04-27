@@ -41,13 +41,13 @@ const FX_SLOT_OPTIONS: { value: FxSlotType; label: string }[] = [
 function SlotModule({ type, slot }: { type: FxSlotType; slot: number }) {
 	switch (type) {
 		case "chorus":
-			return <ChorusModule />;
+				return <ChorusModule slot={slot} />;
 		case "phaser":
-			return <PhaserModule />;
+				return <PhaserModule slot={slot} />;
 		case "delay":
-			return <DelayModule />;
+				return <DelayModule slot={slot} />;
 		case "reverb":
-			return <ReverbModule />;
+				return <ReverbModule slot={slot} />;
 		case "vibrato":
 			return <VibratoModule />;
 		case "phaseMod":

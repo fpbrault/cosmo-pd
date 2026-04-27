@@ -3,31 +3,26 @@ import ControlKnob from "@/components/controls/ControlKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
-import { useSynthParam } from "@/features/synth/SynthParamController";
+import { useSynthStore } from "@/features/synth/synthStore";
 import { CHORUS_PRESETS } from "@/lib/synth/modulePresets";
 
-export default function ChorusModule() {
-	const [selectedPreset, setSelectedPreset] = useState<string>("");
-	const { value: chorusEnabled, setValue: setChorusEnabled } =
-		useSynthParam("chorusEnabled");
-	const { value: chorusRate, setValue: setChorusRate } =
-		useSynthParam("chorusRate");
-	const { value: chorusDepth, setValue: setChorusDepth } =
-		useSynthParam("chorusDepth");
-	const { value: chorusMix, setValue: setChorusMix } =
-		useSynthParam("chorusMix");
+export default function ChorusModule({ slot }: { slot: number }) {
+	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
+	const chorus = useSynthStore((s) => s.fxSlotChoruses[slot]);
+	const setFxSlotChorus = useSynthStore((s) => s.setFxSlotChorus);
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
+		if (presetId === "custom") {
+			return;
+		}
+
 		const preset = CHORUS_PRESETS.find((entry) => entry.id === presetId);
 		if (!preset) {
 			return;
 		}
 
-		setChorusEnabled(preset.patch.chorus.enabled);
-		setChorusRate(preset.patch.chorus.rate);
-		setChorusDepth(preset.patch.chorus.depth);
-		setChorusMix(preset.patch.chorus.mix);
+		setFxSlotChorus(slot, preset.patch.chorus);
 		requestApplyModulePreset({
 			module: "chorus",
 			preset: preset.id,
@@ -43,18 +38,17 @@ export default function ChorusModule() {
 			headerControl={
 				<ModulePresetPopover
 					title="Chorus Presets"
-					accentColor="#818cf8"
 					value={selectedPreset}
-					options={CHORUS_PRESETS}
+					options={[{ id: "custom", label: "Custom" }, ...CHORUS_PRESETS]}
 					onChange={handlePresetChange}
 				/>
 			}
-			enabled={chorusEnabled}
-			onToggle={() => setChorusEnabled(!chorusEnabled)}
+			enabled={chorus.enabled ?? false}
+			onToggle={() => setFxSlotChorus(slot, { ...chorus, enabled: !chorus.enabled })}
 		>
 			<ControlKnob
-				value={chorusRate}
-				onChange={setChorusRate}
+				value={chorus.rate}
+				onChange={(value) => setFxSlotChorus(slot, { ...chorus, rate: value })}
 				min={0.1}
 				max={5}
 				defaultValue={1.0}
@@ -64,8 +58,8 @@ export default function ChorusModule() {
 				valueFormatter={(value) => value.toFixed(1)}
 			/>
 			<ControlKnob
-				value={chorusDepth}
-				onChange={setChorusDepth}
+				value={chorus.depth}
+				onChange={(value) => setFxSlotChorus(slot, { ...chorus, depth: value })}
 				min={0}
 				max={3}
 				defaultValue={1.5}
@@ -75,8 +69,8 @@ export default function ChorusModule() {
 				valueFormatter={(value) => `${Math.round((value / 3) * 100)}%`}
 			/>
 			<ControlKnob
-				value={chorusMix}
-				onChange={setChorusMix}
+				value={chorus.mix}
+				onChange={(value) => setFxSlotChorus(slot, { ...chorus, mix: value })}
 				min={0}
 				max={1}
 				defaultValue={0.5}

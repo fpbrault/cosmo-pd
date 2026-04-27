@@ -3,34 +3,26 @@ import ControlKnob from "@/components/controls/ControlKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
-import { useSynthParam } from "@/features/synth/SynthParamController";
+import { useSynthStore } from "@/features/synth/synthStore";
 import { PHASER_PRESETS } from "@/lib/synth/modulePresets";
 
-export default function PhaserModule() {
-	const [selectedPreset, setSelectedPreset] = useState<string>("");
-	const { value: phaserEnabled, setValue: setPhaserEnabled } =
-		useSynthParam("phaserEnabled");
-	const { value: phaserRate, setValue: setPhaserRate } =
-		useSynthParam("phaserRate");
-	const { value: phaserDepth, setValue: setPhaserDepth } =
-		useSynthParam("phaserDepth");
-	const { value: phaserFeedback, setValue: setPhaserFeedback } =
-		useSynthParam("phaserFeedback");
-	const { value: phaserMix, setValue: setPhaserMix } =
-		useSynthParam("phaserMix");
+export default function PhaserModule({ slot }: { slot: number }) {
+	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
+	const phaser = useSynthStore((s) => s.fxSlotPhasers[slot]);
+	const setFxSlotPhaser = useSynthStore((s) => s.setFxSlotPhaser);
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
+		if (presetId === "custom") {
+			return;
+		}
+
 		const preset = PHASER_PRESETS.find((entry) => entry.id === presetId);
 		if (!preset) {
 			return;
 		}
 
-		setPhaserEnabled(preset.patch.phaser.enabled);
-		setPhaserRate(preset.patch.phaser.rate);
-		setPhaserDepth(preset.patch.phaser.depth);
-		setPhaserFeedback(preset.patch.phaser.feedback);
-		setPhaserMix(preset.patch.phaser.mix);
+		setFxSlotPhaser(slot, preset.patch.phaser);
 		requestApplyModulePreset({
 			module: "phaser",
 			preset: preset.id,
@@ -45,19 +37,18 @@ export default function PhaserModule() {
 			headerControl={
 				<ModulePresetPopover
 					title="Phaser Presets"
-					accentColor="#a78bfa"
 					value={selectedPreset}
-					options={PHASER_PRESETS}
+					options={[{ id: "custom", label: "Custom" }, ...PHASER_PRESETS]}
 					onChange={handlePresetChange}
 				/>
 			}
 			meta="4-Stage"
-			enabled={phaserEnabled}
-			onToggle={() => setPhaserEnabled(!phaserEnabled)}
+			enabled={phaser.enabled ?? false}
+			onToggle={() => setFxSlotPhaser(slot, { ...phaser, enabled: !phaser.enabled })}
 		>
 			<ControlKnob
-				value={phaserRate}
-				onChange={setPhaserRate}
+				value={phaser.rate}
+				onChange={(value) => setFxSlotPhaser(slot, { ...phaser, rate: value })}
 				min={0.1}
 				max={10}
 				defaultValue={0.5}
@@ -67,8 +58,8 @@ export default function PhaserModule() {
 				valueFormatter={(value) => `${value.toFixed(1)}Hz`}
 			/>
 			<ControlKnob
-				value={phaserDepth}
-				onChange={setPhaserDepth}
+				value={phaser.depth}
+				onChange={(value) => setFxSlotPhaser(slot, { ...phaser, depth: value })}
 				min={0}
 				max={1}
 				defaultValue={1.0}
@@ -78,8 +69,10 @@ export default function PhaserModule() {
 				valueFormatter={(value) => `${Math.round(value * 100)}%`}
 			/>
 			<ControlKnob
-				value={phaserFeedback}
-				onChange={setPhaserFeedback}
+				value={phaser.feedback}
+				onChange={(value) =>
+					setFxSlotPhaser(slot, { ...phaser, feedback: value })
+				}
 				min={-0.9}
 				max={0.9}
 				defaultValue={0.5}
@@ -93,8 +86,8 @@ export default function PhaserModule() {
 				}
 			/>
 			<ControlKnob
-				value={phaserMix}
-				onChange={setPhaserMix}
+				value={phaser.mix}
+				onChange={(value) => setFxSlotPhaser(slot, { ...phaser, mix: value })}
 				min={0}
 				max={1}
 				defaultValue={0.5}

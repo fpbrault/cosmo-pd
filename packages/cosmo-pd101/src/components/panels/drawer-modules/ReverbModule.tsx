@@ -3,38 +3,26 @@ import ControlKnob from "@/components/controls/ControlKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
-import { useSynthParam } from "@/features/synth/SynthParamController";
+import { useSynthStore } from "@/features/synth/synthStore";
 import { REVERB_PRESETS } from "@/lib/synth/modulePresets";
 
-export default function ReverbModule() {
-	const [selectedPreset, setSelectedPreset] = useState<string>("");
-	const { value: reverbEnabled, setValue: setReverbEnabled } =
-		useSynthParam("reverbEnabled");
-	const { value: reverbSpace, setValue: setReverbSpace } =
-		useSynthParam("reverbSpace");
-	const { value: reverbPredelay, setValue: setReverbPredelay } =
-		useSynthParam("reverbPredelay");
-	const { value: reverbDistance, setValue: setReverbDistance } =
-		useSynthParam("reverbDistance");
-	const { value: reverbCharacter, setValue: setReverbCharacter } =
-		useSynthParam("reverbCharacter");
-	const { value: reverbMix, setValue: setReverbMix } =
-		useSynthParam("reverbMix");
+export default function ReverbModule({ slot }: { slot: number }) {
+	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
+	const reverb = useSynthStore((s) => s.fxSlotReverbs[slot]);
+	const setFxSlotReverb = useSynthStore((s) => s.setFxSlotReverb);
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
+		if (presetId === "custom") {
+			return;
+		}
 
 		const preset = REVERB_PRESETS.find((entry) => entry.id === presetId);
 		if (!preset) {
 			return;
 		}
 
-		setReverbEnabled(preset.patch.reverb.enabled);
-		setReverbMix(preset.patch.reverb.mix);
-		setReverbSpace(preset.patch.reverb.space);
-		setReverbPredelay(preset.patch.reverb.predelay);
-		setReverbDistance(preset.patch.reverb.distance);
-		setReverbCharacter(preset.patch.reverb.character);
+		setFxSlotReverb(slot, preset.patch.reverb);
 		requestApplyModulePreset({
 			module: "reverb",
 			preset: preset.id,
@@ -49,19 +37,18 @@ export default function ReverbModule() {
 			headerControl={
 				<ModulePresetPopover
 					title="Reverb Presets"
-					accentColor="#f97316"
 					value={selectedPreset}
-					options={REVERB_PRESETS}
+					options={[{ id: "custom", label: "Custom" }, ...REVERB_PRESETS]}
 					onChange={handlePresetChange}
 				/>
 			}
 			meta="FDN"
-			enabled={reverbEnabled}
-			onToggle={() => setReverbEnabled(!reverbEnabled)}
+			enabled={reverb.enabled}
+			onToggle={() => setFxSlotReverb(slot, { ...reverb, enabled: !reverb.enabled })}
 		>
 			<ControlKnob
-				value={reverbSpace}
-				onChange={setReverbSpace}
+				value={reverb.space}
+				onChange={(value) => setFxSlotReverb(slot, { ...reverb, space: value })}
 				min={0}
 				max={1}
 				defaultValue={0.5}
@@ -71,8 +58,8 @@ export default function ReverbModule() {
 				valueFormatter={(value) => `${Math.round(value * 100)}%`}
 			/>
 			<ControlKnob
-				value={reverbPredelay}
-				onChange={setReverbPredelay}
+				value={reverb.predelay}
+				onChange={(value) => setFxSlotReverb(slot, { ...reverb, predelay: value })}
 				min={0}
 				max={0.1}
 				defaultValue={0}
@@ -82,8 +69,8 @@ export default function ReverbModule() {
 				valueFormatter={(value) => `${Math.round(value * 1000)}ms`}
 			/>
 			<ControlKnob
-				value={reverbDistance}
-				onChange={setReverbDistance}
+				value={reverb.distance}
+				onChange={(value) => setFxSlotReverb(slot, { ...reverb, distance: value })}
 				min={0}
 				max={1}
 				defaultValue={0.3}
@@ -93,8 +80,10 @@ export default function ReverbModule() {
 				valueFormatter={(value) => `${Math.round(value * 100)}%`}
 			/>
 			<ControlKnob
-				value={reverbCharacter}
-				onChange={setReverbCharacter}
+				value={reverb.character}
+				onChange={(value) =>
+					setFxSlotReverb(slot, { ...reverb, character: value })
+				}
 				min={0}
 				max={1}
 				defaultValue={0.65}
@@ -104,8 +93,8 @@ export default function ReverbModule() {
 				valueFormatter={(value) => `${Math.round(value * 100)}%`}
 			/>
 			<ControlKnob
-				value={reverbMix}
-				onChange={setReverbMix}
+				value={reverb.mix}
+				onChange={(value) => setFxSlotReverb(slot, { ...reverb, mix: value })}
 				min={0}
 				max={1}
 				defaultValue={0.3}

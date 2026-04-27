@@ -9,8 +9,10 @@ import type {
 	Algo,
 	AlgoControlValueV1,
 	BitcrusherParams,
+	ChorusParams,
 	CompressorParams,
 	CzWaveform,
+	DelayParams,
 	DistortionParams,
 	EqParams,
 	FilterType,
@@ -21,8 +23,10 @@ import type {
 	LineSelect,
 	ModMatrix,
 	ModMode,
+	PhaserParams,
 	PolyMode,
 	PortamentoMode,
+	ReverbParams,
 	RingModParams,
 	ShimmerVerbParams,
 	StepEnvData,
@@ -220,6 +224,38 @@ export type SynthState = {
 		FxSlotType,
 		FxSlotType,
 	];
+	fxSlotChoruses: [
+		ChorusParams,
+		ChorusParams,
+		ChorusParams,
+		ChorusParams,
+		ChorusParams,
+		ChorusParams,
+	];
+	fxSlotDelays: [
+		DelayParams,
+		DelayParams,
+		DelayParams,
+		DelayParams,
+		DelayParams,
+		DelayParams,
+	];
+	fxSlotReverbs: [
+		ReverbParams,
+		ReverbParams,
+		ReverbParams,
+		ReverbParams,
+		ReverbParams,
+		ReverbParams,
+	];
+	fxSlotPhasers: [
+		PhaserParams,
+		PhaserParams,
+		PhaserParams,
+		PhaserParams,
+		PhaserParams,
+		PhaserParams,
+	];
 	fxSlotCompressors: [CompressorParams, CompressorParams, CompressorParams, CompressorParams, CompressorParams, CompressorParams];
 	fxSlotEqs: [EqParams, EqParams, EqParams, EqParams, EqParams, EqParams];
 	fxSlotGrainDelays: [GrainDelayParams, GrainDelayParams, GrainDelayParams, GrainDelayParams, GrainDelayParams, GrainDelayParams];
@@ -357,6 +393,10 @@ type SynthActions = {
 	setOctave: (v: number) => void;
 	setModMatrix: (v: ModMatrix) => void;
 	setFxSlotType: (slot: number, type: FxSlotType) => void;
+	setFxSlotChorus: (slot: number, v: ChorusParams) => void;
+	setFxSlotDelay: (slot: number, v: DelayParams) => void;
+	setFxSlotReverb: (slot: number, v: ReverbParams) => void;
+	setFxSlotPhaser: (slot: number, v: PhaserParams) => void;
 	setFxSlotCompressor: (slot: number, v: CompressorParams) => void;
 	setFxSlotEq: (slot: number, v: EqParams) => void;
 	setFxSlotGrainDelay: (slot: number, v: GrainDelayParams) => void;
@@ -367,6 +407,7 @@ type SynthActions = {
 	setFxSlotRingMod: (slot: number, v: RingModParams) => void;
 	setFxSlotTremolo: (slot: number, v: TremoloParams) => void;
 	setFxSlotWavefolder: (slot: number, v: WavefolderParams) => void;
+	reorderFxSlots: (fromSlot: number, toSlot: number) => void;
 
 	gatherState: () => SynthPresetV1;
 	applyPreset: (preset: SynthPresetV1) => void;
@@ -499,6 +540,122 @@ const DEFAULT_STATE: SynthState = {
 	octave: 0,
 	modMatrix: { routes: [] },
 	fxSlotTypes: ["chorus", "delay", "reverb", "vibrato", "phaseMod", "phaser"],
+	fxSlotChoruses: [
+		{ enabled: false, rate: 0.8, depth: 3, mix: 0 },
+		{ enabled: false, rate: 0.8, depth: 3, mix: 0 },
+		{ enabled: false, rate: 0.8, depth: 3, mix: 0 },
+		{ enabled: false, rate: 0.8, depth: 3, mix: 0 },
+		{ enabled: false, rate: 0.8, depth: 3, mix: 0 },
+		{ enabled: false, rate: 0.8, depth: 3, mix: 0 },
+	],
+	fxSlotDelays: [
+		{
+			enabled: false,
+			time: 0.3,
+			feedback: 0.35,
+			mix: 0,
+			tapeMode: false,
+			warmth: 0.5,
+		},
+		{
+			enabled: false,
+			time: 0.3,
+			feedback: 0.35,
+			mix: 0,
+			tapeMode: false,
+			warmth: 0.5,
+		},
+		{
+			enabled: false,
+			time: 0.3,
+			feedback: 0.35,
+			mix: 0,
+			tapeMode: false,
+			warmth: 0.5,
+		},
+		{
+			enabled: false,
+			time: 0.3,
+			feedback: 0.35,
+			mix: 0,
+			tapeMode: false,
+			warmth: 0.5,
+		},
+		{
+			enabled: false,
+			time: 0.3,
+			feedback: 0.35,
+			mix: 0,
+			tapeMode: false,
+			warmth: 0.5,
+		},
+		{
+			enabled: false,
+			time: 0.3,
+			feedback: 0.35,
+			mix: 0,
+			tapeMode: false,
+			warmth: 0.5,
+		},
+	],
+	fxSlotReverbs: [
+		{
+			enabled: false,
+			mix: 0,
+			space: 0.5,
+			predelay: 0,
+			distance: 0.3,
+			character: 0.65,
+		},
+		{
+			enabled: false,
+			mix: 0,
+			space: 0.5,
+			predelay: 0,
+			distance: 0.3,
+			character: 0.65,
+		},
+		{
+			enabled: false,
+			mix: 0,
+			space: 0.5,
+			predelay: 0,
+			distance: 0.3,
+			character: 0.65,
+		},
+		{
+			enabled: false,
+			mix: 0,
+			space: 0.5,
+			predelay: 0,
+			distance: 0.3,
+			character: 0.65,
+		},
+		{
+			enabled: false,
+			mix: 0,
+			space: 0.5,
+			predelay: 0,
+			distance: 0.3,
+			character: 0.65,
+		},
+		{
+			enabled: false,
+			mix: 0,
+			space: 0.5,
+			predelay: 0,
+			distance: 0.3,
+			character: 0.65,
+		},
+	],
+	fxSlotPhasers: [
+		{ enabled: false, rate: 0.5, depth: 1, mix: 0, feedback: 0.5 },
+		{ enabled: false, rate: 0.5, depth: 1, mix: 0, feedback: 0.5 },
+		{ enabled: false, rate: 0.5, depth: 1, mix: 0, feedback: 0.5 },
+		{ enabled: false, rate: 0.5, depth: 1, mix: 0, feedback: 0.5 },
+		{ enabled: false, rate: 0.5, depth: 1, mix: 0, feedback: 0.5 },
+		{ enabled: false, rate: 0.5, depth: 1, mix: 0, feedback: 0.5 },
+	],
 	fxSlotCompressors: [
 		{ enabled: false, thresholdDb: -12, ratio: 4, attackMs: 5, releaseMs: 100, makeupDb: 6, mix: 1 },
 		{ enabled: false, thresholdDb: -12, ratio: 4, attackMs: 5, releaseMs: 100, makeupDb: 6, mix: 1 },
@@ -723,6 +880,30 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			return { fxSlotTypes: slots };
 		});
 	},
+	setFxSlotChorus: (slot, v) =>
+		set((s) => {
+			const arr = [...s.fxSlotChoruses] as typeof s.fxSlotChoruses;
+			arr[slot] = v;
+			return { fxSlotChoruses: arr };
+		}),
+	setFxSlotDelay: (slot, v) =>
+		set((s) => {
+			const arr = [...s.fxSlotDelays] as typeof s.fxSlotDelays;
+			arr[slot] = v;
+			return { fxSlotDelays: arr };
+		}),
+	setFxSlotReverb: (slot, v) =>
+		set((s) => {
+			const arr = [...s.fxSlotReverbs] as typeof s.fxSlotReverbs;
+			arr[slot] = v;
+			return { fxSlotReverbs: arr };
+		}),
+	setFxSlotPhaser: (slot, v) =>
+		set((s) => {
+			const arr = [...s.fxSlotPhasers] as typeof s.fxSlotPhasers;
+			arr[slot] = v;
+			return { fxSlotPhasers: arr };
+		}),
 	setFxSlotCompressor: (slot, v) =>
 		set((s) => {
 			const arr = [...s.fxSlotCompressors] as typeof s.fxSlotCompressors;
@@ -782,6 +963,43 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			const arr = [...s.fxSlotWavefolders] as typeof s.fxSlotWavefolders;
 			arr[slot] = v;
 			return { fxSlotWavefolders: arr };
+		}),
+	reorderFxSlots: (fromSlot, toSlot) =>
+		set((s) => {
+			if (
+				fromSlot < 0 ||
+				fromSlot > 5 ||
+				toSlot < 0 ||
+				toSlot > 5 ||
+				fromSlot === toSlot
+			) {
+				return {};
+			}
+
+			const move = <T,>(items: readonly T[]): T[] => {
+				const next = [...items];
+				const [moved] = next.splice(fromSlot, 1);
+				next.splice(toSlot, 0, moved);
+				return next;
+			};
+
+			return {
+				fxSlotTypes: move(s.fxSlotTypes) as typeof s.fxSlotTypes,
+				fxSlotChoruses: move(s.fxSlotChoruses) as typeof s.fxSlotChoruses,
+				fxSlotDelays: move(s.fxSlotDelays) as typeof s.fxSlotDelays,
+				fxSlotReverbs: move(s.fxSlotReverbs) as typeof s.fxSlotReverbs,
+				fxSlotPhasers: move(s.fxSlotPhasers) as typeof s.fxSlotPhasers,
+				fxSlotCompressors: move(s.fxSlotCompressors) as typeof s.fxSlotCompressors,
+				fxSlotEqs: move(s.fxSlotEqs) as typeof s.fxSlotEqs,
+				fxSlotGrainDelays: move(s.fxSlotGrainDelays) as typeof s.fxSlotGrainDelays,
+				fxSlotBitcrushers: move(s.fxSlotBitcrushers) as typeof s.fxSlotBitcrushers,
+				fxSlotShimmerVerbs: move(s.fxSlotShimmerVerbs) as typeof s.fxSlotShimmerVerbs,
+				fxSlotDistortions: move(s.fxSlotDistortions) as typeof s.fxSlotDistortions,
+				fxSlotJunoChoruses: move(s.fxSlotJunoChoruses) as typeof s.fxSlotJunoChoruses,
+				fxSlotRingMods: move(s.fxSlotRingMods) as typeof s.fxSlotRingMods,
+				fxSlotTremolos: move(s.fxSlotTremolos) as typeof s.fxSlotTremolos,
+				fxSlotWavefolders: move(s.fxSlotWavefolders) as typeof s.fxSlotWavefolders,
+			};
 		}),
 
 	// --- gatherState ---
@@ -939,6 +1157,10 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				modWheelVibratoDepth: s.modWheelVibratoDepth,
 				modMatrix: s.modMatrix,
 				fxSlots: s.fxSlotTypes,
+				fxSlotChoruses: s.fxSlotChoruses,
+				fxSlotDelays: s.fxSlotDelays,
+				fxSlotReverbs: s.fxSlotReverbs,
+				fxSlotPhasers: s.fxSlotPhasers,
 				fxSlotCompressors: s.fxSlotCompressors,
 				fxSlotEqs: s.fxSlotEqs,
 				fxSlotGrainDelays: s.fxSlotGrainDelays,
@@ -1156,6 +1378,47 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 							FxSlotType,
 						])
 					: ["chorus", "delay", "reverb", "vibrato", "phaseMod", "phaser"],
+			fxSlotChoruses: Array.isArray((p as { fxSlotChoruses?: ChorusParams[] }).fxSlotChoruses) &&
+				(p as { fxSlotChoruses?: ChorusParams[] }).fxSlotChoruses?.length === 6
+				? ((p as { fxSlotChoruses: ChorusParams[] }).fxSlotChoruses as typeof DEFAULT_STATE.fxSlotChoruses)
+				: ([0, 1, 2, 3, 4, 5].map(() => ({
+					enabled: p.chorus?.enabled ?? safe(p.chorus?.mix, 0) > 0,
+					rate: safe(p.chorus?.rate, 0.8),
+					depth: safe(p.chorus?.depth, 3),
+					mix: safe(p.chorus?.mix, 0),
+				})) as typeof DEFAULT_STATE.fxSlotChoruses),
+			fxSlotDelays: Array.isArray((p as { fxSlotDelays?: DelayParams[] }).fxSlotDelays) &&
+				(p as { fxSlotDelays?: DelayParams[] }).fxSlotDelays?.length === 6
+				? ((p as { fxSlotDelays: DelayParams[] }).fxSlotDelays as typeof DEFAULT_STATE.fxSlotDelays)
+				: ([0, 1, 2, 3, 4, 5].map(() => ({
+					enabled: p.delay?.enabled ?? safe(p.delay?.mix, 0) > 0,
+					time: safe(p.delay?.time, 0.3),
+					feedback: safe(p.delay?.feedback, 0.35),
+					mix: safe(p.delay?.mix, 0),
+					tapeMode: p.delay?.tapeMode ?? false,
+					warmth: safe(p.delay?.warmth, 0.5),
+				})) as typeof DEFAULT_STATE.fxSlotDelays),
+			fxSlotReverbs: Array.isArray((p as { fxSlotReverbs?: ReverbParams[] }).fxSlotReverbs) &&
+				(p as { fxSlotReverbs?: ReverbParams[] }).fxSlotReverbs?.length === 6
+				? ((p as { fxSlotReverbs: ReverbParams[] }).fxSlotReverbs as typeof DEFAULT_STATE.fxSlotReverbs)
+				: ([0, 1, 2, 3, 4, 5].map(() => ({
+					enabled: p.reverb?.enabled ?? safe(p.reverb?.mix, 0) > 0,
+					mix: safe(p.reverb?.mix, 0),
+					space: safe(p.reverb?.space, 0.5),
+					predelay: safe(p.reverb?.predelay, 0),
+					distance: safe(p.reverb?.distance, 0.3),
+					character: reverbCharacter,
+				})) as typeof DEFAULT_STATE.fxSlotReverbs),
+			fxSlotPhasers: Array.isArray((p as { fxSlotPhasers?: PhaserParams[] }).fxSlotPhasers) &&
+				(p as { fxSlotPhasers?: PhaserParams[] }).fxSlotPhasers?.length === 6
+				? ((p as { fxSlotPhasers: PhaserParams[] }).fxSlotPhasers as typeof DEFAULT_STATE.fxSlotPhasers)
+				: ([0, 1, 2, 3, 4, 5].map(() => ({
+					enabled: p.phaser?.enabled ?? false,
+					rate: safe(p.phaser?.rate, 0.5),
+					depth: safe(p.phaser?.depth, 1),
+					mix: safe(p.phaser?.mix, 0),
+					feedback: safe(p.phaser?.feedback, 0.5),
+				})) as typeof DEFAULT_STATE.fxSlotPhasers),
 			fxSlotCompressors: Array.isArray(p.fxSlotCompressors) && p.fxSlotCompressors.length === 6
 				? (p.fxSlotCompressors as typeof DEFAULT_STATE.fxSlotCompressors)
 				: DEFAULT_STATE.fxSlotCompressors,

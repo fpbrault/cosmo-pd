@@ -49,13 +49,33 @@ const FX_MODULE_TAB_IDS = new Set([
 	"phaser",
 ]);
 
-const FX_MODULE_TAB_COLORS: Record<string, string> = {
-	phasemod: "#be3330",
-	vibrato: "#307948",
+const FX_TAB_SLOT_INDEX: Record<string, number> = {
+	chorus: 0,
+	delay: 1,
+	reverb: 2,
+	vibrato: 3,
+	phasemod: 4,
+	phaser: 5,
+};
+
+const FX_TYPE_COLORS: Record<FxSlotType, string> = {
+	empty: "#3b3b3b",
 	chorus: "#818cf8",
+	phaser: "#a78bfa",
 	delay: "#fbbf24",
 	reverb: "#f97316",
-	phaser: "#a78bfa",
+	vibrato: "#307948",
+	phaseMod: "#be3330",
+	compressor: "#facc15",
+	eq5Band: "#34d399",
+	grainDelay: "#f59e0b",
+	bitcrusher: "#f87171",
+	shimmerVerb: "#60a5fa",
+	distortion: "#f59e0b",
+	junoChorus: "#22d3ee",
+	ringMod: "#e879f9",
+	tremolo: "#4ade80",
+	wavefolder: "#c084fc",
 };
 
 const FX_TYPE_SHORT_LABELS: Record<FxSlotType, string> = {
@@ -106,18 +126,14 @@ export default function AsidePanelSwitcher<T extends string>({
 		useSynthParam("portamentoEnabled");
 	const { value: phaseModEnabled } = useSynthParam("phaseModEnabled");
 	const { value: vibratoEnabled } = useSynthParam("vibratoEnabled");
-	const { value: chorusEnabled } = useSynthParam("chorusEnabled");
-	const { value: delayEnabled } = useSynthParam("delayEnabled");
-	const { value: reverbEnabled } = useSynthParam("reverbEnabled");
-	const { value: phaserEnabled } = useSynthParam("phaserEnabled");
 	const { setValue: setPhaseModEnabled } = useSynthParam("phaseModEnabled");
 	const { setValue: setVibratoEnabled } = useSynthParam("vibratoEnabled");
-	const { setValue: setChorusEnabled } = useSynthParam("chorusEnabled");
-	const { setValue: setDelayEnabled } = useSynthParam("delayEnabled");
-	const { setValue: setReverbEnabled } = useSynthParam("reverbEnabled");
-	const { setValue: setPhaserEnabled } = useSynthParam("phaserEnabled");
 
 	const fxSlotTypes = useSynthStore((s) => s.fxSlotTypes);
+	const fxSlotChoruses = useSynthStore((s) => s.fxSlotChoruses);
+	const fxSlotDelays = useSynthStore((s) => s.fxSlotDelays);
+	const fxSlotReverbs = useSynthStore((s) => s.fxSlotReverbs);
+	const fxSlotPhasers = useSynthStore((s) => s.fxSlotPhasers);
 	const fxSlotCompressors = useSynthStore((s) => s.fxSlotCompressors);
 	const fxSlotEqs = useSynthStore((s) => s.fxSlotEqs);
 	const fxSlotGrainDelays = useSynthStore((s) => s.fxSlotGrainDelays);
@@ -128,6 +144,10 @@ export default function AsidePanelSwitcher<T extends string>({
 	const fxSlotRingMods = useSynthStore((s) => s.fxSlotRingMods);
 	const fxSlotTremolos = useSynthStore((s) => s.fxSlotTremolos);
 	const fxSlotWavefolders = useSynthStore((s) => s.fxSlotWavefolders);
+	const setFxSlotChorus = useSynthStore((s) => s.setFxSlotChorus);
+	const setFxSlotDelay = useSynthStore((s) => s.setFxSlotDelay);
+	const setFxSlotReverb = useSynthStore((s) => s.setFxSlotReverb);
+	const setFxSlotPhaser = useSynthStore((s) => s.setFxSlotPhaser);
 	const setFxSlotCompressor = useSynthStore((s) => s.setFxSlotCompressor);
 	const setFxSlotEq = useSynthStore((s) => s.setFxSlotEq);
 	const setFxSlotGrainDelay = useSynthStore((s) => s.setFxSlotGrainDelay);
@@ -141,12 +161,18 @@ export default function AsidePanelSwitcher<T extends string>({
 
 	const getSlotEnabled = (slot: number, type: FxSlotType): boolean => {
 		switch (type) {
-			case "chorus": return chorusEnabled ?? false;
-			case "delay": return delayEnabled ?? false;
-			case "reverb": return reverbEnabled ?? false;
-			case "phaser": return phaserEnabled ?? false;
-			case "vibrato": return vibratoEnabled ?? false;
-			case "phaseMod": return phaseModEnabled ?? false;
+			case "chorus":
+				return fxSlotChoruses[slot]?.enabled ?? false;
+			case "delay":
+				return fxSlotDelays[slot]?.enabled ?? false;
+			case "reverb":
+				return fxSlotReverbs[slot]?.enabled ?? false;
+			case "phaser":
+				return fxSlotPhasers[slot]?.enabled ?? false;
+			case "vibrato":
+				return vibratoEnabled;
+			case "phaseMod":
+				return phaseModEnabled;
 			case "compressor": return fxSlotCompressors[slot]?.enabled ?? false;
 			case "eq5Band": return fxSlotEqs[slot]?.enabled ?? false;
 			case "grainDelay": return fxSlotGrainDelays[slot]?.enabled ?? false;
@@ -164,10 +190,18 @@ export default function AsidePanelSwitcher<T extends string>({
 	const toggleSlotEnabled = (slot: number, type: FxSlotType): void => {
 		const en = getSlotEnabled(slot, type);
 		switch (type) {
-			case "chorus": setChorusEnabled(!en); break;
-			case "delay": setDelayEnabled(!en); break;
-			case "reverb": setReverbEnabled(!en); break;
-			case "phaser": setPhaserEnabled(!en); break;
+			case "chorus":
+				setFxSlotChorus(slot, { ...fxSlotChoruses[slot], enabled: !en });
+				break;
+			case "delay":
+				setFxSlotDelay(slot, { ...fxSlotDelays[slot], enabled: !en });
+				break;
+			case "reverb":
+				setFxSlotReverb(slot, { ...fxSlotReverbs[slot], enabled: !en });
+				break;
+			case "phaser":
+				setFxSlotPhaser(slot, { ...fxSlotPhasers[slot], enabled: !en });
+				break;
 			case "vibrato": setVibratoEnabled(!en); break;
 			case "phaseMod": setPhaseModEnabled(!en); break;
 			case "compressor": setFxSlotCompressor(slot, { ...fxSlotCompressors[slot], enabled: !en }); break;
@@ -184,23 +218,17 @@ export default function AsidePanelSwitcher<T extends string>({
 	};
 
 	const isTabEnabled = (tabId: T): boolean => {
-		switch (String(tabId).toLowerCase()) {
+		const normalized = String(tabId).toLowerCase();
+		const slot = FX_TAB_SLOT_INDEX[normalized];
+		if (slot != null) {
+			return getSlotEnabled(slot, fxSlotTypes[slot]);
+		}
+
+		switch (normalized) {
 			case "polymode":
 				return polyMode === "mono";
 			case "portamentoenabled":
 				return portamentoEnabled;
-			case "phasemod":
-				return phaseModEnabled;
-			case "vibrato":
-				return vibratoEnabled;
-			case "chorus":
-				return chorusEnabled;
-			case "delay":
-				return delayEnabled;
-			case "reverb":
-				return reverbEnabled;
-			case "phaser":
-				return phaserEnabled;
 			default:
 				return false;
 		}
@@ -236,34 +264,27 @@ export default function AsidePanelSwitcher<T extends string>({
 
 	const getCustomTabColor = (tabId: T): string | undefined => {
 		const normalizedTabId = String(tabId).toLowerCase();
-		return FX_MODULE_TAB_COLORS[normalizedTabId];
+		const slot = FX_TAB_SLOT_INDEX[normalizedTabId];
+		if (slot != null) {
+			return FX_TYPE_COLORS[fxSlotTypes[slot]];
+		}
+		return undefined;
 	};
 
 	const toggleTab = (tabId: T) => {
-		switch (String(tabId).toLowerCase()) {
+		const normalized = String(tabId).toLowerCase();
+		const slot = FX_TAB_SLOT_INDEX[normalized];
+		if (slot != null) {
+			toggleSlotEnabled(slot, fxSlotTypes[slot]);
+			return;
+		}
+
+		switch (normalized) {
 			case "polymode":
 				setPolyMode(polyMode === "poly8" ? "mono" : "poly8");
 				break;
 			case "portamentoenabled":
 				setPortamentoEnabled(!portamentoEnabled);
-				break;
-			case "phasemod":
-				setPhaseModEnabled(!phaseModEnabled);
-				break;
-			case "vibrato":
-				setVibratoEnabled(!vibratoEnabled);
-				break;
-			case "chorus":
-				setChorusEnabled(!chorusEnabled);
-				break;
-			case "delay":
-				setDelayEnabled(!delayEnabled);
-				break;
-			case "reverb":
-				setReverbEnabled(!reverbEnabled);
-				break;
-			case "phaser":
-				setPhaserEnabled(!phaserEnabled);
 				break;
 		}
 	};
@@ -314,6 +335,16 @@ export default function AsidePanelSwitcher<T extends string>({
 
 	const visibleTabs = panelElements.map((child) => {
 		const panelType = child.type as AsidePanelComponent<T>;
+		const normalizedTabId = String(panelType.panelId).toLowerCase();
+		const slot = FX_TAB_SLOT_INDEX[normalizedTabId];
+		if (slot != null) {
+			const type = fxSlotTypes[slot];
+			return {
+				id: panelType.panelId,
+				topLabel: `S${slot + 1}`,
+				bottomLabel: FX_TYPE_SHORT_LABELS[type] ?? type,
+			};
+		}
 		return {
 			id: panelType.panelId,
 			topLabel: panelType.panelTab.topLabel,
@@ -368,26 +399,6 @@ export default function AsidePanelSwitcher<T extends string>({
 						bottomLabel={tab.bottomLabel}
 					/>
 				))}
-			</div>
-			<div className="grid grid-cols-6 gap-1">
-				{([0, 1, 2, 3, 4, 5] as const).map((slot) => {
-					const type = fxSlotTypes[slot];
-					const enabled = getSlotEnabled(slot, type);
-					return (
-						<CzTabButton
-							key={`fx-slot-${slot}`}
-							topLabel={`${slot + 1}`}
-							bottomLabel={FX_TYPE_SHORT_LABELS[type] ?? type}
-							color="blue"
-							active={enabled}
-							ledColor={enabled ? "green" : "off"}
-							onClick={() => {
-								if (type !== "empty") toggleSlotEnabled(slot, type);
-							}}
-							onLongPress={() => setMainPanelMode("fx")}
-						/>
-					);
-				})}
 			</div>
 			{activePanel}
 		</div>

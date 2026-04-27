@@ -58,30 +58,34 @@ impl FxSlotProcessors {
     }
 
     fn sync_from_params(&mut self, p: &SynthParams, slot_idx: usize) {
-        self.chorus.enabled = p.chorus.enabled;
-        self.chorus.rate = p.chorus.rate;
-        self.chorus.depth = p.chorus.depth;
-        self.chorus.mix = p.chorus.mix;
+        let ch = &p.fx_slot_choruses[slot_idx];
+        self.chorus.enabled = ch.enabled;
+        self.chorus.rate = ch.rate;
+        self.chorus.depth = ch.depth;
+        self.chorus.mix = ch.mix;
 
-        self.phaser.enabled = p.phaser.enabled;
-        self.phaser.rate = p.phaser.rate;
-        self.phaser.depth = p.phaser.depth;
-        self.phaser.mix = p.phaser.mix;
-        self.phaser.feedback = p.phaser.feedback;
+        let ph = &p.fx_slot_phasers[slot_idx];
+        self.phaser.enabled = ph.enabled;
+        self.phaser.rate = ph.rate;
+        self.phaser.depth = ph.depth;
+        self.phaser.mix = ph.mix;
+        self.phaser.feedback = ph.feedback;
 
-        self.delay.enabled = p.delay.enabled;
-        self.delay.time = p.delay.time;
-        self.delay.feedback = p.delay.feedback;
-        self.delay.mix = p.delay.mix;
-        self.delay.tape_mode = p.delay.tape_mode;
-        self.delay.warmth = p.delay.warmth;
+        let d = &p.fx_slot_delays[slot_idx];
+        self.delay.enabled = d.enabled;
+        self.delay.time = d.time;
+        self.delay.feedback = d.feedback;
+        self.delay.mix = d.mix;
+        self.delay.tape_mode = d.tape_mode;
+        self.delay.warmth = d.warmth;
 
-        self.reverb.enabled = p.reverb.enabled;
-        self.reverb.mix = p.reverb.mix;
-        self.reverb.space = p.reverb.space;
-        self.reverb.predelay = p.reverb.predelay;
-        self.reverb.distance = p.reverb.distance;
-        self.reverb.character = p.reverb.character;
+        let rv = &p.fx_slot_reverbs[slot_idx];
+        self.reverb.enabled = rv.enabled;
+        self.reverb.mix = rv.mix;
+        self.reverb.space = rv.space;
+        self.reverb.predelay = rv.predelay;
+        self.reverb.distance = rv.distance;
+        self.reverb.character = rv.character;
 
         let c = &p.fx_slot_compressors[slot_idx];
         self.compressor.enabled = c.enabled;
