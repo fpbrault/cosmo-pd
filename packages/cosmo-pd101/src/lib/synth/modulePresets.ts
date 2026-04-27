@@ -375,7 +375,7 @@ export const COMPRESSOR_PRESETS: ModulePresetDefinition<{
 				thresholdDb: -18,
 				ratio: 2,
 				attackMs: 10,
-				releaseMs: 140,
+				releaseMs: 150,
 				makeupDb: 3,
 				mix: 1,
 			},
@@ -387,11 +387,11 @@ export const COMPRESSOR_PRESETS: ModulePresetDefinition<{
 		patch: {
 			compressor: {
 				enabled: true,
-				thresholdDb: -14,
+				thresholdDb: -12,
 				ratio: 4,
 				attackMs: 5,
-				releaseMs: 90,
-				makeupDb: 5,
+				releaseMs: 80,
+				makeupDb: 6,
 				mix: 1,
 			},
 		},
@@ -402,10 +402,10 @@ export const COMPRESSOR_PRESETS: ModulePresetDefinition<{
 		patch: {
 			compressor: {
 				enabled: true,
-				thresholdDb: -8,
-				ratio: 12,
-				attackMs: 0.8,
-				releaseMs: 65,
+				thresholdDb: -6,
+				ratio: 20,
+				attackMs: 1,
+				releaseMs: 200,
 				makeupDb: 2,
 				mix: 1,
 			},
@@ -429,8 +429,8 @@ export const EQ_PRESETS: ModulePresetDefinition<{
 		patch: {
 			eq: {
 				enabled: true,
-				gain80: 5,
-				gain240: 2,
+				gain80: 6,
+				gain240: 3,
 				gain750: 0,
 				gain2200: -1,
 				gain8000: -2,
@@ -443,11 +443,11 @@ export const EQ_PRESETS: ModulePresetDefinition<{
 		patch: {
 			eq: {
 				enabled: true,
-				gain80: -1,
-				gain240: -1,
-				gain750: 1,
-				gain2200: 3,
-				gain8000: 4,
+				gain80: 0,
+				gain240: -2,
+				gain750: 0,
+				gain2200: 5,
+				gain8000: 3,
 			},
 		},
 	},
@@ -457,11 +457,11 @@ export const EQ_PRESETS: ModulePresetDefinition<{
 		patch: {
 			eq: {
 				enabled: true,
-				gain80: 2,
-				gain240: 3,
+				gain80: 3,
+				gain240: 4,
 				gain750: 1,
-				gain2200: -1,
-				gain8000: -2,
+				gain2200: -3,
+				gain8000: -5,
 			},
 		},
 	},
@@ -483,7 +483,7 @@ export const GRAIN_DELAY_PRESETS: ModulePresetDefinition<{
 			grainDelay: {
 				enabled: true,
 				time: 0.35,
-				scatter: 0.3,
+				scatter: 0.6,
 				density: 0.7,
 				mix: 0.4,
 			},
@@ -495,9 +495,9 @@ export const GRAIN_DELAY_PRESETS: ModulePresetDefinition<{
 		patch: {
 			grainDelay: {
 				enabled: true,
-				time: 0.18,
-				scatter: 0.8,
-				density: 0.55,
+				time: 0.12,
+				scatter: 0.9,
+				density: 0.85,
 				mix: 0.5,
 			},
 		},
@@ -508,9 +508,9 @@ export const GRAIN_DELAY_PRESETS: ModulePresetDefinition<{
 		patch: {
 			grainDelay: {
 				enabled: true,
-				time: 0.42,
-				scatter: 0.2,
-				density: 0.8,
+				time: 0.5,
+				scatter: 0.35,
+				density: 0.5,
 				mix: 0.35,
 			},
 		},
@@ -528,20 +528,20 @@ export const BITCRUSHER_PRESETS: ModulePresetDefinition<{
 	{
 		id: "retroGame",
 		label: "Retro Game",
-		patch: { bitcrusher: { enabled: true, bits: 6, rateReduction: 6, mix: 1 } },
+		patch: { bitcrusher: { enabled: true, bits: 8, rateReduction: 4, mix: 1 } },
 	},
 	{
 		id: "grunge",
 		label: "Grunge",
 		patch: {
-			bitcrusher: { enabled: true, bits: 4, rateReduction: 10, mix: 1 },
+			bitcrusher: { enabled: true, bits: 4, rateReduction: 2, mix: 1 },
 		},
 	},
 	{
 		id: "subtle",
 		label: "Subtle",
 		patch: {
-			bitcrusher: { enabled: true, bits: 10, rateReduction: 2, mix: 0.55 },
+			bitcrusher: { enabled: true, bits: 12, rateReduction: 1.5, mix: 0.6 },
 		},
 	},
 ];
@@ -558,21 +558,21 @@ export const SHIMMER_VERB_PRESETS: ModulePresetDefinition<{
 		id: "crystalHall",
 		label: "Crystal Hall",
 		patch: {
-			shimmerVerb: { enabled: true, shimmer: 0.8, space: 0.85, mix: 0.45 },
+			shimmerVerb: { enabled: true, shimmer: 0.6, space: 0.8, mix: 0.4 },
 		},
 	},
 	{
 		id: "ethereal",
 		label: "Ethereal",
 		patch: {
-			shimmerVerb: { enabled: true, shimmer: 0.6, space: 0.95, mix: 0.55 },
+			shimmerVerb: { enabled: true, shimmer: 0.85, space: 0.95, mix: 0.55 },
 		},
 	},
 	{
 		id: "subtleShimmer",
 		label: "Subtle Shimmer",
 		patch: {
-			shimmerVerb: { enabled: true, shimmer: 0.35, space: 0.7, mix: 0.25 },
+			shimmerVerb: { enabled: true, shimmer: 0.25, space: 0.6, mix: 0.3 },
 		},
 	},
 ];
@@ -583,17 +583,17 @@ export const DISTORTION_PRESETS: ModulePresetDefinition<{
 	{
 		id: "warmOverdrive",
 		label: "Warm Overdrive",
-		patch: { distortion: { enabled: true, drive: 0.4, tone: 0.45, mix: 0.85 } },
+		patch: { distortion: { enabled: true, drive: 0.35, tone: 0.3, mix: 0.9 } },
 	},
 	{
 		id: "grittyFuzz",
 		label: "Gritty Fuzz",
-		patch: { distortion: { enabled: true, drive: 0.8, tone: 0.35, mix: 1 } },
+		patch: { distortion: { enabled: true, drive: 0.75, tone: 0.6, mix: 1 } },
 	},
 	{
 		id: "bitingClip",
 		label: "Biting Clip",
-		patch: { distortion: { enabled: true, drive: 0.65, tone: 0.7, mix: 0.9 } },
+		patch: { distortion: { enabled: true, drive: 0.9, tone: 0.8, mix: 1 } },
 	},
 ];
 
@@ -603,7 +603,7 @@ export const JUNO_CHORUS_PRESETS: ModulePresetDefinition<{
 	{
 		id: "junoI",
 		label: "Juno I",
-		patch: { junoChorus: { enabled: true, mode: 0, mix: 0.45 } },
+		patch: { junoChorus: { enabled: true, mode: 0, mix: 0.5 } },
 	},
 	{
 		id: "junoII",
@@ -613,7 +613,7 @@ export const JUNO_CHORUS_PRESETS: ModulePresetDefinition<{
 	{
 		id: "junoFull",
 		label: "Juno Full",
-		patch: { junoChorus: { enabled: true, mode: 2, mix: 0.65 } },
+		patch: { junoChorus: { enabled: true, mode: 2, mix: 0.6 } },
 	},
 ];
 
@@ -623,17 +623,17 @@ export const RING_MOD_PRESETS: ModulePresetDefinition<{
 	{
 		id: "metallic",
 		label: "Metallic",
-		patch: { ringMod: { enabled: true, carrierHz: 320, mix: 0.7 } },
+		patch: { ringMod: { enabled: true, carrierHz: 220, mix: 0.7 } },
 	},
 	{
 		id: "bell",
 		label: "Bell",
-		patch: { ringMod: { enabled: true, carrierHz: 620, mix: 0.8 } },
+		patch: { ringMod: { enabled: true, carrierHz: 523, mix: 0.5 } },
 	},
 	{
 		id: "alien",
 		label: "Alien",
-		patch: { ringMod: { enabled: true, carrierHz: 1120, mix: 0.9 } },
+		patch: { ringMod: { enabled: true, carrierHz: 1337, mix: 0.85 } },
 	},
 ];
 
@@ -650,21 +650,21 @@ export const TREMOLO_PRESETS: ModulePresetDefinition<{
 		id: "slowWave",
 		label: "Slow Wave",
 		patch: {
-			tremolo: { enabled: true, rate: 2.5, depth: 0.45, waveform: 0, mix: 1 },
+			tremolo: { enabled: true, rate: 2, depth: 0.5, waveform: 0, mix: 1 },
 		},
 	},
 	{
 		id: "fastChop",
 		label: "Fast Chop",
 		patch: {
-			tremolo: { enabled: true, rate: 11, depth: 0.8, waveform: 2, mix: 1 },
+			tremolo: { enabled: true, rate: 8, depth: 0.75, waveform: 2, mix: 1 },
 		},
 	},
 	{
 		id: "triPulse",
 		label: "Tri Pulse",
 		patch: {
-			tremolo: { enabled: true, rate: 6, depth: 0.65, waveform: 1, mix: 1 },
+			tremolo: { enabled: true, rate: 5, depth: 0.6, waveform: 1, mix: 1 },
 		},
 	},
 ];
@@ -675,18 +675,18 @@ export const WAVEFOLDER_PRESETS: ModulePresetDefinition<{
 	{
 		id: "gentle",
 		label: "Gentle",
-		patch: { wavefolder: { enabled: true, drive: 0.3, folds: 0.35, mix: 0.9 } },
+		patch: { wavefolder: { enabled: true, drive: 0.3, folds: 0.3, mix: 0.8 } },
 	},
 	{
 		id: "aggressive",
 		label: "Aggressive",
-		patch: { wavefolder: { enabled: true, drive: 0.75, folds: 0.85, mix: 1 } },
+		patch: { wavefolder: { enabled: true, drive: 0.75, folds: 0.7, mix: 1 } },
 	},
 	{
 		id: "harmonic",
 		label: "Harmonic",
 		patch: {
-			wavefolder: { enabled: true, drive: 0.55, folds: 0.6, mix: 0.95 },
+			wavefolder: { enabled: true, drive: 0.5, folds: 0.5, mix: 0.9 },
 		},
 	},
 ];

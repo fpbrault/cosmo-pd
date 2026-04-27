@@ -101,7 +101,6 @@ impl CzSynthProcessor {
         self.inner.set_aftertouch(value);
     }
 
-    /// Return the latest runtime modulation-source values as JSON for UI telemetry.
     /// Set which effect type occupies a given FX slot (0–5).
     ///
     /// `type_name` is the camelCase string representation of `FxSlotType`
@@ -109,7 +108,11 @@ impl CzSynthProcessor {
     /// Returns `true` on success, `false` when `slot ≥ 6` or type is unknown.
     #[wasm_bindgen(js_name = setFxSlotType)]
     pub fn set_fx_slot_type(&mut self, slot: usize, type_name: &str) -> bool {
-        match serde_json::from_str::<FxSlotType>(&format!("\"{type_name}\"")) {
+        if slot >= 6 {
+            return false;
+        }
+        match serde_json::from_value::<FxSlotType>(serde_json::Value::String(type_name.to_owned()))
+        {
             Ok(slot_type) => {
                 self.inner.set_fx_slot_type(slot, slot_type);
                 true

@@ -54,7 +54,6 @@ declare namespace wasm_bindgen {
          */
         setAftertouch(value: number): void;
         /**
-         * Return the latest runtime modulation-source values as JSON for UI telemetry.
          * Set which effect type occupies a given FX slot (0–5).
          *
          * `type_name` is the camelCase string representation of `FxSlotType`

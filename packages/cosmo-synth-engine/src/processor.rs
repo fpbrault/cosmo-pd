@@ -247,8 +247,6 @@ impl CosmoProcessor {
         self.update_fx();
     }
 
-    /// Apply a named module preset to the current parameters.
-
     /// Set which effect type occupies a given FX slot (0–5).
     /// Resets to default params with enabled=true for non-empty types.
     pub fn set_fx_slot_type(&mut self, slot: usize, slot_type: FxSlotType) {

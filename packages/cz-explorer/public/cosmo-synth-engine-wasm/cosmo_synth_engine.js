@@ -128,7 +128,6 @@ let wasm_bindgen = (function(exports) {
             wasm.czsynthprocessor_setAftertouch(this.__wbg_ptr, value);
         }
         /**
-         * Return the latest runtime modulation-source values as JSON for UI telemetry.
          * Set which effect type occupies a given FX slot (0–5).
          *
          * `type_name` is the camelCase string representation of `FxSlotType`
