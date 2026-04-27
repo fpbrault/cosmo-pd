@@ -6,8 +6,8 @@ use libm::{cosf, sinf};
 
 pub struct WavefolderFx {
     pub enabled: bool,
-    pub drive: f32,   // 0..1 → input gain before folding (1..8x)
-    pub folds: f32,   // 0..1 → fold threshold (controls number of folds)
+    pub drive: f32, // 0..1 → input gain before folding (1..8x)
+    pub folds: f32, // 0..1 → fold threshold (controls number of folds)
     pub mix: f32,
 }
 

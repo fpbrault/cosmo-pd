@@ -10,16 +10,16 @@ pub fn apply_module_preset(params: &mut SynthParams, module: &str, preset: &str)
         "lfo1" => apply_lfo_preset(params, preset, false),
         "lfo2" => apply_lfo_preset(params, preset, true),
         "modEnv" => apply_mod_env_preset(params, preset),
-           "compressor" => apply_compressor_preset(params, preset),
-           "eq" => apply_eq_preset(params, preset),
-           "grainDelay" => apply_grain_delay_preset(params, preset),
-           "bitcrusher" => apply_bitcrusher_preset(params, preset),
-           "shimmerVerb" => apply_shimmer_verb_preset(params, preset),
-           "distortion" => apply_distortion_preset(params, preset),
-           "junoChorus" => apply_juno_chorus_preset(params, preset),
-           "ringMod" => apply_ring_mod_preset(params, preset),
-           "tremolo" => apply_tremolo_preset(params, preset),
-           "wavefolder" => apply_wavefolder_preset(params, preset),
+        "compressor" => apply_compressor_preset(params, preset),
+        "eq" => apply_eq_preset(params, preset),
+        "grainDelay" => apply_grain_delay_preset(params, preset),
+        "bitcrusher" => apply_bitcrusher_preset(params, preset),
+        "shimmerVerb" => apply_shimmer_verb_preset(params, preset),
+        "distortion" => apply_distortion_preset(params, preset),
+        "junoChorus" => apply_juno_chorus_preset(params, preset),
+        "ringMod" => apply_ring_mod_preset(params, preset),
+        "tremolo" => apply_tremolo_preset(params, preset),
+        "wavefolder" => apply_wavefolder_preset(params, preset),
         _ => false,
     }
 }
@@ -365,7 +365,6 @@ fn apply_bitcrusher_preset(params: &mut SynthParams, preset: &str) -> bool {
         _ => false,
     }
 }
-
 
 fn apply_grain_delay_preset(params: &mut SynthParams, preset: &str) -> bool {
     match preset {

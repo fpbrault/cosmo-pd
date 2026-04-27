@@ -1,4 +1,4 @@
-use libm::{cosf, sinf, tanhf, expf};
+use libm::{cosf, expf, sinf, tanhf};
 
 // ---------------------------------------------------------------------------
 // DistortionFx — soft/hard clipping with tone control (1-pole HP + LP)
@@ -6,8 +6,8 @@ use libm::{cosf, sinf, tanhf, expf};
 
 pub struct DistortionFx {
     pub enabled: bool,
-    pub drive: f32,    // 0..1 → controls clipping amount
-    pub tone: f32,     // 0..1 → 0=warm, 1=bright
+    pub drive: f32, // 0..1 → controls clipping amount
+    pub tone: f32,  // 0..1 → 0=warm, 1=bright
     pub mix: f32,
     hp_state: f32,
     lp_state: f32,

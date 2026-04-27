@@ -25,7 +25,11 @@ export default function TremoloModule() {
 		const preset = TREMOLO_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
 		setTremolo(preset.patch.tremolo);
-		requestApplyModulePreset({ module: "tremolo", preset: preset.id, patch: preset.patch });
+		requestApplyModulePreset({
+			module: "tremolo",
+			preset: preset.id,
+			patch: preset.patch,
+		});
 	};
 
 	return (

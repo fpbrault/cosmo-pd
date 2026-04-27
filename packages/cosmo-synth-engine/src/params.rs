@@ -818,12 +818,24 @@ pub struct CompressorParams {
     pub mix: f32,
 }
 
-fn default_compressor_threshold() -> f32 { -12.0 }
-fn default_compressor_ratio() -> f32 { 4.0 }
-fn default_compressor_attack() -> f32 { 5.0 }
-fn default_compressor_release() -> f32 { 100.0 }
-fn default_compressor_makeup() -> f32 { 6.0 }
-fn default_one() -> f32 { 1.0 }
+fn default_compressor_threshold() -> f32 {
+    -12.0
+}
+fn default_compressor_ratio() -> f32 {
+    4.0
+}
+fn default_compressor_attack() -> f32 {
+    5.0
+}
+fn default_compressor_release() -> f32 {
+    100.0
+}
+fn default_compressor_makeup() -> f32 {
+    6.0
+}
+fn default_one() -> f32 {
+    1.0
+}
 
 impl Default for CompressorParams {
     fn default() -> Self {
@@ -888,8 +900,12 @@ pub struct GrainDelayParams {
     pub mix: f32,
 }
 
-fn default_grain_delay_time() -> f32 { 0.25 }
-fn default_half() -> f32 { 0.5 }
+fn default_grain_delay_time() -> f32 {
+    0.25
+}
+fn default_half() -> f32 {
+    0.5
+}
 
 impl Default for GrainDelayParams {
     fn default() -> Self {
@@ -918,7 +934,9 @@ pub struct BitcrusherParams {
     pub mix: f32,
 }
 
-fn default_bits() -> f32 { 8.0 }
+fn default_bits() -> f32 {
+    8.0
+}
 
 impl Default for BitcrusherParams {
     fn default() -> Self {
@@ -946,8 +964,12 @@ pub struct ShimmerVerbParams {
     pub mix: f32,
 }
 
-fn default_shimmer() -> f32 { 0.4 }
-fn default_shimmer_space() -> f32 { 0.7 }
+fn default_shimmer() -> f32 {
+    0.4
+}
+fn default_shimmer_space() -> f32 {
+    0.7
+}
 
 impl Default for ShimmerVerbParams {
     fn default() -> Self {
@@ -1022,7 +1044,9 @@ pub struct RingModParams {
     pub mix: f32,
 }
 
-fn default_carrier_hz() -> f32 { 440.0 }
+fn default_carrier_hz() -> f32 {
+    440.0
+}
 
 impl Default for RingModParams {
     fn default() -> Self {
@@ -1051,7 +1075,9 @@ pub struct TremoloParams {
     pub mix: f32,
 }
 
-fn default_tremolo_rate() -> f32 { 4.0 }
+fn default_tremolo_rate() -> f32 {
+    4.0
+}
 
 impl Default for TremoloParams {
     fn default() -> Self {
@@ -1215,17 +1241,17 @@ impl Default for SynthParams {
             mod_matrix: ModMatrix::default(),
             random: RandomParams::default(),
             mod_env: ModEnvParams::default(),
-               fx_slots: default_fx_slots(),
-               compressor: CompressorParams::default(),
-               eq: EqParams::default(),
-               grain_delay: GrainDelayParams::default(),
-               bitcrusher: BitcrusherParams::default(),
-               shimmer_verb: ShimmerVerbParams::default(),
-               distortion: DistortionParams::default(),
-               juno_chorus: JunoChorusParams::default(),
-               ring_mod: RingModParams::default(),
-               tremolo: TremoloParams::default(),
-               wavefolder: WavefolderParams::default(),
+            fx_slots: default_fx_slots(),
+            compressor: CompressorParams::default(),
+            eq: EqParams::default(),
+            grain_delay: GrainDelayParams::default(),
+            bitcrusher: BitcrusherParams::default(),
+            shimmer_verb: ShimmerVerbParams::default(),
+            distortion: DistortionParams::default(),
+            juno_chorus: JunoChorusParams::default(),
+            ring_mod: RingModParams::default(),
+            tremolo: TremoloParams::default(),
+            wavefolder: WavefolderParams::default(),
         }
     }
 }

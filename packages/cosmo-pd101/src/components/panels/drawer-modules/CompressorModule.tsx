@@ -19,7 +19,11 @@ export default function CompressorModule() {
 		const preset = COMPRESSOR_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
 		setCompressor(preset.patch.compressor);
-		requestApplyModulePreset({ module: "compressor", preset: preset.id, patch: preset.patch });
+		requestApplyModulePreset({
+			module: "compressor",
+			preset: preset.id,
+			patch: preset.patch,
+		});
 	};
 
 	return (
@@ -36,7 +40,9 @@ export default function CompressorModule() {
 				/>
 			}
 			enabled={compressor.enabled ?? false}
-			onToggle={() => setCompressor({ ...compressor, enabled: !compressor.enabled })}
+			onToggle={() =>
+				setCompressor({ ...compressor, enabled: !compressor.enabled })
+			}
 		>
 			<ControlKnob
 				value={compressor.thresholdDb ?? -12}

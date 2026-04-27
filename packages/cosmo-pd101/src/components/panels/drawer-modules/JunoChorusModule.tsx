@@ -25,7 +25,11 @@ export default function JunoChorusModule() {
 		const preset = JUNO_CHORUS_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
 		setJunoChorus(preset.patch.junoChorus);
-		requestApplyModulePreset({ module: "junoChorus", preset: preset.id, patch: preset.patch });
+		requestApplyModulePreset({
+			module: "junoChorus",
+			preset: preset.id,
+			patch: preset.patch,
+		});
 	};
 
 	return (
@@ -42,7 +46,9 @@ export default function JunoChorusModule() {
 				/>
 			}
 			enabled={junoChorus.enabled ?? false}
-			onToggle={() => setJunoChorus({ ...junoChorus, enabled: !junoChorus.enabled })}
+			onToggle={() =>
+				setJunoChorus({ ...junoChorus, enabled: !junoChorus.enabled })
+			}
 		>
 			<div className="flex flex-col gap-1">
 				<span className="text-xs text-center opacity-60">Mode</span>

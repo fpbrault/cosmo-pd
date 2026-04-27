@@ -6,7 +6,7 @@ use libm::{cosf, sinf};
 
 pub struct BitcrusherFx {
     pub enabled: bool,
-    pub bits: f32,         // 1..16 bit depth
+    pub bits: f32,           // 1..16 bit depth
     pub rate_reduction: f32, // 1..32 sample rate divisor
     pub mix: f32,
     hold_counter: f32,

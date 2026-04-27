@@ -6,7 +6,7 @@ use libm::{cosf, sinf};
 
 pub struct RingModFx {
     pub enabled: bool,
-    pub carrier_hz: f32,  // 20..2000 Hz
+    pub carrier_hz: f32, // 20..2000 Hz
     pub mix: f32,
     phase: f32,
     sample_rate: f32,

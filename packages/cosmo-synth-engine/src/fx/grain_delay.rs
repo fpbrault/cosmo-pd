@@ -8,9 +8,9 @@ use super::delay_line::DelayLine;
 
 pub struct GrainDelayFx {
     delay_line: DelayLine,
-    pub time: f32,     // base delay time in seconds (0.01..1.0)
-    pub scatter: f32,  // time randomization (0..1)
-    pub density: f32,  // grain density / playback speed variation (0..1)
+    pub time: f32,    // base delay time in seconds (0.01..1.0)
+    pub scatter: f32, // time randomization (0..1)
+    pub density: f32, // grain density / playback speed variation (0..1)
     pub mix: f32,
     pub enabled: bool,
     read_offset: f32,
@@ -52,7 +52,9 @@ impl GrainDelayFx {
         let target_offset = (base_samples + scatter_samples).max(1.0);
         self.read_offset = self.read_offset + (target_offset - self.read_offset) * 0.005;
 
-        let wet = self.delay_line.read_at_fractional(self.read_offset.max(1.0));
+        let wet = self
+            .delay_line
+            .read_at_fractional(self.read_offset.max(1.0));
         self.delay_line.write(sample);
 
         let mix_angle = self.mix * core::f32::consts::PI * 0.5;

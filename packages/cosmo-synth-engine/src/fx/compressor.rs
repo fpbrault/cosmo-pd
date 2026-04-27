@@ -35,8 +35,7 @@ impl CompressorFx {
         if !self.enabled || self.mix <= 0.0 {
             return sample;
         }
-        let attack_coeff =
-            libm::expf(-1.0 / (self.attack_ms * 0.001 * self.sample_rate).max(1.0));
+        let attack_coeff = libm::expf(-1.0 / (self.attack_ms * 0.001 * self.sample_rate).max(1.0));
         let release_coeff =
             libm::expf(-1.0 / (self.release_ms * 0.001 * self.sample_rate).max(1.0));
 

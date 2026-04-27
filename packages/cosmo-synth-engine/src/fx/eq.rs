@@ -52,8 +52,7 @@ impl BiquadFilter {
         let cos_w0 = cosf(w0);
         let sin_w0 = sinf(w0);
         let alpha = sin_w0 / 2.0 * libm::sqrtf((a + 1.0 / a) * (1.0 / 0.707 - 1.0) + 2.0);
-        let a0_inv = 1.0
-            / ((a + 1.0) + (a - 1.0) * cos_w0 + 2.0 * libm::sqrtf(a) * alpha);
+        let a0_inv = 1.0 / ((a + 1.0) + (a - 1.0) * cos_w0 + 2.0 * libm::sqrtf(a) * alpha);
         self.b0 = a * ((a + 1.0) - (a - 1.0) * cos_w0 + 2.0 * libm::sqrtf(a) * alpha) * a0_inv;
         self.b1 = 2.0 * a * ((a - 1.0) - (a + 1.0) * cos_w0) * a0_inv;
         self.b2 = a * ((a + 1.0) - (a - 1.0) * cos_w0 - 2.0 * libm::sqrtf(a) * alpha) * a0_inv;
@@ -68,8 +67,7 @@ impl BiquadFilter {
         let cos_w0 = cosf(w0);
         let sin_w0 = sinf(w0);
         let alpha = sin_w0 / 2.0 * libm::sqrtf((a + 1.0 / a) * (1.0 / 0.707 - 1.0) + 2.0);
-        let a0_inv = 1.0
-            / ((a + 1.0) - (a - 1.0) * cos_w0 + 2.0 * libm::sqrtf(a) * alpha);
+        let a0_inv = 1.0 / ((a + 1.0) - (a - 1.0) * cos_w0 + 2.0 * libm::sqrtf(a) * alpha);
         self.b0 = a * ((a + 1.0) + (a - 1.0) * cos_w0 + 2.0 * libm::sqrtf(a) * alpha) * a0_inv;
         self.b1 = -2.0 * a * ((a - 1.0) + (a + 1.0) * cos_w0) * a0_inv;
         self.b2 = a * ((a + 1.0) + (a - 1.0) * cos_w0 - 2.0 * libm::sqrtf(a) * alpha) * a0_inv;

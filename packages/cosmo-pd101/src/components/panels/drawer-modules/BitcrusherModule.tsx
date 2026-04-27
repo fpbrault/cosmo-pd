@@ -19,7 +19,11 @@ export default function BitcrusherModule() {
 		const preset = BITCRUSHER_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
 		setBitcrusher(preset.patch.bitcrusher);
-		requestApplyModulePreset({ module: "bitcrusher", preset: preset.id, patch: preset.patch });
+		requestApplyModulePreset({
+			module: "bitcrusher",
+			preset: preset.id,
+			patch: preset.patch,
+		});
 	};
 
 	return (
@@ -36,7 +40,9 @@ export default function BitcrusherModule() {
 				/>
 			}
 			enabled={bitcrusher.enabled ?? false}
-			onToggle={() => setBitcrusher({ ...bitcrusher, enabled: !bitcrusher.enabled })}
+			onToggle={() =>
+				setBitcrusher({ ...bitcrusher, enabled: !bitcrusher.enabled })
+			}
 		>
 			<ControlKnob
 				value={bitcrusher.bits ?? 8}

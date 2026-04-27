@@ -1,5 +1,5 @@
-use super::reverb::FdnReverb;
 use super::delay_line::DelayLine;
+use super::reverb::FdnReverb;
 
 // ---------------------------------------------------------------------------
 // ShimmerVerbFx — FDN reverb with pitch-shifted feedback (octave up)
@@ -10,7 +10,7 @@ pub struct ShimmerVerbFx {
     pitch_line: DelayLine,
     pitch_phase: f32,
     pitch_buf_len: usize,
-    pub shimmer: f32,  // amount of octave-up shimmer fed back (0..1)
+    pub shimmer: f32, // amount of octave-up shimmer fed back (0..1)
     pub mix: f32,
     pub space: f32,
     pub enabled: bool,
@@ -30,7 +30,7 @@ impl ShimmerVerbFx {
             reverb,
             pitch_line: DelayLine::new(pitch_buf_len),
             pitch_phase: 0.0,
-               pitch_buf_len,
+            pitch_buf_len,
             shimmer: 0.4,
             mix: 0.0,
             space: 0.7,
@@ -45,7 +45,7 @@ impl ShimmerVerbFx {
         }
 
         // Pitch shift up one octave using a single-crossfade read-position trick
-           let buf_samples = self.pitch_buf_len;
+        let buf_samples = self.pitch_buf_len;
         // Advance read phase at 2x speed for +1 octave
         self.pitch_phase += 2.0 / self.sample_rate;
         if self.pitch_phase >= 1.0 {
@@ -76,4 +76,3 @@ impl ShimmerVerbFx {
         sample * libm::cosf(mix_angle) + wet * libm::sinf(mix_angle)
     }
 }
-

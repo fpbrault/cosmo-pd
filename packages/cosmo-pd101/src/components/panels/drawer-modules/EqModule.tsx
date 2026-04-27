@@ -19,7 +19,11 @@ export default function EqModule() {
 		const preset = EQ_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
 		setEq(preset.patch.eq);
-		requestApplyModulePreset({ module: "eq", preset: preset.id, patch: preset.patch });
+		requestApplyModulePreset({
+			module: "eq",
+			preset: preset.id,
+			patch: preset.patch,
+		});
 	};
 
 	return (

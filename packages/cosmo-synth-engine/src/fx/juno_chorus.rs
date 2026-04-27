@@ -11,14 +11,14 @@ use super::delay_line::DelayLine;
 // ---------------------------------------------------------------------------
 
 const JUNO_CENTER_S: f32 = 0.0017; // 1.7 ms center delay
-const JUNO_DEPTH_S: f32 = 0.0008;  // ±0.8 ms swing
+const JUNO_DEPTH_S: f32 = 0.0008; // ±0.8 ms swing
 
 pub struct JunoChorusFx {
     delay1: DelayLine,
     delay2: DelayLine,
     lfo1_phase: f32,
     lfo2_phase: f32,
-    pub mode: u8,  // 0, 1, or 2
+    pub mode: u8, // 0, 1, or 2
     pub mix: f32,
     pub enabled: bool,
     sample_rate: f32,
@@ -49,8 +49,12 @@ impl JunoChorusFx {
 
         self.lfo1_phase += lfo1_rate / self.sample_rate;
         self.lfo2_phase += lfo2_rate / self.sample_rate;
-        if self.lfo1_phase >= 1.0 { self.lfo1_phase -= 1.0; }
-        if self.lfo2_phase >= 1.0 { self.lfo2_phase -= 1.0; }
+        if self.lfo1_phase >= 1.0 {
+            self.lfo1_phase -= 1.0;
+        }
+        if self.lfo2_phase >= 1.0 {
+            self.lfo2_phase -= 1.0;
+        }
 
         let lfo1 = sinf(self.lfo1_phase * core::f32::consts::PI * 2.0);
         let lfo2 = sinf(self.lfo2_phase * core::f32::consts::PI * 2.0);

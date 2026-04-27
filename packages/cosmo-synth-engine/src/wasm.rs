@@ -102,32 +102,32 @@ impl CzSynthProcessor {
     }
 
     /// Return the latest runtime modulation-source values as JSON for UI telemetry.
-       /// Set which effect type occupies a given FX slot (0–5).
-       ///
-       /// `type_name` is the camelCase string representation of `FxSlotType`
-       /// (e.g. `"chorus"`, `"reverb"`, `"compressor"`, `"eq5Band"`, …).
-       /// Returns `true` on success, `false` when `slot ≥ 6` or type is unknown.
-       #[wasm_bindgen(js_name = setFxSlotType)]
-       pub fn set_fx_slot_type(&mut self, slot: usize, type_name: &str) -> bool {
-           match serde_json::from_str::<FxSlotType>(&format!("\"{type_name}\"")) {
-               Ok(slot_type) => {
-                   self.inner.set_fx_slot_type(slot, slot_type);
-                   true
-               }
-               Err(_) => false,
-           }
-       }
+    /// Set which effect type occupies a given FX slot (0–5).
+    ///
+    /// `type_name` is the camelCase string representation of `FxSlotType`
+    /// (e.g. `"chorus"`, `"reverb"`, `"compressor"`, `"eq5Band"`, …).
+    /// Returns `true` on success, `false` when `slot ≥ 6` or type is unknown.
+    #[wasm_bindgen(js_name = setFxSlotType)]
+    pub fn set_fx_slot_type(&mut self, slot: usize, type_name: &str) -> bool {
+        match serde_json::from_str::<FxSlotType>(&format!("\"{type_name}\"")) {
+            Ok(slot_type) => {
+                self.inner.set_fx_slot_type(slot, slot_type);
+                true
+            }
+            Err(_) => false,
+        }
+    }
 
-       /// Return the current FX slot layout as a JSON array of camelCase strings.
-       #[wasm_bindgen(js_name = getFxSlotTypes)]
-       pub fn get_fx_slot_types(&self) -> String {
-           match serde_json::to_string(&self.inner.get_fx_slot_types()) {
-               Ok(json) => json,
-               Err(_) => String::from("[]"),
-           }
-       }
+    /// Return the current FX slot layout as a JSON array of camelCase strings.
+    #[wasm_bindgen(js_name = getFxSlotTypes)]
+    pub fn get_fx_slot_types(&self) -> String {
+        match serde_json::to_string(&self.inner.get_fx_slot_types()) {
+            Ok(json) => json,
+            Err(_) => String::from("[]"),
+        }
+    }
 
-       /// Return the latest runtime modulation-source values as JSON for UI telemetry.
+    /// Return the latest runtime modulation-source values as JSON for UI telemetry.
     #[wasm_bindgen(js_name = getRuntimeModSources)]
     pub fn get_runtime_mod_sources(&self) -> String {
         match serde_json::to_string(&self.inner.runtime_mod_sources()) {

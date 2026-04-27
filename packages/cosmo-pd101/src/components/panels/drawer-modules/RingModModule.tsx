@@ -19,7 +19,11 @@ export default function RingModModule() {
 		const preset = RING_MOD_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
 		setRingMod(preset.patch.ringMod);
-		requestApplyModulePreset({ module: "ringMod", preset: preset.id, patch: preset.patch });
+		requestApplyModulePreset({
+			module: "ringMod",
+			preset: preset.id,
+			patch: preset.patch,
+		});
 	};
 
 	return (

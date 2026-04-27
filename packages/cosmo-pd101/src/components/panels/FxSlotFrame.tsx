@@ -1,6 +1,6 @@
 import { memo } from "react";
-import type { FxSlotType } from "@/lib/synth/bindings/synth";
 import { useSynthStore } from "@/features/synth/synthStore";
+import type { FxSlotType } from "@/lib/synth/bindings/synth";
 import BitcrusherModule from "./drawer-modules/BitcrusherModule";
 import ChorusModule from "./drawer-modules/ChorusModule";
 import CompressorModule from "./drawer-modules/CompressorModule";
@@ -40,23 +40,40 @@ const FX_SLOT_OPTIONS: { value: FxSlotType; label: string }[] = [
 
 function SlotModule({ type }: { type: FxSlotType }) {
 	switch (type) {
-		case "chorus": return <ChorusModule />;
-		case "phaser": return <PhaserModule />;
-		case "delay": return <DelayModule />;
-		case "reverb": return <ReverbModule />;
-		case "vibrato": return <VibratoModule />;
-		case "phaseMod": return <PhaseModModule />;
-		case "compressor": return <CompressorModule />;
-		case "eq5Band": return <EqModule />;
-		case "grainDelay": return <GrainDelayModule />;
-		case "bitcrusher": return <BitcrusherModule />;
-		case "shimmerVerb": return <ShimmerVerbModule />;
-		case "distortion": return <DistortionModule />;
-		case "junoChorus": return <JunoChorusModule />;
-		case "ringMod": return <RingModModule />;
-		case "tremolo": return <TremoloModule />;
-		case "wavefolder": return <WavefolderModule />;
-		default: return null;
+		case "chorus":
+			return <ChorusModule />;
+		case "phaser":
+			return <PhaserModule />;
+		case "delay":
+			return <DelayModule />;
+		case "reverb":
+			return <ReverbModule />;
+		case "vibrato":
+			return <VibratoModule />;
+		case "phaseMod":
+			return <PhaseModModule />;
+		case "compressor":
+			return <CompressorModule />;
+		case "eq5Band":
+			return <EqModule />;
+		case "grainDelay":
+			return <GrainDelayModule />;
+		case "bitcrusher":
+			return <BitcrusherModule />;
+		case "shimmerVerb":
+			return <ShimmerVerbModule />;
+		case "distortion":
+			return <DistortionModule />;
+		case "junoChorus":
+			return <JunoChorusModule />;
+		case "ringMod":
+			return <RingModModule />;
+		case "tremolo":
+			return <TremoloModule />;
+		case "wavefolder":
+			return <WavefolderModule />;
+		default:
+			return null;
 	}
 }
 

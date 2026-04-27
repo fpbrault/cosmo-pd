@@ -40,11 +40,19 @@ impl TremoloFx {
             1 => {
                 // Triangle
                 let t = self.phase;
-                if t < 0.5 { t * 4.0 - 1.0 } else { 3.0 - t * 4.0 }
+                if t < 0.5 {
+                    t * 4.0 - 1.0
+                } else {
+                    3.0 - t * 4.0
+                }
             }
             2 => {
                 // Square
-                if self.phase < 0.5 { 1.0 } else { -1.0 }
+                if self.phase < 0.5 {
+                    1.0
+                } else {
+                    -1.0
+                }
             }
             _ => sinf(self.phase * core::f32::consts::PI * 2.0),
         };

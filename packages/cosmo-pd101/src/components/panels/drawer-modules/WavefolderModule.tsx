@@ -19,7 +19,11 @@ export default function WavefolderModule() {
 		const preset = WAVEFOLDER_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
 		setWavefolder(preset.patch.wavefolder);
-		requestApplyModulePreset({ module: "wavefolder", preset: preset.id, patch: preset.patch });
+		requestApplyModulePreset({
+			module: "wavefolder",
+			preset: preset.id,
+			patch: preset.patch,
+		});
 	};
 
 	return (
@@ -36,7 +40,9 @@ export default function WavefolderModule() {
 				/>
 			}
 			enabled={wavefolder.enabled ?? false}
-			onToggle={() => setWavefolder({ ...wavefolder, enabled: !wavefolder.enabled })}
+			onToggle={() =>
+				setWavefolder({ ...wavefolder, enabled: !wavefolder.enabled })
+			}
 		>
 			<ControlKnob
 				value={wavefolder.drive ?? 0.5}

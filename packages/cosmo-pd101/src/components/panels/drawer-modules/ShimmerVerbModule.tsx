@@ -19,7 +19,11 @@ export default function ShimmerVerbModule() {
 		const preset = SHIMMER_VERB_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
 		setShimmerVerb(preset.patch.shimmerVerb);
-		requestApplyModulePreset({ module: "shimmerVerb", preset: preset.id, patch: preset.patch });
+		requestApplyModulePreset({
+			module: "shimmerVerb",
+			preset: preset.id,
+			patch: preset.patch,
+		});
 	};
 
 	return (
@@ -36,7 +40,9 @@ export default function ShimmerVerbModule() {
 				/>
 			}
 			enabled={shimmerVerb.enabled ?? false}
-			onToggle={() => setShimmerVerb({ ...shimmerVerb, enabled: !shimmerVerb.enabled })}
+			onToggle={() =>
+				setShimmerVerb({ ...shimmerVerb, enabled: !shimmerVerb.enabled })
+			}
 		>
 			<ControlKnob
 				value={shimmerVerb.shimmer ?? 0.4}

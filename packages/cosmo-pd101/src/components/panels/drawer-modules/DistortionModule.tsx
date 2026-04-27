@@ -19,7 +19,11 @@ export default function DistortionModule() {
 		const preset = DISTORTION_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
 		setDistortion(preset.patch.distortion);
-		requestApplyModulePreset({ module: "distortion", preset: preset.id, patch: preset.patch });
+		requestApplyModulePreset({
+			module: "distortion",
+			preset: preset.id,
+			patch: preset.patch,
+		});
 	};
 
 	return (
@@ -36,7 +40,9 @@ export default function DistortionModule() {
 				/>
 			}
 			enabled={distortion.enabled ?? false}
-			onToggle={() => setDistortion({ ...distortion, enabled: !distortion.enabled })}
+			onToggle={() =>
+				setDistortion({ ...distortion, enabled: !distortion.enabled })
+			}
 		>
 			<ControlKnob
 				value={distortion.drive ?? 0.5}

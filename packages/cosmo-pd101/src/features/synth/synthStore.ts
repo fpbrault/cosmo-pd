@@ -212,7 +212,14 @@ export type SynthState = {
 	modWheelVibratoDepth: number;
 	octave: number;
 	modMatrix: ModMatrix;
-	fxSlotTypes: [FxSlotType, FxSlotType, FxSlotType, FxSlotType, FxSlotType, FxSlotType];
+	fxSlotTypes: [
+		FxSlotType,
+		FxSlotType,
+		FxSlotType,
+		FxSlotType,
+		FxSlotType,
+		FxSlotType,
+	];
 	compressor: CompressorParams;
 	eq: EqParams;
 	grainDelay: GrainDelayParams;

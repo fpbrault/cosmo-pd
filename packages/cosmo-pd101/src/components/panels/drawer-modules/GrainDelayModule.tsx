@@ -19,7 +19,11 @@ export default function GrainDelayModule() {
 		const preset = GRAIN_DELAY_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
 		setGrainDelay(preset.patch.grainDelay);
-		requestApplyModulePreset({ module: "grainDelay", preset: preset.id, patch: preset.patch });
+		requestApplyModulePreset({
+			module: "grainDelay",
+			preset: preset.id,
+			patch: preset.patch,
+		});
 	};
 
 	return (
@@ -36,7 +40,9 @@ export default function GrainDelayModule() {
 				/>
 			}
 			enabled={grainDelay.enabled ?? false}
-			onToggle={() => setGrainDelay({ ...grainDelay, enabled: !grainDelay.enabled })}
+			onToggle={() =>
+				setGrainDelay({ ...grainDelay, enabled: !grainDelay.enabled })
+			}
 		>
 			<ControlKnob
 				value={grainDelay.time ?? 0.25}
