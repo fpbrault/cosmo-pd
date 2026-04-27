@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import Button from "@/components/controls/Button";
 
 type ModulePresetOption = {
 	id: string;
@@ -96,16 +97,13 @@ export default function ModulePresetPopover({
 				className="menu dropdown-content z-[9999] mt-1.5 w-44 rounded-md border border-cz-border bg-cz-panel p-1 shadow-[0_10px_24px_rgba(0,0,0,0.5)]"
 				style={{ borderColor: borderColor }}
 			>
-				<li className="menu-title px-2 py-1 text-[0.58rem] font-mono uppercase tracking-[0.14em] text-cz-cream-dim/85">
-					{title}
-				</li>
 				{options.map((option) => {
 					const active = option.id === value;
 					return (
 						<li key={option.id}>
-							<button
+							<Button
 								type="button"
-								className={`min-h-0 rounded px-2 py-1 text-left text-xs transition-colors ${
+								className={`btn btn-ghost btn-sm justify-start w-full min-h-0 px-2 py-1 text-xs ${
 									active
 										? "text-cz-cream-light"
 										: "text-cz-cream hover:bg-cz-surface"
@@ -119,7 +117,7 @@ export default function ModulePresetPopover({
 								}}
 							>
 								{option.label}
-							</button>
+							</Button>
 						</li>
 					);
 				})}

@@ -1,6 +1,6 @@
 import { useState } from "react";
+import Button from "@/components/controls/Button";
 import ControlKnob from "@/components/controls/ControlKnob";
-import CompactButton from "@/components/primitives/CompactButton";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
@@ -59,14 +59,16 @@ export default function VibratoModule() {
 		>
 			<div className="grid grid-cols-4 gap-1 w-full col-span-3">
 				{(["sine", "tri", "sq", "saw"] as const).map((w, i) => (
-					<CompactButton
+					<Button
 						key={w}
-						active={vibratoWave === i + 1}
+						className={`btn btn-xs ${
+							vibratoWave === i + 1 ? "btn-secondary" : "btn-outline"
+						}`}
 						onClick={() => setVibratoWave(i + 1)}
-						tooltip={`Select ${w} vibrato waveform.`}
+						title={`Select ${w} vibrato waveform.`}
 					>
 						{w}
-					</CompactButton>
+					</Button>
 				))}
 			</div>
 			<ControlKnob

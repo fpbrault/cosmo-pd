@@ -1,3 +1,4 @@
+import Button from "@/components/controls/Button";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
 
 type PresetNavigatorProps = {
@@ -20,7 +21,7 @@ export default function PresetNavigator({
 	return (
 		<div className="relative w-full max-w-3xl">
 			<div className="flex items-center gap-1">
-				<button
+				<Button
 					type="button"
 					className="cz-btn-arrow"
 					onClick={() => onStepPreset(-1)}
@@ -35,7 +36,7 @@ export default function PresetNavigator({
 					>
 						<path d="M640-197 200-477l440-280v560Zm-60-280Zm0 171v-342L311-477l269 171Z" />
 					</svg>
-				</button>
+				</Button>
 
 				<div className="flex flex-1 items-stretch overflow-hidden rounded-xl border border-cz-border bg-cz-inset">
 					<button
@@ -58,7 +59,7 @@ export default function PresetNavigator({
 					</button>
 				</div>
 
-				<button
+				<Button
 					type="button"
 					className="cz-btn-arrow"
 					onClick={() => onStepPreset(1)}
@@ -73,7 +74,7 @@ export default function PresetNavigator({
 					>
 						<path d="M640-197 200-477l440-280v560Zm-60-280Zm0 171v-342L311-477l269 171Z" />
 					</svg>
-				</button>
+				</Button>
 			</div>
 		</div>
 	);

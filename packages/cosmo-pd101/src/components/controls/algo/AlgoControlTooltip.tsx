@@ -1,3 +1,4 @@
+import Button from "@/components/controls/Button";
 import { useHoverInfoHandlers } from "../../layout/HoverInfo";
 
 export default function AlgoControlTooltip({
@@ -12,14 +13,14 @@ export default function AlgoControlTooltip({
 	}
 
 	return (
-		<button
+		<Button
 			type="button"
-			className="btn btn-ghost btn-circle btn-xs h-4 min-h-4 w-4 border border-cz-border p-0 text-2xs font-semibold leading-none text-cz-cream/70 hover:border-cz-light-blue hover:text-cz-light-blue"
+			className="btn btn-ghost btn-circle h-4 min-h-4 w-4 border border-cz-border p-0 text-2xs font-semibold leading-none text-cz-cream/70 hover:border-cz-light-blue hover:text-cz-light-blue"
 			aria-label="Show control description"
 			data-hover-info={description}
 			{...hoverHandlers}
 		>
 			?
-		</button>
+		</Button>
 	);
 }

@@ -1,4 +1,5 @@
 import type React from "react";
+import Button from "@/components/controls/Button";
 import { useHoverInfoHandlers } from "../layout/HoverInfo";
 
 type CompactButtonProps = {
@@ -27,7 +28,7 @@ export default function CompactButton({
 	const hoverHandlers = useHoverInfoHandlers(resolvedTooltip);
 
 	return (
-		<button
+		<Button
 			type="button"
 			onClick={onClick}
 			disabled={disabled}
@@ -40,6 +41,6 @@ export default function CompactButton({
 			} ${className}`}
 		>
 			{children}
-		</button>
+		</Button>
 	);
 }

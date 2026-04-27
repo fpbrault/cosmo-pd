@@ -1,4 +1,5 @@
 import { type ReactNode, useCallback, useRef, useState } from "react";
+import Button from "@/components/controls/Button";
 import ModulatableControl from "@/components/controls/modulation/ModulatableControl";
 import { useOptionalSynthController } from "@/features/synth/SynthParamController";
 import type { ModDestination } from "@/lib/synth/bindings/synth";
@@ -210,7 +211,7 @@ export function ControlKnob({
 					</div>
 				</div>
 			)}
-			<button
+			<Button
 				ref={buttonRef}
 				type="button"
 				role="spinbutton"
@@ -248,7 +249,7 @@ export function ControlKnob({
 					htmlOverlay={children}
 					svgRef={svgRef}
 				/>
-			</button>
+			</Button>
 			{label && (
 				<div className="min-h-2 -mt-1.5 space-y-0">
 					{valueVisibility !== "never" && editing ? (
@@ -263,7 +264,7 @@ export function ControlKnob({
 							onKeyDown={onEditKeyDown}
 						/>
 					) : valueVisibility !== "never" ? (
-						<button
+						<Button
 							type="button"
 							aria-label={valueControlLabel}
 							className={`text-2xs leading-none font-semibold transition-opacity ${
@@ -279,7 +280,7 @@ export function ControlKnob({
 							onClick={() => beginEdit(displayValue)}
 						>
 							{displayValue}
-						</button>
+						</Button>
 					) : null}
 				</div>
 			)}

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Button from "@/components/controls/Button";
 
 type SynthPanelContainerProps = {
 	children?: ReactNode;
@@ -39,7 +40,7 @@ export default function SynthPanelContainer({
 					<span className="text-3xs font-mono text-cz-cream-dim uppercase tracking-wider">
 						{enableLabel}
 					</span>
-					<button
+					<Button
 						type="button"
 						className={`cz-btn-arrow ${enabled ? "bg-cz-gold" : ""}`}
 						onClick={() => onToggleEnabled?.(!enabled)}
@@ -51,7 +52,7 @@ export default function SynthPanelContainer({
 						>
 							{enabled ? "On" : "Off"}
 						</span>
-					</button>
+					</Button>
 				</div>
 			) : null}
 

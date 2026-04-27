@@ -1,8 +1,8 @@
 import { memo } from "react";
+import Button from "@/components/controls/Button";
 import ControlKnob from "@/components/controls/ControlKnob";
 import type { AsidePanelComponent } from "@/components/layout/AsidePanelSwitcher";
 import SynthPanelContainer from "@/components/layout/SynthPanelContainer";
-import CzButton from "@/components/primitives/CzButton";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import { PARAM_META, PORTAMENTO_MODE_TOOLTIPS } from "@/lib/synth/paramMeta";
 import { applyVelocityCurve } from "@/lib/synth/velocityCurve";
@@ -94,20 +94,30 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 					<div className="min-w-0">
 						<div className="mb-0.5 text-center cz-light-blue">Portamento</div>
 						<div className="mt-0.5 flex justify-center gap-1">
-							<CzButton
+							<Button
 								active={portamentoMode === "rate"}
 								onClick={() => setPortamentoMode("rate")}
-								tooltip={PORTAMENTO_MODE_TOOLTIPS["rate"]}
+								title={PORTAMENTO_MODE_TOOLTIPS.rate}
+								className={`btn btn-xs px-3 py-1 tracking-wide ${
+									portamentoMode === "rate"
+										? "btn-primary"
+										: "btn-outline border-cz-border text-cz-cream/70"
+								}`}
 							>
 								Rate
-							</CzButton>
-							<CzButton
+							</Button>
+							<Button
 								active={portamentoMode === "time"}
 								onClick={() => setPortamentoMode("time")}
-								tooltip={PORTAMENTO_MODE_TOOLTIPS["time"]}
+								title={PORTAMENTO_MODE_TOOLTIPS.time}
+								className={`btn btn-xs px-3 py-1 tracking-wide ${
+									portamentoMode === "time"
+										? "btn-primary"
+										: "btn-outline border-cz-border text-cz-cream/70"
+								}`}
 							>
 								Time
-							</CzButton>
+							</Button>
 						</div>
 						<div className="mt-0.5 flex justify-center">
 							{portamentoMode === "rate" ? (

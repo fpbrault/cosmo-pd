@@ -1,4 +1,5 @@
 import { memo } from "react";
+import Button from "@/components/controls/Button";
 import { ControlKnob } from "@/components/controls/ControlKnob";
 import type { ModRoute, ModSource } from "@/lib/synth/bindings/synth";
 
@@ -118,28 +119,28 @@ const ModRouteRow = memo(function ModRouteRow({
 			</div>
 
 			{/* Enabled toggle */}
-			<button
+			<Button
 				type="button"
 				onClick={onToggleEnabled}
 				aria-label={route.enabled ? "Disable route" : "Enable route"}
-				className={`shrink-0 rounded border px-1.5 py-0.5 font-mono text-5xs font-bold uppercase tracking-[0.12em] transition-colors ${
+				className={`btn btn-sm shrink-0 px-1.5 py-0.5 font-mono text-5xs font-bold uppercase tracking-[0.12em] ${
 					route.enabled
 						? "border-cz-gold/50 bg-cz-gold/10 text-cz-gold"
-						: "border-cz-border bg-black/10 text-cz-cream-dim hover:text-cz-cream"
+						: "border-cz-border bg-transparent text-cz-cream-dim hover:text-cz-cream"
 				}`}
 			>
 				{route.enabled ? "On" : "Off"}
-			</button>
+			</Button>
 
 			{/* Remove */}
-			<button
+			<Button
 				type="button"
 				onClick={onRemove}
 				aria-label="Remove route"
-				className="shrink-0 flex h-4 w-4 items-center justify-center rounded text-[0.6rem] text-cz-cream-dim/60 transition-colors hover:bg-red-500/20 hover:text-red-400"
+				className="btn btn-ghost btn-square btn-xs shrink-0 h-4 w-4 text-[0.6rem] text-cz-cream-dim/60 hover:bg-red-500/20 hover:text-red-400"
 			>
 				✕
-			</button>
+			</Button>
 		</div>
 	);
 });

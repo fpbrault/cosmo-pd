@@ -7,6 +7,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import Button from "@/components/controls/Button";
 
 type MiniKeyboardOverlayProps = {
 	activeNotes: number[];
@@ -95,14 +96,14 @@ function PianoKey({
 		: "translate-y-px border-cz-gold bg-cz-gold/70";
 
 	return (
-		<button
+		<Button
 			type="button"
 			aria-label={`Play ${label}`}
 			className={`${keyClassName} ${active ? activeClassName : ""} touch-none`}
 			data-mini-note={note}
 			style={black && left !== undefined ? { left: `${left}%` } : undefined}
 			onPointerDown={(event) => onPointerDown(event, note)}
-		></button>
+		></Button>
 	);
 }
 

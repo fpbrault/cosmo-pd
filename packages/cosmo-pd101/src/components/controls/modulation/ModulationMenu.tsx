@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import Button from "@/components/controls/Button";
 import type { ModRoute, ModSource } from "@/lib/synth/bindings/synth";
 import ModRouteRow, { MOD_SOURCE_META } from "./ModRouteRow";
 
@@ -92,14 +93,14 @@ export default function ModulationMenu({
 						{title}
 					</span>
 				</div>
-				<button
+				<Button
 					type="button"
 					onClick={onClose}
 					aria-label="Close modulation panel"
-					className="flex h-5 w-5 items-center justify-center rounded text-cz-cream-dim/60 transition-colors hover:bg-cz-border/40 hover:text-cz-cream"
+					className="btn btn-ghost btn-square btn-xs h-5 w-5 text-cz-cream-dim/60 hover:bg-cz-border/40 hover:text-cz-cream"
 				>
 					✕
-				</button>
+				</Button>
 			</div>
 
 			<div className="space-y-2 p-2.5">
@@ -161,15 +162,13 @@ export default function ModulationMenu({
 								▾
 							</span>
 						</div>
-						<button
+						<Button
 							type="button"
 							onClick={handleAddRoute}
-							className={`shrink-0 rounded-md border px-2.5 py-1 font-mono text-[0.55rem] font-bold uppercase tracking-[0.15em] transition-colors ${
-								MOD_SOURCE_META[selectedSource].colorClass
-							} border-current/30 bg-current/10 hover:bg-current/20`}
+							className={`btn btn-sm shrink-0 px-2.5 py-1 font-mono text-[0.55rem] font-bold uppercase tracking-[0.15em] ${MOD_SOURCE_META[selectedSource].colorClass} border-current/30 bg-current/10 hover:bg-current/20`}
 						>
 							Add
-						</button>
+						</Button>
 					</div>
 				</div>
 			</div>

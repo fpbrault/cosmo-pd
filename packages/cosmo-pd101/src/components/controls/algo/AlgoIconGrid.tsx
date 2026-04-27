@@ -1,3 +1,4 @@
+import Button from "@/components/controls/Button";
 import { isAlgoRefEqual } from "@/lib/synth/algoRef";
 import {
 	getPdAlgoBehaviorDescription,
@@ -32,7 +33,7 @@ export default function AlgoIconGrid({
 				return (
 					<HoverInfoTrigger key={algo.key} message={tooltipText}>
 						{(hoverHandlers) => (
-							<button
+							<Button
 								type="button"
 								title={algo.label}
 								data-hover-info={tooltipText}
@@ -40,7 +41,7 @@ export default function AlgoIconGrid({
 								onClick={() => !disabled && onChange(algo.value)}
 								disabled={disabled}
 								className={[
-									"flex  items-center justify-center transition-colors focus:outline-none border-t-0 border-b border-l border-r text-cz-gold border-cz-light-blue",
+									"flex items-center justify-center transition-colors focus:outline-none border-t-0 border-b border-l border-r text-cz-gold border-cz-light-blue",
 									isAlgoRefEqual(value, algo.value)
 										? "border-cz-light-blue bg-cz-inset text-white shadow-sm"
 										: "border-cz-border bg-cz-surface  hover:border-cz-light-blue hover:text-white",
@@ -61,7 +62,7 @@ export default function AlgoIconGrid({
 									<title>{algo.label}</title>
 									<path d={algo.icon} />
 								</svg>
-							</button>
+							</Button>
 						)}
 					</HoverInfoTrigger>
 				);

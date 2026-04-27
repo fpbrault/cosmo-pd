@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Button from "@/components/controls/Button";
 
 type SynthInfoBarProps = {
 	infoText: string;
@@ -25,17 +26,17 @@ export default function SynthInfoBar({
 				</div>
 			) : null}
 			{showKeyboardToggle ? (
-				<button
+				<Button
 					type="button"
 					onClick={onKeyboardToggle}
-					className={`rounded-sm border px-2 py-1 text-[0.56rem] uppercase tracking-[0.24em] transition-colors ${
+					className={`btn btn-sm px-2 py-1 text-[0.56rem] uppercase tracking-[0.24em] ${
 						keyboardVisible
 							? "border-cz-gold bg-cz-gold/10 text-cz-gold"
-							: "border-cz-border bg-black/10 text-cz-cream/70 hover:text-cz-cream"
+							: "border-cz-border bg-transparent text-cz-cream/70 hover:text-cz-cream"
 					}`}
 				>
 					{keyboardVisible ? "Hide Keys" : "Show Keys"}
-				</button>
+				</Button>
 			) : null}
 		</div>
 	);

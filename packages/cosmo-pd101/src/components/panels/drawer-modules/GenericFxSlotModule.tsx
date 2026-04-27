@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Button from "@/components/controls/Button";
 import ControlKnob from "@/components/controls/ControlKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
@@ -48,6 +49,7 @@ export default function GenericFxSlotModule({
 					value={selectedPreset}
 					options={config.presets}
 					onChange={handlePresetChange}
+					accentColor={config.color}
 				/>
 			}
 			enabled={enabled}
@@ -62,7 +64,7 @@ export default function GenericFxSlotModule({
 						min={ctrl.min}
 						max={ctrl.max}
 						defaultValue={ctrl.defaultValue}
-						size={ctrl.size ?? 52}
+						size={ctrl.size ?? 40}
 						color={config.color}
 						label={ctrl.label}
 						valueFormatter={ctrl.formatter}
@@ -72,16 +74,16 @@ export default function GenericFxSlotModule({
 						<span className="text-xs text-center opacity-60">{ctrl.label}</span>
 						<div className="join">
 							{ctrl.options.map((opt) => (
-								<button
+								<Button
 									key={opt.value}
 									type="button"
-									className={`join-item btn btn-xs ${(params[ctrl.param] as number) === opt.value ? "btn-primary" : "btn-ghost"}`}
+									className={(params[ctrl.param] as number) === opt.value ? "join-item btn btn-sm btn-primary" : "join-item btn btn-sm btn-outline btn-primary"}
 									onClick={() =>
 										setFxSlotParams(slot, { [ctrl.param]: opt.value })
 									}
 								>
 									{opt.label}
-								</button>
+								</Button>
 							))}
 						</div>
 					</div>
