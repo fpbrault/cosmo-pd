@@ -37,6 +37,7 @@ import {
 } from "@/features/synth/SynthParamController";
 import { useSynthStore } from "@/features/synth/synthStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
+import { PARAM_META } from "@/lib/synth/paramMeta";
 import { HoverInfoProvider, useHoverInfo } from "../layout/HoverInfo";
 import MiniKeyboardOverlay from "../layout/MiniKeyboardOverlay";
 import SynthInfoBar from "../layout/SynthInfoBar";
@@ -370,7 +371,7 @@ function MasterVolumeControl() {
 				size={48}
 				color="white"
 				label="Main Volume"
-				tooltip="Sets the global synth output level."
+				tooltip={PARAM_META.volume?.tooltip}
 				valueFormatter={(value) => `${Math.round(value * 100)}%`}
 				modDestination="volume"
 			/>

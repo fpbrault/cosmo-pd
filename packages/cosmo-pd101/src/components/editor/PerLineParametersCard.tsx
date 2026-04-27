@@ -1,6 +1,7 @@
 import { memo } from "react";
 import ControlKnob from "@/components/controls/ControlKnob";
 import Card from "@/components/primitives/Card";
+import { PARAM_META } from "@/lib/synth/paramMeta";
 
 interface PerLineParametersCardProps {
 	color: string;
@@ -27,10 +28,27 @@ function PerLineParametersCardInner({
 	setFineDetune,
 	lineIndex,
 }: PerLineParametersCardProps) {
+	const dcwTooltip =
+		lineIndex === 1
+			? PARAM_META.warpAAmount?.tooltip
+			: PARAM_META.warpBAmount?.tooltip;
+	const levelTooltip =
+		lineIndex === 1
+			? PARAM_META.line1Level?.tooltip
+			: PARAM_META.line2Level?.tooltip;
+	const octaveTooltip =
+		lineIndex === 1
+			? PARAM_META.line1Octave?.tooltip
+			: PARAM_META.line2Octave?.tooltip;
+	const detuneTooltip =
+		lineIndex === 1
+			? PARAM_META.line1Detune?.tooltip
+			: PARAM_META.line2Detune?.tooltip;
+
 	const controls = [
 		{
 			label: "DCW Amt",
-			tooltip: "Sets base harmonic warp amount for this line.",
+			tooltip: dcwTooltip,
 			value: warpAmount,
 			min: 0,
 			max: 1,
@@ -43,7 +61,7 @@ function PerLineParametersCardInner({
 		},
 		{
 			label: "Level",
-			tooltip: "Sets base output level for this line.",
+			tooltip: levelTooltip,
 			value: level,
 			min: 0,
 			max: 1,
@@ -56,7 +74,7 @@ function PerLineParametersCardInner({
 		},
 		{
 			label: "Oct",
-			tooltip: "Transposes this line by octave steps.",
+			tooltip: octaveTooltip,
 			value: octave,
 			min: -2,
 			max: 2,
@@ -69,7 +87,7 @@ function PerLineParametersCardInner({
 		},
 		{
 			label: "Fine",
-			tooltip: "Fine tunes this line in cents.",
+			tooltip: detuneTooltip,
 			value: fineDetune,
 			min: -50,
 			max: 50,

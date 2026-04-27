@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { StepEnvData } from "@/lib/synth/bindings/synth";
+import type {
+	EngineParamReadoutFormatV1,
+	StepEnvData,
+} from "@/lib/synth/bindings/synth";
+import { getEngineParamUiMeta } from "@/lib/synth/paramMeta";
 
 type LcdControlReadout = {
 	label: string;
@@ -19,8 +23,60 @@ export function useLcdControlReadout(): UseLcdControlReadoutResult {
 		useState<LcdControlReadout | null>(null);
 	const lcdReadoutTimeoutRef = useRef<number | null>(null);
 
+	const formatEngineValue = useCallback(
+		(
+			format: EngineParamReadoutFormatV1,
+			value: string | number | boolean,
+		): string | null => {
+			switch (format.kind) {
+				case "onOff":
+					return typeof value === "boolean" ? (value ? "ON" : "OFF") : null;
+				case "raw":
+					return typeof value === "string" ? value : null;
+				case "uppercase":
+					return typeof value === "string" ? value.toUpperCase() : null;
+				case "integer":
+					return typeof value === "number" ? `${Math.round(value)}` : null;
+				case "decimal":
+					if (typeof value !== "number") return null;
+					return Number.isInteger(value) ? `${value}` : value.toFixed(2);
+				case "percent":
+					return typeof value === "number"
+						? `${Math.round(value * 100)}%`
+						: null;
+				case "semitones":
+					return typeof value === "number" ? `${Math.round(value)} ST` : null;
+				case "milliseconds":
+					return typeof value === "number" ? `${Math.round(value)} MS` : null;
+				case "seconds2":
+					return typeof value === "number" ? `${value.toFixed(2)} S` : null;
+				case "hertz":
+					return typeof value === "number" ? `${Math.round(value)} HZ` : null;
+				case "enumMap": {
+					if (typeof value !== "string") {
+						return null;
+					}
+					const match = format.values.find((entry) => entry.value === value);
+					return match?.label ?? value.toUpperCase();
+				}
+			}
+		},
+		[],
+	);
+
 	const formatValue = useCallback(
 		(key: string, value: string | number | boolean): string => {
+			const engineMeta = getEngineParamUiMeta(key);
+			if (engineMeta) {
+				const engineFormatted = formatEngineValue(
+					engineMeta.readoutFormat,
+					value,
+				);
+				if (engineFormatted) {
+					return engineFormatted;
+				}
+			}
+
 			if (typeof value === "boolean") {
 				return value ? t("states.on") : t("states.off");
 			}
@@ -73,12 +129,15 @@ export function useLcdControlReadout(): UseLcdControlReadoutResult {
 
 			return Number.isInteger(value) ? `${value}` : value.toFixed(2);
 		},
-		[t],
+		[formatEngineValue, t],
 	);
 
 	const pushLcdControlReadout = useCallback(
 		(key: string, value: unknown) => {
-			const label = t(`lcdControls.${key}`, { defaultValue: key });
+			const engineMeta = getEngineParamUiMeta(key);
+			const label =
+				engineMeta?.readoutLabel ??
+				t(`lcdControls.${key}`, { defaultValue: key });
 			if (
 				typeof value !== "string" &&
 				typeof value !== "number" &&

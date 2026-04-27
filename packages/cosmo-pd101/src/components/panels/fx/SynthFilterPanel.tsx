@@ -97,13 +97,7 @@ const SynthFilterPanel: AsidePanelComponent<"filter"> = Object.assign(
 							key={t}
 							active={filterType === t}
 							onClick={() => setFilterType(t)}
-							tooltip={
-								t === "lp"
-									? "Low-pass mode: attenuates frequencies above cutoff."
-									: t === "hp"
-										? "High-pass mode: attenuates frequencies below cutoff."
-										: "Band-pass mode: emphasizes a narrow band around cutoff."
-							}
+							tooltip={FILTER_TYPE_TOOLTIPS[t]}
 							className="flex-1"
 						>
 							{t.toUpperCase()}

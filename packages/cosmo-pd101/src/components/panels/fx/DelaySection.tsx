@@ -27,7 +27,9 @@ export function DelaySection({
 	warmth,
 	setWarmth,
 }: DelaySectionProps) {
-	const tapeModeHoverHandlers = useHoverInfoHandlers(PARAM_META.delayTapeMode?.tooltip);
+	const tapeModeHoverHandlers = useHoverInfoHandlers(
+		PARAM_META.delayTapeMode?.tooltip,
+	);
 	const knobs: FxKnobConfig[] = [
 		{
 			label: "Time",

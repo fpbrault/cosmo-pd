@@ -2915,3 +2915,542 @@ export const MODULE_PRESET_CATALOG_V1: ModulePresetGroupV1[] = [
     ]
   }
 ];
+
+export type EngineEnumValueLabelV1 = { value: string; label: string };
+export type EngineParamReadoutFormatV1 =
+  | { kind: "onOff" }
+  | { kind: "raw" }
+  | { kind: "uppercase" }
+  | { kind: "integer" }
+  | { kind: "decimal" }
+  | { kind: "percent" }
+  | { kind: "semitones" }
+  | { kind: "milliseconds" }
+  | { kind: "seconds2" }
+  | { kind: "hertz" }
+  | { kind: "enumMap"; values: EngineEnumValueLabelV1[] };
+export type EngineParamUiMetaV1 = { key: string; tooltip: string; readoutLabel: string; readoutFormat: EngineParamReadoutFormatV1 };
+export type EngineEnumValueTooltipV1 = { key: string; value: string; tooltip: string };
+
+/** Rust-owned engine parameter tooltip and readout metadata. */
+export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
+  {
+    "key": "volume",
+    "tooltip": "Sets the global synth output level.",
+    "readoutLabel": "Volume",
+    "readoutFormat": {
+      "kind": "percent"
+    }
+  },
+  {
+    "key": "warpAAmount",
+    "tooltip": "Sets base harmonic warp amount for this line.",
+    "readoutLabel": "Line 1 DCW",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "warpBAmount",
+    "tooltip": "Sets base harmonic warp amount for this line.",
+    "readoutLabel": "Line 2 DCW",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "algoBlendA",
+    "tooltip": "Crossfades between Algo A and Algo B outputs.",
+    "readoutLabel": "Line 1 Blend",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "algoBlendB",
+    "tooltip": "Crossfades between Algo A and Algo B outputs.",
+    "readoutLabel": "Line 2 Blend",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "line1Level",
+    "tooltip": "Sets base output level for this line.",
+    "readoutLabel": "Line 1 Level",
+    "readoutFormat": {
+      "kind": "percent"
+    }
+  },
+  {
+    "key": "line2Level",
+    "tooltip": "Sets base output level for this line.",
+    "readoutLabel": "Line 2 Level",
+    "readoutFormat": {
+      "kind": "percent"
+    }
+  },
+  {
+    "key": "line1Octave",
+    "tooltip": "Transposes this line by octave steps.",
+    "readoutLabel": "Line 1 Octave",
+    "readoutFormat": {
+      "kind": "integer"
+    }
+  },
+  {
+    "key": "line2Octave",
+    "tooltip": "Transposes this line by octave steps.",
+    "readoutLabel": "Line 2 Octave",
+    "readoutFormat": {
+      "kind": "integer"
+    }
+  },
+  {
+    "key": "line1Detune",
+    "tooltip": "Fine tunes this line in cents.",
+    "readoutLabel": "Line 1 Detune",
+    "readoutFormat": {
+      "kind": "integer"
+    }
+  },
+  {
+    "key": "line2Detune",
+    "tooltip": "Fine tunes this line in cents.",
+    "readoutLabel": "Line 2 Detune",
+    "readoutFormat": {
+      "kind": "integer"
+    }
+  },
+  {
+    "key": "lineSelect",
+    "tooltip": "Selects which oscillator lines are heard together.",
+    "readoutLabel": "Line Select",
+    "readoutFormat": {
+      "kind": "raw"
+    }
+  },
+  {
+    "key": "modMode",
+    "tooltip": "Chooses the interaction mode between oscillator lines.",
+    "readoutLabel": "Modulation",
+    "readoutFormat": {
+      "kind": "uppercase"
+    }
+  },
+  {
+    "key": "polyMode",
+    "tooltip": "Switches between polyphonic and monophonic note allocation.",
+    "readoutLabel": "Voice Mode",
+    "readoutFormat": {
+      "kind": "enumMap",
+      "values": [
+        {
+          "value": "poly8",
+          "label": "POLY 8"
+        },
+        {
+          "value": "mono",
+          "label": "MONO"
+        }
+      ]
+    }
+  },
+  {
+    "key": "intPmAmount",
+    "tooltip": "Sets internal phase modulation depth.",
+    "readoutLabel": "PM Amount",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "intPmRatio",
+    "tooltip": "Sets modulator-to-carrier frequency ratio.",
+    "readoutLabel": "PM Ratio",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "pmPre",
+    "tooltip": "Apply phase modulation before warp shaping.",
+    "readoutLabel": "PM Mode",
+    "readoutFormat": {
+      "kind": "onOff"
+    }
+  },
+  {
+    "key": "vibratoRate",
+    "tooltip": "Sets vibrato speed.",
+    "readoutLabel": "Vibrato Rate",
+    "readoutFormat": {
+      "kind": "integer"
+    }
+  },
+  {
+    "key": "vibratoDepth",
+    "tooltip": "Sets vibrato pitch modulation depth.",
+    "readoutLabel": "Vibrato Depth",
+    "readoutFormat": {
+      "kind": "integer"
+    }
+  },
+  {
+    "key": "vibratoDelay",
+    "tooltip": "Delays vibrato onset after note start.",
+    "readoutLabel": "Vibrato Delay",
+    "readoutFormat": {
+      "kind": "milliseconds"
+    }
+  },
+  {
+    "key": "lfoWaveform",
+    "tooltip": "Selects LFO 1 waveform shape.",
+    "readoutLabel": "LFO Wave",
+    "readoutFormat": {
+      "kind": "uppercase"
+    }
+  },
+  {
+    "key": "lfoRate",
+    "tooltip": "Sets LFO 1 speed.",
+    "readoutLabel": "LFO Rate",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "lfoDepth",
+    "tooltip": "Sets LFO 1 modulation depth.",
+    "readoutLabel": "LFO Depth",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "lfoOffset",
+    "tooltip": "Offsets LFO 1 output around zero.",
+    "readoutLabel": "LFO Offset",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "lfo2Rate",
+    "tooltip": "Sets LFO 2 speed.",
+    "readoutLabel": "LFO 2 Rate",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "lfo2Depth",
+    "tooltip": "Sets LFO 2 modulation depth.",
+    "readoutLabel": "LFO 2 Depth",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "lfo2Offset",
+    "tooltip": "Offsets LFO 2 output around zero.",
+    "readoutLabel": "LFO 2 Offset",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "randomRate",
+    "tooltip": "Sets sample-and-hold random modulation refresh rate.",
+    "readoutLabel": "Random Rate",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "modEnvAttack",
+    "tooltip": "Sets modulation envelope attack time.",
+    "readoutLabel": "Mod Env Attack",
+    "readoutFormat": {
+      "kind": "seconds2"
+    }
+  },
+  {
+    "key": "modEnvDecay",
+    "tooltip": "Sets modulation envelope decay time.",
+    "readoutLabel": "Mod Env Decay",
+    "readoutFormat": {
+      "kind": "seconds2"
+    }
+  },
+  {
+    "key": "modEnvSustain",
+    "tooltip": "Sets sustained modulation level while note is held.",
+    "readoutLabel": "Mod Env Sustain",
+    "readoutFormat": {
+      "kind": "percent"
+    }
+  },
+  {
+    "key": "modEnvRelease",
+    "tooltip": "Sets modulation envelope release time after note off.",
+    "readoutLabel": "Mod Env Release",
+    "readoutFormat": {
+      "kind": "seconds2"
+    }
+  },
+  {
+    "key": "filterType",
+    "tooltip": "Selects the filter response shape.",
+    "readoutLabel": "Filter Type",
+    "readoutFormat": {
+      "kind": "uppercase"
+    }
+  },
+  {
+    "key": "filterCutoff",
+    "tooltip": "Sets the filter cutoff frequency.",
+    "readoutLabel": "Filter Cutoff",
+    "readoutFormat": {
+      "kind": "hertz"
+    }
+  },
+  {
+    "key": "filterResonance",
+    "tooltip": "Boosts frequencies around the cutoff point.",
+    "readoutLabel": "Filter Resonance",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "filterEnvAmount",
+    "tooltip": "Applies envelope modulation amount to the cutoff.",
+    "readoutLabel": "Filter Env",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "chorusRate",
+    "tooltip": "Sets chorus modulation speed.",
+    "readoutLabel": "Chorus Rate",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "chorusDepth",
+    "tooltip": "Sets intensity of chorus pitch modulation.",
+    "readoutLabel": "Chorus Depth",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "chorusMix",
+    "tooltip": "Blends dry signal with chorus effect.",
+    "readoutLabel": "Chorus Mix",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "delayTime",
+    "tooltip": "Sets the delay repeat interval.",
+    "readoutLabel": "Delay Time",
+    "readoutFormat": {
+      "kind": "seconds2"
+    }
+  },
+  {
+    "key": "delayFeedback",
+    "tooltip": "Feeds delayed signal back for additional repeats.",
+    "readoutLabel": "Delay Feedback",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "delayWarmth",
+    "tooltip": "Adds tape-style saturation and high-frequency rolloff.",
+    "readoutLabel": "Delay Warmth",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "delayMix",
+    "tooltip": "Blends dry signal with delayed signal.",
+    "readoutLabel": "Delay Mix",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "delayTapeMode",
+    "tooltip": "Toggle tape echo coloration for delay repeats.",
+    "readoutLabel": "Tape Mode",
+    "readoutFormat": {
+      "kind": "onOff"
+    }
+  },
+  {
+    "key": "reverbSpace",
+    "tooltip": "Sets the virtual room size for reverb reflections.",
+    "readoutLabel": "Reverb Space",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "reverbPredelay",
+    "tooltip": "Adds delay before the reverb tail starts.",
+    "readoutLabel": "Reverb Pre-Delay",
+    "readoutFormat": {
+      "kind": "milliseconds"
+    }
+  },
+  {
+    "key": "reverbDistance",
+    "tooltip": "Moves source position deeper into the reverb space.",
+    "readoutLabel": "Reverb Distance",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "reverbCharacter",
+    "tooltip": "Shapes reverb tone from dark to bright.",
+    "readoutLabel": "Reverb Character",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "reverbMix",
+    "tooltip": "Blends dry signal with reverb output.",
+    "readoutLabel": "Reverb Mix",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "portamentoMode",
+    "tooltip": "Chooses whether glide uses rate or fixed time behavior.",
+    "readoutLabel": "Portamento Mode",
+    "readoutFormat": {
+      "kind": "uppercase"
+    }
+  },
+  {
+    "key": "portamentoRate",
+    "tooltip": "Sets glide speed when portamento mode is Rate.",
+    "readoutLabel": "Portamento Rate",
+    "readoutFormat": {
+      "kind": "integer"
+    }
+  },
+  {
+    "key": "portamentoTime",
+    "tooltip": "Sets glide duration when portamento mode is Time.",
+    "readoutLabel": "Portamento Time",
+    "readoutFormat": {
+      "kind": "seconds2"
+    }
+  },
+  {
+    "key": "pitchBendRange",
+    "tooltip": "Sets maximum pitch bend range in semitones.",
+    "readoutLabel": "Bend Range",
+    "readoutFormat": {
+      "kind": "semitones"
+    }
+  },
+  {
+    "key": "velocityCurve",
+    "tooltip": "Shapes how keyboard velocity maps to output level.",
+    "readoutLabel": "Vel Curve",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
+    "key": "modWheelVibratoDepth",
+    "tooltip": "Sets how much mod wheel movement affects vibrato depth.",
+    "readoutLabel": "Mod to Vibrato",
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  }
+];
+
+/** Rust-owned tooltip metadata for enum/select values. */
+export const ENGINE_ENUM_VALUE_TOOLTIPS_V1: EngineEnumValueTooltipV1[] = [
+  {
+    "key": "lineSelect",
+    "value": "L1",
+    "tooltip": "Play oscillator line 1 only."
+  },
+  {
+    "key": "lineSelect",
+    "value": "L1+L2",
+    "tooltip": "Layer oscillator lines 1 and 2."
+  },
+  {
+    "key": "lineSelect",
+    "value": "L2",
+    "tooltip": "Play oscillator line 2 only."
+  },
+  {
+    "key": "lineSelect",
+    "value": "L1+L1'",
+    "tooltip": "Stack line 1 with a detuned variant."
+  },
+  {
+    "key": "lineSelect",
+    "value": "L1+L2'",
+    "tooltip": "Layer line 1 with a detuned line 2 variant."
+  },
+  {
+    "key": "modMode",
+    "value": "normal",
+    "tooltip": "Standard phase modulation behavior."
+  },
+  {
+    "key": "modMode",
+    "value": "ring",
+    "tooltip": "Enable ring modulation between lines."
+  },
+  {
+    "key": "modMode",
+    "value": "noise",
+    "tooltip": "Mix noise source into modulation path."
+  },
+  {
+    "key": "filterType",
+    "value": "lp",
+    "tooltip": "Low-pass mode: attenuates frequencies above cutoff."
+  },
+  {
+    "key": "filterType",
+    "value": "hp",
+    "tooltip": "High-pass mode: attenuates frequencies below cutoff."
+  },
+  {
+    "key": "filterType",
+    "value": "bp",
+    "tooltip": "Band-pass mode: emphasizes a narrow band around cutoff."
+  },
+  {
+    "key": "portamentoMode",
+    "value": "rate",
+    "tooltip": "Portamento time scales with note interval distance."
+  },
+  {
+    "key": "portamentoMode",
+    "value": "time",
+    "tooltip": "Portamento uses a fixed glide time between notes."
+  }
+];

@@ -5,8 +5,8 @@ import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthStore } from "@/features/synth/synthStore";
-import { PARAM_META } from "@/lib/synth/paramMeta";
 import { DELAY_PRESETS } from "@/lib/synth/modulePresets";
+import { PARAM_META } from "@/lib/synth/paramMeta";
 
 export default function DelayModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("");
@@ -32,7 +32,9 @@ export default function DelayModule({ slot }: { slot: number }) {
 		});
 	};
 
-	const tapeModeHoverHandlers = useHoverInfoHandlers(PARAM_META.delayTapeMode?.tooltip);
+	const tapeModeHoverHandlers = useHoverInfoHandlers(
+		PARAM_META.delayTapeMode?.tooltip,
+	);
 	return (
 		<ModuleFrame
 			title="Delay"
@@ -110,7 +112,7 @@ export default function DelayModule({ slot }: { slot: number }) {
 				size={52}
 				color="#fbbf24"
 				label="Mix"
-			tooltip={PARAM_META.delayMix?.tooltip}
+				tooltip={PARAM_META.delayMix?.tooltip}
 				valueFormatter={(value) => `${Math.round(value * 100)}%`}
 			/>
 		</ModuleFrame>

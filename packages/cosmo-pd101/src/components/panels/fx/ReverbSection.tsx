@@ -1,5 +1,5 @@
-import { BaseFxSection, type FxKnobConfig } from "./BaseFxSection";
 import { PARAM_META } from "@/lib/synth/paramMeta";
+import { BaseFxSection, type FxKnobConfig } from "./BaseFxSection";
 
 interface ReverbSectionProps {
 	space: number;

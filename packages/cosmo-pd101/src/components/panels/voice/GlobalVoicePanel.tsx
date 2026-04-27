@@ -4,8 +4,8 @@ import type { AsidePanelComponent } from "@/components/layout/AsidePanelSwitcher
 import SynthPanelContainer from "@/components/layout/SynthPanelContainer";
 import CzButton from "@/components/primitives/CzButton";
 import { useSynthParam } from "@/features/synth/SynthParamController";
-import { applyVelocityCurve } from "@/lib/synth/velocityCurve";
 import { PARAM_META, PORTAMENTO_MODE_TOOLTIPS } from "@/lib/synth/paramMeta";
+import { applyVelocityCurve } from "@/lib/synth/velocityCurve";
 
 const W = 72;
 const H = 42;
