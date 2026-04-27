@@ -11,10 +11,12 @@ use cosmo_synth_engine::generators::{
     AlgoControlV1, AlgoDefinitionV1, AlgoUiEntryV1, CzPresetV1,
 };
 use cosmo_synth_engine::params::{
-    Algo, AlgoControlValueV1, ChorusParams, CzAlgo, CzLineParams, CzWaveform, DelayParams, EnvStep,
-    FilterParams, FilterType, LfoParams, LfoWaveform, LineParams, LineSelect, ModDestination,
-    ModEnvParams, ModMatrix, ModMode, ModRoute, ModSource, PhaserParams, PolyMode, PortamentoMode,
-    PortamentoParams, RandomParams, ReverbParams, StepEnvData, SynthParams, VibratoParams,
+    Algo, AlgoControlValueV1, BitcrusherParams, ChorusParams, CompressorParams, CzAlgo,
+    CzLineParams, CzWaveform, DelayParams, DistortionParams, EnvStep, EqParams, FilterParams,
+    FilterType, FxSlotType, GrainDelayParams, JunoChorusParams, LfoParams, LfoWaveform, LineParams,
+    LineSelect, ModDestination, ModEnvParams, ModMatrix, ModMode, ModRoute, ModSource, PhaserParams,
+    PolyMode, PortamentoMode, PortamentoParams, RandomParams, ReverbParams, RingModParams,
+    ShimmerVerbParams, StepEnvData, SynthParams, TremoloParams, VibratoParams, WavefolderParams,
     WindowType,
 };
 use cosmo_synth_engine::preset_wire::{
@@ -122,6 +124,28 @@ fn main() {
     out.push_str(&export::<ModRoute>(&config).expect("Failed to export ModRoute"));
     out.push_str("\n\n");
     out.push_str(&export::<ModMatrix>(&config).expect("Failed to export ModMatrix"));
+    out.push_str("\n\n");
+    out.push_str(&export::<FxSlotType>(&config).expect("Failed to export FxSlotType"));
+    out.push_str("\n\n");
+    out.push_str(&export::<CompressorParams>(&config).expect("Failed to export CompressorParams"));
+    out.push_str("\n\n");
+    out.push_str(&export::<EqParams>(&config).expect("Failed to export EqParams"));
+    out.push_str("\n\n");
+    out.push_str(&export::<GrainDelayParams>(&config).expect("Failed to export GrainDelayParams"));
+    out.push_str("\n\n");
+    out.push_str(&export::<BitcrusherParams>(&config).expect("Failed to export BitcrusherParams"));
+    out.push_str("\n\n");
+    out.push_str(&export::<ShimmerVerbParams>(&config).expect("Failed to export ShimmerVerbParams"));
+    out.push_str("\n\n");
+    out.push_str(&export::<DistortionParams>(&config).expect("Failed to export DistortionParams"));
+    out.push_str("\n\n");
+    out.push_str(&export::<JunoChorusParams>(&config).expect("Failed to export JunoChorusParams"));
+    out.push_str("\n\n");
+    out.push_str(&export::<RingModParams>(&config).expect("Failed to export RingModParams"));
+    out.push_str("\n\n");
+    out.push_str(&export::<TremoloParams>(&config).expect("Failed to export TremoloParams"));
+    out.push_str("\n\n");
+    out.push_str(&export::<WavefolderParams>(&config).expect("Failed to export WavefolderParams"));
     out.push_str("\n\n");
     out.push_str(&export::<SynthParams>(&config).expect("Failed to export SynthParams"));
     out.push_str("\n\n");
