@@ -49,10 +49,7 @@ export default function ModEnveloppeModule() {
 				<ModulePresetPopover
 					title="Mod Env Presets"
 					value={selectedPreset}
-					options={[
-						{ id: "custom", label: "Custom" },
-						...MOD_ENV_PRESETS,
-					]}
+					options={[{ id: "custom", label: "Custom" }, ...MOD_ENV_PRESETS]}
 					onChange={handlePresetChange}
 				/>
 			}

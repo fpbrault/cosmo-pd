@@ -50,10 +50,7 @@ export default function PhaserModule() {
 				<ModulePresetPopover
 					title="Phaser Presets"
 					value={selectedPreset}
-					options={[
-						{ id: "custom", label: "Custom" },
-						...PHASER_PRESETS,
-					]}
+					options={[{ id: "custom", label: "Custom" }, ...PHASER_PRESETS]}
 					onChange={handlePresetChange}
 				/>
 			}

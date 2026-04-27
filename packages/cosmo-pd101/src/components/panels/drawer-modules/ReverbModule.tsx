@@ -53,10 +53,7 @@ export default function ReverbModule() {
 				<ModulePresetPopover
 					title="Reverb Presets"
 					value={selectedPreset}
-					options={[
-						{ id: "custom", label: "Custom" },
-						...REVERB_PRESETS,
-					]}
+					options={[{ id: "custom", label: "Custom" }, ...REVERB_PRESETS]}
 					onChange={handlePresetChange}
 				/>
 			}

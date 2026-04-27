@@ -53,10 +53,7 @@ export default function DelayModule() {
 				<ModulePresetPopover
 					title="Delay Presets"
 					value={selectedPreset}
-					options={[
-						{ id: "custom", label: "Custom" },
-						...DELAY_PRESETS,
-					]}
+					options={[{ id: "custom", label: "Custom" }, ...DELAY_PRESETS]}
 					onChange={handlePresetChange}
 				/>
 			}

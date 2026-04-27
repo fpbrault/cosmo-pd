@@ -48,10 +48,7 @@ export default function ChorusModule() {
 				<ModulePresetPopover
 					title="Chorus Presets"
 					value={selectedPreset}
-					options={[
-						{ id: "custom", label: "Custom" },
-						...CHORUS_PRESETS,
-					]}
+					options={[{ id: "custom", label: "Custom" }, ...CHORUS_PRESETS]}
 					onChange={handlePresetChange}
 				/>
 			}

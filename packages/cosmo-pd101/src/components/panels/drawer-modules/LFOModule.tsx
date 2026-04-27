@@ -70,10 +70,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				<ModulePresetPopover
 					title={`LFO ${id} Presets`}
 					value={selectedPreset}
-					options={[
-						{ id: "custom", label: "Custom" },
-						...LFO_PRESETS,
-					]}
+					options={[{ id: "custom", label: "Custom" }, ...LFO_PRESETS]}
 					onChange={handlePresetChange}
 				/>
 			}

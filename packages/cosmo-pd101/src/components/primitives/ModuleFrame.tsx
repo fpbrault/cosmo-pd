@@ -83,7 +83,10 @@ export default function ModuleFrame({
 					{title}
 				</span>
 				{/* Right side: optional meta and header control */}
-				<span className="relative z-10 ml-auto inline-flex shrink-0 items-center gap-2" aria-hidden>
+				<span
+					className="relative z-10 ml-auto inline-flex shrink-0 items-center gap-2"
+					aria-hidden
+				>
 					{meta && (
 						<span
 							style={{ color: textColor }}
@@ -93,10 +96,7 @@ export default function ModuleFrame({
 						</span>
 					)}
 					{headerControl && (
-						<span
-							style={{ color: textColor }}
-							className="pointer-events-auto"
-						>
+						<span style={{ color: textColor }} className="pointer-events-auto">
 							{headerControl}
 						</span>
 					)}

@@ -47,10 +47,7 @@ export default function PhaseModModule() {
 				<ModulePresetPopover
 					title="Phase Mod Presets"
 					value={selectedPreset}
-					options={[
-						{ id: "custom", label: "Custom" },
-						...PHASE_MOD_PRESETS,
-					]}
+					options={[{ id: "custom", label: "Custom" }, ...PHASE_MOD_PRESETS]}
 					onChange={handlePresetChange}
 				/>
 			}

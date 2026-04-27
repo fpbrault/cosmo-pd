@@ -51,10 +51,7 @@ export default function VibratoModule() {
 				<ModulePresetPopover
 					title="Vibrato Presets"
 					value={selectedPreset}
-					options={[
-						{ id: "custom", label: "Custom" },
-						...VIBRATO_PRESETS,
-					]}
+					options={[{ id: "custom", label: "Custom" }, ...VIBRATO_PRESETS]}
 					onChange={handlePresetChange}
 				/>
 			}
