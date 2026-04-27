@@ -348,7 +348,19 @@ random?: RandomParams;
 /**
  * Parameters for the ADSR mod envelope.
  */
-modEnv?: ModEnvParams }
+modEnv?: ModEnvParams; fxSlots?: FxSlotType[]; compressor?: CompressorParams; eq?: EqParams; grainDelay?: GrainDelayParams; bitcrusher?: BitcrusherParams; shimmerVerb?: ShimmerVerbParams; distortion?: DistortionParams; junoChorus?: JunoChorusParams; ringMod?: RingModParams; tremolo?: TremoloParams; wavefolder?: WavefolderParams }
+
+export type FxSlotType = "empty" | "chorus" | "phaser" | "delay" | "reverb" | "vibrato" | "phaseMod" | "compressor" | "eq5Band" | "grainDelay" | "bitcrusher" | "shimmerVerb" | "distortion" | "junoChorus" | "ringMod" | "tremolo" | "wavefolder"
+export type CompressorParams = { enabled?: boolean; thresholdDb?: number; ratio?: number; attackMs?: number; releaseMs?: number; makeupDb?: number; mix?: number }
+export type EqParams = { enabled?: boolean; gain80?: number; gain240?: number; gain750?: number; gain2200?: number; gain8000?: number }
+export type GrainDelayParams = { enabled?: boolean; time?: number; scatter?: number; density?: number; mix?: number }
+export type BitcrusherParams = { enabled?: boolean; bits?: number; rateReduction?: number; mix?: number }
+export type ShimmerVerbParams = { enabled?: boolean; shimmer?: number; space?: number; mix?: number }
+export type DistortionParams = { enabled?: boolean; drive?: number; tone?: number; mix?: number }
+export type JunoChorusParams = { enabled?: boolean; mode?: number; mix?: number }
+export type RingModParams = { enabled?: boolean; carrierHz?: number; mix?: number }
+export type TremoloParams = { enabled?: boolean; rate?: number; depth?: number; waveform?: number; mix?: number }
+export type WavefolderParams = { enabled?: boolean; drive?: number; folds?: number; mix?: number }
 
 /**
  * Canonical, versioned synth preset wire contract.

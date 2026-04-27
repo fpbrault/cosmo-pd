@@ -38,6 +38,26 @@ let wasm_bindgen = (function(exports) {
             return ret !== 0;
         }
         /**
+         * Return the current FX slot layout as a JSON array of camelCase strings.
+         * @returns {string}
+         */
+        getFxSlotTypes() {
+            let deferred1_0;
+            let deferred1_1;
+            try {
+                const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+                wasm.czsynthprocessor_getFxSlotTypes(retptr, this.__wbg_ptr);
+                var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+                var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+                deferred1_0 = r0;
+                deferred1_1 = r1;
+                return getStringFromWasm0(r0, r1);
+            } finally {
+                wasm.__wbindgen_add_to_stack_pointer(16);
+                wasm.__wbindgen_export3(deferred1_0, deferred1_1, 1);
+            }
+        }
+        /**
          * Return the latest runtime modulation-source values as JSON for UI telemetry.
          * @returns {string}
          */
@@ -106,6 +126,23 @@ let wasm_bindgen = (function(exports) {
          */
         setAftertouch(value) {
             wasm.czsynthprocessor_setAftertouch(this.__wbg_ptr, value);
+        }
+        /**
+         * Return the latest runtime modulation-source values as JSON for UI telemetry.
+         * Set which effect type occupies a given FX slot (0–5).
+         *
+         * `type_name` is the camelCase string representation of `FxSlotType`
+         * (e.g. `"chorus"`, `"reverb"`, `"compressor"`, `"eq5Band"`, …).
+         * Returns `true` on success, `false` when `slot ≥ 6` or type is unknown.
+         * @param {number} slot
+         * @param {string} type_name
+         * @returns {boolean}
+         */
+        setFxSlotType(slot, type_name) {
+            const ptr0 = passStringToWasm0(type_name, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+            const len0 = WASM_VECTOR_LEN;
+            const ret = wasm.czsynthprocessor_setFxSlotType(this.__wbg_ptr, slot, ptr0, len0);
+            return ret !== 0;
         }
         /**
          * Set mod wheel value. `value` is normalised [0.0, 1.0] (CC1 / 127).

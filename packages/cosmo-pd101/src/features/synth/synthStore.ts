@@ -8,16 +8,27 @@ import {
 import type {
 	Algo,
 	AlgoControlValueV1,
+	BitcrusherParams,
+	CompressorParams,
 	CzWaveform,
+	DistortionParams,
+	EqParams,
 	FilterType,
+	FxSlotType,
+	GrainDelayParams,
+	JunoChorusParams,
 	LfoWaveform,
 	LineSelect,
 	ModMatrix,
 	ModMode,
 	PolyMode,
 	PortamentoMode,
+	RingModParams,
+	ShimmerVerbParams,
 	StepEnvData,
 	SynthPresetV1,
+	TremoloParams,
+	WavefolderParams,
 	WindowType,
 } from "@/lib/synth/bindings/synth";
 import { ALGO_DEFINITIONS_V1 } from "@/lib/synth/bindings/synth";
@@ -201,6 +212,17 @@ export type SynthState = {
 	modWheelVibratoDepth: number;
 	octave: number;
 	modMatrix: ModMatrix;
+	fxSlotTypes: [FxSlotType, FxSlotType, FxSlotType, FxSlotType, FxSlotType, FxSlotType];
+	compressor: CompressorParams;
+	eq: EqParams;
+	grainDelay: GrainDelayParams;
+	bitcrusher: BitcrusherParams;
+	shimmerVerb: ShimmerVerbParams;
+	distortion: DistortionParams;
+	junoChorus: JunoChorusParams;
+	ringMod: RingModParams;
+	tremolo: TremoloParams;
+	wavefolder: WavefolderParams;
 };
 
 // ---------------------------------------------------------------------------
@@ -327,6 +349,17 @@ type SynthActions = {
 	setModWheelVibratoDepth: (v: number) => void;
 	setOctave: (v: number) => void;
 	setModMatrix: (v: ModMatrix) => void;
+	setFxSlotType: (slot: number, type: FxSlotType) => void;
+	setCompressor: (v: CompressorParams) => void;
+	setEq: (v: EqParams) => void;
+	setGrainDelay: (v: GrainDelayParams) => void;
+	setBitcrusher: (v: BitcrusherParams) => void;
+	setShimmerVerb: (v: ShimmerVerbParams) => void;
+	setDistortion: (v: DistortionParams) => void;
+	setJunoChorus: (v: JunoChorusParams) => void;
+	setRingMod: (v: RingModParams) => void;
+	setTremolo: (v: TremoloParams) => void;
+	setWavefolder: (v: WavefolderParams) => void;
 
 	gatherState: () => SynthPresetV1;
 	applyPreset: (preset: SynthPresetV1) => void;
@@ -458,6 +491,72 @@ const DEFAULT_STATE: SynthState = {
 	modWheelVibratoDepth: 0,
 	octave: 0,
 	modMatrix: { routes: [] },
+	fxSlotTypes: ["chorus", "delay", "reverb", "vibrato", "phaseMod", "phaser"],
+	compressor: {
+		enabled: false,
+		thresholdDb: -12,
+		ratio: 4,
+		attackMs: 5,
+		releaseMs: 100,
+		makeupDb: 6,
+		mix: 1,
+	},
+	eq: {
+		enabled: false,
+		gain80: 0,
+		gain240: 0,
+		gain750: 0,
+		gain2200: 0,
+		gain8000: 0,
+	},
+	grainDelay: {
+		enabled: false,
+		time: 0.25,
+		scatter: 0,
+		density: 0.5,
+		mix: 0,
+	},
+	bitcrusher: {
+		enabled: false,
+		bits: 8,
+		rateReduction: 1,
+		mix: 1,
+	},
+	shimmerVerb: {
+		enabled: false,
+		shimmer: 0.4,
+		space: 0.7,
+		mix: 0,
+	},
+	distortion: {
+		enabled: false,
+		drive: 0.5,
+		tone: 0.5,
+		mix: 1,
+	},
+	junoChorus: {
+		enabled: false,
+		mode: 0,
+		mix: 0.5,
+	},
+	ringMod: {
+		enabled: false,
+		carrierHz: 440,
+		mix: 1,
+	},
+	tremolo: {
+		enabled: false,
+		rate: 4,
+		depth: 0.5,
+		waveform: 0,
+		mix: 1,
+	},
+	wavefolder: {
+		enabled: false,
+		drive: 0.5,
+		folds: 0.5,
+		mix: 1,
+	},
 };
 
 // ---------------------------------------------------------------------------
@@ -595,6 +694,23 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setModWheelVibratoDepth: (v) => set({ modWheelVibratoDepth: v }),
 	setOctave: (v) => set({ octave: v }),
 	setModMatrix: (v) => set({ modMatrix: v }),
+	setFxSlotType: (slot, type) => {
+		set((s) => {
+			const slots = [...s.fxSlotTypes] as typeof s.fxSlotTypes;
+			slots[slot] = type;
+			return { fxSlotTypes: slots };
+		});
+	},
+	setCompressor: (v) => set({ compressor: v }),
+	setEq: (v) => set({ eq: v }),
+	setGrainDelay: (v) => set({ grainDelay: v }),
+	setBitcrusher: (v) => set({ bitcrusher: v }),
+	setShimmerVerb: (v) => set({ shimmerVerb: v }),
+	setDistortion: (v) => set({ distortion: v }),
+	setJunoChorus: (v) => set({ junoChorus: v }),
+	setRingMod: (v) => set({ ringMod: v }),
+	setTremolo: (v) => set({ tremolo: v }),
+	setWavefolder: (v) => set({ wavefolder: v }),
 
 	// --- gatherState ---
 	gatherState(): SynthPresetV1 {
@@ -750,6 +866,17 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				pitchBendRange: s.pitchBendRange,
 				modWheelVibratoDepth: s.modWheelVibratoDepth,
 				modMatrix: s.modMatrix,
+				fxSlots: s.fxSlotTypes,
+				compressor: s.compressor,
+				eq: s.eq,
+				grainDelay: s.grainDelay,
+				bitcrusher: s.bitcrusher,
+				shimmerVerb: s.shimmerVerb,
+				distortion: s.distortion,
+				junoChorus: s.junoChorus,
+				ringMod: s.ringMod,
+				tremolo: s.tremolo,
+				wavefolder: s.wavefolder,
 			},
 		};
 	},
@@ -946,6 +1073,82 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				p.modMatrix && typeof p.modMatrix === "object"
 					? (p.modMatrix as ModMatrix)
 					: { routes: [] },
+			fxSlotTypes:
+				Array.isArray(p.fxSlots) && p.fxSlots.length === 6
+					? (p.fxSlots as [
+							FxSlotType,
+							FxSlotType,
+							FxSlotType,
+							FxSlotType,
+							FxSlotType,
+							FxSlotType,
+						])
+					: ["chorus", "delay", "reverb", "vibrato", "phaseMod", "phaser"],
+			compressor: p.compressor ?? {
+				enabled: false,
+				thresholdDb: -12,
+				ratio: 4,
+				attackMs: 5,
+				releaseMs: 100,
+				makeupDb: 6,
+				mix: 1,
+			},
+			eq: p.eq ?? {
+				enabled: false,
+				gain80: 0,
+				gain240: 0,
+				gain750: 0,
+				gain2200: 0,
+				gain8000: 0,
+			},
+			grainDelay: p.grainDelay ?? {
+				enabled: false,
+				time: 0.25,
+				scatter: 0,
+				density: 0.5,
+				mix: 0,
+			},
+			bitcrusher: p.bitcrusher ?? {
+				enabled: false,
+				bits: 8,
+				rateReduction: 1,
+				mix: 1,
+			},
+			shimmerVerb: p.shimmerVerb ?? {
+				enabled: false,
+				shimmer: 0.4,
+				space: 0.7,
+				mix: 0,
+			},
+			distortion: p.distortion ?? {
+				enabled: false,
+				drive: 0.5,
+				tone: 0.5,
+				mix: 1,
+			},
+			junoChorus: p.junoChorus ?? {
+				enabled: false,
+				mode: 0,
+				mix: 0.5,
+			},
+			ringMod: p.ringMod ?? {
+				enabled: false,
+				carrierHz: 440,
+				mix: 1,
+			},
+			tremolo: p.tremolo ?? {
+				enabled: false,
+				rate: 4,
+				depth: 0.5,
+				waveform: 0,
+				mix: 1,
+			},
+			wavefolder: p.wavefolder ?? {
+				enabled: false,
+				drive: 0.5,
+				folds: 0.5,
+				mix: 1,
+			},
 		});
 	},
 }));

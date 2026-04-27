@@ -772,6 +772,337 @@ impl Default for FilterParams {
 }
 
 /// Top-level synth parameters (mirrors this.params in the JS)
+/// FX slot type selector — determines which effect is active in a given slot.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub enum FxSlotType {
+    #[default]
+    Empty,
+    Chorus,
+    Phaser,
+    Delay,
+    Reverb,
+    Vibrato,
+    PhaseMod,
+    Compressor,
+    Eq5Band,
+    GrainDelay,
+    Bitcrusher,
+    ShimmerVerb,
+    Distortion,
+    JunoChorus,
+    RingMod,
+    Tremolo,
+    Wavefolder,
+}
+
+/// Compressor parameters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct CompressorParams {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "default_compressor_threshold")]
+    pub threshold_db: f32,
+    #[serde(default = "default_compressor_ratio")]
+    pub ratio: f32,
+    #[serde(default = "default_compressor_attack")]
+    pub attack_ms: f32,
+    #[serde(default = "default_compressor_release")]
+    pub release_ms: f32,
+    #[serde(default = "default_compressor_makeup")]
+    pub makeup_db: f32,
+    #[serde(default = "default_one")]
+    pub mix: f32,
+}
+
+fn default_compressor_threshold() -> f32 { -12.0 }
+fn default_compressor_ratio() -> f32 { 4.0 }
+fn default_compressor_attack() -> f32 { 5.0 }
+fn default_compressor_release() -> f32 { 100.0 }
+fn default_compressor_makeup() -> f32 { 6.0 }
+fn default_one() -> f32 { 1.0 }
+
+impl Default for CompressorParams {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            threshold_db: -12.0,
+            ratio: 4.0,
+            attack_ms: 5.0,
+            release_ms: 100.0,
+            makeup_db: 6.0,
+            mix: 1.0,
+        }
+    }
+}
+
+/// 5-band EQ parameters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct EqParams {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default)]
+    pub gain80: f32,
+    #[serde(default)]
+    pub gain240: f32,
+    #[serde(default)]
+    pub gain750: f32,
+    #[serde(default)]
+    pub gain2200: f32,
+    #[serde(default)]
+    pub gain8000: f32,
+}
+
+impl Default for EqParams {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            gain80: 0.0,
+            gain240: 0.0,
+            gain750: 0.0,
+            gain2200: 0.0,
+            gain8000: 0.0,
+        }
+    }
+}
+
+/// Grain delay parameters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct GrainDelayParams {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "default_grain_delay_time")]
+    pub time: f32,
+    #[serde(default)]
+    pub scatter: f32,
+    #[serde(default = "default_half")]
+    pub density: f32,
+    #[serde(default)]
+    pub mix: f32,
+}
+
+fn default_grain_delay_time() -> f32 { 0.25 }
+fn default_half() -> f32 { 0.5 }
+
+impl Default for GrainDelayParams {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            time: 0.25,
+            scatter: 0.0,
+            density: 0.5,
+            mix: 0.0,
+        }
+    }
+}
+
+/// Bitcrusher parameters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct BitcrusherParams {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "default_bits")]
+    pub bits: f32,
+    #[serde(default = "default_one")]
+    pub rate_reduction: f32,
+    #[serde(default = "default_one")]
+    pub mix: f32,
+}
+
+fn default_bits() -> f32 { 8.0 }
+
+impl Default for BitcrusherParams {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            bits: 8.0,
+            rate_reduction: 1.0,
+            mix: 1.0,
+        }
+    }
+}
+
+/// Shimmer verb parameters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct ShimmerVerbParams {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "default_shimmer")]
+    pub shimmer: f32,
+    #[serde(default = "default_shimmer_space")]
+    pub space: f32,
+    #[serde(default)]
+    pub mix: f32,
+}
+
+fn default_shimmer() -> f32 { 0.4 }
+fn default_shimmer_space() -> f32 { 0.7 }
+
+impl Default for ShimmerVerbParams {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            shimmer: 0.4,
+            space: 0.7,
+            mix: 0.0,
+        }
+    }
+}
+
+/// Distortion parameters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct DistortionParams {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "default_half")]
+    pub drive: f32,
+    #[serde(default = "default_half")]
+    pub tone: f32,
+    #[serde(default = "default_one")]
+    pub mix: f32,
+}
+
+impl Default for DistortionParams {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            drive: 0.5,
+            tone: 0.5,
+            mix: 1.0,
+        }
+    }
+}
+
+/// Juno-style chorus parameters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct JunoChorusParams {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default)]
+    pub mode: u8,
+    #[serde(default = "default_half")]
+    pub mix: f32,
+}
+
+impl Default for JunoChorusParams {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            mode: 0,
+            mix: 0.5,
+        }
+    }
+}
+
+/// Ring modulator parameters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct RingModParams {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "default_carrier_hz")]
+    pub carrier_hz: f32,
+    #[serde(default = "default_one")]
+    pub mix: f32,
+}
+
+fn default_carrier_hz() -> f32 { 440.0 }
+
+impl Default for RingModParams {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            carrier_hz: 440.0,
+            mix: 1.0,
+        }
+    }
+}
+
+/// Tremolo parameters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct TremoloParams {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "default_tremolo_rate")]
+    pub rate: f32,
+    #[serde(default = "default_half")]
+    pub depth: f32,
+    #[serde(default)]
+    pub waveform: u8,
+    #[serde(default = "default_one")]
+    pub mix: f32,
+}
+
+fn default_tremolo_rate() -> f32 { 4.0 }
+
+impl Default for TremoloParams {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            rate: 4.0,
+            depth: 0.5,
+            waveform: 0,
+            mix: 1.0,
+        }
+    }
+}
+
+/// Wavefolder parameters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct WavefolderParams {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "default_half")]
+    pub drive: f32,
+    #[serde(default = "default_half")]
+    pub folds: f32,
+    #[serde(default = "default_one")]
+    pub mix: f32,
+}
+
+impl Default for WavefolderParams {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            drive: 0.5,
+            folds: 0.5,
+            mix: 1.0,
+        }
+    }
+}
+
+pub(crate) fn default_fx_slots() -> [FxSlotType; 6] {
+    [
+        FxSlotType::Chorus,
+        FxSlotType::Delay,
+        FxSlotType::Reverb,
+        FxSlotType::Vibrato,
+        FxSlotType::PhaseMod,
+        FxSlotType::Phaser,
+    ]
+}
+
+/// Top-level synth parameters (mirrors this.params in the JS)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
 #[serde(rename_all = "camelCase")]
@@ -819,6 +1150,29 @@ pub struct SynthParams {
     /// Parameters for the ADSR mod envelope.
     #[serde(default)]
     pub mod_env: ModEnvParams,
+    /// Which effect type occupies each of the 6 FX slots.
+    #[serde(default = "default_fx_slots")]
+    pub fx_slots: [FxSlotType; 6],
+    #[serde(default)]
+    pub compressor: CompressorParams,
+    #[serde(default)]
+    pub eq: EqParams,
+    #[serde(default)]
+    pub grain_delay: GrainDelayParams,
+    #[serde(default)]
+    pub bitcrusher: BitcrusherParams,
+    #[serde(default)]
+    pub shimmer_verb: ShimmerVerbParams,
+    #[serde(default)]
+    pub distortion: DistortionParams,
+    #[serde(default)]
+    pub juno_chorus: JunoChorusParams,
+    #[serde(default)]
+    pub ring_mod: RingModParams,
+    #[serde(default)]
+    pub tremolo: TremoloParams,
+    #[serde(default)]
+    pub wavefolder: WavefolderParams,
 }
 
 pub(crate) fn default_pitch_bend_range() -> f32 {
@@ -861,6 +1215,17 @@ impl Default for SynthParams {
             mod_matrix: ModMatrix::default(),
             random: RandomParams::default(),
             mod_env: ModEnvParams::default(),
+               fx_slots: default_fx_slots(),
+               compressor: CompressorParams::default(),
+               eq: EqParams::default(),
+               grain_delay: GrainDelayParams::default(),
+               bitcrusher: BitcrusherParams::default(),
+               shimmer_verb: ShimmerVerbParams::default(),
+               distortion: DistortionParams::default(),
+               juno_chorus: JunoChorusParams::default(),
+               ring_mod: RingModParams::default(),
+               tremolo: TremoloParams::default(),
+               wavefolder: WavefolderParams::default(),
         }
     }
 }
