@@ -1128,6 +1128,37 @@ pub(crate) fn default_fx_slots() -> [FxSlotType; 6] {
     ]
 }
 
+fn default_fx_slot_compressors() -> [CompressorParams; 6] {
+    core::array::from_fn(|_| CompressorParams::default())
+}
+fn default_fx_slot_eqs() -> [EqParams; 6] {
+    core::array::from_fn(|_| EqParams::default())
+}
+fn default_fx_slot_grain_delays() -> [GrainDelayParams; 6] {
+    core::array::from_fn(|_| GrainDelayParams::default())
+}
+fn default_fx_slot_bitcrushers() -> [BitcrusherParams; 6] {
+    core::array::from_fn(|_| BitcrusherParams::default())
+}
+fn default_fx_slot_shimmer_verbs() -> [ShimmerVerbParams; 6] {
+    core::array::from_fn(|_| ShimmerVerbParams::default())
+}
+fn default_fx_slot_distortions() -> [DistortionParams; 6] {
+    core::array::from_fn(|_| DistortionParams::default())
+}
+fn default_fx_slot_juno_choruses() -> [JunoChorusParams; 6] {
+    core::array::from_fn(|_| JunoChorusParams::default())
+}
+fn default_fx_slot_ring_mods() -> [RingModParams; 6] {
+    core::array::from_fn(|_| RingModParams::default())
+}
+fn default_fx_slot_tremolos() -> [TremoloParams; 6] {
+    core::array::from_fn(|_| TremoloParams::default())
+}
+fn default_fx_slot_wavefolders() -> [WavefolderParams; 6] {
+    core::array::from_fn(|_| WavefolderParams::default())
+}
+
 /// Top-level synth parameters (mirrors this.params in the JS)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
@@ -1179,26 +1210,26 @@ pub struct SynthParams {
     /// Which effect type occupies each of the 6 FX slots.
     #[serde(default = "default_fx_slots")]
     pub fx_slots: [FxSlotType; 6],
-    #[serde(default)]
-    pub compressor: CompressorParams,
-    #[serde(default)]
-    pub eq: EqParams,
-    #[serde(default)]
-    pub grain_delay: GrainDelayParams,
-    #[serde(default)]
-    pub bitcrusher: BitcrusherParams,
-    #[serde(default)]
-    pub shimmer_verb: ShimmerVerbParams,
-    #[serde(default)]
-    pub distortion: DistortionParams,
-    #[serde(default)]
-    pub juno_chorus: JunoChorusParams,
-    #[serde(default)]
-    pub ring_mod: RingModParams,
-    #[serde(default)]
-    pub tremolo: TremoloParams,
-    #[serde(default)]
-    pub wavefolder: WavefolderParams,
+    #[serde(default = "default_fx_slot_compressors")]
+    pub fx_slot_compressors: [CompressorParams; 6],
+    #[serde(default = "default_fx_slot_eqs")]
+    pub fx_slot_eqs: [EqParams; 6],
+    #[serde(default = "default_fx_slot_grain_delays")]
+    pub fx_slot_grain_delays: [GrainDelayParams; 6],
+    #[serde(default = "default_fx_slot_bitcrushers")]
+    pub fx_slot_bitcrushers: [BitcrusherParams; 6],
+    #[serde(default = "default_fx_slot_shimmer_verbs")]
+    pub fx_slot_shimmer_verbs: [ShimmerVerbParams; 6],
+    #[serde(default = "default_fx_slot_distortions")]
+    pub fx_slot_distortions: [DistortionParams; 6],
+    #[serde(default = "default_fx_slot_juno_choruses")]
+    pub fx_slot_juno_choruses: [JunoChorusParams; 6],
+    #[serde(default = "default_fx_slot_ring_mods")]
+    pub fx_slot_ring_mods: [RingModParams; 6],
+    #[serde(default = "default_fx_slot_tremolos")]
+    pub fx_slot_tremolos: [TremoloParams; 6],
+    #[serde(default = "default_fx_slot_wavefolders")]
+    pub fx_slot_wavefolders: [WavefolderParams; 6],
 }
 
 pub(crate) fn default_pitch_bend_range() -> f32 {
@@ -1242,16 +1273,16 @@ impl Default for SynthParams {
             random: RandomParams::default(),
             mod_env: ModEnvParams::default(),
             fx_slots: default_fx_slots(),
-            compressor: CompressorParams::default(),
-            eq: EqParams::default(),
-            grain_delay: GrainDelayParams::default(),
-            bitcrusher: BitcrusherParams::default(),
-            shimmer_verb: ShimmerVerbParams::default(),
-            distortion: DistortionParams::default(),
-            juno_chorus: JunoChorusParams::default(),
-            ring_mod: RingModParams::default(),
-            tremolo: TremoloParams::default(),
-            wavefolder: WavefolderParams::default(),
+            fx_slot_compressors: default_fx_slot_compressors(),
+            fx_slot_eqs: default_fx_slot_eqs(),
+            fx_slot_grain_delays: default_fx_slot_grain_delays(),
+            fx_slot_bitcrushers: default_fx_slot_bitcrushers(),
+            fx_slot_shimmer_verbs: default_fx_slot_shimmer_verbs(),
+            fx_slot_distortions: default_fx_slot_distortions(),
+            fx_slot_juno_choruses: default_fx_slot_juno_choruses(),
+            fx_slot_ring_mods: default_fx_slot_ring_mods(),
+            fx_slot_tremolos: default_fx_slot_tremolos(),
+            fx_slot_wavefolders: default_fx_slot_wavefolders(),
         }
     }
 }

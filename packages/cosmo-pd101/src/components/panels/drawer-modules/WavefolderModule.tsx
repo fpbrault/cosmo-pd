@@ -8,17 +8,17 @@ import { WAVEFOLDER_PRESETS } from "@/lib/synth/modulePresets";
 
 const COLOR = "#c084fc";
 
-export default function WavefolderModule() {
+export default function WavefolderModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
-	const wavefolder = useSynthStore((s) => s.wavefolder);
-	const setWavefolder = useSynthStore((s) => s.setWavefolder);
+	const wavefolder = useSynthStore((s) => s.fxSlotWavefolders[slot]);
+	const setFxSlotWavefolder = useSynthStore((s) => s.setFxSlotWavefolder);
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
 		if (presetId === "custom") return;
 		const preset = WAVEFOLDER_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
-		setWavefolder(preset.patch.wavefolder);
+		setFxSlotWavefolder(slot, preset.patch.wavefolder);
 		requestApplyModulePreset({
 			module: "wavefolder",
 			preset: preset.id,
@@ -41,12 +41,12 @@ export default function WavefolderModule() {
 			}
 			enabled={wavefolder.enabled ?? false}
 			onToggle={() =>
-				setWavefolder({ ...wavefolder, enabled: !wavefolder.enabled })
+				setFxSlotWavefolder(slot, { ...wavefolder, enabled: !wavefolder.enabled })
 			}
 		>
 			<ControlKnob
 				value={wavefolder.drive ?? 0.5}
-				onChange={(v) => setWavefolder({ ...wavefolder, drive: v })}
+				onChange={(v) => setFxSlotWavefolder(slot, { ...wavefolder, drive: v })}
 				min={0}
 				max={1}
 				defaultValue={0.5}
@@ -57,7 +57,7 @@ export default function WavefolderModule() {
 			/>
 			<ControlKnob
 				value={wavefolder.folds ?? 0.5}
-				onChange={(v) => setWavefolder({ ...wavefolder, folds: v })}
+				onChange={(v) => setFxSlotWavefolder(slot, { ...wavefolder, folds: v })}
 				min={0}
 				max={1}
 				defaultValue={0.5}
@@ -68,7 +68,7 @@ export default function WavefolderModule() {
 			/>
 			<ControlKnob
 				value={wavefolder.mix ?? 1}
-				onChange={(v) => setWavefolder({ ...wavefolder, mix: v })}
+				onChange={(v) => setFxSlotWavefolder(slot, { ...wavefolder, mix: v })}
 				min={0}
 				max={1}
 				defaultValue={1}

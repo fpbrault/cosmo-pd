@@ -8,17 +8,17 @@ import { DISTORTION_PRESETS } from "@/lib/synth/modulePresets";
 
 const COLOR = "#f59e0b";
 
-export default function DistortionModule() {
+export default function DistortionModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
-	const distortion = useSynthStore((s) => s.distortion);
-	const setDistortion = useSynthStore((s) => s.setDistortion);
+	const distortion = useSynthStore((s) => s.fxSlotDistortions[slot]);
+	const setFxSlotDistortion = useSynthStore((s) => s.setFxSlotDistortion);
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
 		if (presetId === "custom") return;
 		const preset = DISTORTION_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
-		setDistortion(preset.patch.distortion);
+		setFxSlotDistortion(slot, preset.patch.distortion);
 		requestApplyModulePreset({
 			module: "distortion",
 			preset: preset.id,
@@ -41,12 +41,12 @@ export default function DistortionModule() {
 			}
 			enabled={distortion.enabled ?? false}
 			onToggle={() =>
-				setDistortion({ ...distortion, enabled: !distortion.enabled })
+				setFxSlotDistortion(slot, { ...distortion, enabled: !distortion.enabled })
 			}
 		>
 			<ControlKnob
 				value={distortion.drive ?? 0.5}
-				onChange={(v) => setDistortion({ ...distortion, drive: v })}
+				onChange={(v) => setFxSlotDistortion(slot, { ...distortion, drive: v })}
 				min={0}
 				max={1}
 				defaultValue={0.5}
@@ -57,7 +57,7 @@ export default function DistortionModule() {
 			/>
 			<ControlKnob
 				value={distortion.tone ?? 0.5}
-				onChange={(v) => setDistortion({ ...distortion, tone: v })}
+				onChange={(v) => setFxSlotDistortion(slot, { ...distortion, tone: v })}
 				min={0}
 				max={1}
 				defaultValue={0.5}
@@ -68,7 +68,7 @@ export default function DistortionModule() {
 			/>
 			<ControlKnob
 				value={distortion.mix ?? 1}
-				onChange={(v) => setDistortion({ ...distortion, mix: v })}
+				onChange={(v) => setFxSlotDistortion(slot, { ...distortion, mix: v })}
 				min={0}
 				max={1}
 				defaultValue={1}

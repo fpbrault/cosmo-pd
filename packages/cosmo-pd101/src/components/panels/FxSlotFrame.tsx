@@ -38,7 +38,7 @@ const FX_SLOT_OPTIONS: { value: FxSlotType; label: string }[] = [
 	{ value: "wavefolder", label: "Wavefolder" },
 ];
 
-function SlotModule({ type }: { type: FxSlotType }) {
+function SlotModule({ type, slot }: { type: FxSlotType; slot: number }) {
 	switch (type) {
 		case "chorus":
 			return <ChorusModule />;
@@ -53,25 +53,25 @@ function SlotModule({ type }: { type: FxSlotType }) {
 		case "phaseMod":
 			return <PhaseModModule />;
 		case "compressor":
-			return <CompressorModule />;
+			return <CompressorModule slot={slot} />;
 		case "eq5Band":
-			return <EqModule />;
+			return <EqModule slot={slot} />;
 		case "grainDelay":
-			return <GrainDelayModule />;
+			return <GrainDelayModule slot={slot} />;
 		case "bitcrusher":
-			return <BitcrusherModule />;
+			return <BitcrusherModule slot={slot} />;
 		case "shimmerVerb":
-			return <ShimmerVerbModule />;
+			return <ShimmerVerbModule slot={slot} />;
 		case "distortion":
-			return <DistortionModule />;
+			return <DistortionModule slot={slot} />;
 		case "junoChorus":
-			return <JunoChorusModule />;
+			return <JunoChorusModule slot={slot} />;
 		case "ringMod":
-			return <RingModModule />;
+			return <RingModModule slot={slot} />;
 		case "tremolo":
-			return <TremoloModule />;
+			return <TremoloModule slot={slot} />;
 		case "wavefolder":
-			return <WavefolderModule />;
+			return <WavefolderModule slot={slot} />;
 		default:
 			return null;
 	}
@@ -96,7 +96,7 @@ export default memo(function FxSlotFrame({ slot }: { slot: number }) {
 				))}
 			</select>
 			<div className="flex-1 min-h-0 overflow-hidden">
-				<SlotModule type={currentType} />
+				<SlotModule type={currentType} slot={slot} />
 			</div>
 		</div>
 	);

@@ -14,17 +14,17 @@ const WAVEFORMS = [
 	{ value: 2, label: "Sqr" },
 ];
 
-export default function TremoloModule() {
+export default function TremoloModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
-	const tremolo = useSynthStore((s) => s.tremolo);
-	const setTremolo = useSynthStore((s) => s.setTremolo);
+	const tremolo = useSynthStore((s) => s.fxSlotTremolos[slot]);
+	const setFxSlotTremolo = useSynthStore((s) => s.setFxSlotTremolo);
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
 		if (presetId === "custom") return;
 		const preset = TREMOLO_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
-		setTremolo(preset.patch.tremolo);
+		setFxSlotTremolo(slot, preset.patch.tremolo);
 		requestApplyModulePreset({
 			module: "tremolo",
 			preset: preset.id,
@@ -46,11 +46,11 @@ export default function TremoloModule() {
 				/>
 			}
 			enabled={tremolo.enabled ?? false}
-			onToggle={() => setTremolo({ ...tremolo, enabled: !tremolo.enabled })}
+			onToggle={() => setFxSlotTremolo(slot, { ...tremolo, enabled: !tremolo.enabled })}
 		>
 			<ControlKnob
 				value={tremolo.rate ?? 4}
-				onChange={(v) => setTremolo({ ...tremolo, rate: v })}
+				onChange={(v) => setFxSlotTremolo(slot, { ...tremolo, rate: v })}
 				min={0.1}
 				max={20}
 				defaultValue={4}
@@ -61,7 +61,7 @@ export default function TremoloModule() {
 			/>
 			<ControlKnob
 				value={tremolo.depth ?? 0.5}
-				onChange={(v) => setTremolo({ ...tremolo, depth: v })}
+				onChange={(v) => setFxSlotTremolo(slot, { ...tremolo, depth: v })}
 				min={0}
 				max={1}
 				defaultValue={0.5}
@@ -78,7 +78,7 @@ export default function TremoloModule() {
 							key={w.value}
 							type="button"
 							className={`join-item btn btn-xs ${(tremolo.waveform ?? 0) === w.value ? "btn-primary" : "btn-ghost"}`}
-							onClick={() => setTremolo({ ...tremolo, waveform: w.value })}
+							onClick={() => setFxSlotTremolo(slot, { ...tremolo, waveform: w.value })}
 						>
 							{w.label}
 						</button>
@@ -87,7 +87,7 @@ export default function TremoloModule() {
 			</div>
 			<ControlKnob
 				value={tremolo.mix ?? 1}
-				onChange={(v) => setTremolo({ ...tremolo, mix: v })}
+				onChange={(v) => setFxSlotTremolo(slot, { ...tremolo, mix: v })}
 				min={0}
 				max={1}
 				defaultValue={1}

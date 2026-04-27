@@ -57,7 +57,7 @@ impl FxSlotProcessors {
         }
     }
 
-    fn sync_from_params(&mut self, p: &SynthParams) {
+    fn sync_from_params(&mut self, p: &SynthParams, slot_idx: usize) {
         self.chorus.enabled = p.chorus.enabled;
         self.chorus.rate = p.chorus.rate;
         self.chorus.depth = p.chorus.depth;
@@ -83,60 +83,70 @@ impl FxSlotProcessors {
         self.reverb.distance = p.reverb.distance;
         self.reverb.character = p.reverb.character;
 
-        self.compressor.enabled = p.compressor.enabled;
-        self.compressor.threshold_db = p.compressor.threshold_db;
-        self.compressor.ratio = p.compressor.ratio;
-        self.compressor.attack_ms = p.compressor.attack_ms;
-        self.compressor.release_ms = p.compressor.release_ms;
-        self.compressor.makeup_db = p.compressor.makeup_db;
-        self.compressor.mix = p.compressor.mix;
+        let c = &p.fx_slot_compressors[slot_idx];
+        self.compressor.enabled = c.enabled;
+        self.compressor.threshold_db = c.threshold_db;
+        self.compressor.ratio = c.ratio;
+        self.compressor.attack_ms = c.attack_ms;
+        self.compressor.release_ms = c.release_ms;
+        self.compressor.makeup_db = c.makeup_db;
+        self.compressor.mix = c.mix;
 
-        self.eq.enabled = p.eq.enabled;
-        self.eq.gains[0] = p.eq.gain80;
-        self.eq.gains[1] = p.eq.gain240;
-        self.eq.gains[2] = p.eq.gain750;
-        self.eq.gains[3] = p.eq.gain2200;
-        self.eq.gains[4] = p.eq.gain8000;
+        let eq = &p.fx_slot_eqs[slot_idx];
+        self.eq.enabled = eq.enabled;
+        self.eq.gains[0] = eq.gain80;
+        self.eq.gains[1] = eq.gain240;
+        self.eq.gains[2] = eq.gain750;
+        self.eq.gains[3] = eq.gain2200;
+        self.eq.gains[4] = eq.gain8000;
 
-        self.grain_delay.enabled = p.grain_delay.enabled;
-        self.grain_delay.time = p.grain_delay.time;
-        self.grain_delay.scatter = p.grain_delay.scatter;
-        self.grain_delay.density = p.grain_delay.density;
-        self.grain_delay.mix = p.grain_delay.mix;
+        let gd = &p.fx_slot_grain_delays[slot_idx];
+        self.grain_delay.enabled = gd.enabled;
+        self.grain_delay.time = gd.time;
+        self.grain_delay.scatter = gd.scatter;
+        self.grain_delay.density = gd.density;
+        self.grain_delay.mix = gd.mix;
 
-        self.bitcrusher.enabled = p.bitcrusher.enabled;
-        self.bitcrusher.bits = p.bitcrusher.bits;
-        self.bitcrusher.rate_reduction = p.bitcrusher.rate_reduction;
-        self.bitcrusher.mix = p.bitcrusher.mix;
+        let bc = &p.fx_slot_bitcrushers[slot_idx];
+        self.bitcrusher.enabled = bc.enabled;
+        self.bitcrusher.bits = bc.bits;
+        self.bitcrusher.rate_reduction = bc.rate_reduction;
+        self.bitcrusher.mix = bc.mix;
 
-        self.shimmer_verb.enabled = p.shimmer_verb.enabled;
-        self.shimmer_verb.shimmer = p.shimmer_verb.shimmer;
-        self.shimmer_verb.space = p.shimmer_verb.space;
-        self.shimmer_verb.mix = p.shimmer_verb.mix;
+        let sv = &p.fx_slot_shimmer_verbs[slot_idx];
+        self.shimmer_verb.enabled = sv.enabled;
+        self.shimmer_verb.shimmer = sv.shimmer;
+        self.shimmer_verb.space = sv.space;
+        self.shimmer_verb.mix = sv.mix;
 
-        self.distortion.enabled = p.distortion.enabled;
-        self.distortion.drive = p.distortion.drive;
-        self.distortion.tone = p.distortion.tone;
-        self.distortion.mix = p.distortion.mix;
+        let dist = &p.fx_slot_distortions[slot_idx];
+        self.distortion.enabled = dist.enabled;
+        self.distortion.drive = dist.drive;
+        self.distortion.tone = dist.tone;
+        self.distortion.mix = dist.mix;
 
-        self.juno_chorus.enabled = p.juno_chorus.enabled;
-        self.juno_chorus.mode = p.juno_chorus.mode;
-        self.juno_chorus.mix = p.juno_chorus.mix;
+        let jc = &p.fx_slot_juno_choruses[slot_idx];
+        self.juno_chorus.enabled = jc.enabled;
+        self.juno_chorus.mode = jc.mode;
+        self.juno_chorus.mix = jc.mix;
 
-        self.ring_mod.enabled = p.ring_mod.enabled;
-        self.ring_mod.carrier_hz = p.ring_mod.carrier_hz;
-        self.ring_mod.mix = p.ring_mod.mix;
+        let rm = &p.fx_slot_ring_mods[slot_idx];
+        self.ring_mod.enabled = rm.enabled;
+        self.ring_mod.carrier_hz = rm.carrier_hz;
+        self.ring_mod.mix = rm.mix;
 
-        self.tremolo.enabled = p.tremolo.enabled;
-        self.tremolo.rate = p.tremolo.rate;
-        self.tremolo.depth = p.tremolo.depth;
-        self.tremolo.waveform = p.tremolo.waveform;
-        self.tremolo.mix = p.tremolo.mix;
+        let tr = &p.fx_slot_tremolos[slot_idx];
+        self.tremolo.enabled = tr.enabled;
+        self.tremolo.rate = tr.rate;
+        self.tremolo.depth = tr.depth;
+        self.tremolo.waveform = tr.waveform;
+        self.tremolo.mix = tr.mix;
 
-        self.wavefolder.enabled = p.wavefolder.enabled;
-        self.wavefolder.drive = p.wavefolder.drive;
-        self.wavefolder.folds = p.wavefolder.folds;
-        self.wavefolder.mix = p.wavefolder.mix;
+        let wf = &p.fx_slot_wavefolders[slot_idx];
+        self.wavefolder.enabled = wf.enabled;
+        self.wavefolder.drive = wf.drive;
+        self.wavefolder.folds = wf.folds;
+        self.wavefolder.mix = wf.mix;
     }
 
     fn process(&mut self, effect_type: FxSlotType, sample: f32) -> f32 {
@@ -190,8 +200,8 @@ impl FxChain {
     }
 
     pub fn sync_from_params(&mut self, params: &SynthParams) {
-        for slot in &mut self.slots {
-            slot.sync_from_params(params);
+        for (i, slot) in self.slots.iter_mut().enumerate() {
+            slot.sync_from_params(params, i);
         }
         self.slot_types = params.fx_slots;
     }

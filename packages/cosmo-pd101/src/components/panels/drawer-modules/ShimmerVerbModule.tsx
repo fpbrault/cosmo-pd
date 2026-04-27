@@ -8,17 +8,17 @@ import { SHIMMER_VERB_PRESETS } from "@/lib/synth/modulePresets";
 
 const COLOR = "#60a5fa";
 
-export default function ShimmerVerbModule() {
+export default function ShimmerVerbModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
-	const shimmerVerb = useSynthStore((s) => s.shimmerVerb);
-	const setShimmerVerb = useSynthStore((s) => s.setShimmerVerb);
+	const shimmerVerb = useSynthStore((s) => s.fxSlotShimmerVerbs[slot]);
+	const setFxSlotShimmerVerb = useSynthStore((s) => s.setFxSlotShimmerVerb);
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
 		if (presetId === "custom") return;
 		const preset = SHIMMER_VERB_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
-		setShimmerVerb(preset.patch.shimmerVerb);
+		setFxSlotShimmerVerb(slot, preset.patch.shimmerVerb);
 		requestApplyModulePreset({
 			module: "shimmerVerb",
 			preset: preset.id,
@@ -41,12 +41,12 @@ export default function ShimmerVerbModule() {
 			}
 			enabled={shimmerVerb.enabled ?? false}
 			onToggle={() =>
-				setShimmerVerb({ ...shimmerVerb, enabled: !shimmerVerb.enabled })
+				setFxSlotShimmerVerb(slot, { ...shimmerVerb, enabled: !shimmerVerb.enabled })
 			}
 		>
 			<ControlKnob
 				value={shimmerVerb.shimmer ?? 0.4}
-				onChange={(v) => setShimmerVerb({ ...shimmerVerb, shimmer: v })}
+				onChange={(v) => setFxSlotShimmerVerb(slot, { ...shimmerVerb, shimmer: v })}
 				min={0}
 				max={1}
 				defaultValue={0.4}
@@ -57,7 +57,7 @@ export default function ShimmerVerbModule() {
 			/>
 			<ControlKnob
 				value={shimmerVerb.space ?? 0.7}
-				onChange={(v) => setShimmerVerb({ ...shimmerVerb, space: v })}
+				onChange={(v) => setFxSlotShimmerVerb(slot, { ...shimmerVerb, space: v })}
 				min={0}
 				max={1}
 				defaultValue={0.7}
@@ -68,7 +68,7 @@ export default function ShimmerVerbModule() {
 			/>
 			<ControlKnob
 				value={shimmerVerb.mix ?? 0}
-				onChange={(v) => setShimmerVerb({ ...shimmerVerb, mix: v })}
+				onChange={(v) => setFxSlotShimmerVerb(slot, { ...shimmerVerb, mix: v })}
 				min={0}
 				max={1}
 				defaultValue={0}

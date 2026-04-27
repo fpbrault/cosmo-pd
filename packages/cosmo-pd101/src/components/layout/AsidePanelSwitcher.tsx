@@ -9,7 +9,9 @@ import CzTabButton, {
 	type CzTabButtonLedColor,
 } from "@/components/primitives/CzTabButton";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { useSynthStore } from "@/features/synth/synthStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
+import type { FxSlotType } from "@/lib/synth/bindings/synth";
 
 export type AsidePanelButtonTab<T extends string> = {
 	id: T;
@@ -56,6 +58,26 @@ const FX_MODULE_TAB_COLORS: Record<string, string> = {
 	phaser: "#a78bfa",
 };
 
+const FX_TYPE_SHORT_LABELS: Record<FxSlotType, string> = {
+	empty: "—",
+	chorus: "Chrs",
+	phaser: "Phsr",
+	delay: "Dly",
+	reverb: "Rvb",
+	vibrato: "Vib",
+	phaseMod: "PhMd",
+	compressor: "Comp",
+	eq5Band: "EQ",
+	grainDelay: "GrDl",
+	bitcrusher: "Bit",
+	shimmerVerb: "Shim",
+	distortion: "Dist",
+	junoChorus: "Juno",
+	ringMod: "Ring",
+	tremolo: "Trem",
+	wavefolder: "Wave",
+};
+
 export type AsidePanelTabMeta = {
 	topLabel: string;
 	bottomLabel: string;
@@ -94,6 +116,72 @@ export default function AsidePanelSwitcher<T extends string>({
 	const { setValue: setDelayEnabled } = useSynthParam("delayEnabled");
 	const { setValue: setReverbEnabled } = useSynthParam("reverbEnabled");
 	const { setValue: setPhaserEnabled } = useSynthParam("phaserEnabled");
+
+	const fxSlotTypes = useSynthStore((s) => s.fxSlotTypes);
+	const fxSlotCompressors = useSynthStore((s) => s.fxSlotCompressors);
+	const fxSlotEqs = useSynthStore((s) => s.fxSlotEqs);
+	const fxSlotGrainDelays = useSynthStore((s) => s.fxSlotGrainDelays);
+	const fxSlotBitcrushers = useSynthStore((s) => s.fxSlotBitcrushers);
+	const fxSlotShimmerVerbs = useSynthStore((s) => s.fxSlotShimmerVerbs);
+	const fxSlotDistortions = useSynthStore((s) => s.fxSlotDistortions);
+	const fxSlotJunoChoruses = useSynthStore((s) => s.fxSlotJunoChoruses);
+	const fxSlotRingMods = useSynthStore((s) => s.fxSlotRingMods);
+	const fxSlotTremolos = useSynthStore((s) => s.fxSlotTremolos);
+	const fxSlotWavefolders = useSynthStore((s) => s.fxSlotWavefolders);
+	const setFxSlotCompressor = useSynthStore((s) => s.setFxSlotCompressor);
+	const setFxSlotEq = useSynthStore((s) => s.setFxSlotEq);
+	const setFxSlotGrainDelay = useSynthStore((s) => s.setFxSlotGrainDelay);
+	const setFxSlotBitcrusher = useSynthStore((s) => s.setFxSlotBitcrusher);
+	const setFxSlotShimmerVerb = useSynthStore((s) => s.setFxSlotShimmerVerb);
+	const setFxSlotDistortion = useSynthStore((s) => s.setFxSlotDistortion);
+	const setFxSlotJunoChorus = useSynthStore((s) => s.setFxSlotJunoChorus);
+	const setFxSlotRingMod = useSynthStore((s) => s.setFxSlotRingMod);
+	const setFxSlotTremolo = useSynthStore((s) => s.setFxSlotTremolo);
+	const setFxSlotWavefolder = useSynthStore((s) => s.setFxSlotWavefolder);
+
+	const getSlotEnabled = (slot: number, type: FxSlotType): boolean => {
+		switch (type) {
+			case "chorus": return chorusEnabled ?? false;
+			case "delay": return delayEnabled ?? false;
+			case "reverb": return reverbEnabled ?? false;
+			case "phaser": return phaserEnabled ?? false;
+			case "vibrato": return vibratoEnabled ?? false;
+			case "phaseMod": return phaseModEnabled ?? false;
+			case "compressor": return fxSlotCompressors[slot]?.enabled ?? false;
+			case "eq5Band": return fxSlotEqs[slot]?.enabled ?? false;
+			case "grainDelay": return fxSlotGrainDelays[slot]?.enabled ?? false;
+			case "bitcrusher": return fxSlotBitcrushers[slot]?.enabled ?? false;
+			case "shimmerVerb": return fxSlotShimmerVerbs[slot]?.enabled ?? false;
+			case "distortion": return fxSlotDistortions[slot]?.enabled ?? false;
+			case "junoChorus": return fxSlotJunoChoruses[slot]?.enabled ?? false;
+			case "ringMod": return fxSlotRingMods[slot]?.enabled ?? false;
+			case "tremolo": return fxSlotTremolos[slot]?.enabled ?? false;
+			case "wavefolder": return fxSlotWavefolders[slot]?.enabled ?? false;
+			default: return false;
+		}
+	};
+
+	const toggleSlotEnabled = (slot: number, type: FxSlotType): void => {
+		const en = getSlotEnabled(slot, type);
+		switch (type) {
+			case "chorus": setChorusEnabled(!en); break;
+			case "delay": setDelayEnabled(!en); break;
+			case "reverb": setReverbEnabled(!en); break;
+			case "phaser": setPhaserEnabled(!en); break;
+			case "vibrato": setVibratoEnabled(!en); break;
+			case "phaseMod": setPhaseModEnabled(!en); break;
+			case "compressor": setFxSlotCompressor(slot, { ...fxSlotCompressors[slot], enabled: !en }); break;
+			case "eq5Band": setFxSlotEq(slot, { ...fxSlotEqs[slot], enabled: !en }); break;
+			case "grainDelay": setFxSlotGrainDelay(slot, { ...fxSlotGrainDelays[slot], enabled: !en }); break;
+			case "bitcrusher": setFxSlotBitcrusher(slot, { ...fxSlotBitcrushers[slot], enabled: !en }); break;
+			case "shimmerVerb": setFxSlotShimmerVerb(slot, { ...fxSlotShimmerVerbs[slot], enabled: !en }); break;
+			case "distortion": setFxSlotDistortion(slot, { ...fxSlotDistortions[slot], enabled: !en }); break;
+			case "junoChorus": setFxSlotJunoChorus(slot, { ...fxSlotJunoChoruses[slot], enabled: !en }); break;
+			case "ringMod": setFxSlotRingMod(slot, { ...fxSlotRingMods[slot], enabled: !en }); break;
+			case "tremolo": setFxSlotTremolo(slot, { ...fxSlotTremolos[slot], enabled: !en }); break;
+			case "wavefolder": setFxSlotWavefolder(slot, { ...fxSlotWavefolders[slot], enabled: !en }); break;
+		}
+	};
 
 	const isTabEnabled = (tabId: T): boolean => {
 		switch (String(tabId).toLowerCase()) {
@@ -280,6 +368,26 @@ export default function AsidePanelSwitcher<T extends string>({
 						bottomLabel={tab.bottomLabel}
 					/>
 				))}
+			</div>
+			<div className="grid grid-cols-6 gap-1">
+				{([0, 1, 2, 3, 4, 5] as const).map((slot) => {
+					const type = fxSlotTypes[slot];
+					const enabled = getSlotEnabled(slot, type);
+					return (
+						<CzTabButton
+							key={`fx-slot-${slot}`}
+							topLabel={`${slot + 1}`}
+							bottomLabel={FX_TYPE_SHORT_LABELS[type] ?? type}
+							color="blue"
+							active={enabled}
+							ledColor={enabled ? "green" : "off"}
+							onClick={() => {
+								if (type !== "empty") toggleSlotEnabled(slot, type);
+							}}
+							onLongPress={() => setMainPanelMode("fx")}
+						/>
+					);
+				})}
 			</div>
 			{activePanel}
 		</div>

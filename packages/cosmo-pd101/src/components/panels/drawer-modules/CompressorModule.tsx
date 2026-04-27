@@ -8,17 +8,17 @@ import { COMPRESSOR_PRESETS } from "@/lib/synth/modulePresets";
 
 const COLOR = "#fb923c";
 
-export default function CompressorModule() {
+export default function CompressorModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
-	const compressor = useSynthStore((s) => s.compressor);
-	const setCompressor = useSynthStore((s) => s.setCompressor);
+	const compressor = useSynthStore((s) => s.fxSlotCompressors[slot]);
+	const setFxSlotCompressor = useSynthStore((s) => s.setFxSlotCompressor);
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
 		if (presetId === "custom") return;
 		const preset = COMPRESSOR_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
-		setCompressor(preset.patch.compressor);
+		setFxSlotCompressor(slot, preset.patch.compressor);
 		requestApplyModulePreset({
 			module: "compressor",
 			preset: preset.id,
@@ -41,12 +41,12 @@ export default function CompressorModule() {
 			}
 			enabled={compressor.enabled ?? false}
 			onToggle={() =>
-				setCompressor({ ...compressor, enabled: !compressor.enabled })
+				setFxSlotCompressor(slot, { ...compressor, enabled: !compressor.enabled })
 			}
 		>
 			<ControlKnob
 				value={compressor.thresholdDb ?? -12}
-				onChange={(v) => setCompressor({ ...compressor, thresholdDb: v })}
+				onChange={(v) => setFxSlotCompressor(slot, { ...compressor, thresholdDb: v })}
 				min={-60}
 				max={0}
 				defaultValue={-12}
@@ -57,7 +57,7 @@ export default function CompressorModule() {
 			/>
 			<ControlKnob
 				value={compressor.ratio ?? 4}
-				onChange={(v) => setCompressor({ ...compressor, ratio: v })}
+				onChange={(v) => setFxSlotCompressor(slot, { ...compressor, ratio: v })}
 				min={1}
 				max={20}
 				defaultValue={4}
@@ -68,7 +68,7 @@ export default function CompressorModule() {
 			/>
 			<ControlKnob
 				value={compressor.attackMs ?? 5}
-				onChange={(v) => setCompressor({ ...compressor, attackMs: v })}
+				onChange={(v) => setFxSlotCompressor(slot, { ...compressor, attackMs: v })}
 				min={0.1}
 				max={100}
 				defaultValue={5}
@@ -79,7 +79,7 @@ export default function CompressorModule() {
 			/>
 			<ControlKnob
 				value={compressor.releaseMs ?? 100}
-				onChange={(v) => setCompressor({ ...compressor, releaseMs: v })}
+				onChange={(v) => setFxSlotCompressor(slot, { ...compressor, releaseMs: v })}
 				min={10}
 				max={1000}
 				defaultValue={100}
@@ -90,7 +90,7 @@ export default function CompressorModule() {
 			/>
 			<ControlKnob
 				value={compressor.makeupDb ?? 6}
-				onChange={(v) => setCompressor({ ...compressor, makeupDb: v })}
+				onChange={(v) => setFxSlotCompressor(slot, { ...compressor, makeupDb: v })}
 				min={0}
 				max={24}
 				defaultValue={6}
@@ -101,7 +101,7 @@ export default function CompressorModule() {
 			/>
 			<ControlKnob
 				value={compressor.mix ?? 1}
-				onChange={(v) => setCompressor({ ...compressor, mix: v })}
+				onChange={(v) => setFxSlotCompressor(slot, { ...compressor, mix: v })}
 				min={0}
 				max={1}
 				defaultValue={1}

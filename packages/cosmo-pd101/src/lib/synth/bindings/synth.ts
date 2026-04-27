@@ -348,7 +348,7 @@ random?: RandomParams;
 /**
  * Parameters for the ADSR mod envelope.
  */
-modEnv?: ModEnvParams; fxSlots?: FxSlotType[]; compressor?: CompressorParams; eq?: EqParams; grainDelay?: GrainDelayParams; bitcrusher?: BitcrusherParams; shimmerVerb?: ShimmerVerbParams; distortion?: DistortionParams; junoChorus?: JunoChorusParams; ringMod?: RingModParams; tremolo?: TremoloParams; wavefolder?: WavefolderParams }
+modEnv?: ModEnvParams; fxSlots?: FxSlotType[]; fxSlotCompressors?: CompressorParams[]; fxSlotEqs?: EqParams[]; fxSlotGrainDelays?: GrainDelayParams[]; fxSlotBitcrushers?: BitcrusherParams[]; fxSlotShimmerVerbs?: ShimmerVerbParams[]; fxSlotDistortions?: DistortionParams[]; fxSlotJunoChoruses?: JunoChorusParams[]; fxSlotRingMods?: RingModParams[]; fxSlotTremolos?: TremoloParams[]; fxSlotWavefolders?: WavefolderParams[] }
 
 export type FxSlotType = "empty" | "chorus" | "phaser" | "delay" | "reverb" | "vibrato" | "phaseMod" | "compressor" | "eq5Band" | "grainDelay" | "bitcrusher" | "shimmerVerb" | "distortion" | "junoChorus" | "ringMod" | "tremolo" | "wavefolder"
 export type CompressorParams = { enabled?: boolean; thresholdDb?: number; ratio?: number; attackMs?: number; releaseMs?: number; makeupDb?: number; mix?: number }

@@ -8,17 +8,17 @@ import { BITCRUSHER_PRESETS } from "@/lib/synth/modulePresets";
 
 const COLOR = "#f87171";
 
-export default function BitcrusherModule() {
+export default function BitcrusherModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
-	const bitcrusher = useSynthStore((s) => s.bitcrusher);
-	const setBitcrusher = useSynthStore((s) => s.setBitcrusher);
+	const bitcrusher = useSynthStore((s) => s.fxSlotBitcrushers[slot]);
+	const setFxSlotBitcrusher = useSynthStore((s) => s.setFxSlotBitcrusher);
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
 		if (presetId === "custom") return;
 		const preset = BITCRUSHER_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
-		setBitcrusher(preset.patch.bitcrusher);
+		setFxSlotBitcrusher(slot, preset.patch.bitcrusher);
 		requestApplyModulePreset({
 			module: "bitcrusher",
 			preset: preset.id,
@@ -41,12 +41,12 @@ export default function BitcrusherModule() {
 			}
 			enabled={bitcrusher.enabled ?? false}
 			onToggle={() =>
-				setBitcrusher({ ...bitcrusher, enabled: !bitcrusher.enabled })
+				setFxSlotBitcrusher(slot, { ...bitcrusher, enabled: !bitcrusher.enabled })
 			}
 		>
 			<ControlKnob
 				value={bitcrusher.bits ?? 8}
-				onChange={(v) => setBitcrusher({ ...bitcrusher, bits: v })}
+				onChange={(v) => setFxSlotBitcrusher(slot, { ...bitcrusher, bits: v })}
 				min={2}
 				max={16}
 				defaultValue={8}
@@ -57,7 +57,7 @@ export default function BitcrusherModule() {
 			/>
 			<ControlKnob
 				value={bitcrusher.rateReduction ?? 1}
-				onChange={(v) => setBitcrusher({ ...bitcrusher, rateReduction: v })}
+				onChange={(v) => setFxSlotBitcrusher(slot, { ...bitcrusher, rateReduction: v })}
 				min={1}
 				max={16}
 				defaultValue={1}
@@ -68,7 +68,7 @@ export default function BitcrusherModule() {
 			/>
 			<ControlKnob
 				value={bitcrusher.mix ?? 1}
-				onChange={(v) => setBitcrusher({ ...bitcrusher, mix: v })}
+				onChange={(v) => setFxSlotBitcrusher(slot, { ...bitcrusher, mix: v })}
 				min={0}
 				max={1}
 				defaultValue={1}

@@ -8,17 +8,17 @@ import { EQ_PRESETS } from "@/lib/synth/modulePresets";
 
 const COLOR = "#34d399";
 
-export default function EqModule() {
+export default function EqModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
-	const eq = useSynthStore((s) => s.eq);
-	const setEq = useSynthStore((s) => s.setEq);
+	const eq = useSynthStore((s) => s.fxSlotEqs[slot]);
+	const setFxSlotEq = useSynthStore((s) => s.setFxSlotEq);
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
 		if (presetId === "custom") return;
 		const preset = EQ_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
-		setEq(preset.patch.eq);
+		setFxSlotEq(slot, preset.patch.eq);
 		requestApplyModulePreset({
 			module: "eq",
 			preset: preset.id,
@@ -40,11 +40,11 @@ export default function EqModule() {
 				/>
 			}
 			enabled={eq.enabled ?? false}
-			onToggle={() => setEq({ ...eq, enabled: !eq.enabled })}
+			onToggle={() => setFxSlotEq(slot, { ...eq, enabled: !eq.enabled })}
 		>
 			<ControlKnob
 				value={eq.gain80 ?? 0}
-				onChange={(v) => setEq({ ...eq, gain80: v })}
+				onChange={(v) => setFxSlotEq(slot, { ...eq, gain80: v })}
 				min={-12}
 				max={12}
 				defaultValue={0}
@@ -55,7 +55,7 @@ export default function EqModule() {
 			/>
 			<ControlKnob
 				value={eq.gain240 ?? 0}
-				onChange={(v) => setEq({ ...eq, gain240: v })}
+				onChange={(v) => setFxSlotEq(slot, { ...eq, gain240: v })}
 				min={-12}
 				max={12}
 				defaultValue={0}
@@ -66,7 +66,7 @@ export default function EqModule() {
 			/>
 			<ControlKnob
 				value={eq.gain750 ?? 0}
-				onChange={(v) => setEq({ ...eq, gain750: v })}
+				onChange={(v) => setFxSlotEq(slot, { ...eq, gain750: v })}
 				min={-12}
 				max={12}
 				defaultValue={0}
@@ -77,7 +77,7 @@ export default function EqModule() {
 			/>
 			<ControlKnob
 				value={eq.gain2200 ?? 0}
-				onChange={(v) => setEq({ ...eq, gain2200: v })}
+				onChange={(v) => setFxSlotEq(slot, { ...eq, gain2200: v })}
 				min={-12}
 				max={12}
 				defaultValue={0}
@@ -88,7 +88,7 @@ export default function EqModule() {
 			/>
 			<ControlKnob
 				value={eq.gain8000 ?? 0}
-				onChange={(v) => setEq({ ...eq, gain8000: v })}
+				onChange={(v) => setFxSlotEq(slot, { ...eq, gain8000: v })}
 				min={-12}
 				max={12}
 				defaultValue={0}

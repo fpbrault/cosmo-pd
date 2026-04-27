@@ -14,17 +14,17 @@ const JUNO_MODES = [
 	{ value: 2, label: "I+II" },
 ];
 
-export default function JunoChorusModule() {
+export default function JunoChorusModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
-	const junoChorus = useSynthStore((s) => s.junoChorus);
-	const setJunoChorus = useSynthStore((s) => s.setJunoChorus);
+	const junoChorus = useSynthStore((s) => s.fxSlotJunoChoruses[slot]);
+	const setFxSlotJunoChorus = useSynthStore((s) => s.setFxSlotJunoChorus);
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
 		if (presetId === "custom") return;
 		const preset = JUNO_CHORUS_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
-		setJunoChorus(preset.patch.junoChorus);
+		setFxSlotJunoChorus(slot, preset.patch.junoChorus);
 		requestApplyModulePreset({
 			module: "junoChorus",
 			preset: preset.id,
@@ -47,7 +47,7 @@ export default function JunoChorusModule() {
 			}
 			enabled={junoChorus.enabled ?? false}
 			onToggle={() =>
-				setJunoChorus({ ...junoChorus, enabled: !junoChorus.enabled })
+				setFxSlotJunoChorus(slot, { ...junoChorus, enabled: !junoChorus.enabled })
 			}
 		>
 			<div className="flex flex-col gap-1">
@@ -58,7 +58,7 @@ export default function JunoChorusModule() {
 							key={m.value}
 							type="button"
 							className={`join-item btn btn-xs ${(junoChorus.mode ?? 0) === m.value ? "btn-primary" : "btn-ghost"}`}
-							onClick={() => setJunoChorus({ ...junoChorus, mode: m.value })}
+							onClick={() => setFxSlotJunoChorus(slot, { ...junoChorus, mode: m.value })}
 						>
 							{m.label}
 						</button>
@@ -67,7 +67,7 @@ export default function JunoChorusModule() {
 			</div>
 			<ControlKnob
 				value={junoChorus.mix ?? 0.5}
-				onChange={(v) => setJunoChorus({ ...junoChorus, mix: v })}
+				onChange={(v) => setFxSlotJunoChorus(slot, { ...junoChorus, mix: v })}
 				min={0}
 				max={1}
 				defaultValue={0.5}
