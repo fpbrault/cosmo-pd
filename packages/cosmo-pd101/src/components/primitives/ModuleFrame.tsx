@@ -40,14 +40,14 @@ export default function ModuleFrame({
 		<section
 			style={{ borderColor: color }}
 			className={[
-				`relative flex min-h-0 flex-col overflow-hidden border-4 rounded-b-sm bg-cz-surface shadow-lg rounded-t-lg transition-[filter]`,
+				`relative flex h-full min-h-0 flex-col overflow-hidden border-4 rounded-b-sm bg-cz-surface shadow-lg rounded-t-lg transition-[filter]`,
 				dimmed ? "brightness-80" : "",
 				className,
 			]
 				.filter(Boolean)
 				.join(" ")}
 		>
-			{/* Header — toggle surface with title and optional meta */}
+			{/* Header — toggle surface plus optional right-side control */}
 			<div
 				data-header
 				style={{ backgroundColor: color }}
@@ -82,8 +82,11 @@ export default function ModuleFrame({
 				>
 					{title}
 				</span>
-				{/* Right side: optional meta */}
-				<span className="relative z-10 ml-auto inline-flex shrink-0 items-center gap-2">
+				{/* Right side: optional meta and header control */}
+				<span
+					className="relative z-10 ml-auto inline-flex shrink-0 items-center gap-2"
+					aria-hidden
+				>
 					{meta && (
 						<span
 							style={{ color: textColor }}
@@ -92,27 +95,25 @@ export default function ModuleFrame({
 							{meta}
 						</span>
 					)}
-					{!meta && <span className="inline-block h-1.5 w-3 opacity-0" />}
+					{headerControl && (
+						<span style={{ color: textColor }} className="pointer-events-auto">
+							{headerControl}
+						</span>
+					)}
+					{!meta && !headerControl && (
+						<span className="inline-block h-1.5 w-3 opacity-0" />
+					)}
 				</span>
 			</div>
 
 			{/* Content area */}
 			<div
-				className={`flex min-h-0 flex-1 px-3 py-3 ${
+				className={`flex min-h-0 flex-1 items-stretch justify-center px-3 py-3 ${
 					dimmed ? "bg-cz-inset/20" : "bg-cz-inset/60"
 				}`}
 			>
-				<div className="flex w-full flex-1 flex-col gap-2">
-					{headerControl && (
-						<div className="flex justify-end">{headerControl}</div>
-					)}
-					<div
-						className={`grid grid-cols-${columns} w-full gap-2.5 ${
-							headerControl ? "" : "my-auto"
-						}`}
-					>
-						{children}
-					</div>
+				<div className={`grid h-full w-full grid-cols-${columns} gap-2.5`}>
+					{children}
 				</div>
 			</div>
 		</section>
