@@ -25,35 +25,38 @@ function AlgoControlSelectInner({
 }: AlgoControlSelectProps) {
 	const options = control.options ?? [];
 	const activeOption = getActiveSelectOption(control);
-	const buttonTooltip = control.description
-		? `${control.label}: ${control.description}`
-		: control.label;
 
 	return (
 		<div className="space-y-1.5">
 			<div className="grid grid-cols-4 gap-1.5">
-				{options.map((option, index) => (
-					<CzButton
-						key={option.value}
-						active={activeOption?.value === option.value}
-						disabled={disabled}
-						led={false}
-						tooltip={buttonTooltip}
-						onClick={() => {
-							if (disabled) {
-								return;
-							}
-							if (option.set.length > 0) {
-								applyOptionAssignments(option);
-								return;
-							}
-							binding?.setNumber?.(index);
-						}}
-						className="[&_button]:w-full"
-					>
-						{option.label}
-					</CzButton>
-				))}
+				{options.map((option, index) => {
+					const buttonTooltip = control.description
+						? `${control.label} ${option.label}: ${control.description}`
+						: `${control.label} ${option.label}`;
+
+					return (
+						<CzButton
+							key={option.value}
+							active={activeOption?.value === option.value}
+							disabled={disabled}
+							led={false}
+							tooltip={buttonTooltip}
+							onClick={() => {
+								if (disabled) {
+									return;
+								}
+								if (option.set.length > 0) {
+									applyOptionAssignments(option);
+									return;
+								}
+								binding?.setNumber?.(index);
+							}}
+							className="[&_button]:w-full"
+						>
+							{option.label}
+						</CzButton>
+					);
+				})}
 			</div>
 		</div>
 	);
