@@ -10,6 +10,13 @@ use cosmo_synth_engine::generators::{
     AlgoControlAssignmentV1, AlgoControlKindV1, AlgoControlOptionV1, AlgoControlPresentationV1,
     AlgoControlV1, AlgoDefinitionV1, AlgoUiEntryV1, CzPresetV1,
 };
+use cosmo_synth_engine::module_presets::{
+    module_preset_catalog_v1, ModulePresetGroupV1,
+};
+use cosmo_synth_engine::fx::{
+    fx_definitions_v1, FxControlKindV1, FxControlOptionV1, FxControlV1, FxDefinitionV1,
+    FxPresetOptionV1,
+};
 use cosmo_synth_engine::params::{
     Algo, AlgoControlValueV1, BitcrusherParams, ChorusParams, CompressorParams, CzAlgo,
     CzLineParams, CzWaveform, DelayParams, DistortionParams, EnvStep, EqParams, FilterParams,
@@ -157,6 +164,30 @@ fn main() {
     out.push_str("\n\n");
     out.push_str(&export::<CzPresetV1>(&config).expect("Failed to export CzPresetV1"));
     out.push_str("\n\n");
+    out.push_str(
+        &export::<FxPresetOptionV1>(&config).expect("Failed to export FxPresetOptionV1"),
+    );
+    out.push_str("\n\n");
+    out.push_str(
+        &export::<FxControlKindV1>(&config).expect("Failed to export FxControlKindV1"),
+    );
+    out.push_str("\n\n");
+    out.push_str(
+        &export::<FxControlOptionV1>(&config).expect("Failed to export FxControlOptionV1"),
+    );
+    out.push_str("\n\n");
+    out.push_str(
+        &export::<FxControlV1>(&config).expect("Failed to export FxControlV1"),
+    );
+    out.push_str("\n\n");
+    out.push_str(
+        &export::<FxDefinitionV1>(&config).expect("Failed to export FxDefinitionV1"),
+    );
+    out.push_str("\n\n");
+    out.push_str(
+        &export::<ModulePresetGroupV1>(&config).expect("Failed to export ModulePresetGroupV1"),
+    );
+    out.push_str("\n\n");
     let catalog_json = serde_json::to_string_pretty(algo_ui_catalog_v1())
         .expect("Failed to serialize ALGO_UI_CATALOG_V1");
     let definitions_json = serde_json::to_string_pretty(algo_definitions_v1())
@@ -177,6 +208,20 @@ fn main() {
     out.push_str("/** Rust-owned CZ waveform combination presets. */\n");
     out.push_str("export const CZ_PRESETS: CzPresetV1[] = ");
     out.push_str(&cz_presets_json);
+    out.push_str(";\n");
+    out.push_str("\n");
+    let fx_definitions_json = serde_json::to_string_pretty(fx_definitions_v1())
+        .expect("Failed to serialize FX_DEFINITIONS_V1");
+    out.push_str("/** Rust-owned FX module definitions and control defaults. */\n");
+    out.push_str("export const FX_DEFINITIONS_V1: FxDefinitionV1[] = ");
+    out.push_str(&fx_definitions_json);
+    out.push_str(";\n");
+    out.push_str("\n");
+    let module_preset_catalog_json = serde_json::to_string_pretty(module_preset_catalog_v1())
+        .expect("Failed to serialize MODULE_PRESET_CATALOG_V1");
+    out.push_str("/** Rust-owned module preset labels and ordering. */\n");
+    out.push_str("export const MODULE_PRESET_CATALOG_V1: ModulePresetGroupV1[] = ");
+    out.push_str(&module_preset_catalog_json);
     out.push_str(";\n");
 
     std::fs::write(&ts_path, out)

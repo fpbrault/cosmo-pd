@@ -37,3 +37,91 @@ impl RingModFx {
         sample * cosf(mix_angle) + wet * sinf(mix_angle)
     }
 }
+
+// ---------------------------------------------------------------------------
+// Module definition and presets
+// ---------------------------------------------------------------------------
+
+use crate::{
+    fx::{FxControlKindV1, FxControlV1, FxDefinitionV1, FxPresetOptionV1, NO_FX_CONTROL_OPTIONS},
+    params::{FxSlotConfig, FxSlotType, SynthParams},
+};
+
+const PRESET_OPTIONS: [FxPresetOptionV1; 3] = [
+    FxPresetOptionV1 {
+        id: "metallic",
+        label: "Metallic",
+    },
+    FxPresetOptionV1 {
+        id: "bell",
+        label: "Bell",
+    },
+    FxPresetOptionV1 {
+        id: "alien",
+        label: "Alien",
+    },
+];
+
+const CONTROLS: [FxControlV1; 2] = [
+    FxControlV1 {
+        id: "carrierHz",
+        label: "Freq",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(20.0),
+        max: Some(4000.0),
+        default_f32: Some(440.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "mix",
+        label: "Mix",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(1.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+];
+
+pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
+    slot_type: FxSlotType::RingMod,
+    name: "Ring Mod",
+    controls: &CONTROLS,
+    presets: &PRESET_OPTIONS,
+};
+
+pub fn apply_ring_mod_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::RingMod(rm) = s {
+            Some(rm)
+        } else {
+            None
+        }
+    });
+    let Some(rm) = slot else {
+        return false;
+    };
+    match preset {
+        "metallic" => {
+            rm.enabled = true;
+            rm.carrier_hz = 220.0;
+            rm.mix = 0.7;
+            true
+        }
+        "bell" => {
+            rm.enabled = true;
+            rm.carrier_hz = 523.0;
+            rm.mix = 0.5;
+            true
+        }
+        "alien" => {
+            rm.enabled = true;
+            rm.carrier_hz = 1337.0;
+            rm.mix = 0.85;
+            true
+        }
+        _ => false,
+    }
+}

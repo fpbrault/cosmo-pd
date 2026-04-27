@@ -242,7 +242,7 @@ function SynthRendererContent({
 									</div>
 								</div>
 
-								<div className="relative flex-1 min-h-0 min-w-0 overflow-hidden rounded-2xl border border-cz-border/75 bg-cz-panel/30 p-2 shadow-inner">
+								<div className="relative flex-1 min-h-0 min-w-0 overflow-hidden">
 									<div className="pointer-events-none absolute inset-0" />
 									<PhaseLinesSection
 										className="h-full min-h-0 max-h-164"

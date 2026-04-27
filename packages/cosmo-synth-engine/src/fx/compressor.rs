@@ -72,3 +72,143 @@ fn db_to_linear(db: f32) -> f32 {
 fn linear_to_db(linear: f32) -> f32 {
     20.0 * libm::log10f(linear.max(1e-9))
 }
+
+// ---------------------------------------------------------------------------
+// Module definition and presets
+// ---------------------------------------------------------------------------
+
+use crate::{
+    fx::{FxControlKindV1, FxControlV1, FxDefinitionV1, FxPresetOptionV1, NO_FX_CONTROL_OPTIONS},
+    params::{FxSlotConfig, FxSlotType, SynthParams},
+};
+
+const PRESET_OPTIONS: [FxPresetOptionV1; 3] = [
+    FxPresetOptionV1 {
+        id: "gentle",
+        label: "Gentle",
+    },
+    FxPresetOptionV1 {
+        id: "punchy",
+        label: "Punchy",
+    },
+    FxPresetOptionV1 {
+        id: "limiter",
+        label: "Limiter",
+    },
+];
+
+const CONTROLS: [FxControlV1; 6] = [
+    FxControlV1 {
+        id: "thresholdDb",
+        label: "Threshold",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(-60.0),
+        max: Some(0.0),
+        default_f32: Some(-12.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "ratio",
+        label: "Ratio",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(1.0),
+        max: Some(20.0),
+        default_f32: Some(4.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "attackMs",
+        label: "Attack",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.1),
+        max: Some(200.0),
+        default_f32: Some(5.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "releaseMs",
+        label: "Release",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(10.0),
+        max: Some(2000.0),
+        default_f32: Some(100.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "makeupDb",
+        label: "Makeup",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(24.0),
+        default_f32: Some(6.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "mix",
+        label: "Mix",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(1.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+];
+
+pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
+    slot_type: FxSlotType::Compressor,
+    name: "Compressor",
+    controls: &CONTROLS,
+    presets: &PRESET_OPTIONS,
+};
+
+pub fn apply_compressor_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::Compressor(c) = s {
+            Some(c)
+        } else {
+            None
+        }
+    });
+    let Some(c) = slot else {
+        return false;
+    };
+    match preset {
+        "gentle" => {
+            c.enabled = true;
+            c.threshold_db = -18.0;
+            c.ratio = 2.0;
+            c.attack_ms = 10.0;
+            c.release_ms = 150.0;
+            c.makeup_db = 3.0;
+            c.mix = 1.0;
+            true
+        }
+        "punchy" => {
+            c.enabled = true;
+            c.threshold_db = -12.0;
+            c.ratio = 4.0;
+            c.attack_ms = 5.0;
+            c.release_ms = 80.0;
+            c.makeup_db = 6.0;
+            c.mix = 1.0;
+            true
+        }
+        "limiter" => {
+            c.enabled = true;
+            c.threshold_db = -6.0;
+            c.ratio = 20.0;
+            c.attack_ms = 1.0;
+            c.release_ms = 200.0;
+            c.makeup_db = 2.0;
+            c.mix = 1.0;
+            true
+        }
+        _ => false,
+    }
+}

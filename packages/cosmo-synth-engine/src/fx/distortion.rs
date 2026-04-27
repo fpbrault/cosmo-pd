@@ -59,3 +59,104 @@ impl DistortionFx {
         sample * cosf(mix_angle) + wet * sinf(mix_angle)
     }
 }
+
+// ---------------------------------------------------------------------------
+// Module definition and presets
+// ---------------------------------------------------------------------------
+
+use crate::{
+    fx::{FxControlKindV1, FxControlV1, FxDefinitionV1, FxPresetOptionV1, NO_FX_CONTROL_OPTIONS},
+    params::{FxSlotConfig, FxSlotType, SynthParams},
+};
+
+const PRESET_OPTIONS: [FxPresetOptionV1; 3] = [
+    FxPresetOptionV1 {
+        id: "warmOverdrive",
+        label: "Warm Overdrive",
+    },
+    FxPresetOptionV1 {
+        id: "grittyFuzz",
+        label: "Gritty Fuzz",
+    },
+    FxPresetOptionV1 {
+        id: "bitingClip",
+        label: "Biting Clip",
+    },
+];
+
+const CONTROLS: [FxControlV1; 3] = [
+    FxControlV1 {
+        id: "drive",
+        label: "Drive",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(0.5),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "tone",
+        label: "Tone",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(0.5),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "mix",
+        label: "Mix",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(1.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+];
+
+pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
+    slot_type: FxSlotType::Distortion,
+    name: "Distortion",
+    controls: &CONTROLS,
+    presets: &PRESET_OPTIONS,
+};
+
+pub fn apply_distortion_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::Distortion(d) = s {
+            Some(d)
+        } else {
+            None
+        }
+    });
+    let Some(dist) = slot else {
+        return false;
+    };
+    match preset {
+        "warmOverdrive" => {
+            dist.enabled = true;
+            dist.drive = 0.35;
+            dist.tone = 0.3;
+            dist.mix = 0.9;
+            true
+        }
+        "grittyFuzz" => {
+            dist.enabled = true;
+            dist.drive = 0.75;
+            dist.tone = 0.6;
+            dist.mix = 1.0;
+            true
+        }
+        "bitingClip" => {
+            dist.enabled = true;
+            dist.drive = 0.9;
+            dist.tone = 0.8;
+            dist.mix = 1.0;
+            true
+        }
+        _ => false,
+    }
+}

@@ -44,3 +44,104 @@ impl BitcrusherFx {
         sample * cosf(mix_angle) + self.hold_value * sinf(mix_angle)
     }
 }
+
+// ---------------------------------------------------------------------------
+// Module definition and presets
+// ---------------------------------------------------------------------------
+
+use crate::{
+    fx::{FxControlKindV1, FxControlV1, FxDefinitionV1, FxPresetOptionV1, NO_FX_CONTROL_OPTIONS},
+    params::{FxSlotConfig, FxSlotType, SynthParams},
+};
+
+const PRESET_OPTIONS: [FxPresetOptionV1; 3] = [
+    FxPresetOptionV1 {
+        id: "retroGame",
+        label: "Retro Game",
+    },
+    FxPresetOptionV1 {
+        id: "grunge",
+        label: "Grunge",
+    },
+    FxPresetOptionV1 {
+        id: "subtle",
+        label: "Subtle",
+    },
+];
+
+const CONTROLS: [FxControlV1; 3] = [
+    FxControlV1 {
+        id: "bits",
+        label: "Bits",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(1.0),
+        max: Some(16.0),
+        default_f32: Some(8.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "rateReduction",
+        label: "Rate",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(1.0),
+        max: Some(32.0),
+        default_f32: Some(1.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "mix",
+        label: "Mix",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(1.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+];
+
+pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
+    slot_type: FxSlotType::Bitcrusher,
+    name: "Bitcrusher",
+    controls: &CONTROLS,
+    presets: &PRESET_OPTIONS,
+};
+
+pub fn apply_bitcrusher_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::Bitcrusher(bc) = s {
+            Some(bc)
+        } else {
+            None
+        }
+    });
+    let Some(bc) = slot else {
+        return false;
+    };
+    match preset {
+        "retroGame" => {
+            bc.enabled = true;
+            bc.bits = 8.0;
+            bc.rate_reduction = 4.0;
+            bc.mix = 1.0;
+            true
+        }
+        "grunge" => {
+            bc.enabled = true;
+            bc.bits = 4.0;
+            bc.rate_reduction = 2.0;
+            bc.mix = 0.8;
+            true
+        }
+        "subtle" => {
+            bc.enabled = true;
+            bc.bits = 12.0;
+            bc.rate_reduction = 1.5;
+            bc.mix = 0.6;
+            true
+        }
+        _ => false,
+    }
+}

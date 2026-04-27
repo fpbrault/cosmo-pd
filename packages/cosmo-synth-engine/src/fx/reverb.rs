@@ -137,3 +137,120 @@ impl FdnReverb {
         current + (target - current) * coeff
     }
 }
+
+// ---------------------------------------------------------------------------
+// Module definition and presets
+// ---------------------------------------------------------------------------
+
+use crate::{
+    fx::{FxControlKindV1, FxControlV1, FxDefinitionV1, FxPresetOptionV1, NO_FX_CONTROL_OPTIONS},
+    params::{FxSlotType, SynthParams},
+};
+
+const PRESET_OPTIONS: [FxPresetOptionV1; 3] = [
+    FxPresetOptionV1 {
+        id: "smallRoom",
+        label: "Small Room",
+    },
+    FxPresetOptionV1 {
+        id: "plateAir",
+        label: "Plate Air",
+    },
+    FxPresetOptionV1 {
+        id: "cathedral",
+        label: "Cathedral",
+    },
+];
+
+const CONTROLS: [FxControlV1; 5] = [
+    FxControlV1 {
+        id: "mix",
+        label: "Mix",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "space",
+        label: "Space",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(0.5),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "predelay",
+        label: "Pre",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(0.1),
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "distance",
+        label: "Dist",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(0.3),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "character",
+        label: "Char",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(0.65),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+];
+
+pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
+    slot_type: FxSlotType::Reverb,
+    name: "Reverb",
+    controls: &CONTROLS,
+    presets: &PRESET_OPTIONS,
+};
+
+pub fn apply_reverb_preset(params: &mut SynthParams, preset: &str) -> bool {
+    match preset {
+        "smallRoom" => {
+            params.reverb.enabled = true;
+            params.reverb.mix = 0.22;
+            params.reverb.space = 0.32;
+            params.reverb.predelay = 0.006;
+            params.reverb.distance = 0.28;
+            params.reverb.character = 0.45;
+            true
+        }
+        "plateAir" => {
+            params.reverb.enabled = true;
+            params.reverb.mix = 0.31;
+            params.reverb.space = 0.58;
+            params.reverb.predelay = 0.012;
+            params.reverb.distance = 0.4;
+            params.reverb.character = 0.74;
+            true
+        }
+        "cathedral" => {
+            params.reverb.enabled = true;
+            params.reverb.mix = 0.47;
+            params.reverb.space = 0.9;
+            params.reverb.predelay = 0.03;
+            params.reverb.distance = 0.68;
+            params.reverb.character = 0.66;
+            true
+        }
+        _ => false,
+    }
+}

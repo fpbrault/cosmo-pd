@@ -61,3 +61,117 @@ impl GrainDelayFx {
         sample * cosf(mix_angle) + wet * sinf(mix_angle)
     }
 }
+
+// ---------------------------------------------------------------------------
+// Module definition and presets
+// ---------------------------------------------------------------------------
+
+use crate::{
+    fx::{FxControlKindV1, FxControlV1, FxDefinitionV1, FxPresetOptionV1, NO_FX_CONTROL_OPTIONS},
+    params::{FxSlotConfig, FxSlotType, SynthParams},
+};
+
+const PRESET_OPTIONS: [FxPresetOptionV1; 3] = [
+    FxPresetOptionV1 {
+        id: "cloudEcho",
+        label: "Cloud Echo",
+    },
+    FxPresetOptionV1 {
+        id: "glitchDelay",
+        label: "Glitch Delay",
+    },
+    FxPresetOptionV1 {
+        id: "shimmerEcho",
+        label: "Shimmer Echo",
+    },
+];
+
+const CONTROLS: [FxControlV1; 4] = [
+    FxControlV1 {
+        id: "time",
+        label: "Time",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.01),
+        max: Some(1.0),
+        default_f32: Some(0.25),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "scatter",
+        label: "Scatter",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "density",
+        label: "Density",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(0.5),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "mix",
+        label: "Mix",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+];
+
+pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
+    slot_type: FxSlotType::GrainDelay,
+    name: "Grain Delay",
+    controls: &CONTROLS,
+    presets: &PRESET_OPTIONS,
+};
+
+pub fn apply_grain_delay_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::GrainDelay(gd) = s {
+            Some(gd)
+        } else {
+            None
+        }
+    });
+    let Some(gd) = slot else {
+        return false;
+    };
+    match preset {
+        "cloudEcho" => {
+            gd.enabled = true;
+            gd.time = 0.35;
+            gd.scatter = 0.6;
+            gd.density = 0.7;
+            gd.mix = 0.4;
+            true
+        }
+        "glitchDelay" => {
+            gd.enabled = true;
+            gd.time = 0.12;
+            gd.scatter = 0.9;
+            gd.density = 0.85;
+            gd.mix = 0.5;
+            true
+        }
+        "shimmerEcho" => {
+            gd.enabled = true;
+            gd.time = 0.5;
+            gd.scatter = 0.35;
+            gd.density = 0.5;
+            gd.mix = 0.35;
+            true
+        }
+        _ => false,
+    }
+}

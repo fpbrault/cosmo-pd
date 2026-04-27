@@ -153,3 +153,130 @@ impl EqFx {
         out
     }
 }
+
+// ---------------------------------------------------------------------------
+// Module definition and presets
+// ---------------------------------------------------------------------------
+
+use crate::{
+    fx::{FxControlKindV1, FxControlV1, FxDefinitionV1, FxPresetOptionV1, NO_FX_CONTROL_OPTIONS},
+    params::{FxSlotConfig, FxSlotType, SynthParams},
+};
+
+const PRESET_OPTIONS: [FxPresetOptionV1; 3] = [
+    FxPresetOptionV1 {
+        id: "bassBoost",
+        label: "Bass Boost",
+    },
+    FxPresetOptionV1 {
+        id: "presence",
+        label: "Presence",
+    },
+    FxPresetOptionV1 {
+        id: "warmth",
+        label: "Warmth",
+    },
+];
+
+const CONTROLS: [FxControlV1; 5] = [
+    FxControlV1 {
+        id: "gain80",
+        label: "80",
+        kind: FxControlKindV1::Knob,
+        bipolar: true,
+        min: Some(-12.0),
+        max: Some(12.0),
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "gain240",
+        label: "240",
+        kind: FxControlKindV1::Knob,
+        bipolar: true,
+        min: Some(-12.0),
+        max: Some(12.0),
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "gain750",
+        label: "750",
+        kind: FxControlKindV1::Knob,
+        bipolar: true,
+        min: Some(-12.0),
+        max: Some(12.0),
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "gain2200",
+        label: "2.2k",
+        kind: FxControlKindV1::Knob,
+        bipolar: true,
+        min: Some(-12.0),
+        max: Some(12.0),
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "gain8000",
+        label: "8k",
+        kind: FxControlKindV1::Knob,
+        bipolar: true,
+        min: Some(-12.0),
+        max: Some(12.0),
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+];
+
+pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
+    slot_type: FxSlotType::Eq5Band,
+    name: "5-Band EQ",
+    controls: &CONTROLS,
+    presets: &PRESET_OPTIONS,
+};
+
+pub fn apply_eq_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::Eq5Band(eq) = s {
+            Some(eq)
+        } else {
+            None
+        }
+    });
+    let Some(eq) = slot else {
+        return false;
+    };
+    match preset {
+        "bassBoost" => {
+            eq.enabled = true;
+            eq.gain80 = 6.0;
+            eq.gain240 = 3.0;
+            eq.gain750 = 0.0;
+            eq.gain2200 = -1.0;
+            eq.gain8000 = -2.0;
+            true
+        }
+        "presence" => {
+            eq.enabled = true;
+            eq.gain80 = 0.0;
+            eq.gain240 = -2.0;
+            eq.gain750 = 0.0;
+            eq.gain2200 = 5.0;
+            eq.gain8000 = 3.0;
+            true
+        }
+        "warmth" => {
+            eq.enabled = true;
+            eq.gain80 = 3.0;
+            eq.gain240 = 4.0;
+            eq.gain750 = 1.0;
+            eq.gain2200 = -3.0;
+            eq.gain8000 = -5.0;
+            true
+        }
+        _ => false,
+    }
+}

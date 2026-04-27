@@ -92,3 +92,107 @@ impl PhaserFx {
         sample * dry_gain + out * wet_gain
     }
 }
+
+// ---------------------------------------------------------------------------
+// Module definition and presets
+// ---------------------------------------------------------------------------
+
+use crate::{
+    fx::{FxControlKindV1, FxControlV1, FxDefinitionV1, FxPresetOptionV1, NO_FX_CONTROL_OPTIONS},
+    params::{FxSlotType, SynthParams},
+};
+
+const PRESET_OPTIONS: [FxPresetOptionV1; 3] = [
+    FxPresetOptionV1 {
+        id: "gentleSweep",
+        label: "Gentle Sweep",
+    },
+    FxPresetOptionV1 {
+        id: "jetWash",
+        label: "Jet Wash",
+    },
+    FxPresetOptionV1 {
+        id: "wideNotch",
+        label: "Wide Notch",
+    },
+];
+
+const CONTROLS: [FxControlV1; 4] = [
+    FxControlV1 {
+        id: "rate",
+        label: "Rate",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.1),
+        max: Some(10.0),
+        default_f32: Some(0.5),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "depth",
+        label: "Depth",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(1.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "feedback",
+        label: "Feedback",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(-0.9),
+        max: Some(0.9),
+        default_f32: Some(0.5),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "mix",
+        label: "Mix",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+];
+
+pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
+    slot_type: FxSlotType::Phaser,
+    name: "Phaser",
+    controls: &CONTROLS,
+    presets: &PRESET_OPTIONS,
+};
+
+pub fn apply_phaser_preset(params: &mut SynthParams, preset: &str) -> bool {
+    match preset {
+        "gentleSweep" => {
+            params.phaser.enabled = true;
+            params.phaser.rate = 0.35;
+            params.phaser.depth = 0.45;
+            params.phaser.feedback = 0.2;
+            params.phaser.mix = 0.25;
+            true
+        }
+        "jetWash" => {
+            params.phaser.enabled = true;
+            params.phaser.rate = 0.9;
+            params.phaser.depth = 0.78;
+            params.phaser.feedback = 0.55;
+            params.phaser.mix = 0.43;
+            true
+        }
+        "wideNotch" => {
+            params.phaser.enabled = true;
+            params.phaser.rate = 0.18;
+            params.phaser.depth = 1.0;
+            params.phaser.feedback = 0.72;
+            params.phaser.mix = 0.52;
+            true
+        }
+        _ => false,
+    }
+}

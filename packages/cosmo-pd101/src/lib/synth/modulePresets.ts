@@ -1,4 +1,7 @@
-import type { LfoWaveform } from "@/lib/synth/bindings/synth";
+import {
+	type LfoWaveform,
+	MODULE_PRESET_CATALOG_V1,
+} from "@/lib/synth/bindings/synth";
 
 export type ModulePresetModule =
 	| "chorus"
@@ -28,6 +31,40 @@ export type ModulePresetDefinition<TPatch extends ModulePresetPatch> = {
 	label: string;
 	patch: TPatch;
 };
+
+function applyRustPresetCatalog<TPatch extends ModulePresetPatch>(
+	module: ModulePresetModule,
+	presets: ModulePresetDefinition<TPatch>[],
+) {
+	const catalogEntry = MODULE_PRESET_CATALOG_V1.find(
+		(entry) => entry.module === module,
+	);
+	if (!catalogEntry) {
+		return;
+	}
+
+	const presetsById = new Map(presets.map((preset) => [preset.id, preset]));
+	const orderedPresets: ModulePresetDefinition<TPatch>[] = [];
+
+	for (const rustPreset of catalogEntry.presets) {
+		const matchingPreset = presetsById.get(rustPreset.id);
+		if (!matchingPreset) {
+			continue;
+		}
+		orderedPresets.push({ ...matchingPreset, label: rustPreset.label });
+		presetsById.delete(rustPreset.id);
+	}
+
+	for (const preset of presets) {
+		if (presetsById.has(preset.id)) {
+			orderedPresets.push(preset);
+		}
+	}
+
+	if (orderedPresets.length > 0) {
+		presets.splice(0, presets.length, ...orderedPresets);
+	}
+}
 
 export const CHORUS_PRESETS: ModulePresetDefinition<{
 	chorus: { enabled: boolean; rate: number; depth: number; mix: number };
@@ -690,6 +727,28 @@ export const WAVEFOLDER_PRESETS: ModulePresetDefinition<{
 		},
 	},
 ];
+
+// TODO: Remove these local patch payload definitions once the engine exports
+// full module preset parameter payloads and the frontend no longer mirrors them.
+applyRustPresetCatalog("chorus", CHORUS_PRESETS);
+applyRustPresetCatalog("delay", DELAY_PRESETS);
+applyRustPresetCatalog("reverb", REVERB_PRESETS);
+applyRustPresetCatalog("phaser", PHASER_PRESETS);
+applyRustPresetCatalog("vibrato", VIBRATO_PRESETS);
+applyRustPresetCatalog("phaseMod", PHASE_MOD_PRESETS);
+applyRustPresetCatalog("lfo1", LFO_PRESETS);
+applyRustPresetCatalog("lfo2", LFO_PRESETS);
+applyRustPresetCatalog("modEnv", MOD_ENV_PRESETS);
+applyRustPresetCatalog("compressor", COMPRESSOR_PRESETS);
+applyRustPresetCatalog("eq", EQ_PRESETS);
+applyRustPresetCatalog("grainDelay", GRAIN_DELAY_PRESETS);
+applyRustPresetCatalog("bitcrusher", BITCRUSHER_PRESETS);
+applyRustPresetCatalog("shimmerVerb", SHIMMER_VERB_PRESETS);
+applyRustPresetCatalog("distortion", DISTORTION_PRESETS);
+applyRustPresetCatalog("junoChorus", JUNO_CHORUS_PRESETS);
+applyRustPresetCatalog("ringMod", RING_MOD_PRESETS);
+applyRustPresetCatalog("tremolo", TREMOLO_PRESETS);
+applyRustPresetCatalog("wavefolder", WAVEFOLDER_PRESETS);
 
 export function getLfoModulePatch(id: 1 | 2, patch: Record<string, unknown>) {
 	return id === 1 ? { lfo: patch } : { lfo2: patch };

@@ -65,3 +65,104 @@ fn fold(mut x: f32, threshold: f32) -> f32 {
     }
     x
 }
+
+// ---------------------------------------------------------------------------
+// Module definition and presets
+// ---------------------------------------------------------------------------
+
+use crate::{
+    fx::{FxControlKindV1, FxControlV1, FxDefinitionV1, FxPresetOptionV1, NO_FX_CONTROL_OPTIONS},
+    params::{FxSlotConfig, FxSlotType, SynthParams},
+};
+
+const PRESET_OPTIONS: [FxPresetOptionV1; 3] = [
+    FxPresetOptionV1 {
+        id: "gentle",
+        label: "Gentle",
+    },
+    FxPresetOptionV1 {
+        id: "aggressive",
+        label: "Aggressive",
+    },
+    FxPresetOptionV1 {
+        id: "harmonic",
+        label: "Harmonic",
+    },
+];
+
+const CONTROLS: [FxControlV1; 3] = [
+    FxControlV1 {
+        id: "drive",
+        label: "Drive",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(0.5),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "folds",
+        label: "Folds",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(0.5),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "mix",
+        label: "Mix",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(1.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+];
+
+pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
+    slot_type: FxSlotType::Wavefolder,
+    name: "Wavefolder",
+    controls: &CONTROLS,
+    presets: &PRESET_OPTIONS,
+};
+
+pub fn apply_wavefolder_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::Wavefolder(wf) = s {
+            Some(wf)
+        } else {
+            None
+        }
+    });
+    let Some(wf) = slot else {
+        return false;
+    };
+    match preset {
+        "gentle" => {
+            wf.enabled = true;
+            wf.drive = 0.3;
+            wf.folds = 0.3;
+            wf.mix = 0.8;
+            true
+        }
+        "aggressive" => {
+            wf.enabled = true;
+            wf.drive = 0.75;
+            wf.folds = 0.7;
+            wf.mix = 1.0;
+            true
+        }
+        "harmonic" => {
+            wf.enabled = true;
+            wf.drive = 0.5;
+            wf.folds = 0.5;
+            wf.mix = 0.9;
+            true
+        }
+        _ => false,
+    }
+}

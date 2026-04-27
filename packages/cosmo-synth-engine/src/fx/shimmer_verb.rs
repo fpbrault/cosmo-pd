@@ -76,3 +76,104 @@ impl ShimmerVerbFx {
         sample * libm::cosf(mix_angle) + wet * libm::sinf(mix_angle)
     }
 }
+
+// ---------------------------------------------------------------------------
+// Module definition and presets
+// ---------------------------------------------------------------------------
+
+use crate::{
+    fx::{FxControlKindV1, FxControlV1, FxDefinitionV1, FxPresetOptionV1, NO_FX_CONTROL_OPTIONS},
+    params::{FxSlotConfig, FxSlotType, SynthParams},
+};
+
+const PRESET_OPTIONS: [FxPresetOptionV1; 3] = [
+    FxPresetOptionV1 {
+        id: "crystalHall",
+        label: "Crystal Hall",
+    },
+    FxPresetOptionV1 {
+        id: "ethereal",
+        label: "Ethereal",
+    },
+    FxPresetOptionV1 {
+        id: "subtleShimmer",
+        label: "Subtle Shimmer",
+    },
+];
+
+const CONTROLS: [FxControlV1; 3] = [
+    FxControlV1 {
+        id: "shimmer",
+        label: "Shimmer",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(0.4),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "space",
+        label: "Space",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(0.7),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "mix",
+        label: "Mix",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+];
+
+pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
+    slot_type: FxSlotType::ShimmerVerb,
+    name: "Shimmer Verb",
+    controls: &CONTROLS,
+    presets: &PRESET_OPTIONS,
+};
+
+pub fn apply_shimmer_verb_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::ShimmerVerb(sv) = s {
+            Some(sv)
+        } else {
+            None
+        }
+    });
+    let Some(sv) = slot else {
+        return false;
+    };
+    match preset {
+        "crystalHall" => {
+            sv.enabled = true;
+            sv.shimmer = 0.6;
+            sv.space = 0.8;
+            sv.mix = 0.4;
+            true
+        }
+        "ethereal" => {
+            sv.enabled = true;
+            sv.shimmer = 0.85;
+            sv.space = 0.95;
+            sv.mix = 0.55;
+            true
+        }
+        "subtleShimmer" => {
+            sv.enabled = true;
+            sv.shimmer = 0.25;
+            sv.space = 0.6;
+            sv.mix = 0.3;
+            true
+        }
+        _ => false,
+    }
+}

@@ -56,3 +56,94 @@ impl ChorusFx {
         sample * dry_gain + wet * wet_gain
     }
 }
+
+// ---------------------------------------------------------------------------
+// Module definition and presets
+// ---------------------------------------------------------------------------
+
+use crate::{
+    fx::{FxControlKindV1, FxControlV1, FxDefinitionV1, FxPresetOptionV1, NO_FX_CONTROL_OPTIONS},
+    params::{FxSlotType, SynthParams},
+};
+
+const PRESET_OPTIONS: [FxPresetOptionV1; 3] = [
+    FxPresetOptionV1 {
+        id: "classicWide",
+        label: "Classic Wide",
+    },
+    FxPresetOptionV1 {
+        id: "slowShimmer",
+        label: "Slow Shimmer",
+    },
+    FxPresetOptionV1 {
+        id: "ensembleThick",
+        label: "Ensemble Thick",
+    },
+];
+
+const CONTROLS: [FxControlV1; 3] = [
+    FxControlV1 {
+        id: "rate",
+        label: "Rate",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.1),
+        max: Some(10.0),
+        default_f32: Some(0.8),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "depth",
+        label: "Depth",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(5.0),
+        default_f32: Some(0.003),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "mix",
+        label: "Mix",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+];
+
+pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
+    slot_type: FxSlotType::Chorus,
+    name: "Chorus",
+    controls: &CONTROLS,
+    presets: &PRESET_OPTIONS,
+};
+
+pub fn apply_chorus_preset(params: &mut SynthParams, preset: &str) -> bool {
+    match preset {
+        "classicWide" => {
+            params.chorus.enabled = true;
+            params.chorus.rate = 0.9;
+            params.chorus.depth = 1.2;
+            params.chorus.mix = 0.38;
+            true
+        }
+        "slowShimmer" => {
+            params.chorus.enabled = true;
+            params.chorus.rate = 0.35;
+            params.chorus.depth = 2.1;
+            params.chorus.mix = 0.44;
+            true
+        }
+        "ensembleThick" => {
+            params.chorus.enabled = true;
+            params.chorus.rate = 1.8;
+            params.chorus.depth = 2.6;
+            params.chorus.mix = 0.56;
+            true
+        }
+        _ => false,
+    }
+}

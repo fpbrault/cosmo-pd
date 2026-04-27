@@ -82,3 +82,112 @@ impl JunoChorusFx {
         sample * cosf(mix_angle) + wet * sinf(mix_angle)
     }
 }
+
+// ---------------------------------------------------------------------------
+// Module definition and presets
+// ---------------------------------------------------------------------------
+
+use crate::{
+    fx::{
+        FxControlKindV1, FxControlOptionV1, FxControlV1, FxDefinitionV1, FxPresetOptionV1,
+        NO_FX_CONTROL_OPTIONS,
+    },
+    params::{FxSlotConfig, FxSlotType, SynthParams},
+};
+
+const PRESET_OPTIONS: [FxPresetOptionV1; 3] = [
+    FxPresetOptionV1 {
+        id: "junoI",
+        label: "Juno I",
+    },
+    FxPresetOptionV1 {
+        id: "junoII",
+        label: "Juno II",
+    },
+    FxPresetOptionV1 {
+        id: "junoFull",
+        label: "Juno Full",
+    },
+];
+
+const MODE_OPTIONS: [FxControlOptionV1; 3] = [
+    FxControlOptionV1 {
+        value: 0,
+        label: "I",
+        icon_name: None,
+    },
+    FxControlOptionV1 {
+        value: 1,
+        label: "II",
+        icon_name: None,
+    },
+    FxControlOptionV1 {
+        value: 2,
+        label: "I+II",
+        icon_name: None,
+    },
+];
+
+const CONTROLS: [FxControlV1; 2] = [
+    FxControlV1 {
+        id: "mode",
+        label: "Mode",
+        kind: FxControlKindV1::ButtonGroup,
+        bipolar: false,
+        min: None,
+        max: None,
+        default_f32: Some(0.0),
+        options: &MODE_OPTIONS,
+    },
+    FxControlV1 {
+        id: "mix",
+        label: "Mix",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(1.0),
+        default_f32: Some(0.5),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+];
+
+pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
+    slot_type: FxSlotType::JunoChorus,
+    name: "Juno Chorus",
+    controls: &CONTROLS,
+    presets: &PRESET_OPTIONS,
+};
+
+pub fn apply_juno_chorus_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::JunoChorus(jc) = s {
+            Some(jc)
+        } else {
+            None
+        }
+    });
+    let Some(jc) = slot else {
+        return false;
+    };
+    match preset {
+        "junoI" => {
+            jc.enabled = true;
+            jc.mode = 0;
+            jc.mix = 0.5;
+            true
+        }
+        "junoII" => {
+            jc.enabled = true;
+            jc.mode = 1;
+            jc.mix = 0.55;
+            true
+        }
+        "junoFull" => {
+            jc.enabled = true;
+            jc.mode = 2;
+            jc.mix = 0.6;
+            true
+        }
+        _ => false,
+    }
+}

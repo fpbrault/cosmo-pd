@@ -7,7 +7,7 @@ import { useSynthStore } from "@/features/synth/synthStore";
 import { DELAY_PRESETS } from "@/lib/synth/modulePresets";
 
 export default function DelayModule({ slot }: { slot: number }) {
-	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
+	const [selectedPreset, setSelectedPreset] = useState<string>("");
 	const rawSlot = useSynthStore((s) => s.fxSlots[slot]);
 	const setFxSlotParams = useSynthStore((s) => s.setFxSlotParams);
 	if (rawSlot?.type !== "delay") return null;
@@ -16,9 +16,6 @@ export default function DelayModule({ slot }: { slot: number }) {
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
-		if (presetId === "custom") {
-			return;
-		}
 
 		const preset = DELAY_PRESETS.find((entry) => entry.id === presetId);
 		if (!preset) {
@@ -41,7 +38,7 @@ export default function DelayModule({ slot }: { slot: number }) {
 				<ModulePresetPopover
 					title="Delay Presets"
 					value={selectedPreset}
-					options={[{ id: "custom", label: "Custom" }, ...DELAY_PRESETS]}
+					options={DELAY_PRESETS}
 					onChange={handlePresetChange}
 				/>
 			}
