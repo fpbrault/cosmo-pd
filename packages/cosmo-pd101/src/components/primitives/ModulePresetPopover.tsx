@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 type ModulePresetOption = {
 	id: string;
@@ -20,6 +20,16 @@ export default function ModulePresetPopover({
 }: ModulePresetPopoverProps) {
 	const detailsRef = useRef<HTMLDetailsElement | null>(null);
 
+	useEffect(() => {
+		const handleClickOutside = (e: MouseEvent) => {
+			if (detailsRef.current && !detailsRef.current.contains(e.target as Node)) {
+				detailsRef.current.open = false;
+			}
+		};
+		document.addEventListener("click", handleClickOutside, true);
+		return () => document.removeEventListener("click", handleClickOutside, true);
+	}, []);
+
 	return (
 		<details
 			ref={detailsRef}
@@ -32,7 +42,7 @@ export default function ModulePresetPopover({
 				<span>presets</span>
 				<span className="text-cyan-300/80">&lt;&gt;</span>
 			</summary>
-			<ul className="menu dropdown-content z-[90] mt-1.5 w-44 rounded-sm border border-cyan-300/30 bg-[#11141d] p-1 shadow-[0_10px_24px_rgba(0,0,0,0.45)]">
+			<ul className="menu dropdown-content z-[9999] mt-1.5 w-44 rounded-sm border border-cyan-300/30 bg-[#11141d] p-1 shadow-[0_10px_24px_rgba(0,0,0,0.45)]">
 				<li className="menu-title px-2 py-1 text-[0.58rem] font-mono uppercase tracking-[0.14em] text-cyan-200/70">
 					{title}
 				</li>
