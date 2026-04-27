@@ -171,6 +171,7 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 		// structuredClone is not available in AudioWorklet scope — use JSON round-trip
 		this._params = JSON.parse(JSON.stringify(DEFAULT_PARAMS));
 		this._queue = []; // messages received before WASM is ready
+		this._supportedModDestinations = null;
 		this._runtimeTelemetryDivider = 4;
 		this._runtimeTelemetryCounter = 0;
 
@@ -202,6 +203,16 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 			case "setParams": {
 				const p = d.params;
 				this._mergeParams(p);
+				if (this._supportedModDestinations) {
+					const filteredRoutes = filterRoutesToSupportedDestinations(
+						this._params.modMatrix?.routes ?? [],
+						this._supportedModDestinations,
+					);
+					this._params.modMatrix = {
+						...(this._params.modMatrix ?? {}),
+						routes: filteredRoutes,
+					};
+				}
 				try {
 					synth.setParams(JSON.stringify(this._params));
 				} catch (error) {
@@ -211,6 +222,7 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 						parseSupportedModDestinationsFromSetParamsError(errorMessage);
 					const supportedDestinations =
 						parsedDestinations ?? LEGACY_MOD_DESTINATIONS;
+					this._supportedModDestinations = supportedDestinations;
 					const routesBefore = this._params.modMatrix?.routes ?? [];
 					const routesAfter = filterRoutesToSupportedDestinations(
 						routesBefore,
