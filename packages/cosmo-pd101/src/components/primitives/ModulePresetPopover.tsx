@@ -22,12 +22,16 @@ export default function ModulePresetPopover({
 
 	useEffect(() => {
 		const handleClickOutside = (e: MouseEvent) => {
-			if (detailsRef.current && !detailsRef.current.contains(e.target as Node)) {
+			if (
+				detailsRef.current &&
+				!detailsRef.current.contains(e.target as Node)
+			) {
 				detailsRef.current.open = false;
 			}
 		};
 		document.addEventListener("click", handleClickOutside, true);
-		return () => document.removeEventListener("click", handleClickOutside, true);
+		return () =>
+			document.removeEventListener("click", handleClickOutside, true);
 	}, []);
 
 	return (
