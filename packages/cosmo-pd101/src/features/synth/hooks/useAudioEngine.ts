@@ -152,6 +152,62 @@ export type LineParams = {
 	algoControls?: AlgoControlValueV1[];
 };
 
+type ResumableAudioContext = Pick<AudioContext, "state" | "resume">;
+
+const USER_GESTURE_EVENTS = [
+	"pointerdown",
+	"mousedown",
+	"touchstart",
+	"keydown",
+] as const;
+
+function isAutoplayBlockError(error: unknown): boolean {
+	if (!(error instanceof Error)) {
+		return false;
+	}
+	const name = error.name.toLowerCase();
+	const message = error.message.toLowerCase();
+	return (
+		name.includes("notallowed") ||
+		message.includes("not allowed") ||
+		message.includes("user gesture")
+	);
+}
+
+export function attachResumeOnUserGesture(
+	ctx: ResumableAudioContext,
+): () => void {
+	let active = true;
+
+	const cleanup = () => {
+		if (!active) return;
+		active = false;
+		for (const eventName of USER_GESTURE_EVENTS) {
+			window.removeEventListener(eventName, tryResume, true);
+		}
+	};
+
+	const tryResume = () => {
+		if (!active) return;
+		void ctx
+			.resume()
+			.then(() => {
+				if (ctx.state === "running") {
+					cleanup();
+				}
+			})
+			.catch(() => {
+				// Keep listeners attached until a later gesture succeeds.
+			});
+	};
+
+	for (const eventName of USER_GESTURE_EVENTS) {
+		window.addEventListener(eventName, tryResume, true);
+	}
+
+	return cleanup;
+}
+
 const DEFAULT_LINE_PARAMS: LineParams = {
 	algo: "cz101",
 	algo2: null,
@@ -251,6 +307,7 @@ export function useAudioEngine({
 		if (audioInitRef.current) return;
 		audioInitRef.current = true;
 		let disposed = false;
+		let removeGestureResumeListener: (() => void) | null = null;
 
 		const normalizeRuntimeModSources = (
 			value: unknown,
@@ -422,7 +479,16 @@ export function useAudioEngine({
 				gainNodeRef.current = gainNode;
 				analyserNodeRef.current = analyserNode;
 
-				if (ctx.state === "suspended") await ctx.resume();
+				if (ctx.state === "suspended") {
+					try {
+						await ctx.resume();
+					} catch (resumeError) {
+						if (!isAutoplayBlockError(resumeError)) {
+							throw resumeError;
+						}
+						removeGestureResumeListener = attachResumeOnUserGesture(ctx);
+					}
+				}
 			} catch (err) {
 				console.error("[PD Visualizer] Audio init failed:", err);
 				audioInitRef.current = false;
@@ -434,6 +500,8 @@ export function useAudioEngine({
 		return () => {
 			disposed = true;
 			audioInitRef.current = false;
+			removeGestureResumeListener?.();
+			removeGestureResumeListener = null;
 			workletNodeRef.current?.disconnect();
 			workletNodeRef.current = null;
 			gainNodeRef.current?.disconnect();
