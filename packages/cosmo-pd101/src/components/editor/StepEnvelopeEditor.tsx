@@ -4,6 +4,7 @@ import Card from "@/components/primitives/Card";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
 
 const STEP_KEYS = ["s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7"] as const;
+const DEFAULT_STEP = { level: 0, rate: 50 };
 
 interface StepEnvelopeEditorProps {
 	title: string;
@@ -25,6 +26,27 @@ const HOVER_RADIUS_PX = 22;
 
 function clamp(value: number, min: number, max: number) {
 	return Math.max(min, Math.min(max, value));
+}
+
+function normalizeStepCount(stepCount: number) {
+	return clamp(Math.round(stepCount), 1, STEP_KEYS.length);
+}
+
+function getPaddedSteps(steps: StepEnvData["steps"]) {
+	return STEP_KEYS.map((_, index) => {
+		const step = steps[index];
+		return step ? { ...step } : { ...DEFAULT_STEP };
+	});
+}
+
+function normalizeEnvelope(env: StepEnvData): StepEnvData {
+	const stepCount = normalizeStepCount(env.stepCount);
+	return {
+		...env,
+		steps: getPaddedSteps(env.steps),
+		stepCount,
+		sustainStep: clamp(Math.round(env.sustainStep), 0, stepCount - 1),
+	};
 }
 
 function editorStepDuration(rate: number, activeStepCount: number): number {
@@ -184,6 +206,10 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 }: StepEnvelopeEditorProps) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const [hoverStep, setHoverStep] = useState<number | null>(null);
+	const normalizedEnv = normalizeEnvelope(env);
+	const steps = normalizedEnv.steps;
+	const activeStepCount = normalizedEnv.stepCount;
+	const sustainStep = normalizedEnv.sustainStep;
 	const [dragState, setDragState] = useState<{
 		pointerId: number;
 		stepIndex: number;
@@ -197,43 +223,74 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 		if (canvasRef.current) {
 			drawEnvPreview(
 				canvasRef.current,
-				env,
+				normalizedEnv,
 				color,
 				dragState?.stepIndex ?? hoverStep,
 			);
 		}
-	}, [env, color, hoverStep, dragState]);
+	}, [normalizedEnv, color, hoverStep, dragState]);
+
+	const commitEnvelope = useCallback(
+		(nextEnv: StepEnvData) => {
+			onChange(normalizeEnvelope(nextEnv));
+		},
+		[onChange],
+	);
 
 	const updateStep = useCallback(
 		(index: number, field: "level" | "rate", value: number) => {
-			const newSteps = env.steps.map((s, i) =>
+			const newSteps = steps.map((s, i) =>
 				i === index ? { ...s, [field]: value } : s,
 			);
-			onChange({ ...env, steps: newSteps });
+			commitEnvelope({ ...normalizedEnv, steps: newSteps });
 		},
-		[env, onChange],
+		[commitEnvelope, normalizedEnv, steps],
 	);
 
 	const updateStepValues = useCallback(
 		(index: number, level: number, rate: number) => {
-			const newSteps = env.steps.map((step, i) =>
+			const newSteps = steps.map((step, i) =>
 				i === index ? { ...step, level, rate } : step,
 			);
-			onChange({ ...env, steps: newSteps });
+			commitEnvelope({ ...normalizedEnv, steps: newSteps });
 		},
-		[env, onChange],
+		[commitEnvelope, normalizedEnv, steps],
+	);
+
+	const setSustainStepForIndex = useCallback(
+		(index: number) => {
+			if (index < 0 || index >= activeStepCount) {
+				return;
+			}
+
+			commitEnvelope({
+				...normalizedEnv,
+				sustainStep: index,
+			});
+		},
+		[activeStepCount, commitEnvelope, normalizedEnv],
+	);
+
+	const setEndStepForIndex = useCallback(
+		(index: number) => {
+			commitEnvelope({
+				...normalizedEnv,
+				stepCount: index + 1,
+			});
+		},
+		[commitEnvelope, normalizedEnv],
 	);
 
 	const getRateForPointerX = useCallback(
 		(stepIndex: number, pointerX: number, canvasWidth: number) => {
-			const activeSteps = env.steps.slice(0, env.stepCount);
-			const activeStepCount = activeSteps.length;
+			const activeSteps = steps.slice(0, activeStepCount);
+			const visibleStepCount = activeSteps.length;
 			if (stepIndex < 0 || stepIndex >= activeSteps.length) {
-				return env.steps[stepIndex]?.rate ?? 0;
+				return steps[stepIndex]?.rate ?? 0;
 			}
 			const allowed = getStepAllowedXRange(
 				stepIndex,
-				activeStepCount,
+				visibleStepCount,
 				canvasWidth,
 			);
 			const clampedPointerX = clamp(pointerX, allowed.minX, allowed.maxX);
@@ -248,7 +305,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 
 				for (let i = 0; i < activeSteps.length; i++) {
 					const rate = i === stepIndex ? candidateRate : activeSteps[i].rate;
-					const duration = editorStepDuration(rate, activeStepCount);
+					const duration = editorStepDuration(rate, visibleStepCount);
 					totalTime += duration;
 					if (i <= stepIndex) cumulative += duration;
 				}
@@ -265,7 +322,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 
 			return bestRate;
 		},
-		[env.stepCount, env.steps],
+		[activeStepCount, steps],
 	);
 
 	const getRelativePointerPosition = useCallback(
@@ -286,7 +343,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 			const pos = getRelativePointerPosition(clientX, clientY);
 			if (!pos) return null;
 
-			const points = buildEnvelopePoints(env, 1000, 200);
+			const points = buildEnvelopePoints(normalizedEnv, 1000, 200);
 			const closest = findClosestPoint(points, pos.x, pos.y);
 			if (!closest) return null;
 
@@ -295,7 +352,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 				distanceSquared: closest.distanceSquared,
 			};
 		},
-		[env, getRelativePointerPosition],
+		[getRelativePointerPosition, normalizedEnv],
 	);
 
 	const handleCanvasPointerDown = useCallback(
@@ -305,7 +362,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 			const closest = getClosestStepAtPointer(e.clientX, e.clientY);
 			if (!closest) return;
 
-			const step = env.steps[closest.stepIndex];
+			const step = steps[closest.stepIndex];
 			if (!step) return;
 
 			canvas.setPointerCapture(e.pointerId);
@@ -319,7 +376,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 				startRate: step.rate,
 			});
 		},
-		[env.steps, getClosestStepAtPointer],
+		[getClosestStepAtPointer, steps],
 	);
 
 	const handleCanvasPointerMove = useCallback(
@@ -331,10 +388,10 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 				const levelDelta =
 					(dragState.startClientY - e.clientY) / pos.rect.height;
 				const level = clamp(dragState.startLevel + levelDelta * 99, 0, 99);
-				const isLastActiveStep = dragState.stepIndex === env.stepCount - 1;
+				const isLastActiveStep = dragState.stepIndex === activeStepCount - 1;
 				const allowed = getStepAllowedXRange(
 					dragState.stepIndex,
-					env.stepCount,
+					activeStepCount,
 					canvasRef.current?.width ?? 1000,
 				);
 				const clampedX = clamp(pos.x, allowed.minX, allowed.maxX);
@@ -372,7 +429,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 		},
 		[
 			dragState,
-			env.stepCount,
+			activeStepCount,
 			getClosestStepAtPointer,
 			getRateForPointerX,
 			getRelativePointerPosition,
@@ -407,30 +464,16 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 					<label className="text-xs flex items-center gap-1">
 						<input
 							type="checkbox"
-							checked={env.loop}
-							onChange={(e) => onChange({ ...env, loop: e.target.checked })}
+							checked={normalizedEnv.loop}
+							onChange={(e) =>
+								commitEnvelope({
+									...normalizedEnv,
+									loop: e.target.checked,
+								})
+							}
 							className="checkbox checkbox-xs"
 						/>
 						Loop
-					</label>
-					<label className="text-xs flex items-center gap-1">
-						<span>Sus</span>
-						<select
-							className="select select-bordered select-xs w-12"
-							value={env.sustainStep}
-							onChange={(e) =>
-								onChange({
-									...env,
-									sustainStep: Number(e.target.value),
-								})
-							}
-						>
-							{env.steps.map((_, i) => (
-								<option key={STEP_KEYS[i]} value={i}>
-									{i + 1}
-								</option>
-							))}
-						</select>
 					</label>
 				</div>
 			</div>
@@ -455,24 +498,31 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 						: "grid grid-cols-2 gap-2 sm:grid-cols-4 2xl:grid-cols-8"
 				}
 			>
-				{env.steps.slice(0, env.stepCount).map((step, i) => {
-					const isLastStep = i === env.stepCount - 1;
+				{steps.map((step, i) => {
+					const isActiveStep = i < activeStepCount;
+					const isEndStep = i === activeStepCount - 1;
+					const isSustainStep = i === sustainStep;
 					return (
 						<div
 							key={STEP_KEYS[i]}
-							className={`rounded-xl border px-1 ${
-								isLastStep
-									? "border-base-300/40 bg-base-300/10 opacity-70"
+							role="group"
+							aria-label={`Step ${i + 1}`}
+							className={`flex flex-col rounded-xl border px-1 transition-colors ${
+								!isActiveStep
+									? "border-base-300/30 bg-base-300/10"
 									: "border-base-300/60 bg-base-300/20"
 							} ${compact ? "py-1.5" : "py-2"}`}
 						>
-							<div className="mb-1 text-center text-4xs uppercase tracking-[0.2em] text-base-content/45">
-								{i + 1}
+							<div className="mb-1 flex items-center justify-start px-1">
+								<div className="text-4xs uppercase tracking-[0.2em] text-base-content/45">
+									{i + 1}
+								</div>
 							</div>
-							<div className="flex flex-col items-center justify-center gap-2">
+							<div className={`flex flex-col items-center justify-center gap-2 ${!isActiveStep ? "opacity-40" : ""}`}>
 								<ControlKnob
 									value={step.level}
 									onChange={(v) => updateStep(i, "level", v)}
+									disabled={!isActiveStep}
 									min={0}
 									max={99}
 									label="Lvl"
@@ -481,48 +531,56 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 									// value as 0 but the stored value is still editable so it
 									// is preserved when the step count is increased.
 									valueFormatter={(v) =>
-										isLastStep ? "0*" : `${Math.round(v)}`
+										isEndStep ? "0*" : `${Math.round(v)}`
 									}
-									color={isLastStep ? "#6b7280" : color}
+									color={
+										!isActiveStep ? "#6b7280" : isEndStep ? "#f59e0b" : color
+									}
 									size={compact ? 26 : 30}
 								/>
 								<ControlKnob
 									value={step.rate}
 									onChange={(v) => updateStep(i, "rate", v)}
+									disabled={!isActiveStep}
 									min={0}
 									max={99}
 									label="Rate"
 									tooltip={`Sets envelope transition speed for step ${i + 1}.`}
 									valueFormatter={(v) => `${Math.round(v)}`}
-									color="#a3a3a3"
+									color={!isActiveStep ? "#6b7280" : "#a3a3a3"}
 									size={compact ? 26 : 30}
 								/>
+							</div>
+							<div className="mt-1 flex w-full flex-col gap-1 pt-1">
+								<button
+									type="button"
+									onClick={() => setSustainStepForIndex(i)}
+									disabled={!isActiveStep}
+									aria-pressed={isSustainStep}
+									className={`rounded border px-1 py-1 text-[0.55rem] font-semibold uppercase tracking-[0.18em] transition-colors ${
+										isSustainStep
+											? "border-warning/60 bg-warning/15 text-warning"
+											: "border-base-300/60 bg-base-100/40 text-base-content/70"
+									} disabled:cursor-not-allowed disabled:opacity-40`}
+								>
+									SUS
+								</button>
+								<button
+									type="button"
+									onClick={() => setEndStepForIndex(i)}
+									aria-pressed={isEndStep}
+									className={`rounded border px-1 py-1 text-[0.55rem] font-semibold uppercase tracking-[0.18em] transition-colors ${
+										isEndStep
+											? "border-cz-gold/60 bg-cz-gold/15 text-cz-gold"
+											: "border-base-300/60 bg-base-100/40 text-base-content/70"
+									}`}
+								>
+									END
+								</button>
 							</div>
 						</div>
 					);
 				})}
-			</div>
-
-			<div className="flex items-center gap-2">
-				<label className="text-xs flex items-center gap-1">
-					<span>Steps</span>
-					<select
-						className="select select-bordered select-xs w-12"
-						value={env.stepCount}
-						onChange={(e) =>
-							onChange({ ...env, stepCount: Number(e.target.value) })
-						}
-					>
-						{[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-							<option key={n} value={n}>
-								{n}
-							</option>
-						))}
-					</select>
-				</label>
-				<span className="text-xs text-base-content/50 ml-auto">
-					Release: L0* R{(env.steps[env.stepCount - 1]?.rate ?? 0).toFixed(0)}
-				</span>
 			</div>
 		</Card>
 	);
