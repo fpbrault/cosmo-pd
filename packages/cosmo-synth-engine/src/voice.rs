@@ -1337,8 +1337,8 @@ fn wrap_voice_phase(phase: &mut f32, cycle_count: &mut u32) {
 
 #[cfg(test)]
 mod tests {
-    use super::{mod_value_for, ModSources};
-    use crate::params::{ModDestination, ModMatrix, ModRoute, ModSource};
+    use super::{mod_value_for, render_voice, ModSources, Voice};
+    use crate::params::{ModDestination, ModMatrix, ModRoute, ModSource, SynthParams};
 
     fn all_sources() -> [ModSource; 7] {
         [
@@ -1596,5 +1596,68 @@ mod tests {
         let modded = super::modulated_line_params(&line, 1, &matrix, &sources);
         assert_eq!(modded.dco_env.steps[0].level, 84);
         assert_eq!(modded.dco_env.steps[0].rate, 62);
+    }
+
+    #[test]
+    fn env_step_modulation_affects_rendered_audio_output() {
+        let mut base_params = SynthParams::default();
+        base_params.mod_matrix = ModMatrix::default();
+
+        let mut modded_params = base_params.clone();
+        modded_params.mod_matrix = ModMatrix {
+            routes: vec![ModRoute {
+                source: ModSource::ModWheel,
+                destination: ModDestination::Line1DcaEnvStep1Level,
+                amount: -1.0,
+                enabled: true,
+            }],
+        };
+
+        let mut base_voice = Voice::new();
+        base_voice.is_silent = false;
+        base_voice.note = Some(60);
+        base_voice.env_note = 60;
+        base_voice.frequency = 440.0;
+        base_voice.current_freq = 440.0;
+        base_voice.target_freq = 440.0;
+        base_voice.velocity = 1.0;
+
+        let mut modded_voice = base_voice.clone();
+
+        let mut base_energy = 0.0_f32;
+        let mut modded_energy = 0.0_f32;
+        for _ in 0..256 {
+            base_energy += render_voice(
+                &mut base_voice,
+                &base_params,
+                0.0,
+                0.0,
+                0.0,
+                48_000.0,
+                0.0,
+                1.0,
+                0.0,
+            )
+            .abs();
+            modded_energy += render_voice(
+                &mut modded_voice,
+                &modded_params,
+                0.0,
+                0.0,
+                0.0,
+                48_000.0,
+                0.0,
+                1.0,
+                0.0,
+            )
+            .abs();
+        }
+
+        assert!(
+            modded_energy < base_energy * 0.8,
+            "expected env-step modulation to reduce rendered energy (base={}, modded={})",
+            base_energy,
+            modded_energy
+        );
     }
 }
