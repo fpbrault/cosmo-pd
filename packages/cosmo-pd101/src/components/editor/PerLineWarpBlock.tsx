@@ -54,8 +54,6 @@ interface PerLineWarpBlockProps {
 	setCzSlotBWaveform: (v: CzWaveform) => void;
 	czWindow: WindowType;
 	setCzWindow: (v: WindowType) => void;
-	keyFollow: number;
-	setKeyFollow: (v: number) => void;
 	algoControlsA: AlgoControlValueV1[];
 	setAlgoControlsA: (value: AlgoControlValueV1[]) => void;
 	algoControlsB: AlgoControlValueV1[];
@@ -100,8 +98,6 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 	setCzSlotBWaveform,
 	czWindow,
 	setCzWindow,
-	keyFollow,
-	setKeyFollow,
 	algoControlsA = [],
 	setAlgoControlsA = () => {},
 	algoControlsB = [],
@@ -522,21 +518,6 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 									color={activeEnv.envColor}
 									compact
 								/>
-								<div className="mt-2 flex items-center gap-2">
-									<span className="text-3xs text-cz-cream uppercase tracking-[0.2em]">
-										Key Follow:
-									</span>
-									<input
-										type="range"
-										min={0}
-										max={9}
-										value={keyFollow}
-										onChange={(e) => setKeyFollow(Number(e.target.value))}
-										className="range range-xs"
-										style={{ accentColor: "var(--color-cz-gold)" }}
-									/>
-									<span className="text-xs text-cz-cream w-4">{keyFollow}</span>
-								</div>
 							</Card>
 						</div>
 					)}
