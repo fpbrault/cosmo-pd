@@ -202,11 +202,7 @@ export function ScopeMiniDisplay({
 				<div className="absolute left-1 top-0.5 text-5xs font-mono text-cz-lcd-fg/60">
 					CH1
 				</div>
-				<canvas
-					ref={canvasRef}
-					className="h-16 w-36"
-					style={{ imageRendering: "pixelated" }}
-				/>
+				<canvas ref={canvasRef} className="h-20 w-48" />
 			</div>
 		</div>
 	);
