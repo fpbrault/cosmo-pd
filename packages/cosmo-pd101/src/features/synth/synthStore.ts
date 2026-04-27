@@ -392,6 +392,11 @@ type SynthActions = {
 	setModWheelVibratoDepth: (v: number) => void;
 	setOctave: (v: number) => void;
 	setModMatrix: (v: ModMatrix) => void;
+	setFxSlotArrayValue: <K extends FxSlotArrayKey>(
+		key: K,
+		slot: number,
+		value: SynthState[K][number],
+	) => void;
 	setFxSlotType: (slot: number, type: FxSlotType) => void;
 	setFxSlotChorus: (slot: number, v: ChorusParams) => void;
 	setFxSlotDelay: (slot: number, v: DelayParams) => void;
@@ -750,6 +755,56 @@ function makeSetter<K extends keyof SynthState>(
 	return (v: SynthState[K]) => set({ [key]: v });
 }
 
+type FxSlotArrayKey =
+	| "fxSlotChoruses"
+	| "fxSlotDelays"
+	| "fxSlotReverbs"
+	| "fxSlotPhasers"
+	| "fxSlotCompressors"
+	| "fxSlotEqs"
+	| "fxSlotGrainDelays"
+	| "fxSlotBitcrushers"
+	| "fxSlotShimmerVerbs"
+	| "fxSlotDistortions"
+	| "fxSlotJunoChoruses"
+	| "fxSlotRingMods"
+	| "fxSlotTremolos"
+	| "fxSlotWavefolders";
+
+const FX_SLOT_ARRAY_KEYS: FxSlotArrayKey[] = [
+	"fxSlotChoruses",
+	"fxSlotDelays",
+	"fxSlotReverbs",
+	"fxSlotPhasers",
+	"fxSlotCompressors",
+	"fxSlotEqs",
+	"fxSlotGrainDelays",
+	"fxSlotBitcrushers",
+	"fxSlotShimmerVerbs",
+	"fxSlotDistortions",
+	"fxSlotJunoChoruses",
+	"fxSlotRingMods",
+	"fxSlotTremolos",
+	"fxSlotWavefolders",
+];
+
+const FX_SLOT_TYPE_TO_ARRAY_KEY: Partial<Record<FxSlotType, FxSlotArrayKey>> = {
+	chorus: "fxSlotChoruses",
+	delay: "fxSlotDelays",
+	reverb: "fxSlotReverbs",
+	phaser: "fxSlotPhasers",
+	compressor: "fxSlotCompressors",
+	eq5Band: "fxSlotEqs",
+	grainDelay: "fxSlotGrainDelays",
+	bitcrusher: "fxSlotBitcrushers",
+	shimmerVerb: "fxSlotShimmerVerbs",
+	distortion: "fxSlotDistortions",
+	junoChorus: "fxSlotJunoChoruses",
+	ringMod: "fxSlotRingMods",
+	tremolo: "fxSlotTremolos",
+	wavefolder: "fxSlotWavefolders",
+};
+
 export const useSynthStore = create<SynthStore>((set, get) => ({
 	...DEFAULT_STATE,
 
@@ -873,97 +928,64 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setModWheelVibratoDepth: (v) => set({ modWheelVibratoDepth: v }),
 	setOctave: (v) => set({ octave: v }),
 	setModMatrix: (v) => set({ modMatrix: v }),
+	setFxSlotArrayValue: ((key: FxSlotArrayKey, slot: number, value: unknown) => {
+		set((s) => {
+			const arr = [...s[key]] as SynthState[typeof key];
+			arr[slot] = value as SynthState[typeof key][number];
+			return { [key]: arr } as Partial<SynthState>;
+		});
+	}) as <K extends FxSlotArrayKey>(
+		key: K,
+		slot: number,
+		value: SynthState[K][number],
+	) => void,
 	setFxSlotType: (slot, type) => {
 		set((s) => {
+			if (slot < 0 || slot > 5) return {};
+
 			const slots = [...s.fxSlotTypes] as typeof s.fxSlotTypes;
 			slots[slot] = type;
-			return { fxSlotTypes: slots };
+
+			const next: Partial<SynthState> = { fxSlotTypes: slots };
+			const slotArrayKey = FX_SLOT_TYPE_TO_ARRAY_KEY[type];
+			if (slotArrayKey) {
+				const defaults = DEFAULT_STATE[slotArrayKey] as SynthState[typeof slotArrayKey];
+				const arr = [...s[slotArrayKey]] as SynthState[typeof slotArrayKey];
+				arr[slot] = { ...defaults[slot] } as SynthState[typeof slotArrayKey][number];
+				(next as Record<string, unknown>)[slotArrayKey] = arr;
+			}
+
+			return next;
 		});
 	},
 	setFxSlotChorus: (slot, v) =>
-		set((s) => {
-			const arr = [...s.fxSlotChoruses] as typeof s.fxSlotChoruses;
-			arr[slot] = v;
-			return { fxSlotChoruses: arr };
-		}),
+		get().setFxSlotArrayValue("fxSlotChoruses", slot, v),
 	setFxSlotDelay: (slot, v) =>
-		set((s) => {
-			const arr = [...s.fxSlotDelays] as typeof s.fxSlotDelays;
-			arr[slot] = v;
-			return { fxSlotDelays: arr };
-		}),
+		get().setFxSlotArrayValue("fxSlotDelays", slot, v),
 	setFxSlotReverb: (slot, v) =>
-		set((s) => {
-			const arr = [...s.fxSlotReverbs] as typeof s.fxSlotReverbs;
-			arr[slot] = v;
-			return { fxSlotReverbs: arr };
-		}),
+		get().setFxSlotArrayValue("fxSlotReverbs", slot, v),
 	setFxSlotPhaser: (slot, v) =>
-		set((s) => {
-			const arr = [...s.fxSlotPhasers] as typeof s.fxSlotPhasers;
-			arr[slot] = v;
-			return { fxSlotPhasers: arr };
-		}),
+		get().setFxSlotArrayValue("fxSlotPhasers", slot, v),
 	setFxSlotCompressor: (slot, v) =>
-		set((s) => {
-			const arr = [...s.fxSlotCompressors] as typeof s.fxSlotCompressors;
-			arr[slot] = v;
-			return { fxSlotCompressors: arr };
-		}),
+		get().setFxSlotArrayValue("fxSlotCompressors", slot, v),
 	setFxSlotEq: (slot, v) =>
-		set((s) => {
-			const arr = [...s.fxSlotEqs] as typeof s.fxSlotEqs;
-			arr[slot] = v;
-			return { fxSlotEqs: arr };
-		}),
+		get().setFxSlotArrayValue("fxSlotEqs", slot, v),
 	setFxSlotGrainDelay: (slot, v) =>
-		set((s) => {
-			const arr = [...s.fxSlotGrainDelays] as typeof s.fxSlotGrainDelays;
-			arr[slot] = v;
-			return { fxSlotGrainDelays: arr };
-		}),
+		get().setFxSlotArrayValue("fxSlotGrainDelays", slot, v),
 	setFxSlotBitcrusher: (slot, v) =>
-		set((s) => {
-			const arr = [...s.fxSlotBitcrushers] as typeof s.fxSlotBitcrushers;
-			arr[slot] = v;
-			return { fxSlotBitcrushers: arr };
-		}),
+		get().setFxSlotArrayValue("fxSlotBitcrushers", slot, v),
 	setFxSlotShimmerVerb: (slot, v) =>
-		set((s) => {
-			const arr = [...s.fxSlotShimmerVerbs] as typeof s.fxSlotShimmerVerbs;
-			arr[slot] = v;
-			return { fxSlotShimmerVerbs: arr };
-		}),
+		get().setFxSlotArrayValue("fxSlotShimmerVerbs", slot, v),
 	setFxSlotDistortion: (slot, v) =>
-		set((s) => {
-			const arr = [...s.fxSlotDistortions] as typeof s.fxSlotDistortions;
-			arr[slot] = v;
-			return { fxSlotDistortions: arr };
-		}),
+		get().setFxSlotArrayValue("fxSlotDistortions", slot, v),
 	setFxSlotJunoChorus: (slot, v) =>
-		set((s) => {
-			const arr = [...s.fxSlotJunoChoruses] as typeof s.fxSlotJunoChoruses;
-			arr[slot] = v;
-			return { fxSlotJunoChoruses: arr };
-		}),
+		get().setFxSlotArrayValue("fxSlotJunoChoruses", slot, v),
 	setFxSlotRingMod: (slot, v) =>
-		set((s) => {
-			const arr = [...s.fxSlotRingMods] as typeof s.fxSlotRingMods;
-			arr[slot] = v;
-			return { fxSlotRingMods: arr };
-		}),
+		get().setFxSlotArrayValue("fxSlotRingMods", slot, v),
 	setFxSlotTremolo: (slot, v) =>
-		set((s) => {
-			const arr = [...s.fxSlotTremolos] as typeof s.fxSlotTremolos;
-			arr[slot] = v;
-			return { fxSlotTremolos: arr };
-		}),
+		get().setFxSlotArrayValue("fxSlotTremolos", slot, v),
 	setFxSlotWavefolder: (slot, v) =>
-		set((s) => {
-			const arr = [...s.fxSlotWavefolders] as typeof s.fxSlotWavefolders;
-			arr[slot] = v;
-			return { fxSlotWavefolders: arr };
-		}),
+		get().setFxSlotArrayValue("fxSlotWavefolders", slot, v),
 	reorderFxSlots: (fromSlot, toSlot) =>
 		set((s) => {
 			if (
@@ -976,30 +998,22 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				return {};
 			}
 
-			const move = <T,>(items: readonly T[]): T[] => {
+			const move = (items: readonly unknown[]): unknown[] => {
 				const next = [...items];
 				const [moved] = next.splice(fromSlot, 1);
 				next.splice(toSlot, 0, moved);
 				return next;
 			};
 
-			return {
+			const next: Partial<SynthState> = {
 				fxSlotTypes: move(s.fxSlotTypes) as typeof s.fxSlotTypes,
-				fxSlotChoruses: move(s.fxSlotChoruses) as typeof s.fxSlotChoruses,
-				fxSlotDelays: move(s.fxSlotDelays) as typeof s.fxSlotDelays,
-				fxSlotReverbs: move(s.fxSlotReverbs) as typeof s.fxSlotReverbs,
-				fxSlotPhasers: move(s.fxSlotPhasers) as typeof s.fxSlotPhasers,
-				fxSlotCompressors: move(s.fxSlotCompressors) as typeof s.fxSlotCompressors,
-				fxSlotEqs: move(s.fxSlotEqs) as typeof s.fxSlotEqs,
-				fxSlotGrainDelays: move(s.fxSlotGrainDelays) as typeof s.fxSlotGrainDelays,
-				fxSlotBitcrushers: move(s.fxSlotBitcrushers) as typeof s.fxSlotBitcrushers,
-				fxSlotShimmerVerbs: move(s.fxSlotShimmerVerbs) as typeof s.fxSlotShimmerVerbs,
-				fxSlotDistortions: move(s.fxSlotDistortions) as typeof s.fxSlotDistortions,
-				fxSlotJunoChoruses: move(s.fxSlotJunoChoruses) as typeof s.fxSlotJunoChoruses,
-				fxSlotRingMods: move(s.fxSlotRingMods) as typeof s.fxSlotRingMods,
-				fxSlotTremolos: move(s.fxSlotTremolos) as typeof s.fxSlotTremolos,
-				fxSlotWavefolders: move(s.fxSlotWavefolders) as typeof s.fxSlotWavefolders,
 			};
+
+			for (const key of FX_SLOT_ARRAY_KEYS) {
+				(next as Record<string, unknown>)[key] = move(s[key]);
+			}
+
+			return next;
 		}),
 
 	// --- gatherState ---
@@ -1020,9 +1034,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			? normalizeAlgoControls(s.algo2B, s.line2AlgoControlsB)
 			: [];
 
-		return {
-			schemaVersion: 1,
-			params: {
+		const params = {
 				lineSelect: s.lineSelect,
 				modMode: s.modMode,
 				octave: s.octave,
@@ -1115,6 +1127,16 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 					depth: s.vibratoDepth,
 					delay: s.vibratoDelay,
 				},
+				compressor: s.fxSlotCompressors[0],
+				eq: s.fxSlotEqs[0],
+				grainDelay: s.fxSlotGrainDelays[0],
+				bitcrusher: s.fxSlotBitcrushers[0],
+				shimmerVerb: s.fxSlotShimmerVerbs[0],
+				distortion: s.fxSlotDistortions[0],
+				junoChorus: s.fxSlotJunoChoruses[0],
+				ringMod: s.fxSlotRingMods[0],
+				tremolo: s.fxSlotTremolos[0],
+				wavefolder: s.fxSlotWavefolders[0],
 				portamento: {
 					enabled: s.portamentoEnabled,
 					mode: s.portamentoMode,
@@ -1171,7 +1193,11 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				fxSlotRingMods: s.fxSlotRingMods,
 				fxSlotTremolos: s.fxSlotTremolos,
 				fxSlotWavefolders: s.fxSlotWavefolders,
-			},
+			} satisfies SynthPresetV1["params"];
+
+		return {
+			schemaVersion: 1,
+			params,
 		};
 	},
 

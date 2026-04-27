@@ -1193,20 +1193,35 @@ pub struct SynthParams {
     pub volume: f32,
     pub poly_mode: PolyMode,
     pub legato: bool,
+    #[serde(default)]
     pub chorus: ChorusParams,
+    #[serde(default)]
     pub delay: DelayParams,
+    #[serde(default)]
     pub reverb: ReverbParams,
+    #[serde(default)]
     pub phaser: PhaserParams,
+    #[serde(default)]
     pub vibrato: VibratoParams,
+    #[serde(default)]
     pub compressor: CompressorParams,
+    #[serde(default)]
     pub eq: EqParams,
+    #[serde(default)]
     pub grain_delay: GrainDelayParams,
+    #[serde(default)]
     pub bitcrusher: BitcrusherParams,
+    #[serde(default)]
     pub shimmer_verb: ShimmerVerbParams,
+    #[serde(default)]
     pub distortion: DistortionParams,
+    #[serde(default)]
     pub juno_chorus: JunoChorusParams,
+    #[serde(default)]
     pub ring_mod: RingModParams,
+    #[serde(default)]
     pub tremolo: TremoloParams,
+    #[serde(default)]
     pub wavefolder: WavefolderParams,
     pub portamento: PortamentoParams,
     pub lfo: LfoParams,
@@ -1385,5 +1400,57 @@ mod tests {
 
         assert_eq!(Algo::Bend.as_cz_waveform(), None);
         assert!(!Algo::Bend.is_cz_waveform());
+    }
+
+    #[test]
+    fn synth_params_deserialize_defaults_when_legacy_fx_blocks_missing() {
+        let mut value = serde_json::to_value(SynthParams::default())
+            .expect("default synth params should serialize");
+
+        let params = value
+            .as_object_mut()
+            .expect("synth params should serialize as an object");
+
+        for key in [
+            "chorus",
+            "delay",
+            "reverb",
+            "phaser",
+            "vibrato",
+            "compressor",
+            "eq",
+            "grainDelay",
+            "bitcrusher",
+            "shimmerVerb",
+            "distortion",
+            "junoChorus",
+            "ringMod",
+            "tremolo",
+            "wavefolder",
+        ] {
+            params.remove(key);
+        }
+
+        let decoded: SynthParams =
+            serde_json::from_value(value).expect("missing legacy fx blocks should default");
+
+        assert_eq!(decoded.chorus.mix, ChorusParams::default().mix);
+        assert_eq!(decoded.delay.mix, DelayParams::default().mix);
+        assert_eq!(decoded.reverb.mix, ReverbParams::default().mix);
+        assert_eq!(decoded.phaser.mix, PhaserParams::default().mix);
+        assert_eq!(decoded.vibrato.depth, VibratoParams::default().depth);
+        assert_eq!(decoded.compressor.ratio, CompressorParams::default().ratio);
+        assert_eq!(decoded.eq.gain750, EqParams::default().gain750);
+        assert_eq!(decoded.grain_delay.density, GrainDelayParams::default().density);
+        assert_eq!(decoded.bitcrusher.bits, BitcrusherParams::default().bits);
+        assert_eq!(
+            decoded.shimmer_verb.shimmer,
+            ShimmerVerbParams::default().shimmer
+        );
+        assert_eq!(decoded.distortion.drive, DistortionParams::default().drive);
+        assert_eq!(decoded.juno_chorus.mode, JunoChorusParams::default().mode);
+        assert_eq!(decoded.ring_mod.carrier_hz, RingModParams::default().carrier_hz);
+        assert_eq!(decoded.tremolo.depth, TremoloParams::default().depth);
+        assert_eq!(decoded.wavefolder.folds, WavefolderParams::default().folds);
     }
 }
