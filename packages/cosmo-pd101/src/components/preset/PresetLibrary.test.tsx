@@ -83,11 +83,16 @@ describe("PresetLibrary", () => {
 
 		const { container } = render(<PresetLibrary {...props} />);
 
-		const saveInput = screen.getByPlaceholderText("Preset name");
-		fireEvent.change(saveInput, { target: { value: "  New Patch  " } });
 		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+		expect(props.onSavePreset).toHaveBeenCalledWith("Local Keys");
+
+		fireEvent.click(screen.getByRole("button", { name: "Save As" }));
+		const saveAsInput = screen.getByPlaceholderText("New preset name");
+		fireEvent.change(saveAsInput, { target: { value: "  New Patch  " } });
+		fireEvent.click(screen.getByRole("button", { name: "Confirm save as" }));
 		expect(props.onSavePreset).toHaveBeenCalledWith("New Patch");
 
+		const saveInput = screen.getByPlaceholderText("Export file name");
 		fireEvent.change(saveInput, { target: { value: "  Snapshot  " } });
 		fireEvent.click(
 			screen.getByRole("button", { name: "Export current state" }),
@@ -177,5 +182,19 @@ describe("PresetLibrary", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Return" }));
 
 		expect(props.onClose).toHaveBeenCalled();
+	});
+
+	it("disables overwrite save when active preset is not local", () => {
+		const props = createProps();
+		render(
+			<PresetLibrary
+				{...props}
+				activeEntryId="builtin:factory-bass"
+				activePresetName="Factory Bass"
+			/>,
+		);
+
+		expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+		expect(screen.getByRole("button", { name: "Save As" })).toBeEnabled();
 	});
 });
