@@ -17,9 +17,9 @@ use cosmo_synth_engine::generators::{
 use cosmo_synth_engine::module_presets::{module_preset_catalog_v1, ModulePresetGroupV1};
 use cosmo_synth_engine::params::{
     engine_enum_value_tooltips_v1, engine_param_ui_meta_v1, Algo, AlgoControlValueV1,
-    BitcrusherParams, ChorusParams, CompressorParams, CzAlgo, CzLineParams, CzWaveform, DelayParams,
-    DistortionParams, EnvStep, EqParams, FilterParams, FilterType, FxSlotConfig, FxSlotType,
-    GrainDelayParams, JunoChorusParams, LfoParams, LfoWaveform, LineParams, LineSelect,
+    BitcrusherParams, ChorusParams, CompressorParams, CzAlgo, CzLineParams, CzWaveform,
+    DelayParams, DistortionParams, EnvStep, EqParams, FilterParams, FilterType, FxSlotConfig,
+    FxSlotType, GrainDelayParams, JunoChorusParams, LfoParams, LfoWaveform, LineParams, LineSelect,
     ModDestination, ModEnvParams, ModMatrix, ModMode, ModRoute, ModSource, PhaserParams, PolyMode,
     PortamentoMode, PortamentoParams, RandomParams, ReverbParams, RingModParams, ShimmerVerbParams,
     StepEnvData, SynthParams, TremoloParams, VibratoParams, WavefolderParams, WindowType,
