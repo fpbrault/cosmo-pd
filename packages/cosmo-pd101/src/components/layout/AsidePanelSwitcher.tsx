@@ -40,9 +40,6 @@ const FX_TAB_SLOT_INDEX: Record<string, number> = {
 	phaser: 5,
 };
 
-// Voice panels stay in the FX grid for layout/LED/color but are navigable (not toggle)
-const VOICE_FX_PANELS = new Set(["phasemod", "vibrato"]);
-
 const FX_TYPE_COLORS: Record<FxSlotType, string> = {
 	empty: "#3b3b3b",
 	chorus: "#818cf8",
@@ -111,10 +108,6 @@ export default function AsidePanelSwitcher<T extends string>({
 	const { value: polyMode, setValue: setPolyMode } = useSynthParam("polyMode");
 	const { value: portamentoEnabled, setValue: setPortamentoEnabled } =
 		useSynthParam("portamentoEnabled");
-	const { value: phaseModEnabled } = useSynthParam("phaseModEnabled");
-	const { value: vibratoEnabled } = useSynthParam("vibratoEnabled");
-	const { setValue: setPhaseModEnabled } = useSynthParam("phaseModEnabled");
-	const { setValue: setVibratoEnabled } = useSynthParam("vibratoEnabled");
 
 	const fxSlots = useSynthStore((s) => s.fxSlots);
 	const setFxSlotEnabled = useSynthStore((s) => s.setFxSlotEnabled);
@@ -123,8 +116,6 @@ export default function AsidePanelSwitcher<T extends string>({
 		const config = fxSlots[slot];
 		if (!config) return false;
 		if (config.type === "empty") return false;
-		if (config.type === "phaseMod") return phaseModEnabled;
-		if (config.type === "vibrato") return vibratoEnabled;
 		return (
 			(config as { params: { enabled?: boolean } }).params?.enabled ?? false
 		);
@@ -134,14 +125,6 @@ export default function AsidePanelSwitcher<T extends string>({
 		const config = fxSlots[slot];
 		if (!config || config.type === "empty") return;
 		const en = getSlotEnabled(slot);
-		if (config.type === "vibrato") {
-			setVibratoEnabled(!en);
-			return;
-		}
-		if (config.type === "phaseMod") {
-			setPhaseModEnabled(!en);
-			return;
-		}
 		setFxSlotEnabled(slot, !en);
 	};
 
@@ -180,9 +163,7 @@ export default function AsidePanelSwitcher<T extends string>({
 	const isToggleTab = (tabId: T): boolean => {
 		const normalized = normalizeTabId(tabId);
 		return (
-			TOGGLE_TAB_IDS.has(normalized) ||
-			(FX_TAB_SLOT_INDEX[normalized] != null &&
-				!VOICE_FX_PANELS.has(normalized))
+			TOGGLE_TAB_IDS.has(normalized) || FX_TAB_SLOT_INDEX[normalized] != null
 		);
 	};
 
@@ -265,7 +246,7 @@ export default function AsidePanelSwitcher<T extends string>({
 		const panelType = child.type as AsidePanelComponent<T>;
 		const normalizedTabId = String(panelType.panelId).toLowerCase();
 		const slot = FX_TAB_SLOT_INDEX[normalizedTabId];
-		if (slot != null && !VOICE_FX_PANELS.has(normalizedTabId)) {
+		if (slot != null) {
 			const type = (fxSlots[slot]?.type ?? "empty") as FxSlotType;
 			return {
 				id: panelType.panelId,
