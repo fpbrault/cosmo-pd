@@ -310,6 +310,10 @@ impl CosmoProcessor {
         voice.anti_click_attack = crate::voice::ANTI_CLICK_ATTACK_SAMPLES;
         voice.last_output_sample = 0.0;
         voice.release_tail_level = 0.0;
+        // Reset DCW dezipper state so a new note always starts slewing from 0
+        // rather than inheriting the previous note's smoothed DCW value.
+        voice.smoothed_dcw1 = 0.0;
+        voice.smoothed_dcw2 = 0.0;
 
         if self.params.vibrato.enabled {
             voice.vibrato_phase = 0.0;

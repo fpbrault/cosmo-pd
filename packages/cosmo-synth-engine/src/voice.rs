@@ -557,7 +557,9 @@ pub fn render_voice(
         if voice.anti_click_fade == 0 {
             voice.zero_cross_stop_pending = true;
             voice.zero_cross_stop_wait = ZERO_CROSS_STOP_MAX_WAIT_SAMPLES;
-            // Track raw waveform crossing while keeping output muted.
+            // Store the post-fade sample so the subsequent zero-cross detector
+            // can compare sign changes on the same processed signal it will
+            // continue to receive (not a pre-fade "raw" value).
             voice.last_output_sample = sample;
             return 0.0;
         }

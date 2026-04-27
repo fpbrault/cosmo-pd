@@ -74,7 +74,9 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
 fn fold_pass(mut p: f32, pivot: f32, softness: f32) -> f32 {
     if p > pivot {
         // Reflect around the configured pivot for continuity at the fold edge.
-        p = (2.0 * pivot - p).max(0.0);
+        // Use abs() for true reflection so values above 2*pivot fold back
+        // rather than clamping to 0 (which would create a flat region and aliasing).
+        p = (2.0 * pivot - p).abs();
     }
     let fold_gain = (1.0 / pivot).min(8.0);
     let softened_gain = fold_gain * (1.0 - softness.clamp(0.0, 1.0)) + softness.clamp(0.0, 1.0);
