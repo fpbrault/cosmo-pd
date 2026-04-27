@@ -1,5 +1,9 @@
 import { isAlgoRefEqual } from "@/lib/synth/algoRef";
-import { PD_ALGOS, type PdAlgo } from "@/lib/synth/pdAlgorithms";
+import {
+	getPdAlgoBehaviorDescription,
+	PD_ALGOS,
+	type PdAlgo,
+} from "@/lib/synth/pdAlgorithms";
 import { HoverInfoTrigger } from "../../layout/HoverInfo";
 
 export default function AlgoIconGrid({
@@ -23,7 +27,7 @@ export default function AlgoIconGrid({
 			style={{ pointerEvents: disabled ? "none" : undefined }}
 		>
 			{PD_ALGOS.map((algo) => {
-				const tooltipText = `Algorithm ${algo.label}`;
+				const tooltipText = `Algorithm ${algo.label}: ${getPdAlgoBehaviorDescription(algo.value)}`;
 
 				return (
 					<HoverInfoTrigger key={algo.key} message={tooltipText}>
