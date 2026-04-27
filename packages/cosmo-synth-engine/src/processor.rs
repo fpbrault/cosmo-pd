@@ -13,9 +13,7 @@ use crate::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use crate::fx::FxChain;
 use crate::generators::PER_LINE_HEADROOM;
 use crate::module_presets;
-use crate::params::{
-    FxSlotConfig, FxSlotType, ModDestination, PolyMode, SynthParams, NUM_VOICES,
-};
+use crate::params::{FxSlotConfig, FxSlotType, ModDestination, PolyMode, SynthParams, NUM_VOICES};
 use crate::voice::{mod_value_for, render_voice, ModSources, Voice};
 
 const SOFT_CLIP_DRIVE: f32 = 1.0;
