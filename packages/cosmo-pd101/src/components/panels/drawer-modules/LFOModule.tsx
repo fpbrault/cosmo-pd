@@ -13,7 +13,7 @@ interface LfoModuleProps {
 }
 
 export default function LfoModule({ id, color }: LfoModuleProps) {
-	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
+	const [selectedPreset, setSelectedPreset] = useState<string>("");
 	// Dynamically resolve the parameter names based on the LFO id
 	const prefix = id === 1 ? "lfo" : "lfo2";
 
@@ -38,10 +38,6 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
-		if (presetId === "custom") {
-			return;
-		}
-
 		const preset = LFO_PRESETS.find((entry) => entry.id === presetId);
 		if (!preset) {
 			return;
@@ -69,8 +65,9 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 			headerControl={
 				<ModulePresetPopover
 					title={`LFO ${id} Presets`}
+					accentColor={color}
 					value={selectedPreset}
-					options={[{ id: "custom", label: "Custom" }, ...LFO_PRESETS]}
+					options={LFO_PRESETS}
 					onChange={handlePresetChange}
 				/>
 			}

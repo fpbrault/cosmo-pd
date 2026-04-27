@@ -7,7 +7,7 @@ import { useSynthParam } from "@/features/synth/SynthParamController";
 import { PHASER_PRESETS } from "@/lib/synth/modulePresets";
 
 export default function PhaserModule() {
-	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
+	const [selectedPreset, setSelectedPreset] = useState<string>("");
 	const { value: phaserEnabled, setValue: setPhaserEnabled } =
 		useSynthParam("phaserEnabled");
 	const { value: phaserRate, setValue: setPhaserRate } =
@@ -21,10 +21,6 @@ export default function PhaserModule() {
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
-		if (presetId === "custom") {
-			return;
-		}
-
 		const preset = PHASER_PRESETS.find((entry) => entry.id === presetId);
 		if (!preset) {
 			return;
@@ -49,8 +45,9 @@ export default function PhaserModule() {
 			headerControl={
 				<ModulePresetPopover
 					title="Phaser Presets"
+					accentColor="#a78bfa"
 					value={selectedPreset}
-					options={[{ id: "custom", label: "Custom" }, ...PHASER_PRESETS]}
+					options={PHASER_PRESETS}
 					onChange={handlePresetChange}
 				/>
 			}

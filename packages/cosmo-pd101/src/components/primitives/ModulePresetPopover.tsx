@@ -10,15 +10,43 @@ type ModulePresetPopoverProps = {
 	value: string;
 	options: ModulePresetOption[];
 	onChange: (value: string) => void;
+	accentColor?: string;
 };
+
+function hexToRgb(hex: string) {
+	const normalized = hex.trim();
+	if (!/^#[\da-fA-F]{6}$/.test(normalized)) {
+		return null;
+	}
+
+	return {
+		r: Number.parseInt(normalized.slice(1, 3), 16),
+		g: Number.parseInt(normalized.slice(3, 5), 16),
+		b: Number.parseInt(normalized.slice(5, 7), 16),
+	};
+}
+
+function colorAlpha(hex: string, alpha: number) {
+	const rgb = hexToRgb(hex);
+	if (!rgb) {
+		return undefined;
+	}
+
+	return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+}
 
 export default function ModulePresetPopover({
 	title,
 	value,
 	options,
 	onChange,
+	accentColor,
 }: ModulePresetPopoverProps) {
 	const detailsRef = useRef<HTMLDetailsElement | null>(null);
+	const borderColor = colorAlpha(accentColor ?? "", 0.65);
+	const softBorderColor = colorAlpha(accentColor ?? "", 0.5);
+	const activeBgColor = colorAlpha(accentColor ?? "", 0.34);
+	const triggerBgColor = colorAlpha(accentColor ?? "", 0.3);
 
 	useEffect(() => {
 		const handleClickOutside = (e: MouseEvent) => {
@@ -29,9 +57,19 @@ export default function ModulePresetPopover({
 				detailsRef.current.open = false;
 			}
 		};
+
+		const handleEscape = (e: KeyboardEvent) => {
+			if (e.key === "Escape" && detailsRef.current?.open) {
+				detailsRef.current.open = false;
+			}
+		};
+
 		document.addEventListener("click", handleClickOutside, true);
-		return () =>
+		document.addEventListener("keydown", handleEscape);
+		return () => {
 			document.removeEventListener("click", handleClickOutside, true);
+			document.removeEventListener("keydown", handleEscape);
+		};
 	}, []);
 
 	return (
@@ -40,14 +78,25 @@ export default function ModulePresetPopover({
 			className="dropdown dropdown-end [&_summary::-webkit-details-marker]:hidden"
 		>
 			<summary
-				className="flex h-5 cursor-pointer items-center gap-1.5 rounded-full border border-cyan-400/35 bg-cyan-950/35 px-2 text-[0.52rem] font-mono uppercase tracking-[0.14em] text-cyan-200 transition hover:border-cyan-300/60 hover:bg-cyan-900/55"
+				className="flex h-5 min-w-20 cursor-pointer items-center justify-center gap-1.5 rounded-[4px] border border-cz-border bg-cz-inset px-2 text-[0.54rem] font-mono font-bold uppercase tracking-[0.14em] text-cz-cream-light shadow-[0_1px_0_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.08)] transition-colors hover:bg-cz-surface"
+				style={{
+					borderColor: softBorderColor,
+					backgroundColor: triggerBgColor,
+				}}
 				aria-label={`${title} presets`}
 			>
+				<span
+					className="inline-block h-1 w-1 rounded-full"
+					style={{ backgroundColor: borderColor }}
+				/>
 				<span>presets</span>
-				<span className="text-cyan-300/80">&lt;&gt;</span>
+				<span className="text-cz-cream-dim">▾</span>
 			</summary>
-			<ul className="menu dropdown-content z-[9999] mt-1.5 w-44 rounded-sm border border-cyan-300/30 bg-[#11141d] p-1 shadow-[0_10px_24px_rgba(0,0,0,0.45)]">
-				<li className="menu-title px-2 py-1 text-[0.58rem] font-mono uppercase tracking-[0.14em] text-cyan-200/70">
+			<ul
+				className="menu dropdown-content z-[9999] mt-1.5 w-44 rounded-md border border-cz-border bg-cz-panel p-1 shadow-[0_10px_24px_rgba(0,0,0,0.5)]"
+				style={{ borderColor: borderColor }}
+			>
+				<li className="menu-title px-2 py-1 text-[0.58rem] font-mono uppercase tracking-[0.14em] text-cz-cream-dim/85">
 					{title}
 				</li>
 				{options.map((option) => {
@@ -56,9 +105,12 @@ export default function ModulePresetPopover({
 						<li key={option.id}>
 							<button
 								type="button"
-								className={`min-h-0 rounded px-2 py-1 text-left text-xs ${
-									active ? "bg-cyan-500/25 text-cyan-100" : "text-zinc-100"
+								className={`min-h-0 rounded px-2 py-1 text-left text-xs transition-colors ${
+									active
+										? "text-cz-cream-light"
+										: "text-cz-cream hover:bg-cz-surface"
 								}`}
+								style={active ? { backgroundColor: activeBgColor } : undefined}
 								onClick={() => {
 									onChange(option.id);
 									if (detailsRef.current) {

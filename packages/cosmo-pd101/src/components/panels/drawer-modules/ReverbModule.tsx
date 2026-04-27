@@ -7,7 +7,7 @@ import { useSynthParam } from "@/features/synth/SynthParamController";
 import { REVERB_PRESETS } from "@/lib/synth/modulePresets";
 
 export default function ReverbModule() {
-	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
+	const [selectedPreset, setSelectedPreset] = useState<string>("");
 	const { value: reverbEnabled, setValue: setReverbEnabled } =
 		useSynthParam("reverbEnabled");
 	const { value: reverbSpace, setValue: setReverbSpace } =
@@ -23,9 +23,6 @@ export default function ReverbModule() {
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
-		if (presetId === "custom") {
-			return;
-		}
 
 		const preset = REVERB_PRESETS.find((entry) => entry.id === presetId);
 		if (!preset) {
@@ -52,8 +49,9 @@ export default function ReverbModule() {
 			headerControl={
 				<ModulePresetPopover
 					title="Reverb Presets"
+					accentColor="#f97316"
 					value={selectedPreset}
-					options={[{ id: "custom", label: "Custom" }, ...REVERB_PRESETS]}
+					options={REVERB_PRESETS}
 					onChange={handlePresetChange}
 				/>
 			}

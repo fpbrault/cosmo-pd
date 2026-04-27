@@ -7,7 +7,7 @@ import { useSynthParam } from "@/features/synth/SynthParamController";
 import { MOD_ENV_PRESETS } from "@/lib/synth/modulePresets";
 
 export default function ModEnveloppeModule() {
-	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
+	const [selectedPreset, setSelectedPreset] = useState<string>("");
 	const { value: modEnvAttack, setValue: setModEnvAttack } =
 		useSynthParam("modEnvAttack");
 	const { value: modEnvDecay, setValue: setModEnvDecay } =
@@ -19,10 +19,6 @@ export default function ModEnveloppeModule() {
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
-		if (presetId === "custom") {
-			return;
-		}
-
 		const preset = MOD_ENV_PRESETS.find((entry) => entry.id === presetId);
 		if (!preset) {
 			return;
@@ -48,8 +44,9 @@ export default function ModEnveloppeModule() {
 			headerControl={
 				<ModulePresetPopover
 					title="Mod Env Presets"
+					accentColor="#c24587"
 					value={selectedPreset}
-					options={[{ id: "custom", label: "Custom" }, ...MOD_ENV_PRESETS]}
+					options={MOD_ENV_PRESETS}
 					onChange={handlePresetChange}
 				/>
 			}

@@ -8,7 +8,7 @@ import { useSynthParam } from "@/features/synth/SynthParamController";
 import { PHASE_MOD_PRESETS } from "@/lib/synth/modulePresets";
 
 export default function PhaseModModule() {
-	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
+	const [selectedPreset, setSelectedPreset] = useState<string>("");
 	const { value: phaseModEnabled, setValue: setPhaseModEnabled } =
 		useSynthParam("phaseModEnabled");
 	const { value: intPmAmount, setValue: setIntPmAmount } =
@@ -19,10 +19,6 @@ export default function PhaseModModule() {
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
-		if (presetId === "custom") {
-			return;
-		}
-
 		const preset = PHASE_MOD_PRESETS.find((entry) => entry.id === presetId);
 		if (!preset) {
 			return;
@@ -46,8 +42,9 @@ export default function PhaseModModule() {
 			headerControl={
 				<ModulePresetPopover
 					title="Phase Mod Presets"
+					accentColor="#be3330"
 					value={selectedPreset}
-					options={[{ id: "custom", label: "Custom" }, ...PHASE_MOD_PRESETS]}
+					options={PHASE_MOD_PRESETS}
 					onChange={handlePresetChange}
 				/>
 			}

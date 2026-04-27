@@ -7,7 +7,7 @@ import { useSynthParam } from "@/features/synth/SynthParamController";
 import { DELAY_PRESETS } from "@/lib/synth/modulePresets";
 
 export default function DelayModule() {
-	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
+	const [selectedPreset, setSelectedPreset] = useState<string>("");
 	const { value: delayEnabled, setValue: setDelayEnabled } =
 		useSynthParam("delayEnabled");
 	const { value: delayTime, setValue: setDelayTime } =
@@ -23,10 +23,6 @@ export default function DelayModule() {
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
-		if (presetId === "custom") {
-			return;
-		}
-
 		const preset = DELAY_PRESETS.find((entry) => entry.id === presetId);
 		if (!preset) {
 			return;
@@ -52,8 +48,9 @@ export default function DelayModule() {
 			headerControl={
 				<ModulePresetPopover
 					title="Delay Presets"
+					accentColor="#d4aa2a"
 					value={selectedPreset}
-					options={[{ id: "custom", label: "Custom" }, ...DELAY_PRESETS]}
+					options={DELAY_PRESETS}
 					onChange={handlePresetChange}
 				/>
 			}
