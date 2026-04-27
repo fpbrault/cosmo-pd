@@ -10,15 +10,17 @@ const COLOR = "#f87171";
 
 export default function BitcrusherModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
-	const bitcrusher = useSynthStore((s) => s.fxSlotBitcrushers[slot]);
-	const setFxSlotBitcrusher = useSynthStore((s) => s.setFxSlotBitcrusher);
+	const rawSlot = useSynthStore((s) => s.fxSlots[slot]);
+	const setFxSlotParams = useSynthStore((s) => s.setFxSlotParams);
+	if (rawSlot?.type !== "bitcrusher") return null;
+	const bitcrusher = rawSlot.params;
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
 		if (presetId === "custom") return;
 		const preset = BITCRUSHER_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
-		setFxSlotBitcrusher(slot, preset.patch.bitcrusher);
+		setFxSlotParams(slot, preset.patch.bitcrusher);
 		requestApplyModulePreset({
 			module: "bitcrusher",
 			preset: preset.id,
@@ -40,13 +42,11 @@ export default function BitcrusherModule({ slot }: { slot: number }) {
 				/>
 			}
 			enabled={bitcrusher.enabled ?? false}
-			onToggle={() =>
-				setFxSlotBitcrusher(slot, { ...bitcrusher, enabled: !bitcrusher.enabled })
-			}
+			onToggle={() => setFxSlotParams(slot, { enabled: !bitcrusher.enabled })}
 		>
 			<ControlKnob
 				value={bitcrusher.bits ?? 8}
-				onChange={(v) => setFxSlotBitcrusher(slot, { ...bitcrusher, bits: v })}
+				onChange={(v) => setFxSlotParams(slot, { bits: v })}
 				min={2}
 				max={16}
 				defaultValue={8}
@@ -57,7 +57,7 @@ export default function BitcrusherModule({ slot }: { slot: number }) {
 			/>
 			<ControlKnob
 				value={bitcrusher.rateReduction ?? 1}
-				onChange={(v) => setFxSlotBitcrusher(slot, { ...bitcrusher, rateReduction: v })}
+				onChange={(v) => setFxSlotParams(slot, { rateReduction: v })}
 				min={1}
 				max={16}
 				defaultValue={1}
@@ -68,7 +68,7 @@ export default function BitcrusherModule({ slot }: { slot: number }) {
 			/>
 			<ControlKnob
 				value={bitcrusher.mix ?? 1}
-				onChange={(v) => setFxSlotBitcrusher(slot, { ...bitcrusher, mix: v })}
+				onChange={(v) => setFxSlotParams(slot, { mix: v })}
 				min={0}
 				max={1}
 				defaultValue={1}

@@ -8,8 +8,10 @@ import { REVERB_PRESETS } from "@/lib/synth/modulePresets";
 
 export default function ReverbModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
-	const reverb = useSynthStore((s) => s.fxSlotReverbs[slot]);
-	const setFxSlotReverb = useSynthStore((s) => s.setFxSlotReverb);
+	const rawSlot = useSynthStore((s) => s.fxSlots[slot]);
+	const setFxSlotParams = useSynthStore((s) => s.setFxSlotParams);
+	if (rawSlot?.type !== "reverb") return null;
+	const reverb = rawSlot.params;
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
@@ -22,7 +24,7 @@ export default function ReverbModule({ slot }: { slot: number }) {
 			return;
 		}
 
-		setFxSlotReverb(slot, preset.patch.reverb);
+		setFxSlotParams(slot, preset.patch.reverb);
 		requestApplyModulePreset({
 			module: "reverb",
 			preset: preset.id,
@@ -44,11 +46,11 @@ export default function ReverbModule({ slot }: { slot: number }) {
 			}
 			meta="FDN"
 			enabled={reverb.enabled}
-			onToggle={() => setFxSlotReverb(slot, { ...reverb, enabled: !reverb.enabled })}
+			onToggle={() => setFxSlotParams(slot, { enabled: !reverb.enabled })}
 		>
 			<ControlKnob
 				value={reverb.space}
-				onChange={(value) => setFxSlotReverb(slot, { ...reverb, space: value })}
+				onChange={(value) => setFxSlotParams(slot, { space: value })}
 				min={0}
 				max={1}
 				defaultValue={0.5}
@@ -59,7 +61,7 @@ export default function ReverbModule({ slot }: { slot: number }) {
 			/>
 			<ControlKnob
 				value={reverb.predelay}
-				onChange={(value) => setFxSlotReverb(slot, { ...reverb, predelay: value })}
+				onChange={(value) => setFxSlotParams(slot, { predelay: value })}
 				min={0}
 				max={0.1}
 				defaultValue={0}
@@ -70,7 +72,7 @@ export default function ReverbModule({ slot }: { slot: number }) {
 			/>
 			<ControlKnob
 				value={reverb.distance}
-				onChange={(value) => setFxSlotReverb(slot, { ...reverb, distance: value })}
+				onChange={(value) => setFxSlotParams(slot, { distance: value })}
 				min={0}
 				max={1}
 				defaultValue={0.3}
@@ -81,9 +83,7 @@ export default function ReverbModule({ slot }: { slot: number }) {
 			/>
 			<ControlKnob
 				value={reverb.character}
-				onChange={(value) =>
-					setFxSlotReverb(slot, { ...reverb, character: value })
-				}
+				onChange={(value) => setFxSlotParams(slot, { character: value })}
 				min={0}
 				max={1}
 				defaultValue={0.65}
@@ -94,7 +94,7 @@ export default function ReverbModule({ slot }: { slot: number }) {
 			/>
 			<ControlKnob
 				value={reverb.mix}
-				onChange={(value) => setFxSlotReverb(slot, { ...reverb, mix: value })}
+				onChange={(value) => setFxSlotParams(slot, { mix: value })}
 				min={0}
 				max={1}
 				defaultValue={0.3}

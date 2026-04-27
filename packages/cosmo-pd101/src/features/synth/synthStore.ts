@@ -8,31 +8,18 @@ import {
 import type {
 	Algo,
 	AlgoControlValueV1,
-	BitcrusherParams,
-	ChorusParams,
-	CompressorParams,
 	CzWaveform,
-	DelayParams,
-	DistortionParams,
-	EqParams,
 	FilterType,
+	FxSlotConfig,
 	FxSlotType,
-	GrainDelayParams,
-	JunoChorusParams,
 	LfoWaveform,
 	LineSelect,
 	ModMatrix,
 	ModMode,
-	PhaserParams,
 	PolyMode,
 	PortamentoMode,
-	ReverbParams,
-	RingModParams,
-	ShimmerVerbParams,
 	StepEnvData,
 	SynthPresetV1,
-	TremoloParams,
-	WavefolderParams,
 	WindowType,
 } from "@/lib/synth/bindings/synth";
 import { ALGO_DEFINITIONS_V1 } from "@/lib/synth/bindings/synth";
@@ -91,6 +78,148 @@ function inferCzWaveform(
 	}
 	return fallback;
 }
+
+// ---------------------------------------------------------------------------
+// FX slot helpers
+// ---------------------------------------------------------------------------
+
+/** Mirror of Rust FxSlotConfig::default_for_type — creates an enabled config. */
+function makeDefaultFxSlotConfig(type: FxSlotType): FxSlotConfig {
+	switch (type) {
+		case "empty":
+			return { type: "empty" };
+		case "phaseMod":
+			return { type: "phaseMod" };
+		case "chorus":
+			return {
+				type: "chorus",
+				params: { enabled: true, rate: 0.8, depth: 3, mix: 0.5 },
+			};
+		case "delay":
+			return {
+				type: "delay",
+				params: {
+					enabled: true,
+					time: 0.3,
+					feedback: 0.35,
+					mix: 0.5,
+					tapeMode: false,
+					warmth: 0.5,
+				},
+			};
+		case "reverb":
+			return {
+				type: "reverb",
+				params: {
+					enabled: true,
+					mix: 0.5,
+					space: 0.5,
+					predelay: 0,
+					distance: 0.3,
+					character: 0.65,
+				},
+			};
+		case "phaser":
+			return {
+				type: "phaser",
+				params: { enabled: true, rate: 0.5, depth: 1, mix: 0.5, feedback: 0.5 },
+			};
+		case "vibrato":
+			return {
+				type: "vibrato",
+				params: { enabled: true, waveform: 1, rate: 55, depth: 8, delay: 120 },
+			};
+		case "compressor":
+			return {
+				type: "compressor",
+				params: {
+					enabled: true,
+					thresholdDb: -12,
+					ratio: 4,
+					attackMs: 5,
+					releaseMs: 100,
+					makeupDb: 6,
+					mix: 1,
+				},
+			};
+		case "eq5Band":
+			return {
+				type: "eq5Band",
+				params: {
+					enabled: true,
+					gain80: 0,
+					gain240: 0,
+					gain750: 0,
+					gain2200: 0,
+					gain8000: 0,
+				},
+			};
+		case "grainDelay":
+			return {
+				type: "grainDelay",
+				params: {
+					enabled: true,
+					time: 0.25,
+					scatter: 0,
+					density: 0.5,
+					mix: 0.5,
+				},
+			};
+		case "bitcrusher":
+			return {
+				type: "bitcrusher",
+				params: { enabled: true, bits: 8, rateReduction: 1, mix: 1 },
+			};
+		case "shimmerVerb":
+			return {
+				type: "shimmerVerb",
+				params: { enabled: true, shimmer: 0.4, space: 0.7, mix: 0.5 },
+			};
+		case "distortion":
+			return {
+				type: "distortion",
+				params: { enabled: true, drive: 0.5, tone: 0.5, mix: 1 },
+			};
+		case "junoChorus":
+			return {
+				type: "junoChorus",
+				params: { enabled: true, mode: 0, mix: 0.5 },
+			};
+		case "ringMod":
+			return {
+				type: "ringMod",
+				params: { enabled: true, carrierHz: 440, mix: 1 },
+			};
+		case "tremolo":
+			return {
+				type: "tremolo",
+				params: { enabled: true, rate: 4, depth: 0.5, waveform: 0, mix: 1 },
+			};
+		case "wavefolder":
+			return {
+				type: "wavefolder",
+				params: { enabled: true, drive: 0.5, folds: 0.5, mix: 1 },
+			};
+	}
+}
+
+type FxSlotTuple = [
+	FxSlotConfig,
+	FxSlotConfig,
+	FxSlotConfig,
+	FxSlotConfig,
+	FxSlotConfig,
+	FxSlotConfig,
+];
+
+const EMPTY_FX_SLOTS: FxSlotTuple = [
+	{ type: "empty" },
+	{ type: "empty" },
+	{ type: "empty" },
+	{ type: "empty" },
+	{ type: "empty" },
+	{ type: "empty" },
+];
 
 // ---------------------------------------------------------------------------
 // Flat state shape — mirrors the old individual useState fields
@@ -216,56 +345,8 @@ export type SynthState = {
 	modWheelVibratoDepth: number;
 	octave: number;
 	modMatrix: ModMatrix;
-	fxSlotTypes: [
-		FxSlotType,
-		FxSlotType,
-		FxSlotType,
-		FxSlotType,
-		FxSlotType,
-		FxSlotType,
-	];
-	fxSlotChoruses: [
-		ChorusParams,
-		ChorusParams,
-		ChorusParams,
-		ChorusParams,
-		ChorusParams,
-		ChorusParams,
-	];
-	fxSlotDelays: [
-		DelayParams,
-		DelayParams,
-		DelayParams,
-		DelayParams,
-		DelayParams,
-		DelayParams,
-	];
-	fxSlotReverbs: [
-		ReverbParams,
-		ReverbParams,
-		ReverbParams,
-		ReverbParams,
-		ReverbParams,
-		ReverbParams,
-	];
-	fxSlotPhasers: [
-		PhaserParams,
-		PhaserParams,
-		PhaserParams,
-		PhaserParams,
-		PhaserParams,
-		PhaserParams,
-	];
-	fxSlotCompressors: [CompressorParams, CompressorParams, CompressorParams, CompressorParams, CompressorParams, CompressorParams];
-	fxSlotEqs: [EqParams, EqParams, EqParams, EqParams, EqParams, EqParams];
-	fxSlotGrainDelays: [GrainDelayParams, GrainDelayParams, GrainDelayParams, GrainDelayParams, GrainDelayParams, GrainDelayParams];
-	fxSlotBitcrushers: [BitcrusherParams, BitcrusherParams, BitcrusherParams, BitcrusherParams, BitcrusherParams, BitcrusherParams];
-	fxSlotShimmerVerbs: [ShimmerVerbParams, ShimmerVerbParams, ShimmerVerbParams, ShimmerVerbParams, ShimmerVerbParams, ShimmerVerbParams];
-	fxSlotDistortions: [DistortionParams, DistortionParams, DistortionParams, DistortionParams, DistortionParams, DistortionParams];
-	fxSlotJunoChoruses: [JunoChorusParams, JunoChorusParams, JunoChorusParams, JunoChorusParams, JunoChorusParams, JunoChorusParams];
-	fxSlotRingMods: [RingModParams, RingModParams, RingModParams, RingModParams, RingModParams, RingModParams];
-	fxSlotTremolos: [TremoloParams, TremoloParams, TremoloParams, TremoloParams, TremoloParams, TremoloParams];
-	fxSlotWavefolders: [WavefolderParams, WavefolderParams, WavefolderParams, WavefolderParams, WavefolderParams, WavefolderParams];
+	/** Unified per-slot FX configuration — all 6 slots. */
+	fxSlots: FxSlotTuple;
 };
 
 // ---------------------------------------------------------------------------
@@ -392,26 +473,15 @@ type SynthActions = {
 	setModWheelVibratoDepth: (v: number) => void;
 	setOctave: (v: number) => void;
 	setModMatrix: (v: ModMatrix) => void;
-	setFxSlotArrayValue: <K extends FxSlotArrayKey>(
-		key: K,
-		slot: number,
-		value: SynthState[K][number],
-	) => void;
+	/** Replace the effect type in a slot (resets params to enabled defaults). */
 	setFxSlotType: (slot: number, type: FxSlotType) => void;
-	setFxSlotChorus: (slot: number, v: ChorusParams) => void;
-	setFxSlotDelay: (slot: number, v: DelayParams) => void;
-	setFxSlotReverb: (slot: number, v: ReverbParams) => void;
-	setFxSlotPhaser: (slot: number, v: PhaserParams) => void;
-	setFxSlotCompressor: (slot: number, v: CompressorParams) => void;
-	setFxSlotEq: (slot: number, v: EqParams) => void;
-	setFxSlotGrainDelay: (slot: number, v: GrainDelayParams) => void;
-	setFxSlotBitcrusher: (slot: number, v: BitcrusherParams) => void;
-	setFxSlotShimmerVerb: (slot: number, v: ShimmerVerbParams) => void;
-	setFxSlotDistortion: (slot: number, v: DistortionParams) => void;
-	setFxSlotJunoChorus: (slot: number, v: JunoChorusParams) => void;
-	setFxSlotRingMod: (slot: number, v: RingModParams) => void;
-	setFxSlotTremolo: (slot: number, v: TremoloParams) => void;
-	setFxSlotWavefolder: (slot: number, v: WavefolderParams) => void;
+	/** Toggle the enabled flag on a slot that has params. */
+	setFxSlotEnabled: (slot: number, enabled: boolean) => void;
+	/** Shallow-merge `patch` into the params of an effect slot. */
+	setFxSlotParams: (
+		slot: number,
+		patch: Partial<Record<string, unknown>>,
+	) => void;
 	reorderFxSlots: (fromSlot: number, toSlot: number) => void;
 
 	gatherState: () => SynthPresetV1;
@@ -544,203 +614,7 @@ const DEFAULT_STATE: SynthState = {
 	modWheelVibratoDepth: 0,
 	octave: 0,
 	modMatrix: { routes: [] },
-	fxSlotTypes: ["chorus", "delay", "reverb", "vibrato", "phaseMod", "phaser"],
-	fxSlotChoruses: [
-		{ enabled: false, rate: 0.8, depth: 3, mix: 0 },
-		{ enabled: false, rate: 0.8, depth: 3, mix: 0 },
-		{ enabled: false, rate: 0.8, depth: 3, mix: 0 },
-		{ enabled: false, rate: 0.8, depth: 3, mix: 0 },
-		{ enabled: false, rate: 0.8, depth: 3, mix: 0 },
-		{ enabled: false, rate: 0.8, depth: 3, mix: 0 },
-	],
-	fxSlotDelays: [
-		{
-			enabled: false,
-			time: 0.3,
-			feedback: 0.35,
-			mix: 0,
-			tapeMode: false,
-			warmth: 0.5,
-		},
-		{
-			enabled: false,
-			time: 0.3,
-			feedback: 0.35,
-			mix: 0,
-			tapeMode: false,
-			warmth: 0.5,
-		},
-		{
-			enabled: false,
-			time: 0.3,
-			feedback: 0.35,
-			mix: 0,
-			tapeMode: false,
-			warmth: 0.5,
-		},
-		{
-			enabled: false,
-			time: 0.3,
-			feedback: 0.35,
-			mix: 0,
-			tapeMode: false,
-			warmth: 0.5,
-		},
-		{
-			enabled: false,
-			time: 0.3,
-			feedback: 0.35,
-			mix: 0,
-			tapeMode: false,
-			warmth: 0.5,
-		},
-		{
-			enabled: false,
-			time: 0.3,
-			feedback: 0.35,
-			mix: 0,
-			tapeMode: false,
-			warmth: 0.5,
-		},
-	],
-	fxSlotReverbs: [
-		{
-			enabled: false,
-			mix: 0,
-			space: 0.5,
-			predelay: 0,
-			distance: 0.3,
-			character: 0.65,
-		},
-		{
-			enabled: false,
-			mix: 0,
-			space: 0.5,
-			predelay: 0,
-			distance: 0.3,
-			character: 0.65,
-		},
-		{
-			enabled: false,
-			mix: 0,
-			space: 0.5,
-			predelay: 0,
-			distance: 0.3,
-			character: 0.65,
-		},
-		{
-			enabled: false,
-			mix: 0,
-			space: 0.5,
-			predelay: 0,
-			distance: 0.3,
-			character: 0.65,
-		},
-		{
-			enabled: false,
-			mix: 0,
-			space: 0.5,
-			predelay: 0,
-			distance: 0.3,
-			character: 0.65,
-		},
-		{
-			enabled: false,
-			mix: 0,
-			space: 0.5,
-			predelay: 0,
-			distance: 0.3,
-			character: 0.65,
-		},
-	],
-	fxSlotPhasers: [
-		{ enabled: false, rate: 0.5, depth: 1, mix: 0, feedback: 0.5 },
-		{ enabled: false, rate: 0.5, depth: 1, mix: 0, feedback: 0.5 },
-		{ enabled: false, rate: 0.5, depth: 1, mix: 0, feedback: 0.5 },
-		{ enabled: false, rate: 0.5, depth: 1, mix: 0, feedback: 0.5 },
-		{ enabled: false, rate: 0.5, depth: 1, mix: 0, feedback: 0.5 },
-		{ enabled: false, rate: 0.5, depth: 1, mix: 0, feedback: 0.5 },
-	],
-	fxSlotCompressors: [
-		{ enabled: false, thresholdDb: -12, ratio: 4, attackMs: 5, releaseMs: 100, makeupDb: 6, mix: 1 },
-		{ enabled: false, thresholdDb: -12, ratio: 4, attackMs: 5, releaseMs: 100, makeupDb: 6, mix: 1 },
-		{ enabled: false, thresholdDb: -12, ratio: 4, attackMs: 5, releaseMs: 100, makeupDb: 6, mix: 1 },
-		{ enabled: false, thresholdDb: -12, ratio: 4, attackMs: 5, releaseMs: 100, makeupDb: 6, mix: 1 },
-		{ enabled: false, thresholdDb: -12, ratio: 4, attackMs: 5, releaseMs: 100, makeupDb: 6, mix: 1 },
-		{ enabled: false, thresholdDb: -12, ratio: 4, attackMs: 5, releaseMs: 100, makeupDb: 6, mix: 1 },
-	],
-	fxSlotEqs: [
-		{ enabled: false, gain80: 0, gain240: 0, gain750: 0, gain2200: 0, gain8000: 0 },
-		{ enabled: false, gain80: 0, gain240: 0, gain750: 0, gain2200: 0, gain8000: 0 },
-		{ enabled: false, gain80: 0, gain240: 0, gain750: 0, gain2200: 0, gain8000: 0 },
-		{ enabled: false, gain80: 0, gain240: 0, gain750: 0, gain2200: 0, gain8000: 0 },
-		{ enabled: false, gain80: 0, gain240: 0, gain750: 0, gain2200: 0, gain8000: 0 },
-		{ enabled: false, gain80: 0, gain240: 0, gain750: 0, gain2200: 0, gain8000: 0 },
-	],
-	fxSlotGrainDelays: [
-		{ enabled: false, time: 0.25, scatter: 0, density: 0.5, mix: 0 },
-		{ enabled: false, time: 0.25, scatter: 0, density: 0.5, mix: 0 },
-		{ enabled: false, time: 0.25, scatter: 0, density: 0.5, mix: 0 },
-		{ enabled: false, time: 0.25, scatter: 0, density: 0.5, mix: 0 },
-		{ enabled: false, time: 0.25, scatter: 0, density: 0.5, mix: 0 },
-		{ enabled: false, time: 0.25, scatter: 0, density: 0.5, mix: 0 },
-	],
-	fxSlotBitcrushers: [
-		{ enabled: false, bits: 8, rateReduction: 1, mix: 1 },
-		{ enabled: false, bits: 8, rateReduction: 1, mix: 1 },
-		{ enabled: false, bits: 8, rateReduction: 1, mix: 1 },
-		{ enabled: false, bits: 8, rateReduction: 1, mix: 1 },
-		{ enabled: false, bits: 8, rateReduction: 1, mix: 1 },
-		{ enabled: false, bits: 8, rateReduction: 1, mix: 1 },
-	],
-	fxSlotShimmerVerbs: [
-		{ enabled: false, shimmer: 0.4, space: 0.7, mix: 0 },
-		{ enabled: false, shimmer: 0.4, space: 0.7, mix: 0 },
-		{ enabled: false, shimmer: 0.4, space: 0.7, mix: 0 },
-		{ enabled: false, shimmer: 0.4, space: 0.7, mix: 0 },
-		{ enabled: false, shimmer: 0.4, space: 0.7, mix: 0 },
-		{ enabled: false, shimmer: 0.4, space: 0.7, mix: 0 },
-	],
-	fxSlotDistortions: [
-		{ enabled: false, drive: 0.5, tone: 0.5, mix: 1 },
-		{ enabled: false, drive: 0.5, tone: 0.5, mix: 1 },
-		{ enabled: false, drive: 0.5, tone: 0.5, mix: 1 },
-		{ enabled: false, drive: 0.5, tone: 0.5, mix: 1 },
-		{ enabled: false, drive: 0.5, tone: 0.5, mix: 1 },
-		{ enabled: false, drive: 0.5, tone: 0.5, mix: 1 },
-	],
-	fxSlotJunoChoruses: [
-		{ enabled: false, mode: 0, mix: 0.5 },
-		{ enabled: false, mode: 0, mix: 0.5 },
-		{ enabled: false, mode: 0, mix: 0.5 },
-		{ enabled: false, mode: 0, mix: 0.5 },
-		{ enabled: false, mode: 0, mix: 0.5 },
-		{ enabled: false, mode: 0, mix: 0.5 },
-	],
-	fxSlotRingMods: [
-		{ enabled: false, carrierHz: 440, mix: 1 },
-		{ enabled: false, carrierHz: 440, mix: 1 },
-		{ enabled: false, carrierHz: 440, mix: 1 },
-		{ enabled: false, carrierHz: 440, mix: 1 },
-		{ enabled: false, carrierHz: 440, mix: 1 },
-		{ enabled: false, carrierHz: 440, mix: 1 },
-	],
-	fxSlotTremolos: [
-		{ enabled: false, rate: 4, depth: 0.5, waveform: 0, mix: 1 },
-		{ enabled: false, rate: 4, depth: 0.5, waveform: 0, mix: 1 },
-		{ enabled: false, rate: 4, depth: 0.5, waveform: 0, mix: 1 },
-		{ enabled: false, rate: 4, depth: 0.5, waveform: 0, mix: 1 },
-		{ enabled: false, rate: 4, depth: 0.5, waveform: 0, mix: 1 },
-		{ enabled: false, rate: 4, depth: 0.5, waveform: 0, mix: 1 },
-	],
-	fxSlotWavefolders: [
-		{ enabled: false, drive: 0.5, folds: 0.5, mix: 1 },
-		{ enabled: false, drive: 0.5, folds: 0.5, mix: 1 },
-		{ enabled: false, drive: 0.5, folds: 0.5, mix: 1 },
-		{ enabled: false, drive: 0.5, folds: 0.5, mix: 1 },
-		{ enabled: false, drive: 0.5, folds: 0.5, mix: 1 },
-		{ enabled: false, drive: 0.5, folds: 0.5, mix: 1 },
-	],
+	fxSlots: EMPTY_FX_SLOTS,
 };
 
 // ---------------------------------------------------------------------------
@@ -754,56 +628,6 @@ function makeSetter<K extends keyof SynthState>(
 ) {
 	return (v: SynthState[K]) => set({ [key]: v });
 }
-
-type FxSlotArrayKey =
-	| "fxSlotChoruses"
-	| "fxSlotDelays"
-	| "fxSlotReverbs"
-	| "fxSlotPhasers"
-	| "fxSlotCompressors"
-	| "fxSlotEqs"
-	| "fxSlotGrainDelays"
-	| "fxSlotBitcrushers"
-	| "fxSlotShimmerVerbs"
-	| "fxSlotDistortions"
-	| "fxSlotJunoChoruses"
-	| "fxSlotRingMods"
-	| "fxSlotTremolos"
-	| "fxSlotWavefolders";
-
-const FX_SLOT_ARRAY_KEYS: FxSlotArrayKey[] = [
-	"fxSlotChoruses",
-	"fxSlotDelays",
-	"fxSlotReverbs",
-	"fxSlotPhasers",
-	"fxSlotCompressors",
-	"fxSlotEqs",
-	"fxSlotGrainDelays",
-	"fxSlotBitcrushers",
-	"fxSlotShimmerVerbs",
-	"fxSlotDistortions",
-	"fxSlotJunoChoruses",
-	"fxSlotRingMods",
-	"fxSlotTremolos",
-	"fxSlotWavefolders",
-];
-
-const FX_SLOT_TYPE_TO_ARRAY_KEY: Partial<Record<FxSlotType, FxSlotArrayKey>> = {
-	chorus: "fxSlotChoruses",
-	delay: "fxSlotDelays",
-	reverb: "fxSlotReverbs",
-	phaser: "fxSlotPhasers",
-	compressor: "fxSlotCompressors",
-	eq5Band: "fxSlotEqs",
-	grainDelay: "fxSlotGrainDelays",
-	bitcrusher: "fxSlotBitcrushers",
-	shimmerVerb: "fxSlotShimmerVerbs",
-	distortion: "fxSlotDistortions",
-	junoChorus: "fxSlotJunoChoruses",
-	ringMod: "fxSlotRingMods",
-	tremolo: "fxSlotTremolos",
-	wavefolder: "fxSlotWavefolders",
-};
 
 export const useSynthStore = create<SynthStore>((set, get) => ({
 	...DEFAULT_STATE,
@@ -928,64 +752,46 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setModWheelVibratoDepth: (v) => set({ modWheelVibratoDepth: v }),
 	setOctave: (v) => set({ octave: v }),
 	setModMatrix: (v) => set({ modMatrix: v }),
-	setFxSlotArrayValue: ((key: FxSlotArrayKey, slot: number, value: unknown) => {
-		set((s) => {
-			const arr = [...s[key]] as SynthState[typeof key];
-			arr[slot] = value as SynthState[typeof key][number];
-			return { [key]: arr } as Partial<SynthState>;
-		});
-	}) as <K extends FxSlotArrayKey>(
-		key: K,
-		slot: number,
-		value: SynthState[K][number],
-	) => void,
 	setFxSlotType: (slot, type) => {
+		if (slot < 0 || slot > 5) return;
 		set((s) => {
-			if (slot < 0 || slot > 5) return {};
-
-			const slots = [...s.fxSlotTypes] as typeof s.fxSlotTypes;
-			slots[slot] = type;
-
-			const next: Partial<SynthState> = { fxSlotTypes: slots };
-			const slotArrayKey = FX_SLOT_TYPE_TO_ARRAY_KEY[type];
-			if (slotArrayKey) {
-				const defaults = DEFAULT_STATE[slotArrayKey] as SynthState[typeof slotArrayKey];
-				const arr = [...s[slotArrayKey]] as SynthState[typeof slotArrayKey];
-				arr[slot] = { ...defaults[slot] } as SynthState[typeof slotArrayKey][number];
-				(next as Record<string, unknown>)[slotArrayKey] = arr;
-			}
-
-			return next;
+			const slots = [...s.fxSlots] as FxSlotTuple;
+			slots[slot] = makeDefaultFxSlotConfig(type);
+			return { fxSlots: slots };
 		});
 	},
-	setFxSlotChorus: (slot, v) =>
-		get().setFxSlotArrayValue("fxSlotChoruses", slot, v),
-	setFxSlotDelay: (slot, v) =>
-		get().setFxSlotArrayValue("fxSlotDelays", slot, v),
-	setFxSlotReverb: (slot, v) =>
-		get().setFxSlotArrayValue("fxSlotReverbs", slot, v),
-	setFxSlotPhaser: (slot, v) =>
-		get().setFxSlotArrayValue("fxSlotPhasers", slot, v),
-	setFxSlotCompressor: (slot, v) =>
-		get().setFxSlotArrayValue("fxSlotCompressors", slot, v),
-	setFxSlotEq: (slot, v) =>
-		get().setFxSlotArrayValue("fxSlotEqs", slot, v),
-	setFxSlotGrainDelay: (slot, v) =>
-		get().setFxSlotArrayValue("fxSlotGrainDelays", slot, v),
-	setFxSlotBitcrusher: (slot, v) =>
-		get().setFxSlotArrayValue("fxSlotBitcrushers", slot, v),
-	setFxSlotShimmerVerb: (slot, v) =>
-		get().setFxSlotArrayValue("fxSlotShimmerVerbs", slot, v),
-	setFxSlotDistortion: (slot, v) =>
-		get().setFxSlotArrayValue("fxSlotDistortions", slot, v),
-	setFxSlotJunoChorus: (slot, v) =>
-		get().setFxSlotArrayValue("fxSlotJunoChoruses", slot, v),
-	setFxSlotRingMod: (slot, v) =>
-		get().setFxSlotArrayValue("fxSlotRingMods", slot, v),
-	setFxSlotTremolo: (slot, v) =>
-		get().setFxSlotArrayValue("fxSlotTremolos", slot, v),
-	setFxSlotWavefolder: (slot, v) =>
-		get().setFxSlotArrayValue("fxSlotWavefolders", slot, v),
+	setFxSlotEnabled: (slot, enabled) => {
+		set((s) => {
+			const config = s.fxSlots[slot];
+			if (!config || config.type === "empty" || config.type === "phaseMod")
+				return {};
+			const slots = [...s.fxSlots] as FxSlotTuple;
+			slots[slot] = {
+				...config,
+				params: {
+					...(config as { params: Record<string, unknown> }).params,
+					enabled,
+				},
+			};
+			return { fxSlots: slots };
+		});
+	},
+	setFxSlotParams: (slot, patch) => {
+		set((s) => {
+			const config = s.fxSlots[slot];
+			if (!config || config.type === "empty" || config.type === "phaseMod")
+				return {};
+			const slots = [...s.fxSlots] as FxSlotTuple;
+			slots[slot] = {
+				...config,
+				params: {
+					...(config as { params: Record<string, unknown> }).params,
+					...patch,
+				},
+			};
+			return { fxSlots: slots };
+		});
+	},
 	reorderFxSlots: (fromSlot, toSlot) =>
 		set((s) => {
 			if (
@@ -997,23 +803,10 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			) {
 				return {};
 			}
-
-			const move = (items: readonly unknown[]): unknown[] => {
-				const next = [...items];
-				const [moved] = next.splice(fromSlot, 1);
-				next.splice(toSlot, 0, moved);
-				return next;
-			};
-
-			const next: Partial<SynthState> = {
-				fxSlotTypes: move(s.fxSlotTypes) as typeof s.fxSlotTypes,
-			};
-
-			for (const key of FX_SLOT_ARRAY_KEYS) {
-				(next as Record<string, unknown>)[key] = move(s[key]);
-			}
-
-			return next;
+			const slots = [...s.fxSlots];
+			const [moved] = slots.splice(fromSlot, 1);
+			slots.splice(toSlot, 0, moved);
+			return { fxSlots: slots as FxSlotTuple };
 		}),
 
 	// --- gatherState ---
@@ -1035,165 +828,141 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			: [];
 
 		const params = {
-				lineSelect: s.lineSelect,
-				modMode: s.modMode,
-				octave: s.octave,
-				line1: {
-					algo: s.warpAAlgo,
-					algo2: s.algo2A,
-					algoBlend: s.algoBlendA,
-					window: s.windowType,
-					dcaBase: s.line1Level,
-					dcwBase: s.warpAAmount,
-					modulation: 0,
-					detuneCents: s.line1Detune,
-					octave: s.line1Octave,
-					dcoEnv: s.line1DcoEnv,
-					dcwEnv: s.line1DcwEnv,
-					dcaEnv: s.line1DcaEnv,
-					keyFollow: s.line1DcwKeyFollow,
-					cz: {
-						slotAWaveform: s.line1CzSlotAWaveform,
-						slotBWaveform: s.line1CzSlotBWaveform,
-						window: s.line1CzWindow,
-					},
-					algoControlsA: line1NormalizedAlgoControlsA,
-					algoControlsB: line1NormalizedAlgoControlsB,
+			lineSelect: s.lineSelect,
+			modMode: s.modMode,
+			octave: s.octave,
+			line1: {
+				algo: s.warpAAlgo,
+				algo2: s.algo2A,
+				algoBlend: s.algoBlendA,
+				window: s.windowType,
+				dcaBase: s.line1Level,
+				dcwBase: s.warpAAmount,
+				modulation: 0,
+				detuneCents: s.line1Detune,
+				octave: s.line1Octave,
+				dcoEnv: s.line1DcoEnv,
+				dcwEnv: s.line1DcwEnv,
+				dcaEnv: s.line1DcaEnv,
+				keyFollow: s.line1DcwKeyFollow,
+				cz: {
+					slotAWaveform: s.line1CzSlotAWaveform,
+					slotBWaveform: s.line1CzSlotBWaveform,
+					window: s.line1CzWindow,
 				},
-				line2: {
-					algo: s.warpBAlgo,
-					algo2: s.algo2B,
-					algoBlend: s.algoBlendB,
-					window: s.windowType,
-					dcaBase: s.line2Level,
-					dcwBase: s.warpBAmount,
-					modulation: 0,
-					detuneCents: s.line2Detune,
-					octave: s.line2Octave,
-					dcoEnv: s.line2DcoEnv,
-					dcwEnv: s.line2DcwEnv,
-					dcaEnv: s.line2DcaEnv,
-					keyFollow: s.line2DcwKeyFollow,
-					cz: {
-						slotAWaveform: s.line2CzSlotAWaveform,
-						slotBWaveform: s.line2CzSlotBWaveform,
-						window: s.line2CzWindow,
-					},
-					algoControlsA: line2NormalizedAlgoControlsA,
-					algoControlsB: line2NormalizedAlgoControlsB,
+				algoControlsA: line1NormalizedAlgoControlsA,
+				algoControlsB: line1NormalizedAlgoControlsB,
+			},
+			line2: {
+				algo: s.warpBAlgo,
+				algo2: s.algo2B,
+				algoBlend: s.algoBlendB,
+				window: s.windowType,
+				dcaBase: s.line2Level,
+				dcwBase: s.warpBAmount,
+				modulation: 0,
+				detuneCents: s.line2Detune,
+				octave: s.line2Octave,
+				dcoEnv: s.line2DcoEnv,
+				dcwEnv: s.line2DcwEnv,
+				dcaEnv: s.line2DcaEnv,
+				keyFollow: s.line2DcwKeyFollow,
+				cz: {
+					slotAWaveform: s.line2CzSlotAWaveform,
+					slotBWaveform: s.line2CzSlotBWaveform,
+					window: s.line2CzWindow,
 				},
-				intPmAmount: s.intPmAmount,
-				intPmEnabled: s.phaseModEnabled,
-				intPmRatio: s.intPmRatio,
-				extPmAmount: 0,
-				pmPre: s.pmPre,
-				frequency: 440,
-				volume: s.volume,
-				polyMode: s.polyMode,
-				legato: s.legato,
-				chorus: {
-					enabled: s.chorusEnabled,
-					rate: s.chorusRate,
-					depth: s.chorusDepth,
-					mix: s.chorusMix,
-				},
-				delay: {
-					enabled: s.delayEnabled,
-					time: s.delayTime,
-					feedback: s.delayFeedback,
-					mix: s.delayMix,
-					tapeMode: s.delayTapeMode,
-					warmth: s.delayWarmth,
-				},
-				reverb: {
-					enabled: s.reverbEnabled,
-					mix: s.reverbMix,
-					space: s.reverbSpace,
-					predelay: s.reverbPredelay,
-					distance: s.reverbDistance,
-					character: s.reverbCharacter,
-				},
-				phaser: {
-					enabled: s.phaserEnabled,
-					rate: s.phaserRate,
-					depth: s.phaserDepth,
-					mix: s.phaserMix,
-					feedback: s.phaserFeedback,
-				},
-				vibrato: {
-					enabled: s.vibratoEnabled,
-					waveform: s.vibratoWave,
-					rate: s.vibratoRate,
-					depth: s.vibratoDepth,
-					delay: s.vibratoDelay,
-				},
-				compressor: s.fxSlotCompressors[0],
-				eq: s.fxSlotEqs[0],
-				grainDelay: s.fxSlotGrainDelays[0],
-				bitcrusher: s.fxSlotBitcrushers[0],
-				shimmerVerb: s.fxSlotShimmerVerbs[0],
-				distortion: s.fxSlotDistortions[0],
-				junoChorus: s.fxSlotJunoChoruses[0],
-				ringMod: s.fxSlotRingMods[0],
-				tremolo: s.fxSlotTremolos[0],
-				wavefolder: s.fxSlotWavefolders[0],
-				portamento: {
-					enabled: s.portamentoEnabled,
-					mode: s.portamentoMode,
-					rate: s.portamentoRate,
-					time: s.portamentoTime,
-				},
-				lfo: {
-					waveform: s.lfoWaveform,
-					rate: s.lfoRate,
-					depth: s.lfoDepth,
-					symmetry: s.lfoSymmetry,
-					retrigger: s.lfoRetrigger,
-					offset: s.lfoOffset,
-				},
-				lfo2: {
-					waveform: s.lfo2Waveform,
-					rate: s.lfo2Rate,
-					depth: s.lfo2Depth,
-					symmetry: s.lfo2Symmetry,
-					retrigger: s.lfo2Retrigger,
-					offset: s.lfo2Offset,
-				},
-				random: {
-					rate: s.randomRate,
-				},
-				modEnv: {
-					attack: s.modEnvAttack,
-					decay: s.modEnvDecay,
-					sustain: s.modEnvSustain,
-					release: s.modEnvRelease,
-				},
-				filter: {
-					enabled: s.filterEnabled,
-					type: s.filterType,
-					cutoff: s.filterCutoff,
-					resonance: s.filterResonance,
-					envAmount: s.filterEnvAmount,
-				},
-				pitchBendRange: s.pitchBendRange,
-				modWheelVibratoDepth: s.modWheelVibratoDepth,
-				modMatrix: s.modMatrix,
-				fxSlots: s.fxSlotTypes,
-				fxSlotChoruses: s.fxSlotChoruses,
-				fxSlotDelays: s.fxSlotDelays,
-				fxSlotReverbs: s.fxSlotReverbs,
-				fxSlotPhasers: s.fxSlotPhasers,
-				fxSlotCompressors: s.fxSlotCompressors,
-				fxSlotEqs: s.fxSlotEqs,
-				fxSlotGrainDelays: s.fxSlotGrainDelays,
-				fxSlotBitcrushers: s.fxSlotBitcrushers,
-				fxSlotShimmerVerbs: s.fxSlotShimmerVerbs,
-				fxSlotDistortions: s.fxSlotDistortions,
-				fxSlotJunoChoruses: s.fxSlotJunoChoruses,
-				fxSlotRingMods: s.fxSlotRingMods,
-				fxSlotTremolos: s.fxSlotTremolos,
-				fxSlotWavefolders: s.fxSlotWavefolders,
-			} satisfies SynthPresetV1["params"];
+				algoControlsA: line2NormalizedAlgoControlsA,
+				algoControlsB: line2NormalizedAlgoControlsB,
+			},
+			intPmAmount: s.intPmAmount,
+			intPmEnabled: s.phaseModEnabled,
+			intPmRatio: s.intPmRatio,
+			extPmAmount: 0,
+			pmPre: s.pmPre,
+			frequency: 440,
+			volume: s.volume,
+			polyMode: s.polyMode,
+			legato: s.legato,
+			chorus: {
+				enabled: s.chorusEnabled,
+				rate: s.chorusRate,
+				depth: s.chorusDepth,
+				mix: s.chorusMix,
+			},
+			delay: {
+				enabled: s.delayEnabled,
+				time: s.delayTime,
+				feedback: s.delayFeedback,
+				mix: s.delayMix,
+				tapeMode: s.delayTapeMode,
+				warmth: s.delayWarmth,
+			},
+			reverb: {
+				enabled: s.reverbEnabled,
+				mix: s.reverbMix,
+				space: s.reverbSpace,
+				predelay: s.reverbPredelay,
+				distance: s.reverbDistance,
+				character: s.reverbCharacter,
+			},
+			phaser: {
+				enabled: s.phaserEnabled,
+				rate: s.phaserRate,
+				depth: s.phaserDepth,
+				mix: s.phaserMix,
+				feedback: s.phaserFeedback,
+			},
+			vibrato: {
+				enabled: s.vibratoEnabled,
+				waveform: s.vibratoWave,
+				rate: s.vibratoRate,
+				depth: s.vibratoDepth,
+				delay: s.vibratoDelay,
+			},
+			portamento: {
+				enabled: s.portamentoEnabled,
+				mode: s.portamentoMode,
+				rate: s.portamentoRate,
+				time: s.portamentoTime,
+			},
+			lfo: {
+				waveform: s.lfoWaveform,
+				rate: s.lfoRate,
+				depth: s.lfoDepth,
+				symmetry: s.lfoSymmetry,
+				retrigger: s.lfoRetrigger,
+				offset: s.lfoOffset,
+			},
+			lfo2: {
+				waveform: s.lfo2Waveform,
+				rate: s.lfo2Rate,
+				depth: s.lfo2Depth,
+				symmetry: s.lfo2Symmetry,
+				retrigger: s.lfo2Retrigger,
+				offset: s.lfo2Offset,
+			},
+			random: {
+				rate: s.randomRate,
+			},
+			modEnv: {
+				attack: s.modEnvAttack,
+				decay: s.modEnvDecay,
+				sustain: s.modEnvSustain,
+				release: s.modEnvRelease,
+			},
+			filter: {
+				enabled: s.filterEnabled,
+				type: s.filterType,
+				cutoff: s.filterCutoff,
+				resonance: s.filterResonance,
+				envAmount: s.filterEnvAmount,
+			},
+			pitchBendRange: s.pitchBendRange,
+			modWheelVibratoDepth: s.modWheelVibratoDepth,
+			modMatrix: s.modMatrix,
+			fxSlots: s.fxSlots,
+		} satisfies SynthPresetV1["params"];
 
 		return {
 			schemaVersion: 1,
@@ -1393,88 +1162,10 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				p.modMatrix && typeof p.modMatrix === "object"
 					? (p.modMatrix as ModMatrix)
 					: { routes: [] },
-			fxSlotTypes:
+			fxSlots:
 				Array.isArray(p.fxSlots) && p.fxSlots.length === 6
-					? (p.fxSlots as [
-							FxSlotType,
-							FxSlotType,
-							FxSlotType,
-							FxSlotType,
-							FxSlotType,
-							FxSlotType,
-						])
-					: ["chorus", "delay", "reverb", "vibrato", "phaseMod", "phaser"],
-			fxSlotChoruses: Array.isArray((p as { fxSlotChoruses?: ChorusParams[] }).fxSlotChoruses) &&
-				(p as { fxSlotChoruses?: ChorusParams[] }).fxSlotChoruses?.length === 6
-				? ((p as { fxSlotChoruses: ChorusParams[] }).fxSlotChoruses as typeof DEFAULT_STATE.fxSlotChoruses)
-				: ([0, 1, 2, 3, 4, 5].map(() => ({
-					enabled: p.chorus?.enabled ?? safe(p.chorus?.mix, 0) > 0,
-					rate: safe(p.chorus?.rate, 0.8),
-					depth: safe(p.chorus?.depth, 3),
-					mix: safe(p.chorus?.mix, 0),
-				})) as typeof DEFAULT_STATE.fxSlotChoruses),
-			fxSlotDelays: Array.isArray((p as { fxSlotDelays?: DelayParams[] }).fxSlotDelays) &&
-				(p as { fxSlotDelays?: DelayParams[] }).fxSlotDelays?.length === 6
-				? ((p as { fxSlotDelays: DelayParams[] }).fxSlotDelays as typeof DEFAULT_STATE.fxSlotDelays)
-				: ([0, 1, 2, 3, 4, 5].map(() => ({
-					enabled: p.delay?.enabled ?? safe(p.delay?.mix, 0) > 0,
-					time: safe(p.delay?.time, 0.3),
-					feedback: safe(p.delay?.feedback, 0.35),
-					mix: safe(p.delay?.mix, 0),
-					tapeMode: p.delay?.tapeMode ?? false,
-					warmth: safe(p.delay?.warmth, 0.5),
-				})) as typeof DEFAULT_STATE.fxSlotDelays),
-			fxSlotReverbs: Array.isArray((p as { fxSlotReverbs?: ReverbParams[] }).fxSlotReverbs) &&
-				(p as { fxSlotReverbs?: ReverbParams[] }).fxSlotReverbs?.length === 6
-				? ((p as { fxSlotReverbs: ReverbParams[] }).fxSlotReverbs as typeof DEFAULT_STATE.fxSlotReverbs)
-				: ([0, 1, 2, 3, 4, 5].map(() => ({
-					enabled: p.reverb?.enabled ?? safe(p.reverb?.mix, 0) > 0,
-					mix: safe(p.reverb?.mix, 0),
-					space: safe(p.reverb?.space, 0.5),
-					predelay: safe(p.reverb?.predelay, 0),
-					distance: safe(p.reverb?.distance, 0.3),
-					character: reverbCharacter,
-				})) as typeof DEFAULT_STATE.fxSlotReverbs),
-			fxSlotPhasers: Array.isArray((p as { fxSlotPhasers?: PhaserParams[] }).fxSlotPhasers) &&
-				(p as { fxSlotPhasers?: PhaserParams[] }).fxSlotPhasers?.length === 6
-				? ((p as { fxSlotPhasers: PhaserParams[] }).fxSlotPhasers as typeof DEFAULT_STATE.fxSlotPhasers)
-				: ([0, 1, 2, 3, 4, 5].map(() => ({
-					enabled: p.phaser?.enabled ?? false,
-					rate: safe(p.phaser?.rate, 0.5),
-					depth: safe(p.phaser?.depth, 1),
-					mix: safe(p.phaser?.mix, 0),
-					feedback: safe(p.phaser?.feedback, 0.5),
-				})) as typeof DEFAULT_STATE.fxSlotPhasers),
-			fxSlotCompressors: Array.isArray(p.fxSlotCompressors) && p.fxSlotCompressors.length === 6
-				? (p.fxSlotCompressors as typeof DEFAULT_STATE.fxSlotCompressors)
-				: DEFAULT_STATE.fxSlotCompressors,
-			fxSlotEqs: Array.isArray(p.fxSlotEqs) && p.fxSlotEqs.length === 6
-				? (p.fxSlotEqs as typeof DEFAULT_STATE.fxSlotEqs)
-				: DEFAULT_STATE.fxSlotEqs,
-			fxSlotGrainDelays: Array.isArray(p.fxSlotGrainDelays) && p.fxSlotGrainDelays.length === 6
-				? (p.fxSlotGrainDelays as typeof DEFAULT_STATE.fxSlotGrainDelays)
-				: DEFAULT_STATE.fxSlotGrainDelays,
-			fxSlotBitcrushers: Array.isArray(p.fxSlotBitcrushers) && p.fxSlotBitcrushers.length === 6
-				? (p.fxSlotBitcrushers as typeof DEFAULT_STATE.fxSlotBitcrushers)
-				: DEFAULT_STATE.fxSlotBitcrushers,
-			fxSlotShimmerVerbs: Array.isArray(p.fxSlotShimmerVerbs) && p.fxSlotShimmerVerbs.length === 6
-				? (p.fxSlotShimmerVerbs as typeof DEFAULT_STATE.fxSlotShimmerVerbs)
-				: DEFAULT_STATE.fxSlotShimmerVerbs,
-			fxSlotDistortions: Array.isArray(p.fxSlotDistortions) && p.fxSlotDistortions.length === 6
-				? (p.fxSlotDistortions as typeof DEFAULT_STATE.fxSlotDistortions)
-				: DEFAULT_STATE.fxSlotDistortions,
-			fxSlotJunoChoruses: Array.isArray(p.fxSlotJunoChoruses) && p.fxSlotJunoChoruses.length === 6
-				? (p.fxSlotJunoChoruses as typeof DEFAULT_STATE.fxSlotJunoChoruses)
-				: DEFAULT_STATE.fxSlotJunoChoruses,
-			fxSlotRingMods: Array.isArray(p.fxSlotRingMods) && p.fxSlotRingMods.length === 6
-				? (p.fxSlotRingMods as typeof DEFAULT_STATE.fxSlotRingMods)
-				: DEFAULT_STATE.fxSlotRingMods,
-			fxSlotTremolos: Array.isArray(p.fxSlotTremolos) && p.fxSlotTremolos.length === 6
-				? (p.fxSlotTremolos as typeof DEFAULT_STATE.fxSlotTremolos)
-				: DEFAULT_STATE.fxSlotTremolos,
-			fxSlotWavefolders: Array.isArray(p.fxSlotWavefolders) && p.fxSlotWavefolders.length === 6
-				? (p.fxSlotWavefolders as typeof DEFAULT_STATE.fxSlotWavefolders)
-				: DEFAULT_STATE.fxSlotWavefolders,
+					? (p.fxSlots as FxSlotTuple)
+					: EMPTY_FX_SLOTS,
 		});
 	},
 }));

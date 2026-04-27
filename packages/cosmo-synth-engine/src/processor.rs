@@ -13,7 +13,7 @@ use crate::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use crate::fx::FxChain;
 use crate::generators::PER_LINE_HEADROOM;
 use crate::module_presets;
-use crate::params::{FxSlotType, PolyMode, SynthParams, NUM_VOICES};
+use crate::params::{FxSlotConfig, FxSlotType, PolyMode, SynthParams, NUM_VOICES};
 use crate::voice::{render_voice, Voice};
 
 const SOFT_CLIP_DRIVE: f32 = 1.0;
@@ -249,17 +249,18 @@ impl CosmoProcessor {
 
     /// Apply a named module preset to the current parameters.
 
-    /// Set which effect type occupies a given FX slot.
+    /// Set which effect type occupies a given FX slot (0–5).
+    /// Resets to default params with enabled=true for non-empty types.
     pub fn set_fx_slot_type(&mut self, slot: usize, slot_type: FxSlotType) {
         if slot < 6 {
-            self.params.fx_slots[slot] = slot_type;
+            self.params.fx_slots[slot] = FxSlotConfig::default_for_type(slot_type);
             self.update_fx();
         }
     }
 
-    /// Return the current FX slot layout.
+    /// Return the current FX slot type layout.
     pub fn get_fx_slot_types(&self) -> [FxSlotType; 6] {
-        self.params.fx_slots
+        core::array::from_fn(|i| self.params.fx_slots[i].slot_type())
     }
 
     /// Apply a named module preset to the current parameters.

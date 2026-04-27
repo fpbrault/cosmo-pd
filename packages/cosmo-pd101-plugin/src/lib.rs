@@ -652,11 +652,8 @@ impl CzParameters {
 #[allow(dead_code, clippy::items_after_statements)]
 fn _assert_synth_params_coverage(p: SynthParams) {
     use cosmo_synth_engine::params::{
-        BitcrusherParams, ChorusParams, CompressorParams, CzLineParams, DelayParams,
-        DistortionParams, EqParams, FilterParams, GrainDelayParams, JunoChorusParams,
-        LfoParams, LineParams, ModEnvParams, PhaserParams, PortamentoParams, RandomParams,
-        ReverbParams, RingModParams, ShimmerVerbParams, TremoloParams, VibratoParams,
-        WavefolderParams,
+        ChorusParams, CzLineParams, DelayParams, FilterParams, LfoParams, LineParams, ModEnvParams,
+        PhaserParams, PortamentoParams, RandomParams, ReverbParams, VibratoParams,
     };
 
     let SynthParams {
@@ -686,34 +683,10 @@ fn _assert_synth_params_coverage(p: SynthParams) {
         mod_env,
         random,
         filter,
-        pitch_bend_range: _pitch_bend_range,     // not yet a VST param
+        pitch_bend_range: _pitch_bend_range, // not yet a VST param
         mod_wheel_vibrato_depth: _mod_wheel_vibrato_depth, // not yet a VST param
-        mod_matrix: _mod_matrix,                  // not yet a VST param
-        compressor,
-        eq,
-        grain_delay,
-        bitcrusher,
-        shimmer_verb,
-        distortion,
-        juno_chorus,
-        ring_mod,
-        tremolo,
-        wavefolder,
-        fx_slots: _fx_slots,                      // not yet a VST param
-        fx_slot_choruses: _fx_slot_choruses,      // not yet a VST param
-        fx_slot_delays: _fx_slot_delays,          // not yet a VST param
-        fx_slot_reverbs: _fx_slot_reverbs,        // not yet a VST param
-        fx_slot_phasers: _fx_slot_phasers,        // not yet a VST param
-        fx_slot_compressors: _fx_slot_compressors, // not yet a VST param
-        fx_slot_eqs: _fx_slot_eqs,                // not yet a VST param
-        fx_slot_grain_delays: _fx_slot_grain_delays, // not yet a VST param
-        fx_slot_bitcrushers: _fx_slot_bitcrushers, // not yet a VST param
-        fx_slot_shimmer_verbs: _fx_slot_shimmer_verbs, // not yet a VST param
-        fx_slot_distortions: _fx_slot_distortions, // not yet a VST param
-        fx_slot_juno_choruses: _fx_slot_juno_choruses, // not yet a VST param
-        fx_slot_ring_mods: _fx_slot_ring_mods,    // not yet a VST param
-        fx_slot_tremolos: _fx_slot_tremolos,      // not yet a VST param
-        fx_slot_wavefolders: _fx_slot_wavefolders, // not yet a VST param
+        mod_matrix: _mod_matrix,             // not yet a VST param
+        fx_slots: _fx_slots,                 // not yet a VST param
     } = p;
 
     // Phaser — not yet a VST param but destructured to catch field additions.
@@ -732,72 +705,6 @@ fn _assert_synth_params_coverage(p: SynthParams) {
         release: _menv_release,
     } = mod_env;
     let RandomParams { rate: _rand_rate } = random;
-    // New FX param structs — not yet VST params.
-    let CompressorParams {
-        enabled: _cmp_enabled,
-        threshold_db: _cmp_threshold,
-        ratio: _cmp_ratio,
-        attack_ms: _cmp_attack,
-        release_ms: _cmp_release,
-        makeup_db: _cmp_makeup,
-        mix: _cmp_mix,
-    } = compressor;
-    let EqParams {
-        enabled: _eq_enabled,
-        gain80: _eq_g80,
-        gain240: _eq_g240,
-        gain750: _eq_g750,
-        gain2200: _eq_g2200,
-        gain8000: _eq_g8000,
-    } = eq;
-    let GrainDelayParams {
-        enabled: _gd_enabled,
-        time: _gd_time,
-        scatter: _gd_scatter,
-        density: _gd_density,
-        mix: _gd_mix,
-    } = grain_delay;
-    let BitcrusherParams {
-        enabled: _bc_enabled,
-        bits: _bc_bits,
-        rate_reduction: _bc_rate,
-        mix: _bc_mix,
-    } = bitcrusher;
-    let ShimmerVerbParams {
-        enabled: _sv_enabled,
-        shimmer: _sv_shimmer,
-        space: _sv_space,
-        mix: _sv_mix,
-    } = shimmer_verb;
-    let DistortionParams {
-        enabled: _dist_enabled,
-        drive: _dist_drive,
-        tone: _dist_tone,
-        mix: _dist_mix,
-    } = distortion;
-    let JunoChorusParams {
-        enabled: _jc_enabled,
-        mode: _jc_mode,
-        mix: _jc_mix,
-    } = juno_chorus;
-    let RingModParams {
-        enabled: _rm_enabled,
-        carrier_hz: _rm_carrier,
-        mix: _rm_mix,
-    } = ring_mod;
-    let TremoloParams {
-        enabled: _trem_enabled,
-        rate: _trem_rate,
-        depth: _trem_depth,
-        waveform: _trem_waveform,
-        mix: _trem_mix,
-    } = tremolo;
-    let WavefolderParams {
-        enabled: _wf_enabled,
-        drive: _wf_drive,
-        folds: _wf_folds,
-        mix: _wf_mix,
-    } = wavefolder;
     let ChorusParams {
         enabled: _cho_enabled,
         rate: _cho_rate,

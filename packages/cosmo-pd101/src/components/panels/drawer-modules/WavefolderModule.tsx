@@ -10,15 +10,17 @@ const COLOR = "#c084fc";
 
 export default function WavefolderModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
-	const wavefolder = useSynthStore((s) => s.fxSlotWavefolders[slot]);
-	const setFxSlotWavefolder = useSynthStore((s) => s.setFxSlotWavefolder);
+	const rawSlot = useSynthStore((s) => s.fxSlots[slot]);
+	const setFxSlotParams = useSynthStore((s) => s.setFxSlotParams);
+	if (rawSlot?.type !== "wavefolder") return null;
+	const wavefolder = rawSlot.params;
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
 		if (presetId === "custom") return;
 		const preset = WAVEFOLDER_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
-		setFxSlotWavefolder(slot, preset.patch.wavefolder);
+		setFxSlotParams(slot, preset.patch.wavefolder);
 		requestApplyModulePreset({
 			module: "wavefolder",
 			preset: preset.id,
@@ -40,13 +42,11 @@ export default function WavefolderModule({ slot }: { slot: number }) {
 				/>
 			}
 			enabled={wavefolder.enabled ?? false}
-			onToggle={() =>
-				setFxSlotWavefolder(slot, { ...wavefolder, enabled: !wavefolder.enabled })
-			}
+			onToggle={() => setFxSlotParams(slot, { enabled: !wavefolder.enabled })}
 		>
 			<ControlKnob
 				value={wavefolder.drive ?? 0.5}
-				onChange={(v) => setFxSlotWavefolder(slot, { ...wavefolder, drive: v })}
+				onChange={(v) => setFxSlotParams(slot, { drive: v })}
 				min={0}
 				max={1}
 				defaultValue={0.5}
@@ -57,7 +57,7 @@ export default function WavefolderModule({ slot }: { slot: number }) {
 			/>
 			<ControlKnob
 				value={wavefolder.folds ?? 0.5}
-				onChange={(v) => setFxSlotWavefolder(slot, { ...wavefolder, folds: v })}
+				onChange={(v) => setFxSlotParams(slot, { folds: v })}
 				min={0}
 				max={1}
 				defaultValue={0.5}
@@ -68,7 +68,7 @@ export default function WavefolderModule({ slot }: { slot: number }) {
 			/>
 			<ControlKnob
 				value={wavefolder.mix ?? 1}
-				onChange={(v) => setFxSlotWavefolder(slot, { ...wavefolder, mix: v })}
+				onChange={(v) => setFxSlotParams(slot, { mix: v })}
 				min={0}
 				max={1}
 				defaultValue={1}

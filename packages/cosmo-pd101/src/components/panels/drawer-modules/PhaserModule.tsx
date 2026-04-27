@@ -8,8 +8,10 @@ import { PHASER_PRESETS } from "@/lib/synth/modulePresets";
 
 export default function PhaserModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
-	const phaser = useSynthStore((s) => s.fxSlotPhasers[slot]);
-	const setFxSlotPhaser = useSynthStore((s) => s.setFxSlotPhaser);
+	const rawSlot = useSynthStore((s) => s.fxSlots[slot]);
+	const setFxSlotParams = useSynthStore((s) => s.setFxSlotParams);
+	if (rawSlot?.type !== "phaser") return null;
+	const phaser = rawSlot.params;
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
@@ -22,7 +24,7 @@ export default function PhaserModule({ slot }: { slot: number }) {
 			return;
 		}
 
-		setFxSlotPhaser(slot, preset.patch.phaser);
+		setFxSlotParams(slot, preset.patch.phaser);
 		requestApplyModulePreset({
 			module: "phaser",
 			preset: preset.id,
@@ -44,11 +46,11 @@ export default function PhaserModule({ slot }: { slot: number }) {
 			}
 			meta="4-Stage"
 			enabled={phaser.enabled ?? false}
-			onToggle={() => setFxSlotPhaser(slot, { ...phaser, enabled: !phaser.enabled })}
+			onToggle={() => setFxSlotParams(slot, { enabled: !phaser.enabled })}
 		>
 			<ControlKnob
 				value={phaser.rate}
-				onChange={(value) => setFxSlotPhaser(slot, { ...phaser, rate: value })}
+				onChange={(value) => setFxSlotParams(slot, { rate: value })}
 				min={0.1}
 				max={10}
 				defaultValue={0.5}
@@ -59,7 +61,7 @@ export default function PhaserModule({ slot }: { slot: number }) {
 			/>
 			<ControlKnob
 				value={phaser.depth}
-				onChange={(value) => setFxSlotPhaser(slot, { ...phaser, depth: value })}
+				onChange={(value) => setFxSlotParams(slot, { depth: value })}
 				min={0}
 				max={1}
 				defaultValue={1.0}
@@ -70,9 +72,7 @@ export default function PhaserModule({ slot }: { slot: number }) {
 			/>
 			<ControlKnob
 				value={phaser.feedback}
-				onChange={(value) =>
-					setFxSlotPhaser(slot, { ...phaser, feedback: value })
-				}
+				onChange={(value) => setFxSlotParams(slot, { feedback: value })}
 				min={-0.9}
 				max={0.9}
 				defaultValue={0.5}
@@ -87,7 +87,7 @@ export default function PhaserModule({ slot }: { slot: number }) {
 			/>
 			<ControlKnob
 				value={phaser.mix}
-				onChange={(value) => setFxSlotPhaser(slot, { ...phaser, mix: value })}
+				onChange={(value) => setFxSlotParams(slot, { mix: value })}
 				min={0}
 				max={1}
 				defaultValue={0.5}

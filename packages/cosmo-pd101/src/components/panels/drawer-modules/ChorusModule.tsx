@@ -8,8 +8,10 @@ import { CHORUS_PRESETS } from "@/lib/synth/modulePresets";
 
 export default function ChorusModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
-	const chorus = useSynthStore((s) => s.fxSlotChoruses[slot]);
-	const setFxSlotChorus = useSynthStore((s) => s.setFxSlotChorus);
+	const rawSlot = useSynthStore((s) => s.fxSlots[slot]);
+	const setFxSlotParams = useSynthStore((s) => s.setFxSlotParams);
+	if (rawSlot?.type !== "chorus") return null;
+	const chorus = rawSlot.params;
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
@@ -22,7 +24,7 @@ export default function ChorusModule({ slot }: { slot: number }) {
 			return;
 		}
 
-		setFxSlotChorus(slot, preset.patch.chorus);
+		setFxSlotParams(slot, preset.patch.chorus);
 		requestApplyModulePreset({
 			module: "chorus",
 			preset: preset.id,
@@ -44,11 +46,11 @@ export default function ChorusModule({ slot }: { slot: number }) {
 				/>
 			}
 			enabled={chorus.enabled ?? false}
-			onToggle={() => setFxSlotChorus(slot, { ...chorus, enabled: !chorus.enabled })}
+			onToggle={() => setFxSlotParams(slot, { enabled: !chorus.enabled })}
 		>
 			<ControlKnob
 				value={chorus.rate}
-				onChange={(value) => setFxSlotChorus(slot, { ...chorus, rate: value })}
+				onChange={(value) => setFxSlotParams(slot, { rate: value })}
 				min={0.1}
 				max={5}
 				defaultValue={1.0}
@@ -59,7 +61,7 @@ export default function ChorusModule({ slot }: { slot: number }) {
 			/>
 			<ControlKnob
 				value={chorus.depth}
-				onChange={(value) => setFxSlotChorus(slot, { ...chorus, depth: value })}
+				onChange={(value) => setFxSlotParams(slot, { depth: value })}
 				min={0}
 				max={3}
 				defaultValue={1.5}
@@ -70,7 +72,7 @@ export default function ChorusModule({ slot }: { slot: number }) {
 			/>
 			<ControlKnob
 				value={chorus.mix}
-				onChange={(value) => setFxSlotChorus(slot, { ...chorus, mix: value })}
+				onChange={(value) => setFxSlotParams(slot, { mix: value })}
 				min={0}
 				max={1}
 				defaultValue={0.5}

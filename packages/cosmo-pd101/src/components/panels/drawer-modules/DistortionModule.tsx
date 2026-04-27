@@ -10,15 +10,17 @@ const COLOR = "#f59e0b";
 
 export default function DistortionModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
-	const distortion = useSynthStore((s) => s.fxSlotDistortions[slot]);
-	const setFxSlotDistortion = useSynthStore((s) => s.setFxSlotDistortion);
+	const rawSlot = useSynthStore((s) => s.fxSlots[slot]);
+	const setFxSlotParams = useSynthStore((s) => s.setFxSlotParams);
+	if (rawSlot?.type !== "distortion") return null;
+	const distortion = rawSlot.params;
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
 		if (presetId === "custom") return;
 		const preset = DISTORTION_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
-		setFxSlotDistortion(slot, preset.patch.distortion);
+		setFxSlotParams(slot, preset.patch.distortion);
 		requestApplyModulePreset({
 			module: "distortion",
 			preset: preset.id,
@@ -40,13 +42,11 @@ export default function DistortionModule({ slot }: { slot: number }) {
 				/>
 			}
 			enabled={distortion.enabled ?? false}
-			onToggle={() =>
-				setFxSlotDistortion(slot, { ...distortion, enabled: !distortion.enabled })
-			}
+			onToggle={() => setFxSlotParams(slot, { enabled: !distortion.enabled })}
 		>
 			<ControlKnob
 				value={distortion.drive ?? 0.5}
-				onChange={(v) => setFxSlotDistortion(slot, { ...distortion, drive: v })}
+				onChange={(v) => setFxSlotParams(slot, { drive: v })}
 				min={0}
 				max={1}
 				defaultValue={0.5}
@@ -57,7 +57,7 @@ export default function DistortionModule({ slot }: { slot: number }) {
 			/>
 			<ControlKnob
 				value={distortion.tone ?? 0.5}
-				onChange={(v) => setFxSlotDistortion(slot, { ...distortion, tone: v })}
+				onChange={(v) => setFxSlotParams(slot, { tone: v })}
 				min={0}
 				max={1}
 				defaultValue={0.5}
@@ -68,7 +68,7 @@ export default function DistortionModule({ slot }: { slot: number }) {
 			/>
 			<ControlKnob
 				value={distortion.mix ?? 1}
-				onChange={(v) => setFxSlotDistortion(slot, { ...distortion, mix: v })}
+				onChange={(v) => setFxSlotParams(slot, { mix: v })}
 				min={0}
 				max={1}
 				defaultValue={1}

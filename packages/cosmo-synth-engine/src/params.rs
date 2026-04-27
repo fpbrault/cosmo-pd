@@ -771,7 +771,6 @@ impl Default for FilterParams {
     }
 }
 
-/// Top-level synth parameters (mirrors this.params in the JS)
 /// FX slot type selector — determines which effect is active in a given slot.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
@@ -795,6 +794,155 @@ pub enum FxSlotType {
     RingMod,
     Tremolo,
     Wavefolder,
+}
+
+/// Per-slot FX configuration — wraps effect-specific parameters with the slot type.
+/// Serializes as `{"type": "chorus", "params": {...}}` for effects,
+/// or `{"type": "empty"}` for empty slots.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(tag = "type", content = "params", rename_all = "camelCase")]
+pub enum FxSlotConfig {
+    Empty,
+    Chorus(ChorusParams),
+    Phaser(PhaserParams),
+    Delay(DelayParams),
+    Reverb(ReverbParams),
+    Vibrato(VibratoParams),
+    PhaseMod,
+    Compressor(CompressorParams),
+    Eq5Band(EqParams),
+    GrainDelay(GrainDelayParams),
+    Bitcrusher(BitcrusherParams),
+    ShimmerVerb(ShimmerVerbParams),
+    Distortion(DistortionParams),
+    JunoChorus(JunoChorusParams),
+    RingMod(RingModParams),
+    Tremolo(TremoloParams),
+    Wavefolder(WavefolderParams),
+}
+
+impl Default for FxSlotConfig {
+    fn default() -> Self {
+        Self::Empty
+    }
+}
+
+impl FxSlotConfig {
+    /// Return the `FxSlotType` discriminant for this slot configuration.
+    pub fn slot_type(&self) -> FxSlotType {
+        match self {
+            Self::Empty => FxSlotType::Empty,
+            Self::Chorus(_) => FxSlotType::Chorus,
+            Self::Phaser(_) => FxSlotType::Phaser,
+            Self::Delay(_) => FxSlotType::Delay,
+            Self::Reverb(_) => FxSlotType::Reverb,
+            Self::Vibrato(_) => FxSlotType::Vibrato,
+            Self::PhaseMod => FxSlotType::PhaseMod,
+            Self::Compressor(_) => FxSlotType::Compressor,
+            Self::Eq5Band(_) => FxSlotType::Eq5Band,
+            Self::GrainDelay(_) => FxSlotType::GrainDelay,
+            Self::Bitcrusher(_) => FxSlotType::Bitcrusher,
+            Self::ShimmerVerb(_) => FxSlotType::ShimmerVerb,
+            Self::Distortion(_) => FxSlotType::Distortion,
+            Self::JunoChorus(_) => FxSlotType::JunoChorus,
+            Self::RingMod(_) => FxSlotType::RingMod,
+            Self::Tremolo(_) => FxSlotType::Tremolo,
+            Self::Wavefolder(_) => FxSlotType::Wavefolder,
+        }
+    }
+
+    /// Whether the effect in this slot is currently enabled.
+    pub fn is_enabled(&self) -> bool {
+        match self {
+            Self::Empty => false,
+            Self::Chorus(p) => p.enabled,
+            Self::Phaser(p) => p.enabled,
+            Self::Delay(p) => p.enabled,
+            Self::Reverb(p) => p.enabled,
+            Self::Vibrato(p) => p.enabled,
+            Self::PhaseMod => true,
+            Self::Compressor(p) => p.enabled,
+            Self::Eq5Band(p) => p.enabled,
+            Self::GrainDelay(p) => p.enabled,
+            Self::Bitcrusher(p) => p.enabled,
+            Self::ShimmerVerb(p) => p.enabled,
+            Self::Distortion(p) => p.enabled,
+            Self::JunoChorus(p) => p.enabled,
+            Self::RingMod(p) => p.enabled,
+            Self::Tremolo(p) => p.enabled,
+            Self::Wavefolder(p) => p.enabled,
+        }
+    }
+
+    /// Create a default-params config for the given type with `enabled = true`.
+    /// Used when the user selects a new effect type for a slot.
+    pub fn default_for_type(slot_type: FxSlotType) -> Self {
+        match slot_type {
+            FxSlotType::Empty => Self::Empty,
+            FxSlotType::Chorus => Self::Chorus(ChorusParams {
+                enabled: true,
+                ..ChorusParams::default()
+            }),
+            FxSlotType::Phaser => Self::Phaser(PhaserParams {
+                enabled: true,
+                ..PhaserParams::default()
+            }),
+            FxSlotType::Delay => Self::Delay(DelayParams {
+                enabled: true,
+                ..DelayParams::default()
+            }),
+            FxSlotType::Reverb => Self::Reverb(ReverbParams {
+                enabled: true,
+                ..ReverbParams::default()
+            }),
+            FxSlotType::Vibrato => Self::Vibrato(VibratoParams {
+                enabled: true,
+                ..VibratoParams::default()
+            }),
+            FxSlotType::PhaseMod => Self::PhaseMod,
+            FxSlotType::Compressor => Self::Compressor(CompressorParams {
+                enabled: true,
+                ..CompressorParams::default()
+            }),
+            FxSlotType::Eq5Band => Self::Eq5Band(EqParams {
+                enabled: true,
+                ..EqParams::default()
+            }),
+            FxSlotType::GrainDelay => Self::GrainDelay(GrainDelayParams {
+                enabled: true,
+                ..GrainDelayParams::default()
+            }),
+            FxSlotType::Bitcrusher => Self::Bitcrusher(BitcrusherParams {
+                enabled: true,
+                ..BitcrusherParams::default()
+            }),
+            FxSlotType::ShimmerVerb => Self::ShimmerVerb(ShimmerVerbParams {
+                enabled: true,
+                ..ShimmerVerbParams::default()
+            }),
+            FxSlotType::Distortion => Self::Distortion(DistortionParams {
+                enabled: true,
+                ..DistortionParams::default()
+            }),
+            FxSlotType::JunoChorus => Self::JunoChorus(JunoChorusParams {
+                enabled: true,
+                ..JunoChorusParams::default()
+            }),
+            FxSlotType::RingMod => Self::RingMod(RingModParams {
+                enabled: true,
+                ..RingModParams::default()
+            }),
+            FxSlotType::Tremolo => Self::Tremolo(TremoloParams {
+                enabled: true,
+                ..TremoloParams::default()
+            }),
+            FxSlotType::Wavefolder => Self::Wavefolder(WavefolderParams {
+                enabled: true,
+                ..WavefolderParams::default()
+            }),
+        }
+    }
 }
 
 /// Compressor parameters
@@ -1117,58 +1265,8 @@ impl Default for WavefolderParams {
     }
 }
 
-pub(crate) fn default_fx_slots() -> [FxSlotType; 6] {
-    [
-        FxSlotType::Chorus,
-        FxSlotType::Delay,
-        FxSlotType::Reverb,
-        FxSlotType::Vibrato,
-        FxSlotType::PhaseMod,
-        FxSlotType::Phaser,
-    ]
-}
-
-fn default_fx_slot_compressors() -> [CompressorParams; 6] {
-    core::array::from_fn(|_| CompressorParams::default())
-}
-fn default_fx_slot_choruses() -> [ChorusParams; 6] {
-    core::array::from_fn(|_| ChorusParams::default())
-}
-fn default_fx_slot_delays() -> [DelayParams; 6] {
-    core::array::from_fn(|_| DelayParams::default())
-}
-fn default_fx_slot_reverbs() -> [ReverbParams; 6] {
-    core::array::from_fn(|_| ReverbParams::default())
-}
-fn default_fx_slot_phasers() -> [PhaserParams; 6] {
-    core::array::from_fn(|_| PhaserParams::default())
-}
-fn default_fx_slot_eqs() -> [EqParams; 6] {
-    core::array::from_fn(|_| EqParams::default())
-}
-fn default_fx_slot_grain_delays() -> [GrainDelayParams; 6] {
-    core::array::from_fn(|_| GrainDelayParams::default())
-}
-fn default_fx_slot_bitcrushers() -> [BitcrusherParams; 6] {
-    core::array::from_fn(|_| BitcrusherParams::default())
-}
-fn default_fx_slot_shimmer_verbs() -> [ShimmerVerbParams; 6] {
-    core::array::from_fn(|_| ShimmerVerbParams::default())
-}
-fn default_fx_slot_distortions() -> [DistortionParams; 6] {
-    core::array::from_fn(|_| DistortionParams::default())
-}
-fn default_fx_slot_juno_choruses() -> [JunoChorusParams; 6] {
-    core::array::from_fn(|_| JunoChorusParams::default())
-}
-fn default_fx_slot_ring_mods() -> [RingModParams; 6] {
-    core::array::from_fn(|_| RingModParams::default())
-}
-fn default_fx_slot_tremolos() -> [TremoloParams; 6] {
-    core::array::from_fn(|_| TremoloParams::default())
-}
-fn default_fx_slot_wavefolders() -> [WavefolderParams; 6] {
-    core::array::from_fn(|_| WavefolderParams::default())
+pub(crate) fn default_fx_slot_configs() -> [FxSlotConfig; 6] {
+    core::array::from_fn(|_| FxSlotConfig::Empty)
 }
 
 /// Top-level synth parameters (mirrors this.params in the JS)
@@ -1203,26 +1301,6 @@ pub struct SynthParams {
     pub phaser: PhaserParams,
     #[serde(default)]
     pub vibrato: VibratoParams,
-    #[serde(default)]
-    pub compressor: CompressorParams,
-    #[serde(default)]
-    pub eq: EqParams,
-    #[serde(default)]
-    pub grain_delay: GrainDelayParams,
-    #[serde(default)]
-    pub bitcrusher: BitcrusherParams,
-    #[serde(default)]
-    pub shimmer_verb: ShimmerVerbParams,
-    #[serde(default)]
-    pub distortion: DistortionParams,
-    #[serde(default)]
-    pub juno_chorus: JunoChorusParams,
-    #[serde(default)]
-    pub ring_mod: RingModParams,
-    #[serde(default)]
-    pub tremolo: TremoloParams,
-    #[serde(default)]
-    pub wavefolder: WavefolderParams,
     pub portamento: PortamentoParams,
     pub lfo: LfoParams,
     #[serde(default)]
@@ -1244,37 +1322,9 @@ pub struct SynthParams {
     /// Parameters for the ADSR mod envelope.
     #[serde(default)]
     pub mod_env: ModEnvParams,
-    /// Which effect type occupies each of the 6 FX slots.
-    #[serde(default = "default_fx_slots")]
-    pub fx_slots: [FxSlotType; 6],
-    #[serde(default = "default_fx_slot_choruses")]
-    pub fx_slot_choruses: [ChorusParams; 6],
-    #[serde(default = "default_fx_slot_delays")]
-    pub fx_slot_delays: [DelayParams; 6],
-    #[serde(default = "default_fx_slot_reverbs")]
-    pub fx_slot_reverbs: [ReverbParams; 6],
-    #[serde(default = "default_fx_slot_phasers")]
-    pub fx_slot_phasers: [PhaserParams; 6],
-    #[serde(default = "default_fx_slot_compressors")]
-    pub fx_slot_compressors: [CompressorParams; 6],
-    #[serde(default = "default_fx_slot_eqs")]
-    pub fx_slot_eqs: [EqParams; 6],
-    #[serde(default = "default_fx_slot_grain_delays")]
-    pub fx_slot_grain_delays: [GrainDelayParams; 6],
-    #[serde(default = "default_fx_slot_bitcrushers")]
-    pub fx_slot_bitcrushers: [BitcrusherParams; 6],
-    #[serde(default = "default_fx_slot_shimmer_verbs")]
-    pub fx_slot_shimmer_verbs: [ShimmerVerbParams; 6],
-    #[serde(default = "default_fx_slot_distortions")]
-    pub fx_slot_distortions: [DistortionParams; 6],
-    #[serde(default = "default_fx_slot_juno_choruses")]
-    pub fx_slot_juno_choruses: [JunoChorusParams; 6],
-    #[serde(default = "default_fx_slot_ring_mods")]
-    pub fx_slot_ring_mods: [RingModParams; 6],
-    #[serde(default = "default_fx_slot_tremolos")]
-    pub fx_slot_tremolos: [TremoloParams; 6],
-    #[serde(default = "default_fx_slot_wavefolders")]
-    pub fx_slot_wavefolders: [WavefolderParams; 6],
+    /// Per-slot FX configuration. Default is all 6 slots empty.
+    #[serde(default = "default_fx_slot_configs")]
+    pub fx_slots: [FxSlotConfig; 6],
 }
 
 pub(crate) fn default_pitch_bend_range() -> f32 {
@@ -1308,16 +1358,6 @@ impl Default for SynthParams {
             reverb: ReverbParams::default(),
             phaser: PhaserParams::default(),
             vibrato: VibratoParams::default(),
-            compressor: CompressorParams::default(),
-            eq: EqParams::default(),
-            grain_delay: GrainDelayParams::default(),
-            bitcrusher: BitcrusherParams::default(),
-            shimmer_verb: ShimmerVerbParams::default(),
-            distortion: DistortionParams::default(),
-            juno_chorus: JunoChorusParams::default(),
-            ring_mod: RingModParams::default(),
-            tremolo: TremoloParams::default(),
-            wavefolder: WavefolderParams::default(),
             portamento: PortamentoParams::default(),
             lfo: LfoParams::default(),
             lfo2: LfoParams::default(),
@@ -1327,21 +1367,7 @@ impl Default for SynthParams {
             mod_matrix: ModMatrix::default(),
             random: RandomParams::default(),
             mod_env: ModEnvParams::default(),
-            fx_slots: default_fx_slots(),
-            fx_slot_choruses: default_fx_slot_choruses(),
-            fx_slot_delays: default_fx_slot_delays(),
-            fx_slot_reverbs: default_fx_slot_reverbs(),
-            fx_slot_phasers: default_fx_slot_phasers(),
-            fx_slot_compressors: default_fx_slot_compressors(),
-            fx_slot_eqs: default_fx_slot_eqs(),
-            fx_slot_grain_delays: default_fx_slot_grain_delays(),
-            fx_slot_bitcrushers: default_fx_slot_bitcrushers(),
-            fx_slot_shimmer_verbs: default_fx_slot_shimmer_verbs(),
-            fx_slot_distortions: default_fx_slot_distortions(),
-            fx_slot_juno_choruses: default_fx_slot_juno_choruses(),
-            fx_slot_ring_mods: default_fx_slot_ring_mods(),
-            fx_slot_tremolos: default_fx_slot_tremolos(),
-            fx_slot_wavefolders: default_fx_slot_wavefolders(),
+            fx_slots: default_fx_slot_configs(),
         }
     }
 }
@@ -1403,7 +1429,7 @@ mod tests {
     }
 
     #[test]
-    fn synth_params_deserialize_defaults_when_legacy_fx_blocks_missing() {
+    fn synth_params_legacy_fx_fields_default_when_missing() {
         let mut value = serde_json::to_value(SynthParams::default())
             .expect("default synth params should serialize");
 
@@ -1411,23 +1437,7 @@ mod tests {
             .as_object_mut()
             .expect("synth params should serialize as an object");
 
-        for key in [
-            "chorus",
-            "delay",
-            "reverb",
-            "phaser",
-            "vibrato",
-            "compressor",
-            "eq",
-            "grainDelay",
-            "bitcrusher",
-            "shimmerVerb",
-            "distortion",
-            "junoChorus",
-            "ringMod",
-            "tremolo",
-            "wavefolder",
-        ] {
+        for key in ["chorus", "delay", "reverb", "phaser", "vibrato"] {
             params.remove(key);
         }
 
@@ -1439,18 +1449,63 @@ mod tests {
         assert_eq!(decoded.reverb.mix, ReverbParams::default().mix);
         assert_eq!(decoded.phaser.mix, PhaserParams::default().mix);
         assert_eq!(decoded.vibrato.depth, VibratoParams::default().depth);
-        assert_eq!(decoded.compressor.ratio, CompressorParams::default().ratio);
-        assert_eq!(decoded.eq.gain750, EqParams::default().gain750);
-        assert_eq!(decoded.grain_delay.density, GrainDelayParams::default().density);
-        assert_eq!(decoded.bitcrusher.bits, BitcrusherParams::default().bits);
-        assert_eq!(
-            decoded.shimmer_verb.shimmer,
-            ShimmerVerbParams::default().shimmer
+    }
+
+    #[test]
+    fn fx_slots_default_to_all_empty() {
+        let params = SynthParams::default();
+        for slot in &params.fx_slots {
+            assert!(matches!(slot, FxSlotConfig::Empty));
+        }
+    }
+
+    #[test]
+    fn fx_slot_config_roundtrip_serialization() {
+        let config = FxSlotConfig::Chorus(ChorusParams {
+            enabled: true,
+            rate: 1.2,
+            depth: 0.01,
+            mix: 0.5,
+        });
+        let json = serde_json::to_string(&config).expect("serialize FxSlotConfig");
+        let back: FxSlotConfig = serde_json::from_str(&json).expect("deserialize FxSlotConfig");
+        assert!(
+            matches!(back, FxSlotConfig::Chorus(p) if p.enabled && (p.rate - 1.2).abs() < 1e-5)
         );
-        assert_eq!(decoded.distortion.drive, DistortionParams::default().drive);
-        assert_eq!(decoded.juno_chorus.mode, JunoChorusParams::default().mode);
-        assert_eq!(decoded.ring_mod.carrier_hz, RingModParams::default().carrier_hz);
-        assert_eq!(decoded.tremolo.depth, TremoloParams::default().depth);
-        assert_eq!(decoded.wavefolder.folds, WavefolderParams::default().folds);
+    }
+
+    #[test]
+    fn fx_slot_config_empty_roundtrip() {
+        let config = FxSlotConfig::Empty;
+        let json = serde_json::to_string(&config).expect("serialize empty slot");
+        assert!(json.contains("\"type\":\"empty\""));
+        let back: FxSlotConfig = serde_json::from_str(&json).expect("deserialize empty slot");
+        assert!(matches!(back, FxSlotConfig::Empty));
+    }
+
+    #[test]
+    fn fx_slot_config_default_for_type_sets_enabled() {
+        let chorus = FxSlotConfig::default_for_type(FxSlotType::Chorus);
+        assert!(chorus.is_enabled());
+        assert!(matches!(chorus.slot_type(), FxSlotType::Chorus));
+
+        let empty = FxSlotConfig::default_for_type(FxSlotType::Empty);
+        assert!(!empty.is_enabled());
+
+        let reverb = FxSlotConfig::default_for_type(FxSlotType::Reverb);
+        assert!(reverb.is_enabled());
+    }
+
+    #[test]
+    fn fx_slots_missing_from_json_defaults_to_empty() {
+        let mut value =
+            serde_json::to_value(SynthParams::default()).expect("serialize default params");
+        value.as_object_mut().unwrap().remove("fxSlots");
+        let decoded: SynthParams =
+            serde_json::from_value(value).expect("fxSlots field should default");
+        assert!(decoded
+            .fx_slots
+            .iter()
+            .all(|s| matches!(s, FxSlotConfig::Empty)));
     }
 }

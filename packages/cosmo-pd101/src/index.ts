@@ -31,6 +31,8 @@ export type {
 export { decodeCzPatch, WF_NAMES } from "./lib/midi/czSysexDecoder";
 export type {
 	AlgoControlValueV1,
+	FxSlotConfig,
+	FxSlotType,
 	ModMatrix,
 	StepEnvData,
 } from "./lib/synth/bindings/synth";

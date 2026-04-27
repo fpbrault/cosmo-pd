@@ -16,15 +16,17 @@ const JUNO_MODES = [
 
 export default function JunoChorusModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
-	const junoChorus = useSynthStore((s) => s.fxSlotJunoChoruses[slot]);
-	const setFxSlotJunoChorus = useSynthStore((s) => s.setFxSlotJunoChorus);
+	const rawSlot = useSynthStore((s) => s.fxSlots[slot]);
+	const setFxSlotParams = useSynthStore((s) => s.setFxSlotParams);
+	if (rawSlot?.type !== "junoChorus") return null;
+	const junoChorus = rawSlot.params;
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
 		if (presetId === "custom") return;
 		const preset = JUNO_CHORUS_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
-		setFxSlotJunoChorus(slot, preset.patch.junoChorus);
+		setFxSlotParams(slot, preset.patch.junoChorus);
 		requestApplyModulePreset({
 			module: "junoChorus",
 			preset: preset.id,
@@ -46,9 +48,7 @@ export default function JunoChorusModule({ slot }: { slot: number }) {
 				/>
 			}
 			enabled={junoChorus.enabled ?? false}
-			onToggle={() =>
-				setFxSlotJunoChorus(slot, { ...junoChorus, enabled: !junoChorus.enabled })
-			}
+			onToggle={() => setFxSlotParams(slot, { enabled: !junoChorus.enabled })}
 		>
 			<div className="flex flex-col gap-1">
 				<span className="text-xs text-center opacity-60">Mode</span>
@@ -58,7 +58,7 @@ export default function JunoChorusModule({ slot }: { slot: number }) {
 							key={m.value}
 							type="button"
 							className={`join-item btn btn-xs ${(junoChorus.mode ?? 0) === m.value ? "btn-primary" : "btn-ghost"}`}
-							onClick={() => setFxSlotJunoChorus(slot, { ...junoChorus, mode: m.value })}
+							onClick={() => setFxSlotParams(slot, { mode: m.value })}
 						>
 							{m.label}
 						</button>
@@ -67,7 +67,7 @@ export default function JunoChorusModule({ slot }: { slot: number }) {
 			</div>
 			<ControlKnob
 				value={junoChorus.mix ?? 0.5}
-				onChange={(v) => setFxSlotJunoChorus(slot, { ...junoChorus, mix: v })}
+				onChange={(v) => setFxSlotParams(slot, { mix: v })}
 				min={0}
 				max={1}
 				defaultValue={0.5}

@@ -325,7 +325,6 @@ amount: number; enabled: boolean }
 export type ModMatrix = { routes?: ModRoute[] }
 
 /**
- * Top-level synth parameters (mirrors this.params in the JS)
  * FX slot type selector — determines which effect is active in a given slot.
  */
 export type FxSlotType = "empty" | "chorus" | "phaser" | "delay" | "reverb" | "vibrato" | "phaseMod" | "compressor" | "eq5Band" | "grainDelay" | "bitcrusher" | "shimmerVerb" | "distortion" | "junoChorus" | "ringMod" | "tremolo" | "wavefolder"
@@ -381,9 +380,16 @@ export type TremoloParams = { enabled?: boolean; rate?: number; depth?: number; 
 export type WavefolderParams = { enabled?: boolean; drive?: number; folds?: number; mix?: number }
 
 /**
+ * Per-slot FX configuration — wraps effect-specific parameters with the slot type.
+ * Serializes as `{"type": "chorus", "params": {...}}` for effects,
+ * or `{"type": "empty"}` for empty slots.
+ */
+export type FxSlotConfig = { type: "empty" } | { type: "chorus"; params: ChorusParams } | { type: "phaser"; params: PhaserParams } | { type: "delay"; params: DelayParams } | { type: "reverb"; params: ReverbParams } | { type: "vibrato"; params: VibratoParams } | { type: "phaseMod" } | { type: "compressor"; params: CompressorParams } | { type: "eq5Band"; params: EqParams } | { type: "grainDelay"; params: GrainDelayParams } | { type: "bitcrusher"; params: BitcrusherParams } | { type: "shimmerVerb"; params: ShimmerVerbParams } | { type: "distortion"; params: DistortionParams } | { type: "junoChorus"; params: JunoChorusParams } | { type: "ringMod"; params: RingModParams } | { type: "tremolo"; params: TremoloParams } | { type: "wavefolder"; params: WavefolderParams }
+
+/**
  * Top-level synth parameters (mirrors this.params in the JS)
  */
-export type SynthParams = { lineSelect: LineSelect; modMode: ModMode; ringGain?: number; octave: number; line1: LineParams; line2: LineParams; intPmEnabled?: boolean; intPmAmount: number; intPmRatio: number; extPmAmount: number; pmPre: boolean; frequency: number; volume: number; polyMode: PolyMode; legato: boolean; chorus?: ChorusParams; delay?: DelayParams; reverb?: ReverbParams; phaser?: PhaserParams; vibrato?: VibratoParams; compressor?: CompressorParams; eq?: EqParams; grainDelay?: GrainDelayParams; bitcrusher?: BitcrusherParams; shimmerVerb?: ShimmerVerbParams; distortion?: DistortionParams; junoChorus?: JunoChorusParams; ringMod?: RingModParams; tremolo?: TremoloParams; wavefolder?: WavefolderParams; portamento: PortamentoParams; lfo: LfoParams; lfo2?: LfoParams; filter: FilterParams; 
+export type SynthParams = { lineSelect: LineSelect; modMode: ModMode; ringGain?: number; octave: number; line1: LineParams; line2: LineParams; intPmEnabled?: boolean; intPmAmount: number; intPmRatio: number; extPmAmount: number; pmPre: boolean; frequency: number; volume: number; polyMode: PolyMode; legato: boolean; chorus?: ChorusParams; delay?: DelayParams; reverb?: ReverbParams; phaser?: PhaserParams; vibrato?: VibratoParams; portamento: PortamentoParams; lfo: LfoParams; lfo2?: LfoParams; filter: FilterParams; 
 /**
  * Pitch bend wheel range in semitones (1-24). Default 2.
  */
@@ -406,9 +412,9 @@ random?: RandomParams;
  */
 modEnv?: ModEnvParams; 
 /**
- * Which effect type occupies each of the 6 FX slots.
+ * Per-slot FX configuration. Default is all 6 slots empty.
  */
-fxSlots?: [FxSlotType, FxSlotType, FxSlotType, FxSlotType, FxSlotType, FxSlotType]; fxSlotChoruses?: [ChorusParams, ChorusParams, ChorusParams, ChorusParams, ChorusParams, ChorusParams]; fxSlotDelays?: [DelayParams, DelayParams, DelayParams, DelayParams, DelayParams, DelayParams]; fxSlotReverbs?: [ReverbParams, ReverbParams, ReverbParams, ReverbParams, ReverbParams, ReverbParams]; fxSlotPhasers?: [PhaserParams, PhaserParams, PhaserParams, PhaserParams, PhaserParams, PhaserParams]; fxSlotCompressors?: [CompressorParams, CompressorParams, CompressorParams, CompressorParams, CompressorParams, CompressorParams]; fxSlotEqs?: [EqParams, EqParams, EqParams, EqParams, EqParams, EqParams]; fxSlotGrainDelays?: [GrainDelayParams, GrainDelayParams, GrainDelayParams, GrainDelayParams, GrainDelayParams, GrainDelayParams]; fxSlotBitcrushers?: [BitcrusherParams, BitcrusherParams, BitcrusherParams, BitcrusherParams, BitcrusherParams, BitcrusherParams]; fxSlotShimmerVerbs?: [ShimmerVerbParams, ShimmerVerbParams, ShimmerVerbParams, ShimmerVerbParams, ShimmerVerbParams, ShimmerVerbParams]; fxSlotDistortions?: [DistortionParams, DistortionParams, DistortionParams, DistortionParams, DistortionParams, DistortionParams]; fxSlotJunoChoruses?: [JunoChorusParams, JunoChorusParams, JunoChorusParams, JunoChorusParams, JunoChorusParams, JunoChorusParams]; fxSlotRingMods?: [RingModParams, RingModParams, RingModParams, RingModParams, RingModParams, RingModParams]; fxSlotTremolos?: [TremoloParams, TremoloParams, TremoloParams, TremoloParams, TremoloParams, TremoloParams]; fxSlotWavefolders?: [WavefolderParams, WavefolderParams, WavefolderParams, WavefolderParams, WavefolderParams, WavefolderParams] }
+fxSlots?: [FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig] }
 
 /**
  * Canonical, versioned synth preset wire contract.

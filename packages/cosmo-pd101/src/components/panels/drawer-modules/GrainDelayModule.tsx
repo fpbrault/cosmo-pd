@@ -10,15 +10,17 @@ const COLOR = "#a78bfa";
 
 export default function GrainDelayModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
-	const grainDelay = useSynthStore((s) => s.fxSlotGrainDelays[slot]);
-	const setFxSlotGrainDelay = useSynthStore((s) => s.setFxSlotGrainDelay);
+	const rawSlot = useSynthStore((s) => s.fxSlots[slot]);
+	const setFxSlotParams = useSynthStore((s) => s.setFxSlotParams);
+	if (rawSlot?.type !== "grainDelay") return null;
+	const grainDelay = rawSlot.params;
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
 		if (presetId === "custom") return;
 		const preset = GRAIN_DELAY_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
-		setFxSlotGrainDelay(slot, preset.patch.grainDelay);
+		setFxSlotParams(slot, preset.patch.grainDelay);
 		requestApplyModulePreset({
 			module: "grainDelay",
 			preset: preset.id,
@@ -40,13 +42,11 @@ export default function GrainDelayModule({ slot }: { slot: number }) {
 				/>
 			}
 			enabled={grainDelay.enabled ?? false}
-			onToggle={() =>
-				setFxSlotGrainDelay(slot, { ...grainDelay, enabled: !grainDelay.enabled })
-			}
+			onToggle={() => setFxSlotParams(slot, { enabled: !grainDelay.enabled })}
 		>
 			<ControlKnob
 				value={grainDelay.time ?? 0.25}
-				onChange={(v) => setFxSlotGrainDelay(slot, { ...grainDelay, time: v })}
+				onChange={(v) => setFxSlotParams(slot, { time: v })}
 				min={0.01}
 				max={1}
 				defaultValue={0.25}
@@ -57,7 +57,7 @@ export default function GrainDelayModule({ slot }: { slot: number }) {
 			/>
 			<ControlKnob
 				value={grainDelay.scatter ?? 0}
-				onChange={(v) => setFxSlotGrainDelay(slot, { ...grainDelay, scatter: v })}
+				onChange={(v) => setFxSlotParams(slot, { scatter: v })}
 				min={0}
 				max={1}
 				defaultValue={0}
@@ -68,7 +68,7 @@ export default function GrainDelayModule({ slot }: { slot: number }) {
 			/>
 			<ControlKnob
 				value={grainDelay.density ?? 0.5}
-				onChange={(v) => setFxSlotGrainDelay(slot, { ...grainDelay, density: v })}
+				onChange={(v) => setFxSlotParams(slot, { density: v })}
 				min={0}
 				max={1}
 				defaultValue={0.5}
@@ -79,7 +79,7 @@ export default function GrainDelayModule({ slot }: { slot: number }) {
 			/>
 			<ControlKnob
 				value={grainDelay.mix ?? 0}
-				onChange={(v) => setFxSlotGrainDelay(slot, { ...grainDelay, mix: v })}
+				onChange={(v) => setFxSlotParams(slot, { mix: v })}
 				min={0}
 				max={1}
 				defaultValue={0}

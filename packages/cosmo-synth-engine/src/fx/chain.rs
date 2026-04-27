@@ -1,3 +1,4 @@
+use crate::params::FxSlotConfig;
 use crate::params::FxSlotType;
 use crate::params::SynthParams;
 
@@ -57,100 +58,105 @@ impl FxSlotProcessors {
         }
     }
 
-    fn sync_from_params(&mut self, p: &SynthParams, slot_idx: usize) {
-        let ch = &p.fx_slot_choruses[slot_idx];
-        self.chorus.enabled = ch.enabled;
-        self.chorus.rate = ch.rate;
-        self.chorus.depth = ch.depth;
-        self.chorus.mix = ch.mix;
-
-        let ph = &p.fx_slot_phasers[slot_idx];
-        self.phaser.enabled = ph.enabled;
-        self.phaser.rate = ph.rate;
-        self.phaser.depth = ph.depth;
-        self.phaser.mix = ph.mix;
-        self.phaser.feedback = ph.feedback;
-
-        let d = &p.fx_slot_delays[slot_idx];
-        self.delay.enabled = d.enabled;
-        self.delay.time = d.time;
-        self.delay.feedback = d.feedback;
-        self.delay.mix = d.mix;
-        self.delay.tape_mode = d.tape_mode;
-        self.delay.warmth = d.warmth;
-
-        let rv = &p.fx_slot_reverbs[slot_idx];
-        self.reverb.enabled = rv.enabled;
-        self.reverb.mix = rv.mix;
-        self.reverb.space = rv.space;
-        self.reverb.predelay = rv.predelay;
-        self.reverb.distance = rv.distance;
-        self.reverb.character = rv.character;
-
-        let c = &p.fx_slot_compressors[slot_idx];
-        self.compressor.enabled = c.enabled;
-        self.compressor.threshold_db = c.threshold_db;
-        self.compressor.ratio = c.ratio;
-        self.compressor.attack_ms = c.attack_ms;
-        self.compressor.release_ms = c.release_ms;
-        self.compressor.makeup_db = c.makeup_db;
-        self.compressor.mix = c.mix;
-
-        let eq = &p.fx_slot_eqs[slot_idx];
-        self.eq.enabled = eq.enabled;
-        self.eq.gains[0] = eq.gain80;
-        self.eq.gains[1] = eq.gain240;
-        self.eq.gains[2] = eq.gain750;
-        self.eq.gains[3] = eq.gain2200;
-        self.eq.gains[4] = eq.gain8000;
-
-        let gd = &p.fx_slot_grain_delays[slot_idx];
-        self.grain_delay.enabled = gd.enabled;
-        self.grain_delay.time = gd.time;
-        self.grain_delay.scatter = gd.scatter;
-        self.grain_delay.density = gd.density;
-        self.grain_delay.mix = gd.mix;
-
-        let bc = &p.fx_slot_bitcrushers[slot_idx];
-        self.bitcrusher.enabled = bc.enabled;
-        self.bitcrusher.bits = bc.bits;
-        self.bitcrusher.rate_reduction = bc.rate_reduction;
-        self.bitcrusher.mix = bc.mix;
-
-        let sv = &p.fx_slot_shimmer_verbs[slot_idx];
-        self.shimmer_verb.enabled = sv.enabled;
-        self.shimmer_verb.shimmer = sv.shimmer;
-        self.shimmer_verb.space = sv.space;
-        self.shimmer_verb.mix = sv.mix;
-
-        let dist = &p.fx_slot_distortions[slot_idx];
-        self.distortion.enabled = dist.enabled;
-        self.distortion.drive = dist.drive;
-        self.distortion.tone = dist.tone;
-        self.distortion.mix = dist.mix;
-
-        let jc = &p.fx_slot_juno_choruses[slot_idx];
-        self.juno_chorus.enabled = jc.enabled;
-        self.juno_chorus.mode = jc.mode;
-        self.juno_chorus.mix = jc.mix;
-
-        let rm = &p.fx_slot_ring_mods[slot_idx];
-        self.ring_mod.enabled = rm.enabled;
-        self.ring_mod.carrier_hz = rm.carrier_hz;
-        self.ring_mod.mix = rm.mix;
-
-        let tr = &p.fx_slot_tremolos[slot_idx];
-        self.tremolo.enabled = tr.enabled;
-        self.tremolo.rate = tr.rate;
-        self.tremolo.depth = tr.depth;
-        self.tremolo.waveform = tr.waveform;
-        self.tremolo.mix = tr.mix;
-
-        let wf = &p.fx_slot_wavefolders[slot_idx];
-        self.wavefolder.enabled = wf.enabled;
-        self.wavefolder.drive = wf.drive;
-        self.wavefolder.folds = wf.folds;
-        self.wavefolder.mix = wf.mix;
+    fn sync_from_config(&mut self, config: &FxSlotConfig) {
+        match config {
+            FxSlotConfig::Chorus(ch) => {
+                self.chorus.enabled = ch.enabled;
+                self.chorus.rate = ch.rate;
+                self.chorus.depth = ch.depth;
+                self.chorus.mix = ch.mix;
+            }
+            FxSlotConfig::Phaser(ph) => {
+                self.phaser.enabled = ph.enabled;
+                self.phaser.rate = ph.rate;
+                self.phaser.depth = ph.depth;
+                self.phaser.mix = ph.mix;
+                self.phaser.feedback = ph.feedback;
+            }
+            FxSlotConfig::Delay(d) => {
+                self.delay.enabled = d.enabled;
+                self.delay.time = d.time;
+                self.delay.feedback = d.feedback;
+                self.delay.mix = d.mix;
+                self.delay.tape_mode = d.tape_mode;
+                self.delay.warmth = d.warmth;
+            }
+            FxSlotConfig::Reverb(rv) => {
+                self.reverb.enabled = rv.enabled;
+                self.reverb.mix = rv.mix;
+                self.reverb.space = rv.space;
+                self.reverb.predelay = rv.predelay;
+                self.reverb.distance = rv.distance;
+                self.reverb.character = rv.character;
+            }
+            FxSlotConfig::Compressor(c) => {
+                self.compressor.enabled = c.enabled;
+                self.compressor.threshold_db = c.threshold_db;
+                self.compressor.ratio = c.ratio;
+                self.compressor.attack_ms = c.attack_ms;
+                self.compressor.release_ms = c.release_ms;
+                self.compressor.makeup_db = c.makeup_db;
+                self.compressor.mix = c.mix;
+            }
+            FxSlotConfig::Eq5Band(eq) => {
+                self.eq.enabled = eq.enabled;
+                self.eq.gains[0] = eq.gain80;
+                self.eq.gains[1] = eq.gain240;
+                self.eq.gains[2] = eq.gain750;
+                self.eq.gains[3] = eq.gain2200;
+                self.eq.gains[4] = eq.gain8000;
+            }
+            FxSlotConfig::GrainDelay(gd) => {
+                self.grain_delay.enabled = gd.enabled;
+                self.grain_delay.time = gd.time;
+                self.grain_delay.scatter = gd.scatter;
+                self.grain_delay.density = gd.density;
+                self.grain_delay.mix = gd.mix;
+            }
+            FxSlotConfig::Bitcrusher(bc) => {
+                self.bitcrusher.enabled = bc.enabled;
+                self.bitcrusher.bits = bc.bits;
+                self.bitcrusher.rate_reduction = bc.rate_reduction;
+                self.bitcrusher.mix = bc.mix;
+            }
+            FxSlotConfig::ShimmerVerb(sv) => {
+                self.shimmer_verb.enabled = sv.enabled;
+                self.shimmer_verb.shimmer = sv.shimmer;
+                self.shimmer_verb.space = sv.space;
+                self.shimmer_verb.mix = sv.mix;
+            }
+            FxSlotConfig::Distortion(dist) => {
+                self.distortion.enabled = dist.enabled;
+                self.distortion.drive = dist.drive;
+                self.distortion.tone = dist.tone;
+                self.distortion.mix = dist.mix;
+            }
+            FxSlotConfig::JunoChorus(jc) => {
+                self.juno_chorus.enabled = jc.enabled;
+                self.juno_chorus.mode = jc.mode;
+                self.juno_chorus.mix = jc.mix;
+            }
+            FxSlotConfig::RingMod(rm) => {
+                self.ring_mod.enabled = rm.enabled;
+                self.ring_mod.carrier_hz = rm.carrier_hz;
+                self.ring_mod.mix = rm.mix;
+            }
+            FxSlotConfig::Tremolo(tr) => {
+                self.tremolo.enabled = tr.enabled;
+                self.tremolo.rate = tr.rate;
+                self.tremolo.depth = tr.depth;
+                self.tremolo.waveform = tr.waveform;
+                self.tremolo.mix = tr.mix;
+            }
+            FxSlotConfig::Wavefolder(wf) => {
+                self.wavefolder.enabled = wf.enabled;
+                self.wavefolder.drive = wf.drive;
+                self.wavefolder.folds = wf.folds;
+                self.wavefolder.mix = wf.mix;
+            }
+            // Empty, Vibrato, PhaseMod are handled at voice level or pass through.
+            FxSlotConfig::Empty | FxSlotConfig::Vibrato(_) | FxSlotConfig::PhaseMod => {}
+        }
     }
 
     fn process(&mut self, effect_type: FxSlotType, sample: f32) -> f32 {
@@ -192,22 +198,15 @@ impl FxChain {
     pub fn new(sr: f32) -> Self {
         Self {
             slots: core::array::from_fn(|_| FxSlotProcessors::new(sr)),
-            slot_types: [
-                FxSlotType::Chorus,
-                FxSlotType::Delay,
-                FxSlotType::Reverb,
-                FxSlotType::Vibrato,
-                FxSlotType::PhaseMod,
-                FxSlotType::Phaser,
-            ],
+            slot_types: [FxSlotType::Empty; 6],
         }
     }
 
     pub fn sync_from_params(&mut self, params: &SynthParams) {
-        for (i, slot) in self.slots.iter_mut().enumerate() {
-            slot.sync_from_params(params, i);
+        for (i, config) in params.fx_slots.iter().enumerate() {
+            self.slots[i].sync_from_config(config);
+            self.slot_types[i] = config.slot_type();
         }
-        self.slot_types = params.fx_slots;
     }
 
     /// Process one sample through all 6 FX slots in series.

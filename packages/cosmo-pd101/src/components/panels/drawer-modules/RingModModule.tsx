@@ -10,15 +10,17 @@ const COLOR = "#e879f9";
 
 export default function RingModModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("custom");
-	const ringMod = useSynthStore((s) => s.fxSlotRingMods[slot]);
-	const setFxSlotRingMod = useSynthStore((s) => s.setFxSlotRingMod);
+	const rawSlot = useSynthStore((s) => s.fxSlots[slot]);
+	const setFxSlotParams = useSynthStore((s) => s.setFxSlotParams);
+	if (rawSlot?.type !== "ringMod") return null;
+	const ringMod = rawSlot.params;
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
 		if (presetId === "custom") return;
 		const preset = RING_MOD_PRESETS.find((e) => e.id === presetId);
 		if (!preset) return;
-		setFxSlotRingMod(slot, preset.patch.ringMod);
+		setFxSlotParams(slot, preset.patch.ringMod);
 		requestApplyModulePreset({
 			module: "ringMod",
 			preset: preset.id,
@@ -40,11 +42,11 @@ export default function RingModModule({ slot }: { slot: number }) {
 				/>
 			}
 			enabled={ringMod.enabled ?? false}
-			onToggle={() => setFxSlotRingMod(slot, { ...ringMod, enabled: !ringMod.enabled })}
+			onToggle={() => setFxSlotParams(slot, { enabled: !ringMod.enabled })}
 		>
 			<ControlKnob
 				value={ringMod.carrierHz ?? 440}
-				onChange={(v) => setFxSlotRingMod(slot, { ...ringMod, carrierHz: v })}
+				onChange={(v) => setFxSlotParams(slot, { carrierHz: v })}
 				min={20}
 				max={2000}
 				defaultValue={440}
@@ -55,7 +57,7 @@ export default function RingModModule({ slot }: { slot: number }) {
 			/>
 			<ControlKnob
 				value={ringMod.mix ?? 1}
-				onChange={(v) => setFxSlotRingMod(slot, { ...ringMod, mix: v })}
+				onChange={(v) => setFxSlotParams(slot, { mix: v })}
 				min={0}
 				max={1}
 				defaultValue={1}

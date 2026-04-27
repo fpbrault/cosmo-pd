@@ -1,4 +1,4 @@
-use crate::params::{LfoWaveform, SynthParams};
+use crate::params::{FxSlotConfig, LfoWaveform, SynthParams};
 pub fn apply_module_preset(params: &mut SynthParams, module: &str, preset: &str) -> bool {
     match module {
         "chorus" => apply_chorus_preset(params, preset),
@@ -271,35 +271,45 @@ fn apply_mod_env_preset(params: &mut SynthParams, preset: &str) -> bool {
 }
 
 fn apply_compressor_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::Compressor(c) = s {
+            Some(c)
+        } else {
+            None
+        }
+    });
+    let Some(c) = slot else {
+        return false;
+    };
     match preset {
         "gentle" => {
-            params.compressor.enabled = true;
-            params.compressor.threshold_db = -18.0;
-            params.compressor.ratio = 2.0;
-            params.compressor.attack_ms = 10.0;
-            params.compressor.release_ms = 150.0;
-            params.compressor.makeup_db = 3.0;
-            params.compressor.mix = 1.0;
+            c.enabled = true;
+            c.threshold_db = -18.0;
+            c.ratio = 2.0;
+            c.attack_ms = 10.0;
+            c.release_ms = 150.0;
+            c.makeup_db = 3.0;
+            c.mix = 1.0;
             true
         }
         "punchy" => {
-            params.compressor.enabled = true;
-            params.compressor.threshold_db = -12.0;
-            params.compressor.ratio = 4.0;
-            params.compressor.attack_ms = 5.0;
-            params.compressor.release_ms = 80.0;
-            params.compressor.makeup_db = 6.0;
-            params.compressor.mix = 1.0;
+            c.enabled = true;
+            c.threshold_db = -12.0;
+            c.ratio = 4.0;
+            c.attack_ms = 5.0;
+            c.release_ms = 80.0;
+            c.makeup_db = 6.0;
+            c.mix = 1.0;
             true
         }
         "limiter" => {
-            params.compressor.enabled = true;
-            params.compressor.threshold_db = -6.0;
-            params.compressor.ratio = 20.0;
-            params.compressor.attack_ms = 1.0;
-            params.compressor.release_ms = 200.0;
-            params.compressor.makeup_db = 2.0;
-            params.compressor.mix = 1.0;
+            c.enabled = true;
+            c.threshold_db = -6.0;
+            c.ratio = 20.0;
+            c.attack_ms = 1.0;
+            c.release_ms = 200.0;
+            c.makeup_db = 2.0;
+            c.mix = 1.0;
             true
         }
         _ => false,
@@ -307,32 +317,42 @@ fn apply_compressor_preset(params: &mut SynthParams, preset: &str) -> bool {
 }
 
 fn apply_eq_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::Eq5Band(eq) = s {
+            Some(eq)
+        } else {
+            None
+        }
+    });
+    let Some(eq) = slot else {
+        return false;
+    };
     match preset {
         "bassBoost" => {
-            params.eq.enabled = true;
-            params.eq.gain80 = 6.0;
-            params.eq.gain240 = 3.0;
-            params.eq.gain750 = 0.0;
-            params.eq.gain2200 = -1.0;
-            params.eq.gain8000 = -2.0;
+            eq.enabled = true;
+            eq.gain80 = 6.0;
+            eq.gain240 = 3.0;
+            eq.gain750 = 0.0;
+            eq.gain2200 = -1.0;
+            eq.gain8000 = -2.0;
             true
         }
         "presence" => {
-            params.eq.enabled = true;
-            params.eq.gain80 = 0.0;
-            params.eq.gain240 = -2.0;
-            params.eq.gain750 = 0.0;
-            params.eq.gain2200 = 5.0;
-            params.eq.gain8000 = 3.0;
+            eq.enabled = true;
+            eq.gain80 = 0.0;
+            eq.gain240 = -2.0;
+            eq.gain750 = 0.0;
+            eq.gain2200 = 5.0;
+            eq.gain8000 = 3.0;
             true
         }
         "warmth" => {
-            params.eq.enabled = true;
-            params.eq.gain80 = 3.0;
-            params.eq.gain240 = 4.0;
-            params.eq.gain750 = 1.0;
-            params.eq.gain2200 = -3.0;
-            params.eq.gain8000 = -5.0;
+            eq.enabled = true;
+            eq.gain80 = 3.0;
+            eq.gain240 = 4.0;
+            eq.gain750 = 1.0;
+            eq.gain2200 = -3.0;
+            eq.gain8000 = -5.0;
             true
         }
         _ => false,
@@ -340,26 +360,36 @@ fn apply_eq_preset(params: &mut SynthParams, preset: &str) -> bool {
 }
 
 fn apply_bitcrusher_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::Bitcrusher(bc) = s {
+            Some(bc)
+        } else {
+            None
+        }
+    });
+    let Some(bc) = slot else {
+        return false;
+    };
     match preset {
         "retroGame" => {
-            params.bitcrusher.enabled = true;
-            params.bitcrusher.bits = 8.0;
-            params.bitcrusher.rate_reduction = 4.0;
-            params.bitcrusher.mix = 1.0;
+            bc.enabled = true;
+            bc.bits = 8.0;
+            bc.rate_reduction = 4.0;
+            bc.mix = 1.0;
             true
         }
         "grunge" => {
-            params.bitcrusher.enabled = true;
-            params.bitcrusher.bits = 4.0;
-            params.bitcrusher.rate_reduction = 2.0;
-            params.bitcrusher.mix = 0.8;
+            bc.enabled = true;
+            bc.bits = 4.0;
+            bc.rate_reduction = 2.0;
+            bc.mix = 0.8;
             true
         }
         "subtle" => {
-            params.bitcrusher.enabled = true;
-            params.bitcrusher.bits = 12.0;
-            params.bitcrusher.rate_reduction = 1.5;
-            params.bitcrusher.mix = 0.6;
+            bc.enabled = true;
+            bc.bits = 12.0;
+            bc.rate_reduction = 1.5;
+            bc.mix = 0.6;
             true
         }
         _ => false,
@@ -367,29 +397,39 @@ fn apply_bitcrusher_preset(params: &mut SynthParams, preset: &str) -> bool {
 }
 
 fn apply_grain_delay_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::GrainDelay(gd) = s {
+            Some(gd)
+        } else {
+            None
+        }
+    });
+    let Some(gd) = slot else {
+        return false;
+    };
     match preset {
         "cloudEcho" => {
-            params.grain_delay.enabled = true;
-            params.grain_delay.time = 0.35;
-            params.grain_delay.scatter = 0.6;
-            params.grain_delay.density = 0.7;
-            params.grain_delay.mix = 0.4;
+            gd.enabled = true;
+            gd.time = 0.35;
+            gd.scatter = 0.6;
+            gd.density = 0.7;
+            gd.mix = 0.4;
             true
         }
         "glitchDelay" => {
-            params.grain_delay.enabled = true;
-            params.grain_delay.time = 0.12;
-            params.grain_delay.scatter = 0.9;
-            params.grain_delay.density = 0.85;
-            params.grain_delay.mix = 0.5;
+            gd.enabled = true;
+            gd.time = 0.12;
+            gd.scatter = 0.9;
+            gd.density = 0.85;
+            gd.mix = 0.5;
             true
         }
         "shimmerEcho" => {
-            params.grain_delay.enabled = true;
-            params.grain_delay.time = 0.5;
-            params.grain_delay.scatter = 0.35;
-            params.grain_delay.density = 0.5;
-            params.grain_delay.mix = 0.35;
+            gd.enabled = true;
+            gd.time = 0.5;
+            gd.scatter = 0.35;
+            gd.density = 0.5;
+            gd.mix = 0.35;
             true
         }
         _ => false,
@@ -397,26 +437,36 @@ fn apply_grain_delay_preset(params: &mut SynthParams, preset: &str) -> bool {
 }
 
 fn apply_shimmer_verb_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::ShimmerVerb(sv) = s {
+            Some(sv)
+        } else {
+            None
+        }
+    });
+    let Some(sv) = slot else {
+        return false;
+    };
     match preset {
         "crystalHall" => {
-            params.shimmer_verb.enabled = true;
-            params.shimmer_verb.shimmer = 0.6;
-            params.shimmer_verb.space = 0.8;
-            params.shimmer_verb.mix = 0.4;
+            sv.enabled = true;
+            sv.shimmer = 0.6;
+            sv.space = 0.8;
+            sv.mix = 0.4;
             true
         }
         "ethereal" => {
-            params.shimmer_verb.enabled = true;
-            params.shimmer_verb.shimmer = 0.85;
-            params.shimmer_verb.space = 0.95;
-            params.shimmer_verb.mix = 0.55;
+            sv.enabled = true;
+            sv.shimmer = 0.85;
+            sv.space = 0.95;
+            sv.mix = 0.55;
             true
         }
         "subtleShimmer" => {
-            params.shimmer_verb.enabled = true;
-            params.shimmer_verb.shimmer = 0.25;
-            params.shimmer_verb.space = 0.6;
-            params.shimmer_verb.mix = 0.3;
+            sv.enabled = true;
+            sv.shimmer = 0.25;
+            sv.space = 0.6;
+            sv.mix = 0.3;
             true
         }
         _ => false,
@@ -424,26 +474,36 @@ fn apply_shimmer_verb_preset(params: &mut SynthParams, preset: &str) -> bool {
 }
 
 fn apply_distortion_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::Distortion(d) = s {
+            Some(d)
+        } else {
+            None
+        }
+    });
+    let Some(dist) = slot else {
+        return false;
+    };
     match preset {
         "warmOverdrive" => {
-            params.distortion.enabled = true;
-            params.distortion.drive = 0.35;
-            params.distortion.tone = 0.3;
-            params.distortion.mix = 0.9;
+            dist.enabled = true;
+            dist.drive = 0.35;
+            dist.tone = 0.3;
+            dist.mix = 0.9;
             true
         }
         "grittyFuzz" => {
-            params.distortion.enabled = true;
-            params.distortion.drive = 0.75;
-            params.distortion.tone = 0.6;
-            params.distortion.mix = 1.0;
+            dist.enabled = true;
+            dist.drive = 0.75;
+            dist.tone = 0.6;
+            dist.mix = 1.0;
             true
         }
         "bitingClip" => {
-            params.distortion.enabled = true;
-            params.distortion.drive = 0.9;
-            params.distortion.tone = 0.8;
-            params.distortion.mix = 1.0;
+            dist.enabled = true;
+            dist.drive = 0.9;
+            dist.tone = 0.8;
+            dist.mix = 1.0;
             true
         }
         _ => false,
@@ -451,23 +511,33 @@ fn apply_distortion_preset(params: &mut SynthParams, preset: &str) -> bool {
 }
 
 fn apply_juno_chorus_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::JunoChorus(jc) = s {
+            Some(jc)
+        } else {
+            None
+        }
+    });
+    let Some(jc) = slot else {
+        return false;
+    };
     match preset {
         "junoI" => {
-            params.juno_chorus.enabled = true;
-            params.juno_chorus.mode = 0;
-            params.juno_chorus.mix = 0.5;
+            jc.enabled = true;
+            jc.mode = 0;
+            jc.mix = 0.5;
             true
         }
         "junoII" => {
-            params.juno_chorus.enabled = true;
-            params.juno_chorus.mode = 1;
-            params.juno_chorus.mix = 0.55;
+            jc.enabled = true;
+            jc.mode = 1;
+            jc.mix = 0.55;
             true
         }
         "junoFull" => {
-            params.juno_chorus.enabled = true;
-            params.juno_chorus.mode = 2;
-            params.juno_chorus.mix = 0.6;
+            jc.enabled = true;
+            jc.mode = 2;
+            jc.mix = 0.6;
             true
         }
         _ => false,
@@ -475,23 +545,33 @@ fn apply_juno_chorus_preset(params: &mut SynthParams, preset: &str) -> bool {
 }
 
 fn apply_ring_mod_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::RingMod(rm) = s {
+            Some(rm)
+        } else {
+            None
+        }
+    });
+    let Some(rm) = slot else {
+        return false;
+    };
     match preset {
         "metallic" => {
-            params.ring_mod.enabled = true;
-            params.ring_mod.carrier_hz = 220.0;
-            params.ring_mod.mix = 0.7;
+            rm.enabled = true;
+            rm.carrier_hz = 220.0;
+            rm.mix = 0.7;
             true
         }
         "bell" => {
-            params.ring_mod.enabled = true;
-            params.ring_mod.carrier_hz = 523.0;
-            params.ring_mod.mix = 0.5;
+            rm.enabled = true;
+            rm.carrier_hz = 523.0;
+            rm.mix = 0.5;
             true
         }
         "alien" => {
-            params.ring_mod.enabled = true;
-            params.ring_mod.carrier_hz = 1337.0;
-            params.ring_mod.mix = 0.85;
+            rm.enabled = true;
+            rm.carrier_hz = 1337.0;
+            rm.mix = 0.85;
             true
         }
         _ => false,
@@ -499,29 +579,39 @@ fn apply_ring_mod_preset(params: &mut SynthParams, preset: &str) -> bool {
 }
 
 fn apply_tremolo_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::Tremolo(tr) = s {
+            Some(tr)
+        } else {
+            None
+        }
+    });
+    let Some(tr) = slot else {
+        return false;
+    };
     match preset {
         "slowWave" => {
-            params.tremolo.enabled = true;
-            params.tremolo.rate = 2.0;
-            params.tremolo.depth = 0.5;
-            params.tremolo.waveform = 0;
-            params.tremolo.mix = 1.0;
+            tr.enabled = true;
+            tr.rate = 2.0;
+            tr.depth = 0.5;
+            tr.waveform = 0;
+            tr.mix = 1.0;
             true
         }
         "fastChop" => {
-            params.tremolo.enabled = true;
-            params.tremolo.rate = 8.0;
-            params.tremolo.depth = 0.75;
-            params.tremolo.waveform = 2;
-            params.tremolo.mix = 1.0;
+            tr.enabled = true;
+            tr.rate = 8.0;
+            tr.depth = 0.75;
+            tr.waveform = 2;
+            tr.mix = 1.0;
             true
         }
         "triPulse" => {
-            params.tremolo.enabled = true;
-            params.tremolo.rate = 5.0;
-            params.tremolo.depth = 0.6;
-            params.tremolo.waveform = 1;
-            params.tremolo.mix = 1.0;
+            tr.enabled = true;
+            tr.rate = 5.0;
+            tr.depth = 0.6;
+            tr.waveform = 1;
+            tr.mix = 1.0;
             true
         }
         _ => false,
@@ -529,26 +619,36 @@ fn apply_tremolo_preset(params: &mut SynthParams, preset: &str) -> bool {
 }
 
 fn apply_wavefolder_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::Wavefolder(wf) = s {
+            Some(wf)
+        } else {
+            None
+        }
+    });
+    let Some(wf) = slot else {
+        return false;
+    };
     match preset {
         "gentle" => {
-            params.wavefolder.enabled = true;
-            params.wavefolder.drive = 0.3;
-            params.wavefolder.folds = 0.3;
-            params.wavefolder.mix = 0.8;
+            wf.enabled = true;
+            wf.drive = 0.3;
+            wf.folds = 0.3;
+            wf.mix = 0.8;
             true
         }
         "aggressive" => {
-            params.wavefolder.enabled = true;
-            params.wavefolder.drive = 0.75;
-            params.wavefolder.folds = 0.7;
-            params.wavefolder.mix = 1.0;
+            wf.enabled = true;
+            wf.drive = 0.75;
+            wf.folds = 0.7;
+            wf.mix = 1.0;
             true
         }
         "harmonic" => {
-            params.wavefolder.enabled = true;
-            params.wavefolder.drive = 0.5;
-            params.wavefolder.folds = 0.5;
-            params.wavefolder.mix = 0.9;
+            wf.enabled = true;
+            wf.drive = 0.5;
+            wf.folds = 0.5;
+            wf.mix = 0.9;
             true
         }
         _ => false,

@@ -129,99 +129,40 @@ export default function AsidePanelSwitcher<T extends string>({
 	const { setValue: setPhaseModEnabled } = useSynthParam("phaseModEnabled");
 	const { setValue: setVibratoEnabled } = useSynthParam("vibratoEnabled");
 
-	const fxSlotTypes = useSynthStore((s) => s.fxSlotTypes);
-	const fxSlotChoruses = useSynthStore((s) => s.fxSlotChoruses);
-	const fxSlotDelays = useSynthStore((s) => s.fxSlotDelays);
-	const fxSlotReverbs = useSynthStore((s) => s.fxSlotReverbs);
-	const fxSlotPhasers = useSynthStore((s) => s.fxSlotPhasers);
-	const fxSlotCompressors = useSynthStore((s) => s.fxSlotCompressors);
-	const fxSlotEqs = useSynthStore((s) => s.fxSlotEqs);
-	const fxSlotGrainDelays = useSynthStore((s) => s.fxSlotGrainDelays);
-	const fxSlotBitcrushers = useSynthStore((s) => s.fxSlotBitcrushers);
-	const fxSlotShimmerVerbs = useSynthStore((s) => s.fxSlotShimmerVerbs);
-	const fxSlotDistortions = useSynthStore((s) => s.fxSlotDistortions);
-	const fxSlotJunoChoruses = useSynthStore((s) => s.fxSlotJunoChoruses);
-	const fxSlotRingMods = useSynthStore((s) => s.fxSlotRingMods);
-	const fxSlotTremolos = useSynthStore((s) => s.fxSlotTremolos);
-	const fxSlotWavefolders = useSynthStore((s) => s.fxSlotWavefolders);
-	const setFxSlotChorus = useSynthStore((s) => s.setFxSlotChorus);
-	const setFxSlotDelay = useSynthStore((s) => s.setFxSlotDelay);
-	const setFxSlotReverb = useSynthStore((s) => s.setFxSlotReverb);
-	const setFxSlotPhaser = useSynthStore((s) => s.setFxSlotPhaser);
-	const setFxSlotCompressor = useSynthStore((s) => s.setFxSlotCompressor);
-	const setFxSlotEq = useSynthStore((s) => s.setFxSlotEq);
-	const setFxSlotGrainDelay = useSynthStore((s) => s.setFxSlotGrainDelay);
-	const setFxSlotBitcrusher = useSynthStore((s) => s.setFxSlotBitcrusher);
-	const setFxSlotShimmerVerb = useSynthStore((s) => s.setFxSlotShimmerVerb);
-	const setFxSlotDistortion = useSynthStore((s) => s.setFxSlotDistortion);
-	const setFxSlotJunoChorus = useSynthStore((s) => s.setFxSlotJunoChorus);
-	const setFxSlotRingMod = useSynthStore((s) => s.setFxSlotRingMod);
-	const setFxSlotTremolo = useSynthStore((s) => s.setFxSlotTremolo);
-	const setFxSlotWavefolder = useSynthStore((s) => s.setFxSlotWavefolder);
+	const fxSlots = useSynthStore((s) => s.fxSlots);
+	const setFxSlotEnabled = useSynthStore((s) => s.setFxSlotEnabled);
 
-	const getSlotEnabled = (slot: number, type: FxSlotType): boolean => {
-		switch (type) {
-			case "chorus":
-				return fxSlotChoruses[slot]?.enabled ?? false;
-			case "delay":
-				return fxSlotDelays[slot]?.enabled ?? false;
-			case "reverb":
-				return fxSlotReverbs[slot]?.enabled ?? false;
-			case "phaser":
-				return fxSlotPhasers[slot]?.enabled ?? false;
-			case "vibrato":
-				return vibratoEnabled;
-			case "phaseMod":
-				return phaseModEnabled;
-			case "compressor": return fxSlotCompressors[slot]?.enabled ?? false;
-			case "eq5Band": return fxSlotEqs[slot]?.enabled ?? false;
-			case "grainDelay": return fxSlotGrainDelays[slot]?.enabled ?? false;
-			case "bitcrusher": return fxSlotBitcrushers[slot]?.enabled ?? false;
-			case "shimmerVerb": return fxSlotShimmerVerbs[slot]?.enabled ?? false;
-			case "distortion": return fxSlotDistortions[slot]?.enabled ?? false;
-			case "junoChorus": return fxSlotJunoChoruses[slot]?.enabled ?? false;
-			case "ringMod": return fxSlotRingMods[slot]?.enabled ?? false;
-			case "tremolo": return fxSlotTremolos[slot]?.enabled ?? false;
-			case "wavefolder": return fxSlotWavefolders[slot]?.enabled ?? false;
-			default: return false;
-		}
+	const getSlotEnabled = (slot: number): boolean => {
+		const config = fxSlots[slot];
+		if (!config) return false;
+		if (config.type === "empty") return false;
+		if (config.type === "phaseMod") return phaseModEnabled;
+		if (config.type === "vibrato") return vibratoEnabled;
+		return (
+			(config as { params: { enabled?: boolean } }).params?.enabled ?? false
+		);
 	};
 
-	const toggleSlotEnabled = (slot: number, type: FxSlotType): void => {
-		const en = getSlotEnabled(slot, type);
-		switch (type) {
-			case "chorus":
-				setFxSlotChorus(slot, { ...fxSlotChoruses[slot], enabled: !en });
-				break;
-			case "delay":
-				setFxSlotDelay(slot, { ...fxSlotDelays[slot], enabled: !en });
-				break;
-			case "reverb":
-				setFxSlotReverb(slot, { ...fxSlotReverbs[slot], enabled: !en });
-				break;
-			case "phaser":
-				setFxSlotPhaser(slot, { ...fxSlotPhasers[slot], enabled: !en });
-				break;
-			case "vibrato": setVibratoEnabled(!en); break;
-			case "phaseMod": setPhaseModEnabled(!en); break;
-			case "compressor": setFxSlotCompressor(slot, { ...fxSlotCompressors[slot], enabled: !en }); break;
-			case "eq5Band": setFxSlotEq(slot, { ...fxSlotEqs[slot], enabled: !en }); break;
-			case "grainDelay": setFxSlotGrainDelay(slot, { ...fxSlotGrainDelays[slot], enabled: !en }); break;
-			case "bitcrusher": setFxSlotBitcrusher(slot, { ...fxSlotBitcrushers[slot], enabled: !en }); break;
-			case "shimmerVerb": setFxSlotShimmerVerb(slot, { ...fxSlotShimmerVerbs[slot], enabled: !en }); break;
-			case "distortion": setFxSlotDistortion(slot, { ...fxSlotDistortions[slot], enabled: !en }); break;
-			case "junoChorus": setFxSlotJunoChorus(slot, { ...fxSlotJunoChoruses[slot], enabled: !en }); break;
-			case "ringMod": setFxSlotRingMod(slot, { ...fxSlotRingMods[slot], enabled: !en }); break;
-			case "tremolo": setFxSlotTremolo(slot, { ...fxSlotTremolos[slot], enabled: !en }); break;
-			case "wavefolder": setFxSlotWavefolder(slot, { ...fxSlotWavefolders[slot], enabled: !en }); break;
+	const toggleSlotEnabled = (slot: number): void => {
+		const config = fxSlots[slot];
+		if (!config || config.type === "empty") return;
+		const en = getSlotEnabled(slot);
+		if (config.type === "vibrato") {
+			setVibratoEnabled(!en);
+			return;
 		}
+		if (config.type === "phaseMod") {
+			setPhaseModEnabled(!en);
+			return;
+		}
+		setFxSlotEnabled(slot, !en);
 	};
 
 	const isTabEnabled = (tabId: T): boolean => {
 		const normalized = String(tabId).toLowerCase();
 		const slot = FX_TAB_SLOT_INDEX[normalized];
 		if (slot != null) {
-			return getSlotEnabled(slot, fxSlotTypes[slot]);
+			return getSlotEnabled(slot);
 		}
 
 		switch (normalized) {
@@ -266,7 +207,7 @@ export default function AsidePanelSwitcher<T extends string>({
 		const normalizedTabId = String(tabId).toLowerCase();
 		const slot = FX_TAB_SLOT_INDEX[normalizedTabId];
 		if (slot != null) {
-			return FX_TYPE_COLORS[fxSlotTypes[slot]];
+			return FX_TYPE_COLORS[fxSlots[slot]?.type as FxSlotType];
 		}
 		return undefined;
 	};
@@ -275,7 +216,7 @@ export default function AsidePanelSwitcher<T extends string>({
 		const normalized = String(tabId).toLowerCase();
 		const slot = FX_TAB_SLOT_INDEX[normalized];
 		if (slot != null) {
-			toggleSlotEnabled(slot, fxSlotTypes[slot]);
+			toggleSlotEnabled(slot);
 			return;
 		}
 
@@ -338,7 +279,7 @@ export default function AsidePanelSwitcher<T extends string>({
 		const normalizedTabId = String(panelType.panelId).toLowerCase();
 		const slot = FX_TAB_SLOT_INDEX[normalizedTabId];
 		if (slot != null) {
-			const type = fxSlotTypes[slot];
+			const type = fxSlots[slot]?.type as FxSlotType;
 			return {
 				id: panelType.panelId,
 				topLabel: `S${slot + 1}`,

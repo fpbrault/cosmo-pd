@@ -13,11 +13,11 @@ use cosmo_synth_engine::generators::{
 use cosmo_synth_engine::params::{
     Algo, AlgoControlValueV1, BitcrusherParams, ChorusParams, CompressorParams, CzAlgo,
     CzLineParams, CzWaveform, DelayParams, DistortionParams, EnvStep, EqParams, FilterParams,
-    FilterType, FxSlotType, GrainDelayParams, JunoChorusParams, LfoParams, LfoWaveform, LineParams,
-    LineSelect, ModDestination, ModEnvParams, ModMatrix, ModMode, ModRoute, ModSource, PhaserParams,
-    PolyMode, PortamentoMode, PortamentoParams, RandomParams, ReverbParams, RingModParams,
-    ShimmerVerbParams, StepEnvData, SynthParams, TremoloParams, VibratoParams, WavefolderParams,
-    WindowType,
+    FilterType, FxSlotConfig, FxSlotType, GrainDelayParams, JunoChorusParams, LfoParams,
+    LfoWaveform, LineParams, LineSelect, ModDestination, ModEnvParams, ModMatrix, ModMode,
+    ModRoute, ModSource, PhaserParams, PolyMode, PortamentoMode, PortamentoParams, RandomParams,
+    ReverbParams, RingModParams, ShimmerVerbParams, StepEnvData, SynthParams, TremoloParams,
+    VibratoParams, WavefolderParams, WindowType,
 };
 use cosmo_synth_engine::preset_wire::{
     algo_definitions_v1, algo_ui_catalog_v1, cz_presets, SynthPresetV1,
@@ -135,7 +135,9 @@ fn main() {
     out.push_str("\n\n");
     out.push_str(&export::<BitcrusherParams>(&config).expect("Failed to export BitcrusherParams"));
     out.push_str("\n\n");
-    out.push_str(&export::<ShimmerVerbParams>(&config).expect("Failed to export ShimmerVerbParams"));
+    out.push_str(
+        &export::<ShimmerVerbParams>(&config).expect("Failed to export ShimmerVerbParams"),
+    );
     out.push_str("\n\n");
     out.push_str(&export::<DistortionParams>(&config).expect("Failed to export DistortionParams"));
     out.push_str("\n\n");
@@ -146,6 +148,8 @@ fn main() {
     out.push_str(&export::<TremoloParams>(&config).expect("Failed to export TremoloParams"));
     out.push_str("\n\n");
     out.push_str(&export::<WavefolderParams>(&config).expect("Failed to export WavefolderParams"));
+    out.push_str("\n\n");
+    out.push_str(&export::<FxSlotConfig>(&config).expect("Failed to export FxSlotConfig"));
     out.push_str("\n\n");
     out.push_str(&export::<SynthParams>(&config).expect("Failed to export SynthParams"));
     out.push_str("\n\n");
