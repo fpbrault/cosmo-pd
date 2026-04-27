@@ -42,7 +42,9 @@ test.describe("Preset management", () => {
 			.filter({ has: page.getByRole("heading", { name: "Current State" }) });
 
 		await currentStateSection.getByRole("button", { name: "Save As" }).click();
-		const saveAsDialog = page.locator("dialog[open]");
+		const saveAsDialog = page
+			.locator("dialog[open]")
+			.filter({ has: page.getByRole("heading", { name: "Save preset as" }) });
 		await saveAsDialog.getByPlaceholder("New preset name").fill("E2E Patch");
 		await saveAsDialog.getByRole("button", { name: "Confirm save as" }).click();
 
