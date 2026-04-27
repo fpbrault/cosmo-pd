@@ -33,6 +33,7 @@ export function PhaserSection({
 			color: "#a78bfa",
 			tooltip: PARAM_META.phaserRate?.tooltip,
 			valueFormatter: (value) => `${value.toFixed(1)}Hz`,
+			modTarget: "phaser.rate",
 		},
 		{
 			label: "Depth",
@@ -44,6 +45,7 @@ export function PhaserSection({
 			color: "#a78bfa",
 			tooltip: PARAM_META.phaserDepth?.tooltip,
 			valueFormatter: (value) => `${Math.round(value * 100)}%`,
+			modTarget: "phaser.depth",
 		},
 		{
 			label: "Fdbk",
@@ -58,6 +60,7 @@ export function PhaserSection({
 				value >= 0
 					? `+${Math.round(value * 100)}%`
 					: `${Math.round(value * 100)}%`,
+			modTarget: "phaser.feedback",
 		},
 		{
 			label: "Mix",
@@ -69,6 +72,7 @@ export function PhaserSection({
 			color: "#9cb937",
 			tooltip: PARAM_META.phaserMix?.tooltip,
 			valueFormatter: (value) => `${Math.round(value * 100)}%`,
+			modTarget: "phaser.mix",
 		},
 	];
 	return <BaseFxSection title="Phaser" knobs={knobs} />;

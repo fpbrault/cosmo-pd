@@ -13,8 +13,10 @@ use crate::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use crate::fx::FxChain;
 use crate::generators::PER_LINE_HEADROOM;
 use crate::module_presets;
-use crate::params::{FxSlotConfig, FxSlotType, PolyMode, SynthParams, NUM_VOICES};
-use crate::voice::{render_voice, Voice};
+use crate::params::{
+    FxSlotConfig, FxSlotType, ModDestination, PolyMode, SynthParams, NUM_VOICES,
+};
+use crate::voice::{mod_value_for, render_voice, ModSources, Voice};
 
 const SOFT_CLIP_DRIVE: f32 = 1.0;
 const SOFT_CLIP_THRESHOLD: f32 = 0.9;
@@ -595,23 +597,72 @@ impl CosmoProcessor {
     pub fn process(&mut self, output: &mut [f32]) {
         let p = &self.params;
         let volume = p.volume;
-        let lfo1_rate = p.lfo.rate;
+        let base_lfo1_rate = p.lfo.rate;
         let lfo1_waveform = p.lfo.waveform;
-        let lfo1_symmetry = p.lfo.symmetry;
-        let lfo1_depth = p.lfo.depth;
-        let lfo1_offset = p.lfo.offset;
-        let lfo2_rate = p.lfo2.rate;
+        let base_lfo1_symmetry = p.lfo.symmetry;
+        let base_lfo1_depth = p.lfo.depth;
+        let base_lfo1_offset = p.lfo.offset;
+        let base_lfo2_rate = p.lfo2.rate;
         let lfo2_waveform = p.lfo2.waveform;
-        let lfo2_symmetry = p.lfo2.symmetry;
-        let lfo2_depth = p.lfo2.depth;
-        let lfo2_offset = p.lfo2.offset;
+        let base_lfo2_symmetry = p.lfo2.symmetry;
+        let base_lfo2_depth = p.lfo2.depth;
+        let base_lfo2_offset = p.lfo2.offset;
+        let base_random_rate = p.random.rate;
         let sr = self.sample_rate;
         let headroom_ratio = REFERENCE_LINE_HEADROOM / PER_LINE_HEADROOM.max(0.01);
         let headroom_makeup =
             libm::powf(headroom_ratio, HEADROOM_MAKEUP_EXPONENT).clamp(1.0, MAX_HEADROOM_MAKEUP);
         let norm = volume * headroom_makeup / libm::sqrtf(NUM_VOICES as f32);
+        let matrix = &p.mod_matrix;
+
+        let mut prev_lfo1 = self.last_runtime_mod_sources.lfo1;
+        let mut prev_lfo2 = self.last_runtime_mod_sources.lfo2;
+        let mut prev_random = self.last_runtime_mod_sources.random;
 
         for sample_out in output.iter_mut() {
+            let (source_mod_env, source_velocity) = self
+                .runtime_mod_source_voice_index()
+                .map(|voice_idx| {
+                    let voice = &self.voices[voice_idx];
+                    (voice.mod_env.output, voice.velocity)
+                })
+                .unwrap_or((0.0, 0.0));
+
+            let pre_sources = ModSources::new(
+                prev_lfo1,
+                prev_lfo2,
+                prev_random,
+                source_mod_env,
+                source_velocity,
+                self.mod_wheel,
+                self.aftertouch,
+            );
+
+            let lfo1_rate_mod = mod_value_for(ModDestination::LfoRate, matrix, &pre_sources)
+                + mod_value_for(ModDestination::Lfo1Rate, matrix, &pre_sources);
+            let lfo1_depth_mod = mod_value_for(ModDestination::LfoDepth, matrix, &pre_sources)
+                + mod_value_for(ModDestination::Lfo1Depth, matrix, &pre_sources);
+            let lfo1_symmetry_mod =
+                mod_value_for(ModDestination::Lfo1Symmetry, matrix, &pre_sources);
+            let lfo1_offset_mod = mod_value_for(ModDestination::Lfo1Offset, matrix, &pre_sources);
+
+            let lfo2_rate_mod = mod_value_for(ModDestination::Lfo2Rate, matrix, &pre_sources);
+            let lfo2_depth_mod = mod_value_for(ModDestination::Lfo2Depth, matrix, &pre_sources);
+            let lfo2_symmetry_mod =
+                mod_value_for(ModDestination::Lfo2Symmetry, matrix, &pre_sources);
+            let lfo2_offset_mod = mod_value_for(ModDestination::Lfo2Offset, matrix, &pre_sources);
+            let random_rate_mod = mod_value_for(ModDestination::RandomRate, matrix, &pre_sources);
+
+            let lfo1_rate = (base_lfo1_rate + lfo1_rate_mod * 20.0).clamp(0.01, 40.0);
+            let lfo1_depth = (base_lfo1_depth + lfo1_depth_mod).clamp(0.0, 1.0);
+            let lfo1_symmetry = (base_lfo1_symmetry + lfo1_symmetry_mod).clamp(0.0, 1.0);
+            let lfo1_offset = (base_lfo1_offset + lfo1_offset_mod).clamp(-1.0, 1.0);
+
+            let lfo2_rate = (base_lfo2_rate + lfo2_rate_mod * 20.0).clamp(0.01, 40.0);
+            let lfo2_depth = (base_lfo2_depth + lfo2_depth_mod).clamp(0.0, 1.0);
+            let lfo2_symmetry = (base_lfo2_symmetry + lfo2_symmetry_mod).clamp(0.0, 1.0);
+            let lfo2_offset = (base_lfo2_offset + lfo2_offset_mod).clamp(-1.0, 1.0);
+
             self.lfo_phase += lfo1_rate / sr;
             if self.lfo_phase >= 1.0 {
                 self.lfo_phase -= 1.0;
@@ -630,7 +681,8 @@ impl CosmoProcessor {
                     + lfo2_offset;
 
             // Advance the random (sample-and-hold) mod source.
-            self.random_phase += p.random.rate / sr;
+            let random_rate = (base_random_rate + random_rate_mod * 20.0).clamp(0.01, 40.0);
+            self.random_phase += random_rate / sr;
             if self.random_phase >= 1.0 {
                 self.random_phase -= 1.0;
                 self.random_step = self.random_step.wrapping_add(1);
@@ -677,6 +729,9 @@ impl CosmoProcessor {
                 mod_wheel,
                 aftertouch,
             };
+            prev_lfo1 = lfo1_mod_val;
+            prev_lfo2 = lfo2_mod_val;
+            prev_random = random_mod_val;
 
             mixed *= norm;
 
@@ -729,6 +784,7 @@ fn soft_clip_tanh(sample: f32, drive: f32) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::params::{ModDestination, ModRoute, ModSource};
 
     fn active_voice_indices_for_note(proc: &CosmoProcessor, note: u8) -> Vec<usize> {
         proc.voices
@@ -774,5 +830,61 @@ mod tests {
             lingering.is_empty(),
             "note should fully release after note-off and enough process cycles",
         );
+    }
+
+    #[test]
+    fn lfo_rate_destination_changes_runtime_lfo_phase_advance() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.set_mod_wheel(1.0);
+        proc.params.mod_matrix.routes = vec![ModRoute {
+            source: ModSource::ModWheel,
+            destination: ModDestination::Lfo1Rate,
+            amount: 1.0,
+            enabled: true,
+        }];
+
+        let base_rate = proc.params.lfo.rate;
+        let mut out = [0.0_f32; 1];
+        proc.process(&mut out);
+
+        let expected_without_mod = base_rate / proc.sample_rate;
+        assert!(proc.lfo_phase > expected_without_mod);
+    }
+
+    #[test]
+    fn fx_destination_route_does_not_break_processing() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.set_mod_wheel(1.0);
+        proc.params.chorus.enabled = true;
+        proc.params.chorus.mix = 1.0;
+        proc.params.mod_matrix.routes = vec![ModRoute {
+            source: ModSource::ModWheel,
+            destination: ModDestination::ChorusRate,
+            amount: 1.0,
+            enabled: true,
+        }];
+        let mut out = [0.0_f32; 1];
+        proc.process(&mut out);
+
+        assert!(out[0].is_finite());
+    }
+
+    #[test]
+    fn random_rate_destination_changes_random_phase_advance() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.set_mod_wheel(1.0);
+        proc.params.mod_matrix.routes = vec![ModRoute {
+            source: ModSource::ModWheel,
+            destination: ModDestination::RandomRate,
+            amount: 1.0,
+            enabled: true,
+        }];
+
+        let base_rate = proc.params.random.rate;
+        let mut out = [0.0_f32; 1];
+        proc.process(&mut out);
+
+        let expected_without_mod = base_rate / proc.sample_rate;
+        assert!(proc.random_phase > expected_without_mod);
     }
 }
