@@ -73,14 +73,7 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
 /// The cycle is divided into N equal segments. Segments whose index satisfies
 /// `seg % period == 1` play backwards (controlled by `reverse`). A cumulative
 /// `slip` drifts each segment boundary forward, adding inharmonic character.
-pub fn warp_phase(
-    phase: f32,
-    amt: f32,
-    segs: f32,
-    reverse: f32,
-    slip: f32,
-    spacing: f32,
-) -> f32 {
+pub fn warp_phase(phase: f32, amt: f32, segs: f32, reverse: f32, slip: f32, spacing: f32) -> f32 {
     // Map segs [0..1] → integer count [2..8]
     let n = (2.0 + libm::roundf(segs * 6.0)).clamp(2.0, 8.0);
     let scaled = phase * n;

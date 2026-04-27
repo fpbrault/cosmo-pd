@@ -75,14 +75,7 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
 /// The linear phase is displaced by a secondary oscillator running at `ratio`
 /// times the fundamental, creating FM-like sidebands through the PD engine.
 /// `shape` morphs the modulator from sine to sawtooth for richer sideband sets.
-pub fn warp_phase(
-    phase: f32,
-    amt: f32,
-    ratio: f32,
-    depth: f32,
-    fm_phase: f32,
-    shape: f32,
-) -> f32 {
+pub fn warp_phase(phase: f32, amt: f32, ratio: f32, depth: f32, fm_phase: f32, shape: f32) -> f32 {
     let fm_x = ratio * phase + fm_phase;
     // Sine modulator
     let sin_mod = libm::sinf(TWO_PI * fm_x);

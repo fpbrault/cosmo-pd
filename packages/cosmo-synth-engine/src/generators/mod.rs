@@ -12,6 +12,7 @@ pub mod bend;
 pub mod clip;
 pub mod cz101;
 pub use cz101::{CzPresetV1, CZ_PRESETS};
+pub mod cheby;
 pub mod fof;
 pub mod fold;
 pub mod karpunk;
@@ -21,11 +22,10 @@ pub mod quantize;
 pub mod ripple;
 pub mod sine;
 pub mod skew;
+pub mod stutter;
 pub mod sync;
 pub mod terrain;
 pub mod twist;
-pub mod stutter;
-pub mod cheby;
 
 /// Per-line render inputs passed to a voice's generator for one sample.
 #[derive(Debug, Clone, Copy)]
