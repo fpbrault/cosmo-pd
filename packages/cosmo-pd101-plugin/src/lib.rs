@@ -1143,14 +1143,8 @@ impl WebViewHandler for CzWebViewHandler {
                     }));
                 }
                 let linear = scope.to_linear();
-                // Quantise to i8 (–127..127) for a compact JSON payload.
-                // The JS side rescales by dividing by 127.0.
-                let int_samples: Vec<i8> = linear
-                    .iter()
-                    .map(|&s| (s.clamp(-1.0, 1.0) * 127.0) as i8)
-                    .collect();
                 Ok(serde_json::json!({
-                    "samples": int_samples,
+                    "samples": linear,
                     "sampleRate": scope.sample_rate,
                     "hz": scope.hz,
                 }))

@@ -112,6 +112,7 @@ export function drawOscilloscope(
 	ctx.strokeStyle = color;
 	ctx.lineWidth = 2;
 	ctx.beginPath();
+	const amplitudeGain = 2;
 
 	for (let i = 0; i < viewSamples; i++) {
 		const x = (i / (viewSamples - 1)) * drawWidth;
@@ -120,8 +121,9 @@ export function drawOscilloscope(
 		const normalized = isUint8
 			? (sampleValue - mean) / 128
 			: sampleValue - mean;
-		const y =
-			drawHeight / 2 - normalized * (drawHeight / 2 - 8) * config.verticalZoom;
+		// Apply zoom as waveform amplitude gain and let canvas bounds clip out-of-view peaks.
+		const scaledAmplitude = normalized * config.verticalZoom * amplitudeGain;
+		const y = drawHeight / 2 - scaledAmplitude * (drawHeight / 2 - 8);
 		if (i === 0) {
 			ctx.moveTo(x, y);
 		} else {

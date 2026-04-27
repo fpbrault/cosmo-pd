@@ -182,8 +182,8 @@ export function ScopeMiniDisplay({
 				drawScopeBackdrop(canvas);
 				return;
 			}
-			const data = new Uint8Array(analyserNode.fftSize);
-			analyserNode.getByteTimeDomainData(data);
+			const data = new Float32Array(analyserNode.fftSize);
+			analyserNode.getFloatTimeDomainData(data);
 			const sampleRate = ctxRef?.current?.sampleRate ?? 44100;
 			drawFrameRef.current(canvas, data, Math.max(1, hz), sampleRate);
 		};
@@ -194,19 +194,15 @@ export function ScopeMiniDisplay({
 	}, []); // Runs once on mount; reads latest values through refs.
 
 	return (
-		<div className="flex flex-col items-center">
-			<span className="mb-1 text-3xs uppercase tracking-[0.24em] text-base-content/55">
+		<div className="flex w-full flex-col">
+			<span className="mb-1 self-center text-3xs uppercase tracking-[0.24em] text-base-content/55">
 				Scope
 			</span>
-			<div className="relative overflow-hidden rounded border border-cz-border bg-cz-lcd-bg">
+			<div className="relative w-full overflow-hidden rounded border border-cz-border bg-cz-lcd-bg">
 				<div className="absolute left-1 top-0.5 text-5xs font-mono text-cz-lcd-fg/60">
 					CH1
 				</div>
-				<canvas
-					ref={canvasRef}
-					className="h-16 w-36"
-					style={{ imageRendering: "pixelated" }}
-				/>
+				<canvas ref={canvasRef} className="h-24 w-full" />
 			</div>
 		</div>
 	);
@@ -233,6 +229,7 @@ function ScopePanel() {
 					min={0.5}
 					max={8}
 					size={48}
+					defaultValue={2}
 					color="#3dff3d"
 					label="Cycles"
 					tooltip="Sets how many waveform cycles are shown in scope view."
@@ -243,6 +240,7 @@ function ScopePanel() {
 					onChange={setScopeVerticalZoom}
 					min={0.25}
 					max={4}
+					defaultValue={1}
 					size={48}
 					color="#9cb937"
 					label="Zoom"
@@ -254,6 +252,7 @@ function ScopePanel() {
 					onChange={(value) => setScopeTriggerLevel(Math.round(value))}
 					min={0}
 					max={255}
+					defaultValue={128}
 					size={48}
 					color="#7f9de4"
 					label="Trig"

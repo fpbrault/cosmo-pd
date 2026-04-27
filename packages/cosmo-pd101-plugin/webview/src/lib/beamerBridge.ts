@@ -299,7 +299,6 @@ type ScopeDataResponse = {
 
 function installScopePolling(runtime: BeamerRuntime) {
 	const INTERVAL_MS = 33; // ~30 fps
-	const SCALE = 1 / 127.0;
 	let rafId = 0;
 	let lastScheduled = 0;
 	let pollInFlight = false;
@@ -335,9 +334,8 @@ function installScopePolling(runtime: BeamerRuntime) {
 		try {
 			const raw = (await runtime.invoke("getScopeData")) as ScopeDataResponse;
 			if (raw && raw.samples.length > 0 && currentScopeHandler) {
-				// Rust sends i8 integers (–127..127); rescale to float32 [-1, 1].
-				const floats = raw.samples.map((s) => s * SCALE);
-				currentScopeHandler(floats, raw.sampleRate, raw.hz);
+				// Rust sends float samples in [-1, 1].
+				currentScopeHandler(raw.samples, raw.sampleRate, raw.hz);
 			}
 		} catch {
 			// Ignore — plugin may not be producing audio yet.
