@@ -1976,4 +1976,88 @@ mod tests {
             .iter()
             .all(|s| matches!(s, FxSlotConfig::Empty)));
     }
+
+    #[test]
+    fn engine_param_ui_meta_v1_keys_are_unique_and_non_empty() {
+        let meta = engine_param_ui_meta_v1();
+        let mut seen_keys = std::collections::HashSet::new();
+        for entry in meta {
+            assert!(!entry.key.is_empty(), "param key must not be empty");
+            assert!(
+                seen_keys.insert(entry.key),
+                "duplicate param key: {}",
+                entry.key
+            );
+        }
+    }
+
+    #[test]
+    fn engine_param_ui_meta_v1_labels_and_tooltips_non_empty() {
+        for entry in engine_param_ui_meta_v1() {
+            assert!(
+                !entry.tooltip.is_empty(),
+                "tooltip must not be empty for key: {}",
+                entry.key
+            );
+            assert!(
+                !entry.readout_label.is_empty(),
+                "readout_label must not be empty for key: {}",
+                entry.key
+            );
+        }
+    }
+
+    #[test]
+    fn engine_param_ui_meta_v1_enum_map_values_are_unique() {
+        for entry in engine_param_ui_meta_v1() {
+            if let EngineParamReadoutFormatV1::EnumMap { values } = &entry.readout_format {
+                let mut seen = std::collections::HashSet::new();
+                for ev in *values {
+                    assert!(
+                        !ev.value.is_empty(),
+                        "enum value must not be empty for key: {}",
+                        entry.key
+                    );
+                    assert!(
+                        !ev.label.is_empty(),
+                        "enum label must not be empty for key: {}, value: {}",
+                        entry.key,
+                        ev.value
+                    );
+                    assert!(
+                        seen.insert(ev.value),
+                        "duplicate enum value '{}' for key: {}",
+                        ev.value,
+                        entry.key
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn engine_enum_value_tooltips_v1_are_unique_and_non_empty() {
+        let tooltips = engine_enum_value_tooltips_v1();
+        let mut seen = std::collections::HashSet::new();
+        for entry in tooltips {
+            assert!(!entry.key.is_empty(), "enum tooltip key must not be empty");
+            assert!(
+                !entry.value.is_empty(),
+                "enum tooltip value must not be empty for key: {}",
+                entry.key
+            );
+            assert!(
+                !entry.tooltip.is_empty(),
+                "tooltip must not be empty for key: {}, value: {}",
+                entry.key,
+                entry.value
+            );
+            assert!(
+                seen.insert((entry.key, entry.value)),
+                "duplicate (key, value) pair: ({}, {})",
+                entry.key,
+                entry.value
+            );
+        }
+    }
 }

@@ -1,5 +1,6 @@
 import CzButton from "@/components/primitives/CzButton";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { MOD_MODE_TOOLTIPS } from "@/lib/synth/paramMeta";
 
 export default function ModModeControl() {
 	const { value: modMode, setValue: setModMode } = useSynthParam("modMode");
@@ -10,16 +11,16 @@ export default function ModModeControl() {
 			<div className="flex gap-1">
 				{(
 					[
-						["normal", "Normal", "Standard phase modulation behavior."],
-						["ring", "Ring", "Enable ring modulation between lines."],
-						["noise", "Noise", "Mix noise source into modulation path."],
+						["normal", "Normal"],
+						["ring", "Ring"],
+						["noise", "Noise"],
 					] as const
-				).map(([mode, label, tooltip]) => (
+				).map(([mode, label]) => (
 					<CzButton
 						key={mode}
 						active={modMode === mode}
 						onClick={() => setModMode(mode)}
-						tooltip={tooltip}
+						tooltip={MOD_MODE_TOOLTIPS[mode]}
 						className="flex-1"
 					>
 						{label}
