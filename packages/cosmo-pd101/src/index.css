@@ -1,9 +1,63 @@
 @import "tailwindcss";
 
-@plugin "daisyui" {
-	themes:
-		dracula --default,
-		cyberpunk;
+@plugin "daisyui";
+@plugin "daisyui/theme" {
+	name: "cz101";
+	color-scheme: dark;
+
+	/* Base — dark hardware panel */
+	--color-base-100: oklch(20% 0.003 270);   /* cz-surface */
+	--color-base-200: oklch(14% 0.002 100);   /* between surface and body */
+	--color-base-300: oklch(10.5% 0.004 55);  /* cz-body */
+	--color-base-content: oklch(79% 0.02 75); /* cz-cream */
+
+	/* Primary — gold */
+	--color-primary: oklch(76% 0.155 100);
+	--color-primary-content: oklch(10.5% 0.004 55);
+
+	/* Secondary — tab blue */
+	--color-secondary: oklch(59% 0.088 250);
+	--color-secondary-content: oklch(89.5% 0.016 74);
+
+	/* Accent — cyan */
+	--color-accent: #3f8f98;
+	--color-accent-content: oklch(10.5% 0.004 55);
+
+	/* Neutral — panel grey */
+	--color-neutral: oklch(30% 0.001 100);
+	--color-neutral-content: oklch(79% 0.02 75);
+
+	/* Info — light blue */
+	--color-info: oklch(66% 0.1 255);
+	--color-info-content: oklch(10.5% 0.004 55);
+
+	/* Success — LCD green */
+	--color-success: oklch(90% 0.28 145);
+	--color-success-content: oklch(10.5% 0.004 55);
+
+	/* Warning — gold */
+	--color-warning: oklch(76% 0.155 100);
+	--color-warning-content: oklch(10.5% 0.004 55);
+
+	/* Error — tab red */
+	--color-error: oklch(56% 0.14 22);
+	--color-error-content: oklch(89.5% 0.016 74);
+
+	/* Radii */
+	--radius-selector: 0.5rem;
+	--radius-field: 0.375rem;
+	--radius-box: 0.75rem;
+
+	/* Sizes */
+	--size-selector: 0.25rem;
+	--size-field: 0.25rem;
+
+	/* Border */
+	--border: 1px;
+
+	/* Effects */
+	--depth: 0;
+	--noise: 0;
 }
 
 @source "../index.html";

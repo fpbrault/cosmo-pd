@@ -2,6 +2,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { memo, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import Button from "@/components/controls/Button";
 import { useSynthStore } from "@/features/synth/synthStore";
 import type { FxSlotType } from "@/lib/synth/bindings/synth";
 import DelayModule from "./drawer-modules/DelayModule";
@@ -90,12 +91,12 @@ function TypeSelectorPopover({
 			className="w-36 overflow-hidden rounded border border-cz-border bg-cz-panel py-1 shadow-[0_8px_24px_rgba(0,0,0,0.65)]"
 		>
 			{options.map((o) => (
-				<button
+				<Button
 					key={o.value}
 					type="button"
 					onClick={() => onSelect(o.value)}
 					className={[
-						"w-full px-3 py-1 text-left font-mono text-[0.6rem] uppercase tracking-[0.12em] transition-colors hover:bg-white/10",
+						"btn btn-ghost btn-sm justify-start w-full px-3 py-1 font-mono text-[0.6rem] uppercase tracking-[0.12em] hover:bg-white/10",
 						o.value === "empty"
 							? "text-red-400/80 hover:text-red-300"
 							: currentType === o.value
@@ -104,7 +105,7 @@ function TypeSelectorPopover({
 					].join(" ")}
 				>
 					{o.label}
-				</button>
+				</Button>
 			))}
 		</div>,
 		document.body,
@@ -140,12 +141,12 @@ function TypeSelectorTrigger({
 
 	return (
 		<>
-			<button
+			<Button
 				ref={triggerRef}
 				type="button"
 				onClick={openPopover}
 				aria-label="Change effect type"
-				className="flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded opacity-60 transition-opacity hover:opacity-100"
+				className="btn btn-ghost btn-square btn-xs h-4 w-4 shrink-0 opacity-60 hover:opacity-100"
 			>
 				{/* Downward-pointing triangle */}
 				<svg
@@ -156,7 +157,7 @@ function TypeSelectorTrigger({
 				>
 					<path d="M4 5 L0 0 L8 0 Z" />
 				</svg>
-			</button>
+			</Button>
 			{popoverPos && (
 				<TypeSelectorPopover
 					pos={popoverPos}
@@ -197,7 +198,7 @@ function EmptySlot({ slot }: { slot: number }) {
 
 	return (
 		<div className="flex h-full items-center justify-center rounded-lg border-2 border-dashed border-white/15">
-			<button
+			<Button
 				ref={triggerRef}
 				type="button"
 				onClick={openPopover}
@@ -205,7 +206,7 @@ function EmptySlot({ slot }: { slot: number }) {
 				className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 text-xl text-white/40 transition-all hover:border-white/50 hover:text-white/80"
 			>
 				+
-			</button>
+			</Button>
 			{popoverPos && (
 				<TypeSelectorPopover
 					pos={popoverPos}

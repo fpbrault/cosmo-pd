@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Button from "@/components/controls/Button";
 import ControlKnob from "@/components/controls/ControlKnob";
 import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
@@ -10,6 +11,9 @@ import { PARAM_META } from "@/lib/synth/paramMeta";
 
 export default function DelayModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("");
+	const tapeModeHoverHandlers = useHoverInfoHandlers(
+		PARAM_META.delayTapeMode?.tooltip,
+	);
 	const rawSlot = useSynthStore((s) => s.fxSlots[slot]);
 	const setFxSlotParams = useSynthStore((s) => s.setFxSlotParams);
 	if (rawSlot?.type !== "delay") return null;
@@ -32,9 +36,6 @@ export default function DelayModule({ slot }: { slot: number }) {
 		});
 	};
 
-	const tapeModeHoverHandlers = useHoverInfoHandlers(
-		PARAM_META.delayTapeMode?.tooltip,
-	);
 	return (
 		<ModuleFrame
 			title="Delay"
@@ -45,6 +46,7 @@ export default function DelayModule({ slot }: { slot: number }) {
 					value={selectedPreset}
 					options={DELAY_PRESETS}
 					onChange={handlePresetChange}
+					accentColor="#fbbf24"
 				/>
 			}
 			meta={delayModeLabel}
@@ -52,19 +54,19 @@ export default function DelayModule({ slot }: { slot: number }) {
 			enabled={delay.enabled ?? false}
 			onToggle={() => setFxSlotParams(slot, { enabled: !delay.enabled })}
 		>
-			<button
+			<Button
 				type="button"
 				onClick={() => setFxSlotParams(slot, { tapeMode: !delay.tapeMode })}
 				data-hover-info={PARAM_META.delayTapeMode?.tooltip}
 				{...tapeModeHoverHandlers}
-				className={`rounded px-2 py-0.5 text-[0.6rem] font-medium tracking-wider border transition-colors w-fit justify-self-center grow col-span-${delay.tapeMode ? 4 : 3} ${
+				className={`btn btn-xs justify-self-center grow col-span-${delay.tapeMode ? 4 : 3} ${
 					delay.tapeMode
 						? "border-amber-500/60 bg-amber-500/20 text-amber-300"
-						: "border-cz-border bg-cz-body text-cz-cream/60 hover:text-cz-cream/90"
+						: "border-cz-border bg-transparent text-cz-cream/60 hover:text-cz-cream/90"
 				}`}
 			>
 				{delay.tapeMode ? "● TAPE" : "○ TAPE"}
-			</button>
+			</Button>
 			<ControlKnob
 				value={delay.time}
 				onChange={(value) => setFxSlotParams(slot, { time: value })}

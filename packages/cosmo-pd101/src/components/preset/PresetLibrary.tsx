@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import Button from "@/components/controls/Button";
 import type { LibraryPreset } from "@/features/synth/types/libraryPreset";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
 
@@ -53,6 +54,8 @@ export default function PresetLibrary({
 }: PresetLibrary) {
 	const [search, setSearch] = useState("");
 	const [saveName, setSaveName] = useState("");
+	const [saveAsOpen, setSaveAsOpen] = useState(false);
+	const [saveAsName, setSaveAsName] = useState("");
 	const [importError, setImportError] = useState<string | null>(null);
 	const [renameEntry, setRenameEntry] = useState<PresetEntry | null>(null);
 	const [renameValue, setRenameValue] = useState("");
@@ -79,6 +82,12 @@ export default function PresetLibrary({
 	const focusedEntry = filteredEntries.find(
 		(entry) => entry.id === focusedEntryId,
 	);
+	const activeLocalEntry =
+		activeEntryId === null
+			? null
+			: allEntries.find(
+					(entry) => entry.id === activeEntryId && entry.type === "local",
+				);
 
 	useEffect(() => {
 		if (filteredEntries.length === 0) {
@@ -164,10 +173,23 @@ export default function PresetLibrary({
 	};
 
 	const handleSave = () => {
-		const name = saveName.trim();
+		if (!activeLocalEntry) return;
+		onSavePreset(activeLocalEntry.label);
+	};
+
+	const openSaveAsModal = () => {
+		setSaveAsName(
+			activeLocalEntry?.label ?? activePresetName.replace(/\s+\*$/, ""),
+		);
+		setSaveAsOpen(true);
+	};
+
+	const commitSaveAs = () => {
+		const name = saveAsName.trim();
 		if (!name) return;
 		onSavePreset(name);
-		setSaveName("");
+		setSaveAsOpen(false);
+		setSaveAsName("");
 	};
 
 	const handleExportCurrentState = () => {
@@ -236,13 +258,13 @@ export default function PresetLibrary({
 							value={search}
 							onChange={(event) => setSearch(event.target.value)}
 						/>
-						<button
+						<Button
 							type="button"
 							className="btn btn-sm border-cz-border bg-cz-inset text-cz-cream hover:bg-cz-body"
 							onClick={onClose}
 						>
 							Return
-						</button>
+						</Button>
 					</div>
 				</div>
 
@@ -287,47 +309,47 @@ export default function PresetLibrary({
 												<span className="font-mono text-cz-gold ">
 													{active ? "*" : ""}
 												</span>
-												<button
+												<Button
 													type="button"
 													ref={(node) => {
 														rowRefs.current[entry.id] = node;
 													}}
-													className="min-w-0 truncate rounded-sm py-2 text-left font-semibold outline-none text-cz-cream"
+													className="btn btn-ghost btn-sm justify-start w-full min-w-0 truncate py-2 font-semibold outline-none text-cz-cream"
 													onFocus={() => setFocusedEntryId(entry.id)}
 													onClick={() => handleLoad(entry)}
 												>
 													{entry.label}
-												</button>
+												</Button>
 												<span className="truncate text-3xs font-mono uppercase tracking-[0.18em] text-cz-cream-dim">
 													{typeLabels[entry.type]}
 												</span>
 												<div className="flex justify-end gap-1">
 													{entry.type === "local" ? (
 														<>
-															<button
+															<Button
 																type="button"
-																className="btn btn-ghost btn-xs text-cz-cream"
+																className="btn btn-ghost text-cz-cream"
 																aria-label={`Rename ${entry.label}`}
 																onClick={() => openRenameModal(entry)}
 															>
 																Rename
-															</button>
-															<button
+															</Button>
+															<Button
 																type="button"
-																className="btn btn-ghost btn-xs text-cz-light-blue"
+																className="btn btn-ghost text-cz-light-blue"
 																aria-label={`Export ${entry.label}`}
 																onClick={() => onExportPreset(entry.label)}
 															>
 																Export
-															</button>
-															<button
+															</Button>
+															<Button
 																type="button"
-																className="btn btn-ghost btn-xs text-red-400"
+																className="btn btn-ghost text-red-400"
 																aria-label={`Delete ${entry.label}`}
 																onClick={() => setDeleteEntry(entry)}
 															>
 																Delete
-															</button>
+															</Button>
 														</>
 													) : null}
 												</div>
@@ -345,26 +367,37 @@ export default function PresetLibrary({
 								<h3 className="mb-2 text-4xs font-mono uppercase tracking-[0.28em] text-cz-gold">
 									Current State
 								</h3>
-								<input
-									type="text"
-									className="input input-sm w-full border-cz-border bg-cz-inset text-cz-cream placeholder-cz-cream-dim/70"
-									placeholder="Preset name"
-									value={saveName}
-									onChange={(event) => setSaveName(event.target.value)}
-									onKeyDown={(event) => {
-										if (event.key === "Enter") handleSave();
-									}}
-								/>
 								<div className="mt-2 grid grid-cols-2 gap-2">
-									<button
+									<Button
 										type="button"
-										className="btn btn-sm bg-cz-gold text-white hover:brightness-110"
-										disabled={!saveName.trim()}
+										className="btn btn-primary"
+										disabled={!activeLocalEntry}
 										onClick={handleSave}
 									>
 										Save
-									</button>
-									<button
+									</Button>
+									<Button
+										type="button"
+										className="btn btn-sm border-cz-border bg-cz-inset text-cz-light-blue"
+										onClick={openSaveAsModal}
+									>
+										Save As
+									</Button>
+								</div>
+								<div className="mt-3">
+									<input
+										type="text"
+										className="input input-sm w-full border-cz-border bg-cz-inset text-cz-cream placeholder-cz-cream-dim/70"
+										placeholder="Export file name"
+										value={saveName}
+										onChange={(event) => setSaveName(event.target.value)}
+										onKeyDown={(event) => {
+											if (event.key === "Enter") handleExportCurrentState();
+										}}
+									/>
+								</div>
+								<div className="mt-2 grid grid-cols-1 gap-2">
+									<Button
 										type="button"
 										className="btn btn-sm border-cz-border bg-cz-inset text-cz-light-blue"
 										aria-label="Export current state"
@@ -372,7 +405,7 @@ export default function PresetLibrary({
 										onClick={handleExportCurrentState}
 									>
 										Export
-									</button>
+									</Button>
 								</div>
 							</section>
 
@@ -381,20 +414,20 @@ export default function PresetLibrary({
 									File
 								</h3>
 								<div className="grid grid-cols-2 gap-2">
-									<button
+									<Button
 										type="button"
 										className="btn btn-sm border-cz-border bg-cz-inset text-cz-cream"
 										onClick={() => importFileRef.current?.click()}
 									>
 										Import
-									</button>
-									<button
+									</Button>
+									<Button
 										type="button"
 										className="btn btn-sm border-cz-border bg-cz-inset text-red-400"
 										onClick={onInitPreset}
 									>
 										Init
-									</button>
+									</Button>
 								</div>
 								<input
 									ref={importFileRef}
@@ -434,21 +467,21 @@ export default function PresetLibrary({
 						}}
 					/>
 					<div className="modal-action">
-						<button
+						<Button
 							type="button"
 							className="btn border-cz-border bg-cz-inset text-cz-cream"
 							onClick={() => setRenameEntry(null)}
 						>
 							Cancel
-						</button>
-						<button
+						</Button>
+						<Button
 							type="button"
-							className="btn bg-cz-gold text-white"
+							className="btn btn-primary"
 							aria-label="Confirm rename"
 							onClick={commitRename}
 						>
 							Rename
-						</button>
+						</Button>
 					</div>
 				</div>
 			</dialog>
@@ -467,21 +500,63 @@ export default function PresetLibrary({
 						{deleteEntry?.label} will be removed from your local presets.
 					</p>
 					<div className="modal-action">
-						<button
+						<Button
 							type="button"
 							className="btn border-cz-border bg-cz-inset text-cz-cream"
 							onClick={() => setDeleteEntry(null)}
 						>
 							Cancel
-						</button>
-						<button
+						</Button>
+						<Button
 							type="button"
-							className="btn bg-red-700 text-white"
+							className="btn btn-error"
 							aria-label="Confirm delete"
 							onClick={commitDelete}
 						>
 							Delete
-						</button>
+						</Button>
+					</div>
+				</div>
+			</dialog>
+
+			<dialog
+				className="modal"
+				open={saveAsOpen}
+				onCancel={(event) => {
+					event.preventDefault();
+					setSaveAsOpen(false);
+				}}
+			>
+				<div className="modal-box rounded-md border border-cz-border bg-cz-surface text-cz-cream">
+					<h3 className="font-mono text-lg font-bold">Save preset as</h3>
+					<input
+						type="text"
+						className="input mt-4 w-full border-cz-border bg-cz-inset text-cz-cream"
+						placeholder="New preset name"
+						value={saveAsName}
+						onChange={(event) => setSaveAsName(event.target.value)}
+						onKeyDown={(event) => {
+							if (event.key === "Enter") commitSaveAs();
+							if (event.key === "Escape") setSaveAsOpen(false);
+						}}
+					/>
+					<div className="modal-action">
+						<Button
+							type="button"
+							className="btn border-cz-border bg-cz-inset text-cz-cream"
+							onClick={() => setSaveAsOpen(false)}
+						>
+							Cancel
+						</Button>
+						<Button
+							type="button"
+							className="btn btn-primary"
+							aria-label="Confirm save as"
+							disabled={!saveAsName.trim()}
+							onClick={commitSaveAs}
+						>
+							Save As
+						</Button>
 					</div>
 				</div>
 			</dialog>

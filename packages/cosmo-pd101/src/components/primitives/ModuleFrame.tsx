@@ -1,3 +1,4 @@
+import Button from "@/components/controls/Button";
 import { useFxSlotContext } from "@/components/panels/FxSlotContext";
 
 /** Returns "black" or "white" — whichever has better contrast against the given hex color. */
@@ -57,7 +58,7 @@ export default function ModuleFrame({
 			>
 				{/* Left: power button when toggleable, otherwise a spacer to preserve alignment */}
 				{canToggle ? (
-					<button
+					<Button
 						type="button"
 						onClick={onToggle}
 						aria-label={enabled ? `Disable ${title}` : `Enable ${title}`}
@@ -80,7 +81,7 @@ export default function ModuleFrame({
 							<path d="M5 1.5v3" strokeLinecap="round" />
 							<path d="M2.5 2.8A3.5 3.5 0 1 0 7.5 2.8" strokeLinecap="round" />
 						</svg>
-					</button>
+					</Button>
 				) : (
 					<span className="inline-block h-4 w-4 shrink-0" />
 				)}
@@ -128,9 +129,7 @@ export default function ModuleFrame({
 
 			{/* Content area */}
 			<div
-				className={`flex min-h-0 flex-1 px-3 py-3 ${
-					dimmed ? "bg-cz-inset/20" : "bg-cz-inset/60"
-				}`}
+				className={`flex min-h-0 flex-1 px-3 py-3`}
 			>
 				<div className="flex w-full flex-1 flex-col gap-2">
 					{headerControl && (

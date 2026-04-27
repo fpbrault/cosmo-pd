@@ -6,6 +6,7 @@ import {
 	useEffect,
 	useState,
 } from "react";
+import Button from "@/components/controls/Button";
 import ControlKnob from "@/components/controls/ControlKnob";
 import LineSelectControl from "@/components/controls/LineSelectControl";
 import ModModeControl from "@/components/controls/ModModeControl";
@@ -152,6 +153,7 @@ function SynthRendererContent({
 		<ModMatrixProvider modMatrix={modMatrix} setModMatrix={setModMatrix}>
 			<SynthParamControllerProvider onControlReadout={onControlReadout}>
 				<div
+				data-theme="cz101"
 					className={`${frameClassName} relative select-none`}
 					style={frameStyle}
 				>
@@ -431,23 +433,23 @@ function PendingModifiedPresetModal({
 					/>
 				)}
 				<div className="modal-action">
-					<button
+					<Button
 						type="button"
 						className="btn border-cz-border bg-cz-inset text-cz-cream"
 						onClick={onCancel}
 					>
 						Cancel
-					</button>
-					<button
+					</Button>
+					<Button
 						type="button"
 						className="btn border-cz-border bg-cz-inset text-cz-cream"
 						onClick={onDiscard}
 					>
 						Discard
-					</button>
-					<button
+					</Button>
+					<Button
 						type="button"
-						className="btn bg-cz-gold text-white"
+						className="btn btn-primary"
 						aria-label="Save modified preset"
 						disabled={
 							!pendingPresetChange?.activeLocalName && !pendingSaveName.trim()
@@ -455,7 +457,7 @@ function PendingModifiedPresetModal({
 						onClick={() => onSave?.(pendingSaveName)}
 					>
 						Save
-					</button>
+					</Button>
 				</div>
 			</div>
 		</dialog>

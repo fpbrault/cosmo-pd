@@ -1,6 +1,6 @@
 import { useState } from "react";
+import Button from "@/components/controls/Button";
 import ControlKnob from "@/components/controls/ControlKnob";
-import CompactButton from "@/components/primitives/CompactButton";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
@@ -64,12 +64,11 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 		<ModuleFrame
 			title={`LFO ${id}`}
 			color={color}
-			showLed={false}
 			enabled
 			headerControl={
 				<ModulePresetPopover
 					title={`LFO ${id} Presets`}
-					accentColor={color}
+					secondaryColor={color}
 					value={selectedPreset}
 					options={LFO_PRESETS}
 					onChange={handlePresetChange}
@@ -87,15 +86,16 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 						["rnd", "random"],
 					] as const
 				).map(([label, w]) => (
-					<CompactButton
+					<Button
 						key={w}
-						className="grow"
-						active={lfoWaveform === w}
+						className={`btn btn-xs grow ${
+							lfoWaveform === w ? "btn-secondary" : "btn-outline"
+						}`}
 						onClick={() => setLfoWaveform(w)}
-						tooltip={`Select ${label} waveform for LFO ${id}.`}
+						title={`Select ${label} waveform for LFO ${id}.`}
 					>
 						{label}
-					</CompactButton>
+					</Button>
 				))}
 			</div>
 			<ControlKnob
@@ -146,14 +146,15 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				tooltip={lfoParamTooltip("Symmetry")}
 				valueFormatter={(v) => `${Math.round(v * 100)}%`}
 			/>
-			<CompactButton
-				active={lfoRetrigger}
+			<Button
+				className={`btn btn-xs px-2 col-span-4 w-fit justify-self-center ${
+					lfoRetrigger ? "btn-secondary" : "btn-outline"
+				}`}
 				onClick={() => setLfoRetrigger(!lfoRetrigger)}
-				tooltip={lfoParamTooltip("Retrigger")}
-				className="px-2 col-span-4 w-fit justify-self-center"
+				title={lfoParamTooltip("Retrigger")}
 			>
 				Retrig
-			</CompactButton>
+			</Button>
 		</ModuleFrame>
 	);
 }

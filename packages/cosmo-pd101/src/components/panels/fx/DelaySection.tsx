@@ -1,3 +1,4 @@
+import Button from "@/components/controls/Button";
 import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
 import { PARAM_META } from "@/lib/synth/paramMeta";
 import { BaseFxSection, type FxKnobConfig } from "./BaseFxSection";
@@ -87,19 +88,19 @@ export function DelaySection({
 		<div className="space-y-2">
 			<BaseFxSection title={`Delay — ${modeLabel}`} knobs={knobs} />
 			<div className="flex justify-center">
-				<button
+				<Button
 					type="button"
 					onClick={() => setTapeMode(!tapeMode)}
 					data-hover-info={PARAM_META.delayTapeMode?.tooltip}
 					{...tapeModeHoverHandlers}
-					className={`rounded px-3 py-1 text-xs font-medium tracking-wide border transition-colors ${
+					className={`btn btn-sm px-3 py-1 text-xs tracking-wide ${
 						tapeMode
 							? "border-amber-500/60 bg-amber-500/20 text-amber-300"
-							: "border-cz-border bg-cz-surface text-cz-cream/60 hover:text-cz-cream/90"
+							: "border-cz-border bg-transparent text-cz-cream/60 hover:text-cz-cream/90"
 					}`}
 				>
 					{tapeMode ? "● Tape Echo" : "○ Tape Echo"}
-				</button>
+				</Button>
 			</div>
 		</div>
 	);

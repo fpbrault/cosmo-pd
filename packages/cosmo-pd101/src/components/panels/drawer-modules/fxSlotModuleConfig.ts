@@ -613,7 +613,7 @@ export const FX_SLOT_MODULE_CONFIGS: Partial<
 		moduleKey: "tremolo",
 		title: "Tremolo",
 		color: "#4ade80",
-		columns: 2,
+		columns: 3,
 		presets: TREMOLO_PRESETS,
 		presetTitle: "Tremolo Presets",
 		controls: [
@@ -635,16 +635,7 @@ export const FX_SLOT_MODULE_CONFIGS: Partial<
 				defaultValue: 0.5,
 				formatter: pct,
 			},
-			{
-				kind: "buttonGroup",
-				param: "waveform",
-				label: "Wave",
-				options: [
-					{ value: 0, label: "Sine" },
-					{ value: 1, label: "Tri" },
-					{ value: 2, label: "Sqr" },
-				],
-			},
+
 			{
 				kind: "knob",
 				param: "mix",
@@ -653,6 +644,16 @@ export const FX_SLOT_MODULE_CONFIGS: Partial<
 				max: 1,
 				defaultValue: 1,
 				formatter: pct,
+			},
+						{
+				kind: "buttonGroup",
+				param: "waveform",
+				label: "Wave",
+				options: [
+					{ value: 0, label: "Sine" },
+					{ value: 1, label: "Tri" },
+					{ value: 2, label: "Sqr" },
+				],
 			},
 		],
 	},

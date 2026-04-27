@@ -1,4 +1,5 @@
 import type React from "react";
+import Button from "@/components/controls/Button";
 
 interface ModulationIconButtonProps {
 	hasActiveRoutes: boolean;
@@ -24,7 +25,7 @@ export default function ModulationIconButton({
 	const isVisible = hasActiveRoutes || forceVisible;
 
 	return (
-		<button
+		<Button
 			type="button"
 			aria-label={label}
 			onClick={onClick}
@@ -48,6 +49,6 @@ export default function ModulationIconButton({
 			style={style}
 		>
 			{hasActiveRoutes ? routeCount : "+"}
-		</button>
+		</Button>
 	);
 }

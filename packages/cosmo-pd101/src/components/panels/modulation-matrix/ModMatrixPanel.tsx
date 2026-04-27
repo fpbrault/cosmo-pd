@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import Button from "@/components/controls/Button";
 import ModRouteRow, {
 	MOD_SOURCE_META,
 } from "@/components/controls/modulation/ModRouteRow";
@@ -260,13 +261,13 @@ export default function ModMatrixPanel() {
 						▾
 					</span>
 				</div>
-				<button
+				<Button
 					type="button"
 					onClick={handleAdd}
-					className={`w-full rounded-md border px-2 py-1.5 font-mono text-[0.55rem] font-bold uppercase tracking-[0.15em] transition-colors ${MOD_SOURCE_META[newSource].colorClass} border-current/30 bg-current/10 hover:bg-current/20`}
+					className={`btn btn-sm w-full px-2 py-1.5 font-mono text-[0.55rem] font-bold uppercase tracking-[0.15em] ${MOD_SOURCE_META[newSource].colorClass} border-current/30 bg-current/10 hover:bg-current/20`}
 				>
 					Add
-				</button>
+				</Button>
 			</div>
 		</section>
 	);
