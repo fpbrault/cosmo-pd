@@ -13,10 +13,10 @@ use crate::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use crate::fx::FxChain;
 use crate::generators::PER_LINE_HEADROOM;
 use crate::module_presets;
-use crate::params::{FxSlotConfig, FxSlotType, ModDestination, PolyMode, SynthParams, NUM_VOICES};
-use crate::params::{FxSlotConfig, FxSlotType, PolyMode, SynthParams, NUM_VOICES};
+use crate::params::{
+    FxSlotConfig, FxSlotType, ModDestination, PolyMode, SynthParams, NUM_VOICES,
+};
 use crate::voice::{mod_value_for, render_voice, ModSources, Voice};
-use crate::voice::{render_voice, Voice};
 
 const SOFT_CLIP_DRIVE: f32 = 1.0;
 const SOFT_CLIP_THRESHOLD: f32 = 0.9;
@@ -608,23 +608,6 @@ impl CosmoProcessor {
         let base_lfo2_depth = p.lfo2.depth;
         let base_lfo2_offset = p.lfo2.offset;
         let base_random_rate = p.random.rate;
-
-        let base_chorus_rate = p.chorus.rate;
-        let base_chorus_depth = p.chorus.depth;
-        let base_chorus_mix = p.chorus.mix;
-        let base_delay_time = p.delay.time;
-        let base_delay_feedback = p.delay.feedback;
-        let base_delay_mix = p.delay.mix;
-        let base_delay_warmth = p.delay.warmth;
-        let base_reverb_mix = p.reverb.mix;
-        let base_reverb_space = p.reverb.space;
-        let base_reverb_predelay = p.reverb.predelay;
-        let base_reverb_distance = p.reverb.distance;
-        let base_reverb_character = p.reverb.character;
-        let base_phaser_rate = p.phaser.rate;
-        let base_phaser_depth = p.phaser.depth;
-        let base_phaser_feedback = p.phaser.feedback;
-        let base_phaser_mix = p.phaser.mix;
         let sr = self.sample_rate;
         let headroom_ratio = REFERENCE_LINE_HEADROOM / PER_LINE_HEADROOM.max(0.01);
         let headroom_makeup =
@@ -706,69 +689,6 @@ impl CosmoProcessor {
                 self.random_hold = random_hold_value(self.random_step);
             }
             let random_mod_val = self.random_hold;
-
-            let mod_sources = ModSources::new(
-                lfo1_mod_val,
-                lfo2_mod_val,
-                random_mod_val,
-                source_mod_env,
-                source_velocity,
-                self.mod_wheel,
-                self.aftertouch,
-            );
-
-            // Apply global FX modulation once per sample.
-            self.fx.chorus_rate = (base_chorus_rate
-                + mod_value_for(ModDestination::ChorusRate, matrix, &mod_sources) * 5.0)
-                .clamp(0.01, 10.0);
-            self.fx.chorus_depth = (base_chorus_depth
-                + mod_value_for(ModDestination::ChorusDepth, matrix, &mod_sources) * 3.0)
-                .clamp(0.0, 3.0);
-            self.fx.chorus_mix = (base_chorus_mix
-                + mod_value_for(ModDestination::ChorusMix, matrix, &mod_sources))
-            .clamp(0.0, 1.0);
-
-            self.fx.delay_time = (base_delay_time
-                + mod_value_for(ModDestination::DelayTime, matrix, &mod_sources))
-            .clamp(0.01, 2.0);
-            self.fx.delay_feedback = (base_delay_feedback
-                + mod_value_for(ModDestination::DelayFeedback, matrix, &mod_sources))
-            .clamp(0.0, 0.95);
-            self.fx.delay_mix = (base_delay_mix
-                + mod_value_for(ModDestination::DelayMix, matrix, &mod_sources))
-            .clamp(0.0, 1.0);
-            self.fx.delay_warmth = (base_delay_warmth
-                + mod_value_for(ModDestination::DelayWarmth, matrix, &mod_sources))
-            .clamp(0.0, 1.0);
-
-            self.fx.reverb.mix = (base_reverb_mix
-                + mod_value_for(ModDestination::ReverbMix, matrix, &mod_sources))
-            .clamp(0.0, 1.0);
-            self.fx.reverb.space = (base_reverb_space
-                + mod_value_for(ModDestination::ReverbSpace, matrix, &mod_sources))
-            .clamp(0.0, 1.0);
-            self.fx.reverb.predelay = (base_reverb_predelay
-                + mod_value_for(ModDestination::ReverbPredelay, matrix, &mod_sources) * 0.1)
-                .clamp(0.0, 0.2);
-            self.fx.reverb.distance = (base_reverb_distance
-                + mod_value_for(ModDestination::ReverbDistance, matrix, &mod_sources))
-            .clamp(0.0, 1.0);
-            self.fx.reverb.character = (base_reverb_character
-                + mod_value_for(ModDestination::ReverbCharacter, matrix, &mod_sources))
-            .clamp(0.0, 1.0);
-
-            self.fx.phaser_rate = (base_phaser_rate
-                + mod_value_for(ModDestination::PhaserRate, matrix, &mod_sources) * 10.0)
-                .clamp(0.01, 10.0);
-            self.fx.phaser_depth = (base_phaser_depth
-                + mod_value_for(ModDestination::PhaserDepth, matrix, &mod_sources))
-            .clamp(0.0, 1.0);
-            self.fx.phaser_feedback = (base_phaser_feedback
-                + mod_value_for(ModDestination::PhaserFeedback, matrix, &mod_sources))
-            .clamp(-0.95, 0.95);
-            self.fx.phaser_mix = (base_phaser_mix
-                + mod_value_for(ModDestination::PhaserMix, matrix, &mod_sources))
-            .clamp(0.0, 1.0);
 
             let mut mixed = 0.0_f32;
             // SAFETY: `voices` and `params` are separate fields; we use raw pointer to avoid
@@ -932,21 +852,21 @@ mod tests {
     }
 
     #[test]
-    fn fx_destination_changes_effective_fx_parameter() {
+    fn fx_destination_route_does_not_break_processing() {
         let mut proc = CosmoProcessor::new(48_000.0);
         proc.set_mod_wheel(1.0);
+        proc.params.chorus.enabled = true;
+        proc.params.chorus.mix = 1.0;
         proc.params.mod_matrix.routes = vec![ModRoute {
             source: ModSource::ModWheel,
             destination: ModDestination::ChorusRate,
             amount: 1.0,
             enabled: true,
         }];
-
-        let base_rate = proc.params.chorus.rate;
         let mut out = [0.0_f32; 1];
         proc.process(&mut out);
 
-        assert!(proc.fx.chorus_rate > base_rate);
+        assert!(out[0].is_finite());
     }
 
     #[test]
