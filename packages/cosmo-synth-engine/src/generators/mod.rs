@@ -22,7 +22,10 @@ pub mod ripple;
 pub mod sine;
 pub mod skew;
 pub mod sync;
+pub mod terrain;
 pub mod twist;
+pub mod stutter;
+pub mod cheby;
 
 /// Per-line render inputs passed to a voice's generator for one sample.
 #[derive(Debug, Clone, Copy)]
@@ -348,7 +351,7 @@ pub const DCW_CONTROL: [AlgoControlV1; 1] = [AlgoControlV1 {
     options: &NO_CONTROL_OPTIONS,
 }];
 
-pub const ALGO_DEFINITIONS_V1: [AlgoDefinitionV1; 12] = [
+pub const ALGO_DEFINITIONS_V1: [AlgoDefinitionV1; 15] = [
     cz101::DEFINITION,
     bend::DEFINITION,
     sync::DEFINITION,
@@ -361,6 +364,9 @@ pub const ALGO_DEFINITIONS_V1: [AlgoDefinitionV1; 12] = [
     mirror::DEFINITION,
     karpunk::DEFINITION,
     fof::DEFINITION,
+    terrain::DEFINITION,
+    stutter::DEFINITION,
+    cheby::DEFINITION,
 ];
 
 pub fn algo_definitions_v1() -> &'static [AlgoDefinitionV1] {
@@ -368,7 +374,7 @@ pub fn algo_definitions_v1() -> &'static [AlgoDefinitionV1] {
 }
 
 pub fn algo_ui_catalog_v1() -> &'static [AlgoUiEntryV1] {
-    const CATALOG: [AlgoUiEntryV1; 12] = [
+    const CATALOG: [AlgoUiEntryV1; 15] = [
         AlgoUiEntryV1 {
             id: ALGO_DEFINITIONS_V1[0].id,
             label: ALGO_DEFINITIONS_V1[0].name,
@@ -440,6 +446,24 @@ pub fn algo_ui_catalog_v1() -> &'static [AlgoUiEntryV1] {
             label: ALGO_DEFINITIONS_V1[11].name,
             icon_path: ALGO_DEFINITIONS_V1[11].icon_path,
             visible: ALGO_DEFINITIONS_V1[11].visible,
+        },
+        AlgoUiEntryV1 {
+            id: ALGO_DEFINITIONS_V1[12].id,
+            label: ALGO_DEFINITIONS_V1[12].name,
+            icon_path: ALGO_DEFINITIONS_V1[12].icon_path,
+            visible: ALGO_DEFINITIONS_V1[12].visible,
+        },
+        AlgoUiEntryV1 {
+            id: ALGO_DEFINITIONS_V1[13].id,
+            label: ALGO_DEFINITIONS_V1[13].name,
+            icon_path: ALGO_DEFINITIONS_V1[13].icon_path,
+            visible: ALGO_DEFINITIONS_V1[13].visible,
+        },
+        AlgoUiEntryV1 {
+            id: ALGO_DEFINITIONS_V1[14].id,
+            label: ALGO_DEFINITIONS_V1[14].name,
+            icon_path: ALGO_DEFINITIONS_V1[14].icon_path,
+            visible: ALGO_DEFINITIONS_V1[14].visible,
         },
     ];
 
@@ -620,6 +644,30 @@ pub fn warp_phase(
         ),
         Algo::Sine => sine::warp_phase(phase, amt),
         Algo::Karpunk => phase,
+        Algo::Terrain => terrain::warp_phase(
+            phase,
+            amt,
+            resolve_algo_control_value(algo, algo_controls, "terrainRatio", 2.0, algo_param_mods),
+            resolve_algo_control_value(algo, algo_controls, "terrainDepth", 0.5, algo_param_mods),
+            resolve_algo_control_value(algo, algo_controls, "terrainFmPhase", 0.0, algo_param_mods),
+            resolve_algo_control_value(algo, algo_controls, "terrainShape", 0.0, algo_param_mods),
+        ),
+        Algo::Stutter => stutter::warp_phase(
+            phase,
+            amt,
+            resolve_algo_control_value(algo, algo_controls, "stutterSegs", 0.25, algo_param_mods),
+            resolve_algo_control_value(algo, algo_controls, "stutterReverse", 1.0, algo_param_mods),
+            resolve_algo_control_value(algo, algo_controls, "stutterSlip", 0.0, algo_param_mods),
+            resolve_algo_control_value(algo, algo_controls, "stutterSpacing", 0.0, algo_param_mods),
+        ),
+        Algo::Cheby => cheby::warp_phase(
+            phase,
+            amt,
+            resolve_algo_control_value(algo, algo_controls, "chebyOrder", 0.2, algo_param_mods),
+            resolve_algo_control_value(algo, algo_controls, "chebyTilt", 0.0, algo_param_mods),
+            resolve_algo_control_value(algo, algo_controls, "chebyWarp", 0.0, algo_param_mods),
+            resolve_algo_control_value(algo, algo_controls, "chebyMix", 1.0, algo_param_mods),
+        ),
     }
 }
 

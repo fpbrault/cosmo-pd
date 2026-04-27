@@ -20,6 +20,9 @@ const WARP_ALGOS = [
 	"fof",
 	"karpunk",
 	"sine",
+	"terrain",
+	"stutter",
+	"cheby",
 ] as const;
 type WarpAlgo = (typeof WARP_ALGOS)[number];
 
@@ -153,6 +156,9 @@ const ALL_ALGO_VALUES = [
 	"fof",
 	"karpunk",
 	"sine",
+	"terrain",
+	"stutter",
+	"cheby",
 ] as const;
 
 export function isAlgo(value: unknown): value is Algo {

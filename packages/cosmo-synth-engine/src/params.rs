@@ -187,6 +187,10 @@ pub enum Algo {
     Fof,
     Karpunk,
     Sine,
+    // Experimental warp algorithms
+    Terrain,
+    Stutter,
+    Cheby,
 }
 
 impl Algo {

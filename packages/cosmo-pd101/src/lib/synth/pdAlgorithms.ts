@@ -95,6 +95,12 @@ const ALGO_BEHAVIOR_DESCRIPTIONS: Record<PdAlgo, string> = {
 	karpunk:
 		"Plucked/resonant distortion character with decaying inharmonic overtones.",
 	sine: "Pure sine phase path with minimal harmonics and smooth tone.",
+	terrain:
+		"FM-inside-PD: a secondary oscillator displaces the phase path, producing FM-like sideband spectra through the PD engine.",
+	stutter:
+		"Splits the cycle into segments and plays alternating ones backwards, creating glitchy, asymmetric timbres.",
+	cheby:
+		"Chebyshev polynomial harmonic stacking — integer orders multiply the fundamental cleanly; fractional orders blend adjacent harmonics.",
 	// Legacy waveform aliases supported by Algo type
 	saw: "Saw transfer shape with a bright, harmonically rich spectrum.",
 	square: "Square transfer shape emphasizing odd harmonics for hollow tone.",
