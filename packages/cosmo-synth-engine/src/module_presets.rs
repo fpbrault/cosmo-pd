@@ -25,37 +25,112 @@ pub struct ModulePresetGroupV1 {
 }
 
 const LFO_PRESET_OPTIONS_V1: [FxPresetOptionV1; 3] = [
-    FxPresetOptionV1 { id: "slowSine", label: "Slow Sine" },
-    FxPresetOptionV1 { id: "tempoTri", label: "Tempo Tri" },
-    FxPresetOptionV1 { id: "randomDrift", label: "Random Drift" },
+    FxPresetOptionV1 {
+        id: "slowSine",
+        label: "Slow Sine",
+    },
+    FxPresetOptionV1 {
+        id: "tempoTri",
+        label: "Tempo Tri",
+    },
+    FxPresetOptionV1 {
+        id: "randomDrift",
+        label: "Random Drift",
+    },
 ];
 
 const MOD_ENV_PRESET_OPTIONS_V1: [FxPresetOptionV1; 3] = [
-    FxPresetOptionV1 { id: "pluck", label: "Pluck" },
-    FxPresetOptionV1 { id: "pad", label: "Pad" },
-    FxPresetOptionV1 { id: "reverseSwell", label: "Reverse Swell" },
+    FxPresetOptionV1 {
+        id: "pluck",
+        label: "Pluck",
+    },
+    FxPresetOptionV1 {
+        id: "pad",
+        label: "Pad",
+    },
+    FxPresetOptionV1 {
+        id: "reverseSwell",
+        label: "Reverse Swell",
+    },
 ];
 
 const MODULE_PRESET_CATALOG_V1: [ModulePresetGroupV1; 19] = [
-    ModulePresetGroupV1 { module: "chorus", presets: crate::fx::chorus::DEFINITION.presets },
-    ModulePresetGroupV1 { module: "delay", presets: crate::fx::delay::DEFINITION.presets },
-    ModulePresetGroupV1 { module: "reverb", presets: crate::fx::reverb::DEFINITION.presets },
-    ModulePresetGroupV1 { module: "phaser", presets: crate::fx::phaser::DEFINITION.presets },
-    ModulePresetGroupV1 { module: "vibrato", presets: crate::fx::vibrato::DEFINITION.presets },
-    ModulePresetGroupV1 { module: "phaseMod", presets: crate::fx::phase_mod::DEFINITION.presets },
-    ModulePresetGroupV1 { module: "lfo1", presets: &LFO_PRESET_OPTIONS_V1 },
-    ModulePresetGroupV1 { module: "lfo2", presets: &LFO_PRESET_OPTIONS_V1 },
-    ModulePresetGroupV1 { module: "modEnv", presets: &MOD_ENV_PRESET_OPTIONS_V1 },
-    ModulePresetGroupV1 { module: "compressor", presets: crate::fx::compressor::DEFINITION.presets },
-    ModulePresetGroupV1 { module: "eq", presets: crate::fx::eq::DEFINITION.presets },
-    ModulePresetGroupV1 { module: "grainDelay", presets: crate::fx::grain_delay::DEFINITION.presets },
-    ModulePresetGroupV1 { module: "bitcrusher", presets: crate::fx::bitcrusher::DEFINITION.presets },
-    ModulePresetGroupV1 { module: "shimmerVerb", presets: crate::fx::shimmer_verb::DEFINITION.presets },
-    ModulePresetGroupV1 { module: "distortion", presets: crate::fx::distortion::DEFINITION.presets },
-    ModulePresetGroupV1 { module: "junoChorus", presets: crate::fx::juno_chorus::DEFINITION.presets },
-    ModulePresetGroupV1 { module: "ringMod", presets: crate::fx::ring_mod::DEFINITION.presets },
-    ModulePresetGroupV1 { module: "tremolo", presets: crate::fx::tremolo::DEFINITION.presets },
-    ModulePresetGroupV1 { module: "wavefolder", presets: crate::fx::wavefolder::DEFINITION.presets },
+    ModulePresetGroupV1 {
+        module: "chorus",
+        presets: crate::fx::chorus::DEFINITION.presets,
+    },
+    ModulePresetGroupV1 {
+        module: "delay",
+        presets: crate::fx::delay::DEFINITION.presets,
+    },
+    ModulePresetGroupV1 {
+        module: "reverb",
+        presets: crate::fx::reverb::DEFINITION.presets,
+    },
+    ModulePresetGroupV1 {
+        module: "phaser",
+        presets: crate::fx::phaser::DEFINITION.presets,
+    },
+    ModulePresetGroupV1 {
+        module: "vibrato",
+        presets: crate::fx::vibrato::DEFINITION.presets,
+    },
+    ModulePresetGroupV1 {
+        module: "phaseMod",
+        presets: crate::fx::phase_mod::DEFINITION.presets,
+    },
+    ModulePresetGroupV1 {
+        module: "lfo1",
+        presets: &LFO_PRESET_OPTIONS_V1,
+    },
+    ModulePresetGroupV1 {
+        module: "lfo2",
+        presets: &LFO_PRESET_OPTIONS_V1,
+    },
+    ModulePresetGroupV1 {
+        module: "modEnv",
+        presets: &MOD_ENV_PRESET_OPTIONS_V1,
+    },
+    ModulePresetGroupV1 {
+        module: "compressor",
+        presets: crate::fx::compressor::DEFINITION.presets,
+    },
+    ModulePresetGroupV1 {
+        module: "eq",
+        presets: crate::fx::eq::DEFINITION.presets,
+    },
+    ModulePresetGroupV1 {
+        module: "grainDelay",
+        presets: crate::fx::grain_delay::DEFINITION.presets,
+    },
+    ModulePresetGroupV1 {
+        module: "bitcrusher",
+        presets: crate::fx::bitcrusher::DEFINITION.presets,
+    },
+    ModulePresetGroupV1 {
+        module: "shimmerVerb",
+        presets: crate::fx::shimmer_verb::DEFINITION.presets,
+    },
+    ModulePresetGroupV1 {
+        module: "distortion",
+        presets: crate::fx::distortion::DEFINITION.presets,
+    },
+    ModulePresetGroupV1 {
+        module: "junoChorus",
+        presets: crate::fx::juno_chorus::DEFINITION.presets,
+    },
+    ModulePresetGroupV1 {
+        module: "ringMod",
+        presets: crate::fx::ring_mod::DEFINITION.presets,
+    },
+    ModulePresetGroupV1 {
+        module: "tremolo",
+        presets: crate::fx::tremolo::DEFINITION.presets,
+    },
+    ModulePresetGroupV1 {
+        module: "wavefolder",
+        presets: crate::fx::wavefolder::DEFINITION.presets,
+    },
 ];
 
 pub fn module_preset_catalog_v1() -> &'static [ModulePresetGroupV1] {

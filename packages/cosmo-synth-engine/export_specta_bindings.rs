@@ -6,17 +6,15 @@
 //! Optional env vars:
 //! - SPECTA_TS_EXPORT_PATH: absolute/relative path to generated TypeScript file
 
-use cosmo_synth_engine::generators::{
-    AlgoControlAssignmentV1, AlgoControlKindV1, AlgoControlOptionV1, AlgoControlPresentationV1,
-    AlgoControlV1, AlgoDefinitionV1, AlgoUiEntryV1, CzPresetV1,
-};
-use cosmo_synth_engine::module_presets::{
-    module_preset_catalog_v1, ModulePresetGroupV1,
-};
 use cosmo_synth_engine::fx::{
     fx_definitions_v1, FxControlKindV1, FxControlOptionV1, FxControlV1, FxDefinitionV1,
     FxPresetOptionV1,
 };
+use cosmo_synth_engine::generators::{
+    AlgoControlAssignmentV1, AlgoControlKindV1, AlgoControlOptionV1, AlgoControlPresentationV1,
+    AlgoControlV1, AlgoDefinitionV1, AlgoUiEntryV1, CzPresetV1,
+};
+use cosmo_synth_engine::module_presets::{module_preset_catalog_v1, ModulePresetGroupV1};
 use cosmo_synth_engine::params::{
     Algo, AlgoControlValueV1, BitcrusherParams, ChorusParams, CompressorParams, CzAlgo,
     CzLineParams, CzWaveform, DelayParams, DistortionParams, EnvStep, EqParams, FilterParams,
@@ -164,25 +162,17 @@ fn main() {
     out.push_str("\n\n");
     out.push_str(&export::<CzPresetV1>(&config).expect("Failed to export CzPresetV1"));
     out.push_str("\n\n");
-    out.push_str(
-        &export::<FxPresetOptionV1>(&config).expect("Failed to export FxPresetOptionV1"),
-    );
+    out.push_str(&export::<FxPresetOptionV1>(&config).expect("Failed to export FxPresetOptionV1"));
     out.push_str("\n\n");
-    out.push_str(
-        &export::<FxControlKindV1>(&config).expect("Failed to export FxControlKindV1"),
-    );
+    out.push_str(&export::<FxControlKindV1>(&config).expect("Failed to export FxControlKindV1"));
     out.push_str("\n\n");
     out.push_str(
         &export::<FxControlOptionV1>(&config).expect("Failed to export FxControlOptionV1"),
     );
     out.push_str("\n\n");
-    out.push_str(
-        &export::<FxControlV1>(&config).expect("Failed to export FxControlV1"),
-    );
+    out.push_str(&export::<FxControlV1>(&config).expect("Failed to export FxControlV1"));
     out.push_str("\n\n");
-    out.push_str(
-        &export::<FxDefinitionV1>(&config).expect("Failed to export FxDefinitionV1"),
-    );
+    out.push_str(&export::<FxDefinitionV1>(&config).expect("Failed to export FxDefinitionV1"));
     out.push_str("\n\n");
     out.push_str(
         &export::<ModulePresetGroupV1>(&config).expect("Failed to export ModulePresetGroupV1"),

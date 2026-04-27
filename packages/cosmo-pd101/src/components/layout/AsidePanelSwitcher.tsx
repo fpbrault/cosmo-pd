@@ -29,25 +29,7 @@ export type AsidePanelTab =
 	| "reverb"
 	| "phaser";
 
-const TOGGLE_TAB_IDS = new Set([
-	"polymode",
-	"portamentoenabled",
-	"phasemod",
-	"vibrato",
-	"chorus",
-	"delay",
-	"reverb",
-	"phaser",
-]);
-
-const FX_MODULE_TAB_IDS = new Set([
-	"phasemod",
-	"vibrato",
-	"chorus",
-	"delay",
-	"reverb",
-	"phaser",
-]);
+const TOGGLE_TAB_IDS = new Set(["polymode", "portamentoenabled"]);
 
 const FX_TAB_SLOT_INDEX: Record<string, number> = {
 	chorus: 0,
@@ -120,6 +102,8 @@ export default function AsidePanelSwitcher<T extends string>({
 	onTabChange,
 	children,
 }: AsidePanelSwitcherProps<T>) {
+	const normalizeTabId = (tabId: T): string => String(tabId).toLowerCase();
+
 	const setMainPanelMode = useSynthUiStore((state) => state.setMainPanelMode);
 	const { value: polyMode, setValue: setPolyMode } = useSynthParam("polyMode");
 	const { value: portamentoEnabled, setValue: setPortamentoEnabled } =
@@ -159,7 +143,7 @@ export default function AsidePanelSwitcher<T extends string>({
 	};
 
 	const isTabEnabled = (tabId: T): boolean => {
-		const normalized = String(tabId).toLowerCase();
+		const normalized = normalizeTabId(tabId);
 		const slot = FX_TAB_SLOT_INDEX[normalized];
 		if (slot != null) {
 			return getSlotEnabled(slot);
@@ -176,17 +160,10 @@ export default function AsidePanelSwitcher<T extends string>({
 	};
 
 	const getTabColor = (tabId: T): CzTabButtonColor => {
-		const normalizedTabId = String(tabId).toLowerCase();
-
-		if (normalizedTabId === "phasemod" || normalizedTabId === "vibrato") {
-			return "red";
-		}
-
+		const normalizedTabId = normalizeTabId(tabId);
 		if (
-			normalizedTabId === "chorus" ||
-			normalizedTabId === "delay" ||
-			normalizedTabId === "reverb" ||
-			normalizedTabId === "phaser"
+			normalizedTabId === "polymode" ||
+			normalizedTabId === "portamentoenabled"
 		) {
 			return "blue";
 		}
@@ -198,22 +175,24 @@ export default function AsidePanelSwitcher<T extends string>({
 	};
 
 	const isToggleTab = (tabId: T): boolean =>
-		TOGGLE_TAB_IDS.has(String(tabId).toLowerCase());
+		TOGGLE_TAB_IDS.has(normalizeTabId(tabId)) ||
+		FX_TAB_SLOT_INDEX[normalizeTabId(tabId)] != null;
 
 	const isFxModuleTab = (tabId: T): boolean =>
-		FX_MODULE_TAB_IDS.has(String(tabId).toLowerCase());
+		FX_TAB_SLOT_INDEX[normalizeTabId(tabId)] != null;
 
 	const getCustomTabColor = (tabId: T): string | undefined => {
-		const normalizedTabId = String(tabId).toLowerCase();
+		const normalizedTabId = normalizeTabId(tabId);
 		const slot = FX_TAB_SLOT_INDEX[normalizedTabId];
 		if (slot != null) {
-			return FX_TYPE_COLORS[fxSlots[slot]?.type as FxSlotType];
+			const slotType = (fxSlots[slot]?.type ?? "empty") as FxSlotType;
+			return FX_TYPE_COLORS[slotType];
 		}
 		return undefined;
 	};
 
 	const toggleTab = (tabId: T) => {
-		const normalized = String(tabId).toLowerCase();
+		const normalized = normalizeTabId(tabId);
 		const slot = FX_TAB_SLOT_INDEX[normalized];
 		if (slot != null) {
 			toggleSlotEnabled(slot);
@@ -271,7 +250,7 @@ export default function AsidePanelSwitcher<T extends string>({
 	const activePanel = panelElements.find(
 		(child) =>
 			(child.type as AsidePanelComponent).panelId === String(activeTab) &&
-			!TOGGLE_TAB_IDS.has(String(activeTab).toLowerCase()),
+			!isToggleTab(activeTab),
 	);
 
 	const visibleTabs = panelElements.map((child) => {
@@ -279,10 +258,10 @@ export default function AsidePanelSwitcher<T extends string>({
 		const normalizedTabId = String(panelType.panelId).toLowerCase();
 		const slot = FX_TAB_SLOT_INDEX[normalizedTabId];
 		if (slot != null) {
-			const type = fxSlots[slot]?.type as FxSlotType;
+			const type = (fxSlots[slot]?.type ?? "empty") as FxSlotType;
 			return {
 				id: panelType.panelId,
-				topLabel: `S${slot + 1}`,
+				topLabel: `FX${slot + 1}`,
 				bottomLabel: FX_TYPE_SHORT_LABELS[type] ?? type,
 			};
 		}
@@ -307,39 +286,59 @@ export default function AsidePanelSwitcher<T extends string>({
 	];
 
 	const globalTab = visibleTabs.find(
-		(tab) => String(tab.id).toLowerCase() === "global",
+		(tab) => normalizeTabId(tab.id) === "global",
 	);
-	const nonGlobalTabs = visibleTabs.filter(
-		(tab) => String(tab.id).toLowerCase() !== "global",
+	const scopeTab = visibleTabs.find(
+		(tab) => normalizeTabId(tab.id) === "scope",
 	);
-	const allTabs = [
+	const fxTabs = visibleTabs
+		.filter((tab) => FX_TAB_SLOT_INDEX[normalizeTabId(tab.id)] != null)
+		.sort(
+			(a, b) =>
+				FX_TAB_SLOT_INDEX[normalizeTabId(a.id)] -
+				FX_TAB_SLOT_INDEX[normalizeTabId(b.id)],
+		);
+	const otherTabs = visibleTabs.filter((tab) => {
+		const normalized = normalizeTabId(tab.id);
+		return (
+			normalized !== "global" &&
+			normalized !== "scope" &&
+			FX_TAB_SLOT_INDEX[normalized] == null
+		);
+	});
+
+	const leftTabs = [
 		...(globalTab ? [globalTab] : []),
+		...(scopeTab ? [scopeTab] : []),
 		...utilityToggleTabs,
-		...nonGlobalTabs,
+		...otherTabs,
 	];
+
+	const renderTabButton = (tab: AsidePanelButtonTab<T>) => (
+		<CzTabButton
+			key={tab.id}
+			color={getCustomTabColor(tab.id) ? "black" : getTabColor(tab.id)}
+			customColor={getCustomTabColor(tab.id)}
+			active={isToggleTab(tab.id) ? isTabEnabled(tab.id) : activeTab === tab.id}
+			ledColor={getTabLedColor(tab.id, activeTab === tab.id)}
+			onClick={() => handleTabClick(tab.id)}
+			onLongPress={
+				isFxModuleTab(tab.id) ? () => handleTabLongPress(tab.id) : undefined
+			}
+			topLabel={tab.topLabel}
+			bottomLabel={tab.bottomLabel}
+		/>
+	);
 
 	return (
 		<div className="px-2 pb-2 space-y-2">
-			<div className="grid grid-cols-5 gap-1 gap-y-2 mt-2">
-				{allTabs.map((tab) => (
-					<CzTabButton
-						key={tab.id}
-						color={getCustomTabColor(tab.id) ? "black" : getTabColor(tab.id)}
-						customColor={getCustomTabColor(tab.id)}
-						active={
-							isToggleTab(tab.id) ? isTabEnabled(tab.id) : activeTab === tab.id
-						}
-						ledColor={getTabLedColor(tab.id, activeTab === tab.id)}
-						onClick={() => handleTabClick(tab.id)}
-						onLongPress={
-							isFxModuleTab(tab.id)
-								? () => handleTabLongPress(tab.id)
-								: undefined
-						}
-						topLabel={tab.topLabel}
-						bottomLabel={tab.bottomLabel}
-					/>
-				))}
+			<div className="mt-2 grid grid-cols-[2fr_3fr] gap-1.5">
+				<div className="grid grid-cols-2 gap-1 gap-y-2">
+					{leftTabs.map(renderTabButton)}
+				</div>
+				<div className="grid grid-cols-3 gap-1 gap-y-2">
+					{fxTabs.map(renderTabButton)}
+				</div>
 			</div>
 			{activePanel}
 		</div>
