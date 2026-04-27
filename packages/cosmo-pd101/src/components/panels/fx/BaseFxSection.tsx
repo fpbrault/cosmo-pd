@@ -1,5 +1,6 @@
 import ControlKnob from "@/components/controls/ControlKnob";
 import type { KnobVariant } from "@/components/controls/knob/KnobView";
+import type { ModTarget } from "@/lib/synth/modDestination";
 
 export interface FxKnobConfig {
 	label: string;
@@ -14,6 +15,7 @@ export interface FxKnobConfig {
 	/** Legacy: raw CSS color override. Prefer variant. */
 	color?: string;
 	valueFormatter: (value: number) => string;
+	modTarget?: ModTarget;
 }
 
 export interface BaseFxSectionProps {
@@ -39,6 +41,7 @@ export function BaseFxSection({ title, knobs }: BaseFxSectionProps) {
 						label={knob.label}
 						tooltip={knob.tooltip}
 						valueFormatter={knob.valueFormatter}
+						modulatable={knob.modTarget}
 					/>
 				))}
 			</div>
