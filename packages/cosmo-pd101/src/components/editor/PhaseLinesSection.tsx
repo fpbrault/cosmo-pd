@@ -87,11 +87,6 @@ export default function PhaseLinesSection({
 		useSynthParam("line2AlgoControlsA");
 	const { value: line2AlgoControlsB, setValue: setLine2AlgoControlsB } =
 		useSynthParam("line2AlgoControlsB");
-	const { value: line1DcwKeyFollow, setValue: setLine1DcwKeyFollow } =
-		useSynthParam("line1DcwKeyFollow");
-	const { value: line2DcwKeyFollow, setValue: setLine2DcwKeyFollow } =
-		useSynthParam("line2DcwKeyFollow");
-
 	const line1 = {
 		warpAmount: warpAAmount,
 		setWarpAmount: setWarpAAmount,
@@ -123,8 +118,6 @@ export default function PhaseLinesSection({
 		setAlgoControlsA: setLine1AlgoControlsA,
 		algoControlsB: line1AlgoControlsB,
 		setAlgoControlsB: setLine1AlgoControlsB,
-		keyFollow: line1DcwKeyFollow,
-		setKeyFollow: setLine1DcwKeyFollow,
 	};
 
 	const line2 = {
@@ -158,8 +151,6 @@ export default function PhaseLinesSection({
 		setAlgoControlsA: setLine2AlgoControlsA,
 		algoControlsB: line2AlgoControlsB,
 		setAlgoControlsB: setLine2AlgoControlsB,
-		keyFollow: line2DcwKeyFollow,
-		setKeyFollow: setLine2DcwKeyFollow,
 	};
 
 	const activeTab = useSynthUiStore((s) => s.phaseLinePanelTab);
@@ -271,8 +262,6 @@ export default function PhaseLinesSection({
 						setAlgoControlsA={activeLineConfig.setAlgoControlsA}
 						algoControlsB={activeLineConfig.algoControlsB}
 						setAlgoControlsB={activeLineConfig.setAlgoControlsB}
-						keyFollow={activeLineConfig.keyFollow}
-						setKeyFollow={activeLineConfig.setKeyFollow}
 						activeSection={activeSection}
 					/>
 				</div>
