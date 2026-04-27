@@ -40,6 +40,9 @@ const FX_TAB_SLOT_INDEX: Record<string, number> = {
 	phaser: 5,
 };
 
+// Voice panels stay in the FX grid for layout/LED/color but are navigable (not toggle)
+const VOICE_FX_PANELS = new Set(["phasemod", "vibrato"]);
+
 const FX_TYPE_COLORS: Record<FxSlotType, string> = {
 	empty: "#3b3b3b",
 	chorus: "#818cf8",
@@ -174,9 +177,13 @@ export default function AsidePanelSwitcher<T extends string>({
 		return "black";
 	};
 
-	const isToggleTab = (tabId: T): boolean =>
-		TOGGLE_TAB_IDS.has(normalizeTabId(tabId)) ||
-		FX_TAB_SLOT_INDEX[normalizeTabId(tabId)] != null;
+	const isToggleTab = (tabId: T): boolean => {
+		const normalized = normalizeTabId(tabId);
+		return (
+			TOGGLE_TAB_IDS.has(normalized) ||
+			(FX_TAB_SLOT_INDEX[normalized] != null && !VOICE_FX_PANELS.has(normalized))
+		);
+	};
 
 	const isFxModuleTab = (tabId: T): boolean =>
 		FX_TAB_SLOT_INDEX[normalizeTabId(tabId)] != null;
@@ -257,7 +264,7 @@ export default function AsidePanelSwitcher<T extends string>({
 		const panelType = child.type as AsidePanelComponent<T>;
 		const normalizedTabId = String(panelType.panelId).toLowerCase();
 		const slot = FX_TAB_SLOT_INDEX[normalizedTabId];
-		if (slot != null) {
+		if (slot != null && !VOICE_FX_PANELS.has(normalizedTabId)) {
 			const type = (fxSlots[slot]?.type ?? "empty") as FxSlotType;
 			return {
 				id: panelType.panelId,

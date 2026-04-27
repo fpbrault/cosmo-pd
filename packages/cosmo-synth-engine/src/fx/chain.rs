@@ -105,6 +105,7 @@ impl FxSlotProcessors {
                 self.eq.gains[2] = eq.gain750;
                 self.eq.gains[3] = eq.gain2200;
                 self.eq.gains[4] = eq.gain8000;
+                self.eq.dirty = true;
             }
             FxSlotConfig::GrainDelay(gd) => {
                 self.grain_delay.enabled = gd.enabled;

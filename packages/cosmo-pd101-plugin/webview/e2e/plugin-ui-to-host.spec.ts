@@ -13,7 +13,6 @@ test.describe("UI to host outbound messages", () => {
 	test("changing Line 1 algo records a param:set message for l1_warp_algo", async ({
 		page,
 	}) => {
-		await page.getByRole("button", { name: /phase\s*mod/i }).click();
 
 		const bendAlgoButton = page.getByTitle("Bend").first();
 		await expect(bendAlgoButton).toBeVisible();

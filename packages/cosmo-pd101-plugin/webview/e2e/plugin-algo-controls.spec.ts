@@ -12,7 +12,6 @@ test.describe("Algo controls plugin bridge", () => {
 	test("Line 1 Algo A and Algo B knob edits should invoke setAlgoControls with correct banks", async ({
 		page,
 	}) => {
-		await page.getByRole("button", { name: /phase\s*mod/i }).click();
 
 		const bendAlgoButton = page.getByTitle("Bend").first();
 		await expect(bendAlgoButton).toBeVisible();
@@ -104,8 +103,6 @@ test.describe("Algo controls plugin bridge", () => {
 	test("hovering an algo control knob should update the bottom info bar", async ({
 		page,
 	}) => {
-		await page.getByRole("button", { name: /phase\s*mod/i }).click();
-
 		const bendAlgoButton = page.getByTitle("Bend").first();
 		await expect(bendAlgoButton).toBeVisible();
 		await bendAlgoButton.click();
