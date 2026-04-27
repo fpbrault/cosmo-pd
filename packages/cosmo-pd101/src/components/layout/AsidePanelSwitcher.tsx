@@ -181,7 +181,8 @@ export default function AsidePanelSwitcher<T extends string>({
 		const normalized = normalizeTabId(tabId);
 		return (
 			TOGGLE_TAB_IDS.has(normalized) ||
-			(FX_TAB_SLOT_INDEX[normalized] != null && !VOICE_FX_PANELS.has(normalized))
+			(FX_TAB_SLOT_INDEX[normalized] != null &&
+				!VOICE_FX_PANELS.has(normalized))
 		);
 	};
 

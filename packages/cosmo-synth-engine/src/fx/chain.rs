@@ -100,12 +100,11 @@ impl FxSlotProcessors {
             }
             FxSlotConfig::Eq5Band(eq) => {
                 self.eq.enabled = eq.enabled;
-                self.eq.gains[0] = eq.gain80;
-                self.eq.gains[1] = eq.gain240;
-                self.eq.gains[2] = eq.gain750;
-                self.eq.gains[3] = eq.gain2200;
-                self.eq.gains[4] = eq.gain8000;
-                self.eq.dirty = true;
+                self.eq.set_gain(0, eq.gain80);
+                self.eq.set_gain(1, eq.gain240);
+                self.eq.set_gain(2, eq.gain750);
+                self.eq.set_gain(3, eq.gain2200);
+                self.eq.set_gain(4, eq.gain8000);
             }
             FxSlotConfig::GrainDelay(gd) => {
                 self.grain_delay.enabled = gd.enabled;

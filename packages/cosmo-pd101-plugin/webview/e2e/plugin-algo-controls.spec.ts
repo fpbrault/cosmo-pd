@@ -12,7 +12,6 @@ test.describe("Algo controls plugin bridge", () => {
 	test("Line 1 Algo A and Algo B knob edits should invoke setAlgoControls with correct banks", async ({
 		page,
 	}) => {
-
 		const bendAlgoButton = page.getByTitle("Bend").first();
 		await expect(bendAlgoButton).toBeVisible();
 		await bendAlgoButton.click();
