@@ -68,7 +68,10 @@ type WarpAlgoKey =
 	| "mirror"
 	| "fof"
 	| "karpunk"
-	| "sine";
+	| "sine"
+	| "terrain"
+	| "stutter"
+	| "cheby";
 
 const invertMap = <T extends string>(
 	input: EnumToIdMap<T>,
@@ -114,6 +117,9 @@ const WARP_ALGO_IDS: EnumToIdMap<WarpAlgoKey> = {
 	fof: 11,
 	karpunk: 12,
 	sine: 13,
+	terrain: 14,
+	stutter: 15,
+	cheby: 16,
 };
 const WARP_ALGO_FROM_ID = invertMap(WARP_ALGO_IDS);
 

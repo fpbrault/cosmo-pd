@@ -34,7 +34,9 @@ const generatePath = (fn: (phase: number) => number, res = 64): string => {
 	const steps = [];
 	for (let i = 0; i <= res; i++) {
 		const phase = i / res; // 0 to 1
-		const amplitude = Math.max(-1, Math.min(1, fn(phase)));
+		const sample = fn(phase);
+		const safeSample = Number.isFinite(sample) ? sample : 0;
+		const amplitude = Math.max(-1, Math.min(1, safeSample));
 
 		const x = 4 + phase * 16;
 		const y = 12 - amplitude * 8;
@@ -204,9 +206,9 @@ function pdPinch(phase: number, amount: number): number {
 	if (amount === 0) return phase;
 	const center = 0.5;
 	const a = amount * 0.98 + 0.01;
-	return (
-		center + (phase - center) * (Math.abs(phase - center) / center) ** (a - 1)
-	);
+	const dist = Math.abs(phase - center) / center;
+	if (dist === 0) return center;
+	return center + (phase - center) * dist ** (a - 1);
 }
 
 function pdFold(phase: number, amount: number): number {

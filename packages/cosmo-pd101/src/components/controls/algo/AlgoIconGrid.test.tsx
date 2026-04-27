@@ -11,7 +11,7 @@ vi.mock("@/lib/synth/pdAlgorithms", () => ({
 		{ key: "algo-1", label: "Algo 1", value: "cz101", icon: "M1 1L10 10" },
 		{ key: "algo-2", label: "Algo 2", value: "bend", icon: "M2 2L11 11" },
 	],
-	getPdAlgoBehaviorDescription: () => "mock behavior",
+	getPdAlgoBehaviorDescription: () => "behavior",
 }));
 
 describe("AlgoIconGrid", () => {
