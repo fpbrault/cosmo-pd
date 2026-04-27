@@ -1,4 +1,5 @@
 import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
+import { PARAM_META } from "@/lib/synth/paramMeta";
 import { BaseFxSection, type FxKnobConfig } from "./BaseFxSection";
 
 interface DelaySectionProps {
@@ -26,12 +27,11 @@ export function DelaySection({
 	warmth,
 	setWarmth,
 }: DelaySectionProps) {
-	const tapeModeTooltip = "Toggle tape echo coloration for delay repeats.";
-	const tapeModeHoverHandlers = useHoverInfoHandlers(tapeModeTooltip);
+	const tapeModeHoverHandlers = useHoverInfoHandlers(PARAM_META.delayTapeMode?.tooltip);
 	const knobs: FxKnobConfig[] = [
 		{
 			label: "Time",
-			tooltip: "Sets the delay repeat interval.",
+			tooltip: PARAM_META.delayTime?.tooltip,
 			value: time,
 			setValue: setTime,
 			min: 0.01,
@@ -42,7 +42,7 @@ export function DelaySection({
 		},
 		{
 			label: "Dly Fdbk",
-			tooltip: "Feeds delayed signal back for additional repeats.",
+			tooltip: PARAM_META.delayFeedback?.tooltip,
 			value: feedback,
 			setValue: setFeedback,
 			min: 0,
@@ -55,7 +55,7 @@ export function DelaySection({
 			? ([
 					{
 						label: "Warmth",
-						tooltip: "Adds tape-style saturation and high-frequency rolloff.",
+						tooltip: PARAM_META.delayWarmth?.tooltip,
 						value: warmth,
 						setValue: setWarmth,
 						min: 0,
@@ -68,7 +68,7 @@ export function DelaySection({
 			: []),
 		{
 			label: "Mix",
-			tooltip: "Blends dry signal with delayed signal.",
+			tooltip: PARAM_META.delayMix?.tooltip,
 			value: mix,
 			setValue: setMix,
 			min: 0,
@@ -88,7 +88,7 @@ export function DelaySection({
 				<button
 					type="button"
 					onClick={() => setTapeMode(!tapeMode)}
-					data-hover-info={tapeModeTooltip}
+					data-hover-info={PARAM_META.delayTapeMode?.tooltip}
 					{...tapeModeHoverHandlers}
 					className={`rounded px-3 py-1 text-xs font-medium tracking-wide border transition-colors ${
 						tapeMode

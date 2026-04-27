@@ -1,4 +1,5 @@
 import { BaseFxSection, type FxKnobConfig } from "./BaseFxSection";
+import { PARAM_META } from "@/lib/synth/paramMeta";
 
 interface ChorusSectionProps {
 	rate: number;
@@ -20,7 +21,7 @@ export function ChorusSection({
 	const knobs: FxKnobConfig[] = [
 		{
 			label: "Rate",
-			tooltip: "Sets chorus modulation speed.",
+			tooltip: PARAM_META.chorusRate?.tooltip,
 			value: rate,
 			setValue: setRate,
 			min: 0.1,
@@ -31,7 +32,7 @@ export function ChorusSection({
 		},
 		{
 			label: "Depth",
-			tooltip: "Sets how wide the chorus pitch modulation swings.",
+			tooltip: PARAM_META.chorusDepth?.tooltip,
 			value: depth,
 			setValue: setDepth,
 			min: 0,
@@ -42,7 +43,7 @@ export function ChorusSection({
 		},
 		{
 			label: "Mix",
-			tooltip: "Blends dry signal with the chorus effect.",
+			tooltip: PARAM_META.chorusMix?.tooltip,
 			value: mix,
 			setValue: setMix,
 			min: 0,

@@ -4,6 +4,7 @@ import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { PARAM_META } from "@/lib/synth/paramMeta";
 import { MOD_ENV_PRESETS } from "@/lib/synth/modulePresets";
 
 export default function ModEnveloppeModule() {
@@ -84,7 +85,7 @@ export default function ModEnveloppeModule() {
 				size={52}
 				color="#c24587"
 				label="Sus"
-				tooltip="Sets sustained modulation level while note is held."
+							tooltip={PARAM_META.modEnvSustain?.tooltip}
 				valueFormatter={(v) => `${Math.round(v * 100)}%`}
 			/>
 			<ControlKnob
@@ -96,7 +97,7 @@ export default function ModEnveloppeModule() {
 				size={52}
 				color="#c24587"
 				label="Rel"
-				tooltip="Sets modulation envelope release time after note off."
+							tooltip={PARAM_META.modEnvRelease?.tooltip}
 				valueFormatter={(v) => `${v.toFixed(2)}s`}
 			/>
 		</ModuleFrame>

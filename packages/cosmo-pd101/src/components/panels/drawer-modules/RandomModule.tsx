@@ -1,6 +1,7 @@
 import ControlKnob from "@/components/controls/ControlKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { PARAM_META } from "@/lib/synth/paramMeta";
 
 export default function RandomModule() {
 	const { value: randomRate, setValue: setRandomRate } =
@@ -16,7 +17,7 @@ export default function RandomModule() {
 				size={52}
 				color="#c2571a"
 				label="Rate"
-				tooltip="Sets sample-and-hold random modulation refresh rate."
+				tooltip={PARAM_META.randomRate?.tooltip}
 				valueFormatter={(v) => `${v.toFixed(2)}Hz`}
 			/>
 		</ModuleFrame>

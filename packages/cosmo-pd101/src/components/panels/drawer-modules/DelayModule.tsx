@@ -5,6 +5,7 @@ import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthStore } from "@/features/synth/synthStore";
+import { PARAM_META } from "@/lib/synth/paramMeta";
 import { DELAY_PRESETS } from "@/lib/synth/modulePresets";
 
 export default function DelayModule({ slot }: { slot: number }) {
@@ -31,8 +32,7 @@ export default function DelayModule({ slot }: { slot: number }) {
 		});
 	};
 
-	const tapeModeTooltip = "Toggle tape echo coloration for delay repeats.";
-	const tapeModeHoverHandlers = useHoverInfoHandlers(tapeModeTooltip);
+	const tapeModeHoverHandlers = useHoverInfoHandlers(PARAM_META.delayTapeMode?.tooltip);
 	return (
 		<ModuleFrame
 			title="Delay"
@@ -53,7 +53,7 @@ export default function DelayModule({ slot }: { slot: number }) {
 			<button
 				type="button"
 				onClick={() => setFxSlotParams(slot, { tapeMode: !delay.tapeMode })}
-				data-hover-info={tapeModeTooltip}
+				data-hover-info={PARAM_META.delayTapeMode?.tooltip}
 				{...tapeModeHoverHandlers}
 				className={`rounded px-2 py-0.5 text-[0.6rem] font-medium tracking-wider border transition-colors w-fit justify-self-center grow col-span-${delay.tapeMode ? 4 : 3} ${
 					delay.tapeMode
@@ -72,7 +72,7 @@ export default function DelayModule({ slot }: { slot: number }) {
 				size={52}
 				color="#fbbf24"
 				label="Time"
-				tooltip="Sets the delay repeat interval."
+				tooltip={PARAM_META.delayTime?.tooltip}
 				valueFormatter={(value) => `${Math.round(value * 1000)}ms`}
 			/>
 			<ControlKnob
@@ -84,7 +84,7 @@ export default function DelayModule({ slot }: { slot: number }) {
 				size={52}
 				color="#fbbf24"
 				label="Fdbk"
-				tooltip="Controls how much delayed signal feeds back into the delay."
+				tooltip={PARAM_META.delayFeedback?.tooltip}
 				valueFormatter={(value) => `${Math.round(value * 100)}%`}
 			/>
 			{delay.tapeMode && (
@@ -97,7 +97,7 @@ export default function DelayModule({ slot }: { slot: number }) {
 					size={52}
 					color="#f59e0b"
 					label="Warmth"
-					tooltip="Adds tape-style saturation and tone darkening."
+					tooltip={PARAM_META.delayWarmth?.tooltip}
 					valueFormatter={(value) => `${Math.round(value * 100)}%`}
 				/>
 			)}
@@ -110,7 +110,7 @@ export default function DelayModule({ slot }: { slot: number }) {
 				size={52}
 				color="#fbbf24"
 				label="Mix"
-				tooltip="Blends dry signal with delayed repeats."
+			tooltip={PARAM_META.delayMix?.tooltip}
 				valueFormatter={(value) => `${Math.round(value * 100)}%`}
 			/>
 		</ModuleFrame>

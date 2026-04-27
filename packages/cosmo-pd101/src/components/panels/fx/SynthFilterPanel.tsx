@@ -4,6 +4,7 @@ import type { AsidePanelComponent } from "@/components/layout/AsidePanelSwitcher
 import SynthPanelContainer from "@/components/layout/SynthPanelContainer";
 import CzButton from "@/components/primitives/CzButton";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { FILTER_TYPE_TOOLTIPS, PARAM_META } from "@/lib/synth/paramMeta";
 
 const SynthFilterPanel: AsidePanelComponent<"filter"> = Object.assign(
 	function SynthFilterPanel() {
@@ -118,7 +119,7 @@ const SynthFilterPanel: AsidePanelComponent<"filter"> = Object.assign(
 						size={44}
 						color="#3dff3d"
 						label="Cutoff"
-						tooltip="Sets the filter cutoff frequency."
+						tooltip={PARAM_META.filterCutoff?.tooltip}
 						valueFormatter={(v) => `${Math.round(v)}Hz`}
 						modDestination="filterCutoff"
 					/>
@@ -130,7 +131,7 @@ const SynthFilterPanel: AsidePanelComponent<"filter"> = Object.assign(
 						size={44}
 						color="#3dff3d"
 						label="Res"
-						tooltip="Boosts frequencies around the cutoff point."
+						tooltip={PARAM_META.filterResonance?.tooltip}
 						valueFormatter={(v) => `${Math.round(v * 100)}%`}
 						modDestination="filterResonance"
 					/>
@@ -142,7 +143,7 @@ const SynthFilterPanel: AsidePanelComponent<"filter"> = Object.assign(
 						size={44}
 						color="#3dff3d"
 						label="Env"
-						tooltip="Applies envelope modulation amount to the cutoff."
+						tooltip={PARAM_META.filterEnvAmount?.tooltip}
 						valueFormatter={(v) => `${Math.round(v * 100)}%`}
 						modDestination="filterEnvAmount"
 					/>

@@ -5,6 +5,7 @@ import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { PARAM_META } from "@/lib/synth/paramMeta";
 import { VIBRATO_PRESETS } from "@/lib/synth/modulePresets";
 
 export default function VibratoModule() {
@@ -77,7 +78,7 @@ export default function VibratoModule() {
 				size={52}
 				color="#307948"
 				label="Rate"
-				tooltip="Sets vibrato speed."
+			tooltip={PARAM_META.vibratoRate?.tooltip}
 				valueFormatter={(v) => `${Math.round(v)}`}
 			/>
 			<ControlKnob
@@ -89,7 +90,7 @@ export default function VibratoModule() {
 				size={52}
 				color="#307948"
 				label="Depth"
-				tooltip="Sets vibrato pitch modulation depth."
+			tooltip={PARAM_META.vibratoDepth?.tooltip}
 				valueFormatter={(v) => `${Math.round(v)}`}
 			/>
 			<ControlKnob
@@ -101,7 +102,7 @@ export default function VibratoModule() {
 				size={52}
 				color="#307948"
 				label="Delay"
-				tooltip="Delays vibrato onset after note start."
+			tooltip={PARAM_META.vibratoDelay?.tooltip}
 				valueFormatter={(v) => `${Math.round(v)}ms`}
 			/>
 		</ModuleFrame>

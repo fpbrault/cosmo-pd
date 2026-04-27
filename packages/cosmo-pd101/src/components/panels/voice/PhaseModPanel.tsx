@@ -3,6 +3,7 @@ import type { AsidePanelComponent } from "@/components/layout/AsidePanelSwitcher
 import SynthPanelContainer from "@/components/layout/SynthPanelContainer";
 import CzButton from "@/components/primitives/CzButton";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { PARAM_META } from "@/lib/synth/paramMeta";
 
 const PhaseModPanel: AsidePanelComponent<"phaseMod"> = Object.assign(
 	function PhaseModPanel() {
@@ -28,7 +29,7 @@ const PhaseModPanel: AsidePanelComponent<"phaseMod"> = Object.assign(
 						size={52}
 						color="#7f9de4"
 						label="Amount"
-						tooltip="Sets internal phase modulation depth."
+						tooltip={PARAM_META.intPmAmount?.tooltip}
 						valueFormatter={(value) => value.toFixed(2)}
 						modDestination="intPmAmount"
 					/>
@@ -40,14 +41,14 @@ const PhaseModPanel: AsidePanelComponent<"phaseMod"> = Object.assign(
 						size={52}
 						color="#9cb937"
 						label="Ratio"
-						tooltip="Sets modulator-to-carrier frequency ratio."
+						tooltip={PARAM_META.intPmRatio?.tooltip}
 						valueFormatter={(value) => value.toFixed(1)}
 					/>
 				</div>
 				<CzButton
 					active={pmPre}
 					onClick={() => setPmPre(!pmPre)}
-					tooltip="Apply phase modulation before warp shaping."
+					tooltip={PARAM_META.pmPre?.tooltip}
 					className="mt-3 [&_button]:bg-cz-inset [&_button]:border-cz-border"
 				>
 					Pre-warp PM

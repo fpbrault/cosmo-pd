@@ -1,4 +1,5 @@
 import { BaseFxSection, type FxKnobConfig } from "./BaseFxSection";
+import { PARAM_META } from "@/lib/synth/paramMeta";
 
 interface ReverbSectionProps {
 	space: number;
@@ -28,7 +29,7 @@ export function ReverbSection({
 	const knobs: FxKnobConfig[] = [
 		{
 			label: "Space",
-			tooltip: "Sets the virtual room size of the reverb.",
+			tooltip: PARAM_META.reverbSpace?.tooltip,
 			value: space,
 			setValue: setSpace,
 			min: 0,
@@ -39,7 +40,7 @@ export function ReverbSection({
 		},
 		{
 			label: "Pre-Dly",
-			tooltip: "Adds a short delay before reverb reflections begin.",
+			tooltip: PARAM_META.reverbPredelay?.tooltip,
 			value: predelay,
 			setValue: setPredelay,
 			min: 0,
@@ -50,7 +51,7 @@ export function ReverbSection({
 		},
 		{
 			label: "Char",
-			tooltip: "Shapes reverb tone between darker and brighter tails.",
+			tooltip: PARAM_META.reverbCharacter?.tooltip,
 			value: character,
 			setValue: setCharacter,
 			min: 0,
@@ -61,7 +62,7 @@ export function ReverbSection({
 		},
 		{
 			label: "Dist",
-			tooltip: "Moves the source closer or farther inside the virtual space.",
+			tooltip: PARAM_META.reverbDistance?.tooltip,
 			value: distance,
 			setValue: setDistance,
 			min: 0,
@@ -72,7 +73,7 @@ export function ReverbSection({
 		},
 		{
 			label: "Mix",
-			tooltip: "Blends dry signal with reverb output.",
+			tooltip: PARAM_META.reverbMix?.tooltip,
 			value: mix,
 			setValue: setMix,
 			min: 0,
