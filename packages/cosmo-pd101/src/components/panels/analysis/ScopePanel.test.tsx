@@ -17,8 +17,8 @@ describe("ScopeMiniDisplay", () => {
 			throw new Error("expected scope canvas");
 		}
 
-		expect(canvas.className).toContain("h-20");
-		expect(canvas.className).toContain("w-48");
+		expect(canvas.className).toContain("h-24");
+		expect(canvas.className).toContain("w-full");
 		expect(canvas.style.imageRendering).toBe("");
 	});
 });
