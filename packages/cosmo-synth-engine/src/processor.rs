@@ -13,7 +13,7 @@ use crate::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use crate::fx::FxChain;
 use crate::generators::PER_LINE_HEADROOM;
 use crate::module_presets;
-use crate::params::{PolyMode, SynthParams, NUM_VOICES};
+use crate::params::{FxSlotConfig, FxSlotType, PolyMode, SynthParams, NUM_VOICES};
 use crate::voice::{render_voice, Voice};
 
 const SOFT_CLIP_DRIVE: f32 = 1.0;
@@ -233,28 +233,7 @@ impl CosmoProcessor {
 
     /// Copy FX-relevant fields from `self.params` into the `FxChain`.
     pub fn update_fx(&mut self) {
-        let p = &self.params;
-        self.fx.chorus_enabled = p.chorus.enabled;
-        self.fx.chorus_rate = p.chorus.rate;
-        self.fx.chorus_depth = p.chorus.depth;
-        self.fx.chorus_mix = p.chorus.mix;
-        self.fx.phaser_enabled = p.phaser.enabled;
-        self.fx.phaser_rate = p.phaser.rate;
-        self.fx.phaser_depth = p.phaser.depth;
-        self.fx.phaser_mix = p.phaser.mix;
-        self.fx.phaser_feedback = p.phaser.feedback;
-        self.fx.delay_enabled = p.delay.enabled;
-        self.fx.delay_time = p.delay.time;
-        self.fx.delay_feedback = p.delay.feedback;
-        self.fx.delay_mix = p.delay.mix;
-        self.fx.reverb.enabled = p.reverb.enabled;
-        self.fx.reverb.mix = p.reverb.mix;
-        self.fx.reverb.space = p.reverb.space;
-        self.fx.reverb.predelay = p.reverb.predelay;
-        self.fx.reverb.distance = p.reverb.distance;
-        self.fx.reverb.character = p.reverb.character;
-        self.fx.delay_tape_mode = p.delay.tape_mode;
-        self.fx.delay_warmth = p.delay.warmth;
+        self.fx.sync_from_params(&self.params);
     }
 
     // -----------------------------------------------------------------------
@@ -266,6 +245,20 @@ impl CosmoProcessor {
         normalize_synth_params_envelopes_to_raw_if_human(&mut params);
         self.params = params;
         self.update_fx();
+    }
+
+    /// Set which effect type occupies a given FX slot (0–5).
+    /// Resets to default params with enabled=true for non-empty types.
+    pub fn set_fx_slot_type(&mut self, slot: usize, slot_type: FxSlotType) {
+        if slot < 6 {
+            self.params.fx_slots[slot] = FxSlotConfig::default_for_type(slot_type);
+            self.update_fx();
+        }
+    }
+
+    /// Return the current FX slot type layout.
+    pub fn get_fx_slot_types(&self) -> [FxSlotType; 6] {
+        core::array::from_fn(|i| self.params.fx_slots[i].slot_type())
     }
 
     /// Apply a named module preset to the current parameters.

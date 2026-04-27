@@ -3,37 +3,26 @@ import ControlKnob from "@/components/controls/ControlKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
-import { useSynthParam } from "@/features/synth/SynthParamController";
+import { useSynthStore } from "@/features/synth/synthStore";
 import { DELAY_PRESETS } from "@/lib/synth/modulePresets";
 
-export default function DelayModule() {
+export default function DelayModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("");
-	const { value: delayEnabled, setValue: setDelayEnabled } =
-		useSynthParam("delayEnabled");
-	const { value: delayTime, setValue: setDelayTime } =
-		useSynthParam("delayTime");
-	const { value: delayFeedback, setValue: setDelayFeedback } =
-		useSynthParam("delayFeedback");
-	const { value: delayMix, setValue: setDelayMix } = useSynthParam("delayMix");
-	const { value: delayTapeMode, setValue: setDelayTapeMode } =
-		useSynthParam("delayTapeMode");
-	const { value: delayWarmth, setValue: setDelayWarmth } =
-		useSynthParam("delayWarmth");
-	const delayModeLabel = delayTapeMode ? "Tape Echo" : "Digital";
+	const rawSlot = useSynthStore((s) => s.fxSlots[slot]);
+	const setFxSlotParams = useSynthStore((s) => s.setFxSlotParams);
+	if (rawSlot?.type !== "delay") return null;
+	const delay = rawSlot.params;
+	const delayModeLabel = delay.tapeMode ? "Tape Echo" : "Digital";
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
+
 		const preset = DELAY_PRESETS.find((entry) => entry.id === presetId);
 		if (!preset) {
 			return;
 		}
 
-		setDelayEnabled(preset.patch.delay.enabled);
-		setDelayTime(preset.patch.delay.time);
-		setDelayFeedback(preset.patch.delay.feedback);
-		setDelayMix(preset.patch.delay.mix);
-		setDelayTapeMode(preset.patch.delay.tapeMode);
-		setDelayWarmth(preset.patch.delay.warmth);
+		setFxSlotParams(slot, preset.patch.delay);
 		requestApplyModulePreset({
 			module: "delay",
 			preset: preset.id,
@@ -48,31 +37,30 @@ export default function DelayModule() {
 			headerControl={
 				<ModulePresetPopover
 					title="Delay Presets"
-					accentColor="#d4aa2a"
 					value={selectedPreset}
 					options={DELAY_PRESETS}
 					onChange={handlePresetChange}
 				/>
 			}
 			meta={delayModeLabel}
-			columns={delayTapeMode ? 4 : 3}
-			enabled={delayEnabled}
-			onToggle={() => setDelayEnabled(!delayEnabled)}
+			columns={delay.tapeMode ? 4 : 3}
+			enabled={delay.enabled ?? false}
+			onToggle={() => setFxSlotParams(slot, { enabled: !delay.enabled })}
 		>
 			<button
 				type="button"
-				onClick={() => setDelayTapeMode(!delayTapeMode)}
-				className={`rounded px-2 py-0.5 text-[0.6rem] font-medium tracking-wider border transition-colors w-fit justify-self-center grow col-span-${delayTapeMode ? 4 : 3} ${
-					delayTapeMode
+				onClick={() => setFxSlotParams(slot, { tapeMode: !delay.tapeMode })}
+				className={`rounded px-2 py-0.5 text-[0.6rem] font-medium tracking-wider border transition-colors w-fit justify-self-center grow col-span-${delay.tapeMode ? 4 : 3} ${
+					delay.tapeMode
 						? "border-amber-500/60 bg-amber-500/20 text-amber-300"
 						: "border-cz-border bg-cz-body text-cz-cream/60 hover:text-cz-cream/90"
 				}`}
 			>
-				{delayTapeMode ? "● TAPE" : "○ TAPE"}
+				{delay.tapeMode ? "● TAPE" : "○ TAPE"}
 			</button>
 			<ControlKnob
-				value={delayTime}
-				onChange={setDelayTime}
+				value={delay.time}
+				onChange={(value) => setFxSlotParams(slot, { time: value })}
 				min={0.01}
 				max={1}
 				defaultValue={0.3}
@@ -82,8 +70,8 @@ export default function DelayModule() {
 				valueFormatter={(value) => `${Math.round(value * 1000)}ms`}
 			/>
 			<ControlKnob
-				value={delayFeedback}
-				onChange={setDelayFeedback}
+				value={delay.feedback}
+				onChange={(value) => setFxSlotParams(slot, { feedback: value })}
 				min={0}
 				max={0.9}
 				defaultValue={0.3}
@@ -92,10 +80,10 @@ export default function DelayModule() {
 				label="Fdbk"
 				valueFormatter={(value) => `${Math.round(value * 100)}%`}
 			/>
-			{delayTapeMode && (
+			{delay.tapeMode && (
 				<ControlKnob
-					value={delayWarmth}
-					onChange={setDelayWarmth}
+					value={delay.warmth ?? 0.5}
+					onChange={(value) => setFxSlotParams(slot, { warmth: value })}
 					min={0}
 					max={1}
 					defaultValue={0.5}
@@ -106,8 +94,8 @@ export default function DelayModule() {
 				/>
 			)}
 			<ControlKnob
-				value={delayMix}
-				onChange={setDelayMix}
+				value={delay.mix}
+				onChange={(value) => setFxSlotParams(slot, { mix: value })}
 				min={0}
 				max={1}
 				defaultValue={0.25}

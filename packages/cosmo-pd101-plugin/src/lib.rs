@@ -649,11 +649,11 @@ impl CzParameters {
 //   - Deliberately unmapped fields (e.g. `frequency`, `ring_gain`,
 //     `algo_controls`) must still be listed — use a `_`-prefixed binding to
 //     make the intentional omission visible.
-#[allow(dead_code, unused_variables, clippy::items_after_statements)]
+#[allow(dead_code, clippy::items_after_statements)]
 fn _assert_synth_params_coverage(p: SynthParams) {
     use cosmo_synth_engine::params::{
-        ChorusParams, CzLineParams, DelayParams, FilterParams, LfoParams, LineParams,
-        PortamentoParams, ReverbParams, VibratoParams,
+        ChorusParams, CzLineParams, DelayParams, FilterParams, LfoParams, LineParams, ModEnvParams,
+        PhaserParams, PortamentoParams, RandomParams, ReverbParams, VibratoParams,
     };
 
     let SynthParams {
@@ -686,8 +686,25 @@ fn _assert_synth_params_coverage(p: SynthParams) {
         pitch_bend_range: _pitch_bend_range, // not yet a VST param
         mod_wheel_vibrato_depth: _mod_wheel_vibrato_depth, // not yet a VST param
         mod_matrix: _mod_matrix,             // not yet a VST param
+        fx_slots: _fx_slots,                 // not yet a VST param
     } = p;
 
+    // Phaser — not yet a VST param but destructured to catch field additions.
+    let PhaserParams {
+        enabled: _phas_enabled,
+        rate: _phas_rate,
+        depth: _phas_depth,
+        mix: _phas_mix,
+        feedback: _phas_feedback,
+    } = phaser;
+    // ModEnvParams / RandomParams — not yet VST params.
+    let ModEnvParams {
+        attack: _menv_attack,
+        decay: _menv_decay,
+        sustain: _menv_sustain,
+        release: _menv_release,
+    } = mod_env;
+    let RandomParams { rate: _rand_rate } = random;
     let ChorusParams {
         enabled: _cho_enabled,
         rate: _cho_rate,

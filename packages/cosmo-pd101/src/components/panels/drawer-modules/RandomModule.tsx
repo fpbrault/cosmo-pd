@@ -6,13 +6,7 @@ export default function RandomModule() {
 	const { value: randomRate, setValue: setRandomRate } =
 		useSynthParam("randomRate");
 	return (
-		<ModuleFrame
-			title="Random"
-			color="#c2571a"
-			enabled
-			showLed={false}
-			columns={1}
-		>
+		<ModuleFrame title="Random" color="#c2571a" enabled columns={1}>
 			<ControlKnob
 				value={randomRate}
 				onChange={setRandomRate}

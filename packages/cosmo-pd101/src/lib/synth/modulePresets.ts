@@ -1,4 +1,7 @@
-import type { LfoWaveform } from "@/lib/synth/bindings/synth";
+import {
+	type LfoWaveform,
+	MODULE_PRESET_CATALOG_V1,
+} from "@/lib/synth/bindings/synth";
 
 export type ModulePresetModule =
 	| "chorus"
@@ -9,7 +12,17 @@ export type ModulePresetModule =
 	| "phaseMod"
 	| "lfo1"
 	| "lfo2"
-	| "modEnv";
+	| "modEnv"
+	| "compressor"
+	| "eq"
+	| "grainDelay"
+	| "bitcrusher"
+	| "shimmerVerb"
+	| "distortion"
+	| "junoChorus"
+	| "ringMod"
+	| "tremolo"
+	| "wavefolder";
 
 export type ModulePresetPatch = Record<string, unknown>;
 
@@ -18,6 +31,40 @@ export type ModulePresetDefinition<TPatch extends ModulePresetPatch> = {
 	label: string;
 	patch: TPatch;
 };
+
+function applyRustPresetCatalog<TPatch extends ModulePresetPatch>(
+	module: ModulePresetModule,
+	presets: ModulePresetDefinition<TPatch>[],
+) {
+	const catalogEntry = MODULE_PRESET_CATALOG_V1.find(
+		(entry) => entry.module === module,
+	);
+	if (!catalogEntry) {
+		return;
+	}
+
+	const presetsById = new Map(presets.map((preset) => [preset.id, preset]));
+	const orderedPresets: ModulePresetDefinition<TPatch>[] = [];
+
+	for (const rustPreset of catalogEntry.presets) {
+		const matchingPreset = presetsById.get(rustPreset.id);
+		if (!matchingPreset) {
+			continue;
+		}
+		orderedPresets.push({ ...matchingPreset, label: rustPreset.label });
+		presetsById.delete(rustPreset.id);
+	}
+
+	for (const preset of presets) {
+		if (presetsById.has(preset.id)) {
+			orderedPresets.push(preset);
+		}
+	}
+
+	if (orderedPresets.length > 0) {
+		presets.splice(0, presets.length, ...orderedPresets);
+	}
+}
 
 export const CHORUS_PRESETS: ModulePresetDefinition<{
 	chorus: { enabled: boolean; rate: number; depth: number; mix: number };
@@ -344,6 +391,364 @@ export const MOD_ENV_PRESETS: ModulePresetDefinition<{
 		},
 	},
 ];
+
+export const COMPRESSOR_PRESETS: ModulePresetDefinition<{
+	compressor: {
+		enabled: boolean;
+		thresholdDb: number;
+		ratio: number;
+		attackMs: number;
+		releaseMs: number;
+		makeupDb: number;
+		mix: number;
+	};
+}>[] = [
+	{
+		id: "gentle",
+		label: "Gentle",
+		patch: {
+			compressor: {
+				enabled: true,
+				thresholdDb: -18,
+				ratio: 2,
+				attackMs: 10,
+				releaseMs: 150,
+				makeupDb: 3,
+				mix: 1,
+			},
+		},
+	},
+	{
+		id: "punchy",
+		label: "Punchy",
+		patch: {
+			compressor: {
+				enabled: true,
+				thresholdDb: -12,
+				ratio: 4,
+				attackMs: 5,
+				releaseMs: 80,
+				makeupDb: 6,
+				mix: 1,
+			},
+		},
+	},
+	{
+		id: "limiter",
+		label: "Limiter",
+		patch: {
+			compressor: {
+				enabled: true,
+				thresholdDb: -6,
+				ratio: 20,
+				attackMs: 1,
+				releaseMs: 200,
+				makeupDb: 2,
+				mix: 1,
+			},
+		},
+	},
+];
+
+export const EQ_PRESETS: ModulePresetDefinition<{
+	eq: {
+		enabled: boolean;
+		gain80: number;
+		gain240: number;
+		gain750: number;
+		gain2200: number;
+		gain8000: number;
+	};
+}>[] = [
+	{
+		id: "bassBoost",
+		label: "Bass Boost",
+		patch: {
+			eq: {
+				enabled: true,
+				gain80: 6,
+				gain240: 3,
+				gain750: 0,
+				gain2200: -1,
+				gain8000: -2,
+			},
+		},
+	},
+	{
+		id: "presence",
+		label: "Presence",
+		patch: {
+			eq: {
+				enabled: true,
+				gain80: 0,
+				gain240: -2,
+				gain750: 0,
+				gain2200: 5,
+				gain8000: 3,
+			},
+		},
+	},
+	{
+		id: "warmth",
+		label: "Warmth",
+		patch: {
+			eq: {
+				enabled: true,
+				gain80: 3,
+				gain240: 4,
+				gain750: 1,
+				gain2200: -3,
+				gain8000: -5,
+			},
+		},
+	},
+];
+
+export const GRAIN_DELAY_PRESETS: ModulePresetDefinition<{
+	grainDelay: {
+		enabled: boolean;
+		time: number;
+		scatter: number;
+		density: number;
+		mix: number;
+	};
+}>[] = [
+	{
+		id: "cloudEcho",
+		label: "Cloud Echo",
+		patch: {
+			grainDelay: {
+				enabled: true,
+				time: 0.35,
+				scatter: 0.6,
+				density: 0.7,
+				mix: 0.4,
+			},
+		},
+	},
+	{
+		id: "glitchDelay",
+		label: "Glitch Delay",
+		patch: {
+			grainDelay: {
+				enabled: true,
+				time: 0.12,
+				scatter: 0.9,
+				density: 0.85,
+				mix: 0.5,
+			},
+		},
+	},
+	{
+		id: "shimmerEcho",
+		label: "Shimmer Echo",
+		patch: {
+			grainDelay: {
+				enabled: true,
+				time: 0.5,
+				scatter: 0.35,
+				density: 0.5,
+				mix: 0.35,
+			},
+		},
+	},
+];
+
+export const BITCRUSHER_PRESETS: ModulePresetDefinition<{
+	bitcrusher: {
+		enabled: boolean;
+		bits: number;
+		rateReduction: number;
+		mix: number;
+	};
+}>[] = [
+	{
+		id: "retroGame",
+		label: "Retro Game",
+		patch: { bitcrusher: { enabled: true, bits: 8, rateReduction: 4, mix: 1 } },
+	},
+	{
+		id: "grunge",
+		label: "Grunge",
+		patch: {
+			bitcrusher: { enabled: true, bits: 4, rateReduction: 2, mix: 1 },
+		},
+	},
+	{
+		id: "subtle",
+		label: "Subtle",
+		patch: {
+			bitcrusher: { enabled: true, bits: 12, rateReduction: 1.5, mix: 0.6 },
+		},
+	},
+];
+
+export const SHIMMER_VERB_PRESETS: ModulePresetDefinition<{
+	shimmerVerb: {
+		enabled: boolean;
+		shimmer: number;
+		space: number;
+		mix: number;
+	};
+}>[] = [
+	{
+		id: "crystalHall",
+		label: "Crystal Hall",
+		patch: {
+			shimmerVerb: { enabled: true, shimmer: 0.6, space: 0.8, mix: 0.4 },
+		},
+	},
+	{
+		id: "ethereal",
+		label: "Ethereal",
+		patch: {
+			shimmerVerb: { enabled: true, shimmer: 0.85, space: 0.95, mix: 0.55 },
+		},
+	},
+	{
+		id: "subtleShimmer",
+		label: "Subtle Shimmer",
+		patch: {
+			shimmerVerb: { enabled: true, shimmer: 0.25, space: 0.6, mix: 0.3 },
+		},
+	},
+];
+
+export const DISTORTION_PRESETS: ModulePresetDefinition<{
+	distortion: { enabled: boolean; drive: number; tone: number; mix: number };
+}>[] = [
+	{
+		id: "warmOverdrive",
+		label: "Warm Overdrive",
+		patch: { distortion: { enabled: true, drive: 0.35, tone: 0.3, mix: 0.9 } },
+	},
+	{
+		id: "grittyFuzz",
+		label: "Gritty Fuzz",
+		patch: { distortion: { enabled: true, drive: 0.75, tone: 0.6, mix: 1 } },
+	},
+	{
+		id: "bitingClip",
+		label: "Biting Clip",
+		patch: { distortion: { enabled: true, drive: 0.9, tone: 0.8, mix: 1 } },
+	},
+];
+
+export const JUNO_CHORUS_PRESETS: ModulePresetDefinition<{
+	junoChorus: { enabled: boolean; mode: number; mix: number };
+}>[] = [
+	{
+		id: "junoI",
+		label: "Juno I",
+		patch: { junoChorus: { enabled: true, mode: 0, mix: 0.5 } },
+	},
+	{
+		id: "junoII",
+		label: "Juno II",
+		patch: { junoChorus: { enabled: true, mode: 1, mix: 0.55 } },
+	},
+	{
+		id: "junoFull",
+		label: "Juno Full",
+		patch: { junoChorus: { enabled: true, mode: 2, mix: 0.6 } },
+	},
+];
+
+export const RING_MOD_PRESETS: ModulePresetDefinition<{
+	ringMod: { enabled: boolean; carrierHz: number; mix: number };
+}>[] = [
+	{
+		id: "metallic",
+		label: "Metallic",
+		patch: { ringMod: { enabled: true, carrierHz: 220, mix: 0.7 } },
+	},
+	{
+		id: "bell",
+		label: "Bell",
+		patch: { ringMod: { enabled: true, carrierHz: 523, mix: 0.5 } },
+	},
+	{
+		id: "alien",
+		label: "Alien",
+		patch: { ringMod: { enabled: true, carrierHz: 1337, mix: 0.85 } },
+	},
+];
+
+export const TREMOLO_PRESETS: ModulePresetDefinition<{
+	tremolo: {
+		enabled: boolean;
+		rate: number;
+		depth: number;
+		waveform: number;
+		mix: number;
+	};
+}>[] = [
+	{
+		id: "slowWave",
+		label: "Slow Wave",
+		patch: {
+			tremolo: { enabled: true, rate: 2, depth: 0.5, waveform: 0, mix: 1 },
+		},
+	},
+	{
+		id: "fastChop",
+		label: "Fast Chop",
+		patch: {
+			tremolo: { enabled: true, rate: 8, depth: 0.75, waveform: 2, mix: 1 },
+		},
+	},
+	{
+		id: "triPulse",
+		label: "Tri Pulse",
+		patch: {
+			tremolo: { enabled: true, rate: 5, depth: 0.6, waveform: 1, mix: 1 },
+		},
+	},
+];
+
+export const WAVEFOLDER_PRESETS: ModulePresetDefinition<{
+	wavefolder: { enabled: boolean; drive: number; folds: number; mix: number };
+}>[] = [
+	{
+		id: "gentle",
+		label: "Gentle",
+		patch: { wavefolder: { enabled: true, drive: 0.3, folds: 0.3, mix: 0.8 } },
+	},
+	{
+		id: "aggressive",
+		label: "Aggressive",
+		patch: { wavefolder: { enabled: true, drive: 0.75, folds: 0.7, mix: 1 } },
+	},
+	{
+		id: "harmonic",
+		label: "Harmonic",
+		patch: {
+			wavefolder: { enabled: true, drive: 0.5, folds: 0.5, mix: 0.9 },
+		},
+	},
+];
+
+// TODO: Remove these local patch payload definitions once the engine exports
+// full module preset parameter payloads and the frontend no longer mirrors them.
+applyRustPresetCatalog("chorus", CHORUS_PRESETS);
+applyRustPresetCatalog("delay", DELAY_PRESETS);
+applyRustPresetCatalog("reverb", REVERB_PRESETS);
+applyRustPresetCatalog("phaser", PHASER_PRESETS);
+applyRustPresetCatalog("vibrato", VIBRATO_PRESETS);
+applyRustPresetCatalog("phaseMod", PHASE_MOD_PRESETS);
+applyRustPresetCatalog("lfo1", LFO_PRESETS);
+applyRustPresetCatalog("lfo2", LFO_PRESETS);
+applyRustPresetCatalog("modEnv", MOD_ENV_PRESETS);
+applyRustPresetCatalog("compressor", COMPRESSOR_PRESETS);
+applyRustPresetCatalog("eq", EQ_PRESETS);
+applyRustPresetCatalog("grainDelay", GRAIN_DELAY_PRESETS);
+applyRustPresetCatalog("bitcrusher", BITCRUSHER_PRESETS);
+applyRustPresetCatalog("shimmerVerb", SHIMMER_VERB_PRESETS);
+applyRustPresetCatalog("distortion", DISTORTION_PRESETS);
+applyRustPresetCatalog("junoChorus", JUNO_CHORUS_PRESETS);
+applyRustPresetCatalog("ringMod", RING_MOD_PRESETS);
+applyRustPresetCatalog("tremolo", TREMOLO_PRESETS);
+applyRustPresetCatalog("wavefolder", WAVEFOLDER_PRESETS);
 
 export function getLfoModulePatch(id: 1 | 2, patch: Record<string, unknown>) {
 	return id === 1 ? { lfo: patch } : { lfo2: patch };

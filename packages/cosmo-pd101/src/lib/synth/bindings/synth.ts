@@ -325,9 +325,71 @@ amount: number; enabled: boolean }
 export type ModMatrix = { routes?: ModRoute[] }
 
 /**
+ * FX slot type selector — determines which effect is active in a given slot.
+ */
+export type FxSlotType = "empty" | "chorus" | "phaser" | "delay" | "reverb" | "vibrato" | "phaseMod" | "compressor" | "eq5Band" | "grainDelay" | "bitcrusher" | "shimmerVerb" | "distortion" | "junoChorus" | "ringMod" | "tremolo" | "wavefolder"
+
+/**
+ * Compressor parameters
+ */
+export type CompressorParams = { enabled?: boolean; thresholdDb?: number; ratio?: number; attackMs?: number; releaseMs?: number; makeupDb?: number; mix?: number }
+
+/**
+ * 5-band EQ parameters
+ */
+export type EqParams = { enabled?: boolean; gain80?: number; gain240?: number; gain750?: number; gain2200?: number; gain8000?: number }
+
+/**
+ * Grain delay parameters
+ */
+export type GrainDelayParams = { enabled?: boolean; time?: number; scatter?: number; density?: number; mix?: number }
+
+/**
+ * Bitcrusher parameters
+ */
+export type BitcrusherParams = { enabled?: boolean; bits?: number; rateReduction?: number; mix?: number }
+
+/**
+ * Shimmer verb parameters
+ */
+export type ShimmerVerbParams = { enabled?: boolean; shimmer?: number; space?: number; mix?: number }
+
+/**
+ * Distortion parameters
+ */
+export type DistortionParams = { enabled?: boolean; drive?: number; tone?: number; mix?: number }
+
+/**
+ * Juno-style chorus parameters
+ */
+export type JunoChorusParams = { enabled?: boolean; mode?: number; mix?: number }
+
+/**
+ * Ring modulator parameters
+ */
+export type RingModParams = { enabled?: boolean; carrierHz?: number; mix?: number }
+
+/**
+ * Tremolo parameters
+ */
+export type TremoloParams = { enabled?: boolean; rate?: number; depth?: number; waveform?: number; mix?: number }
+
+/**
+ * Wavefolder parameters
+ */
+export type WavefolderParams = { enabled?: boolean; drive?: number; folds?: number; mix?: number }
+
+/**
+ * Per-slot FX configuration — wraps effect-specific parameters with the slot type.
+ * Serializes as `{"type": "chorus", "params": {...}}` for effects,
+ * or `{"type": "empty"}` for empty slots.
+ */
+export type FxSlotConfig = { type: "empty" } | { type: "chorus"; params: ChorusParams } | { type: "phaser"; params: PhaserParams } | { type: "delay"; params: DelayParams } | { type: "reverb"; params: ReverbParams } | { type: "vibrato"; params: VibratoParams } | { type: "phaseMod" } | { type: "compressor"; params: CompressorParams } | { type: "eq5Band"; params: EqParams } | { type: "grainDelay"; params: GrainDelayParams } | { type: "bitcrusher"; params: BitcrusherParams } | { type: "shimmerVerb"; params: ShimmerVerbParams } | { type: "distortion"; params: DistortionParams } | { type: "junoChorus"; params: JunoChorusParams } | { type: "ringMod"; params: RingModParams } | { type: "tremolo"; params: TremoloParams } | { type: "wavefolder"; params: WavefolderParams }
+
+/**
  * Top-level synth parameters (mirrors this.params in the JS)
  */
-export type SynthParams = { lineSelect: LineSelect; modMode: ModMode; ringGain?: number; octave: number; line1: LineParams; line2: LineParams; intPmEnabled?: boolean; intPmAmount: number; intPmRatio: number; extPmAmount: number; pmPre: boolean; frequency: number; volume: number; polyMode: PolyMode; legato: boolean; chorus: ChorusParams; delay: DelayParams; reverb: ReverbParams; phaser: PhaserParams; vibrato: VibratoParams; portamento: PortamentoParams; lfo: LfoParams; lfo2?: LfoParams; filter: FilterParams; 
+export type SynthParams = { lineSelect: LineSelect; modMode: ModMode; ringGain?: number; octave: number; line1: LineParams; line2: LineParams; intPmEnabled?: boolean; intPmAmount: number; intPmRatio: number; extPmAmount: number; pmPre: boolean; frequency: number; volume: number; polyMode: PolyMode; legato: boolean; chorus?: ChorusParams; delay?: DelayParams; reverb?: ReverbParams; phaser?: PhaserParams; vibrato?: VibratoParams; portamento: PortamentoParams; lfo: LfoParams; lfo2?: LfoParams; filter: FilterParams; 
 /**
  * Pitch bend wheel range in semitones (1-24). Default 2.
  */
@@ -348,7 +410,11 @@ random?: RandomParams;
 /**
  * Parameters for the ADSR mod envelope.
  */
-modEnv?: ModEnvParams }
+modEnv?: ModEnvParams; 
+/**
+ * Per-slot FX configuration. Default is all 6 slots empty.
+ */
+fxSlots?: [FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig] }
 
 /**
  * Canonical, versioned synth preset wire contract.
@@ -359,6 +425,37 @@ export type SynthPresetV1 = { schemaVersion?: number; params: SynthParams }
  * A named CZ waveform combination preset (slot A waveform, slot B waveform, window function).
  */
 export type CzPresetV1 = { id: string; label: string; waveform1: CzWaveform; waveform2: CzWaveform; windowFunction: WindowType }
+
+/**
+ * A single named preset that can be applied to an FX module.
+ */
+export type FxPresetOptionV1 = { id: string; label: string }
+
+/**
+ * Visual/semantic kind for an FX control.
+ */
+export type FxControlKindV1 = "knob" | "buttonGroup" | "toggle"
+
+/**
+ * One selectable option for button-group controls.
+ */
+export type FxControlOptionV1 = { value: number; label: string; iconName: string | null }
+
+/**
+ * Describes one control surfaced by an FX module.
+ */
+export type FxControlV1 = { id: string; label: string; kind: FxControlKindV1; bipolar: boolean; min: number | null; max: number | null; defaultF32: number | null; 
+/**
+ * Options for `ButtonGroup` controls (empty slice for knobs/toggles).
+ */
+options: FxControlOptionV1[] }
+
+/**
+ * Complete definition of an FX slot module — controls, name, and preset catalog.
+ */
+export type FxDefinitionV1 = { slotType: FxSlotType; name: string; controls: FxControlV1[]; presets: FxPresetOptionV1[] }
+
+export type ModulePresetGroupV1 = { module: string; presets: FxPresetOptionV1[] }
 
 
 
@@ -1511,5 +1608,1310 @@ export const CZ_PRESETS: CzPresetV1[] = [
     "waveform1": "multiSine",
     "waveform2": "multiSine",
     "windowFunction": "trapezoid"
+  }
+];
+
+/** Rust-owned FX module definitions and control defaults. */
+export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
+  {
+    "slotType": "chorus",
+    "name": "Chorus",
+    "controls": [
+      {
+        "id": "rate",
+        "label": "Rate",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.1,
+        "max": 10.0,
+        "defaultF32": 0.8,
+        "options": []
+      },
+      {
+        "id": "depth",
+        "label": "Depth",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 5.0,
+        "defaultF32": 0.003,
+        "options": []
+      },
+      {
+        "id": "mix",
+        "label": "Mix",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.0,
+        "options": []
+      }
+    ],
+    "presets": [
+      {
+        "id": "classicWide",
+        "label": "Classic Wide"
+      },
+      {
+        "id": "slowShimmer",
+        "label": "Slow Shimmer"
+      },
+      {
+        "id": "ensembleThick",
+        "label": "Ensemble Thick"
+      }
+    ]
+  },
+  {
+    "slotType": "delay",
+    "name": "Delay",
+    "controls": [
+      {
+        "id": "time",
+        "label": "Time",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.01,
+        "max": 2.0,
+        "defaultF32": 0.3,
+        "options": []
+      },
+      {
+        "id": "feedback",
+        "label": "Feedback",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 0.99,
+        "defaultF32": 0.35,
+        "options": []
+      },
+      {
+        "id": "mix",
+        "label": "Mix",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.0,
+        "options": []
+      },
+      {
+        "id": "tapeMode",
+        "label": "Mode",
+        "kind": "buttonGroup",
+        "bipolar": false,
+        "min": null,
+        "max": null,
+        "defaultF32": 0.0,
+        "options": [
+          {
+            "value": 0,
+            "label": "Digital",
+            "iconName": null
+          },
+          {
+            "value": 1,
+            "label": "Tape",
+            "iconName": null
+          }
+        ]
+      },
+      {
+        "id": "warmth",
+        "label": "Warmth",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.5,
+        "options": []
+      }
+    ],
+    "presets": [
+      {
+        "id": "digitalSlap",
+        "label": "Digital Slap"
+      },
+      {
+        "id": "tapeEcho",
+        "label": "Tape Echo"
+      },
+      {
+        "id": "dubFeedback",
+        "label": "Dub Feedback"
+      }
+    ]
+  },
+  {
+    "slotType": "reverb",
+    "name": "Reverb",
+    "controls": [
+      {
+        "id": "mix",
+        "label": "Mix",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.0,
+        "options": []
+      },
+      {
+        "id": "space",
+        "label": "Space",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.5,
+        "options": []
+      },
+      {
+        "id": "predelay",
+        "label": "Pre",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 0.1,
+        "defaultF32": 0.0,
+        "options": []
+      },
+      {
+        "id": "distance",
+        "label": "Dist",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.3,
+        "options": []
+      },
+      {
+        "id": "character",
+        "label": "Char",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.65,
+        "options": []
+      }
+    ],
+    "presets": [
+      {
+        "id": "smallRoom",
+        "label": "Small Room"
+      },
+      {
+        "id": "plateAir",
+        "label": "Plate Air"
+      },
+      {
+        "id": "cathedral",
+        "label": "Cathedral"
+      }
+    ]
+  },
+  {
+    "slotType": "phaser",
+    "name": "Phaser",
+    "controls": [
+      {
+        "id": "rate",
+        "label": "Rate",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.1,
+        "max": 10.0,
+        "defaultF32": 0.5,
+        "options": []
+      },
+      {
+        "id": "depth",
+        "label": "Depth",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 1.0,
+        "options": []
+      },
+      {
+        "id": "feedback",
+        "label": "Feedback",
+        "kind": "knob",
+        "bipolar": false,
+        "min": -0.9,
+        "max": 0.9,
+        "defaultF32": 0.5,
+        "options": []
+      },
+      {
+        "id": "mix",
+        "label": "Mix",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.0,
+        "options": []
+      }
+    ],
+    "presets": [
+      {
+        "id": "gentleSweep",
+        "label": "Gentle Sweep"
+      },
+      {
+        "id": "jetWash",
+        "label": "Jet Wash"
+      },
+      {
+        "id": "wideNotch",
+        "label": "Wide Notch"
+      }
+    ]
+  },
+  {
+    "slotType": "vibrato",
+    "name": "Vibrato",
+    "controls": [
+      {
+        "id": "waveform",
+        "label": "Wave",
+        "kind": "buttonGroup",
+        "bipolar": false,
+        "min": null,
+        "max": null,
+        "defaultF32": 1.0,
+        "options": [
+          {
+            "value": 1,
+            "label": "Sine",
+            "iconName": "waveSine"
+          },
+          {
+            "value": 2,
+            "label": "Tri",
+            "iconName": "waveTriangle"
+          },
+          {
+            "value": 3,
+            "label": "Sq",
+            "iconName": "waveSquare"
+          },
+          {
+            "value": 4,
+            "label": "Saw",
+            "iconName": "waveSawtooth"
+          }
+        ]
+      },
+      {
+        "id": "rate",
+        "label": "Rate",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 1.0,
+        "max": 200.0,
+        "defaultF32": 55.0,
+        "options": []
+      },
+      {
+        "id": "depth",
+        "label": "Depth",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 50.0,
+        "defaultF32": 8.0,
+        "options": []
+      },
+      {
+        "id": "delay",
+        "label": "Delay",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 500.0,
+        "defaultF32": 120.0,
+        "options": []
+      }
+    ],
+    "presets": [
+      {
+        "id": "subtle",
+        "label": "Subtle"
+      },
+      {
+        "id": "chorused",
+        "label": "Chorused"
+      },
+      {
+        "id": "warble",
+        "label": "Warble"
+      }
+    ]
+  },
+  {
+    "slotType": "phaseMod",
+    "name": "Phase Mod",
+    "controls": [
+      {
+        "id": "intPmAmount",
+        "label": "Amount",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 0.5,
+        "defaultF32": 0.0,
+        "options": []
+      },
+      {
+        "id": "intPmRatio",
+        "label": "Ratio",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.5,
+        "max": 8.0,
+        "defaultF32": 2.0,
+        "options": []
+      },
+      {
+        "id": "pmPre",
+        "label": "Pre",
+        "kind": "toggle",
+        "bipolar": false,
+        "min": null,
+        "max": null,
+        "defaultF32": 1.0,
+        "options": []
+      }
+    ],
+    "presets": [
+      {
+        "id": "glassBell",
+        "label": "Glass Bell"
+      },
+      {
+        "id": "metalFold",
+        "label": "Metal Fold"
+      },
+      {
+        "id": "aggressiveSync",
+        "label": "Aggressive Sync"
+      }
+    ]
+  },
+  {
+    "slotType": "compressor",
+    "name": "Compressor",
+    "controls": [
+      {
+        "id": "thresholdDb",
+        "label": "Threshold",
+        "kind": "knob",
+        "bipolar": false,
+        "min": -60.0,
+        "max": 0.0,
+        "defaultF32": -12.0,
+        "options": []
+      },
+      {
+        "id": "ratio",
+        "label": "Ratio",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 1.0,
+        "max": 20.0,
+        "defaultF32": 4.0,
+        "options": []
+      },
+      {
+        "id": "attackMs",
+        "label": "Attack",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.1,
+        "max": 200.0,
+        "defaultF32": 5.0,
+        "options": []
+      },
+      {
+        "id": "releaseMs",
+        "label": "Release",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 10.0,
+        "max": 2000.0,
+        "defaultF32": 100.0,
+        "options": []
+      },
+      {
+        "id": "makeupDb",
+        "label": "Makeup",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 24.0,
+        "defaultF32": 6.0,
+        "options": []
+      },
+      {
+        "id": "mix",
+        "label": "Mix",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 1.0,
+        "options": []
+      }
+    ],
+    "presets": [
+      {
+        "id": "gentle",
+        "label": "Gentle"
+      },
+      {
+        "id": "punchy",
+        "label": "Punchy"
+      },
+      {
+        "id": "limiter",
+        "label": "Limiter"
+      }
+    ]
+  },
+  {
+    "slotType": "eq5Band",
+    "name": "5-Band EQ",
+    "controls": [
+      {
+        "id": "gain80",
+        "label": "80",
+        "kind": "knob",
+        "bipolar": true,
+        "min": -12.0,
+        "max": 12.0,
+        "defaultF32": 0.0,
+        "options": []
+      },
+      {
+        "id": "gain240",
+        "label": "240",
+        "kind": "knob",
+        "bipolar": true,
+        "min": -12.0,
+        "max": 12.0,
+        "defaultF32": 0.0,
+        "options": []
+      },
+      {
+        "id": "gain750",
+        "label": "750",
+        "kind": "knob",
+        "bipolar": true,
+        "min": -12.0,
+        "max": 12.0,
+        "defaultF32": 0.0,
+        "options": []
+      },
+      {
+        "id": "gain2200",
+        "label": "2.2k",
+        "kind": "knob",
+        "bipolar": true,
+        "min": -12.0,
+        "max": 12.0,
+        "defaultF32": 0.0,
+        "options": []
+      },
+      {
+        "id": "gain8000",
+        "label": "8k",
+        "kind": "knob",
+        "bipolar": true,
+        "min": -12.0,
+        "max": 12.0,
+        "defaultF32": 0.0,
+        "options": []
+      }
+    ],
+    "presets": [
+      {
+        "id": "bassBoost",
+        "label": "Bass Boost"
+      },
+      {
+        "id": "presence",
+        "label": "Presence"
+      },
+      {
+        "id": "warmth",
+        "label": "Warmth"
+      }
+    ]
+  },
+  {
+    "slotType": "grainDelay",
+    "name": "Grain Delay",
+    "controls": [
+      {
+        "id": "time",
+        "label": "Time",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.01,
+        "max": 1.0,
+        "defaultF32": 0.25,
+        "options": []
+      },
+      {
+        "id": "scatter",
+        "label": "Scatter",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.0,
+        "options": []
+      },
+      {
+        "id": "density",
+        "label": "Density",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.5,
+        "options": []
+      },
+      {
+        "id": "mix",
+        "label": "Mix",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.0,
+        "options": []
+      }
+    ],
+    "presets": [
+      {
+        "id": "cloudEcho",
+        "label": "Cloud Echo"
+      },
+      {
+        "id": "glitchDelay",
+        "label": "Glitch Delay"
+      },
+      {
+        "id": "shimmerEcho",
+        "label": "Shimmer Echo"
+      }
+    ]
+  },
+  {
+    "slotType": "bitcrusher",
+    "name": "Bitcrusher",
+    "controls": [
+      {
+        "id": "bits",
+        "label": "Bits",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 1.0,
+        "max": 16.0,
+        "defaultF32": 8.0,
+        "options": []
+      },
+      {
+        "id": "rateReduction",
+        "label": "Rate",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 1.0,
+        "max": 32.0,
+        "defaultF32": 1.0,
+        "options": []
+      },
+      {
+        "id": "mix",
+        "label": "Mix",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 1.0,
+        "options": []
+      }
+    ],
+    "presets": [
+      {
+        "id": "retroGame",
+        "label": "Retro Game"
+      },
+      {
+        "id": "grunge",
+        "label": "Grunge"
+      },
+      {
+        "id": "subtle",
+        "label": "Subtle"
+      }
+    ]
+  },
+  {
+    "slotType": "shimmerVerb",
+    "name": "Shimmer Verb",
+    "controls": [
+      {
+        "id": "shimmer",
+        "label": "Shimmer",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.4,
+        "options": []
+      },
+      {
+        "id": "space",
+        "label": "Space",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.7,
+        "options": []
+      },
+      {
+        "id": "mix",
+        "label": "Mix",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.0,
+        "options": []
+      }
+    ],
+    "presets": [
+      {
+        "id": "crystalHall",
+        "label": "Crystal Hall"
+      },
+      {
+        "id": "ethereal",
+        "label": "Ethereal"
+      },
+      {
+        "id": "subtleShimmer",
+        "label": "Subtle Shimmer"
+      }
+    ]
+  },
+  {
+    "slotType": "distortion",
+    "name": "Distortion",
+    "controls": [
+      {
+        "id": "drive",
+        "label": "Drive",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.5,
+        "options": []
+      },
+      {
+        "id": "tone",
+        "label": "Tone",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.5,
+        "options": []
+      },
+      {
+        "id": "mix",
+        "label": "Mix",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 1.0,
+        "options": []
+      }
+    ],
+    "presets": [
+      {
+        "id": "warmOverdrive",
+        "label": "Warm Overdrive"
+      },
+      {
+        "id": "grittyFuzz",
+        "label": "Gritty Fuzz"
+      },
+      {
+        "id": "bitingClip",
+        "label": "Biting Clip"
+      }
+    ]
+  },
+  {
+    "slotType": "junoChorus",
+    "name": "Juno Chorus",
+    "controls": [
+      {
+        "id": "mode",
+        "label": "Mode",
+        "kind": "buttonGroup",
+        "bipolar": false,
+        "min": null,
+        "max": null,
+        "defaultF32": 0.0,
+        "options": [
+          {
+            "value": 0,
+            "label": "I",
+            "iconName": null
+          },
+          {
+            "value": 1,
+            "label": "II",
+            "iconName": null
+          },
+          {
+            "value": 2,
+            "label": "I+II",
+            "iconName": null
+          }
+        ]
+      },
+      {
+        "id": "mix",
+        "label": "Mix",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.5,
+        "options": []
+      }
+    ],
+    "presets": [
+      {
+        "id": "junoI",
+        "label": "Juno I"
+      },
+      {
+        "id": "junoII",
+        "label": "Juno II"
+      },
+      {
+        "id": "junoFull",
+        "label": "Juno Full"
+      }
+    ]
+  },
+  {
+    "slotType": "ringMod",
+    "name": "Ring Mod",
+    "controls": [
+      {
+        "id": "carrierHz",
+        "label": "Freq",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 20.0,
+        "max": 4000.0,
+        "defaultF32": 440.0,
+        "options": []
+      },
+      {
+        "id": "mix",
+        "label": "Mix",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 1.0,
+        "options": []
+      }
+    ],
+    "presets": [
+      {
+        "id": "metallic",
+        "label": "Metallic"
+      },
+      {
+        "id": "bell",
+        "label": "Bell"
+      },
+      {
+        "id": "alien",
+        "label": "Alien"
+      }
+    ]
+  },
+  {
+    "slotType": "tremolo",
+    "name": "Tremolo",
+    "controls": [
+      {
+        "id": "rate",
+        "label": "Rate",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.1,
+        "max": 20.0,
+        "defaultF32": 4.0,
+        "options": []
+      },
+      {
+        "id": "depth",
+        "label": "Depth",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.5,
+        "options": []
+      },
+      {
+        "id": "waveform",
+        "label": "Wave",
+        "kind": "buttonGroup",
+        "bipolar": false,
+        "min": null,
+        "max": null,
+        "defaultF32": 0.0,
+        "options": [
+          {
+            "value": 0,
+            "label": "Sine",
+            "iconName": "waveSine"
+          },
+          {
+            "value": 1,
+            "label": "Tri",
+            "iconName": "waveTriangle"
+          },
+          {
+            "value": 2,
+            "label": "Sq",
+            "iconName": "waveSquare"
+          }
+        ]
+      },
+      {
+        "id": "mix",
+        "label": "Mix",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 1.0,
+        "options": []
+      }
+    ],
+    "presets": [
+      {
+        "id": "slowWave",
+        "label": "Slow Wave"
+      },
+      {
+        "id": "fastChop",
+        "label": "Fast Chop"
+      },
+      {
+        "id": "triPulse",
+        "label": "Tri Pulse"
+      }
+    ]
+  },
+  {
+    "slotType": "wavefolder",
+    "name": "Wavefolder",
+    "controls": [
+      {
+        "id": "drive",
+        "label": "Drive",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.5,
+        "options": []
+      },
+      {
+        "id": "folds",
+        "label": "Folds",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.5,
+        "options": []
+      },
+      {
+        "id": "mix",
+        "label": "Mix",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 1.0,
+        "options": []
+      }
+    ],
+    "presets": [
+      {
+        "id": "gentle",
+        "label": "Gentle"
+      },
+      {
+        "id": "aggressive",
+        "label": "Aggressive"
+      },
+      {
+        "id": "harmonic",
+        "label": "Harmonic"
+      }
+    ]
+  }
+];
+
+/** Rust-owned module preset labels and ordering. */
+export const MODULE_PRESET_CATALOG_V1: ModulePresetGroupV1[] = [
+  {
+    "module": "chorus",
+    "presets": [
+      {
+        "id": "classicWide",
+        "label": "Classic Wide"
+      },
+      {
+        "id": "slowShimmer",
+        "label": "Slow Shimmer"
+      },
+      {
+        "id": "ensembleThick",
+        "label": "Ensemble Thick"
+      }
+    ]
+  },
+  {
+    "module": "delay",
+    "presets": [
+      {
+        "id": "digitalSlap",
+        "label": "Digital Slap"
+      },
+      {
+        "id": "tapeEcho",
+        "label": "Tape Echo"
+      },
+      {
+        "id": "dubFeedback",
+        "label": "Dub Feedback"
+      }
+    ]
+  },
+  {
+    "module": "reverb",
+    "presets": [
+      {
+        "id": "smallRoom",
+        "label": "Small Room"
+      },
+      {
+        "id": "plateAir",
+        "label": "Plate Air"
+      },
+      {
+        "id": "cathedral",
+        "label": "Cathedral"
+      }
+    ]
+  },
+  {
+    "module": "phaser",
+    "presets": [
+      {
+        "id": "gentleSweep",
+        "label": "Gentle Sweep"
+      },
+      {
+        "id": "jetWash",
+        "label": "Jet Wash"
+      },
+      {
+        "id": "wideNotch",
+        "label": "Wide Notch"
+      }
+    ]
+  },
+  {
+    "module": "vibrato",
+    "presets": [
+      {
+        "id": "subtle",
+        "label": "Subtle"
+      },
+      {
+        "id": "chorused",
+        "label": "Chorused"
+      },
+      {
+        "id": "warble",
+        "label": "Warble"
+      }
+    ]
+  },
+  {
+    "module": "phaseMod",
+    "presets": [
+      {
+        "id": "glassBell",
+        "label": "Glass Bell"
+      },
+      {
+        "id": "metalFold",
+        "label": "Metal Fold"
+      },
+      {
+        "id": "aggressiveSync",
+        "label": "Aggressive Sync"
+      }
+    ]
+  },
+  {
+    "module": "lfo1",
+    "presets": [
+      {
+        "id": "slowSine",
+        "label": "Slow Sine"
+      },
+      {
+        "id": "tempoTri",
+        "label": "Tempo Tri"
+      },
+      {
+        "id": "randomDrift",
+        "label": "Random Drift"
+      }
+    ]
+  },
+  {
+    "module": "lfo2",
+    "presets": [
+      {
+        "id": "slowSine",
+        "label": "Slow Sine"
+      },
+      {
+        "id": "tempoTri",
+        "label": "Tempo Tri"
+      },
+      {
+        "id": "randomDrift",
+        "label": "Random Drift"
+      }
+    ]
+  },
+  {
+    "module": "modEnv",
+    "presets": [
+      {
+        "id": "pluck",
+        "label": "Pluck"
+      },
+      {
+        "id": "pad",
+        "label": "Pad"
+      },
+      {
+        "id": "reverseSwell",
+        "label": "Reverse Swell"
+      }
+    ]
+  },
+  {
+    "module": "compressor",
+    "presets": [
+      {
+        "id": "gentle",
+        "label": "Gentle"
+      },
+      {
+        "id": "punchy",
+        "label": "Punchy"
+      },
+      {
+        "id": "limiter",
+        "label": "Limiter"
+      }
+    ]
+  },
+  {
+    "module": "eq",
+    "presets": [
+      {
+        "id": "bassBoost",
+        "label": "Bass Boost"
+      },
+      {
+        "id": "presence",
+        "label": "Presence"
+      },
+      {
+        "id": "warmth",
+        "label": "Warmth"
+      }
+    ]
+  },
+  {
+    "module": "grainDelay",
+    "presets": [
+      {
+        "id": "cloudEcho",
+        "label": "Cloud Echo"
+      },
+      {
+        "id": "glitchDelay",
+        "label": "Glitch Delay"
+      },
+      {
+        "id": "shimmerEcho",
+        "label": "Shimmer Echo"
+      }
+    ]
+  },
+  {
+    "module": "bitcrusher",
+    "presets": [
+      {
+        "id": "retroGame",
+        "label": "Retro Game"
+      },
+      {
+        "id": "grunge",
+        "label": "Grunge"
+      },
+      {
+        "id": "subtle",
+        "label": "Subtle"
+      }
+    ]
+  },
+  {
+    "module": "shimmerVerb",
+    "presets": [
+      {
+        "id": "crystalHall",
+        "label": "Crystal Hall"
+      },
+      {
+        "id": "ethereal",
+        "label": "Ethereal"
+      },
+      {
+        "id": "subtleShimmer",
+        "label": "Subtle Shimmer"
+      }
+    ]
+  },
+  {
+    "module": "distortion",
+    "presets": [
+      {
+        "id": "warmOverdrive",
+        "label": "Warm Overdrive"
+      },
+      {
+        "id": "grittyFuzz",
+        "label": "Gritty Fuzz"
+      },
+      {
+        "id": "bitingClip",
+        "label": "Biting Clip"
+      }
+    ]
+  },
+  {
+    "module": "junoChorus",
+    "presets": [
+      {
+        "id": "junoI",
+        "label": "Juno I"
+      },
+      {
+        "id": "junoII",
+        "label": "Juno II"
+      },
+      {
+        "id": "junoFull",
+        "label": "Juno Full"
+      }
+    ]
+  },
+  {
+    "module": "ringMod",
+    "presets": [
+      {
+        "id": "metallic",
+        "label": "Metallic"
+      },
+      {
+        "id": "bell",
+        "label": "Bell"
+      },
+      {
+        "id": "alien",
+        "label": "Alien"
+      }
+    ]
+  },
+  {
+    "module": "tremolo",
+    "presets": [
+      {
+        "id": "slowWave",
+        "label": "Slow Wave"
+      },
+      {
+        "id": "fastChop",
+        "label": "Fast Chop"
+      },
+      {
+        "id": "triPulse",
+        "label": "Tri Pulse"
+      }
+    ]
+  },
+  {
+    "module": "wavefolder",
+    "presets": [
+      {
+        "id": "gentle",
+        "label": "Gentle"
+      },
+      {
+        "id": "aggressive",
+        "label": "Aggressive"
+      },
+      {
+        "id": "harmonic",
+        "label": "Harmonic"
+      }
+    ]
   }
 ];

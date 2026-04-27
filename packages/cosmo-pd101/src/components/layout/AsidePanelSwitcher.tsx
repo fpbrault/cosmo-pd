@@ -9,7 +9,9 @@ import CzTabButton, {
 	type CzTabButtonLedColor,
 } from "@/components/primitives/CzTabButton";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { useSynthStore } from "@/features/synth/synthStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
+import type { FxSlotType } from "@/lib/synth/bindings/synth";
 
 export type AsidePanelButtonTab<T extends string> = {
 	id: T;
@@ -27,33 +29,58 @@ export type AsidePanelTab =
 	| "reverb"
 	| "phaser";
 
-const TOGGLE_TAB_IDS = new Set([
-	"polymode",
-	"portamentoenabled",
-	"phasemod",
-	"vibrato",
-	"chorus",
-	"delay",
-	"reverb",
-	"phaser",
-]);
+const TOGGLE_TAB_IDS = new Set(["polymode", "portamentoenabled"]);
 
-const FX_MODULE_TAB_IDS = new Set([
-	"phasemod",
-	"vibrato",
-	"chorus",
-	"delay",
-	"reverb",
-	"phaser",
-]);
+const FX_TAB_SLOT_INDEX: Record<string, number> = {
+	chorus: 0,
+	delay: 1,
+	reverb: 2,
+	vibrato: 3,
+	phasemod: 4,
+	phaser: 5,
+};
 
-const FX_MODULE_TAB_COLORS: Record<string, string> = {
-	phasemod: "#be3330",
-	vibrato: "#307948",
+// Voice panels stay in the FX grid for layout/LED/color but are navigable (not toggle)
+const VOICE_FX_PANELS = new Set(["phasemod", "vibrato"]);
+
+const FX_TYPE_COLORS: Record<FxSlotType, string> = {
+	empty: "#3b3b3b",
 	chorus: "#818cf8",
+	phaser: "#a78bfa",
 	delay: "#fbbf24",
 	reverb: "#f97316",
-	phaser: "#a78bfa",
+	vibrato: "#307948",
+	phaseMod: "#be3330",
+	compressor: "#facc15",
+	eq5Band: "#34d399",
+	grainDelay: "#f59e0b",
+	bitcrusher: "#f87171",
+	shimmerVerb: "#60a5fa",
+	distortion: "#f59e0b",
+	junoChorus: "#22d3ee",
+	ringMod: "#e879f9",
+	tremolo: "#4ade80",
+	wavefolder: "#c084fc",
+};
+
+const FX_TYPE_SHORT_LABELS: Record<FxSlotType, string> = {
+	empty: "—",
+	chorus: "Chrs",
+	phaser: "Phsr",
+	delay: "Dly",
+	reverb: "Rvb",
+	vibrato: "Vib",
+	phaseMod: "PhMd",
+	compressor: "Comp",
+	eq5Band: "EQ",
+	grainDelay: "GrDl",
+	bitcrusher: "Bit",
+	shimmerVerb: "Shim",
+	distortion: "Dist",
+	junoChorus: "Juno",
+	ringMod: "Ring",
+	tremolo: "Trem",
+	wavefolder: "Wave",
 };
 
 export type AsidePanelTabMeta = {
@@ -78,58 +105,68 @@ export default function AsidePanelSwitcher<T extends string>({
 	onTabChange,
 	children,
 }: AsidePanelSwitcherProps<T>) {
+	const normalizeTabId = (tabId: T): string => String(tabId).toLowerCase();
+
 	const setMainPanelMode = useSynthUiStore((state) => state.setMainPanelMode);
 	const { value: polyMode, setValue: setPolyMode } = useSynthParam("polyMode");
 	const { value: portamentoEnabled, setValue: setPortamentoEnabled } =
 		useSynthParam("portamentoEnabled");
 	const { value: phaseModEnabled } = useSynthParam("phaseModEnabled");
 	const { value: vibratoEnabled } = useSynthParam("vibratoEnabled");
-	const { value: chorusEnabled } = useSynthParam("chorusEnabled");
-	const { value: delayEnabled } = useSynthParam("delayEnabled");
-	const { value: reverbEnabled } = useSynthParam("reverbEnabled");
-	const { value: phaserEnabled } = useSynthParam("phaserEnabled");
 	const { setValue: setPhaseModEnabled } = useSynthParam("phaseModEnabled");
 	const { setValue: setVibratoEnabled } = useSynthParam("vibratoEnabled");
-	const { setValue: setChorusEnabled } = useSynthParam("chorusEnabled");
-	const { setValue: setDelayEnabled } = useSynthParam("delayEnabled");
-	const { setValue: setReverbEnabled } = useSynthParam("reverbEnabled");
-	const { setValue: setPhaserEnabled } = useSynthParam("phaserEnabled");
+
+	const fxSlots = useSynthStore((s) => s.fxSlots);
+	const setFxSlotEnabled = useSynthStore((s) => s.setFxSlotEnabled);
+
+	const getSlotEnabled = (slot: number): boolean => {
+		const config = fxSlots[slot];
+		if (!config) return false;
+		if (config.type === "empty") return false;
+		if (config.type === "phaseMod") return phaseModEnabled;
+		if (config.type === "vibrato") return vibratoEnabled;
+		return (
+			(config as { params: { enabled?: boolean } }).params?.enabled ?? false
+		);
+	};
+
+	const toggleSlotEnabled = (slot: number): void => {
+		const config = fxSlots[slot];
+		if (!config || config.type === "empty") return;
+		const en = getSlotEnabled(slot);
+		if (config.type === "vibrato") {
+			setVibratoEnabled(!en);
+			return;
+		}
+		if (config.type === "phaseMod") {
+			setPhaseModEnabled(!en);
+			return;
+		}
+		setFxSlotEnabled(slot, !en);
+	};
 
 	const isTabEnabled = (tabId: T): boolean => {
-		switch (String(tabId).toLowerCase()) {
+		const normalized = normalizeTabId(tabId);
+		const slot = FX_TAB_SLOT_INDEX[normalized];
+		if (slot != null) {
+			return getSlotEnabled(slot);
+		}
+
+		switch (normalized) {
 			case "polymode":
 				return polyMode === "mono";
 			case "portamentoenabled":
 				return portamentoEnabled;
-			case "phasemod":
-				return phaseModEnabled;
-			case "vibrato":
-				return vibratoEnabled;
-			case "chorus":
-				return chorusEnabled;
-			case "delay":
-				return delayEnabled;
-			case "reverb":
-				return reverbEnabled;
-			case "phaser":
-				return phaserEnabled;
 			default:
 				return false;
 		}
 	};
 
 	const getTabColor = (tabId: T): CzTabButtonColor => {
-		const normalizedTabId = String(tabId).toLowerCase();
-
-		if (normalizedTabId === "phasemod" || normalizedTabId === "vibrato") {
-			return "red";
-		}
-
+		const normalizedTabId = normalizeTabId(tabId);
 		if (
-			normalizedTabId === "chorus" ||
-			normalizedTabId === "delay" ||
-			normalizedTabId === "reverb" ||
-			normalizedTabId === "phaser"
+			normalizedTabId === "polymode" ||
+			normalizedTabId === "portamentoenabled"
 		) {
 			return "blue";
 		}
@@ -140,42 +177,42 @@ export default function AsidePanelSwitcher<T extends string>({
 		return "black";
 	};
 
-	const isToggleTab = (tabId: T): boolean =>
-		TOGGLE_TAB_IDS.has(String(tabId).toLowerCase());
+	const isToggleTab = (tabId: T): boolean => {
+		const normalized = normalizeTabId(tabId);
+		return (
+			TOGGLE_TAB_IDS.has(normalized) ||
+			(FX_TAB_SLOT_INDEX[normalized] != null &&
+				!VOICE_FX_PANELS.has(normalized))
+		);
+	};
 
 	const isFxModuleTab = (tabId: T): boolean =>
-		FX_MODULE_TAB_IDS.has(String(tabId).toLowerCase());
+		FX_TAB_SLOT_INDEX[normalizeTabId(tabId)] != null;
 
 	const getCustomTabColor = (tabId: T): string | undefined => {
-		const normalizedTabId = String(tabId).toLowerCase();
-		return FX_MODULE_TAB_COLORS[normalizedTabId];
+		const normalizedTabId = normalizeTabId(tabId);
+		const slot = FX_TAB_SLOT_INDEX[normalizedTabId];
+		if (slot != null) {
+			const slotType = (fxSlots[slot]?.type ?? "empty") as FxSlotType;
+			return FX_TYPE_COLORS[slotType];
+		}
+		return undefined;
 	};
 
 	const toggleTab = (tabId: T) => {
-		switch (String(tabId).toLowerCase()) {
+		const normalized = normalizeTabId(tabId);
+		const slot = FX_TAB_SLOT_INDEX[normalized];
+		if (slot != null) {
+			toggleSlotEnabled(slot);
+			return;
+		}
+
+		switch (normalized) {
 			case "polymode":
 				setPolyMode(polyMode === "poly8" ? "mono" : "poly8");
 				break;
 			case "portamentoenabled":
 				setPortamentoEnabled(!portamentoEnabled);
-				break;
-			case "phasemod":
-				setPhaseModEnabled(!phaseModEnabled);
-				break;
-			case "vibrato":
-				setVibratoEnabled(!vibratoEnabled);
-				break;
-			case "chorus":
-				setChorusEnabled(!chorusEnabled);
-				break;
-			case "delay":
-				setDelayEnabled(!delayEnabled);
-				break;
-			case "reverb":
-				setReverbEnabled(!reverbEnabled);
-				break;
-			case "phaser":
-				setPhaserEnabled(!phaserEnabled);
 				break;
 		}
 	};
@@ -221,11 +258,21 @@ export default function AsidePanelSwitcher<T extends string>({
 	const activePanel = panelElements.find(
 		(child) =>
 			(child.type as AsidePanelComponent).panelId === String(activeTab) &&
-			!TOGGLE_TAB_IDS.has(String(activeTab).toLowerCase()),
+			!isToggleTab(activeTab),
 	);
 
 	const visibleTabs = panelElements.map((child) => {
 		const panelType = child.type as AsidePanelComponent<T>;
+		const normalizedTabId = String(panelType.panelId).toLowerCase();
+		const slot = FX_TAB_SLOT_INDEX[normalizedTabId];
+		if (slot != null && !VOICE_FX_PANELS.has(normalizedTabId)) {
+			const type = (fxSlots[slot]?.type ?? "empty") as FxSlotType;
+			return {
+				id: panelType.panelId,
+				topLabel: `FX${slot + 1}`,
+				bottomLabel: FX_TYPE_SHORT_LABELS[type] ?? type,
+			};
+		}
 		return {
 			id: panelType.panelId,
 			topLabel: panelType.panelTab.topLabel,
@@ -247,39 +294,59 @@ export default function AsidePanelSwitcher<T extends string>({
 	];
 
 	const globalTab = visibleTabs.find(
-		(tab) => String(tab.id).toLowerCase() === "global",
+		(tab) => normalizeTabId(tab.id) === "global",
 	);
-	const nonGlobalTabs = visibleTabs.filter(
-		(tab) => String(tab.id).toLowerCase() !== "global",
+	const scopeTab = visibleTabs.find(
+		(tab) => normalizeTabId(tab.id) === "scope",
 	);
-	const allTabs = [
+	const fxTabs = visibleTabs
+		.filter((tab) => FX_TAB_SLOT_INDEX[normalizeTabId(tab.id)] != null)
+		.sort(
+			(a, b) =>
+				FX_TAB_SLOT_INDEX[normalizeTabId(a.id)] -
+				FX_TAB_SLOT_INDEX[normalizeTabId(b.id)],
+		);
+	const otherTabs = visibleTabs.filter((tab) => {
+		const normalized = normalizeTabId(tab.id);
+		return (
+			normalized !== "global" &&
+			normalized !== "scope" &&
+			FX_TAB_SLOT_INDEX[normalized] == null
+		);
+	});
+
+	const leftTabs = [
 		...(globalTab ? [globalTab] : []),
+		...(scopeTab ? [scopeTab] : []),
 		...utilityToggleTabs,
-		...nonGlobalTabs,
+		...otherTabs,
 	];
+
+	const renderTabButton = (tab: AsidePanelButtonTab<T>) => (
+		<CzTabButton
+			key={tab.id}
+			color={getCustomTabColor(tab.id) ? "black" : getTabColor(tab.id)}
+			customColor={getCustomTabColor(tab.id)}
+			active={isToggleTab(tab.id) ? isTabEnabled(tab.id) : activeTab === tab.id}
+			ledColor={getTabLedColor(tab.id, activeTab === tab.id)}
+			onClick={() => handleTabClick(tab.id)}
+			onLongPress={
+				isFxModuleTab(tab.id) ? () => handleTabLongPress(tab.id) : undefined
+			}
+			topLabel={tab.topLabel}
+			bottomLabel={tab.bottomLabel}
+		/>
+	);
 
 	return (
 		<div className="px-2 pb-2 space-y-2">
-			<div className="grid grid-cols-5 gap-1 gap-y-2 mt-2">
-				{allTabs.map((tab) => (
-					<CzTabButton
-						key={tab.id}
-						color={getCustomTabColor(tab.id) ? "black" : getTabColor(tab.id)}
-						customColor={getCustomTabColor(tab.id)}
-						active={
-							isToggleTab(tab.id) ? isTabEnabled(tab.id) : activeTab === tab.id
-						}
-						ledColor={getTabLedColor(tab.id, activeTab === tab.id)}
-						onClick={() => handleTabClick(tab.id)}
-						onLongPress={
-							isFxModuleTab(tab.id)
-								? () => handleTabLongPress(tab.id)
-								: undefined
-						}
-						topLabel={tab.topLabel}
-						bottomLabel={tab.bottomLabel}
-					/>
-				))}
+			<div className="mt-2 grid grid-cols-[2fr_3fr] gap-1.5">
+				<div className="grid grid-cols-2 gap-1 gap-y-2">
+					{leftTabs.map(renderTabButton)}
+				</div>
+				<div className="grid grid-cols-3 gap-1 gap-y-2">
+					{fxTabs.map(renderTabButton)}
+				</div>
 			</div>
 			{activePanel}
 		</div>

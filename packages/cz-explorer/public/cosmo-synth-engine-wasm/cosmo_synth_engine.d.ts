@@ -18,6 +18,10 @@ declare namespace wasm_bindgen {
          */
         applyModulePreset(module: string, preset: string): boolean;
         /**
+         * Return the current FX slot layout as a JSON array of camelCase strings.
+         */
+        getFxSlotTypes(): string;
+        /**
          * Return the latest runtime modulation-source values as JSON for UI telemetry.
          */
         getRuntimeModSources(): string;
@@ -50,6 +54,14 @@ declare namespace wasm_bindgen {
          */
         setAftertouch(value: number): void;
         /**
+         * Set which effect type occupies a given FX slot (0–5).
+         *
+         * `type_name` is the camelCase string representation of `FxSlotType`
+         * (e.g. `"chorus"`, `"reverb"`, `"compressor"`, `"eq5Band"`, …).
+         * Returns `true` on success, `false` when `slot ≥ 6` or type is unknown.
+         */
+        setFxSlotType(slot: number, type_name: string): boolean;
+        /**
          * Set mod wheel value. `value` is normalised [0.0, 1.0] (CC1 / 127).
          */
         setModWheel(value: number): void;
@@ -78,12 +90,14 @@ declare interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly __wbg_czsynthprocessor_free: (a: number, b: number) => void;
     readonly czsynthprocessor_applyModulePreset: (a: number, b: number, c: number, d: number, e: number) => number;
+    readonly czsynthprocessor_getFxSlotTypes: (a: number, b: number) => void;
     readonly czsynthprocessor_getRuntimeModSources: (a: number, b: number) => void;
     readonly czsynthprocessor_new: (a: number) => number;
     readonly czsynthprocessor_noteOff: (a: number, b: number) => void;
     readonly czsynthprocessor_noteOn: (a: number, b: number, c: number, d: number) => void;
     readonly czsynthprocessor_process: (a: number, b: number, c: number, d: number) => void;
     readonly czsynthprocessor_setAftertouch: (a: number, b: number) => void;
+    readonly czsynthprocessor_setFxSlotType: (a: number, b: number, c: number, d: number) => number;
     readonly czsynthprocessor_setModWheel: (a: number, b: number) => void;
     readonly czsynthprocessor_setParams: (a: number, b: number, c: number) => void;
     readonly czsynthprocessor_setPitchBend: (a: number, b: number) => void;

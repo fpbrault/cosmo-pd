@@ -10,6 +10,8 @@ import type {
 	AlgoControlValueV1,
 	CzWaveform,
 	FilterType,
+	FxSlotConfig,
+	FxSlotType,
 	LfoWaveform,
 	LineSelect,
 	ModMatrix,
@@ -76,6 +78,148 @@ function inferCzWaveform(
 	}
 	return fallback;
 }
+
+// ---------------------------------------------------------------------------
+// FX slot helpers
+// ---------------------------------------------------------------------------
+
+/** Mirror of Rust FxSlotConfig::default_for_type — creates an enabled config. */
+function makeDefaultFxSlotConfig(type: FxSlotType): FxSlotConfig {
+	switch (type) {
+		case "empty":
+			return { type: "empty" };
+		case "phaseMod":
+			return { type: "phaseMod" };
+		case "chorus":
+			return {
+				type: "chorus",
+				params: { enabled: true, rate: 0.8, depth: 3, mix: 0.5 },
+			};
+		case "delay":
+			return {
+				type: "delay",
+				params: {
+					enabled: true,
+					time: 0.3,
+					feedback: 0.35,
+					mix: 0.5,
+					tapeMode: false,
+					warmth: 0.5,
+				},
+			};
+		case "reverb":
+			return {
+				type: "reverb",
+				params: {
+					enabled: true,
+					mix: 0.5,
+					space: 0.5,
+					predelay: 0,
+					distance: 0.3,
+					character: 0.65,
+				},
+			};
+		case "phaser":
+			return {
+				type: "phaser",
+				params: { enabled: true, rate: 0.5, depth: 1, mix: 0.5, feedback: 0.5 },
+			};
+		case "vibrato":
+			return {
+				type: "vibrato",
+				params: { enabled: true, waveform: 1, rate: 55, depth: 8, delay: 120 },
+			};
+		case "compressor":
+			return {
+				type: "compressor",
+				params: {
+					enabled: true,
+					thresholdDb: -12,
+					ratio: 4,
+					attackMs: 5,
+					releaseMs: 100,
+					makeupDb: 6,
+					mix: 1,
+				},
+			};
+		case "eq5Band":
+			return {
+				type: "eq5Band",
+				params: {
+					enabled: true,
+					gain80: 0,
+					gain240: 0,
+					gain750: 0,
+					gain2200: 0,
+					gain8000: 0,
+				},
+			};
+		case "grainDelay":
+			return {
+				type: "grainDelay",
+				params: {
+					enabled: true,
+					time: 0.25,
+					scatter: 0,
+					density: 0.5,
+					mix: 0.5,
+				},
+			};
+		case "bitcrusher":
+			return {
+				type: "bitcrusher",
+				params: { enabled: true, bits: 8, rateReduction: 1, mix: 1 },
+			};
+		case "shimmerVerb":
+			return {
+				type: "shimmerVerb",
+				params: { enabled: true, shimmer: 0.4, space: 0.7, mix: 0.5 },
+			};
+		case "distortion":
+			return {
+				type: "distortion",
+				params: { enabled: true, drive: 0.5, tone: 0.5, mix: 1 },
+			};
+		case "junoChorus":
+			return {
+				type: "junoChorus",
+				params: { enabled: true, mode: 0, mix: 0.5 },
+			};
+		case "ringMod":
+			return {
+				type: "ringMod",
+				params: { enabled: true, carrierHz: 440, mix: 1 },
+			};
+		case "tremolo":
+			return {
+				type: "tremolo",
+				params: { enabled: true, rate: 4, depth: 0.5, waveform: 0, mix: 1 },
+			};
+		case "wavefolder":
+			return {
+				type: "wavefolder",
+				params: { enabled: true, drive: 0.5, folds: 0.5, mix: 1 },
+			};
+	}
+}
+
+type FxSlotTuple = [
+	FxSlotConfig,
+	FxSlotConfig,
+	FxSlotConfig,
+	FxSlotConfig,
+	FxSlotConfig,
+	FxSlotConfig,
+];
+
+const EMPTY_FX_SLOTS: FxSlotTuple = [
+	{ type: "empty" },
+	{ type: "empty" },
+	{ type: "empty" },
+	{ type: "empty" },
+	{ type: "empty" },
+	{ type: "empty" },
+];
 
 // ---------------------------------------------------------------------------
 // Flat state shape — mirrors the old individual useState fields
@@ -201,6 +345,8 @@ export type SynthState = {
 	modWheelVibratoDepth: number;
 	octave: number;
 	modMatrix: ModMatrix;
+	/** Unified per-slot FX configuration — all 6 slots. */
+	fxSlots: FxSlotTuple;
 };
 
 // ---------------------------------------------------------------------------
@@ -327,6 +473,16 @@ type SynthActions = {
 	setModWheelVibratoDepth: (v: number) => void;
 	setOctave: (v: number) => void;
 	setModMatrix: (v: ModMatrix) => void;
+	/** Replace the effect type in a slot (resets params to enabled defaults). */
+	setFxSlotType: (slot: number, type: FxSlotType) => void;
+	/** Toggle the enabled flag on a slot that has params. */
+	setFxSlotEnabled: (slot: number, enabled: boolean) => void;
+	/** Shallow-merge `patch` into the params of an effect slot. */
+	setFxSlotParams: (
+		slot: number,
+		patch: Partial<Record<string, unknown>>,
+	) => void;
+	reorderFxSlots: (fromSlot: number, toSlot: number) => void;
 
 	gatherState: () => SynthPresetV1;
 	applyPreset: (preset: SynthPresetV1) => void;
@@ -458,6 +614,7 @@ const DEFAULT_STATE: SynthState = {
 	modWheelVibratoDepth: 0,
 	octave: 0,
 	modMatrix: { routes: [] },
+	fxSlots: EMPTY_FX_SLOTS,
 };
 
 // ---------------------------------------------------------------------------
@@ -595,6 +752,62 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setModWheelVibratoDepth: (v) => set({ modWheelVibratoDepth: v }),
 	setOctave: (v) => set({ octave: v }),
 	setModMatrix: (v) => set({ modMatrix: v }),
+	setFxSlotType: (slot, type) => {
+		if (slot < 0 || slot > 5) return;
+		set((s) => {
+			const slots = [...s.fxSlots] as FxSlotTuple;
+			slots[slot] = makeDefaultFxSlotConfig(type);
+			return { fxSlots: slots };
+		});
+	},
+	setFxSlotEnabled: (slot, enabled) => {
+		set((s) => {
+			const config = s.fxSlots[slot];
+			if (!config || config.type === "empty" || config.type === "phaseMod")
+				return {};
+			const slots = [...s.fxSlots] as FxSlotTuple;
+			slots[slot] = {
+				...config,
+				params: {
+					...(config as { params: Record<string, unknown> }).params,
+					enabled,
+				},
+			};
+			return { fxSlots: slots };
+		});
+	},
+	setFxSlotParams: (slot, patch) => {
+		set((s) => {
+			const config = s.fxSlots[slot];
+			if (!config || config.type === "empty" || config.type === "phaseMod")
+				return {};
+			const slots = [...s.fxSlots] as FxSlotTuple;
+			slots[slot] = {
+				...config,
+				params: {
+					...(config as { params: Record<string, unknown> }).params,
+					...patch,
+				},
+			};
+			return { fxSlots: slots };
+		});
+	},
+	reorderFxSlots: (fromSlot, toSlot) =>
+		set((s) => {
+			if (
+				fromSlot < 0 ||
+				fromSlot > 5 ||
+				toSlot < 0 ||
+				toSlot > 5 ||
+				fromSlot === toSlot
+			) {
+				return {};
+			}
+			const slots = [...s.fxSlots];
+			const [moved] = slots.splice(fromSlot, 1);
+			slots.splice(toSlot, 0, moved);
+			return { fxSlots: slots as FxSlotTuple };
+		}),
 
 	// --- gatherState ---
 	gatherState(): SynthPresetV1 {
@@ -614,143 +827,146 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			? normalizeAlgoControls(s.algo2B, s.line2AlgoControlsB)
 			: [];
 
+		const params = {
+			lineSelect: s.lineSelect,
+			modMode: s.modMode,
+			octave: s.octave,
+			line1: {
+				algo: s.warpAAlgo,
+				algo2: s.algo2A,
+				algoBlend: s.algoBlendA,
+				window: s.windowType,
+				dcaBase: s.line1Level,
+				dcwBase: s.warpAAmount,
+				modulation: 0,
+				detuneCents: s.line1Detune,
+				octave: s.line1Octave,
+				dcoEnv: s.line1DcoEnv,
+				dcwEnv: s.line1DcwEnv,
+				dcaEnv: s.line1DcaEnv,
+				keyFollow: s.line1DcwKeyFollow,
+				cz: {
+					slotAWaveform: s.line1CzSlotAWaveform,
+					slotBWaveform: s.line1CzSlotBWaveform,
+					window: s.line1CzWindow,
+				},
+				algoControlsA: line1NormalizedAlgoControlsA,
+				algoControlsB: line1NormalizedAlgoControlsB,
+			},
+			line2: {
+				algo: s.warpBAlgo,
+				algo2: s.algo2B,
+				algoBlend: s.algoBlendB,
+				window: s.windowType,
+				dcaBase: s.line2Level,
+				dcwBase: s.warpBAmount,
+				modulation: 0,
+				detuneCents: s.line2Detune,
+				octave: s.line2Octave,
+				dcoEnv: s.line2DcoEnv,
+				dcwEnv: s.line2DcwEnv,
+				dcaEnv: s.line2DcaEnv,
+				keyFollow: s.line2DcwKeyFollow,
+				cz: {
+					slotAWaveform: s.line2CzSlotAWaveform,
+					slotBWaveform: s.line2CzSlotBWaveform,
+					window: s.line2CzWindow,
+				},
+				algoControlsA: line2NormalizedAlgoControlsA,
+				algoControlsB: line2NormalizedAlgoControlsB,
+			},
+			intPmAmount: s.intPmAmount,
+			intPmEnabled: s.phaseModEnabled,
+			intPmRatio: s.intPmRatio,
+			extPmAmount: 0,
+			pmPre: s.pmPre,
+			frequency: 440,
+			volume: s.volume,
+			polyMode: s.polyMode,
+			legato: s.legato,
+			chorus: {
+				enabled: s.chorusEnabled,
+				rate: s.chorusRate,
+				depth: s.chorusDepth,
+				mix: s.chorusMix,
+			},
+			delay: {
+				enabled: s.delayEnabled,
+				time: s.delayTime,
+				feedback: s.delayFeedback,
+				mix: s.delayMix,
+				tapeMode: s.delayTapeMode,
+				warmth: s.delayWarmth,
+			},
+			reverb: {
+				enabled: s.reverbEnabled,
+				mix: s.reverbMix,
+				space: s.reverbSpace,
+				predelay: s.reverbPredelay,
+				distance: s.reverbDistance,
+				character: s.reverbCharacter,
+			},
+			phaser: {
+				enabled: s.phaserEnabled,
+				rate: s.phaserRate,
+				depth: s.phaserDepth,
+				mix: s.phaserMix,
+				feedback: s.phaserFeedback,
+			},
+			vibrato: {
+				enabled: s.vibratoEnabled,
+				waveform: s.vibratoWave,
+				rate: s.vibratoRate,
+				depth: s.vibratoDepth,
+				delay: s.vibratoDelay,
+			},
+			portamento: {
+				enabled: s.portamentoEnabled,
+				mode: s.portamentoMode,
+				rate: s.portamentoRate,
+				time: s.portamentoTime,
+			},
+			lfo: {
+				waveform: s.lfoWaveform,
+				rate: s.lfoRate,
+				depth: s.lfoDepth,
+				symmetry: s.lfoSymmetry,
+				retrigger: s.lfoRetrigger,
+				offset: s.lfoOffset,
+			},
+			lfo2: {
+				waveform: s.lfo2Waveform,
+				rate: s.lfo2Rate,
+				depth: s.lfo2Depth,
+				symmetry: s.lfo2Symmetry,
+				retrigger: s.lfo2Retrigger,
+				offset: s.lfo2Offset,
+			},
+			random: {
+				rate: s.randomRate,
+			},
+			modEnv: {
+				attack: s.modEnvAttack,
+				decay: s.modEnvDecay,
+				sustain: s.modEnvSustain,
+				release: s.modEnvRelease,
+			},
+			filter: {
+				enabled: s.filterEnabled,
+				type: s.filterType,
+				cutoff: s.filterCutoff,
+				resonance: s.filterResonance,
+				envAmount: s.filterEnvAmount,
+			},
+			pitchBendRange: s.pitchBendRange,
+			modWheelVibratoDepth: s.modWheelVibratoDepth,
+			modMatrix: s.modMatrix,
+			fxSlots: s.fxSlots,
+		} satisfies SynthPresetV1["params"];
+
 		return {
 			schemaVersion: 1,
-			params: {
-				lineSelect: s.lineSelect,
-				modMode: s.modMode,
-				octave: s.octave,
-				line1: {
-					algo: s.warpAAlgo,
-					algo2: s.algo2A,
-					algoBlend: s.algoBlendA,
-					window: s.windowType,
-					dcaBase: s.line1Level,
-					dcwBase: s.warpAAmount,
-					modulation: 0,
-					detuneCents: s.line1Detune,
-					octave: s.line1Octave,
-					dcoEnv: s.line1DcoEnv,
-					dcwEnv: s.line1DcwEnv,
-					dcaEnv: s.line1DcaEnv,
-					keyFollow: s.line1DcwKeyFollow,
-					cz: {
-						slotAWaveform: s.line1CzSlotAWaveform,
-						slotBWaveform: s.line1CzSlotBWaveform,
-						window: s.line1CzWindow,
-					},
-					algoControlsA: line1NormalizedAlgoControlsA,
-					algoControlsB: line1NormalizedAlgoControlsB,
-				},
-				line2: {
-					algo: s.warpBAlgo,
-					algo2: s.algo2B,
-					algoBlend: s.algoBlendB,
-					window: s.windowType,
-					dcaBase: s.line2Level,
-					dcwBase: s.warpBAmount,
-					modulation: 0,
-					detuneCents: s.line2Detune,
-					octave: s.line2Octave,
-					dcoEnv: s.line2DcoEnv,
-					dcwEnv: s.line2DcwEnv,
-					dcaEnv: s.line2DcaEnv,
-					keyFollow: s.line2DcwKeyFollow,
-					cz: {
-						slotAWaveform: s.line2CzSlotAWaveform,
-						slotBWaveform: s.line2CzSlotBWaveform,
-						window: s.line2CzWindow,
-					},
-					algoControlsA: line2NormalizedAlgoControlsA,
-					algoControlsB: line2NormalizedAlgoControlsB,
-				},
-				intPmAmount: s.intPmAmount,
-				intPmEnabled: s.phaseModEnabled,
-				intPmRatio: s.intPmRatio,
-				extPmAmount: 0,
-				pmPre: s.pmPre,
-				frequency: 440,
-				volume: s.volume,
-				polyMode: s.polyMode,
-				legato: s.legato,
-				chorus: {
-					enabled: s.chorusEnabled,
-					rate: s.chorusRate,
-					depth: s.chorusDepth,
-					mix: s.chorusMix,
-				},
-				delay: {
-					enabled: s.delayEnabled,
-					time: s.delayTime,
-					feedback: s.delayFeedback,
-					mix: s.delayMix,
-					tapeMode: s.delayTapeMode,
-					warmth: s.delayWarmth,
-				},
-				reverb: {
-					enabled: s.reverbEnabled,
-					mix: s.reverbMix,
-					space: s.reverbSpace,
-					predelay: s.reverbPredelay,
-					distance: s.reverbDistance,
-					character: s.reverbCharacter,
-				},
-				phaser: {
-					enabled: s.phaserEnabled,
-					rate: s.phaserRate,
-					depth: s.phaserDepth,
-					mix: s.phaserMix,
-					feedback: s.phaserFeedback,
-				},
-				vibrato: {
-					enabled: s.vibratoEnabled,
-					waveform: s.vibratoWave,
-					rate: s.vibratoRate,
-					depth: s.vibratoDepth,
-					delay: s.vibratoDelay,
-				},
-				portamento: {
-					enabled: s.portamentoEnabled,
-					mode: s.portamentoMode,
-					rate: s.portamentoRate,
-					time: s.portamentoTime,
-				},
-				lfo: {
-					waveform: s.lfoWaveform,
-					rate: s.lfoRate,
-					depth: s.lfoDepth,
-					symmetry: s.lfoSymmetry,
-					retrigger: s.lfoRetrigger,
-					offset: s.lfoOffset,
-				},
-				lfo2: {
-					waveform: s.lfo2Waveform,
-					rate: s.lfo2Rate,
-					depth: s.lfo2Depth,
-					symmetry: s.lfo2Symmetry,
-					retrigger: s.lfo2Retrigger,
-					offset: s.lfo2Offset,
-				},
-				random: {
-					rate: s.randomRate,
-				},
-				modEnv: {
-					attack: s.modEnvAttack,
-					decay: s.modEnvDecay,
-					sustain: s.modEnvSustain,
-					release: s.modEnvRelease,
-				},
-				filter: {
-					enabled: s.filterEnabled,
-					type: s.filterType,
-					cutoff: s.filterCutoff,
-					resonance: s.filterResonance,
-					envAmount: s.filterEnvAmount,
-				},
-				pitchBendRange: s.pitchBendRange,
-				modWheelVibratoDepth: s.modWheelVibratoDepth,
-				modMatrix: s.modMatrix,
-			},
+			params,
 		};
 	},
 
@@ -946,6 +1162,10 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				p.modMatrix && typeof p.modMatrix === "object"
 					? (p.modMatrix as ModMatrix)
 					: { routes: [] },
+			fxSlots:
+				Array.isArray(p.fxSlots) && p.fxSlots.length === 6
+					? (p.fxSlots as FxSlotTuple)
+					: EMPTY_FX_SLOTS,
 		});
 	},
 }));

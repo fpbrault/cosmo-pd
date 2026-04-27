@@ -1,3 +1,5 @@
+import { useFxSlotContext } from "@/components/panels/FxSlotContext";
+
 /** Returns "black" or "white" — whichever has better contrast against the given hex color. */
 function contrastColor(hex: string): "black" | "white" {
 	const r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -9,7 +11,7 @@ function contrastColor(hex: string): "black" | "white" {
 
 type ModuleFrameProps = {
 	title: string;
-	color: string; // hex accent color — border, header bg, LED glow
+	color: string; // hex accent color — border and header background
 	meta?: string; // optional subtitle shown right-aligned in header
 	headerControl?: React.ReactNode;
 	enabled: boolean;
@@ -17,7 +19,6 @@ type ModuleFrameProps = {
 	className?: string;
 	columns?: number; // number of columns for the content grid (default: 2)
 	children: React.ReactNode;
-	showLed?: boolean; // whether to show the LED indicator (default: true)
 };
 
 export default function ModuleFrame({
@@ -30,70 +31,99 @@ export default function ModuleFrame({
 	className,
 	columns = 4,
 	children,
-	showLed = true,
 }: ModuleFrameProps) {
 	const canToggle = Boolean(onToggle);
 	const dimmed = canToggle && !enabled;
 	const textColor = contrastColor(color);
 
+	const slotCtx = useFxSlotContext();
+
 	return (
 		<section
 			style={{ borderColor: color }}
 			className={[
-				`relative flex min-h-0 flex-col overflow-hidden border-4 rounded-b-sm bg-cz-surface shadow-lg rounded-t-lg transition-[filter]`,
+				"relative flex h-full min-h-0 flex-col overflow-hidden border-4 rounded-b-sm bg-cz-surface shadow-lg rounded-t-lg transition-[filter]",
 				dimmed ? "brightness-80" : "",
 				className,
 			]
 				.filter(Boolean)
 				.join(" ")}
 		>
-			{/* Header — toggle surface with title and optional meta */}
+			{/* Header */}
 			<div
 				data-header
-				style={{ backgroundColor: color }}
-				className={`relative flex w-full items-center px-2 py-1 ${
-					canToggle
-						? "select-none hover:brightness-125 transition-all duration-200"
-						: "cursor-default"
-				}`}
+				style={{ backgroundColor: color, color: textColor }}
+				className="relative flex w-full items-center gap-1 px-1.5 py-1"
 			>
-				{canToggle && (
+				{/* Left: power button when toggleable, otherwise a spacer to preserve alignment */}
+				{canToggle ? (
 					<button
 						type="button"
 						onClick={onToggle}
-						aria-label={`Toggle ${title} module`}
-						className="absolute inset-0 z-0 cursor-pointer"
-					/>
-				)}
-				{/* LED dot — green indicator */}
-				{showLed && (
-					<span
-						className={`relative z-10 inline-block h-1.5 w-3 shrink-0 rounded-[1px] transition-colors ${
+						aria-label={enabled ? `Disable ${title}` : `Enable ${title}`}
+						className={[
+							"relative z-20 flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded-full bg-black transition-all duration-200",
 							enabled
-								? "bg-green-400 shadow-[0_0_5px_2px_rgba(74,222,128,0.8)]"
-								: "bg-green-950/80"
-						}`}
-					/>
-				)}
-				{/* Title centered in the full header width */}
-				<span
-					style={{ color: textColor }}
-					className="z-10 border-none pointer-events-none absolute inset-0 flex items-center justify-center font-mono font-bold uppercase tracking-[0.28em]"
-				>
-					{title}
-				</span>
-				{/* Right side: optional meta */}
-				<span className="relative z-10 ml-auto inline-flex shrink-0 items-center gap-2">
-					{meta && (
-						<span
-							style={{ color: textColor }}
-							className="font-mono text-5xs uppercase tracking-[0.15em] opacity-60"
+								? "text-cyan-300 shadow-[0_0_5px_2px_rgba(103,232,249,0.45)]"
+								: "text-white",
+						].join(" ")}
+					>
+						{/* Power symbol */}
+						<svg
+							aria-label={enabled ? "On" : "Off"}
+							viewBox="0 0 10 10"
+							className="h-2 w-2"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="1.8"
 						>
-							{meta}
+							<path d="M5 1.5v3" strokeLinecap="round" />
+							<path d="M2.5 2.8A3.5 3.5 0 1 0 7.5 2.8" strokeLinecap="round" />
+						</svg>
+					</button>
+				) : (
+					<span className="inline-block h-4 w-4 shrink-0" />
+				)}
+
+				{/* Center: drag handle (when in FX slot context) + title */}
+				{slotCtx ? (
+					<div
+						{...(slotCtx.dragListeners as React.HTMLAttributes<HTMLDivElement>)}
+						{...(slotCtx.dragAttributes as React.HTMLAttributes<HTMLDivElement>)}
+						className="group/drag relative z-10 flex flex-1 cursor-grab select-none items-center justify-center gap-1.5 active:cursor-grabbing"
+					>
+						{/* 4-direction move icon — fades in on hover */}
+						<svg
+							aria-label="Drag to reorder"
+							viewBox="0 0 14 14"
+							className="h-2.5 w-2.5 shrink-0 opacity-0 transition-opacity duration-150 group-hover/drag:opacity-35"
+							fill="currentColor"
+							aria-hidden
+						>
+							<path d="M7 0L5 3h4L7 0ZM7 14l-2-3h4l-2 3ZM0 7l3-2v4L0 7ZM14 7l-3-2v4l3-2Z" />
+						</svg>
+						<span className="pointer-events-none font-mono text-xs font-bold uppercase tracking-[0.28em]">
+							{title}
 						</span>
-					)}
-					{!meta && <span className="inline-block h-1.5 w-3 opacity-0" />}
-				</span>
+					</div>
+				) : (
+					/* No drag context — plain centered title */
+					<span className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center font-mono text-xs font-bold uppercase tracking-[0.28em]">
+						{title}
+					</span>
+				)}
+
+				{/* Right: type selector (FX slot context) or meta label */}
+				<div className="relative z-20 flex shrink-0 items-center">
+					{slotCtx?.typeSelector ??
+						(meta ? (
+							<span className="font-mono text-5xs uppercase tracking-[0.15em] opacity-60">
+								{meta}
+							</span>
+						) : (
+							<span className="inline-block h-4 w-4" />
+						))}
+				</div>
 			</div>
 
 			{/* Content area */}
