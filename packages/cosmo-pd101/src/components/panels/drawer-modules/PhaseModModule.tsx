@@ -55,6 +55,7 @@ export default function PhaseModModule() {
 			<CzButton
 				active={pmPre}
 				onClick={() => setPmPre(!pmPre)}
+				tooltip="Apply phase modulation before warp shaping."
 				className="h-16 px-2 col-span-2"
 			>
 				Pre
@@ -69,6 +70,7 @@ export default function PhaseModModule() {
 				size={52}
 				color="#be3330"
 				label="Amount"
+				tooltip="Sets internal phase modulation depth."
 				valueFormatter={(value) => value.toFixed(2)}
 			/>
 			<ControlKnob
@@ -80,6 +82,7 @@ export default function PhaseModModule() {
 				size={52}
 				color="#be3330"
 				label="Ratio"
+				tooltip="Sets modulator-to-carrier frequency ratio."
 				valueFormatter={(value) => value.toFixed(1)}
 			/>
 		</ModuleFrame>

@@ -60,6 +60,7 @@ export default function ModEnveloppeModule() {
 				size={52}
 				color="#c24587"
 				label="Atk"
+				tooltip="Sets modulation envelope attack time."
 				valueFormatter={(v) => `${v.toFixed(2)}s`}
 			/>
 			<ControlKnob
@@ -71,6 +72,7 @@ export default function ModEnveloppeModule() {
 				size={52}
 				color="#c24587"
 				label="Dec"
+				tooltip="Sets modulation envelope decay time."
 				valueFormatter={(v) => `${v.toFixed(2)}s`}
 			/>
 			<ControlKnob
@@ -82,6 +84,7 @@ export default function ModEnveloppeModule() {
 				size={52}
 				color="#c24587"
 				label="Sus"
+				tooltip="Sets sustained modulation level while note is held."
 				valueFormatter={(v) => `${Math.round(v * 100)}%`}
 			/>
 			<ControlKnob
@@ -93,6 +96,7 @@ export default function ModEnveloppeModule() {
 				size={52}
 				color="#c24587"
 				label="Rel"
+				tooltip="Sets modulation envelope release time after note off."
 				valueFormatter={(v) => `${v.toFixed(2)}s`}
 			/>
 		</ModuleFrame>

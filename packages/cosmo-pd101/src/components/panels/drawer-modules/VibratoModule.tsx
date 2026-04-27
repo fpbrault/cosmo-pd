@@ -62,6 +62,7 @@ export default function VibratoModule() {
 						key={w}
 						active={vibratoWave === i + 1}
 						onClick={() => setVibratoWave(i + 1)}
+						tooltip={`Select ${w} vibrato waveform.`}
 					>
 						{w}
 					</CompactButton>
@@ -76,6 +77,7 @@ export default function VibratoModule() {
 				size={52}
 				color="#307948"
 				label="Rate"
+				tooltip="Sets vibrato speed."
 				valueFormatter={(v) => `${Math.round(v)}`}
 			/>
 			<ControlKnob
@@ -87,6 +89,7 @@ export default function VibratoModule() {
 				size={52}
 				color="#307948"
 				label="Depth"
+				tooltip="Sets vibrato pitch modulation depth."
 				valueFormatter={(v) => `${Math.round(v)}`}
 			/>
 			<ControlKnob
@@ -98,6 +101,7 @@ export default function VibratoModule() {
 				size={52}
 				color="#307948"
 				label="Delay"
+				tooltip="Delays vibrato onset after note start."
 				valueFormatter={(v) => `${Math.round(v)}ms`}
 			/>
 		</ModuleFrame>
