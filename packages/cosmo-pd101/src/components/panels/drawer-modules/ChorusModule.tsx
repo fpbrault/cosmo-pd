@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ControlKnob from "@/components/controls/ControlKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
+import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import { CHORUS_PRESETS } from "@/lib/synth/modulePresets";
@@ -43,23 +44,20 @@ export default function ChorusModule() {
 			title="Chorus"
 			color="#818cf8"
 			columns={3}
-			meta="Stereo"
+			headerControl={
+				<ModulePresetPopover
+					title="Chorus Presets"
+					value={selectedPreset}
+					options={[
+						{ id: "custom", label: "Custom" },
+						...CHORUS_PRESETS,
+					]}
+					onChange={handlePresetChange}
+				/>
+			}
 			enabled={chorusEnabled}
 			onToggle={() => setChorusEnabled(!chorusEnabled)}
 		>
-			<select
-				className="select select-bordered select-xs col-span-full"
-				aria-label="Chorus preset"
-				value={selectedPreset}
-				onChange={(event) => handlePresetChange(event.target.value)}
-			>
-				<option value="custom">Custom</option>
-				{CHORUS_PRESETS.map((preset) => (
-					<option key={preset.id} value={preset.id}>
-						{preset.label}
-					</option>
-				))}
-			</select>
 			<ControlKnob
 				value={chorusRate}
 				onChange={setChorusRate}

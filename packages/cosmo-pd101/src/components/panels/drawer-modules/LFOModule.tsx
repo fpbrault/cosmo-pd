@@ -2,6 +2,7 @@ import { useState } from "react";
 import ControlKnob from "@/components/controls/ControlKnob";
 import CompactButton from "@/components/primitives/CompactButton";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
+import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import { getLfoModulePatch, LFO_PRESETS } from "@/lib/synth/modulePresets";
@@ -60,20 +61,23 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 	};
 
 	return (
-		<ModuleFrame title={`LFO ${id}`} color={color} showLed={false} enabled>
-			<select
-				className="select select-bordered select-xs col-span-full"
-				aria-label={`LFO ${id} preset`}
-				value={selectedPreset}
-				onChange={(event) => handlePresetChange(event.target.value)}
-			>
-				<option value="custom">Custom</option>
-				{LFO_PRESETS.map((preset) => (
-					<option key={preset.id} value={preset.id}>
-						{preset.label}
-					</option>
-				))}
-			</select>
+		<ModuleFrame
+			title={`LFO ${id}`}
+			color={color}
+			showLed={false}
+			enabled
+			headerControl={
+				<ModulePresetPopover
+					title={`LFO ${id} Presets`}
+					value={selectedPreset}
+					options={[
+						{ id: "custom", label: "Custom" },
+						...LFO_PRESETS,
+					]}
+					onChange={handlePresetChange}
+				/>
+			}
+		>
 			<div className="grid grid-cols-3 justify-center col-span-4 gap-1">
 				{(
 					[

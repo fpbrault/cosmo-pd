@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ControlKnob from "@/components/controls/ControlKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
+import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import { PHASER_PRESETS } from "@/lib/synth/modulePresets";
@@ -45,23 +46,21 @@ export default function PhaserModule() {
 		<ModuleFrame
 			title="Phaser"
 			color="#a78bfa"
+			headerControl={
+				<ModulePresetPopover
+					title="Phaser Presets"
+					value={selectedPreset}
+					options={[
+						{ id: "custom", label: "Custom" },
+						...PHASER_PRESETS,
+					]}
+					onChange={handlePresetChange}
+				/>
+			}
 			meta="4-Stage"
 			enabled={phaserEnabled}
 			onToggle={() => setPhaserEnabled(!phaserEnabled)}
 		>
-			<select
-				className="select select-bordered select-xs col-span-full"
-				aria-label="Phaser preset"
-				value={selectedPreset}
-				onChange={(event) => handlePresetChange(event.target.value)}
-			>
-				<option value="custom">Custom</option>
-				{PHASER_PRESETS.map((preset) => (
-					<option key={preset.id} value={preset.id}>
-						{preset.label}
-					</option>
-				))}
-			</select>
 			<ControlKnob
 				value={phaserRate}
 				onChange={setPhaserRate}

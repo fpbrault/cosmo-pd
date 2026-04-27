@@ -2,6 +2,7 @@ import { useState } from "react";
 import ControlKnob from "@/components/controls/ControlKnob";
 import CzButton from "@/components/primitives/CzButton";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
+import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import { PHASE_MOD_PRESETS } from "@/lib/synth/modulePresets";
@@ -42,23 +43,21 @@ export default function PhaseModModule() {
 		<ModuleFrame
 			title="Phase Mod"
 			color="#be3330"
+			headerControl={
+				<ModulePresetPopover
+					title="Phase Mod Presets"
+					value={selectedPreset}
+					options={[
+						{ id: "custom", label: "Custom" },
+						...PHASE_MOD_PRESETS,
+					]}
+					onChange={handlePresetChange}
+				/>
+			}
 			enabled={phaseModEnabled}
 			columns={2}
 			onToggle={() => setPhaseModEnabled(!phaseModEnabled)}
 		>
-			<select
-				className="select select-bordered select-xs col-span-full"
-				aria-label="Phase mod preset"
-				value={selectedPreset}
-				onChange={(event) => handlePresetChange(event.target.value)}
-			>
-				<option value="custom">Custom</option>
-				{PHASE_MOD_PRESETS.map((preset) => (
-					<option key={preset.id} value={preset.id}>
-						{preset.label}
-					</option>
-				))}
-			</select>
 			<CzButton
 				active={pmPre}
 				onClick={() => setPmPre(!pmPre)}

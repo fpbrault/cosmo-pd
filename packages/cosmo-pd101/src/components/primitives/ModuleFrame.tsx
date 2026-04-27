@@ -11,6 +11,7 @@ type ModuleFrameProps = {
 	title: string;
 	color: string; // hex accent color — border, header bg, LED glow
 	meta?: string; // optional subtitle shown right-aligned in header
+	headerControl?: React.ReactNode;
 	enabled: boolean;
 	onToggle?: () => void;
 	className?: string;
@@ -23,6 +24,7 @@ export default function ModuleFrame({
 	title,
 	color,
 	meta,
+	headerControl,
 	enabled,
 	onToggle,
 	className,
@@ -45,22 +47,28 @@ export default function ModuleFrame({
 				.filter(Boolean)
 				.join(" ")}
 		>
-			{/* Header — full bar is clickable when the module is toggleable */}
-			<button
-				type="button"
+			{/* Header — toggle surface plus optional right-side control */}
+			<div
 				data-header
-				onClick={canToggle ? onToggle : undefined}
 				style={{ backgroundColor: color }}
 				className={`relative flex w-full items-center px-2 py-1 ${
 					canToggle
-						? "cursor-pointer select-none hover:brightness-125 transition-all duration-200"
+						? "select-none hover:brightness-125 transition-all duration-200"
 						: "cursor-default"
 				}`}
 			>
+				{canToggle && (
+					<button
+						type="button"
+						onClick={onToggle}
+						aria-label={`Toggle ${title} module`}
+						className="absolute inset-0 z-0 cursor-pointer"
+					/>
+				)}
 				{/* LED dot — green indicator */}
 				{showLed && (
 					<span
-						className={`inline-block h-1.5 w-3 shrink-0 rounded-[1px] transition-colors ${
+						className={`relative z-10 inline-block h-1.5 w-3 shrink-0 rounded-[1px] transition-colors ${
 							enabled
 								? "bg-green-400 shadow-[0_0_5px_2px_rgba(74,222,128,0.8)]"
 								: "bg-green-950/80"
@@ -70,24 +78,33 @@ export default function ModuleFrame({
 				{/* Title centered in the full header width */}
 				<span
 					style={{ color: textColor }}
-					className="border-none pointer-events-none absolute inset-0 flex items-center justify-center font-mono font-bold uppercase tracking-[0.28em]"
+					className="z-10 border-none pointer-events-none absolute inset-0 flex items-center justify-center font-mono font-bold uppercase tracking-[0.28em]"
 				>
 					{title}
 				</span>
-				{/* Right side: meta label or spacer to keep title optically centered */}
-				<span className="ml-auto inline-block shrink-0" aria-hidden>
-					{meta ? (
+				{/* Right side: optional meta and header control */}
+				<span className="relative z-10 ml-auto inline-flex shrink-0 items-center gap-2" aria-hidden>
+					{meta && (
 						<span
 							style={{ color: textColor }}
 							className="font-mono text-5xs uppercase tracking-[0.15em] opacity-60"
 						>
 							{meta}
 						</span>
-					) : (
+					)}
+					{headerControl && (
+						<span
+							style={{ color: textColor }}
+							className="pointer-events-auto"
+						>
+							{headerControl}
+						</span>
+					)}
+					{!meta && !headerControl && (
 						<span className="inline-block h-1.5 w-3 opacity-0" />
 					)}
 				</span>
-			</button>
+			</div>
 
 			{/* Content area */}
 			<div

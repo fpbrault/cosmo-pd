@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ControlKnob from "@/components/controls/ControlKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
+import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import { REVERB_PRESETS } from "@/lib/synth/modulePresets";
@@ -48,23 +49,21 @@ export default function ReverbModule() {
 			title="Reverb"
 			color="#f97316"
 			columns={3}
+			headerControl={
+				<ModulePresetPopover
+					title="Reverb Presets"
+					value={selectedPreset}
+					options={[
+						{ id: "custom", label: "Custom" },
+						...REVERB_PRESETS,
+					]}
+					onChange={handlePresetChange}
+				/>
+			}
 			meta="FDN"
 			enabled={reverbEnabled}
 			onToggle={() => setReverbEnabled(!reverbEnabled)}
 		>
-			<select
-				className="select select-bordered select-xs col-span-full"
-				aria-label="Reverb preset"
-				value={selectedPreset}
-				onChange={(event) => handlePresetChange(event.target.value)}
-			>
-				<option value="custom">Custom</option>
-				{REVERB_PRESETS.map((preset) => (
-					<option key={preset.id} value={preset.id}>
-						{preset.label}
-					</option>
-				))}
-			</select>
 			<ControlKnob
 				value={reverbSpace}
 				onChange={setReverbSpace}

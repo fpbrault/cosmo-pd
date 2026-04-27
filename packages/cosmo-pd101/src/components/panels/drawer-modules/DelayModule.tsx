@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ControlKnob from "@/components/controls/ControlKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
+import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import { DELAY_PRESETS } from "@/lib/synth/modulePresets";
@@ -48,24 +49,22 @@ export default function DelayModule() {
 		<ModuleFrame
 			title="Delay"
 			color="#fbbf24"
+			headerControl={
+				<ModulePresetPopover
+					title="Delay Presets"
+					value={selectedPreset}
+					options={[
+						{ id: "custom", label: "Custom" },
+						...DELAY_PRESETS,
+					]}
+					onChange={handlePresetChange}
+				/>
+			}
 			meta={delayModeLabel}
 			columns={delayTapeMode ? 4 : 3}
 			enabled={delayEnabled}
 			onToggle={() => setDelayEnabled(!delayEnabled)}
 		>
-			<select
-				className="select select-bordered select-xs col-span-full"
-				aria-label="Delay preset"
-				value={selectedPreset}
-				onChange={(event) => handlePresetChange(event.target.value)}
-			>
-				<option value="custom">Custom</option>
-				{DELAY_PRESETS.map((preset) => (
-					<option key={preset.id} value={preset.id}>
-						{preset.label}
-					</option>
-				))}
-			</select>
 			<button
 				type="button"
 				onClick={() => setDelayTapeMode(!delayTapeMode)}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import ControlKnob from "@/components/controls/ControlKnob";
 import CompactButton from "@/components/primitives/CompactButton";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
+import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import { VIBRATO_PRESETS } from "@/lib/synth/modulePresets";
@@ -46,23 +47,21 @@ export default function VibratoModule() {
 		<ModuleFrame
 			title="Vibrato"
 			color="#307948"
+			headerControl={
+				<ModulePresetPopover
+					title="Vibrato Presets"
+					value={selectedPreset}
+					options={[
+						{ id: "custom", label: "Custom" },
+						...VIBRATO_PRESETS,
+					]}
+					onChange={handlePresetChange}
+				/>
+			}
 			enabled={vibratoEnabled}
 			columns={3}
 			onToggle={() => setVibratoEnabled(!vibratoEnabled)}
 		>
-			<select
-				className="select select-bordered select-xs col-span-full"
-				aria-label="Vibrato preset"
-				value={selectedPreset}
-				onChange={(event) => handlePresetChange(event.target.value)}
-			>
-				<option value="custom">Custom</option>
-				{VIBRATO_PRESETS.map((preset) => (
-					<option key={preset.id} value={preset.id}>
-						{preset.label}
-					</option>
-				))}
-			</select>
 			<div className="grid grid-cols-4 gap-1 w-full col-span-3">
 				{(["sine", "tri", "sq", "saw"] as const).map((w, i) => (
 					<CompactButton
