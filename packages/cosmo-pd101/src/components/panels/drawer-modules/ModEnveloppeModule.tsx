@@ -5,6 +5,7 @@ import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import { MOD_ENV_PRESETS } from "@/lib/synth/modulePresets";
+import { PARAM_META } from "@/lib/synth/paramMeta";
 
 export default function ModEnveloppeModule() {
 	const [selectedPreset, setSelectedPreset] = useState<string>("");
@@ -60,6 +61,7 @@ export default function ModEnveloppeModule() {
 				size={52}
 				color="#c24587"
 				label="Atk"
+				tooltip={PARAM_META.modEnvAttack?.tooltip}
 				valueFormatter={(v) => `${v.toFixed(2)}s`}
 			/>
 			<ControlKnob
@@ -71,6 +73,7 @@ export default function ModEnveloppeModule() {
 				size={52}
 				color="#c24587"
 				label="Dec"
+				tooltip={PARAM_META.modEnvDecay?.tooltip}
 				valueFormatter={(v) => `${v.toFixed(2)}s`}
 			/>
 			<ControlKnob
@@ -82,6 +85,7 @@ export default function ModEnveloppeModule() {
 				size={52}
 				color="#c24587"
 				label="Sus"
+				tooltip={PARAM_META.modEnvSustain?.tooltip}
 				valueFormatter={(v) => `${Math.round(v * 100)}%`}
 			/>
 			<ControlKnob
@@ -93,6 +97,7 @@ export default function ModEnveloppeModule() {
 				size={52}
 				color="#c24587"
 				label="Rel"
+				tooltip={PARAM_META.modEnvRelease?.tooltip}
 				valueFormatter={(v) => `${v.toFixed(2)}s`}
 			/>
 		</ModuleFrame>

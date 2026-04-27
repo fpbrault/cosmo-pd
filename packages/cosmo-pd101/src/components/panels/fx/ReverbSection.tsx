@@ -1,3 +1,4 @@
+import { PARAM_META } from "@/lib/synth/paramMeta";
 import { BaseFxSection, type FxKnobConfig } from "./BaseFxSection";
 
 interface ReverbSectionProps {
@@ -28,6 +29,7 @@ export function ReverbSection({
 	const knobs: FxKnobConfig[] = [
 		{
 			label: "Space",
+			tooltip: PARAM_META.reverbSpace?.tooltip,
 			value: space,
 			setValue: setSpace,
 			min: 0,
@@ -38,6 +40,7 @@ export function ReverbSection({
 		},
 		{
 			label: "Pre-Dly",
+			tooltip: PARAM_META.reverbPredelay?.tooltip,
 			value: predelay,
 			setValue: setPredelay,
 			min: 0,
@@ -48,6 +51,7 @@ export function ReverbSection({
 		},
 		{
 			label: "Char",
+			tooltip: PARAM_META.reverbCharacter?.tooltip,
 			value: character,
 			setValue: setCharacter,
 			min: 0,
@@ -58,6 +62,7 @@ export function ReverbSection({
 		},
 		{
 			label: "Dist",
+			tooltip: PARAM_META.reverbDistance?.tooltip,
 			value: distance,
 			setValue: setDistance,
 			min: 0,
@@ -68,6 +73,7 @@ export function ReverbSection({
 		},
 		{
 			label: "Mix",
+			tooltip: PARAM_META.reverbMix?.tooltip,
 			value: mix,
 			setValue: setMix,
 			min: 0,

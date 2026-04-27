@@ -3,6 +3,7 @@ import type { AsidePanelComponent } from "@/components/layout/AsidePanelSwitcher
 import SynthPanelContainer from "@/components/layout/SynthPanelContainer";
 import CzButton from "@/components/primitives/CzButton";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { PARAM_META } from "@/lib/synth/paramMeta";
 
 const VibratoPanel: AsidePanelComponent<"vibrato"> = Object.assign(
 	function VibratoPanel() {
@@ -28,6 +29,7 @@ const VibratoPanel: AsidePanelComponent<"vibrato"> = Object.assign(
 							key={w}
 							active={vibratoWave === i + 1}
 							onClick={() => setVibratoWave(i + 1)}
+							tooltip={`Select ${w} vibrato waveform.`}
 						>
 							{w}
 						</CzButton>
@@ -42,6 +44,7 @@ const VibratoPanel: AsidePanelComponent<"vibrato"> = Object.assign(
 						size={44}
 						color="#7f9de4"
 						label="Rate"
+						tooltip={PARAM_META.vibratoRate?.tooltip}
 						valueFormatter={(v) => `${Math.round(v)}`}
 					/>
 					<ControlKnob
@@ -52,6 +55,7 @@ const VibratoPanel: AsidePanelComponent<"vibrato"> = Object.assign(
 						size={44}
 						color="#7f9de4"
 						label="Depth"
+						tooltip={PARAM_META.vibratoDepth?.tooltip}
 						valueFormatter={(v) => `${Math.round(v)}`}
 						modDestination="vibratoDepth"
 					/>
@@ -63,6 +67,7 @@ const VibratoPanel: AsidePanelComponent<"vibrato"> = Object.assign(
 						size={44}
 						color="#7f9de4"
 						label="Delay"
+						tooltip={PARAM_META.vibratoDelay?.tooltip}
 						valueFormatter={(v) => `${Math.round(v)}ms`}
 					/>
 				</div>

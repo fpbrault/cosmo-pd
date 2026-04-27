@@ -1,3 +1,4 @@
+import { PARAM_META } from "@/lib/synth/paramMeta";
 import { BaseFxSection, type FxKnobConfig } from "./BaseFxSection";
 
 interface ChorusSectionProps {
@@ -20,6 +21,7 @@ export function ChorusSection({
 	const knobs: FxKnobConfig[] = [
 		{
 			label: "Rate",
+			tooltip: PARAM_META.chorusRate?.tooltip,
 			value: rate,
 			setValue: setRate,
 			min: 0.1,
@@ -30,6 +32,7 @@ export function ChorusSection({
 		},
 		{
 			label: "Depth",
+			tooltip: PARAM_META.chorusDepth?.tooltip,
 			value: depth,
 			setValue: setDepth,
 			min: 0,
@@ -40,6 +43,7 @@ export function ChorusSection({
 		},
 		{
 			label: "Mix",
+			tooltip: PARAM_META.chorusMix?.tooltip,
 			value: mix,
 			setValue: setMix,
 			min: 0,

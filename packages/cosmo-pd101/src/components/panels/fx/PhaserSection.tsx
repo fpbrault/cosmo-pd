@@ -1,3 +1,4 @@
+import { PARAM_META } from "@/lib/synth/paramMeta";
 import { BaseFxSection, type FxKnobConfig } from "./BaseFxSection";
 
 interface PhaserSectionProps {
@@ -30,6 +31,7 @@ export function PhaserSection({
 			max: 10,
 			size: 44,
 			color: "#a78bfa",
+			tooltip: PARAM_META.phaserRate?.tooltip,
 			valueFormatter: (value) => `${value.toFixed(1)}Hz`,
 		},
 		{
@@ -40,6 +42,7 @@ export function PhaserSection({
 			max: 1,
 			size: 44,
 			color: "#a78bfa",
+			tooltip: PARAM_META.phaserDepth?.tooltip,
 			valueFormatter: (value) => `${Math.round(value * 100)}%`,
 		},
 		{
@@ -50,6 +53,7 @@ export function PhaserSection({
 			max: 0.9,
 			size: 42,
 			color: "#a78bfa",
+			tooltip: PARAM_META.phaserFeedback?.tooltip,
 			valueFormatter: (value) =>
 				value >= 0
 					? `+${Math.round(value * 100)}%`
@@ -63,6 +67,7 @@ export function PhaserSection({
 			max: 1,
 			size: 44,
 			color: "#9cb937",
+			tooltip: PARAM_META.phaserMix?.tooltip,
 			valueFormatter: (value) => `${Math.round(value * 100)}%`,
 		},
 	];

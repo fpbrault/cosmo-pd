@@ -1,5 +1,6 @@
 import CzButton from "@/components/primitives/CzButton";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { MOD_MODE_TOOLTIPS } from "@/lib/synth/paramMeta";
 
 export default function ModModeControl() {
 	const { value: modMode, setValue: setModMode } = useSynthParam("modMode");
@@ -19,6 +20,7 @@ export default function ModModeControl() {
 						key={mode}
 						active={modMode === mode}
 						onClick={() => setModMode(mode)}
+						tooltip={MOD_MODE_TOOLTIPS[mode]}
 						className="flex-1"
 					>
 						{label}

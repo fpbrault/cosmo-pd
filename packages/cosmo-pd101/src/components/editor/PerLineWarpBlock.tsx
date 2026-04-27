@@ -19,6 +19,7 @@ import type {
 	WindowType,
 } from "@/lib/synth/bindings/synth";
 import { ALGO_DEFINITIONS_V1 } from "@/lib/synth/bindings/synth";
+import { PARAM_META } from "@/lib/synth/paramMeta";
 import type { PdAlgo } from "@/lib/synth/pdAlgorithms";
 import { getPdAlgoDef, PD_ALGOS } from "@/lib/synth/pdAlgorithms";
 import PerLineParametersCard from "./PerLineParametersCard";
@@ -414,6 +415,11 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 										</div>
 										<ControlKnob
 											label="Blend"
+											tooltip={
+												PARAM_META[
+													lineIndex === 2 ? "algoBlendB" : "algoBlendA"
+												]?.tooltip
+											}
 											value={algoBlend}
 											onChange={setAlgoBlend}
 											min={0}

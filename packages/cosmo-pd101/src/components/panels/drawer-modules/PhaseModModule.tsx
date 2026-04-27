@@ -6,6 +6,7 @@ import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import { PHASE_MOD_PRESETS } from "@/lib/synth/modulePresets";
+import { PARAM_META } from "@/lib/synth/paramMeta";
 
 export default function PhaseModModule() {
 	const [selectedPreset, setSelectedPreset] = useState<string>("");
@@ -55,6 +56,7 @@ export default function PhaseModModule() {
 			<CzButton
 				active={pmPre}
 				onClick={() => setPmPre(!pmPre)}
+				tooltip={PARAM_META.pmPre?.tooltip}
 				className="h-16 px-2 col-span-2"
 			>
 				Pre
@@ -69,6 +71,7 @@ export default function PhaseModModule() {
 				size={52}
 				color="#be3330"
 				label="Amount"
+				tooltip={PARAM_META.intPmAmount?.tooltip}
 				valueFormatter={(value) => value.toFixed(2)}
 			/>
 			<ControlKnob
@@ -80,6 +83,7 @@ export default function PhaseModModule() {
 				size={52}
 				color="#be3330"
 				label="Ratio"
+				tooltip={PARAM_META.intPmRatio?.tooltip}
 				valueFormatter={(value) => value.toFixed(1)}
 			/>
 		</ModuleFrame>

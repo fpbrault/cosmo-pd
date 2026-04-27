@@ -1,5 +1,10 @@
 import { isAlgoRefEqual } from "@/lib/synth/algoRef";
-import { PD_ALGOS, type PdAlgo } from "@/lib/synth/pdAlgorithms";
+import {
+	getPdAlgoBehaviorDescription,
+	PD_ALGOS,
+	type PdAlgo,
+} from "@/lib/synth/pdAlgorithms";
+import { HoverInfoTrigger } from "../../layout/HoverInfo";
 
 export default function AlgoIconGrid({
 	value,
@@ -21,37 +26,46 @@ export default function AlgoIconGrid({
 			].join(" ")}
 			style={{ pointerEvents: disabled ? "none" : undefined }}
 		>
-			{PD_ALGOS.map((algo) => (
-				<button
-					key={algo.key}
-					type="button"
-					title={algo.label}
-					onClick={() => !disabled && onChange(algo.value)}
-					disabled={disabled}
-					className={[
-						"flex  items-center justify-center transition-colors focus:outline-none border-t-0 border-b border-l border-r text-cz-gold border-cz-light-blue",
-						isAlgoRefEqual(value, algo.value)
-							? "border-cz-light-blue bg-cz-inset text-white shadow-sm"
-							: "border-cz-border bg-cz-surface  hover:border-cz-light-blue hover:text-white",
-					].join(" ")}
-					style={{ height: size, width: size + 4 }}
-				>
-					<svg
-						viewBox="0 0 24 24"
-						width={iconSize}
-						height={iconSize}
-						stroke="currentColor"
-						strokeWidth="1.5"
-						fill="none"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						aria-hidden="true"
-					>
-						<title>{algo.label}</title>
-						<path d={algo.icon} />
-					</svg>
-				</button>
-			))}
+			{PD_ALGOS.map((algo) => {
+				const tooltipText = `Algorithm ${algo.label}: ${getPdAlgoBehaviorDescription(algo.value)}`;
+
+				return (
+					<HoverInfoTrigger key={algo.key} message={tooltipText}>
+						{(hoverHandlers) => (
+							<button
+								type="button"
+								title={algo.label}
+								data-hover-info={tooltipText}
+								{...hoverHandlers}
+								onClick={() => !disabled && onChange(algo.value)}
+								disabled={disabled}
+								className={[
+									"flex  items-center justify-center transition-colors focus:outline-none border-t-0 border-b border-l border-r text-cz-gold border-cz-light-blue",
+									isAlgoRefEqual(value, algo.value)
+										? "border-cz-light-blue bg-cz-inset text-white shadow-sm"
+										: "border-cz-border bg-cz-surface  hover:border-cz-light-blue hover:text-white",
+								].join(" ")}
+								style={{ height: size, width: size + 4 }}
+							>
+								<svg
+									viewBox="0 0 24 24"
+									width={iconSize}
+									height={iconSize}
+									stroke="currentColor"
+									strokeWidth="1.5"
+									fill="none"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									aria-hidden="true"
+								>
+									<title>{algo.label}</title>
+									<path d={algo.icon} />
+								</svg>
+							</button>
+						)}
+					</HoverInfoTrigger>
+				);
+			})}
 		</div>
 	);
 }

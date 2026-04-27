@@ -1,3 +1,5 @@
+import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
+import { PARAM_META } from "@/lib/synth/paramMeta";
 import { BaseFxSection, type FxKnobConfig } from "./BaseFxSection";
 
 interface DelaySectionProps {
@@ -25,9 +27,13 @@ export function DelaySection({
 	warmth,
 	setWarmth,
 }: DelaySectionProps) {
+	const tapeModeHoverHandlers = useHoverInfoHandlers(
+		PARAM_META.delayTapeMode?.tooltip,
+	);
 	const knobs: FxKnobConfig[] = [
 		{
 			label: "Time",
+			tooltip: PARAM_META.delayTime?.tooltip,
 			value: time,
 			setValue: setTime,
 			min: 0.01,
@@ -38,6 +44,7 @@ export function DelaySection({
 		},
 		{
 			label: "Dly Fdbk",
+			tooltip: PARAM_META.delayFeedback?.tooltip,
 			value: feedback,
 			setValue: setFeedback,
 			min: 0,
@@ -50,6 +57,7 @@ export function DelaySection({
 			? ([
 					{
 						label: "Warmth",
+						tooltip: PARAM_META.delayWarmth?.tooltip,
 						value: warmth,
 						setValue: setWarmth,
 						min: 0,
@@ -62,6 +70,7 @@ export function DelaySection({
 			: []),
 		{
 			label: "Mix",
+			tooltip: PARAM_META.delayMix?.tooltip,
 			value: mix,
 			setValue: setMix,
 			min: 0,
@@ -81,6 +90,8 @@ export function DelaySection({
 				<button
 					type="button"
 					onClick={() => setTapeMode(!tapeMode)}
+					data-hover-info={PARAM_META.delayTapeMode?.tooltip}
+					{...tapeModeHoverHandlers}
 					className={`rounded px-3 py-1 text-xs font-medium tracking-wide border transition-colors ${
 						tapeMode
 							? "border-amber-500/60 bg-amber-500/20 text-amber-300"

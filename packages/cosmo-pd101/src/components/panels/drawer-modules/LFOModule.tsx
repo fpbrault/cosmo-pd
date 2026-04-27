@@ -4,8 +4,10 @@ import CompactButton from "@/components/primitives/CompactButton";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
+import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import { getLfoModulePatch, LFO_PRESETS } from "@/lib/synth/modulePresets";
+import { PARAM_META } from "@/lib/synth/paramMeta";
 
 interface LfoModuleProps {
 	id: 1 | 2;
@@ -16,6 +18,8 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("");
 	// Dynamically resolve the parameter names based on the LFO id
 	const prefix = id === 1 ? "lfo" : "lfo2";
+	const lfoParamTooltip = (suffix: string) =>
+		PARAM_META[`${prefix}${suffix}` as SynthParamKey]?.tooltip;
 
 	const { value: lfoWaveform, setValue: setLfoWaveform } = useSynthParam(
 		`${prefix}Waveform`,
@@ -88,6 +92,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 						className="grow"
 						active={lfoWaveform === w}
 						onClick={() => setLfoWaveform(w)}
+						tooltip={`Select ${label} waveform for LFO ${id}.`}
 					>
 						{label}
 					</CompactButton>
@@ -102,6 +107,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				size={40}
 				color="#27588f"
 				label="Rate"
+				tooltip={lfoParamTooltip("Rate")}
 				valueFormatter={(v) => `${v.toFixed(1)}Hz`}
 			/>
 			<ControlKnob
@@ -113,6 +119,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				size={40}
 				color="#27588f"
 				label="Depth"
+				tooltip={lfoParamTooltip("Depth")}
 				valueFormatter={(v) => `${Math.round(v * 100)}%`}
 			/>
 			<ControlKnob
@@ -124,6 +131,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				size={40}
 				color="#27588f"
 				label="Offset"
+				tooltip={lfoParamTooltip("Offset")}
 				valueFormatter={(v) => `${Math.round(v * 100)}%`}
 			/>
 			<ControlKnob
@@ -135,11 +143,13 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				size={40}
 				color="#27588f"
 				label="Sym."
+				tooltip={lfoParamTooltip("Symmetry")}
 				valueFormatter={(v) => `${Math.round(v * 100)}%`}
 			/>
 			<CompactButton
 				active={lfoRetrigger}
 				onClick={() => setLfoRetrigger(!lfoRetrigger)}
+				tooltip={lfoParamTooltip("Retrigger")}
 				className="px-2 col-span-4 w-fit justify-self-center"
 			>
 				Retrig

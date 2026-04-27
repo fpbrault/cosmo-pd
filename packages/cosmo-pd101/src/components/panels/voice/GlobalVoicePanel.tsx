@@ -4,6 +4,7 @@ import type { AsidePanelComponent } from "@/components/layout/AsidePanelSwitcher
 import SynthPanelContainer from "@/components/layout/SynthPanelContainer";
 import CzButton from "@/components/primitives/CzButton";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { PARAM_META, PORTAMENTO_MODE_TOOLTIPS } from "@/lib/synth/paramMeta";
 import { applyVelocityCurve } from "@/lib/synth/velocityCurve";
 
 const W = 72;
@@ -96,12 +97,14 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 							<CzButton
 								active={portamentoMode === "rate"}
 								onClick={() => setPortamentoMode("rate")}
+								tooltip={PORTAMENTO_MODE_TOOLTIPS["rate"]}
 							>
 								Rate
 							</CzButton>
 							<CzButton
 								active={portamentoMode === "time"}
 								onClick={() => setPortamentoMode("time")}
+								tooltip={PORTAMENTO_MODE_TOOLTIPS["time"]}
 							>
 								Time
 							</CzButton>
@@ -116,6 +119,7 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 									size={32}
 									color="#7f9de4"
 									label="Rate"
+									tooltip={PARAM_META.portamentoRate?.tooltip}
 									valueFormatter={(v) => `${Math.round(v)}`}
 								/>
 							) : (
@@ -127,6 +131,7 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 									size={32}
 									color="#7f9de4"
 									label="Time"
+									tooltip={PARAM_META.portamentoTime?.tooltip}
 									valueFormatter={(v) => `${v.toFixed(2)}s`}
 								/>
 							)}
@@ -143,6 +148,7 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 								size={30}
 								color="#5bc8d4"
 								label="Bend"
+								tooltip={PARAM_META.pitchBendRange?.tooltip}
 								valueFormatter={(v) => `${Math.round(v)} st`}
 							/>
 						</div>
@@ -158,6 +164,7 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 								size={28}
 								color="#c46eb4"
 								label="Vel Curve"
+								tooltip={PARAM_META.velocityCurve?.tooltip}
 								valueFormatter={(v) => (v === 0 ? "Linear" : v.toFixed(2))}
 							/>
 						</div>

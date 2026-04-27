@@ -1,5 +1,6 @@
 import CzButton from "@/components/primitives/CzButton";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { LINE_SELECT_TOOLTIPS } from "@/lib/synth/paramMeta";
 
 export default function LineSelectControl() {
 	const { value: lineSelect, setValue: setLineSelect } =
@@ -13,6 +14,7 @@ export default function LineSelectControl() {
 					<CzButton
 						key={ls}
 						active={lineSelect === ls}
+						tooltip={LINE_SELECT_TOOLTIPS[ls]}
 						onClick={() => setLineSelect(ls)}
 					>
 						{ls}

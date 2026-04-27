@@ -73,6 +73,46 @@ export const PD_ALGOS: PdAlgoDef[] = [
 	}),
 ];
 
+const ALGO_BEHAVIOR_DESCRIPTIONS: Record<PdAlgo, string> = {
+	cz101:
+		"Classic CZ phase-distortion core. Use DCW and the CZ preset controls to shape the harmonic contour.",
+	bend: "Bends phase toward one side, adding asymmetry and a brighter edge as depth increases.",
+	sync: "Applies hard-sync style phase resets for harmonic-rich, edgy tones.",
+	pinch:
+		"Compresses phase around the center, emphasizing mid-cycle detail and nasal character.",
+	fold: "Folds the phase path back on itself for wavefold-style harmonics and sharper timbre.",
+	skew: "Tilts phase timing earlier vs later to shift harmonic balance and attack character.",
+	quantize:
+		"Steps the phase into discrete levels for a digitized, stair-stepped texture.",
+	twist:
+		"Applies sinusoidal phase twisting for animated, swirling harmonic motion.",
+	clip: "Limits phase excursion, flattening peaks for a harder, clipped tone.",
+	ripple:
+		"Adds high-frequency ripple to the phase trajectory for fine, buzzy harmonic detail.",
+	mirror:
+		"Blends toward an inverted phase path to create mirrored, symmetrical timbres.",
+	fof: "Formant-like shaping with windowed resonant emphasis suited to vocal-style colors.",
+	karpunk:
+		"Plucked/resonant distortion character with decaying inharmonic overtones.",
+	sine: "Pure sine phase path with minimal harmonics and smooth tone.",
+	// Legacy waveform aliases supported by Algo type
+	saw: "Saw transfer shape with a bright, harmonically rich spectrum.",
+	square: "Square transfer shape emphasizing odd harmonics for hollow tone.",
+	pulse: "Pulse transfer shape with a narrow-duty harmonic profile.",
+	null: "Sparse transfer shape with thin, subdued harmonic content.",
+	sinePulse: "Hybrid sine/pulse transfer for mixed smooth and buzzy harmonics.",
+	sawPulse: "Hybrid saw/pulse transfer balancing edge and body.",
+	multiSine: "Multi-sine resonant transfer emphasizing vocal-like peaks.",
+	pulse2: "Dual-pulse style transfer with hollow, comb-like harmonic spacing.",
+};
+
+export function getPdAlgoBehaviorDescription(algo: PdAlgo): string {
+	return (
+		ALGO_BEHAVIOR_DESCRIPTIONS[algo] ??
+		"Phase-distortion algorithm with a distinct harmonic shaping profile."
+	);
+}
+
 export function getPdAlgoDef(algo: PdAlgo): PdAlgoDef | undefined {
 	return PD_ALGOS.find((entry) => isAlgoRefEqual(entry.value, algo));
 }

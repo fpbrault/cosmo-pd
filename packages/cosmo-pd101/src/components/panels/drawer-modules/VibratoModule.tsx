@@ -6,6 +6,7 @@ import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import { VIBRATO_PRESETS } from "@/lib/synth/modulePresets";
+import { PARAM_META } from "@/lib/synth/paramMeta";
 
 export default function VibratoModule() {
 	const [selectedPreset, setSelectedPreset] = useState<string>("");
@@ -62,6 +63,7 @@ export default function VibratoModule() {
 						key={w}
 						active={vibratoWave === i + 1}
 						onClick={() => setVibratoWave(i + 1)}
+						tooltip={`Select ${w} vibrato waveform.`}
 					>
 						{w}
 					</CompactButton>
@@ -76,6 +78,7 @@ export default function VibratoModule() {
 				size={52}
 				color="#307948"
 				label="Rate"
+				tooltip={PARAM_META.vibratoRate?.tooltip}
 				valueFormatter={(v) => `${Math.round(v)}`}
 			/>
 			<ControlKnob
@@ -87,6 +90,7 @@ export default function VibratoModule() {
 				size={52}
 				color="#307948"
 				label="Depth"
+				tooltip={PARAM_META.vibratoDepth?.tooltip}
 				valueFormatter={(v) => `${Math.round(v)}`}
 			/>
 			<ControlKnob
@@ -98,6 +102,7 @@ export default function VibratoModule() {
 				size={52}
 				color="#307948"
 				label="Delay"
+				tooltip={PARAM_META.vibratoDelay?.tooltip}
 				valueFormatter={(v) => `${Math.round(v)}ms`}
 			/>
 		</ModuleFrame>
