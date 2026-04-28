@@ -79,8 +79,14 @@ export function SharedPhaseDistortionVisualizer({
 		setActiveAsidePanel("scope");
 	}, [setActiveAsidePanel]);
 
-	const { audioCtxRef, analyserNodeRef, workletNodeRef, paramsRef } =
-		useAudioEngine({
+	const {
+		audioCtxRef,
+		analyserNodeRef,
+		workletNodeRef,
+		paramsRef,
+		audioContextState,
+		resumeAudio,
+	} = useAudioEngine({
 			synthWasmUrl,
 			synthBindingsUrl,
 			pdVisualizerWorkletUrl,
@@ -259,6 +265,10 @@ export function SharedPhaseDistortionVisualizer({
 				activeNotes,
 				onNoteOn: sendNoteOn,
 				onNoteOff: sendNoteOff,
+			}}
+			audioGate={{
+				ready: audioContextState === "running",
+				onResume: resumeAudio,
 			}}
 		/>
 	);

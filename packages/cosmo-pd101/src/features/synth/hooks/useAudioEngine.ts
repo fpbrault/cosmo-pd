@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { PolyMode } from "@/features/synth/useSynthState";
 import type {
 	Algo,
@@ -62,12 +62,18 @@ export type UseAudioEngineParams = {
 	pdVisualizerWorkletUrl: string;
 };
 
+export type AudioContextState = "suspended" | "running" | "closed";
+
 export type AudioEngineRefs = {
 	audioCtxRef: React.MutableRefObject<AudioContext | null>;
 	gainNodeRef: React.MutableRefObject<GainNode | null>;
 	analyserNodeRef: React.MutableRefObject<AnalyserNode | null>;
 	workletNodeRef: React.MutableRefObject<AudioWorkletNode | null>;
 	paramsRef: React.MutableRefObject<EngineParams>;
+	/** Reactive audio context state — null until the context is created. */
+	audioContextState: AudioContextState | null;
+	/** Call from a button click handler to resume a suspended context. */
+	resumeAudio: () => void;
 };
 
 export type EngineParams = {
@@ -198,7 +204,7 @@ export async function resumeOrDefer(
 	// Browsers commonly resolve resume() without error but leave the context
 	// suspended when autoplay is blocked. Check state regardless of whether an
 	// error was thrown.
-	if (ctx.state !== "running") {
+	if ((ctx.state as string) !== "running") {
 		return attachResumeOnUserGesture(ctx);
 	}
 
@@ -286,6 +292,7 @@ export function useAudioEngine({
 	const analyserNodeRef = useRef<AnalyserNode | null>(null);
 	const workletNodeRef = useRef<AudioWorkletNode | null>(null);
 	const audioInitRef = useRef(false);
+	const [audioContextState, setAudioContextState] = useState<AudioContextState | null>(null);
 
 	const paramsRef = useRef<EngineParams>({
 		lineSelect: "L1+L2",
@@ -506,11 +513,17 @@ export function useAudioEngine({
 				gainNode.connect(analyserNode);
 				analyserNode.connect(ctx.destination);
 
+				ctx.addEventListener("statechange", () => {
+					if (!disposed) setAudioContextState(ctx.state as AudioContextState);
+				});
+
 				audioCtxRef.current = ctx;
 				gainNodeRef.current = gainNode;
 				analyserNodeRef.current = analyserNode;
 
+				setAudioContextState(ctx.state as AudioContextState);
 				removeGestureResumeListener = await resumeOrDefer(ctx);
+				setAudioContextState(ctx.state as AudioContextState);
 			} catch (err) {
 				console.error("[PD Visualizer] Audio init failed:", err);
 				audioInitRef.current = false;
@@ -535,11 +548,19 @@ export function useAudioEngine({
 		};
 	}, [synthWasmUrl, synthBindingsUrl, pdVisualizerWorkletUrl]);
 
+	const resumeAudio = useCallback(() => {
+		const ctx = audioCtxRef.current;
+		if (!ctx || ctx.state !== "suspended") return;
+		void ctx.resume();
+	}, []);
+
 	return {
 		audioCtxRef,
 		gainNodeRef,
 		analyserNodeRef,
 		workletNodeRef,
 		paramsRef,
+		audioContextState,
+		resumeAudio,
 	};
 }
