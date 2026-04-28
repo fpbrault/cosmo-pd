@@ -69,7 +69,6 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 			headerControl={
 				<ModulePresetPopover
 					title={`LFO ${id} Presets`}
-					secondaryColor={color}
 					value={selectedPreset}
 					options={LFO_PRESETS}
 					onChange={handlePresetChange}

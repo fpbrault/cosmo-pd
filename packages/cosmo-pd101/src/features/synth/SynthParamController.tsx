@@ -290,7 +290,8 @@ export function SynthParamControllerProvider({
 			}
 
 			const clampedLiveModDelta = Math.max(-2, Math.min(2, liveModDelta));
-			return baseValue + clampedLiveModDelta;
+			const visualModScale = destination.includes("EnvStep") ? 127 : 1;
+			return baseValue + clampedLiveModDelta * visualModScale;
 		},
 		[liveSources, modRoutes],
 	);
