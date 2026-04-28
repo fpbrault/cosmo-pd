@@ -28,6 +28,26 @@ type EnvelopeId =
 	| "l2_dcw"
 	| "l2_dca";
 
+type EnvelopeMap = Partial<Record<EnvelopeId, StepEnvData>>;
+
+type PresetSessionPayload = {
+	activePresetId?: string | null;
+	activePresetNameBase?: string;
+	loadedPresetFingerprint?: string | null;
+};
+
+declare global {
+	interface Window {
+		ipc?: { postMessage: (message: string) => void };
+		__czOnParams?: (json: string) => void;
+		__czGetEnvelopes?: () => Promise<EnvelopeMap>;
+		__czGetAlgoControls?: () => Promise<AlgoControlsSnapshot | null>;
+		__czGetModMatrix?: () => Promise<ModMatrix>;
+		__czGetFxSlots?: () => Promise<SynthParams["fxSlots"]>;
+		__czGetPresetSession?: () => Promise<PresetSessionPayload>;
+	}
+}
+
 // ---------------------------------------------------------------------------
 // Enum ↔ integer maps
 // Integers are the plain values Beamer uses for EnumParameter fields.
@@ -506,6 +526,7 @@ type InboundHydrationState = {
 	envelopes: boolean;
 	algoControls: boolean;
 	modMatrix: boolean;
+	fxSlots: boolean;
 	presetSession: boolean;
 };
 
@@ -543,6 +564,12 @@ function sendModMatrix(matrix: ModMatrix) {
 	}
 }
 
+function sendFxSlots(fxSlots: SynthParams["fxSlots"]) {
+	if (window.ipc) {
+		window.ipc.postMessage(JSON.stringify({ fx_slots: fxSlots }));
+	}
+}
+
 // ---------------------------------------------------------------------------
 // createPluginBridgeSynthEngineAdapter
 // Builds a SynthEngineAdapter that syncs a SynthEngineSnapshot to the
@@ -563,12 +590,14 @@ export function usePluginBridgeSynthEngine(
 	const sentEnvelopesRef = useRef<Map<EnvelopeId, string>>(new Map());
 	const sentAlgoControlsRef = useRef<Map<string, string>>(new Map());
 	const sentModMatrixRef = useRef("");
+	const sentFxSlotsRef = useRef("");
 	const outboundSyncEnabledRef = useRef(false);
 	const inboundHydrationRef = useRef<InboundHydrationState>({
 		params: false,
 		envelopes: false,
 		algoControls: false,
 		modMatrix: false,
+		fxSlots: false,
 		presetSession: false,
 	});
 	const syncRef = useRef<(() => void) | null>(null);
@@ -612,6 +641,13 @@ export function usePluginBridgeSynthEngine(
 		sendModMatrix(matrix);
 	}, []);
 
+	const queueFxSlots = useCallback((fxSlots: SynthParams["fxSlots"]) => {
+		const serialized = JSON.stringify(fxSlots ?? []);
+		if (sentFxSlotsRef.current === serialized) return;
+		sentFxSlotsRef.current = serialized;
+		sendFxSlots(fxSlots);
+	}, []);
+
 	const tryEnableOutboundSync = useCallback(() => {
 		const hydration = inboundHydrationRef.current;
 		if (
@@ -619,11 +655,20 @@ export function usePluginBridgeSynthEngine(
 			hydration.envelopes &&
 			hydration.algoControls &&
 			hydration.modMatrix &&
+			hydration.fxSlots &&
 			hydration.presetSession
 		) {
 			outboundSyncEnabledRef.current = true;
 			syncRef.current?.();
 		}
+	}, []);
+
+	const enableOutboundSyncAfterParamReplay = useCallback(() => {
+		if (!inboundHydrationRef.current.params) {
+			return;
+		}
+		outboundSyncEnabledRef.current = true;
+		syncRef.current?.();
 	}, []);
 
 	const markHydrated = useCallback(
@@ -655,9 +700,19 @@ export function usePluginBridgeSynthEngine(
 				queueAlgoControls(2, "a", params.line2.algoControlsA ?? []);
 				queueAlgoControls(2, "b", params.line2.algoControlsB ?? []);
 				queueModMatrix(params.modMatrix ?? { routes: [] });
+				queueFxSlots(
+					(params.fxSlots ??
+						useSynthStore.getState().fxSlots) as SynthParams["fxSlots"],
+				);
 			},
 		}),
-		[queueParam, queueEnvelope, queueAlgoControls, queueModMatrix],
+		[
+			queueParam,
+			queueEnvelope,
+			queueAlgoControls,
+			queueModMatrix,
+			queueFxSlots,
+		],
 	);
 
 	// Lifecycle: connect / dispose
@@ -684,6 +739,12 @@ export function usePluginBridgeSynthEngine(
 		}
 		if (!window.__czGetModMatrix) {
 			markHydrated("modMatrix");
+		}
+		if (!window.__czGetFxSlots) {
+			markHydrated("fxSlots");
+		}
+		if (!window.__czGetPresetSession) {
+			markHydrated("presetSession");
 		}
 	}, [enabled, markHydrated]);
 
@@ -759,13 +820,18 @@ export function usePluginBridgeSynthEngine(
 		const shouldAllowFallbackSync =
 			!window.__czGetEnvelopes &&
 			!window.__czGetAlgoControls &&
-			!window.__czGetModMatrix;
-		const timeoutId = shouldAllowFallbackSync
-			? window.setTimeout(() => {
-					outboundSyncEnabledRef.current = true;
-					sync();
-				}, hydrationGraceMs)
-			: null;
+			!window.__czGetModMatrix &&
+			!window.__czGetFxSlots &&
+			!window.__czGetPresetSession;
+		const timeoutId = window.setTimeout(() => {
+			if (shouldAllowFallbackSync) {
+				outboundSyncEnabledRef.current = true;
+				sync();
+				return;
+			}
+
+			enableOutboundSyncAfterParamReplay();
+		}, hydrationGraceMs);
 
 		return () => {
 			syncRef.current = null;
@@ -774,7 +840,13 @@ export function usePluginBridgeSynthEngine(
 			}
 			unsubscribe();
 		};
-	}, [adapter, enabled, gatherState, hydrationGraceMs]);
+	}, [
+		adapter,
+		enableOutboundSyncAfterParamReplay,
+		enabled,
+		gatherState,
+		hydrationGraceMs,
+	]);
 
 	// Inbound: initial envelope state from Rust
 	useEffect(() => {
@@ -802,6 +874,35 @@ export function usePluginBridgeSynthEngine(
 			})
 			.catch((error) => {
 				console.error("[PluginPage] Failed to load envelope state:", error);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [enabled, markHydrated]);
+
+	// Inbound: initial fx-slot state from Rust
+	useEffect(() => {
+		if (!enabled) {
+			return;
+		}
+		if (!window.__czGetFxSlots) {
+			return;
+		}
+		let cancelled = false;
+		void window
+			.__czGetFxSlots()
+			.then((fxSlots) => {
+				if (cancelled) return;
+				if (Array.isArray(fxSlots) && fxSlots.length === 6) {
+					useSynthStore.setState({
+						fxSlots: fxSlots as SynthStore["fxSlots"],
+					});
+				}
+				markHydrated("fxSlots");
+			})
+			.catch((error) => {
+				console.error("[PluginPage] Failed to load fx slots:", error);
+				markHydrated("fxSlots");
 			});
 		return () => {
 			cancelled = true;

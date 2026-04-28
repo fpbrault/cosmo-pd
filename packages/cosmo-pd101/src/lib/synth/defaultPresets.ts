@@ -284,7 +284,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				algoControlsB: [],
 			},
 			intPmAmount: 0,
-			intPmEnabled: false,
 			intPmRatio: 2,
 			extPmAmount: 0,
 			pmPre: true,
@@ -709,23 +708,46 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 			volume: 1,
 			polyMode: "poly8",
 			legato: false,
-			chorus: {
-				rate: 0.8,
-				depth: 1,
-				mix: 0,
+			random: {
+				rate: 2,
 			},
-			delay: {
-				time: 0.3,
-				feedback: 0.35,
-				mix: 0,
+			modEnv: {
+				attack: 0.01,
+				decay: 0.1,
+				sustain: 0.5,
+				release: 0.2,
 			},
-			vibrato: {
-				enabled: false,
-				waveform: 1,
-				rate: 30,
-				depth: 30,
-				delay: 0,
-			},
+			fxSlots: [
+				{
+					type: "chorus",
+					params: {
+						rate: 0.8,
+						depth: 1,
+						mix: 0,
+					},
+				},
+				{
+					type: "delay",
+					params: {
+						time: 0.3,
+						feedback: 0.35,
+						mix: 0,
+					},
+				},
+				{
+					type: "vibrato",
+					params: {
+						enabled: false,
+						waveform: 1,
+						rate: 30,
+						depth: 30,
+						delay: 0,
+					},
+				},
+				{ type: "empty" },
+				{ type: "empty" },
+				{ type: "empty" },
+			],
 			portamento: {
 				enabled: false,
 				mode: "rate",
@@ -1062,23 +1084,46 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 			volume: 1,
 			polyMode: "poly8",
 			legato: false,
-			chorus: {
-				rate: 0.8,
-				depth: 1,
-				mix: 0,
+			random: {
+				rate: 2,
 			},
-			delay: {
-				time: 0.3,
-				feedback: 0.35,
-				mix: 0,
+			modEnv: {
+				attack: 0.01,
+				decay: 0.1,
+				sustain: 0.5,
+				release: 0.2,
 			},
-			vibrato: {
-				enabled: false,
-				waveform: 1,
-				rate: 30,
-				depth: 30,
-				delay: 0,
-			},
+			fxSlots: [
+				{
+					type: "chorus",
+					params: {
+						rate: 0.8,
+						depth: 1,
+						mix: 0,
+					},
+				},
+				{
+					type: "delay",
+					params: {
+						time: 0.3,
+						feedback: 0.35,
+						mix: 0,
+					},
+				},
+				{
+					type: "vibrato",
+					params: {
+						enabled: false,
+						waveform: 1,
+						rate: 30,
+						depth: 30,
+						delay: 0,
+					},
+				},
+				{ type: "empty" },
+				{ type: "empty" },
+				{ type: "empty" },
+			],
 			portamento: {
 				enabled: false,
 				mode: "rate",
@@ -1378,7 +1423,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 					window: "off",
 				},
 			},
-			intPmEnabled: false,
 			intPmAmount: 0,
 			intPmRatio: 4,
 			extPmAmount: 0,
@@ -1387,25 +1431,48 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 			volume: 1,
 			polyMode: "poly8",
 			legato: false,
-			chorus: {
-				enabled: false,
-				rate: 2.1,
-				depth: 1,
-				mix: 0,
+			random: {
+				rate: 2,
 			},
-			delay: {
-				enabled: false,
-				time: 0.3,
-				feedback: 0.35,
-				mix: 0,
+			modEnv: {
+				attack: 0.01,
+				decay: 0.1,
+				sustain: 0.5,
+				release: 0.2,
 			},
-			vibrato: {
-				enabled: false,
-				waveform: 1,
-				rate: 30,
-				depth: 30,
-				delay: 0,
-			},
+			fxSlots: [
+				{
+					type: "chorus",
+					params: {
+						enabled: false,
+						rate: 2.1,
+						depth: 1,
+						mix: 0,
+					},
+				},
+				{
+					type: "delay",
+					params: {
+						enabled: false,
+						time: 0.3,
+						feedback: 0.35,
+						mix: 0,
+					},
+				},
+				{
+					type: "vibrato",
+					params: {
+						enabled: false,
+						waveform: 1,
+						rate: 30,
+						depth: 30,
+						delay: 0,
+					},
+				},
+				{ type: "empty" },
+				{ type: "empty" },
+				{ type: "empty" },
+			],
 			portamento: {
 				enabled: false,
 				mode: "rate",
@@ -1705,7 +1772,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 					window: "off",
 				},
 			},
-			intPmEnabled: false,
 			intPmAmount: 0,
 			intPmRatio: 1.9931265024038458,
 			extPmAmount: 0,
@@ -1714,25 +1780,48 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 			volume: 1,
 			polyMode: "poly8",
 			legato: false,
-			chorus: {
-				enabled: false,
-				rate: 1.0637961647727274,
-				depth: 0.5464311079545454,
-				mix: 0.24906782670454547,
+			random: {
+				rate: 2,
 			},
-			delay: {
-				enabled: false,
-				time: 0.5631665039062499,
-				feedback: 0.14724469866071424,
-				mix: 0.265625,
+			modEnv: {
+				attack: 0.01,
+				decay: 0.1,
+				sustain: 0.5,
+				release: 0.2,
 			},
-			vibrato: {
-				enabled: false,
-				waveform: 1,
-				rate: 30,
-				depth: 30,
-				delay: 0,
-			},
+			fxSlots: [
+				{
+					type: "chorus",
+					params: {
+						enabled: false,
+						rate: 1.0637961647727274,
+						depth: 0.5464311079545454,
+						mix: 0.24906782670454547,
+					},
+				},
+				{
+					type: "delay",
+					params: {
+						enabled: false,
+						time: 0.5631665039062499,
+						feedback: 0.14724469866071424,
+						mix: 0.265625,
+					},
+				},
+				{
+					type: "vibrato",
+					params: {
+						enabled: false,
+						waveform: 1,
+						rate: 30,
+						depth: 30,
+						delay: 0,
+					},
+				},
+				{ type: "empty" },
+				{ type: "empty" },
+				{ type: "empty" },
+			],
 			portamento: {
 				enabled: false,
 				mode: "rate",
@@ -2032,7 +2121,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 					window: "off",
 				},
 			},
-			intPmEnabled: false,
 			intPmAmount: 0,
 			intPmRatio: 2,
 			extPmAmount: 0,
@@ -2041,25 +2129,48 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 			volume: 1,
 			polyMode: "poly8",
 			legato: false,
-			chorus: {
-				enabled: false,
-				rate: 0.8,
-				depth: 3,
-				mix: 0,
+			random: {
+				rate: 2,
 			},
-			delay: {
-				enabled: false,
-				time: 0.3,
-				feedback: 0.35,
-				mix: 0,
+			modEnv: {
+				attack: 0.01,
+				decay: 0.1,
+				sustain: 0.5,
+				release: 0.2,
 			},
-			vibrato: {
-				enabled: false,
-				waveform: 1,
-				rate: 30,
-				depth: 30,
-				delay: 0,
-			},
+			fxSlots: [
+				{
+					type: "chorus",
+					params: {
+						enabled: false,
+						rate: 0.8,
+						depth: 3,
+						mix: 0,
+					},
+				},
+				{
+					type: "delay",
+					params: {
+						enabled: false,
+						time: 0.3,
+						feedback: 0.35,
+						mix: 0,
+					},
+				},
+				{
+					type: "vibrato",
+					params: {
+						enabled: false,
+						waveform: 1,
+						rate: 30,
+						depth: 30,
+						delay: 0,
+					},
+				},
+				{ type: "empty" },
+				{ type: "empty" },
+				{ type: "empty" },
+			],
 			portamento: {
 				enabled: false,
 				mode: "rate",
@@ -2359,7 +2470,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 					window: "off",
 				},
 			},
-			intPmEnabled: false,
 			intPmAmount: 0,
 			intPmRatio: 0.5,
 			extPmAmount: 0,
@@ -2368,25 +2478,48 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 			volume: 1,
 			polyMode: "poly8",
 			legato: false,
-			chorus: {
-				enabled: false,
-				rate: 2.1,
-				depth: 0.6099520596590908,
-				mix: 1,
+			random: {
+				rate: 2,
 			},
-			delay: {
-				enabled: false,
-				time: 0.554091796875,
-				feedback: 0.3257254464285714,
-				mix: 0,
+			modEnv: {
+				attack: 0.01,
+				decay: 0.1,
+				sustain: 0.5,
+				release: 0.2,
 			},
-			vibrato: {
-				enabled: true,
-				waveform: 1,
-				rate: 8.93701171875,
-				depth: 12.68994140625,
-				delay: 0,
-			},
+			fxSlots: [
+				{
+					type: "chorus",
+					params: {
+						enabled: false,
+						rate: 2.1,
+						depth: 0.6099520596590908,
+						mix: 1,
+					},
+				},
+				{
+					type: "delay",
+					params: {
+						enabled: false,
+						time: 0.554091796875,
+						feedback: 0.3257254464285714,
+						mix: 0,
+					},
+				},
+				{
+					type: "vibrato",
+					params: {
+						enabled: true,
+						waveform: 1,
+						rate: 8.93701171875,
+						depth: 12.68994140625,
+						delay: 0,
+					},
+				},
+				{ type: "empty" },
+				{ type: "empty" },
+				{ type: "empty" },
+			],
 			portamento: {
 				enabled: false,
 				mode: "rate",
@@ -2686,7 +2819,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 					window: "off",
 				},
 			},
-			intPmEnabled: false,
 			intPmAmount: 0,
 			intPmRatio: 2,
 			extPmAmount: 0,
@@ -2695,25 +2827,48 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 			volume: 1,
 			polyMode: "poly8",
 			legato: false,
-			chorus: {
-				enabled: false,
-				rate: 0.8,
-				depth: 1,
-				mix: 0,
+			random: {
+				rate: 2,
 			},
-			delay: {
-				enabled: false,
-				time: 0.3,
-				feedback: 0.35,
-				mix: 0,
+			modEnv: {
+				attack: 0.01,
+				decay: 0.1,
+				sustain: 0.5,
+				release: 0.2,
 			},
-			vibrato: {
-				enabled: false,
-				waveform: 1,
-				rate: 30,
-				depth: 30,
-				delay: 0,
-			},
+			fxSlots: [
+				{
+					type: "chorus",
+					params: {
+						enabled: false,
+						rate: 0.8,
+						depth: 1,
+						mix: 0,
+					},
+				},
+				{
+					type: "delay",
+					params: {
+						enabled: false,
+						time: 0.3,
+						feedback: 0.35,
+						mix: 0,
+					},
+				},
+				{
+					type: "vibrato",
+					params: {
+						enabled: false,
+						waveform: 1,
+						rate: 30,
+						depth: 30,
+						delay: 0,
+					},
+				},
+				{ type: "empty" },
+				{ type: "empty" },
+				{ type: "empty" },
+			],
 			portamento: {
 				enabled: false,
 				mode: "rate",
@@ -3013,7 +3168,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 					window: "off",
 				},
 			},
-			intPmEnabled: false,
 			intPmAmount: 0,
 			intPmRatio: 2.5,
 			extPmAmount: 0,
@@ -3022,25 +3176,48 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 			volume: 1,
 			polyMode: "poly8",
 			legato: false,
-			chorus: {
-				enabled: false,
-				rate: 0.8,
-				depth: 3,
-				mix: 0.61,
+			random: {
+				rate: 2,
 			},
-			delay: {
-				enabled: false,
-				time: 0.41,
-				feedback: 0.35,
-				mix: 0.27,
+			modEnv: {
+				attack: 0.01,
+				decay: 0.1,
+				sustain: 0.5,
+				release: 0.2,
 			},
-			vibrato: {
-				enabled: false,
-				waveform: 1,
-				rate: 30,
-				depth: 30,
-				delay: 0,
-			},
+			fxSlots: [
+				{
+					type: "chorus",
+					params: {
+						enabled: false,
+						rate: 0.8,
+						depth: 3,
+						mix: 0.61,
+					},
+				},
+				{
+					type: "delay",
+					params: {
+						enabled: false,
+						time: 0.41,
+						feedback: 0.35,
+						mix: 0.27,
+					},
+				},
+				{
+					type: "vibrato",
+					params: {
+						enabled: false,
+						waveform: 1,
+						rate: 30,
+						depth: 30,
+						delay: 0,
+					},
+				},
+				{ type: "empty" },
+				{ type: "empty" },
+				{ type: "empty" },
+			],
 			portamento: {
 				enabled: false,
 				mode: "rate",
@@ -3396,7 +3573,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				],
 			},
 			intPmAmount: 0,
-			intPmEnabled: false,
 			intPmRatio: 2,
 			extPmAmount: 0,
 			pmPre: true,
@@ -3404,25 +3580,48 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 			volume: 1,
 			polyMode: "poly8",
 			legato: false,
-			chorus: {
-				enabled: false,
-				rate: 1.39,
-				depth: 0.32,
-				mix: 0,
+			random: {
+				rate: 2,
 			},
-			delay: {
-				enabled: false,
-				time: 0.3,
-				feedback: 0.35,
-				mix: 0.37,
+			modEnv: {
+				attack: 0.01,
+				decay: 0.1,
+				sustain: 0.5,
+				release: 0.2,
 			},
-			vibrato: {
-				enabled: true,
-				waveform: 1,
-				rate: 7.43,
-				depth: 15.69,
-				delay: 0,
-			},
+			fxSlots: [
+				{
+					type: "chorus",
+					params: {
+						enabled: false,
+						rate: 1.39,
+						depth: 0.32,
+						mix: 0,
+					},
+				},
+				{
+					type: "delay",
+					params: {
+						enabled: false,
+						time: 0.3,
+						feedback: 0.35,
+						mix: 0.37,
+					},
+				},
+				{
+					type: "vibrato",
+					params: {
+						enabled: true,
+						waveform: 1,
+						rate: 7.43,
+						depth: 15.69,
+						delay: 0,
+					},
+				},
+				{ type: "empty" },
+				{ type: "empty" },
+				{ type: "empty" },
+			],
 			portamento: {
 				enabled: false,
 				mode: "rate",
@@ -3725,7 +3924,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 					window: "off",
 				},
 			},
-			intPmEnabled: false,
 			intPmAmount: 0,
 			intPmRatio: 4,
 			extPmAmount: 0,
@@ -3734,25 +3932,48 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 			volume: 1,
 			polyMode: "poly8",
 			legato: false,
-			chorus: {
-				enabled: false,
-				rate: 2.1,
-				depth: 1,
-				mix: 0.54,
+			random: {
+				rate: 2,
 			},
-			delay: {
-				enabled: false,
-				time: 0.3,
-				feedback: 0.35,
-				mix: 0.17,
+			modEnv: {
+				attack: 0.01,
+				decay: 0.1,
+				sustain: 0.5,
+				release: 0.2,
 			},
-			vibrato: {
-				enabled: false,
-				waveform: 1,
-				rate: 30,
-				depth: 30,
-				delay: 0,
-			},
+			fxSlots: [
+				{
+					type: "chorus",
+					params: {
+						enabled: false,
+						rate: 2.1,
+						depth: 1,
+						mix: 0.54,
+					},
+				},
+				{
+					type: "delay",
+					params: {
+						enabled: false,
+						time: 0.3,
+						feedback: 0.35,
+						mix: 0.17,
+					},
+				},
+				{
+					type: "vibrato",
+					params: {
+						enabled: false,
+						waveform: 1,
+						rate: 30,
+						depth: 30,
+						delay: 0,
+					},
+				},
+				{ type: "empty" },
+				{ type: "empty" },
+				{ type: "empty" },
+			],
 			portamento: {
 				enabled: false,
 				mode: "rate",

@@ -12,8 +12,10 @@ export async function waitForBridge(page: Page): Promise<void> {
 }
 
 export async function setupPluginPage(page: Page): Promise<void> {
-	await page.goto("/");
-	await page.waitForLoadState("networkidle");
+	await page.addInitScript(() => {
+		localStorage.setItem("cz-plugin-ui-scale", "100");
+	});
+	await page.goto("/", { waitUntil: "domcontentloaded" });
 	await waitForBridge(page);
 	await expect(page.getByText("COSMO").first()).toBeVisible({ timeout: 5000 });
 	await page.evaluate(() => window.__MOCK_BRIDGE__?.clearMessages());

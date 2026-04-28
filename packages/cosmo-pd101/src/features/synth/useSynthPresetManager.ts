@@ -110,13 +110,14 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function roundNumber(value: number): number {
+	return Math.round(value * 1e6) / 1e6;
+}
+
 function formatDiffValue(value: unknown): string {
 	if (typeof value === "string") return `"${value}"`;
-	if (
-		typeof value === "number" ||
-		typeof value === "boolean" ||
-		value === null
-	) {
+	if (typeof value === "number") return String(roundNumber(value));
+	if (typeof value === "boolean" || value === null) {
 		return String(value);
 	}
 	if (Array.isArray(value)) return `[${value.length} items]`;
@@ -132,7 +133,13 @@ function collectPresetDiffs(
 	path = "",
 	maxEntries = 200,
 ): void {
-	if (out.length >= maxEntries || Object.is(previousValue, nextValue)) {
+	const normalizedPrev =
+		typeof previousValue === "number"
+			? roundNumber(previousValue)
+			: previousValue;
+	const normalizedNext =
+		typeof nextValue === "number" ? roundNumber(nextValue) : nextValue;
+	if (out.length >= maxEntries || Object.is(normalizedPrev, normalizedNext)) {
 		return;
 	}
 
