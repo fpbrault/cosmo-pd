@@ -458,6 +458,28 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 		}
 	}
 
+	_emitRuntimeVoiceStates() {
+		if (
+			!this._synth ||
+			typeof this._synth.getRuntimeVoiceStates !== "function"
+		) {
+			return;
+		}
+
+		try {
+			const voices = JSON.parse(this._synth.getRuntimeVoiceStates());
+			this.port.postMessage({
+				type: "runtimeVoiceStates",
+				voices,
+			});
+		} catch (err) {
+			console.error(
+				"[czSynthWorklet] Failed to read runtime voice states:",
+				err,
+			);
+		}
+	}
+
 	// ── Audio render loop ─────────────────────────────────────────────────
 
 	process(_inputs, outputs, _params) {
@@ -477,6 +499,7 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 		if (this._runtimeTelemetryCounter >= this._runtimeTelemetryDivider) {
 			this._runtimeTelemetryCounter = 0;
 			this._emitRuntimeModSources();
+			this._emitRuntimeVoiceStates();
 		}
 
 		// Copy to right channel if present

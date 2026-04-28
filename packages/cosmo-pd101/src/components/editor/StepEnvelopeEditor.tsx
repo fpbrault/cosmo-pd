@@ -16,7 +16,24 @@ interface StepEnvelopeEditorProps {
 	compact?: boolean;
 	lineIndex?: 1 | 2;
 	envKind?: EnvKind;
+	voiceMarkers?: StepEnvelopeVoiceMarker[];
 }
+
+export type StepEnvelopeVoiceMarker = {
+	id: string | number;
+	step: number;
+	progress?: number;
+	releasing?: boolean;
+	color?: string;
+};
+
+type StepEnvelopePreviewProps = {
+	env: StepEnvData;
+	color: string;
+	title: string;
+	active?: boolean;
+	onClick: () => void;
+};
 
 type EnvPoint = {
 	index: number;
@@ -113,6 +130,22 @@ function buildEnvelopePoints(
 	return points;
 }
 
+function getMarkerX(
+	points: EnvPoint[],
+	marker: StepEnvelopeVoiceMarker,
+): number | null {
+	if (points.length === 0) return null;
+	const stepIndex = clamp(Math.round(marker.step), 0, points.length - 1);
+	const point = points[stepIndex];
+	if (!point) return null;
+
+	if (marker.progress === undefined) return point.x;
+
+	const fromX = stepIndex === 0 ? CHART_PADDING_X : points[stepIndex - 1].x;
+	const progress = clamp(marker.progress, 0, 1);
+	return fromX + (point.x - fromX) * progress;
+}
+
 function findClosestPoint(
 	points: EnvPoint[],
 	x: number,
@@ -141,6 +174,8 @@ function drawEnvPreview(
 	env: StepEnvData,
 	color: string,
 	highlightStep: number | null,
+	voiceMarkers: StepEnvelopeVoiceMarker[] = [],
+	preview = false,
 ) {
 	const ctx = canvas.getContext("2d");
 	if (!ctx) return;
@@ -152,7 +187,9 @@ function drawEnvPreview(
 	ctx.fillStyle = "rgba(0,0,0,0.3)";
 	ctx.fillRect(0, 0, w, h);
 
-	ctx.strokeStyle = "rgba(100,100,100,0.3)";
+	ctx.strokeStyle = preview
+		? "rgba(100,100,100,0.18)"
+		: "rgba(100,100,100,0.3)";
 	ctx.lineWidth = 1;
 	for (let y = 0.25; y < 1; y += 0.25) {
 		ctx.beginPath();
@@ -163,7 +200,7 @@ function drawEnvPreview(
 	const points = buildEnvelopePoints(env, w, h);
 
 	ctx.strokeStyle = color;
-	ctx.lineWidth = 2;
+	ctx.lineWidth = preview ? 1.5 : 2;
 	ctx.beginPath();
 	ctx.moveTo(CHART_PADDING_X, CHART_PADDING_Y + drawHeight);
 	for (let i = 0; i < points.length; i++) {
@@ -174,7 +211,8 @@ function drawEnvPreview(
 	const susStep = Math.min(env.sustainStep, env.stepCount - 1);
 	if (susStep >= 0 && susStep < points.length) {
 		const sp = points[susStep];
-		ctx.strokeStyle = "rgba(255,200,0,0.6)";
+		ctx.strokeStyle = preview ? "rgba(255,200,0,0.45)" : "rgba(255,200,0,0.6)";
+		ctx.lineWidth = preview ? 0.8 : 1;
 		ctx.setLineDash([3, 3]);
 		ctx.beginPath();
 		ctx.moveTo(sp.x, CHART_PADDING_Y);
@@ -182,6 +220,23 @@ function drawEnvPreview(
 		ctx.stroke();
 		ctx.setLineDash([]);
 	}
+
+	for (const marker of voiceMarkers) {
+		const x = getMarkerX(points, marker);
+		if (x === null) continue;
+
+		ctx.strokeStyle =
+			marker.color ?? (marker.releasing ? "#f59e0b" : "#f8fafc");
+		ctx.lineWidth = marker.releasing ? 1 : 1.5;
+		ctx.globalAlpha = marker.releasing ? 0.65 : 0.9;
+		ctx.beginPath();
+		ctx.moveTo(x, CHART_PADDING_Y);
+		ctx.lineTo(x, h - CHART_PADDING_Y);
+		ctx.stroke();
+		ctx.globalAlpha = 1;
+	}
+
+	if (preview) return;
 
 	for (let i = 0; i < points.length; i++) {
 		const p = points[i];
@@ -201,6 +256,54 @@ function drawEnvPreview(
 	}
 }
 
+export const StepEnvelopePreview = memo(function StepEnvelopePreview({
+	env,
+	color,
+	title,
+	active = false,
+	onClick,
+}: StepEnvelopePreviewProps) {
+	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const normalizedEnv = normalizeEnvelope(env);
+
+	useEffect(() => {
+		if (canvasRef.current) {
+			drawEnvPreview(canvasRef.current, normalizedEnv, color, null, [], true);
+		}
+	}, [normalizedEnv, color]);
+
+	return (
+		<button
+			type="button"
+			onClick={onClick}
+			aria-pressed={active}
+			aria-label={`Show ${title} envelope`}
+			className={`group min-w-0 rounded-md border bg-cz-inset/80 p-1.5 transition-colors focus:outline-none focus:ring-1 focus:ring-cz-light-blue ${
+				active
+					? "border-cz-gold/70 shadow-[0_0_0_1px_rgba(251,191,36,0.28)]"
+					: "border-cz-border/70 hover:border-cz-cream/50"
+			}`}
+		>
+			<canvas
+				ref={canvasRef}
+				width={220}
+				height={54}
+				className="block h-12 w-full rounded bg-black/25"
+			/>
+			<div className="mt-1 flex items-center justify-between gap-2 px-0.5">
+				<span className="truncate text-[0.55rem] font-semibold uppercase tracking-[0.18em] text-cz-cream-dim group-hover:text-cz-cream">
+					{title}
+				</span>
+				<span
+					className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+						active ? "bg-cz-gold" : "bg-cz-border"
+					}`}
+				/>
+			</div>
+		</button>
+	);
+});
+
 export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 	title,
 	env,
@@ -209,6 +312,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 	compact = false,
 	lineIndex = 1,
 	envKind = "dco",
+	voiceMarkers = [],
 }: StepEnvelopeEditorProps) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const [hoverStep, setHoverStep] = useState<number | null>(null);
@@ -232,9 +336,10 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 				normalizedEnv,
 				color,
 				dragState?.stepIndex ?? hoverStep,
+				voiceMarkers,
 			);
 		}
-	}, [normalizedEnv, color, hoverStep, dragState]);
+	}, [normalizedEnv, color, hoverStep, dragState, voiceMarkers]);
 
 	const commitEnvelope = useCallback(
 		(nextEnv: StepEnvData) => {

@@ -146,6 +146,21 @@ impl CzSynthProcessor {
         }
     }
 
+    /// Return the latest per-voice envelope state as JSON for UI telemetry.
+    #[wasm_bindgen(js_name = getRuntimeVoiceStates)]
+    pub fn get_runtime_voice_states(&self) -> String {
+        match serde_json::to_string(&self.inner.runtime_voice_debug_state()) {
+            Ok(json) => json,
+            Err(e) => {
+                web_sys::console::error_1(
+                    &format!("[cosmo-synth-engine] getRuntimeVoiceStates serialize error: {e}")
+                        .into(),
+                );
+                String::from("[]")
+            }
+        }
+    }
+
     /// Fill `output` with mono samples rendered by the DSP engine.
     ///
     /// The caller passes a `Float32Array` slice backed by WASM linear memory.
