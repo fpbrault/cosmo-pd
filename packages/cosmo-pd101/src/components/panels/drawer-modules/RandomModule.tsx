@@ -1,6 +1,7 @@
 import ControlKnob from "@/components/controls/ControlKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { resolveTargetFromMetadata } from "@/lib/synth/modTargets";
 import { PARAM_META } from "@/lib/synth/paramMeta";
 
 export default function RandomModule() {
@@ -18,6 +19,7 @@ export default function RandomModule() {
 				color="#c2571a"
 				label="Rate"
 				tooltip={PARAM_META.randomRate?.tooltip}
+				modDestination={resolveTargetFromMetadata("random.rate")}
 				valueFormatter={(v) => `${v.toFixed(2)}Hz`}
 			/>
 		</ModuleFrame>

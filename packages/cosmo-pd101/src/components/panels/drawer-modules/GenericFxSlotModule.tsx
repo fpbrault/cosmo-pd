@@ -77,7 +77,11 @@ export default function GenericFxSlotModule({
 								<Button
 									key={opt.value}
 									type="button"
-									className={(params[ctrl.param] as number) === opt.value ? "join-item btn btn-sm btn-primary" : "join-item btn btn-sm btn-outline btn-primary"}
+									className={
+										(params[ctrl.param] as number) === opt.value
+											? "join-item btn btn-sm btn-primary"
+											: "join-item btn btn-sm btn-outline btn-primary"
+									}
 									onClick={() =>
 										setFxSlotParams(slot, { [ctrl.param]: opt.value })
 									}

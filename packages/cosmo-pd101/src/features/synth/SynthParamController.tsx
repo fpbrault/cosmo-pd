@@ -19,6 +19,11 @@ import {
 	type ModTarget,
 	resolveModDestination,
 } from "@/lib/synth/modDestination";
+import {
+	type ModTargetContext,
+	type ModTargetKey,
+	resolveTargetFromMetadata,
+} from "@/lib/synth/modTargets";
 
 const SYNTH_PARAM_SETTERS = {
 	lineSelect: "setLineSelect",
@@ -135,8 +140,16 @@ type SynthParamController = {
 		target: ModTarget | undefined,
 		options?: { lineIndex?: 1 | 2 },
 	) => ModDestination | undefined;
+	resolveDestinationFromKey: (
+		key: ModTargetKey,
+		context?: ModTargetContext,
+	) => ModDestination | undefined;
 	getRouteCount: (destination: ModDestination | undefined) => number;
 	hasActiveRoutes: (destination: ModDestination | undefined) => boolean;
+	hasActiveRoutesForKey: (
+		key: ModTargetKey,
+		context?: ModTargetContext,
+	) => boolean;
 	getLiveSources: () => LiveModSources;
 	getModulatedValue: (params: {
 		destination: ModDestination | undefined;
@@ -220,6 +233,12 @@ export function SynthParamControllerProvider({
 		[],
 	);
 
+	const resolveDestinationFromKey = useCallback(
+		(key: ModTargetKey, context?: ModTargetContext) =>
+			resolveTargetFromMetadata(key, context),
+		[],
+	);
+
 	const getRouteCount = useCallback(
 		(destination: ModDestination | undefined) => {
 			if (!destination) {
@@ -235,6 +254,14 @@ export function SynthParamControllerProvider({
 	const hasActiveRoutes = useCallback(
 		(destination: ModDestination | undefined) => getRouteCount(destination) > 0,
 		[getRouteCount],
+	);
+
+	const hasActiveRoutesForKey = useCallback(
+		(key: ModTargetKey, context?: ModTargetContext) => {
+			const destination = resolveDestinationFromKey(key, context);
+			return getRouteCount(destination) > 0;
+		},
+		[getRouteCount, resolveDestinationFromKey],
 	);
 
 	const getModulatedValue = useCallback(
@@ -263,7 +290,8 @@ export function SynthParamControllerProvider({
 			}
 
 			const clampedLiveModDelta = Math.max(-2, Math.min(2, liveModDelta));
-			return baseValue + clampedLiveModDelta;
+			const visualModScale = destination.includes("EnvStep") ? 127 : 1;
+			return baseValue + clampedLiveModDelta * visualModScale;
 		},
 		[liveSources, modRoutes],
 	);
@@ -273,8 +301,10 @@ export function SynthParamControllerProvider({
 			getParam,
 			setParam,
 			resolveDestination,
+			resolveDestinationFromKey,
 			getRouteCount,
 			hasActiveRoutes,
+			hasActiveRoutesForKey,
 			getLiveSources: () => liveSources,
 			getModulatedValue,
 		}),
@@ -282,8 +312,10 @@ export function SynthParamControllerProvider({
 			getParam,
 			setParam,
 			resolveDestination,
+			resolveDestinationFromKey,
 			getRouteCount,
 			hasActiveRoutes,
+			hasActiveRoutesForKey,
 			liveSources,
 			getModulatedValue,
 		],

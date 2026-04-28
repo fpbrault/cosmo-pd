@@ -5,6 +5,445 @@ import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
  * Converted to canonical SynthPresetV1 format.
  */
 export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
+	Stutters: {
+		schemaVersion: 1,
+		params: {
+			lineSelect: "L1",
+			modMode: "normal",
+			octave: 0,
+			line1: {
+				algo: "cz101",
+				algo2: null,
+				algoBlend: 0,
+				window: "off",
+				dcaBase: 1,
+				dcwBase: 0.43,
+				modulation: 0,
+				detuneCents: 0,
+				octave: 0,
+				dcoEnv: {
+					steps: [
+						{
+							level: 0,
+							rate: 0,
+						},
+						{
+							level: 0,
+							rate: 0,
+						},
+						{
+							level: 0,
+							rate: 0,
+						},
+						{
+							level: 0,
+							rate: 0,
+						},
+						{
+							level: 0,
+							rate: 0,
+						},
+						{
+							level: 0,
+							rate: 0,
+						},
+						{
+							level: 0,
+							rate: 0,
+						},
+						{
+							level: 0,
+							rate: 0,
+						},
+					],
+					sustainStep: 1,
+					stepCount: 2,
+					loop: false,
+				},
+				dcwEnv: {
+					steps: [
+						{
+							level: 99,
+							rate: 75,
+						},
+						{
+							level: 0,
+							rate: 93,
+						},
+						{
+							level: 99,
+							rate: 75,
+						},
+						{
+							level: 0,
+							rate: 20.495841974381896,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 2,
+					stepCount: 4,
+					loop: true,
+				},
+				dcaEnv: {
+					steps: [
+						{
+							level: 99,
+							rate: 75,
+						},
+						{
+							level: 79,
+							rate: 80,
+						},
+						{
+							level: 79,
+							rate: 75,
+						},
+						{
+							level: 0,
+							rate: 40,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 2,
+					stepCount: 4,
+					loop: false,
+				},
+				keyFollow: 0,
+				cz: {
+					slotAWaveform: "saw",
+					slotBWaveform: "saw",
+					window: "off",
+				},
+				algoControlsA: [],
+				algoControlsB: [],
+			},
+			line2: {
+				algo: "cz101",
+				algo2: null,
+				algoBlend: 0,
+				window: "off",
+				dcaBase: 1,
+				dcwBase: 1,
+				modulation: 0,
+				detuneCents: 0,
+				octave: 0,
+				dcoEnv: {
+					steps: [
+						{
+							level: 0,
+							rate: 0,
+						},
+						{
+							level: 0,
+							rate: 0,
+						},
+						{
+							level: 0,
+							rate: 0,
+						},
+						{
+							level: 0,
+							rate: 0,
+						},
+						{
+							level: 0,
+							rate: 0,
+						},
+						{
+							level: 0,
+							rate: 0,
+						},
+						{
+							level: 0,
+							rate: 0,
+						},
+						{
+							level: 0,
+							rate: 0,
+						},
+					],
+					sustainStep: 1,
+					stepCount: 2,
+					loop: false,
+				},
+				dcwEnv: {
+					steps: [
+						{
+							level: 99,
+							rate: 75,
+						},
+						{
+							level: 99,
+							rate: 80,
+						},
+						{
+							level: 99,
+							rate: 75,
+						},
+						{
+							level: 0,
+							rate: 40,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 2,
+					stepCount: 4,
+					loop: false,
+				},
+				dcaEnv: {
+					steps: [
+						{
+							level: 99,
+							rate: 75,
+						},
+						{
+							level: 79,
+							rate: 80,
+						},
+						{
+							level: 79,
+							rate: 75,
+						},
+						{
+							level: 0,
+							rate: 40,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 2,
+					stepCount: 4,
+					loop: false,
+				},
+				keyFollow: 0,
+				cz: {
+					slotAWaveform: "saw",
+					slotBWaveform: "saw",
+					window: "off",
+				},
+				algoControlsA: [],
+				algoControlsB: [],
+			},
+			intPmAmount: 0,
+			intPmEnabled: false,
+			intPmRatio: 2,
+			extPmAmount: 0,
+			pmPre: true,
+			frequency: 440,
+			volume: 1,
+			polyMode: "poly8",
+			legato: false,
+			chorus: {
+				enabled: false,
+				rate: 0.8,
+				depth: 1,
+				mix: 0,
+			},
+			delay: {
+				enabled: true,
+				time: 0.32509807275448527,
+				feedback: 0.6942499901907784,
+				mix: 0.22992186818804064,
+				tapeMode: true,
+				warmth: 0.5,
+			},
+			reverb: {
+				enabled: true,
+				mix: 0.29339843068804056,
+				space: 0.7592773478371756,
+				predelay: 0.048013670512608124,
+				distance: 0.5,
+				character: 0.4055664035252162,
+			},
+			phaser: {
+				enabled: false,
+				rate: 0.5,
+				depth: 1,
+				mix: 0,
+				feedback: 0.5,
+			},
+			vibrato: {
+				enabled: false,
+				waveform: 1,
+				rate: 30,
+				depth: 30,
+				delay: 0,
+			},
+			portamento: {
+				enabled: false,
+				mode: "time",
+				rate: 50,
+				time: 0.1,
+			},
+			lfo: {
+				waveform: "sine",
+				rate: 0.13350514003208705,
+				depth: 0.28801865577697755,
+				symmetry: 0.5,
+				retrigger: false,
+				offset: 0.059453230265841456,
+			},
+			lfo2: {
+				waveform: "sine",
+				rate: 5,
+				depth: 0,
+				symmetry: 0.5,
+				retrigger: false,
+				offset: 0,
+			},
+			random: {
+				rate: 2,
+			},
+			modEnv: {
+				attack: 1.1107421193804057,
+				decay: 2.215937523841858,
+				sustain: 0.903105457850865,
+				release: 2.761523483480726,
+			},
+			filter: {
+				enabled: false,
+				type: "lp",
+				cutoff: 5000,
+				resonance: 0,
+				envAmount: 0,
+			},
+			pitchBendRange: 2,
+			modWheelVibratoDepth: 0,
+			modMatrix: {
+				routes: [
+					{
+						source: "modEnv",
+						destination: "line1DcwEnvStep4Rate",
+						amount: 0.1739453125,
+						enabled: true,
+					},
+					{
+						source: "velocity",
+						destination: "line1DcwBase",
+						amount: 1,
+						enabled: true,
+					},
+				],
+			},
+			fxSlots: [
+				{
+					type: "chorus",
+					params: {
+						enabled: true,
+						rate: 1.8,
+						depth: 2.6,
+						mix: 0.25855467932564874,
+					},
+				},
+				{
+					type: "phaser",
+					params: {
+						enabled: true,
+						rate: 0.35,
+						depth: 0.45,
+						mix: 0.25,
+						feedback: 0.2,
+					},
+				},
+				{
+					type: "empty",
+				},
+				{
+					type: "compressor",
+					params: {
+						enabled: true,
+						thresholdDb: -12,
+						ratio: 4,
+						attackMs: 5,
+						releaseMs: 100,
+						makeupDb: 6,
+						mix: 1,
+					},
+				},
+				{
+					type: "delay",
+					params: {
+						enabled: true,
+						time: 0.34,
+						feedback: 0.46,
+						mix: 0.35,
+						tapeMode: true,
+						warmth: 0.72,
+					},
+				},
+				{
+					type: "reverb",
+					params: {
+						enabled: true,
+						mix: 0.47,
+						space: 0.8229687554495675,
+						predelay: 0.03,
+						distance: 0.68,
+						character: 0.2902343913487026,
+					},
+				},
+			],
+		},
+	},
 	Clav2: {
 		schemaVersion: 1,
 		params: {
@@ -316,10 +755,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				feedback: 0.35,
 				mix: 0,
 			},
-			reverb: {
-				size: 0.5,
-				mix: 0,
-			},
 			vibrato: {
 				enabled: false,
 				waveform: 1,
@@ -334,11 +769,12 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				time: 0.5,
 			},
 			lfo: {
-				enabled: false,
 				waveform: "sine",
 				rate: 5,
 				depth: 0.28284801136363635,
 				offset: 0,
+				symmetry: 0,
+				retrigger: false,
 			},
 			filter: {
 				enabled: false,
@@ -672,10 +1108,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				feedback: 0.35,
 				mix: 0,
 			},
-			reverb: {
-				size: 0.5,
-				mix: 0,
-			},
 			vibrato: {
 				enabled: false,
 				waveform: 1,
@@ -690,11 +1122,12 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				time: 0.5,
 			},
 			lfo: {
-				enabled: false,
 				waveform: "sine",
 				rate: 5,
 				depth: 0,
 				offset: 0,
+				symmetry: 0,
+				retrigger: false,
 			},
 			filter: {
 				enabled: false,
@@ -1002,11 +1435,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				feedback: 0.35,
 				mix: 0,
 			},
-			reverb: {
-				enabled: false,
-				size: 0,
-				mix: 0,
-			},
 			vibrato: {
 				enabled: false,
 				waveform: 1,
@@ -1021,11 +1449,12 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				time: 0.5,
 			},
 			lfo: {
-				enabled: false,
 				waveform: "sine",
 				rate: 5,
 				depth: 0,
 				offset: 0,
+				symmetry: 0,
+				retrigger: false,
 			},
 			filter: {
 				enabled: false,
@@ -1333,11 +1762,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				feedback: 0.14724469866071424,
 				mix: 0.265625,
 			},
-			reverb: {
-				enabled: false,
-				size: 0.5,
-				mix: 0,
-			},
 			vibrato: {
 				enabled: false,
 				waveform: 1,
@@ -1352,11 +1776,12 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				time: 0.5,
 			},
 			lfo: {
-				enabled: true,
 				waveform: "sine",
 				rate: 0.4674183238636367,
 				depth: 0.14038085937499994,
 				offset: 0,
+				symmetry: 0,
+				retrigger: false,
 			},
 			filter: {
 				enabled: false,
@@ -1664,11 +2089,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				feedback: 0.35,
 				mix: 0,
 			},
-			reverb: {
-				enabled: false,
-				size: 0.5,
-				mix: 0,
-			},
 			vibrato: {
 				enabled: false,
 				waveform: 1,
@@ -1683,11 +2103,12 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				time: 0.5,
 			},
 			lfo: {
-				enabled: false,
 				waveform: "sine",
 				rate: 5,
 				depth: 0,
 				offset: 0,
+				symmetry: 0,
+				retrigger: false,
 			},
 			filter: {
 				enabled: false,
@@ -1995,11 +2416,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				feedback: 0.3257254464285714,
 				mix: 0,
 			},
-			reverb: {
-				enabled: false,
-				size: 0.5,
-				mix: 0,
-			},
 			vibrato: {
 				enabled: true,
 				waveform: 1,
@@ -2014,11 +2430,12 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				time: 0.5,
 			},
 			lfo: {
-				enabled: false,
 				waveform: "triangle",
 				rate: 0.5260120738636367,
 				depth: 0.8219549005681819,
 				offset: 0,
+				symmetry: 0,
+				retrigger: false,
 			},
 			filter: {
 				enabled: false,
@@ -2326,11 +2743,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				feedback: 0.35,
 				mix: 0,
 			},
-			reverb: {
-				enabled: false,
-				size: 0.5,
-				mix: 0,
-			},
 			vibrato: {
 				enabled: false,
 				waveform: 1,
@@ -2345,11 +2757,12 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				time: 0.5,
 			},
 			lfo: {
-				enabled: false,
 				waveform: "sine",
 				rate: 5,
 				depth: 0,
 				offset: 0,
+				symmetry: 0,
+				retrigger: false,
 			},
 			filter: {
 				enabled: false,
@@ -2657,11 +3070,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				feedback: 0.35,
 				mix: 0.27,
 			},
-			reverb: {
-				enabled: false,
-				size: 0.5,
-				mix: 0,
-			},
 			vibrato: {
 				enabled: false,
 				waveform: 1,
@@ -2676,11 +3084,12 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				time: 0.5,
 			},
 			lfo: {
-				enabled: false,
 				waveform: "sine",
 				rate: 5,
 				depth: 0,
 				offset: 0,
+				symmetry: 0,
+				retrigger: false,
 			},
 			filter: {
 				enabled: false,
@@ -3043,11 +3452,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				feedback: 0.35,
 				mix: 0.37,
 			},
-			reverb: {
-				enabled: false,
-				size: 0.78,
-				mix: 0,
-			},
 			vibrato: {
 				enabled: true,
 				waveform: 1,
@@ -3062,11 +3466,12 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				time: 0.5,
 			},
 			lfo: {
-				enabled: false,
 				waveform: "sine",
 				rate: 5,
 				depth: 0,
 				offset: 0,
+				symmetry: 0,
+				retrigger: false,
 			},
 			filter: {
 				enabled: false,
@@ -3377,11 +3782,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				feedback: 0.35,
 				mix: 0.17,
 			},
-			reverb: {
-				enabled: false,
-				size: 0.5,
-				mix: 0,
-			},
 			vibrato: {
 				enabled: false,
 				waveform: 1,
@@ -3396,11 +3796,12 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				time: 0.5,
 			},
 			lfo: {
-				enabled: false,
 				waveform: "sine",
 				rate: 5,
 				depth: 0,
 				offset: 0,
+				symmetry: 0,
+				retrigger: false,
 			},
 			filter: {
 				enabled: false,

@@ -2,6 +2,8 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import ControlKnob from "@/components/controls/ControlKnob";
 import Card from "@/components/primitives/Card";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
+import type { EnvKind } from "@/lib/synth/modTargets";
+import { resolveTargetFromMetadata } from "@/lib/synth/modTargets";
 
 const STEP_KEYS = ["s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7"] as const;
 const DEFAULT_STEP = { level: 0, rate: 50 };
@@ -12,6 +14,8 @@ interface StepEnvelopeEditorProps {
 	onChange: (env: StepEnvData) => void;
 	color?: string;
 	compact?: boolean;
+	lineIndex?: 1 | 2;
+	envKind?: EnvKind;
 }
 
 type EnvPoint = {
@@ -203,6 +207,8 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 	onChange,
 	color = "#60a5fa",
 	compact = false,
+	lineIndex = 1,
+	envKind = "dco",
 }: StepEnvelopeEditorProps) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const [hoverStep, setHoverStep] = useState<number | null>(null);
@@ -503,9 +509,8 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 					const isEndStep = i === activeStepCount - 1;
 					const isSustainStep = i === sustainStep;
 					return (
-						<div
+						<fieldset
 							key={STEP_KEYS[i]}
-							role="group"
 							aria-label={`Step ${i + 1}`}
 							className={`flex flex-col rounded-xl border px-1 transition-colors ${
 								!isActiveStep
@@ -518,7 +523,9 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 									{i + 1}
 								</div>
 							</div>
-							<div className={`flex flex-col items-center justify-center gap-2 ${!isActiveStep ? "opacity-40" : ""}`}>
+							<div
+								className={`flex flex-col items-center justify-center gap-2 ${!isActiveStep ? "opacity-40" : ""}`}
+							>
 								<ControlKnob
 									value={step.level}
 									onChange={(v) => updateStep(i, "level", v)}
@@ -537,6 +544,11 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 										!isActiveStep ? "#6b7280" : isEndStep ? "#f59e0b" : color
 									}
 									size={compact ? 26 : 30}
+									modDestination={resolveTargetFromMetadata("env.stepLevel", {
+										lineIndex,
+										envKind,
+										stepIndex: i + 1,
+									})}
 								/>
 								<ControlKnob
 									value={step.rate}
@@ -549,6 +561,11 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 									valueFormatter={(v) => `${Math.round(v)}`}
 									color={!isActiveStep ? "#6b7280" : "#a3a3a3"}
 									size={compact ? 26 : 30}
+									modDestination={resolveTargetFromMetadata("env.stepRate", {
+										lineIndex,
+										envKind,
+										stepIndex: i + 1,
+									})}
 								/>
 							</div>
 							<div className="mt-1 flex w-full flex-col gap-1 pt-1">
@@ -578,7 +595,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 									END
 								</button>
 							</div>
-						</div>
+						</fieldset>
 					);
 				})}
 			</div>

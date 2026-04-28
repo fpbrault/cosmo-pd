@@ -10,14 +10,7 @@ const ACCESSIBLE_BASE_CLASS =
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 	(
-		{
-			children,
-			active,
-			className = "",
-			disabled = false,
-			type,
-			...props
-		},
+		{ children, active, className = "", disabled = false, type, ...props },
 		ref,
 	) => {
 		const resolvedType = type ?? "button";

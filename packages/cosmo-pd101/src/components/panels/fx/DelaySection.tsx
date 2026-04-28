@@ -42,6 +42,7 @@ export function DelaySection({
 			size: 44,
 			color: "#7f9de4",
 			valueFormatter: (value) => `${Math.round(value * 1000)}ms`,
+			modTarget: "delay.time",
 		},
 		{
 			label: "Dly Fdbk",
@@ -53,6 +54,7 @@ export function DelaySection({
 			size: 42,
 			color: "#7f9de4",
 			valueFormatter: (value) => `${Math.round(value * 100)}%`,
+			modTarget: "delay.feedback",
 		},
 		...(tapeMode
 			? ([
@@ -66,6 +68,7 @@ export function DelaySection({
 						size: 42,
 						color: "#f59e0b",
 						valueFormatter: (value: number) => `${Math.round(value * 100)}%`,
+						modTarget: "delay.warmth",
 					},
 				] satisfies FxKnobConfig[])
 			: []),
@@ -79,6 +82,7 @@ export function DelaySection({
 			size: 44,
 			color: "#9cb937",
 			valueFormatter: (value) => `${Math.round(value * 100)}%`,
+			modTarget: "delay.mix",
 		},
 	];
 

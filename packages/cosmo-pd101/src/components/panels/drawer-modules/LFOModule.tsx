@@ -6,6 +6,7 @@ import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { resolveTargetFromMetadata } from "@/lib/synth/modTargets";
 import { getLfoModulePatch, LFO_PRESETS } from "@/lib/synth/modulePresets";
 import { PARAM_META } from "@/lib/synth/paramMeta";
 
@@ -68,7 +69,6 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 			headerControl={
 				<ModulePresetPopover
 					title={`LFO ${id} Presets`}
-					secondaryColor={color}
 					value={selectedPreset}
 					options={LFO_PRESETS}
 					onChange={handlePresetChange}
@@ -108,6 +108,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				color="#27588f"
 				label="Rate"
 				tooltip={lfoParamTooltip("Rate")}
+				modDestination={resolveTargetFromMetadata("lfo.rate", { lfoIndex: id })}
 				valueFormatter={(v) => `${v.toFixed(1)}Hz`}
 			/>
 			<ControlKnob
@@ -120,6 +121,9 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				color="#27588f"
 				label="Depth"
 				tooltip={lfoParamTooltip("Depth")}
+				modDestination={resolveTargetFromMetadata("lfo.depth", {
+					lfoIndex: id,
+				})}
 				valueFormatter={(v) => `${Math.round(v * 100)}%`}
 			/>
 			<ControlKnob
@@ -132,6 +136,9 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				color="#27588f"
 				label="Offset"
 				tooltip={lfoParamTooltip("Offset")}
+				modDestination={resolveTargetFromMetadata("lfo.offset", {
+					lfoIndex: id,
+				})}
 				valueFormatter={(v) => `${Math.round(v * 100)}%`}
 			/>
 			<ControlKnob
@@ -144,6 +151,9 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				color="#27588f"
 				label="Sym."
 				tooltip={lfoParamTooltip("Symmetry")}
+				modDestination={resolveTargetFromMetadata("lfo.symmetry", {
+					lfoIndex: id,
+				})}
 				valueFormatter={(v) => `${Math.round(v * 100)}%`}
 			/>
 			<Button

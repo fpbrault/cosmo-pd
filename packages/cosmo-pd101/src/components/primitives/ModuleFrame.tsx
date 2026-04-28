@@ -128,9 +128,7 @@ export default function ModuleFrame({
 			</div>
 
 			{/* Content area */}
-			<div
-				className={`flex min-h-0 flex-1 px-3 py-3`}
-			>
+			<div className={`flex min-h-0 flex-1 px-3 py-3`}>
 				<div className="flex w-full flex-1 flex-col gap-2">
 					{headerControl && (
 						<div className="flex justify-end">{headerControl}</div>

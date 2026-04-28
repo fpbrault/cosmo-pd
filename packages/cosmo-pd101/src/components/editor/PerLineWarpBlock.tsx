@@ -516,6 +516,8 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 									env={activeEnv.env}
 									onChange={activeEnv.setEnv}
 									color={activeEnv.envColor}
+									lineIndex={lineIndex}
+									envKind={activeEnvTab}
 									compact
 								/>
 							</Card>
