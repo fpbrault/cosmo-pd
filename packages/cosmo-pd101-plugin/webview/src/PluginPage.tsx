@@ -86,8 +86,6 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		localStorage.setItem(UI_SCALE_KEY, String(uiScale));
 	}, [uiScale]);
 
-	const shouldLoadCurrentState = useCallback(() => !window.ipc, []);
-
 	const {
 		allPresetEntries,
 		activePresetId,
@@ -111,7 +109,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		builtinPresets: DEFAULT_SYNTH_PRESETS,
 		gatherState,
 		applyPreset,
-		shouldLoadCurrentState,
+		shouldLoadCurrentState: () => false,
 		presetStateKey,
 	});
 
