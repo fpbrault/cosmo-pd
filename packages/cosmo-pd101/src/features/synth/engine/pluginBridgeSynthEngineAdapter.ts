@@ -471,34 +471,7 @@ const PLUGIN_PARAM_DESCRIPTORS: PluginParamDescriptor[] = [
 		read: (params) => params.lfo.depth,
 		apply: (value, s) => s.setLfoDepth(value),
 	},
-	{
-		id: "fil_enabled",
-		read: (params) => (params.filter.enabled ? 1 : 0),
-		apply: (value, s) => s.setFilterEnabled(value >= 0.5),
-	},
-	{
-		id: "fil_cutoff",
-		read: (params) => params.filter.cutoff,
-		apply: (value, s) => s.setFilterCutoff(value),
-	},
-	{
-		id: "fil_resonance",
-		read: (params) => params.filter.resonance,
-		apply: (value, s) => s.setFilterResonance(value),
-	},
-	{
-		id: "fil_env_amount",
-		read: (params) => params.filter.envAmount,
-		apply: (value, s) => s.setFilterEnvAmount(value),
-	},
-	{
-		id: "fil_type",
-		read: (params) => FILTER_TYPE_IDS[params.filter.type as FilterType] ?? 0,
-		apply: (value, s) =>
-			s.setFilterType(
-				(FILTER_TYPE_FROM_ID[Math.round(value)] ?? "lp") as FilterType,
-			),
-	},
+
 	{
 		id: "port_enabled",
 		read: (params) => (params.portamento.enabled ? 1 : 0),
