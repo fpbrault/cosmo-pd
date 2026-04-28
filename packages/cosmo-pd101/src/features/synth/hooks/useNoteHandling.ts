@@ -8,6 +8,11 @@ type UseNoteHandlingParams = {
 	eventSink?: (type: string, payload: Record<string, unknown>) => void;
 	/** Velocity curve exponent parameter in range [-1, 1]. 0 = linear. */
 	velocityCurve?: number;
+	/**
+	 * When enabled, mapped PC keyboard keys are not preventDefault()'d so the
+	 * host can still receive them (used in plugin mode).
+	 */
+	keyboardPassthrough?: boolean;
 };
 
 export type NoteHandlingApi = {
@@ -24,6 +29,7 @@ export function useNoteHandling({
 	workletNodeRef,
 	eventSink,
 	velocityCurve = 0,
+	keyboardPassthrough = false,
 }: UseNoteHandlingParams): NoteHandlingApi {
 	const dispatchEngineEvent = useCallback(
 		(type: string, payload: Record<string, unknown>) => {
@@ -122,9 +128,28 @@ export function useNoteHandling({
 
 	// Keyboard input
 	useEffect(() => {
+		const beamerRuntime = (
+			window as Window & {
+				__BEAMER__?: { emit?: (event: string, data?: unknown) => void };
+			}
+		).__BEAMER__;
+		const isPluginRuntime = typeof beamerRuntime?.emit === "function";
+
+		// In plugin runtime, keep keyboard ownership with the host and disable
+		// the in-webview PC keyboard note mapping (A/S/D... + space sustain).
+		if (isPluginRuntime) {
+			return;
+		}
+
 		const isTypingTarget = (e: KeyboardEvent) => {
 			const target = e.target as HTMLElement | null;
 			if (!target) return false;
+			if (
+				target.isContentEditable ||
+				target.closest("[contenteditable='true']")
+			) {
+				return true;
+			}
 			if (target.tagName === "TEXTAREA" || target.tagName === "SELECT") {
 				return true;
 			}
@@ -142,21 +167,27 @@ export function useNoteHandling({
 		};
 
 		const keyDown = (event: KeyboardEvent) => {
+			if (!document.hasFocus()) return;
 			if (isTypingTarget(event)) return;
 			if (event.key === " ") {
-				event.preventDefault();
+				if (!keyboardPassthrough) {
+					event.preventDefault();
+				}
 				if (!sustainRef.current) setSustain(true);
 				return;
 			}
 			const key = event.key.toLowerCase();
 			const note = PC_KEY_TO_NOTE[key];
 			if (note == null) return;
-			event.preventDefault();
+			if (!keyboardPassthrough) {
+				event.preventDefault();
+			}
 			if (activeNotesRef.current.has(note)) return;
 			sendNoteOn(note);
 		};
 
 		const keyUp = (event: KeyboardEvent) => {
+			if (!document.hasFocus()) return;
 			if (isTypingTarget(event)) return;
 			if (event.key === " ") {
 				setSustain(false);
@@ -174,7 +205,7 @@ export function useNoteHandling({
 			window.removeEventListener("keydown", keyDown);
 			window.removeEventListener("keyup", keyUp);
 		};
-	}, [sendNoteOn, sendNoteOff, setSustain]);
+	}, [keyboardPassthrough, sendNoteOn, sendNoteOff, setSustain]);
 
 	// MIDI input
 	useEffect(() => {

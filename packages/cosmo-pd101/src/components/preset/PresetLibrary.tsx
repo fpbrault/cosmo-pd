@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Button from "@/components/controls/Button";
 import type { LibraryPreset } from "@/features/synth/types/libraryPreset";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
@@ -36,6 +36,28 @@ function getEntrySearchText(entry: PresetEntry) {
 	return `${entry.label} ${sectionLabels[entry.type]}`.toLowerCase();
 }
 
+function isEditableTarget(target: EventTarget | null): boolean {
+	if (!(target instanceof HTMLElement)) {
+		return false;
+	}
+	if (target.isContentEditable || target.closest("[contenteditable='true']")) {
+		return true;
+	}
+	if (target.tagName === "TEXTAREA" || target.tagName === "SELECT") {
+		return true;
+	}
+	if (target.tagName !== "INPUT") {
+		return false;
+	}
+	const input = target as HTMLInputElement;
+	return !(
+		input.type === "range" ||
+		input.type === "checkbox" ||
+		input.type === "radio" ||
+		input.type === "button"
+	);
+}
+
 export default function PresetLibrary({
 	allEntries,
 	activeEntryId,
@@ -52,6 +74,12 @@ export default function PresetLibrary({
 	onInitPreset,
 	onClose,
 }: PresetLibrary) {
+	const isPluginRuntime =
+		typeof (
+			window as Window & {
+				__BEAMER__?: { emit?: (event: string, data?: unknown) => void };
+			}
+		).__BEAMER__?.emit === "function";
 	const [search, setSearch] = useState("");
 	const [saveName, setSaveName] = useState("");
 	const [saveAsOpen, setSaveAsOpen] = useState(false);
@@ -104,73 +132,105 @@ export default function PresetLibrary({
 		rowRefs.current[focusedEntryId]?.focus();
 	}, [focusedEntryId]);
 
-	const handleLoad = (entry: PresetEntry) => {
-		if (entry.type === "local") {
-			onLoadLocal(entry.label);
-			return;
-		}
-		if (entry.type === "builtin") {
-			onLoadBuiltin(entry.label);
-			return;
-		}
-		if (entry.preset) {
-			onLoadLibrary(entry.preset);
-		}
-	};
+	const handleLoad = useCallback(
+		(entry: PresetEntry) => {
+			if (entry.type === "local") {
+				onLoadLocal(entry.label);
+				return;
+			}
+			if (entry.type === "builtin") {
+				onLoadBuiltin(entry.label);
+				return;
+			}
+			if (entry.preset) {
+				onLoadLibrary(entry.preset);
+			}
+		},
+		[onLoadBuiltin, onLoadLibrary, onLoadLocal],
+	);
 
-	const handleKeyboardNavigation = (
-		event: React.KeyboardEvent<HTMLDivElement>,
-	) => {
-		if (filteredEntries.length === 0) return;
-		const currentIndex = Math.max(
-			0,
-			filteredEntries.findIndex((entry) => entry.id === focusedEntryId),
-		);
-		if (event.key === "ArrowDown") {
-			event.preventDefault();
-			const nextEntry =
-				filteredEntries[(currentIndex + 1) % filteredEntries.length];
-			if (nextEntry) {
-				setFocusedEntryId(nextEntry.id);
-				handleLoad(nextEntry);
+	const handleKeyboardNavigation = useCallback(
+		(event: { key: string; preventDefault: () => void }) => {
+			if (filteredEntries.length === 0) return;
+			const currentIndex = Math.max(
+				0,
+				filteredEntries.findIndex((entry) => entry.id === focusedEntryId),
+			);
+			if (event.key === "ArrowDown") {
+				event.preventDefault();
+				const nextEntry =
+					filteredEntries[(currentIndex + 1) % filteredEntries.length];
+				if (nextEntry) {
+					setFocusedEntryId(nextEntry.id);
+					handleLoad(nextEntry);
+				}
 			}
-		}
-		if (event.key === "ArrowUp") {
-			event.preventDefault();
-			const prevEntry =
-				filteredEntries[
-					(currentIndex - 1 + filteredEntries.length) % filteredEntries.length
-				];
-			if (prevEntry) {
-				setFocusedEntryId(prevEntry.id);
-				handleLoad(prevEntry);
+			if (event.key === "ArrowUp") {
+				event.preventDefault();
+				const prevEntry =
+					filteredEntries[
+						(currentIndex - 1 + filteredEntries.length) % filteredEntries.length
+					];
+				if (prevEntry) {
+					setFocusedEntryId(prevEntry.id);
+					handleLoad(prevEntry);
+				}
 			}
-		}
-		if (event.key === "Home") {
-			event.preventDefault();
-			const firstEntry = filteredEntries[0];
-			if (firstEntry) {
-				setFocusedEntryId(firstEntry.id);
-				handleLoad(firstEntry);
+			if (event.key === "Home") {
+				event.preventDefault();
+				const firstEntry = filteredEntries[0];
+				if (firstEntry) {
+					setFocusedEntryId(firstEntry.id);
+					handleLoad(firstEntry);
+				}
 			}
-		}
-		if (event.key === "End") {
-			event.preventDefault();
-			const lastEntry = filteredEntries[filteredEntries.length - 1];
-			if (lastEntry) {
-				setFocusedEntryId(lastEntry.id);
-				handleLoad(lastEntry);
+			if (event.key === "End") {
+				event.preventDefault();
+				const lastEntry = filteredEntries[filteredEntries.length - 1];
+				if (lastEntry) {
+					setFocusedEntryId(lastEntry.id);
+					handleLoad(lastEntry);
+				}
 			}
-		}
-		if (event.key === "Enter" && focusedEntry) {
-			event.preventDefault();
-			handleLoad(focusedEntry);
-		}
-		if (event.key === "Escape") {
-			event.preventDefault();
-			onClose();
-		}
-	};
+			if (event.key === "Enter" && focusedEntry) {
+				event.preventDefault();
+				handleLoad(focusedEntry);
+			}
+			if (event.key === "Escape") {
+				event.preventDefault();
+				onClose();
+			}
+		},
+		[filteredEntries, focusedEntry, focusedEntryId, handleLoad, onClose],
+	);
+
+	useEffect(() => {
+		const handleWindowKeyDown = (event: KeyboardEvent) => {
+			if (!document.hasFocus()) {
+				return;
+			}
+			if (event.defaultPrevented) {
+				return;
+			}
+			if (isEditableTarget(event.target)) {
+				return;
+			}
+			if (
+				event.key !== "ArrowDown" &&
+				event.key !== "ArrowUp" &&
+				event.key !== "Home" &&
+				event.key !== "End"
+			) {
+				return;
+			}
+			handleKeyboardNavigation(event);
+		};
+
+		window.addEventListener("keydown", handleWindowKeyDown);
+		return () => {
+			window.removeEventListener("keydown", handleWindowKeyDown);
+		};
+	}, [handleKeyboardNavigation]);
 
 	const handleSave = () => {
 		if (!activeLocalEntry) return;
@@ -273,8 +333,29 @@ export default function PresetLibrary({
 						className="min-h-0 overflow-y-auto [scrollbar-gutter:stable]"
 						role="listbox"
 						aria-label="Preset library"
+						data-preset-library="true"
 						tabIndex={-1}
-						onKeyDown={handleKeyboardNavigation}
+						onKeyDownCapture={(event) => {
+							if (!isPluginRuntime) {
+								return;
+							}
+							if (event.key !== " ") {
+								return;
+							}
+							if (isEditableTarget(event.target)) {
+								return;
+							}
+							const target = event.target;
+							if (target instanceof HTMLElement) {
+								target.blur();
+							}
+						}}
+						onKeyDown={(event) => {
+							if (isEditableTarget(event.target)) {
+								return;
+							}
+							handleKeyboardNavigation(event);
+						}}
 					>
 						<div className="grid grid-cols-[2rem_minmax(12rem,1.5fr)_8rem_7rem] border-b border-cz-border bg-cz-body px-4 py-2 text-4xs font-mono uppercase tracking-[0.22em] text-cz-cream-dim">
 							<span />
