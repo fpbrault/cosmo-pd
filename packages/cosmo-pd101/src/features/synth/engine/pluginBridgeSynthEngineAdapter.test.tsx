@@ -224,6 +224,67 @@ describe("usePluginBridgeSynthEngine", () => {
 		unmount();
 	});
 
+	it("unblocks outbound sync after param replay when non-param hydration stalls", async () => {
+		vi.useFakeTimers();
+		let currentHandler: ((json: string) => void) | undefined;
+		Object.defineProperty(window, "__czOnParams", {
+			configurable: true,
+			get: () => currentHandler,
+			set: (handler: ((json: string) => void) | undefined) => {
+				currentHandler = handler;
+			},
+		});
+
+		window.__czGetEnvelopes = () => new Promise(() => {});
+
+		const outbound: IpcMessage[] = [];
+		window.ipc = {
+			postMessage(message: string) {
+				outbound.push(JSON.parse(message) as IpcMessage);
+			},
+		};
+
+		const { unmount } = renderHook(() =>
+			usePluginBridgeSynthEngine({ hydrationGraceMs: 10 }),
+		);
+
+		act(() => {
+			vi.advanceTimersByTime(0);
+		});
+
+		expect(typeof currentHandler).toBe("function");
+
+		act(() => {
+			currentHandler?.(JSON.stringify({ volume: 0.42 }));
+			useSynthStore.getState().setVolume(0.91);
+		});
+
+		expect(
+			outbound.some(
+				(message) =>
+					"param_id" in message &&
+					message.param_id === "volume" &&
+					Math.abs(message.value - 0.91) < 1e-6,
+			),
+		).toBe(false);
+
+		act(() => {
+			vi.advanceTimersByTime(11);
+			useSynthStore.getState().setVolume(0.63);
+		});
+
+		expect(
+			outbound.some(
+				(message) =>
+					"param_id" in message &&
+					message.param_id === "volume" &&
+					Math.abs(message.value - 0.63) < 1e-6,
+			),
+		).toBe(true);
+
+		unmount();
+	});
+
 	it("still performs an initial outbound sync when host has no replay", async () => {
 		vi.useFakeTimers();
 		window.__czOnParams = undefined;

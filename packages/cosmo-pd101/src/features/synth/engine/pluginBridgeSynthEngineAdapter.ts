@@ -663,6 +663,14 @@ export function usePluginBridgeSynthEngine(
 		}
 	}, []);
 
+	const enableOutboundSyncAfterParamReplay = useCallback(() => {
+		if (!inboundHydrationRef.current.params) {
+			return;
+		}
+		outboundSyncEnabledRef.current = true;
+		syncRef.current?.();
+	}, []);
+
 	const markHydrated = useCallback(
 		(key: keyof InboundHydrationState) => {
 			if (inboundHydrationRef.current[key]) {
@@ -815,12 +823,15 @@ export function usePluginBridgeSynthEngine(
 			!window.__czGetModMatrix &&
 			!window.__czGetFxSlots &&
 			!window.__czGetPresetSession;
-		const timeoutId = shouldAllowFallbackSync
-			? window.setTimeout(() => {
-					outboundSyncEnabledRef.current = true;
-					sync();
-				}, hydrationGraceMs)
-			: null;
+		const timeoutId = window.setTimeout(() => {
+			if (shouldAllowFallbackSync) {
+				outboundSyncEnabledRef.current = true;
+				sync();
+				return;
+			}
+
+			enableOutboundSyncAfterParamReplay();
+		}, hydrationGraceMs);
 
 		return () => {
 			syncRef.current = null;
@@ -829,7 +840,13 @@ export function usePluginBridgeSynthEngine(
 			}
 			unsubscribe();
 		};
-	}, [adapter, enabled, gatherState, hydrationGraceMs]);
+	}, [
+		adapter,
+		enableOutboundSyncAfterParamReplay,
+		enabled,
+		gatherState,
+		hydrationGraceMs,
+	]);
 
 	// Inbound: initial envelope state from Rust
 	useEffect(() => {
