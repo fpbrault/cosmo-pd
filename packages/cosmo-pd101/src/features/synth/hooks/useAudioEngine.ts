@@ -440,6 +440,15 @@ export function useAudioEngine({
 					return;
 				}
 
+				// Assign immediately so resumeAudio() can call ctx.resume() within
+				// the user's gesture call stack, even while the worklet is loading.
+				audioCtxRef.current = ctx;
+				ctx.addEventListener("statechange", () => {
+					if (!disposed) setAudioContextState(ctx.state as AudioContextState);
+				});
+				setAudioContextState(ctx.state as AudioContextState);
+				removeGestureResumeListener = await resumeOrDefer(ctx);
+
 				const [wasmResponse, bindingsResponse] = await Promise.all([
 					fetch(synthWasmUrl),
 					fetch(synthBindingsUrl),
@@ -513,17 +522,8 @@ export function useAudioEngine({
 				gainNode.connect(analyserNode);
 				analyserNode.connect(ctx.destination);
 
-				ctx.addEventListener("statechange", () => {
-					if (!disposed) setAudioContextState(ctx.state as AudioContextState);
-				});
-
-				audioCtxRef.current = ctx;
 				gainNodeRef.current = gainNode;
 				analyserNodeRef.current = analyserNode;
-
-				setAudioContextState(ctx.state as AudioContextState);
-				removeGestureResumeListener = await resumeOrDefer(ctx);
-				setAudioContextState(ctx.state as AudioContextState);
 			} catch (err) {
 				console.error("[PD Visualizer] Audio init failed:", err);
 				audioInitRef.current = false;
