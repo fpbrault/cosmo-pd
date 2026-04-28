@@ -693,11 +693,18 @@ export function usePluginBridgeSynthEngine(
 				queueAlgoControls(2, "b", params.line2.algoControlsB ?? []);
 				queueModMatrix(params.modMatrix ?? { routes: [] });
 				queueFxSlots(
-					(params.fxSlots ?? useSynthStore.getState().fxSlots) as SynthParams["fxSlots"],
+					(params.fxSlots ??
+						useSynthStore.getState().fxSlots) as SynthParams["fxSlots"],
 				);
 			},
 		}),
-		[queueParam, queueEnvelope, queueAlgoControls, queueModMatrix, queueFxSlots],
+		[
+			queueParam,
+			queueEnvelope,
+			queueAlgoControls,
+			queueModMatrix,
+			queueFxSlots,
+		],
 	);
 
 	// Lifecycle: connect / dispose
@@ -805,9 +812,9 @@ export function usePluginBridgeSynthEngine(
 		const shouldAllowFallbackSync =
 			!window.__czGetEnvelopes &&
 			!window.__czGetAlgoControls &&
-				!window.__czGetModMatrix &&
-				!window.__czGetFxSlots &&
-				!window.__czGetPresetSession;
+			!window.__czGetModMatrix &&
+			!window.__czGetFxSlots &&
+			!window.__czGetPresetSession;
 		const timeoutId = shouldAllowFallbackSync
 			? window.setTimeout(() => {
 					outboundSyncEnabledRef.current = true;

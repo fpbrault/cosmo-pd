@@ -134,7 +134,9 @@ function collectPresetDiffs(
 	maxEntries = 200,
 ): void {
 	const normalizedPrev =
-		typeof previousValue === "number" ? roundNumber(previousValue) : previousValue;
+		typeof previousValue === "number"
+			? roundNumber(previousValue)
+			: previousValue;
 	const normalizedNext =
 		typeof nextValue === "number" ? roundNumber(nextValue) : nextValue;
 	if (out.length >= maxEntries || Object.is(normalizedPrev, normalizedNext)) {

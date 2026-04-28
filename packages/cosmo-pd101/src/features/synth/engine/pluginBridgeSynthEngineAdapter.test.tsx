@@ -287,8 +287,7 @@ describe("usePluginBridgeSynthEngine", () => {
 		await waitFor(() => {
 			expect(
 				outbound.some(
-					(message): message is { fx_slots: unknown } =>
-						"fx_slots" in message,
+					(message): message is { fx_slots: unknown } => "fx_slots" in message,
 				),
 			).toBe(true);
 		});
