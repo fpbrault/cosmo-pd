@@ -8,6 +8,7 @@ pub mod distortion;
 pub mod eq;
 pub mod grain_delay;
 pub mod juno_chorus;
+pub mod lofi;
 pub mod phase_mod;
 pub mod phaser;
 pub mod reverb;
@@ -95,7 +96,7 @@ pub const NO_FX_CONTROL_OPTIONS: [FxControlOptionV1; 0] = [];
 // Catalog — one entry per FX slot type (excluding Empty)
 // ---------------------------------------------------------------------------
 
-pub const FX_DEFINITIONS_V1: [FxDefinitionV1; 16] = [
+pub const FX_DEFINITIONS_V1: [FxDefinitionV1; 17] = [
     chorus::DEFINITION,
     delay::DEFINITION,
     reverb::DEFINITION,
@@ -112,6 +113,7 @@ pub const FX_DEFINITIONS_V1: [FxDefinitionV1; 16] = [
     ring_mod::DEFINITION,
     tremolo::DEFINITION,
     wavefolder::DEFINITION,
+    lofi::DEFINITION,
 ];
 
 pub fn fx_definitions_v1() -> &'static [FxDefinitionV1] {

@@ -8,7 +8,7 @@ use crate::{
         compressor::apply_compressor_preset, delay::apply_delay_preset,
         distortion::apply_distortion_preset, eq::apply_eq_preset,
         grain_delay::apply_grain_delay_preset, juno_chorus::apply_juno_chorus_preset,
-        phase_mod::apply_phase_mod_preset, phaser::apply_phaser_preset,
+        lofi::apply_lofi_preset, phase_mod::apply_phase_mod_preset, phaser::apply_phaser_preset,
         reverb::apply_reverb_preset, ring_mod::apply_ring_mod_preset,
         shimmer_verb::apply_shimmer_verb_preset, tremolo::apply_tremolo_preset,
         vibrato::apply_vibrato_preset, wavefolder::apply_wavefolder_preset, FxPresetOptionV1,
@@ -54,7 +54,7 @@ const MOD_ENV_PRESET_OPTIONS_V1: [FxPresetOptionV1; 3] = [
     },
 ];
 
-const MODULE_PRESET_CATALOG_V1: [ModulePresetGroupV1; 19] = [
+const MODULE_PRESET_CATALOG_V1: [ModulePresetGroupV1; 20] = [
     ModulePresetGroupV1 {
         module: "chorus",
         presets: crate::fx::chorus::DEFINITION.presets,
@@ -131,6 +131,10 @@ const MODULE_PRESET_CATALOG_V1: [ModulePresetGroupV1; 19] = [
         module: "wavefolder",
         presets: crate::fx::wavefolder::DEFINITION.presets,
     },
+    ModulePresetGroupV1 {
+        module: "loFi",
+        presets: crate::fx::lofi::DEFINITION.presets,
+    },
 ];
 
 pub fn module_preset_catalog_v1() -> &'static [ModulePresetGroupV1] {
@@ -158,6 +162,7 @@ pub fn apply_module_preset(params: &mut SynthParams, module: &str, preset: &str)
         "ringMod" => apply_ring_mod_preset(params, preset),
         "tremolo" => apply_tremolo_preset(params, preset),
         "wavefolder" => apply_wavefolder_preset(params, preset),
+        "loFi" => apply_lofi_preset(params, preset),
         _ => false,
     }
 }

@@ -33,6 +33,7 @@ const FX_EFFECT_OPTIONS: { value: FxSlotType; label: string }[] = [
 	{ value: "ringMod", label: "Ring Mod" },
 	{ value: "tremolo", label: "Tremolo" },
 	{ value: "wavefolder", label: "Wavefolder" },
+	{ value: "loFi", label: "LoFi" },
 ];
 
 /** For active slots: includes a "Remove" option at the top. */
@@ -45,7 +46,37 @@ const FX_CHANGE_OPTIONS: { value: FxSlotType; label: string }[] = [
 // TypeSelectorPopover — portal-based so overflow:hidden parents don't clip it
 // ---------------------------------------------------------------------------
 
-type PopoverPos = { top: number; right: number };
+const TYPE_SELECTOR_WIDTH = 176;
+const TYPE_SELECTOR_MARGIN = 12;
+
+type PopoverPos = { top: number; left: number; maxHeight: number };
+
+function getTypeSelectorPosition(rect: DOMRect, align: "right" | "center") {
+	const maxHeight = Math.min(
+		360,
+		window.innerHeight - TYPE_SELECTOR_MARGIN * 2,
+	);
+	const preferredTop = rect.bottom + 6;
+	const availableBelow =
+		window.innerHeight - preferredTop - TYPE_SELECTOR_MARGIN;
+	const top =
+		availableBelow < 180
+			? Math.max(TYPE_SELECTOR_MARGIN, rect.top - maxHeight - 6)
+			: Math.min(
+					preferredTop,
+					window.innerHeight - maxHeight - TYPE_SELECTOR_MARGIN,
+				);
+	const preferredLeft =
+		align === "center"
+			? rect.left + rect.width / 2 - TYPE_SELECTOR_WIDTH / 2
+			: rect.right - TYPE_SELECTOR_WIDTH;
+	const left = Math.min(
+		Math.max(TYPE_SELECTOR_MARGIN, preferredLeft),
+		window.innerWidth - TYPE_SELECTOR_WIDTH - TYPE_SELECTOR_MARGIN,
+	);
+
+	return { top, left, maxHeight };
+}
 
 function TypeSelectorPopover({
 	pos,
@@ -85,28 +116,36 @@ function TypeSelectorPopover({
 			style={{
 				position: "fixed",
 				top: pos.top,
-				right: window.innerWidth - pos.right,
+				left: pos.left,
+				maxHeight: pos.maxHeight,
 				zIndex: 9999,
 			}}
-			className="w-36 overflow-hidden rounded border border-cz-border bg-cz-panel py-1 shadow-[0_8px_24px_rgba(0,0,0,0.65)]"
+			className="flex w-44 flex-col overflow-hidden rounded-xl border border-cz-gold/30 bg-cz-panel shadow-2xl"
+			role="dialog"
+			aria-label="Select effect type"
 		>
-			{options.map((o) => (
-				<Button
-					key={o.value}
-					type="button"
-					onClick={() => onSelect(o.value)}
-					className={[
-						"btn btn-ghost btn-sm justify-start w-full px-3 py-1 font-mono text-[0.6rem] uppercase tracking-[0.12em] hover:bg-white/10",
-						o.value === "empty"
-							? "text-red-400/80 hover:text-red-300"
-							: currentType === o.value
-								? "text-white"
-								: "text-cz-cream-dim",
-					].join(" ")}
-				>
-					{o.label}
-				</Button>
-			))}
+			<div className="border-b border-cz-border/60 bg-cz-surface/80 px-3 py-2 font-mono text-[0.58rem] font-bold uppercase tracking-[0.22em] text-cz-cream">
+				Effect Type
+			</div>
+			<div className="min-h-0 flex-1 overflow-y-auto p-1.5">
+				{options.map((o) => (
+					<Button
+						key={o.value}
+						type="button"
+						onClick={() => onSelect(o.value)}
+						className={[
+							"btn btn-ghost btn-sm min-h-0 h-8 justify-start w-full rounded-md px-2.5 py-1 font-mono text-[0.58rem] uppercase tracking-[0.12em] hover:bg-white/10",
+							o.value === "empty"
+								? "text-red-400/80 hover:text-red-300"
+								: currentType === o.value
+									? "bg-cz-gold/10 text-white"
+									: "text-cz-cream-dim",
+						].join(" ")}
+					>
+						{o.label}
+					</Button>
+				))}
+			</div>
 		</div>,
 		document.body,
 	);
@@ -130,7 +169,7 @@ function TypeSelectorTrigger({
 	const openPopover = () => {
 		if (triggerRef.current) {
 			const rect = triggerRef.current.getBoundingClientRect();
-			setPopoverPos({ top: rect.bottom + 4, right: rect.right });
+			setPopoverPos(getTypeSelectorPosition(rect, "right"));
 		}
 	};
 
@@ -183,11 +222,7 @@ function EmptySlot({ slot }: { slot: number }) {
 	const openPopover = () => {
 		if (triggerRef.current) {
 			const rect = triggerRef.current.getBoundingClientRect();
-			// Center the popover horizontally on the trigger button
-			setPopoverPos({
-				top: rect.bottom + 8,
-				right: rect.left + rect.width / 2 + 72,
-			});
+			setPopoverPos(getTypeSelectorPosition(rect, "center"));
 		}
 	};
 

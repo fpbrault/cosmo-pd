@@ -58,6 +58,7 @@ const FX_TYPE_COLORS: Record<FxSlotType, string> = {
 	ringMod: "#e879f9",
 	tremolo: "#4ade80",
 	wavefolder: "#c084fc",
+	loFi: "#38bdf8",
 };
 
 const FX_TYPE_SHORT_LABELS: Record<FxSlotType, string> = {
@@ -78,6 +79,7 @@ const FX_TYPE_SHORT_LABELS: Record<FxSlotType, string> = {
 	ringMod: "Ring",
 	tremolo: "Trem",
 	wavefolder: "Wave",
+	loFi: "LoFi",
 };
 
 export type AsidePanelTabMeta = {

@@ -912,6 +912,7 @@ pub enum FxSlotType {
     RingMod,
     Tremolo,
     Wavefolder,
+    LoFi,
 }
 
 /// Per-slot FX configuration — wraps effect-specific parameters with the slot type.
@@ -938,6 +939,7 @@ pub enum FxSlotConfig {
     RingMod(RingModParams),
     Tremolo(TremoloParams),
     Wavefolder(WavefolderParams),
+    LoFi(LoFiParams),
 }
 
 impl Default for FxSlotConfig {
@@ -967,6 +969,7 @@ impl FxSlotConfig {
             Self::RingMod(_) => FxSlotType::RingMod,
             Self::Tremolo(_) => FxSlotType::Tremolo,
             Self::Wavefolder(_) => FxSlotType::Wavefolder,
+            Self::LoFi(_) => FxSlotType::LoFi,
         }
     }
 
@@ -990,6 +993,7 @@ impl FxSlotConfig {
             Self::RingMod(p) => p.enabled,
             Self::Tremolo(p) => p.enabled,
             Self::Wavefolder(p) => p.enabled,
+            Self::LoFi(p) => p.enabled,
         }
     }
 
@@ -1058,6 +1062,10 @@ impl FxSlotConfig {
             FxSlotType::Wavefolder => Self::Wavefolder(WavefolderParams {
                 enabled: true,
                 ..WavefolderParams::default()
+            }),
+            FxSlotType::LoFi => Self::LoFi(LoFiParams {
+                enabled: true,
+                ..LoFiParams::default()
             }),
         }
     }
@@ -1159,6 +1167,8 @@ pub struct GrainDelayParams {
     #[serde(default = "default_grain_delay_time")]
     pub time: f32,
     #[serde(default)]
+    pub feedback: f32,
+    #[serde(default)]
     pub scatter: f32,
     #[serde(default = "default_half")]
     pub density: f32,
@@ -1178,6 +1188,7 @@ impl Default for GrainDelayParams {
         Self {
             enabled: false,
             time: 0.25,
+            feedback: 0.0,
             scatter: 0.0,
             density: 0.5,
             mix: 0.0,
@@ -1255,6 +1266,8 @@ impl Default for ShimmerVerbParams {
 pub struct DistortionParams {
     #[serde(default)]
     pub enabled: bool,
+    #[serde(default)]
+    pub mode: u8,
     #[serde(default = "default_half")]
     pub drive: f32,
     #[serde(default = "default_half")]
@@ -1267,8 +1280,66 @@ impl Default for DistortionParams {
     fn default() -> Self {
         Self {
             enabled: false,
+            mode: 0,
             drive: 0.5,
             tone: 0.5,
+            mix: 1.0,
+        }
+    }
+}
+
+/// LoFi effect parameters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct LoFiParams {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "default_lofi_degrade", alias = "drive")]
+    pub degrade: f32,
+    #[serde(default = "default_lofi_wow_depth", alias = "wobble")]
+    pub wow_depth: f32,
+    #[serde(default = "default_lofi_wow_rate")]
+    pub wow_rate: f32,
+    #[serde(default = "default_lofi_flutter_depth", alias = "flutter")]
+    pub flutter_depth: f32,
+    #[serde(default = "default_lofi_flutter_rate")]
+    pub flutter_rate: f32,
+    #[serde(default = "default_lofi_tone")]
+    pub tone: f32,
+    #[serde(default = "default_one")]
+    pub mix: f32,
+}
+
+fn default_lofi_degrade() -> f32 {
+    0.25
+}
+fn default_lofi_wow_depth() -> f32 {
+    0.35
+}
+fn default_lofi_wow_rate() -> f32 {
+    0.42
+}
+fn default_lofi_flutter_depth() -> f32 {
+    0.18
+}
+fn default_lofi_flutter_rate() -> f32 {
+    6.7
+}
+fn default_lofi_tone() -> f32 {
+    0.45
+}
+
+impl Default for LoFiParams {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            degrade: 0.25,
+            wow_depth: 0.35,
+            wow_rate: 0.42,
+            flutter_depth: 0.18,
+            flutter_rate: 6.7,
+            tone: 0.45,
             mix: 1.0,
         }
     }

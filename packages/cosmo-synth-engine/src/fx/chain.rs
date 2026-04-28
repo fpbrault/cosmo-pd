@@ -10,6 +10,7 @@ use super::distortion::DistortionFx;
 use super::eq::EqFx;
 use super::grain_delay::GrainDelayFx;
 use super::juno_chorus::JunoChorusFx;
+use super::lofi::LoFiFx;
 use super::phaser::PhaserFx;
 use super::reverb::FdnReverb;
 use super::ring_mod::RingModFx;
@@ -36,6 +37,7 @@ struct FxSlotProcessors {
     ring_mod: RingModFx,
     tremolo: TremoloFx,
     wavefolder: WavefolderFx,
+    lofi: LoFiFx,
 }
 
 impl FxSlotProcessors {
@@ -55,6 +57,7 @@ impl FxSlotProcessors {
             ring_mod: RingModFx::new(sr),
             tremolo: TremoloFx::new(sr),
             wavefolder: WavefolderFx::new(),
+            lofi: LoFiFx::new(sr),
         }
     }
 
@@ -109,6 +112,7 @@ impl FxSlotProcessors {
             FxSlotConfig::GrainDelay(gd) => {
                 self.grain_delay.enabled = gd.enabled;
                 self.grain_delay.time = gd.time;
+                self.grain_delay.feedback = gd.feedback;
                 self.grain_delay.scatter = gd.scatter;
                 self.grain_delay.density = gd.density;
                 self.grain_delay.mix = gd.mix;
@@ -127,6 +131,7 @@ impl FxSlotProcessors {
             }
             FxSlotConfig::Distortion(dist) => {
                 self.distortion.enabled = dist.enabled;
+                self.distortion.mode = dist.mode;
                 self.distortion.drive = dist.drive;
                 self.distortion.tone = dist.tone;
                 self.distortion.mix = dist.mix;
@@ -153,6 +158,16 @@ impl FxSlotProcessors {
                 self.wavefolder.drive = wf.drive;
                 self.wavefolder.folds = wf.folds;
                 self.wavefolder.mix = wf.mix;
+            }
+            FxSlotConfig::LoFi(lofi) => {
+                self.lofi.enabled = lofi.enabled;
+                self.lofi.degrade = lofi.degrade;
+                self.lofi.wow_depth = lofi.wow_depth;
+                self.lofi.wow_rate = lofi.wow_rate;
+                self.lofi.flutter_depth = lofi.flutter_depth;
+                self.lofi.flutter_rate = lofi.flutter_rate;
+                self.lofi.tone = lofi.tone;
+                self.lofi.mix = lofi.mix;
             }
             // Empty, Vibrato, PhaseMod are handled at voice level or pass through.
             FxSlotConfig::Empty | FxSlotConfig::Vibrato(_) | FxSlotConfig::PhaseMod => {}
@@ -181,6 +196,7 @@ impl FxSlotProcessors {
             FxSlotType::RingMod => self.ring_mod.process(sample),
             FxSlotType::Tremolo => self.tremolo.process(sample),
             FxSlotType::Wavefolder => self.wavefolder.process(sample),
+            FxSlotType::LoFi => self.lofi.process(sample),
             // Voice-level effects and empty slots pass through.
             FxSlotType::Vibrato | FxSlotType::PhaseMod | FxSlotType::Empty => sample,
         }
