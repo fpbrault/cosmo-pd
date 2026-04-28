@@ -1,20 +1,40 @@
-use libm::{cosf, sinf};
+use libm::{cosf, floorf, sinf};
 
 use super::delay_line::DelayLine;
 
-// ---------------------------------------------------------------------------
-// GrainDelayFx — granular delay with time scatter and density control
-// ---------------------------------------------------------------------------
+const GRAIN_COUNT: usize = 6;
+const OCTAVE_UP_RATE_DELTA: f32 = 1.0;
+
+#[derive(Clone, Copy)]
+struct Grain {
+    active: bool,
+    age: f32,
+    duration: f32,
+    offset: f32,
+}
+
+impl Grain {
+    const fn inactive() -> Self {
+        Self {
+            active: false,
+            age: 0.0,
+            duration: 1.0,
+            offset: 1.0,
+        }
+    }
+}
 
 pub struct GrainDelayFx {
     delay_line: DelayLine,
-    pub time: f32,    // base delay time in seconds (0.01..1.0)
-    pub scatter: f32, // time randomization (0..1)
-    pub density: f32, // grain density / playback speed variation (0..1)
+    pub time: f32,
+    pub feedback: f32,
+    pub scatter: f32,
+    pub density: f32,
     pub mix: f32,
     pub enabled: bool,
-    read_offset: f32,
-    scatter_phase: f32,
+    grains: [Grain; GRAIN_COUNT],
+    spawn_counter: f32,
+    spawn_index: u32,
     sample_rate: f32,
 }
 
@@ -24,47 +44,88 @@ impl GrainDelayFx {
         Self {
             delay_line: DelayLine::new(buf_len),
             time: 0.25,
+            feedback: 0.0,
             scatter: 0.0,
             density: 0.5,
             mix: 0.0,
             enabled: false,
-            read_offset: libm::roundf(0.25 * sr) as f32,
-            scatter_phase: 0.0,
+            grains: [Grain::inactive(); GRAIN_COUNT],
+            spawn_counter: 0.0,
+            spawn_index: 0,
             sample_rate: sr,
         }
     }
 
     pub fn process(&mut self, sample: f32) -> f32 {
         if !self.enabled || self.mix <= 0.0 {
+            self.delay_line.write(sample);
             return sample;
         }
 
-        // Advance a slow LFO to modulate scatter
-        let scatter_rate = 0.5 + self.density * 3.0;
-        self.scatter_phase += scatter_rate / self.sample_rate;
-        if self.scatter_phase >= 1.0 {
-            self.scatter_phase -= 1.0;
+        self.spawn_counter -= 1.0;
+        if self.spawn_counter <= 0.0 {
+            self.spawn_grain();
+            self.spawn_counter += self.spawn_interval_samples();
         }
-        let scatter_mod = sinf(self.scatter_phase * core::f32::consts::PI * 2.0);
 
-        let base_samples = self.time * self.sample_rate;
-        let scatter_samples = self.scatter * 0.1 * self.sample_rate * scatter_mod;
-        let target_offset = (base_samples + scatter_samples).max(1.0);
-        self.read_offset = self.read_offset + (target_offset - self.read_offset) * 0.005;
+        let mut wet = 0.0;
+        let mut gain_sum = 0.0;
+        for grain in &mut self.grains {
+            if !grain.active {
+                continue;
+            }
+            let phase = grain.age / grain.duration;
+            if phase >= 1.0 {
+                grain.active = false;
+                continue;
+            }
+            let window = sinf(phase * core::f32::consts::PI).max(0.0);
+            let read_offset = (grain.offset - grain.age * OCTAVE_UP_RATE_DELTA).max(1.0);
+            wet += self.delay_line.read_at_fractional(read_offset) * window;
+            gain_sum += window;
+            grain.age += 1.0;
+        }
 
-        let wet = self
-            .delay_line
-            .read_at_fractional(self.read_offset.max(1.0));
-        self.delay_line.write(sample);
+        if gain_sum > 0.001 {
+            wet /= gain_sum;
+        }
 
-        let mix_angle = self.mix * core::f32::consts::PI * 0.5;
+        self.delay_line
+            .write(sample + wet * self.feedback.clamp(0.0, 0.85));
+
+        let mix_angle = self.mix.clamp(0.0, 1.0) * core::f32::consts::PI * 0.5;
         sample * cosf(mix_angle) + wet * sinf(mix_angle)
+    }
+
+    fn spawn_grain(&mut self) {
+        let density = self.density.clamp(0.0, 1.0);
+        let duration = (0.12 + density * 0.16) * self.sample_rate;
+        let base = (self.time.clamp(0.01, 1.0) * self.sample_rate).max(duration + 1.0);
+        let scatter_width = self.scatter.clamp(0.0, 1.0) * 0.14 * self.sample_rate;
+        let random = hash_signed(self.spawn_index);
+        let offset = (base + random * scatter_width).max(duration + 1.0);
+        let grain_index = (self.spawn_index as usize) % GRAIN_COUNT;
+        self.grains[grain_index] = Grain {
+            active: true,
+            age: 0.0,
+            duration,
+            offset,
+        };
+        self.spawn_index = self.spawn_index.wrapping_add(1);
+    }
+
+    fn spawn_interval_samples(&self) -> f32 {
+        let density = self.density.clamp(0.0, 1.0);
+        ((0.1 - density * 0.05) * self.sample_rate).max(1024.0)
     }
 }
 
-// ---------------------------------------------------------------------------
-// Module definition and presets
-// ---------------------------------------------------------------------------
+fn hash_signed(index: u32) -> f32 {
+    let seed = index as f32 * 12.9898 + 78.233;
+    let hash = sinf(seed) * 43_758.547;
+    let fract = hash - floorf(hash);
+    fract * 2.0 - 1.0
+}
 
 use crate::{
     fx::{FxControlKindV1, FxControlV1, FxDefinitionV1, FxPresetOptionV1, NO_FX_CONTROL_OPTIONS},
@@ -86,7 +147,7 @@ const PRESET_OPTIONS: [FxPresetOptionV1; 3] = [
     },
 ];
 
-const CONTROLS: [FxControlV1; 4] = [
+const CONTROLS: [FxControlV1; 5] = [
     FxControlV1 {
         id: "time",
         label: "Time",
@@ -95,6 +156,16 @@ const CONTROLS: [FxControlV1; 4] = [
         min: Some(0.01),
         max: Some(1.0),
         default_f32: Some(0.25),
+        options: &NO_FX_CONTROL_OPTIONS,
+    },
+    FxControlV1 {
+        id: "feedback",
+        label: "Feedback",
+        kind: FxControlKindV1::Knob,
+        bipolar: false,
+        min: Some(0.0),
+        max: Some(0.85),
+        default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
     },
     FxControlV1 {
@@ -151,27 +222,55 @@ pub fn apply_grain_delay_preset(params: &mut SynthParams, preset: &str) -> bool 
         "cloudEcho" => {
             gd.enabled = true;
             gd.time = 0.35;
-            gd.scatter = 0.6;
-            gd.density = 0.7;
+            gd.feedback = 0.22;
+            gd.scatter = 0.32;
+            gd.density = 0.58;
             gd.mix = 0.4;
             true
         }
         "glitchDelay" => {
             gd.enabled = true;
             gd.time = 0.12;
-            gd.scatter = 0.9;
-            gd.density = 0.85;
+            gd.feedback = 0.18;
+            gd.scatter = 0.42;
+            gd.density = 0.7;
             gd.mix = 0.5;
             true
         }
         "shimmerEcho" => {
             gd.enabled = true;
             gd.time = 0.5;
-            gd.scatter = 0.35;
+            gd.feedback = 0.36;
+            gd.scatter = 0.24;
             gd.density = 0.5;
             gd.mix = 0.35;
             true
         }
         _ => false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn emits_bounded_grain_output() {
+        let mut fx = GrainDelayFx::new(44100.0);
+        fx.enabled = true;
+        fx.mix = 1.0;
+        fx.time = 0.05;
+        fx.feedback = 0.35;
+        fx.scatter = 0.7;
+        fx.density = 0.8;
+        let mut energy = 0.0;
+        for i in 0..12000 {
+            let input = if i < 256 { 0.8 } else { 0.0 };
+            let out = fx.process(input);
+            assert!(out.is_finite());
+            assert!(out.abs() < 2.0);
+            energy += out.abs();
+        }
+        assert!(energy > 1.0);
     }
 }

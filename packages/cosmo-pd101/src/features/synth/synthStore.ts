@@ -160,6 +160,7 @@ function makeDefaultFxSlotConfig(type: FxSlotType): FxSlotConfig {
 				params: {
 					enabled: true,
 					time: 0.25,
+					feedback: 0,
 					scatter: 0,
 					density: 0.5,
 					mix: 0.5,
@@ -178,7 +179,21 @@ function makeDefaultFxSlotConfig(type: FxSlotType): FxSlotConfig {
 		case "distortion":
 			return {
 				type: "distortion",
-				params: { enabled: true, drive: 0.5, tone: 0.5, mix: 1 },
+				params: { enabled: true, mode: 0, drive: 0.5, tone: 0.5, mix: 1 },
+			};
+		case "loFi":
+			return {
+				type: "loFi",
+				params: {
+					enabled: true,
+					degrade: 0.25,
+					wowDepth: 0.35,
+					wowRate: 0.42,
+					flutterDepth: 0.18,
+					flutterRate: 6.7,
+					tone: 0.45,
+					mix: 1,
+				},
 			};
 		case "junoChorus":
 			return {

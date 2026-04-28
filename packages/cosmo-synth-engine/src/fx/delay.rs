@@ -6,7 +6,7 @@ const SMOOTH_COEFF: f32 = 0.005;
 const TWO_PI: f32 = core::f32::consts::PI * 2.0;
 const TAPE_BRIGHT_CUTOFF_HZ: f32 = 20000.0;
 const TAPE_WARM_RANGE_HZ: f32 = 19700.0;
-const TAPE_SATURATION_DRIVE: f32 = 1.5;
+const TAPE_SATURATION_DRIVE: f32 = 2.1;
 
 // ---------------------------------------------------------------------------
 // DelayFx
@@ -22,6 +22,8 @@ pub struct DelayFx {
     pub tape_mode: bool,
     pub warmth: f32,
     tape_filter_state: f32,
+    tape_wow_phase: f32,
+    tape_flutter_phase: f32,
     sample_rate: f32,
 }
 
@@ -34,10 +36,12 @@ impl DelayFx {
             feedback: 0.35,
             mix: 0.0,
             enabled: false,
-            smooth_samples: libm::roundf(0.3 * sr) as f32,
+            smooth_samples: libm::roundf(0.3 * sr),
             tape_mode: false,
             warmth: 0.5,
             tape_filter_state: 0.0,
+            tape_wow_phase: 0.0,
+            tape_flutter_phase: 0.31,
             sample_rate: sr,
         }
     }
@@ -46,12 +50,22 @@ impl DelayFx {
         if !self.enabled || self.mix <= 0.0 {
             return sample;
         }
-        self.smooth_samples = self.smooth_samples
-            + (self.time * self.sample_rate - self.smooth_samples) * SMOOTH_COEFF;
-        let delay_samples = self.smooth_samples.max(1.0);
+        let target_samples = self.time * self.sample_rate;
+        let smooth_coeff = if self.tape_mode { 0.0009 } else { SMOOTH_COEFF };
+        self.smooth_samples += (target_samples - self.smooth_samples) * smooth_coeff;
+        let wow_flutter = if self.tape_mode {
+            self.tape_wow_phase = wrap01(self.tape_wow_phase + 0.42 / self.sample_rate);
+            self.tape_flutter_phase = wrap01(self.tape_flutter_phase + 6.2 / self.sample_rate);
+            let wow = libm::sinf(self.tape_wow_phase * TWO_PI) * 0.0025 * self.sample_rate;
+            let flutter = libm::sinf(self.tape_flutter_phase * TWO_PI) * 0.00045 * self.sample_rate;
+            (wow + flutter) * self.warmth.clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
+        let delay_samples = (self.smooth_samples + wow_flutter).max(1.0);
         let delayed = self.delay_line.read_at_fractional(delay_samples);
 
-        let feedback_input = if self.tape_mode {
+        let wet = if self.tape_mode {
             let fc = TAPE_BRIGHT_CUTOFF_HZ - self.warmth * TAPE_WARM_RANGE_HZ;
             let g = expf(-TWO_PI * fc / self.sample_rate);
             self.tape_filter_state = self.tape_filter_state * g + delayed * (1.0 - g);
@@ -61,11 +75,20 @@ impl DelayFx {
         };
 
         self.delay_line
-            .write(sample + feedback_input * self.feedback);
+            .write(sample + wet * self.feedback.clamp(0.0, 0.97));
         let mix_angle = self.mix * core::f32::consts::PI * 0.5;
         let dry_gain = cosf(mix_angle);
         let wet_gain = sinf_approx(mix_angle);
-        sample * dry_gain + delayed * wet_gain
+        sample * dry_gain + wet * wet_gain
+    }
+}
+
+#[inline]
+fn wrap01(value: f32) -> f32 {
+    if value >= 1.0 {
+        value - 1.0
+    } else {
+        value
     }
 }
 
@@ -204,5 +227,27 @@ pub fn apply_delay_preset(params: &mut SynthParams, preset: &str) -> bool {
             true
         }
         _ => false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tape_time_changes_remain_bounded() {
+        let mut fx = DelayFx::new(44100.0);
+        fx.enabled = true;
+        fx.tape_mode = true;
+        fx.mix = 0.8;
+        fx.feedback = 0.8;
+        fx.warmth = 0.75;
+        for i in 0..24000 {
+            fx.time = if i < 8000 { 0.12 } else { 0.55 };
+            let input = if i % 1000 == 0 { 0.9 } else { 0.0 };
+            let out = fx.process(input);
+            assert!(out.is_finite());
+            assert!(out.abs() < 4.0);
+        }
     }
 }

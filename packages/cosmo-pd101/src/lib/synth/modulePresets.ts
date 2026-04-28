@@ -22,7 +22,8 @@ export type ModulePresetModule =
 	| "junoChorus"
 	| "ringMod"
 	| "tremolo"
-	| "wavefolder";
+	| "wavefolder"
+	| "loFi";
 
 export type ModulePresetPatch = Record<string, unknown>;
 
@@ -508,6 +509,7 @@ export const GRAIN_DELAY_PRESETS: ModulePresetDefinition<{
 	grainDelay: {
 		enabled: boolean;
 		time: number;
+		feedback: number;
 		scatter: number;
 		density: number;
 		mix: number;
@@ -520,8 +522,9 @@ export const GRAIN_DELAY_PRESETS: ModulePresetDefinition<{
 			grainDelay: {
 				enabled: true,
 				time: 0.35,
-				scatter: 0.6,
-				density: 0.7,
+				feedback: 0.22,
+				scatter: 0.32,
+				density: 0.58,
 				mix: 0.4,
 			},
 		},
@@ -533,8 +536,9 @@ export const GRAIN_DELAY_PRESETS: ModulePresetDefinition<{
 			grainDelay: {
 				enabled: true,
 				time: 0.12,
-				scatter: 0.9,
-				density: 0.85,
+				feedback: 0.18,
+				scatter: 0.42,
+				density: 0.7,
 				mix: 0.5,
 			},
 		},
@@ -546,7 +550,8 @@ export const GRAIN_DELAY_PRESETS: ModulePresetDefinition<{
 			grainDelay: {
 				enabled: true,
 				time: 0.5,
-				scatter: 0.35,
+				feedback: 0.36,
+				scatter: 0.24,
 				density: 0.5,
 				mix: 0.35,
 			},
@@ -615,22 +620,34 @@ export const SHIMMER_VERB_PRESETS: ModulePresetDefinition<{
 ];
 
 export const DISTORTION_PRESETS: ModulePresetDefinition<{
-	distortion: { enabled: boolean; drive: number; tone: number; mix: number };
+	distortion: {
+		enabled: boolean;
+		mode: number;
+		drive: number;
+		tone: number;
+		mix: number;
+	};
 }>[] = [
 	{
 		id: "warmOverdrive",
 		label: "Warm Overdrive",
-		patch: { distortion: { enabled: true, drive: 0.35, tone: 0.3, mix: 0.9 } },
+		patch: {
+			distortion: { enabled: true, mode: 0, drive: 0.48, tone: 0.34, mix: 0.9 },
+		},
 	},
 	{
 		id: "grittyFuzz",
 		label: "Gritty Fuzz",
-		patch: { distortion: { enabled: true, drive: 0.75, tone: 0.6, mix: 1 } },
+		patch: {
+			distortion: { enabled: true, mode: 2, drive: 0.72, tone: 0.48, mix: 1 },
+		},
 	},
 	{
 		id: "bitingClip",
 		label: "Biting Clip",
-		patch: { distortion: { enabled: true, drive: 0.9, tone: 0.8, mix: 1 } },
+		patch: {
+			distortion: { enabled: true, mode: 1, drive: 0.88, tone: 0.78, mix: 1 },
+		},
 	},
 ];
 
@@ -728,6 +745,68 @@ export const WAVEFOLDER_PRESETS: ModulePresetDefinition<{
 	},
 ];
 
+export const LOFI_PRESETS: ModulePresetDefinition<{
+	loFi: {
+		enabled: boolean;
+		degrade: number;
+		wowDepth: number;
+		wowRate: number;
+		flutterDepth: number;
+		flutterRate: number;
+		tone: number;
+		mix: number;
+	};
+}>[] = [
+	{
+		id: "warpedCassette",
+		label: "Warped Cassette",
+		patch: {
+			loFi: {
+				enabled: true,
+				degrade: 0.32,
+				wowDepth: 0.65,
+				wowRate: 0.32,
+				flutterDepth: 0.28,
+				flutterRate: 7.4,
+				tone: 0.38,
+				mix: 1,
+			},
+		},
+	},
+	{
+		id: "dustyKeys",
+		label: "Dusty Keys",
+		patch: {
+			loFi: {
+				enabled: true,
+				degrade: 0.22,
+				wowDepth: 0.28,
+				wowRate: 0.5,
+				flutterDepth: 0.16,
+				flutterRate: 5.9,
+				tone: 0.42,
+				mix: 1,
+			},
+		},
+	},
+	{
+		id: "cheapSpeaker",
+		label: "Cheap Speaker",
+		patch: {
+			loFi: {
+				enabled: true,
+				degrade: 0.55,
+				wowDepth: 0.18,
+				wowRate: 0.78,
+				flutterDepth: 0.22,
+				flutterRate: 9.2,
+				tone: 0.12,
+				mix: 1,
+			},
+		},
+	},
+];
+
 // TODO: Remove these local patch payload definitions once the engine exports
 // full module preset parameter payloads and the frontend no longer mirrors them.
 applyRustPresetCatalog("chorus", CHORUS_PRESETS);
@@ -749,6 +828,7 @@ applyRustPresetCatalog("junoChorus", JUNO_CHORUS_PRESETS);
 applyRustPresetCatalog("ringMod", RING_MOD_PRESETS);
 applyRustPresetCatalog("tremolo", TREMOLO_PRESETS);
 applyRustPresetCatalog("wavefolder", WAVEFOLDER_PRESETS);
+applyRustPresetCatalog("loFi", LOFI_PRESETS);
 
 export function getLfoModulePatch(id: 1 | 2, patch: Record<string, unknown>) {
 	return id === 1 ? { lfo: patch } : { lfo2: patch };

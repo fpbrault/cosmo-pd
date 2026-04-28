@@ -327,7 +327,7 @@ export type ModMatrix = { routes?: ModRoute[] }
 /**
  * FX slot type selector — determines which effect is active in a given slot.
  */
-export type FxSlotType = "empty" | "chorus" | "phaser" | "delay" | "reverb" | "vibrato" | "phaseMod" | "compressor" | "eq5Band" | "grainDelay" | "bitcrusher" | "shimmerVerb" | "distortion" | "junoChorus" | "ringMod" | "tremolo" | "wavefolder"
+export type FxSlotType = "empty" | "chorus" | "phaser" | "delay" | "reverb" | "vibrato" | "phaseMod" | "compressor" | "eq5Band" | "grainDelay" | "bitcrusher" | "shimmerVerb" | "distortion" | "junoChorus" | "ringMod" | "tremolo" | "wavefolder" | "loFi"
 
 /**
  * Compressor parameters
@@ -342,7 +342,7 @@ export type EqParams = { enabled?: boolean; gain80?: number; gain240?: number; g
 /**
  * Grain delay parameters
  */
-export type GrainDelayParams = { enabled?: boolean; time?: number; scatter?: number; density?: number; mix?: number }
+export type GrainDelayParams = { enabled?: boolean; time?: number; feedback?: number; scatter?: number; density?: number; mix?: number }
 
 /**
  * Bitcrusher parameters
@@ -357,7 +357,7 @@ export type ShimmerVerbParams = { enabled?: boolean; shimmer?: number; space?: n
 /**
  * Distortion parameters
  */
-export type DistortionParams = { enabled?: boolean; drive?: number; tone?: number; mix?: number }
+export type DistortionParams = { enabled?: boolean; mode?: number; drive?: number; tone?: number; mix?: number }
 
 /**
  * Juno-style chorus parameters
@@ -380,11 +380,16 @@ export type TremoloParams = { enabled?: boolean; rate?: number; depth?: number; 
 export type WavefolderParams = { enabled?: boolean; drive?: number; folds?: number; mix?: number }
 
 /**
+ * LoFi effect parameters
+ */
+export type LoFiParams = { enabled?: boolean; degrade?: number; wowDepth?: number; wowRate?: number; flutterDepth?: number; flutterRate?: number; tone?: number; mix?: number }
+
+/**
  * Per-slot FX configuration — wraps effect-specific parameters with the slot type.
  * Serializes as `{"type": "chorus", "params": {...}}` for effects,
  * or `{"type": "empty"}` for empty slots.
  */
-export type FxSlotConfig = { type: "empty" } | { type: "chorus"; params: ChorusParams } | { type: "phaser"; params: PhaserParams } | { type: "delay"; params: DelayParams } | { type: "reverb"; params: ReverbParams } | { type: "vibrato"; params: VibratoParams } | { type: "phaseMod" } | { type: "compressor"; params: CompressorParams } | { type: "eq5Band"; params: EqParams } | { type: "grainDelay"; params: GrainDelayParams } | { type: "bitcrusher"; params: BitcrusherParams } | { type: "shimmerVerb"; params: ShimmerVerbParams } | { type: "distortion"; params: DistortionParams } | { type: "junoChorus"; params: JunoChorusParams } | { type: "ringMod"; params: RingModParams } | { type: "tremolo"; params: TremoloParams } | { type: "wavefolder"; params: WavefolderParams }
+export type FxSlotConfig = { type: "empty" } | { type: "chorus"; params: ChorusParams } | { type: "phaser"; params: PhaserParams } | { type: "delay"; params: DelayParams } | { type: "reverb"; params: ReverbParams } | { type: "vibrato"; params: VibratoParams } | { type: "phaseMod" } | { type: "compressor"; params: CompressorParams } | { type: "eq5Band"; params: EqParams } | { type: "grainDelay"; params: GrainDelayParams } | { type: "bitcrusher"; params: BitcrusherParams } | { type: "shimmerVerb"; params: ShimmerVerbParams } | { type: "distortion"; params: DistortionParams } | { type: "junoChorus"; params: JunoChorusParams } | { type: "ringMod"; params: RingModParams } | { type: "tremolo"; params: TremoloParams } | { type: "wavefolder"; params: WavefolderParams } | { type: "loFi"; params: LoFiParams }
 
 /**
  * Top-level synth parameters (mirrors this.params in the JS)
@@ -2170,6 +2175,16 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "options": []
       },
       {
+        "id": "feedback",
+        "label": "Feedback",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 0.85,
+        "defaultF32": 0.0,
+        "options": []
+      },
+      {
         "id": "scatter",
         "label": "Scatter",
         "kind": "knob",
@@ -2319,6 +2334,32 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
     "slotType": "distortion",
     "name": "Distortion",
     "controls": [
+      {
+        "id": "mode",
+        "label": "Type",
+        "kind": "buttonGroup",
+        "bipolar": false,
+        "min": null,
+        "max": null,
+        "defaultF32": 0.0,
+        "options": [
+          {
+            "value": 0,
+            "label": "OD",
+            "iconName": null
+          },
+          {
+            "value": 1,
+            "label": "Dist",
+            "iconName": null
+          },
+          {
+            "value": 2,
+            "label": "Fuzz",
+            "iconName": null
+          }
+        ]
+      },
       {
         "id": "drive",
         "label": "Drive",
@@ -2584,6 +2625,96 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
       {
         "id": "harmonic",
         "label": "Harmonic"
+      }
+    ]
+  },
+  {
+    "slotType": "loFi",
+    "name": "LoFi",
+    "controls": [
+      {
+        "id": "degrade",
+        "label": "Degrade",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.25,
+        "options": []
+      },
+      {
+        "id": "wowDepth",
+        "label": "Wow Depth",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.35,
+        "options": []
+      },
+      {
+        "id": "wowRate",
+        "label": "Wow Rate",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.03,
+        "max": 2.5,
+        "defaultF32": 0.42,
+        "options": []
+      },
+      {
+        "id": "flutterDepth",
+        "label": "Flutter Depth",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.18,
+        "options": []
+      },
+      {
+        "id": "flutterRate",
+        "label": "Flutter Rate",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.5,
+        "max": 18.0,
+        "defaultF32": 6.7,
+        "options": []
+      },
+      {
+        "id": "tone",
+        "label": "Tone",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.45,
+        "options": []
+      },
+      {
+        "id": "mix",
+        "label": "Mix",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 1.0,
+        "options": []
+      }
+    ],
+    "presets": [
+      {
+        "id": "warpedCassette",
+        "label": "Warped Cassette"
+      },
+      {
+        "id": "dustyKeys",
+        "label": "Dusty Keys"
+      },
+      {
+        "id": "cheapSpeaker",
+        "label": "Cheap Speaker"
       }
     ]
   }
@@ -2911,6 +3042,23 @@ export const MODULE_PRESET_CATALOG_V1: ModulePresetGroupV1[] = [
       {
         "id": "harmonic",
         "label": "Harmonic"
+      }
+    ]
+  },
+  {
+    "module": "loFi",
+    "presets": [
+      {
+        "id": "warpedCassette",
+        "label": "Warped Cassette"
+      },
+      {
+        "id": "dustyKeys",
+        "label": "Dusty Keys"
+      },
+      {
+        "id": "cheapSpeaker",
+        "label": "Cheap Speaker"
       }
     ]
   }

@@ -8,19 +8,20 @@ use super::reverb::FdnReverb;
 pub struct ShimmerVerbFx {
     reverb: FdnReverb,
     pitch_line: DelayLine,
-    pitch_phase: f32,
-    pitch_buf_len: usize,
+    pitch_phase_a: f32,
+    pitch_phase_b: f32,
+    pitch_window_samples: f32,
+    shimmer_lp: f32,
     pub shimmer: f32, // amount of octave-up shimmer fed back (0..1)
     pub mix: f32,
     pub space: f32,
     pub enabled: bool,
-    sample_rate: f32,
 }
 
 impl ShimmerVerbFx {
     pub fn new(sr: f32) -> Self {
-        // Buffer large enough for a full period of the lowest pitch-shift range (~1 octave)
-        let pitch_buf_len = libm::roundf(0.05 * sr) as usize + 2;
+        let pitch_window_samples = (0.055 * sr).max(16.0);
+        let pitch_buf_len = libm::roundf((0.08 * sr).max(pitch_window_samples + 4.0)) as usize;
         let mut reverb = FdnReverb::new(sr);
         reverb.enabled = true;
         reverb.mix = 1.0; // always wet internally; outer mix handled here
@@ -29,13 +30,14 @@ impl ShimmerVerbFx {
         Self {
             reverb,
             pitch_line: DelayLine::new(pitch_buf_len),
-            pitch_phase: 0.0,
-            pitch_buf_len,
+            pitch_phase_a: 0.0,
+            pitch_phase_b: 0.5,
+            pitch_window_samples,
+            shimmer_lp: 0.0,
             shimmer: 0.4,
             mix: 0.0,
             space: 0.7,
             enabled: false,
-            sample_rate: sr,
         }
     }
 
@@ -44,37 +46,47 @@ impl ShimmerVerbFx {
             return sample;
         }
 
-        // Pitch shift up one octave using a single-crossfade read-position trick
-        let buf_samples = self.pitch_buf_len;
-        // Advance read phase at 2x speed for +1 octave
-        self.pitch_phase += 2.0 / self.sample_rate;
-        if self.pitch_phase >= 1.0 {
-            self.pitch_phase -= 1.0;
-        }
-        let read_offset = (self.pitch_phase * buf_samples as f32).max(1.0);
+        let phase_step = 1.0 / self.pitch_window_samples;
+        self.pitch_phase_a = wrap01(self.pitch_phase_a + phase_step);
+        self.pitch_phase_b = wrap01(self.pitch_phase_b + phase_step);
 
-        // Simple crossfade at wrap point to reduce clicks
-        let xfade_width = (buf_samples as f32 * 0.1).max(1.0);
-        let xfade_pos = self.pitch_phase * buf_samples as f32;
-        let xfade = if xfade_pos < xfade_width {
-            xfade_pos / xfade_width
-        } else if xfade_pos > buf_samples as f32 - xfade_width {
-            (buf_samples as f32 - xfade_pos) / xfade_width
-        } else {
-            1.0
-        };
-
-        let pitched = self.pitch_line.read_at_fractional(read_offset) * xfade;
+        let pitched_a = self.pitch_head(self.pitch_phase_a);
+        let pitched_b = self.pitch_head(self.pitch_phase_b);
+        let gain_a = raised_sine_window(self.pitch_phase_a);
+        let gain_b = raised_sine_window(self.pitch_phase_b);
+        let gain_sum = (gain_a + gain_b).max(0.001);
+        let pitched = (pitched_a * gain_a + pitched_b * gain_b) / gain_sum;
         self.pitch_line.write(sample);
 
-        // Feed shimmer back into reverb input
-        let reverb_in = sample + pitched * self.shimmer;
+        self.shimmer_lp = self.shimmer_lp * 0.82 + pitched * 0.18;
+
+        let shimmer_amount = (self.shimmer.clamp(0.0, 1.0) * 0.62).min(0.62);
+        let reverb_in = sample + self.shimmer_lp * shimmer_amount;
         self.reverb.space = self.space;
         let wet = self.reverb.process(reverb_in);
 
         let mix_angle = self.mix * core::f32::consts::PI * 0.5;
         sample * libm::cosf(mix_angle) + wet * libm::sinf(mix_angle)
     }
+
+    fn pitch_head(&self, phase: f32) -> f32 {
+        let offset = 1.0 + (1.0 - phase) * self.pitch_window_samples;
+        self.pitch_line.read_at_fractional(offset)
+    }
+}
+
+#[inline]
+fn wrap01(value: f32) -> f32 {
+    if value >= 1.0 {
+        value - 1.0
+    } else {
+        value
+    }
+}
+
+#[inline]
+fn raised_sine_window(phase: f32) -> f32 {
+    libm::sinf(phase * core::f32::consts::PI).max(0.0)
 }
 
 // ---------------------------------------------------------------------------
@@ -175,5 +187,23 @@ pub fn apply_shimmer_verb_preset(params: &mut SynthParams, preset: &str) -> bool
             true
         }
         _ => false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn shimmer_stays_finite_on_impulse() {
+        let mut fx = ShimmerVerbFx::new(44100.0);
+        fx.enabled = true;
+        fx.mix = 0.7;
+        fx.shimmer = 0.9;
+        for i in 0..20000 {
+            let out = fx.process(if i == 0 { 1.0 } else { 0.0 });
+            assert!(out.is_finite());
+            assert!(out.abs() < 8.0);
+        }
     }
 }
