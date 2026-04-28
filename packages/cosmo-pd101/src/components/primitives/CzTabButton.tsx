@@ -257,7 +257,7 @@ export default function CzTabButton({
 								// pressed: wall collapses
 								boxShadow:
 									"0 1px 0 rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.3), inset 0 0px 0px rgba(0,0,0,0)",
-								y: 3,
+								y: 1.5,
 							}
 						: {
 								// raised: tall bottom wall + diffuse shadow + top edge highlight

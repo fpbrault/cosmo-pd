@@ -49,30 +49,32 @@ export default function PresetsPage() {
 				onAddPresetToPlaylist={setlistMode.handleAddPreset}
 			/>
 
-			<PresetList
-				handleSelectPreset={presetMode.handleSelectPreset}
-				handleActivatePreset={presetMode.handleActivatePreset}
-				currentPreset={currentPreset}
-				autoSend={presetMode.autoSend}
-				onToggleAutoSend={presetMode.handleToggleAutoSend}
-				onSendCurrentPreset={() =>
-					presetMode.handleSendCurrentPreset(currentPreset)
-				}
-				onRetrieveCurrentPreset={presetMode.handleRetrieveCurrentPreset}
-				onRetrievePresetSlot={presetMode.handleRetrievePresetSlot}
-				playlists={setlistMode.playlists}
-				onAddPresetToPlaylist={setlistMode.handleAddPreset}
-			/>
-			<PresetDetails
-				editMode={presetMode.editMode}
-				currentPreset={currentPreset}
-				onPresetUpdated={setCurrentPreset}
-				setShowDeleteModal={setShowDeleteModal}
-				setEditMode={presetMode.setEditMode}
-				onWritePresetSlot={(bank, slot) =>
-					presetMode.handleWritePresetSlot(currentPreset, bank, slot)
-				}
-			/>
+			<div className="flex h-full min-w-0 overflow-hidden bg-base-300">
+				<PresetList
+					handleSelectPreset={presetMode.handleSelectPreset}
+					handleActivatePreset={presetMode.handleActivatePreset}
+					currentPreset={currentPreset}
+					autoSend={presetMode.autoSend}
+					onToggleAutoSend={presetMode.handleToggleAutoSend}
+					onSendCurrentPreset={() =>
+						presetMode.handleSendCurrentPreset(currentPreset)
+					}
+					onRetrieveCurrentPreset={presetMode.handleRetrieveCurrentPreset}
+					onRetrievePresetSlot={presetMode.handleRetrievePresetSlot}
+					playlists={setlistMode.playlists}
+					onAddPresetToPlaylist={setlistMode.handleAddPreset}
+				/>
+				<PresetDetails
+					editMode={presetMode.editMode}
+					currentPreset={currentPreset}
+					onPresetUpdated={setCurrentPreset}
+					setShowDeleteModal={setShowDeleteModal}
+					setEditMode={presetMode.setEditMode}
+					onWritePresetSlot={(bank, slot) =>
+						presetMode.handleWritePresetSlot(currentPreset, bank, slot)
+					}
+				/>
+			</div>
 
 			{showDeleteModal && (
 				<dialog open className="modal modal-open">

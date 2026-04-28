@@ -203,11 +203,11 @@ export default function PhaseLinesSection({
 			</div>
 			<div className="bg-cz-panel p-2 flex-1 min-h-0 min-w-0 flex overflow-hidden">
 				<div className="flex-1 min-h-0 min-w-0 flex gap-2 items-stretch">
-					<div className="w-16 shrink-0 self-stretch flex flex-col gap-5 justify-center">
+					<div className="w-16 shrink-0 self-stretch flex flex-col gap-5 justify-evenly">
 						{leftTabGroups.map((group) => (
 							<div
 								key={group.label}
-								className="flex flex-col gap-4 bg-cz-inset/80 rounded-lg p-1.5 py-3"
+								className="flex flex-col h-full justify-center gap-4 pb-10 bg-cz-inset/80 rounded-lg p-1.5 py-3"
 							>
 								<div className="text-center text-[0.6rem] font-bold tracking-[0.12em] text-cz-cream">
 									{group.label}

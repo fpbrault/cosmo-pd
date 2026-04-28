@@ -1,8 +1,4 @@
-import {
-	keepPreviousData,
-	useInfiniteQuery,
-	useQueryClient,
-} from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	type ColumnDef,
 	type ColumnResizeMode,
@@ -63,7 +59,7 @@ interface PresetListProps {
 	onAddPresetToPlaylist?: (playlistId: string, presetId: string) => void;
 }
 
-const fetchSize = 50;
+const visiblePageSize = 100;
 
 const getColumnStyle = (size: number) => ({
 	width: size,
@@ -426,14 +422,10 @@ const PresetList: React.FC<PresetListProps> = ({
 	);
 	const favoriteSortEnabled = sorting[0]?.id === "favorite";
 
-	const fetchData = async (
-		start: number,
-		size: number,
-		sorting: SortingState,
-	) => {
+	const fetchData = async (sorting: SortingState) => {
 		const result = await fetchPresetData(
-			start,
-			size,
+			0,
+			-1,
 			randomOrder ? [] : sorting,
 			searchTerm,
 			selectedTags,
@@ -484,10 +476,23 @@ const PresetList: React.FC<PresetListProps> = ({
 			queryClient.setQueryData(
 				queryKey,
 				(old: {
-					pageParams: number[];
-					pages: { presets: Preset[]; totalCount: number }[];
+					pageParams?: number[];
+					pages?: { presets: Preset[]; totalCount: number }[];
+					presets?: Preset[];
+					totalCount?: number;
 				}) => {
-					if (!old?.pages) return old;
+					if (!old) return old;
+
+					if (Array.isArray(old.presets)) {
+						return {
+							...old,
+							presets: old.presets.map((p) =>
+								p.id === preset.id ? { ...p, ...updates } : p,
+							),
+						};
+					}
+
+					if (!old.pages) return old;
 					const updatedPages = old.pages.map((page) => ({
 						...page,
 						presets: page.presets.map((p) =>
@@ -674,60 +679,31 @@ const PresetList: React.FC<PresetListProps> = ({
 		setUserPresetsOnly(!userPresetsOnly);
 	}, [setUserPresetsOnly, userPresetsOnly]);
 
-	const { data, fetchNextPage, isFetching } = useInfiniteQuery<{
+	const { data, isLoading } = useQuery<{
 		presets: Preset[];
 		totalCount: number;
 	}>({
 		queryKey,
-		queryFn: async ({ pageParam = 0 }) => {
-			const start = (pageParam as number) * fetchSize;
-			const fetchedData = await fetchData(start, fetchSize, effectiveSorting); //pretend api call
+		queryFn: async () => {
+			const fetchedData = await fetchData(effectiveSorting);
 			return fetchedData;
 		},
-		initialPageParam: 0,
-		getNextPageParam: (_lastGroup, groups) => groups.length,
 		refetchOnWindowFocus: false,
-		placeholderData: keepPreviousData,
 	});
 
 	const flatData = React.useMemo(() => {
-		return (
-			data?.pages?.flatMap((page: { presets: Preset[] }) => page.presets) ?? []
-		);
+		return data?.presets ?? [];
 	}, [data]);
+	const [visibleCount, setVisibleCount] = useState(visiblePageSize);
+	const visibleData = useMemo(
+		() => flatData.slice(0, visibleCount),
+		[flatData, visibleCount],
+	);
 
 	const availableTags = useMemo<[string, number][]>(() => {
-		const cachedQueryData = queryClient.getQueriesData({
-			queryKey: ["presets"],
-		});
-
-		const cachedPresets: Preset[] = cachedQueryData.flatMap(
-			([, queryData]): Preset[] => {
-				if (!queryData || typeof queryData !== "object") {
-					return [];
-				}
-
-				const candidate = queryData as {
-					pages?: Array<{ presets?: Preset[] }>;
-					presets?: Preset[];
-				};
-
-				if (Array.isArray(candidate.pages)) {
-					return candidate.pages.flatMap((page) => page.presets ?? []);
-				}
-
-				if (Array.isArray(candidate.presets)) {
-					return candidate.presets;
-				}
-
-				return [];
-			},
-		);
-
-		const presets = cachedPresets.length > 0 ? cachedPresets : flatData;
 		const tagCounts: Record<string, number> = {};
 
-		presets.forEach((preset) => {
+		flatData.forEach((preset) => {
 			preset.tags.forEach((tag: string) => {
 				const normalizedTag = tag.toLowerCase();
 				tagCounts[normalizedTag] = (tagCounts[normalizedTag] ?? 0) + 1;
@@ -735,10 +711,17 @@ const PresetList: React.FC<PresetListProps> = ({
 		});
 
 		return Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
-	}, [flatData, queryClient]);
+	}, [flatData]);
 
-	const totalDBRowCount = data?.pages?.[0]?.totalCount ?? 0;
-	const totalFetched = flatData.length;
+	const totalDBRowCount = data?.totalCount ?? 0;
+	const totalVisible = visibleData.length;
+	const presetListResetKey = queryKey.join("|");
+
+	useEffect(() => {
+		if (!presetListResetKey) return;
+		setVisibleCount(visiblePageSize);
+		tableContainerRef.current?.scrollTo({ top: 0 });
+	}, [presetListResetKey]);
 
 	const [visualSelectedId, setVisualSelectedId] = useState<string | null>(null);
 
@@ -844,29 +827,28 @@ const PresetList: React.FC<PresetListProps> = ({
 		visualSelectedId,
 	]);
 
-	const fetchMoreOnBottomReached = React.useCallback(
+	const revealMoreOnBottomReached = useCallback(
 		(containerRefElement?: HTMLDivElement | null) => {
-			if (containerRefElement) {
-				const { scrollHeight, scrollTop, clientHeight } = containerRefElement;
-				//once the user has scrolled within 500px of the bottom of the table, fetch more data if we can
-				if (
-					scrollHeight - scrollTop - clientHeight < 500 &&
-					!isFetching &&
-					totalFetched < totalDBRowCount
-				) {
-					fetchNextPage();
-				}
+			if (!containerRefElement || totalVisible >= flatData.length) {
+				return;
+			}
+
+			const { scrollHeight, scrollTop, clientHeight } = containerRefElement;
+			if (scrollHeight - scrollTop - clientHeight < 500) {
+				setVisibleCount((count) =>
+					Math.min(count + visiblePageSize, flatData.length),
+				);
 			}
 		},
-		[fetchNextPage, isFetching, totalFetched, totalDBRowCount],
+		[flatData.length, totalVisible],
 	);
 
 	useEffect(() => {
-		fetchMoreOnBottomReached(tableContainerRef.current);
-	}, [fetchMoreOnBottomReached]);
+		revealMoreOnBottomReached(tableContainerRef.current);
+	}, [revealMoreOnBottomReached]);
 
 	const table = useReactTable({
-		data: flatData,
+		data: visibleData,
 		columns,
 		defaultColumn: {
 			minSize: 112,
@@ -908,7 +890,7 @@ const PresetList: React.FC<PresetListProps> = ({
 	});
 
 	return (
-		<div className="flex flex-col grow min-w-0 select-none bg-base-300">
+		<div className="flex h-full min-h-0 grow flex-col min-w-0 select-none bg-base-300">
 			<PresetListTopBar
 				currentPreset={currentPreset}
 				totalDBRowCount={totalDBRowCount}
@@ -990,8 +972,8 @@ const PresetList: React.FC<PresetListProps> = ({
 			)}
 
 			<div
-				className="relative max-h-full overflow-auto"
-				onScroll={(e) => fetchMoreOnBottomReached(e.target as HTMLDivElement)}
+				className="relative min-h-0 flex-1 overflow-auto"
+				onScroll={(e) => revealMoreOnBottomReached(e.target as HTMLDivElement)}
 				ref={tableContainerRef}
 			>
 				<table
@@ -1100,64 +1082,62 @@ const PresetList: React.FC<PresetListProps> = ({
 							position: "relative",
 						}}
 					>
-						{!isFetching &&
-							rowVirtualizer.getVirtualItems().map((virtualRow) => {
-								const row = rows[virtualRow.index];
-								if (!row.original) return null; // Ensure row.original is defined
-								return (
-									<tr
-										data-index={virtualRow.index}
-										ref={(node) => rowVirtualizer.measureElement(node)}
-										key={row.id}
-										draggable={playlists.length > 0}
-										onDragStart={(e) => {
-											e.dataTransfer.setData("text/preset-id", row.original.id);
-											e.dataTransfer.effectAllowed = "copy";
-										}}
-										className={
-											"justifybetween " +
-											(visualSelectedId === row.original.id ||
-											(!visualSelectedId &&
-												currentPreset?.id === row.original.id)
-												? "bg-base-100"
-												: "")
-										}
-										style={{
-											display: "flex",
-											position: "absolute",
-											transform: `translateY(${virtualRow.start}px)`,
-											width: table.getTotalSize(),
-										}}
-										onClick={() => handleSelectPreset(row.original)}
-									>
-										{row.getVisibleCells().map((cell) => (
-											<td
-												key={cell.id}
-												className={
-													isCompactColumn(cell.column.id)
-														? "px-2 py-2 text-center"
-														: "px-4 py-2"
-												}
-												style={{
-													...getColumnStyle(cell.column.getSize()),
-												}}
-											>
-												{flexRender(
-													cell.column.columnDef.cell,
-													cell.getContext(),
-												)}
-											</td>
-										))}
-									</tr>
-								);
-							})}
-						{isFetching && (
+						{rowVirtualizer.getVirtualItems().map((virtualRow) => {
+							const row = rows[virtualRow.index];
+							if (!row.original) return null; // Ensure row.original is defined
+							return (
+								<tr
+									data-index={virtualRow.index}
+									ref={(node) => rowVirtualizer.measureElement(node)}
+									key={row.id}
+									draggable={playlists.length > 0}
+									onDragStart={(e) => {
+										e.dataTransfer.setData("text/preset-id", row.original.id);
+										e.dataTransfer.effectAllowed = "copy";
+									}}
+									className={
+										"justifybetween " +
+										(visualSelectedId === row.original.id ||
+										(!visualSelectedId && currentPreset?.id === row.original.id)
+											? "bg-base-100"
+											: "")
+									}
+									style={{
+										display: "flex",
+										position: "absolute",
+										transform: `translateY(${virtualRow.start}px)`,
+										width: table.getTotalSize(),
+									}}
+									onClick={() => handleSelectPreset(row.original)}
+								>
+									{row.getVisibleCells().map((cell) => (
+										<td
+											key={cell.id}
+											className={
+												isCompactColumn(cell.column.id)
+													? "px-2 py-2 text-center"
+													: "px-4 py-2"
+											}
+											style={{
+												...getColumnStyle(cell.column.getSize()),
+											}}
+										>
+											{flexRender(
+												cell.column.columnDef.cell,
+												cell.getContext(),
+											)}
+										</td>
+									))}
+								</tr>
+							);
+						})}
+						{isLoading && (
 							<tr>
 								<td
 									colSpan={table.getAllColumns().length}
 									className="text-center"
 								>
-									Fetching More...
+									Loading presets...
 								</td>
 							</tr>
 						)}

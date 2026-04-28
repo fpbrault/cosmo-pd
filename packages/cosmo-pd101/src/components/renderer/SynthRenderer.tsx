@@ -203,7 +203,7 @@ function SynthRendererContent({
 						</aside>
 
 						<main className="flex min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
-							<div className="flex w-full max-w-none min-h-0 flex-1 flex-col rounded-[1.2rem] bg-cz-surface 2xl:mx-auto 2xl:max-w-5xl shadow-xl">
+							<div className="flex w-full max-w-none min-h-0 flex-1 flex-col rounded-[1.2rem] 2xl:mx-auto 2xl:max-w-5xl">
 								<div className="pointer-events-none absolute inset-x-4 top-0 h-12 rounded-t-[1.2rem] opacity-70" />
 								<div className="relative shrink-0 rounded-md border border-cz-border bg-cz-body px-2 py-2 xl:px-3 shadow-inner">
 									<div className="flex flex-wrap justify-center gap-x-2 gap-y-2 xl:gap-x-4 items-center">
@@ -288,7 +288,7 @@ function SynthRendererContent({
 												style={{ transformOrigin: "top center" }}
 												className="absolute inset-0 z-10 overflow-hidden"
 											>
-												<div className="relative flex h-full min-h-0 flex-col rounded-lg border border-cz-border bg-cz-body shadow-xl">
+												<div className="relative flex h-full min-h-0 flex-col rounded-lg border border-cz-border bg-cz-body">
 													<div className="pointer-events-none absolute inset-0 rounded-lg bg-white/5" />
 													<div className="pointer-events-none absolute inset-x-0 top-0 h-14 rounded-t-lg opacity-60" />
 													<div className="relative min-h-0 flex-1">
