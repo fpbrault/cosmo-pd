@@ -11,7 +11,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use beamer::prelude::*;
 use cosmo_synth_engine::default_envelopes::{default_dca_env, default_dco_env, default_dcw_env};
 use cosmo_synth_engine::params::{
-    AlgoControlValueV1, ModMatrix, PolyMode, StepEnvData, SynthParams,
+    AlgoControlValueV1, FxSlotConfig, ModMatrix, PolyMode, StepEnvData, SynthParams,
 };
 use cosmo_synth_engine::processor::{midi_note_to_freq, CosmoProcessor};
 
@@ -906,6 +906,33 @@ impl ModMatrixState {
     }
 }
 
+#[derive(Clone)]
+struct FxSlotsState {
+    slots: [FxSlotConfig; 6],
+}
+
+impl Default for FxSlotsState {
+    fn default() -> Self {
+        Self {
+            slots: SynthParams::default().fx_slots,
+        }
+    }
+}
+
+impl FxSlotsState {
+    fn apply_to(&self, params: &mut SynthParams) {
+        params.fx_slots = self.slots.clone();
+    }
+
+    fn set(&mut self, slots: [FxSlotConfig; 6]) {
+        self.slots = slots;
+    }
+
+    fn to_json(&self) -> serde_json::Value {
+        serde_json::to_value(&self.slots).unwrap_or_else(|_| serde_json::json!([]))
+    }
+}
+
 #[derive(Clone, Default)]
 struct PresetSessionState {
     /// The ID of the currently loaded preset (e.g., "local:MyBass" or "builtin:Pad").
@@ -941,6 +968,7 @@ struct CzWebViewHandler {
     envelopes: Arc<RwLock<EnvelopeState>>,
     algo_controls: Arc<RwLock<AlgoControlsState>>,
     mod_matrix: Arc<RwLock<ModMatrixState>>,
+    fx_slots: Arc<RwLock<FxSlotsState>>,
     preset_session: Arc<RwLock<PresetSessionState>>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
@@ -1052,6 +1080,25 @@ impl CzWebViewHandler {
         serde_json::from_value(matrix_value)
             .map_err(|error| format!("invalid mod matrix payload: {error}"))
     }
+
+    fn parse_set_fx_slots_args(args: &[serde_json::Value]) -> Result<[FxSlotConfig; 6], String> {
+        let payload = args
+            .first()
+            .ok_or_else(|| "setFxSlots expects at least one argument".to_string())?;
+
+        let slots_value = payload
+            .get("fx_slots")
+            .or_else(|| payload.get("fxSlots"))
+            .cloned()
+            .unwrap_or_else(|| payload.clone());
+
+        let slots_vec: Vec<FxSlotConfig> = serde_json::from_value(slots_value)
+            .map_err(|error| format!("invalid fx slots payload: {error}"))?;
+
+        slots_vec
+            .try_into()
+            .map_err(|_| "setFxSlots expects exactly 6 slots".to_string())
+    }
 }
 
 impl WebViewHandler for CzWebViewHandler {
@@ -1096,6 +1143,16 @@ impl WebViewHandler for CzWebViewHandler {
                 append_log("setModMatrix");
                 Ok(serde_json::Value::Null)
             }
+            "setFxSlots" => {
+                let slots = Self::parse_set_fx_slots_args(args)?;
+                let mut fx_slots = self
+                    .fx_slots
+                    .write()
+                    .map_err(|_| "fx slots store is poisoned".to_string())?;
+                fx_slots.set(slots);
+                append_log("setFxSlots");
+                Ok(serde_json::Value::Null)
+            }
             "getEnvelopes" => {
                 let envelopes = self
                     .envelopes
@@ -1119,6 +1176,14 @@ impl WebViewHandler for CzWebViewHandler {
                     .map_err(|_| "mod matrix store is poisoned".to_string())?;
                 append_log("getModMatrix");
                 Ok(mod_matrix.to_json())
+            }
+            "getFxSlots" => {
+                let fx_slots = self
+                    .fx_slots
+                    .read()
+                    .map_err(|_| "fx slots store is poisoned".to_string())?;
+                append_log("getFxSlots");
+                Ok(fx_slots.to_json())
             }
             "getScopeData" => {
                 let scope = self
@@ -1249,6 +1314,7 @@ pub struct CzDescriptor {
     envelopes: Arc<RwLock<EnvelopeState>>,
     algo_controls: Arc<RwLock<AlgoControlsState>>,
     mod_matrix: Arc<RwLock<ModMatrixState>>,
+    fx_slots: Arc<RwLock<FxSlotsState>>,
     preset_session: Arc<RwLock<PresetSessionState>>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
@@ -1284,6 +1350,7 @@ impl Descriptor for CzDescriptor {
             envelopes: self.envelopes.clone(),
             algo_controls: self.algo_controls.clone(),
             mod_matrix: self.mod_matrix.clone(),
+            fx_slots: self.fx_slots.clone(),
             preset_session: self.preset_session.clone(),
             scope_buffer: self.scope_buffer.clone(),
             ui_input_queue: self.ui_input_queue.clone(),
@@ -1313,9 +1380,15 @@ impl Descriptor for CzDescriptor {
             .read()
             .map(|mod_matrix| mod_matrix.clone())
             .unwrap_or_default();
+        let cached_fx_slots = self
+            .fx_slots
+            .read()
+            .map(|fx_slots| fx_slots.clone())
+            .unwrap_or_default();
         cached_envelopes.apply_to(&mut synth_params);
         cached_algo_controls.apply_to(&mut synth_params);
         cached_mod_matrix.apply_to(&mut synth_params);
+        cached_fx_slots.apply_to(&mut synth_params);
         processor.set_params(synth_params);
         CzProcessor {
             parameters: self.parameters,
@@ -1326,6 +1399,8 @@ impl Descriptor for CzDescriptor {
             cached_algo_controls,
             mod_matrix: self.mod_matrix,
             cached_mod_matrix,
+            fx_slots: self.fx_slots,
+            cached_fx_slots,
             scope_buffer: self.scope_buffer,
             ui_input_queue: self.ui_input_queue,
         }
@@ -1347,6 +1422,8 @@ pub struct CzProcessor {
     cached_algo_controls: AlgoControlsState,
     mod_matrix: Arc<RwLock<ModMatrixState>>,
     cached_mod_matrix: ModMatrixState,
+    fx_slots: Arc<RwLock<FxSlotsState>>,
+    cached_fx_slots: FxSlotsState,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
 }
@@ -1392,11 +1469,15 @@ impl Processor for CzProcessor {
         if let Ok(mod_matrix) = self.mod_matrix.try_read() {
             self.cached_mod_matrix = mod_matrix.clone();
         }
+        if let Ok(fx_slots) = self.fx_slots.try_read() {
+            self.cached_fx_slots = fx_slots.clone();
+        }
 
         let mut synth_params = self.parameters.to_synth_params();
         self.cached_envelopes.apply_to(&mut synth_params);
         self.cached_algo_controls.apply_to(&mut synth_params);
         self.cached_mod_matrix.apply_to(&mut synth_params);
+        self.cached_fx_slots.apply_to(&mut synth_params);
         self.processor.set_params(synth_params);
         self.drain_ui_input_events();
 
@@ -1563,5 +1644,32 @@ mod tests {
         assert_eq!(state.to_json()["line1"]["a"][0]["id"], json!("warp"));
         assert_eq!(state.to_json()["line2"]["b"][0]["value"], json!(0.75));
         assert!(state.set(3, "a", Vec::new()).is_err());
+    }
+
+    #[test]
+    fn fx_slots_state_applies_slots_to_synth_params() {
+        let mut state = FxSlotsState::default();
+        let slots = [
+            FxSlotConfig::Delay(Default::default()),
+            FxSlotConfig::Reverb(Default::default()),
+            FxSlotConfig::Empty,
+            FxSlotConfig::Chorus(Default::default()),
+            FxSlotConfig::Compressor(Default::default()),
+            FxSlotConfig::Empty,
+        ];
+        state.set(slots);
+
+        let mut params = SynthParams::default();
+        state.apply_to(&mut params);
+
+        assert!(matches!(params.fx_slots[0], FxSlotConfig::Delay(_)));
+        assert!(matches!(params.fx_slots[1], FxSlotConfig::Reverb(_)));
+        assert!(matches!(params.fx_slots[2], FxSlotConfig::Empty));
+        assert!(matches!(params.fx_slots[3], FxSlotConfig::Chorus(_)));
+        assert!(matches!(params.fx_slots[4], FxSlotConfig::Compressor(_)));
+        assert!(matches!(params.fx_slots[5], FxSlotConfig::Empty));
+
+        let serialized = state.to_json();
+        assert_eq!(serialized.as_array().map(Vec::len), Some(6));
     }
 }

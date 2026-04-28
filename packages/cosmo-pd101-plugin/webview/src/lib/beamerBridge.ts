@@ -35,6 +35,8 @@ type AlgoControlsPayload = {
 	controls: AlgoControlValueV1[];
 };
 
+type FxSlotsPayload = unknown;
+
 type EnvelopeId =
 	| "l1_dco"
 	| "l1_dcw"
@@ -61,11 +63,6 @@ declare global {
 	interface Window {
 		__BEAMER__?: BeamerRuntime;
 		ipc?: { postMessage: (msg: string) => void };
-		__czOnParams?: (json: string) => void;
-		__czGetEnvelopes?: () => Promise<EnvelopeMap>;
-		__czGetAlgoControls?: () => Promise<unknown>;
-		__czGetModMatrix?: () => Promise<ModMatrix>;
-		__czGetPresetSession?: () => Promise<PresetSessionPayload>;
 		__czOnScope?: (samples: number[], sampleRate: number, hz: number) => void;
 	}
 }
@@ -187,6 +184,7 @@ function installBridgeIpc(runtime: BeamerRuntime) {
 				| { envelope_id: EnvelopeId; data: StepEnvData }
 				| { algo_controls: AlgoControlsPayload }
 				| { mod_matrix: ModMatrix }
+				| { fx_slots: FxSlotsPayload }
 				| { preset_session: PresetSessionPayload };
 
 			if ("param_id" in payload) {
@@ -224,6 +222,13 @@ function installBridgeIpc(runtime: BeamerRuntime) {
 				return;
 			}
 
+			if ("fx_slots" in payload) {
+				void runtime.invoke("setFxSlots", payload.fx_slots).catch((error) => {
+					console.error("[beamerBridge] Failed to send fx slots", error);
+				});
+				return;
+			}
+
 			if ("preset_session" in payload) {
 				void runtime
 					.invoke("setPresetSession", payload.preset_session)
@@ -257,6 +262,11 @@ function installBridgeIpc(runtime: BeamerRuntime) {
 	window.__czGetModMatrix = async () => {
 		const response = await runtime.invoke("getModMatrix");
 		return (response ?? { routes: [] }) as ModMatrix;
+	};
+
+	window.__czGetFxSlots = async () => {
+		const response = await runtime.invoke("getFxSlots");
+		return (response ?? []) as FxSlotsPayload;
 	};
 
 	window.__czGetPresetSession = async () => {

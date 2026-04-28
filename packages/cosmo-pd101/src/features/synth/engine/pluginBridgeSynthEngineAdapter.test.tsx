@@ -7,7 +7,15 @@ type IpcMessage =
 	| { param_id: string; value: number }
 	| { envelope_id: string; data: unknown }
 	| { algo_controls: unknown }
-	| { mod_matrix: unknown };
+	| { mod_matrix: unknown }
+	| { fx_slots: unknown }
+	| {
+			preset_session: {
+				activePresetId: string | null;
+				activePresetNameBase: string;
+				loadedPresetFingerprint: string | null;
+			};
+	  };
 
 describe("usePluginBridgeSynthEngine", () => {
 	beforeEach(() => {
@@ -17,6 +25,8 @@ describe("usePluginBridgeSynthEngine", () => {
 		window.__czGetEnvelopes = undefined;
 		window.__czGetAlgoControls = undefined;
 		window.__czGetModMatrix = undefined;
+		window.__czGetFxSlots = undefined;
+		window.__czGetPresetSession = undefined;
 	});
 
 	afterEach(() => {
@@ -26,6 +36,8 @@ describe("usePluginBridgeSynthEngine", () => {
 		window.__czGetEnvelopes = undefined;
 		window.__czGetAlgoControls = undefined;
 		window.__czGetModMatrix = undefined;
+		window.__czGetFxSlots = undefined;
+		window.__czGetPresetSession = undefined;
 	});
 
 	it("does not push default params before host replay on mount", async () => {
@@ -147,10 +159,13 @@ describe("usePluginBridgeSynthEngine", () => {
 	it("waits for envelope hydration before outbound sync", async () => {
 		const hostVolume = 0.41;
 		const hostEnv = structuredClone(useSynthStore.getState().line1DcoEnv);
+		type EnvelopeResponse = Awaited<
+			ReturnType<NonNullable<typeof window.__czGetEnvelopes>>
+		>;
 
-		let resolveEnvelopes: ((value: unknown) => void) | null = null;
+		let resolveEnvelopes: ((value: EnvelopeResponse) => void) | null = null;
 		window.__czGetEnvelopes = () =>
-			new Promise((resolve) => {
+			new Promise<EnvelopeResponse>((resolve) => {
 				resolveEnvelopes = resolve;
 			});
 		window.__czGetAlgoControls = async () => ({
@@ -187,7 +202,9 @@ describe("usePluginBridgeSynthEngine", () => {
 
 		expect(outbound.some((message) => "envelope_id" in message)).toBe(false);
 
-		resolveEnvelopes?.({ l1_dco: hostEnv });
+		if (resolveEnvelopes) {
+			resolveEnvelopes({ l1_dco: hostEnv });
+		}
 
 		await waitFor(() => {
 			expect(
@@ -230,6 +247,58 @@ describe("usePluginBridgeSynthEngine", () => {
 				(message) => "param_id" in message && message.param_id === "volume",
 			),
 		).toBe(true);
+
+		unmount();
+	});
+
+	it("sends fx_slots updates after hydration", async () => {
+		const hostVolume = 0.44;
+		let currentHandler: ((json: string) => void) | undefined;
+		Object.defineProperty(window, "__czOnParams", {
+			configurable: true,
+			get: () => currentHandler,
+			set: (handler: ((json: string) => void) | undefined) => {
+				currentHandler = handler;
+			},
+		});
+
+		const outbound: IpcMessage[] = [];
+		window.ipc = {
+			postMessage(message: string) {
+				outbound.push(JSON.parse(message) as IpcMessage);
+			},
+		};
+
+		const { unmount } = renderHook(() => usePluginBridgeSynthEngine());
+
+		await waitFor(() => {
+			expect(typeof currentHandler).toBe("function");
+		});
+
+		act(() => {
+			currentHandler?.(JSON.stringify({ volume: hostVolume }));
+		});
+
+		const fxSlots = useSynthStore.getState().fxSlots;
+		act(() => {
+			useSynthStore.getState().setFxSlotType(0, "delay");
+		});
+
+		await waitFor(() => {
+			expect(
+				outbound.some(
+					(message): message is { fx_slots: unknown } =>
+						"fx_slots" in message,
+				),
+			).toBe(true);
+		});
+
+		const fxSlotsMessage = outbound.find(
+			(message): message is { fx_slots: unknown } => "fx_slots" in message,
+		);
+		expect(Array.isArray(fxSlotsMessage?.fx_slots)).toBe(true);
+		expect((fxSlotsMessage?.fx_slots as unknown[])?.length).toBe(6);
+		expect(fxSlots).toHaveLength(6);
 
 		unmount();
 	});
