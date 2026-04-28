@@ -19,6 +19,8 @@ Do not expose `DATABASE_URL` to frontend runtime.
 
 ## Commands
 
+Run from the `packages/cz-explorer/` directory (or via `bun --filter @cosmo/cz-explorer`):
+
 ```bash
 bun run db:generate   # Generate SQL migration files from src/db/schema.ts
 bun run db:migrate    # Apply pending migrations to DATABASE_URL
@@ -27,7 +29,7 @@ bun run db:studio     # Inspect schema/data (optional)
 
 ## Workflow
 
-1. Update schema in `src/db/schema.ts`
+1. Update schema in `packages/cz-explorer/src/db/schema.ts`
 2. Generate migration: `bun run db:generate`
 3. Review generated SQL in `drizzle/`
 4. Apply migration: `bun run db:migrate`

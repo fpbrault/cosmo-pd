@@ -11,7 +11,8 @@ This is a **Bun monorepo** containing:
 | `packages/cz-explorer` | React + Vite web app: preset library, setlists, synth browser UI |
 | `packages/cz-explorer-desktop` | Tauri 2 desktop wrapper for cz-explorer |
 | `packages/cosmo-synth-engine` | Rust WebAssembly phase distortion synth engine |
-| `packages/cosmo-pd101` | beamer-based VST3/AUv2/AUv3 plugin host **and** reusable library for synth-specific UI components, hooks, and SysEx utilities |
+| `packages/cosmo-pd101` | Reusable library: synth-specific React components, hooks, preset utilities, and SysEx utilities consumed by `cz-explorer` and the plugin webview |
+| `packages/cosmo-pd101-plugin` | beamer-based VST3/AUv2/AUv3 plugin host with a thin React/Vite WebView shell |
 | `packages/xtask` | Build automation (xtask pattern) |
 
 ## Setup
@@ -47,11 +48,14 @@ bun run build:standalone # Build the Tauri desktop app
 
 ### Testing
 
+Test commands run in the `packages/cz-explorer` scope (prefix with `bun --filter @cosmo/cz-explorer` or `cd packages/cz-explorer`):
+
 ```bash
-bun run test             # All tests (JS + Rust)
+bun run test             # All tests across all packages (JS + Rust) — root-level
 bun run test:unit        # Unit tests (Happy DOM)
-bun run test:browser     # Browser tests (Playwright)
-bun run test:component   # Component tests only
+bun run test:browser     # Browser tests (Playwright/Chromium)
+bun run test:all         # All JS tests for cz-explorer (unit + browser)
+bun run test:component   # Component tests only (features/ + components/)
 bun run test:coverage    # Unit test coverage report
 ```
 
@@ -64,8 +68,10 @@ bun run lint:fix         # Biome auto-fix + cargo fmt
 
 ### Database
 
+Database commands run in the `packages/cz-explorer` scope:
+
 ```bash
-bun run db:generate      # Generate Drizzle migration files
+bun run db:generate      # Generate Drizzle migration files from src/db/schema.ts
 bun run db:migrate       # Apply pending migrations (requires DATABASE_URL)
 bun run db:studio        # Open Drizzle Studio
 ```
