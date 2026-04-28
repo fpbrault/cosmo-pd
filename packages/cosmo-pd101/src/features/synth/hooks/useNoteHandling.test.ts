@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useNoteHandling } from "./useNoteHandling";
 
 describe("useNoteHandling", () => {
@@ -181,5 +181,39 @@ describe("useNoteHandling", () => {
 		expect(noteOffNotes).toHaveLength(2);
 		expect(noteOffNotes).toContain(60);
 		expect(noteOffNotes).toContain(64);
+	});
+
+	it("disables PC keyboard note mapping in plugin runtime", () => {
+		const previousBeamer = (
+			window as Window & { __BEAMER__?: { emit?: () => void } }
+		).__BEAMER__;
+		(window as Window & { __BEAMER__?: { emit?: () => void } }).__BEAMER__ = {
+			emit: () => {},
+		};
+
+		renderHook(() => useNoteHandling({ eventSink }));
+
+		act(() => {
+			window.dispatchEvent(new KeyboardEvent("keydown", { key: "a" }));
+		});
+
+		expect(events.some((event) => event.type === "noteOn")).toBe(false);
+
+		(window as Window & { __BEAMER__?: { emit?: () => void } }).__BEAMER__ =
+			previousBeamer;
+	});
+
+	it("ignores keyboard mapping when document is not focused", () => {
+		const originalHasFocus = document.hasFocus;
+		document.hasFocus = vi.fn(() => false);
+
+		renderHook(() => useNoteHandling({ eventSink }));
+
+		act(() => {
+			window.dispatchEvent(new KeyboardEvent("keydown", { key: "a" }));
+		});
+
+		expect(events.some((event) => event.type === "noteOn")).toBe(false);
+		document.hasFocus = originalHasFocus;
 	});
 });

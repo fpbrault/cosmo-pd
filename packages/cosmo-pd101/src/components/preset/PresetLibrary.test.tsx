@@ -148,6 +148,50 @@ describe("PresetLibrary", () => {
 		expect(props.onLoadLibrary).toHaveBeenNthCalledWith(3, libraryPreset);
 	});
 
+	it("handles Arrow navigation from window-level keydown", () => {
+		const props = createProps();
+		render(<PresetLibrary {...props} />);
+
+		fireEvent.keyDown(window, { key: "ArrowDown" });
+
+		expect(props.onLoadLibrary).toHaveBeenCalledTimes(1);
+		expect(props.onLoadLibrary).toHaveBeenNthCalledWith(1, libraryPreset);
+	});
+
+	it("does not navigate when typing in a text input", () => {
+		const props = createProps();
+		render(<PresetLibrary {...props} />);
+
+		const searchInput = screen.getByPlaceholderText("Search presets");
+		searchInput.focus();
+		fireEvent.keyDown(searchInput, { key: "ArrowDown" });
+
+		expect(props.onLoadLibrary).not.toHaveBeenCalled();
+		expect(props.onLoadBuiltin).not.toHaveBeenCalled();
+		expect(props.onLoadLocal).not.toHaveBeenCalled();
+	});
+
+	it("does not trigger focused row action on space in plugin mode", () => {
+		const props = createProps();
+		const previousBeamer = (
+			window as Window & { __BEAMER__?: { emit?: () => void } }
+		).__BEAMER__;
+		(window as Window & { __BEAMER__?: { emit?: () => void } }).__BEAMER__ = {
+			emit: () => {},
+		};
+
+		render(<PresetLibrary {...props} />);
+		const activeRow = screen.getByRole("button", { name: "Local Keys" });
+		activeRow.focus();
+		fireEvent.keyDown(activeRow, { key: " " });
+		fireEvent.keyUp(activeRow, { key: " " });
+
+		expect(props.onLoadLocal).not.toHaveBeenCalled();
+
+		(window as Window & { __BEAMER__?: { emit?: () => void } }).__BEAMER__ =
+			previousBeamer;
+	});
+
 	it("clears modal state when dialogs receive a native cancel event", () => {
 		const props = createProps();
 		render(<PresetLibrary {...props} />);
