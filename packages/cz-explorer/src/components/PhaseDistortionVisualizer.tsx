@@ -87,10 +87,10 @@ export function SharedPhaseDistortionVisualizer({
 		audioContextState,
 		resumeAudio,
 	} = useAudioEngine({
-			synthWasmUrl,
-			synthBindingsUrl,
-			pdVisualizerWorkletUrl,
-		});
+		synthWasmUrl,
+		synthBindingsUrl,
+		pdVisualizerWorkletUrl,
+	});
 
 	const { activeNotes, sendNoteOn, sendNoteOff } = useNoteHandling({
 		workletNodeRef,

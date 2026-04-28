@@ -158,93 +158,6 @@ export type LineParams = {
 	algoControls?: AlgoControlValueV1[];
 };
 
-type ResumableAudioContext = Pick<AudioContext, "state" | "resume">;
-
-const USER_GESTURE_EVENTS = [
-	"pointerdown",
-	"mousedown",
-	"touchstart",
-	"keydown",
-] as const;
-
-function isAutoplayBlockError(error: unknown): boolean {
-	if (!(error instanceof Error)) {
-		return false;
-	}
-	const name = error.name.toLowerCase();
-	const message = error.message.toLowerCase();
-	return (
-		name.includes("notallowed") ||
-		message.includes("not allowed") ||
-		message.includes("user gesture")
-	);
-}
-
-/**
- * Attempts to resume a suspended AudioContext. If resume() resolves but the
- * context is still suspended (browsers silently ignore the call under autoplay
- * restrictions), or if resume() throws an autoplay-related error, gesture
- * listeners are attached so the engine recovers on first user interaction.
- *
- * Returns the cleanup function for the gesture listeners, or null if the
- * context was already running or resumed immediately.
- */
-export async function resumeOrDefer(
-	ctx: ResumableAudioContext,
-): Promise<(() => void) | null> {
-	if (ctx.state !== "suspended") return null;
-
-	try {
-		await ctx.resume();
-	} catch (err) {
-		if (!isAutoplayBlockError(err)) throw err;
-		// Explicit autoplay rejection — fall through to attach gesture listeners.
-	}
-
-	// Browsers commonly resolve resume() without error but leave the context
-	// suspended when autoplay is blocked. Check state regardless of whether an
-	// error was thrown.
-	if ((ctx.state as string) !== "running") {
-		return attachResumeOnUserGesture(ctx);
-	}
-
-	return null;
-}
-
-export function attachResumeOnUserGesture(
-	ctx: ResumableAudioContext,
-): () => void {
-	let active = true;
-
-	const cleanup = () => {
-		if (!active) return;
-		active = false;
-		for (const eventName of USER_GESTURE_EVENTS) {
-			window.removeEventListener(eventName, tryResume, true);
-		}
-	};
-
-	const tryResume = () => {
-		if (!active) return;
-		void ctx
-			.resume()
-			.then(() => {
-				if (ctx.state === "running") {
-					cleanup();
-				}
-			})
-			.catch(() => {
-				// Keep listeners attached until a later gesture succeeds.
-			});
-	};
-
-	for (const eventName of USER_GESTURE_EVENTS) {
-		window.addEventListener(eventName, tryResume, true);
-	}
-
-	return cleanup;
-}
-
 const DEFAULT_LINE_PARAMS: LineParams = {
 	algo: "cz101",
 	algo2: null,
@@ -292,7 +205,8 @@ export function useAudioEngine({
 	const analyserNodeRef = useRef<AnalyserNode | null>(null);
 	const workletNodeRef = useRef<AudioWorkletNode | null>(null);
 	const audioInitRef = useRef(false);
-	const [audioContextState, setAudioContextState] = useState<AudioContextState | null>(null);
+	const [audioContextState, setAudioContextState] =
+		useState<AudioContextState | null>(null);
 
 	const paramsRef = useRef<EngineParams>({
 		lineSelect: "L1+L2",
@@ -526,6 +440,13 @@ export function useAudioEngine({
 				gainNodeRef.current = gainNode;
 				analyserNodeRef.current = analyserNode;
 			} catch (err) {
+				// init() can fail after we already created/assigned AudioContext.
+				// Close and clear references immediately so we do not leak contexts.
+				await audioCtxRef.current?.close().catch(() => {
+					// Ignore close failures while handling init failure.
+				});
+				audioCtxRef.current = null;
+				setAudioContextState(null);
 				console.error("[PD Visualizer] Audio init failed:", err);
 				audioInitRef.current = false;
 			}
@@ -557,8 +478,10 @@ export function useAudioEngine({
 			return;
 		}
 		if (ctx.state !== "suspended") return;
-		void ctx.resume();
-	}, [setAudioContextState]);
+		void ctx.resume().catch(() => {
+			// Ignore resume failures (e.g. autoplay still blocked).
+		});
+	}, []);
 
 	return {
 		audioCtxRef,
