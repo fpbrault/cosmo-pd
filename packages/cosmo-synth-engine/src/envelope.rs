@@ -77,13 +77,8 @@ impl EnvGen {
             step_target_level
         };
         let frozen_step = is_frozen_step(self.prev_level, target_level, step_rate);
-        let raw_duration = step_duration_samples(
-            kind,
-            self.prev_level,
-            target_level,
-            step_rate,
-            sr,
-        );
+        let raw_duration =
+            step_duration_samples(kind, self.prev_level, target_level, step_rate, sr);
         // Apply key-follow speed multiplier, ensure at least 1
         let duration = if raw_duration == 0 {
             0
@@ -139,13 +134,7 @@ impl EnvGen {
             step_target_level2
         };
         let frozen_step2 = is_frozen_step(self.prev_level, target_level2, step_rate2);
-        let duration2 = step_duration_samples(
-            kind,
-            self.prev_level,
-            target_level2,
-            step_rate2,
-            sr,
-        );
+        let duration2 = step_duration_samples(kind, self.prev_level, target_level2, step_rate2, sr);
 
         if frozen_step2 {
             // CZ-style hold: stop advancing this envelope step.

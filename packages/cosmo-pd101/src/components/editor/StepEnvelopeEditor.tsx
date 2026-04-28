@@ -97,14 +97,13 @@ function buildEnvelopePoints(
 ): EnvPoint[] {
 	const activeSteps = env.steps.slice(0, env.stepCount);
 	if (activeSteps.length === 0) return [];
-	const activeStepCount = activeSteps.length;
+	const _activeStepCount = activeSteps.length;
 
 	const drawWidth = width - CHART_PADDING_X * 2;
 	const drawHeight = height - CHART_PADDING_Y * 2;
 
 	let totalTime = 0;
-	for (const step of activeSteps)
-		totalTime += editorStepDuration(step.rate);
+	for (const step of activeSteps) totalTime += editorStepDuration(step.rate);
 	if (totalTime <= 0) totalTime = 1;
 
 	const points: EnvPoint[] = [];

@@ -534,7 +534,6 @@ export const FX_SLOT_MODULE_CONFIGS: Partial<
 		presets: LOFI_PRESETS,
 		presetTitle: "LoFi Presets",
 		controls: [
-
 			{
 				kind: "knob",
 				param: "wowDepth",
@@ -571,7 +570,7 @@ export const FX_SLOT_MODULE_CONFIGS: Partial<
 				defaultValue: 6.7,
 				formatter: (v) => `${v.toFixed(1)}Hz`,
 			},
-						{
+			{
 				kind: "knob",
 				param: "degrade",
 				label: "Dirt",
