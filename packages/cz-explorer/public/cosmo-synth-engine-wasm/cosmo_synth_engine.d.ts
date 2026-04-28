@@ -26,6 +26,10 @@ declare namespace wasm_bindgen {
          */
         getRuntimeModSources(): string;
         /**
+         * Return the latest per-voice envelope state as JSON for UI telemetry.
+         */
+        getRuntimeVoiceStates(): string;
+        /**
          * Create a new processor at the given sample rate.
          */
         constructor(sample_rate: number);
@@ -92,6 +96,7 @@ declare interface InitOutput {
     readonly czsynthprocessor_applyModulePreset: (a: number, b: number, c: number, d: number, e: number) => number;
     readonly czsynthprocessor_getFxSlotTypes: (a: number, b: number) => void;
     readonly czsynthprocessor_getRuntimeModSources: (a: number, b: number) => void;
+    readonly czsynthprocessor_getRuntimeVoiceStates: (a: number, b: number) => void;
     readonly czsynthprocessor_new: (a: number) => number;
     readonly czsynthprocessor_noteOff: (a: number, b: number) => void;
     readonly czsynthprocessor_noteOn: (a: number, b: number, c: number, d: number) => void;

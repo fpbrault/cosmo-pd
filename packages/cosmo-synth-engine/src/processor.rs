@@ -40,6 +40,8 @@ pub struct RuntimeVoiceEnvState {
     pub value: f32,
     pub step: usize,
     pub releasing: bool,
+    pub step_pos: u32,
+    pub prev_level: f32,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Default)]
@@ -194,16 +196,22 @@ impl CosmoProcessor {
                         value: voice.line1_env.dco.output,
                         step: voice.line1_env.dco.step,
                         releasing: voice.line1_env.dco.releasing,
+                        step_pos: voice.line1_env.dco.step_pos,
+                        prev_level: voice.line1_env.dco.prev_level,
                     },
                     dcw: RuntimeVoiceEnvState {
                         value: voice.line1_env.dcw.output,
                         step: voice.line1_env.dcw.step,
                         releasing: voice.line1_env.dcw.releasing,
+                        step_pos: voice.line1_env.dcw.step_pos,
+                        prev_level: voice.line1_env.dcw.prev_level,
                     },
                     dca: RuntimeVoiceEnvState {
                         value: voice.line1_env.dca.output,
                         step: voice.line1_env.dca.step,
                         releasing: voice.line1_env.dca.releasing,
+                        step_pos: voice.line1_env.dca.step_pos,
+                        prev_level: voice.line1_env.dca.prev_level,
                     },
                 },
                 line2: RuntimeVoiceLineState {
@@ -211,16 +219,22 @@ impl CosmoProcessor {
                         value: voice.line2_env.dco.output,
                         step: voice.line2_env.dco.step,
                         releasing: voice.line2_env.dco.releasing,
+                        step_pos: voice.line2_env.dco.step_pos,
+                        prev_level: voice.line2_env.dco.prev_level,
                     },
                     dcw: RuntimeVoiceEnvState {
                         value: voice.line2_env.dcw.output,
                         step: voice.line2_env.dcw.step,
                         releasing: voice.line2_env.dcw.releasing,
+                        step_pos: voice.line2_env.dcw.step_pos,
+                        prev_level: voice.line2_env.dcw.prev_level,
                     },
                     dca: RuntimeVoiceEnvState {
                         value: voice.line2_env.dca.output,
                         step: voice.line2_env.dca.step,
                         releasing: voice.line2_env.dca.releasing,
+                        step_pos: voice.line2_env.dca.step_pos,
+                        prev_level: voice.line2_env.dca.prev_level,
                     },
                 },
             })

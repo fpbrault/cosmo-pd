@@ -18,6 +18,32 @@ export type RuntimeModSources = {
 	aftertouch: number;
 };
 
+export type RuntimeVoiceEnvState = {
+	value: number;
+	step: number;
+	releasing: boolean;
+	stepPos: number;
+	prevLevel: number;
+};
+
+export type RuntimeVoiceLineState = {
+	dco: RuntimeVoiceEnvState;
+	dcw: RuntimeVoiceEnvState;
+	dca: RuntimeVoiceEnvState;
+};
+
+export type RuntimeVoiceDebugState = {
+	index: number;
+	active: boolean;
+	isReleasing: boolean;
+	sustained: boolean;
+	note: number | null;
+	envNote: number;
+	velocity: number;
+	line1: RuntimeVoiceLineState;
+	line2: RuntimeVoiceLineState;
+};
+
 export const EMPTY_RUNTIME_MOD_SOURCES: RuntimeModSources = {
 	lfo1: 0,
 	lfo2: 0,
@@ -27,6 +53,8 @@ export const EMPTY_RUNTIME_MOD_SOURCES: RuntimeModSources = {
 	modWheel: 0,
 	aftertouch: 0,
 };
+
+export const EMPTY_RUNTIME_VOICE_STATES: RuntimeVoiceDebugState[] = [];
 
 export type UseAudioEngineParams = {
 	synthWasmUrl: string;
@@ -248,6 +276,67 @@ export function useAudioEngine({
 			};
 		};
 
+		const normalizeRuntimeVoiceStates = (
+			value: unknown,
+		): RuntimeVoiceDebugState[] | null => {
+			if (!Array.isArray(value)) {
+				return null;
+			}
+
+			const readNumber = (source: unknown, fallback = 0) =>
+				typeof source === "number" && Number.isFinite(source)
+					? source
+					: fallback;
+			const readEnv = (source: unknown): RuntimeVoiceEnvState => {
+				const detail =
+					source && typeof source === "object"
+						? (source as Record<string, unknown>)
+						: {};
+				return {
+					value: readNumber(detail.value),
+					step: readNumber(detail.step),
+					releasing: detail.releasing === true,
+					stepPos: readNumber(detail.stepPos),
+					prevLevel: readNumber(detail.prevLevel),
+				};
+			};
+
+			return value.map((entry, index) => {
+				const detail =
+					entry && typeof entry === "object"
+						? (entry as Record<string, unknown>)
+						: {};
+				const line1 =
+					detail.line1 && typeof detail.line1 === "object"
+						? (detail.line1 as Record<string, unknown>)
+						: {};
+				const line2 =
+					detail.line2 && typeof detail.line2 === "object"
+						? (detail.line2 as Record<string, unknown>)
+						: {};
+
+				return {
+					index: readNumber(detail.index, index),
+					active: detail.active === true,
+					isReleasing: detail.isReleasing === true,
+					sustained: detail.sustained === true,
+					note: typeof detail.note === "number" ? detail.note : null,
+					envNote: readNumber(detail.envNote, 60),
+					velocity: readNumber(detail.velocity, 0),
+					line1: {
+						dco: readEnv(line1.dco),
+						dcw: readEnv(line1.dcw),
+						dca: readEnv(line1.dca),
+					},
+					line2: {
+						dco: readEnv(line2.dco),
+						dcw: readEnv(line2.dcw),
+						dca: readEnv(line2.dca),
+					},
+				};
+			});
+		};
+
 		const init = async () => {
 			try {
 				const ctx = new AudioContext();
@@ -300,6 +389,16 @@ export function useAudioEngine({
 								new CustomEvent<RuntimeModSources>("cz-runtime-mod-sources", {
 									detail: sources,
 								}),
+							);
+						}
+					} else if (e.data?.type === "runtimeVoiceStates") {
+						const voices = normalizeRuntimeVoiceStates(e.data.voices);
+						if (voices) {
+							window.dispatchEvent(
+								new CustomEvent<RuntimeVoiceDebugState[]>(
+									"cz-runtime-voice-states",
+									{ detail: voices },
+								),
 							);
 						}
 					} else if (e.data?.type === "error") {

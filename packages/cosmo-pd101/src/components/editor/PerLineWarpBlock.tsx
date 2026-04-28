@@ -8,7 +8,7 @@ import type {
 import ControlKnob from "@/components/controls/ControlKnob";
 import AlgoSectionCard from "@/components/editor/AlgoSectionCard";
 import Card from "@/components/primitives/Card";
-import CzButton from "@/components/primitives/CzButton";
+import { useOptionalSynthController } from "@/features/synth/SynthParamController";
 import type { EnvTab } from "@/features/synth/synthUiStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import { getCzPresetDefaults } from "@/lib/synth/algoRef";
@@ -23,7 +23,11 @@ import { PARAM_META } from "@/lib/synth/paramMeta";
 import type { PdAlgo } from "@/lib/synth/pdAlgorithms";
 import { getPdAlgoDef, PD_ALGOS } from "@/lib/synth/pdAlgorithms";
 import PerLineParametersCard from "./PerLineParametersCard";
-import { StepEnvelopeEditor } from "./StepEnvelopeEditor";
+import {
+	StepEnvelopeEditor,
+	StepEnvelopePreview,
+	type StepEnvelopeVoiceMarker,
+} from "./StepEnvelopeEditor";
 
 interface PerLineWarpBlockProps {
 	label: string;
@@ -69,6 +73,33 @@ type AlgoDefinitionRuntime = {
 	controls: AlgoControlRuntime[];
 };
 
+function clamp(value: number, min: number, max: number) {
+	return Math.max(min, Math.min(max, value));
+}
+
+function getEnvelopeVoiceProgress(
+	env: StepEnvData,
+	step: number,
+	value: number,
+) {
+	const stepIndex = clamp(Math.round(step), 0, Math.max(0, env.stepCount - 1));
+	const currentStep = env.steps[stepIndex];
+	if (!currentStep) {
+		return undefined;
+	}
+
+	const isEndStep = stepIndex === env.stepCount - 1;
+	const targetLevel = isEndStep ? 0 : currentStep.level / 99;
+	const previousStep = stepIndex > 0 ? env.steps[stepIndex - 1] : null;
+	const previousLevel = previousStep ? previousStep.level / 99 : 0;
+	const distance = targetLevel - previousLevel;
+	if (Math.abs(distance) < 0.0001) {
+		return undefined;
+	}
+
+	return clamp((value - previousLevel) / distance, 0, 1);
+}
+
 export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 	label,
 	color,
@@ -107,6 +138,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 }: PerLineWarpBlockProps) {
 	const activeEnvTab = useSynthUiStore((s) => s.activeEnvTab);
 	const setActiveEnvTab = useSynthUiStore((s) => s.setActiveEnvTab);
+	const synthController = useOptionalSynthController();
 	const activeSection = activeSectionProp;
 	const algoBEnabled = algoBlend > 0.001;
 
@@ -136,17 +168,35 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 			title: `${label} DCW`,
 			env: dcwEnv,
 			setEnv: setDcwEnv,
-			envColor: color,
+			envColor: "#60a5fa",
 		},
 		dca: {
 			title: `${label} DCA`,
 			env: dcaEnv,
 			setEnv: setDcaEnv,
-			envColor: "#3dff3d",
+			envColor: "#f97316",
 		},
 	};
 
 	const activeEnv = envMap[activeEnvTab];
+	const liveVoiceStates = synthController?.getLiveVoiceStates() ?? [];
+	const activeVoiceMarkers: StepEnvelopeVoiceMarker[] = liveVoiceStates
+		.filter((voice) => voice.active)
+		.map((voice) => {
+			const lineState = lineIndex === 1 ? voice.line1 : voice.line2;
+			const envState = lineState[activeEnvTab];
+			return {
+				id: voice.index,
+				step: envState.step,
+				progress: getEnvelopeVoiceProgress(
+					activeEnv.env,
+					envState.step,
+					envState.value,
+				),
+				releasing: envState.releasing || voice.isReleasing,
+				color: voice.isReleasing ? "#f59e0b" : "#f8fafc",
+			};
+		});
 
 	const handleAlgoChange = useCallback(
 		(nextAlgo: PdAlgo) => {
@@ -499,16 +549,16 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 								<div className="mb-2 text-3xs uppercase tracking-[0.24em] text-cz-cream">
 									Envelope Matrix
 								</div>
-								<div className="mb-2 flex gap-1">
+								<div className="mb-3 grid grid-cols-3 gap-2">
 									{(["dco", "dcw", "dca"] as EnvTab[]).map((tab) => (
-										<CzButton
+										<StepEnvelopePreview
 											key={tab}
+											title={tab.toUpperCase()}
+											env={envMap[tab].env}
+											color={envMap[tab].envColor}
 											active={activeEnvTab === tab}
 											onClick={() => setActiveEnvTab(tab)}
-											className="[&_button]:bg-cz-inset [&_button]:border-cz-border"
-										>
-											{tab.toUpperCase()}
-										</CzButton>
+										/>
 									))}
 								</div>
 								<StepEnvelopeEditor
@@ -518,6 +568,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 									color={activeEnv.envColor}
 									lineIndex={lineIndex}
 									envKind={activeEnvTab}
+									voiceMarkers={activeVoiceMarkers}
 									compact
 								/>
 							</Card>

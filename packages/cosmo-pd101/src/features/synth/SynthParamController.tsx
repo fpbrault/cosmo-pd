@@ -10,7 +10,9 @@ import {
 import { useOptionalModMatrix } from "@/context/ModMatrixContext";
 import {
 	EMPTY_RUNTIME_MOD_SOURCES,
+	EMPTY_RUNTIME_VOICE_STATES,
 	type RuntimeModSources,
+	type RuntimeVoiceDebugState,
 } from "@/features/synth/hooks/useAudioEngine";
 import { useSynthStore } from "@/features/synth/synthStore";
 import type { UseSynthStateResult } from "@/features/synth/useSynthState";
@@ -129,6 +131,7 @@ export type SynthParamKey = keyof typeof SYNTH_PARAM_SETTERS;
 type ReadoutValue = string | number | boolean;
 
 type LiveModSources = Readonly<RuntimeModSources>;
+type LiveVoiceStates = ReadonlyArray<RuntimeVoiceDebugState>;
 
 type SynthParamController = {
 	getParam: <K extends SynthParamKey>(key: K) => UseSynthStateResult[K];
@@ -151,6 +154,7 @@ type SynthParamController = {
 		context?: ModTargetContext,
 	) => boolean;
 	getLiveSources: () => LiveModSources;
+	getLiveVoiceStates: () => LiveVoiceStates;
 	getModulatedValue: (params: {
 		destination: ModDestination | undefined;
 		baseValue: number;
@@ -174,6 +178,9 @@ export function SynthParamControllerProvider({
 	const modRoutes = maybeModMatrix?.modMatrix.routes ?? [];
 	const [liveSources, setLiveSources] = useState<LiveModSources>(
 		EMPTY_RUNTIME_MOD_SOURCES,
+	);
+	const [liveVoiceStates, setLiveVoiceStates] = useState<LiveVoiceStates>(
+		EMPTY_RUNTIME_VOICE_STATES,
 	);
 
 	const getParam = useCallback(
@@ -224,6 +231,27 @@ export function SynthParamControllerProvider({
 		window.addEventListener("cz-runtime-mod-sources", onRuntimeModSources);
 		return () => {
 			window.removeEventListener("cz-runtime-mod-sources", onRuntimeModSources);
+		};
+	}, []);
+
+	useEffect(() => {
+		const onRuntimeVoiceStates = (event: Event) => {
+			const detail = (
+				event as CustomEvent<RuntimeVoiceDebugState[] | undefined>
+			).detail;
+			if (!detail) {
+				return;
+			}
+
+			setLiveVoiceStates(detail);
+		};
+
+		window.addEventListener("cz-runtime-voice-states", onRuntimeVoiceStates);
+		return () => {
+			window.removeEventListener(
+				"cz-runtime-voice-states",
+				onRuntimeVoiceStates,
+			);
 		};
 	}, []);
 
@@ -306,6 +334,7 @@ export function SynthParamControllerProvider({
 			hasActiveRoutes,
 			hasActiveRoutesForKey,
 			getLiveSources: () => liveSources,
+			getLiveVoiceStates: () => liveVoiceStates,
 			getModulatedValue,
 		}),
 		[
@@ -317,6 +346,7 @@ export function SynthParamControllerProvider({
 			hasActiveRoutes,
 			hasActiveRoutesForKey,
 			liveSources,
+			liveVoiceStates,
 			getModulatedValue,
 		],
 	);
