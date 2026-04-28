@@ -1,31 +1,49 @@
 import { usePluginBridgeSynthEngine } from "@cosmo/cosmo-pd101";
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { ensureBeamerBridge } from "@/lib/beamerBridge";
 
 export function usePluginParamBridge(): void {
-	const bridgeReadyRef = useRef(false);
+	const [bridgeReady, setBridgeReady] = useState(false);
 
 	useEffect(() => {
-		if (bridgeReadyRef.current) {
+		if (bridgeReady) {
 			return;
 		}
 
+		let cancelled = false;
+		const finalizeBridgeReady = () => {
+			void window.__BEAMER__?.ready
+				.then(() => {
+					if (!cancelled) {
+						setBridgeReady(true);
+					}
+				})
+				.catch(() => {
+					if (!cancelled) {
+						setBridgeReady(true);
+					}
+				});
+		};
+
 		if (ensureBeamerBridge()) {
-			bridgeReadyRef.current = true;
-			return;
+			finalizeBridgeReady();
+			return () => {
+				cancelled = true;
+			};
 		}
 
 		const intervalId = window.setInterval(() => {
 			if (ensureBeamerBridge()) {
-				bridgeReadyRef.current = true;
 				window.clearInterval(intervalId);
+				finalizeBridgeReady();
 			}
 		}, 50);
 
 		return () => {
+			cancelled = true;
 			window.clearInterval(intervalId);
 		};
-	}, []);
+	}, [bridgeReady]);
 
-	usePluginBridgeSynthEngine();
+	usePluginBridgeSynthEngine({ enabled: bridgeReady });
 }

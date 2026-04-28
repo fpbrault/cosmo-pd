@@ -948,10 +948,42 @@ impl ModMatrixState {
     }
 }
 
+#[derive(Clone, Default)]
+struct PresetSessionState {
+    /// The ID of the currently loaded preset (e.g., "local:MyBass" or "builtin:Pad").
+    active_preset_id: Option<String>,
+    /// The display name of the currently loaded preset.
+    active_preset_name_base: String,
+    /// Fingerprint of the loaded preset to track if there are unsaved changes.
+    loaded_preset_fingerprint: Option<String>,
+}
+
+impl PresetSessionState {
+    fn set(
+        &mut self,
+        active_preset_id: Option<String>,
+        active_preset_name_base: String,
+        loaded_preset_fingerprint: Option<String>,
+    ) {
+        self.active_preset_id = active_preset_id;
+        self.active_preset_name_base = active_preset_name_base;
+        self.loaded_preset_fingerprint = loaded_preset_fingerprint;
+    }
+
+    fn to_json(&self) -> serde_json::Value {
+        serde_json::json!({
+            "activePresetId": self.active_preset_id,
+            "activePresetNameBase": self.active_preset_name_base,
+            "loadedPresetFingerprint": self.loaded_preset_fingerprint,
+        })
+    }
+}
+
 struct CzWebViewHandler {
     envelopes: Arc<RwLock<EnvelopeState>>,
     algo_controls: Arc<RwLock<AlgoControlsState>>,
     mod_matrix: Arc<RwLock<ModMatrixState>>,
+    preset_session: Arc<RwLock<PresetSessionState>>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
 }
@@ -1149,6 +1181,44 @@ impl WebViewHandler for CzWebViewHandler {
                     "hz": scope.hz,
                 }))
             }
+            "setPresetSession" => {
+                let payload = args
+                    .first()
+                    .ok_or_else(|| "setPresetSession expects at least one argument".to_string())?;
+                let active_preset_id = payload
+                    .get("activePresetId")
+                    .and_then(|v| v.as_str().map(String::from));
+                let active_preset_name_base = payload
+                    .get("activePresetNameBase")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or("Current State")
+                    .to_string();
+                let loaded_preset_fingerprint = payload
+                    .get("loadedPresetFingerprint")
+                    .and_then(|v| v.as_str().map(String::from));
+                let mut preset_session = self
+                    .preset_session
+                    .write()
+                    .map_err(|_| "preset session store is poisoned".to_string())?;
+                preset_session.set(
+                    active_preset_id.clone(),
+                    active_preset_name_base.clone(),
+                    loaded_preset_fingerprint.clone(),
+                );
+                append_log(&format!(
+                    "setPresetSession id={:?} name={active_preset_name_base}",
+                    active_preset_id
+                ));
+                Ok(serde_json::Value::Null)
+            }
+            "getPresetSession" => {
+                let preset_session = self
+                    .preset_session
+                    .read()
+                    .map_err(|_| "preset session store is poisoned".to_string())?;
+                append_log("getPresetSession");
+                Ok(preset_session.to_json())
+            }
             _ => {
                 append_log(&format!("unknown webview method={method}"));
                 Err(format!("unknown method: {method}"))
@@ -1221,6 +1291,7 @@ pub struct CzDescriptor {
     envelopes: Arc<RwLock<EnvelopeState>>,
     algo_controls: Arc<RwLock<AlgoControlsState>>,
     mod_matrix: Arc<RwLock<ModMatrixState>>,
+    preset_session: Arc<RwLock<PresetSessionState>>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
 }
@@ -1255,6 +1326,7 @@ impl Descriptor for CzDescriptor {
             envelopes: self.envelopes.clone(),
             algo_controls: self.algo_controls.clone(),
             mod_matrix: self.mod_matrix.clone(),
+            preset_session: self.preset_session.clone(),
             scope_buffer: self.scope_buffer.clone(),
             ui_input_queue: self.ui_input_queue.clone(),
         }))

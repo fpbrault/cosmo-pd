@@ -11,6 +11,11 @@ export type SynthHeaderProps = {
 		activePresetName: string;
 		activeLocalName: string | null;
 		suggestedName: string;
+		changes: Array<{
+			path: string;
+			previous: string;
+			next: string;
+		}>;
 	} | null;
 	onLoadLocal: (name: string) => void;
 	onLoadLibrary: (preset: LibraryPreset) => void;

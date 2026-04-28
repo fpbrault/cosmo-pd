@@ -51,7 +51,9 @@ describe("PluginPage", () => {
 		mockUseSynthPresetManager.mockReturnValue({
 			allPresetEntries: [],
 			activePresetId: null,
+			activePresetNameBase: "Current State",
 			activePresetName: "Current State",
+			loadedPresetFingerprint: null,
 			pendingPresetChange: null,
 			handleLoadLocal: vi.fn(),
 			handleLoadBuiltin: vi.fn(),
@@ -71,13 +73,56 @@ describe("PluginPage", () => {
 		delete (window as Window & { ipc?: unknown }).ipc;
 	});
 
-	it("does not hydrate persisted current state in plugin mode", () => {
+	it("hydrates preset session restored from plugin host", () => {
 		render(<PluginPage />);
 
 		expect(mockUseSynthPresetManager).toHaveBeenCalledTimes(1);
 		const options = mockUseSynthPresetManager.mock.calls[0]?.[0] as {
 			shouldLoadCurrentState: () => boolean;
 		};
-		expect(options.shouldLoadCurrentState()).toBe(false);
+		expect(options.shouldLoadCurrentState()).toBe(true);
+	});
+
+	it("syncs preset session to host using loaded preset fingerprint baseline", () => {
+		const postMessage = vi.fn();
+		(window as Window & { ipc?: { postMessage: (message: string) => void } }).ipc =
+			{
+				postMessage,
+			};
+
+		mockUseSynthPresetManager.mockReturnValue({
+			allPresetEntries: [],
+			activePresetId: "builtin:Factory Brass",
+			activePresetNameBase: "Factory Brass",
+			activePresetName: "Factory Brass *",
+			loadedPresetFingerprint: "baseline-fingerprint",
+			pendingPresetChange: null,
+			handleLoadLocal: vi.fn(),
+			handleLoadBuiltin: vi.fn(),
+			handleLoadLibrary: vi.fn(),
+			handleStepPreset: vi.fn(),
+			handleSavePreset: vi.fn(),
+			handleDeletePreset: vi.fn(),
+			handleRenamePreset: vi.fn(),
+			handleInitPreset: vi.fn(),
+			handleExportPreset: vi.fn(),
+			handleImportPreset: vi.fn(),
+			handleExportCurrentState: vi.fn(),
+			handleSavePendingPresetChange: vi.fn(),
+			handleDiscardPendingPresetChange: vi.fn(),
+			handleCancelPendingPresetChange: vi.fn(),
+		});
+
+		render(<PluginPage />);
+
+		expect(postMessage).toHaveBeenCalledTimes(1);
+		const payload = JSON.parse(postMessage.mock.calls[0]?.[0] ?? "{}");
+		expect(payload).toEqual({
+			preset_session: {
+				activePresetId: "builtin:Factory Brass",
+				activePresetNameBase: "Factory Brass",
+				loadedPresetFingerprint: "baseline-fingerprint",
+			},
+		});
 	});
 });
