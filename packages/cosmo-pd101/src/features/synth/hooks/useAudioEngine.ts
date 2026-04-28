@@ -174,6 +174,37 @@ function isAutoplayBlockError(error: unknown): boolean {
 	);
 }
 
+/**
+ * Attempts to resume a suspended AudioContext. If resume() resolves but the
+ * context is still suspended (browsers silently ignore the call under autoplay
+ * restrictions), or if resume() throws an autoplay-related error, gesture
+ * listeners are attached so the engine recovers on first user interaction.
+ *
+ * Returns the cleanup function for the gesture listeners, or null if the
+ * context was already running or resumed immediately.
+ */
+export async function resumeOrDefer(
+	ctx: ResumableAudioContext,
+): Promise<(() => void) | null> {
+	if (ctx.state !== "suspended") return null;
+
+	try {
+		await ctx.resume();
+	} catch (err) {
+		if (!isAutoplayBlockError(err)) throw err;
+		// Explicit autoplay rejection — fall through to attach gesture listeners.
+	}
+
+	// Browsers commonly resolve resume() without error but leave the context
+	// suspended when autoplay is blocked. Check state regardless of whether an
+	// error was thrown.
+	if (ctx.state !== "running") {
+		return attachResumeOnUserGesture(ctx);
+	}
+
+	return null;
+}
+
 export function attachResumeOnUserGesture(
 	ctx: ResumableAudioContext,
 ): () => void {
@@ -479,16 +510,7 @@ export function useAudioEngine({
 				gainNodeRef.current = gainNode;
 				analyserNodeRef.current = analyserNode;
 
-				if (ctx.state === "suspended") {
-					try {
-						await ctx.resume();
-					} catch (resumeError) {
-						if (!isAutoplayBlockError(resumeError)) {
-							throw resumeError;
-						}
-						removeGestureResumeListener = attachResumeOnUserGesture(ctx);
-					}
-				}
+				removeGestureResumeListener = await resumeOrDefer(ctx);
 			} catch (err) {
 				console.error("[PD Visualizer] Audio init failed:", err);
 				audioInitRef.current = false;
