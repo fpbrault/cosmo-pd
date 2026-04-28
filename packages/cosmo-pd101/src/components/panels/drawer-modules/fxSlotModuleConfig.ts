@@ -534,19 +534,11 @@ export const FX_SLOT_MODULE_CONFIGS: Partial<
 		presets: LOFI_PRESETS,
 		presetTitle: "LoFi Presets",
 		controls: [
-			{
-				kind: "knob",
-				param: "degrade",
-				label: "Degrade",
-				min: 0,
-				max: 1,
-				defaultValue: 0.25,
-				formatter: pct,
-			},
+
 			{
 				kind: "knob",
 				param: "wowDepth",
-				label: "Wow Depth",
+				label: "Wow Amt",
 				min: 0,
 				max: 1,
 				defaultValue: 0.35,
@@ -578,6 +570,15 @@ export const FX_SLOT_MODULE_CONFIGS: Partial<
 				max: 18,
 				defaultValue: 6.7,
 				formatter: (v) => `${v.toFixed(1)}Hz`,
+			},
+						{
+				kind: "knob",
+				param: "degrade",
+				label: "Dirt",
+				min: 0,
+				max: 1,
+				defaultValue: 0.25,
+				formatter: pct,
 			},
 			{
 				kind: "knob",
