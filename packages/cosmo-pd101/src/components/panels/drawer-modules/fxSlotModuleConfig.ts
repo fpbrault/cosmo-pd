@@ -645,7 +645,7 @@ export const FX_SLOT_MODULE_CONFIGS: Partial<
 				defaultValue: 1,
 				formatter: pct,
 			},
-						{
+			{
 				kind: "buttonGroup",
 				param: "waveform",
 				label: "Wave",

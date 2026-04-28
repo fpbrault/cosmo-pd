@@ -509,9 +509,8 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 					const isEndStep = i === activeStepCount - 1;
 					const isSustainStep = i === sustainStep;
 					return (
-						<div
+						<fieldset
 							key={STEP_KEYS[i]}
-							role="group"
 							aria-label={`Step ${i + 1}`}
 							className={`flex flex-col rounded-xl border px-1 transition-colors ${
 								!isActiveStep
@@ -524,7 +523,9 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 									{i + 1}
 								</div>
 							</div>
-							<div className={`flex flex-col items-center justify-center gap-2 ${!isActiveStep ? "opacity-40" : ""}`}>
+							<div
+								className={`flex flex-col items-center justify-center gap-2 ${!isActiveStep ? "opacity-40" : ""}`}
+							>
 								<ControlKnob
 									value={step.level}
 									onChange={(v) => updateStep(i, "level", v)}
@@ -594,7 +595,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 									END
 								</button>
 							</div>
-						</div>
+						</fieldset>
 					);
 				})}
 			</div>

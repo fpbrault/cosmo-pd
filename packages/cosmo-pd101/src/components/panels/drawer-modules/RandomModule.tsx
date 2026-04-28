@@ -1,8 +1,8 @@
 import ControlKnob from "@/components/controls/ControlKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import { useSynthParam } from "@/features/synth/SynthParamController";
-import { PARAM_META } from "@/lib/synth/paramMeta";
 import { resolveTargetFromMetadata } from "@/lib/synth/modTargets";
+import { PARAM_META } from "@/lib/synth/paramMeta";
 
 export default function RandomModule() {
 	const { value: randomRate, setValue: setRandomRate } =

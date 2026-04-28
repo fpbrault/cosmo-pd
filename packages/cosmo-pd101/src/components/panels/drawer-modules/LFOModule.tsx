@@ -6,9 +6,9 @@ import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { resolveTargetFromMetadata } from "@/lib/synth/modTargets";
 import { getLfoModulePatch, LFO_PRESETS } from "@/lib/synth/modulePresets";
 import { PARAM_META } from "@/lib/synth/paramMeta";
-import { resolveTargetFromMetadata } from "@/lib/synth/modTargets";
 
 interface LfoModuleProps {
 	id: 1 | 2;

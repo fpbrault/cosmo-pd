@@ -153,7 +153,7 @@ function SynthRendererContent({
 		<ModMatrixProvider modMatrix={modMatrix} setModMatrix={setModMatrix}>
 			<SynthParamControllerProvider onControlReadout={onControlReadout}>
 				<div
-				data-theme="cz101"
+					data-theme="cz101"
 					className={`${frameClassName} relative select-none`}
 					style={frameStyle}
 				>
