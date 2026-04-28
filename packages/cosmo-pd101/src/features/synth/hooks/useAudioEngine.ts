@@ -345,7 +345,6 @@ export function useAudioEngine({
 		if (audioInitRef.current) return;
 		audioInitRef.current = true;
 		let disposed = false;
-		let removeGestureResumeListener: (() => void) | null = null;
 
 		const normalizeRuntimeModSources = (
 			value: unknown,
@@ -446,8 +445,10 @@ export function useAudioEngine({
 				ctx.addEventListener("statechange", () => {
 					if (!disposed) setAudioContextState(ctx.state as AudioContextState);
 				});
-				setAudioContextState(ctx.state as AudioContextState);
-				removeGestureResumeListener = await resumeOrDefer(ctx);
+				// Do NOT eagerly call resumeOrDefer here — the AudioStartOverlay is the
+				// intended user-gesture mechanism. Attaching global gesture listeners at
+				// init time causes them to fire on Playwright's synthetic events, resuming
+				// the context before the overlay can render.
 
 				const [wasmResponse, bindingsResponse] = await Promise.all([
 					fetch(synthWasmUrl),
@@ -535,8 +536,6 @@ export function useAudioEngine({
 		return () => {
 			disposed = true;
 			audioInitRef.current = false;
-			removeGestureResumeListener?.();
-			removeGestureResumeListener = null;
 			workletNodeRef.current?.disconnect();
 			workletNodeRef.current = null;
 			gainNodeRef.current?.disconnect();
@@ -550,9 +549,16 @@ export function useAudioEngine({
 
 	const resumeAudio = useCallback(() => {
 		const ctx = audioCtxRef.current;
-		if (!ctx || ctx.state !== "suspended") return;
+		if (!ctx) return;
+		if (ctx.state === "running") {
+			// Context already running (e.g. headless test env without autoplay policy).
+			// Sync React state so the overlay closes.
+			setAudioContextState("running");
+			return;
+		}
+		if (ctx.state !== "suspended") return;
 		void ctx.resume();
-	}, []);
+	}, [setAudioContextState]);
 
 	return {
 		audioCtxRef,
