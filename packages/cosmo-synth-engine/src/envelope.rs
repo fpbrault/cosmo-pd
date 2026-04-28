@@ -77,7 +77,8 @@ impl EnvGen {
             step_target_level
         };
         let frozen_step = is_frozen_step(self.prev_level, target_level, step_rate);
-        let raw_duration = step_duration_samples(self.prev_level, target_level, step_rate, sr);
+        let raw_duration =
+            step_duration_samples(kind, self.prev_level, target_level, step_rate, sr);
         // Apply key-follow speed multiplier, ensure at least 1
         let duration = if raw_duration == 0 {
             0
@@ -133,7 +134,7 @@ impl EnvGen {
             step_target_level2
         };
         let frozen_step2 = is_frozen_step(self.prev_level, target_level2, step_rate2);
-        let duration2 = step_duration_samples(self.prev_level, target_level2, step_rate2, sr);
+        let duration2 = step_duration_samples(kind, self.prev_level, target_level2, step_rate2, sr);
 
         if frozen_step2 {
             // CZ-style hold: stop advancing this envelope step.
@@ -204,14 +205,32 @@ fn lerp(a: f32, b: f32, t: f32) -> f32 {
     a + (b - a) * t
 }
 
-/// Converts a rate byte [0..99] to a sample count.
-///
-/// JS: `Math.max(1, Math.round(sr * 5.0 * 0.0002 ** (rate / 99)))`
+/// Converts a human rate [0..99] to a transition duration in seconds.
 #[inline]
-fn rate_to_samples(rate: u8, sr: f32) -> u32 {
+fn rate_to_seconds(kind: EnvelopeKind, rate: u8) -> f32 {
     let clamped_rate = rate.min(99);
-    let r = clamped_rate as f32 / 99.0;
-    let v = sr * 5.0 * libm::powf(0.0002_f32, r);
+    let normalized_rate = clamped_rate as f32 / 99.0;
+
+    match kind {
+        EnvelopeKind::Dca | EnvelopeKind::Dcw => {
+            // DCA and DCW share the same measured timing curve once their raw
+            // machine rates have been converted back to the displayed 0..99 scale.
+            104.04_f32 * libm::powf(0.004_f32 / 104.04_f32, normalized_rate)
+        }
+        EnvelopeKind::Dco => {
+            // DCO uses normalized exponential curve: slowest at rate 0 (235.64s),
+            // fastest at rate 99 (4ms). Formula: 235.64 * e^(k*x) where
+            // k = ln(0.004/235.64) ≈ -12.985.
+            const DCO_EXP_K: f32 = -13.985;
+            235.64_f32 * libm::expf(DCO_EXP_K * normalized_rate)
+        }
+    }
+}
+
+/// Converts a rate byte [0..99] to a sample count.
+#[inline]
+fn rate_to_samples(kind: EnvelopeKind, rate: u8, sr: f32) -> u32 {
+    let v = sr * rate_to_seconds(kind, rate);
     v.max(1.0).round() as u32
 }
 
@@ -220,12 +239,18 @@ fn rate_to_samples(rate: u8, sr: f32) -> u32 {
 /// JS: `Math.max(1, Math.round(rateToSamples(rate, sr) * |toLevel - fromLevel|))`
 /// Returns 0 when distance is 0 (no movement needed).
 #[inline]
-fn step_duration_samples(from_level: f32, to_level: f32, rate: u8, sr: f32) -> u32 {
+fn step_duration_samples(
+    kind: EnvelopeKind,
+    from_level: f32,
+    to_level: f32,
+    rate: u8,
+    sr: f32,
+) -> u32 {
     let distance = libm::fabsf(to_level - from_level);
     if distance <= 0.0 {
         return 0;
     }
-    let base = rate_to_samples(rate, sr);
+    let base = rate_to_samples(kind, rate, sr);
     ((base as f32 * distance).max(1.0).round()) as u32
 }
 
@@ -309,6 +334,65 @@ mod tests {
         assert_eq!(params.line1.dcw_env.steps[0].rate, 8);
         assert_eq!(params.line1.dca_env.steps[0].level, 29);
         assert_eq!(params.line1.dca_env.steps[0].rate, 119);
+    }
+
+    #[test]
+    fn dca_rate_curve_matches_measured_times() {
+        let expected = [
+            (0, 104.04_f32),
+            (1, 92.45_f32),
+            (10, 34.66_f32),
+            (20, 13.0_f32),
+            (40, 1.63_f32),
+            (50, 0.544_f32),
+            (60, 0.194_f32),
+            (70, 0.066_f32),
+            (85, 0.016_f32),
+            (99, 0.004_f32),
+        ];
+
+        for (rate, seconds) in expected {
+            let actual = rate_to_seconds(EnvelopeKind::Dca, rate);
+            let relative_error = libm::fabsf(actual - seconds) / seconds;
+            assert!(
+                relative_error <= 0.20,
+                "rate {rate}: expected about {seconds}s, got {actual}s (relative error {relative_error})"
+            );
+        }
+    }
+
+    #[test]
+    fn dcw_uses_same_rate_curve_as_dca() {
+        for rate in [0, 1, 10, 20, 40, 50, 60, 70, 85, 99] {
+            let dcw = rate_to_seconds(EnvelopeKind::Dcw, rate);
+            let dca = rate_to_seconds(EnvelopeKind::Dca, rate);
+            assert_eq!(dcw, dca, "rate {rate}: DCW and DCA should share timing");
+        }
+    }
+
+    #[test]
+    fn dco_rate_curve_matches_measured_times() {
+        let expected = [
+            (0, 235.64_f32),
+            (1, 209.74_f32),
+            (10, 78.64_f32),
+            (20, 26.20_f32),
+            (40, 2.68_f32),
+            (50, 0.921_f32),
+            (60, 0.295_f32),
+            (70, 0.097_f32),
+            (85, 0.017_f32),
+            (99, 0.004_f32),
+        ];
+
+        for (rate, seconds) in expected {
+            let actual = rate_to_seconds(EnvelopeKind::Dco, rate);
+            let relative_error = libm::fabsf(actual - seconds) / seconds;
+            assert!(
+                relative_error <= 0.12,
+                "rate {rate}: expected about {seconds}s, got {actual}s (relative error {relative_error})"
+            );
+        }
     }
 
     #[test]

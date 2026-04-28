@@ -70,13 +70,11 @@ function normalizeEnvelope(env: StepEnvData): StepEnvData {
 	};
 }
 
-function editorStepDuration(rate: number, activeStepCount: number): number {
-	// Reciprocal spacing model: each step gets a width weight of
-	// 1 / ((rate + 1) * activeSteps). This keeps high-rate changes smooth
-	// (no abrupt 98/99 jump) while preserving "higher rate = shorter time".
+function editorStepDuration(rate: number): number {
+	// Rate-based duration: higher rate = shorter duration (steeper visually).
+	// Direct reciprocal of rate for linear, rate-driven envelope appearance.
 	const clampedRate = clamp(Math.round(rate), 0, 99);
-	const safeStepCount = Math.max(1, activeStepCount);
-	return 1 / ((clampedRate + 1) * safeStepCount);
+	return 1 / (clampedRate + 1);
 }
 
 function getStepAllowedXRange(
@@ -99,14 +97,13 @@ function buildEnvelopePoints(
 ): EnvPoint[] {
 	const activeSteps = env.steps.slice(0, env.stepCount);
 	if (activeSteps.length === 0) return [];
-	const activeStepCount = activeSteps.length;
+	const _activeStepCount = activeSteps.length;
 
 	const drawWidth = width - CHART_PADDING_X * 2;
 	const drawHeight = height - CHART_PADDING_Y * 2;
 
 	let totalTime = 0;
-	for (const step of activeSteps)
-		totalTime += editorStepDuration(step.rate, activeStepCount);
+	for (const step of activeSteps) totalTime += editorStepDuration(step.rate);
 	if (totalTime <= 0) totalTime = 1;
 
 	const points: EnvPoint[] = [];
@@ -117,7 +114,7 @@ function buildEnvelopePoints(
 		const isLastStep = i === activeSteps.length - 1;
 		// CZ behaviour: last step always resolves to 0
 		const effectiveLevel = isLastStep ? 0 : step.level;
-		const duration = editorStepDuration(step.rate, activeStepCount);
+		const duration = editorStepDuration(step.rate);
 		const dx = (duration / totalTime) * drawWidth;
 		x += dx;
 		points.push({

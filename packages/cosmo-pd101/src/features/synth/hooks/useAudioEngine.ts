@@ -387,6 +387,16 @@ export function useAudioEngine({
 
 				await ctx.audioWorklet.addModule(pdVisualizerWorkletUrl);
 
+				// Async init can outlive this effect (React Strict Mode mount/unmount,
+				// route changes, etc.). If the context was closed/disposed in the
+				// meantime, skip node construction to avoid InvalidStateError.
+				if (disposed || audioCtxRef.current !== ctx || ctx.state === "closed") {
+					await ctx.close().catch(() => {
+						// Ignore close failures during stale-init cleanup.
+					});
+					return;
+				}
+
 				const workletNode = new AudioWorkletNode(ctx, "cosmo-processor");
 				if (disposed) {
 					workletNode.disconnect();

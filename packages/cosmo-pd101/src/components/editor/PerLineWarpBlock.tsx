@@ -545,7 +545,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 						</div>
 					) : (
 						<div className="flex-1 min-h-0 overflow-y-auto p-3">
-							<Card variant="subtle" className="p-0 min-w-0" padding='none'>
+							<Card variant="subtle" className="p-0 min-w-0" padding="none">
 								<div className="mb-3 grid grid-cols-3 gap-2">
 									{(["dco", "dcw", "dca"] as EnvTab[]).map((tab) => (
 										<StepEnvelopePreview
