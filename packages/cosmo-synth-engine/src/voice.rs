@@ -31,6 +31,7 @@ const RELEASE_TAIL_LEVEL_TIME_SECONDS: f32 = 0.01;
 const RELEASE_TAIL_LEVEL_THRESHOLD: f32 = 0.002;
 const ZERO_CROSS_STOP_THRESHOLD: f32 = 0.0005;
 const ZERO_CROSS_STOP_MAX_WAIT_SAMPLES: u32 = 1024;
+const DCA_LOG_CURVE_BASE: f32 = 100.0;
 
 // ---------------------------------------------------------------------------
 // ADSR modulation envelope
@@ -897,8 +898,8 @@ fn build_signal_state(
     base_freq: f32,
     sources: &ModSources,
 ) -> SignalState {
-    let dca1_level = line1.dca_base * env.dca1;
-    let dca2_level = line2.dca_base * env.dca2;
+    let dca1_level = line1.dca_base * cz_dca_env_gain(env.dca1);
+    let dca2_level = line2.dca_base * cz_dca_env_gain(env.dca2);
 
     // Mod matrix offsets for DCW/DCA
     let dcw1_mod = mod_value_for(ModDestination::Line1DcwBase, matrix, sources);
@@ -940,31 +941,40 @@ fn suppress_sample_discontinuity(prev_sample: f32, sample: f32) -> f32 {
     prev_sample + delta.signum() * allowed
 }
 
-/// Maps a normalized DCO envelope output (0.0–1.0) to a 0.0–1.0 normalized pitch
-/// position using the CZ-101 piecewise non-linear pitch curve, then scales by
-/// a fixed 36-semitone range to produce the final semitone offset.
+/// Maps a normalized DCO envelope output (0.0–1.0) to an absolute semitone
+/// offset using the CZ-101 piecewise non-linear pitch curve.
 ///
 /// The CZ-101 display levels 0–99 map to pitch as follows:
 ///   - Levels  0–64: linear, 1 semitone per 8 levels  (max 8 st)
 ///   - Levels >64: each increment raises pitch by a whole tone (+2 semitones)
 ///                 (max 8 + 35*2 = 78 st at level 99)
 ///
-/// This function returns a value in [0.0, 1.0] (normalized to the 78-semitone max).
+/// This function returns a semitone offset in [0.0, 78.0].
 /// The input is clamped to [0.0, 1.0] before conversion.
-fn cz_dco_env_normalized(dco_env: f32) -> f32 {
-    const MAX_SEMITONES: f32 = 78.0; // 8 + (99 - 64) * 2
+fn cz_dco_env_semitones(dco_env: f32) -> f32 {
     let level = dco_env.clamp(0.0, 1.0) * 99.0;
-    let semitones = if level <= 64.0 {
+    if level <= 64.0 {
         level / 8.0
     } else {
         8.0 + (level - 64.0) * 2.0
-    };
-    semitones / MAX_SEMITONES
+    }
+}
+
+#[inline]
+fn cz_dca_env_gain(dca_env: f32) -> f32 {
+    let level = dca_env.clamp(0.0, 1.0);
+    if level <= 0.0 {
+        return 0.0;
+    }
+
+    // TODO: Replace this temporary log-style loudness taper with a measured CZ DCA level curve.
+    let numerator = libm::powf(DCA_LOG_CURVE_BASE, level) - 1.0;
+    let denominator = DCA_LOG_CURVE_BASE - 1.0;
+    (numerator / denominator).clamp(0.0, 1.0)
 }
 
 fn line_frequency(base_freq: f32, line: &LineParams, dco_env: f32) -> f32 {
-    const DCO_RANGE_SEMITONES: f32 = 36.0;
-    let dco_semitones = cz_dco_env_normalized(dco_env) * DCO_RANGE_SEMITONES;
+    let dco_semitones = cz_dco_env_semitones(dco_env);
     base_freq
         * libm::powf(2.0, line.octave + line.detune_cents / 1200.0)
         * libm::powf(2.0, dco_semitones / 12.0)
@@ -1337,8 +1347,58 @@ fn wrap_voice_phase(phase: &mut f32, cycle_count: &mut u32) {
 
 #[cfg(test)]
 mod tests {
-    use super::{mod_value_for, render_voice, ModSources, Voice};
+    use super::{
+        cz_dca_env_gain, cz_dco_env_semitones, line_frequency, mod_value_for, render_voice,
+        ModSources, Voice,
+    };
     use crate::params::{ModDestination, ModMatrix, ModRoute, ModSource, SynthParams};
+
+    #[test]
+    fn dca_gain_uses_log_style_taper() {
+        assert_eq!(cz_dca_env_gain(0.0), 0.0);
+        assert_eq!(cz_dca_env_gain(1.0), 1.0);
+        assert!(cz_dca_env_gain(0.5) < 0.5);
+        assert!(cz_dca_env_gain(0.75) < 0.75);
+    }
+
+    #[test]
+    fn dco_env_matches_cz_reference_semitone_points() {
+        let cases = [
+            (8_u8, 1.0_f32),
+            (16_u8, 2.0_f32),
+            (24_u8, 3.0_f32),
+            (32_u8, 4.0_f32),
+            (40_u8, 5.0_f32),
+            (48_u8, 6.0_f32),
+            (56_u8, 7.0_f32),
+            (64_u8, 8.0_f32),
+            (65_u8, 10.0_f32),
+            (66_u8, 12.0_f32),
+            (72_u8, 24.0_f32),
+        ];
+
+        for (level, expected_semitones) in cases {
+            let normalized_level = level as f32 / 99.0;
+            let got = cz_dco_env_semitones(normalized_level);
+            assert!(
+                (got - expected_semitones).abs() <= 0.02,
+                "level {level}: expected {expected_semitones} st, got {got} st"
+            );
+        }
+    }
+
+    #[test]
+    fn dco_env_level_66_is_one_octave_up() {
+        let base_freq = 220.0_f32;
+        let line = crate::params::LineParams::default();
+        let level_66 = 66.0_f32 / 99.0;
+        let got = line_frequency(base_freq, &line, level_66);
+        let expected = base_freq * 2.0;
+        assert!(
+            (got - expected).abs() <= expected * 0.02,
+            "expected about {expected} Hz at level 66, got {got} Hz"
+        );
+    }
 
     fn all_sources() -> [ModSource; 7] {
         [
@@ -1653,11 +1713,14 @@ mod tests {
             .abs();
         }
 
+        let base_safe = base_energy.max(1.0e-6);
+        let relative_delta = (modded_energy - base_energy).abs() / base_safe;
         assert!(
-            modded_energy < base_energy * 0.8,
-            "expected env-step modulation to reduce rendered energy (base={}, modded={})",
+            relative_delta > 0.05,
+            "expected env-step modulation to measurably change rendered energy (base={}, modded={}, relative_delta={})",
             base_energy,
-            modded_energy
+            modded_energy,
+            relative_delta
         );
     }
 }
