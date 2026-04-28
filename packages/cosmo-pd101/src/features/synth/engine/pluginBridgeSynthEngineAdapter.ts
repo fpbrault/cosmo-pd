@@ -10,7 +10,6 @@ import type {
 	Algo,
 	AlgoControlValueV1,
 	CzWaveform,
-	FilterType,
 	LfoWaveform,
 	LineSelect,
 	ModMatrix,
@@ -103,15 +102,10 @@ const LFO_WAVE_IDS: EnumToIdMap<LfoWaveform> = {
 	triangle: 1,
 	square: 2,
 	saw: 3,
+	invertedSaw: 4,
+	random: 5,
 };
 const LFO_WAVE_FROM_ID = invertMap(LFO_WAVE_IDS);
-
-const FILTER_TYPE_IDS: EnumToIdMap<FilterType> = {
-	lp: 0,
-	hp: 1,
-	bp: 2,
-};
-const FILTER_TYPE_FROM_ID = invertMap(FILTER_TYPE_IDS);
 
 const PORT_MODE_IDS: EnumToIdMap<PortamentoMode> = {
 	rate: 0,
@@ -471,34 +465,7 @@ const PLUGIN_PARAM_DESCRIPTORS: PluginParamDescriptor[] = [
 		read: (params) => params.lfo.depth,
 		apply: (value, s) => s.setLfoDepth(value),
 	},
-	{
-		id: "fil_enabled",
-		read: (params) => (params.filter.enabled ? 1 : 0),
-		apply: (value, s) => s.setFilterEnabled(value >= 0.5),
-	},
-	{
-		id: "fil_cutoff",
-		read: (params) => params.filter.cutoff,
-		apply: (value, s) => s.setFilterCutoff(value),
-	},
-	{
-		id: "fil_resonance",
-		read: (params) => params.filter.resonance,
-		apply: (value, s) => s.setFilterResonance(value),
-	},
-	{
-		id: "fil_env_amount",
-		read: (params) => params.filter.envAmount,
-		apply: (value, s) => s.setFilterEnvAmount(value),
-	},
-	{
-		id: "fil_type",
-		read: (params) => FILTER_TYPE_IDS[params.filter.type as FilterType] ?? 0,
-		apply: (value, s) =>
-			s.setFilterType(
-				(FILTER_TYPE_FROM_ID[Math.round(value)] ?? "lp") as FilterType,
-			),
-	},
+
 	{
 		id: "port_enabled",
 		read: (params) => (params.portamento.enabled ? 1 : 0),
@@ -523,6 +490,24 @@ const PLUGIN_PARAM_DESCRIPTORS: PluginParamDescriptor[] = [
 export const PLUGIN_PARAM_DESCRIPTOR_BY_ID = new Map(
 	PLUGIN_PARAM_DESCRIPTORS.map((d) => [d.id, d]),
 );
+
+type UsePluginBridgeSynthEngineOptions = {
+	enabled?: boolean;
+	hydrationGraceMs?: number;
+};
+
+type AlgoControlsSnapshot = {
+	line1?: { a?: AlgoControlValueV1[]; b?: AlgoControlValueV1[] };
+	line2?: { a?: AlgoControlValueV1[]; b?: AlgoControlValueV1[] };
+};
+
+type InboundHydrationState = {
+	params: boolean;
+	envelopes: boolean;
+	algoControls: boolean;
+	modMatrix: boolean;
+	presetSession: boolean;
+};
 
 // ---------------------------------------------------------------------------
 // Outbound: send plain value via the bridge IPC
@@ -564,8 +549,12 @@ function sendModMatrix(matrix: ModMatrix) {
 // Beamer plugin host over the bridge IPC protocol.
 // ---------------------------------------------------------------------------
 
-export function usePluginBridgeSynthEngine(): void {
+export function usePluginBridgeSynthEngine(
+	options: UsePluginBridgeSynthEngineOptions = {},
+): void {
 	const gatherState = useSynthStore((s) => s.gatherState);
+	const enabled = options.enabled ?? true;
+	const hydrationGraceMs = options.hydrationGraceMs ?? 1000;
 
 	const sentParamsRef = useRef<Map<string, number>>(new Map());
 	const pendingLocalParamsRef = useRef<
@@ -574,6 +563,15 @@ export function usePluginBridgeSynthEngine(): void {
 	const sentEnvelopesRef = useRef<Map<EnvelopeId, string>>(new Map());
 	const sentAlgoControlsRef = useRef<Map<string, string>>(new Map());
 	const sentModMatrixRef = useRef("");
+	const outboundSyncEnabledRef = useRef(false);
+	const inboundHydrationRef = useRef<InboundHydrationState>({
+		params: false,
+		envelopes: false,
+		algoControls: false,
+		modMatrix: false,
+		presetSession: false,
+	});
+	const syncRef = useRef<(() => void) | null>(null);
 	const PENDING_PARAM_TTL_MS = 250;
 	const PARAM_EPSILON = 1e-6;
 
@@ -614,6 +612,31 @@ export function usePluginBridgeSynthEngine(): void {
 		sendModMatrix(matrix);
 	}, []);
 
+	const tryEnableOutboundSync = useCallback(() => {
+		const hydration = inboundHydrationRef.current;
+		if (
+			hydration.params &&
+			hydration.envelopes &&
+			hydration.algoControls &&
+			hydration.modMatrix &&
+			hydration.presetSession
+		) {
+			outboundSyncEnabledRef.current = true;
+			syncRef.current?.();
+		}
+	}, []);
+
+	const markHydrated = useCallback(
+		(key: keyof InboundHydrationState) => {
+			if (inboundHydrationRef.current[key]) {
+				return;
+			}
+			inboundHydrationRef.current[key] = true;
+			tryEnableOutboundSync();
+		},
+		[tryEnableOutboundSync],
+	);
+
 	const adapter = useMemo<SynthEngineAdapter>(
 		() => ({
 			sync(snapshot) {
@@ -639,31 +662,40 @@ export function usePluginBridgeSynthEngine(): void {
 
 	// Lifecycle: connect / dispose
 	useEffect(() => {
+		if (!enabled) {
+			return;
+		}
 		const controller = new SynthEngineController(adapter);
 		controller.connect();
 		return () => controller.dispose();
-	}, [adapter]);
+	}, [adapter, enabled]);
 
-	// Outbound sync: subscribe directly to Zustand so every state change
-	// flows to the host without causing component re-renders.
+	// Mark non-parameter hydration stages as complete when bridge helpers
+	// are unavailable (e.g. lightweight harnesses).
 	useEffect(() => {
-		const sync = () => {
-			const snapshot = createSynthEngineSnapshot({
-				gatherState,
-				effectivePitchHz: 220,
-				extPmAmount: 0,
-			});
-			adapter.sync(snapshot);
-		};
-		sync();
-		return useSynthStore.subscribe(sync);
-	}, [adapter, gatherState]);
+		if (!enabled) {
+			return;
+		}
+		if (!window.__czGetEnvelopes) {
+			markHydrated("envelopes");
+		}
+		if (!window.__czGetAlgoControls) {
+			markHydrated("algoControls");
+		}
+		if (!window.__czGetModMatrix) {
+			markHydrated("modMatrix");
+		}
+	}, [enabled, markHydrated]);
 
 	// Inbound: Rust → React state via __czOnParams (string ID → plain value)
 	useEffect(() => {
+		if (!enabled) {
+			return;
+		}
 		window.__czOnParams = (json: string) => {
 			try {
 				const params = JSON.parse(json) as Record<string, number>;
+				const hasParams = Object.keys(params).length > 0;
 				const now =
 					typeof performance !== "undefined" ? performance.now() : Date.now();
 				for (const [id, value] of Object.entries(params)) {
@@ -680,10 +712,15 @@ export function usePluginBridgeSynthEngine(): void {
 						pendingLocalParamsRef.current.delete(id);
 					}
 
+					sentParamsRef.current.set(id, value);
+
 					PLUGIN_PARAM_DESCRIPTOR_BY_ID.get(id)?.apply(
 						value,
 						useSynthStore.getState(),
 					);
+				}
+				if (hasParams) {
+					markHydrated("params");
 				}
 			} catch (e) {
 				console.error("[PluginPage] Failed to parse params from Rust:", e);
@@ -692,10 +729,58 @@ export function usePluginBridgeSynthEngine(): void {
 		return () => {
 			window.__czOnParams = undefined;
 		};
-	}, []);
+	}, [enabled, markHydrated]);
+
+	// Outbound sync: subscribe directly to Zustand so every state change
+	// flows to the host without causing component re-renders.
+	// Outbound sync: subscribe directly to Zustand so every state change
+	// flows to the host without causing component re-renders.
+	useEffect(() => {
+		if (!enabled) {
+			return;
+		}
+		const sync = () => {
+			if (!outboundSyncEnabledRef.current) {
+				return;
+			}
+			const snapshot = createSynthEngineSnapshot({
+				gatherState,
+				effectivePitchHz: 220,
+				extPmAmount: 0,
+			});
+			adapter.sync(snapshot);
+		};
+
+		syncRef.current = sync;
+		const unsubscribe = useSynthStore.subscribe(sync);
+
+		// In environments that do not expose host hydration helpers, allow a
+		// fallback initial sync so local-only harnesses keep working.
+		const shouldAllowFallbackSync =
+			!window.__czGetEnvelopes &&
+			!window.__czGetAlgoControls &&
+			!window.__czGetModMatrix;
+		const timeoutId = shouldAllowFallbackSync
+			? window.setTimeout(() => {
+					outboundSyncEnabledRef.current = true;
+					sync();
+				}, hydrationGraceMs)
+			: null;
+
+		return () => {
+			syncRef.current = null;
+			if (timeoutId !== null) {
+				window.clearTimeout(timeoutId);
+			}
+			unsubscribe();
+		};
+	}, [adapter, enabled, gatherState, hydrationGraceMs]);
 
 	// Inbound: initial envelope state from Rust
 	useEffect(() => {
+		if (!enabled) {
+			return;
+		}
 		if (!window.__czGetEnvelopes) {
 			return;
 		}
@@ -703,14 +788,17 @@ export function usePluginBridgeSynthEngine(): void {
 		void window
 			.__czGetEnvelopes()
 			.then((envelopes) => {
-				if (cancelled || !envelopes) return;
-				const s = useSynthStore.getState();
-				if (envelopes.l1_dco) s.setLine1DcoEnv(envelopes.l1_dco);
-				if (envelopes.l1_dcw) s.setLine1DcwEnv(envelopes.l1_dcw);
-				if (envelopes.l1_dca) s.setLine1DcaEnv(envelopes.l1_dca);
-				if (envelopes.l2_dco) s.setLine2DcoEnv(envelopes.l2_dco);
-				if (envelopes.l2_dcw) s.setLine2DcwEnv(envelopes.l2_dcw);
-				if (envelopes.l2_dca) s.setLine2DcaEnv(envelopes.l2_dca);
+				if (cancelled) return;
+				if (envelopes) {
+					const s = useSynthStore.getState();
+					if (envelopes.l1_dco) s.setLine1DcoEnv(envelopes.l1_dco);
+					if (envelopes.l1_dcw) s.setLine1DcwEnv(envelopes.l1_dcw);
+					if (envelopes.l1_dca) s.setLine1DcaEnv(envelopes.l1_dca);
+					if (envelopes.l2_dco) s.setLine2DcoEnv(envelopes.l2_dco);
+					if (envelopes.l2_dcw) s.setLine2DcwEnv(envelopes.l2_dcw);
+					if (envelopes.l2_dca) s.setLine2DcaEnv(envelopes.l2_dca);
+				}
+				markHydrated("envelopes");
 			})
 			.catch((error) => {
 				console.error("[PluginPage] Failed to load envelope state:", error);
@@ -718,10 +806,42 @@ export function usePluginBridgeSynthEngine(): void {
 		return () => {
 			cancelled = true;
 		};
-	}, []);
+	}, [enabled, markHydrated]);
+
+	// Inbound: initial algo-controls state from Rust
+	useEffect(() => {
+		if (!enabled) {
+			return;
+		}
+		if (!window.__czGetAlgoControls) {
+			return;
+		}
+		let cancelled = false;
+		void window
+			.__czGetAlgoControls()
+			.then((snapshot) => {
+				if (cancelled || !snapshot || typeof snapshot !== "object") return;
+				const typedSnapshot = snapshot as AlgoControlsSnapshot;
+				const s = useSynthStore.getState();
+				s.setLine1AlgoControlsA(typedSnapshot.line1?.a ?? []);
+				s.setLine1AlgoControlsB(typedSnapshot.line1?.b ?? []);
+				s.setLine2AlgoControlsA(typedSnapshot.line2?.a ?? []);
+				s.setLine2AlgoControlsB(typedSnapshot.line2?.b ?? []);
+				markHydrated("algoControls");
+			})
+			.catch((error) => {
+				console.error("[PluginPage] Failed to load algo controls:", error);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [enabled, markHydrated]);
 
 	// Inbound: initial mod matrix state from Rust
 	useEffect(() => {
+		if (!enabled) {
+			return;
+		}
 		if (!window.__czGetModMatrix) {
 			return;
 		}
@@ -729,8 +849,11 @@ export function usePluginBridgeSynthEngine(): void {
 		void window
 			.__czGetModMatrix()
 			.then((matrix) => {
-				if (cancelled || !matrix || typeof matrix !== "object") return;
-				useSynthStore.getState().setModMatrix(matrix);
+				if (cancelled) return;
+				if (matrix && typeof matrix === "object") {
+					useSynthStore.getState().setModMatrix(matrix);
+				}
+				markHydrated("modMatrix");
 			})
 			.catch((error) => {
 				console.error("[PluginPage] Failed to load mod matrix state:", error);
@@ -738,5 +861,44 @@ export function usePluginBridgeSynthEngine(): void {
 		return () => {
 			cancelled = true;
 		};
-	}, []);
+	}, [enabled, markHydrated]);
+
+	// Inbound: initial preset session metadata from Rust
+	useEffect(() => {
+		if (!enabled) {
+			return;
+		}
+		if (!window.__czGetPresetSession) {
+			markHydrated("presetSession");
+			return;
+		}
+		let cancelled = false;
+		void window
+			.__czGetPresetSession()
+			.then((session) => {
+				if (cancelled) return;
+				if (session && typeof session === "object") {
+					// Restore preset session to localStorage so that useSynthPresetManager
+					// picks it up when it loads the initial state
+					const presetSessionData = {
+						activePresetId: session.activePresetId ?? null,
+						activePresetNameBase:
+							session.activePresetNameBase ?? "Current State",
+						loadedPresetFingerprint: session.loadedPresetFingerprint ?? null,
+					};
+					localStorage.setItem(
+						"cz101-current-preset-session",
+						JSON.stringify(presetSessionData),
+					);
+				}
+				markHydrated("presetSession");
+			})
+			.catch((error) => {
+				console.error("[PluginPage] Failed to load preset session:", error);
+				markHydrated("presetSession");
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [enabled, markHydrated]);
 }

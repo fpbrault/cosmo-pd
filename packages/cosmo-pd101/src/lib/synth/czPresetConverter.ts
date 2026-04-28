@@ -150,12 +150,6 @@ export function convertDecodedPatchToSynthPreset(
 		p.lineSelect = "L1+L2'";
 	}
 
-	p.vibrato.enabled = decoded.vibratoDepth > 0;
-	p.vibrato.waveform = decoded.vibratoWave;
-	p.vibrato.rate = decoded.vibratoRate;
-	p.vibrato.depth = decoded.vibratoDepth;
-	p.vibrato.delay = decoded.vibratoDelay;
-
 	p.polyMode = "poly8";
 	p.legato = false;
 
@@ -172,17 +166,6 @@ export function convertDecodedPatchToSynthPreset(
 	p.volume = 0.8;
 	p.line1.dcaBase = 1;
 	p.line2.dcaBase = 1;
-	p.chorus.enabled = false;
-	p.chorus.rate = 1.0;
-	p.chorus.depth = 1.5;
-	p.chorus.mix = 0.5;
-	p.delay.enabled = false;
-	p.delay.time = 0.3;
-	p.delay.feedback = 0.3;
-	p.delay.mix = 0.25;
-	p.reverb.enabled = false;
-	p.reverb.size = 0.5;
-	p.reverb.mix = 0.3;
 	p.portamento.enabled = false;
 	p.portamento.mode = "rate";
 	p.portamento.rate = 0;
@@ -192,16 +175,6 @@ export function convertDecodedPatchToSynthPreset(
 	p.lfo.depth = 1;
 	p.lfo.symmetry = 0.5;
 	p.lfo.retrigger = false;
-	p.lfo2.waveform = "sine";
-	p.lfo2.rate = 5;
-	p.lfo2.depth = 1;
-	p.lfo2.symmetry = 0.5;
-	p.lfo2.retrigger = false;
-	p.filter.enabled = false;
-	p.filter.type = "lp";
-	p.filter.cutoff = 5000;
-	p.filter.resonance = 0;
-	p.filter.envAmount = 0;
 
 	return preset;
 }

@@ -425,6 +425,26 @@ function PendingModifiedPresetModal({
 				<p className="mt-3 text-sm text-cz-cream-dim">
 					{pendingPresetChange?.activePresetName} has unsaved changes.
 				</p>
+				{pendingPresetChange?.changes.length ? (
+					<div className="mt-4 rounded-md border border-cz-border bg-cz-inset/70 p-2">
+						<p className="mb-2 text-3xs font-mono uppercase tracking-[0.24em] text-cz-light-blue">
+							Changed Parameters ({pendingPresetChange.changes.length})
+						</p>
+						<ul className="max-h-44 space-y-1 overflow-y-auto pr-1">
+							{pendingPresetChange.changes.map((change) => (
+								<li
+									key={`${change.path}-${change.previous}-${change.next}`}
+									className="rounded border border-cz-border/60 bg-black/20 px-2 py-1 text-[0.7rem] leading-tight"
+								>
+									<p className="font-mono text-cz-cream">{change.path}</p>
+									<p className="font-mono text-cz-cream-dim">
+										{change.previous} → {change.next}
+									</p>
+								</li>
+							))}
+						</ul>
+					</div>
+				) : null}
 				{pendingPresetChange?.activeLocalName ? null : (
 					<input
 						type="text"

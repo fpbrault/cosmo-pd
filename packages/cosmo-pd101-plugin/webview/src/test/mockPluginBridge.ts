@@ -242,6 +242,11 @@ export function installMockPluginBridge(): void {
 	let pendingInvokeResolve: ((result: unknown) => void) | null = null;
 	let pendingInvokeReject: ((error: string) => void) | null = null;
 	let virtualModMatrix: { routes: unknown[] } = { routes: [] };
+	let virtualPresetSession: {
+		activePresetId?: string | null;
+		activePresetNameBase?: string;
+		loadedPresetFingerprint?: string | null;
+	} = {};
 
 	// Virtual param state: string ID → normalized value
 	const virtualParamState: Record<string, number> = {};
@@ -350,6 +355,24 @@ export function installMockPluginBridge(): void {
 				}
 				if (method === "getModMatrix") {
 					resolve({ routes: [...virtualModMatrix.routes] });
+					return;
+				}
+				if (method === "setPresetSession") {
+					const next = (args[0] ?? {}) as {
+						activePresetId?: string | null;
+						activePresetNameBase?: string;
+						loadedPresetFingerprint?: string | null;
+					};
+					virtualPresetSession = {
+						activePresetId: next.activePresetId ?? null,
+						activePresetNameBase: next.activePresetNameBase ?? "Current State",
+						loadedPresetFingerprint: next.loadedPresetFingerprint ?? null,
+					};
+					resolve(null);
+					return;
+				}
+				if (method === "getPresetSession") {
+					resolve({ ...virtualPresetSession });
 					return;
 				}
 				if (method === "getScopeData") {

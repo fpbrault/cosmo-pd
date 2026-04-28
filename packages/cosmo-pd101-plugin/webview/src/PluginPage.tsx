@@ -89,7 +89,9 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	const {
 		allPresetEntries,
 		activePresetId,
+		activePresetNameBase,
 		activePresetName,
+		loadedPresetFingerprint,
 		pendingPresetChange,
 		handleLoadLocal,
 		handleLoadBuiltin,
@@ -109,9 +111,24 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		builtinPresets: DEFAULT_SYNTH_PRESETS,
 		gatherState,
 		applyPreset,
-		shouldLoadCurrentState: () => false,
+		shouldLoadCurrentState: () => true,
 		presetStateKey,
 	});
+
+	// Sync preset session to plugin host whenever it changes
+	useEffect(() => {
+		if (window.ipc) {
+			window.ipc.postMessage(
+				JSON.stringify({
+					preset_session: {
+						activePresetId,
+						activePresetNameBase,
+						loadedPresetFingerprint,
+					},
+				}),
+			);
+		}
+	}, [activePresetId, activePresetNameBase, loadedPresetFingerprint]);
 
 	const lcdPrimaryText = useMemo(
 		() => `PRESET ${activePresetName.toUpperCase()}`,

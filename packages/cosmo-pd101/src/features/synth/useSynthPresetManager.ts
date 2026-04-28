@@ -30,7 +30,9 @@ type UseSynthPresetManagerOptions = {
 type UseSynthPresetManagerResult = {
 	allPresetEntries: PresetEntry[];
 	activePresetId: string | null;
+	activePresetNameBase: string;
 	activePresetName: string;
+	loadedPresetFingerprint: string | null;
 	pendingPresetChange: PendingPresetChange | null;
 	handleLoadLocal: (name: string) => void;
 	handleLoadBuiltin: (name: string) => void;
@@ -57,6 +59,19 @@ type PendingPresetChange = {
 	activePresetName: string;
 	activeLocalName: string | null;
 	suggestedName: string;
+	changes: PendingPresetDiffEntry[];
+};
+
+type PendingPresetDiffEntry = {
+	path: string;
+	previous: string;
+	next: string;
+};
+
+type JsonLike = null | boolean | number | string | JsonLike[] | JsonLikeObject;
+
+type JsonLikeObject = {
+	[key: string]: JsonLike | undefined;
 };
 
 const getBuiltinPresetEntryId = (name: string) => `builtin:${name}`;
@@ -78,6 +93,99 @@ function sortPresetEntries(entries: PresetEntry[]): PresetEntry[] {
 
 function getPresetFingerprint(preset: SynthPresetV1): string {
 	return JSON.stringify(preset);
+}
+
+function parsePresetFingerprint(fingerprint: string | null): JsonLike | null {
+	if (!fingerprint) {
+		return null;
+	}
+	try {
+		return JSON.parse(fingerprint) as JsonLike;
+	} catch {
+		return null;
+	}
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function formatDiffValue(value: unknown): string {
+	if (typeof value === "string") return `"${value}"`;
+	if (
+		typeof value === "number" ||
+		typeof value === "boolean" ||
+		value === null
+	) {
+		return String(value);
+	}
+	if (Array.isArray(value)) return `[${value.length} items]`;
+	if (isPlainObject(value)) return "{...}";
+	if (typeof value === "undefined") return "undefined";
+	return String(value);
+}
+
+function collectPresetDiffs(
+	previousValue: unknown,
+	nextValue: unknown,
+	out: PendingPresetDiffEntry[],
+	path = "",
+	maxEntries = 200,
+): void {
+	if (out.length >= maxEntries || Object.is(previousValue, nextValue)) {
+		return;
+	}
+
+	if (Array.isArray(previousValue) && Array.isArray(nextValue)) {
+		if (previousValue.length !== nextValue.length) {
+			out.push({
+				path: path ? `${path}.length` : "length",
+				previous: String(previousValue.length),
+				next: String(nextValue.length),
+			});
+			if (out.length >= maxEntries) return;
+		}
+
+		for (
+			let index = 0;
+			index < Math.max(previousValue.length, nextValue.length);
+			index++
+		) {
+			collectPresetDiffs(
+				previousValue[index],
+				nextValue[index],
+				out,
+				`${path}[${index}]`,
+				maxEntries,
+			);
+			if (out.length >= maxEntries) return;
+		}
+		return;
+	}
+
+	if (isPlainObject(previousValue) && isPlainObject(nextValue)) {
+		const keys = Array.from(
+			new Set([...Object.keys(previousValue), ...Object.keys(nextValue)]),
+		).sort();
+		for (const key of keys) {
+			const nextPath = path ? `${path}.${key}` : key;
+			collectPresetDiffs(
+				previousValue[key],
+				nextValue[key],
+				out,
+				nextPath,
+				maxEntries,
+			);
+			if (out.length >= maxEntries) return;
+		}
+		return;
+	}
+
+	out.push({
+		path: path || "(root)",
+		previous: formatDiffValue(previousValue),
+		next: formatDiffValue(nextValue),
+	});
 }
 
 export function useSynthPresetManager({
@@ -120,14 +228,42 @@ export function useSynthPresetManager({
 	const activeLocalName = activePresetId?.startsWith("local:")
 		? activePresetNameBase
 		: null;
-	const pendingPresetChange = pendingNavigation
-		? {
-				activePresetName: activePresetNameBase,
-				activeLocalName,
-				suggestedName:
-					activePresetNameBase === "Current State" ? "" : activePresetNameBase,
-			}
-		: null;
+	const pendingPresetChange = useMemo(() => {
+		if (!pendingNavigation) {
+			return null;
+		}
+
+		const changes: PendingPresetDiffEntry[] = [];
+		const previousPreset = parsePresetFingerprint(loadedPresetFingerprint);
+		const currentPreset = parsePresetFingerprint(currentPresetFingerprint);
+
+		if (previousPreset !== null && currentPreset !== null) {
+			collectPresetDiffs(previousPreset, currentPreset, changes);
+		}
+
+		if (changes.length === 0 && hasUnsavedChanges) {
+			changes.push({
+				path: "(preset)",
+				previous: "saved preset",
+				next: "current state",
+			});
+		}
+
+		return {
+			activePresetName: activePresetNameBase,
+			activeLocalName,
+			suggestedName:
+				activePresetNameBase === "Current State" ? "" : activePresetNameBase,
+			changes,
+		};
+	}, [
+		activeLocalName,
+		activePresetNameBase,
+		currentPresetFingerprint,
+		hasUnsavedChanges,
+		loadedPresetFingerprint,
+		pendingNavigation,
+	]);
 
 	const captureLoadedPresetFingerprint = useCallback(() => {
 		setLoadedPresetFingerprint(getPresetFingerprint(gatherState()));
@@ -445,7 +581,9 @@ export function useSynthPresetManager({
 	return {
 		allPresetEntries,
 		activePresetId,
+		activePresetNameBase,
 		activePresetName,
+		loadedPresetFingerprint,
 		pendingPresetChange,
 		handleLoadLocal,
 		handleLoadBuiltin,

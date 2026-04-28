@@ -451,7 +451,7 @@ export default function PresetLibrary({
 								<div className="mt-2 grid grid-cols-2 gap-2">
 									<Button
 										type="button"
-										className="btn btn-sm bg-cz-gold text-white hover:brightness-110"
+										className="btn btn-sm btn-warning"
 										disabled={!activeLocalEntry}
 										onClick={handleSave}
 									>
@@ -459,7 +459,7 @@ export default function PresetLibrary({
 									</Button>
 									<Button
 										type="button"
-										className="btn btn-sm border-cz-border bg-cz-inset text-cz-light-blue"
+										className="btn btn-sm btn-success"
 										onClick={openSaveAsModal}
 									>
 										Save As

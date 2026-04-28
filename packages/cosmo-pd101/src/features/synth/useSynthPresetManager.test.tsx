@@ -142,11 +142,16 @@ describe("useSynthPresetManager", () => {
 		expect(applyPreset).toHaveBeenCalledTimes(1);
 		expect(result.current.activePresetId).toBe("builtin:Alpha");
 		expect(result.current.activePresetName).toBe("Alpha *");
-		expect(result.current.pendingPresetChange).toEqual({
-			activePresetName: "Alpha",
-			activeLocalName: null,
-			suggestedName: "Alpha",
-		});
+		expect(result.current.pendingPresetChange).toEqual(
+			expect.objectContaining({
+				activePresetName: "Alpha",
+				activeLocalName: null,
+				suggestedName: "Alpha",
+			}),
+		);
+		expect(result.current.pendingPresetChange?.changes.length).toBeGreaterThan(
+			0,
+		);
 	});
 
 	it("saves the active local preset before completing a pending navigation", () => {

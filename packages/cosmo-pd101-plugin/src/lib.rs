@@ -235,18 +235,6 @@ pub enum LfoWaveform {
     Random,
 }
 
-/// Filter type.
-#[derive(Copy, Clone, PartialEq, EnumParameter)]
-pub enum FilterType {
-    #[name = "Low Pass"]
-    #[default]
-    Lp,
-    #[name = "High Pass"]
-    Hp,
-    #[name = "Band Pass"]
-    Bp,
-}
-
 /// Portamento mode.
 #[derive(Copy, Clone, PartialEq, EnumParameter)]
 pub enum PortamentoMode {
@@ -431,22 +419,6 @@ pub struct CzParameters {
     #[parameter(id = "lfo_depth", name = "Depth", default = 0.2, range = 0.0..=1.0, group = "LFO")]
     pub lfo_depth: FloatParameter,
 
-    // Filter
-    #[parameter(id = "fil_enabled", name = "Enabled", default = 0.0, range = 0.0..=1.0, group = "Filter")]
-    pub fil_enabled: FloatParameter,
-
-    #[parameter(id = "fil_cutoff", name = "Cutoff (Hz)", default = 5000.0, range = 20.0..=20000.0, kind = "hz", group = "Filter")]
-    pub fil_cutoff: FloatParameter,
-
-    #[parameter(id = "fil_resonance", name = "Resonance", default = 0.0, range = 0.0..=1.0, group = "Filter")]
-    pub fil_resonance: FloatParameter,
-
-    #[parameter(id = "fil_env_amount", name = "Env Amount", default = 0.0, range = 0.0..=1.0, group = "Filter")]
-    pub fil_env_amount: FloatParameter,
-
-    #[parameter(id = "fil_type", name = "Type", group = "Filter")]
-    pub fil_type: EnumParameter<FilterType>,
-
     // Portamento
     #[parameter(id = "port_enabled", name = "Enabled", default = 0.0, range = 0.0..=1.0, group = "Portamento")]
     pub port_enabled: FloatParameter,
@@ -501,14 +473,6 @@ impl CzParameters {
             LfoWaveform::Saw => cosmo_synth_engine::params::LfoWaveform::Saw,
             LfoWaveform::InvertedSaw => cosmo_synth_engine::params::LfoWaveform::InvertedSaw,
             LfoWaveform::Random => cosmo_synth_engine::params::LfoWaveform::Random,
-        }
-    }
-
-    fn map_filter_type(value: FilterType) -> cosmo_synth_engine::params::FilterType {
-        match value {
-            FilterType::Lp => cosmo_synth_engine::params::FilterType::Lp,
-            FilterType::Hp => cosmo_synth_engine::params::FilterType::Hp,
-            FilterType::Bp => cosmo_synth_engine::params::FilterType::Bp,
         }
     }
 
@@ -620,12 +584,6 @@ impl CzParameters {
         params.lfo.waveform = Self::map_lfo_waveform(self.lfo_waveform.get());
         params.lfo.rate = self.lfo_rate.get() as f32;
         params.lfo.depth = self.lfo_depth.get() as f32;
-
-        params.filter.enabled = self.fil_enabled.get() >= 0.5;
-        params.filter.filter_type = Self::map_filter_type(self.fil_type.get());
-        params.filter.cutoff = self.fil_cutoff.get() as f32;
-        params.filter.resonance = self.fil_resonance.get() as f32;
-        params.filter.env_amount = self.fil_env_amount.get() as f32;
 
         params.portamento.enabled = self.port_enabled.get() >= 0.5;
         params.portamento.mode = Self::map_portamento_mode(self.port_mode.get());
@@ -757,11 +715,11 @@ fn _assert_synth_params_coverage(p: SynthParams) {
         offset: _lfo2_offset,
     } = lfo2;
     let FilterParams {
-        enabled: _fil_enabled,
-        filter_type: _fil_type,
-        cutoff: _fil_cutoff,
-        resonance: _fil_res,
-        env_amount: _fil_env,
+        enabled: _,
+        filter_type: _,
+        cutoff: _,
+        resonance: _,
+        env_amount: _,
     } = filter;
 
     // Both lines must be destructured exhaustively.
@@ -948,10 +906,42 @@ impl ModMatrixState {
     }
 }
 
+#[derive(Clone, Default)]
+struct PresetSessionState {
+    /// The ID of the currently loaded preset (e.g., "local:MyBass" or "builtin:Pad").
+    active_preset_id: Option<String>,
+    /// The display name of the currently loaded preset.
+    active_preset_name_base: String,
+    /// Fingerprint of the loaded preset to track if there are unsaved changes.
+    loaded_preset_fingerprint: Option<String>,
+}
+
+impl PresetSessionState {
+    fn set(
+        &mut self,
+        active_preset_id: Option<String>,
+        active_preset_name_base: String,
+        loaded_preset_fingerprint: Option<String>,
+    ) {
+        self.active_preset_id = active_preset_id;
+        self.active_preset_name_base = active_preset_name_base;
+        self.loaded_preset_fingerprint = loaded_preset_fingerprint;
+    }
+
+    fn to_json(&self) -> serde_json::Value {
+        serde_json::json!({
+            "activePresetId": self.active_preset_id,
+            "activePresetNameBase": self.active_preset_name_base,
+            "loadedPresetFingerprint": self.loaded_preset_fingerprint,
+        })
+    }
+}
+
 struct CzWebViewHandler {
     envelopes: Arc<RwLock<EnvelopeState>>,
     algo_controls: Arc<RwLock<AlgoControlsState>>,
     mod_matrix: Arc<RwLock<ModMatrixState>>,
+    preset_session: Arc<RwLock<PresetSessionState>>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
 }
@@ -1149,6 +1139,44 @@ impl WebViewHandler for CzWebViewHandler {
                     "hz": scope.hz,
                 }))
             }
+            "setPresetSession" => {
+                let payload = args
+                    .first()
+                    .ok_or_else(|| "setPresetSession expects at least one argument".to_string())?;
+                let active_preset_id = payload
+                    .get("activePresetId")
+                    .and_then(|v| v.as_str().map(String::from));
+                let active_preset_name_base = payload
+                    .get("activePresetNameBase")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or("Current State")
+                    .to_string();
+                let loaded_preset_fingerprint = payload
+                    .get("loadedPresetFingerprint")
+                    .and_then(|v| v.as_str().map(String::from));
+                let mut preset_session = self
+                    .preset_session
+                    .write()
+                    .map_err(|_| "preset session store is poisoned".to_string())?;
+                preset_session.set(
+                    active_preset_id.clone(),
+                    active_preset_name_base.clone(),
+                    loaded_preset_fingerprint.clone(),
+                );
+                append_log(&format!(
+                    "setPresetSession id={:?} name={active_preset_name_base}",
+                    active_preset_id
+                ));
+                Ok(serde_json::Value::Null)
+            }
+            "getPresetSession" => {
+                let preset_session = self
+                    .preset_session
+                    .read()
+                    .map_err(|_| "preset session store is poisoned".to_string())?;
+                append_log("getPresetSession");
+                Ok(preset_session.to_json())
+            }
             _ => {
                 append_log(&format!("unknown webview method={method}"));
                 Err(format!("unknown method: {method}"))
@@ -1221,6 +1249,7 @@ pub struct CzDescriptor {
     envelopes: Arc<RwLock<EnvelopeState>>,
     algo_controls: Arc<RwLock<AlgoControlsState>>,
     mod_matrix: Arc<RwLock<ModMatrixState>>,
+    preset_session: Arc<RwLock<PresetSessionState>>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
 }
@@ -1255,6 +1284,7 @@ impl Descriptor for CzDescriptor {
             envelopes: self.envelopes.clone(),
             algo_controls: self.algo_controls.clone(),
             mod_matrix: self.mod_matrix.clone(),
+            preset_session: self.preset_session.clone(),
             scope_buffer: self.scope_buffer.clone(),
             ui_input_queue: self.ui_input_queue.clone(),
         }))

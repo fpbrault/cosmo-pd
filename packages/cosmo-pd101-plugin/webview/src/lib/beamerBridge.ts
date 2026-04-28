@@ -23,6 +23,12 @@ type BeamerParamUpdate = Record<string, [number, number, string]>;
 
 type EnvelopeMap = Partial<Record<EnvelopeId, StepEnvData>>;
 
+type PresetSessionPayload = {
+	activePresetId?: string | null;
+	activePresetNameBase?: string;
+	loadedPresetFingerprint?: string | null;
+};
+
 type AlgoControlsPayload = {
 	line: 1 | 2;
 	bank?: "a" | "b";
@@ -57,7 +63,9 @@ declare global {
 		ipc?: { postMessage: (msg: string) => void };
 		__czOnParams?: (json: string) => void;
 		__czGetEnvelopes?: () => Promise<EnvelopeMap>;
+		__czGetAlgoControls?: () => Promise<unknown>;
 		__czGetModMatrix?: () => Promise<ModMatrix>;
+		__czGetPresetSession?: () => Promise<PresetSessionPayload>;
 		__czOnScope?: (samples: number[], sampleRate: number, hz: number) => void;
 	}
 }
@@ -178,7 +186,8 @@ function installBridgeIpc(runtime: BeamerRuntime) {
 				| { param_id: string; value: number }
 				| { envelope_id: EnvelopeId; data: StepEnvData }
 				| { algo_controls: AlgoControlsPayload }
-				| { mod_matrix: ModMatrix };
+				| { mod_matrix: ModMatrix }
+				| { preset_session: PresetSessionPayload };
 
 			if ("param_id" in payload) {
 				const info = runtime.params.info(payload.param_id);
@@ -215,6 +224,18 @@ function installBridgeIpc(runtime: BeamerRuntime) {
 				return;
 			}
 
+			if ("preset_session" in payload) {
+				void runtime
+					.invoke("setPresetSession", payload.preset_session)
+					.catch((error) => {
+						console.error(
+							"[beamerBridge] Failed to send preset session",
+							error,
+						);
+					});
+				return;
+			}
+
 			void runtime
 				.invoke("setEnvelope", payload.envelope_id, payload.data)
 				.catch((error) => {
@@ -228,9 +249,19 @@ function installBridgeIpc(runtime: BeamerRuntime) {
 		return (response ?? {}) as EnvelopeMap;
 	};
 
+	window.__czGetAlgoControls = async () => {
+		const response = await runtime.invoke("getAlgoControls");
+		return response ?? null;
+	};
+
 	window.__czGetModMatrix = async () => {
 		const response = await runtime.invoke("getModMatrix");
 		return (response ?? { routes: [] }) as ModMatrix;
+	};
+
+	window.__czGetPresetSession = async () => {
+		const response = await runtime.invoke("getPresetSession");
+		return (response ?? {}) as PresetSessionPayload;
 	};
 }
 
