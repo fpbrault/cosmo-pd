@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { PolyMode } from "@/features/synth/useSynthState";
 import type {
 	Algo,
@@ -62,12 +62,18 @@ export type UseAudioEngineParams = {
 	pdVisualizerWorkletUrl: string;
 };
 
+export type AudioContextState = "suspended" | "running" | "closed";
+
 export type AudioEngineRefs = {
 	audioCtxRef: React.MutableRefObject<AudioContext | null>;
 	gainNodeRef: React.MutableRefObject<GainNode | null>;
 	analyserNodeRef: React.MutableRefObject<AnalyserNode | null>;
 	workletNodeRef: React.MutableRefObject<AudioWorkletNode | null>;
 	paramsRef: React.MutableRefObject<EngineParams>;
+	/** Reactive audio context state — null until the context is created. */
+	audioContextState: AudioContextState | null;
+	/** Call from a button click handler to resume a suspended context. */
+	resumeAudio: () => void;
 };
 
 export type EngineParams = {
@@ -199,6 +205,8 @@ export function useAudioEngine({
 	const analyserNodeRef = useRef<AnalyserNode | null>(null);
 	const workletNodeRef = useRef<AudioWorkletNode | null>(null);
 	const audioInitRef = useRef(false);
+	const [audioContextState, setAudioContextState] =
+		useState<AudioContextState | null>(null);
 
 	const paramsRef = useRef<EngineParams>({
 		lineSelect: "L1+L2",
@@ -345,6 +353,17 @@ export function useAudioEngine({
 					return;
 				}
 
+				// Assign immediately so resumeAudio() can call ctx.resume() within
+				// the user's gesture call stack, even while the worklet is loading.
+				audioCtxRef.current = ctx;
+				ctx.addEventListener("statechange", () => {
+					if (!disposed) setAudioContextState(ctx.state as AudioContextState);
+				});
+				// Do NOT eagerly call resumeOrDefer here — the AudioStartOverlay is the
+				// intended user-gesture mechanism. Attaching global gesture listeners at
+				// init time causes them to fire on Playwright's synthetic events, resuming
+				// the context before the overlay can render.
+
 				const [wasmResponse, bindingsResponse] = await Promise.all([
 					fetch(synthWasmUrl),
 					fetch(synthBindingsUrl),
@@ -418,12 +437,16 @@ export function useAudioEngine({
 				gainNode.connect(analyserNode);
 				analyserNode.connect(ctx.destination);
 
-				audioCtxRef.current = ctx;
 				gainNodeRef.current = gainNode;
 				analyserNodeRef.current = analyserNode;
-
-				if (ctx.state === "suspended") await ctx.resume();
 			} catch (err) {
+				// init() can fail after we already created/assigned AudioContext.
+				// Close and clear references immediately so we do not leak contexts.
+				await audioCtxRef.current?.close().catch(() => {
+					// Ignore close failures while handling init failure.
+				});
+				audioCtxRef.current = null;
+				setAudioContextState(null);
 				console.error("[PD Visualizer] Audio init failed:", err);
 				audioInitRef.current = false;
 			}
@@ -445,11 +468,28 @@ export function useAudioEngine({
 		};
 	}, [synthWasmUrl, synthBindingsUrl, pdVisualizerWorkletUrl]);
 
+	const resumeAudio = useCallback(() => {
+		const ctx = audioCtxRef.current;
+		if (!ctx) return;
+		if (ctx.state === "running") {
+			// Context already running (e.g. headless test env without autoplay policy).
+			// Sync React state so the overlay closes.
+			setAudioContextState("running");
+			return;
+		}
+		if (ctx.state !== "suspended") return;
+		void ctx.resume().catch(() => {
+			// Ignore resume failures (e.g. autoplay still blocked).
+		});
+	}, []);
+
 	return {
 		audioCtxRef,
 		gainNodeRef,
 		analyserNodeRef,
 		workletNodeRef,
 		paramsRef,
+		audioContextState,
+		resumeAudio,
 	};
 }
