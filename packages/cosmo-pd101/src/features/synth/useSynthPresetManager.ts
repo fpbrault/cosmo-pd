@@ -95,9 +95,7 @@ function getPresetFingerprint(preset: SynthPresetV1): string {
 	return JSON.stringify(preset);
 }
 
-function parsePresetFingerprint(
-	fingerprint: string | null,
-): JsonLike | null {
+function parsePresetFingerprint(fingerprint: string | null): JsonLike | null {
 	if (!fingerprint) {
 		return null;
 	}

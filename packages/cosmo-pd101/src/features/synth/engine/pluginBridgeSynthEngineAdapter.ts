@@ -10,7 +10,6 @@ import type {
 	Algo,
 	AlgoControlValueV1,
 	CzWaveform,
-	FilterType,
 	LfoWaveform,
 	LineSelect,
 	ModMatrix,
@@ -103,15 +102,10 @@ const LFO_WAVE_IDS: EnumToIdMap<LfoWaveform> = {
 	triangle: 1,
 	square: 2,
 	saw: 3,
+	invertedSaw: 4,
+	random: 5,
 };
 const LFO_WAVE_FROM_ID = invertMap(LFO_WAVE_IDS);
-
-const FILTER_TYPE_IDS: EnumToIdMap<FilterType> = {
-	lp: 0,
-	hp: 1,
-	bp: 2,
-};
-const FILTER_TYPE_FROM_ID = invertMap(FILTER_TYPE_IDS);
 
 const PORT_MODE_IDS: EnumToIdMap<PortamentoMode> = {
 	rate: 0,
@@ -549,24 +543,6 @@ function sendModMatrix(matrix: ModMatrix) {
 	}
 }
 
-function sendPresetSession(
-	activePresetId: string | null,
-	activePresetNameBase: string,
-	loadedPresetFingerprint: string | null,
-) {
-	if (window.ipc) {
-		window.ipc.postMessage(
-			JSON.stringify({
-				preset_session: {
-					activePresetId,
-					activePresetNameBase,
-					loadedPresetFingerprint,
-				},
-			}),
-		);
-	}
-}
-
 // ---------------------------------------------------------------------------
 // createPluginBridgeSynthEngineAdapter
 // Builds a SynthEngineAdapter that syncs a SynthEngineSnapshot to the
@@ -786,9 +762,9 @@ export function usePluginBridgeSynthEngine(
 			!window.__czGetModMatrix;
 		const timeoutId = shouldAllowFallbackSync
 			? window.setTimeout(() => {
-				outboundSyncEnabledRef.current = true;
-				sync();
-			}, hydrationGraceMs)
+					outboundSyncEnabledRef.current = true;
+					sync();
+				}, hydrationGraceMs)
 			: null;
 
 		return () => {
@@ -906,7 +882,8 @@ export function usePluginBridgeSynthEngine(
 					// picks it up when it loads the initial state
 					const presetSessionData = {
 						activePresetId: session.activePresetId ?? null,
-						activePresetNameBase: session.activePresetNameBase ?? "Current State",
+						activePresetNameBase:
+							session.activePresetNameBase ?? "Current State",
 						loadedPresetFingerprint: session.loadedPresetFingerprint ?? null,
 					};
 					localStorage.setItem(
@@ -917,10 +894,7 @@ export function usePluginBridgeSynthEngine(
 				markHydrated("presetSession");
 			})
 			.catch((error) => {
-				console.error(
-					"[PluginPage] Failed to load preset session:",
-					error,
-				);
+				console.error("[PluginPage] Failed to load preset session:", error);
 				markHydrated("presetSession");
 			});
 		return () => {

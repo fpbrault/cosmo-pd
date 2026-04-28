@@ -30,21 +30,17 @@ test.describe("Host to UI inbound updates", () => {
 		await expect(dspState).toContainText("id:volume", { timeout: 2000 });
 	});
 
-	test("pushBeamerParamUpdate through _onParams updates the debug panel", async ({
+	test("pushBeamerParamUpdate through _onParams updates the volume display", async ({
 		page,
 	}) => {
-		const panel = page.getByTestId("debug-panel");
-		if (!(await panel.isVisible())) {
-			await page.getByTestId("debug-panel-toggle").click();
-		}
-
 		await page.evaluate(() =>
 			window.__MOCK_BRIDGE__?.pushBeamerParamUpdate({
-				"0": [0.33, 0.33, "33%"],
+				volume: [0.33, 0.33, "33%"],
 			}),
 		);
 
-		const dspState = page.getByTestId("debug-dsp-state");
-		await expect(dspState).toContainText("0.330", { timeout: 2000 });
+		await expect(
+			page.getByRole("button", { name: "Main Volume value" }).first(),
+		).toHaveText("33%", { timeout: 2000 });
 	});
 });

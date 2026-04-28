@@ -128,11 +128,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 				}),
 			);
 		}
-	}, [
-		activePresetId,
-		activePresetNameBase,
-		loadedPresetFingerprint,
-	]);
+	}, [activePresetId, activePresetNameBase, loadedPresetFingerprint]);
 
 	const lcdPrimaryText = useMemo(
 		() => `PRESET ${activePresetName.toUpperCase()}`,

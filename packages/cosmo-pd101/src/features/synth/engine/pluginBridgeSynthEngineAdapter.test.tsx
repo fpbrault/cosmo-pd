@@ -185,9 +185,7 @@ describe("usePluginBridgeSynthEngine", () => {
 			currentHandler?.(JSON.stringify({ volume: hostVolume }));
 		});
 
-		expect(
-			outbound.some((message) => "envelope_id" in message),
-		).toBe(false);
+		expect(outbound.some((message) => "envelope_id" in message)).toBe(false);
 
 		resolveEnvelopes?.({ l1_dco: hostEnv });
 

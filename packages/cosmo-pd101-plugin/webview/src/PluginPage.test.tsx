@@ -85,10 +85,11 @@ describe("PluginPage", () => {
 
 	it("syncs preset session to host using loaded preset fingerprint baseline", () => {
 		const postMessage = vi.fn();
-		(window as Window & { ipc?: { postMessage: (message: string) => void } }).ipc =
-			{
-				postMessage,
-			};
+		(
+			window as Window & { ipc?: { postMessage: (message: string) => void } }
+		).ipc = {
+			postMessage,
+		};
 
 		mockUseSynthPresetManager.mockReturnValue({
 			allPresetEntries: [],

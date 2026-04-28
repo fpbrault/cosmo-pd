@@ -149,7 +149,9 @@ describe("useSynthPresetManager", () => {
 				suggestedName: "Alpha",
 			}),
 		);
-		expect(result.current.pendingPresetChange?.changes.length).toBeGreaterThan(0);
+		expect(result.current.pendingPresetChange?.changes.length).toBeGreaterThan(
+			0,
+		);
 	});
 
 	it("saves the active local preset before completing a pending navigation", () => {

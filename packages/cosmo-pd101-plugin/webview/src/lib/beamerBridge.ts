@@ -228,7 +228,10 @@ function installBridgeIpc(runtime: BeamerRuntime) {
 				void runtime
 					.invoke("setPresetSession", payload.preset_session)
 					.catch((error) => {
-						console.error("[beamerBridge] Failed to send preset session", error);
+						console.error(
+							"[beamerBridge] Failed to send preset session",
+							error,
+						);
 					});
 				return;
 			}
