@@ -709,14 +709,8 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			line1DcoEnv: p.line1?.dcoEnv ?? DEFAULT_DCO_ENV,
 			line1DcwEnv: p.line1?.dcwEnv ?? DEFAULT_DCW_ENV,
 			line1DcaEnv: p.line1?.dcaEnv ?? DEFAULT_DCA_ENV,
-			line1CzSlotAWaveform: inferCzWaveform(
-				p.line1?.cz?.slotAWaveform,
-				"saw",
-			),
-			line1CzSlotBWaveform: inferCzWaveform(
-				p.line1?.cz?.slotBWaveform,
-				"saw",
-			),
+			line1CzSlotAWaveform: inferCzWaveform(p.line1?.cz?.slotAWaveform, "saw"),
+			line1CzSlotBWaveform: inferCzWaveform(p.line1?.cz?.slotBWaveform, "saw"),
 			line1CzWindow: (p.line1?.cz?.window as WindowType) ?? "off",
 			line1AlgoControlsA: normalizeAlgoControls(
 				line1PrimaryAlgo,
@@ -731,14 +725,8 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			line2DcoEnv: p.line2?.dcoEnv ?? DEFAULT_DCO_ENV,
 			line2DcwEnv: p.line2?.dcwEnv ?? DEFAULT_DCW_ENV,
 			line2DcaEnv: p.line2?.dcaEnv ?? DEFAULT_DCA_ENV,
-			line2CzSlotAWaveform: inferCzWaveform(
-				p.line2?.cz?.slotAWaveform,
-				"saw",
-			),
-			line2CzSlotBWaveform: inferCzWaveform(
-				p.line2?.cz?.slotBWaveform,
-				"saw",
-			),
+			line2CzSlotAWaveform: inferCzWaveform(p.line2?.cz?.slotAWaveform, "saw"),
+			line2CzSlotBWaveform: inferCzWaveform(p.line2?.cz?.slotBWaveform, "saw"),
 			line2CzWindow: (p.line2?.cz?.window as WindowType) ?? "off",
 			line2AlgoControlsA: normalizeAlgoControls(
 				line2PrimaryAlgo,
@@ -789,10 +777,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			lfo2Depth: safe(p.lfo2?.depth, getEngineParamDefault("lfo2Depth", 0.2)),
 			lfo2Symmetry: safe(p.lfo2?.symmetry, 0.5),
 			lfo2Retrigger: p.lfo2?.retrigger ?? false,
-			lfo2Offset: safe(
-				p.lfo2?.offset,
-				getEngineParamDefault("lfo2Offset", 0),
-			),
+			lfo2Offset: safe(p.lfo2?.offset, getEngineParamDefault("lfo2Offset", 0)),
 			randomRate: safe(p.random?.rate, 2),
 			modEnvAttack: safe(
 				p.modEnv?.attack,

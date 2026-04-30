@@ -40,9 +40,7 @@ export function BaseWaveSelector({
 						disabled={disabled}
 						title={option.label}
 						className={`flex flex-col items-center gap-0.5 rounded py-1.5 transition-colors select-none focus-visible:outline-2 focus-visible:outline-offset-1 ${
-							disabled
-								? "opacity-40 cursor-not-allowed"
-								: "cursor-pointer"
+							disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"
 						} ${
 							value === option.value
 								? "bg-primary text-primary-content"

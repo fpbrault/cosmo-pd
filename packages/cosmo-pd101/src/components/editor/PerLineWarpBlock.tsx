@@ -11,7 +11,11 @@ import Card from "@/components/primitives/Card";
 import { useOptionalSynthController } from "@/features/synth/SynthParamController";
 import type { EnvTab } from "@/features/synth/synthUiStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
-import { CZ_WAVEFORMS, CZ_WINDOWS, getCzPresetDefaults } from "@/lib/synth/algoRef";
+import {
+	CZ_WAVEFORMS,
+	CZ_WINDOWS,
+	getCzPresetDefaults,
+} from "@/lib/synth/algoRef";
 import type {
 	AlgoControlValueV1,
 	AlgoDefinitionV1,
@@ -201,8 +205,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 	const handleAlgoChange = useCallback(
 		(nextAlgo: PdAlgo) => {
 			setAlgo(nextAlgo);
-			const definitions =
-				ALGO_DEFINITIONS_V1 as AlgoDefinitionV1[];
+			const definitions = ALGO_DEFINITIONS_V1 as AlgoDefinitionV1[];
 			const nextDefinition = definitions.find((entry) => entry.id === nextAlgo);
 			if (nextDefinition?.defaultBaseWaveform) {
 				setBaseWaveformA(nextDefinition.defaultBaseWaveform);
@@ -236,8 +239,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 	const handleAlgo2Change = useCallback(
 		(nextAlgo: PdAlgo) => {
 			setAlgo2(nextAlgo);
-			const definitions =
-				ALGO_DEFINITIONS_V1 as AlgoDefinitionV1[];
+			const definitions = ALGO_DEFINITIONS_V1 as AlgoDefinitionV1[];
 			const nextDefinition = definitions.find((entry) => entry.id === nextAlgo);
 			if (nextDefinition?.defaultBaseWaveform) {
 				setBaseWaveformB(nextDefinition.defaultBaseWaveform);
@@ -255,8 +257,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 	const czWaveforms = CZ_WAVEFORMS;
 	const czWindows = CZ_WINDOWS;
 
-	const algoDefinitions =
-		ALGO_DEFINITIONS_V1 as AlgoDefinitionV1[];
+	const algoDefinitions = ALGO_DEFINITIONS_V1 as AlgoDefinitionV1[];
 	const baseWaveEnabledA = algoUsesBaseWaveform(algo);
 	const baseWaveEnabledB =
 		algoBEnabled && algo2 != null && algoUsesBaseWaveform(algo2);

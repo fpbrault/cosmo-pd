@@ -9,15 +9,19 @@ import {
 
 const ALGO_DEFINITIONS = ALGO_DEFINITIONS_V1 as AlgoDefinitionV1[];
 
-const CZ101_DEF = ALGO_DEFINITIONS.find((d) => d.id === "cz101") as AlgoDefinitionV1;
+const CZ101_DEF = ALGO_DEFINITIONS.find(
+	(d) => d.id === "cz101",
+) as AlgoDefinitionV1;
 
-export const CZ_WAVEFORMS = (CZ101_DEF.controls.find((c) => c.id === "waveform1") as AlgoControlV1)
-	.options.map((o) => o.value as CzWaveform);
+export const CZ_WAVEFORMS = (
+	CZ101_DEF.controls.find((c) => c.id === "waveform1") as AlgoControlV1
+).options.map((o) => o.value as CzWaveform);
 
 const WAVEFORMS = CZ_WAVEFORMS;
 
-export const CZ_WINDOWS = (CZ101_DEF.controls.find((c) => c.id === "windowFunction") as AlgoControlV1)
-	.options.map((o) => o.value as WindowType);
+export const CZ_WINDOWS = (
+	CZ101_DEF.controls.find((c) => c.id === "windowFunction") as AlgoControlV1
+).options.map((o) => o.value as WindowType);
 
 const ALL_ALGOS = ALGO_DEFINITIONS.map((d) => d.id);
 
@@ -107,17 +111,29 @@ export function getCzPresetDefaults(algo: Algo): {
 		return null;
 	}
 
-	const waveform1Control = definition.controls.find((c) => c.id === "waveform1");
-	const waveform2Control = definition.controls.find((c) => c.id === "waveform2");
-	const windowControl = definition.controls.find((c) => c.id === "windowFunction");
+	const waveform1Control = definition.controls.find(
+		(c) => c.id === "waveform1",
+	);
+	const waveform2Control = definition.controls.find(
+		(c) => c.id === "waveform2",
+	);
+	const windowControl = definition.controls.find(
+		(c) => c.id === "windowFunction",
+	);
 
 	if (!waveform1Control || !waveform2Control || !windowControl) {
 		return null;
 	}
 
 	return {
-		waveform1: waveform1Control.options[Math.round(waveform1Control.default ?? 0)]?.value as CzWaveform ?? "saw",
-		waveform2: waveform2Control.options[Math.round(waveform2Control.default ?? 0)]?.value as CzWaveform ?? "saw",
-		windowFunction: windowControl.options[Math.round(windowControl.default ?? 0)]?.value as WindowType ?? "off",
+		waveform1:
+			(waveform1Control.options[Math.round(waveform1Control.default ?? 0)]
+				?.value as CzWaveform) ?? "saw",
+		waveform2:
+			(waveform2Control.options[Math.round(waveform2Control.default ?? 0)]
+				?.value as CzWaveform) ?? "saw",
+		windowFunction:
+			(windowControl.options[Math.round(windowControl.default ?? 0)]
+				?.value as WindowType) ?? "off",
 	};
 }

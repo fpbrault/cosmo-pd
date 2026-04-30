@@ -1,7 +1,4 @@
-import {
-	isWarpAlgo,
-	resolveAlgoRef,
-} from "@/lib/synth/algoRef";
+import { isWarpAlgo, resolveAlgoRef } from "@/lib/synth/algoRef";
 import type {
 	Algo,
 	CzWaveform,
@@ -74,9 +71,7 @@ export const PD_ALGOS: PdAlgoDef[] = [
 	}),
 ];
 
-const NON_BASE_WAVE_ALGOS = new Set<PdAlgo>([
-	"karpunk",
-]);
+const NON_BASE_WAVE_ALGOS = new Set<PdAlgo>(["karpunk"]);
 
 export function algoUsesBaseWaveform(algo: PdAlgo): boolean {
 	return !NON_BASE_WAVE_ALGOS.has(algo);
@@ -268,7 +263,6 @@ function pdMirror(phase: number, amount: number): number {
 
 function sampleDirectAlgoPreview(algo: PdAlgo, _phase: number): number | null {
 	switch (algo) {
-	
 		default:
 			return null;
 	}

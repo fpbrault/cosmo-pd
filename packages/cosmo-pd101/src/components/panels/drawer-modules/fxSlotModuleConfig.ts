@@ -148,7 +148,7 @@ const FX_UI_META = {
 			},
 		},
 	},
-	
+
 	phaser: {
 		patchKey: "phaser",
 		moduleKey: "phaser",

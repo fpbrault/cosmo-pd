@@ -43,8 +43,7 @@ export default function AlgoIconGrid({
 	);
 	const hasOverflow = overflowAlgos.length > 0;
 	const selectedOverflowAlgo = useMemo(
-		() =>
-			overflowAlgos.find((algo) => algo.value === value) ?? null,
+		() => overflowAlgos.find((algo) => algo.value === value) ?? null,
 		[overflowAlgos, value],
 	);
 	const displayedAlgos = useMemo(() => {
