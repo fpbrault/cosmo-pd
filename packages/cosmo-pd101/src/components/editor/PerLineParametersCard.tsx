@@ -41,6 +41,7 @@ function PerLineParametersCardInner({
 					label="DCW Amt"
 					value={warpAmount}
 					color={color}
+					modDestination={lineIndex === 1 ? "line1DcwBase" : "line2DcwBase"}
 					onChange={setWarpAmount}
 				/>
 				<SynthParamKnob
@@ -48,6 +49,7 @@ function PerLineParametersCardInner({
 					label="Level"
 					value={level}
 					color="#9cb937"
+					modDestination={lineIndex === 1 ? "line1DcaBase" : "line2DcaBase"}
 					onChange={setLevel}
 				/>
 				<SynthParamKnob

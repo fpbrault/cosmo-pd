@@ -251,7 +251,7 @@ export default function MiniKeyboardOverlay({
 										onChange={(event) =>
 											setPitchWheel(Number(event.target.value))
 										}
-										className="h-24 w-3 cursor-pointer appearance-none bg-transparent [writing-mode:bt-lr] [-webkit-appearance:slider-vertical]"
+										className="h-24 w-3 cursor-pointer appearance-none bg-transparent [writing-mode:bt-lr]"
 									/>
 									<span className="text-5xs font-mono uppercase tracking-wider text-cz-cream/70">
 										P
@@ -268,7 +268,7 @@ export default function MiniKeyboardOverlay({
 										onChange={(event) =>
 											setModWheel(Number(event.target.value))
 										}
-										className="h-24 w-3 cursor-pointer appearance-none bg-transparent [writing-mode:bt-lr] [-webkit-appearance:slider-vertical]"
+										className="h-24 w-3 cursor-pointer appearance-none bg-transparent [writing-mode:bt-lr]"
 									/>
 									<span className="text-5xs font-mono uppercase tracking-wider text-cz-cream/70">
 										M

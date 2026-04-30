@@ -374,6 +374,7 @@ function MasterVolumeControl() {
 				size={48}
 				color="white"
 				label="Main Volume"
+				modDestination="volume"
 			/>
 		</div>
 	);

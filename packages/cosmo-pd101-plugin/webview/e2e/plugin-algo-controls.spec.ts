@@ -22,16 +22,7 @@ test.describe("Algo controls plugin bridge", () => {
 			.getByRole("spinbutton", { name: /^curve$/i })
 			.first();
 		await expect(curveKnobA).toBeVisible();
-
-		const boxA = await curveKnobA.boundingBox();
-		if (!boxA) throw new Error("Algo A Curve knob not found in layout");
-
-		const ax = boxA.x + boxA.width / 2;
-		const ay = boxA.y + boxA.height * 0.75;
-		await page.mouse.move(ax, ay);
-		await page.mouse.down();
-		await page.mouse.move(ax, ay - 30, { steps: 5 });
-		await page.mouse.up();
+		await curveKnobA.press("ArrowUp");
 
 		await waitForMessageMatching(
 			page,
@@ -52,15 +43,7 @@ test.describe("Algo controls plugin bridge", () => {
 			.getByRole("spinbutton", { name: /^blend$/i })
 			.first();
 		await expect(blendKnob).toBeVisible();
-		const blendBox = await blendKnob.boundingBox();
-		if (!blendBox) throw new Error("Blend knob not found in layout");
-
-		const bx = blendBox.x + blendBox.width / 2;
-		const by = blendBox.y + blendBox.height * 0.75;
-		await page.mouse.move(bx, by);
-		await page.mouse.down();
-		await page.mouse.move(bx, by - 42, { steps: 6 });
-		await page.mouse.up();
+		await blendKnob.press("ArrowUp");
 
 		const bendAlgoButtonB = page.getByTitle("Bend").nth(1);
 		await expect(bendAlgoButtonB).toBeVisible();
@@ -72,16 +55,7 @@ test.describe("Algo controls plugin bridge", () => {
 			.getByRole("spinbutton", { name: /^curve$/i })
 			.nth(1);
 		await expect(curveKnobB).toBeVisible();
-
-		const boxB = await curveKnobB.boundingBox();
-		if (!boxB) throw new Error("Algo B Curve knob not found in layout");
-
-		const cx = boxB.x + boxB.width / 2;
-		const cy = boxB.y + boxB.height * 0.75;
-		await page.mouse.move(cx, cy);
-		await page.mouse.down();
-		await page.mouse.move(cx, cy - 30, { steps: 5 });
-		await page.mouse.up();
+		await curveKnobB.press("ArrowUp");
 
 		await waitForMessageMatching(
 			page,
