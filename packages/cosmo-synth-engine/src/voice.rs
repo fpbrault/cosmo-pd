@@ -885,7 +885,10 @@ fn advance_silent_voice(
 ) {
     let freq1 = line_frequency(base_freq, line1, 0.0);
     let freq2 = line_frequency(base_freq, line2, 0.0);
-    let pm_delta = (base_freq * p.int_pm_ratio) / sr;
+    let pm_delta = match p.phase_mod_params() {
+        Some(pm) => (base_freq * pm.ratio) / sr,
+        None => base_freq / sr,
+    };
 
     advance_voice_phase(voice, sr, freq1, freq2, pm_delta);
 }
@@ -1055,7 +1058,9 @@ fn apply_vibrato(
     sources: &ModSources,
     signal: &mut SignalState,
 ) {
-    let vibrato = &p.vibrato;
+    let Some(vibrato) = p.vibrato_params() else {
+        return;
+    };
     if !vibrato.enabled {
         return;
     }
@@ -1065,7 +1070,9 @@ fn apply_vibrato(
         return;
     }
 
-    voice.vibrato_phase += (vibrato.rate * 0.1) / sr;
+    let vibrato_rate_mod = mod_value_for(ModDestination::VibratoRate, &p.mod_matrix, sources);
+    let effective_rate = (vibrato.rate + vibrato_rate_mod * 99.0).clamp(0.1, 200.0);
+    voice.vibrato_phase += (effective_rate * 0.1) / sr;
     if voice.vibrato_phase >= 1.0 {
         voice.vibrato_phase -= 1.0;
     }
@@ -1097,39 +1104,36 @@ fn build_phase_frame(
     base_freq: f32,
     sources: &ModSources,
 ) -> PhaseFrame {
-    let int_pm_mod = mod_value_for(ModDestination::IntPmAmount, &p.mod_matrix, sources);
-    let int_pm_amount = if p.int_pm_enabled {
-        (p.int_pm_amount + int_pm_mod).clamp(-1.0, 1.0)
+    let int_pm_ratio_mod = mod_value_for(ModDestination::IntPmRatio, &p.mod_matrix, sources);
+    let (int_pm_enabled, int_pm_amount_raw, int_pm_ratio_raw, pm_pre) = p
+        .phase_mod_params()
+        .map(|pm| (pm.enabled, pm.amount, pm.ratio, pm.pm_pre))
+        .unwrap_or((false, 0.0, 1.0, true));
+    let int_pm_amount = if int_pm_enabled {
+        (int_pm_amount_raw).clamp(-1.0, 1.0)
     } else {
         0.0
     };
-    let pm_delta = (base_freq * p.int_pm_ratio) / sr;
+    let effective_int_pm_ratio = (int_pm_ratio_raw + int_pm_ratio_mod * 7.5).clamp(0.5, 8.0);
+    let pm_delta = (base_freq * effective_int_pm_ratio) / sr;
     let phi1 = wrap01(voice.phi1);
     let phi2 = wrap01(voice.phi2);
     let pm_phi = wrap01(voice.pm_phi);
     let pm_mod = int_pm_amount * 10.0 * sinf(TWO_PI * pm_phi);
 
-    let phase_a_input = if p.pm_pre {
-        wrap01(phi1 + pm_mod)
-    } else {
-        phi1
-    };
-    let phase_b_input = if p.pm_pre {
-        wrap01(phi2 + pm_mod)
-    } else {
-        phi2
-    };
+    let phase_a_input = if pm_pre { wrap01(phi1 + pm_mod) } else { phi1 };
+    let phase_b_input = if pm_pre { wrap01(phi2 + pm_mod) } else { phi2 };
 
     PhaseFrame {
         phi1,
         phi2,
         pm_delta,
-        phase_a_post: wrap01(if p.pm_pre {
+        phase_a_post: wrap01(if pm_pre {
             phase_a_input
         } else {
             phase_a_input + pm_mod
         }),
-        phase_b_post: wrap01(if p.pm_pre {
+        phase_b_post: wrap01(if pm_pre {
             phase_b_input
         } else {
             phase_b_input + pm_mod
@@ -1229,6 +1233,11 @@ fn select_line_sources(
                 algo_prime,
                 phi1,
                 0.0,
+                if cfg.secondary_algo.is_some() {
+                    cfg.secondary_base_waveform
+                } else {
+                    cfg.primary_base_waveform
+                },
                 algo_prime_controls,
                 cfg.algo_param_mods,
                 ks_raw1,
@@ -1257,6 +1266,11 @@ fn select_line_sources(
                 algo_prime,
                 phi1,
                 0.0,
+                if cfg.secondary_algo.is_some() {
+                    cfg.secondary_base_waveform
+                } else {
+                    cfg.primary_base_waveform
+                },
                 algo_prime_controls,
                 cfg.algo_param_mods,
                 ks_raw2,
@@ -1412,11 +1426,10 @@ mod tests {
         ]
     }
 
-    fn all_destinations() -> [ModDestination; 67] {
+    fn all_destinations() -> [ModDestination; 66] {
         [
             ModDestination::Volume,
             ModDestination::Pitch,
-            ModDestination::IntPmAmount,
             ModDestination::Line1DcwBase,
             ModDestination::Line1DcaBase,
             ModDestination::Line1AlgoBlend,
@@ -1450,8 +1463,8 @@ mod tests {
             ModDestination::DelayMix,
             ModDestination::ReverbMix,
             ModDestination::VibratoDepth,
-            ModDestination::LfoDepth,
-            ModDestination::LfoRate,
+            ModDestination::VibratoRate,
+            ModDestination::IntPmRatio,
             ModDestination::Line1DcoEnvStep1Level,
             ModDestination::Line1DcoEnvStep1Rate,
             ModDestination::Line1DcwEnvStep3Level,

@@ -74,6 +74,7 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
     name: "Karpunk",
     icon_path: "M4,16 C8,2 12,22 16,8 L20,12",
     visible: true,
+    default_base_waveform: crate::params::BaseWaveform::Sine,
     controls: &CONTROLS,
 };
 
@@ -221,6 +222,7 @@ fn render_line(ks_state: &mut KarpunkState, config: LineRenderConfig<'_>) -> (f3
             config.primary_algo,
             config.phase,
             primary_dcw,
+            config.primary_base_waveform,
             config.primary_algo_controls,
             config.algo_param_mods,
             ks_raw,
@@ -229,6 +231,7 @@ fn render_line(ks_state: &mut KarpunkState, config: LineRenderConfig<'_>) -> (f3
             secondary_algo,
             config.phase,
             secondary_dcw,
+            config.secondary_base_waveform,
             config.secondary_algo_controls,
             config.algo_param_mods,
             ks_raw,
@@ -239,6 +242,7 @@ fn render_line(ks_state: &mut KarpunkState, config: LineRenderConfig<'_>) -> (f3
             config.primary_algo,
             config.phase,
             config.final_dcw,
+            config.primary_base_waveform,
             config.primary_algo_controls,
             config.algo_param_mods,
             ks_raw,

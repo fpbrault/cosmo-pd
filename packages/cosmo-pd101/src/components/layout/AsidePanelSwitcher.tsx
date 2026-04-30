@@ -112,12 +112,12 @@ export default function AsidePanelSwitcher<T extends string>({
 		useSynthParam("portamentoEnabled");
 
 	const fxSlots = useSynthStore((s) => s.fxSlots);
+	const setFxSlotType = useSynthStore((s) => s.setFxSlotType);
 	const setFxSlotEnabled = useSynthStore((s) => s.setFxSlotEnabled);
 
 	const getSlotEnabled = (slot: number): boolean => {
 		const config = fxSlots[slot];
-		if (!config) return false;
-		if (config.type === "empty") return false;
+		if (!config || config.type === "empty") return false;
 		return (
 			(config as { params: { enabled?: boolean } }).params?.enabled ?? false
 		);
@@ -125,7 +125,11 @@ export default function AsidePanelSwitcher<T extends string>({
 
 	const toggleSlotEnabled = (slot: number): void => {
 		const config = fxSlots[slot];
-		if (!config || config.type === "empty") return;
+		if (!config || config.type === "empty") {
+			if (slot === 3) setFxSlotType(slot, "vibrato");
+			if (slot === 4) setFxSlotType(slot, "phaseMod");
+			return;
+		}
 		const en = getSlotEnabled(slot);
 		setFxSlotEnabled(slot, !en);
 	};

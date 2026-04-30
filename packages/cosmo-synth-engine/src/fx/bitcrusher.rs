@@ -79,6 +79,7 @@ const CONTROLS: [FxControlV1; 3] = [
         max: Some(16.0),
         default_f32: Some(8.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("bitcrusherBits"),
     },
     FxControlV1 {
         id: "rateReduction",
@@ -89,6 +90,7 @@ const CONTROLS: [FxControlV1; 3] = [
         max: Some(32.0),
         default_f32: Some(1.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("bitcrusherRateReduction"),
     },
     FxControlV1 {
         id: "mix",
@@ -99,6 +101,7 @@ const CONTROLS: [FxControlV1; 3] = [
         max: Some(1.0),
         default_f32: Some(1.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("bitcrusherMix"),
     },
 ];
 

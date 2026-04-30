@@ -107,6 +107,7 @@ const CONTROLS: [FxControlV1; 6] = [
         max: Some(0.0),
         default_f32: Some(-12.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("compressorThreshold"),
     },
     FxControlV1 {
         id: "ratio",
@@ -117,6 +118,7 @@ const CONTROLS: [FxControlV1; 6] = [
         max: Some(20.0),
         default_f32: Some(4.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("compressorRatio"),
     },
     FxControlV1 {
         id: "attackMs",
@@ -127,6 +129,7 @@ const CONTROLS: [FxControlV1; 6] = [
         max: Some(200.0),
         default_f32: Some(5.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: None,
     },
     FxControlV1 {
         id: "releaseMs",
@@ -137,6 +140,7 @@ const CONTROLS: [FxControlV1; 6] = [
         max: Some(2000.0),
         default_f32: Some(100.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: None,
     },
     FxControlV1 {
         id: "makeupDb",
@@ -147,6 +151,7 @@ const CONTROLS: [FxControlV1; 6] = [
         max: Some(24.0),
         default_f32: Some(6.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("compressorMakeup"),
     },
     FxControlV1 {
         id: "mix",
@@ -157,6 +162,7 @@ const CONTROLS: [FxControlV1; 6] = [
         max: Some(1.0),
         default_f32: Some(1.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("compressorMix"),
     },
 ];
 

@@ -18,12 +18,15 @@ export type CurrentPresetSession = {
 function isSynthPresetV1(value: unknown): value is SynthPresetV1 {
 	if (typeof value !== "object" || value === null) return false;
 	const candidate = value as Partial<SynthPresetV1> & {
+		schemaVersion?: unknown;
 		params?: {
 			volume?: unknown;
 			line1?: unknown;
 			line2?: unknown;
+			fxSlots?: unknown;
 		};
 	};
+	if (candidate.schemaVersion !== 1) return false;
 	if (typeof candidate.params !== "object" || candidate.params === null) {
 		return false;
 	}
@@ -37,6 +40,12 @@ function isSynthPresetV1(value: unknown): value is SynthPresetV1 {
 	if (
 		typeof candidate.params.line2 !== "object" ||
 		candidate.params.line2 === null
+	) {
+		return false;
+	}
+	if (
+		!Array.isArray(candidate.params.fxSlots) ||
+		candidate.params.fxSlots.length !== 6
 	) {
 		return false;
 	}
@@ -91,10 +100,6 @@ export const DEFAULT_PRESET: SynthPresetV1 = {
 				window: "off",
 			},
 		},
-		intPmAmount: 0,
-		intPmRatio: 2,
-		extPmAmount: 0,
-		pmPre: true,
 		frequency: 440,
 		volume: 1,
 		polyMode: "poly8",
@@ -118,13 +123,6 @@ export const DEFAULT_PRESET: SynthPresetV1 = {
 			distance: 0.5,
 			character: 0.5,
 			mix: 0,
-		},
-		vibrato: {
-			enabled: false,
-			waveform: 1,
-			rate: 30,
-			depth: 30,
-			delay: 0,
 		},
 		portamento: {
 			enabled: false,
@@ -158,6 +156,14 @@ export const DEFAULT_PRESET: SynthPresetV1 = {
 		pitchBendRange: 2,
 		modWheelVibratoDepth: 0,
 		modMatrix: { routes: [] },
+		fxSlots: [
+			{ type: "empty" },
+			{ type: "empty" },
+			{ type: "empty" },
+			{ type: "empty" },
+			{ type: "empty" },
+			{ type: "empty" },
+		],
 	},
 };
 

@@ -7,13 +7,11 @@ export type SynthEngineSnapshot = {
 type CreateSynthEngineSnapshotParams = {
 	gatherState: () => SynthPresetV1;
 	effectivePitchHz: number;
-	extPmAmount: number;
 };
 
 export function createSynthEngineSnapshot({
 	gatherState,
 	effectivePitchHz,
-	extPmAmount,
 }: CreateSynthEngineSnapshotParams): SynthEngineSnapshot {
 	const { params } = gatherState();
 
@@ -21,7 +19,6 @@ export function createSynthEngineSnapshot({
 		params: {
 			...params,
 			frequency: effectivePitchHz,
-			extPmAmount,
 			line1: {
 				...params.line1,
 				algoControlsA: params.line1.algoControlsA ?? [],

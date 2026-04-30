@@ -147,6 +147,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(2.0),
         default_f32: Some(0.3),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("delayTime"),
     },
     FxControlV1 {
         id: "feedback",
@@ -157,6 +158,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(0.99),
         default_f32: Some(0.35),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("delayFeedback"),
     },
     FxControlV1 {
         id: "mix",
@@ -167,6 +169,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(1.0),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("delayMix"),
     },
     FxControlV1 {
         id: "tapeMode",
@@ -177,6 +180,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: None,
         default_f32: Some(0.0),
         options: &TAPE_MODE_OPTIONS,
+        mod_destination_key: None,
     },
     FxControlV1 {
         id: "warmth",
@@ -187,6 +191,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(1.0),
         default_f32: Some(0.5),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("delayWarmth"),
     },
 ];
 

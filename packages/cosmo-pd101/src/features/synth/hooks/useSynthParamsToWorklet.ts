@@ -4,12 +4,11 @@ import { SynthEngineController } from "@/features/synth/engine/synthEngineAdapte
 import { createSynthEngineSnapshot } from "@/features/synth/engine/synthEngineSnapshot";
 import { createWorkletSynthEngineAdapter } from "@/features/synth/engine/workletSynthEngineAdapter";
 import { useSynthStore } from "@/features/synth/synthStore";
-import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
-import type { EngineParams } from "./useAudioEngine";
+import type { SynthParams, SynthPresetV1 } from "@/lib/synth/bindings/synth";
 
 type UseSynthParamsToWorkletParams = {
 	workletNodeRef: React.MutableRefObject<AudioWorkletNode | null>;
-	paramsRef: React.MutableRefObject<EngineParams>;
+	paramsRef: React.MutableRefObject<SynthParams>;
 	effectivePitchHz: number;
 	extPmAmount: number;
 	gatherState: () => SynthPresetV1;
@@ -19,7 +18,6 @@ export function useSynthParamsToWorklet({
 	workletNodeRef,
 	paramsRef,
 	effectivePitchHz,
-	extPmAmount,
 	gatherState,
 }: UseSynthParamsToWorkletParams) {
 	const adapter = useMemo(
@@ -41,13 +39,12 @@ export function useSynthParamsToWorklet({
 			const snapshot = createSynthEngineSnapshot({
 				gatherState,
 				effectivePitchHz,
-				extPmAmount,
 			});
 			adapter.sync(snapshot);
 		};
 		sync();
 		return useSynthStore.subscribe(sync);
-	}, [adapter, gatherState, effectivePitchHz, extPmAmount]);
+	}, [adapter, gatherState, effectivePitchHz]);
 
 	useEffect(() => {
 		return subscribeApplyModulePreset((request) => {

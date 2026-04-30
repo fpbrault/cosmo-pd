@@ -112,7 +112,7 @@ export function drawOscilloscope(
 	ctx.strokeStyle = color;
 	ctx.lineWidth = 2;
 	ctx.beginPath();
-	const amplitudeGain = 2;
+	const amplitudeGain = 5;
 
 	for (let i = 0; i < viewSamples; i++) {
 		const x = (i / (viewSamples - 1)) * drawWidth;

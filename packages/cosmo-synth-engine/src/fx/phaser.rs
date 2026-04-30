@@ -127,6 +127,7 @@ const CONTROLS: [FxControlV1; 4] = [
         max: Some(10.0),
         default_f32: Some(0.5),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("phaserRate"),
     },
     FxControlV1 {
         id: "depth",
@@ -137,6 +138,7 @@ const CONTROLS: [FxControlV1; 4] = [
         max: Some(1.0),
         default_f32: Some(1.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("phaserDepth"),
     },
     FxControlV1 {
         id: "feedback",
@@ -147,6 +149,7 @@ const CONTROLS: [FxControlV1; 4] = [
         max: Some(0.9),
         default_f32: Some(0.5),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("phaserFeedback"),
     },
     FxControlV1 {
         id: "mix",
@@ -157,6 +160,7 @@ const CONTROLS: [FxControlV1; 4] = [
         max: Some(1.0),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("phaserMix"),
     },
 ];
 

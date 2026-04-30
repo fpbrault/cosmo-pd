@@ -29,6 +29,7 @@ import {
 	useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import MidiFilePlayer from "@/components/MidiFilePlayer";
 import { fetchPresetData, type Preset } from "@/lib/presets/presetManager";
 
 type PhaseDistortionVisualizerProps = {
@@ -46,26 +47,62 @@ export function SharedPhaseDistortionVisualizer({
 	libraryPresets = [],
 }: PhaseDistortionVisualizerBaseProps = {}) {
 	const { t } = useTranslation("synth");
-	const line1DcoEnv = useSynthStore((s) => s.line1DcoEnv);
-	const setLine1DcoEnv = useSynthStore((s) => s.setLine1DcoEnv);
-	const line1DcwEnv = useSynthStore((s) => s.line1DcwEnv);
-	const setLine1DcwEnv = useSynthStore((s) => s.setLine1DcwEnv);
-	const line1DcaEnv = useSynthStore((s) => s.line1DcaEnv);
-	const setLine1DcaEnv = useSynthStore((s) => s.setLine1DcaEnv);
-	const line2DcoEnv = useSynthStore((s) => s.line2DcoEnv);
-	const setLine2DcoEnv = useSynthStore((s) => s.setLine2DcoEnv);
-	const line2DcwEnv = useSynthStore((s) => s.line2DcwEnv);
-	const setLine2DcwEnv = useSynthStore((s) => s.setLine2DcwEnv);
-	const line2DcaEnv = useSynthStore((s) => s.line2DcaEnv);
-	const setLine2DcaEnv = useSynthStore((s) => s.setLine2DcaEnv);
-	const velocityCurve = useSynthStore((s) => s.velocityCurve);
-	const gatherState = useSynthStore((s) => s.gatherState);
-	const applyPreset = useSynthStore((s) => s.applyPreset);
-	const presetStateKey = useSynthStore((s) => JSON.stringify(s.gatherState()));
+	const line1DcoEnv = useSynthStore(
+		(s) => s.line1DcoEnv,
+	);
+	const setLine1DcoEnv = useSynthStore(
+		(s) => s.setLine1DcoEnv,
+	);
+	const line1DcwEnv = useSynthStore(
+		(s) => s.line1DcwEnv,
+	);
+	const setLine1DcwEnv = useSynthStore(
+		(s) => s.setLine1DcwEnv,
+	);
+	const line1DcaEnv = useSynthStore(
+		(s) => s.line1DcaEnv,
+	);
+	const setLine1DcaEnv = useSynthStore(
+		(s) => s.setLine1DcaEnv,
+	);
+	const line2DcoEnv = useSynthStore(
+		(s) => s.line2DcoEnv,
+	);
+	const setLine2DcoEnv = useSynthStore(
+		(s) => s.setLine2DcoEnv,
+	);
+	const line2DcwEnv = useSynthStore(
+		(s) => s.line2DcwEnv,
+	);
+	const setLine2DcwEnv = useSynthStore(
+		(s) => s.setLine2DcwEnv,
+	);
+	const line2DcaEnv = useSynthStore(
+		(s) => s.line2DcaEnv,
+	);
+	const setLine2DcaEnv = useSynthStore(
+		(s) => s.setLine2DcaEnv,
+	);
+	const velocityCurve = useSynthStore(
+		(s) => s.velocityCurve,
+	);
+	const gatherState = useSynthStore(
+		(s) => s.gatherState,
+	);
+	const applyPreset = useSynthStore(
+		(s) => s.applyPreset,
+	);
+	const presetStateKey = useSynthStore((s) =>
+		JSON.stringify(s.gatherState()),
+	);
 
 	const [extPmAmount] = useState(0);
-	const activeAsidePanel = useSynthUiStore((s) => s.activeAsidePanel);
-	const setActiveAsidePanel = useSynthUiStore((s) => s.setActiveAsidePanel);
+	const activeAsidePanel = useSynthUiStore(
+		(s) => s.activeAsidePanel,
+	);
+	const setActiveAsidePanel = useSynthUiStore(
+		(s) => s.setActiveAsidePanel,
+	);
 
 	useEffect(() => {
 		try {
@@ -261,6 +298,9 @@ export function SharedPhaseDistortionVisualizer({
 				onLine2DcwEnvChange: handleLine2DcwEnvChange,
 				onLine2DcaEnvChange: handleLine2DcaEnvChange,
 			}}
+			bottomBarExtra={
+				<MidiFilePlayer onNoteOn={sendNoteOn} onNoteOff={sendNoteOff} />
+			}
 			miniKeyboard={{
 				activeNotes,
 				onNoteOn: sendNoteOn,

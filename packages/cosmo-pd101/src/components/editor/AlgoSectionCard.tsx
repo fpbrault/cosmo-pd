@@ -45,7 +45,7 @@ export default function AlgoSectionCard({
 	return (
 		<Card
 			variant="subtle"
-			className={`min-h-0 flex flex-col ${disabled ? "opacity-45" : ""}`}
+			className={`min-h-0 flex flex-col grow ${disabled ? "opacity-45" : ""}`}
 		>
 			<div className="flex justify-between">
 				<div className="mb-2 text-3xs uppercase tracking-[0.24em] text-cz-cream">
@@ -55,12 +55,7 @@ export default function AlgoSectionCard({
 					{algoLabel}
 				</span>
 			</div>
-			<AlgoIconGrid
-				value={value}
-				onChange={onChange}
-				size={36}
-				disabled={disabled}
-			/>
+			<AlgoIconGrid value={value} onChange={onChange} disabled={disabled} />
 			<div className="mt-2 border-t border-cz-border/70 pt-4">
 				<AlgoControlsGroup
 					embedded
