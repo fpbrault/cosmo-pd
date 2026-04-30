@@ -8,9 +8,9 @@ describe("DEFAULT_SYNTH_PRESETS", () => {
 
 			expect(params).not.toHaveProperty("intPmEnabled");
 			expect(params).not.toHaveProperty("vibrato");
-			expect(params).toHaveProperty("chorus");
-			expect(params).toHaveProperty("delay");
-			expect(params).toHaveProperty("reverb");
+			expect(params).not.toHaveProperty("chorus");
+			expect(params).not.toHaveProperty("delay");
+			expect(params).not.toHaveProperty("reverb");
 			expect(params).toHaveProperty("random");
 			expect(params).toHaveProperty("modEnv");
 			expect(params).toHaveProperty("fxSlots");

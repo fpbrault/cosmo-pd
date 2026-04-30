@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ModSource } from "@/lib/synth/bindings/synth";
 import { noteToFreq, PC_KEY_TO_NOTE } from "@/lib/synth/pdAlgorithms";
-import { applyVelocityCurve } from "@/lib/synth/velocityCurve";
 
 type UseNoteHandlingParams = {
 	workletNodeRef?: React.MutableRefObject<AudioWorkletNode | null> | null;
 	eventSink?: (type: string, payload: Record<string, unknown>) => void;
-	/** Velocity curve exponent parameter in range [-1, 1]. 0 = linear. */
+	/**
+	 * Deprecated: velocity curve is now applied in the engine.
+	 * Kept for call-site compatibility during migration.
+	 */
 	velocityCurve?: number;
 	/**
 	 * When enabled, mapped PC keyboard keys are not preventDefault()'d so the
@@ -28,7 +30,7 @@ export type NoteHandlingApi = {
 export function useNoteHandling({
 	workletNodeRef,
 	eventSink,
-	velocityCurve = 0,
+	velocityCurve: _velocityCurve,
 	keyboardPassthrough = false,
 }: UseNoteHandlingParams): NoteHandlingApi {
 	const dispatchEngineEvent = useCallback(
@@ -63,15 +65,15 @@ export function useNoteHandling({
 			if (activeNotesRef.current.has(note)) return;
 			activeNotesRef.current.add(note);
 			setActiveNotes((prev) => (prev.includes(note) ? prev : [...prev, note]));
-			const curvedVelocity = applyVelocityCurve(velocity / 127, velocityCurve);
+			const normalizedVelocity = velocity / 127;
 			dispatchEngineEvent("noteOn", {
 				note,
 				frequency: noteToFreq(note),
-				velocity: curvedVelocity,
+				velocity: normalizedVelocity,
 			});
-			emitModSourceValue("velocity", curvedVelocity);
+			emitModSourceValue("velocity", normalizedVelocity);
 		},
-		[dispatchEngineEvent, emitModSourceValue, velocityCurve],
+		[dispatchEngineEvent, emitModSourceValue],
 	);
 
 	const sendNoteOff = useCallback(

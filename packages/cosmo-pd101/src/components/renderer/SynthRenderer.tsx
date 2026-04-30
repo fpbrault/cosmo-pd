@@ -8,9 +8,9 @@ import {
 	useState,
 } from "react";
 import Button from "@/components/controls/Button";
-import ControlKnob from "@/components/controls/ControlKnob";
 import LineSelectControl from "@/components/controls/LineSelectControl";
 import ModModeControl from "@/components/controls/ModModeControl";
+import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import type { EnvOverrideHandlers } from "@/components/editor/PhaseLinesSection";
 import PhaseLinesSection from "@/components/editor/PhaseLinesSection";
 import { SynthSingleCycleDisplay } from "@/components/editor/SingleCycleDisplay";
@@ -35,7 +35,7 @@ import {
 } from "@/features/synth/SynthParamController";
 import { useSynthStore } from "@/features/synth/synthStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
-import { PARAM_META } from "@/lib/synth/paramMeta";
+
 import { HoverInfoProvider, useHoverInfo } from "../layout/HoverInfo";
 import MiniKeyboardOverlay from "../layout/MiniKeyboardOverlay";
 import SynthInfoBar from "../layout/SynthInfoBar";
@@ -367,17 +367,13 @@ function MasterVolumeControl() {
 
 	return (
 		<div className="shrink-0">
-			<ControlKnob
+			<SynthParamKnob
+				paramKey="volume"
 				value={volume}
 				onChange={setVolume}
-				min={0}
-				max={1}
 				size={48}
 				color="white"
 				label="Main Volume"
-				tooltip={PARAM_META.volume?.tooltip}
-				valueFormatter={(value) => `${Math.round(value * 100)}%`}
-				modDestination="volume"
 			/>
 		</div>
 	);

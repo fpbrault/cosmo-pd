@@ -9,7 +9,7 @@
 	--color-base-100: oklch(20% 0.003 270); /* cz-surface */
 	--color-base-200: oklch(14% 0.002 100); /* between surface and body */
 	--color-base-300: oklch(10.5% 0.004 55); /* cz-body */
-	--color-base-content: oklch(79% 0.02 75); /* cz-cream */
+	--color-base-content: oklch(90% 0.02 75); /* cz-cream */
 
 	/* Primary — gold */
 	--color-primary: oklch(76% 0.155 100);
@@ -17,7 +17,7 @@
 
 	/* Secondary — tab blue */
 	--color-secondary: oklch(59% 0.088 250);
-	--color-secondary-content: oklch(89.5% 0.016 74);
+	--color-secondary-content: oklch(95.5% 0.016 74);
 
 	/* Accent — cyan */
 	--color-accent: #3f8f98;
@@ -25,7 +25,7 @@
 
 	/* Neutral — panel grey */
 	--color-neutral: oklch(30% 0.001 100);
-	--color-neutral-content: oklch(79% 0.02 75);
+	--color-neutral-content: oklch(90% 0.02 75);
 
 	/* Info — light blue */
 	--color-info: oklch(66% 0.1 255);
@@ -41,7 +41,7 @@
 
 	/* Error — tab red */
 	--color-error: oklch(56% 0.14 22);
-	--color-error-content: oklch(89.5% 0.016 74);
+	--color-error-content: oklch(98% 0.016 74);
 
 	/* Radii */
 	--radius-selector: 0.5rem;
@@ -81,9 +81,9 @@
 	--color-cz-border: #3a3a3c;
 	--color-cz-gold: #bfbd30;
 	--color-cz-gold-dim: #5e6b1e;
-	--color-cz-cream: #c8bfab;
-	--color-cz-cream-dim: #7a7060;
-	--color-cz-cream-light: #e8dfd5;
+	--color-cz-cream: oklch(90% 0.02 75);
+	--color-cz-cream-dim: oklch(75% 0.02 75);
+	--color-cz-cream-light: oklch(98% 0.02 75);
 	--color-cz-lcd-bg: #051005;
 	--color-cz-lcd-fg: #3dff3d;
 	--color-cz-lcd-grid: rgba(0, 120, 0, 0.35);

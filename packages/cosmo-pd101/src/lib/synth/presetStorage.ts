@@ -1,3 +1,4 @@
+import { buildDefaultAlgoControls } from "@/lib/synth/algoRef";
 import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
 import {
 	DEFAULT_DCA_ENV,
@@ -61,7 +62,7 @@ export const DEFAULT_PRESET: SynthPresetV1 = {
 		line1: {
 			algo: "cz101",
 			algo2: null,
-			algoControlsA: [],
+			algoControlsA: buildDefaultAlgoControls("cz101"),
 			algoBlend: 0,
 			window: "off",
 			dcaBase: 1,
@@ -73,16 +74,11 @@ export const DEFAULT_PRESET: SynthPresetV1 = {
 			dcwEnv: DEFAULT_DCW_ENV,
 			dcaEnv: DEFAULT_DCA_ENV,
 			keyFollow: 0,
-			cz: {
-				slotAWaveform: "saw",
-				slotBWaveform: "saw",
-				window: "off",
-			},
 		},
 		line2: {
 			algo: "cz101",
 			algo2: null,
-			algoControlsA: [],
+			algoControlsA: buildDefaultAlgoControls("cz101"),
 			algoBlend: 0,
 			window: "off",
 			dcaBase: 1,
@@ -94,11 +90,6 @@ export const DEFAULT_PRESET: SynthPresetV1 = {
 			dcwEnv: DEFAULT_DCW_ENV,
 			dcaEnv: DEFAULT_DCA_ENV,
 			keyFollow: 0,
-			cz: {
-				slotAWaveform: "saw",
-				slotBWaveform: "saw",
-				window: "off",
-			},
 		},
 		frequency: 440,
 		volume: 1,

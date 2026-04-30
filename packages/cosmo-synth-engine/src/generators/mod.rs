@@ -1,5 +1,7 @@
 use crate::dsp_utils::apply_window;
-use crate::params::{Algo, AlgoControlValueV1, BaseWaveform, LineParams};
+use crate::params::{
+    Algo, AlgoControlValueV1, BaseWaveform, EngineParamReadoutFormatV1, LineParams,
+};
 use serde::Serialize;
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
@@ -31,7 +33,8 @@ pub struct LineRenderConfig<'a> {
     pub secondary_algo: Option<Algo>,
     pub blend: f32,
     pub phase: f32,
-    pub window_gain: f32,
+    pub primary_window_gain: f32,
+    pub secondary_window_gain: f32,
     pub final_dcw: f32,
     pub final_dca: f32,
     pub primary_base_waveform: BaseWaveform,
@@ -57,23 +60,40 @@ impl<'a> LineRenderConfig<'a> {
         sample_rate: f32,
         algo_param_mods: [f32; 8],
     ) -> Self {
-        let primary_algo = cz101::resolve_line_primary_algo(line, cycle_count);
-        let secondary_algo = cz101::resolve_line_secondary_algo(line, cycle_count);
-        let window_gain = apply_window(window_phi, cz101::resolve_line_window(line));
+        let primary_algo_controls = line.algo_controls_a.as_deref();
+        let secondary_algo_controls = line.algo_controls_b.as_deref();
+        let primary_algo = cz101::resolve_algo(line.algo, primary_algo_controls, cycle_count);
+        let secondary_algo = line
+            .algo2
+            .map(|algo| cz101::resolve_algo(algo, secondary_algo_controls, cycle_count));
+        let primary_window_gain = apply_window(
+            window_phi,
+            cz101::resolve_window(line.algo, primary_algo_controls, line.window),
+        );
+        let secondary_window_gain = line
+            .algo2
+            .map(|algo| {
+                apply_window(
+                    window_phi,
+                    cz101::resolve_window(algo, secondary_algo_controls, line.window),
+                )
+            })
+            .unwrap_or(primary_window_gain);
         Self {
             primary_algo,
             secondary_algo,
             blend: line.algo_blend,
             phase,
-            window_gain,
+            primary_window_gain,
+            secondary_window_gain,
             final_dcw,
             final_dca,
             primary_base_waveform: line.base_waveform_a,
             secondary_base_waveform: line.base_waveform_b,
             effective_freq,
             sample_rate,
-            primary_algo_controls: line.algo_controls_a.as_deref(),
-            secondary_algo_controls: line.algo_controls_b.as_deref(),
+            primary_algo_controls,
+            secondary_algo_controls,
             algo_param_mods,
         }
     }
@@ -131,7 +151,7 @@ fn render_line_stateless(config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
             config.primary_algo_controls,
             config.algo_param_mods,
             None,
-        );
+        ) * config.primary_window_gain;
         let secondary = render_algo_sample(
             secondary_algo,
             config.phase,
@@ -140,7 +160,7 @@ fn render_line_stateless(config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
             config.secondary_algo_controls,
             config.algo_param_mods,
             None,
-        );
+        ) * config.secondary_window_gain;
         blend_line_samples(config.primary_algo, primary, secondary, config.blend)
     } else {
         render_algo_sample(
@@ -151,13 +171,10 @@ fn render_line_stateless(config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
             config.primary_algo_controls,
             config.algo_param_mods,
             None,
-        )
+        ) * config.primary_window_gain
     };
 
-    (
-        sample * config.window_gain * config.final_dca * PER_LINE_HEADROOM,
-        None,
-    )
+    (sample * config.final_dca * PER_LINE_HEADROOM, None)
 }
 
 #[inline(always)]
@@ -249,6 +266,8 @@ pub struct AlgoControlV1 {
     pub default: Option<f32>,
     pub default_toggle: Option<bool>,
     pub options: &'static [AlgoControlOptionV1],
+    /// Engine-owned display format for infobar readouts.
+    pub readout_format: crate::params::EngineParamReadoutFormatV1,
 }
 
 /// Complete algorithm package definition.
@@ -292,6 +311,7 @@ pub const WARP_AMOUNT_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
     default: Some(0.0),
     default_toggle: None,
     options: &NO_CONTROL_OPTIONS,
+    readout_format: EngineParamReadoutFormatV1::Percent,
 };
 pub const LEVEL_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
     id: "level",
@@ -306,6 +326,7 @@ pub const LEVEL_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
     default: Some(1.0),
     default_toggle: None,
     options: &NO_CONTROL_OPTIONS,
+    readout_format: EngineParamReadoutFormatV1::Percent,
 };
 pub const OCTAVE_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
     id: "octave",
@@ -320,6 +341,7 @@ pub const OCTAVE_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
     default: Some(0.0),
     default_toggle: None,
     options: &NO_CONTROL_OPTIONS,
+    readout_format: EngineParamReadoutFormatV1::Integer,
 };
 pub const FINE_DETUNE_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
     id: "fineDetune",
@@ -334,6 +356,7 @@ pub const FINE_DETUNE_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
     default: Some(0.0),
     default_toggle: None,
     options: &NO_CONTROL_OPTIONS,
+    readout_format: EngineParamReadoutFormatV1::Integer,
 };
 pub const KEY_FOLLOW_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
     id: "keyFollow",
@@ -348,6 +371,7 @@ pub const KEY_FOLLOW_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
     default: Some(0.0),
     default_toggle: None,
     options: &NO_CONTROL_OPTIONS,
+    readout_format: EngineParamReadoutFormatV1::Decimal,
 };
 pub const ALGO_BLEND_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
     id: "algoBlend",
@@ -362,6 +386,7 @@ pub const ALGO_BLEND_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
     default: Some(0.0),
     default_toggle: None,
     options: &NO_CONTROL_OPTIONS,
+    readout_format: EngineParamReadoutFormatV1::Percent,
 };
 pub const WARP_AMOUNT_CONTROL: [AlgoControlV1; 1] = [WARP_AMOUNT_NUMBER_CONTROL];
 pub const DCW_CONTROL: [AlgoControlV1; 1] = [AlgoControlV1 {
@@ -377,6 +402,7 @@ pub const DCW_CONTROL: [AlgoControlV1; 1] = [AlgoControlV1 {
     default: Some(0.0),
     default_toggle: None,
     options: &NO_CONTROL_OPTIONS,
+    readout_format: EngineParamReadoutFormatV1::Percent,
 }];
 
 const ALGO_DEFINITION_COUNT: usize = 12;
@@ -648,7 +674,8 @@ mod tests {
             secondary_algo: None,
             blend: 0.0,
             phase: 0.37,
-            window_gain: 1.0,
+            primary_window_gain: 1.0,
+            secondary_window_gain: 1.0,
             final_dcw: 1.0,
             final_dca: 1.0,
             primary_base_waveform: BaseWaveform::Cosine,

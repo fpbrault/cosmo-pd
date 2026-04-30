@@ -13,7 +13,8 @@ import {
 	bipolarCenterNorm,
 	clampValue,
 	DEFAULT_ARC_GEOMETRY,
-	normalizeValue,
+	type KnobCurve,
+	normalizeValueCurved,
 } from "./knob/knobGeometry";
 import { useKnobInteraction } from "./knob/useKnobInteraction";
 
@@ -26,6 +27,7 @@ export interface ControlKnobProps {
 	/** Quantize to nearest step. Undefined = continuous. */
 	step?: number;
 	label?: string;
+	labelClassName?: string;
 	tooltip?: string;
 	/** Semantic color variant. Prefer this over `color`. */
 	variant?: KnobVariant;
@@ -70,6 +72,8 @@ export interface ControlKnobProps {
 	modulatedValue?: number;
 	/** How long (ms) each trail dot persists. Set to 0 to disable trail. */
 	modTrailDuration?: number;
+	/** Non-linear scaling curve for pointer/wheel interaction and rendered position. */
+	curve?: KnobCurve;
 }
 
 export function ControlKnob({
@@ -80,6 +84,7 @@ export function ControlKnob({
 	max = 1,
 	step,
 	label,
+	labelClassName,
 	tooltip,
 	variant = "default",
 	className,
@@ -101,6 +106,7 @@ export function ControlKnob({
 	modDestination,
 	modulatedValue,
 	modTrailDuration = 220,
+	curve = "linear",
 }: ControlKnobProps) {
 	const svgRef = useRef<SVGSVGElement | null>(null);
 	const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -166,6 +172,7 @@ export function ControlKnob({
 		arcGeometry,
 		svgRef,
 		buttonRef,
+		curve,
 	});
 
 	const maybeSynthController = useOptionalSynthController();
@@ -184,10 +191,15 @@ export function ControlKnob({
 	// Normalize the effective modulated value for KnobView
 	const modulatedNorm =
 		effectiveModulatedValue !== undefined && effectiveModulatedValue !== null
-			? normalizeValue(clampValue(effectiveModulatedValue, min, max), min, max)
+			? normalizeValueCurved(
+					clampValue(effectiveModulatedValue, min, max),
+					min,
+					max,
+					curve,
+				)
 			: undefined;
 
-	const normalizedValue = normalizeValue(value, min, max);
+	const normalizedValue = normalizeValueCurved(value, min, max, curve);
 	const bipolarNorm = bipolar ? bipolarCenterNorm(min, max) : null;
 
 	const displayValue = valueFormatter
@@ -206,7 +218,9 @@ export function ControlKnob({
 		>
 			{label && (
 				<div className="space-y-0.5">
-					<div className="flex items-center justify-center text-3xs uppercase tracking-[0.24em] text-base-content/55">
+					<div
+						className={`flex items-center justify-center text-3xs uppercase tracking-[0.24em] text-base-content/55 ${labelClassName ?? ""}`}
+					>
 						<span>{label}</span>
 					</div>
 				</div>

@@ -15,6 +15,19 @@ type EngineKnobMeta = {
 	defaultValue?: number;
 };
 
+function resolveButtonGroupSpan(
+	options: { value: number; label: string }[],
+	columns: number,
+) {
+	if (columns <= 1) {
+		return "col-span-1";
+	}
+
+	const needsExtraWidth =
+		options.length >= 3 || options.some((opt) => opt.label.length > 4);
+	return needsExtraWidth ? "col-span-2" : "col-span-1";
+}
+
 export default function GenericFxSlotModule({
 	config,
 	slot,
@@ -61,6 +74,7 @@ export default function GenericFxSlotModule({
 	if (rawSlot?.type !== config.type) return null;
 	const params = (rawSlot as { params: Record<string, unknown> }).params;
 	const enabled = (params.enabled as boolean) ?? false;
+	const moduleColumns = config.columns ?? 4;
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
@@ -123,25 +137,32 @@ export default function GenericFxSlotModule({
 						);
 					})()
 				) : (
-					<div key={ctrl.param} className="flex flex-col gap-1">
-						<span className="text-xs text-center opacity-60">{ctrl.label}</span>
-						<div className="join">
-							{ctrl.options.map((opt) => (
-								<Button
-									key={opt.value}
-									type="button"
-									className={
-										(params[ctrl.param] as number) === opt.value
-											? "join-item btn btn-sm btn-primary"
-											: "join-item btn btn-sm btn-outline btn-primary"
-									}
-									onClick={() =>
-										setFxSlotParams(slot, { [ctrl.param]: opt.value })
-									}
-								>
-									{opt.label}
-								</Button>
-							))}
+					<div
+						key={ctrl.param}
+						className={`min-w-0 ${resolveButtonGroupSpan(ctrl.options, moduleColumns)}`}
+					>
+						<div className="flex flex-col gap-1.5">
+							<span className="text-center text-3xs uppercase tracking-[0.2em] text-base-content/58">
+								{ctrl.label}
+							</span>
+							<div className="join w-full overflow-hidden rounded-md border border-cz-border/65">
+								{ctrl.options.map((opt) => (
+									<Button
+										key={opt.value}
+										type="button"
+										className={`join-item btn h-10 min-h-0 flex-1 rounded-none border-0 px-2 font-mono text-[0.9rem] tracking-[0.02em] ${
+											(params[ctrl.param] as number) === opt.value
+												? "bg-cz-gold text-cz-surface"
+												: "bg-transparent text-cz-gold hover:bg-cz-gold/12"
+										}`}
+										onClick={() =>
+											setFxSlotParams(slot, { [ctrl.param]: opt.value })
+										}
+									>
+										{opt.label}
+									</Button>
+								))}
+							</div>
 						</div>
 					</div>
 				),

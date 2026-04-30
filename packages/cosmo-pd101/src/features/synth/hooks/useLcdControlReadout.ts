@@ -60,6 +60,8 @@ export function useLcdControlReadout(): UseLcdControlReadoutResult {
 					return match?.label ?? value.toUpperCase();
 				}
 			}
+
+			return null;
 		},
 		[],
 	);

@@ -1,10 +1,8 @@
-import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
-
-/**
+import type { SynthPresetV1 } from "@/lib/synth/bindings/synth"; /**
  * Built-in factory presets for the CZ-101 PD synthesizer lab.
  * Converted to canonical SynthPresetV1 format.
  */
-export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
+export const DEFAULT_SYNTH_PRESETS = {
 	Blep: {
 		schemaVersion: 1,
 		params: {
@@ -414,7 +412,7 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 			],
 		},
 	},
-	Stutters: {
+	Chops: {
 		schemaVersion: 1,
 		params: {
 			lineSelect: "L1",
@@ -844,7 +842,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 		params: {
 			lineSelect: "L1+L2",
 			modMode: "normal",
-
 			octave: 0,
 			line1: {
 				algo: "fold",
@@ -3247,7 +3244,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 		params: {
 			lineSelect: "L1+L2",
 			modMode: "normal",
-
 			octave: 0,
 			line1: {
 				algo: "twist",
@@ -3680,7 +3676,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 		params: {
 			lineSelect: "L1+L2",
 			modMode: "normal",
-
 			octave: 0,
 			line1: {
 				algo: "bend",
@@ -4499,8 +4494,8 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				},
 				keyFollow: 0,
 				cz: {
-					slotAWaveform: "saw",
-					slotBWaveform: "saw",
+					slotAWaveform: "sinePulse",
+					slotBWaveform: "sinePulse",
 					window: "off",
 				},
 				algoControlsA: [
@@ -4568,7 +4563,7 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				},
 				keyFollow: 0,
 				cz: {
-					slotAWaveform: "saw",
+					slotAWaveform: "sinePulse",
 					slotBWaveform: "saw",
 					window: "off",
 				},
@@ -4878,8 +4873,8 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				},
 				keyFollow: 0,
 				cz: {
-					slotAWaveform: "saw",
-					slotBWaveform: "saw",
+					slotAWaveform: "sinePulse",
+					slotBWaveform: "sinePulse",
 					window: "off",
 				},
 				algoControlsA: [
@@ -5053,8 +5048,8 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				},
 				keyFollow: 0,
 				cz: {
-					slotAWaveform: "saw",
-					slotBWaveform: "saw",
+					slotAWaveform: "sinePulse",
+					slotBWaveform: "sinePulse",
 					window: "off",
 				},
 				algoControlsA: [
@@ -5121,8 +5116,8 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 				},
 				keyFollow: 0,
 				cz: {
-					slotAWaveform: "saw",
-					slotBWaveform: "saw",
+					slotAWaveform: "sinePulse",
+					slotBWaveform: "sinePulse",
 					window: "off",
 				},
 				algoControlsA: [],
@@ -5163,4 +5158,4 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, SynthPresetV1> = {
 			],
 		},
 	},
-};
+} as Record<string, SynthPresetV1>;

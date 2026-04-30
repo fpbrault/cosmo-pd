@@ -2,7 +2,7 @@ use super::{
     lerp, wrap01, AlgoControlAssignmentV1, AlgoControlKindV1, AlgoControlOptionV1, AlgoControlV1,
     AlgoDefinitionV1,
 };
-use crate::params::{Algo, CzWaveform, LineParams, WindowType};
+use crate::params::{Algo, AlgoControlValueV1, CzWaveform, WindowType};
 use serde::Serialize;
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
@@ -253,6 +253,7 @@ const CZ_CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.0),
         default_toggle: None,
         options: &PRESET_OPTIONS,
+        readout_format: crate::params::EngineParamReadoutFormatV1::Raw,
     },
     AlgoControlV1 {
         id: "waveform1",
@@ -267,6 +268,7 @@ const CZ_CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.0),
         default_toggle: None,
         options: &WAVEFORM_OPTIONS,
+        readout_format: crate::params::EngineParamReadoutFormatV1::Raw,
     },
     AlgoControlV1 {
         id: "waveform2",
@@ -281,6 +283,7 @@ const CZ_CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.0),
         default_toggle: None,
         options: &WAVEFORM_OPTIONS,
+        readout_format: crate::params::EngineParamReadoutFormatV1::Raw,
     },
     AlgoControlV1 {
         id: "windowFunction",
@@ -295,6 +298,7 @@ const CZ_CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.0),
         default_toggle: None,
         options: &WINDOW_OPTIONS,
+        readout_format: crate::params::EngineParamReadoutFormatV1::Raw,
     },
 ];
 
@@ -411,52 +415,97 @@ pub fn warp_phase_from_controls(
     warp_phase_for_waveform(waveform, phase, dcw)
 }
 
-/// Resolve the effective primary algorithm for a line at the current cycle.
-pub fn resolve_line_primary_algo(line: &LineParams, cycle_count: u32) -> Algo {
-    if line.algo == Algo::Cz101 {
-        let slot = resolve_cycle_waveform(
-            line.cz.slot_a_waveform,
-            line.cz.slot_b_waveform,
-            cycle_count,
-        );
-        return Algo::from_cz_waveform(slot);
-    }
-
-    if line.algo.is_cz_waveform() {
-        let slot = if cycle_count & 1 == 0 {
-            line.cz.slot_a_waveform
-        } else {
-            line.cz.slot_b_waveform
-        };
-        return Algo::from_cz_waveform(slot);
-    }
-
-    line.algo
+#[derive(Debug, Clone, Copy)]
+pub struct ResolvedCzControls {
+    pub waveform1: CzWaveform,
+    pub waveform2: CzWaveform,
+    pub window_function: WindowType,
 }
 
-/// Resolve the effective secondary algorithm for a line at the current cycle.
-pub fn resolve_line_secondary_algo(line: &LineParams, cycle_count: u32) -> Option<Algo> {
-    let secondary = line.algo2?;
-
-    if secondary == Algo::Cz101 {
-        let slot = resolve_cycle_waveform(
-            line.cz.slot_a_waveform,
-            line.cz.slot_b_waveform,
-            cycle_count,
-        );
-        return Some(Algo::from_cz_waveform(slot));
+impl Default for ResolvedCzControls {
+    fn default() -> Self {
+        Self {
+            waveform1: CzWaveform::Saw,
+            waveform2: CzWaveform::Saw,
+            window_function: WindowType::Off,
+        }
     }
-
-    Some(secondary)
 }
 
-/// Resolve the effective line window for the current algorithm selection.
-pub fn resolve_line_window(line: &LineParams) -> WindowType {
-    if line.algo == Algo::Cz101 || line.algo.is_cz_waveform() {
-        line.cz.window
-    } else {
-        line.window
+fn find_control_value(entries: Option<&[AlgoControlValueV1]>, control_id: &str) -> Option<f32> {
+    entries?
+        .iter()
+        .find(|entry| entry.id == control_id)
+        .map(|entry| entry.value)
+}
+
+fn decode_waveform(value: f32) -> CzWaveform {
+    match libm::roundf(value).clamp(0.0, 7.0) as i32 {
+        0 => CzWaveform::Saw,
+        1 => CzWaveform::Square,
+        2 => CzWaveform::Pulse,
+        3 => CzWaveform::Null,
+        4 => CzWaveform::SinePulse,
+        5 => CzWaveform::SawPulse,
+        6 => CzWaveform::MultiSine,
+        7 => CzWaveform::Pulse2,
+        _ => CzWaveform::Saw,
     }
+}
+
+fn decode_window(value: f32) -> WindowType {
+    match libm::roundf(value).clamp(0.0, 5.0) as i32 {
+        0 => WindowType::Off,
+        1 => WindowType::Saw,
+        2 => WindowType::Triangle,
+        3 => WindowType::Trapezoid,
+        4 => WindowType::Pulse,
+        5 => WindowType::DoubleSaw,
+        _ => WindowType::Off,
+    }
+}
+
+pub fn resolve_cz_controls(entries: Option<&[AlgoControlValueV1]>) -> ResolvedCzControls {
+    ResolvedCzControls {
+        waveform1: find_control_value(entries, "waveform1")
+            .map(decode_waveform)
+            .unwrap_or(CzWaveform::Saw),
+        waveform2: find_control_value(entries, "waveform2")
+            .map(decode_waveform)
+            .unwrap_or(CzWaveform::Saw),
+        window_function: find_control_value(entries, "windowFunction")
+            .map(decode_window)
+            .unwrap_or(WindowType::Off),
+    }
+}
+
+pub fn resolve_algo(
+    algo: Algo,
+    algo_controls: Option<&[AlgoControlValueV1]>,
+    cycle_count: u32,
+) -> Algo {
+    if algo == Algo::Cz101 {
+        let controls = resolve_cz_controls(algo_controls);
+        return Algo::from_cz_waveform(resolve_cycle_waveform(
+            controls.waveform1,
+            controls.waveform2,
+            cycle_count,
+        ));
+    }
+
+    algo
+}
+
+pub fn resolve_window(
+    algo: Algo,
+    algo_controls: Option<&[AlgoControlValueV1]>,
+    fallback: WindowType,
+) -> WindowType {
+    if algo == Algo::Cz101 {
+        return resolve_cz_controls(algo_controls).window_function;
+    }
+
+    fallback
 }
 
 /// Dispatch CZ waveform transfer by waveform id.

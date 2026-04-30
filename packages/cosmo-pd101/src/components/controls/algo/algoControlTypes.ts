@@ -1,3 +1,5 @@
+import type { EngineParamReadoutFormatV1 } from "@/lib/synth/bindings/synth";
+
 export type LineIndex = 1 | 2;
 
 export type AlgoControlAssignmentRuntime = {
@@ -24,6 +26,7 @@ export type AlgoControlRuntime = {
 	default?: number | null;
 	defaultToggle?: boolean | null;
 	options?: AlgoControlOptionRuntime[];
+	readoutFormat?: EngineParamReadoutFormatV1;
 };
 
 export type AlgoControlBinding = {

@@ -1,5 +1,5 @@
 use super::{AlgoControlKindV1, AlgoControlV1, AlgoDefinitionV1, NO_CONTROL_OPTIONS};
-use crate::params::Algo;
+use crate::params::{Algo, EngineParamReadoutFormatV1};
 
 const CONTROLS: [AlgoControlV1; 3] = [
     AlgoControlV1 {
@@ -15,6 +15,7 @@ const CONTROLS: [AlgoControlV1; 3] = [
         default: Some(0.5),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
     AlgoControlV1 {
         id: "bendBias",
@@ -29,6 +30,7 @@ const CONTROLS: [AlgoControlV1; 3] = [
         default: Some(0.0),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::BipolarPercent,
     },
     AlgoControlV1 {
         id: "bendKnee",
@@ -43,6 +45,7 @@ const CONTROLS: [AlgoControlV1; 3] = [
         default: Some(0.5),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
 ];
 

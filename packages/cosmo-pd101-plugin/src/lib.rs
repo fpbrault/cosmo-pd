@@ -431,21 +431,6 @@ pub struct CzParameters {
 }
 
 impl CzParameters {
-    fn map_waveform(value: Waveform) -> cosmo_synth_engine::params::CzWaveform {
-        match value {
-            Waveform::Saw => cosmo_synth_engine::params::CzWaveform::Saw,
-            Waveform::Square => cosmo_synth_engine::params::CzWaveform::Square,
-            Waveform::Pulse => cosmo_synth_engine::params::CzWaveform::Pulse,
-            Waveform::Null => cosmo_synth_engine::params::CzWaveform::Null,
-            Waveform::SinePulse => cosmo_synth_engine::params::CzWaveform::SinePulse,
-            Waveform::SawPulse => cosmo_synth_engine::params::CzWaveform::SawPulse,
-            Waveform::DoubleSine | Waveform::MultiSine => {
-                cosmo_synth_engine::params::CzWaveform::MultiSine
-            }
-            Waveform::Pulse2 => cosmo_synth_engine::params::CzWaveform::Pulse2,
-        }
-    }
-
     fn map_warp_algo(value: WarpAlgo) -> cosmo_synth_engine::params::Algo {
         match value {
             WarpAlgo::Cz101 => cosmo_synth_engine::params::Algo::Cz101,
@@ -529,8 +514,6 @@ impl CzParameters {
             ..Default::default()
         };
 
-        params.line1.cz.slot_a_waveform = Self::map_waveform(self.l1_waveform.get());
-        params.line1.cz.slot_b_waveform = Self::map_waveform(self.l1_waveform.get());
         params.line1.algo = Self::map_warp_algo(self.l1_warp_algo.get());
         params.line1.dcw_base = self.l1_dcw_base.get() as f32;
         params.line1.dca_base = self.l1_dca_base.get() as f32;
@@ -541,8 +524,6 @@ impl CzParameters {
         params.line1.algo_blend = self.l1_algo_blend.get() as f32;
         params.line1.algo2 = Self::map_optional_warp(self.l1_warp_algo2.get() as f32);
 
-        params.line2.cz.slot_a_waveform = Self::map_waveform(self.l2_waveform.get());
-        params.line2.cz.slot_b_waveform = Self::map_waveform(self.l2_waveform.get());
         params.line2.algo = Self::map_warp_algo(self.l2_warp_algo.get());
         params.line2.dcw_base = self.l2_dcw_base.get() as f32;
         params.line2.dca_base = self.l2_dca_base.get() as f32;
@@ -552,23 +533,6 @@ impl CzParameters {
         params.line2.modulation = self.l2_modulation.get() as f32;
         params.line2.algo_blend = self.l2_algo_blend.get() as f32;
         params.line2.algo2 = Self::map_optional_warp(self.l2_warp_algo2.get() as f32);
-
-        params.chorus.enabled = self.cho_enabled.get() >= 0.5;
-        params.chorus.mix = self.cho_mix.get() as f32;
-        params.chorus.rate = self.cho_rate.get() as f32;
-        params.chorus.depth = self.cho_depth.get() as f32;
-
-        params.delay.enabled = self.del_enabled.get() >= 0.5;
-        params.delay.mix = self.del_mix.get() as f32;
-        params.delay.time = self.del_time.get() as f32;
-        params.delay.feedback = self.del_feedback.get() as f32;
-
-        params.reverb.enabled = self.rev_enabled.get() >= 0.5;
-        params.reverb.mix = self.rev_mix.get() as f32;
-        params.reverb.space = self.rev_space.get() as f32;
-        params.reverb.predelay = self.rev_predelay.get() as f32;
-        params.reverb.distance = self.rev_distance.get() as f32;
-        params.reverb.character = self.rev_character.get() as f32;
 
         params.lfo.waveform = Self::map_lfo_waveform(self.lfo_waveform.get());
         params.lfo.rate = self.lfo_rate.get() as f32;
@@ -599,7 +563,7 @@ impl CzParameters {
 #[allow(dead_code, clippy::items_after_statements)]
 fn _assert_synth_params_coverage(p: SynthParams) {
     use cosmo_synth_engine::params::{
-        CzLineParams, LfoParams, LineParams, ModEnvParams, PortamentoParams, RandomParams,
+        LfoParams, LineParams, ModEnvParams, PortamentoParams, RandomParams,
     };
 
     let SynthParams {
@@ -613,21 +577,15 @@ fn _assert_synth_params_coverage(p: SynthParams) {
         volume,
         poly_mode,
         legato,
-        chorus: _,
-        delay: _,
-        phaser: _,
-        reverb: _,
         portamento,
         lfo,
         lfo2,
         mod_env,
         random,
-        velocity_curve: _,
-        filter: _,                                         // not yet a VST param
-        pitch_bend_range: _pitch_bend_range,               // not yet a VST param
-        mod_wheel_vibrato_depth: _mod_wheel_vibrato_depth, // not yet a VST param
-        mod_matrix: _mod_matrix,                           // not yet a VST param
-        fx_slots: _fx_slots,                               // not yet a VST param
+        velocity_curve: _velocity_curve,     // not yet a VST param
+        pitch_bend_range: _pitch_bend_range, // not yet a VST param
+        mod_matrix: _mod_matrix,             // not yet a VST param
+        fx_slots: _fx_slots,                 // not yet a VST param
     } = p;
 
     // ModEnvParams / RandomParams — not yet VST params.
@@ -678,15 +636,9 @@ fn _assert_synth_params_coverage(p: SynthParams) {
         dcw_env: _,
         dca_env: _,
         key_follow: _l1_kf,
-        cz: _l1_cz,
         algo_controls_a: _l1_algo_controls_a, // not yet a VST param — routed via IPC
         algo_controls_b: _l1_algo_controls_b, // not yet a VST param — routed via IPC
     } = line1;
-    let CzLineParams {
-        slot_a_waveform: _l1_slot_a,
-        slot_b_waveform: _l1_slot_b,
-        window: _l1_cz_window,
-    } = _l1_cz;
 
     let LineParams {
         algo: _l2_algo,
@@ -704,15 +656,9 @@ fn _assert_synth_params_coverage(p: SynthParams) {
         dcw_env: _,
         dca_env: _,
         key_follow: _l2_kf,
-        cz: _l2_cz,
         algo_controls_a: _l2_algo_controls_a, // not yet a VST param — routed via IPC
         algo_controls_b: _l2_algo_controls_b, // not yet a VST param — routed via IPC
     } = line2;
-    let CzLineParams {
-        slot_a_waveform: _l2_slot_a,
-        slot_b_waveform: _l2_slot_b,
-        window: _l2_cz_window,
-    } = _l2_cz;
 
     // Suppress unused-variable warnings for fields that ARE mapped to VST params.
     let _ = (line_select, mod_mode, octave, volume, poly_mode, legato);

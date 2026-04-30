@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import {
+	buildDefaultAlgoControls,
 	DEFAULT_ALGO_REF,
-	normalizeWaveformId,
 	toAlgoRefV1,
 } from "@/lib/synth/algoRef";
 import type {
@@ -9,7 +9,6 @@ import type {
 	AlgoControlValueV1,
 	AlgoDefinitionV1,
 	BaseWaveform,
-	CzWaveform,
 	FxDefinitionV1,
 	FxSlotConfig,
 	FxSlotType,
@@ -25,9 +24,9 @@ import type {
 } from "@/lib/synth/bindings/synth";
 import {
 	ALGO_DEFINITIONS_V1,
-	ENGINE_PARAM_UI_META_V1,
 	FX_DEFINITIONS_V1,
 } from "@/lib/synth/bindings/synth";
+import { requireEngineParamDefault } from "@/lib/synth/paramMeta";
 import {
 	DEFAULT_DCA_ENV,
 	DEFAULT_DCO_ENV,
@@ -54,22 +53,14 @@ function normalizeAlgoControls(
 	const incoming = new Map(
 		(values ?? []).map((entry) => [entry.id, entry.value]),
 	);
-	return definition.controls
-		.filter((control) => (control.kind ?? "number") === "number")
-		.map((control) => ({
-			id: control.id,
-			value: incoming.get(control.id) ?? control.default ?? control.min ?? 0,
-		}));
+	return definition.controls.map((control) => ({
+		id: control.id,
+		value: incoming.get(control.id) ?? control.default ?? control.min ?? 0,
+	}));
 }
 
-function inferCzWaveform(
-	explicitWaveform: unknown,
-	fallback: CzWaveform,
-): CzWaveform {
-	if (typeof explicitWaveform === "string") {
-		return normalizeWaveformId(explicitWaveform);
-	}
-	return fallback;
+function toIntegerInRange(value: number, min: number, max: number): number {
+	return Math.max(min, Math.min(max, Math.round(value)));
 }
 
 // ---------------------------------------------------------------------------
@@ -112,15 +103,6 @@ const DEFAULT_FX_SLOTS: FxSlotTuple = [
 	{ type: "empty" },
 ];
 
-const ENGINE_PARAM_DEFAULTS = new Map(
-	ENGINE_PARAM_UI_META_V1.map((meta) => [meta.key, meta.paramDefault]),
-);
-
-function getEngineParamDefault(key: string, fallback: number): number {
-	const value = ENGINE_PARAM_DEFAULTS.get(key);
-	return typeof value === "number" ? value : fallback;
-}
-
 // ---------------------------------------------------------------------------
 // Flat state shape — mirrors the old individual useState fields
 // ---------------------------------------------------------------------------
@@ -146,9 +128,6 @@ export type SynthState = {
 	line1DcoEnv: StepEnvData;
 	line1DcwEnv: StepEnvData;
 	line1DcaEnv: StepEnvData;
-	line1CzSlotAWaveform: CzWaveform;
-	line1CzSlotBWaveform: CzWaveform;
-	line1CzWindow: WindowType;
 	line1AlgoControlsA: AlgoControlValueV1[];
 	line1AlgoControlsB: AlgoControlValueV1[];
 	line1BaseWaveformA: BaseWaveform;
@@ -161,9 +140,6 @@ export type SynthState = {
 	line2DcoEnv: StepEnvData;
 	line2DcwEnv: StepEnvData;
 	line2DcaEnv: StepEnvData;
-	line2CzSlotAWaveform: CzWaveform;
-	line2CzSlotBWaveform: CzWaveform;
-	line2CzWindow: WindowType;
 	line2AlgoControlsA: AlgoControlValueV1[];
 	line2AlgoControlsB: AlgoControlValueV1[];
 	line2BaseWaveformA: BaseWaveform;
@@ -233,9 +209,6 @@ type SynthActions = {
 	setLine1DcoEnv: (v: StepEnvData) => void;
 	setLine1DcwEnv: (v: StepEnvData) => void;
 	setLine1DcaEnv: (v: StepEnvData) => void;
-	setLine1CzSlotAWaveform: (v: CzWaveform) => void;
-	setLine1CzSlotBWaveform: (v: CzWaveform) => void;
-	setLine1CzWindow: (v: WindowType) => void;
 	setLine1AlgoControlsA: (v: AlgoControlValueV1[]) => void;
 	setLine1AlgoControlsB: (v: AlgoControlValueV1[]) => void;
 	setLine1BaseWaveformA: (v: BaseWaveform) => void;
@@ -248,9 +221,6 @@ type SynthActions = {
 	setLine2DcoEnv: (v: StepEnvData) => void;
 	setLine2DcwEnv: (v: StepEnvData) => void;
 	setLine2DcaEnv: (v: StepEnvData) => void;
-	setLine2CzSlotAWaveform: (v: CzWaveform) => void;
-	setLine2CzSlotBWaveform: (v: CzWaveform) => void;
-	setLine2CzWindow: (v: WindowType) => void;
 	setLine2AlgoControlsA: (v: AlgoControlValueV1[]) => void;
 	setLine2AlgoControlsB: (v: AlgoControlValueV1[]) => void;
 	setLine2BaseWaveformA: (v: BaseWaveform) => void;
@@ -333,10 +303,7 @@ const DEFAULT_STATE: SynthState = {
 	line1DcoEnv: DEFAULT_DCO_ENV,
 	line1DcwEnv: DEFAULT_DCW_ENV,
 	line1DcaEnv: DEFAULT_DCA_ENV,
-	line1CzSlotAWaveform: "saw",
-	line1CzSlotBWaveform: "saw",
-	line1CzWindow: "off",
-	line1AlgoControlsA: [],
+	line1AlgoControlsA: buildDefaultAlgoControls("cz101"),
 	line1AlgoControlsB: [],
 	line1BaseWaveformA: "cosine",
 	line1BaseWaveformB: "cosine",
@@ -348,10 +315,7 @@ const DEFAULT_STATE: SynthState = {
 	line2DcoEnv: DEFAULT_DCO_ENV,
 	line2DcwEnv: DEFAULT_DCW_ENV,
 	line2DcaEnv: DEFAULT_DCA_ENV,
-	line2CzSlotAWaveform: "saw",
-	line2CzSlotBWaveform: "saw",
-	line2CzWindow: "off",
-	line2AlgoControlsA: [],
+	line2AlgoControlsA: buildDefaultAlgoControls("cz101"),
 	line2AlgoControlsB: [],
 	line2BaseWaveformA: "cosine",
 	line2BaseWaveformB: "cosine",
@@ -361,34 +325,34 @@ const DEFAULT_STATE: SynthState = {
 
 	polyMode: "poly8",
 	legato: false,
-	velocityCurve: getEngineParamDefault("velocityCurve", 0),
+	velocityCurve: requireEngineParamDefault("velocityCurve"),
 
 	portamentoEnabled: false,
 	portamentoMode: "rate",
-	portamentoRate: getEngineParamDefault("portamentoRate", 50),
-	portamentoTime: getEngineParamDefault("portamentoTime", 0.5),
+	portamentoRate: requireEngineParamDefault("portamentoRate"),
+	portamentoTime: requireEngineParamDefault("portamentoTime"),
 
 	lfoWaveform: "sine",
-	lfoRate: getEngineParamDefault("lfoRate", 5),
-	lfoDepth: getEngineParamDefault("lfoDepth", 0.2),
+	lfoRate: requireEngineParamDefault("lfoRate"),
+	lfoDepth: requireEngineParamDefault("lfoDepth"),
 	lfoSymmetry: 0.5,
 	lfoRetrigger: false,
-	lfoOffset: getEngineParamDefault("lfoOffset", 0),
+	lfoOffset: requireEngineParamDefault("lfoOffset"),
 	lfo2Waveform: "sine",
-	lfo2Rate: getEngineParamDefault("lfo2Rate", 5),
-	lfo2Depth: getEngineParamDefault("lfo2Depth", 0.2),
+	lfo2Rate: requireEngineParamDefault("lfo2Rate"),
+	lfo2Depth: requireEngineParamDefault("lfo2Depth"),
 	lfo2Symmetry: 0.5,
 	lfo2Retrigger: false,
-	lfo2Offset: getEngineParamDefault("lfo2Offset", 0),
+	lfo2Offset: requireEngineParamDefault("lfo2Offset"),
 
-	randomRate: 2,
+	randomRate: requireEngineParamDefault("randomRate"),
 
-	modEnvAttack: getEngineParamDefault("modEnvAttack", 0.01),
-	modEnvDecay: getEngineParamDefault("modEnvDecay", 0.1),
-	modEnvSustain: getEngineParamDefault("modEnvSustain", 0.5),
-	modEnvRelease: getEngineParamDefault("modEnvRelease", 0.2),
+	modEnvAttack: requireEngineParamDefault("modEnvAttack"),
+	modEnvDecay: requireEngineParamDefault("modEnvDecay"),
+	modEnvSustain: requireEngineParamDefault("modEnvSustain"),
+	modEnvRelease: requireEngineParamDefault("modEnvRelease"),
 
-	pitchBendRange: 2,
+	pitchBendRange: requireEngineParamDefault("pitchBendRange"),
 	octave: 0,
 	modMatrix: { routes: [] },
 	fxSlots: DEFAULT_FX_SLOTS,
@@ -416,30 +380,24 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setVolume: (v) => set({ volume: v }),
 
 	setLine1Level: (v) => set({ line1Level: v }),
-	setLine1Octave: (v) => set({ line1Octave: v }),
-	setLine1Detune: (v) => set({ line1Detune: v }),
+	setLine1Octave: (v) => set({ line1Octave: toIntegerInRange(v, -2, 2) }),
+	setLine1Detune: (v) => set({ line1Detune: toIntegerInRange(v, -100, 100) }),
 	setLine1DcwKeyFollow: (v) => set({ line1DcwKeyFollow: v }),
 	setLine1DcoEnv: (v) => set({ line1DcoEnv: v }),
 	setLine1DcwEnv: (v) => set({ line1DcwEnv: v }),
 	setLine1DcaEnv: (v) => set({ line1DcaEnv: v }),
-	setLine1CzSlotAWaveform: (v) => set({ line1CzSlotAWaveform: v }),
-	setLine1CzSlotBWaveform: (v) => set({ line1CzSlotBWaveform: v }),
-	setLine1CzWindow: (v) => set({ line1CzWindow: v }),
 	setLine1AlgoControlsA: (v) => set({ line1AlgoControlsA: v }),
 	setLine1AlgoControlsB: (v) => set({ line1AlgoControlsB: v }),
 	setLine1BaseWaveformA: (v) => set({ line1BaseWaveformA: v }),
 	setLine1BaseWaveformB: (v) => set({ line1BaseWaveformB: v }),
 
 	setLine2Level: (v) => set({ line2Level: v }),
-	setLine2Octave: (v) => set({ line2Octave: v }),
-	setLine2Detune: (v) => set({ line2Detune: v }),
+	setLine2Octave: (v) => set({ line2Octave: toIntegerInRange(v, -2, 2) }),
+	setLine2Detune: (v) => set({ line2Detune: toIntegerInRange(v, -100, 100) }),
 	setLine2DcwKeyFollow: (v) => set({ line2DcwKeyFollow: v }),
 	setLine2DcoEnv: (v) => set({ line2DcoEnv: v }),
 	setLine2DcwEnv: (v) => set({ line2DcwEnv: v }),
 	setLine2DcaEnv: (v) => set({ line2DcaEnv: v }),
-	setLine2CzSlotAWaveform: (v) => set({ line2CzSlotAWaveform: v }),
-	setLine2CzSlotBWaveform: (v) => set({ line2CzSlotBWaveform: v }),
-	setLine2CzWindow: (v) => set({ line2CzWindow: v }),
 	setLine2AlgoControlsA: (v) => set({ line2AlgoControlsA: v }),
 	setLine2AlgoControlsB: (v) => set({ line2AlgoControlsB: v }),
 	setLine2BaseWaveformA: (v) => set({ line2BaseWaveformA: v }),
@@ -478,7 +436,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setModEnvRelease: (v) => set({ modEnvRelease: v }),
 
 	setPitchBendRange: (v) => set({ pitchBendRange: v }),
-	setOctave: (v) => set({ octave: v }),
+	setOctave: (v) => set({ octave: toIntegerInRange(v, -2, 2) }),
 	setModMatrix: (v) => set({ modMatrix: v }),
 	setFxSlotType: (slot, type) => {
 		if (slot < 0 || slot > 5) return;
@@ -573,11 +531,6 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				dcwEnv: s.line1DcwEnv,
 				dcaEnv: s.line1DcaEnv,
 				keyFollow: s.line1DcwKeyFollow,
-				cz: {
-					slotAWaveform: s.line1CzSlotAWaveform,
-					slotBWaveform: s.line1CzSlotBWaveform,
-					window: s.line1CzWindow,
-				},
 				algoControlsA: line1NormalizedAlgoControlsA,
 				algoControlsB: line1NormalizedAlgoControlsB,
 			},
@@ -597,11 +550,6 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				dcwEnv: s.line2DcwEnv,
 				dcaEnv: s.line2DcaEnv,
 				keyFollow: s.line2DcwKeyFollow,
-				cz: {
-					slotAWaveform: s.line2CzSlotAWaveform,
-					slotBWaveform: s.line2CzSlotBWaveform,
-					window: s.line2CzWindow,
-				},
 				algoControlsA: line2NormalizedAlgoControlsA,
 				algoControlsB: line2NormalizedAlgoControlsB,
 			},
@@ -709,9 +657,6 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			line1DcoEnv: p.line1?.dcoEnv ?? DEFAULT_DCO_ENV,
 			line1DcwEnv: p.line1?.dcwEnv ?? DEFAULT_DCW_ENV,
 			line1DcaEnv: p.line1?.dcaEnv ?? DEFAULT_DCA_ENV,
-			line1CzSlotAWaveform: inferCzWaveform(p.line1?.cz?.slotAWaveform, "saw"),
-			line1CzSlotBWaveform: inferCzWaveform(p.line1?.cz?.slotBWaveform, "saw"),
-			line1CzWindow: (p.line1?.cz?.window as WindowType) ?? "off",
 			line1AlgoControlsA: normalizeAlgoControls(
 				line1PrimaryAlgo,
 				p.line1?.algoControlsA ?? [],
@@ -725,9 +670,6 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			line2DcoEnv: p.line2?.dcoEnv ?? DEFAULT_DCO_ENV,
 			line2DcwEnv: p.line2?.dcwEnv ?? DEFAULT_DCW_ENV,
 			line2DcaEnv: p.line2?.dcaEnv ?? DEFAULT_DCA_ENV,
-			line2CzSlotAWaveform: inferCzWaveform(p.line2?.cz?.slotAWaveform, "saw"),
-			line2CzSlotBWaveform: inferCzWaveform(p.line2?.cz?.slotBWaveform, "saw"),
-			line2CzWindow: (p.line2?.cz?.window as WindowType) ?? "off",
 			line2AlgoControlsA: normalizeAlgoControls(
 				line2PrimaryAlgo,
 				p.line2?.algoControlsA ?? [],
@@ -760,45 +702,48 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			portamentoMode: (p.portamento?.mode as PortamentoMode) ?? "rate",
 			portamentoRate: safe(
 				p.portamento?.rate,
-				getEngineParamDefault("portamentoRate", 50),
+				requireEngineParamDefault("portamentoRate"),
 			),
 			portamentoTime: safe(
 				p.portamento?.time,
-				getEngineParamDefault("portamentoTime", 0.5),
+				requireEngineParamDefault("portamentoTime"),
 			),
 			lfoWaveform: (p.lfo?.waveform as LfoWaveform) ?? "sine",
-			lfoRate: safe(p.lfo?.rate, getEngineParamDefault("lfoRate", 5)),
-			lfoDepth: safe(p.lfo?.depth, getEngineParamDefault("lfoDepth", 0.2)),
+			lfoRate: safe(p.lfo?.rate, requireEngineParamDefault("lfoRate")),
+			lfoDepth: safe(p.lfo?.depth, requireEngineParamDefault("lfoDepth")),
 			lfoSymmetry: safe(p.lfo?.symmetry, 0.5),
 			lfoRetrigger: p.lfo?.retrigger ?? false,
-			lfoOffset: safe(p.lfo?.offset, getEngineParamDefault("lfoOffset", 0)),
+			lfoOffset: safe(p.lfo?.offset, requireEngineParamDefault("lfoOffset")),
 			lfo2Waveform: (p.lfo2?.waveform as LfoWaveform) ?? "sine",
-			lfo2Rate: safe(p.lfo2?.rate, getEngineParamDefault("lfo2Rate", 5)),
-			lfo2Depth: safe(p.lfo2?.depth, getEngineParamDefault("lfo2Depth", 0.2)),
+			lfo2Rate: safe(p.lfo2?.rate, requireEngineParamDefault("lfo2Rate")),
+			lfo2Depth: safe(p.lfo2?.depth, requireEngineParamDefault("lfo2Depth")),
 			lfo2Symmetry: safe(p.lfo2?.symmetry, 0.5),
 			lfo2Retrigger: p.lfo2?.retrigger ?? false,
-			lfo2Offset: safe(p.lfo2?.offset, getEngineParamDefault("lfo2Offset", 0)),
-			randomRate: safe(p.random?.rate, 2),
+			lfo2Offset: safe(p.lfo2?.offset, requireEngineParamDefault("lfo2Offset")),
+			randomRate: safe(p.random?.rate, requireEngineParamDefault("randomRate")),
 			modEnvAttack: safe(
 				p.modEnv?.attack,
-				getEngineParamDefault("modEnvAttack", 0.01),
+				requireEngineParamDefault("modEnvAttack"),
 			),
 			modEnvDecay: safe(
 				p.modEnv?.decay,
-				getEngineParamDefault("modEnvDecay", 0.1),
+				requireEngineParamDefault("modEnvDecay"),
 			),
 			modEnvSustain: safe(
 				p.modEnv?.sustain,
-				getEngineParamDefault("modEnvSustain", 0.5),
+				requireEngineParamDefault("modEnvSustain"),
 			),
 			modEnvRelease: safe(
 				p.modEnv?.release,
-				getEngineParamDefault("modEnvRelease", 0.2),
+				requireEngineParamDefault("modEnvRelease"),
 			),
-			pitchBendRange: safe(p.pitchBendRange, 2),
+			pitchBendRange: safe(
+				p.pitchBendRange,
+				requireEngineParamDefault("pitchBendRange"),
+			),
 			velocityCurve: safe(
 				p.velocityCurve,
-				getEngineParamDefault("velocityCurve", 0),
+				requireEngineParamDefault("velocityCurve"),
 			),
 			octave: safe(p.octave, 0),
 			modMatrix:

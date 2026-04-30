@@ -15,10 +15,11 @@ use cosmo_synth_engine::generators::{
     AlgoControlV1, AlgoDefinitionV1, AlgoUiEntryV1, CzPresetV1,
 };
 use cosmo_synth_engine::module_presets::{module_preset_catalog_v1, ModulePresetGroupV1};
+use cosmo_synth_engine::params::engine_param_default_v1;
 use cosmo_synth_engine::params::{
     engine_enum_value_tooltips_v1, engine_param_ui_meta_v1, Algo, AlgoControlValueV1, BaseWaveform,
-    BitcrusherParams, ChorusParams, CompressorParams, CzAlgo, CzLineParams, CzWaveform,
-    DelayParams, DistortionParams, EnvStep, EqParams, FxSlotConfig, FxSlotType, GrainDelayParams,
+    BitcrusherParams, ChorusParams, CompressorParams, CzAlgo, CzWaveform, DelayParams,
+    DistortionParams, EnvStep, EqParams, FxSlotConfig, FxSlotType, GrainDelayParams,
     JunoChorusParams, LfoParams, LfoWaveform, LineParams, LineSelect, LoFiParams, ModDestination,
     ModEnvParams, ModMatrix, ModMode, ModRoute, ModSource, PhaseModParams, PhaserParams, PolyMode,
     PortamentoMode, PortamentoParams, RandomParams, ReverbParams, RingModParams, ShimmerVerbParams,
@@ -55,8 +56,6 @@ fn main() {
     out.push_str(&export::<CzWaveform>(&config).expect("Failed to export CzWaveform"));
     out.push_str("\n\n");
     out.push_str(&export::<BaseWaveform>(&config).expect("Failed to export BaseWaveform"));
-    out.push_str("\n\n");
-    out.push_str(&export::<CzLineParams>(&config).expect("Failed to export CzLineParams"));
     out.push_str("\n\n");
     out.push_str(&export::<Algo>(&config).expect("Failed to export Algo"));
     out.push_str("\n\n");
@@ -217,7 +216,28 @@ fn main() {
     out.push_str(";\n");
     out.push_str("\n");
 
-    let engine_param_ui_meta_json = serde_json::to_string_pretty(engine_param_ui_meta_v1())
+    let mut engine_param_ui_meta_value = serde_json::to_value(engine_param_ui_meta_v1())
+        .expect("Failed to serialize ENGINE_PARAM_UI_META_V1");
+    if let Some(items) = engine_param_ui_meta_value.as_array_mut() {
+        for item in items {
+            if let Some(obj) = item.as_object_mut() {
+                let key = obj.get("key").and_then(|v| v.as_str()).unwrap_or_default();
+                match engine_param_default_v1(key) {
+                    Some(default) => {
+                        let rounded = (default * 1_000_000.0).round() / 1_000_000.0;
+                        obj.insert(
+                            "paramDefault".to_string(),
+                            serde_json::Value::from(rounded as f64),
+                        );
+                    }
+                    None => {
+                        obj.insert("paramDefault".to_string(), serde_json::Value::Null);
+                    }
+                }
+            }
+        }
+    }
+    let engine_param_ui_meta_json = serde_json::to_string_pretty(&engine_param_ui_meta_value)
         .expect("Failed to serialize ENGINE_PARAM_UI_META_V1");
     let engine_enum_value_tooltips_json =
         serde_json::to_string_pretty(engine_enum_value_tooltips_v1())
@@ -231,6 +251,8 @@ fn main() {
     out.push_str("  | { kind: \"integer\" }\n");
     out.push_str("  | { kind: \"decimal\" }\n");
     out.push_str("  | { kind: \"percent\" }\n");
+    out.push_str("  | { kind: \"bipolarPercent\" }\n");
+    out.push_str("  | { kind: \"degrees\" }\n");
     out.push_str("  | { kind: \"semitones\" }\n");
     out.push_str("  | { kind: \"milliseconds\" }\n");
     out.push_str("  | { kind: \"seconds2\" }\n");

@@ -5,7 +5,10 @@ import {
 } from "@/features/synth/engine/synthEngineAdapter";
 import { createSynthEngineSnapshot } from "@/features/synth/engine/synthEngineSnapshot";
 import { type SynthStore, useSynthStore } from "@/features/synth/synthStore";
-import { isWaveformId } from "@/lib/synth/algoRef";
+import {
+	isWaveformId,
+	resolveCzControlsFromEntries,
+} from "@/lib/synth/algoRef";
 import type {
 	Algo,
 	AlgoControlValueV1,
@@ -172,6 +175,32 @@ function algoKeyToWaveform(key: Algo | null, slotWaveform: CzWaveform): number {
 	return 0;
 }
 
+function setControlValue(
+	entries: AlgoControlValueV1[],
+	controlId: string,
+	value: number,
+): AlgoControlValueV1[] {
+	const index = entries.findIndex((entry) => entry.id === controlId);
+	if (index >= 0) {
+		const next = [...entries];
+		next[index] = { ...next[index], value };
+		return next;
+	}
+	return [...entries, { id: controlId, value }];
+}
+
+function setLegacyCzWaveformBank(
+	entries: AlgoControlValueV1[],
+	waveform: CzWaveform,
+): AlgoControlValueV1[] {
+	const index = CZ_WAVEFORM_IDX[waveform] ?? 0;
+	return setControlValue(
+		setControlValue(entries, "waveform1", index),
+		"waveform2",
+		index,
+	);
+}
+
 // ---------------------------------------------------------------------------
 // Descriptor table
 // Each entry maps a Beamer string param ID to a read (snapshot → number) and
@@ -255,13 +284,15 @@ const PLUGIN_PARAM_DESCRIPTORS: PluginParamDescriptor[] = [
 		read: (params) =>
 			algoKeyToWaveform(
 				params.line1.algo,
-				params.line1.cz?.slotAWaveform ?? "saw",
+				resolveCzControlsFromEntries(params.line1.algoControlsA ?? [])
+					.waveform1,
 			),
 		apply: (value, s) => {
 			const waveform = IDX_TO_CZ_WAVEFORM[Math.round(value)];
 			if (!waveform) return;
-			s.setLine1CzSlotAWaveform(waveform);
-			s.setLine1CzSlotBWaveform(waveform);
+			s.setLine1AlgoControlsA(
+				setLegacyCzWaveformBank(s.line1AlgoControlsA, waveform),
+			);
 		},
 	},
 	{
@@ -322,13 +353,15 @@ const PLUGIN_PARAM_DESCRIPTORS: PluginParamDescriptor[] = [
 		read: (params) =>
 			algoKeyToWaveform(
 				params.line2.algo,
-				params.line2.cz?.slotAWaveform ?? "saw",
+				resolveCzControlsFromEntries(params.line2.algoControlsA ?? [])
+					.waveform1,
 			),
 		apply: (value, s) => {
 			const waveform = IDX_TO_CZ_WAVEFORM[Math.round(value)];
 			if (!waveform) return;
-			s.setLine2CzSlotAWaveform(waveform);
-			s.setLine2CzSlotBWaveform(waveform);
+			s.setLine2AlgoControlsA(
+				setLegacyCzWaveformBank(s.line2AlgoControlsA, waveform),
+			);
 		},
 	},
 	{

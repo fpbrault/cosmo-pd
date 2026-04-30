@@ -22,6 +22,15 @@ type ModuleFrameProps = {
 	children: React.ReactNode;
 };
 
+const MODULE_GRID_COLUMN_CLASS: Record<number, string> = {
+	1: "grid-cols-1",
+	2: "grid-cols-2",
+	3: "grid-cols-3",
+	4: "grid-cols-4",
+	5: "grid-cols-5",
+	6: "grid-cols-6",
+};
+
 export default function ModuleFrame({
 	title,
 	color,
@@ -38,6 +47,8 @@ export default function ModuleFrame({
 	const textColor = contrastColor(color);
 
 	const slotCtx = useFxSlotContext();
+	const safeColumns = Math.min(Math.max(columns, 1), 6);
+	const columnClass = MODULE_GRID_COLUMN_CLASS[safeColumns] ?? "grid-cols-4";
 
 	return (
 		<section
@@ -134,7 +145,7 @@ export default function ModuleFrame({
 						<div className="flex justify-end">{headerControl}</div>
 					)}
 					<div
-						className={`grid grid-cols-${columns} w-full gap-2.5 ${
+						className={`grid ${columnClass} w-full content-start items-start gap-2.5 ${
 							headerControl ? "" : "my-auto"
 						}`}
 					>

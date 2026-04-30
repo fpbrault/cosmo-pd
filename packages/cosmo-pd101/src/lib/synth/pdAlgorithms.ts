@@ -1,6 +1,13 @@
-import { isWarpAlgo, resolveAlgoRef } from "@/lib/synth/algoRef";
+import {
+	algoRefKey,
+	isAlgoRefEqual,
+	isWarpAlgo,
+	resolveAlgoRef,
+	resolveCzControlsFromEntries,
+} from "@/lib/synth/algoRef";
 import type {
 	Algo,
+	AlgoControlValueV1,
 	CzWaveform,
 	StepEnvData,
 	WindowType,
@@ -29,7 +36,9 @@ const generatePath = (fn: (phase: number) => number, res = 64): string => {
 	const steps = [];
 	for (let i = 0; i <= res; i++) {
 		const phase = i / res; // 0 to 1
-		const amplitude = Math.max(-1, Math.min(1, fn(phase)));
+		const sample = fn(phase);
+		const safeSample = Number.isFinite(sample) ? sample : 0;
+		const amplitude = Math.max(-1, Math.min(1, safeSample));
 
 		const x = 4 + phase * 16;
 		const y = 12 - amplitude * 8;
@@ -65,7 +74,7 @@ export const PD_ALGOS: PdAlgoDef[] = [
 			label: entry.label,
 			waveform: resolved.waveform,
 			algo: resolved.warpAlgo,
-			key: entry.id,
+			key: algoRefKey(entry.id),
 			icon: getAlgoIcon(entry.id),
 		};
 	}),
@@ -118,7 +127,7 @@ export function getPdAlgoBehaviorDescription(algo: PdAlgo): string {
 }
 
 export function getPdAlgoDef(algo: PdAlgo): PdAlgoDef | undefined {
-	return PD_ALGOS.find((entry) => entry.value === algo);
+	return PD_ALGOS.find((entry) => isAlgoRefEqual(entry.value, algo));
 }
 
 export const DEFAULT_DCA_ENV: StepEnvData = {
@@ -202,9 +211,9 @@ function pdPinch(phase: number, amount: number): number {
 	if (amount === 0) return phase;
 	const center = 0.5;
 	const a = amount * 0.98 + 0.01;
-	return (
-		center + (phase - center) * (Math.abs(phase - center) / center) ** (a - 1)
-	);
+	const dist = Math.abs(phase - center) / center;
+	if (dist === 0) return center;
+	return center + (phase - center) * dist ** (a - 1);
 }
 
 function pdFold(phase: number, amount: number): number {
@@ -412,12 +421,10 @@ export function computeWaveform(params: {
 	windowType: WindowType;
 	line1Level: number;
 	line2Level: number;
-	line1CzSlotAWaveform?: CzWaveform;
-	line1CzSlotBWaveform?: CzWaveform;
-	line1CzWindow?: WindowType;
-	line2CzSlotAWaveform?: CzWaveform;
-	line2CzSlotBWaveform?: CzWaveform;
-	line2CzWindow?: WindowType;
+	line1AlgoControlsA?: AlgoControlValueV1[];
+	line1AlgoControlsB?: AlgoControlValueV1[];
+	line2AlgoControlsA?: AlgoControlValueV1[];
+	line2AlgoControlsB?: AlgoControlValueV1[];
 }): WaveformData {
 	const phasor = new Float32Array(N);
 	for (let i = 0; i < N; ++i) phasor[i] = i / N;
@@ -437,36 +444,31 @@ export function computeWaveform(params: {
 	const algoB = resolveAlgoRef(params.warpBAlgo);
 	const algo2AResolved = params.algo2A ? resolveAlgoRef(params.algo2A) : null;
 	const algo2BResolved = params.algo2B ? resolveAlgoRef(params.algo2B) : null;
+	const line1CzA = resolveCzControlsFromEntries(params.line1AlgoControlsA);
+	const line1CzB = resolveCzControlsFromEntries(params.line1AlgoControlsB);
+	const line2CzA = resolveCzControlsFromEntries(params.line2AlgoControlsA);
+	const line2CzB = resolveCzControlsFromEntries(params.line2AlgoControlsB);
 
-	// Use explicit CZ waveform params when available (from CzLineParams)
 	const algoAWaveform: CzWaveform =
-		algoA.warpAlgo === "cz101" && params.line1CzSlotAWaveform
-			? params.line1CzSlotAWaveform
-			: algoA.waveform;
+		algoA.warpAlgo === "cz101" ? line1CzA.waveform1 : algoA.waveform;
 	const algo2AWaveform: CzWaveform =
-		algo2AResolved?.warpAlgo === "cz101" && params.line1CzSlotBWaveform
-			? params.line1CzSlotBWaveform
+		algo2AResolved?.warpAlgo === "cz101"
+			? line1CzB.waveform1
 			: (algo2AResolved?.waveform ?? "saw");
 	const algoBWaveform: CzWaveform =
-		algoB.warpAlgo === "cz101" && params.line2CzSlotAWaveform
-			? params.line2CzSlotAWaveform
-			: algoB.waveform;
+		algoB.warpAlgo === "cz101" ? line2CzA.waveform1 : algoB.waveform;
 	const algo2BWaveform: CzWaveform =
-		algo2BResolved?.warpAlgo === "cz101" && params.line2CzSlotBWaveform
-			? params.line2CzSlotBWaveform
+		algo2BResolved?.warpAlgo === "cz101"
+			? line2CzB.waveform1
 			: (algo2BResolved?.waveform ?? "saw");
 
 	const line1Window =
-		algoA.warpAlgo === "cz101" &&
-		params.line1CzWindow &&
-		params.line1CzWindow !== "off"
-			? params.line1CzWindow
+		algoA.warpAlgo === "cz101" && line1CzA.windowFunction !== "off"
+			? line1CzA.windowFunction
 			: (algoA.windowType ?? params.windowType);
 	const line2Window =
-		algoB.warpAlgo === "cz101" &&
-		params.line2CzWindow &&
-		params.line2CzWindow !== "off"
-			? params.line2CzWindow
+		algoB.warpAlgo === "cz101" && line2CzA.windowFunction !== "off"
+			? line2CzA.windowFunction
 			: (algoB.windowType ?? params.windowType);
 
 	// Aliases for backward compat within this function

@@ -86,12 +86,10 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay() {
 	const effectiveIntPmAmount = phaseModEnabled ? intPmAmount : 0;
 	const { value: line1Level } = useSynthParam("line1Level");
 	const { value: line2Level } = useSynthParam("line2Level");
-	const { value: line1CzSlotAWaveform } = useSynthParam("line1CzSlotAWaveform");
-	const { value: line1CzSlotBWaveform } = useSynthParam("line1CzSlotBWaveform");
-	const { value: line1CzWindow } = useSynthParam("line1CzWindow");
-	const { value: line2CzSlotAWaveform } = useSynthParam("line2CzSlotAWaveform");
-	const { value: line2CzSlotBWaveform } = useSynthParam("line2CzSlotBWaveform");
-	const { value: line2CzWindow } = useSynthParam("line2CzWindow");
+	const { value: line1AlgoControlsA } = useSynthParam("line1AlgoControlsA");
+	const { value: line1AlgoControlsB } = useSynthParam("line1AlgoControlsB");
+	const { value: line2AlgoControlsA } = useSynthParam("line2AlgoControlsA");
+	const { value: line2AlgoControlsB } = useSynthParam("line2AlgoControlsB");
 
 	const waveform = useMemo(
 		() =>
@@ -111,12 +109,10 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay() {
 				windowType,
 				line1Level,
 				line2Level,
-				line1CzSlotAWaveform,
-				line1CzSlotBWaveform,
-				line1CzWindow,
-				line2CzSlotAWaveform,
-				line2CzSlotBWaveform,
-				line2CzWindow,
+				line1AlgoControlsA,
+				line1AlgoControlsB,
+				line2AlgoControlsA,
+				line2AlgoControlsB,
 			}),
 		[
 			warpAAmount,
@@ -133,12 +129,10 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay() {
 			windowType,
 			line1Level,
 			line2Level,
-			line1CzSlotAWaveform,
-			line1CzSlotBWaveform,
-			line1CzWindow,
-			line2CzSlotAWaveform,
-			line2CzSlotBWaveform,
-			line2CzWindow,
+			line1AlgoControlsA,
+			line1AlgoControlsB,
+			line2AlgoControlsA,
+			line2AlgoControlsB,
 		],
 	);
 

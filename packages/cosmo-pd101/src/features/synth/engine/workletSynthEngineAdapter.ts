@@ -3,11 +3,6 @@ import type { SynthEngineSnapshot } from "@/features/synth/engine/synthEngineSna
 import { resolveAlgoRef } from "@/lib/synth/algoRef";
 import type { SynthParams } from "@/lib/synth/bindings/synth";
 
-const DEFAULT_CZ_PARAMS = {
-	slotAWaveform: "saw",
-	slotBWaveform: "saw",
-} as const;
-
 type CreateWorkletSynthEngineAdapterParams = {
 	workletNodeRef: React.MutableRefObject<AudioWorkletNode | null>;
 	paramsRef: React.MutableRefObject<SynthParams>;
@@ -34,30 +29,12 @@ export function createWorkletSynthEngineAdapter({
 					algo: algoA,
 					algo2: baseParams.line1.algo2 ?? null,
 					window: line1Window,
-					cz: {
-						slotAWaveform:
-							baseParams.line1.cz?.slotAWaveform ??
-							DEFAULT_CZ_PARAMS.slotAWaveform,
-						slotBWaveform:
-							baseParams.line1.cz?.slotBWaveform ??
-							DEFAULT_CZ_PARAMS.slotBWaveform,
-						window: baseParams.line1.cz?.window ?? line1Window,
-					},
 				},
 				line2: {
 					...baseParams.line2,
 					algo: algoB,
 					algo2: baseParams.line2.algo2 ?? null,
 					window: line2Window,
-					cz: {
-						slotAWaveform:
-							baseParams.line2.cz?.slotAWaveform ??
-							DEFAULT_CZ_PARAMS.slotAWaveform,
-						slotBWaveform:
-							baseParams.line2.cz?.slotBWaveform ??
-							DEFAULT_CZ_PARAMS.slotBWaveform,
-						window: baseParams.line2.cz?.window ?? line2Window,
-					},
 				},
 				modMatrix: { routes: baseParams.modMatrix?.routes ?? [] },
 			};

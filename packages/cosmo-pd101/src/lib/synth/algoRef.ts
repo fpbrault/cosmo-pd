@@ -2,6 +2,7 @@ import {
 	ALGO_DEFINITIONS_V1,
 	type Algo,
 	type AlgoControlV1,
+	type AlgoControlValueV1,
 	type AlgoDefinitionV1,
 	type CzWaveform,
 	type WindowType,
@@ -13,15 +14,9 @@ const CZ101_DEF = ALGO_DEFINITIONS.find(
 	(d) => d.id === "cz101",
 ) as AlgoDefinitionV1;
 
-export const CZ_WAVEFORMS = (
+const WAVEFORMS = (
 	CZ101_DEF.controls.find((c) => c.id === "waveform1") as AlgoControlV1
 ).options.map((o) => o.value as CzWaveform);
-
-const WAVEFORMS = CZ_WAVEFORMS;
-
-export const CZ_WINDOWS = (
-	CZ101_DEF.controls.find((c) => c.id === "windowFunction") as AlgoControlV1
-).options.map((o) => o.value as WindowType);
 
 const ALL_ALGOS = ALGO_DEFINITIONS.map((d) => d.id);
 
@@ -33,6 +28,10 @@ type WaveformId = CzWaveform;
 type WarpAlgo = Algo;
 
 export const DEFAULT_ALGO_REF: Algo = "cz101";
+
+export function isCzAlgo(value: unknown): value is "cz101" {
+	return value === "cz101";
+}
 
 export function isWarpAlgo(value: unknown): value is WarpAlgo {
 	return typeof value === "string" && (WARP_ALGOS as string[]).includes(value);
@@ -68,14 +67,20 @@ export function toAlgoRefV1(
 	return fallback;
 }
 
+export function algoRefKey(algo: Algo): string {
+	return algo;
+}
+
+export function isAlgoRefEqual(a: Algo | null, b: Algo | null): boolean {
+	return a === b;
+}
+
 export function resolveAlgoRef(algo: Algo): {
 	waveform: WaveformId;
 	warpAlgo: Algo;
 	windowType: WindowType | null;
 	isFrontPanelCzAlgo: boolean;
 } {
-	// For cz101, waveform comes from CzLineParams (not from algo).
-	// Return "saw" as a fallback — callers should use line.cz.slotAWaveform.
 	if (algo === "cz101") {
 		return {
 			waveform: "saw",
@@ -101,12 +106,23 @@ export function resolveAlgoRef(algo: Algo): {
 	};
 }
 
+export function getAlgoDefinition(algo: Algo): AlgoDefinitionV1 | undefined {
+	return ALGO_DEFINITIONS.find((entry) => entry.id === algo);
+}
+
+export function buildDefaultAlgoControls(algo: Algo): AlgoControlValueV1[] {
+	return (getAlgoDefinition(algo)?.controls ?? []).map((control) => ({
+		id: control.id,
+		value: control.default ?? control.min ?? 0,
+	}));
+}
+
 export function getCzPresetDefaults(algo: Algo): {
 	waveform1: CzWaveform;
 	waveform2: CzWaveform;
 	windowFunction: WindowType;
 } | null {
-	const definition = ALGO_DEFINITIONS.find((entry) => entry.id === algo);
+	const definition = getAlgoDefinition(algo);
 	if (!definition) {
 		return null;
 	}
@@ -135,5 +151,58 @@ export function getCzPresetDefaults(algo: Algo): {
 		windowFunction:
 			(windowControl.options[Math.round(windowControl.default ?? 0)]
 				?.value as WindowType) ?? "off",
+	};
+}
+
+function resolveIndexedOption<T extends string>(
+	controlId: string,
+	entries: AlgoControlValueV1[] | null | undefined,
+	fallbackIndex: number,
+): T {
+	const control = CZ101_DEF.controls.find((entry) => entry.id === controlId);
+	const fallback = control?.options[Math.round(fallbackIndex)]?.value as
+		| T
+		| undefined;
+	const value = entries?.find((entry) => entry.id === controlId)?.value;
+	if (control && typeof value === "number") {
+		const option = control.options[Math.round(value)]?.value as T | undefined;
+		if (option) {
+			return option;
+		}
+	}
+	return fallback ?? (control?.options[0]?.value as T);
+}
+
+export function resolveCzControlsFromEntries(
+	entries: AlgoControlValueV1[] | null | undefined,
+): {
+	waveform1: CzWaveform;
+	waveform2: CzWaveform;
+	windowFunction: WindowType;
+} {
+	const defaults = getCzPresetDefaults("cz101") ?? {
+		waveform1: "saw" as CzWaveform,
+		waveform2: "saw" as CzWaveform,
+		windowFunction: "off" as WindowType,
+	};
+	return {
+		waveform1: resolveIndexedOption<CzWaveform>(
+			"waveform1",
+			entries,
+			WAVEFORMS.indexOf(defaults.waveform1),
+		),
+		waveform2: resolveIndexedOption<CzWaveform>(
+			"waveform2",
+			entries,
+			WAVEFORMS.indexOf(defaults.waveform2),
+		),
+		windowFunction: resolveIndexedOption<WindowType>(
+			"windowFunction",
+			entries,
+			(
+				CZ101_DEF.controls.find((control) => control.id === "windowFunction")
+					?.options ?? []
+			).findIndex((option) => option.value === defaults.windowFunction),
+		),
 	};
 }

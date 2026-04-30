@@ -5,27 +5,21 @@ import type {
 	AlgoControlRuntime,
 	LineIndex,
 } from "@/components/controls/algo/algoControlTypes";
-import ControlKnob from "@/components/controls/ControlKnob";
+import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import AlgoSectionCard from "@/components/editor/AlgoSectionCard";
 import Card from "@/components/primitives/Card";
 import { useOptionalSynthController } from "@/features/synth/SynthParamController";
 import type { EnvTab } from "@/features/synth/synthUiStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
-import {
-	CZ_WAVEFORMS,
-	CZ_WINDOWS,
-	getCzPresetDefaults,
-} from "@/lib/synth/algoRef";
+import { buildDefaultAlgoControls } from "@/lib/synth/algoRef";
 import type {
 	AlgoControlValueV1,
 	AlgoDefinitionV1,
 	BaseWaveform,
-	CzWaveform,
 	StepEnvData,
-	WindowType,
 } from "@/lib/synth/bindings/synth";
 import { ALGO_DEFINITIONS_V1 } from "@/lib/synth/bindings/synth";
-import { PARAM_META } from "@/lib/synth/paramMeta";
+
 import type { PdAlgo } from "@/lib/synth/pdAlgorithms";
 import {
 	algoUsesBaseWaveform,
@@ -61,12 +55,6 @@ interface PerLineWarpBlockProps {
 	setDcwEnv: (e: StepEnvData) => void;
 	dcaEnv: StepEnvData;
 	setDcaEnv: (e: StepEnvData) => void;
-	czSlotAWaveform: CzWaveform;
-	setCzSlotAWaveform: (v: CzWaveform) => void;
-	czSlotBWaveform: CzWaveform;
-	setCzSlotBWaveform: (v: CzWaveform) => void;
-	czWindow: WindowType;
-	setCzWindow: (v: WindowType) => void;
 	baseWaveformA: BaseWaveform;
 	setBaseWaveformA: (v: BaseWaveform) => void;
 	baseWaveformB: BaseWaveform;
@@ -84,6 +72,12 @@ type SectionTab = "algos" | "envelopes";
 
 function clamp(value: number, min: number, max: number) {
 	return Math.max(min, Math.min(max, value));
+}
+
+function formatAlgoBlendReadout(value: number) {
+	const blendB = Math.round(clamp(value, 0, 1) * 100);
+	const blendA = 100 - blendB;
+	return `A ${blendA}% | B ${blendB}%`;
 }
 
 function getEnvelopeVoiceProgress(
@@ -132,12 +126,6 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 	setDcwEnv,
 	dcaEnv,
 	setDcaEnv,
-	czSlotAWaveform,
-	setCzSlotAWaveform,
-	czSlotBWaveform,
-	setCzSlotBWaveform,
-	czWindow,
-	setCzWindow,
 	baseWaveformA,
 	setBaseWaveformA,
 	baseWaveformB,
@@ -210,30 +198,9 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 			if (nextDefinition?.defaultBaseWaveform) {
 				setBaseWaveformA(nextDefinition.defaultBaseWaveform);
 			}
-			const nextDefaults = (nextDefinition?.controls ?? [])
-				.filter((control) => (control.kind ?? "number") === "number")
-				.map((control) => ({
-					id: control.id,
-					value: control.default ?? control.min ?? 0,
-				}));
-			setAlgoControlsA(nextDefaults);
-			const defaults = getCzPresetDefaults(nextAlgo);
-			if (!defaults) {
-				return;
-			}
-
-			setCzSlotAWaveform(defaults.waveform1);
-			setCzSlotBWaveform(defaults.waveform2);
-			setCzWindow(defaults.windowFunction);
+			setAlgoControlsA(buildDefaultAlgoControls(nextAlgo));
 		},
-		[
-			setAlgo,
-			setAlgoControlsA,
-			setBaseWaveformA,
-			setCzSlotAWaveform,
-			setCzSlotBWaveform,
-			setCzWindow,
-		],
+		[setAlgo, setAlgoControlsA, setBaseWaveformA],
 	);
 
 	const handleAlgo2Change = useCallback(
@@ -244,18 +211,10 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 			if (nextDefinition?.defaultBaseWaveform) {
 				setBaseWaveformB(nextDefinition.defaultBaseWaveform);
 			}
-			const nextDefaults = (nextDefinition?.controls ?? [])
-				.filter((control) => (control.kind ?? "number") === "number")
-				.map((control) => ({
-					id: control.id,
-					value: control.default ?? control.min ?? 0,
-				}));
-			setAlgoControlsB(nextDefaults);
+			setAlgoControlsB(buildDefaultAlgoControls(nextAlgo));
 		},
 		[setAlgo2, setAlgoControlsB, setBaseWaveformB],
 	);
-	const czWaveforms = CZ_WAVEFORMS;
-	const czWindows = CZ_WINDOWS;
 
 	const algoDefinitions = ALGO_DEFINITIONS_V1 as AlgoDefinitionV1[];
 	const baseWaveEnabledA = algoUsesBaseWaveform(algo);
@@ -291,36 +250,6 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 		}
 	}
 
-	const controlBindings: Record<string, AlgoControlBinding> = {
-		waveform1: {
-			getNumber: () => czWaveforms.indexOf(czSlotAWaveform),
-			setNumber: (value: number) => {
-				const waveform = czWaveforms[Math.round(value)];
-				if (waveform) {
-					setCzSlotAWaveform(waveform);
-				}
-			},
-		},
-		waveform2: {
-			getNumber: () => czWaveforms.indexOf(czSlotBWaveform),
-			setNumber: (value: number) => {
-				const waveform = czWaveforms[Math.round(value)];
-				if (waveform) {
-					setCzSlotBWaveform(waveform);
-				}
-			},
-		},
-		windowFunction: {
-			getNumber: () => czWindows.indexOf(czWindow),
-			setNumber: (value: number) => {
-				const window = czWindows[Math.round(value)];
-				if (window) {
-					setCzWindow(window);
-				}
-			},
-		},
-	};
-
 	const getAlgoControlValue = (
 		entries: AlgoControlValueV1[],
 		id: string,
@@ -330,9 +259,8 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 		return existing ? existing.value : fallback;
 	};
 
-	const setAlgoControlValue = (
+	const upsertAlgoControlValue = (
 		entries: AlgoControlValueV1[],
-		setEntries: (value: AlgoControlValueV1[]) => void,
 		id: string,
 		value: number,
 	) => {
@@ -341,10 +269,18 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 		if (index >= 0) {
 			const next = [...entries];
 			next[index] = { ...next[index], value: nextValue };
-			setEntries(next);
-			return;
+			return next;
 		}
-		setEntries([...entries, { id, value: nextValue }]);
+		return [...entries, { id, value: nextValue }];
+	};
+
+	const setAlgoControlValue = (
+		entries: AlgoControlValueV1[],
+		setEntries: (value: AlgoControlValueV1[]) => void,
+		id: string,
+		value: number,
+	) => {
+		setEntries(upsertAlgoControlValue(entries, id, value));
 	};
 
 	const applyOptionAssignments = (
@@ -352,37 +288,87 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 		setEntries: (value: AlgoControlValueV1[]) => void,
 		option: AlgoControlOptionRuntime,
 	) => {
+		let nextEntries = entries;
 		for (const assignment of option.set) {
-			const binding = controlBindings[assignment.controlId];
-			if (binding?.setNumber) {
-				binding.setNumber(assignment.value);
-				continue;
-			}
-			setAlgoControlValue(
-				entries,
-				setEntries,
+			nextEntries = upsertAlgoControlValue(
+				nextEntries,
 				assignment.controlId,
 				assignment.value,
 			);
 		}
+		setEntries(nextEntries);
 	};
+
+	const createControlBindings = (
+		controls: AlgoControlRuntime[],
+		entries: AlgoControlValueV1[],
+		setEntries: (value: AlgoControlValueV1[]) => void,
+	): Record<string, AlgoControlBinding> =>
+		Object.fromEntries(
+			controls.map((control) => {
+				const controlKind = control.kind ?? "number";
+				if (controlKind === "select") {
+					return [
+						control.id,
+						{
+							getNumber: () =>
+								getAlgoControlValue(entries, control.id, control.default ?? 0),
+							setNumber: (value: number) =>
+								setAlgoControlValue(entries, setEntries, control.id, value),
+						} satisfies AlgoControlBinding,
+					];
+				}
+
+				if (controlKind === "toggle") {
+					return [
+						control.id,
+						{
+							getToggle: () =>
+								getAlgoControlValue(
+									entries,
+									control.id,
+									control.defaultToggle ? 1 : 0,
+								) >= 0.5,
+							setToggle: (value: boolean) =>
+								setAlgoControlValue(
+									entries,
+									setEntries,
+									control.id,
+									value ? 1 : 0,
+								),
+						} satisfies AlgoControlBinding,
+					];
+				}
+
+				return [control.id, {} satisfies AlgoControlBinding];
+			}),
+		);
+
+	const controlBindingsA = createControlBindings(
+		algoDefinitionControlsA,
+		algoControlsA,
+		setAlgoControlsA,
+	);
+
+	const controlBindingsB = createControlBindings(
+		algoDefinitionControlsB,
+		algoControlsB,
+		setAlgoControlsB,
+	);
 
 	const getActiveSelectOption = (
 		entries: AlgoControlValueV1[],
 		control: AlgoControlRuntime,
+		localBindings: Record<string, AlgoControlBinding>,
 	) => {
 		const options = control.options ?? [];
-		const binding = controlBindings[control.id];
-		if (!binding) {
-			return null;
-		}
 
 		if (options.some((option) => option.set.length > 0)) {
 			return (
 				options.find((option) =>
 					option.set.every((assignment) => {
 						const currentValue =
-							controlBindings[assignment.controlId]?.getNumber?.() ??
+							localBindings[assignment.controlId]?.getNumber?.() ??
 							getAlgoControlValue(entries, assignment.controlId, Number.NaN);
 						if (!Number.isFinite(currentValue)) {
 							return false;
@@ -391,6 +377,11 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 					}),
 				) ?? null
 			);
+		}
+
+		const binding = localBindings[control.id];
+		if (!binding) {
+			return null;
 		}
 
 		const currentIndex = binding.getNumber?.();
@@ -424,7 +415,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 							value={algo}
 							onChange={handleAlgoChange}
 							controls={algoDefinitionControlsA}
-							controlBindings={controlBindings}
+							controlBindings={controlBindingsA}
 							lineIndex={lineIndex}
 							algoParamSlotIndex={algoParamSlotIndex}
 							getAlgoControlValue={(id, fallback) =>
@@ -434,7 +425,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 								setAlgoControlValue(algoControlsA, setAlgoControlsA, id, value)
 							}
 							getActiveSelectOption={(control) =>
-								getActiveSelectOption(algoControlsA, control)
+								getActiveSelectOption(algoControlsA, control, controlBindingsA)
 							}
 							applyOptionAssignments={(option) =>
 								applyOptionAssignments(algoControlsA, setAlgoControlsA, option)
@@ -444,43 +435,18 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 					<div className="flex min-h-0 flex-col gap-4">
 						<Card
 							variant="subtle"
-							className="flex flex-col items-center justify-center grow"
+							className="flex flex-col items-center justify-center"
 						>
-							<div className="text-3xs uppercase tracking-[0.24em] text-cz-light-blue">
-								Algo Bridge
-							</div>
-							<ControlKnob
+							<SynthParamKnob
+								paramKey={lineIndex === 2 ? "algoBlendB" : "algoBlendA"}
 								label="Blend"
-								tooltip={
-									PARAM_META[lineIndex === 2 ? "algoBlendB" : "algoBlendA"]
-										?.tooltip
-								}
+								labelClassName="text-lg font-bold tracking-[0.3em] text-base-content/75"
 								value={algoBlend}
+								size={96}
 								onChange={setAlgoBlend}
-								min={0}
-								max={1}
-								step={0.01}
-								size={52}
-								defaultValue={0}
 								color="#7f9de4"
-								modulatable="algoBlend"
-								lineIndex={lineIndex}
-								valueFormatter={(value) => `${Math.round(value * 100)}%`}
+								valueFormatter={formatAlgoBlendReadout}
 							/>
-							<div className="flex w-full items-center justify-between rounded-md border border-cz-border/70 bg-black/20 px-3 py-2 font-mono text-[0.6rem] uppercase tracking-[0.22em] text-cz-cream-dim">
-								<span>A</span>
-								<span className="text-cz-gold">
-									{Math.round((1 - algoBlend) * 100)}%
-								</span>
-								<span>B</span>
-								<span
-									className={
-										algoBEnabled ? "text-cz-light-blue" : "text-cz-cream-dim/50"
-									}
-								>
-									{Math.round(algoBlend * 100)}%
-								</span>
-							</div>
 						</Card>
 
 						<PerLineParametersCard
@@ -510,7 +476,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 							onChange={handleAlgo2Change}
 							disabled={!algoBEnabled}
 							controls={algoDefinitionControlsB}
-							controlBindings={{}}
+							controlBindings={controlBindingsB}
 							lineIndex={lineIndex}
 							algoParamSlotIndex={algoParamSlotIndexB}
 							getAlgoControlValue={(id, fallback) =>
@@ -520,7 +486,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 								setAlgoControlValue(algoControlsB, setAlgoControlsB, id, value)
 							}
 							getActiveSelectOption={(control) =>
-								getActiveSelectOption(algoControlsB, control)
+								getActiveSelectOption(algoControlsB, control, controlBindingsB)
 							}
 							applyOptionAssignments={(option) =>
 								applyOptionAssignments(algoControlsB, setAlgoControlsB, option)

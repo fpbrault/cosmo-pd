@@ -507,6 +507,15 @@ impl CosmoProcessor {
     /// * `velocity`  – normalised velocity [0.0, 1.0]
     pub fn note_on(&mut self, note: u8, frequency: f32, velocity: f32) {
         let vel = if velocity <= 0.0 { 1.0 } else { velocity };
+        let vel = {
+            let curve = self.params.velocity_curve;
+            if curve.abs() < 0.001 {
+                vel
+            } else {
+                let exponent = libm::powf(2.0_f32, -curve * 2.5);
+                vel.clamp(0.0, 1.0).powf(exponent)
+            }
+        };
 
         if self.params.lfo.retrigger {
             self.lfo_phase = 0.0;
@@ -868,8 +877,6 @@ mod tests {
     fn fx_destination_route_does_not_break_processing() {
         let mut proc = CosmoProcessor::new(48_000.0);
         proc.set_mod_wheel(1.0);
-        proc.params.chorus.enabled = true;
-        proc.params.chorus.mix = 1.0;
         proc.params.mod_matrix.routes = vec![ModRoute {
             source: ModSource::ModWheel,
             destination: ModDestination::ChorusRate,

@@ -29,6 +29,31 @@ export const PARAM_META: Partial<Record<SynthParamKey, ParamMeta>> =
 		{} as Partial<Record<SynthParamKey, ParamMeta>>,
 	);
 
+const ENGINE_PARAM_DEFAULTS_BY_KEY = new Map<string, number>(
+	ENGINE_PARAM_UI_META_V1.flatMap((meta) =>
+		typeof meta.paramDefault === "number"
+			? [[meta.key, meta.paramDefault] as const]
+			: [],
+	),
+);
+
+/** Returns engine-owned numeric default for a param key, if defined. */
+export function getEngineParamDefault(key: string): number | undefined {
+	return ENGINE_PARAM_DEFAULTS_BY_KEY.get(key);
+}
+
+/**
+ * Returns engine-owned numeric default for a param key, throwing if missing.
+ * Use this where numeric params must be source-of-truth from the engine.
+ */
+export function requireEngineParamDefault(key: string): number {
+	const value = getEngineParamDefault(key);
+	if (typeof value === "number") {
+		return value;
+	}
+	throw new Error(`Missing engine numeric default for parameter: ${key}`);
+}
+
 function buildEnumTooltipMap(key: string): Partial<Record<string, string>> {
 	return ENGINE_ENUM_VALUE_TOOLTIPS_V1.filter(
 		(entry) => entry.key === key,
