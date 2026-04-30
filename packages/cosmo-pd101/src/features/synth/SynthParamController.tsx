@@ -70,7 +70,6 @@ const SYNTH_PARAM_SETTERS = {
 	polyMode: "setPolyMode",
 	velocityCurve: "setVelocityCurve",
 	pitchBendRange: "setPitchBendRange",
-	modWheelVibratoDepth: "setModWheelVibratoDepth",
 	windowType: "setWindowType",
 	portamentoEnabled: "setPortamentoEnabled",
 	portamentoMode: "setPortamentoMode",
@@ -93,11 +92,6 @@ const SYNTH_PARAM_SETTERS = {
 	modEnvDecay: "setModEnvDecay",
 	modEnvSustain: "setModEnvSustain",
 	modEnvRelease: "setModEnvRelease",
-	filterEnabled: "setFilterEnabled",
-	filterType: "setFilterType",
-	filterCutoff: "setFilterCutoff",
-	filterResonance: "setFilterResonance",
-	filterEnvAmount: "setFilterEnvAmount",
 } as const;
 
 export type SynthParamKey = keyof typeof SYNTH_PARAM_SETTERS;

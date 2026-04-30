@@ -104,26 +104,6 @@ export const DEFAULT_PRESET: SynthPresetV1 = {
 		volume: 1,
 		polyMode: "poly8",
 		legato: false,
-		chorus: {
-			enabled: false,
-			rate: 0.8,
-			depth: 1,
-			mix: 0,
-		},
-		delay: {
-			enabled: false,
-			time: 0.3,
-			feedback: 0.35,
-			mix: 0,
-		},
-		reverb: {
-			enabled: false,
-			space: 0.5,
-			predelay: 0.01,
-			distance: 0.5,
-			character: 0.5,
-			mix: 0,
-		},
 		portamento: {
 			enabled: false,
 			mode: "time",
@@ -146,15 +126,7 @@ export const DEFAULT_PRESET: SynthPresetV1 = {
 			retrigger: false,
 			offset: 0,
 		},
-		filter: {
-			enabled: false,
-			type: "lp",
-			cutoff: 5000,
-			resonance: 0,
-			envAmount: 0,
-		},
 		pitchBendRange: 2,
-		modWheelVibratoDepth: 0,
 		modMatrix: { routes: [] },
 		fxSlots: [
 			{ type: "empty" },

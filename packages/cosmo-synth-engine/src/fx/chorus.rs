@@ -63,7 +63,7 @@ impl ChorusFx {
 
 use crate::{
     fx::{FxControlKindV1, FxControlV1, FxDefinitionV1, FxPresetOptionV1, NO_FX_CONTROL_OPTIONS},
-    params::{FxSlotType, SynthParams},
+    params::{FxSlotConfig, FxSlotType, SynthParams},
 };
 
 const PRESET_OPTIONS: [FxPresetOptionV1; 3] = [
@@ -125,26 +125,37 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
 };
 
 pub fn apply_chorus_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::Chorus(c) = s {
+            Some(c)
+        } else {
+            None
+        }
+    });
+    let Some(c) = slot else {
+        return false;
+    };
+
     match preset {
         "classicWide" => {
-            params.chorus.enabled = true;
-            params.chorus.rate = 0.9;
-            params.chorus.depth = 1.2;
-            params.chorus.mix = 0.38;
+            c.enabled = true;
+            c.rate = 0.9;
+            c.depth = 1.2;
+            c.mix = 0.38;
             true
         }
         "slowShimmer" => {
-            params.chorus.enabled = true;
-            params.chorus.rate = 0.35;
-            params.chorus.depth = 2.1;
-            params.chorus.mix = 0.44;
+            c.enabled = true;
+            c.rate = 0.35;
+            c.depth = 2.1;
+            c.mix = 0.44;
             true
         }
         "ensembleThick" => {
-            params.chorus.enabled = true;
-            params.chorus.rate = 1.8;
-            params.chorus.depth = 2.6;
-            params.chorus.mix = 0.56;
+            c.enabled = true;
+            c.rate = 1.8;
+            c.depth = 2.6;
+            c.mix = 0.56;
             true
         }
         _ => false,

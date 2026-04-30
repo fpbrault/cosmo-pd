@@ -106,7 +106,7 @@ use crate::{
         FxControlKindV1, FxControlOptionV1, FxControlV1, FxDefinitionV1, FxPresetOptionV1,
         NO_FX_CONTROL_OPTIONS,
     },
-    params::{FxSlotType, SynthParams},
+    params::{FxSlotConfig, FxSlotType, SynthParams},
 };
 
 const PRESET_OPTIONS: [FxPresetOptionV1; 3] = [
@@ -203,32 +203,43 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
 };
 
 pub fn apply_delay_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::Delay(d) = s {
+            Some(d)
+        } else {
+            None
+        }
+    });
+    let Some(d) = slot else {
+        return false;
+    };
+
     match preset {
         "digitalSlap" => {
-            params.delay.enabled = true;
-            params.delay.time = 0.11;
-            params.delay.feedback = 0.22;
-            params.delay.mix = 0.27;
-            params.delay.tape_mode = false;
-            params.delay.warmth = 0.2;
+            d.enabled = true;
+            d.time = 0.11;
+            d.feedback = 0.22;
+            d.mix = 0.27;
+            d.tape_mode = false;
+            d.warmth = 0.2;
             true
         }
         "tapeEcho" => {
-            params.delay.enabled = true;
-            params.delay.time = 0.34;
-            params.delay.feedback = 0.46;
-            params.delay.mix = 0.35;
-            params.delay.tape_mode = true;
-            params.delay.warmth = 0.72;
+            d.enabled = true;
+            d.time = 0.34;
+            d.feedback = 0.46;
+            d.mix = 0.35;
+            d.tape_mode = true;
+            d.warmth = 0.72;
             true
         }
         "dubFeedback" => {
-            params.delay.enabled = true;
-            params.delay.time = 0.52;
-            params.delay.feedback = 0.68;
-            params.delay.mix = 0.4;
-            params.delay.tape_mode = true;
-            params.delay.warmth = 0.55;
+            d.enabled = true;
+            d.time = 0.52;
+            d.feedback = 0.68;
+            d.mix = 0.4;
+            d.tape_mode = true;
+            d.warmth = 0.55;
             true
         }
         _ => false,

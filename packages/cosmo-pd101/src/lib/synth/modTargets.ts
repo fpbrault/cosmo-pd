@@ -22,18 +22,6 @@ export type ModTargetKey =
 	| "line.algoBlend"
 	| "env.stepLevel"
 	| "env.stepRate"
-	| "chorus.rate"
-	| "chorus.depth"
-	| "chorus.mix"
-	| "delay.time"
-	| "delay.feedback"
-	| "delay.warmth"
-	| "delay.mix"
-	| "reverb.space"
-	| "reverb.predelay"
-	| "reverb.distance"
-	| "reverb.character"
-	| "reverb.mix"
 	| "phaser.rate"
 	| "phaser.depth"
 	| "phaser.feedback"
@@ -84,9 +72,6 @@ const CORE_TARGETS: ModTargetMeta[] = [
 	{ id: "line2AlgoParam6", label: "L2 Param 6", group: "Line 2" },
 	{ id: "line2AlgoParam7", label: "L2 Param 7", group: "Line 2" },
 	{ id: "line2AlgoParam8", label: "L2 Param 8", group: "Line 2" },
-	{ id: "filterCutoff", label: "Filter Cutoff", group: "FX" },
-	{ id: "filterResonance", label: "Filter Resonance", group: "FX" },
-	{ id: "filterEnvAmount", label: "Filter Env", group: "FX" },
 	{ id: "lfo1Rate", label: "LFO 1 Rate", group: "Modulation" },
 	{ id: "lfo1Depth", label: "LFO 1 Depth", group: "Modulation" },
 	{ id: "lfo1Symmetry", label: "LFO 1 Symmetry", group: "Modulation" },
@@ -234,30 +219,6 @@ export function resolveTargetFromMetadata(
 			}
 			return toEnvDestination(lineIndex, envKind, stepIndex, "rate");
 		}
-		case "chorus.rate":
-			return "chorusRate";
-		case "chorus.depth":
-			return "chorusDepth";
-		case "chorus.mix":
-			return "chorusMix";
-		case "delay.time":
-			return "delayTime";
-		case "delay.feedback":
-			return "delayFeedback";
-		case "delay.warmth":
-			return "delayWarmth";
-		case "delay.mix":
-			return "delayMix";
-		case "reverb.space":
-			return "reverbSpace";
-		case "reverb.predelay":
-			return "reverbPredelay";
-		case "reverb.distance":
-			return "reverbDistance";
-		case "reverb.character":
-			return "reverbCharacter";
-		case "reverb.mix":
-			return "reverbMix";
 		case "phaser.rate":
 			return "phaserRate";
 		case "phaser.depth":

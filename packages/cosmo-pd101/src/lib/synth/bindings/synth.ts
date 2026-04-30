@@ -91,11 +91,6 @@ export type PolyMode = "poly8" | "mono"
 export type LfoWaveform = "sine" | "triangle" | "square" | "saw" | "invertedSaw" | "random"
 
 /**
- * Filter type
- */
-export type FilterType = "lp" | "hp" | "bp"
-
-/**
  * Portamento mode
  */
 export type PortamentoMode = "rate" | "time"
@@ -259,11 +254,6 @@ retrigger: boolean;
 offset?: number }
 
 /**
- * Filter parameters
- */
-export type FilterParams = { enabled: boolean; type: FilterType; cutoff: number; resonance: number; envAmount: number }
-
-/**
  * One algorithm-specific control value persisted on a line.
  */
 export type AlgoControlValueV1 = { id: string; value: number }
@@ -330,7 +320,7 @@ export type ModSource = "lfo1" |
 /**
  * Modulation destination selector for modulation matrix routes.
  */
-export type ModDestination = "volume" | "pitch" | "line1DcwBase" | "line1DcaBase" | "line1AlgoBlend" | "line1Detune" | "line1Octave" | "line1AlgoParam1" | "line1AlgoParam2" | "line1AlgoParam3" | "line1AlgoParam4" | "line1AlgoParam5" | "line1AlgoParam6" | "line1AlgoParam7" | "line1AlgoParam8" | "line2DcwBase" | "line2DcaBase" | "line2AlgoBlend" | "line2Detune" | "line2Octave" | "line2AlgoParam1" | "line2AlgoParam2" | "line2AlgoParam3" | "line2AlgoParam4" | "line2AlgoParam5" | "line2AlgoParam6" | "line2AlgoParam7" | "line2AlgoParam8" | "filterCutoff" | "filterResonance" | "filterEnvAmount" | "chorusMix" | "delayMix" | "reverbMix" | "vibratoDepth" | "vibratoRate" | "intPmRatio" | "line1DcoEnvStep1Level" | "line1DcoEnvStep1Rate" | "line1DcoEnvStep2Level" | "line1DcoEnvStep2Rate" | "line1DcoEnvStep3Level" | "line1DcoEnvStep3Rate" | "line1DcoEnvStep4Level" | "line1DcoEnvStep4Rate" | "line1DcoEnvStep5Level" | "line1DcoEnvStep5Rate" | "line1DcoEnvStep6Level" | "line1DcoEnvStep6Rate" | "line1DcoEnvStep7Level" | "line1DcoEnvStep7Rate" | "line1DcoEnvStep8Level" | "line1DcoEnvStep8Rate" | "line1DcwEnvStep1Level" | "line1DcwEnvStep1Rate" | "line1DcwEnvStep2Level" | "line1DcwEnvStep2Rate" | "line1DcwEnvStep3Level" | "line1DcwEnvStep3Rate" | "line1DcwEnvStep4Level" | "line1DcwEnvStep4Rate" | "line1DcwEnvStep5Level" | "line1DcwEnvStep5Rate" | "line1DcwEnvStep6Level" | "line1DcwEnvStep6Rate" | "line1DcwEnvStep7Level" | "line1DcwEnvStep7Rate" | "line1DcwEnvStep8Level" | "line1DcwEnvStep8Rate" | "line1DcaEnvStep1Level" | "line1DcaEnvStep1Rate" | "line1DcaEnvStep2Level" | "line1DcaEnvStep2Rate" | "line1DcaEnvStep3Level" | "line1DcaEnvStep3Rate" | "line1DcaEnvStep4Level" | "line1DcaEnvStep4Rate" | "line1DcaEnvStep5Level" | "line1DcaEnvStep5Rate" | "line1DcaEnvStep6Level" | "line1DcaEnvStep6Rate" | "line1DcaEnvStep7Level" | "line1DcaEnvStep7Rate" | "line1DcaEnvStep8Level" | "line1DcaEnvStep8Rate" | "line2DcoEnvStep1Level" | "line2DcoEnvStep1Rate" | "line2DcoEnvStep2Level" | "line2DcoEnvStep2Rate" | "line2DcoEnvStep3Level" | "line2DcoEnvStep3Rate" | "line2DcoEnvStep4Level" | "line2DcoEnvStep4Rate" | "line2DcoEnvStep5Level" | "line2DcoEnvStep5Rate" | "line2DcoEnvStep6Level" | "line2DcoEnvStep6Rate" | "line2DcoEnvStep7Level" | "line2DcoEnvStep7Rate" | "line2DcoEnvStep8Level" | "line2DcoEnvStep8Rate" | "line2DcwEnvStep1Level" | "line2DcwEnvStep1Rate" | "line2DcwEnvStep2Level" | "line2DcwEnvStep2Rate" | "line2DcwEnvStep3Level" | "line2DcwEnvStep3Rate" | "line2DcwEnvStep4Level" | "line2DcwEnvStep4Rate" | "line2DcwEnvStep5Level" | "line2DcwEnvStep5Rate" | "line2DcwEnvStep6Level" | "line2DcwEnvStep6Rate" | "line2DcwEnvStep7Level" | "line2DcwEnvStep7Rate" | "line2DcwEnvStep8Level" | "line2DcwEnvStep8Rate" | "line2DcaEnvStep1Level" | "line2DcaEnvStep1Rate" | "line2DcaEnvStep2Level" | "line2DcaEnvStep2Rate" | "line2DcaEnvStep3Level" | "line2DcaEnvStep3Rate" | "line2DcaEnvStep4Level" | "line2DcaEnvStep4Rate" | "line2DcaEnvStep5Level" | "line2DcaEnvStep5Rate" | "line2DcaEnvStep6Level" | "line2DcaEnvStep6Rate" | "line2DcaEnvStep7Level" | "line2DcaEnvStep7Rate" | "line2DcaEnvStep8Level" | "line2DcaEnvStep8Rate" | "chorusRate" | "chorusDepth" | "delayTime" | "delayFeedback" | "delayWarmth" | "reverbSpace" | "reverbPredelay" | "reverbDistance" | "reverbCharacter" | "phaserRate" | "phaserDepth" | "phaserFeedback" | "phaserMix" | "lfo1Rate" | "lfo1Depth" | "lfo1Symmetry" | "lfo1Offset" | "lfo2Rate" | "lfo2Depth" | "lfo2Symmetry" | "lfo2Offset" | "randomRate" | "vibratoDelay" | "compressorThreshold" | "compressorRatio" | "compressorMakeup" | "compressorMix" | "grainDelayTime" | "grainDelayFeedback" | "grainDelayScatter" | "grainDelayDensity" | "grainDelayMix" | "bitcrusherBits" | "bitcrusherRateReduction" | "bitcrusherMix" | "shimmerVerbShimmer" | "shimmerVerbSpace" | "shimmerVerbMix" | "distortionDrive" | "distortionTone" | "distortionMix" | "junoChorusMix" | "ringModCarrierHz" | "ringModMix" | "tremoloRate" | "tremoloDepth" | "tremoloMix" | "wavefolderDrive" | "wavefolderFolds" | "wavefolderMix" | "loFiDegrade" | "loFiWowDepth" | "loFiWowRate" | "loFiFlutterDepth" | "loFiFlutterRate" | "loFiTone" | "loFiMix" | "eqGain80" | "eqGain240" | "eqGain750" | "eqGain2200" | "eqGain8000"
+export type ModDestination = "volume" | "pitch" | "line1DcwBase" | "line1DcaBase" | "line1AlgoBlend" | "line1Detune" | "line1Octave" | "line1AlgoParam1" | "line1AlgoParam2" | "line1AlgoParam3" | "line1AlgoParam4" | "line1AlgoParam5" | "line1AlgoParam6" | "line1AlgoParam7" | "line1AlgoParam8" | "line2DcwBase" | "line2DcaBase" | "line2AlgoBlend" | "line2Detune" | "line2Octave" | "line2AlgoParam1" | "line2AlgoParam2" | "line2AlgoParam3" | "line2AlgoParam4" | "line2AlgoParam5" | "line2AlgoParam6" | "line2AlgoParam7" | "line2AlgoParam8" | "vibratoDepth" | "vibratoRate" | "intPmRatio" | "line1DcoEnvStep1Level" | "line1DcoEnvStep1Rate" | "line1DcoEnvStep2Level" | "line1DcoEnvStep2Rate" | "line1DcoEnvStep3Level" | "line1DcoEnvStep3Rate" | "line1DcoEnvStep4Level" | "line1DcoEnvStep4Rate" | "line1DcoEnvStep5Level" | "line1DcoEnvStep5Rate" | "line1DcoEnvStep6Level" | "line1DcoEnvStep6Rate" | "line1DcoEnvStep7Level" | "line1DcoEnvStep7Rate" | "line1DcoEnvStep8Level" | "line1DcoEnvStep8Rate" | "line1DcwEnvStep1Level" | "line1DcwEnvStep1Rate" | "line1DcwEnvStep2Level" | "line1DcwEnvStep2Rate" | "line1DcwEnvStep3Level" | "line1DcwEnvStep3Rate" | "line1DcwEnvStep4Level" | "line1DcwEnvStep4Rate" | "line1DcwEnvStep5Level" | "line1DcwEnvStep5Rate" | "line1DcwEnvStep6Level" | "line1DcwEnvStep6Rate" | "line1DcwEnvStep7Level" | "line1DcwEnvStep7Rate" | "line1DcwEnvStep8Level" | "line1DcwEnvStep8Rate" | "line1DcaEnvStep1Level" | "line1DcaEnvStep1Rate" | "line1DcaEnvStep2Level" | "line1DcaEnvStep2Rate" | "line1DcaEnvStep3Level" | "line1DcaEnvStep3Rate" | "line1DcaEnvStep4Level" | "line1DcaEnvStep4Rate" | "line1DcaEnvStep5Level" | "line1DcaEnvStep5Rate" | "line1DcaEnvStep6Level" | "line1DcaEnvStep6Rate" | "line1DcaEnvStep7Level" | "line1DcaEnvStep7Rate" | "line1DcaEnvStep8Level" | "line1DcaEnvStep8Rate" | "line2DcoEnvStep1Level" | "line2DcoEnvStep1Rate" | "line2DcoEnvStep2Level" | "line2DcoEnvStep2Rate" | "line2DcoEnvStep3Level" | "line2DcoEnvStep3Rate" | "line2DcoEnvStep4Level" | "line2DcoEnvStep4Rate" | "line2DcoEnvStep5Level" | "line2DcoEnvStep5Rate" | "line2DcoEnvStep6Level" | "line2DcoEnvStep6Rate" | "line2DcoEnvStep7Level" | "line2DcoEnvStep7Rate" | "line2DcoEnvStep8Level" | "line2DcoEnvStep8Rate" | "line2DcwEnvStep1Level" | "line2DcwEnvStep1Rate" | "line2DcwEnvStep2Level" | "line2DcwEnvStep2Rate" | "line2DcwEnvStep3Level" | "line2DcwEnvStep3Rate" | "line2DcwEnvStep4Level" | "line2DcwEnvStep4Rate" | "line2DcwEnvStep5Level" | "line2DcwEnvStep5Rate" | "line2DcwEnvStep6Level" | "line2DcwEnvStep6Rate" | "line2DcwEnvStep7Level" | "line2DcwEnvStep7Rate" | "line2DcwEnvStep8Level" | "line2DcwEnvStep8Rate" | "line2DcaEnvStep1Level" | "line2DcaEnvStep1Rate" | "line2DcaEnvStep2Level" | "line2DcaEnvStep2Rate" | "line2DcaEnvStep3Level" | "line2DcaEnvStep3Rate" | "line2DcaEnvStep4Level" | "line2DcaEnvStep4Rate" | "line2DcaEnvStep5Level" | "line2DcaEnvStep5Rate" | "line2DcaEnvStep6Level" | "line2DcaEnvStep6Rate" | "line2DcaEnvStep7Level" | "line2DcaEnvStep7Rate" | "line2DcaEnvStep8Level" | "line2DcaEnvStep8Rate" | "phaserRate" | "phaserDepth" | "phaserFeedback" | "phaserMix" | "lfo1Rate" | "lfo1Depth" | "lfo1Symmetry" | "lfo1Offset" | "lfo2Rate" | "lfo2Depth" | "lfo2Symmetry" | "lfo2Offset" | "randomRate" | "vibratoDelay" | "compressorThreshold" | "compressorRatio" | "compressorMakeup" | "compressorMix" | "grainDelayTime" | "grainDelayFeedback" | "grainDelayScatter" | "grainDelayDensity" | "grainDelayMix" | "bitcrusherBits" | "bitcrusherRateReduction" | "bitcrusherMix" | "shimmerVerbShimmer" | "shimmerVerbSpace" | "shimmerVerbMix" | "distortionDrive" | "distortionTone" | "distortionMix" | "junoChorusMix" | "ringModCarrierHz" | "ringModMix" | "tremoloRate" | "tremoloDepth" | "tremoloMix" | "wavefolderDrive" | "wavefolderFolds" | "wavefolderMix" | "loFiDegrade" | "loFiWowDepth" | "loFiWowRate" | "loFiFlutterDepth" | "loFiFlutterRate" | "loFiTone" | "loFiMix" | "eqGain80" | "eqGain240" | "eqGain750" | "eqGain2200" | "eqGain8000"
 
 /**
  * A single modulation route assignment.
@@ -416,16 +406,11 @@ export type FxSlotConfig = { type: "empty" } | { type: "chorus"; params: ChorusP
 /**
  * Top-level synth parameters (mirrors this.params in the JS)
  */
-export type SynthParams = { lineSelect: LineSelect; modMode: ModMode; ringGain?: number; octave: number; line1: LineParams; line2: LineParams; frequency: number; volume: number; polyMode: PolyMode; legato: boolean; chorus?: ChorusParams; delay?: DelayParams; reverb?: ReverbParams; phaser?: PhaserParams; portamento: PortamentoParams; lfo: LfoParams; lfo2?: LfoParams; filter: FilterParams; 
+export type SynthParams = { lineSelect: LineSelect; modMode: ModMode; ringGain?: number; octave: number; line1: LineParams; line2: LineParams; frequency: number; volume: number; polyMode: PolyMode; legato: boolean; portamento: PortamentoParams; lfo: LfoParams; lfo2?: LfoParams; 
 /**
  * Pitch bend wheel range in semitones (1-24). Default 2.
  */
 pitchBendRange?: number; 
-/**
- * How much the mod wheel adds to vibrato depth (0-99 UI units).
- * When mod wheel is at max (1.0), vibrato depth is boosted by this amount.
- */
-modWheelVibratoDepth?: number; 
 /**
  * Modulation matrix routes for source-to-destination parameter modulation.
  */
@@ -3339,51 +3324,6 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "paramDefault": null
   },
   {
-    "key": "intPmRatio",
-    "tooltip": "Sets modulator-to-carrier frequency ratio.",
-    "readoutLabel": "PM Ratio",
-    "readoutFormat": {
-      "kind": "decimal"
-    },
-    "paramDefault": null
-  },
-  {
-    "key": "pmPre",
-    "tooltip": "Apply phase modulation before warp shaping.",
-    "readoutLabel": "PM Mode",
-    "readoutFormat": {
-      "kind": "onOff"
-    },
-    "paramDefault": null
-  },
-  {
-    "key": "vibratoRate",
-    "tooltip": "Sets vibrato speed.",
-    "readoutLabel": "Vibrato Rate",
-    "readoutFormat": {
-      "kind": "integer"
-    },
-    "paramDefault": null
-  },
-  {
-    "key": "vibratoDepth",
-    "tooltip": "Sets vibrato pitch modulation depth.",
-    "readoutLabel": "Vibrato Depth",
-    "readoutFormat": {
-      "kind": "integer"
-    },
-    "paramDefault": null
-  },
-  {
-    "key": "vibratoDelay",
-    "tooltip": "Delays vibrato onset after note start.",
-    "readoutLabel": "Vibrato Delay",
-    "readoutFormat": {
-      "kind": "milliseconds"
-    },
-    "paramDefault": null
-  },
-  {
     "key": "lfoWaveform",
     "tooltip": "Selects LFO 1 waveform shape.",
     "readoutLabel": "LFO Wave",
@@ -3492,159 +3432,6 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "paramDefault": 0.2
   },
   {
-    "key": "filterType",
-    "tooltip": "Selects the filter response shape.",
-    "readoutLabel": "Filter Type",
-    "readoutFormat": {
-      "kind": "uppercase"
-    },
-    "paramDefault": null
-  },
-  {
-    "key": "filterCutoff",
-    "tooltip": "Sets the filter cutoff frequency.",
-    "readoutLabel": "Filter Cutoff",
-    "readoutFormat": {
-      "kind": "hertz"
-    },
-    "paramDefault": 5000.0
-  },
-  {
-    "key": "filterResonance",
-    "tooltip": "Boosts frequencies around the cutoff point.",
-    "readoutLabel": "Filter Resonance",
-    "readoutFormat": {
-      "kind": "decimal"
-    },
-    "paramDefault": 0.0
-  },
-  {
-    "key": "filterEnvAmount",
-    "tooltip": "Applies envelope modulation amount to the cutoff.",
-    "readoutLabel": "Filter Env",
-    "readoutFormat": {
-      "kind": "decimal"
-    },
-    "paramDefault": 0.0
-  },
-  {
-    "key": "chorusRate",
-    "tooltip": "Sets chorus modulation speed.",
-    "readoutLabel": "Chorus Rate",
-    "readoutFormat": {
-      "kind": "decimal"
-    },
-    "paramDefault": null
-  },
-  {
-    "key": "chorusDepth",
-    "tooltip": "Sets intensity of chorus pitch modulation.",
-    "readoutLabel": "Chorus Depth",
-    "readoutFormat": {
-      "kind": "decimal"
-    },
-    "paramDefault": null
-  },
-  {
-    "key": "chorusMix",
-    "tooltip": "Blends dry signal with chorus effect.",
-    "readoutLabel": "Chorus Mix",
-    "readoutFormat": {
-      "kind": "decimal"
-    },
-    "paramDefault": null
-  },
-  {
-    "key": "delayTime",
-    "tooltip": "Sets the delay repeat interval.",
-    "readoutLabel": "Delay Time",
-    "readoutFormat": {
-      "kind": "seconds2"
-    },
-    "paramDefault": null
-  },
-  {
-    "key": "delayFeedback",
-    "tooltip": "Feeds delayed signal back for additional repeats.",
-    "readoutLabel": "Delay Feedback",
-    "readoutFormat": {
-      "kind": "decimal"
-    },
-    "paramDefault": null
-  },
-  {
-    "key": "delayWarmth",
-    "tooltip": "Adds tape-style saturation and high-frequency rolloff.",
-    "readoutLabel": "Delay Warmth",
-    "readoutFormat": {
-      "kind": "decimal"
-    },
-    "paramDefault": null
-  },
-  {
-    "key": "delayMix",
-    "tooltip": "Blends dry signal with delayed signal.",
-    "readoutLabel": "Delay Mix",
-    "readoutFormat": {
-      "kind": "decimal"
-    },
-    "paramDefault": null
-  },
-  {
-    "key": "delayTapeMode",
-    "tooltip": "Toggle tape echo coloration for delay repeats.",
-    "readoutLabel": "Tape Mode",
-    "readoutFormat": {
-      "kind": "onOff"
-    },
-    "paramDefault": null
-  },
-  {
-    "key": "reverbSpace",
-    "tooltip": "Sets the virtual room size for reverb reflections.",
-    "readoutLabel": "Reverb Space",
-    "readoutFormat": {
-      "kind": "decimal"
-    },
-    "paramDefault": null
-  },
-  {
-    "key": "reverbPredelay",
-    "tooltip": "Adds delay before the reverb tail starts.",
-    "readoutLabel": "Reverb Pre-Delay",
-    "readoutFormat": {
-      "kind": "milliseconds"
-    },
-    "paramDefault": null
-  },
-  {
-    "key": "reverbDistance",
-    "tooltip": "Moves source position deeper into the reverb space.",
-    "readoutLabel": "Reverb Distance",
-    "readoutFormat": {
-      "kind": "decimal"
-    },
-    "paramDefault": null
-  },
-  {
-    "key": "reverbCharacter",
-    "tooltip": "Shapes reverb tone from dark to bright.",
-    "readoutLabel": "Reverb Character",
-    "readoutFormat": {
-      "kind": "decimal"
-    },
-    "paramDefault": null
-  },
-  {
-    "key": "reverbMix",
-    "tooltip": "Blends dry signal with reverb output.",
-    "readoutLabel": "Reverb Mix",
-    "readoutFormat": {
-      "kind": "decimal"
-    },
-    "paramDefault": null
-  },
-  {
     "key": "portamentoMode",
     "tooltip": "Chooses whether glide uses rate or fixed time behavior.",
     "readoutLabel": "Portamento Mode",
@@ -3684,15 +3471,6 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "key": "velocityCurve",
     "tooltip": "Shapes how keyboard velocity maps to output level.",
     "readoutLabel": "Vel Curve",
-    "readoutFormat": {
-      "kind": "decimal"
-    },
-    "paramDefault": 0.0
-  },
-  {
-    "key": "modWheelVibratoDepth",
-    "tooltip": "Sets how much mod wheel movement affects vibrato depth.",
-    "readoutLabel": "Mod to Vibrato",
     "readoutFormat": {
       "kind": "decimal"
     },
@@ -3741,21 +3519,6 @@ export const ENGINE_ENUM_VALUE_TOOLTIPS_V1: EngineEnumValueTooltipV1[] = [
     "key": "modMode",
     "value": "noise",
     "tooltip": "Mix noise source into modulation path."
-  },
-  {
-    "key": "filterType",
-    "value": "lp",
-    "tooltip": "Low-pass mode: attenuates frequencies above cutoff."
-  },
-  {
-    "key": "filterType",
-    "value": "hp",
-    "tooltip": "High-pass mode: attenuates frequencies below cutoff."
-  },
-  {
-    "key": "filterType",
-    "value": "bp",
-    "tooltip": "Band-pass mode: emphasizes a narrow band around cutoff."
   },
   {
     "key": "portamentoMode",

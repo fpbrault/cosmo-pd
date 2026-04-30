@@ -10,7 +10,6 @@ import type {
 	AlgoDefinitionV1,
 	BaseWaveform,
 	CzWaveform,
-	FilterType,
 	FxDefinitionV1,
 	FxSlotConfig,
 	FxSlotType,
@@ -202,14 +201,7 @@ export type SynthState = {
 	modEnvSustain: number;
 	modEnvRelease: number;
 
-	filterEnabled: boolean;
-	filterType: FilterType;
-	filterCutoff: number;
-	filterResonance: number;
-	filterEnvAmount: number;
-
 	pitchBendRange: number;
-	modWheelVibratoDepth: number;
 	octave: number;
 	modMatrix: ModMatrix;
 	/** Unified per-slot FX configuration — all 6 slots. */
@@ -296,14 +288,7 @@ type SynthActions = {
 	setModEnvSustain: (v: number) => void;
 	setModEnvRelease: (v: number) => void;
 
-	setFilterEnabled: (v: boolean) => void;
-	setFilterType: (v: FilterType) => void;
-	setFilterCutoff: (v: number) => void;
-	setFilterResonance: (v: number) => void;
-	setFilterEnvAmount: (v: number) => void;
-
 	setPitchBendRange: (v: number) => void;
-	setModWheelVibratoDepth: (v: number) => void;
 	setOctave: (v: number) => void;
 	setModMatrix: (v: ModMatrix) => void;
 	/** Replace the effect type in a slot (resets params to enabled defaults). */
@@ -403,14 +388,7 @@ const DEFAULT_STATE: SynthState = {
 	modEnvSustain: getEngineParamDefault("modEnvSustain", 0.5),
 	modEnvRelease: getEngineParamDefault("modEnvRelease", 0.2),
 
-	filterEnabled: false,
-	filterType: "lp",
-	filterCutoff: getEngineParamDefault("filterCutoff", 5000),
-	filterResonance: getEngineParamDefault("filterResonance", 0),
-	filterEnvAmount: getEngineParamDefault("filterEnvAmount", 0),
-
 	pitchBendRange: 2,
-	modWheelVibratoDepth: 0,
 	octave: 0,
 	modMatrix: { routes: [] },
 	fxSlots: DEFAULT_FX_SLOTS,
@@ -499,14 +477,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setModEnvSustain: (v) => set({ modEnvSustain: v }),
 	setModEnvRelease: (v) => set({ modEnvRelease: v }),
 
-	setFilterEnabled: (v) => set({ filterEnabled: v }),
-	setFilterType: (v) => set({ filterType: v }),
-	setFilterCutoff: (v) => set({ filterCutoff: v }),
-	setFilterResonance: (v) => set({ filterResonance: v }),
-	setFilterEnvAmount: (v) => set({ filterEnvAmount: v }),
-
 	setPitchBendRange: (v) => set({ pitchBendRange: v }),
-	setModWheelVibratoDepth: (v) => set({ modWheelVibratoDepth: v }),
 	setOctave: (v) => set({ octave: v }),
 	setModMatrix: (v) => set({ modMatrix: v }),
 	setFxSlotType: (slot, type) => {
@@ -671,15 +642,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				sustain: s.modEnvSustain,
 				release: s.modEnvRelease,
 			},
-			filter: {
-				enabled: s.filterEnabled,
-				type: s.filterType,
-				cutoff: s.filterCutoff,
-				resonance: s.filterResonance,
-				envAmount: s.filterEnvAmount,
-			},
 			pitchBendRange: s.pitchBendRange,
-			modWheelVibratoDepth: s.modWheelVibratoDepth,
 			modMatrix: s.modMatrix,
 			fxSlots: s.fxSlots,
 		} satisfies SynthPresetV1["params"];
@@ -847,26 +810,11 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				p.modEnv?.release,
 				getEngineParamDefault("modEnvRelease", 0.2),
 			),
-			filterEnabled: p.filter?.enabled ?? false,
-			filterType: (p.filter?.type as FilterType) ?? "lp",
-			filterCutoff: safe(
-				p.filter?.cutoff,
-				getEngineParamDefault("filterCutoff", 5000),
-			),
-			filterResonance: safe(
-				p.filter?.resonance,
-				getEngineParamDefault("filterResonance", 0),
-			),
-			filterEnvAmount: safe(
-				p.filter?.envAmount,
-				getEngineParamDefault("filterEnvAmount", 0),
-			),
 			pitchBendRange: safe(p.pitchBendRange, 2),
 			velocityCurve: safe(
 				p.velocityCurve,
 				getEngineParamDefault("velocityCurve", 0),
 			),
-			modWheelVibratoDepth: safe(p.modWheelVibratoDepth, 0),
 			octave: safe(p.octave, 0),
 			modMatrix:
 				p.modMatrix && typeof p.modMatrix === "object"

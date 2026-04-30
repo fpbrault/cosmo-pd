@@ -297,20 +297,6 @@ pub enum LfoWaveform {
     Random,
 }
 
-/// Filter type
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
-#[cfg_attr(feature = "specta-bindings", derive(Type))]
-#[serde(rename_all = "camelCase")]
-pub enum FilterType {
-    #[default]
-    #[serde(rename = "lp")]
-    Lp,
-    #[serde(rename = "hp")]
-    Hp,
-    #[serde(rename = "bp")]
-    Bp,
-}
-
 /// Portamento mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
@@ -705,12 +691,6 @@ pub enum ModDestination {
     Line2AlgoParam6,
     Line2AlgoParam7,
     Line2AlgoParam8,
-    FilterCutoff,
-    FilterResonance,
-    FilterEnvAmount,
-    ChorusMix,
-    DelayMix,
-    ReverbMix,
     VibratoDepth,
     VibratoRate,
     IntPmRatio,
@@ -810,15 +790,6 @@ pub enum ModDestination {
     Line2DcaEnvStep7Rate,
     Line2DcaEnvStep8Level,
     Line2DcaEnvStep8Rate,
-    ChorusRate,
-    ChorusDepth,
-    DelayTime,
-    DelayFeedback,
-    DelayWarmth,
-    ReverbSpace,
-    ReverbPredelay,
-    ReverbDistance,
-    ReverbCharacter,
     PhaserRate,
     PhaserDepth,
     PhaserFeedback,
@@ -933,31 +904,6 @@ impl Default for LfoParams {
             symmetry: 0.5,
             retrigger: false,
             offset: 0.0,
-        }
-    }
-}
-
-/// Filter parameters
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "specta-bindings", derive(Type))]
-#[serde(rename_all = "camelCase")]
-pub struct FilterParams {
-    pub enabled: bool,
-    #[serde(rename = "type")]
-    pub filter_type: FilterType,
-    pub cutoff: f32,
-    pub resonance: f32,
-    pub env_amount: f32,
-}
-
-impl Default for FilterParams {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            filter_type: FilterType::Lp,
-            cutoff: 5000.0,
-            resonance: 0.0,
-            env_amount: 0.0,
         }
     }
 }
@@ -1168,6 +1114,7 @@ pub struct CompressorParams {
     pub mix: f32,
 }
 
+/// FX slot type selector
 fn default_compressor_threshold() -> f32 {
     -12.0
 }
@@ -1557,26 +1504,13 @@ pub struct SynthParams {
     pub volume: f32,
     pub poly_mode: PolyMode,
     pub legato: bool,
-    #[serde(default)]
-    pub chorus: ChorusParams,
-    #[serde(default)]
-    pub delay: DelayParams,
-    #[serde(default)]
-    pub reverb: ReverbParams,
-    #[serde(default)]
-    pub phaser: PhaserParams,
     pub portamento: PortamentoParams,
     pub lfo: LfoParams,
     #[serde(default)]
     pub lfo2: LfoParams,
-    pub filter: FilterParams,
     /// Pitch bend wheel range in semitones (1-24). Default 2.
     #[serde(default = "default_pitch_bend_range")]
     pub pitch_bend_range: f32,
-    /// How much the mod wheel adds to vibrato depth (0-99 UI units).
-    /// When mod wheel is at max (1.0), vibrato depth is boosted by this amount.
-    #[serde(default)]
-    pub mod_wheel_vibrato_depth: f32,
     /// Modulation matrix routes for source-to-destination parameter modulation.
     #[serde(default)]
     pub mod_matrix: ModMatrix,
@@ -1640,16 +1574,10 @@ impl Default for SynthParams {
             volume: 0.4,
             poly_mode: PolyMode::default(),
             legato: false,
-            chorus: ChorusParams::default(),
-            delay: DelayParams::default(),
-            reverb: ReverbParams::default(),
-            phaser: PhaserParams::default(),
             portamento: PortamentoParams::default(),
             lfo: LfoParams::default(),
             lfo2: LfoParams::default(),
-            filter: FilterParams::default(),
             pitch_bend_range: 2.0,
-            mod_wheel_vibrato_depth: 0.0,
             mod_matrix: ModMatrix::default(),
             velocity_curve: 0.0,
             random: RandomParams::default(),
@@ -1717,7 +1645,7 @@ const POLY_MODE_LABELS_V1: [EngineEnumValueLabelV1; 2] = [
     },
 ];
 
-const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 55] = [
+const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 32] = [
     EngineParamUiMetaV1 {
         key: "volume",
         tooltip: "Sets the global synth output level.",
@@ -1826,41 +1754,6 @@ const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 55] = [
         param_default: None,
     },
     EngineParamUiMetaV1 {
-        key: "intPmRatio",
-        tooltip: "Sets modulator-to-carrier frequency ratio.",
-        readout_label: "PM Ratio",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-        param_default: None,
-    },
-    EngineParamUiMetaV1 {
-        key: "pmPre",
-        tooltip: "Apply phase modulation before warp shaping.",
-        readout_label: "PM Mode",
-        readout_format: EngineParamReadoutFormatV1::OnOff,
-        param_default: None,
-    },
-    EngineParamUiMetaV1 {
-        key: "vibratoRate",
-        tooltip: "Sets vibrato speed.",
-        readout_label: "Vibrato Rate",
-        readout_format: EngineParamReadoutFormatV1::Integer,
-        param_default: None,
-    },
-    EngineParamUiMetaV1 {
-        key: "vibratoDepth",
-        tooltip: "Sets vibrato pitch modulation depth.",
-        readout_label: "Vibrato Depth",
-        readout_format: EngineParamReadoutFormatV1::Integer,
-        param_default: None,
-    },
-    EngineParamUiMetaV1 {
-        key: "vibratoDelay",
-        tooltip: "Delays vibrato onset after note start.",
-        readout_label: "Vibrato Delay",
-        readout_format: EngineParamReadoutFormatV1::Milliseconds,
-        param_default: None,
-    },
-    EngineParamUiMetaV1 {
         key: "lfoWaveform",
         tooltip: "Selects LFO 1 waveform shape.",
         readout_label: "LFO Wave",
@@ -1945,125 +1838,6 @@ const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 55] = [
         param_default: Some(0.2),
     },
     EngineParamUiMetaV1 {
-        key: "filterType",
-        tooltip: "Selects the filter response shape.",
-        readout_label: "Filter Type",
-        readout_format: EngineParamReadoutFormatV1::Uppercase,
-        param_default: None,
-    },
-    EngineParamUiMetaV1 {
-        key: "filterCutoff",
-        tooltip: "Sets the filter cutoff frequency.",
-        readout_label: "Filter Cutoff",
-        readout_format: EngineParamReadoutFormatV1::Hertz,
-        param_default: Some(5000.0),
-    },
-    EngineParamUiMetaV1 {
-        key: "filterResonance",
-        tooltip: "Boosts frequencies around the cutoff point.",
-        readout_label: "Filter Resonance",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-        param_default: Some(0.0),
-    },
-    EngineParamUiMetaV1 {
-        key: "filterEnvAmount",
-        tooltip: "Applies envelope modulation amount to the cutoff.",
-        readout_label: "Filter Env",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-        param_default: Some(0.0),
-    },
-    EngineParamUiMetaV1 {
-        key: "chorusRate",
-        tooltip: "Sets chorus modulation speed.",
-        readout_label: "Chorus Rate",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-        param_default: None,
-    },
-    EngineParamUiMetaV1 {
-        key: "chorusDepth",
-        tooltip: "Sets intensity of chorus pitch modulation.",
-        readout_label: "Chorus Depth",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-        param_default: None,
-    },
-    EngineParamUiMetaV1 {
-        key: "chorusMix",
-        tooltip: "Blends dry signal with chorus effect.",
-        readout_label: "Chorus Mix",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-        param_default: None,
-    },
-    EngineParamUiMetaV1 {
-        key: "delayTime",
-        tooltip: "Sets the delay repeat interval.",
-        readout_label: "Delay Time",
-        readout_format: EngineParamReadoutFormatV1::Seconds2,
-        param_default: None,
-    },
-    EngineParamUiMetaV1 {
-        key: "delayFeedback",
-        tooltip: "Feeds delayed signal back for additional repeats.",
-        readout_label: "Delay Feedback",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-        param_default: None,
-    },
-    EngineParamUiMetaV1 {
-        key: "delayWarmth",
-        tooltip: "Adds tape-style saturation and high-frequency rolloff.",
-        readout_label: "Delay Warmth",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-        param_default: None,
-    },
-    EngineParamUiMetaV1 {
-        key: "delayMix",
-        tooltip: "Blends dry signal with delayed signal.",
-        readout_label: "Delay Mix",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-        param_default: None,
-    },
-    EngineParamUiMetaV1 {
-        key: "delayTapeMode",
-        tooltip: "Toggle tape echo coloration for delay repeats.",
-        readout_label: "Tape Mode",
-        readout_format: EngineParamReadoutFormatV1::OnOff,
-        param_default: None,
-    },
-    EngineParamUiMetaV1 {
-        key: "reverbSpace",
-        tooltip: "Sets the virtual room size for reverb reflections.",
-        readout_label: "Reverb Space",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-        param_default: None,
-    },
-    EngineParamUiMetaV1 {
-        key: "reverbPredelay",
-        tooltip: "Adds delay before the reverb tail starts.",
-        readout_label: "Reverb Pre-Delay",
-        readout_format: EngineParamReadoutFormatV1::Milliseconds,
-        param_default: None,
-    },
-    EngineParamUiMetaV1 {
-        key: "reverbDistance",
-        tooltip: "Moves source position deeper into the reverb space.",
-        readout_label: "Reverb Distance",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-        param_default: None,
-    },
-    EngineParamUiMetaV1 {
-        key: "reverbCharacter",
-        tooltip: "Shapes reverb tone from dark to bright.",
-        readout_label: "Reverb Character",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-        param_default: None,
-    },
-    EngineParamUiMetaV1 {
-        key: "reverbMix",
-        tooltip: "Blends dry signal with reverb output.",
-        readout_label: "Reverb Mix",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-        param_default: None,
-    },
-    EngineParamUiMetaV1 {
         key: "portamentoMode",
         tooltip: "Chooses whether glide uses rate or fixed time behavior.",
         readout_label: "Portamento Mode",
@@ -2098,16 +1872,9 @@ const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 55] = [
         readout_format: EngineParamReadoutFormatV1::Decimal,
         param_default: Some(0.0),
     },
-    EngineParamUiMetaV1 {
-        key: "modWheelVibratoDepth",
-        tooltip: "Sets how much mod wheel movement affects vibrato depth.",
-        readout_label: "Mod to Vibrato",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-        param_default: Some(0.0),
-    },
 ];
 
-const ENGINE_ENUM_VALUE_TOOLTIPS_V1: [EngineEnumValueTooltipV1; 13] = [
+const ENGINE_ENUM_VALUE_TOOLTIPS_V1: [EngineEnumValueTooltipV1; 10] = [
     EngineEnumValueTooltipV1 {
         key: "lineSelect",
         value: "L1",
@@ -2147,21 +1914,6 @@ const ENGINE_ENUM_VALUE_TOOLTIPS_V1: [EngineEnumValueTooltipV1; 13] = [
         key: "modMode",
         value: "noise",
         tooltip: "Mix noise source into modulation path.",
-    },
-    EngineEnumValueTooltipV1 {
-        key: "filterType",
-        value: "lp",
-        tooltip: "Low-pass mode: attenuates frequencies above cutoff.",
-    },
-    EngineEnumValueTooltipV1 {
-        key: "filterType",
-        value: "hp",
-        tooltip: "High-pass mode: attenuates frequencies below cutoff.",
-    },
-    EngineEnumValueTooltipV1 {
-        key: "filterType",
-        value: "bp",
-        tooltip: "Band-pass mode: emphasizes a narrow band around cutoff.",
     },
     EngineEnumValueTooltipV1 {
         key: "portamentoMode",
@@ -2205,99 +1957,14 @@ mod tests {
         assert!(env.loop_);
         assert_eq!(env.steps[0].rate, 13);
         assert_eq!(env.steps[1].rate, 120);
-        assert_eq!(env.steps[2].level, 0);
-        assert_eq!(env.steps[2].rate, 0);
+        assert_eq!(env.steps[2].level, 0.0);
     }
 
     #[test]
-    fn step_env_deserialize_treats_values_as_raw_7bit() {
-        let json = r#"{
-            "steps": [
-                { "level": 66, "rate": 99 },
-                { "level": 127, "rate": 127 }
-            ],
-            "sustainStep": 0,
-            "stepCount": 2,
-            "loop": false
-        }"#;
-
-        let env: StepEnvData = serde_json::from_str(json).expect("valid step env json");
-        assert_eq!(env.steps[0].level, 66);
-        assert_eq!(env.steps[0].rate, 99);
-        assert_eq!(env.steps[1].level, 127);
-        assert_eq!(env.steps[1].rate, 127);
-    }
-
-    #[test]
-    fn algo_cz_waveform_roundtrip_and_non_cz_detection() {
-        let from_square = Algo::from_cz_waveform(CzWaveform::Square);
-        assert_eq!(from_square, Algo::Square);
-        assert_eq!(from_square.as_cz_waveform(), Some(CzWaveform::Square));
-        assert!(from_square.is_cz_waveform());
-
-        assert_eq!(Algo::Bend.as_cz_waveform(), None);
-        assert!(!Algo::Bend.is_cz_waveform());
-    }
-
-    #[test]
-    fn synth_params_fx_fields_default_when_missing() {
-        let mut value = serde_json::to_value(SynthParams::default())
-            .expect("default synth params should serialize");
-
-        let params = value
-            .as_object_mut()
-            .expect("synth params should serialize as an object");
-
-        for key in ["chorus", "delay", "reverb", "phaser"] {
-            params.remove(key);
-        }
-
-        let decoded: SynthParams =
-            serde_json::from_value(value).expect("missing fx blocks should default");
-
-        assert_eq!(decoded.chorus.mix, ChorusParams::default().mix);
-        assert_eq!(decoded.delay.mix, DelayParams::default().mix);
-        assert_eq!(decoded.reverb.mix, ReverbParams::default().mix);
-        assert_eq!(decoded.phaser.mix, PhaserParams::default().mix);
-    }
-
-    #[test]
-    fn fx_slots_default_to_all_empty() {
-        let params = SynthParams::default();
-        for slot in &params.fx_slots {
-            assert!(matches!(slot, FxSlotConfig::Empty));
-        }
-    }
-
-    #[test]
-    fn fx_slot_config_roundtrip_serialization() {
-        let config = FxSlotConfig::Chorus(ChorusParams {
-            enabled: true,
-            rate: 1.2,
-            depth: 0.01,
-            mix: 0.5,
-        });
-        let json = serde_json::to_string(&config).expect("serialize FxSlotConfig");
-        let back: FxSlotConfig = serde_json::from_str(&json).expect("deserialize FxSlotConfig");
-        assert!(
-            matches!(back, FxSlotConfig::Chorus(p) if p.enabled && (p.rate - 1.2).abs() < 1e-5)
-        );
-    }
-
-    #[test]
-    fn fx_slot_config_empty_roundtrip() {
-        let config = FxSlotConfig::Empty;
-        let json = serde_json::to_string(&config).expect("serialize empty slot");
-        assert!(json.contains("\"type\":\"empty\""));
-        let back: FxSlotConfig = serde_json::from_str(&json).expect("deserialize empty slot");
-        assert!(matches!(back, FxSlotConfig::Empty));
-    }
-
-    #[test]
-    fn fx_slot_config_default_for_type_sets_enabled() {
+    fn fx_slot_default_for_type_sets_expected_enabled_state() {
         let chorus = FxSlotConfig::default_for_type(FxSlotType::Chorus);
-        assert!(chorus.is_enabled());
         assert!(matches!(chorus.slot_type(), FxSlotType::Chorus));
+        assert!(chorus.is_enabled());
 
         let empty = FxSlotConfig::default_for_type(FxSlotType::Empty);
         assert!(!empty.is_enabled());

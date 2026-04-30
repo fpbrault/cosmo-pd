@@ -53,8 +53,5 @@ export const LINE_SELECT_TOOLTIPS = buildEnumTooltipMap("lineSelect");
 /** Canonical tooltips for `modMode` enum values. */
 export const MOD_MODE_TOOLTIPS = buildEnumTooltipMap("modMode");
 
-/** Canonical tooltips for `filterType` enum values. */
-export const FILTER_TYPE_TOOLTIPS = buildEnumTooltipMap("filterType");
-
 /** Canonical tooltips for `portamentoMode` enum values. */
 export const PORTAMENTO_MODE_TOOLTIPS = buildEnumTooltipMap("portamentoMode");

@@ -18,7 +18,7 @@ use cosmo_synth_engine::module_presets::{module_preset_catalog_v1, ModulePresetG
 use cosmo_synth_engine::params::{
     engine_enum_value_tooltips_v1, engine_param_ui_meta_v1, Algo, AlgoControlValueV1, BaseWaveform,
     BitcrusherParams, ChorusParams, CompressorParams, CzAlgo, CzLineParams, CzWaveform,
-    DelayParams, DistortionParams, EnvStep, EqParams, FilterParams, FilterType, FxSlotConfig,
+    DelayParams, DistortionParams, EnvStep, EqParams, FxSlotConfig,
     FxSlotType, GrainDelayParams, JunoChorusParams, LfoParams, LfoWaveform, LineParams, LineSelect,
     LoFiParams, ModDestination, ModEnvParams, ModMatrix, ModMode, ModRoute, ModSource,
     PhaseModParams, PhaserParams, PolyMode, PortamentoMode, PortamentoParams, RandomParams,
@@ -71,8 +71,6 @@ fn main() {
     out.push_str("\n\n");
     out.push_str(&export::<LfoWaveform>(&config).expect("Failed to export LfoWaveform"));
     out.push_str("\n\n");
-    out.push_str(&export::<FilterType>(&config).expect("Failed to export FilterType"));
-    out.push_str("\n\n");
     out.push_str(&export::<PortamentoMode>(&config).expect("Failed to export PortamentoMode"));
     out.push_str("\n\n");
     out.push_str(&export::<ChorusParams>(&config).expect("Failed to export ChorusParams"));
@@ -94,8 +92,6 @@ fn main() {
     out.push_str(&export::<PortamentoParams>(&config).expect("Failed to export PortamentoParams"));
     out.push_str("\n\n");
     out.push_str(&export::<LfoParams>(&config).expect("Failed to export LfoParams"));
-    out.push_str("\n\n");
-    out.push_str(&export::<FilterParams>(&config).expect("Failed to export FilterParams"));
     out.push_str("\n\n");
     out.push_str(
         &export::<AlgoControlValueV1>(&config).expect("Failed to export AlgoControlValueV1"),
