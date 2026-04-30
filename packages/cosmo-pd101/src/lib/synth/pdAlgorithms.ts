@@ -3,9 +3,11 @@ import {
 	isAlgoRefEqual,
 	isWarpAlgo,
 	resolveAlgoRef,
+	resolveCzControlsFromEntries,
 } from "@/lib/synth/algoRef";
 import type {
 	Algo,
+	AlgoControlValueV1,
 	CzWaveform,
 	StepEnvData,
 	WindowType,
@@ -34,7 +36,9 @@ const generatePath = (fn: (phase: number) => number, res = 64): string => {
 	const steps = [];
 	for (let i = 0; i <= res; i++) {
 		const phase = i / res; // 0 to 1
-		const amplitude = Math.max(-1, Math.min(1, fn(phase)));
+		const sample = fn(phase);
+		const safeSample = Number.isFinite(sample) ? sample : 0;
+		const amplitude = Math.max(-1, Math.min(1, safeSample));
 
 		const x = 4 + phase * 16;
 		const y = 12 - amplitude * 8;
@@ -50,6 +54,9 @@ const sampleAlgoFullDcw = (algo: PdAlgo, phase: number): number => {
 		const w = resolved.windowType ? applyWindow(phase, resolved.windowType) : 1;
 		return raw * w;
 	}
+
+	const direct = sampleDirectAlgoPreview(algo, phase);
+	if (direct !== null) return direct;
 
 	const warpedPhase = applyPdAlgo(phase, 1, algo, resolved.waveform);
 	return Math.sin(TAU * warpedPhase);
@@ -73,6 +80,12 @@ export const PD_ALGOS: PdAlgoDef[] = [
 	}),
 ];
 
+const NON_BASE_WAVE_ALGOS = new Set<PdAlgo>(["karpunk"]);
+
+export function algoUsesBaseWaveform(algo: PdAlgo): boolean {
+	return !NON_BASE_WAVE_ALGOS.has(algo);
+}
+
 const ALGO_BEHAVIOR_DESCRIPTIONS: Record<PdAlgo, string> = {
 	cz101:
 		"Classic CZ phase-distortion core. Use DCW and the CZ preset controls to shape the harmonic contour.",
@@ -95,7 +108,7 @@ const ALGO_BEHAVIOR_DESCRIPTIONS: Record<PdAlgo, string> = {
 	karpunk:
 		"Plucked/resonant distortion character with decaying inharmonic overtones.",
 	sine: "Pure sine phase path with minimal harmonics and smooth tone.",
-	// Legacy waveform aliases supported by Algo type
+	// CZ waveform transfer shapes
 	saw: "Saw transfer shape with a bright, harmonically rich spectrum.",
 	square: "Square transfer shape emphasizing odd harmonics for hollow tone.",
 	pulse: "Pulse transfer shape with a narrow-duty harmonic profile.",
@@ -198,9 +211,9 @@ function pdPinch(phase: number, amount: number): number {
 	if (amount === 0) return phase;
 	const center = 0.5;
 	const a = amount * 0.98 + 0.01;
-	return (
-		center + (phase - center) * (Math.abs(phase - center) / center) ** (a - 1)
-	);
+	const dist = Math.abs(phase - center) / center;
+	if (dist === 0) return center;
+	return center + (phase - center) * dist ** (a - 1);
 }
 
 function pdFold(phase: number, amount: number): number {
@@ -255,6 +268,13 @@ function pdMirror(phase: number, amount: number): number {
 	if (amount === 0) return phase;
 	const mirrored = 1 - phase;
 	return phase + (mirrored - phase) * amount;
+}
+
+function sampleDirectAlgoPreview(algo: PdAlgo, _phase: number): number | null {
+	switch (algo) {
+		default:
+			return null;
+	}
 }
 
 function pdTransfer(waveformId: CzWaveform, phi: number): number {
@@ -401,12 +421,10 @@ export function computeWaveform(params: {
 	windowType: WindowType;
 	line1Level: number;
 	line2Level: number;
-	line1CzSlotAWaveform?: CzWaveform;
-	line1CzSlotBWaveform?: CzWaveform;
-	line1CzWindow?: WindowType;
-	line2CzSlotAWaveform?: CzWaveform;
-	line2CzSlotBWaveform?: CzWaveform;
-	line2CzWindow?: WindowType;
+	line1AlgoControlsA?: AlgoControlValueV1[];
+	line1AlgoControlsB?: AlgoControlValueV1[];
+	line2AlgoControlsA?: AlgoControlValueV1[];
+	line2AlgoControlsB?: AlgoControlValueV1[];
 }): WaveformData {
 	const phasor = new Float32Array(N);
 	for (let i = 0; i < N; ++i) phasor[i] = i / N;
@@ -426,36 +444,31 @@ export function computeWaveform(params: {
 	const algoB = resolveAlgoRef(params.warpBAlgo);
 	const algo2AResolved = params.algo2A ? resolveAlgoRef(params.algo2A) : null;
 	const algo2BResolved = params.algo2B ? resolveAlgoRef(params.algo2B) : null;
+	const line1CzA = resolveCzControlsFromEntries(params.line1AlgoControlsA);
+	const line1CzB = resolveCzControlsFromEntries(params.line1AlgoControlsB);
+	const line2CzA = resolveCzControlsFromEntries(params.line2AlgoControlsA);
+	const line2CzB = resolveCzControlsFromEntries(params.line2AlgoControlsB);
 
-	// Use explicit CZ waveform params when available (from CzLineParams)
 	const algoAWaveform: CzWaveform =
-		algoA.warpAlgo === "cz101" && params.line1CzSlotAWaveform
-			? params.line1CzSlotAWaveform
-			: algoA.waveform;
+		algoA.warpAlgo === "cz101" ? line1CzA.waveform1 : algoA.waveform;
 	const algo2AWaveform: CzWaveform =
-		algo2AResolved?.warpAlgo === "cz101" && params.line1CzSlotBWaveform
-			? params.line1CzSlotBWaveform
+		algo2AResolved?.warpAlgo === "cz101"
+			? line1CzB.waveform1
 			: (algo2AResolved?.waveform ?? "saw");
 	const algoBWaveform: CzWaveform =
-		algoB.warpAlgo === "cz101" && params.line2CzSlotAWaveform
-			? params.line2CzSlotAWaveform
-			: algoB.waveform;
+		algoB.warpAlgo === "cz101" ? line2CzA.waveform1 : algoB.waveform;
 	const algo2BWaveform: CzWaveform =
-		algo2BResolved?.warpAlgo === "cz101" && params.line2CzSlotBWaveform
-			? params.line2CzSlotBWaveform
+		algo2BResolved?.warpAlgo === "cz101"
+			? line2CzB.waveform1
 			: (algo2BResolved?.waveform ?? "saw");
 
 	const line1Window =
-		algoA.warpAlgo === "cz101" &&
-		params.line1CzWindow &&
-		params.line1CzWindow !== "off"
-			? params.line1CzWindow
+		algoA.warpAlgo === "cz101" && line1CzA.windowFunction !== "off"
+			? line1CzA.windowFunction
 			: (algoA.windowType ?? params.windowType);
 	const line2Window =
-		algoB.warpAlgo === "cz101" &&
-		params.line2CzWindow &&
-		params.line2CzWindow !== "off"
-			? params.line2CzWindow
+		algoB.warpAlgo === "cz101" && line2CzA.windowFunction !== "off"
+			? line2CzA.windowFunction
 			: (algoB.windowType ?? params.windowType);
 
 	// Aliases for backward compat within this function

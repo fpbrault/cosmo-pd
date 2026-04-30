@@ -106,6 +106,19 @@ pub enum CzWaveform {
     Pulse2,
 }
 
+/// Base waveform used as the final carrier for warp algorithms.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub enum BaseWaveform {
+    #[default]
+    Cosine,
+    Sine,
+    Triangle,
+    Saw,
+    Square,
+}
+
 /// Front-panel CZ algorithm shortcuts.
 ///
 /// These map to a `(CzWaveform, WindowType)` pair.
@@ -157,18 +170,12 @@ impl CzAlgo {
 #[serde(rename_all = "camelCase")]
 pub enum Algo {
     // CZ waveforms — phase distortion with piecewise-linear carrier
-    #[serde(alias = "czSaw")]
     Saw,
-    #[serde(alias = "czSquare")]
     Square,
-    #[serde(alias = "czPulse")]
     Pulse,
     Null,
-    #[serde(alias = "czDoubleSine")]
     SinePulse,
-    #[serde(alias = "czSawPulse")]
     SawPulse,
-    #[serde(alias = "czReso1", alias = "czReso2", alias = "czReso3")]
     MultiSine,
     Pulse2,
     // Warp algorithms — phase distortion applied to a sine carrier
@@ -314,29 +321,6 @@ pub enum PortamentoMode {
     Time,
 }
 
-/// Per-line CZ slot controls.
-///
-/// Slot A/Slot B alternate per cycle in CZ mode. Setting both slots to the
-/// same waveform effectively yields single-wave behavior.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "specta-bindings", derive(Type))]
-#[serde(rename_all = "camelCase")]
-pub struct CzLineParams {
-    pub slot_a_waveform: CzWaveform,
-    pub slot_b_waveform: CzWaveform,
-    pub window: WindowType,
-}
-
-impl Default for CzLineParams {
-    fn default() -> Self {
-        Self {
-            slot_a_waveform: CzWaveform::Saw,
-            slot_b_waveform: CzWaveform::Saw,
-            window: WindowType::Off,
-        }
-    }
-}
-
 /// One algorithm-specific control value persisted on a line.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
@@ -354,6 +338,10 @@ pub struct LineParams {
     pub algo: Algo,
     pub algo2: Option<Algo>,
     pub algo_blend: f32,
+    #[serde(default)]
+    pub base_waveform_a: BaseWaveform,
+    #[serde(default)]
+    pub base_waveform_b: BaseWaveform,
     pub window: WindowType,
     pub dca_base: f32,
     pub dcw_base: f32,
@@ -364,13 +352,7 @@ pub struct LineParams {
     pub dcw_env: StepEnvData,
     pub dca_env: StepEnvData,
     pub key_follow: f32,
-    #[serde(default)]
-    pub cz: CzLineParams,
-    #[serde(
-        default,
-        skip_serializing_if = "Option::is_none",
-        alias = "algoControls"
-    )]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub algo_controls_a: Option<Vec<AlgoControlValueV1>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub algo_controls_b: Option<Vec<AlgoControlValueV1>>,
@@ -382,6 +364,8 @@ impl Default for LineParams {
             algo: Algo::Saw,
             algo2: None,
             algo_blend: 0.0,
+            base_waveform_a: BaseWaveform::default(),
+            base_waveform_b: BaseWaveform::default(),
             window: WindowType::Off,
             dca_base: 1.0,
             dcw_base: 0.0,
@@ -392,7 +376,6 @@ impl Default for LineParams {
             dcw_env: default_dcw_env(),
             dca_env: default_dca_env(),
             key_follow: 0.0,
-            cz: CzLineParams::default(),
             algo_controls_a: None,
             algo_controls_b: None,
         }
@@ -532,6 +515,31 @@ impl Default for ReverbParams {
     }
 }
 
+/// Phase modulation parameters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct PhaseModParams {
+    pub enabled: bool,
+    /// Internal PM depth (0.0–0.5)
+    pub amount: f32,
+    /// Modulator-to-carrier frequency ratio (0.5–8.0)
+    pub ratio: f32,
+    /// Apply PM before warp shaping when true
+    pub pm_pre: bool,
+}
+
+impl Default for PhaseModParams {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            amount: 0.0,
+            ratio: 1.0,
+            pm_pre: true,
+        }
+    }
+}
+
 /// Vibrato parameters
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
@@ -645,7 +653,6 @@ pub enum ModDestination {
     #[default]
     Volume,
     Pitch,
-    IntPmAmount,
     Line1DcwBase,
     Line1DcaBase,
     Line1AlgoBlend,
@@ -679,8 +686,8 @@ pub enum ModDestination {
     DelayMix,
     ReverbMix,
     VibratoDepth,
-    LfoDepth,
-    LfoRate,
+    VibratoRate,
+    IntPmRatio,
     Line1DcoEnvStep1Level,
     Line1DcoEnvStep1Rate,
     Line1DcoEnvStep2Level,
@@ -799,6 +806,46 @@ pub enum ModDestination {
     Lfo2Symmetry,
     Lfo2Offset,
     RandomRate,
+    VibratoDelay,
+    CompressorThreshold,
+    CompressorRatio,
+    CompressorMakeup,
+    CompressorMix,
+    GrainDelayTime,
+    GrainDelayFeedback,
+    GrainDelayScatter,
+    GrainDelayDensity,
+    GrainDelayMix,
+    BitcrusherBits,
+    BitcrusherRateReduction,
+    BitcrusherMix,
+    ShimmerVerbShimmer,
+    ShimmerVerbSpace,
+    ShimmerVerbMix,
+    DistortionDrive,
+    DistortionTone,
+    DistortionMix,
+    JunoChorusMix,
+    RingModCarrierHz,
+    RingModMix,
+    TremoloRate,
+    TremoloDepth,
+    TremoloMix,
+    WavefolderDrive,
+    WavefolderFolds,
+    WavefolderMix,
+    LoFiDegrade,
+    LoFiWowDepth,
+    LoFiWowRate,
+    LoFiFlutterDepth,
+    LoFiFlutterRate,
+    LoFiTone,
+    LoFiMix,
+    EqGain80,
+    EqGain240,
+    EqGain750,
+    EqGain2200,
+    EqGain8000,
 }
 
 /// A single modulation route assignment.
@@ -928,7 +975,7 @@ pub enum FxSlotConfig {
     Delay(DelayParams),
     Reverb(ReverbParams),
     Vibrato(VibratoParams),
-    PhaseMod,
+    PhaseMod(PhaseModParams),
     Compressor(CompressorParams),
     Eq5Band(EqParams),
     GrainDelay(GrainDelayParams),
@@ -958,7 +1005,7 @@ impl FxSlotConfig {
             Self::Delay(_) => FxSlotType::Delay,
             Self::Reverb(_) => FxSlotType::Reverb,
             Self::Vibrato(_) => FxSlotType::Vibrato,
-            Self::PhaseMod => FxSlotType::PhaseMod,
+            Self::PhaseMod(_) => FxSlotType::PhaseMod,
             Self::Compressor(_) => FxSlotType::Compressor,
             Self::Eq5Band(_) => FxSlotType::Eq5Band,
             Self::GrainDelay(_) => FxSlotType::GrainDelay,
@@ -982,7 +1029,7 @@ impl FxSlotConfig {
             Self::Delay(p) => p.enabled,
             Self::Reverb(p) => p.enabled,
             Self::Vibrato(p) => p.enabled,
-            Self::PhaseMod => true,
+            Self::PhaseMod(p) => p.enabled,
             Self::Compressor(p) => p.enabled,
             Self::Eq5Band(p) => p.enabled,
             Self::GrainDelay(p) => p.enabled,
@@ -1022,7 +1069,10 @@ impl FxSlotConfig {
                 enabled: true,
                 ..VibratoParams::default()
             }),
-            FxSlotType::PhaseMod => Self::PhaseMod,
+            FxSlotType::PhaseMod => Self::PhaseMod(PhaseModParams {
+                enabled: true,
+                ..PhaseModParams::default()
+            }),
             FxSlotType::Compressor => Self::Compressor(CompressorParams {
                 enabled: true,
                 ..CompressorParams::default()
@@ -1295,13 +1345,13 @@ impl Default for DistortionParams {
 pub struct LoFiParams {
     #[serde(default)]
     pub enabled: bool,
-    #[serde(default = "default_lofi_degrade", alias = "drive")]
+    #[serde(default = "default_lofi_degrade")]
     pub degrade: f32,
-    #[serde(default = "default_lofi_wow_depth", alias = "wobble")]
+    #[serde(default = "default_lofi_wow_depth")]
     pub wow_depth: f32,
     #[serde(default = "default_lofi_wow_rate")]
     pub wow_rate: f32,
-    #[serde(default = "default_lofi_flutter_depth", alias = "flutter")]
+    #[serde(default = "default_lofi_flutter_depth")]
     pub flutter_depth: f32,
     #[serde(default = "default_lofi_flutter_rate")]
     pub flutter_rate: f32,
@@ -1315,13 +1365,13 @@ fn default_lofi_degrade() -> f32 {
     0.25
 }
 fn default_lofi_wow_depth() -> f32 {
-    0.35
+    0.07
 }
 fn default_lofi_wow_rate() -> f32 {
     0.42
 }
 fn default_lofi_flutter_depth() -> f32 {
-    0.18
+    0.036
 }
 fn default_lofi_flutter_rate() -> f32 {
     6.7
@@ -1335,9 +1385,9 @@ impl Default for LoFiParams {
         Self {
             enabled: false,
             degrade: 0.25,
-            wow_depth: 0.35,
+            wow_depth: 0.07,
             wow_rate: 0.42,
-            flutter_depth: 0.18,
+            flutter_depth: 0.036,
             flutter_rate: 6.7,
             tone: 0.45,
             mix: 1.0,
@@ -1455,7 +1505,14 @@ impl Default for WavefolderParams {
 }
 
 pub(crate) fn default_fx_slot_configs() -> [FxSlotConfig; 6] {
-    core::array::from_fn(|_| FxSlotConfig::Empty)
+    [
+        FxSlotConfig::Empty,
+        FxSlotConfig::Empty,
+        FxSlotConfig::Empty,
+        FxSlotConfig::Vibrato(VibratoParams::default()),
+        FxSlotConfig::PhaseMod(PhaseModParams::default()),
+        FxSlotConfig::Empty,
+    ]
 }
 
 /// Top-level synth parameters (mirrors this.params in the JS)
@@ -1470,38 +1527,20 @@ pub struct SynthParams {
     pub octave: f32,
     pub line1: LineParams,
     pub line2: LineParams,
-    #[serde(default)]
-    pub int_pm_enabled: bool,
-    pub int_pm_amount: f32,
-    pub int_pm_ratio: f32,
-    pub ext_pm_amount: f32,
-    pub pm_pre: bool,
     pub frequency: f32,
     pub volume: f32,
     pub poly_mode: PolyMode,
     pub legato: bool,
-    #[serde(default)]
-    pub chorus: ChorusParams,
-    #[serde(default)]
-    pub delay: DelayParams,
-    #[serde(default)]
-    pub reverb: ReverbParams,
-    #[serde(default)]
-    pub phaser: PhaserParams,
-    #[serde(default)]
-    pub vibrato: VibratoParams,
     pub portamento: PortamentoParams,
     pub lfo: LfoParams,
     #[serde(default)]
     pub lfo2: LfoParams,
-    pub filter: FilterParams,
+    /// Velocity curve exponent [-1, 1]. 0 = linear, >0 = convex, <0 = concave.
+    #[serde(default)]
+    pub velocity_curve: f32,
     /// Pitch bend wheel range in semitones (1-24). Default 2.
     #[serde(default = "default_pitch_bend_range")]
     pub pitch_bend_range: f32,
-    /// How much the mod wheel adds to vibrato depth (0-99 UI units).
-    /// When mod wheel is at max (1.0), vibrato depth is boosted by this amount.
-    #[serde(default)]
-    pub mod_wheel_vibrato_depth: f32,
     /// Modulation matrix routes for source-to-destination parameter modulation.
     #[serde(default)]
     pub mod_matrix: ModMatrix,
@@ -1524,6 +1563,30 @@ pub(crate) fn default_ring_gain() -> f32 {
     4.0
 }
 
+impl SynthParams {
+    /// Returns a reference to vibrato params from the fx_slots, if present.
+    pub fn vibrato_params(&self) -> Option<&VibratoParams> {
+        self.fx_slots.iter().find_map(|s| {
+            if let FxSlotConfig::Vibrato(p) = s {
+                Some(p)
+            } else {
+                None
+            }
+        })
+    }
+
+    /// Returns a reference to phase mod params from the fx_slots, if present.
+    pub fn phase_mod_params(&self) -> Option<&PhaseModParams> {
+        self.fx_slots.iter().find_map(|s| {
+            if let FxSlotConfig::PhaseMod(p) = s {
+                Some(p)
+            } else {
+                None
+            }
+        })
+    }
+}
+
 impl Default for SynthParams {
     fn default() -> Self {
         Self {
@@ -1533,26 +1596,15 @@ impl Default for SynthParams {
             octave: 0.0,
             line1: LineParams::default(),
             line2: LineParams::default(),
-            int_pm_enabled: false,
-            int_pm_amount: 0.0,
-            int_pm_ratio: 1.0,
-            ext_pm_amount: 0.0,
-            pm_pre: true,
             frequency: 220.0,
             volume: 0.4,
             poly_mode: PolyMode::default(),
             legato: false,
-            chorus: ChorusParams::default(),
-            delay: DelayParams::default(),
-            reverb: ReverbParams::default(),
-            phaser: PhaserParams::default(),
-            vibrato: VibratoParams::default(),
             portamento: PortamentoParams::default(),
             lfo: LfoParams::default(),
             lfo2: LfoParams::default(),
-            filter: FilterParams::default(),
+            velocity_curve: 0.0,
             pitch_bend_range: 2.0,
-            mod_wheel_vibrato_depth: 0.0,
             mod_matrix: ModMatrix::default(),
             random: RandomParams::default(),
             mod_env: ModEnvParams::default(),
@@ -1563,6 +1615,7 @@ impl Default for SynthParams {
 
 /// Readout label for one string enum value.
 #[derive(Debug, Clone, Copy, Serialize)]
+#[cfg_attr(feature = "specta-bindings", derive(specta::Type))]
 #[serde(rename_all = "camelCase")]
 pub struct EngineEnumValueLabelV1 {
     pub value: &'static str,
@@ -1571,6 +1624,7 @@ pub struct EngineEnumValueLabelV1 {
 
 /// Engine-owned formatting strategy for infobar readouts.
 #[derive(Debug, Clone, Copy, Serialize)]
+#[cfg_attr(feature = "specta-bindings", derive(specta::Type))]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum EngineParamReadoutFormatV1 {
     OnOff,
@@ -1579,6 +1633,8 @@ pub enum EngineParamReadoutFormatV1 {
     Integer,
     Decimal,
     Percent,
+    BipolarPercent,
+    Degrees,
     Semitones,
     Milliseconds,
     Seconds2,
@@ -2025,6 +2081,78 @@ pub fn engine_param_ui_meta_v1() -> &'static [EngineParamUiMetaV1] {
     &ENGINE_PARAM_UI_META_V1
 }
 
+/// Engine-owned numeric defaults for UI parameters where a concrete number
+/// exists and should be reused by frontend state initialization.
+pub fn engine_param_default_v1(key: &str) -> Option<f32> {
+    let synth = SynthParams::default();
+    let line1 = &synth.line1;
+    let line2 = &synth.line2;
+    let phase_mod = PhaseModParams::default();
+    let vibrato = VibratoParams::default();
+    let filter = FilterParams::default();
+    let chorus = ChorusParams::default();
+    let delay = DelayParams::default();
+    let reverb = ReverbParams::default();
+    let phaser = PhaserParams::default();
+
+    match key {
+        "volume" => Some(synth.volume),
+        "warpAAmount" => Some(line1.dcw_base),
+        "warpBAmount" => Some(line2.dcw_base),
+        "algoBlendA" => Some(line1.algo_blend),
+        "algoBlendB" => Some(line2.algo_blend),
+        "line1Level" => Some(line1.dca_base),
+        "line2Level" => Some(line2.dca_base),
+        "line1Octave" => Some(line1.octave),
+        "line2Octave" => Some(line2.octave),
+        "line1Detune" => Some(line1.detune_cents),
+        "line2Detune" => Some(line2.detune_cents),
+        "intPmAmount" => Some(phase_mod.amount),
+        "intPmRatio" => Some(phase_mod.ratio),
+        "pmPre" => Some(if phase_mod.pm_pre { 1.0 } else { 0.0 }),
+        "vibratoRate" => Some(vibrato.rate),
+        "vibratoDepth" => Some(vibrato.depth),
+        "vibratoDelay" => Some(vibrato.delay),
+        "lfoRate" => Some(synth.lfo.rate),
+        "lfoDepth" => Some(synth.lfo.depth),
+        "lfoOffset" => Some(synth.lfo.offset),
+        "lfo2Rate" => Some(synth.lfo2.rate),
+        "lfo2Depth" => Some(synth.lfo2.depth),
+        "lfo2Offset" => Some(synth.lfo2.offset),
+        "randomRate" => Some(synth.random.rate),
+        "modEnvAttack" => Some(synth.mod_env.attack),
+        "modEnvDecay" => Some(synth.mod_env.decay),
+        "modEnvSustain" => Some(synth.mod_env.sustain),
+        "modEnvRelease" => Some(synth.mod_env.release),
+        "filterCutoff" => Some(filter.cutoff),
+        "filterResonance" => Some(filter.resonance),
+        "filterEnvAmount" => Some(filter.env_amount),
+        "chorusRate" => Some(chorus.rate),
+        "chorusDepth" => Some(chorus.depth),
+        "chorusMix" => Some(chorus.mix),
+        "delayTime" => Some(delay.time),
+        "delayFeedback" => Some(delay.feedback),
+        "delayWarmth" => Some(delay.warmth),
+        "delayMix" => Some(delay.mix),
+        "delayTapeMode" => Some(if delay.tape_mode { 1.0 } else { 0.0 }),
+        "reverbSpace" => Some(reverb.space),
+        "reverbPredelay" => Some(reverb.predelay),
+        "reverbDistance" => Some(reverb.distance),
+        "reverbCharacter" => Some(reverb.character),
+        "reverbMix" => Some(reverb.mix),
+        "phaserRate" => Some(phaser.rate),
+        "phaserDepth" => Some(phaser.depth),
+        "phaserFeedback" => Some(phaser.feedback),
+        "phaserMix" => Some(phaser.mix),
+        "velocityCurve" => Some(synth.velocity_curve),
+        "portamentoRate" => Some(synth.portamento.rate),
+        "portamentoTime" => Some(synth.portamento.time),
+        "pitchBendRange" => Some(synth.pitch_bend_range),
+        "modWheelVibratoDepth" => Some(0.0),
+        _ => None,
+    }
+}
+
 pub fn engine_enum_value_tooltips_v1() -> &'static [EngineEnumValueTooltipV1] {
     &ENGINE_ENUM_VALUE_TOOLTIPS_V1
 }
@@ -2086,7 +2214,7 @@ mod tests {
     }
 
     #[test]
-    fn synth_params_legacy_fx_fields_default_when_missing() {
+    fn synth_params_fx_fields_default_when_missing() {
         let mut value = serde_json::to_value(SynthParams::default())
             .expect("default synth params should serialize");
 
@@ -2094,18 +2222,9 @@ mod tests {
             .as_object_mut()
             .expect("synth params should serialize as an object");
 
-        for key in ["chorus", "delay", "reverb", "phaser", "vibrato"] {
+        for key in ["chorus", "delay", "reverb", "phaser"] {
             params.remove(key);
         }
-
-        let decoded: SynthParams =
-            serde_json::from_value(value).expect("missing legacy fx blocks should default");
-
-        assert_eq!(decoded.chorus.mix, ChorusParams::default().mix);
-        assert_eq!(decoded.delay.mix, DelayParams::default().mix);
-        assert_eq!(decoded.reverb.mix, ReverbParams::default().mix);
-        assert_eq!(decoded.phaser.mix, PhaserParams::default().mix);
-        assert_eq!(decoded.vibrato.depth, VibratoParams::default().depth);
     }
 
     #[test]

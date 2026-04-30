@@ -1,10 +1,10 @@
 import { memo } from "react";
 import Button from "@/components/controls/Button";
-import ControlKnob from "@/components/controls/ControlKnob";
+import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import type { AsidePanelComponent } from "@/components/layout/AsidePanelSwitcher";
 import SynthPanelContainer from "@/components/layout/SynthPanelContainer";
 import { useSynthParam } from "@/features/synth/SynthParamController";
-import { PARAM_META, PORTAMENTO_MODE_TOOLTIPS } from "@/lib/synth/paramMeta";
+import { PORTAMENTO_MODE_TOOLTIPS } from "@/lib/synth/paramMeta";
 import { applyVelocityCurve } from "@/lib/synth/velocityCurve";
 
 const W = 72;
@@ -121,28 +121,22 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 						</div>
 						<div className="mt-0.5 flex justify-center">
 							{portamentoMode === "rate" ? (
-								<ControlKnob
+								<SynthParamKnob
+									paramKey="portamentoRate"
 									value={portamentoRate}
 									onChange={setPortamentoRate}
-									min={0}
-									max={99}
 									size={32}
 									color="#7f9de4"
 									label="Rate"
-									tooltip={PARAM_META.portamentoRate?.tooltip}
-									valueFormatter={(v) => `${Math.round(v)}`}
 								/>
 							) : (
-								<ControlKnob
+								<SynthParamKnob
+									paramKey="portamentoTime"
 									value={portamentoTime}
 									onChange={setPortamentoTime}
-									min={0}
-									max={2}
 									size={32}
 									color="#7f9de4"
 									label="Time"
-									tooltip={PARAM_META.portamentoTime?.tooltip}
-									valueFormatter={(v) => `${v.toFixed(2)}s`}
 								/>
 							)}
 						</div>
@@ -150,32 +144,27 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 
 					<div className="grid grid-cols-[auto_1fr_auto] items-end gap-1.5 pt-0.5">
 						<div className="flex justify-center">
-							<ControlKnob
+							<SynthParamKnob
+								paramKey="pitchBendRange"
 								value={pitchBendRange}
 								onChange={setPitchBendRange}
-								min={1}
-								max={24}
 								size={30}
 								color="#5bc8d4"
 								label="Bend"
-								tooltip={PARAM_META.pitchBendRange?.tooltip}
-								valueFormatter={(v) => `${Math.round(v)} st`}
 							/>
 						</div>
 						<div className="flex justify-center">
 							<VelocityCurvePreview curve={velocityCurve} />
 						</div>
 						<div className="flex justify-center">
-							<ControlKnob
+							<SynthParamKnob
+								paramKey="velocityCurve"
 								value={velocityCurve}
 								onChange={setVelocityCurve}
 								min={-1}
-								max={1}
 								size={28}
 								color="#c46eb4"
 								label="Vel Curve"
-								tooltip={PARAM_META.velocityCurve?.tooltip}
-								valueFormatter={(v) => (v === 0 ? "Linear" : v.toFixed(2))}
 							/>
 						</div>
 					</div>

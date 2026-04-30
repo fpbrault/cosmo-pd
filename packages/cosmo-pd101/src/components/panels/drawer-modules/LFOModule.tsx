@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Button from "@/components/controls/Button";
-import ControlKnob from "@/components/controls/ControlKnob";
+import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
@@ -17,29 +17,23 @@ interface LfoModuleProps {
 
 export default function LfoModule({ id, color }: LfoModuleProps) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("");
-	// Dynamically resolve the parameter names based on the LFO id
-	const prefix = id === 1 ? "lfo" : "lfo2";
-	const lfoParamTooltip = (suffix: string) =>
-		PARAM_META[`${prefix}${suffix}` as SynthParamKey]?.tooltip;
+	const lfoWaveformKey = id === 1 ? "lfoWaveform" : "lfo2Waveform";
+	const lfoRateKey = id === 1 ? "lfoRate" : "lfo2Rate";
+	const lfoDepthKey = id === 1 ? "lfoDepth" : "lfo2Depth";
+	const lfoSymmetryKey = id === 1 ? "lfoSymmetry" : "lfo2Symmetry";
+	const lfoRetriggerKey = id === 1 ? "lfoRetrigger" : "lfo2Retrigger";
+	const lfoOffsetKey = id === 1 ? "lfoOffset" : "lfo2Offset";
 
-	const { value: lfoWaveform, setValue: setLfoWaveform } = useSynthParam(
-		`${prefix}Waveform`,
-	);
-	const { value: lfoRate, setValue: setLfoRate } = useSynthParam(
-		`${prefix}Rate`,
-	);
-	const { value: lfoDepth, setValue: setLfoDepth } = useSynthParam(
-		`${prefix}Depth`,
-	);
-	const { value: lfoSymmetry, setValue: setLfoSymmetry } = useSynthParam(
-		`${prefix}Symmetry`,
-	);
-	const { value: lfoRetrigger, setValue: setLfoRetrigger } = useSynthParam(
-		`${prefix}Retrigger`,
-	);
-	const { value: lfoOffset, setValue: setLfoOffset } = useSynthParam(
-		`${prefix}Offset`,
-	);
+	const { value: lfoWaveform, setValue: setLfoWaveform } =
+		useSynthParam(lfoWaveformKey);
+	const { value: lfoRate, setValue: setLfoRate } = useSynthParam(lfoRateKey);
+	const { value: lfoDepth, setValue: setLfoDepth } = useSynthParam(lfoDepthKey);
+	const { value: lfoSymmetry, setValue: setLfoSymmetry } =
+		useSynthParam(lfoSymmetryKey);
+	const { value: lfoRetrigger, setValue: setLfoRetrigger } =
+		useSynthParam(lfoRetriggerKey);
+	const { value: lfoOffset, setValue: setLfoOffset } =
+		useSynthParam(lfoOffsetKey);
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
@@ -98,70 +92,54 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 					</Button>
 				))}
 			</div>
-			<ControlKnob
+			<SynthParamKnob
+				paramKey={lfoRateKey}
 				value={lfoRate}
 				onChange={setLfoRate}
-				min={0}
-				max={20}
-				defaultValue={5}
 				size={40}
 				color="#27588f"
 				label="Rate"
-				tooltip={lfoParamTooltip("Rate")}
 				modDestination={resolveTargetFromMetadata("lfo.rate", { lfoIndex: id })}
-				valueFormatter={(v) => `${v.toFixed(1)}Hz`}
 			/>
-			<ControlKnob
+			<SynthParamKnob
+				paramKey={lfoDepthKey}
 				value={lfoDepth}
 				onChange={setLfoDepth}
-				min={0}
-				max={1}
-				defaultValue={1.0}
 				size={40}
 				color="#27588f"
 				label="Depth"
-				tooltip={lfoParamTooltip("Depth")}
 				modDestination={resolveTargetFromMetadata("lfo.depth", {
 					lfoIndex: id,
 				})}
-				valueFormatter={(v) => `${Math.round(v * 100)}%`}
 			/>
-			<ControlKnob
+			<SynthParamKnob
+				paramKey={lfoOffsetKey}
 				value={lfoOffset}
 				onChange={setLfoOffset}
-				min={-1}
-				max={1}
-				defaultValue={0}
 				size={40}
 				color="#27588f"
 				label="Offset"
-				tooltip={lfoParamTooltip("Offset")}
 				modDestination={resolveTargetFromMetadata("lfo.offset", {
 					lfoIndex: id,
 				})}
-				valueFormatter={(v) => `${Math.round(v * 100)}%`}
 			/>
-			<ControlKnob
+			<SynthParamKnob
+				paramKey={lfoSymmetryKey}
 				value={lfoSymmetry}
 				onChange={setLfoSymmetry}
-				min={0}
-				max={1}
-				defaultValue={0.5}
 				size={40}
 				color="#27588f"
 				label="Sym."
-				tooltip={lfoParamTooltip("Symmetry")}
 				modDestination={resolveTargetFromMetadata("lfo.symmetry", {
 					lfoIndex: id,
 				})}
-				valueFormatter={(v) => `${Math.round(v * 100)}%`}
 			/>
 			<Button
 				className={`btn btn-xs px-2 col-span-4 w-fit justify-self-center ${
 					lfoRetrigger ? "btn-secondary" : "btn-outline"
 				}`}
 				onClick={() => setLfoRetrigger(!lfoRetrigger)}
-				title={lfoParamTooltip("Retrigger")}
+				title={PARAM_META[lfoRetriggerKey as SynthParamKey]?.tooltip}
 			>
 				Retrig
 			</Button>

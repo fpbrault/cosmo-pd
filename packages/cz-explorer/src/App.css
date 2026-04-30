@@ -13,7 +13,7 @@
 	--color-base-100: oklch(20% 0.003 270); /* cz-surface */
 	--color-base-200: oklch(14% 0.002 100); /* between surface and body */
 	--color-base-300: oklch(10.5% 0.004 55); /* cz-body */
-	--color-base-content: oklch(79% 0.02 75); /* cz-cream */
+	--color-base-content: oklch(90% 0.02 75); /* cz-cream */
 
 	/* Primary — gold */
 	--color-primary: oklch(76% 0.155 100);
@@ -21,15 +21,15 @@
 
 	/* Secondary — tab blue */
 	--color-secondary: oklch(59% 0.088 250);
-	--color-secondary-content: oklch(89.5% 0.016 74);
+	--color-secondary-content: oklch(95.5% 0.016 74);
 
 	/* Accent — cyan */
 	--color-accent: #3f8f98;
-	--color-accent-content: oklch(89.5% 0.016 74);
+	--color-accent-content: oklch(10.5% 0.004 55);
 
 	/* Neutral — panel grey */
 	--color-neutral: oklch(30% 0.001 100);
-	--color-neutral-content: oklch(79% 0.02 75);
+	--color-neutral-content: oklch(90% 0.02 75);
 
 	/* Info — light blue */
 	--color-info: oklch(66% 0.1 255);
@@ -45,7 +45,7 @@
 
 	/* Error — tab red */
 	--color-error: oklch(56% 0.14 22);
-	--color-error-content: oklch(89.5% 0.016 74);
+	--color-error-content: oklch(98% 0.016 74);
 
 	/* Radii */
 	--radius-selector: 0.5rem;
@@ -79,23 +79,24 @@
 	--text-5xs: 8px;
 
 	/* CZ-101 hardware panel palette */
-	--color-cz-body: #171615; /* page background */
-	--color-cz-panel: #424241; /* panel / card background */
-	--color-cz-surface: #2c2c2e; /* raised sub-panel surfaces */
-	--color-cz-inset: #181818; /* recessed / inset areas */
-	--color-cz-border: #3a3a3c; /* panel borders / engraved lines */
-	--color-cz-gold: #bfbd30; /* primary accent — CZ orange */
-	--color-cz-gold-dim: #5e6b1e; /* muted version of primary accent */
-	--color-cz-cream: #c8bfab; /* label text */
-	--color-cz-cream-dim: #7a7060; /* muted label / section titles */
-	--color-cz-lcd-bg: #051005; /* phosphor display background */
-	--color-cz-lcd-fg: #3dff3d; /* phosphor display trace / fg */
-	--color-cz-lcd-grid: rgba(0, 120, 0, 0.35); /* scope grid lines */
-	--color-cz-led-on: #ff2222; /* CZ-style LED indicator — active */
-	--color-cz-led-off: #3a1414; /* CZ-style LED indicator — inactive */
-	--color-cz-light-blue: #7f9de4; /* CZ section header bar (blue accent) */
-	--color-cz-btn: #b5b5b5; /* CZ hardware button face */
-	--color-cz-btn-border: #555558; /* CZ hardware button border */
+	--color-cz-body: #171615;
+	--color-cz-panel: #424241;
+	--color-cz-surface: #2c2c2e;
+	--color-cz-inset: #181818;
+	--color-cz-border: #3a3a3c;
+	--color-cz-gold: #bfbd30;
+	--color-cz-gold-dim: #5e6b1e;
+	--color-cz-cream: oklch(90% 0.02 75);
+	--color-cz-cream-dim: oklch(75% 0.02 75);
+	--color-cz-cream-light: oklch(98% 0.02 75);
+	--color-cz-lcd-bg: #051005;
+	--color-cz-lcd-fg: #3dff3d;
+	--color-cz-lcd-grid: rgba(0, 120, 0, 0.35);
+	--color-cz-led-on: #ff2222;
+	--color-cz-led-off: #3a1414;
+	--color-cz-light-blue: #7f9de4;
+	--color-cz-btn: #b5b5b5;
+	--color-cz-btn-border: #555558;
 
 	/* Synth-style tab button palette */
 	--color-cz-tab-blue: #6b8ace; /* synth blue tab — active / hover target */
@@ -283,5 +284,96 @@
 	}
 	.cz-btn-arrow:hover:not(:disabled) svg {
 		stroke: var(--color-cz-cream);
+	}
+
+	/* ─── Synth page ambient atmosphere ────────────────────────────────────── */
+
+	.cz-reactive-bg {
+		position: absolute;
+		inset: -10%;
+		will-change: background, filter;
+	}
+
+	.cz-reactive-bg-audio {
+		position: absolute;
+		inset: -12%;
+		mix-blend-mode: screen;
+		will-change: background, opacity, transform;
+	}
+
+	.cz-reactive-bg-noise {
+		position: absolute;
+		inset: 0;
+		background-image:
+			radial-gradient(rgba(255, 255, 255, 0.32) 0.75px, transparent 0.75px),
+			radial-gradient(rgba(255, 255, 255, 0.14) 0.85px, transparent 0.85px),
+			repeating-linear-gradient(
+				0deg,
+				rgba(255, 255, 255, 0.03) 0,
+				rgba(255, 255, 255, 0.03) 1px,
+				transparent 1px,
+				transparent 3px
+			);
+		background-size:
+			3px 3px,
+			2px 2px,
+			100% 4px;
+		background-position:
+			0 0,
+			0 0,
+			0 0;
+		mix-blend-mode: soft-light;
+		will-change: transform, opacity;
+	}
+
+	[data-ui-overlay-open="true"] .cz-reactive-bg-audio {
+		mix-blend-mode: screen;
+	}
+
+	[data-ui-overlay-open="true"] .cz-reactive-bg-noise {
+		mix-blend-mode: soft-light;
+	}
+
+	[data-ui-overlay-open="true"] .cz-reactive-bg {
+		will-change: background, filter;
+	}
+
+	.cz-vignette {
+		background: radial-gradient(
+			ellipse 95% 95% at 50% 50%,
+			transparent 49%,
+			rgba(0, 0, 0, 0.52) 100%
+		);
+	}
+}
+
+@keyframes cz-audio-halo {
+	0%,
+	100% {
+		transform: translate3d(0, 0, 0) scale(1);
+		opacity: calc(0.45 + var(--ambient-audio, 0) * 0.35);
+	}
+	50% {
+		transform: translate3d(0, 0, 0) scale(1.06);
+		opacity: calc(0.62 + var(--ambient-audio, 0) * 0.42);
+	}
+}
+
+@keyframes cz-noise-shift {
+	0%,
+	100% {
+		transform: translate3d(0, 0, 0);
+	}
+	20% {
+		transform: translate3d(-1px, 2px, 0);
+	}
+	40% {
+		transform: translate3d(2px, -1px, 0);
+	}
+	60% {
+		transform: translate3d(-2px, -2px, 0);
+	}
+	80% {
+		transform: translate3d(1px, 1px, 0);
 	}
 }

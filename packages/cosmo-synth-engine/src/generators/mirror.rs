@@ -1,5 +1,5 @@
 use super::{AlgoControlKindV1, AlgoControlV1, AlgoDefinitionV1, NO_CONTROL_OPTIONS};
-use crate::params::Algo;
+use crate::params::{Algo, EngineParamReadoutFormatV1};
 
 const CONTROLS: [AlgoControlV1; 4] = [
     AlgoControlV1 {
@@ -15,6 +15,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.5),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
     AlgoControlV1 {
         id: "mirrorBlend",
@@ -29,6 +30,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.5),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
     AlgoControlV1 {
         id: "mirrorClip",
@@ -43,6 +45,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.0),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
     AlgoControlV1 {
         id: "mirrorSkew",
@@ -57,6 +60,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.0),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::BipolarPercent,
     },
 ];
 
@@ -65,6 +69,7 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
     name: "Mirror",
     icon_path: "M4,20 L12,4 L20,20",
     visible: true,
+    default_base_waveform: crate::params::BaseWaveform::Sine,
     controls: &CONTROLS,
 };
 

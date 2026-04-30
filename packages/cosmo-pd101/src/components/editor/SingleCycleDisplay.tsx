@@ -1,6 +1,7 @@
 import { memo, useEffect, useMemo, useRef } from "react";
 import Card from "@/components/primitives/Card";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { useSynthStore } from "@/features/synth/synthStore";
 import { computeWaveform } from "@/lib/synth/pdAlgorithms";
 
 interface SingleCycleDisplayProps {
@@ -74,20 +75,21 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay() {
 	const { value: algo2B } = useSynthParam("algo2B");
 	const { value: algoBlendA } = useSynthParam("algoBlendA");
 	const { value: algoBlendB } = useSynthParam("algoBlendB");
-	const { value: intPmAmount } = useSynthParam("intPmAmount");
-	const { value: intPmRatio } = useSynthParam("intPmRatio");
-	const { value: pmPre } = useSynthParam("pmPre");
+	const phaseModSlot = useSynthStore((s) => s.fxSlots[4]);
 	const { value: windowType } = useSynthParam("windowType");
-	const { value: phaseModEnabled } = useSynthParam("phaseModEnabled");
+	const phaseModParams =
+		phaseModSlot?.type === "phaseMod" ? phaseModSlot.params : null;
+	const intPmAmount = phaseModParams?.amount ?? 0;
+	const intPmRatio = phaseModParams?.ratio ?? 1;
+	const pmPre = phaseModParams?.pmPre ?? true;
+	const phaseModEnabled = phaseModParams?.enabled ?? false;
 	const effectiveIntPmAmount = phaseModEnabled ? intPmAmount : 0;
 	const { value: line1Level } = useSynthParam("line1Level");
 	const { value: line2Level } = useSynthParam("line2Level");
-	const { value: line1CzSlotAWaveform } = useSynthParam("line1CzSlotAWaveform");
-	const { value: line1CzSlotBWaveform } = useSynthParam("line1CzSlotBWaveform");
-	const { value: line1CzWindow } = useSynthParam("line1CzWindow");
-	const { value: line2CzSlotAWaveform } = useSynthParam("line2CzSlotAWaveform");
-	const { value: line2CzSlotBWaveform } = useSynthParam("line2CzSlotBWaveform");
-	const { value: line2CzWindow } = useSynthParam("line2CzWindow");
+	const { value: line1AlgoControlsA } = useSynthParam("line1AlgoControlsA");
+	const { value: line1AlgoControlsB } = useSynthParam("line1AlgoControlsB");
+	const { value: line2AlgoControlsA } = useSynthParam("line2AlgoControlsA");
+	const { value: line2AlgoControlsB } = useSynthParam("line2AlgoControlsB");
 
 	const waveform = useMemo(
 		() =>
@@ -107,12 +109,10 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay() {
 				windowType,
 				line1Level,
 				line2Level,
-				line1CzSlotAWaveform,
-				line1CzSlotBWaveform,
-				line1CzWindow,
-				line2CzSlotAWaveform,
-				line2CzSlotBWaveform,
-				line2CzWindow,
+				line1AlgoControlsA,
+				line1AlgoControlsB,
+				line2AlgoControlsA,
+				line2AlgoControlsB,
 			}),
 		[
 			warpAAmount,
@@ -129,12 +129,10 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay() {
 			windowType,
 			line1Level,
 			line2Level,
-			line1CzSlotAWaveform,
-			line1CzSlotBWaveform,
-			line1CzWindow,
-			line2CzSlotAWaveform,
-			line2CzSlotBWaveform,
-			line2CzWindow,
+			line1AlgoControlsA,
+			line1AlgoControlsB,
+			line2AlgoControlsA,
+			line2AlgoControlsB,
 		],
 	);
 

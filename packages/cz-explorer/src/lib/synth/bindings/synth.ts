@@ -66,18 +66,6 @@ export type CzWaveform =
 	| "pulse2";
 
 /**
- * Per-line CZ slot controls.
- *
- * Slot A/Slot B alternate per cycle in CZ mode. Setting both slots to the
- * same waveform effectively yields single-wave behavior.
- */
-export type CzLineParams = {
-	slotAWaveform: CzWaveform;
-	slotBWaveform: CzWaveform;
-	window: WindowType;
-};
-
-/**
  * Flat algorithm selector — unifies CZ waveforms and warp variants.
  * Serializes as plain camelCase string (e.g., "saw", "bend", "sync").
  */
@@ -273,7 +261,6 @@ export type LineParams = {
 	dcwEnv: StepEnvData;
 	dcaEnv: StepEnvData;
 	keyFollow: number;
-	cz?: CzLineParams;
 	algoControls?: AlgoControlValueV1[] | null;
 };
 

@@ -9,20 +9,22 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe("Mod matrix route management", () => {
-	test.skip("add, adjust, disable, and remove route emits setModMatrix payloads", async ({
+	test("add, adjust, disable, and remove route emits setModMatrix payloads", async ({
 		page,
 	}) => {
-		const volumeKnob = page.getByRole("spinbutton", { name: /^volume$/i });
+		const volumeKnob = page.getByRole("spinbutton", {
+			name: /^main volume$/i,
+		});
 		await expect(volumeKnob).toBeVisible();
 		await volumeKnob.hover();
 
 		const modulationButton = page.getByRole("button", {
-			name: /modulation for volume/i,
+			name: /modulation for main volume/i,
 		});
 		await expect(modulationButton).toBeVisible();
 		await modulationButton.click();
 		const modulationMenu = page.getByRole("dialog", {
-			name: /modulation for volume/i,
+			name: /modulation for main volume/i,
 		});
 		await expect(modulationMenu).toBeVisible();
 

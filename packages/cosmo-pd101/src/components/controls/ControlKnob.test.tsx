@@ -132,7 +132,9 @@ describe("ControlKnob", () => {
 		fireEvent.pointerUp(window, { pointerId: 1, pointerType: "mouse" });
 
 		expect(onChange).toHaveBeenCalled();
-		expect(onChange.mock.calls.at(-1)?.[0]).toBeGreaterThan(0.4);
+		expect(
+			onChange.mock.calls[onChange.mock.calls.length - 1]?.[0],
+		).toBeGreaterThan(0.4);
 	});
 
 	it("hides value display when valueVisibility is never", () => {

@@ -1,3 +1,4 @@
+import { buildDefaultAlgoControls } from "@/lib/synth/algoRef";
 import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
 import {
 	DEFAULT_DCA_ENV,
@@ -18,12 +19,15 @@ export type CurrentPresetSession = {
 function isSynthPresetV1(value: unknown): value is SynthPresetV1 {
 	if (typeof value !== "object" || value === null) return false;
 	const candidate = value as Partial<SynthPresetV1> & {
+		schemaVersion?: unknown;
 		params?: {
 			volume?: unknown;
 			line1?: unknown;
 			line2?: unknown;
+			fxSlots?: unknown;
 		};
 	};
+	if (candidate.schemaVersion !== 1) return false;
 	if (typeof candidate.params !== "object" || candidate.params === null) {
 		return false;
 	}
@@ -40,6 +44,12 @@ function isSynthPresetV1(value: unknown): value is SynthPresetV1 {
 	) {
 		return false;
 	}
+	if (
+		!Array.isArray(candidate.params.fxSlots) ||
+		candidate.params.fxSlots.length !== 6
+	) {
+		return false;
+	}
 	return true;
 }
 
@@ -52,7 +62,7 @@ export const DEFAULT_PRESET: SynthPresetV1 = {
 		line1: {
 			algo: "cz101",
 			algo2: null,
-			algoControlsA: [],
+			algoControlsA: buildDefaultAlgoControls("cz101"),
 			algoBlend: 0,
 			window: "off",
 			dcaBase: 1,
@@ -64,16 +74,11 @@ export const DEFAULT_PRESET: SynthPresetV1 = {
 			dcwEnv: DEFAULT_DCW_ENV,
 			dcaEnv: DEFAULT_DCA_ENV,
 			keyFollow: 0,
-			cz: {
-				slotAWaveform: "saw",
-				slotBWaveform: "saw",
-				window: "off",
-			},
 		},
 		line2: {
 			algo: "cz101",
 			algo2: null,
-			algoControlsA: [],
+			algoControlsA: buildDefaultAlgoControls("cz101"),
 			algoBlend: 0,
 			window: "off",
 			dcaBase: 1,
@@ -85,47 +90,11 @@ export const DEFAULT_PRESET: SynthPresetV1 = {
 			dcwEnv: DEFAULT_DCW_ENV,
 			dcaEnv: DEFAULT_DCA_ENV,
 			keyFollow: 0,
-			cz: {
-				slotAWaveform: "saw",
-				slotBWaveform: "saw",
-				window: "off",
-			},
 		},
-		intPmAmount: 0,
-		intPmRatio: 2,
-		extPmAmount: 0,
-		pmPre: true,
 		frequency: 440,
 		volume: 1,
 		polyMode: "poly8",
 		legato: false,
-		chorus: {
-			enabled: false,
-			rate: 0.8,
-			depth: 1,
-			mix: 0,
-		},
-		delay: {
-			enabled: false,
-			time: 0.3,
-			feedback: 0.35,
-			mix: 0,
-		},
-		reverb: {
-			enabled: false,
-			space: 0.5,
-			predelay: 0.01,
-			distance: 0.5,
-			character: 0.5,
-			mix: 0,
-		},
-		vibrato: {
-			enabled: false,
-			waveform: 1,
-			rate: 30,
-			depth: 30,
-			delay: 0,
-		},
 		portamento: {
 			enabled: false,
 			mode: "time",
@@ -148,16 +117,16 @@ export const DEFAULT_PRESET: SynthPresetV1 = {
 			retrigger: false,
 			offset: 0,
 		},
-		filter: {
-			enabled: false,
-			type: "lp",
-			cutoff: 5000,
-			resonance: 0,
-			envAmount: 0,
-		},
 		pitchBendRange: 2,
-		modWheelVibratoDepth: 0,
 		modMatrix: { routes: [] },
+		fxSlots: [
+			{ type: "empty" },
+			{ type: "empty" },
+			{ type: "empty" },
+			{ type: "empty" },
+			{ type: "empty" },
+			{ type: "empty" },
+		],
 	},
 };
 

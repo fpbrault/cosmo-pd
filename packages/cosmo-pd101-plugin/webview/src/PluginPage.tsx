@@ -1,6 +1,5 @@
 import {
 	DEFAULT_SYNTH_PRESETS,
-	getSynthRuntimeCapabilities,
 	SynthRenderer,
 	useLcdControlReadout,
 	useNoteHandling,
@@ -18,10 +17,6 @@ import {
 } from "react";
 import { usePluginParamBridge } from "./hooks/usePluginParamBridge";
 
-const UI_SCALE_KEY = "cz-plugin-ui-scale";
-const PLUGIN_RUNTIME_CAPABILITIES = getSynthRuntimeCapabilities("plugin");
-type UiScale = (typeof PLUGIN_RUNTIME_CAPABILITIES.uiScaleOptions)[number];
-
 type PluginPageProps = {
 	utilityExtra?: ReactNode;
 };
@@ -31,14 +26,6 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	const applyPreset = useSynthStore((s) => s.applyPreset);
 	const velocityCurve = useSynthStore((s) => s.velocityCurve);
 	const presetStateKey = useSynthStore((s) => JSON.stringify(s.gatherState()));
-
-	const [uiScale, setUiScale] = useState<UiScale>(() => {
-		const saved = localStorage.getItem(UI_SCALE_KEY);
-		const parsed = saved ? Number(saved) : 70;
-		return (
-			PLUGIN_RUNTIME_CAPABILITIES.uiScaleOptions.includes(parsed) ? parsed : 70
-		) as UiScale;
-	});
 	const [scopeActiveHz, setScopeActiveHz] = useState(220);
 	const analyserNodeRef = useRef<AnalyserNode | null>(null);
 	const audioCtxRef = useRef<AudioContext | null>(null);
@@ -81,10 +68,6 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		},
 		[],
 	);
-
-	useEffect(() => {
-		localStorage.setItem(UI_SCALE_KEY, String(uiScale));
-	}, [uiScale]);
 
 	const {
 		allPresetEntries,
@@ -158,32 +141,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 				onCancelPendingPresetChange: handleCancelPendingPresetChange,
 			}}
 			frameClassName="h-full bg-cz-panel flex flex-col overflow-hidden w-full"
-			frameStyle={{ zoom: `${uiScale}%` }}
-			bottomBarExtra={
-				<>
-					{PLUGIN_RUNTIME_CAPABILITIES.showUiScaleControl ? (
-						<div className="flex items-center gap-1.5">
-							<span className="text-cz-cream/65">Scale</span>
-							<select
-								value={uiScale}
-								onChange={(event) =>
-									setUiScale(Number(event.target.value) as UiScale)
-								}
-								className="h-6 rounded-sm border border-cz-border bg-black/30 px-1.5 text-[0.56rem] font-mono tracking-[0.12em] text-cz-cream/85"
-							>
-								{PLUGIN_RUNTIME_CAPABILITIES.uiScaleOptions.map(
-									(scaleOption) => (
-										<option key={scaleOption} value={scaleOption}>
-											{scaleOption}%
-										</option>
-									),
-								)}
-							</select>
-						</div>
-					) : null}
-					{utilityExtra}
-				</>
-			}
+			bottomBarExtra={utilityExtra}
 			lcdPrimaryText={lcdPrimaryText}
 			lcdSecondaryText={""}
 			lcdTransientReadout={lcdControlReadout}

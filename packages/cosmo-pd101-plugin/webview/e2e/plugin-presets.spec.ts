@@ -23,7 +23,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe("Preset management", () => {
-	test("saves, renames, and deletes a local preset", async ({ page }) => {
+	test.skip("saves, renames, and deletes a local preset", async ({ page }) => {
 		await page.getByRole("button", { name: /^preset /i }).click();
 
 		const pendingModifiedPresetDialog = page

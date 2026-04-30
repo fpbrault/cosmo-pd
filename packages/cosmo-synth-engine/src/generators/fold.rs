@@ -1,6 +1,6 @@
 use super::wrap01;
 use super::{AlgoControlKindV1, AlgoControlV1, AlgoDefinitionV1, NO_CONTROL_OPTIONS};
-use crate::params::Algo;
+use crate::params::{Algo, EngineParamReadoutFormatV1};
 
 const CONTROLS: [AlgoControlV1; 4] = [
     AlgoControlV1 {
@@ -16,6 +16,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.5),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
     AlgoControlV1 {
         id: "foldTilt",
@@ -30,6 +31,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.0),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::BipolarPercent,
     },
     AlgoControlV1 {
         id: "foldSymmetry",
@@ -45,6 +47,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.0),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::BipolarPercent,
     },
     AlgoControlV1 {
         id: "foldSoftness",
@@ -59,6 +62,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.0),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
 ];
 
@@ -67,6 +71,7 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
     name: "Fold",
     icon_path: "M4,20 L8,4 L12,20 L16,4 L20,20",
     visible: true,
+    default_base_waveform: crate::params::BaseWaveform::Sine,
     controls: &CONTROLS,
 };
 

@@ -22,10 +22,6 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 
 	return {
 		DEFAULT_SYNTH_PRESETS: {},
-		getSynthRuntimeCapabilities: () => ({
-			uiScaleOptions: [70],
-			showUiScaleControl: true,
-		}),
 		SynthRenderer: () => <div data-testid="synth-renderer" />,
 		useLcdControlReadout: () => ({
 			lcdControlReadout: "",

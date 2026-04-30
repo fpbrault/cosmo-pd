@@ -26,6 +26,8 @@ Current development status and planned features.
 | Migrate to nih-plug | 🔵 |
 | Ring mod matching CZ-101 behaviour | 🔵 |
 | Saveable per-FX module presets | 🔵 |
+| Window functions for all algos | 🔵 |
+| Ability to change the carrier wave | 🔵 |
 
 ---
 

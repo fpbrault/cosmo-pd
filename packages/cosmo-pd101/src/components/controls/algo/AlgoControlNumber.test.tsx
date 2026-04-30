@@ -62,10 +62,57 @@ describe("AlgoControlNumber", () => {
 			/>,
 		);
 
-		const props = knobSpy.mock.calls.at(-1)?.[0] as {
+		const props = knobSpy.mock.calls[knobSpy.mock.calls.length - 1]?.[0] as {
 			onChange: (value: number) => void;
+			valueFormatter: (value: number) => string;
 		};
+		expect(props.valueFormatter(0.61)).toBe("61%");
 		props.onChange(0.2);
 		expect(setAlgoControlValue).toHaveBeenCalledWith("res", 0.2);
+	});
+
+	it("uses curated units for phase and detune controls", () => {
+		render(
+			<>
+				<AlgoControlNumber
+					control={{
+						id: "twistPhase",
+						label: "Phase",
+						min: 0,
+						max: 1,
+						default: 0,
+						readoutFormat: { kind: "degrees" },
+					}}
+					lineIndex={1}
+					algoParamSlotIndex={{}}
+					getAlgoControlValue={() => 0.25}
+					setAlgoControlValue={vi.fn()}
+				/>
+				<AlgoControlNumber
+					control={{
+						id: "fineDetune",
+						label: "Fine",
+						min: -50,
+						max: 50,
+						default: 0,
+						readoutFormat: { kind: "integer" },
+					}}
+					lineIndex={1}
+					algoParamSlotIndex={{}}
+					getAlgoControlValue={() => 12}
+					setAlgoControlValue={vi.fn()}
+				/>
+			</>,
+		);
+
+		const phaseProps = knobSpy.mock.calls[0][0] as {
+			valueFormatter: (value: number) => string;
+		};
+		const detuneProps = knobSpy.mock.calls[1][0] as {
+			valueFormatter: (value: number) => string;
+		};
+
+		expect(phaseProps.valueFormatter(0.25)).toBe("90°");
+		expect(detuneProps.valueFormatter(12)).toBe("+12");
 	});
 });

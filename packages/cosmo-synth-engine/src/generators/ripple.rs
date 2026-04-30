@@ -1,6 +1,6 @@
 use super::wrap01;
 use super::{AlgoControlKindV1, AlgoControlV1, AlgoDefinitionV1, NO_CONTROL_OPTIONS};
-use crate::params::Algo;
+use crate::params::{Algo, EngineParamReadoutFormatV1};
 
 const CONTROLS: [AlgoControlV1; 4] = [
     AlgoControlV1 {
@@ -16,6 +16,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.5),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Decimal,
     },
     AlgoControlV1 {
         id: "rippleDepth",
@@ -30,6 +31,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.5),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
     AlgoControlV1 {
         id: "ripplePhase",
@@ -44,6 +46,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.0),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Degrees,
     },
     AlgoControlV1 {
         id: "rippleShape",
@@ -58,6 +61,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.5),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
 ];
 
@@ -66,6 +70,7 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
     name: "Ripple",
     icon_path: "M4,12 C6,8 8,16 10,12 C12,8 14,16 16,12 C18,8 19,13 20,12",
     visible: true,
+    default_base_waveform: crate::params::BaseWaveform::Sine,
     controls: &CONTROLS,
 };
 

@@ -1,5 +1,7 @@
 import type { DecodedPatch, EnvelopeStep } from "@/lib/midi/czSysexDecoder";
 import type {
+	AlgoControlValueV1,
+	CzWaveform,
 	EnvStep,
 	StepEnvData,
 	SynthPresetV1,
@@ -38,15 +40,7 @@ function convertEnvelope(env: {
 
 function waveformToCzWaveform(
 	waveform: DecodedPatch["dco1"]["firstWaveform"],
-):
-	| "saw"
-	| "square"
-	| "pulse"
-	| "null"
-	| "sinePulse"
-	| "sawPulse"
-	| "multiSine"
-	| "pulse2" {
+): CzWaveform {
 	if (waveform === 1) return "saw";
 	if (waveform === 2) return "square";
 	if (waveform === 3) return "pulse";
@@ -68,6 +62,42 @@ function calculateDetune(
 	return sign * cents;
 }
 
+function setAlgoControl(
+	entries: AlgoControlValueV1[],
+	id: string,
+	value: number,
+): AlgoControlValueV1[] {
+	const index = entries.findIndex((entry) => entry.id === id);
+	if (index >= 0) {
+		const next = [...entries];
+		next[index] = { ...next[index], value };
+		return next;
+	}
+	return [...entries, { id, value }];
+}
+
+function makeCzControls(
+	waveform1: CzWaveform,
+	waveform2: CzWaveform,
+): AlgoControlValueV1[] {
+	const waveformIndex = (waveform: CzWaveform) =>
+		[
+			"saw",
+			"square",
+			"pulse",
+			"null",
+			"sinePulse",
+			"sawPulse",
+			"multiSine",
+			"pulse2",
+		].indexOf(waveform);
+	let entries: AlgoControlValueV1[] = [];
+	entries = setAlgoControl(entries, "waveform1", waveformIndex(waveform1));
+	entries = setAlgoControl(entries, "waveform2", waveformIndex(waveform2));
+	entries = setAlgoControl(entries, "windowFunction", 0);
+	return entries;
+}
+
 export function convertDecodedPatchToSynthPreset(
 	decoded: DecodedPatch,
 ): SynthPresetV1 {
@@ -83,13 +113,15 @@ export function convertDecodedPatchToSynthPreset(
 
 	p.line1.algo = "cz101";
 	p.line1.algo2 = decoded.dco1.secondWaveform ? "cz101" : null;
-	p.line1.cz = {
-		slotAWaveform: waveformToCzWaveform(decoded.dco1.firstWaveform),
-		slotBWaveform: decoded.dco1.secondWaveform
+	p.line1.algoControlsA = makeCzControls(
+		waveformToCzWaveform(decoded.dco1.firstWaveform),
+		decoded.dco1.secondWaveform
 			? waveformToCzWaveform(decoded.dco1.secondWaveform)
 			: "saw",
-		window: "off",
-	};
+	);
+	p.line1.algoControlsB = decoded.dco1.secondWaveform
+		? makeCzControls(waveformToCzWaveform(decoded.dco1.secondWaveform), "saw")
+		: [];
 	p.line1.octave = decoded.octave;
 	p.line1.detuneCents = 0;
 	p.line1.dcoEnv = convertEnvelope(decoded.dco1Env);
@@ -99,13 +131,15 @@ export function convertDecodedPatchToSynthPreset(
 
 	p.line2.algo = "cz101";
 	p.line2.algo2 = decoded.dco2.secondWaveform ? "cz101" : null;
-	p.line2.cz = {
-		slotAWaveform: waveformToCzWaveform(decoded.dco2.firstWaveform),
-		slotBWaveform: decoded.dco2.secondWaveform
+	p.line2.algoControlsA = makeCzControls(
+		waveformToCzWaveform(decoded.dco2.firstWaveform),
+		decoded.dco2.secondWaveform
 			? waveformToCzWaveform(decoded.dco2.secondWaveform)
 			: "saw",
-		window: "off",
-	};
+	);
+	p.line2.algoControlsB = decoded.dco2.secondWaveform
+		? makeCzControls(waveformToCzWaveform(decoded.dco2.secondWaveform), "saw")
+		: [];
 	p.line2.octave = decoded.octave;
 	p.line2.detuneCents = detune;
 	p.line2.dcoEnv = convertEnvelope(decoded.dco2Env);
@@ -157,10 +191,6 @@ export function convertDecodedPatchToSynthPreset(
 	p.line2.dcwBase = 1.0;
 	p.line1.algoBlend = 0;
 	p.line2.algoBlend = 0;
-	p.intPmEnabled = false;
-	p.intPmAmount = 0.03;
-	p.intPmRatio = 1.0;
-	p.pmPre = true;
 	p.line1.window = "off";
 	p.line2.window = "off";
 	p.volume = 0.8;
@@ -175,6 +205,23 @@ export function convertDecodedPatchToSynthPreset(
 	p.lfo.depth = 1;
 	p.lfo.symmetry = 0.5;
 	p.lfo.retrigger = false;
+	p.fxSlots = [
+		{ type: "empty" },
+		{ type: "empty" },
+		{ type: "empty" },
+		{
+			type: "vibrato",
+			params: {
+				enabled: decoded.vibratoDepth > 0,
+				waveform: decoded.vibratoWave,
+				rate: decoded.vibratoRate,
+				depth: decoded.vibratoDepth,
+				delay: decoded.vibratoDelay,
+			},
+		},
+		{ type: "empty" },
+		{ type: "empty" },
+	];
 
 	return preset;
 }

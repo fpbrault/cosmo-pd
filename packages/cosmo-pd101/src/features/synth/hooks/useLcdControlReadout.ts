@@ -60,6 +60,8 @@ export function useLcdControlReadout(): UseLcdControlReadoutResult {
 					return match?.label ?? value.toUpperCase();
 				}
 			}
+
+			return null;
 		},
 		[],
 	);
@@ -88,7 +90,6 @@ export function useLcdControlReadout(): UseLcdControlReadoutResult {
 				if (key === "windowType") return value.toUpperCase();
 				if (key === "lineSelect") return value;
 				if (key === "modMode") return value.toUpperCase();
-				if (key === "filterType") return value.toUpperCase();
 				if (key === "lfoWaveform") return value.toUpperCase();
 				if (key === "portamentoMode") return value.toUpperCase();
 				return value.toUpperCase();
@@ -102,17 +103,13 @@ export function useLcdControlReadout(): UseLcdControlReadoutResult {
 				return t("units.semitones", { value: Math.round(value) });
 			if (key === "vibratoDelay")
 				return t("units.milliseconds", { value: Math.round(value) });
-			if (key === "filterCutoff")
-				return t("units.hertz", { value: Math.round(value) });
 			if (key === "delayTime" || key === "portamentoTime")
 				return t("units.seconds", { value: value.toFixed(2) });
 			if (
 				key === "chorusMix" ||
 				key === "delayMix" ||
 				key === "reverbMix" ||
-				key === "reverbCharacter" ||
-				key === "filterResonance" ||
-				key === "filterEnvAmount"
+				key === "reverbCharacter"
 			) {
 				return t("units.decimal", { value });
 			}

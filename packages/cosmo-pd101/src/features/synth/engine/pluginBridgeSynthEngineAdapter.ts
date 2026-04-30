@@ -5,7 +5,10 @@ import {
 } from "@/features/synth/engine/synthEngineAdapter";
 import { createSynthEngineSnapshot } from "@/features/synth/engine/synthEngineSnapshot";
 import { type SynthStore, useSynthStore } from "@/features/synth/synthStore";
-import { isWaveformId } from "@/lib/synth/algoRef";
+import {
+	isWaveformId,
+	resolveCzControlsFromEntries,
+} from "@/lib/synth/algoRef";
 import type {
 	Algo,
 	AlgoControlValueV1,
@@ -172,6 +175,32 @@ function algoKeyToWaveform(key: Algo | null, slotWaveform: CzWaveform): number {
 	return 0;
 }
 
+function setControlValue(
+	entries: AlgoControlValueV1[],
+	controlId: string,
+	value: number,
+): AlgoControlValueV1[] {
+	const index = entries.findIndex((entry) => entry.id === controlId);
+	if (index >= 0) {
+		const next = [...entries];
+		next[index] = { ...next[index], value };
+		return next;
+	}
+	return [...entries, { id: controlId, value }];
+}
+
+function setLegacyCzWaveformBank(
+	entries: AlgoControlValueV1[],
+	waveform: CzWaveform,
+): AlgoControlValueV1[] {
+	const index = CZ_WAVEFORM_IDX[waveform] ?? 0;
+	return setControlValue(
+		setControlValue(entries, "waveform1", index),
+		"waveform2",
+		index,
+	);
+}
+
 // ---------------------------------------------------------------------------
 // Descriptor table
 // Each entry maps a Beamer string param ID to a read (snapshot → number) and
@@ -220,36 +249,50 @@ const PLUGIN_PARAM_DESCRIPTORS: PluginParamDescriptor[] = [
 	},
 	{
 		id: "int_pm_enabled",
-		read: (params) => (params.intPmEnabled ? 1 : 0),
-		apply: (value, s) => s.setPhaseModEnabled(value >= 0.5),
+		read: (params) =>
+			(params.fxSlots?.[4] as { params?: { enabled?: boolean } } | undefined)
+				?.params?.enabled
+				? 1
+				: 0,
+		apply: (value, s) => s.setFxSlotEnabled(4, value >= 0.5),
 	},
 	{
 		id: "int_pm_amount",
-		read: (params) => params.intPmAmount,
-		apply: (value, s) => s.setIntPmAmount(value),
+		read: (params) =>
+			(params.fxSlots?.[4] as { params?: { amount?: number } } | undefined)
+				?.params?.amount ?? 0,
+		apply: (value, s) => s.setFxSlotParams(4, { amount: value }),
 	},
 	{
 		id: "int_pm_ratio",
-		read: (params) => params.intPmRatio,
-		apply: (value, s) => s.setIntPmRatio(value),
+		read: (params) =>
+			(params.fxSlots?.[4] as { params?: { ratio?: number } } | undefined)
+				?.params?.ratio ?? 1,
+		apply: (value, s) => s.setFxSlotParams(4, { ratio: value }),
 	},
 	{
 		id: "pm_pre",
-		read: (params) => (params.pmPre ? 1 : 0),
-		apply: (value, s) => s.setPmPre(value >= 0.5),
+		read: (params) =>
+			(params.fxSlots?.[4] as { params?: { pmPre?: boolean } } | undefined)
+				?.params?.pmPre
+				? 1
+				: 0,
+		apply: (value, s) => s.setFxSlotParams(4, { pmPre: value >= 0.5 }),
 	},
 	{
 		id: "l1_waveform",
 		read: (params) =>
 			algoKeyToWaveform(
 				params.line1.algo,
-				params.line1.cz?.slotAWaveform ?? "saw",
+				resolveCzControlsFromEntries(params.line1.algoControlsA ?? [])
+					.waveform1,
 			),
 		apply: (value, s) => {
 			const waveform = IDX_TO_CZ_WAVEFORM[Math.round(value)];
 			if (!waveform) return;
-			s.setLine1CzSlotAWaveform(waveform);
-			s.setLine1CzSlotBWaveform(waveform);
+			s.setLine1AlgoControlsA(
+				setLegacyCzWaveformBank(s.line1AlgoControlsA, waveform),
+			);
 		},
 	},
 	{
@@ -310,13 +353,15 @@ const PLUGIN_PARAM_DESCRIPTORS: PluginParamDescriptor[] = [
 		read: (params) =>
 			algoKeyToWaveform(
 				params.line2.algo,
-				params.line2.cz?.slotAWaveform ?? "saw",
+				resolveCzControlsFromEntries(params.line2.algoControlsA ?? [])
+					.waveform1,
 			),
 		apply: (value, s) => {
 			const waveform = IDX_TO_CZ_WAVEFORM[Math.round(value)];
 			if (!waveform) return;
-			s.setLine2CzSlotAWaveform(waveform);
-			s.setLine2CzSlotBWaveform(waveform);
+			s.setLine2AlgoControlsA(
+				setLegacyCzWaveformBank(s.line2AlgoControlsA, waveform),
+			);
 		},
 	},
 	{
@@ -371,101 +416,6 @@ const PLUGIN_PARAM_DESCRIPTORS: PluginParamDescriptor[] = [
 				"cz101") as Algo;
 			s.setAlgo2B(algoName);
 		},
-	},
-	{
-		id: "vib_enabled",
-		read: (params) => (params.vibrato.enabled ? 1 : 0),
-		apply: (value, s) => s.setVibratoEnabled(value >= 0.5),
-	},
-	{
-		id: "vib_waveform",
-		read: (params) => params.vibrato.waveform,
-		apply: (value, s) => s.setVibratoWave(Math.round(value)),
-	},
-	{
-		id: "vib_rate",
-		read: (params) => params.vibrato.rate,
-		apply: (value, s) => s.setVibratoRate(value),
-	},
-	{
-		id: "vib_depth",
-		read: (params) => params.vibrato.depth,
-		apply: (value, s) => s.setVibratoDepth(value),
-	},
-	{
-		id: "vib_delay",
-		read: (params) => params.vibrato.delay,
-		apply: (value, s) => s.setVibratoDelay(value),
-	},
-	{
-		id: "cho_enabled",
-		read: (params) => (params.chorus.enabled ? 1 : 0),
-		apply: (value, s) => s.setChorusEnabled(value >= 0.5),
-	},
-	{
-		id: "cho_mix",
-		read: (params) => params.chorus.mix,
-		apply: (value, s) => s.setChorusMix(value),
-	},
-	{
-		id: "cho_rate",
-		read: (params) => params.chorus.rate,
-		apply: (value, s) => s.setChorusRate(value),
-	},
-	{
-		id: "cho_depth",
-		read: (params) => params.chorus.depth,
-		apply: (value, s) => s.setChorusDepth(value),
-	},
-	{
-		id: "del_enabled",
-		read: (params) => (params.delay.enabled ? 1 : 0),
-		apply: (value, s) => s.setDelayEnabled(value >= 0.5),
-	},
-	{
-		id: "del_mix",
-		read: (params) => params.delay.mix,
-		apply: (value, s) => s.setDelayMix(value),
-	},
-	{
-		id: "del_time",
-		read: (params) => params.delay.time,
-		apply: (value, s) => s.setDelayTime(value),
-	},
-	{
-		id: "del_feedback",
-		read: (params) => params.delay.feedback,
-		apply: (value, s) => s.setDelayFeedback(value),
-	},
-	{
-		id: "rev_enabled",
-		read: (params) => (params.reverb.enabled ? 1 : 0),
-		apply: (value, s) => s.setReverbEnabled(value >= 0.5),
-	},
-	{
-		id: "rev_mix",
-		read: (params) => params.reverb.mix ?? 0,
-		apply: (value, s) => s.setReverbMix(value),
-	},
-	{
-		id: "rev_space",
-		read: (params) => params.reverb.space ?? 0.5,
-		apply: (value, s) => s.setReverbSpace(value),
-	},
-	{
-		id: "rev_predelay",
-		read: (params) => params.reverb.predelay ?? 0,
-		apply: (value, s) => s.setReverbPredelay(value),
-	},
-	{
-		id: "rev_distance",
-		read: (params) => params.reverb.distance ?? 0.3,
-		apply: (value, s) => s.setReverbDistance(value),
-	},
-	{
-		id: "rev_character",
-		read: (params) => params.reverb.character ?? 0.65,
-		apply: (value, s) => s.setReverbCharacter(value),
 	},
 	{
 		id: "lfo_waveform",
@@ -807,7 +757,6 @@ export function usePluginBridgeSynthEngine(
 			const snapshot = createSynthEngineSnapshot({
 				gatherState,
 				effectivePitchHz: 220,
-				extPmAmount: 0,
 			});
 			adapter.sync(snapshot);
 		};

@@ -2,6 +2,13 @@ import { describe, expect, it } from "vitest";
 import type { DecodedPatch } from "@/lib/midi/czSysexDecoder";
 import { convertDecodedPatchToSynthPreset } from "@/lib/synth/czPresetConverter";
 
+function getControlValue(
+	controls: Array<{ id: string; value: number }> | null | undefined,
+	id: string,
+) {
+	return controls?.find((entry) => entry.id === id)?.value;
+}
+
 const basePatch: DecodedPatch = {
 	lineSelect: "L1",
 	octave: 1,
@@ -59,10 +66,27 @@ describe("convertDecodedPatchToSynthPreset", () => {
 
 		expect(preset.params.line1.algo).toBe("cz101");
 		expect(preset.params.line1.algo2).toBe("cz101");
-		expect(preset.params.line1.cz?.slotAWaveform).toBe("sawPulse");
-		expect(preset.params.line1.cz?.slotBWaveform).toBe("square");
+		expect(
+			getControlValue(preset.params.line1.algoControlsA, "waveform1"),
+		).toBe(5);
+		expect(
+			getControlValue(preset.params.line1.algoControlsA, "waveform2"),
+		).toBe(1);
 		expect(preset.params.modMode).toBe("ring");
-		expect(preset.params.line2.cz?.slotAWaveform).toBe("pulse2");
+		expect(
+			getControlValue(preset.params.line2.algoControlsA, "waveform1"),
+		).toBe(7);
+		expect(preset.params.fxSlots?.[3]).toEqual({
+			type: "vibrato",
+			params: {
+				enabled: true,
+				waveform: 2,
+				rate: 34,
+				depth: 56,
+				delay: 12,
+			},
+		});
+		expect(preset.params.fxSlots?.[4].type).toBe("empty");
 	});
 
 	it("maps dual-line CZ modes into visualizer line modes and preserves line 2", () => {
@@ -75,8 +99,12 @@ describe("convertDecodedPatchToSynthPreset", () => {
 		expect(preset.params.line1.algo).toBe("cz101");
 		expect(preset.params.line2.algo).toBe("cz101");
 		expect(preset.params.line2.algo2).toBe("cz101");
-		expect(preset.params.line2.cz?.slotAWaveform).toBe("pulse2");
-		expect(preset.params.line2.cz?.slotBWaveform).toBe("pulse");
+		expect(
+			getControlValue(preset.params.line2.algoControlsA, "waveform1"),
+		).toBe(7);
+		expect(
+			getControlValue(preset.params.line2.algoControlsA, "waveform2"),
+		).toBe(2);
 		expect(preset.params.modMode).toBe("ring");
 		expect(preset.params.line2.detuneCents).toBe(1720);
 		expect(preset.params.line2.octave).toBe(1);

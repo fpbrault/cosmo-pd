@@ -1,7 +1,6 @@
 import { memo } from "react";
-import ControlKnob from "@/components/controls/ControlKnob";
+import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import Card from "@/components/primitives/Card";
-import { PARAM_META } from "@/lib/synth/paramMeta";
 
 interface PerLineParametersCardProps {
 	color: string;
@@ -28,117 +27,51 @@ function PerLineParametersCardInner({
 	setFineDetune,
 	lineIndex,
 }: PerLineParametersCardProps) {
-	const dcwTooltip =
-		lineIndex === 1
-			? PARAM_META.warpAAmount?.tooltip
-			: PARAM_META.warpBAmount?.tooltip;
-	const levelTooltip =
-		lineIndex === 1
-			? PARAM_META.line1Level?.tooltip
-			: PARAM_META.line2Level?.tooltip;
-	const octaveTooltip =
-		lineIndex === 1
-			? PARAM_META.line1Octave?.tooltip
-			: PARAM_META.line2Octave?.tooltip;
-	const detuneTooltip =
-		lineIndex === 1
-			? PARAM_META.line1Detune?.tooltip
-			: PARAM_META.line2Detune?.tooltip;
-
-	const controls = [
-		{
-			label: "DCW Amt",
-			tooltip: dcwTooltip,
-			value: warpAmount,
-			min: 0,
-			max: 1,
-			defaultValue: 1,
-			step: 0.01,
-			color,
-			fmt: (value: number) => value.toFixed(2),
-			onChange: setWarpAmount,
-			modDest: "dcwBase",
-		},
-		{
-			label: "Level",
-			tooltip: levelTooltip,
-			value: level,
-			min: 0,
-			max: 1,
-			defaultValue: 1,
-			step: 0.01,
-			color: "#9cb937",
-			fmt: (value: number) => `${Math.round(value * 100)}%`,
-			onChange: setLevel,
-			modDest: "dcaBase",
-		},
-		{
-			label: "Oct",
-			tooltip: octaveTooltip,
-			value: octave,
-			min: -2,
-			max: 2,
-			defaultValue: 0,
-			step: 1,
-			color: "#7f9de4",
-			fmt: (value: number) => `${value >= 0 ? "+" : ""}${Math.round(value)}`,
-			onChange: (value: number) => setOctave(Math.round(value)),
-			modDest: "octave",
-		},
-		{
-			label: "Fine",
-			tooltip: detuneTooltip,
-			value: fineDetune,
-			min: -50,
-			max: 50,
-			defaultValue: 0,
-			step: 1,
-			color: "#9cb937",
-			fmt: (value: number) => `${value >= 0 ? "+" : ""}${Math.round(value)}`,
-			onChange: (value: number) => setFineDetune(Math.round(value)),
-			modDest: "detune",
-		},
-	] as const;
-
 	return (
-		<Card variant="subtle" className="p-3 md:col-span-1 min-h-0 flex flex-col">
+		<Card
+			variant="subtle"
+			className="p-3 col-span-1 min-h-0 flex flex-col grow"
+		>
 			<div className="mb-3 text-3xs uppercase tracking-[0.24em] text-cz-cream">
 				Parameters
 			</div>
 			<div className="flex-1 min-h-0 grid grid-cols-2  gap-3 place-items-center content-start">
-				{controls.map(
-					({
-						label,
-						tooltip,
-						value,
-						min,
-						max,
-						defaultValue,
-						step,
-						color,
-						fmt,
-						onChange,
-						modDest,
-					}) => (
-						<ControlKnob
-							key={label}
-							label={label}
-							tooltip={tooltip}
-							value={value}
-							min={min}
-							max={max}
-							step={step}
-							size={52}
-							defaultValue={defaultValue}
-							bipolar={min < 0 && max > 0}
-							color={color}
-							modulatable={modDest}
-							lineIndex={lineIndex}
-							onChange={onChange}
-							valueFormatter={fmt}
-						/>
-					),
-				)}
+				<SynthParamKnob
+					paramKey={lineIndex === 1 ? "warpAAmount" : "warpBAmount"}
+					label="DCW Amt"
+					value={warpAmount}
+					color={color}
+					modDestination={lineIndex === 1 ? "line1DcwBase" : "line2DcwBase"}
+					onChange={setWarpAmount}
+				/>
+				<SynthParamKnob
+					paramKey={lineIndex === 1 ? "line1Level" : "line2Level"}
+					label="Level"
+					value={level}
+					color="#9cb937"
+					modDestination={lineIndex === 1 ? "line1DcaBase" : "line2DcaBase"}
+					onChange={setLevel}
+				/>
+				<SynthParamKnob
+					paramKey={lineIndex === 1 ? "line1Octave" : "line2Octave"}
+					label="Oct"
+					value={octave}
+					color="#7f9de4"
+					min={-2}
+					max={2}
+					step={1}
+					onChange={(v) => setOctave(Math.round(v))}
+				/>
+				<SynthParamKnob
+					paramKey={lineIndex === 1 ? "line1Detune" : "line2Detune"}
+					label="Fine"
+					value={fineDetune}
+					color="#9cb937"
+					min={-100}
+					max={100}
+					step={1}
+					onChange={(v) => setFineDetune(Math.round(v))}
+				/>
 			</div>
 		</Card>
 	);

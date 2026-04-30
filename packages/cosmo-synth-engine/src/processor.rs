@@ -334,10 +334,13 @@ impl CosmoProcessor {
         voice.smoothed_dcw1 = 0.0;
         voice.smoothed_dcw2 = 0.0;
 
-        if self.params.vibrato.enabled {
-            voice.vibrato_phase = 0.0;
-            let delay_ms = self.params.vibrato.delay;
-            voice.vibrato_delay_counter = libm::roundf(delay_ms * self.sample_rate / 1000.0) as u32;
+        if let Some(vib) = self.params.vibrato_params() {
+            if vib.enabled {
+                voice.vibrato_phase = 0.0;
+                let delay_ms = vib.delay;
+                voice.vibrato_delay_counter =
+                    libm::roundf(delay_ms * self.sample_rate / 1000.0) as u32;
+            }
         }
     }
 
@@ -504,6 +507,15 @@ impl CosmoProcessor {
     /// * `velocity`  – normalised velocity [0.0, 1.0]
     pub fn note_on(&mut self, note: u8, frequency: f32, velocity: f32) {
         let vel = if velocity <= 0.0 { 1.0 } else { velocity };
+        let vel = {
+            let curve = self.params.velocity_curve;
+            if curve.abs() < 0.001 {
+                vel
+            } else {
+                let exponent = libm::powf(2.0_f32, -curve * 2.5);
+                vel.clamp(0.0, 1.0).powf(exponent)
+            }
+        };
 
         if self.params.lfo.retrigger {
             self.lfo_phase = 0.0;
@@ -650,10 +662,8 @@ impl CosmoProcessor {
                 self.aftertouch,
             );
 
-            let lfo1_rate_mod = mod_value_for(ModDestination::LfoRate, matrix, &pre_sources)
-                + mod_value_for(ModDestination::Lfo1Rate, matrix, &pre_sources);
-            let lfo1_depth_mod = mod_value_for(ModDestination::LfoDepth, matrix, &pre_sources)
-                + mod_value_for(ModDestination::Lfo1Depth, matrix, &pre_sources);
+            let lfo1_rate_mod = mod_value_for(ModDestination::Lfo1Rate, matrix, &pre_sources);
+            let lfo1_depth_mod = mod_value_for(ModDestination::Lfo1Depth, matrix, &pre_sources);
             let lfo1_symmetry_mod =
                 mod_value_for(ModDestination::Lfo1Symmetry, matrix, &pre_sources);
             let lfo1_offset_mod = mod_value_for(ModDestination::Lfo1Offset, matrix, &pre_sources);
@@ -867,8 +877,6 @@ mod tests {
     fn fx_destination_route_does_not_break_processing() {
         let mut proc = CosmoProcessor::new(48_000.0);
         proc.set_mod_wheel(1.0);
-        proc.params.chorus.enabled = true;
-        proc.params.chorus.mix = 1.0;
         proc.params.mod_matrix.routes = vec![ModRoute {
             source: ModSource::ModWheel,
             destination: ModDestination::ChorusRate,

@@ -5,29 +5,32 @@ import type {
 	AlgoControlRuntime,
 	LineIndex,
 } from "@/components/controls/algo/algoControlTypes";
-import ControlKnob from "@/components/controls/ControlKnob";
+import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import AlgoSectionCard from "@/components/editor/AlgoSectionCard";
 import Card from "@/components/primitives/Card";
 import { useOptionalSynthController } from "@/features/synth/SynthParamController";
 import type { EnvTab } from "@/features/synth/synthUiStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
-import { getCzPresetDefaults } from "@/lib/synth/algoRef";
+import { buildDefaultAlgoControls } from "@/lib/synth/algoRef";
 import type {
 	AlgoControlValueV1,
-	CzWaveform,
+	AlgoDefinitionV1,
+	BaseWaveform,
 	StepEnvData,
-	WindowType,
 } from "@/lib/synth/bindings/synth";
 import { ALGO_DEFINITIONS_V1 } from "@/lib/synth/bindings/synth";
-import { PARAM_META } from "@/lib/synth/paramMeta";
+
 import type { PdAlgo } from "@/lib/synth/pdAlgorithms";
-import { getPdAlgoDef, PD_ALGOS } from "@/lib/synth/pdAlgorithms";
-import PerLineParametersCard from "./PerLineParametersCard";
 import {
-	StepEnvelopeEditor,
-	StepEnvelopePreview,
-	type StepEnvelopeVoiceMarker,
-} from "./StepEnvelopeEditor";
+	algoUsesBaseWaveform,
+	getPdAlgoDef,
+	PD_ALGOS,
+} from "@/lib/synth/pdAlgorithms";
+import { BaseWaveSelector } from "./BaseWaveSelector";
+import type { EnvMapEntry } from "./EnvelopesSection";
+import { EnvelopesSection } from "./EnvelopesSection";
+import PerLineParametersCard from "./PerLineParametersCard";
+import type { StepEnvelopeVoiceMarker } from "./StepEnvelopeEditor";
 
 interface PerLineWarpBlockProps {
 	label: string;
@@ -52,12 +55,10 @@ interface PerLineWarpBlockProps {
 	setDcwEnv: (e: StepEnvData) => void;
 	dcaEnv: StepEnvData;
 	setDcaEnv: (e: StepEnvData) => void;
-	czSlotAWaveform: CzWaveform;
-	setCzSlotAWaveform: (v: CzWaveform) => void;
-	czSlotBWaveform: CzWaveform;
-	setCzSlotBWaveform: (v: CzWaveform) => void;
-	czWindow: WindowType;
-	setCzWindow: (v: WindowType) => void;
+	baseWaveformA: BaseWaveform;
+	setBaseWaveformA: (v: BaseWaveform) => void;
+	baseWaveformB: BaseWaveform;
+	setBaseWaveformB: (v: BaseWaveform) => void;
 	algoControlsA: AlgoControlValueV1[];
 	setAlgoControlsA: (value: AlgoControlValueV1[]) => void;
 	algoControlsB: AlgoControlValueV1[];
@@ -68,13 +69,15 @@ interface PerLineWarpBlockProps {
 }
 
 type SectionTab = "algos" | "envelopes";
-type AlgoDefinitionRuntime = {
-	id: PdAlgo;
-	controls: AlgoControlRuntime[];
-};
 
 function clamp(value: number, min: number, max: number) {
 	return Math.max(min, Math.min(max, value));
+}
+
+function formatAlgoBlendReadout(value: number) {
+	const blendB = Math.round(clamp(value, 0, 1) * 100);
+	const blendA = 100 - blendB;
+	return `A ${blendA}% | B ${blendB}%`;
 }
 
 function getEnvelopeVoiceProgress(
@@ -123,12 +126,10 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 	setDcwEnv,
 	dcaEnv,
 	setDcaEnv,
-	czSlotAWaveform,
-	setCzSlotAWaveform,
-	czSlotBWaveform,
-	setCzSlotBWaveform,
-	czWindow,
-	setCzWindow,
+	baseWaveformA,
+	setBaseWaveformA,
+	baseWaveformB,
+	setBaseWaveformB,
 	algoControlsA = [],
 	setAlgoControlsA = () => {},
 	algoControlsB = [],
@@ -137,7 +138,6 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 	activeSection: activeSectionProp,
 }: PerLineWarpBlockProps) {
 	const activeEnvTab = useSynthUiStore((s) => s.activeEnvTab);
-	const setActiveEnvTab = useSynthUiStore((s) => s.setActiveEnvTab);
 	const synthController = useOptionalSynthController();
 	const activeSection = activeSectionProp;
 	const algoBEnabled = algoBlend > 0.001;
@@ -149,15 +149,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 		}
 	}, [algoBlend, algo2, setAlgo2]);
 
-	const envMap: Record<
-		EnvTab,
-		{
-			title: string;
-			env: StepEnvData;
-			setEnv: (env: StepEnvData) => void;
-			envColor: string;
-		}
-	> = {
+	const envMap: Record<EnvTab, EnvMapEntry> = {
 		dco: {
 			title: `${label} DCO`,
 			env: dcoEnv,
@@ -201,72 +193,33 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 	const handleAlgoChange = useCallback(
 		(nextAlgo: PdAlgo) => {
 			setAlgo(nextAlgo);
-			const definitions =
-				ALGO_DEFINITIONS_V1 as unknown as AlgoDefinitionRuntime[];
+			const definitions = ALGO_DEFINITIONS_V1 as AlgoDefinitionV1[];
 			const nextDefinition = definitions.find((entry) => entry.id === nextAlgo);
-			const nextDefaults = (nextDefinition?.controls ?? [])
-				.filter((control) => (control.kind ?? "number") === "number")
-				.map((control) => ({
-					id: control.id,
-					value: control.default ?? control.min ?? 0,
-				}));
-			setAlgoControlsA(nextDefaults);
-			const defaults = getCzPresetDefaults(nextAlgo);
-			if (!defaults) {
-				return;
+			if (nextDefinition?.defaultBaseWaveform) {
+				setBaseWaveformA(nextDefinition.defaultBaseWaveform);
 			}
-
-			setCzSlotAWaveform(defaults.waveform1);
-			setCzSlotBWaveform(defaults.waveform2);
-			setCzWindow(defaults.windowFunction);
+			setAlgoControlsA(buildDefaultAlgoControls(nextAlgo));
 		},
-		[
-			setAlgo,
-			setAlgoControlsA,
-			setCzSlotAWaveform,
-			setCzSlotBWaveform,
-			setCzWindow,
-		],
+		[setAlgo, setAlgoControlsA, setBaseWaveformA],
 	);
 
 	const handleAlgo2Change = useCallback(
 		(nextAlgo: PdAlgo) => {
 			setAlgo2(nextAlgo);
-			const definitions =
-				ALGO_DEFINITIONS_V1 as unknown as AlgoDefinitionRuntime[];
+			const definitions = ALGO_DEFINITIONS_V1 as AlgoDefinitionV1[];
 			const nextDefinition = definitions.find((entry) => entry.id === nextAlgo);
-			const nextDefaults = (nextDefinition?.controls ?? [])
-				.filter((control) => (control.kind ?? "number") === "number")
-				.map((control) => ({
-					id: control.id,
-					value: control.default ?? control.min ?? 0,
-				}));
-			setAlgoControlsB(nextDefaults);
+			if (nextDefinition?.defaultBaseWaveform) {
+				setBaseWaveformB(nextDefinition.defaultBaseWaveform);
+			}
+			setAlgoControlsB(buildDefaultAlgoControls(nextAlgo));
 		},
-		[setAlgo2, setAlgoControlsB],
+		[setAlgo2, setAlgoControlsB, setBaseWaveformB],
 	);
-	const czWaveforms: CzWaveform[] = [
-		"saw",
-		"square",
-		"pulse",
-		"null",
-		"sinePulse",
-		"sawPulse",
-		"multiSine",
-		"pulse2",
-	];
 
-	const czWindows: WindowType[] = [
-		"off",
-		"saw",
-		"triangle",
-		"trapezoid",
-		"pulse",
-		"doubleSaw",
-	];
-
-	const algoDefinitions =
-		ALGO_DEFINITIONS_V1 as unknown as AlgoDefinitionRuntime[];
+	const algoDefinitions = ALGO_DEFINITIONS_V1 as AlgoDefinitionV1[];
+	const baseWaveEnabledA = algoUsesBaseWaveform(algo);
+	const baseWaveEnabledB =
+		algoBEnabled && algo2 != null && algoUsesBaseWaveform(algo2);
 	const activeAlgoDefinition = algoDefinitions.find(
 		(entry) => entry.id === algo,
 	);
@@ -297,36 +250,6 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 		}
 	}
 
-	const controlBindings: Record<string, AlgoControlBinding> = {
-		waveform1: {
-			getNumber: () => czWaveforms.indexOf(czSlotAWaveform),
-			setNumber: (value: number) => {
-				const waveform = czWaveforms[Math.round(value)];
-				if (waveform) {
-					setCzSlotAWaveform(waveform);
-				}
-			},
-		},
-		waveform2: {
-			getNumber: () => czWaveforms.indexOf(czSlotBWaveform),
-			setNumber: (value: number) => {
-				const waveform = czWaveforms[Math.round(value)];
-				if (waveform) {
-					setCzSlotBWaveform(waveform);
-				}
-			},
-		},
-		windowFunction: {
-			getNumber: () => czWindows.indexOf(czWindow),
-			setNumber: (value: number) => {
-				const window = czWindows[Math.round(value)];
-				if (window) {
-					setCzWindow(window);
-				}
-			},
-		},
-	};
-
 	const getAlgoControlValue = (
 		entries: AlgoControlValueV1[],
 		id: string,
@@ -336,9 +259,8 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 		return existing ? existing.value : fallback;
 	};
 
-	const setAlgoControlValue = (
+	const upsertAlgoControlValue = (
 		entries: AlgoControlValueV1[],
-		setEntries: (value: AlgoControlValueV1[]) => void,
 		id: string,
 		value: number,
 	) => {
@@ -347,10 +269,18 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 		if (index >= 0) {
 			const next = [...entries];
 			next[index] = { ...next[index], value: nextValue };
-			setEntries(next);
-			return;
+			return next;
 		}
-		setEntries([...entries, { id, value: nextValue }]);
+		return [...entries, { id, value: nextValue }];
+	};
+
+	const setAlgoControlValue = (
+		entries: AlgoControlValueV1[],
+		setEntries: (value: AlgoControlValueV1[]) => void,
+		id: string,
+		value: number,
+	) => {
+		setEntries(upsertAlgoControlValue(entries, id, value));
 	};
 
 	const applyOptionAssignments = (
@@ -358,37 +288,87 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 		setEntries: (value: AlgoControlValueV1[]) => void,
 		option: AlgoControlOptionRuntime,
 	) => {
+		let nextEntries = entries;
 		for (const assignment of option.set) {
-			const binding = controlBindings[assignment.controlId];
-			if (binding?.setNumber) {
-				binding.setNumber(assignment.value);
-				continue;
-			}
-			setAlgoControlValue(
-				entries,
-				setEntries,
+			nextEntries = upsertAlgoControlValue(
+				nextEntries,
 				assignment.controlId,
 				assignment.value,
 			);
 		}
+		setEntries(nextEntries);
 	};
+
+	const createControlBindings = (
+		controls: AlgoControlRuntime[],
+		entries: AlgoControlValueV1[],
+		setEntries: (value: AlgoControlValueV1[]) => void,
+	): Record<string, AlgoControlBinding> =>
+		Object.fromEntries(
+			controls.map((control) => {
+				const controlKind = control.kind ?? "number";
+				if (controlKind === "select") {
+					return [
+						control.id,
+						{
+							getNumber: () =>
+								getAlgoControlValue(entries, control.id, control.default ?? 0),
+							setNumber: (value: number) =>
+								setAlgoControlValue(entries, setEntries, control.id, value),
+						} satisfies AlgoControlBinding,
+					];
+				}
+
+				if (controlKind === "toggle") {
+					return [
+						control.id,
+						{
+							getToggle: () =>
+								getAlgoControlValue(
+									entries,
+									control.id,
+									control.defaultToggle ? 1 : 0,
+								) >= 0.5,
+							setToggle: (value: boolean) =>
+								setAlgoControlValue(
+									entries,
+									setEntries,
+									control.id,
+									value ? 1 : 0,
+								),
+						} satisfies AlgoControlBinding,
+					];
+				}
+
+				return [control.id, {} satisfies AlgoControlBinding];
+			}),
+		);
+
+	const controlBindingsA = createControlBindings(
+		algoDefinitionControlsA,
+		algoControlsA,
+		setAlgoControlsA,
+	);
+
+	const controlBindingsB = createControlBindings(
+		algoDefinitionControlsB,
+		algoControlsB,
+		setAlgoControlsB,
+	);
 
 	const getActiveSelectOption = (
 		entries: AlgoControlValueV1[],
 		control: AlgoControlRuntime,
+		localBindings: Record<string, AlgoControlBinding>,
 	) => {
 		const options = control.options ?? [];
-		const binding = controlBindings[control.id];
-		if (!binding) {
-			return null;
-		}
 
 		if (options.some((option) => option.set.length > 0)) {
 			return (
 				options.find((option) =>
 					option.set.every((assignment) => {
 						const currentValue =
-							controlBindings[assignment.controlId]?.getNumber?.() ??
+							localBindings[assignment.controlId]?.getNumber?.() ??
 							getAlgoControlValue(entries, assignment.controlId, Number.NaN);
 						if (!Number.isFinite(currentValue)) {
 							return false;
@@ -397,6 +377,11 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 					}),
 				) ?? null
 			);
+		}
+
+		const binding = localBindings[control.id];
+		if (!binding) {
+			return null;
 		}
 
 		const currentIndex = binding.getNumber?.();
@@ -414,165 +399,108 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 	};
 
 	return (
-		<div className="min-w-0 min-h-0 flex-1 flex flex-col">
-			<div className="flex flex-1 min-h-0 items-stretch">
-				<div className="min-h-0 min-w-0 h-full flex-1 flex flex-col overflow-visible">
-					{activeSection === "algos" ? (
-						<div className="flex-1 min-h-0 flex flex-col">
-							<div className="flex-1 min-h-0 grid gap-4 xl:grid-cols-[minmax(0,1fr)_17rem_minmax(0,1fr)]">
-								<AlgoSectionCard
-									title="Algo A"
-									algoLabel={getPdAlgoDef(algo)?.label}
-									value={algo}
-									onChange={handleAlgoChange}
-									controls={algoDefinitionControlsA}
-									controlBindings={controlBindings}
-									lineIndex={lineIndex}
-									algoParamSlotIndex={algoParamSlotIndex}
-									getAlgoControlValue={(id, fallback) =>
-										getAlgoControlValue(algoControlsA, id, fallback)
-									}
-									setAlgoControlValue={(id, value) =>
-										setAlgoControlValue(
-											algoControlsA,
-											setAlgoControlsA,
-											id,
-											value,
-										)
-									}
-									getActiveSelectOption={(control) =>
-										getActiveSelectOption(algoControlsA, control)
-									}
-									applyOptionAssignments={(option) =>
-										applyOptionAssignments(
-											algoControlsA,
-											setAlgoControlsA,
-											option,
-										)
-									}
-								/>
-								<div className="flex min-h-0 flex-col gap-4">
-									<Card
-										variant="subtle"
-										className="flex flex-col items-center justify-center grow"
-									>
-										<div className="text-3xs uppercase tracking-[0.24em] text-cz-light-blue">
-											Algo Bridge
-										</div>
-										<ControlKnob
-											label="Blend"
-											tooltip={
-												PARAM_META[
-													lineIndex === 2 ? "algoBlendB" : "algoBlendA"
-												]?.tooltip
-											}
-											value={algoBlend}
-											onChange={setAlgoBlend}
-											min={0}
-											max={1}
-											step={0.01}
-											size={52}
-											defaultValue={0}
-											color="#7f9de4"
-											modulatable="algoBlend"
-											lineIndex={lineIndex}
-											valueFormatter={(value) => `${Math.round(value * 100)}%`}
-										/>
-										<div className="flex w-full items-center justify-between rounded-md border border-cz-border/70 bg-black/20 px-3 py-2 font-mono text-[0.6rem] uppercase tracking-[0.22em] text-cz-cream-dim">
-											<span>A</span>
-											<span className="text-cz-gold">
-												{Math.round((1 - algoBlend) * 100)}%
-											</span>
-											<span>B</span>
-											<span
-												className={
-													algoBEnabled
-														? "text-cz-light-blue"
-														: "text-cz-cream-dim/50"
-												}
-											>
-												{Math.round(algoBlend * 100)}%
-											</span>
-										</div>
-									</Card>
+		<div className="min-h-0 min-w-0 h-full flex-1 flex flex-col overflow-visible">
+			{activeSection === "algos" ? (
+				<div className="flex-1 grid grid-cols-3 min-h-0 gap-4">
+					<div className="min-h-0 flex-1 flex flex-col gap-2">
+						<BaseWaveSelector
+							title="Base Wave A"
+							value={baseWaveformA}
+							onChange={setBaseWaveformA}
+							disabled={!baseWaveEnabledA}
+						/>
+						<AlgoSectionCard
+							title="Algo A"
+							algoLabel={getPdAlgoDef(algo)?.label}
+							value={algo}
+							onChange={handleAlgoChange}
+							controls={algoDefinitionControlsA}
+							controlBindings={controlBindingsA}
+							lineIndex={lineIndex}
+							algoParamSlotIndex={algoParamSlotIndex}
+							getAlgoControlValue={(id, fallback) =>
+								getAlgoControlValue(algoControlsA, id, fallback)
+							}
+							setAlgoControlValue={(id, value) =>
+								setAlgoControlValue(algoControlsA, setAlgoControlsA, id, value)
+							}
+							getActiveSelectOption={(control) =>
+								getActiveSelectOption(algoControlsA, control, controlBindingsA)
+							}
+							applyOptionAssignments={(option) =>
+								applyOptionAssignments(algoControlsA, setAlgoControlsA, option)
+							}
+						/>
+					</div>
+					<div className="flex min-h-0 flex-col gap-4">
+						<Card
+							variant="subtle"
+							className="flex flex-col items-center justify-center"
+						>
+							<SynthParamKnob
+								paramKey={lineIndex === 2 ? "algoBlendB" : "algoBlendA"}
+								label="Blend"
+								labelClassName="text-lg font-bold tracking-[0.3em] text-base-content/75"
+								value={algoBlend}
+								size={96}
+								onChange={setAlgoBlend}
+								color="#7f9de4"
+								valueFormatter={formatAlgoBlendReadout}
+							/>
+						</Card>
 
-									<PerLineParametersCard
-										color={color}
-										warpAmount={warpAmount}
-										setWarpAmount={setWarpAmount}
-										level={level}
-										setLevel={setLevel}
-										octave={octave}
-										setOctave={setOctave}
-										fineDetune={fineDetune}
-										setFineDetune={setFineDetune}
-										lineIndex={lineIndex}
-									/>
-								</div>
-								<AlgoSectionCard
-									title="Algo B"
-									algoLabel={algo2 ? getPdAlgoDef(algo2)?.label : undefined}
-									value={algo2 ?? PD_ALGOS[0].value}
-									onChange={handleAlgo2Change}
-									disabled={!algoBEnabled}
-									controls={algoDefinitionControlsB}
-									controlBindings={{}}
-									lineIndex={lineIndex}
-									algoParamSlotIndex={algoParamSlotIndexB}
-									getAlgoControlValue={(id, fallback) =>
-										getAlgoControlValue(algoControlsB, id, fallback)
-									}
-									setAlgoControlValue={(id, value) =>
-										setAlgoControlValue(
-											algoControlsB,
-											setAlgoControlsB,
-											id,
-											value,
-										)
-									}
-									getActiveSelectOption={(control) =>
-										getActiveSelectOption(algoControlsB, control)
-									}
-									applyOptionAssignments={(option) =>
-										applyOptionAssignments(
-											algoControlsB,
-											setAlgoControlsB,
-											option,
-										)
-									}
-								/>
-							</div>
-						</div>
-					) : (
-						<div className="flex-1 min-h-0 overflow-y-auto p-3">
-							<Card variant="subtle" className="p-0 min-w-0" padding="none">
-								<div className="mb-3 grid grid-cols-3 gap-2">
-									{(["dco", "dcw", "dca"] as EnvTab[]).map((tab) => (
-										<StepEnvelopePreview
-											key={tab}
-											title={tab.toUpperCase()}
-											env={envMap[tab].env}
-											color={envMap[tab].envColor}
-											active={activeEnvTab === tab}
-											onClick={() => setActiveEnvTab(tab)}
-										/>
-									))}
-								</div>
-								<StepEnvelopeEditor
-									title={activeEnv.title}
-									env={activeEnv.env}
-									onChange={activeEnv.setEnv}
-									color={activeEnv.envColor}
-									lineIndex={lineIndex}
-									envKind={activeEnvTab}
-									voiceMarkers={activeVoiceMarkers}
-									compact
-								/>
-							</Card>
-						</div>
-					)}
+						<PerLineParametersCard
+							color={color}
+							warpAmount={warpAmount}
+							setWarpAmount={setWarpAmount}
+							level={level}
+							setLevel={setLevel}
+							octave={octave}
+							setOctave={setOctave}
+							fineDetune={fineDetune}
+							setFineDetune={setFineDetune}
+							lineIndex={lineIndex}
+						/>
+					</div>
+					<div className="min-h-0 flex-1 flex flex-col gap-2">
+						<BaseWaveSelector
+							title="Base Wave B"
+							value={baseWaveformB}
+							onChange={setBaseWaveformB}
+							disabled={!baseWaveEnabledB}
+						/>
+						<AlgoSectionCard
+							title="Algo B"
+							algoLabel={algo2 ? getPdAlgoDef(algo2)?.label : undefined}
+							value={algo2 ?? PD_ALGOS[0].value}
+							onChange={handleAlgo2Change}
+							disabled={!algoBEnabled}
+							controls={algoDefinitionControlsB}
+							controlBindings={controlBindingsB}
+							lineIndex={lineIndex}
+							algoParamSlotIndex={algoParamSlotIndexB}
+							getAlgoControlValue={(id, fallback) =>
+								getAlgoControlValue(algoControlsB, id, fallback)
+							}
+							setAlgoControlValue={(id, value) =>
+								setAlgoControlValue(algoControlsB, setAlgoControlsB, id, value)
+							}
+							getActiveSelectOption={(control) =>
+								getActiveSelectOption(algoControlsB, control, controlBindingsB)
+							}
+							applyOptionAssignments={(option) =>
+								applyOptionAssignments(algoControlsB, setAlgoControlsB, option)
+							}
+						/>
+					</div>
 				</div>
-			</div>
+			) : (
+				<EnvelopesSection
+					envMap={envMap}
+					voiceMarkers={activeVoiceMarkers}
+					lineIndex={lineIndex}
+				/>
+			)}
 		</div>
 	);
 });

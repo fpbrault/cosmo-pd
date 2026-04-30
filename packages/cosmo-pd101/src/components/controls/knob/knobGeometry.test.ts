@@ -4,9 +4,11 @@ import {
 	clampValue,
 	DEFAULT_ARC_GEOMETRY,
 	denormalizeValue,
+	denormalizeValueCurved,
 	describeArc,
 	describeValuePath,
 	normalizeValue,
+	normalizeValueCurved,
 	polarToCartesian,
 	snapToStep,
 	svgPointToNorm,
@@ -47,6 +49,25 @@ describe("normalizeValue / denormalizeValue", () => {
 	it("round-trips value", () => {
 		const v = 37;
 		expect(denormalizeValue(normalizeValue(v, 0, 100), 0, 100)).toBeCloseTo(v);
+	});
+});
+
+describe("curved normalization", () => {
+	it("keeps linear mapping unchanged", () => {
+		expect(denormalizeValueCurved(0.5, 0, 20, "linear")).toBeCloseTo(10);
+		expect(normalizeValueCurved(10, 0, 20, "linear")).toBeCloseTo(0.5);
+	});
+
+	it("uses a squared zero-based curve for exponential2", () => {
+		expect(denormalizeValueCurved(0.5, 0, 20, "exponential2")).toBeCloseTo(5);
+		expect(normalizeValueCurved(5, 0, 20, "exponential2")).toBeCloseTo(0.5);
+	});
+
+	it("uses a quartic zero-based curve for exponential4", () => {
+		expect(denormalizeValueCurved(0.5, 0, 20, "exponential4")).toBeCloseTo(
+			1.25,
+		);
+		expect(normalizeValueCurved(1.25, 0, 20, "exponential4")).toBeCloseTo(0.5);
 	});
 });
 

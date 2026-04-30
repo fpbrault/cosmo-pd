@@ -1,11 +1,11 @@
 import type { SynthEngineAdapter } from "@/features/synth/engine/synthEngineAdapter";
 import type { SynthEngineSnapshot } from "@/features/synth/engine/synthEngineSnapshot";
-import type { EngineParams } from "@/features/synth/hooks/useAudioEngine";
 import { resolveAlgoRef } from "@/lib/synth/algoRef";
+import type { SynthParams } from "@/lib/synth/bindings/synth";
 
 type CreateWorkletSynthEngineAdapterParams = {
 	workletNodeRef: React.MutableRefObject<AudioWorkletNode | null>;
-	paramsRef: React.MutableRefObject<EngineParams>;
+	paramsRef: React.MutableRefObject<SynthParams>;
 };
 
 export function createWorkletSynthEngineAdapter({
@@ -22,7 +22,7 @@ export function createWorkletSynthEngineAdapter({
 			const line1Window = resolvedAlgoA.windowType ?? baseParams.line1.window;
 			const line2Window = resolvedAlgoB.windowType ?? baseParams.line2.window;
 
-			const params: EngineParams = {
+			const params: SynthParams = {
 				...baseParams,
 				line1: {
 					...baseParams.line1,

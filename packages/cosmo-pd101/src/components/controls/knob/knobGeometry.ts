@@ -62,6 +62,67 @@ export function denormalizeValue(
 }
 
 /**
+ * Curve type for non-linear knob scaling.
+ * - `linear`: straight 1:1 mapping (default).
+ * - `exponential2`: log scale when min > 0, or a squared curve for zero-based ranges.
+ * - `exponential4`: log scale when min > 0, or a quartic curve for zero-based ranges.
+ */
+export type KnobCurve = "linear" | "exponential2" | "exponential4";
+
+function curveExponent(curve: KnobCurve): number {
+	switch (curve) {
+		case "exponential2":
+			return 2;
+		case "exponential4":
+			return 4;
+		default:
+			return 1;
+	}
+}
+
+/**
+ * Convert a domain value to a visual knob position [0, 1] applying the given curve.
+ * Use this instead of `normalizeValue` when a non-linear curve is desired.
+ */
+export function normalizeValueCurved(
+	value: number,
+	min: number,
+	max: number,
+	curve: KnobCurve,
+): number {
+	if (curve === "linear" || max <= min) return normalizeValue(value, min, max);
+	const clamped = clampValue(value, min, max);
+	if (min > 0) {
+		// True log scale: position = log(v/min) / log(max/min)
+		const ratio = max / min;
+		return Math.log(clamped / min) / Math.log(ratio);
+	}
+	const exponent = curveExponent(curve);
+	return ((clamped - min) / (max - min)) ** (1 / exponent);
+}
+
+/**
+ * Convert a visual knob position [0, 1] back to a domain value applying the given curve.
+ * Inverse of `normalizeValueCurved`.
+ */
+export function denormalizeValueCurved(
+	pos: number,
+	min: number,
+	max: number,
+	curve: KnobCurve,
+): number {
+	if (curve === "linear") return denormalizeValue(pos, min, max);
+	const p = clampValue(pos, 0, 1);
+	if (min > 0) {
+		// True log scale: v = min * (max/min)^position
+		const ratio = max / min;
+		return min * ratio ** p;
+	}
+	const exponent = curveExponent(curve);
+	return min + p ** exponent * (max - min);
+}
+
+/**
  * Snap a domain value to the nearest step boundary.
  * No-ops when step is undefined or ≤ 0.
  */

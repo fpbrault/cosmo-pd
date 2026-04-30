@@ -1,5 +1,5 @@
 use super::{AlgoControlKindV1, AlgoControlV1, AlgoDefinitionV1, NO_CONTROL_OPTIONS};
-use crate::params::Algo;
+use crate::params::{Algo, EngineParamReadoutFormatV1};
 
 const CONTROLS: [AlgoControlV1; 4] = [
     AlgoControlV1 {
@@ -15,6 +15,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.5),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
     AlgoControlV1 {
         id: "clipShape",
@@ -29,6 +30,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.5),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
     AlgoControlV1 {
         id: "clipBias",
@@ -43,6 +45,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.0),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::BipolarPercent,
     },
     AlgoControlV1 {
         id: "clipSoft",
@@ -57,6 +60,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.0),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
 ];
 
@@ -65,6 +69,7 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
     name: "Clip",
     icon_path: "M4,16 L8,16 L8,8 L16,8 L16,16 L20,16",
     visible: true,
+    default_base_waveform: crate::params::BaseWaveform::Sine,
     controls: &CONTROLS,
 };
 

@@ -1,16 +1,18 @@
 import { AnimatePresence, motion } from "motion/react";
 import {
 	type CSSProperties,
+	memo,
 	type ReactNode,
 	type RefObject,
+	useCallback,
 	useEffect,
 	useRef,
 	useState,
 } from "react";
 import Button from "@/components/controls/Button";
-import ControlKnob from "@/components/controls/ControlKnob";
 import LineSelectControl from "@/components/controls/LineSelectControl";
 import ModModeControl from "@/components/controls/ModModeControl";
+import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import type { EnvOverrideHandlers } from "@/components/editor/PhaseLinesSection";
 import PhaseLinesSection from "@/components/editor/PhaseLinesSection";
 import { SynthSingleCycleDisplay } from "@/components/editor/SingleCycleDisplay";
@@ -21,12 +23,8 @@ import ScopePanel, {
 } from "@/components/panels/analysis/ScopePanel";
 import FxConsoleDrawer from "@/components/panels/drawers/FxConsoleDrawer";
 import ModConsoleDrawer from "@/components/panels/drawers/ModConsoleDrawer";
-import ChorusPanel from "@/components/panels/fx/ChorusPanel";
-import DelayPanel from "@/components/panels/fx/DelayPanel";
-import ReverbPanel from "@/components/panels/fx/ReverbPanel";
+import { FX_SLOT_PANELS } from "@/components/panels/fx/FxSlotPanel";
 import GlobalVoicePanel from "@/components/panels/voice/GlobalVoicePanel";
-import PhaseModPanel from "@/components/panels/voice/PhaseModPanel";
-import VibratoPanel from "@/components/panels/voice/VibratoPanel";
 import PresetLibrary from "@/components/preset/PresetLibrary";
 import SynthHeader, {
 	type SynthHeaderProps,
@@ -39,11 +37,26 @@ import {
 } from "@/features/synth/SynthParamController";
 import { useSynthStore } from "@/features/synth/synthStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
-import { PARAM_META } from "@/lib/synth/paramMeta";
+
 import { HoverInfoProvider, useHoverInfo } from "../layout/HoverInfo";
 import MiniKeyboardOverlay from "../layout/MiniKeyboardOverlay";
 import SynthInfoBar from "../layout/SynthInfoBar";
-import PhaserPanel from "../panels/fx/PhaserPanel";
+
+const MemoPresetLibrary = memo(PresetLibrary);
+
+const DRAWER_SLIDE_TRANSITION = {
+	type: "spring",
+	stiffness: 220,
+	damping: 30,
+	mass: 1,
+} as const;
+
+const LIBRARY_SLIDE_TRANSITION = {
+	type: "spring",
+	stiffness: 520,
+	damping: 60,
+	mass: 1,
+} as const;
 
 type SynthRendererProps = {
 	headerProps: SynthHeaderProps;
@@ -157,6 +170,29 @@ function SynthRendererContent({
 	const libraryModeOpen = useSynthUiStore((s) => s.libraryModeOpen);
 	const setLibraryModeOpen = useSynthUiStore((s) => s.setLibraryModeOpen);
 	const { infoText, setControlReadout } = useHoverInfo();
+	const drawerOpen = mainPanelMode === "fx" || mainPanelMode === "mod";
+	const [activeDrawerPanel, setActiveDrawerPanel] = useState<"fx" | "mod">(
+		mainPanelMode === "mod" ? "mod" : "fx",
+	);
+	const [drawerSlideDirection, setDrawerSlideDirection] = useState<1 | -1>(1);
+	const [brandInfoOpen, setBrandInfoOpen] = useState(false);
+	const handleCloseLibrary = useCallback(() => {
+		setLibraryModeOpen(false);
+	}, [setLibraryModeOpen]);
+
+	useEffect(() => {
+		if (mainPanelMode !== "fx" && mainPanelMode !== "mod") {
+			return;
+		}
+		if (mainPanelMode === activeDrawerPanel) {
+			return;
+		}
+
+		setDrawerSlideDirection(
+			activeDrawerPanel === "fx" && mainPanelMode === "mod" ? 1 : -1,
+		);
+		setActiveDrawerPanel(mainPanelMode);
+	}, [mainPanelMode, activeDrawerPanel]);
 
 	return (
 		<ModMatrixProvider modMatrix={modMatrix} setModMatrix={setModMatrix}>
@@ -171,12 +207,13 @@ function SynthRendererContent({
 					<div className="relative z-30">
 						<SynthHeader
 							{...headerProps}
+							onBrandInfoClick={() => setBrandInfoOpen(true)}
 							isLibraryModeOpen={libraryModeOpen}
 							onLibraryModeChange={setLibraryModeOpen}
 						/>
 						{headerExtra}
 					</div>
-					<div className="relative z-10 px-1 grid flex-1 min-h-0 min-w-0 w-full gap-2 xl:gap-3 grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)] overflow-hidden">
+					<div className="relative z-10 px-1 flex flex-1 min-h-0 min-w-0 w-full gap-2 overflow-hidden">
 						<aside className="overflow-y-auto min-h-0 rounded-[1.15rem] border border-cz-border/80 bg-cz-inset px-0 pb-2 shadow-lg [scrollbar-gutter:stable]">
 							<div className="px-4 mt-4 mx-auto">
 								<ScopeMiniDisplay
@@ -192,21 +229,18 @@ function SynthRendererContent({
 								onTabChange={onAsidePanelChange}
 							>
 								<GlobalVoicePanel />
-								<PhaseModPanel />
-								<VibratoPanel />
 								<ScopePanel />
-								<ChorusPanel />
-								<PhaserPanel />
-								<DelayPanel />
-								<ReverbPanel />
+								{FX_SLOT_PANELS.map((Panel) => (
+									<Panel key={Panel.panelId} />
+								))}
 							</AsidePanelSwitcher>
 						</aside>
 
 						<main className="flex min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
-							<div className="flex w-full max-w-none min-h-0 flex-1 flex-col rounded-[1.2rem] 2xl:mx-auto 2xl:max-w-5xl">
+							<div className="flex w-full  min-h-0 flex-1 flex-col rounded-[1.2rem] mx-auto max-w-5xl">
 								<div className="pointer-events-none absolute inset-x-4 top-0 h-12 rounded-t-[1.2rem] opacity-70" />
-								<div className="relative shrink-0 rounded-md border border-cz-border bg-cz-body px-2 py-2 xl:px-3 shadow-inner">
-									<div className="flex flex-wrap justify-center gap-x-2 gap-y-2 xl:gap-x-4 items-center">
+								<div className="relative shrink-0 rounded-md border border-cz-border bg-cz-body px-3 shadow-inner">
+									<div className="flex flex-wrap justify-center gap-y-2 gap-x-4 items-center">
 										<MasterVolumeControl />
 										<LineSelectControl />
 
@@ -272,77 +306,88 @@ function SynthRendererContent({
 										className="h-full min-h-0 max-h-164"
 										envOverrideHandlers={envOverrideHandlers}
 									/>
-									<AnimatePresence initial={false}>
-										{mainPanelMode === "fx" || mainPanelMode === "mod" ? (
-											<motion.div
-												key={`${mainPanelMode}-drawer`}
-												initial={{ y: "-100%" }}
-												animate={{ y: 0 }}
-												exit={{ y: "-100%" }}
-												transition={{
-													type: "spring",
-													stiffness: 220,
-													damping: 30,
-													mass: 1,
-												}}
-												style={{ transformOrigin: "top center" }}
-												className="absolute inset-0 z-10 overflow-hidden"
-											>
-												<div className="relative flex h-full min-h-0 flex-col rounded-lg border border-cz-border bg-cz-body">
-													<div className="pointer-events-none absolute inset-0 rounded-lg bg-white/5" />
-													<div className="pointer-events-none absolute inset-x-0 top-0 h-14 rounded-t-lg opacity-60" />
-													<div className="relative min-h-0 flex-1">
-														{mainPanelMode === "fx" ? (
-															<FxConsoleDrawer />
-														) : (
-															<ModConsoleDrawer />
-														)}
-													</div>
-												</div>
-											</motion.div>
-										) : null}
-									</AnimatePresence>
+									<motion.div
+										aria-hidden={!drawerOpen}
+										initial={false}
+										animate={{ y: drawerOpen ? 0 : "-100%" }}
+										transition={DRAWER_SLIDE_TRANSITION}
+										style={{ transformOrigin: "top center" }}
+										className={`absolute inset-0 z-10 origin-top overflow-hidden will-change-transform ${drawerOpen ? "pointer-events-auto" : "pointer-events-none"}`}
+									>
+										<div className="relative flex h-full min-h-0 flex-col rounded-lg border border-cz-border bg-cz-body">
+											<div className="pointer-events-none absolute inset-0 rounded-lg bg-white/5" />
+											<div className="pointer-events-none absolute inset-x-0 top-0 h-14 rounded-t-lg opacity-60" />
+											<div className="relative min-h-0 flex-1 overflow-hidden">
+												<motion.div
+													aria-hidden={activeDrawerPanel !== "fx"}
+													initial={false}
+													animate={{
+														y:
+															activeDrawerPanel === "fx"
+																? "0%"
+																: drawerSlideDirection === 1
+																	? "-100%"
+																	: "100%",
+													}}
+													transition={DRAWER_SLIDE_TRANSITION}
+													className={`absolute inset-0 will-change-transform ${activeDrawerPanel === "fx" ? "pointer-events-auto" : "pointer-events-none"}`}
+												>
+													<FxConsoleDrawer />
+												</motion.div>
+												<motion.div
+													aria-hidden={activeDrawerPanel !== "mod"}
+													initial={false}
+													animate={{
+														y:
+															activeDrawerPanel === "mod"
+																? "0%"
+																: drawerSlideDirection === 1
+																	? "100%"
+																	: "-100%",
+													}}
+													transition={DRAWER_SLIDE_TRANSITION}
+													className={`absolute inset-0 will-change-transform ${activeDrawerPanel === "mod" ? "pointer-events-auto" : "pointer-events-none"}`}
+												>
+													<ModConsoleDrawer />
+												</motion.div>
+											</div>
+										</div>
+									</motion.div>
 								</div>
 							</div>
 						</main>
 					</div>
-					<AnimatePresence initial={false}>
-						{libraryModeOpen ? (
-							<motion.div
-								key="library-mode"
-								initial={{ y: "-100%", opacity: 0 }}
-								animate={{ y: 0, opacity: 1 }}
-								exit={{ y: "-100%", opacity: 0 }}
-								transition={{
-									ease: "easeInOut",
-									type: "spring",
-									stiffness: 520,
-									damping: 60,
-									mass: 1,
-								}}
-								style={{ transformOrigin: "top center" }}
-								className="absolute inset-x-0 top-20 bottom-10 z-20 flex min-h-0 flex-col overflow-hidden shadow-lg shadow-black "
-							>
-								<PresetLibrary
-									allEntries={headerProps.allEntries}
-									activeEntryId={headerProps.activeEntryId}
-									activePresetName={headerProps.activePresetName}
-									onLoadLocal={headerProps.onLoadLocal}
-									onLoadLibrary={headerProps.onLoadLibrary}
-									onLoadBuiltin={headerProps.onLoadBuiltin}
-									onSavePreset={headerProps.onSavePreset}
-									onDeletePreset={headerProps.onDeletePreset}
-									onRenamePreset={headerProps.onRenamePreset}
-									onExportPreset={headerProps.onExportPreset}
-									onExportCurrentState={headerProps.onExportCurrentState}
-									onImportPreset={headerProps.onImportPreset}
-									onInitPreset={headerProps.onInitPreset}
-									onClose={() => setLibraryModeOpen(false)}
-								/>
-							</motion.div>
-						) : null}
-					</AnimatePresence>
+					<motion.div
+						aria-hidden={!libraryModeOpen}
+						initial={false}
+						animate={{ y: libraryModeOpen ? 0 : "-100%" }}
+						transition={LIBRARY_SLIDE_TRANSITION}
+						style={{ transformOrigin: "top center" }}
+						className={`absolute inset-x-0 top-20 bottom-10 z-20 flex min-h-0 flex-col origin-top overflow-hidden shadow-lg shadow-black will-change-transform ${libraryModeOpen ? "pointer-events-auto" : "pointer-events-none"}`}
+					>
+						<MemoPresetLibrary
+							allEntries={headerProps.allEntries}
+							activeEntryId={headerProps.activeEntryId}
+							activePresetName={headerProps.activePresetName}
+							onLoadLocal={headerProps.onLoadLocal}
+							onLoadLibrary={headerProps.onLoadLibrary}
+							onLoadBuiltin={headerProps.onLoadBuiltin}
+							onSavePreset={headerProps.onSavePreset}
+							onDeletePreset={headerProps.onDeletePreset}
+							onRenamePreset={headerProps.onRenamePreset}
+							onExportPreset={headerProps.onExportPreset}
+							onExportCurrentState={headerProps.onExportCurrentState}
+							onImportPreset={headerProps.onImportPreset}
+							onInitPreset={headerProps.onInitPreset}
+							onClose={handleCloseLibrary}
+							isOpen={libraryModeOpen}
+						/>
+					</motion.div>
 					<AudioStartOverlay audioGate={audioGate} />
+					<SynthBrandInfoModal
+						open={brandInfoOpen}
+						onClose={() => setBrandInfoOpen(false)}
+					/>
 					<PendingModifiedPresetModal
 						pendingPresetChange={headerProps.pendingPresetChange}
 						onSave={headerProps.onSavePendingPresetChange}
@@ -375,18 +420,91 @@ function MasterVolumeControl() {
 
 	return (
 		<div className="shrink-0">
-			<ControlKnob
+			<SynthParamKnob
+				paramKey="volume"
 				value={volume}
 				onChange={setVolume}
-				min={0}
-				max={1}
 				size={48}
 				color="white"
 				label="Main Volume"
-				tooltip={PARAM_META.volume?.tooltip}
-				valueFormatter={(value) => `${Math.round(value * 100)}%`}
 				modDestination="volume"
 			/>
+		</div>
+	);
+}
+
+function SynthBrandInfoModal({
+	open,
+	onClose,
+}: {
+	open: boolean;
+	onClose: () => void;
+}) {
+	useEffect(() => {
+		if (!open) return;
+
+		const handleEscape = (event: KeyboardEvent) => {
+			if (event.key !== "Escape") return;
+			event.preventDefault();
+			onClose();
+		};
+
+		window.addEventListener("keydown", handleEscape);
+		return () => window.removeEventListener("keydown", handleEscape);
+	}, [open, onClose]);
+
+	if (!open) return null;
+
+	return (
+		<div
+			className="absolute inset-0 z-40 flex items-center justify-center"
+			role="dialog"
+			aria-modal="true"
+			aria-label="Synthesizer lab information"
+		>
+			<button
+				type="button"
+				className="absolute inset-0 bg-cz-body/80 backdrop-blur-sm"
+				onClick={onClose}
+				aria-label="Close synthesizer information"
+			/>
+			<div className="relative w-[min(32rem,94%)] rounded-md border border-cz-border bg-cz-surface p-5 text-cz-cream shadow-2xl">
+				<div className="mb-4 flex items-center justify-between gap-4">
+					<div className="flex items-center gap-3">
+						<div className="flex h-16 w-16 items-center justify-center rounded-md border border-cz-border bg-linear-to-br from-cz-light-blue/25 to-cz-gold/25 text-3xs font-mono uppercase tracking-[0.22em] text-cz-cream-dim">
+							Logo
+						</div>
+						<div>
+							<p className="text-4xs font-mono uppercase tracking-[0.3em] text-cz-light-blue">
+								Phase Distortion
+							</p>
+							<h3 className="mt-1 text-sm font-mono font-semibold uppercase tracking-[0.18em] text-cz-cream">
+								Synthesizer Lab
+							</h3>
+						</div>
+					</div>
+					<Button
+						type="button"
+						className="btn btn-sm border-cz-border bg-cz-inset text-cz-cream"
+						onClick={onClose}
+					>
+						Close
+					</Button>
+				</div>
+
+				<div className="space-y-2 rounded-md border border-cz-border bg-cz-inset/60 p-4">
+					<p className="text-xs font-mono text-cz-cream">Felix Perron-Brault</p>
+					<p className="text-2xs font-mono uppercase tracking-[0.14em] text-cz-cream-dim">
+						Version: 0.1.0
+					</p>
+					<p className="text-2xs font-mono uppercase tracking-[0.14em] text-cz-cream-dim">
+						Year: 2026
+					</p>
+					<p className="pt-2 text-sm text-cz-gold">
+						For my cats, Basil, Lola, and Latte
+					</p>
+				</div>
+			</div>
 		</div>
 	);
 }

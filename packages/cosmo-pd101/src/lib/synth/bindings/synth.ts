@@ -47,12 +47,9 @@ export type CzAlgo = "saw" | "square" | "pulse" | "doubleSine" | "sawPulse" | "r
 export type CzWaveform = "saw" | "square" | "pulse" | "null" | "sinePulse" | "sawPulse" | "multiSine" | "pulse2"
 
 /**
- * Per-line CZ slot controls.
- * 
- * Slot A/Slot B alternate per cycle in CZ mode. Setting both slots to the
- * same waveform effectively yields single-wave behavior.
+ * Base waveform used as the final carrier for warp algorithms.
  */
-export type CzLineParams = { slotAWaveform: CzWaveform; slotBWaveform: CzWaveform; window: WindowType }
+export type BaseWaveform = "cosine" | "sine" | "triangle" | "saw" | "square"
 
 /**
  * Flat algorithm selector — unifies CZ waveforms and warp variants.
@@ -84,11 +81,6 @@ export type PolyMode = "poly8" | "mono"
  * LFO waveform
  */
 export type LfoWaveform = "sine" | "triangle" | "square" | "saw" | "invertedSaw" | "random"
-
-/**
- * Filter type
- */
-export type FilterType = "lp" | "hp" | "bp"
 
 /**
  * Portamento mode
@@ -177,6 +169,23 @@ depth: number;
 delay: number }
 
 /**
+ * Phase modulation parameters
+ */
+export type PhaseModParams = { enabled: boolean; 
+/**
+ * Internal PM depth (0.0–0.5)
+ */
+amount: number; 
+/**
+ * Modulator-to-carrier frequency ratio (0.5–8.0)
+ */
+ratio: number; 
+/**
+ * Apply PM before warp shaping when true
+ */
+pmPre: boolean }
+
+/**
  * Parameters for the random (sample-and-hold) modulation source.
  */
 export type RandomParams = { 
@@ -237,11 +246,6 @@ retrigger: boolean;
 offset?: number }
 
 /**
- * Filter parameters
- */
-export type FilterParams = { enabled: boolean; type: FilterType; cutoff: number; resonance: number; envAmount: number }
-
-/**
  * One algorithm-specific control value persisted on a line.
  */
 export type AlgoControlValueV1 = { id: string; value: number }
@@ -249,7 +253,7 @@ export type AlgoControlValueV1 = { id: string; value: number }
 /**
  * Per-line parameters
  */
-export type LineParams = { algo: Algo; algo2: Algo | null; algoBlend: number; window: WindowType; dcaBase: number; dcwBase: number; modulation: number; detuneCents: number; octave: number; dcoEnv: StepEnvData; dcwEnv: StepEnvData; dcaEnv: StepEnvData; keyFollow: number; cz?: CzLineParams; algoControlsA?: AlgoControlValueV1[] | null; algoControlsB?: AlgoControlValueV1[] | null }
+export type LineParams = { algo: Algo; algo2: Algo | null; algoBlend: number; baseWaveformA?: BaseWaveform; baseWaveformB?: BaseWaveform; window: WindowType; dcaBase: number; dcwBase: number; modulation: number; detuneCents: number; octave: number; dcoEnv: StepEnvData; dcwEnv: StepEnvData; dcaEnv: StepEnvData; keyFollow: number; algoControlsA?: AlgoControlValueV1[] | null; algoControlsB?: AlgoControlValueV1[] | null }
 
 /**
  * Describes one control surfaced by an algorithm package.
@@ -274,12 +278,16 @@ export type AlgoControlOptionV1 = { value: string; label: string; set: AlgoContr
 /**
  * Describes one control surfaced by an algorithm package.
  */
-export type AlgoControlV1 = { id: string; label: string; description: string; kind: AlgoControlKindV1; controlType: AlgoControlPresentationV1; bipolar: boolean; iconName: string | null; min: number | null; max: number | null; default: number | null; defaultToggle: boolean | null; options: AlgoControlOptionV1[] }
+export type AlgoControlV1 = { id: string; label: string; description: string; kind: AlgoControlKindV1; controlType: AlgoControlPresentationV1; bipolar: boolean; iconName: string | null; min: number | null; max: number | null; default: number | null; defaultToggle: boolean | null; options: AlgoControlOptionV1[]; 
+/**
+ * Engine-owned display format for infobar readouts.
+ */
+readoutFormat: EngineParamReadoutFormatV1 }
 
 /**
  * Complete algorithm package definition.
  */
-export type AlgoDefinitionV1 = { id: Algo; name: string; iconPath: string; visible: boolean; controls: AlgoControlV1[] }
+export type AlgoDefinitionV1 = { id: Algo; name: string; iconPath: string; visible: boolean; defaultBaseWaveform: BaseWaveform; controls: AlgoControlV1[] }
 
 /**
  * UI catalog entry for algorithm pickers.
@@ -308,7 +316,7 @@ export type ModSource = "lfo1" |
 /**
  * Modulation destination selector for modulation matrix routes.
  */
-export type ModDestination = "volume" | "pitch" | "intPmAmount" | "line1DcwBase" | "line1DcaBase" | "line1AlgoBlend" | "line1Detune" | "line1Octave" | "line1AlgoParam1" | "line1AlgoParam2" | "line1AlgoParam3" | "line1AlgoParam4" | "line1AlgoParam5" | "line1AlgoParam6" | "line1AlgoParam7" | "line1AlgoParam8" | "line2DcwBase" | "line2DcaBase" | "line2AlgoBlend" | "line2Detune" | "line2Octave" | "line2AlgoParam1" | "line2AlgoParam2" | "line2AlgoParam3" | "line2AlgoParam4" | "line2AlgoParam5" | "line2AlgoParam6" | "line2AlgoParam7" | "line2AlgoParam8" | "filterCutoff" | "filterResonance" | "filterEnvAmount" | "chorusMix" | "delayMix" | "reverbMix" | "vibratoDepth" | "lfoDepth" | "lfoRate" | "line1DcoEnvStep1Level" | "line1DcoEnvStep1Rate" | "line1DcoEnvStep2Level" | "line1DcoEnvStep2Rate" | "line1DcoEnvStep3Level" | "line1DcoEnvStep3Rate" | "line1DcoEnvStep4Level" | "line1DcoEnvStep4Rate" | "line1DcoEnvStep5Level" | "line1DcoEnvStep5Rate" | "line1DcoEnvStep6Level" | "line1DcoEnvStep6Rate" | "line1DcoEnvStep7Level" | "line1DcoEnvStep7Rate" | "line1DcoEnvStep8Level" | "line1DcoEnvStep8Rate" | "line1DcwEnvStep1Level" | "line1DcwEnvStep1Rate" | "line1DcwEnvStep2Level" | "line1DcwEnvStep2Rate" | "line1DcwEnvStep3Level" | "line1DcwEnvStep3Rate" | "line1DcwEnvStep4Level" | "line1DcwEnvStep4Rate" | "line1DcwEnvStep5Level" | "line1DcwEnvStep5Rate" | "line1DcwEnvStep6Level" | "line1DcwEnvStep6Rate" | "line1DcwEnvStep7Level" | "line1DcwEnvStep7Rate" | "line1DcwEnvStep8Level" | "line1DcwEnvStep8Rate" | "line1DcaEnvStep1Level" | "line1DcaEnvStep1Rate" | "line1DcaEnvStep2Level" | "line1DcaEnvStep2Rate" | "line1DcaEnvStep3Level" | "line1DcaEnvStep3Rate" | "line1DcaEnvStep4Level" | "line1DcaEnvStep4Rate" | "line1DcaEnvStep5Level" | "line1DcaEnvStep5Rate" | "line1DcaEnvStep6Level" | "line1DcaEnvStep6Rate" | "line1DcaEnvStep7Level" | "line1DcaEnvStep7Rate" | "line1DcaEnvStep8Level" | "line1DcaEnvStep8Rate" | "line2DcoEnvStep1Level" | "line2DcoEnvStep1Rate" | "line2DcoEnvStep2Level" | "line2DcoEnvStep2Rate" | "line2DcoEnvStep3Level" | "line2DcoEnvStep3Rate" | "line2DcoEnvStep4Level" | "line2DcoEnvStep4Rate" | "line2DcoEnvStep5Level" | "line2DcoEnvStep5Rate" | "line2DcoEnvStep6Level" | "line2DcoEnvStep6Rate" | "line2DcoEnvStep7Level" | "line2DcoEnvStep7Rate" | "line2DcoEnvStep8Level" | "line2DcoEnvStep8Rate" | "line2DcwEnvStep1Level" | "line2DcwEnvStep1Rate" | "line2DcwEnvStep2Level" | "line2DcwEnvStep2Rate" | "line2DcwEnvStep3Level" | "line2DcwEnvStep3Rate" | "line2DcwEnvStep4Level" | "line2DcwEnvStep4Rate" | "line2DcwEnvStep5Level" | "line2DcwEnvStep5Rate" | "line2DcwEnvStep6Level" | "line2DcwEnvStep6Rate" | "line2DcwEnvStep7Level" | "line2DcwEnvStep7Rate" | "line2DcwEnvStep8Level" | "line2DcwEnvStep8Rate" | "line2DcaEnvStep1Level" | "line2DcaEnvStep1Rate" | "line2DcaEnvStep2Level" | "line2DcaEnvStep2Rate" | "line2DcaEnvStep3Level" | "line2DcaEnvStep3Rate" | "line2DcaEnvStep4Level" | "line2DcaEnvStep4Rate" | "line2DcaEnvStep5Level" | "line2DcaEnvStep5Rate" | "line2DcaEnvStep6Level" | "line2DcaEnvStep6Rate" | "line2DcaEnvStep7Level" | "line2DcaEnvStep7Rate" | "line2DcaEnvStep8Level" | "line2DcaEnvStep8Rate" | "chorusRate" | "chorusDepth" | "delayTime" | "delayFeedback" | "delayWarmth" | "reverbSpace" | "reverbPredelay" | "reverbDistance" | "reverbCharacter" | "phaserRate" | "phaserDepth" | "phaserFeedback" | "phaserMix" | "lfo1Rate" | "lfo1Depth" | "lfo1Symmetry" | "lfo1Offset" | "lfo2Rate" | "lfo2Depth" | "lfo2Symmetry" | "lfo2Offset" | "randomRate"
+export type ModDestination = "volume" | "pitch" | "line1DcwBase" | "line1DcaBase" | "line1AlgoBlend" | "line1Detune" | "line1Octave" | "line1AlgoParam1" | "line1AlgoParam2" | "line1AlgoParam3" | "line1AlgoParam4" | "line1AlgoParam5" | "line1AlgoParam6" | "line1AlgoParam7" | "line1AlgoParam8" | "line2DcwBase" | "line2DcaBase" | "line2AlgoBlend" | "line2Detune" | "line2Octave" | "line2AlgoParam1" | "line2AlgoParam2" | "line2AlgoParam3" | "line2AlgoParam4" | "line2AlgoParam5" | "line2AlgoParam6" | "line2AlgoParam7" | "line2AlgoParam8" | "filterCutoff" | "filterResonance" | "filterEnvAmount" | "chorusMix" | "delayMix" | "reverbMix" | "vibratoDepth" | "vibratoRate" | "intPmRatio" | "line1DcoEnvStep1Level" | "line1DcoEnvStep1Rate" | "line1DcoEnvStep2Level" | "line1DcoEnvStep2Rate" | "line1DcoEnvStep3Level" | "line1DcoEnvStep3Rate" | "line1DcoEnvStep4Level" | "line1DcoEnvStep4Rate" | "line1DcoEnvStep5Level" | "line1DcoEnvStep5Rate" | "line1DcoEnvStep6Level" | "line1DcoEnvStep6Rate" | "line1DcoEnvStep7Level" | "line1DcoEnvStep7Rate" | "line1DcoEnvStep8Level" | "line1DcoEnvStep8Rate" | "line1DcwEnvStep1Level" | "line1DcwEnvStep1Rate" | "line1DcwEnvStep2Level" | "line1DcwEnvStep2Rate" | "line1DcwEnvStep3Level" | "line1DcwEnvStep3Rate" | "line1DcwEnvStep4Level" | "line1DcwEnvStep4Rate" | "line1DcwEnvStep5Level" | "line1DcwEnvStep5Rate" | "line1DcwEnvStep6Level" | "line1DcwEnvStep6Rate" | "line1DcwEnvStep7Level" | "line1DcwEnvStep7Rate" | "line1DcwEnvStep8Level" | "line1DcwEnvStep8Rate" | "line1DcaEnvStep1Level" | "line1DcaEnvStep1Rate" | "line1DcaEnvStep2Level" | "line1DcaEnvStep2Rate" | "line1DcaEnvStep3Level" | "line1DcaEnvStep3Rate" | "line1DcaEnvStep4Level" | "line1DcaEnvStep4Rate" | "line1DcaEnvStep5Level" | "line1DcaEnvStep5Rate" | "line1DcaEnvStep6Level" | "line1DcaEnvStep6Rate" | "line1DcaEnvStep7Level" | "line1DcaEnvStep7Rate" | "line1DcaEnvStep8Level" | "line1DcaEnvStep8Rate" | "line2DcoEnvStep1Level" | "line2DcoEnvStep1Rate" | "line2DcoEnvStep2Level" | "line2DcoEnvStep2Rate" | "line2DcoEnvStep3Level" | "line2DcoEnvStep3Rate" | "line2DcoEnvStep4Level" | "line2DcoEnvStep4Rate" | "line2DcoEnvStep5Level" | "line2DcoEnvStep5Rate" | "line2DcoEnvStep6Level" | "line2DcoEnvStep6Rate" | "line2DcoEnvStep7Level" | "line2DcoEnvStep7Rate" | "line2DcoEnvStep8Level" | "line2DcoEnvStep8Rate" | "line2DcwEnvStep1Level" | "line2DcwEnvStep1Rate" | "line2DcwEnvStep2Level" | "line2DcwEnvStep2Rate" | "line2DcwEnvStep3Level" | "line2DcwEnvStep3Rate" | "line2DcwEnvStep4Level" | "line2DcwEnvStep4Rate" | "line2DcwEnvStep5Level" | "line2DcwEnvStep5Rate" | "line2DcwEnvStep6Level" | "line2DcwEnvStep6Rate" | "line2DcwEnvStep7Level" | "line2DcwEnvStep7Rate" | "line2DcwEnvStep8Level" | "line2DcwEnvStep8Rate" | "line2DcaEnvStep1Level" | "line2DcaEnvStep1Rate" | "line2DcaEnvStep2Level" | "line2DcaEnvStep2Rate" | "line2DcaEnvStep3Level" | "line2DcaEnvStep3Rate" | "line2DcaEnvStep4Level" | "line2DcaEnvStep4Rate" | "line2DcaEnvStep5Level" | "line2DcaEnvStep5Rate" | "line2DcaEnvStep6Level" | "line2DcaEnvStep6Rate" | "line2DcaEnvStep7Level" | "line2DcaEnvStep7Rate" | "line2DcaEnvStep8Level" | "line2DcaEnvStep8Rate" | "chorusRate" | "chorusDepth" | "delayTime" | "delayFeedback" | "delayWarmth" | "reverbSpace" | "reverbPredelay" | "reverbDistance" | "reverbCharacter" | "phaserRate" | "phaserDepth" | "phaserFeedback" | "phaserMix" | "lfo1Rate" | "lfo1Depth" | "lfo1Symmetry" | "lfo1Offset" | "lfo2Rate" | "lfo2Depth" | "lfo2Symmetry" | "lfo2Offset" | "randomRate" | "vibratoDelay" | "compressorThreshold" | "compressorRatio" | "compressorMakeup" | "compressorMix" | "grainDelayTime" | "grainDelayFeedback" | "grainDelayScatter" | "grainDelayDensity" | "grainDelayMix" | "bitcrusherBits" | "bitcrusherRateReduction" | "bitcrusherMix" | "shimmerVerbShimmer" | "shimmerVerbSpace" | "shimmerVerbMix" | "distortionDrive" | "distortionTone" | "distortionMix" | "junoChorusMix" | "ringModCarrierHz" | "ringModMix" | "tremoloRate" | "tremoloDepth" | "tremoloMix" | "wavefolderDrive" | "wavefolderFolds" | "wavefolderMix" | "loFiDegrade" | "loFiWowDepth" | "loFiWowRate" | "loFiFlutterDepth" | "loFiFlutterRate" | "loFiTone" | "loFiMix" | "eqGain80" | "eqGain240" | "eqGain750" | "eqGain2200" | "eqGain8000"
 
 /**
  * A single modulation route assignment.
@@ -389,21 +397,20 @@ export type LoFiParams = { enabled?: boolean; degrade?: number; wowDepth?: numbe
  * Serializes as `{"type": "chorus", "params": {...}}` for effects,
  * or `{"type": "empty"}` for empty slots.
  */
-export type FxSlotConfig = { type: "empty" } | { type: "chorus"; params: ChorusParams } | { type: "phaser"; params: PhaserParams } | { type: "delay"; params: DelayParams } | { type: "reverb"; params: ReverbParams } | { type: "vibrato"; params: VibratoParams } | { type: "phaseMod" } | { type: "compressor"; params: CompressorParams } | { type: "eq5Band"; params: EqParams } | { type: "grainDelay"; params: GrainDelayParams } | { type: "bitcrusher"; params: BitcrusherParams } | { type: "shimmerVerb"; params: ShimmerVerbParams } | { type: "distortion"; params: DistortionParams } | { type: "junoChorus"; params: JunoChorusParams } | { type: "ringMod"; params: RingModParams } | { type: "tremolo"; params: TremoloParams } | { type: "wavefolder"; params: WavefolderParams } | { type: "loFi"; params: LoFiParams }
+export type FxSlotConfig = { type: "empty" } | { type: "chorus"; params: ChorusParams } | { type: "phaser"; params: PhaserParams } | { type: "delay"; params: DelayParams } | { type: "reverb"; params: ReverbParams } | { type: "vibrato"; params: VibratoParams } | { type: "phaseMod"; params: PhaseModParams } | { type: "compressor"; params: CompressorParams } | { type: "eq5Band"; params: EqParams } | { type: "grainDelay"; params: GrainDelayParams } | { type: "bitcrusher"; params: BitcrusherParams } | { type: "shimmerVerb"; params: ShimmerVerbParams } | { type: "distortion"; params: DistortionParams } | { type: "junoChorus"; params: JunoChorusParams } | { type: "ringMod"; params: RingModParams } | { type: "tremolo"; params: TremoloParams } | { type: "wavefolder"; params: WavefolderParams } | { type: "loFi"; params: LoFiParams }
 
 /**
  * Top-level synth parameters (mirrors this.params in the JS)
  */
-export type SynthParams = { lineSelect: LineSelect; modMode: ModMode; ringGain?: number; octave: number; line1: LineParams; line2: LineParams; intPmEnabled?: boolean; intPmAmount: number; intPmRatio: number; extPmAmount: number; pmPre: boolean; frequency: number; volume: number; polyMode: PolyMode; legato: boolean; chorus?: ChorusParams; delay?: DelayParams; reverb?: ReverbParams; phaser?: PhaserParams; vibrato?: VibratoParams; portamento: PortamentoParams; lfo: LfoParams; lfo2?: LfoParams; filter: FilterParams; 
+export type SynthParams = { lineSelect: LineSelect; modMode: ModMode; ringGain?: number; octave: number; line1: LineParams; line2: LineParams; frequency: number; volume: number; polyMode: PolyMode; legato: boolean; portamento: PortamentoParams; lfo: LfoParams; lfo2?: LfoParams; 
+/**
+ * Velocity curve exponent [-1, 1]. 0 = linear, >0 = convex, <0 = concave.
+ */
+velocityCurve?: number; 
 /**
  * Pitch bend wheel range in semitones (1-24). Default 2.
  */
 pitchBendRange?: number; 
-/**
- * How much the mod wheel adds to vibrato depth (0-99 UI units).
- * When mod wheel is at max (1.0), vibrato depth is boosted by this amount.
- */
-modWheelVibratoDepth?: number; 
 /**
  * Modulation matrix routes for source-to-destination parameter modulation.
  */
@@ -424,7 +431,7 @@ fxSlots?: [FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig,
 /**
  * Canonical, versioned synth preset wire contract.
  */
-export type SynthPresetV1 = { schemaVersion?: number; params: SynthParams }
+export type SynthPresetV1 = { schemaVersion: number; params: SynthParams }
 
 /**
  * A named CZ waveform combination preset (slot A waveform, slot B waveform, window function).
@@ -453,7 +460,11 @@ export type FxControlV1 = { id: string; label: string; kind: FxControlKindV1; bi
 /**
  * Options for `ButtonGroup` controls (empty slice for knobs/toggles).
  */
-options: FxControlOptionV1[] }
+options: FxControlOptionV1[]; 
+/**
+ * Mod matrix destination key for this control, if it can be a mod target.
+ */
+modDestinationKey: string | null }
 
 /**
  * Complete definition of an FX slot module — controls, name, and preset catalog.
@@ -547,6 +558,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "CZ101",
     "iconPath": "M4,12 L20,12",
     "visible": true,
+    "defaultBaseWaveform": "cosine",
     "controls": [
       {
         "id": "preset",
@@ -705,7 +717,10 @@ export const ALGO_DEFINITIONS_V1 = [
               }
             ]
           }
-        ]
+        ],
+        "readoutFormat": {
+          "kind": "raw"
+        }
       },
       {
         "id": "waveform1",
@@ -760,7 +775,10 @@ export const ALGO_DEFINITIONS_V1 = [
             "label": "Pulse 2",
             "set": []
           }
-        ]
+        ],
+        "readoutFormat": {
+          "kind": "raw"
+        }
       },
       {
         "id": "waveform2",
@@ -815,7 +833,10 @@ export const ALGO_DEFINITIONS_V1 = [
             "label": "Pulse 2",
             "set": []
           }
-        ]
+        ],
+        "readoutFormat": {
+          "kind": "raw"
+        }
       },
       {
         "id": "windowFunction",
@@ -860,7 +881,10 @@ export const ALGO_DEFINITIONS_V1 = [
             "label": "Double Saw",
             "set": []
           }
-        ]
+        ],
+        "readoutFormat": {
+          "kind": "raw"
+        }
       }
     ]
   },
@@ -869,6 +893,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Bend",
     "iconPath": "M4,18 C10,18 14,10 20,4",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "bendCurve",
@@ -882,7 +907,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "bendBias",
@@ -896,7 +924,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "bipolarPercent"
+        }
       },
       {
         "id": "bendKnee",
@@ -910,7 +941,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       }
     ]
   },
@@ -919,6 +953,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Sync",
     "iconPath": "M4,20 L8,4 L8,20 L12,4 L12,20 L16,4 L16,20 L20,4",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "syncRatio",
@@ -932,7 +967,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "decimal"
+        }
       },
       {
         "id": "syncPhase",
@@ -946,7 +984,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "degrees"
+        }
       },
       {
         "id": "syncCurve",
@@ -960,7 +1001,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "syncWindow",
@@ -974,7 +1018,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       }
     ]
   },
@@ -983,6 +1030,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Pinch",
     "iconPath": "M4,12 C8,4 10,12 12,12 C14,12 16,20 20,12",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "pinchFocus",
@@ -996,7 +1044,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "pinchAsym",
@@ -1010,7 +1061,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "bipolarPercent"
+        }
       },
       {
         "id": "pinchCurve",
@@ -1024,7 +1078,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "pinchDrive",
@@ -1038,7 +1095,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       }
     ]
   },
@@ -1047,6 +1107,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Fold",
     "iconPath": "M4,20 L8,4 L12,20 L16,4 L20,20",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "foldStages",
@@ -1060,7 +1121,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "foldTilt",
@@ -1074,7 +1138,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "bipolarPercent"
+        }
       },
       {
         "id": "foldSymmetry",
@@ -1088,7 +1155,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "bipolarPercent"
+        }
       },
       {
         "id": "foldSoftness",
@@ -1102,7 +1172,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       }
     ]
   },
@@ -1111,6 +1184,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Skew",
     "iconPath": "M4,20 L10,6 L20,4",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "skewBias",
@@ -1124,7 +1198,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.2,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "skewCurve",
@@ -1138,7 +1215,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "skewSpread",
@@ -1152,7 +1232,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "bipolarPercent"
+        }
       },
       {
         "id": "skewTilt",
@@ -1166,7 +1249,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "bipolarPercent"
+        }
       }
     ]
   },
@@ -1175,6 +1261,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Twist",
     "iconPath": "M4,12 C8,2 16,22 20,12",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "twistHarmonics",
@@ -1188,7 +1275,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "decimal"
+        }
       },
       {
         "id": "twistDepth",
@@ -1202,7 +1292,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "twistPhase",
@@ -1216,7 +1309,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "degrees"
+        }
       },
       {
         "id": "twistShape",
@@ -1230,7 +1326,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       }
     ]
   },
@@ -1239,6 +1338,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Clip",
     "iconPath": "M4,16 L8,16 L8,8 L16,8 L16,16 L20,16",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "clipDrive",
@@ -1252,7 +1352,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "clipShape",
@@ -1266,7 +1369,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "clipBias",
@@ -1280,7 +1386,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "bipolarPercent"
+        }
       },
       {
         "id": "clipSoft",
@@ -1294,7 +1403,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       }
     ]
   },
@@ -1303,6 +1415,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Ripple",
     "iconPath": "M4,12 C6,8 8,16 10,12 C12,8 14,16 16,12 C18,8 19,13 20,12",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "rippleFreq",
@@ -1316,7 +1429,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "decimal"
+        }
       },
       {
         "id": "rippleDepth",
@@ -1330,7 +1446,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "ripplePhase",
@@ -1344,7 +1463,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "degrees"
+        }
       },
       {
         "id": "rippleShape",
@@ -1358,7 +1480,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       }
     ]
   },
@@ -1367,6 +1492,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Mirror",
     "iconPath": "M4,20 L12,4 L20,20",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "mirrorCenter",
@@ -1380,7 +1506,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "mirrorBlend",
@@ -1394,7 +1523,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "mirrorClip",
@@ -1408,7 +1540,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "mirrorSkew",
@@ -1422,7 +1557,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "bipolarPercent"
+        }
       }
     ]
   },
@@ -1431,6 +1569,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Karpunk",
     "iconPath": "M4,16 C8,2 12,22 16,8 L20,12",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "karpunkDamp",
@@ -1444,7 +1583,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "karpunkBright",
@@ -1458,7 +1600,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "karpunkDecay",
@@ -1472,7 +1617,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "karpunkExcite",
@@ -1486,7 +1634,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       }
     ]
   },
@@ -1495,6 +1646,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "FOF",
     "iconPath": "M4,16 C8,4 10,4 12,16 C14,4 16,4 20,16",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "fofRatio",
@@ -1508,7 +1660,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "decimal"
+        }
       },
       {
         "id": "fofTightness",
@@ -1522,7 +1677,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "fofOffset",
@@ -1536,7 +1694,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "bipolarPercent"
+        }
       },
       {
         "id": "fofSkew",
@@ -1550,7 +1711,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "bipolarPercent"
+        }
       }
     ]
   }
@@ -1630,7 +1794,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.1,
         "max": 10.0,
         "defaultF32": 0.8,
-        "options": []
+        "options": [],
+        "modDestinationKey": "chorusRate"
       },
       {
         "id": "depth",
@@ -1640,7 +1805,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 5.0,
         "defaultF32": 0.003,
-        "options": []
+        "options": [],
+        "modDestinationKey": "chorusDepth"
       },
       {
         "id": "mix",
@@ -1650,7 +1816,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "chorusMix"
       }
     ],
     "presets": [
@@ -1680,7 +1847,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.01,
         "max": 2.0,
         "defaultF32": 0.3,
-        "options": []
+        "options": [],
+        "modDestinationKey": "delayTime"
       },
       {
         "id": "feedback",
@@ -1690,7 +1858,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 0.99,
         "defaultF32": 0.35,
-        "options": []
+        "options": [],
+        "modDestinationKey": "delayFeedback"
       },
       {
         "id": "mix",
@@ -1700,7 +1869,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "delayMix"
       },
       {
         "id": "tapeMode",
@@ -1721,7 +1891,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
             "label": "Tape",
             "iconName": null
           }
-        ]
+        ],
+        "modDestinationKey": null
       },
       {
         "id": "warmth",
@@ -1731,7 +1902,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "delayWarmth"
       }
     ],
     "presets": [
@@ -1761,7 +1933,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "reverbMix"
       },
       {
         "id": "space",
@@ -1771,7 +1944,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "reverbSpace"
       },
       {
         "id": "predelay",
@@ -1781,7 +1955,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 0.1,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "reverbPredelay"
       },
       {
         "id": "distance",
@@ -1791,7 +1966,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.3,
-        "options": []
+        "options": [],
+        "modDestinationKey": "reverbDistance"
       },
       {
         "id": "character",
@@ -1801,7 +1977,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.65,
-        "options": []
+        "options": [],
+        "modDestinationKey": "reverbCharacter"
       }
     ],
     "presets": [
@@ -1831,7 +2008,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.1,
         "max": 10.0,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "phaserRate"
       },
       {
         "id": "depth",
@@ -1841,7 +2019,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 1.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "phaserDepth"
       },
       {
         "id": "feedback",
@@ -1851,7 +2030,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": -0.9,
         "max": 0.9,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "phaserFeedback"
       },
       {
         "id": "mix",
@@ -1861,7 +2041,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "phaserMix"
       }
     ],
     "presets": [
@@ -1912,7 +2093,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
             "label": "Saw",
             "iconName": "waveSawtooth"
           }
-        ]
+        ],
+        "modDestinationKey": null
       },
       {
         "id": "rate",
@@ -1922,7 +2104,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 1.0,
         "max": 200.0,
         "defaultF32": 55.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "vibratoRate"
       },
       {
         "id": "depth",
@@ -1932,7 +2115,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 50.0,
         "defaultF32": 8.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "vibratoDepth"
       },
       {
         "id": "delay",
@@ -1942,7 +2126,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 500.0,
         "defaultF32": 120.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "vibratoDelay"
       }
     ],
     "presets": [
@@ -1972,7 +2157,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 0.5,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "intPmAmount"
       },
       {
         "id": "intPmRatio",
@@ -1982,7 +2168,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.5,
         "max": 8.0,
         "defaultF32": 2.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "intPmRatio"
       },
       {
         "id": "pmPre",
@@ -1992,7 +2179,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": null,
         "max": null,
         "defaultF32": 1.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": null
       }
     ],
     "presets": [
@@ -2022,7 +2210,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": -60.0,
         "max": 0.0,
         "defaultF32": -12.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "compressorThreshold"
       },
       {
         "id": "ratio",
@@ -2032,7 +2221,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 1.0,
         "max": 20.0,
         "defaultF32": 4.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "compressorRatio"
       },
       {
         "id": "attackMs",
@@ -2042,7 +2232,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.1,
         "max": 200.0,
         "defaultF32": 5.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": null
       },
       {
         "id": "releaseMs",
@@ -2052,7 +2243,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 10.0,
         "max": 2000.0,
         "defaultF32": 100.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": null
       },
       {
         "id": "makeupDb",
@@ -2062,7 +2254,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 24.0,
         "defaultF32": 6.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "compressorMakeup"
       },
       {
         "id": "mix",
@@ -2072,7 +2265,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 1.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "compressorMix"
       }
     ],
     "presets": [
@@ -2102,7 +2296,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": -12.0,
         "max": 12.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "eqGain80"
       },
       {
         "id": "gain240",
@@ -2112,7 +2307,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": -12.0,
         "max": 12.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "eqGain240"
       },
       {
         "id": "gain750",
@@ -2122,7 +2318,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": -12.0,
         "max": 12.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "eqGain750"
       },
       {
         "id": "gain2200",
@@ -2132,7 +2329,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": -12.0,
         "max": 12.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "eqGain2200"
       },
       {
         "id": "gain8000",
@@ -2142,7 +2340,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": -12.0,
         "max": 12.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "eqGain8000"
       }
     ],
     "presets": [
@@ -2172,7 +2371,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.01,
         "max": 1.0,
         "defaultF32": 0.25,
-        "options": []
+        "options": [],
+        "modDestinationKey": "grainDelayTime"
       },
       {
         "id": "feedback",
@@ -2182,7 +2382,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 0.85,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "grainDelayFeedback"
       },
       {
         "id": "scatter",
@@ -2192,7 +2393,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "grainDelayScatter"
       },
       {
         "id": "density",
@@ -2202,7 +2404,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "grainDelayDensity"
       },
       {
         "id": "mix",
@@ -2212,7 +2415,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "grainDelayMix"
       }
     ],
     "presets": [
@@ -2242,7 +2446,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 1.0,
         "max": 16.0,
         "defaultF32": 8.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "bitcrusherBits"
       },
       {
         "id": "rateReduction",
@@ -2252,7 +2457,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 1.0,
         "max": 32.0,
         "defaultF32": 1.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "bitcrusherRateReduction"
       },
       {
         "id": "mix",
@@ -2262,7 +2468,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 1.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "bitcrusherMix"
       }
     ],
     "presets": [
@@ -2292,7 +2499,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.4,
-        "options": []
+        "options": [],
+        "modDestinationKey": "shimmerVerbShimmer"
       },
       {
         "id": "space",
@@ -2302,7 +2510,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.7,
-        "options": []
+        "options": [],
+        "modDestinationKey": "shimmerVerbSpace"
       },
       {
         "id": "mix",
@@ -2312,7 +2521,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "shimmerVerbMix"
       }
     ],
     "presets": [
@@ -2358,7 +2568,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
             "label": "Fuzz",
             "iconName": null
           }
-        ]
+        ],
+        "modDestinationKey": null
       },
       {
         "id": "drive",
@@ -2368,7 +2579,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "distortionDrive"
       },
       {
         "id": "tone",
@@ -2378,7 +2590,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "distortionTone"
       },
       {
         "id": "mix",
@@ -2388,7 +2601,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 1.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "distortionMix"
       }
     ],
     "presets": [
@@ -2434,7 +2648,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
             "label": "I+II",
             "iconName": null
           }
-        ]
+        ],
+        "modDestinationKey": null
       },
       {
         "id": "mix",
@@ -2444,7 +2659,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "junoChorusMix"
       }
     ],
     "presets": [
@@ -2474,7 +2690,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 20.0,
         "max": 4000.0,
         "defaultF32": 440.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "ringModCarrierHz"
       },
       {
         "id": "mix",
@@ -2484,7 +2701,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 1.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "ringModMix"
       }
     ],
     "presets": [
@@ -2514,7 +2732,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.1,
         "max": 20.0,
         "defaultF32": 4.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "tremoloRate"
       },
       {
         "id": "depth",
@@ -2524,7 +2743,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "tremoloDepth"
       },
       {
         "id": "waveform",
@@ -2550,7 +2770,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
             "label": "Sq",
             "iconName": "waveSquare"
           }
-        ]
+        ],
+        "modDestinationKey": null
       },
       {
         "id": "mix",
@@ -2560,7 +2781,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 1.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "tremoloMix"
       }
     ],
     "presets": [
@@ -2590,7 +2812,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "wavefolderDrive"
       },
       {
         "id": "folds",
@@ -2600,7 +2823,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "wavefolderFolds"
       },
       {
         "id": "mix",
@@ -2610,7 +2834,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 1.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "wavefolderMix"
       }
     ],
     "presets": [
@@ -2640,7 +2865,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.25,
-        "options": []
+        "options": [],
+        "modDestinationKey": "loFiDegrade"
       },
       {
         "id": "wowDepth",
@@ -2648,9 +2874,10 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "kind": "knob",
         "bipolar": false,
         "min": 0.0,
-        "max": 1.0,
-        "defaultF32": 0.35,
-        "options": []
+        "max": 0.2,
+        "defaultF32": 0.07,
+        "options": [],
+        "modDestinationKey": "loFiWowDepth"
       },
       {
         "id": "wowRate",
@@ -2660,7 +2887,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.03,
         "max": 2.5,
         "defaultF32": 0.42,
-        "options": []
+        "options": [],
+        "modDestinationKey": "loFiWowRate"
       },
       {
         "id": "flutterDepth",
@@ -2668,9 +2896,10 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "kind": "knob",
         "bipolar": false,
         "min": 0.0,
-        "max": 1.0,
-        "defaultF32": 0.18,
-        "options": []
+        "max": 0.2,
+        "defaultF32": 0.036,
+        "options": [],
+        "modDestinationKey": "loFiFlutterDepth"
       },
       {
         "id": "flutterRate",
@@ -2680,7 +2909,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.5,
         "max": 18.0,
         "defaultF32": 6.7,
-        "options": []
+        "options": [],
+        "modDestinationKey": "loFiFlutterRate"
       },
       {
         "id": "tone",
@@ -2690,7 +2920,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.45,
-        "options": []
+        "options": [],
+        "modDestinationKey": "loFiTone"
       },
       {
         "id": "mix",
@@ -2700,7 +2931,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 1.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "loFiMix"
       }
     ],
     "presets": [
@@ -3072,465 +3304,522 @@ export type EngineParamReadoutFormatV1 =
   | { kind: "integer" }
   | { kind: "decimal" }
   | { kind: "percent" }
+  | { kind: "bipolarPercent" }
+  | { kind: "degrees" }
   | { kind: "semitones" }
   | { kind: "milliseconds" }
   | { kind: "seconds2" }
   | { kind: "hertz" }
   | { kind: "enumMap"; values: EngineEnumValueLabelV1[] };
-export type EngineParamUiMetaV1 = { key: string; tooltip: string; readoutLabel: string; readoutFormat: EngineParamReadoutFormatV1 };
+export type EngineParamUiMetaV1 = { key: string; tooltip: string; readoutLabel: string; readoutFormat: EngineParamReadoutFormatV1; paramDefault: number | null };
 export type EngineEnumValueTooltipV1 = { key: string; value: string; tooltip: string };
 
 /** Rust-owned engine parameter tooltip and readout metadata. */
 export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
   {
     "key": "volume",
-    "tooltip": "Sets the global synth output level.",
-    "readoutLabel": "Volume",
+    "paramDefault": 0.4000000059604645,
     "readoutFormat": {
       "kind": "percent"
-    }
+    },
+    "readoutLabel": "Volume",
+    "tooltip": "Sets the global synth output level."
   },
   {
     "key": "warpAAmount",
-    "tooltip": "Sets base harmonic warp amount for this line.",
-    "readoutLabel": "Line 1 DCW",
+    "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "Line 1 DCW",
+    "tooltip": "Sets base harmonic warp amount for this line."
   },
   {
     "key": "warpBAmount",
-    "tooltip": "Sets base harmonic warp amount for this line.",
-    "readoutLabel": "Line 2 DCW",
+    "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "Line 2 DCW",
+    "tooltip": "Sets base harmonic warp amount for this line."
   },
   {
     "key": "algoBlendA",
-    "tooltip": "Crossfades between Algo A and Algo B outputs.",
-    "readoutLabel": "Line 1 Blend",
+    "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "Line 1 Blend",
+    "tooltip": "Crossfades between Algo A and Algo B outputs."
   },
   {
     "key": "algoBlendB",
-    "tooltip": "Crossfades between Algo A and Algo B outputs.",
-    "readoutLabel": "Line 2 Blend",
+    "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "Line 2 Blend",
+    "tooltip": "Crossfades between Algo A and Algo B outputs."
   },
   {
     "key": "line1Level",
-    "tooltip": "Sets base output level for this line.",
-    "readoutLabel": "Line 1 Level",
+    "paramDefault": 1.0,
     "readoutFormat": {
       "kind": "percent"
-    }
+    },
+    "readoutLabel": "Line 1 Level",
+    "tooltip": "Sets base output level for this line."
   },
   {
     "key": "line2Level",
-    "tooltip": "Sets base output level for this line.",
-    "readoutLabel": "Line 2 Level",
+    "paramDefault": 1.0,
     "readoutFormat": {
       "kind": "percent"
-    }
+    },
+    "readoutLabel": "Line 2 Level",
+    "tooltip": "Sets base output level for this line."
   },
   {
     "key": "line1Octave",
-    "tooltip": "Transposes this line by octave steps.",
-    "readoutLabel": "Line 1 Octave",
+    "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "integer"
-    }
+    },
+    "readoutLabel": "Line 1 Octave",
+    "tooltip": "Transposes this line by octave steps."
   },
   {
     "key": "line2Octave",
-    "tooltip": "Transposes this line by octave steps.",
-    "readoutLabel": "Line 2 Octave",
+    "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "integer"
-    }
+    },
+    "readoutLabel": "Line 2 Octave",
+    "tooltip": "Transposes this line by octave steps."
   },
   {
     "key": "line1Detune",
-    "tooltip": "Fine tunes this line in cents.",
-    "readoutLabel": "Line 1 Detune",
+    "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "integer"
-    }
+    },
+    "readoutLabel": "Line 1 Detune",
+    "tooltip": "Fine tunes this line in cents."
   },
   {
     "key": "line2Detune",
-    "tooltip": "Fine tunes this line in cents.",
-    "readoutLabel": "Line 2 Detune",
+    "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "integer"
-    }
+    },
+    "readoutLabel": "Line 2 Detune",
+    "tooltip": "Fine tunes this line in cents."
   },
   {
     "key": "lineSelect",
-    "tooltip": "Selects which oscillator lines are heard together.",
-    "readoutLabel": "Line Select",
+    "paramDefault": null,
     "readoutFormat": {
       "kind": "raw"
-    }
+    },
+    "readoutLabel": "Line Select",
+    "tooltip": "Selects which oscillator lines are heard together."
   },
   {
     "key": "modMode",
-    "tooltip": "Chooses the interaction mode between oscillator lines.",
-    "readoutLabel": "Modulation",
+    "paramDefault": null,
     "readoutFormat": {
       "kind": "uppercase"
-    }
+    },
+    "readoutLabel": "Modulation",
+    "tooltip": "Chooses the interaction mode between oscillator lines."
   },
   {
     "key": "polyMode",
-    "tooltip": "Switches between polyphonic and monophonic note allocation.",
-    "readoutLabel": "Voice Mode",
+    "paramDefault": null,
     "readoutFormat": {
       "kind": "enumMap",
       "values": [
         {
-          "value": "poly8",
-          "label": "POLY 8"
+          "label": "POLY 8",
+          "value": "poly8"
         },
         {
-          "value": "mono",
-          "label": "MONO"
+          "label": "MONO",
+          "value": "mono"
         }
       ]
-    }
+    },
+    "readoutLabel": "Voice Mode",
+    "tooltip": "Switches between polyphonic and monophonic note allocation."
   },
   {
     "key": "intPmAmount",
-    "tooltip": "Sets internal phase modulation depth.",
-    "readoutLabel": "PM Amount",
+    "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "PM Amount",
+    "tooltip": "Sets internal phase modulation depth."
   },
   {
     "key": "intPmRatio",
-    "tooltip": "Sets modulator-to-carrier frequency ratio.",
-    "readoutLabel": "PM Ratio",
+    "paramDefault": 1.0,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "PM Ratio",
+    "tooltip": "Sets modulator-to-carrier frequency ratio."
   },
   {
     "key": "pmPre",
-    "tooltip": "Apply phase modulation before warp shaping.",
-    "readoutLabel": "PM Mode",
+    "paramDefault": 1.0,
     "readoutFormat": {
       "kind": "onOff"
-    }
+    },
+    "readoutLabel": "PM Mode",
+    "tooltip": "Apply phase modulation before warp shaping."
   },
   {
     "key": "vibratoRate",
-    "tooltip": "Sets vibrato speed.",
-    "readoutLabel": "Vibrato Rate",
+    "paramDefault": 55.0,
     "readoutFormat": {
       "kind": "integer"
-    }
+    },
+    "readoutLabel": "Vibrato Rate",
+    "tooltip": "Sets vibrato speed."
   },
   {
     "key": "vibratoDepth",
-    "tooltip": "Sets vibrato pitch modulation depth.",
-    "readoutLabel": "Vibrato Depth",
+    "paramDefault": 8.0,
     "readoutFormat": {
       "kind": "integer"
-    }
+    },
+    "readoutLabel": "Vibrato Depth",
+    "tooltip": "Sets vibrato pitch modulation depth."
   },
   {
     "key": "vibratoDelay",
-    "tooltip": "Delays vibrato onset after note start.",
-    "readoutLabel": "Vibrato Delay",
+    "paramDefault": 120.0,
     "readoutFormat": {
       "kind": "milliseconds"
-    }
+    },
+    "readoutLabel": "Vibrato Delay",
+    "tooltip": "Delays vibrato onset after note start."
   },
   {
     "key": "lfoWaveform",
-    "tooltip": "Selects LFO 1 waveform shape.",
-    "readoutLabel": "LFO Wave",
+    "paramDefault": null,
     "readoutFormat": {
       "kind": "uppercase"
-    }
+    },
+    "readoutLabel": "LFO Wave",
+    "tooltip": "Selects LFO 1 waveform shape."
   },
   {
     "key": "lfoRate",
-    "tooltip": "Sets LFO 1 speed.",
-    "readoutLabel": "LFO Rate",
+    "paramDefault": 5.0,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "LFO Rate",
+    "tooltip": "Sets LFO 1 speed."
   },
   {
     "key": "lfoDepth",
-    "tooltip": "Sets LFO 1 modulation depth.",
-    "readoutLabel": "LFO Depth",
+    "paramDefault": 0.20000000298023224,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "LFO Depth",
+    "tooltip": "Sets LFO 1 modulation depth."
   },
   {
     "key": "lfoOffset",
-    "tooltip": "Offsets LFO 1 output around zero.",
-    "readoutLabel": "LFO Offset",
+    "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "LFO Offset",
+    "tooltip": "Offsets LFO 1 output around zero."
   },
   {
     "key": "lfo2Rate",
-    "tooltip": "Sets LFO 2 speed.",
-    "readoutLabel": "LFO 2 Rate",
+    "paramDefault": 5.0,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "LFO 2 Rate",
+    "tooltip": "Sets LFO 2 speed."
   },
   {
     "key": "lfo2Depth",
-    "tooltip": "Sets LFO 2 modulation depth.",
-    "readoutLabel": "LFO 2 Depth",
+    "paramDefault": 0.20000000298023224,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "LFO 2 Depth",
+    "tooltip": "Sets LFO 2 modulation depth."
   },
   {
     "key": "lfo2Offset",
-    "tooltip": "Offsets LFO 2 output around zero.",
-    "readoutLabel": "LFO 2 Offset",
+    "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "LFO 2 Offset",
+    "tooltip": "Offsets LFO 2 output around zero."
   },
   {
     "key": "randomRate",
-    "tooltip": "Sets sample-and-hold random modulation refresh rate.",
-    "readoutLabel": "Random Rate",
+    "paramDefault": 2.0,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "Random Rate",
+    "tooltip": "Sets sample-and-hold random modulation refresh rate."
   },
   {
     "key": "modEnvAttack",
-    "tooltip": "Sets modulation envelope attack time.",
-    "readoutLabel": "Mod Env Attack",
+    "paramDefault": 0.009999999776482582,
     "readoutFormat": {
       "kind": "seconds2"
-    }
+    },
+    "readoutLabel": "Mod Env Attack",
+    "tooltip": "Sets modulation envelope attack time."
   },
   {
     "key": "modEnvDecay",
-    "tooltip": "Sets modulation envelope decay time.",
-    "readoutLabel": "Mod Env Decay",
+    "paramDefault": 0.10000000149011612,
     "readoutFormat": {
       "kind": "seconds2"
-    }
+    },
+    "readoutLabel": "Mod Env Decay",
+    "tooltip": "Sets modulation envelope decay time."
   },
   {
     "key": "modEnvSustain",
-    "tooltip": "Sets sustained modulation level while note is held.",
-    "readoutLabel": "Mod Env Sustain",
+    "paramDefault": 0.5,
     "readoutFormat": {
       "kind": "percent"
-    }
+    },
+    "readoutLabel": "Mod Env Sustain",
+    "tooltip": "Sets sustained modulation level while note is held."
   },
   {
     "key": "modEnvRelease",
-    "tooltip": "Sets modulation envelope release time after note off.",
-    "readoutLabel": "Mod Env Release",
+    "paramDefault": 0.20000000298023224,
     "readoutFormat": {
       "kind": "seconds2"
-    }
+    },
+    "readoutLabel": "Mod Env Release",
+    "tooltip": "Sets modulation envelope release time after note off."
   },
   {
     "key": "filterType",
-    "tooltip": "Selects the filter response shape.",
-    "readoutLabel": "Filter Type",
+    "paramDefault": null,
     "readoutFormat": {
       "kind": "uppercase"
-    }
+    },
+    "readoutLabel": "Filter Type",
+    "tooltip": "Selects the filter response shape."
   },
   {
     "key": "filterCutoff",
-    "tooltip": "Sets the filter cutoff frequency.",
-    "readoutLabel": "Filter Cutoff",
+    "paramDefault": 5000.0,
     "readoutFormat": {
       "kind": "hertz"
-    }
+    },
+    "readoutLabel": "Filter Cutoff",
+    "tooltip": "Sets the filter cutoff frequency."
   },
   {
     "key": "filterResonance",
-    "tooltip": "Boosts frequencies around the cutoff point.",
-    "readoutLabel": "Filter Resonance",
+    "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "Filter Resonance",
+    "tooltip": "Boosts frequencies around the cutoff point."
   },
   {
     "key": "filterEnvAmount",
-    "tooltip": "Applies envelope modulation amount to the cutoff.",
-    "readoutLabel": "Filter Env",
+    "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "Filter Env",
+    "tooltip": "Applies envelope modulation amount to the cutoff."
   },
   {
     "key": "chorusRate",
-    "tooltip": "Sets chorus modulation speed.",
-    "readoutLabel": "Chorus Rate",
+    "paramDefault": 0.800000011920929,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "Chorus Rate",
+    "tooltip": "Sets chorus modulation speed."
   },
   {
     "key": "chorusDepth",
-    "tooltip": "Sets intensity of chorus pitch modulation.",
-    "readoutLabel": "Chorus Depth",
+    "paramDefault": 0.003000000026077032,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "Chorus Depth",
+    "tooltip": "Sets intensity of chorus pitch modulation."
   },
   {
     "key": "chorusMix",
-    "tooltip": "Blends dry signal with chorus effect.",
-    "readoutLabel": "Chorus Mix",
+    "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "Chorus Mix",
+    "tooltip": "Blends dry signal with chorus effect."
   },
   {
     "key": "delayTime",
-    "tooltip": "Sets the delay repeat interval.",
-    "readoutLabel": "Delay Time",
+    "paramDefault": 0.30000001192092896,
     "readoutFormat": {
       "kind": "seconds2"
-    }
+    },
+    "readoutLabel": "Delay Time",
+    "tooltip": "Sets the delay repeat interval."
   },
   {
     "key": "delayFeedback",
-    "tooltip": "Feeds delayed signal back for additional repeats.",
-    "readoutLabel": "Delay Feedback",
+    "paramDefault": 0.3499999940395355,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "Delay Feedback",
+    "tooltip": "Feeds delayed signal back for additional repeats."
   },
   {
     "key": "delayWarmth",
-    "tooltip": "Adds tape-style saturation and high-frequency rolloff.",
-    "readoutLabel": "Delay Warmth",
+    "paramDefault": 0.5,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "Delay Warmth",
+    "tooltip": "Adds tape-style saturation and high-frequency rolloff."
   },
   {
     "key": "delayMix",
-    "tooltip": "Blends dry signal with delayed signal.",
-    "readoutLabel": "Delay Mix",
+    "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "Delay Mix",
+    "tooltip": "Blends dry signal with delayed signal."
   },
   {
     "key": "delayTapeMode",
-    "tooltip": "Toggle tape echo coloration for delay repeats.",
-    "readoutLabel": "Tape Mode",
+    "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "onOff"
-    }
+    },
+    "readoutLabel": "Tape Mode",
+    "tooltip": "Toggle tape echo coloration for delay repeats."
   },
   {
     "key": "reverbSpace",
-    "tooltip": "Sets the virtual room size for reverb reflections.",
-    "readoutLabel": "Reverb Space",
+    "paramDefault": 0.5,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "Reverb Space",
+    "tooltip": "Sets the virtual room size for reverb reflections."
   },
   {
     "key": "reverbPredelay",
-    "tooltip": "Adds delay before the reverb tail starts.",
-    "readoutLabel": "Reverb Pre-Delay",
+    "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "milliseconds"
-    }
+    },
+    "readoutLabel": "Reverb Pre-Delay",
+    "tooltip": "Adds delay before the reverb tail starts."
   },
   {
     "key": "reverbDistance",
-    "tooltip": "Moves source position deeper into the reverb space.",
-    "readoutLabel": "Reverb Distance",
+    "paramDefault": 0.30000001192092896,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "Reverb Distance",
+    "tooltip": "Moves source position deeper into the reverb space."
   },
   {
     "key": "reverbCharacter",
-    "tooltip": "Shapes reverb tone from dark to bright.",
-    "readoutLabel": "Reverb Character",
+    "paramDefault": 0.6499999761581421,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "Reverb Character",
+    "tooltip": "Shapes reverb tone from dark to bright."
   },
   {
     "key": "reverbMix",
-    "tooltip": "Blends dry signal with reverb output.",
-    "readoutLabel": "Reverb Mix",
+    "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "Reverb Mix",
+    "tooltip": "Blends dry signal with reverb output."
   },
   {
     "key": "portamentoMode",
-    "tooltip": "Chooses whether glide uses rate or fixed time behavior.",
-    "readoutLabel": "Portamento Mode",
+    "paramDefault": null,
     "readoutFormat": {
       "kind": "uppercase"
-    }
+    },
+    "readoutLabel": "Portamento Mode",
+    "tooltip": "Chooses whether glide uses rate or fixed time behavior."
   },
   {
     "key": "portamentoRate",
-    "tooltip": "Sets glide speed when portamento mode is Rate.",
-    "readoutLabel": "Portamento Rate",
+    "paramDefault": 50.0,
     "readoutFormat": {
       "kind": "integer"
-    }
+    },
+    "readoutLabel": "Portamento Rate",
+    "tooltip": "Sets glide speed when portamento mode is Rate."
   },
   {
     "key": "portamentoTime",
-    "tooltip": "Sets glide duration when portamento mode is Time.",
-    "readoutLabel": "Portamento Time",
+    "paramDefault": 0.5,
     "readoutFormat": {
       "kind": "seconds2"
-    }
+    },
+    "readoutLabel": "Portamento Time",
+    "tooltip": "Sets glide duration when portamento mode is Time."
   },
   {
     "key": "pitchBendRange",
-    "tooltip": "Sets maximum pitch bend range in semitones.",
-    "readoutLabel": "Bend Range",
+    "paramDefault": 2.0,
     "readoutFormat": {
       "kind": "semitones"
-    }
+    },
+    "readoutLabel": "Bend Range",
+    "tooltip": "Sets maximum pitch bend range in semitones."
   },
   {
     "key": "velocityCurve",
-    "tooltip": "Shapes how keyboard velocity maps to output level.",
-    "readoutLabel": "Vel Curve",
+    "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "Vel Curve",
+    "tooltip": "Shapes how keyboard velocity maps to output level."
   },
   {
     "key": "modWheelVibratoDepth",
-    "tooltip": "Sets how much mod wheel movement affects vibrato depth.",
-    "readoutLabel": "Mod to Vibrato",
+    "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "readoutLabel": "Mod to Vibrato",
+    "tooltip": "Sets how much mod wheel movement affects vibrato depth."
   }
 ];
 

@@ -157,6 +157,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(1.0),
         default_f32: Some(0.25),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("grainDelayTime"),
     },
     FxControlV1 {
         id: "feedback",
@@ -167,6 +168,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(0.85),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("grainDelayFeedback"),
     },
     FxControlV1 {
         id: "scatter",
@@ -177,6 +179,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(1.0),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("grainDelayScatter"),
     },
     FxControlV1 {
         id: "density",
@@ -187,6 +190,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(1.0),
         default_f32: Some(0.5),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("grainDelayDensity"),
     },
     FxControlV1 {
         id: "mix",
@@ -197,6 +201,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(1.0),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("grainDelayMix"),
     },
 ];
 

@@ -7,6 +7,7 @@ export type SynthHeaderProps = {
 	allEntries: PresetEntry[];
 	activeEntryId: string | null;
 	activePresetName: string;
+	onBrandInfoClick?: () => void;
 	pendingPresetChange?: {
 		activePresetName: string;
 		activeLocalName: string | null;
@@ -39,13 +40,14 @@ export type SynthHeaderProps = {
 export default function SynthHeader({
 	allEntries,
 	activePresetName,
+	onBrandInfoClick,
 	onStepPreset,
 	isLibraryModeOpen = false,
 	onLibraryModeChange,
 	trailingContent,
 }: SynthHeaderProps) {
 	return (
-		<header className="shrink-0 flex flex-col gap-3 border-b-4 border-cz-border bg-cz-body px-8 py-2 shadow-inner lg:flex-row lg:items-center lg:justify-between">
+		<header className="shrink-0 flex gap-3 border-b-4 border-cz-border bg-cz-body px-8 py-2 shadow-inner flex-row items-center justify-between">
 			{/* Hardware nameplate logo */}
 			<div className="flex items-center gap-4 shrink-0">
 				<div className="flex flex-col items-start leading-none select-none">
@@ -72,14 +74,19 @@ export default function SynthHeader({
 				onLibraryModeChange={onLibraryModeChange}
 			/>
 
-			<div className="hidden sm:flex flex-col justify-center border-l border-cz-border pl-4">
-				<span className="text-4xs font-mono uppercase tracking-[0.3em] text-cz-light-blue">
+			<button
+				type="button"
+				className="group flex flex-col justify-center border-l border-cz-border pl-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cz-light-blue/70"
+				aria-label="Open synthesizer lab information"
+				onClick={onBrandInfoClick}
+			>
+				<span className="text-4xs font-mono uppercase tracking-[0.3em] text-cz-light-blue transition-colors group-hover:text-cz-cream group-focus-visible:text-cz-cream">
 					Phase Distortion
 				</span>
-				<span className="text-xs font-mono font-semibold uppercase tracking-[0.18em] text-cz-cream">
+				<span className="text-xs font-mono font-semibold uppercase tracking-[0.18em] text-cz-cream transition-colors group-hover:text-cz-gold group-focus-visible:text-cz-gold">
 					Synthesizer Lab
 				</span>
-			</div>
+			</button>
 
 			{trailingContent}
 		</header>

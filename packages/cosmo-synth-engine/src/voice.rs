@@ -4,14 +4,14 @@
 /// (lines 488-1257).
 extern crate alloc;
 
-use libm::{cosf, sinf};
+use libm::sinf;
 
 use crate::dsp_utils::{lfo_output, wrap01};
 use crate::envelope::{EnvGen, EnvelopeKind};
 use crate::generators::{self, AlgoRuntimeState, LineRenderConfig};
 use crate::params::{
-    EnvStep, FilterType, LfoWaveform, LineParams, LineSelect, ModDestination, ModEnvParams,
-    ModMatrix, ModMode, ModSource, PortamentoMode, StepEnvData, SynthParams, NUM_ENV_STEPS,
+    EnvStep, LfoWaveform, LineParams, LineSelect, ModDestination, ModEnvParams, ModMatrix, ModMode,
+    ModSource, PortamentoMode, StepEnvData, SynthParams, NUM_ENV_STEPS,
 };
 
 // TWO_PI for f32
@@ -446,9 +446,6 @@ pub struct Voice {
     pub line1_env: LineEnvs,
     pub line2_env: LineEnvs,
 
-    pub filter_state1: [f32; 4],
-    pub filter_state2: [f32; 4],
-
     /// ADSR mod envelope used as a modulation source.
     pub mod_env: AdsrEnv,
 
@@ -507,8 +504,6 @@ impl Voice {
             velocity: 1.0,
             line1_env: LineEnvs::default(),
             line2_env: LineEnvs::default(),
-            filter_state1: [0.0; 4],
-            filter_state2: [0.0; 4],
             mod_env: AdsrEnv::default(),
             anti_click_fade: 0,
             anti_click_fade_len: 0,
@@ -652,7 +647,6 @@ pub fn render_voice(
         sr,
         base_freq,
         pitch_bend_semitones,
-        mod_wheel,
         &mod_sources,
         &mut signal,
     );
@@ -697,7 +691,6 @@ pub fn render_voice(
         line1_algo_param_mods,
         line2_algo_param_mods,
     );
-    let sample = apply_filter(sample, voice, p, sr, env.dcw1, &mod_sources);
 
     // Apply volume modulation from mod matrix
     let volume_mod = mod_value_for(ModDestination::Volume, &p.mod_matrix, &mod_sources);
@@ -885,7 +878,10 @@ fn advance_silent_voice(
 ) {
     let freq1 = line_frequency(base_freq, line1, 0.0);
     let freq2 = line_frequency(base_freq, line2, 0.0);
-    let pm_delta = (base_freq * p.int_pm_ratio) / sr;
+    let pm_delta = match p.phase_mod_params() {
+        Some(pm) => (base_freq * pm.ratio) / sr,
+        None => base_freq / sr,
+    };
 
     advance_voice_phase(voice, sr, freq1, freq2, pm_delta);
 }
@@ -986,13 +982,12 @@ fn apply_pitch_and_lfo_modulation(
     sr: f32,
     base_freq: f32,
     pitch_bend_semitones: f32,
-    mod_wheel: f32,
     sources: &ModSources,
     signal: &mut SignalState,
 ) {
     apply_portamento(voice, &p.portamento, sr, base_freq, signal);
     apply_pitch_bend(pitch_bend_semitones, signal);
-    apply_vibrato(voice, p, sr, mod_wheel, sources, signal);
+    apply_vibrato(voice, p, sr, sources, signal);
     // Pitch modulation from mod matrix (additive semitone offset via ratio)
     let pitch_mod = mod_value_for(ModDestination::Pitch, &p.mod_matrix, sources);
     if pitch_mod != 0.0 {
@@ -1051,11 +1046,12 @@ fn apply_vibrato(
     voice: &mut Voice,
     p: &SynthParams,
     sr: f32,
-    mod_wheel: f32,
     sources: &ModSources,
     signal: &mut SignalState,
 ) {
-    let vibrato = &p.vibrato;
+    let Some(vibrato) = p.vibrato_params() else {
+        return;
+    };
     if !vibrato.enabled {
         return;
     }
@@ -1065,7 +1061,9 @@ fn apply_vibrato(
         return;
     }
 
-    voice.vibrato_phase += (vibrato.rate * 0.1) / sr;
+    let vibrato_rate_mod = mod_value_for(ModDestination::VibratoRate, &p.mod_matrix, sources);
+    let effective_rate = (vibrato.rate + vibrato_rate_mod * 99.0).clamp(0.1, 200.0);
+    voice.vibrato_phase += (effective_rate * 0.1) / sr;
     if voice.vibrato_phase >= 1.0 {
         voice.vibrato_phase -= 1.0;
     }
@@ -1073,9 +1071,7 @@ fn apply_vibrato(
     let vib_waveform = vibrato_waveform(vibrato.waveform);
     let lfo_val = lfo_output(voice.vibrato_phase, vib_waveform);
     let vibrato_depth_mod = mod_value_for(ModDestination::VibratoDepth, &p.mod_matrix, sources);
-    let effective_depth =
-        (vibrato.depth + mod_wheel * p.mod_wheel_vibrato_depth + vibrato_depth_mod * 99.0)
-            .clamp(0.0, 99.0);
+    let effective_depth = (vibrato.depth + vibrato_depth_mod * 99.0).clamp(0.0, 99.0);
     let pitch_mod = 1.0 + lfo_val * (effective_depth / 1000.0);
     signal.effective_freq1 *= pitch_mod;
     signal.effective_freq2 *= pitch_mod;
@@ -1097,39 +1093,36 @@ fn build_phase_frame(
     base_freq: f32,
     sources: &ModSources,
 ) -> PhaseFrame {
-    let int_pm_mod = mod_value_for(ModDestination::IntPmAmount, &p.mod_matrix, sources);
-    let int_pm_amount = if p.int_pm_enabled {
-        (p.int_pm_amount + int_pm_mod).clamp(-1.0, 1.0)
+    let int_pm_ratio_mod = mod_value_for(ModDestination::IntPmRatio, &p.mod_matrix, sources);
+    let (int_pm_enabled, int_pm_amount_raw, int_pm_ratio_raw, pm_pre) = p
+        .phase_mod_params()
+        .map(|pm| (pm.enabled, pm.amount, pm.ratio, pm.pm_pre))
+        .unwrap_or((false, 0.0, 1.0, false));
+    let int_pm_amount = if int_pm_enabled {
+        (int_pm_amount_raw).clamp(-1.0, 1.0)
     } else {
         0.0
     };
-    let pm_delta = (base_freq * p.int_pm_ratio) / sr;
+    let effective_int_pm_ratio = (int_pm_ratio_raw + int_pm_ratio_mod * 7.5).clamp(0.5, 8.0);
+    let pm_delta = (base_freq * effective_int_pm_ratio) / sr;
     let phi1 = wrap01(voice.phi1);
     let phi2 = wrap01(voice.phi2);
     let pm_phi = wrap01(voice.pm_phi);
     let pm_mod = int_pm_amount * 10.0 * sinf(TWO_PI * pm_phi);
 
-    let phase_a_input = if p.pm_pre {
-        wrap01(phi1 + pm_mod)
-    } else {
-        phi1
-    };
-    let phase_b_input = if p.pm_pre {
-        wrap01(phi2 + pm_mod)
-    } else {
-        phi2
-    };
+    let phase_a_input = if pm_pre { wrap01(phi1 + pm_mod) } else { phi1 };
+    let phase_b_input = if pm_pre { wrap01(phi2 + pm_mod) } else { phi2 };
 
     PhaseFrame {
         phi1,
         phi2,
         pm_delta,
-        phase_a_post: wrap01(if p.pm_pre {
+        phase_a_post: wrap01(if pm_pre {
             phase_a_input
         } else {
             phase_a_input + pm_mod
         }),
-        phase_b_post: wrap01(if p.pm_pre {
+        phase_b_post: wrap01(if pm_pre {
             phase_b_input
         } else {
             phase_b_input + pm_mod
@@ -1229,6 +1222,11 @@ fn select_line_sources(
                 algo_prime,
                 phi1,
                 0.0,
+                if cfg.secondary_algo.is_some() {
+                    cfg.secondary_base_waveform
+                } else {
+                    cfg.primary_base_waveform
+                },
                 algo_prime_controls,
                 cfg.algo_param_mods,
                 ks_raw1,
@@ -1257,6 +1255,11 @@ fn select_line_sources(
                 algo_prime,
                 phi1,
                 0.0,
+                if cfg.secondary_algo.is_some() {
+                    cfg.secondary_base_waveform
+                } else {
+                    cfg.primary_base_waveform
+                },
                 algo_prime_controls,
                 cfg.algo_param_mods,
                 ks_raw2,
@@ -1264,60 +1267,6 @@ fn select_line_sources(
             (s1, s2_prime)
         }
         _ => (s1, s2),
-    }
-}
-
-fn apply_filter(
-    sample: f32,
-    voice: &mut Voice,
-    p: &SynthParams,
-    sr: f32,
-    dcw1: f32,
-    sources: &ModSources,
-) -> f32 {
-    if !p.filter.enabled {
-        return sample;
-    }
-
-    let filter = &p.filter;
-    let cutoff_mod = mod_value_for(ModDestination::FilterCutoff, &p.mod_matrix, sources);
-    let resonance_mod = mod_value_for(ModDestination::FilterResonance, &p.mod_matrix, sources);
-    let env_amount_mod = mod_value_for(ModDestination::FilterEnvAmount, &p.mod_matrix, sources);
-    let effective_env_amount = (filter.env_amount + env_amount_mod).clamp(-1.0, 1.0);
-    let cutoff = (filter.cutoff
-        * libm::powf(2.0, cutoff_mod * 4.0) // ±4 octaves max for cutoff mod
-        * (1.0 + effective_env_amount * dcw1))
-        .clamp(20.0, sr * 0.49);
-    let resonance = (filter.resonance + resonance_mod).max(0.001);
-    let w0 = TWO_PI * cutoff / sr;
-    let cos_w0 = cosf(w0);
-    let sin_w0 = sinf(w0);
-    let alpha = sin_w0 / (2.0 * resonance);
-
-    let (b0, b1, b2) = match filter.filter_type {
-        FilterType::Lp => ((1.0 - cos_w0) / 2.0, 1.0 - cos_w0, (1.0 - cos_w0) / 2.0),
-        FilterType::Hp => ((1.0 + cos_w0) / 2.0, -(1.0 + cos_w0), (1.0 + cos_w0) / 2.0),
-        FilterType::Bp => (alpha, 0.0, -alpha),
-    };
-    let norm = 1.0 / (1.0 + alpha);
-    let a1_coef = -2.0 * cos_w0;
-    let a2_coef = 1.0 - alpha;
-
-    // Direct Form I history layout: [x[n-1], x[n-2], y[n-1], y[n-2]].
-    let yn = norm
-        * (b0 * sample + b1 * voice.filter_state1[0] + b2 * voice.filter_state1[1]
-            - a1_coef * voice.filter_state1[2]
-            - a2_coef * voice.filter_state1[3]);
-
-    voice.filter_state1[1] = voice.filter_state1[0];
-    voice.filter_state1[0] = sample;
-    voice.filter_state1[3] = voice.filter_state1[2];
-    voice.filter_state1[2] = yn;
-
-    if yn.is_finite() {
-        yn
-    } else {
-        0.0
     }
 }
 
@@ -1412,11 +1361,10 @@ mod tests {
         ]
     }
 
-    fn all_destinations() -> [ModDestination; 67] {
+    fn all_destinations() -> [ModDestination; 51] {
         [
             ModDestination::Volume,
             ModDestination::Pitch,
-            ModDestination::IntPmAmount,
             ModDestination::Line1DcwBase,
             ModDestination::Line1DcaBase,
             ModDestination::Line1AlgoBlend,
@@ -1443,15 +1391,9 @@ mod tests {
             ModDestination::Line2AlgoParam6,
             ModDestination::Line2AlgoParam7,
             ModDestination::Line2AlgoParam8,
-            ModDestination::FilterCutoff,
-            ModDestination::FilterResonance,
-            ModDestination::FilterEnvAmount,
-            ModDestination::ChorusMix,
-            ModDestination::DelayMix,
-            ModDestination::ReverbMix,
             ModDestination::VibratoDepth,
-            ModDestination::LfoDepth,
-            ModDestination::LfoRate,
+            ModDestination::VibratoRate,
+            ModDestination::IntPmRatio,
             ModDestination::Line1DcoEnvStep1Level,
             ModDestination::Line1DcoEnvStep1Rate,
             ModDestination::Line1DcwEnvStep3Level,
@@ -1459,15 +1401,6 @@ mod tests {
             ModDestination::Line2DcoEnvStep2Level,
             ModDestination::Line2DcwEnvStep6Rate,
             ModDestination::Line2DcaEnvStep8Level,
-            ModDestination::ChorusRate,
-            ModDestination::ChorusDepth,
-            ModDestination::DelayTime,
-            ModDestination::DelayFeedback,
-            ModDestination::DelayWarmth,
-            ModDestination::ReverbSpace,
-            ModDestination::ReverbPredelay,
-            ModDestination::ReverbDistance,
-            ModDestination::ReverbCharacter,
             ModDestination::PhaserRate,
             ModDestination::PhaserDepth,
             ModDestination::PhaserFeedback,

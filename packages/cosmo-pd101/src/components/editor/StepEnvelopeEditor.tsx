@@ -413,7 +413,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 
 				for (let i = 0; i < activeSteps.length; i++) {
 					const rate = i === stepIndex ? candidateRate : activeSteps[i].rate;
-					const duration = editorStepDuration(rate, visibleStepCount);
+					const duration = editorStepDuration(rate);
 					totalTime += duration;
 					if (i <= stepIndex) cumulative += duration;
 				}
@@ -601,9 +601,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 
 			<div
 				className={
-					compact
-						? "grid grid-cols-4 gap-2 lg:grid-cols-8"
-						: "grid grid-cols-2 gap-2 sm:grid-cols-4 2xl:grid-cols-8"
+					compact ? "grid gap-2 grid-cols-8" : "grid gap-2 grid-cols-8"
 				}
 			>
 				{steps.map((step, i) => {

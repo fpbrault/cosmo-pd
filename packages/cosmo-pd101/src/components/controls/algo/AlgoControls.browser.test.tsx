@@ -103,11 +103,11 @@ describe("algo controls (browser)", () => {
 			/>,
 		);
 
-		const dropdown = screen.getByRole("combobox");
-		fireEvent.change(dropdown, { target: { value: "a" } });
+		expect(screen.getAllByRole("button")).toHaveLength(2);
+		fireEvent.click(screen.getByRole("button", { name: "A" }));
 		expect(setNumber).toHaveBeenCalledWith(0);
 
-		fireEvent.change(dropdown, { target: { value: "b" } });
+		fireEvent.click(screen.getByRole("button", { name: "B" }));
 		expect(applyOptionAssignments).toHaveBeenCalledWith(
 			selectControl.options[1],
 		);
