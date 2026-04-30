@@ -623,11 +623,11 @@ fn _assert_synth_params_coverage(p: SynthParams) {
         mod_env,
         random,
         velocity_curve: _,
-        filter: _,     // not yet a VST param
-        pitch_bend_range: _pitch_bend_range, // not yet a VST param
+        filter: _,                                         // not yet a VST param
+        pitch_bend_range: _pitch_bend_range,               // not yet a VST param
         mod_wheel_vibrato_depth: _mod_wheel_vibrato_depth, // not yet a VST param
-        mod_matrix: _mod_matrix,             // not yet a VST param
-        fx_slots: _fx_slots,                 // not yet a VST param
+        mod_matrix: _mod_matrix,                           // not yet a VST param
+        fx_slots: _fx_slots,                               // not yet a VST param
     } = p;
 
     // ModEnvParams / RandomParams — not yet VST params.
