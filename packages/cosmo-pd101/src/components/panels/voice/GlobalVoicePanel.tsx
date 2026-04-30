@@ -161,6 +161,7 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 								paramKey="velocityCurve"
 								value={velocityCurve}
 								onChange={setVelocityCurve}
+								min={-1}
 								size={28}
 								color="#c46eb4"
 								label="Vel Curve"
