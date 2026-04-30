@@ -72,6 +72,7 @@ const CONTROLS: [FxControlV1; 2] = [
         max: Some(4000.0),
         default_f32: Some(440.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("ringModCarrierHz"),
     },
     FxControlV1 {
         id: "mix",
@@ -82,6 +83,7 @@ const CONTROLS: [FxControlV1; 2] = [
         max: Some(1.0),
         default_f32: Some(1.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("ringModMix"),
     },
 ];
 

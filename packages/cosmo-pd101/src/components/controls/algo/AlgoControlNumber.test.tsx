@@ -62,7 +62,7 @@ describe("AlgoControlNumber", () => {
 			/>,
 		);
 
-		const props = knobSpy.mock.calls.at(-1)?.[0] as {
+		const props = knobSpy.mock.calls[knobSpy.mock.calls.length - 1]?.[0] as {
 			onChange: (value: number) => void;
 		};
 		props.onChange(0.2);

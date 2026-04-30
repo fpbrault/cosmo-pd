@@ -115,7 +115,7 @@ export function ControlKnob({
 
 			return Number.isInteger(nextValue)
 				? `${nextValue}`
-				: nextValue.toFixed(2);
+				: nextValue?.toFixed(2);
 		},
 		[valueFormatter],
 	);

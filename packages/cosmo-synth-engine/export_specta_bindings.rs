@@ -16,14 +16,14 @@ use cosmo_synth_engine::generators::{
 };
 use cosmo_synth_engine::module_presets::{module_preset_catalog_v1, ModulePresetGroupV1};
 use cosmo_synth_engine::params::{
-    engine_enum_value_tooltips_v1, engine_param_ui_meta_v1, Algo, AlgoControlValueV1,
+    engine_enum_value_tooltips_v1, engine_param_ui_meta_v1, Algo, AlgoControlValueV1, BaseWaveform,
     BitcrusherParams, ChorusParams, CompressorParams, CzAlgo, CzLineParams, CzWaveform,
-    DelayParams, DistortionParams, EnvStep, EqParams, FilterParams, FilterType, FxSlotConfig,
+    DelayParams, DistortionParams, EnvStep, EqParams, FxSlotConfig,
     FxSlotType, GrainDelayParams, JunoChorusParams, LfoParams, LfoWaveform, LineParams, LineSelect,
     LoFiParams, ModDestination, ModEnvParams, ModMatrix, ModMode, ModRoute, ModSource,
-    PhaserParams, PolyMode, PortamentoMode, PortamentoParams, RandomParams, ReverbParams,
-    RingModParams, ShimmerVerbParams, StepEnvData, SynthParams, TremoloParams, VibratoParams,
-    WavefolderParams, WindowType,
+    PhaseModParams, PhaserParams, PolyMode, PortamentoMode, PortamentoParams, RandomParams,
+    ReverbParams, RingModParams, ShimmerVerbParams, StepEnvData, SynthParams, TremoloParams,
+    VibratoParams, WavefolderParams, WindowType,
 };
 use cosmo_synth_engine::preset_wire::{
     algo_definitions_v1, algo_ui_catalog_v1, cz_presets, SynthPresetV1,
@@ -55,6 +55,8 @@ fn main() {
     out.push_str("\n\n");
     out.push_str(&export::<CzWaveform>(&config).expect("Failed to export CzWaveform"));
     out.push_str("\n\n");
+    out.push_str(&export::<BaseWaveform>(&config).expect("Failed to export BaseWaveform"));
+    out.push_str("\n\n");
     out.push_str(&export::<CzLineParams>(&config).expect("Failed to export CzLineParams"));
     out.push_str("\n\n");
     out.push_str(&export::<Algo>(&config).expect("Failed to export Algo"));
@@ -69,8 +71,6 @@ fn main() {
     out.push_str("\n\n");
     out.push_str(&export::<LfoWaveform>(&config).expect("Failed to export LfoWaveform"));
     out.push_str("\n\n");
-    out.push_str(&export::<FilterType>(&config).expect("Failed to export FilterType"));
-    out.push_str("\n\n");
     out.push_str(&export::<PortamentoMode>(&config).expect("Failed to export PortamentoMode"));
     out.push_str("\n\n");
     out.push_str(&export::<ChorusParams>(&config).expect("Failed to export ChorusParams"));
@@ -83,6 +83,8 @@ fn main() {
     out.push_str("\n\n");
     out.push_str(&export::<VibratoParams>(&config).expect("Failed to export VibratoParams"));
     out.push_str("\n\n");
+    out.push_str(&export::<PhaseModParams>(&config).expect("Failed to export PhaseModParams"));
+    out.push_str("\n\n");
     out.push_str(&export::<RandomParams>(&config).expect("Failed to export RandomParams"));
     out.push_str("\n\n");
     out.push_str(&export::<ModEnvParams>(&config).expect("Failed to export ModEnvParams"));
@@ -90,8 +92,6 @@ fn main() {
     out.push_str(&export::<PortamentoParams>(&config).expect("Failed to export PortamentoParams"));
     out.push_str("\n\n");
     out.push_str(&export::<LfoParams>(&config).expect("Failed to export LfoParams"));
-    out.push_str("\n\n");
-    out.push_str(&export::<FilterParams>(&config).expect("Failed to export FilterParams"));
     out.push_str("\n\n");
     out.push_str(
         &export::<AlgoControlValueV1>(&config).expect("Failed to export AlgoControlValueV1"),
@@ -238,7 +238,7 @@ fn main() {
     out.push_str("  | { kind: \"hertz\" }\n");
     out.push_str("  | { kind: \"enumMap\"; values: EngineEnumValueLabelV1[] };\n");
     out.push_str(
-        "export type EngineParamUiMetaV1 = { key: string; tooltip: string; readoutLabel: string; readoutFormat: EngineParamReadoutFormatV1 };\n"
+        "export type EngineParamUiMetaV1 = { key: string; tooltip: string; readoutLabel: string; readoutFormat: EngineParamReadoutFormatV1; paramDefault: number | null };\n"
     );
     out.push_str(
         "export type EngineEnumValueTooltipV1 = { key: string; value: string; tooltip: string };\n\n"

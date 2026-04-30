@@ -3,8 +3,7 @@
  *
  * All consumers that previously called `useSynthState()` continue to work
  * unchanged. The real state now lives in `synthStore.ts` and benefits from
- * Zustand's selective subscriptions: components that call
- * `useSynthStore(s => s.chorusMix)` only re-render when `chorusMix` changes.
+ * Zustand's selective subscriptions.
  */
 
 import { useSynthStore } from "@/features/synth/synthStore";

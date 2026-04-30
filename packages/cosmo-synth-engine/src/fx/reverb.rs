@@ -144,7 +144,7 @@ impl FdnReverb {
 
 use crate::{
     fx::{FxControlKindV1, FxControlV1, FxDefinitionV1, FxPresetOptionV1, NO_FX_CONTROL_OPTIONS},
-    params::{FxSlotType, SynthParams},
+    params::{FxSlotConfig, FxSlotType, SynthParams},
 };
 
 const PRESET_OPTIONS: [FxPresetOptionV1; 3] = [
@@ -172,6 +172,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(1.0),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("reverbMix"),
     },
     FxControlV1 {
         id: "space",
@@ -182,6 +183,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(1.0),
         default_f32: Some(0.5),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("reverbSpace"),
     },
     FxControlV1 {
         id: "predelay",
@@ -192,6 +194,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(0.1),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("reverbPredelay"),
     },
     FxControlV1 {
         id: "distance",
@@ -202,6 +205,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(1.0),
         default_f32: Some(0.3),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("reverbDistance"),
     },
     FxControlV1 {
         id: "character",
@@ -212,6 +216,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(1.0),
         default_f32: Some(0.65),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("reverbCharacter"),
     },
 ];
 
@@ -223,32 +228,43 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
 };
 
 pub fn apply_reverb_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::Reverb(r) = s {
+            Some(r)
+        } else {
+            None
+        }
+    });
+    let Some(r) = slot else {
+        return false;
+    };
+
     match preset {
         "smallRoom" => {
-            params.reverb.enabled = true;
-            params.reverb.mix = 0.22;
-            params.reverb.space = 0.32;
-            params.reverb.predelay = 0.006;
-            params.reverb.distance = 0.28;
-            params.reverb.character = 0.45;
+            r.enabled = true;
+            r.mix = 0.22;
+            r.space = 0.32;
+            r.predelay = 0.006;
+            r.distance = 0.28;
+            r.character = 0.45;
             true
         }
         "plateAir" => {
-            params.reverb.enabled = true;
-            params.reverb.mix = 0.31;
-            params.reverb.space = 0.58;
-            params.reverb.predelay = 0.012;
-            params.reverb.distance = 0.4;
-            params.reverb.character = 0.74;
+            r.enabled = true;
+            r.mix = 0.31;
+            r.space = 0.58;
+            r.predelay = 0.012;
+            r.distance = 0.4;
+            r.character = 0.74;
             true
         }
         "cathedral" => {
-            params.reverb.enabled = true;
-            params.reverb.mix = 0.47;
-            params.reverb.space = 0.9;
-            params.reverb.predelay = 0.03;
-            params.reverb.distance = 0.68;
-            params.reverb.character = 0.66;
+            r.enabled = true;
+            r.mix = 0.47;
+            r.space = 0.9;
+            r.predelay = 0.03;
+            r.distance = 0.68;
+            r.character = 0.66;
             true
         }
         _ => false,

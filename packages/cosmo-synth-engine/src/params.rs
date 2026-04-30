@@ -106,6 +106,19 @@ pub enum CzWaveform {
     Pulse2,
 }
 
+/// Base waveform used as the final carrier for warp algorithms.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub enum BaseWaveform {
+    #[default]
+    Cosine,
+    Sine,
+    Triangle,
+    Saw,
+    Square,
+}
+
 /// Front-panel CZ algorithm shortcuts.
 ///
 /// These map to a `(CzWaveform, WindowType)` pair.
@@ -157,18 +170,12 @@ impl CzAlgo {
 #[serde(rename_all = "camelCase")]
 pub enum Algo {
     // CZ waveforms — phase distortion with piecewise-linear carrier
-    #[serde(alias = "czSaw")]
     Saw,
-    #[serde(alias = "czSquare")]
     Square,
-    #[serde(alias = "czPulse")]
     Pulse,
     Null,
-    #[serde(alias = "czDoubleSine")]
     SinePulse,
-    #[serde(alias = "czSawPulse")]
     SawPulse,
-    #[serde(alias = "czReso1", alias = "czReso2", alias = "czReso3")]
     MultiSine,
     Pulse2,
     // Warp algorithms — phase distortion applied to a sine carrier
@@ -290,20 +297,6 @@ pub enum LfoWaveform {
     Random,
 }
 
-/// Filter type
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
-#[cfg_attr(feature = "specta-bindings", derive(Type))]
-#[serde(rename_all = "camelCase")]
-pub enum FilterType {
-    #[default]
-    #[serde(rename = "lp")]
-    Lp,
-    #[serde(rename = "hp")]
-    Hp,
-    #[serde(rename = "bp")]
-    Bp,
-}
-
 /// Portamento mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
@@ -354,6 +347,10 @@ pub struct LineParams {
     pub algo: Algo,
     pub algo2: Option<Algo>,
     pub algo_blend: f32,
+    #[serde(default)]
+    pub base_waveform_a: BaseWaveform,
+    #[serde(default)]
+    pub base_waveform_b: BaseWaveform,
     pub window: WindowType,
     pub dca_base: f32,
     pub dcw_base: f32,
@@ -366,11 +363,7 @@ pub struct LineParams {
     pub key_follow: f32,
     #[serde(default)]
     pub cz: CzLineParams,
-    #[serde(
-        default,
-        skip_serializing_if = "Option::is_none",
-        alias = "algoControls"
-    )]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub algo_controls_a: Option<Vec<AlgoControlValueV1>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub algo_controls_b: Option<Vec<AlgoControlValueV1>>,
@@ -382,6 +375,8 @@ impl Default for LineParams {
             algo: Algo::Saw,
             algo2: None,
             algo_blend: 0.0,
+            base_waveform_a: BaseWaveform::default(),
+            base_waveform_b: BaseWaveform::default(),
             window: WindowType::Off,
             dca_base: 1.0,
             dcw_base: 0.0,
@@ -532,6 +527,31 @@ impl Default for ReverbParams {
     }
 }
 
+/// Phase modulation parameters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct PhaseModParams {
+    pub enabled: bool,
+    /// Internal PM depth (0.0–0.5)
+    pub amount: f32,
+    /// Modulator-to-carrier frequency ratio (0.5–8.0)
+    pub ratio: f32,
+    /// Apply PM before warp shaping when true
+    pub pm_pre: bool,
+}
+
+impl Default for PhaseModParams {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            amount: 0.0,
+            ratio: 1.0,
+            pm_pre: true,
+        }
+    }
+}
+
 /// Vibrato parameters
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
@@ -645,7 +665,6 @@ pub enum ModDestination {
     #[default]
     Volume,
     Pitch,
-    IntPmAmount,
     Line1DcwBase,
     Line1DcaBase,
     Line1AlgoBlend,
@@ -672,15 +691,9 @@ pub enum ModDestination {
     Line2AlgoParam6,
     Line2AlgoParam7,
     Line2AlgoParam8,
-    FilterCutoff,
-    FilterResonance,
-    FilterEnvAmount,
-    ChorusMix,
-    DelayMix,
-    ReverbMix,
     VibratoDepth,
-    LfoDepth,
-    LfoRate,
+    VibratoRate,
+    IntPmRatio,
     Line1DcoEnvStep1Level,
     Line1DcoEnvStep1Rate,
     Line1DcoEnvStep2Level,
@@ -777,15 +790,6 @@ pub enum ModDestination {
     Line2DcaEnvStep7Rate,
     Line2DcaEnvStep8Level,
     Line2DcaEnvStep8Rate,
-    ChorusRate,
-    ChorusDepth,
-    DelayTime,
-    DelayFeedback,
-    DelayWarmth,
-    ReverbSpace,
-    ReverbPredelay,
-    ReverbDistance,
-    ReverbCharacter,
     PhaserRate,
     PhaserDepth,
     PhaserFeedback,
@@ -799,6 +803,46 @@ pub enum ModDestination {
     Lfo2Symmetry,
     Lfo2Offset,
     RandomRate,
+    VibratoDelay,
+    CompressorThreshold,
+    CompressorRatio,
+    CompressorMakeup,
+    CompressorMix,
+    GrainDelayTime,
+    GrainDelayFeedback,
+    GrainDelayScatter,
+    GrainDelayDensity,
+    GrainDelayMix,
+    BitcrusherBits,
+    BitcrusherRateReduction,
+    BitcrusherMix,
+    ShimmerVerbShimmer,
+    ShimmerVerbSpace,
+    ShimmerVerbMix,
+    DistortionDrive,
+    DistortionTone,
+    DistortionMix,
+    JunoChorusMix,
+    RingModCarrierHz,
+    RingModMix,
+    TremoloRate,
+    TremoloDepth,
+    TremoloMix,
+    WavefolderDrive,
+    WavefolderFolds,
+    WavefolderMix,
+    LoFiDegrade,
+    LoFiWowDepth,
+    LoFiWowRate,
+    LoFiFlutterDepth,
+    LoFiFlutterRate,
+    LoFiTone,
+    LoFiMix,
+    EqGain80,
+    EqGain240,
+    EqGain750,
+    EqGain2200,
+    EqGain8000,
 }
 
 /// A single modulation route assignment.
@@ -864,31 +908,6 @@ impl Default for LfoParams {
     }
 }
 
-/// Filter parameters
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "specta-bindings", derive(Type))]
-#[serde(rename_all = "camelCase")]
-pub struct FilterParams {
-    pub enabled: bool,
-    #[serde(rename = "type")]
-    pub filter_type: FilterType,
-    pub cutoff: f32,
-    pub resonance: f32,
-    pub env_amount: f32,
-}
-
-impl Default for FilterParams {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            filter_type: FilterType::Lp,
-            cutoff: 5000.0,
-            resonance: 0.0,
-            env_amount: 0.0,
-        }
-    }
-}
-
 /// FX slot type selector — determines which effect is active in a given slot.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
@@ -928,7 +947,7 @@ pub enum FxSlotConfig {
     Delay(DelayParams),
     Reverb(ReverbParams),
     Vibrato(VibratoParams),
-    PhaseMod,
+    PhaseMod(PhaseModParams),
     Compressor(CompressorParams),
     Eq5Band(EqParams),
     GrainDelay(GrainDelayParams),
@@ -958,7 +977,7 @@ impl FxSlotConfig {
             Self::Delay(_) => FxSlotType::Delay,
             Self::Reverb(_) => FxSlotType::Reverb,
             Self::Vibrato(_) => FxSlotType::Vibrato,
-            Self::PhaseMod => FxSlotType::PhaseMod,
+            Self::PhaseMod(_) => FxSlotType::PhaseMod,
             Self::Compressor(_) => FxSlotType::Compressor,
             Self::Eq5Band(_) => FxSlotType::Eq5Band,
             Self::GrainDelay(_) => FxSlotType::GrainDelay,
@@ -982,7 +1001,7 @@ impl FxSlotConfig {
             Self::Delay(p) => p.enabled,
             Self::Reverb(p) => p.enabled,
             Self::Vibrato(p) => p.enabled,
-            Self::PhaseMod => true,
+            Self::PhaseMod(p) => p.enabled,
             Self::Compressor(p) => p.enabled,
             Self::Eq5Band(p) => p.enabled,
             Self::GrainDelay(p) => p.enabled,
@@ -1022,7 +1041,10 @@ impl FxSlotConfig {
                 enabled: true,
                 ..VibratoParams::default()
             }),
-            FxSlotType::PhaseMod => Self::PhaseMod,
+            FxSlotType::PhaseMod => Self::PhaseMod(PhaseModParams {
+                enabled: true,
+                ..PhaseModParams::default()
+            }),
             FxSlotType::Compressor => Self::Compressor(CompressorParams {
                 enabled: true,
                 ..CompressorParams::default()
@@ -1092,6 +1114,7 @@ pub struct CompressorParams {
     pub mix: f32,
 }
 
+/// FX slot type selector
 fn default_compressor_threshold() -> f32 {
     -12.0
 }
@@ -1295,13 +1318,13 @@ impl Default for DistortionParams {
 pub struct LoFiParams {
     #[serde(default)]
     pub enabled: bool,
-    #[serde(default = "default_lofi_degrade", alias = "drive")]
+    #[serde(default = "default_lofi_degrade")]
     pub degrade: f32,
-    #[serde(default = "default_lofi_wow_depth", alias = "wobble")]
+    #[serde(default = "default_lofi_wow_depth")]
     pub wow_depth: f32,
     #[serde(default = "default_lofi_wow_rate")]
     pub wow_rate: f32,
-    #[serde(default = "default_lofi_flutter_depth", alias = "flutter")]
+    #[serde(default = "default_lofi_flutter_depth")]
     pub flutter_depth: f32,
     #[serde(default = "default_lofi_flutter_rate")]
     pub flutter_rate: f32,
@@ -1315,13 +1338,13 @@ fn default_lofi_degrade() -> f32 {
     0.25
 }
 fn default_lofi_wow_depth() -> f32 {
-    0.35
+    0.07
 }
 fn default_lofi_wow_rate() -> f32 {
     0.42
 }
 fn default_lofi_flutter_depth() -> f32 {
-    0.18
+    0.036
 }
 fn default_lofi_flutter_rate() -> f32 {
     6.7
@@ -1335,9 +1358,9 @@ impl Default for LoFiParams {
         Self {
             enabled: false,
             degrade: 0.25,
-            wow_depth: 0.35,
+            wow_depth: 0.07,
             wow_rate: 0.42,
-            flutter_depth: 0.18,
+            flutter_depth: 0.036,
             flutter_rate: 6.7,
             tone: 0.45,
             mix: 1.0,
@@ -1455,7 +1478,14 @@ impl Default for WavefolderParams {
 }
 
 pub(crate) fn default_fx_slot_configs() -> [FxSlotConfig; 6] {
-    core::array::from_fn(|_| FxSlotConfig::Empty)
+    [
+        FxSlotConfig::Empty,
+        FxSlotConfig::Empty,
+        FxSlotConfig::Empty,
+        FxSlotConfig::Vibrato(VibratoParams::default()),
+        FxSlotConfig::PhaseMod(PhaseModParams::default()),
+        FxSlotConfig::Empty,
+    ]
 }
 
 /// Top-level synth parameters (mirrors this.params in the JS)
@@ -1470,41 +1500,24 @@ pub struct SynthParams {
     pub octave: f32,
     pub line1: LineParams,
     pub line2: LineParams,
-    #[serde(default)]
-    pub int_pm_enabled: bool,
-    pub int_pm_amount: f32,
-    pub int_pm_ratio: f32,
-    pub ext_pm_amount: f32,
-    pub pm_pre: bool,
     pub frequency: f32,
     pub volume: f32,
     pub poly_mode: PolyMode,
     pub legato: bool,
-    #[serde(default)]
-    pub chorus: ChorusParams,
-    #[serde(default)]
-    pub delay: DelayParams,
-    #[serde(default)]
-    pub reverb: ReverbParams,
-    #[serde(default)]
-    pub phaser: PhaserParams,
-    #[serde(default)]
-    pub vibrato: VibratoParams,
     pub portamento: PortamentoParams,
     pub lfo: LfoParams,
     #[serde(default)]
     pub lfo2: LfoParams,
-    pub filter: FilterParams,
     /// Pitch bend wheel range in semitones (1-24). Default 2.
     #[serde(default = "default_pitch_bend_range")]
     pub pitch_bend_range: f32,
-    /// How much the mod wheel adds to vibrato depth (0-99 UI units).
-    /// When mod wheel is at max (1.0), vibrato depth is boosted by this amount.
-    #[serde(default)]
-    pub mod_wheel_vibrato_depth: f32,
     /// Modulation matrix routes for source-to-destination parameter modulation.
     #[serde(default)]
     pub mod_matrix: ModMatrix,
+    /// Velocity sensitivity curve applied to note-on velocity → amplitude mapping.
+    /// 0 = linear, negative = softer response, positive = louder at low velocities.
+    #[serde(default)]
+    pub velocity_curve: f32,
     /// Parameters for the random (sample-and-hold) modulation source.
     #[serde(default)]
     pub random: RandomParams,
@@ -1524,6 +1537,30 @@ pub(crate) fn default_ring_gain() -> f32 {
     4.0
 }
 
+impl SynthParams {
+    /// Returns a reference to vibrato params from the fx_slots, if present.
+    pub fn vibrato_params(&self) -> Option<&VibratoParams> {
+        self.fx_slots.iter().find_map(|s| {
+            if let FxSlotConfig::Vibrato(p) = s {
+                Some(p)
+            } else {
+                None
+            }
+        })
+    }
+
+    /// Returns a reference to phase mod params from the fx_slots, if present.
+    pub fn phase_mod_params(&self) -> Option<&PhaseModParams> {
+        self.fx_slots.iter().find_map(|s| {
+            if let FxSlotConfig::PhaseMod(p) = s {
+                Some(p)
+            } else {
+                None
+            }
+        })
+    }
+}
+
 impl Default for SynthParams {
     fn default() -> Self {
         Self {
@@ -1533,27 +1570,16 @@ impl Default for SynthParams {
             octave: 0.0,
             line1: LineParams::default(),
             line2: LineParams::default(),
-            int_pm_enabled: false,
-            int_pm_amount: 0.0,
-            int_pm_ratio: 1.0,
-            ext_pm_amount: 0.0,
-            pm_pre: true,
             frequency: 220.0,
             volume: 0.4,
             poly_mode: PolyMode::default(),
             legato: false,
-            chorus: ChorusParams::default(),
-            delay: DelayParams::default(),
-            reverb: ReverbParams::default(),
-            phaser: PhaserParams::default(),
-            vibrato: VibratoParams::default(),
             portamento: PortamentoParams::default(),
             lfo: LfoParams::default(),
             lfo2: LfoParams::default(),
-            filter: FilterParams::default(),
             pitch_bend_range: 2.0,
-            mod_wheel_vibrato_depth: 0.0,
             mod_matrix: ModMatrix::default(),
+            velocity_curve: 0.0,
             random: RandomParams::default(),
             mod_env: ModEnvParams::default(),
             fx_slots: default_fx_slot_configs(),
@@ -1596,6 +1622,7 @@ pub struct EngineParamUiMetaV1 {
     pub tooltip: &'static str,
     pub readout_label: &'static str,
     pub readout_format: EngineParamReadoutFormatV1,
+    pub param_default: Option<f32>,
 }
 
 /// Tooltip metadata for enum-like button choices.
@@ -1618,84 +1645,97 @@ const POLY_MODE_LABELS_V1: [EngineEnumValueLabelV1; 2] = [
     },
 ];
 
-const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 55] = [
+const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 32] = [
     EngineParamUiMetaV1 {
         key: "volume",
         tooltip: "Sets the global synth output level.",
         readout_label: "Volume",
         readout_format: EngineParamReadoutFormatV1::Percent,
+        param_default: None,
     },
     EngineParamUiMetaV1 {
         key: "warpAAmount",
         tooltip: "Sets base harmonic warp amount for this line.",
         readout_label: "Line 1 DCW",
         readout_format: EngineParamReadoutFormatV1::Decimal,
+        param_default: None,
     },
     EngineParamUiMetaV1 {
         key: "warpBAmount",
         tooltip: "Sets base harmonic warp amount for this line.",
         readout_label: "Line 2 DCW",
         readout_format: EngineParamReadoutFormatV1::Decimal,
+        param_default: None,
     },
     EngineParamUiMetaV1 {
         key: "algoBlendA",
         tooltip: "Crossfades between Algo A and Algo B outputs.",
         readout_label: "Line 1 Blend",
         readout_format: EngineParamReadoutFormatV1::Decimal,
+        param_default: None,
     },
     EngineParamUiMetaV1 {
         key: "algoBlendB",
         tooltip: "Crossfades between Algo A and Algo B outputs.",
         readout_label: "Line 2 Blend",
         readout_format: EngineParamReadoutFormatV1::Decimal,
+        param_default: None,
     },
     EngineParamUiMetaV1 {
         key: "line1Level",
         tooltip: "Sets base output level for this line.",
         readout_label: "Line 1 Level",
         readout_format: EngineParamReadoutFormatV1::Percent,
+        param_default: None,
     },
     EngineParamUiMetaV1 {
         key: "line2Level",
         tooltip: "Sets base output level for this line.",
         readout_label: "Line 2 Level",
         readout_format: EngineParamReadoutFormatV1::Percent,
+        param_default: None,
     },
     EngineParamUiMetaV1 {
         key: "line1Octave",
         tooltip: "Transposes this line by octave steps.",
         readout_label: "Line 1 Octave",
         readout_format: EngineParamReadoutFormatV1::Integer,
+        param_default: None,
     },
     EngineParamUiMetaV1 {
         key: "line2Octave",
         tooltip: "Transposes this line by octave steps.",
         readout_label: "Line 2 Octave",
         readout_format: EngineParamReadoutFormatV1::Integer,
+        param_default: None,
     },
     EngineParamUiMetaV1 {
         key: "line1Detune",
         tooltip: "Fine tunes this line in cents.",
         readout_label: "Line 1 Detune",
         readout_format: EngineParamReadoutFormatV1::Integer,
+        param_default: None,
     },
     EngineParamUiMetaV1 {
         key: "line2Detune",
         tooltip: "Fine tunes this line in cents.",
         readout_label: "Line 2 Detune",
         readout_format: EngineParamReadoutFormatV1::Integer,
+        param_default: None,
     },
     EngineParamUiMetaV1 {
         key: "lineSelect",
         tooltip: "Selects which oscillator lines are heard together.",
         readout_label: "Line Select",
         readout_format: EngineParamReadoutFormatV1::Raw,
+        param_default: None,
     },
     EngineParamUiMetaV1 {
         key: "modMode",
         tooltip: "Chooses the interaction mode between oscillator lines.",
         readout_label: "Modulation",
         readout_format: EngineParamReadoutFormatV1::Uppercase,
+        param_default: None,
     },
     EngineParamUiMetaV1 {
         key: "polyMode",
@@ -1704,256 +1744,137 @@ const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 55] = [
         readout_format: EngineParamReadoutFormatV1::EnumMap {
             values: &POLY_MODE_LABELS_V1,
         },
+        param_default: None,
     },
     EngineParamUiMetaV1 {
         key: "intPmAmount",
         tooltip: "Sets internal phase modulation depth.",
         readout_label: "PM Amount",
         readout_format: EngineParamReadoutFormatV1::Decimal,
-    },
-    EngineParamUiMetaV1 {
-        key: "intPmRatio",
-        tooltip: "Sets modulator-to-carrier frequency ratio.",
-        readout_label: "PM Ratio",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-    },
-    EngineParamUiMetaV1 {
-        key: "pmPre",
-        tooltip: "Apply phase modulation before warp shaping.",
-        readout_label: "PM Mode",
-        readout_format: EngineParamReadoutFormatV1::OnOff,
-    },
-    EngineParamUiMetaV1 {
-        key: "vibratoRate",
-        tooltip: "Sets vibrato speed.",
-        readout_label: "Vibrato Rate",
-        readout_format: EngineParamReadoutFormatV1::Integer,
-    },
-    EngineParamUiMetaV1 {
-        key: "vibratoDepth",
-        tooltip: "Sets vibrato pitch modulation depth.",
-        readout_label: "Vibrato Depth",
-        readout_format: EngineParamReadoutFormatV1::Integer,
-    },
-    EngineParamUiMetaV1 {
-        key: "vibratoDelay",
-        tooltip: "Delays vibrato onset after note start.",
-        readout_label: "Vibrato Delay",
-        readout_format: EngineParamReadoutFormatV1::Milliseconds,
+        param_default: None,
     },
     EngineParamUiMetaV1 {
         key: "lfoWaveform",
         tooltip: "Selects LFO 1 waveform shape.",
         readout_label: "LFO Wave",
         readout_format: EngineParamReadoutFormatV1::Uppercase,
+        param_default: None,
     },
     EngineParamUiMetaV1 {
         key: "lfoRate",
         tooltip: "Sets LFO 1 speed.",
         readout_label: "LFO Rate",
         readout_format: EngineParamReadoutFormatV1::Decimal,
+        param_default: Some(5.0),
     },
     EngineParamUiMetaV1 {
         key: "lfoDepth",
         tooltip: "Sets LFO 1 modulation depth.",
         readout_label: "LFO Depth",
         readout_format: EngineParamReadoutFormatV1::Decimal,
+        param_default: Some(0.2),
     },
     EngineParamUiMetaV1 {
         key: "lfoOffset",
         tooltip: "Offsets LFO 1 output around zero.",
         readout_label: "LFO Offset",
         readout_format: EngineParamReadoutFormatV1::Decimal,
+        param_default: Some(0.0),
     },
     EngineParamUiMetaV1 {
         key: "lfo2Rate",
         tooltip: "Sets LFO 2 speed.",
         readout_label: "LFO 2 Rate",
         readout_format: EngineParamReadoutFormatV1::Decimal,
+        param_default: Some(5.0),
     },
     EngineParamUiMetaV1 {
         key: "lfo2Depth",
         tooltip: "Sets LFO 2 modulation depth.",
         readout_label: "LFO 2 Depth",
         readout_format: EngineParamReadoutFormatV1::Decimal,
+        param_default: Some(0.2),
     },
     EngineParamUiMetaV1 {
         key: "lfo2Offset",
         tooltip: "Offsets LFO 2 output around zero.",
         readout_label: "LFO 2 Offset",
         readout_format: EngineParamReadoutFormatV1::Decimal,
+        param_default: Some(0.0),
     },
     EngineParamUiMetaV1 {
         key: "randomRate",
         tooltip: "Sets sample-and-hold random modulation refresh rate.",
         readout_label: "Random Rate",
         readout_format: EngineParamReadoutFormatV1::Decimal,
+        param_default: Some(2.0),
     },
     EngineParamUiMetaV1 {
         key: "modEnvAttack",
         tooltip: "Sets modulation envelope attack time.",
         readout_label: "Mod Env Attack",
         readout_format: EngineParamReadoutFormatV1::Seconds2,
+        param_default: Some(0.01),
     },
     EngineParamUiMetaV1 {
         key: "modEnvDecay",
         tooltip: "Sets modulation envelope decay time.",
         readout_label: "Mod Env Decay",
         readout_format: EngineParamReadoutFormatV1::Seconds2,
+        param_default: Some(0.1),
     },
     EngineParamUiMetaV1 {
         key: "modEnvSustain",
         tooltip: "Sets sustained modulation level while note is held.",
         readout_label: "Mod Env Sustain",
         readout_format: EngineParamReadoutFormatV1::Percent,
+        param_default: Some(0.5),
     },
     EngineParamUiMetaV1 {
         key: "modEnvRelease",
         tooltip: "Sets modulation envelope release time after note off.",
         readout_label: "Mod Env Release",
         readout_format: EngineParamReadoutFormatV1::Seconds2,
-    },
-    EngineParamUiMetaV1 {
-        key: "filterType",
-        tooltip: "Selects the filter response shape.",
-        readout_label: "Filter Type",
-        readout_format: EngineParamReadoutFormatV1::Uppercase,
-    },
-    EngineParamUiMetaV1 {
-        key: "filterCutoff",
-        tooltip: "Sets the filter cutoff frequency.",
-        readout_label: "Filter Cutoff",
-        readout_format: EngineParamReadoutFormatV1::Hertz,
-    },
-    EngineParamUiMetaV1 {
-        key: "filterResonance",
-        tooltip: "Boosts frequencies around the cutoff point.",
-        readout_label: "Filter Resonance",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-    },
-    EngineParamUiMetaV1 {
-        key: "filterEnvAmount",
-        tooltip: "Applies envelope modulation amount to the cutoff.",
-        readout_label: "Filter Env",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-    },
-    EngineParamUiMetaV1 {
-        key: "chorusRate",
-        tooltip: "Sets chorus modulation speed.",
-        readout_label: "Chorus Rate",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-    },
-    EngineParamUiMetaV1 {
-        key: "chorusDepth",
-        tooltip: "Sets intensity of chorus pitch modulation.",
-        readout_label: "Chorus Depth",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-    },
-    EngineParamUiMetaV1 {
-        key: "chorusMix",
-        tooltip: "Blends dry signal with chorus effect.",
-        readout_label: "Chorus Mix",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-    },
-    EngineParamUiMetaV1 {
-        key: "delayTime",
-        tooltip: "Sets the delay repeat interval.",
-        readout_label: "Delay Time",
-        readout_format: EngineParamReadoutFormatV1::Seconds2,
-    },
-    EngineParamUiMetaV1 {
-        key: "delayFeedback",
-        tooltip: "Feeds delayed signal back for additional repeats.",
-        readout_label: "Delay Feedback",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-    },
-    EngineParamUiMetaV1 {
-        key: "delayWarmth",
-        tooltip: "Adds tape-style saturation and high-frequency rolloff.",
-        readout_label: "Delay Warmth",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-    },
-    EngineParamUiMetaV1 {
-        key: "delayMix",
-        tooltip: "Blends dry signal with delayed signal.",
-        readout_label: "Delay Mix",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-    },
-    EngineParamUiMetaV1 {
-        key: "delayTapeMode",
-        tooltip: "Toggle tape echo coloration for delay repeats.",
-        readout_label: "Tape Mode",
-        readout_format: EngineParamReadoutFormatV1::OnOff,
-    },
-    EngineParamUiMetaV1 {
-        key: "reverbSpace",
-        tooltip: "Sets the virtual room size for reverb reflections.",
-        readout_label: "Reverb Space",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-    },
-    EngineParamUiMetaV1 {
-        key: "reverbPredelay",
-        tooltip: "Adds delay before the reverb tail starts.",
-        readout_label: "Reverb Pre-Delay",
-        readout_format: EngineParamReadoutFormatV1::Milliseconds,
-    },
-    EngineParamUiMetaV1 {
-        key: "reverbDistance",
-        tooltip: "Moves source position deeper into the reverb space.",
-        readout_label: "Reverb Distance",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-    },
-    EngineParamUiMetaV1 {
-        key: "reverbCharacter",
-        tooltip: "Shapes reverb tone from dark to bright.",
-        readout_label: "Reverb Character",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-    },
-    EngineParamUiMetaV1 {
-        key: "reverbMix",
-        tooltip: "Blends dry signal with reverb output.",
-        readout_label: "Reverb Mix",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
+        param_default: Some(0.2),
     },
     EngineParamUiMetaV1 {
         key: "portamentoMode",
         tooltip: "Chooses whether glide uses rate or fixed time behavior.",
         readout_label: "Portamento Mode",
         readout_format: EngineParamReadoutFormatV1::Uppercase,
+        param_default: None,
     },
     EngineParamUiMetaV1 {
         key: "portamentoRate",
         tooltip: "Sets glide speed when portamento mode is Rate.",
         readout_label: "Portamento Rate",
         readout_format: EngineParamReadoutFormatV1::Integer,
+        param_default: Some(50.0),
     },
     EngineParamUiMetaV1 {
         key: "portamentoTime",
         tooltip: "Sets glide duration when portamento mode is Time.",
         readout_label: "Portamento Time",
         readout_format: EngineParamReadoutFormatV1::Seconds2,
+        param_default: Some(0.5),
     },
     EngineParamUiMetaV1 {
         key: "pitchBendRange",
         tooltip: "Sets maximum pitch bend range in semitones.",
         readout_label: "Bend Range",
         readout_format: EngineParamReadoutFormatV1::Semitones,
+        param_default: Some(2.0),
     },
     EngineParamUiMetaV1 {
         key: "velocityCurve",
         tooltip: "Shapes how keyboard velocity maps to output level.",
         readout_label: "Vel Curve",
         readout_format: EngineParamReadoutFormatV1::Decimal,
-    },
-    EngineParamUiMetaV1 {
-        key: "modWheelVibratoDepth",
-        tooltip: "Sets how much mod wheel movement affects vibrato depth.",
-        readout_label: "Mod to Vibrato",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
+        param_default: Some(0.0),
     },
 ];
 
-const ENGINE_ENUM_VALUE_TOOLTIPS_V1: [EngineEnumValueTooltipV1; 13] = [
+const ENGINE_ENUM_VALUE_TOOLTIPS_V1: [EngineEnumValueTooltipV1; 10] = [
     EngineEnumValueTooltipV1 {
         key: "lineSelect",
         value: "L1",
@@ -1993,21 +1914,6 @@ const ENGINE_ENUM_VALUE_TOOLTIPS_V1: [EngineEnumValueTooltipV1; 13] = [
         key: "modMode",
         value: "noise",
         tooltip: "Mix noise source into modulation path.",
-    },
-    EngineEnumValueTooltipV1 {
-        key: "filterType",
-        value: "lp",
-        tooltip: "Low-pass mode: attenuates frequencies above cutoff.",
-    },
-    EngineEnumValueTooltipV1 {
-        key: "filterType",
-        value: "hp",
-        tooltip: "High-pass mode: attenuates frequencies below cutoff.",
-    },
-    EngineEnumValueTooltipV1 {
-        key: "filterType",
-        value: "bp",
-        tooltip: "Band-pass mode: emphasizes a narrow band around cutoff.",
     },
     EngineEnumValueTooltipV1 {
         key: "portamentoMode",
@@ -2051,100 +1957,14 @@ mod tests {
         assert!(env.loop_);
         assert_eq!(env.steps[0].rate, 13);
         assert_eq!(env.steps[1].rate, 120);
-        assert_eq!(env.steps[2].level, 0);
-        assert_eq!(env.steps[2].rate, 0);
+        assert_eq!(env.steps[2].level, 0.0);
     }
 
     #[test]
-    fn step_env_deserialize_treats_values_as_raw_7bit() {
-        let json = r#"{
-            "steps": [
-                { "level": 66, "rate": 99 },
-                { "level": 127, "rate": 127 }
-            ],
-            "sustainStep": 0,
-            "stepCount": 2,
-            "loop": false
-        }"#;
-
-        let env: StepEnvData = serde_json::from_str(json).expect("valid step env json");
-        assert_eq!(env.steps[0].level, 66);
-        assert_eq!(env.steps[0].rate, 99);
-        assert_eq!(env.steps[1].level, 127);
-        assert_eq!(env.steps[1].rate, 127);
-    }
-
-    #[test]
-    fn algo_cz_waveform_roundtrip_and_non_cz_detection() {
-        let from_square = Algo::from_cz_waveform(CzWaveform::Square);
-        assert_eq!(from_square, Algo::Square);
-        assert_eq!(from_square.as_cz_waveform(), Some(CzWaveform::Square));
-        assert!(from_square.is_cz_waveform());
-
-        assert_eq!(Algo::Bend.as_cz_waveform(), None);
-        assert!(!Algo::Bend.is_cz_waveform());
-    }
-
-    #[test]
-    fn synth_params_legacy_fx_fields_default_when_missing() {
-        let mut value = serde_json::to_value(SynthParams::default())
-            .expect("default synth params should serialize");
-
-        let params = value
-            .as_object_mut()
-            .expect("synth params should serialize as an object");
-
-        for key in ["chorus", "delay", "reverb", "phaser", "vibrato"] {
-            params.remove(key);
-        }
-
-        let decoded: SynthParams =
-            serde_json::from_value(value).expect("missing legacy fx blocks should default");
-
-        assert_eq!(decoded.chorus.mix, ChorusParams::default().mix);
-        assert_eq!(decoded.delay.mix, DelayParams::default().mix);
-        assert_eq!(decoded.reverb.mix, ReverbParams::default().mix);
-        assert_eq!(decoded.phaser.mix, PhaserParams::default().mix);
-        assert_eq!(decoded.vibrato.depth, VibratoParams::default().depth);
-    }
-
-    #[test]
-    fn fx_slots_default_to_all_empty() {
-        let params = SynthParams::default();
-        for slot in &params.fx_slots {
-            assert!(matches!(slot, FxSlotConfig::Empty));
-        }
-    }
-
-    #[test]
-    fn fx_slot_config_roundtrip_serialization() {
-        let config = FxSlotConfig::Chorus(ChorusParams {
-            enabled: true,
-            rate: 1.2,
-            depth: 0.01,
-            mix: 0.5,
-        });
-        let json = serde_json::to_string(&config).expect("serialize FxSlotConfig");
-        let back: FxSlotConfig = serde_json::from_str(&json).expect("deserialize FxSlotConfig");
-        assert!(
-            matches!(back, FxSlotConfig::Chorus(p) if p.enabled && (p.rate - 1.2).abs() < 1e-5)
-        );
-    }
-
-    #[test]
-    fn fx_slot_config_empty_roundtrip() {
-        let config = FxSlotConfig::Empty;
-        let json = serde_json::to_string(&config).expect("serialize empty slot");
-        assert!(json.contains("\"type\":\"empty\""));
-        let back: FxSlotConfig = serde_json::from_str(&json).expect("deserialize empty slot");
-        assert!(matches!(back, FxSlotConfig::Empty));
-    }
-
-    #[test]
-    fn fx_slot_config_default_for_type_sets_enabled() {
+    fn fx_slot_default_for_type_sets_expected_enabled_state() {
         let chorus = FxSlotConfig::default_for_type(FxSlotType::Chorus);
-        assert!(chorus.is_enabled());
         assert!(matches!(chorus.slot_type(), FxSlotType::Chorus));
+        assert!(chorus.is_enabled());
 
         let empty = FxSlotConfig::default_for_type(FxSlotType::Empty);
         assert!(!empty.is_enabled());

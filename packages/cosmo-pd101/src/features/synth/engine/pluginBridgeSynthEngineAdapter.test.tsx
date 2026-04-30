@@ -163,7 +163,7 @@ describe("usePluginBridgeSynthEngine", () => {
 			ReturnType<NonNullable<typeof window.__czGetEnvelopes>>
 		>;
 
-		let resolveEnvelopes: ((value: EnvelopeResponse) => void) | null = null;
+		let resolveEnvelopes: ((value: EnvelopeResponse) => void) | undefined;
 		window.__czGetEnvelopes = () =>
 			new Promise<EnvelopeResponse>((resolve) => {
 				resolveEnvelopes = resolve;
@@ -202,9 +202,7 @@ describe("usePluginBridgeSynthEngine", () => {
 
 		expect(outbound.some((message) => "envelope_id" in message)).toBe(false);
 
-		if (resolveEnvelopes) {
-			resolveEnvelopes({ l1_dco: hostEnv });
-		}
+		resolveEnvelopes?.({ l1_dco: hostEnv });
 
 		await waitFor(() => {
 			expect(

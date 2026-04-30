@@ -63,6 +63,17 @@ describe("convertDecodedPatchToSynthPreset", () => {
 		expect(preset.params.line1.cz?.slotBWaveform).toBe("square");
 		expect(preset.params.modMode).toBe("ring");
 		expect(preset.params.line2.cz?.slotAWaveform).toBe("pulse2");
+		expect(preset.params.fxSlots?.[3]).toEqual({
+			type: "vibrato",
+			params: {
+				enabled: true,
+				waveform: 2,
+				rate: 34,
+				depth: 56,
+				delay: 12,
+			},
+		});
+		expect(preset.params.fxSlots?.[4].type).toBe("empty");
 	});
 
 	it("maps dual-line CZ modes into visualizer line modes and preserves line 2", () => {

@@ -220,23 +220,35 @@ const PLUGIN_PARAM_DESCRIPTORS: PluginParamDescriptor[] = [
 	},
 	{
 		id: "int_pm_enabled",
-		read: (params) => (params.intPmEnabled ? 1 : 0),
-		apply: (value, s) => s.setPhaseModEnabled(value >= 0.5),
+		read: (params) =>
+			(params.fxSlots?.[4] as { params?: { enabled?: boolean } } | undefined)
+				?.params?.enabled
+				? 1
+				: 0,
+		apply: (value, s) => s.setFxSlotEnabled(4, value >= 0.5),
 	},
 	{
 		id: "int_pm_amount",
-		read: (params) => params.intPmAmount,
-		apply: (value, s) => s.setIntPmAmount(value),
+		read: (params) =>
+			(params.fxSlots?.[4] as { params?: { amount?: number } } | undefined)
+				?.params?.amount ?? 0,
+		apply: (value, s) => s.setFxSlotParams(4, { amount: value }),
 	},
 	{
 		id: "int_pm_ratio",
-		read: (params) => params.intPmRatio,
-		apply: (value, s) => s.setIntPmRatio(value),
+		read: (params) =>
+			(params.fxSlots?.[4] as { params?: { ratio?: number } } | undefined)
+				?.params?.ratio ?? 1,
+		apply: (value, s) => s.setFxSlotParams(4, { ratio: value }),
 	},
 	{
 		id: "pm_pre",
-		read: (params) => (params.pmPre ? 1 : 0),
-		apply: (value, s) => s.setPmPre(value >= 0.5),
+		read: (params) =>
+			(params.fxSlots?.[4] as { params?: { pmPre?: boolean } } | undefined)
+				?.params?.pmPre
+				? 1
+				: 0,
+		apply: (value, s) => s.setFxSlotParams(4, { pmPre: value >= 0.5 }),
 	},
 	{
 		id: "l1_waveform",
@@ -371,101 +383,6 @@ const PLUGIN_PARAM_DESCRIPTORS: PluginParamDescriptor[] = [
 				"cz101") as Algo;
 			s.setAlgo2B(algoName);
 		},
-	},
-	{
-		id: "vib_enabled",
-		read: (params) => (params.vibrato.enabled ? 1 : 0),
-		apply: (value, s) => s.setVibratoEnabled(value >= 0.5),
-	},
-	{
-		id: "vib_waveform",
-		read: (params) => params.vibrato.waveform,
-		apply: (value, s) => s.setVibratoWave(Math.round(value)),
-	},
-	{
-		id: "vib_rate",
-		read: (params) => params.vibrato.rate,
-		apply: (value, s) => s.setVibratoRate(value),
-	},
-	{
-		id: "vib_depth",
-		read: (params) => params.vibrato.depth,
-		apply: (value, s) => s.setVibratoDepth(value),
-	},
-	{
-		id: "vib_delay",
-		read: (params) => params.vibrato.delay,
-		apply: (value, s) => s.setVibratoDelay(value),
-	},
-	{
-		id: "cho_enabled",
-		read: (params) => (params.chorus.enabled ? 1 : 0),
-		apply: (value, s) => s.setChorusEnabled(value >= 0.5),
-	},
-	{
-		id: "cho_mix",
-		read: (params) => params.chorus.mix,
-		apply: (value, s) => s.setChorusMix(value),
-	},
-	{
-		id: "cho_rate",
-		read: (params) => params.chorus.rate,
-		apply: (value, s) => s.setChorusRate(value),
-	},
-	{
-		id: "cho_depth",
-		read: (params) => params.chorus.depth,
-		apply: (value, s) => s.setChorusDepth(value),
-	},
-	{
-		id: "del_enabled",
-		read: (params) => (params.delay.enabled ? 1 : 0),
-		apply: (value, s) => s.setDelayEnabled(value >= 0.5),
-	},
-	{
-		id: "del_mix",
-		read: (params) => params.delay.mix,
-		apply: (value, s) => s.setDelayMix(value),
-	},
-	{
-		id: "del_time",
-		read: (params) => params.delay.time,
-		apply: (value, s) => s.setDelayTime(value),
-	},
-	{
-		id: "del_feedback",
-		read: (params) => params.delay.feedback,
-		apply: (value, s) => s.setDelayFeedback(value),
-	},
-	{
-		id: "rev_enabled",
-		read: (params) => (params.reverb.enabled ? 1 : 0),
-		apply: (value, s) => s.setReverbEnabled(value >= 0.5),
-	},
-	{
-		id: "rev_mix",
-		read: (params) => params.reverb.mix ?? 0,
-		apply: (value, s) => s.setReverbMix(value),
-	},
-	{
-		id: "rev_space",
-		read: (params) => params.reverb.space ?? 0.5,
-		apply: (value, s) => s.setReverbSpace(value),
-	},
-	{
-		id: "rev_predelay",
-		read: (params) => params.reverb.predelay ?? 0,
-		apply: (value, s) => s.setReverbPredelay(value),
-	},
-	{
-		id: "rev_distance",
-		read: (params) => params.reverb.distance ?? 0.3,
-		apply: (value, s) => s.setReverbDistance(value),
-	},
-	{
-		id: "rev_character",
-		read: (params) => params.reverb.character ?? 0.65,
-		apply: (value, s) => s.setReverbCharacter(value),
 	},
 	{
 		id: "lfo_waveform",
@@ -807,7 +724,6 @@ export function usePluginBridgeSynthEngine(
 			const snapshot = createSynthEngineSnapshot({
 				gatherState,
 				effectivePitchHz: 220,
-				extPmAmount: 0,
 			});
 			adapter.sync(snapshot);
 		};

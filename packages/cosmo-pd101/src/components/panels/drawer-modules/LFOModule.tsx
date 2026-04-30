@@ -102,14 +102,14 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				value={lfoRate}
 				onChange={setLfoRate}
 				min={0}
-				max={20}
+				max={10}
 				defaultValue={5}
 				size={40}
 				color="#27588f"
 				label="Rate"
 				tooltip={lfoParamTooltip("Rate")}
 				modDestination={resolveTargetFromMetadata("lfo.rate", { lfoIndex: id })}
-				valueFormatter={(v) => `${v.toFixed(1)}Hz`}
+				valueFormatter={(v) => `${v.toFixed(2)}Hz`}
 			/>
 			<ControlKnob
 				value={lfoDepth}

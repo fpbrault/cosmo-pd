@@ -1,179 +1,59 @@
 import {
 	ALGO_DEFINITIONS_V1,
 	type Algo,
+	type AlgoControlV1,
+	type AlgoDefinitionV1,
 	type CzWaveform,
 	type WindowType,
 } from "@/lib/synth/bindings/synth";
 
-const WARP_ALGOS = [
-	"cz101",
-	"bend",
-	"sync",
-	"pinch",
-	"fold",
-	"skew",
-	"quantize",
-	"twist",
-	"clip",
-	"ripple",
-	"mirror",
-	"fof",
-	"karpunk",
-	"sine",
-] as const;
-type WarpAlgo = (typeof WARP_ALGOS)[number];
+const ALGO_DEFINITIONS = ALGO_DEFINITIONS_V1 as AlgoDefinitionV1[];
 
-const WAVEFORMS = [
-	"saw",
-	"square",
-	"pulse",
-	"null",
-	"sinePulse",
-	"sawPulse",
-	"multiSine",
-	"pulse2",
-] as const;
-type WaveformId = (typeof WAVEFORMS)[number];
+const CZ101_DEF = ALGO_DEFINITIONS.find((d) => d.id === "cz101") as AlgoDefinitionV1;
 
-// Maps legacy CZ preset alias names (from old AlgoRefV1) to the waveform they implied
-const LEGACY_CZ_ALGO_TO_WAVEFORM: Record<string, WaveformId> = {
-	czSaw: "saw",
-	czSquare: "square",
-	czPulse: "pulse",
-	czDoubleSine: "sinePulse",
-	czSawPulse: "sawPulse",
-	czReso1: "multiSine",
-	czReso2: "multiSine",
-	czReso3: "multiSine",
-};
+export const CZ_WAVEFORMS = (CZ101_DEF.controls.find((c) => c.id === "waveform1") as AlgoControlV1)
+	.options.map((o) => o.value as CzWaveform);
 
-const WAVEFORM_NAME_TO_LEGACY: Record<WaveformId, number> = {
-	saw: 1,
-	square: 2,
-	pulse: 3,
-	null: 4,
-	sinePulse: 5,
-	sawPulse: 6,
-	multiSine: 7,
-	pulse2: 8,
-};
+const WAVEFORMS = CZ_WAVEFORMS;
 
-const WAVEFORM_ORDER: CzWaveform[] = [
-	"saw",
-	"square",
-	"pulse",
-	"null",
-	"sinePulse",
-	"sawPulse",
-	"multiSine",
-	"pulse2",
-];
+export const CZ_WINDOWS = (CZ101_DEF.controls.find((c) => c.id === "windowFunction") as AlgoControlV1)
+	.options.map((o) => o.value as WindowType);
 
-const WINDOW_ORDER: WindowType[] = [
-	"off",
-	"saw",
-	"triangle",
-	"trapezoid",
-	"pulse",
-	"doubleSaw",
-];
+const ALL_ALGOS = ALGO_DEFINITIONS.map((d) => d.id);
 
-type AlgoControlRuntime = {
-	id: string;
-	kind?: "number" | "select" | "toggle";
-	controlType?: "knob" | "slider" | "buttonGroup" | "dropdown";
-	bipolar?: boolean;
-	iconName?: string | null;
-	default?: number | null;
-};
+const WARP_ALGOS = ALL_ALGOS.filter(
+	(id) => !(WAVEFORMS as string[]).includes(id),
+);
 
-type AlgoDefinitionRuntime = {
-	id: Algo;
-	controls: AlgoControlRuntime[];
-};
-
-const ALGO_DEFINITIONS = ALGO_DEFINITIONS_V1 as AlgoDefinitionRuntime[];
-
-export type LegacyPdAlgo = Algo;
+type WaveformId = CzWaveform;
+type WarpAlgo = Algo;
 
 export const DEFAULT_ALGO_REF: Algo = "cz101";
 
-export function isCzAlgo(value: unknown): value is "cz101" {
-	return value === "cz101";
-}
-
-/** Returns the waveform implied by a legacy CZ preset alias (e.g. "czSaw" → "saw"), or null. */
-export function legacyCzAlgoToWaveform(algo: string): WaveformId | null {
-	return LEGACY_CZ_ALGO_TO_WAVEFORM[algo] ?? null;
-}
-
 export function isWarpAlgo(value: unknown): value is WarpAlgo {
-	return (
-		typeof value === "string" &&
-		(WARP_ALGOS as readonly string[]).includes(value)
-	);
+	return typeof value === "string" && (WARP_ALGOS as string[]).includes(value);
 }
 
 export function isWaveformId(value: unknown): value is WaveformId {
-	return (
-		typeof value === "string" &&
-		(WAVEFORMS as readonly string[]).includes(value)
-	);
+	return typeof value === "string" && (WAVEFORMS as string[]).includes(value);
 }
 
 export function normalizeWaveformId(value: unknown): WaveformId {
-	if (typeof value === "string") {
-		if ((WAVEFORMS as readonly string[]).includes(value)) {
-			return value as WaveformId;
-		}
+	if (typeof value === "string" && (WAVEFORMS as string[]).includes(value)) {
+		return value as WaveformId;
 	}
 	return "saw";
 }
 
-const ALL_ALGO_VALUES = [
-	"saw",
-	"square",
-	"pulse",
-	"null",
-	"sinePulse",
-	"sawPulse",
-	"multiSine",
-	"pulse2",
-	"cz101",
-	"bend",
-	"sync",
-	"pinch",
-	"fold",
-	"skew",
-	"quantize",
-	"twist",
-	"clip",
-	"ripple",
-	"mirror",
-	"fof",
-	"karpunk",
-	"sine",
-] as const;
-
 export function isAlgo(value: unknown): value is Algo {
-	return (
-		typeof value === "string" &&
-		(ALL_ALGO_VALUES as readonly string[]).includes(value)
-	);
+	return typeof value === "string" && (ALL_ALGOS as string[]).includes(value);
 }
 
 export function toAlgoRefV1(
 	value: unknown,
 	fallback: Algo = DEFAULT_ALGO_REF,
 ): Algo {
-	// Legacy payloads may encode a CZ waveform directly in algo fields.
-	// Coerce these to the canonical cz101 warp algo.
 	if (isWaveformId(value)) {
-		return "cz101";
-	}
-
-	// Handle legacy CZ preset alias names → map to cz101
-	if (typeof value === "string" && value in LEGACY_CZ_ALGO_TO_WAVEFORM) {
 		return "cz101";
 	}
 
@@ -182,21 +62,6 @@ export function toAlgoRefV1(
 	}
 
 	return fallback;
-}
-
-export function algoRefKey(algo: Algo): string {
-	return algo;
-}
-
-export function waveformIdToLegacyNumber(waveform: WaveformId): number {
-	return WAVEFORM_NAME_TO_LEGACY[waveform];
-}
-
-export function isAlgoRefEqual(a: Algo | null, b: Algo | null): boolean {
-	if (a === null || b === null) {
-		return a === b;
-	}
-	return a === b;
 }
 
 export function resolveAlgoRef(algo: Algo): {
@@ -242,27 +107,17 @@ export function getCzPresetDefaults(algo: Algo): {
 		return null;
 	}
 
-	const waveform1Control = definition.controls.find(
-		(control) => control.id === "waveform1",
-	);
-	const waveform2Control = definition.controls.find(
-		(control) => control.id === "waveform2",
-	);
-	const windowControl = definition.controls.find(
-		(control) => control.id === "windowFunction",
-	);
+	const waveform1Control = definition.controls.find((c) => c.id === "waveform1");
+	const waveform2Control = definition.controls.find((c) => c.id === "waveform2");
+	const windowControl = definition.controls.find((c) => c.id === "windowFunction");
 
 	if (!waveform1Control || !waveform2Control || !windowControl) {
 		return null;
 	}
 
-	const waveform1Index = Math.round(waveform1Control.default ?? 0);
-	const waveform2Index = Math.round(waveform2Control.default ?? 0);
-	const windowIndex = Math.round(windowControl.default ?? 0);
-
 	return {
-		waveform1: WAVEFORM_ORDER[waveform1Index] ?? "saw",
-		waveform2: WAVEFORM_ORDER[waveform2Index] ?? "saw",
-		windowFunction: WINDOW_ORDER[windowIndex] ?? "off",
+		waveform1: waveform1Control.options[Math.round(waveform1Control.default ?? 0)]?.value as CzWaveform ?? "saw",
+		waveform2: waveform2Control.options[Math.round(waveform2Control.default ?? 0)]?.value as CzWaveform ?? "saw",
+		windowFunction: windowControl.options[Math.round(windowControl.default ?? 0)]?.value as WindowType ?? "off",
 	};
 }

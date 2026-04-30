@@ -1,15 +1,16 @@
 import { create } from "zustand";
 import {
 	DEFAULT_ALGO_REF,
-	legacyCzAlgoToWaveform,
 	normalizeWaveformId,
 	toAlgoRefV1,
 } from "@/lib/synth/algoRef";
 import type {
 	Algo,
 	AlgoControlValueV1,
+	AlgoDefinitionV1,
+	BaseWaveform,
 	CzWaveform,
-	FilterType,
+	FxDefinitionV1,
 	FxSlotConfig,
 	FxSlotType,
 	LfoWaveform,
@@ -22,7 +23,11 @@ import type {
 	SynthPresetV1,
 	WindowType,
 } from "@/lib/synth/bindings/synth";
-import { ALGO_DEFINITIONS_V1 } from "@/lib/synth/bindings/synth";
+import {
+	ALGO_DEFINITIONS_V1,
+	ENGINE_PARAM_UI_META_V1,
+	FX_DEFINITIONS_V1,
+} from "@/lib/synth/bindings/synth";
 import {
 	DEFAULT_DCA_ENV,
 	DEFAULT_DCO_ENV,
@@ -33,23 +38,17 @@ import {
 // Helpers (identical to the ones that were in useSynthState)
 // ---------------------------------------------------------------------------
 
-type AlgoControlRuntime = {
-	id: string;
-	kind?: "number" | "select" | "toggle";
-	default?: number | null;
-	min?: number | null;
-};
-
-type AlgoDefinitionRuntime = {
-	id: Algo;
-	controls: AlgoControlRuntime[];
-};
+function resolveAlgoDefaultBaseWaveform(algo: Algo): BaseWaveform {
+	const definitions = ALGO_DEFINITIONS_V1 as AlgoDefinitionV1[];
+	const definition = definitions.find((entry) => entry.id === algo);
+	return definition?.defaultBaseWaveform ?? "sine";
+}
 
 function normalizeAlgoControls(
 	algo: Algo,
 	values: AlgoControlValueV1[] | null | undefined,
 ): AlgoControlValueV1[] {
-	const definitions = ALGO_DEFINITIONS_V1 as unknown as AlgoDefinitionRuntime[];
+	const definitions = ALGO_DEFINITIONS_V1 as AlgoDefinitionV1[];
 	const definition = definitions.find((entry) => entry.id === algo);
 	if (!definition) return [];
 	const incoming = new Map(
@@ -64,17 +63,11 @@ function normalizeAlgoControls(
 }
 
 function inferCzWaveform(
-	algoValue: unknown,
 	explicitWaveform: unknown,
 	fallback: CzWaveform,
 ): CzWaveform {
 	if (typeof explicitWaveform === "string") {
 		return normalizeWaveformId(explicitWaveform);
-	}
-	if (typeof algoValue === "string") {
-		const legacyWaveform = legacyCzAlgoToWaveform(algoValue);
-		if (legacyWaveform) return legacyWaveform;
-		return normalizeWaveformId(algoValue);
 	}
 	return fallback;
 }
@@ -83,139 +76,22 @@ function inferCzWaveform(
 // FX slot helpers
 // ---------------------------------------------------------------------------
 
-/** Mirror of Rust FxSlotConfig::default_for_type — creates an enabled config. */
+/** Builds an enabled FxSlotConfig from Rust defaults in FX_DEFINITIONS_V1. */
 function makeDefaultFxSlotConfig(type: FxSlotType): FxSlotConfig {
-	switch (type) {
-		case "empty":
-			return { type: "empty" };
-		case "phaseMod":
-			return { type: "phaseMod" };
-		case "chorus":
-			return {
-				type: "chorus",
-				params: { enabled: true, rate: 0.8, depth: 3, mix: 0.5 },
-			};
-		case "delay":
-			return {
-				type: "delay",
-				params: {
-					enabled: true,
-					time: 0.3,
-					feedback: 0.35,
-					mix: 0.5,
-					tapeMode: false,
-					warmth: 0.5,
-				},
-			};
-		case "reverb":
-			return {
-				type: "reverb",
-				params: {
-					enabled: true,
-					mix: 0.5,
-					space: 0.5,
-					predelay: 0,
-					distance: 0.3,
-					character: 0.65,
-				},
-			};
-		case "phaser":
-			return {
-				type: "phaser",
-				params: { enabled: true, rate: 0.5, depth: 1, mix: 0.5, feedback: 0.5 },
-			};
-		case "vibrato":
-			return {
-				type: "vibrato",
-				params: { enabled: true, waveform: 1, rate: 55, depth: 8, delay: 120 },
-			};
-		case "compressor":
-			return {
-				type: "compressor",
-				params: {
-					enabled: true,
-					thresholdDb: -12,
-					ratio: 4,
-					attackMs: 5,
-					releaseMs: 100,
-					makeupDb: 6,
-					mix: 1,
-				},
-			};
-		case "eq5Band":
-			return {
-				type: "eq5Band",
-				params: {
-					enabled: true,
-					gain80: 0,
-					gain240: 0,
-					gain750: 0,
-					gain2200: 0,
-					gain8000: 0,
-				},
-			};
-		case "grainDelay":
-			return {
-				type: "grainDelay",
-				params: {
-					enabled: true,
-					time: 0.25,
-					feedback: 0,
-					scatter: 0,
-					density: 0.5,
-					mix: 0.5,
-				},
-			};
-		case "bitcrusher":
-			return {
-				type: "bitcrusher",
-				params: { enabled: true, bits: 8, rateReduction: 1, mix: 1 },
-			};
-		case "shimmerVerb":
-			return {
-				type: "shimmerVerb",
-				params: { enabled: true, shimmer: 0.4, space: 0.7, mix: 0.5 },
-			};
-		case "distortion":
-			return {
-				type: "distortion",
-				params: { enabled: true, mode: 0, drive: 0.5, tone: 0.5, mix: 1 },
-			};
-		case "loFi":
-			return {
-				type: "loFi",
-				params: {
-					enabled: true,
-					degrade: 0.25,
-					wowDepth: 0.35,
-					wowRate: 0.42,
-					flutterDepth: 0.18,
-					flutterRate: 6.7,
-					tone: 0.45,
-					mix: 1,
-				},
-			};
-		case "junoChorus":
-			return {
-				type: "junoChorus",
-				params: { enabled: true, mode: 0, mix: 0.5 },
-			};
-		case "ringMod":
-			return {
-				type: "ringMod",
-				params: { enabled: true, carrierHz: 440, mix: 1 },
-			};
-		case "tremolo":
-			return {
-				type: "tremolo",
-				params: { enabled: true, rate: 4, depth: 0.5, waveform: 0, mix: 1 },
-			};
-		case "wavefolder":
-			return {
-				type: "wavefolder",
-				params: { enabled: true, drive: 0.5, folds: 0.5, mix: 1 },
-			};
-	}
+	if (type === "empty") return { type: "empty" };
+	const def = (FX_DEFINITIONS_V1 as FxDefinitionV1[]).find(
+		(d) => d.slotType === type,
+	);
+	if (!def) return { type: "empty" };
+	const params = def.controls.reduce<Record<string, number | boolean>>(
+		(acc, c) => {
+			const v = c.defaultF32 ?? 0;
+			acc[c.id] = c.kind === "toggle" ? v !== 0 : v;
+			return acc;
+		},
+		{ enabled: true },
+	);
+	return { type, params } as FxSlotConfig;
 }
 
 type FxSlotTuple = [
@@ -227,7 +103,7 @@ type FxSlotTuple = [
 	FxSlotConfig,
 ];
 
-const EMPTY_FX_SLOTS: FxSlotTuple = [
+const DEFAULT_FX_SLOTS: FxSlotTuple = [
 	{ type: "empty" },
 	{ type: "empty" },
 	{ type: "empty" },
@@ -235,6 +111,15 @@ const EMPTY_FX_SLOTS: FxSlotTuple = [
 	{ type: "empty" },
 	{ type: "empty" },
 ];
+
+const ENGINE_PARAM_DEFAULTS = new Map(
+	ENGINE_PARAM_UI_META_V1.map((meta) => [meta.key, meta.paramDefault]),
+);
+
+function getEngineParamDefault(key: string, fallback: number): number {
+	const value = ENGINE_PARAM_DEFAULTS.get(key);
+	return typeof value === "number" ? value : fallback;
+}
 
 // ---------------------------------------------------------------------------
 // Flat state shape — mirrors the old individual useState fields
@@ -251,11 +136,6 @@ export type SynthState = {
 	algo2B: Algo | null;
 	algoBlendB: number;
 
-	intPmAmount: number;
-	intPmRatio: number;
-	pmPre: boolean;
-	phaseModEnabled: boolean;
-
 	windowType: WindowType;
 	volume: number;
 
@@ -263,7 +143,6 @@ export type SynthState = {
 	line1Octave: number;
 	line1Detune: number;
 	line1DcwKeyFollow: number;
-	line1DcaKeyFollow: number;
 	line1DcoEnv: StepEnvData;
 	line1DcwEnv: StepEnvData;
 	line1DcaEnv: StepEnvData;
@@ -272,12 +151,13 @@ export type SynthState = {
 	line1CzWindow: WindowType;
 	line1AlgoControlsA: AlgoControlValueV1[];
 	line1AlgoControlsB: AlgoControlValueV1[];
+	line1BaseWaveformA: BaseWaveform;
+	line1BaseWaveformB: BaseWaveform;
 
 	line2Level: number;
 	line2Octave: number;
 	line2Detune: number;
 	line2DcwKeyFollow: number;
-	line2DcaKeyFollow: number;
 	line2DcoEnv: StepEnvData;
 	line2DcwEnv: StepEnvData;
 	line2DcaEnv: StepEnvData;
@@ -286,6 +166,8 @@ export type SynthState = {
 	line2CzWindow: WindowType;
 	line2AlgoControlsA: AlgoControlValueV1[];
 	line2AlgoControlsB: AlgoControlValueV1[];
+	line2BaseWaveformA: BaseWaveform;
+	line2BaseWaveformB: BaseWaveform;
 
 	lineSelect: LineSelect;
 	modMode: ModMode;
@@ -293,37 +175,6 @@ export type SynthState = {
 	polyMode: PolyMode;
 	legato: boolean;
 	velocityCurve: number;
-
-	chorusEnabled: boolean;
-	chorusRate: number;
-	chorusDepth: number;
-	chorusMix: number;
-
-	delayEnabled: boolean;
-	delayTime: number;
-	delayFeedback: number;
-	delayMix: number;
-	delayTapeMode: boolean;
-	delayWarmth: number;
-
-	reverbEnabled: boolean;
-	reverbMix: number;
-	reverbSpace: number;
-	reverbPredelay: number;
-	reverbDistance: number;
-	reverbCharacter: number;
-
-	phaserEnabled: boolean;
-	phaserRate: number;
-	phaserDepth: number;
-	phaserMix: number;
-	phaserFeedback: number;
-
-	vibratoEnabled: boolean;
-	vibratoWave: number;
-	vibratoRate: number;
-	vibratoDepth: number;
-	vibratoDelay: number;
 
 	portamentoEnabled: boolean;
 	portamentoMode: PortamentoMode;
@@ -350,14 +201,7 @@ export type SynthState = {
 	modEnvSustain: number;
 	modEnvRelease: number;
 
-	filterEnabled: boolean;
-	filterType: FilterType;
-	filterCutoff: number;
-	filterResonance: number;
-	filterEnvAmount: number;
-
 	pitchBendRange: number;
-	modWheelVibratoDepth: number;
 	octave: number;
 	modMatrix: ModMatrix;
 	/** Unified per-slot FX configuration — all 6 slots. */
@@ -379,11 +223,6 @@ type SynthActions = {
 	setAlgo2B: (v: Algo | null) => void;
 	setAlgoBlendB: (v: number) => void;
 
-	setIntPmAmount: (v: number) => void;
-	setIntPmRatio: (v: number) => void;
-	setPmPre: (v: boolean) => void;
-	setPhaseModEnabled: (v: boolean) => void;
-
 	setWindowType: (v: WindowType) => void;
 	setVolume: (v: number) => void;
 
@@ -391,7 +230,6 @@ type SynthActions = {
 	setLine1Octave: (v: number) => void;
 	setLine1Detune: (v: number) => void;
 	setLine1DcwKeyFollow: (v: number) => void;
-	setLine1DcaKeyFollow: (v: number) => void;
 	setLine1DcoEnv: (v: StepEnvData) => void;
 	setLine1DcwEnv: (v: StepEnvData) => void;
 	setLine1DcaEnv: (v: StepEnvData) => void;
@@ -400,12 +238,13 @@ type SynthActions = {
 	setLine1CzWindow: (v: WindowType) => void;
 	setLine1AlgoControlsA: (v: AlgoControlValueV1[]) => void;
 	setLine1AlgoControlsB: (v: AlgoControlValueV1[]) => void;
+	setLine1BaseWaveformA: (v: BaseWaveform) => void;
+	setLine1BaseWaveformB: (v: BaseWaveform) => void;
 
 	setLine2Level: (v: number) => void;
 	setLine2Octave: (v: number) => void;
 	setLine2Detune: (v: number) => void;
 	setLine2DcwKeyFollow: (v: number) => void;
-	setLine2DcaKeyFollow: (v: number) => void;
 	setLine2DcoEnv: (v: StepEnvData) => void;
 	setLine2DcwEnv: (v: StepEnvData) => void;
 	setLine2DcaEnv: (v: StepEnvData) => void;
@@ -414,6 +253,8 @@ type SynthActions = {
 	setLine2CzWindow: (v: WindowType) => void;
 	setLine2AlgoControlsA: (v: AlgoControlValueV1[]) => void;
 	setLine2AlgoControlsB: (v: AlgoControlValueV1[]) => void;
+	setLine2BaseWaveformA: (v: BaseWaveform) => void;
+	setLine2BaseWaveformB: (v: BaseWaveform) => void;
 
 	setLineSelect: (v: LineSelect) => void;
 	setModMode: (v: ModMode) => void;
@@ -421,37 +262,6 @@ type SynthActions = {
 	setPolyMode: (v: PolyMode) => void;
 	setLegato: (v: boolean) => void;
 	setVelocityCurve: (v: number) => void;
-
-	setChorusEnabled: (v: boolean) => void;
-	setChorusRate: (v: number) => void;
-	setChorusDepth: (v: number) => void;
-	setChorusMix: (v: number) => void;
-
-	setDelayEnabled: (v: boolean) => void;
-	setDelayTime: (v: number) => void;
-	setDelayFeedback: (v: number) => void;
-	setDelayMix: (v: number) => void;
-	setDelayTapeMode: (v: boolean) => void;
-	setDelayWarmth: (v: number) => void;
-
-	setReverbEnabled: (v: boolean) => void;
-	setReverbMix: (v: number) => void;
-	setReverbSpace: (v: number) => void;
-	setReverbPredelay: (v: number) => void;
-	setReverbDistance: (v: number) => void;
-	setReverbCharacter: (v: number) => void;
-
-	setPhaserEnabled: (v: boolean) => void;
-	setPhaserRate: (v: number) => void;
-	setPhaserDepth: (v: number) => void;
-	setPhaserMix: (v: number) => void;
-	setPhaserFeedback: (v: number) => void;
-
-	setVibratoEnabled: (v: boolean) => void;
-	setVibratoWave: (v: number) => void;
-	setVibratoRate: (v: number) => void;
-	setVibratoDepth: (v: number) => void;
-	setVibratoDelay: (v: number) => void;
 
 	setPortamentoEnabled: (v: boolean) => void;
 	setPortamentoMode: (v: PortamentoMode) => void;
@@ -478,14 +288,7 @@ type SynthActions = {
 	setModEnvSustain: (v: number) => void;
 	setModEnvRelease: (v: number) => void;
 
-	setFilterEnabled: (v: boolean) => void;
-	setFilterType: (v: FilterType) => void;
-	setFilterCutoff: (v: number) => void;
-	setFilterResonance: (v: number) => void;
-	setFilterEnvAmount: (v: number) => void;
-
 	setPitchBendRange: (v: number) => void;
-	setModWheelVibratoDepth: (v: number) => void;
 	setOctave: (v: number) => void;
 	setModMatrix: (v: ModMatrix) => void;
 	/** Replace the effect type in a slot (resets params to enabled defaults). */
@@ -520,11 +323,6 @@ const DEFAULT_STATE: SynthState = {
 	algo2B: null,
 	algoBlendB: 0,
 
-	intPmAmount: 0,
-	intPmRatio: 1,
-	pmPre: true,
-	phaseModEnabled: false,
-
 	windowType: "off",
 	volume: 1,
 
@@ -532,7 +330,6 @@ const DEFAULT_STATE: SynthState = {
 	line1Octave: 0,
 	line1Detune: 0,
 	line1DcwKeyFollow: 0,
-	line1DcaKeyFollow: 0,
 	line1DcoEnv: DEFAULT_DCO_ENV,
 	line1DcwEnv: DEFAULT_DCW_ENV,
 	line1DcaEnv: DEFAULT_DCA_ENV,
@@ -541,12 +338,13 @@ const DEFAULT_STATE: SynthState = {
 	line1CzWindow: "off",
 	line1AlgoControlsA: [],
 	line1AlgoControlsB: [],
+	line1BaseWaveformA: "cosine",
+	line1BaseWaveformB: "cosine",
 
 	line2Level: 1,
 	line2Octave: 0,
 	line2Detune: 0,
 	line2DcwKeyFollow: 0,
-	line2DcaKeyFollow: 0,
 	line2DcoEnv: DEFAULT_DCO_ENV,
 	line2DcwEnv: DEFAULT_DCW_ENV,
 	line2DcaEnv: DEFAULT_DCA_ENV,
@@ -555,94 +353,50 @@ const DEFAULT_STATE: SynthState = {
 	line2CzWindow: "off",
 	line2AlgoControlsA: [],
 	line2AlgoControlsB: [],
+	line2BaseWaveformA: "cosine",
+	line2BaseWaveformB: "cosine",
 
 	lineSelect: "L1+L2",
 	modMode: "normal",
 
 	polyMode: "poly8",
 	legato: false,
-	velocityCurve: 0,
-
-	chorusEnabled: false,
-	chorusRate: 0.8,
-	chorusDepth: 3,
-	chorusMix: 0,
-
-	delayEnabled: false,
-	delayTime: 0.3,
-	delayFeedback: 0.35,
-	delayMix: 0,
-	delayTapeMode: false,
-	delayWarmth: 0.5,
-
-	reverbEnabled: false,
-	reverbMix: 0,
-	reverbSpace: 0.5,
-	reverbPredelay: 0,
-	reverbDistance: 0.3,
-	reverbCharacter: 0.65,
-
-	phaserEnabled: false,
-	phaserRate: 0.5,
-	phaserDepth: 1,
-	phaserMix: 0,
-	phaserFeedback: 0.5,
-
-	vibratoEnabled: false,
-	vibratoWave: 1,
-	vibratoRate: 55,
-	vibratoDepth: 8,
-	vibratoDelay: 120,
+	velocityCurve: getEngineParamDefault("velocityCurve", 0),
 
 	portamentoEnabled: false,
 	portamentoMode: "rate",
-	portamentoRate: 50,
-	portamentoTime: 0.5,
+	portamentoRate: getEngineParamDefault("portamentoRate", 50),
+	portamentoTime: getEngineParamDefault("portamentoTime", 0.5),
 
 	lfoWaveform: "sine",
-	lfoRate: 5,
-	lfoDepth: 0.2,
+	lfoRate: getEngineParamDefault("lfoRate", 5),
+	lfoDepth: getEngineParamDefault("lfoDepth", 0.2),
 	lfoSymmetry: 0.5,
 	lfoRetrigger: false,
-	lfoOffset: 0,
+	lfoOffset: getEngineParamDefault("lfoOffset", 0),
 	lfo2Waveform: "sine",
-	lfo2Rate: 5,
-	lfo2Depth: 0.2,
+	lfo2Rate: getEngineParamDefault("lfo2Rate", 5),
+	lfo2Depth: getEngineParamDefault("lfo2Depth", 0.2),
 	lfo2Symmetry: 0.5,
 	lfo2Retrigger: false,
-	lfo2Offset: 0,
+	lfo2Offset: getEngineParamDefault("lfo2Offset", 0),
 
 	randomRate: 2,
 
-	modEnvAttack: 0.01,
-	modEnvDecay: 0.1,
-	modEnvSustain: 0.5,
-	modEnvRelease: 0.2,
-
-	filterEnabled: false,
-	filterType: "lp",
-	filterCutoff: 5000,
-	filterResonance: 0,
-	filterEnvAmount: 0,
+	modEnvAttack: getEngineParamDefault("modEnvAttack", 0.01),
+	modEnvDecay: getEngineParamDefault("modEnvDecay", 0.1),
+	modEnvSustain: getEngineParamDefault("modEnvSustain", 0.5),
+	modEnvRelease: getEngineParamDefault("modEnvRelease", 0.2),
 
 	pitchBendRange: 2,
-	modWheelVibratoDepth: 0,
 	octave: 0,
 	modMatrix: { routes: [] },
-	fxSlots: EMPTY_FX_SLOTS,
+	fxSlots: DEFAULT_FX_SLOTS,
 };
 
 // ---------------------------------------------------------------------------
 // Store
 // ---------------------------------------------------------------------------
-
-/** Helper to build flat setters for every key in SynthState. */
-function makeSetter<K extends keyof SynthState>(
-	set: (partial: Partial<SynthState>) => void,
-	key: K,
-) {
-	return (v: SynthState[K]) => set({ [key]: v });
-}
 
 export const useSynthStore = create<SynthStore>((set, get) => ({
 	...DEFAULT_STATE,
@@ -658,11 +412,6 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setAlgo2B: (v) => set({ algo2B: v }),
 	setAlgoBlendB: (v) => set({ algoBlendB: v }),
 
-	setIntPmAmount: (v) => set({ intPmAmount: v }),
-	setIntPmRatio: (v) => set({ intPmRatio: v }),
-	setPmPre: (v) => set({ pmPre: v }),
-	setPhaseModEnabled: (v) => set({ phaseModEnabled: v }),
-
 	setWindowType: (v) => set({ windowType: v }),
 	setVolume: (v) => set({ volume: v }),
 
@@ -670,7 +419,6 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setLine1Octave: (v) => set({ line1Octave: v }),
 	setLine1Detune: (v) => set({ line1Detune: v }),
 	setLine1DcwKeyFollow: (v) => set({ line1DcwKeyFollow: v }),
-	setLine1DcaKeyFollow: (v) => set({ line1DcaKeyFollow: v }),
 	setLine1DcoEnv: (v) => set({ line1DcoEnv: v }),
 	setLine1DcwEnv: (v) => set({ line1DcwEnv: v }),
 	setLine1DcaEnv: (v) => set({ line1DcaEnv: v }),
@@ -679,12 +427,13 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setLine1CzWindow: (v) => set({ line1CzWindow: v }),
 	setLine1AlgoControlsA: (v) => set({ line1AlgoControlsA: v }),
 	setLine1AlgoControlsB: (v) => set({ line1AlgoControlsB: v }),
+	setLine1BaseWaveformA: (v) => set({ line1BaseWaveformA: v }),
+	setLine1BaseWaveformB: (v) => set({ line1BaseWaveformB: v }),
 
 	setLine2Level: (v) => set({ line2Level: v }),
 	setLine2Octave: (v) => set({ line2Octave: v }),
 	setLine2Detune: (v) => set({ line2Detune: v }),
 	setLine2DcwKeyFollow: (v) => set({ line2DcwKeyFollow: v }),
-	setLine2DcaKeyFollow: (v) => set({ line2DcaKeyFollow: v }),
 	setLine2DcoEnv: (v) => set({ line2DcoEnv: v }),
 	setLine2DcwEnv: (v) => set({ line2DcwEnv: v }),
 	setLine2DcaEnv: (v) => set({ line2DcaEnv: v }),
@@ -693,6 +442,8 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setLine2CzWindow: (v) => set({ line2CzWindow: v }),
 	setLine2AlgoControlsA: (v) => set({ line2AlgoControlsA: v }),
 	setLine2AlgoControlsB: (v) => set({ line2AlgoControlsB: v }),
+	setLine2BaseWaveformA: (v) => set({ line2BaseWaveformA: v }),
+	setLine2BaseWaveformB: (v) => set({ line2BaseWaveformB: v }),
 
 	setLineSelect: (v) => set({ lineSelect: v }),
 	setModMode: (v) => set({ modMode: v }),
@@ -700,37 +451,6 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setPolyMode: (v) => set({ polyMode: v }),
 	setLegato: (v) => set({ legato: v }),
 	setVelocityCurve: (v) => set({ velocityCurve: v }),
-
-	setChorusEnabled: (v) => set({ chorusEnabled: v }),
-	setChorusRate: (v) => set({ chorusRate: v }),
-	setChorusDepth: (v) => set({ chorusDepth: v }),
-	setChorusMix: (v) => set({ chorusMix: v }),
-
-	setDelayEnabled: (v) => set({ delayEnabled: v }),
-	setDelayTime: (v) => set({ delayTime: v }),
-	setDelayFeedback: (v) => set({ delayFeedback: v }),
-	setDelayMix: (v) => set({ delayMix: v }),
-	setDelayTapeMode: (v) => set({ delayTapeMode: v }),
-	setDelayWarmth: (v) => set({ delayWarmth: v }),
-
-	setReverbEnabled: (v) => set({ reverbEnabled: v }),
-	setReverbMix: (v) => set({ reverbMix: v }),
-	setReverbSpace: (v) => set({ reverbSpace: v }),
-	setReverbPredelay: (v) => set({ reverbPredelay: v }),
-	setReverbDistance: (v) => set({ reverbDistance: v }),
-	setReverbCharacter: (v) => set({ reverbCharacter: v }),
-
-	setPhaserEnabled: (v) => set({ phaserEnabled: v }),
-	setPhaserRate: (v) => set({ phaserRate: v }),
-	setPhaserDepth: (v) => set({ phaserDepth: v }),
-	setPhaserMix: (v) => set({ phaserMix: v }),
-	setPhaserFeedback: (v) => set({ phaserFeedback: v }),
-
-	setVibratoEnabled: (v) => set({ vibratoEnabled: v }),
-	setVibratoWave: (v) => set({ vibratoWave: v }),
-	setVibratoRate: (v) => set({ vibratoRate: v }),
-	setVibratoDepth: (v) => set({ vibratoDepth: v }),
-	setVibratoDelay: (v) => set({ vibratoDelay: v }),
 
 	setPortamentoEnabled: (v) => set({ portamentoEnabled: v }),
 	setPortamentoMode: (v) => set({ portamentoMode: v }),
@@ -757,14 +477,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setModEnvSustain: (v) => set({ modEnvSustain: v }),
 	setModEnvRelease: (v) => set({ modEnvRelease: v }),
 
-	setFilterEnabled: (v) => set({ filterEnabled: v }),
-	setFilterType: (v) => set({ filterType: v }),
-	setFilterCutoff: (v) => set({ filterCutoff: v }),
-	setFilterResonance: (v) => set({ filterResonance: v }),
-	setFilterEnvAmount: (v) => set({ filterEnvAmount: v }),
-
 	setPitchBendRange: (v) => set({ pitchBendRange: v }),
-	setModWheelVibratoDepth: (v) => set({ modWheelVibratoDepth: v }),
 	setOctave: (v) => set({ octave: v }),
 	setModMatrix: (v) => set({ modMatrix: v }),
 	setFxSlotType: (slot, type) => {
@@ -778,8 +491,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setFxSlotEnabled: (slot, enabled) => {
 		set((s) => {
 			const config = s.fxSlots[slot];
-			if (!config || config.type === "empty" || config.type === "phaseMod")
-				return {};
+			if (!config || config.type === "empty") return {};
 			const slots = [...s.fxSlots] as FxSlotTuple;
 			slots[slot] = {
 				...config,
@@ -787,15 +499,14 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 					...(config as { params: Record<string, unknown> }).params,
 					enabled,
 				},
-			};
+			} as FxSlotConfig;
 			return { fxSlots: slots };
 		});
 	},
 	setFxSlotParams: (slot, patch) => {
 		set((s) => {
 			const config = s.fxSlots[slot];
-			if (!config || config.type === "empty" || config.type === "phaseMod")
-				return {};
+			if (!config || config.type === "empty") return {};
 			const slots = [...s.fxSlots] as FxSlotTuple;
 			slots[slot] = {
 				...config,
@@ -803,7 +514,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 					...(config as { params: Record<string, unknown> }).params,
 					...patch,
 				},
-			};
+			} as FxSlotConfig;
 			return { fxSlots: slots };
 		});
 	},
@@ -850,6 +561,8 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				algo: s.warpAAlgo,
 				algo2: s.algo2A,
 				algoBlend: s.algoBlendA,
+				baseWaveformA: s.line1BaseWaveformA,
+				baseWaveformB: s.line1BaseWaveformB,
 				window: s.windowType,
 				dcaBase: s.line1Level,
 				dcwBase: s.warpAAmount,
@@ -872,6 +585,8 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				algo: s.warpBAlgo,
 				algo2: s.algo2B,
 				algoBlend: s.algoBlendB,
+				baseWaveformA: s.line2BaseWaveformA,
+				baseWaveformB: s.line2BaseWaveformB,
 				window: s.windowType,
 				dcaBase: s.line2Level,
 				dcwBase: s.warpBAmount,
@@ -890,51 +605,12 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				algoControlsA: line2NormalizedAlgoControlsA,
 				algoControlsB: line2NormalizedAlgoControlsB,
 			},
-			intPmAmount: s.intPmAmount,
-			intPmEnabled: s.phaseModEnabled,
-			intPmRatio: s.intPmRatio,
-			extPmAmount: 0,
-			pmPre: s.pmPre,
 			frequency: 440,
 			volume: s.volume,
 			polyMode: s.polyMode,
 			legato: s.legato,
-			chorus: {
-				enabled: s.chorusEnabled,
-				rate: s.chorusRate,
-				depth: s.chorusDepth,
-				mix: s.chorusMix,
-			},
-			delay: {
-				enabled: s.delayEnabled,
-				time: s.delayTime,
-				feedback: s.delayFeedback,
-				mix: s.delayMix,
-				tapeMode: s.delayTapeMode,
-				warmth: s.delayWarmth,
-			},
-			reverb: {
-				enabled: s.reverbEnabled,
-				mix: s.reverbMix,
-				space: s.reverbSpace,
-				predelay: s.reverbPredelay,
-				distance: s.reverbDistance,
-				character: s.reverbCharacter,
-			},
-			phaser: {
-				enabled: s.phaserEnabled,
-				rate: s.phaserRate,
-				depth: s.phaserDepth,
-				mix: s.phaserMix,
-				feedback: s.phaserFeedback,
-			},
-			vibrato: {
-				enabled: s.vibratoEnabled,
-				waveform: s.vibratoWave,
-				rate: s.vibratoRate,
-				depth: s.vibratoDepth,
-				delay: s.vibratoDelay,
-			},
+			velocityCurve: s.velocityCurve,
+
 			portamento: {
 				enabled: s.portamentoEnabled,
 				mode: s.portamentoMode,
@@ -966,15 +642,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				sustain: s.modEnvSustain,
 				release: s.modEnvRelease,
 			},
-			filter: {
-				enabled: s.filterEnabled,
-				type: s.filterType,
-				cutoff: s.filterCutoff,
-				resonance: s.filterResonance,
-				envAmount: s.filterEnvAmount,
-			},
 			pitchBendRange: s.pitchBendRange,
-			modWheelVibratoDepth: s.modWheelVibratoDepth,
 			modMatrix: s.modMatrix,
 			fxSlots: s.fxSlots,
 		} satisfies SynthPresetV1["params"];
@@ -990,6 +658,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 		if (
 			typeof preset !== "object" ||
 			preset === null ||
+			preset.schemaVersion !== 1 ||
 			typeof preset.params !== "object" ||
 			preset.params === null ||
 			typeof preset.params.line1 !== "object" ||
@@ -1019,23 +688,6 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			p.line2?.algo2 == null
 				? null
 				: toAlgoRefV1(p.line2.algo2, DEFAULT_ALGO_REF);
-		const legacyReverb = p.reverb as
-			| (typeof p.reverb & { brightness?: number; highCut?: number })
-			| undefined;
-		const hasLegacyReverbTone =
-			legacyReverb?.brightness != null || legacyReverb?.highCut != null;
-		const reverbCharacter = hasLegacyReverbTone
-			? Math.min(
-					1,
-					Math.max(
-						0,
-						(safe(legacyReverb?.brightness, 0.7) -
-							safe(legacyReverb?.highCut, 0) * 0.4) *
-							0.85 +
-							safe(legacyReverb?.character, 0.3) * 0.15,
-					),
-				)
-			: safe(p.reverb?.character, 0.65);
 
 		set({
 			warpAAmount: safe(p.line1?.dcwBase, 0),
@@ -1046,10 +698,6 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			algo2B: line2SecondaryAlgo,
 			algoBlendA: safe(p.line1?.algoBlend, 0),
 			algoBlendB: safe(p.line2?.algoBlend, 0),
-			intPmAmount: safe(p.intPmAmount, 0),
-			intPmRatio: safe(p.intPmRatio, 1),
-			phaseModEnabled: p.intPmEnabled ?? safe(p.intPmAmount, 0) > 0,
-			pmPre: p.pmPre ?? true,
 			windowType: (p.line1?.window as WindowType) ?? "off",
 			volume: safe(p.volume, 1),
 			line1Level: safe(p.line1?.dcaBase, 1),
@@ -1062,21 +710,17 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			line1DcwEnv: p.line1?.dcwEnv ?? DEFAULT_DCW_ENV,
 			line1DcaEnv: p.line1?.dcaEnv ?? DEFAULT_DCA_ENV,
 			line1CzSlotAWaveform: inferCzWaveform(
-				p.line1?.algo,
 				p.line1?.cz?.slotAWaveform,
 				"saw",
 			),
 			line1CzSlotBWaveform: inferCzWaveform(
-				p.line1?.algo2,
 				p.line1?.cz?.slotBWaveform,
 				"saw",
 			),
 			line1CzWindow: (p.line1?.cz?.window as WindowType) ?? "off",
 			line1AlgoControlsA: normalizeAlgoControls(
 				line1PrimaryAlgo,
-				p.line1?.algoControlsA ??
-					(p.line1 as { algoControls?: AlgoControlValueV1[] })?.algoControls ??
-					[],
+				p.line1?.algoControlsA ?? [],
 			),
 			line1AlgoControlsB: line1SecondaryAlgo
 				? normalizeAlgoControls(
@@ -1088,21 +732,17 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			line2DcwEnv: p.line2?.dcwEnv ?? DEFAULT_DCW_ENV,
 			line2DcaEnv: p.line2?.dcaEnv ?? DEFAULT_DCA_ENV,
 			line2CzSlotAWaveform: inferCzWaveform(
-				p.line2?.algo,
 				p.line2?.cz?.slotAWaveform,
 				"saw",
 			),
 			line2CzSlotBWaveform: inferCzWaveform(
-				p.line2?.algo2,
 				p.line2?.cz?.slotBWaveform,
 				"saw",
 			),
 			line2CzWindow: (p.line2?.cz?.window as WindowType) ?? "off",
 			line2AlgoControlsA: normalizeAlgoControls(
 				line2PrimaryAlgo,
-				p.line2?.algoControlsA ??
-					(p.line2 as { algoControls?: AlgoControlValueV1[] })?.algoControls ??
-					[],
+				p.line2?.algoControlsA ?? [],
 			),
 			line2AlgoControlsB: line2SecondaryAlgo
 				? normalizeAlgoControls(
@@ -1112,66 +752,69 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				: [],
 			polyMode: (p.polyMode as PolyMode) ?? "poly8",
 			legato: p.legato ?? false,
-			chorusRate: safe(p.chorus?.rate, 0.8),
-			chorusDepth: safe(p.chorus?.depth, 3),
-			chorusMix: safe(p.chorus?.mix, 0),
-			chorusEnabled: p.chorus?.enabled ?? safe(p.chorus?.mix, 0) > 0,
-			delayTime: safe(p.delay?.time, 0.3),
-			delayFeedback: safe(p.delay?.feedback, 0.35),
-			delayMix: safe(p.delay?.mix, 0),
-			delayEnabled: p.delay?.enabled ?? safe(p.delay?.mix, 0) > 0,
-			reverbMix: safe(p.reverb?.mix, 0),
-			reverbEnabled: p.reverb?.enabled ?? safe(p.reverb?.mix, 0) > 0,
-			reverbSpace: safe(p.reverb?.space, 0.5),
-			reverbPredelay: safe(p.reverb?.predelay, 0),
-			reverbDistance: safe(p.reverb?.distance, 0.3),
-			reverbCharacter,
-			delayTapeMode: p.delay?.tapeMode ?? false,
-			delayWarmth: safe(p.delay?.warmth, 0.5),
-			phaserEnabled: p.phaser?.enabled ?? false,
-			phaserRate: safe(p.phaser?.rate, 0.5),
-			phaserDepth: safe(p.phaser?.depth, 1),
-			phaserMix: safe(p.phaser?.mix, 0),
-			phaserFeedback: safe(p.phaser?.feedback, 0.5),
 			lineSelect: (p.lineSelect as LineSelect) ?? "L1+L2",
 			modMode: (p.modMode as ModMode) ?? "normal",
+			line1BaseWaveformA:
+				(p.line1?.baseWaveformA as BaseWaveform) ??
+				resolveAlgoDefaultBaseWaveform(line1PrimaryAlgo),
+			line1BaseWaveformB:
+				(p.line1?.baseWaveformB as BaseWaveform) ??
+				resolveAlgoDefaultBaseWaveform(line1SecondaryAlgo ?? line1PrimaryAlgo),
+			line2BaseWaveformA:
+				(p.line2?.baseWaveformA as BaseWaveform) ??
+				resolveAlgoDefaultBaseWaveform(line2PrimaryAlgo),
+			line2BaseWaveformB:
+				(p.line2?.baseWaveformB as BaseWaveform) ??
+				resolveAlgoDefaultBaseWaveform(line2SecondaryAlgo ?? line2PrimaryAlgo),
 			line1DcwKeyFollow: safe(p.line1?.keyFollow, 0),
-			line1DcaKeyFollow: 0,
 			line2DcwKeyFollow: safe(p.line2?.keyFollow, 0),
-			line2DcaKeyFollow: 0,
-			vibratoEnabled: p.vibrato?.enabled ?? false,
-			vibratoWave: safe(p.vibrato?.waveform, 1),
-			vibratoRate: safe(p.vibrato?.rate, 30),
-			vibratoDepth: safe(p.vibrato?.depth, 30),
-			vibratoDelay: safe(p.vibrato?.delay, 0),
 			portamentoEnabled: p.portamento?.enabled ?? false,
 			portamentoMode: (p.portamento?.mode as PortamentoMode) ?? "rate",
-			portamentoRate: safe(p.portamento?.rate, 50),
-			portamentoTime: safe(p.portamento?.time, 0.5),
+			portamentoRate: safe(
+				p.portamento?.rate,
+				getEngineParamDefault("portamentoRate", 50),
+			),
+			portamentoTime: safe(
+				p.portamento?.time,
+				getEngineParamDefault("portamentoTime", 0.5),
+			),
 			lfoWaveform: (p.lfo?.waveform as LfoWaveform) ?? "sine",
-			lfoRate: safe(p.lfo?.rate, 5),
-			lfoDepth: safe(p.lfo?.depth, 0),
+			lfoRate: safe(p.lfo?.rate, getEngineParamDefault("lfoRate", 5)),
+			lfoDepth: safe(p.lfo?.depth, getEngineParamDefault("lfoDepth", 0.2)),
 			lfoSymmetry: safe(p.lfo?.symmetry, 0.5),
 			lfoRetrigger: p.lfo?.retrigger ?? false,
-			lfoOffset: safe(p.lfo?.offset, 0),
+			lfoOffset: safe(p.lfo?.offset, getEngineParamDefault("lfoOffset", 0)),
 			lfo2Waveform: (p.lfo2?.waveform as LfoWaveform) ?? "sine",
-			lfo2Rate: safe(p.lfo2?.rate, 5),
-			lfo2Depth: safe(p.lfo2?.depth, 0),
+			lfo2Rate: safe(p.lfo2?.rate, getEngineParamDefault("lfo2Rate", 5)),
+			lfo2Depth: safe(p.lfo2?.depth, getEngineParamDefault("lfo2Depth", 0.2)),
 			lfo2Symmetry: safe(p.lfo2?.symmetry, 0.5),
 			lfo2Retrigger: p.lfo2?.retrigger ?? false,
-			lfo2Offset: safe(p.lfo2?.offset, 0),
+			lfo2Offset: safe(
+				p.lfo2?.offset,
+				getEngineParamDefault("lfo2Offset", 0),
+			),
 			randomRate: safe(p.random?.rate, 2),
-			modEnvAttack: safe(p.modEnv?.attack, 0.01),
-			modEnvDecay: safe(p.modEnv?.decay, 0.1),
-			modEnvSustain: safe(p.modEnv?.sustain, 0.5),
-			modEnvRelease: safe(p.modEnv?.release, 0.2),
-			filterEnabled: p.filter?.enabled ?? false,
-			filterType: (p.filter?.type as FilterType) ?? "lp",
-			filterCutoff: safe(p.filter?.cutoff, 5000),
-			filterResonance: safe(p.filter?.resonance, 0),
-			filterEnvAmount: safe(p.filter?.envAmount, 0),
+			modEnvAttack: safe(
+				p.modEnv?.attack,
+				getEngineParamDefault("modEnvAttack", 0.01),
+			),
+			modEnvDecay: safe(
+				p.modEnv?.decay,
+				getEngineParamDefault("modEnvDecay", 0.1),
+			),
+			modEnvSustain: safe(
+				p.modEnv?.sustain,
+				getEngineParamDefault("modEnvSustain", 0.5),
+			),
+			modEnvRelease: safe(
+				p.modEnv?.release,
+				getEngineParamDefault("modEnvRelease", 0.2),
+			),
 			pitchBendRange: safe(p.pitchBendRange, 2),
-			modWheelVibratoDepth: safe(p.modWheelVibratoDepth, 0),
+			velocityCurve: safe(
+				p.velocityCurve,
+				getEngineParamDefault("velocityCurve", 0),
+			),
 			octave: safe(p.octave, 0),
 			modMatrix:
 				p.modMatrix && typeof p.modMatrix === "object"
@@ -1180,10 +823,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			fxSlots:
 				Array.isArray(p.fxSlots) && p.fxSlots.length === 6
 					? (p.fxSlots as FxSlotTuple)
-					: EMPTY_FX_SLOTS,
+					: DEFAULT_FX_SLOTS,
 		});
 	},
 }));
-
-// Suppress the unused variable warning for makeSetter (it's kept for reference)
-void makeSetter;

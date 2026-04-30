@@ -5,11 +5,8 @@ import { createPortal } from "react-dom";
 import Button from "@/components/controls/Button";
 import { useSynthStore } from "@/features/synth/synthStore";
 import type { FxSlotType } from "@/lib/synth/bindings/synth";
-import DelayModule from "./drawer-modules/DelayModule";
 import { FX_SLOT_MODULE_CONFIGS } from "./drawer-modules/fxSlotModuleConfig";
 import GenericFxSlotModule from "./drawer-modules/GenericFxSlotModule";
-import PhaseModModule from "./drawer-modules/PhaseModModule";
-import VibratoModule from "./drawer-modules/VibratoModule";
 import { FxSlotContext } from "./FxSlotContext";
 
 // ---------------------------------------------------------------------------
@@ -260,11 +257,6 @@ function EmptySlot({ slot }: { slot: number }) {
 // ---------------------------------------------------------------------------
 
 function SlotModule({ type, slot }: { type: FxSlotType; slot: number }) {
-	// Modules with custom layouts handled by dedicated components
-	if (type === "delay") return <DelayModule slot={slot} />;
-	if (type === "vibrato") return <VibratoModule />;
-	if (type === "phaseMod") return <PhaseModModule />;
-
 	// All other slot-based FX modules are driven by config
 	const config = FX_SLOT_MODULE_CONFIGS[type];
 	if (config) return <GenericFxSlotModule config={config} slot={slot} />;
@@ -309,7 +301,7 @@ export default memo(function FxSlotFrame({ slot }: { slot: number }) {
 		dragListeners: listeners as
 			| Record<string, React.EventHandler<React.SyntheticEvent>>
 			| undefined,
-		dragAttributes: attributes as Record<
+		dragAttributes: attributes as unknown as Record<
 			string,
 			string | boolean | number | undefined
 		>,

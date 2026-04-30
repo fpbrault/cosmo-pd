@@ -170,7 +170,7 @@ impl FxSlotProcessors {
                 self.lofi.mix = lofi.mix;
             }
             // Empty, Vibrato, PhaseMod are handled at voice level or pass through.
-            FxSlotConfig::Empty | FxSlotConfig::Vibrato(_) | FxSlotConfig::PhaseMod => {}
+            FxSlotConfig::Empty | FxSlotConfig::Vibrato(_) | FxSlotConfig::PhaseMod(_) => {}
         }
     }
 

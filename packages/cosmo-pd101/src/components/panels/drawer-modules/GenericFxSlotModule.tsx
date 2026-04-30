@@ -1,11 +1,19 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Button from "@/components/controls/Button";
 import ControlKnob from "@/components/controls/ControlKnob";
+import type { FxSlotModuleConfig } from "@/components/panels/drawer-modules/fxSlotModuleConfig";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthStore } from "@/features/synth/synthStore";
-import type { FxSlotModuleConfig } from "./fxSlotModuleConfig";
+import type { ModDestination } from "@/lib/synth/bindings/synth";
+import { FX_DEFINITIONS_V1 } from "@/lib/synth/bindings/synth";
+
+type EngineKnobMeta = {
+	min?: number;
+	max?: number;
+	defaultValue?: number;
+};
 
 export default function GenericFxSlotModule({
 	config,
@@ -18,8 +26,40 @@ export default function GenericFxSlotModule({
 	const rawSlot = useSynthStore((s) => s.fxSlots[slot]);
 	const setFxSlotParams = useSynthStore((s) => s.setFxSlotParams);
 
+	// Build a param→modDestinationKey lookup from FX_DEFINITIONS_V1
+	const modDestinationByParam = useMemo(() => {
+		const def = FX_DEFINITIONS_V1.find((d) => d.slotType === config.type);
+		const map: Record<string, string> = {};
+		if (def) {
+			for (const ctrl of def.controls) {
+				if (ctrl.modDestinationKey) {
+					map[ctrl.id] = ctrl.modDestinationKey;
+				}
+			}
+		}
+		return map;
+	}, [config.type]);
+
+	const knobMetaByParam = useMemo(() => {
+		const def = FX_DEFINITIONS_V1.find((d) => d.slotType === config.type);
+		const map: Record<string, EngineKnobMeta> = {};
+		if (def) {
+			for (const ctrl of def.controls) {
+				if (ctrl.kind !== "knob") {
+					continue;
+				}
+				map[ctrl.id] = {
+					min: ctrl.min ?? undefined,
+					max: ctrl.max ?? undefined,
+					defaultValue: ctrl.defaultF32 ?? undefined,
+				};
+			}
+		}
+		return map;
+	}, [config.type]);
+
 	if (rawSlot?.type !== config.type) return null;
-	const params = rawSlot.params as Record<string, unknown>;
+	const params = (rawSlot as { params: Record<string, unknown> }).params;
 	const enabled = (params.enabled as boolean) ?? false;
 
 	const handlePresetChange = (presetId: string) => {
@@ -57,18 +97,31 @@ export default function GenericFxSlotModule({
 		>
 			{config.controls.map((ctrl) =>
 				ctrl.kind === "knob" ? (
-					<ControlKnob
-						key={ctrl.param}
-						value={(params[ctrl.param] as number) ?? ctrl.defaultValue}
-						onChange={(v) => setFxSlotParams(slot, { [ctrl.param]: v })}
-						min={ctrl.min}
-						max={ctrl.max}
-						defaultValue={ctrl.defaultValue}
-						size={ctrl.size ?? 40}
-						color={config.color}
-						label={ctrl.label}
-						valueFormatter={ctrl.formatter}
-					/>
+					(() => {
+						const engineMeta = knobMetaByParam[ctrl.param];
+						const min = engineMeta?.min ?? ctrl.min;
+						const max = engineMeta?.max ?? ctrl.max;
+						const defaultValue = engineMeta?.defaultValue ?? ctrl.defaultValue;
+						return (
+							<ControlKnob
+								key={ctrl.param}
+								value={(params[ctrl.param] as number) ?? defaultValue}
+								onChange={(v) => setFxSlotParams(slot, { [ctrl.param]: v })}
+								min={min}
+								max={max}
+								defaultValue={defaultValue}
+								size={ctrl.size ?? 40}
+								color={config.color}
+								label={ctrl.label}
+								valueFormatter={ctrl.formatter}
+								modDestination={
+									modDestinationByParam[ctrl.param] as
+										| ModDestination
+										| undefined
+								}
+							/>
+						);
+					})()
 				) : (
 					<div key={ctrl.param} className="flex flex-col gap-1">
 						<span className="text-xs text-center opacity-60">{ctrl.label}</span>

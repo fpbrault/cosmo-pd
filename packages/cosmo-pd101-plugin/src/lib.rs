@@ -526,11 +526,6 @@ impl CzParameters {
                 PolyModeParam::Mono => PolyMode::Mono,
             },
             legato: self.legato.get() >= 0.5,
-            int_pm_enabled: self.int_pm_enabled.get() >= 0.5,
-            int_pm_amount: self.int_pm_amount.get() as f32,
-            int_pm_ratio: self.int_pm_ratio.get() as f32,
-            ext_pm_amount: self.ext_pm_amount.get() as f32,
-            pm_pre: self.pm_pre.get() >= 0.5,
             ..Default::default()
         };
 
@@ -557,12 +552,6 @@ impl CzParameters {
         params.line2.modulation = self.l2_modulation.get() as f32;
         params.line2.algo_blend = self.l2_algo_blend.get() as f32;
         params.line2.algo2 = Self::map_optional_warp(self.l2_warp_algo2.get() as f32);
-
-        params.vibrato.enabled = self.vib_enabled.get() >= 0.5;
-        params.vibrato.waveform = (self.vib_waveform.get().round() as i32).clamp(1, 4) as u8;
-        params.vibrato.rate = self.vib_rate.get() as f32;
-        params.vibrato.depth = self.vib_depth.get() as f32;
-        params.vibrato.delay = self.vib_delay.get() as f32;
 
         params.chorus.enabled = self.cho_enabled.get() >= 0.5;
         params.chorus.mix = self.cho_mix.get() as f32;
@@ -610,8 +599,7 @@ impl CzParameters {
 #[allow(dead_code, clippy::items_after_statements)]
 fn _assert_synth_params_coverage(p: SynthParams) {
     use cosmo_synth_engine::params::{
-        ChorusParams, CzLineParams, DelayParams, FilterParams, LfoParams, LineParams, ModEnvParams,
-        PhaserParams, PortamentoParams, RandomParams, ReverbParams, VibratoParams,
+        CzLineParams, LfoParams, LineParams, ModEnvParams, PortamentoParams, RandomParams,
     };
 
     let SynthParams {
@@ -621,40 +609,27 @@ fn _assert_synth_params_coverage(p: SynthParams) {
         octave,
         line1,
         line2,
-        int_pm_enabled,
-        int_pm_amount,
-        int_pm_ratio,
-        ext_pm_amount,
-        pm_pre,
         frequency: _frequency, // set by the MIDI layer, not a VST param
         volume,
         poly_mode,
         legato,
-        chorus,
-        delay,
-        phaser,
-        reverb,
-        vibrato,
+        chorus: _,
+        delay: _,
+        phaser: _,
+        reverb: _,
         portamento,
         lfo,
         lfo2,
         mod_env,
         random,
-        filter,
-        pitch_bend_range: _pitch_bend_range, // not yet a VST param
+        velocity_curve: _,
+        filter: _,                                         // not yet a VST param
+        pitch_bend_range: _pitch_bend_range,               // not yet a VST param
         mod_wheel_vibrato_depth: _mod_wheel_vibrato_depth, // not yet a VST param
-        mod_matrix: _mod_matrix,             // not yet a VST param
-        fx_slots: _fx_slots,                 // not yet a VST param
+        mod_matrix: _mod_matrix,                           // not yet a VST param
+        fx_slots: _fx_slots,                               // not yet a VST param
     } = p;
 
-    // Phaser — not yet a VST param but destructured to catch field additions.
-    let PhaserParams {
-        enabled: _phas_enabled,
-        rate: _phas_rate,
-        depth: _phas_depth,
-        mix: _phas_mix,
-        feedback: _phas_feedback,
-    } = phaser;
     // ModEnvParams / RandomParams — not yet VST params.
     let ModEnvParams {
         attack: _menv_attack,
@@ -663,35 +638,6 @@ fn _assert_synth_params_coverage(p: SynthParams) {
         release: _menv_release,
     } = mod_env;
     let RandomParams { rate: _rand_rate } = random;
-    let ChorusParams {
-        enabled: _cho_enabled,
-        rate: _cho_rate,
-        depth: _cho_depth,
-        mix: _cho_mix,
-    } = chorus;
-    let DelayParams {
-        enabled: _del_enabled,
-        tape_mode: _del_tape_mode,
-        warmth: _del_warmth,
-        time: _del_time,
-        feedback: _del_fb,
-        mix: _del_mix,
-    } = delay;
-    let ReverbParams {
-        enabled: _rev_enabled,
-        mix: _rev_mix,
-        space: _rev_space,
-        predelay: _rev_predelay,
-        distance: _rev_distance,
-        character: _rev_character,
-    } = reverb;
-    let VibratoParams {
-        enabled: _vib_enabled,
-        waveform: _vib_waveform,
-        rate: _vib_rate,
-        depth: _vib_depth,
-        delay: _vib_delay,
-    } = vibrato;
     let PortamentoParams {
         enabled: _port_enabled,
         mode: _port_mode,
@@ -714,19 +660,14 @@ fn _assert_synth_params_coverage(p: SynthParams) {
         retrigger: _lfo2_retrigger,
         offset: _lfo2_offset,
     } = lfo2;
-    let FilterParams {
-        enabled: _,
-        filter_type: _,
-        cutoff: _,
-        resonance: _,
-        env_amount: _,
-    } = filter;
 
     // Both lines must be destructured exhaustively.
     let LineParams {
         algo: _l1_algo,
         algo2: _l1_algo2,
         algo_blend: _l1_blend,
+        base_waveform_a: _l1_base_waveform_a,
+        base_waveform_b: _l1_base_waveform_b,
         window: _l1_window,
         dca_base: _l1_dca,
         dcw_base: _l1_dcw,
@@ -751,6 +692,8 @@ fn _assert_synth_params_coverage(p: SynthParams) {
         algo: _l2_algo,
         algo2: _l2_algo2,
         algo_blend: _l2_blend,
+        base_waveform_a: _l2_base_waveform_a,
+        base_waveform_b: _l2_base_waveform_b,
         window: _l2_window,
         dca_base: _l2_dca,
         dcw_base: _l2_dcw,
@@ -772,19 +715,7 @@ fn _assert_synth_params_coverage(p: SynthParams) {
     } = _l2_cz;
 
     // Suppress unused-variable warnings for fields that ARE mapped to VST params.
-    let _ = (
-        line_select,
-        mod_mode,
-        octave,
-        int_pm_enabled,
-        int_pm_amount,
-        int_pm_ratio,
-        ext_pm_amount,
-        pm_pre,
-        volume,
-        poly_mode,
-        legato,
-    );
+    let _ = (line_select, mod_mode, octave, volume, poly_mode, legato);
 }
 
 #[derive(Clone)]

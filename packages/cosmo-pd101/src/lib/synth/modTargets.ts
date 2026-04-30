@@ -1,4 +1,5 @@
 import type { ModDestination } from "@/lib/synth/bindings/synth";
+import { FX_DEFINITIONS_V1 } from "@/lib/synth/bindings/synth";
 
 export type ModTargetGroup =
 	| "Global"
@@ -21,18 +22,6 @@ export type ModTargetKey =
 	| "line.algoBlend"
 	| "env.stepLevel"
 	| "env.stepRate"
-	| "chorus.rate"
-	| "chorus.depth"
-	| "chorus.mix"
-	| "delay.time"
-	| "delay.feedback"
-	| "delay.warmth"
-	| "delay.mix"
-	| "reverb.space"
-	| "reverb.predelay"
-	| "reverb.distance"
-	| "reverb.character"
-	| "reverb.mix"
 	| "phaser.rate"
 	| "phaser.depth"
 	| "phaser.feedback"
@@ -57,7 +46,6 @@ export type ModTargetMeta = {
 const CORE_TARGETS: ModTargetMeta[] = [
 	{ id: "volume", label: "Volume", group: "Global" },
 	{ id: "pitch", label: "Pitch", group: "Global" },
-	{ id: "intPmAmount", label: "PM Amount", group: "Global" },
 	{ id: "line1DcwBase", label: "L1 DCW", group: "Line 1" },
 	{ id: "line1DcaBase", label: "L1 DCA", group: "Line 1" },
 	{ id: "line1AlgoBlend", label: "L1 Algo Blend", group: "Line 1" },
@@ -84,28 +72,6 @@ const CORE_TARGETS: ModTargetMeta[] = [
 	{ id: "line2AlgoParam6", label: "L2 Param 6", group: "Line 2" },
 	{ id: "line2AlgoParam7", label: "L2 Param 7", group: "Line 2" },
 	{ id: "line2AlgoParam8", label: "L2 Param 8", group: "Line 2" },
-	{ id: "filterCutoff", label: "Filter Cutoff", group: "FX" },
-	{ id: "filterResonance", label: "Filter Resonance", group: "FX" },
-	{ id: "filterEnvAmount", label: "Filter Env", group: "FX" },
-	{ id: "chorusMix", label: "Chorus Mix", group: "FX" },
-	{ id: "chorusRate", label: "Chorus Rate", group: "FX" },
-	{ id: "chorusDepth", label: "Chorus Depth", group: "FX" },
-	{ id: "delayMix", label: "Delay Mix", group: "FX" },
-	{ id: "delayTime", label: "Delay Time", group: "FX" },
-	{ id: "delayFeedback", label: "Delay Feedback", group: "FX" },
-	{ id: "delayWarmth", label: "Delay Warmth", group: "FX" },
-	{ id: "reverbMix", label: "Reverb Mix", group: "FX" },
-	{ id: "reverbSpace", label: "Reverb Space", group: "FX" },
-	{ id: "reverbPredelay", label: "Reverb Predelay", group: "FX" },
-	{ id: "reverbDistance", label: "Reverb Distance", group: "FX" },
-	{ id: "reverbCharacter", label: "Reverb Character", group: "FX" },
-	{ id: "phaserRate", label: "Phaser Rate", group: "FX" },
-	{ id: "phaserDepth", label: "Phaser Depth", group: "FX" },
-	{ id: "phaserFeedback", label: "Phaser Feedback", group: "FX" },
-	{ id: "phaserMix", label: "Phaser Mix", group: "FX" },
-	{ id: "vibratoDepth", label: "Vibrato Depth", group: "Modulation" },
-	{ id: "lfoRate", label: "LFO Rate (Legacy)", group: "Modulation" },
-	{ id: "lfoDepth", label: "LFO Depth (Legacy)", group: "Modulation" },
 	{ id: "lfo1Rate", label: "LFO 1 Rate", group: "Modulation" },
 	{ id: "lfo1Depth", label: "LFO 1 Depth", group: "Modulation" },
 	{ id: "lfo1Symmetry", label: "LFO 1 Symmetry", group: "Modulation" },
@@ -177,8 +143,19 @@ const ENVELOPE_TARGETS: ModTargetMeta[] = [1, 2].flatMap((lineIndex) =>
 	),
 );
 
+const FX_TARGETS: ModTargetMeta[] = FX_DEFINITIONS_V1.flatMap((def) =>
+	def.controls
+		.filter((ctrl) => ctrl.modDestinationKey != null)
+		.map((ctrl) => ({
+			id: ctrl.modDestinationKey as ModDestination,
+			label: `${def.name} ${ctrl.label}`,
+			group: "FX" as ModTargetGroup,
+		})),
+);
+
 export const MOD_TARGET_REGISTRY: ModTargetMeta[] = [
 	...CORE_TARGETS,
+	...FX_TARGETS,
 	...ENVELOPE_TARGETS,
 ];
 
@@ -242,30 +219,6 @@ export function resolveTargetFromMetadata(
 			}
 			return toEnvDestination(lineIndex, envKind, stepIndex, "rate");
 		}
-		case "chorus.rate":
-			return "chorusRate";
-		case "chorus.depth":
-			return "chorusDepth";
-		case "chorus.mix":
-			return "chorusMix";
-		case "delay.time":
-			return "delayTime";
-		case "delay.feedback":
-			return "delayFeedback";
-		case "delay.warmth":
-			return "delayWarmth";
-		case "delay.mix":
-			return "delayMix";
-		case "reverb.space":
-			return "reverbSpace";
-		case "reverb.predelay":
-			return "reverbPredelay";
-		case "reverb.distance":
-			return "reverbDistance";
-		case "reverb.character":
-			return "reverbCharacter";
-		case "reverb.mix":
-			return "reverbMix";
 		case "phaser.rate":
 			return "phaserRate";
 		case "phaser.depth":

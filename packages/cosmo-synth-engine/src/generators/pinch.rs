@@ -65,6 +65,7 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
     name: "Pinch",
     icon_path: "M4,12 C8,4 10,12 12,12 C14,12 16,20 20,12",
     visible: true,
+    default_base_waveform: crate::params::BaseWaveform::Sine,
     controls: &CONTROLS,
 };
 
