@@ -18,6 +18,7 @@ type PresetLibrary = {
 	onImportPreset: (json: string, filename: string) => void;
 	onInitPreset: () => void;
 	onClose: () => void;
+	isOpen?: boolean;
 };
 
 const sectionLabels: Record<PresetEntry["type"], string> = {
@@ -31,6 +32,19 @@ const typeLabels: Record<PresetEntry["type"], string> = {
 	local: "User",
 	library: "Library",
 };
+
+type VirtualPresetRow =
+	| { id: string; kind: "section"; type: PresetEntry["type"] }
+	| { id: string; kind: "entry"; entry: PresetEntry };
+
+const TABLE_HEADER_HEIGHT = 32;
+const SECTION_ROW_HEIGHT = 32;
+const ENTRY_ROW_HEIGHT = 42;
+const VIRTUAL_OVERSCAN_PX = ENTRY_ROW_HEIGHT * 8;
+
+function getVirtualRowHeight(row: VirtualPresetRow) {
+	return row.kind === "section" ? SECTION_ROW_HEIGHT : ENTRY_ROW_HEIGHT;
+}
 
 function getEntrySearchText(entry: PresetEntry) {
 	return `${entry.label} ${sectionLabels[entry.type]}`.toLowerCase();
@@ -73,6 +87,7 @@ export default function PresetLibrary({
 	onImportPreset,
 	onInitPreset,
 	onClose,
+	isOpen = true,
 }: PresetLibrary) {
 	const isPluginRuntime =
 		typeof (
@@ -90,7 +105,10 @@ export default function PresetLibrary({
 	const [deleteEntry, setDeleteEntry] = useState<PresetEntry | null>(null);
 	const [focusedEntryId, setFocusedEntryId] = useState(activeEntryId);
 	const importFileRef = useRef<HTMLInputElement>(null);
+	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const rowRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+	const [virtualScrollTop, setVirtualScrollTop] = useState(0);
+	const [virtualViewportHeight, setVirtualViewportHeight] = useState(0);
 
 	const filteredEntries = useMemo(() => {
 		const normalizedSearch = search.trim().toLowerCase();
@@ -100,12 +118,77 @@ export default function PresetLibrary({
 		);
 	}, [allEntries, search]);
 
-	const sections = (["builtin", "local", "library"] as const)
-		.map((type) => ({
-			type,
-			entries: filteredEntries.filter((entry) => entry.type === type),
-		}))
-		.filter((section) => section.entries.length > 0);
+	const sections = useMemo(
+		() =>
+			(["builtin", "local", "library"] as const)
+				.map((type) => ({
+					type,
+					entries: filteredEntries.filter((entry) => entry.type === type),
+				}))
+				.filter((section) => section.entries.length > 0),
+		[filteredEntries],
+	);
+
+	const virtualRows = useMemo<VirtualPresetRow[]>(
+		() =>
+			sections.flatMap((section) => [
+				{ id: `section-${section.type}`, kind: "section", type: section.type },
+				...section.entries.map((entry) => ({
+					id: entry.id,
+					kind: "entry" as const,
+					entry,
+				})),
+			]),
+		[sections],
+	);
+
+	const virtualLayout = useMemo(() => {
+		let totalHeight = 0;
+		const offsets = virtualRows.map((row) => {
+			const offset = totalHeight;
+			totalHeight += getVirtualRowHeight(row);
+			return offset;
+		});
+		return { offsets, totalHeight };
+	}, [virtualRows]);
+
+	const visibleVirtualRows = useMemo(() => {
+		const listScrollTop = Math.max(0, virtualScrollTop - TABLE_HEADER_HEIGHT);
+		const startBoundary = Math.max(0, listScrollTop - VIRTUAL_OVERSCAN_PX);
+		const endBoundary =
+			listScrollTop + virtualViewportHeight + VIRTUAL_OVERSCAN_PX;
+		let startIndex = 0;
+		while (
+			startIndex < virtualRows.length &&
+			virtualLayout.offsets[startIndex] +
+				getVirtualRowHeight(virtualRows[startIndex]) <
+				startBoundary
+		) {
+			startIndex++;
+		}
+
+		let endIndex = startIndex;
+		while (
+			endIndex < virtualRows.length &&
+			virtualLayout.offsets[endIndex] < endBoundary
+		) {
+			endIndex++;
+		}
+
+		return virtualRows.slice(startIndex, endIndex).map((row, index) => {
+			const rowIndex = startIndex + index;
+			return {
+				row,
+				rowIndex,
+				top: virtualLayout.offsets[rowIndex],
+			};
+		});
+	}, [
+		virtualLayout.offsets,
+		virtualRows,
+		virtualScrollTop,
+		virtualViewportHeight,
+	]);
 
 	const focusedEntry = filteredEntries.find(
 		(entry) => entry.id === focusedEntryId,
@@ -118,6 +201,7 @@ export default function PresetLibrary({
 				);
 
 	useEffect(() => {
+		if (!isOpen) return;
 		if (filteredEntries.length === 0) {
 			setFocusedEntryId(null);
 			return;
@@ -125,12 +209,52 @@ export default function PresetLibrary({
 		if (!filteredEntries.some((entry) => entry.id === focusedEntryId)) {
 			setFocusedEntryId(activeEntryId ?? filteredEntries[0]?.id ?? null);
 		}
-	}, [activeEntryId, filteredEntries, focusedEntryId]);
+	}, [activeEntryId, filteredEntries, focusedEntryId, isOpen]);
 
 	useEffect(() => {
+		if (!isOpen) return;
 		if (!focusedEntryId) return;
-		rowRefs.current[focusedEntryId]?.focus();
-	}, [focusedEntryId]);
+		const focusedNode = rowRefs.current[focusedEntryId];
+		if (focusedNode) {
+			focusedNode.focus();
+			return;
+		}
+
+		const rowIndex = virtualRows.findIndex(
+			(row) => row.kind === "entry" && row.entry.id === focusedEntryId,
+		);
+		const scrollContainer = scrollContainerRef.current;
+		if (rowIndex < 0 || !scrollContainer) return;
+
+		const top = virtualLayout.offsets[rowIndex] + TABLE_HEADER_HEIGHT;
+		const bottom = top + getVirtualRowHeight(virtualRows[rowIndex]);
+		if (top < scrollContainer.scrollTop) {
+			scrollContainer.scrollTop = top;
+			setVirtualScrollTop(top);
+		}
+		if (bottom > scrollContainer.scrollTop + scrollContainer.clientHeight) {
+			const nextScrollTop = bottom - scrollContainer.clientHeight;
+			scrollContainer.scrollTop = nextScrollTop;
+			setVirtualScrollTop(nextScrollTop);
+		}
+	}, [focusedEntryId, isOpen, virtualLayout.offsets, virtualRows]);
+
+	useEffect(() => {
+		const scrollContainer = scrollContainerRef.current;
+		if (!scrollContainer) return;
+
+		const updateViewportHeight = () => {
+			setVirtualViewportHeight(scrollContainer.clientHeight);
+			setVirtualScrollTop(scrollContainer.scrollTop);
+		};
+
+		updateViewportHeight();
+		const resizeObserver = new ResizeObserver(updateViewportHeight);
+		resizeObserver.observe(scrollContainer);
+		return () => {
+			resizeObserver.disconnect();
+		};
+	}, []);
 
 	const handleLoad = useCallback(
 		(entry: PresetEntry) => {
@@ -205,6 +329,7 @@ export default function PresetLibrary({
 	);
 
 	useEffect(() => {
+		if (!isOpen) return;
 		const handleWindowKeyDown = (event: KeyboardEvent) => {
 			if (!document.hasFocus()) {
 				return;
@@ -230,7 +355,7 @@ export default function PresetLibrary({
 		return () => {
 			window.removeEventListener("keydown", handleWindowKeyDown);
 		};
-	}, [handleKeyboardNavigation]);
+	}, [handleKeyboardNavigation, isOpen]);
 
 	const handleSave = () => {
 		if (!activeLocalEntry) return;
@@ -301,7 +426,7 @@ export default function PresetLibrary({
 	return (
 		<div className="relative z-10 flex min-h-0 flex-1 flex-col">
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden  border border-cz-border bg-cz-panel">
-				<div className="grid gap-3 border-b border-cz-border bg-cz-body px-5 py-4 lg:grid-cols-[1fr_auto] lg:items-center">
+				<div className="grid gap-3 border-b border-cz-border bg-cz-body px-5 py-4 grid-cols-[1fr_auto] items-center">
 					<div>
 						<p className="text-3xs font-mono uppercase tracking-[0.32em] text-cz-gold">
 							Preset Library
@@ -328,13 +453,17 @@ export default function PresetLibrary({
 					</div>
 				</div>
 
-				<div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1fr)_17rem]">
+				<div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_17rem]">
 					<div
+						ref={scrollContainerRef}
 						className="min-h-0 overflow-y-auto [scrollbar-gutter:stable]"
 						role="listbox"
 						aria-label="Preset library"
 						data-preset-library="true"
 						tabIndex={-1}
+						onScroll={(event) => {
+							setVirtualScrollTop(event.currentTarget.scrollTop);
+						}}
 						onKeyDownCapture={(event) => {
 							if (!isPluginRuntime) {
 								return;
@@ -368,81 +497,99 @@ export default function PresetLibrary({
 								No presets available.
 							</div>
 						) : (
-							sections.map((section) => (
-								<section key={section.type}>
-									<div className="border-b border-cz-border/70 bg-cz-surface px-4 py-2 text-4xs font-mono uppercase tracking-[0.3em] text-cz-gold">
-										{sectionLabels[section.type]}
-									</div>
-									{section.entries.map((entry) => {
-										const active = entry.id === activeEntryId;
-										const focused = entry.id === focusedEntryId;
+							<div
+								className="relative"
+								style={{ height: virtualLayout.totalHeight }}
+							>
+								{visibleVirtualRows.map(({ row, top }) => {
+									if (row.kind === "section") {
 										return (
 											<div
-												key={entry.id}
-												className={`grid grid-cols-[2rem_minmax(12rem,1.5fr)_8rem_7rem] items-center border-b border-cz-border px-4 py-0.5 text-sm transition ${
-													active
-														? "bg-cz-surface/20"
-														: focused
-															? "bg-cz-surface/50 text-cz-cream"
-															: "text-cz-cream bg-cz-surface hover:bg-cz-surface/30"
-												}`}
+												key={row.id}
+												className="absolute inset-x-0 border-b border-cz-border/70 bg-cz-surface px-4 py-2 text-4xs font-mono uppercase tracking-[0.3em] text-cz-gold"
+												style={{
+													height: SECTION_ROW_HEIGHT,
+													transform: `translateY(${top}px)`,
+												}}
 											>
-												<span className="font-mono text-cz-gold ">
-													{active ? "*" : ""}
-												</span>
-												<Button
-													type="button"
-													ref={(node) => {
-														rowRefs.current[entry.id] = node;
-													}}
-													className="btn btn-ghost btn-sm justify-start w-full min-w-0 truncate py-2 font-semibold outline-none text-cz-cream"
-													onFocus={() => setFocusedEntryId(entry.id)}
-													onClick={() => handleLoad(entry)}
-												>
-													{entry.label}
-												</Button>
-												<span className="truncate text-3xs font-mono uppercase tracking-[0.18em] text-cz-cream-dim">
-													{typeLabels[entry.type]}
-												</span>
-												<div className="flex justify-end gap-1">
-													{entry.type === "local" ? (
-														<>
-															<Button
-																type="button"
-																className="btn btn-ghost text-cz-cream"
-																aria-label={`Rename ${entry.label}`}
-																onClick={() => openRenameModal(entry)}
-															>
-																Rename
-															</Button>
-															<Button
-																type="button"
-																className="btn btn-ghost text-cz-light-blue"
-																aria-label={`Export ${entry.label}`}
-																onClick={() => onExportPreset(entry.label)}
-															>
-																Export
-															</Button>
-															<Button
-																type="button"
-																className="btn btn-ghost text-red-400"
-																aria-label={`Delete ${entry.label}`}
-																onClick={() => setDeleteEntry(entry)}
-															>
-																Delete
-															</Button>
-														</>
-													) : null}
-												</div>
+												{sectionLabels[row.type]}
 											</div>
 										);
-									})}
-								</section>
-							))
+									}
+
+									const entry = row.entry;
+									const active = entry.id === activeEntryId;
+									const focused = entry.id === focusedEntryId;
+									return (
+										<div
+											key={entry.id}
+											className={`absolute inset-x-0 grid grid-cols-[2rem_minmax(12rem,1.5fr)_8rem_7rem] items-center border-b border-cz-border px-4 py-0.5 text-sm transition ${
+												active
+													? "bg-cz-surface/20"
+													: focused
+														? "bg-cz-surface/50 text-cz-cream"
+														: "text-cz-cream bg-cz-surface hover:bg-cz-surface/30"
+											}`}
+											style={{
+												height: ENTRY_ROW_HEIGHT,
+												transform: `translateY(${top}px)`,
+											}}
+										>
+											<span className="font-mono text-cz-gold ">
+												{active ? "*" : ""}
+											</span>
+											<Button
+												type="button"
+												ref={(node) => {
+													rowRefs.current[entry.id] = node;
+												}}
+												className="btn btn-ghost btn-sm justify-start w-full min-w-0 truncate py-2 font-semibold outline-none text-cz-cream"
+												onFocus={() => setFocusedEntryId(entry.id)}
+												onClick={() => handleLoad(entry)}
+											>
+												{entry.label}
+											</Button>
+											<span className="truncate text-3xs font-mono uppercase tracking-[0.18em] text-cz-cream-dim">
+												{typeLabels[entry.type]}
+											</span>
+											<div className="flex justify-end gap-1">
+												{entry.type === "local" ? (
+													<>
+														<Button
+															type="button"
+															className="btn btn-ghost text-cz-cream"
+															aria-label={`Rename ${entry.label}`}
+															onClick={() => openRenameModal(entry)}
+														>
+															Rename
+														</Button>
+														<Button
+															type="button"
+															className="btn btn-ghost text-cz-light-blue"
+															aria-label={`Export ${entry.label}`}
+															onClick={() => onExportPreset(entry.label)}
+														>
+															Export
+														</Button>
+														<Button
+															type="button"
+															className="btn btn-ghost text-red-400"
+															aria-label={`Delete ${entry.label}`}
+															onClick={() => setDeleteEntry(entry)}
+														>
+															Delete
+														</Button>
+													</>
+												) : null}
+											</div>
+										</div>
+									);
+								})}
+							</div>
 						)}
 					</div>
 
-					<aside className="border-t border-cz-border bg-cz-surface p-4 lg:border-l lg:border-t-0">
+					<aside className="border-cz-border bg-cz-surface p-4 border-l border-t-0">
 						<div className="space-y-5">
 							<section>
 								<h3 className="mb-2 text-4xs font-mono uppercase tracking-[0.28em] text-cz-gold">

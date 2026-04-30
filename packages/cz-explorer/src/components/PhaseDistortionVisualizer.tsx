@@ -20,6 +20,13 @@ import {
 } from "@cosmo/cosmo-pd101";
 import { useQuery } from "@tanstack/react-query";
 import {
+	motion,
+	useMotionTemplate,
+	useMotionValue,
+	useSpring,
+	useTransform,
+} from "motion/react";
+import {
 	type CSSProperties,
 	type ReactNode,
 	useCallback,
@@ -29,7 +36,6 @@ import {
 	useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import MidiFilePlayer from "@/components/MidiFilePlayer";
 import { fetchPresetData, type Preset } from "@/lib/presets/presetManager";
 
 type PhaseDistortionVisualizerProps = {
@@ -39,12 +45,17 @@ type PhaseDistortionVisualizerProps = {
 
 type PhaseDistortionVisualizerBaseProps = PhaseDistortionVisualizerProps & {
 	libraryPresets?: Preset[];
+	onAudioLevelChange?: (level: number) => void;
 };
+
+const SYNTH_RENDERER_MAX_WIDTH = 1280;
+const SYNTH_RENDERER_MAX_HEIGHT = 800;
 
 export function SharedPhaseDistortionVisualizer({
 	frameStyle,
 	headerExtra,
 	libraryPresets = [],
+	onAudioLevelChange,
 }: PhaseDistortionVisualizerBaseProps = {}) {
 	const { t } = useTranslation("synth");
 	const line1DcoEnv = useSynthStore((s) => s.line1DcoEnv);
@@ -97,6 +108,70 @@ export function SharedPhaseDistortionVisualizer({
 		workletNodeRef,
 		velocityCurve,
 	});
+
+	useEffect(() => {
+		if (!onAudioLevelChange) {
+			return;
+		}
+
+		let rafId = 0;
+		let smoothLevel = 0;
+		let lastSampleTime = 0;
+		let lastPublishedLevel = -1;
+		let sampleBuffer = new Float32Array(2048);
+
+		const updateAudioLevel = (now: number) => {
+			const analyserNode = analyserNodeRef.current;
+			if (now - lastSampleTime < 40) {
+				rafId = window.requestAnimationFrame(updateAudioLevel);
+				return;
+			}
+			lastSampleTime = now;
+
+			if (!analyserNode) {
+				smoothLevel *= 0.9;
+				if (
+					lastPublishedLevel < 0 ||
+					Math.abs(lastPublishedLevel - smoothLevel) > 0.01
+				) {
+					onAudioLevelChange(smoothLevel);
+					lastPublishedLevel = smoothLevel;
+				}
+				rafId = window.requestAnimationFrame(updateAudioLevel);
+				return;
+			}
+
+			if (sampleBuffer.length !== analyserNode.fftSize) {
+				sampleBuffer = new Float32Array(analyserNode.fftSize);
+			}
+			analyserNode.getFloatTimeDomainData(sampleBuffer);
+
+			let sumSquares = 0;
+			for (const sample of sampleBuffer) {
+				sumSquares += sample * sample;
+			}
+
+			const rms = Math.sqrt(sumSquares / sampleBuffer.length);
+			const normalized = Math.min(1, rms * 7.5);
+			smoothLevel = smoothLevel * 0.82 + normalized * 0.18;
+
+			if (
+				lastPublishedLevel < 0 ||
+				Math.abs(lastPublishedLevel - smoothLevel) > 0.01
+			) {
+				onAudioLevelChange(smoothLevel);
+				lastPublishedLevel = smoothLevel;
+			}
+
+			rafId = window.requestAnimationFrame(updateAudioLevel);
+		};
+
+		rafId = window.requestAnimationFrame(updateAudioLevel);
+
+		return () => {
+			window.cancelAnimationFrame(rafId);
+		};
+	}, [analyserNodeRef, onAudioLevelChange]);
 
 	const { lcdControlReadout, pushLcdControlReadout, formatEnvReadout } =
 		useLcdControlReadout();
@@ -262,9 +337,6 @@ export function SharedPhaseDistortionVisualizer({
 				onLine2DcwEnvChange: handleLine2DcwEnvChange,
 				onLine2DcaEnvChange: handleLine2DcaEnvChange,
 			}}
-			bottomBarExtra={
-				<MidiFilePlayer onNoteOn={sendNoteOn} onNoteOff={sendNoteOff} />
-			}
 			miniKeyboard={{
 				activeNotes,
 				onNoteOn: sendNoteOn,
@@ -281,6 +353,136 @@ export function SharedPhaseDistortionVisualizer({
 export default function PhaseDistortionVisualizer(
 	props: PhaseDistortionVisualizerProps = {},
 ) {
+	const frameRef = useRef<HTMLDivElement | null>(null);
+	const [frameScale, setFrameScale] = useState(1);
+	const mainPanelMode = useSynthUiStore((s) => s.mainPanelMode);
+	const libraryModeOpen = useSynthUiStore((s) => s.libraryModeOpen);
+	const isOverlayOpen = libraryModeOpen || mainPanelMode !== "phase";
+	const cursorTargetX = useMotionValue(50);
+	const cursorTargetY = useMotionValue(50);
+	const cursorX = useSpring(cursorTargetX, {
+		stiffness: 74,
+		damping: 24,
+		mass: 0.7,
+	});
+	const cursorY = useSpring(cursorTargetY, {
+		stiffness: 74,
+		damping: 24,
+		mass: 0.7,
+	});
+	const audioTarget = useMotionValue(0);
+	const audioLevel = useSpring(audioTarget, {
+		stiffness: 85,
+		damping: 24,
+		mass: 0.6,
+	});
+	const cursorXPercent = useTransform(cursorX, (value: number) => `${value}%`);
+	const cursorYPercent = useTransform(cursorY, (value: number) => `${value}%`);
+	const inverseCursorXPercent = useTransform(
+		cursorX,
+		(value: number) => `${100 - value}%`,
+	);
+	const inverseCursorYPercent = useTransform(
+		cursorY,
+		(value: number) => `${100 - value}%`,
+	);
+	const blueStartAlpha = useTransform(audioLevel, (value: number) =>
+		(0.26 + value * 0.34).toFixed(3),
+	);
+	const blueMidAlpha = useTransform(audioLevel, (value: number) =>
+		(0.16 + value * 0.24).toFixed(3),
+	);
+	const goldStartAlpha = useTransform(audioLevel, (value: number) =>
+		(0.22 + value * 0.3).toFixed(3),
+	);
+	const goldMidAlpha = useTransform(audioLevel, (value: number) =>
+		(0.12 + value * 0.2).toFixed(3),
+	);
+	const greenStartAlpha = useTransform(audioLevel, (value: number) =>
+		(0.12 + value * 0.18).toFixed(3),
+	);
+	const whiteGlowAlpha = useTransform(audioLevel, (value: number) =>
+		(0.12 + value * 0.26).toFixed(3),
+	);
+	const centerGlowAlpha = useTransform(audioLevel, (value: number) =>
+		(0.12 + value * 0.32).toFixed(3),
+	);
+	const audioGlowOpacity = useTransform(audioLevel, (value: number) =>
+		isOverlayOpen ? 0.62 : 0.62 + value * 0.32,
+	);
+	const audioGlowScale = useTransform(audioLevel, (value: number) =>
+		isOverlayOpen ? 1.02 : 1.04 + value * 0.1,
+	);
+	const noiseOpacity = useTransform(audioLevel, (value: number) =>
+		isOverlayOpen ? 0.16 : 0.24 + value * 0.12,
+	);
+	const brightness = useTransform(audioLevel, (value: number) =>
+		(isOverlayOpen ? 1.1 : 1.22 + value * 0.08).toFixed(3),
+	);
+	const saturation = useTransform(audioLevel, (value: number) =>
+		(isOverlayOpen ? 1.08 : 1.14 + value * 0.65).toFixed(3),
+	);
+	const reactiveBackground = useMotionTemplate`radial-gradient(58rem 58rem at ${cursorXPercent} ${cursorYPercent}, rgba(141, 173, 248, ${blueStartAlpha}) 0%, rgba(141, 173, 248, ${blueMidAlpha}) 30%, rgba(141, 173, 248, 0) 74%), radial-gradient(48rem 48rem at ${inverseCursorXPercent} ${inverseCursorYPercent}, rgba(214, 204, 75, ${goldStartAlpha}) 0%, rgba(214, 204, 75, ${goldMidAlpha}) 32%, rgba(214, 204, 75, 0) 75%), radial-gradient(42rem 42rem at 50% 8%, rgba(102, 255, 130, ${greenStartAlpha}) 0%, rgba(102, 255, 130, 0) 76%)`;
+	const reactiveFilter = useMotionTemplate`brightness(${brightness}) saturate(${saturation})`;
+	const audioBackground = useMotionTemplate`radial-gradient(44rem 44rem at ${cursorXPercent} ${cursorYPercent}, rgba(255, 255, 255, ${whiteGlowAlpha}), transparent 72%), radial-gradient(36rem 36rem at 50% 50%, rgba(121, 151, 255, ${centerGlowAlpha}), transparent 75%)`;
+
+	const handlePointerMove = useCallback(
+		(event: React.PointerEvent<HTMLDivElement>) => {
+			const bounds = event.currentTarget.getBoundingClientRect();
+			if (bounds.width <= 0 || bounds.height <= 0) {
+				return;
+			}
+
+			const x = ((event.clientX - bounds.left) / bounds.width) * 100;
+			const y = ((event.clientY - bounds.top) / bounds.height) * 100;
+			cursorTargetX.set(Math.min(100, Math.max(0, x)));
+			cursorTargetY.set(Math.min(100, Math.max(0, y)));
+		},
+		[cursorTargetX, cursorTargetY],
+	);
+
+	const handlePointerLeave = useCallback(() => {
+		cursorTargetX.set(50);
+		cursorTargetY.set(50);
+	}, [cursorTargetX, cursorTargetY]);
+
+	useEffect(() => {
+		const element = frameRef.current;
+		if (!element) {
+			return;
+		}
+
+		const updateFrameSize = () => {
+			const bounds = element.getBoundingClientRect();
+			if (bounds.width <= 0 || bounds.height <= 0) {
+				return;
+			}
+
+			const nextScale = Math.min(
+				bounds.width / SYNTH_RENDERER_MAX_WIDTH,
+				bounds.height / SYNTH_RENDERER_MAX_HEIGHT,
+				1,
+			);
+
+			setFrameScale((current) => {
+				if (Math.abs(current - nextScale) < 0.001) {
+					return current;
+				}
+
+				return nextScale;
+			});
+		};
+
+		updateFrameSize();
+
+		const resizeObserver = new ResizeObserver(updateFrameSize);
+		resizeObserver.observe(element);
+
+		return () => {
+			resizeObserver.disconnect();
+		};
+	}, []);
+
 	const { data } = useQuery({
 		queryKey: ["presets"],
 		queryFn: () =>
@@ -288,11 +490,79 @@ export default function PhaseDistortionVisualizer(
 		staleTime: 1000 * 60 * 5,
 	});
 	const libraryPresets = data?.presets ?? [];
+	const scaledWidth = SYNTH_RENDERER_MAX_WIDTH * frameScale;
+	const scaledHeight = SYNTH_RENDERER_MAX_HEIGHT * frameScale;
+
+	const handleAudioLevelChange = useCallback(
+		(level: number) => {
+			audioTarget.set(isOverlayOpen ? level * 0.45 : level);
+		},
+		[audioTarget, isOverlayOpen],
+	);
 
 	return (
-		<SharedPhaseDistortionVisualizer
-			{...props}
-			libraryPresets={libraryPresets}
-		/>
+		<div
+			ref={frameRef}
+			className="relative flex items-center justify-center w-full h-full overflow-hidden bg-black"
+			data-ui-overlay-open={isOverlayOpen ? "true" : "false"}
+			onPointerMove={handlePointerMove}
+			onPointerLeave={handlePointerLeave}
+		>
+			{/* Reactive background layers: cursor gradient, grain, and audio glow */}
+			<motion.div
+				aria-hidden="true"
+				className="cz-reactive-bg pointer-events-none absolute inset-0"
+				style={{ background: reactiveBackground, filter: reactiveFilter }}
+			/>
+			<motion.div
+				aria-hidden="true"
+				className="cz-reactive-bg-audio pointer-events-none absolute inset-0"
+				style={{
+					background: audioBackground,
+					opacity: audioGlowOpacity,
+					scale: audioGlowScale,
+				}}
+			/>
+			<motion.div
+				aria-hidden="true"
+				className="cz-reactive-bg-noise pointer-events-none absolute inset-0"
+				animate={
+					isOverlayOpen
+						? { x: 0, y: 0 }
+						: { x: [0, -1, 2, -2, 1, 0], y: [0, 2, -1, -2, 1, 0] }
+				}
+				transition={{ duration: 0.68, repeat: Infinity, ease: "linear" }}
+				style={{ opacity: noiseOpacity }}
+			/>
+			{/* Radial vignette to focus on the panel */}
+			<div
+				aria-hidden="true"
+				className="cz-vignette pointer-events-none absolute inset-0"
+			/>
+			{/* Synth panel */}
+			<div
+				className="relative shrink-0 overflow-visible"
+				style={{
+					width: scaledWidth,
+					height: scaledHeight,
+				}}
+			>
+				<div
+					className="absolute left-0 top-0"
+					style={{
+						width: SYNTH_RENDERER_MAX_WIDTH,
+						height: SYNTH_RENDERER_MAX_HEIGHT,
+						transform: `scale(${frameScale})`,
+						transformOrigin: "top left",
+					}}
+				>
+					<SharedPhaseDistortionVisualizer
+						{...props}
+						libraryPresets={libraryPresets}
+						onAudioLevelChange={handleAudioLevelChange}
+					/>
+				</div>
+			</div>
+		</div>
 	);
 }

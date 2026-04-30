@@ -30,7 +30,7 @@ function PerLineParametersCardInner({
 	return (
 		<Card
 			variant="subtle"
-			className="p-3 md:col-span-1 min-h-0 flex flex-col grow"
+			className="p-3 col-span-1 min-h-0 flex flex-col grow"
 		>
 			<div className="mb-3 text-3xs uppercase tracking-[0.24em] text-cz-cream">
 				Parameters

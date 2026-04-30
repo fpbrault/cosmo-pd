@@ -1,8 +1,10 @@
 import { AnimatePresence, motion } from "motion/react";
 import {
 	type CSSProperties,
+	memo,
 	type ReactNode,
 	type RefObject,
+	useCallback,
 	useEffect,
 	useRef,
 	useState,
@@ -39,6 +41,22 @@ import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import { HoverInfoProvider, useHoverInfo } from "../layout/HoverInfo";
 import MiniKeyboardOverlay from "../layout/MiniKeyboardOverlay";
 import SynthInfoBar from "../layout/SynthInfoBar";
+
+const MemoPresetLibrary = memo(PresetLibrary);
+
+const DRAWER_SLIDE_TRANSITION = {
+	type: "spring",
+	stiffness: 220,
+	damping: 30,
+	mass: 1,
+} as const;
+
+const LIBRARY_SLIDE_TRANSITION = {
+	type: "spring",
+	stiffness: 520,
+	damping: 60,
+	mass: 1,
+} as const;
 
 type SynthRendererProps = {
 	headerProps: SynthHeaderProps;
@@ -152,6 +170,28 @@ function SynthRendererContent({
 	const libraryModeOpen = useSynthUiStore((s) => s.libraryModeOpen);
 	const setLibraryModeOpen = useSynthUiStore((s) => s.setLibraryModeOpen);
 	const { infoText, setControlReadout } = useHoverInfo();
+	const drawerOpen = mainPanelMode === "fx" || mainPanelMode === "mod";
+	const [activeDrawerPanel, setActiveDrawerPanel] = useState<"fx" | "mod">(
+		mainPanelMode === "mod" ? "mod" : "fx",
+	);
+	const [drawerSlideDirection, setDrawerSlideDirection] = useState<1 | -1>(1);
+	const handleCloseLibrary = useCallback(() => {
+		setLibraryModeOpen(false);
+	}, [setLibraryModeOpen]);
+
+	useEffect(() => {
+		if (mainPanelMode !== "fx" && mainPanelMode !== "mod") {
+			return;
+		}
+		if (mainPanelMode === activeDrawerPanel) {
+			return;
+		}
+
+		setDrawerSlideDirection(
+			activeDrawerPanel === "fx" && mainPanelMode === "mod" ? 1 : -1,
+		);
+		setActiveDrawerPanel(mainPanelMode);
+	}, [mainPanelMode, activeDrawerPanel]);
 
 	return (
 		<ModMatrixProvider modMatrix={modMatrix} setModMatrix={setModMatrix}>
@@ -195,10 +235,10 @@ function SynthRendererContent({
 						</aside>
 
 						<main className="flex min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
-							<div className="flex w-full max-w-none min-h-0 flex-1 flex-col rounded-[1.2rem] 2xl:mx-auto 2xl:max-w-5xl">
+							<div className="flex w-full  min-h-0 flex-1 flex-col rounded-[1.2rem] mx-auto max-w-5xl">
 								<div className="pointer-events-none absolute inset-x-4 top-0 h-12 rounded-t-[1.2rem] opacity-70" />
-								<div className="relative shrink-0 rounded-md border border-cz-border bg-cz-body px-2 py-2 xl:px-3 shadow-inner">
-									<div className="flex flex-wrap justify-center gap-x-2 gap-y-2 xl:gap-x-4 items-center">
+								<div className="relative shrink-0 rounded-md border border-cz-border bg-cz-body px-3 shadow-inner">
+									<div className="flex flex-wrap justify-center gap-y-2 gap-x-4 items-center">
 										<MasterVolumeControl />
 										<LineSelectControl />
 
@@ -264,76 +304,83 @@ function SynthRendererContent({
 										className="h-full min-h-0 max-h-164"
 										envOverrideHandlers={envOverrideHandlers}
 									/>
-									<AnimatePresence initial={false}>
-										{mainPanelMode === "fx" || mainPanelMode === "mod" ? (
-											<motion.div
-												key={`${mainPanelMode}-drawer`}
-												initial={{ y: "-100%" }}
-												animate={{ y: 0 }}
-												exit={{ y: "-100%" }}
-												transition={{
-													type: "spring",
-													stiffness: 220,
-													damping: 30,
-													mass: 1,
-												}}
-												style={{ transformOrigin: "top center" }}
-												className="absolute inset-0 z-10 overflow-hidden"
-											>
-												<div className="relative flex h-full min-h-0 flex-col rounded-lg border border-cz-border bg-cz-body">
-													<div className="pointer-events-none absolute inset-0 rounded-lg bg-white/5" />
-													<div className="pointer-events-none absolute inset-x-0 top-0 h-14 rounded-t-lg opacity-60" />
-													<div className="relative min-h-0 flex-1">
-														{mainPanelMode === "fx" ? (
-															<FxConsoleDrawer />
-														) : (
-															<ModConsoleDrawer />
-														)}
-													</div>
-												</div>
-											</motion.div>
-										) : null}
-									</AnimatePresence>
+									<motion.div
+										aria-hidden={!drawerOpen}
+										initial={false}
+										animate={{ y: drawerOpen ? 0 : "-100%" }}
+										transition={DRAWER_SLIDE_TRANSITION}
+										style={{ transformOrigin: "top center" }}
+										className={`absolute inset-0 z-10 origin-top overflow-hidden will-change-transform ${drawerOpen ? "pointer-events-auto" : "pointer-events-none"}`}
+									>
+										<div className="relative flex h-full min-h-0 flex-col rounded-lg border border-cz-border bg-cz-body">
+											<div className="pointer-events-none absolute inset-0 rounded-lg bg-white/5" />
+											<div className="pointer-events-none absolute inset-x-0 top-0 h-14 rounded-t-lg opacity-60" />
+											<div className="relative min-h-0 flex-1 overflow-hidden">
+												<motion.div
+													aria-hidden={activeDrawerPanel !== "fx"}
+													initial={false}
+													animate={{
+														y:
+															activeDrawerPanel === "fx"
+																? "0%"
+																: drawerSlideDirection === 1
+																	? "-100%"
+																	: "100%",
+													}}
+													transition={DRAWER_SLIDE_TRANSITION}
+													className={`absolute inset-0 will-change-transform ${activeDrawerPanel === "fx" ? "pointer-events-auto" : "pointer-events-none"}`}
+												>
+													<FxConsoleDrawer />
+												</motion.div>
+												<motion.div
+													aria-hidden={activeDrawerPanel !== "mod"}
+													initial={false}
+													animate={{
+														y:
+															activeDrawerPanel === "mod"
+																? "0%"
+																: drawerSlideDirection === 1
+																	? "100%"
+																	: "-100%",
+													}}
+													transition={DRAWER_SLIDE_TRANSITION}
+													className={`absolute inset-0 will-change-transform ${activeDrawerPanel === "mod" ? "pointer-events-auto" : "pointer-events-none"}`}
+												>
+													<ModConsoleDrawer />
+												</motion.div>
+											</div>
+										</div>
+									</motion.div>
 								</div>
 							</div>
 						</main>
 					</div>
-					<AnimatePresence initial={false}>
-						{libraryModeOpen ? (
-							<motion.div
-								key="library-mode"
-								initial={{ y: "-100%", opacity: 0 }}
-								animate={{ y: 0, opacity: 1 }}
-								exit={{ y: "-100%", opacity: 0 }}
-								transition={{
-									ease: "easeInOut",
-									type: "spring",
-									stiffness: 520,
-									damping: 60,
-									mass: 1,
-								}}
-								style={{ transformOrigin: "top center" }}
-								className="absolute inset-x-0 top-20 bottom-10 z-20 flex min-h-0 flex-col overflow-hidden shadow-lg shadow-black "
-							>
-								<PresetLibrary
-									allEntries={headerProps.allEntries}
-									activeEntryId={headerProps.activeEntryId}
-									activePresetName={headerProps.activePresetName}
-									onLoadLocal={headerProps.onLoadLocal}
-									onLoadLibrary={headerProps.onLoadLibrary}
-									onLoadBuiltin={headerProps.onLoadBuiltin}
-									onSavePreset={headerProps.onSavePreset}
-									onDeletePreset={headerProps.onDeletePreset}
-									onRenamePreset={headerProps.onRenamePreset}
-									onExportPreset={headerProps.onExportPreset}
-									onExportCurrentState={headerProps.onExportCurrentState}
-									onImportPreset={headerProps.onImportPreset}
-									onInitPreset={headerProps.onInitPreset}
-									onClose={() => setLibraryModeOpen(false)}
-								/>
-							</motion.div>
-						) : null}
-					</AnimatePresence>
+					<motion.div
+						aria-hidden={!libraryModeOpen}
+						initial={false}
+						animate={{ y: libraryModeOpen ? 0 : "-100%" }}
+						transition={LIBRARY_SLIDE_TRANSITION}
+						style={{ transformOrigin: "top center" }}
+						className={`absolute inset-x-0 top-20 bottom-10 z-20 flex min-h-0 flex-col origin-top overflow-hidden shadow-lg shadow-black will-change-transform ${libraryModeOpen ? "pointer-events-auto" : "pointer-events-none"}`}
+					>
+						<MemoPresetLibrary
+							allEntries={headerProps.allEntries}
+							activeEntryId={headerProps.activeEntryId}
+							activePresetName={headerProps.activePresetName}
+							onLoadLocal={headerProps.onLoadLocal}
+							onLoadLibrary={headerProps.onLoadLibrary}
+							onLoadBuiltin={headerProps.onLoadBuiltin}
+							onSavePreset={headerProps.onSavePreset}
+							onDeletePreset={headerProps.onDeletePreset}
+							onRenamePreset={headerProps.onRenamePreset}
+							onExportPreset={headerProps.onExportPreset}
+							onExportCurrentState={headerProps.onExportCurrentState}
+							onImportPreset={headerProps.onImportPreset}
+							onInitPreset={headerProps.onInitPreset}
+							onClose={handleCloseLibrary}
+							isOpen={libraryModeOpen}
+						/>
+					</motion.div>
 					<AudioStartOverlay audioGate={audioGate} />
 					<PendingModifiedPresetModal
 						pendingPresetChange={headerProps.pendingPresetChange}
