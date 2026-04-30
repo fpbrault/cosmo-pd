@@ -10,8 +10,8 @@ use crate::dsp_utils::{lfo_output, wrap01};
 use crate::envelope::{EnvGen, EnvelopeKind};
 use crate::generators::{self, AlgoRuntimeState, LineRenderConfig};
 use crate::params::{
-    EnvStep, LfoWaveform, LineParams, LineSelect, ModDestination, ModEnvParams,
-    ModMatrix, ModMode, ModSource, PortamentoMode, StepEnvData, SynthParams, NUM_ENV_STEPS,
+    EnvStep, LfoWaveform, LineParams, LineSelect, ModDestination, ModEnvParams, ModMatrix, ModMode,
+    ModSource, PortamentoMode, StepEnvData, SynthParams, NUM_ENV_STEPS,
 };
 
 // TWO_PI for f32
