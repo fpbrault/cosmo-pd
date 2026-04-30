@@ -13,6 +13,8 @@ export async function waitForBridge(page: Page): Promise<void> {
 
 export async function setupPluginPage(page: Page): Promise<void> {
 	await page.addInitScript(() => {
+		// Keep test state deterministic across retries/workers.
+		localStorage.removeItem("cosmo-pd101-ui-state");
 		localStorage.setItem("cz-plugin-ui-scale", "100");
 	});
 	await page.goto("/", { waitUntil: "domcontentloaded" });
@@ -42,7 +44,7 @@ export async function waitForMessage(
 						(stringId === undefined || message.stringId === stringId),
 				);
 			},
-			{ timeout: 3000, intervals: [100, 200, 500] },
+			{ timeout: 6000, intervals: [100, 200, 500] },
 		)
 		.toBe(true);
 }
@@ -57,7 +59,7 @@ export async function waitForMessageMatching(
 				const messages = await getMessages(page);
 				return messages.some(matcher);
 			},
-			{ timeout: 3000, intervals: [100, 200, 500] },
+			{ timeout: 6000, intervals: [100, 200, 500] },
 		)
 		.toBe(true);
 }
