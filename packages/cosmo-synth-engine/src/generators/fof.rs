@@ -65,6 +65,7 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
     name: "FOF",
     icon_path: "M4,16 C8,4 10,4 12,16 C14,4 16,4 20,16",
     visible: true,
+    default_base_waveform: crate::params::BaseWaveform::Sine,
     controls: &CONTROLS,
 };
 

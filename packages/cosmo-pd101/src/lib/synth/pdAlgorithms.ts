@@ -1,6 +1,4 @@
 import {
-	algoRefKey,
-	isAlgoRefEqual,
 	isWarpAlgo,
 	resolveAlgoRef,
 } from "@/lib/synth/algoRef";
@@ -51,6 +49,9 @@ const sampleAlgoFullDcw = (algo: PdAlgo, phase: number): number => {
 		return raw * w;
 	}
 
+	const direct = sampleDirectAlgoPreview(algo, phase);
+	if (direct !== null) return direct;
+
 	const warpedPhase = applyPdAlgo(phase, 1, algo, resolved.waveform);
 	return Math.sin(TAU * warpedPhase);
 };
@@ -67,11 +68,19 @@ export const PD_ALGOS: PdAlgoDef[] = [
 			label: entry.label,
 			waveform: resolved.waveform,
 			algo: resolved.warpAlgo,
-			key: algoRefKey(entry.id),
+			key: entry.id,
 			icon: getAlgoIcon(entry.id),
 		};
 	}),
 ];
+
+const NON_BASE_WAVE_ALGOS = new Set<PdAlgo>([
+	"karpunk",
+]);
+
+export function algoUsesBaseWaveform(algo: PdAlgo): boolean {
+	return !NON_BASE_WAVE_ALGOS.has(algo);
+}
 
 const ALGO_BEHAVIOR_DESCRIPTIONS: Record<PdAlgo, string> = {
 	cz101:
@@ -95,7 +104,7 @@ const ALGO_BEHAVIOR_DESCRIPTIONS: Record<PdAlgo, string> = {
 	karpunk:
 		"Plucked/resonant distortion character with decaying inharmonic overtones.",
 	sine: "Pure sine phase path with minimal harmonics and smooth tone.",
-	// Legacy waveform aliases supported by Algo type
+	// CZ waveform transfer shapes
 	saw: "Saw transfer shape with a bright, harmonically rich spectrum.",
 	square: "Square transfer shape emphasizing odd harmonics for hollow tone.",
 	pulse: "Pulse transfer shape with a narrow-duty harmonic profile.",
@@ -114,7 +123,7 @@ export function getPdAlgoBehaviorDescription(algo: PdAlgo): string {
 }
 
 export function getPdAlgoDef(algo: PdAlgo): PdAlgoDef | undefined {
-	return PD_ALGOS.find((entry) => isAlgoRefEqual(entry.value, algo));
+	return PD_ALGOS.find((entry) => entry.value === algo);
 }
 
 export const DEFAULT_DCA_ENV: StepEnvData = {
@@ -255,6 +264,14 @@ function pdMirror(phase: number, amount: number): number {
 	if (amount === 0) return phase;
 	const mirrored = 1 - phase;
 	return phase + (mirrored - phase) * amount;
+}
+
+function sampleDirectAlgoPreview(algo: PdAlgo, _phase: number): number | null {
+	switch (algo) {
+	
+		default:
+			return null;
+	}
 }
 
 function pdTransfer(waveformId: CzWaveform, phi: number): number {

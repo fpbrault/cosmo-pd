@@ -4,22 +4,17 @@ import ControlKnob from "@/components/controls/ControlKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
-import { useSynthParam } from "@/features/synth/SynthParamController";
+import { useSynthStore } from "@/features/synth/synthStore";
 import { VIBRATO_PRESETS } from "@/lib/synth/modulePresets";
-import { PARAM_META } from "@/lib/synth/paramMeta";
 
-export default function VibratoModule() {
+export default function VibratoModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("");
-	const { value: vibratoEnabled, setValue: setVibratoEnabled } =
-		useSynthParam("vibratoEnabled");
-	const { value: vibratoWave, setValue: setVibratoWave } =
-		useSynthParam("vibratoWave");
-	const { value: vibratoRate, setValue: setVibratoRate } =
-		useSynthParam("vibratoRate");
-	const { value: vibratoDepth, setValue: setVibratoDepth } =
-		useSynthParam("vibratoDepth");
-	const { value: vibratoDelay, setValue: setVibratoDelay } =
-		useSynthParam("vibratoDelay");
+	const rawSlot = useSynthStore((s) => s.fxSlots[slot]);
+	const setFxSlotEnabled = useSynthStore((s) => s.setFxSlotEnabled);
+	const setFxSlotParams = useSynthStore((s) => s.setFxSlotParams);
+
+	if (rawSlot?.type !== "vibrato") return null;
+	const params = rawSlot.params;
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
@@ -28,11 +23,7 @@ export default function VibratoModule() {
 			return;
 		}
 
-		setVibratoEnabled(preset.patch.vibrato.enabled);
-		setVibratoWave(preset.patch.vibrato.waveform);
-		setVibratoRate(preset.patch.vibrato.rate);
-		setVibratoDepth(preset.patch.vibrato.depth);
-		setVibratoDelay(preset.patch.vibrato.delay);
+		setFxSlotParams(slot, preset.patch.vibrato);
 		requestApplyModulePreset({
 			module: "vibrato",
 			preset: preset.id,
@@ -53,18 +44,18 @@ export default function VibratoModule() {
 					onChange={handlePresetChange}
 				/>
 			}
-			enabled={vibratoEnabled}
+			enabled={params.enabled}
 			columns={3}
-			onToggle={() => setVibratoEnabled(!vibratoEnabled)}
+			onToggle={() => setFxSlotEnabled(slot, !params.enabled)}
 		>
 			<div className="grid grid-cols-4 gap-1 w-full col-span-3">
 				{(["sine", "tri", "sq", "saw"] as const).map((w, i) => (
 					<Button
 						key={w}
 						className={`btn btn-xs ${
-							vibratoWave === i + 1 ? "btn-secondary" : "btn-outline"
+							params.waveform === i + 1 ? "btn-secondary" : "btn-outline"
 						}`}
-						onClick={() => setVibratoWave(i + 1)}
+						onClick={() => setFxSlotParams(slot, { waveform: i + 1 })}
 						title={`Select ${w} vibrato waveform.`}
 					>
 						{w}
@@ -72,40 +63,40 @@ export default function VibratoModule() {
 				))}
 			</div>
 			<ControlKnob
-				value={vibratoRate}
-				onChange={setVibratoRate}
+				value={params.rate}
+				onChange={(value) => setFxSlotParams(slot, { rate: value })}
 				min={0}
 				max={99}
 				defaultValue={65}
 				size={52}
 				color="#307948"
 				label="Rate"
-				tooltip={PARAM_META.vibratoRate?.tooltip}
 				valueFormatter={(v) => `${Math.round(v)}`}
+				modDestination="vibratoRate"
 			/>
 			<ControlKnob
-				value={vibratoDepth}
-				onChange={setVibratoDepth}
+				value={params.depth}
+				onChange={(value) => setFxSlotParams(slot, { depth: value })}
 				min={0}
 				max={99}
 				defaultValue={20}
 				size={52}
 				color="#307948"
 				label="Depth"
-				tooltip={PARAM_META.vibratoDepth?.tooltip}
 				valueFormatter={(v) => `${Math.round(v)}`}
+				modDestination="vibratoDepth"
 			/>
 			<ControlKnob
-				value={vibratoDelay}
-				onChange={setVibratoDelay}
+				value={params.delay}
+				onChange={(value) => setFxSlotParams(slot, { delay: value })}
 				min={0}
 				max={5000}
 				defaultValue={0}
 				size={52}
 				color="#307948"
 				label="Delay"
-				tooltip={PARAM_META.vibratoDelay?.tooltip}
 				valueFormatter={(v) => `${Math.round(v)}ms`}
+				modDestination="vibratoDelay"
 			/>
 		</ModuleFrame>
 	);

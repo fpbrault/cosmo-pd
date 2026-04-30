@@ -65,6 +65,7 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
     name: "Clip",
     icon_path: "M4,16 L8,16 L8,8 L16,8 L16,16 L20,16",
     visible: true,
+    default_base_waveform: crate::params::BaseWaveform::Sine,
     controls: &CONTROLS,
 };
 

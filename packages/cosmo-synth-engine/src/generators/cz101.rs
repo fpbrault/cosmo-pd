@@ -303,6 +303,7 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
     name: "CZ101",
     icon_path: "M4,12 L20,12",
     visible: true,
+    default_base_waveform: crate::params::BaseWaveform::Cosine,
     controls: &CZ_CONTROLS,
 };
 

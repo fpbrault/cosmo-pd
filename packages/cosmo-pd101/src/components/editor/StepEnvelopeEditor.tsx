@@ -413,7 +413,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 
 				for (let i = 0; i < activeSteps.length; i++) {
 					const rate = i === stepIndex ? candidateRate : activeSteps[i].rate;
-					const duration = editorStepDuration(rate, visibleStepCount);
+					const duration = editorStepDuration(rate);
 					totalTime += duration;
 					if (i <= stepIndex) cumulative += duration;
 				}

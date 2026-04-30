@@ -71,6 +71,10 @@ export default function PhaseLinesSection({
 		useSynthParam("line1AlgoControlsA");
 	const { value: line1AlgoControlsB, setValue: setLine1AlgoControlsB } =
 		useSynthParam("line1AlgoControlsB");
+	const { value: line1BaseWaveformA, setValue: setLine1BaseWaveformA } =
+		useSynthParam("line1BaseWaveformA");
+	const { value: line1BaseWaveformB, setValue: setLine1BaseWaveformB } =
+		useSynthParam("line1BaseWaveformB");
 	const { value: line2DcoEnv, setValue: setLine2DcoEnv } =
 		useSynthParam("line2DcoEnv");
 	const { value: line2DcwEnv, setValue: setLine2DcwEnv } =
@@ -87,6 +91,10 @@ export default function PhaseLinesSection({
 		useSynthParam("line2AlgoControlsA");
 	const { value: line2AlgoControlsB, setValue: setLine2AlgoControlsB } =
 		useSynthParam("line2AlgoControlsB");
+	const { value: line2BaseWaveformA, setValue: setLine2BaseWaveformA } =
+		useSynthParam("line2BaseWaveformA");
+	const { value: line2BaseWaveformB, setValue: setLine2BaseWaveformB } =
+		useSynthParam("line2BaseWaveformB");
 	const line1 = {
 		warpAmount: warpAAmount,
 		setWarpAmount: setWarpAAmount,
@@ -118,6 +126,10 @@ export default function PhaseLinesSection({
 		setAlgoControlsA: setLine1AlgoControlsA,
 		algoControlsB: line1AlgoControlsB,
 		setAlgoControlsB: setLine1AlgoControlsB,
+		baseWaveformA: line1BaseWaveformA,
+		setBaseWaveformA: setLine1BaseWaveformA,
+		baseWaveformB: line1BaseWaveformB,
+		setBaseWaveformB: setLine1BaseWaveformB,
 	};
 
 	const line2 = {
@@ -151,6 +163,10 @@ export default function PhaseLinesSection({
 		setAlgoControlsA: setLine2AlgoControlsA,
 		algoControlsB: line2AlgoControlsB,
 		setAlgoControlsB: setLine2AlgoControlsB,
+		baseWaveformA: line2BaseWaveformA,
+		setBaseWaveformA: setLine2BaseWaveformA,
+		baseWaveformB: line2BaseWaveformB,
+		setBaseWaveformB: setLine2BaseWaveformB,
 	};
 
 	const activeTab = useSynthUiStore((s) => s.phaseLinePanelTab);
@@ -258,6 +274,10 @@ export default function PhaseLinesSection({
 						setCzSlotBWaveform={activeLineConfig.setCzSlotBWaveform}
 						czWindow={activeLineConfig.czWindow}
 						setCzWindow={activeLineConfig.setCzWindow}
+						baseWaveformA={activeLineConfig.baseWaveformA}
+						setBaseWaveformA={activeLineConfig.setBaseWaveformA}
+						baseWaveformB={activeLineConfig.baseWaveformB}
+						setBaseWaveformB={activeLineConfig.setBaseWaveformB}
 						algoControlsA={activeLineConfig.algoControlsA}
 						setAlgoControlsA={activeLineConfig.setAlgoControlsA}
 						algoControlsB={activeLineConfig.algoControlsB}

@@ -21,12 +21,8 @@ import ScopePanel, {
 } from "@/components/panels/analysis/ScopePanel";
 import FxConsoleDrawer from "@/components/panels/drawers/FxConsoleDrawer";
 import ModConsoleDrawer from "@/components/panels/drawers/ModConsoleDrawer";
-import ChorusPanel from "@/components/panels/fx/ChorusPanel";
-import DelayPanel from "@/components/panels/fx/DelayPanel";
-import ReverbPanel from "@/components/panels/fx/ReverbPanel";
+import { FX_SLOT_PANELS } from "@/components/panels/fx/FxSlotPanel";
 import GlobalVoicePanel from "@/components/panels/voice/GlobalVoicePanel";
-import PhaseModPanel from "@/components/panels/voice/PhaseModPanel";
-import VibratoPanel from "@/components/panels/voice/VibratoPanel";
 import PresetLibrary from "@/components/preset/PresetLibrary";
 import SynthHeader, {
 	type SynthHeaderProps,
@@ -43,7 +39,6 @@ import { PARAM_META } from "@/lib/synth/paramMeta";
 import { HoverInfoProvider, useHoverInfo } from "../layout/HoverInfo";
 import MiniKeyboardOverlay from "../layout/MiniKeyboardOverlay";
 import SynthInfoBar from "../layout/SynthInfoBar";
-import PhaserPanel from "../panels/fx/PhaserPanel";
 
 type SynthRendererProps = {
 	headerProps: SynthHeaderProps;
@@ -176,7 +171,7 @@ function SynthRendererContent({
 						/>
 						{headerExtra}
 					</div>
-					<div className="relative z-10 px-1 grid flex-1 min-h-0 min-w-0 w-full gap-2 xl:gap-3 grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)] overflow-hidden">
+					<div className="relative z-10 px-1 flex flex-1 min-h-0 min-w-0 w-full gap-2 overflow-hidden">
 						<aside className="overflow-y-auto min-h-0 rounded-[1.15rem] border border-cz-border/80 bg-cz-inset px-0 pb-2 shadow-lg [scrollbar-gutter:stable]">
 							<div className="px-4 mt-4 mx-auto">
 								<ScopeMiniDisplay
@@ -192,13 +187,10 @@ function SynthRendererContent({
 								onTabChange={onAsidePanelChange}
 							>
 								<GlobalVoicePanel />
-								<PhaseModPanel />
-								<VibratoPanel />
 								<ScopePanel />
-								<ChorusPanel />
-								<PhaserPanel />
-								<DelayPanel />
-								<ReverbPanel />
+								{FX_SLOT_PANELS.map((Panel) => (
+									<Panel key={Panel.panelId} />
+								))}
 							</AsidePanelSwitcher>
 						</aside>
 

@@ -4,19 +4,23 @@ import CzButton from "@/components/primitives/CzButton";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
-import { useSynthParam } from "@/features/synth/SynthParamController";
+import { useSynthStore } from "@/features/synth/synthStore";
 import { PHASE_MOD_PRESETS } from "@/lib/synth/modulePresets";
-import { PARAM_META } from "@/lib/synth/paramMeta";
 
-export default function PhaseModModule() {
+const PHASE_MOD_TOOLTIPS = {
+	amount: "Sets internal phase modulation depth.",
+	ratio: "Sets modulator-to-carrier frequency ratio.",
+	pmPre: "Applies phase modulation before phase distortion warping.",
+};
+
+export default function PhaseModModule({ slot }: { slot: number }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("");
-	const { value: phaseModEnabled, setValue: setPhaseModEnabled } =
-		useSynthParam("phaseModEnabled");
-	const { value: intPmAmount, setValue: setIntPmAmount } =
-		useSynthParam("intPmAmount");
-	const { value: intPmRatio, setValue: setIntPmRatio } =
-		useSynthParam("intPmRatio");
-	const { value: pmPre, setValue: setPmPre } = useSynthParam("pmPre");
+	const rawSlot = useSynthStore((s) => s.fxSlots[slot]);
+	const setFxSlotEnabled = useSynthStore((s) => s.setFxSlotEnabled);
+	const setFxSlotParams = useSynthStore((s) => s.setFxSlotParams);
+
+	if (rawSlot?.type !== "phaseMod") return null;
+	const params = rawSlot.params;
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
@@ -25,10 +29,12 @@ export default function PhaseModModule() {
 			return;
 		}
 
-		setPhaseModEnabled(preset.patch.intPmEnabled);
-		setIntPmAmount(preset.patch.intPmAmount);
-		setIntPmRatio(preset.patch.intPmRatio);
-		setPmPre(preset.patch.pmPre);
+		setFxSlotParams(slot, {
+			enabled: preset.patch.intPmEnabled,
+			amount: preset.patch.intPmAmount,
+			ratio: preset.patch.intPmRatio,
+			pmPre: preset.patch.pmPre,
+		});
 		requestApplyModulePreset({
 			module: "phaseMod",
 			preset: preset.id,
@@ -49,42 +55,43 @@ export default function PhaseModModule() {
 					onChange={handlePresetChange}
 				/>
 			}
-			enabled={phaseModEnabled}
+			enabled={params.enabled}
 			columns={2}
-			onToggle={() => setPhaseModEnabled(!phaseModEnabled)}
+			onToggle={() => setFxSlotEnabled(slot, !params.enabled)}
 		>
 			<CzButton
-				active={pmPre}
-				onClick={() => setPmPre(!pmPre)}
-				tooltip={PARAM_META.pmPre?.tooltip}
+				active={params.pmPre}
+				onClick={() => setFxSlotParams(slot, { pmPre: !params.pmPre })}
+				tooltip={PHASE_MOD_TOOLTIPS.pmPre}
 				className="h-16 px-2 col-span-2"
 			>
 				Pre
 			</CzButton>
 
 			<ControlKnob
-				value={intPmAmount}
-				onChange={setIntPmAmount}
+				value={params.amount}
+				onChange={(value) => setFxSlotParams(slot, { amount: value })}
 				min={0}
 				max={0.3}
 				defaultValue={0.03}
 				size={52}
 				color="#be3330"
 				label="Amount"
-				tooltip={PARAM_META.intPmAmount?.tooltip}
-				valueFormatter={(value) => value.toFixed(2)}
+				tooltip={PHASE_MOD_TOOLTIPS.amount}
+				valueFormatter={(value) => value?.toFixed(2)}
 			/>
 			<ControlKnob
-				value={intPmRatio}
-				onChange={setIntPmRatio}
+				value={params.ratio}
+				onChange={(value) => setFxSlotParams(slot, { ratio: value })}
 				min={0.5}
 				max={4}
 				defaultValue={1.0}
 				size={52}
 				color="#be3330"
 				label="Ratio"
-				tooltip={PARAM_META.intPmRatio?.tooltip}
-				valueFormatter={(value) => value.toFixed(1)}
+				tooltip={PHASE_MOD_TOOLTIPS.ratio}
+				valueFormatter={(value) => value?.toFixed(1)}
+				modDestination="intPmRatio"
 			/>
 		</ModuleFrame>
 	);

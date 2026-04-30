@@ -51,6 +51,7 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
 	name: "Quantize",
 	icon_path: "M4,12 L6,12 L6,8 L8,8 L8,16 L10,16 L10,10 L12,10 L12,14 L14,14 L14,6 L16,6 L16,18 L18,18 L18,12 L20,12",
 	visible: false,
+	default_base_waveform: crate::params::BaseWaveform::Sine,
 	controls: &CONTROLS,
 };
 

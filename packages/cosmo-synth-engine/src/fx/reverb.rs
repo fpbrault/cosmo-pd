@@ -172,6 +172,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(1.0),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("reverbMix"),
     },
     FxControlV1 {
         id: "space",
@@ -182,6 +183,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(1.0),
         default_f32: Some(0.5),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("reverbSpace"),
     },
     FxControlV1 {
         id: "predelay",
@@ -192,6 +194,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(0.1),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("reverbPredelay"),
     },
     FxControlV1 {
         id: "distance",
@@ -202,6 +205,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(1.0),
         default_f32: Some(0.3),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("reverbDistance"),
     },
     FxControlV1 {
         id: "character",
@@ -212,6 +216,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(1.0),
         default_f32: Some(0.65),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("reverbCharacter"),
     },
 ];
 

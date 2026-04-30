@@ -1,6 +1,7 @@
 import { memo, useEffect, useMemo, useRef } from "react";
 import Card from "@/components/primitives/Card";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { useSynthStore } from "@/features/synth/synthStore";
 import { computeWaveform } from "@/lib/synth/pdAlgorithms";
 
 interface SingleCycleDisplayProps {
@@ -74,11 +75,14 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay() {
 	const { value: algo2B } = useSynthParam("algo2B");
 	const { value: algoBlendA } = useSynthParam("algoBlendA");
 	const { value: algoBlendB } = useSynthParam("algoBlendB");
-	const { value: intPmAmount } = useSynthParam("intPmAmount");
-	const { value: intPmRatio } = useSynthParam("intPmRatio");
-	const { value: pmPre } = useSynthParam("pmPre");
+	const phaseModSlot = useSynthStore((s) => s.fxSlots[4]);
 	const { value: windowType } = useSynthParam("windowType");
-	const { value: phaseModEnabled } = useSynthParam("phaseModEnabled");
+	const phaseModParams =
+		phaseModSlot?.type === "phaseMod" ? phaseModSlot.params : null;
+	const intPmAmount = phaseModParams?.amount ?? 0;
+	const intPmRatio = phaseModParams?.ratio ?? 1;
+	const pmPre = phaseModParams?.pmPre ?? true;
+	const phaseModEnabled = phaseModParams?.enabled ?? false;
 	const effectiveIntPmAmount = phaseModEnabled ? intPmAmount : 0;
 	const { value: line1Level } = useSynthParam("line1Level");
 	const { value: line2Level } = useSynthParam("line2Level");

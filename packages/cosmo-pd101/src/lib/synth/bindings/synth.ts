@@ -47,6 +47,11 @@ export type CzAlgo = "saw" | "square" | "pulse" | "doubleSine" | "sawPulse" | "r
 export type CzWaveform = "saw" | "square" | "pulse" | "null" | "sinePulse" | "sawPulse" | "multiSine" | "pulse2"
 
 /**
+ * Base waveform used as the final carrier for warp algorithms.
+ */
+export type BaseWaveform = "cosine" | "sine" | "triangle" | "saw" | "square"
+
+/**
  * Per-line CZ slot controls.
  * 
  * Slot A/Slot B alternate per cycle in CZ mode. Setting both slots to the
@@ -177,6 +182,23 @@ depth: number;
 delay: number }
 
 /**
+ * Phase modulation parameters
+ */
+export type PhaseModParams = { enabled: boolean; 
+/**
+ * Internal PM depth (0.0–0.5)
+ */
+amount: number; 
+/**
+ * Modulator-to-carrier frequency ratio (0.5–8.0)
+ */
+ratio: number; 
+/**
+ * Apply PM before warp shaping when true
+ */
+pmPre: boolean }
+
+/**
  * Parameters for the random (sample-and-hold) modulation source.
  */
 export type RandomParams = { 
@@ -249,7 +271,7 @@ export type AlgoControlValueV1 = { id: string; value: number }
 /**
  * Per-line parameters
  */
-export type LineParams = { algo: Algo; algo2: Algo | null; algoBlend: number; window: WindowType; dcaBase: number; dcwBase: number; modulation: number; detuneCents: number; octave: number; dcoEnv: StepEnvData; dcwEnv: StepEnvData; dcaEnv: StepEnvData; keyFollow: number; cz?: CzLineParams; algoControlsA?: AlgoControlValueV1[] | null; algoControlsB?: AlgoControlValueV1[] | null }
+export type LineParams = { algo: Algo; algo2: Algo | null; algoBlend: number; baseWaveformA?: BaseWaveform; baseWaveformB?: BaseWaveform; window: WindowType; dcaBase: number; dcwBase: number; modulation: number; detuneCents: number; octave: number; dcoEnv: StepEnvData; dcwEnv: StepEnvData; dcaEnv: StepEnvData; keyFollow: number; cz?: CzLineParams; algoControlsA?: AlgoControlValueV1[] | null; algoControlsB?: AlgoControlValueV1[] | null }
 
 /**
  * Describes one control surfaced by an algorithm package.
@@ -279,7 +301,7 @@ export type AlgoControlV1 = { id: string; label: string; description: string; ki
 /**
  * Complete algorithm package definition.
  */
-export type AlgoDefinitionV1 = { id: Algo; name: string; iconPath: string; visible: boolean; controls: AlgoControlV1[] }
+export type AlgoDefinitionV1 = { id: Algo; name: string; iconPath: string; visible: boolean; defaultBaseWaveform: BaseWaveform; controls: AlgoControlV1[] }
 
 /**
  * UI catalog entry for algorithm pickers.
@@ -308,7 +330,7 @@ export type ModSource = "lfo1" |
 /**
  * Modulation destination selector for modulation matrix routes.
  */
-export type ModDestination = "volume" | "pitch" | "intPmAmount" | "line1DcwBase" | "line1DcaBase" | "line1AlgoBlend" | "line1Detune" | "line1Octave" | "line1AlgoParam1" | "line1AlgoParam2" | "line1AlgoParam3" | "line1AlgoParam4" | "line1AlgoParam5" | "line1AlgoParam6" | "line1AlgoParam7" | "line1AlgoParam8" | "line2DcwBase" | "line2DcaBase" | "line2AlgoBlend" | "line2Detune" | "line2Octave" | "line2AlgoParam1" | "line2AlgoParam2" | "line2AlgoParam3" | "line2AlgoParam4" | "line2AlgoParam5" | "line2AlgoParam6" | "line2AlgoParam7" | "line2AlgoParam8" | "filterCutoff" | "filterResonance" | "filterEnvAmount" | "chorusMix" | "delayMix" | "reverbMix" | "vibratoDepth" | "lfoDepth" | "lfoRate" | "line1DcoEnvStep1Level" | "line1DcoEnvStep1Rate" | "line1DcoEnvStep2Level" | "line1DcoEnvStep2Rate" | "line1DcoEnvStep3Level" | "line1DcoEnvStep3Rate" | "line1DcoEnvStep4Level" | "line1DcoEnvStep4Rate" | "line1DcoEnvStep5Level" | "line1DcoEnvStep5Rate" | "line1DcoEnvStep6Level" | "line1DcoEnvStep6Rate" | "line1DcoEnvStep7Level" | "line1DcoEnvStep7Rate" | "line1DcoEnvStep8Level" | "line1DcoEnvStep8Rate" | "line1DcwEnvStep1Level" | "line1DcwEnvStep1Rate" | "line1DcwEnvStep2Level" | "line1DcwEnvStep2Rate" | "line1DcwEnvStep3Level" | "line1DcwEnvStep3Rate" | "line1DcwEnvStep4Level" | "line1DcwEnvStep4Rate" | "line1DcwEnvStep5Level" | "line1DcwEnvStep5Rate" | "line1DcwEnvStep6Level" | "line1DcwEnvStep6Rate" | "line1DcwEnvStep7Level" | "line1DcwEnvStep7Rate" | "line1DcwEnvStep8Level" | "line1DcwEnvStep8Rate" | "line1DcaEnvStep1Level" | "line1DcaEnvStep1Rate" | "line1DcaEnvStep2Level" | "line1DcaEnvStep2Rate" | "line1DcaEnvStep3Level" | "line1DcaEnvStep3Rate" | "line1DcaEnvStep4Level" | "line1DcaEnvStep4Rate" | "line1DcaEnvStep5Level" | "line1DcaEnvStep5Rate" | "line1DcaEnvStep6Level" | "line1DcaEnvStep6Rate" | "line1DcaEnvStep7Level" | "line1DcaEnvStep7Rate" | "line1DcaEnvStep8Level" | "line1DcaEnvStep8Rate" | "line2DcoEnvStep1Level" | "line2DcoEnvStep1Rate" | "line2DcoEnvStep2Level" | "line2DcoEnvStep2Rate" | "line2DcoEnvStep3Level" | "line2DcoEnvStep3Rate" | "line2DcoEnvStep4Level" | "line2DcoEnvStep4Rate" | "line2DcoEnvStep5Level" | "line2DcoEnvStep5Rate" | "line2DcoEnvStep6Level" | "line2DcoEnvStep6Rate" | "line2DcoEnvStep7Level" | "line2DcoEnvStep7Rate" | "line2DcoEnvStep8Level" | "line2DcoEnvStep8Rate" | "line2DcwEnvStep1Level" | "line2DcwEnvStep1Rate" | "line2DcwEnvStep2Level" | "line2DcwEnvStep2Rate" | "line2DcwEnvStep3Level" | "line2DcwEnvStep3Rate" | "line2DcwEnvStep4Level" | "line2DcwEnvStep4Rate" | "line2DcwEnvStep5Level" | "line2DcwEnvStep5Rate" | "line2DcwEnvStep6Level" | "line2DcwEnvStep6Rate" | "line2DcwEnvStep7Level" | "line2DcwEnvStep7Rate" | "line2DcwEnvStep8Level" | "line2DcwEnvStep8Rate" | "line2DcaEnvStep1Level" | "line2DcaEnvStep1Rate" | "line2DcaEnvStep2Level" | "line2DcaEnvStep2Rate" | "line2DcaEnvStep3Level" | "line2DcaEnvStep3Rate" | "line2DcaEnvStep4Level" | "line2DcaEnvStep4Rate" | "line2DcaEnvStep5Level" | "line2DcaEnvStep5Rate" | "line2DcaEnvStep6Level" | "line2DcaEnvStep6Rate" | "line2DcaEnvStep7Level" | "line2DcaEnvStep7Rate" | "line2DcaEnvStep8Level" | "line2DcaEnvStep8Rate" | "chorusRate" | "chorusDepth" | "delayTime" | "delayFeedback" | "delayWarmth" | "reverbSpace" | "reverbPredelay" | "reverbDistance" | "reverbCharacter" | "phaserRate" | "phaserDepth" | "phaserFeedback" | "phaserMix" | "lfo1Rate" | "lfo1Depth" | "lfo1Symmetry" | "lfo1Offset" | "lfo2Rate" | "lfo2Depth" | "lfo2Symmetry" | "lfo2Offset" | "randomRate"
+export type ModDestination = "volume" | "pitch" | "line1DcwBase" | "line1DcaBase" | "line1AlgoBlend" | "line1Detune" | "line1Octave" | "line1AlgoParam1" | "line1AlgoParam2" | "line1AlgoParam3" | "line1AlgoParam4" | "line1AlgoParam5" | "line1AlgoParam6" | "line1AlgoParam7" | "line1AlgoParam8" | "line2DcwBase" | "line2DcaBase" | "line2AlgoBlend" | "line2Detune" | "line2Octave" | "line2AlgoParam1" | "line2AlgoParam2" | "line2AlgoParam3" | "line2AlgoParam4" | "line2AlgoParam5" | "line2AlgoParam6" | "line2AlgoParam7" | "line2AlgoParam8" | "filterCutoff" | "filterResonance" | "filterEnvAmount" | "chorusMix" | "delayMix" | "reverbMix" | "vibratoDepth" | "vibratoRate" | "intPmRatio" | "line1DcoEnvStep1Level" | "line1DcoEnvStep1Rate" | "line1DcoEnvStep2Level" | "line1DcoEnvStep2Rate" | "line1DcoEnvStep3Level" | "line1DcoEnvStep3Rate" | "line1DcoEnvStep4Level" | "line1DcoEnvStep4Rate" | "line1DcoEnvStep5Level" | "line1DcoEnvStep5Rate" | "line1DcoEnvStep6Level" | "line1DcoEnvStep6Rate" | "line1DcoEnvStep7Level" | "line1DcoEnvStep7Rate" | "line1DcoEnvStep8Level" | "line1DcoEnvStep8Rate" | "line1DcwEnvStep1Level" | "line1DcwEnvStep1Rate" | "line1DcwEnvStep2Level" | "line1DcwEnvStep2Rate" | "line1DcwEnvStep3Level" | "line1DcwEnvStep3Rate" | "line1DcwEnvStep4Level" | "line1DcwEnvStep4Rate" | "line1DcwEnvStep5Level" | "line1DcwEnvStep5Rate" | "line1DcwEnvStep6Level" | "line1DcwEnvStep6Rate" | "line1DcwEnvStep7Level" | "line1DcwEnvStep7Rate" | "line1DcwEnvStep8Level" | "line1DcwEnvStep8Rate" | "line1DcaEnvStep1Level" | "line1DcaEnvStep1Rate" | "line1DcaEnvStep2Level" | "line1DcaEnvStep2Rate" | "line1DcaEnvStep3Level" | "line1DcaEnvStep3Rate" | "line1DcaEnvStep4Level" | "line1DcaEnvStep4Rate" | "line1DcaEnvStep5Level" | "line1DcaEnvStep5Rate" | "line1DcaEnvStep6Level" | "line1DcaEnvStep6Rate" | "line1DcaEnvStep7Level" | "line1DcaEnvStep7Rate" | "line1DcaEnvStep8Level" | "line1DcaEnvStep8Rate" | "line2DcoEnvStep1Level" | "line2DcoEnvStep1Rate" | "line2DcoEnvStep2Level" | "line2DcoEnvStep2Rate" | "line2DcoEnvStep3Level" | "line2DcoEnvStep3Rate" | "line2DcoEnvStep4Level" | "line2DcoEnvStep4Rate" | "line2DcoEnvStep5Level" | "line2DcoEnvStep5Rate" | "line2DcoEnvStep6Level" | "line2DcoEnvStep6Rate" | "line2DcoEnvStep7Level" | "line2DcoEnvStep7Rate" | "line2DcoEnvStep8Level" | "line2DcoEnvStep8Rate" | "line2DcwEnvStep1Level" | "line2DcwEnvStep1Rate" | "line2DcwEnvStep2Level" | "line2DcwEnvStep2Rate" | "line2DcwEnvStep3Level" | "line2DcwEnvStep3Rate" | "line2DcwEnvStep4Level" | "line2DcwEnvStep4Rate" | "line2DcwEnvStep5Level" | "line2DcwEnvStep5Rate" | "line2DcwEnvStep6Level" | "line2DcwEnvStep6Rate" | "line2DcwEnvStep7Level" | "line2DcwEnvStep7Rate" | "line2DcwEnvStep8Level" | "line2DcwEnvStep8Rate" | "line2DcaEnvStep1Level" | "line2DcaEnvStep1Rate" | "line2DcaEnvStep2Level" | "line2DcaEnvStep2Rate" | "line2DcaEnvStep3Level" | "line2DcaEnvStep3Rate" | "line2DcaEnvStep4Level" | "line2DcaEnvStep4Rate" | "line2DcaEnvStep5Level" | "line2DcaEnvStep5Rate" | "line2DcaEnvStep6Level" | "line2DcaEnvStep6Rate" | "line2DcaEnvStep7Level" | "line2DcaEnvStep7Rate" | "line2DcaEnvStep8Level" | "line2DcaEnvStep8Rate" | "chorusRate" | "chorusDepth" | "delayTime" | "delayFeedback" | "delayWarmth" | "reverbSpace" | "reverbPredelay" | "reverbDistance" | "reverbCharacter" | "phaserRate" | "phaserDepth" | "phaserFeedback" | "phaserMix" | "lfo1Rate" | "lfo1Depth" | "lfo1Symmetry" | "lfo1Offset" | "lfo2Rate" | "lfo2Depth" | "lfo2Symmetry" | "lfo2Offset" | "randomRate" | "vibratoDelay" | "compressorThreshold" | "compressorRatio" | "compressorMakeup" | "compressorMix" | "grainDelayTime" | "grainDelayFeedback" | "grainDelayScatter" | "grainDelayDensity" | "grainDelayMix" | "bitcrusherBits" | "bitcrusherRateReduction" | "bitcrusherMix" | "shimmerVerbShimmer" | "shimmerVerbSpace" | "shimmerVerbMix" | "distortionDrive" | "distortionTone" | "distortionMix" | "junoChorusMix" | "ringModCarrierHz" | "ringModMix" | "tremoloRate" | "tremoloDepth" | "tremoloMix" | "wavefolderDrive" | "wavefolderFolds" | "wavefolderMix" | "loFiDegrade" | "loFiWowDepth" | "loFiWowRate" | "loFiFlutterDepth" | "loFiFlutterRate" | "loFiTone" | "loFiMix" | "eqGain80" | "eqGain240" | "eqGain750" | "eqGain2200" | "eqGain8000"
 
 /**
  * A single modulation route assignment.
@@ -389,12 +411,12 @@ export type LoFiParams = { enabled?: boolean; degrade?: number; wowDepth?: numbe
  * Serializes as `{"type": "chorus", "params": {...}}` for effects,
  * or `{"type": "empty"}` for empty slots.
  */
-export type FxSlotConfig = { type: "empty" } | { type: "chorus"; params: ChorusParams } | { type: "phaser"; params: PhaserParams } | { type: "delay"; params: DelayParams } | { type: "reverb"; params: ReverbParams } | { type: "vibrato"; params: VibratoParams } | { type: "phaseMod" } | { type: "compressor"; params: CompressorParams } | { type: "eq5Band"; params: EqParams } | { type: "grainDelay"; params: GrainDelayParams } | { type: "bitcrusher"; params: BitcrusherParams } | { type: "shimmerVerb"; params: ShimmerVerbParams } | { type: "distortion"; params: DistortionParams } | { type: "junoChorus"; params: JunoChorusParams } | { type: "ringMod"; params: RingModParams } | { type: "tremolo"; params: TremoloParams } | { type: "wavefolder"; params: WavefolderParams } | { type: "loFi"; params: LoFiParams }
+export type FxSlotConfig = { type: "empty" } | { type: "chorus"; params: ChorusParams } | { type: "phaser"; params: PhaserParams } | { type: "delay"; params: DelayParams } | { type: "reverb"; params: ReverbParams } | { type: "vibrato"; params: VibratoParams } | { type: "phaseMod"; params: PhaseModParams } | { type: "compressor"; params: CompressorParams } | { type: "eq5Band"; params: EqParams } | { type: "grainDelay"; params: GrainDelayParams } | { type: "bitcrusher"; params: BitcrusherParams } | { type: "shimmerVerb"; params: ShimmerVerbParams } | { type: "distortion"; params: DistortionParams } | { type: "junoChorus"; params: JunoChorusParams } | { type: "ringMod"; params: RingModParams } | { type: "tremolo"; params: TremoloParams } | { type: "wavefolder"; params: WavefolderParams } | { type: "loFi"; params: LoFiParams }
 
 /**
  * Top-level synth parameters (mirrors this.params in the JS)
  */
-export type SynthParams = { lineSelect: LineSelect; modMode: ModMode; ringGain?: number; octave: number; line1: LineParams; line2: LineParams; intPmEnabled?: boolean; intPmAmount: number; intPmRatio: number; extPmAmount: number; pmPre: boolean; frequency: number; volume: number; polyMode: PolyMode; legato: boolean; chorus?: ChorusParams; delay?: DelayParams; reverb?: ReverbParams; phaser?: PhaserParams; vibrato?: VibratoParams; portamento: PortamentoParams; lfo: LfoParams; lfo2?: LfoParams; filter: FilterParams; 
+export type SynthParams = { lineSelect: LineSelect; modMode: ModMode; ringGain?: number; octave: number; line1: LineParams; line2: LineParams; frequency: number; volume: number; polyMode: PolyMode; legato: boolean; chorus?: ChorusParams; delay?: DelayParams; reverb?: ReverbParams; phaser?: PhaserParams; portamento: PortamentoParams; lfo: LfoParams; lfo2?: LfoParams; filter: FilterParams; 
 /**
  * Pitch bend wheel range in semitones (1-24). Default 2.
  */
@@ -408,6 +430,11 @@ modWheelVibratoDepth?: number;
  * Modulation matrix routes for source-to-destination parameter modulation.
  */
 modMatrix?: ModMatrix; 
+/**
+ * Velocity sensitivity curve applied to note-on velocity → amplitude mapping.
+ * 0 = linear, negative = softer response, positive = louder at low velocities.
+ */
+velocityCurve?: number; 
 /**
  * Parameters for the random (sample-and-hold) modulation source.
  */
@@ -424,7 +451,7 @@ fxSlots?: [FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig,
 /**
  * Canonical, versioned synth preset wire contract.
  */
-export type SynthPresetV1 = { schemaVersion?: number; params: SynthParams }
+export type SynthPresetV1 = { schemaVersion: number; params: SynthParams }
 
 /**
  * A named CZ waveform combination preset (slot A waveform, slot B waveform, window function).
@@ -453,7 +480,11 @@ export type FxControlV1 = { id: string; label: string; kind: FxControlKindV1; bi
 /**
  * Options for `ButtonGroup` controls (empty slice for knobs/toggles).
  */
-options: FxControlOptionV1[] }
+options: FxControlOptionV1[]; 
+/**
+ * Mod matrix destination key for this control, if it can be a mod target.
+ */
+modDestinationKey: string | null }
 
 /**
  * Complete definition of an FX slot module — controls, name, and preset catalog.
@@ -547,6 +578,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "CZ101",
     "iconPath": "M4,12 L20,12",
     "visible": true,
+    "defaultBaseWaveform": "cosine",
     "controls": [
       {
         "id": "preset",
@@ -869,6 +901,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Bend",
     "iconPath": "M4,18 C10,18 14,10 20,4",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "bendCurve",
@@ -919,6 +952,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Sync",
     "iconPath": "M4,20 L8,4 L8,20 L12,4 L12,20 L16,4 L16,20 L20,4",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "syncRatio",
@@ -983,6 +1017,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Pinch",
     "iconPath": "M4,12 C8,4 10,12 12,12 C14,12 16,20 20,12",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "pinchFocus",
@@ -1047,6 +1082,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Fold",
     "iconPath": "M4,20 L8,4 L12,20 L16,4 L20,20",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "foldStages",
@@ -1111,6 +1147,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Skew",
     "iconPath": "M4,20 L10,6 L20,4",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "skewBias",
@@ -1175,6 +1212,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Twist",
     "iconPath": "M4,12 C8,2 16,22 20,12",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "twistHarmonics",
@@ -1239,6 +1277,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Clip",
     "iconPath": "M4,16 L8,16 L8,8 L16,8 L16,16 L20,16",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "clipDrive",
@@ -1303,6 +1342,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Ripple",
     "iconPath": "M4,12 C6,8 8,16 10,12 C12,8 14,16 16,12 C18,8 19,13 20,12",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "rippleFreq",
@@ -1367,6 +1407,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Mirror",
     "iconPath": "M4,20 L12,4 L20,20",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "mirrorCenter",
@@ -1431,6 +1472,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Karpunk",
     "iconPath": "M4,16 C8,2 12,22 16,8 L20,12",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "karpunkDamp",
@@ -1495,6 +1537,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "FOF",
     "iconPath": "M4,16 C8,4 10,4 12,16 C14,4 16,4 20,16",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "fofRatio",
@@ -1630,7 +1673,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.1,
         "max": 10.0,
         "defaultF32": 0.8,
-        "options": []
+        "options": [],
+        "modDestinationKey": "chorusRate"
       },
       {
         "id": "depth",
@@ -1640,7 +1684,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 5.0,
         "defaultF32": 0.003,
-        "options": []
+        "options": [],
+        "modDestinationKey": "chorusDepth"
       },
       {
         "id": "mix",
@@ -1650,7 +1695,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "chorusMix"
       }
     ],
     "presets": [
@@ -1680,7 +1726,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.01,
         "max": 2.0,
         "defaultF32": 0.3,
-        "options": []
+        "options": [],
+        "modDestinationKey": "delayTime"
       },
       {
         "id": "feedback",
@@ -1690,7 +1737,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 0.99,
         "defaultF32": 0.35,
-        "options": []
+        "options": [],
+        "modDestinationKey": "delayFeedback"
       },
       {
         "id": "mix",
@@ -1700,7 +1748,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "delayMix"
       },
       {
         "id": "tapeMode",
@@ -1721,7 +1770,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
             "label": "Tape",
             "iconName": null
           }
-        ]
+        ],
+        "modDestinationKey": null
       },
       {
         "id": "warmth",
@@ -1731,7 +1781,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "delayWarmth"
       }
     ],
     "presets": [
@@ -1761,7 +1812,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "reverbMix"
       },
       {
         "id": "space",
@@ -1771,7 +1823,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "reverbSpace"
       },
       {
         "id": "predelay",
@@ -1781,7 +1834,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 0.1,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "reverbPredelay"
       },
       {
         "id": "distance",
@@ -1791,7 +1845,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.3,
-        "options": []
+        "options": [],
+        "modDestinationKey": "reverbDistance"
       },
       {
         "id": "character",
@@ -1801,7 +1856,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.65,
-        "options": []
+        "options": [],
+        "modDestinationKey": "reverbCharacter"
       }
     ],
     "presets": [
@@ -1831,7 +1887,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.1,
         "max": 10.0,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "phaserRate"
       },
       {
         "id": "depth",
@@ -1841,7 +1898,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 1.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "phaserDepth"
       },
       {
         "id": "feedback",
@@ -1851,7 +1909,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": -0.9,
         "max": 0.9,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "phaserFeedback"
       },
       {
         "id": "mix",
@@ -1861,7 +1920,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "phaserMix"
       }
     ],
     "presets": [
@@ -1912,7 +1972,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
             "label": "Saw",
             "iconName": "waveSawtooth"
           }
-        ]
+        ],
+        "modDestinationKey": null
       },
       {
         "id": "rate",
@@ -1922,7 +1983,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 1.0,
         "max": 200.0,
         "defaultF32": 55.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "vibratoRate"
       },
       {
         "id": "depth",
@@ -1932,7 +1994,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 50.0,
         "defaultF32": 8.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "vibratoDepth"
       },
       {
         "id": "delay",
@@ -1942,7 +2005,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 500.0,
         "defaultF32": 120.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "vibratoDelay"
       }
     ],
     "presets": [
@@ -1972,7 +2036,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 0.5,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "intPmAmount"
       },
       {
         "id": "intPmRatio",
@@ -1982,7 +2047,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.5,
         "max": 8.0,
         "defaultF32": 2.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "intPmRatio"
       },
       {
         "id": "pmPre",
@@ -1992,7 +2058,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": null,
         "max": null,
         "defaultF32": 1.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": null
       }
     ],
     "presets": [
@@ -2022,7 +2089,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": -60.0,
         "max": 0.0,
         "defaultF32": -12.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "compressorThreshold"
       },
       {
         "id": "ratio",
@@ -2032,7 +2100,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 1.0,
         "max": 20.0,
         "defaultF32": 4.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "compressorRatio"
       },
       {
         "id": "attackMs",
@@ -2042,7 +2111,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.1,
         "max": 200.0,
         "defaultF32": 5.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": null
       },
       {
         "id": "releaseMs",
@@ -2052,7 +2122,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 10.0,
         "max": 2000.0,
         "defaultF32": 100.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": null
       },
       {
         "id": "makeupDb",
@@ -2062,7 +2133,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 24.0,
         "defaultF32": 6.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "compressorMakeup"
       },
       {
         "id": "mix",
@@ -2072,7 +2144,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 1.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "compressorMix"
       }
     ],
     "presets": [
@@ -2102,7 +2175,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": -12.0,
         "max": 12.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "eqGain80"
       },
       {
         "id": "gain240",
@@ -2112,7 +2186,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": -12.0,
         "max": 12.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "eqGain240"
       },
       {
         "id": "gain750",
@@ -2122,7 +2197,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": -12.0,
         "max": 12.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "eqGain750"
       },
       {
         "id": "gain2200",
@@ -2132,7 +2208,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": -12.0,
         "max": 12.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "eqGain2200"
       },
       {
         "id": "gain8000",
@@ -2142,7 +2219,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": -12.0,
         "max": 12.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "eqGain8000"
       }
     ],
     "presets": [
@@ -2172,7 +2250,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.01,
         "max": 1.0,
         "defaultF32": 0.25,
-        "options": []
+        "options": [],
+        "modDestinationKey": "grainDelayTime"
       },
       {
         "id": "feedback",
@@ -2182,7 +2261,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 0.85,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "grainDelayFeedback"
       },
       {
         "id": "scatter",
@@ -2192,7 +2272,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "grainDelayScatter"
       },
       {
         "id": "density",
@@ -2202,7 +2283,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "grainDelayDensity"
       },
       {
         "id": "mix",
@@ -2212,7 +2294,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "grainDelayMix"
       }
     ],
     "presets": [
@@ -2242,7 +2325,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 1.0,
         "max": 16.0,
         "defaultF32": 8.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "bitcrusherBits"
       },
       {
         "id": "rateReduction",
@@ -2252,7 +2336,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 1.0,
         "max": 32.0,
         "defaultF32": 1.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "bitcrusherRateReduction"
       },
       {
         "id": "mix",
@@ -2262,7 +2347,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 1.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "bitcrusherMix"
       }
     ],
     "presets": [
@@ -2292,7 +2378,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.4,
-        "options": []
+        "options": [],
+        "modDestinationKey": "shimmerVerbShimmer"
       },
       {
         "id": "space",
@@ -2302,7 +2389,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.7,
-        "options": []
+        "options": [],
+        "modDestinationKey": "shimmerVerbSpace"
       },
       {
         "id": "mix",
@@ -2312,7 +2400,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "shimmerVerbMix"
       }
     ],
     "presets": [
@@ -2358,7 +2447,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
             "label": "Fuzz",
             "iconName": null
           }
-        ]
+        ],
+        "modDestinationKey": null
       },
       {
         "id": "drive",
@@ -2368,7 +2458,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "distortionDrive"
       },
       {
         "id": "tone",
@@ -2378,7 +2469,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "distortionTone"
       },
       {
         "id": "mix",
@@ -2388,7 +2480,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 1.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "distortionMix"
       }
     ],
     "presets": [
@@ -2434,7 +2527,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
             "label": "I+II",
             "iconName": null
           }
-        ]
+        ],
+        "modDestinationKey": null
       },
       {
         "id": "mix",
@@ -2444,7 +2538,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "junoChorusMix"
       }
     ],
     "presets": [
@@ -2474,7 +2569,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 20.0,
         "max": 4000.0,
         "defaultF32": 440.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "ringModCarrierHz"
       },
       {
         "id": "mix",
@@ -2484,7 +2580,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 1.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "ringModMix"
       }
     ],
     "presets": [
@@ -2514,7 +2611,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.1,
         "max": 20.0,
         "defaultF32": 4.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "tremoloRate"
       },
       {
         "id": "depth",
@@ -2524,7 +2622,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "tremoloDepth"
       },
       {
         "id": "waveform",
@@ -2550,7 +2649,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
             "label": "Sq",
             "iconName": "waveSquare"
           }
-        ]
+        ],
+        "modDestinationKey": null
       },
       {
         "id": "mix",
@@ -2560,7 +2660,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 1.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "tremoloMix"
       }
     ],
     "presets": [
@@ -2590,7 +2691,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "wavefolderDrive"
       },
       {
         "id": "folds",
@@ -2600,7 +2702,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.5,
-        "options": []
+        "options": [],
+        "modDestinationKey": "wavefolderFolds"
       },
       {
         "id": "mix",
@@ -2610,7 +2713,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 1.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "wavefolderMix"
       }
     ],
     "presets": [
@@ -2640,7 +2744,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.25,
-        "options": []
+        "options": [],
+        "modDestinationKey": "loFiDegrade"
       },
       {
         "id": "wowDepth",
@@ -2648,9 +2753,10 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "kind": "knob",
         "bipolar": false,
         "min": 0.0,
-        "max": 1.0,
-        "defaultF32": 0.35,
-        "options": []
+        "max": 0.2,
+        "defaultF32": 0.07,
+        "options": [],
+        "modDestinationKey": "loFiWowDepth"
       },
       {
         "id": "wowRate",
@@ -2660,7 +2766,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.03,
         "max": 2.5,
         "defaultF32": 0.42,
-        "options": []
+        "options": [],
+        "modDestinationKey": "loFiWowRate"
       },
       {
         "id": "flutterDepth",
@@ -2668,9 +2775,10 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "kind": "knob",
         "bipolar": false,
         "min": 0.0,
-        "max": 1.0,
-        "defaultF32": 0.18,
-        "options": []
+        "max": 0.2,
+        "defaultF32": 0.036,
+        "options": [],
+        "modDestinationKey": "loFiFlutterDepth"
       },
       {
         "id": "flutterRate",
@@ -2680,7 +2788,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.5,
         "max": 18.0,
         "defaultF32": 6.7,
-        "options": []
+        "options": [],
+        "modDestinationKey": "loFiFlutterRate"
       },
       {
         "id": "tone",
@@ -2690,7 +2799,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 0.45,
-        "options": []
+        "options": [],
+        "modDestinationKey": "loFiTone"
       },
       {
         "id": "mix",
@@ -2700,7 +2810,8 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "min": 0.0,
         "max": 1.0,
         "defaultF32": 1.0,
-        "options": []
+        "options": [],
+        "modDestinationKey": "loFiMix"
       }
     ],
     "presets": [
@@ -3077,7 +3188,7 @@ export type EngineParamReadoutFormatV1 =
   | { kind: "seconds2" }
   | { kind: "hertz" }
   | { kind: "enumMap"; values: EngineEnumValueLabelV1[] };
-export type EngineParamUiMetaV1 = { key: string; tooltip: string; readoutLabel: string; readoutFormat: EngineParamReadoutFormatV1 };
+export type EngineParamUiMetaV1 = { key: string; tooltip: string; readoutLabel: string; readoutFormat: EngineParamReadoutFormatV1; paramDefault: number | null };
 export type EngineEnumValueTooltipV1 = { key: string; value: string; tooltip: string };
 
 /** Rust-owned engine parameter tooltip and readout metadata. */
@@ -3088,7 +3199,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Volume",
     "readoutFormat": {
       "kind": "percent"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "warpAAmount",
@@ -3096,7 +3208,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Line 1 DCW",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "warpBAmount",
@@ -3104,7 +3217,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Line 2 DCW",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "algoBlendA",
@@ -3112,7 +3226,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Line 1 Blend",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "algoBlendB",
@@ -3120,7 +3235,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Line 2 Blend",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "line1Level",
@@ -3128,7 +3244,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Line 1 Level",
     "readoutFormat": {
       "kind": "percent"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "line2Level",
@@ -3136,7 +3253,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Line 2 Level",
     "readoutFormat": {
       "kind": "percent"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "line1Octave",
@@ -3144,7 +3262,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Line 1 Octave",
     "readoutFormat": {
       "kind": "integer"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "line2Octave",
@@ -3152,7 +3271,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Line 2 Octave",
     "readoutFormat": {
       "kind": "integer"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "line1Detune",
@@ -3160,7 +3280,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Line 1 Detune",
     "readoutFormat": {
       "kind": "integer"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "line2Detune",
@@ -3168,7 +3289,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Line 2 Detune",
     "readoutFormat": {
       "kind": "integer"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "lineSelect",
@@ -3176,7 +3298,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Line Select",
     "readoutFormat": {
       "kind": "raw"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "modMode",
@@ -3184,7 +3307,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Modulation",
     "readoutFormat": {
       "kind": "uppercase"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "polyMode",
@@ -3202,7 +3326,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
           "label": "MONO"
         }
       ]
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "intPmAmount",
@@ -3210,7 +3335,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "PM Amount",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "intPmRatio",
@@ -3218,7 +3344,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "PM Ratio",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "pmPre",
@@ -3226,7 +3353,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "PM Mode",
     "readoutFormat": {
       "kind": "onOff"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "vibratoRate",
@@ -3234,7 +3362,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Vibrato Rate",
     "readoutFormat": {
       "kind": "integer"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "vibratoDepth",
@@ -3242,7 +3371,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Vibrato Depth",
     "readoutFormat": {
       "kind": "integer"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "vibratoDelay",
@@ -3250,7 +3380,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Vibrato Delay",
     "readoutFormat": {
       "kind": "milliseconds"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "lfoWaveform",
@@ -3258,7 +3389,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "LFO Wave",
     "readoutFormat": {
       "kind": "uppercase"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "lfoRate",
@@ -3266,7 +3398,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "LFO Rate",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": 5.0
   },
   {
     "key": "lfoDepth",
@@ -3274,7 +3407,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "LFO Depth",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": 0.2
   },
   {
     "key": "lfoOffset",
@@ -3282,7 +3416,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "LFO Offset",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": 0.0
   },
   {
     "key": "lfo2Rate",
@@ -3290,7 +3425,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "LFO 2 Rate",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": 5.0
   },
   {
     "key": "lfo2Depth",
@@ -3298,7 +3434,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "LFO 2 Depth",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": 0.2
   },
   {
     "key": "lfo2Offset",
@@ -3306,7 +3443,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "LFO 2 Offset",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": 0.0
   },
   {
     "key": "randomRate",
@@ -3314,7 +3452,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Random Rate",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": 2.0
   },
   {
     "key": "modEnvAttack",
@@ -3322,7 +3461,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Mod Env Attack",
     "readoutFormat": {
       "kind": "seconds2"
-    }
+    },
+    "paramDefault": 0.01
   },
   {
     "key": "modEnvDecay",
@@ -3330,7 +3470,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Mod Env Decay",
     "readoutFormat": {
       "kind": "seconds2"
-    }
+    },
+    "paramDefault": 0.1
   },
   {
     "key": "modEnvSustain",
@@ -3338,7 +3479,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Mod Env Sustain",
     "readoutFormat": {
       "kind": "percent"
-    }
+    },
+    "paramDefault": 0.5
   },
   {
     "key": "modEnvRelease",
@@ -3346,7 +3488,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Mod Env Release",
     "readoutFormat": {
       "kind": "seconds2"
-    }
+    },
+    "paramDefault": 0.2
   },
   {
     "key": "filterType",
@@ -3354,7 +3497,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Filter Type",
     "readoutFormat": {
       "kind": "uppercase"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "filterCutoff",
@@ -3362,7 +3506,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Filter Cutoff",
     "readoutFormat": {
       "kind": "hertz"
-    }
+    },
+    "paramDefault": 5000.0
   },
   {
     "key": "filterResonance",
@@ -3370,7 +3515,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Filter Resonance",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": 0.0
   },
   {
     "key": "filterEnvAmount",
@@ -3378,7 +3524,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Filter Env",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": 0.0
   },
   {
     "key": "chorusRate",
@@ -3386,7 +3533,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Chorus Rate",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "chorusDepth",
@@ -3394,7 +3542,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Chorus Depth",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "chorusMix",
@@ -3402,7 +3551,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Chorus Mix",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "delayTime",
@@ -3410,7 +3560,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Delay Time",
     "readoutFormat": {
       "kind": "seconds2"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "delayFeedback",
@@ -3418,7 +3569,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Delay Feedback",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "delayWarmth",
@@ -3426,7 +3578,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Delay Warmth",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "delayMix",
@@ -3434,7 +3587,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Delay Mix",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "delayTapeMode",
@@ -3442,7 +3596,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Tape Mode",
     "readoutFormat": {
       "kind": "onOff"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "reverbSpace",
@@ -3450,7 +3605,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Reverb Space",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "reverbPredelay",
@@ -3458,7 +3614,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Reverb Pre-Delay",
     "readoutFormat": {
       "kind": "milliseconds"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "reverbDistance",
@@ -3466,7 +3623,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Reverb Distance",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "reverbCharacter",
@@ -3474,7 +3632,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Reverb Character",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "reverbMix",
@@ -3482,7 +3641,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Reverb Mix",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "portamentoMode",
@@ -3490,7 +3650,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Portamento Mode",
     "readoutFormat": {
       "kind": "uppercase"
-    }
+    },
+    "paramDefault": null
   },
   {
     "key": "portamentoRate",
@@ -3498,7 +3659,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Portamento Rate",
     "readoutFormat": {
       "kind": "integer"
-    }
+    },
+    "paramDefault": 50.0
   },
   {
     "key": "portamentoTime",
@@ -3506,7 +3668,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Portamento Time",
     "readoutFormat": {
       "kind": "seconds2"
-    }
+    },
+    "paramDefault": 0.5
   },
   {
     "key": "pitchBendRange",
@@ -3514,7 +3677,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Bend Range",
     "readoutFormat": {
       "kind": "semitones"
-    }
+    },
+    "paramDefault": 2.0
   },
   {
     "key": "velocityCurve",
@@ -3522,7 +3686,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Vel Curve",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": 0.0
   },
   {
     "key": "modWheelVibratoDepth",
@@ -3530,7 +3695,8 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "readoutLabel": "Mod to Vibrato",
     "readoutFormat": {
       "kind": "decimal"
-    }
+    },
+    "paramDefault": 0.0
   }
 ];
 

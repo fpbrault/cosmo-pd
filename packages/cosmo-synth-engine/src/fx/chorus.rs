@@ -91,6 +91,7 @@ const CONTROLS: [FxControlV1; 3] = [
         max: Some(10.0),
         default_f32: Some(0.8),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("chorusRate"),
     },
     FxControlV1 {
         id: "depth",
@@ -101,6 +102,7 @@ const CONTROLS: [FxControlV1; 3] = [
         max: Some(5.0),
         default_f32: Some(0.003),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("chorusDepth"),
     },
     FxControlV1 {
         id: "mix",
@@ -111,6 +113,7 @@ const CONTROLS: [FxControlV1; 3] = [
         max: Some(1.0),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("chorusMix"),
     },
 ];
 

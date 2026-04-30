@@ -1,26 +1,50 @@
-use crate::params::SynthParams;
+use crate::params::{FxSlotConfig, PhaseModParams, SynthParams};
+
+fn set_phase_mod(params: &mut SynthParams, p: PhaseModParams) {
+    for slot in params.fx_slots.iter_mut() {
+        if let FxSlotConfig::PhaseMod(pm) = slot {
+            *pm = p;
+            return;
+        }
+    }
+}
 
 pub fn apply_phase_mod_preset(params: &mut SynthParams, preset: &str) -> bool {
     match preset {
         "glassBell" => {
-            params.int_pm_enabled = true;
-            params.pm_pre = true;
-            params.int_pm_amount = 0.06;
-            params.int_pm_ratio = 2.0;
+            set_phase_mod(
+                params,
+                PhaseModParams {
+                    enabled: true,
+                    amount: 0.06,
+                    ratio: 2.0,
+                    pm_pre: true,
+                },
+            );
             true
         }
         "metalFold" => {
-            params.int_pm_enabled = true;
-            params.pm_pre = true;
-            params.int_pm_amount = 0.11;
-            params.int_pm_ratio = 2.7;
+            set_phase_mod(
+                params,
+                PhaseModParams {
+                    enabled: true,
+                    amount: 0.11,
+                    ratio: 2.7,
+                    pm_pre: true,
+                },
+            );
             true
         }
         "aggressiveSync" => {
-            params.int_pm_enabled = true;
-            params.pm_pre = false;
-            params.int_pm_amount = 0.18;
-            params.int_pm_ratio = 3.4;
+            set_phase_mod(
+                params,
+                PhaseModParams {
+                    enabled: true,
+                    amount: 0.18,
+                    ratio: 3.4,
+                    pm_pre: false,
+                },
+            );
             true
         }
         _ => false,
@@ -61,6 +85,7 @@ const CONTROLS: [FxControlV1; 3] = [
         max: Some(0.5),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("intPmAmount"),
     },
     FxControlV1 {
         id: "intPmRatio",
@@ -71,6 +96,7 @@ const CONTROLS: [FxControlV1; 3] = [
         max: Some(8.0),
         default_f32: Some(2.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("intPmRatio"),
     },
     FxControlV1 {
         id: "pmPre",
@@ -81,6 +107,7 @@ const CONTROLS: [FxControlV1; 3] = [
         max: None,
         default_f32: Some(1.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: None,
     },
 ];
 

@@ -188,6 +188,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(12.0),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("eqGain80"),
     },
     FxControlV1 {
         id: "gain240",
@@ -198,6 +199,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(12.0),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("eqGain240"),
     },
     FxControlV1 {
         id: "gain750",
@@ -208,6 +210,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(12.0),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("eqGain750"),
     },
     FxControlV1 {
         id: "gain2200",
@@ -218,6 +221,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(12.0),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("eqGain2200"),
     },
     FxControlV1 {
         id: "gain8000",
@@ -228,6 +232,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(12.0),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("eqGain8000"),
     },
 ];
 

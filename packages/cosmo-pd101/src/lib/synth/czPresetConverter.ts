@@ -1,5 +1,6 @@
 import type { DecodedPatch, EnvelopeStep } from "@/lib/midi/czSysexDecoder";
 import type {
+	CzWaveform,
 	EnvStep,
 	StepEnvData,
 	SynthPresetV1,
@@ -38,15 +39,7 @@ function convertEnvelope(env: {
 
 function waveformToCzWaveform(
 	waveform: DecodedPatch["dco1"]["firstWaveform"],
-):
-	| "saw"
-	| "square"
-	| "pulse"
-	| "null"
-	| "sinePulse"
-	| "sawPulse"
-	| "multiSine"
-	| "pulse2" {
+): CzWaveform {
 	if (waveform === 1) return "saw";
 	if (waveform === 2) return "square";
 	if (waveform === 3) return "pulse";
@@ -157,10 +150,6 @@ export function convertDecodedPatchToSynthPreset(
 	p.line2.dcwBase = 1.0;
 	p.line1.algoBlend = 0;
 	p.line2.algoBlend = 0;
-	p.intPmEnabled = false;
-	p.intPmAmount = 0.03;
-	p.intPmRatio = 1.0;
-	p.pmPre = true;
 	p.line1.window = "off";
 	p.line2.window = "off";
 	p.volume = 0.8;
@@ -175,6 +164,23 @@ export function convertDecodedPatchToSynthPreset(
 	p.lfo.depth = 1;
 	p.lfo.symmetry = 0.5;
 	p.lfo.retrigger = false;
+	p.fxSlots = [
+		{ type: "empty" },
+		{ type: "empty" },
+		{ type: "empty" },
+		{
+			type: "vibrato",
+			params: {
+				enabled: decoded.vibratoDepth > 0,
+				waveform: decoded.vibratoWave,
+				rate: decoded.vibratoRate,
+				depth: decoded.vibratoDepth,
+				delay: decoded.vibratoDelay,
+			},
+		},
+		{ type: "empty" },
+		{ type: "empty" },
+	];
 
 	return preset;
 }

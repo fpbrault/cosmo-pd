@@ -1,5 +1,5 @@
 use crate::dsp_utils::apply_window;
-use crate::params::{Algo, AlgoControlValueV1, LineParams};
+use crate::params::{Algo, AlgoControlValueV1, BaseWaveform, LineParams};
 use serde::Serialize;
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
@@ -34,6 +34,8 @@ pub struct LineRenderConfig<'a> {
     pub window_gain: f32,
     pub final_dcw: f32,
     pub final_dca: f32,
+    pub primary_base_waveform: BaseWaveform,
+    pub secondary_base_waveform: BaseWaveform,
     pub effective_freq: f32,
     pub sample_rate: f32,
     pub primary_algo_controls: Option<&'a [AlgoControlValueV1]>,
@@ -66,6 +68,8 @@ impl<'a> LineRenderConfig<'a> {
             window_gain,
             final_dcw,
             final_dca,
+            primary_base_waveform: line.base_waveform_a,
+            secondary_base_waveform: line.base_waveform_b,
             effective_freq,
             sample_rate,
             primary_algo_controls: line.algo_controls_a.as_deref(),
@@ -123,6 +127,7 @@ fn render_line_stateless(config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
             config.primary_algo,
             config.phase,
             primary_dcw,
+            config.primary_base_waveform,
             config.primary_algo_controls,
             config.algo_param_mods,
             None,
@@ -131,6 +136,7 @@ fn render_line_stateless(config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
             secondary_algo,
             config.phase,
             secondary_dcw,
+            config.secondary_base_waveform,
             config.secondary_algo_controls,
             config.algo_param_mods,
             None,
@@ -141,6 +147,7 @@ fn render_line_stateless(config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
             config.primary_algo,
             config.phase,
             config.final_dcw,
+            config.primary_base_waveform,
             config.primary_algo_controls,
             config.algo_param_mods,
             None,
@@ -154,7 +161,30 @@ fn render_line_stateless(config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
 }
 
 #[inline(always)]
-fn blend_line_samples(primary_algo: Algo, primary: f32, secondary: f32, blend: f32) -> f32 {
+fn sample_base_wave(base_waveform: BaseWaveform, phase: f32) -> f32 {
+    let p = wrap01(phase);
+    match base_waveform {
+        BaseWaveform::Cosine => -libm::cosf(TWO_PI * p),
+        BaseWaveform::Sine => libm::sinf(TWO_PI * p),
+        BaseWaveform::Triangle => 1.0 - 4.0 * libm::fabsf(p - 0.5),
+        BaseWaveform::Saw => p * 2.0 - 1.0,
+        BaseWaveform::Square => {
+            if p < 0.5 {
+                1.0
+            } else {
+                -1.0
+            }
+        }
+    }
+}
+
+#[inline(always)]
+pub(crate) fn blend_line_samples(
+    primary_algo: Algo,
+    primary: f32,
+    secondary: f32,
+    blend: f32,
+) -> f32 {
     if primary_algo == Algo::Karpunk {
         primary + (primary * secondary * 2.0 - primary) * blend
     } else {
@@ -230,6 +260,7 @@ pub struct AlgoDefinitionV1 {
     pub name: &'static str,
     pub icon_path: &'static str,
     pub visible: bool,
+    pub default_base_waveform: BaseWaveform,
     pub controls: &'static [AlgoControlV1],
 }
 
@@ -348,7 +379,9 @@ pub const DCW_CONTROL: [AlgoControlV1; 1] = [AlgoControlV1 {
     options: &NO_CONTROL_OPTIONS,
 }];
 
-pub const ALGO_DEFINITIONS_V1: [AlgoDefinitionV1; 12] = [
+const ALGO_DEFINITION_COUNT: usize = 12;
+
+pub const ALGO_DEFINITIONS_V1: [AlgoDefinitionV1; ALGO_DEFINITION_COUNT] = [
     cz101::DEFINITION,
     bend::DEFINITION,
     sync::DEFINITION,
@@ -368,79 +401,30 @@ pub fn algo_definitions_v1() -> &'static [AlgoDefinitionV1] {
 }
 
 pub fn algo_ui_catalog_v1() -> &'static [AlgoUiEntryV1] {
-    const CATALOG: [AlgoUiEntryV1; 12] = [
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[0].id,
-            label: ALGO_DEFINITIONS_V1[0].name,
-            icon_path: ALGO_DEFINITIONS_V1[0].icon_path,
-            visible: ALGO_DEFINITIONS_V1[0].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[1].id,
-            label: ALGO_DEFINITIONS_V1[1].name,
-            icon_path: ALGO_DEFINITIONS_V1[1].icon_path,
-            visible: ALGO_DEFINITIONS_V1[1].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[2].id,
-            label: ALGO_DEFINITIONS_V1[2].name,
-            icon_path: ALGO_DEFINITIONS_V1[2].icon_path,
-            visible: ALGO_DEFINITIONS_V1[2].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[3].id,
-            label: ALGO_DEFINITIONS_V1[3].name,
-            icon_path: ALGO_DEFINITIONS_V1[3].icon_path,
-            visible: ALGO_DEFINITIONS_V1[3].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[4].id,
-            label: ALGO_DEFINITIONS_V1[4].name,
-            icon_path: ALGO_DEFINITIONS_V1[4].icon_path,
-            visible: ALGO_DEFINITIONS_V1[4].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[5].id,
-            label: ALGO_DEFINITIONS_V1[5].name,
-            icon_path: ALGO_DEFINITIONS_V1[5].icon_path,
-            visible: ALGO_DEFINITIONS_V1[5].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[6].id,
-            label: ALGO_DEFINITIONS_V1[6].name,
-            icon_path: ALGO_DEFINITIONS_V1[6].icon_path,
-            visible: ALGO_DEFINITIONS_V1[6].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[7].id,
-            label: ALGO_DEFINITIONS_V1[7].name,
-            icon_path: ALGO_DEFINITIONS_V1[7].icon_path,
-            visible: ALGO_DEFINITIONS_V1[7].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[8].id,
-            label: ALGO_DEFINITIONS_V1[8].name,
-            icon_path: ALGO_DEFINITIONS_V1[8].icon_path,
-            visible: ALGO_DEFINITIONS_V1[8].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[9].id,
-            label: ALGO_DEFINITIONS_V1[9].name,
-            icon_path: ALGO_DEFINITIONS_V1[9].icon_path,
-            visible: ALGO_DEFINITIONS_V1[9].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[10].id,
-            label: ALGO_DEFINITIONS_V1[10].name,
-            icon_path: ALGO_DEFINITIONS_V1[10].icon_path,
-            visible: ALGO_DEFINITIONS_V1[10].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[11].id,
-            label: ALGO_DEFINITIONS_V1[11].name,
-            icon_path: ALGO_DEFINITIONS_V1[11].icon_path,
-            visible: ALGO_DEFINITIONS_V1[11].visible,
-        },
+    macro_rules! entry {
+        ($index:expr) => {
+            AlgoUiEntryV1 {
+                id: ALGO_DEFINITIONS_V1[$index].id,
+                label: ALGO_DEFINITIONS_V1[$index].name,
+                icon_path: ALGO_DEFINITIONS_V1[$index].icon_path,
+                visible: ALGO_DEFINITIONS_V1[$index].visible,
+            }
+        };
+    }
+
+    const CATALOG: [AlgoUiEntryV1; ALGO_DEFINITION_COUNT] = [
+        entry!(0),
+        entry!(1),
+        entry!(2),
+        entry!(3),
+        entry!(4),
+        entry!(5),
+        entry!(6),
+        entry!(7),
+        entry!(8),
+        entry!(9),
+        entry!(10),
+        entry!(11),
     ];
 
     &CATALOG
@@ -623,28 +607,39 @@ pub fn warp_phase(
     }
 }
 
+fn render_direct_algo_sample(algo: Algo) -> Option<f32> {
+    match algo {
+        _ => None,
+    }
+}
+
 /// Unified algorithm sample renderer used by voice and utility paths.
 ///
-/// `karpunk_sample` is used only when `algo == Algo::Karpunk`.
+/// `runtime_sample` is used only when an algorithm is rendered by per-voice state.
 pub fn render_algo_sample(
     algo: Algo,
     phase: f32,
     dcw: f32,
+    base_waveform: BaseWaveform,
     algo_controls: Option<&[AlgoControlValueV1]>,
     algo_param_mods: [f32; 8],
-    karpunk_sample: Option<f32>,
+    runtime_sample: Option<f32>,
 ) -> f32 {
     if algo == Algo::Karpunk {
-        return karpunk_sample.unwrap_or(0.0);
+        return runtime_sample.unwrap_or(0.0);
+    }
+    if let Some(sample) = render_direct_algo_sample(algo) {
+        return sample;
     }
     let warped = warp_phase(algo, phase, dcw, algo_controls, &algo_param_mods);
-    -libm::cosf(TWO_PI * warped)
+    sample_base_wave(base_waveform, warped)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{render_line_stateless, LineRenderConfig};
-    use crate::params::Algo;
+    use super::render_line_stateless;
+    use super::LineRenderConfig;
+    use crate::params::{Algo, BaseWaveform};
 
     #[test]
     fn stateless_render_applies_algo_param_mods() {
@@ -656,6 +651,8 @@ mod tests {
             window_gain: 1.0,
             final_dcw: 1.0,
             final_dca: 1.0,
+            primary_base_waveform: BaseWaveform::Cosine,
+            secondary_base_waveform: BaseWaveform::Cosine,
             effective_freq: 220.0,
             sample_rate: 44100.0,
             primary_algo_controls: None,

@@ -41,7 +41,6 @@ export default function ModEnveloppeModule() {
 			title="Mod Env"
 			color="#c24587"
 			enabled
-			showLed={false}
 			headerControl={
 				<ModulePresetPopover
 					title="Mod Env Presets"
@@ -62,7 +61,7 @@ export default function ModEnveloppeModule() {
 				color="#c24587"
 				label="Atk"
 				tooltip={PARAM_META.modEnvAttack?.tooltip}
-				valueFormatter={(v) => `${v.toFixed(2)}s`}
+				valueFormatter={(v) => `${v?.toFixed(2)}s`}
 			/>
 			<ControlKnob
 				value={modEnvDecay}
@@ -74,7 +73,7 @@ export default function ModEnveloppeModule() {
 				color="#c24587"
 				label="Dec"
 				tooltip={PARAM_META.modEnvDecay?.tooltip}
-				valueFormatter={(v) => `${v.toFixed(2)}s`}
+				valueFormatter={(v) => `${v?.toFixed(2)}s`}
 			/>
 			<ControlKnob
 				value={modEnvSustain}
@@ -98,7 +97,7 @@ export default function ModEnveloppeModule() {
 				color="#c24587"
 				label="Rel"
 				tooltip={PARAM_META.modEnvRelease?.tooltip}
-				valueFormatter={(v) => `${v.toFixed(2)}s`}
+				valueFormatter={(v) => `${v?.toFixed(2)}s`}
 			/>
 		</ModuleFrame>
 	);

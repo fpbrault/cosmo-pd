@@ -66,6 +66,7 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
     name: "Sync",
     icon_path: "M4,20 L8,4 L8,20 L12,4 L12,20 L16,4 L16,20 L20,4",
     visible: true,
+    default_base_waveform: crate::params::BaseWaveform::Sine,
     controls: &CONTROLS,
 };
 

@@ -55,6 +55,7 @@ const DEFAULT_LINE = {
 const DEFAULT_PARAMS = {
 	lineSelect: "L1+L2",
 	modMode: "normal",
+	baseWaveform: "cosine",
 	octave: 0,
 	line1: { ...DEFAULT_LINE },
 	line2: { ...DEFAULT_LINE },
