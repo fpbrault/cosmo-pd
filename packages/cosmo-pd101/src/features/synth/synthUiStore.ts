@@ -64,7 +64,7 @@ const DEFAULT_UI_STATE: SynthUiState = {
 	activeEnvTab: "dcw",
 	keyboardVisible: true,
 	libraryModeOpen: false,
-	scopeCycles: 4,
+	scopeCycles: 2,
 	scopeVerticalZoom: 1,
 	scopeTriggerLevel: 128,
 };
