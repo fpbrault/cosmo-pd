@@ -175,6 +175,7 @@ function SynthRendererContent({
 		mainPanelMode === "mod" ? "mod" : "fx",
 	);
 	const [drawerSlideDirection, setDrawerSlideDirection] = useState<1 | -1>(1);
+	const [brandInfoOpen, setBrandInfoOpen] = useState(false);
 	const handleCloseLibrary = useCallback(() => {
 		setLibraryModeOpen(false);
 	}, [setLibraryModeOpen]);
@@ -206,6 +207,7 @@ function SynthRendererContent({
 					<div className="relative z-30">
 						<SynthHeader
 							{...headerProps}
+							onBrandInfoClick={() => setBrandInfoOpen(true)}
 							isLibraryModeOpen={libraryModeOpen}
 							onLibraryModeChange={setLibraryModeOpen}
 						/>
@@ -382,6 +384,10 @@ function SynthRendererContent({
 						/>
 					</motion.div>
 					<AudioStartOverlay audioGate={audioGate} />
+					<SynthBrandInfoModal
+						open={brandInfoOpen}
+						onClose={() => setBrandInfoOpen(false)}
+					/>
 					<PendingModifiedPresetModal
 						pendingPresetChange={headerProps.pendingPresetChange}
 						onSave={headerProps.onSavePendingPresetChange}
@@ -423,6 +429,82 @@ function MasterVolumeControl() {
 				label="Main Volume"
 				modDestination="volume"
 			/>
+		</div>
+	);
+}
+
+function SynthBrandInfoModal({
+	open,
+	onClose,
+}: {
+	open: boolean;
+	onClose: () => void;
+}) {
+	useEffect(() => {
+		if (!open) return;
+
+		const handleEscape = (event: KeyboardEvent) => {
+			if (event.key !== "Escape") return;
+			event.preventDefault();
+			onClose();
+		};
+
+		window.addEventListener("keydown", handleEscape);
+		return () => window.removeEventListener("keydown", handleEscape);
+	}, [open, onClose]);
+
+	if (!open) return null;
+
+	return (
+		<div
+			className="absolute inset-0 z-40 flex items-center justify-center"
+			role="dialog"
+			aria-modal="true"
+			aria-label="Synthesizer lab information"
+		>
+			<button
+				type="button"
+				className="absolute inset-0 bg-cz-body/80 backdrop-blur-sm"
+				onClick={onClose}
+				aria-label="Close synthesizer information"
+			/>
+			<div className="relative w-[min(32rem,94%)] rounded-md border border-cz-border bg-cz-surface p-5 text-cz-cream shadow-2xl">
+				<div className="mb-4 flex items-center justify-between gap-4">
+					<div className="flex items-center gap-3">
+						<div className="flex h-16 w-16 items-center justify-center rounded-md border border-cz-border bg-linear-to-br from-cz-light-blue/25 to-cz-gold/25 text-3xs font-mono uppercase tracking-[0.22em] text-cz-cream-dim">
+							Logo
+						</div>
+						<div>
+							<p className="text-4xs font-mono uppercase tracking-[0.3em] text-cz-light-blue">
+								Phase Distortion
+							</p>
+							<h3 className="mt-1 text-sm font-mono font-semibold uppercase tracking-[0.18em] text-cz-cream">
+								Synthesizer Lab
+							</h3>
+						</div>
+					</div>
+					<Button
+						type="button"
+						className="btn btn-sm border-cz-border bg-cz-inset text-cz-cream"
+						onClick={onClose}
+					>
+						Close
+					</Button>
+				</div>
+
+				<div className="space-y-2 rounded-md border border-cz-border bg-cz-inset/60 p-4">
+					<p className="text-xs font-mono text-cz-cream">Felix Perron-Brault</p>
+					<p className="text-2xs font-mono uppercase tracking-[0.14em] text-cz-cream-dim">
+						Version: 0.1.0
+					</p>
+					<p className="text-2xs font-mono uppercase tracking-[0.14em] text-cz-cream-dim">
+						Year: 2026
+					</p>
+					<p className="pt-2 text-sm text-cz-gold">
+						For my cats, Basil, Lola, and Latte
+					</p>
+				</div>
+			</div>
 		</div>
 	);
 }

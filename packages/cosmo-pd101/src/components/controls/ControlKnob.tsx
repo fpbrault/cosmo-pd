@@ -151,6 +151,9 @@ export function ControlKnob({
 		editValue,
 		inputRef,
 		onPointerDown,
+		onPointerMove,
+		onPointerUp,
+		onPointerCancel,
 		onDoubleClick,
 		onKeyDown,
 		beginEdit,
@@ -246,6 +249,9 @@ export function ControlKnob({
 				onFocus={() => setHovered(true)}
 				onBlur={() => setHovered(false)}
 				onPointerDown={onPointerDown}
+				onPointerMove={onPointerMove}
+				onPointerUp={onPointerUp}
+				onPointerCancel={onPointerCancel}
 				onDoubleClick={onDoubleClick}
 				onKeyDown={onKeyDown}
 			>

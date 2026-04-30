@@ -42,6 +42,9 @@ export interface UseKnobInteractionResult {
 	editValue: string;
 	inputRef: React.RefObject<HTMLInputElement | null>;
 	onPointerDown: (e: React.PointerEvent) => void;
+	onPointerMove: (e: React.PointerEvent) => void;
+	onPointerUp: (e: React.PointerEvent) => void;
+	onPointerCancel: (e: React.PointerEvent) => void;
 	onDoubleClick: (e: React.MouseEvent) => void;
 	onKeyDown: (e: React.KeyboardEvent) => void;
 	beginEdit: (currentDisplay: string) => void;
@@ -160,6 +163,54 @@ export function useKnobInteraction({
 		],
 	);
 
+	const onPointerMove = useCallback(
+		(e: React.PointerEvent) => {
+			const state = dragState.current;
+			if (!state) return;
+
+			if (state.mode === "angular") {
+				const pt = toSvgPoint(e.clientX, e.clientY);
+				const norm = svgPointToNorm(pt.x, pt.y, arcGeometry);
+				emit(denormalizeValueCurved(norm, min, max, curve));
+				return;
+			}
+
+			const pt = toSvgPoint(e.clientX, e.clientY);
+			const deltaY = state.startSvgY - pt.y;
+			const effectiveSensitivity =
+				state.isShift || e.shiftKey
+					? sensitivity * fineSensitivity
+					: sensitivity;
+			const screenRatio = svgRef.current
+				? (svgRef.current.getBoundingClientRect().height || 1) /
+					(arcGeometry.viewBoxSize || 1)
+				: 1;
+			const startPos = normalizeValueCurved(state.startValue, min, max, curve);
+			const nextPos = startPos + (deltaY * screenRatio) / effectiveSensitivity;
+			emit(denormalizeValueCurved(nextPos, min, max, curve));
+		},
+		[
+			arcGeometry,
+			curve,
+			emit,
+			fineSensitivity,
+			max,
+			min,
+			sensitivity,
+			svgRef,
+			toSvgPoint,
+		],
+	);
+
+	const endPointerDrag = useCallback((e: React.PointerEvent) => {
+		const target = e.currentTarget;
+		if (target.hasPointerCapture(e.pointerId)) {
+			target.releasePointerCapture(e.pointerId);
+		}
+		dragState.current = null;
+		setDragging(false);
+	}, []);
+
 	const onDoubleClick = useCallback(
 		(e: React.MouseEvent) => {
 			if (disabled) return;
@@ -250,66 +301,6 @@ export function useKnobInteraction({
 		commitEdit();
 	}, [commitEdit]);
 
-	// Pointer move/up while dragging — attached to window for capture outside element.
-	useEffect(() => {
-		if (!dragging) return;
-
-		const handlePointerMove = (e: PointerEvent) => {
-			const state = dragState.current;
-			if (!state) return;
-			if (state.mode === "angular") {
-				const pt = toSvgPoint(e.clientX, e.clientY);
-				const norm = svgPointToNorm(pt.x, pt.y, arcGeometry);
-				emit(denormalizeValueCurved(norm, min, max, curve));
-			} else {
-				const pt = toSvgPoint(e.clientX, e.clientY);
-				const deltaY = state.startSvgY - pt.y;
-				// Shift can be held mid-drag to switch to fine mode
-				const effectiveSensitivity =
-					state.isShift || e.shiftKey
-						? sensitivity * fineSensitivity
-						: sensitivity;
-				// Scale deltaY from SVG space back to screen space for sensitivity
-				const screenRatio = svgRef.current
-					? (svgRef.current.getBoundingClientRect().height || 1) /
-						(arcGeometry.viewBoxSize || 1)
-					: 1;
-				const startPos = normalizeValueCurved(
-					state.startValue,
-					min,
-					max,
-					curve,
-				);
-				const nextPos =
-					startPos + (deltaY * screenRatio) / effectiveSensitivity;
-				emit(denormalizeValueCurved(nextPos, min, max, curve));
-			}
-		};
-
-		const handlePointerUp = () => {
-			dragState.current = null;
-			setDragging(false);
-		};
-
-		window.addEventListener("pointermove", handlePointerMove);
-		window.addEventListener("pointerup", handlePointerUp);
-		return () => {
-			window.removeEventListener("pointermove", handlePointerMove);
-			window.removeEventListener("pointerup", handlePointerUp);
-		};
-	}, [
-		dragging,
-		min,
-		max,
-		sensitivity,
-		fineSensitivity,
-		arcGeometry,
-		toSvgPoint,
-		emit,
-		svgRef,
-		curve,
-	]);
-
 	// Focus the text input when editing starts.
 	useEffect(() => {
 		if (editing && inputRef.current) {
@@ -364,6 +355,9 @@ export function useKnobInteraction({
 		editValue,
 		inputRef,
 		onPointerDown,
+		onPointerMove,
+		onPointerUp: endPointerDrag,
+		onPointerCancel: endPointerDrag,
 		onDoubleClick,
 		onKeyDown,
 		beginEdit,
