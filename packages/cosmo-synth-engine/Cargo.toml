@@ -29,6 +29,7 @@ specta-bindings = [
 serde = { version = "1", features = ["derive"], default-features = false }
 serde_json = { version = "1", optional = true }
 libm = "0.2"
+purr-synth-core = { path = "../purr-synth-core", default-features = false }
 
 [dependencies.specta]
 version = "=2.0.0-rc.22"

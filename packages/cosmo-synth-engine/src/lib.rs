@@ -6,6 +6,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+pub use purr_synth_core;
+
 pub mod default_envelopes;
 pub mod dsp_utils;
 pub mod envelope;
