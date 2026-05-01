@@ -24,6 +24,9 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --version 0.13.1 --locked
+
       - name: Build web app
         run: bun run build:web
 
@@ -37,8 +40,8 @@ jobs:
             platform: macos
             arch: universal
             build_cmd: bun run build:plugin
-            plugin_bundle_path: packages/cosmo-pd101-plugin/target/release/CosmoPd101.vst3
-            secondary_bundle_path: packages/cosmo-pd101-plugin/target/release/CosmoPd101.component
+            plugin_bundle_path: packages/cosmo-pd101-plugin/target/release/CosmoPd101Plugin.vst3
+            secondary_bundle_path: packages/cosmo-pd101-plugin/target/release/CosmoPd101Plugin.component
             installer_glob: dist/plugin-installers/macos/cosmo-plugins-macos-universal-v*.pkg
             bare_glob: |
               dist/plugin-installers/macos/cosmo-pd101-plugin-macos-universal-v*-vst3.zip
@@ -100,6 +103,8 @@ jobs:
         run: choco install nsis -y
 
       - name: Package plugin installers
+        env:
+          PLUGIN_BASENAME: ${{ matrix.platform == 'macos' && 'CosmoPd101Plugin' || 'CosmoPd101' }}
         run: bun run scripts/package-plugin-installers.mjs --platform ${{ matrix.platform }}
 
       - name: Validate plugin release artifacts
