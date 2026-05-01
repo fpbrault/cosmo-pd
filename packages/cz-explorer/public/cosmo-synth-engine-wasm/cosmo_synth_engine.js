@@ -58,6 +58,31 @@ let wasm_bindgen = (function(exports) {
             }
         }
         /**
+         * Return output-level telemetry (peak and RMS) as JSON.
+         *
+         * Resets the level meter accumulator after reading so each call returns
+         * the level for the most recent window of samples.
+         *
+         * JS shape: `{ "peak": number, "rms": number }`
+         * @returns {string}
+         */
+        getLevelTelemetry() {
+            let deferred1_0;
+            let deferred1_1;
+            try {
+                const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+                wasm.czsynthprocessor_getLevelTelemetry(retptr, this.__wbg_ptr);
+                var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+                var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+                deferred1_0 = r0;
+                deferred1_1 = r1;
+                return getStringFromWasm0(r0, r1);
+            } finally {
+                wasm.__wbindgen_add_to_stack_pointer(16);
+                wasm.__wbindgen_export3(deferred1_0, deferred1_1, 1);
+            }
+        }
+        /**
          * Return the latest runtime modulation-source values as JSON for UI telemetry.
          * @returns {string}
          */
@@ -118,7 +143,8 @@ let wasm_bindgen = (function(exports) {
          * Trigger a note-on event.
          *
          * * `note`      — MIDI note number (0-127)
-         * * `frequency` — Hz; pass `0.0` to auto-compute from the MIDI note number
+         * * `frequency` — Hz; accepted for API compatibility but **ignored** —
+         *                 frequency is always derived from `note` via standard MIDI tuning.
          * * `velocity`  — normalised 0.0-1.0
          * @param {number} note
          * @param {number} frequency

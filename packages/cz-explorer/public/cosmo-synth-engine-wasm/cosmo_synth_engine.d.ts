@@ -22,6 +22,15 @@ declare namespace wasm_bindgen {
          */
         getFxSlotTypes(): string;
         /**
+         * Return output-level telemetry (peak and RMS) as JSON.
+         *
+         * Resets the level meter accumulator after reading so each call returns
+         * the level for the most recent window of samples.
+         *
+         * JS shape: `{ "peak": number, "rms": number }`
+         */
+        getLevelTelemetry(): string;
+        /**
          * Return the latest runtime modulation-source values as JSON for UI telemetry.
          */
         getRuntimeModSources(): string;
@@ -41,7 +50,8 @@ declare namespace wasm_bindgen {
          * Trigger a note-on event.
          *
          * * `note`      — MIDI note number (0-127)
-         * * `frequency` — Hz; pass `0.0` to auto-compute from the MIDI note number
+         * * `frequency` — Hz; accepted for API compatibility but **ignored** —
+         *                 frequency is always derived from `note` via standard MIDI tuning.
          * * `velocity`  — normalised 0.0-1.0
          */
         noteOn(note: number, frequency: number, velocity: number): void;
@@ -95,6 +105,7 @@ declare interface InitOutput {
     readonly __wbg_czsynthprocessor_free: (a: number, b: number) => void;
     readonly czsynthprocessor_applyModulePreset: (a: number, b: number, c: number, d: number, e: number) => number;
     readonly czsynthprocessor_getFxSlotTypes: (a: number, b: number) => void;
+    readonly czsynthprocessor_getLevelTelemetry: (a: number, b: number) => void;
     readonly czsynthprocessor_getRuntimeModSources: (a: number, b: number) => void;
     readonly czsynthprocessor_getRuntimeVoiceStates: (a: number, b: number) => void;
     readonly czsynthprocessor_new: (a: number) => number;

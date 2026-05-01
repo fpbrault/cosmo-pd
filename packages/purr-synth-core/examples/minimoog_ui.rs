@@ -358,8 +358,7 @@ fn knob_u8(
 ) -> egui::Response {
     let mut as_u32 = *value as u32;
     let resp = ui.add(
-        egui::Slider::new(&mut as_u32, *range.start() as u32..=*range.end() as u32)
-            .text(label),
+        egui::Slider::new(&mut as_u32, *range.start() as u32..=*range.end() as u32).text(label),
     );
     *value = as_u32.clamp(*range.start() as u32, *range.end() as u32) as u8;
     resp
@@ -374,8 +373,7 @@ fn knob_i8(
 ) -> egui::Response {
     let mut as_i32 = *value as i32;
     let resp = ui.add(
-        egui::Slider::new(&mut as_i32, *range.start() as i32..=*range.end() as i32)
-            .text(label),
+        egui::Slider::new(&mut as_i32, *range.start() as i32..=*range.end() as i32).text(label),
     );
     *value = as_i32.clamp(*range.start() as i32, *range.end() as i32) as i8;
     resp
@@ -416,16 +414,57 @@ fn oscillator_ui(ui: &mut egui::Ui, label: &str, osc: &mut OscPatch, reset_osc: 
         ui.checkbox(&mut osc.kbd_track, "Keyboard tracking");
     });
     knob_f32(ui, "Level", &mut osc.level, 0.0..=1.0, "", reset_osc.level);
-    knob_i8(ui, "Range", &mut osc.semitones, -24..=24, reset_osc.semitones);
-    knob_f32(ui, "Fine", &mut osc.cents, -50.0..=50.0, "c", reset_osc.cents);
+    knob_i8(
+        ui,
+        "Range",
+        &mut osc.semitones,
+        -24..=24,
+        reset_osc.semitones,
+    );
+    knob_f32(
+        ui,
+        "Fine",
+        &mut osc.cents,
+        -50.0..=50.0,
+        "c",
+        reset_osc.cents,
+    );
 }
 
 fn adsr_ui(ui: &mut egui::Ui, label: &str, env: &mut AdsrParams, reset_env: AdsrParams) {
     ui.label(RichText::new(label).strong().color(LABEL_GOLD));
-    knob_f32(ui, "Attack", &mut env.attack_seconds, 0.001..=2.0, "s", reset_env.attack_seconds);
-    knob_f32(ui, "Decay", &mut env.decay_seconds, 0.01..=3.0, "s", reset_env.decay_seconds);
-    knob_f32(ui, "Sustain", &mut env.sustain_level, 0.0..=1.0, "", reset_env.sustain_level);
-    knob_f32(ui, "Release", &mut env.release_seconds, 0.01..=3.0, "s", reset_env.release_seconds);
+    knob_f32(
+        ui,
+        "Attack",
+        &mut env.attack_seconds,
+        0.001..=2.0,
+        "s",
+        reset_env.attack_seconds,
+    );
+    knob_f32(
+        ui,
+        "Decay",
+        &mut env.decay_seconds,
+        0.01..=3.0,
+        "s",
+        reset_env.decay_seconds,
+    );
+    knob_f32(
+        ui,
+        "Sustain",
+        &mut env.sustain_level,
+        0.0..=1.0,
+        "",
+        reset_env.sustain_level,
+    );
+    knob_f32(
+        ui,
+        "Release",
+        &mut env.release_seconds,
+        0.01..=3.0,
+        "s",
+        reset_env.release_seconds,
+    );
 }
 
 fn draw_scope(ui: &mut egui::Ui, samples: &[f32]) {

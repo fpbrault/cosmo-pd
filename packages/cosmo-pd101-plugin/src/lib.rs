@@ -1368,11 +1368,12 @@ impl Processor for CzProcessor {
         // Feed scope buffer (non-blocking try_lock; skip if GUI is reading).
         let hz = self
             .processor
-            .voices
+            .runtime
+            .voices()
             .iter()
             .filter(|v| !v.is_silent && !v.is_releasing && v.note.is_some())
             .map(|v| v.current_freq)
-            .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+            .max_by(|a: &f32, b: &f32| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
             .unwrap_or(0.0);
         if let Ok(mut scope) = self.scope_buffer.try_lock() {
             scope.push_block(&mono_output, self.processor.sample_rate, hz);

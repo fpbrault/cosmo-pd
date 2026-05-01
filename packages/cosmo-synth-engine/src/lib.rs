@@ -16,6 +16,7 @@ pub mod fx;
 pub mod generators;
 pub mod module_presets;
 pub mod params;
+pub mod pd101;
 pub mod preset_wire;
 pub mod processor;
 pub mod voice;

@@ -4,6 +4,7 @@ export const memory: WebAssembly.Memory;
 export const __wbg_czsynthprocessor_free: (a: number, b: number) => void;
 export const czsynthprocessor_applyModulePreset: (a: number, b: number, c: number, d: number, e: number) => number;
 export const czsynthprocessor_getFxSlotTypes: (a: number, b: number) => void;
+export const czsynthprocessor_getLevelTelemetry: (a: number, b: number) => void;
 export const czsynthprocessor_getRuntimeModSources: (a: number, b: number) => void;
 export const czsynthprocessor_getRuntimeVoiceStates: (a: number, b: number) => void;
 export const czsynthprocessor_new: (a: number) => number;

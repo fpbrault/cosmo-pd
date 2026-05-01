@@ -1509,8 +1509,8 @@ pub(crate) fn default_fx_slot_configs() -> [FxSlotConfig; 6] {
         FxSlotConfig::Empty,
         FxSlotConfig::Empty,
         FxSlotConfig::Empty,
-        FxSlotConfig::Vibrato(VibratoParams::default()),
-        FxSlotConfig::PhaseMod(PhaseModParams::default()),
+        FxSlotConfig::Empty,
+        FxSlotConfig::Empty,
         FxSlotConfig::Empty,
     ]
 }

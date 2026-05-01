@@ -7,13 +7,32 @@ use crate::engine::{Frame, RenderContext, SynthDefinition, VoiceContext, VoiceDs
 use crate::event::{NoteId, SynthEvent};
 use crate::modulation::ModMatrix;
 use crate::voice::{VoiceRuntime, VoiceStatus};
-use crate::voice_allocator::{DefaultVoiceStealer, VoiceAllocator, VoiceStealingPolicy};
+use crate::voice_allocator::{
+    DefaultVoiceStealer, VoiceAllocator, VoiceStealingPolicy, VoiceStealingPolicyExt,
+};
 
 /// Voice scheduling mode for the reusable runtime.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VoiceMode {
     Polyphonic,
     Monophonic { legato: bool },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ControllerState {
+    pub pitch_bend: f32,
+    pub mod_wheel: f32,
+    pub aftertouch: f32,
+}
+
+impl Default for ControllerState {
+    fn default() -> Self {
+        Self {
+            pitch_bend: 0.0,
+            mod_wheel: 0.0,
+            aftertouch: 0.0,
+        }
+    }
 }
 
 impl Default for VoiceMode {
@@ -37,7 +56,8 @@ where
     sample_clock: u64,
     sustain_down: bool,
     voice_mode: VoiceMode,
-    mono_note_stack: Vec<NoteId>,
+    mono_note_stack: Vec<(NoteId, V)>,
+    controllers: ControllerState,
 }
 
 impl<T, V> SynthRuntime<T, V, DefaultVoiceStealer>
@@ -73,6 +93,7 @@ where
             sustain_down: false,
             voice_mode: VoiceMode::Polyphonic,
             mono_note_stack: Vec::new(),
+            controllers: ControllerState::default(),
         }
     }
 
@@ -128,24 +149,52 @@ where
     pub fn sustain_down(&self) -> bool {
         self.sustain_down
     }
+
+    pub fn controllers(&self) -> ControllerState {
+        self.controllers
+    }
+
+    pub fn pitch_bend(&self) -> f32 {
+        self.controllers.pitch_bend
+    }
+
+    pub fn set_pitch_bend(&mut self, value: f32) {
+        self.controllers.pitch_bend = value.clamp(-1.0, 1.0);
+    }
+
+    pub fn mod_wheel(&self) -> f32 {
+        self.controllers.mod_wheel
+    }
+
+    pub fn set_mod_wheel(&mut self, value: f32) {
+        self.controllers.mod_wheel = value.clamp(0.0, 1.0);
+    }
+
+    pub fn aftertouch(&self) -> f32 {
+        self.controllers.aftertouch
+    }
+
+    pub fn set_aftertouch(&mut self, value: f32) {
+        self.controllers.aftertouch = value.clamp(0.0, 1.0);
+    }
 }
 
 impl<T, V, P> SynthRuntime<T, V, P>
 where
     T: SynthDefinition,
-    V: VoiceDsp<T>,
-    P: VoiceStealingPolicy,
+    V: VoiceDsp<T> + Clone,
+    P: VoiceStealingPolicy + VoiceStealingPolicyExt<V>,
 {
     pub fn handle_event(&mut self, event: SynthEvent) {
         match event {
             SynthEvent::NoteOn(note) => self.note_on(note),
             SynthEvent::NoteOff { midi_note } => self.note_off(midi_note),
             SynthEvent::Sustain(down) => self.set_sustain(down),
+            SynthEvent::PitchBend(value) => self.set_pitch_bend(value),
+            SynthEvent::ModWheel(value) => self.set_mod_wheel(value),
+            SynthEvent::Aftertouch(value) => self.set_aftertouch(value),
             SynthEvent::AllNotesOff => self.all_notes_off(),
-            SynthEvent::PitchBend(_)
-            | SynthEvent::ModWheel(_)
-            | SynthEvent::Aftertouch(_)
-            | SynthEvent::MidiControl(_) => {}
+            SynthEvent::MidiControl(_) => {}
         }
     }
 
@@ -214,6 +263,9 @@ where
             let mut context = RenderContext {
                 sample_rate: self.sample_rate,
                 patch: &self.patch,
+                pitch_bend: self.controllers.pitch_bend,
+                mod_wheel: self.controllers.mod_wheel,
+                aftertouch: self.controllers.aftertouch,
                 modulation: &self.modulation,
                 telemetry: None,
             };
@@ -229,7 +281,10 @@ where
     }
 
     fn note_on_polyphonic(&mut self, note: NoteId) {
-        let Some(voice_id) = self.allocator.allocate(&self.voice_runtimes) else {
+        let Some(voice_id) = self
+            .allocator
+            .allocate_with_dsp(&self.voice_runtimes, &self.voices)
+        else {
             return;
         };
         let index = voice_id.0;
@@ -268,8 +323,12 @@ where
 
         let had_held_note = !self.mono_note_stack.is_empty();
         self.mono_note_stack
-            .retain(|stacked_note| stacked_note.midi_note != note.midi_note);
-        self.mono_note_stack.push(note);
+            .retain(|(stacked_note, _)| stacked_note.midi_note != note.midi_note);
+
+        // Snapshot current voice state before starting the new note.
+        // Restored when a later note_off pops back to this note.
+        let snapshot = self.voices[0].clone();
+        self.mono_note_stack.push((note, snapshot));
 
         let was_active = self.voice_runtimes[0].is_active();
         let context = VoiceContext {
@@ -293,21 +352,24 @@ where
         let released_current = self
             .mono_note_stack
             .last()
-            .is_some_and(|note| note.midi_note == midi_note);
+            .is_some_and(|(note, _)| note.midi_note == midi_note);
         self.mono_note_stack
-            .retain(|note| note.midi_note != midi_note);
+            .retain(|(note, _)| note.midi_note != midi_note);
 
         if released_current {
-            if let Some(note) = self.mono_note_stack.last().copied() {
+            if let Some((note, snapshot)) = self.mono_note_stack.last() {
+                let note = *note;
+                let snapshot = snapshot.clone();
                 let context = VoiceContext {
                     sample_rate: self.sample_rate,
                     patch: &self.patch,
                 };
                 self.voice_runtimes[0].note_on(note, self.sample_clock);
+                // Restore DSP state from the snapshot taken when this note was
+                // last active — resumes envelope/oscillator state without retriggering.
+                self.voices[0].restore_snapshot(&snapshot);
                 if legato {
                     self.voices[0].note_change(note, &context);
-                } else {
-                    self.voices[0].note_on(note, &context);
                 }
                 return;
             }
@@ -352,6 +414,9 @@ mod tests {
         note_on_count: u32,
         note_change_count: u32,
         note_off_count: u32,
+        last_pitch_bend: f32,
+        last_mod_wheel: f32,
+        last_aftertouch: f32,
     }
 
     impl VoiceDsp<TestSynth> for TestVoice {
@@ -371,7 +436,10 @@ mod tests {
             self.note_off_count += 1;
         }
 
-        fn render(&mut self, _context: &mut RenderContext<TestSynth>) -> Frame {
+        fn render(&mut self, context: &mut RenderContext<TestSynth>) -> Frame {
+            self.last_pitch_bend = context.pitch_bend;
+            self.last_mod_wheel = context.mod_wheel;
+            self.last_aftertouch = context.aftertouch;
             Frame::mono(self.note.map_or(0.0, |note| note.midi_note as f32))
         }
 
@@ -449,5 +517,24 @@ mod tests {
         assert_eq!(runtime.voices()[0].note_on_count, 2);
         assert_eq!(runtime.voices()[0].note_change_count, 0);
         assert_eq!(runtime.voices()[0].note, Some(NoteId::new(64, 1.0)));
+    }
+
+    #[test]
+    fn controller_events_update_runtime_and_render_context() {
+        let mut runtime =
+            SynthRuntime::<TestSynth, TestVoice>::new((), vec![TestVoice::default()], 1_000.0);
+
+        runtime.handle_event(SynthEvent::PitchBend(0.25));
+        runtime.handle_event(SynthEvent::ModWheel(0.75));
+        runtime.handle_event(SynthEvent::Aftertouch(0.5));
+        runtime.note_on(NoteId::new(60, 1.0));
+        let _ = runtime.render_frame();
+
+        assert_eq!(runtime.pitch_bend(), 0.25);
+        assert_eq!(runtime.mod_wheel(), 0.75);
+        assert_eq!(runtime.aftertouch(), 0.5);
+        assert_eq!(runtime.voices()[0].last_pitch_bend, 0.25);
+        assert_eq!(runtime.voices()[0].last_mod_wheel, 0.75);
+        assert_eq!(runtime.voices()[0].last_aftertouch, 0.5);
     }
 }

@@ -58,16 +58,13 @@ impl CzSynthProcessor {
     /// Trigger a note-on event.
     ///
     /// * `note`      — MIDI note number (0-127)
-    /// * `frequency` — Hz; pass `0.0` to auto-compute from the MIDI note number
+    /// * `frequency` — Hz; accepted for API compatibility but **ignored** —
+    ///                 frequency is always derived from `note` via standard MIDI tuning.
     /// * `velocity`  — normalised 0.0-1.0
     #[wasm_bindgen(js_name = noteOn)]
     pub fn note_on(&mut self, note: u8, frequency: f32, velocity: f32) {
-        let freq = if frequency > 0.0 {
-            frequency
-        } else {
-            midi_note_to_freq(note)
-        };
-        self.inner.note_on(note, freq, velocity);
+        let _ = frequency; // ignored; kept for API compatibility
+        self.inner.note_on(note, 0.0, velocity);
     }
 
     /// Trigger a note-off event.
@@ -159,6 +156,20 @@ impl CzSynthProcessor {
                 String::from("[]")
             }
         }
+    }
+
+    /// Return output-level telemetry (peak and RMS) as JSON.
+    ///
+    /// Resets the level meter accumulator after reading so each call returns
+    /// the level for the most recent window of samples.
+    ///
+    /// JS shape: `{ "peak": number, "rms": number }`
+    #[wasm_bindgen(js_name = getLevelTelemetry)]
+    pub fn get_level_telemetry(&mut self) -> String {
+        let peak = self.inner.telemetry.peak();
+        let rms = self.inner.telemetry.rms();
+        self.inner.telemetry.reset_level();
+        format!(r#"{{"peak":{peak},"rms":{rms}}}"#)
     }
 
     /// Fill `output` with mono samples rendered by the DSP engine.

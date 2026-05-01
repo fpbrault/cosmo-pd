@@ -47,6 +47,9 @@ pub struct VoiceContext<'a, T: SynthDefinition> {
 pub struct RenderContext<'a, T: SynthDefinition> {
     pub sample_rate: f32,
     pub patch: &'a T::Patch,
+    pub pitch_bend: f32,
+    pub mod_wheel: f32,
+    pub aftertouch: f32,
     pub modulation: &'a ModMatrix<T::ModSource, T::ModTarget>,
     pub telemetry: Option<&'a mut T::Telemetry>,
 }
@@ -64,4 +67,11 @@ pub trait VoiceDsp<T: SynthDefinition> {
     fn render(&mut self, context: &mut RenderContext<T>) -> Frame;
 
     fn is_active(&self) -> bool;
+
+    /// Restore full DSP state from a snapshot taken at an earlier point.
+    /// Used by monophonic note-stack restore to resume a previous note without
+    /// re-triggering envelopes. Default implementation is a no-op.
+    fn restore_snapshot(&mut self, snapshot: &Self) {
+        let _ = snapshot;
+    }
 }

@@ -53,8 +53,11 @@ pub mod prelude {
     pub use crate::modulation::{ModMatrix, ModRoute, ModSourceValues};
     pub use crate::noise::{NoiseGenerator, SampleHold};
     pub use crate::oscillator::{waveform_sample, BasicOscillator, BasicWaveform, Wavetable};
-    pub use crate::runtime::{SynthRuntime, VoiceMode};
+    pub use crate::runtime::{ControllerState, SynthRuntime, VoiceMode};
     pub use crate::telemetry::{LevelMeter, ScopeCapture};
     pub use crate::voice::{VoiceId, VoiceRuntime, VoiceStatus};
-    pub use crate::voice_allocator::{DefaultVoiceStealer, VoiceAllocator, VoiceStealingPolicy};
+    pub use crate::voice_allocator::{
+        DefaultVoiceStealer, HighestVoiceStealer, LastVoiceStealer, LowestVoiceStealer,
+        VoiceAllocator, VoiceStealingPolicy, VoiceStealingPolicyExt,
+    };
 }
