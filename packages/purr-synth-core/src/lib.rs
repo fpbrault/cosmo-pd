@@ -28,6 +28,9 @@ pub mod telemetry;
 pub mod voice;
 pub mod voice_allocator;
 
+#[cfg(feature = "std")]
+pub mod examples;
+
 pub mod prelude {
     pub use crate::buffer::{DelayLine, RingBuffer};
     pub use crate::control::{ControlDescriptor, ControlEvent};
