@@ -1,4 +1,3 @@
-use crate::dsp::midi_note_to_hz;
 use crate::engine::{Frame, RenderContext, VoiceContext, VoiceDsp};
 use crate::envelope::{AdsrEnvelope, AdsrPhase};
 use crate::event::NoteId;
@@ -63,10 +62,34 @@ impl MiniVoice {
     }
 
     /// Compute the Hz value for an oscillator after applying semitone and cent offsets.
-    fn osc_hz(note: u8, pitch_bend_semitones: f32, semitones: i8, cents: f32, kbd_track: bool) -> f32 {
+    fn osc_hz(
+        note: u8,
+        pitch_bend_semitones: f32,
+        semitones: i8,
+        cents: f32,
+        kbd_track: bool,
+    ) -> f32 {
         let base_note = if kbd_track { note as f32 } else { 60.0 };
         let offset = pitch_bend_semitones + semitones as f32 + cents / 100.0;
-        midi_note_to_hz((base_note + offset).clamp(0.0, 127.0) as u8)
+        let fractional_note = (base_note + offset).clamp(0.0, 127.0);
+        440.0 * libm::powf(2.0, (fractional_note - 69.0) / 12.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::MiniVoice;
+
+    #[test]
+    fn osc_hz_preserves_fine_detune_direction_and_amount() {
+        let neutral = MiniVoice::osc_hz(60, 0.0, 0, 0.0, true);
+        let sharp = MiniVoice::osc_hz(60, 0.0, 0, 25.0, true);
+        let flat = MiniVoice::osc_hz(60, 0.0, 0, -25.0, true);
+
+        assert!(sharp > neutral);
+        assert!(flat < neutral);
+        assert!((sharp - neutral) < (neutral - flat) * 1.2);
+        assert!((neutral - flat) < (sharp - neutral) * 1.2);
     }
 }
 
@@ -134,9 +157,27 @@ impl VoiceDsp<MiniSynth> for MiniVoice {
         let o2 = &patch.osc2;
         let o3 = &patch.osc3;
 
-        let hz1 = Self::osc_hz(note, pb + lfo_osc1_mod, o1.semitones, o1.cents, o1.kbd_track);
-        let hz2 = Self::osc_hz(note, pb + lfo_osc2_mod, o2.semitones, o2.cents, o2.kbd_track);
-        let hz3 = Self::osc_hz(note, pb + lfo_osc3_mod, o3.semitones, o3.cents, o3.kbd_track);
+        let hz1 = Self::osc_hz(
+            note,
+            pb + lfo_osc1_mod,
+            o1.semitones,
+            o1.cents,
+            o1.kbd_track,
+        );
+        let hz2 = Self::osc_hz(
+            note,
+            pb + lfo_osc2_mod,
+            o2.semitones,
+            o2.cents,
+            o2.kbd_track,
+        );
+        let hz3 = Self::osc_hz(
+            note,
+            pb + lfo_osc3_mod,
+            o3.semitones,
+            o3.cents,
+            o3.kbd_track,
+        );
 
         let s1 = self.osc1.next(o1.waveform, hz1, sr) * o1.level;
         let s2 = self.osc2.next(o2.waveform, hz2, sr) * o2.level;

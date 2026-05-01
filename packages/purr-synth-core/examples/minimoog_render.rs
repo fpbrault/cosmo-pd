@@ -7,9 +7,9 @@
 //! Run with:
 //!   cargo run -p purr-synth-core --example minimoog_render --features std
 
+use purr_synth_core::event::SynthEvent;
 use purr_synth_core::examples::minimoog::{MiniPatch, MiniSynth, MiniVoice};
 use purr_synth_core::runtime::{SynthRuntime, VoiceMode};
-use purr_synth_core::event::SynthEvent;
 
 fn main() {
     const SAMPLE_RATE: f32 = 44_100.0;
@@ -27,7 +27,9 @@ fn main() {
 
     for i in 0..TOTAL_FRAMES {
         if i == NOTE_ON_FRAME {
-            engine.handle_event(SynthEvent::NoteOn(purr_synth_core::event::NoteId::new(60, 0.787)));
+            engine.handle_event(SynthEvent::NoteOn(purr_synth_core::event::NoteId::new(
+                60, 0.787,
+            )));
         }
         if i == NOTE_OFF_FRAME {
             engine.handle_event(SynthEvent::NoteOff { midi_note: 60 });

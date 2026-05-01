@@ -266,6 +266,7 @@ where
             return;
         }
 
+        let had_held_note = !self.mono_note_stack.is_empty();
         self.mono_note_stack
             .retain(|stacked_note| stacked_note.midi_note != note.midi_note);
         self.mono_note_stack.push(note);
@@ -277,7 +278,7 @@ where
         };
         self.voice_runtimes[0].note_on(note, self.sample_clock);
 
-        if legato && was_active {
+        if legato && was_active && had_held_note {
             self.voices[0].note_change(note, &context);
         } else {
             self.voices[0].note_on(note, &context);
@@ -431,5 +432,22 @@ mod tests {
         assert_eq!(runtime.voices()[0].note_change_count, 2);
         assert_eq!(runtime.voices()[0].note, Some(NoteId::new(60, 1.0)));
         assert!(!runtime.voice_runtimes()[1].is_active());
+    }
+
+    #[test]
+    fn monophonic_new_note_after_release_retriggers_note_on() {
+        let mut runtime =
+            SynthRuntime::<TestSynth, TestVoice>::new((), vec![TestVoice::default()], 1_000.0);
+        runtime.set_voice_mode(VoiceMode::Monophonic { legato: true });
+
+        runtime.note_on(NoteId::new(60, 1.0));
+        runtime.note_off(60);
+        runtime.voice_runtimes[0].status = VoiceStatus::Releasing;
+        runtime.voices[0].active = true;
+        runtime.note_on(NoteId::new(64, 1.0));
+
+        assert_eq!(runtime.voices()[0].note_on_count, 2);
+        assert_eq!(runtime.voices()[0].note_change_count, 0);
+        assert_eq!(runtime.voices()[0].note, Some(NoteId::new(64, 1.0)));
     }
 }
