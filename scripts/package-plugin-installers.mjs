@@ -98,7 +98,7 @@ function run(cmd, args, opts = {}) {
 function resolveTargetRoot(rootDir) {
 	const fromEnv = process.env.CARGO_TARGET_DIR;
 	if (!fromEnv) {
-		return path.join(rootDir, "packages", "cosmo-pd101", "target");
+		return path.join(rootDir, "packages", "cosmo-pd101-plugin", "target");
 	}
 
 	if (path.isAbsolute(fromEnv)) {

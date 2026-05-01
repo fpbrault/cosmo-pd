@@ -83,6 +83,12 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Check plugin Rust targets (non-linux)
+        if: matrix.os != 'ubuntu-latest'
+        env:
+          RUSTFLAGS: -D warnings
+        run: cargo check -p cosmo-pd101-plugin --all-targets
+
       - name: Build plugins
         env:
           ARCH: ${{ matrix.arch }}

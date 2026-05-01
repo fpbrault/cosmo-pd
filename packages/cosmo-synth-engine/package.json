@@ -4,6 +4,6 @@
 	"version": "0.1.0",
 	"type": "module",
 	"scripts": {
-		"build:wasm": "cargo check --workspace && cross-env RUSTFLAGS='-D warnings' cargo check -p cosmo-pd101-plugin --all-targets && cross-env CARGO_TARGET_DIR=target wasm-pack build . --target no-modules --out-dir ../cz-explorer/public/cosmo-synth-engine-wasm --features wasm && rimraf ../cz-explorer/public/cosmo-synth-engine-wasm/.gitignore"
+		"build:wasm": "cross-env RUSTFLAGS='-D warnings' cargo check --workspace --exclude cosmo-pd101-plugin --exclude cz-explorer-desktop && cross-env RUSTFLAGS='-D warnings' cargo check -p cosmo-synth-engine --features wasm && cross-env CARGO_TARGET_DIR=target wasm-pack build . --target no-modules --out-dir ../cz-explorer/public/cosmo-synth-engine-wasm --features wasm && rimraf ../cz-explorer/public/cosmo-synth-engine-wasm/.gitignore"
 	}
 }
