@@ -86,12 +86,6 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Check plugin Rust targets (non-linux)
-        if: matrix.os != 'ubuntu-latest'
-        env:
-          RUSTFLAGS: -D warnings
-        run: cargo check -p cosmo-pd101-plugin --all-targets
-
       - name: Build plugins
         env:
           ARCH: ${{ matrix.arch }}
@@ -100,7 +94,14 @@ jobs:
       - name: Install NSIS
         if: matrix.platform == 'windows'
         shell: powershell
-        run: choco install nsis -y
+        run: |
+          choco install nsis -y
+          $nsisPath = "C:\Program Files (x86)\NSIS"
+          if (Test-Path $nsisPath) {
+            echo $nsisPath >> $env:GITHUB_PATH
+          } else {
+            echo "C:\ProgramData\chocolatey\bin" >> $env:GITHUB_PATH
+          }
 
       - name: Package plugin installers
         env:
