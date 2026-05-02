@@ -86,6 +86,10 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay() {
 	const effectiveIntPmAmount = phaseModEnabled ? intPmAmount : 0;
 	const { value: line1Level } = useSynthParam("line1Level");
 	const { value: line2Level } = useSynthParam("line2Level");
+	const { value: line1BaseWaveformA } = useSynthParam("line1BaseWaveformA");
+	const { value: line1BaseWaveformB } = useSynthParam("line1BaseWaveformB");
+	const { value: line2BaseWaveformA } = useSynthParam("line2BaseWaveformA");
+	const { value: line2BaseWaveformB } = useSynthParam("line2BaseWaveformB");
 	const { value: line1AlgoControlsA } = useSynthParam("line1AlgoControlsA");
 	const { value: line1AlgoControlsB } = useSynthParam("line1AlgoControlsB");
 	const { value: line2AlgoControlsA } = useSynthParam("line2AlgoControlsA");
@@ -109,6 +113,10 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay() {
 				windowType,
 				line1Level,
 				line2Level,
+				line1BaseWaveformA,
+				line1BaseWaveformB,
+				line2BaseWaveformA,
+				line2BaseWaveformB,
 				line1AlgoControlsA,
 				line1AlgoControlsB,
 				line2AlgoControlsA,
@@ -129,6 +137,10 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay() {
 			windowType,
 			line1Level,
 			line2Level,
+			line1BaseWaveformA,
+			line1BaseWaveformB,
+			line2BaseWaveformA,
+			line2BaseWaveformB,
 			line1AlgoControlsA,
 			line1AlgoControlsB,
 			line2AlgoControlsA,

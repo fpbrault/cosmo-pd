@@ -1,32 +1,5 @@
 # Synth Core Framework Implementation Roadmap
 
-## Status
-
-| Workstream | Title | Status |
-|---|---|---|
-| A | Architecture and boundary definition | ✅ Complete |
-| B | Core runtime extraction in place | ✅ Complete |
-| C | Framework API definition | ✅ Complete |
-| D | PD-101 implementation migration | ✅ Complete (D1–D6) |
-| E | Validation and parity | 🔲 Not started |
-| F | Minimoog-style example synth | ✅ Complete |
-| G | `egui` validation UI | ✅ Complete |
-| H | Documentation and extraction follow-up | 🔲 Not started |
-
-**Implementation note:** Rather than migrating the `cosmo-synth-engine` package in-place, the framework was extracted as a new standalone crate: `packages/purr-synth-core`. This covers Workstreams A–C and F–G. The crate lives independently of the PD-101 engine and is validated by the Minimoog example synth and its `egui` UI. Workstream D is now complete: the PD-101 engine implements `purr-synth-core` framework traits through a new `pd101/` module (see D1–D6 detail below).
-
-**D migration outcome:** `CosmoProcessor` retains its hand-written note stack, voice stealing, sustain, and LFO — these diverge from `SynthRuntime` in ways that require further validation before replacement (see D3 deferred items below).
-
-| Phase | Focus | Status |
-|---|---|---|
-| Phase 1: Architecture lock | Workstreams A, C | ✅ Complete |
-| Phase 2: In-place extraction | Workstream B | ✅ Complete (as new crate) |
-| Phase 3: PD-101 migration | Workstreams D, E | � D complete; E next |
-| Phase 4: Example synth proof | Workstreams F, G | ✅ Complete |
-| Phase 5: Stabilization | Workstream H | 🔲 Pending |
-
----
-
 ## Purpose
 
 This roadmap translates the synth core framework PRD into an implementation sequence with concrete package and module tasks. It is intended to guide delivery of v1 of the reusable synth framework, including:
@@ -139,15 +112,9 @@ Target modules:
 - `src/core/envelopes/adsr.rs`
 - `src/core/envelopes/step.rs`
 - `src/core/dsp/lfo.rs`
-- `src/core/dsp/oscillator.rs`
-- `src/core/dsp/noise.rs`
-- `src/core/dsp/filter.rs`
-- `src/core/dsp/buffer.rs`
-- `src/core/dsp/mixing.rs`
 - `src/core/dsp/phase.rs`
 - `src/core/dsp/smoothing.rs`
 - `src/core/dsp/math.rs`
-- `src/core/control.rs`
 - `src/core/telemetry.rs`
 
 Tasks:
@@ -156,12 +123,9 @@ Tasks:
 2. Move note event, sustain, mono/poly, legato, and voice selection logic into reusable runtime modules.
 3. Extract reusable modulation route storage and evaluation helpers.
 4. Extract generic DSP utilities into focused modules instead of a single shared file.
-5. Extract optional reusable oscillator, noise, filter, sampling/buffer, mixing, and effects primitives where they are broadly reusable.
-6. Extract reusable ADSR and generic step-envelope runtimes.
-7. Define generic control-event and MIDI-mapping support without imposing a universal parameter schema.
-8. Define opt-in telemetry and capture surfaces for visualization without coupling core code to UI renderers.
-9. Leave PD-101-specific envelope rules, mappings, algorithms, and signal curves in synth-specific modules.
-10. Keep temporary compatibility shims where needed to avoid a big-bang rewrite.
+5. Extract reusable ADSR and generic step-envelope runtimes.
+6. Leave PD-101-specific envelope rules, mappings, and signal curves in synth-specific modules.
+7. Keep temporary compatibility shims where needed to avoid a big-bang rewrite.
 
 Detailed task list by current file:
 
@@ -232,7 +196,7 @@ Exit criteria:
 
 Goal:
 
-Migrate the PD-101 engine in `packages/cosmo-synth-engine` to implement the `purr-synth-core` framework traits (`SynthDefinition`, `VoiceDsp`), replacing the ad-hoc internal runtime with the reusable infrastructure from `purr-synth-core`. The WASM entry points and downstream TypeScript consumers must remain stable.
+Move the current engine onto the framework boundary without breaking audio behavior or downstream consumers.
 
 Primary packages:
 
@@ -240,102 +204,49 @@ Primary packages:
 - `packages/cosmo-pd101`
 - `packages/cosmo-pd101-plugin`
 
-Dependency to add:
+Target modules:
 
-```toml
-# packages/cosmo-synth-engine/Cargo.toml
-purr-synth-core = { path = "../purr-synth-core" }
-```
+- `packages/cosmo-synth-engine/src/pd101/patch.rs`
+- `packages/cosmo-synth-engine/src/pd101/voice.rs`
+- `packages/cosmo-synth-engine/src/pd101/envelopes/`
+- `packages/cosmo-synth-engine/src/pd101/algorithms/`
+- `packages/cosmo-synth-engine/src/pd101/modulation.rs`
+- `packages/cosmo-synth-engine/src/pd101/telemetry.rs`
 
-#### D1 — Define the PD-101 synth boundary types ✅
+Tasks:
 
-File: `packages/cosmo-synth-engine/src/pd101/synth.rs` ✅ Created
+1. Move PD-101 patch and parameter types behind a synth-specific boundary.
+2. Move CZ envelope mapping and behavior into PD-101 modules.
+3. Move phase distortion algorithms and line-select logic into PD-101 modules.
+4. Implement the framework synth-definition and voice-DSP traits for PD-101.
+5. Preserve runtime telemetry needed by existing UI or host surfaces.
+6. Keep WASM-facing entry points stable or version them deliberately.
 
-Outcome:
-- `Pd101Synth` marker type implements `SynthDefinition`.
-- `Patch = Pd101Patch` — wraps `SynthParams` plus per-frame LFO/controller scalars (`lfo1_out`, `lfo2_out`, `random_out`, `pitch_bend_semitones`, `mod_wheel`, `aftertouch`).
-- `ModSource = crate::params::ModSource` — reuses existing CZ enum, no duplication.
-- `ModTarget = crate::params::ModDestination` — same.
-- `Telemetry = Pd101Telemetry` (see D4).
+Concrete file migration tasks:
 
-#### D2 — Adapt the voice to `VoiceDsp` ✅
+- `src/params.rs`
+  - split reusable concepts from PD-101 parameter schema
+  - keep PD-101 patch and algorithm-control structures in synth-specific modules
+- `src/preset_wire.rs`
+  - keep PD-101-only serialization in synth-specific code
+- `src/wasm.rs`
+  - adapt wrapper to instantiate framework-backed PD-101 engine
+- `src/lib.rs`
+  - publish intentional public modules only
 
-File: `packages/cosmo-synth-engine/src/pd101/voice.rs` ✅ Created
+Downstream tasks:
 
-Outcome:
-- `Pd101Voice` wraps `Voice` and implements `VoiceDsp<Pd101Synth>`.
-- `note_on()` replicates `CosmoProcessor::initialize_voice_for_note` — portamento, phase reset, envelope reset, mod-env trigger.
-- `note_off()` replicates `CosmoProcessor::start_release` — all step-envelope and mod-env release.
-- `render()` delegates to `render_voice()` using LFO values from `Pd101Patch`.
-- `is_active()` mirrors `!Voice::is_silent`.
-- Implements `Deref<Target = Voice>` and `DerefMut` for transparent field access in `CosmoProcessor`.
+- `packages/cosmo-pd101`
+  - update bindings if engine-facing type names or runtime surfaces change
+  - verify no accidental dependency on engine-internal layout
+- `packages/cosmo-pd101-plugin`
+  - verify plugin still instantiates engine and receives expected telemetry or control surfaces
 
-#### D3 — Thread `Pd101Voice` through the processor ✅
+Exit criteria:
 
-File: `packages/cosmo-synth-engine/src/processor.rs` ✅ Updated
-
-Outcome:
-- `CosmoProcessor::voices` changed from `[Voice; NUM_VOICES]` to `[Pd101Voice; NUM_VOICES]`.
-- `MonoStackEntry::voice` changed to `Pd101Voice`.
-- All existing field access via `self.voices[i].field` works transparently through `DerefMut`.
-- Render loop still calls `render_voice()` directly (not through `VoiceDsp::render()`) — this is intentional because:
-  - `CosmoProcessor` steals the **lowest-amplitude releasing** voice; `SynthRuntime` steals the oldest.
-  - Mono-mode restores full voice state on note-off (`*voice = prev.voice.clone()`); `SynthRuntime` does not.
-  - LFO phases are computed **globally** at the processor level; `SynthRuntime` has no equivalent.
-- Full `SynthRuntime` adoption is a post-v1 task requiring parity tests.
-
-#### D4 — Wire telemetry ✅
-
-Files: `packages/cosmo-synth-engine/src/pd101/telemetry.rs` ✅ Created; `processor.rs` ✅ Updated
-
-Outcome:
-- `Pd101Telemetry` contains `ScopeCapture` (512 samples, 4× decimation) and `LevelMeter`.
-- `CosmoProcessor::telemetry: Pd101Telemetry` field added.
-- Every post-FX clamped sample is fed through `telemetry.push()` in `process()`.
-- WASM getter `getLevelTelemetry` exposes `{ peak, rms }` JSON and resets the accumulator.
-
-#### D5 — Stabilize WASM entry points ✅
-
-File: `packages/cosmo-synth-engine/src/wasm.rs` ✅ Updated
-
-Outcome:
-- All existing `#[wasm_bindgen]` methods verified unchanged (`noteOn`, `noteOff`, `setSustain`, `setPitchBend`, `setModWheel`, `setAftertouch`, `setParams`, `applyModulePreset`, `setFxSlotType`, `process`, `getRuntimeModSources`, `getRuntimeVoiceStates`).
-- New `getLevelTelemetry` getter added — non-breaking addition.
-- `cargo check --features wasm --target wasm32-unknown-unknown` passes.
-
-#### D6 — Envelope migration 📋 Deferred post-v1
-
-Outcome of analysis:
-- `AdsrEnv` (in `voice.rs`) is behaviorally equivalent to `purr_synth_core::envelope::AdsrEnvelope`. Migration is feasible but risky without test coverage of the mod-envelope audio path. Deferred.
-- CZ step envelopes (`EnvGen` in `envelope.rs`) use CZ-specific rate tables, sustain-step semantics, and loop-back behavior. These are **not compatible** with `purr_synth_core::envelope::StepEnvelope` (which uses duration-in-seconds linear interpolation). CZ step envelopes must remain in PD-101-specific code permanently.
-
-#### File-level migration map
-
-| Current file | Action | Status |
-|---|---|---|
-| `src/processor.rs` | Replace runtime internals with `SynthRuntime`; keep WASM wiring | 🔄 Partial — `Pd101Voice` threaded in; `SynthRuntime` deferred (see D3) |
-| `src/voice.rs` | Implement `VoiceDsp<Pd101Synth>`; remove framework responsibilities | ✅ `Pd101Voice` wraps `Voice`; `VoiceDsp` implemented in `pd101/voice.rs` |
-| `src/envelope.rs` | Migrate generic ADSR to `purr-synth-core`; keep CZ-specific rules | 📋 Deferred — CZ envelopes incompatible with framework `StepEnvelope` |
-| `src/default_envelopes.rs` | Move CZ default presets to `pd101/envelopes/` | 📋 Post-v1 |
-| `src/envelope_map.rs` | Move to `pd101/envelopes/mapping.rs` | 📋 Post-v1 |
-| `src/dsp_utils.rs` | Remove anything already in `purr_synth_core::dsp`, `lfo`, `oscillator` | 📋 Post-v1 |
-| `src/params.rs` | Becomes `pd101/patch.rs`; remove framework concepts | 📋 Post-v1 |
-| `src/preset_wire.rs` | Stays in `pd101/`; no framework dependency | — No change needed |
-| `src/generators/` | Stays PD-101–specific; no framework change | — No change needed |
-| `src/fx/` | Evaluate against `purr_synth_core::effects`; deduplicate where safe | 📋 Post-v1 |
-| `src/wasm.rs` | Thin adapter only; no business logic | ✅ Entry points verified; `getLevelTelemetry` added |
-| `src/module_presets.rs` | Move to `pd101/presets.rs` | 📋 Post-v1 |
-| `src/pd101/synth.rs` | New — `Pd101Synth` + `Pd101Patch` boundary types | ✅ Created |
-| `src/pd101/voice.rs` | New — `Pd101Voice` + `VoiceDsp<Pd101Synth>` | ✅ Created |
-| `src/pd101/telemetry.rs` | New — `Pd101Telemetry` with `LevelMeter` + `ScopeCapture` | ✅ Created |
-
-#### Exit criteria status
-
-- ✅ `packages/cosmo-synth-engine` builds with `purr-synth-core` as a dependency.
-- ✅ WASM target (`--features wasm --target wasm32-unknown-unknown`) passes `cargo check`.
-- ✅ All 39 passing tests in `cosmo-synth-engine` continue to pass (3 pre-existing failures unchanged).
-- ✅ PD-101 framework boundary (`SynthDefinition`, `VoiceDsp`) defined and wired through processor.
-- 🔄 No hand-written voice stealing/note stack/sustain remains in `processor.rs` — deferred; divergences from `SynthRuntime` semantics require parity test coverage first.
+- PD-101 builds on the framework boundary.
+- Existing web and plugin flows continue to work or have documented migration changes.
+- PD-101-specific logic is no longer mixed into shared runtime modules.
 
 ### Workstream E: Validation and parity
 
@@ -447,8 +358,6 @@ Recommended UI scope:
 - envelope parameters
 - master volume
 - note trigger controls or basic keyboard mapping
-- MIDI learn for at least one mapped control
-- simple scope or runtime meter fed by telemetry/capture data
 
 Exit criteria:
 
@@ -523,17 +432,8 @@ Deliverables:
 
 Focus:
 
-- complete Workstream D (tasks D1–D6 in order)
-- run Workstream E continuously alongside each task
-
-Suggested task order:
-
-1. D1 — Define `Pd101Synth` boundary types (no behavior change, safe to land first)
-2. D2 — Implement `VoiceDsp` for the PD-101 voice (most isolated change)
-3. D3 — Replace processor runtime with `SynthRuntime` (largest change; run E after this)
-4. D4 — Wire telemetry through `RenderContext`
-5. D5 — Verify and stabilize WASM entry points
-6. D6 — Migrate envelope modules
+- complete Workstream D
+- run Workstream E continuously
 
 Deliverables:
 
