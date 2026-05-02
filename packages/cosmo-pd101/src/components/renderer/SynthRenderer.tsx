@@ -236,8 +236,8 @@ function SynthRendererContent({
 							</AsidePanelSwitcher>
 						</aside>
 
-						<main className="flex min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
-							<div className="flex w-full  min-h-0 flex-1 flex-col rounded-[1.2rem] mx-auto max-w-5xl">
+						<main className="flex min-h-0 min-w-0 overflow-y-auto overflow-x-hidden w-full max-w-4xl mx-auto">
+							<div className="flex w-full  min-h-0 flex-1 flex-col rounded-[1.2rem] mx-auto">
 								<div className="pointer-events-none absolute inset-x-4 top-0 h-12 rounded-t-[1.2rem] opacity-70" />
 								<div className="relative shrink-0 rounded-md border border-cz-border bg-cz-body px-3 shadow-inner">
 									<div className="flex flex-wrap justify-center gap-y-2 gap-x-4 items-center">

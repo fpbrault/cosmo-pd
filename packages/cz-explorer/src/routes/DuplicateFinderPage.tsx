@@ -142,7 +142,7 @@ export default function DuplicateFinderPage() {
 	return (
 		<div className="flex grow min-w-0 h-full overflow-hidden bg-base-300">
 			<section className="flex grow min-w-0 overflow-hidden p-4 lg:p-6">
-				<div className="mx-auto flex h-full w-full max-w-5xl min-w-0 flex-col overflow-hidden rounded-xl border border-base-content/15 bg-base-100 p-4 lg:p-6">
+				<div className="mx-auto flex h-full w-full min-w-0 flex-col overflow-hidden rounded-xl border border-base-content/15 bg-base-100 p-4 lg:p-6">
 					<h1 className="text-2xl font-bold">Duplicate Finder</h1>
 					<p className="mt-1 text-sm opacity-70">
 						{groups.length} duplicate groups, {totalDuplicates} total duplicate

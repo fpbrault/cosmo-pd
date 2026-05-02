@@ -74,6 +74,14 @@ export interface ControlKnobProps {
 	modTrailDuration?: number;
 	/** Non-linear scaling curve for pointer/wheel interaction and rendered position. */
 	curve?: KnobCurve;
+	/** Shows MIDI Learn visual overlay on the knob face. */
+	midiLearnOverlay?: boolean;
+	/** Highlights this knob as the currently selected MIDI Learn target. */
+	midiLearnTargetActive?: boolean;
+	/** Called when the knob is selected as the MIDI Learn target. */
+	onMidiLearnSelect?: () => void;
+	/** Mapped MIDI CC number, when this knob has an active mapping. */
+	midiLearnMappedCc?: number | null;
 }
 
 export function ControlKnob({
@@ -107,6 +115,10 @@ export function ControlKnob({
 	modulatedValue,
 	modTrailDuration = 220,
 	curve = "linear",
+	midiLearnOverlay = false,
+	midiLearnTargetActive = false,
+	onMidiLearnSelect,
+	midiLearnMappedCc = null,
 }: ControlKnobProps) {
 	const svgRef = useRef<SVGSVGElement | null>(null);
 	const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -212,6 +224,9 @@ export function ControlKnob({
 	const hoverHandlers = useHoverInfoHandlers(resolvedTooltip, {
 		useCapture: true,
 	});
+	const hasMidiMapping = typeof midiLearnMappedCc === "number";
+	const showMidiLearnVisuals = midiLearnOverlay;
+	const showMappedVisual = showMidiLearnVisuals && hasMidiMapping;
 
 	const inner = (
 		<div
@@ -228,11 +243,27 @@ export function ControlKnob({
 					</div>
 				</div>
 			)}
+			{showMappedVisual ? (
+				<div
+					className="tooltip tooltip-success tooltip-top"
+					data-tip="MIDI CC mapping"
+				>
+					<div className="badge badge-success badge-xs font-mono tracking-wide">
+						CC {midiLearnMappedCc}
+					</div>
+				</div>
+			) : null}
 			<Button
 				ref={buttonRef}
 				type="button"
 				role="spinbutton"
 				className={`rounded-full border border-base-300/80 bg-base-300/40 p-0 shadow-lg backdrop-blur-sm touch-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-base-content/30 ${
+					showMidiLearnVisuals && midiLearnTargetActive
+						? "ring-2 ring-error/80"
+						: showMappedVisual
+							? "ring-2 ring-success/70"
+							: ""
+				} ${
 					disabled
 						? "cursor-not-allowed opacity-60"
 						: "cursor-grab active:cursor-grabbing"
@@ -248,13 +279,41 @@ export function ControlKnob({
 				onPointerLeave={() => setHovered(false)}
 				onFocus={() => setHovered(true)}
 				onBlur={() => setHovered(false)}
-				onPointerDown={onPointerDown}
+				onPointerDown={(event) => {
+					if (midiLearnOverlay && onMidiLearnSelect) {
+						event.preventDefault();
+						onMidiLearnSelect();
+						return;
+					}
+					onPointerDown(event);
+				}}
 				onPointerMove={onPointerMove}
 				onPointerUp={onPointerUp}
 				onPointerCancel={onPointerCancel}
 				onDoubleClick={onDoubleClick}
-				onKeyDown={onKeyDown}
+				onKeyDown={(event) => {
+					if (
+						midiLearnOverlay &&
+						onMidiLearnSelect &&
+						(event.key === "Enter" || event.key === " ")
+					) {
+						event.preventDefault();
+						onMidiLearnSelect();
+						return;
+					}
+					onKeyDown(event);
+				}}
+				onClick={() => {
+					if (midiLearnOverlay && onMidiLearnSelect) {
+						onMidiLearnSelect();
+					}
+				}}
 			>
+				{showMappedVisual ? (
+					<div className="pointer-events-none absolute inset-0 rounded-full border border-success/80 bg-success/15" />
+				) : showMidiLearnVisuals ? (
+					<div className="pointer-events-none absolute inset-0 rounded-full border border-error/80 bg-error/15" />
+				) : null}
 				<KnobView
 					normalizedValue={normalizedValue}
 					bipolarNorm={bipolarNorm}

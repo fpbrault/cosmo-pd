@@ -1,4 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useMidiLearnStore } from "@/features/synth/midiLearnStore";
+import {
+	SYNTH_PARAM_SETTERS,
+	type SynthParamKey,
+} from "@/features/synth/synthParamSetters";
 import type { ModSource, SynthParams } from "@/lib/synth/bindings/synth";
 import { DEFAULT_PRESET } from "@/lib/synth/presetStorage";
 
@@ -185,6 +190,17 @@ export function useAudioEngine({
 
 		const init = async () => {
 			try {
+				const setMidiMappings = useMidiLearnStore.getState().setMappings;
+				type RawMidiMapping = {
+					cc?: unknown;
+					targetKey?: unknown;
+				};
+				type ValidMidiMapping = {
+					cc: number;
+					targetKey: SynthParamKey;
+				};
+				const isSynthParamKey = (value: string): value is SynthParamKey =>
+					value in SYNTH_PARAM_SETTERS;
 				const ctx = new AudioContext();
 				if (disposed) {
 					ctx.close();
@@ -268,6 +284,23 @@ export function useAudioEngine({
 								),
 							);
 						}
+					} else if (e.data?.type === "midiMappings") {
+						const rawMappings: RawMidiMapping[] = Array.isArray(e.data.mappings)
+							? (e.data.mappings as RawMidiMapping[])
+							: [];
+						setMidiMappings(
+							rawMappings
+								.filter(
+									(entry): entry is ValidMidiMapping =>
+										typeof entry?.cc === "number" &&
+										typeof entry?.targetKey === "string" &&
+										isSynthParamKey(entry.targetKey),
+								)
+								.map((entry) => ({
+									cc: entry.cc,
+									target: entry.targetKey as SynthParamKey,
+								})),
+						);
 					} else if (e.data?.type === "error") {
 						console.error("[CZ Synth WASM] Worklet error:", e.data.message);
 					}

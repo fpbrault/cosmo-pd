@@ -194,7 +194,6 @@ where
             SynthEvent::ModWheel(value) => self.set_mod_wheel(value),
             SynthEvent::Aftertouch(value) => self.set_aftertouch(value),
             SynthEvent::AllNotesOff => self.all_notes_off(),
-            SynthEvent::MidiControl(_) => {}
         }
     }
 

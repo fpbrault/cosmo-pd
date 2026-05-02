@@ -370,7 +370,7 @@ export type DistortionParams = { enabled?: boolean; mode?: number; drive?: numbe
 /**
  * Juno-style chorus parameters
  */
-export type JunoChorusParams = { enabled?: boolean; mode?: number; mix?: number }
+export type JunoChorusParams = { enabled?: boolean; mix?: number; mode?: number }
 
 /**
  * Ring modulator parameters

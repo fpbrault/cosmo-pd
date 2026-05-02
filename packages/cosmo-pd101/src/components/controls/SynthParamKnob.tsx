@@ -1,5 +1,6 @@
 import { memo, useMemo } from "react";
 import { ControlKnob } from "@/components/controls/ControlKnob";
+import { useMidiLearnStore } from "@/features/synth/midiLearnStore";
 import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import type {
 	EngineParamReadoutFormatV1,
@@ -90,6 +91,18 @@ function SynthParamKnobInner({
 	modDestination,
 	valueFormatter: valueFormatterOverride,
 }: SynthParamKnobProps) {
+	const midiLearnEnabled = useMidiLearnStore((state) => state.enabled);
+	const activeMidiLearnTarget = useMidiLearnStore(
+		(state) => state.activeTarget,
+	);
+	const mappedCc = useMidiLearnStore((state) => {
+		const mapping = state.mappings.find((entry) => entry.target === paramKey);
+		return mapping?.cc ?? null;
+	});
+	const setActiveMidiLearnTarget = useMidiLearnStore(
+		(state) => state.setActiveTarget,
+	);
+
 	const meta = ENGINE_PARAM_UI_META_BY_KEY[paramKey] as
 		| EngineParamUiMetaRuntime
 		| undefined;
@@ -122,6 +135,14 @@ function SynthParamKnobInner({
 			modDestination={
 				modDestination ?? (meta?.modDestination as ModDestination | undefined)
 			}
+			midiLearnOverlay={midiLearnEnabled}
+			midiLearnTargetActive={
+				midiLearnEnabled && activeMidiLearnTarget === paramKey
+			}
+			onMidiLearnSelect={
+				midiLearnEnabled ? () => setActiveMidiLearnTarget(paramKey) : undefined
+			}
+			midiLearnMappedCc={mappedCc}
 		/>
 	);
 }

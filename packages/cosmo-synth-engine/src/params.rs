@@ -1402,10 +1402,10 @@ impl Default for LoFiParams {
 pub struct JunoChorusParams {
     #[serde(default)]
     pub enabled: bool,
-    #[serde(default)]
-    pub mode: u8,
     #[serde(default = "default_half")]
     pub mix: f32,
+    #[serde(default)]
+    pub mode: u8,
 }
 
 impl Default for JunoChorusParams {

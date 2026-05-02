@@ -264,7 +264,7 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 				break;
 			}
 			case "noteOn":
-				synth.noteOn(d.note, d.frequency ?? 0, d.velocity ?? 1);
+				synth.noteOn(d.note, d.velocity ?? 1);
 				break;
 			case "noteOff":
 				synth.noteOff(d.note);
@@ -280,6 +280,26 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 				break;
 			case "aftertouch":
 				synth.setAftertouch(d.value);
+				break;
+			case "midiLearnEnabled":
+				if (typeof synth.setMidiLearnEnabled === "function") {
+					synth.setMidiLearnEnabled(Boolean(d.enabled));
+				}
+				break;
+			case "midiLearnTarget":
+				if (typeof synth.setMidiLearnTarget === "function") {
+					synth.setMidiLearnTarget(
+						d.target,
+						d.min ?? 0,
+						d.max ?? 1,
+						d.curve ?? "linear",
+					);
+				}
+				break;
+			case "midiCc":
+				if (typeof synth.midiCc === "function") {
+					synth.midiCc(d.channel ?? 0, d.controller, d.value);
+				}
 				break;
 		}
 	}
@@ -481,6 +501,22 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 		}
 	}
 
+	_emitMidiMappings() {
+		if (!this._synth || typeof this._synth.getMidiMappings !== "function") {
+			return;
+		}
+
+		try {
+			const mappings = JSON.parse(this._synth.getMidiMappings());
+			this.port.postMessage({
+				type: "midiMappings",
+				mappings,
+			});
+		} catch (err) {
+			console.error("[czSynthWorklet] Failed to read MIDI mappings:", err);
+		}
+	}
+
 	// ── Audio render loop ─────────────────────────────────────────────────
 
 	process(_inputs, outputs, _params) {
@@ -501,6 +537,7 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 			this._runtimeTelemetryCounter = 0;
 			this._emitRuntimeModSources();
 			this._emitRuntimeVoiceStates();
+			this._emitMidiMappings();
 		}
 
 		// Copy to right channel if present

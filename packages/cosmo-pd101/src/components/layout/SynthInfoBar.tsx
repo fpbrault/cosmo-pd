@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Button from "@/components/controls/Button";
+import { useMidiLearnStore } from "@/features/synth/midiLearnStore";
 
 type SynthInfoBarProps = {
 	infoText: string;
@@ -16,6 +17,9 @@ export default function SynthInfoBar({
 	keyboardVisible,
 	onKeyboardToggle,
 }: SynthInfoBarProps) {
+	const midiLearnEnabled = useMidiLearnStore((state) => state.enabled);
+	const toggleMidiLearn = useMidiLearnStore((state) => state.toggleEnabled);
+
 	return (
 		<div className="relative z-20 mt-1 flex min-h-8 flex-wrap items-center gap-x-3 gap-y-1 rounded-t-sm border border-cz-border/80 bg-cz-body px-3 py-1 font-mono text-[0.62rem] uppercase tracking-[0.22em] text-cz-cream/80 shadow-inner">
 			<span className="text-cz-light-blue/80">Info</span>
@@ -25,6 +29,17 @@ export default function SynthInfoBar({
 					{bottomBarExtra}
 				</div>
 			) : null}
+			<Button
+				type="button"
+				onClick={toggleMidiLearn}
+				className={`btn btn-sm px-2 py-1 text-[0.56rem] uppercase tracking-[0.24em] ${
+					midiLearnEnabled
+						? "border-error/80 bg-error/20 text-error"
+						: "border-cz-border bg-transparent text-cz-cream/70 hover:text-cz-cream"
+				}`}
+			>
+				Midi Learn
+			</Button>
 			{showKeyboardToggle ? (
 				<Button
 					type="button"

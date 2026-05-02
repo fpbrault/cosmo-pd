@@ -5,8 +5,8 @@ import { createPortal } from "react-dom";
 import Button from "@/components/controls/Button";
 import { useSynthStore } from "@/features/synth/synthStore";
 import type { FxSlotType } from "@/lib/synth/bindings/synth";
+import FxSlotModuleRenderer from "./drawer-modules/FxSlotModuleRenderer";
 import { FX_SLOT_MODULE_CONFIGS } from "./drawer-modules/fxSlotModuleConfig";
-import GenericFxSlotModule from "./drawer-modules/GenericFxSlotModule";
 import { FxSlotContext } from "./FxSlotContext";
 
 // ---------------------------------------------------------------------------
@@ -257,9 +257,8 @@ function EmptySlot({ slot }: { slot: number }) {
 // ---------------------------------------------------------------------------
 
 function SlotModule({ type, slot }: { type: FxSlotType; slot: number }) {
-	// All other slot-based FX modules are driven by config
 	const config = FX_SLOT_MODULE_CONFIGS[type];
-	if (config) return <GenericFxSlotModule config={config} slot={slot} />;
+	if (config) return <FxSlotModuleRenderer config={config} slot={slot} />;
 
 	return null;
 }

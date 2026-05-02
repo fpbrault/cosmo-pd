@@ -399,7 +399,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 	};
 
 	return (
-		<div className="min-h-0 min-w-0 h-full flex-1 flex flex-col overflow-visible">
+		<>
 			{activeSection === "algos" ? (
 				<div className="flex-1 grid grid-cols-3 min-h-0 gap-4">
 					<div className="min-h-0 flex-1 flex flex-col gap-2">
@@ -501,7 +501,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 					lineIndex={lineIndex}
 				/>
 			)}
-		</div>
+		</>
 	);
 });
 

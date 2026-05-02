@@ -263,6 +263,12 @@ impl<T: Copy + Eq> MidiMappingTable<T> {
         &self.mappings
     }
 
+    pub fn mapping_for_target(&self, target: T) -> Option<&MidiMapping<T>> {
+        self.mappings
+            .iter()
+            .find(|mapping| mapping.target == target)
+    }
+
     pub fn learn_state(&self) -> Option<MidiLearnState<T>> {
         self.learn_state
     }

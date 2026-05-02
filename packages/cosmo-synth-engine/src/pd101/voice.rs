@@ -1,5 +1,3 @@
-use core::ops::{Deref, DerefMut};
-
 use purr_synth_core::engine::{Frame, RenderContext, VoiceContext, VoiceDsp};
 use purr_synth_core::event::NoteId;
 
@@ -20,11 +18,6 @@ use super::synth::Pd101Synth;
 /// voices. `Pd101Voice` reads pre-computed LFO outputs from `Pd101Patch`
 /// (`lfo1_out`, `lfo2_out`, `random_out`) which the processor populates before
 /// each render frame.
-///
-/// # Field access
-/// `Pd101Voice` implements `Deref<Target = Voice>` and `DerefMut` so that
-/// `CosmoProcessor` can access all `Voice` fields transparently, preserving
-/// existing processor logic while the framework boundary migrates incrementally.
 #[derive(Debug, Clone)]
 pub struct Pd101Voice {
     inner: Voice,
@@ -43,9 +36,6 @@ impl Pd101Voice {
     }
 
     /// Expose a mutable reference to the underlying voice state.
-    ///
-    /// Prefer the `VoiceDsp` methods for note lifecycle; use this only for
-    /// processor-level diagnostics and compatibility code paths.
     pub fn inner_mut(&mut self) -> &mut Voice {
         &mut self.inner
     }
@@ -54,20 +44,6 @@ impl Pd101Voice {
 impl Default for Pd101Voice {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-impl Deref for Pd101Voice {
-    type Target = Voice;
-
-    fn deref(&self) -> &Voice {
-        &self.inner
-    }
-}
-
-impl DerefMut for Pd101Voice {
-    fn deref_mut(&mut self) -> &mut Voice {
-        &mut self.inner
     }
 }
 

@@ -5,6 +5,10 @@ use alloc::vec::Vec;
 use serde::Serialize;
 
 use purr_synth_core::event::NoteId;
+use purr_synth_core::midi_mapping::{
+    MidiControlEvent, MidiControlSource, MidiLearnState, MidiMapping, MidiMappingCurve,
+    MidiMappingTable,
+};
 use purr_synth_core::runtime::{SynthRuntime, VoiceMode};
 use purr_synth_core::voice_allocator::{HighestVoiceStealer, VoiceAllocator};
 
@@ -13,7 +17,10 @@ use crate::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use crate::fx::FxChain;
 use crate::generators::PER_LINE_HEADROOM;
 use crate::module_presets;
-use crate::params::{FxSlotConfig, FxSlotType, ModDestination, PolyMode, SynthParams, NUM_VOICES};
+use crate::params::{
+    engine_param_ui_meta_v1, FxSlotConfig, FxSlotType, ModDestination, PolyMode, SynthParams,
+    NUM_VOICES,
+};
 use crate::pd101::{Pd101Patch, Pd101Synth, Pd101Telemetry, Pd101Voice};
 use crate::voice::{mod_value_for, ModSources};
 
@@ -75,6 +82,37 @@ pub struct RuntimeVoiceDebugState {
     pub line2: RuntimeVoiceLineState,
 }
 
+#[derive(Debug, Clone, Copy)]
+struct MidiLearnTargetConfig {
+    target: &'static str,
+    min: f32,
+    max: f32,
+    curve: MidiMappingCurve,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct RuntimeMidiMapping {
+    pub cc: u8,
+    pub target_key: &'static str,
+}
+
+fn midi_map_target_from_key(key: &str) -> Option<&'static str> {
+    engine_param_ui_meta_v1()
+        .iter()
+        .find_map(|meta| (meta.key == key).then_some(meta.key))
+}
+
+fn midi_mapping_curve_from_ui(curve: &str) -> MidiMappingCurve {
+    match curve {
+        "inverted" => MidiMappingCurve::Inverted,
+        "exponential2" => MidiMappingCurve::Exponential { exponent: 2.0 },
+        "exponential4" => MidiMappingCurve::Exponential { exponent: 4.0 },
+        "bipolar" => MidiMappingCurve::Bipolar,
+        _ => MidiMappingCurve::Linear,
+    }
+}
+
 // ---------------------------------------------------------------------------
 // CosmoProcessor
 // ---------------------------------------------------------------------------
@@ -90,6 +128,9 @@ pub struct CosmoProcessor {
     pub sample_rate: f32,
     pub last_runtime_mod_sources: RuntimeModSources,
     pub telemetry: Pd101Telemetry,
+    midi_mappings: MidiMappingTable<&'static str>,
+    midi_learn_enabled: bool,
+    midi_learn_target: Option<MidiLearnTargetConfig>,
 }
 
 impl CosmoProcessor {
@@ -116,6 +157,9 @@ impl CosmoProcessor {
             sample_rate,
             last_runtime_mod_sources: RuntimeModSources::default(),
             telemetry: Pd101Telemetry::default(),
+            midi_mappings: MidiMappingTable::new(),
+            midi_learn_enabled: false,
+            midi_learn_target: None,
         };
         proc.update_fx();
         proc
@@ -131,10 +175,10 @@ impl CosmoProcessor {
         runtimes
             .iter()
             .enumerate()
-            .filter(|(i, rt)| rt.is_active() && voices[*i].note.is_some())
+            .filter(|(i, rt)| rt.is_active() && voices[*i].inner().note.is_some())
             .max_by_key(|(_, rt)| rt.started_at)
             .map(|(i, _)| i)
-            .or_else(|| voices.iter().position(|v| v.mod_env.output > 0.0))
+            .or_else(|| voices.iter().position(|v| v.inner().mod_env.output > 0.0))
     }
 
     pub fn runtime_mod_sources(&self) -> RuntimeModSources {
@@ -151,63 +195,63 @@ impl CosmoProcessor {
             .map(|(index, (voice, rt))| RuntimeVoiceDebugState {
                 index,
                 active: rt.is_active(),
-                is_releasing: voice.is_releasing,
-                sustained: voice.sustained,
-                note: voice.note,
-                env_note: voice.env_note,
-                velocity: voice.velocity,
-                frequency: voice.frequency,
-                current_freq: voice.current_freq,
-                target_freq: voice.target_freq,
-                phase1: voice.phi1,
-                phase2: voice.phi2,
-                anti_click_fade: voice.anti_click_fade,
-                anti_click_attack: voice.anti_click_attack,
-                release_tail_level: voice.release_tail_level,
+                is_releasing: voice.inner().is_releasing,
+                sustained: voice.inner().sustained,
+                note: voice.inner().note,
+                env_note: voice.inner().env_note,
+                velocity: voice.inner().velocity,
+                frequency: voice.inner().frequency,
+                current_freq: voice.inner().current_freq,
+                target_freq: voice.inner().target_freq,
+                phase1: voice.inner().phi1,
+                phase2: voice.inner().phi2,
+                anti_click_fade: voice.inner().anti_click_fade,
+                anti_click_attack: voice.inner().anti_click_attack,
+                release_tail_level: voice.inner().release_tail_level,
                 line1: RuntimeVoiceLineState {
                     dco: RuntimeVoiceEnvState {
-                        value: voice.line1_env.dco.output,
-                        step: voice.line1_env.dco.step,
-                        releasing: voice.line1_env.dco.releasing,
-                        step_pos: voice.line1_env.dco.step_pos,
-                        prev_level: voice.line1_env.dco.prev_level,
+                        value: voice.inner().line1_env.dco.output,
+                        step: voice.inner().line1_env.dco.step,
+                        releasing: voice.inner().line1_env.dco.releasing,
+                        step_pos: voice.inner().line1_env.dco.step_pos,
+                        prev_level: voice.inner().line1_env.dco.prev_level,
                     },
                     dcw: RuntimeVoiceEnvState {
-                        value: voice.line1_env.dcw.output,
-                        step: voice.line1_env.dcw.step,
-                        releasing: voice.line1_env.dcw.releasing,
-                        step_pos: voice.line1_env.dcw.step_pos,
-                        prev_level: voice.line1_env.dcw.prev_level,
+                        value: voice.inner().line1_env.dcw.output,
+                        step: voice.inner().line1_env.dcw.step,
+                        releasing: voice.inner().line1_env.dcw.releasing,
+                        step_pos: voice.inner().line1_env.dcw.step_pos,
+                        prev_level: voice.inner().line1_env.dcw.prev_level,
                     },
                     dca: RuntimeVoiceEnvState {
-                        value: voice.line1_env.dca.output,
-                        step: voice.line1_env.dca.step,
-                        releasing: voice.line1_env.dca.releasing,
-                        step_pos: voice.line1_env.dca.step_pos,
-                        prev_level: voice.line1_env.dca.prev_level,
+                        value: voice.inner().line1_env.dca.output,
+                        step: voice.inner().line1_env.dca.step,
+                        releasing: voice.inner().line1_env.dca.releasing,
+                        step_pos: voice.inner().line1_env.dca.step_pos,
+                        prev_level: voice.inner().line1_env.dca.prev_level,
                     },
                 },
                 line2: RuntimeVoiceLineState {
                     dco: RuntimeVoiceEnvState {
-                        value: voice.line2_env.dco.output,
-                        step: voice.line2_env.dco.step,
-                        releasing: voice.line2_env.dco.releasing,
-                        step_pos: voice.line2_env.dco.step_pos,
-                        prev_level: voice.line2_env.dco.prev_level,
+                        value: voice.inner().line2_env.dco.output,
+                        step: voice.inner().line2_env.dco.step,
+                        releasing: voice.inner().line2_env.dco.releasing,
+                        step_pos: voice.inner().line2_env.dco.step_pos,
+                        prev_level: voice.inner().line2_env.dco.prev_level,
                     },
                     dcw: RuntimeVoiceEnvState {
-                        value: voice.line2_env.dcw.output,
-                        step: voice.line2_env.dcw.step,
-                        releasing: voice.line2_env.dcw.releasing,
-                        step_pos: voice.line2_env.dcw.step_pos,
-                        prev_level: voice.line2_env.dcw.prev_level,
+                        value: voice.inner().line2_env.dcw.output,
+                        step: voice.inner().line2_env.dcw.step,
+                        releasing: voice.inner().line2_env.dcw.releasing,
+                        step_pos: voice.inner().line2_env.dcw.step_pos,
+                        prev_level: voice.inner().line2_env.dcw.prev_level,
                     },
                     dca: RuntimeVoiceEnvState {
-                        value: voice.line2_env.dca.output,
-                        step: voice.line2_env.dca.step,
-                        releasing: voice.line2_env.dca.releasing,
-                        step_pos: voice.line2_env.dca.step_pos,
-                        prev_level: voice.line2_env.dca.prev_level,
+                        value: voice.inner().line2_env.dca.output,
+                        step: voice.inner().line2_env.dca.step,
+                        releasing: voice.inner().line2_env.dca.releasing,
+                        step_pos: voice.inner().line2_env.dca.step_pos,
+                        prev_level: voice.inner().line2_env.dca.prev_level,
                     },
                 },
             })
@@ -258,9 +302,8 @@ impl CosmoProcessor {
     /// Handle a note-on event.
     ///
     /// * `note`      — MIDI note number [0, 127]
-    /// * `_frequency` — ignored; frequency is derived from `note` via MIDI standard mapping
     /// * `velocity`  — normalised velocity [0.0, 1.0]
-    pub fn note_on(&mut self, note: u8, _frequency: f32, velocity: f32) {
+    pub fn note_on(&mut self, note: u8, velocity: f32) {
         let vel = if velocity <= 0.0 { 1.0 } else { velocity };
         let vel = {
             let curve = self.params().velocity_curve;
@@ -310,6 +353,137 @@ impl CosmoProcessor {
         self.runtime.set_aftertouch(value);
     }
 
+    pub fn set_midi_learn_enabled(&mut self, enabled: bool) {
+        self.midi_learn_enabled = enabled;
+        if !enabled {
+            self.midi_learn_target = None;
+            self.midi_mappings.cancel_learn();
+        }
+    }
+
+    pub fn set_midi_learn_target(
+        &mut self,
+        target_key: &str,
+        min: f32,
+        max: f32,
+        curve: &str,
+    ) -> bool {
+        let Some(target) = midi_map_target_from_key(target_key) else {
+            return false;
+        };
+
+        let (min, max) = if min <= max { (min, max) } else { (max, min) };
+        let curve = midi_mapping_curve_from_ui(curve);
+        self.midi_learn_target = Some(MidiLearnTargetConfig {
+            target,
+            min,
+            max,
+            curve,
+        });
+        self.midi_mappings.begin_learn(
+            MidiLearnState::new(target)
+                .with_range(min, max)
+                .with_curve(curve),
+        );
+        true
+    }
+
+    pub fn midi_control_change(&mut self, channel: u8, controller: u8, value: u8) {
+        let event = MidiControlEvent::ControlChange {
+            channel,
+            controller,
+            value,
+        };
+
+        if self.midi_learn_enabled {
+            if let Some(learn_target) = self.midi_learn_target {
+                let mapping = MidiMapping::new(
+                    MidiControlSource::ControlChange {
+                        channel: Some(channel),
+                        controller,
+                    },
+                    learn_target.target,
+                )
+                .with_range(learn_target.min, learn_target.max)
+                .with_curve(learn_target.curve);
+                self.midi_mappings.clear_target(learn_target.target);
+                self.midi_mappings.set_mapping(mapping);
+            }
+        }
+
+        let mut applied = false;
+        for change in self.midi_mappings.evaluate(event) {
+            applied |= self.apply_mapped_target_value(change.target, change.value);
+        }
+
+        if applied {
+            return;
+        }
+
+        match controller {
+            1 => self.set_mod_wheel(value as f32 / 127.0),
+            64 => self.set_sustain(value >= 64),
+            _ => {}
+        }
+    }
+
+    pub fn midi_mappings(&self) -> Vec<RuntimeMidiMapping> {
+        self.midi_mappings
+            .mappings()
+            .iter()
+            .filter_map(|mapping| {
+                let MidiControlSource::ControlChange { controller, .. } = mapping.source else {
+                    return None;
+                };
+
+                Some(RuntimeMidiMapping {
+                    cc: controller,
+                    target_key: mapping.target,
+                })
+            })
+            .collect()
+    }
+
+    fn apply_mapped_target_value(&mut self, target: &'static str, value: f32) -> bool {
+        let patch = self.runtime.patch_mut();
+        match target {
+            "volume" => patch.params.volume = value,
+            "warpAAmount" => patch.params.line1.dcw_base = value,
+            "warpBAmount" => patch.params.line2.dcw_base = value,
+            "algoBlendA" => patch.params.line1.algo_blend = value,
+            "algoBlendB" => patch.params.line2.algo_blend = value,
+            "line1Level" => patch.params.line1.dca_base = value,
+            "line2Level" => patch.params.line2.dca_base = value,
+            "line1Octave" => patch.params.line1.octave = value.round().clamp(-2.0, 2.0),
+            "line2Octave" => patch.params.line2.octave = value.round().clamp(-2.0, 2.0),
+            "line1Detune" => patch.params.line1.detune_cents = value.round().clamp(-100.0, 100.0),
+            "line2Detune" => patch.params.line2.detune_cents = value.round().clamp(-100.0, 100.0),
+            "line1DcwKeyFollow" => patch.params.line1.key_follow = value,
+            "line2DcwKeyFollow" => patch.params.line2.key_follow = value,
+            "velocityCurve" => patch.params.velocity_curve = value,
+            "pitchBendRange" => patch.params.pitch_bend_range = value,
+            "portamentoRate" => patch.params.portamento.rate = value,
+            "portamentoTime" => patch.params.portamento.time = value,
+            "lfoRate" => patch.params.lfo.rate = value,
+            "lfoDepth" => patch.params.lfo.depth = value,
+            "lfoSymmetry" => patch.params.lfo.symmetry = value,
+            "lfoOffset" => patch.params.lfo.offset = value,
+            "lfo2Rate" => patch.params.lfo2.rate = value,
+            "lfo2Depth" => patch.params.lfo2.depth = value,
+            "lfo2Symmetry" => patch.params.lfo2.symmetry = value,
+            "lfo2Offset" => patch.params.lfo2.offset = value,
+            "randomRate" => patch.params.random.rate = value,
+            "modEnvAttack" => patch.params.mod_env.attack = value,
+            "modEnvDecay" => patch.params.mod_env.decay = value,
+            "modEnvSustain" => patch.params.mod_env.sustain = value,
+            "modEnvRelease" => patch.params.mod_env.release = value,
+            "octave" => patch.params.octave = value.round().clamp(-2.0, 2.0),
+            _ => return false,
+        }
+
+        true
+    }
+
     pub fn process(&mut self, output: &mut [f32]) {
         let p = &self.runtime.patch().params;
         let volume = p.volume;
@@ -340,7 +514,7 @@ impl CosmoProcessor {
                 .runtime_mod_source_voice_index()
                 .map(|i| {
                     let v = &self.runtime.voices()[i];
-                    (v.mod_env.output, v.velocity)
+                    (v.inner().mod_env.output, v.inner().velocity)
                 })
                 .unwrap_or((0.0, 0.0));
 
@@ -415,7 +589,7 @@ impl CosmoProcessor {
                 .runtime_mod_source_voice_index()
                 .map(|i| {
                     let v = &self.runtime.voices()[i];
-                    (v.mod_env.output, v.velocity)
+                    (v.inner().mod_env.output, v.inner().velocity)
                 })
                 .unwrap_or((0.0, 0.0));
 
@@ -491,7 +665,8 @@ mod tests {
             .zip(proc.runtime.voices().iter())
             .enumerate()
             .filter_map(|(idx, (rt, voice))| {
-                (voice.note == Some(note) && rt.is_active() && !voice.is_releasing).then_some(idx)
+                (voice.inner().note == Some(note) && rt.is_active() && !voice.inner().is_releasing)
+                    .then_some(idx)
             })
             .collect()
     }
@@ -500,13 +675,12 @@ mod tests {
     fn releasing_sustain_does_not_latch_old_voice_on_same_note_retrigger() {
         let mut proc = CosmoProcessor::new(48_000.0);
         let note = 60_u8;
-        let freq = midi_note_to_freq(note);
 
-        proc.note_on(note, freq, 1.0);
+        proc.note_on(note, 1.0);
         proc.set_sustain(true);
         proc.note_off(note);
 
-        proc.note_on(note, freq, 1.0);
+        proc.note_on(note, 1.0);
         proc.set_sustain(false);
 
         let active_voice_indices = active_voice_indices_for_note(&proc, note);

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useMidiLearnStore } from "@/features/synth/midiLearnStore";
 import type { ModSource } from "@/lib/synth/bindings/synth";
 import { noteToFreq, PC_KEY_TO_NOTE } from "@/lib/synth/pdAlgorithms";
 
@@ -59,6 +60,10 @@ export function useNoteHandling({
 	const sustainedButReleasedRef = useRef<Set<number>>(new Set());
 	const sustainRef = useRef(false);
 	const [activeNotes, setActiveNotes] = useState<number[]>([]);
+	const midiLearnEnabled = useMidiLearnStore((state) => state.enabled);
+	const midiLearnActiveTarget = useMidiLearnStore(
+		(state) => state.activeTarget,
+	);
 
 	const sendNoteOn = useCallback(
 		(note: number, velocity = 100) => {
@@ -128,6 +133,25 @@ export function useNoteHandling({
 		[dispatchEngineEvent, emitModSourceValue],
 	);
 
+	useEffect(() => {
+		dispatchEngineEvent("midiLearnEnabled", {
+			enabled: midiLearnEnabled,
+		});
+	}, [dispatchEngineEvent, midiLearnEnabled]);
+
+	useEffect(() => {
+		if (!midiLearnEnabled || !midiLearnActiveTarget) {
+			return;
+		}
+
+		dispatchEngineEvent("midiLearnTarget", {
+			target: midiLearnActiveTarget,
+			min: 0,
+			max: 1,
+			curve: "linear",
+		});
+	}, [dispatchEngineEvent, midiLearnActiveTarget, midiLearnEnabled]);
+
 	// Keyboard input
 	useEffect(() => {
 		const beamerRuntime = (
@@ -137,8 +161,6 @@ export function useNoteHandling({
 		).__BEAMER__;
 		const isPluginRuntime = typeof beamerRuntime?.emit === "function";
 
-		// In plugin runtime, keep keyboard ownership with the host and disable
-		// the in-webview PC keyboard note mapping (A/S/D... + space sustain).
 		if (isPluginRuntime) {
 			return;
 		}
@@ -159,7 +181,6 @@ export function useNoteHandling({
 				return false;
 			}
 			const input = target as HTMLInputElement;
-			// Keep note-entry active while focused on sliders and non-text controls.
 			return !(
 				input.type === "range" ||
 				input.type === "checkbox" ||
@@ -230,36 +251,33 @@ export function useNoteHandling({
 
 							const status = data[0] & 0xf0;
 
-							// CC messages
 							if (status === 0xb0) {
-								if (data[1] === 1) {
-									sendModWheel(data[2] / 127);
-								} else if (data[1] === 64) {
-									setSustain(data[2] >= 64);
-								}
+								const cc = data[1];
+								const ccValue = data[2];
+								dispatchEngineEvent("midiCc", {
+									channel: data[0] & 0x0f,
+									controller: cc,
+									value: ccValue,
+								});
 								return;
 							}
 
-							// Pitch bend
 							if (status === 0xe0 && data.length >= 3) {
 								const raw = (data[2] << 7) | data[1];
 								sendPitchBend((raw - 8192) / 8192);
 								return;
 							}
 
-							// Channel pressure / aftertouch (status 0xD0, value in data1)
 							if (status === 0xd0) {
 								sendAftertouch(data[1] / 127);
 								return;
 							}
 
-							// Poly pressure (status 0xA0, per-note pressure in data2)
 							if (status === 0xa0 && data.length >= 3) {
 								sendAftertouch(data[2] / 127);
 								return;
 							}
 
-							// Note on/off
 							if (status === 0x90 && data[2] > 0) {
 								sendNoteOn(data[1], data[2]);
 							} else if (
@@ -295,12 +313,11 @@ export function useNoteHandling({
 			}
 		};
 	}, [
-		sendModWheel,
+		dispatchEngineEvent,
 		sendPitchBend,
 		sendAftertouch,
 		sendNoteOn,
 		sendNoteOff,
-		setSustain,
 	]);
 
 	return {

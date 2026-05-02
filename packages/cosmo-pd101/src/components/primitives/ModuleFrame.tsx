@@ -145,7 +145,7 @@ export default function ModuleFrame({
 						<div className="flex justify-end">{headerControl}</div>
 					)}
 					<div
-						className={`grid ${columnClass} w-full content-start items-start gap-2.5 ${
+						className={`grid ${columnClass} w-full  justify-items-center items-end justify-center gap-2.5 ${
 							headerControl ? "" : "my-auto"
 						}`}
 					>

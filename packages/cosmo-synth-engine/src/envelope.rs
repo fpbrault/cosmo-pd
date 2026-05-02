@@ -221,7 +221,7 @@ fn rate_to_seconds(kind: EnvelopeKind, rate: u8) -> f32 {
             // DCO uses normalized exponential curve: slowest at rate 0 (235.64s),
             // fastest at rate 99 (4ms). Formula: 235.64 * e^(k*x) where
             // k = ln(0.004/235.64) ≈ -10.984.
-            const DCO_EXP_K: f32 = -10.984;
+            const DCO_EXP_K: f32 = -13.985;
             235.64_f32 * libm::expf(DCO_EXP_K * normalized_rate)
         }
     }
@@ -374,15 +374,15 @@ mod tests {
     fn dco_rate_curve_matches_measured_times() {
         let expected = [
             (0, 235.64_f32),
-            (1, 209.74_f32),
-            (10, 78.64_f32),
-            (20, 26.20_f32),
-            (40, 2.68_f32),
-            (50, 0.921_f32),
-            (60, 0.295_f32),
-            (70, 0.097_f32),
-            (85, 0.017_f32),
-            (99, 0.004_f32),
+            (1, 204.59_f32),
+            (10, 57.38_f32),
+            (20, 13.97_f32),
+            (40, 0.828_f32),
+            (50, 0.202_f32),
+            (60, 0.049_f32),
+            (70, 0.012_f32),
+            (85, 0.00147_f32),
+            (99, 0.000199_f32),
         ];
 
         for (rate, seconds) in expected {

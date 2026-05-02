@@ -58,13 +58,10 @@ impl CzSynthProcessor {
     /// Trigger a note-on event.
     ///
     /// * `note`      — MIDI note number (0-127)
-    /// * `frequency` — Hz; accepted for API compatibility but **ignored** —
-    ///                 frequency is always derived from `note` via standard MIDI tuning.
     /// * `velocity`  — normalised 0.0-1.0
     #[wasm_bindgen(js_name = noteOn)]
-    pub fn note_on(&mut self, note: u8, frequency: f32, velocity: f32) {
-        let _ = frequency; // ignored; kept for API compatibility
-        self.inner.note_on(note, 0.0, velocity);
+    pub fn note_on(&mut self, note: u8, velocity: f32) {
+        self.inner.note_on(note, velocity);
     }
 
     /// Trigger a note-off event.
@@ -96,6 +93,43 @@ impl CzSynthProcessor {
     #[wasm_bindgen(js_name = setAftertouch)]
     pub fn set_aftertouch(&mut self, value: f32) {
         self.inner.set_aftertouch(value);
+    }
+
+    /// Enable or disable MIDI learn mode in the engine.
+    #[wasm_bindgen(js_name = setMidiLearnEnabled)]
+    pub fn set_midi_learn_enabled(&mut self, enabled: bool) {
+        self.inner.set_midi_learn_enabled(enabled);
+    }
+
+    /// Set the active MIDI learn target in the engine.
+    ///
+    /// `target_key` must match a supported engine parameter key.
+    /// Returns `true` when accepted.
+    #[wasm_bindgen(js_name = setMidiLearnTarget)]
+    pub fn set_midi_learn_target(
+        &mut self,
+        target_key: &str,
+        min: f32,
+        max: f32,
+        curve: &str,
+    ) -> bool {
+        self.inner
+            .set_midi_learn_target(target_key, min, max, curve)
+    }
+
+    /// Forward an incoming MIDI CC message to the engine mapping/runtime.
+    #[wasm_bindgen(js_name = midiCc)]
+    pub fn midi_cc(&mut self, channel: u8, controller: u8, value: u8) {
+        self.inner.midi_control_change(channel, controller, value);
+    }
+
+    /// Return active engine MIDI mappings as JSON telemetry.
+    #[wasm_bindgen(js_name = getMidiMappings)]
+    pub fn get_midi_mappings(&self) -> String {
+        match serde_json::to_string(&self.inner.midi_mappings()) {
+            Ok(json) => json,
+            Err(_) => String::from("[]"),
+        }
     }
 
     /// Set which effect type occupies a given FX slot (0–5).

@@ -2,8 +2,8 @@ import type {
 	AsidePanelComponent,
 	AsidePanelTab,
 } from "@/components/layout/AsidePanelSwitcher";
+import FxSlotModuleRenderer from "@/components/panels/drawer-modules/FxSlotModuleRenderer";
 import { FX_SLOT_MODULE_CONFIGS } from "@/components/panels/drawer-modules/fxSlotModuleConfig";
-import GenericFxSlotModule from "@/components/panels/drawer-modules/GenericFxSlotModule";
 import { useSynthStore } from "@/features/synth/synthStore";
 
 function FxSlotPanelInner({ slot }: { slot: number }) {
@@ -21,7 +21,7 @@ function FxSlotPanelInner({ slot }: { slot: number }) {
 			<p className="p-4 font-mono text-sm text-cz-cream-dim">{rawSlot.type}</p>
 		);
 	}
-	return <GenericFxSlotModule config={config} slot={slot} />;
+	return <FxSlotModuleRenderer config={config} slot={slot} />;
 }
 
 const FX_SLOT_PANEL_DEFS: [AsidePanelTab, number][] = [

@@ -13,7 +13,7 @@ use cosmo_synth_engine::default_envelopes::{default_dca_env, default_dco_env, de
 use cosmo_synth_engine::params::{
     AlgoControlValueV1, FxSlotConfig, ModMatrix, PolyMode, StepEnvData, SynthParams,
 };
-use cosmo_synth_engine::processor::{midi_note_to_freq, CosmoProcessor};
+use cosmo_synth_engine::processor::CosmoProcessor;
 
 const PLUGIN_LOG_PATH: &str = "/tmp/cosmo-plugin.log";
 
@@ -1313,10 +1313,7 @@ impl CzProcessor {
 
         while let Some(event) = queue.pop_front() {
             match event {
-                UiInputEvent::NoteOn { note, velocity } => {
-                    self.processor
-                        .note_on(note, midi_note_to_freq(note), velocity)
-                }
+                UiInputEvent::NoteOn { note, velocity } => self.processor.note_on(note, velocity),
                 UiInputEvent::NoteOff { note } => self.processor.note_off(note),
                 UiInputEvent::Sustain { on } => self.processor.set_sustain(on),
                 UiInputEvent::PitchBend { value } => self.processor.set_pitch_bend(value),
@@ -1371,8 +1368,8 @@ impl Processor for CzProcessor {
             .runtime
             .voices()
             .iter()
-            .filter(|v| !v.is_silent && !v.is_releasing && v.note.is_some())
-            .map(|v| v.current_freq)
+            .filter(|v| !v.inner().is_silent && !v.inner().is_releasing && v.inner().note.is_some())
+            .map(|v| v.inner().current_freq)
             .max_by(|a: &f32, b: &f32| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
             .unwrap_or(0.0);
         if let Ok(mut scope) = self.scope_buffer.try_lock() {
@@ -1392,8 +1389,7 @@ impl Processor for CzProcessor {
         for event in input {
             match &event.event {
                 MidiEventKind::NoteOn(note) if note.velocity > 0.0 => {
-                    let freq = midi_note_to_freq(note.pitch);
-                    self.processor.note_on(note.pitch, freq, note.velocity);
+                    self.processor.note_on(note.pitch, note.velocity);
                 }
                 MidiEventKind::NoteOff(note) => {
                     self.processor.note_off(note.pitch);

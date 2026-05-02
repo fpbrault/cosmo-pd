@@ -1,5 +1,3 @@
-use crate::midi_mapping::MidiControlEvent;
-
 /// A note identity used by reusable runtime code.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NoteId {
@@ -25,7 +23,6 @@ pub enum SynthEvent {
     PitchBend(f32),
     ModWheel(f32),
     Aftertouch(f32),
-    MidiControl(MidiControlEvent),
     AllNotesOff,
 }
 

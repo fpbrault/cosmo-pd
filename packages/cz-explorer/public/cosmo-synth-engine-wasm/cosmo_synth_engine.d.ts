@@ -31,6 +31,10 @@ declare namespace wasm_bindgen {
          */
         getLevelTelemetry(): string;
         /**
+         * Return active engine MIDI mappings as JSON telemetry.
+         */
+        getMidiMappings(): string;
+        /**
          * Return the latest runtime modulation-source values as JSON for UI telemetry.
          */
         getRuntimeModSources(): string;
@@ -38,6 +42,10 @@ declare namespace wasm_bindgen {
          * Return the latest per-voice envelope state as JSON for UI telemetry.
          */
         getRuntimeVoiceStates(): string;
+        /**
+         * Forward an incoming MIDI CC message to the engine mapping/runtime.
+         */
+        midiCc(channel: number, controller: number, value: number): void;
         /**
          * Create a new processor at the given sample rate.
          */
@@ -50,11 +58,9 @@ declare namespace wasm_bindgen {
          * Trigger a note-on event.
          *
          * * `note`      — MIDI note number (0-127)
-         * * `frequency` — Hz; accepted for API compatibility but **ignored** —
-         *                 frequency is always derived from `note` via standard MIDI tuning.
          * * `velocity`  — normalised 0.0-1.0
          */
-        noteOn(note: number, frequency: number, velocity: number): void;
+        noteOn(note: number, velocity: number): void;
         /**
          * Fill `output` with mono samples rendered by the DSP engine.
          *
@@ -75,6 +81,17 @@ declare namespace wasm_bindgen {
          * Returns `true` on success, `false` when `slot ≥ 6` or type is unknown.
          */
         setFxSlotType(slot: number, type_name: string): boolean;
+        /**
+         * Enable or disable MIDI learn mode in the engine.
+         */
+        setMidiLearnEnabled(enabled: boolean): void;
+        /**
+         * Set the active MIDI learn target in the engine.
+         *
+         * `target_key` must match a supported engine parameter key.
+         * Returns `true` when accepted.
+         */
+        setMidiLearnTarget(target_key: string, min: number, max: number, curve: string): boolean;
         /**
          * Set mod wheel value. `value` is normalised [0.0, 1.0] (CC1 / 127).
          */
@@ -106,14 +123,18 @@ declare interface InitOutput {
     readonly czsynthprocessor_applyModulePreset: (a: number, b: number, c: number, d: number, e: number) => number;
     readonly czsynthprocessor_getFxSlotTypes: (a: number, b: number) => void;
     readonly czsynthprocessor_getLevelTelemetry: (a: number, b: number) => void;
+    readonly czsynthprocessor_getMidiMappings: (a: number, b: number) => void;
     readonly czsynthprocessor_getRuntimeModSources: (a: number, b: number) => void;
     readonly czsynthprocessor_getRuntimeVoiceStates: (a: number, b: number) => void;
+    readonly czsynthprocessor_midiCc: (a: number, b: number, c: number, d: number) => void;
     readonly czsynthprocessor_new: (a: number) => number;
     readonly czsynthprocessor_noteOff: (a: number, b: number) => void;
-    readonly czsynthprocessor_noteOn: (a: number, b: number, c: number, d: number) => void;
+    readonly czsynthprocessor_noteOn: (a: number, b: number, c: number) => void;
     readonly czsynthprocessor_process: (a: number, b: number, c: number, d: number) => void;
     readonly czsynthprocessor_setAftertouch: (a: number, b: number) => void;
     readonly czsynthprocessor_setFxSlotType: (a: number, b: number, c: number, d: number) => number;
+    readonly czsynthprocessor_setMidiLearnEnabled: (a: number, b: number) => void;
+    readonly czsynthprocessor_setMidiLearnTarget: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => number;
     readonly czsynthprocessor_setModWheel: (a: number, b: number) => void;
     readonly czsynthprocessor_setParams: (a: number, b: number, c: number) => void;
     readonly czsynthprocessor_setPitchBend: (a: number, b: number) => void;

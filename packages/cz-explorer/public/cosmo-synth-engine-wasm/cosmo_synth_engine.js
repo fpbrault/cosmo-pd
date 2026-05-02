@@ -83,6 +83,26 @@ let wasm_bindgen = (function(exports) {
             }
         }
         /**
+         * Return active engine MIDI mappings as JSON telemetry.
+         * @returns {string}
+         */
+        getMidiMappings() {
+            let deferred1_0;
+            let deferred1_1;
+            try {
+                const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+                wasm.czsynthprocessor_getMidiMappings(retptr, this.__wbg_ptr);
+                var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+                var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+                deferred1_0 = r0;
+                deferred1_1 = r1;
+                return getStringFromWasm0(r0, r1);
+            } finally {
+                wasm.__wbindgen_add_to_stack_pointer(16);
+                wasm.__wbindgen_export3(deferred1_0, deferred1_1, 1);
+            }
+        }
+        /**
          * Return the latest runtime modulation-source values as JSON for UI telemetry.
          * @returns {string}
          */
@@ -123,6 +143,15 @@ let wasm_bindgen = (function(exports) {
             }
         }
         /**
+         * Forward an incoming MIDI CC message to the engine mapping/runtime.
+         * @param {number} channel
+         * @param {number} controller
+         * @param {number} value
+         */
+        midiCc(channel, controller, value) {
+            wasm.czsynthprocessor_midiCc(this.__wbg_ptr, channel, controller, value);
+        }
+        /**
          * Create a new processor at the given sample rate.
          * @param {number} sample_rate
          */
@@ -143,15 +172,12 @@ let wasm_bindgen = (function(exports) {
          * Trigger a note-on event.
          *
          * * `note`      — MIDI note number (0-127)
-         * * `frequency` — Hz; accepted for API compatibility but **ignored** —
-         *                 frequency is always derived from `note` via standard MIDI tuning.
          * * `velocity`  — normalised 0.0-1.0
          * @param {number} note
-         * @param {number} frequency
          * @param {number} velocity
          */
-        noteOn(note, frequency, velocity) {
-            wasm.czsynthprocessor_noteOn(this.__wbg_ptr, note, frequency, velocity);
+        noteOn(note, velocity) {
+            wasm.czsynthprocessor_noteOn(this.__wbg_ptr, note, velocity);
         }
         /**
          * Fill `output` with mono samples rendered by the DSP engine.
@@ -187,6 +213,32 @@ let wasm_bindgen = (function(exports) {
             const ptr0 = passStringToWasm0(type_name, wasm.__wbindgen_export, wasm.__wbindgen_export2);
             const len0 = WASM_VECTOR_LEN;
             const ret = wasm.czsynthprocessor_setFxSlotType(this.__wbg_ptr, slot, ptr0, len0);
+            return ret !== 0;
+        }
+        /**
+         * Enable or disable MIDI learn mode in the engine.
+         * @param {boolean} enabled
+         */
+        setMidiLearnEnabled(enabled) {
+            wasm.czsynthprocessor_setMidiLearnEnabled(this.__wbg_ptr, enabled);
+        }
+        /**
+         * Set the active MIDI learn target in the engine.
+         *
+         * `target_key` must match a supported engine parameter key.
+         * Returns `true` when accepted.
+         * @param {string} target_key
+         * @param {number} min
+         * @param {number} max
+         * @param {string} curve
+         * @returns {boolean}
+         */
+        setMidiLearnTarget(target_key, min, max, curve) {
+            const ptr0 = passStringToWasm0(target_key, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+            const len0 = WASM_VECTOR_LEN;
+            const ptr1 = passStringToWasm0(curve, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+            const len1 = WASM_VECTOR_LEN;
+            const ret = wasm.czsynthprocessor_setMidiLearnTarget(this.__wbg_ptr, ptr0, len0, min, max, ptr1, len1);
             return ret !== 0;
         }
         /**
