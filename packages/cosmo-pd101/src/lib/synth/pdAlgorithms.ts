@@ -793,14 +793,33 @@ export function computeWaveform(params: {
 	for (let i = 0; i < N; ++i) {
 		const w1 = applyWindow(phasor[i], line1Window);
 		const w2 = applyWindow(phasor[i], line2Window);
+		const line1PrimaryCarrier = sampleBaseWave(
+			params.line1BaseWaveformA ?? "sine",
+			phasor[i],
+		);
+		const line1SecondaryCarrier = sampleBaseWave(
+			params.line1BaseWaveformB ?? "sine",
+			phasor[i],
+		);
+		const line2PrimaryCarrier = sampleBaseWave(
+			params.line2BaseWaveformA ?? "sine",
+			phasor[i],
+		);
+		const line2SecondaryCarrier = sampleBaseWave(
+			params.line2BaseWaveformB ?? "sine",
+			phasor[i],
+		);
 
 		if (algo2A && algoA.warpAlgo === "cz101" && algo2A.warpAlgo === "cz101") {
 			const cyclePhase = (phasor[i] * 2) % 1;
 			const useSecondary = phasor[i] >= 0.5;
 			const activeWaveform = useSecondary ? algo2AWaveform : algoAWaveform;
+			const activeCarrier = useSecondary
+				? sampleBaseWave(params.line1BaseWaveformB ?? "sine", cyclePhase)
+				: sampleBaseWave(params.line1BaseWaveformA ?? "sine", cyclePhase);
 			out1[i] =
 				lerp(
-					Math.sin(TAU * cyclePhase),
+					activeCarrier,
 					czWaveform(activeWaveform, cyclePhase),
 					params.warpAAmount,
 				) *
@@ -813,7 +832,7 @@ export function computeWaveform(params: {
 			const sigA1 =
 				algoA.warpAlgo === "cz101"
 					? lerp(
-							Math.sin(TAU * phasor[i]),
+							line1PrimaryCarrier,
 							czWaveform(algoAWaveform, phasor[i]),
 							dcw1eff,
 						)
@@ -827,7 +846,7 @@ export function computeWaveform(params: {
 			const sigA2 =
 				algo2A.warpAlgo === "cz101"
 					? lerp(
-							Math.sin(TAU * phasor[i]),
+							line1SecondaryCarrier,
 							czWaveform(algo2AWaveform, phasor[i]),
 							dcw2A,
 						)
@@ -842,7 +861,7 @@ export function computeWaveform(params: {
 		} else if (algoA.warpAlgo === "cz101") {
 			out1[i] =
 				lerp(
-					Math.sin(TAU * phasor[i]),
+					line1PrimaryCarrier,
 					czWaveform(algoAWaveform, phasor[i]),
 					params.warpAAmount,
 				) *
@@ -865,9 +884,12 @@ export function computeWaveform(params: {
 			const cyclePhase = (phasor[i] * 2) % 1;
 			const useSecondary = phasor[i] >= 0.5;
 			const activeWaveform = useSecondary ? algo2BWaveform : algoBWaveform;
+			const activeCarrier = useSecondary
+				? sampleBaseWave(params.line2BaseWaveformB ?? "sine", cyclePhase)
+				: sampleBaseWave(params.line2BaseWaveformA ?? "sine", cyclePhase);
 			out2[i] =
 				lerp(
-					Math.sin(TAU * cyclePhase),
+					activeCarrier,
 					czWaveform(activeWaveform, cyclePhase),
 					params.warpBAmount,
 				) *
@@ -880,7 +902,7 @@ export function computeWaveform(params: {
 			const sigB1 =
 				algoB.warpAlgo === "cz101"
 					? lerp(
-							Math.sin(TAU * phasor[i]),
+							line2PrimaryCarrier,
 							czWaveform(algoBWaveform, phasor[i]),
 							dcw1effB,
 						)
@@ -894,7 +916,7 @@ export function computeWaveform(params: {
 			const sigB2 =
 				algo2B.warpAlgo === "cz101"
 					? lerp(
-							Math.sin(TAU * phasor[i]),
+							line2SecondaryCarrier,
 							czWaveform(algo2BWaveform, phasor[i]),
 							dcw2B,
 						)
@@ -909,7 +931,7 @@ export function computeWaveform(params: {
 		} else if (algoB.warpAlgo === "cz101") {
 			out2[i] =
 				lerp(
-					Math.sin(TAU * phasor[i]),
+					line2PrimaryCarrier,
 					czWaveform(algoBWaveform, phasor[i]),
 					params.warpBAmount,
 				) *
