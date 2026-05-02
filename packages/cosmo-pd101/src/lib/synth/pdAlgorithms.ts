@@ -1,5 +1,6 @@
 import {
 	algoRefKey,
+	getAlgoDefinition,
 	isAlgoRefEqual,
 	isWarpAlgo,
 	resolveAlgoRef,
@@ -8,6 +9,7 @@ import {
 import type {
 	Algo,
 	AlgoControlValueV1,
+	BaseWaveform,
 	CzWaveform,
 	StepEnvData,
 	WindowType,
@@ -58,8 +60,13 @@ const sampleAlgoFullDcw = (algo: PdAlgo, phase: number): number => {
 	const direct = sampleDirectAlgoPreview(algo, phase);
 	if (direct !== null) return direct;
 
-	const warpedPhase = applyPdAlgo(phase, 1, algo, resolved.waveform);
-	return Math.sin(TAU * warpedPhase);
+	return renderAlgoSample(
+		algo,
+		phase,
+		1,
+		getAlgoDefinition(algo)?.defaultBaseWaveform ?? "sine",
+		undefined,
+	);
 };
 
 const getAlgoIcon = (algo: PdAlgo): string => {
@@ -194,86 +201,261 @@ function wrap01(value: number): number {
 	return wrapped < 0 ? wrapped + 1 : wrapped;
 }
 
-function pdBend(phase: number, amount: number): number {
-	if (amount === 0) return phase;
-	return phase < amount
-		? (phase / amount) * 0.5
-		: 0.5 + ((phase - amount) / (1 - amount)) * 0.5;
+function clamp(value: number, min: number, max: number): number {
+	return Math.max(min, Math.min(max, value));
 }
 
-function pdSync(phase: number, amount: number): number {
-	if (amount === 0) return phase;
-	const n = 1 + amount * 7;
-	return (phase * n) % 1;
+function pdBend(
+	phase: number,
+	amount: number,
+	curve = 0.5,
+	bias = 0,
+	knee = 0.5,
+): number {
+	const centered = (phase - 0.5) * (1.25 + bias * 0.75) + 0.5;
+	const warpedPhase = clamp(centered, 0, 1);
+	const kneeExp = 0.25 + knee * 2.75;
+	const kneeShaped =
+		warpedPhase < 0.5
+			? 0.5 * clamp(warpedPhase * 2, 0, 1) ** kneeExp
+			: 0.5 + 0.5 * (1 - clamp((1 - warpedPhase) * 2, 0, 1) ** kneeExp);
+	const scale = -10 * (amount * (0.5 + curve * 1.5));
+	const numerator = Math.expm1(kneeShaped * scale);
+	const denominator = Math.expm1(scale);
+	return denominator === 0 ? phase : numerator / denominator;
 }
 
-function pdPinch(phase: number, amount: number): number {
-	if (amount === 0) return phase;
-	const center = 0.5;
-	const a = amount * 0.98 + 0.01;
-	const dist = Math.abs(phase - center) / center;
-	if (dist === 0) return center;
-	return center + (phase - center) * dist ** (a - 1);
+function pdSync(
+	phase: number,
+	amount: number,
+	ratio = 0.5,
+	phaseOffset = 0,
+	curve = 0.5,
+	window = 0.5,
+): number {
+	const mult = 1 + amount * (4 + ratio * 14);
+	const synced = wrap01((phase + phaseOffset) * mult);
+	const exponent = 0.35 + curve * 2.4;
+	const shaped =
+		synced < 0.5
+			? 0.5 * clamp(synced * 2, 0, 1) ** exponent
+			: 0.5 + 0.5 * (1 - clamp((1 - synced) * 2, 0, 1) ** exponent);
+	return phase + (shaped - phase) * (0.25 + window * 0.75);
 }
 
-function pdFold(phase: number, amount: number): number {
-	if (amount === 0) return phase;
-	let p = phase;
-	const folds = 1 + Math.floor(amount * 5);
-	for (let i = 0; i < folds; ++i) {
-		if (p > 0.5) p = 1 - p;
-		p *= 2;
+function pdPinch(
+	phase: number,
+	amount: number,
+	focus = 0.5,
+	asym = 0,
+	curve = 0.5,
+	drive = 0.5,
+): number {
+	const center = 0.3 + focus * 0.4;
+	const intensity = 1 + amount * (2 + focus * 5 + drive * 4);
+	const shaped =
+		phase < center
+			? center * clamp(phase / center, 0, 1) ** intensity
+			: center +
+				(1 - center) *
+					(1 - (1 - clamp((phase - center) / (1 - center), 0, 1)) ** intensity);
+	const asymShift = asym * (0.1 + drive * 0.1);
+	const exponent = 0.35 + curve * 2.4;
+	const curved =
+		shaped < 0.5
+			? 0.5 * clamp(shaped * 2, 0, 1) ** exponent
+			: 0.5 + 0.5 * (1 - clamp((1 - shaped) * 2, 0, 1) ** exponent);
+	return clamp(curved + asymShift, 0, 1);
+}
+
+function foldPass(phase: number, pivot: number, softness: number): number {
+	let folded = phase;
+	if (folded > pivot) {
+		folded = Math.abs(2 * pivot - folded);
 	}
-	return p % 1;
+	const foldGain = Math.min(1 / pivot, 8);
+	const soft = clamp(softness, 0, 1);
+	const softenedGain = foldGain * (1 - soft) + soft;
+	return folded * softenedGain;
 }
 
-function pdSkew(phase: number, amount: number): number {
-	if (amount === 0) return phase;
-	const breakpoint = 0.2;
+function applyFolds(
+	phase: number,
+	foldCount: number,
+	pivot: number,
+	softness: number,
+): number {
+	let folded = phase;
+	for (let index = 0; index < foldCount; index += 1) {
+		folded = foldPass(folded, pivot, softness);
+	}
+	return wrap01(folded);
+}
+
+function smoothstep01(value: number): number {
+	const t = clamp(value, 0, 1);
+	return t * t * (3 - 2 * t);
+}
+
+function lerpPhase(a: number, b: number, t: number): number {
+	let delta = b - a;
+	if (delta > 0.5) delta -= 1;
+	else if (delta < -0.5) delta += 1;
+	return wrap01(a + delta * t);
+}
+
+function pdFold(
+	phase: number,
+	amount: number,
+	stages = 0.5,
+	tilt = 0,
+	symmetry = 0,
+	softness = 0,
+): number {
+	const foldDrive = (0.5 + stages * 5.5) * Math.max(amount, 0.05);
+	const foldFloor = Math.max(Math.floor(foldDrive), 0);
+	const foldFrac = smoothstep01(foldDrive - foldFloor);
+	const baseFolds = 1 + foldFloor;
+	const nextFolds = baseFolds + 1;
+	const pivot = clamp(0.5 + tilt * 0.3 + symmetry * 0.125, 0.05, 0.95);
+	const basePhase = applyFolds(phase, baseFolds, pivot, softness);
+	if (foldFrac <= 0) return basePhase;
+	const nextPhase = applyFolds(phase, nextFolds, pivot, softness);
+	return lerpPhase(basePhase, nextPhase, foldFrac);
+}
+
+function pdSkew(
+	phase: number,
+	amount: number,
+	bias = 0.2,
+	curve = 0.5,
+	spread = 0,
+	tilt = 0,
+): number {
+	const breakpoint = clamp(0.05 + bias * 0.9, 0.05, 0.95);
+	const leftSpan = 0.675 + spread * 0.325;
+	const rightSpan = 0.675 - spread * 0.325;
 	const target =
 		phase < breakpoint
-			? (phase / breakpoint) * 0.5
-			: 0.5 + ((phase - breakpoint) / (1 - breakpoint)) * 0.5;
+			? leftSpan * clamp(phase / breakpoint, 0, 1) ** (0.4 + curve * 2.2)
+			: leftSpan +
+				rightSpan *
+					clamp((phase - breakpoint) / (1 - breakpoint), 0, 1) **
+						(0.4 + (1 - curve + tilt * 0.25) * 2.2);
 	return phase + (target - phase) * amount;
 }
 
-function pdQuantize(phase: number, amount: number): number {
-	if (amount === 0) return phase;
-	const levels = 2 + Math.floor(amount * 30);
-	const target = Math.round(phase * levels) / levels;
+function pdQuantize(
+	phase: number,
+	amount: number,
+	steps = 0.5,
+	skew = 0.5,
+): number {
+	const levels = 2 + Math.floor(steps * 30);
+	const warpedPhase = clamp(phase, 0, 1) ** (0.4 + skew * 2.2);
+	const target = Math.round(warpedPhase * levels) / levels;
 	return phase + (target - phase) * amount;
 }
 
-function pdTwist(phase: number, amount: number): number {
-	if (amount === 0) return phase;
-	const target = phase + amount * 0.2 * Math.sin(TAU * phase * 3);
-	return wrap01(target);
+function pdTwist(
+	phase: number,
+	amount: number,
+	harmonics = 0.5,
+	depth = 0.5,
+	phaseOffset = 0,
+	shape = 0.5,
+): number {
+	const partials = 1 + harmonics * 11;
+	const depthScale = 0.03 + depth * 0.25;
+	const driver = Math.sin(TAU * (phase + phaseOffset) * partials);
+	const shaped =
+		driver >= 0
+			? driver ** (0.35 + shape * 2.2)
+			: -((-driver) ** (0.35 + shape * 2.2));
+	return wrap01(phase + amount * depthScale * shaped);
 }
 
-function pdClip(phase: number, amount: number): number {
-	if (amount === 0) return phase;
-	const gain = 1 + amount * 4;
-	const x = (phase - 0.5) * gain;
-	const clipped = Math.max(-0.5, Math.min(0.5, x));
-	return clipped + 0.5;
+function pdClip(
+	phase: number,
+	amount: number,
+	drive = 0.5,
+	shape = 0.5,
+	bias = 0,
+	soft = 0,
+): number {
+	const gain = 1 + amount * (2 + drive * 8);
+	const clip = 0.15 + (1 - shape) * 0.35;
+	const shifted = (phase - 0.5 + bias * 0.25) * gain;
+	const hard = clamp(shifted, -clip, clip);
+	const softMix = clamp(soft, 0, 1);
+	const softened = Math.tanh(shifted / Math.max(clip, 0.001)) * clip;
+	const mixed = hard * (1 - softMix) + softened * softMix;
+	return mixed / (clip * 2) + 0.5;
 }
 
-function pdRipple(phase: number, amount: number): number {
-	if (amount === 0) return phase;
-	const ripple = amount * 0.08 * Math.sin(TAU * phase * 10);
-	return wrap01(phase + ripple);
+function pdRipple(
+	phase: number,
+	amount: number,
+	rippleFreq = 0.5,
+	rippleDepth = 0.5,
+	phaseOffset = 0,
+	shape = 0.5,
+): number {
+	const cycles = 2 + rippleFreq * 22;
+	const depth = 0.01 + rippleDepth * 0.12;
+	const ripple = Math.sin(TAU * (phase + phaseOffset) * cycles);
+	const shaped =
+		ripple >= 0
+			? ripple ** (0.35 + shape * 2.4)
+			: -((-ripple) ** (0.35 + shape * 2.4));
+	return wrap01(phase + amount * depth * shaped);
 }
 
-function pdMirror(phase: number, amount: number): number {
-	if (amount === 0) return phase;
-	const mirrored = 1 - phase;
-	return phase + (mirrored - phase) * amount;
+function pdMirror(
+	phase: number,
+	amount: number,
+	center = 0.5,
+	blend = 0.5,
+	clip = 0,
+	skew = 0,
+): number {
+	const pivot = clamp(center, 0.01, 0.99);
+	const mirrored = clamp(pivot + (pivot - phase) * (1 + skew * 0.5), 0, 1);
+	const clipped =
+		clip > 0
+			? (() => {
+					const clipAmount = 0.5 - clip * 0.45;
+					return (
+						clamp(mirrored - 0.5, -clipAmount, clipAmount) / (clipAmount * 2) +
+						0.5
+					);
+				})()
+			: mirrored;
+	return phase + (clipped - phase) * (amount * (0.2 + blend * 0.8));
 }
 
 function sampleDirectAlgoPreview(algo: PdAlgo, _phase: number): number | null {
 	switch (algo) {
 		default:
 			return null;
+	}
+}
+
+function sampleBaseWave(baseWaveform: BaseWaveform, phase: number): number {
+	const wrappedPhase = wrap01(phase);
+	switch (baseWaveform) {
+		case "cosine":
+			return -Math.cos(TAU * wrappedPhase);
+		case "sine":
+			return Math.sin(TAU * wrappedPhase);
+		case "triangle":
+			return 1 - 4 * Math.abs(wrappedPhase - 0.5);
+		case "saw":
+			return wrappedPhase * 2 - 1;
+		case "square":
+			return wrappedPhase < 0.5 ? 1 : -1;
+		default:
+			return Math.sin(TAU * wrappedPhase);
 	}
 }
 
@@ -341,44 +523,148 @@ function applyPdAlgo(
 	amount: number,
 	algo: PdAlgo,
 	_waveformId: CzWaveform,
+	algoControls?: AlgoControlValueV1[] | null,
 ): number {
+	const controlValue = (id: string, fallback: number) => {
+		const value = algoControls?.find((entry) => entry.id === id)?.value;
+		return typeof value === "number" ? value : fallback;
+	};
+
 	switch (isWarpAlgo(algo) ? algo : "cz101") {
 		case "bend":
-			return pdBend(phase, amount);
+			return pdBend(
+				phase,
+				amount,
+				controlValue("bendCurve", 0.5),
+				controlValue("bendBias", 0),
+				controlValue("bendKnee", 0.5),
+			);
 		case "sync":
-			return pdSync(phase, amount);
+			return pdSync(
+				phase,
+				amount,
+				controlValue("syncRatio", 0.5),
+				controlValue("syncPhase", 0),
+				controlValue("syncCurve", 0.5),
+				controlValue("syncWindow", 0.5),
+			);
 		case "pinch":
-			return pdPinch(phase, amount);
+			return pdPinch(
+				phase,
+				amount,
+				controlValue("pinchFocus", 0.5),
+				controlValue("pinchAsym", 0),
+				controlValue("pinchCurve", 0.5),
+				controlValue("pinchDrive", 0.5),
+			);
 		case "fold":
-			return pdFold(phase, amount);
+			return pdFold(
+				phase,
+				amount,
+				controlValue("foldStages", 0.5),
+				controlValue("foldTilt", 0),
+				controlValue("foldSymmetry", 0),
+				controlValue("foldSoftness", 0),
+			);
 		case "cz101":
 			return pdCz101(phase, amount);
 		case "skew":
-			return pdSkew(phase, amount);
+			return pdSkew(
+				phase,
+				amount,
+				controlValue("skewBias", 0.2),
+				controlValue("skewCurve", 0.5),
+				controlValue("skewSpread", 0),
+				controlValue("skewTilt", 0),
+			);
 		case "quantize":
-			return pdQuantize(phase, amount);
+			return pdQuantize(
+				phase,
+				controlValue("quantizeAmount", amount),
+				controlValue("quantizeSteps", 0.5),
+				controlValue("quantizeSkew", 0.5),
+			);
 		case "twist":
-			return pdTwist(phase, amount);
+			return pdTwist(
+				phase,
+				amount,
+				controlValue("twistHarmonics", 0.5),
+				controlValue("twistDepth", 0.5),
+				controlValue("twistPhase", 0),
+				controlValue("twistShape", 0.5),
+			);
 		case "clip":
-			return pdClip(phase, amount);
+			return pdClip(
+				phase,
+				amount,
+				controlValue("clipDrive", 0.5),
+				controlValue("clipShape", 0.5),
+				controlValue("clipBias", 0),
+				controlValue("clipSoft", 0),
+			);
 		case "ripple":
-			return pdRipple(phase, amount);
+			return pdRipple(
+				phase,
+				amount,
+				controlValue("rippleFreq", 0.5),
+				controlValue("rippleDepth", 0.5),
+				controlValue("ripplePhase", 0),
+				controlValue("rippleShape", 0.5),
+			);
 		case "mirror":
-			return pdMirror(phase, amount);
+			return pdMirror(
+				phase,
+				amount,
+				controlValue("mirrorCenter", 0.5),
+				controlValue("mirrorBlend", 0.5),
+				controlValue("mirrorClip", 0),
+				controlValue("mirrorSkew", 0),
+			);
 		case "karpunk":
 			// Stateless approximation: decaying resonant phase distortion
 			return wrap01(
 				phase + amount * Math.sin(TAU * phase * 3) * Math.exp(-phase * 2.5),
 			);
 		case "fof":
-			// Stateless approximation: gaussian-windowed harmonic carrier
-			return wrap01(
-				phase * 5.0 * (1 - amount * 0.8) +
-					amount * 0.5 * Math.exp(-20 * (phase - 0.5) ** 2),
+			return clamp(
+				wrap01(
+					(phase + controlValue("fofOffset", 0) * 0.25) *
+						(2 + controlValue("fofRatio", 0.5) * 8),
+				) *
+					(1 - amount) +
+					wrap01(
+						(phase + controlValue("fofOffset", 0) * 0.25) *
+							(2 + controlValue("fofRatio", 0.5) * 8),
+					) *
+						Math.exp(
+							-(8 + controlValue("fofTightness", 0.5) * 36) *
+								(phase - (0.5 + controlValue("fofSkew", 0) * 0.25)) ** 2,
+						) *
+						amount,
+				0,
+				1,
 			);
+		case "sine":
+			return phase;
 		default:
 			return phase;
 	}
+}
+
+function renderAlgoSample(
+	algo: PdAlgo,
+	phase: number,
+	dcw: number,
+	baseWaveform: BaseWaveform,
+	algoControls?: AlgoControlValueV1[] | null,
+): number {
+	if (algo === "karpunk") {
+		return Math.sin(TAU * applyPdAlgo(phase, dcw, algo, "saw", algoControls));
+	}
+	const direct = sampleDirectAlgoPreview(algo, phase);
+	if (direct !== null) return direct;
+	const warpedPhase = applyPdAlgo(phase, dcw, algo, "saw", algoControls);
+	return sampleBaseWave(baseWaveform, warpedPhase);
 }
 
 function applyWindow(phase: number, type: WindowType): number {
@@ -421,6 +707,10 @@ export function computeWaveform(params: {
 	windowType: WindowType;
 	line1Level: number;
 	line2Level: number;
+	line1BaseWaveformA?: BaseWaveform;
+	line1BaseWaveformB?: BaseWaveform;
+	line2BaseWaveformA?: BaseWaveform;
+	line2BaseWaveformB?: BaseWaveform;
 	line1AlgoControlsA?: AlgoControlValueV1[];
 	line1AlgoControlsB?: AlgoControlValueV1[];
 	line2AlgoControlsA?: AlgoControlValueV1[];
@@ -489,26 +779,47 @@ export function computeWaveform(params: {
 			params.warpAAmount,
 			params.warpAAlgo,
 			algoAWaveform,
+			params.line1AlgoControlsA,
 		);
 		phaseB[i] = applyPdAlgo(
 			phasor[i],
 			params.warpBAmount,
 			params.warpBAlgo,
 			algoBWaveform,
+			params.line2AlgoControlsA,
 		);
 	}
 
 	for (let i = 0; i < N; ++i) {
 		const w1 = applyWindow(phasor[i], line1Window);
 		const w2 = applyWindow(phasor[i], line2Window);
+		const line1PrimaryCarrier = sampleBaseWave(
+			params.line1BaseWaveformA ?? "sine",
+			phasor[i],
+		);
+		const line1SecondaryCarrier = sampleBaseWave(
+			params.line1BaseWaveformB ?? "sine",
+			phasor[i],
+		);
+		const line2PrimaryCarrier = sampleBaseWave(
+			params.line2BaseWaveformA ?? "sine",
+			phasor[i],
+		);
+		const line2SecondaryCarrier = sampleBaseWave(
+			params.line2BaseWaveformB ?? "sine",
+			phasor[i],
+		);
 
 		if (algo2A && algoA.warpAlgo === "cz101" && algo2A.warpAlgo === "cz101") {
 			const cyclePhase = (phasor[i] * 2) % 1;
 			const useSecondary = phasor[i] >= 0.5;
 			const activeWaveform = useSecondary ? algo2AWaveform : algoAWaveform;
+			const activeCarrier = useSecondary
+				? sampleBaseWave(params.line1BaseWaveformB ?? "sine", cyclePhase)
+				: sampleBaseWave(params.line1BaseWaveformA ?? "sine", cyclePhase);
 			out1[i] =
 				lerp(
-					Math.sin(TAU * cyclePhase),
+					activeCarrier,
 					czWaveform(activeWaveform, cyclePhase),
 					params.warpAAmount,
 				) *
@@ -521,46 +832,64 @@ export function computeWaveform(params: {
 			const sigA1 =
 				algoA.warpAlgo === "cz101"
 					? lerp(
-							Math.sin(TAU * phasor[i]),
+							line1PrimaryCarrier,
 							czWaveform(algoAWaveform, phasor[i]),
 							dcw1eff,
 						)
-					: Math.sin(TAU * phaseA[i]);
-			const phaseA2 = applyPdAlgo(
-				phasor[i],
-				dcw2A,
-				params.algo2A as PdAlgo,
-				algo2AWaveform,
-			);
+					: renderAlgoSample(
+							params.warpAAlgo,
+							phasor[i],
+							dcw1eff,
+							params.line1BaseWaveformA ?? "sine",
+							params.line1AlgoControlsA,
+						);
 			const sigA2 =
 				algo2A.warpAlgo === "cz101"
 					? lerp(
-							Math.sin(TAU * phasor[i]),
+							line1SecondaryCarrier,
 							czWaveform(algo2AWaveform, phasor[i]),
 							dcw2A,
 						)
-					: Math.sin(TAU * phaseA2);
+					: renderAlgoSample(
+							params.algo2A as PdAlgo,
+							phasor[i],
+							dcw2A,
+							params.line1BaseWaveformB ?? "sine",
+							params.line1AlgoControlsB,
+						);
 			out1[i] = lerp(sigA1, sigA2, blendA) * w1 * params.line1Level;
 		} else if (algoA.warpAlgo === "cz101") {
 			out1[i] =
 				lerp(
-					Math.sin(TAU * phasor[i]),
+					line1PrimaryCarrier,
 					czWaveform(algoAWaveform, phasor[i]),
 					params.warpAAmount,
 				) *
 				w1 *
 				params.line1Level;
 		} else {
-			out1[i] = Math.sin(TAU * phaseA[i]) * w1 * params.line1Level;
+			out1[i] =
+				renderAlgoSample(
+					params.warpAAlgo,
+					phasor[i],
+					params.warpAAmount,
+					params.line1BaseWaveformA ?? "sine",
+					params.line1AlgoControlsA,
+				) *
+				w1 *
+				params.line1Level;
 		}
 
 		if (algo2B && algoB.warpAlgo === "cz101" && algo2B.warpAlgo === "cz101") {
 			const cyclePhase = (phasor[i] * 2) % 1;
 			const useSecondary = phasor[i] >= 0.5;
 			const activeWaveform = useSecondary ? algo2BWaveform : algoBWaveform;
+			const activeCarrier = useSecondary
+				? sampleBaseWave(params.line2BaseWaveformB ?? "sine", cyclePhase)
+				: sampleBaseWave(params.line2BaseWaveformA ?? "sine", cyclePhase);
 			out2[i] =
 				lerp(
-					Math.sin(TAU * cyclePhase),
+					activeCarrier,
 					czWaveform(activeWaveform, cyclePhase),
 					params.warpBAmount,
 				) *
@@ -573,37 +902,52 @@ export function computeWaveform(params: {
 			const sigB1 =
 				algoB.warpAlgo === "cz101"
 					? lerp(
-							Math.sin(TAU * phasor[i]),
+							line2PrimaryCarrier,
 							czWaveform(algoBWaveform, phasor[i]),
 							dcw1effB,
 						)
-					: Math.sin(TAU * phaseB[i]);
-			const phaseB2 = applyPdAlgo(
-				phasor[i],
-				dcw2B,
-				params.algo2B as PdAlgo,
-				algo2BWaveform,
-			);
+					: renderAlgoSample(
+							params.warpBAlgo,
+							phasor[i],
+							dcw1effB,
+							params.line2BaseWaveformA ?? "sine",
+							params.line2AlgoControlsA,
+						);
 			const sigB2 =
 				algo2B.warpAlgo === "cz101"
 					? lerp(
-							Math.sin(TAU * phasor[i]),
+							line2SecondaryCarrier,
 							czWaveform(algo2BWaveform, phasor[i]),
 							dcw2B,
 						)
-					: Math.sin(TAU * phaseB2);
+					: renderAlgoSample(
+							params.algo2B as PdAlgo,
+							phasor[i],
+							dcw2B,
+							params.line2BaseWaveformB ?? "sine",
+							params.line2AlgoControlsB,
+						);
 			out2[i] = lerp(sigB1, sigB2, blendB) * w2 * params.line2Level;
 		} else if (algoB.warpAlgo === "cz101") {
 			out2[i] =
 				lerp(
-					Math.sin(TAU * phasor[i]),
+					line2PrimaryCarrier,
 					czWaveform(algoBWaveform, phasor[i]),
 					params.warpBAmount,
 				) *
 				w2 *
 				params.line2Level;
 		} else {
-			out2[i] = Math.sin(TAU * phaseB[i]) * w2 * params.line2Level;
+			out2[i] =
+				renderAlgoSample(
+					params.warpBAlgo,
+					phasor[i],
+					params.warpBAmount,
+					params.line2BaseWaveformA ?? "sine",
+					params.line2AlgoControlsA,
+				) *
+				w2 *
+				params.line2Level;
 		}
 	}
 

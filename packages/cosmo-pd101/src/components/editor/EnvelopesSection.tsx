@@ -32,31 +32,33 @@ export function EnvelopesSection({
 	const activeEnv = envMap[activeEnvTab];
 
 	return (
-		<div className="flex-1 min-h-0 overflow-y-auto p-3">
-			<Card variant="subtle" className="p-0 min-w-0" padding="none">
-				<div className="mb-3 grid grid-cols-3 gap-2">
-					{(["dco", "dcw", "dca"] as EnvTab[]).map((tab) => (
-						<StepEnvelopePreview
-							key={tab}
-							title={tab.toUpperCase()}
-							env={envMap[tab].env}
-							color={envMap[tab].envColor}
-							active={activeEnvTab === tab}
-							onClick={() => setActiveEnvTab(tab)}
-						/>
-					))}
-				</div>
-				<StepEnvelopeEditor
-					title={activeEnv.title}
-					env={activeEnv.env}
-					onChange={activeEnv.setEnv}
-					color={activeEnv.envColor}
-					lineIndex={lineIndex}
-					envKind={activeEnvTab}
-					voiceMarkers={voiceMarkers}
-					compact
-				/>
-			</Card>
-		</div>
+		<Card
+			variant="subtle"
+			className="p-2 min-w-0 h-full flex-1 min-h-0"
+			padding="none"
+		>
+			<div className="mb-3 grid grid-cols-3 gap-2 w-full">
+				{(["dco", "dcw", "dca"] as EnvTab[]).map((tab) => (
+					<StepEnvelopePreview
+						key={tab}
+						title={tab.toUpperCase()}
+						env={envMap[tab].env}
+						color={envMap[tab].envColor}
+						active={activeEnvTab === tab}
+						onClick={() => setActiveEnvTab(tab)}
+					/>
+				))}
+			</div>
+			<StepEnvelopeEditor
+				title={activeEnv.title}
+				env={activeEnv.env}
+				onChange={activeEnv.setEnv}
+				color={activeEnv.envColor}
+				lineIndex={lineIndex}
+				envKind={activeEnvTab}
+				voiceMarkers={voiceMarkers}
+				compact
+			/>
+		</Card>
 	);
 }

@@ -31,6 +31,16 @@ export type KnobControlDef = {
 	defaultValue: number;
 	size?: number;
 	formatter: (v: number) => string;
+	order?: number;
+	row?: number;
+	colSpan?: number;
+	colStart?: number;
+	hideLabel?: boolean;
+	visibleWhen?: {
+		param: string;
+		equals: number | boolean | string;
+	};
+	sourceIndex: number;
 };
 
 export type ButtonGroupControlDef = {
@@ -38,9 +48,26 @@ export type ButtonGroupControlDef = {
 	param: string;
 	label: string;
 	options: { value: number; label: string }[];
+	buttonPresentation?: "segmented" | "compactBinaryToggle";
+	centered?: boolean;
+	order?: number;
+	row?: number;
+	colSpan?: number;
+	colStart?: number;
+	hideLabel?: boolean;
+	visibleWhen?: {
+		param: string;
+		equals: number | boolean | string;
+	};
+	sourceIndex: number;
 };
 
 export type ControlDef = KnobControlDef | ButtonGroupControlDef;
+
+export type FxCustomRendererKey =
+	| "delayLegacy"
+	| "phaseModLegacy"
+	| "vibratoLegacy";
 
 export type FxSlotModuleConfig = {
 	type: FxSlotType;
@@ -50,16 +77,36 @@ export type FxSlotModuleConfig = {
 	color: string;
 	meta?: string;
 	columns?: number;
+	dynamicColumns?: {
+		param: string;
+		equals: number | boolean | string;
+		columns: number;
+		otherwiseColumns?: number;
+	};
+	customRenderer?: FxCustomRendererKey;
 	presets: ModulePresetDefinition<ModulePresetPatch>[];
 	presetTitle: string;
 	controls: ControlDef[];
 };
-
 function pct(v: number) {
 	return `${Math.round(v * 100)}%`;
 }
 
 type FormatterFn = (v: number) => string;
+
+type ControlLayoutRule = {
+	buttonPresentation?: "segmented" | "compactBinaryToggle";
+	centered?: boolean;
+	order?: number;
+	row?: number;
+	colSpan?: number;
+	colStart?: number;
+	hideLabel?: boolean;
+	visibleWhen?: {
+		param: string;
+		equals: number | boolean | string;
+	};
+};
 
 type FxUiMeta = {
 	patchKey: string;
@@ -68,11 +115,18 @@ type FxUiMeta = {
 	color: string;
 	meta?: string;
 	columns?: number;
+	dynamicColumns?: {
+		param: string;
+		equals: number | boolean | string;
+		columns: number;
+		otherwiseColumns?: number;
+	};
+	customRenderer?: FxCustomRendererKey;
 	presets: ModulePresetDefinition<ModulePresetPatch>[];
 	presetTitle: string;
 	formatters?: Partial<Record<string, FormatterFn>>;
+	controlLayout?: Partial<Record<string, ControlLayoutRule>>;
 };
-
 const FX_UI_META = {
 	chorus: {
 		patchKey: "chorus",
@@ -92,6 +146,7 @@ const FX_UI_META = {
 		moduleKey: "delay",
 		color: "#fbbf24",
 		columns: 4,
+		customRenderer: "delayLegacy",
 		presets: DELAY_PRESETS,
 		presetTitle: "Delay Presets",
 		formatters: {
@@ -108,6 +163,7 @@ const FX_UI_META = {
 		title: "Phase Mod",
 		color: "#f43f5e",
 		columns: 3,
+		customRenderer: "phaseModLegacy",
 		presets: PHASE_MOD_PRESETS,
 		presetTitle: "Phase Mod Presets",
 		formatters: {
@@ -122,6 +178,7 @@ const FX_UI_META = {
 		title: "Vibrato",
 		color: "#f472b6",
 		columns: 2,
+		customRenderer: "vibratoLegacy",
 		presets: VIBRATO_PRESETS,
 		presetTitle: "Vibrato Presets",
 		formatters: {
@@ -318,7 +375,7 @@ const FX_UI_META = {
 		moduleKey: "junoChorus",
 		title: "Juno Chorus",
 		color: "#22d3ee",
-		columns: 2,
+		columns: 1,
 		presets: JUNO_CHORUS_PRESETS,
 		presetTitle: "Juno Chorus Presets",
 		formatters: {
@@ -358,6 +415,7 @@ function buildControls(type: FxSlotType, meta: FxUiMeta): ControlDef[] {
 	}
 
 	return def.controls.flatMap((ctrl): ControlDef[] => {
+		const layout = meta.controlLayout?.[ctrl.id];
 		if (ctrl.kind === "toggle") {
 			return [];
 		}
@@ -372,6 +430,15 @@ function buildControls(type: FxSlotType, meta: FxUiMeta): ControlDef[] {
 						value: opt.value,
 						label: opt.label,
 					})),
+					buttonPresentation: layout?.buttonPresentation,
+					centered: layout?.centered,
+					order: layout?.order,
+					row: layout?.row,
+					colSpan: layout?.colSpan,
+					colStart: layout?.colStart,
+					hideLabel: layout?.hideLabel,
+					visibleWhen: layout?.visibleWhen,
+					sourceIndex: def.controls.indexOf(ctrl),
 				},
 			];
 		}
@@ -388,6 +455,13 @@ function buildControls(type: FxSlotType, meta: FxUiMeta): ControlDef[] {
 				max,
 				defaultValue,
 				formatter: resolveKnobFormatter(ctrl.id, meta),
+				order: layout?.order,
+				row: layout?.row,
+				colSpan: layout?.colSpan,
+				colStart: layout?.colStart,
+				hideLabel: layout?.hideLabel,
+				visibleWhen: layout?.visibleWhen,
+				sourceIndex: def.controls.indexOf(ctrl),
 			},
 		];
 	});
@@ -403,6 +477,8 @@ function buildConfig(type: FxSlotType, meta: FxUiMeta): FxSlotModuleConfig {
 		color: meta.color,
 		meta: meta.meta,
 		columns: meta.columns,
+		dynamicColumns: meta.dynamicColumns,
+		customRenderer: meta.customRenderer,
 		presets: meta.presets,
 		presetTitle: meta.presetTitle,
 		controls: buildControls(type, meta),

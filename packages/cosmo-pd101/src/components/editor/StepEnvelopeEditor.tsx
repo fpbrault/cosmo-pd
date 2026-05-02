@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import ControlKnob from "@/components/controls/ControlKnob";
-import Card from "@/components/primitives/Card";
+
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
 import type { EnvKind } from "@/lib/synth/modTargets";
 import { resolveTargetFromMetadata } from "@/lib/synth/modTargets";
@@ -284,8 +284,8 @@ export const StepEnvelopePreview = memo(function StepEnvelopePreview({
 			<canvas
 				ref={canvasRef}
 				width={220}
-				height={54}
-				className="block h-12 w-full rounded bg-black/25"
+				height={50}
+				className="block h-10 w-full rounded bg-black/25"
 			/>
 			<div className="mt-1 flex items-center justify-between gap-2 px-0.5">
 				<span className="truncate text-[0.55rem] font-semibold uppercase tracking-[0.18em] text-cz-cream-dim group-hover:text-cz-cream">
@@ -451,7 +451,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 			const pos = getRelativePointerPosition(clientX, clientY);
 			if (!pos) return null;
 
-			const points = buildEnvelopePoints(normalizedEnv, 1000, 200);
+			const points = buildEnvelopePoints(normalizedEnv, 1200, 300);
 			const closest = findClosestPoint(points, pos.x, pos.y);
 			if (!closest) return null;
 
@@ -500,7 +500,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 				const allowed = getStepAllowedXRange(
 					dragState.stepIndex,
 					activeStepCount,
-					canvasRef.current?.width ?? 1000,
+					canvasRef.current?.width ?? 1200,
 				);
 				const clampedX = clamp(pos.x, allowed.minX, allowed.maxX);
 				const rate = isLastActiveStep
@@ -516,7 +516,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 					: getRateForPointerX(
 							dragState.stepIndex,
 							clampedX,
-							canvasRef.current?.width ?? 1000,
+							canvasRef.current?.width ?? 1200,
 						);
 				updateStepValues(dragState.stepIndex, level, rate);
 				setHoverStep(dragState.stepIndex);
@@ -558,9 +558,8 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 	}, [dragState]);
 
 	return (
-		<Card
-			variant="subtle"
-			className={`bg-base-200/70 shadow-lg ${
+		<div
+			className={`h-full flex flex-col justify-center ${
 				compact ? "space-y-2" : "space-y-3"
 			}`}
 		>
@@ -588,8 +587,8 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 
 			<canvas
 				ref={canvasRef}
-				width={1000}
-				height={compact ? 150 : 200}
+				width={1200}
+				height={compact ? 150 : 300}
 				className="max-w-full rounded-xl cursor-crosshair border border-base-300/60 bg-base-300/30 touch-none"
 				style={{ imageRendering: "auto" }}
 				onPointerDown={handleCanvasPointerDown}
@@ -699,7 +698,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 					);
 				})}
 			</div>
-		</Card>
+		</div>
 	);
 });
 

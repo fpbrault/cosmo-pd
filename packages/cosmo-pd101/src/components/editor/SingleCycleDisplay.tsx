@@ -66,7 +66,13 @@ export const SingleCycleDisplay = memo(function SingleCycleDisplay({
 	);
 });
 
-export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay() {
+export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay({
+	width = 120,
+	height = 64,
+}: {
+	width?: number;
+	height?: number;
+}) {
 	const { value: warpAAmount } = useSynthParam("warpAAmount");
 	const { value: warpBAmount } = useSynthParam("warpBAmount");
 	const { value: warpAAlgo } = useSynthParam("warpAAlgo");
@@ -86,6 +92,10 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay() {
 	const effectiveIntPmAmount = phaseModEnabled ? intPmAmount : 0;
 	const { value: line1Level } = useSynthParam("line1Level");
 	const { value: line2Level } = useSynthParam("line2Level");
+	const { value: line1BaseWaveformA } = useSynthParam("line1BaseWaveformA");
+	const { value: line1BaseWaveformB } = useSynthParam("line1BaseWaveformB");
+	const { value: line2BaseWaveformA } = useSynthParam("line2BaseWaveformA");
+	const { value: line2BaseWaveformB } = useSynthParam("line2BaseWaveformB");
 	const { value: line1AlgoControlsA } = useSynthParam("line1AlgoControlsA");
 	const { value: line1AlgoControlsB } = useSynthParam("line1AlgoControlsB");
 	const { value: line2AlgoControlsA } = useSynthParam("line2AlgoControlsA");
@@ -109,6 +119,10 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay() {
 				windowType,
 				line1Level,
 				line2Level,
+				line1BaseWaveformA,
+				line1BaseWaveformB,
+				line2BaseWaveformA,
+				line2BaseWaveformB,
 				line1AlgoControlsA,
 				line1AlgoControlsB,
 				line2AlgoControlsA,
@@ -129,6 +143,10 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay() {
 			windowType,
 			line1Level,
 			line2Level,
+			line1BaseWaveformA,
+			line1BaseWaveformB,
+			line2BaseWaveformA,
+			line2BaseWaveformB,
 			line1AlgoControlsA,
 			line1AlgoControlsB,
 			line2AlgoControlsA,
@@ -137,22 +155,24 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay() {
 	);
 
 	const canvasRef = useRef<HTMLCanvasElement>(null);
-	const width = 120;
-	const height = 64;
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
 		if (!canvas) return;
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
-		ctx.clearRect(0, 0, width, height);
+		const w = canvas.clientWidth || width;
+		const h = height;
+		canvas.width = w;
+		canvas.height = h;
+		ctx.clearRect(0, 0, w, h);
 
 		// centre line
 		ctx.strokeStyle = "#8884";
 		ctx.lineWidth = 1;
 		ctx.beginPath();
-		ctx.moveTo(0, height / 2);
-		ctx.lineTo(width, height / 2);
+		ctx.moveTo(0, h / 2);
+		ctx.lineTo(w, h / 2);
 		ctx.stroke();
 
 		const drawLine = (data: Float32Array | number[], color: string) => {
@@ -160,8 +180,8 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay() {
 			ctx.lineWidth = 2;
 			ctx.beginPath();
 			for (let i = 0; i < data.length; i++) {
-				const x = (i / (data.length - 1)) * width;
-				const y = height / 2 - data[i] * (height / 2 - 4);
+				const x = (i / (data.length - 1)) * w;
+				const y = h / 2 - data[i] * (h / 2 - 4);
 				if (i === 0) ctx.moveTo(x, y);
 				else ctx.lineTo(x, y);
 			}
@@ -170,25 +190,13 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay() {
 
 		drawLine(waveform.out1, "#ec4899");
 		drawLine(waveform.out2, "#2563eb");
-	}, [waveform]);
+	}, [waveform, width, height]);
 
 	return (
-		<div className="flex flex-col items-center col-span-2">
-			<span className="mb-1 text-3xs uppercase tracking-[0.24em] text-base-content/55">
-				Single Cycle
-			</span>
-			<Card
-				variant="subtle"
-				padding="none"
-				className="overflow-hidden shadow-lg"
-			>
-				<canvas
-					ref={canvasRef}
-					width={width}
-					height={height}
-					className="bg-base-300/30"
-				/>
-			</Card>
-		</div>
+		<canvas
+			ref={canvasRef}
+			className="w-full bg-base-300/30"
+			style={{ height: `${height}px` }}
+		/>
 	);
 });

@@ -7,6 +7,7 @@ import type {
 } from "@/components/controls/algo/algoControlTypes";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import AlgoSectionCard from "@/components/editor/AlgoSectionCard";
+import { SynthSingleCycleDisplay } from "@/components/editor/SingleCycleDisplay";
 import Card from "@/components/primitives/Card";
 import { useOptionalSynthController } from "@/features/synth/SynthParamController";
 import type { EnvTab } from "@/features/synth/synthUiStore";
@@ -19,7 +20,6 @@ import type {
 	StepEnvData,
 } from "@/lib/synth/bindings/synth";
 import { ALGO_DEFINITIONS_V1 } from "@/lib/synth/bindings/synth";
-
 import type { PdAlgo } from "@/lib/synth/pdAlgorithms";
 import {
 	algoUsesBaseWaveform,
@@ -399,7 +399,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 	};
 
 	return (
-		<div className="min-h-0 min-w-0 h-full flex-1 flex flex-col overflow-visible">
+		<>
 			{activeSection === "algos" ? (
 				<div className="flex-1 grid grid-cols-3 min-h-0 gap-4">
 					<div className="min-h-0 flex-1 flex flex-col gap-2">
@@ -448,7 +448,16 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 								valueFormatter={formatAlgoBlendReadout}
 							/>
 						</Card>
-
+						<Card
+							variant="subtle"
+							padding="none"
+							className="flex flex-col overflow-hidden"
+						>
+							<div className="px-3 pt-2 pb-1 text-3xs uppercase tracking-[0.24em] text-cz-cream">
+								Single Cycle
+							</div>
+							<SynthSingleCycleDisplay width={200} height={64} />
+						</Card>
 						<PerLineParametersCard
 							color={color}
 							warpAmount={warpAmount}
@@ -501,7 +510,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 					lineIndex={lineIndex}
 				/>
 			)}
-		</div>
+		</>
 	);
 });
 

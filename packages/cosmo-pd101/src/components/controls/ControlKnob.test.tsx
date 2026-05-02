@@ -123,13 +123,13 @@ describe("ControlKnob", () => {
 			clientX: 28,
 			clientY: 28,
 		});
-		fireEvent.pointerMove(window, {
+		fireEvent.pointerMove(knob, {
 			pointerId: 1,
 			pointerType: "mouse",
 			clientX: 28,
 			clientY: 8,
 		});
-		fireEvent.pointerUp(window, { pointerId: 1, pointerType: "mouse" });
+		fireEvent.pointerUp(knob, { pointerId: 1, pointerType: "mouse" });
 
 		expect(onChange).toHaveBeenCalled();
 		expect(
