@@ -134,28 +134,44 @@
 @layer components {
 	/* ── Knob variants ─────────────────────────────────────────────────────── */
 	.knob-variant-default {
-		--knob-track-color: rgba(255, 255, 255, 0.1);
+		--knob-track-color: rgba(255, 255, 255, 0.15);
 		--knob-value-color: var(--color-cz-gold);
-		--knob-indicator-color: var(--color-cz-gold);
+		--knob-indicator-color: rgba(255, 255, 255, 0.9);
 		--knob-mod-color: #67c7ff;
-		--knob-bg: rgba(24, 24, 35, 0.95);
-		--knob-border: rgba(255, 255, 255, 0.08);
+		--knob-bg: rgb(28, 30, 33);
+		--knob-border: rgba(255, 255, 255, 0.12);
 	}
 	.knob-variant-accent {
-		--knob-track-color: rgba(255, 255, 255, 0.1);
+		--knob-track-color: rgba(255, 255, 255, 0.15);
 		--knob-value-color: var(--color-cz-light-blue);
-		--knob-indicator-color: var(--color-cz-light-blue);
+		--knob-indicator-color: rgba(255, 255, 255, 0.9);
 		--knob-mod-color: #67c7ff;
-		--knob-bg: rgba(24, 24, 35, 0.95);
-		--knob-border: rgba(255, 255, 255, 0.08);
+		--knob-bg: rgb(28, 30, 33);
+		--knob-border: rgba(255, 255, 255, 0.12);
 	}
 	.knob-variant-muted {
-		--knob-track-color: rgba(255, 255, 255, 0.06);
+		--knob-track-color: rgba(255, 255, 255, 0.08);
 		--knob-value-color: rgba(191, 189, 48, 0.5);
-		--knob-indicator-color: rgba(191, 189, 48, 0.5);
+		--knob-indicator-color: rgba(255, 255, 255, 0.55);
 		--knob-mod-color: rgba(103, 199, 255, 0.55);
-		--knob-bg: rgba(24, 24, 35, 0.85);
-		--knob-border: rgba(255, 255, 255, 0.05);
+		--knob-bg: rgb(22, 24, 26);
+		--knob-border: rgba(255, 255, 255, 0.07);
+	}
+	.knob-variant-light {
+		--knob-track-color: rgba(0, 0, 0, 0.15);
+		--knob-value-color: #a0a0a0;
+		--knob-indicator-color: rgba(0, 0, 0, 0.6);
+		--knob-mod-color: rgba(0, 0, 0, 0.3);
+		--knob-bg: rgb(245, 245, 245);
+		--knob-border: rgba(0, 0, 0, 0.12);
+	}
+	.knob-variant-dark {
+		--knob-track-color: rgba(255, 255, 255, 0.15);
+		--knob-value-color: var(--color-cz-gold);
+		--knob-indicator-color: rgba(255, 255, 255, 0.9);
+		--knob-mod-color: #67c7ff;
+		--knob-bg: rgb(28, 30, 33);
+		--knob-border: rgba(255, 255, 255, 0.12);
 	}
 
 	.cz-light-blue {

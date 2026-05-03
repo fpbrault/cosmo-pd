@@ -16,6 +16,7 @@ interface BaseWaveSelectorProps {
 	value: BaseWaveform;
 	onChange: (v: BaseWaveform) => void;
 	disabled?: boolean;
+	color?: string;
 }
 
 export function BaseWaveSelector({
@@ -23,10 +24,14 @@ export function BaseWaveSelector({
 	value,
 	onChange,
 	disabled = false,
+	color,
 }: BaseWaveSelectorProps) {
 	return (
 		<Card variant="subtle" className="">
-			<div className="text-3xs uppercase tracking-[0.24em] text-cz-light-blue text-center">
+			<div
+				className="text-3xs uppercase tracking-[0.24em] text-center"
+				style={color ? { color } : undefined}
+			>
 				{title}
 			</div>
 			<div className="mt-2 flex flex-wrap justify-center gap-1">
@@ -43,9 +48,14 @@ export function BaseWaveSelector({
 							disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"
 						} ${
 							value === option.value
-								? "bg-primary text-primary-content"
+								? "text-primary-content"
 								: "border border-cz-border text-cz-cream/70 hover:text-cz-cream hover:border-cz-cream/40"
 						}`}
+						style={
+							value === option.value && color
+								? { backgroundColor: color }
+								: undefined
+						}
 					>
 						<BaseWaveformIcon
 							waveform={option.value}

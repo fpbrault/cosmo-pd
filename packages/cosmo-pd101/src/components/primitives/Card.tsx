@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 
 export type CardVariant =
 	| "panel"
@@ -14,7 +14,10 @@ type CardProps<T extends React.ElementType = "div"> = {
 	variant?: CardVariant;
 	padding?: CardPadding;
 	className?: string;
-} & Omit<React.ComponentPropsWithoutRef<T>, "as" | "className">;
+} & Omit<
+	React.ComponentPropsWithoutRef<T>,
+	"as" | "variant" | "padding" | "className"
+>;
 
 export const CARD_BASE_CLASSES = "card text-cz-cream outline-none";
 
@@ -68,12 +71,11 @@ export default function Card<T extends React.ElementType = "div">({
 	className = "",
 	...props
 }: CardProps<T>) {
-	const Component = as ?? "div";
+	const Component = (as ?? "div") as React.ElementType;
+	const componentProps = props as React.ComponentPropsWithoutRef<T>;
 
-	return (
-		<Component
-			className={getCardClassName({ variant, padding, className })}
-			{...props}
-		/>
-	);
+	return React.createElement(Component, {
+		...componentProps,
+		className: getCardClassName({ variant, padding, className }),
+	});
 }

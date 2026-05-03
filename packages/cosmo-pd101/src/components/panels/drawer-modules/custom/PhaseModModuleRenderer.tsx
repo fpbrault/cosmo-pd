@@ -90,7 +90,6 @@ export default function PhaseModModuleRenderer({
 					min={amountControl.min}
 					max={amountControl.max}
 					defaultValue={amountControl.defaultValue}
-					size={52}
 					color={config.color}
 					label="Amount"
 					tooltip={getTooltip("intPmAmount")}
@@ -104,7 +103,6 @@ export default function PhaseModModuleRenderer({
 					min={ratioControl.min}
 					max={ratioControl.max}
 					defaultValue={ratioControl.defaultValue}
-					size={52}
 					color={config.color}
 					label="Ratio"
 					tooltip={getTooltip("intPmRatio")}

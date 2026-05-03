@@ -32,7 +32,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	const activeAsidePanel = useSynthUiStore((s) => s.activeAsidePanel);
 	const setActiveAsidePanel = useSynthUiStore((s) => s.setActiveAsidePanel);
 	const { lcdControlReadout, pushLcdControlReadout } = useLcdControlReadout();
-	const { activeNotes, sendNoteOn, sendNoteOff } = useNoteHandling({
+	const { activeNotes, sendNoteOn, sendNoteOff, panic } = useNoteHandling({
 		velocityCurve,
 		eventSink: (type, payload) => {
 			window.__BEAMER__?.emit?.(type, payload);
@@ -94,6 +94,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		builtinPresets: DEFAULT_SYNTH_PRESETS,
 		gatherState,
 		applyPreset,
+		onBeforeApplyPreset: panic,
 		shouldLoadCurrentState: () => true,
 		presetStateKey,
 	});

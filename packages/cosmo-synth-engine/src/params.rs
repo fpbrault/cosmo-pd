@@ -581,7 +581,7 @@ impl Default for PortamentoParams {
     fn default() -> Self {
         Self {
             enabled: false,
-            mode: PortamentoMode::Rate,
+            mode: PortamentoMode::Time,
             rate: 50.0,
             time: 0.5,
         }
@@ -2230,9 +2230,13 @@ mod tests {
     #[test]
     fn fx_slots_default_to_all_empty() {
         let params = SynthParams::default();
-        for slot in &params.fx_slots {
-            assert!(matches!(slot, FxSlotConfig::Empty));
-        }
+        // Default slots include Vibrato and PhaseMod; only the others are empty
+        let empty_count = params
+            .fx_slots
+            .iter()
+            .filter(|s| matches!(s, FxSlotConfig::Empty))
+            .count();
+        assert_eq!(empty_count, 4, "expected 4 empty slots in default config");
     }
 
     #[test]
@@ -2279,10 +2283,13 @@ mod tests {
         value.as_object_mut().unwrap().remove("fxSlots");
         let decoded: SynthParams =
             serde_json::from_value(value).expect("fxSlots field should default");
-        assert!(decoded
+        // Default slots include Vibrato and PhaseMod; only the others are empty
+        let empty_count = decoded
             .fx_slots
             .iter()
-            .all(|s| matches!(s, FxSlotConfig::Empty)));
+            .filter(|s| matches!(s, FxSlotConfig::Empty))
+            .count();
+        assert_eq!(empty_count, 4, "expected 4 empty slots in default config");
     }
 
     #[test]

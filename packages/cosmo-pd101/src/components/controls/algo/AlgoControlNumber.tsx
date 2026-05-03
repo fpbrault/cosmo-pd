@@ -15,6 +15,7 @@ interface AlgoControlNumberProps {
 	algoParamSlotIndex: Record<string, number>;
 	getAlgoControlValue: (id: string, fallback: number) => number;
 	setAlgoControlValue: (id: string, value: number) => void;
+	color?: string;
 }
 
 // Derived-display overrides for controls whose readout is a computed value,
@@ -79,6 +80,7 @@ function AlgoControlNumberInner({
 	algoParamSlotIndex,
 	getAlgoControlValue,
 	setAlgoControlValue,
+	color = "cyan",
 }: AlgoControlNumberProps) {
 	const min = control.min ?? 0;
 	const max = control.max ?? 1;
@@ -99,10 +101,10 @@ function AlgoControlNumberInner({
 				min={min}
 				max={max}
 				value={value}
-				size={64}
+				size={112}
 				bipolar={min < 0 && max > 0}
 				defaultValue={control.default ?? undefined}
-				color="cyan"
+				color={color}
 				modulatable={disabled ? undefined : algoParamTarget}
 				lineIndex={lineIndex}
 				onChange={(newVal) =>

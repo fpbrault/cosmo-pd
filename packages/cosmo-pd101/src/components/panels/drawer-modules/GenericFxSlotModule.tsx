@@ -218,7 +218,7 @@ export default function GenericFxSlotModule({
 										min={min}
 										max={max}
 										defaultValue={defaultValue}
-										size={ctrl.size ?? 48}
+										size={ctrl.size}
 										color={config.color}
 										label={ctrl.label}
 										valueFormatter={ctrl.formatter}

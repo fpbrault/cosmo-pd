@@ -21,6 +21,7 @@ export type NoteHandlingApi = {
 	activeNotes: number[];
 	sendNoteOn: (note: number, velocity?: number) => void;
 	sendNoteOff: (note: number) => void;
+	panic: () => void;
 	setSustain: (on: boolean) => void;
 	sendPitchBend: (value: number) => void;
 	sendModWheel: (value: number) => void;
@@ -127,6 +128,14 @@ export function useNoteHandling({
 		},
 		[dispatchEngineEvent, emitModSourceValue],
 	);
+
+	const panic = useCallback(() => {
+		activeNotesRef.current.clear();
+		sustainedButReleasedRef.current.clear();
+		sustainRef.current = false;
+		setActiveNotes([]);
+		dispatchEngineEvent("panic", {});
+	}, [dispatchEngineEvent]);
 
 	// Keyboard input
 	useEffect(() => {
@@ -307,6 +316,7 @@ export function useNoteHandling({
 		activeNotes,
 		sendNoteOn,
 		sendNoteOff,
+		panic,
 		setSustain,
 		sendPitchBend,
 		sendModWheel,

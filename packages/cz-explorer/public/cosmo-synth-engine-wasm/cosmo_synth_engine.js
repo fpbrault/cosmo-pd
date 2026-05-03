@@ -141,6 +141,12 @@ let wasm_bindgen = (function(exports) {
             wasm.czsynthprocessor_process(this.__wbg_ptr, ptr0, len0, addHeapObject(output));
         }
         /**
+         * Hard reset runtime voice and FX state while preserving current params.
+         */
+        resetAudioState() {
+            wasm.czsynthprocessor_resetAudioState(this.__wbg_ptr);
+        }
+        /**
          * Set aftertouch/channel pressure value. `value` is normalised [0.0, 1.0].
          * @param {number} value
          */

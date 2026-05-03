@@ -82,6 +82,12 @@ impl CzSynthProcessor {
         self.inner.set_sustain(on);
     }
 
+    /// Hard reset runtime voice and FX state while preserving current params.
+    #[wasm_bindgen(js_name = resetAudioState)]
+    pub fn reset_audio_state(&mut self) {
+        self.inner.reset_audio_state();
+    }
+
     /// Set pitch bend. `value` is normalised [-1.0, 1.0] (MIDI 14-bit mapped to this range).
     /// Actual pitch shift in semitones = value * params.pitchBendRange.
     #[wasm_bindgen(js_name = setPitchBend)]

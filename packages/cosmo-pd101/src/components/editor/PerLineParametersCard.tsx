@@ -3,7 +3,6 @@ import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import Card from "@/components/primitives/Card";
 
 interface PerLineParametersCardProps {
-	color: string;
 	warpAmount: number;
 	setWarpAmount: (value: number) => void;
 	level: number;
@@ -16,7 +15,6 @@ interface PerLineParametersCardProps {
 }
 
 function PerLineParametersCardInner({
-	color,
 	warpAmount,
 	setWarpAmount,
 	level,
@@ -40,7 +38,8 @@ function PerLineParametersCardInner({
 					paramKey={lineIndex === 1 ? "warpAAmount" : "warpBAmount"}
 					label="DCW Amt"
 					value={warpAmount}
-					color={color}
+					variant="accent"
+					color="#9cb937"
 					modDestination={lineIndex === 1 ? "line1DcwBase" : "line2DcwBase"}
 					onChange={setWarpAmount}
 				/>
@@ -48,6 +47,7 @@ function PerLineParametersCardInner({
 					paramKey={lineIndex === 1 ? "line1Level" : "line2Level"}
 					label="Level"
 					value={level}
+					variant="accent"
 					color="#9cb937"
 					modDestination={lineIndex === 1 ? "line1DcaBase" : "line2DcaBase"}
 					onChange={setLevel}
@@ -56,7 +56,8 @@ function PerLineParametersCardInner({
 					paramKey={lineIndex === 1 ? "line1Octave" : "line2Octave"}
 					label="Oct"
 					value={octave}
-					color="#7f9de4"
+					variant="accent"
+					color="#9cb937"
 					min={-2}
 					max={2}
 					step={1}
@@ -66,6 +67,7 @@ function PerLineParametersCardInner({
 					paramKey={lineIndex === 1 ? "line1Detune" : "line2Detune"}
 					label="Fine"
 					value={fineDetune}
+					variant="accent"
 					color="#9cb937"
 					min={-100}
 					max={100}

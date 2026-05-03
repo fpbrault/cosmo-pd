@@ -33,7 +33,6 @@ describe("StepEnvelopeEditor", () => {
 				title="Line 1 DCW"
 				env={createEnv()}
 				onChange={vi.fn()}
-				compact
 			/>,
 		);
 
@@ -57,7 +56,6 @@ describe("StepEnvelopeEditor", () => {
 				title="Line 1 DCW"
 				env={createEnv()}
 				onChange={onChange}
-				compact
 			/>,
 		);
 
@@ -84,7 +82,6 @@ describe("StepEnvelopeEditor", () => {
 				title="Line 1 DCW"
 				env={createEnv()}
 				onChange={onChange}
-				compact
 			/>,
 		);
 
@@ -111,7 +108,6 @@ describe("StepEnvelopeEditor", () => {
 				title="Line 1 DCW"
 				env={createEnv({ stepCount: 6, sustainStep: 4 })}
 				onChange={onChange}
-				compact
 			/>,
 		);
 
