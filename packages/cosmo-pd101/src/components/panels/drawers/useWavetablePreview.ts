@@ -64,7 +64,10 @@ function resampleWave(wave: Float32Array, points: number): number[] {
 	return out;
 }
 
-export function useWavetablePreview(): number[][] {
+export function useWavetablePreview(): {
+	line1History: number[][];
+	line2History: number[][];
+} {
 	const warpAAmount = useSynthStore((s) => s.warpAAmount);
 	const warpBAmount = useSynthStore((s) => s.warpBAmount);
 	const warpAAlgo = useSynthStore((s) => s.warpAAlgo);
@@ -98,7 +101,10 @@ export function useWavetablePreview(): number[][] {
 		const intPmRatio = phaseModParams?.ratio ?? 1;
 		const pmPre = phaseModParams?.pmPre ?? true;
 
-		return Array.from({ length: WAVE_COUNT }, (_, index) => {
+		const line1History: number[][] = [];
+		const line2History: number[][] = [];
+
+		for (let index = 0; index < WAVE_COUNT; index++) {
 			const time = index / (WAVE_COUNT - 1);
 			const dcw1 = evaluateEnvelope(line1DcwEnv, time);
 			const dcw2 = evaluateEnvelope(line2DcwEnv, time);
@@ -130,16 +136,28 @@ export function useWavetablePreview(): number[][] {
 				line2AlgoControlsB,
 			});
 
-			const combined = new Float32Array(waveform.out1.length);
-			for (let sample = 0; sample < combined.length; sample++) {
-				combined[sample] = clamp(
-					(waveform.out1[sample] ?? 0) + (waveform.out2[sample] ?? 0),
-					-1.15,
-					1.15,
-				);
-			}
-			return resampleWave(combined, POINTS_PER_WAVE);
-		});
+			line1History.push(
+				resampleWave(
+					Float32Array.from(waveform.out1, (sample) =>
+						clamp(sample, -1.15, 1.15),
+					),
+					POINTS_PER_WAVE,
+				),
+			);
+			line2History.push(
+				resampleWave(
+					Float32Array.from(waveform.out2, (sample) =>
+						clamp(sample, -1.15, 1.15),
+					),
+					POINTS_PER_WAVE,
+				),
+			);
+		}
+
+		return {
+			line1History,
+			line2History,
+		};
 	}, [
 		warpAAmount,
 		warpBAmount,

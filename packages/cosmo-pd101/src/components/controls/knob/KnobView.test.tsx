@@ -27,7 +27,7 @@ describe("KnobView", () => {
 		);
 
 		expect(
-			container.querySelector('path[stroke-opacity="0.35"]'),
+			container.querySelector('path[stroke-opacity="0.55"]'),
 		).toBeInTheDocument();
 		expect(
 			container.querySelector(

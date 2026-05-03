@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import type {
 	AlgoControlBinding,
 	AlgoControlOptionRuntime,
@@ -139,6 +139,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 	const synthController = useOptionalSynthController();
 	const activeSection = activeSectionProp;
 	const algoBEnabled = algoBlend > 0.001;
+	const [voiceMarkerTick, setVoiceMarkerTick] = useState(0);
 
 	// Auto-set algo2 to first algo when blend is raised from 0 with nothing selected
 	useEffect(() => {
@@ -171,11 +172,39 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 		[label, dcoEnv, setDcoEnv, dcwEnv, setDcwEnv, dcaEnv, setDcaEnv],
 	);
 
+	useEffect(() => {
+		if (activeSection !== "envelopes" || !synthController) {
+			return;
+		}
+		if (typeof window === "undefined") {
+			return;
+		}
+
+		let rafId = 0;
+		let lastFrameAt = 0;
+		const FRAME_INTERVAL_MS = 33;
+
+		const tick = (timestamp: number) => {
+			if (timestamp - lastFrameAt >= FRAME_INTERVAL_MS) {
+				lastFrameAt = timestamp;
+				setVoiceMarkerTick((value) => value + 1);
+			}
+			rafId = window.requestAnimationFrame(tick);
+		};
+
+		rafId = window.requestAnimationFrame(tick);
+
+		return () => {
+			window.cancelAnimationFrame(rafId);
+		};
+	}, [activeSection, synthController]);
+
 	const activeVoiceMarkers = useMemo<StepEnvelopeVoiceMarker[]>(() => {
 		if (activeSection !== "envelopes") {
 			return [];
 		}
 
+		void voiceMarkerTick;
 		const activeEnv = envMap[activeEnvTab];
 		const liveVoiceStates = synthController?.getLiveVoiceStates() ?? [];
 		return liveVoiceStates
@@ -195,7 +224,14 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 					color: voice.isReleasing ? "#f59e0b" : "#f8fafc",
 				};
 			});
-	}, [activeSection, activeEnvTab, envMap, lineIndex, synthController]);
+	}, [
+		activeSection,
+		activeEnvTab,
+		envMap,
+		lineIndex,
+		synthController,
+		voiceMarkerTick,
+	]);
 
 	const handleAlgoChange = useCallback(
 		(nextAlgo: PdAlgo) => {
@@ -556,7 +592,6 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 							/>
 						</Card>
 						<PerLineParametersCard
-							color={color}
 							warpAmount={warpAmount}
 							setWarpAmount={setWarpAmount}
 							level={level}

@@ -19,6 +19,7 @@ describe("ScopeMiniDisplay", () => {
 
 		expect(canvas.className).toContain("h-24");
 		expect(canvas.className).toContain("w-full");
+
 		expect(canvas.style.imageRendering).toBe("");
 	});
 });

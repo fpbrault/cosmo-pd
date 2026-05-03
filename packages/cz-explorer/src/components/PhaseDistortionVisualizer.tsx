@@ -105,7 +105,7 @@ export function SharedPhaseDistortionVisualizer({
 		pdVisualizerWorkletUrl,
 	});
 
-	const { activeNotes, sendNoteOn, sendNoteOff } = useNoteHandling({
+	const { activeNotes, sendNoteOn, sendNoteOff, panic } = useNoteHandling({
 		workletNodeRef,
 		velocityCurve,
 	});
@@ -225,6 +225,7 @@ export function SharedPhaseDistortionVisualizer({
 		builtinPresets: DEFAULT_SYNTH_PRESETS,
 		gatherState,
 		applyPreset,
+		onBeforeApplyPreset: panic,
 		libraryPresets,
 		onLoadLibraryPreset: handleLoadLibraryPreset,
 		presetStateKey,

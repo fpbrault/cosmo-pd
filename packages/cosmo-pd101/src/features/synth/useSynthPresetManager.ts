@@ -21,6 +21,7 @@ type UseSynthPresetManagerOptions = {
 	builtinPresets: Record<string, SynthPresetV1>;
 	gatherState: () => SynthPresetV1;
 	applyPreset: (data: SynthPresetV1) => void;
+	onBeforeApplyPreset?: () => void;
 	libraryPresets?: LibraryPreset[];
 	onLoadLibraryPreset?: (preset: LibraryPreset) => void;
 	shouldLoadCurrentState?: () => boolean;
@@ -199,6 +200,7 @@ export function useSynthPresetManager({
 	builtinPresets,
 	gatherState,
 	applyPreset,
+	onBeforeApplyPreset,
 	libraryPresets = [],
 	onLoadLibraryPreset,
 	shouldLoadCurrentState,
@@ -290,35 +292,43 @@ export function useSynthPresetManager({
 		(name: string) => {
 			const data = loadPreset(name);
 			if (!data) return;
+			onBeforeApplyPreset?.();
 			applyPreset(data);
 			setActivePresetId(getLocalPresetEntryId(name));
 			setActivePresetNameBase(name);
 			captureLoadedPresetFingerprint();
 		},
-		[applyPreset, captureLoadedPresetFingerprint],
+		[applyPreset, captureLoadedPresetFingerprint, onBeforeApplyPreset],
 	);
 
 	const loadBuiltinPreset = useCallback(
 		(name: string) => {
 			const data = builtinPresets[name];
 			if (!data) return;
+			onBeforeApplyPreset?.();
 			applyPreset(data);
 			setActivePresetId(getBuiltinPresetEntryId(name));
 			setActivePresetNameBase(name);
 			captureLoadedPresetFingerprint();
 		},
-		[applyPreset, builtinPresets, captureLoadedPresetFingerprint],
+		[
+			applyPreset,
+			builtinPresets,
+			captureLoadedPresetFingerprint,
+			onBeforeApplyPreset,
+		],
 	);
 
 	const loadLibraryPreset = useCallback(
 		(preset: LibraryPreset) => {
 			if (!onLoadLibraryPreset) return;
+			onBeforeApplyPreset?.();
 			onLoadLibraryPreset(preset);
 			setActivePresetId(getLibraryPresetEntryId(preset.id));
 			setActivePresetNameBase(preset.name);
 			captureLoadedPresetFingerprint();
 		},
-		[captureLoadedPresetFingerprint, onLoadLibraryPreset],
+		[captureLoadedPresetFingerprint, onBeforeApplyPreset, onLoadLibraryPreset],
 	);
 
 	const handleLoadLocal = useCallback(
@@ -507,11 +517,12 @@ export function useSynthPresetManager({
 	}, []);
 
 	const handleInitPreset = useCallback(() => {
+		onBeforeApplyPreset?.();
 		applyPreset(DEFAULT_PRESET);
 		setActivePresetId(null);
 		setActivePresetNameBase("Current State");
 		captureLoadedPresetFingerprint();
-	}, [applyPreset, captureLoadedPresetFingerprint]);
+	}, [applyPreset, captureLoadedPresetFingerprint, onBeforeApplyPreset]);
 
 	const handleExportPreset = useCallback((name: string) => {
 		const json = exportPreset(name);
@@ -538,12 +549,13 @@ export function useSynthPresetManager({
 			}
 			savePreset(candidate, data);
 			setPresetList(listPresets());
+			onBeforeApplyPreset?.();
 			applyPreset(data);
 			setActivePresetId(getLocalPresetEntryId(candidate));
 			setActivePresetNameBase(candidate);
 			captureLoadedPresetFingerprint();
 		},
-		[applyPreset, captureLoadedPresetFingerprint],
+		[applyPreset, captureLoadedPresetFingerprint, onBeforeApplyPreset],
 	);
 
 	const handleExportCurrentState = useCallback(

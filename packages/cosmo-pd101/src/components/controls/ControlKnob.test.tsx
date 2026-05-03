@@ -220,9 +220,7 @@ describe("ControlKnob", () => {
 			<ControlKnob value={0.5} onChange={vi.fn()} label="Test" />,
 		);
 
-		expect(
-			container.querySelector(".knob-variant-default"),
-		).toBeInTheDocument();
+		expect(container.querySelector(".knob-variant-dark")).toBeInTheDocument();
 	});
 
 	it("uses valueFormatter when provided", () => {

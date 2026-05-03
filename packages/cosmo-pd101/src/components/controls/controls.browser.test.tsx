@@ -59,7 +59,7 @@ describe("core controls (browser)", () => {
 			/>,
 		);
 
-		fireEvent.click(screen.getByRole("button", { name: "Cutoff value" }));
+		fireEvent.doubleClick(screen.getByRole("button", { name: "Cutoff value" }));
 		const input = screen.getByRole("textbox", { name: "Cutoff value" });
 		fireEvent.change(input, { target: { value: "0.75" } });
 		fireEvent.keyDown(input, { key: "Enter" });

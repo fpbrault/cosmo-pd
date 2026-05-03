@@ -261,6 +261,28 @@ impl CosmoProcessor {
         self.update_fx();
     }
 
+    /// Hard reset runtime voice/FX state while keeping current parameters.
+    ///
+    /// Used when loading a new preset so held notes and effect tails are cut
+    /// immediately before rendering the new sound.
+    pub fn reset_audio_state(&mut self) {
+        self.voices = array::from_fn(|_| Voice::new());
+        self.fx = FxChain::new(self.sample_rate);
+        self.update_fx();
+        self.active_notes.clear();
+        self.mono_stack.clear();
+        self.sustain_on = false;
+        self.lfo_phase = 0.0;
+        self.lfo2_phase = 0.0;
+        self.random_phase = 0.0;
+        self.random_step = 0;
+        self.random_hold = random_hold_value(0);
+        self.pitch_bend = 0.0;
+        self.mod_wheel = 0.0;
+        self.aftertouch = 0.0;
+        self.last_runtime_mod_sources = RuntimeModSources::default();
+    }
+
     /// Set which effect type occupies a given FX slot (0–5).
     /// Resets to default params with enabled=true for non-empty types.
     pub fn set_fx_slot_type(&mut self, slot: usize, slot_type: FxSlotType) {

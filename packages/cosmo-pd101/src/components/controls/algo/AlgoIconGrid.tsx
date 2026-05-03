@@ -138,7 +138,9 @@ export default function AlgoIconGrid({
 									<button
 										type="button"
 										{...hoverHandlers}
+										disabled={disabled}
 										onClick={() => {
+											if (disabled) return;
 											onChange(algo.value);
 											setPopoverOpen(false);
 										}}

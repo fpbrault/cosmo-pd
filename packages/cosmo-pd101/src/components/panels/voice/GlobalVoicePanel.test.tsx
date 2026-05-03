@@ -72,7 +72,7 @@ describe("GlobalVoicePanel", () => {
 				name: "Time",
 			}),
 		).toBeInTheDocument();
-		expect(screen.getByTestId("knob-Rate")).toBeInTheDocument();
+		expect(screen.getByTestId("knob-Time")).toBeInTheDocument();
 		expect(screen.getByTestId("knob-Bend")).toBeInTheDocument();
 	});
 
