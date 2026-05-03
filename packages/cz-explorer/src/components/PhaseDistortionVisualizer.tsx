@@ -50,6 +50,7 @@ type PhaseDistortionVisualizerBaseProps = PhaseDistortionVisualizerProps & {
 
 const SYNTH_RENDERER_MAX_WIDTH = 1280;
 const SYNTH_RENDERER_MAX_HEIGHT = 800;
+const VISUALIZER_FRAME_PADDING = 30;
 
 export function SharedPhaseDistortionVisualizer({
 	frameStyle,
@@ -372,9 +373,9 @@ export default function PhaseDistortionVisualizer(
 	});
 	const audioTarget = useMotionValue(0);
 	const audioLevel = useSpring(audioTarget, {
-		stiffness: 85,
-		damping: 24,
-		mass: 0.6,
+		stiffness: 156,
+		damping: 20,
+		mass: 0.42,
 	});
 	const cursorXPercent = useTransform(cursorX, (value: number) => `${value}%`);
 	const cursorYPercent = useTransform(cursorY, (value: number) => `${value}%`);
@@ -401,6 +402,12 @@ export default function PhaseDistortionVisualizer(
 	const greenStartAlpha = useTransform(audioLevel, (value: number) =>
 		(0.12 + value * 0.18).toFixed(3),
 	);
+	const magentaStartAlpha = useTransform(audioLevel, (value: number) =>
+		(0.1 + value * 0.28).toFixed(3),
+	);
+	const magentaMidAlpha = useTransform(audioLevel, (value: number) =>
+		(0.06 + value * 0.18).toFixed(3),
+	);
 	const whiteGlowAlpha = useTransform(audioLevel, (value: number) =>
 		(0.12 + value * 0.26).toFixed(3),
 	);
@@ -417,13 +424,22 @@ export default function PhaseDistortionVisualizer(
 		isOverlayOpen ? 0.16 : 0.24 + value * 0.12,
 	);
 	const brightness = useTransform(audioLevel, (value: number) =>
-		(isOverlayOpen ? 1.1 : 1.22 + value * 0.08).toFixed(3),
+		(isOverlayOpen ? 1.14 : 1.28 + value * 0.12).toFixed(3),
 	);
 	const saturation = useTransform(audioLevel, (value: number) =>
-		(isOverlayOpen ? 1.08 : 1.14 + value * 0.65).toFixed(3),
+		(isOverlayOpen ? 1.08 : 1.24 + value * 1.5).toFixed(3),
 	);
-	const reactiveBackground = useMotionTemplate`radial-gradient(58rem 58rem at ${cursorXPercent} ${cursorYPercent}, rgba(141, 173, 248, ${blueStartAlpha}) 0%, rgba(141, 173, 248, ${blueMidAlpha}) 30%, rgba(141, 173, 248, 0) 74%), radial-gradient(48rem 48rem at ${inverseCursorXPercent} ${inverseCursorYPercent}, rgba(214, 204, 75, ${goldStartAlpha}) 0%, rgba(214, 204, 75, ${goldMidAlpha}) 32%, rgba(214, 204, 75, 0) 75%), radial-gradient(42rem 42rem at 50% 8%, rgba(102, 255, 130, ${greenStartAlpha}) 0%, rgba(102, 255, 130, 0) 76%)`;
-	const reactiveFilter = useMotionTemplate`brightness(${brightness}) saturate(${saturation})`;
+	const backgroundBlur = useTransform(
+		audioLevel,
+		(value: number) => `${isOverlayOpen ? 30 : 34 + value * 18}px`,
+	);
+	const audioBlur = useTransform(
+		audioLevel,
+		(value: number) => `${isOverlayOpen ? 54 : 60 + value * 26}px`,
+	);
+	const reactiveBackground = useMotionTemplate`radial-gradient(58rem 58rem at ${cursorXPercent} ${cursorYPercent}, rgba(141, 173, 248, ${blueStartAlpha}) 0%, rgba(141, 173, 248, ${blueMidAlpha}) 30%, rgba(141, 173, 248, 0) 74%), radial-gradient(48rem 48rem at ${inverseCursorXPercent} ${inverseCursorYPercent}, rgba(214, 204, 75, ${goldStartAlpha}) 0%, rgba(214, 204, 75, ${goldMidAlpha}) 32%, rgba(214, 204, 75, 0) 75%), radial-gradient(42rem 42rem at 50% 8%, rgba(102, 255, 130, ${greenStartAlpha}) 0%, rgba(102, 255, 130, 0) 76%), radial-gradient(34rem 34rem at 50% ${inverseCursorYPercent}, rgba(255, 92, 214, ${magentaStartAlpha}) 0%, rgba(255, 92, 214, ${magentaMidAlpha}) 34%, rgba(255, 92, 214, 0) 78%)`;
+	const reactiveFilter = useMotionTemplate`brightness(${brightness}) saturate(${saturation}) blur(${backgroundBlur})`;
+	const audioFilter = useMotionTemplate`blur(${audioBlur})`;
 	const audioBackground = useMotionTemplate`radial-gradient(44rem 44rem at ${cursorXPercent} ${cursorYPercent}, rgba(255, 255, 255, ${whiteGlowAlpha}), transparent 72%), radial-gradient(36rem 36rem at 50% 50%, rgba(121, 151, 255, ${centerGlowAlpha}), transparent 75%)`;
 
 	const handlePointerMove = useCallback(
@@ -454,13 +470,21 @@ export default function PhaseDistortionVisualizer(
 
 		const updateFrameSize = () => {
 			const bounds = element.getBoundingClientRect();
-			if (bounds.width <= 0 || bounds.height <= 0) {
+			const availableWidth = Math.max(
+				bounds.width - VISUALIZER_FRAME_PADDING * 2,
+				0,
+			);
+			const availableHeight = Math.max(
+				bounds.height - VISUALIZER_FRAME_PADDING * 2,
+				0,
+			);
+			if (availableWidth <= 0 || availableHeight <= 0) {
 				return;
 			}
 
 			const nextScale = Math.min(
-				bounds.width / SYNTH_RENDERER_MAX_WIDTH,
-				bounds.height / SYNTH_RENDERER_MAX_HEIGHT,
+				availableWidth / SYNTH_RENDERER_MAX_WIDTH,
+				availableHeight / SYNTH_RENDERER_MAX_HEIGHT,
 				1,
 			);
 
@@ -503,7 +527,7 @@ export default function PhaseDistortionVisualizer(
 	return (
 		<div
 			ref={frameRef}
-			className="relative flex items-center justify-center w-full h-full overflow-hidden bg-black"
+			className="relative flex h-full w-full items-center justify-center overflow-hidden bg-black p-7.5"
 			data-ui-overlay-open={isOverlayOpen ? "true" : "false"}
 			onPointerMove={handlePointerMove}
 			onPointerLeave={handlePointerLeave}
@@ -519,6 +543,7 @@ export default function PhaseDistortionVisualizer(
 				className="cz-reactive-bg-audio pointer-events-none absolute inset-0"
 				style={{
 					background: audioBackground,
+					filter: audioFilter,
 					opacity: audioGlowOpacity,
 					scale: audioGlowScale,
 				}}

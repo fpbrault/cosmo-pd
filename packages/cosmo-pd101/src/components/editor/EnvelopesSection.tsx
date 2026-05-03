@@ -20,12 +20,14 @@ interface EnvelopesSectionProps {
 	envMap: Record<EnvTab, EnvMapEntry>;
 	voiceMarkers: StepEnvelopeVoiceMarker[];
 	lineIndex: LineIndex;
+	lineColor: string;
 }
 
 export function EnvelopesSection({
 	envMap,
 	voiceMarkers,
 	lineIndex,
+	lineColor,
 }: EnvelopesSectionProps) {
 	const activeEnvTab = useSynthUiStore((s) => s.activeEnvTab);
 	const setActiveEnvTab = useSynthUiStore((s) => s.setActiveEnvTab);
@@ -54,10 +56,10 @@ export function EnvelopesSection({
 				env={activeEnv.env}
 				onChange={activeEnv.setEnv}
 				color={activeEnv.envColor}
+				levelKnobColor={lineColor}
 				lineIndex={lineIndex}
 				envKind={activeEnvTab}
 				voiceMarkers={voiceMarkers}
-				compact
 			/>
 		</Card>
 	);

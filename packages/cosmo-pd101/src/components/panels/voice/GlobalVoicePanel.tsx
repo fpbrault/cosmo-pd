@@ -125,7 +125,6 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 									paramKey="portamentoRate"
 									value={portamentoRate}
 									onChange={setPortamentoRate}
-									size={32}
 									color="#7f9de4"
 									label="Rate"
 								/>
@@ -134,7 +133,6 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 									paramKey="portamentoTime"
 									value={portamentoTime}
 									onChange={setPortamentoTime}
-									size={32}
 									color="#7f9de4"
 									label="Time"
 								/>
@@ -147,8 +145,10 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 							<SynthParamKnob
 								paramKey="pitchBendRange"
 								value={pitchBendRange}
+								min={0}
+								max={24}
+								step={1}
 								onChange={setPitchBendRange}
-								size={30}
 								color="#5bc8d4"
 								label="Bend"
 							/>
@@ -162,7 +162,6 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 								value={velocityCurve}
 								onChange={setVelocityCurve}
 								min={-1}
-								size={28}
 								color="#c46eb4"
 								label="Vel Curve"
 							/>

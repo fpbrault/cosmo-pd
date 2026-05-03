@@ -50,7 +50,7 @@ describe("ControlKnob", () => {
 			/>,
 		);
 
-		fireEvent.click(screen.getByRole("button", { name: "Cutoff value" }));
+		fireEvent.doubleClick(screen.getByRole("button", { name: "Cutoff value" }));
 		const input = screen.getByRole("textbox", { name: "Cutoff value" });
 		fireEvent.change(input, { target: { value: "2.5" } });
 		fireEvent.keyDown(input, { key: "Enter" });
@@ -135,6 +135,45 @@ describe("ControlKnob", () => {
 		expect(
 			onChange.mock.calls[onChange.mock.calls.length - 1]?.[0],
 		).toBeGreaterThan(0.4);
+	});
+
+	it("stops dragging when pointer is released on window", () => {
+		const onChange = vi.fn();
+		render(
+			<ControlKnob
+				value={0.4}
+				onChange={onChange}
+				label="Drive"
+				min={0}
+				max={1}
+			/>,
+		);
+
+		const knob = screen.getByRole("spinbutton", { name: "Drive" });
+		fireEvent.pointerDown(knob, {
+			pointerId: 7,
+			pointerType: "mouse",
+			clientX: 28,
+			clientY: 28,
+		});
+		fireEvent.pointerMove(knob, {
+			pointerId: 7,
+			pointerType: "mouse",
+			clientX: 28,
+			clientY: 8,
+		});
+		const callsBeforeRelease = onChange.mock.calls.length;
+
+		fireEvent.pointerUp(window, { pointerId: 7, pointerType: "mouse" });
+
+		fireEvent.pointerMove(knob, {
+			pointerId: 7,
+			pointerType: "mouse",
+			clientX: 28,
+			clientY: 0,
+		});
+
+		expect(onChange.mock.calls.length).toBe(callsBeforeRelease);
 	});
 
 	it("hides value display when valueVisibility is never", () => {
@@ -227,7 +266,7 @@ describe("ControlKnob", () => {
 			/>,
 		);
 
-		fireEvent.click(screen.getByRole("button", { name: "Vol value" }));
+		fireEvent.doubleClick(screen.getByRole("button", { name: "Vol value" }));
 		const input = screen.getByRole("textbox", { name: "Vol value" });
 		fireEvent.change(input, { target: { value: "9" } });
 		fireEvent.keyDown(input, { key: "Escape" });

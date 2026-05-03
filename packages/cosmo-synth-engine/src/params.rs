@@ -581,7 +581,7 @@ impl Default for PortamentoParams {
     fn default() -> Self {
         Self {
             enabled: false,
-            mode: PortamentoMode::Rate,
+            mode: PortamentoMode::Time,
             rate: 50.0,
             time: 0.5,
         }

@@ -17,9 +17,11 @@ export default function SynthInfoBar({
 	onKeyboardToggle,
 }: SynthInfoBarProps) {
 	return (
-		<div className="relative z-20 mt-1 flex min-h-8 flex-wrap items-center gap-x-3 gap-y-1 rounded-t-sm border border-cz-border/80 bg-cz-body px-3 py-1 font-mono text-[0.62rem] uppercase tracking-[0.22em] text-cz-cream/80 shadow-inner">
+		<div className="relative z-20 mt-1 flex min-h-8 flex-nowrap items-center gap-x-3 gap-y-1 rounded-t-sm border border-cz-border/80 bg-cz-body px-3 py-1 font-mono text-[0.62rem] uppercase tracking-[0.22em] text-cz-cream/80 shadow-inner">
 			<span className="text-cz-light-blue/80">Info</span>
-			<span className="min-w-0 flex-1 truncate">{infoText}</span>
+			<span className="min-w-0 flex-1 truncate whitespace-nowrap">
+				{infoText}
+			</span>
 			{bottomBarExtra ? (
 				<div className="flex items-center gap-2 text-[0.54rem] tracking-[0.18em]">
 					{bottomBarExtra}

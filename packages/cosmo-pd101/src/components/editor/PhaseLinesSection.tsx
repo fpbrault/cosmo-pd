@@ -172,7 +172,7 @@ export default function PhaseLinesSection({
 	}> = [
 		{
 			label: "L1",
-			color: "red",
+			color: "blue",
 			tabs: [
 				{ id: "line1-algos", bottomLabel: "WAVE FORM" },
 				{ id: "line1-envelopes", bottomLabel: "ENV" },
@@ -180,7 +180,7 @@ export default function PhaseLinesSection({
 		},
 		{
 			label: "L2",
-			color: "blue",
+			color: "red",
 			tabs: [
 				{ id: "line2-algos", bottomLabel: "WAVE FORM" },
 				{ id: "line2-envelopes", bottomLabel: "ENV" },
@@ -196,33 +196,35 @@ export default function PhaseLinesSection({
 			<div className="bg-cz-panel p-2 flex-1 min-h-0 min-w-0 flex overflow-hidden">
 				<div className="flex-1 min-h-0 min-w-0 flex gap-2 items-stretch">
 					<div className="w-16 shrink-0 self-stretch flex flex-col gap-5 justify-evenly">
-						{leftTabGroups.map((group) => (
-							<div
-								key={group.label}
-								className="flex flex-col h-full justify-center gap-4 pb-10 bg-cz-inset/80 rounded-lg p-1.5 py-3"
-							>
-								<div className="text-center text-[0.6rem] font-bold tracking-[0.12em] text-cz-cream">
-									{group.label}
+						{leftTabGroups.map((group) => {
+							return (
+								<div
+									key={group.label}
+									className="flex flex-col h-full justify-center gap-4 pb-10 bg-cz-inset/80 rounded-lg p-1.5 py-3"
+								>
+									<div className="text-center text-[0.6rem] font-bold tracking-[0.12em] text-cz-cream">
+										{group.label}
+									</div>
+									{group.tabs.map((tab) => (
+										<CzTabButton
+											key={tab.id}
+											active={activeTab === tab.id}
+											onClick={() => setActiveTab(tab.id)}
+											topLabel=""
+											bottomLabel={tab.bottomLabel}
+											color={group.color}
+											showLed
+										/>
+									))}
 								</div>
-								{group.tabs.map((tab) => (
-									<CzTabButton
-										key={tab.id}
-										active={activeTab === tab.id}
-										onClick={() => setActiveTab(tab.id)}
-										topLabel=""
-										bottomLabel={tab.bottomLabel}
-										color={group.color}
-										showLed
-									/>
-								))}
-							</div>
-						))}
+							);
+						})}
 					</div>
 
 					<PerLineWarpBlock
 						key={activeLineLabel}
 						label={activeLineLabel}
-						color="#9cb937"
+						color={activeLine === "line1" ? "#7f9de4" : "#c45c5c"}
 						lineIndex={activeLine === "line1" ? 1 : 2}
 						algo={activeLineConfig.algo}
 						setAlgo={activeLineConfig.setAlgo}

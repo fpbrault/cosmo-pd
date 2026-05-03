@@ -69,9 +69,13 @@ export const SingleCycleDisplay = memo(function SingleCycleDisplay({
 export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay({
 	width = 120,
 	height = 64,
+	lineIndex = 1,
+	color = "#7f9de4",
 }: {
 	width?: number;
 	height?: number;
+	lineIndex?: 1 | 2;
+	color?: string;
 }) {
 	const { value: warpAAmount } = useSynthParam("warpAAmount");
 	const { value: warpBAmount } = useSynthParam("warpBAmount");
@@ -127,6 +131,7 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay({
 				line1AlgoControlsB,
 				line2AlgoControlsA,
 				line2AlgoControlsB,
+				sampleCount: 256,
 			}),
 		[
 			warpAAmount,
@@ -188,9 +193,8 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay({
 			ctx.stroke();
 		};
 
-		drawLine(waveform.out1, "#ec4899");
-		drawLine(waveform.out2, "#2563eb");
-	}, [waveform, width, height]);
+		drawLine(lineIndex === 1 ? waveform.out1 : waveform.out2, color);
+	}, [waveform, width, height, lineIndex, color]);
 
 	return (
 		<canvas

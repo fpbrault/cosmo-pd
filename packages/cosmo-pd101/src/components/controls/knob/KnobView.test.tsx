@@ -5,7 +5,7 @@ import { KnobView } from "./KnobView";
 describe("KnobView", () => {
 	it("renders thin track by default and thicker track on hover", () => {
 		const { container, rerender } = render(
-			<KnobView normalizedValue={0.5} size={56} hovered={false} />,
+			<KnobView normalizedValue={0.5} hovered={false} />,
 		);
 
 		const track = container.querySelector(
@@ -13,7 +13,7 @@ describe("KnobView", () => {
 		);
 		expect(track).toHaveAttribute("stroke-width", "2");
 
-		rerender(<KnobView normalizedValue={0.5} size={56} hovered={true} />);
+		rerender(<KnobView normalizedValue={0.5} hovered={true} />);
 		expect(track).toHaveAttribute("stroke-width", "5");
 	});
 
@@ -22,7 +22,6 @@ describe("KnobView", () => {
 			<KnobView
 				normalizedValue={0.45}
 				modulatedNorm={0.8}
-				size={56}
 				modTrailDuration={240}
 			/>,
 		);
@@ -38,7 +37,7 @@ describe("KnobView", () => {
 	});
 
 	it("does not render modulation trail when modulatedNorm is absent", () => {
-		const { container } = render(<KnobView normalizedValue={0.5} size={56} />);
+		const { container } = render(<KnobView normalizedValue={0.5} />);
 
 		expect(container.querySelector('path[stroke-opacity="0.35"]')).toBeNull();
 		expect(container.querySelector('circle[fill-opacity="0.95"]')).toBeNull();
@@ -46,7 +45,7 @@ describe("KnobView", () => {
 
 	it("applies color override CSS variables", () => {
 		const { container } = render(
-			<KnobView normalizedValue={0.4} size={56} colorOverride="#00ffff" />,
+			<KnobView normalizedValue={0.4} colorOverride="#00ffff" />,
 		);
 
 		const root = container.firstElementChild as HTMLElement;
@@ -58,11 +57,7 @@ describe("KnobView", () => {
 
 	it("guards against invalid numeric inputs without undefined SVG attributes", () => {
 		const { container } = render(
-			<KnobView
-				normalizedValue={Number.NaN}
-				modulatedNorm={Number.NaN}
-				size={56}
-			/>,
+			<KnobView normalizedValue={Number.NaN} modulatedNorm={Number.NaN} />,
 		);
 
 		expect(container.innerHTML).not.toContain("undefined");

@@ -109,7 +109,6 @@ const ModRouteRow = memo(function ModRouteRow({
 					min={-1}
 					max={1}
 					bipolar
-					size={32}
 					color="#7f9de4"
 					label="Amount"
 					tooltip="Sets modulation depth and direction from source to destination."

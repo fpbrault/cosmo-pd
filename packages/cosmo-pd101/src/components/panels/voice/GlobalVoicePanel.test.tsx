@@ -46,7 +46,7 @@ describe("GlobalVoicePanel", () => {
 		values.set("velocityCurve", 0);
 		values.set("pitchBendRange", 2);
 		values.set("portamentoEnabled", false);
-		values.set("portamentoMode", "rate");
+		values.set("portamentoMode", "time");
 		values.set("portamentoRate", 50);
 		values.set("portamentoTime", 0.5);
 		useSynthParamMock.mockImplementation((key: string) => {

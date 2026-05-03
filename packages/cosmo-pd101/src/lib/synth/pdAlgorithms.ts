@@ -715,19 +715,24 @@ export function computeWaveform(params: {
 	line1AlgoControlsB?: AlgoControlValueV1[];
 	line2AlgoControlsA?: AlgoControlValueV1[];
 	line2AlgoControlsB?: AlgoControlValueV1[];
+	sampleCount?: number;
 }): WaveformData {
-	const phasor = new Float32Array(N);
-	for (let i = 0; i < N; ++i) phasor[i] = i / N;
+	const sampleCount = Number.isFinite(params.sampleCount)
+		? Math.max(64, Math.floor(params.sampleCount as number))
+		: N;
 
-	const pm = new Float32Array(N);
-	for (let i = 0; i < N; ++i) {
+	const phasor = new Float32Array(sampleCount);
+	for (let i = 0; i < sampleCount; ++i) phasor[i] = i / sampleCount;
+
+	const pm = new Float32Array(sampleCount);
+	for (let i = 0; i < sampleCount; ++i) {
 		pm[i] =
 			params.intPmAmount * Math.sin(TAU * params.intPmRatio * phasor[i]) +
 			params.extPmAmount * Math.sin(TAU * 1.5 * phasor[i]);
 	}
 
 	if (params.pmPre) {
-		for (let i = 0; i < N; ++i) phasor[i] = (phasor[i] + pm[i]) % 1;
+		for (let i = 0; i < sampleCount; ++i) phasor[i] = (phasor[i] + pm[i]) % 1;
 	}
 
 	const algoA = resolveAlgoRef(params.warpAAlgo);
@@ -766,14 +771,14 @@ export function computeWaveform(params: {
 	const algo2B = algo2BResolved;
 
 	if (!params.pmPre) {
-		for (let i = 0; i < N; ++i) phasor[i] = (phasor[i] + pm[i]) % 1;
+		for (let i = 0; i < sampleCount; ++i) phasor[i] = (phasor[i] + pm[i]) % 1;
 	}
 
-	const phaseA = new Float32Array(N);
-	const phaseB = new Float32Array(N);
-	const out1 = new Float32Array(N);
-	const out2 = new Float32Array(N);
-	for (let i = 0; i < N; ++i) {
+	const phaseA = new Float32Array(sampleCount);
+	const phaseB = new Float32Array(sampleCount);
+	const out1 = new Float32Array(sampleCount);
+	const out2 = new Float32Array(sampleCount);
+	for (let i = 0; i < sampleCount; ++i) {
 		phaseA[i] = applyPdAlgo(
 			phasor[i],
 			params.warpAAmount,
@@ -790,7 +795,7 @@ export function computeWaveform(params: {
 		);
 	}
 
-	for (let i = 0; i < N; ++i) {
+	for (let i = 0; i < sampleCount; ++i) {
 		const w1 = applyWindow(phasor[i], line1Window);
 		const w2 = applyWindow(phasor[i], line2Window);
 		const line1PrimaryCarrier = sampleBaseWave(

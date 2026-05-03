@@ -10,6 +10,7 @@ import {
 	ENGINE_PARAM_UI_META_BY_KEY,
 	getEngineParamDefault,
 } from "@/lib/synth/paramMeta";
+import type { KnobVariant } from "./knob/KnobView";
 
 type EngineParamUiMetaRuntime = EngineParamUiMetaV1 & {
 	min?: number;
@@ -71,6 +72,7 @@ export interface SynthParamKnobProps {
 	size?: number;
 	min?: number;
 	max?: number;
+	variant?: KnobVariant;
 	step?: number;
 	modDestination?: ModDestination;
 	valueFormatter?: (value: number) => string;
@@ -83,9 +85,10 @@ function SynthParamKnobInner({
 	label,
 	labelClassName,
 	color,
-	size = 52,
+	size,
 	min,
 	max,
+	variant,
 	step,
 	modDestination,
 	valueFormatter: valueFormatterOverride,
@@ -117,6 +120,7 @@ function SynthParamKnobInner({
 			bipolar={meta?.bipolar ?? false}
 			color={color}
 			size={size}
+			variant={variant}
 			curve={meta?.curve ?? "linear"}
 			valueFormatter={valueFormatter}
 			modDestination={
