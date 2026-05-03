@@ -3405,19 +3405,19 @@ export const DEFAULT_SYNTH_PRESETS = {
 				algoControlsA: [
 					{
 						id: "pinchFocus",
-						value: 0.6648828125,
+						value: 0.34845703124999994,
 					},
 					{
 						id: "pinchAsym",
-						value: 0,
+						value: -0.0677343749999999,
 					},
 					{
 						id: "pinchCurve",
-						value: 0.5,
+						value: 0.4052343749999999,
 					},
 					{
 						id: "pinchDrive",
-						value: 0.57712890625,
+						value: 0.58357421875,
 					},
 				],
 				algoControlsB: [
@@ -3619,8 +3619,8 @@ export const DEFAULT_SYNTH_PRESETS = {
 			},
 			lfo: {
 				waveform: "sine",
-				rate: 5,
-				depth: 0,
+				rate: 0.12460306874216127,
+				depth: 0.7686718561819622,
 				symmetry: 0,
 				retrigger: false,
 				offset: 0,
@@ -3644,7 +3644,20 @@ export const DEFAULT_SYNTH_PRESETS = {
 			},
 			pitchBendRange: 2,
 			modMatrix: {
-				routes: [],
+				routes: [
+					{
+						source: "lfo1",
+						destination: "line1AlgoParam3",
+						amount: 0.21906247820172986,
+						enabled: true,
+					},
+					{
+						source: "lfo1",
+						destination: "line1AlgoParam2",
+						amount: 0.5,
+						enabled: true,
+					},
+				],
 			},
 			fxSlots: [
 				{
@@ -4124,7 +4137,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 	Bliss: {
 		schemaVersion: 1,
 		params: {
-			lineSelect: "L1+L2",
+			lineSelect: "L1",
 			modMode: "normal",
 			octave: 0,
 			line1: {
@@ -4547,8 +4560,8 @@ export const DEFAULT_SYNTH_PRESETS = {
 					type: "chorus",
 					params: {
 						enabled: true,
-						rate: 1.8,
-						depth: 2.6,
+						rate: 1.4,
+						depth: 1,
 						mix: 0.56,
 					},
 				},

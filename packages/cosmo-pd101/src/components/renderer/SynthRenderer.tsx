@@ -272,7 +272,7 @@ function SynthRendererContent({
 						{headerExtra}
 					</div>
 					<div className="relative z-10 px-1 flex flex-1 min-h-0 min-w-0 w-full gap-2 overflow-hidden">
-						<aside className="overflow-y-auto min-h-0 rounded-[1.15rem] border border-cz-border/80 bg-cz-inset px-0 pb-2 shadow-lg [scrollbar-gutter:stable]">
+						<aside className="overflow-y-auto min-h-0 rounded-[1.15rem] border border-cz-border/80 bg-cz-inset px-0 pb-2 shadow-lg">
 							<div className="px-4 mt-4 mx-auto">
 								<ScopeMiniDisplay
 									analyserNodeRef={analyserNodeRef}

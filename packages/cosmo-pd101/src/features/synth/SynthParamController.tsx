@@ -102,6 +102,7 @@ type SynthParamController = {
 		key: K,
 		value: UseSynthStateResult[K],
 	) => void;
+	modulationRevision: number;
 	resolveDestination: (
 		target: ModTarget | undefined,
 		options?: { lineIndex?: 1 | 2 },
@@ -145,6 +146,7 @@ export function SynthParamControllerProvider({
 	const [liveVoiceStates, setLiveVoiceStates] = useState<LiveVoiceStates>(
 		EMPTY_RUNTIME_VOICE_STATES,
 	);
+	const [modulationRevision, setModulationRevision] = useState(0);
 	const liveSourcesRef = useRef<LiveModSources>(EMPTY_RUNTIME_MOD_SOURCES);
 	const liveVoiceStatesRef = useRef<LiveVoiceStates>(
 		EMPTY_RUNTIME_VOICE_STATES,
@@ -201,6 +203,7 @@ export function SynthParamControllerProvider({
 				modWheel: Number.isFinite(detail.modWheel) ? detail.modWheel : 0,
 				aftertouch: Number.isFinite(detail.aftertouch) ? detail.aftertouch : 0,
 			});
+			setModulationRevision((revision) => revision + 1);
 		};
 
 		window.addEventListener("cz-runtime-mod-sources", onRuntimeModSources);
@@ -219,6 +222,7 @@ export function SynthParamControllerProvider({
 			}
 
 			setLiveVoiceStates(detail);
+			setModulationRevision((revision) => revision + 1);
 		};
 
 		window.addEventListener("cz-runtime-voice-states", onRuntimeVoiceStates);
@@ -307,6 +311,7 @@ export function SynthParamControllerProvider({
 		() => ({
 			getParam,
 			setParam,
+			modulationRevision,
 			resolveDestination,
 			resolveDestinationFromKey,
 			getRouteCount,
@@ -319,6 +324,7 @@ export function SynthParamControllerProvider({
 		[
 			getParam,
 			setParam,
+			modulationRevision,
 			resolveDestination,
 			resolveDestinationFromKey,
 			getRouteCount,
