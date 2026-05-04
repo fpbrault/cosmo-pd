@@ -10,7 +10,6 @@ import type {
 
 interface AlgoControlsGroupProps {
 	controls: AlgoControlRuntime[];
-	title?: string;
 	disabled?: boolean;
 	embedded?: boolean;
 	controlBindings: Record<string, AlgoControlBinding>;
@@ -27,7 +26,6 @@ interface AlgoControlsGroupProps {
 
 function AlgoControlsGroupInner({
 	controls,
-	title = "Algo Controls",
 	disabled = false,
 	embedded = false,
 	controlBindings,
@@ -82,9 +80,6 @@ function AlgoControlsGroupInner({
 
 	const content = (
 		<>
-			<div className="mb-3 text-3xs uppercase tracking-[0.24em] text-cz-cream">
-				{title}
-			</div>
 			{controls.length > 0 ? (
 				<div
 					className={`flex-1 min-h-0 overflow-visible ${disabled ? "pointer-events-none" : ""}`}

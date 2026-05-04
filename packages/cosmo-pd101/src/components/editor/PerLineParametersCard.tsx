@@ -44,10 +44,7 @@ function PerLineParametersCardInner({
 	const detuneLabelPrefix = lineSelect === "L1+L1'" ? "L1'" : "L2";
 
 	return (
-		<Card
-			variant="subtle"
-			className="p-3 col-span-1 min-h-0 flex flex-col grow"
-		>
+		<Card variant="subtle" className="p-3 col-span-1 min-h-0 flex flex-col">
 			<div className="mb-3 text-3xs uppercase tracking-[0.24em] text-cz-cream">
 				Parameters
 			</div>

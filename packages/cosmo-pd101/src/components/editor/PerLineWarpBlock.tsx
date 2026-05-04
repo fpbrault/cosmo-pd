@@ -524,13 +524,6 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 							Algo A
 						</div>
 						<div className="flex flex-col gap-2 flex-1 min-h-0">
-							<BaseWaveSelector
-								title="Base Wave A"
-								value={baseWaveformA}
-								onChange={setBaseWaveformA}
-								disabled={!baseWaveEnabledA}
-								color={color}
-							/>
 							<AlgoSectionCard
 								value={algo}
 								onChange={handleAlgoChange}
@@ -544,25 +537,16 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 								applyOptionAssignments={applyOptionAssignmentsA}
 								color={color}
 							/>
+							<BaseWaveSelector
+								title="Base Wave A"
+								value={baseWaveformA}
+								onChange={setBaseWaveformA}
+								disabled={!baseWaveEnabledA}
+								color={color}
+							/>
 						</div>
 					</div>
 					<div className="flex min-h-0 flex-col gap-4">
-						<Card
-							variant="subtle"
-							className="flex flex-col items-center justify-center"
-						>
-							<SynthParamKnob
-								paramKey={lineIndex === 2 ? "algoBlendB" : "algoBlendA"}
-								label="Blend"
-								labelClassName="text-lg font-bold tracking-[0.3em] text-base-content/75"
-								value={algoBlend}
-								size={144}
-								variant="light"
-								onChange={setAlgoBlend}
-								color={color}
-								valueFormatter={formatAlgoBlendReadout}
-							/>
-						</Card>
 						<Card
 							variant="subtle"
 							padding="none"
@@ -573,7 +557,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 							</div>
 							<SynthSingleCycleDisplay
 								width={200}
-								height={64}
+								height={128}
 								lineIndex={lineIndex}
 								color={color}
 							/>
@@ -594,6 +578,23 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 							setFineDetune={setFineDetune}
 							lineIndex={lineIndex}
 						/>
+
+						<Card
+							variant="subtle"
+							className="flex flex-col items-center justify-center"
+						>
+							<SynthParamKnob
+								paramKey={lineIndex === 2 ? "algoBlendB" : "algoBlendA"}
+								label="Blend"
+								labelClassName="text-lg font-bold tracking-[0.3em] text-base-content/75"
+								value={algoBlend}
+								size={144}
+								variant="light"
+								onChange={setAlgoBlend}
+								color={color}
+								valueFormatter={formatAlgoBlendReadout}
+							/>
+						</Card>
 					</div>
 					<div className="min-h-0 flex-1 flex flex-col gap-0">
 						<div
@@ -603,13 +604,6 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 							Algo B
 						</div>
 						<div className="flex flex-col gap-2 flex-1 min-h-0">
-							<BaseWaveSelector
-								title="Base Wave B"
-								value={baseWaveformB}
-								onChange={setBaseWaveformB}
-								disabled={!baseWaveEnabledB}
-								color={color}
-							/>
 							<AlgoSectionCard
 								value={algo2 ?? PD_ALGOS[0].value}
 								onChange={handleAlgo2Change}
@@ -622,6 +616,13 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 								setAlgoControlValue={setAlgoControlValueB}
 								getActiveSelectOption={getActiveSelectOptionB}
 								applyOptionAssignments={applyOptionAssignmentsB}
+								color={color}
+							/>
+							<BaseWaveSelector
+								title="Base Wave B"
+								value={baseWaveformB}
+								onChange={setBaseWaveformB}
+								disabled={!baseWaveEnabledB}
 								color={color}
 							/>
 						</div>

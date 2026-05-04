@@ -101,7 +101,7 @@ function AlgoControlNumberInner({
 				min={min}
 				max={max}
 				value={value}
-				size={112}
+				size={100}
 				bipolar={min < 0 && max > 0}
 				defaultValue={control.default ?? undefined}
 				color={color}
