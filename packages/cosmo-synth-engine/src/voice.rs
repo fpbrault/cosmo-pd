@@ -978,10 +978,7 @@ fn cz_dcw_env_depth(dcw_env: f32) -> f32 {
 fn line_frequency(base_freq: f32, line: &LineParams, dco_env: f32) -> f32 {
     let dco_semitones = cz_dco_env_semitones(dco_env);
     base_freq
-        * libm::powf(
-            2.0,
-            line.octave + line.detune_note / 12.0 + line.detune_fine / 720.0,
-        )
+        * libm::powf(2.0, line.octave + line.detune_note / 12.0 + line.detune_fine / 720.0)
         * libm::powf(2.0, dco_semitones / 12.0)
 }
 
@@ -1230,26 +1227,7 @@ fn select_line_sources(
                 1.0,
                 line1_algo_param_mods,
             );
-            let algo_prime = cfg.secondary_algo.unwrap_or(cfg.primary_algo);
-            let algo_prime_controls = if cfg.secondary_algo.is_some() {
-                cfg.secondary_algo_controls
-            } else {
-                cfg.primary_algo_controls
-            };
-            let s1_prime = generators::render_algo_sample(
-                algo_prime,
-                phi2,
-                0.0,
-                if cfg.secondary_algo.is_some() {
-                    cfg.secondary_base_waveform
-                } else {
-                    cfg.primary_base_waveform
-                },
-                algo_prime_controls,
-                cfg.algo_param_mods,
-                ks_raw1,
-            ) * final_dca1
-                * generators::PER_LINE_HEADROOM;
+            let s1_prime = render_prime_line_sample(cfg, ks_raw1);
             (s1, s1_prime)
         }
         LineSelect::L1PlusL2Prime => {
@@ -1264,30 +1242,49 @@ fn select_line_sources(
                 1.0,
                 line2_algo_param_mods,
             );
-            let algo_prime = cfg.secondary_algo.unwrap_or(cfg.primary_algo);
-            let algo_prime_controls = if cfg.secondary_algo.is_some() {
-                cfg.secondary_algo_controls
-            } else {
-                cfg.primary_algo_controls
-            };
-            let s2_prime = generators::render_algo_sample(
-                algo_prime,
-                phi2,
-                0.0,
-                if cfg.secondary_algo.is_some() {
-                    cfg.secondary_base_waveform
-                } else {
-                    cfg.primary_base_waveform
-                },
-                algo_prime_controls,
-                cfg.algo_param_mods,
-                ks_raw2,
-            ) * final_dca2
-                * generators::PER_LINE_HEADROOM;
+            let s2_prime = render_prime_line_sample(cfg, ks_raw2);
             (s1, s2_prime)
         }
         _ => (s1, s2),
     }
+}
+
+fn render_prime_line_sample(cfg: LineRenderConfig<'_>, ks_raw: Option<f32>) -> f32 {
+    let sample = if let Some(secondary_algo) = cfg.secondary_algo {
+        let secondary_dcw = cfg.final_dcw * cfg.blend;
+        let primary_dcw = cfg.final_dcw * (1.0 - cfg.blend);
+        let primary = generators::render_algo_sample(
+            cfg.primary_algo,
+            cfg.phase,
+            primary_dcw,
+            cfg.primary_base_waveform,
+            cfg.primary_algo_controls,
+            cfg.algo_param_mods,
+            ks_raw,
+        ) * cfg.primary_window_gain;
+        let secondary = generators::render_algo_sample(
+            secondary_algo,
+            cfg.phase,
+            secondary_dcw,
+            cfg.secondary_base_waveform,
+            cfg.secondary_algo_controls,
+            cfg.algo_param_mods,
+            ks_raw,
+        ) * cfg.secondary_window_gain;
+        generators::blend_line_samples(cfg.primary_algo, primary, secondary, cfg.blend)
+    } else {
+        generators::render_algo_sample(
+            cfg.primary_algo,
+            cfg.phase,
+            cfg.final_dcw,
+            cfg.primary_base_waveform,
+            cfg.primary_algo_controls,
+            cfg.algo_param_mods,
+            ks_raw,
+        ) * cfg.primary_window_gain
+    };
+
+    sample * cfg.final_dca * generators::PER_LINE_HEADROOM
 }
 
 fn advance_voice_phase(
@@ -1318,7 +1315,8 @@ fn wrap_voice_phase(phase: &mut f32, cycle_count: &mut u32) {
 mod tests {
     use super::{
         cz_dca_env_gain, cz_dco_env_semitones, cz_dcw_env_depth, line_frequency, mod_value_for,
-        render_voice, ModSources, Voice,
+        render_voice,
+        ModSources, Voice,
     };
     use crate::params::{ModDestination, ModMatrix, ModRoute, ModSource, SynthParams};
 

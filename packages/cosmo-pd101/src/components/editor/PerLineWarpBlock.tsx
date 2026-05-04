@@ -186,7 +186,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 		[label, dcoEnv, setDcoEnv, dcwEnv, setDcwEnv, dcaEnv, setDcaEnv],
 	);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: <Necessary for envelope voice markers>
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <For updates>
 	const activeVoiceMarkers = useMemo<StepEnvelopeVoiceMarker[]>(() => {
 		if (activeSection !== "envelopes") {
 			return [];
