@@ -978,7 +978,10 @@ fn cz_dcw_env_depth(dcw_env: f32) -> f32 {
 fn line_frequency(base_freq: f32, line: &LineParams, dco_env: f32) -> f32 {
     let dco_semitones = cz_dco_env_semitones(dco_env);
     base_freq
-        * libm::powf(2.0, line.octave + line.detune_note / 12.0 + line.detune_fine / 720.0)
+        * libm::powf(
+            2.0,
+            line.octave + line.detune_note / 12.0 + line.detune_fine / 720.0,
+        )
         * libm::powf(2.0, dco_semitones / 12.0)
 }
 
@@ -1315,8 +1318,7 @@ fn wrap_voice_phase(phase: &mut f32, cycle_count: &mut u32) {
 mod tests {
     use super::{
         cz_dca_env_gain, cz_dco_env_semitones, cz_dcw_env_depth, line_frequency, mod_value_for,
-        render_voice,
-        ModSources, Voice,
+        render_voice, ModSources, Voice,
     };
     use crate::params::{ModDestination, ModMatrix, ModRoute, ModSource, SynthParams};
 
