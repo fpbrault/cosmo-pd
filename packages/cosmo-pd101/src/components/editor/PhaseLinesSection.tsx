@@ -155,6 +155,7 @@ export default function PhaseLinesSection({
 
 	const activeTab = useSynthUiStore((s) => s.phaseLinePanelTab);
 	const setActiveTab = useSynthUiStore((s) => s.setPhaseLinePanelTab);
+	const { value: lineSelect } = useSynthParam("lineSelect");
 
 	const activeLine: "line1" | "line2" = activeTab.startsWith("line1")
 		? "line1"
@@ -164,6 +165,15 @@ export default function PhaseLinesSection({
 		: "envelopes";
 	const activeLineConfig = activeLine === "line1" ? line1 : line2;
 	const activeLineLabel = activeLine === "line1" ? "Line 1" : "Line 2";
+
+	const isLineAudible = (line: "line1" | "line2"): boolean => {
+		if (lineSelect === "L1+L2'") return true;
+		if (lineSelect === "L1" || lineSelect === "L1+L1'") return line === "line1";
+		if (lineSelect === "L2") return line === "line2";
+		return true;
+	};
+	const activeLineIsAudible = isLineAudible(activeLine);
+	const inaudibleLineSelectLabel = lineSelect as string;
 
 	useEffect(() => {
 		onActiveTabChange?.(activeLine);
@@ -229,45 +239,55 @@ export default function PhaseLinesSection({
 						})}
 					</div>
 
-					<PerLineWarpBlock
-						key={activeLineLabel}
-						label={activeLineLabel}
-						color={activeLine === "line1" ? "#7f9de4" : "#c45c5c"}
-						lineIndex={activeLine === "line1" ? 1 : 2}
-						algo={activeLineConfig.algo}
-						setAlgo={activeLineConfig.setAlgo}
-						algo2={activeLineConfig.algo2}
-						setAlgo2={activeLineConfig.setAlgo2}
-						algoBlend={activeLineConfig.algoBlend}
-						setAlgoBlend={activeLineConfig.setAlgoBlend}
-						warpAmount={activeLineConfig.warpAmount}
-						setWarpAmount={activeLineConfig.setWarpAmount}
-						level={activeLineConfig.level}
-						setLevel={activeLineConfig.setLevel}
-						octave={activeLineConfig.octave}
-						setOctave={activeLineConfig.setOctave}
-						detuneOctave={activeLineConfig.detuneOctave}
-						setDetuneOctave={activeLineConfig.setDetuneOctave}
-						detuneNote={activeLineConfig.detuneNote}
-						setDetuneNote={activeLineConfig.setDetuneNote}
-						fineDetune={activeLineConfig.fineDetune}
-						setFineDetune={activeLineConfig.setFineDetune}
-						dcoEnv={activeLineConfig.dcoEnv}
-						setDcoEnv={activeLineConfig.setDcoEnv}
-						dcwEnv={activeLineConfig.dcwEnv}
-						setDcwEnv={activeLineConfig.setDcwEnv}
-						dcaEnv={activeLineConfig.dcaEnv}
-						setDcaEnv={activeLineConfig.setDcaEnv}
-						baseWaveformA={activeLineConfig.baseWaveformA}
-						setBaseWaveformA={activeLineConfig.setBaseWaveformA}
-						baseWaveformB={activeLineConfig.baseWaveformB}
-						setBaseWaveformB={activeLineConfig.setBaseWaveformB}
-						algoControlsA={activeLineConfig.algoControlsA}
-						setAlgoControlsA={activeLineConfig.setAlgoControlsA}
-						algoControlsB={activeLineConfig.algoControlsB}
-						setAlgoControlsB={activeLineConfig.setAlgoControlsB}
-						activeSection={activeSection}
-					/>
+					<div className="relative flex-1 min-h-0 min-w-0">
+						{!activeLineIsAudible && (
+							<div className="absolute inset-0 bg-black/45 backdrop-blur-[2px] rounded pointer-events-none flex items-center justify-center z-10">
+								<div className="text-cz-cream/80 text-xs font-semibold tracking-wide text-center px-3">
+									{activeLineLabel} is currently inactive in{" "}
+									{inaudibleLineSelectLabel} mode
+								</div>
+							</div>
+						)}
+						<PerLineWarpBlock
+							key={activeLineLabel}
+							label={activeLineLabel}
+							color={activeLine === "line1" ? "#7f9de4" : "#c45c5c"}
+							lineIndex={activeLine === "line1" ? 1 : 2}
+							algo={activeLineConfig.algo}
+							setAlgo={activeLineConfig.setAlgo}
+							algo2={activeLineConfig.algo2}
+							setAlgo2={activeLineConfig.setAlgo2}
+							algoBlend={activeLineConfig.algoBlend}
+							setAlgoBlend={activeLineConfig.setAlgoBlend}
+							warpAmount={activeLineConfig.warpAmount}
+							setWarpAmount={activeLineConfig.setWarpAmount}
+							level={activeLineConfig.level}
+							setLevel={activeLineConfig.setLevel}
+							octave={activeLineConfig.octave}
+							setOctave={activeLineConfig.setOctave}
+							detuneOctave={activeLineConfig.detuneOctave}
+							setDetuneOctave={activeLineConfig.setDetuneOctave}
+							detuneNote={activeLineConfig.detuneNote}
+							setDetuneNote={activeLineConfig.setDetuneNote}
+							fineDetune={activeLineConfig.fineDetune}
+							setFineDetune={activeLineConfig.setFineDetune}
+							dcoEnv={activeLineConfig.dcoEnv}
+							setDcoEnv={activeLineConfig.setDcoEnv}
+							dcwEnv={activeLineConfig.dcwEnv}
+							setDcwEnv={activeLineConfig.setDcwEnv}
+							dcaEnv={activeLineConfig.dcaEnv}
+							setDcaEnv={activeLineConfig.setDcaEnv}
+							baseWaveformA={activeLineConfig.baseWaveformA}
+							setBaseWaveformA={activeLineConfig.setBaseWaveformA}
+							baseWaveformB={activeLineConfig.baseWaveformB}
+							setBaseWaveformB={activeLineConfig.setBaseWaveformB}
+							algoControlsA={activeLineConfig.algoControlsA}
+							setAlgoControlsA={activeLineConfig.setAlgoControlsA}
+							algoControlsB={activeLineConfig.algoControlsB}
+							setAlgoControlsB={activeLineConfig.setAlgoControlsB}
+							activeSection={activeSection}
+						/>
+					</div>
 				</div>
 			</div>
 		</Card>
