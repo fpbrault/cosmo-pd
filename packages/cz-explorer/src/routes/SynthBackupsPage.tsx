@@ -3,6 +3,8 @@ import { useMemo, useState } from "react";
 import InlineNotice from "@/components/feedback/InlineNotice";
 import { useMidiChannel } from "@/context/MidiChannelContext";
 import { useMidiPort } from "@/context/MidiPortContext";
+import SaveDraftPresetModal from "@/features/presets/components/SaveDraftPresetModal";
+import { usePresetMode } from "@/features/presets/hooks/usePresetMode";
 import SendEntryModal from "@/features/synthBackups/components/SendEntryModal";
 import SynthBackupDetailsHeader from "@/features/synthBackups/components/SynthBackupDetailsHeader";
 import SynthBackupEntriesTable from "@/features/synthBackups/components/SynthBackupEntriesTable";
@@ -154,29 +156,56 @@ export default function SynthBackupsRoutePage() {
 
 	useMidiSetup(setMidiPorts);
 
+	const presetMode = usePresetMode({
+		selectedMidiPort,
+		selectedMidiChannel,
+		setCurrentPreset: () => {},
+	});
+
 	const synthBackupMode = useSynthBackupMode({
 		selectedMidiPort,
 		selectedMidiChannel,
-		openSaveDraftPresetModal: () => {},
+		openSaveDraftPresetModal: presetMode.openSaveDraftPresetModal,
 	});
 
 	return (
-		<SynthBackupsPageView
-			backups={synthBackupMode.backups}
-			selectedBackupId={synthBackupMode.selectedBackupId}
-			isBackingUp={synthBackupMode.isBackingUp}
-			backupProgress={synthBackupMode.backupProgress}
-			isRestoring={synthBackupMode.isRestoringBackup}
-			restoreProgress={synthBackupMode.restoreProgress}
-			onSelectBackup={synthBackupMode.setSelectedBackupId}
-			onCreateBackup={synthBackupMode.handleCreateBackup}
-			onRestoreBackupToSynth={synthBackupMode.handleRestoreBackupToSynth}
-			onDeleteBackup={synthBackupMode.handleDeleteBackup}
-			onExportBackup={synthBackupMode.handleExportBackup}
-			onImportBackup={synthBackupMode.handleImportBackup}
-			onSaveEntryAsPreset={synthBackupMode.handleSaveBackupEntryAsPreset}
-			onSendEntryToSlot={synthBackupMode.handleSendBackupEntryToSlot}
-			onPreviewEntryInBuffer={synthBackupMode.handlePreviewBackupEntryInBuffer}
-		/>
+		<>
+			<SynthBackupsPageView
+				backups={synthBackupMode.backups}
+				selectedBackupId={synthBackupMode.selectedBackupId}
+				isBackingUp={synthBackupMode.isBackingUp}
+				backupProgress={synthBackupMode.backupProgress}
+				isRestoring={synthBackupMode.isRestoringBackup}
+				restoreProgress={synthBackupMode.restoreProgress}
+				onSelectBackup={synthBackupMode.setSelectedBackupId}
+				onCreateBackup={synthBackupMode.handleCreateBackup}
+				onRestoreBackupToSynth={synthBackupMode.handleRestoreBackupToSynth}
+				onDeleteBackup={synthBackupMode.handleDeleteBackup}
+				onExportBackup={synthBackupMode.handleExportBackup}
+				onImportBackup={synthBackupMode.handleImportBackup}
+				onSaveEntryAsPreset={synthBackupMode.handleSaveBackupEntryAsPreset}
+				onSendEntryToSlot={synthBackupMode.handleSendBackupEntryToSlot}
+				onPreviewEntryInBuffer={
+					synthBackupMode.handlePreviewBackupEntryInBuffer
+				}
+			/>
+
+			<SaveDraftPresetModal
+				isOpen={Boolean(presetMode.saveDraftPresetState)}
+				matchingPresetName={
+					presetMode.saveDraftPresetState?.matchingPreset?.name
+				}
+				name={presetMode.saveDraftName}
+				author={presetMode.saveDraftAuthor}
+				tags={presetMode.saveDraftTags}
+				description={presetMode.saveDraftDescription}
+				onNameChange={presetMode.setSaveDraftName}
+				onAuthorChange={presetMode.setSaveDraftAuthor}
+				onTagsChange={presetMode.setSaveDraftTags}
+				onDescriptionChange={presetMode.setSaveDraftDescription}
+				onCancel={presetMode.closeSaveDraftPresetModal}
+				onSave={presetMode.handleSaveDraftPreset}
+			/>
+		</>
 	);
 }

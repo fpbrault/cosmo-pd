@@ -5,10 +5,15 @@ import {
 	DEFAULT_DCO_ENV,
 	DEFAULT_DCW_ENV,
 } from "@/lib/synth/pdAlgorithms";
+import type { FrontendPresetV1, PresetMetadata } from "@/lib/synth/presetTypes";
 
 const STORAGE_PREFIX = "cz101-preset-";
 const CURRENT_STATE_KEY = "cz101-current-state";
 const CURRENT_PRESET_SESSION_KEY = "cz101-current-preset-session";
+const SHOW_LIBRARY_PRESETS_KEY = "cz101-show-library-presets";
+
+export type { PresetMetadata };
+export type StoredPreset = FrontendPresetV1;
 
 export type CurrentPresetSession = {
 	activePresetId: string | null;
@@ -53,10 +58,73 @@ function isSynthPresetV1(value: unknown): value is SynthPresetV1 {
 	return true;
 }
 
+function normalizeTags(tags: string[]): string[] {
+	return Array.from(
+		new Set(
+			tags
+				.map((tag) => tag.trim().toLowerCase())
+				.filter((tag) => tag.length > 0),
+		),
+	);
+}
+
+function normalizeMetadata(metadata?: Partial<PresetMetadata>): PresetMetadata {
+	return {
+		favorite: metadata?.favorite ?? false,
+		category: metadata?.category?.trim() ?? "",
+		tags: normalizeTags(metadata?.tags ?? []),
+	};
+}
+
+function isStoredPreset(value: unknown): value is StoredPreset {
+	if (typeof value !== "object" || value === null) return false;
+	const candidate = value as Partial<StoredPreset>;
+	return (
+		typeof candidate.name === "string" &&
+		isSynthPresetV1(candidate.data) &&
+		typeof candidate.favorite === "boolean" &&
+		typeof candidate.category === "string" &&
+		Array.isArray(candidate.tags) &&
+		candidate.tags.every((tag) => typeof tag === "string")
+	);
+}
+
+function createStoredPreset(
+	name: string,
+	data: SynthPresetV1,
+	metadata?: Partial<PresetMetadata>,
+): StoredPreset {
+	const normalized = normalizeMetadata(metadata);
+	return {
+		name,
+		data,
+		favorite: normalized.favorite,
+		category: normalized.category,
+		tags: normalized.tags,
+	};
+}
+
+function readStoredPreset(name: string): StoredPreset | null {
+	const raw = localStorage.getItem(STORAGE_PREFIX + name);
+	if (!raw) return null;
+	try {
+		const parsed = JSON.parse(raw);
+		if (isStoredPreset(parsed)) {
+			return parsed;
+		}
+		if (isSynthPresetV1(parsed)) {
+			return createStoredPreset(name, parsed);
+		}
+		return null;
+	} catch {
+		return null;
+	}
+}
+
 export const DEFAULT_PRESET: SynthPresetV1 = {
 	schemaVersion: 1,
 	params: {
-		lineSelect: "L1+L2",
+		lineSelect: "L1+L2'",
 		modMode: "normal",
 		octave: 0,
 		line1: {
@@ -68,7 +136,8 @@ export const DEFAULT_PRESET: SynthPresetV1 = {
 			dcaBase: 1,
 			dcwBase: 1,
 			modulation: 0,
-			detuneCents: 0,
+			detuneNote: 0,
+			detuneFine: 0,
 			octave: 0,
 			dcoEnv: DEFAULT_DCO_ENV,
 			dcwEnv: DEFAULT_DCW_ENV,
@@ -84,7 +153,8 @@ export const DEFAULT_PRESET: SynthPresetV1 = {
 			dcaBase: 1,
 			dcwBase: 1,
 			modulation: 0,
-			detuneCents: 0,
+			detuneNote: 0,
+			detuneFine: 0,
 			octave: 0,
 			dcoEnv: DEFAULT_DCO_ENV,
 			dcwEnv: DEFAULT_DCW_ENV,
@@ -130,19 +200,66 @@ export const DEFAULT_PRESET: SynthPresetV1 = {
 	},
 };
 
-export function savePreset(name: string, data: SynthPresetV1): void {
-	localStorage.setItem(STORAGE_PREFIX + name, JSON.stringify(data));
+export function savePreset(
+	name: string,
+	data: SynthPresetV1,
+	metadata?: Partial<PresetMetadata>,
+): void {
+	const existing = readStoredPreset(name);
+	const mergedMetadata = normalizeMetadata({
+		favorite: existing?.favorite,
+		category: existing?.category,
+		tags: existing?.tags,
+		...metadata,
+	});
+	const stored = createStoredPreset(name, data, mergedMetadata);
+	localStorage.setItem(STORAGE_PREFIX + name, JSON.stringify(stored));
+}
+
+export function saveShowLibraryPresets(value: boolean): void {
+	localStorage.setItem(SHOW_LIBRARY_PRESETS_KEY, value ? "1" : "0");
+}
+
+export function loadShowLibraryPresets(): boolean {
+	const raw = localStorage.getItem(SHOW_LIBRARY_PRESETS_KEY);
+	return raw === null ? true : raw === "1";
 }
 
 export function loadPreset(name: string): SynthPresetV1 | null {
-	const raw = localStorage.getItem(STORAGE_PREFIX + name);
-	if (!raw) return null;
-	try {
-		const parsed = JSON.parse(raw);
-		return isSynthPresetV1(parsed) ? parsed : null;
-	} catch {
-		return null;
+	return readStoredPreset(name)?.data ?? null;
+}
+
+export function loadStoredPreset(name: string): StoredPreset | null {
+	return readStoredPreset(name);
+}
+
+export function getPresetMetadata(name: string): PresetMetadata | null {
+	const preset = readStoredPreset(name);
+	if (!preset) return null;
+	return {
+		favorite: preset.favorite,
+		category: preset.category,
+		tags: preset.tags,
+	};
+}
+
+export function updatePresetMetadata(
+	name: string,
+	metadata: Partial<PresetMetadata>,
+): boolean {
+	const preset = readStoredPreset(name);
+	if (!preset) {
+		return false;
 	}
+	const nextMetadata = normalizeMetadata({
+		favorite: preset.favorite,
+		category: preset.category,
+		tags: preset.tags,
+		...metadata,
+	});
+	const nextPreset = createStoredPreset(name, preset.data, nextMetadata);
+	localStorage.setItem(STORAGE_PREFIX + name, JSON.stringify(nextPreset));
+	return true;
 }
 
 export function listPresets(): string[] {
@@ -161,24 +278,40 @@ export function deletePreset(name: string): void {
 }
 
 export function renamePreset(oldName: string, newName: string): boolean {
-	const data = loadPreset(oldName);
-	if (!data) return false;
+	const preset = readStoredPreset(oldName);
+	if (!preset) return false;
 	if (oldName === newName) return true;
-	savePreset(newName, data);
+	localStorage.setItem(
+		STORAGE_PREFIX + newName,
+		JSON.stringify({
+			...preset,
+			name: newName,
+		}),
+	);
 	deletePreset(oldName);
 	return true;
 }
 
 export function exportPreset(name: string): string | null {
-	const data = loadPreset(name);
-	if (!data) return null;
-	return JSON.stringify(data, null, 2);
+	const preset = readStoredPreset(name);
+	if (!preset) return null;
+	return JSON.stringify(preset, null, 2);
 }
 
-export function importPreset(json: string): SynthPresetV1 | null {
+export function importPreset(json: string): StoredPreset | null {
 	try {
 		const parsed = JSON.parse(json);
-		return isSynthPresetV1(parsed) ? parsed : null;
+		if (isStoredPreset(parsed)) {
+			return {
+				...parsed,
+				category: parsed.category.trim(),
+				tags: normalizeTags(parsed.tags),
+			};
+		}
+		if (isSynthPresetV1(parsed)) {
+			return createStoredPreset("imported", parsed);
+		}
+		return null;
 	} catch {
 		return null;
 	}

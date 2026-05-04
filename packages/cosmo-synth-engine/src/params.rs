@@ -248,9 +248,6 @@ pub enum WindowType {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
 pub enum LineSelect {
-    #[serde(rename = "L1+L2")]
-    #[default]
-    L1PlusL2,
     #[serde(rename = "L1")]
     L1,
     #[serde(rename = "L2")]
@@ -258,6 +255,7 @@ pub enum LineSelect {
     #[serde(rename = "L1+L1'")]
     L1PlusL1Prime,
     #[serde(rename = "L1+L2'")]
+    #[default]
     L1PlusL2Prime,
 }
 
@@ -346,7 +344,12 @@ pub struct LineParams {
     pub dca_base: f32,
     pub dcw_base: f32,
     pub modulation: f32,
-    pub detune_cents: f32,
+    /// Semitone offset for this line (±11 semitones). CZ SysEx "detuneNote".
+    #[serde(default)]
+    pub detune_note: f32,
+    /// Fine detune in CZ units (±60, 1 unit ≈ 1.67 cents). CZ SysEx "detuneFine".
+    #[serde(default)]
+    pub detune_fine: f32,
     pub octave: f32,
     pub dco_env: StepEnvData,
     pub dcw_env: StepEnvData,
@@ -370,7 +373,8 @@ impl Default for LineParams {
             dca_base: 1.0,
             dcw_base: 0.0,
             modulation: 0.0,
-            detune_cents: 0.0,
+            detune_note: 0.0,
+            detune_fine: 0.0,
             octave: 0.0,
             dco_env: default_dco_env(),
             dcw_env: default_dcw_env(),
@@ -656,7 +660,7 @@ pub enum ModDestination {
     Line1DcwBase,
     Line1DcaBase,
     Line1AlgoBlend,
-    Line1Detune,
+    Line2DetuneNote,
     Line1Octave,
     Line1AlgoParam1,
     Line1AlgoParam2,
@@ -669,8 +673,8 @@ pub enum ModDestination {
     Line2DcwBase,
     Line2DcaBase,
     Line2AlgoBlend,
-    Line2Detune,
-    Line2Octave,
+    Line2DetuneFine,
+    Line2DetuneOctave,
     Line2AlgoParam1,
     Line2AlgoParam2,
     Line2AlgoParam3,
@@ -1719,26 +1723,26 @@ const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 55] = [
     },
     EngineParamUiMetaV1 {
         key: "line1Octave",
-        tooltip: "Transposes this line by octave steps.",
-        readout_label: "Line 1 Octave",
+        tooltip: "Transposes both lines by octave steps (shared).",
+        readout_label: "Octave",
         readout_format: EngineParamReadoutFormatV1::Integer,
     },
     EngineParamUiMetaV1 {
         key: "line2Octave",
-        tooltip: "Transposes this line by octave steps.",
-        readout_label: "Line 2 Octave",
+        tooltip: "Relative octave shift for line 2.",
+        readout_label: "L2 Oct",
         readout_format: EngineParamReadoutFormatV1::Integer,
     },
     EngineParamUiMetaV1 {
-        key: "line1Detune",
-        tooltip: "Fine tunes this line in cents.",
-        readout_label: "Line 1 Detune",
+        key: "line2DetuneNote",
+        tooltip: "Semitone offset for line 2 (0–11).",
+        readout_label: "L2 Note",
         readout_format: EngineParamReadoutFormatV1::Integer,
     },
     EngineParamUiMetaV1 {
-        key: "line2Detune",
-        tooltip: "Fine tunes this line in cents.",
-        readout_label: "Line 2 Detune",
+        key: "line2DetuneFine",
+        tooltip: "Fine detune for line 2 in CZ units (±60).",
+        readout_label: "L2 Fine",
         readout_format: EngineParamReadoutFormatV1::Integer,
     },
     EngineParamUiMetaV1 {
@@ -2105,8 +2109,9 @@ pub fn engine_param_default_v1(key: &str) -> Option<f32> {
         "line2Level" => Some(line2.dca_base),
         "line1Octave" => Some(line1.octave),
         "line2Octave" => Some(line2.octave),
-        "line1Detune" => Some(line1.detune_cents),
-        "line2Detune" => Some(line2.detune_cents),
+        "line2DetuneOctave" => Some(line2.octave - line1.octave),
+        "line2DetuneNote" => Some(line2.detune_note),
+        "line2DetuneFine" => Some(line2.detune_fine),
         "intPmAmount" => Some(phase_mod.amount),
         "intPmRatio" => Some(phase_mod.ratio),
         "pmPre" => Some(if phase_mod.pm_pre { 1.0 } else { 0.0 }),

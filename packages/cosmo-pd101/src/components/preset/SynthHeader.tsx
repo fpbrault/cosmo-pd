@@ -5,6 +5,8 @@ import PresetNavigator from "./PresetNavigator";
 
 export type SynthHeaderProps = {
 	allEntries: PresetEntry[];
+	showLibraryPresets: boolean;
+	onToggleLibraryPresets: () => void;
 	activeEntryId: string | null;
 	activePresetName: string;
 	onBrandInfoClick?: () => void;
@@ -25,6 +27,9 @@ export type SynthHeaderProps = {
 	onSavePreset: (name: string) => void;
 	onDeletePreset: (name: string) => void;
 	onRenamePreset: (oldName: string, newName: string) => void;
+	onSetPresetFavorite: (name: string, favorite: boolean) => void;
+	onSetPresetCategory: (name: string, category: string) => void;
+	onSetPresetTags: (name: string, tags: string[]) => void;
 	onExportPreset: (name: string) => void;
 	onExportCurrentState: (name: string) => void;
 	onImportPreset: (json: string, filename: string) => void;
@@ -39,6 +44,7 @@ export type SynthHeaderProps = {
 
 export default function SynthHeader({
 	allEntries,
+	activeEntryId,
 	activePresetName,
 	onBrandInfoClick,
 	onStepPreset,
@@ -46,6 +52,9 @@ export default function SynthHeader({
 	onLibraryModeChange,
 	trailingContent,
 }: SynthHeaderProps) {
+	const activeEntry = allEntries.find((entry) => entry.id === activeEntryId);
+	const activePresetSource = activeEntry?.sourceLabel ?? "Current State";
+
 	return (
 		<header className="shrink-0 flex gap-3 border-b-4 border-cz-border bg-cz-body px-8 py-2 shadow-inner flex-row items-center justify-between">
 			{/* Hardware nameplate logo */}
@@ -69,6 +78,7 @@ export default function SynthHeader({
 			<PresetNavigator
 				allEntries={allEntries}
 				activePresetName={activePresetName}
+				activePresetSource={activePresetSource}
 				onStepPreset={onStepPreset}
 				isLibraryModeOpen={isLibraryModeOpen}
 				onLibraryModeChange={onLibraryModeChange}

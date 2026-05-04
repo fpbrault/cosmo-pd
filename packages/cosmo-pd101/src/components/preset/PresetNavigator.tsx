@@ -4,6 +4,7 @@ import type { PresetEntry } from "@/features/synth/types/presetEntry";
 type PresetNavigatorProps = {
 	allEntries: PresetEntry[];
 	activePresetName: string;
+	activePresetSource: string;
 	onStepPreset: (direction: -1 | 1) => void;
 	isLibraryModeOpen?: boolean;
 	onLibraryModeChange?: (open: boolean) => void;
@@ -12,6 +13,7 @@ type PresetNavigatorProps = {
 export default function PresetNavigator({
 	allEntries,
 	activePresetName,
+	activePresetSource,
 	onStepPreset,
 	isLibraryModeOpen = false,
 	onLibraryModeChange,
@@ -67,8 +69,11 @@ export default function PresetNavigator({
 							className="pointer-events-none absolute inset-px rounded-md border border-[#6b7c83]/42"
 						/>
 
-						<span className="relative truncate text-[1.7rem] leading-[0.95] font-['IBM_Plex_Mono','SFMono-Regular','Consolas','Liberation_Mono','Menlo',monospace] font-semibold uppercase tracking-[0.08em] text-[#54666e] [text-shadow:0_1px_0_rgba(235,242,245,0.24)]">
+						<span className="relative truncate text-[1.05rem] leading-[1.05] font-['IBM_Plex_Mono','SFMono-Regular','Consolas','Liberation_Mono','Menlo',monospace] font-semibold uppercase tracking-[0.08em] text-[#54666e] [text-shadow:0_1px_0_rgba(235,242,245,0.24)]">
 							{activePresetName}
+						</span>
+						<span className="relative mt-1 truncate text-[0.58rem] leading-none font-['IBM_Plex_Mono','SFMono-Regular','Consolas','Liberation_Mono','Menlo',monospace] uppercase tracking-[0.28em] text-[#6d7c82]">
+							{activePresetSource}
 						</span>
 					</button>
 				</div>

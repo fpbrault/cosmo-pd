@@ -221,7 +221,7 @@ fn rate_to_seconds(kind: EnvelopeKind, rate: u8) -> f32 {
             // DCO uses normalized exponential curve: slowest at rate 0 (235.64s),
             // fastest at rate 99 (4ms). Formula: 235.64 * e^(k*x) where
             // k = ln(0.004/235.64) ≈ -10.984.
-            const DCO_EXP_K: f32 = -10.984;
+            const DCO_EXP_K: f32 = -13.984;
             235.64_f32 * libm::expf(DCO_EXP_K * normalized_rate)
         }
     }

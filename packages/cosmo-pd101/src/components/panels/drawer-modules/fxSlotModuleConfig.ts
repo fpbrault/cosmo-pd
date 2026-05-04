@@ -137,7 +137,7 @@ const FX_UI_META = {
 		presetTitle: "Chorus Presets",
 		formatters: {
 			rate: (v) => v.toFixed(1),
-			depth: (v) => `${Math.round((v / 5) * 100)}%`,
+			depth: (v) => `${Math.round(v / 5)}%`,
 			mix: pct,
 		},
 	},
@@ -150,7 +150,7 @@ const FX_UI_META = {
 		presets: DELAY_PRESETS,
 		presetTitle: "Delay Presets",
 		formatters: {
-			time: (v) => `${(v * 1000).toFixed(0)}ms`,
+			time: (v) => `${(v).toFixed(0)}ms`,
 			feedback: pct,
 			mix: pct,
 			tapeMode: (v) => (v ? "Tape" : "Digital"),
@@ -184,7 +184,7 @@ const FX_UI_META = {
 		formatters: {
 			rate: (v) => `${v.toFixed(1)}Hz`,
 			depth: pct,
-			delay: (v) => `${(v * 1000).toFixed(0)}ms`,
+			delay: (v) => `${(v).toFixed(0)}ms`,
 			waveform: (v) => {
 				switch (v) {
 					case 0:

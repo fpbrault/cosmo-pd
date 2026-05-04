@@ -203,7 +203,8 @@ export function SharedPhaseDistortionVisualizer({
 	);
 
 	const {
-		allPresetEntries,
+		visiblePresetEntries,
+		showLibraryPresets,
 		activePresetId,
 		activePresetName,
 		pendingPresetChange,
@@ -211,9 +212,13 @@ export function SharedPhaseDistortionVisualizer({
 		handleLoadBuiltin,
 		handleLoadLibrary,
 		handleStepPreset,
+		handleToggleLibraryPresets,
 		handleSavePreset,
 		handleDeletePreset,
 		handleRenamePreset,
+		handleSetPresetFavorite,
+		handleSetPresetCategory,
+		handleSetPresetTags,
 		handleInitPreset,
 		handleExportPreset,
 		handleImportPreset,
@@ -300,7 +305,9 @@ export function SharedPhaseDistortionVisualizer({
 	return (
 		<SynthRenderer
 			headerProps={{
-				allEntries: allPresetEntries,
+				allEntries: visiblePresetEntries,
+				showLibraryPresets,
+				onToggleLibraryPresets: handleToggleLibraryPresets,
 				activeEntryId: activePresetId,
 				activePresetName,
 				pendingPresetChange,
@@ -311,6 +318,9 @@ export function SharedPhaseDistortionVisualizer({
 				onSavePreset: handleSavePreset,
 				onDeletePreset: handleDeletePreset,
 				onRenamePreset: handleRenamePreset,
+				onSetPresetFavorite: handleSetPresetFavorite,
+				onSetPresetCategory: handleSetPresetCategory,
+				onSetPresetTags: handleSetPresetTags,
 				onInitPreset: handleInitPreset,
 				onExportPreset: handleExportPreset,
 				onExportCurrentState: handleExportCurrentState,

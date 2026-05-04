@@ -65,6 +65,7 @@ export interface SynthParamKnobProps {
 	paramKey: SynthParamKey;
 	value: number;
 	onChange: (v: number) => void;
+	disabled?: boolean;
 	/** Short display label shown under the knob face. */
 	label?: string;
 	labelClassName?: string;
@@ -72,6 +73,7 @@ export interface SynthParamKnobProps {
 	size?: number;
 	min?: number;
 	max?: number;
+	bipolar?: boolean;
 	variant?: KnobVariant;
 	step?: number;
 	modDestination?: ModDestination;
@@ -82,12 +84,14 @@ function SynthParamKnobInner({
 	paramKey,
 	value,
 	onChange,
+	disabled,
 	label,
 	labelClassName,
 	color,
 	size,
 	min,
 	max,
+	bipolar,
 	variant,
 	step,
 	modDestination,
@@ -110,6 +114,7 @@ function SynthParamKnobInner({
 		<ControlKnob
 			value={value}
 			onChange={onChange}
+			disabled={disabled}
 			label={label}
 			labelClassName={labelClassName}
 			tooltip={meta?.tooltip}
@@ -117,7 +122,7 @@ function SynthParamKnobInner({
 			max={max ?? meta?.max ?? 1}
 			step={step ?? meta?.step ?? undefined}
 			defaultValue={defaultValue}
-			bipolar={meta?.bipolar ?? false}
+			bipolar={bipolar ?? meta?.bipolar ?? false}
 			color={color}
 			size={size}
 			variant={variant}

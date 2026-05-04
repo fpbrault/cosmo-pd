@@ -104,6 +104,7 @@ export default function DelayModuleRenderer({
 					min={timeControl.min}
 					max={timeControl.max}
 					defaultValue={timeControl.defaultValue}
+					size={52}
 					color={config.color}
 					label="Time"
 					tooltip={getTooltip("delayTime")}
@@ -117,6 +118,7 @@ export default function DelayModuleRenderer({
 					min={feedbackControl.min}
 					max={feedbackControl.max}
 					defaultValue={feedbackControl.defaultValue}
+					size={52}
 					color={config.color}
 					label="Fdbk"
 					tooltip={getTooltip("delayFeedback")}
@@ -130,6 +132,7 @@ export default function DelayModuleRenderer({
 					min={warmthControl.min}
 					max={warmthControl.max}
 					defaultValue={warmthControl.defaultValue}
+					size={52}
 					color={config.color}
 					label="Warmth"
 					tooltip={getTooltip("delayWarmth")}
@@ -143,6 +146,7 @@ export default function DelayModuleRenderer({
 					min={mixControl.min}
 					max={mixControl.max}
 					defaultValue={mixControl.defaultValue}
+					size={52}
 					color={config.color}
 					label="Mix"
 					tooltip={getTooltip("delayMix")}

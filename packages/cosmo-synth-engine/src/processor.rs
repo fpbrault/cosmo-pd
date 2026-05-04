@@ -21,6 +21,91 @@ const SOFT_CLIP_THRESHOLD: f32 = 0.9;
 const REFERENCE_LINE_HEADROOM: f32 = 0.75;
 const HEADROOM_MAKEUP_EXPONENT: f32 = 0.8;
 const MAX_HEADROOM_MAKEUP: f32 = 1.0;
+const MONO_RETRIGGER_QUICK_FADE_SAMPLES: u32 = 128;
+const ENABLE_CZ_DAC_COLOR: bool = false;
+const CZ_DAC_SAMPLE_RATE_HZ: f32 = 40_000.0;
+const CZ_DAC_QUANT_STEPS: f32 = 2047.0;
+const CZ_DAC_COMPRESS_GAMMA: f32 = 0.78;
+const CZ_DAC_EXPAND_GAMMA: f32 = 1.0 / CZ_DAC_COMPRESS_GAMMA;
+const CZ_DAC_MISTRACK_MAX: f32 = 0.22;
+const CZ_DAC_LOW_BUMP_HZ: f32 = 100.0;
+const CZ_DAC_HONK_HP_HZ: f32 = 650.0;
+const CZ_DAC_HONK_LP_HZ: f32 = 1_700.0;
+const CZ_DAC_AIR_HP_HZ: f32 = 5_500.0;
+const CZ_DAC_HF_ROLLOFF_HZ: f32 = 20_000.0;
+
+#[derive(Debug, Clone, Copy)]
+struct CzDacColor {
+    env: f32,
+    slew_env: f32,
+    prev_q: f32,
+    low_state: f32,
+    honk_hp_state: f32,
+    honk_lp_state: f32,
+    air_hp_state: f32,
+    output_lp_state: f32,
+}
+
+impl CzDacColor {
+    fn new() -> Self {
+        Self {
+            env: 0.0,
+            slew_env: 0.0,
+            prev_q: 0.0,
+            low_state: 0.0,
+            honk_hp_state: 0.0,
+            honk_lp_state: 0.0,
+            air_hp_state: 0.0,
+            output_lp_state: 0.0,
+        }
+    }
+
+    fn reset(&mut self) {
+        *self = Self::new();
+    }
+
+    fn process(&mut self, sample: f32, sample_rate: f32) -> f32 {
+        let sr = sample_rate.max(1.0);
+        let input = sample.clamp(-1.2, 1.2);
+
+        // Approximate CZ compansion: non-linear digital compression into a
+        // 12-bit DAC, then imperfect expansion with envelope-dependent tracking.
+        let compressed = signed_pow(input, CZ_DAC_COMPRESS_GAMMA);
+        let quantized = (compressed * CZ_DAC_QUANT_STEPS).round() / CZ_DAC_QUANT_STEPS;
+
+        let abs_q = libm::fabsf(quantized);
+        let env_attack = 1.0 - libm::expf(-1.0 / (0.0015 * sr));
+        let env_release = 1.0 - libm::expf(-1.0 / (0.055 * sr));
+        let env_alpha = if abs_q > self.env {
+            env_attack
+        } else {
+            env_release
+        };
+        self.env += (abs_q - self.env) * env_alpha;
+
+        let slew = libm::fabsf(quantized - self.prev_q);
+        self.prev_q = quantized;
+        let slew_alpha = 1.0 - libm::expf(-1.0 / (0.0075 * sr));
+        self.slew_env += (slew - self.slew_env) * slew_alpha;
+
+        let mistrack = ((0.45 - self.env) * 0.18 + self.slew_env * 0.9)
+            .clamp(-CZ_DAC_MISTRACK_MAX, CZ_DAC_MISTRACK_MAX);
+        let expand_gamma = (CZ_DAC_EXPAND_GAMMA + mistrack).clamp(0.8, 2.0);
+        let expanded = signed_pow(quantized, expand_gamma);
+
+        // Spectral color: low-end punch, mid honk and slight breathy top-end.
+        let low = one_pole_lp(expanded, &mut self.low_state, CZ_DAC_LOW_BUMP_HZ, sr);
+        let honk_hp = one_pole_hp(expanded, &mut self.honk_hp_state, CZ_DAC_HONK_HP_HZ, sr);
+        let honk = one_pole_lp(honk_hp, &mut self.honk_lp_state, CZ_DAC_HONK_LP_HZ, sr);
+        let air = one_pole_hp(expanded, &mut self.air_hp_state, CZ_DAC_AIR_HP_HZ, sr);
+
+        let shaped = expanded + low * 0.08 + honk * 0.07 + air * (0.03 + self.slew_env * 0.07);
+
+        let effective_sr = sr.min(CZ_DAC_SAMPLE_RATE_HZ);
+        let output_cutoff = CZ_DAC_HF_ROLLOFF_HZ.min(effective_sr * 0.49);
+        one_pole_lp(shaped, &mut self.output_lp_state, output_cutoff, sr).clamp(-1.2, 1.2)
+    }
+}
 
 #[derive(Debug, Clone, Copy, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
@@ -98,6 +183,7 @@ pub struct MonoStackEntry {
 pub struct CosmoProcessor {
     pub voices: [Voice; NUM_VOICES],
     pub fx: FxChain,
+    cz_dac_color: CzDacColor,
     /// Active note → voice mapping (replaces JS `activeNoteMap`).
     pub active_notes: Vec<NoteEntry>,
     /// Note stack for mono mode (last-note priority), stores full voice state.
@@ -131,6 +217,7 @@ impl CosmoProcessor {
         let mut proc = Self {
             voices: array::from_fn(|_| Voice::new()),
             fx: FxChain::new(sample_rate),
+            cz_dac_color: CzDacColor::new(),
             active_notes: Vec::new(),
             mono_stack: Vec::new(),
             sustain_on: false,
@@ -268,6 +355,7 @@ impl CosmoProcessor {
     pub fn reset_audio_state(&mut self) {
         self.voices = array::from_fn(|_| Voice::new());
         self.fx = FxChain::new(self.sample_rate);
+        self.cz_dac_color.reset();
         self.update_fx();
         self.active_notes.clear();
         self.mono_stack.clear();
@@ -332,9 +420,25 @@ impl CosmoProcessor {
         self.start_env_release_for_voice(voice_idx);
     }
 
+    /// Start release and force a short anti-click fade for mono overlap retriggers.
+    fn start_quick_release(&mut self, voice_idx: usize) {
+        if self.voices[voice_idx].is_silent {
+            return;
+        }
+
+        self.start_release(voice_idx);
+        let voice = &mut self.voices[voice_idx];
+        voice.anti_click_fade = MONO_RETRIGGER_QUICK_FADE_SAMPLES;
+        voice.anti_click_fade_len = MONO_RETRIGGER_QUICK_FADE_SAMPLES;
+        voice.zero_cross_stop_pending = false;
+        voice.zero_cross_stop_wait = 0;
+    }
+
     /// Reset transient oscillator and gate state before starting a fresh note.
     fn reset_voice_runtime(&mut self, voice_idx: usize) {
         let voice = &mut self.voices[voice_idx];
+        let was_active = !voice.is_silent;
+        let prev_output_sample = voice.last_output_sample;
         voice.phi1 = 0.0;
         voice.phi2 = 0.0;
         voice.cycle_count1 = 0;
@@ -349,7 +453,9 @@ impl CosmoProcessor {
         voice.zero_cross_stop_pending = false;
         voice.zero_cross_stop_wait = 0;
         voice.anti_click_attack = crate::voice::ANTI_CLICK_ATTACK_SAMPLES;
-        voice.last_output_sample = 0.0;
+        // Preserve continuity on retrigger so sample-discontinuity suppression
+        // can smooth the transition from the previous sounding note.
+        voice.last_output_sample = if was_active { prev_output_sample } else { 0.0 };
         voice.release_tail_level = 0.0;
         // Reset DCW dezipper state so a new note always starts slewing from 0
         // rather than inheriting the previous note's smoothed DCW value.
@@ -419,20 +525,60 @@ impl CosmoProcessor {
         self.mono_stack.push(entry);
     }
 
-    /// Handle mono legato note-on without retriggering envelopes.
-    fn try_handle_mono_legato_note_on(&mut self, note: u8, frequency: f32) -> bool {
-        let voice = &mut self.voices[0];
-        if !self.params.legato || voice.is_releasing || voice.is_silent || voice.note == Some(note)
-        {
+    /// Return the current mono lead voice index, if one is actively sounding.
+    fn mono_active_voice_index(&self) -> Option<usize> {
+        self.active_notes
+            .last()
+            .map(|entry| entry.voice_idx)
+            .filter(|idx| {
+                *idx < NUM_VOICES
+                    && !self.voices[*idx].is_silent
+                    && !self.voices[*idx].is_releasing
+                    && self.voices[*idx].note.is_some()
+            })
+            .or_else(|| {
+                self.voices
+                    .iter()
+                    .enumerate()
+                    .find(|(_, voice)| {
+                        !voice.is_silent && !voice.is_releasing && voice.note.is_some()
+                    })
+                    .map(|(idx, _)| idx)
+            })
+    }
+
+    /// Force a short fade on every sounding mono voice except the newly-triggered one.
+    fn quick_fade_other_mono_voices(&mut self, keep_voice_idx: usize) {
+        for idx in 0..NUM_VOICES {
+            if idx != keep_voice_idx && !self.voices[idx].is_silent {
+                self.start_quick_release(idx);
+            }
+        }
+    }
+
+    /// Handle mono note changes without retriggering envelopes.
+    fn try_handle_mono_note_change_no_retrigger(
+        &mut self,
+        note: u8,
+        frequency: f32,
+        velocity: f32,
+    ) -> bool {
+        let Some(voice_idx) = self.mono_active_voice_index() else {
             return false;
+        };
+
+        let prev_entry = self.voices[voice_idx].note.map(|prev_note| MonoStackEntry {
+            note: prev_note,
+            voice: self.voices[voice_idx].clone(),
+        });
+
+        if let Some(entry) = prev_entry {
+            self.push_mono_stack_entry(entry);
         }
 
-        if let Some(prev_note) = voice.note {
-            self.mono_stack.retain(|e| e.note != prev_note);
-            self.mono_stack.push(MonoStackEntry {
-                note: prev_note,
-                voice: voice.clone(),
-            });
+        let voice = &mut self.voices[voice_idx];
+        if voice.is_releasing || voice.is_silent || voice.note == Some(note) {
+            return false;
         }
 
         voice.target_freq = frequency;
@@ -445,23 +591,11 @@ impl CosmoProcessor {
 
         voice.note = Some(note);
         voice.frequency = frequency;
+        voice.velocity = velocity;
         voice.is_releasing = false;
 
-        self.replace_active_note_entry(0, note);
+        self.replace_active_note_entry(voice_idx, note);
         true
-    }
-
-    /// Snapshot the currently sounding mono voice before overwriting it.
-    fn mono_previous_entry(&self, fallback_note: u8) -> Option<MonoStackEntry> {
-        let voice = &self.voices[0];
-        if voice.is_silent {
-            None
-        } else {
-            Some(MonoStackEntry {
-                note: voice.note.unwrap_or(fallback_note),
-                voice: voice.clone(),
-            })
-        }
     }
 
     /// Choose the best poly voice slot for a new note-on event.
@@ -487,18 +621,19 @@ impl CosmoProcessor {
 
     /// Route a note-on through mono mode rules, including legato and stack restore.
     fn handle_mono_note_on(&mut self, note: u8, frequency: f32, velocity: f32) {
-        if self.try_handle_mono_legato_note_on(note, frequency) {
+        if self.params.portamento.enabled
+            && self.try_handle_mono_note_change_no_retrigger(note, frequency, velocity)
+        {
             return;
         }
 
-        let prev_entry = self.mono_previous_entry(note);
-        self.initialize_voice_for_note(0, note, frequency, velocity);
-
-        if let Some(entry) = prev_entry {
-            self.push_mono_stack_entry(entry);
-        }
-
-        self.replace_active_note_entry(0, note);
+        // Fresh mono trigger: allocate a voice for the new note, then quickly
+        // fade any residual tails from previous mono notes to avoid clicks.
+        let new_voice_idx = self.find_poly_voice_for_note_on();
+        self.initialize_voice_for_note(new_voice_idx, note, frequency, velocity);
+        self.replace_active_note_entry(new_voice_idx, note);
+        self.mono_stack.clear();
+        self.quick_fade_other_mono_voices(new_voice_idx);
     }
 
     /// Route a note-on through poly mode rules, including voice reuse and stealing.
@@ -581,12 +716,12 @@ impl CosmoProcessor {
 
         if self.params.poly_mode == PolyMode::Mono {
             if let Some(prev) = self.mono_stack.last() {
-                let voice = &mut self.voices[0];
+                let voice = &mut self.voices[voice_idx];
                 *voice = prev.voice.clone();
                 voice.note = Some(prev.note);
-                self.replace_active_note_entry(0, prev.note);
+                self.replace_active_note_entry(voice_idx, prev.note);
             } else {
-                self.start_release(0);
+                self.start_release(voice_idx);
             }
         } else {
             self.start_release(voice_idx);
@@ -780,7 +915,12 @@ impl CosmoProcessor {
             mixed *= norm;
 
             let fx_out = self.fx.process(mixed);
-            let soft_limited = soft_clip_tanh(fx_out, SOFT_CLIP_DRIVE);
+            let colored = if ENABLE_CZ_DAC_COLOR {
+                self.cz_dac_color.process(fx_out, sr)
+            } else {
+                fx_out
+            };
+            let soft_limited = soft_clip_tanh(colored, SOFT_CLIP_DRIVE);
             *sample_out = soft_limited.clamp(-1.0, 1.0);
         }
     }
@@ -825,10 +965,29 @@ fn soft_clip_tanh(sample: f32, drive: f32) -> f32 {
     sample + (clipped - sample) * blend
 }
 
+#[inline]
+fn signed_pow(value: f32, gamma: f32) -> f32 {
+    value.signum() * libm::powf(libm::fabsf(value), gamma.max(0.0001))
+}
+
+#[inline]
+fn one_pole_lp(input: f32, state: &mut f32, cutoff_hz: f32, sample_rate: f32) -> f32 {
+    let safe_cutoff = cutoff_hz.clamp(1.0, sample_rate * 0.49);
+    let g = 1.0 - libm::expf(-2.0 * core::f32::consts::PI * safe_cutoff / sample_rate.max(1.0));
+    *state += (input - *state) * g;
+    *state
+}
+
+#[inline]
+fn one_pole_hp(input: f32, state: &mut f32, cutoff_hz: f32, sample_rate: f32) -> f32 {
+    let low = one_pole_lp(input, state, cutoff_hz, sample_rate);
+    input - low
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::params::{ModDestination, ModRoute, ModSource};
+    use crate::params::{ModDestination, ModRoute, ModSource, PolyMode};
 
     fn active_voice_indices_for_note(proc: &CosmoProcessor, note: u8) -> Vec<usize> {
         proc.voices
@@ -912,6 +1071,39 @@ mod tests {
     }
 
     #[test]
+    fn mono_releasing_previous_note_is_not_restored_after_new_note_off() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params.poly_mode = PolyMode::Mono;
+
+        let note_a = 60_u8;
+        let note_b = 64_u8;
+        let freq_a = midi_note_to_freq(note_a);
+        let freq_b = midi_note_to_freq(note_b);
+
+        // Start A, then release it so voice enters envelope release.
+        proc.note_on(note_a, freq_a, 1.0);
+        proc.note_off(note_a);
+        assert!(proc.voices[0].is_releasing);
+
+        // Strike B while A is still releasing: B should be a fresh note.
+        proc.note_on(note_b, freq_b, 1.0);
+        let active_b = active_voice_indices_for_note(&proc, note_b);
+        assert_eq!(active_b.len(), 1, "expected one active voice for note B");
+        let b_idx = active_b[0];
+        assert!(!proc.voices[b_idx].is_releasing);
+
+        // Releasing B must not restore old A from a release-phase snapshot.
+        proc.note_off(note_b);
+        assert!(proc.voices[b_idx].is_releasing);
+
+        let active_a = active_voice_indices_for_note(&proc, note_a);
+        assert!(
+            active_a.is_empty(),
+            "old note A should not be restored as an active note after releasing B"
+        );
+    }
+
+    #[test]
     fn random_rate_destination_changes_random_phase_advance() {
         let mut proc = CosmoProcessor::new(48_000.0);
         proc.set_mod_wheel(1.0);
@@ -928,5 +1120,41 @@ mod tests {
 
         let expected_without_mod = base_rate / proc.sample_rate;
         assert!(proc.random_phase > expected_without_mod);
+    }
+
+    #[test]
+    fn cz_dac_color_output_is_finite_and_bounded() {
+        let mut color = CzDacColor::new();
+        for n in 0..4096 {
+            let input = libm::sinf(n as f32 * 0.013) * 1.25;
+            let out = color.process(input, 48_000.0);
+            assert!(out.is_finite(), "colored sample should be finite");
+            assert!(
+                libm::fabsf(out) <= 1.2,
+                "colored sample should stay within stage bounds",
+            );
+        }
+    }
+
+    #[test]
+    fn cz_dac_color_transient_differs_from_steady_state() {
+        let mut steady = CzDacColor::new();
+        let mut transient = CzDacColor::new();
+
+        // Warm both instances with low-level steady signal.
+        for _ in 0..1024 {
+            let _ = steady.process(0.12, 48_000.0);
+            let _ = transient.process(0.12, 48_000.0);
+        }
+
+        let steady_out = steady.process(0.12, 48_000.0);
+        let transient_out = transient.process(0.78, 48_000.0);
+        let delta = libm::fabsf(transient_out - steady_out);
+
+        assert!(
+            delta > 0.1,
+            "expected transient mistracking color to alter output (delta={})",
+            delta,
+        );
     }
 }

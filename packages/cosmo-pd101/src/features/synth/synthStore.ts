@@ -122,8 +122,11 @@ export type SynthState = {
 	volume: number;
 
 	line1Level: number;
-	line1Octave: number;
-	line1Detune: number;
+	/** Shared OCT knob — sets octave for both lines. */
+	lineOctave: number;
+	line2DetuneOctave: number;
+	line2DetuneNote: number;
+	line2DetuneFine: number;
 	line1DcwKeyFollow: number;
 	line1DcoEnv: StepEnvData;
 	line1DcwEnv: StepEnvData;
@@ -134,8 +137,6 @@ export type SynthState = {
 	line1BaseWaveformB: BaseWaveform;
 
 	line2Level: number;
-	line2Octave: number;
-	line2Detune: number;
 	line2DcwKeyFollow: number;
 	line2DcoEnv: StepEnvData;
 	line2DcwEnv: StepEnvData;
@@ -203,8 +204,10 @@ type SynthActions = {
 	setVolume: (v: number) => void;
 
 	setLine1Level: (v: number) => void;
-	setLine1Octave: (v: number) => void;
-	setLine1Detune: (v: number) => void;
+	setLineOctave: (v: number) => void;
+	setLine2DetuneOctave: (v: number) => void;
+	setLine2DetuneNote: (v: number) => void;
+	setLine2DetuneFine: (v: number) => void;
 	setLine1DcwKeyFollow: (v: number) => void;
 	setLine1DcoEnv: (v: StepEnvData) => void;
 	setLine1DcwEnv: (v: StepEnvData) => void;
@@ -215,8 +218,6 @@ type SynthActions = {
 	setLine1BaseWaveformB: (v: BaseWaveform) => void;
 
 	setLine2Level: (v: number) => void;
-	setLine2Octave: (v: number) => void;
-	setLine2Detune: (v: number) => void;
 	setLine2DcwKeyFollow: (v: number) => void;
 	setLine2DcoEnv: (v: StepEnvData) => void;
 	setLine2DcwEnv: (v: StepEnvData) => void;
@@ -297,8 +298,10 @@ const DEFAULT_STATE: SynthState = {
 	volume: 1,
 
 	line1Level: 1,
-	line1Octave: 0,
-	line1Detune: 0,
+	lineOctave: 0,
+	line2DetuneOctave: 0,
+	line2DetuneNote: 0,
+	line2DetuneFine: 0,
 	line1DcwKeyFollow: 0,
 	line1DcoEnv: DEFAULT_DCO_ENV,
 	line1DcwEnv: DEFAULT_DCW_ENV,
@@ -309,8 +312,6 @@ const DEFAULT_STATE: SynthState = {
 	line1BaseWaveformB: "cosine",
 
 	line2Level: 1,
-	line2Octave: 0,
-	line2Detune: 0,
 	line2DcwKeyFollow: 0,
 	line2DcoEnv: DEFAULT_DCO_ENV,
 	line2DcwEnv: DEFAULT_DCW_ENV,
@@ -320,7 +321,7 @@ const DEFAULT_STATE: SynthState = {
 	line2BaseWaveformA: "cosine",
 	line2BaseWaveformB: "cosine",
 
-	lineSelect: "L1+L2",
+	lineSelect: "L1+L2'",
 	modMode: "normal",
 
 	polyMode: "poly8",
@@ -380,8 +381,13 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setVolume: (v) => set({ volume: v }),
 
 	setLine1Level: (v) => set({ line1Level: v }),
-	setLine1Octave: (v) => set({ line1Octave: toIntegerInRange(v, -2, 2) }),
-	setLine1Detune: (v) => set({ line1Detune: toIntegerInRange(v, -100, 100) }),
+	setLineOctave: (v) => set({ lineOctave: toIntegerInRange(v, -2, 2) }),
+	setLine2DetuneOctave: (v) =>
+		set({ line2DetuneOctave: toIntegerInRange(v, -3, 3) }),
+	setLine2DetuneNote: (v) =>
+		set({ line2DetuneNote: toIntegerInRange(v, -11, 11) }),
+	setLine2DetuneFine: (v) =>
+		set({ line2DetuneFine: toIntegerInRange(v, -60, 60) }),
 	setLine1DcwKeyFollow: (v) => set({ line1DcwKeyFollow: v }),
 	setLine1DcoEnv: (v) => set({ line1DcoEnv: v }),
 	setLine1DcwEnv: (v) => set({ line1DcwEnv: v }),
@@ -392,8 +398,6 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setLine1BaseWaveformB: (v) => set({ line1BaseWaveformB: v }),
 
 	setLine2Level: (v) => set({ line2Level: v }),
-	setLine2Octave: (v) => set({ line2Octave: toIntegerInRange(v, -2, 2) }),
-	setLine2Detune: (v) => set({ line2Detune: toIntegerInRange(v, -100, 100) }),
 	setLine2DcwKeyFollow: (v) => set({ line2DcwKeyFollow: v }),
 	setLine2DcoEnv: (v) => set({ line2DcoEnv: v }),
 	setLine2DcwEnv: (v) => set({ line2DcwEnv: v }),
@@ -510,6 +514,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 		const line2NormalizedAlgoControlsB = s.algo2B
 			? normalizeAlgoControls(s.algo2B, s.line2AlgoControlsB)
 			: [];
+		const line2DetuneEnabled = s.lineSelect !== "L1" && s.lineSelect !== "L2";
 
 		const params = {
 			lineSelect: s.lineSelect,
@@ -525,8 +530,9 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				dcaBase: s.line1Level,
 				dcwBase: s.warpAAmount,
 				modulation: 0,
-				detuneCents: s.line1Detune,
-				octave: s.line1Octave,
+				detuneNote: 0,
+				detuneFine: 0,
+				octave: s.lineOctave,
 				dcoEnv: s.line1DcoEnv,
 				dcwEnv: s.line1DcwEnv,
 				dcaEnv: s.line1DcaEnv,
@@ -544,8 +550,9 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				dcaBase: s.line2Level,
 				dcwBase: s.warpBAmount,
 				modulation: 0,
-				detuneCents: s.line2Detune,
-				octave: s.line2Octave,
+				detuneNote: line2DetuneEnabled ? s.line2DetuneNote : 0,
+				detuneFine: line2DetuneEnabled ? s.line2DetuneFine : 0,
+				octave: s.lineOctave + (line2DetuneEnabled ? s.line2DetuneOctave : 0),
 				dcoEnv: s.line2DcoEnv,
 				dcwEnv: s.line2DcwEnv,
 				dcaEnv: s.line2DcaEnv,
@@ -650,10 +657,19 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			volume: safe(p.volume, 1),
 			line1Level: safe(p.line1?.dcaBase, 1),
 			line2Level: safe(p.line2?.dcaBase, 1),
-			line1Octave: safe(p.line1?.octave, 0),
-			line2Octave: safe(p.line2?.octave, 0),
-			line1Detune: safe(p.line1?.detuneCents, 0),
-			line2Detune: safe(p.line2?.detuneCents, 0),
+			lineOctave: safe(p.line1?.octave, 0),
+			line2DetuneOctave: safe(p.line2?.octave, 0) - safe(p.line1?.octave, 0),
+			line2DetuneNote: safe(p.line2?.detuneNote, 0),
+			line2DetuneFine: safe(
+				p.line2?.detuneFine ??
+					Math.round(
+						(((p.line2 as unknown as Record<string, number> | undefined)
+							?.detuneCents ?? 0) *
+							60) /
+							100,
+					),
+				0,
+			),
 			line1DcoEnv: p.line1?.dcoEnv ?? DEFAULT_DCO_ENV,
 			line1DcwEnv: p.line1?.dcwEnv ?? DEFAULT_DCW_ENV,
 			line1DcaEnv: p.line1?.dcaEnv ?? DEFAULT_DCA_ENV,
@@ -682,7 +698,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				: [],
 			polyMode: (p.polyMode as PolyMode) ?? "poly8",
 			legato: p.legato ?? false,
-			lineSelect: (p.lineSelect as LineSelect) ?? "L1+L2",
+			lineSelect: (p.lineSelect as LineSelect) ?? "L1+L2'",
 			modMode: (p.modMode as ModMode) ?? "normal",
 			line1BaseWaveformA:
 				(p.line1?.baseWaveformA as BaseWaveform) ??

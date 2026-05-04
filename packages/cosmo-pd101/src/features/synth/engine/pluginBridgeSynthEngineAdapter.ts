@@ -81,11 +81,10 @@ const invertMap = <T extends string>(
 	) as Record<number, T>;
 
 const LINE_SELECT_IDS: EnumToIdMap<LineSelect> = {
-	"L1+L2": 0,
-	L1: 1,
-	L2: 2,
-	"L1+L1'": 3,
-	"L1+L2'": 4,
+	L1: 0,
+	L2: 1,
+	"L1+L1'": 2,
+	"L1+L2'": 3,
 };
 const LINE_SELECT_FROM_ID = invertMap(LINE_SELECT_IDS);
 
@@ -228,7 +227,7 @@ const PLUGIN_PARAM_DESCRIPTORS: PluginParamDescriptor[] = [
 		id: "line_select",
 		read: (params) => LINE_SELECT_IDS[params.lineSelect as LineSelect] ?? 0,
 		apply: (value, s) =>
-			s.setLineSelect((LINE_SELECT_FROM_ID[value] ?? "L1+L2") as LineSelect),
+			s.setLineSelect((LINE_SELECT_FROM_ID[value] ?? "L1+L2'") as LineSelect),
 	},
 	{
 		id: "mod_mode",
@@ -317,12 +316,12 @@ const PLUGIN_PARAM_DESCRIPTORS: PluginParamDescriptor[] = [
 	{
 		id: "l1_octave",
 		read: (params) => params.line1.octave,
-		apply: (value, s) => s.setLine1Octave(value),
+		apply: (value, s) => s.setLineOctave(value),
 	},
 	{
 		id: "l1_detune",
-		read: (params) => params.line1.detuneCents,
-		apply: (value, s) => s.setLine1Detune(value),
+		read: (params) => params.line2.detuneNote ?? 0,
+		apply: (value, s) => s.setLine2DetuneNote(value),
 	},
 	{
 		id: "l1_key_follow",
@@ -385,13 +384,13 @@ const PLUGIN_PARAM_DESCRIPTORS: PluginParamDescriptor[] = [
 	},
 	{
 		id: "l2_octave",
-		read: (params) => params.line2.octave,
-		apply: (value, s) => s.setLine2Octave(value),
+		read: (params) => params.line2.octave - params.line1.octave,
+		apply: (value, s) => s.setLine2DetuneOctave(value),
 	},
 	{
 		id: "l2_detune",
-		read: (params) => params.line2.detuneCents,
-		apply: (value, s) => s.setLine2Detune(value),
+		read: (params) => params.line2.detuneFine ?? 0,
+		apply: (value, s) => s.setLine2DetuneFine(value),
 	},
 	{
 		id: "l2_key_follow",

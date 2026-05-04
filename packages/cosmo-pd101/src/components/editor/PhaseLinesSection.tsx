@@ -7,7 +7,7 @@ import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import type { Algo, StepEnvData } from "@/lib/synth/bindings/synth";
 import { PerLineWarpBlock } from "./PerLineWarpBlock";
 
-export type LineSelect = "L1" | "L2" | "L1+L2" | "L1+L1'" | "L1+L2'";
+export type LineSelect = "L1" | "L2" | "L1+L1'" | "L1+L2'";
 
 export type EnvOverrideHandlers = {
 	onLine1DcoEnvChange?: (next: StepEnvData) => void;
@@ -47,14 +47,14 @@ export default function PhaseLinesSection({
 		useSynthParam("line1Level");
 	const { value: line2Level, setValue: setLine2Level } =
 		useSynthParam("line2Level");
-	const { value: line1Octave, setValue: setLine1Octave } =
-		useSynthParam("line1Octave");
-	const { value: line2Octave, setValue: setLine2Octave } =
-		useSynthParam("line2Octave");
-	const { value: line1Detune, setValue: setLine1Detune } =
-		useSynthParam("line1Detune");
-	const { value: line2Detune, setValue: setLine2Detune } =
-		useSynthParam("line2Detune");
+	const { value: lineOctave, setValue: setLineOctave } =
+		useSynthParam("lineOctave");
+	const { value: line2DetuneOctave, setValue: setLine2DetuneOctave } =
+		useSynthParam("line2DetuneOctave");
+	const { value: line2DetuneNote, setValue: setLine2DetuneNote } =
+		useSynthParam("line2DetuneNote");
+	const { value: line2DetuneFine, setValue: setLine2DetuneFine } =
+		useSynthParam("line2DetuneFine");
 	const { value: line1DcoEnv, setValue: setLine1DcoEnv } =
 		useSynthParam("line1DcoEnv");
 	const { value: line1DcwEnv, setValue: setLine1DcwEnv } =
@@ -94,10 +94,14 @@ export default function PhaseLinesSection({
 		setAlgoBlend: setAlgoBlendA,
 		level: line1Level,
 		setLevel: setLine1Level,
-		octave: line1Octave,
-		setOctave: setLine1Octave,
-		fineDetune: line1Detune,
-		setFineDetune: setLine1Detune,
+		octave: lineOctave,
+		setOctave: setLineOctave,
+		detuneOctave: line2DetuneOctave,
+		setDetuneOctave: setLine2DetuneOctave,
+		detuneNote: line2DetuneNote,
+		setDetuneNote: setLine2DetuneNote,
+		fineDetune: line2DetuneFine,
+		setFineDetune: setLine2DetuneFine,
 		dcoEnv: line1DcoEnv,
 		setDcoEnv: envOverrideHandlers?.onLine1DcoEnvChange ?? setLine1DcoEnv,
 		dcwEnv: line1DcwEnv,
@@ -125,10 +129,14 @@ export default function PhaseLinesSection({
 		setAlgoBlend: setAlgoBlendB,
 		level: line2Level,
 		setLevel: setLine2Level,
-		octave: line2Octave,
-		setOctave: setLine2Octave,
-		fineDetune: line2Detune,
-		setFineDetune: setLine2Detune,
+		octave: lineOctave,
+		setOctave: setLineOctave,
+		detuneOctave: line2DetuneOctave,
+		setDetuneOctave: setLine2DetuneOctave,
+		detuneNote: line2DetuneNote,
+		setDetuneNote: setLine2DetuneNote,
+		fineDetune: line2DetuneFine,
+		setFineDetune: setLine2DetuneFine,
 		dcoEnv: line2DcoEnv,
 		setDcoEnv: envOverrideHandlers?.onLine2DcoEnvChange ?? setLine2DcoEnv,
 		dcwEnv: line2DcwEnv,
@@ -147,6 +155,7 @@ export default function PhaseLinesSection({
 
 	const activeTab = useSynthUiStore((s) => s.phaseLinePanelTab);
 	const setActiveTab = useSynthUiStore((s) => s.setPhaseLinePanelTab);
+	const { value: lineSelect } = useSynthParam("lineSelect");
 
 	const activeLine: "line1" | "line2" = activeTab.startsWith("line1")
 		? "line1"
@@ -156,6 +165,15 @@ export default function PhaseLinesSection({
 		: "envelopes";
 	const activeLineConfig = activeLine === "line1" ? line1 : line2;
 	const activeLineLabel = activeLine === "line1" ? "Line 1" : "Line 2";
+
+	const isLineAudible = (line: "line1" | "line2"): boolean => {
+		if (lineSelect === "L1+L2'") return true;
+		if (lineSelect === "L1" || lineSelect === "L1+L1'") return line === "line1";
+		if (lineSelect === "L2") return line === "line2";
+		return true;
+	};
+	const activeLineIsAudible = isLineAudible(activeLine);
+	const inaudibleLineSelectLabel = lineSelect as string;
 
 	useEffect(() => {
 		onActiveTabChange?.(activeLine);
@@ -221,41 +239,55 @@ export default function PhaseLinesSection({
 						})}
 					</div>
 
-					<PerLineWarpBlock
-						key={activeLineLabel}
-						label={activeLineLabel}
-						color={activeLine === "line1" ? "#7f9de4" : "#c45c5c"}
-						lineIndex={activeLine === "line1" ? 1 : 2}
-						algo={activeLineConfig.algo}
-						setAlgo={activeLineConfig.setAlgo}
-						algo2={activeLineConfig.algo2}
-						setAlgo2={activeLineConfig.setAlgo2}
-						algoBlend={activeLineConfig.algoBlend}
-						setAlgoBlend={activeLineConfig.setAlgoBlend}
-						warpAmount={activeLineConfig.warpAmount}
-						setWarpAmount={activeLineConfig.setWarpAmount}
-						level={activeLineConfig.level}
-						setLevel={activeLineConfig.setLevel}
-						octave={activeLineConfig.octave}
-						setOctave={activeLineConfig.setOctave}
-						fineDetune={activeLineConfig.fineDetune}
-						setFineDetune={activeLineConfig.setFineDetune}
-						dcoEnv={activeLineConfig.dcoEnv}
-						setDcoEnv={activeLineConfig.setDcoEnv}
-						dcwEnv={activeLineConfig.dcwEnv}
-						setDcwEnv={activeLineConfig.setDcwEnv}
-						dcaEnv={activeLineConfig.dcaEnv}
-						setDcaEnv={activeLineConfig.setDcaEnv}
-						baseWaveformA={activeLineConfig.baseWaveformA}
-						setBaseWaveformA={activeLineConfig.setBaseWaveformA}
-						baseWaveformB={activeLineConfig.baseWaveformB}
-						setBaseWaveformB={activeLineConfig.setBaseWaveformB}
-						algoControlsA={activeLineConfig.algoControlsA}
-						setAlgoControlsA={activeLineConfig.setAlgoControlsA}
-						algoControlsB={activeLineConfig.algoControlsB}
-						setAlgoControlsB={activeLineConfig.setAlgoControlsB}
-						activeSection={activeSection}
-					/>
+					<div className="relative flex-1 min-h-0 min-w-0">
+						{!activeLineIsAudible && (
+							<div className="absolute inset-0 bg-black/45 backdrop-blur-[2px] rounded pointer-events-none flex items-center justify-center z-10">
+								<div className="text-cz-cream/80 text-xs font-semibold tracking-wide text-center px-3">
+									{activeLineLabel} is currently inactive in{" "}
+									{inaudibleLineSelectLabel} mode
+								</div>
+							</div>
+						)}
+						<PerLineWarpBlock
+							key={activeLineLabel}
+							label={activeLineLabel}
+							color={activeLine === "line1" ? "#7f9de4" : "#c45c5c"}
+							lineIndex={activeLine === "line1" ? 1 : 2}
+							algo={activeLineConfig.algo}
+							setAlgo={activeLineConfig.setAlgo}
+							algo2={activeLineConfig.algo2}
+							setAlgo2={activeLineConfig.setAlgo2}
+							algoBlend={activeLineConfig.algoBlend}
+							setAlgoBlend={activeLineConfig.setAlgoBlend}
+							warpAmount={activeLineConfig.warpAmount}
+							setWarpAmount={activeLineConfig.setWarpAmount}
+							level={activeLineConfig.level}
+							setLevel={activeLineConfig.setLevel}
+							octave={activeLineConfig.octave}
+							setOctave={activeLineConfig.setOctave}
+							detuneOctave={activeLineConfig.detuneOctave}
+							setDetuneOctave={activeLineConfig.setDetuneOctave}
+							detuneNote={activeLineConfig.detuneNote}
+							setDetuneNote={activeLineConfig.setDetuneNote}
+							fineDetune={activeLineConfig.fineDetune}
+							setFineDetune={activeLineConfig.setFineDetune}
+							dcoEnv={activeLineConfig.dcoEnv}
+							setDcoEnv={activeLineConfig.setDcoEnv}
+							dcwEnv={activeLineConfig.dcwEnv}
+							setDcwEnv={activeLineConfig.setDcwEnv}
+							dcaEnv={activeLineConfig.dcaEnv}
+							setDcaEnv={activeLineConfig.setDcaEnv}
+							baseWaveformA={activeLineConfig.baseWaveformA}
+							setBaseWaveformA={activeLineConfig.setBaseWaveformA}
+							baseWaveformB={activeLineConfig.baseWaveformB}
+							setBaseWaveformB={activeLineConfig.setBaseWaveformB}
+							algoControlsA={activeLineConfig.algoControlsA}
+							setAlgoControlsA={activeLineConfig.setAlgoControlsA}
+							algoControlsB={activeLineConfig.algoControlsB}
+							setAlgoControlsB={activeLineConfig.setAlgoControlsB}
+							activeSection={activeSection}
+						/>
+					</div>
 				</div>
 			</div>
 		</Card>
