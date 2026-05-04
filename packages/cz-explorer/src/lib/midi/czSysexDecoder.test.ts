@@ -251,4 +251,12 @@ describe("decodeCzPatch", () => {
 		expect(result.detuneNote).toBeGreaterThanOrEqual(0);
 		expect(result.detuneNote).toBeLessThan(12);
 	});
+
+	it("decodes fine detune from quarter-unit PDL encoding", () => {
+		const packet = makeZeroPacket();
+		setLogicalByte(packet, 2, 40);
+		const result = decodeCzPatch(packet);
+		if (!result) throw new Error("Expected patch to be defined");
+		expect(result.detuneFine).toBe(10);
+	});
 });

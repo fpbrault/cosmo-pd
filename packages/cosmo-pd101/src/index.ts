@@ -45,3 +45,8 @@ export {
 	synthBindingsUrl,
 	synthWasmUrl,
 } from "./lib/synth/pdVisualizerWorkletUrl";
+export type {
+	EnginePresetV1,
+	FrontendPresetV1,
+	PresetMetadata,
+} from "./lib/synth/presetTypes";

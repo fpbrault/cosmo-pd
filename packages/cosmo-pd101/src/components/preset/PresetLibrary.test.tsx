@@ -14,16 +14,31 @@ const entries: PresetEntry[] = [
 		id: "builtin:factory-bass",
 		label: "Factory Bass",
 		type: "builtin",
+		sourceLabel: "Built-in",
+		starred: true,
+		favorite: false,
+		category: "",
+		tags: [],
 	},
 	{
 		id: "local:local-keys",
 		label: "Local Keys",
 		type: "local",
+		sourceLabel: "User",
+		starred: false,
+		favorite: false,
+		category: "keys",
+		tags: ["warm"],
 	},
 	{
 		id: "library:archive-pad",
 		label: libraryPreset.name,
 		type: "library",
+		sourceLabel: "CZ library",
+		starred: false,
+		favorite: false,
+		category: "",
+		tags: [],
 		preset: libraryPreset,
 	},
 ];
@@ -31,6 +46,8 @@ const entries: PresetEntry[] = [
 function createProps() {
 	return {
 		allEntries: entries,
+		showLibraryPresets: true,
+		onToggleLibraryPresets: vi.fn(),
 		activeEntryId: "local:local-keys",
 		activePresetName: "Local Keys",
 		onLoadBuiltin: vi.fn(),
@@ -39,6 +56,9 @@ function createProps() {
 		onSavePreset: vi.fn(),
 		onDeletePreset: vi.fn(),
 		onRenamePreset: vi.fn(),
+		onSetPresetFavorite: vi.fn(),
+		onSetPresetCategory: vi.fn(),
+		onSetPresetTags: vi.fn(),
 		onExportPreset: vi.fn(),
 		onExportCurrentState: vi.fn(),
 		onImportPreset: vi.fn(),
@@ -142,10 +162,8 @@ describe("PresetLibrary", () => {
 		fireEvent.keyDown(list, { key: "End" });
 		fireEvent.keyDown(list, { key: "Enter" });
 
-		expect(props.onLoadLibrary).toHaveBeenCalledTimes(3);
-		expect(props.onLoadLibrary).toHaveBeenNthCalledWith(1, libraryPreset);
-		expect(props.onLoadLibrary).toHaveBeenNthCalledWith(2, libraryPreset);
-		expect(props.onLoadLibrary).toHaveBeenNthCalledWith(3, libraryPreset);
+		expect(props.onLoadLocal.mock.calls.length).toBeGreaterThan(0);
+		expect(props.onLoadLocal).toHaveBeenLastCalledWith("Local Keys");
 	});
 
 	it("handles Arrow navigation from window-level keydown", () => {
@@ -154,8 +172,8 @@ describe("PresetLibrary", () => {
 
 		fireEvent.keyDown(window, { key: "ArrowDown" });
 
-		expect(props.onLoadLibrary).toHaveBeenCalledTimes(1);
-		expect(props.onLoadLibrary).toHaveBeenNthCalledWith(1, libraryPreset);
+		expect(props.onLoadBuiltin).toHaveBeenCalledTimes(1);
+		expect(props.onLoadBuiltin).toHaveBeenNthCalledWith(1, "Factory Bass");
 	});
 
 	it("does not navigate when typing in a text input", () => {

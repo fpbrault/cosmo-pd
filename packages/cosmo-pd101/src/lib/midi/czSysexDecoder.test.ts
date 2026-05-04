@@ -178,6 +178,17 @@ describe("decodeCzPatch", () => {
 		}
 	});
 
+	it("masks DCO step bytes to 7-bit machine values", () => {
+		const packet = makeZeroPacket();
+		// Section 16 starts at logical index 55: [rate0, level0, ...].
+		setLogicalByte(packet, 55, 0x80);
+		setLogicalByte(packet, 56, 0x80);
+		const result = decodeCzPatch(packet);
+		if (!result) throw new Error("Expected patch to be defined");
+		expect(result.dco1Env.steps[0].rate).toBe(0);
+		expect(result.dco1Env.steps[0].level).toBe(0);
+	});
+
 	it("returns minimum endStep of 1 even when encoded end step byte is 0", () => {
 		const packet = makeZeroPacket();
 		const result = decodeCzPatch(packet);
@@ -204,6 +215,30 @@ describe("decodeCzPatch", () => {
 		expect(result.dco1).toHaveProperty("modulation");
 		expect(result.dco2).toHaveProperty("firstWaveform");
 		expect(result.dco2).toHaveProperty("modulation");
+	});
+
+	it("decodes raw 3-bit waveform ids without WT extension remapping", () => {
+		const packet = makeZeroPacket();
+		// b1 = 111 000 0 0 -> first=111 (pulse2), second disabled.
+		setLogicalByte(packet, 14, 0b11100000);
+		setLogicalByte(packet, 15, 0);
+		const result = decodeCzPatch(packet);
+		if (!result) throw new Error("Expected patch to be defined");
+		expect(result.dco1.firstWaveform).toBe(8);
+		expect(result.dco1.secondWaveform).toBeNull();
+	});
+
+	it("decodes window and modulation bits from MFW", () => {
+		const packet = makeZeroPacket();
+		// wave1=101 (saw-pulse), wave2=001 (square), second enabled, window=011 (trapezoid), mod=011 (noise)
+		setLogicalByte(packet, 14, 0b10100110);
+		setLogicalByte(packet, 15, 0b11011000);
+		const result = decodeCzPatch(packet);
+		if (!result) throw new Error("Expected patch to be defined");
+		expect(result.dco1.firstWaveform).toBe(6);
+		expect(result.dco1.secondWaveform).toBe(2);
+		expect(result.dco1.windowFunction).toBe(3);
+		expect(result.dco1.modulation).toBe("noise");
 	});
 
 	it("accepts data without F0/F7 framing and adds it automatically", () => {
@@ -250,5 +285,21 @@ describe("decodeCzPatch", () => {
 		expect(result.detuneOctave).toBeGreaterThanOrEqual(0);
 		expect(result.detuneNote).toBeGreaterThanOrEqual(0);
 		expect(result.detuneNote).toBeLessThan(12);
+	});
+
+	it("decodes fine detune from quarter-unit PDL encoding", () => {
+		const packet = makeZeroPacket();
+		setLogicalByte(packet, 2, 40);
+		const result = decodeCzPatch(packet);
+		if (!result) throw new Error("Expected patch to be defined");
+		expect(result.detuneFine).toBe(10);
+	});
+
+	it("ignores low PDL bits when decoding fine detune", () => {
+		const packet = makeZeroPacket();
+		setLogicalByte(packet, 2, 43);
+		const result = decodeCzPatch(packet);
+		if (!result) throw new Error("Expected patch to be defined");
+		expect(result.detuneFine).toBe(10);
 	});
 });

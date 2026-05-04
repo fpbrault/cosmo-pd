@@ -70,7 +70,8 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	);
 
 	const {
-		allPresetEntries,
+		visiblePresetEntries,
+		showLibraryPresets,
 		activePresetId,
 		activePresetNameBase,
 		activePresetName,
@@ -80,9 +81,13 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		handleLoadBuiltin,
 		handleLoadLibrary,
 		handleStepPreset,
+		handleToggleLibraryPresets,
 		handleSavePreset,
 		handleDeletePreset,
 		handleRenamePreset,
+		handleSetPresetFavorite,
+		handleSetPresetCategory,
+		handleSetPresetTags,
 		handleInitPreset,
 		handleExportPreset,
 		handleImportPreset,
@@ -122,7 +127,9 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	return (
 		<SynthRenderer
 			headerProps={{
-				allEntries: allPresetEntries,
+				allEntries: visiblePresetEntries,
+				showLibraryPresets,
+				onToggleLibraryPresets: handleToggleLibraryPresets,
 				activeEntryId: activePresetId,
 				activePresetName,
 				pendingPresetChange,
@@ -133,6 +140,9 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 				onSavePreset: handleSavePreset,
 				onDeletePreset: handleDeletePreset,
 				onRenamePreset: handleRenamePreset,
+				onSetPresetFavorite: handleSetPresetFavorite,
+				onSetPresetCategory: handleSetPresetCategory,
+				onSetPresetTags: handleSetPresetTags,
 				onInitPreset: handleInitPreset,
 				onExportPreset: handleExportPreset,
 				onExportCurrentState: handleExportCurrentState,

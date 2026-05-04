@@ -9,7 +9,9 @@ import {
 	saveCurrentPresetSession,
 	saveCurrentState,
 	savePreset,
+	saveShowLibraryPresets,
 } from "@/lib/synth/presetStorage";
+import type { FrontendPresetV1 } from "@/lib/synth/presetTypes";
 import { useSynthPresetManager } from "./useSynthPresetManager";
 
 const clonePreset = (): SynthPresetV1 =>
@@ -20,6 +22,22 @@ const makePreset = (volume: number): SynthPresetV1 => {
 	preset.params.volume = volume;
 	return preset;
 };
+
+const makeBuiltinPresets = (
+	presets: Record<string, SynthPresetV1>,
+): Record<string, FrontendPresetV1> =>
+	Object.fromEntries(
+		Object.entries(presets).map(([name, data]) => [
+			name,
+			{
+				name,
+				data,
+				favorite: false,
+				category: "",
+				tags: [],
+			},
+		]),
+	);
 
 describe("useSynthPresetManager", () => {
 	beforeEach(() => {
@@ -46,10 +64,10 @@ describe("useSynthPresetManager", () => {
 
 		const { result } = renderHook(() =>
 			useSynthPresetManager({
-				builtinPresets: {
+				builtinPresets: makeBuiltinPresets({
 					"Init Bass": makePreset(0.5),
 					"Factory Brass": makePreset(0.7),
-				},
+				}),
 				gatherState: () => currentState,
 				applyPreset,
 			}),
@@ -82,10 +100,10 @@ describe("useSynthPresetManager", () => {
 
 		const { result } = renderHook(() =>
 			useSynthPresetManager({
-				builtinPresets: {
+				builtinPresets: makeBuiltinPresets({
 					"Factory Brass": makePreset(0.7),
 					Beta: makePreset(0.9),
-				},
+				}),
 				gatherState: () => currentState,
 				applyPreset,
 				shouldLoadCurrentState: () => false,
@@ -116,10 +134,10 @@ describe("useSynthPresetManager", () => {
 		const { result, rerender } = renderHook(
 			({ presetStateKey }: { presetStateKey: string }) =>
 				useSynthPresetManager({
-					builtinPresets: {
+					builtinPresets: makeBuiltinPresets({
 						Alpha: alphaPreset,
 						Beta: betaPreset,
-					},
+					}),
 					gatherState: () => currentState,
 					applyPreset,
 					presetStateKey,
@@ -168,9 +186,9 @@ describe("useSynthPresetManager", () => {
 		const { result, rerender } = renderHook(
 			({ presetStateKey }: { presetStateKey: string }) =>
 				useSynthPresetManager({
-					builtinPresets: {
+					builtinPresets: makeBuiltinPresets({
 						Beta: betaPreset,
-					},
+					}),
 					gatherState: () => currentState,
 					applyPreset,
 					presetStateKey,
@@ -214,9 +232,9 @@ describe("useSynthPresetManager", () => {
 		const { result, rerender } = renderHook(
 			({ presetStateKey }: { presetStateKey: string }) =>
 				useSynthPresetManager({
-					builtinPresets: {
+					builtinPresets: makeBuiltinPresets({
 						Alpha: alphaPreset,
-					},
+					}),
 					gatherState: () => currentState,
 					applyPreset,
 					presetStateKey,
@@ -241,5 +259,30 @@ describe("useSynthPresetManager", () => {
 			activePresetNameBase: "Alpha",
 			loadedPresetFingerprint: JSON.stringify(alphaPreset),
 		});
+	});
+
+	it("keeps builtin presets visible when library presets are hidden", () => {
+		saveShowLibraryPresets(false);
+
+		const { result } = renderHook(() =>
+			useSynthPresetManager({
+				builtinPresets: makeBuiltinPresets({
+					Alpha: makePreset(0.7),
+				}),
+				libraryPresets: [
+					{
+						id: "library-1",
+						name: "Cloud Pad",
+						tags: ["pad"],
+					},
+				],
+				gatherState: clonePreset,
+				applyPreset: vi.fn(),
+			}),
+		);
+
+		expect(
+			result.current.visiblePresetEntries.map((entry) => entry.id),
+		).toEqual(["builtin:Alpha"]);
 	});
 });

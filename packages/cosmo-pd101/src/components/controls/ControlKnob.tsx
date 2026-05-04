@@ -122,6 +122,7 @@ export function ControlKnob({
 	const svgRef = useRef<SVGSVGElement | null>(null);
 	const buttonRef = useRef<HTMLButtonElement | null>(null);
 	const [hovered, setHovered] = useState(false);
+	const [, setModulationTick] = useState(0);
 	const { setControlReadout } = useHoverInfo();
 	const resolvedTooltip = tooltip?.trim() ? tooltip : label?.trim();
 	const readoutRafRef = useRef<number | null>(null);
@@ -207,6 +208,29 @@ export function ControlKnob({
 		modDestination ??
 		maybeSynthController?.resolveDestination(modulatable, { lineIndex }) ??
 		resolveModDestination(modulatable, { lineIndex });
+
+	useEffect(() => {
+		if (!maybeSynthController || modulatedValue !== undefined) {
+			return;
+		}
+
+		if (!resolvedDestination) {
+			return;
+		}
+
+		if (!maybeSynthController.hasActiveRoutes(resolvedDestination)) {
+			return;
+		}
+
+		const onRuntimeModSources = () => {
+			setModulationTick((tick) => (tick + 1) % 1_000_000);
+		};
+
+		window.addEventListener("cz-runtime-mod-sources", onRuntimeModSources);
+		return () => {
+			window.removeEventListener("cz-runtime-mod-sources", onRuntimeModSources);
+		};
+	}, [maybeSynthController, resolvedDestination, modulatedValue]);
 
 	const computedModulatedValue = maybeSynthController?.getModulatedValue({
 		destination: resolvedDestination,

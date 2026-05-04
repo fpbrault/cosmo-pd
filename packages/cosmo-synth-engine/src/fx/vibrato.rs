@@ -142,7 +142,7 @@ const CONTROLS: [FxControlV1; 4] = [
         kind: FxControlKindV1::Knob,
         bipolar: false,
         min: Some(0.0),
-        max: Some(500.0),
+        max: Some(5000.0),
         default_f32: Some(120.0),
         options: &NO_FX_CONTROL_OPTIONS,
         mod_destination_key: Some("vibratoDelay"),
