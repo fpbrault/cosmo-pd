@@ -182,9 +182,7 @@ pub enum WarpAlgo {
 /// Line select mode.
 #[derive(Copy, Clone, PartialEq, EnumParameter)]
 pub enum LineSelect {
-    #[name = "L1+L2"]
     #[default]
-    L1PlusL2,
     #[name = "L1"]
     L1,
     #[name = "L2"]
@@ -299,11 +297,8 @@ pub struct CzParameters {
     #[parameter(id = "l1_dca_base", name = "Level", default = 1.0, range = 0.0..=1.0, group = "Line 1")]
     pub l1_dca_base: FloatParameter,
 
-    #[parameter(id = "l1_octave", name = "Octave", default = 0.0, range = -2.0..=2.0, group = "Line 1")]
+    #[parameter(id = "l1_octave", name = "Octave (shared)", default = 0.0, range = -2.0..=2.0, group = "Line 1")]
     pub l1_octave: FloatParameter,
-
-    #[parameter(id = "l1_detune", name = "Detune (cents)", default = 0.0, range = -100.0..=100.0, group = "Line 1")]
-    pub l1_detune: FloatParameter,
 
     #[parameter(id = "l1_key_follow", name = "Key Follow", default = 0.0, range = 0.0..=10.0, group = "Line 1")]
     pub l1_key_follow: FloatParameter,
@@ -330,11 +325,14 @@ pub struct CzParameters {
     #[parameter(id = "l2_dca_base", name = "Level", default = 1.0, range = 0.0..=1.0, group = "Line 2")]
     pub l2_dca_base: FloatParameter,
 
-    #[parameter(id = "l2_octave", name = "Octave", default = 0.0, range = -2.0..=2.0, group = "Line 2")]
+    #[parameter(id = "l2_octave", name = "L2 Oct (relative)", default = 0.0, range = -3.0..=3.0, group = "Line 2")]
     pub l2_octave: FloatParameter,
 
-    #[parameter(id = "l2_detune", name = "Detune (cents)", default = 0.0, range = -100.0..=100.0, group = "Line 2")]
-    pub l2_detune: FloatParameter,
+    #[parameter(id = "l2_detune_note", name = "L2 Note", default = 0.0, range = -11.0..=11.0, group = "Line 2")]
+    pub l2_detune_note: FloatParameter,
+
+    #[parameter(id = "l2_detune_fine", name = "L2 Fine", default = 0.0, range = -60.0..=60.0, group = "Line 2")]
+    pub l2_detune_fine: FloatParameter,
 
     #[parameter(id = "l2_key_follow", name = "Key Follow", default = 0.0, range = 0.0..=10.0, group = "Line 2")]
     pub l2_key_follow: FloatParameter,
@@ -495,7 +493,6 @@ impl CzParameters {
             volume: self.volume.get() as f32,
             octave: self.octave.get() as f32,
             line_select: match self.line_select.get() {
-                LineSelect::L1PlusL2 => cosmo_synth_engine::params::LineSelect::L1PlusL2,
                 LineSelect::L1 => cosmo_synth_engine::params::LineSelect::L1,
                 LineSelect::L2 => cosmo_synth_engine::params::LineSelect::L2,
                 LineSelect::L1PlusL1Prime => cosmo_synth_engine::params::LineSelect::L1PlusL1Prime,
@@ -518,7 +515,8 @@ impl CzParameters {
         params.line1.dcw_base = self.l1_dcw_base.get() as f32;
         params.line1.dca_base = self.l1_dca_base.get() as f32;
         params.line1.octave = self.l1_octave.get() as f32;
-        params.line1.detune_cents = self.l1_detune.get() as f32;
+        params.line1.detune_note = 0.0;
+        params.line1.detune_fine = 0.0;
         params.line1.key_follow = self.l1_key_follow.get() as f32;
         params.line1.modulation = self.l1_modulation.get() as f32;
         params.line1.algo_blend = self.l1_algo_blend.get() as f32;
@@ -527,8 +525,9 @@ impl CzParameters {
         params.line2.algo = Self::map_warp_algo(self.l2_warp_algo.get());
         params.line2.dcw_base = self.l2_dcw_base.get() as f32;
         params.line2.dca_base = self.l2_dca_base.get() as f32;
-        params.line2.octave = self.l2_octave.get() as f32;
-        params.line2.detune_cents = self.l2_detune.get() as f32;
+        params.line2.octave = self.l1_octave.get() as f32 + self.l2_octave.get() as f32;
+        params.line2.detune_note = self.l2_detune_note.get() as f32;
+        params.line2.detune_fine = self.l2_detune_fine.get() as f32;
         params.line2.key_follow = self.l2_key_follow.get() as f32;
         params.line2.modulation = self.l2_modulation.get() as f32;
         params.line2.algo_blend = self.l2_algo_blend.get() as f32;
@@ -630,7 +629,8 @@ fn _assert_synth_params_coverage(p: SynthParams) {
         dca_base: _l1_dca,
         dcw_base: _l1_dcw,
         modulation: _l1_mod,
-        detune_cents: _l1_detune,
+        detune_note: _l1_detune_note,
+        detune_fine: _l1_detune_fine,
         octave: _l1_octave,
         dco_env: _,
         dcw_env: _,
@@ -650,7 +650,8 @@ fn _assert_synth_params_coverage(p: SynthParams) {
         dca_base: _l2_dca,
         dcw_base: _l2_dcw,
         modulation: _l2_mod,
-        detune_cents: _l2_detune,
+        detune_note: _l2_detune_note,
+        detune_fine: _l2_detune_fine,
         octave: _l2_octave,
         dco_env: _,
         dcw_env: _,

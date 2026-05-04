@@ -2,8 +2,6 @@ import { AnimatePresence, motion } from "motion/react";
 import {
 	type CSSProperties,
 	memo,
-	Profiler,
-	type ProfilerOnRenderCallback,
 	type ReactNode,
 	type RefObject,
 	useCallback,
@@ -210,28 +208,7 @@ function SynthRendererContent({
 	);
 	const [drawerSlideDirection, setDrawerSlideDirection] = useState<1 | -1>(1);
 	const [brandInfoOpen, setBrandInfoOpen] = useState(false);
-	const perfDebugEnabled =
-		typeof window !== "undefined" &&
-		window.localStorage.getItem("cz-perf") === "1";
 
-	useEffect(() => {
-		if (!perfDebugEnabled) {
-			return;
-		}
-		console.log("[cz-perf] profiler enabled");
-	}, [perfDebugEnabled]);
-
-	const handleProfile = useCallback<ProfilerOnRenderCallback>(
-		(id, phase, actualDuration, baseDuration, _startTime, _commitTime) => {
-			if (!perfDebugEnabled) {
-				return;
-			}
-			console.log(
-				`[cz-perf] ${id} ${phase} actual=${actualDuration.toFixed(2)}ms base=${baseDuration.toFixed(2)}ms`,
-			);
-		},
-		[perfDebugEnabled],
-	);
 	const handleCloseLibrary = useCallback(() => {
 		setLibraryModeOpen(false);
 	}, [setLibraryModeOpen]);
@@ -299,13 +276,6 @@ function SynthRendererContent({
 								<div className="pointer-events-none absolute inset-x-4 top-0 h-12 rounded-t-[1.2rem] opacity-70" />
 								<div className="relative shrink-0 rounded-md border border-cz-border bg-cz-body px-3 shadow-inner">
 									<div className="flex flex-wrap justify-center gap-y-2 gap-x-4 items-center">
-										<Profiler id="master-volume" onRender={handleProfile}>
-											<MasterVolumeControl />
-										</Profiler>
-										<LineSelectControl />
-
-										<ModModeControl />
-
 										<div className="flex items-end gap-2">
 											<CzTabButton
 												active={mainPanelMode === "phase"}
@@ -376,17 +346,20 @@ function SynthRendererContent({
 												tooltip="Toggle 3D wavetable waterfall drawer."
 											></CzTabButton>
 										</div>
+
+										<MasterVolumeControl />
+										<LineSelectControl />
+										<ModModeControl />
 									</div>
 								</div>
 
 								<div className="relative flex-1 min-h-0 min-w-0 overflow-hidden">
 									<div className="pointer-events-none absolute inset-0" />
-									<Profiler id="phase-lines" onRender={handleProfile}>
-										<PhaseLinesSection
-											className="h-full min-h-0 max-h-164"
-											envOverrideHandlers={envOverrideHandlers}
-										/>
-									</Profiler>
+
+									<PhaseLinesSection
+										className="h-full min-h-0 max-h-164"
+										envOverrideHandlers={envOverrideHandlers}
+									/>
 									<motion.div
 										aria-hidden={!drawerOpen}
 										initial={false}
@@ -452,6 +425,8 @@ function SynthRendererContent({
 					>
 						<MemoPresetLibrary
 							allEntries={headerProps.allEntries}
+							showLibraryPresets={headerProps.showLibraryPresets}
+							onToggleLibraryPresets={headerProps.onToggleLibraryPresets}
 							activeEntryId={headerProps.activeEntryId}
 							activePresetName={headerProps.activePresetName}
 							onLoadLocal={headerProps.onLoadLocal}
@@ -460,6 +435,9 @@ function SynthRendererContent({
 							onSavePreset={headerProps.onSavePreset}
 							onDeletePreset={headerProps.onDeletePreset}
 							onRenamePreset={headerProps.onRenamePreset}
+							onSetPresetFavorite={headerProps.onSetPresetFavorite}
+							onSetPresetCategory={headerProps.onSetPresetCategory}
+							onSetPresetTags={headerProps.onSetPresetTags}
 							onExportPreset={headerProps.onExportPreset}
 							onExportCurrentState={headerProps.onExportCurrentState}
 							onImportPreset={headerProps.onImportPreset}

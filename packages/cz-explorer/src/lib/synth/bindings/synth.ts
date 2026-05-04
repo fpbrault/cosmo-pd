@@ -107,7 +107,7 @@ export type WindowType =
 /**
  * Line select
  */
-export type LineSelect = "L1+L2" | "L1" | "L2" | "L1+L1'" | "L1+L2'";
+export type LineSelect = "L1" | "L2" | "L1+L1'" | "L1+L2'";
 
 /**
  * Modulation mode
@@ -255,7 +255,10 @@ export type LineParams = {
 	dcaBase: number;
 	dcwBase: number;
 	modulation: number;
-	detuneCents: number;
+	/** Semitone offset for line 2 (±11). @default 0 */
+	detuneNote?: number;
+	/** Fine detune in CZ units (±60). @default 0 */
+	detuneFine?: number;
 	octave: number;
 	dcoEnv: StepEnvData;
 	dcwEnv: StepEnvData;
@@ -388,7 +391,7 @@ export type ModDestination =
 	| "line1DcwBase"
 	| "line1DcaBase"
 	| "line1AlgoBlend"
-	| "line1Detune"
+	| "line2DetuneNote"
 	| "line1Octave"
 	| "line1AlgoParam1"
 	| "line1AlgoParam2"
@@ -401,8 +404,8 @@ export type ModDestination =
 	| "line2DcwBase"
 	| "line2DcaBase"
 	| "line2AlgoBlend"
-	| "line2Detune"
-	| "line2Octave"
+	| "line2DetuneFine"
+	| "line2DetuneOctave"
 	| "line2AlgoParam1"
 	| "line2AlgoParam2"
 	| "line2AlgoParam3"

@@ -171,7 +171,7 @@ export const DEFAULT_DCW_ENV: StepEnvData = {
 
 export const DEFAULT_DCO_ENV: StepEnvData = {
 	steps: [
-		{ level: 0, rate: 0 },
+		{ level: 0, rate: 50 },
 		{ level: 0, rate: 0 },
 		{ level: 0, rate: 0 },
 		{ level: 0, rate: 0 },

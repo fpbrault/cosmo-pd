@@ -72,6 +72,12 @@ describe("convertDecodedPatchToSynthPreset", () => {
 		expect(
 			getControlValue(preset.params.line1.algoControlsA, "waveform2"),
 		).toBe(1);
+		expect(
+			getControlValue(preset.params.line1.algoControlsA, "windowFunction"),
+		).toBe(0);
+		expect(getControlValue(preset.params.line1.algoControlsA, "preset")).toBe(
+			0,
+		);
 		expect(preset.params.modMode).toBe("ring");
 		expect(
 			getControlValue(preset.params.line2.algoControlsA, "waveform1"),
@@ -106,8 +112,32 @@ describe("convertDecodedPatchToSynthPreset", () => {
 			getControlValue(preset.params.line2.algoControlsA, "waveform2"),
 		).toBe(2);
 		expect(preset.params.modMode).toBe("ring");
-		expect(preset.params.line2.detuneCents).toBe(1720);
-		expect(preset.params.line2.octave).toBe(1);
+		expect(preset.params.line2.detuneNote).toBe(5);
+		expect(preset.params.line2.detuneFine).toBe(10);
+		expect(preset.params.line2.octave).toBe(2);
 		expect(preset.params.line2.keyFollow).toBe(4);
+	});
+
+	it("keeps single-wave CZ waveforms aligned with preset slots", () => {
+		const preset = convertDecodedPatchToSynthPreset({
+			...basePatch,
+			dco1: {
+				firstWaveform: 6,
+				secondWaveform: null,
+				windowFunction: 0,
+				modulation: "none",
+			},
+		});
+
+		expect(preset.params.line1.algo2).toBeNull();
+		expect(
+			getControlValue(preset.params.line1.algoControlsA, "waveform1"),
+		).toBe(5);
+		expect(
+			getControlValue(preset.params.line1.algoControlsA, "waveform2"),
+		).toBe(5);
+		expect(getControlValue(preset.params.line1.algoControlsA, "preset")).toBe(
+			4,
+		);
 	});
 });

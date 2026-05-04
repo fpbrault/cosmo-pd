@@ -1,83 +1,8 @@
 import { memo, useEffect, useMemo, useRef } from "react";
 import Card from "@/components/primitives/Card";
-import {
-	useOptionalSynthController,
-	useSynthParam,
-} from "@/features/synth/SynthParamController";
+import { useSynthParam } from "@/features/synth/SynthParamController";
 import { useSynthStore } from "@/features/synth/synthStore";
-import { getAlgoDefinition } from "@/lib/synth/algoRef";
-import type {
-	Algo,
-	AlgoControlValueV1,
-	ModDestination,
-} from "@/lib/synth/bindings/synth";
 import { computeWaveform } from "@/lib/synth/pdAlgorithms";
-
-type GetModulatedValue =
-	| ((params: {
-			destination: ModDestination | undefined;
-			baseValue: number;
-	  }) => number | undefined)
-	| undefined;
-
-function getModulatedNumber(
-	baseValue: number,
-	destination: ModDestination | undefined,
-	getModulatedValue: GetModulatedValue,
-): number {
-	if (!getModulatedValue) {
-		return baseValue;
-	}
-
-	return getModulatedValue({ destination, baseValue }) ?? baseValue;
-}
-
-function getModulatedAlgoControls(
-	lineIndex: 1 | 2,
-	algoA: Algo,
-	algoB: Algo,
-	controlsA: AlgoControlValueV1[],
-	controlsB: AlgoControlValueV1[],
-	getModulatedValue: GetModulatedValue,
-): {
-	controlsA: AlgoControlValueV1[];
-	controlsB: AlgoControlValueV1[];
-} {
-	if (!getModulatedValue) {
-		return { controlsA, controlsB };
-	}
-
-	let slotCounter = 1;
-	const modulateEntries = (
-		entries: AlgoControlValueV1[],
-		algo: Algo,
-	): AlgoControlValueV1[] => {
-		const numericControlIds = new Set(
-			(getAlgoDefinition(algo)?.controls ?? [])
-				.filter((control) => (control.kind ?? "number") === "number")
-				.map((control) => control.id),
-		);
-
-		return entries.map((entry) => {
-			if (!numericControlIds.has(entry.id) || slotCounter > 8) {
-				return entry;
-			}
-
-			const destination =
-				`line${lineIndex}AlgoParam${slotCounter}` as ModDestination;
-			slotCounter += 1;
-			return {
-				...entry,
-				value: getModulatedNumber(entry.value, destination, getModulatedValue),
-			};
-		});
-	};
-
-	return {
-		controlsA: modulateEntries(controlsA, algoA),
-		controlsB: modulateEntries(controlsB, algoB),
-	};
-}
 
 interface SingleCycleDisplayProps {
 	data: Float32Array | number[];
@@ -152,8 +77,6 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay({
 	lineIndex?: 1 | 2;
 	color?: string;
 }) {
-	const controller = useOptionalSynthController();
-	const getModulatedValue = controller?.getModulatedValue;
 	const { value: warpAAmount } = useSynthParam("warpAAmount");
 	const { value: warpBAmount } = useSynthParam("warpBAmount");
 	const { value: warpAAlgo } = useSynthParam("warpAAlgo");
@@ -182,103 +105,57 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay({
 	const { value: line2AlgoControlsA } = useSynthParam("line2AlgoControlsA");
 	const { value: line2AlgoControlsB } = useSynthParam("line2AlgoControlsB");
 
-	const modulatedLine1AlgoControls = getModulatedAlgoControls(
-		1,
-		warpAAlgo,
-		algo2A ?? warpAAlgo,
-		line1AlgoControlsA,
-		line1AlgoControlsB,
-		getModulatedValue,
-	);
-	const modulatedLine2AlgoControls = getModulatedAlgoControls(
-		2,
-		warpBAlgo,
-		algo2B ?? warpBAlgo,
-		line2AlgoControlsA,
-		line2AlgoControlsB,
-		getModulatedValue,
-	);
-
-	const effectiveWarpAAmount = getModulatedNumber(
-		warpAAmount,
-		"line1DcwBase",
-		getModulatedValue,
-	);
-	const effectiveWarpBAmount = getModulatedNumber(
-		warpBAmount,
-		"line2DcwBase",
-		getModulatedValue,
-	);
-	const effectiveAlgoBlendA = getModulatedNumber(
-		algoBlendA,
-		"line1AlgoBlend",
-		getModulatedValue,
-	);
-	const effectiveAlgoBlendB = getModulatedNumber(
-		algoBlendB,
-		"line2AlgoBlend",
-		getModulatedValue,
-	);
-	const effectiveLine1Level = getModulatedNumber(
-		line1Level,
-		"line1DcaBase",
-		getModulatedValue,
-	);
-	const effectiveLine2Level = getModulatedNumber(
-		line2Level,
-		"line2DcaBase",
-		getModulatedValue,
-	);
-
 	const waveform = useMemo(
 		() =>
 			computeWaveform({
-				warpAAmount: effectiveWarpAAmount,
-				warpBAmount: effectiveWarpBAmount,
+				warpAAmount,
+				warpBAmount,
 				warpAAlgo,
 				warpBAlgo,
 				algo2A,
 				algo2B,
-				algoBlendA: effectiveAlgoBlendA,
-				algoBlendB: effectiveAlgoBlendB,
+				algoBlendA,
+				algoBlendB,
 				intPmAmount: effectiveIntPmAmount,
 				intPmRatio,
 				extPmAmount: 0,
 				pmPre,
 				windowType,
-				line1Level: effectiveLine1Level,
-				line2Level: effectiveLine2Level,
+				line1Level,
+				line2Level,
 				line1BaseWaveformA,
 				line1BaseWaveformB,
 				line2BaseWaveformA,
 				line2BaseWaveformB,
-				line1AlgoControlsA: modulatedLine1AlgoControls.controlsA,
-				line1AlgoControlsB: modulatedLine1AlgoControls.controlsB,
-				line2AlgoControlsA: modulatedLine2AlgoControls.controlsA,
-				line2AlgoControlsB: modulatedLine2AlgoControls.controlsB,
+				line1AlgoControlsA,
+				line1AlgoControlsB,
+				line2AlgoControlsA,
+				line2AlgoControlsB,
 				sampleCount: 256,
 			}),
 		[
-			effectiveAlgoBlendA,
-			effectiveAlgoBlendB,
-			effectiveLine1Level,
-			effectiveLine2Level,
-			effectiveWarpAAmount,
-			effectiveWarpBAmount,
+			warpAAmount,
+			warpBAmount,
 			warpAAlgo,
 			warpBAlgo,
 			algo2A,
 			algo2B,
+			algoBlendA,
+			algoBlendB,
 			effectiveIntPmAmount,
 			intPmRatio,
-			modulatedLine1AlgoControls,
-			modulatedLine2AlgoControls,
 			pmPre,
 			windowType,
+			line1Level,
+			line2Level,
 			line1BaseWaveformA,
 			line1BaseWaveformB,
 			line2BaseWaveformA,
 			line2BaseWaveformB,
+			line1AlgoControlsA,
+			line1AlgoControlsB,
+			line2AlgoControlsA,
+			line2AlgoControlsB,
 		],
 	);
 

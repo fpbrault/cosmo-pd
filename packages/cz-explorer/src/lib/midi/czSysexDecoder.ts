@@ -164,18 +164,21 @@ function decodeDcwStep(rateByte: number, levelByte: number): EnvelopeStep {
 
 // DCO rate/level (sections 16, 25)
 function decodeDcoStep(rateByte: number, levelByte: number): EnvelopeStep {
+	const rawRate = rateByte & 0x7f;
 	const rate =
-		rateByte === 0
+		rawRate === 0
 			? 0
-			: rateByte === 0x7f
+			: rawRate === 0x7f
 				? 99
-				: Math.floor((99 * rateByte) / 127) + 1;
+				: Math.floor((99 * rawRate) / 127) + 1;
+
+	const rawLevel = levelByte & 0x7f;
 
 	let level: number;
-	if (levelByte <= 0x3f) {
-		level = levelByte;
-	} else if (levelByte >= 0x44) {
-		level = 64 + (levelByte - 0x44);
+	if (rawLevel <= 0x3f) {
+		level = rawLevel;
+	} else if (rawLevel >= 0x44) {
+		level = 64 + (rawLevel - 0x44);
 	} else {
 		level = 63; // 0x40–0x43 undefined range
 	}
@@ -212,6 +215,7 @@ export type ModulationType = "none" | "ring" | "noise";
 export interface WaveformConfig {
 	firstWaveform: WaveformId;
 	secondWaveform: WaveformId | null;
+	windowFunction?: number;
 	modulation: ModulationType;
 }
 
@@ -226,23 +230,35 @@ const WF_NAMES: Record<WaveformId, string> = {
 	8: "Pulse 2",
 };
 
-// 3-bit prefix → waveform id (index 3 is unused/invalid in original spec)
-const BITS_TO_WF: Record<number, WaveformId> = {
-	0: 1,
-	1: 2,
-	2: 3,
-	4: 4,
-	5: 5,
-};
-
-function bitsToWaveform(bits: number, wtExt: number): WaveformId {
-	if (bits === 0b110) {
-		if (wtExt === 0b001) return 6;
-		if (wtExt === 0b010) return 7;
-		if (wtExt === 0b011) return 8;
-		return 6; // fallback
+function bitsToWaveform(bits: number): WaveformId {
+	const waveform = bits + 1;
+	if (waveform < 1 || waveform > 8) {
+		return 1;
 	}
-	return BITS_TO_WF[bits] ?? 1;
+	return waveform as WaveformId;
+}
+
+function normalizeWindowFunction(windowBits: number): number {
+	if (windowBits <= 5) {
+		return windowBits;
+	}
+	// CZ treats 110/111 as aliases of Double Saw.
+	return 5;
+}
+
+function decodeModulation(modBits: number): ModulationType {
+	if (modBits === 0b011 || modBits === 0b111) {
+		return "noise";
+	}
+	if (
+		modBits === 0b010 ||
+		modBits === 0b100 ||
+		modBits === 0b101 ||
+		modBits === 0b110
+	) {
+		return "ring";
+	}
+	return "none";
 }
 
 function decodeWaveform(
@@ -256,19 +272,16 @@ function decodeWaveform(
 	const fwfBits = (b1 >> 5) & 0x07;
 	const swfBits = (b1 >> 2) & 0x07;
 	const slActive = (b1 >> 1) & 0x01;
-	const wtExt = b2 & 0x07;
+	const windowBits = ((b1 & 0x01) << 2) | ((b2 >> 6) & 0x03);
 	const modBits = (b2 >> 3) & 0x07;
 
-	const firstWaveform = bitsToWaveform(fwfBits, wtExt);
-	const secondWaveform = slActive ? bitsToWaveform(swfBits, wtExt) : null;
+	const firstWaveform = bitsToWaveform(fwfBits);
+	const secondWaveform = slActive ? bitsToWaveform(swfBits) : null;
+	const windowFunction = normalizeWindowFunction(windowBits);
 
-	let modulation: ModulationType = "none";
-	if (!ignoreModulation) {
-		if (modBits === 0b100) modulation = "ring";
-		else if (modBits === 0b011) modulation = "noise";
-	}
+	const modulation = ignoreModulation ? "none" : decodeModulation(modBits);
 
-	return { firstWaveform, secondWaveform, modulation };
+	return { firstWaveform, secondWaveform, windowFunction, modulation };
 }
 
 // ---------------------------------------------------------------------------
@@ -361,7 +374,8 @@ export function decodeCzPatch(sysexData: Uint8Array): DecodedPatch | null {
 	// Section 3 — PDL / PDH
 	const pdl = logicalByte(normalized, 2);
 	const pdh = logicalByte(normalized, 3);
-	const detuneFine = (pdl & 0x0f) + (pdl >> 4) * 16;
+	// Fine detune is encoded in quarter-units in SysEx payload.
+	const detuneFine = Math.max(0, Math.min(60, Math.round(pdl / 4)));
 	const detuneOctave = Math.floor(pdh / 12);
 	const detuneNote = pdh % 12;
 

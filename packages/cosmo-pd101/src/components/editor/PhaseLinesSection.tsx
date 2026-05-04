@@ -7,7 +7,7 @@ import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import type { Algo, StepEnvData } from "@/lib/synth/bindings/synth";
 import { PerLineWarpBlock } from "./PerLineWarpBlock";
 
-export type LineSelect = "L1" | "L2" | "L1+L2" | "L1+L1'" | "L1+L2'";
+export type LineSelect = "L1" | "L2" | "L1+L1'" | "L1+L2'";
 
 export type EnvOverrideHandlers = {
 	onLine1DcoEnvChange?: (next: StepEnvData) => void;
@@ -47,14 +47,14 @@ export default function PhaseLinesSection({
 		useSynthParam("line1Level");
 	const { value: line2Level, setValue: setLine2Level } =
 		useSynthParam("line2Level");
-	const { value: line1Octave, setValue: setLine1Octave } =
-		useSynthParam("line1Octave");
-	const { value: line2Octave, setValue: setLine2Octave } =
-		useSynthParam("line2Octave");
-	const { value: line1Detune, setValue: setLine1Detune } =
-		useSynthParam("line1Detune");
-	const { value: line2Detune, setValue: setLine2Detune } =
-		useSynthParam("line2Detune");
+	const { value: lineOctave, setValue: setLineOctave } =
+		useSynthParam("lineOctave");
+	const { value: line2DetuneOctave, setValue: setLine2DetuneOctave } =
+		useSynthParam("line2DetuneOctave");
+	const { value: line2DetuneNote, setValue: setLine2DetuneNote } =
+		useSynthParam("line2DetuneNote");
+	const { value: line2DetuneFine, setValue: setLine2DetuneFine } =
+		useSynthParam("line2DetuneFine");
 	const { value: line1DcoEnv, setValue: setLine1DcoEnv } =
 		useSynthParam("line1DcoEnv");
 	const { value: line1DcwEnv, setValue: setLine1DcwEnv } =
@@ -94,10 +94,14 @@ export default function PhaseLinesSection({
 		setAlgoBlend: setAlgoBlendA,
 		level: line1Level,
 		setLevel: setLine1Level,
-		octave: line1Octave,
-		setOctave: setLine1Octave,
-		fineDetune: line1Detune,
-		setFineDetune: setLine1Detune,
+		octave: lineOctave,
+		setOctave: setLineOctave,
+		detuneOctave: line2DetuneOctave,
+		setDetuneOctave: setLine2DetuneOctave,
+		detuneNote: line2DetuneNote,
+		setDetuneNote: setLine2DetuneNote,
+		fineDetune: line2DetuneFine,
+		setFineDetune: setLine2DetuneFine,
 		dcoEnv: line1DcoEnv,
 		setDcoEnv: envOverrideHandlers?.onLine1DcoEnvChange ?? setLine1DcoEnv,
 		dcwEnv: line1DcwEnv,
@@ -125,10 +129,14 @@ export default function PhaseLinesSection({
 		setAlgoBlend: setAlgoBlendB,
 		level: line2Level,
 		setLevel: setLine2Level,
-		octave: line2Octave,
-		setOctave: setLine2Octave,
-		fineDetune: line2Detune,
-		setFineDetune: setLine2Detune,
+		octave: lineOctave,
+		setOctave: setLineOctave,
+		detuneOctave: line2DetuneOctave,
+		setDetuneOctave: setLine2DetuneOctave,
+		detuneNote: line2DetuneNote,
+		setDetuneNote: setLine2DetuneNote,
+		fineDetune: line2DetuneFine,
+		setFineDetune: setLine2DetuneFine,
 		dcoEnv: line2DcoEnv,
 		setDcoEnv: envOverrideHandlers?.onLine2DcoEnvChange ?? setLine2DcoEnv,
 		dcwEnv: line2DcwEnv,
@@ -238,6 +246,10 @@ export default function PhaseLinesSection({
 						setLevel={activeLineConfig.setLevel}
 						octave={activeLineConfig.octave}
 						setOctave={activeLineConfig.setOctave}
+						detuneOctave={activeLineConfig.detuneOctave}
+						setDetuneOctave={activeLineConfig.setDetuneOctave}
+						detuneNote={activeLineConfig.detuneNote}
+						setDetuneNote={activeLineConfig.setDetuneNote}
 						fineDetune={activeLineConfig.fineDetune}
 						setFineDetune={activeLineConfig.setFineDetune}
 						dcoEnv={activeLineConfig.dcoEnv}

@@ -3,7 +3,7 @@ import Button from "@/components/controls/Button";
 
 type ModulePresetOption = {
 	id: string;
-	label: string;
+	label?: string;
 };
 
 type ModulePresetPopoverProps = {
@@ -79,7 +79,7 @@ export default function ModulePresetPopover({
 			className="dropdown dropdown-end [&_summary::-webkit-details-marker]:hidden"
 		>
 			<summary
-				className="flex h-5 min-w-20 cursor-pointer items-center justify-center gap-1.5 rounded-[4px] border border-cz-border bg-cz-inset px-2 text-[0.54rem] font-mono font-bold uppercase tracking-[0.14em] text-cz-cream-light shadow-[0_1px_0_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.08)] transition-colors hover:bg-cz-surface"
+				className="flex h-5 min-w-20 cursor-pointer items-center justify-center gap-1.5 rounded-sm border border-cz-border bg-cz-inset px-2 text-[0.54rem] font-mono font-bold uppercase tracking-[0.14em] text-cz-cream-light shadow-[0_1px_0_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.08)] transition-colors hover:bg-cz-surface"
 				style={{
 					borderColor: softBorderColor,
 					backgroundColor: triggerBgColor,
@@ -94,7 +94,7 @@ export default function ModulePresetPopover({
 				<span className="text-cz-cream-dim">▾</span>
 			</summary>
 			<ul
-				className="menu dropdown-content z-[9999] mt-1.5 w-44 rounded-md border border-cz-border bg-cz-panel p-1 shadow-[0_10px_24px_rgba(0,0,0,0.5)]"
+				className="menu dropdown-content z-9999 mt-1.5 w-44 rounded-md border border-cz-border bg-cz-panel p-1 shadow-[0_10px_24px_rgba(0,0,0,0.5)]"
 				style={{ borderColor: borderColor }}
 			>
 				{options.map((option) => {
@@ -116,7 +116,7 @@ export default function ModulePresetPopover({
 									}
 								}}
 							>
-								{option.label}
+								{option.label ?? option.id}
 							</Button>
 						</li>
 					);
