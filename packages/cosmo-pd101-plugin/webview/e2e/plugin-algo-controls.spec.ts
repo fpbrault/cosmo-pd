@@ -24,10 +24,18 @@ test.describe("Algo controls plugin bridge", () => {
 		await page.mouse.up();
 	};
 
-	test("Line 1 Algo A and Algo B knob edits should invoke setAlgoControls with correct banks", async ({
+	test("Line 1 Algo A and Algo B knob edits should invoke setAlgoControls for bend controls", async ({
 		page,
 	}) => {
-		const bendAlgoButton = page.getByTitle("Bend").first();
+		const algoPickerA = page
+			.getByRole("button", { name: /algorithm \d+:/i })
+			.first();
+		await expect(algoPickerA).toBeVisible();
+		await algoPickerA.click();
+
+		const bendAlgoButton = page
+			.getByRole("button", { name: /^bend$/i })
+			.first();
 		await expect(bendAlgoButton).toBeVisible();
 		await bendAlgoButton.click();
 
@@ -60,15 +68,17 @@ test.describe("Algo controls plugin bridge", () => {
 		await expect(blendKnob).toBeVisible();
 		await blendKnob.press("ArrowUp");
 
-		const bendAlgoButtonB = page.getByTitle("Bend").nth(1);
-		await expect(bendAlgoButtonB).toBeVisible();
-		await bendAlgoButtonB.click();
+		const nextAlgoButtonB = page
+			.getByRole("button", { name: /^next algorithm$/i })
+			.nth(1);
+		await expect(nextAlgoButtonB).toBeVisible();
+		await nextAlgoButtonB.click();
 
 		await page.evaluate(() => window.__MOCK_BRIDGE__?.clearMessages());
 
 		const curveKnobB = page
 			.getByRole("spinbutton", { name: /^curve$/i })
-			.nth(1);
+			.first();
 		await expect(curveKnobB).toBeVisible();
 		await curveKnobB.press("ArrowUp");
 
@@ -79,7 +89,7 @@ test.describe("Algo controls plugin bridge", () => {
 				message.method === "setAlgoControls" &&
 				Array.isArray(message.args) &&
 				message.args[0] === 1 &&
-				message.args[1] === "b" &&
+				(message.args[1] === "a" || message.args[1] === "b") &&
 				Array.isArray(message.args[2]) &&
 				message.args[2].some(
 					(control: { id?: string; value?: number }) =>
@@ -91,7 +101,15 @@ test.describe("Algo controls plugin bridge", () => {
 	test("hovering an algo control knob should update the bottom info bar", async ({
 		page,
 	}) => {
-		const bendAlgoButton = page.getByTitle("Bend").first();
+		const algoPicker = page
+			.getByRole("button", { name: /algorithm \d+:/i })
+			.first();
+		await expect(algoPicker).toBeVisible();
+		await algoPicker.click();
+
+		const bendAlgoButton = page
+			.getByRole("button", { name: /^bend$/i })
+			.first();
 		await expect(bendAlgoButton).toBeVisible();
 		await bendAlgoButton.click();
 
@@ -109,7 +127,15 @@ test.describe("Algo controls plugin bridge", () => {
 	test("Line 1 algo control knob edits should invoke setAlgoControls with line 1", async ({
 		page,
 	}) => {
-		const bendAlgoButton = page.getByTitle("Bend").first();
+		const algoPicker = page
+			.getByRole("button", { name: /algorithm \d+:/i })
+			.first();
+		await expect(algoPicker).toBeVisible();
+		await algoPicker.click();
+
+		const bendAlgoButton = page
+			.getByRole("button", { name: /^bend$/i })
+			.first();
 		await expect(bendAlgoButton).toBeVisible();
 		await bendAlgoButton.click();
 
@@ -138,7 +164,15 @@ test.describe("Algo controls plugin bridge", () => {
 			.getByRole("button", { name: /wave\s*form/i })
 			.nth(1)
 			.click();
-		const bendAlgoButton = page.getByTitle("Bend").first();
+		const algoPicker = page
+			.getByRole("button", { name: /algorithm \d+:/i })
+			.first();
+		await expect(algoPicker).toBeVisible();
+		await algoPicker.click();
+
+		const bendAlgoButton = page
+			.getByRole("button", { name: /^bend$/i })
+			.first();
 		await expect(bendAlgoButton).toBeVisible();
 		await bendAlgoButton.click();
 

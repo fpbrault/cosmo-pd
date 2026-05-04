@@ -89,7 +89,15 @@ test.describe("Mod matrix plugin bridge", () => {
 			dialogName: /modulation for curve/i,
 			expectedDestination: "line1AlgoParam1",
 			beforeAdd: async () => {
-				const bendAlgoButton = page.getByTitle("Bend").first();
+				const algoPicker = page
+					.getByRole("button", { name: /algorithm \d+:/i })
+					.first();
+				await expect(algoPicker).toBeVisible();
+				await algoPicker.click();
+
+				const bendAlgoButton = page
+					.getByRole("button", { name: /^bend$/i })
+					.first();
 				await expect(bendAlgoButton).toBeVisible();
 				await bendAlgoButton.click();
 			},
