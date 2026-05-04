@@ -787,9 +787,23 @@ export function useSynthPresetManager({
 	useEffect(() => {
 		refreshLocalPresetEntries();
 		if (!shouldHydratePersistedState) return;
+		if (!initialPresetSession) {
+			const firstPresetName = Object.keys(builtinPresets)[0];
+			if (firstPresetName) {
+				loadBuiltinPreset(firstPresetName);
+				return;
+			}
+		}
 		const saved = loadCurrentState();
 		if (saved) applyPreset(saved);
-	}, [applyPreset, refreshLocalPresetEntries, shouldHydratePersistedState]);
+	}, [
+		applyPreset,
+		builtinPresets,
+		initialPresetSession,
+		loadBuiltinPreset,
+		refreshLocalPresetEntries,
+		shouldHydratePersistedState,
+	]);
 
 	useEffect(() => {
 		const timer = setTimeout(() => {
