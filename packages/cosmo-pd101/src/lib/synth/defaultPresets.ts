@@ -3,7 +3,7 @@ import type { SynthPresetV1 } from "@/lib/synth/bindings/synth"; /**
  * Converted to canonical SynthPresetV1 format.
  */
 export const DEFAULT_SYNTH_PRESETS = {
-	Blep: {
+	Rise: {
 		schemaVersion: 1,
 		params: {
 			lineSelect: "L1",
@@ -837,7 +837,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 			],
 		},
 	},
-	Fas: {
+	Organ: {
 		schemaVersion: 1,
 		params: {
 			lineSelect: "L1+L2",
@@ -1616,6 +1616,428 @@ export const DEFAULT_SYNTH_PRESETS = {
 						makeupDb: 6,
 						mix: 1,
 					},
+				},
+				{
+					type: "empty",
+				},
+			],
+		},
+	},
+	"Solo Lead": {
+		schemaVersion: 1,
+		params: {
+			lineSelect: "L1",
+			modMode: "normal",
+			octave: 0,
+			line1: {
+				algo: "cz101",
+				algo2: "skew",
+				algoBlend: 0,
+				baseWaveformA: "cosine",
+				baseWaveformB: "sine",
+				window: "off",
+				dcaBase: 1,
+				dcwBase: 1,
+				modulation: 0,
+				detuneCents: 0,
+				octave: 0,
+				dcoEnv: {
+					steps: [
+						{
+							level: 0,
+							rate: 99,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 0,
+					stepCount: 1,
+					loop: false,
+				},
+				dcwEnv: {
+					steps: [
+						{
+							level: 81.47138659568323,
+							rate: 99,
+						},
+						{
+							level: 0,
+							rate: 99,
+						},
+						{
+							level: 48,
+							rate: 19,
+						},
+						{
+							level: 42,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 22,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 0,
+					stepCount: 2,
+					loop: false,
+				},
+				dcaEnv: {
+					steps: [
+						{
+							level: 99,
+							rate: 99,
+						},
+						{
+							level: 0,
+							rate: 99,
+						},
+						{
+							level: 88,
+							rate: 34,
+						},
+						{
+							level: 89,
+							rate: 17,
+						},
+						{
+							level: 0,
+							rate: 66,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 0,
+					stepCount: 2,
+					loop: false,
+				},
+				keyFollow: 8,
+				algoControlsA: [
+					{
+						id: "preset",
+						value: 0,
+					},
+					{
+						id: "waveform1",
+						value: 3,
+					},
+					{
+						id: "waveform2",
+						value: 0,
+					},
+					{
+						id: "windowFunction",
+						value: 0,
+					},
+				],
+				algoControlsB: [
+					{
+						id: "skewBias",
+						value: 0.37171875,
+					},
+					{
+						id: "skewCurve",
+						value: 0.5,
+					},
+					{
+						id: "skewSpread",
+						value: 0,
+					},
+					{
+						id: "skewTilt",
+						value: 0,
+					},
+				],
+			},
+			line2: {
+				algo: "cz101",
+				algo2: "cz101",
+				algoBlend: 0,
+				baseWaveformA: "cosine",
+				baseWaveformB: "cosine",
+				window: "off",
+				dcaBase: 1,
+				dcwBase: 1,
+				modulation: 0,
+				detuneCents: 0,
+				octave: 0,
+				dcoEnv: {
+					steps: [
+						{
+							level: 49,
+							rate: 99,
+						},
+						{
+							level: 2,
+							rate: 99,
+						},
+						{
+							level: 12,
+							rate: 92,
+						},
+						{
+							level: 0,
+							rate: 99,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 7,
+					stepCount: 8,
+					loop: false,
+				},
+				dcwEnv: {
+					steps: [
+						{
+							level: 49,
+							rate: 40,
+						},
+						{
+							level: 0,
+							rate: 12,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 1,
+					stepCount: 2,
+					loop: false,
+				},
+				dcaEnv: {
+					steps: [
+						{
+							level: 99,
+							rate: 99,
+						},
+						{
+							level: 53,
+							rate: 27,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 1,
+					stepCount: 2,
+					loop: false,
+				},
+				keyFollow: 0,
+				algoControlsA: [
+					{
+						id: "preset",
+						value: 0,
+					},
+					{
+						id: "waveform1",
+						value: 0,
+					},
+					{
+						id: "waveform2",
+						value: 0,
+					},
+					{
+						id: "windowFunction",
+						value: 0,
+					},
+				],
+				algoControlsB: [
+					{
+						id: "preset",
+						value: 0,
+					},
+					{
+						id: "waveform1",
+						value: 0,
+					},
+					{
+						id: "waveform2",
+						value: 0,
+					},
+					{
+						id: "windowFunction",
+						value: 0,
+					},
+				],
+			},
+			frequency: 440,
+			volume: 1,
+			polyMode: "mono",
+			legato: false,
+			velocityCurve: 0,
+			portamento: {
+				enabled: true,
+				mode: "time",
+				rate: 0,
+				time: 0.06121093205043249,
+			},
+			lfo: {
+				waveform: "sine",
+				rate: 5,
+				depth: 0.9863473661174851,
+				symmetry: 0.5,
+				retrigger: false,
+				offset: 0,
+			},
+			lfo2: {
+				waveform: "sine",
+				rate: 5,
+				depth: 0,
+				symmetry: 0.5,
+				retrigger: false,
+				offset: 0,
+			},
+			random: {
+				rate: 2,
+			},
+			modEnv: {
+				attack: 0.009999999776482582,
+				decay: 0.10000000149011612,
+				sustain: 0.5,
+				release: 0.20000000298023224,
+			},
+			pitchBendRange: 2,
+			modMatrix: {
+				routes: [
+					{
+						source: "modWheel",
+						destination: "vibratoDepth",
+						amount: 0.29500000817435135,
+						enabled: true,
+					},
+					{
+						source: "aftertouch",
+						destination: "vibratoDepth",
+						amount: 0.15902344839913507,
+						enabled: true,
+					},
+				],
+			},
+			fxSlots: [
+				{
+					type: "vibrato",
+					params: {
+						enabled: true,
+						waveform: 1,
+						rate: 50,
+						depth: 0,
+						delay: 38,
+					},
+				},
+				{
+					type: "empty",
+				},
+				{
+					type: "empty",
+				},
+				{
+					type: "empty",
+				},
+				{
+					type: "empty",
 				},
 				{
 					type: "empty",
@@ -2847,14 +3269,15 @@ export const DEFAULT_SYNTH_PRESETS = {
 	Chants: {
 		schemaVersion: 1,
 		params: {
-			lineSelect: "L1+L2",
-			modMode: "ring",
+			lineSelect: "L1+L2'",
+			modMode: "normal",
 			octave: 0,
 			line1: {
 				algo: "pinch",
 				algo2: "cz101",
 				algoBlend: 0,
 				baseWaveformA: "triangle",
+				baseWaveformB: "cosine",
 				window: "off",
 				dcaBase: 1,
 				dcwBase: 0.96,
@@ -2865,7 +3288,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 					steps: [
 						{
 							level: 66,
-							rate: 50.566600972414015,
+							rate: 71.19031217966761,
 						},
 						{
 							level: 0,
@@ -2979,35 +3402,49 @@ export const DEFAULT_SYNTH_PRESETS = {
 					loop: false,
 				},
 				keyFollow: 0,
-				cz: {
-					slotAWaveform: "saw",
-					slotBWaveform: "saw",
-					window: "off",
-				},
 				algoControlsA: [
 					{
 						id: "pinchFocus",
-						value: 0.6648828125,
+						value: 0.34845703124999994,
 					},
 					{
 						id: "pinchAsym",
-						value: 0,
+						value: -0.0677343749999999,
 					},
 					{
 						id: "pinchCurve",
-						value: 0.5,
+						value: 0.4052343749999999,
 					},
 					{
 						id: "pinchDrive",
-						value: 0.57712890625,
+						value: 0.58357421875,
 					},
 				],
-				algoControlsB: [],
+				algoControlsB: [
+					{
+						id: "preset",
+						value: 0,
+					},
+					{
+						id: "waveform1",
+						value: 0,
+					},
+					{
+						id: "waveform2",
+						value: 0,
+					},
+					{
+						id: "windowFunction",
+						value: 0,
+					},
+				],
 			},
 			line2: {
 				algo: "pinch",
 				algo2: "cz101",
 				algoBlend: 0,
+				baseWaveformA: "sine",
+				baseWaveformB: "cosine",
 				window: "off",
 				dcaBase: 1,
 				dcwBase: 1,
@@ -3132,11 +3569,6 @@ export const DEFAULT_SYNTH_PRESETS = {
 					loop: false,
 				},
 				keyFollow: 0,
-				cz: {
-					slotAWaveform: "sawPulse",
-					slotBWaveform: "sawPulse",
-					window: "off",
-				},
 				algoControlsA: [
 					{
 						id: "pinchFocus",
@@ -3155,12 +3587,30 @@ export const DEFAULT_SYNTH_PRESETS = {
 						value: 0.5,
 					},
 				],
-				algoControlsB: [],
+				algoControlsB: [
+					{
+						id: "preset",
+						value: 0,
+					},
+					{
+						id: "waveform1",
+						value: 0,
+					},
+					{
+						id: "waveform2",
+						value: 0,
+					},
+					{
+						id: "windowFunction",
+						value: 0,
+					},
+				],
 			},
 			frequency: 440,
 			volume: 1,
 			polyMode: "poly8",
 			legato: false,
+			velocityCurve: 0,
 			portamento: {
 				enabled: false,
 				mode: "rate",
@@ -3169,8 +3619,8 @@ export const DEFAULT_SYNTH_PRESETS = {
 			},
 			lfo: {
 				waveform: "sine",
-				rate: 5,
-				depth: 0,
+				rate: 0.12460306874216127,
+				depth: 0.7686718561819622,
 				symmetry: 0,
 				retrigger: false,
 				offset: 0,
@@ -3194,7 +3644,20 @@ export const DEFAULT_SYNTH_PRESETS = {
 			},
 			pitchBendRange: 2,
 			modMatrix: {
-				routes: [],
+				routes: [
+					{
+						source: "lfo1",
+						destination: "line1AlgoParam3",
+						amount: 0.21906247820172986,
+						enabled: true,
+					},
+					{
+						source: "lfo1",
+						destination: "line1AlgoParam2",
+						amount: 0.5,
+						enabled: true,
+					},
+				],
 			},
 			fxSlots: [
 				{
@@ -3674,28 +4137,29 @@ export const DEFAULT_SYNTH_PRESETS = {
 	Bliss: {
 		schemaVersion: 1,
 		params: {
-			lineSelect: "L1+L2",
+			lineSelect: "L1",
 			modMode: "normal",
 			octave: 0,
 			line1: {
-				algo: "bend",
-				algo2: null,
+				algo: "cz101",
+				algo2: "cz101",
 				algoBlend: 0,
-				baseWaveformA: "sine",
+				baseWaveformA: "cosine",
+				baseWaveformB: "sine",
 				window: "off",
 				dcaBase: 1,
 				dcwBase: 1,
 				modulation: 0,
 				detuneCents: 6,
-				octave: -1,
+				octave: 0,
 				dcoEnv: {
 					steps: [
 						{
-							level: 66,
-							rate: 62.523644766491685,
+							level: 0,
+							rate: 99,
 						},
 						{
-							level: 68.17851481573922,
+							level: 0,
 							rate: 99,
 						},
 						{
@@ -3731,11 +4195,11 @@ export const DEFAULT_SYNTH_PRESETS = {
 					steps: [
 						{
 							level: 99,
-							rate: 58,
+							rate: 64.63609348024639,
 						},
 						{
-							level: 35,
-							rate: 68,
+							level: 0,
+							rate: 43.08371174676078,
 						},
 						{
 							level: 60,
@@ -3762,19 +4226,19 @@ export const DEFAULT_SYNTH_PRESETS = {
 							rate: 60,
 						},
 					],
-					sustainStep: 4,
-					stepCount: 6,
+					sustainStep: 0,
+					stepCount: 2,
 					loop: false,
 				},
 				dcaEnv: {
 					steps: [
 						{
 							level: 99,
-							rate: 71.95722740547998,
+							rate: 79.66992729429087,
 						},
 						{
 							level: 0,
-							rate: 45.029375267646145,
+							rate: 37.971756731378186,
 						},
 						{
 							level: 0,
@@ -3806,34 +4270,52 @@ export const DEFAULT_SYNTH_PRESETS = {
 					loop: false,
 				},
 				keyFollow: 0,
-				cz: {
-					slotAWaveform: "saw",
-					slotBWaveform: "saw",
-					window: "off",
-				},
 				algoControlsA: [
 					{
-						id: "bendCurve",
-						value: 0.5,
-					},
-					{
-						id: "bendBias",
+						id: "preset",
 						value: 0,
 					},
 					{
-						id: "bendKnee",
-						value: 0.5,
+						id: "waveform1",
+						value: 0,
+					},
+					{
+						id: "waveform2",
+						value: 0,
+					},
+					{
+						id: "windowFunction",
+						value: 0,
 					},
 				],
-				algoControlsB: [],
+				algoControlsB: [
+					{
+						id: "preset",
+						value: 0,
+					},
+					{
+						id: "waveform1",
+						value: 0,
+					},
+					{
+						id: "waveform2",
+						value: 0,
+					},
+					{
+						id: "windowFunction",
+						value: 0,
+					},
+				],
 			},
 			line2: {
-				algo: "cz101",
-				algo2: null,
+				algo: "pinch",
+				algo2: "cz101",
 				algoBlend: 0,
+				baseWaveformA: "sine",
+				baseWaveformB: "cosine",
 				window: "off",
 				dcaBase: 1,
-				dcwBase: 0.6900000000000001,
+				dcwBase: 0.7401758030482701,
 				modulation: 0,
 				detuneCents: -4,
 				octave: -1,
@@ -3883,11 +4365,11 @@ export const DEFAULT_SYNTH_PRESETS = {
 							rate: 88.6122268954771,
 						},
 						{
-							level: 99,
+							level: 0,
 							rate: 99,
 						},
 						{
-							level: 99,
+							level: 0,
 							rate: 99,
 						},
 						{
@@ -3911,8 +4393,8 @@ export const DEFAULT_SYNTH_PRESETS = {
 							rate: 60,
 						},
 					],
-					sustainStep: 1,
-					stepCount: 8,
+					sustainStep: 0,
+					stepCount: 2,
 					loop: false,
 				},
 				dcaEnv: {
@@ -3922,7 +4404,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 							rate: 91.8601169683252,
 						},
 						{
-							level: 99,
+							level: 0,
 							rate: 99,
 						},
 						{
@@ -3950,23 +4432,53 @@ export const DEFAULT_SYNTH_PRESETS = {
 							rate: 60,
 						},
 					],
-					sustainStep: 1,
-					stepCount: 8,
+					sustainStep: 0,
+					stepCount: 2,
 					loop: false,
 				},
 				keyFollow: 0,
-				cz: {
-					slotAWaveform: "saw",
-					slotBWaveform: "saw",
-					window: "off",
-				},
-				algoControlsA: [],
-				algoControlsB: [],
+				algoControlsA: [
+					{
+						id: "pinchFocus",
+						value: 0.5,
+					},
+					{
+						id: "pinchAsym",
+						value: 0,
+					},
+					{
+						id: "pinchCurve",
+						value: 0.5,
+					},
+					{
+						id: "pinchDrive",
+						value: 0.5,
+					},
+				],
+				algoControlsB: [
+					{
+						id: "preset",
+						value: 0,
+					},
+					{
+						id: "waveform1",
+						value: 0,
+					},
+					{
+						id: "waveform2",
+						value: 0,
+					},
+					{
+						id: "windowFunction",
+						value: 0,
+					},
+				],
 			},
 			frequency: 440,
 			volume: 1,
 			polyMode: "poly8",
 			legato: false,
+			velocityCurve: 0,
 			portamento: {
 				enabled: false,
 				mode: "rate",
@@ -4035,14 +4547,6 @@ export const DEFAULT_SYNTH_PRESETS = {
 			},
 			fxSlots: [
 				{
-					type: "junoChorus",
-					params: {
-						enabled: true,
-						mode: 0,
-						mix: 0.5159961019243513,
-					},
-				},
-				{
 					type: "vibrato",
 					params: {
 						enabled: true,
@@ -4053,23 +4557,850 @@ export const DEFAULT_SYNTH_PRESETS = {
 					},
 				},
 				{
-					type: "delay",
+					type: "chorus",
 					params: {
 						enabled: true,
-						time: 0.48704979153701233,
-						feedback: 0.46,
-						mix: 0.13208983148847306,
-						tapeMode: true,
-						warmth: 0.3037695503234863,
+						rate: 1.4,
+						depth: 1,
+						mix: 0.56,
+					},
+				},
+				{
+					type: "delay",
+					params: {
+						enabled: false,
+						time: 0.11,
+						feedback: 0.22,
+						mix: 0.14310545785086495,
+						tapeMode: false,
+						warmth: 0.2,
 					},
 				},
 				{
 					type: "shimmerVerb",
 					params: {
-						enabled: true,
+						enabled: false,
 						shimmer: 0.4,
-						space: 0.3778320040021623,
-						mix: 0.1837890352521624,
+						space: 0.6546679530824934,
+						mix: 0.3501562322889056,
+					},
+				},
+				{
+					type: "empty",
+				},
+				{
+					type: "empty",
+				},
+			],
+		},
+	},
+	"Thick Bass": {
+		schemaVersion: 1,
+		params: {
+			lineSelect: "L1+L1'",
+			modMode: "normal",
+			octave: 0,
+			line1: {
+				algo: "cz101",
+				algo2: "cz101",
+				algoBlend: 0,
+				baseWaveformA: "saw",
+				baseWaveformB: "cosine",
+				window: "off",
+				dcaBase: 1,
+				dcwBase: 1,
+				modulation: 0,
+				detuneCents: 0,
+				octave: -2,
+				dcoEnv: {
+					steps: [
+						{
+							level: 0,
+							rate: 99,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 0,
+					stepCount: 1,
+					loop: false,
+				},
+				dcwEnv: {
+					steps: [
+						{
+							level: 99,
+							rate: 99,
+						},
+						{
+							level: 0,
+							rate: 82.29181586674282,
+						},
+						{
+							level: 42.416096791162545,
+							rate: 53,
+						},
+						{
+							level: 0,
+							rate: 52,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 2,
+					stepCount: 4,
+					loop: false,
+				},
+				dcaEnv: {
+					steps: [
+						{
+							level: 99,
+							rate: 99,
+						},
+						{
+							level: 0,
+							rate: 21,
+						},
+						{
+							level: 0,
+							rate: 61,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 1,
+					stepCount: 3,
+					loop: false,
+				},
+				keyFollow: 7,
+				algoControlsA: [
+					{
+						id: "preset",
+						value: 0,
+					},
+					{
+						id: "waveform1",
+						value: 1,
+					},
+					{
+						id: "waveform2",
+						value: 2,
+					},
+					{
+						id: "windowFunction",
+						value: 0,
+					},
+				],
+				algoControlsB: [
+					{
+						id: "preset",
+						value: 0,
+					},
+					{
+						id: "waveform1",
+						value: 2,
+					},
+					{
+						id: "waveform2",
+						value: 0,
+					},
+					{
+						id: "windowFunction",
+						value: 0,
+					},
+				],
+			},
+			line2: {
+				algo: "cz101",
+				algo2: "cz101",
+				algoBlend: 0,
+				baseWaveformA: "cosine",
+				baseWaveformB: "cosine",
+				window: "off",
+				dcaBase: 1,
+				dcwBase: 1,
+				modulation: 0,
+				detuneCents: 0,
+				octave: -1,
+				dcoEnv: {
+					steps: [
+						{
+							level: 0,
+							rate: 99,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 0,
+					stepCount: 1,
+					loop: false,
+				},
+				dcwEnv: {
+					steps: [
+						{
+							level: 99,
+							rate: 97,
+						},
+						{
+							level: 79,
+							rate: 43,
+						},
+						{
+							level: 74,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 52,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 2,
+					stepCount: 4,
+					loop: false,
+				},
+				dcaEnv: {
+					steps: [
+						{
+							level: 99,
+							rate: 99,
+						},
+						{
+							level: 0,
+							rate: 21,
+						},
+						{
+							level: 0,
+							rate: 61,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 1,
+					stepCount: 3,
+					loop: false,
+				},
+				keyFollow: 7,
+				algoControlsA: [
+					{
+						id: "preset",
+						value: 0,
+					},
+					{
+						id: "waveform1",
+						value: 1,
+					},
+					{
+						id: "waveform2",
+						value: 2,
+					},
+					{
+						id: "windowFunction",
+						value: 0,
+					},
+				],
+				algoControlsB: [
+					{
+						id: "preset",
+						value: 0,
+					},
+					{
+						id: "waveform1",
+						value: 2,
+					},
+					{
+						id: "waveform2",
+						value: 0,
+					},
+					{
+						id: "windowFunction",
+						value: 0,
+					},
+				],
+			},
+			frequency: 440,
+			volume: 1,
+			polyMode: "mono",
+			legato: false,
+			velocityCurve: 0,
+			portamento: {
+				enabled: true,
+				mode: "time",
+				rate: 0,
+				time: 0.10404297964913502,
+			},
+			lfo: {
+				waveform: "sine",
+				rate: 5,
+				depth: 1,
+				symmetry: 0.5,
+				retrigger: false,
+				offset: 0,
+			},
+			lfo2: {
+				waveform: "sine",
+				rate: 5,
+				depth: 0,
+				symmetry: 0.5,
+				retrigger: false,
+				offset: 0,
+			},
+			random: {
+				rate: 2,
+			},
+			modEnv: {
+				attack: 0.009999999776482582,
+				decay: 0.10000000149011612,
+				sustain: 0.5,
+				release: 0.20000000298023224,
+			},
+			pitchBendRange: 2,
+			modMatrix: {
+				routes: [],
+			},
+			fxSlots: [
+				{
+					type: "empty",
+				},
+				{
+					type: "empty",
+				},
+				{
+					type: "empty",
+				},
+				{
+					type: "vibrato",
+					params: {
+						enabled: true,
+						waveform: 1,
+						rate: 46,
+						depth: 16,
+						delay: 60,
+					},
+				},
+				{
+					type: "empty",
+				},
+				{
+					type: "empty",
+				},
+			],
+		},
+	},
+	"Synth Bass": {
+		schemaVersion: 1,
+		params: {
+			lineSelect: "L1+L1'",
+			modMode: "ring",
+			octave: 0,
+			line1: {
+				algo: "cz101",
+				algo2: "cz101",
+				algoBlend: 0,
+				baseWaveformA: "cosine",
+				baseWaveformB: "cosine",
+				window: "off",
+				dcaBase: 1,
+				dcwBase: 1,
+				modulation: 0,
+				detuneCents: 0,
+				octave: -2,
+				dcoEnv: {
+					steps: [
+						{
+							level: 0,
+							rate: 99,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 0,
+					stepCount: 1,
+					loop: false,
+				},
+				dcwEnv: {
+					steps: [
+						{
+							level: 99,
+							rate: 99,
+						},
+						{
+							level: 79,
+							rate: 45,
+						},
+						{
+							level: 15,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 52,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 2,
+					stepCount: 4,
+					loop: false,
+				},
+				dcaEnv: {
+					steps: [
+						{
+							level: 99,
+							rate: 99,
+						},
+						{
+							level: 0,
+							rate: 21,
+						},
+						{
+							level: 0,
+							rate: 61,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 1,
+					stepCount: 3,
+					loop: false,
+				},
+				keyFollow: 7,
+				algoControlsA: [
+					{
+						id: "preset",
+						value: 0,
+					},
+					{
+						id: "waveform1",
+						value: 5,
+					},
+					{
+						id: "waveform2",
+						value: 2,
+					},
+					{
+						id: "windowFunction",
+						value: 0,
+					},
+				],
+				algoControlsB: [
+					{
+						id: "preset",
+						value: 0,
+					},
+					{
+						id: "waveform1",
+						value: 2,
+					},
+					{
+						id: "waveform2",
+						value: 0,
+					},
+					{
+						id: "windowFunction",
+						value: 0,
+					},
+				],
+			},
+			line2: {
+				algo: "cz101",
+				algo2: "cz101",
+				algoBlend: 0,
+				baseWaveformA: "cosine",
+				baseWaveformB: "cosine",
+				window: "off",
+				dcaBase: 1,
+				dcwBase: 1,
+				modulation: 0,
+				detuneCents: 0,
+				octave: -1,
+				dcoEnv: {
+					steps: [
+						{
+							level: 0,
+							rate: 99,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 0,
+					stepCount: 1,
+					loop: false,
+				},
+				dcwEnv: {
+					steps: [
+						{
+							level: 99,
+							rate: 97,
+						},
+						{
+							level: 79,
+							rate: 43,
+						},
+						{
+							level: 74,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 52,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 2,
+					stepCount: 4,
+					loop: false,
+				},
+				dcaEnv: {
+					steps: [
+						{
+							level: 99,
+							rate: 99,
+						},
+						{
+							level: 0,
+							rate: 21,
+						},
+						{
+							level: 0,
+							rate: 61,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+						{
+							level: 0,
+							rate: 50,
+						},
+					],
+					sustainStep: 1,
+					stepCount: 3,
+					loop: false,
+				},
+				keyFollow: 7,
+				algoControlsA: [
+					{
+						id: "preset",
+						value: 0,
+					},
+					{
+						id: "waveform1",
+						value: 1,
+					},
+					{
+						id: "waveform2",
+						value: 2,
+					},
+					{
+						id: "windowFunction",
+						value: 0,
+					},
+				],
+				algoControlsB: [
+					{
+						id: "preset",
+						value: 0,
+					},
+					{
+						id: "waveform1",
+						value: 2,
+					},
+					{
+						id: "waveform2",
+						value: 0,
+					},
+					{
+						id: "windowFunction",
+						value: 0,
+					},
+				],
+			},
+			frequency: 440,
+			volume: 1,
+			polyMode: "poly8",
+			legato: false,
+			velocityCurve: 0,
+			portamento: {
+				enabled: false,
+				mode: "rate",
+				rate: 0,
+				time: 0.5,
+			},
+			lfo: {
+				waveform: "sine",
+				rate: 5,
+				depth: 1,
+				symmetry: 0.5,
+				retrigger: false,
+				offset: 0,
+			},
+			lfo2: {
+				waveform: "sine",
+				rate: 5,
+				depth: 0,
+				symmetry: 0.5,
+				retrigger: false,
+				offset: 0,
+			},
+			random: {
+				rate: 2,
+			},
+			modEnv: {
+				attack: 0.009999999776482582,
+				decay: 0.10000000149011612,
+				sustain: 0.5,
+				release: 0.20000000298023224,
+			},
+			pitchBendRange: 2,
+			modMatrix: {
+				routes: [],
+			},
+			fxSlots: [
+				{
+					type: "empty",
+				},
+				{
+					type: "empty",
+				},
+				{
+					type: "empty",
+				},
+				{
+					type: "vibrato",
+					params: {
+						enabled: true,
+						waveform: 1,
+						rate: 46,
+						depth: 16,
+						delay: 60,
 					},
 				},
 				{

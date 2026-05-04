@@ -101,7 +101,6 @@ export default function VibratoModuleRenderer({
 					min={rateControl.min}
 					max={rateControl.max}
 					defaultValue={rateControl.defaultValue}
-					size={52}
 					color={config.color}
 					label="Rate"
 					tooltip={getTooltip("vibratoRate")}
@@ -115,7 +114,6 @@ export default function VibratoModuleRenderer({
 					min={depthControl.min}
 					max={depthControl.max}
 					defaultValue={depthControl.defaultValue}
-					size={52}
 					color={config.color}
 					label="Depth"
 					tooltip={getTooltip("vibratoDepth")}
@@ -129,7 +127,6 @@ export default function VibratoModuleRenderer({
 					min={delayControl.min}
 					max={delayControl.max}
 					defaultValue={delayControl.defaultValue}
-					size={52}
 					color={config.color}
 					label="Delay"
 					tooltip={getTooltip("vibratoDelay")}

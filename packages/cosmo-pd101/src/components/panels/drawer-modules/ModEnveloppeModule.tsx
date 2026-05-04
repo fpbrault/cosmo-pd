@@ -54,7 +54,6 @@ export default function ModEnveloppeModule() {
 				paramKey="modEnvAttack"
 				value={modEnvAttack}
 				onChange={setModEnvAttack}
-				size={52}
 				color="#c24587"
 				label="Atk"
 			/>
@@ -62,7 +61,6 @@ export default function ModEnveloppeModule() {
 				paramKey="modEnvDecay"
 				value={modEnvDecay}
 				onChange={setModEnvDecay}
-				size={52}
 				color="#c24587"
 				label="Dec"
 			/>
@@ -70,7 +68,6 @@ export default function ModEnveloppeModule() {
 				paramKey="modEnvSustain"
 				value={modEnvSustain}
 				onChange={setModEnvSustain}
-				size={52}
 				color="#c24587"
 				label="Sus"
 			/>
@@ -78,7 +75,6 @@ export default function ModEnveloppeModule() {
 				paramKey="modEnvRelease"
 				value={modEnvRelease}
 				onChange={setModEnvRelease}
-				size={52}
 				color="#c24587"
 				label="Rel"
 			/>

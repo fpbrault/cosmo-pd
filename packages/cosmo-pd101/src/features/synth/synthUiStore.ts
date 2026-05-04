@@ -4,7 +4,7 @@ import type { AsidePanelTab } from "@/components/layout/AsidePanelSwitcher";
 
 export const SYNTH_UI_STATE_STORAGE_KEY = "cosmo-pd101-ui-state";
 
-export type MainPanelMode = "phase" | "fx" | "mod";
+export type MainPanelMode = "phase" | "fx" | "mod" | "waterfall";
 export type PhaseLinePanelTab =
 	| "line1-algos"
 	| "line2-algos"
@@ -48,7 +48,12 @@ const ASIDE_PANEL_TABS = new Set<AsidePanelTab>([
 	"reverb",
 	"phaser",
 ]);
-const MAIN_PANEL_MODES = new Set<MainPanelMode>(["phase", "fx", "mod"]);
+const MAIN_PANEL_MODES = new Set<MainPanelMode>([
+	"phase",
+	"fx",
+	"mod",
+	"waterfall",
+]);
 const PHASE_LINE_PANEL_TABS = new Set<PhaseLinePanelTab>([
 	"line1-algos",
 	"line2-algos",

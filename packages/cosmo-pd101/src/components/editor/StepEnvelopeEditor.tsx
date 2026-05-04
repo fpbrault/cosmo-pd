@@ -13,7 +13,7 @@ interface StepEnvelopeEditorProps {
 	env: StepEnvData;
 	onChange: (env: StepEnvData) => void;
 	color?: string;
-	compact?: boolean;
+	levelKnobColor?: string;
 	lineIndex?: 1 | 2;
 	envKind?: EnvKind;
 	voiceMarkers?: StepEnvelopeVoiceMarker[];
@@ -62,9 +62,14 @@ function getPaddedSteps(steps: StepEnvData["steps"]) {
 
 function normalizeEnvelope(env: StepEnvData): StepEnvData {
 	const stepCount = normalizeStepCount(env.stepCount);
+	const steps = getPaddedSteps(env.steps);
+	const endStepIndex = stepCount - 1;
+	if (steps[endStepIndex]) {
+		steps[endStepIndex] = { ...steps[endStepIndex], level: 0 };
+	}
 	return {
 		...env,
-		steps: getPaddedSteps(env.steps),
+		steps,
 		stepCount,
 		sustainStep: clamp(Math.round(env.sustainStep), 0, stepCount - 1),
 	};
@@ -306,7 +311,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 	env,
 	onChange,
 	color = "#60a5fa",
-	compact = false,
+	levelKnobColor = color,
 	lineIndex = 1,
 	envKind = "dco",
 	voiceMarkers = [],
@@ -558,11 +563,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 	}, [dragState]);
 
 	return (
-		<div
-			className={`h-full flex flex-col justify-center ${
-				compact ? "space-y-2" : "space-y-3"
-			}`}
-		>
+		<div className="h-full flex flex-col justify-center space-y-3">
 			<div className="flex items-center justify-between">
 				<span className="text-2xs font-semibold uppercase tracking-[0.24em] text-base-content/70">
 					{title}
@@ -588,7 +589,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 			<canvas
 				ref={canvasRef}
 				width={1200}
-				height={compact ? 150 : 300}
+				height={200}
 				className="max-w-full rounded-xl cursor-crosshair border border-base-300/60 bg-base-300/30 touch-none"
 				style={{ imageRendering: "auto" }}
 				onPointerDown={handleCanvasPointerDown}
@@ -598,11 +599,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 				onPointerLeave={handleCanvasPointerLeave}
 			/>
 
-			<div
-				className={
-					compact ? "grid gap-2 grid-cols-8" : "grid gap-2 grid-cols-8"
-				}
-			>
+			<div className="grid gap-2 grid-cols-8">
 				{steps.map((step, i) => {
 					const isActiveStep = i < activeStepCount;
 					const isEndStep = i === activeStepCount - 1;
@@ -611,11 +608,11 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 						<fieldset
 							key={STEP_KEYS[i]}
 							aria-label={`Step ${i + 1}`}
-							className={`flex flex-col rounded-xl border px-1 transition-colors ${
+							className={`flex flex-col rounded-xl border px-1 transition-colors py-2 ${
 								!isActiveStep
 									? "border-base-300/30 bg-base-300/10"
 									: "border-base-300/60 bg-base-300/20"
-							} ${compact ? "py-1.5" : "py-2"}`}
+							}`}
 						>
 							<div className="mb-1 flex items-center justify-start px-1">
 								<div className="text-4xs uppercase tracking-[0.2em] text-base-content/45">
@@ -628,21 +625,15 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 								<ControlKnob
 									value={step.level}
 									onChange={(v) => updateStep(i, "level", v)}
-									disabled={!isActiveStep}
+									disabled={!isActiveStep || isEndStep}
 									min={0}
 									max={99}
 									label="Lvl"
 									tooltip={`Sets envelope level for step ${i + 1}.`}
-									// CZ behaviour: last step always outputs 0; show effective
-									// value as 0 but the stored value is still editable so it
-									// is preserved when the step count is increased.
-									valueFormatter={(v) =>
-										isEndStep ? "0*" : `${Math.round(v)}`
-									}
+									valueFormatter={(v) => `${Math.round(v)}`}
 									color={
-										!isActiveStep ? "#6b7280" : isEndStep ? "#f59e0b" : color
+										!isActiveStep || isEndStep ? "#6b7280" : levelKnobColor
 									}
-									size={compact ? 26 : 30}
 									modDestination={resolveTargetFromMetadata("env.stepLevel", {
 										lineIndex,
 										envKind,
@@ -659,7 +650,6 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 									tooltip={`Sets envelope transition speed for step ${i + 1}.`}
 									valueFormatter={(v) => `${Math.round(v)}`}
 									color={!isActiveStep ? "#6b7280" : "#a3a3a3"}
-									size={compact ? 26 : 30}
 									modDestination={resolveTargetFromMetadata("env.stepRate", {
 										lineIndex,
 										envKind,

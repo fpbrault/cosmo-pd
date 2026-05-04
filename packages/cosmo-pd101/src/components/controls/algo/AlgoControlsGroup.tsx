@@ -22,6 +22,7 @@ interface AlgoControlsGroupProps {
 		control: AlgoControlRuntime,
 	) => AlgoControlOptionRuntime | null;
 	applyOptionAssignments: (option: AlgoControlOptionRuntime) => void;
+	color?: string;
 }
 
 function AlgoControlsGroupInner({
@@ -36,6 +37,7 @@ function AlgoControlsGroupInner({
 	setAlgoControlValue,
 	getActiveSelectOption,
 	applyOptionAssignments,
+	color,
 }: AlgoControlsGroupProps) {
 	const presetControl = controls.find((control) => control.id === "preset");
 	const waveform1Control = controls.find(
@@ -74,6 +76,7 @@ function AlgoControlsGroupInner({
 			setAlgoControlValue={setAlgoControlValue}
 			getActiveSelectOption={getActiveSelectOption}
 			applyOptionAssignments={applyOptionAssignments}
+			color={color}
 		/>
 	);
 

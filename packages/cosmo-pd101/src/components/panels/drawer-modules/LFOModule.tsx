@@ -96,7 +96,6 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				paramKey={lfoRateKey}
 				value={lfoRate}
 				onChange={setLfoRate}
-				size={40}
 				color="#27588f"
 				label="Rate"
 				modDestination={resolveTargetFromMetadata("lfo.rate", { lfoIndex: id })}
@@ -105,7 +104,6 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				paramKey={lfoDepthKey}
 				value={lfoDepth}
 				onChange={setLfoDepth}
-				size={40}
 				color="#27588f"
 				label="Depth"
 				modDestination={resolveTargetFromMetadata("lfo.depth", {
@@ -116,7 +114,6 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				paramKey={lfoOffsetKey}
 				value={lfoOffset}
 				onChange={setLfoOffset}
-				size={40}
 				color="#27588f"
 				label="Offset"
 				modDestination={resolveTargetFromMetadata("lfo.offset", {
@@ -127,7 +124,6 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				paramKey={lfoSymmetryKey}
 				value={lfoSymmetry}
 				onChange={setLfoSymmetry}
-				size={40}
 				color="#27588f"
 				label="Sym."
 				modDestination={resolveTargetFromMetadata("lfo.symmetry", {

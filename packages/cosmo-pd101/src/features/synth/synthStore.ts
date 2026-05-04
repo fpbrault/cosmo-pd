@@ -328,7 +328,7 @@ const DEFAULT_STATE: SynthState = {
 	velocityCurve: requireEngineParamDefault("velocityCurve"),
 
 	portamentoEnabled: false,
-	portamentoMode: "rate",
+	portamentoMode: "time",
 	portamentoRate: requireEngineParamDefault("portamentoRate"),
 	portamentoTime: requireEngineParamDefault("portamentoTime"),
 

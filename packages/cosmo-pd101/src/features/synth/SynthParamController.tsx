@@ -5,6 +5,7 @@ import {
 	useContext,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from "react";
 import { useOptionalModMatrix } from "@/context/ModMatrixContext";
@@ -101,6 +102,7 @@ type SynthParamController = {
 		key: K,
 		value: UseSynthStateResult[K],
 	) => void;
+	modulationRevision: number;
 	resolveDestination: (
 		target: ModTarget | undefined,
 		options?: { lineIndex?: 1 | 2 },
@@ -144,6 +146,19 @@ export function SynthParamControllerProvider({
 	const [liveVoiceStates, setLiveVoiceStates] = useState<LiveVoiceStates>(
 		EMPTY_RUNTIME_VOICE_STATES,
 	);
+	const [modulationRevision, setModulationRevision] = useState(0);
+	const liveSourcesRef = useRef<LiveModSources>(EMPTY_RUNTIME_MOD_SOURCES);
+	const liveVoiceStatesRef = useRef<LiveVoiceStates>(
+		EMPTY_RUNTIME_VOICE_STATES,
+	);
+
+	useEffect(() => {
+		liveSourcesRef.current = liveSources;
+	}, [liveSources]);
+
+	useEffect(() => {
+		liveVoiceStatesRef.current = liveVoiceStates;
+	}, [liveVoiceStates]);
 
 	const getParam = useCallback(
 		<K extends SynthParamKey>(key: K): UseSynthStateResult[K] => {
@@ -188,6 +203,7 @@ export function SynthParamControllerProvider({
 				modWheel: Number.isFinite(detail.modWheel) ? detail.modWheel : 0,
 				aftertouch: Number.isFinite(detail.aftertouch) ? detail.aftertouch : 0,
 			});
+			setModulationRevision((revision) => revision + 1);
 		};
 
 		window.addEventListener("cz-runtime-mod-sources", onRuntimeModSources);
@@ -206,6 +222,7 @@ export function SynthParamControllerProvider({
 			}
 
 			setLiveVoiceStates(detail);
+			setModulationRevision((revision) => revision + 1);
 		};
 
 		window.addEventListener("cz-runtime-voice-states", onRuntimeVoiceStates);
@@ -273,9 +290,10 @@ export function SynthParamControllerProvider({
 				return undefined;
 			}
 
+			const runtimeSources = liveSourcesRef.current;
 			let liveModDelta = 0;
 			for (const route of activeRoutes) {
-				const sourceValue = liveSources[route.source] ?? 0;
+				const sourceValue = runtimeSources[route.source] ?? 0;
 				liveModDelta += route.amount * sourceValue;
 			}
 
@@ -283,32 +301,37 @@ export function SynthParamControllerProvider({
 			const visualModScale = destination.includes("EnvStep") ? 127 : 1;
 			return baseValue + clampedLiveModDelta * visualModScale;
 		},
-		[liveSources, modRoutes],
+		[modRoutes],
 	);
+
+	const getLiveSources = useCallback(() => liveSourcesRef.current, []);
+	const getLiveVoiceStates = useCallback(() => liveVoiceStatesRef.current, []);
 
 	const controller = useMemo(
 		() => ({
 			getParam,
 			setParam,
+			modulationRevision,
 			resolveDestination,
 			resolveDestinationFromKey,
 			getRouteCount,
 			hasActiveRoutes,
 			hasActiveRoutesForKey,
-			getLiveSources: () => liveSources,
-			getLiveVoiceStates: () => liveVoiceStates,
+			getLiveSources,
+			getLiveVoiceStates,
 			getModulatedValue,
 		}),
 		[
 			getParam,
 			setParam,
+			modulationRevision,
 			resolveDestination,
 			resolveDestinationFromKey,
 			getRouteCount,
 			hasActiveRoutes,
 			hasActiveRoutesForKey,
-			liveSources,
-			liveVoiceStates,
+			getLiveSources,
+			getLiveVoiceStates,
 			getModulatedValue,
 		],
 	);
@@ -334,10 +357,14 @@ export function useSynthParam<K extends SynthParamKey>(
 			"useSynthParam must be used within SynthParamControllerProvider",
 		);
 	}
+	const setValue = useCallback(
+		(v: UseSynthStateResult[K]) => controller.setParam(key, v),
+		[controller.setParam, key],
+	);
 
 	return {
 		value,
-		setValue: (v) => controller.setParam(key, v),
+		setValue,
 	};
 }
 

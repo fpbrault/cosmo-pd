@@ -228,7 +228,6 @@ function ScopePanel() {
 					onChange={setScopeCycles}
 					min={0.5}
 					max={8}
-					size={48}
 					defaultValue={2}
 					color="#3dff3d"
 					label="Cycles"
@@ -241,7 +240,6 @@ function ScopePanel() {
 					min={0.25}
 					max={4}
 					defaultValue={1}
-					size={48}
 					color="#9cb937"
 					label="Zoom"
 					tooltip="Sets vertical waveform magnification."
@@ -253,7 +251,6 @@ function ScopePanel() {
 					min={0}
 					max={255}
 					defaultValue={128}
-					size={48}
 					color="#7f9de4"
 					label="Trig"
 					tooltip="Sets trigger threshold used to stabilize waveform display."

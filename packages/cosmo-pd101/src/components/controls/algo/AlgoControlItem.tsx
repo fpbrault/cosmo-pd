@@ -22,6 +22,7 @@ interface AlgoControlItemProps {
 		control: AlgoControlRuntime,
 	) => AlgoControlOptionRuntime | null;
 	applyOptionAssignments: (option: AlgoControlOptionRuntime) => void;
+	color?: string;
 }
 
 function AlgoControlItemInner({
@@ -34,6 +35,7 @@ function AlgoControlItemInner({
 	setAlgoControlValue,
 	getActiveSelectOption,
 	applyOptionAssignments,
+	color,
 }: AlgoControlItemProps) {
 	const controlKind = control.kind ?? "number";
 
@@ -71,6 +73,7 @@ function AlgoControlItemInner({
 				algoParamSlotIndex={algoParamSlotIndex}
 				getAlgoControlValue={getAlgoControlValue}
 				setAlgoControlValue={setAlgoControlValue}
+				color={color}
 			/>
 		);
 	}

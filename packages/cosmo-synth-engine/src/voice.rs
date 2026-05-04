@@ -32,6 +32,7 @@ const RELEASE_TAIL_LEVEL_THRESHOLD: f32 = 0.002;
 const ZERO_CROSS_STOP_THRESHOLD: f32 = 0.0005;
 const ZERO_CROSS_STOP_MAX_WAIT_SAMPLES: u32 = 1024;
 const DCA_LOG_CURVE_BASE: f32 = 100.0;
+const DUAL_LINE_MIX_GAIN: f32 = 0.8;
 
 // ---------------------------------------------------------------------------
 // ADSR modulation envelope
@@ -1171,14 +1172,14 @@ fn mix_line_outputs(
             let mixed = match p.line_select {
                 LineSelect::L1 => mix_a,
                 LineSelect::L2 => mix_b,
-                _ => (mix_a + mix_b) * 0.5,
+                _ => (mix_a + mix_b) * DUAL_LINE_MIX_GAIN,
             };
             mixed + mixed * noise * 0.5
         }
         ModMode::Normal => match p.line_select {
             LineSelect::L1 => mix_a,
             LineSelect::L2 => mix_b,
-            _ => (mix_a + mix_b) * 0.5,
+            _ => (mix_a + mix_b) * DUAL_LINE_MIX_GAIN,
         },
     }
 }
@@ -1230,7 +1231,8 @@ fn select_line_sources(
                 algo_prime_controls,
                 cfg.algo_param_mods,
                 ks_raw1,
-            ) * final_dca1;
+            ) * final_dca1
+                * generators::PER_LINE_HEADROOM;
             (s1, s1_prime)
         }
         LineSelect::L1PlusL2Prime => {
@@ -1263,7 +1265,8 @@ fn select_line_sources(
                 algo_prime_controls,
                 cfg.algo_param_mods,
                 ks_raw2,
-            ) * final_dca2;
+            ) * final_dca2
+                * generators::PER_LINE_HEADROOM;
             (s1, s2_prime)
         }
         _ => (s1, s2),

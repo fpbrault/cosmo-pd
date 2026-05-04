@@ -2,6 +2,8 @@ import { AnimatePresence, motion } from "motion/react";
 import {
 	type CSSProperties,
 	memo,
+	Profiler,
+	type ProfilerOnRenderCallback,
 	type ReactNode,
 	type RefObject,
 	useCallback,
@@ -22,6 +24,7 @@ import ScopePanel, {
 } from "@/components/panels/analysis/ScopePanel";
 import FxConsoleDrawer from "@/components/panels/drawers/FxConsoleDrawer";
 import ModConsoleDrawer from "@/components/panels/drawers/ModConsoleDrawer";
+import WavetableWaterfallDrawer from "@/components/panels/drawers/WavetableWaterfallDrawer";
 import { FX_SLOT_PANELS } from "@/components/panels/fx/FxSlotPanel";
 import GlobalVoicePanel from "@/components/panels/voice/GlobalVoicePanel";
 import PresetLibrary from "@/components/preset/PresetLibrary";
@@ -56,6 +59,38 @@ const LIBRARY_SLIDE_TRANSITION = {
 	damping: 60,
 	mass: 1,
 } as const;
+
+type DrawerPanel = "fx" | "mod" | "waterfall";
+
+const DRAWER_PANEL_ORDER: Record<DrawerPanel, number> = {
+	fx: 0,
+	mod: 1,
+	waterfall: 2,
+};
+
+const DRAWER_PANELS: DrawerPanel[] = ["fx", "mod", "waterfall"];
+
+function isDrawerPanel(mode: string): mode is DrawerPanel {
+	return DRAWER_PANELS.includes(mode as DrawerPanel);
+}
+
+function getDrawerOffset(
+	panel: DrawerPanel,
+	activePanel: DrawerPanel,
+	direction: 1 | -1,
+): "0%" | "100%" | "-100%" {
+	if (panel === activePanel) {
+		return "0%";
+	}
+
+	const panelOrder = DRAWER_PANEL_ORDER[panel];
+	const activeOrder = DRAWER_PANEL_ORDER[activePanel];
+	if (panelOrder > activeOrder) {
+		return direction === 1 ? "100%" : "-100%";
+	}
+
+	return direction === 1 ? "-100%" : "100%";
+}
 
 type SynthRendererProps = {
 	headerProps: SynthHeaderProps;
@@ -169,18 +204,40 @@ function SynthRendererContent({
 	const libraryModeOpen = useSynthUiStore((s) => s.libraryModeOpen);
 	const setLibraryModeOpen = useSynthUiStore((s) => s.setLibraryModeOpen);
 	const { infoText, setControlReadout } = useHoverInfo();
-	const drawerOpen = mainPanelMode === "fx" || mainPanelMode === "mod";
-	const [activeDrawerPanel, setActiveDrawerPanel] = useState<"fx" | "mod">(
-		mainPanelMode === "mod" ? "mod" : "fx",
+	const drawerOpen = isDrawerPanel(mainPanelMode);
+	const [activeDrawerPanel, setActiveDrawerPanel] = useState<DrawerPanel>(
+		isDrawerPanel(mainPanelMode) ? mainPanelMode : "fx",
 	);
 	const [drawerSlideDirection, setDrawerSlideDirection] = useState<1 | -1>(1);
 	const [brandInfoOpen, setBrandInfoOpen] = useState(false);
+	const perfDebugEnabled =
+		typeof window !== "undefined" &&
+		window.localStorage.getItem("cz-perf") === "1";
+
+	useEffect(() => {
+		if (!perfDebugEnabled) {
+			return;
+		}
+		console.log("[cz-perf] profiler enabled");
+	}, [perfDebugEnabled]);
+
+	const handleProfile = useCallback<ProfilerOnRenderCallback>(
+		(id, phase, actualDuration, baseDuration, _startTime, _commitTime) => {
+			if (!perfDebugEnabled) {
+				return;
+			}
+			console.log(
+				`[cz-perf] ${id} ${phase} actual=${actualDuration.toFixed(2)}ms base=${baseDuration.toFixed(2)}ms`,
+			);
+		},
+		[perfDebugEnabled],
+	);
 	const handleCloseLibrary = useCallback(() => {
 		setLibraryModeOpen(false);
 	}, [setLibraryModeOpen]);
 
 	useEffect(() => {
-		if (mainPanelMode !== "fx" && mainPanelMode !== "mod") {
+		if (!isDrawerPanel(mainPanelMode)) {
 			return;
 		}
 		if (mainPanelMode === activeDrawerPanel) {
@@ -188,7 +245,9 @@ function SynthRendererContent({
 		}
 
 		setDrawerSlideDirection(
-			activeDrawerPanel === "fx" && mainPanelMode === "mod" ? 1 : -1,
+			DRAWER_PANEL_ORDER[mainPanelMode] > DRAWER_PANEL_ORDER[activeDrawerPanel]
+				? 1
+				: -1,
 		);
 		setActiveDrawerPanel(mainPanelMode);
 	}, [mainPanelMode, activeDrawerPanel]);
@@ -213,7 +272,7 @@ function SynthRendererContent({
 						{headerExtra}
 					</div>
 					<div className="relative z-10 px-1 flex flex-1 min-h-0 min-w-0 w-full gap-2 overflow-hidden">
-						<aside className="overflow-y-auto min-h-0 rounded-[1.15rem] border border-cz-border/80 bg-cz-inset px-0 pb-2 shadow-lg [scrollbar-gutter:stable]">
+						<aside className="overflow-y-auto min-h-0 rounded-[1.15rem] border border-cz-border/80 bg-cz-inset px-0 pb-2 shadow-lg">
 							<div className="px-4 mt-4 mx-auto">
 								<ScopeMiniDisplay
 									analyserNodeRef={analyserNodeRef}
@@ -240,7 +299,9 @@ function SynthRendererContent({
 								<div className="pointer-events-none absolute inset-x-4 top-0 h-12 rounded-t-[1.2rem] opacity-70" />
 								<div className="relative shrink-0 rounded-md border border-cz-border bg-cz-body px-3 shadow-inner">
 									<div className="flex flex-wrap justify-center gap-y-2 gap-x-4 items-center">
-										<MasterVolumeControl />
+										<Profiler id="master-volume" onRender={handleProfile}>
+											<MasterVolumeControl />
+										</Profiler>
 										<LineSelectControl />
 
 										<ModModeControl />
@@ -295,16 +356,37 @@ function SynthRendererContent({
 												color="cyan"
 												tooltip="Toggle modulation console drawer."
 											></CzTabButton>
+											<CzTabButton
+												active={mainPanelMode === "waterfall"}
+												onClick={() => {
+													const nextMode =
+														mainPanelMode === "waterfall"
+															? "phase"
+															: "waterfall";
+													setMainPanelMode(nextMode);
+													setControlReadout({
+														label: "Main Panel",
+														value: nextMode.toUpperCase(),
+													});
+												}}
+												topLabel="WAVE"
+												bottomLabel=""
+												width={48}
+												color="grey"
+												tooltip="Toggle 3D wavetable waterfall drawer."
+											></CzTabButton>
 										</div>
 									</div>
 								</div>
 
 								<div className="relative flex-1 min-h-0 min-w-0 overflow-hidden">
 									<div className="pointer-events-none absolute inset-0" />
-									<PhaseLinesSection
-										className="h-full min-h-0 max-h-164"
-										envOverrideHandlers={envOverrideHandlers}
-									/>
+									<Profiler id="phase-lines" onRender={handleProfile}>
+										<PhaseLinesSection
+											className="h-full min-h-0 max-h-164"
+											envOverrideHandlers={envOverrideHandlers}
+										/>
+									</Profiler>
 									<motion.div
 										aria-hidden={!drawerOpen}
 										initial={false}
@@ -317,38 +399,42 @@ function SynthRendererContent({
 											<div className="pointer-events-none absolute inset-0 rounded-lg bg-white/5" />
 											<div className="pointer-events-none absolute inset-x-0 top-0 h-14 rounded-t-lg opacity-60" />
 											<div className="relative min-h-0 flex-1 overflow-hidden">
-												<motion.div
-													aria-hidden={activeDrawerPanel !== "fx"}
-													initial={false}
-													animate={{
-														y:
-															activeDrawerPanel === "fx"
-																? "0%"
-																: drawerSlideDirection === 1
-																	? "-100%"
-																	: "100%",
-													}}
-													transition={DRAWER_SLIDE_TRANSITION}
-													className={`absolute inset-0 will-change-transform ${activeDrawerPanel === "fx" ? "pointer-events-auto" : "pointer-events-none"}`}
-												>
-													<FxConsoleDrawer />
-												</motion.div>
-												<motion.div
-													aria-hidden={activeDrawerPanel !== "mod"}
-													initial={false}
-													animate={{
-														y:
-															activeDrawerPanel === "mod"
-																? "0%"
-																: drawerSlideDirection === 1
-																	? "100%"
-																	: "-100%",
-													}}
-													transition={DRAWER_SLIDE_TRANSITION}
-													className={`absolute inset-0 will-change-transform ${activeDrawerPanel === "mod" ? "pointer-events-auto" : "pointer-events-none"}`}
-												>
-													<ModConsoleDrawer />
-												</motion.div>
+												{DRAWER_PANELS.map((panel) => (
+													<motion.div
+														key={panel}
+														aria-hidden={activeDrawerPanel !== panel}
+														initial={false}
+														animate={{
+															y: getDrawerOffset(
+																panel,
+																activeDrawerPanel,
+																drawerSlideDirection,
+															),
+														}}
+														transition={DRAWER_SLIDE_TRANSITION}
+														className={`absolute inset-0 will-change-transform ${
+															activeDrawerPanel === panel
+																? "pointer-events-auto"
+																: "pointer-events-none"
+														}`}
+													>
+														{panel === "fx" &&
+														drawerOpen &&
+														activeDrawerPanel === panel ? (
+															<FxConsoleDrawer />
+														) : null}
+														{panel === "mod" &&
+														drawerOpen &&
+														activeDrawerPanel === panel ? (
+															<ModConsoleDrawer />
+														) : null}
+														{panel === "waterfall" &&
+														drawerOpen &&
+														activeDrawerPanel === panel ? (
+															<WavetableWaterfallDrawer />
+														) : null}
+													</motion.div>
+												))}
 											</div>
 										</div>
 									</motion.div>
@@ -423,7 +509,6 @@ function MasterVolumeControl() {
 				paramKey="volume"
 				value={volume}
 				onChange={setVolume}
-				size={48}
 				color="white"
 				label="Main Volume"
 				modDestination="volume"

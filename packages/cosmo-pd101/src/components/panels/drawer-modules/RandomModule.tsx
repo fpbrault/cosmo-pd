@@ -11,7 +11,6 @@ export default function RandomModule() {
 				paramKey="randomRate"
 				value={randomRate}
 				onChange={setRandomRate}
-				size={52}
 				color="#c2571a"
 				label="Rate"
 			/>

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-	type ArcGeometry,
 	clampValue,
 	DEFAULT_ARC_GEOMETRY,
 	denormalizeValueCurved,
@@ -27,7 +26,6 @@ export interface UseKnobInteractionProps {
 	fineWheelStep?: number;
 	disabled?: boolean;
 	onChange: (value: number) => void;
-	arcGeometry?: ArcGeometry;
 	/** Ref to the SVG element for coordinate transforms (angular drag). */
 	svgRef: React.RefObject<SVGSVGElement | null>;
 	/** Ref to the interactive element for attaching non-passive wheel listener. */
@@ -45,6 +43,7 @@ export interface UseKnobInteractionResult {
 	onPointerMove: (e: React.PointerEvent) => void;
 	onPointerUp: (e: React.PointerEvent) => void;
 	onPointerCancel: (e: React.PointerEvent) => void;
+	onLostPointerCapture: () => void;
 	onDoubleClick: (e: React.MouseEvent) => void;
 	onKeyDown: (e: React.KeyboardEvent) => void;
 	beginEdit: (currentDisplay: string) => void;
@@ -67,16 +66,18 @@ export function useKnobInteraction({
 	fineWheelStep = 0.002,
 	disabled = false,
 	onChange,
-	arcGeometry = DEFAULT_ARC_GEOMETRY,
 	svgRef,
 	buttonRef,
 	curve = "linear",
 }: UseKnobInteractionProps): UseKnobInteractionResult {
+	const arcGeometry = DEFAULT_ARC_GEOMETRY;
 	const [dragging, setDragging] = useState(false);
 	const [editing, setEditing] = useState(false);
 	const [editValue, setEditValue] = useState("");
 	const inputRef = useRef<HTMLInputElement>(null);
 	const lastTouchTapAtRef = useRef(0);
+	const activePointerIdRef = useRef<number | null>(null);
+	const activePointerTargetRef = useRef<Element | null>(null);
 
 	const dragState = useRef<{
 		mode: "linear" | "angular";
@@ -136,7 +137,10 @@ export function useKnobInteraction({
 			}
 
 			e.preventDefault();
-			(e.currentTarget as Element).setPointerCapture(e.pointerId);
+			const target = e.currentTarget as Element;
+			target.setPointerCapture(e.pointerId);
+			activePointerIdRef.current = e.pointerId;
+			activePointerTargetRef.current = target;
 			const pt = toSvgPoint(e.clientX, e.clientY);
 			const norm = normalizeValueCurved(value, min, max, curve);
 			const mode = isOnHandle(pt.x, pt.y, norm, arcGeometry)
@@ -150,21 +154,17 @@ export function useKnobInteraction({
 			};
 			setDragging(true);
 		},
-		[
-			disabled,
-			defaultValue,
-			toSvgPoint,
-			value,
-			min,
-			max,
-			arcGeometry,
-			curve,
-			emit,
-		],
+		[disabled, defaultValue, toSvgPoint, value, min, max, curve, emit],
 	);
 
 	const onPointerMove = useCallback(
 		(e: React.PointerEvent) => {
+			if (
+				activePointerIdRef.current !== null &&
+				e.pointerId !== activePointerIdRef.current
+			) {
+				return;
+			}
 			const state = dragState.current;
 			if (!state) return;
 
@@ -189,27 +189,33 @@ export function useKnobInteraction({
 			const nextPos = startPos + (deltaY * screenRatio) / effectiveSensitivity;
 			emit(denormalizeValueCurved(nextPos, min, max, curve));
 		},
-		[
-			arcGeometry,
-			curve,
-			emit,
-			fineSensitivity,
-			max,
-			min,
-			sensitivity,
-			svgRef,
-			toSvgPoint,
-		],
+		[curve, emit, fineSensitivity, max, min, sensitivity, svgRef, toSvgPoint],
 	);
 
-	const endPointerDrag = useCallback((e: React.PointerEvent) => {
-		const target = e.currentTarget;
-		if (target.hasPointerCapture(e.pointerId)) {
-			target.releasePointerCapture(e.pointerId);
+	const endPointerDrag = useCallback(() => {
+		const pointerId = activePointerIdRef.current;
+		const pointerTarget = activePointerTargetRef.current;
+		if (pointerId !== null && pointerTarget?.hasPointerCapture(pointerId)) {
+			pointerTarget?.releasePointerCapture(pointerId);
 		}
+		activePointerIdRef.current = null;
+		activePointerTargetRef.current = null;
 		dragState.current = null;
 		setDragging(false);
 	}, []);
+
+	const endPointerDragFromEvent = useCallback(
+		(e: React.PointerEvent) => {
+			if (
+				activePointerIdRef.current !== null &&
+				e.pointerId !== activePointerIdRef.current
+			) {
+				return;
+			}
+			endPointerDrag();
+		},
+		[endPointerDrag],
+	);
 
 	const onDoubleClick = useCallback(
 		(e: React.MouseEvent) => {
@@ -349,6 +355,43 @@ export function useKnobInteraction({
 		emit,
 	]);
 
+	// Ensure drag never gets stuck if pointer release happens outside the viewport.
+	useEffect(() => {
+		if (!dragging) return;
+
+		const handlePointerEnd = (e: PointerEvent) => {
+			if (
+				activePointerIdRef.current !== null &&
+				e.pointerId !== activePointerIdRef.current
+			) {
+				return;
+			}
+			endPointerDrag();
+		};
+
+		const handleWindowBlur = () => {
+			endPointerDrag();
+		};
+
+		const handleVisibilityChange = () => {
+			if (document.visibilityState !== "visible") {
+				endPointerDrag();
+			}
+		};
+
+		window.addEventListener("pointerup", handlePointerEnd);
+		window.addEventListener("pointercancel", handlePointerEnd);
+		window.addEventListener("blur", handleWindowBlur);
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+
+		return () => {
+			window.removeEventListener("pointerup", handlePointerEnd);
+			window.removeEventListener("pointercancel", handlePointerEnd);
+			window.removeEventListener("blur", handleWindowBlur);
+			document.removeEventListener("visibilitychange", handleVisibilityChange);
+		};
+	}, [dragging, endPointerDrag]);
+
 	return {
 		dragging,
 		editing,
@@ -356,8 +399,9 @@ export function useKnobInteraction({
 		inputRef,
 		onPointerDown,
 		onPointerMove,
-		onPointerUp: endPointerDrag,
-		onPointerCancel: endPointerDrag,
+		onPointerUp: endPointerDragFromEvent,
+		onPointerCancel: endPointerDragFromEvent,
+		onLostPointerCapture: endPointerDrag,
 		onDoubleClick,
 		onKeyDown,
 		beginEdit,
