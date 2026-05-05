@@ -858,18 +858,18 @@ impl CzParams {
         true
     }
 
-    fn map_waveform(value: Waveform) -> cosmo_synth_engine::params::CzWaveform {
+    fn map_waveform(value: Waveform) -> cosmo_synth_engine::params::Algo {
         match value {
-            Waveform::Saw => cosmo_synth_engine::params::CzWaveform::Saw,
-            Waveform::Square => cosmo_synth_engine::params::CzWaveform::Square,
-            Waveform::Pulse => cosmo_synth_engine::params::CzWaveform::Pulse,
-            Waveform::Null => cosmo_synth_engine::params::CzWaveform::Null,
-            Waveform::SinePulse => cosmo_synth_engine::params::CzWaveform::SinePulse,
-            Waveform::SawPulse => cosmo_synth_engine::params::CzWaveform::SawPulse,
+            Waveform::Saw => cosmo_synth_engine::params::Algo::Saw,
+            Waveform::Square => cosmo_synth_engine::params::Algo::Square,
+            Waveform::Pulse => cosmo_synth_engine::params::Algo::Pulse,
+            Waveform::Null => cosmo_synth_engine::params::Algo::Null,
+            Waveform::SinePulse => cosmo_synth_engine::params::Algo::SinePulse,
+            Waveform::SawPulse => cosmo_synth_engine::params::Algo::SawPulse,
             Waveform::DoubleSine | Waveform::MultiSine => {
-                cosmo_synth_engine::params::CzWaveform::MultiSine
+                cosmo_synth_engine::params::Algo::MultiSine
             }
-            Waveform::Pulse2 => cosmo_synth_engine::params::CzWaveform::Pulse2,
+            Waveform::Pulse2 => cosmo_synth_engine::params::Algo::Pulse2,
         }
     }
 
@@ -945,7 +945,7 @@ impl CzParams {
             volume: self.volume.value(),
             octave: self.octave.value(),
             line_select: match self.line_select.value() {
-                LineSelect::L1PlusL2 => cosmo_synth_engine::params::LineSelect::L1PlusL2,
+                LineSelect::L1PlusL2 => cosmo_synth_engine::params::LineSelect::L1PlusL2Prime,
                 LineSelect::L1 => cosmo_synth_engine::params::LineSelect::L1,
                 LineSelect::L2 => cosmo_synth_engine::params::LineSelect::L2,
                 LineSelect::L1PlusL1Prime => cosmo_synth_engine::params::LineSelect::L1PlusL1Prime,
@@ -961,70 +961,86 @@ impl CzParams {
                 PolyModeParam::Mono => PolyMode::Mono,
             },
             legato: self.legato.value() >= 0.5,
-            int_pm_enabled: self.int_pm_enabled.value() >= 0.5,
-            int_pm_amount: self.int_pm_amount.value(),
-            int_pm_ratio: self.int_pm_ratio.value(),
-            ext_pm_amount: self.ext_pm_amount.value(),
-            pm_pre: self.pm_pre.value() >= 0.5,
             ..Default::default()
         };
 
-        params.line1.cz.slot_a_waveform = Self::map_waveform(self.l1_waveform.value());
-        params.line1.cz.slot_b_waveform = Self::map_waveform(self.l1_waveform.value());
+        params.line1.base_waveform_a = cosmo_synth_engine::params::BaseWaveform::Cosine;
+        params.line1.base_waveform_b = cosmo_synth_engine::params::BaseWaveform::Cosine;
+        params.line1.algo = Self::map_waveform(self.l1_waveform.value());
         params.line1.algo = Self::map_warp_algo(self.l1_warp_algo.value());
         params.line1.dcw_base = self.l1_dcw_base.value();
         params.line1.dca_base = self.l1_dca_base.value();
         params.line1.octave = self.l1_octave.value();
-        params.line1.detune_cents = self.l1_detune.value();
+        params.line1.detune_note = 0.0;
+        params.line1.detune_fine = (self.l1_detune.value() / 1.666_666_6).clamp(-60.0, 60.0);
         params.line1.key_follow = self.l1_key_follow.value();
         params.line1.modulation = self.l1_modulation.value();
         params.line1.algo_blend = self.l1_algo_blend.value();
         params.line1.algo2 = Self::map_optional_warp(self.l1_warp_algo2.value());
 
-        params.line2.cz.slot_a_waveform = Self::map_waveform(self.l2_waveform.value());
-        params.line2.cz.slot_b_waveform = Self::map_waveform(self.l2_waveform.value());
+        params.line2.base_waveform_a = cosmo_synth_engine::params::BaseWaveform::Cosine;
+        params.line2.base_waveform_b = cosmo_synth_engine::params::BaseWaveform::Cosine;
+        params.line2.algo = Self::map_waveform(self.l2_waveform.value());
         params.line2.algo = Self::map_warp_algo(self.l2_warp_algo.value());
         params.line2.dcw_base = self.l2_dcw_base.value();
         params.line2.dca_base = self.l2_dca_base.value();
         params.line2.octave = self.l2_octave.value();
-        params.line2.detune_cents = self.l2_detune.value();
+        params.line2.detune_note = 0.0;
+        params.line2.detune_fine = (self.l2_detune.value() / 1.666_666_6).clamp(-60.0, 60.0);
         params.line2.key_follow = self.l2_key_follow.value();
         params.line2.modulation = self.l2_modulation.value();
         params.line2.algo_blend = self.l2_algo_blend.value();
         params.line2.algo2 = Self::map_optional_warp(self.l2_warp_algo2.value());
 
-        params.vibrato.enabled = self.vib_enabled.value() >= 0.5;
-        params.vibrato.waveform = (self.vib_waveform.value().round() as i32).clamp(1, 4) as u8;
-        params.vibrato.rate = self.vib_rate.value();
-        params.vibrato.depth = self.vib_depth.value();
-        params.vibrato.delay = self.vib_delay.value();
-
-        params.chorus.enabled = self.cho_enabled.value() >= 0.5;
-        params.chorus.mix = self.cho_mix.value();
-        params.chorus.rate = self.cho_rate.value();
-        params.chorus.depth = self.cho_depth.value();
-
-        params.delay.enabled = self.del_enabled.value() >= 0.5;
-        params.delay.mix = self.del_mix.value();
-        params.delay.time = self.del_time.value();
-        params.delay.feedback = self.del_feedback.value();
-
-        params.reverb.enabled = self.rev_enabled.value() >= 0.5;
-        params.reverb.mix = self.rev_mix.value();
-        params.reverb.space = self.rev_space.value();
-        params.reverb.predelay = self.rev_predelay.value();
-        params.reverb.distance = self.rev_distance.value();
-        params.reverb.character = self.rev_character.value();
+        params.fx_slots[0] = cosmo_synth_engine::params::FxSlotConfig::Chorus(
+            cosmo_synth_engine::params::ChorusParams {
+                enabled: self.cho_enabled.value() >= 0.5,
+                mix: self.cho_mix.value(),
+                rate: self.cho_rate.value(),
+                depth: self.cho_depth.value(),
+            },
+        );
+        params.fx_slots[1] = cosmo_synth_engine::params::FxSlotConfig::Delay(
+            cosmo_synth_engine::params::DelayParams {
+                enabled: self.del_enabled.value() >= 0.5,
+                mix: self.del_mix.value(),
+                time: self.del_time.value(),
+                feedback: self.del_feedback.value(),
+                tape_mode: false,
+                warmth: 0.5,
+            },
+        );
+        params.fx_slots[2] = cosmo_synth_engine::params::FxSlotConfig::Reverb(
+            cosmo_synth_engine::params::ReverbParams {
+                enabled: self.rev_enabled.value() >= 0.5,
+                mix: self.rev_mix.value(),
+                space: self.rev_space.value(),
+                predelay: self.rev_predelay.value(),
+                distance: self.rev_distance.value(),
+                character: self.rev_character.value(),
+            },
+        );
+        params.fx_slots[3] = cosmo_synth_engine::params::FxSlotConfig::Vibrato(
+            cosmo_synth_engine::params::VibratoParams {
+                enabled: self.vib_enabled.value() >= 0.5,
+                waveform: (self.vib_waveform.value().round() as i32).clamp(1, 4) as u8,
+                rate: self.vib_rate.value(),
+                depth: self.vib_depth.value(),
+                delay: self.vib_delay.value(),
+            },
+        );
+        params.fx_slots[4] = cosmo_synth_engine::params::FxSlotConfig::PhaseMod(
+            cosmo_synth_engine::params::PhaseModParams {
+                enabled: self.int_pm_enabled.value() >= 0.5,
+                amount: self.int_pm_amount.value(),
+                ratio: self.int_pm_ratio.value(),
+                pm_pre: self.pm_pre.value() >= 0.5,
+            },
+        );
 
         params.lfo.waveform = Self::map_lfo_waveform(self.lfo_waveform.value());
         params.lfo.rate = self.lfo_rate.value();
         params.lfo.depth = self.lfo_depth.value();
-
-        params.filter.enabled = self.fil_enabled.value() >= 0.5;
-        params.filter.filter_type = Self::map_filter_type(self.fil_type.value());
-        params.filter.cutoff = self.fil_cutoff.value();
-        params.filter.resonance = self.fil_resonance.value();
-        params.filter.env_amount = self.fil_env_amount.value();
 
         params.portamento.enabled = self.port_enabled.value() >= 0.5;
         params.portamento.mode = Self::map_portamento_mode(self.port_mode.value());
@@ -1107,10 +1123,7 @@ impl CzParams {
 // =============================================================================
 #[allow(dead_code, unused_variables, clippy::items_after_statements)]
 fn _assert_synth_params_coverage(p: SynthParams) {
-    use cosmo_synth_engine::params::{
-        ChorusParams, CzLineParams, DelayParams, FilterParams, LfoParams, LineParams,
-        PortamentoParams, ReverbParams, VibratoParams,
-    };
+    use cosmo_synth_engine::params::{FxSlotConfig, LfoParams, LineParams, PortamentoParams};
 
     let SynthParams {
         line_select,
@@ -1119,60 +1132,21 @@ fn _assert_synth_params_coverage(p: SynthParams) {
         octave,
         line1,
         line2,
-        int_pm_enabled,
-        int_pm_amount,
-        int_pm_ratio,
-        ext_pm_amount,
-        pm_pre,
         frequency: _frequency,
         volume,
         poly_mode,
         legato,
-        chorus,
-        delay,
-        phaser,
-        reverb,
-        vibrato,
         portamento,
         lfo,
         lfo2,
         mod_env,
         random,
-        filter,
         pitch_bend_range: _pitch_bend_range,
-        mod_wheel_vibrato_depth: _mod_wheel_vibrato_depth,
+        velocity_curve: _,
+        fx_slots,
         mod_matrix: _mod_matrix,
+        ..
     } = p;
-
-    let ChorusParams {
-        enabled: _,
-        rate: _,
-        depth: _,
-        mix: _,
-    } = chorus;
-    let DelayParams {
-        enabled: _,
-        tape_mode: _,
-        warmth: _,
-        time: _,
-        feedback: _,
-        mix: _,
-    } = delay;
-    let ReverbParams {
-        enabled: _,
-        mix: _,
-        space: _,
-        predelay: _,
-        distance: _,
-        character: _,
-    } = reverb;
-    let VibratoParams {
-        enabled: _,
-        waveform: _,
-        rate: _,
-        depth: _,
-        delay: _,
-    } = vibrato;
     let PortamentoParams {
         enabled: _,
         mode: _,
@@ -1195,75 +1169,80 @@ fn _assert_synth_params_coverage(p: SynthParams) {
         retrigger: _,
         offset: _,
     } = lfo2;
-    let FilterParams {
-        enabled: _,
-        filter_type: _,
-        cutoff: _,
-        resonance: _,
-        env_amount: _,
-    } = filter;
-
     let LineParams {
         algo: _,
         algo2: _,
         algo_blend: _,
+        base_waveform_a: _,
+        base_waveform_b: _,
         window: _,
         dca_base: _,
         dcw_base: _,
         modulation: _,
-        detune_cents: _,
+        detune_note: _,
+        detune_fine: _,
         octave: _,
         dco_env: _,
         dcw_env: _,
         dca_env: _,
         key_follow: _,
-        cz: _l1_cz,
         algo_controls_a: _,
         algo_controls_b: _,
+        ..
     } = line1;
-    let CzLineParams {
-        slot_a_waveform: _,
-        slot_b_waveform: _,
-        window: _,
-    } = _l1_cz;
 
     let LineParams {
         algo: _,
         algo2: _,
         algo_blend: _,
+        base_waveform_a: _,
+        base_waveform_b: _,
         window: _,
         dca_base: _,
         dcw_base: _,
         modulation: _,
-        detune_cents: _,
+        detune_note: _,
+        detune_fine: _,
         octave: _,
         dco_env: _,
         dcw_env: _,
         dca_env: _,
         key_follow: _,
-        cz: _l2_cz,
         algo_controls_a: _,
         algo_controls_b: _,
+        ..
     } = line2;
-    let CzLineParams {
-        slot_a_waveform: _,
-        slot_b_waveform: _,
-        window: _,
-    } = _l2_cz;
+
+    for slot in fx_slots {
+        match slot {
+            FxSlotConfig::Empty
+            | FxSlotConfig::Chorus(_)
+            | FxSlotConfig::Phaser(_)
+            | FxSlotConfig::Delay(_)
+            | FxSlotConfig::Reverb(_)
+            | FxSlotConfig::Vibrato(_)
+            | FxSlotConfig::PhaseMod(_)
+            | FxSlotConfig::Compressor(_)
+            | FxSlotConfig::Eq5Band(_)
+            | FxSlotConfig::GrainDelay(_)
+            | FxSlotConfig::Bitcrusher(_)
+            | FxSlotConfig::ShimmerVerb(_)
+            | FxSlotConfig::Distortion(_)
+            | FxSlotConfig::JunoChorus(_)
+            | FxSlotConfig::RingMod(_)
+            | FxSlotConfig::Tremolo(_)
+            | FxSlotConfig::Wavefolder(_)
+            | FxSlotConfig::LoFi(_) => {}
+        }
+    }
 
     let _ = (
         line_select,
         mod_mode,
         octave,
-        int_pm_enabled,
-        int_pm_amount,
-        int_pm_ratio,
-        ext_pm_amount,
-        pm_pre,
         volume,
         poly_mode,
         legato,
-        phaser,
         mod_env,
         random,
     );
