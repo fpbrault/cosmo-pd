@@ -356,9 +356,9 @@ export const DEFAULT_SYNTH_PRESETS = {
 				velocityCurve: 0,
 				portamento: {
 					enabled: false,
-					mode: "rate",
-					rate: 50,
-					time: 0.5,
+					mode: "time",
+					rate: 85,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -783,7 +783,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 				portamento: {
 					enabled: false,
 					mode: "time",
-					rate: 50,
+					rate: 85,
 					time: 0.07835937500000001,
 				},
 				lfo: {
@@ -1195,7 +1195,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 				portamento: {
 					enabled: false,
 					mode: "time",
-					rate: 50,
+					rate: 85,
 					time: 0.1,
 				},
 				lfo: {
@@ -1601,9 +1601,9 @@ export const DEFAULT_SYNTH_PRESETS = {
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
-					rate: 50,
-					time: 0.5,
+					mode: "time",
+					rate: 85,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -1995,7 +1995,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 				portamento: {
 					enabled: false,
 					mode: "time",
-					rate: 50,
+					rate: 85,
 					time: 0.07703125,
 				},
 				lfo: {
@@ -2441,7 +2441,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 				portamento: {
 					enabled: true,
 					mode: "time",
-					rate: 0,
+					rate: 85,
 					time: 0.06121093205043249,
 				},
 				lfo: {
@@ -2833,9 +2833,9 @@ export const DEFAULT_SYNTH_PRESETS = {
 				velocityCurve: 0,
 				portamento: {
 					enabled: false,
-					mode: "rate",
-					rate: 50,
-					time: 0.5,
+					mode: "time",
+					rate: 85,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -3276,9 +3276,9 @@ export const DEFAULT_SYNTH_PRESETS = {
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
-					rate: 50,
-					time: 0.5,
+					mode: "time",
+					rate: 85,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "triangle",
@@ -3669,9 +3669,9 @@ export const DEFAULT_SYNTH_PRESETS = {
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
-					rate: 50,
-					time: 0.5,
+					mode: "time",
+					rate: 85,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -4110,9 +4110,9 @@ export const DEFAULT_SYNTH_PRESETS = {
 				velocityCurve: 0,
 				portamento: {
 					enabled: false,
-					mode: "rate",
-					rate: 50,
-					time: 0.5,
+					mode: "time",
+					rate: 85,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -4547,9 +4547,9 @@ export const DEFAULT_SYNTH_PRESETS = {
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
-					rate: 50,
-					time: 0.5,
+					mode: "time",
+					rate: 85,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -4987,7 +4987,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 				portamento: {
 					enabled: true,
 					mode: "time",
-					rate: 0,
+					rate: 85,
 					time: 0.10404297964913502,
 				},
 				lfo: {
@@ -5404,9 +5404,9 @@ export const DEFAULT_SYNTH_PRESETS = {
 				velocityCurve: 0,
 				portamento: {
 					enabled: false,
-					mode: "rate",
-					rate: 0,
-					time: 0.5,
+					mode: "time",
+					rate: 85,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -5804,9 +5804,9 @@ export const DEFAULT_SYNTH_PRESETS = {
 				velocityCurve: 0,
 				portamento: {
 					enabled: false,
-					mode: "rate",
-					rate: 0,
-					time: 0.5,
+					mode: "time",
+					rate: 85,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -6192,9 +6192,9 @@ export const DEFAULT_SYNTH_PRESETS = {
 				velocityCurve: 0,
 				portamento: {
 					enabled: false,
-					mode: "rate",
-					rate: 0,
-					time: 0.5,
+					mode: "time",
+					rate: 85,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -6575,9 +6575,9 @@ export const DEFAULT_SYNTH_PRESETS = {
 				velocityCurve: 0,
 				portamento: {
 					enabled: false,
-					mode: "rate",
-					rate: 0,
-					time: 0.5,
+					mode: "time",
+					rate: 85,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -6976,7 +6976,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 				portamento: {
 					enabled: true,
 					mode: "time",
-					rate: 0,
+					rate: 85,
 					time: 0.07287109919956747,
 				},
 				lfo: {
@@ -7358,9 +7358,9 @@ export const DEFAULT_SYNTH_PRESETS = {
 				velocityCurve: 0,
 				portamento: {
 					enabled: false,
-					mode: "rate",
-					rate: 0,
-					time: 0.5,
+					mode: "time",
+					rate: 85,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -7742,7 +7742,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 				portamento: {
 					enabled: true,
 					mode: "time",
-					rate: 0,
+					rate: 85,
 					time: 0.10011720657348633,
 				},
 				lfo: {
@@ -8158,9 +8158,9 @@ export const DEFAULT_SYNTH_PRESETS = {
 				velocityCurve: 0,
 				portamento: {
 					enabled: false,
-					mode: "rate",
-					rate: 0,
-					time: 0.5,
+					mode: "time",
+					rate: 85,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -8577,9 +8577,9 @@ export const DEFAULT_SYNTH_PRESETS = {
 				velocityCurve: 0,
 				portamento: {
 					enabled: false,
-					mode: "rate",
-					rate: 0,
-					time: 0.5,
+					mode: "time",
+					rate: 85,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -8994,9 +8994,9 @@ export const DEFAULT_SYNTH_PRESETS = {
 				velocityCurve: 0,
 				portamento: {
 					enabled: false,
-					mode: "rate",
-					rate: 0,
-					time: 0.5,
+					mode: "time",
+					rate: 85,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -9394,9 +9394,9 @@ export const DEFAULT_SYNTH_PRESETS = {
 				velocityCurve: 0,
 				portamento: {
 					enabled: false,
-					mode: "rate",
-					rate: 0,
-					time: 0.5,
+					mode: "time",
+					rate: 85,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",

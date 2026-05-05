@@ -3,7 +3,7 @@ import { setupPluginPage, waitForBridge } from "./helpers/pluginBridge";
 
 test.beforeEach(async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 980 });
-	await setupPluginPage(page);
+	await setupPluginPage(page, { keyboard: true });
 });
 
 test.describe("Plugin shell visual smoke", () => {

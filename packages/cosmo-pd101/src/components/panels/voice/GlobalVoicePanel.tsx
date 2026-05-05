@@ -124,6 +124,9 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 								<SynthParamKnob
 									paramKey="portamentoRate"
 									value={portamentoRate}
+									min={0.01}
+									max={100}
+									step={0.01}
 									onChange={setPortamentoRate}
 									color="#7f9de4"
 									label="Rate"

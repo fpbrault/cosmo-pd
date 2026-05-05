@@ -119,23 +119,25 @@ test.describe("Mod matrix plugin bridge", () => {
 		page,
 	}) => {
 		await expectAddRouteForDestination(page, {
-			controlName: /^mix$/i,
-			modulationButtonName: /modulation for mix/i,
-			dialogName: /modulation for mix/i,
+			controlName: /mix/i,
+			modulationButtonName: /modulation for .*mix/i,
+			dialogName: /modulation for .*mix/i,
 			expectedDestination: "chorusMix",
 			beforeAdd: async () => {
-				await page.getByRole("button", { name: /^fx$/i }).click();
-				const addEffectButton = page
-					.getByRole("button", { name: /add effect to slot/i })
-					.first();
-				await expect(addEffectButton).toBeVisible();
-				await addEffectButton.click();
-
-				const selector = page.getByRole("dialog", {
-					name: /select effect type/i,
+				await page.evaluate(() => {
+					window.__testSetParam?.("fxSlots", [
+						{
+							type: "chorus",
+							params: { enabled: true, rate: 1, depth: 0.5, mix: 0.5 },
+						},
+						{ type: "empty" },
+						{ type: "empty" },
+						{ type: "empty" },
+						{ type: "empty" },
+						{ type: "empty" },
+					]);
 				});
-				await expect(selector).toBeVisible();
-				await selector.getByRole("button", { name: /^chorus$/i }).click();
+				await page.getByRole("button", { name: /^fx$/i }).click();
 			},
 		});
 	});

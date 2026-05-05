@@ -12,9 +12,18 @@
  *
  * TODO: Remove when harness is promoted to a permanent CI fixture.
  */
+import { useSynthStore } from "@cosmo/cosmo-pd101";
 import { useCallback, useEffect, useRef, useState } from "react";
 import App from "../App";
 import type { MockBridgeMessage } from "./mockPluginBridge";
+
+declare global {
+	interface Window {
+		__testSetAlgo?: (line: 1 | 2, algo: string) => void;
+		__testGetParam?: (key: string) => unknown;
+		__testSetParam?: (key: string, value: unknown) => void;
+	}
+}
 
 // Toggle-open default: respect VITE_DEBUG_PANEL env or fall back to test mode.
 const DEBUG_PANEL_DEFAULT_OPEN = import.meta.env.VITE_DEBUG_PANEL === "1";
@@ -35,13 +44,15 @@ function MessageRow({ msg }: { msg: MockBridgeMessage }) {
 						? "text-purple-400"
 						: "text-base-content/60";
 
+	const fullText = JSON.stringify(msg, null, 2);
+
 	return (
 		<div
-			className={`flex gap-1 border-b border-base-content/5 py-0.5 ${color}`}
+			className={`flex gap-1 border-b border-base-content/5 py-0.5 px-1 ${color} hover:bg-base-content/5`}
 		>
 			<span className="w-20 shrink-0 font-bold">{msg.type}</span>
-			<span className="truncate text-base-content/70">
-				{JSON.stringify(msg).slice(0, 80)}
+			<span className="flex-1 break-words text-base-content/70">
+				{fullText}
 			</span>
 		</div>
 	);
@@ -56,6 +67,30 @@ export default function TestHarness() {
 	const [messages, setMessages] = useState<MockBridgeMessage[]>([]);
 	const [virtualState, setVirtualState] = useState<Record<string, number>>({});
 
+	// Expose direct store helpers for E2E tests.
+	useEffect(() => {
+		window.__testSetAlgo = (line: 1 | 2, algo: string) => {
+			const s = useSynthStore.getState();
+			if (line === 1)
+				s.setWarpAAlgo(algo as Parameters<typeof s.setWarpAAlgo>[0]);
+			else s.setWarpBAlgo(algo as Parameters<typeof s.setWarpBAlgo>[0]);
+		};
+		window.__testGetParam = (key: string) => {
+			const s = useSynthStore.getState() as Record<string, unknown>;
+			return s[key];
+		};
+		window.__testSetParam = (key: string, value: unknown) => {
+			useSynthStore.setState({ [key]: value } as Partial<
+				ReturnType<typeof useSynthStore.getState>
+			>);
+		};
+		return () => {
+			delete window.__testSetAlgo;
+			delete window.__testGetParam;
+			delete window.__testSetParam;
+		};
+	}, []);
+
 	// Inbound simulation form state
 	const [pushParamId, setPushParamId] = useState("0");
 	const [pushValue, setPushValue] = useState("0.5");
@@ -66,12 +101,23 @@ export default function TestHarness() {
 		const bridge = window.__MOCK_BRIDGE__;
 		if (!bridge) return;
 
+		const getFilteredMessages = () =>
+			bridge
+				.getMessages()
+				.filter(
+					(msg) => !(msg.type === "invoke" && msg.method === "getScopeData"),
+				)
+				.slice(-20);
+
 		// Seed with any messages that arrived before mount.
-		setMessages(bridge.getMessages().slice(-20));
+		setMessages(getFilteredMessages());
 		setVirtualState(bridge.getState());
 
-		const unsub = bridge.onMessage(() => {
-			setMessages(bridge.getMessages().slice(-20));
+		const unsub = bridge.onMessage((msg) => {
+			if (!(msg.type === "invoke" && msg.method === "getScopeData")) {
+				console.log("[mock-bridge]", msg);
+			}
+			setMessages(getFilteredMessages());
 			setVirtualState(bridge.getState());
 		});
 
@@ -118,7 +164,7 @@ export default function TestHarness() {
 			{/* Debug Panel */}
 			{panelOpen && (
 				<div
-					className="fixed bottom-8 left-2 z-[9998] flex max-h-[60vh] w-80 flex-col overflow-hidden rounded border border-base-content/30 bg-base-300/95 shadow-xl backdrop-blur"
+					className="fixed bottom-8 left-2 z-[9998] flex max-h-[60vh] w-96 flex-col overflow-hidden rounded border border-base-content/30 bg-base-300/95 shadow-xl backdrop-blur"
 					data-testid="debug-panel"
 				>
 					{/* Header */}

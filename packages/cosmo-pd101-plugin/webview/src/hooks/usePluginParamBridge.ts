@@ -45,5 +45,10 @@ export function usePluginParamBridge(): void {
 		};
 	}, [bridgeReady]);
 
-	usePluginBridgeSynthEngine({ enabled: bridgeReady });
+	const isTestHarness = import.meta.env.VITE_TEST_HARNESS === "1";
+	usePluginBridgeSynthEngine({
+		enabled: bridgeReady,
+		hydrationGraceMs: isTestHarness ? 0 : 1000,
+		pendingParamTtlMs: isTestHarness ? 0 : 250,
+	});
 }

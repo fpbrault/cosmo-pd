@@ -463,6 +463,7 @@ export const PLUGIN_PARAM_DESCRIPTOR_BY_ID = new Map(
 type UsePluginBridgeSynthEngineOptions = {
 	enabled?: boolean;
 	hydrationGraceMs?: number;
+	pendingParamTtlMs?: number;
 };
 
 type AlgoControlsSnapshot = {
@@ -531,6 +532,7 @@ export function usePluginBridgeSynthEngine(
 	const gatherState = useSynthStore((s) => s.gatherState);
 	const enabled = options.enabled ?? true;
 	const hydrationGraceMs = options.hydrationGraceMs ?? 1000;
+	const pendingParamTtlMs = options.pendingParamTtlMs ?? 250;
 
 	const sentParamsRef = useRef<Map<string, number>>(new Map());
 	const pendingLocalParamsRef = useRef<
@@ -550,7 +552,6 @@ export function usePluginBridgeSynthEngine(
 		presetSession: false,
 	});
 	const syncRef = useRef<(() => void) | null>(null);
-	const PENDING_PARAM_TTL_MS = 250;
 	const PARAM_EPSILON = 1e-6;
 
 	const queueParam = useCallback((id: string, value: number) => {
@@ -716,7 +717,7 @@ export function usePluginBridgeSynthEngine(
 							pendingLocalParamsRef.current.delete(id);
 							continue;
 						}
-						if (ageMs < PENDING_PARAM_TTL_MS) {
+						if (ageMs < pendingParamTtlMs) {
 							continue;
 						}
 						pendingLocalParamsRef.current.delete(id);
@@ -739,7 +740,7 @@ export function usePluginBridgeSynthEngine(
 		return () => {
 			window.__czOnParams = undefined;
 		};
-	}, [enabled, markHydrated]);
+	}, [enabled, markHydrated, pendingParamTtlMs]);
 
 	// Outbound sync: subscribe directly to Zustand so every state change
 	// flows to the host without causing component re-renders.

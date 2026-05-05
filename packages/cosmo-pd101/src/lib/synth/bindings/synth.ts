@@ -3786,7 +3786,7 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
   },
   {
     "key": "portamentoRate",
-    "paramDefault": 50.0,
+    "paramDefault": 85.0,
     "readoutFormat": {
       "kind": "integer"
     },
@@ -3795,7 +3795,7 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
   },
   {
     "key": "portamentoTime",
-    "paramDefault": 0.5,
+    "paramDefault": 0.10000000149011612,
     "readoutFormat": {
       "kind": "seconds2"
     },

@@ -788,10 +788,14 @@ export function useSynthPresetManager({
 		refreshLocalPresetEntries();
 		if (!shouldHydratePersistedState) return;
 		if (!initialPresetSession) {
-			const firstPresetName = Object.keys(builtinPresets)[0];
-			if (firstPresetName) {
-				loadBuiltinPreset(firstPresetName);
-				return;
+			// In test mode, don't auto-load builtin presets to avoid overwriting test param updates
+			const isTestMode = import.meta.env.VITE_TEST_HARNESS === "1";
+			if (!isTestMode) {
+				const firstPresetName = Object.keys(builtinPresets)[0];
+				if (firstPresetName) {
+					loadBuiltinPreset(firstPresetName);
+					return;
+				}
 			}
 		}
 		const saved = loadCurrentState();

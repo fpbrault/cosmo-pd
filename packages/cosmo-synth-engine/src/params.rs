@@ -586,8 +586,8 @@ impl Default for PortamentoParams {
         Self {
             enabled: false,
             mode: PortamentoMode::Time,
-            rate: 50.0,
-            time: 0.5,
+            rate: 85.0,
+            time: 0.1,
         }
     }
 }

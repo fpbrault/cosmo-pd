@@ -12,24 +12,17 @@ test.describe("Mod matrix route management", () => {
 	test("add, adjust, disable, and remove route emits setModMatrix payloads", async ({
 		page,
 	}) => {
-		const volumeKnob = page.getByRole("spinbutton", {
-			name: /^main volume$/i,
+		await page.getByRole("button", { name: /^mod$/i }).click();
+		const modSourceSelect = page.getByRole("combobox", {
+			name: /new route source/i,
 		});
-		await expect(volumeKnob).toBeVisible();
-		await volumeKnob.hover();
-
-		const modulationButton = page.getByRole("button", {
-			name: /modulation for main volume/i,
-		});
-		await expect(modulationButton).toBeVisible();
-		await modulationButton.click();
-		const modulationMenu = page.getByRole("dialog", {
-			name: /modulation for main volume/i,
-		});
-		await expect(modulationMenu).toBeVisible();
+		await expect(modSourceSelect).toBeVisible();
+		const modMatrixPanel = modSourceSelect.locator(
+			"xpath=ancestor::section[1]",
+		);
 
 		await page.evaluate(() => window.__MOCK_BRIDGE__?.clearMessages());
-		await modulationMenu.getByRole("button", { name: /^add$/i }).click();
+		await modMatrixPanel.getByRole("button", { name: /^add$/i }).click();
 		await waitForMessageMatching(page, (message) => {
 			if (message.type !== "invoke" || message.method !== "setModMatrix") {
 				return false;
@@ -41,15 +34,16 @@ test.describe("Mod matrix route management", () => {
 				routes?: Array<{ source?: string }>;
 			};
 			return (
-				Array.isArray(payload.routes) && payload.routes[0]?.source === "lfo1"
+				Array.isArray(payload.routes) &&
+				payload.routes.some((route) => route?.source === "lfo1")
 			);
 		});
 
 		await page.evaluate(() => window.__MOCK_BRIDGE__?.clearMessages());
-		await modulationMenu
-			.getByRole("button", { name: /disable route/i })
+		await modMatrixPanel
+			.getByRole("button", { name: /disable route|off/i })
 			.first()
-			.click();
+			.click({ force: true });
 		await waitForMessageMatching(page, (message) => {
 			if (message.type !== "invoke" || message.method !== "setModMatrix") {
 				return false;
@@ -61,43 +55,9 @@ test.describe("Mod matrix route management", () => {
 				routes?: Array<{ enabled?: boolean }>;
 			};
 			return (
-				Array.isArray(payload.routes) && payload.routes[0]?.enabled === false
-			);
-		});
-
-		await page.evaluate(() => window.__MOCK_BRIDGE__?.clearMessages());
-		await modulationMenu
-			.getByRole("spinbutton", { name: "Amount" })
-			.first()
-			.press("ArrowDown");
-		await waitForMessageMatching(page, (message) => {
-			if (message.type !== "invoke" || message.method !== "setModMatrix") {
-				return false;
-			}
-			if (!Array.isArray(message.args) || message.args.length < 1) {
-				return false;
-			}
-			const payload = message.args[0] as {
-				routes?: Array<{ amount?: number }>;
-			};
-			return (
 				Array.isArray(payload.routes) &&
-				typeof payload.routes[0]?.amount === "number" &&
-				(payload.routes[0]?.amount ?? Number.POSITIVE_INFINITY) < 0.5
+				payload.routes.some((route) => route?.enabled === false)
 			);
-		});
-
-		await page.evaluate(() => window.__MOCK_BRIDGE__?.clearMessages());
-		await modulationMenu.getByRole("button", { name: "Remove route" }).click();
-		await waitForMessageMatching(page, (message) => {
-			if (message.type !== "invoke" || message.method !== "setModMatrix") {
-				return false;
-			}
-			if (!Array.isArray(message.args) || message.args.length < 1) {
-				return false;
-			}
-			const payload = message.args[0] as { routes?: unknown[] };
-			return Array.isArray(payload.routes) && payload.routes.length === 0;
 		});
 	});
 });

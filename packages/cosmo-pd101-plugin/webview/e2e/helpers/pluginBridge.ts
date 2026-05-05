@@ -11,16 +11,40 @@ export async function waitForBridge(page: Page): Promise<void> {
 	);
 }
 
-export async function setupPluginPage(page: Page): Promise<void> {
-	await page.addInitScript(() => {
-		// Keep test state deterministic across retries/workers.
-		localStorage.removeItem("cosmo-pd101-ui-state");
-		localStorage.setItem("cz-plugin-ui-scale", "100");
-	});
+export async function setupPluginPage(
+	page: Page,
+	{ keyboard = false }: { keyboard?: boolean } = {},
+): Promise<void> {
+	await page.addInitScript(
+		({ keyboardVisible }) => {
+			// Keep test state deterministic across retries/workers.
+			localStorage.setItem(
+				"cosmo-pd101-ui-state",
+				JSON.stringify({ state: { keyboardVisible }, version: 0 }),
+			);
+			localStorage.setItem("cz-plugin-ui-scale", "100");
+
+			// Clear persisted preset/session state that can asynchronously re-apply
+			// params after mount and race test interactions.
+			localStorage.removeItem("cz101-current-state");
+			localStorage.removeItem("cz101-current-preset-session");
+			localStorage.removeItem("cz101-show-library-presets");
+			for (const key of Object.keys(localStorage)) {
+				if (key.startsWith("cz101-preset-")) {
+					localStorage.removeItem(key);
+				}
+			}
+		},
+		{ keyboardVisible: keyboard },
+	);
 	await page.goto("/", { waitUntil: "domcontentloaded" });
 	await waitForBridge(page);
 	await expect(page.getByText("COSMO").first()).toBeVisible({ timeout: 5000 });
-	await page.evaluate(() => window.__MOCK_BRIDGE__?.clearMessages());
+	await page.evaluate(() => {
+		// Prime __czOnParams once so outbound sync unlocks deterministically in tests.
+		window.__MOCK_BRIDGE__?.pushParamUpdate("volume", 0.8);
+		window.__MOCK_BRIDGE__?.clearMessages();
+	});
 }
 
 export async function getMessages(page: Page): Promise<MockBridgeMessage[]> {
