@@ -57,7 +57,6 @@ function AlgoSectionCard({
 			<div className="mt-2 border-t border-cz-border/70 pt-4">
 				<AlgoControlsGroup
 					embedded
-					title="Controls"
 					disabled={disabled}
 					controls={controls}
 					controlBindings={controlBindings}
