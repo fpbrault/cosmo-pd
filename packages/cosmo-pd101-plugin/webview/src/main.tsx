@@ -3,7 +3,7 @@ import { Component, type ReactNode, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App";
-import { ensureNihPlugBridge } from "./lib/nihPlugBridge";
+import { ensurePluginBridge } from "./lib/pluginBridge";
 
 function postHostLog(level: "info" | "error", message: string) {
 	try {
@@ -99,12 +99,12 @@ async function init() {
 	postHostLog("info", "main.tsx: init start");
 
 	try {
-		const installed = ensureNihPlugBridge();
-		postHostLog("info", `main.tsx: ensureNihPlugBridge=${installed}`);
+		const installed = ensurePluginBridge();
+		postHostLog("info", `main.tsx: ensurePluginBridge=${installed}`);
 	} catch (error) {
 		postHostLog(
 			"error",
-			`main.tsx: ensureNihPlugBridge threw: ${String(error)}`,
+			`main.tsx: ensurePluginBridge threw: ${String(error)}`,
 		);
 	}
 
@@ -115,7 +115,7 @@ async function init() {
 				import("./test/TestHarness"),
 			]);
 		// Install the mock bridge before React renders so that
-		// ensureNihPlugBridge() inside App finds native ipc immediately.
+		// ensurePluginBridge() inside App finds native ipc immediately.
 		installMockPluginBridge();
 		RootComponent = TestHarness;
 	}

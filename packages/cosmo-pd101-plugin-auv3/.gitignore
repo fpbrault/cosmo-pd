@@ -1,0 +1,5 @@
+.build/
+Artifacts/
+Build/
+Sources/CosmoPd101AUv3/Resources/ui/*
+!Sources/CosmoPd101AUv3/Resources/ui/.gitkeep
