@@ -115,7 +115,9 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		allPresetEntries,
 		showLibraryPresets,
 		activePresetId,
+		activePresetNameBase,
 		activePresetName,
+		loadedPresetFingerprint,
 		pendingPresetChange,
 		handleLoadLocal,
 		handleLoadBuiltin,
@@ -142,6 +144,21 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		shouldLoadCurrentState,
 		presetStateKey,
 	});
+
+	useEffect(() => {
+		if (!window.ipc || loadedPresetFingerprint == null) {
+			return;
+		}
+		window.ipc.postMessage(
+			JSON.stringify({
+				preset_session: {
+					activePresetId,
+					activePresetNameBase,
+					loadedPresetFingerprint,
+				},
+			}),
+		);
+	}, [activePresetId, activePresetNameBase, loadedPresetFingerprint]);
 
 	const heldNote =
 		activeNotes.length > 0 ? activeNotes[activeNotes.length - 1] : null;
