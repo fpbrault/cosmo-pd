@@ -164,27 +164,67 @@ jobs:
             packages/cz-explorer-desktop/target/release/bundle/**/*.msi
           if-no-files-found: error
 
+  # TODO: enable when Gumroad distribution is ready
+  # Requires secrets: GUMROAD_ACCESS_TOKEN, GUMROAD_PRODUCT_ID
+  upload-plugins-to-gumroad:
+    name: Upload plugins to Gumroad
+    if: false # disabled — Gumroad distribution not yet configured
+    needs: [build-plugins]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download plugin artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: plugins-*
+          path: plugin-assets
+          merge-multiple: true
+
+      - name: Upload plugin files to Gumroad
+        shell: bash
+        env:
+          GUMROAD_ACCESS_TOKEN: ${{ secrets.GUMROAD_ACCESS_TOKEN }}
+          GUMROAD_PRODUCT_ID: ${{ secrets.GUMROAD_PRODUCT_ID }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          shopt -s globstar
+
+          upload_file() {
+            local file="$1"
+            local name
+            name=$(basename "$file")
+            echo "Uploading $name ..."
+            curl --fail-with-body -sS \
+              -X POST "https://api.gumroad.com/v2/products/${GUMROAD_PRODUCT_ID}/product_files" \
+              -H "Authorization: Bearer ${GUMROAD_ACCESS_TOKEN}" \
+              -F "file=@${file}" \
+              -F "description=${name}"
+            echo
+          }
+
+          for f in plugin-assets/**/*.pkg \
+                    plugin-assets/**/*.zip \
+                    plugin-assets/**/*.exe; do
+            [[ -e "$f" ]] && upload_file "$f"
+          done
+
   create-release:
     name: Create GitHub release
-    needs: [build-web, build-plugins, build-desktop]
+    needs: [build-web, build-desktop]
     runs-on: ubuntu-latest
     steps:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
+          pattern: desktop-*
           path: release-assets
+          merge-multiple: true
 
       - name: Validate release assets are present
         shell: bash
         run: |
           set -euo pipefail
           shopt -s globstar
-
-          compgen -G "release-assets/**/cosmo-plugins-macos-universal-v*.pkg" > /dev/null
-          compgen -G "release-assets/**/cosmo-pd101-plugin-macos-universal-v*-vst3.zip" > /dev/null
-          compgen -G "release-assets/**/cosmo-pd101-plugin-macos-universal-v*-auv2.zip" > /dev/null
-          compgen -G "release-assets/**/cosmo-pd101-plugin-windows-*.exe" > /dev/null
-          compgen -G "release-assets/**/cosmo-pd101-plugin-windows-*-v*-vst3.zip" > /dev/null
 
           compgen -G "release-assets/**/cz101-presets-library_*.dmg" > /dev/null || compgen -G "release-assets/**/cz101-presets-library_*.app.tar.gz" > /dev/null
           compgen -G "release-assets/**/cz101-presets-library_*setup.exe" > /dev/null || compgen -G "release-assets/**/cz101-presets-library_*.msi" > /dev/null
@@ -194,11 +234,6 @@ jobs:
         with:
           generate_release_notes: true
           files: |
-            release-assets/**/cosmo-plugins-macos-universal-v*.pkg
-            release-assets/**/cosmo-pd101-plugin-macos-universal-v*-vst3.zip
-            release-assets/**/cosmo-pd101-plugin-macos-universal-v*-auv2.zip
-            release-assets/**/cosmo-pd101-plugin-windows-*.exe
-            release-assets/**/cosmo-pd101-plugin-windows-*-v*-vst3.zip
             release-assets/**/cz101-presets-library_*.dmg
             release-assets/**/cz101-presets-library_*.app.tar.gz
             release-assets/**/cz101-presets-library_*setup.exe

@@ -2,7 +2,7 @@
  * nih-plug IPC bridge.
  *
  * Provides a plugin bridge surface for the webview (window.__czOnParams,
- * window.__czGetEnvelopes, window.__czGetModMatrix, window.__czOnScope,
+ * window.__czGetParams, window.__czSetParams, window.__czOnScope,
  * window.ipc.postMessage) but wired to the wry WebView IPC channel that
  * nih-plug / Rust uses.
  *
@@ -11,33 +11,10 @@
  *   - `window.__czIpcResponse({ id, result })` — RPC replies
  *
  * ## JS → Rust (outbound via window.ipc.postMessage):
- *   - Param change:  `{ param_id: string, value: number }`
  *   - RPC invoke:    `{ id: number, method: string, args: unknown[] }`
  */
 
-import type {
-	AlgoControlValueV1,
-	ModMatrix,
-	StepEnvData,
-} from "@cosmo/cosmo-pd101";
-
 // ─── Types ───────────────────────────────────────────────────────────────────
-
-type EnvelopeId =
-	| "l1_dco"
-	| "l1_dcw"
-	| "l1_dca"
-	| "l2_dco"
-	| "l2_dcw"
-	| "l2_dca";
-
-type EnvelopeMap = Partial<Record<EnvelopeId, StepEnvData>>;
-
-type AlgoControlsPayload = {
-	line: 1 | 2;
-	bank?: "a" | "b";
-	controls: AlgoControlValueV1[];
-};
 
 type IpcRpcResponse = {
 	id: number;
@@ -54,9 +31,9 @@ type ScopeDataResponse = {
 declare global {
 	interface Window {
 		ipc?: { postMessage: (msg: string) => void };
-		__czOnParams?: (json: unknown) => void;
-		__czGetEnvelopes?: () => Promise<EnvelopeMap>;
-		__czGetModMatrix?: () => Promise<ModMatrix>;
+		__czOnParams?: (json: string) => void;
+		__czGetParams?: () => Promise<unknown>;
+		__czSetParams?: (json: string) => void;
 		__czOnScope?: (samples: number[], sampleRate: number, hz: number) => void;
 		__czIpcResponse?: (response: IpcRpcResponse) => void;
 	}
@@ -160,60 +137,7 @@ function installIpcResponseHandler() {
 }
 
 function routeOutgoingMessage(message: string) {
-	let payload: unknown;
-	try {
-		payload = JSON.parse(message) as unknown;
-	} catch {
-		_nativePostMessage(message);
-		return;
-	}
-
-	if (typeof payload !== "object" || payload === null) {
-		_nativePostMessage(message);
-		return;
-	}
-
-	if ("method" in payload) {
-		// RPC envelopes are already in Rust-native format.
-		_nativePostMessage(message);
-		return;
-	}
-
-	const msg = payload as Record<string, unknown>;
-
-	if ("param_id" in msg) {
-		// Direct param change — send raw; Rust reads { param_id, value }.
-		_nativePostMessage(message);
-		return;
-	}
-
-	if ("algo_controls" in msg) {
-		const ac = msg.algo_controls as AlgoControlsPayload;
-		void invokeRust(
-			"setAlgoControls",
-			ac.line,
-			ac.bank ?? "a",
-			ac.controls,
-		).catch((error) => {
-			console.error("[nihPlugBridge] setAlgoControls error", error);
-		});
-		return;
-	}
-
-	if ("mod_matrix" in msg) {
-		void invokeRust("setModMatrix", msg.mod_matrix).catch((error) => {
-			console.error("[nihPlugBridge] setModMatrix error", error);
-		});
-		return;
-	}
-
-	if ("envelope_id" in msg) {
-		void invokeRust("setEnvelope", msg.envelope_id, msg.data).catch((error) => {
-			console.error("[nihPlugBridge] setEnvelope error", error);
-		});
-		return;
-	}
-
+	// All outbound messages are RPC envelopes — pass through directly.
 	_nativePostMessage(message);
 }
 
@@ -232,14 +156,12 @@ function routeOutgoingMessage(message: string) {
 function installIpcRouter() {
 	_routerPostMessage = routeOutgoingMessage;
 
-	window.__czGetEnvelopes = async () => {
-		const response = await invokeRust("getEnvelopes");
-		return (response ?? {}) as EnvelopeMap;
-	};
+	window.__czGetParams = async () => invokeRust("getParams");
 
-	window.__czGetModMatrix = async () => {
-		const response = await invokeRust("getModMatrix");
-		return (response ?? { routes: [] }) as ModMatrix;
+	window.__czSetParams = (json: string) => {
+		void invokeRust("setParams", json).catch((error) => {
+			console.error("[nihPlugBridge] setParams error", error);
+		});
 	};
 }
 

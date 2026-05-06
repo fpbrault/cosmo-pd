@@ -1,317 +1,31 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useSynthStore } from "@/features/synth/synthStore";
+import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
 import { usePluginBridgeSynthEngine } from "./pluginBridgeSynthEngineAdapter";
 
-type IpcMessage =
-	| { param_id: string; value: number }
-	| { envelope_id: string; data: unknown }
-	| { algo_controls: unknown }
-	| { mod_matrix: unknown }
-	| { fx_slots: unknown }
-	| {
-			preset_session: {
-				activePresetId: string | null;
-				activePresetNameBase: string;
-				loadedPresetFingerprint: string | null;
-			};
-	  };
+/** Build a minimal valid SynthPresetV1 params shape with optional volume override. */
+function makeParams(volume = 1.0) {
+	const params = useSynthStore.getState().gatherState().params;
+	return { ...params, volume } satisfies SynthPresetV1["params"];
+}
 
 describe("usePluginBridgeSynthEngine", () => {
 	beforeEach(() => {
 		useSynthStore.setState(useSynthStore.getInitialState());
-		window.ipc = undefined as unknown as typeof window.ipc;
-		delete window.__czOnParams;
-		window.__czGetEnvelopes = undefined;
-		window.__czGetAlgoControls = undefined;
-		window.__czGetModMatrix = undefined;
-		window.__czGetFxSlots = undefined;
-		window.__czGetPresetSession = undefined;
+		window.__czOnParams = undefined;
+		window.__czGetParams = undefined;
+		window.__czSetParams = undefined;
 	});
 
 	afterEach(() => {
 		vi.useRealTimers();
-		window.ipc = undefined as unknown as typeof window.ipc;
-		delete window.__czOnParams;
-		window.__czGetEnvelopes = undefined;
-		window.__czGetAlgoControls = undefined;
-		window.__czGetModMatrix = undefined;
-		window.__czGetFxSlots = undefined;
-		window.__czGetPresetSession = undefined;
-	});
-
-	it("does not push default params before host replay on mount", async () => {
-		const hostVolume = 0.31;
-		let currentHandler: ((json: string) => void) | undefined;
-		Object.defineProperty(window, "__czOnParams", {
-			configurable: true,
-			get: () => currentHandler,
-			set: (handler: ((json: string) => void) | undefined) => {
-				currentHandler = handler;
-			},
-		});
-
-		const outbound: IpcMessage[] = [];
-		window.ipc = {
-			postMessage(message: string) {
-				outbound.push(JSON.parse(message) as IpcMessage);
-			},
-		};
-
-		const { unmount } = renderHook(() => usePluginBridgeSynthEngine());
-
-		await waitFor(() => {
-			expect(typeof currentHandler).toBe("function");
-		});
-
-		act(() => {
-			currentHandler?.(JSON.stringify({ volume: hostVolume }));
-		});
-
-		await waitFor(() => {
-			expect(useSynthStore.getState().volume).toBeCloseTo(hostVolume, 6);
-		});
-
-		const volumeSends = outbound.filter(
-			(message): message is { param_id: string; value: number } =>
-				"param_id" in message && message.param_id === "volume",
-		);
-		expect(volumeSends.some((message) => message.value === 1)).toBe(false);
-		if (volumeSends.length > 0) {
-			expect(volumeSends[0]?.value).toBeCloseTo(hostVolume, 6);
-		}
-
-		unmount();
-	});
-
-	it("blocks outbound sync until inbound params are applied", async () => {
-		vi.useFakeTimers();
-
-		const hostVolume = 0.27;
-		let currentHandler: ((json: string) => void) | undefined;
-		Object.defineProperty(window, "__czOnParams", {
-			configurable: true,
-			get: () => currentHandler,
-			set: (handler: ((json: string) => void) | undefined) => {
-				currentHandler = handler;
-			},
-		});
-
-		const outbound: IpcMessage[] = [];
-		window.ipc = {
-			postMessage(message: string) {
-				outbound.push(JSON.parse(message) as IpcMessage);
-			},
-		};
-
-		const { unmount } = renderHook(() =>
-			usePluginBridgeSynthEngine({ hydrationGraceMs: 5_000 }),
-		);
-
-		act(() => {
-			vi.advanceTimersByTime(0);
-		});
-
-		expect(typeof currentHandler).toBe("function");
-
-		act(() => {
-			useSynthStore.getState().setVolume(0.91);
-		});
-
-		expect(
-			outbound.some(
-				(message) => "param_id" in message && message.param_id === "volume",
-			),
-		).toBe(false);
-
-		act(() => {
-			currentHandler?.(JSON.stringify({ volume: hostVolume }));
-		});
-
-		expect(useSynthStore.getState().volume).toBeCloseTo(hostVolume, 6);
-
-		const postHydrationVolume = 0.63;
-		act(() => {
-			useSynthStore.getState().setVolume(postHydrationVolume);
-		});
-
-		expect(
-			outbound.some(
-				(message) =>
-					"param_id" in message &&
-					message.param_id === "volume" &&
-					Math.abs(message.value - postHydrationVolume) < 1e-6,
-			),
-		).toBe(true);
-
-		expect(
-			outbound.some(
-				(message) =>
-					"param_id" in message &&
-					message.param_id === "volume" &&
-					Math.abs(message.value - 0.91) < 1e-6,
-			),
-		).toBe(false);
-
-		unmount();
-	});
-
-	it("waits for envelope hydration before outbound sync", async () => {
-		const hostVolume = 0.41;
-		const hostEnv = structuredClone(useSynthStore.getState().line1DcoEnv);
-		type EnvelopeResponse = Awaited<
-			ReturnType<NonNullable<typeof window.__czGetEnvelopes>>
-		>;
-
-		let resolveEnvelopes: ((value: EnvelopeResponse) => void) | undefined;
-		window.__czGetEnvelopes = () =>
-			new Promise<EnvelopeResponse>((resolve) => {
-				resolveEnvelopes = resolve;
-			});
-		window.__czGetAlgoControls = async () => ({
-			line1: { a: [], b: [] },
-			line2: { a: [], b: [] },
-		});
-		window.__czGetModMatrix = async () => ({ routes: [] });
-
-		let currentHandler: ((json: string) => void) | undefined;
-		Object.defineProperty(window, "__czOnParams", {
-			configurable: true,
-			get: () => currentHandler,
-			set: (handler: ((json: string) => void) | undefined) => {
-				currentHandler = handler;
-			},
-		});
-
-		const outbound: IpcMessage[] = [];
-		window.ipc = {
-			postMessage(message: string) {
-				outbound.push(JSON.parse(message) as IpcMessage);
-			},
-		};
-
-		const { unmount } = renderHook(() => usePluginBridgeSynthEngine());
-
-		await waitFor(() => {
-			expect(typeof currentHandler).toBe("function");
-		});
-
-		act(() => {
-			currentHandler?.(JSON.stringify({ volume: hostVolume }));
-		});
-
-		expect(outbound.some((message) => "envelope_id" in message)).toBe(false);
-
-		resolveEnvelopes?.({ l1_dco: hostEnv });
-
-		await waitFor(() => {
-			expect(
-				outbound.some(
-					(message) =>
-						"envelope_id" in message && message.envelope_id === "l1_dco",
-				),
-			).toBe(true);
-		});
-
-		const firstL1DcoSend = outbound.find(
-			(message): message is { envelope_id: string; data: unknown } =>
-				"envelope_id" in message && message.envelope_id === "l1_dco",
-		);
-		expect(firstL1DcoSend?.data).toEqual(hostEnv);
-
-		unmount();
-	});
-
-	it("unblocks outbound sync after param replay when non-param hydration stalls", async () => {
-		vi.useFakeTimers();
-		let currentHandler: ((json: string) => void) | undefined;
-		Object.defineProperty(window, "__czOnParams", {
-			configurable: true,
-			get: () => currentHandler,
-			set: (handler: ((json: string) => void) | undefined) => {
-				currentHandler = handler;
-			},
-		});
-
-		window.__czGetEnvelopes = () => new Promise(() => {});
-
-		const outbound: IpcMessage[] = [];
-		window.ipc = {
-			postMessage(message: string) {
-				outbound.push(JSON.parse(message) as IpcMessage);
-			},
-		};
-
-		const { unmount } = renderHook(() =>
-			usePluginBridgeSynthEngine({ hydrationGraceMs: 10 }),
-		);
-
-		act(() => {
-			vi.advanceTimersByTime(0);
-		});
-
-		expect(typeof currentHandler).toBe("function");
-
-		act(() => {
-			currentHandler?.(JSON.stringify({ volume: 0.42 }));
-			useSynthStore.getState().setVolume(0.91);
-		});
-
-		expect(
-			outbound.some(
-				(message) =>
-					"param_id" in message &&
-					message.param_id === "volume" &&
-					Math.abs(message.value - 0.91) < 1e-6,
-			),
-		).toBe(false);
-
-		act(() => {
-			vi.advanceTimersByTime(11);
-			useSynthStore.getState().setVolume(0.63);
-		});
-
-		expect(
-			outbound.some(
-				(message) =>
-					"param_id" in message &&
-					message.param_id === "volume" &&
-					Math.abs(message.value - 0.63) < 1e-6,
-			),
-		).toBe(true);
-
-		unmount();
-	});
-
-	it("still performs an initial outbound sync when host has no replay", async () => {
-		vi.useFakeTimers();
 		window.__czOnParams = undefined;
-		const outbound: IpcMessage[] = [];
-		window.ipc = {
-			postMessage(message: string) {
-				outbound.push(JSON.parse(message) as IpcMessage);
-			},
-		};
-
-		const { unmount } = renderHook(() =>
-			usePluginBridgeSynthEngine({ hydrationGraceMs: 10 }),
-		);
-
-		act(() => {
-			vi.advanceTimersByTime(11);
-		});
-
-		expect(
-			outbound.some(
-				(message) => "param_id" in message && message.param_id === "volume",
-			),
-		).toBe(true);
-
-		unmount();
+		window.__czGetParams = undefined;
+		window.__czSetParams = undefined;
 	});
 
-	it("sends fx_slots updates after hydration", async () => {
-		const hostVolume = 0.44;
+	it("does not push default params before hydration completes", async () => {
 		let currentHandler: ((json: string) => void) | undefined;
 		Object.defineProperty(window, "__czOnParams", {
 			configurable: true,
@@ -321,11 +35,9 @@ describe("usePluginBridgeSynthEngine", () => {
 			},
 		});
 
-		const outbound: IpcMessage[] = [];
-		window.ipc = {
-			postMessage(message: string) {
-				outbound.push(JSON.parse(message) as IpcMessage);
-			},
+		const outboundJsons: string[] = [];
+		window.__czSetParams = (json: string) => {
+			outboundJsons.push(json);
 		};
 
 		const { unmount } = renderHook(() => usePluginBridgeSynthEngine());
@@ -334,30 +46,171 @@ describe("usePluginBridgeSynthEngine", () => {
 			expect(typeof currentHandler).toBe("function");
 		});
 
-		act(() => {
-			currentHandler?.(JSON.stringify({ volume: hostVolume }));
-		});
+		// No outbound before hydration
+		expect(outboundJsons).toHaveLength(0);
 
-		const fxSlots = useSynthStore.getState().fxSlots;
+		// Hydrate
 		act(() => {
-			useSynthStore.getState().setFxSlotType(0, "delay");
+			currentHandler?.(JSON.stringify(makeParams(0.31)));
 		});
 
 		await waitFor(() => {
-			expect(
-				outbound.some(
-					(message): message is { fx_slots: unknown } => "fx_slots" in message,
-				),
-			).toBe(true);
+			expect(useSynthStore.getState().volume).toBeCloseTo(0.31, 6);
 		});
 
-		const fxSlotsMessage = outbound.find(
-			(message): message is { fx_slots: unknown } => "fx_slots" in message,
-		);
-		expect(Array.isArray(fxSlotsMessage?.fx_slots)).toBe(true);
-		expect((fxSlotsMessage?.fx_slots as unknown[])?.length).toBe(6);
-		expect(fxSlots).toHaveLength(6);
+		unmount();
+	});
+
+	it("sends full params JSON outbound after hydration via __czOnParams", async () => {
+		let currentHandler: ((json: string) => void) | undefined;
+		Object.defineProperty(window, "__czOnParams", {
+			configurable: true,
+			get: () => currentHandler,
+			set: (handler: ((json: string) => void) | undefined) => {
+				currentHandler = handler;
+			},
+		});
+
+		const outboundJsons: string[] = [];
+		window.__czSetParams = (json: string) => {
+			outboundJsons.push(json);
+		};
+
+		const { unmount } = renderHook(() => usePluginBridgeSynthEngine());
+
+		await waitFor(() => {
+			expect(typeof currentHandler).toBe("function");
+		});
+
+		// Hydrate via __czOnParams
+		act(() => {
+			currentHandler?.(JSON.stringify(makeParams(0.55)));
+		});
+
+		await waitFor(() => {
+			expect(useSynthStore.getState().volume).toBeCloseTo(0.55, 6);
+		});
+
+		// Next store change should trigger an outbound send
+		act(() => {
+			useSynthStore.setState({ volume: 0.7 });
+		});
+
+		await waitFor(() => {
+			expect(outboundJsons.length).toBeGreaterThan(0);
+		});
+
+		const lastJson = outboundJsons[outboundJsons.length - 1] ?? "{}";
+		const last = JSON.parse(lastJson) as Record<string, unknown>;
+		expect(last).toHaveProperty("volume");
 
 		unmount();
+	});
+
+	it("hydrates from __czGetParams on mount", async () => {
+		const validParams = makeParams(0.88);
+		window.__czGetParams = vi.fn().mockResolvedValue(validParams);
+
+		const outboundJsons: string[] = [];
+		window.__czSetParams = (json: string) => {
+			outboundJsons.push(json);
+		};
+
+		const { unmount } = renderHook(() => usePluginBridgeSynthEngine());
+
+		await waitFor(() => {
+			expect(useSynthStore.getState().volume).toBeCloseTo(0.88, 6);
+		});
+
+		expect(window.__czGetParams).toHaveBeenCalledOnce();
+
+		unmount();
+	});
+
+	it("converts host raw envelope values to UI range only", async () => {
+		const rawParams = makeParams(0.62);
+		rawParams.line1.dcoEnv.steps[0] = {
+			...rawParams.line1.dcoEnv.steps[0],
+			rate: 127,
+		};
+		rawParams.line1.dcaEnv.steps[0] = {
+			...rawParams.line1.dcaEnv.steps[0],
+			level: 127,
+		};
+
+		window.__czGetParams = vi.fn().mockResolvedValue(rawParams);
+
+		const outboundJsons: string[] = [];
+		window.__czSetParams = (json: string) => {
+			outboundJsons.push(json);
+		};
+
+		const { unmount } = renderHook(() => usePluginBridgeSynthEngine());
+
+		await waitFor(() => {
+			expect(useSynthStore.getState().line1DcoEnv.steps[0]?.rate).toBe(99);
+			expect(useSynthStore.getState().line1DcaEnv.steps[0]?.level).toBe(99);
+		});
+
+		await waitFor(() => {
+			expect(outboundJsons.length).toBeGreaterThan(0);
+		});
+
+		const firstOutbound = JSON.parse(outboundJsons[0] ?? "{}") as {
+			line1?: {
+				dcoEnv?: { steps?: Array<{ rate?: number }> };
+				dcaEnv?: { steps?: Array<{ level?: number }> };
+			};
+		};
+
+		expect(firstOutbound.line1?.dcoEnv?.steps?.[0]?.rate).toBe(99);
+		expect(firstOutbound.line1?.dcaEnv?.steps?.[0]?.level).toBe(99);
+
+		unmount();
+	});
+
+	it("enables outbound immediately when __czGetParams is absent", async () => {
+		window.__czGetParams = undefined;
+
+		const outboundJsons: string[] = [];
+		window.__czSetParams = (json: string) => {
+			outboundJsons.push(json);
+		};
+
+		renderHook(() => usePluginBridgeSynthEngine());
+
+		// Trigger a store change
+		act(() => {
+			useSynthStore.setState({ volume: 0.3 });
+		});
+
+		await waitFor(() => {
+			expect(outboundJsons.length).toBeGreaterThan(0);
+		});
+	});
+
+	it("does nothing when disabled", async () => {
+		let registered = false;
+		Object.defineProperty(window, "__czOnParams", {
+			configurable: true,
+			set: () => {
+				registered = true;
+			},
+		});
+
+		const called: string[] = [];
+		window.__czSetParams = (json: string) => {
+			called.push(json);
+		};
+		window.__czGetParams = vi.fn().mockResolvedValue({});
+
+		renderHook(() => usePluginBridgeSynthEngine({ enabled: false }));
+
+		// Give effects time to run
+		await new Promise((r) => setTimeout(r, 20));
+
+		expect(registered).toBe(false);
+		expect(window.__czGetParams).not.toHaveBeenCalled();
+		expect(called).toHaveLength(0);
 	});
 });

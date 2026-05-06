@@ -38,10 +38,8 @@ use cocoa;
 #[cfg(target_os = "macos")]
 use objc;
 
-use crate::{
-    append_log, handle_ipc_direct_format, handle_ipc_invoke, AlgoControlsState, CzParams,
-    EnvelopeState, ModMatrixState, ScopeBuffer, UiInputQueue,
-};
+use crate::{append_log, handle_ipc_invoke, ScopeBuffer, UiInputQueue};
+use cosmo_synth_engine::params::SynthParams;
 
 // ─── Size constants ──────────────────────────────────────────────────────────
 
@@ -131,12 +129,10 @@ unsafe impl Send for CzEditorHandle {}
 
 /// nih-plug `Editor` implementation for the Cosmo PD-101 plugin.
 pub struct CzEditor {
-    params: Arc<CzParams>,
-    envelopes: Arc<RwLock<EnvelopeState>>,
-    algo_controls: Arc<RwLock<AlgoControlsState>>,
-    mod_matrix: Arc<RwLock<ModMatrixState>>,
+    synth_params: Arc<RwLock<SynthParams>>,
     scope_buffer: ScopeBuffer,
     _ui_input_queue: UiInputQueue,
+    host_scale_factor: Arc<Mutex<f32>>,
 
     /// Shared handle to the live WebView (if any).  Held by both the Editor
     /// and the spawned handle so param pushes can reach the view.
@@ -145,30 +141,53 @@ pub struct CzEditor {
 
 impl CzEditor {
     pub(crate) fn new(
-        params: Arc<CzParams>,
-        envelopes: Arc<RwLock<EnvelopeState>>,
-        algo_controls: Arc<RwLock<AlgoControlsState>>,
-        mod_matrix: Arc<RwLock<ModMatrixState>>,
+        synth_params: Arc<RwLock<SynthParams>>,
         scope_buffer: ScopeBuffer,
         ui_input_queue: UiInputQueue,
     ) -> Self {
         Self {
-            params,
-            envelopes,
-            algo_controls,
-            mod_matrix,
+            synth_params,
             scope_buffer,
             _ui_input_queue: ui_input_queue,
+            host_scale_factor: Arc::new(Mutex::new(1.0)),
             webview_state: Arc::new(Mutex::new(WebViewContainer { webview: None })),
         }
     }
 
     /// Push the current parameter snapshot to the WebView's `__czOnParams` hook.
     fn push_params(&self) {
-        let json = self.params.to_params_json().to_string();
+        let Ok(sp) = self.synth_params.read() else {
+            return;
+        };
+        let Ok(json_str) = serde_json::to_string(&*sp) else {
+            return;
+        };
+        // Escape the JSON string for embedding inside a JS string literal.
+        let escaped = json_str.replace('\\', "\\\\").replace('"', "\\\"");
         let script = format!(
-            "if(typeof window.__czOnParams === 'function') {{ window.__czOnParams(JSON.stringify({json})); }}"
+            "if(typeof window.__czOnParams === 'function') {{ window.__czOnParams(\"{escaped}\"); }}"
         );
+        if let Ok(container) = self.webview_state.lock() {
+            if let Some(wv) = &container.webview {
+                let _ = wv.evaluate_script(&script);
+            }
+        }
+    }
+
+    /// Keep the plugin UI visually aligned with the web/wasm version by
+    /// cancelling host DPI scaling inside the WebView.
+    fn apply_scale_normalization(&self) {
+        let factor = self
+            .host_scale_factor
+            .lock()
+            .map(|v| *v)
+            .unwrap_or(1.0)
+            .max(0.01);
+        let zoom = 1.0 / factor;
+        let script = format!(
+            "if (document?.documentElement) {{ document.documentElement.style.zoom = '{zoom}'; }}"
+        );
+
         if let Ok(container) = self.webview_state.lock() {
             if let Some(wv) = &container.webview {
                 let _ = wv.evaluate_script(&script);
@@ -193,7 +212,7 @@ impl Editor for CzEditor {
     fn spawn(
         &self,
         parent: ParentWindowHandle,
-        context: Arc<dyn GuiContext>,
+        _context: Arc<dyn GuiContext>,
     ) -> Box<dyn Any + Send> {
         append_log("CzEditor::spawn");
 
@@ -230,16 +249,8 @@ impl Editor for CzEditor {
             };
             append_log(&format!("resource_dir: {}", resource_dir.display()));
 
-            let envelopes = self.envelopes.clone();
-            let algo_controls = self.algo_controls.clone();
-            let mod_matrix = self.mod_matrix.clone();
+            let synth_params = self.synth_params.clone();
             let scope_buffer = self.scope_buffer.clone();
-            let params = self.params.clone();
-
-            let envelopes_ipc = envelopes.clone();
-            let algo_controls_ipc = algo_controls.clone();
-            let mod_matrix_ipc = mod_matrix.clone();
-            let scope_buffer_ipc = scope_buffer.clone();
 
             let webview_state_for_ipc = self.webview_state.clone();
 
@@ -247,12 +258,8 @@ impl Editor for CzEditor {
                 build_webview_from_ns_view(
                     ns_view,
                     resource_dir,
-                    params,
-                    envelopes_ipc,
-                    algo_controls_ipc,
-                    mod_matrix_ipc,
-                    scope_buffer_ipc,
-                    context.clone(),
+                    synth_params,
+                    scope_buffer,
                     webview_state_for_ipc.clone(),
                 )
             };
@@ -262,6 +269,7 @@ impl Editor for CzEditor {
             }
 
             self.push_params();
+            self.apply_scale_normalization();
 
             Box::new(CzEditorHandle {
                 webview_state: self.webview_state.clone(),
@@ -287,7 +295,7 @@ impl Editor for CzEditor {
     }
 
     fn set_scale_factor(&self, _factor: f32) -> bool {
-        false
+        true
     }
 
     fn param_value_changed(&self, _id: &str, _normalized_value: f32) {
@@ -460,12 +468,8 @@ unsafe fn ensure_parent_has_window(ns_view: *mut std::ffi::c_void) -> Option<Tem
 unsafe fn build_webview_from_ns_view(
     ns_view: *mut std::ffi::c_void,
     resource_dir: std::path::PathBuf,
-    params: Arc<CzParams>,
-    envelopes: Arc<RwLock<EnvelopeState>>,
-    algo_controls: Arc<RwLock<AlgoControlsState>>,
-    mod_matrix: Arc<RwLock<ModMatrixState>>,
+    synth_params: Arc<RwLock<SynthParams>>,
     scope_buffer: ScopeBuffer,
-    gui_context: Arc<dyn GuiContext>,
     webview_state: Arc<Mutex<WebViewContainer>>,
 ) -> (Option<wry::WebView>, Option<TempWindow>) {
     use core::ptr::NonNull;
@@ -519,36 +523,8 @@ unsafe fn build_webview_from_ns_view(
             let body = request.body();
             let params_repush_done = params_repush_done.clone();
 
-            // Parse as { id, method, args }
+            // All IPC messages are RPC: { id, method, args }
             if let Ok(msg) = serde_json::from_str::<serde_json::Value>(body) {
-                // Webview param bridge sends direct { param_id, value } updates.
-                if let (Some(param_id), Some(value)) = (
-                    msg.get("param_id").and_then(serde_json::Value::as_str),
-                    msg.get("value").and_then(serde_json::Value::as_f64),
-                ) {
-                    let setter = ParamSetter::new(gui_context.as_ref());
-                    if !params.set_from_webview(&setter, param_id, value as f32) {
-                        append_log(&format!(
-                            "ipc unknown param_id from webview: {param_id}"
-                        ));
-                    }
-                    return;
-                }
-
-                // wry exposes window.ipc as non-configurable+frozen so the
-                // nihPlugBridge shim cannot be installed. The cosmo-pd101
-                // library therefore sends algo-controls, mod-matrix and
-                // envelope updates in their original direct-object form
-                // (no { id, method, args } wrapper). Handle those here.
-                if handle_ipc_direct_format(
-                    &msg,
-                    &envelopes,
-                    &algo_controls,
-                    &mod_matrix,
-                ) {
-                    return;
-                }
-
                 let id = msg.get("id").cloned().unwrap_or(serde_json::Value::Null);
                 let method = msg.get("method").and_then(|m| m.as_str()).unwrap_or("");
                 let args = msg
@@ -557,14 +533,7 @@ unsafe fn build_webview_from_ns_view(
                     .cloned()
                     .unwrap_or_default();
 
-                let result = handle_ipc_invoke(
-                    method,
-                    &args,
-                    &envelopes,
-                    &algo_controls,
-                    &mod_matrix,
-                    &scope_buffer,
-                );
+                let result = handle_ipc_invoke(method, &args, &synth_params, &scope_buffer);
 
                 let response = match result {
                     Ok(val) => serde_json::json!({ "id": id, "result": val }),
@@ -585,11 +554,17 @@ unsafe fn build_webview_from_ns_view(
                             .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
                             .is_ok()
                         {
-                            let json = params.to_params_json().to_string();
-                            let params_script = format!(
-                                "if(typeof window.__czOnParams === 'function') {{ window.__czOnParams(JSON.stringify({json})); }}"
-                            );
-                            let _ = wv.evaluate_script(&params_script);
+                            if let Ok(sp) = synth_params.read() {
+                                if let Ok(json_str) = serde_json::to_string(&*sp) {
+                                    let escaped = json_str
+                                        .replace('\\', "\\\\")
+                                        .replace('"', "\\\"");
+                                    let params_script = format!(
+                                        "if(typeof window.__czOnParams === 'function') {{ window.__czOnParams(\"{escaped}\"); }}"
+                                    );
+                                    let _ = wv.evaluate_script(&params_script);
+                                }
+                            }
                         }
                     }
                 }

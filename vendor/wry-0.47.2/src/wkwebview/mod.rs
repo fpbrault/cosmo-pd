@@ -349,16 +349,13 @@ impl InnerWebView {
 
       #[cfg(target_os = "macos")]
       {
-        if is_child {
-          // fixed element
-          webview.setAutoresizingMask(NSAutoresizingMaskOptions::NSViewMinYMargin);
-        } else {
-          // Auto-resize
-          webview.setAutoresizingMask(
-            NSAutoresizingMaskOptions::NSViewHeightSizable
-              | NSAutoresizingMaskOptions::NSViewWidthSizable,
-          );
-        }
+        // Auto-resize with parent NSView. Child webviews were previously created
+        // as fixed elements, which prevents host-side plugin resize from resizing
+        // the actual WKWebView content.
+        webview.setAutoresizingMask(
+          NSAutoresizingMaskOptions::NSViewHeightSizable
+            | NSAutoresizingMaskOptions::NSViewWidthSizable,
+        );
 
         // allowsBackForwardNavigation
         webview.setAllowsBackForwardNavigationGestures(attributes.back_forward_navigation_gestures);
@@ -538,7 +535,7 @@ r#"Object.defineProperty(window, 'ipc', {
     }
   }
 
-  pub fn id(&self) -> crate::WebViewId {
+  pub fn id(&self) -> crate::WebViewId<'_> {
     &self.id
   }
 
