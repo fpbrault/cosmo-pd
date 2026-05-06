@@ -7,7 +7,7 @@
 		"build": "bun run ../../scripts/build-plugin-auv3.mjs",
 		"stage:webview": "bun run ../../scripts/build-plugin-auv3.mjs --webview-only",
 		"build:ios": "bun run ../../scripts/build-plugin-auv3.mjs --ios-xcframework",
-		"bundle": "bun run ../../scripts/build-plugin-auv3.mjs --bundle --swift-build",
-		"install": "bun run ../../scripts/build-plugin-auv3.mjs --install --swift-build"
+		"bundle": "bun run ../../scripts/build-plugin-auv3.mjs --bundle",
+		"install": "bun run ../../scripts/build-plugin-auv3.mjs --install"
 	}
 }
