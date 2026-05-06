@@ -181,8 +181,16 @@ function drawEnvPreview(
 ) {
 	const ctx = canvas.getContext("2d");
 	if (!ctx) return;
-	const w = canvas.width;
-	const h = canvas.height;
+	const dpr = window.devicePixelRatio || 1;
+	const w = canvas.clientWidth || canvas.width;
+	const h = canvas.clientHeight || canvas.height;
+	const targetW = Math.round(w * dpr);
+	const targetH = Math.round(h * dpr);
+	if (canvas.width !== targetW || canvas.height !== targetH) {
+		canvas.width = targetW;
+		canvas.height = targetH;
+	}
+	ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 	const drawHeight = h - CHART_PADDING_Y * 2;
 	ctx.clearRect(0, 0, w, h);
 
@@ -444,8 +452,8 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 			if (!canvas) return null;
 
 			const rect = canvas.getBoundingClientRect();
-			const x = ((clientX - rect.left) / rect.width) * canvas.width;
-			const y = ((clientY - rect.top) / rect.height) * canvas.height;
+			const x = clientX - rect.left;
+			const y = clientY - rect.top;
 			return { x, y, rect };
 		},
 		[],
@@ -456,7 +464,13 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 			const pos = getRelativePointerPosition(clientX, clientY);
 			if (!pos) return null;
 
-			const points = buildEnvelopePoints(normalizedEnv, 1200, 300);
+			const canvas = canvasRef.current;
+			if (!canvas) return null;
+			const points = buildEnvelopePoints(
+				normalizedEnv,
+				canvas.clientWidth,
+				canvas.clientHeight,
+			);
 			const closest = findClosestPoint(points, pos.x, pos.y);
 			if (!closest) return null;
 
@@ -502,10 +516,11 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 					(dragState.startClientY - e.clientY) / pos.rect.height;
 				const level = clamp(dragState.startLevel + levelDelta * 99, 0, 99);
 				const isLastActiveStep = dragState.stepIndex === activeStepCount - 1;
+				const canvasW = canvasRef.current?.clientWidth ?? 1200;
 				const allowed = getStepAllowedXRange(
 					dragState.stepIndex,
 					activeStepCount,
-					canvasRef.current?.width ?? 1200,
+					canvasW,
 				);
 				const clampedX = clamp(pos.x, allowed.minX, allowed.maxX);
 				const rate = isLastActiveStep
@@ -518,11 +533,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 							0,
 							99,
 						)
-					: getRateForPointerX(
-							dragState.stepIndex,
-							clampedX,
-							canvasRef.current?.width ?? 1200,
-						);
+					: getRateForPointerX(dragState.stepIndex, clampedX, canvasW);
 				updateStepValues(dragState.stepIndex, level, rate);
 				setHoverStep(dragState.stepIndex);
 				return;

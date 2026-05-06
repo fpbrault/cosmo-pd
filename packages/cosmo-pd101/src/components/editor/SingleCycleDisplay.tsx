@@ -26,13 +26,19 @@ export const SingleCycleDisplay = memo(function SingleCycleDisplay({
 		if (!canvas || !data) return;
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
-		ctx.clearRect(0, 0, width, height);
+		const dpr = window.devicePixelRatio || 1;
+		const w = width;
+		const h = height;
+		canvas.width = Math.round(w * dpr);
+		canvas.height = Math.round(h * dpr);
+		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+		ctx.clearRect(0, 0, w, h);
 		ctx.strokeStyle = color;
 		ctx.lineWidth = 2;
 		ctx.beginPath();
 		for (let i = 0; i < data.length; i++) {
-			const x = (i / (data.length - 1)) * width;
-			const y = height / 2 - data[i] * (height / 2 - 4);
+			const x = (i / (data.length - 1)) * w;
+			const y = h / 2 - data[i] * (h / 2 - 4);
 			if (i === 0) ctx.moveTo(x, y);
 			else ctx.lineTo(x, y);
 		}
@@ -40,8 +46,8 @@ export const SingleCycleDisplay = memo(function SingleCycleDisplay({
 		ctx.strokeStyle = "#8884";
 		ctx.lineWidth = 1;
 		ctx.beginPath();
-		ctx.moveTo(0, height / 2);
-		ctx.lineTo(width, height / 2);
+		ctx.moveTo(0, h / 2);
+		ctx.lineTo(w, h / 2);
 		ctx.stroke();
 	}, [data, color, width, height]);
 
@@ -166,10 +172,12 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay({
 		if (!canvas) return;
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
+		const dpr = window.devicePixelRatio || 1;
 		const w = canvas.clientWidth || width;
 		const h = height;
-		canvas.width = w;
-		canvas.height = h;
+		canvas.width = Math.round(w * dpr);
+		canvas.height = Math.round(h * dpr);
+		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 		ctx.clearRect(0, 0, w, h);
 
 		// centre line

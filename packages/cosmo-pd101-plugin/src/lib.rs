@@ -1,6 +1,8 @@
-//! Cosmo PD-101 Phase Distortion synthesizer — VST3/AU plugin via Beamer.
+//! Cosmo PD-101 Phase Distortion synthesizer — VST3/CLAP plugin via nih-plug.
 //!
-//! Uses beamer for VST3/AU plugin hosting and cosmo-synth-engine for the DSP engine.
+//! Uses nih-plug for VST3/CLAP plugin hosting and cosmo-synth-engine for the DSP engine.
+
+#![recursion_limit = "256"]
 
 use std::collections::VecDeque;
 use std::fs::OpenOptions;
@@ -8,12 +10,11 @@ use std::io::Write;
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use beamer::prelude::*;
-use cosmo_synth_engine::default_envelopes::{default_dca_env, default_dco_env, default_dcw_env};
-use cosmo_synth_engine::params::{
-    AlgoControlValueV1, FxSlotConfig, ModMatrix, PolyMode, StepEnvData, SynthParams,
-};
+use cosmo_synth_engine::params::SynthParams;
 use cosmo_synth_engine::processor::{midi_note_to_freq, CosmoProcessor};
+use nih_plug::prelude::*;
+
+pub mod gui;
 
 const PLUGIN_LOG_PATH: &str = "/tmp/cosmo-plugin.log";
 
@@ -107,6 +108,7 @@ impl ScopeFrame {
 type ScopeBuffer = Arc<Mutex<ScopeFrame>>;
 type UiInputQueue = Arc<Mutex<VecDeque<UiInputEvent>>>;
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 enum UiInputEvent {
     NoteOn { note: u8, velocity: f32 },
@@ -118,1337 +120,317 @@ enum UiInputEvent {
 }
 
 // =============================================================================
-// Enum Types for EnumParameter
+// Minimal nih-plug Params struct (no DAW automation — all state flows through
+// the JSON bridge).
 // =============================================================================
 
-/// Waveform selection (1-8).
-#[derive(Copy, Clone, PartialEq, EnumParameter)]
-pub enum Waveform {
-    #[name = "Saw"]
-    #[default]
-    Saw,
-    #[name = "Square"]
-    Square,
-    #[name = "Pulse"]
-    Pulse,
-    #[name = "Null"]
-    Null,
-    #[name = "Sine Pulse"]
-    SinePulse,
-    #[name = "Double Sine"]
-    DoubleSine,
-    #[name = "Saw Pulse"]
-    SawPulse,
-    #[name = "Multi Sine"]
-    MultiSine,
-    #[name = "Pulse 2"]
-    Pulse2,
-}
-
-/// Warp algorithm selector.
-#[derive(Copy, Clone, PartialEq, EnumParameter)]
-pub enum WarpAlgo {
-    #[name = "CZ-101"]
-    #[default]
-    Cz101,
-    #[name = "Bend"]
-    Bend,
-    #[name = "Sync"]
-    Sync,
-    #[name = "Pinch"]
-    Pinch,
-    #[name = "Fold"]
-    Fold,
-    #[name = "Skew"]
-    Skew,
-    #[name = "Quantize"]
-    Quantize,
-    #[name = "Twist"]
-    Twist,
-    #[name = "Clip"]
-    Clip,
-    #[name = "Ripple"]
-    Ripple,
-    #[name = "Mirror"]
-    Mirror,
-    #[name = "Fof"]
-    Fof,
-    #[name = "Karpunk"]
-    Karpunk,
-    #[name = "Sine"]
-    Sine,
-}
-
-/// Line select mode.
-#[derive(Copy, Clone, PartialEq, EnumParameter)]
-pub enum LineSelect {
-    #[default]
-    #[name = "L1"]
-    L1,
-    #[name = "L2"]
-    L2,
-    #[name = "L1+L1'"]
-    L1PlusL1Prime,
-    #[name = "L1+L2'"]
-    L1PlusL2Prime,
-}
-
-/// Modulation mode.
-#[derive(Copy, Clone, PartialEq, EnumParameter)]
-pub enum ModMode {
-    #[name = "Normal"]
-    #[default]
-    Normal,
-    #[name = "Ring"]
-    Ring,
-    #[name = "Noise"]
-    Noise,
-}
-
-/// Polyphony mode.
-#[derive(Copy, Clone, PartialEq, EnumParameter)]
-pub enum PolyModeParam {
-    #[name = "Poly 8"]
-    #[default]
-    Poly8,
-    #[name = "Mono"]
-    Mono,
-}
-
-/// LFO waveform.
-#[derive(Copy, Clone, PartialEq, EnumParameter)]
-pub enum LfoWaveform {
-    #[name = "Sine"]
-    #[default]
-    Sine,
-    #[name = "Triangle"]
-    Triangle,
-    #[name = "Square"]
-    Square,
-    #[name = "Saw"]
-    Saw,
-    #[name = "Inverted Saw"]
-    InvertedSaw,
-    #[name = "Random"]
-    Random,
-}
-
-/// Portamento mode.
-#[derive(Copy, Clone, PartialEq, EnumParameter)]
-pub enum PortamentoMode {
-    #[name = "Rate"]
-    Rate,
-    #[default]
-    #[name = "Time"]
-    Time,
-}
+#[derive(Params, Default)]
+pub struct CzParams {}
 
 // =============================================================================
-// Parameters
+// IPC dispatch
 // =============================================================================
 
-/// Parameters for the Cosmo PD-101 Phase Distortion synthesizer.
-#[derive(Parameters)]
-pub struct CzParameters {
-    // Global
-    #[parameter(id = "volume", name = "Volume", default = 0.4, range = 0.0..=1.0)]
-    pub volume: FloatParameter,
-
-    #[parameter(id = "octave", name = "Octave", default = 0.0, range = -2.0..=2.0)]
-    pub octave: FloatParameter,
-
-    #[parameter(id = "line_select", name = "Line Select", group = "Global")]
-    pub line_select: EnumParameter<LineSelect>,
-
-    #[parameter(id = "mod_mode", name = "Mod Mode", group = "Global")]
-    pub mod_mode: EnumParameter<ModMode>,
-
-    #[parameter(id = "poly_mode", name = "Poly Mode", group = "Global")]
-    pub poly_mode: EnumParameter<PolyModeParam>,
-
-    #[parameter(id = "legato", name = "Legato", default = 0.0, range = 0.0..=1.0)]
-    pub legato: FloatParameter,
-
-    #[parameter(id = "int_pm_enabled", name = "Int PM Enabled", default = 0.0, range = 0.0..=1.0)]
-    pub int_pm_enabled: FloatParameter,
-
-    #[parameter(id = "int_pm_amount", name = "Int PM Amount", default = 0.0, range = 0.0..=1.0)]
-    pub int_pm_amount: FloatParameter,
-
-    #[parameter(id = "int_pm_ratio", name = "Int PM Ratio", default = 1.0, range = 0.0..=8.0)]
-    pub int_pm_ratio: FloatParameter,
-
-    #[parameter(id = "ext_pm_amount", name = "Ext PM Amount", default = 0.0, range = 0.0..=1.0)]
-    pub ext_pm_amount: FloatParameter,
-
-    #[parameter(id = "pm_pre", name = "PM Pre", default = 1.0, range = 0.0..=1.0)]
-    pub pm_pre: FloatParameter,
-
-    // Line 1
-    #[parameter(id = "l1_waveform", name = "Waveform", group = "Line 1")]
-    pub l1_waveform: EnumParameter<Waveform>,
-
-    #[parameter(id = "l1_warp_algo", name = "Warp Algo", group = "Line 1")]
-    pub l1_warp_algo: EnumParameter<WarpAlgo>,
-
-    #[parameter(id = "l1_dcw_base", name = "DCW Amount", default = 0.0, range = 0.0..=1.0, group = "Line 1")]
-    pub l1_dcw_base: FloatParameter,
-
-    #[parameter(id = "l1_dca_base", name = "Level", default = 1.0, range = 0.0..=1.0, group = "Line 1")]
-    pub l1_dca_base: FloatParameter,
-
-    #[parameter(id = "l1_octave", name = "Octave (shared)", default = 0.0, range = -2.0..=2.0, group = "Line 1")]
-    pub l1_octave: FloatParameter,
-
-    #[parameter(id = "l1_key_follow", name = "Key Follow", default = 0.0, range = 0.0..=10.0, group = "Line 1")]
-    pub l1_key_follow: FloatParameter,
-
-    #[parameter(id = "l1_modulation", name = "Modulation", default = 0.0, range = 0.0..=1.0, group = "Line 1")]
-    pub l1_modulation: FloatParameter,
-
-    #[parameter(id = "l1_algo_blend", name = "Algo Blend", default = 0.0, range = 0.0..=1.0, group = "Line 1")]
-    pub l1_algo_blend: FloatParameter,
-
-    #[parameter(id = "l1_warp_algo2", name = "Warp Algo 2", default = -1.0, range = -1.0..=13.0, group = "Line 1")]
-    pub l1_warp_algo2: FloatParameter,
-
-    // Line 2
-    #[parameter(id = "l2_waveform", name = "Waveform", group = "Line 2")]
-    pub l2_waveform: EnumParameter<Waveform>,
-
-    #[parameter(id = "l2_warp_algo", name = "Warp Algo", group = "Line 2")]
-    pub l2_warp_algo: EnumParameter<WarpAlgo>,
-
-    #[parameter(id = "l2_dcw_base", name = "DCW Amount", default = 0.0, range = 0.0..=1.0, group = "Line 2")]
-    pub l2_dcw_base: FloatParameter,
-
-    #[parameter(id = "l2_dca_base", name = "Level", default = 1.0, range = 0.0..=1.0, group = "Line 2")]
-    pub l2_dca_base: FloatParameter,
-
-    #[parameter(id = "l2_octave", name = "L2 Oct (relative)", default = 0.0, range = -3.0..=3.0, group = "Line 2")]
-    pub l2_octave: FloatParameter,
-
-    #[parameter(id = "l2_detune_note", name = "L2 Note", default = 0.0, range = -11.0..=11.0, group = "Line 2")]
-    pub l2_detune_note: FloatParameter,
-
-    #[parameter(id = "l2_detune_fine", name = "L2 Fine", default = 0.0, range = -60.0..=60.0, group = "Line 2")]
-    pub l2_detune_fine: FloatParameter,
-
-    #[parameter(id = "l2_key_follow", name = "Key Follow", default = 0.0, range = 0.0..=10.0, group = "Line 2")]
-    pub l2_key_follow: FloatParameter,
-
-    #[parameter(id = "l2_modulation", name = "Modulation", default = 0.0, range = 0.0..=1.0, group = "Line 2")]
-    pub l2_modulation: FloatParameter,
-
-    #[parameter(id = "l2_algo_blend", name = "Algo Blend", default = 0.0, range = 0.0..=1.0, group = "Line 2")]
-    pub l2_algo_blend: FloatParameter,
-
-    #[parameter(id = "l2_warp_algo2", name = "Warp Algo 2", default = -1.0, range = -1.0..=13.0, group = "Line 2")]
-    pub l2_warp_algo2: FloatParameter,
-
-    // Vibrato
-    #[parameter(id = "vib_enabled", name = "Enabled", default = 0.0, range = 0.0..=1.0, group = "Vibrato")]
-    pub vib_enabled: FloatParameter,
-
-    #[parameter(id = "vib_waveform", name = "Waveform", default = 1.0, range = 1.0..=4.0, group = "Vibrato")]
-    pub vib_waveform: FloatParameter,
-
-    #[parameter(id = "vib_rate", name = "Rate", default = 55.0, range = 0.0..=99.0, group = "Vibrato")]
-    pub vib_rate: FloatParameter,
-
-    #[parameter(id = "vib_depth", name = "Depth", default = 8.0, range = 0.0..=99.0, group = "Vibrato")]
-    pub vib_depth: FloatParameter,
-
-    #[parameter(id = "vib_delay", name = "Delay (ms)", default = 120.0, range = 0.0..=5000.0, group = "Vibrato")]
-    pub vib_delay: FloatParameter,
-
-    // Chorus
-    #[parameter(id = "cho_enabled", name = "Enabled", default = 0.0, range = 0.0..=1.0, group = "Chorus")]
-    pub cho_enabled: FloatParameter,
-
-    #[parameter(id = "cho_mix", name = "Mix", default = 0.0, range = 0.0..=1.0, group = "Chorus")]
-    pub cho_mix: FloatParameter,
-
-    #[parameter(id = "cho_rate", name = "Rate (Hz)", default = 0.8, range = 0.1..=10.0, group = "Chorus")]
-    pub cho_rate: FloatParameter,
-
-    #[parameter(id = "cho_depth", name = "Depth", default = 1.0, range = 0.0..=3.0, group = "Chorus")]
-    pub cho_depth: FloatParameter,
-
-    // Delay
-    #[parameter(id = "del_enabled", name = "Enabled", default = 0.0, range = 0.0..=1.0, group = "Delay")]
-    pub del_enabled: FloatParameter,
-
-    #[parameter(id = "del_mix", name = "Mix", default = 0.0, range = 0.0..=1.0, group = "Delay")]
-    pub del_mix: FloatParameter,
-
-    #[parameter(id = "del_time", name = "Time (s)", default = 0.3, range = 0.01..=2.0, group = "Delay")]
-    pub del_time: FloatParameter,
-
-    #[parameter(id = "del_feedback", name = "Feedback", default = 0.35, range = 0.0..=1.0, group = "Delay")]
-    pub del_feedback: FloatParameter,
-
-    // Reverb
-    #[parameter(id = "rev_enabled", name = "Enabled", default = 0.0, range = 0.0..=1.0, group = "Reverb")]
-    pub rev_enabled: FloatParameter,
-
-    #[parameter(id = "rev_mix", name = "Mix", default = 0.0, range = 0.0..=1.0, group = "Reverb")]
-    pub rev_mix: FloatParameter,
-
-    #[parameter(id = "rev_space", name = "Space", default = 0.5, range = 0.0..=1.0, group = "Reverb")]
-    pub rev_space: FloatParameter,
-
-    #[parameter(id = "rev_predelay", name = "Pre-Delay (s)", default = 0.0, range = 0.0..=0.1, group = "Reverb")]
-    pub rev_predelay: FloatParameter,
-
-    #[parameter(id = "rev_distance", name = "Distance", default = 0.3, range = 0.0..=1.0, group = "Reverb")]
-    pub rev_distance: FloatParameter,
-
-    #[parameter(id = "rev_character", name = "Character", default = 0.65, range = 0.0..=1.0, group = "Reverb")]
-    pub rev_character: FloatParameter,
-
-    // LFO
-    #[parameter(id = "lfo_waveform", name = "Waveform", group = "LFO")]
-    pub lfo_waveform: EnumParameter<LfoWaveform>,
-
-    #[parameter(id = "lfo_rate", name = "Rate (Hz)", default = 5.0, range = 0.01..=20.0, group = "LFO")]
-    pub lfo_rate: FloatParameter,
-
-    #[parameter(id = "lfo_depth", name = "Depth", default = 0.2, range = 0.0..=1.0, group = "LFO")]
-    pub lfo_depth: FloatParameter,
-
-    // Portamento
-    #[parameter(id = "port_enabled", name = "Enabled", default = 0.0, range = 0.0..=1.0, group = "Portamento")]
-    pub port_enabled: FloatParameter,
-
-    #[parameter(id = "port_mode", name = "Mode", group = "Portamento")]
-    pub port_mode: EnumParameter<PortamentoMode>,
-
-    #[parameter(id = "port_time", name = "Time (s)", default = 0.1, range = 0.0..=2.0, group = "Portamento")]
-    pub port_time: FloatParameter,
-}
-
-impl CzParameters {
-    fn map_warp_algo(value: WarpAlgo) -> cosmo_synth_engine::params::Algo {
-        match value {
-            WarpAlgo::Cz101 => cosmo_synth_engine::params::Algo::Cz101,
-            WarpAlgo::Bend => cosmo_synth_engine::params::Algo::Bend,
-            WarpAlgo::Sync => cosmo_synth_engine::params::Algo::Sync,
-            WarpAlgo::Pinch => cosmo_synth_engine::params::Algo::Pinch,
-            WarpAlgo::Fold => cosmo_synth_engine::params::Algo::Fold,
-            WarpAlgo::Skew => cosmo_synth_engine::params::Algo::Skew,
-            WarpAlgo::Quantize => cosmo_synth_engine::params::Algo::Quantize,
-            WarpAlgo::Twist => cosmo_synth_engine::params::Algo::Twist,
-            WarpAlgo::Clip => cosmo_synth_engine::params::Algo::Clip,
-            WarpAlgo::Ripple => cosmo_synth_engine::params::Algo::Ripple,
-            WarpAlgo::Mirror => cosmo_synth_engine::params::Algo::Mirror,
-            WarpAlgo::Fof => cosmo_synth_engine::params::Algo::Fof,
-            WarpAlgo::Karpunk => cosmo_synth_engine::params::Algo::Karpunk,
-            WarpAlgo::Sine => cosmo_synth_engine::params::Algo::Sine,
-        }
+fn handle_ipc_invoke(
+    method: &str,
+    args: &[serde_json::Value],
+    synth_params: &Arc<RwLock<SynthParams>>,
+    scope_buffer: &ScopeBuffer,
+) -> Result<serde_json::Value, String> {
+    if method != "getScopeData" && method != "clientLog" {
+        append_log(&format!("ipc invoke method={method} args={}", args.len()));
     }
 
-    fn map_lfo_waveform(value: LfoWaveform) -> cosmo_synth_engine::params::LfoWaveform {
-        match value {
-            LfoWaveform::Sine => cosmo_synth_engine::params::LfoWaveform::Sine,
-            LfoWaveform::Triangle => cosmo_synth_engine::params::LfoWaveform::Triangle,
-            LfoWaveform::Square => cosmo_synth_engine::params::LfoWaveform::Square,
-            LfoWaveform::Saw => cosmo_synth_engine::params::LfoWaveform::Saw,
-            LfoWaveform::InvertedSaw => cosmo_synth_engine::params::LfoWaveform::InvertedSaw,
-            LfoWaveform::Random => cosmo_synth_engine::params::LfoWaveform::Random,
-        }
-    }
-
-    fn map_portamento_mode(value: PortamentoMode) -> cosmo_synth_engine::params::PortamentoMode {
-        match value {
-            PortamentoMode::Rate => cosmo_synth_engine::params::PortamentoMode::Rate,
-            PortamentoMode::Time => cosmo_synth_engine::params::PortamentoMode::Time,
-        }
-    }
-
-    fn map_optional_warp(value: f32) -> Option<cosmo_synth_engine::params::Algo> {
-        let id = value.round() as i32;
-        match id {
-            -1 => None,
-            0 => Some(cosmo_synth_engine::params::Algo::Cz101),
-            1 => Some(cosmo_synth_engine::params::Algo::Bend),
-            2 => Some(cosmo_synth_engine::params::Algo::Sync),
-            3 => Some(cosmo_synth_engine::params::Algo::Pinch),
-            4 => Some(cosmo_synth_engine::params::Algo::Fold),
-            5 => Some(cosmo_synth_engine::params::Algo::Skew),
-            6 => Some(cosmo_synth_engine::params::Algo::Quantize),
-            7 => Some(cosmo_synth_engine::params::Algo::Twist),
-            8 => Some(cosmo_synth_engine::params::Algo::Clip),
-            9 => Some(cosmo_synth_engine::params::Algo::Ripple),
-            10 => Some(cosmo_synth_engine::params::Algo::Mirror),
-            11 => Some(cosmo_synth_engine::params::Algo::Fof),
-            12 => Some(cosmo_synth_engine::params::Algo::Karpunk),
-            13 => Some(cosmo_synth_engine::params::Algo::Sine),
-            _ => None,
-        }
-    }
-
-    fn to_synth_params(&self) -> SynthParams {
-        let mut params = SynthParams {
-            volume: self.volume.get() as f32,
-            octave: self.octave.get() as f32,
-            line_select: match self.line_select.get() {
-                LineSelect::L1 => cosmo_synth_engine::params::LineSelect::L1,
-                LineSelect::L2 => cosmo_synth_engine::params::LineSelect::L2,
-                LineSelect::L1PlusL1Prime => cosmo_synth_engine::params::LineSelect::L1PlusL1Prime,
-                LineSelect::L1PlusL2Prime => cosmo_synth_engine::params::LineSelect::L1PlusL2Prime,
-            },
-            mod_mode: match self.mod_mode.get() {
-                ModMode::Normal => cosmo_synth_engine::params::ModMode::Normal,
-                ModMode::Ring => cosmo_synth_engine::params::ModMode::Ring,
-                ModMode::Noise => cosmo_synth_engine::params::ModMode::Noise,
-            },
-            poly_mode: match self.poly_mode.get() {
-                PolyModeParam::Poly8 => PolyMode::Poly8,
-                PolyModeParam::Mono => PolyMode::Mono,
-            },
-            legato: self.legato.get() >= 0.5,
-            ..Default::default()
-        };
-
-        params.line1.algo = Self::map_warp_algo(self.l1_warp_algo.get());
-        params.line1.dcw_base = self.l1_dcw_base.get() as f32;
-        params.line1.dca_base = self.l1_dca_base.get() as f32;
-        params.line1.octave = self.l1_octave.get() as f32;
-        params.line1.detune_note = 0.0;
-        params.line1.detune_fine = 0.0;
-        params.line1.key_follow = self.l1_key_follow.get() as f32;
-        params.line1.modulation = self.l1_modulation.get() as f32;
-        params.line1.algo_blend = self.l1_algo_blend.get() as f32;
-        params.line1.algo2 = Self::map_optional_warp(self.l1_warp_algo2.get() as f32);
-
-        params.line2.algo = Self::map_warp_algo(self.l2_warp_algo.get());
-        params.line2.dcw_base = self.l2_dcw_base.get() as f32;
-        params.line2.dca_base = self.l2_dca_base.get() as f32;
-        params.line2.octave = self.l1_octave.get() as f32 + self.l2_octave.get() as f32;
-        params.line2.detune_note = self.l2_detune_note.get() as f32;
-        params.line2.detune_fine = self.l2_detune_fine.get() as f32;
-        params.line2.key_follow = self.l2_key_follow.get() as f32;
-        params.line2.modulation = self.l2_modulation.get() as f32;
-        params.line2.algo_blend = self.l2_algo_blend.get() as f32;
-        params.line2.algo2 = Self::map_optional_warp(self.l2_warp_algo2.get() as f32);
-
-        params.lfo.waveform = Self::map_lfo_waveform(self.lfo_waveform.get());
-        params.lfo.rate = self.lfo_rate.get() as f32;
-        params.lfo.depth = self.lfo_depth.get() as f32;
-
-        params.portamento.enabled = self.port_enabled.get() >= 0.5;
-        params.portamento.mode = Self::map_portamento_mode(self.port_mode.get());
-        params.portamento.time = self.port_time.get() as f32;
-
-        params
-    }
-}
-
-// =============================================================================
-// Compile-time coverage guard
-// =============================================================================
-//
-// This function is NEVER called. It exists solely to force a compile error
-// whenever a new field is added to SynthParams (or any nested param struct) in
-// cosmo-synth-engine/src/params.rs without updating `to_synth_params` above.
-//
-// Rules:
-//   - Every struct destructure here must name ALL fields — no `..` allowed.
-//   - If params.rs adds a field, rustc will report "missing field `foo`" here.
-//   - Deliberately unmapped fields (e.g. `frequency`, `ring_gain`,
-//     `algo_controls`) must still be listed — use a `_`-prefixed binding to
-//     make the intentional omission visible.
-#[allow(dead_code, clippy::items_after_statements)]
-fn _assert_synth_params_coverage(p: SynthParams) {
-    use cosmo_synth_engine::params::{
-        LfoParams, LineParams, ModEnvParams, PortamentoParams, RandomParams,
-    };
-
-    let SynthParams {
-        line_select,
-        mod_mode,
-        ring_gain: _ring_gain, // intentionally not a VST param
-        octave,
-        line1,
-        line2,
-        frequency: _frequency, // set by the MIDI layer, not a VST param
-        volume,
-        poly_mode,
-        legato,
-        portamento,
-        lfo,
-        lfo2,
-        mod_env,
-        random,
-        velocity_curve: _velocity_curve,     // not yet a VST param
-        pitch_bend_range: _pitch_bend_range, // not yet a VST param
-        mod_matrix: _mod_matrix,             // not yet a VST param
-        fx_slots: _fx_slots,                 // not yet a VST param
-    } = p;
-
-    // ModEnvParams / RandomParams — not yet VST params.
-    let ModEnvParams {
-        attack: _menv_attack,
-        decay: _menv_decay,
-        sustain: _menv_sustain,
-        release: _menv_release,
-    } = mod_env;
-    let RandomParams { rate: _rand_rate } = random;
-    let PortamentoParams {
-        enabled: _port_enabled,
-        mode: _port_mode,
-        rate: _port_rate,
-        time: _port_time,
-    } = portamento;
-    let LfoParams {
-        waveform: _lfo_waveform,
-        rate: _lfo_rate,
-        depth: _lfo_depth,
-        symmetry: _lfo_symmetry,
-        retrigger: _lfo_retrigger,
-        offset: _lfo_offset,
-    } = lfo;
-    let LfoParams {
-        waveform: _lfo2_waveform,
-        rate: _lfo2_rate,
-        depth: _lfo2_depth,
-        symmetry: _lfo2_symmetry,
-        retrigger: _lfo2_retrigger,
-        offset: _lfo2_offset,
-    } = lfo2;
-
-    // Both lines must be destructured exhaustively.
-    let LineParams {
-        algo: _l1_algo,
-        algo2: _l1_algo2,
-        algo_blend: _l1_blend,
-        base_waveform_a: _l1_base_waveform_a,
-        base_waveform_b: _l1_base_waveform_b,
-        window: _l1_window,
-        dca_base: _l1_dca,
-        dcw_base: _l1_dcw,
-        modulation: _l1_mod,
-        detune_note: _l1_detune_note,
-        detune_fine: _l1_detune_fine,
-        octave: _l1_octave,
-        dco_env: _,
-        dcw_env: _,
-        dca_env: _,
-        key_follow: _l1_kf,
-        algo_controls_a: _l1_algo_controls_a, // not yet a VST param — routed via IPC
-        algo_controls_b: _l1_algo_controls_b, // not yet a VST param — routed via IPC
-    } = line1;
-
-    let LineParams {
-        algo: _l2_algo,
-        algo2: _l2_algo2,
-        algo_blend: _l2_blend,
-        base_waveform_a: _l2_base_waveform_a,
-        base_waveform_b: _l2_base_waveform_b,
-        window: _l2_window,
-        dca_base: _l2_dca,
-        dcw_base: _l2_dcw,
-        modulation: _l2_mod,
-        detune_note: _l2_detune_note,
-        detune_fine: _l2_detune_fine,
-        octave: _l2_octave,
-        dco_env: _,
-        dcw_env: _,
-        dca_env: _,
-        key_follow: _l2_kf,
-        algo_controls_a: _l2_algo_controls_a, // not yet a VST param — routed via IPC
-        algo_controls_b: _l2_algo_controls_b, // not yet a VST param — routed via IPC
-    } = line2;
-
-    // Suppress unused-variable warnings for fields that ARE mapped to VST params.
-    let _ = (line_select, mod_mode, octave, volume, poly_mode, legato);
-}
-
-#[derive(Clone)]
-struct EnvelopeState {
-    l1_dco: StepEnvData,
-    l1_dcw: StepEnvData,
-    l1_dca: StepEnvData,
-    l2_dco: StepEnvData,
-    l2_dcw: StepEnvData,
-    l2_dca: StepEnvData,
-}
-
-impl Default for EnvelopeState {
-    fn default() -> Self {
-        Self {
-            l1_dco: default_dco_env(),
-            l1_dcw: default_dcw_env(),
-            l1_dca: default_dca_env(),
-            l2_dco: default_dco_env(),
-            l2_dcw: default_dcw_env(),
-            l2_dca: default_dca_env(),
-        }
-    }
-}
-
-impl EnvelopeState {
-    fn apply_to(&self, params: &mut SynthParams) {
-        params.line1.dco_env = self.l1_dco.clone();
-        params.line1.dcw_env = self.l1_dcw.clone();
-        params.line1.dca_env = self.l1_dca.clone();
-        params.line2.dco_env = self.l2_dco.clone();
-        params.line2.dcw_env = self.l2_dcw.clone();
-        params.line2.dca_env = self.l2_dca.clone();
-    }
-
-    fn set(&mut self, envelope_id: &str, data: StepEnvData) -> Result<(), String> {
-        match envelope_id {
-            "l1_dco" => self.l1_dco = data,
-            "l1_dcw" => self.l1_dcw = data,
-            "l1_dca" => self.l1_dca = data,
-            "l2_dco" => self.l2_dco = data,
-            "l2_dcw" => self.l2_dcw = data,
-            "l2_dca" => self.l2_dca = data,
-            _ => return Err(format!("unknown envelope id: {envelope_id}")),
-        }
-
-        Ok(())
-    }
-
-    fn to_json(&self) -> serde_json::Value {
-        serde_json::json!({
-            "l1_dco": self.l1_dco,
-            "l1_dcw": self.l1_dcw,
-            "l1_dca": self.l1_dca,
-            "l2_dco": self.l2_dco,
-            "l2_dcw": self.l2_dcw,
-            "l2_dca": self.l2_dca,
-        })
-    }
-}
-
-#[derive(Clone, Default)]
-struct AlgoControlsState {
-    line1_a: Vec<AlgoControlValueV1>,
-    line1_b: Vec<AlgoControlValueV1>,
-    line2_a: Vec<AlgoControlValueV1>,
-    line2_b: Vec<AlgoControlValueV1>,
-}
-
-impl AlgoControlsState {
-    fn apply_to(&self, params: &mut SynthParams) {
-        params.line1.algo_controls_a = Some(self.line1_a.clone());
-        params.line1.algo_controls_b = Some(self.line1_b.clone());
-        params.line2.algo_controls_a = Some(self.line2_a.clone());
-        params.line2.algo_controls_b = Some(self.line2_b.clone());
-    }
-
-    fn set(
-        &mut self,
-        line: u8,
-        bank: &str,
-        controls: Vec<AlgoControlValueV1>,
-    ) -> Result<(), String> {
-        match (line, bank) {
-            (1, "a") => self.line1_a = controls,
-            (1, "b") => self.line1_b = controls,
-            (2, "a") => self.line2_a = controls,
-            (2, "b") => self.line2_b = controls,
-            _ => return Err(format!("unknown algo controls line: {line}")),
-        }
-
-        Ok(())
-    }
-
-    fn to_json(&self) -> serde_json::Value {
-        serde_json::json!({
-            "line1": { "a": self.line1_a, "b": self.line1_b },
-            "line2": { "a": self.line2_a, "b": self.line2_b },
-        })
-    }
-}
-
-#[derive(Clone, Default)]
-struct ModMatrixState {
-    matrix: ModMatrix,
-}
-
-impl ModMatrixState {
-    fn apply_to(&self, params: &mut SynthParams) {
-        params.mod_matrix = self.matrix.clone();
-    }
-
-    fn set(&mut self, matrix: ModMatrix) {
-        self.matrix = matrix;
-    }
-
-    fn to_json(&self) -> serde_json::Value {
-        serde_json::to_value(&self.matrix).unwrap_or_else(|_| serde_json::json!({ "routes": [] }))
-    }
-}
-
-#[derive(Clone)]
-struct FxSlotsState {
-    slots: [FxSlotConfig; 6],
-}
-
-impl Default for FxSlotsState {
-    fn default() -> Self {
-        Self {
-            slots: SynthParams::default().fx_slots,
-        }
-    }
-}
-
-impl FxSlotsState {
-    fn apply_to(&self, params: &mut SynthParams) {
-        params.fx_slots = self.slots.clone();
-    }
-
-    fn set(&mut self, slots: [FxSlotConfig; 6]) {
-        self.slots = slots;
-    }
-
-    fn to_json(&self) -> serde_json::Value {
-        serde_json::to_value(&self.slots).unwrap_or_else(|_| serde_json::json!([]))
-    }
-}
-
-#[derive(Clone, Default)]
-struct PresetSessionState {
-    /// The ID of the currently loaded preset (e.g., "local:MyBass" or "builtin:Pad").
-    active_preset_id: Option<String>,
-    /// The display name of the currently loaded preset.
-    active_preset_name_base: String,
-    /// Fingerprint of the loaded preset to track if there are unsaved changes.
-    loaded_preset_fingerprint: Option<String>,
-}
-
-impl PresetSessionState {
-    fn set(
-        &mut self,
-        active_preset_id: Option<String>,
-        active_preset_name_base: String,
-        loaded_preset_fingerprint: Option<String>,
-    ) {
-        self.active_preset_id = active_preset_id;
-        self.active_preset_name_base = active_preset_name_base;
-        self.loaded_preset_fingerprint = loaded_preset_fingerprint;
-    }
-
-    fn to_json(&self) -> serde_json::Value {
-        serde_json::json!({
-            "activePresetId": self.active_preset_id,
-            "activePresetNameBase": self.active_preset_name_base,
-            "loadedPresetFingerprint": self.loaded_preset_fingerprint,
-        })
-    }
-}
-
-struct CzWebViewHandler {
-    envelopes: Arc<RwLock<EnvelopeState>>,
-    algo_controls: Arc<RwLock<AlgoControlsState>>,
-    mod_matrix: Arc<RwLock<ModMatrixState>>,
-    fx_slots: Arc<RwLock<FxSlotsState>>,
-    preset_session: Arc<RwLock<PresetSessionState>>,
-    scope_buffer: ScopeBuffer,
-    ui_input_queue: UiInputQueue,
-}
-
-impl CzWebViewHandler {
-    fn parse_set_envelope_args(args: &[serde_json::Value]) -> Result<(&str, StepEnvData), String> {
-        if args.len() == 2 {
-            let envelope_id = args[0]
-                .as_str()
-                .ok_or_else(|| "setEnvelope expects envelope id as first argument".to_string())?;
-            let data: StepEnvData = serde_json::from_value(args[1].clone())
-                .map_err(|error| format!("invalid envelope payload: {error}"))?;
-            return Ok((envelope_id, data));
-        }
-
-        let payload = args
-            .first()
-            .ok_or_else(|| "setEnvelope expects at least one argument".to_string())?;
-        let envelope_id = payload
-            .get("envelope_id")
-            .or_else(|| payload.get("envelopeId"))
-            .and_then(serde_json::Value::as_str)
-            .ok_or_else(|| "setEnvelope payload is missing envelope_id".to_string())?;
-        let data_value = payload
-            .get("data")
-            .cloned()
-            .ok_or_else(|| "setEnvelope payload is missing data".to_string())?;
-        let data: StepEnvData = serde_json::from_value(data_value)
-            .map_err(|error| format!("invalid envelope payload: {error}"))?;
-        Ok((envelope_id, data))
-    }
-
-    fn parse_set_algo_controls_args(
-        args: &[serde_json::Value],
-    ) -> Result<(u8, String, Vec<AlgoControlValueV1>), String> {
-        if args.len() == 2 {
-            let line = args[0]
-                .as_u64()
-                .ok_or_else(|| "setAlgoControls expects line as first argument".to_string())?
-                as u8;
-            let controls: Vec<AlgoControlValueV1> = serde_json::from_value(args[1].clone())
-                .map_err(|error| format!("invalid algo controls payload: {error}"))?;
-            return Ok((line, "a".to_string(), controls));
-        }
-
-        if args.len() == 3 {
-            let line = args[0]
-                .as_u64()
-                .ok_or_else(|| "setAlgoControls expects line as first argument".to_string())?
-                as u8;
-            let bank = args[1]
-                .as_str()
-                .ok_or_else(|| "setAlgoControls expects bank as second argument".to_string())?
-                .to_string();
-            let controls: Vec<AlgoControlValueV1> = serde_json::from_value(args[2].clone())
-                .map_err(|error| format!("invalid algo controls payload: {error}"))?;
-            return Ok((line, bank, controls));
-        }
-
-        let payload = args
-            .first()
-            .ok_or_else(|| "setAlgoControls expects at least one argument".to_string())?;
-        let line = payload
-            .get("line")
-            .or_else(|| payload.get("line_id"))
-            .or_else(|| payload.get("lineId"))
-            .and_then(serde_json::Value::as_u64)
-            .ok_or_else(|| "setAlgoControls payload is missing line".to_string())?
-            as u8;
-        let controls_value = payload
-            .get("controls")
-            .or_else(|| payload.get("algo_controls"))
-            .cloned()
-            .ok_or_else(|| "setAlgoControls payload is missing controls".to_string())?;
-        let bank = payload
-            .get("bank")
-            .and_then(serde_json::Value::as_str)
-            .unwrap_or("a")
-            .to_string();
-        let controls: Vec<AlgoControlValueV1> = serde_json::from_value(controls_value)
-            .map_err(|error| format!("invalid algo controls payload: {error}"))?;
-        Ok((line, bank, controls))
-    }
-
-    fn parse_set_mod_matrix_args(args: &[serde_json::Value]) -> Result<ModMatrix, String> {
-        if args.len() == 1 {
-            let payload = args
+    match method {
+        "setParams" => {
+            let json_str = args
                 .first()
-                .ok_or_else(|| "setModMatrix expects at least one argument".to_string())?;
-            let matrix_value = payload
-                .get("mod_matrix")
-                .or_else(|| payload.get("modMatrix"))
-                .cloned()
-                .unwrap_or_else(|| payload.clone());
-            return serde_json::from_value(matrix_value)
-                .map_err(|error| format!("invalid mod matrix payload: {error}"));
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "setParams expects a JSON string as first argument".to_string())?;
+            let params: SynthParams = serde_json::from_str(json_str)
+                .map_err(|e| format!("invalid SynthParams payload: {e}"))?;
+            let mut sp = synth_params
+                .write()
+                .map_err(|_| "synth params store is poisoned".to_string())?;
+            *sp = params;
+            Ok(serde_json::Value::Null)
         }
-
-        let payload = args
-            .first()
-            .ok_or_else(|| "setModMatrix expects at least one argument".to_string())?;
-        let matrix_value = payload
-            .get("mod_matrix")
-            .or_else(|| payload.get("modMatrix"))
-            .cloned()
-            .ok_or_else(|| "setModMatrix payload is missing mod_matrix".to_string())?;
-
-        serde_json::from_value(matrix_value)
-            .map_err(|error| format!("invalid mod matrix payload: {error}"))
-    }
-
-    fn parse_set_fx_slots_args(args: &[serde_json::Value]) -> Result<[FxSlotConfig; 6], String> {
-        let payload = args
-            .first()
-            .ok_or_else(|| "setFxSlots expects at least one argument".to_string())?;
-
-        let slots_value = payload
-            .get("fx_slots")
-            .or_else(|| payload.get("fxSlots"))
-            .cloned()
-            .unwrap_or_else(|| payload.clone());
-
-        let slots_vec: Vec<FxSlotConfig> = serde_json::from_value(slots_value)
-            .map_err(|error| format!("invalid fx slots payload: {error}"))?;
-
-        slots_vec
-            .try_into()
-            .map_err(|_| "setFxSlots expects exactly 6 slots".to_string())
-    }
-}
-
-impl WebViewHandler for CzWebViewHandler {
-    fn on_invoke(
-        &self,
-        method: &str,
-        args: &[serde_json::Value],
-    ) -> Result<serde_json::Value, String> {
-        append_log(&format!(
-            "webview invoke method={method} args={}",
-            args.len()
-        ));
-
-        match method {
-            "setEnvelope" => {
-                let (envelope_id, data) = Self::parse_set_envelope_args(args)?;
-                let mut envelopes = self
-                    .envelopes
-                    .write()
-                    .map_err(|_| "envelope store is poisoned".to_string())?;
-                envelopes.set(envelope_id, data)?;
-                append_log(&format!("setEnvelope envelope_id={envelope_id}"));
-                Ok(serde_json::Value::Null)
-            }
-            "setAlgoControls" => {
-                let (line, bank, controls) = Self::parse_set_algo_controls_args(args)?;
-                let mut algo_controls = self
-                    .algo_controls
-                    .write()
-                    .map_err(|_| "algo controls store is poisoned".to_string())?;
-                algo_controls.set(line, &bank, controls)?;
-                append_log(&format!("setAlgoControls line={line} bank={bank}"));
-                Ok(serde_json::Value::Null)
-            }
-            "setModMatrix" => {
-                let matrix = Self::parse_set_mod_matrix_args(args)?;
-                let mut mod_matrix = self
-                    .mod_matrix
-                    .write()
-                    .map_err(|_| "mod matrix store is poisoned".to_string())?;
-                mod_matrix.set(matrix);
-                append_log("setModMatrix");
-                Ok(serde_json::Value::Null)
-            }
-            "setFxSlots" => {
-                let slots = Self::parse_set_fx_slots_args(args)?;
-                let mut fx_slots = self
-                    .fx_slots
-                    .write()
-                    .map_err(|_| "fx slots store is poisoned".to_string())?;
-                fx_slots.set(slots);
-                append_log("setFxSlots");
-                Ok(serde_json::Value::Null)
-            }
-            "getEnvelopes" => {
-                let envelopes = self
-                    .envelopes
-                    .read()
-                    .map_err(|_| "envelope store is poisoned".to_string())?;
-                append_log("getEnvelopes");
-                Ok(envelopes.to_json())
-            }
-            "getAlgoControls" => {
-                let algo_controls = self
-                    .algo_controls
-                    .read()
-                    .map_err(|_| "algo controls store is poisoned".to_string())?;
-                append_log("getAlgoControls");
-                Ok(algo_controls.to_json())
-            }
-            "getModMatrix" => {
-                let mod_matrix = self
-                    .mod_matrix
-                    .read()
-                    .map_err(|_| "mod matrix store is poisoned".to_string())?;
-                append_log("getModMatrix");
-                Ok(mod_matrix.to_json())
-            }
-            "getFxSlots" => {
-                let fx_slots = self
-                    .fx_slots
-                    .read()
-                    .map_err(|_| "fx slots store is poisoned".to_string())?;
-                append_log("getFxSlots");
-                Ok(fx_slots.to_json())
-            }
-            "getScopeData" => {
-                let scope = self
-                    .scope_buffer
-                    .lock()
-                    .map_err(|_| "scope buffer is poisoned".to_string())?;
-                if scope.samples.is_empty() {
-                    return Ok(serde_json::json!({
-                        "samples": serde_json::Value::Array(vec![]),
-                        "sampleRate": scope.sample_rate,
-                        "hz": 0.0_f64,
-                    }));
-                }
-                let linear = scope.to_linear();
-                Ok(serde_json::json!({
-                    "samples": linear,
-                    "sampleRate": scope.sample_rate,
-                    "hz": scope.hz,
-                }))
-            }
-            "setPresetSession" => {
-                let payload = args
-                    .first()
-                    .ok_or_else(|| "setPresetSession expects at least one argument".to_string())?;
-                let active_preset_id = payload
-                    .get("activePresetId")
-                    .and_then(|v| v.as_str().map(String::from));
-                let active_preset_name_base = payload
-                    .get("activePresetNameBase")
-                    .and_then(serde_json::Value::as_str)
-                    .unwrap_or("Current State")
-                    .to_string();
-                let loaded_preset_fingerprint = payload
-                    .get("loadedPresetFingerprint")
-                    .and_then(|v| v.as_str().map(String::from));
-                let mut preset_session = self
-                    .preset_session
-                    .write()
-                    .map_err(|_| "preset session store is poisoned".to_string())?;
-                preset_session.set(
-                    active_preset_id.clone(),
-                    active_preset_name_base.clone(),
-                    loaded_preset_fingerprint.clone(),
+        "getParams" => {
+            let sp = synth_params
+                .read()
+                .map_err(|_| "synth params store is poisoned".to_string())?;
+            serde_json::to_value(&*sp).map_err(|e| e.to_string())
+        }
+        "getScopeData" => {
+            let scope = scope_buffer
+                .lock()
+                .map_err(|_| "scope buffer is poisoned".to_string())?;
+            if scope.samples.is_empty() {
+                return Ok(
+                    serde_json::json!({ "samples": [], "sampleRate": scope.sample_rate, "hz": 0.0_f64 }),
                 );
-                append_log(&format!(
-                    "setPresetSession id={:?} name={active_preset_name_base}",
-                    active_preset_id
-                ));
-                Ok(serde_json::Value::Null)
             }
-            "getPresetSession" => {
-                let preset_session = self
-                    .preset_session
-                    .read()
-                    .map_err(|_| "preset session store is poisoned".to_string())?;
-                append_log("getPresetSession");
-                Ok(preset_session.to_json())
-            }
-            _ => {
-                append_log(&format!("unknown webview method={method}"));
-                Err(format!("unknown method: {method}"))
-            }
+            let linear = scope.to_linear();
+            let int_samples: Vec<i8> = linear
+                .iter()
+                .map(|&s| (s.clamp(-1.0, 1.0) * 127.0) as i8)
+                .collect();
+            Ok(
+                serde_json::json!({ "samples": int_samples, "sampleRate": scope.sample_rate, "hz": scope.hz }),
+            )
         }
-    }
-
-    fn on_event(&self, name: &str, data: &serde_json::Value) {
-        let Ok(mut queue) = self.ui_input_queue.lock() else {
-            return;
-        };
-
-        let maybe_event = match name {
-            "noteOn" => {
-                let note = data.get("note").and_then(serde_json::Value::as_u64);
-                let velocity = data.get("velocity").and_then(serde_json::Value::as_f64);
-                match (note, velocity) {
-                    (Some(note), Some(velocity)) => Some(UiInputEvent::NoteOn {
-                        note: note as u8,
-                        velocity: velocity as f32,
-                    }),
-                    _ => None,
-                }
-            }
-            "noteOff" => data
-                .get("note")
-                .and_then(serde_json::Value::as_u64)
-                .map(|note| UiInputEvent::NoteOff { note: note as u8 }),
-            "sustain" => data
-                .get("on")
-                .and_then(serde_json::Value::as_bool)
-                .map(|on| UiInputEvent::Sustain { on }),
-            "pitchBend" => data
-                .get("value")
-                .and_then(serde_json::Value::as_f64)
-                .map(|value| UiInputEvent::PitchBend {
-                    value: value as f32,
-                }),
-            "modWheel" => data
-                .get("value")
-                .and_then(serde_json::Value::as_f64)
-                .map(|value| UiInputEvent::ModWheel {
-                    value: value as f32,
-                }),
-            "aftertouch" => data
-                .get("value")
-                .and_then(serde_json::Value::as_f64)
-                .map(|value| UiInputEvent::Aftertouch {
-                    value: value as f32,
-                }),
-            _ => None,
-        };
-
-        if let Some(event) = maybe_event {
-            append_log(&format!("webview event name={name}"));
-            queue.push_back(event);
+        "clientLog" => {
+            let level = args
+                .first()
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("info");
+            let message = args
+                .get(1)
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("");
+            append_log(&format!("[webview:{level}] {message}"));
+            Ok(serde_json::Value::Null)
         }
+        _ => Err(format!("unknown method: {method}")),
     }
 }
 
 // =============================================================================
-// Descriptor (unprepared state)
+// Plugin struct
 // =============================================================================
 
-#[beamer::export]
-#[derive(Default, HasParameters)]
-pub struct CzDescriptor {
-    #[parameters]
-    pub parameters: CzParameters,
-    envelopes: Arc<RwLock<EnvelopeState>>,
-    algo_controls: Arc<RwLock<AlgoControlsState>>,
-    mod_matrix: Arc<RwLock<ModMatrixState>>,
-    fx_slots: Arc<RwLock<FxSlotsState>>,
-    preset_session: Arc<RwLock<PresetSessionState>>,
+pub struct CzPlugin {
+    params: Arc<CzParams>,
+    /// DSP engine, present after `initialize()`.
+    processor: Option<CosmoProcessor>,
+    /// Synth parameters shared with the GUI thread (set via `setParams` IPC).
+    synth_params: Arc<RwLock<SynthParams>>,
+    /// Per-frame cached copy read by the audio thread.
+    cached_synth_params: SynthParams,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
 }
 
-impl Descriptor for CzDescriptor {
-    type Setup = SampleRate;
-    type Processor = CzProcessor;
-
-    fn input_bus_count(&self) -> usize {
-        0
-    }
-
-    fn input_bus_info(&self, _index: usize) -> Option<BusInfo> {
-        None
-    }
-
-    fn output_bus_info(&self, index: usize) -> Option<BusInfo> {
-        if index == 0 {
-            Some(BusInfo::stereo("Output"))
-        } else {
-            None
-        }
-    }
-
-    fn wants_midi(&self) -> bool {
-        true
-    }
-
-    fn webview_handler(&self) -> Option<Arc<dyn WebViewHandler>> {
-        append_log("descriptor created webview handler");
-        Some(Arc::new(CzWebViewHandler {
-            envelopes: self.envelopes.clone(),
-            algo_controls: self.algo_controls.clone(),
-            mod_matrix: self.mod_matrix.clone(),
-            fx_slots: self.fx_slots.clone(),
-            preset_session: self.preset_session.clone(),
-            scope_buffer: self.scope_buffer.clone(),
-            ui_input_queue: self.ui_input_queue.clone(),
-        }))
-    }
-
-    fn prepare(self, setup: SampleRate) -> CzProcessor {
-        append_log(&format!(
-            "prepare sample_rate_hz={} log_path={}",
-            setup.hz(),
-            plugin_log_path()
-        ));
-        let mut processor = CosmoProcessor::new(setup.hz() as f32);
-        let mut synth_params = self.parameters.to_synth_params();
-        let cached_envelopes = self
-            .envelopes
-            .read()
-            .map(|envelopes| envelopes.clone())
-            .unwrap_or_default();
-        let cached_algo_controls = self
-            .algo_controls
-            .read()
-            .map(|algo_controls| algo_controls.clone())
-            .unwrap_or_default();
-        let cached_mod_matrix = self
-            .mod_matrix
-            .read()
-            .map(|mod_matrix| mod_matrix.clone())
-            .unwrap_or_default();
-        let cached_fx_slots = self
-            .fx_slots
-            .read()
-            .map(|fx_slots| fx_slots.clone())
-            .unwrap_or_default();
-        cached_envelopes.apply_to(&mut synth_params);
-        cached_algo_controls.apply_to(&mut synth_params);
-        cached_mod_matrix.apply_to(&mut synth_params);
-        cached_fx_slots.apply_to(&mut synth_params);
-        processor.set_params(synth_params);
-        CzProcessor {
-            parameters: self.parameters,
-            processor,
-            envelopes: self.envelopes,
-            cached_envelopes,
-            algo_controls: self.algo_controls,
-            cached_algo_controls,
-            mod_matrix: self.mod_matrix,
-            cached_mod_matrix,
-            fx_slots: self.fx_slots,
-            cached_fx_slots,
-            scope_buffer: self.scope_buffer,
-            ui_input_queue: self.ui_input_queue,
+impl Default for CzPlugin {
+    fn default() -> Self {
+        Self {
+            params: Arc::new(CzParams::default()),
+            processor: None,
+            synth_params: Arc::new(RwLock::new(SynthParams::default())),
+            cached_synth_params: SynthParams::default(),
+            scope_buffer: Arc::new(Mutex::new(ScopeFrame::default())),
+            ui_input_queue: Arc::new(Mutex::new(VecDeque::new())),
         }
     }
 }
 
-// =============================================================================
-// Processor (prepared state)
-// =============================================================================
+impl CzPlugin {
+    fn all_notes_off(proc: &mut CosmoProcessor) {
+        proc.set_sustain(false);
+        for note in 0u8..=127u8 {
+            proc.note_off(note);
+        }
+    }
 
-#[derive(HasParameters)]
-pub struct CzProcessor {
-    #[parameters]
-    pub parameters: CzParameters,
-    processor: CosmoProcessor,
-    envelopes: Arc<RwLock<EnvelopeState>>,
-    cached_envelopes: EnvelopeState,
-    algo_controls: Arc<RwLock<AlgoControlsState>>,
-    cached_algo_controls: AlgoControlsState,
-    mod_matrix: Arc<RwLock<ModMatrixState>>,
-    cached_mod_matrix: ModMatrixState,
-    fx_slots: Arc<RwLock<FxSlotsState>>,
-    cached_fx_slots: FxSlotsState,
-    scope_buffer: ScopeBuffer,
-    ui_input_queue: UiInputQueue,
-}
-
-impl CzProcessor {
     fn drain_ui_input_events(&mut self) {
         let Ok(mut queue) = self.ui_input_queue.lock() else {
             return;
         };
-
         while let Some(event) = queue.pop_front() {
-            match event {
-                UiInputEvent::NoteOn { note, velocity } => {
-                    self.processor
-                        .note_on(note, midi_note_to_freq(note), velocity)
+            if let Some(proc) = &mut self.processor {
+                match event {
+                    UiInputEvent::NoteOn { note, velocity } => {
+                        proc.note_on(note, midi_note_to_freq(note), velocity)
+                    }
+                    UiInputEvent::NoteOff { note } => proc.note_off(note),
+                    UiInputEvent::Sustain { on } => proc.set_sustain(on),
+                    UiInputEvent::PitchBend { value } => proc.set_pitch_bend(value),
+                    UiInputEvent::ModWheel { value } => proc.set_mod_wheel(value),
+                    UiInputEvent::Aftertouch { value } => proc.set_aftertouch(value),
                 }
-                UiInputEvent::NoteOff { note } => self.processor.note_off(note),
-                UiInputEvent::Sustain { on } => self.processor.set_sustain(on),
-                UiInputEvent::PitchBend { value } => self.processor.set_pitch_bend(value),
-                UiInputEvent::ModWheel { value } => self.processor.set_mod_wheel(value),
-                UiInputEvent::Aftertouch { value } => self.processor.set_aftertouch(value),
             }
         }
     }
 }
 
-impl Processor for CzProcessor {
-    type Descriptor = CzDescriptor;
+impl Plugin for CzPlugin {
+    const NAME: &'static str = "Cosmo PD-101";
+    const VENDOR: &'static str = "Cosmo";
+    const URL: &'static str = "https://github.com/fpbrault/cosmo-pd";
+    const EMAIL: &'static str = "";
+    const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+
+    const AUDIO_IO_LAYOUTS: &'static [AudioIOLayout] = &[AudioIOLayout {
+        main_input_channels: None,
+        main_output_channels: NonZeroU32::new(2),
+        aux_input_ports: &[],
+        aux_output_ports: &[],
+        names: PortNames::const_default(),
+    }];
+
+    const MIDI_INPUT: MidiConfig = MidiConfig::Basic;
+    const MIDI_OUTPUT: MidiConfig = MidiConfig::None;
+    const SAMPLE_ACCURATE_AUTOMATION: bool = false;
+
+    type SysExMessage = ();
+    type BackgroundTask = ();
+
+    fn params(&self) -> Arc<dyn Params> {
+        self.params.clone()
+    }
+
+    fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
+        Some(Box::new(crate::gui::CzEditor::new(
+            self.synth_params.clone(),
+            self.scope_buffer.clone(),
+            self.ui_input_queue.clone(),
+        )))
+    }
+
+    fn initialize(
+        &mut self,
+        _audio_io_layout: &AudioIOLayout,
+        buffer_config: &BufferConfig,
+        _context: &mut impl InitContext<Self>,
+    ) -> bool {
+        append_log(&format!(
+            "initialize sample_rate={} log_path={}",
+            buffer_config.sample_rate,
+            plugin_log_path()
+        ));
+        let mut processor = CosmoProcessor::new(buffer_config.sample_rate);
+        let synth_params = SynthParams::default();
+        processor.set_params(synth_params.clone());
+        self.cached_synth_params = synth_params;
+        self.processor = Some(processor);
+        true
+    }
+
+    fn reset(&mut self) {
+        if let Some(proc) = &mut self.processor {
+            Self::all_notes_off(proc);
+        }
+    }
 
     fn process(
         &mut self,
         buffer: &mut Buffer,
         _aux: &mut AuxiliaryBuffers,
-        _context: &ProcessContext,
-    ) {
-        // Pull the host-automated parameter snapshot each block and mirror it into DSP state.
-        if let Ok(envelopes) = self.envelopes.try_read() {
-            self.cached_envelopes = envelopes.clone();
-        }
-        if let Ok(algo_controls) = self.algo_controls.try_read() {
-            self.cached_algo_controls = algo_controls.clone();
-        }
-        if let Ok(mod_matrix) = self.mod_matrix.try_read() {
-            self.cached_mod_matrix = mod_matrix.clone();
-        }
-        if let Ok(fx_slots) = self.fx_slots.try_read() {
-            self.cached_fx_slots = fx_slots.clone();
-        }
-
-        let mut synth_params = self.parameters.to_synth_params();
-        self.cached_envelopes.apply_to(&mut synth_params);
-        self.cached_algo_controls.apply_to(&mut synth_params);
-        self.cached_mod_matrix.apply_to(&mut synth_params);
-        self.cached_fx_slots.apply_to(&mut synth_params);
-        self.processor.set_params(synth_params);
-        self.drain_ui_input_events();
-
-        let num_samples = buffer.num_samples();
-        let num_channels = buffer.num_output_channels();
-
-        // Process mono output from synth
-        let mut mono_output = vec![0.0f32; num_samples];
-        self.processor.process(&mut mono_output);
-
-        // Feed scope buffer (non-blocking try_lock; skip if GUI is reading).
-        let hz = self
-            .processor
-            .voices
-            .iter()
-            .filter(|v| !v.is_silent && !v.is_releasing && v.note.is_some())
-            .map(|v| v.current_freq)
-            .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
-            .unwrap_or(0.0);
-        if let Ok(mut scope) = self.scope_buffer.try_lock() {
-            scope.push_block(&mono_output, self.processor.sample_rate, hz);
-        }
-
-        // Write to all output channels
-        for ch in 0..num_channels {
-            let out = buffer.output(ch);
-            for sample_idx in 0..num_samples {
-                out[sample_idx] = mono_output[sample_idx];
-            }
-        }
-    }
-
-    fn process_midi(&mut self, input: &[MidiEvent], _output: &mut MidiBuffer) {
-        for event in input {
-            match &event.event {
-                MidiEventKind::NoteOn(note) if note.velocity > 0.0 => {
-                    let freq = midi_note_to_freq(note.pitch);
-                    self.processor.note_on(note.pitch, freq, note.velocity);
-                }
-                MidiEventKind::NoteOff(note) => {
-                    self.processor.note_off(note.pitch);
-                }
-                MidiEventKind::ControlChange(cc) => {
-                    match cc.controller {
-                        1 => {
-                            // Mod wheel (already 0.0-1.0)
-                            self.processor.set_mod_wheel(cc.value);
-                        }
-                        64 => {
-                            // Sustain pedal (already 0.0-1.0)
-                            self.processor.set_sustain(cc.value >= 0.5);
-                        }
-                        _ => {}
+        context: &mut impl ProcessContext<Self>,
+    ) -> ProcessStatus {
+        // Handle MIDI events
+        while let Some(event) = context.next_event() {
+            match event {
+                // NoteOn with (near) zero velocity is the standard MIDI equivalent
+                // of NoteOff. Different hosts can encode release events differently.
+                NoteEvent::NoteOn { note, velocity, .. } if velocity <= 0.0001 => {
+                    if let Some(proc) = &mut self.processor {
+                        proc.note_off(note);
                     }
                 }
-                MidiEventKind::PitchBend(pb) => {
-                    // Pitch bend is already -1.0 to 1.0
-                    self.processor.set_pitch_bend(pb.value);
+                NoteEvent::NoteOff { note, .. } => {
+                    if let Some(proc) = &mut self.processor {
+                        proc.note_off(note);
+                    }
+                }
+                NoteEvent::Choke { note, .. } => {
+                    if let Some(proc) = &mut self.processor {
+                        proc.note_off(note);
+                    }
+                }
+                NoteEvent::NoteOn { note, velocity, .. } => {
+                    if let Some(proc) = &mut self.processor {
+                        proc.note_on(note, midi_note_to_freq(note), velocity);
+                    }
+                }
+                NoteEvent::MidiCC { cc, value, .. } => {
+                    if let Some(proc) = &mut self.processor {
+                        match cc {
+                            1 => proc.set_mod_wheel(value),
+                            64 => proc.set_sustain(value >= 0.5),
+                            // Host transport stop/reset safety: clear held notes.
+                            120 | 123 => {
+                                Self::all_notes_off(proc);
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                NoteEvent::MidiPitchBend { value, .. } => {
+                    if let Some(proc) = &mut self.processor {
+                        proc.set_pitch_bend(value);
+                    }
                 }
                 _ => {}
             }
         }
-    }
 
-    fn wants_midi(&self) -> bool {
-        true
-    }
+        self.drain_ui_input_events();
 
-    fn tail_samples(&self) -> u32 {
-        0
+        // Snapshot latest params from the IPC thread (non-blocking).
+        if let Ok(sp) = self.synth_params.try_read() {
+            self.cached_synth_params = sp.clone();
+        }
+
+        if let Some(proc) = &mut self.processor {
+            proc.set_params(self.cached_synth_params.clone());
+
+            let num_samples = buffer.samples();
+            let mut mono_output = vec![0.0f32; num_samples];
+            proc.process(&mut mono_output);
+
+            let hz = proc
+                .voices
+                .iter()
+                .filter(|v| !v.is_silent && !v.is_releasing && v.note.is_some())
+                .map(|v| v.current_freq)
+                .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+                .unwrap_or(0.0);
+            if let Ok(mut scope) = self.scope_buffer.try_lock() {
+                scope.push_block(&mono_output, proc.sample_rate, hz);
+            }
+
+            for channel_slice in buffer.as_slice() {
+                channel_slice.copy_from_slice(&mono_output);
+            }
+        }
+
+        ProcessStatus::Normal
     }
 }
+
+impl ClapPlugin for CzPlugin {
+    const CLAP_ID: &'static str = "jp.cosmo.pd101";
+    const CLAP_DESCRIPTION: Option<&'static str> =
+        Some("Cosmo PD-101 Phase Distortion Synthesizer");
+    const CLAP_MANUAL_URL: Option<&'static str> = None;
+    const CLAP_SUPPORT_URL: Option<&'static str> = None;
+    const CLAP_FEATURES: &'static [ClapFeature] = &[
+        ClapFeature::Instrument,
+        ClapFeature::Synthesizer,
+        ClapFeature::Stereo,
+    ];
+}
+
+impl Vst3Plugin for CzPlugin {
+    const VST3_CLASS_ID: [u8; 16] = *b"CosmoPD101Synth!";
+    const VST3_SUBCATEGORIES: &'static [Vst3SubCategory] = &[
+        Vst3SubCategory::Instrument,
+        Vst3SubCategory::Synth,
+        Vst3SubCategory::Stereo,
+    ];
+}
+
+nih_export_clap!(CzPlugin);
+nih_export_vst3!(CzPlugin);
+
+// =============================================================================
+// Tests
+// =============================================================================
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cosmo_synth_engine::params::EnvStep;
-    use serde_json::json;
-
-    fn make_env(
-        level: u8,
-        rate: u8,
-        step_count: usize,
-        sustain_step: usize,
-        loop_: bool,
-    ) -> StepEnvData {
-        let mut env = StepEnvData::default();
-        env.steps[0] = EnvStep { level, rate };
-        env.step_count = step_count;
-        env.sustain_step = sustain_step;
-        env.loop_ = loop_;
-        env
-    }
 
     #[test]
     fn scope_frame_keeps_samples_in_chronological_order_after_wrap() {
@@ -1466,88 +448,34 @@ mod tests {
     }
 
     #[test]
-    fn envelope_state_applies_updates_and_serializes_expected_keys() {
-        let mut state = EnvelopeState {
-            l1_dco: StepEnvData::default(),
-            l1_dcw: StepEnvData::default(),
-            l1_dca: StepEnvData::default(),
-            l2_dco: StepEnvData::default(),
-            l2_dcw: StepEnvData::default(),
-            l2_dca: StepEnvData::default(),
-        };
-        let updated = make_env(25, 33, 6, 4, true);
+    fn set_params_rpc_updates_synth_params() {
+        let synth_params = Arc::new(RwLock::new(SynthParams::default()));
+        let scope_buffer: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
 
-        state.set("l1_dco", updated.clone()).unwrap();
+        let mut new_params = SynthParams::default();
+        new_params.volume = 0.42;
+        let json_str = serde_json::to_string(&new_params).unwrap();
 
-        let mut params = SynthParams::default();
-        state.apply_to(&mut params);
-
-        assert_eq!(params.line1.dco_env.step_count, 6);
-        assert_eq!(params.line1.dco_env.sustain_step, 4);
-        assert!(params.line1.dco_env.loop_);
-        assert_eq!(params.line1.dco_env.steps[0].level, 25);
-        assert_eq!(params.line1.dco_env.steps[0].rate, 33);
-        assert_eq!(state.to_json()["l1_dco"]["stepCount"], json!(6));
-        assert_eq!(state.to_json()["l1_dco"]["sustainStep"], json!(4));
-        assert_eq!(state.to_json()["l1_dco"]["loop"], json!(true));
-        assert!(state.set("missing", StepEnvData::default()).is_err());
+        let result = handle_ipc_invoke(
+            "setParams",
+            &[serde_json::Value::String(json_str)],
+            &synth_params,
+            &scope_buffer,
+        );
+        assert!(result.is_ok());
+        assert_eq!(synth_params.read().unwrap().volume, 0.42);
     }
 
     #[test]
-    fn algo_controls_state_applies_per_line_values_and_rejects_unknown_lines() {
-        let mut state = AlgoControlsState::default();
-        let line1 = vec![AlgoControlValueV1 {
-            id: "warp".to_string(),
-            value: 0.25,
-        }];
-        let line2 = vec![AlgoControlValueV1 {
-            id: "bias".to_string(),
-            value: 0.75,
-        }];
+    fn get_params_rpc_returns_current_synth_params() {
+        let mut initial = SynthParams::default();
+        initial.volume = 0.77;
+        let synth_params = Arc::new(RwLock::new(initial));
+        let scope_buffer: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
 
-        state.set(1, "a", line1).unwrap();
-        state.set(2, "b", line2).unwrap();
-
-        let mut params = SynthParams::default();
-        state.apply_to(&mut params);
-
-        let applied_line1 = params.line1.algo_controls_a.as_ref().unwrap();
-        let applied_line2 = params.line2.algo_controls_b.as_ref().unwrap();
-        assert_eq!(applied_line1.len(), 1);
-        assert_eq!(applied_line1[0].id, "warp");
-        assert_eq!(applied_line1[0].value, 0.25);
-        assert_eq!(applied_line2.len(), 1);
-        assert_eq!(applied_line2[0].id, "bias");
-        assert_eq!(applied_line2[0].value, 0.75);
-        assert_eq!(state.to_json()["line1"]["a"][0]["id"], json!("warp"));
-        assert_eq!(state.to_json()["line2"]["b"][0]["value"], json!(0.75));
-        assert!(state.set(3, "a", Vec::new()).is_err());
-    }
-
-    #[test]
-    fn fx_slots_state_applies_slots_to_synth_params() {
-        let mut state = FxSlotsState::default();
-        let slots = [
-            FxSlotConfig::Delay(Default::default()),
-            FxSlotConfig::Reverb(Default::default()),
-            FxSlotConfig::Empty,
-            FxSlotConfig::Chorus(Default::default()),
-            FxSlotConfig::Compressor(Default::default()),
-            FxSlotConfig::Empty,
-        ];
-        state.set(slots);
-
-        let mut params = SynthParams::default();
-        state.apply_to(&mut params);
-
-        assert!(matches!(params.fx_slots[0], FxSlotConfig::Delay(_)));
-        assert!(matches!(params.fx_slots[1], FxSlotConfig::Reverb(_)));
-        assert!(matches!(params.fx_slots[2], FxSlotConfig::Empty));
-        assert!(matches!(params.fx_slots[3], FxSlotConfig::Chorus(_)));
-        assert!(matches!(params.fx_slots[4], FxSlotConfig::Compressor(_)));
-        assert!(matches!(params.fx_slots[5], FxSlotConfig::Empty));
-
-        let serialized = state.to_json();
-        assert_eq!(serialized.as_array().map(Vec::len), Some(6));
+        let result = handle_ipc_invoke("getParams", &[], &synth_params, &scope_buffer);
+        assert!(result.is_ok());
+        let val = result.unwrap();
+        assert_eq!(val["volume"].as_f64().unwrap(), 0.77);
     }
 }

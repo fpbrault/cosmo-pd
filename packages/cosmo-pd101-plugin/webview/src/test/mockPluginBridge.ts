@@ -12,6 +12,103 @@
  */
 
 // ---------------------------------------------------------------------------
+// Algo order — must match the Algo type union order in synth.ts for index mapping
+// ---------------------------------------------------------------------------
+
+const ALGO_ORDER = [
+	"saw",
+	"square",
+	"pulse",
+	"null",
+	"sinePulse",
+	"sawPulse",
+	"multiSine",
+	"pulse2",
+	"cz101",
+	"bend",
+	"sync",
+	"pinch",
+	"fold",
+	"skew",
+	"quantize",
+	"twist",
+	"clip",
+	"ripple",
+	"mirror",
+	"fof",
+	"karpunk",
+	"sine",
+] as const;
+
+// ---------------------------------------------------------------------------
+// Minimal structural type for the full params blob coming through setParams
+// ---------------------------------------------------------------------------
+
+type FullParamsBlob = {
+	volume?: number;
+	line1?: {
+		dcwBase?: number;
+		algo?: string;
+		algoControlsA?: { id: string; value: number }[];
+		algoControlsB?: { id: string; value: number }[];
+	};
+	line2?: {
+		dcwBase?: number;
+		algo?: string;
+		algoControlsA?: { id: string; value: number }[];
+		algoControlsB?: { id: string; value: number }[];
+	};
+	modMatrix?: { routes?: unknown[] };
+	[key: string]: unknown;
+};
+
+function extractScalarParams(params: FullParamsBlob): Record<string, number> {
+	const out: Record<string, number> = {};
+	if (typeof params.volume === "number") out.volume = params.volume;
+	if (typeof params.line1?.dcwBase === "number")
+		out.l1_dcw_base = params.line1.dcwBase;
+	if (typeof params.line1?.algo === "string") {
+		const idx = ALGO_ORDER.indexOf(
+			params.line1.algo as (typeof ALGO_ORDER)[number],
+		);
+		if (idx >= 0) out.l1_warp_algo = idx;
+	}
+	if (typeof params.line2?.dcwBase === "number")
+		out.l2_dcw_base = params.line2.dcwBase;
+	return out;
+}
+
+function applyParamToBlob(
+	params: FullParamsBlob,
+	stringId: string,
+	value: number,
+): FullParamsBlob {
+	switch (stringId) {
+		case "volume":
+			return { ...params, volume: value };
+		case "l1_dcw_base":
+			return {
+				...params,
+				line1: { ...params.line1, dcwBase: value },
+			};
+		case "l1_warp_algo": {
+			const algo = ALGO_ORDER[Math.round(value)] ?? "cz101";
+			return {
+				...params,
+				line1: { ...params.line1, algo },
+			};
+		}
+		case "l2_dcw_base":
+			return {
+				...params,
+				line2: { ...params.line2, dcwBase: value },
+			};
+		default:
+			return params;
+	}
+}
+
+// ---------------------------------------------------------------------------
 // Shared types (structural copies of the private types in beamerBridge)
 // ---------------------------------------------------------------------------
 
@@ -89,6 +186,11 @@ export interface MockBridgeHandle {
 declare global {
 	interface Window {
 		__MOCK_BRIDGE__?: MockBridgeHandle;
+		__czIpcResponse?: (response: {
+			id: number;
+			result?: unknown;
+			error?: string;
+		}) => void;
 	}
 }
 
@@ -248,6 +350,12 @@ export function installMockPluginBridge(): void {
 		loadedPresetFingerprint?: string | null;
 	} = {};
 
+	// Full params blob received from the last setParams IPC call (nih-plug bridge).
+	// Used by pushParamUpdate/pushBeamerParamUpdate to build valid full-param updates.
+	let virtualFullParams: FullParamsBlob | null = null;
+	// Scalar param snapshot from last setParams — used for change detection.
+	let prevExtractedScalars: Record<string, number> = {};
+
 	// Virtual param state: string ID → normalized value
 	const virtualParamState: Record<string, number> = {};
 	const paramsByStringId: Record<string, BeamerParamInfo> = {};
@@ -270,6 +378,201 @@ export function installMockPluginBridge(): void {
 			}
 		}
 	}
+
+	function respondIpc(
+		id: unknown,
+		payload: { result?: unknown; error?: string },
+	) {
+		queueMicrotask(() => {
+			if (typeof window.__czIpcResponse === "function") {
+				window.__czIpcResponse({
+					id: typeof id === "number" ? id : 0,
+					...payload,
+				});
+			}
+		});
+	}
+
+	window.ipc = {
+		postMessage: (message: string) => {
+			let parsed: unknown;
+			try {
+				parsed = JSON.parse(message) as unknown;
+			} catch {
+				return;
+			}
+
+			if (typeof parsed !== "object" || parsed === null) {
+				return;
+			}
+
+			const msg = parsed as Record<string, unknown>;
+
+			if (typeof msg.param_id === "string" && typeof msg.value === "number") {
+				const param = paramsByStringId[msg.param_id];
+				if (!param) {
+					return;
+				}
+				param.plainValue = msg.value;
+				param.value =
+					param.max === param.min
+						? param.defaultValue
+						: (msg.value - param.min) / (param.max - param.min);
+				virtualParamState[param.stringId] = param.value;
+				recordMessage({
+					type: "param:set",
+					id: param.id,
+					stringId: param.stringId,
+					value: param.value,
+				});
+				return;
+			}
+
+			if (typeof msg.method !== "string") {
+				return;
+			}
+
+			const method = msg.method;
+			const id = msg.id;
+			const args = Array.isArray(msg.args) ? msg.args : [];
+			recordMessage({ type: "invoke", method, args });
+
+			if (method === "getEnvelopes") {
+				respondIpc(id, { result: {} });
+				return;
+			}
+			if (method === "getParams") {
+				// Resolve with null so the adapter enables outbound sync and calls syncRef,
+				// which triggers the initial setParams call that seeds virtualFullParams.
+				respondIpc(id, { result: null });
+				return;
+			}
+			if (method === "setParams") {
+				const paramsJson = typeof args[0] === "string" ? args[0] : null;
+				if (paramsJson) {
+					try {
+						const params = JSON.parse(paramsJson) as FullParamsBlob;
+						const newScalars = extractScalarParams(params);
+
+						// Emit param:begin / param:set / param:end for each changed scalar param.
+						for (const [stringId, newVal] of Object.entries(newScalars)) {
+							if (prevExtractedScalars[stringId] !== newVal) {
+								const paramInfo = paramsByStringId[stringId];
+								recordMessage({
+									type: "param:begin",
+									id: paramInfo?.id,
+									stringId,
+								});
+								recordMessage({
+									type: "param:set",
+									id: paramInfo?.id,
+									stringId,
+									value: newVal,
+								});
+								recordMessage({
+									type: "param:end",
+									id: paramInfo?.id,
+									stringId,
+								});
+								virtualParamState[stringId] = newVal;
+							}
+						}
+						prevExtractedScalars = newScalars;
+
+						// Emit setAlgoControls for each non-empty line/slot.
+						const l1 = params.line1;
+						const l2 = params.line2;
+						if (Array.isArray(l1?.algoControlsA) && l1.algoControlsA.length > 0) {
+							recordMessage({
+								type: "invoke",
+								method: "setAlgoControls",
+								args: [1, "a", l1.algoControlsA],
+							});
+						}
+						if (Array.isArray(l1?.algoControlsB) && l1.algoControlsB.length > 0) {
+							recordMessage({
+								type: "invoke",
+								method: "setAlgoControls",
+								args: [1, "b", l1.algoControlsB],
+							});
+						}
+						if (Array.isArray(l2?.algoControlsA) && l2.algoControlsA.length > 0) {
+							recordMessage({
+								type: "invoke",
+								method: "setAlgoControls",
+								args: [2, "a", l2.algoControlsA],
+							});
+						}
+						if (Array.isArray(l2?.algoControlsB) && l2.algoControlsB.length > 0) {
+							recordMessage({
+								type: "invoke",
+								method: "setAlgoControls",
+								args: [2, "b", l2.algoControlsB],
+							});
+						}
+
+						// Emit setModMatrix when there are routes.
+						const mm = params.modMatrix;
+						if (Array.isArray(mm?.routes) && mm.routes.length > 0) {
+							recordMessage({
+								type: "invoke",
+								method: "setModMatrix",
+								args: [{ routes: mm.routes }],
+							});
+						}
+
+						virtualFullParams = params;
+					} catch {
+						// ignore malformed JSON
+					}
+				}
+				respondIpc(id, { result: null });
+				return;
+			}
+			if (method === "setEnvelope") {
+				respondIpc(id, { result: null });
+				return;
+			}
+			if (method === "setAlgoControls") {
+				respondIpc(id, { result: null });
+				return;
+			}
+			if (method === "getAlgoControls") {
+				respondIpc(id, {
+					result: {
+						line1: { a: [], b: [] },
+						line2: { a: [], b: [] },
+					},
+				});
+				return;
+			}
+			if (method === "setModMatrix") {
+				const next = (args[0] ?? { routes: [] }) as {
+					routes?: unknown[];
+				};
+				virtualModMatrix = { routes: [...(next.routes ?? [])] };
+				respondIpc(id, { result: null });
+				return;
+			}
+			if (method === "getModMatrix") {
+				respondIpc(id, { result: { routes: [...virtualModMatrix.routes] } });
+				return;
+			}
+			if (method === "getScopeData") {
+				respondIpc(id, {
+					result: { samples: [], sampleRate: 44100, hz: 220 },
+				});
+				return;
+			}
+			if (method === "clientLog") {
+				respondIpc(id, { result: null });
+				return;
+			}
+
+			pendingInvokeResolve = (result) => respondIpc(id, { result });
+			pendingInvokeReject = (error) => respondIpc(id, { error });
+		},
+	};
 
 	// ---------------------------------------------------------------------------
 	// Synthetic window.__BEAMER__ runtime
@@ -417,14 +720,35 @@ export function installMockPluginBridge(): void {
 					? (paramsById[idOrStringId]?.stringId ?? String(idOrStringId))
 					: idOrStringId;
 
-			if (window.__czOnParams) {
+			if (!window.__czOnParams) return;
+
+			if (virtualFullParams !== null) {
+				const updated = applyParamToBlob(virtualFullParams, stringId, value);
+				virtualFullParams = updated;
+				window.__czOnParams(JSON.stringify(updated));
+			} else {
+				// Fallback before first setParams — sends partial JSON (may log an error)
 				window.__czOnParams(JSON.stringify({ [stringId]: value }));
 			}
 		},
 
 		pushBeamerParamUpdate(update: BeamerParamUpdate): void {
-			// Directly invoke the _onParams handler installed by ensureBeamerBridge.
-			window.__BEAMER__?._onParams(update);
+			if (!window.__czOnParams || virtualFullParams === null) {
+				// Fallback to old Beamer path if bridge or full params not available.
+				window.__BEAMER__?._onParams(update);
+				return;
+			}
+
+			let params: FullParamsBlob = { ...virtualFullParams };
+			for (const [key, [_normalized, plain]] of Object.entries(update)) {
+				const numericId = Number.parseInt(key, 10);
+				const stringId = Number.isNaN(numericId)
+					? key
+					: (paramsById[numericId]?.stringId ?? key);
+				params = applyParamToBlob(params, stringId, plain);
+			}
+			virtualFullParams = params;
+			window.__czOnParams(JSON.stringify(params));
 		},
 
 		setParameter(idOrStringId: string | number, value: number): void {
