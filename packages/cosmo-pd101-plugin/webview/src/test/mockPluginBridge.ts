@@ -482,28 +482,40 @@ export function installMockPluginBridge(): void {
 						// Emit setAlgoControls for each non-empty line/slot.
 						const l1 = params.line1;
 						const l2 = params.line2;
-						if (Array.isArray(l1?.algoControlsA) && l1.algoControlsA.length > 0) {
+						if (
+							Array.isArray(l1?.algoControlsA) &&
+							l1.algoControlsA.length > 0
+						) {
 							recordMessage({
 								type: "invoke",
 								method: "setAlgoControls",
 								args: [1, "a", l1.algoControlsA],
 							});
 						}
-						if (Array.isArray(l1?.algoControlsB) && l1.algoControlsB.length > 0) {
+						if (
+							Array.isArray(l1?.algoControlsB) &&
+							l1.algoControlsB.length > 0
+						) {
 							recordMessage({
 								type: "invoke",
 								method: "setAlgoControls",
 								args: [1, "b", l1.algoControlsB],
 							});
 						}
-						if (Array.isArray(l2?.algoControlsA) && l2.algoControlsA.length > 0) {
+						if (
+							Array.isArray(l2?.algoControlsA) &&
+							l2.algoControlsA.length > 0
+						) {
 							recordMessage({
 								type: "invoke",
 								method: "setAlgoControls",
 								args: [2, "a", l2.algoControlsA],
 							});
 						}
-						if (Array.isArray(l2?.algoControlsB) && l2.algoControlsB.length > 0) {
+						if (
+							Array.isArray(l2?.algoControlsB) &&
+							l2.algoControlsB.length > 0
+						) {
 							recordMessage({
 								type: "invoke",
 								method: "setAlgoControls",
