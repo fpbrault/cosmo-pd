@@ -31,6 +31,12 @@
 		"enabled": true,
 		"rules": {
 			"recommended": true,
+			"nursery": {
+				"useSortedClasses": {
+					"level": "on",
+					"fix": "safe"
+				}
+			},
 			"suspicious": {
 				"noUnknownAtRules": {
 					"level": "warn",

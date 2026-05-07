@@ -39,10 +39,10 @@ export default function SaveDraftPresetModal({
 
 	return (
 		<Modal panelClassName="w-full max-w-2xl" onClose={onCancel}>
-			<h2 className="mb-3 text-xl font-bold">Save Retrieved Preset</h2>
+			<h2 className="mb-3 font-bold text-xl">Save Retrieved Preset</h2>
 
 			{matchingPresetName && (
-				<div className="p-2 mb-3 text-sm rounded-md bg-success/20 border border-success/40">
+				<div className="mb-3 rounded-md border border-success/40 bg-success/20 p-2 text-sm">
 					Exact library match found: {matchingPresetName}
 				</div>
 			)}
@@ -77,7 +77,7 @@ export default function SaveDraftPresetModal({
 				</FormField>
 			</div>
 
-			<div className="flex justify-end gap-2 mt-4">
+			<div className="mt-4 flex justify-end gap-2">
 				<Button variant="secondary" onClick={onCancel}>
 					Cancel
 				</Button>

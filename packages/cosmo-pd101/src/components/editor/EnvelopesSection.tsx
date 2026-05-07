@@ -36,10 +36,10 @@ export function EnvelopesSection({
 	return (
 		<Card
 			variant="subtle"
-			className="p-2 min-w-0 h-full flex-1 min-h-0"
+			className="h-fit min-h-0 min-w-0 flex-1 p-2"
 			padding="none"
 		>
-			<div className="mb-3 grid grid-cols-3 gap-2 w-full">
+			<div className="mb-3 grid w-full grid-cols-3 gap-2">
 				{(["dco", "dcw", "dca"] as EnvTab[]).map((tab) => (
 					<StepEnvelopePreview
 						key={tab}

@@ -7,7 +7,7 @@ export default function ModModeControl() {
 
 	return (
 		<div className="shrink-0">
-			<div className="mb-1 cz-light-blue">Modulation</div>
+			<div className="cz-light-blue mb-1">Modulation</div>
 			<div className="flex gap-1">
 				{(
 					[

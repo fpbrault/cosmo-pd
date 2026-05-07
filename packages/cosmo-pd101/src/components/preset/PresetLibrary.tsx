@@ -592,25 +592,25 @@ export default function PresetLibrary({
 
 	return (
 		<div className="relative z-10 flex min-h-0 flex-1 flex-col">
-			<div className="flex min-h-0 flex-1 flex-col overflow-hidden  border border-cz-border bg-cz-panel">
-				<div className="grid gap-3 border-b border-cz-border bg-cz-body px-5 py-4 grid-cols-[1fr_auto] items-center">
+			<div className="flex min-h-0 flex-1 flex-col overflow-hidden border border-cz-border bg-cz-panel">
+				<div className="grid grid-cols-[1fr_auto] items-center gap-3 border-cz-border border-b bg-cz-body px-5 py-4">
 					<div>
-						<p className="text-3xs font-mono uppercase tracking-[0.32em] text-cz-gold">
+						<p className="font-mono text-3xs text-cz-gold uppercase tracking-[0.32em]">
 							Preset Library
 						</p>
-						<h2 className="mt-1 truncate text-xl font-mono font-bold text-cz-cream">
+						<h2 className="mt-1 truncate font-bold font-mono text-cz-cream text-xl">
 							{activePresetName}
 						</h2>
 					</div>
 					<div className="flex flex-wrap items-center gap-2">
-						<p className="text-4xs font-mono uppercase tracking-[0.2em] text-cz-cream-dim">
+						<p className="font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.2em]">
 							{sortedEntries.length}{" "}
 							{sortedEntries.length === 1 ? "Preset" : "Presets"} found
 						</p>
 						<input
 							ref={searchInputRef}
 							type="text"
-							className="h-10 min-w-48 rounded-md border border-cz-border bg-cz-inset px-3 text-sm text-cz-cream placeholder-cz-cream-dim/70 outline-none focus:border-cz-light-blue"
+							className="h-10 min-w-48 rounded-md border border-cz-border bg-cz-inset px-3 text-cz-cream text-sm placeholder-cz-cream-dim/70 outline-none focus:border-cz-light-blue"
 							placeholder="Search presets"
 							value={search}
 							onChange={(event) => setSearch(event.target.value)}
@@ -633,7 +633,7 @@ export default function PresetLibrary({
 						</Button>
 					</div>
 					<div className="col-span-2 flex flex-wrap items-center gap-2">
-						<p className="text-4xs font-mono uppercase tracking-[0.18em] text-cz-cream-dim">
+						<p className="font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
 							Filter tags
 						</p>
 						<button
@@ -656,7 +656,7 @@ export default function PresetLibrary({
 								</button>
 							);
 						})}
-						<p className="ml-2 text-4xs font-mono uppercase tracking-[0.18em] text-cz-cream-dim">
+						<p className="ml-2 font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
 							Sort
 						</p>
 						<Button
@@ -709,7 +709,7 @@ export default function PresetLibrary({
 							handleKeyboardNavigation(event);
 						}}
 					>
-						<div className="grid grid-cols-[2.5rem_2.5rem_minmax(12rem,1fr)_8rem_minmax(10rem,1fr)_9rem] border-b border-cz-border bg-cz-body px-4 py-2 text-4xs font-mono uppercase tracking-[0.22em] text-cz-cream-dim">
+						<div className="grid grid-cols-[2.5rem_2.5rem_minmax(12rem,1fr)_8rem_minmax(10rem,1fr)_9rem] border-cz-border border-b bg-cz-body px-4 py-2 font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.22em]">
 							<button
 								type="button"
 								className="text-left hover:text-cz-cream"
@@ -748,7 +748,7 @@ export default function PresetLibrary({
 							<span className="text-right">Actions</span>
 						</div>
 						{sortedEntries.length === 0 ? (
-							<div className="px-5 py-10 text-sm text-cz-cream">
+							<div className="px-5 py-10 text-cz-cream text-sm">
 								No presets available.
 							</div>
 						) : (
@@ -764,12 +764,12 @@ export default function PresetLibrary({
 									return (
 										<div
 											key={entry.id}
-											className={`absolute inset-x-0 grid grid-cols-[2.5rem_2.5rem_minmax(12rem,1fr)_8rem_minmax(10rem,1fr)_9rem] items-center border-b border-cz-border px-4 py-1 text-sm transition ${
+											className={`absolute inset-x-0 grid grid-cols-[2.5rem_2.5rem_minmax(12rem,1fr)_8rem_minmax(10rem,1fr)_9rem] items-center border-cz-border border-b px-4 py-1 text-sm transition ${
 												active
 													? "bg-cz-surface/20"
 													: focused
 														? "bg-cz-surface/50 text-cz-cream"
-														: "text-cz-cream bg-cz-surface hover:bg-cz-surface/30"
+														: "bg-cz-surface text-cz-cream hover:bg-cz-surface/30"
 											}`}
 											style={{
 												height: ENTRY_ROW_HEIGHT,
@@ -832,19 +832,19 @@ export default function PresetLibrary({
 													ref={(node) => {
 														rowRefs.current[entry.id] = node;
 													}}
-													className="h-auto min-h-0 w-full min-w-0 truncate bg-transparent px-0 py-0.5 text-left text-xs font-medium text-cz-cream outline-none hover:bg-transparent focus:bg-transparent active:bg-transparent"
+													className="h-auto min-h-0 w-full min-w-0 truncate bg-transparent px-0 py-0.5 text-left font-medium text-cz-cream text-xs outline-none hover:bg-transparent focus:bg-transparent active:bg-transparent"
 													onFocus={() => setFocusedEntryId(entry.id)}
 													onClick={() => handleLoad(entry)}
 												>
 													{entry.label}
 												</button>
-												<p className="truncate text-4xs font-mono uppercase tracking-[0.16em] text-cz-cream-dim">
+												<p className="truncate font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.16em]">
 													{entry.category
 														? `Category: ${entry.category}`
 														: entry.sourceLabel}
 												</p>
 											</div>
-											<span className="truncate text-3xs font-mono uppercase tracking-[0.16em] text-cz-cream-dim">
+											<span className="truncate font-mono text-3xs text-cz-cream-dim uppercase tracking-[0.16em]">
 												{entry.sourceLabel}
 											</span>
 											<div className="flex flex-wrap gap-2">
@@ -853,14 +853,14 @@ export default function PresetLibrary({
 														<button
 															key={`${entry.id}-${tag}`}
 															type="button"
-															className="capitalize badge badge-primary"
+															className="badge badge-primary capitalize"
 															onClick={() => toggleTagFilter(tag)}
 														>
 															{tag.toLowerCase()}
 														</button>
 													))
 												) : (
-													<span className="text-4xs font-mono uppercase tracking-[0.16em] text-cz-cream-dim">
+													<span className="font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.16em]">
 														-
 													</span>
 												)}
@@ -910,10 +910,10 @@ export default function PresetLibrary({
 						)}
 					</div>
 
-					<aside className="border-cz-border bg-cz-surface p-4 border-l border-t-0">
+					<aside className="border-cz-border border-t-0 border-l bg-cz-surface p-4">
 						<div className="space-y-5">
 							<section>
-								<h3 className="mb-2 text-4xs font-mono uppercase tracking-[0.28em] text-cz-gold">
+								<h3 className="mb-2 font-mono text-4xs text-cz-gold uppercase tracking-[0.28em]">
 									Current State
 								</h3>
 								<div className="mt-2 grid grid-cols-2 gap-2">
@@ -959,7 +959,7 @@ export default function PresetLibrary({
 							</section>
 
 							<section>
-								<h3 className="mb-2 text-4xs font-mono uppercase tracking-[0.28em] text-cz-gold">
+								<h3 className="mb-2 font-mono text-4xs text-cz-gold uppercase tracking-[0.28em]">
 									File
 								</h3>
 								<div className="grid grid-cols-2 gap-2">
@@ -986,7 +986,7 @@ export default function PresetLibrary({
 									onChange={handleImportFile}
 								/>
 								{importError ? (
-									<p className="mt-2 text-xs text-red-400">{importError}</p>
+									<p className="mt-2 text-red-400 text-xs">{importError}</p>
 								) : null}
 							</section>
 						</div>
@@ -1004,7 +1004,7 @@ export default function PresetLibrary({
 				}}
 			>
 				<div className="modal-box rounded-md border border-cz-border bg-cz-surface text-cz-cream">
-					<h3 className="font-mono text-lg font-bold">Rename preset</h3>
+					<h3 className="font-bold font-mono text-lg">Rename preset</h3>
 					<input
 						type="text"
 						className="input mt-4 w-full border-cz-border bg-cz-inset text-cz-cream"
@@ -1044,8 +1044,8 @@ export default function PresetLibrary({
 				}}
 			>
 				<div className="modal-box rounded-md border border-cz-border bg-cz-surface text-cz-cream">
-					<h3 className="font-mono text-lg font-bold">Delete preset?</h3>
-					<p className="mt-3 text-sm text-cz-cream-dim">
+					<h3 className="font-bold font-mono text-lg">Delete preset?</h3>
+					<p className="mt-3 text-cz-cream-dim text-sm">
 						{deleteEntry?.label} will be removed from your local presets.
 					</p>
 					<div className="modal-action">
@@ -1079,13 +1079,13 @@ export default function PresetLibrary({
 				}}
 			>
 				<div className="modal-box rounded-md border border-cz-border bg-cz-surface text-cz-cream">
-					<h3 className="font-mono text-lg font-bold">Preset metadata</h3>
-					<p className="mt-2 text-xs text-cz-cream-dim">
+					<h3 className="font-bold font-mono text-lg">Preset metadata</h3>
+					<p className="mt-2 text-cz-cream-dim text-xs">
 						{metadataEntry?.label}
 					</p>
 					<div className="mt-4 space-y-3">
 						<div>
-							<p className="mb-1 text-4xs font-mono uppercase tracking-[0.2em] text-cz-cream-dim">
+							<p className="mb-1 font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.2em]">
 								Category
 							</p>
 							<input
@@ -1099,7 +1099,7 @@ export default function PresetLibrary({
 							/>
 						</div>
 						<div>
-							<p className="mb-1 text-4xs font-mono uppercase tracking-[0.2em] text-cz-cream-dim">
+							<p className="mb-1 font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.2em]">
 								Tags
 							</p>
 							<input
@@ -1148,7 +1148,7 @@ export default function PresetLibrary({
 				}}
 			>
 				<div className="modal-box rounded-md border border-cz-border bg-cz-surface text-cz-cream">
-					<h3 className="font-mono text-lg font-bold">Save preset as</h3>
+					<h3 className="font-bold font-mono text-lg">Save preset as</h3>
 					<input
 						type="text"
 						className="input mt-4 w-full border-cz-border bg-cz-inset text-cz-cream"

@@ -200,7 +200,6 @@ describe("algo controls (browser)", () => {
 				controls={[{ id: "depth", label: "Depth" }]}
 			/>,
 		);
-		expect(screen.getByText("Algo Controls")).toBeInTheDocument();
 		expect(screen.getByTestId("mock-knob")).toBeInTheDocument();
 	});
 

@@ -69,7 +69,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				/>
 			}
 		>
-			<div className="grid grid-cols-3 justify-center col-span-4 gap-1">
+			<div className="col-span-4 grid grid-cols-3 justify-center gap-1">
 				{(
 					[
 						["sine", "sine"],
@@ -131,7 +131,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				})}
 			/>
 			<Button
-				className={`btn btn-xs px-2 col-span-4 w-fit justify-self-center ${
+				className={`btn btn-xs col-span-4 w-fit justify-self-center px-2 ${
 					lfoRetrigger ? "btn-secondary" : "btn-outline"
 				}`}
 				onClick={() => setLfoRetrigger(!lfoRetrigger)}

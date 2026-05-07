@@ -39,13 +39,18 @@ jobs:
         run: bun install
         shell: bash
 
+      - name: Setup Biome
+        uses: biomejs/setup-biome@v2
+        with:
+          version: latest
+
       - name: Run Biome CI
         id: biome-ci
-        run: bunx biome ci . || echo "has-issues=true" >> $GITHUB_OUTPUT
+        run: biome ci . || echo "has-issues=true" >> $GITHUB_OUTPUT
 
       - name: Fix Biome issues
         if: steps.biome-ci.outputs.has-issues == 'true'
-        run: bunx biome check --write .
+        run: biome check --write .
 
       - name: Run Cargo fmt
         run: bun run lint:fix:cargo || true
@@ -76,7 +81,7 @@ jobs:
 
       - name: Verify Biome CI after fixes
         if: steps.biome-ci.outputs.has-issues == 'true' && steps.check-changes.outputs.has-changes != 'true'
-        run: bunx biome ci .
+        run: biome ci .
 
   unit-tests:
     name: Unit Tests

@@ -10,7 +10,7 @@ function FxSlotPanelInner({ slot }: { slot: number }) {
 	const rawSlot = useSynthStore((s) => s.fxSlots[slot]);
 	if (!rawSlot || rawSlot.type === "empty") {
 		return (
-			<p className="p-4 font-mono text-sm text-cz-cream-dim">
+			<p className="p-4 font-mono text-cz-cream-dim text-sm">
 				No FX loaded in slot {slot + 1}.
 			</p>
 		);
@@ -18,7 +18,7 @@ function FxSlotPanelInner({ slot }: { slot: number }) {
 	const config = FX_SLOT_MODULE_CONFIGS[rawSlot.type];
 	if (!config) {
 		return (
-			<p className="p-4 font-mono text-sm text-cz-cream-dim">{rawSlot.type}</p>
+			<p className="p-4 font-mono text-cz-cream-dim text-sm">{rawSlot.type}</p>
 		);
 	}
 	return <FxSlotModuleRenderer config={config} slot={slot} />;

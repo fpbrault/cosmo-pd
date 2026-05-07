@@ -104,7 +104,7 @@ const WaveIcon: React.FC<{ id: WaveformId; size?: number }> = ({
 			width={s}
 			height={s}
 			viewBox={`0 0 ${s} ${s}`}
-			className="text-current shrink-0"
+			className="shrink-0 text-current"
 			aria-hidden="true"
 		>
 			{shapes[id]}
@@ -140,25 +140,25 @@ const WaveformSlot: React.FC<{
 	if (!waveform) {
 		return (
 			<div
-				className={`flex items-center gap-3 rounded-md px-3 py-2 border border-dashed border-base-content/10 w-full min-w-0 ${dim ? "opacity-30" : "opacity-60"}`}
+				className={`flex w-full min-w-0 items-center gap-3 rounded-md border border-base-content/10 border-dashed px-3 py-2 ${dim ? "opacity-30" : "opacity-60"}`}
 			>
-				<span className="text-4xs font-mono text-base-content/40 uppercase tracking-widest shrink-0">
+				<span className="shrink-0 font-mono text-4xs text-base-content/40 uppercase tracking-widest">
 					{label}
 				</span>
-				<span className="text-xs text-base-content/20 ml-auto">—</span>
+				<span className="ml-auto text-base-content/20 text-xs">—</span>
 			</div>
 		);
 	}
 
 	return (
 		<div
-			className={`flex items-center gap-3 rounded-md px-3 py-2 border border-base-content/20 bg-base-300/40 w-full min-w-0 transition-opacity ${dim ? "opacity-40" : "opacity-100"}`}
+			className={`flex w-full min-w-0 items-center gap-3 rounded-md border border-base-content/20 bg-base-300/40 px-3 py-2 transition-opacity ${dim ? "opacity-40" : "opacity-100"}`}
 		>
-			<span className="text-4xs font-mono text-base-content/50 uppercase tracking-widest shrink-0">
+			<span className="shrink-0 font-mono text-4xs text-base-content/50 uppercase tracking-widest">
 				{label}
 			</span>
 			<WaveIcon id={waveform} size={24} />
-			<span className="text-3xs font-mono leading-tight text-base-content/70 text-right flex-1">
+			<span className="flex-1 text-right font-mono text-3xs text-base-content/70 leading-tight">
 				{WF_NAMES[waveform]}
 			</span>
 		</div>
@@ -184,14 +184,14 @@ const WaveformDisplay: React.FC<WaveformDisplayProps> = memo(
 				className={`flex flex-col gap-2 overflow-x-hidden ${disabled ? "opacity-40" : ""}`}
 			>
 				<div className="flex items-center justify-between">
-					<span className="text-3xs font-mono text-base-content/50 uppercase tracking-widest">
+					<span className="font-mono text-3xs text-base-content/50 uppercase tracking-widest">
 						{line}
 					</span>
 					<span className={`badge badge-xs ${MOD_COLORS[config.modulation]}`}>
 						{MOD_LABELS[config.modulation]}
 					</span>
 				</div>
-				<div className="grid items-start min-w-0 gap-1.5 grid-cols-1">
+				<div className="grid min-w-0 grid-cols-1 items-start gap-1.5">
 					<WaveformSlot waveform={config.firstWaveform} label="Primary" />
 					{hasSecondary && (
 						<WaveformSlot waveform={config.secondWaveform} label="Secondary" />
