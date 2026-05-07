@@ -172,11 +172,15 @@ export function usePluginBridgeSynthEngine(
 			return;
 		}
 		let cancelled = false;
-		void window
-			.__czGetParams()
-			.then((result) => {
-				if (cancelled) return;
-				if (result && typeof result === "object") {
+		let retryCount = 0;
+		const MAX_RETRIES = 10;
+		const RETRY_DELAY_MS = 500;
+		let retryId = 0;
+		let fallbackId = 0;
+
+		const applyResult = (result: unknown) => {
+			if (result && typeof result === "object") {
+				try {
 					const uiParams = normalizeHostParamsIfRaw(
 						result as SynthPresetV1["params"],
 					);
@@ -184,16 +188,69 @@ export function usePluginBridgeSynthEngine(
 						schemaVersion: 1,
 						params: uiParams,
 					});
+				} catch {
+					// Partial/empty params — ignore, keep current UI state.
 				}
+			}
+			outboundEnabledRef.current = true;
+			syncRef.current?.();
+		};
+
+		const tryGetParams = () => {
+			if (cancelled) return;
+			const getParams = window.__czGetParams;
+			if (!getParams) return;
+			void getParams()
+				.then((result) => {
+					window.clearTimeout(fallbackId);
+					if (cancelled) return;
+					applyResult(result);
+				})
+				.catch((error) => {
+					if (cancelled) return;
+					retryCount++;
+					if (retryCount <= MAX_RETRIES) {
+						console.warn(
+							`[PluginBridge] getParams failed (attempt ${retryCount}/${MAX_RETRIES}):`,
+							error,
+						);
+						// Open the gate so controls work immediately while we retry.
+						if (!outboundEnabledRef.current) {
+							outboundEnabledRef.current = true;
+							syncRef.current?.();
+						}
+						retryId = window.setTimeout(tryGetParams, RETRY_DELAY_MS);
+					} else {
+						window.clearTimeout(fallbackId);
+						console.error(
+							"[PluginBridge] getParams failed after all retries:",
+							error,
+						);
+						if (!outboundEnabledRef.current) {
+							outboundEnabledRef.current = true;
+							syncRef.current?.();
+						}
+					}
+				});
+		};
+
+		// Safety fallback: open the outbound gate after 10 s no matter what.
+		fallbackId = window.setTimeout(() => {
+			if (!cancelled && !outboundEnabledRef.current) {
+				console.warn(
+					"[PluginBridge] getParams timed out — opening outbound gate anyway",
+				);
 				outboundEnabledRef.current = true;
 				syncRef.current?.();
-			})
-			.catch((error) => {
-				console.error("[PluginBridge] Failed to get params from Rust:", error);
-				outboundEnabledRef.current = true;
-			});
+			}
+		}, 10000);
+
+		tryGetParams();
+
 		return () => {
 			cancelled = true;
+			window.clearTimeout(retryId);
+			window.clearTimeout(fallbackId);
 		};
 	}, [enabled, applyPreset]);
 }

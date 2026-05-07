@@ -43,8 +43,8 @@ use cosmo_synth_engine::params::SynthParams;
 
 // ─── Size constants ──────────────────────────────────────────────────────────
 
-pub const DEFAULT_WIDTH: u32 = 1280;
-pub const DEFAULT_HEIGHT: u32 = 800;
+pub const DEFAULT_WIDTH: u32 = 1152;
+pub const DEFAULT_HEIGHT: u32 = 864;
 
 // ─── Per-format URL scheme ───────────────────────────────────────────────────
 

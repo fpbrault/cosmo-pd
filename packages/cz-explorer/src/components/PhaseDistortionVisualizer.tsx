@@ -48,8 +48,8 @@ type PhaseDistortionVisualizerBaseProps = PhaseDistortionVisualizerProps & {
 	onAudioLevelChange?: (level: number) => void;
 };
 
-const SYNTH_RENDERER_MAX_WIDTH = 1280;
-const SYNTH_RENDERER_MAX_HEIGHT = 800;
+const SYNTH_RENDERER_MAX_WIDTH = 1152;
+const SYNTH_RENDERER_MAX_HEIGHT = 864;
 const VISUALIZER_FRAME_PADDING = 30;
 
 export function SharedPhaseDistortionVisualizer({

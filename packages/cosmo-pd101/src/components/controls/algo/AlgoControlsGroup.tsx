@@ -88,7 +88,7 @@ function AlgoControlsGroupInner({
 						<div className="space-y-3">
 							{presetControl ? <div>{renderControl(presetControl)}</div> : null}
 							{waveform1Control || waveform2Control ? (
-								<div className="grid grid-cols-2 gap-2 items-start">
+								<div className="grid grid-cols-2 gap-6 items-start">
 									{waveform1Control ? (
 										<div>{renderControl(waveform1Control)}</div>
 									) : (

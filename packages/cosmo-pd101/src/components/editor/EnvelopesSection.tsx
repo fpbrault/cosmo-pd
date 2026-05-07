@@ -36,7 +36,7 @@ export function EnvelopesSection({
 	return (
 		<Card
 			variant="subtle"
-			className="p-2 min-w-0 h-full flex-1 min-h-0"
+			className="p-2 min-w-0 h-fit flex-1 min-h-0"
 			padding="none"
 		>
 			<div className="mb-3 grid grid-cols-3 gap-2 w-full">

@@ -452,8 +452,10 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 			if (!canvas) return null;
 
 			const rect = canvas.getBoundingClientRect();
-			const x = clientX - rect.left;
-			const y = clientY - rect.top;
+			const scaleX = canvas.clientWidth / Math.max(1, rect.width);
+			const scaleY = canvas.clientHeight / Math.max(1, rect.height);
+			const x = (clientX - rect.left) * scaleX;
+			const y = (clientY - rect.top) * scaleY;
 			return { x, y, rect };
 		},
 		[],
@@ -574,7 +576,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 	}, [dragState]);
 
 	return (
-		<div className="h-full flex flex-col justify-center space-y-3">
+		<div className="h-full flex flex-col space-y-3">
 			<div className="flex items-center justify-between">
 				<span className="text-2xs font-semibold uppercase tracking-[0.24em] text-base-content/70">
 					{title}
@@ -637,6 +639,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 									value={step.level}
 									onChange={(v) => updateStep(i, "level", v)}
 									disabled={!isActiveStep || isEndStep}
+									size={64}
 									min={0}
 									max={99}
 									label="Lvl"
@@ -661,6 +664,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 									tooltip={`Sets envelope transition speed for step ${i + 1}.`}
 									valueFormatter={(v) => `${Math.round(v)}`}
 									color={!isActiveStep ? "#6b7280" : "#a3a3a3"}
+									size={64}
 									modDestination={resolveTargetFromMetadata("env.stepRate", {
 										lineIndex,
 										envKind,

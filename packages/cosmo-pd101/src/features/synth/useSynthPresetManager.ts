@@ -44,6 +44,7 @@ type UseSynthPresetManagerResult = {
 	activePresetName: string;
 	loadedPresetFingerprint: string | null;
 	pendingPresetChange: PendingPresetChange | null;
+	handleSyncBuiltinSelection: (name: string) => void;
 	handleLoadLocal: (name: string) => void;
 	handleLoadBuiltin: (name: string) => void;
 	handleLoadLibrary: (preset: LibraryPreset) => void;
@@ -427,6 +428,16 @@ export function useSynthPresetManager({
 			loadBuiltinPreset(name);
 		},
 		[loadBuiltinPreset, requestPresetChange],
+	);
+
+	const handleSyncBuiltinSelection = useCallback(
+		(name: string) => {
+			const hasBuiltinPreset = Object.hasOwn(builtinPresets, name);
+			setActivePresetId(hasBuiltinPreset ? getBuiltinPresetEntryId(name) : null);
+			setActivePresetNameBase(name);
+			captureLoadedPresetFingerprint();
+		},
+		[builtinPresets, captureLoadedPresetFingerprint],
 	);
 
 	const handleLoadLibrary = useCallback(
@@ -836,6 +847,7 @@ export function useSynthPresetManager({
 		activePresetName,
 		loadedPresetFingerprint,
 		pendingPresetChange,
+		handleSyncBuiltinSelection,
 		handleLoadLocal,
 		handleLoadBuiltin,
 		handleLoadLibrary,

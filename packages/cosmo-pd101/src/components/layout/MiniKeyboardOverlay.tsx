@@ -5,7 +5,6 @@ import {
 	useEffect,
 	useMemo,
 	useRef,
-	useState,
 } from "react";
 import Button from "@/components/controls/Button";
 
@@ -34,7 +33,7 @@ const BLACK_CONFIG = [
 ] as const;
 
 const START_NOTE = 36;
-const KEYBOARD_OCTAVES = 4;
+const KEYBOARD_OCTAVES = 3;
 
 const WHITE_KEY_CLASS_NAME =
 	"relative flex h-full flex-1 flex-col justify-end rounded-b-xs border border-cz-border/75 bg-white shadow-sm transition-all";
@@ -92,8 +91,8 @@ function PianoKey({
 }) {
 	const keyClassName = black ? BLACK_KEY_CLASS_NAME : WHITE_KEY_CLASS_NAME;
 	const activeClassName = black
-		? "border-cz-light-blue bg-cz-surface"
-		: "translate-y-px border-cz-gold bg-cz-gold/70";
+		? "!border-cz-light-blue !bg-cz-light-blue"
+		: "translate-y-px !border-cz-light-blue !bg-cz-light-blue";
 
 	return (
 		<Button
@@ -113,51 +112,56 @@ export default function MiniKeyboardOverlay({
 	onNoteOn,
 	onNoteOff,
 }: MiniKeyboardOverlayProps) {
-	const [pitchWheel, setPitchWheel] = useState(0);
-	const [modWheel, setModWheel] = useState(0);
-	const draggingPointerIdRef = useRef<number | null>(null);
-	const draggingNoteRef = useRef<number | null>(null);
+	// Maps each active pointer ID to the note it is currently pressing.
+	// This enables independent per-finger note lifecycle for multitouch.
+	const activePointersRef = useRef<Map<number, number>>(new Map());
 	const activeSet = new Set(activeNotes);
 	const { whiteKeys, blackKeys } = useMemo(
 		() => buildKeyboardLayout(START_NOTE, KEYBOARD_OCTAVES),
 		[],
 	);
 
-	const playDraggedNote = useCallback(
-		(note: number) => {
-			const previousNote = draggingNoteRef.current;
-			if (previousNote === note) {
+	const playNoteForPointer = useCallback(
+		(pointerId: number, note: number) => {
+			const currentNote = activePointersRef.current.get(pointerId);
+			if (currentNote === note) {
 				return;
 			}
-
-			if (previousNote !== null) {
-				onNoteOff(previousNote);
+			if (currentNote !== undefined) {
+				onNoteOff(currentNote);
 			}
-
-			draggingNoteRef.current = note;
+			activePointersRef.current.set(pointerId, note);
 			onNoteOn(note, 112);
 		},
 		[onNoteOn, onNoteOff],
 	);
 
-	const stopDragging = useCallback(() => {
-		const previousNote = draggingNoteRef.current;
-		if (previousNote !== null) {
-			onNoteOff(previousNote);
-		}
+	const releasePointer = useCallback(
+		(pointerId: number) => {
+			const note = activePointersRef.current.get(pointerId);
+			if (note !== undefined) {
+				onNoteOff(note);
+				activePointersRef.current.delete(pointerId);
+			}
+		},
+		[onNoteOff],
+	);
 
-		draggingPointerIdRef.current = null;
-		draggingNoteRef.current = null;
+	const releaseAllPointers = useCallback(() => {
+		for (const note of activePointersRef.current.values()) {
+			onNoteOff(note);
+		}
+		activePointersRef.current.clear();
 	}, [onNoteOff]);
 
 	useEffect(() => {
 		const onWindowPointerMove = (event: PointerEvent) => {
-			if (draggingPointerIdRef.current !== event.pointerId) {
+			if (!activePointersRef.current.has(event.pointerId)) {
 				return;
 			}
 
 			if (event.pointerType === "mouse" && event.buttons === 0) {
-				stopDragging();
+				releasePointer(event.pointerId);
 				return;
 			}
 
@@ -178,19 +182,19 @@ export default function MiniKeyboardOverlay({
 
 			const parsedNote = Number(noteAttribute);
 			if (!Number.isNaN(parsedNote)) {
-				playDraggedNote(parsedNote);
+				playNoteForPointer(event.pointerId, parsedNote);
 			}
 		};
 
 		const onWindowPointerUp = (event: PointerEvent) => {
-			if (draggingPointerIdRef.current === event.pointerId) {
-				stopDragging();
+			if (activePointersRef.current.has(event.pointerId)) {
+				releasePointer(event.pointerId);
 			}
 		};
 
 		const onWindowPointerCancel = (event: PointerEvent) => {
-			if (draggingPointerIdRef.current === event.pointerId) {
-				stopDragging();
+			if (activePointersRef.current.has(event.pointerId)) {
+				releasePointer(event.pointerId);
 			}
 		};
 
@@ -203,23 +207,22 @@ export default function MiniKeyboardOverlay({
 			window.removeEventListener("pointerup", onWindowPointerUp);
 			window.removeEventListener("pointercancel", onWindowPointerCancel);
 		};
-	}, [playDraggedNote, stopDragging]);
+	}, [playNoteForPointer, releasePointer]);
 
 	useEffect(() => {
 		if (!visible) {
-			stopDragging();
+			releaseAllPointers();
 		}
-	}, [stopDragging, visible]);
+	}, [releaseAllPointers, visible]);
 
-	useEffect(() => () => stopDragging(), [stopDragging]);
+	useEffect(() => () => releaseAllPointers(), [releaseAllPointers]);
 
 	const handleKeyPointerDown = useCallback(
 		(event: ReactPointerEvent<HTMLButtonElement>, note: number) => {
 			event.preventDefault();
-			draggingPointerIdRef.current = event.pointerId;
-			playDraggedNote(note);
+			playNoteForPointer(event.pointerId, note);
 		},
-		[playDraggedNote],
+		[playNoteForPointer],
 	);
 
 	return (
@@ -239,42 +242,7 @@ export default function MiniKeyboardOverlay({
 					>
 						<div className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-cz-light-blue/10 opacity-50" />
 						<div className="relative flex h-32 gap-2 overflow-hidden rounded-none border border-x-0 border-b-0 border-cz-border/70 bg-cz-inset px-2">
-							<div className="flex w-14 shrink-0 items-end gap-1 rounded-md border border-cz-border/60 bg-black/20 px-1.5 pb-1.5 pt-1">
-								<div className="flex flex-1 flex-col items-center gap-1">
-									<input
-										aria-label="Pitch wheel"
-										type="range"
-										min={-1}
-										max={1}
-										step={0.01}
-										value={pitchWheel}
-										onChange={(event) =>
-											setPitchWheel(Number(event.target.value))
-										}
-										className="h-24 w-3 cursor-pointer appearance-none bg-transparent [writing-mode:bt-lr]"
-									/>
-									<span className="text-5xs font-mono uppercase tracking-wider text-cz-cream/70">
-										P
-									</span>
-								</div>
-								<div className="flex flex-1 flex-col items-center gap-1">
-									<input
-										aria-label="Mod wheel"
-										type="range"
-										min={0}
-										max={1}
-										step={0.01}
-										value={modWheel}
-										onChange={(event) =>
-											setModWheel(Number(event.target.value))
-										}
-										className="h-24 w-3 cursor-pointer appearance-none bg-transparent [writing-mode:bt-lr]"
-									/>
-									<span className="text-5xs font-mono uppercase tracking-wider text-cz-cream/70">
-										M
-									</span>
-								</div>
-							</div>
+						
 
 							<div className="relative flex min-w-0 flex-1 gap-0.5 overflow-hidden rounded-md border border-cz-border/65 bg-cz-surface p-1">
 								{whiteKeys.map((key) => (

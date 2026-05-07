@@ -34,9 +34,9 @@ export const CARD_PADDING_CLASSES: Record<
 	Exclude<CardPadding, "none">,
 	string
 > = {
-	sm: "p-3",
-	md: "p-4",
-	lg: "p-6",
+	sm: "p-1",
+	md: "p-2",
+	lg: "p-3",
 };
 
 export function joinClasses(

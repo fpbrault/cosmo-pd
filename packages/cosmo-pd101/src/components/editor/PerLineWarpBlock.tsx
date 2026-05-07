@@ -151,7 +151,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 
 	useEffect(() => {
 		if (activeSection !== "envelopes") return;
-		const id = setInterval(() => setVoiceMarkerTick((t) => t + 1), 32);
+		const id = setInterval(() => setVoiceMarkerTick((t) => t + 1), 16);
 		return () => clearInterval(id);
 	}, [activeSection]);
 
@@ -557,7 +557,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 							</div>
 							<SynthSingleCycleDisplay
 								width={200}
-								height={128}
+								height={100}
 								lineIndex={lineIndex}
 								color={color}
 							/>
@@ -579,22 +579,21 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 							lineIndex={lineIndex}
 						/>
 
-						<Card
-							variant="subtle"
-							className="flex flex-col items-center justify-center"
+						<div
+							className="rounded-none bg-cz-surface/50 pb-1.5 mt-2"
 						>
 							<SynthParamKnob
 								paramKey={lineIndex === 2 ? "algoBlendB" : "algoBlendA"}
 								label="Blend"
 								labelClassName="text-lg font-bold tracking-[0.3em] text-base-content/75"
 								value={algoBlend}
-								size={144}
+								size={100}
 								variant="light"
 								onChange={setAlgoBlend}
 								color={color}
 								valueFormatter={formatAlgoBlendReadout}
 							/>
-						</Card>
+						</div>
 					</div>
 					<div className="min-h-0 flex-1 flex flex-col gap-0">
 						<div

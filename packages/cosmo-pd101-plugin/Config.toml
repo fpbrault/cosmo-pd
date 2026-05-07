@@ -7,6 +7,6 @@ bundle_identifier_prefix = "ca.purraudio"
 url = "https://github.com/fpbrault/cosmo-pd"
 email = "fpbrault@gmail.com"
 has_gui = true
-gui_size = [1280, 800]
+gui_size = [1152, 864]
 gui_background_color = "#0a0a0a"
 subcategories = ["synth", "piano"]
