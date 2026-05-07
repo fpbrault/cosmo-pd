@@ -139,12 +139,12 @@ export function useNoteHandling({
 
 	// Keyboard input
 	useEffect(() => {
-		const beamerRuntime = (
+		const pluginBridgeRuntime = (
 			window as Window & {
-				__BEAMER__?: { emit?: (event: string, data?: unknown) => void };
+				__czSetParams?: (json: string) => void;
 			}
-		).__BEAMER__;
-		const isPluginRuntime = typeof beamerRuntime?.emit === "function";
+		).__czSetParams;
+		const isPluginRuntime = typeof pluginBridgeRuntime === "function";
 
 		// In plugin runtime, keep keyboard ownership with the host and disable
 		// the in-webview PC keyboard note mapping (A/S/D... + space sustain).

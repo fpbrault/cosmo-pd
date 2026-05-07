@@ -1,8 +1,8 @@
 /**
  * Mock Plugin Bridge — E2E / Unit Test Harness
  *
- * Installs a synthetic window.__BEAMER__ runtime that mirrors the real Beamer
- * message contract, intercepts outbound bridge traffic, and exposes
+ * Installs a synthetic plugin IPC/runtime contract for tests, intercepts
+ * outbound bridge traffic, and exposes
  * window.__MOCK_BRIDGE__ for Playwright / Vitest assertions.
  *
  * Import and call installMockPluginBridge() BEFORE rendering React.
@@ -109,10 +109,10 @@ function applyParamToBlob(
 }
 
 // ---------------------------------------------------------------------------
-// Shared types (structural copies of the private types in beamerBridge)
+// Shared types (structural copies of the private bridge types)
 // ---------------------------------------------------------------------------
 
-interface BeamerParamInfo {
+interface PluginParamInfo {
 	id: number;
 	stringId: string;
 	name: string;
@@ -127,7 +127,7 @@ interface BeamerParamInfo {
 	steps: number;
 }
 
-type BeamerParamUpdate = Record<string, [number, number, string]>;
+type PluginParamUpdate = Record<string, [number, number, string]>;
 
 // ---------------------------------------------------------------------------
 // Public types exposed on window.__MOCK_BRIDGE__
@@ -148,21 +148,21 @@ export interface MockBridgeHandle {
 
 	/**
 	 * Push an inbound param update (simulates Rust → UI) via __czOnParams.
-	 * @param idOrStringId  Numeric legacy param ID (0 = volume, 102, 202, etc.) or Beamer string param ID (e.g. "volume", "cho_mix")
+	 * @param idOrStringId  Numeric legacy param ID (0 = volume, 102, 202, etc.) or string param ID (e.g. "volume", "cho_mix")
 	 * @param value     Plain (un-normalized) value
 	 */
 	pushParamUpdate(idOrStringId: string | number, value: number): void;
 
 	/**
-	 * Push an inbound param update through the Beamer runtime _onParams path.
+	 * Push an inbound full param update through the mock host path.
 	 * @param update  Map of numeric-or-string param ID → [normalized, plain, displayText]
 	 */
-	pushBeamerParamUpdate(update: BeamerParamUpdate): void;
+	pushPluginParamUpdate(update: PluginParamUpdate): void;
 
 	/**
 	 * Send an outbound param set through window.ipc (if installed), testing the
 	 * full UI → bridge → runtime.params.set chain.
-	 * @param idOrStringId  Numeric legacy param ID (0, 102, 202, etc.) or Beamer string ID ("volume", "cho_mix")
+	 * @param idOrStringId  Numeric legacy param ID (0, 102, 202, etc.) or string ID ("volume", "cho_mix")
 	 * @param value     Plain (un-normalized) value
 	 */
 	setParameter(idOrStringId: string | number, value: number): void;
@@ -197,11 +197,11 @@ declare global {
 // ---------------------------------------------------------------------------
 // Default parameter set
 // Provides the params used by the E2E spec and a representative global set.
-// Other params return undefined from info(), which beamerBridge skips.
+// Other params return undefined from info(), which the bridge skips.
 // ---------------------------------------------------------------------------
 
-/** Legacy numeric ID → BeamerParamInfo lookup used to build the mock runtime. */
-const DEFAULT_PARAMS: BeamerParamInfo[] = [
+/** Legacy numeric ID → PluginParamInfo lookup used to build the mock runtime. */
+const DEFAULT_PARAMS: PluginParamInfo[] = [
 	// Global
 	{
 		id: 0,
@@ -344,22 +344,17 @@ export function installMockPluginBridge(): void {
 	let pendingInvokeResolve: ((result: unknown) => void) | null = null;
 	let pendingInvokeReject: ((error: string) => void) | null = null;
 	let virtualModMatrix: { routes: unknown[] } = { routes: [] };
-	let virtualPresetSession: {
-		activePresetId?: string | null;
-		activePresetNameBase?: string;
-		loadedPresetFingerprint?: string | null;
-	} = {};
 
 	// Full params blob received from the last setParams IPC call (nih-plug bridge).
-	// Used by pushParamUpdate/pushBeamerParamUpdate to build valid full-param updates.
+	// Used by pushParamUpdate/pushPluginParamUpdate to build valid full-param updates.
 	let virtualFullParams: FullParamsBlob | null = null;
 	// Scalar param snapshot from last setParams — used for change detection.
 	let prevExtractedScalars: Record<string, number> = {};
 
 	// Virtual param state: string ID → normalized value
 	const virtualParamState: Record<string, number> = {};
-	const paramsByStringId: Record<string, BeamerParamInfo> = {};
-	const paramsById: Record<number, BeamerParamInfo> = {};
+	const paramsByStringId: Record<string, PluginParamInfo> = {};
+	const paramsById: Record<number, PluginParamInfo> = {};
 
 	for (const p of DEFAULT_PARAMS) {
 		const entry = { ...p };
@@ -587,133 +582,6 @@ export function installMockPluginBridge(): void {
 	};
 
 	// ---------------------------------------------------------------------------
-	// Synthetic window.__BEAMER__ runtime
-	// Structurally matches the BeamerRuntime type consumed by beamerBridge.
-	// ---------------------------------------------------------------------------
-
-	window.__BEAMER__ = {
-		// Promise already resolved — no host _onInit needed in test mode.
-		ready: Promise.resolve(),
-
-		params: {
-			get: (stringId: string) => paramsByStringId[stringId]?.value ?? 0,
-
-			getPlain: (stringId: string) =>
-				paramsByStringId[stringId]?.plainValue ?? 0,
-
-			getDisplayText: (stringId: string) =>
-				paramsByStringId[stringId]?.displayText ?? "",
-
-			set: (stringId: string, normalizedValue: number) => {
-				const p = paramsByStringId[stringId];
-				if (!p) return;
-				p.value = normalizedValue;
-				p.plainValue = p.min + normalizedValue * (p.max - p.min);
-				virtualParamState[stringId] = normalizedValue;
-				recordMessage({
-					type: "param:set",
-					id: p.id,
-					stringId,
-					value: normalizedValue,
-				});
-			},
-
-			beginEdit: (stringId: string) => {
-				const p = paramsByStringId[stringId];
-				if (p) recordMessage({ type: "param:begin", id: p.id, stringId });
-			},
-
-			endEdit: (stringId: string) => {
-				const p = paramsByStringId[stringId];
-				if (p) recordMessage({ type: "param:end", id: p.id, stringId });
-			},
-
-			// Unused by beamerBridge but part of the full runtime shape.
-			on: (_stringId: string, _cb: (v: number) => void) => () => {},
-
-			all: () => Object.values(paramsByStringId),
-
-			info: (stringId: string) => paramsByStringId[stringId],
-		},
-
-		invoke: (method: string, ...args: unknown[]) => {
-			recordMessage({ type: "invoke", method, args });
-
-			return new Promise<unknown>((resolve, reject) => {
-				// Automatically handle well-known side-effect-free invocations.
-				if (method === "getEnvelopes") {
-					resolve({});
-					return;
-				}
-				if (method === "setEnvelope") {
-					resolve(null);
-					return;
-				}
-				if (method === "setAlgoControls") {
-					resolve(null);
-					return;
-				}
-				if (method === "getAlgoControls") {
-					resolve({
-						line1: { a: [], b: [] },
-						line2: { a: [], b: [] },
-					});
-					return;
-				}
-				if (method === "setModMatrix") {
-					const next = (args[0] ?? { routes: [] }) as {
-						routes?: unknown[];
-					};
-					virtualModMatrix = { routes: [...(next.routes ?? [])] };
-					resolve(null);
-					return;
-				}
-				if (method === "getModMatrix") {
-					resolve({ routes: [...virtualModMatrix.routes] });
-					return;
-				}
-				if (method === "setPresetSession") {
-					const next = (args[0] ?? {}) as {
-						activePresetId?: string | null;
-						activePresetNameBase?: string;
-						loadedPresetFingerprint?: string | null;
-					};
-					virtualPresetSession = {
-						activePresetId: next.activePresetId ?? null,
-						activePresetNameBase: next.activePresetNameBase ?? "Current State",
-						loadedPresetFingerprint: next.loadedPresetFingerprint ?? null,
-					};
-					resolve(null);
-					return;
-				}
-				if (method === "getPresetSession") {
-					resolve({ ...virtualPresetSession });
-					return;
-				}
-				if (method === "getScopeData") {
-					// Return empty scope data so the polling loop doesn't error.
-					resolve({ samples: [], sampleRate: 44100, hz: 220 });
-					return;
-				}
-
-				// Unknown invocations queue so tests can drive the response.
-				pendingInvokeResolve = resolve;
-				pendingInvokeReject = reject;
-			});
-		},
-
-		// Event system (used by custom plugins, not required for PD-101 tests).
-		on: (_name: string, _cb: (data: unknown) => void) => () => {},
-		emit: (name: string, data: unknown) => {
-			recordMessage({ type: "event", name, data });
-		},
-
-		// These are replaced by ensureBeamerBridge() — stubs are fine.
-		_onInit: (_params: BeamerParamInfo[]) => {},
-		_onParams: (_update: BeamerParamUpdate) => {},
-	} as unknown as NonNullable<Window["__BEAMER__"]>;
-
-	// ---------------------------------------------------------------------------
 	// Public test handle — window.__MOCK_BRIDGE__
 	// ---------------------------------------------------------------------------
 
@@ -744,10 +612,8 @@ export function installMockPluginBridge(): void {
 			}
 		},
 
-		pushBeamerParamUpdate(update: BeamerParamUpdate): void {
+		pushPluginParamUpdate(update: PluginParamUpdate): void {
 			if (!window.__czOnParams || virtualFullParams === null) {
-				// Fallback to old Beamer path if bridge or full params not available.
-				window.__BEAMER__?._onParams(update);
 				return;
 			}
 

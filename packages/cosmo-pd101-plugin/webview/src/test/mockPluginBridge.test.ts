@@ -17,7 +17,6 @@ import {
 beforeEach(() => {
 	// Reset globals that installMockPluginBridge writes to.
 	window.__MOCK_BRIDGE__ = undefined;
-	window.__BEAMER__ = undefined;
 	window.ipc = undefined as unknown as typeof window.ipc;
 	window.__czOnParams = undefined;
 	installMockPluginBridge();
@@ -32,16 +31,8 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe("installMockPluginBridge", () => {
-	it("installs window.__BEAMER__", () => {
-		expect(window.__BEAMER__).toBeDefined();
-	});
-
 	it("installs window.__MOCK_BRIDGE__", () => {
 		expect(window.__MOCK_BRIDGE__).toBeDefined();
-	});
-
-	it("window.__BEAMER__.ready is a resolved promise", async () => {
-		await expect(window.__BEAMER__?.ready).resolves.toBeUndefined();
 	});
 });
 
@@ -51,7 +42,7 @@ describe("installMockPluginBridge", () => {
 
 describe("params.set", () => {
 	it("records a param:set message with correct shape", () => {
-		window.__BEAMER__?.params.set("volume", 0.5);
+		window.__MOCK_BRIDGE__?.setParameter("volume", 0.5);
 
 		const msgs = window.__MOCK_BRIDGE__?.getMessages() ?? [];
 		expect(msgs).toHaveLength(1);
@@ -63,15 +54,19 @@ describe("params.set", () => {
 	});
 
 	it("updates virtual param state", () => {
-		window.__BEAMER__?.params.set("volume", 0.7);
+		window.__MOCK_BRIDGE__?.setParameter("volume", 0.7);
 		const state = window.__MOCK_BRIDGE__?.getState() ?? {};
 		expect(state.volume).toBeCloseTo(0.7, 5);
 	});
 
 	it("records param:begin and param:end events", () => {
-		window.__BEAMER__?.params.beginEdit("volume");
-		window.__BEAMER__?.params.set("volume", 0.3);
-		window.__BEAMER__?.params.endEdit("volume");
+		window.ipc?.postMessage(
+			JSON.stringify({
+				method: "setParams",
+				id: 1,
+				args: [JSON.stringify({ volume: 0.3 })],
+			}),
+		);
 
 		const types = (window.__MOCK_BRIDGE__?.getMessages() ?? []).map(
 			(m) => m.type,
@@ -80,7 +75,7 @@ describe("params.set", () => {
 	});
 
 	it("is a no-op for unknown stringIds", () => {
-		window.__BEAMER__?.params.set("unknown_param", 0.5);
+		window.__MOCK_BRIDGE__?.setParameter("unknown_param", 0.5);
 		expect(window.__MOCK_BRIDGE__?.getMessages()).toHaveLength(0);
 	});
 });
@@ -89,27 +84,15 @@ describe("params.set", () => {
 // params.info — read-back
 // ---------------------------------------------------------------------------
 
-describe("params.info", () => {
-	it("returns correct info for a known param", () => {
-		const info = window.__BEAMER__?.params.info("volume");
-		expect(info).toBeDefined();
-		expect(info?.min).toBe(0);
-		expect(info?.max).toBe(1);
-	});
-
-	it("returns undefined for an unknown param", () => {
-		const info = window.__BEAMER__?.params.info("not_a_real_param");
-		expect(info).toBeUndefined();
-	});
-});
-
 // ---------------------------------------------------------------------------
 // invoke
 // ---------------------------------------------------------------------------
 
 describe("invoke", () => {
 	it("records an invoke message", async () => {
-		await window.__BEAMER__?.invoke("getEnvelopes");
+		window.ipc?.postMessage(
+			JSON.stringify({ method: "getEnvelopes", id: 1, args: [] }),
+		);
 		const msgs = window.__MOCK_BRIDGE__?.getMessages() ?? [];
 		expect(
 			msgs.some((m) => m.type === "invoke" && m.method === "getEnvelopes"),
@@ -117,28 +100,51 @@ describe("invoke", () => {
 	});
 
 	it("resolves getEnvelopes immediately", async () => {
-		const result = await window.__BEAMER__?.invoke("getEnvelopes");
-		expect(result).toEqual({});
+		const handler = vi.fn();
+		window.__czIpcResponse = handler;
+		window.ipc?.postMessage(
+			JSON.stringify({ method: "getEnvelopes", id: 1, args: [] }),
+		);
+		await Promise.resolve();
+		expect(handler).toHaveBeenCalledWith({ id: 1, result: {} });
 	});
 
 	it("resolves getScopeData with empty samples", async () => {
-		const result = (await window.__BEAMER__?.invoke("getScopeData")) as {
-			samples: number[];
-		};
-		expect(result.samples).toHaveLength(0);
+		const handler = vi.fn();
+		window.__czIpcResponse = handler;
+		window.ipc?.postMessage(
+			JSON.stringify({ method: "getScopeData", id: 1, args: [] }),
+		);
+		await Promise.resolve();
+		expect(handler).toHaveBeenCalledWith({
+			id: 1,
+			result: { samples: [], sampleRate: 44100, hz: 220 },
+		});
 	});
 
 	it("allows test to resolve custom invocations via resolveNextInvoke", async () => {
-		const promise = window.__BEAMER__?.invoke("customMethod");
+		const handler = vi.fn();
+		window.__czIpcResponse = handler;
+		window.ipc?.postMessage(
+			JSON.stringify({ method: "customMethod", id: 42, args: [] }),
+		);
 		window.__MOCK_BRIDGE__?.resolveNextInvoke({ ok: true });
-		const result = await promise;
-		expect(result).toEqual({ ok: true });
+		await Promise.resolve();
+		expect(handler).toHaveBeenCalledWith({ id: 42, result: { ok: true } });
 	});
 
 	it("allows test to reject custom invocations via rejectNextInvoke", async () => {
-		const promise = window.__BEAMER__?.invoke("failingMethod");
+		const handler = vi.fn();
+		window.__czIpcResponse = handler;
+		window.ipc?.postMessage(
+			JSON.stringify({ method: "failingMethod", id: 7, args: [] }),
+		);
 		window.__MOCK_BRIDGE__?.rejectNextInvoke("something went wrong");
-		await expect(promise).rejects.toBe("something went wrong");
+		await Promise.resolve();
+		expect(handler).toHaveBeenCalledWith({
+			id: 7,
+			error: "something went wrong",
+		});
 	});
 });
 
@@ -200,12 +206,12 @@ describe("onMessage", () => {
 		if (!bridge) throw new Error("bridge not installed in beforeEach");
 		const unsub = bridge.onMessage((m) => received.push(m));
 
-		window.__BEAMER__?.params.set("volume", 0.2);
+		window.__MOCK_BRIDGE__?.setParameter("volume", 0.2);
 		expect(received).toHaveLength(1);
 		expect(received[0].type).toBe("param:set");
 
 		unsub();
-		window.__BEAMER__?.params.set("volume", 0.3);
+		window.__MOCK_BRIDGE__?.setParameter("volume", 0.3);
 		// Listener was unsubscribed; still only one message.
 		expect(received).toHaveLength(1);
 	});
@@ -217,7 +223,7 @@ describe("onMessage", () => {
 
 describe("clearMessages and reset", () => {
 	it("clearMessages empties the log", () => {
-		window.__BEAMER__?.params.set("volume", 0.5);
+		window.__MOCK_BRIDGE__?.setParameter("volume", 0.5);
 		expect(window.__MOCK_BRIDGE__?.getMessages()).toHaveLength(1);
 
 		window.__MOCK_BRIDGE__?.clearMessages();
@@ -225,7 +231,7 @@ describe("clearMessages and reset", () => {
 	});
 
 	it("getLastMessage returns undefined after clear", () => {
-		window.__BEAMER__?.params.set("volume", 0.5);
+		window.__MOCK_BRIDGE__?.setParameter("volume", 0.5);
 		window.__MOCK_BRIDGE__?.clearMessages();
 		expect(window.__MOCK_BRIDGE__?.getLastMessage()).toBeUndefined();
 	});
@@ -235,13 +241,13 @@ describe("clearMessages and reset", () => {
 		const bridge = window.__MOCK_BRIDGE__;
 		if (!bridge) throw new Error("bridge not installed in beforeEach");
 		bridge.onMessage((m) => received.push(m));
-		window.__BEAMER__?.params.set("volume", 0.5);
+		window.__MOCK_BRIDGE__?.setParameter("volume", 0.5);
 		expect(received).toHaveLength(1);
 
 		window.__MOCK_BRIDGE__?.reset();
 		expect(window.__MOCK_BRIDGE__?.getMessages()).toHaveLength(0);
 		// After reset, listener is removed.
-		window.__BEAMER__?.params.set("volume", 0.6);
+		window.__MOCK_BRIDGE__?.setParameter("volume", 0.6);
 		expect(received).toHaveLength(1);
 	});
 });

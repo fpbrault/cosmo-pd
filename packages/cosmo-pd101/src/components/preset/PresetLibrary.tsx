@@ -90,9 +90,9 @@ export default function PresetLibrary({
 	const isPluginRuntime =
 		typeof (
 			window as Window & {
-				__BEAMER__?: { emit?: (event: string, data?: unknown) => void };
+				__czSetParams?: (json: string) => void;
 			}
-		).__BEAMER__?.emit === "function";
+		).__czSetParams === "function";
 	const [search, setSearch] = useState("");
 	const [saveName, setSaveName] = useState("");
 	const [saveAsOpen, setSaveAsOpen] = useState(false);

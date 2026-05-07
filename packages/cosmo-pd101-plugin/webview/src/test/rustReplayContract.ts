@@ -27,7 +27,7 @@
 export type ReplayAction =
 	| {
 			kind: "param:set";
-			/** Beamer numeric param ID. */
+			/** Numeric param ID. */
 			paramId: number;
 			/** Normalised value (0–1). */
 			normalizedValue: number;
@@ -57,7 +57,7 @@ export type ReplayAction =
 
 /** Expected DSP state snapshot to assert after replaying a set of actions. */
 export interface DspStateSnapshot {
-	/** Beamer numeric param ID → normalised value at time of snapshot. */
+	/** Numeric param ID → normalised value at time of snapshot. */
 	params: Record<number, number>;
 	/** Optional audio sample values (e.g., first 256 samples of a note-on burst). */
 	audioSamples?: number[];

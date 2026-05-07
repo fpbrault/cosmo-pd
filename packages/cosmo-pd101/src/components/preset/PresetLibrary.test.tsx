@@ -191,12 +191,12 @@ describe("PresetLibrary", () => {
 
 	it("does not trigger focused row action on space in plugin mode", () => {
 		const props = createProps();
-		const previousBeamer = (
-			window as Window & { __BEAMER__?: { emit?: () => void } }
-		).__BEAMER__;
-		(window as Window & { __BEAMER__?: { emit?: () => void } }).__BEAMER__ = {
-			emit: () => {},
-		};
+		const previousSetParams = (
+			window as Window & { __czSetParams?: (json: string) => void }
+		).__czSetParams;
+		(
+			window as Window & { __czSetParams?: (json: string) => void }
+		).__czSetParams = () => {};
 
 		render(<PresetLibrary {...props} />);
 		const activeRow = screen.getByRole("button", { name: "Local Keys" });
@@ -206,8 +206,9 @@ describe("PresetLibrary", () => {
 
 		expect(props.onLoadLocal).not.toHaveBeenCalled();
 
-		(window as Window & { __BEAMER__?: { emit?: () => void } }).__BEAMER__ =
-			previousBeamer;
+		(
+			window as Window & { __czSetParams?: (json: string) => void }
+		).__czSetParams = previousSetParams;
 	});
 
 	it("clears modal state when dialogs receive a native cancel event", () => {
