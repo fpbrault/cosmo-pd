@@ -54,7 +54,7 @@ const FilterPanel: React.FC = () => {
 	};
 
 	return (
-		<div className="flex flex-col h-full gap-2 overflow-auto">
+		<div className="flex h-full flex-col gap-2 overflow-auto">
 			<h3>Filters</h3>
 			<Button onClick={handleClearFilters} variant="error">
 				Clear Filters <FaTrash size={12} />
@@ -72,7 +72,7 @@ const FilterPanel: React.FC = () => {
 					</>
 				)}
 			</Button>
-			<div className="flex flex-wrap content-start grow gap-1 overflow-scroll ">
+			<div className="flex grow flex-wrap content-start gap-1 overflow-scroll">
 				{Object.entries(
 					presets
 						.flatMap((preset) => preset.tags.map((tag) => tag.toLowerCase()))
@@ -91,7 +91,7 @@ const FilterPanel: React.FC = () => {
 					<Button
 						key={tag}
 						unstyled
-						className={`badge badge-lg text-lg p-3 font-bold capitalize badge-neutral ${
+						className={`badge badge-lg badge-neutral p-3 font-bold text-lg capitalize ${
 							selectedTags.includes(tag) ? "badge-primary" : ""
 						}`}
 						onClick={() => handleTagClick(tag)}

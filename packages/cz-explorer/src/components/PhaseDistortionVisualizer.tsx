@@ -584,7 +584,7 @@ export default function PhaseDistortionVisualizer(
 				}}
 			>
 				<div
-					className="absolute left-0 top-0"
+					className="absolute top-0 left-0"
 					style={{
 						width: SYNTH_RENDERER_MAX_WIDTH,
 						height: SYNTH_RENDERER_MAX_HEIGHT,

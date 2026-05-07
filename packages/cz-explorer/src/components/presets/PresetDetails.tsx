@@ -115,14 +115,14 @@ const PresetDetails: React.FC<PresetDetailsProps> = ({
 	return (
 		<div
 			className={
-				"w-72 lg:w-md flex flex-col p-4 bg-base-200 h-full overflow-auto min-w-52 lg:min-w-72" +
-				(currentPreset ? " block" : " hidden")
+				"flex h-full w-72 min-w-52 flex-col overflow-auto bg-base-200 p-4 lg:w-md lg:min-w-72" +
+				(currentPreset ? "block" : "hidden")
 			}
 		>
-			<div className="flex flex-col grow gap-2">
-				<div className="p-2 border rounded-lg border-base-content/10 bg-base-100/20">
-					<div className="flex items-center justify-between gap-2 mb-2">
-						<div className="text-xs font-bold tracking-wider uppercase text-base-content/60">
+			<div className="flex grow flex-col gap-2">
+				<div className="rounded-lg border border-base-content/10 bg-base-100/20 p-2">
+					<div className="mb-2 flex items-center justify-between gap-2">
+						<div className="font-bold text-base-content/60 text-xs uppercase tracking-wider">
 							Preset Details
 						</div>
 						<div className="flex gap-2">
@@ -156,7 +156,7 @@ const PresetDetails: React.FC<PresetDetailsProps> = ({
 						</div>
 					</div>
 					<div className="space-y-3">
-						<div className="p-2 border rounded-md border-base-content/10 bg-base-200/30">
+						<div className="rounded-md border border-base-content/10 bg-base-200/30 p-2">
 							<Button
 								variant="info"
 								size="sm"
@@ -173,7 +173,7 @@ const PresetDetails: React.FC<PresetDetailsProps> = ({
 							</Button>
 						</div>
 
-						<div className="p-2 border rounded-md border-base-content/10 bg-base-200/30">
+						<div className="rounded-md border border-base-content/10 bg-base-200/30 p-2">
 							<FormField
 								label="Name"
 								labelClassName="text-3xs uppercase tracking-wider text-base-content/40"
@@ -188,14 +188,14 @@ const PresetDetails: React.FC<PresetDetailsProps> = ({
 										inputSize="sm"
 									/>
 								) : (
-									<div className="mt-1 text-lg font-bold leading-tight wrap-break-word">
+									<div className="wrap-break-word mt-1 font-bold text-lg leading-tight">
 										{formData.name || "-"}
 									</div>
 								)}
 							</FormField>
 						</div>
 
-						<div className="p-2 border rounded-md border-base-content/10 bg-base-200/30">
+						<div className="rounded-md border border-base-content/10 bg-base-200/30 p-2">
 							<FormField
 								label="Tags"
 								labelClassName="text-3xs uppercase tracking-wider text-base-content/40"
@@ -210,12 +210,12 @@ const PresetDetails: React.FC<PresetDetailsProps> = ({
 										inputSize="sm"
 									/>
 								) : (
-									<div className="flex flex-wrap gap-1 mt-1">
+									<div className="mt-1 flex flex-wrap gap-1">
 										{currentPreset?.tags.length ? (
 											currentPreset.tags.map((tag: string) => (
 												<span
 													key={uuidv4()}
-													className="capitalize badge badge-primary badge-sm"
+													className="badge badge-primary badge-sm capitalize"
 												>
 													{tag.toLowerCase()}
 												</span>
@@ -229,7 +229,7 @@ const PresetDetails: React.FC<PresetDetailsProps> = ({
 						</div>
 
 						<div className="grid grid-cols-1 gap-2">
-							<div className="p-2 border rounded-md border-base-content/10 bg-base-200/30">
+							<div className="rounded-md border border-base-content/10 bg-base-200/30 p-2">
 								<FormField
 									label="Author"
 									labelClassName="text-3xs uppercase tracking-wider text-base-content/40"
@@ -244,7 +244,7 @@ const PresetDetails: React.FC<PresetDetailsProps> = ({
 											inputSize="sm"
 										/>
 									) : (
-										<div className="mt-1 text-xs font-semibold wrap-break-word">
+										<div className="wrap-break-word mt-1 font-semibold text-xs">
 											{formData.author || "-"}
 										</div>
 									)}
@@ -252,7 +252,7 @@ const PresetDetails: React.FC<PresetDetailsProps> = ({
 							</div>
 						</div>
 
-						<div className="p-2 border rounded-md border-base-content/10 bg-base-200/30">
+						<div className="rounded-md border border-base-content/10 bg-base-200/30 p-2">
 							<FormField
 								label="Description"
 								labelClassName="text-3xs uppercase tracking-wider text-base-content/40"
@@ -267,18 +267,18 @@ const PresetDetails: React.FC<PresetDetailsProps> = ({
 										rows={4}
 									/>
 								) : (
-									<div className="mt-1 text-xs font-semibold whitespace-pre-wrap wrap-break-word">
+									<div className="wrap-break-word mt-1 whitespace-pre-wrap font-semibold text-xs">
 										{formData.description || "-"}
 									</div>
 								)}
 							</FormField>
 						</div>
 
-						<details className="p-2 border rounded-md border-base-content/10 bg-base-200/30">
-							<summary className="text-3xs font-bold uppercase tracking-wider cursor-pointer text-base-content/60">
+						<details className="rounded-md border border-base-content/10 bg-base-200/30 p-2">
+							<summary className="cursor-pointer font-bold text-3xs text-base-content/60 uppercase tracking-wider">
 								Additional Data
 							</summary>
-							<div className="grid grid-cols-1 gap-2 mt-2">
+							<div className="mt-2 grid grid-cols-1 gap-2">
 								<KeyValueBlock label="ID" value={currentPreset?.id || "-"} />
 								<KeyValueBlock
 									label="Filename"
@@ -295,19 +295,19 @@ const PresetDetails: React.FC<PresetDetailsProps> = ({
 							</div>
 						</details>
 
-						<details className="p-2 border rounded-md border-base-content/10 bg-base-200/30">
-							<summary className="text-3xs font-bold uppercase tracking-wider cursor-pointer text-base-content/60">
+						<details className="rounded-md border border-base-content/10 bg-base-200/30 p-2">
+							<summary className="cursor-pointer font-bold text-3xs text-base-content/60 uppercase tracking-wider">
 								Raw SysEx Data
 							</summary>
-							<div className="mt-2 max-h-40 overflow-auto text-3xs font-mono font-semibold whitespace-pre-wrap break-all opacity-80">
+							<div className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap break-all font-mono font-semibold text-3xs opacity-80">
 								{buf2hex(currentPreset?.sysexData || [])}
 							</div>
 						</details>
 					</div>
 				</div>
 				{currentPreset?.sysexData && (
-					<div className="p-2 border rounded-lg border-base-content/10 bg-base-100/20">
-						<div className="mb-2 text-xs font-bold tracking-wider uppercase text-base-content/60">
+					<div className="rounded-lg border border-base-content/10 bg-base-100/20 p-2">
+						<div className="mb-2 font-bold text-base-content/60 text-xs uppercase tracking-wider">
 							Patch Parameters
 						</div>
 						<PatchParameterViewer sysexData={currentPreset.sysexData} />
@@ -344,13 +344,13 @@ const PresetDetails: React.FC<PresetDetailsProps> = ({
 									setIsWriteModalOpen(false);
 								}}
 								variant="primary"
-								className="text-2xl font-bold"
+								className="font-bold text-2xl"
 							>
 								{slot}
 							</Button>
 						))}
 					</div>
-					<div className="flex justify-end mt-4">
+					<div className="mt-4 flex justify-end">
 						<Button onClick={() => setIsWriteModalOpen(false)} variant="error">
 							Close
 						</Button>

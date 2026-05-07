@@ -89,7 +89,7 @@ export default function DelayModuleRenderer({
 				onClick={() => setFxSlotParams(slot, { tapeMode: tapeMode ? 0 : 1 })}
 				data-hover-info={getTooltip("delayTapeMode")}
 				{...tapeModeHoverHandlers}
-				className={`btn btn-xs h-8 min-h-0 justify-self-center px-4 col-span-full ${
+				className={`btn btn-xs col-span-full h-8 min-h-0 justify-self-center px-4 ${
 					tapeMode
 						? "border-amber-500/60 bg-amber-500/20 text-amber-300"
 						: "border-cz-border bg-transparent text-cz-cream/60 hover:text-cz-cream/90"

@@ -195,11 +195,11 @@ export function ScopeMiniDisplay({
 
 	return (
 		<div className="flex w-full flex-col">
-			<span className="mb-1 self-center text-3xs uppercase tracking-[0.24em] text-base-content/55">
+			<span className="mb-1 self-center text-3xs text-base-content/55 uppercase tracking-[0.24em]">
 				Scope
 			</span>
 			<div className="relative w-full overflow-hidden rounded border border-cz-border bg-cz-lcd-bg">
-				<div className="absolute left-1 top-0.5 text-5xs font-mono text-cz-lcd-fg/60">
+				<div className="absolute top-0.5 left-1 font-mono text-5xs text-cz-lcd-fg/60">
 					CH1
 				</div>
 				<canvas ref={canvasRef} className="h-24 w-full" />

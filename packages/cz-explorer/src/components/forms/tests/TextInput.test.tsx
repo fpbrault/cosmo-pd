@@ -22,7 +22,7 @@ describe("TextInput", () => {
 
 	it("applies size and custom classes", () => {
 		renderWithProviders(
-			<TextInput value="Pad" readOnly inputSize="sm" className="w-full mt-1" />,
+			<TextInput value="Pad" readOnly inputSize="sm" className="mt-1 w-full" />,
 		);
 
 		const input = screen.getByDisplayValue("Pad");

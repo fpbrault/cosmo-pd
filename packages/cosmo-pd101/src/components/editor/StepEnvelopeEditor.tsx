@@ -301,7 +301,7 @@ export const StepEnvelopePreview = memo(function StepEnvelopePreview({
 				className="block h-10 w-full rounded bg-black/25"
 			/>
 			<div className="mt-1 flex items-center justify-between gap-2 px-0.5">
-				<span className="truncate text-[0.55rem] font-semibold uppercase tracking-[0.18em] text-cz-cream-dim group-hover:text-cz-cream">
+				<span className="truncate font-semibold text-[0.55rem] text-cz-cream-dim uppercase tracking-[0.18em] group-hover:text-cz-cream">
 					{title}
 				</span>
 				<span
@@ -576,13 +576,13 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 	}, [dragState]);
 
 	return (
-		<div className="h-full flex flex-col space-y-3">
+		<div className="flex h-full flex-col space-y-3">
 			<div className="flex items-center justify-between">
-				<span className="text-2xs font-semibold uppercase tracking-[0.24em] text-base-content/70">
+				<span className="font-semibold text-2xs text-base-content/70 uppercase tracking-[0.24em]">
 					{title}
 				</span>
 				<div className="flex items-center gap-2">
-					<label className="text-xs flex items-center gap-1">
+					<label className="flex items-center gap-1 text-xs">
 						<input
 							type="checkbox"
 							checked={normalizedEnv.loop}
@@ -603,7 +603,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 				ref={canvasRef}
 				width={1200}
 				height={200}
-				className="max-w-full rounded-xl cursor-crosshair border border-base-300/60 bg-base-300/30 touch-none"
+				className="max-w-full cursor-crosshair touch-none rounded-xl border border-base-300/60 bg-base-300/30"
 				style={{ imageRendering: "auto" }}
 				onPointerDown={handleCanvasPointerDown}
 				onPointerMove={handleCanvasPointerMove}
@@ -612,7 +612,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 				onPointerLeave={handleCanvasPointerLeave}
 			/>
 
-			<div className="grid gap-2 grid-cols-8">
+			<div className="grid grid-cols-8 gap-2">
 				{steps.map((step, i) => {
 					const isActiveStep = i < activeStepCount;
 					const isEndStep = i === activeStepCount - 1;
@@ -621,14 +621,14 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 						<fieldset
 							key={STEP_KEYS[i]}
 							aria-label={`Step ${i + 1}`}
-							className={`flex flex-col rounded-xl border px-1 transition-colors py-2 ${
+							className={`flex flex-col rounded-xl border px-1 py-2 transition-colors ${
 								!isActiveStep
 									? "border-base-300/30 bg-base-300/10"
 									: "border-base-300/60 bg-base-300/20"
 							}`}
 						>
 							<div className="mb-1 flex items-center justify-start px-1">
-								<div className="text-4xs uppercase tracking-[0.2em] text-base-content/45">
+								<div className="text-4xs text-base-content/45 uppercase tracking-[0.2em]">
 									{i + 1}
 								</div>
 							</div>
@@ -678,7 +678,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 									onClick={() => setSustainStepForIndex(i)}
 									disabled={!isActiveStep}
 									aria-pressed={isSustainStep}
-									className={`rounded border px-1 py-1 text-[0.55rem] font-semibold uppercase tracking-[0.18em] transition-colors ${
+									className={`rounded border px-1 py-1 font-semibold text-[0.55rem] uppercase tracking-[0.18em] transition-colors ${
 										isSustainStep
 											? "border-warning/60 bg-warning/15 text-warning"
 											: "border-base-300/60 bg-base-100/40 text-base-content/70"
@@ -690,7 +690,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 									type="button"
 									onClick={() => setEndStepForIndex(i)}
 									aria-pressed={isEndStep}
-									className={`rounded border px-1 py-1 text-[0.55rem] font-semibold uppercase tracking-[0.18em] transition-colors ${
+									className={`rounded border px-1 py-1 font-semibold text-[0.55rem] uppercase tracking-[0.18em] transition-colors ${
 										isEndStep
 											? "border-cz-gold/60 bg-cz-gold/15 text-cz-gold"
 											: "border-base-300/60 bg-base-100/40 text-base-content/70"

@@ -433,7 +433,9 @@ export function useSynthPresetManager({
 	const handleSyncBuiltinSelection = useCallback(
 		(name: string) => {
 			const hasBuiltinPreset = Object.hasOwn(builtinPresets, name);
-			setActivePresetId(hasBuiltinPreset ? getBuiltinPresetEntryId(name) : null);
+			setActivePresetId(
+				hasBuiltinPreset ? getBuiltinPresetEntryId(name) : null,
+			);
 			setActivePresetNameBase(name);
 			captureLoadedPresetFingerprint();
 		},

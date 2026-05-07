@@ -81,7 +81,7 @@ class PluginErrorBoundary extends Component<
 		if (this.state.hasError) {
 			return (
 				<div className="h-dvh w-full bg-cz-panel p-4 text-cz-cream">
-					<div className="rounded border border-cz-border bg-black/35 p-3 text-xs font-mono tracking-[0.04em]">
+					<div className="rounded border border-cz-border bg-black/35 p-3 font-mono text-xs tracking-[0.04em]">
 						Plugin UI failed to initialize.
 						<br />
 						{this.state.errorMessage}

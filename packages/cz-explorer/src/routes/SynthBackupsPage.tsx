@@ -79,14 +79,14 @@ export const SynthBackupsPageView: React.FC<SynthBackupsPageViewProps> = ({
 	);
 
 	useSidebarContent(
-		<div className="p-2 rounded-lg bg-base-300 text-xs">
+		<div className="rounded-lg bg-base-300 p-2 text-xs">
 			<div>Backups: {backups.length}</div>
 			<div>Entries: {totalEntries}</div>
 		</div>,
 	);
 
 	return (
-		<div className="flex grow h-full overflow-hidden bg-base-300">
+		<div className="flex h-full grow overflow-hidden bg-base-300">
 			<SynthBackupsSidebar
 				backups={backups}
 				selectedBackupId={selectedBackupId}
@@ -98,9 +98,9 @@ export const SynthBackupsPageView: React.FC<SynthBackupsPageViewProps> = ({
 				onImportBackup={onImportBackup}
 			/>
 
-			<section className="flex flex-col grow h-full overflow-hidden">
+			<section className="flex h-full grow flex-col overflow-hidden">
 				{!selectedBackup && (
-					<div className="flex items-center justify-center grow px-4">
+					<div className="flex grow items-center justify-center px-4">
 						<InlineNotice
 							message="Select a synth backup to view its entries."
 							tone="neutral"

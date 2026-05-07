@@ -36,7 +36,7 @@ export default function FxConsoleDrawer() {
 			onDragEnd={handleDragEnd}
 		>
 			<SortableContext items={SLOT_IDS} strategy={rectSortingStrategy}>
-				<div className="h-full grid min-h-0 grid-cols-3 grid-rows-2 gap-2">
+				<div className="grid h-full min-h-0 grid-cols-3 grid-rows-2 gap-2">
 					{SLOT_IDS.map((slot) => (
 						<FxSlotFrame key={slot} slot={slot} />
 					))}

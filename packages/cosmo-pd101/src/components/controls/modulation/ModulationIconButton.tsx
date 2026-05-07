@@ -32,15 +32,15 @@ export default function ModulationIconButton({
 				"absolute top-1 right-1 z-10 flex h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-4xs transition-all focus:outline-none",
 				hasActiveRoutes
 					? "text-white"
-					: "bg-cz-surface border-cz-border text-cz-cream",
+					: "border-cz-border bg-cz-surface text-cz-cream",
 				// Always hover-reveal (even when active); always visible on touch
 				[
-					"opacity-0 pointer-events-none",
-					"group-hover:opacity-100 group-hover:pointer-events-auto",
+					"pointer-events-none opacity-0",
+					"group-hover:pointer-events-auto group-hover:opacity-100",
 					// Touch devices: always visible so the badge is tappable
-					"[@media(hover:none)]:opacity-100 [@media(hover:none)]:pointer-events-auto",
+					"[@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100",
 				].join(" "),
-				forceVisible ? "opacity-100! pointer-events-auto!" : "",
+				forceVisible ? "pointer-events-auto! opacity-100!" : "",
 			].join(" ")}
 			style={{
 				...buttonStyle,

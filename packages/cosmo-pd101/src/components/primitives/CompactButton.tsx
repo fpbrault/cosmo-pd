@@ -34,10 +34,10 @@ export default function CompactButton({
 			disabled={disabled}
 			data-hover-info={resolvedTooltip}
 			{...hoverHandlers}
-			className={`inline-flex items-center justify-center h-5 min-w-7 px-1 font-mono text-[0.56rem] font-bold uppercase tracking-wide select-none cursor-pointer transition-colors rounded-xs border disabled:opacity-40 disabled:cursor-not-allowed ${
+			className={`inline-flex h-5 min-w-7 cursor-pointer select-none items-center justify-center rounded-xs border px-1 font-bold font-mono text-[0.56rem] uppercase tracking-wide transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
 				active
-					? "bg-cz-cream text-cz-body border-cz-cream"
-					: "bg-cz-btn text-cz-cream-dim border-cz-btn-border hover:text-cz-cream"
+					? "border-cz-cream bg-cz-cream text-cz-body"
+					: "border-cz-btn-border bg-cz-btn text-cz-cream-dim hover:text-cz-cream"
 			} ${className}`}
 		>
 			{children}

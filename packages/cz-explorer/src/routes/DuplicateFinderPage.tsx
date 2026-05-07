@@ -133,17 +133,17 @@ export default function DuplicateFinderPage() {
 	};
 
 	useSidebarContent(
-		<div className="p-2 rounded-lg bg-base-300 text-xs">
+		<div className="rounded-lg bg-base-300 p-2 text-xs">
 			<div>Duplicate groups: {groups.length}</div>
 			<div>Total duplicate presets: {totalDuplicates}</div>
 		</div>,
 	);
 
 	return (
-		<div className="flex grow min-w-0 h-full overflow-hidden bg-base-300">
-			<section className="flex grow min-w-0 overflow-hidden p-4 lg:p-6">
-				<div className="mx-auto flex h-full w-full max-w-5xl min-w-0 flex-col overflow-hidden rounded-xl border border-base-content/15 bg-base-100 p-4 lg:p-6">
-					<h1 className="text-2xl font-bold">Duplicate Finder</h1>
+		<div className="flex h-full min-w-0 grow overflow-hidden bg-base-300">
+			<section className="flex min-w-0 grow overflow-hidden p-4 lg:p-6">
+				<div className="mx-auto flex h-full w-full min-w-0 max-w-5xl flex-col overflow-hidden rounded-xl border border-base-content/15 bg-base-100 p-4 lg:p-6">
+					<h1 className="font-bold text-2xl">Duplicate Finder</h1>
 					<p className="mt-1 text-sm opacity-70">
 						{groups.length} duplicate groups, {totalDuplicates} total duplicate
 						presets.
@@ -159,7 +159,7 @@ export default function DuplicateFinderPage() {
 								/>
 							</div>
 						) : (
-							<div className="space-y-3 min-w-0 overflow-x-hidden">
+							<div className="min-w-0 space-y-3 overflow-x-hidden">
 								{groups.map((group, groupIndex) => {
 									const keepIndex = getSuggestedKeepIndex(group.presets);
 									const previewPreset =
@@ -170,10 +170,10 @@ export default function DuplicateFinderPage() {
 									return (
 										<div
 											key={group.fingerprint}
-											className="p-3 border rounded-lg border-base-content/15 min-w-0 overflow-x-hidden"
+											className="min-w-0 overflow-x-hidden rounded-lg border border-base-content/15 p-3"
 										>
 											<div className="mb-2 flex items-center justify-between gap-3">
-												<div className="min-w-0 text-sm font-semibold">
+												<div className="min-w-0 font-semibold text-sm">
 													Group {groupIndex + 1} ({group.presets.length}{" "}
 													presets)
 												</div>
@@ -190,23 +190,23 @@ export default function DuplicateFinderPage() {
 												</Button>
 											</div>
 
-											<div className="space-y-2 min-w-0 overflow-x-hidden">
+											<div className="min-w-0 space-y-2 overflow-x-hidden">
 												{group.presets.map((preset, presetIndex) => {
 													const checked = selectedIds.includes(preset.id);
 
 													return (
 														<div
 															key={preset.id}
-															className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-2 rounded-md bg-base-200/60 min-w-0 overflow-hidden"
+															className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-md bg-base-200/60 p-2"
 														>
-															<label className="flex items-center gap-2 min-w-0 overflow-hidden cursor-pointer">
+															<label className="flex min-w-0 cursor-pointer items-center gap-2 overflow-hidden">
 																<input
 																	type="checkbox"
 																	className="checkbox checkbox-sm"
 																	checked={checked}
 																	onChange={() => togglePreset(preset.id)}
 																/>
-																<span className="font-medium truncate min-w-0">
+																<span className="min-w-0 truncate font-medium">
 																	{preset.name}
 																</span>
 																{preset.favorite && (
@@ -214,11 +214,11 @@ export default function DuplicateFinderPage() {
 																		Favorite
 																	</span>
 																)}
-																<span className="text-xs opacity-70 truncate min-w-0">
+																<span className="min-w-0 truncate text-xs opacity-70">
 																	by {preset.author || "Unknown"}
 																</span>
 															</label>
-															<div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-2 shrink-0">
+															<div className="flex shrink-0 flex-wrap items-center justify-end gap-2 sm:flex-nowrap">
 																{presetIndex === keepIndex && (
 																	<span className="badge badge-success badge-sm">
 																		Suggested keep
@@ -236,7 +236,7 @@ export default function DuplicateFinderPage() {
 						)}
 					</div>
 
-					<div className="mt-4 flex shrink-0 flex-wrap justify-end gap-2 border-t border-base-content/10 pt-4">
+					<div className="mt-4 flex shrink-0 flex-wrap justify-end gap-2 border-base-content/10 border-t pt-4">
 						<Button
 							variant="neutral"
 							onClick={() => setSelectedIds([])}

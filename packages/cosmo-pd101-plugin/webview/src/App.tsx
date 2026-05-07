@@ -99,7 +99,7 @@ export default function App() {
 						<button
 							type="button"
 							onClick={handleManualCheck}
-							className="rounded-sm border border-cz-border bg-black/25 px-1.5 py-0.5 text-[0.54rem] font-mono tracking-[0.14em] text-cz-cream/80 transition-colors hover:text-cz-cream"
+							className="rounded-sm border border-cz-border bg-black/25 px-1.5 py-0.5 font-mono text-[0.54rem] text-cz-cream/80 tracking-[0.14em] transition-colors hover:text-cz-cream"
 						>
 							Check updates
 						</button>
@@ -112,17 +112,17 @@ export default function App() {
 			{updateInfo && (
 				<div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/65 p-4">
 					<div className="w-full max-w-md rounded-xl border border-slate-700 bg-slate-900 p-5 text-slate-100 shadow-2xl">
-						<h2 className="text-lg font-semibold">New Version Available</h2>
-						<p className="mt-2 text-sm text-slate-300">
+						<h2 className="font-semibold text-lg">New Version Available</h2>
+						<p className="mt-2 text-slate-300 text-sm">
 							Version v{updateInfo.latestVersion} is available (you are on v
 							{updateInfo.currentVersion}).
 						</p>
 						{updateInfo.forcedByEnv && (
-							<p className="mt-1 text-xs text-amber-300">
+							<p className="mt-1 text-amber-300 text-xs">
 								Test mode enabled via VITE_FORCE_UPDATE_NOTIFIER=1.
 							</p>
 						)}
-						<p className="mt-1 text-xs text-slate-400">
+						<p className="mt-1 text-slate-400 text-xs">
 							Open the GitHub release page to download the update.
 						</p>
 						<div className="mt-4 flex justify-end gap-2">
@@ -132,7 +132,7 @@ export default function App() {
 									setUpdateInfo(null);
 									setManualStatus(null);
 								}}
-								className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+								className="rounded-md border border-slate-600 px-3 py-2 text-slate-200 text-sm hover:bg-slate-800"
 							>
 								Later
 							</button>
@@ -140,7 +140,7 @@ export default function App() {
 								href={updateInfo.releaseUrl}
 								target="_blank"
 								rel="noreferrer"
-								className="rounded-md bg-sky-500 px-3 py-2 text-sm font-medium text-white hover:bg-sky-400"
+								className="rounded-md bg-sky-500 px-3 py-2 font-medium text-sm text-white hover:bg-sky-400"
 							>
 								View Release
 							</a>

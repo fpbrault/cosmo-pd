@@ -73,7 +73,7 @@ export default function SendEntryModal({
 				</div>
 			</div>
 
-			<div className="flex justify-end gap-2 mt-4">
+			<div className="mt-4 flex justify-end gap-2">
 				<Button variant="secondary" onClick={() => setSendModalState(null)}>
 					Cancel
 				</Button>

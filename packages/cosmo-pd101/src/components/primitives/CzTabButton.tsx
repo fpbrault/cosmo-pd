@@ -237,7 +237,7 @@ export default function CzTabButton({
 						scaleX: { type: "spring", stiffness: 900, damping: 16 },
 						boxShadow: { duration: 0.12, ease: "easeOut" },
 					}}
-					className={`inline-block h-1 w-3 mb-1 rounded-[1px] ${resolvedLedColor !== "off" ? "bg-cz-led-on" : "bg-cz-led-off"}`}
+					className={`mb-1 inline-block h-1 w-3 rounded-[1px] ${resolvedLedColor !== "off" ? "bg-cz-led-on" : "bg-cz-led-off"}`}
 					aria-hidden="true"
 				/>
 			) : null}
@@ -268,8 +268,8 @@ export default function CzTabButton({
 				}
 				transition={{ duration: 0.08, ease: "easeOut" }}
 				className={joinClasses(
-					"shrink-0 flex items-center justify-center rounded-xs border uppercase tracking-[0.06em] text-3xs leading-[1.08] font-bold px-1 py-1",
-					"disabled:opacity-40 disabled:cursor-not-allowed",
+					"flex shrink-0 items-center justify-center rounded-xs border px-1 py-1 font-bold text-3xs uppercase leading-[1.08] tracking-[0.06em]",
+					"disabled:cursor-not-allowed disabled:opacity-40",
 					normalizedCustomColor
 						? "text-white"
 						: active

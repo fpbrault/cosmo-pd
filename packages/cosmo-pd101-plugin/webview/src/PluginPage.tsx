@@ -265,7 +265,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 					height: scaledHeight,
 				}}
 			>
-				<div className="absolute left-0 top-0" style={zoomStyle}>
+				<div className="absolute top-0 left-0" style={zoomStyle}>
 					<SynthRenderer
 						headerProps={{
 							allEntries: allPresetEntries,

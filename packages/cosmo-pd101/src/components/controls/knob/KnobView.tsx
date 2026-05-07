@@ -306,7 +306,7 @@ export function KnobView({
 					r={knobBodyRadius}
 					fill={`url(#knob-grad-body-${_uid})`}
 					filter={`url(#knob-shadow-${_uid})`}
-					className="stroke-base-content/10 stroke-[0.5px]"
+					className="stroke-[0.5px] stroke-base-content/10"
 				/>
 				<circle
 					cx={cx}

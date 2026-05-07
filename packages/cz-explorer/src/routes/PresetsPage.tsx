@@ -79,7 +79,7 @@ export default function PresetsPage() {
 			{showDeleteModal && (
 				<dialog open className="modal modal-open">
 					<div className="modal-box">
-						<h3 className="text-lg font-bold">Confirm Delete</h3>
+						<h3 className="font-bold text-lg">Confirm Delete</h3>
 						<p className="py-2 text-sm opacity-80">
 							Are you sure you want to delete this preset?
 						</p>

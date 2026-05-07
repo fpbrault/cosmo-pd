@@ -54,7 +54,7 @@ export default function ModuleFrame({
 		<section
 			style={{ borderColor: color }}
 			className={[
-				"relative flex h-full min-h-0 flex-col overflow-hidden border-4 rounded-b-sm bg-cz-surface shadow-lg rounded-t-lg transition-[filter]",
+				"relative flex h-full min-h-0 flex-col overflow-hidden rounded-t-lg rounded-b-sm border-4 bg-cz-surface shadow-lg transition-[filter]",
 				dimmed ? "brightness-80" : "",
 				className,
 			]
@@ -114,13 +114,13 @@ export default function ModuleFrame({
 						>
 							<path d="M7 0L5 3h4L7 0ZM7 14l-2-3h4l-2 3ZM0 7l3-2v4L0 7ZM14 7l-3-2v4l3-2Z" />
 						</svg>
-						<span className="pointer-events-none font-mono text-xs font-bold uppercase tracking-[0.28em]">
+						<span className="pointer-events-none font-bold font-mono text-xs uppercase tracking-[0.28em]">
 							{title}
 						</span>
 					</div>
 				) : (
 					/* No drag context — plain centered title */
-					<span className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center font-mono text-xs font-bold uppercase tracking-[0.28em]">
+					<span className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center font-bold font-mono text-xs uppercase tracking-[0.28em]">
 						{title}
 					</span>
 				)}
@@ -145,7 +145,7 @@ export default function ModuleFrame({
 						<div className="flex justify-end">{headerControl}</div>
 					)}
 					<div
-						className={`grid ${columnClass} w-full  justify-items-center items-end justify-center gap-2.5 ${
+						className={`grid ${columnClass} w-full items-end justify-center justify-items-center gap-2.5 ${
 							headerControl ? "" : "my-auto"
 						}`}
 					>

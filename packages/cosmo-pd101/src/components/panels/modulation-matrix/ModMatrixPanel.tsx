@@ -108,18 +108,18 @@ export default function ModMatrixPanel() {
 		<section className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-cz-border bg-cz-surface p-3 shadow-lg">
 			{/* Header */}
 			<div className="mb-2 flex items-center gap-2">
-				<span className="font-mono text-sm font-bold uppercase tracking-[0.3em] text-cz-light-blue">
+				<span className="font-bold font-mono text-cz-light-blue text-sm uppercase tracking-[0.3em]">
 					Mod Matrix
 				</span>
 				{routes.length > 0 && (
-					<span className="rounded-full border border-cz-light-blue/40 bg-cz-light-blue/15 px-1.5 font-mono text-5xs font-bold text-cz-light-blue">
+					<span className="rounded-full border border-cz-light-blue/40 bg-cz-light-blue/15 px-1.5 font-bold font-mono text-5xs text-cz-light-blue">
 						{routes.length}
 					</span>
 				)}
 			</div>
 
 			{/* Route list */}
-			<div className="min-h-0 flex-1 overflow-y-auto space-y-1.5 pr-0.5 scrollbar-thin">
+			<div className="scrollbar-thin min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-0.5">
 				<AnimatePresence initial={false}>
 					{routes.length === 0 && (
 						<motion.div
@@ -127,7 +127,7 @@ export default function ModMatrixPanel() {
 							initial={{ opacity: 0 }}
 							animate={{ opacity: 1 }}
 							exit={{ opacity: 0 }}
-							className="flex h-16 items-center justify-center rounded-lg border border-dashed border-cz-border/50 font-mono text-[0.55rem] uppercase tracking-[0.18em] text-cz-cream-dim/50"
+							className="flex h-16 items-center justify-center rounded-lg border border-cz-border/50 border-dashed font-mono text-[0.55rem] text-cz-cream-dim/50 uppercase tracking-[0.18em]"
 						>
 							No routes
 						</motion.div>
@@ -154,8 +154,8 @@ export default function ModMatrixPanel() {
 			</div>
 
 			{/* Add route form */}
-			<div className="mt-2 border-t border-cz-border/40 pt-2 space-y-1.5">
-				<div className="font-mono text-5xs uppercase tracking-[0.2em] text-cz-cream-dim/60">
+			<div className="mt-2 space-y-1.5 border-cz-border/40 border-t pt-2">
+				<div className="font-mono text-5xs text-cz-cream-dim/60 uppercase tracking-[0.2em]">
 					Add route
 				</div>
 				<div className="relative">
@@ -171,7 +171,7 @@ export default function ModMatrixPanel() {
 							</option>
 						))}
 					</select>
-					<span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-5xs text-cz-cream-dim/60">
+					<span className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-5xs text-cz-cream-dim/60">
 						▾
 					</span>
 				</div>
@@ -192,14 +192,14 @@ export default function ModMatrixPanel() {
 							</optgroup>
 						))}
 					</select>
-					<span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-5xs text-cz-cream-dim/60">
+					<span className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-5xs text-cz-cream-dim/60">
 						▾
 					</span>
 				</div>
 				<Button
 					type="button"
 					onClick={handleAdd}
-					className={`btn btn-sm w-full px-2 py-1.5 font-mono text-[0.55rem] font-bold uppercase tracking-[0.15em] ${MOD_SOURCE_META[newSource].colorClass} border-current/30 bg-current/10 hover:bg-current/20`}
+					className={`btn btn-sm w-full px-2 py-1.5 font-bold font-mono text-[0.55rem] uppercase tracking-[0.15em] ${MOD_SOURCE_META[newSource].colorClass} border-current/30 bg-current/10 hover:bg-current/20`}
 				>
 					Add
 				</Button>

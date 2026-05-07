@@ -51,7 +51,7 @@ export default function AlgoIconGrid({
 			ref={rootRef}
 			className={[
 				"relative w-fit",
-				disabled ? "opacity-30 pointer-events-none" : "",
+				disabled ? "pointer-events-none opacity-30" : "",
 			].join(" ")}
 		>
 			{/* Main widget: icon + arrows */}
@@ -88,12 +88,12 @@ export default function AlgoIconGrid({
 					)}
 				</HoverInfoTrigger>
 				{/* Up / down arrows */}
-				<div className="flex flex-col border-l border-cz-border">
+				<div className="flex flex-col border-cz-border border-l">
 					<button
 						type="button"
 						onClick={() => navigate(-1)}
 						aria-label="Previous algorithm"
-						className="flex flex-1 items-center justify-center px-1.5 transition-colors hover:bg-cz-inset focus:outline-none border-b border-cz-border text-xs"
+						className="flex flex-1 items-center justify-center border-cz-border border-b px-1.5 text-xs transition-colors hover:bg-cz-inset focus:outline-none"
 						style={color ? { color } : undefined}
 					>
 						▲
@@ -102,7 +102,7 @@ export default function AlgoIconGrid({
 						type="button"
 						onClick={() => navigate(1)}
 						aria-label="Next algorithm"
-						className="flex flex-1 items-center justify-center px-1.5 transition-colors hover:bg-cz-inset focus:outline-none text-xs"
+						className="flex flex-1 items-center justify-center px-1.5 text-xs transition-colors hover:bg-cz-inset focus:outline-none"
 						style={color ? { color } : undefined}
 					>
 						▼
@@ -112,7 +112,7 @@ export default function AlgoIconGrid({
 
 			{/* Label */}
 			<div
-				className="mt-1 text-center font-mono text-xs tracking-widest uppercase"
+				className="mt-1 text-center font-mono text-xs uppercase tracking-widest"
 				style={color ? { color } : undefined}
 			>
 				{currentAlgo.label}
@@ -121,10 +121,10 @@ export default function AlgoIconGrid({
 			{/* Popover grid */}
 			<div
 				className={[
-					"absolute left-1/2 -translate-x-1/2 top-full z-20 mt-1 bg-cz-surface border border-cz-border p-1 origin-top transition-all duration-150 ease-out",
+					"absolute top-full left-1/2 z-20 mt-1 origin-top -translate-x-1/2 border border-cz-border bg-cz-surface p-1 transition-all duration-150 ease-out",
 					popoverOpen
-						? "opacity-100 scale-100 pointer-events-auto"
-						: "opacity-0 scale-95 pointer-events-none",
+						? "pointer-events-auto scale-100 opacity-100"
+						: "pointer-events-none scale-95 opacity-0",
 				].join(" ")}
 			>
 				<div className="grid" style={{ gridTemplateColumns: "repeat(5, 1fr)" }}>
@@ -146,13 +146,13 @@ export default function AlgoIconGrid({
 										}}
 										aria-label={algo.label}
 										className={[
-											"flex flex-col items-center justify-center p-1 border transition-colors focus:outline-none text-cz-gold",
+											"flex flex-col items-center justify-center border p-1 text-cz-gold transition-colors focus:outline-none",
 											algo.value === value
 												? "border-cz-light-blue bg-cz-inset text-white"
 												: "border-transparent hover:border-cz-light-blue hover:text-white",
 										].join(" ")}
 									>
-										<span className="text-4xs leading-none mb-0.5">
+										<span className="mb-0.5 text-4xs leading-none">
 											{index + 1}
 										</span>
 										<svg

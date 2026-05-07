@@ -287,7 +287,7 @@ export function ControlKnob({
 						ref={inputRef as React.RefObject<HTMLInputElement>}
 						type="text"
 						aria-label={valueControlLabel}
-						className="pointer-events-auto w-16 rounded-sm border border-base-content/25 bg-base-300/95 px-1.5 py-0.5 text-center text-2xs font-semibold text-base-content shadow-[0_2px_6px_rgba(0,0,0,0.5)] outline-none focus:border-primary"
+						className="pointer-events-auto w-16 rounded-sm border border-base-content/25 bg-base-300/95 px-1.5 py-0.5 text-center font-semibold text-2xs text-base-content shadow-[0_2px_6px_rgba(0,0,0,0.5)] outline-none focus:border-primary"
 						value={editValue}
 						onChange={(e) => setEditValue(e.target.value)}
 						onBlur={onEditBlur}
@@ -297,14 +297,14 @@ export function ControlKnob({
 					<Button
 						type="button"
 						aria-label={valueControlLabel}
-						className={`pointer-events-auto rounded-sm border px-1.5 py-0.5 text-2xs leading-none font-semibold whitespace-nowrap shadow-[0_2px_6px_rgba(0,0,0,0.5)] transition-all duration-150 ${
+						className={`pointer-events-auto whitespace-nowrap rounded-sm border px-1.5 py-0.5 font-semibold text-2xs leading-none shadow-[0_2px_6px_rgba(0,0,0,0.5)] transition-all duration-150 ${
 							disabled
 								? "cursor-not-allowed border-base-content/15 bg-base-300/85 text-base-content/50"
 								: "cursor-pointer border-base-content/25 bg-base-300/95 text-base-content/80 hover:text-base-content"
 						} ${
 							valueVisibility === "always" || dragging || hovered
 								? "translate-y-0 opacity-100"
-								: "translate-y-1 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100"
+								: "translate-y-1 opacity-0 group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:translate-y-0 group-hover:opacity-100"
 						}`}
 						disabled={disabled}
 						onDoubleClick={(e) => {
@@ -325,7 +325,7 @@ export function ControlKnob({
 				ref={buttonRef}
 				type="button"
 				role="spinbutton"
-				className={`block rounded-full p-0 touch-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-base-content/30 disabled:bg-transparent! disabled:border-transparent! disabled:shadow-none! ${
+				className={`block touch-none rounded-full p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-base-content/30 disabled:border-transparent! disabled:bg-transparent! disabled:shadow-none! ${
 					disabled
 						? "cursor-not-allowed opacity-60"
 						: "cursor-grab active:cursor-grabbing"
@@ -367,7 +367,7 @@ export function ControlKnob({
 
 	const labelEl = label ? (
 		<div
-			className={`flex items-center justify-center text-4xs uppercase tracking-[0.24em] text-base-content/55 ${labelClassName ?? ""}`}
+			className={`flex items-center justify-center text-4xs text-base-content/55 uppercase tracking-[0.24em] ${labelClassName ?? ""}`}
 		>
 			<span>{label}</span>
 		</div>
@@ -395,7 +395,7 @@ export function ControlKnob({
 				knobButton
 			)}
 			<div className="relative h-0 w-full">
-				<div className="absolute left-1/2 top-0 z-20 -translate-x-1/2">
+				<div className="absolute top-0 left-1/2 z-20 -translate-x-1/2">
 					{valueIndicatorEl}
 				</div>
 			</div>
