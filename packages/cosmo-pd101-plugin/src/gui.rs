@@ -25,12 +25,13 @@
 
 use std::any::Any;
 use std::panic::{self, AssertUnwindSafe};
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Arc, Mutex, RwLock,
-};
+use std::sync::{Arc, Mutex, RwLock};
 
 use nih_plug::prelude::*;
+#[cfg(target_os = "macos")]
+use std::sync::atomic::{AtomicBool, Ordering};
+
+#[cfg(target_os = "macos")]
 use wry::WebViewBuilder;
 
 #[cfg(target_os = "macos")]
@@ -38,7 +39,9 @@ use cocoa;
 #[cfg(target_os = "macos")]
 use objc;
 
-use crate::{append_log, handle_ipc_invoke, ScopeBuffer, UiInputQueue};
+use crate::{append_log, ScopeBuffer, UiInputQueue};
+#[cfg(target_os = "macos")]
+use crate::handle_ipc_invoke;
 use cosmo_synth_engine::params::SynthParams;
 
 // ─── Size constants ──────────────────────────────────────────────────────────
@@ -211,7 +214,7 @@ fn panic_payload_message(payload: Box<dyn Any + Send>) -> String {
 impl Editor for CzEditor {
     fn spawn(
         &self,
-        parent: ParentWindowHandle,
+        _parent: ParentWindowHandle,
         _context: Arc<dyn GuiContext>,
     ) -> Box<dyn Any + Send> {
         append_log("CzEditor::spawn");
@@ -225,6 +228,12 @@ impl Editor for CzEditor {
         };
 
         let spawn_result = panic::catch_unwind(AssertUnwindSafe(|| {
+            #[cfg(not(target_os = "macos"))]
+            {
+                append_log("CzEditor::spawn: non-macOS build; returning no-op editor handle");
+                return fallback_handle();
+            }
+
             #[cfg(target_os = "macos")]
             if !is_main_thread() {
                 append_log(
@@ -233,7 +242,7 @@ impl Editor for CzEditor {
                 return fallback_handle();
             }
 
-            let ns_view = match parent {
+            let ns_view = match _parent {
                 ParentWindowHandle::AppKitNsView(ptr) => ptr,
                 other => {
                     append_log(&format!(
