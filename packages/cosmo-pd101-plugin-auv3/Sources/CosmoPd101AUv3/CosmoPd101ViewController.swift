@@ -14,7 +14,7 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
     private static let preferredAspectRatio = preferredWidth / preferredHeight
 
     private var webView: WKWebView?
-    private weak var audioUnit: CosmoPd101AudioUnit?
+    private var audioUnit: CosmoPd101AudioUnit?
 
     #if os(iOS)
     public override var prefersStatusBarHidden: Bool { true }
@@ -62,16 +62,31 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
     public func createAudioUnit(with componentDescription: AudioComponentDescription) throws -> AUAudioUnit {
         let unit = try CosmoPd101AudioUnit(componentDescription: componentDescription)
         audioUnit = unit
+        unit.paramsChangedHandler = { [weak self] json, presetName in
+            DispatchQueue.main.async { [weak self] in
+                self?.pushStateToWebView(json, selectedPresetName: presetName)
+            }
+        }
         return unit
     }
 
     public func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard message.name == "cosmoPd101", let audioUnit else { return }
+        NSLog("[CzVC] userContentController: name=%@ auNil=%@", message.name, audioUnit == nil ? "YES" : "NO")
+        guard message.name == "cosmoPd101" else { return }
         guard let payload = message.body as? [String: Any] else { return }
 
         let id = payload["id"] as? Int ?? 0
         let method = payload["method"] as? String ?? ""
         let args = payload["args"] as? [Any] ?? []
+        NSLog("[CzVC] IPC method=%@ id=%d auNil=%@", method, id, audioUnit == nil ? "YES" : "NO")
+
+        guard let audioUnit else {
+            // Audio unit not yet assigned — respond with an error so JS promises
+            // reject immediately rather than hanging forever.
+            sendError(id: id, message: "audioUnit not ready")
+            return
+        }
+
         switch method {
         case "getParams":
             sendResponse(id: id, result: audioUnit.paramsJson() ?? "{}")
@@ -79,6 +94,7 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
             if let json = args.first as? String, audioUnit.setParamsJson(json) {
                 sendResponse(id: id, result: NSNull())
             } else {
+                NSLog("[CzVC] setParams FAILED: jsonOk=%@", (args.first as? String) != nil ? "yes" : "no")
                 sendError(id: id, message: "invalid setParams payload")
             }
         case "getScopeData":
@@ -90,7 +106,12 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
             ])
         case "getRuntimeVoiceStates":
             sendResponse(id: id, result: audioUnit.runtimeVoiceStatesJson() ?? "[]")
+        case "getRuntimeModSources":
+            sendResponse(id: id, result: audioUnit.runtimeModSourcesJson() ?? "{}")
         case "clientLog":
+            let logLevel = args.first as? String ?? "info"
+            let logMessage = args.count > 1 ? (args[1] as? String ?? "") : ""
+            NSLog("[CzWebView][%@] %@", logLevel, logMessage)
             sendResponse(id: id, result: NSNull())
         case "noteOn", "noteOff", "sustain", "pitchBend", "modWheel", "aftertouch", "panic":
             audioUnit.handleEngineEvent(type: method, payload: args.first as? [String: Any] ?? [:])
@@ -105,13 +126,53 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
         configuration.allowsAirPlayForMediaPlayback = false
         configuration.mediaTypesRequiringUserActionForPlayback = .all
         configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+                let diagnosticsScript = """
+                (function () {
+                    if (window.__czDiagInstalled) return;
+                    window.__czDiagInstalled = true;
+
+                    function show(msg) {
+                        try {
+                            var pre = document.getElementById('__czFatal');
+                            if (!pre) {
+                                pre = document.createElement('pre');
+                                pre.id = '__czFatal';
+                                pre.style.cssText = 'position:fixed;inset:0;z-index:2147483647;padding:16px;margin:0;overflow:auto;background:#111;color:#ff8080;font:12px/1.45 -apple-system,monospace;white-space:pre-wrap;';
+                                document.body.appendChild(pre);
+                            }
+                            pre.textContent = 'Cosmo PD-101 UI runtime error\\n\\n' + msg;
+                        } catch (_) {}
+                    }
+
+                    window.addEventListener('error', function (e) {
+                        var msg = (e && e.message) ? (e.message + ' @ ' + e.filename + ':' + e.lineno) : 'Unknown window error';
+                        show(msg);
+                        try {
+                            window.webkit.messageHandlers.cosmoPd101.postMessage({ id: 0, method: 'clientLog', args: ['error', 'window.error: ' + msg] });
+                        } catch (_) {}
+                    });
+
+                    window.addEventListener('unhandledrejection', function (e) {
+                        var reason = e && e.reason;
+                        var msg = reason && (reason.stack || reason.message) ? (reason.stack || reason.message) : String(reason || 'Unhandled promise rejection');
+                        show(msg);
+                        try {
+                            window.webkit.messageHandlers.cosmoPd101.postMessage({ id: 0, method: 'clientLog', args: ['error', 'unhandledrejection: ' + msg] });
+                        } catch (_) {}
+                    });
+                })();
+                """
+                configuration.userContentController.addUserScript(
+                        WKUserScript(source: diagnosticsScript, injectionTime: .atDocumentStart, forMainFrameOnly: true)
+                )
         configuration.userContentController.add(self, name: "cosmoPd101")
 
         let webView = WKWebView(frame: view.bounds, configuration: configuration)
         webView.autoresizingMask = []
         webView.navigationDelegate = self
         #if os(macOS)
-        webView.setValue(false, forKey: "drawsBackground")
+        // Keep a non-transparent background on macOS so load failures are visible.
+        webView.setValue(true, forKey: "drawsBackground")
         #else
         webView.isOpaque = false
         webView.backgroundColor = .clear
@@ -124,7 +185,7 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
         layoutWebView()
 
         guard let indexUrl = resourceBundle.url(forResource: "index", withExtension: "html", subdirectory: "ui") else {
-            webView.loadHTMLString("<html><body>Cosmo PD-101 UI bundle missing.</body></html>", baseURL: nil)
+            webView.loadHTMLString(diagnosticHtml(title: "UI Bundle Missing", message: "Could not find index.html in the AU bundle."), baseURL: nil)
             return
         }
         webView.loadFileURL(indexUrl, allowingReadAccessTo: indexUrl.deletingLastPathComponent())
@@ -155,11 +216,24 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
     }
 
     public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        webView.loadHTMLString("<html><body style='font-family: -apple-system; padding: 24px;'>Cosmo PD-101 UI failed to load.<br>\(error.localizedDescription)</body></html>", baseURL: nil)
+        webView.loadHTMLString(diagnosticHtml(title: "Navigation Failed", message: error.localizedDescription), baseURL: nil)
     }
 
     public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-        webView.loadHTMLString("<html><body style='font-family: -apple-system; padding: 24px;'>Cosmo PD-101 UI failed to load.<br>\(error.localizedDescription)</body></html>", baseURL: nil)
+        webView.loadHTMLString(diagnosticHtml(title: "Provisional Navigation Failed", message: error.localizedDescription), baseURL: nil)
+    }
+
+    private func diagnosticHtml(title: String, message: String) -> String {
+        """
+        <html>
+            <body style='margin:0;background:#0f1115;color:#f3f4f6;font-family:-apple-system,system-ui,sans-serif;'>
+                <div style='padding:24px;'>
+                    <h2 style='margin:0 0 10px 0;'>Cosmo PD-101 UI: \(title)</h2>
+                    <p style='margin:0;white-space:pre-wrap;line-height:1.4;'>\(message)</p>
+                </div>
+            </body>
+        </html>
+        """
     }
 
     private var resourceBundle: Bundle {
@@ -176,6 +250,24 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
 
     private func sendError(id: Int, message: String) {
         sendScriptPayload(["id": id, "error": message])
+    }
+
+    /// Pushes updated engine params and optional preset metadata to the WebView.
+    /// Called when native-side state changes (factory preset selection, state restore).
+    private func pushStateToWebView(_ paramsJson: String, selectedPresetName: String? = nil) {
+        // Wrap in a JSON object so JSONSerialization handles all string escaping correctly.
+        let container: [String: String] = ["p": paramsJson]
+        guard let data = try? JSONSerialization.data(withJSONObject: container),
+              let containerStr = String(data: data, encoding: .utf8) else { return }
+        var script = "window.__czOnParams?.(JSON.parse(\(containerStr)).p);"
+        if let selectedPresetName {
+            let presetContainer: [String: String] = ["n": selectedPresetName]
+            if let presetData = try? JSONSerialization.data(withJSONObject: presetContainer),
+               let presetContainerStr = String(data: presetData, encoding: .utf8) {
+                script += "window.__czOnHostPresetSelected?.(JSON.parse(\(presetContainerStr)).n);"
+            }
+        }
+        webView?.evaluateJavaScript(script, completionHandler: nil)
     }
 
     private func sendScriptPayload(_ payload: [String: Any]) {

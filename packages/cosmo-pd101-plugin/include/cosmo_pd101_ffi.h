@@ -47,6 +47,11 @@ size_t cosmo_pd101_ffi_get_runtime_voice_states_json(
     uint8_t* output,
     size_t output_len
 );
+size_t cosmo_pd101_ffi_get_runtime_mod_sources_json(
+    const CosmoPd101FfiEngine* engine,
+    uint8_t* output,
+    size_t output_len
+);
 
 size_t cosmo_pd101_ffi_get_parameter_count(void);
 CosmoPd101FfiStatus cosmo_pd101_ffi_get_parameter_info(

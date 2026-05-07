@@ -10,13 +10,13 @@
 			<array>
 				<dict>
 					<key>description</key>
-					<string>CosmoPD101AUv3Ext_macOSExtension</string>
+					<string>Cosmo PD-101 AUv3</string>
 					<key>factoryFunction</key>
 					<string>$(PRODUCT_MODULE_NAME).AudioUnitViewController</string>
 					<key>manufacturer</key>
 					<string>PurA</string>
 					<key>name</key>
-					<string>Purr Audio: CosmoPD101AUv3Ext_macOSExtension</string>
+					<string>Purr Audio: Cosmo PD-101 AUv3</string>
 					<key>sandboxSafe</key>
 					<true/>
 					<key>subtype</key>

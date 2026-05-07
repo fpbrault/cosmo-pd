@@ -1,4 +1,4 @@
-import { cp, mkdir, readdir, rm } from "node:fs/promises";
+import { cp, mkdir, readdir, rm, stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,8 +19,12 @@ const xcodeProjectPath = join(
 	"CosmoPD101Host",
 	"CosmoPD101Host.xcodeproj",
 );
-const xcodeContainerScheme = "CosmoPD101AUv3Ext-macOS";
+const xcodeContainerScheme = "CosmoPD101Host";
 const xcodeDerivedDataDir = join(buildDir, "XcodeDerivedData");
+
+const macosDeploymentTarget = "15.6";
+const iosDeploymentTarget = "18.6";
+process.env.MACOSX_DEPLOYMENT_TARGET = macosDeploymentTarget;
 
 function parseArgs(argv) {
 	const options = {
@@ -48,10 +52,11 @@ function parseArgs(argv) {
 	return options;
 }
 
-async function run(command, args, cwd = repoRoot) {
+async function run(command, args, cwd = repoRoot, env = {}) {
 	console.log(`$ ${[command, ...args].join(" ")}`);
 	const proc = Bun.spawn([command, ...args], {
 		cwd,
+		env: { ...process.env, ...env },
 		stdout: "inherit",
 		stderr: "inherit",
 	});
@@ -75,7 +80,7 @@ async function createIosXcframework(options) {
 		...(options.release ? ["--release"] : []),
 		"--target",
 		deviceTarget,
-	]);
+	], repoRoot, { IPHONEOS_DEPLOYMENT_TARGET: iosDeploymentTarget });
 	await run("cargo", [
 		"build",
 		"-p",
@@ -83,7 +88,7 @@ async function createIosXcframework(options) {
 		...(options.release ? ["--release"] : []),
 		"--target",
 		simulatorTarget,
-	]);
+	], repoRoot, { IPHONEOS_DEPLOYMENT_TARGET: iosDeploymentTarget });
 
 	await mkdir(artifactsDir, { recursive: true });
 	await rm(outputPath, { recursive: true, force: true });
@@ -155,15 +160,41 @@ async function buildMacAuv3AppWithXcode(options) {
 		"build",
 	]);
 
-	const productsDir = join(
-		xcodeDerivedDataDir,
-		"Build",
-		"Products",
-		`${configuration}-macosx`,
-	);
-	const builtAppPath = join(productsDir, `${xcodeContainerScheme}.app`);
-	const stagedAppPath = join(buildDir, "Cosmo PD-101.app");
+	const productDirs = [
+		join(xcodeDerivedDataDir, "Build", "Products", `${configuration}-macosx`),
+		join(xcodeDerivedDataDir, "Build", "Products", configuration),
+	];
 
+	let builtAppPath = "";
+	for (const productsDir of productDirs) {
+		const candidate = join(productsDir, `${xcodeContainerScheme}.app`);
+		try {
+			await stat(candidate);
+			builtAppPath = candidate;
+			break;
+		} catch {
+			// Continue probing alternate Xcode product output layouts.
+		}
+
+		try {
+			const entries = await readdir(productsDir);
+			const appName = entries.find((entry) => entry.endsWith(".app"));
+			if (appName) {
+				builtAppPath = join(productsDir, appName);
+				break;
+			}
+		} catch {
+			// Directory may not exist in this layout.
+		}
+	}
+
+	if (!builtAppPath) {
+		throw new Error(
+			`Unable to locate built app for scheme ${xcodeContainerScheme} in: ${productDirs.join(", ")}`,
+		);
+	}
+
+	const stagedAppPath = join(buildDir, "Cosmo PD-101.app");
 	await rm(stagedAppPath, { recursive: true, force: true });
 	await mkdir(buildDir, { recursive: true });
 	await cp(builtAppPath, stagedAppPath, { recursive: true });
@@ -218,7 +249,7 @@ async function main() {
 	const cargoArgs = ["build", "-p", "cosmo-pd101-plugin"];
 	if (options.release) cargoArgs.push("--release");
 	if (options.rustTarget) cargoArgs.push("--target", options.rustTarget);
-	await run("cargo", cargoArgs);
+	await run("cargo", cargoArgs, repoRoot, { MACOSX_DEPLOYMENT_TARGET: macosDeploymentTarget });
 	await copyRustArtifacts(options);
 
 	if (options.swiftBuild) {

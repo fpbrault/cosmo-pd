@@ -64,21 +64,28 @@ class AudioUnitHostModel: ObservableObject {
 
     private func loadAudioUnit() {
         Task {
+            self.audioUnitCrashed = false
             let viewController = await playEngine.initComponent(type: type, subType: subType, manufacturer: manufacturer)
 
-            if let audioUnit = playEngine.avAudioUnit {
+#if DEBUG
+            // Validation can invalidate/reload AU instances in debug builds.
+            // Keep this opt-in to avoid disrupting normal host startup.
+            let shouldRunValidation = ProcessInfo.processInfo.environment["COSMO_RUN_AU_VALIDATION"] == "1"
+            if shouldRunValidation, let audioUnit = playEngine.avAudioUnit {
                 Task { @MainActor in
                     let (validationResult, validationData) = await validateAU(audioUnit: audioUnit)
                     self.validationResult = validationResult
                     self.currentValidationData = validationData
                 }
             }
+#endif
 
             let statusMessage: String
             if viewController != nil {
                 statusMessage = "Loaded AU view (\(self.auValString))"
             } else {
-                statusMessage = "AU loaded, but no custom view controller returned (\(self.auValString))"
+				statusMessage = playEngine.lastInitErrorMessage
+					?? "AU loaded, but no custom view controller returned (\(self.auValString))"
             }
 
             self.viewModel = AudioUnitViewModel(showAudioControls: self.wantsAudio,
@@ -96,10 +103,37 @@ class AudioUnitHostModel: ObservableObject {
     private func setupNotifications() {
         let notificationName = Notification.Name(instanceInvalidationNotifcation.rawValue)
         NotificationCenter.default.addObserver(forName: notificationName, object: nil, queue: nil) { [weak self] notification in
-            guard let self = self else { return }
-            if let _ = notification.object as? AUAudioUnit {
-                Task { @MainActor in
-                    self.audioUnitCrashed = true
+            // Extract non-Sendable data outside of the @Sendable Task closure
+            let invalidatedObject = notification.object
+			guard let hostModel = self else { return }
+
+            Task { @MainActor in
+                let currentAudioUnit = hostModel.playEngine.avAudioUnit?.auAudioUnit
+                guard currentAudioUnit != nil else { return }
+
+                guard let invalidatedAudioUnit = invalidatedObject as? AUAudioUnit else {
+                    NSLog("[AUHostModel] AU invalidation notification with unexpected object type=%@", String(describing: Swift.type(of: invalidatedObject as Any)))
+                    hostModel.viewModel.viewController = nil
+                    hostModel.viewModel.message = "The AU view process disconnected. Rebuild/install and relaunch the AUv3 host."
+                    hostModel.audioUnitCrashed = true
+                    return
+                }
+
+                let isCurrentInstance = invalidatedAudioUnit === currentAudioUnit
+                let hasMatchingDescription: Bool = {
+                    guard let currentDescription = currentAudioUnit?.componentDescription else {
+                        return false
+                    }
+                    let invalidatedDescription = invalidatedAudioUnit.componentDescription
+                    return currentDescription.componentType == invalidatedDescription.componentType
+                        && currentDescription.componentSubType == invalidatedDescription.componentSubType
+                        && currentDescription.componentManufacturer == invalidatedDescription.componentManufacturer
+                }()
+                if isCurrentInstance || hasMatchingDescription {
+                    NSLog("[AUHostModel] AU invalidated (instance=%@ descMatch=%@)", isCurrentInstance ? "yes" : "no", hasMatchingDescription ? "yes" : "no")
+                    hostModel.viewModel.viewController = nil
+                    hostModel.viewModel.message = "The AU view process disconnected. Rebuild/install and relaunch the AUv3 host."
+                    hostModel.audioUnitCrashed = true
                 }
             }
         }
@@ -118,8 +152,6 @@ class AudioUnitHostModel: ObservableObject {
                 } else {
                     formattedOutput = "Validation probably crashed"
                 }
-
-                print(formattedOutput)
                 
                 continuation.resume(returning: (result, formattedOutput))
             }
@@ -138,3 +170,4 @@ class AudioUnitHostModel: ObservableObject {
         playEngine.stopPlaying()
     }
 }
+

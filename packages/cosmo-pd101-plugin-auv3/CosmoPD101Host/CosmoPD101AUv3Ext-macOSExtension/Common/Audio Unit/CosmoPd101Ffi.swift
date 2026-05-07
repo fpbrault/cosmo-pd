@@ -1,11 +1,11 @@
 import Foundation
 
 public enum CosmoPd101FfiStatus: Int32 {
-    case ok = 0
-    case nullPointer = 1
-    case invalidArgument = 2
-    case bufferTooSmall = 3
-    case jsonError = 4
+	case ok = 0
+	case nullPointer = 1
+	case invalidArgument = 2
+	case bufferTooSmall = 3
+	case jsonError = 4
 }
 
 public typealias CosmoPd101FfiEngineRef = OpaquePointer

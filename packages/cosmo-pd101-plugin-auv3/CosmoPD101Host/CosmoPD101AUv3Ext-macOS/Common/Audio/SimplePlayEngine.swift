@@ -23,24 +23,95 @@ extension AVAudioUnit {
         let componentType = self.auAudioUnit.componentDescription.componentType
         return componentType == kAudioUnitType_MusicEffect || componentType == kAudioUnitType_Effect
     }
+
+    static fileprivate func componentDescription(type: String, subType: String, manufacturer: String) -> AudioComponentDescription {
+        AudioComponentDescription(componentType: type.fourCharCode!,
+                                  componentSubType: subType.fourCharCode!,
+                                  componentManufacturer: manufacturer.fourCharCode!,
+                                  componentFlags: 0,
+                                  componentFlagsMask: 0)
+    }
+
+    static fileprivate func componentURLs(type: String, subType: String, manufacturer: String) -> [URL] {
+        let description = componentDescription(type: type, subType: subType, manufacturer: manufacturer)
+        return AVAudioUnitComponentManager.shared().components(matching: description).compactMap {
+            $0.value(forKey: "componentURL") as? URL
+        }
+    }
     
     static fileprivate func findComponent(type: String, subType: String, manufacturer: String) -> AVAudioUnitComponent? {
-        // Make a component description matching any Audio Unit of the selected component type.
-        let description = AudioComponentDescription(componentType: type.fourCharCode!,
-                                                    componentSubType: subType.fourCharCode!,
-                                                    componentManufacturer: manufacturer.fourCharCode!,
-                                                    componentFlags: 0,
-                                                    componentFlagsMask: 0)
-        return AVAudioUnitComponentManager.shared().components(matching: description).first
+        let description = componentDescription(type: type, subType: subType, manufacturer: manufacturer)
+        let components = AVAudioUnitComponentManager.shared().components(matching: description)
+        NSLog("[SPE] findComponent: matches=%d for %@/%@/%@", components.count, type, subType, manufacturer)
+        let appBundlePath = Bundle.main.bundleURL.path
+        for component in components {
+            let componentURL = component.value(forKey: "componentURL") as? URL
+            #if os(macOS)
+            NSLog(
+                "[SPE] candidate AU: name=%@ manufacturer=%@ version=%@ hasCustomView=%@ url=%@",
+                component.name,
+                component.manufacturerName,
+                component.versionString,
+                component.hasCustomView ? "yes" : "no",
+                componentURL?.path ?? "<nil>"
+            )
+            #else
+            NSLog(
+                "[SPE] candidate AU: name=%@ manufacturer=%@ version=%@ url=%@",
+                component.name,
+                component.manufacturerName,
+                component.versionString,
+                componentURL?.path ?? "<nil>"
+            )
+            #endif
+        }
+
+        if let embedded = components.first(where: { component in
+            guard let url = component.value(forKey: "componentURL") as? URL else { return false }
+            return url.path.hasPrefix(appBundlePath)
+        }) {
+            NSLog("[SPE] selected embedded AU: %@", embedded.name)
+            return embedded
+        }
+
+        #if DEBUG && os(macOS)
+        if !components.isEmpty {
+            NSLog(
+                "[SPE] no embedded AU match for host bundle=%@; falling back to registered non-embedded match",
+                appBundlePath
+            )
+        }
+        #endif
+
+        #if os(macOS)
+        if let preferred = components.first(where: { $0.hasCustomView }) {
+            NSLog("[SPE] selected AU with custom view: %@", preferred.name)
+            return preferred
+        }
+        #endif
+
+        if let first = components.first {
+            NSLog("[SPE] selected first AU (no custom-view match): %@", first.name)
+        }
+        return components.first
     }
     
 	fileprivate func loadAudioUnitViewController() async -> ViewController? {
+		NSLog("[SPE] loadAudioUnitViewController: requesting VC...")
         let viewController = await withTaskGroup(of: ViewController?.self) { group in
             group.addTask {
-                await self.auAudioUnit.requestViewController()
+                let vc = await self.auAudioUnit.requestViewController()
+                NSLog("[SPE] requestViewController returned: %@", vc == nil ? "nil" : String(describing: type(of: vc!)))
+                return vc
             }
             group.addTask {
-                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                do {
+                    try await Task.sleep(nanoseconds: 8_000_000_000)
+                } catch {
+                    // Cancelled because requestViewController returned first.
+                    return nil
+                }
+                NSLog("[SPE] requestViewController timed out after 8s")
                 return nil
             }
 
@@ -48,11 +119,13 @@ extension AVAudioUnit {
             group.cancelAll()
             return first
         }
+		NSLog("[SPE] chosen VC: %@", viewController == nil ? "nil" : String(describing: type(of: viewController!)))
 
 		if #available(macOS 13.0, iOS 16.0, *) {
 			if viewController == nil {
-				let genericViewController = await AUGenericViewController()
-				await MainActor.run {
+                NSLog("[SPE] falling back to AUGenericViewController")
+                let genericViewController = await MainActor.run { AUGenericViewController() }
+                await MainActor.run {
 					genericViewController.auAudioUnit = self.auAudioUnit
 				}
 				return genericViewController
@@ -69,6 +142,7 @@ extension AVAudioUnit {
 public class SimplePlayEngine {
     
     var avAudioUnit: AVAudioUnit?
+	private(set) var lastInitErrorMessage: String?
     
     // Synchronizes starting/stopping the engine and scheduling file segments.
     private let stateChangeQueue = DispatchQueue(label: "com.example.apple-samplecode.StateChangeQueue")
@@ -117,19 +191,174 @@ public class SimplePlayEngine {
             print("[SimplePlayEngine] Core MIDI unavailable — hardware MIDI input disabled.")
         }
     }
+
+    private func logEmbeddedExtensions() {
+        guard let pluginsURL = Bundle.main.builtInPlugInsURL else {
+            NSLog("[SPE] builtInPlugInsURL is nil for host bundle: %@", Bundle.main.bundleURL.path)
+            return
+        }
+
+        let fileManager = FileManager.default
+        let pluginPaths = (try? fileManager.contentsOfDirectory(at: pluginsURL, includingPropertiesForKeys: nil)) ?? []
+        NSLog("[SPE] embedded PlugIns dir: %@ entries=%d", pluginsURL.path, pluginPaths.count)
+        for path in pluginPaths {
+            NSLog("[SPE] embedded plugin entry: %@", path.lastPathComponent)
+        }
+    }
+
+    private func missingComponentMessage(type: String, subType: String, manufacturer: String) -> String {
+        let base = "Audio Unit not found for \(type)/\(subType)/\(manufacturer)."
+
+        #if os(iOS)
+        if ProcessInfo.processInfo.isiOSAppOnMac {
+            return "\(base) Running as Designed for iPad on macOS does not reliably register embedded AUv3 components in dev wrapper builds. Run the native macOS host target (not iOS-on-Mac) to register and load the extension."
+        }
+        #endif
+
+        return "\(base) Verify the extension is embedded in the app and that the app is launched from a stable installed path so LaunchServices can register the AU extension."
+    }
+
+    #if DEBUG && os(macOS)
+    @discardableResult
+    private func runProcess(executablePath: String, arguments: [String]) -> Int32? {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: executablePath)
+        process.arguments = arguments
+
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = outputPipe
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
+            if let output = String(data: data, encoding: .utf8), !output.isEmpty {
+                NSLog("[SPE] %@ %@ -> %d\n%@", executablePath, arguments.joined(separator: " "), process.terminationStatus, output)
+            } else {
+                NSLog("[SPE] %@ %@ -> %d", executablePath, arguments.joined(separator: " "), process.terminationStatus)
+            }
+            return process.terminationStatus
+        } catch {
+            NSLog("[SPE] process run failed: %@ %@", executablePath, error.localizedDescription)
+            return nil
+        }
+    }
+
+    private func shouldForceRegistrationRefresh() -> Bool {
+        ProcessInfo.processInfo.environment["COSMO_FORCE_AUV3_REGISTRATION_REFRESH"] == "1"
+    }
+
+    private func shouldAutoRegistrationRefreshOnMiss() -> Bool {
+        ProcessInfo.processInfo.environment["COSMO_AUTO_AUV3_REGISTRATION_REFRESH_ON_MISS"] != "0"
+    }
+
+    private func bestEffortRegisterEmbeddedAudioUnits(type: String, subType: String, manufacturer: String) {
+        guard ProcessInfo.processInfo.environment["COSMO_SKIP_AUV3_REGISTRATION_REFRESH"] != "1" else {
+            NSLog("[SPE] skipping embedded AUv3 registration refresh")
+            return
+        }
+
+        guard let pluginsURL = Bundle.main.builtInPlugInsURL else { return }
+        let fileManager = FileManager.default
+        let entries = (try? fileManager.contentsOfDirectory(at: pluginsURL, includingPropertiesForKeys: nil)) ?? []
+        let appexEntries = entries.filter { $0.pathExtension.lowercased() == "appex" }
+        guard !appexEntries.isEmpty else {
+            NSLog("[SPE] no embedded appex found in %@", pluginsURL.path)
+            return
+        }
+
+        let hostBundlePath = Bundle.main.bundleURL.path
+        for url in AVAudioUnit.componentURLs(type: type, subType: subType, manufacturer: manufacturer) where !url.path.hasPrefix(hostBundlePath) {
+            NSLog("[SPE] unregistering stale AUv3 match at %@", url.path)
+            _ = runProcess(executablePath: "/usr/bin/pluginkit", arguments: ["-r", url.path])
+        }
+
+        let lsregister = "/System/Library/Frameworks/CoreServices.framework/Versions/Current/Frameworks/LaunchServices.framework/Versions/Current/Support/lsregister"
+        _ = runProcess(executablePath: lsregister, arguments: ["-f", "-R", "-trusted", Bundle.main.bundleURL.path])
+
+        for appexURL in appexEntries {
+            NSLog("[SPE] attempting pluginkit registration for %@", appexURL.path)
+            _ = runProcess(executablePath: "/usr/bin/pluginkit", arguments: ["-r", appexURL.path])
+            _ = runProcess(executablePath: "/usr/bin/pluginkit", arguments: ["-a", appexURL.path])
+        }
+
+        _ = runProcess(executablePath: "/usr/bin/killall", arguments: ["-9", "AudioComponentRegistrar"])
+    }
+    #endif
     
     func initComponent(type: String, subType: String, manufacturer: String) async -> ViewController? {
+        lastInitErrorMessage = nil
         // Reset the engine to remove any configured audio units.
         reset()
-        
-        guard let component = AVAudioUnit.findComponent(type: type, subType: subType, manufacturer: manufacturer) else {
-            fatalError("Failed to find component with type: \(type), subtype: \(subType), manufacturer: \(manufacturer))" )
+        logEmbeddedExtensions()
+        #if DEBUG && os(macOS)
+        if shouldForceRegistrationRefresh() {
+            NSLog("[SPE] forcing embedded AUv3 registration refresh")
+            bestEffortRegisterEmbeddedAudioUnits(type: type, subType: subType, manufacturer: manufacturer)
+        } else {
+            NSLog("[SPE] registration refresh disabled (set COSMO_FORCE_AUV3_REGISTRATION_REFRESH=1 to enable)")
+        }
+        #endif
+
+        let maxAttempts = 12
+        var selectedComponent: AVAudioUnitComponent?
+        #if DEBUG && os(macOS)
+        var didAutoRefreshRegistration = false
+        #endif
+        for attempt in 1...maxAttempts {
+            if let component = AVAudioUnit.findComponent(type: type, subType: subType, manufacturer: manufacturer) {
+                selectedComponent = component
+                break
+            }
+
+            #if DEBUG && os(macOS)
+            if !didAutoRefreshRegistration && attempt == 2 && shouldAutoRegistrationRefreshOnMiss() {
+                didAutoRefreshRegistration = true
+                NSLog("[SPE] component still missing after initial retries; running one-time AUv3 registration refresh")
+                bestEffortRegisterEmbeddedAudioUnits(type: type, subType: subType, manufacturer: manufacturer)
+            }
+            #endif
+
+            if attempt < maxAttempts {
+                NSLog("[SPE] component not found on attempt %d/%d; retrying...", attempt, maxAttempts)
+                try? await Task.sleep(nanoseconds: 500_000_000)
+            }
+        }
+
+        guard let component = selectedComponent else {
+            let message = missingComponentMessage(type: type, subType: subType, manufacturer: manufacturer)
+            NSLog("[SPE] %@", message)
+            lastInitErrorMessage = message
+            return nil
         }
         
         // Instantiate the audio unit.
         do {
-            let audioUnit = try await AVAudioUnit.instantiate(
-                with: component.audioComponentDescription, options: AudioComponentInstantiationOptions.loadOutOfProcess)
+            let description = component.audioComponentDescription
+            let audioUnit: AVAudioUnit
+            do {
+                audioUnit = try await AVAudioUnit.instantiate(
+                    with: description,
+                    options: .loadOutOfProcess
+                )
+            } catch {
+                #if os(macOS)
+                let nsError = error as NSError
+                let isInstantiateNotPermitted = nsError.code == -3000
+                if isInstantiateNotPermitted {
+                    NSLog("[SPE] instantiate out-of-process failed with -3000; retrying in-process")
+                    audioUnit = try await AVAudioUnit.instantiate(
+                        with: description,
+                        options: .loadInProcess
+                    )
+                } else {
+                    throw error
+                }
+                #else
+                throw error
+                #endif
+            }
             
             self.avAudioUnit = audioUnit
             
@@ -137,6 +366,9 @@ public class SimplePlayEngine {
             
             return await audioUnit.loadAudioUnitViewController()
         } catch {
+			let message = "Failed to instantiate AVAudioUnit: \(error.localizedDescription)"
+			print("[SimplePlayEngine] \(message)")
+			lastInitErrorMessage = message
             return nil
         }
     }

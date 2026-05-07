@@ -12,8 +12,11 @@ type ScopeDataResponse = {
 
 type RuntimeVoiceStatesResponse = string | unknown[];
 
+type RuntimeModSourcesResponse = string | Record<string, number>;
+
 const SCOPE_POLL_INTERVAL_MS = 33;
 const RUNTIME_VOICE_STATES_POLL_INTERVAL_MS = 16;
+const RUNTIME_MOD_SOURCES_POLL_INTERVAL_MS = 16;
 const IPC_TIMEOUT_MS = 250;
 const SCOPE_SAMPLE_SCALE = 1 / 127.0;
 
@@ -24,8 +27,10 @@ declare global {
 				cosmoPd101?: { postMessage: (payload: unknown) => void };
 			};
 		};
+		__czHostPlatform?: "macos" | "ios";
 		ipc?: { postMessage: (msg: string) => void };
 		__czOnParams?: (json: string) => void;
+		__czOnHostPresetSelected?: (name: string) => void;
 		__czGetParams?: () => Promise<unknown>;
 		__czSetParams?: (json: string) => void;
 		__czOnScope?: (samples: number[], sampleRate: number, hz: number) => void;
@@ -125,7 +130,7 @@ function installIpcRouter() {
 	};
 
 	window.__czGetParams = async () => {
-		const result = await invokeAuv3("getParams");
+		const result = await invokeAuv3("getParams", [], 3000);
 		if (typeof result !== "string") {
 			return result;
 		}
@@ -300,6 +305,72 @@ function installRuntimeVoiceStatesPolling() {
 	});
 }
 
+function installRuntimeModSourcesPolling() {
+	let rafId = 0;
+	let lastScheduled = 0;
+	let pollInFlight = false;
+	let destroyed = false;
+	let runtimeModSourcesAvailable = true;
+
+	const dispatchRuntimeModSources = (result: RuntimeModSourcesResponse) => {
+		const sources =
+			typeof result === "string"
+				? (JSON.parse(result) as Record<string, number>)
+				: result;
+		if (typeof sources !== "object" || sources === null) {
+			return;
+		}
+		window.dispatchEvent(
+			new CustomEvent("cz-runtime-mod-sources", { detail: sources }),
+		);
+	};
+
+	const scheduleNextFrame = () => {
+		if (destroyed || rafId !== 0 || !runtimeModSourcesAvailable) {
+			return;
+		}
+		rafId = requestAnimationFrame(tick);
+	};
+
+	const tick = async (now: number) => {
+		rafId = 0;
+		if (destroyed || !runtimeModSourcesAvailable) {
+			return;
+		}
+		if (
+			now - lastScheduled < RUNTIME_MOD_SOURCES_POLL_INTERVAL_MS ||
+			pollInFlight
+		) {
+			scheduleNextFrame();
+			return;
+		}
+
+		lastScheduled = now;
+		pollInFlight = true;
+		try {
+			await invokeAuv3("getRuntimeModSources", [], IPC_TIMEOUT_MS)
+				.then((result) => {
+					dispatchRuntimeModSources(result as RuntimeModSourcesResponse);
+				})
+				.catch(() => {
+					runtimeModSourcesAvailable = false;
+				});
+		} finally {
+			pollInFlight = false;
+			scheduleNextFrame();
+		}
+	};
+
+	scheduleNextFrame();
+	window.addEventListener("pagehide", () => {
+		destroyed = true;
+		if (rafId !== 0) {
+			cancelAnimationFrame(rafId);
+			rafId = 0;
+		}
+	});
+}
+
 export function ensureAuv3Bridge(): boolean {
 	if (installed) {
 		return true;
@@ -314,5 +385,6 @@ export function ensureAuv3Bridge(): boolean {
 	installIpcRouter();
 	installScopePolling();
 	installRuntimeVoiceStatesPolling();
+	installRuntimeModSourcesPolling();
 	return true;
 }

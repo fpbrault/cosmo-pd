@@ -10,6 +10,14 @@ public final class CosmoPd101AudioUnit: AUAudioUnit {
     private var engine: CosmoPd101FfiEngineRef?
     private var maxFrames: Int = 4096
     private var parameterObserverToken: AUParameterObserverToken?
+    /// Full-state JSON buffered when `fullStateForDocument` is set before `allocateRenderResources`.
+    private var pendingParamsJson: String?
+    private var pendingFactoryPresetIndex: Int?
+    private var selectedFactoryPreset: AUAudioUnitPreset?
+    private lazy var availableFactoryPresets: [AUAudioUnitPreset] = buildFactoryPresets()
+    /// Called on the main thread when engine state changes from the native side (preset load, state restore).
+    /// The ViewController sets this to push params and optional preset metadata to the WebView.
+    var paramsChangedHandler: ((String, String?) -> Void)?
 
     public override var parameterTree: AUParameterTree? {
         get { internalParameterTree }
@@ -20,6 +28,61 @@ public final class CosmoPd101AudioUnit: AUAudioUnit {
 
     public override var outputBusses: AUAudioUnitBusArray { outputBusArrayStorage }
     public override var inputBusses: AUAudioUnitBusArray { inputBusArrayStorage }
+
+    public override var supportsUserPresets: Bool { true }
+    public override var factoryPresets: [AUAudioUnitPreset]? { availableFactoryPresets }
+
+    public override var currentPreset: AUAudioUnitPreset? {
+        get { selectedFactoryPreset ?? super.currentPreset }
+        set {
+            guard let preset = newValue else {
+                selectedFactoryPreset = nil
+                super.currentPreset = nil
+                return
+            }
+
+            if preset.number >= 0 {
+                let index = Int(preset.number)
+                let normalized = availableFactoryPresets.first(where: { $0.number == preset.number }) ?? preset
+                selectedFactoryPreset = normalized
+                super.currentPreset = normalized
+                if engine != nil {
+                    if !applyFactoryPreset(index: index) {
+                        NSLog("[CzAU] currentPreset set failed: index=%d", index)
+                    }
+                } else {
+                    pendingFactoryPresetIndex = index
+                    NSLog("[CzAU] currentPreset deferred: engine nil index=%d", index)
+                }
+                return
+            }
+
+            selectedFactoryPreset = nil
+            super.currentPreset = preset
+        }
+    }
+
+    public override var fullStateForDocument: [String: Any]? {
+        get {
+            var state = super.fullStateForDocument ?? [:]
+            if let json = paramsJson() {
+                state["CzParamsJson"] = json
+            }
+            return state
+        }
+        set {
+            super.fullStateForDocument = newValue
+            if let json = newValue?["CzParamsJson"] as? String {
+                if engine != nil {
+                    NSLog("[CzAU] fullStateForDocument set: applying json len=%d", json.count)
+                    _ = setParamsJson(json, notifyWebView: true)
+                } else {
+                    NSLog("[CzAU] fullStateForDocument set: engine nil, buffering len=%d", json.count)
+                    pendingParamsJson = json
+                }
+            }
+        }
+    }
 
     public override init(componentDescription: AudioComponentDescription, options: AudioComponentInstantiationOptions = []) throws {
         let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 2)!
@@ -49,7 +112,16 @@ public final class CosmoPd101AudioUnit: AUAudioUnit {
         guard engine != nil else {
             throw NSError(domain: NSOSStatusErrorDomain, code: Int(kAudioUnitErr_FailedInitialization))
         }
-        syncParametersToEngine()
+        NSLog("[CzAU] allocateRenderResources: engine created sr=%.0f frames=%d pending=%@", sampleRate, maxFrames, pendingParamsJson != nil ? "yes" : "no")
+        if let pending = pendingParamsJson {
+            pendingParamsJson = nil
+            _ = setParamsJson(pending, notifyWebView: true)
+        } else if let pendingIndex = pendingFactoryPresetIndex {
+            pendingFactoryPresetIndex = nil
+            _ = applyFactoryPreset(index: pendingIndex)
+        } else {
+            syncParametersToEngine()
+        }
     }
 
     public override func deallocateRenderResources() {
@@ -85,10 +157,18 @@ public final class CosmoPd101AudioUnit: AUAudioUnit {
         }
     }
 
-    public func setParamsJson(_ json: String) -> Bool {
-        json.withCString { pointer in
+    public func setParamsJson(_ json: String, notifyWebView: Bool = false, selectedPresetName: String? = nil) -> Bool {
+        NSLog("[CzAU] setParamsJson: engine=%@ len=%d notify=%@", engine != nil ? "ok" : "NIL", json.count, notifyWebView ? "yes" : "no")
+        let didSet = json.withCString { pointer in
             cosmo_pd101_ffi_set_params_json(engine, pointer) == CosmoPd101FfiStatus.ok.rawValue
         }
+        NSLog("[CzAU] setParamsJson: didSet=%@", didSet ? "true" : "false")
+        guard didSet else { return false }
+        syncParameterTreeFromEngine()
+        if notifyWebView {
+            paramsChangedHandler?(json, selectedPresetName)
+        }
+        return true
     }
 
     public func paramsJson() -> String? {
@@ -108,6 +188,17 @@ public final class CosmoPd101AudioUnit: AUAudioUnit {
         var bytes = [UInt8](repeating: 0, count: required)
         let written = bytes.withUnsafeMutableBufferPointer { buffer in
             cosmo_pd101_ffi_get_runtime_voice_states_json(engine, buffer.baseAddress, buffer.count)
+        }
+        guard written == required else { return nil }
+        return String(bytes: bytes, encoding: .utf8)
+    }
+
+    public func runtimeModSourcesJson() -> String? {
+        let required = cosmo_pd101_ffi_get_runtime_mod_sources_json(engine, nil, 0)
+        guard required > 0 else { return nil }
+        var bytes = [UInt8](repeating: 0, count: required)
+        let written = bytes.withUnsafeMutableBufferPointer { buffer in
+            cosmo_pd101_ffi_get_runtime_mod_sources_json(engine, buffer.baseAddress, buffer.count)
         }
         guard written == required else { return nil }
         return String(bytes: bytes, encoding: .utf8)
@@ -159,6 +250,53 @@ public final class CosmoPd101AudioUnit: AUAudioUnit {
         }
     }
 
+    private func buildFactoryPresets() -> [AUAudioUnitPreset] {
+        let count = max(0, cosmo_pd101_ffi_get_factory_preset_count())
+        guard count > 0 else { return [] }
+
+        var presets: [AUAudioUnitPreset] = []
+        presets.reserveCapacity(count)
+        for index in 0..<count {
+            let preset = AUAudioUnitPreset()
+            preset.number = index
+            preset.name = factoryPresetName(index: index) ?? "Preset \(index + 1)"
+            presets.append(preset)
+        }
+        return presets
+    }
+
+    private func factoryPresetName(index: Int) -> String? {
+        let required = cosmo_pd101_ffi_get_factory_preset_name(index, nil, 0)
+        guard required > 0 else { return nil }
+        var bytes = [UInt8](repeating: 0, count: required)
+        let written = bytes.withUnsafeMutableBufferPointer { buffer in
+            cosmo_pd101_ffi_get_factory_preset_name(index, buffer.baseAddress, buffer.count)
+        }
+        guard written == required else { return nil }
+        return String(bytes: bytes, encoding: .utf8)
+    }
+
+    private func factoryPresetParamsJson(index: Int) -> String? {
+        let required = cosmo_pd101_ffi_get_factory_preset_params_json(index, nil, 0)
+        guard required > 0 else { return nil }
+        var bytes = [UInt8](repeating: 0, count: required)
+        let written = bytes.withUnsafeMutableBufferPointer { buffer in
+            cosmo_pd101_ffi_get_factory_preset_params_json(index, buffer.baseAddress, buffer.count)
+        }
+        guard written == required else { return nil }
+        return String(bytes: bytes, encoding: .utf8)
+    }
+
+    private func applyFactoryPreset(index: Int) -> Bool {
+        guard let json = factoryPresetParamsJson(index: index) else {
+            NSLog("[CzAU] applyFactoryPreset missing JSON: index=%d", index)
+            return false
+        }
+        NSLog("[CzAU] applyFactoryPreset index=%d", index)
+        let presetName = availableFactoryPresets.first(where: { Int($0.number) == index })?.name
+        return setParamsJson(json, notifyWebView: true, selectedPresetName: presetName)
+    }
+
     private func syncParametersToEngine() {
         for parameter in internalParameterTree?.allParameters ?? [] {
             setParameter(address: parameter.address, value: parameter.value)
@@ -169,18 +307,29 @@ public final class CosmoPd101AudioUnit: AUAudioUnit {
         _ = cosmo_pd101_ffi_set_parameter_value(engine, UInt32(address), Float(value))
     }
 
-    private func consumeEvents(_ eventList: UnsafePointer<AURenderEvent>?) {
-        guard let eventList else {
-            return
+    private func syncParameterTreeFromEngine() {
+        for parameter in internalParameterTree?.allParameters ?? [] {
+            var value: Float = parameter.value
+            let status = cosmo_pd101_ffi_get_parameter_value(engine, UInt32(parameter.address), &value)
+            if status == CosmoPd101FfiStatus.ok.rawValue {
+                // Use our own observer token as originator to suppress re-entrant setParameter callbacks
+                parameter.setValue(value, originator: parameterObserverToken)
+            }
         }
+    }
 
-        switch renderEventType(eventList) {
-        case 8:
-            consumeLegacyMidiEvent(eventList)
-        case 10:
-            consumeMidiEventList(eventList)
-        default:
-            break
+    private func consumeEvents(_ eventList: UnsafePointer<AURenderEvent>?) {
+        var current = eventList
+        while let event = current {
+            switch renderEventType(event) {
+            case 8:
+                consumeLegacyMidiEvent(event)
+            case 10:
+                consumeMidiEventList(event)
+            default:
+                break
+            }
+            current = event.pointee.head.next.map { UnsafePointer($0) }
         }
     }
 

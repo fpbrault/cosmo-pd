@@ -61,20 +61,50 @@ struct AUViewControllerUI: UIViewControllerRepresentable {
     }
 }
 #elseif os(macOS)
+final class FullScreenAUMacContainerViewController: NSViewController {
+    private let auViewController: NSViewController?
+
+    init(auViewController: NSViewController?) {
+        self.auViewController = auViewController
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        nil
+    }
+
+    override func loadView() {
+        view = NSView()
+        view.wantsLayer = true
+        view.layer?.backgroundColor = NSColor.black.cgColor
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        guard let auViewController else { return }
+
+        addChild(auViewController)
+        let childView = auViewController.view
+        childView.frame = view.bounds
+        childView.autoresizingMask = [.width, .height]
+        view.addSubview(childView)
+    }
+}
+
 struct AUViewControllerUI: NSViewControllerRepresentable {
-    
     var auViewController: NSViewController?
 
     init(viewController: NSViewController?) {
         self.auViewController = viewController
     }
-    
+
     func makeNSViewController(context: Context) -> NSViewController {
-        return self.auViewController!
+        FullScreenAUMacContainerViewController(auViewController: self.auViewController)
     }
-    
+
     func updateNSViewController(_ nsViewController: NSViewController, context: Context) {
-        // No opp
+        // No op
     }
 }
 #endif

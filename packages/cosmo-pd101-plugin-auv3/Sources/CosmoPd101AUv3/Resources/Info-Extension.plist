@@ -13,7 +13,7 @@
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>Cosmo PD-101 AUv3</string>
+    <string>Cosmo PD-101</string>
     <key>CFBundlePackageType</key>
     <string>XPC!</string>
     <key>CFBundleShortVersionString</key>
@@ -38,7 +38,7 @@
                     <key>manufacturer</key>
                     <string>PurA</string>
                     <key>name</key>
-                    <string>Purr Audio: Cosmo PD-101 AUv3</string>
+                    <string>Purr Audio: Cosmo PD-101</string>
                     <key>description</key>
                     <string>Cosmo PD-101 Phase Distortion Synthesizer</string>
                     <key>version</key>

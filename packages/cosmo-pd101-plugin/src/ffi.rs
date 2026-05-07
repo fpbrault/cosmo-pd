@@ -2,6 +2,7 @@ use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::ptr;
 use std::slice;
+use std::sync::OnceLock;
 
 use cosmo_synth_engine::params::{
     engine_param_default_v1, engine_param_ui_meta_v1, EngineParamReadoutFormatV1, SynthParams,
@@ -12,6 +13,39 @@ const SCOPE_CAPACITY: usize = 4096;
 const PARAM_KEY_CAPACITY: usize = 64;
 const PARAM_LABEL_CAPACITY: usize = 64;
 const PARAM_FLAG_AUTOMATABLE: u32 = 1 << 0;
+const FACTORY_PRESETS_JSON: &str = include_str!("factory_presets.json");
+
+struct FactoryPresetEntry {
+    name: String,
+    params_json: String,
+}
+
+static FACTORY_PRESETS: OnceLock<Vec<FactoryPresetEntry>> = OnceLock::new();
+
+fn factory_presets() -> &'static [FactoryPresetEntry] {
+    FACTORY_PRESETS.get_or_init(load_factory_presets).as_slice()
+}
+
+fn load_factory_presets() -> Vec<FactoryPresetEntry> {
+    let Ok(presets_value) = serde_json::from_str::<serde_json::Value>(FACTORY_PRESETS_JSON) else {
+        return Vec::new();
+    };
+    let Some(presets) = presets_value.as_array() else {
+        return Vec::new();
+    };
+
+    presets
+        .iter()
+        .filter_map(|preset| {
+            let name = preset.get("name")?.as_str()?.to_owned();
+            let params = preset.get("data")?.get("params")?;
+            Some(FactoryPresetEntry {
+                name,
+                params_json: params.to_string(),
+            })
+        })
+        .collect()
+}
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
@@ -545,6 +579,53 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_params_json(
 }
 
 #[no_mangle]
+pub extern "C" fn cosmo_pd101_ffi_get_factory_preset_count() -> usize {
+    factory_presets().len()
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn cosmo_pd101_ffi_get_factory_preset_name(
+    index: usize,
+    output: *mut u8,
+    output_len: usize,
+) -> usize {
+    let Some(name) = factory_presets().get(index).map(|preset| preset.name.as_str()) else {
+        return 0;
+    };
+    let bytes = name.as_bytes();
+    if output.is_null() || output_len == 0 {
+        return bytes.len();
+    }
+    let Ok(output) = output_slice_mut(output, output_len) else {
+        return 0;
+    };
+    let bytes_to_write = bytes.len().min(output.len());
+    output[..bytes_to_write].copy_from_slice(&bytes[..bytes_to_write]);
+    bytes.len()
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn cosmo_pd101_ffi_get_factory_preset_params_json(
+    index: usize,
+    output: *mut u8,
+    output_len: usize,
+) -> usize {
+    let Some(params_json) = factory_presets().get(index).map(|preset| &preset.params_json) else {
+        return 0;
+    };
+    let bytes = params_json.as_bytes();
+    if output.is_null() || output_len == 0 {
+        return bytes.len();
+    }
+    let Ok(output) = output_slice_mut(output, output_len) else {
+        return 0;
+    };
+    let bytes_to_write = bytes.len().min(output.len());
+    output[..bytes_to_write].copy_from_slice(&bytes[..bytes_to_write]);
+    bytes.len()
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn cosmo_pd101_ffi_get_runtime_voice_states_json(
     engine: *const CosmoPd101FfiEngine,
     output: *mut u8,
@@ -554,6 +635,30 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_runtime_voice_states_json(
         return 0;
     };
     let Ok(json) = serde_json::to_string(&engine.processor.runtime_voice_debug_state()) else {
+        return 0;
+    };
+    let bytes = json.as_bytes();
+    if output.is_null() || output_len == 0 {
+        return bytes.len();
+    }
+    let Ok(output) = output_slice_mut(output, output_len) else {
+        return 0;
+    };
+    let bytes_to_write = bytes.len().min(output.len());
+    output[..bytes_to_write].copy_from_slice(&bytes[..bytes_to_write]);
+    bytes.len()
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn cosmo_pd101_ffi_get_runtime_mod_sources_json(
+    engine: *const CosmoPd101FfiEngine,
+    output: *mut u8,
+    output_len: usize,
+) -> usize {
+    let Ok(engine) = engine_ref(engine) else {
+        return 0;
+    };
+    let Ok(json) = serde_json::to_string(&engine.processor.runtime_mod_sources()) else {
         return 0;
     };
     let bytes = json.as_bytes();
@@ -1017,6 +1122,75 @@ mod tests {
         assert_eq!(sample_rate, 48_000.0);
         assert!(hz > 0.0);
         assert_eq!(scope, mono);
+
+        unsafe { cosmo_pd101_ffi_engine_destroy(engine) };
+    }
+
+    #[test]
+    fn ffi_mod_routes_roundtrip_and_produce_audible_lfo_output() {
+        use cosmo_synth_engine::params::{ModDestination, ModMatrix, ModRoute, ModSource};
+
+        let engine = cosmo_pd101_ffi_engine_create(44_100.0, 512);
+        assert!(!engine.is_null());
+
+        // Build SynthParams with an active LFO1→Volume mod route and non-zero LFO depth.
+        let mut params = SynthParams::default();
+        assert!(
+            params.lfo.depth > 0.0,
+            "SynthParams::default() must have lfo.depth > 0 (Rust default is 0.2)"
+        );
+        params.mod_matrix = ModMatrix {
+            routes: vec![ModRoute {
+                source: ModSource::Lfo1,
+                destination: ModDestination::Volume,
+                amount: 1.0,
+                enabled: true,
+            }],
+        };
+        let json = CString::new(serde_json::to_string(&params).unwrap()).unwrap();
+        let status = unsafe { cosmo_pd101_ffi_set_params_json(engine, json.as_ptr()) };
+        assert_eq!(status, CosmoPd101FfiStatus::Ok);
+
+        // Verify mod routes survive the JSON roundtrip.
+        let required = unsafe { cosmo_pd101_ffi_get_params_json(engine, ptr::null_mut(), 0) };
+        assert!(required > 0);
+        let mut buffer = vec![0u8; required];
+        let written = unsafe {
+            cosmo_pd101_ffi_get_params_json(engine, buffer.as_mut_ptr(), buffer.len())
+        };
+        assert_eq!(written, required);
+        let decoded: SynthParams = serde_json::from_slice(&buffer).unwrap();
+        assert_eq!(decoded.mod_matrix.routes.len(), 1);
+        assert!(decoded.mod_matrix.routes[0].enabled);
+        assert_eq!(decoded.mod_matrix.routes[0].source, ModSource::Lfo1);
+        assert_eq!(decoded.mod_matrix.routes[0].destination, ModDestination::Volume);
+        assert!((decoded.mod_matrix.routes[0].amount - 1.0).abs() < 0.000_001);
+
+        // Render two 512-sample blocks with a held note and verify that the peak amplitude
+        // differs between them — confirming that the LFO is actually modulating the volume.
+        assert_eq!(
+            cosmo_pd101_ffi_note_on(engine, 60, 0.0, 1.0),
+            CosmoPd101FfiStatus::Ok
+        );
+        let mut block1 = vec![0.0f32; 512];
+        let mut block2 = vec![0.0f32; 512];
+        let status =
+            unsafe { cosmo_pd101_ffi_render_mono(engine, block1.as_mut_ptr(), block1.len()) };
+        assert_eq!(status, CosmoPd101FfiStatus::Ok);
+        let status =
+            unsafe { cosmo_pd101_ffi_render_mono(engine, block2.as_mut_ptr(), block2.len()) };
+        assert_eq!(status, CosmoPd101FfiStatus::Ok);
+
+        let peak1: f32 = block1.iter().map(|s| s.abs()).fold(0.0, f32::max);
+        let peak2: f32 = block2.iter().map(|s| s.abs()).fold(0.0, f32::max);
+        assert!(peak1 > 0.0, "block1 should have audio output");
+        assert!(peak2 > 0.0, "block2 should have audio output");
+        // With LFO1 modulating volume at 5 Hz (1 full cycle / 44100 * 5 samples ≈ 8820),
+        // two adjacent 512-sample blocks will have slightly different peak amplitudes.
+        assert!(
+            (peak1 - peak2).abs() > 0.000_001,
+            "LFO modulation should produce differing peak amplitudes between blocks (peak1={peak1:.6}, peak2={peak2:.6})"
+        );
 
         unsafe { cosmo_pd101_ffi_engine_destroy(engine) };
     }

@@ -24,15 +24,16 @@ struct ContentView: View {
                     Text("Loading Cosmo PD-101 web UI...")
                     Text(hostModel.viewModel.message)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black)
+        #if os(iOS)
         .ignoresSafeArea()
         .statusBarHidden(true)
+        #endif
     }
 }
 
