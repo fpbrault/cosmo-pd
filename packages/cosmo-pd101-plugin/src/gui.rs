@@ -235,56 +235,58 @@ impl Editor for CzEditor {
             }
 
             #[cfg(target_os = "macos")]
-            if !is_main_thread() {
-                append_log(
-                    "CzEditor::spawn called off main thread; skipping WebView creation to avoid Cocoa crash",
-                );
-                return fallback_handle();
-            }
-
-            let ns_view = match _parent {
-                ParentWindowHandle::AppKitNsView(ptr) => ptr,
-                other => {
-                    append_log(&format!(
-                        "CzEditor::spawn: unsupported window handle: {other:?}"
-                    ));
+            {
+                if !is_main_thread() {
+                    append_log(
+                        "CzEditor::spawn called off main thread; skipping WebView creation to avoid Cocoa crash",
+                    );
                     return fallback_handle();
                 }
-            };
 
-            let Some(resource_dir) = plugin_resource_dir() else {
-                append_log("CzEditor::spawn: resource dir unavailable; skipping WebView creation");
-                return fallback_handle();
-            };
-            append_log(&format!("resource_dir: {}", resource_dir.display()));
+                let ns_view = match _parent {
+                    ParentWindowHandle::AppKitNsView(ptr) => ptr,
+                    other => {
+                        append_log(&format!(
+                            "CzEditor::spawn: unsupported window handle: {other:?}"
+                        ));
+                        return fallback_handle();
+                    }
+                };
 
-            let synth_params = self.synth_params.clone();
-            let scope_buffer = self.scope_buffer.clone();
+                let Some(resource_dir) = plugin_resource_dir() else {
+                    append_log("CzEditor::spawn: resource dir unavailable; skipping WebView creation");
+                    return fallback_handle();
+                };
+                append_log(&format!("resource_dir: {}", resource_dir.display()));
 
-            let webview_state_for_ipc = self.webview_state.clone();
+                let synth_params = self.synth_params.clone();
+                let scope_buffer = self.scope_buffer.clone();
 
-            let (webview, temp_window) = unsafe {
-                build_webview_from_ns_view(
-                    ns_view,
-                    resource_dir,
-                    synth_params,
-                    scope_buffer,
-                    webview_state_for_ipc.clone(),
-                )
-            };
+                let webview_state_for_ipc = self.webview_state.clone();
 
-            if let Ok(mut container) = self.webview_state.lock() {
-                container.webview = webview;
+                let (webview, temp_window) = unsafe {
+                    build_webview_from_ns_view(
+                        ns_view,
+                        resource_dir,
+                        synth_params,
+                        scope_buffer,
+                        webview_state_for_ipc.clone(),
+                    )
+                };
+
+                if let Ok(mut container) = self.webview_state.lock() {
+                    container.webview = webview;
+                }
+
+                self.push_params();
+                self.apply_scale_normalization();
+
+                Box::new(CzEditorHandle {
+                    webview_state: self.webview_state.clone(),
+                    #[cfg(target_os = "macos")]
+                    _temp_window: temp_window,
+                }) as Box<dyn Any + Send>
             }
-
-            self.push_params();
-            self.apply_scale_normalization();
-
-            Box::new(CzEditorHandle {
-                webview_state: self.webview_state.clone(),
-                #[cfg(target_os = "macos")]
-                _temp_window: temp_window,
-            }) as Box<dyn Any + Send>
         }));
 
         match spawn_result {
