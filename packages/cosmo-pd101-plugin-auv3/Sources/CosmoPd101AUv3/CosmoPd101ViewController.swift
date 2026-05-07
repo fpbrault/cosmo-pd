@@ -7,7 +7,7 @@ import UIKit
 #endif
 
 public final class CosmoPd101ViewController: AUViewController, @preconcurrency AUAudioUnitFactory, WKNavigationDelegate, WKScriptMessageHandler {
-    private static let preferredWidth: CGFloat = 2048
+    private static let preferredWidth: CGFloat = 10
     private static let preferredHeight: CGFloat = 1536
     private static let minimumWidth: CGFloat = 1024
     private static let minimumHeight: CGFloat = 768

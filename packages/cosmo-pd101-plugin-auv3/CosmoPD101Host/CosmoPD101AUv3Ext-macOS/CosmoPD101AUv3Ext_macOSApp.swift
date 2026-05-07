@@ -9,18 +9,24 @@ import SwiftUI
 
 @main
 struct CosmoPD101AUv3Ext_macOSApp: App {
-	private static let minimumWindowWidth: CGFloat = 1024
-	private static let minimumWindowHeight: CGFloat = 768
-	private static let defaultWindowWidth: CGFloat = 1368
-	private static let defaultWindowHeight: CGFloat = 912
+	private static let fixedWindowWidth: CGFloat = 1368
+	private static let fixedWindowHeight: CGFloat = 912
 
     @StateObject private var hostModel = AudioUnitHostModel()
 
     var body: some Scene {
         WindowGroup {
             ContentView(hostModel: hostModel)
-				.frame(minWidth: Self.minimumWindowWidth, minHeight: Self.minimumWindowHeight)
+				.frame(
+					minWidth: Self.fixedWindowWidth,
+					idealWidth: Self.fixedWindowWidth,
+					maxWidth: Self.fixedWindowWidth,
+					minHeight: Self.fixedWindowHeight,
+					idealHeight: Self.fixedWindowHeight,
+					maxHeight: Self.fixedWindowHeight
+				)
         }
-		.defaultSize(width: Self.defaultWindowWidth, height: Self.defaultWindowHeight)
+		.defaultSize(width: Self.fixedWindowWidth, height: Self.fixedWindowHeight)
+		.windowResizability(.contentSize)
     }
 }

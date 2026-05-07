@@ -34,6 +34,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		preferredContentSize = CGSize(width: Self.preferredWidth, height: Self.preferredHeight)
 		#else
 		view = NSView(frame: NSRect(x: 0, y: 0, width: Self.preferredWidth, height: Self.preferredHeight))
+		
 		view.wantsLayer = true
 		view.layer?.backgroundColor = NSColor.black.cgColor
 		preferredContentSize = NSSize(width: Self.preferredWidth, height: Self.preferredHeight)
@@ -53,6 +54,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		NSLog("[CzVC] viewDidAppear")
 		guard let window = view.window else { return }
 		window.contentMinSize = NSSize(width: Self.minimumWidth, height: Self.minimumHeight)
+		window.contentAspectRatio = NSSize(width: Self.preferredWidth, height: Self.preferredHeight)
 	}
 
 	public override func viewDidLayout() {
