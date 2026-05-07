@@ -39,9 +39,9 @@ use cocoa;
 #[cfg(target_os = "macos")]
 use objc;
 
-use crate::{append_log, ScopeBuffer, UiInputQueue};
 #[cfg(target_os = "macos")]
 use crate::handle_ipc_invoke;
+use crate::{append_log, ScopeBuffer, UiInputQueue};
 use cosmo_synth_engine::params::SynthParams;
 
 // ─── Size constants ──────────────────────────────────────────────────────────
@@ -254,7 +254,9 @@ impl Editor for CzEditor {
                 };
 
                 let Some(resource_dir) = plugin_resource_dir() else {
-                    append_log("CzEditor::spawn: resource dir unavailable; skipping WebView creation");
+                    append_log(
+                        "CzEditor::spawn: resource dir unavailable; skipping WebView creation",
+                    );
                     return fallback_handle();
                 };
                 append_log(&format!("resource_dir: {}", resource_dir.display()));
