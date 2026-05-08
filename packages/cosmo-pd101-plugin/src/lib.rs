@@ -202,7 +202,9 @@ fn handle_ipc_invoke(
             let payload = args
                 .first()
                 .and_then(serde_json::Value::as_object)
-                .ok_or_else(|| "pitchBend expects an object payload as first argument".to_string())?;
+                .ok_or_else(|| {
+                    "pitchBend expects an object payload as first argument".to_string()
+                })?;
             let value = payload
                 .get("value")
                 .and_then(serde_json::Value::as_f64)
@@ -219,7 +221,9 @@ fn handle_ipc_invoke(
             let payload = args
                 .first()
                 .and_then(serde_json::Value::as_object)
-                .ok_or_else(|| "modWheel expects an object payload as first argument".to_string())?;
+                .ok_or_else(|| {
+                    "modWheel expects an object payload as first argument".to_string()
+                })?;
             let value = payload
                 .get("value")
                 .and_then(serde_json::Value::as_f64)
@@ -236,7 +240,9 @@ fn handle_ipc_invoke(
             let payload = args
                 .first()
                 .and_then(serde_json::Value::as_object)
-                .ok_or_else(|| "aftertouch expects an object payload as first argument".to_string())?;
+                .ok_or_else(|| {
+                    "aftertouch expects an object payload as first argument".to_string()
+                })?;
             let value = payload
                 .get("value")
                 .and_then(serde_json::Value::as_f64)
