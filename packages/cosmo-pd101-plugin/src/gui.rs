@@ -25,6 +25,7 @@
 
 use std::any::Any;
 use std::panic::{self, AssertUnwindSafe};
+use std::sync::atomic::AtomicU64;
 use std::sync::{Arc, Mutex, RwLock};
 
 use nih_plug::prelude::*;
@@ -41,7 +42,7 @@ use objc;
 
 #[cfg(target_os = "macos")]
 use crate::handle_ipc_invoke;
-use crate::{append_log, ScopeBuffer, UiInputQueue};
+use crate::{append_log, PerformanceCountersHandle, ScopeBuffer, UiInputQueue};
 use cosmo_synth_engine::params::SynthParams;
 
 // ─── Size constants ──────────────────────────────────────────────────────────
@@ -133,8 +134,10 @@ unsafe impl Send for CzEditorHandle {}
 /// nih-plug `Editor` implementation for the Cosmo PD-101 plugin.
 pub struct CzEditor {
     synth_params: Arc<RwLock<SynthParams>>,
+    synth_params_version: Arc<AtomicU64>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
+    performance_counters: PerformanceCountersHandle,
     host_scale_factor: Arc<Mutex<f32>>,
 
     /// Shared handle to the live WebView (if any).  Held by both the Editor
@@ -145,13 +148,17 @@ pub struct CzEditor {
 impl CzEditor {
     pub(crate) fn new(
         synth_params: Arc<RwLock<SynthParams>>,
+        synth_params_version: Arc<AtomicU64>,
         scope_buffer: ScopeBuffer,
         ui_input_queue: UiInputQueue,
+        performance_counters: PerformanceCountersHandle,
     ) -> Self {
         Self {
             synth_params,
+            synth_params_version,
             scope_buffer,
             ui_input_queue,
+            performance_counters,
             host_scale_factor: Arc::new(Mutex::new(1.0)),
             webview_state: Arc::new(Mutex::new(WebViewContainer { webview: None })),
         }
@@ -262,8 +269,10 @@ impl Editor for CzEditor {
                 append_log(&format!("resource_dir: {}", resource_dir.display()));
 
                 let synth_params = self.synth_params.clone();
+                let synth_params_version = self.synth_params_version.clone();
                 let scope_buffer = self.scope_buffer.clone();
                 let ui_input_queue = self.ui_input_queue.clone();
+                let performance_counters = self.performance_counters.clone();
 
                 let webview_state_for_ipc = self.webview_state.clone();
 
@@ -272,8 +281,10 @@ impl Editor for CzEditor {
                         ns_view,
                         resource_dir,
                         synth_params,
+                        synth_params_version,
                         scope_buffer,
                         ui_input_queue,
+                        performance_counters,
                         webview_state_for_ipc.clone(),
                     )
                 };
@@ -484,8 +495,10 @@ unsafe fn build_webview_from_ns_view(
     ns_view: *mut std::ffi::c_void,
     resource_dir: std::path::PathBuf,
     synth_params: Arc<RwLock<SynthParams>>,
+    synth_params_version: Arc<AtomicU64>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
+    performance_counters: PerformanceCountersHandle,
     webview_state: Arc<Mutex<WebViewContainer>>,
 ) -> (Option<wry::WebView>, Option<TempWindow>) {
     use core::ptr::NonNull;
@@ -549,8 +562,15 @@ unsafe fn build_webview_from_ns_view(
                     .cloned()
                     .unwrap_or_default();
 
-                let result =
-                    handle_ipc_invoke(method, &args, &synth_params, &scope_buffer, &ui_input_queue);
+                let result = handle_ipc_invoke(
+                    method,
+                    &args,
+                    &synth_params,
+                    &synth_params_version,
+                    &scope_buffer,
+                    &ui_input_queue,
+                    &performance_counters,
+                );
 
                 let response = match result {
                     Ok(val) => serde_json::json!({ "id": id, "result": val }),

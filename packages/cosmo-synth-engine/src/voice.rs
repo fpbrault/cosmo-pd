@@ -409,6 +409,24 @@ fn modulated_line_params(
         apply_env_step_modulation(&line.dca_env, line_index, EnvKindKey::Dca, matrix, sources);
     modded
 }
+
+#[inline]
+fn is_env_step_destination(dest: ModDestination) -> bool {
+    let dest = dest as u16;
+    dest >= ModDestination::Line1DcoEnvStep1Level as u16
+        && dest <= ModDestination::Line2DcaEnvStep8Rate as u16
+}
+
+#[inline]
+fn has_line_param_modulation(matrix: &ModMatrix) -> bool {
+    matrix.routes.iter().any(|route| {
+        route.enabled
+            && (matches!(
+                route.destination,
+                ModDestination::Line1AlgoBlend | ModDestination::Line2AlgoBlend
+            ) || is_env_step_destination(route.destination))
+    })
+}
 // ---------------------------------------------------------------------------
 // LineEnvs — per-line group of three envelope generators
 // ---------------------------------------------------------------------------
@@ -612,13 +630,22 @@ pub fn render_voice(
         mod_wheel,
         aftertouch,
     );
-    let line1_modded = modulated_line_params(&p.line1, 1, &p.mod_matrix, &preview_mod_sources);
-    let line2_modded = modulated_line_params(&p.line2, 2, &p.mod_matrix, &preview_mod_sources);
+    let line1_modded_storage;
+    let line2_modded_storage;
+    let (line1_modded, line2_modded) = if has_line_param_modulation(&p.mod_matrix) {
+        line1_modded_storage =
+            modulated_line_params(&p.line1, 1, &p.mod_matrix, &preview_mod_sources);
+        line2_modded_storage =
+            modulated_line_params(&p.line2, 2, &p.mod_matrix, &preview_mod_sources);
+        (&line1_modded_storage, &line2_modded_storage)
+    } else {
+        (&p.line1, &p.line2)
+    };
 
-    let env = advance_envelopes(voice, &line1_modded, &line2_modded, sr);
+    let env = advance_envelopes(voice, line1_modded, line2_modded, sr);
 
     if voice.is_silent {
-        advance_silent_voice(voice, &line1_modded, &line2_modded, p, sr, base_freq);
+        advance_silent_voice(voice, line1_modded, line2_modded, p, sr, base_freq);
         voice.last_output_sample = 0.0;
         voice.release_tail_level = 0.0;
         voice.anti_click_fade_len = 0;
@@ -642,8 +669,8 @@ pub fn render_voice(
     let line1_algo_param_mods = algo_param_slot_mods_for_line(1, &p.mod_matrix, &mod_sources);
     let line2_algo_param_mods = algo_param_slot_mods_for_line(2, &p.mod_matrix, &mod_sources);
     let mut signal = build_signal_state(
-        &line1_modded,
-        &line2_modded,
+        line1_modded,
+        line2_modded,
         &p.mod_matrix,
         &env,
         base_freq,
@@ -662,7 +689,7 @@ pub fn render_voice(
 
     let phase = build_phase_frame(voice, p, sr, base_freq, &mod_sources);
     let (s1, ks_raw1) = voice.algo_runtime.render_line1(LineRenderConfig::from_line(
-        &line1_modded,
+        line1_modded,
         voice.cycle_count1,
         phase.phi1,
         phase.phase_a_post,
@@ -674,7 +701,7 @@ pub fn render_voice(
         phase.pm_post_mod,
     ));
     let (s2, ks_raw2) = voice.algo_runtime.render_line2(LineRenderConfig::from_line(
-        &line2_modded,
+        line2_modded,
         voice.cycle_count2,
         phase.phi2,
         phase.phase_b_post,
@@ -692,8 +719,8 @@ pub fn render_voice(
         phase.phi2,
         s1,
         s2,
-        &line1_modded,
-        &line2_modded,
+        line1_modded,
+        line2_modded,
         voice.cycle_count1,
         voice.cycle_count2,
         ks_raw1,
