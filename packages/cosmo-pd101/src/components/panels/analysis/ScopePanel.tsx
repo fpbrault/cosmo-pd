@@ -35,6 +35,10 @@ const SCOPE_VISUALIZATION_MODES: ScopeVisualizationMode[] = [
 	"phaseBender",
 	"phaseXY",
 	"orbital",
+	"mirrorFold",
+	"constellation",
+	"ribbon",
+	"harmonicBars",
 	"spectrogram",
 ];
 
@@ -43,6 +47,10 @@ const SCOPE_VISUALIZATION_LABELS: Record<ScopeVisualizationMode, string> = {
 	phaseBender: "Bend",
 	phaseXY: "X-Y",
 	orbital: "Orb",
+	mirrorFold: "Fold",
+	constellation: "Star",
+	ribbon: "Rib",
+	harmonicBars: "Bars",
 	spectrogram: "Spec",
 };
 
@@ -375,6 +383,208 @@ function drawOrbitalScope(
 	ctx.shadowBlur = 0;
 }
 
+function drawMirrorFoldScope(
+	canvas: HTMLCanvasElement,
+	samples: Uint8Array | Float32Array,
+	hz: number,
+	sampleRate: number,
+	cycles: number,
+	triggerLevel: number,
+	zoom: number,
+) {
+	const setup = setupScopeCanvas(canvas);
+	if (!setup) return;
+	const { ctx, width, height } = setup;
+	drawScopeGrid(ctx, width, height);
+
+	const window = resolveScopeWindow(
+		samples,
+		hz,
+		sampleRate,
+		cycles,
+		triggerLevel,
+	);
+	if (window.count < 8) return;
+	const normalized = normalizeWindowedSamples(
+		samples,
+		window.start,
+		window.count,
+	);
+
+	ctx.strokeStyle = "rgba(61, 255, 61, 0.38)";
+	ctx.lineWidth = 1;
+	ctx.beginPath();
+	ctx.moveTo(width / 2, 0);
+	ctx.lineTo(width / 2, height);
+	ctx.stroke();
+
+	ctx.shadowColor = "#7dff7d";
+	ctx.shadowBlur = 7;
+	ctx.strokeStyle = "#7dff7d";
+	ctx.lineWidth = 1.8;
+	ctx.beginPath();
+	for (let i = 0; i < window.count; i++) {
+		const phase = i / (window.count - 1);
+		const amp = normalized[i] * zoom;
+		const fold = Math.abs(phase * 2 - 1);
+		const x = width / 2 + amp * (width / 2 - 10) * (1 - fold * 0.25);
+		const y = phase * height;
+		if (i === 0) {
+			ctx.moveTo(x, y);
+		} else {
+			ctx.lineTo(x, y);
+		}
+	}
+	ctx.stroke();
+	ctx.shadowBlur = 0;
+}
+
+function drawConstellationScope(
+	canvas: HTMLCanvasElement,
+	samples: Uint8Array | Float32Array,
+	hz: number,
+	sampleRate: number,
+	cycles: number,
+	triggerLevel: number,
+	zoom: number,
+) {
+	const setup = setupScopeCanvas(canvas);
+	if (!setup) return;
+	const { ctx, width, height } = setup;
+	drawScopeGrid(ctx, width, height);
+
+	const window = resolveScopeWindow(
+		samples,
+		hz,
+		sampleRate,
+		cycles,
+		triggerLevel,
+	);
+	if (window.count < 16 || !window.samplesPerCycle) return;
+	const normalized = normalizeWindowedSamples(
+		samples,
+		window.start,
+		window.count,
+	);
+
+	ctx.strokeStyle = "rgba(125, 255, 125, 0.35)";
+	ctx.lineWidth = 1;
+	ctx.beginPath();
+	for (let i = 0; i < window.count; i += 2) {
+		const phase = (i % window.samplesPerCycle) / window.samplesPerCycle;
+		const angle = phase * Math.PI * 2;
+		const radius =
+			(0.25 + Math.abs(normalized[i]) * 0.65 * zoom) *
+			Math.min(width, height) *
+			0.45;
+		const x = width / 2 + Math.cos(angle) * radius;
+		const y = height / 2 + Math.sin(angle) * radius;
+		if (i === 0) {
+			ctx.moveTo(x, y);
+		} else {
+			ctx.lineTo(x, y);
+		}
+	}
+	ctx.stroke();
+
+	ctx.fillStyle = "#98ff98";
+	for (
+		let i = 0;
+		i < window.count;
+		i += Math.max(2, Math.floor(window.samplesPerCycle / 12))
+	) {
+		const phase = (i % window.samplesPerCycle) / window.samplesPerCycle;
+		const angle = phase * Math.PI * 2;
+		const radius =
+			(0.25 + Math.abs(normalized[i]) * 0.65 * zoom) *
+			Math.min(width, height) *
+			0.45;
+		const x = width / 2 + Math.cos(angle) * radius;
+		const y = height / 2 + Math.sin(angle) * radius;
+		ctx.fillRect(x - 1, y - 1, 2, 2);
+	}
+}
+
+function drawRibbonScope(
+	canvas: HTMLCanvasElement,
+	samples: Uint8Array | Float32Array,
+	hz: number,
+	sampleRate: number,
+	cycles: number,
+	triggerLevel: number,
+	zoom: number,
+) {
+	const setup = setupScopeCanvas(canvas);
+	if (!setup) return;
+	const { ctx, width, height } = setup;
+	drawScopeGrid(ctx, width, height);
+
+	const window = resolveScopeWindow(
+		samples,
+		hz,
+		sampleRate,
+		cycles,
+		triggerLevel,
+	);
+	if (window.count < 8) return;
+	const normalized = normalizeWindowedSamples(
+		samples,
+		window.start,
+		window.count,
+	);
+
+	const layers = [
+		{ offset: -8, alpha: 0.22 },
+		{ offset: -4, alpha: 0.35 },
+		{ offset: 0, alpha: 0.9 },
+		{ offset: 4, alpha: 0.35 },
+		{ offset: 8, alpha: 0.22 },
+	];
+
+	for (const layer of layers) {
+		ctx.shadowColor = layer.offset === 0 ? "#7bff7b" : "transparent";
+		ctx.shadowBlur = layer.offset === 0 ? 8 : 0;
+		ctx.strokeStyle = `rgba(123, 255, 123, ${layer.alpha})`;
+		ctx.lineWidth = layer.offset === 0 ? 2 : 1.2;
+		ctx.beginPath();
+		for (let i = 0; i < window.count; i++) {
+			const x = (i / (window.count - 1)) * width;
+			const y =
+				height / 2 - normalized[i] * zoom * (height / 2 - 12) + layer.offset;
+			if (i === 0) {
+				ctx.moveTo(x, y);
+			} else {
+				ctx.lineTo(x, y);
+			}
+		}
+		ctx.stroke();
+	}
+	ctx.shadowBlur = 0;
+}
+
+function drawHarmonicBarsScope(
+	canvas: HTMLCanvasElement,
+	bins: Uint8Array<ArrayBufferLike>,
+) {
+	const setup = setupScopeCanvas(canvas);
+	if (!setup) return;
+	const { ctx, width, height } = setup;
+	drawScopeGrid(ctx, width, height);
+
+	const barCount = Math.max(12, Math.min(64, Math.floor(width / 6)));
+	const barBins = downsampleBins(bins, barCount);
+	const barWidth = width / barCount;
+
+	for (let i = 0; i < barCount; i++) {
+		const magnitude = (barBins[i] ?? 0) / 255;
+		const barHeight = Math.max(2, magnitude * (height - 14));
+		const x = i * barWidth + 0.6;
+		const y = height - barHeight - 2;
+		ctx.fillStyle = `rgba(126, 255, 126, ${0.18 + magnitude * 0.72})`;
+		ctx.fillRect(x, y, Math.max(1, barWidth - 1.2), barHeight);
+	}
+}
+
 function downsampleBins(
 	source: Uint8Array<ArrayBufferLike>,
 	targetBins: number,
@@ -594,6 +804,15 @@ export function ScopeMiniDisplay({
 			return;
 		}
 
+		if (mode === "harmonicBars") {
+			const bins =
+				frequencyBins && frequencyBins.length > 0
+					? frequencyBins
+					: computeDftBins(samples, SPECTROGRAM_BINS);
+			drawHarmonicBarsScope(canvas, bins);
+			return;
+		}
+
 		spectrogramStateRef.current = { width: 0, height: 0, history: null };
 
 		const mean = calculateFrameMean(samples);
@@ -636,6 +855,45 @@ export function ScopeMiniDisplay({
 
 		if (mode === "orbital") {
 			drawOrbitalScope(
+				canvas,
+				samples,
+				hz,
+				sampleRate,
+				settingsRef.current.scopeCycles,
+				triggerLevel,
+				settingsRef.current.scopeVerticalZoom,
+			);
+			return;
+		}
+
+		if (mode === "mirrorFold") {
+			drawMirrorFoldScope(
+				canvas,
+				samples,
+				hz,
+				sampleRate,
+				settingsRef.current.scopeCycles,
+				triggerLevel,
+				settingsRef.current.scopeVerticalZoom,
+			);
+			return;
+		}
+
+		if (mode === "constellation") {
+			drawConstellationScope(
+				canvas,
+				samples,
+				hz,
+				sampleRate,
+				settingsRef.current.scopeCycles,
+				triggerLevel,
+				settingsRef.current.scopeVerticalZoom,
+			);
+			return;
+		}
+
+		if (mode === "ribbon") {
+			drawRibbonScope(
 				canvas,
 				samples,
 				hz,
@@ -703,7 +961,10 @@ export function ScopeMiniDisplay({
 			const data = new Float32Array(analyserNode.fftSize);
 			analyserNode.getFloatTimeDomainData(data);
 			let frequencyBins: Uint8Array | undefined;
-			if (settingsRef.current.scopeVisualizationMode === "spectrogram") {
+			if (
+				settingsRef.current.scopeVisualizationMode === "spectrogram" ||
+				settingsRef.current.scopeVisualizationMode === "harmonicBars"
+			) {
 				frequencyBins = new Uint8Array(analyserNode.frequencyBinCount);
 				analyserNode.getByteFrequencyData(
 					frequencyBins as Uint8Array<ArrayBuffer>,
@@ -736,7 +997,7 @@ export function ScopeMiniDisplay({
 				<div className="absolute top-0.5 right-1 z-10">
 					<button
 						type="button"
-						className="rounded border border-[#3dff3d]/45 bg-black/55 px-1.5 py-0.5 font-mono text-[#8dff8d] text-[9px] tracking-wide hover:bg-black/70 hover:text-[#b8ffb8]"
+						className="rounded border border-cz-lcd-fg/45 bg-black/55 px-1.5 py-0.5 font-mono text-4xs text-[#8dff8d] tracking-wide hover:bg-black/70 hover:text-[#b8ffb8]"
 						onClick={() => setModePickerOpen((open) => !open)}
 						aria-expanded={modePickerOpen}
 						aria-label="Toggle scope mode picker"
@@ -744,17 +1005,17 @@ export function ScopeMiniDisplay({
 						Mode: {SCOPE_VISUALIZATION_LABELS[scopeVisualizationMode]}
 					</button>
 					{modePickerOpen && (
-						<div className="mt-1 flex min-w-22 flex-col rounded border border-[#3dff3d]/45 bg-black/80 p-0.5">
+						<div className="mt-1 flex min-w-22 flex-col rounded border border-cz-lcd-fg/45 bg-black/80 p-0.5">
 							{SCOPE_VISUALIZATION_MODES.map((mode) => {
 								const isActive = mode === scopeVisualizationMode;
 								return (
 									<button
 										key={mode}
 										type="button"
-										className={`rounded px-1.5 py-0.5 text-left font-mono text-[9px] tracking-wide transition-colors ${
+										className={`rounded px-1.5 py-0.5 text-left font-mono text-4xs tracking-wide transition-colors ${
 											isActive
-												? "bg-[#3dff3d]/20 text-[#b8ffb8]"
-												: "text-[#8dff8d]/85 hover:bg-[#3dff3d]/12 hover:text-[#b8ffb8]"
+												? "bg-cz-lcd-fg/20 text-[#b8ffb8]"
+												: "text-[#8dff8d]/85 hover:bg-cz-lcd-fg/12 hover:text-[#b8ffb8]"
 										}`}
 										onClick={() => {
 											setScopeVisualizationMode(mode);
@@ -769,7 +1030,7 @@ export function ScopeMiniDisplay({
 						</div>
 					)}
 				</div>
-				<canvas ref={canvasRef} className="h-[10.75rem] w-full" />
+				<canvas ref={canvasRef} className="h-43 w-full" />
 			</div>
 		</div>
 	);

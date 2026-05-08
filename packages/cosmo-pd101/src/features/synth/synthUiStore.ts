@@ -10,7 +10,11 @@ export type ScopeVisualizationMode =
 	| "phaseBender"
 	| "phaseXY"
 	| "orbital"
-	| "spectrogram";
+	| "spectrogram"
+	| "mirrorFold"
+	| "constellation"
+	| "ribbon"
+	| "harmonicBars";
 export type PhaseLinePanelTab =
 	| "line1-algos"
 	| "line2-algos"
@@ -75,6 +79,10 @@ const SCOPE_VISUALIZATION_MODES = new Set<ScopeVisualizationMode>([
 	"phaseXY",
 	"orbital",
 	"spectrogram",
+	"mirrorFold",
+	"constellation",
+	"ribbon",
+	"harmonicBars",
 ]);
 
 const DEFAULT_UI_STATE: SynthUiState = {
