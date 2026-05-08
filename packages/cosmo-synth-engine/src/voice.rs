@@ -1893,7 +1893,6 @@ mod tests {
                 1.0,
                 0.0,
                 super::LineModulationState::default(),
-                None,
                 1.0,
                 1.0,
             )
@@ -1909,7 +1908,6 @@ mod tests {
                 1.0,
                 0.0,
                 super::line_modulation_state(&modded_params.mod_matrix),
-                None,
                 1.0,
                 1.0,
             )
