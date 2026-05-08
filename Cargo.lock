@@ -6077,7 +6077,7 @@ checksum = "1ffae5123b2d3fc086436f8834ae3ab053a283cfac8fe0a0b8eaae044768a4c4"
 [[package]]
 name = "wry"
 version = "0.47.2"
-source = "git+https://github.com/fpbrault/wry?branch=cosmo-pd-patches#f85a1be795ff7a1ea40359901b82f00403c3252e"
+source = "git+https://github.com/fpbrault/wry?branch=cosmo-pd-objc-prefix-fix#0b5473674b32620ea2c6e0c4ac0fbea0f064da76"
 dependencies = [
  "base64 0.22.1",
  "block2 0.5.1",

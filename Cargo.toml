@@ -28,7 +28,7 @@ raw-window-handle = "0.5"
 clippy.unused_async = "warn"
 
 [patch.crates-io]
-wry = { git = "https://github.com/fpbrault/wry", branch = "cosmo-pd-patches" }
+wry = { git = "https://github.com/fpbrault/wry", branch = "cosmo-pd-objc-prefix-fix" }
 
 
 [profile.release]
