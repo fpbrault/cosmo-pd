@@ -36,7 +36,10 @@ async function expectAddRouteForDestination(
 		name: options.dialogName,
 	});
 	await expect(modulationMenu.first()).toBeVisible();
-	await modulationMenu.first().getByRole("button", { name: /^add$/i }).click();
+	await modulationMenu
+		.first()
+		.getByRole("button", { name: /^add\s+/i })
+		.click();
 
 	await waitForMessageMatching(page, (message) => {
 		if (message.type !== "invoke" || message.method !== "setModMatrix") {

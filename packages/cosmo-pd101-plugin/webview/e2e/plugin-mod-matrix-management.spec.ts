@@ -13,16 +13,16 @@ test.describe("Mod matrix route management", () => {
 		page,
 	}) => {
 		await page.getByRole("button", { name: /^mod$/i }).click();
-		const modSourceSelect = page.getByRole("combobox", {
-			name: /new route source/i,
-		});
-		await expect(modSourceSelect).toBeVisible();
-		const modMatrixPanel = modSourceSelect.locator(
-			"xpath=ancestor::section[1]",
-		);
+		const addRouteButton = page.getByRole("button", { name: /^add route$/i });
+		const modMatrixPanel = addRouteButton.locator("xpath=ancestor::section[1]");
+		await expect(modMatrixPanel).toBeVisible();
 
 		await page.evaluate(() => window.__MOCK_BRIDGE__?.clearMessages());
-		await modMatrixPanel.getByRole("button", { name: /^add$/i }).click();
+		await addRouteButton.click();
+		await expect(
+			page.getByRole("button", { name: /close route editor/i }),
+		).toBeVisible();
+		await page.getByRole("button", { name: /^add\s+(?!route$)/i }).click();
 		await waitForMessageMatching(page, (message) => {
 			if (message.type !== "invoke" || message.method !== "setModMatrix") {
 				return false;
@@ -41,7 +41,7 @@ test.describe("Mod matrix route management", () => {
 
 		await page.evaluate(() => window.__MOCK_BRIDGE__?.clearMessages());
 		await modMatrixPanel
-			.getByRole("button", { name: /disable route|off/i })
+			.getByRole("checkbox", { name: /disable route|enable route/i })
 			.first()
 			.click({ force: true });
 		await waitForMessageMatching(page, (message) => {
