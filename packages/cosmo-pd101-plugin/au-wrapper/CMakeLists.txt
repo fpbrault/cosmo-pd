@@ -50,7 +50,7 @@ FetchContent_MakeAvailable(clap-wrapper)
 # ---------------------------------------------------------------------------
 # AUv2 wrapper target
 #
-# Manufacturer code: "Cosm" (4 chars, registered with Apple)
+# Manufacturer code: "Pura" (4 chars, registered with Apple)
 # Subtype code:      "PD01" (4 chars, unique to this plugin)
 # Instrument type:   "aumu" — virtual instrument (not an effect)
 # CLAP plugin ID:    jp.cosmo.pd101 (must match CzPlugin::CLAP_ID in lib.rs)
@@ -62,8 +62,8 @@ target_add_auv2_wrapper(
     OUTPUT_NAME          "CosmoPd101"
     BUNDLE_IDENTIFIER    "jp.cosmo.pd101.auv2"
     BUNDLE_VERSION       "0.1.0"
-    MANUFACTURER_NAME    "Cosmo"
-    MANUFACTURER_CODE    "Cosm"
+    MANUFACTURER_NAME    "Purr Audio"
+    MANUFACTURER_CODE    "Pura"
     SUBTYPE_CODE         "PD01"
     INSTRUMENT_TYPE      "aumu"
     MACOS_EMBEDDED_CLAP_LOCATION "${CLAP_PATH}"

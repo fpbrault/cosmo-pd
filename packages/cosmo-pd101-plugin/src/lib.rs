@@ -255,7 +255,7 @@ impl CzPlugin {
 
 impl Plugin for CzPlugin {
     const NAME: &'static str = "Cosmo PD-101";
-    const VENDOR: &'static str = "Cosmo";
+    const VENDOR: &'static str = "Purr Audio";
     const URL: &'static str = "https://github.com/fpbrault/cosmo-pd";
     const EMAIL: &'static str = "";
     const VERSION: &'static str = env!("CARGO_PKG_VERSION");

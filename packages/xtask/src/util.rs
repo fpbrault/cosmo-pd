@@ -259,7 +259,7 @@ pub fn detect_bundle_identifier_prefix(package: &str, workspace_root: &Path) -> 
         }
     }
 
-    "com.cosmo".to_string()
+    "com.purraudio".to_string()
 }
 
 /// Recursively copy a directory, preserving symlinks.
