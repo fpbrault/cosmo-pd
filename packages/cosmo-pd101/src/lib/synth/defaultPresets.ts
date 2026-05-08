@@ -5481,8 +5481,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 						type: "phaseMod",
 						params: {
 							enabled: false,
-							intPmAmount: 0,
-							intPmRatio: 2,
 							pmPre: false,
 							amount: 0.01379699707031249,
 							ratio: 2,
@@ -7531,8 +7529,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 						type: "phaseMod",
 						params: {
 							enabled: false,
-							intPmAmount: 0,
-							intPmRatio: 2,
 							pmPre: false,
 							amount: 0.04171875,
 							ratio: 1,
