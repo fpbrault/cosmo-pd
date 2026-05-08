@@ -178,7 +178,7 @@ fn apply_lfo_preset(params: &mut SynthParams, preset: &str, secondary: bool) -> 
         "slowSine" => {
             lfo.waveform = LfoWaveform::Sine;
             lfo.rate = 0.6;
-            lfo.depth = 0.23;
+            lfo.depth = 1.0;
             lfo.symmetry = 0.5;
             lfo.retrigger = false;
             lfo.offset = 0.0;
@@ -187,18 +187,9 @@ fn apply_lfo_preset(params: &mut SynthParams, preset: &str, secondary: bool) -> 
         "tempoTri" => {
             lfo.waveform = LfoWaveform::Triangle;
             lfo.rate = 2.25;
-            lfo.depth = 0.48;
+            lfo.depth = 1.0;
             lfo.symmetry = 0.5;
             lfo.retrigger = true;
-            lfo.offset = 0.0;
-            true
-        }
-        "randomDrift" => {
-            lfo.waveform = LfoWaveform::Random;
-            lfo.rate = 4.4;
-            lfo.depth = 0.36;
-            lfo.symmetry = 0.5;
-            lfo.retrigger = false;
             lfo.offset = 0.0;
             true
         }

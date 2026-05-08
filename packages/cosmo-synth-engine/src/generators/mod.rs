@@ -44,6 +44,8 @@ pub struct LineRenderConfig<'a> {
     pub primary_algo_controls: Option<&'a [AlgoControlValueV1]>,
     pub secondary_algo_controls: Option<&'a [AlgoControlValueV1]>,
     pub algo_param_mods: [f32; 8],
+    /// Post-warp phase modulation offset (non-zero only when pm_pre=false).
+    pub pm_post_mod: f32,
 }
 
 impl<'a> LineRenderConfig<'a> {
@@ -59,6 +61,7 @@ impl<'a> LineRenderConfig<'a> {
         effective_freq: f32,
         sample_rate: f32,
         algo_param_mods: [f32; 8],
+        pm_post_mod: f32,
     ) -> Self {
         let primary_algo_controls = line.algo_controls_a.as_deref();
         let secondary_algo_controls = line.algo_controls_b.as_deref();
@@ -95,6 +98,7 @@ impl<'a> LineRenderConfig<'a> {
             primary_algo_controls,
             secondary_algo_controls,
             algo_param_mods,
+            pm_post_mod,
         }
     }
 }
@@ -151,6 +155,7 @@ fn render_line_stateless(config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
             config.primary_algo_controls,
             config.algo_param_mods,
             None,
+            config.pm_post_mod,
         ) * config.primary_window_gain;
         let secondary = render_algo_sample(
             secondary_algo,
@@ -160,6 +165,7 @@ fn render_line_stateless(config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
             config.secondary_algo_controls,
             config.algo_param_mods,
             None,
+            config.pm_post_mod,
         ) * config.secondary_window_gain;
         blend_line_samples(config.primary_algo, primary, secondary, config.blend)
     } else {
@@ -171,6 +177,7 @@ fn render_line_stateless(config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
             config.primary_algo_controls,
             config.algo_param_mods,
             None,
+            config.pm_post_mod,
         ) * config.primary_window_gain
     };
 
@@ -650,6 +657,7 @@ pub fn render_algo_sample(
     algo_controls: Option<&[AlgoControlValueV1]>,
     algo_param_mods: [f32; 8],
     runtime_sample: Option<f32>,
+    pm_post_mod: f32,
 ) -> f32 {
     if algo == Algo::Karpunk {
         return runtime_sample.unwrap_or(0.0);
@@ -658,7 +666,7 @@ pub fn render_algo_sample(
         return sample;
     }
     let warped = warp_phase(algo, phase, dcw, algo_controls, &algo_param_mods);
-    sample_base_wave(base_waveform, warped)
+    sample_base_wave(base_waveform, warped + pm_post_mod)
 }
 
 #[cfg(test)]
@@ -685,6 +693,7 @@ mod tests {
             primary_algo_controls: None,
             secondary_algo_controls: None,
             algo_param_mods: [0.0; 8],
+            pm_post_mod: 0.0,
         };
 
         let modded = LineRenderConfig {

@@ -88,30 +88,63 @@ pub fn random_hold_value(step_index: i32) -> f32 {
     fract * 2.0 - 1.0
 }
 
+#[inline]
+fn warp_phase_with_symmetry(phase: f32, symmetry: f32) -> f32 {
+    let p = wrap01(phase);
+    let pivot = symmetry.clamp(0.001, 0.999);
+    if p < pivot {
+        (p / pivot) * 0.5
+    } else {
+        0.5 + ((p - pivot) / (1.0 - pivot)) * 0.5
+    }
+}
+
 pub fn lfo_output_with_symmetry(phase: f32, waveform: LfoWaveform, symmetry: f32) -> f32 {
-    let sym = symmetry.clamp(0.001, 0.999);
+    let warped = warp_phase_with_symmetry(phase, symmetry);
     match waveform {
-        LfoWaveform::Sine => libm::sinf(TWO_PI * phase),
+        LfoWaveform::Sine => libm::sinf(TWO_PI * warped),
         LfoWaveform::Triangle => {
-            if phase < sym {
-                (phase / sym) * 2.0 - 1.0
+            if warped < 0.5 {
+                warped * 4.0 - 1.0
             } else {
-                1.0 - ((phase - sym) / (1.0 - sym)) * 2.0
+                3.0 - warped * 4.0
             }
         }
         LfoWaveform::Square => {
-            if phase < sym {
+            if warped < 0.5 {
                 1.0
             } else {
                 -1.0
             }
         }
-        LfoWaveform::Saw => phase * 2.0 - 1.0,
-        LfoWaveform::InvertedSaw => 1.0 - phase * 2.0,
-        LfoWaveform::Random => {
-            let steps_per_cycle = 16.0;
-            let step_index = libm::floorf(phase * steps_per_cycle) as i32;
-            random_hold_value(step_index)
-        }
+        LfoWaveform::Saw => warped * 2.0 - 1.0,
+        LfoWaveform::InvertedSaw => 1.0 - warped * 2.0,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn lfo_symmetry_modulates_saw_shape() {
+        let phase = 0.25;
+        let centered = lfo_output_with_symmetry(phase, LfoWaveform::Saw, 0.5);
+        let skewed = lfo_output_with_symmetry(phase, LfoWaveform::Saw, 0.8);
+        assert!(
+            (centered - skewed).abs() > 0.1,
+            "expected symmetry to alter saw output"
+        );
+    }
+
+    #[test]
+    fn lfo_symmetry_modulates_sine_phase() {
+        let phase = 0.2;
+        let centered = lfo_output_with_symmetry(phase, LfoWaveform::Sine, 0.5);
+        let skewed = lfo_output_with_symmetry(phase, LfoWaveform::Sine, 0.8);
+        assert!(
+            (centered - skewed).abs() > 0.01,
+            "expected symmetry to alter sine output"
+        );
     }
 }
