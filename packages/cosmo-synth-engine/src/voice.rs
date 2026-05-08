@@ -24,10 +24,8 @@ pub(crate) const ANTI_CLICK_ATTACK_SAMPLES: u32 = 64;
 /// abrupt signal discontinuities (e.g., filter resonance ringing at release).
 const ANTI_CLICK_FADE_SAMPLES: u32 = 64;
 const ANTI_CLICK_FADE_MAX_SAMPLES: u32 = 1024;
-const DCW_DEZIPPER_TIME_SECONDS: f32 = 0.0015;
 const POP_SUPPRESS_DELTA_THRESHOLD: f32 = 1.2;
 const POP_SUPPRESS_EXCESS_KEEP: f32 = 0.15;
-const RELEASE_TAIL_LEVEL_TIME_SECONDS: f32 = 0.01;
 const RELEASE_TAIL_LEVEL_THRESHOLD: f32 = 0.002;
 const ZERO_CROSS_STOP_THRESHOLD: f32 = 0.0005;
 const ZERO_CROSS_STOP_MAX_WAIT_SAMPLES: u32 = 1024;
@@ -185,22 +183,73 @@ impl ModSources {
     }
 }
 
-/// Sum all enabled routes targeting `dest`, clamping the total to [-1, 1].
-pub(crate) fn mod_value_for(dest: ModDestination, matrix: &ModMatrix, sources: &ModSources) -> f32 {
-    let mut total = 0.0_f32;
-    for route in &matrix.routes {
-        if route.enabled && route.destination == dest {
-            total += route.amount * sources.source_value(route.source);
-        }
-    }
-    total.clamp(-1.0, 1.0)
+const MOD_DESTINATION_COUNT: usize = ModDestination::EqGain8000 as usize + 1;
+
+#[derive(Debug, Clone)]
+pub(crate) struct ModValueCache {
+    values: [f32; MOD_DESTINATION_COUNT],
 }
 
-fn algo_param_slot_mods_for_line(
-    line_index: u8,
-    matrix: &ModMatrix,
-    sources: &ModSources,
-) -> [f32; 8] {
+impl ModValueCache {
+    #[inline]
+    pub(crate) fn get(&self, dest: ModDestination) -> f32 {
+        self.values[dest as usize]
+    }
+}
+
+/// Build cached modulation destination values for one render step.
+pub(crate) fn build_mod_value_cache(matrix: &ModMatrix, sources: &ModSources) -> ModValueCache {
+    if matrix.routes.is_empty() {
+        return ModValueCache {
+            values: [0.0_f32; MOD_DESTINATION_COUNT],
+        };
+    }
+
+    let mut values = [0.0_f32; MOD_DESTINATION_COUNT];
+
+    for route in &matrix.routes {
+        if !route.enabled || route.amount == 0.0 {
+            continue;
+        }
+        values[route.destination as usize] += route.amount * sources.source_value(route.source);
+    }
+
+    for value in &mut values {
+        *value = value.clamp(-1.0, 1.0);
+    }
+
+    ModValueCache { values }
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct LineModTargets {
+    pub algo_blend: bool,
+    pub dco_env: bool,
+    pub dcw_env: bool,
+    pub dca_env: bool,
+}
+
+impl LineModTargets {
+    #[inline]
+    pub(crate) fn has_any(&self) -> bool {
+        self.algo_blend || self.dco_env || self.dcw_env || self.dca_env
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct LineModulationState {
+    pub(crate) line1: LineModTargets,
+    pub(crate) line2: LineModTargets,
+}
+
+impl LineModulationState {
+    #[inline]
+    pub(crate) fn has_any(&self) -> bool {
+        self.line1.has_any() || self.line2.has_any()
+    }
+}
+
+fn algo_param_slot_mods_for_line(line_index: u8, mod_values: &ModValueCache) -> [f32; 8] {
     let destinations = if line_index == 2 {
         [
             ModDestination::Line2AlgoParam1,
@@ -227,7 +276,7 @@ fn algo_param_slot_mods_for_line(
 
     let mut out = [0.0_f32; 8];
     for (idx, dest) in destinations.iter().enumerate() {
-        out[idx] = mod_value_for(*dest, matrix, sources);
+        out[idx] = mod_values.get(*dest);
     }
     out
 }
@@ -239,119 +288,153 @@ enum EnvKindKey {
     Dca,
 }
 
-fn env_step_level_destination(
-    line_index: u8,
-    env_kind: EnvKindKey,
-    step_index: usize,
-) -> ModDestination {
-    match (line_index, env_kind, step_index) {
-        (1, EnvKindKey::Dco, 0) => ModDestination::Line1DcoEnvStep1Level,
-        (1, EnvKindKey::Dco, 1) => ModDestination::Line1DcoEnvStep2Level,
-        (1, EnvKindKey::Dco, 2) => ModDestination::Line1DcoEnvStep3Level,
-        (1, EnvKindKey::Dco, 3) => ModDestination::Line1DcoEnvStep4Level,
-        (1, EnvKindKey::Dco, 4) => ModDestination::Line1DcoEnvStep5Level,
-        (1, EnvKindKey::Dco, 5) => ModDestination::Line1DcoEnvStep6Level,
-        (1, EnvKindKey::Dco, 6) => ModDestination::Line1DcoEnvStep7Level,
-        (1, EnvKindKey::Dco, 7) => ModDestination::Line1DcoEnvStep8Level,
-        (1, EnvKindKey::Dcw, 0) => ModDestination::Line1DcwEnvStep1Level,
-        (1, EnvKindKey::Dcw, 1) => ModDestination::Line1DcwEnvStep2Level,
-        (1, EnvKindKey::Dcw, 2) => ModDestination::Line1DcwEnvStep3Level,
-        (1, EnvKindKey::Dcw, 3) => ModDestination::Line1DcwEnvStep4Level,
-        (1, EnvKindKey::Dcw, 4) => ModDestination::Line1DcwEnvStep5Level,
-        (1, EnvKindKey::Dcw, 5) => ModDestination::Line1DcwEnvStep6Level,
-        (1, EnvKindKey::Dcw, 6) => ModDestination::Line1DcwEnvStep7Level,
-        (1, EnvKindKey::Dcw, 7) => ModDestination::Line1DcwEnvStep8Level,
-        (1, EnvKindKey::Dca, 0) => ModDestination::Line1DcaEnvStep1Level,
-        (1, EnvKindKey::Dca, 1) => ModDestination::Line1DcaEnvStep2Level,
-        (1, EnvKindKey::Dca, 2) => ModDestination::Line1DcaEnvStep3Level,
-        (1, EnvKindKey::Dca, 3) => ModDestination::Line1DcaEnvStep4Level,
-        (1, EnvKindKey::Dca, 4) => ModDestination::Line1DcaEnvStep5Level,
-        (1, EnvKindKey::Dca, 5) => ModDestination::Line1DcaEnvStep6Level,
-        (1, EnvKindKey::Dca, 6) => ModDestination::Line1DcaEnvStep7Level,
-        (1, EnvKindKey::Dca, 7) => ModDestination::Line1DcaEnvStep8Level,
-        (2, EnvKindKey::Dco, 0) => ModDestination::Line2DcoEnvStep1Level,
-        (2, EnvKindKey::Dco, 1) => ModDestination::Line2DcoEnvStep2Level,
-        (2, EnvKindKey::Dco, 2) => ModDestination::Line2DcoEnvStep3Level,
-        (2, EnvKindKey::Dco, 3) => ModDestination::Line2DcoEnvStep4Level,
-        (2, EnvKindKey::Dco, 4) => ModDestination::Line2DcoEnvStep5Level,
-        (2, EnvKindKey::Dco, 5) => ModDestination::Line2DcoEnvStep6Level,
-        (2, EnvKindKey::Dco, 6) => ModDestination::Line2DcoEnvStep7Level,
-        (2, EnvKindKey::Dco, 7) => ModDestination::Line2DcoEnvStep8Level,
-        (2, EnvKindKey::Dcw, 0) => ModDestination::Line2DcwEnvStep1Level,
-        (2, EnvKindKey::Dcw, 1) => ModDestination::Line2DcwEnvStep2Level,
-        (2, EnvKindKey::Dcw, 2) => ModDestination::Line2DcwEnvStep3Level,
-        (2, EnvKindKey::Dcw, 3) => ModDestination::Line2DcwEnvStep4Level,
-        (2, EnvKindKey::Dcw, 4) => ModDestination::Line2DcwEnvStep5Level,
-        (2, EnvKindKey::Dcw, 5) => ModDestination::Line2DcwEnvStep6Level,
-        (2, EnvKindKey::Dcw, 6) => ModDestination::Line2DcwEnvStep7Level,
-        (2, EnvKindKey::Dcw, 7) => ModDestination::Line2DcwEnvStep8Level,
-        (2, EnvKindKey::Dca, 0) => ModDestination::Line2DcaEnvStep1Level,
-        (2, EnvKindKey::Dca, 1) => ModDestination::Line2DcaEnvStep2Level,
-        (2, EnvKindKey::Dca, 2) => ModDestination::Line2DcaEnvStep3Level,
-        (2, EnvKindKey::Dca, 3) => ModDestination::Line2DcaEnvStep4Level,
-        (2, EnvKindKey::Dca, 4) => ModDestination::Line2DcaEnvStep5Level,
-        (2, EnvKindKey::Dca, 5) => ModDestination::Line2DcaEnvStep6Level,
-        (2, EnvKindKey::Dca, 6) => ModDestination::Line2DcaEnvStep7Level,
-        (2, EnvKindKey::Dca, 7) => ModDestination::Line2DcaEnvStep8Level,
-        _ => ModDestination::Volume,
-    }
-}
+const LINE1_DCO_LEVEL_DESTS: [ModDestination; NUM_ENV_STEPS] = [
+    ModDestination::Line1DcoEnvStep1Level,
+    ModDestination::Line1DcoEnvStep2Level,
+    ModDestination::Line1DcoEnvStep3Level,
+    ModDestination::Line1DcoEnvStep4Level,
+    ModDestination::Line1DcoEnvStep5Level,
+    ModDestination::Line1DcoEnvStep6Level,
+    ModDestination::Line1DcoEnvStep7Level,
+    ModDestination::Line1DcoEnvStep8Level,
+];
 
-fn env_step_rate_destination(
+const LINE1_DCO_RATE_DESTS: [ModDestination; NUM_ENV_STEPS] = [
+    ModDestination::Line1DcoEnvStep1Rate,
+    ModDestination::Line1DcoEnvStep2Rate,
+    ModDestination::Line1DcoEnvStep3Rate,
+    ModDestination::Line1DcoEnvStep4Rate,
+    ModDestination::Line1DcoEnvStep5Rate,
+    ModDestination::Line1DcoEnvStep6Rate,
+    ModDestination::Line1DcoEnvStep7Rate,
+    ModDestination::Line1DcoEnvStep8Rate,
+];
+
+const LINE1_DCW_LEVEL_DESTS: [ModDestination; NUM_ENV_STEPS] = [
+    ModDestination::Line1DcwEnvStep1Level,
+    ModDestination::Line1DcwEnvStep2Level,
+    ModDestination::Line1DcwEnvStep3Level,
+    ModDestination::Line1DcwEnvStep4Level,
+    ModDestination::Line1DcwEnvStep5Level,
+    ModDestination::Line1DcwEnvStep6Level,
+    ModDestination::Line1DcwEnvStep7Level,
+    ModDestination::Line1DcwEnvStep8Level,
+];
+
+const LINE1_DCW_RATE_DESTS: [ModDestination; NUM_ENV_STEPS] = [
+    ModDestination::Line1DcwEnvStep1Rate,
+    ModDestination::Line1DcwEnvStep2Rate,
+    ModDestination::Line1DcwEnvStep3Rate,
+    ModDestination::Line1DcwEnvStep4Rate,
+    ModDestination::Line1DcwEnvStep5Rate,
+    ModDestination::Line1DcwEnvStep6Rate,
+    ModDestination::Line1DcwEnvStep7Rate,
+    ModDestination::Line1DcwEnvStep8Rate,
+];
+
+const LINE1_DCA_LEVEL_DESTS: [ModDestination; NUM_ENV_STEPS] = [
+    ModDestination::Line1DcaEnvStep1Level,
+    ModDestination::Line1DcaEnvStep2Level,
+    ModDestination::Line1DcaEnvStep3Level,
+    ModDestination::Line1DcaEnvStep4Level,
+    ModDestination::Line1DcaEnvStep5Level,
+    ModDestination::Line1DcaEnvStep6Level,
+    ModDestination::Line1DcaEnvStep7Level,
+    ModDestination::Line1DcaEnvStep8Level,
+];
+
+const LINE1_DCA_RATE_DESTS: [ModDestination; NUM_ENV_STEPS] = [
+    ModDestination::Line1DcaEnvStep1Rate,
+    ModDestination::Line1DcaEnvStep2Rate,
+    ModDestination::Line1DcaEnvStep3Rate,
+    ModDestination::Line1DcaEnvStep4Rate,
+    ModDestination::Line1DcaEnvStep5Rate,
+    ModDestination::Line1DcaEnvStep6Rate,
+    ModDestination::Line1DcaEnvStep7Rate,
+    ModDestination::Line1DcaEnvStep8Rate,
+];
+
+const LINE2_DCO_LEVEL_DESTS: [ModDestination; NUM_ENV_STEPS] = [
+    ModDestination::Line2DcoEnvStep1Level,
+    ModDestination::Line2DcoEnvStep2Level,
+    ModDestination::Line2DcoEnvStep3Level,
+    ModDestination::Line2DcoEnvStep4Level,
+    ModDestination::Line2DcoEnvStep5Level,
+    ModDestination::Line2DcoEnvStep6Level,
+    ModDestination::Line2DcoEnvStep7Level,
+    ModDestination::Line2DcoEnvStep8Level,
+];
+
+const LINE2_DCO_RATE_DESTS: [ModDestination; NUM_ENV_STEPS] = [
+    ModDestination::Line2DcoEnvStep1Rate,
+    ModDestination::Line2DcoEnvStep2Rate,
+    ModDestination::Line2DcoEnvStep3Rate,
+    ModDestination::Line2DcoEnvStep4Rate,
+    ModDestination::Line2DcoEnvStep5Rate,
+    ModDestination::Line2DcoEnvStep6Rate,
+    ModDestination::Line2DcoEnvStep7Rate,
+    ModDestination::Line2DcoEnvStep8Rate,
+];
+
+const LINE2_DCW_LEVEL_DESTS: [ModDestination; NUM_ENV_STEPS] = [
+    ModDestination::Line2DcwEnvStep1Level,
+    ModDestination::Line2DcwEnvStep2Level,
+    ModDestination::Line2DcwEnvStep3Level,
+    ModDestination::Line2DcwEnvStep4Level,
+    ModDestination::Line2DcwEnvStep5Level,
+    ModDestination::Line2DcwEnvStep6Level,
+    ModDestination::Line2DcwEnvStep7Level,
+    ModDestination::Line2DcwEnvStep8Level,
+];
+
+const LINE2_DCW_RATE_DESTS: [ModDestination; NUM_ENV_STEPS] = [
+    ModDestination::Line2DcwEnvStep1Rate,
+    ModDestination::Line2DcwEnvStep2Rate,
+    ModDestination::Line2DcwEnvStep3Rate,
+    ModDestination::Line2DcwEnvStep4Rate,
+    ModDestination::Line2DcwEnvStep5Rate,
+    ModDestination::Line2DcwEnvStep6Rate,
+    ModDestination::Line2DcwEnvStep7Rate,
+    ModDestination::Line2DcwEnvStep8Rate,
+];
+
+const LINE2_DCA_LEVEL_DESTS: [ModDestination; NUM_ENV_STEPS] = [
+    ModDestination::Line2DcaEnvStep1Level,
+    ModDestination::Line2DcaEnvStep2Level,
+    ModDestination::Line2DcaEnvStep3Level,
+    ModDestination::Line2DcaEnvStep4Level,
+    ModDestination::Line2DcaEnvStep5Level,
+    ModDestination::Line2DcaEnvStep6Level,
+    ModDestination::Line2DcaEnvStep7Level,
+    ModDestination::Line2DcaEnvStep8Level,
+];
+
+const LINE2_DCA_RATE_DESTS: [ModDestination; NUM_ENV_STEPS] = [
+    ModDestination::Line2DcaEnvStep1Rate,
+    ModDestination::Line2DcaEnvStep2Rate,
+    ModDestination::Line2DcaEnvStep3Rate,
+    ModDestination::Line2DcaEnvStep4Rate,
+    ModDestination::Line2DcaEnvStep5Rate,
+    ModDestination::Line2DcaEnvStep6Rate,
+    ModDestination::Line2DcaEnvStep7Rate,
+    ModDestination::Line2DcaEnvStep8Rate,
+];
+
+#[inline]
+fn env_step_destinations(
     line_index: u8,
     env_kind: EnvKindKey,
-    step_index: usize,
-) -> ModDestination {
-    match (line_index, env_kind, step_index) {
-        (1, EnvKindKey::Dco, 0) => ModDestination::Line1DcoEnvStep1Rate,
-        (1, EnvKindKey::Dco, 1) => ModDestination::Line1DcoEnvStep2Rate,
-        (1, EnvKindKey::Dco, 2) => ModDestination::Line1DcoEnvStep3Rate,
-        (1, EnvKindKey::Dco, 3) => ModDestination::Line1DcoEnvStep4Rate,
-        (1, EnvKindKey::Dco, 4) => ModDestination::Line1DcoEnvStep5Rate,
-        (1, EnvKindKey::Dco, 5) => ModDestination::Line1DcoEnvStep6Rate,
-        (1, EnvKindKey::Dco, 6) => ModDestination::Line1DcoEnvStep7Rate,
-        (1, EnvKindKey::Dco, 7) => ModDestination::Line1DcoEnvStep8Rate,
-        (1, EnvKindKey::Dcw, 0) => ModDestination::Line1DcwEnvStep1Rate,
-        (1, EnvKindKey::Dcw, 1) => ModDestination::Line1DcwEnvStep2Rate,
-        (1, EnvKindKey::Dcw, 2) => ModDestination::Line1DcwEnvStep3Rate,
-        (1, EnvKindKey::Dcw, 3) => ModDestination::Line1DcwEnvStep4Rate,
-        (1, EnvKindKey::Dcw, 4) => ModDestination::Line1DcwEnvStep5Rate,
-        (1, EnvKindKey::Dcw, 5) => ModDestination::Line1DcwEnvStep6Rate,
-        (1, EnvKindKey::Dcw, 6) => ModDestination::Line1DcwEnvStep7Rate,
-        (1, EnvKindKey::Dcw, 7) => ModDestination::Line1DcwEnvStep8Rate,
-        (1, EnvKindKey::Dca, 0) => ModDestination::Line1DcaEnvStep1Rate,
-        (1, EnvKindKey::Dca, 1) => ModDestination::Line1DcaEnvStep2Rate,
-        (1, EnvKindKey::Dca, 2) => ModDestination::Line1DcaEnvStep3Rate,
-        (1, EnvKindKey::Dca, 3) => ModDestination::Line1DcaEnvStep4Rate,
-        (1, EnvKindKey::Dca, 4) => ModDestination::Line1DcaEnvStep5Rate,
-        (1, EnvKindKey::Dca, 5) => ModDestination::Line1DcaEnvStep6Rate,
-        (1, EnvKindKey::Dca, 6) => ModDestination::Line1DcaEnvStep7Rate,
-        (1, EnvKindKey::Dca, 7) => ModDestination::Line1DcaEnvStep8Rate,
-        (2, EnvKindKey::Dco, 0) => ModDestination::Line2DcoEnvStep1Rate,
-        (2, EnvKindKey::Dco, 1) => ModDestination::Line2DcoEnvStep2Rate,
-        (2, EnvKindKey::Dco, 2) => ModDestination::Line2DcoEnvStep3Rate,
-        (2, EnvKindKey::Dco, 3) => ModDestination::Line2DcoEnvStep4Rate,
-        (2, EnvKindKey::Dco, 4) => ModDestination::Line2DcoEnvStep5Rate,
-        (2, EnvKindKey::Dco, 5) => ModDestination::Line2DcoEnvStep6Rate,
-        (2, EnvKindKey::Dco, 6) => ModDestination::Line2DcoEnvStep7Rate,
-        (2, EnvKindKey::Dco, 7) => ModDestination::Line2DcoEnvStep8Rate,
-        (2, EnvKindKey::Dcw, 0) => ModDestination::Line2DcwEnvStep1Rate,
-        (2, EnvKindKey::Dcw, 1) => ModDestination::Line2DcwEnvStep2Rate,
-        (2, EnvKindKey::Dcw, 2) => ModDestination::Line2DcwEnvStep3Rate,
-        (2, EnvKindKey::Dcw, 3) => ModDestination::Line2DcwEnvStep4Rate,
-        (2, EnvKindKey::Dcw, 4) => ModDestination::Line2DcwEnvStep5Rate,
-        (2, EnvKindKey::Dcw, 5) => ModDestination::Line2DcwEnvStep6Rate,
-        (2, EnvKindKey::Dcw, 6) => ModDestination::Line2DcwEnvStep7Rate,
-        (2, EnvKindKey::Dcw, 7) => ModDestination::Line2DcwEnvStep8Rate,
-        (2, EnvKindKey::Dca, 0) => ModDestination::Line2DcaEnvStep1Rate,
-        (2, EnvKindKey::Dca, 1) => ModDestination::Line2DcaEnvStep2Rate,
-        (2, EnvKindKey::Dca, 2) => ModDestination::Line2DcaEnvStep3Rate,
-        (2, EnvKindKey::Dca, 3) => ModDestination::Line2DcaEnvStep4Rate,
-        (2, EnvKindKey::Dca, 4) => ModDestination::Line2DcaEnvStep5Rate,
-        (2, EnvKindKey::Dca, 5) => ModDestination::Line2DcaEnvStep6Rate,
-        (2, EnvKindKey::Dca, 6) => ModDestination::Line2DcaEnvStep7Rate,
-        (2, EnvKindKey::Dca, 7) => ModDestination::Line2DcaEnvStep8Rate,
-        _ => ModDestination::Volume,
+) -> (
+    &'static [ModDestination; NUM_ENV_STEPS],
+    &'static [ModDestination; NUM_ENV_STEPS],
+) {
+    match (line_index, env_kind) {
+        (2, EnvKindKey::Dco) => (&LINE2_DCO_LEVEL_DESTS, &LINE2_DCO_RATE_DESTS),
+        (2, EnvKindKey::Dcw) => (&LINE2_DCW_LEVEL_DESTS, &LINE2_DCW_RATE_DESTS),
+        (2, EnvKindKey::Dca) => (&LINE2_DCA_LEVEL_DESTS, &LINE2_DCA_RATE_DESTS),
+        (_, EnvKindKey::Dco) => (&LINE1_DCO_LEVEL_DESTS, &LINE1_DCO_RATE_DESTS),
+        (_, EnvKindKey::Dcw) => (&LINE1_DCW_LEVEL_DESTS, &LINE1_DCW_RATE_DESTS),
+        (_, EnvKindKey::Dca) => (&LINE1_DCA_LEVEL_DESTS, &LINE1_DCA_RATE_DESTS),
     }
 }
 
@@ -359,17 +442,14 @@ fn apply_env_step_modulation(
     env: &StepEnvData,
     line_index: u8,
     env_kind: EnvKindKey,
-    matrix: &ModMatrix,
-    sources: &ModSources,
+    mod_values: &ModValueCache,
 ) -> StepEnvData {
     let mut modded = env.clone();
+    let (level_dests, rate_dests) = env_step_destinations(line_index, env_kind);
 
     for step_index in 0..NUM_ENV_STEPS {
-        let level_dest = env_step_level_destination(line_index, env_kind, step_index);
-        let rate_dest = env_step_rate_destination(line_index, env_kind, step_index);
-
-        let level_mod = mod_value_for(level_dest, matrix, sources);
-        let rate_mod = mod_value_for(rate_dest, matrix, sources);
+        let level_mod = mod_values.get(level_dests[step_index]);
+        let rate_mod = mod_values.get(rate_dests[step_index]);
 
         let step: &mut EnvStep = &mut modded.steps[step_index];
         let next_level = (step.level as f32 + level_mod * 127.0)
@@ -388,45 +468,148 @@ fn apply_env_step_modulation(
 fn modulated_line_params(
     line: &LineParams,
     line_index: u8,
-    matrix: &ModMatrix,
-    sources: &ModSources,
+    mod_values: &ModValueCache,
+    targets: LineModTargets,
 ) -> LineParams {
-    let algo_blend_dest = if line_index == 2 {
-        ModDestination::Line2AlgoBlend
-    } else {
-        ModDestination::Line1AlgoBlend
-    };
-
-    let algo_blend_mod = mod_value_for(algo_blend_dest, matrix, sources);
-
     let mut modded = line.clone();
-    modded.algo_blend = (line.algo_blend + algo_blend_mod).clamp(0.0, 1.0);
-    modded.dco_env =
-        apply_env_step_modulation(&line.dco_env, line_index, EnvKindKey::Dco, matrix, sources);
-    modded.dcw_env =
-        apply_env_step_modulation(&line.dcw_env, line_index, EnvKindKey::Dcw, matrix, sources);
-    modded.dca_env =
-        apply_env_step_modulation(&line.dca_env, line_index, EnvKindKey::Dca, matrix, sources);
+    if targets.algo_blend {
+        let algo_blend_dest = if line_index == 2 {
+            ModDestination::Line2AlgoBlend
+        } else {
+            ModDestination::Line1AlgoBlend
+        };
+        modded.algo_blend = (line.algo_blend + mod_values.get(algo_blend_dest)).clamp(0.0, 1.0);
+    }
+    if targets.dco_env {
+        modded.dco_env =
+            apply_env_step_modulation(&line.dco_env, line_index, EnvKindKey::Dco, mod_values);
+    }
+    if targets.dcw_env {
+        modded.dcw_env =
+            apply_env_step_modulation(&line.dcw_env, line_index, EnvKindKey::Dcw, mod_values);
+    }
+    if targets.dca_env {
+        modded.dca_env =
+            apply_env_step_modulation(&line.dca_env, line_index, EnvKindKey::Dca, mod_values);
+    }
     modded
 }
 
 #[inline]
-fn is_env_step_destination(dest: ModDestination) -> bool {
-    let dest = dest as u16;
-    dest >= ModDestination::Line1DcoEnvStep1Level as u16
-        && dest <= ModDestination::Line2DcaEnvStep8Rate as u16
+pub(crate) fn line_modulation_state(matrix: &ModMatrix) -> LineModulationState {
+    let mut state = LineModulationState::default();
+
+    for route in &matrix.routes {
+        if !route.enabled {
+            continue;
+        }
+
+        match route.destination {
+            ModDestination::Line1AlgoBlend => state.line1.algo_blend = true,
+            ModDestination::Line2AlgoBlend => state.line2.algo_blend = true,
+            ModDestination::Line1DcoEnvStep1Level
+            | ModDestination::Line1DcoEnvStep1Rate
+            | ModDestination::Line1DcoEnvStep2Level
+            | ModDestination::Line1DcoEnvStep2Rate
+            | ModDestination::Line1DcoEnvStep3Level
+            | ModDestination::Line1DcoEnvStep3Rate
+            | ModDestination::Line1DcoEnvStep4Level
+            | ModDestination::Line1DcoEnvStep4Rate
+            | ModDestination::Line1DcoEnvStep5Level
+            | ModDestination::Line1DcoEnvStep5Rate
+            | ModDestination::Line1DcoEnvStep6Level
+            | ModDestination::Line1DcoEnvStep6Rate
+            | ModDestination::Line1DcoEnvStep7Level
+            | ModDestination::Line1DcoEnvStep7Rate
+            | ModDestination::Line1DcoEnvStep8Level
+            | ModDestination::Line1DcoEnvStep8Rate => state.line1.dco_env = true,
+            ModDestination::Line1DcwEnvStep1Level
+            | ModDestination::Line1DcwEnvStep1Rate
+            | ModDestination::Line1DcwEnvStep2Level
+            | ModDestination::Line1DcwEnvStep2Rate
+            | ModDestination::Line1DcwEnvStep3Level
+            | ModDestination::Line1DcwEnvStep3Rate
+            | ModDestination::Line1DcwEnvStep4Level
+            | ModDestination::Line1DcwEnvStep4Rate
+            | ModDestination::Line1DcwEnvStep5Level
+            | ModDestination::Line1DcwEnvStep5Rate
+            | ModDestination::Line1DcwEnvStep6Level
+            | ModDestination::Line1DcwEnvStep6Rate
+            | ModDestination::Line1DcwEnvStep7Level
+            | ModDestination::Line1DcwEnvStep7Rate
+            | ModDestination::Line1DcwEnvStep8Level
+            | ModDestination::Line1DcwEnvStep8Rate => state.line1.dcw_env = true,
+            ModDestination::Line1DcaEnvStep1Level
+            | ModDestination::Line1DcaEnvStep1Rate
+            | ModDestination::Line1DcaEnvStep2Level
+            | ModDestination::Line1DcaEnvStep2Rate
+            | ModDestination::Line1DcaEnvStep3Level
+            | ModDestination::Line1DcaEnvStep3Rate
+            | ModDestination::Line1DcaEnvStep4Level
+            | ModDestination::Line1DcaEnvStep4Rate
+            | ModDestination::Line1DcaEnvStep5Level
+            | ModDestination::Line1DcaEnvStep5Rate
+            | ModDestination::Line1DcaEnvStep6Level
+            | ModDestination::Line1DcaEnvStep6Rate
+            | ModDestination::Line1DcaEnvStep7Level
+            | ModDestination::Line1DcaEnvStep7Rate
+            | ModDestination::Line1DcaEnvStep8Level
+            | ModDestination::Line1DcaEnvStep8Rate => state.line1.dca_env = true,
+            ModDestination::Line2DcoEnvStep1Level
+            | ModDestination::Line2DcoEnvStep1Rate
+            | ModDestination::Line2DcoEnvStep2Level
+            | ModDestination::Line2DcoEnvStep2Rate
+            | ModDestination::Line2DcoEnvStep3Level
+            | ModDestination::Line2DcoEnvStep3Rate
+            | ModDestination::Line2DcoEnvStep4Level
+            | ModDestination::Line2DcoEnvStep4Rate
+            | ModDestination::Line2DcoEnvStep5Level
+            | ModDestination::Line2DcoEnvStep5Rate
+            | ModDestination::Line2DcoEnvStep6Level
+            | ModDestination::Line2DcoEnvStep6Rate
+            | ModDestination::Line2DcoEnvStep7Level
+            | ModDestination::Line2DcoEnvStep7Rate
+            | ModDestination::Line2DcoEnvStep8Level
+            | ModDestination::Line2DcoEnvStep8Rate => state.line2.dco_env = true,
+            ModDestination::Line2DcwEnvStep1Level
+            | ModDestination::Line2DcwEnvStep1Rate
+            | ModDestination::Line2DcwEnvStep2Level
+            | ModDestination::Line2DcwEnvStep2Rate
+            | ModDestination::Line2DcwEnvStep3Level
+            | ModDestination::Line2DcwEnvStep3Rate
+            | ModDestination::Line2DcwEnvStep4Level
+            | ModDestination::Line2DcwEnvStep4Rate
+            | ModDestination::Line2DcwEnvStep5Level
+            | ModDestination::Line2DcwEnvStep5Rate
+            | ModDestination::Line2DcwEnvStep6Level
+            | ModDestination::Line2DcwEnvStep6Rate
+            | ModDestination::Line2DcwEnvStep7Level
+            | ModDestination::Line2DcwEnvStep7Rate
+            | ModDestination::Line2DcwEnvStep8Level
+            | ModDestination::Line2DcwEnvStep8Rate => state.line2.dcw_env = true,
+            ModDestination::Line2DcaEnvStep1Level
+            | ModDestination::Line2DcaEnvStep1Rate
+            | ModDestination::Line2DcaEnvStep2Level
+            | ModDestination::Line2DcaEnvStep2Rate
+            | ModDestination::Line2DcaEnvStep3Level
+            | ModDestination::Line2DcaEnvStep3Rate
+            | ModDestination::Line2DcaEnvStep4Level
+            | ModDestination::Line2DcaEnvStep4Rate
+            | ModDestination::Line2DcaEnvStep5Level
+            | ModDestination::Line2DcaEnvStep5Rate
+            | ModDestination::Line2DcaEnvStep6Level
+            | ModDestination::Line2DcaEnvStep6Rate
+            | ModDestination::Line2DcaEnvStep7Level
+            | ModDestination::Line2DcaEnvStep7Rate
+            | ModDestination::Line2DcaEnvStep8Level
+            | ModDestination::Line2DcaEnvStep8Rate => state.line2.dca_env = true,
+            _ => {}
+        }
+    }
+
+    state
 }
 
-#[inline]
-fn has_line_param_modulation(matrix: &ModMatrix) -> bool {
-    matrix.routes.iter().any(|route| {
-        route.enabled
-            && (matches!(
-                route.destination,
-                ModDestination::Line1AlgoBlend | ModDestination::Line2AlgoBlend
-            ) || is_env_step_destination(route.destination))
-    })
-}
 // ---------------------------------------------------------------------------
 // LineEnvs — per-line group of three envelope generators
 // ---------------------------------------------------------------------------
@@ -605,17 +788,19 @@ struct PhaseFrame {
 /// * `lfo_mod_val` – pre-computed LFO output value for this sample
 /// * `lfo2_mod_val` – pre-computed LFO2 output value for this sample
 /// * `sr`          – sample rate in Hz
-#[allow(clippy::too_many_arguments)]
-pub fn render_voice(
+pub(crate) fn render_voice(
     voice: &mut Voice,
     p: &SynthParams,
     lfo_mod_val: f32,
     lfo2_mod_val: f32,
     random_mod_val: f32,
     sr: f32,
-    pitch_bend_semitones: f32,
+    pitch_bend_ratio: f32,
     mod_wheel: f32,
     aftertouch: f32,
+    line_modulation_state: LineModulationState,
+    dcw_dezipper_alpha: f32,
+    release_tail_alpha: f32,
 ) -> f32 {
     let base_freq = base_voice_frequency(voice);
 
@@ -632,12 +817,31 @@ pub fn render_voice(
     );
     let line1_modded_storage;
     let line2_modded_storage;
-    let (line1_modded, line2_modded) = if has_line_param_modulation(&p.mod_matrix) {
-        line1_modded_storage =
-            modulated_line_params(&p.line1, 1, &p.mod_matrix, &preview_mod_sources);
-        line2_modded_storage =
-            modulated_line_params(&p.line2, 2, &p.mod_matrix, &preview_mod_sources);
-        (&line1_modded_storage, &line2_modded_storage)
+    let (line1_modded, line2_modded) = if line_modulation_state.has_any() {
+        let preview_mod_values = build_mod_value_cache(&p.mod_matrix, &preview_mod_sources);
+        let line1 = if line_modulation_state.line1.has_any() {
+            line1_modded_storage = modulated_line_params(
+                &p.line1,
+                1,
+                &preview_mod_values,
+                line_modulation_state.line1,
+            );
+            &line1_modded_storage
+        } else {
+            &p.line1
+        };
+        let line2 = if line_modulation_state.line2.has_any() {
+            line2_modded_storage = modulated_line_params(
+                &p.line2,
+                2,
+                &preview_mod_values,
+                line_modulation_state.line2,
+            );
+            &line2_modded_storage
+        } else {
+            &p.line2
+        };
+        (line1, line2)
     } else {
         (&p.line1, &p.line2)
     };
@@ -666,28 +870,22 @@ pub fn render_voice(
         mod_wheel,
         aftertouch,
     );
-    let line1_algo_param_mods = algo_param_slot_mods_for_line(1, &p.mod_matrix, &mod_sources);
-    let line2_algo_param_mods = algo_param_slot_mods_for_line(2, &p.mod_matrix, &mod_sources);
-    let mut signal = build_signal_state(
-        line1_modded,
-        line2_modded,
-        &p.mod_matrix,
-        &env,
-        base_freq,
-        &mod_sources,
-    );
-    apply_dcw_dezipper(voice, sr, &mut signal);
+    let mod_values = build_mod_value_cache(&p.mod_matrix, &mod_sources);
+    let line1_algo_param_mods = algo_param_slot_mods_for_line(1, &mod_values);
+    let line2_algo_param_mods = algo_param_slot_mods_for_line(2, &mod_values);
+    let mut signal = build_signal_state(line1_modded, line2_modded, &mod_values, &env, base_freq);
+    apply_dcw_dezipper(voice, dcw_dezipper_alpha, &mut signal);
     apply_pitch_and_lfo_modulation(
         voice,
         p,
         sr,
         base_freq,
-        pitch_bend_semitones,
-        &mod_sources,
+        pitch_bend_ratio,
+        &mod_values,
         &mut signal,
     );
 
-    let phase = build_phase_frame(voice, p, sr, base_freq, &mod_sources);
+    let phase = build_phase_frame(voice, p, sr, base_freq, &mod_values);
     let (s1, ks_raw1) = voice.algo_runtime.render_line1(LineRenderConfig::from_line(
         line1_modded,
         voice.cycle_count1,
@@ -734,11 +932,11 @@ pub fn render_voice(
     );
 
     // Apply volume modulation from mod matrix
-    let volume_mod = mod_value_for(ModDestination::Volume, &p.mod_matrix, &mod_sources);
+    let volume_mod = mod_values.get(ModDestination::Volume);
     let mut sample = sample * (1.0 + volume_mod);
 
-    let tail_alpha = 1.0 - libm::expf(-1.0 / (RELEASE_TAIL_LEVEL_TIME_SECONDS * sr.max(1.0)));
-    voice.release_tail_level += (libm::fabsf(sample) - voice.release_tail_level) * tail_alpha;
+    voice.release_tail_level +=
+        (libm::fabsf(sample) - voice.release_tail_level) * release_tail_alpha;
 
     // Start a short fade when the release tail is near silence.
     // Use both envelope and signal-level checks: the signal check catches
@@ -750,7 +948,8 @@ pub fn render_voice(
         let tail_near_silence = voice.release_tail_level < RELEASE_TAIL_LEVEL_THRESHOLD;
         let instant_near_silence = libm::fabsf(sample) < RELEASE_TAIL_LEVEL_THRESHOLD * 2.0;
 
-        if (env_near_silence || tail_near_silence) && instant_near_silence {
+        if (tail_near_silence && instant_near_silence) || (env_near_silence && instant_near_silence)
+        {
             let min_freq = signal.effective_freq1.min(signal.effective_freq2).max(20.0);
             let half_cycle_samples = (sr / min_freq / 2.0).round() as u32;
             let fade_len = half_cycle_samples
@@ -929,19 +1128,18 @@ fn advance_silent_voice(
 fn build_signal_state(
     line1: &LineParams,
     line2: &LineParams,
-    matrix: &ModMatrix,
+    mod_values: &ModValueCache,
     env: &EnvelopeSnapshot,
     base_freq: f32,
-    sources: &ModSources,
 ) -> SignalState {
     let dca1_level = line1.dca_base * cz_dca_env_gain(env.dca1);
     let dca2_level = line2.dca_base * cz_dca_env_gain(env.dca2);
 
     // Mod matrix offsets for DCW/DCA
-    let dcw1_mod = mod_value_for(ModDestination::Line1DcwBase, matrix, sources);
-    let dcw2_mod = mod_value_for(ModDestination::Line2DcwBase, matrix, sources);
-    let dca1_mod = mod_value_for(ModDestination::Line1DcaBase, matrix, sources);
-    let dca2_mod = mod_value_for(ModDestination::Line2DcaBase, matrix, sources);
+    let dcw1_mod = mod_values.get(ModDestination::Line1DcwBase);
+    let dcw2_mod = mod_values.get(ModDestination::Line2DcwBase);
+    let dca1_mod = mod_values.get(ModDestination::Line1DcaBase);
+    let dca2_mod = mod_values.get(ModDestination::Line2DcaBase);
 
     SignalState {
         effective_freq1: line_frequency(base_freq, line1, env.dco1_env),
@@ -953,10 +1151,7 @@ fn build_signal_state(
     }
 }
 
-fn apply_dcw_dezipper(voice: &mut Voice, sr: f32, signal: &mut SignalState) {
-    let safe_sr = sr.max(1.0);
-    let alpha = 1.0 - libm::expf(-1.0 / (DCW_DEZIPPER_TIME_SECONDS * safe_sr));
-
+fn apply_dcw_dezipper(voice: &mut Voice, alpha: f32, signal: &mut SignalState) {
     voice.smoothed_dcw1 += (signal.final_dcw1 - voice.smoothed_dcw1) * alpha;
     voice.smoothed_dcw2 += (signal.final_dcw2 - voice.smoothed_dcw2) * alpha;
 
@@ -983,7 +1178,7 @@ fn suppress_sample_discontinuity(prev_sample: f32, sample: f32) -> f32 {
 /// The CZ-101 display levels 0–99 map to pitch as follows:
 ///   - Levels  0–64: linear, 1 semitone per 8 levels  (max 8 st)
 ///   - Levels >64: each increment raises pitch by a whole tone (+2 semitones)
-///     (max 8 + 35*2 = 78 st at level 99)
+///                 (max 8 + 35*2 = 78 st at level 99)
 ///
 /// This function returns a semitone offset in [0.0, 78.0].
 /// The input is clamped to [0.0, 1.0] before conversion.
@@ -1010,12 +1205,9 @@ fn cz_dcw_env_depth(dcw_env: f32) -> f32 {
 
 fn line_frequency(base_freq: f32, line: &LineParams, dco_env: f32) -> f32 {
     let dco_semitones = cz_dco_env_semitones(dco_env);
-    base_freq
-        * libm::powf(
-            2.0,
-            line.octave + line.detune_note / 12.0 + line.detune_fine / 720.0,
-        )
-        * libm::powf(2.0, dco_semitones / 12.0)
+    let tuning_ratio =
+        libm::exp2f(line.octave + line.detune_note / 12.0 + line.detune_fine / 720.0);
+    base_freq * tuning_ratio * libm::exp2f(dco_semitones / 12.0)
 }
 
 fn apply_pitch_and_lfo_modulation(
@@ -1023,17 +1215,17 @@ fn apply_pitch_and_lfo_modulation(
     p: &SynthParams,
     sr: f32,
     base_freq: f32,
-    pitch_bend_semitones: f32,
-    sources: &ModSources,
+    pitch_bend_ratio: f32,
+    mod_values: &ModValueCache,
     signal: &mut SignalState,
 ) {
     apply_portamento(voice, &p.portamento, sr, base_freq, signal);
-    apply_pitch_bend(pitch_bend_semitones, signal);
-    apply_vibrato(voice, p, sr, sources, signal);
+    apply_pitch_bend_ratio(pitch_bend_ratio, signal);
+    apply_vibrato(voice, p, sr, mod_values, signal);
     // Pitch modulation from mod matrix (additive semitone offset via ratio)
-    let pitch_mod = mod_value_for(ModDestination::Pitch, &p.mod_matrix, sources);
+    let pitch_mod = mod_values.get(ModDestination::Pitch);
     if pitch_mod != 0.0 {
-        let ratio = libm::powf(2.0, pitch_mod * 2.0 / 12.0); // ±2 semitones max
+        let ratio = libm::exp2f(pitch_mod * 2.0 / 12.0); // ±2 semitones max
         signal.effective_freq1 *= ratio;
         signal.effective_freq2 *= ratio;
     }
@@ -1074,21 +1266,20 @@ fn apply_portamento(
     signal.effective_freq2 *= ratio;
 }
 
-fn apply_pitch_bend(pitch_bend_semitones: f32, signal: &mut SignalState) {
-    if pitch_bend_semitones == 0.0 {
+fn apply_pitch_bend_ratio(pitch_bend_ratio: f32, signal: &mut SignalState) {
+    if pitch_bend_ratio == 1.0 {
         return;
     }
 
-    let bend_ratio = libm::powf(2.0, pitch_bend_semitones / 12.0);
-    signal.effective_freq1 *= bend_ratio;
-    signal.effective_freq2 *= bend_ratio;
+    signal.effective_freq1 *= pitch_bend_ratio;
+    signal.effective_freq2 *= pitch_bend_ratio;
 }
 
 fn apply_vibrato(
     voice: &mut Voice,
     p: &SynthParams,
     sr: f32,
-    sources: &ModSources,
+    mod_values: &ModValueCache,
     signal: &mut SignalState,
 ) {
     let Some(vibrato) = p.vibrato_params() else {
@@ -1103,7 +1294,7 @@ fn apply_vibrato(
         return;
     }
 
-    let vibrato_rate_mod = mod_value_for(ModDestination::VibratoRate, &p.mod_matrix, sources);
+    let vibrato_rate_mod = mod_values.get(ModDestination::VibratoRate);
     let effective_rate = (vibrato.rate + vibrato_rate_mod * 99.0).clamp(0.1, 200.0);
     voice.vibrato_phase += (effective_rate * 0.1) / sr;
     if voice.vibrato_phase >= 1.0 {
@@ -1112,7 +1303,7 @@ fn apply_vibrato(
 
     let vib_waveform = vibrato_waveform(vibrato.waveform);
     let lfo_val = lfo_output(voice.vibrato_phase, vib_waveform);
-    let vibrato_depth_mod = mod_value_for(ModDestination::VibratoDepth, &p.mod_matrix, sources);
+    let vibrato_depth_mod = mod_values.get(ModDestination::VibratoDepth);
     let effective_depth = (vibrato.depth + vibrato_depth_mod * 99.0).clamp(0.0, 99.0);
     let pitch_mod = 1.0 + lfo_val * (effective_depth / 1000.0);
     signal.effective_freq1 *= pitch_mod;
@@ -1133,9 +1324,9 @@ fn build_phase_frame(
     p: &SynthParams,
     sr: f32,
     base_freq: f32,
-    sources: &ModSources,
+    mod_values: &ModValueCache,
 ) -> PhaseFrame {
-    let int_pm_ratio_mod = mod_value_for(ModDestination::IntPmRatio, &p.mod_matrix, sources);
+    let int_pm_ratio_mod = mod_values.get(ModDestination::IntPmRatio);
     let (int_pm_enabled, int_pm_amount_raw, int_pm_ratio_raw, pm_pre) = p
         .phase_mod_params()
         .map(|pm| (pm.enabled, pm.amount, pm.ratio, pm.pm_pre))
@@ -1170,7 +1361,6 @@ fn build_phase_frame(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 fn mix_line_outputs(
     p: &SynthParams,
     phi1: f32,
@@ -1230,7 +1420,6 @@ fn mix_line_outputs(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 fn select_line_sources(
     p: &SynthParams,
     _phi1: f32,
@@ -1355,8 +1544,8 @@ fn wrap_voice_phase(phase: &mut f32, cycle_count: &mut u32) {
 #[cfg(test)]
 mod tests {
     use super::{
-        cz_dca_env_gain, cz_dco_env_semitones, cz_dcw_env_depth, line_frequency, mod_value_for,
-        render_voice, ModSources, Voice,
+        build_mod_value_cache, cz_dca_env_gain, cz_dco_env_semitones, cz_dcw_env_depth,
+        line_frequency, render_voice, ModSources, Voice,
     };
     use crate::params::{ModDestination, ModMatrix, ModRoute, ModSource, SynthParams};
 
@@ -1520,7 +1709,8 @@ mod tests {
                     }],
                 };
 
-                let got = mod_value_for(destination, &matrix, &sources);
+                let mod_values = build_mod_value_cache(&matrix, &sources);
+                let got = mod_values.get(destination);
                 let expected = (amount * source_value(&sources, source)).clamp(-1.0, 1.0);
                 assert!(
                     (got - expected).abs() < 1e-6,
@@ -1555,7 +1745,8 @@ mod tests {
             }],
         };
 
-        let got = mod_value_for(destination, &matrix, &sources);
+        let mod_values = build_mod_value_cache(&matrix, &sources);
+        let got = mod_values.get(destination);
         assert_eq!(got, 0.0);
     }
 
@@ -1588,7 +1779,8 @@ mod tests {
             ],
         };
 
-        let got = mod_value_for(destination, &matrix, &sources);
+        let mod_values = build_mod_value_cache(&matrix, &sources);
+        let got = mod_values.get(destination);
         assert_eq!(got, 1.0);
     }
 
@@ -1616,7 +1808,9 @@ mod tests {
             random: 0.0,
         };
 
-        let modded = super::modulated_line_params(&line, 1, &matrix, &sources);
+        let mod_values = super::build_mod_value_cache(&matrix, &sources);
+        let mod_state = super::line_modulation_state(&matrix);
+        let modded = super::modulated_line_params(&line, 1, &mod_values, mod_state.line1);
         assert!((modded.algo_blend - 0.75).abs() < 1e-6);
     }
 
@@ -1652,17 +1846,17 @@ mod tests {
             random: 0.0,
         };
 
-        let modded = super::modulated_line_params(&line, 1, &matrix, &sources);
+        let mod_values = super::build_mod_value_cache(&matrix, &sources);
+        let mod_state = super::line_modulation_state(&matrix);
+        let modded = super::modulated_line_params(&line, 1, &mod_values, mod_state.line1);
         assert_eq!(modded.dco_env.steps[0].level, 84);
         assert_eq!(modded.dco_env.steps[0].rate, 62);
     }
 
     #[test]
     fn env_step_modulation_affects_rendered_audio_output() {
-        let base_params = SynthParams {
-            mod_matrix: ModMatrix::default(),
-            ..Default::default()
-        };
+        let mut base_params = SynthParams::default();
+        base_params.mod_matrix = ModMatrix::default();
 
         let mut modded_params = base_params.clone();
         modded_params.mod_matrix = ModMatrix {
@@ -1695,9 +1889,13 @@ mod tests {
                 0.0,
                 0.0,
                 48_000.0,
-                0.0,
+                1.0,
                 1.0,
                 0.0,
+                super::LineModulationState::default(),
+                None,
+                1.0,
+                1.0,
             )
             .abs();
             modded_energy += render_voice(
@@ -1707,9 +1905,13 @@ mod tests {
                 0.0,
                 0.0,
                 48_000.0,
-                0.0,
+                1.0,
                 1.0,
                 0.0,
+                super::line_modulation_state(&modded_params.mod_matrix),
+                None,
+                1.0,
+                1.0,
             )
             .abs();
         }

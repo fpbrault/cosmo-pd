@@ -14,7 +14,10 @@ use crate::fx::FxChain;
 use crate::generators::PER_LINE_HEADROOM;
 use crate::module_presets;
 use crate::params::{FxSlotConfig, FxSlotType, ModDestination, PolyMode, SynthParams, NUM_VOICES};
-use crate::voice::{mod_value_for, render_voice, ModSources, Voice};
+use crate::voice::{
+    build_mod_value_cache, line_modulation_state, render_voice, LineModulationState, ModSources,
+    Voice,
+};
 
 const SOFT_CLIP_DRIVE: f32 = 1.0;
 const SOFT_CLIP_THRESHOLD: f32 = 0.9;
@@ -33,6 +36,8 @@ const CZ_DAC_HONK_HP_HZ: f32 = 650.0;
 const CZ_DAC_HONK_LP_HZ: f32 = 1_700.0;
 const CZ_DAC_AIR_HP_HZ: f32 = 5_500.0;
 const CZ_DAC_HF_ROLLOFF_HZ: f32 = 20_000.0;
+const DCW_DEZIPPER_TIME_SECONDS: f32 = 0.0015;
+const RELEASE_TAIL_LEVEL_TIME_SECONDS: f32 = 0.01;
 
 #[derive(Debug, Clone, Copy)]
 struct CzDacColor {
@@ -795,6 +800,11 @@ impl CosmoProcessor {
             libm::powf(headroom_ratio, HEADROOM_MAKEUP_EXPONENT).clamp(1.0, MAX_HEADROOM_MAKEUP);
         let norm = volume * headroom_makeup / libm::sqrtf(NUM_VOICES as f32);
         let matrix = &p.mod_matrix;
+        let line_modulation_state: LineModulationState = line_modulation_state(matrix);
+        let safe_sr = sr.max(1.0);
+        let dcw_dezipper_alpha = 1.0 - libm::expf(-1.0 / (DCW_DEZIPPER_TIME_SECONDS * safe_sr));
+        let release_tail_alpha =
+            1.0 - libm::expf(-1.0 / (RELEASE_TAIL_LEVEL_TIME_SECONDS * safe_sr));
 
         let mut prev_lfo1 = self.last_runtime_mod_sources.lfo1;
         let mut prev_lfo2 = self.last_runtime_mod_sources.lfo2;
@@ -818,19 +828,18 @@ impl CosmoProcessor {
                 self.mod_wheel,
                 self.aftertouch,
             );
+            let pre_mod_values = build_mod_value_cache(matrix, &pre_sources);
 
-            let lfo1_rate_mod = mod_value_for(ModDestination::Lfo1Rate, matrix, &pre_sources);
-            let lfo1_depth_mod = mod_value_for(ModDestination::Lfo1Depth, matrix, &pre_sources);
-            let lfo1_symmetry_mod =
-                mod_value_for(ModDestination::Lfo1Symmetry, matrix, &pre_sources);
-            let lfo1_offset_mod = mod_value_for(ModDestination::Lfo1Offset, matrix, &pre_sources);
+            let lfo1_rate_mod = pre_mod_values.get(ModDestination::Lfo1Rate);
+            let lfo1_depth_mod = pre_mod_values.get(ModDestination::Lfo1Depth);
+            let lfo1_symmetry_mod = pre_mod_values.get(ModDestination::Lfo1Symmetry);
+            let lfo1_offset_mod = pre_mod_values.get(ModDestination::Lfo1Offset);
 
-            let lfo2_rate_mod = mod_value_for(ModDestination::Lfo2Rate, matrix, &pre_sources);
-            let lfo2_depth_mod = mod_value_for(ModDestination::Lfo2Depth, matrix, &pre_sources);
-            let lfo2_symmetry_mod =
-                mod_value_for(ModDestination::Lfo2Symmetry, matrix, &pre_sources);
-            let lfo2_offset_mod = mod_value_for(ModDestination::Lfo2Offset, matrix, &pre_sources);
-            let random_rate_mod = mod_value_for(ModDestination::RandomRate, matrix, &pre_sources);
+            let lfo2_rate_mod = pre_mod_values.get(ModDestination::Lfo2Rate);
+            let lfo2_depth_mod = pre_mod_values.get(ModDestination::Lfo2Depth);
+            let lfo2_symmetry_mod = pre_mod_values.get(ModDestination::Lfo2Symmetry);
+            let lfo2_offset_mod = pre_mod_values.get(ModDestination::Lfo2Offset);
+            let random_rate_mod = pre_mod_values.get(ModDestination::RandomRate);
 
             let lfo1_rate = (base_lfo1_rate + lfo1_rate_mod * 20.0).clamp(0.01, 40.0);
             let lfo1_depth = (base_lfo1_depth + lfo1_depth_mod).clamp(0.0, 1.0);
@@ -868,15 +877,23 @@ impl CosmoProcessor {
                 self.random_hold = random_hold_value(self.random_step);
             }
             let random_mod_val = self.random_hold;
+            let mod_wheel = self.mod_wheel;
+            let aftertouch = self.aftertouch;
 
             let mut mixed = 0.0_f32;
             // SAFETY: `voices` and `params` are separate fields; we use raw pointer to avoid
             // simultaneous mutable + immutable borrow of `self`.
             let params_ptr: *const SynthParams = &self.params;
             let pitch_bend_semitones = self.pitch_bend * self.params.pitch_bend_range;
-            let mod_wheel = self.mod_wheel;
-            let aftertouch = self.aftertouch;
+            let pitch_bend_ratio = if pitch_bend_semitones == 0.0 {
+                1.0
+            } else {
+                libm::exp2f(pitch_bend_semitones / 12.0)
+            };
             for v in 0..NUM_VOICES {
+                if self.voices[v].is_silent && self.voices[v].note.is_none() {
+                    continue;
+                }
                 // SAFETY: params is read-only here and voices[v] is the only mutated field.
                 let p_ref: &SynthParams = unsafe { &*params_ptr };
                 mixed += render_voice(
@@ -886,9 +903,12 @@ impl CosmoProcessor {
                     lfo2_mod_val,
                     random_mod_val,
                     sr,
-                    pitch_bend_semitones,
+                    pitch_bend_ratio,
                     mod_wheel,
                     aftertouch,
+                    line_modulation_state,
+                    dcw_dezipper_alpha,
+                    release_tail_alpha,
                 );
             }
 
