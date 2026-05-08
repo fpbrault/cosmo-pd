@@ -30,7 +30,7 @@
 		"build:plugin:auv3": "bun --filter @cosmo/cosmo-pd101-plugin-auv3 build",
 		"build:plugin:auv3:ios": "bun --filter @cosmo/cosmo-pd101-plugin-auv3 build:ios",
 		"bundle:plugin:auv3": "bun --filter @cosmo/cosmo-pd101-plugin-auv3 bundle",
-		"install:plugin:auv3": "bun --filter @cosmo/cosmo-pd101-plugin-auv3 install",
+		"install:plugin:auv3": "bun --filter @cosmo/cosmo-pd101-plugin-auv3 run plugin:install",
 		"plugin:install": "bun --filter @cosmo/cosmo-pd101-plugin plugin:install",
 		"build:standalone": "bun --filter @cosmo/cz-explorer-desktop build",
 		"package:plugin:installer": "bun run ./scripts/package-plugin-installers.mjs",

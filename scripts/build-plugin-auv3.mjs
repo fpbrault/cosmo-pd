@@ -73,22 +73,32 @@ async function createIosXcframework(options) {
 	const outputPath = join(artifactsDir, "CosmoPd101Plugin.xcframework");
 
 	await run("rustup", ["target", "add", deviceTarget, simulatorTarget]);
-	await run("cargo", [
-		"build",
-		"-p",
-		"cosmo-pd101-plugin",
-		...(options.release ? ["--release"] : []),
-		"--target",
-		deviceTarget,
-	], repoRoot, { IPHONEOS_DEPLOYMENT_TARGET: iosDeploymentTarget });
-	await run("cargo", [
-		"build",
-		"-p",
-		"cosmo-pd101-plugin",
-		...(options.release ? ["--release"] : []),
-		"--target",
-		simulatorTarget,
-	], repoRoot, { IPHONEOS_DEPLOYMENT_TARGET: iosDeploymentTarget });
+	await run(
+		"cargo",
+		[
+			"build",
+			"-p",
+			"cosmo-pd101-plugin",
+			...(options.release ? ["--release"] : []),
+			"--target",
+			deviceTarget,
+		],
+		repoRoot,
+		{ IPHONEOS_DEPLOYMENT_TARGET: iosDeploymentTarget },
+	);
+	await run(
+		"cargo",
+		[
+			"build",
+			"-p",
+			"cosmo-pd101-plugin",
+			...(options.release ? ["--release"] : []),
+			"--target",
+			simulatorTarget,
+		],
+		repoRoot,
+		{ IPHONEOS_DEPLOYMENT_TARGET: iosDeploymentTarget },
+	);
 
 	await mkdir(artifactsDir, { recursive: true });
 	await rm(outputPath, { recursive: true, force: true });
@@ -99,7 +109,13 @@ async function createIosXcframework(options) {
 		"-headers",
 		join(pluginDir, "include"),
 		"-library",
-		join(repoRoot, "target", simulatorTarget, profile, "libcosmo_pd101_plugin.a"),
+		join(
+			repoRoot,
+			"target",
+			simulatorTarget,
+			profile,
+			"libcosmo_pd101_plugin.a",
+		),
 		"-headers",
 		join(pluginDir, "include"),
 		"-output",
@@ -249,7 +265,9 @@ async function main() {
 	const cargoArgs = ["build", "-p", "cosmo-pd101-plugin"];
 	if (options.release) cargoArgs.push("--release");
 	if (options.rustTarget) cargoArgs.push("--target", options.rustTarget);
-	await run("cargo", cargoArgs, repoRoot, { MACOSX_DEPLOYMENT_TARGET: macosDeploymentTarget });
+	await run("cargo", cargoArgs, repoRoot, {
+		MACOSX_DEPLOYMENT_TARGET: macosDeploymentTarget,
+	});
 	await copyRustArtifacts(options);
 
 	if (options.swiftBuild) {
