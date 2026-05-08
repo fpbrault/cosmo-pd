@@ -41,11 +41,13 @@ jobs:
             bare_glob: |
               dist/plugin-installers/macos/cosmo-pd101-plugin-macos-universal-v*-vst3.zip
               dist/plugin-installers/macos/cosmo-pd101-plugin-macos-universal-v*-auv2.zip
+              dist/plugin-installers/macos/cosmo-pd101-plugin-macos-universal-v*-clap.zip
             artifact_paths: |
               dist/plugin-installers/macos/cosmo-plugins-macos-universal-v*.pkg
               dist/plugin-installers/macos/cosmo-plugins-macos-universal-v*.zip
               dist/plugin-installers/macos/cosmo-pd101-plugin-macos-universal-v*-vst3.zip
               dist/plugin-installers/macos/cosmo-pd101-plugin-macos-universal-v*-auv2.zip
+              dist/plugin-installers/macos/cosmo-pd101-plugin-macos-universal-v*-clap.zip
           - os: windows-latest
             platform: windows
             arch: x86_64
