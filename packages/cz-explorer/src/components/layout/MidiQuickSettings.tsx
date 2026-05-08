@@ -43,7 +43,7 @@ export default function MidiQuickSettings({
 			{isOpen && (
 				<dialog open className="modal modal-open">
 					<div className="modal-box w-[min(96vw,520px)] max-w-none rounded-2xl bg-base-100 p-6 shadow-xl">
-						<h2 className="mb-4 text-center text-2xl font-semibold">
+						<h2 className="mb-4 text-center font-semibold text-2xl">
 							MIDI Quick Settings
 						</h2>
 						<div className="space-y-4">

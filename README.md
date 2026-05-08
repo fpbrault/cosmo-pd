@@ -1,6 +1,6 @@
 # cosmo-pd
 
-A monorepo for Casio CZ-101 phase distortion synthesis — including a preset manager web/desktop app, an in-browser phase distortion synthesizer, and a VST3/AUv2/AUv3 plugin.
+A monorepo for Casio CZ-101 phase distortion synthesis — including a preset manager web/desktop app, an in-browser phase distortion synthesizer, and a VST3/CLAP/AUv2 plugin.
 
 ## Overview
 
@@ -12,7 +12,7 @@ This is a **Bun monorepo** containing:
 | `packages/cz-explorer-desktop` | Tauri 2 desktop wrapper for cz-explorer |
 | `packages/cosmo-synth-engine` | Rust WebAssembly phase distortion synth engine |
 | `packages/cosmo-pd101` | Reusable library: synth-specific React components, hooks, preset utilities, and SysEx utilities consumed by `cz-explorer` and the plugin webview |
-| `packages/cosmo-pd101-plugin` | beamer-based VST3/AUv2/AUv3 plugin host with a thin React/Vite WebView shell |
+| `packages/cosmo-pd101-plugin` | nih-plug-based VST3/CLAP/AUv2 plugin host with a thin React/Vite WebView shell |
 | `packages/xtask` | Build automation (xtask pattern) |
 
 ## Setup
@@ -42,7 +42,7 @@ bun run dev              # Start the cz-explorer Vite dev server
 ```bash
 bun run build            # Full build: web + plugin + desktop
 bun run build:web        # Build WASM engine + cz-explorer web app
-bun run build:plugin     # Build VST3/AUv2/AUv3 plugin (macOS, current arch)
+bun run build:plugin     # Build VST3/CLAP/AUv2 plugin (macOS, current arch)
 bun run build:standalone # Build the Tauri desktop app
 ```
 
@@ -107,9 +107,9 @@ For database migration details, see [docs/db-migrations.md](docs/db-migrations.m
 
 ### Plugin (`packages/cosmo-pd101-plugin`)
 
-- **beamer** framework: VST3 + AUv2 + AUv3 from a single Rust codebase.
+- **nih-plug** framework: VST3 + CLAP + AUv2 from a single Rust codebase.
 - Embeds the cosmo-synth-engine and a thin React/Vite WebView app via WebView IPC.
-- The plugin `webview/` stays as a direct child of the Rust crate for Beamer asset embedding and imports reusable UI from `@cosmo/cosmo-pd101`.
+- The plugin `webview/` stays as a direct child of the Rust crate for plugin webview integration and imports reusable UI from `@cosmo/cosmo-pd101`.
 
 ### Database
 

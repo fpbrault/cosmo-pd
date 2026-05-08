@@ -231,6 +231,27 @@ function assertBundleContainsFile(bundleDir, relativeFilePath, platformLabel) {
 	}
 }
 
+function assertBundleHasFileInDirectory(
+	bundleDir,
+	relativeDirectory,
+	platformLabel,
+) {
+	const expectedDir = path.join(bundleDir, ...relativeDirectory.split("/"));
+	if (!existsSync(expectedDir)) {
+		throw new Error(
+			`${platformLabel} bundle mismatch: expected directory ${relativeDirectory} inside ${path.basename(bundleDir)}. Build that platform's plugin artifact first.`,
+		);
+	}
+
+	const entries = readdirSync(expectedDir, { withFileTypes: true });
+	const hasFile = entries.some((entry) => entry.isFile());
+	if (!hasFile) {
+		throw new Error(
+			`${platformLabel} bundle mismatch: expected at least one file in ${relativeDirectory} inside ${path.basename(bundleDir)}. Build that platform's plugin artifact first.`,
+		);
+	}
+}
+
 function detectArchBundleDirs(bundleDir, platformKind) {
 	const contentsDir = path.join(bundleDir, "Contents");
 	if (!existsSync(contentsDir)) {
@@ -259,17 +280,29 @@ function packageMacos({ sourceDir, outputDir, version }) {
 		process.env.PLUGIN_BASENAME ?? toPascalCase(PLUGIN_PACKAGE);
 	const bundleVst3Name = `${pluginBaseName}.vst3`;
 	const bundleAuv2Name = `${pluginBaseName}.component`;
+	const bundleClapName = `${pluginBaseName}.clap`;
 	const bundleVst3 = path.join(sourceDir, bundleVst3Name);
 	const bundleAuv2 = path.join(sourceDir, bundleAuv2Name);
+	const bundleClap = path.join(sourceDir, bundleClapName);
 
-	if (!existsSync(bundleVst3) || !existsSync(bundleAuv2)) {
+	if (
+		!existsSync(bundleVst3) ||
+		!existsSync(bundleAuv2) ||
+		!existsSync(bundleClap)
+	) {
 		throw new Error(
-			`macOS packaging requires ${bundleVst3Name} and ${bundleAuv2Name}. Run plugin build first.`,
+			`macOS packaging requires ${bundleVst3Name}, ${bundleAuv2Name}, and ${bundleClapName}. Run plugin build first.`,
 		);
 	}
 
 	assertBundleContainsFile(
-		bundleVst3,
+		bundleAuv2,
+		`Contents/MacOS/${pluginBaseName}`,
+		"macOS",
+	);
+	assertBundleHasFileInDirectory(bundleVst3, "Contents/MacOS", "macOS");
+	assertBundleContainsFile(
+		bundleClap,
 		`Contents/MacOS/${pluginBaseName}`,
 		"macOS",
 	);
@@ -278,16 +311,19 @@ function packageMacos({ sourceDir, outputDir, version }) {
 	const stagingRoot = path.join(outputDir, "staging");
 	const payloadVst3Root = path.join(stagingRoot, "payload-vst3");
 	const payloadAuv2Root = path.join(stagingRoot, "payload-auv2");
+	const payloadClapRoot = path.join(stagingRoot, "payload-clap");
 	const pkgOut = path.join(outputDir, `${packageBaseName}.pkg`);
 	const zipOut = path.join(outputDir, `${packageBaseName}.zip`);
 	const vst3ComponentPkg = path.join(outputDir, `${packageBaseName}-vst3.pkg`);
 	const auv2ComponentPkg = path.join(outputDir, `${packageBaseName}-auv2.pkg`);
+	const clapComponentPkg = path.join(outputDir, `${packageBaseName}-clap.pkg`);
 	const distributionXml = path.join(stagingRoot, "Distribution.xml");
 
 	rmSync(stagingRoot, { recursive: true, force: true });
 
 	stagePluginBundle(bundleVst3, path.join(payloadVst3Root, bundleVst3Name));
 	stagePluginBundle(bundleAuv2, path.join(payloadAuv2Root, bundleAuv2Name));
+	stagePluginBundle(bundleClap, path.join(payloadClapRoot, bundleClapName));
 
 	const readme = [
 		"CosmoPd101 Plugin Installer (macOS universal)",
@@ -295,17 +331,20 @@ function packageMacos({ sourceDir, outputDir, version }) {
 		"The PKG installer lets you choose what to install:",
 		"- VST3 only",
 		"- AUv2 only",
-		"- Both VST3 and AUv2",
+		"- CLAP only",
+		"- Any combination of VST3, AUv2, and CLAP",
 		"",
 		"Installs:",
 		`- /Library/Audio/Plug-Ins/VST3/${bundleVst3Name}`,
 		`- /Library/Audio/Plug-Ins/Components/${bundleAuv2Name}`,
+		`- /Library/Audio/Plug-Ins/CLAP/${bundleClapName}`,
 	].join("\n");
 	writeText(path.join(stagingRoot, "README.txt"), readme);
 
 	rmSync(pkgOut, { force: true });
 	rmSync(vst3ComponentPkg, { force: true });
 	rmSync(auv2ComponentPkg, { force: true });
+	rmSync(clapComponentPkg, { force: true });
 	rmSync(zipOut, { force: true });
 
 	run("pkgbuild", [
@@ -332,6 +371,18 @@ function packageMacos({ sourceDir, outputDir, version }) {
 		auv2ComponentPkg,
 	]);
 
+	run("pkgbuild", [
+		"--root",
+		payloadClapRoot,
+		"--identifier",
+		"com.cosmo.pd101.plugins.clap",
+		"--version",
+		version,
+		"--install-location",
+		"/Library/Audio/Plug-Ins/CLAP",
+		clapComponentPkg,
+	]);
+
 	const distribution = `<?xml version="1.0" encoding="utf-8"?>
 <installer-gui-script minSpecVersion="1">
   <title>${pluginBaseName} Plugins</title>
@@ -339,6 +390,7 @@ function packageMacos({ sourceDir, outputDir, version }) {
   <choices-outline>
     <line choice="choice_vst3"/>
     <line choice="choice_auv2"/>
+		<line choice="choice_clap"/>
   </choices-outline>
   <choice id="choice_vst3" title="VST3 Plugin" description="Install ${bundleVst3Name}" start_selected="true">
     <pkg-ref id="com.cosmo.pd101.plugins.vst3"/>
@@ -346,8 +398,12 @@ function packageMacos({ sourceDir, outputDir, version }) {
   <choice id="choice_auv2" title="Audio Unit (AUv2) Plugin" description="Install ${bundleAuv2Name}" start_selected="true">
     <pkg-ref id="com.cosmo.pd101.plugins.auv2"/>
   </choice>
+	<choice id="choice_clap" title="CLAP Plugin" description="Install ${bundleClapName}" start_selected="true">
+		<pkg-ref id="com.cosmo.pd101.plugins.clap"/>
+	</choice>
   <pkg-ref id="com.cosmo.pd101.plugins.vst3" version="${version}">${path.basename(vst3ComponentPkg)}</pkg-ref>
   <pkg-ref id="com.cosmo.pd101.plugins.auv2" version="${version}">${path.basename(auv2ComponentPkg)}</pkg-ref>
+	<pkg-ref id="com.cosmo.pd101.plugins.clap" version="${version}">${path.basename(clapComponentPkg)}</pkg-ref>
 </installer-gui-script>
 `;
 	writeText(distributionXml, distribution);
@@ -363,6 +419,7 @@ function packageMacos({ sourceDir, outputDir, version }) {
 
 	rmSync(vst3ComponentPkg, { force: true });
 	rmSync(auv2ComponentPkg, { force: true });
+	rmSync(clapComponentPkg, { force: true });
 
 	const bareVst3Zip = packageBareMacosBundle(
 		sourceDir,
@@ -378,8 +435,15 @@ function packageMacos({ sourceDir, outputDir, version }) {
 		bundleAuv2Name,
 		"auv2",
 	);
+	const bareClapZip = packageBareMacosBundle(
+		sourceDir,
+		outputDir,
+		version,
+		bundleClapName,
+		"clap",
+	);
 
-	return [pkgOut, zipOut, bareVst3Zip, bareAuv2Zip];
+	return [pkgOut, zipOut, bareVst3Zip, bareAuv2Zip, bareClapZip];
 }
 
 function packageWindows({ sourceDir, outputDir, version }) {

@@ -32,7 +32,7 @@ describe("CollapsibleCard", () => {
 		const { container } = renderWithProviders(
 			<CollapsibleCard
 				title={<span>Scoped</span>}
-				className="bg-error/20 custom-class"
+				className="custom-class bg-error/20"
 			>
 				Body
 			</CollapsibleCard>,

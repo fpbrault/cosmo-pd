@@ -44,11 +44,11 @@ function PerLineParametersCardInner({
 	const detuneLabelPrefix = lineSelect === "L1+L1'" ? "L1'" : "L2";
 
 	return (
-		<Card variant="subtle" className="p-3 col-span-1 min-h-0 flex flex-col">
-			<div className="mb-3 text-3xs uppercase tracking-[0.24em] text-cz-cream">
+		<Card variant="subtle" className="col-span-1 flex min-h-0 flex-col p-3">
+			<div className="mb-3 text-3xs text-cz-cream uppercase tracking-[0.24em]">
 				Parameters
 			</div>
-			<div className="flex-1 min-h-0 grid grid-cols-3  gap-3 place-items-center content-start">
+			<div className="grid min-h-0 flex-1 grid-cols-3 place-items-center content-start gap-3">
 				<SynthParamKnob
 					paramKey={lineIndex === 1 ? "warpAAmount" : "warpBAmount"}
 					label="DCW Amt"

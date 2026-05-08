@@ -29,8 +29,8 @@ export default function SynthBackupsSidebar({
 	onImportBackup,
 }: SynthBackupsSidebarProps) {
 	return (
-		<aside className="w-[24rem] min-w-[20rem] border-r border-base-content/10 bg-base-200/70 overflow-auto p-4">
-			<div className="flex flex-col gap-2 mb-4">
+		<aside className="w-[24rem] min-w-[20rem] overflow-auto border-base-content/10 border-r bg-base-200/70 p-4">
+			<div className="mb-4 flex flex-col gap-2">
 				<Button
 					variant="accent"
 					onClick={onCreateBackup}
@@ -38,7 +38,7 @@ export default function SynthBackupsSidebar({
 				>
 					{isBackingUp ? "Backing Up..." : "New Backup (16 Slots)"}
 				</Button>
-				<div className="w-full form-control">
+				<div className="form-control w-full">
 					<FileInput
 						aria-label="Import synth backup JSON"
 						accept="application/json"
@@ -78,14 +78,14 @@ export default function SynthBackupsSidebar({
 						unstyled
 						key={backup.id}
 						className={
-							"w-full text-left p-3 rounded-lg border transition-colors " +
+							"w-full rounded-lg border p-3 text-left transition-colors" +
 							(selectedBackupId === backup.id
-								? "bg-base-100 border-primary/60"
-								: "bg-base-200 border-base-content/10 hover:bg-base-100/60")
+								? "border-primary/60 bg-base-100"
+								: "border-base-content/10 bg-base-200 hover:bg-base-100/60")
 						}
 						onClick={() => onSelectBackup(backup.id)}
 					>
-						<div className="text-sm font-bold truncate">{backup.name}</div>
+						<div className="truncate font-bold text-sm">{backup.name}</div>
 						<div className="text-xs opacity-70">
 							{new Date(backup.createdAt).toLocaleString()} •{" "}
 							{backup.entries.length} entries

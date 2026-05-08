@@ -326,7 +326,7 @@ export default function AsidePanelSwitcher<T extends string>({
 	);
 
 	return (
-		<div className="px-2 pb-2 space-y-2">
+		<div className="space-y-2 px-2 pb-2">
 			<div className="mt-2 grid grid-cols-[2fr_3fr] gap-1.5">
 				<div className="grid grid-cols-2 gap-1 gap-y-2">
 					{leftTabs.map(renderTabButton)}

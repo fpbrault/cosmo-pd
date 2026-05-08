@@ -1,954 +1,256 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import {
-	type SynthEngineAdapter,
-	SynthEngineController,
-} from "@/features/synth/engine/synthEngineAdapter";
-import { createSynthEngineSnapshot } from "@/features/synth/engine/synthEngineSnapshot";
-import { type SynthStore, useSynthStore } from "@/features/synth/synthStore";
-import {
-	isWaveformId,
-	resolveCzControlsFromEntries,
-} from "@/lib/synth/algoRef";
-import type {
-	Algo,
-	AlgoControlValueV1,
-	CzWaveform,
-	LfoWaveform,
-	LineSelect,
-	ModMatrix,
-	ModMode,
-	PolyMode,
-	PortamentoMode,
-	StepEnvData,
-	SynthParams,
-} from "@/lib/synth/bindings/synth";
+import { useCallback, useEffect, useRef } from "react";
 
-type EnvelopeId =
-	| "l1_dco"
-	| "l1_dcw"
-	| "l1_dca"
-	| "l2_dco"
-	| "l2_dcw"
-	| "l2_dca";
-
-type EnvelopeMap = Partial<Record<EnvelopeId, StepEnvData>>;
-
-type PresetSessionPayload = {
-	activePresetId?: string | null;
-	activePresetNameBase?: string;
-	loadedPresetFingerprint?: string | null;
-};
+import { useSynthStore } from "@/features/synth/synthStore";
+import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
 
 declare global {
 	interface Window {
 		ipc?: { postMessage: (message: string) => void };
 		__czOnParams?: (json: string) => void;
-		__czGetEnvelopes?: () => Promise<EnvelopeMap>;
-		__czGetAlgoControls?: () => Promise<AlgoControlsSnapshot | null>;
-		__czGetModMatrix?: () => Promise<ModMatrix>;
-		__czGetFxSlots?: () => Promise<SynthParams["fxSlots"]>;
-		__czGetPresetSession?: () => Promise<PresetSessionPayload>;
+		__czGetParams?: () => Promise<unknown>;
+		__czSetParams?: (json: string) => void;
 	}
 }
-
-// ---------------------------------------------------------------------------
-// Enum ↔ integer maps
-// Integers are the plain values Beamer uses for EnumParameter fields.
-// ---------------------------------------------------------------------------
-
-type EnumToIdMap<T extends string> = Record<T, number>;
-type WarpAlgoKey =
-	| "cz101"
-	| "bend"
-	| "sync"
-	| "pinch"
-	| "fold"
-	| "skew"
-	| "quantize"
-	| "twist"
-	| "clip"
-	| "ripple"
-	| "mirror"
-	| "fof"
-	| "karpunk"
-	| "sine";
-
-const invertMap = <T extends string>(
-	input: EnumToIdMap<T>,
-): Record<number, T> =>
-	Object.fromEntries(
-		Object.entries(input).map(([key, value]) => [value, key]),
-	) as Record<number, T>;
-
-const LINE_SELECT_IDS: EnumToIdMap<LineSelect> = {
-	L1: 0,
-	L2: 1,
-	"L1+L1'": 2,
-	"L1+L2'": 3,
-};
-const LINE_SELECT_FROM_ID = invertMap(LINE_SELECT_IDS);
-
-const MOD_MODE_IDS: EnumToIdMap<ModMode> = {
-	normal: 0,
-	ring: 1,
-	noise: 2,
-};
-const MOD_MODE_FROM_ID = invertMap(MOD_MODE_IDS);
-
-const POLY_MODE_IDS: EnumToIdMap<PolyMode> = {
-	poly8: 0,
-	mono: 1,
-};
-const POLY_MODE_FROM_ID = invertMap(POLY_MODE_IDS);
-
-const WARP_ALGO_IDS: EnumToIdMap<WarpAlgoKey> = {
-	cz101: 0,
-	bend: 1,
-	sync: 2,
-	pinch: 3,
-	fold: 4,
-	skew: 5,
-	quantize: 6,
-	twist: 7,
-	clip: 8,
-	ripple: 9,
-	mirror: 10,
-	fof: 11,
-	karpunk: 12,
-	sine: 13,
-};
-const WARP_ALGO_FROM_ID = invertMap(WARP_ALGO_IDS);
-
-const LFO_WAVE_IDS: EnumToIdMap<LfoWaveform> = {
-	sine: 0,
-	triangle: 1,
-	square: 2,
-	saw: 3,
-	invertedSaw: 4,
-	random: 5,
-};
-const LFO_WAVE_FROM_ID = invertMap(LFO_WAVE_IDS);
-
-const PORT_MODE_IDS: EnumToIdMap<PortamentoMode> = {
-	rate: 0,
-	time: 1,
-};
-const PORT_MODE_FROM_ID = invertMap(PORT_MODE_IDS);
-
-// ---------------------------------------------------------------------------
-// Waveform index maps
-// ---------------------------------------------------------------------------
-
-const CZ_WAVEFORM_IDX: Readonly<Record<CzWaveform, number>> = {
-	saw: 0,
-	square: 1,
-	pulse: 2,
-	null: 3,
-	sinePulse: 4,
-	sawPulse: 6,
-	multiSine: 7,
-	pulse2: 8,
-};
-
-const IDX_TO_CZ_WAVEFORM: Record<number, CzWaveform> = {
-	0: "saw",
-	1: "square",
-	2: "pulse",
-	3: "null",
-	4: "sinePulse",
-	5: "multiSine",
-	6: "sawPulse",
-	7: "multiSine",
-	8: "pulse2",
-};
-
-function algoKeyToId(key: Algo | null): number {
-	if (key === null || isWaveformId(key)) return 0;
-	return WARP_ALGO_IDS[key as WarpAlgoKey] ?? 0;
-}
-
-function algoKeyToWaveform(key: Algo | null, slotWaveform: CzWaveform): number {
-	if (key === null) return CZ_WAVEFORM_IDX.saw;
-	if (isWaveformId(key)) return CZ_WAVEFORM_IDX[key as CzWaveform] ?? 0;
-	if (key === "cz101") return CZ_WAVEFORM_IDX[slotWaveform] ?? 0;
-	return 0;
-}
-
-function setControlValue(
-	entries: AlgoControlValueV1[],
-	controlId: string,
-	value: number,
-): AlgoControlValueV1[] {
-	const index = entries.findIndex((entry) => entry.id === controlId);
-	if (index >= 0) {
-		const next = [...entries];
-		next[index] = { ...next[index], value };
-		return next;
-	}
-	return [...entries, { id: controlId, value }];
-}
-
-function setLegacyCzWaveformBank(
-	entries: AlgoControlValueV1[],
-	waveform: CzWaveform,
-): AlgoControlValueV1[] {
-	const index = CZ_WAVEFORM_IDX[waveform] ?? 0;
-	return setControlValue(
-		setControlValue(entries, "waveform1", index),
-		"waveform2",
-		index,
-	);
-}
-
-// ---------------------------------------------------------------------------
-// Descriptor table
-// Each entry maps a Beamer string param ID to a read (snapshot → number) and
-// apply (inbound value → React state setter) function.
-// ---------------------------------------------------------------------------
-
-type PluginParamDescriptor = {
-	id: string;
-	read: (params: SynthParams) => number;
-	apply: (value: number, synthState: SynthStore) => void;
-};
-
-const PLUGIN_PARAM_DESCRIPTORS: PluginParamDescriptor[] = [
-	{
-		id: "volume",
-		read: (params) => params.volume,
-		apply: (value, s) => s.setVolume(value),
-	},
-	{
-		id: "octave",
-		read: (params) => params.octave,
-		apply: (value, s) => s.setOctave(value),
-	},
-	{
-		id: "line_select",
-		read: (params) => LINE_SELECT_IDS[params.lineSelect as LineSelect] ?? 0,
-		apply: (value, s) =>
-			s.setLineSelect((LINE_SELECT_FROM_ID[value] ?? "L1+L2'") as LineSelect),
-	},
-	{
-		id: "mod_mode",
-		read: (params) => MOD_MODE_IDS[params.modMode as ModMode] ?? 0,
-		apply: (value, s) =>
-			s.setModMode((MOD_MODE_FROM_ID[value] ?? "normal") as ModMode),
-	},
-	{
-		id: "poly_mode",
-		read: (params) => POLY_MODE_IDS[params.polyMode] ?? 0,
-		apply: (value, s) =>
-			s.setPolyMode((POLY_MODE_FROM_ID[value] ?? "poly8") as PolyMode),
-	},
-	{
-		id: "legato",
-		read: (params) => (params.legato ? 1 : 0),
-		apply: (value, s) => s.setLegato(value >= 0.5),
-	},
-	{
-		id: "int_pm_enabled",
-		read: (params) =>
-			(params.fxSlots?.[4] as { params?: { enabled?: boolean } } | undefined)
-				?.params?.enabled
-				? 1
-				: 0,
-		apply: (value, s) => s.setFxSlotEnabled(4, value >= 0.5),
-	},
-	{
-		id: "int_pm_amount",
-		read: (params) =>
-			(params.fxSlots?.[4] as { params?: { amount?: number } } | undefined)
-				?.params?.amount ?? 0,
-		apply: (value, s) => s.setFxSlotParams(4, { amount: value }),
-	},
-	{
-		id: "int_pm_ratio",
-		read: (params) =>
-			(params.fxSlots?.[4] as { params?: { ratio?: number } } | undefined)
-				?.params?.ratio ?? 1,
-		apply: (value, s) => s.setFxSlotParams(4, { ratio: value }),
-	},
-	{
-		id: "pm_pre",
-		read: (params) =>
-			(params.fxSlots?.[4] as { params?: { pmPre?: boolean } } | undefined)
-				?.params?.pmPre
-				? 1
-				: 0,
-		apply: (value, s) => s.setFxSlotParams(4, { pmPre: value >= 0.5 }),
-	},
-	{
-		id: "l1_waveform",
-		read: (params) =>
-			algoKeyToWaveform(
-				params.line1.algo,
-				resolveCzControlsFromEntries(params.line1.algoControlsA ?? [])
-					.waveform1,
-			),
-		apply: (value, s) => {
-			const waveform = IDX_TO_CZ_WAVEFORM[Math.round(value)];
-			if (!waveform) return;
-			s.setLine1AlgoControlsA(
-				setLegacyCzWaveformBank(s.line1AlgoControlsA, waveform),
-			);
-		},
-	},
-	{
-		id: "l1_warp_algo",
-		read: (params) => algoKeyToId(params.line1.algo),
-		apply: (value, s) => {
-			const algoName = (WARP_ALGO_FROM_ID[Math.round(value)] ??
-				"cz101") as Algo;
-			s.setWarpAAlgo(algoName);
-		},
-	},
-	{
-		id: "l1_dcw_base",
-		read: (params) => params.line1.dcwBase,
-		apply: (value, s) => s.setWarpAAmount(value),
-	},
-	{
-		id: "l1_dca_base",
-		read: (params) => params.line1.dcaBase,
-		apply: (value, s) => s.setLine1Level(value),
-	},
-	{
-		id: "l1_octave",
-		read: (params) => params.line1.octave,
-		apply: (value, s) => s.setLineOctave(value),
-	},
-	{
-		id: "l1_detune",
-		read: (params) => params.line2.detuneNote ?? 0,
-		apply: (value, s) => s.setLine2DetuneNote(value),
-	},
-	{
-		id: "l1_key_follow",
-		read: (params) => params.line1.keyFollow,
-		apply: (value, s) => s.setLine1DcwKeyFollow(value),
-	},
-	{
-		id: "l1_algo_blend",
-		read: (params) => params.line1.algoBlend,
-		apply: (value, s) => s.setAlgoBlendA(value),
-	},
-	{
-		id: "l1_warp_algo2",
-		read: (params) =>
-			params.line1.algo2 === null ? -1 : algoKeyToId(params.line1.algo2),
-		apply: (value, s) => {
-			if (value < 0) {
-				s.setAlgo2A(null);
-				return;
-			}
-			const algoName = (WARP_ALGO_FROM_ID[Math.round(value)] ??
-				"cz101") as Algo;
-			s.setAlgo2A(algoName);
-		},
-	},
-	{
-		id: "l2_waveform",
-		read: (params) =>
-			algoKeyToWaveform(
-				params.line2.algo,
-				resolveCzControlsFromEntries(params.line2.algoControlsA ?? [])
-					.waveform1,
-			),
-		apply: (value, s) => {
-			const waveform = IDX_TO_CZ_WAVEFORM[Math.round(value)];
-			if (!waveform) return;
-			s.setLine2AlgoControlsA(
-				setLegacyCzWaveformBank(s.line2AlgoControlsA, waveform),
-			);
-		},
-	},
-	{
-		id: "l2_warp_algo",
-		read: (params) => algoKeyToId(params.line2.algo),
-		apply: (value, s) => {
-			const algoName = (WARP_ALGO_FROM_ID[Math.round(value)] ??
-				"cz101") as Algo;
-			s.setWarpBAlgo(algoName);
-		},
-	},
-	{
-		id: "l2_dcw_base",
-		read: (params) => params.line2.dcwBase,
-		apply: (value, s) => s.setWarpBAmount(value),
-	},
-	{
-		id: "l2_dca_base",
-		read: (params) => params.line2.dcaBase,
-		apply: (value, s) => s.setLine2Level(value),
-	},
-	{
-		id: "l2_octave",
-		read: (params) => params.line2.octave - params.line1.octave,
-		apply: (value, s) => s.setLine2DetuneOctave(value),
-	},
-	{
-		id: "l2_detune",
-		read: (params) => params.line2.detuneFine ?? 0,
-		apply: (value, s) => s.setLine2DetuneFine(value),
-	},
-	{
-		id: "l2_key_follow",
-		read: (params) => params.line2.keyFollow,
-		apply: (value, s) => s.setLine2DcwKeyFollow(value),
-	},
-	{
-		id: "l2_algo_blend",
-		read: (params) => params.line2.algoBlend,
-		apply: (value, s) => s.setAlgoBlendB(value),
-	},
-	{
-		id: "l2_warp_algo2",
-		read: (params) =>
-			params.line2.algo2 === null ? -1 : algoKeyToId(params.line2.algo2),
-		apply: (value, s) => {
-			if (value < 0) {
-				s.setAlgo2B(null);
-				return;
-			}
-			const algoName = (WARP_ALGO_FROM_ID[Math.round(value)] ??
-				"cz101") as Algo;
-			s.setAlgo2B(algoName);
-		},
-	},
-	{
-		id: "lfo_waveform",
-		read: (params) => LFO_WAVE_IDS[params.lfo.waveform as LfoWaveform] ?? 0,
-		apply: (value, s) =>
-			s.setLfoWaveform(
-				(LFO_WAVE_FROM_ID[Math.round(value)] ?? "sine") as LfoWaveform,
-			),
-	},
-	{
-		id: "lfo_rate",
-		read: (params) => params.lfo.rate,
-		apply: (value, s) => s.setLfoRate(value),
-	},
-	{
-		id: "lfo_depth",
-		read: (params) => params.lfo.depth,
-		apply: (value, s) => s.setLfoDepth(value),
-	},
-
-	{
-		id: "port_enabled",
-		read: (params) => (params.portamento.enabled ? 1 : 0),
-		apply: (value, s) => s.setPortamentoEnabled(value >= 0.5),
-	},
-	{
-		id: "port_mode",
-		read: (params) =>
-			PORT_MODE_IDS[params.portamento.mode as PortamentoMode] ?? 0,
-		apply: (value, s) =>
-			s.setPortamentoMode(
-				(PORT_MODE_FROM_ID[Math.round(value)] ?? "rate") as PortamentoMode,
-			),
-	},
-	{
-		id: "port_time",
-		read: (params) => params.portamento.time,
-		apply: (value, s) => s.setPortamentoTime(value),
-	},
-];
-
-export const PLUGIN_PARAM_DESCRIPTOR_BY_ID = new Map(
-	PLUGIN_PARAM_DESCRIPTORS.map((d) => [d.id, d]),
-);
 
 type UsePluginBridgeSynthEngineOptions = {
 	enabled?: boolean;
-	hydrationGraceMs?: number;
-	pendingParamTtlMs?: number;
 };
 
-type AlgoControlsSnapshot = {
-	line1?: { a?: AlgoControlValueV1[]; b?: AlgoControlValueV1[] };
-	line2?: { a?: AlgoControlValueV1[]; b?: AlgoControlValueV1[] };
-};
+type EnvelopeKind = "dco" | "dcw" | "dca";
 
-type InboundHydrationState = {
-	params: boolean;
-	envelopes: boolean;
-	algoControls: boolean;
-	modMatrix: boolean;
-	fxSlots: boolean;
-	presetSession: boolean;
-};
+type StepEnv = SynthPresetV1["params"]["line1"]["dcoEnv"];
 
-// ---------------------------------------------------------------------------
-// Outbound: send plain value via the bridge IPC
-// ---------------------------------------------------------------------------
+function clampRounded(value: number, min: number, max: number): number {
+	return Math.max(min, Math.min(max, Math.round(value)));
+}
 
-function sendParam(paramId: string, value: number) {
-	if (window.ipc) {
-		window.ipc.postMessage(JSON.stringify({ param_id: paramId, value }));
+function rawRateToHuman(kind: EnvelopeKind, raw: number): number {
+	const b = clampRounded(raw, 0, 127);
+	switch (kind) {
+		case "dco":
+			if (b === 0) return 0;
+			if (b === 127) return 99;
+			return Math.floor((b * 99) / 127) + 1;
+		case "dcw":
+			if (b <= 8) return 0;
+			if (b >= 127) return 99;
+			return Math.floor(((b - 8) * 99) / 119) + 1;
+		case "dca":
+			if (b === 0) return 0;
+			if (b >= 119) return 99;
+			return Math.floor((b * 99) / 119) + 1;
 	}
 }
 
-function sendEnvelope(envId: EnvelopeId, env: StepEnvData) {
-	if (window.ipc) {
-		window.ipc.postMessage(JSON.stringify({ envelope_id: envId, data: env }));
+function rawLevelToHuman(kind: EnvelopeKind, raw: number): number {
+	const b = clampRounded(raw, 0, 127);
+	switch (kind) {
+		case "dco":
+			return b > 63 ? b - 4 : b;
+		case "dcw":
+			if (b === 0) return 0;
+			if (b === 127) return 99;
+			return Math.floor((b * 99) / 127) + 1;
+		case "dca":
+			return b === 0 ? 0 : Math.max(0, b - 28);
 	}
 }
 
-function sendAlgoControls(
-	line: 1 | 2,
-	bank: "a" | "b",
-	controls: AlgoControlValueV1[],
-) {
-	if (window.ipc) {
-		window.ipc.postMessage(
-			JSON.stringify({ algo_controls: { line, bank, controls } }),
-		);
-	}
+function mapEnvelope(env: StepEnv, kind: EnvelopeKind): StepEnv {
+	return {
+		...env,
+		steps: env.steps.map((step) => ({
+			...step,
+			level: rawLevelToHuman(kind, step.level),
+			rate: rawRateToHuman(kind, step.rate),
+		})),
+	};
 }
 
-function sendModMatrix(matrix: ModMatrix) {
-	if (window.ipc) {
-		window.ipc.postMessage(JSON.stringify({ mod_matrix: matrix }));
+function hasRawEnvelopeValues(params: SynthPresetV1["params"]): boolean {
+	const envelopes = [
+		params.line1.dcoEnv,
+		params.line1.dcwEnv,
+		params.line1.dcaEnv,
+		params.line2.dcoEnv,
+		params.line2.dcwEnv,
+		params.line2.dcaEnv,
+	];
+
+	for (const envelope of envelopes) {
+		for (const step of envelope.steps) {
+			if (step.level > 99 || step.rate > 99) {
+				return true;
+			}
+		}
 	}
+
+	return false;
 }
 
-function sendFxSlots(fxSlots: SynthParams["fxSlots"]) {
-	if (window.ipc) {
-		window.ipc.postMessage(JSON.stringify({ fx_slots: fxSlots }));
+function normalizeHostParamsIfRaw(
+	params: SynthPresetV1["params"],
+): SynthPresetV1["params"] {
+	if (!hasRawEnvelopeValues(params)) {
+		return params;
 	}
-}
 
-// ---------------------------------------------------------------------------
-// createPluginBridgeSynthEngineAdapter
-// Builds a SynthEngineAdapter that syncs a SynthEngineSnapshot to the
-// Beamer plugin host over the bridge IPC protocol.
-// ---------------------------------------------------------------------------
+	return {
+		...params,
+		line1: {
+			...params.line1,
+			dcoEnv: mapEnvelope(params.line1.dcoEnv, "dco"),
+			dcwEnv: mapEnvelope(params.line1.dcwEnv, "dcw"),
+			dcaEnv: mapEnvelope(params.line1.dcaEnv, "dca"),
+		},
+		line2: {
+			...params.line2,
+			dcoEnv: mapEnvelope(params.line2.dcoEnv, "dco"),
+			dcwEnv: mapEnvelope(params.line2.dcwEnv, "dcw"),
+			dcaEnv: mapEnvelope(params.line2.dcaEnv, "dca"),
+		},
+	};
+}
 
 export function usePluginBridgeSynthEngine(
 	options: UsePluginBridgeSynthEngineOptions = {},
 ): void {
 	const gatherState = useSynthStore((s) => s.gatherState);
+	const applyPreset = useSynthStore((s) => s.applyPreset);
 	const enabled = options.enabled ?? true;
-	const hydrationGraceMs = options.hydrationGraceMs ?? 1000;
-	const pendingParamTtlMs = options.pendingParamTtlMs ?? 250;
-
-	const sentParamsRef = useRef<Map<string, number>>(new Map());
-	const pendingLocalParamsRef = useRef<
-		Map<string, { value: number; sentAt: number }>
-	>(new Map());
-	const sentEnvelopesRef = useRef<Map<EnvelopeId, string>>(new Map());
-	const sentAlgoControlsRef = useRef<Map<string, string>>(new Map());
-	const sentModMatrixRef = useRef("");
-	const sentFxSlotsRef = useRef("");
-	const outboundSyncEnabledRef = useRef(false);
-	const inboundHydrationRef = useRef<InboundHydrationState>({
-		params: false,
-		envelopes: false,
-		algoControls: false,
-		modMatrix: false,
-		fxSlots: false,
-		presetSession: false,
-	});
+	const outboundEnabledRef = useRef(false);
+	const sentParamsRef = useRef("");
 	const syncRef = useRef<(() => void) | null>(null);
-	const PARAM_EPSILON = 1e-6;
 
-	const queueParam = useCallback((id: string, value: number) => {
-		const prev = sentParamsRef.current.get(id);
-		if (prev === value) return;
-		sentParamsRef.current.set(id, value);
-		pendingLocalParamsRef.current.set(id, {
-			value,
-			sentAt:
-				typeof performance !== "undefined" ? performance.now() : Date.now(),
-		});
-		sendParam(id, value);
+	const send = useCallback((params: SynthPresetV1["params"]) => {
+		const json = JSON.stringify(params);
+		if (sentParamsRef.current === json) return;
+		sentParamsRef.current = json;
+		window.__czSetParams?.(json);
 	}, []);
 
-	const queueEnvelope = useCallback((envId: EnvelopeId, env: StepEnvData) => {
-		const serialized = JSON.stringify(env);
-		if (sentEnvelopesRef.current.get(envId) === serialized) return;
-		sentEnvelopesRef.current.set(envId, serialized);
-		sendEnvelope(envId, env);
-	}, []);
-
-	const queueAlgoControls = useCallback(
-		(line: 1 | 2, bank: "a" | "b", controls: AlgoControlValueV1[]) => {
-			const serialized = JSON.stringify(controls);
-			const cacheKey = `${line}:${bank}`;
-			if (sentAlgoControlsRef.current.get(cacheKey) === serialized) return;
-			sentAlgoControlsRef.current.set(cacheKey, serialized);
-			sendAlgoControls(line, bank, controls);
-		},
-		[],
-	);
-
-	const queueModMatrix = useCallback((matrix: ModMatrix) => {
-		const serialized = JSON.stringify(matrix ?? { routes: [] });
-		if (sentModMatrixRef.current === serialized) return;
-		sentModMatrixRef.current = serialized;
-		sendModMatrix(matrix);
-	}, []);
-
-	const queueFxSlots = useCallback((fxSlots: SynthParams["fxSlots"]) => {
-		const serialized = JSON.stringify(fxSlots ?? []);
-		if (sentFxSlotsRef.current === serialized) return;
-		sentFxSlotsRef.current = serialized;
-		sendFxSlots(fxSlots);
-	}, []);
-
-	const tryEnableOutboundSync = useCallback(() => {
-		const hydration = inboundHydrationRef.current;
-		if (
-			hydration.params &&
-			hydration.envelopes &&
-			hydration.algoControls &&
-			hydration.modMatrix &&
-			hydration.fxSlots &&
-			hydration.presetSession
-		) {
-			outboundSyncEnabledRef.current = true;
-			syncRef.current?.();
-		}
-	}, []);
-
-	const enableOutboundSyncAfterParamReplay = useCallback(() => {
-		if (!inboundHydrationRef.current.params) {
-			return;
-		}
-		outboundSyncEnabledRef.current = true;
-		syncRef.current?.();
-	}, []);
-
-	const markHydrated = useCallback(
-		(key: keyof InboundHydrationState) => {
-			if (inboundHydrationRef.current[key]) {
-				return;
-			}
-			inboundHydrationRef.current[key] = true;
-			tryEnableOutboundSync();
-		},
-		[tryEnableOutboundSync],
-	);
-
-	const adapter = useMemo<SynthEngineAdapter>(
-		() => ({
-			sync(snapshot) {
-				const params = snapshot.params;
-				for (const descriptor of PLUGIN_PARAM_DESCRIPTORS) {
-					queueParam(descriptor.id, descriptor.read(params));
-				}
-				queueEnvelope("l1_dco", params.line1.dcoEnv);
-				queueEnvelope("l1_dcw", params.line1.dcwEnv);
-				queueEnvelope("l1_dca", params.line1.dcaEnv);
-				queueEnvelope("l2_dco", params.line2.dcoEnv);
-				queueEnvelope("l2_dcw", params.line2.dcwEnv);
-				queueEnvelope("l2_dca", params.line2.dcaEnv);
-				queueAlgoControls(1, "a", params.line1.algoControlsA ?? []);
-				queueAlgoControls(1, "b", params.line1.algoControlsB ?? []);
-				queueAlgoControls(2, "a", params.line2.algoControlsA ?? []);
-				queueAlgoControls(2, "b", params.line2.algoControlsB ?? []);
-				queueModMatrix(params.modMatrix ?? { routes: [] });
-				queueFxSlots(
-					(params.fxSlots ??
-						useSynthStore.getState().fxSlots) as SynthParams["fxSlots"],
-				);
-			},
-		}),
-		[
-			queueParam,
-			queueEnvelope,
-			queueAlgoControls,
-			queueModMatrix,
-			queueFxSlots,
-		],
-	);
-
-	// Lifecycle: connect / dispose
+	// Inbound: Rust → React state
 	useEffect(() => {
-		if (!enabled) {
-			return;
-		}
-		const controller = new SynthEngineController(adapter);
-		controller.connect();
-		return () => controller.dispose();
-	}, [adapter, enabled]);
-
-	// Mark non-parameter hydration stages as complete when bridge helpers
-	// are unavailable (e.g. lightweight harnesses).
-	useEffect(() => {
-		if (!enabled) {
-			return;
-		}
-		if (!window.__czGetEnvelopes) {
-			markHydrated("envelopes");
-		}
-		if (!window.__czGetAlgoControls) {
-			markHydrated("algoControls");
-		}
-		if (!window.__czGetModMatrix) {
-			markHydrated("modMatrix");
-		}
-		if (!window.__czGetFxSlots) {
-			markHydrated("fxSlots");
-		}
-		if (!window.__czGetPresetSession) {
-			markHydrated("presetSession");
-		}
-	}, [enabled, markHydrated]);
-
-	// Inbound: Rust → React state via __czOnParams (string ID → plain value)
-	useEffect(() => {
-		if (!enabled) {
-			return;
-		}
+		if (!enabled) return;
 		window.__czOnParams = (json: string) => {
 			try {
-				const params = JSON.parse(json) as Record<string, number>;
-				const hasParams = Object.keys(params).length > 0;
-				const now =
-					typeof performance !== "undefined" ? performance.now() : Date.now();
-				for (const [id, value] of Object.entries(params)) {
-					const pendingLocal = pendingLocalParamsRef.current.get(id);
-					if (pendingLocal) {
-						const ageMs = now - pendingLocal.sentAt;
-						if (Math.abs(pendingLocal.value - value) <= PARAM_EPSILON) {
-							pendingLocalParamsRef.current.delete(id);
-							continue;
-						}
-						if (ageMs < pendingParamTtlMs) {
-							continue;
-						}
-						pendingLocalParamsRef.current.delete(id);
-					}
-
-					sentParamsRef.current.set(id, value);
-
-					PLUGIN_PARAM_DESCRIPTOR_BY_ID.get(id)?.apply(
-						value,
-						useSynthStore.getState(),
-					);
-				}
-				if (hasParams) {
-					markHydrated("params");
-				}
+				const params = JSON.parse(json) as SynthPresetV1["params"];
+				const uiParams = normalizeHostParamsIfRaw(params);
+				applyPreset({ schemaVersion: 1, params: uiParams });
 			} catch (e) {
-				console.error("[PluginPage] Failed to parse params from Rust:", e);
+				console.error("[PluginBridge] Failed to parse params from Rust:", e);
 			}
+			outboundEnabledRef.current = true;
+			syncRef.current?.();
 		};
 		return () => {
 			window.__czOnParams = undefined;
 		};
-	}, [enabled, markHydrated, pendingParamTtlMs]);
+	}, [enabled, applyPreset]);
 
-	// Outbound sync: subscribe directly to Zustand so every state change
-	// flows to the host without causing component re-renders.
-	// Outbound sync: subscribe directly to Zustand so every state change
-	// flows to the host without causing component re-renders.
+	// Outbound: React state → Rust
 	useEffect(() => {
-		if (!enabled) {
-			return;
-		}
+		if (!enabled) return;
 		const sync = () => {
-			if (!outboundSyncEnabledRef.current) {
-				return;
-			}
-			const snapshot = createSynthEngineSnapshot({
-				gatherState,
-				effectivePitchHz: 220,
-			});
-			adapter.sync(snapshot);
+			if (!outboundEnabledRef.current) return;
+			send(gatherState().params);
 		};
-
 		syncRef.current = sync;
 		const unsubscribe = useSynthStore.subscribe(sync);
-
-		// In environments that do not expose host hydration helpers, allow a
-		// fallback initial sync so local-only harnesses keep working.
-		const shouldAllowFallbackSync =
-			!window.__czGetEnvelopes &&
-			!window.__czGetAlgoControls &&
-			!window.__czGetModMatrix &&
-			!window.__czGetFxSlots &&
-			!window.__czGetPresetSession;
-		const timeoutId = window.setTimeout(() => {
-			if (shouldAllowFallbackSync) {
-				outboundSyncEnabledRef.current = true;
-				sync();
-				return;
-			}
-
-			enableOutboundSyncAfterParamReplay();
-		}, hydrationGraceMs);
-
 		return () => {
 			syncRef.current = null;
-			if (timeoutId !== null) {
-				window.clearTimeout(timeoutId);
-			}
 			unsubscribe();
 		};
-	}, [
-		adapter,
-		enableOutboundSyncAfterParamReplay,
-		enabled,
-		gatherState,
-		hydrationGraceMs,
-	]);
+	}, [enabled, gatherState, send]);
 
-	// Inbound: initial envelope state from Rust
+	// Hydration: getParams from Rust once on mount
 	useEffect(() => {
-		if (!enabled) {
-			return;
-		}
-		if (!window.__czGetEnvelopes) {
+		if (!enabled) return;
+		if (!window.__czGetParams) {
+			// Running in WASM/standalone mode — outbound sync can start immediately.
+			outboundEnabledRef.current = true;
 			return;
 		}
 		let cancelled = false;
-		void window
-			.__czGetEnvelopes()
-			.then((envelopes) => {
-				if (cancelled) return;
-				if (envelopes) {
-					const s = useSynthStore.getState();
-					if (envelopes.l1_dco) s.setLine1DcoEnv(envelopes.l1_dco);
-					if (envelopes.l1_dcw) s.setLine1DcwEnv(envelopes.l1_dcw);
-					if (envelopes.l1_dca) s.setLine1DcaEnv(envelopes.l1_dca);
-					if (envelopes.l2_dco) s.setLine2DcoEnv(envelopes.l2_dco);
-					if (envelopes.l2_dcw) s.setLine2DcwEnv(envelopes.l2_dcw);
-					if (envelopes.l2_dca) s.setLine2DcaEnv(envelopes.l2_dca);
-				}
-				markHydrated("envelopes");
-			})
-			.catch((error) => {
-				console.error("[PluginPage] Failed to load envelope state:", error);
-			});
-		return () => {
-			cancelled = true;
-		};
-	}, [enabled, markHydrated]);
+		let retryCount = 0;
+		const MAX_RETRIES = 10;
+		const RETRY_DELAY_MS = 500;
+		let retryId = 0;
+		let fallbackId = 0;
 
-	// Inbound: initial fx-slot state from Rust
-	useEffect(() => {
-		if (!enabled) {
-			return;
-		}
-		if (!window.__czGetFxSlots) {
-			return;
-		}
-		let cancelled = false;
-		void window
-			.__czGetFxSlots()
-			.then((fxSlots) => {
-				if (cancelled) return;
-				if (Array.isArray(fxSlots) && fxSlots.length === 6) {
-					useSynthStore.setState({
-						fxSlots: fxSlots as SynthStore["fxSlots"],
-					});
-				}
-				markHydrated("fxSlots");
-			})
-			.catch((error) => {
-				console.error("[PluginPage] Failed to load fx slots:", error);
-				markHydrated("fxSlots");
-			});
-		return () => {
-			cancelled = true;
-		};
-	}, [enabled, markHydrated]);
-
-	// Inbound: initial algo-controls state from Rust
-	useEffect(() => {
-		if (!enabled) {
-			return;
-		}
-		if (!window.__czGetAlgoControls) {
-			return;
-		}
-		let cancelled = false;
-		void window
-			.__czGetAlgoControls()
-			.then((snapshot) => {
-				if (cancelled || !snapshot || typeof snapshot !== "object") return;
-				const typedSnapshot = snapshot as AlgoControlsSnapshot;
-				const s = useSynthStore.getState();
-				s.setLine1AlgoControlsA(typedSnapshot.line1?.a ?? []);
-				s.setLine1AlgoControlsB(typedSnapshot.line1?.b ?? []);
-				s.setLine2AlgoControlsA(typedSnapshot.line2?.a ?? []);
-				s.setLine2AlgoControlsB(typedSnapshot.line2?.b ?? []);
-				markHydrated("algoControls");
-			})
-			.catch((error) => {
-				console.error("[PluginPage] Failed to load algo controls:", error);
-			});
-		return () => {
-			cancelled = true;
-		};
-	}, [enabled, markHydrated]);
-
-	// Inbound: initial mod matrix state from Rust
-	useEffect(() => {
-		if (!enabled) {
-			return;
-		}
-		if (!window.__czGetModMatrix) {
-			return;
-		}
-		let cancelled = false;
-		void window
-			.__czGetModMatrix()
-			.then((matrix) => {
-				if (cancelled) return;
-				if (matrix && typeof matrix === "object") {
-					useSynthStore.getState().setModMatrix(matrix);
-				}
-				markHydrated("modMatrix");
-			})
-			.catch((error) => {
-				console.error("[PluginPage] Failed to load mod matrix state:", error);
-			});
-		return () => {
-			cancelled = true;
-		};
-	}, [enabled, markHydrated]);
-
-	// Inbound: initial preset session metadata from Rust
-	useEffect(() => {
-		if (!enabled) {
-			return;
-		}
-		if (!window.__czGetPresetSession) {
-			markHydrated("presetSession");
-			return;
-		}
-		let cancelled = false;
-		void window
-			.__czGetPresetSession()
-			.then((session) => {
-				if (cancelled) return;
-				if (session && typeof session === "object") {
-					// Restore preset session to localStorage so that useSynthPresetManager
-					// picks it up when it loads the initial state
-					const presetSessionData = {
-						activePresetId: session.activePresetId ?? null,
-						activePresetNameBase:
-							session.activePresetNameBase ?? "Current State",
-						loadedPresetFingerprint: session.loadedPresetFingerprint ?? null,
-					};
-					localStorage.setItem(
-						"cz101-current-preset-session",
-						JSON.stringify(presetSessionData),
+		const applyResult = (result: unknown) => {
+			if (result && typeof result === "object") {
+				try {
+					const uiParams = normalizeHostParamsIfRaw(
+						result as SynthPresetV1["params"],
 					);
+					applyPreset({
+						schemaVersion: 1,
+						params: uiParams,
+					});
+				} catch {
+					// Partial/empty params — ignore, keep current UI state.
 				}
-				markHydrated("presetSession");
-			})
-			.catch((error) => {
-				console.error("[PluginPage] Failed to load preset session:", error);
-				markHydrated("presetSession");
-			});
+			}
+			outboundEnabledRef.current = true;
+			syncRef.current?.();
+		};
+
+		const tryGetParams = () => {
+			if (cancelled) return;
+			const getParams = window.__czGetParams;
+			if (!getParams) return;
+			void getParams()
+				.then((result) => {
+					window.clearTimeout(fallbackId);
+					if (cancelled) return;
+					applyResult(result);
+				})
+				.catch((error) => {
+					if (cancelled) return;
+					retryCount++;
+					if (retryCount <= MAX_RETRIES) {
+						console.warn(
+							`[PluginBridge] getParams failed (attempt ${retryCount}/${MAX_RETRIES}):`,
+							error,
+						);
+						// Open the gate so controls work immediately while we retry.
+						if (!outboundEnabledRef.current) {
+							outboundEnabledRef.current = true;
+							syncRef.current?.();
+						}
+						retryId = window.setTimeout(tryGetParams, RETRY_DELAY_MS);
+					} else {
+						window.clearTimeout(fallbackId);
+						console.error(
+							"[PluginBridge] getParams failed after all retries:",
+							error,
+						);
+						if (!outboundEnabledRef.current) {
+							outboundEnabledRef.current = true;
+							syncRef.current?.();
+						}
+					}
+				});
+		};
+
+		// Safety fallback: open the outbound gate after 10 s no matter what.
+		fallbackId = window.setTimeout(() => {
+			if (!cancelled && !outboundEnabledRef.current) {
+				console.warn(
+					"[PluginBridge] getParams timed out — opening outbound gate anyway",
+				);
+				outboundEnabledRef.current = true;
+				syncRef.current?.();
+			}
+		}, 10000);
+
+		tryGetParams();
+
 		return () => {
 			cancelled = true;
+			window.clearTimeout(retryId);
+			window.clearTimeout(fallbackId);
 		};
-	}, [enabled, markHydrated]);
+	}, [enabled, applyPreset]);
 }

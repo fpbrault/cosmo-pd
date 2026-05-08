@@ -208,19 +208,19 @@ export default function PhaseLinesSection({
 
 	return (
 		<Card variant="panel-slanted" padding="none" className={panelClassName}>
-			<div className="cz-collapse-header cz-section-slanted-title py-0 shrink-0 justify-center">
+			<div className="cz-collapse-header cz-section-slanted-title shrink-0 justify-center py-0">
 				Phase Lines
 			</div>
-			<div className="bg-cz-panel p-2 flex-1 min-h-0 min-w-0 flex overflow-hidden">
-				<div className="flex-1 min-h-0 min-w-0 flex gap-2 items-stretch">
-					<div className="w-16 shrink-0 self-stretch flex flex-col gap-5 justify-evenly">
+			<div className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-cz-panel p-2">
+				<div className="flex max-h-130 min-h-0 min-w-0 flex-1 items-stretch gap-2">
+					<div className="flex w-16 shrink-0 flex-col justify-evenly gap-5 self-stretch">
 						{leftTabGroups.map((group) => {
 							return (
 								<div
 									key={group.label}
-									className="flex flex-col h-full justify-center gap-4 pb-10 bg-cz-inset/80 rounded-lg p-1.5 py-3"
+									className="flex h-full flex-col justify-center gap-4 rounded-lg bg-cz-inset/80 p-1.5 py-3 pb-10"
 								>
-									<div className="text-center text-[0.6rem] font-bold tracking-[0.12em] text-cz-cream">
+									<div className="text-center font-bold text-[0.6rem] text-cz-cream tracking-[0.12em]">
 										{group.label}
 									</div>
 									{group.tabs.map((tab) => (
@@ -239,10 +239,10 @@ export default function PhaseLinesSection({
 						})}
 					</div>
 
-					<div className="relative flex-1 min-h-0 min-w-0">
+					<div className="relative min-h-0 min-w-0 flex-1">
 						{!activeLineIsAudible && (
-							<div className="absolute inset-0 bg-black/45 backdrop-blur-[2px] rounded pointer-events-none flex items-center justify-center z-10">
-								<div className="text-cz-cream/80 text-xs font-semibold tracking-wide text-center px-3">
+							<div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded bg-black/45 backdrop-blur-[2px]">
+								<div className="px-3 text-center font-semibold text-cz-cream/80 text-xs tracking-wide">
 									{activeLineLabel} is currently inactive in{" "}
 									{inaudibleLineSelectLabel} mode
 								</div>

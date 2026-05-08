@@ -252,7 +252,7 @@ static void beamer_auv3_ext_on_loaded(void* context) {
     if (!instance) return;
     if (_paramCount == 0) return;
 
-    NSMutableString* script = [NSMutableString stringWithString:@"window.__BEAMER__._onParams({"];
+    NSMutableString* script = [NSMutableString stringWithString:@"window.__czOnParams(JSON.stringify({"];
     BOOL any = NO;
 
     BeamerAuParameterInfo info;
@@ -270,7 +270,7 @@ static void beamer_auv3_ext_on_loaded(void* context) {
     }
 
     if (any) {
-        [script appendString:@"})"];
+        [script appendString:@"}))"];
         const char* utf8 = [script UTF8String];
         beamer_webview_eval_js(_webviewHandle, (const uint8_t*)utf8, strlen(utf8));
     }

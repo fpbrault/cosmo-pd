@@ -92,7 +92,7 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 			<SynthPanelContainer className="p-2">
 				<div className="space-y-2">
 					<div className="min-w-0">
-						<div className="mb-0.5 text-center cz-light-blue">Portamento</div>
+						<div className="cz-light-blue mb-0.5 text-center">Portamento</div>
 						<div className="mt-0.5 flex justify-center gap-1">
 							<Button
 								active={portamentoMode === "rate"}

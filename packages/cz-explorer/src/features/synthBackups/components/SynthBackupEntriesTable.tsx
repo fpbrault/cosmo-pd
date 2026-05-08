@@ -16,7 +16,7 @@ export default function SynthBackupEntriesTable({
 }: SynthBackupEntriesTableProps) {
 	return (
 		<div className="grow overflow-auto">
-			<table className="table table-sm table-zebra">
+			<table className="table-sm table-zebra table">
 				<thead>
 					<tr>
 						<th>Slot</th>

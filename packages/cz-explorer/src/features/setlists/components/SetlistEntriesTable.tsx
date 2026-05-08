@@ -56,7 +56,7 @@ export default function SetlistEntriesTable({
 
 	if (playlist.entries.length === 0) {
 		return (
-			<div className="flex items-center justify-center grow p-8 text-sm opacity-60">
+			<div className="flex grow items-center justify-center p-8 text-sm opacity-60">
 				No presets in this setlist. Add presets using the button above.
 			</div>
 		);
@@ -64,7 +64,7 @@ export default function SetlistEntriesTable({
 
 	return (
 		<div className="grow overflow-auto">
-			<table className="table table-sm table-zebra">
+			<table className="table-sm table-zebra table">
 				<thead>
 					<tr>
 						<th className="w-8">#</th>
@@ -88,14 +88,14 @@ export default function SetlistEntriesTable({
 								onDrop={() => handleDrop(index)}
 								onDragEnd={handleDragEnd}
 								className={
-									(isCurrentStep ? "bg-accent/20 font-bold " : "") +
-									(dragOverIndex === index ? "opacity-50 " : "")
+									(isCurrentStep ? "bg-accent/20 font-bold" : "") +
+									(dragOverIndex === index ? "opacity-50" : "")
 								}
 							>
 								<td className="text-xs opacity-60">{index + 1}</td>
 								<td>
 									<span
-										className="cursor-grab text-base-content/40 select-none"
+										className="cursor-grab select-none text-base-content/40"
 										title="Drag to reorder"
 									>
 										⠿
@@ -107,7 +107,7 @@ export default function SetlistEntriesTable({
 											{preset.name}
 										</span>
 									) : (
-										<span className="opacity-40 italic">Preset not found</span>
+										<span className="italic opacity-40">Preset not found</span>
 									)}
 								</td>
 								<td className="text-xs">{preset?.author || "-"}</td>

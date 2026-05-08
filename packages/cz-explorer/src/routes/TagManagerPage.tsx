@@ -61,16 +61,16 @@ export default function TagManagerPage() {
 	}, [sourceTag, targetTag]);
 
 	useSidebarContent(
-		<div className="p-2 rounded-lg bg-base-300 text-xs">
+		<div className="rounded-lg bg-base-300 p-2 text-xs">
 			<div>Tags: {availableTags.length}</div>
 		</div>,
 	);
 
 	return (
-		<div className="flex grow h-full overflow-hidden bg-base-300">
+		<div className="flex h-full grow overflow-hidden bg-base-300">
 			<section className="flex grow items-start justify-center overflow-auto p-6">
 				<div className="w-full max-w-3xl rounded-xl border border-base-content/15 bg-base-100 p-6">
-					<h1 className="text-2xl font-bold">Tag Manager</h1>
+					<h1 className="font-bold text-2xl">Tag Manager</h1>
 					<p className="mt-1 text-sm opacity-70">
 						Rename, merge, or delete tags across your preset library.
 					</p>
@@ -116,7 +116,7 @@ export default function TagManagerPage() {
 								/>
 							</div>
 
-							<div className="flex flex-wrap justify-end gap-2 mt-2">
+							<div className="mt-2 flex flex-wrap justify-end gap-2">
 								<Button
 									variant="error"
 									disabled={!sourceTag || isSubmitting}

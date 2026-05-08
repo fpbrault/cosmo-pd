@@ -25,16 +25,16 @@ export default function PresetsSidebarContent({
 
 	useSidebarContent(
 		playlists.length > 0 && (
-			<div className="p-2 rounded-lg bg-base-300 text-xs overflow-y-auto max-h-48">
-				<div className="font-bold mb-1 opacity-70 uppercase tracking-wide">
+			<div className="max-h-48 overflow-y-auto rounded-lg bg-base-300 p-2 text-xs">
+				<div className="mb-1 font-bold uppercase tracking-wide opacity-70">
 					Setlists
 				</div>
 				<Button
 					type="button"
 					unstyled
-					className={`w-full text-left px-2 py-1 rounded transition-colors ${
+					className={`w-full rounded px-2 py-1 text-left transition-colors ${
 						!activePlaylistId
-							? "bg-accent text-accent-content font-semibold"
+							? "bg-accent font-semibold text-accent-content"
 							: "hover:bg-base-200"
 					}`}
 					onClick={() => setActivePlaylistId(null)}
@@ -46,9 +46,9 @@ export default function PresetsSidebarContent({
 						key={playlist.id}
 						type="button"
 						unstyled
-						className={`w-full text-left px-2 py-1 rounded transition-colors truncate ${
+						className={`w-full truncate rounded px-2 py-1 text-left transition-colors ${
 							activePlaylistId === playlist.id
-								? "bg-accent text-accent-content font-semibold"
+								? "bg-accent font-semibold text-accent-content"
 								: dragOverPlaylistId === playlist.id
 									? "bg-success/30 ring-1 ring-success"
 									: "hover:bg-base-200"

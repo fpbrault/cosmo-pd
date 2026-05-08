@@ -667,6 +667,130 @@ function renderAlgoSample(
 	return sampleBaseWave(baseWaveform, warpedPhase);
 }
 
+function warpPhaseForCzWaveform(
+	waveformId: CzWaveform,
+	phase: number,
+	dcw: number,
+): number {
+	const amount = clamp(dcw, 0, 0.999);
+	switch (waveformId) {
+		case "saw": {
+			const peak = lerp(0.5, 0.01, amount);
+			return phase < peak
+				? (phase / peak) * 0.5
+				: 0.5 + ((phase - peak) / (1 - peak)) * 0.5;
+		}
+		case "square": {
+			const peak = lerp(0.5, 0.01, amount);
+			const fall = lerp(1, 0.51, amount);
+			if (phase < peak) return (phase / peak) * 0.5;
+			if (phase < 0.5) return 0.5;
+			if (phase < fall) return 0.5 + ((phase - 0.5) / (fall - 0.5)) * 0.5;
+			return 1;
+		}
+		case "pulse": {
+			const peak = lerp(0.5, 0.01, amount);
+			const hold = lerp(0.5, 0.03, amount);
+			const fall = lerp(1, 0.04, amount);
+			if (phase < peak) return (phase / peak) * 0.5;
+			if (phase < hold) return 0.5;
+			if (phase < fall) return 0.5 + ((phase - hold) / (fall - hold)) * 0.5;
+			return 1;
+		}
+		case "null": {
+			const peak = lerp(0.5, 0.01, amount);
+			return phase < peak ? (phase / peak) * 0.5 : 1;
+		}
+		case "sinePulse": {
+			const end = lerp(1, 0.5, amount);
+			if (end >= 0.999) return phase;
+			return phase < end ? phase / end : (phase - end) / (1 - end);
+		}
+		case "sawPulse": {
+			const peak = lerp(0.5, 0.01, amount);
+			const end = lerp(1, 0.5, amount);
+			if (phase < peak) return (phase / peak) * 0.5;
+			if (phase < end) return 0.5 + ((phase - peak) / (end - peak)) * 0.5;
+			return 1;
+		}
+		case "multiSine":
+			return wrap01(phase * lerp(1, 15, amount));
+		case "pulse2": {
+			const p = wrap01(phase * 2);
+			const peak = lerp(0.5, 0.01, amount);
+			const hold = lerp(0.5, 0.01, amount);
+			const fall = lerp(1, 0.01, amount);
+			if (p < peak) return (p / peak) * 0.5;
+			if (p < hold) return 0.5;
+			if (p < fall) return 0.5 + ((p - hold) / (fall - hold)) * 0.5;
+			return 1;
+		}
+		default:
+			return phase;
+	}
+}
+
+type ResolvedAlgoRef = ReturnType<typeof resolveAlgoRef>;
+type ResolvedCzControls = ReturnType<typeof resolveCzControlsFromEntries>;
+
+function resolvedAlgoUsesCzCyclePair(
+	resolved: ResolvedAlgoRef | null,
+	czControls: ResolvedCzControls,
+): boolean {
+	return (
+		resolved?.warpAlgo === "cz101" &&
+		czControls.waveform1 !== czControls.waveform2
+	);
+}
+
+function resolvePreviewWindow(
+	resolved: ResolvedAlgoRef,
+	czControls: ResolvedCzControls,
+	fallback: WindowType,
+): WindowType {
+	return resolved.warpAlgo === "cz101"
+		? czControls.windowFunction
+		: (resolved.windowType ?? fallback);
+}
+
+function renderResolvedAlgoSample({
+	algo,
+	resolved,
+	czControls,
+	phase,
+	dcw,
+	baseWaveform,
+	algoControls,
+	cycleIndex,
+}: {
+	algo: PdAlgo;
+	resolved: ResolvedAlgoRef;
+	czControls: ResolvedCzControls;
+	phase: number;
+	dcw: number;
+	baseWaveform: BaseWaveform;
+	algoControls?: AlgoControlValueV1[];
+	cycleIndex: number;
+}): number {
+	if (resolved.warpAlgo === "cz101") {
+		const waveform =
+			cycleIndex % 2 === 0 ? czControls.waveform1 : czControls.waveform2;
+		return sampleBaseWave(
+			baseWaveform,
+			warpPhaseForCzWaveform(waveform, phase, dcw),
+		);
+	}
+
+	if (!isWarpAlgo(resolved.warpAlgo)) {
+		return sampleBaseWave(
+			baseWaveform,
+			warpPhaseForCzWaveform(resolved.waveform, phase, dcw),
+		);
+	}
+
+	return renderAlgoSample(algo, phase, dcw, baseWaveform, algoControls);
+}
+
 function applyWindow(phase: number, type: WindowType): number {
 	if (type === "off") return 1;
 	if (type === "saw") return phase;
@@ -743,28 +867,28 @@ export function computeWaveform(params: {
 	const line1CzB = resolveCzControlsFromEntries(params.line1AlgoControlsB);
 	const line2CzA = resolveCzControlsFromEntries(params.line2AlgoControlsA);
 	const line2CzB = resolveCzControlsFromEntries(params.line2AlgoControlsB);
-
-	const algoAWaveform: CzWaveform =
-		algoA.warpAlgo === "cz101" ? line1CzA.waveform1 : algoA.waveform;
-	const algo2AWaveform: CzWaveform =
-		algo2AResolved?.warpAlgo === "cz101"
-			? line1CzB.waveform1
-			: (algo2AResolved?.waveform ?? "saw");
-	const algoBWaveform: CzWaveform =
-		algoB.warpAlgo === "cz101" ? line2CzA.waveform1 : algoB.waveform;
-	const algo2BWaveform: CzWaveform =
-		algo2BResolved?.warpAlgo === "cz101"
-			? line2CzB.waveform1
-			: (algo2BResolved?.waveform ?? "saw");
-
-	const line1Window =
-		algoA.warpAlgo === "cz101" && line1CzA.windowFunction !== "off"
-			? line1CzA.windowFunction
-			: (algoA.windowType ?? params.windowType);
-	const line2Window =
-		algoB.warpAlgo === "cz101" && line2CzA.windowFunction !== "off"
-			? line2CzA.windowFunction
-			: (algoB.windowType ?? params.windowType);
+	const line1PrimaryWindow = resolvePreviewWindow(
+		algoA,
+		line1CzA,
+		params.windowType,
+	);
+	const line1SecondaryWindow = algo2AResolved
+		? resolvePreviewWindow(algo2AResolved, line1CzB, params.windowType)
+		: line1PrimaryWindow;
+	const line2PrimaryWindow = resolvePreviewWindow(
+		algoB,
+		line2CzA,
+		params.windowType,
+	);
+	const line2SecondaryWindow = algo2BResolved
+		? resolvePreviewWindow(algo2BResolved, line2CzB, params.windowType)
+		: line2PrimaryWindow;
+	const line1UsesCzCyclePair =
+		resolvedAlgoUsesCzCyclePair(algoA, line1CzA) ||
+		resolvedAlgoUsesCzCyclePair(algo2AResolved, line1CzB);
+	const line2UsesCzCyclePair =
+		resolvedAlgoUsesCzCyclePair(algoB, line2CzA) ||
+		resolvedAlgoUsesCzCyclePair(algo2BResolved, line2CzB);
 
 	// Aliases for backward compat within this function
 	const algo2A = algo2AResolved;
@@ -775,183 +899,95 @@ export function computeWaveform(params: {
 	}
 
 	const phaseA = new Float32Array(sampleCount);
-	const phaseB = new Float32Array(sampleCount);
 	const out1 = new Float32Array(sampleCount);
 	const out2 = new Float32Array(sampleCount);
 	for (let i = 0; i < sampleCount; ++i) {
-		phaseA[i] = applyPdAlgo(
-			phasor[i],
-			params.warpAAmount,
-			params.warpAAlgo,
-			algoAWaveform,
-			params.line1AlgoControlsA,
-		);
-		phaseB[i] = applyPdAlgo(
-			phasor[i],
-			params.warpBAmount,
-			params.warpBAlgo,
-			algoBWaveform,
-			params.line2AlgoControlsA,
-		);
-	}
+		const line1Phase = line1UsesCzCyclePair ? wrap01(phasor[i] * 2) : phasor[i];
+		const line1Cycle = line1UsesCzCyclePair && phasor[i] >= 0.5 ? 1 : 0;
+		const line2Phase = line2UsesCzCyclePair ? wrap01(phasor[i] * 2) : phasor[i];
+		const line2Cycle = line2UsesCzCyclePair && phasor[i] >= 0.5 ? 1 : 0;
 
-	for (let i = 0; i < sampleCount; ++i) {
-		const w1 = applyWindow(phasor[i], line1Window);
-		const w2 = applyWindow(phasor[i], line2Window);
-		const line1PrimaryCarrier = sampleBaseWave(
-			params.line1BaseWaveformA ?? "sine",
-			phasor[i],
-		);
-		const line1SecondaryCarrier = sampleBaseWave(
-			params.line1BaseWaveformB ?? "sine",
-			phasor[i],
-		);
-		const line2PrimaryCarrier = sampleBaseWave(
-			params.line2BaseWaveformA ?? "sine",
-			phasor[i],
-		);
-		const line2SecondaryCarrier = sampleBaseWave(
-			params.line2BaseWaveformB ?? "sine",
-			phasor[i],
-		);
+		phaseA[i] = line1Phase;
 
-		if (algo2A && algoA.warpAlgo === "cz101" && algo2A.warpAlgo === "cz101") {
-			const cyclePhase = (phasor[i] * 2) % 1;
-			const useSecondary = phasor[i] >= 0.5;
-			const activeWaveform = useSecondary ? algo2AWaveform : algoAWaveform;
-			const activeCarrier = useSecondary
-				? sampleBaseWave(params.line1BaseWaveformB ?? "sine", cyclePhase)
-				: sampleBaseWave(params.line1BaseWaveformA ?? "sine", cyclePhase);
-			out1[i] =
-				lerp(
-					activeCarrier,
-					czWaveform(activeWaveform, cyclePhase),
-					params.warpAAmount,
-				) *
-				w1 *
-				params.line1Level;
-		} else if (algo2A) {
+		if (algo2A) {
 			const blendA = params.algoBlendA;
-			const dcw1eff = params.warpAAmount * (1 - blendA);
-			const dcw2A = params.warpAAmount * blendA;
-			const sigA1 =
-				algoA.warpAlgo === "cz101"
-					? lerp(
-							line1PrimaryCarrier,
-							czWaveform(algoAWaveform, phasor[i]),
-							dcw1eff,
-						)
-					: renderAlgoSample(
-							params.warpAAlgo,
-							phasor[i],
-							dcw1eff,
-							params.line1BaseWaveformA ?? "sine",
-							params.line1AlgoControlsA,
-						);
-			const sigA2 =
-				algo2A.warpAlgo === "cz101"
-					? lerp(
-							line1SecondaryCarrier,
-							czWaveform(algo2AWaveform, phasor[i]),
-							dcw2A,
-						)
-					: renderAlgoSample(
-							params.algo2A as PdAlgo,
-							phasor[i],
-							dcw2A,
-							params.line1BaseWaveformB ?? "sine",
-							params.line1AlgoControlsB,
-						);
-			out1[i] = lerp(sigA1, sigA2, blendA) * w1 * params.line1Level;
-		} else if (algoA.warpAlgo === "cz101") {
-			out1[i] =
-				lerp(
-					line1PrimaryCarrier,
-					czWaveform(algoAWaveform, phasor[i]),
-					params.warpAAmount,
-				) *
-				w1 *
-				params.line1Level;
+			const primary =
+				renderResolvedAlgoSample({
+					algo: params.warpAAlgo,
+					resolved: algoA,
+					czControls: line1CzA,
+					phase: line1Phase,
+					dcw: params.warpAAmount * (1 - blendA),
+					baseWaveform: params.line1BaseWaveformA ?? "sine",
+					algoControls: params.line1AlgoControlsA,
+					cycleIndex: line1Cycle,
+				}) * applyWindow(line1Phase, line1PrimaryWindow);
+			const secondary =
+				renderResolvedAlgoSample({
+					algo: params.algo2A as PdAlgo,
+					resolved: algo2A,
+					czControls: line1CzB,
+					phase: line1Phase,
+					dcw: params.warpAAmount * blendA,
+					baseWaveform: params.line1BaseWaveformB ?? "sine",
+					algoControls: params.line1AlgoControlsB,
+					cycleIndex: line1Cycle,
+				}) * applyWindow(line1Phase, line1SecondaryWindow);
+			out1[i] = lerp(primary, secondary, blendA) * params.line1Level;
 		} else {
 			out1[i] =
-				renderAlgoSample(
-					params.warpAAlgo,
-					phasor[i],
-					params.warpAAmount,
-					params.line1BaseWaveformA ?? "sine",
-					params.line1AlgoControlsA,
-				) *
-				w1 *
+				renderResolvedAlgoSample({
+					algo: params.warpAAlgo,
+					resolved: algoA,
+					czControls: line1CzA,
+					phase: line1Phase,
+					dcw: params.warpAAmount,
+					baseWaveform: params.line1BaseWaveformA ?? "sine",
+					algoControls: params.line1AlgoControlsA,
+					cycleIndex: line1Cycle,
+				}) *
+				applyWindow(line1Phase, line1PrimaryWindow) *
 				params.line1Level;
 		}
 
-		if (algo2B && algoB.warpAlgo === "cz101" && algo2B.warpAlgo === "cz101") {
-			const cyclePhase = (phasor[i] * 2) % 1;
-			const useSecondary = phasor[i] >= 0.5;
-			const activeWaveform = useSecondary ? algo2BWaveform : algoBWaveform;
-			const activeCarrier = useSecondary
-				? sampleBaseWave(params.line2BaseWaveformB ?? "sine", cyclePhase)
-				: sampleBaseWave(params.line2BaseWaveformA ?? "sine", cyclePhase);
-			out2[i] =
-				lerp(
-					activeCarrier,
-					czWaveform(activeWaveform, cyclePhase),
-					params.warpBAmount,
-				) *
-				w2 *
-				params.line2Level;
-		} else if (algo2B) {
+		if (algo2B) {
 			const blendB = params.algoBlendB;
-			const dcw1effB = params.warpBAmount * (1 - blendB);
-			const dcw2B = params.warpBAmount * blendB;
-			const sigB1 =
-				algoB.warpAlgo === "cz101"
-					? lerp(
-							line2PrimaryCarrier,
-							czWaveform(algoBWaveform, phasor[i]),
-							dcw1effB,
-						)
-					: renderAlgoSample(
-							params.warpBAlgo,
-							phasor[i],
-							dcw1effB,
-							params.line2BaseWaveformA ?? "sine",
-							params.line2AlgoControlsA,
-						);
-			const sigB2 =
-				algo2B.warpAlgo === "cz101"
-					? lerp(
-							line2SecondaryCarrier,
-							czWaveform(algo2BWaveform, phasor[i]),
-							dcw2B,
-						)
-					: renderAlgoSample(
-							params.algo2B as PdAlgo,
-							phasor[i],
-							dcw2B,
-							params.line2BaseWaveformB ?? "sine",
-							params.line2AlgoControlsB,
-						);
-			out2[i] = lerp(sigB1, sigB2, blendB) * w2 * params.line2Level;
-		} else if (algoB.warpAlgo === "cz101") {
-			out2[i] =
-				lerp(
-					line2PrimaryCarrier,
-					czWaveform(algoBWaveform, phasor[i]),
-					params.warpBAmount,
-				) *
-				w2 *
-				params.line2Level;
+			const primary =
+				renderResolvedAlgoSample({
+					algo: params.warpBAlgo,
+					resolved: algoB,
+					czControls: line2CzA,
+					phase: line2Phase,
+					dcw: params.warpBAmount * (1 - blendB),
+					baseWaveform: params.line2BaseWaveformA ?? "sine",
+					algoControls: params.line2AlgoControlsA,
+					cycleIndex: line2Cycle,
+				}) * applyWindow(line2Phase, line2PrimaryWindow);
+			const secondary =
+				renderResolvedAlgoSample({
+					algo: params.algo2B as PdAlgo,
+					resolved: algo2B,
+					czControls: line2CzB,
+					phase: line2Phase,
+					dcw: params.warpBAmount * blendB,
+					baseWaveform: params.line2BaseWaveformB ?? "sine",
+					algoControls: params.line2AlgoControlsB,
+					cycleIndex: line2Cycle,
+				}) * applyWindow(line2Phase, line2SecondaryWindow);
+			out2[i] = lerp(primary, secondary, blendB) * params.line2Level;
 		} else {
 			out2[i] =
-				renderAlgoSample(
-					params.warpBAlgo,
-					phasor[i],
-					params.warpBAmount,
-					params.line2BaseWaveformA ?? "sine",
-					params.line2AlgoControlsA,
-				) *
-				w2 *
+				renderResolvedAlgoSample({
+					algo: params.warpBAlgo,
+					resolved: algoB,
+					czControls: line2CzA,
+					phase: line2Phase,
+					dcw: params.warpBAmount,
+					baseWaveform: params.line2BaseWaveformA ?? "sine",
+					algoControls: params.line2AlgoControlsA,
+					cycleIndex: line2Cycle,
+				}) *
+				applyWindow(line2Phase, line2PrimaryWindow) *
 				params.line2Level;
 		}
 	}

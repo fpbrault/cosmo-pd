@@ -79,7 +79,7 @@ export default function PhaseModModuleRenderer({
 				active={pmPreEnabled}
 				onClick={() => setFxSlotParams(slot, { pmPre: pmPreEnabled ? 0 : 1 })}
 				tooltip={getTooltip("pmPre")}
-				className="h-16 px-2 col-span-2"
+				className="col-span-2 h-16 px-2"
 			>
 				Pre
 			</CzButton>

@@ -37,7 +37,7 @@ export default function SynthPanelContainer({
 		>
 			{showEnableToggle ? (
 				<div className="mb-2 flex items-center justify-center gap-2">
-					<span className="text-3xs font-mono text-cz-cream-dim uppercase tracking-wider">
+					<span className="font-mono text-3xs text-cz-cream-dim uppercase tracking-wider">
 						{enableLabel}
 					</span>
 					<Button
@@ -46,7 +46,7 @@ export default function SynthPanelContainer({
 						onClick={() => onToggleEnabled?.(!enabled)}
 					>
 						<span
-							className={`text-5xs font-mono font-bold uppercase tracking-wider ${
+							className={`font-bold font-mono text-5xs uppercase tracking-wider ${
 								enabled ? "text-white" : "text-cz-cream-dim"
 							}`}
 						>
@@ -66,7 +66,7 @@ export default function SynthPanelContainer({
 						.join(" ")}
 				>
 					{visualTitle || visualMeta ? (
-						<div className="mb-2 cz-light-blue justify-between">
+						<div className="cz-light-blue mb-2 justify-between">
 							<span>{visualTitle}</span>
 							<span>{visualMeta}</span>
 						</div>

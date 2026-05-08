@@ -25,9 +25,9 @@ export default function SynthBackupDetailsHeader({
 	onDeleteBackup,
 }: SynthBackupDetailsHeaderProps) {
 	return (
-		<div className="flex items-center justify-between p-4 border-b border-base-content/10 bg-base-200/50">
+		<div className="flex items-center justify-between border-base-content/10 border-b bg-base-200/50 p-4">
 			<div>
-				<div className="text-lg font-bold">{selectedBackup.name}</div>
+				<div className="font-bold text-lg">{selectedBackup.name}</div>
 				<div className="text-xs opacity-70">
 					{new Date(selectedBackup.createdAt).toLocaleString()} •{" "}
 					{selectedBackup.entries.length} slots

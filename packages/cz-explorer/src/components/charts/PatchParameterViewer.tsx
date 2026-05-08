@@ -32,12 +32,12 @@ const ParamRow: React.FC<{
 	value: ReactNode;
 	mono?: boolean;
 }> = ({ label, value, mono }) => (
-	<div className="flex justify-between items-center gap-2 py-0.5">
-		<span className="text-3xs uppercase tracking-wider text-base-content/40 shrink-0">
+	<div className="flex items-center justify-between gap-2 py-0.5">
+		<span className="shrink-0 text-3xs text-base-content/40 uppercase tracking-wider">
 			{label}
 		</span>
 		<span
-			className={`text-xs font-semibold text-right ${mono ? "font-mono" : ""}`}
+			className={`text-right font-semibold text-xs ${mono ? "font-mono" : ""}`}
 		>
 			{value}
 		</span>
@@ -45,11 +45,11 @@ const ParamRow: React.FC<{
 );
 
 const SectionTitle: React.FC<{ children: ReactNode }> = ({ children }) => (
-	<div className="flex items-center gap-2 mt-3 mb-1">
-		<span className="text-4xs uppercase tracking-widest font-bold text-primary/70">
+	<div className="mt-3 mb-1 flex items-center gap-2">
+		<span className="font-bold text-4xs text-primary/70 uppercase tracking-widest">
 			{children}
 		</span>
-		<div className="flex-1 h-px bg-primary/20" />
+		<div className="h-px flex-1 bg-primary/20" />
 	</div>
 );
 
@@ -60,13 +60,13 @@ const ValueBar: React.FC<{
 }> = ({ value, max = 99, className = "progress-primary" }) => {
 	const clamped = Math.max(0, Math.min(max, value));
 	return (
-		<div className="flex items-center justify-end gap-2 min-w-30">
+		<div className="flex min-w-30 items-center justify-end gap-2">
 			<progress
-				className={`progress w-20 h-1.5 ${className}`}
+				className={`progress h-1.5 w-20 ${className}`}
 				value={clamped}
 				max={max}
 			></progress>
-			<span className="w-8 text-3xs font-mono text-right text-base-content/70">
+			<span className="w-8 text-right font-mono text-3xs text-base-content/70">
 				{clamped}
 			</span>
 		</div>
@@ -90,8 +90,8 @@ const EnvelopeGroup: React.FC<{
 	const lineNum = lineId === "Line 1" ? "1" : "2";
 	return (
 		<div className="flex flex-col gap-3">
-			<div className="flex items-center gap-2 mt-1">
-				<span className="badge badge-outline badge-xs text-4xs font-mono">
+			<div className="mt-1 flex items-center gap-2">
+				<span className="badge badge-outline badge-xs font-mono text-4xs">
 					{lineId}
 				</span>
 			</div>
@@ -126,17 +126,17 @@ const CollapsibleSection: React.FC<{
 }> = ({ title, defaultOpen = true, children }) => (
 	<details
 		open={defaultOpen}
-		className="group rounded-lg border border-base-content/10 bg-base-300/20 overflow-hidden"
+		className="group overflow-hidden rounded-lg border border-base-content/10 bg-base-300/20"
 	>
-		<summary className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none hover:bg-base-300/40 transition-colors">
-			<span className="text-3xs uppercase tracking-widest font-bold text-primary/80">
+		<summary className="flex cursor-pointer select-none items-center gap-2 px-3 py-2 transition-colors hover:bg-base-300/40">
+			<span className="font-bold text-3xs text-primary/80 uppercase tracking-widest">
 				{title}
 			</span>
-			<span className="ml-auto text-xs text-base-content/35 group-open:rotate-90 transition-transform">
+			<span className="ml-auto text-base-content/35 text-xs transition-transform group-open:rotate-90">
 				▶
 			</span>
 		</summary>
-		<div className="px-3 pb-3 pt-1 border-t border-base-content/10">
+		<div className="border-base-content/10 border-t px-3 pt-1 pb-3">
 			{children}
 		</div>
 	</details>
@@ -152,7 +152,7 @@ const PatchParameterViewer: React.FC<PatchParameterViewerProps> = memo(
 
 		if (!patch) {
 			return (
-				<div className="flex items-center justify-center h-16 text-xs text-base-content/30 italic">
+				<div className="flex h-16 items-center justify-center text-base-content/30 text-xs italic">
 					No valid SysEx data
 				</div>
 			);
@@ -163,7 +163,7 @@ const PatchParameterViewer: React.FC<PatchParameterViewerProps> = memo(
 		const isLine2Only = patch.lineSelect === "L2";
 
 		return (
-			<div className="flex flex-col gap-2 rounded-xl bg-base-300/40 border border-base-content/10 overflow-hidden">
+			<div className="flex flex-col gap-2 overflow-hidden rounded-xl border border-base-content/10 bg-base-300/40">
 				<CollapsibleSection title="Core Params" defaultOpen>
 					<div className="flex flex-col">
 						<SectionTitle>Voice Setup</SectionTitle>

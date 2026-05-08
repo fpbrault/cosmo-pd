@@ -78,7 +78,7 @@ export default function VibratoModuleRenderer({
 				/>
 			}
 		>
-			<div className="col-span-3 join w-full overflow-hidden rounded-md border border-cz-border/65">
+			<div className="join col-span-3 w-full overflow-hidden rounded-md border border-cz-border/65">
 				{waveformControl?.options.map((option) => (
 					<Button
 						key={option.value}

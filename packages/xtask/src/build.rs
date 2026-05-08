@@ -1,12 +1,11 @@
-//! Build orchestration and AU ObjC code generation.
+//! Build orchestration.
 
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use crate::util::{
-    cargo_target_dir_for_package, combine_or_rename_binaries, to_au_bundle_name,
-    to_auv2_component_name, to_pascal_case, to_vst3_bundle_name, Arch, PathExt,
+    cargo_target_dir_for_package, combine_or_rename_binaries, to_vst3_bundle_name, Arch,
 };
 
 /// Read version from workspace Cargo.toml and convert to Apple's version integer format
@@ -39,77 +38,6 @@ pub fn get_version_info(workspace_root: &Path) -> Result<(String, u32), String> 
     let version_int = (major << 16) | (minor << 8) | patch;
 
     Ok((version, version_int))
-}
-
-/// Generate RUSTFLAGS for linking AU static libraries.
-///
-/// The `objc_lib_dir` parameter points to where plugin-specific ObjC static libraries
-/// were compiled (contains libplugin_au_objc.a and libplugin_au_extension.a).
-fn get_au_rustflags(plugin_name: &str, objc_lib_dir: &Path) -> Result<String, String> {
-    let objc_lib_dir_str = objc_lib_dir
-        .to_str()
-        .ok_or_else(|| "Invalid ObjC library directory path".to_string())?;
-
-    // Generate plugin-specific class and function names
-    let pascal_name = to_pascal_case(plugin_name);
-    let wrapper_class = format!("Beamer{}AuWrapper", pascal_name);
-    let extension_class = format!("Beamer{}AuExtension", pascal_name);
-    let factory_func = format!("Beamer{}AuExtensionFactory", pascal_name);
-
-    // Library names based on plugin
-    let lib_name = plugin_name.replace('-', "_");
-
-    // Build RUSTFLAGS with all necessary linker arguments
-    // Note: beamer_au_appex_force_link is internal (not exported) to avoid symbol collisions
-    let flags = [
-        format!("-L native={}", objc_lib_dir_str),
-        format!(
-            "-C link-arg=-Wl,-force_load,{}/lib{}_au_objc.a",
-            objc_lib_dir_str, lib_name
-        ),
-        format!(
-            "-C link-arg=-Wl,-force_load,{}/lib{}_au_extension.a",
-            objc_lib_dir_str, lib_name
-        ),
-        format!(
-            "-C link-arg=-Wl,-exported_symbol,_OBJC_CLASS_$_{}",
-            wrapper_class
-        ),
-        format!(
-            "-C link-arg=-Wl,-exported_symbol,_OBJC_CLASS_$_{}",
-            extension_class
-        ),
-        format!(
-            "-C link-arg=-Wl,-exported_symbol,_OBJC_METACLASS_$_{}",
-            wrapper_class
-        ),
-        format!(
-            "-C link-arg=-Wl,-exported_symbol,_OBJC_METACLASS_$_{}",
-            extension_class
-        ),
-        format!("-C link-arg=-Wl,-exported_symbol,_{}", factory_func),
-    ];
-
-    Ok(flags.join(" "))
-}
-
-fn is_au_build(format: &str) -> bool {
-    format
-        .split(',')
-        .any(|f| f == "au" || f == "auv2" || f == "auv3")
-}
-
-/// Legacy hook kept for compatibility with older bundling flow.
-///
-/// Recent beamer versions are consumed through the top-level `beamer` crate,
-/// and `beamer-au` is not necessarily a workspace package. Attempting
-/// `cargo build -p beamer-au` can fail with "did not match any packages".
-fn ensure_beamer_au_built(
-    _workspace_root: &Path,
-    _target: &str,
-    _release: bool,
-) -> Result<(), String> {
-    Ok(())
 }
 
 /// Get the current host target triple.
@@ -174,52 +102,18 @@ pub fn build_native(
     let shared_lib_name = shared_lib_filename(&lib_name, target);
     let target_root = cargo_target_dir_for_package(workspace_root, package);
 
-    // AU requires additional setup (beamer-au and ObjC code)
-    let rustflags = if is_au_build(format) {
-        ensure_beamer_au_built(workspace_root, target, release)?;
-        crate::verbose!(
-            verbose,
-            "    Generating plugin-specific ObjC for {}...",
-            package
-        );
-        let objc_lib_dir = compile_plugin_objc(package, workspace_root, target)?;
-        Some(get_au_rustflags(package, &objc_lib_dir)?)
-    } else {
-        None
-    };
-
     let mut cmd = Command::new("cargo");
-    if let Some(flags) = &rustflags {
-        // AU build needs linker args only on the final plugin crate, not dependencies.
-        cmd.arg("rustc")
-            .arg("-p")
-            .arg(package)
-            .arg("--target")
-            .arg(target)
-            .arg("--features")
-            .arg(format)
-            .env("CARGO_TARGET_DIR", &target_root)
-            .current_dir(workspace_root);
-        if release {
-            cmd.arg("--release");
-        }
-        cmd.arg("--");
-        for token in flags.split_whitespace() {
-            cmd.arg(token);
-        }
-    } else {
-        cmd.arg("build")
-            .arg("-p")
-            .arg(package)
-            .arg("--target")
-            .arg(target)
-            .arg("--features")
-            .arg(format)
-            .env("CARGO_TARGET_DIR", &target_root)
-            .current_dir(workspace_root);
-        if release {
-            cmd.arg("--release");
-        }
+    cmd.arg("build")
+        .arg("-p")
+        .arg(package)
+        .arg("--target")
+        .arg(target)
+        .arg("--features")
+        .arg(format)
+        .env("CARGO_TARGET_DIR", &target_root)
+        .current_dir(workspace_root);
+    if release {
+        cmd.arg("--release");
     }
 
     let status = cmd
@@ -258,61 +152,20 @@ pub fn build_universal(
     let dylib_name = shared_lib_filename(&lib_name, "aarch64-apple-darwin");
     let target_root = cargo_target_dir_for_package(workspace_root, package);
 
-    // AU requires additional setup (beamer-au and ObjC code)
-    let (rustflags_x86, rustflags_arm) = if is_au_build(format) {
-        ensure_beamer_au_built(workspace_root, "x86_64-apple-darwin", release)?;
-        ensure_beamer_au_built(workspace_root, "aarch64-apple-darwin", release)?;
-
-        crate::verbose!(
-            verbose,
-            "    Generating plugin-specific ObjC for {}...",
-            package
-        );
-        let objc_lib_dir_x86 = compile_plugin_objc(package, workspace_root, "x86_64-apple-darwin")?;
-        let objc_lib_dir_arm =
-            compile_plugin_objc(package, workspace_root, "aarch64-apple-darwin")?;
-
-        (
-            Some(get_au_rustflags(package, &objc_lib_dir_x86)?),
-            Some(get_au_rustflags(package, &objc_lib_dir_arm)?),
-        )
-    } else {
-        (None, None)
-    };
-
     // Build for x86_64
     crate::verbose!(verbose, "    Building for x86_64...");
     let mut cmd = Command::new("cargo");
-    if let Some(flags) = &rustflags_x86 {
-        cmd.arg("rustc")
-            .arg("-p")
-            .arg(package)
-            .arg("--target")
-            .arg("x86_64-apple-darwin")
-            .arg("--features")
-            .arg(format)
-            .env("CARGO_TARGET_DIR", &target_root)
-            .current_dir(workspace_root);
-        if release {
-            cmd.arg("--release");
-        }
-        cmd.arg("--");
-        for token in flags.split_whitespace() {
-            cmd.arg(token);
-        }
-    } else {
-        cmd.arg("build")
-            .arg("-p")
-            .arg(package)
-            .arg("--target")
-            .arg("x86_64-apple-darwin")
-            .arg("--features")
-            .arg(format)
-            .env("CARGO_TARGET_DIR", &target_root)
-            .current_dir(workspace_root);
-        if release {
-            cmd.arg("--release");
-        }
+    cmd.arg("build")
+        .arg("-p")
+        .arg(package)
+        .arg("--target")
+        .arg("x86_64-apple-darwin")
+        .arg("--features")
+        .arg(format)
+        .env("CARGO_TARGET_DIR", &target_root)
+        .current_dir(workspace_root);
+    if release {
+        cmd.arg("--release");
     }
 
     let status = cmd
@@ -325,36 +178,17 @@ pub fn build_universal(
     // Build for arm64
     crate::verbose!(verbose, "    Building for arm64...");
     let mut cmd = Command::new("cargo");
-    if let Some(flags) = &rustflags_arm {
-        cmd.arg("rustc")
-            .arg("-p")
-            .arg(package)
-            .arg("--target")
-            .arg("aarch64-apple-darwin")
-            .arg("--features")
-            .arg(format)
-            .env("CARGO_TARGET_DIR", &target_root)
-            .current_dir(workspace_root);
-        if release {
-            cmd.arg("--release");
-        }
-        cmd.arg("--");
-        for token in flags.split_whitespace() {
-            cmd.arg(token);
-        }
-    } else {
-        cmd.arg("build")
-            .arg("-p")
-            .arg(package)
-            .arg("--target")
-            .arg("aarch64-apple-darwin")
-            .arg("--features")
-            .arg(format)
-            .env("CARGO_TARGET_DIR", &target_root)
-            .current_dir(workspace_root);
-        if release {
-            cmd.arg("--release");
-        }
+    cmd.arg("build")
+        .arg("-p")
+        .arg(package)
+        .arg("--target")
+        .arg("aarch64-apple-darwin")
+        .arg("--features")
+        .arg(format)
+        .env("CARGO_TARGET_DIR", &target_root)
+        .current_dir(workspace_root);
+    if release {
+        cmd.arg("--release");
     }
 
     let status = cmd
@@ -394,70 +228,24 @@ pub fn build_universal(
 
 /// Clean build caches to force full rebuild.
 ///
-/// This is necessary because:
-/// 1. `cc::Build` (used in build.rs) caches compiled .o files in target/build/beamer-au-*/
-/// 2. Even if cargo triggers a rebuild, cc may use cached object files
-/// 3. The final .app bundle may not get updated if only static libraries changed
-///
-/// Use --clean when ObjC or header file changes aren't being picked up.
+/// This removes stale bundled artifacts before rebuilding.
 pub fn clean_build_caches(
     workspace_root: &Path,
     package: &str,
     release: bool,
     verbose: bool,
-    build_auv2: bool,
-    build_auv3: bool,
     build_vst3: bool,
 ) -> Result<(), String> {
     let profile = if release { "release" } else { "debug" };
     let target_root = cargo_target_dir_for_package(workspace_root, package);
     let target_dir = target_root.join(profile);
-    let clean_au = build_auv2 || build_auv3;
 
     // Build description of what we're cleaning
     let mut targets = Vec::new();
-    if clean_au {
-        targets.push("AU caches");
-    }
-    if build_auv2 {
-        targets.push("AUv2");
-    }
-    if build_auv3 {
-        targets.push("AUv3");
-    }
     if build_vst3 {
         targets.push("VST3");
     }
     crate::status!("  Cleaning ({})...", targets.join(", "));
-
-    // Clean beamer-au cc cache (compiled ObjC objects) - only for AU builds
-    if clean_au {
-        let build_dir = target_root.join(profile).join("build");
-        if build_dir.exists() {
-            for entry in fs::read_dir(&build_dir).map_err(|e| e.to_string())? {
-                let entry = entry.map_err(|e| e.to_string())?;
-                let name = entry.file_name();
-                if name.to_string_lossy().starts_with("beamer-au-") {
-                    crate::verbose!(verbose, "    Removing: {}", entry.path().display());
-                    fs::remove_dir_all(entry.path()).map_err(|e| e.to_string())?;
-                }
-            }
-        }
-
-        // Clean beamer-au deps (compiled Rust library)
-        let deps_dir = target_dir.join("deps");
-        if deps_dir.exists() {
-            for entry in fs::read_dir(&deps_dir).map_err(|e| e.to_string())? {
-                let entry = entry.map_err(|e| e.to_string())?;
-                let name = entry.file_name();
-                let name_str = name.to_string_lossy();
-                if name_str.starts_with("libbeamer_au") {
-                    crate::verbose!(verbose, "    Removing: {}", entry.path().display());
-                    fs::remove_file(entry.path()).map_err(|e| e.to_string())?;
-                }
-            }
-        }
-    }
 
     // Clean previous VST3 bundle
     if build_vst3 {
@@ -469,157 +257,7 @@ pub fn clean_build_caches(
         }
     }
 
-    // Clean previous AUv2 component bundle
-    if build_auv2 {
-        let auv2_bundle_name = to_auv2_component_name(package);
-        let component_path = target_dir.join(&auv2_bundle_name);
-        if component_path.exists() {
-            crate::verbose!(verbose, "    Removing: {}", component_path.display());
-            fs::remove_dir_all(&component_path).map_err(|e| e.to_string())?;
-        }
-    }
-
-    // Clean previous AUv3 app bundle
-    if build_auv3 {
-        let auv3_bundle_name = to_au_bundle_name(package);
-        let app_path = target_dir.join(&auv3_bundle_name);
-        if app_path.exists() {
-            crate::verbose!(verbose, "    Removing: {}", app_path.display());
-            fs::remove_dir_all(&app_path).map_err(|e| e.to_string())?;
-        }
-    }
-
     Ok(())
-}
-
-/// Generate and compile plugin-specific ObjC code.
-///
-/// This creates uniquely named ObjC classes for each plugin to avoid symbol collisions
-/// when multiple AU plugins are loaded in the same process (e.g., in Reaper).
-///
-/// Returns the path to the directory containing the compiled static libraries.
-pub fn compile_plugin_objc(
-    plugin_name: &str,
-    workspace_root: &Path,
-    target: &str,
-) -> Result<PathBuf, String> {
-    let lib_name = plugin_name.replace('-', "_");
-    let target_root = cargo_target_dir_for_package(workspace_root, plugin_name);
-
-    // Create output directory for generated sources and compiled libraries
-    let gen_dir = target_root.join("au-gen").join(plugin_name).join(target);
-
-    fs::create_dir_all(&gen_dir)
-        .map_err(|e| format!("Failed to create au-gen directory: {}", e))?;
-
-    // Generate plugin-specific ObjC source files
-    let wrapper_source = generate_au_wrapper_source(plugin_name);
-    let has_gui = crate::util::detect_has_gui(plugin_name, workspace_root);
-    let extension_source = generate_au_extension_source(plugin_name, has_gui);
-
-    let wrapper_path = gen_dir.join("AuWrapper.m");
-    let extension_path = gen_dir.join("AuExtension.m");
-
-    fs::write(&wrapper_path, wrapper_source)
-        .map_err(|e| format!("Failed to write AuWrapper.m: {}", e))?;
-    fs::write(&extension_path, extension_source)
-        .map_err(|e| format!("Failed to write AuExtension.m: {}", e))?;
-
-    // Header search paths for clang
-    let bridge_header_dir = workspace_root.join("packages/xtask/au-support/objc");
-    let ipc_header_dir = workspace_root.join("packages/xtask/src/au_codegen");
-
-    // Determine architecture for clang
-    let arch = match target {
-        "x86_64-apple-darwin" => "x86_64",
-        "aarch64-apple-darwin" => "arm64",
-        _ => return Err(format!("Unsupported target: {}", target)),
-    };
-
-    // Compile AuWrapper.m to static library
-    let wrapper_obj = gen_dir.join("AuWrapper.o");
-    let wrapper_lib = gen_dir.join(format!("lib{}_au_objc.a", lib_name));
-
-    let status = Command::new("clang")
-        .args([
-            "-c",
-            "-arch",
-            arch,
-            "-fobjc-arc",
-            "-fmodules",
-            "-I",
-            bridge_header_dir.to_str_safe()?,
-            "-I",
-            ipc_header_dir.to_str_safe()?,
-            "-o",
-            wrapper_obj.to_str_safe()?,
-            wrapper_path.to_str_safe()?,
-        ])
-        .status()
-        .map_err(|e| format!("Failed to compile AuWrapper.m: {}", e))?;
-
-    if !status.success() {
-        return Err("Failed to compile AuWrapper.m".to_string());
-    }
-
-    // Create static library from object file
-    let status = Command::new("ar")
-        .args([
-            "rcs",
-            wrapper_lib.to_str_safe()?,
-            wrapper_obj.to_str_safe()?,
-        ])
-        .status()
-        .map_err(|e| format!("Failed to create static library: {}", e))?;
-
-    if !status.success() {
-        return Err("Failed to create AuWrapper static library".to_string());
-    }
-
-    // Compile AuExtension.m to static library
-    let extension_obj = gen_dir.join("AuExtension.o");
-    let extension_lib = gen_dir.join(format!("lib{}_au_extension.a", lib_name));
-
-    let status = Command::new("clang")
-        .args([
-            "-c",
-            "-arch",
-            arch,
-            "-fobjc-arc",
-            "-fmodules",
-            "-I",
-            bridge_header_dir.to_str_safe()?,
-            "-I",
-            ipc_header_dir.to_str_safe()?,
-            "-o",
-            extension_obj.to_str_safe()?,
-            extension_path.to_str_safe()?,
-        ])
-        .status()
-        .map_err(|e| format!("Failed to compile AuExtension.m: {}", e))?;
-
-    if !status.success() {
-        return Err("Failed to compile AuExtension.m".to_string());
-    }
-
-    let status = Command::new("ar")
-        .args([
-            "rcs",
-            extension_lib.to_str_safe()?,
-            extension_obj.to_str_safe()?,
-        ])
-        .status()
-        .map_err(|e| format!("Failed to create static library: {}", e))?;
-
-    if !status.success() {
-        return Err("Failed to create AuExtension static library".to_string());
-    }
-
-    // Clean up object files
-    let _ = fs::remove_file(&wrapper_obj);
-    let _ = fs::remove_file(&extension_obj);
-
-    Ok(gen_dir)
 }
 
 /// Detect the package manager to use for a webview project.
@@ -695,6 +333,3 @@ pub fn build_webview(package_dir: &Path, verbose: bool) -> Result<(), String> {
     crate::verbose!(verbose, "    Webview build complete");
     Ok(())
 }
-
-// Include the AUv3 ObjC code generation functions
-include!("au_codegen/auv3_objc.rs");

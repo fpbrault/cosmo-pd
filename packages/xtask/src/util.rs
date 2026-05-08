@@ -9,33 +9,7 @@ use serde::Deserialize;
 /// Simplified plugin config from Config.toml for xtask use.
 #[derive(Deserialize)]
 struct ConfigFile {
-    name: String,
-    category: String,
-    manufacturer_code: String,
-    plugin_code: String,
-    vendor: Option<String>,
-    has_gui: Option<bool>,
     bundle_identifier_prefix: Option<String>,
-}
-
-/// Extension trait for converting paths to strings with proper error handling.
-pub trait PathExt {
-    /// Convert path to string, returning an error if the path contains invalid UTF-8.
-    fn to_str_safe(&self) -> Result<&str, String>;
-}
-
-impl PathExt for std::path::Path {
-    fn to_str_safe(&self) -> Result<&str, String> {
-        self.to_str()
-            .ok_or_else(|| format!("Path contains invalid UTF-8: {}", self.display()))
-    }
-}
-
-impl PathExt for std::path::PathBuf {
-    fn to_str_safe(&self) -> Result<&str, String> {
-        self.to_str()
-            .ok_or_else(|| format!("Path contains invalid UTF-8: {}", self.display()))
-    }
 }
 
 /// Print an error message, with red color if stderr is a terminal.
@@ -171,53 +145,6 @@ pub fn to_vst3_bundle_name(package: &str) -> String {
     format!("{}.vst3", to_pascal_case(package))
 }
 
-/// Convert package name to AUv3 app bundle name.
-/// "cosmo-pd101" -> "CzSynthVst.app"
-#[must_use]
-pub fn to_au_bundle_name(package: &str) -> String {
-    format!("{}.app", to_pascal_case(package))
-}
-
-/// Convert package name to AUv2 component bundle name.
-/// "cosmo-pd101" -> "CzSynthVst.component"
-#[must_use]
-pub fn to_auv2_component_name(package: &str) -> String {
-    format!("{}.component", to_pascal_case(package))
-}
-
-/// Generates a 4-character AU subtype code from a package name.
-///
-/// Takes alphanumeric characters, lowercases them and pads with underscores if needed.
-/// Examples: "gain" -> "gain", "midi-transform" -> "midi", "fx" -> "fx__"
-#[must_use]
-pub fn generate_au_subtype(package: &str) -> String {
-    let gen: String = package
-        .chars()
-        .filter(|c| c.is_alphanumeric())
-        .map(|c| c.to_ascii_lowercase())
-        .take(4)
-        .collect();
-    if gen.len() < 4 {
-        format!("{:_<4}", gen)
-    } else {
-        gen
-    }
-}
-
-/// Maps AU component type code to appropriate tags for Info.plist.
-///
-/// DAWs use these tags for plugin categorization.
-#[must_use]
-pub fn get_au_tags(component_type: &str) -> &'static str {
-    match component_type {
-        "aufx" => "Effects", // Audio effect
-        "aumu" => "Synth",   // Music device/instrument
-        "aumi" => "MIDI",    // MIDI processor
-        "aumf" => "Effects", // Music effect
-        _ => "Effects",      // Default fallback
-    }
-}
-
 /// Combines multiple architecture-specific binaries into a universal binary using lipo,
 /// or renames a single binary to the output path.
 ///
@@ -267,48 +194,6 @@ pub fn combine_or_rename_binaries(
     Ok(())
 }
 
-/// Ad-hoc code sign a bundle with optional entitlements.
-///
-/// This handles the common codesign pattern used for frameworks, appex and app bundles.
-/// Prints verbose output on success, warnings on failure.
-pub fn codesign_bundle(
-    target_path: &Path,
-    entitlements: Option<&Path>,
-    label: &str,
-    verbose: bool,
-) {
-    use std::process::Command;
-
-    let mut cmd = Command::new("codesign");
-    cmd.args(["--force", "--sign", "-"]);
-
-    if let Some(ent_path) = entitlements {
-        cmd.args(["--entitlements", &ent_path.to_string_lossy()]);
-    }
-
-    cmd.arg(target_path);
-
-    let result = cmd.output();
-
-    match result {
-        Ok(output) if output.status.success() => {
-            if verbose {
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                for line in stderr.lines() {
-                    crate::verbose!(verbose, "    {}", line);
-                }
-            }
-            crate::verbose!(verbose, "    {} code signing successful", label);
-        }
-        Ok(_) => crate::status!("  Warning: {} code signing failed", label),
-        Err(e) => crate::status!(
-            "  Warning: Could not run codesign on {}: {}",
-            label.to_lowercase(),
-            e
-        ),
-    }
-}
-
 /// Install a plugin bundle to a directory under the user's home directory.
 ///
 /// Handles the common install pattern:
@@ -352,35 +237,10 @@ pub fn install_bundle(
     Ok(dest)
 }
 
-// =============================================================================
-// Plugin Feature Detection
-// =============================================================================
-
-/// Detect whether a plugin has a custom GUI (WebView UI).
-///
-/// Checks `Config.toml` for `has_gui = true` and also checks for
-/// a `webview/index.html` file in the package directory.
-pub fn detect_has_gui(package: &str, workspace_root: &Path) -> bool {
-    let pkg_dir = workspace_root.join("packages").join(package);
-
-    // Check Config.toml for explicit has_gui flag
-    let config_path = pkg_dir.join("Config.toml");
-    if let Ok(toml_str) = fs::read_to_string(&config_path) {
-        if let Ok(config) = toml::from_str::<ConfigFile>(&toml_str) {
-            if config.has_gui == Some(true) {
-                return true;
-            }
-        }
-    }
-
-    // Also check for webview/index.html (mirrors macro behavior)
-    pkg_dir.join("webview/index.html").exists()
-}
-
 /// Detect bundle identifier prefix for generated plugin bundles.
 ///
 /// Reads `bundle_identifier_prefix` from `Config.toml` and falls back to
-/// `com.beamer` for compatibility if the field is not present.
+/// `com.cosmo` if the field is not present.
 #[must_use]
 pub fn detect_bundle_identifier_prefix(package: &str, workspace_root: &Path) -> String {
     let config_path = workspace_root
@@ -399,155 +259,7 @@ pub fn detect_bundle_identifier_prefix(package: &str, workspace_root: &Path) -> 
         }
     }
 
-    "com.beamer".to_string()
-}
-
-// =============================================================================
-// AU Plugin Metadata Detection (from source code)
-// =============================================================================
-
-/// Detect AU component info by reading Config.toml or parsing plugin source code.
-///
-/// Returns (component_type, manufacturer, subtype, plugin_name, vendor_name, has_gui).
-/// Used by both AUv2 and AUv3 bundlers.
-///
-/// Tries to read `packages/{package}/Config.toml` first. Falls back to
-/// parsing the source code in `packages/{package}/src/lib.rs` if the TOML
-/// file is missing or cannot be parsed.
-///
-/// The `has_gui` field is computed via `detect_has_gui`, avoiding
-/// a second parse of Config.toml by callers that need both pieces of info.
-pub fn detect_au_component_info(
-    package: &str,
-    workspace_root: &Path,
-) -> (
-    String,
-    Option<String>,
-    Option<String>,
-    Option<String>,
-    Option<String>,
-    bool,
-) {
-    let has_gui = detect_has_gui(package, workspace_root);
-
-    // Try Config.toml first
-    let package_root = workspace_root.join("packages").join(package);
-
-    let config_path = package_root.join("Config.toml");
-    if let Ok(toml_str) = fs::read_to_string(&config_path) {
-        if let Ok(config) = toml::from_str::<ConfigFile>(&toml_str) {
-            let component_type = match config.category.as_str() {
-                "instrument" | "generator" => "aumu",
-                "midi_effect" => "aumi",
-                _ => "aufx",
-            }
-            .to_string();
-
-            return (
-                component_type,
-                Some(config.manufacturer_code),
-                Some(config.plugin_code),
-                Some(config.name),
-                config.vendor,
-                has_gui,
-            );
-        }
-    }
-
-    // Fall back to source code parsing
-    let lib_path = package_root.join("src/lib.rs");
-
-    if let Ok(content) = fs::read_to_string(&lib_path) {
-        // Detect component type from Category enum in Config::new()
-        let component_type = if content.contains("Category::Instrument")
-            || content.contains("Category::Generator")
-        {
-            "aumu".to_string()
-        } else if content.contains("Category::MidiEffect") {
-            "aumi".to_string()
-        } else {
-            // Default to effect (aufx)
-            "aufx".to_string()
-        };
-
-        // Detect manufacturer and subtype from Config::new()
-        let (manufacturer, subtype) = detect_au_fourcc_codes(&content);
-
-        // Detect plugin name and vendor from Config::new()
-        let (plugin_name, vendor_name) = detect_plugin_metadata(&content);
-
-        (
-            component_type,
-            manufacturer,
-            subtype,
-            plugin_name,
-            vendor_name,
-            has_gui,
-        )
-    } else {
-        // Default to effect if we can't read the file
-        ("aufx".to_string(), None, None, None, None, has_gui)
-    }
-}
-
-/// Extract AU fourcc codes (manufacturer and subtype) from plugin source code.
-///
-/// Parses `Config::new("name", Category::Effect, "mfgr", "subt")` to find
-/// the 4-character manufacturer and subtype string literals.
-fn detect_au_fourcc_codes(content: &str) -> (Option<String>, Option<String>) {
-    let Some(start) = content.find("Config::new(") else {
-        return (None, None);
-    };
-
-    let after_new = &content[start..];
-    let Some(end) = after_new.find(')').or_else(|| after_new.find(".with_")) else {
-        return (None, None);
-    };
-
-    let config_args = &after_new[..end];
-    let mut string_literals: Vec<String> = Vec::new();
-    let mut remaining = config_args;
-
-    while let Some(quote_start) = remaining.find('"') {
-        let after_quote = &remaining[quote_start + 1..];
-        if let Some(quote_end) = after_quote.find('"') {
-            let literal = &after_quote[..quote_end];
-            if literal.len() == 4 && literal.is_ascii() {
-                string_literals.push(literal.to_string());
-            }
-            remaining = &after_quote[quote_end + 1..];
-        } else {
-            break;
-        }
-    }
-
-    let manufacturer = string_literals.first().cloned();
-    let subtype = string_literals.get(1).cloned();
-    (manufacturer, subtype)
-}
-
-/// Extract plugin name and vendor from Config in source code.
-///
-/// Parses `Config::new("Plugin Name")` and `.with_vendor("Vendor Name")`.
-fn detect_plugin_metadata(content: &str) -> (Option<String>, Option<String>) {
-    let mut plugin_name = None;
-    let mut vendor_name = None;
-
-    if let Some(start) = content.find("Config::new(\"") {
-        let after_prefix = &content[start + 13..];
-        if let Some(end) = after_prefix.find('"') {
-            plugin_name = Some(after_prefix[..end].to_string());
-        }
-    }
-
-    if let Some(start) = content.find(".with_vendor(\"") {
-        let after_prefix = &content[start + 14..];
-        if let Some(end) = after_prefix.find('"') {
-            vendor_name = Some(after_prefix[..end].to_string());
-        }
-    }
-
-    (plugin_name, vendor_name)
+    "com.purraudio".to_string()
 }
 
 /// Recursively copy a directory, preserving symlinks.

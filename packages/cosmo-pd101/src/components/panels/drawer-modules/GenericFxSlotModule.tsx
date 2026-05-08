@@ -257,7 +257,7 @@ export default function GenericFxSlotModule({
 								>
 									<div className={`flex flex-col gap-1.5 ${groupAlignment}`}>
 										{!ctrl.hideLabel && (
-											<span className="text-center text-3xs uppercase tracking-[0.2em] text-base-content/58">
+											<span className="text-center text-3xs text-base-content/58 uppercase tracking-[0.2em]">
 												{ctrl.label}
 											</span>
 										)}

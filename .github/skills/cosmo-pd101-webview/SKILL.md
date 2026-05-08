@@ -5,7 +5,7 @@ description: "Work in the cosmo-pd101 webview package — the reusable synth UI 
 
 # cosmo-pd101 Shared Library and Plugin Webview
 
-Reusable React synth UI library consumed by `cz-explorer` and the plugin webview. The shared library lives at `packages/cosmo-pd101/`; the Beamer plugin shell lives at `packages/cosmo-pd101-plugin/webview/`.
+Reusable React synth UI library consumed by `cz-explorer` and the plugin webview. The shared library lives at `packages/cosmo-pd101/`; the nih-plug plugin shell lives at `packages/cosmo-pd101-plugin/webview/`.
 
 ## Package Overview
 
@@ -16,7 +16,7 @@ Reusable React synth UI library consumed by `cz-explorer` and the plugin webview
 | Context | `packages/cosmo-pd101/src/context/` | `ModMatrixContext` and others |
 | Lib | `packages/cosmo-pd101/src/lib/midi/` | `czSysexDecoder` — CZ SysEx decoder |
 | Lib | `packages/cosmo-pd101/src/lib/synth/` | Synth bindings, preset converter, PD algorithms, worklet URLs |
-| Plugin shell | `packages/cosmo-pd101-plugin/webview/src/` | App bootstrap, Beamer bridge, plugin-only tests/update checks |
+| Plugin shell | `packages/cosmo-pd101-plugin/webview/src/` | App bootstrap, nih-plug bridge, plugin-only tests/update checks |
 | Public API | `packages/cosmo-pd101/src/index.ts` | Exports consumed by `cz-explorer` and plugin webview |
 
 ### Key Subdirectories

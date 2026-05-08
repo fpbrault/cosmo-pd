@@ -32,7 +32,7 @@ export default function PresetNavigator({
 				>
 					<svg
 						viewBox="0 -960 960 960"
-						className="w-10 h-10 fill-cz-cream"
+						className="h-10 w-10 fill-cz-cream"
 						xmlns="http://www.w3.org/2000/svg"
 						aria-hidden="true"
 					>
@@ -58,21 +58,21 @@ export default function PresetNavigator({
 						/>
 						<div
 							aria-hidden="true"
-							className="pointer-events-none absolute inset-0 opacity-26 bg-[linear-gradient(to_bottom,rgba(94,111,118,0.11)_0px,rgba(94,111,118,0.11)_1px,transparent_1px,transparent_3px)]"
+							className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(94,111,118,0.11)_0px,rgba(94,111,118,0.11)_1px,transparent_1px,transparent_3px)] opacity-26"
 						/>
 						<div
 							aria-hidden="true"
-							className="pointer-events-none absolute inset-0 opacity-28 bg-[linear-gradient(to_right,rgba(234,240,244,0.08)_1px,transparent_1px)] bg-size-[6px_100%]"
+							className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(234,240,244,0.08)_1px,transparent_1px)] bg-size-[6px_100%] opacity-28"
 						/>
 						<div
 							aria-hidden="true"
 							className="pointer-events-none absolute inset-px rounded-md border border-[#6b7c83]/42"
 						/>
 
-						<span className="relative truncate text-[1.05rem] leading-[1.05] font-['IBM_Plex_Mono','SFMono-Regular','Consolas','Liberation_Mono','Menlo',monospace] font-semibold uppercase tracking-[0.08em] text-[#54666e] [text-shadow:0_1px_0_rgba(235,242,245,0.24)]">
+						<span className="relative truncate font-['IBM_Plex_Mono','SFMono-Regular','Consolas','Liberation_Mono','Menlo',monospace] font-semibold text-[#54666e] text-[1.05rem] uppercase leading-[1.05] tracking-[0.08em] [text-shadow:0_1px_0_rgba(235,242,245,0.24)]">
 							{activePresetName}
 						</span>
-						<span className="relative mt-1 truncate text-[0.58rem] leading-none font-['IBM_Plex_Mono','SFMono-Regular','Consolas','Liberation_Mono','Menlo',monospace] uppercase tracking-[0.28em] text-[#6d7c82]">
+						<span className="relative mt-1 truncate font-['IBM_Plex_Mono','SFMono-Regular','Consolas','Liberation_Mono','Menlo',monospace] text-[#6d7c82] text-[0.58rem] uppercase leading-none tracking-[0.28em]">
 							{activePresetSource}
 						</span>
 					</button>
@@ -87,7 +87,7 @@ export default function PresetNavigator({
 				>
 					<svg
 						viewBox="0 -960 960 960"
-						className="w-10 h-10 fill-cz-cream rotate-180"
+						className="h-10 w-10 rotate-180 fill-cz-cream"
 						xmlns="http://www.w3.org/2000/svg"
 						aria-hidden="true"
 					>
