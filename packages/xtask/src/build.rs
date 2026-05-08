@@ -4,7 +4,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use crate::util::{cargo_target_dir_for_package, combine_or_rename_binaries, to_vst3_bundle_name, Arch};
+use crate::util::{
+    cargo_target_dir_for_package, combine_or_rename_binaries, to_vst3_bundle_name, Arch,
+};
 
 /// Read version from workspace Cargo.toml and convert to Apple's version integer format
 pub fn get_version_info(workspace_root: &Path) -> Result<(String, u32), String> {
