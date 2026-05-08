@@ -159,7 +159,7 @@ export default function AsidePanelSwitcher<T extends string>({
 		) {
 			return "blue";
 		}
-		if (normalizedTabId === "scope" || normalizedTabId === "global") {
+		if (normalizedTabId === "global") {
 			return "cyan";
 		}
 

@@ -1,15 +1,15 @@
 import { useState } from "react";
-import Button from "@/components/controls/Button";
 import ControlKnob from "@/components/controls/ControlKnob";
-import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
 import {
 	asNumber,
 	getKnobControl,
+	getModDestinationByParam,
 	getTooltip,
 	resolveEnabled,
 	resolvePresetPatchParams,
 } from "@/components/panels/drawer-modules/custom/utils";
 import type { FxSlotModuleConfig } from "@/components/panels/drawer-modules/fxSlotModuleConfig";
+import BadgeToggle from "@/components/primitives/BadgeToggle";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
@@ -23,9 +23,6 @@ export default function DelayModuleRenderer({
 	slot: number;
 }) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("");
-	const tapeModeHoverHandlers = useHoverInfoHandlers(
-		getTooltip("delayTapeMode"),
-	);
 	const rawSlot = useSynthStore((state) => state.fxSlots[slot]);
 	const setFxSlotParams = useSynthStore((state) => state.setFxSlotParams);
 
@@ -42,6 +39,7 @@ export default function DelayModuleRenderer({
 	const warmthControl = getKnobControl(config, "warmth");
 	const mixControl = getKnobControl(config, "mix");
 	const modeLabel = tapeMode ? "Tape Echo" : "Digital";
+	const modDestinationByParam = getModDestinationByParam(config.type);
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
@@ -84,19 +82,13 @@ export default function DelayModuleRenderer({
 				/>
 			}
 		>
-			<Button
-				type="button"
+			<BadgeToggle
+				active={tapeMode}
+				label="Tape"
 				onClick={() => setFxSlotParams(slot, { tapeMode: tapeMode ? 0 : 1 })}
-				data-hover-info={getTooltip("delayTapeMode")}
-				{...tapeModeHoverHandlers}
-				className={`btn btn-xs col-span-full h-8 min-h-0 justify-self-center px-4 ${
-					tapeMode
-						? "border-amber-500/60 bg-amber-500/20 text-amber-300"
-						: "border-cz-border bg-transparent text-cz-cream/60 hover:text-cz-cream/90"
-				}`}
-			>
-				{tapeMode ? "● TAPE" : "○ TAPE"}
-			</Button>
+				tooltip={getTooltip("delayTapeMode")}
+				className="col-span-full"
+			/>
 			{timeControl ? (
 				<ControlKnob
 					value={asNumber(params.time, timeControl.defaultValue)}
@@ -104,11 +96,12 @@ export default function DelayModuleRenderer({
 					min={timeControl.min}
 					max={timeControl.max}
 					defaultValue={timeControl.defaultValue}
-					size={52}
+					size={64}
 					color={config.color}
 					label="Time"
 					tooltip={getTooltip("delayTime")}
 					valueFormatter={timeControl.formatter}
+					modDestination={modDestinationByParam.time}
 				/>
 			) : null}
 			{feedbackControl ? (
@@ -118,11 +111,12 @@ export default function DelayModuleRenderer({
 					min={feedbackControl.min}
 					max={feedbackControl.max}
 					defaultValue={feedbackControl.defaultValue}
-					size={52}
+					size={64}
 					color={config.color}
 					label="Fdbk"
 					tooltip={getTooltip("delayFeedback")}
 					valueFormatter={feedbackControl.formatter}
+					modDestination={modDestinationByParam.feedback}
 				/>
 			) : null}
 			{tapeMode && warmthControl ? (
@@ -132,11 +126,12 @@ export default function DelayModuleRenderer({
 					min={warmthControl.min}
 					max={warmthControl.max}
 					defaultValue={warmthControl.defaultValue}
-					size={52}
+					size={64}
 					color={config.color}
 					label="Warmth"
 					tooltip={getTooltip("delayWarmth")}
 					valueFormatter={warmthControl.formatter}
+					modDestination={modDestinationByParam.warmth}
 				/>
 			) : null}
 			{mixControl ? (
@@ -146,11 +141,12 @@ export default function DelayModuleRenderer({
 					min={mixControl.min}
 					max={mixControl.max}
 					defaultValue={mixControl.defaultValue}
-					size={52}
+					size={64}
 					color={config.color}
 					label="Mix"
 					tooltip={getTooltip("delayMix")}
 					valueFormatter={mixControl.formatter}
+					modDestination={modDestinationByParam.mix}
 				/>
 			) : null}
 		</ModuleFrame>

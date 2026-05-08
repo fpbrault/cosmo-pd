@@ -2,7 +2,8 @@ import type { DragEndEvent } from "@dnd-kit/core";
 import {
 	closestCenter,
 	DndContext,
-	PointerSensor,
+	MouseSensor,
+	TouchSensor,
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
@@ -15,11 +16,15 @@ const SLOT_IDS = [0, 1, 2, 3, 4, 5];
 export default function FxConsoleDrawer() {
 	const reorderFxSlots = useSynthStore((s) => s.reorderFxSlots);
 
-	// PointerSensor handles both mouse and touch.
-	// distance:8 activation prevents accidental drags on button clicks.
 	const sensors = useSensors(
-		useSensor(PointerSensor, {
+		useSensor(MouseSensor, {
 			activationConstraint: { distance: 8 },
+		}),
+		useSensor(TouchSensor, {
+			activationConstraint: {
+				delay: 180,
+				tolerance: 10,
+			},
 		}),
 	);
 

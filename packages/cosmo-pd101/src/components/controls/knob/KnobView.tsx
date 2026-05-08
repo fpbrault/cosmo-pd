@@ -204,8 +204,8 @@ export function KnobView({
 			<svg
 				ref={svgRef}
 				width={size}
-				height={size}
-				viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
+				height={size - 12}
+				viewBox={`0 0 ${viewBoxSize} ${viewBoxSize - 12}`}
 				role="presentation"
 				aria-hidden="true"
 			>

@@ -91,35 +91,26 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 		return (
 			<SynthPanelContainer className="p-2">
 				<div className="space-y-2">
-					<div className="min-w-0">
-						<div className="cz-light-blue mb-0.5 text-center">Portamento</div>
-						<div className="mt-0.5 flex justify-center gap-1">
+					<div className="grid grid-cols-[auto_1fr_auto] items-end gap-1.5 pt-0.5">
+						<div className="mt-0.5 flex flex-col justify-center">
 							<Button
-								active={portamentoMode === "rate"}
-								onClick={() => setPortamentoMode("rate")}
-								title={PORTAMENTO_MODE_TOOLTIPS.rate}
-								className={`btn btn-xs px-3 py-1 tracking-wide ${
+								type="button"
+								onClick={() =>
+									setPortamentoMode(portamentoMode === "rate" ? "time" : "rate")
+								}
+								title={
+									PORTAMENTO_MODE_TOOLTIPS[
+										portamentoMode === "rate" ? "time" : "rate"
+									]
+								}
+								className={`btn btn-xs h-fit min-h-0 w-fit self-center justify-self-center p-2 ${
 									portamentoMode === "rate"
-										? "btn-primary"
-										: "btn-outline border-cz-border text-cz-cream/70"
+										? "border-amber-500/60 bg-amber-500/20 text-amber-300"
+										: "border-cz-border bg-transparent text-cz-cream/60 hover:text-cz-cream/90"
 								}`}
 							>
-								Rate
+								{portamentoMode === "rate" ? "● Rate" : "○ Time"}
 							</Button>
-							<Button
-								active={portamentoMode === "time"}
-								onClick={() => setPortamentoMode("time")}
-								title={PORTAMENTO_MODE_TOOLTIPS.time}
-								className={`btn btn-xs px-3 py-1 tracking-wide ${
-									portamentoMode === "time"
-										? "btn-primary"
-										: "btn-outline border-cz-border text-cz-cream/70"
-								}`}
-							>
-								Time
-							</Button>
-						</div>
-						<div className="mt-0.5 flex justify-center">
 							{portamentoMode === "rate" ? (
 								<SynthParamKnob
 									paramKey="portamentoRate"
@@ -129,7 +120,7 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 									step={0.01}
 									onChange={setPortamentoRate}
 									color="#7f9de4"
-									label="Rate"
+									label="Portamento"
 								/>
 							) : (
 								<SynthParamKnob
@@ -137,13 +128,11 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 									value={portamentoTime}
 									onChange={setPortamentoTime}
 									color="#7f9de4"
-									label="Time"
+									label="Portamento"
 								/>
 							)}
 						</div>
-					</div>
 
-					<div className="grid grid-cols-[auto_1fr_auto] items-end gap-1.5 pt-0.5">
 						<div className="flex justify-center">
 							<SynthParamKnob
 								paramKey="pitchBendRange"
@@ -153,13 +142,11 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 								step={1}
 								onChange={setPitchBendRange}
 								color="#5bc8d4"
-								label="Bend"
+								label="Pitch Bend"
 							/>
 						</div>
-						<div className="flex justify-center">
+						<div className="flex flex-col justify-center">
 							<VelocityCurvePreview curve={velocityCurve} />
-						</div>
-						<div className="flex justify-center">
 							<SynthParamKnob
 								paramKey="velocityCurve"
 								value={velocityCurve}

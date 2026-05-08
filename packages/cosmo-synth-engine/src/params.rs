@@ -292,7 +292,6 @@ pub enum LfoWaveform {
     Square,
     Saw,
     InvertedSaw,
-    Random,
 }
 
 /// Filter type
@@ -906,8 +905,8 @@ impl Default for LfoParams {
     fn default() -> Self {
         Self {
             waveform: LfoWaveform::Sine,
-            rate: 5.0,
-            depth: 0.2,
+            rate: 2.0,
+            depth: 1.0,
             symmetry: 0.5,
             retrigger: false,
             offset: 0.0,
@@ -1658,6 +1657,16 @@ pub struct EngineParamUiMetaV1 {
     pub readout_format: EngineParamReadoutFormatV1,
 }
 
+/// Engine-owned numeric range metadata for one parameter key.
+#[derive(Debug, Clone, Copy, Serialize)]
+#[cfg_attr(feature = "specta-bindings", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub struct EngineParamRangeV1 {
+    pub key: &'static str,
+    pub min: f32,
+    pub max: f32,
+}
+
 /// Tooltip metadata for enum-like button choices.
 #[derive(Debug, Clone, Copy, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -1678,7 +1687,7 @@ const POLY_MODE_LABELS_V1: [EngineEnumValueLabelV1; 2] = [
     },
 ];
 
-const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 55] = [
+const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 57] = [
     EngineParamUiMetaV1 {
         key: "volume",
         tooltip: "Sets the global synth output level.",
@@ -1820,6 +1829,12 @@ const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 55] = [
         readout_format: EngineParamReadoutFormatV1::Decimal,
     },
     EngineParamUiMetaV1 {
+        key: "lfoSymmetry",
+        tooltip: "Skews LFO 1 waveform timing around the midpoint.",
+        readout_label: "LFO Symmetry",
+        readout_format: EngineParamReadoutFormatV1::Decimal,
+    },
+    EngineParamUiMetaV1 {
         key: "lfoOffset",
         tooltip: "Offsets LFO 1 output around zero.",
         readout_label: "LFO Offset",
@@ -1838,6 +1853,12 @@ const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 55] = [
         readout_format: EngineParamReadoutFormatV1::Decimal,
     },
     EngineParamUiMetaV1 {
+        key: "lfo2Symmetry",
+        tooltip: "Skews LFO 2 waveform timing around the midpoint.",
+        readout_label: "LFO 2 Symmetry",
+        readout_format: EngineParamReadoutFormatV1::Decimal,
+    },
+    EngineParamUiMetaV1 {
         key: "lfo2Offset",
         tooltip: "Offsets LFO 2 output around zero.",
         readout_label: "LFO 2 Offset",
@@ -1847,7 +1868,7 @@ const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 55] = [
         key: "randomRate",
         tooltip: "Sets sample-and-hold random modulation refresh rate.",
         readout_label: "Random Rate",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
+        readout_format: EngineParamReadoutFormatV1::Hertz,
     },
     EngineParamUiMetaV1 {
         key: "modEnvAttack",
@@ -2013,6 +2034,12 @@ const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 55] = [
     },
 ];
 
+const ENGINE_PARAM_RANGES_V1: [EngineParamRangeV1; 1] = [EngineParamRangeV1 {
+    key: "randomRate",
+    min: 0.0,
+    max: 200.0,
+}];
+
 const ENGINE_ENUM_VALUE_TOOLTIPS_V1: [EngineEnumValueTooltipV1; 13] = [
     EngineEnumValueTooltipV1 {
         key: "lineSelect",
@@ -2085,6 +2112,10 @@ pub fn engine_param_ui_meta_v1() -> &'static [EngineParamUiMetaV1] {
     &ENGINE_PARAM_UI_META_V1
 }
 
+pub fn engine_param_ranges_v1() -> &'static [EngineParamRangeV1] {
+    &ENGINE_PARAM_RANGES_V1
+}
+
 /// Engine-owned numeric defaults for UI parameters where a concrete number
 /// exists and should be reused by frontend state initialization.
 pub fn engine_param_default_v1(key: &str) -> Option<f32> {
@@ -2120,9 +2151,11 @@ pub fn engine_param_default_v1(key: &str) -> Option<f32> {
         "vibratoDelay" => Some(vibrato.delay),
         "lfoRate" => Some(synth.lfo.rate),
         "lfoDepth" => Some(synth.lfo.depth),
+        "lfoSymmetry" => Some(synth.lfo.symmetry),
         "lfoOffset" => Some(synth.lfo.offset),
         "lfo2Rate" => Some(synth.lfo2.rate),
         "lfo2Depth" => Some(synth.lfo2.depth),
+        "lfo2Symmetry" => Some(synth.lfo2.symmetry),
         "lfo2Offset" => Some(synth.lfo2.offset),
         "randomRate" => Some(synth.random.rate),
         "modEnvAttack" => Some(synth.mod_env.attack),

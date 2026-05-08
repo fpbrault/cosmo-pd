@@ -394,12 +394,12 @@ export function ControlKnob({
 			) : (
 				knobButton
 			)}
+			{labelEl}
 			<div className="relative h-0 w-full">
 				<div className="absolute top-0 left-1/2 z-20 -translate-x-1/2">
 					{valueIndicatorEl}
 				</div>
 			</div>
-			{labelEl}
 		</div>
 	);
 

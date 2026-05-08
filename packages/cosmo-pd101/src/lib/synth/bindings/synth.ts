@@ -80,7 +80,7 @@ export type PolyMode = "poly8" | "mono"
 /**
  * LFO waveform
  */
-export type LfoWaveform = "sine" | "triangle" | "square" | "saw" | "invertedSaw" | "random"
+export type LfoWaveform = "sine" | "triangle" | "square" | "saw" | "invertedSaw"
 
 /**
  * Portamento mode
@@ -3320,6 +3320,7 @@ export type EngineParamReadoutFormatV1 =
   | { kind: "hertz" }
   | { kind: "enumMap"; values: EngineEnumValueLabelV1[] };
 export type EngineParamUiMetaV1 = { key: string; tooltip: string; readoutLabel: string; readoutFormat: EngineParamReadoutFormatV1; paramDefault: number | null };
+export type EngineParamRangeV1 = { key: string; min: number; max: number };
 export type EngineEnumValueTooltipV1 = { key: string; value: string; tooltip: string };
 
 /** Rust-owned engine parameter tooltip and readout metadata. */
@@ -3525,7 +3526,7 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
   },
   {
     "key": "lfoRate",
-    "paramDefault": 5.0,
+    "paramDefault": 2.0,
     "readoutFormat": {
       "kind": "decimal"
     },
@@ -3534,12 +3535,21 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
   },
   {
     "key": "lfoDepth",
-    "paramDefault": 0.20000000298023224,
+    "paramDefault": 1.0,
     "readoutFormat": {
       "kind": "decimal"
     },
     "readoutLabel": "LFO Depth",
     "tooltip": "Sets LFO 1 modulation depth."
+  },
+  {
+    "key": "lfoSymmetry",
+    "paramDefault": 0.5,
+    "readoutFormat": {
+      "kind": "decimal"
+    },
+    "readoutLabel": "LFO Symmetry",
+    "tooltip": "Skews LFO 1 waveform timing around the midpoint."
   },
   {
     "key": "lfoOffset",
@@ -3552,7 +3562,7 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
   },
   {
     "key": "lfo2Rate",
-    "paramDefault": 5.0,
+    "paramDefault": 2.0,
     "readoutFormat": {
       "kind": "decimal"
     },
@@ -3561,12 +3571,21 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
   },
   {
     "key": "lfo2Depth",
-    "paramDefault": 0.20000000298023224,
+    "paramDefault": 1.0,
     "readoutFormat": {
       "kind": "decimal"
     },
     "readoutLabel": "LFO 2 Depth",
     "tooltip": "Sets LFO 2 modulation depth."
+  },
+  {
+    "key": "lfo2Symmetry",
+    "paramDefault": 0.5,
+    "readoutFormat": {
+      "kind": "decimal"
+    },
+    "readoutLabel": "LFO 2 Symmetry",
+    "tooltip": "Skews LFO 2 waveform timing around the midpoint."
   },
   {
     "key": "lfo2Offset",
@@ -3581,7 +3600,7 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "key": "randomRate",
     "paramDefault": 2.0,
     "readoutFormat": {
-      "kind": "decimal"
+      "kind": "hertz"
     },
     "readoutLabel": "Random Rate",
     "tooltip": "Sets sample-and-hold random modulation refresh rate."
@@ -3828,6 +3847,15 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     },
     "readoutLabel": "Mod to Vibrato",
     "tooltip": "Sets how much mod wheel movement affects vibrato depth."
+  }
+];
+
+/** Rust-owned numeric range metadata for engine parameters. */
+export const ENGINE_PARAM_RANGES_V1: EngineParamRangeV1[] = [
+  {
+    "key": "randomRate",
+    "min": 0.0,
+    "max": 200.0
   }
 ];
 

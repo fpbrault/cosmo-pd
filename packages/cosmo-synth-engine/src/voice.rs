@@ -565,8 +565,12 @@ struct PhaseFrame {
     phi1: f32,
     phi2: f32,
     pm_delta: f32,
+    /// Warp input phase for line 1 (phi1 + pm_mod when pm_pre, else phi1).
     phase_a_post: f32,
+    /// Warp input phase for line 2 (phi2 + pm_mod when pm_pre, else phi2).
     phase_b_post: f32,
+    /// Post-warp PM offset applied inside render_algo_sample (0 when pm_pre, else pm_mod).
+    pm_post_mod: f32,
 }
 
 // ---------------------------------------------------------------------------
@@ -666,6 +670,7 @@ pub fn render_voice(
         signal.effective_freq1,
         sr,
         line1_algo_param_mods,
+        phase.pm_post_mod,
     ));
     let (s2, ks_raw2) = voice.algo_runtime.render_line2(LineRenderConfig::from_line(
         &line2_modded,
@@ -677,6 +682,7 @@ pub fn render_voice(
         signal.effective_freq2,
         sr,
         line2_algo_param_mods,
+        phase.pm_post_mod,
     ));
 
     let sample = mix_line_outputs(
@@ -1119,23 +1125,21 @@ fn build_phase_frame(
     let pm_phi = wrap01(voice.pm_phi);
     let pm_mod = int_pm_amount * 10.0 * sinf(TWO_PI * pm_phi);
 
-    let phase_a_input = if pm_pre { wrap01(phi1 + pm_mod) } else { phi1 };
-    let phase_b_input = if pm_pre { wrap01(phi2 + pm_mod) } else { phi2 };
+    // pm_pre=true:  PM applied before warp shaping (phase_a_post = phi+pm_mod, pm_post_mod=0)
+    // pm_pre=false: PM applied after warp shaping  (phase_a_post = phi,         pm_post_mod=pm_mod)
+    let (phase_a_post, phase_b_post, pm_post_mod) = if pm_pre {
+        (wrap01(phi1 + pm_mod), wrap01(phi2 + pm_mod), 0.0_f32)
+    } else {
+        (phi1, phi2, pm_mod)
+    };
 
     PhaseFrame {
         phi1,
         phi2,
         pm_delta,
-        phase_a_post: wrap01(if pm_pre {
-            phase_a_input
-        } else {
-            phase_a_input + pm_mod
-        }),
-        phase_b_post: wrap01(if pm_pre {
-            phase_b_input
-        } else {
-            phase_b_input + pm_mod
-        }),
+        phase_a_post,
+        phase_b_post,
+        pm_post_mod,
     }
 }
 
@@ -1229,6 +1233,7 @@ fn select_line_sources(
                 0.0,
                 1.0,
                 line1_algo_param_mods,
+                0.0,
             );
             let s1_prime = render_prime_line_sample(cfg, ks_raw1);
             (s1, s1_prime)
@@ -1244,6 +1249,7 @@ fn select_line_sources(
                 0.0,
                 1.0,
                 line2_algo_param_mods,
+                0.0,
             );
             let s2_prime = render_prime_line_sample(cfg, ks_raw2);
             (s1, s2_prime)
@@ -1264,6 +1270,7 @@ fn render_prime_line_sample(cfg: LineRenderConfig<'_>, ks_raw: Option<f32>) -> f
             cfg.primary_algo_controls,
             cfg.algo_param_mods,
             ks_raw,
+            cfg.pm_post_mod,
         ) * cfg.primary_window_gain;
         let secondary = generators::render_algo_sample(
             secondary_algo,
@@ -1273,6 +1280,7 @@ fn render_prime_line_sample(cfg: LineRenderConfig<'_>, ks_raw: Option<f32>) -> f
             cfg.secondary_algo_controls,
             cfg.algo_param_mods,
             ks_raw,
+            cfg.pm_post_mod,
         ) * cfg.secondary_window_gain;
         generators::blend_line_samples(cfg.primary_algo, primary, secondary, cfg.blend)
     } else {
@@ -1284,6 +1292,7 @@ fn render_prime_line_sample(cfg: LineRenderConfig<'_>, ks_raw: Option<f32>) -> f
             cfg.primary_algo_controls,
             cfg.algo_param_mods,
             ks_raw,
+            cfg.pm_post_mod,
         ) * cfg.primary_window_gain
     };
 

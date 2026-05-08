@@ -515,7 +515,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 	return (
 		<>
 			{activeSection === "algos" ? (
-				<div className="grid min-h-0 flex-1 grid-cols-3 gap-4">
+				<div className="grid h-full min-h-0 flex-1 grid-cols-3 gap-4">
 					<div className="flex min-h-0 flex-1 flex-col gap-0">
 						<div
 							className="mb-1 bg-cz-inset px-1.5 py-0.5 font-semibold text-3xs uppercase tracking-[0.24em]"
@@ -579,7 +579,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 							lineIndex={lineIndex}
 						/>
 
-						<div className="mt-2 rounded-none bg-cz-surface/50 pb-1.5">
+						<div className="mt-2 grow rounded-none bg-cz-surface/50 pb-1.5">
 							<SynthParamKnob
 								paramKey={lineIndex === 2 ? "algoBlendB" : "algoBlendA"}
 								label="Blend"

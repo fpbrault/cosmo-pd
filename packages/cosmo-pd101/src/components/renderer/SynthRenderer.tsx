@@ -17,12 +17,8 @@ import type { EnvOverrideHandlers } from "@/components/editor/PhaseLinesSection"
 import PhaseLinesSection from "@/components/editor/PhaseLinesSection";
 import type { AsidePanelTab } from "@/components/layout/AsidePanelSwitcher";
 import AsidePanelSwitcher from "@/components/layout/AsidePanelSwitcher";
-import ScopePanel, {
-	ScopeMiniDisplay,
-} from "@/components/panels/analysis/ScopePanel";
 import FxConsoleDrawer from "@/components/panels/drawers/FxConsoleDrawer";
 import ModConsoleDrawer from "@/components/panels/drawers/ModConsoleDrawer";
-import WavetableWaterfallDrawer from "@/components/panels/drawers/WavetableWaterfallDrawer";
 import { FX_SLOT_PANELS } from "@/components/panels/fx/FxSlotPanel";
 import GlobalVoicePanel from "@/components/panels/voice/GlobalVoicePanel";
 import PresetLibrary from "@/components/preset/PresetLibrary";
@@ -40,6 +36,10 @@ import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import { HoverInfoProvider, useHoverInfo } from "../layout/HoverInfo";
 import MiniKeyboardOverlay from "../layout/MiniKeyboardOverlay";
 import SynthInfoBar from "../layout/SynthInfoBar";
+import {
+	ScopeDrawerDisplay,
+	ScopeMiniDisplay,
+} from "../panels/analysis/ScopeDisplay";
 
 const MemoPresetLibrary = memo(PresetLibrary);
 
@@ -57,15 +57,15 @@ const LIBRARY_SLIDE_TRANSITION = {
 	mass: 1,
 } as const;
 
-type DrawerPanel = "fx" | "mod" | "waterfall";
+type DrawerPanel = "fx" | "mod" | "display";
 
 const DRAWER_PANEL_ORDER: Record<DrawerPanel, number> = {
 	fx: 0,
 	mod: 1,
-	waterfall: 2,
+	display: 2,
 };
 
-const DRAWER_PANELS: DrawerPanel[] = ["fx", "mod", "waterfall"];
+const DRAWER_PANELS: DrawerPanel[] = ["fx", "mod", "display"];
 
 function isDrawerPanel(mode: string): mode is DrawerPanel {
 	return DRAWER_PANELS.includes(mode as DrawerPanel);
@@ -202,6 +202,7 @@ function SynthRendererContent({
 	const setLibraryModeOpen = useSynthUiStore((s) => s.setLibraryModeOpen);
 	const { infoText, setControlReadout } = useHoverInfo();
 	const drawerOpen = isDrawerPanel(mainPanelMode);
+	const waveDrawerOpen = mainPanelMode === "display";
 	const [activeDrawerPanel, setActiveDrawerPanel] = useState<DrawerPanel>(
 		isDrawerPanel(mainPanelMode) ? mainPanelMode : "fx",
 	);
@@ -261,6 +262,7 @@ function SynthRendererContent({
 									audioCtxRef={audioCtxRef}
 									effectivePitchHz={effectivePitchHz}
 									subscribeScopeFrames={subscribeScopeFrames}
+									expanded={waveDrawerOpen}
 								/>
 							</div>
 
@@ -269,7 +271,6 @@ function SynthRendererContent({
 								onTabChange={onAsidePanelChange}
 							>
 								<GlobalVoicePanel />
-								<ScopePanel />
 								{FX_SLOT_PANELS.map((Panel) => (
 									<Panel key={Panel.panelId} />
 								))}
@@ -280,81 +281,85 @@ function SynthRendererContent({
 							<div className="mx-auto flex min-h-0 w-full flex-1 flex-col rounded-[1.2rem]">
 								<div className="pointer-events-none absolute inset-x-4 top-0 h-12 rounded-t-[1.2rem] opacity-70" />
 								<div className="relative shrink-0 rounded-md border border-cz-border bg-cz-body px-3 shadow-inner">
-									<div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-										<div className="flex items-end gap-2">
-											<CzTabButton
-												active={mainPanelMode === "phase"}
-												onClick={() => {
-													setMainPanelMode("phase");
-													setControlReadout({
-														label: "Main Panel",
-														value: "PHASE",
-													});
-												}}
-												topLabel="Main"
-												bottomLabel=""
-												color="red"
-												width={48}
-												tooltip="Show phase editor controls."
-											></CzTabButton>
-											<CzTabButton
-												active={mainPanelMode === "fx"}
-												onClick={() => {
-													const nextMode =
-														mainPanelMode === "fx" ? "phase" : "fx";
-													setMainPanelMode(nextMode);
-													setControlReadout({
-														label: "Main Panel",
-														value: nextMode.toUpperCase(),
-													});
-												}}
-												topLabel="FX"
-												bottomLabel=""
-												width={48}
-												color="blue"
-												tooltip="Toggle FX console drawer."
-											></CzTabButton>
-											<CzTabButton
-												active={mainPanelMode === "mod"}
-												onClick={() => {
-													const nextMode =
-														mainPanelMode === "mod" ? "phase" : "mod";
-													setMainPanelMode(nextMode);
-													setControlReadout({
-														label: "Main Panel",
-														value: nextMode.toUpperCase(),
-													});
-												}}
-												topLabel="MOD"
-												bottomLabel=""
-												width={48}
-												color="cyan"
-												tooltip="Toggle modulation console drawer."
-											></CzTabButton>
-											<CzTabButton
-												active={mainPanelMode === "waterfall"}
-												onClick={() => {
-													const nextMode =
-														mainPanelMode === "waterfall"
-															? "phase"
-															: "waterfall";
-													setMainPanelMode(nextMode);
-													setControlReadout({
-														label: "Main Panel",
-														value: nextMode.toUpperCase(),
-													});
-												}}
-												topLabel="WAVE"
-												bottomLabel=""
-												width={48}
-												color="grey"
-												tooltip="Toggle 3D wavetable waterfall drawer."
-											></CzTabButton>
+									<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+										<div className="flex items-center">
+											<MasterVolumeControl />
+											<div className="divider divider-horizontal py-2"></div>
+											<div className="flex items-end gap-2">
+												<CzTabButton
+													active={mainPanelMode === "phase"}
+													onClick={() => {
+														setMainPanelMode("phase");
+														setControlReadout({
+															label: "Main Panel",
+															value: "PHASE",
+														});
+													}}
+													topLabel="Main"
+													bottomLabel=""
+													color="red"
+													width={48}
+													tooltip="Show phase editor controls."
+												></CzTabButton>
+												<CzTabButton
+													active={mainPanelMode === "fx"}
+													onClick={() => {
+														const nextMode =
+															mainPanelMode === "fx" ? "phase" : "fx";
+														setMainPanelMode(nextMode);
+														setControlReadout({
+															label: "Main Panel",
+															value: nextMode.toUpperCase(),
+														});
+													}}
+													topLabel="FX"
+													bottomLabel=""
+													width={48}
+													color="blue"
+													tooltip="Toggle FX console drawer."
+												></CzTabButton>
+												<CzTabButton
+													active={mainPanelMode === "mod"}
+													onClick={() => {
+														const nextMode =
+															mainPanelMode === "mod" ? "phase" : "mod";
+														setMainPanelMode(nextMode);
+														setControlReadout({
+															label: "Main Panel",
+															value: nextMode.toUpperCase(),
+														});
+													}}
+													topLabel="MOD"
+													bottomLabel=""
+													width={48}
+													color="cyan"
+													tooltip="Toggle modulation console drawer."
+												></CzTabButton>
+												<CzTabButton
+													active={mainPanelMode === "display"}
+													onClick={() => {
+														const nextMode =
+															mainPanelMode === "display" ? "phase" : "display";
+														setMainPanelMode(nextMode);
+														setControlReadout({
+															label: "Main Panel",
+															value: nextMode.toUpperCase(),
+														});
+													}}
+													topLabel="DISPLAY"
+													bottomLabel=""
+													width={48}
+													color="grey"
+													tooltip="Toggle full-size scope drawer."
+												></CzTabButton>
+											</div>
 										</div>
 
-										<MasterVolumeControl />
-										<LineSelectControl />
-										<ModModeControl />
+										<div className="flex items-end">
+											<LineSelectControl />
+											<div className="divider divider-horizontal py-2"></div>
+											<ModModeControl />
+										</div>
 									</div>
 								</div>
 
@@ -371,7 +376,7 @@ function SynthRendererContent({
 										animate={{ y: drawerOpen ? 0 : "-100%" }}
 										transition={DRAWER_SLIDE_TRANSITION}
 										style={{ transformOrigin: "top center" }}
-										className={`absolute inset-0 z-10 origin-top overflow-hidden will-change-transform ${drawerOpen ? "pointer-events-auto" : "pointer-events-none"}`}
+										className={`absolute inset-0 isolate z-40 origin-top overflow-hidden will-change-transform ${drawerOpen ? "pointer-events-auto" : "pointer-events-none"}`}
 									>
 										<div className="relative flex h-full max-h-130 min-h-0 flex-col rounded-lg border border-cz-border bg-cz-body">
 											<div className="pointer-events-none absolute inset-0 rounded-lg bg-white/5" />
@@ -406,10 +411,15 @@ function SynthRendererContent({
 														activeDrawerPanel === panel ? (
 															<ModConsoleDrawer />
 														) : null}
-														{panel === "waterfall" &&
+														{panel === "display" &&
 														drawerOpen &&
 														activeDrawerPanel === panel ? (
-															<WavetableWaterfallDrawer />
+															<ScopeDrawerDisplay
+																analyserNodeRef={analyserNodeRef}
+																audioCtxRef={audioCtxRef}
+																effectivePitchHz={effectivePitchHz}
+																subscribeScopeFrames={subscribeScopeFrames}
+															/>
 														) : null}
 													</motion.div>
 												))}
@@ -491,6 +501,7 @@ function MasterVolumeControl() {
 			<SynthParamKnob
 				paramKey="volume"
 				value={volume}
+				size={64}
 				onChange={setVolume}
 				color="white"
 				label="Main Volume"

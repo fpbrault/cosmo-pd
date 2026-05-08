@@ -860,7 +860,7 @@ impl CosmoProcessor {
                     + lfo2_offset;
 
             // Advance the random (sample-and-hold) mod source.
-            let random_rate = (base_random_rate + random_rate_mod * 20.0).clamp(0.01, 40.0);
+            let random_rate = (base_random_rate + random_rate_mod * 20.0).clamp(0.0, 200.0);
             self.random_phase += random_rate / sr;
             if self.random_phase >= 1.0 {
                 self.random_phase -= 1.0;

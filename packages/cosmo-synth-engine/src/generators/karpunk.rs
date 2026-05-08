@@ -230,6 +230,7 @@ fn render_line(ks_state: &mut KarpunkState, config: LineRenderConfig<'_>) -> (f3
             config.primary_algo_controls,
             config.algo_param_mods,
             ks_raw,
+            config.pm_post_mod,
         ) * config.primary_window_gain;
         let secondary = super::render_algo_sample(
             secondary_algo,
@@ -239,6 +240,7 @@ fn render_line(ks_state: &mut KarpunkState, config: LineRenderConfig<'_>) -> (f3
             config.secondary_algo_controls,
             config.algo_param_mods,
             ks_raw,
+            config.pm_post_mod,
         ) * config.secondary_window_gain;
         blend(config.primary_algo, primary, secondary, config.blend)
     } else {
@@ -250,6 +252,7 @@ fn render_line(ks_state: &mut KarpunkState, config: LineRenderConfig<'_>) -> (f3
             config.primary_algo_controls,
             config.algo_param_mods,
             ks_raw,
+            config.pm_post_mod,
         ) * config.primary_window_gain
     };
 
