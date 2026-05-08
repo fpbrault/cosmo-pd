@@ -14,8 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          submodules: true
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -73,8 +71,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
-        with:
-          submodules: true
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -140,8 +136,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
-        with:
-          submodules: true
 
       - uses: oven-sh/setup-bun@v2
         with:

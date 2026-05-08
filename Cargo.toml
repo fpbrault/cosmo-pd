@@ -27,6 +27,9 @@ raw-window-handle = "0.5"
 [workspace.lints]
 clippy.unused_async = "warn"
 
+[patch.crates-io]
+wry = { git = "https://github.com/fpbrault/wry", branch = "cosmo-pd-patches" }
+
 
 [profile.release]
 lto = true

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Cross-platform replacement for build-plugin.sh
- * Usage: bun run scripts/build-plugin.mjs [--release] [--arch native|arm64|x86_64|universal|all] [--platform macos|windows|linux] [--auv2] [--auv3]
+ * Usage: bun run scripts/build-plugin.mjs [--release] [--arch native|arm64|x86_64|universal|all] [--platform macos|windows|linux] [--auv2]
  *
  * macOS note: VST3 is built via the custom xtask. CLAP and AU wrapper inputs are
  * built as separate dylibs so each format can use distinct macOS WebView class names.
@@ -422,7 +422,6 @@ if (targetPlatform === "macos") {
 	// nih-plug AUv2 is handled via clap-wrapper cmake, NOT via the xtask ObjC path.
 	const shouldBuildAuv2 =
 		args.includes("--auv2") || process.env.BUILD_AUV2 === "1";
-	const buildAuv3 = args.includes("--auv3") || process.env.BUILD_AUV3 === "1";
 	const outRoot = targetRoot();
 
 	// Step 1: Build plugin webview assets
@@ -430,7 +429,6 @@ if (targetPlatform === "macos") {
 
 	// Step 2: Build VST3 via xtask using a VST3-specific Objective-C class prefix
 	const xtaskFormatFlags = ["--vst3"];
-	if (buildAuv3) xtaskFormatFlags.push("--auv3");
 
 	if (archArg === "universal") {
 		ensureRustTarget("x86_64-apple-darwin");

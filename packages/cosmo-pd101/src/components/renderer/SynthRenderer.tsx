@@ -8,6 +8,7 @@ import {
 	useEffect,
 	useState,
 } from "react";
+import logoSrc from "@/assets/logo.png";
 import Button from "@/components/controls/Button";
 import LineSelectControl from "@/components/controls/LineSelectControl";
 import ModModeControl from "@/components/controls/ModModeControl";
@@ -36,7 +37,6 @@ import {
 } from "@/features/synth/SynthParamController";
 import { useSynthStore } from "@/features/synth/synthStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
-
 import { HoverInfoProvider, useHoverInfo } from "../layout/HoverInfo";
 import MiniKeyboardOverlay from "../layout/MiniKeyboardOverlay";
 import SynthInfoBar from "../layout/SynthInfoBar";
@@ -538,9 +538,11 @@ function SynthBrandInfoModal({
 			<div className="relative w-[min(32rem,94%)] rounded-md border border-cz-border bg-cz-surface p-5 text-cz-cream shadow-2xl">
 				<div className="mb-4 flex items-center justify-between gap-4">
 					<div className="flex items-center gap-3">
-						<div className="flex h-16 w-16 items-center justify-center rounded-md border border-cz-border bg-linear-to-br from-cz-light-blue/25 to-cz-gold/25 font-mono text-3xs text-cz-cream-dim uppercase tracking-[0.22em]">
-							Logo
-						</div>
+						<img
+							src={logoSrc}
+							alt="Cosmo PD101 logo"
+							className="h-16 w-16 rounded-md object-contain"
+						/>
 						<div>
 							<p className="font-mono text-4xs text-cz-light-blue uppercase tracking-[0.3em]">
 								Phase Distortion
