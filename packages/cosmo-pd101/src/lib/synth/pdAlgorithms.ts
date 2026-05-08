@@ -657,6 +657,7 @@ function renderAlgoSample(
 	dcw: number,
 	baseWaveform: BaseWaveform,
 	algoControls?: AlgoControlValueV1[] | null,
+	pmPostMod = 0,
 ): number {
 	if (algo === "karpunk") {
 		return Math.sin(TAU * applyPdAlgo(phase, dcw, algo, "saw", algoControls));
@@ -664,7 +665,7 @@ function renderAlgoSample(
 	const direct = sampleDirectAlgoPreview(algo, phase);
 	if (direct !== null) return direct;
 	const warpedPhase = applyPdAlgo(phase, dcw, algo, "saw", algoControls);
-	return sampleBaseWave(baseWaveform, warpedPhase);
+	return sampleBaseWave(baseWaveform, warpedPhase + pmPostMod);
 }
 
 function warpPhaseForCzWaveform(
@@ -762,6 +763,7 @@ function renderResolvedAlgoSample({
 	baseWaveform,
 	algoControls,
 	cycleIndex,
+	pmPostMod = 0,
 }: {
 	algo: PdAlgo;
 	resolved: ResolvedAlgoRef;
@@ -771,24 +773,32 @@ function renderResolvedAlgoSample({
 	baseWaveform: BaseWaveform;
 	algoControls?: AlgoControlValueV1[];
 	cycleIndex: number;
+	pmPostMod?: number;
 }): number {
 	if (resolved.warpAlgo === "cz101") {
 		const waveform =
 			cycleIndex % 2 === 0 ? czControls.waveform1 : czControls.waveform2;
 		return sampleBaseWave(
 			baseWaveform,
-			warpPhaseForCzWaveform(waveform, phase, dcw),
+			warpPhaseForCzWaveform(waveform, phase, dcw) + pmPostMod,
 		);
 	}
 
 	if (!isWarpAlgo(resolved.warpAlgo)) {
 		return sampleBaseWave(
 			baseWaveform,
-			warpPhaseForCzWaveform(resolved.waveform, phase, dcw),
+			warpPhaseForCzWaveform(resolved.waveform, phase, dcw) + pmPostMod,
 		);
 	}
 
-	return renderAlgoSample(algo, phase, dcw, baseWaveform, algoControls);
+	return renderAlgoSample(
+		algo,
+		phase,
+		dcw,
+		baseWaveform,
+		algoControls,
+		pmPostMod,
+	);
 }
 
 function applyWindow(phase: number, type: WindowType): number {
@@ -894,10 +904,6 @@ export function computeWaveform(params: {
 	const algo2A = algo2AResolved;
 	const algo2B = algo2BResolved;
 
-	if (!params.pmPre) {
-		for (let i = 0; i < sampleCount; ++i) phasor[i] = (phasor[i] + pm[i]) % 1;
-	}
-
 	const phaseA = new Float32Array(sampleCount);
 	const out1 = new Float32Array(sampleCount);
 	const out2 = new Float32Array(sampleCount);
@@ -906,6 +912,7 @@ export function computeWaveform(params: {
 		const line1Cycle = line1UsesCzCyclePair && phasor[i] >= 0.5 ? 1 : 0;
 		const line2Phase = line2UsesCzCyclePair ? wrap01(phasor[i] * 2) : phasor[i];
 		const line2Cycle = line2UsesCzCyclePair && phasor[i] >= 0.5 ? 1 : 0;
+		const pmPostMod = params.pmPre ? 0 : pm[i];
 
 		phaseA[i] = line1Phase;
 
@@ -921,6 +928,7 @@ export function computeWaveform(params: {
 					baseWaveform: params.line1BaseWaveformA ?? "sine",
 					algoControls: params.line1AlgoControlsA,
 					cycleIndex: line1Cycle,
+					pmPostMod,
 				}) * applyWindow(line1Phase, line1PrimaryWindow);
 			const secondary =
 				renderResolvedAlgoSample({
@@ -932,6 +940,7 @@ export function computeWaveform(params: {
 					baseWaveform: params.line1BaseWaveformB ?? "sine",
 					algoControls: params.line1AlgoControlsB,
 					cycleIndex: line1Cycle,
+					pmPostMod,
 				}) * applyWindow(line1Phase, line1SecondaryWindow);
 			out1[i] = lerp(primary, secondary, blendA) * params.line1Level;
 		} else {
@@ -945,6 +954,7 @@ export function computeWaveform(params: {
 					baseWaveform: params.line1BaseWaveformA ?? "sine",
 					algoControls: params.line1AlgoControlsA,
 					cycleIndex: line1Cycle,
+					pmPostMod,
 				}) *
 				applyWindow(line1Phase, line1PrimaryWindow) *
 				params.line1Level;
@@ -962,6 +972,7 @@ export function computeWaveform(params: {
 					baseWaveform: params.line2BaseWaveformA ?? "sine",
 					algoControls: params.line2AlgoControlsA,
 					cycleIndex: line2Cycle,
+					pmPostMod,
 				}) * applyWindow(line2Phase, line2PrimaryWindow);
 			const secondary =
 				renderResolvedAlgoSample({
@@ -973,6 +984,7 @@ export function computeWaveform(params: {
 					baseWaveform: params.line2BaseWaveformB ?? "sine",
 					algoControls: params.line2AlgoControlsB,
 					cycleIndex: line2Cycle,
+					pmPostMod,
 				}) * applyWindow(line2Phase, line2SecondaryWindow);
 			out2[i] = lerp(primary, secondary, blendB) * params.line2Level;
 		} else {
@@ -986,6 +998,7 @@ export function computeWaveform(params: {
 					baseWaveform: params.line2BaseWaveformA ?? "sine",
 					algoControls: params.line2AlgoControlsA,
 					cycleIndex: line2Cycle,
+					pmPostMod,
 				}) *
 				applyWindow(line2Phase, line2PrimaryWindow) *
 				params.line2Level;

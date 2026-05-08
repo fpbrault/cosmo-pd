@@ -5,6 +5,7 @@ import {
 	asNumber,
 	getButtonGroupControl,
 	getKnobControl,
+	getModDestinationByParam,
 	getTooltip,
 	resolveEnabled,
 	resolvePresetPatchParams,
@@ -37,6 +38,7 @@ export default function VibratoModuleRenderer({
 	const depthControl = getKnobControl(config, "depth");
 	const delayControl = getKnobControl(config, "delay");
 	const waveformValue = asNumber(params.waveform, 1);
+	const modDestinationByParam = getModDestinationByParam(config.type);
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
@@ -105,6 +107,7 @@ export default function VibratoModuleRenderer({
 					label="Rate"
 					tooltip={getTooltip("vibratoRate")}
 					valueFormatter={rateControl.formatter}
+					modDestination={modDestinationByParam.rate}
 				/>
 			) : null}
 			{depthControl ? (
@@ -118,6 +121,7 @@ export default function VibratoModuleRenderer({
 					label="Depth"
 					tooltip={getTooltip("vibratoDepth")}
 					valueFormatter={depthControl.formatter}
+					modDestination={modDestinationByParam.depth}
 				/>
 			) : null}
 			{delayControl ? (
@@ -131,6 +135,7 @@ export default function VibratoModuleRenderer({
 					label="Delay"
 					tooltip={getTooltip("vibratoDelay")}
 					valueFormatter={delayControl.formatter}
+					modDestination={modDestinationByParam.delay}
 				/>
 			) : null}
 		</ModuleFrame>

@@ -3,6 +3,10 @@ import type {
 	FxSlotModuleConfig,
 	KnobControlDef,
 } from "@/components/panels/drawer-modules/fxSlotModuleConfig";
+import {
+	FX_DEFINITIONS_V1,
+	type ModDestination,
+} from "@/lib/synth/bindings/synth";
 import { getEngineParamUiMeta } from "@/lib/synth/paramMeta";
 
 export function asNumber(value: unknown, fallback: number): number {
@@ -52,4 +56,23 @@ export function resolvePresetPatchParams(
 		return null;
 	}
 	return patchParams as Record<string, unknown>;
+}
+
+export function getModDestinationByParam(
+	type: FxSlotModuleConfig["type"],
+): Record<string, ModDestination> {
+	const def = FX_DEFINITIONS_V1.find((entry) => entry.slotType === type);
+	const map: Record<string, ModDestination> = {};
+
+	if (!def) {
+		return map;
+	}
+
+	for (const ctrl of def.controls) {
+		if (ctrl.modDestinationKey) {
+			map[ctrl.id] = ctrl.modDestinationKey as ModDestination;
+		}
+	}
+
+	return map;
 }

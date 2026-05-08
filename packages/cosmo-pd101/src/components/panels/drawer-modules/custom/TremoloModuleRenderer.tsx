@@ -1,7 +1,9 @@
 import { useState } from "react";
+import Button from "@/components/controls/Button";
 import ControlKnob from "@/components/controls/ControlKnob";
 import {
 	asNumber,
+	getButtonGroupControl,
 	getKnobControl,
 	getModDestinationByParam,
 	getTooltip,
@@ -9,13 +11,12 @@ import {
 	resolvePresetPatchParams,
 } from "@/components/panels/drawer-modules/custom/utils";
 import type { FxSlotModuleConfig } from "@/components/panels/drawer-modules/fxSlotModuleConfig";
-import BadgeToggle from "@/components/primitives/BadgeToggle";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthStore } from "@/features/synth/synthStore";
 
-export default function DelayModuleRenderer({
+export default function TremoloModuleRenderer({
 	config,
 	slot,
 }: {
@@ -32,13 +33,11 @@ export default function DelayModuleRenderer({
 
 	const params = (rawSlot as { params: Record<string, unknown> }).params;
 	const enabled = resolveEnabled(params);
-	const tapeMode = asNumber(params.tapeMode, 0) === 1;
-	const columns = tapeMode ? 4 : 3;
-	const timeControl = getKnobControl(config, "time");
-	const feedbackControl = getKnobControl(config, "feedback");
-	const warmthControl = getKnobControl(config, "warmth");
+	const waveformControl = getButtonGroupControl(config, "waveform");
+	const rateControl = getKnobControl(config, "rate");
+	const depthControl = getKnobControl(config, "depth");
 	const mixControl = getKnobControl(config, "mix");
-	const modeLabel = tapeMode ? "Tape Echo" : "Digital";
+	const waveformValue = asNumber(params.waveform, 0);
 	const modDestinationByParam = getModDestinationByParam(config.type);
 
 	const handlePresetChange = (presetId: string) => {
@@ -68,8 +67,7 @@ export default function DelayModuleRenderer({
 		<ModuleFrame
 			title={config.title}
 			color={config.color}
-			meta={modeLabel}
-			columns={columns}
+			columns={3}
 			enabled={enabled}
 			onToggle={() => setFxSlotParams(slot, { enabled: !enabled })}
 			headerControl={
@@ -82,56 +80,48 @@ export default function DelayModuleRenderer({
 				/>
 			}
 		>
-			<BadgeToggle
-				active={tapeMode}
-				label="Tape"
-				onClick={() => setFxSlotParams(slot, { tapeMode: tapeMode ? 0 : 1 })}
-				tooltip={getTooltip("delayTapeMode")}
-				className="col-span-full"
-			/>
-			{timeControl ? (
+			<div className="join col-span-3 w-full overflow-hidden rounded-md border border-cz-border/65">
+				{waveformControl?.options.map((option) => (
+					<Button
+						key={option.value}
+						type="button"
+						className={`join-item btn btn-xs h-8 min-h-0 flex-1 rounded-none border-0 px-2 ${
+							waveformValue === option.value
+								? "border-amber-500/60 bg-amber-500/20 text-amber-300"
+								: "bg-transparent text-cz-cream/60 hover:text-cz-cream/90"
+						}`}
+						onClick={() => setFxSlotParams(slot, { waveform: option.value })}
+					>
+						{option.label}
+					</Button>
+				))}
+			</div>
+			{rateControl ? (
 				<ControlKnob
-					value={asNumber(params.time, timeControl.defaultValue)}
-					onChange={(value) => setFxSlotParams(slot, { time: value })}
-					min={timeControl.min}
-					max={timeControl.max}
-					defaultValue={timeControl.defaultValue}
-					size={64}
+					value={asNumber(params.rate, rateControl.defaultValue)}
+					onChange={(value) => setFxSlotParams(slot, { rate: value })}
+					min={rateControl.min}
+					max={rateControl.max}
+					defaultValue={rateControl.defaultValue}
 					color={config.color}
-					label="Time"
-					tooltip={getTooltip("delayTime")}
-					valueFormatter={timeControl.formatter}
-					modDestination={modDestinationByParam.time}
+					label="Rate"
+					tooltip={getTooltip("tremoloRate")}
+					valueFormatter={rateControl.formatter}
+					modDestination={modDestinationByParam.rate}
 				/>
 			) : null}
-			{feedbackControl ? (
+			{depthControl ? (
 				<ControlKnob
-					value={asNumber(params.feedback, feedbackControl.defaultValue)}
-					onChange={(value) => setFxSlotParams(slot, { feedback: value })}
-					min={feedbackControl.min}
-					max={feedbackControl.max}
-					defaultValue={feedbackControl.defaultValue}
-					size={64}
+					value={asNumber(params.depth, depthControl.defaultValue)}
+					onChange={(value) => setFxSlotParams(slot, { depth: value })}
+					min={depthControl.min}
+					max={depthControl.max}
+					defaultValue={depthControl.defaultValue}
 					color={config.color}
-					label="Fdbk"
-					tooltip={getTooltip("delayFeedback")}
-					valueFormatter={feedbackControl.formatter}
-					modDestination={modDestinationByParam.feedback}
-				/>
-			) : null}
-			{tapeMode && warmthControl ? (
-				<ControlKnob
-					value={asNumber(params.warmth, warmthControl.defaultValue)}
-					onChange={(value) => setFxSlotParams(slot, { warmth: value })}
-					min={warmthControl.min}
-					max={warmthControl.max}
-					defaultValue={warmthControl.defaultValue}
-					size={64}
-					color={config.color}
-					label="Warmth"
-					tooltip={getTooltip("delayWarmth")}
-					valueFormatter={warmthControl.formatter}
-					modDestination={modDestinationByParam.warmth}
+					label="Depth"
+					tooltip={getTooltip("tremoloDepth")}
+					valueFormatter={depthControl.formatter}
+					modDestination={modDestinationByParam.depth}
 				/>
 			) : null}
 			{mixControl ? (
@@ -141,10 +131,9 @@ export default function DelayModuleRenderer({
 					min={mixControl.min}
 					max={mixControl.max}
 					defaultValue={mixControl.defaultValue}
-					size={64}
 					color={config.color}
 					label="Mix"
-					tooltip={getTooltip("delayMix")}
+					tooltip={getTooltip("tremoloMix")}
 					valueFormatter={mixControl.formatter}
 					modDestination={modDestinationByParam.mix}
 				/>

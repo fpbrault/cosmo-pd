@@ -9,7 +9,7 @@ export default function LineSelectControl() {
 	return (
 		<div className="shrink-0">
 			<div className="cz-light-blue mb-1">Line Select</div>
-			<div className="grid grid-cols-5 gap-1">
+			<div className="grid grid-cols-4 gap-1">
 				{(["L1", "L2", "L1+L1'", "L1+L2'"] as const).map((ls) => (
 					<CzButton
 						key={ls}

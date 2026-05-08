@@ -102,7 +102,7 @@ export default function ModuleFrame({
 					<div
 						{...(slotCtx.dragListeners as React.HTMLAttributes<HTMLDivElement>)}
 						{...(slotCtx.dragAttributes as React.HTMLAttributes<HTMLDivElement>)}
-						className="group/drag relative z-10 flex flex-1 cursor-grab select-none items-center justify-center gap-1.5 active:cursor-grabbing"
+						className="group/drag relative z-10 flex flex-1 cursor-grab touch-none select-none items-center justify-center gap-1.5 active:cursor-grabbing"
 					>
 						{/* 4-direction move icon — fades in on hover */}
 						<svg

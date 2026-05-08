@@ -1,7 +1,9 @@
 import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import {
 	ENGINE_ENUM_VALUE_TOOLTIPS_V1,
+	ENGINE_PARAM_RANGES_V1,
 	ENGINE_PARAM_UI_META_V1,
+	type EngineParamRangeV1,
 	type EngineParamUiMetaV1,
 } from "@/lib/synth/bindings/synth";
 
@@ -9,14 +11,27 @@ export type ParamMeta = {
 	tooltip: string;
 };
 
+export type EngineParamUiMetaWithRangeV1 = EngineParamUiMetaV1 & {
+	min?: number;
+	max?: number;
+};
+
+const ENGINE_PARAM_RANGES_BY_KEY = new Map<string, EngineParamRangeV1>(
+	ENGINE_PARAM_RANGES_V1.map((range) => [range.key, range] as const),
+);
+
 export const ENGINE_PARAM_UI_META_BY_KEY: Partial<
-	Record<SynthParamKey, EngineParamUiMetaV1>
+	Record<SynthParamKey, EngineParamUiMetaWithRangeV1>
 > = ENGINE_PARAM_UI_META_V1.reduce(
 	(acc, meta) => {
-		acc[meta.key as SynthParamKey] = meta;
+		const range = ENGINE_PARAM_RANGES_BY_KEY.get(meta.key);
+		acc[meta.key as SynthParamKey] = {
+			...meta,
+			...(range ? { min: range.min, max: range.max } : {}),
+		};
 		return acc;
 	},
-	{} as Partial<Record<SynthParamKey, EngineParamUiMetaV1>>,
+	{} as Partial<Record<SynthParamKey, EngineParamUiMetaWithRangeV1>>,
 );
 
 /** Canonical tooltip text for engine parameters, owned by the engine metadata export. */
@@ -68,7 +83,7 @@ function buildEnumTooltipMap(key: string): Partial<Record<string, string>> {
 
 export function getEngineParamUiMeta(
 	key: string,
-): EngineParamUiMetaV1 | undefined {
+): EngineParamUiMetaWithRangeV1 | undefined {
 	return ENGINE_PARAM_UI_META_BY_KEY[key as SynthParamKey];
 }
 

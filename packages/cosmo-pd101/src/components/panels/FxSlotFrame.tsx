@@ -1,4 +1,4 @@
-import { useSortable } from "@dnd-kit/sortable";
+import { defaultAnimateLayoutChanges, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { memo, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -278,7 +278,16 @@ export default memo(function FxSlotFrame({ slot }: { slot: number }) {
 		transform,
 		transition,
 		isDragging,
-	} = useSortable({ id: slot });
+	} = useSortable({
+		id: slot,
+		animateLayoutChanges: (args) => {
+			if (args.wasDragging) {
+				return false;
+			}
+
+			return defaultAnimateLayoutChanges(args);
+		},
+	});
 
 	const style: React.CSSProperties = {
 		transform: CSS.Transform.toString(transform),

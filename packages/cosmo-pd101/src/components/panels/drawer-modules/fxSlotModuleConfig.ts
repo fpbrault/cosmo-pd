@@ -67,7 +67,8 @@ export type ControlDef = KnobControlDef | ButtonGroupControlDef;
 export type FxCustomRendererKey =
 	| "delayLegacy"
 	| "phaseModLegacy"
-	| "vibratoLegacy";
+	| "vibratoLegacy"
+	| "tremoloLegacy";
 
 export type FxSlotModuleConfig = {
 	type: FxSlotType;
@@ -95,6 +96,7 @@ function pct(v: number) {
 type FormatterFn = (v: number) => string;
 
 type ControlLayoutRule = {
+	label?: string;
 	buttonPresentation?: "segmented" | "compactBinaryToggle";
 	centered?: boolean;
 	order?: number;
@@ -136,7 +138,7 @@ const FX_UI_META = {
 		presets: CHORUS_PRESETS,
 		presetTitle: "Chorus Presets",
 		formatters: {
-			rate: (v) => v.toFixed(1),
+			rate: (v) => `${v.toFixed(1)}Hz`,
 			depth: (v) => `${Math.round(v / 5)}%`,
 			mix: pct,
 		},
@@ -150,7 +152,7 @@ const FX_UI_META = {
 		presets: DELAY_PRESETS,
 		presetTitle: "Delay Presets",
 		formatters: {
-			time: (v) => `${(v).toFixed(0)}ms`,
+			time: (v) => `${Math.round(v * 1000)}ms`,
 			feedback: pct,
 			mix: pct,
 			tapeMode: (v) => (v ? "Tape" : "Digital"),
@@ -183,7 +185,7 @@ const FX_UI_META = {
 		presetTitle: "Vibrato Presets",
 		formatters: {
 			rate: (v) => `${v.toFixed(1)}Hz`,
-			depth: pct,
+			depth: (v) => `${Math.round(v)}%`,
 			delay: (v) => `${(v).toFixed(0)}ms`,
 			waveform: (v) => {
 				switch (v) {
@@ -342,6 +344,12 @@ const FX_UI_META = {
 			tone: pct,
 			mix: pct,
 		},
+		controlLayout: {
+			wowDepth: { label: "WowDepth" },
+			wowRate: { label: "WowRate" },
+			flutterDepth: { label: "FlutterDepth" },
+			flutterRate: { label: "FlutterRate" },
+		},
 	},
 	ringMod: {
 		patchKey: "ringMod",
@@ -387,6 +395,7 @@ const FX_UI_META = {
 		moduleKey: "tremolo",
 		color: "#4ade80",
 		columns: 3,
+		customRenderer: "tremoloLegacy",
 		presets: TREMOLO_PRESETS,
 		presetTitle: "Tremolo Presets",
 		formatters: {
@@ -425,7 +434,7 @@ function buildControls(type: FxSlotType, meta: FxUiMeta): ControlDef[] {
 				{
 					kind: "buttonGroup",
 					param: ctrl.id,
-					label: ctrl.label,
+					label: layout?.label ?? ctrl.label,
 					options: ctrl.options.map((opt) => ({
 						value: opt.value,
 						label: opt.label,
@@ -450,7 +459,7 @@ function buildControls(type: FxSlotType, meta: FxUiMeta): ControlDef[] {
 			{
 				kind: "knob",
 				param: ctrl.id,
-				label: ctrl.label,
+				label: layout?.label ?? ctrl.label,
 				min,
 				max,
 				defaultValue,
