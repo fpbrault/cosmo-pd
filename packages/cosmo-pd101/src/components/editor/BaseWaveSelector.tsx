@@ -27,14 +27,14 @@ export function BaseWaveSelector({
 	color,
 }: BaseWaveSelectorProps) {
 	return (
-		<Card variant="subtle" className="min-h-30 flex flex-col">
+		<Card variant="subtle" className="flex flex-col pb-2">
 			<div
-				className="text-3xs uppercase tracking-[0.24em] text-center"
+				className="text-center text-3xs uppercase tracking-[0.24em]"
 				style={color ? { color } : undefined}
 			>
 				{title}
 			</div>
-			<div className="mt-2 flex flex-wrap justify-center gap-1">
+			<div className="flex flex-wrap justify-center gap-1">
 				{BASE_WAVE_OPTIONS.map((option) => (
 					<button
 						key={option.value}
@@ -44,12 +44,12 @@ export function BaseWaveSelector({
 						}}
 						disabled={disabled}
 						title={option.label}
-						className={`flex flex-col items-center gap-0.5 rounded py-1.5 transition-colors select-none focus-visible:outline-2 focus-visible:outline-offset-1 ${
-							disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"
+						className={`flex select-none flex-col items-center gap-0.5 rounded py-1.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 ${
+							disabled ? "cursor-not-allowed opacity-40" : "cursor-pointer"
 						} ${
 							value === option.value
 								? "text-primary-content"
-								: "border border-cz-border text-cz-cream/70 hover:text-cz-cream hover:border-cz-cream/40"
+								: "border border-cz-border text-cz-cream/70 hover:border-cz-cream/40 hover:text-cz-cream"
 						}`}
 						style={
 							value === option.value && color
@@ -62,11 +62,11 @@ export function BaseWaveSelector({
 							size={32}
 							className={
 								value === option.value
-									? "text-primary-content "
+									? "text-primary-content"
 									: "text-cz-cream/70 group-hover:text-cz-cream"
 							}
 						/>
-						<span className="text-xs leading-none tracking-wide font-bold">
+						<span className="font-bold text-xs leading-none tracking-wide">
 							{option.label}
 						</span>
 					</button>

@@ -473,17 +473,17 @@ function WavetableWaterfallPane({
 }) {
 	return (
 		<div className="relative isolate min-h-0 flex-1 overflow-hidden rounded-md border border-[#3f3f55]/80 bg-[#030305] [box-shadow:inset_0_0_0_1px_rgba(214,214,255,0.06),inset_0_0_70px_rgba(94,94,255,0.08),0_0_24px_rgba(22,22,44,0.22)]">
-			<div className="pointer-events-none absolute left-2 top-1 z-50 text-4xs font-mono uppercase tracking-[0.24em] text-base-content/75">
+			<div className="pointer-events-none absolute top-1 left-2 z-50 font-mono text-4xs text-base-content/75 uppercase tracking-[0.24em]">
 				<span className={labelClassName}>{label}</span>
 			</div>
 			<div className="pointer-events-none absolute inset-0 z-0 rounded-md bg-[radial-gradient(ellipse_at_50%_55%,rgba(180,180,255,0.12),rgba(0,0,0,0.2)_42%,rgba(0,0,0,0.72)_100%)]" />
-			<div className="pointer-events-none absolute inset-0 z-0 rounded-md opacity-70 bg-[radial-gradient(ellipse_at_50%_50%,transparent_0%,transparent_58%,rgba(0,0,0,0.52)_86%,rgba(0,0,0,0.88)_100%)]" />
-			<div className="pointer-events-none absolute inset-x-0 top-0 z-30 h-1/2 rounded-t-md opacity-25 mix-blend-screen bg-[linear-gradient(105deg,transparent_0%,rgba(235,235,255,0.1)_18%,rgba(235,235,255,0.22)_31%,transparent_46%)]" />
-			<div className="pointer-events-none absolute inset-0 z-20 rounded-md opacity-50 mix-blend-screen bg-[repeating-linear-gradient(180deg,rgba(206,206,255,0.16)_0px,rgba(206,206,255,0.08)_1px,rgba(0,0,0,0.16)_2px,rgba(0,0,0,0.32)_4px)]" />
-			<div className="pointer-events-none absolute inset-0 z-20 rounded-md opacity-20 mix-blend-screen bg-[repeating-linear-gradient(90deg,rgba(159,159,255,0.28)_0px,rgba(159,159,255,0.28)_1px,transparent_1px,transparent_3px)]" />
-			<div className="pointer-events-none absolute inset-0 z-20 rounded-md opacity-30 mix-blend-screen bg-[radial-gradient(circle_at_50%_50%,rgba(190,190,255,0.11)_0px,transparent_1.4px)] bg-size-[4px_4px]" />
+			<div className="pointer-events-none absolute inset-0 z-0 rounded-md bg-[radial-gradient(ellipse_at_50%_50%,transparent_0%,transparent_58%,rgba(0,0,0,0.52)_86%,rgba(0,0,0,0.88)_100%)] opacity-70" />
+			<div className="pointer-events-none absolute inset-x-0 top-0 z-30 h-1/2 rounded-t-md bg-[linear-gradient(105deg,transparent_0%,rgba(235,235,255,0.1)_18%,rgba(235,235,255,0.22)_31%,transparent_46%)] opacity-25 mix-blend-screen" />
+			<div className="pointer-events-none absolute inset-0 z-20 rounded-md bg-[repeating-linear-gradient(180deg,rgba(206,206,255,0.16)_0px,rgba(206,206,255,0.08)_1px,rgba(0,0,0,0.16)_2px,rgba(0,0,0,0.32)_4px)] opacity-50 mix-blend-screen" />
+			<div className="pointer-events-none absolute inset-0 z-20 rounded-md bg-[repeating-linear-gradient(90deg,rgba(159,159,255,0.28)_0px,rgba(159,159,255,0.28)_1px,transparent_1px,transparent_3px)] opacity-20 mix-blend-screen" />
+			<div className="pointer-events-none absolute inset-0 z-20 rounded-md bg-[radial-gradient(circle_at_50%_50%,rgba(190,190,255,0.11)_0px,transparent_1.4px)] bg-size-[4px_4px] opacity-30 mix-blend-screen" />
 			<div className="pointer-events-none absolute inset-0 z-30 rounded-md bg-[radial-gradient(ellipse_at_center,transparent_48%,rgba(0,0,0,0.36)_76%,rgba(0,0,0,0.68)_100%)]" />
-			<div className="pointer-events-none absolute inset-0 z-30 rounded-md opacity-35 bg-[linear-gradient(180deg,rgba(255,255,255,0.08)_0%,transparent_9%,transparent_88%,rgba(200,200,255,0.08)_100%)]" />
+			<div className="pointer-events-none absolute inset-0 z-30 rounded-md bg-[linear-gradient(180deg,rgba(255,255,255,0.08)_0%,transparent_9%,transparent_88%,rgba(200,200,255,0.08)_100%)] opacity-35" />
 			<div className="pointer-events-none absolute inset-0 z-40 rounded-md [box-shadow:inset_0_12px_38px_rgba(214,214,255,0.08),inset_0_-34px_70px_rgba(0,0,0,0.5),inset_18px_0_44px_rgba(255,255,255,0.03),inset_-22px_0_58px_rgba(0,0,0,0.36)]" />
 			<Canvas
 				className="relative z-10 h-full w-full opacity-95 contrast-125 saturate-150"

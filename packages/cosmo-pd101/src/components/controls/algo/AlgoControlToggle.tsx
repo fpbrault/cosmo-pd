@@ -29,7 +29,7 @@ function AlgoControlToggleInner({
 	return (
 		<div className="flex items-center justify-between rounded-md bg-cz-inset/70 px-2 py-1.5">
 			<div className="flex items-center gap-2">
-				<span className="text-4xs uppercase tracking-[0.18em] text-cz-cream">
+				<span className="text-4xs text-cz-cream uppercase tracking-[0.18em]">
 					{control.label}
 				</span>
 				<AlgoControlTooltip description={control.description} />

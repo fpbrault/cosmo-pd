@@ -151,7 +151,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 
 	useEffect(() => {
 		if (activeSection !== "envelopes") return;
-		const id = setInterval(() => setVoiceMarkerTick((t) => t + 1), 32);
+		const id = setInterval(() => setVoiceMarkerTick((t) => t + 1), 16);
 		return () => clearInterval(id);
 	}, [activeSection]);
 
@@ -515,15 +515,15 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 	return (
 		<>
 			{activeSection === "algos" ? (
-				<div className="flex-1 grid grid-cols-3 min-h-0 gap-4">
-					<div className="min-h-0 flex-1 flex flex-col gap-0">
+				<div className="grid min-h-0 flex-1 grid-cols-3 gap-4">
+					<div className="flex min-h-0 flex-1 flex-col gap-0">
 						<div
-							className="text-3xs uppercase tracking-[0.24em] font-semibold mb-1 px-1.5 py-0.5 bg-cz-inset"
+							className="mb-1 bg-cz-inset px-1.5 py-0.5 font-semibold text-3xs uppercase tracking-[0.24em]"
 							style={{ color }}
 						>
 							Algo A
 						</div>
-						<div className="flex flex-col gap-2 flex-1 min-h-0">
+						<div className="flex min-h-0 flex-1 flex-col gap-2">
 							<AlgoSectionCard
 								value={algo}
 								onChange={handleAlgoChange}
@@ -552,12 +552,12 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 							padding="none"
 							className="flex flex-col overflow-hidden"
 						>
-							<div className="px-3 pt-2 pb-1 text-3xs uppercase tracking-[0.24em] text-cz-cream">
+							<div className="px-3 pt-2 pb-1 text-3xs text-cz-cream uppercase tracking-[0.24em]">
 								Single Cycle
 							</div>
 							<SynthSingleCycleDisplay
 								width={200}
-								height={128}
+								height={100}
 								lineIndex={lineIndex}
 								color={color}
 							/>
@@ -579,31 +579,28 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 							lineIndex={lineIndex}
 						/>
 
-						<Card
-							variant="subtle"
-							className="flex flex-col items-center justify-center"
-						>
+						<div className="mt-2 rounded-none bg-cz-surface/50 pb-1.5">
 							<SynthParamKnob
 								paramKey={lineIndex === 2 ? "algoBlendB" : "algoBlendA"}
 								label="Blend"
 								labelClassName="text-lg font-bold tracking-[0.3em] text-base-content/75"
 								value={algoBlend}
-								size={144}
+								size={100}
 								variant="light"
 								onChange={setAlgoBlend}
 								color={color}
 								valueFormatter={formatAlgoBlendReadout}
 							/>
-						</Card>
+						</div>
 					</div>
-					<div className="min-h-0 flex-1 flex flex-col gap-0">
+					<div className="flex min-h-0 flex-1 flex-col gap-0">
 						<div
-							className="text-3xs uppercase tracking-[0.24em] font-semibold mb-1 px-1.5 py-0.5 bg-cz-inset"
+							className="mb-1 bg-cz-inset px-1.5 py-0.5 font-semibold text-3xs uppercase tracking-[0.24em]"
 							style={{ color }}
 						>
 							Algo B
 						</div>
-						<div className="flex flex-col gap-2 flex-1 min-h-0">
+						<div className="flex min-h-0 flex-1 flex-col gap-2">
 							<AlgoSectionCard
 								value={algo2 ?? PD_ALGOS[0].value}
 								onChange={handleAlgo2Change}

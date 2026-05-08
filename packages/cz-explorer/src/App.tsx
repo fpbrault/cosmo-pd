@@ -77,7 +77,7 @@ function AppInner() {
 			{showOnboardingModal && (
 				<dialog open className="modal modal-open">
 					<div className="modal-box">
-						<h3 className="text-lg font-bold">
+						<h3 className="font-bold text-lg">
 							Welcome to CZ101 Presets Library
 						</h3>
 						<p className="py-2 text-sm opacity-80">

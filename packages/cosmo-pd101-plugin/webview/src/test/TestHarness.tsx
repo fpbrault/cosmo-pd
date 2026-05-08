@@ -48,7 +48,7 @@ function MessageRow({ msg }: { msg: MockBridgeMessage }) {
 
 	return (
 		<div
-			className={`flex gap-1 border-b border-base-content/5 py-0.5 px-1 ${color} hover:bg-base-content/5`}
+			className={`flex gap-1 border-base-content/5 border-b px-1 py-0.5 ${color} hover:bg-base-content/5`}
 		>
 			<span className="w-20 shrink-0 font-bold">{msg.type}</span>
 			<span className="flex-1 break-words text-base-content/70">
@@ -168,8 +168,8 @@ export default function TestHarness() {
 					data-testid="debug-panel"
 				>
 					{/* Header */}
-					<div className="flex items-center justify-between border-b border-base-content/20 px-3 py-1.5">
-						<span className="font-mono text-2xs font-bold text-base-content/80">
+					<div className="flex items-center justify-between border-base-content/20 border-b px-3 py-1.5">
+						<span className="font-bold font-mono text-2xs text-base-content/80">
 							MOCK HOST DEBUG
 						</span>
 						<span
@@ -181,8 +181,8 @@ export default function TestHarness() {
 					</div>
 
 					{/* Virtual DSP state */}
-					<div className="border-b border-base-content/10 px-3 py-1.5">
-						<div className="mb-1 font-mono text-3xs uppercase tracking-wider text-base-content/50">
+					<div className="border-base-content/10 border-b px-3 py-1.5">
+						<div className="mb-1 font-mono text-3xs text-base-content/50 uppercase tracking-wider">
 							Virtual DSP State
 						</div>
 						<div
@@ -202,8 +202,8 @@ export default function TestHarness() {
 					</div>
 
 					{/* Inbound push controls */}
-					<div className="border-b border-base-content/10 px-3 py-1.5">
-						<div className="mb-1 font-mono text-3xs uppercase tracking-wider text-base-content/50">
+					<div className="border-base-content/10 border-b px-3 py-1.5">
+						<div className="mb-1 font-mono text-3xs text-base-content/50 uppercase tracking-wider">
 							Push Inbound (Numeric or String ID → Value)
 						</div>
 						<div className="flex gap-1">
@@ -238,7 +238,7 @@ export default function TestHarness() {
 					{/* Message history */}
 					<div className="flex min-h-0 flex-1 flex-col overflow-hidden px-3 py-1.5">
 						<div className="mb-1 flex items-center justify-between">
-							<span className="font-mono text-3xs uppercase tracking-wider text-base-content/50">
+							<span className="font-mono text-3xs text-base-content/50 uppercase tracking-wider">
 								Message Log
 							</span>
 							<button

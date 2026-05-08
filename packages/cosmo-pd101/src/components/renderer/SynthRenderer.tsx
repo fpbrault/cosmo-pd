@@ -6,9 +6,9 @@ import {
 	type RefObject,
 	useCallback,
 	useEffect,
-	useRef,
 	useState,
 } from "react";
+import logoSrc from "@/assets/logo.png";
 import Button from "@/components/controls/Button";
 import LineSelectControl from "@/components/controls/LineSelectControl";
 import ModModeControl from "@/components/controls/ModModeControl";
@@ -37,7 +37,6 @@ import {
 } from "@/features/synth/SynthParamController";
 import { useSynthStore } from "@/features/synth/synthStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
-
 import { HoverInfoProvider, useHoverInfo } from "../layout/HoverInfo";
 import MiniKeyboardOverlay from "../layout/MiniKeyboardOverlay";
 import SynthInfoBar from "../layout/SynthInfoBar";
@@ -208,6 +207,12 @@ function SynthRendererContent({
 	);
 	const [drawerSlideDirection, setDrawerSlideDirection] = useState<1 | -1>(1);
 	const [brandInfoOpen, setBrandInfoOpen] = useState(false);
+	const mainPanelBottomInset =
+		keyboardVisible && !libraryModeOpen ? "11rem" : "0rem";
+	const frameStyleWithPanelInset = {
+		...frameStyle,
+		"--main-panel-bottom-inset": mainPanelBottomInset,
+	} as CSSProperties;
 
 	const handleCloseLibrary = useCallback(() => {
 		setLibraryModeOpen(false);
@@ -235,7 +240,7 @@ function SynthRendererContent({
 				<div
 					data-theme="cz101"
 					className={`${frameClassName} relative select-none`}
-					style={frameStyle}
+					style={frameStyleWithPanelInset}
 				>
 					<div className="pointer-events-none absolute inset-0" />
 					<div className="pointer-events-none absolute inset-x-0 top-[5.8rem] bottom-10" />
@@ -248,9 +253,9 @@ function SynthRendererContent({
 						/>
 						{headerExtra}
 					</div>
-					<div className="relative z-10 px-1 flex flex-1 min-h-0 min-w-0 w-full gap-2 overflow-hidden">
-						<aside className="overflow-y-auto min-h-0 rounded-[1.15rem] border border-cz-border/80 bg-cz-inset px-0 pb-2 shadow-lg">
-							<div className="px-4 mt-4 mx-auto">
+					<div className="relative z-10 flex min-h-0 w-full min-w-0 flex-1 gap-2 overflow-hidden px-1">
+						<aside className="min-h-0 min-w-72 overflow-y-auto rounded-[1.15rem] border border-cz-border/80 bg-cz-inset px-0 pb-2 shadow-lg">
+							<div className="mx-auto mt-4 px-4">
 								<ScopeMiniDisplay
 									analyserNodeRef={analyserNodeRef}
 									audioCtxRef={audioCtxRef}
@@ -271,11 +276,11 @@ function SynthRendererContent({
 							</AsidePanelSwitcher>
 						</aside>
 
-						<main className="flex min-h-0 min-w-0 overflow-y-auto overflow-x-hidden w-full max-w-4xl mx-auto">
-							<div className="flex w-full  min-h-0 flex-1 flex-col rounded-[1.2rem] mx-auto">
+						<main className="flex min-h-0 w-full min-w-0 overflow-y-auto overflow-x-hidden">
+							<div className="mx-auto flex min-h-0 w-full flex-1 flex-col rounded-[1.2rem]">
 								<div className="pointer-events-none absolute inset-x-4 top-0 h-12 rounded-t-[1.2rem] opacity-70" />
 								<div className="relative shrink-0 rounded-md border border-cz-border bg-cz-body px-3 shadow-inner">
-									<div className="flex flex-wrap justify-center gap-y-2 gap-x-4 items-center">
+									<div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
 										<div className="flex items-end gap-2">
 											<CzTabButton
 												active={mainPanelMode === "phase"}
@@ -353,11 +358,11 @@ function SynthRendererContent({
 									</div>
 								</div>
 
-								<div className="relative flex-1 min-h-0 min-w-0 overflow-hidden">
+								<div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
 									<div className="pointer-events-none absolute inset-0" />
 
 									<PhaseLinesSection
-										className="h-full min-h-0 max-h-164"
+										className="main-panel-fill min-h-0"
 										envOverrideHandlers={envOverrideHandlers}
 									/>
 									<motion.div
@@ -368,7 +373,7 @@ function SynthRendererContent({
 										style={{ transformOrigin: "top center" }}
 										className={`absolute inset-0 z-10 origin-top overflow-hidden will-change-transform ${drawerOpen ? "pointer-events-auto" : "pointer-events-none"}`}
 									>
-										<div className="relative flex h-full min-h-0 flex-col rounded-lg border border-cz-border bg-cz-body">
+										<div className="relative flex h-full max-h-130 min-h-0 flex-col rounded-lg border border-cz-border bg-cz-body">
 											<div className="pointer-events-none absolute inset-0 rounded-lg bg-white/5" />
 											<div className="pointer-events-none absolute inset-x-0 top-0 h-14 rounded-t-lg opacity-60" />
 											<div className="relative min-h-0 flex-1 overflow-hidden">
@@ -418,10 +423,10 @@ function SynthRendererContent({
 					<motion.div
 						aria-hidden={!libraryModeOpen}
 						initial={false}
-						animate={{ y: libraryModeOpen ? 0 : "-100%" }}
+						animate={{ y: libraryModeOpen ? 0 : "-120%" }}
 						transition={LIBRARY_SLIDE_TRANSITION}
 						style={{ transformOrigin: "top center" }}
-						className={`absolute inset-x-0 top-20 bottom-10 z-20 flex min-h-0 flex-col origin-top overflow-hidden shadow-lg shadow-black will-change-transform ${libraryModeOpen ? "pointer-events-auto" : "pointer-events-none"}`}
+						className={`absolute inset-x-0 top-18 bottom-10 z-20 flex min-h-0 origin-top flex-col overflow-hidden shadow-black shadow-lg will-change-transform ${libraryModeOpen ? "pointer-events-auto" : "pointer-events-none"}`}
 					>
 						<MemoPresetLibrary
 							allEntries={headerProps.allEntries}
@@ -533,14 +538,16 @@ function SynthBrandInfoModal({
 			<div className="relative w-[min(32rem,94%)] rounded-md border border-cz-border bg-cz-surface p-5 text-cz-cream shadow-2xl">
 				<div className="mb-4 flex items-center justify-between gap-4">
 					<div className="flex items-center gap-3">
-						<div className="flex h-16 w-16 items-center justify-center rounded-md border border-cz-border bg-linear-to-br from-cz-light-blue/25 to-cz-gold/25 text-3xs font-mono uppercase tracking-[0.22em] text-cz-cream-dim">
-							Logo
-						</div>
+						<img
+							src={logoSrc}
+							alt="Cosmo PD101 logo"
+							className="h-16 w-16 rounded-md object-contain"
+						/>
 						<div>
-							<p className="text-4xs font-mono uppercase tracking-[0.3em] text-cz-light-blue">
+							<p className="font-mono text-4xs text-cz-light-blue uppercase tracking-[0.3em]">
 								Phase Distortion
 							</p>
-							<h3 className="mt-1 text-sm font-mono font-semibold uppercase tracking-[0.18em] text-cz-cream">
+							<h3 className="mt-1 font-mono font-semibold text-cz-cream text-sm uppercase tracking-[0.18em]">
 								Synthesizer Lab
 							</h3>
 						</div>
@@ -555,14 +562,14 @@ function SynthBrandInfoModal({
 				</div>
 
 				<div className="space-y-2 rounded-md border border-cz-border bg-cz-inset/60 p-4">
-					<p className="text-xs font-mono text-cz-cream">Felix Perron-Brault</p>
-					<p className="text-2xs font-mono uppercase tracking-[0.14em] text-cz-cream-dim">
+					<p className="font-mono text-cz-cream text-xs">Felix Perron-Brault</p>
+					<p className="font-mono text-2xs text-cz-cream-dim uppercase tracking-[0.14em]">
 						Version: 0.1.0
 					</p>
-					<p className="text-2xs font-mono uppercase tracking-[0.14em] text-cz-cream-dim">
+					<p className="font-mono text-2xs text-cz-cream-dim uppercase tracking-[0.14em]">
 						Year: 2026
 					</p>
-					<p className="pt-2 text-sm text-cz-gold">
+					<p className="pt-2 text-cz-gold text-sm">
 						For my cats, Basil, Lola, and Latte
 					</p>
 				</div>
@@ -601,13 +608,13 @@ function PendingModifiedPresetModal({
 			}}
 		>
 			<div className="modal-box rounded-md border border-cz-border bg-cz-surface text-cz-cream">
-				<h3 className="font-mono text-lg font-bold">Save modified preset?</h3>
-				<p className="mt-3 text-sm text-cz-cream-dim">
+				<h3 className="font-bold font-mono text-lg">Save modified preset?</h3>
+				<p className="mt-3 text-cz-cream-dim text-sm">
 					{pendingPresetChange?.activePresetName} has unsaved changes.
 				</p>
 				{pendingPresetChange?.changes.length ? (
 					<div className="mt-4 rounded-md border border-cz-border bg-cz-inset/70 p-2">
-						<p className="mb-2 text-3xs font-mono uppercase tracking-[0.24em] text-cz-light-blue">
+						<p className="mb-2 font-mono text-3xs text-cz-light-blue uppercase tracking-[0.24em]">
 							Changed Parameters ({pendingPresetChange.changes.length})
 						</p>
 						<ul className="max-h-44 space-y-1 overflow-y-auto pr-1">
@@ -679,13 +686,6 @@ function AudioStartOverlay({
 }: {
 	audioGate?: SynthRendererProps["audioGate"];
 }) {
-	const startButtonRef = useRef<HTMLButtonElement | null>(null);
-
-	useEffect(() => {
-		if (!audioGate || audioGate.ready) return;
-		startButtonRef.current?.focus();
-	}, [audioGate]);
-
 	if (!audioGate || audioGate.ready) return null;
 	return (
 		<AnimatePresence>
@@ -713,12 +713,12 @@ function AudioStartOverlay({
 						<path d="M13.5 4.06c0-1.336-1.616-2.005-2.56-1.06l-4.5 4.5H4.508c-1.141 0-2.318.664-2.66 1.905A9.76 9.76 0 0 0 1.5 12c0 .898.121 1.768.348 2.595.342 1.241 1.519 1.905 2.66 1.905H6.44l4.5 4.5c.945.945 2.561.276 2.561-1.06V4.06ZM18.584 5.106a.75.75 0 0 1 1.06 0c3.808 3.807 3.808 9.98 0 13.788a.75.75 0 0 1-1.06-1.06 8.25 8.25 0 0 0 0-11.668.75.75 0 0 1 0-1.06Z" />
 						<path d="M15.932 7.757a.75.75 0 0 1 1.061 0 6 6 0 0 1 0 8.486.75.75 0 0 1-1.06-1.061 4.5 4.5 0 0 0 0-6.364.75.75 0 0 1 0-1.061Z" />
 					</svg>
-					<p className="font-mono text-sm text-cz-cream-dim">
+					<p className="font-mono text-cz-cream-dim text-sm">
 						Audio requires a user interaction to start.
 					</p>
 					<Button
-						ref={startButtonRef}
 						type="button"
+						autoFocus
 						className="btn btn-primary"
 						onClick={audioGate.onResume}
 					>

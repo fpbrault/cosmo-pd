@@ -1,18 +1,21 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { installMockPluginBridge } from "./mockPluginBridge";
+import {
+	installMockPluginBridge,
+	type MockBridgeHandle,
+} from "./mockPluginBridge";
 
 beforeEach(() => {
 	window.__MOCK_BRIDGE__ = undefined;
-	window.__BEAMER__ = undefined;
 	window.ipc = undefined as unknown as typeof window.ipc;
 	window.__czOnParams = undefined;
 	installMockPluginBridge();
-	window.__MOCK_BRIDGE__?.clearMessages();
+	const bridge = window.__MOCK_BRIDGE__ as MockBridgeHandle | undefined;
+	bridge?.clearMessages();
 });
 
 describe("mockPluginBridge (browser)", () => {
-	it("records l1_dcw_base via runtime params.set", async () => {
-		window.__BEAMER__?.params.set("l1_dcw_base", 0.44);
+	it("records l1_dcw_base via setParameter", async () => {
+		window.__MOCK_BRIDGE__?.setParameter("l1_dcw_base", 0.44);
 
 		await expect
 			.poll(
@@ -28,8 +31,8 @@ describe("mockPluginBridge (browser)", () => {
 			.toBe(true);
 	});
 
-	it("records l2_dcw_base via runtime params.set", async () => {
-		window.__BEAMER__?.params.set("l2_dcw_base", 0.37);
+	it("records l2_dcw_base via setParameter", async () => {
+		window.__MOCK_BRIDGE__?.setParameter("l2_dcw_base", 0.37);
 
 		await expect
 			.poll(

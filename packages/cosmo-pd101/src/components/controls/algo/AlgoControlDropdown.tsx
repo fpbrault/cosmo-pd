@@ -145,13 +145,13 @@ function AlgoControlDropdownInner({
 
 	return (
 		<div className="space-y-1.5">
-			<div className="flex items-end text-3xs uppercase tracking-[0.2em] leading-tight text-cz-cream/85">
+			<div className="flex items-end text-3xs text-cz-cream/85 uppercase leading-tight tracking-[0.2em]">
 				{control.label}
 			</div>
 			<div
 				className={
 					useSingleLineLayout
-						? "flex gap-0 min-w-0 w-full"
+						? "flex w-full min-w-0 gap-0"
 						: "grid grid-cols-2 gap-0"
 				}
 			>
@@ -187,17 +187,17 @@ function AlgoControlDropdownInner({
 										binding?.setNumber?.(index);
 									}}
 									className={[
-										"relative flex items-center justify-center transition-colors focus:outline-none border-t-0 border-b border-l border-r text-cz-gold border-cz-light-blue",
+										"relative flex items-center justify-center border-cz-light-blue border-t-0 border-r border-b border-l text-cz-gold transition-colors focus:outline-none",
 										activeOption?.value === option.value
 											? "border-cz-light-blue bg-cz-inset text-white shadow-sm"
 											: "border-cz-border bg-cz-surface hover:border-cz-light-blue hover:text-white",
 										useSingleLineLayout
-											? `${isPresetControl ? "h-10" : "h-6"} flex-1 min-w-0 px-0 overflow-hidden`
+											? `${isPresetControl ? "h-10" : "h-6"} min-w-0 flex-1 overflow-hidden px-0`
 											: "h-6 min-w-0 px-0",
 									].join(" ")}
 								>
 									{isPresetControl ? (
-										<span className="absolute top-0.5 left-1/2 -translate-x-1/2 text-[0.45rem] leading-none text-current/85 z-10 pointer-events-none">
+										<span className="pointer-events-none absolute top-0.5 left-1/2 z-10 -translate-x-1/2 text-[0.45rem] text-current/85 leading-none">
 											{index + 1}
 										</span>
 									) : null}
@@ -205,7 +205,7 @@ function AlgoControlDropdownInner({
 										viewBox="0 0 34 22"
 										className={
 											isPresetControl
-												? "h-5 w-full max-w-9 mt-3.5"
+												? "mt-3.5 h-5 w-full max-w-9"
 												: "h-4 w-full max-w-9"
 										}
 										aria-hidden="true"

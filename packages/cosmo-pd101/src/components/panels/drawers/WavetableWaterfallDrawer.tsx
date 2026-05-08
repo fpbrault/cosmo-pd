@@ -6,10 +6,12 @@ export default function WavetableWaterfallDrawer() {
 
 	return (
 		<div className="h-full min-h-0 p-2">
-			<WavetableWaterfall
-				line1WaveHistory={wavetablePreview.line1History}
-				line2WaveHistory={wavetablePreview.line2History}
-			/>
+			<div className="h-full min-h-0">
+				<WavetableWaterfall
+					line1WaveHistory={wavetablePreview.line1History}
+					line2WaveHistory={wavetablePreview.line2History}
+				/>
+			</div>
 		</div>
 	);
 }
