@@ -71,7 +71,11 @@ describe("params.set", () => {
 		const types = (window.__MOCK_BRIDGE__?.getMessages() ?? []).map(
 			(m) => m.type,
 		);
-		expect(types).toEqual(["param:begin", "param:set", "param:end"]);
+		expect(types.filter((type) => type.startsWith("param:"))).toEqual([
+			"param:begin",
+			"param:set",
+			"param:end",
+		]);
 	});
 
 	it("is a no-op for unknown stringIds", () => {

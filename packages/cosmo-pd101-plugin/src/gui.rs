@@ -134,7 +134,7 @@ unsafe impl Send for CzEditorHandle {}
 pub struct CzEditor {
     synth_params: Arc<RwLock<SynthParams>>,
     scope_buffer: ScopeBuffer,
-    _ui_input_queue: UiInputQueue,
+    ui_input_queue: UiInputQueue,
     host_scale_factor: Arc<Mutex<f32>>,
 
     /// Shared handle to the live WebView (if any).  Held by both the Editor
@@ -151,7 +151,7 @@ impl CzEditor {
         Self {
             synth_params,
             scope_buffer,
-            _ui_input_queue: ui_input_queue,
+            ui_input_queue,
             host_scale_factor: Arc::new(Mutex::new(1.0)),
             webview_state: Arc::new(Mutex::new(WebViewContainer { webview: None })),
         }
@@ -263,6 +263,7 @@ impl Editor for CzEditor {
 
                 let synth_params = self.synth_params.clone();
                 let scope_buffer = self.scope_buffer.clone();
+                let ui_input_queue = self.ui_input_queue.clone();
 
                 let webview_state_for_ipc = self.webview_state.clone();
 
@@ -272,6 +273,7 @@ impl Editor for CzEditor {
                         resource_dir,
                         synth_params,
                         scope_buffer,
+                        ui_input_queue,
                         webview_state_for_ipc.clone(),
                     )
                 };
@@ -483,6 +485,7 @@ unsafe fn build_webview_from_ns_view(
     resource_dir: std::path::PathBuf,
     synth_params: Arc<RwLock<SynthParams>>,
     scope_buffer: ScopeBuffer,
+    ui_input_queue: UiInputQueue,
     webview_state: Arc<Mutex<WebViewContainer>>,
 ) -> (Option<wry::WebView>, Option<TempWindow>) {
     use core::ptr::NonNull;
@@ -546,7 +549,8 @@ unsafe fn build_webview_from_ns_view(
                     .cloned()
                     .unwrap_or_default();
 
-                let result = handle_ipc_invoke(method, &args, &synth_params, &scope_buffer);
+                let result =
+                    handle_ipc_invoke(method, &args, &synth_params, &scope_buffer, &ui_input_queue);
 
                 let response = match result {
                     Ok(val) => serde_json::json!({ "id": id, "result": val }),

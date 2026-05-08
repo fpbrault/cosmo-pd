@@ -117,6 +117,7 @@ enum UiInputEvent {
     PitchBend { value: f32 },
     ModWheel { value: f32 },
     Aftertouch { value: f32 },
+    Panic,
 }
 
 // =============================================================================
@@ -136,12 +137,125 @@ fn handle_ipc_invoke(
     args: &[serde_json::Value],
     synth_params: &Arc<RwLock<SynthParams>>,
     scope_buffer: &ScopeBuffer,
+    ui_input_queue: &UiInputQueue,
 ) -> Result<serde_json::Value, String> {
     if method != "getScopeData" && method != "clientLog" {
         append_log(&format!("ipc invoke method={method} args={}", args.len()));
     }
 
     match method {
+        "noteOn" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| "noteOn expects an object payload as first argument".to_string())?;
+            let note = payload
+                .get("note")
+                .and_then(serde_json::Value::as_u64)
+                .ok_or_else(|| "noteOn payload missing note".to_string())?;
+            let velocity = payload
+                .get("velocity")
+                .and_then(serde_json::Value::as_f64)
+                .unwrap_or(0.8_f64) as f32;
+            let note = u8::try_from(note).map_err(|_| "noteOn note out of range".to_string())?;
+
+            let mut queue = ui_input_queue
+                .lock()
+                .map_err(|_| "ui input queue is poisoned".to_string())?;
+            queue.push_back(UiInputEvent::NoteOn { note, velocity });
+            Ok(serde_json::Value::Null)
+        }
+        "noteOff" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| "noteOff expects an object payload as first argument".to_string())?;
+            let note = payload
+                .get("note")
+                .and_then(serde_json::Value::as_u64)
+                .ok_or_else(|| "noteOff payload missing note".to_string())?;
+            let note = u8::try_from(note).map_err(|_| "noteOff note out of range".to_string())?;
+
+            let mut queue = ui_input_queue
+                .lock()
+                .map_err(|_| "ui input queue is poisoned".to_string())?;
+            queue.push_back(UiInputEvent::NoteOff { note });
+            Ok(serde_json::Value::Null)
+        }
+        "sustain" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| "sustain expects an object payload as first argument".to_string())?;
+            let on = payload
+                .get("on")
+                .and_then(serde_json::Value::as_bool)
+                .ok_or_else(|| "sustain payload missing on".to_string())?;
+
+            let mut queue = ui_input_queue
+                .lock()
+                .map_err(|_| "ui input queue is poisoned".to_string())?;
+            queue.push_back(UiInputEvent::Sustain { on });
+            Ok(serde_json::Value::Null)
+        }
+        "pitchBend" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| "pitchBend expects an object payload as first argument".to_string())?;
+            let value = payload
+                .get("value")
+                .and_then(serde_json::Value::as_f64)
+                .ok_or_else(|| "pitchBend payload missing value".to_string())?
+                as f32;
+
+            let mut queue = ui_input_queue
+                .lock()
+                .map_err(|_| "ui input queue is poisoned".to_string())?;
+            queue.push_back(UiInputEvent::PitchBend { value });
+            Ok(serde_json::Value::Null)
+        }
+        "modWheel" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| "modWheel expects an object payload as first argument".to_string())?;
+            let value = payload
+                .get("value")
+                .and_then(serde_json::Value::as_f64)
+                .ok_or_else(|| "modWheel payload missing value".to_string())?
+                as f32;
+
+            let mut queue = ui_input_queue
+                .lock()
+                .map_err(|_| "ui input queue is poisoned".to_string())?;
+            queue.push_back(UiInputEvent::ModWheel { value });
+            Ok(serde_json::Value::Null)
+        }
+        "aftertouch" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| "aftertouch expects an object payload as first argument".to_string())?;
+            let value = payload
+                .get("value")
+                .and_then(serde_json::Value::as_f64)
+                .ok_or_else(|| "aftertouch payload missing value".to_string())?
+                as f32;
+
+            let mut queue = ui_input_queue
+                .lock()
+                .map_err(|_| "ui input queue is poisoned".to_string())?;
+            queue.push_back(UiInputEvent::Aftertouch { value });
+            Ok(serde_json::Value::Null)
+        }
+        "panic" => {
+            let mut queue = ui_input_queue
+                .lock()
+                .map_err(|_| "ui input queue is poisoned".to_string())?;
+            queue.push_back(UiInputEvent::Panic);
+            Ok(serde_json::Value::Null)
+        }
         "setParams" => {
             let json_str = args
                 .first()
@@ -247,6 +361,7 @@ impl CzPlugin {
                     UiInputEvent::PitchBend { value } => proc.set_pitch_bend(value),
                     UiInputEvent::ModWheel { value } => proc.set_mod_wheel(value),
                     UiInputEvent::Aftertouch { value } => proc.set_aftertouch(value),
+                    UiInputEvent::Panic => Self::all_notes_off(proc),
                 }
             }
         }
@@ -451,6 +566,7 @@ mod tests {
     fn set_params_rpc_updates_synth_params() {
         let synth_params = Arc::new(RwLock::new(SynthParams::default()));
         let scope_buffer: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
+        let ui_input_queue: UiInputQueue = Arc::new(Mutex::new(VecDeque::new()));
 
         let mut new_params = SynthParams::default();
         new_params.volume = 0.42;
@@ -461,6 +577,7 @@ mod tests {
             &[serde_json::Value::String(json_str)],
             &synth_params,
             &scope_buffer,
+            &ui_input_queue,
         );
         assert!(result.is_ok());
         assert_eq!(synth_params.read().unwrap().volume, 0.42);
@@ -472,10 +589,43 @@ mod tests {
         initial.volume = 0.77;
         let synth_params = Arc::new(RwLock::new(initial));
         let scope_buffer: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
+        let ui_input_queue: UiInputQueue = Arc::new(Mutex::new(VecDeque::new()));
 
-        let result = handle_ipc_invoke("getParams", &[], &synth_params, &scope_buffer);
+        let result = handle_ipc_invoke(
+            "getParams",
+            &[],
+            &synth_params,
+            &scope_buffer,
+            &ui_input_queue,
+        );
         assert!(result.is_ok());
         let val = result.unwrap();
-        assert_eq!(val["volume"].as_f64().unwrap(), 0.77);
+        let volume = val["volume"].as_f64().unwrap();
+        assert!((volume - 0.77).abs() < 1.0e-6);
+    }
+
+    #[test]
+    fn note_on_rpc_enqueues_ui_input_event() {
+        let synth_params = Arc::new(RwLock::new(SynthParams::default()));
+        let scope_buffer: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
+        let ui_input_queue: UiInputQueue = Arc::new(Mutex::new(VecDeque::new()));
+
+        let result = handle_ipc_invoke(
+            "noteOn",
+            &[serde_json::json!({ "note": 60, "velocity": 0.75 })],
+            &synth_params,
+            &scope_buffer,
+            &ui_input_queue,
+        );
+
+        assert!(result.is_ok());
+        let mut queue = ui_input_queue.lock().unwrap();
+        match queue.pop_front() {
+            Some(UiInputEvent::NoteOn { note, velocity }) => {
+                assert_eq!(note, 60);
+                assert!((velocity - 0.75).abs() < f32::EPSILON);
+            }
+            other => panic!("unexpected queued event: {other:?}"),
+        }
     }
 }
