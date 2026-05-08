@@ -5,6 +5,12 @@ import type { AsidePanelTab } from "@/components/layout/AsidePanelSwitcher";
 export const SYNTH_UI_STATE_STORAGE_KEY = "cosmo-pd101-ui-state";
 
 export type MainPanelMode = "phase" | "fx" | "mod" | "waterfall";
+export type ScopeVisualizationMode =
+	| "waveform"
+	| "phaseBender"
+	| "phaseXY"
+	| "orbital"
+	| "spectrogram";
 export type PhaseLinePanelTab =
 	| "line1-algos"
 	| "line2-algos"
@@ -22,6 +28,7 @@ type SynthUiState = {
 	scopeCycles: number;
 	scopeVerticalZoom: number;
 	scopeTriggerLevel: number;
+	scopeVisualizationMode: ScopeVisualizationMode;
 };
 
 type SynthUiActions = {
@@ -34,6 +41,7 @@ type SynthUiActions = {
 	setScopeCycles: (cycles: number) => void;
 	setScopeVerticalZoom: (zoom: number) => void;
 	setScopeTriggerLevel: (level: number) => void;
+	setScopeVisualizationMode: (mode: ScopeVisualizationMode) => void;
 };
 
 export type SynthUiStore = SynthUiState & SynthUiActions;
@@ -61,6 +69,13 @@ const PHASE_LINE_PANEL_TABS = new Set<PhaseLinePanelTab>([
 	"line2-envelopes",
 ]);
 const ENV_TABS = new Set<EnvTab>(["dco", "dcw", "dca"]);
+const SCOPE_VISUALIZATION_MODES = new Set<ScopeVisualizationMode>([
+	"waveform",
+	"phaseBender",
+	"phaseXY",
+	"orbital",
+	"spectrogram",
+]);
 
 const DEFAULT_UI_STATE: SynthUiState = {
 	activeAsidePanel: "global",
@@ -72,6 +87,7 @@ const DEFAULT_UI_STATE: SynthUiState = {
 	scopeCycles: 2,
 	scopeVerticalZoom: 1,
 	scopeTriggerLevel: 128,
+	scopeVisualizationMode: "waveform",
 };
 
 const getStringValue = (value: unknown): string | null =>
@@ -87,6 +103,9 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 	const mainPanelMode = getStringValue(candidate.mainPanelMode);
 	const phaseLinePanelTab = getStringValue(candidate.phaseLinePanelTab);
 	const activeEnvTab = getStringValue(candidate.activeEnvTab);
+	const scopeVisualizationMode = getStringValue(
+		candidate.scopeVisualizationMode,
+	);
 
 	return {
 		activeAsidePanel:
@@ -133,6 +152,13 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 			candidate.scopeTriggerLevel <= 255
 				? candidate.scopeTriggerLevel
 				: DEFAULT_UI_STATE.scopeTriggerLevel,
+		scopeVisualizationMode:
+			scopeVisualizationMode &&
+			SCOPE_VISUALIZATION_MODES.has(
+				scopeVisualizationMode as ScopeVisualizationMode,
+			)
+				? (scopeVisualizationMode as ScopeVisualizationMode)
+				: DEFAULT_UI_STATE.scopeVisualizationMode,
 	};
 };
 
@@ -149,6 +175,8 @@ export const useSynthUiStore = create<SynthUiStore>()(
 			setScopeCycles: (cycles) => set({ scopeCycles: cycles }),
 			setScopeVerticalZoom: (zoom) => set({ scopeVerticalZoom: zoom }),
 			setScopeTriggerLevel: (level) => set({ scopeTriggerLevel: level }),
+			setScopeVisualizationMode: (mode) =>
+				set({ scopeVisualizationMode: mode }),
 		}),
 		{
 			name: SYNTH_UI_STATE_STORAGE_KEY,
@@ -163,6 +191,7 @@ export const useSynthUiStore = create<SynthUiStore>()(
 				scopeCycles: state.scopeCycles,
 				scopeVerticalZoom: state.scopeVerticalZoom,
 				scopeTriggerLevel: state.scopeTriggerLevel,
+				scopeVisualizationMode: state.scopeVisualizationMode,
 			}),
 			merge: (persistedState, currentState) => ({
 				...currentState,

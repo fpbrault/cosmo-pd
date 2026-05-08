@@ -57,7 +57,7 @@ describe("ScopeMiniDisplay", () => {
 	it("renders a larger scope canvas without forced pixelated scaling", () => {
 		render(<ScopeMiniDisplay effectivePitchHz={220} />);
 
-		const scopeLabel = screen.getByText("Scope");
+		const scopeLabel = screen.getByText(/Scope/);
 		const wrapper = scopeLabel.parentElement;
 		if (!(wrapper instanceof HTMLElement)) {
 			throw new Error("expected scope wrapper element");
@@ -68,7 +68,7 @@ describe("ScopeMiniDisplay", () => {
 			throw new Error("expected scope canvas");
 		}
 
-		expect(canvas.className).toContain("h-24");
+		expect(canvas.className).toContain("h-[10.75rem]");
 		expect(canvas.className).toContain("w-full");
 
 		expect(canvas.style.imageRendering).toBe("");
@@ -93,7 +93,7 @@ describe("ScopeMiniDisplay", () => {
 		render(<ScopeMiniDisplay effectivePitchHz={220} />);
 
 		const canvas = screen
-			.getByText("Scope")
+			.getByText(/Scope/)
 			.parentElement?.querySelector("canvas");
 		if (!(canvas instanceof HTMLCanvasElement)) {
 			throw new Error("expected scope canvas");
