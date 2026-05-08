@@ -231,7 +231,11 @@ function assertBundleContainsFile(bundleDir, relativeFilePath, platformLabel) {
 	}
 }
 
-function assertBundleHasFileInDirectory(bundleDir, relativeDirectory, platformLabel) {
+function assertBundleHasFileInDirectory(
+	bundleDir,
+	relativeDirectory,
+	platformLabel,
+) {
 	const expectedDir = path.join(bundleDir, ...relativeDirectory.split("/"));
 	if (!existsSync(expectedDir)) {
 		throw new Error(
@@ -281,7 +285,11 @@ function packageMacos({ sourceDir, outputDir, version }) {
 	const bundleAuv2 = path.join(sourceDir, bundleAuv2Name);
 	const bundleClap = path.join(sourceDir, bundleClapName);
 
-	if (!existsSync(bundleVst3) || !existsSync(bundleAuv2) || !existsSync(bundleClap)) {
+	if (
+		!existsSync(bundleVst3) ||
+		!existsSync(bundleAuv2) ||
+		!existsSync(bundleClap)
+	) {
 		throw new Error(
 			`macOS packaging requires ${bundleVst3Name}, ${bundleAuv2Name}, and ${bundleClapName}. Run plugin build first.`,
 		);
@@ -292,11 +300,7 @@ function packageMacos({ sourceDir, outputDir, version }) {
 		`Contents/MacOS/${pluginBaseName}`,
 		"macOS",
 	);
-	assertBundleHasFileInDirectory(
-		bundleVst3,
-		"Contents/MacOS",
-		"macOS",
-	);
+	assertBundleHasFileInDirectory(bundleVst3, "Contents/MacOS", "macOS");
 	assertBundleContainsFile(
 		bundleClap,
 		`Contents/MacOS/${pluginBaseName}`,
