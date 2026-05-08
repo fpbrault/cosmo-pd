@@ -1,10 +1,6 @@
 import type { FrontendPresetV1 } from "@/lib/synth/presetTypes";
 
-/**
- * Built-in factory presets for the CZ-101 PD synthesizer lab.
- * Converted to canonical SynthPresetV1 format.
- */
-export const DEFAULT_SYNTH_PRESETS = {
+export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 	Bliss: {
 		name: "Bliss",
 		data: {
@@ -24,7 +20,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 					dcwBase: 1,
 					modulation: 0,
 					detuneNote: 0,
-					detuneFine: 4,
+					detuneFine: 0,
 					octave: 0,
 					dcoEnv: {
 						steps: [
@@ -192,8 +188,8 @@ export const DEFAULT_SYNTH_PRESETS = {
 					dcwBase: 0.7401758030482701,
 					modulation: 0,
 					detuneNote: 0,
-					detuneFine: -2,
-					octave: -1,
+					detuneFine: 0,
+					octave: 0,
 					dcoEnv: {
 						steps: [
 							{
@@ -443,21 +439,21 @@ export const DEFAULT_SYNTH_PRESETS = {
 					{
 						type: "delay",
 						params: {
-							enabled: false,
-							time: 0.11,
-							feedback: 0.22,
-							mix: 0.14310545785086495,
-							tapeMode: false,
-							warmth: 0.2,
+							enabled: true,
+							time: 0.34,
+							feedback: 0.46,
+							mix: 0.35,
+							tapeMode: true,
+							warmth: 0.72,
 						},
 					},
 					{
 						type: "shimmerVerb",
 						params: {
-							enabled: false,
-							shimmer: 0.4,
+							enabled: true,
+							shimmer: 0.638798828125,
 							space: 0.6546679530824934,
-							mix: 0.3501562322889056,
+							mix: 0.41625120299203056,
 						},
 					},
 					{
@@ -482,17 +478,18 @@ export const DEFAULT_SYNTH_PRESETS = {
 				modMode: "normal",
 				octave: 0,
 				line1: {
-					algo: "pinch",
+					algo: "fold",
 					algo2: "bend",
 					algoBlend: 0.02,
 					baseWaveformA: "sine",
+					baseWaveformB: "sine",
 					window: "off",
 					dcaBase: 1,
 					dcwBase: 0.48,
 					modulation: 0,
 					detuneNote: 0,
-					detuneFine: 2,
-					octave: 0,
+					detuneFine: 0,
+					octave: -1,
 					dcoEnv: {
 						steps: [
 							{
@@ -575,11 +572,11 @@ export const DEFAULT_SYNTH_PRESETS = {
 						steps: [
 							{
 								level: 99,
-								rate: 80.83521000745344,
+								rate: 84.24280644300032,
 							},
 							{
 								level: 0,
-								rate: 33.92088296203741,
+								rate: 42.00076699524053,
 							},
 							{
 								level: 0,
@@ -613,20 +610,20 @@ export const DEFAULT_SYNTH_PRESETS = {
 					keyFollow: 0,
 					algoControlsA: [
 						{
-							id: "pinchFocus",
-							value: 0.5805859375,
+							id: "foldStages",
+							value: 0.5803859560830252,
 						},
 						{
-							id: "pinchAsym",
+							id: "foldTilt",
+							value: 0.0010312380109513963,
+						},
+						{
+							id: "foldSymmetry",
 							value: 0,
 						},
 						{
-							id: "pinchCurve",
-							value: 0.5,
-						},
-						{
-							id: "pinchDrive",
-							value: 0.5,
+							id: "foldSoftness",
+							value: 0,
 						},
 					],
 					algoControlsB: [
@@ -648,12 +645,14 @@ export const DEFAULT_SYNTH_PRESETS = {
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0,
+					baseWaveformA: "cosine",
+					baseWaveformB: "cosine",
 					window: "off",
 					dcaBase: 1,
 					dcwBase: 0.46,
 					modulation: 0,
 					detuneNote: 0,
-					detuneFine: 7,
+					detuneFine: 0,
 					octave: -1,
 					dcoEnv: {
 						steps: [
@@ -773,13 +772,31 @@ export const DEFAULT_SYNTH_PRESETS = {
 						loop: false,
 					},
 					keyFollow: 0,
-					algoControlsA: [],
+					algoControlsA: [
+						{
+							id: "preset",
+							value: 0,
+						},
+						{
+							id: "waveform1",
+							value: 0,
+						},
+						{
+							id: "waveform2",
+							value: 0,
+						},
+						{
+							id: "windowFunction",
+							value: 0,
+						},
+					],
 					algoControlsB: [],
 				},
 				frequency: 440,
 				volume: 1,
 				polyMode: "poly8",
 				legato: false,
+				velocityCurve: 0,
 				portamento: {
 					enabled: false,
 					mode: "time",
@@ -832,13 +849,13 @@ export const DEFAULT_SYNTH_PRESETS = {
 					{
 						type: "loFi",
 						params: {
-							enabled: false,
-							degrade: 0.19531248637608117,
-							wowDepth: 0.04247656685965401,
-							wowRate: 0.78,
-							flutterDepth: 0.009545559599014757,
-							flutterRate: 9.2,
-							tone: 0.4242187554495675,
+							enabled: true,
+							degrade: 0.22,
+							wowDepth: 0.28,
+							wowRate: 0.5,
+							flutterDepth: 0.16,
+							flutterRate: 5.9,
+							tone: 0.42,
 							mix: 1,
 						},
 					},
@@ -846,18 +863,18 @@ export const DEFAULT_SYNTH_PRESETS = {
 						type: "grainDelay",
 						params: {
 							enabled: true,
-							time: 0.5968093669073922,
+							time: 0.5011327311652046,
 							feedback: 0.5377412213597978,
 							scatter: 0.30899538104951113,
 							density: 0.5996484313692365,
-							mix: 0.2806640625,
+							mix: 0.15453613281249998,
 						},
 					},
 					{
 						type: "reverb",
 						params: {
 							enabled: true,
-							mix: 0.47,
+							mix: 0.21814086914062497,
 							space: 0.9,
 							predelay: 0.03,
 							distance: 0.68,
@@ -880,7 +897,6 @@ export const DEFAULT_SYNTH_PRESETS = {
 		category: "",
 		tags: [],
 	},
-
 	Chops: {
 		name: "Chops",
 		data: {
@@ -1304,7 +1320,6 @@ export const DEFAULT_SYNTH_PRESETS = {
 		category: "",
 		tags: ["pad"],
 	},
-
 	Organ: {
 		name: "Organ",
 		data: {
@@ -1697,7 +1712,6 @@ export const DEFAULT_SYNTH_PRESETS = {
 		category: "",
 		tags: [],
 	},
-
 	Wow: {
 		name: "Wow",
 		data: {
@@ -2088,7 +2102,6 @@ export const DEFAULT_SYNTH_PRESETS = {
 		category: "",
 		tags: [],
 	},
-
 	"Solo Lead": {
 		name: "Solo Lead",
 		data: {
@@ -2519,7 +2532,6 @@ export const DEFAULT_SYNTH_PRESETS = {
 		category: "",
 		tags: [],
 	},
-
 	"Soft Piano": {
 		name: "Soft Piano",
 		data: {
@@ -2539,7 +2551,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 					dcwBase: 1,
 					modulation: 0,
 					detuneNote: 0,
-					detuneFine: 4,
+					detuneFine: 0,
 					octave: -1,
 					dcoEnv: {
 						steps: [
@@ -2686,7 +2698,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 					dcwBase: 0.6900000000000001,
 					modulation: 0,
 					detuneNote: 0,
-					detuneFine: -2,
+					detuneFine: 0,
 					octave: -1,
 					dcoEnv: {
 						steps: [
@@ -2839,16 +2851,16 @@ export const DEFAULT_SYNTH_PRESETS = {
 				},
 				lfo: {
 					waveform: "sine",
-					rate: 5,
-					depth: 0,
-					symmetry: 0,
+					rate: 2.000000000000001,
+					depth: 1,
+					symmetry: 0.5,
 					retrigger: false,
 					offset: 0,
 				},
 				lfo2: {
 					waveform: "sine",
-					rate: 5,
-					depth: 0,
+					rate: 2.000000000000001,
+					depth: 1,
 					symmetry: 0.5,
 					retrigger: false,
 					offset: 0,
@@ -2949,7 +2961,6 @@ export const DEFAULT_SYNTH_PRESETS = {
 		category: "",
 		tags: [],
 	},
-
 	Plucking: {
 		name: "Plucking",
 		data: {
@@ -2963,12 +2974,13 @@ export const DEFAULT_SYNTH_PRESETS = {
 					algo2: null,
 					algoBlend: 0,
 					baseWaveformA: "sine",
+					baseWaveformB: "sine",
 					window: "off",
 					dcaBase: 1,
 					dcwBase: 1,
 					modulation: 0,
 					detuneNote: 0,
-					detuneFine: 2,
+					detuneFine: 0,
 					octave: -1,
 					dcoEnv: {
 						steps: [
@@ -3108,13 +3120,15 @@ export const DEFAULT_SYNTH_PRESETS = {
 					algo: "pinch",
 					algo2: "fold",
 					algoBlend: 0.51,
+					baseWaveformA: "sine",
+					baseWaveformB: "sine",
 					window: "off",
 					dcaBase: 1,
 					dcwBase: 1,
 					modulation: 0,
 					detuneNote: 0,
-					detuneFine: 7,
-					octave: 0,
+					detuneFine: 0,
+					octave: -1,
 					dcoEnv: {
 						steps: [
 							{
@@ -3274,6 +3288,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 				volume: 1,
 				polyMode: "poly8",
 				legato: false,
+				velocityCurve: 0,
 				portamento: {
 					enabled: false,
 					mode: "time",
@@ -3282,16 +3297,16 @@ export const DEFAULT_SYNTH_PRESETS = {
 				},
 				lfo: {
 					waveform: "triangle",
-					rate: 0.5260120738636367,
-					depth: 0.8219549005681819,
-					symmetry: 0,
+					rate: 2.000000000000001,
+					depth: 1,
+					symmetry: 0.5,
 					retrigger: false,
 					offset: 0,
 				},
 				lfo2: {
 					waveform: "sine",
-					rate: 5,
-					depth: 0,
+					rate: 2.000000000000001,
+					depth: 1,
 					symmetry: 0.5,
 					retrigger: false,
 					offset: 0,
@@ -3369,9 +3384,8 @@ export const DEFAULT_SYNTH_PRESETS = {
 		},
 		favorite: false,
 		category: "",
-		tags: ["strings", "piano"],
+		tags: [],
 	},
-
 	Clav: {
 		name: "Clav",
 		data: {
@@ -3758,7 +3772,6 @@ export const DEFAULT_SYNTH_PRESETS = {
 		category: "",
 		tags: ["piano"],
 	},
-
 	Chants: {
 		name: "Chants",
 		data: {
@@ -3779,7 +3792,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 					modulation: 0,
 					detuneNote: 0,
 					detuneFine: 0,
-					octave: -1,
+					octave: 0,
 					dcoEnv: {
 						steps: [
 							{
@@ -3901,7 +3914,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 					algoControlsA: [
 						{
 							id: "pinchFocus",
-							value: 0.34845703124999994,
+							value: 0.20136642183576306,
 						},
 						{
 							id: "pinchAsym",
@@ -3947,7 +3960,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 					modulation: 0,
 					detuneNote: 0,
 					detuneFine: 4,
-					octave: -1,
+					octave: 0,
 					dcoEnv: {
 						steps: [
 							{
@@ -4158,43 +4171,58 @@ export const DEFAULT_SYNTH_PRESETS = {
 				},
 				fxSlots: [
 					{
-						type: "chorus",
+						type: "phaseMod",
 						params: {
 							enabled: true,
-							rate: 0.9,
-							depth: 1.2,
-							mix: 0.38,
+							pmPre: true,
+							amount: 0.08300231933593749,
+							ratio: 2.0046417236328127,
 						},
+					},
+					{
+						type: "junoChorus",
+						params: {
+							enabled: true,
+							mode: 0,
+							mix: 0.12263183593749996,
+						},
+					},
+					{
+						type: "eq5Band",
+						params: {
+							enabled: true,
+							gain80: 3,
+							gain240: 4,
+							gain750: 1,
+							gain2200: -3,
+							gain8000: -6.349765625,
+						},
+					},
+					{
+						type: "compressor",
+						params: {
+							enabled: false,
+							thresholdDb: -21.2406005859375,
+							ratio: 4,
+							attackMs: 5,
+							releaseMs: 80,
+							makeupDb: 1.78318359375,
+							mix: 1,
+						},
+					},
+					{
+						type: "empty",
 					},
 					{
 						type: "delay",
 						params: {
 							enabled: true,
 							time: 0.11,
-							feedback: 0.4798222628853151,
-							mix: 0.13208983148847298,
+							feedback: 0.22,
+							mix: 0.13525512695312503,
 							tapeMode: false,
 							warmth: 0.2,
 						},
-					},
-					{
-						type: "vibrato",
-						params: {
-							enabled: false,
-							waveform: 1,
-							rate: 30,
-							depth: 30,
-							delay: 0,
-						},
-					},
-					{
-						type: "empty",
-					},
-					{
-						type: "empty",
-					},
-					{
-						type: "empty",
 					},
 				],
 			},
@@ -4203,7 +4231,6 @@ export const DEFAULT_SYNTH_PRESETS = {
 		category: "",
 		tags: ["brass"],
 	},
-
 	"Bright Changes": {
 		name: "Bright Changes",
 		data: {
@@ -4217,6 +4244,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 					algo2: "bend",
 					algoBlend: 0.55732421875,
 					baseWaveformA: "sine",
+					baseWaveformB: "sine",
 					window: "off",
 					dcaBase: 1,
 					dcwBase: 1,
@@ -4379,6 +4407,8 @@ export const DEFAULT_SYNTH_PRESETS = {
 					algo: "fold",
 					algo2: "skew",
 					algoBlend: 0.55732421875,
+					baseWaveformA: "sine",
+					baseWaveformB: "sine",
 					window: "off",
 					dcaBase: 1,
 					dcwBase: 1,
@@ -4545,6 +4575,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 				volume: 1,
 				polyMode: "poly8",
 				legato: false,
+				velocityCurve: 0,
 				portamento: {
 					enabled: false,
 					mode: "time",
@@ -4634,7 +4665,6 @@ export const DEFAULT_SYNTH_PRESETS = {
 		category: "",
 		tags: ["pad"],
 	},
-
 	"Thick Bass": {
 		name: "Thick Bass",
 		data: {
@@ -5052,7 +5082,6 @@ export const DEFAULT_SYNTH_PRESETS = {
 		category: "",
 		tags: [],
 	},
-
 	"Synth Bass": {
 		name: "Synth Bass",
 		data: {
@@ -5439,15 +5468,6 @@ export const DEFAULT_SYNTH_PRESETS = {
 				},
 				fxSlots: [
 					{
-						type: "empty",
-					},
-					{
-						type: "empty",
-					},
-					{
-						type: "empty",
-					},
-					{
 						type: "vibrato",
 						params: {
 							enabled: true,
@@ -5458,10 +5478,47 @@ export const DEFAULT_SYNTH_PRESETS = {
 						},
 					},
 					{
-						type: "empty",
+						type: "phaseMod",
+						params: {
+							enabled: false,
+							intPmAmount: 0,
+							intPmRatio: 2,
+							pmPre: false,
+							amount: 0.01379699707031249,
+							ratio: 2,
+						},
+					},
+					{
+						type: "ringMod",
+						params: {
+							enabled: false,
+							carrierHz: 1163.6280517578125,
+							mix: 0.47427124023437495,
+						},
 					},
 					{
 						type: "empty",
+					},
+					{
+						type: "wavefolder",
+						params: {
+							enabled: false,
+							drive: 0.3,
+							folds: 0.3,
+							mix: 0.8,
+						},
+					},
+					{
+						type: "compressor",
+						params: {
+							enabled: true,
+							thresholdDb: -12,
+							ratio: 4,
+							attackMs: 5,
+							releaseMs: 100,
+							makeupDb: 6,
+							mix: 1,
+						},
 					},
 				],
 			},
@@ -6036,7 +6093,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 				},
 				line2: {
 					algo: "cz101",
-					algo2: null,
+					algo2: "cz101",
 					algoBlend: 0,
 					baseWaveformA: "cosine",
 					baseWaveformB: "cosine",
@@ -6089,7 +6146,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 					dcwEnv: {
 						steps: [
 							{
-								level: 50,
+								level: 49.351158447265625,
 								rate: 30,
 							},
 							{
@@ -6183,7 +6240,24 @@ export const DEFAULT_SYNTH_PRESETS = {
 							value: 0,
 						},
 					],
-					algoControlsB: [],
+					algoControlsB: [
+						{
+							id: "preset",
+							value: 0,
+						},
+						{
+							id: "waveform1",
+							value: 0,
+						},
+						{
+							id: "waveform2",
+							value: 0,
+						},
+						{
+							id: "windowFunction",
+							value: 0,
+						},
+					],
 				},
 				frequency: 440,
 				volume: 1,
@@ -6191,14 +6265,14 @@ export const DEFAULT_SYNTH_PRESETS = {
 				legato: false,
 				velocityCurve: 0,
 				portamento: {
-					enabled: false,
+					enabled: true,
 					mode: "time",
 					rate: 85,
 					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
-					rate: 5,
+					rate: 2.000000000000001,
 					depth: 1,
 					symmetry: 0.5,
 					retrigger: false,
@@ -6206,8 +6280,8 @@ export const DEFAULT_SYNTH_PRESETS = {
 				},
 				lfo2: {
 					waveform: "sine",
-					rate: 5,
-					depth: 0,
+					rate: 2.000000000000001,
+					depth: 1,
 					symmetry: 0.5,
 					retrigger: false,
 					offset: 0,
@@ -6216,33 +6290,41 @@ export const DEFAULT_SYNTH_PRESETS = {
 					rate: 2,
 				},
 				modEnv: {
-					attack: 0.009999999776482582,
+					attack: 0.010000000000000007,
 					decay: 0.10000000149011612,
 					sustain: 0.5,
 					release: 0.20000000298023224,
 				},
 				pitchBendRange: 2,
 				modMatrix: {
-					routes: [],
+					routes: [
+						{
+							source: "aftertouch",
+							destination: "line2DcwEnvStep1Level",
+							amount: 0.41596539837973445,
+							enabled: true,
+						},
+					],
 				},
 				fxSlots: [
-					{
-						type: "empty",
-					},
-					{
-						type: "empty",
-					},
-					{
-						type: "empty",
-					},
 					{
 						type: "vibrato",
 						params: {
 							enabled: true,
 							waveform: 1,
 							rate: 40,
-							depth: 4,
+							depth: 5.89589878490993,
 							delay: 600,
+						},
+					},
+					{
+						type: "phaser",
+						params: {
+							enabled: false,
+							rate: 0.35,
+							depth: 0.45,
+							feedback: 0.2,
+							mix: 0.25,
 						},
 					},
 					{
@@ -6251,12 +6333,32 @@ export const DEFAULT_SYNTH_PRESETS = {
 					{
 						type: "empty",
 					},
+					{
+						type: "delay",
+						params: {
+							enabled: true,
+							time: 0.5151404052734375,
+							feedback: 0.46,
+							mix: 0.344969482421875,
+							tapeMode: true,
+							warmth: 0.72,
+						},
+					},
+					{
+						type: "shimmerVerb",
+						params: {
+							enabled: true,
+							shimmer: 0.85,
+							space: 0.95,
+							mix: 0.11443969726562503,
+						},
+					},
 				],
 			},
 		},
 		favorite: false,
 		category: "",
-		tags: ["winds"],
+		tags: [],
 	},
 	"Fun Bass": {
 		name: "Fun Bass",
@@ -6581,7 +6683,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 				},
 				lfo: {
 					waveform: "sine",
-					rate: 5,
+					rate: 2.000000000000001,
 					depth: 1,
 					symmetry: 0.5,
 					retrigger: false,
@@ -6589,8 +6691,8 @@ export const DEFAULT_SYNTH_PRESETS = {
 				},
 				lfo2: {
 					waveform: "sine",
-					rate: 5,
-					depth: 0,
+					rate: 2.000000000000001,
+					depth: 1,
 					symmetry: 0.5,
 					retrigger: false,
 					offset: 0,
@@ -6599,10 +6701,10 @@ export const DEFAULT_SYNTH_PRESETS = {
 					rate: 2,
 				},
 				modEnv: {
-					attack: 0.009999999776482582,
-					decay: 0.10000000149011612,
+					attack: 0.010000000000000007,
+					decay: 0.20000000000000015,
 					sustain: 0.5,
-					release: 0.20000000298023224,
+					release: 0.4000000000000003,
 				},
 				pitchBendRange: 2,
 				modMatrix: {
@@ -6629,10 +6731,26 @@ export const DEFAULT_SYNTH_PRESETS = {
 						},
 					},
 					{
-						type: "empty",
+						type: "distortion",
+						params: {
+							enabled: false,
+							mode: 2,
+							drive: 0.35327392578125,
+							tone: 0.59924560546875,
+							mix: 0.35631591796874995,
+						},
 					},
 					{
-						type: "empty",
+						type: "compressor",
+						params: {
+							enabled: false,
+							thresholdDb: -26.302734375000007,
+							ratio: 2,
+							attackMs: 10,
+							releaseMs: 150,
+							makeupDb: 3,
+							mix: 1,
+						},
 					},
 				],
 			},
@@ -7151,8 +7269,8 @@ export const DEFAULT_SYNTH_PRESETS = {
 								rate: 90,
 							},
 							{
-								level: 60,
-								rate: 0,
+								level: 0,
+								rate: 30.78208740234374,
 							},
 							{
 								level: 0,
@@ -7364,7 +7482,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 				},
 				lfo: {
 					waveform: "sine",
-					rate: 5,
+					rate: 2.000000000000001,
 					depth: 1,
 					symmetry: 0.5,
 					retrigger: false,
@@ -7372,8 +7490,8 @@ export const DEFAULT_SYNTH_PRESETS = {
 				},
 				lfo2: {
 					waveform: "sine",
-					rate: 5,
-					depth: 0,
+					rate: 2.000000000000001,
+					depth: 1,
 					symmetry: 0.5,
 					retrigger: false,
 					offset: 0,
@@ -7389,18 +7507,16 @@ export const DEFAULT_SYNTH_PRESETS = {
 				},
 				pitchBendRange: 2,
 				modMatrix: {
-					routes: [],
+					routes: [
+						{
+							source: "modWheel",
+							destination: "line1DcaEnvStep3Rate",
+							amount: -0.227151186806815,
+							enabled: true,
+						},
+					],
 				},
 				fxSlots: [
-					{
-						type: "empty",
-					},
-					{
-						type: "empty",
-					},
-					{
-						type: "empty",
-					},
 					{
 						type: "vibrato",
 						params: {
@@ -7409,6 +7525,38 @@ export const DEFAULT_SYNTH_PRESETS = {
 							rate: 25,
 							depth: 6,
 							delay: 960,
+						},
+					},
+					{
+						type: "phaseMod",
+						params: {
+							enabled: false,
+							intPmAmount: 0,
+							intPmRatio: 2,
+							pmPre: false,
+							amount: 0.04171875,
+							ratio: 1,
+						},
+					},
+					{
+						type: "phaser",
+						params: {
+							enabled: false,
+							rate: 0.9,
+							depth: 0.78,
+							feedback: 0.55,
+							mix: 0.43,
+						},
+					},
+					{
+						type: "grainDelay",
+						params: {
+							enabled: true,
+							time: 0.35,
+							feedback: 0.22,
+							scatter: 0.32,
+							density: 0.58,
+							mix: 0.4,
 						},
 					},
 					{
@@ -7422,7 +7570,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 		},
 		favorite: false,
 		category: "",
-		tags: ["pad"],
+		tags: [],
 	},
 	"Hot Lead": {
 		name: "Hot Lead",
@@ -8583,7 +8731,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 				},
 				lfo: {
 					waveform: "sine",
-					rate: 5,
+					rate: 2.000000000000001,
 					depth: 1,
 					symmetry: 0.5,
 					retrigger: false,
@@ -8591,8 +8739,8 @@ export const DEFAULT_SYNTH_PRESETS = {
 				},
 				lfo2: {
 					waveform: "sine",
-					rate: 5,
-					depth: 0,
+					rate: 2.000000000000001,
+					depth: 1,
 					symmetry: 0.5,
 					retrigger: false,
 					offset: 0,
@@ -8612,15 +8760,6 @@ export const DEFAULT_SYNTH_PRESETS = {
 				},
 				fxSlots: [
 					{
-						type: "empty",
-					},
-					{
-						type: "empty",
-					},
-					{
-						type: "empty",
-					},
-					{
 						type: "vibrato",
 						params: {
 							enabled: true,
@@ -8629,6 +8768,30 @@ export const DEFAULT_SYNTH_PRESETS = {
 							depth: 10,
 							delay: 960,
 						},
+					},
+					{
+						type: "phaser",
+						params: {
+							enabled: false,
+							rate: 0.35,
+							depth: 0.45,
+							feedback: 0.2,
+							mix: 0.25,
+						},
+					},
+					{
+						type: "delay",
+						params: {
+							enabled: true,
+							time: 0.4012959838867187,
+							feedback: 0.7510517822265625,
+							mix: 0.11745361328125001,
+							tapeMode: true,
+							warmth: 0.681231689453125,
+						},
+					},
+					{
+						type: "empty",
 					},
 					{
 						type: "empty",
@@ -8641,7 +8804,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 		},
 		favorite: false,
 		category: "",
-		tags: ["piano"],
+		tags: [],
 	},
 	"Starship 1": {
 		name: "Starship 1",
@@ -8750,7 +8913,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 							},
 							{
 								level: 0,
-								rate: 30,
+								rate: 47.634979248046875,
 							},
 							{
 								level: 0,
@@ -8918,7 +9081,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 							},
 							{
 								level: 0,
-								rate: 30,
+								rate: 31.597752685546883,
 							},
 							{
 								level: 0,
@@ -8957,15 +9120,15 @@ export const DEFAULT_SYNTH_PRESETS = {
 						},
 						{
 							id: "waveform1",
-							value: 6,
+							value: 4,
 						},
 						{
 							id: "waveform2",
-							value: 1,
+							value: 4,
 						},
 						{
 							id: "windowFunction",
-							value: 3,
+							value: 0,
 						},
 					],
 					algoControlsB: [
@@ -9029,15 +9192,6 @@ export const DEFAULT_SYNTH_PRESETS = {
 				},
 				fxSlots: [
 					{
-						type: "empty",
-					},
-					{
-						type: "empty",
-					},
-					{
-						type: "empty",
-					},
-					{
 						type: "vibrato",
 						params: {
 							enabled: true,
@@ -9045,6 +9199,28 @@ export const DEFAULT_SYNTH_PRESETS = {
 							rate: 53,
 							depth: 18,
 							delay: 0,
+						},
+					},
+					{
+						type: "junoChorus",
+						params: {
+							enabled: true,
+							mode: 1,
+							mix: 0.1607016530309301,
+						},
+					},
+					{
+						type: "empty",
+					},
+					{
+						type: "reverb",
+						params: {
+							enabled: true,
+							mix: 0.31,
+							space: 0.58,
+							predelay: 0.012,
+							distance: 0.4,
+							character: 0.74,
 						},
 					},
 					{
@@ -9058,7 +9234,7 @@ export const DEFAULT_SYNTH_PRESETS = {
 		},
 		favorite: false,
 		category: "",
-		tags: ["bell"],
+		tags: [],
 	},
 	Tweed: {
 		name: "Tweed",
@@ -9460,4 +9636,4 @@ export const DEFAULT_SYNTH_PRESETS = {
 		category: "",
 		tags: [],
 	},
-} satisfies Record<string, FrontendPresetV1>;
+};
