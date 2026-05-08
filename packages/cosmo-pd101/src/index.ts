@@ -1,5 +1,5 @@
 export type { AsidePanelTab } from "./components/layout/AsidePanelSwitcher";
-export { WavetableWaterfall } from "./components/panels/drawers/WavetableWaterfall";
+export { WavetableWaterfall } from "./components/panels/analysis/scope-visualizations/WavetableWaterfall";
 export { default as SynthRenderer } from "./components/renderer/SynthRenderer";
 export { usePluginBridgeSynthEngine } from "./features/synth/engine/pluginBridgeSynthEngineAdapter";
 export { useAudioEngine } from "./features/synth/hooks/useAudioEngine";

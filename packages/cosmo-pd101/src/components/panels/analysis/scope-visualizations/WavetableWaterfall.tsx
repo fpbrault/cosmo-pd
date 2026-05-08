@@ -38,51 +38,25 @@ type WaterfallPalette = {
 export type WavetableWaterfallProps = {
 	line1WaveHistory: number[][];
 	line2WaveHistory: number[][];
-};
-
-const LINE1_PALETTE: WaterfallPalette = {
-	front: "#9fd7ff",
-	back: "#1d4ed8",
-	activeGlow: "#e8f4ff",
-	haloCurrent: "#a9dcff",
-	haloBack: "#3f7ae8",
-	ambient: "#8bc6ff",
-	pointA: "#7bbcff",
-	pointB: "#2a5bd8",
-	background: "#040814",
-	fog: "#040814",
-	glowOuter: "#2d7dff",
-	glowMid: "#8fc5ff",
-	glowCore: "#f2f8ff",
-};
-
-const LINE2_PALETTE: WaterfallPalette = {
-	front: "#ffb0b0",
-	back: "#b0172f",
-	activeGlow: "#fff0f2",
-	haloCurrent: "#ffbaba",
-	haloBack: "#d13b4f",
-	ambient: "#ff9ca8",
-	pointA: "#ff8c98",
-	pointB: "#b81f3a",
-	background: "#160608",
-	fog: "#160608",
-	glowOuter: "#ff3f5d",
-	glowMid: "#ff9cb0",
-	glowCore: "#fff4f6",
+	line1Palette: WaterfallPalette;
+	line2Palette: WaterfallPalette;
+	displayMode?: "both" | "single";
+	labelPosition?: "top-left" | "bottom-left";
+	visualIntensity?: number;
 };
 
 const X_SPAN = 6.4;
 const Y_AMPLITUDE = 0.62;
 const Z_STEP = 0.14;
 const CAMERA_POSITION: WavePoint = [6, 10, 10];
-const SCENE_TRANSLATION: WavePoint = [2.95, 4.1, 1];
+const SCENE_TRANSLATION: WavePoint = [2.95, 4.5, 1];
 const SCENE_ROTATION: WavePoint = [-0.26, 0.14, 0];
 
 type WaterfallSceneProps = {
 	waveHistory: number[][];
 	activeIndicators: ActiveIndicator[];
 	palette: WaterfallPalette;
+	visualIntensity: number;
 };
 
 type VoiceProgressState = {
@@ -224,6 +198,61 @@ function hasAudibleLine2(
 	return voice.line2.dca.value * line2Level > 0.0001;
 }
 
+function collectActiveIndicators({
+	voices,
+	maxWaveIndex,
+	env,
+	lineLevel,
+	voiceProgressRef,
+	isAudible,
+	getRuntimeEnv,
+	getRuntimeDca,
+}: {
+	voices: RuntimeVoiceDebugState[];
+	maxWaveIndex: number;
+	env: StepEnvData;
+	lineLevel: number;
+	voiceProgressRef: React.MutableRefObject<Map<number, VoiceProgressState>>;
+	isAudible: (voice: RuntimeVoiceDebugState, level: number) => boolean;
+	getRuntimeEnv: (voice: RuntimeVoiceDebugState) => RuntimeVoiceEnvState;
+	getRuntimeDca: (voice: RuntimeVoiceDebugState) => number;
+}): ActiveIndicator[] {
+	const activeVoices = voices.filter(
+		(voice) =>
+			voice.active && voice.note !== null && isAudible(voice, lineLevel),
+	);
+
+	const indicators = activeVoices.map((voice) => {
+		const rawProgress = runtimeEnvelopeToProgress(env, getRuntimeEnv(voice));
+		const strength = clamp(getRuntimeDca(voice) * lineLevel, 0, 1);
+		const previous = voiceProgressRef.current.get(voice.index);
+		const progress =
+			previous?.note === voice.note
+				? Math.max(previous.progress, rawProgress)
+				: rawProgress;
+
+		voiceProgressRef.current.set(voice.index, {
+			note: voice.note as number,
+			progress,
+		});
+
+		return {
+			voiceId: voice.index,
+			progress: progress * maxWaveIndex,
+			strength,
+		};
+	});
+
+	const activeIndices = new Set(activeVoices.map((voice) => voice.index));
+	for (const voiceIndex of voiceProgressRef.current.keys()) {
+		if (!activeIndices.has(voiceIndex)) {
+			voiceProgressRef.current.delete(voiceIndex);
+		}
+	}
+
+	return indicators;
+}
+
 function interpolateWavePoints(
 	waveLines: WaveLine[],
 	progress: number,
@@ -277,10 +306,22 @@ function toHexPair(value: number): string {
 	return value.toString(16).padStart(2, "0");
 }
 
+function hexToRgba(hexColor: string, alpha: number): string {
+	const hex = hexColor.startsWith("#") ? hexColor.slice(1) : hexColor;
+	if (hex.length < 6) {
+		return hexColor;
+	}
+	const r = Number.parseInt(hex.slice(0, 2), 16);
+	const g = Number.parseInt(hex.slice(2, 4), 16);
+	const b = Number.parseInt(hex.slice(4, 6), 16);
+	return `rgba(${r}, ${g}, ${b}, ${clamp(alpha, 0, 1)})`;
+}
+
 function WaterfallScene({
 	waveHistory,
 	activeIndicators,
 	palette,
+	visualIntensity,
 }: WaterfallSceneProps) {
 	const { camera } = useThree();
 	const [glowTime, setGlowTime] = useState(0);
@@ -342,15 +383,18 @@ function WaterfallScene({
 		<>
 			<color attach="background" args={[palette.background]} />
 			<fog attach="fog" args={[palette.fog, 5.1, 9.6]} />
-			<ambientLight intensity={0.45} color={palette.ambient} />
+			<ambientLight
+				intensity={0.45 * visualIntensity}
+				color={palette.ambient}
+			/>
 			<pointLight
 				position={[0, 2.6, 3.9]}
-				intensity={7.2}
+				intensity={7.2 * visualIntensity}
 				color={palette.pointA}
 			/>
 			<pointLight
 				position={[-3.8, 2.4, -3.6]}
-				intensity={2.2}
+				intensity={2.2 * visualIntensity}
 				color={palette.pointB}
 			/>
 
@@ -360,9 +404,12 @@ function WaterfallScene({
 						key={`phosphor-halo-${line.id}`}
 						points={line.points}
 						color={line.isCurrent ? palette.haloCurrent : palette.haloBack}
-						lineWidth={line.isCurrent ? 12 : 6.4}
+						lineWidth={(line.isCurrent ? 12 : 6.4) * visualIntensity}
 						transparent
-						opacity={line.isCurrent ? 0.1 : 0.04 + (1 - line.depth) * 0.045}
+						opacity={
+							(line.isCurrent ? 0.1 : 0.04 + (1 - line.depth) * 0.045) *
+							visualIntensity
+						}
 						depthWrite={false}
 						blending={AdditiveBlending}
 						renderOrder={10}
@@ -387,9 +434,14 @@ function WaterfallScene({
 							key={line.id}
 							points={line.points}
 							color={lerpHexColor(line.color, palette.activeGlow, glowMix)}
-							lineWidth={(line.isCurrent ? 2.7 : 1.2) + glowMix * 1.4}
+							lineWidth={
+								((line.isCurrent ? 2.7 : 1.2) + glowMix * 1.4) * visualIntensity
+							}
 							transparent
-							opacity={Math.min(0.95, idleOpacity + glowMix * 0.22)}
+							opacity={Math.min(
+								0.95,
+								(idleOpacity + glowMix * 0.22) * visualIntensity,
+							)}
 							blending={AdditiveBlending}
 							renderOrder={20}
 							toneMapped={false}
@@ -398,7 +450,7 @@ function WaterfallScene({
 				})}
 				{interpolatedGlowLines.map((glowLine, index) => {
 					const pulse = 0.5 + 0.5 * Math.sin(glowTime * 1.8 + index * 0.9);
-					const intensity = clamp(glowLine.strength, 0, 1);
+					const intensity = clamp(glowLine.strength, 0, 1) * visualIntensity;
 					return (
 						<Line
 							key={`glow-outer-${glowLine.id}`}
@@ -417,13 +469,13 @@ function WaterfallScene({
 				})}
 				{interpolatedGlowLines.map((glowLine, index) => {
 					const pulse = 0.5 + 0.5 * Math.sin(glowTime * 2.3 + index * 1.1);
-					const intensity = clamp(glowLine.strength, 0, 1);
+					const intensity = clamp(glowLine.strength, 0, 1) * visualIntensity;
 					return (
 						<Line
 							key={`glow-cyan-${glowLine.id}`}
 							points={glowLine.points}
 							color={palette.glowMid}
-							lineWidth={7 + intensity * 4 + pulse * 1.0}
+							lineWidth={7 + intensity * 4 + pulse * 1}
 							transparent
 							opacity={(0.04 + pulse * 0.055) * intensity}
 							depthTest={false}
@@ -436,7 +488,7 @@ function WaterfallScene({
 				})}
 				{interpolatedGlowLines.map((glowLine, index) => {
 					const pulse = 0.5 + 0.5 * Math.sin(glowTime * 2.9 + index * 1.3);
-					const intensity = clamp(glowLine.strength, 0, 1);
+					const intensity = clamp(glowLine.strength, 0, 1) * visualIntensity;
 					return (
 						<Line
 							key={`glow-core-${glowLine.id}`}
@@ -463,28 +515,94 @@ function WavetableWaterfallPane({
 	waveHistory,
 	activeIndicators,
 	palette,
-	labelClassName,
+	labelPosition,
+	onToggleLine,
+	visualIntensity,
 }: {
 	label: string;
 	waveHistory: number[][];
 	activeIndicators: ActiveIndicator[];
 	palette: WaterfallPalette;
-	labelClassName: string;
+	labelPosition: "top-left" | "bottom-left";
+	onToggleLine?: () => void;
+	visualIntensity: number;
 }) {
+	const labelClass =
+		labelPosition === "bottom-left"
+			? "pointer-events-none absolute bottom-1.5 left-2 z-50 font-mono text-4xs text-base-content/75 uppercase tracking-[0.24em]"
+			: "pointer-events-none absolute top-1 left-2 z-50 font-mono text-4xs text-base-content/75 uppercase tracking-[0.24em]";
+	const frameStyle = {
+		borderColor: hexToRgba(palette.back, 0.62),
+		backgroundColor: palette.background,
+		boxShadow: `inset 0 0 0 1px ${hexToRgba(palette.glowCore, 0.08)}, inset 0 0 70px ${hexToRgba(palette.glowMid, 0.09)}, 0 0 24px ${hexToRgba(palette.glowOuter, 0.2)}`,
+	};
+
 	return (
-		<div className="relative isolate min-h-0 flex-1 overflow-hidden rounded-md border border-[#3f3f55]/80 bg-[#030305] [box-shadow:inset_0_0_0_1px_rgba(214,214,255,0.06),inset_0_0_70px_rgba(94,94,255,0.08),0_0_24px_rgba(22,22,44,0.22)]">
-			<div className="pointer-events-none absolute top-1 left-2 z-50 font-mono text-4xs text-base-content/75 uppercase tracking-[0.24em]">
-				<span className={labelClassName}>{label}</span>
+		<button
+			type="button"
+			className="relative isolate min-h-0 flex-1 overflow-hidden rounded-md border text-left disabled:cursor-default"
+			style={frameStyle}
+			onClick={onToggleLine}
+			disabled={!onToggleLine}
+			aria-label={onToggleLine ? `Toggle ${label} wavetable line` : undefined}
+		>
+			<div className={labelClass}>
+				<span style={{ color: palette.glowCore }}>{label}</span>
 			</div>
-			<div className="pointer-events-none absolute inset-0 z-0 rounded-md bg-[radial-gradient(ellipse_at_50%_55%,rgba(180,180,255,0.12),rgba(0,0,0,0.2)_42%,rgba(0,0,0,0.72)_100%)]" />
-			<div className="pointer-events-none absolute inset-0 z-0 rounded-md bg-[radial-gradient(ellipse_at_50%_50%,transparent_0%,transparent_58%,rgba(0,0,0,0.52)_86%,rgba(0,0,0,0.88)_100%)] opacity-70" />
-			<div className="pointer-events-none absolute inset-x-0 top-0 z-30 h-1/2 rounded-t-md bg-[linear-gradient(105deg,transparent_0%,rgba(235,235,255,0.1)_18%,rgba(235,235,255,0.22)_31%,transparent_46%)] opacity-25 mix-blend-screen" />
-			<div className="pointer-events-none absolute inset-0 z-20 rounded-md bg-[repeating-linear-gradient(180deg,rgba(206,206,255,0.16)_0px,rgba(206,206,255,0.08)_1px,rgba(0,0,0,0.16)_2px,rgba(0,0,0,0.32)_4px)] opacity-50 mix-blend-screen" />
-			<div className="pointer-events-none absolute inset-0 z-20 rounded-md bg-[repeating-linear-gradient(90deg,rgba(159,159,255,0.28)_0px,rgba(159,159,255,0.28)_1px,transparent_1px,transparent_3px)] opacity-20 mix-blend-screen" />
-			<div className="pointer-events-none absolute inset-0 z-20 rounded-md bg-[radial-gradient(circle_at_50%_50%,rgba(190,190,255,0.11)_0px,transparent_1.4px)] bg-size-[4px_4px] opacity-30 mix-blend-screen" />
-			<div className="pointer-events-none absolute inset-0 z-30 rounded-md bg-[radial-gradient(ellipse_at_center,transparent_48%,rgba(0,0,0,0.36)_76%,rgba(0,0,0,0.68)_100%)]" />
-			<div className="pointer-events-none absolute inset-0 z-30 rounded-md bg-[linear-gradient(180deg,rgba(255,255,255,0.08)_0%,transparent_9%,transparent_88%,rgba(200,200,255,0.08)_100%)] opacity-35" />
-			<div className="pointer-events-none absolute inset-0 z-40 rounded-md [box-shadow:inset_0_12px_38px_rgba(214,214,255,0.08),inset_0_-34px_70px_rgba(0,0,0,0.5),inset_18px_0_44px_rgba(255,255,255,0.03),inset_-22px_0_58px_rgba(0,0,0,0.36)]" />
+			<div
+				className="pointer-events-none absolute inset-0 z-0 rounded-md"
+				style={{
+					background: `radial-gradient(ellipse at 50% 55%, ${hexToRgba(palette.glowMid, 0.09)}, ${hexToRgba(palette.background, 0.22)} 42%, ${hexToRgba(palette.background, 0.76)} 100%)`,
+				}}
+			/>
+			<div
+				className="pointer-events-none absolute inset-0 z-0 rounded-md opacity-70"
+				style={{
+					background: `radial-gradient(ellipse at 50% 50%, transparent 0%, transparent 58%, ${hexToRgba(palette.background, 0.52)} 86%, ${hexToRgba(palette.background, 0.88)} 100%)`,
+				}}
+			/>
+			<div
+				className="pointer-events-none absolute inset-x-0 top-0 z-30 h-1/2 rounded-t-md opacity-[0.18] mix-blend-screen"
+				style={{
+					background: `linear-gradient(105deg, transparent 0%, ${hexToRgba(palette.glowCore, 0.08)} 18%, ${hexToRgba(palette.glowCore, 0.16)} 31%, transparent 46%)`,
+				}}
+			/>
+			<div
+				className="pointer-events-none absolute inset-0 z-20 rounded-md opacity-35 mix-blend-screen"
+				style={{
+					background: `repeating-linear-gradient(180deg, ${hexToRgba(palette.glowCore, 0.1)} 0px, ${hexToRgba(palette.glowCore, 0.05)} 1px, ${hexToRgba(palette.background, 0.16)} 2px, ${hexToRgba(palette.background, 0.32)} 4px)`,
+				}}
+			/>
+			<div
+				className="pointer-events-none absolute inset-0 z-20 rounded-md opacity-[0.14] mix-blend-screen"
+				style={{
+					background: `repeating-linear-gradient(90deg, ${hexToRgba(palette.glowMid, 0.18)} 0px, ${hexToRgba(palette.glowMid, 0.18)} 1px, transparent 1px, transparent 3px)`,
+				}}
+			/>
+			<div
+				className="pointer-events-none absolute inset-0 z-20 rounded-md bg-size-[4px_4px] opacity-20 mix-blend-screen"
+				style={{
+					backgroundImage: `radial-gradient(circle at 50% 50%, ${hexToRgba(palette.glowCore, 0.08)} 0px, transparent 1.4px)`,
+				}}
+			/>
+			<div
+				className="pointer-events-none absolute inset-0 z-30 rounded-md"
+				style={{
+					background: `radial-gradient(ellipse at center, transparent 48%, ${hexToRgba(palette.background, 0.36)} 76%, ${hexToRgba(palette.background, 0.68)} 100%)`,
+				}}
+			/>
+			<div
+				className="pointer-events-none absolute inset-0 z-30 rounded-md opacity-25"
+				style={{
+					background: `linear-gradient(180deg, ${hexToRgba(palette.glowCore, 0.06)} 0%, transparent 9%, transparent 88%, ${hexToRgba(palette.glowMid, 0.06)} 100%)`,
+				}}
+			/>
+			<div
+				className="pointer-events-none absolute inset-0 z-40 rounded-md"
+				style={{
+					boxShadow: `inset 0 12px 30px ${hexToRgba(palette.glowCore, 0.05)}, inset 0 -28px 58px ${hexToRgba(palette.background, 0.46)}, inset 18px 0 36px ${hexToRgba(palette.glowCore, 0.025)}, inset -22px 0 48px ${hexToRgba(palette.background, 0.32)}`,
+				}}
+			/>
 			<Canvas
 				className="relative z-10 h-full w-full opacity-95 contrast-125 saturate-150"
 				dpr={[1, 1.75]}
@@ -494,16 +612,23 @@ function WavetableWaterfallPane({
 					waveHistory={waveHistory}
 					activeIndicators={activeIndicators}
 					palette={palette}
+					visualIntensity={visualIntensity}
 				/>
 			</Canvas>
-		</div>
+		</button>
 	);
 }
 
 export function WavetableWaterfall({
 	line1WaveHistory,
 	line2WaveHistory,
+	line1Palette,
+	line2Palette,
+	displayMode = "both",
+	labelPosition = "top-left",
+	visualIntensity = 1,
 }: WavetableWaterfallProps) {
+	const [singleLine, setSingleLine] = useState<1 | 2>(1);
 	const [line1ActiveIndicators, setLine1ActiveIndicators] = useState<
 		ActiveIndicator[]
 	>([]);
@@ -525,87 +650,30 @@ export function WavetableWaterfall({
 		const onVoiceStates = (event: Event) => {
 			const detail = (event as CustomEvent<RuntimeVoiceDebugState[]>).detail;
 			const voices = Array.isArray(detail) ? detail : [];
-			const activeLine1Voices = voices.filter(
-				(voice) =>
-					voice.active &&
-					voice.note !== null &&
-					hasAudibleLine1(voice, line1Level),
-			);
-			const activeLine2Voices = voices.filter(
-				(voice) =>
-					voice.active &&
-					voice.note !== null &&
-					hasAudibleLine2(voice, line2Level),
-			);
-
 			const maxLine1WaveIndex = Math.max(0, line1WaveHistory.length - 1);
 			const maxLine2WaveIndex = Math.max(0, line2WaveHistory.length - 1);
 
-			const line1Indicators = activeLine1Voices.map((voice) => {
-				const rawProgress = runtimeEnvelopeToProgress(
-					line1DcwEnv,
-					voice.line1.dcw,
-				);
-				const strength = clamp(voice.line1.dca.value * line1Level, 0, 1);
-				const previous = line1VoiceProgressRef.current.get(voice.index);
-				const progress =
-					previous?.note === voice.note
-						? Math.max(previous.progress, rawProgress)
-						: rawProgress;
-
-				line1VoiceProgressRef.current.set(voice.index, {
-					note: voice.note as number,
-					progress,
-				});
-
-				return {
-					voiceId: voice.index,
-					progress: progress * maxLine1WaveIndex,
-					strength,
-				};
+			const line1Indicators = collectActiveIndicators({
+				voices,
+				maxWaveIndex: maxLine1WaveIndex,
+				env: line1DcwEnv,
+				lineLevel: line1Level,
+				voiceProgressRef: line1VoiceProgressRef,
+				isAudible: hasAudibleLine1,
+				getRuntimeEnv: (voice) => voice.line1.dcw,
+				getRuntimeDca: (voice) => voice.line1.dca.value,
 			});
 
-			const line2Indicators = activeLine2Voices.map((voice) => {
-				const rawProgress = runtimeEnvelopeToProgress(
-					line2DcwEnv,
-					voice.line2.dcw,
-				);
-				const strength = clamp(voice.line2.dca.value * line2Level, 0, 1);
-				const previous = line2VoiceProgressRef.current.get(voice.index);
-				const progress =
-					previous?.note === voice.note
-						? Math.max(previous.progress, rawProgress)
-						: rawProgress;
-
-				line2VoiceProgressRef.current.set(voice.index, {
-					note: voice.note as number,
-					progress,
-				});
-
-				return {
-					voiceId: voice.index,
-					progress: progress * maxLine2WaveIndex,
-					strength,
-				};
+			const line2Indicators = collectActiveIndicators({
+				voices,
+				maxWaveIndex: maxLine2WaveIndex,
+				env: line2DcwEnv,
+				lineLevel: line2Level,
+				voiceProgressRef: line2VoiceProgressRef,
+				isAudible: hasAudibleLine2,
+				getRuntimeEnv: (voice) => voice.line2.dcw,
+				getRuntimeDca: (voice) => voice.line2.dca.value,
 			});
-
-			const activeLine1Indices = new Set(
-				activeLine1Voices.map((voice) => voice.index),
-			);
-			for (const voiceIndex of line1VoiceProgressRef.current.keys()) {
-				if (!activeLine1Indices.has(voiceIndex)) {
-					line1VoiceProgressRef.current.delete(voiceIndex);
-				}
-			}
-
-			const activeLine2Indices = new Set(
-				activeLine2Voices.map((voice) => voice.index),
-			);
-			for (const voiceIndex of line2VoiceProgressRef.current.keys()) {
-				if (!activeLine2Indices.has(voiceIndex)) {
-					line2VoiceProgressRef.current.delete(voiceIndex);
-				}
-			}
 
 			setLine1ActiveIndicators(line1Indicators);
 			setLine2ActiveIndicators(line2Indicators);
@@ -624,21 +692,45 @@ export function WavetableWaterfall({
 		line2WaveHistory.length,
 	]);
 
+	const toggleSingleLine = () => setSingleLine((line) => (line === 1 ? 2 : 1));
+
+	if (displayMode === "single") {
+		const showingLine1 = singleLine === 1;
+		const palette = showingLine1 ? line1Palette : line2Palette;
+		return (
+			<div className="flex h-full min-h-0 w-full flex-col">
+				<WavetableWaterfallPane
+					label={showingLine1 ? "LINE 1" : "LINE 2"}
+					waveHistory={showingLine1 ? line1WaveHistory : line2WaveHistory}
+					activeIndicators={
+						showingLine1 ? line1ActiveIndicators : line2ActiveIndicators
+					}
+					palette={palette}
+					labelPosition={labelPosition}
+					onToggleLine={toggleSingleLine}
+					visualIntensity={visualIntensity}
+				/>
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex h-full min-h-0 w-full flex-col gap-2">
 			<WavetableWaterfallPane
 				label="LINE 1"
-				labelClassName="text-[#7bbcff]"
 				waveHistory={line1WaveHistory}
 				activeIndicators={line1ActiveIndicators}
-				palette={LINE1_PALETTE}
+				palette={line1Palette}
+				labelPosition={labelPosition}
+				visualIntensity={visualIntensity}
 			/>
 			<WavetableWaterfallPane
 				label="LINE 2"
-				labelClassName="text-[#ff8c98]"
 				waveHistory={line2WaveHistory}
 				activeIndicators={line2ActiveIndicators}
-				palette={LINE2_PALETTE}
+				palette={line2Palette}
+				labelPosition={labelPosition}
+				visualIntensity={visualIntensity}
 			/>
 		</div>
 	);

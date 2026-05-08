@@ -5,16 +5,15 @@ import type { AsidePanelTab } from "@/components/layout/AsidePanelSwitcher";
 export const SYNTH_UI_STATE_STORAGE_KEY = "cosmo-pd101-ui-state";
 
 export type MainPanelMode = "phase" | "fx" | "mod" | "waterfall";
+export type ScopeColorTheme = "vintage" | "amber" | "plasma";
 export type ScopeVisualizationMode =
 	| "waveform"
-	| "phaseBender"
-	| "phaseXY"
 	| "orbital"
 	| "spectrogram"
-	| "mirrorFold"
-	| "constellation"
-	| "ribbon"
-	| "harmonicBars";
+	| "waterfall3d"
+	| "transferCurves"
+	| "travel"
+	| "asteroids";
 export type PhaseLinePanelTab =
 	| "line1-algos"
 	| "line2-algos"
@@ -33,6 +32,7 @@ type SynthUiState = {
 	scopeVerticalZoom: number;
 	scopeTriggerLevel: number;
 	scopeVisualizationMode: ScopeVisualizationMode;
+	scopeColorTheme: ScopeColorTheme;
 };
 
 type SynthUiActions = {
@@ -46,6 +46,7 @@ type SynthUiActions = {
 	setScopeVerticalZoom: (zoom: number) => void;
 	setScopeTriggerLevel: (level: number) => void;
 	setScopeVisualizationMode: (mode: ScopeVisualizationMode) => void;
+	setScopeColorTheme: (theme: ScopeColorTheme) => void;
 };
 
 export type SynthUiStore = SynthUiState & SynthUiActions;
@@ -75,14 +76,17 @@ const PHASE_LINE_PANEL_TABS = new Set<PhaseLinePanelTab>([
 const ENV_TABS = new Set<EnvTab>(["dco", "dcw", "dca"]);
 const SCOPE_VISUALIZATION_MODES = new Set<ScopeVisualizationMode>([
 	"waveform",
-	"phaseBender",
-	"phaseXY",
 	"orbital",
 	"spectrogram",
-	"mirrorFold",
-	"constellation",
-	"ribbon",
-	"harmonicBars",
+	"waterfall3d",
+	"transferCurves",
+	"travel",
+	"asteroids",
+]);
+const SCOPE_COLOR_THEMES = new Set<ScopeColorTheme>([
+	"vintage",
+	"amber",
+	"plasma",
 ]);
 
 const DEFAULT_UI_STATE: SynthUiState = {
@@ -96,6 +100,7 @@ const DEFAULT_UI_STATE: SynthUiState = {
 	scopeVerticalZoom: 1,
 	scopeTriggerLevel: 128,
 	scopeVisualizationMode: "waveform",
+	scopeColorTheme: "vintage",
 };
 
 const getStringValue = (value: unknown): string | null =>
@@ -114,6 +119,9 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 	const scopeVisualizationMode = getStringValue(
 		candidate.scopeVisualizationMode,
 	);
+	const rawScopeColorTheme = getStringValue(candidate.scopeColorTheme);
+	const scopeColorTheme =
+		rawScopeColorTheme === "classic" ? "vintage" : rawScopeColorTheme;
 
 	return {
 		activeAsidePanel:
@@ -167,6 +175,11 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 			)
 				? (scopeVisualizationMode as ScopeVisualizationMode)
 				: DEFAULT_UI_STATE.scopeVisualizationMode,
+		scopeColorTheme:
+			scopeColorTheme &&
+			SCOPE_COLOR_THEMES.has(scopeColorTheme as ScopeColorTheme)
+				? (scopeColorTheme as ScopeColorTheme)
+				: DEFAULT_UI_STATE.scopeColorTheme,
 	};
 };
 
@@ -185,6 +198,7 @@ export const useSynthUiStore = create<SynthUiStore>()(
 			setScopeTriggerLevel: (level) => set({ scopeTriggerLevel: level }),
 			setScopeVisualizationMode: (mode) =>
 				set({ scopeVisualizationMode: mode }),
+			setScopeColorTheme: (theme) => set({ scopeColorTheme: theme }),
 		}),
 		{
 			name: SYNTH_UI_STATE_STORAGE_KEY,
@@ -200,6 +214,7 @@ export const useSynthUiStore = create<SynthUiStore>()(
 				scopeVerticalZoom: state.scopeVerticalZoom,
 				scopeTriggerLevel: state.scopeTriggerLevel,
 				scopeVisualizationMode: state.scopeVisualizationMode,
+				scopeColorTheme: state.scopeColorTheme,
 			}),
 			merge: (persistedState, currentState) => ({
 				...currentState,
