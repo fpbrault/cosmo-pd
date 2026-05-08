@@ -29,10 +29,9 @@ const LIB_CRATE_NAME = "cosmo_pd101_plugin";
 // Parse args
 const args = process.argv.slice(2);
 const release = args.includes("--release");
-const archArg =
-	args.find((a) => a.startsWith("--arch"))?.split("=")[1] ??
-	process.env.ARCH ??
-	"native";
+const archArgFromInput =
+	args.find((a) => a.startsWith("--arch"))?.split("=")[1] ?? process.env.ARCH;
+const archArg = archArgFromInput ?? "native";
 const platformArg = process.env.PLUGIN_PLATFORM ?? null;
 
 const PLUGIN_BASENAME = process.env.PLUGIN_BASENAME ?? "CosmoPd101";
@@ -46,6 +45,10 @@ function detectPlatform() {
 
 const hostPlatform = detectPlatform();
 const targetPlatform = platformArg ?? hostPlatform;
+const effectiveArchArg =
+	targetPlatform === "macos" && archArg === "native" && !archArgFromInput
+		? "universal"
+		: archArg;
 const profileArg = release ? "--release" : "";
 const profile = release ? "release" : "debug";
 const OBJC_CLASS_PREFIXES = {
@@ -327,13 +330,17 @@ function buildClapBundle(
 }
 
 /** Build AUv2 .component via clap-wrapper cmake. */
-function buildAuv2Wrapper(clapBundlePath, profile, outRoot) {
+function buildAuv2Wrapper(clapBundlePath, profile, outRoot, requestedArch) {
 	const wrapperDir = join(ROOT, "packages", "cosmo-pd101-plugin", "au-wrapper");
 	const buildDir = join(outRoot, "au-wrapper", profile);
 	const cmakeBuildType = profile === "release" ? "Release" : "Debug";
 
+	const cmakeArchFlag =
+		requestedArch === "universal"
+			? ' -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"'
+			: "";
 	run(
-		`cmake -B "${buildDir}" -S "${wrapperDir}" -DCLAP_PATH="${clapBundlePath}" -DCMAKE_BUILD_TYPE=${cmakeBuildType}`,
+		`cmake -B "${buildDir}" -S "${wrapperDir}" -DCLAP_PATH="${clapBundlePath}" -DCMAKE_BUILD_TYPE=${cmakeBuildType}${cmakeArchFlag}`,
 	);
 	run(`cmake --build "${buildDir}" --config ${cmakeBuildType}`);
 
@@ -415,7 +422,7 @@ function buildAuv2Wrapper(clapBundlePath, profile, outRoot) {
 }
 
 console.log(
-	`==> Building ${PLUGIN_BASENAME} plugin (${profile}) for ${targetPlatform}, arch=${archArg}`,
+	`==> Building ${PLUGIN_BASENAME} plugin (${profile}) for ${targetPlatform}, arch=${effectiveArchArg}`,
 );
 
 if (targetPlatform === "macos") {
@@ -430,17 +437,17 @@ if (targetPlatform === "macos") {
 	// Step 2: Build VST3 via xtask using a VST3-specific Objective-C class prefix
 	const xtaskFormatFlags = ["--vst3"];
 
-	if (archArg === "universal") {
+	if (effectiveArchArg === "universal") {
 		ensureRustTarget("x86_64-apple-darwin");
 		ensureRustTarget("aarch64-apple-darwin");
-	} else if (archArg === "x86_64") {
+	} else if (effectiveArchArg === "x86_64") {
 		ensureRustTarget("x86_64-apple-darwin");
-	} else if (archArg === "arm64") {
+	} else if (effectiveArchArg === "arm64") {
 		ensureRustTarget("aarch64-apple-darwin");
 	}
 
 	runWithObjcClassPrefix(
-		`cargo run --target-dir "${outRoot}" -p xtask -- bundle cosmo-pd101-plugin ${xtaskFormatFlags.join(" ")} --arch ${archArg} ${profileArg}`.trim(),
+		`cargo run --target-dir "${outRoot}" -p xtask -- bundle cosmo-pd101-plugin ${xtaskFormatFlags.join(" ")} --arch ${effectiveArchArg} ${profileArg}`.trim(),
 		OBJC_CLASS_PREFIXES.vst3,
 		CUSTOM_SCHEME_NAMES.vst3,
 	);
@@ -473,7 +480,7 @@ if (targetPlatform === "macos") {
 
 	// Step 3: Build and package CLAP with its own Objective-C class prefix
 	const clapDylibPath = buildMacosPluginDylib(
-		archArg,
+		effectiveArchArg,
 		profile,
 		profileArg,
 		outRoot,
@@ -486,7 +493,7 @@ if (targetPlatform === "macos") {
 	// Step 4: AUv2 via clap-wrapper cmake using an AU-specific embedded CLAP binary
 	if (shouldBuildAuv2) {
 		const auClapDylibPath = buildMacosPluginDylib(
-			archArg,
+			effectiveArchArg,
 			profile,
 			profileArg,
 			outRoot,
@@ -500,7 +507,7 @@ if (targetPlatform === "macos") {
 			profile,
 			`${PLUGIN_BASENAME}-auv2-temp.clap`,
 		);
-		buildAuv2Wrapper(auClapBundlePath, profile, outRoot);
+		buildAuv2Wrapper(auClapBundlePath, profile, outRoot, effectiveArchArg);
 		rmSync(auClapBundlePath, { recursive: true, force: true });
 	}
 } else {
@@ -508,7 +515,7 @@ if (targetPlatform === "macos") {
 		throw new Error(`Unsupported plugin platform '${targetPlatform}'.`);
 	}
 
-	const targets = resolveTargets(targetPlatform, archArg);
+	const targets = resolveTargets(targetPlatform, effectiveArchArg);
 	const outRoot = targetRoot();
 	const bundleDir = join(outRoot, profile, `${PLUGIN_BASENAME}.vst3`);
 
