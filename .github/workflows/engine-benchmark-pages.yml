@@ -1,0 +1,39 @@
+name: Engine Benchmark Charts
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  deployments: write
+
+jobs:
+  benchmark-pages:
+    name: Publish engine benchmark charts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Run cargo bench on main
+        run: |
+          mkdir -p target/perf/engine
+          cargo bench -p cosmo-synth-engine --bench render-bench -- --nocapture | tee target/perf/engine/main-bench.txt
+        shell: bash
+
+      - name: Publish benchmark trend to GitHub Pages
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: cosmo-synth-engine
+          tool: cargo
+          output-file-path: target/perf/engine/main-bench.txt
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          summary-always: true
+          alert-threshold: 130%
+          fail-on-alert: true

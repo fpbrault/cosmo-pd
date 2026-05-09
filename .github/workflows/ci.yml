@@ -269,51 +269,61 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Setup Rust nightly
         uses: dtolnay/rust-toolchain@nightly
 
-      - name: Restore benchmark history cache
-        uses: actions/cache/restore@v4
-        with:
-          path: cache/engine-benchmark-data.json
-          key: ${{ runner.os }}-engine-benchmark-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: |
-            ${{ runner.os }}-engine-benchmark-
-
-      - name: Run cargo bench
+      - name: Benchmark target branch
         run: |
           mkdir -p target/perf/engine
-          cargo bench -p cosmo-synth-engine --bench render-bench -- --nocapture | tee target/perf/engine/bench.txt
+          base_ref="${{ github.base_ref }}"
+          base_dir="$RUNNER_TEMP/cosmo-pd-base"
+          git fetch origin "$base_ref" --depth=1
+          rm -rf "$base_dir"
+          git worktree add --detach "$base_dir" "origin/$base_ref"
+          cd "$base_dir"
+          cargo bench -p cosmo-synth-engine --bench render-bench -- --nocapture | tee "$GITHUB_WORKSPACE/target/perf/engine/base-bench.txt"
         shell: bash
 
-      - name: Store benchmark result
+      - name: Seed baseline from target branch
         uses: benchmark-action/github-action-benchmark@v1
         with:
           name: cosmo-synth-engine
           tool: cargo
-          output-file-path: target/perf/engine/bench.txt
-          external-data-json-path: cache/engine-benchmark-data.json
+          output-file-path: target/perf/engine/base-bench.txt
+          external-data-json-path: target/perf/engine/baseline.json
+          save-data-file: true
+          fail-on-alert: false
+
+      - name: Benchmark pull request head
+        run: |
+          cargo bench -p cosmo-synth-engine --bench render-bench -- --nocapture | tee target/perf/engine/pr-bench.txt
+        shell: bash
+
+      - name: Compare PR against target branch
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: cosmo-synth-engine
+          tool: cargo
+          output-file-path: target/perf/engine/pr-bench.txt
+          external-data-json-path: target/perf/engine/baseline.json
+          save-data-file: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
           comment-on-alert: true
           fail-on-alert: true
           summary-always: true
           alert-threshold: 130%
 
-      - name: Save benchmark history cache
-        if: always() && hashFiles('cache/engine-benchmark-data.json') != ''
-        uses: actions/cache/save@v4
-        with:
-          path: cache/engine-benchmark-data.json
-          key: ${{ runner.os }}-engine-benchmark-${{ github.run_id }}-${{ github.run_attempt }}
-
       - name: Upload benchmark artifact
         uses: actions/upload-artifact@v4
         with:
           name: engine-benchmark
           path: |
-            target/perf/engine/bench.txt
-            cache/engine-benchmark-data.json
+            target/perf/engine/base-bench.txt
+            target/perf/engine/pr-bench.txt
+            target/perf/engine/baseline.json
 
   build-plugins:
     name: Build plugins (${{ matrix.platform }})
