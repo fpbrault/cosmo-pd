@@ -667,6 +667,49 @@ fn scenario_matrix() -> Vec<(String, usize)> {
     matrix
 }
 
+fn is_heavy_scenario(name: &str) -> bool {
+    matches!(
+        name,
+        "chants-like"
+            | "chops-like"
+            | "fx-heavy"
+            | "mod-heavy"
+            | "worst-poly"
+            | "opt-all-combined"
+    )
+}
+
+fn tune_all_case_config(case_cfg: &mut BenchmarkConfig) {
+    case_cfg.seconds = case_cfg.seconds.min(8.0);
+    case_cfg.iterations = case_cfg.iterations.min(5);
+    case_cfg.warmup_iterations = case_cfg.warmup_iterations.min(1);
+
+    if case_cfg.voices >= 6 {
+        case_cfg.seconds = case_cfg.seconds.min(6.0);
+        case_cfg.iterations = case_cfg.iterations.min(4);
+    }
+
+    if case_cfg.voices >= 8 {
+        case_cfg.seconds = case_cfg.seconds.min(4.0);
+        case_cfg.iterations = case_cfg.iterations.min(3);
+    }
+
+    if is_heavy_scenario(&case_cfg.scenario) {
+        case_cfg.seconds = case_cfg.seconds.min(5.0);
+        case_cfg.iterations = case_cfg.iterations.min(4);
+    }
+
+    if is_heavy_scenario(&case_cfg.scenario) && case_cfg.voices >= 6 {
+        case_cfg.seconds = case_cfg.seconds.min(4.0);
+        case_cfg.iterations = case_cfg.iterations.min(3);
+    }
+
+    if is_heavy_scenario(&case_cfg.scenario) && case_cfg.voices >= 8 {
+        case_cfg.seconds = case_cfg.seconds.min(3.0);
+        case_cfg.iterations = case_cfg.iterations.min(2);
+    }
+}
+
 fn render_pass(config: &BenchmarkConfig, scenario: &Scenario, total_samples: usize) -> f64 {
     let mut processor = CosmoProcessor::new(config.sample_rate);
     let params = (scenario.build_params)();
@@ -842,6 +885,7 @@ fn run_all(config: &BenchmarkConfig) -> Result<Vec<serde_json::Value>, String> {
         let mut case_cfg = config.clone();
         case_cfg.scenario = scenario_name;
         case_cfg.voices = voices;
+        tune_all_case_config(&mut case_cfg);
         let case = run_case(&case_cfg, &scenario)?;
         let summary = summarize(&case);
         if !config.json {

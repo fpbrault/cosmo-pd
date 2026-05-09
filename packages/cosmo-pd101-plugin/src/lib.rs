@@ -13,6 +13,7 @@ use std::time::Instant;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use arc_swap::ArcSwap;
+use cosmo_synth_engine::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use cosmo_synth_engine::params::SynthParams;
 use cosmo_synth_engine::processor::{midi_note_to_freq, CosmoProcessor};
 use crossbeam_queue::ArrayQueue;
@@ -114,8 +115,15 @@ impl ScopeFrame {
 type ScopeBuffer = Arc<Mutex<ScopeFrame>>;
 type UiInputQueue = Arc<ArrayQueue<UiInputEvent>>;
 type SharedSynthParams = Arc<ArcSwap<SynthParams>>;
+type SharedRtSynthParams = Arc<ArcSwap<SynthParams>>;
 type SynthParamsVersion = Arc<AtomicU64>;
 type PerformanceCountersHandle = Arc<PerformanceCounters>;
+
+fn build_rt_synth_params(params: &SynthParams) -> SynthParams {
+    let mut rt_params = params.clone();
+    normalize_synth_params_envelopes_to_raw_if_human(&mut rt_params);
+    rt_params
+}
 
 struct PerformanceCounters {
     enabled: AtomicBool,
@@ -279,6 +287,7 @@ fn handle_ipc_invoke(
     method: &str,
     args: &[serde_json::Value],
     synth_params: &SharedSynthParams,
+    rt_synth_params: &SharedRtSynthParams,
     synth_params_version: &SynthParamsVersion,
     scope_buffer: &ScopeBuffer,
     ui_input_queue: &UiInputQueue,
@@ -407,7 +416,9 @@ fn handle_ipc_invoke(
                 .ok_or_else(|| "setParams expects a JSON string as first argument".to_string())?;
             let params: SynthParams = serde_json::from_str(json_str)
                 .map_err(|e| format!("invalid SynthParams payload: {e}"))?;
+            let rt_params = build_rt_synth_params(&params);
             synth_params.store(Arc::new(params));
+            rt_synth_params.store(Arc::new(rt_params));
             synth_params_version.fetch_add(1, Ordering::Release);
             Ok(serde_json::Value::Null)
         }
@@ -468,10 +479,11 @@ pub struct CzPlugin {
     processor: Option<CosmoProcessor>,
     /// Synth parameters shared with the GUI thread (set via `setParams` IPC).
     synth_params: SharedSynthParams,
+    rt_synth_params: SharedRtSynthParams,
     synth_params_version: SynthParamsVersion,
     cached_synth_params_version: u64,
-    /// Per-frame cached copy read by the audio thread.
-    cached_synth_params: SynthParams,
+    /// Per-frame RT-safe cached snapshot for the audio thread.
+    cached_rt_synth_params: Arc<SynthParams>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
     mono_output: Vec<f32>,
@@ -480,13 +492,16 @@ pub struct CzPlugin {
 
 impl Default for CzPlugin {
     fn default() -> Self {
+        let default_params = SynthParams::default();
+        let default_rt_params = build_rt_synth_params(&default_params);
         Self {
             params: Arc::new(CzParams::default()),
             processor: None,
-            synth_params: Arc::new(ArcSwap::from_pointee(SynthParams::default())),
+            synth_params: Arc::new(ArcSwap::new(Arc::new(default_params))),
+            rt_synth_params: Arc::new(ArcSwap::new(Arc::new(default_rt_params.clone()))),
             synth_params_version: Arc::new(AtomicU64::new(0)),
             cached_synth_params_version: 0,
-            cached_synth_params: SynthParams::default(),
+            cached_rt_synth_params: Arc::new(default_rt_params),
             scope_buffer: Arc::new(Mutex::new(ScopeFrame::default())),
             ui_input_queue: Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY)),
             mono_output: Vec::new(),
@@ -559,6 +574,7 @@ impl Plugin for CzPlugin {
     fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
         Some(Box::new(crate::gui::CzEditor::new(
             self.synth_params.clone(),
+            self.rt_synth_params.clone(),
             self.synth_params_version.clone(),
             self.scope_buffer.clone(),
             self.ui_input_queue.clone(),
@@ -579,8 +595,11 @@ impl Plugin for CzPlugin {
         ));
         let mut processor = CosmoProcessor::new(buffer_config.sample_rate);
         let synth_params = SynthParams::default();
-        processor.set_params(synth_params.clone());
-        self.cached_synth_params = synth_params;
+        let rt_synth_params = Arc::new(build_rt_synth_params(&synth_params));
+        processor.set_shared_params(Arc::clone(&rt_synth_params));
+        self.synth_params.store(Arc::new(synth_params));
+        self.rt_synth_params.store(Arc::clone(&rt_synth_params));
+        self.cached_rt_synth_params = rt_synth_params;
         self.cached_synth_params_version = self.synth_params_version.load(Ordering::Acquire);
         self.processor = Some(processor);
         self.mono_output
@@ -658,15 +677,14 @@ impl Plugin for CzPlugin {
         let params_changed = params_version != self.cached_synth_params_version;
         let mut apply_params_update = false;
         if params_changed {
-            let sp = self.synth_params.load();
-            self.cached_synth_params.clone_from(sp.as_ref());
+            self.cached_rt_synth_params = self.rt_synth_params.load_full();
             self.cached_synth_params_version = params_version;
             apply_params_update = true;
         }
 
         if let Some(proc) = &mut self.processor {
             if apply_params_update {
-                proc.set_params_from_ref(&self.cached_synth_params);
+                proc.set_shared_params(Arc::clone(&self.cached_rt_synth_params));
                 self.performance_counters.record_param_apply();
             }
             let num_samples = buffer.samples();
@@ -771,6 +789,7 @@ mod tests {
     #[test]
     fn set_params_rpc_updates_synth_params() {
         let synth_params = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
+        let rt_synth_params = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
         let scope_buffer: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
         let ui_input_queue: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
 
@@ -782,6 +801,7 @@ mod tests {
             "setParams",
             &[serde_json::Value::String(json_str)],
             &synth_params,
+            &rt_synth_params,
             &Arc::new(AtomicU64::new(0)),
             &scope_buffer,
             &ui_input_queue,
@@ -790,6 +810,8 @@ mod tests {
         assert!(result.is_ok());
         let current = synth_params.load();
         assert_eq!(current.volume, 0.42);
+        let rt_current = rt_synth_params.load();
+        assert_eq!(rt_current.volume, 0.42);
     }
 
     #[test]
@@ -797,6 +819,7 @@ mod tests {
         let mut initial = SynthParams::default();
         initial.volume = 0.77;
         let synth_params = Arc::new(ArcSwap::new(Arc::new(initial)));
+        let rt_synth_params = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
         let scope_buffer: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
         let ui_input_queue: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
 
@@ -804,6 +827,7 @@ mod tests {
             "getParams",
             &[],
             &synth_params,
+            &rt_synth_params,
             &Arc::new(AtomicU64::new(0)),
             &scope_buffer,
             &ui_input_queue,
@@ -818,6 +842,7 @@ mod tests {
     #[test]
     fn note_on_rpc_enqueues_ui_input_event() {
         let synth_params = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
+        let rt_synth_params = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
         let scope_buffer: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
         let ui_input_queue: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
 
@@ -825,6 +850,7 @@ mod tests {
             "noteOn",
             &[serde_json::json!({ "note": 60, "velocity": 0.75 })],
             &synth_params,
+            &rt_synth_params,
             &Arc::new(AtomicU64::new(0)),
             &scope_buffer,
             &ui_input_queue,

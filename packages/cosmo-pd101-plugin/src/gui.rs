@@ -135,6 +135,7 @@ unsafe impl Send for CzEditorHandle {}
 /// nih-plug `Editor` implementation for the Cosmo PD-101 plugin.
 pub struct CzEditor {
     synth_params: Arc<ArcSwap<SynthParams>>,
+    rt_synth_params: Arc<ArcSwap<SynthParams>>,
     synth_params_version: Arc<AtomicU64>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
@@ -149,6 +150,7 @@ pub struct CzEditor {
 impl CzEditor {
     pub(crate) fn new(
         synth_params: Arc<ArcSwap<SynthParams>>,
+        rt_synth_params: Arc<ArcSwap<SynthParams>>,
         synth_params_version: Arc<AtomicU64>,
         scope_buffer: ScopeBuffer,
         ui_input_queue: UiInputQueue,
@@ -156,6 +158,7 @@ impl CzEditor {
     ) -> Self {
         Self {
             synth_params,
+            rt_synth_params,
             synth_params_version,
             scope_buffer,
             ui_input_queue,
@@ -268,6 +271,7 @@ impl Editor for CzEditor {
                 append_log(&format!("resource_dir: {}", resource_dir.display()));
 
                 let synth_params = self.synth_params.clone();
+                let rt_synth_params = self.rt_synth_params.clone();
                 let synth_params_version = self.synth_params_version.clone();
                 let scope_buffer = self.scope_buffer.clone();
                 let ui_input_queue = self.ui_input_queue.clone();
@@ -280,6 +284,7 @@ impl Editor for CzEditor {
                         ns_view,
                         resource_dir,
                         synth_params,
+                        rt_synth_params,
                         synth_params_version,
                         scope_buffer,
                         ui_input_queue,
@@ -494,6 +499,7 @@ unsafe fn build_webview_from_ns_view(
     ns_view: *mut std::ffi::c_void,
     resource_dir: std::path::PathBuf,
     synth_params: Arc<ArcSwap<SynthParams>>,
+    rt_synth_params: Arc<ArcSwap<SynthParams>>,
     synth_params_version: Arc<AtomicU64>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
@@ -565,6 +571,7 @@ unsafe fn build_webview_from_ns_view(
                     method,
                     &args,
                     &synth_params,
+                    &rt_synth_params,
                     &synth_params_version,
                     &scope_buffer,
                     &ui_input_queue,
