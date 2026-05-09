@@ -4,19 +4,26 @@
 
 #![recursion_limit = "256"]
 
-use std::collections::VecDeque;
 use std::fs::OpenOptions;
 use std::io::Write;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::time::Instant;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use arc_swap::ArcSwap;
+use cosmo_synth_engine::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use cosmo_synth_engine::params::SynthParams;
 use cosmo_synth_engine::processor::{midi_note_to_freq, CosmoProcessor};
+use crossbeam_queue::ArrayQueue;
 use nih_plug::prelude::*;
 
 pub mod gui;
 
 const PLUGIN_LOG_PATH: &str = "/tmp/cosmo-plugin.log";
+const MAX_UI_INPUT_EVENTS_PER_BLOCK: usize = 64;
+const UI_INPUT_QUEUE_CAPACITY: usize = 1024;
 
 fn log_timestamp_ms() -> u128 {
     SystemTime::now()
@@ -68,7 +75,7 @@ struct ScopeFrame {
 impl Default for ScopeFrame {
     fn default() -> Self {
         Self {
-            samples: Vec::with_capacity(SCOPE_CAPACITY),
+            samples: vec![0.0; SCOPE_CAPACITY],
             cursor: 0,
             sample_rate: 44100.0,
             hz: 0.0,
@@ -106,7 +113,151 @@ impl ScopeFrame {
 
 /// Thread-safe scope buffer shared between the audio thread and the GUI thread.
 type ScopeBuffer = Arc<Mutex<ScopeFrame>>;
-type UiInputQueue = Arc<Mutex<VecDeque<UiInputEvent>>>;
+type UiInputQueue = Arc<ArrayQueue<UiInputEvent>>;
+type SharedSynthParams = Arc<ArcSwap<SynthParams>>;
+type SharedRtSynthParams = Arc<ArcSwap<SynthParams>>;
+type SynthParamsVersion = Arc<AtomicU64>;
+type PerformanceCountersHandle = Arc<PerformanceCounters>;
+
+fn build_rt_synth_params(params: &SynthParams) -> SynthParams {
+    let mut rt_params = params.clone();
+    normalize_synth_params_envelopes_to_raw_if_human(&mut rt_params);
+    rt_params
+}
+
+struct PerformanceCounters {
+    enabled: AtomicBool,
+    block_count: AtomicU64,
+    total_process_ns: AtomicU64,
+    last_process_ns: AtomicU64,
+    max_process_ns: AtomicU64,
+    last_block_samples: AtomicU32,
+    sample_rate_bits: AtomicU32,
+    active_voices: AtomicU32,
+    ui_queue_depth: AtomicU32,
+    params_apply_count: AtomicU64,
+}
+
+impl Default for PerformanceCounters {
+    fn default() -> Self {
+        Self {
+            enabled: AtomicBool::new(false),
+            block_count: AtomicU64::new(0),
+            total_process_ns: AtomicU64::new(0),
+            last_process_ns: AtomicU64::new(0),
+            max_process_ns: AtomicU64::new(0),
+            last_block_samples: AtomicU32::new(0),
+            sample_rate_bits: AtomicU32::new(44_100.0_f32.to_bits()),
+            active_voices: AtomicU32::new(0),
+            ui_queue_depth: AtomicU32::new(0),
+            params_apply_count: AtomicU64::new(0),
+        }
+    }
+}
+
+impl PerformanceCounters {
+    fn set_enabled(&self, enabled: bool) {
+        self.enabled.store(enabled, Ordering::Release);
+        if !enabled {
+            self.reset();
+        }
+    }
+
+    fn reset(&self) {
+        self.block_count.store(0, Ordering::Release);
+        self.total_process_ns.store(0, Ordering::Release);
+        self.last_process_ns.store(0, Ordering::Release);
+        self.max_process_ns.store(0, Ordering::Release);
+        self.last_block_samples.store(0, Ordering::Release);
+        self.active_voices.store(0, Ordering::Release);
+        self.ui_queue_depth.store(0, Ordering::Release);
+        self.params_apply_count.store(0, Ordering::Release);
+    }
+
+    fn record_param_apply(&self) {
+        if self.enabled.load(Ordering::Acquire) {
+            self.params_apply_count.fetch_add(1, Ordering::Relaxed);
+        }
+    }
+
+    fn record_process_block(
+        &self,
+        elapsed_ns: u64,
+        block_samples: usize,
+        sample_rate: f32,
+        active_voices: usize,
+        ui_queue_depth: usize,
+    ) {
+        if !self.enabled.load(Ordering::Acquire) {
+            return;
+        }
+
+        self.block_count.fetch_add(1, Ordering::Relaxed);
+        self.total_process_ns
+            .fetch_add(elapsed_ns, Ordering::Relaxed);
+        self.last_process_ns.store(elapsed_ns, Ordering::Relaxed);
+        self.last_block_samples
+            .store(block_samples as u32, Ordering::Relaxed);
+        self.sample_rate_bits
+            .store(sample_rate.to_bits(), Ordering::Relaxed);
+        self.active_voices
+            .store(active_voices as u32, Ordering::Relaxed);
+        self.ui_queue_depth
+            .store(ui_queue_depth as u32, Ordering::Relaxed);
+
+        let mut current_max = self.max_process_ns.load(Ordering::Relaxed);
+        while elapsed_ns > current_max {
+            match self.max_process_ns.compare_exchange_weak(
+                current_max,
+                elapsed_ns,
+                Ordering::Relaxed,
+                Ordering::Relaxed,
+            ) {
+                Ok(_) => break,
+                Err(next) => current_max = next,
+            }
+        }
+    }
+
+    fn snapshot_json(&self) -> serde_json::Value {
+        let enabled = self.enabled.load(Ordering::Acquire);
+        let block_count = self.block_count.load(Ordering::Relaxed);
+        let total_ns = self.total_process_ns.load(Ordering::Relaxed);
+        let last_ns = self.last_process_ns.load(Ordering::Relaxed);
+        let max_ns = self.max_process_ns.load(Ordering::Relaxed);
+        let block_samples = self.last_block_samples.load(Ordering::Relaxed);
+        let sample_rate = f32::from_bits(self.sample_rate_bits.load(Ordering::Relaxed)).max(1.0);
+        let block_budget_ms = if block_samples == 0 {
+            0.0
+        } else {
+            (block_samples as f64 / sample_rate as f64) * 1000.0
+        };
+        let last_ms = last_ns as f64 / 1_000_000.0;
+        let max_ms = max_ns as f64 / 1_000_000.0;
+        let avg_ms = if block_count == 0 {
+            0.0
+        } else {
+            (total_ns as f64 / block_count as f64) / 1_000_000.0
+        };
+
+        serde_json::json!({
+            "enabled": enabled,
+            "blockCount": block_count,
+            "lastMs": last_ms,
+            "avgMs": avg_ms,
+            "maxMs": max_ms,
+            "blockBudgetMs": block_budget_ms,
+            "lastRtPercent": if block_budget_ms > 0.0 { last_ms / block_budget_ms * 100.0 } else { 0.0 },
+            "avgRtPercent": if block_budget_ms > 0.0 { avg_ms / block_budget_ms * 100.0 } else { 0.0 },
+            "maxRtPercent": if block_budget_ms > 0.0 { max_ms / block_budget_ms * 100.0 } else { 0.0 },
+            "blockSamples": block_samples,
+            "sampleRate": sample_rate,
+            "activeVoices": self.active_voices.load(Ordering::Relaxed),
+            "uiQueueDepth": self.ui_queue_depth.load(Ordering::Relaxed),
+            "paramsApplyCount": self.params_apply_count.load(Ordering::Relaxed),
+        })
+    }
+}
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
@@ -135,9 +286,12 @@ pub struct CzParams {}
 fn handle_ipc_invoke(
     method: &str,
     args: &[serde_json::Value],
-    synth_params: &Arc<RwLock<SynthParams>>,
+    synth_params: &SharedSynthParams,
+    rt_synth_params: &SharedRtSynthParams,
+    synth_params_version: &SynthParamsVersion,
     scope_buffer: &ScopeBuffer,
     ui_input_queue: &UiInputQueue,
+    performance_counters: &PerformanceCountersHandle,
 ) -> Result<serde_json::Value, String> {
     if method != "getScopeData" && method != "clientLog" {
         append_log(&format!("ipc invoke method={method} args={}", args.len()));
@@ -159,10 +313,9 @@ fn handle_ipc_invoke(
                 .unwrap_or(0.8_f64) as f32;
             let note = u8::try_from(note).map_err(|_| "noteOn note out of range".to_string())?;
 
-            let mut queue = ui_input_queue
-                .lock()
-                .map_err(|_| "ui input queue is poisoned".to_string())?;
-            queue.push_back(UiInputEvent::NoteOn { note, velocity });
+            ui_input_queue
+                .push(UiInputEvent::NoteOn { note, velocity })
+                .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
         "noteOff" => {
@@ -176,10 +329,9 @@ fn handle_ipc_invoke(
                 .ok_or_else(|| "noteOff payload missing note".to_string())?;
             let note = u8::try_from(note).map_err(|_| "noteOff note out of range".to_string())?;
 
-            let mut queue = ui_input_queue
-                .lock()
-                .map_err(|_| "ui input queue is poisoned".to_string())?;
-            queue.push_back(UiInputEvent::NoteOff { note });
+            ui_input_queue
+                .push(UiInputEvent::NoteOff { note })
+                .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
         "sustain" => {
@@ -192,10 +344,9 @@ fn handle_ipc_invoke(
                 .and_then(serde_json::Value::as_bool)
                 .ok_or_else(|| "sustain payload missing on".to_string())?;
 
-            let mut queue = ui_input_queue
-                .lock()
-                .map_err(|_| "ui input queue is poisoned".to_string())?;
-            queue.push_back(UiInputEvent::Sustain { on });
+            ui_input_queue
+                .push(UiInputEvent::Sustain { on })
+                .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
         "pitchBend" => {
@@ -211,10 +362,9 @@ fn handle_ipc_invoke(
                 .ok_or_else(|| "pitchBend payload missing value".to_string())?
                 as f32;
 
-            let mut queue = ui_input_queue
-                .lock()
-                .map_err(|_| "ui input queue is poisoned".to_string())?;
-            queue.push_back(UiInputEvent::PitchBend { value });
+            ui_input_queue
+                .push(UiInputEvent::PitchBend { value })
+                .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
         "modWheel" => {
@@ -230,10 +380,9 @@ fn handle_ipc_invoke(
                 .ok_or_else(|| "modWheel payload missing value".to_string())?
                 as f32;
 
-            let mut queue = ui_input_queue
-                .lock()
-                .map_err(|_| "ui input queue is poisoned".to_string())?;
-            queue.push_back(UiInputEvent::ModWheel { value });
+            ui_input_queue
+                .push(UiInputEvent::ModWheel { value })
+                .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
         "aftertouch" => {
@@ -249,17 +398,15 @@ fn handle_ipc_invoke(
                 .ok_or_else(|| "aftertouch payload missing value".to_string())?
                 as f32;
 
-            let mut queue = ui_input_queue
-                .lock()
-                .map_err(|_| "ui input queue is poisoned".to_string())?;
-            queue.push_back(UiInputEvent::Aftertouch { value });
+            ui_input_queue
+                .push(UiInputEvent::Aftertouch { value })
+                .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
         "panic" => {
-            let mut queue = ui_input_queue
-                .lock()
-                .map_err(|_| "ui input queue is poisoned".to_string())?;
-            queue.push_back(UiInputEvent::Panic);
+            ui_input_queue
+                .push(UiInputEvent::Panic)
+                .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
         "setParams" => {
@@ -269,17 +416,15 @@ fn handle_ipc_invoke(
                 .ok_or_else(|| "setParams expects a JSON string as first argument".to_string())?;
             let params: SynthParams = serde_json::from_str(json_str)
                 .map_err(|e| format!("invalid SynthParams payload: {e}"))?;
-            let mut sp = synth_params
-                .write()
-                .map_err(|_| "synth params store is poisoned".to_string())?;
-            *sp = params;
+            let rt_params = build_rt_synth_params(&params);
+            synth_params.store(Arc::new(params));
+            rt_synth_params.store(Arc::new(rt_params));
+            synth_params_version.fetch_add(1, Ordering::Release);
             Ok(serde_json::Value::Null)
         }
         "getParams" => {
-            let sp = synth_params
-                .read()
-                .map_err(|_| "synth params store is poisoned".to_string())?;
-            serde_json::to_value(&*sp).map_err(|e| e.to_string())
+            let sp = synth_params.load();
+            serde_json::to_value(sp.as_ref()).map_err(|e| e.to_string())
         }
         "getScopeData" => {
             let scope = scope_buffer
@@ -299,6 +444,15 @@ fn handle_ipc_invoke(
                 serde_json::json!({ "samples": int_samples, "sampleRate": scope.sample_rate, "hz": scope.hz }),
             )
         }
+        "setPerformanceMonitorEnabled" => {
+            let enabled = args
+                .first()
+                .and_then(serde_json::Value::as_bool)
+                .ok_or_else(|| "setPerformanceMonitorEnabled expects a boolean".to_string())?;
+            performance_counters.set_enabled(enabled);
+            Ok(serde_json::Value::Null)
+        }
+        "getPerformanceMetrics" => Ok(performance_counters.snapshot_json()),
         "clientLog" => {
             let level = args
                 .first()
@@ -324,22 +478,34 @@ pub struct CzPlugin {
     /// DSP engine, present after `initialize()`.
     processor: Option<CosmoProcessor>,
     /// Synth parameters shared with the GUI thread (set via `setParams` IPC).
-    synth_params: Arc<RwLock<SynthParams>>,
-    /// Per-frame cached copy read by the audio thread.
-    cached_synth_params: SynthParams,
+    synth_params: SharedSynthParams,
+    rt_synth_params: SharedRtSynthParams,
+    synth_params_version: SynthParamsVersion,
+    cached_synth_params_version: u64,
+    /// Per-frame RT-safe cached snapshot for the audio thread.
+    cached_rt_synth_params: Arc<SynthParams>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
+    mono_output: Vec<f32>,
+    performance_counters: PerformanceCountersHandle,
 }
 
 impl Default for CzPlugin {
     fn default() -> Self {
+        let default_params = SynthParams::default();
+        let default_rt_params = build_rt_synth_params(&default_params);
         Self {
             params: Arc::new(CzParams::default()),
             processor: None,
-            synth_params: Arc::new(RwLock::new(SynthParams::default())),
-            cached_synth_params: SynthParams::default(),
+            synth_params: Arc::new(ArcSwap::new(Arc::new(default_params))),
+            rt_synth_params: Arc::new(ArcSwap::new(Arc::new(default_rt_params.clone()))),
+            synth_params_version: Arc::new(AtomicU64::new(0)),
+            cached_synth_params_version: 0,
+            cached_rt_synth_params: Arc::new(default_rt_params),
             scope_buffer: Arc::new(Mutex::new(ScopeFrame::default())),
-            ui_input_queue: Arc::new(Mutex::new(VecDeque::new())),
+            ui_input_queue: Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY)),
+            mono_output: Vec::new(),
+            performance_counters: Arc::new(PerformanceCounters::default()),
         }
     }
 }
@@ -353,10 +519,15 @@ impl CzPlugin {
     }
 
     fn drain_ui_input_events(&mut self) {
-        let Ok(mut queue) = self.ui_input_queue.lock() else {
-            return;
-        };
-        while let Some(event) = queue.pop_front() {
+        if self.performance_counters.enabled.load(Ordering::Acquire) {
+            self.performance_counters
+                .ui_queue_depth
+                .store(self.ui_input_queue.len() as u32, Ordering::Relaxed);
+        }
+        for _ in 0..MAX_UI_INPUT_EVENTS_PER_BLOCK {
+            let Some(event) = self.ui_input_queue.pop() else {
+                break;
+            };
             if let Some(proc) = &mut self.processor {
                 match event {
                     UiInputEvent::NoteOn { note, velocity } => {
@@ -403,8 +574,11 @@ impl Plugin for CzPlugin {
     fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
         Some(Box::new(crate::gui::CzEditor::new(
             self.synth_params.clone(),
+            self.rt_synth_params.clone(),
+            self.synth_params_version.clone(),
             self.scope_buffer.clone(),
             self.ui_input_queue.clone(),
+            self.performance_counters.clone(),
         )))
     }
 
@@ -421,9 +595,18 @@ impl Plugin for CzPlugin {
         ));
         let mut processor = CosmoProcessor::new(buffer_config.sample_rate);
         let synth_params = SynthParams::default();
-        processor.set_params(synth_params.clone());
-        self.cached_synth_params = synth_params;
+        let rt_synth_params = Arc::new(build_rt_synth_params(&synth_params));
+        processor.set_shared_params(Arc::clone(&rt_synth_params));
+        self.synth_params.store(Arc::new(synth_params));
+        self.rt_synth_params.store(Arc::clone(&rt_synth_params));
+        self.cached_rt_synth_params = rt_synth_params;
+        self.cached_synth_params_version = self.synth_params_version.load(Ordering::Acquire);
         self.processor = Some(processor);
+        self.mono_output
+            .resize(buffer_config.max_buffer_size as usize, 0.0);
+        self.performance_counters
+            .sample_rate_bits
+            .store(buffer_config.sample_rate.to_bits(), Ordering::Release);
         true
     }
 
@@ -488,17 +671,35 @@ impl Plugin for CzPlugin {
 
         self.drain_ui_input_events();
 
-        // Snapshot latest params from the IPC thread (non-blocking).
-        if let Ok(sp) = self.synth_params.try_read() {
-            self.cached_synth_params = sp.clone();
+        let monitor_enabled = self.performance_counters.enabled.load(Ordering::Acquire);
+
+        let params_version = self.synth_params_version.load(Ordering::Acquire);
+        let params_changed = params_version != self.cached_synth_params_version;
+        let mut apply_params_update = false;
+        if params_changed {
+            self.cached_rt_synth_params = self.rt_synth_params.load_full();
+            self.cached_synth_params_version = params_version;
+            apply_params_update = true;
         }
 
         if let Some(proc) = &mut self.processor {
-            proc.set_params(self.cached_synth_params.clone());
-
+            if apply_params_update {
+                proc.set_shared_params(Arc::clone(&self.cached_rt_synth_params));
+                self.performance_counters.record_param_apply();
+            }
             let num_samples = buffer.samples();
-            let mut mono_output = vec![0.0f32; num_samples];
-            proc.process(&mut mono_output);
+            if num_samples > self.mono_output.len() {
+                for channel_slice in buffer.as_slice() {
+                    channel_slice.fill(0.0);
+                }
+                return ProcessStatus::Normal;
+            }
+            let mono_output = &mut self.mono_output[..num_samples];
+            let process_start = monitor_enabled.then(Instant::now);
+            proc.process(mono_output);
+            let elapsed_ns = process_start
+                .map(|start| start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64)
+                .unwrap_or(0);
 
             let hz = proc
                 .voices
@@ -507,12 +708,29 @@ impl Plugin for CzPlugin {
                 .map(|v| v.current_freq)
                 .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
                 .unwrap_or(0.0);
+            let active_voice_count = if monitor_enabled {
+                proc.voices.iter().filter(|voice| !voice.is_silent).count()
+            } else {
+                0
+            };
+            let ui_queue_depth = if monitor_enabled {
+                self.ui_input_queue.len()
+            } else {
+                0
+            };
+            self.performance_counters.record_process_block(
+                elapsed_ns,
+                num_samples,
+                proc.sample_rate,
+                active_voice_count,
+                ui_queue_depth,
+            );
             if let Ok(mut scope) = self.scope_buffer.try_lock() {
-                scope.push_block(&mono_output, proc.sample_rate, hz);
+                scope.push_block(mono_output, proc.sample_rate, hz);
             }
 
             for channel_slice in buffer.as_slice() {
-                channel_slice.copy_from_slice(&mono_output);
+                channel_slice.copy_from_slice(mono_output);
             }
         }
 
@@ -570,9 +788,10 @@ mod tests {
 
     #[test]
     fn set_params_rpc_updates_synth_params() {
-        let synth_params = Arc::new(RwLock::new(SynthParams::default()));
+        let synth_params = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
+        let rt_synth_params = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
         let scope_buffer: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
-        let ui_input_queue: UiInputQueue = Arc::new(Mutex::new(VecDeque::new()));
+        let ui_input_queue: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
 
         let mut new_params = SynthParams::default();
         new_params.volume = 0.42;
@@ -582,27 +801,37 @@ mod tests {
             "setParams",
             &[serde_json::Value::String(json_str)],
             &synth_params,
+            &rt_synth_params,
+            &Arc::new(AtomicU64::new(0)),
             &scope_buffer,
             &ui_input_queue,
+            &Arc::new(PerformanceCounters::default()),
         );
         assert!(result.is_ok());
-        assert_eq!(synth_params.read().unwrap().volume, 0.42);
+        let current = synth_params.load();
+        assert_eq!(current.volume, 0.42);
+        let rt_current = rt_synth_params.load();
+        assert_eq!(rt_current.volume, 0.42);
     }
 
     #[test]
     fn get_params_rpc_returns_current_synth_params() {
         let mut initial = SynthParams::default();
         initial.volume = 0.77;
-        let synth_params = Arc::new(RwLock::new(initial));
+        let synth_params = Arc::new(ArcSwap::new(Arc::new(initial)));
+        let rt_synth_params = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
         let scope_buffer: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
-        let ui_input_queue: UiInputQueue = Arc::new(Mutex::new(VecDeque::new()));
+        let ui_input_queue: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
 
         let result = handle_ipc_invoke(
             "getParams",
             &[],
             &synth_params,
+            &rt_synth_params,
+            &Arc::new(AtomicU64::new(0)),
             &scope_buffer,
             &ui_input_queue,
+            &Arc::new(PerformanceCounters::default()),
         );
         assert!(result.is_ok());
         let val = result.unwrap();
@@ -612,21 +841,24 @@ mod tests {
 
     #[test]
     fn note_on_rpc_enqueues_ui_input_event() {
-        let synth_params = Arc::new(RwLock::new(SynthParams::default()));
+        let synth_params = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
+        let rt_synth_params = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
         let scope_buffer: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
-        let ui_input_queue: UiInputQueue = Arc::new(Mutex::new(VecDeque::new()));
+        let ui_input_queue: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
 
         let result = handle_ipc_invoke(
             "noteOn",
             &[serde_json::json!({ "note": 60, "velocity": 0.75 })],
             &synth_params,
+            &rt_synth_params,
+            &Arc::new(AtomicU64::new(0)),
             &scope_buffer,
             &ui_input_queue,
+            &Arc::new(PerformanceCounters::default()),
         );
 
         assert!(result.is_ok());
-        let mut queue = ui_input_queue.lock().unwrap();
-        match queue.pop_front() {
+        match ui_input_queue.pop() {
             Some(UiInputEvent::NoteOn { note, velocity }) => {
                 assert_eq!(note, 60);
                 assert!((velocity - 0.75).abs() < f32::EPSILON);

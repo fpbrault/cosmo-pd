@@ -1,5 +1,6 @@
 use super::wrap01;
 use super::{AlgoControlKindV1, AlgoControlV1, AlgoDefinitionV1, NO_CONTROL_OPTIONS};
+use crate::dsp_utils::pow01;
 use crate::params::{Algo, EngineParamReadoutFormatV1};
 
 const CONTROLS: [AlgoControlV1; 4] = [
@@ -83,14 +84,24 @@ pub fn warp_phase(
     phase_offset: f32,
     shape: f32,
 ) -> f32 {
-    let two_pi = core::f32::consts::TAU;
     let partials = 1.0 + harmonics * 11.0;
     let depth_scale = 0.03 + depth * 0.25;
-    let driver = libm::sinf(two_pi * (phase + phase_offset) * partials);
+    let shape_exp = 0.35 + shape * 2.2;
+    let driver = libm::sinf(core::f32::consts::TAU * (phase + phase_offset) * partials);
+    let shaped_mag = pow01(libm::fabsf(driver), shape_exp);
     let shaped = if driver >= 0.0 {
-        libm::powf(driver, 0.35 + shape * 2.2)
+        shaped_mag
     } else {
-        -libm::powf(-driver, 0.35 + shape * 2.2)
+        -shaped_mag
     };
-    wrap01(phase + amt * depth_scale * shaped)
+    let warped = phase + amt * depth_scale * shaped;
+    if (0.0..1.0).contains(&warped) {
+        warped
+    } else if warped >= 1.0 && warped < 2.0 {
+        warped - 1.0
+    } else if warped >= -1.0 && warped < 0.0 {
+        warped + 1.0
+    } else {
+        wrap01(warped)
+    }
 }

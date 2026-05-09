@@ -91,6 +91,12 @@ declare namespace wasm_bindgen {
         setSustain(on: boolean): void;
     }
 
+    /**
+     * Returns the Rust build profile this WASM binary was compiled with:
+     * `"release"` when built with `--release`, `"debug"` otherwise.
+     */
+    export function engineBuildProfile(): string;
+
 }
 declare type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
@@ -112,6 +118,7 @@ declare interface InitOutput {
     readonly czsynthprocessor_setParams: (a: number, b: number, c: number) => void;
     readonly czsynthprocessor_setPitchBend: (a: number, b: number) => void;
     readonly czsynthprocessor_setSustain: (a: number, b: number) => void;
+    readonly engineBuildProfile: (a: number) => void;
     readonly __wbindgen_export: (a: number, b: number) => number;
     readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_add_to_stack_pointer: (a: number) => number;

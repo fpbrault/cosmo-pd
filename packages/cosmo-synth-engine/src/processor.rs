@@ -4,17 +4,23 @@
 /// (lines 542-1293).
 extern crate alloc;
 
+use alloc::sync::Arc;
 use alloc::vec::Vec;
+use arrayvec::ArrayVec;
 use core::array;
 use serde::Serialize;
 
+use crate::batch_cache::RenderBlockCache;
 use crate::dsp_utils::{lfo_output_with_symmetry, random_hold_value};
-use crate::envelope::normalize_synth_params_envelopes_to_raw_if_human;
+use crate::envelope::{normalize_synth_params_envelopes_to_raw_if_human, EnvelopeTimingCache};
 use crate::fx::FxChain;
 use crate::generators::PER_LINE_HEADROOM;
 use crate::module_presets;
 use crate::params::{FxSlotConfig, FxSlotType, ModDestination, PolyMode, SynthParams, NUM_VOICES};
-use crate::voice::{mod_value_for, render_voice, ModSources, Voice};
+use crate::voice::{
+    build_mod_value_cache, line_modulation_state, render_voice, LineModulationState, ModSources,
+    ModValueCache, Voice,
+};
 
 const SOFT_CLIP_DRIVE: f32 = 1.0;
 const SOFT_CLIP_THRESHOLD: f32 = 0.9;
@@ -33,6 +39,10 @@ const CZ_DAC_HONK_HP_HZ: f32 = 650.0;
 const CZ_DAC_HONK_LP_HZ: f32 = 1_700.0;
 const CZ_DAC_AIR_HP_HZ: f32 = 5_500.0;
 const CZ_DAC_HF_ROLLOFF_HZ: f32 = 20_000.0;
+const DCW_DEZIPPER_TIME_SECONDS: f32 = 0.0015;
+const RELEASE_TAIL_LEVEL_TIME_SECONDS: f32 = 0.01;
+const DYNAMIC_ECO_VOICE_THRESHOLD: usize = 4;
+const DYNAMIC_ECO_FX_SLOT_THRESHOLD: usize = 4;
 
 #[derive(Debug, Clone, Copy)]
 struct CzDacColor {
@@ -185,9 +195,9 @@ pub struct CosmoProcessor {
     pub fx: FxChain,
     cz_dac_color: CzDacColor,
     /// Active note → voice mapping (replaces JS `activeNoteMap`).
-    pub active_notes: Vec<NoteEntry>,
+    pub active_notes: ArrayVec<NoteEntry, NUM_VOICES>,
     /// Note stack for mono mode (last-note priority), stores full voice state.
-    pub mono_stack: Vec<MonoStackEntry>,
+    pub mono_stack: ArrayVec<MonoStackEntry, NUM_VOICES>,
     pub sustain_on: bool,
     pub lfo_phase: f32,
     pub lfo2_phase: f32,
@@ -197,7 +207,7 @@ pub struct CosmoProcessor {
     pub random_step: i32,
     /// Current held value of the random mod source in [-1, 1].
     pub random_hold: f32,
-    pub params: SynthParams,
+    pub params: Arc<SynthParams>,
     pub sample_rate: f32,
     /// Normalised pitch bend value in [-1.0, 1.0].
     /// Multiplied by `params.pitch_bend_range` semitones in voice render.
@@ -209,6 +219,10 @@ pub struct CosmoProcessor {
     pub aftertouch: f32,
     /// Latest modulation-source snapshot for UI telemetry.
     pub last_runtime_mod_sources: RuntimeModSources,
+    /// Dynamic quality mode toggle for load-shedding FX under heavy runtime cost.
+    fx_eco_toggle: bool,
+    fx_last_out: f32,
+    envelope_timing: EnvelopeTimingCache,
 }
 
 impl CosmoProcessor {
@@ -218,20 +232,23 @@ impl CosmoProcessor {
             voices: array::from_fn(|_| Voice::new()),
             fx: FxChain::new(sample_rate),
             cz_dac_color: CzDacColor::new(),
-            active_notes: Vec::new(),
-            mono_stack: Vec::new(),
+            active_notes: ArrayVec::new(),
+            mono_stack: ArrayVec::new(),
             sustain_on: false,
             lfo_phase: 0.0,
             lfo2_phase: 0.0,
             random_phase: 0.0,
             random_step: 0,
             random_hold: random_hold_value(0),
-            params: SynthParams::default(),
+            params: Arc::new(SynthParams::default()),
             sample_rate,
             pitch_bend: 0.0,
             mod_wheel: 0.0,
             aftertouch: 0.0,
             last_runtime_mod_sources: RuntimeModSources::default(),
+            fx_eco_toggle: false,
+            fx_last_out: 0.0,
+            envelope_timing: EnvelopeTimingCache::new(sample_rate),
         };
         proc.update_fx();
         proc
@@ -334,7 +351,7 @@ impl CosmoProcessor {
 
     /// Copy FX-relevant fields from `self.params` into the `FxChain`.
     pub fn update_fx(&mut self) {
-        self.fx.sync_from_params(&self.params);
+        self.fx.sync_from_params(self.params.as_ref());
     }
 
     // -----------------------------------------------------------------------
@@ -344,8 +361,23 @@ impl CosmoProcessor {
     /// Replace the entire parameter set and re-sync FX.
     pub fn set_params(&mut self, mut params: SynthParams) {
         normalize_synth_params_envelopes_to_raw_if_human(&mut params);
+        self.set_shared_params(Arc::new(params));
+    }
+
+    /// Clone parameter values into the processor for non-real-time callers.
+    pub fn set_params_from_ref(&mut self, params: &SynthParams) {
+        self.set_params(params.clone());
+    }
+
+    /// Swap in a pre-normalized shared parameter snapshot without cloning.
+    pub fn set_shared_params(&mut self, params: Arc<SynthParams>) {
         self.params = params;
         self.update_fx();
+    }
+
+    /// Mutable parameter access for non-real-time mutation paths and tests.
+    pub fn params_mut(&mut self) -> &mut SynthParams {
+        Arc::make_mut(&mut self.params)
     }
 
     /// Hard reset runtime voice/FX state while keeping current parameters.
@@ -375,7 +407,7 @@ impl CosmoProcessor {
     /// Resets to default params with enabled=true for non-empty types.
     pub fn set_fx_slot_type(&mut self, slot: usize, slot_type: FxSlotType) {
         if slot < 6 {
-            self.params.fx_slots[slot] = FxSlotConfig::default_for_type(slot_type);
+            self.params_mut().fx_slots[slot] = FxSlotConfig::default_for_type(slot_type);
             self.update_fx();
         }
     }
@@ -389,11 +421,18 @@ impl CosmoProcessor {
     ///
     /// Returns `true` when the module/preset pair is recognized.
     pub fn apply_module_preset(&mut self, module: &str, preset: &str) -> bool {
-        let applied = module_presets::apply_module_preset(&mut self.params, module, preset);
+        let applied = module_presets::apply_module_preset(self.params_mut(), module, preset);
         if applied {
             self.update_fx();
         }
         applied
+    }
+
+    fn debug_assert_note_storage_bounds(&self) {
+        debug_assert!(self.active_notes.len() <= NUM_VOICES);
+        debug_assert!(self.mono_stack.len() <= NUM_VOICES);
+        debug_assert_eq!(self.active_notes.capacity(), NUM_VOICES);
+        debug_assert_eq!(self.mono_stack.capacity(), NUM_VOICES);
     }
 
     /// Reset all envelope generators for the selected voice.
@@ -403,7 +442,7 @@ impl CosmoProcessor {
 
     /// Start the release stage for all envelopes on a voice.
     fn start_env_release_for_voice(&mut self, voice_idx: usize) {
-        let p = &self.params;
+        let p = self.params.as_ref();
         let voice = &mut self.voices[voice_idx];
         voice.line1_env.dco.start_release(&p.line1.dco_env);
         voice.line1_env.dcw.start_release(&p.line1.dcw_env);
@@ -516,13 +555,21 @@ impl CosmoProcessor {
     /// Replace any previous active-note mapping for a voice slot.
     fn replace_active_note_entry(&mut self, voice_idx: usize, note: u8) {
         self.active_notes.retain(|e| e.voice_idx != voice_idx);
-        self.active_notes.push(NoteEntry { note, voice_idx });
+        debug_assert!(self.active_notes.len() < NUM_VOICES);
+        self.active_notes
+            .try_push(NoteEntry { note, voice_idx })
+            .expect("active_notes exceeded voice capacity");
+        self.debug_assert_note_storage_bounds();
     }
 
     /// Push a note snapshot onto the mono stack, deduplicating by note number.
     fn push_mono_stack_entry(&mut self, entry: MonoStackEntry) {
         self.mono_stack.retain(|e| e.note != entry.note);
-        self.mono_stack.push(entry);
+        debug_assert!(self.mono_stack.len() < NUM_VOICES);
+        self.mono_stack
+            .try_push(entry)
+            .expect("mono_stack exceeded voice capacity");
+        self.debug_assert_note_storage_bounds();
     }
 
     /// Return the current mono lead voice index, if one is actively sounding.
@@ -663,6 +710,7 @@ impl CosmoProcessor {
     /// * `frequency` – corresponding frequency in Hz
     /// * `velocity`  – normalised velocity [0.0, 1.0]
     pub fn note_on(&mut self, note: u8, frequency: f32, velocity: f32) {
+        self.debug_assert_note_storage_bounds();
         let vel = if velocity <= 0.0 { 1.0 } else { velocity };
         let vel = {
             let curve = self.params.velocity_curve;
@@ -686,10 +734,12 @@ impl CosmoProcessor {
         } else {
             self.handle_poly_note_on(note, frequency, vel);
         }
+        self.debug_assert_note_storage_bounds();
     }
 
     /// Handle a note-off event, including mono stack restore and sustain logic.
     pub fn note_off(&mut self, note: u8) {
+        self.debug_assert_note_storage_bounds();
         if self.params.poly_mode == PolyMode::Mono {
             self.mono_stack.retain(|e| e.note != note);
         }
@@ -726,6 +776,7 @@ impl CosmoProcessor {
         } else {
             self.start_release(voice_idx);
         }
+        self.debug_assert_note_storage_bounds();
     }
 
     /// Update sustain-pedal state and release any voices no longer physically held.
@@ -777,7 +828,6 @@ impl CosmoProcessor {
     /// channels if required.
     pub fn process(&mut self, output: &mut [f32]) {
         let p = &self.params;
-        let volume = p.volume;
         let base_lfo1_rate = p.lfo.rate;
         let lfo1_waveform = p.lfo.waveform;
         let base_lfo1_symmetry = p.lfo.symmetry;
@@ -793,16 +843,23 @@ impl CosmoProcessor {
         let headroom_ratio = REFERENCE_LINE_HEADROOM / PER_LINE_HEADROOM.max(0.01);
         let headroom_makeup =
             libm::powf(headroom_ratio, HEADROOM_MAKEUP_EXPONENT).clamp(1.0, MAX_HEADROOM_MAKEUP);
-        let norm = volume * headroom_makeup / libm::sqrtf(NUM_VOICES as f32);
+        let render_cache = RenderBlockCache::from_params(p);
+        let norm = render_cache.volume * headroom_makeup / libm::sqrtf(NUM_VOICES as f32);
         let matrix = &p.mod_matrix;
+        let line_modulation_state: LineModulationState = line_modulation_state(matrix);
+        let safe_sr = sr.max(1.0);
+        let dcw_dezipper_alpha = 1.0 - libm::expf(-1.0 / (DCW_DEZIPPER_TIME_SECONDS * safe_sr));
+        let release_tail_alpha =
+            1.0 - libm::expf(-1.0 / (RELEASE_TAIL_LEVEL_TIME_SECONDS * safe_sr));
 
         let mut prev_lfo1 = self.last_runtime_mod_sources.lfo1;
         let mut prev_lfo2 = self.last_runtime_mod_sources.lfo2;
         let mut prev_random = self.last_runtime_mod_sources.random;
+        let active_fx_slots = render_cache.active_fx_slots;
 
         for sample_out in output.iter_mut() {
-            let (source_mod_env, source_velocity) = self
-                .runtime_mod_source_voice_index()
+            let mod_source_voice_idx = self.runtime_mod_source_voice_index();
+            let (source_mod_env, source_velocity) = mod_source_voice_idx
                 .map(|voice_idx| {
                     let voice = &self.voices[voice_idx];
                     (voice.mod_env.output, voice.velocity)
@@ -818,19 +875,22 @@ impl CosmoProcessor {
                 self.mod_wheel,
                 self.aftertouch,
             );
+            let pre_mod_values = if render_cache.has_modulation() {
+                build_mod_value_cache(matrix, &pre_sources)
+            } else {
+                ModValueCache::default()
+            };
 
-            let lfo1_rate_mod = mod_value_for(ModDestination::Lfo1Rate, matrix, &pre_sources);
-            let lfo1_depth_mod = mod_value_for(ModDestination::Lfo1Depth, matrix, &pre_sources);
-            let lfo1_symmetry_mod =
-                mod_value_for(ModDestination::Lfo1Symmetry, matrix, &pre_sources);
-            let lfo1_offset_mod = mod_value_for(ModDestination::Lfo1Offset, matrix, &pre_sources);
+            let lfo1_rate_mod = pre_mod_values.get(ModDestination::Lfo1Rate);
+            let lfo1_depth_mod = pre_mod_values.get(ModDestination::Lfo1Depth);
+            let lfo1_symmetry_mod = pre_mod_values.get(ModDestination::Lfo1Symmetry);
+            let lfo1_offset_mod = pre_mod_values.get(ModDestination::Lfo1Offset);
 
-            let lfo2_rate_mod = mod_value_for(ModDestination::Lfo2Rate, matrix, &pre_sources);
-            let lfo2_depth_mod = mod_value_for(ModDestination::Lfo2Depth, matrix, &pre_sources);
-            let lfo2_symmetry_mod =
-                mod_value_for(ModDestination::Lfo2Symmetry, matrix, &pre_sources);
-            let lfo2_offset_mod = mod_value_for(ModDestination::Lfo2Offset, matrix, &pre_sources);
-            let random_rate_mod = mod_value_for(ModDestination::RandomRate, matrix, &pre_sources);
+            let lfo2_rate_mod = pre_mod_values.get(ModDestination::Lfo2Rate);
+            let lfo2_depth_mod = pre_mod_values.get(ModDestination::Lfo2Depth);
+            let lfo2_symmetry_mod = pre_mod_values.get(ModDestination::Lfo2Symmetry);
+            let lfo2_offset_mod = pre_mod_values.get(ModDestination::Lfo2Offset);
+            let random_rate_mod = pre_mod_values.get(ModDestination::RandomRate);
 
             let lfo1_rate = (base_lfo1_rate + lfo1_rate_mod * 20.0).clamp(0.01, 40.0);
             let lfo1_depth = (base_lfo1_depth + lfo1_depth_mod).clamp(0.0, 1.0);
@@ -868,15 +928,25 @@ impl CosmoProcessor {
                 self.random_hold = random_hold_value(self.random_step);
             }
             let random_mod_val = self.random_hold;
+            let mod_wheel = self.mod_wheel;
+            let aftertouch = self.aftertouch;
 
             let mut mixed = 0.0_f32;
             // SAFETY: `voices` and `params` are separate fields; we use raw pointer to avoid
             // simultaneous mutable + immutable borrow of `self`.
-            let params_ptr: *const SynthParams = &self.params;
+            let params_ptr: *const SynthParams = self.params.as_ref();
             let pitch_bend_semitones = self.pitch_bend * self.params.pitch_bend_range;
-            let mod_wheel = self.mod_wheel;
-            let aftertouch = self.aftertouch;
+            let pitch_bend_ratio = if pitch_bend_semitones == 0.0 {
+                1.0
+            } else {
+                libm::exp2f(pitch_bend_semitones / 12.0)
+            };
+            let mut active_voice_count = 0usize;
             for v in 0..NUM_VOICES {
+                if self.voices[v].is_silent && self.voices[v].note.is_none() {
+                    continue;
+                }
+                active_voice_count += 1;
                 // SAFETY: params is read-only here and voices[v] is the only mutated field.
                 let p_ref: &SynthParams = unsafe { &*params_ptr };
                 mixed += render_voice(
@@ -886,14 +956,17 @@ impl CosmoProcessor {
                     lfo2_mod_val,
                     random_mod_val,
                     sr,
-                    pitch_bend_semitones,
+                    &self.envelope_timing,
+                    pitch_bend_ratio,
                     mod_wheel,
                     aftertouch,
+                    line_modulation_state,
+                    dcw_dezipper_alpha,
+                    release_tail_alpha,
                 );
             }
 
-            let (mod_env, velocity) = self
-                .runtime_mod_source_voice_index()
+            let (mod_env, velocity) = mod_source_voice_idx
                 .map(|voice_idx| {
                     let voice = &self.voices[voice_idx];
                     (voice.mod_env.output, voice.velocity)
@@ -914,7 +987,26 @@ impl CosmoProcessor {
 
             mixed *= norm;
 
-            let fx_out = self.fx.process(mixed);
+            let dynamic_eco_active = active_voice_count >= DYNAMIC_ECO_VOICE_THRESHOLD
+                && active_fx_slots >= DYNAMIC_ECO_FX_SLOT_THRESHOLD;
+            let fx_out = if dynamic_eco_active {
+                if self.fx_eco_toggle {
+                    self.fx_last_out
+                } else {
+                    let out = self.fx.process(mixed);
+                    self.fx_last_out = out;
+                    out
+                }
+            } else {
+                let out = self.fx.process(mixed);
+                self.fx_eco_toggle = false;
+                self.fx_last_out = out;
+                out
+            };
+            if dynamic_eco_active {
+                self.fx_eco_toggle = !self.fx_eco_toggle;
+            }
+
             let colored = if ENABLE_CZ_DAC_COLOR {
                 self.cz_dac_color.process(fx_out, sr)
             } else {
@@ -1039,7 +1131,7 @@ mod tests {
     fn lfo_rate_destination_changes_runtime_lfo_phase_advance() {
         let mut proc = CosmoProcessor::new(48_000.0);
         proc.set_mod_wheel(1.0);
-        proc.params.mod_matrix.routes = vec![ModRoute {
+        proc.params_mut().mod_matrix.routes = vec![ModRoute {
             source: ModSource::ModWheel,
             destination: ModDestination::Lfo1Rate,
             amount: 1.0,
@@ -1058,7 +1150,7 @@ mod tests {
     fn fx_destination_route_does_not_break_processing() {
         let mut proc = CosmoProcessor::new(48_000.0);
         proc.set_mod_wheel(1.0);
-        proc.params.mod_matrix.routes = vec![ModRoute {
+        proc.params_mut().mod_matrix.routes = vec![ModRoute {
             source: ModSource::ModWheel,
             destination: ModDestination::ChorusRate,
             amount: 1.0,
@@ -1073,7 +1165,7 @@ mod tests {
     #[test]
     fn mono_releasing_previous_note_is_not_restored_after_new_note_off() {
         let mut proc = CosmoProcessor::new(48_000.0);
-        proc.params.poly_mode = PolyMode::Mono;
+        proc.params_mut().poly_mode = PolyMode::Mono;
 
         let note_a = 60_u8;
         let note_b = 64_u8;
@@ -1107,7 +1199,7 @@ mod tests {
     fn random_rate_destination_changes_random_phase_advance() {
         let mut proc = CosmoProcessor::new(48_000.0);
         proc.set_mod_wheel(1.0);
-        proc.params.mod_matrix.routes = vec![ModRoute {
+        proc.params_mut().mod_matrix.routes = vec![ModRoute {
             source: ModSource::ModWheel,
             destination: ModDestination::RandomRate,
             amount: 1.0,
@@ -1120,6 +1212,26 @@ mod tests {
 
         let expected_without_mod = base_rate / proc.sample_rate;
         assert!(proc.random_phase > expected_without_mod);
+    }
+
+    #[test]
+    fn note_storage_remains_bounded_after_repeated_retriggers() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().poly_mode = PolyMode::Mono;
+
+        for step in 0..256 {
+            let note = 60_u8 + (step % 8) as u8;
+            let freq = midi_note_to_freq(note);
+            proc.note_on(note, freq, 1.0);
+            if step % 2 == 0 {
+                proc.note_off(note);
+            }
+        }
+
+        assert!(proc.active_notes.len() <= NUM_VOICES);
+        assert!(proc.mono_stack.len() <= NUM_VOICES);
+        assert!(proc.active_notes.capacity() >= NUM_VOICES);
+        assert!(proc.mono_stack.capacity() >= NUM_VOICES);
     }
 
     #[test]

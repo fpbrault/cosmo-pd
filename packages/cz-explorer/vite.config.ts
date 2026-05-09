@@ -115,12 +115,17 @@ function spectaBindingsDevPlugin() {
 const _host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
-export default defineConfig(async () => ({
+export default defineConfig(async ({ command }) => ({
 	publicDir: "public",
 	plugins: [spectaBindingsDevPlugin(), wasmDevPlugin(), react(), tailwindcss()],
 	// Ensure .env is resolved relative to this config file even when launched via tauri tooling.
 	envDir: fileURLToPath(new URL(".", import.meta.url)),
 	envPrefix: ["VITE_", "TAURI_ENV_"],
+	define: {
+		__WASM_BUILD_PROFILE__: JSON.stringify(
+			command === "build" || releaseCargoForDev ? "release" : "debug",
+		),
+	},
 	resolve: {
 		alias: [
 			{
