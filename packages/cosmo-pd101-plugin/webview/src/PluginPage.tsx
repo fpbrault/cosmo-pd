@@ -1,5 +1,6 @@
 import {
 	DEFAULT_SYNTH_PRESETS,
+	installBenchmarkApi,
 	noteToFreq,
 	SynthRenderer,
 	useLcdControlReadout,
@@ -18,6 +19,35 @@ import {
 	useState,
 } from "react";
 import { usePluginParamBridge } from "./hooks/usePluginParamBridge";
+
+function normalizeBenchmarkMetrics(value: unknown) {
+	if (!value || typeof value !== "object") {
+		return null;
+	}
+
+	const candidate = value as Record<string, unknown>;
+	const readNumber = (key: string) => {
+		const next = candidate[key];
+		return typeof next === "number" && Number.isFinite(next) ? next : 0;
+	};
+
+	return {
+		enabled: candidate.enabled === true,
+		blockCount: readNumber("blockCount"),
+		lastMs: readNumber("lastMs"),
+		avgMs: readNumber("avgMs"),
+		maxMs: readNumber("maxMs"),
+		blockBudgetMs: readNumber("blockBudgetMs"),
+		lastRtPercent: readNumber("lastRtPercent"),
+		avgRtPercent: readNumber("avgRtPercent"),
+		maxRtPercent: readNumber("maxRtPercent"),
+		blockSamples: readNumber("blockSamples"),
+		sampleRate: readNumber("sampleRate"),
+		activeVoices: readNumber("activeVoices"),
+		uiQueueDepth: readNumber("uiQueueDepth"),
+		paramsApplyCount: readNumber("paramsApplyCount"),
+	};
+}
 
 const SYNTH_RENDERER_DESIGN_WIDTH = 1368;
 const SYNTH_RENDERER_DESIGN_HEIGHT = 912;
@@ -68,7 +98,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		},
 		[],
 	);
-	const { activeNotes, sendNoteOn, sendNoteOff } = useNoteHandling({
+	const { activeNotes, sendNoteOn, sendNoteOff, panic } = useNoteHandling({
 		eventSink: sendNativeEngineEvent,
 		velocityCurve,
 	});
@@ -196,6 +226,34 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		shouldLoadCurrentState,
 		presetStateKey,
 	});
+
+	useEffect(() => {
+		return installBenchmarkApi({
+			mode: "plugin",
+			listBuiltinPresets: () => Object.keys(DEFAULT_SYNTH_PRESETS),
+			loadBuiltinPreset: (name: string) => {
+				handleLoadBuiltin(name);
+			},
+			setPerformanceMonitorEnabled: async (enabled: boolean) => {
+				await window.__czSetPerformanceMonitorEnabled?.(enabled);
+			},
+			getPerformanceMetrics: async () => {
+				const value = await window.__czGetPerformanceMetrics?.();
+				return normalizeBenchmarkMetrics(value);
+			},
+			noteOn: (note: number, velocity?: number) => sendNoteOn(note, velocity),
+			noteOff: (note: number) => sendNoteOff(note),
+			panic,
+			ensureReady: async () => {
+				if (
+					!window.__czGetPerformanceMetrics ||
+					!window.__czSetPerformanceMonitorEnabled
+				) {
+					throw new Error("Plugin benchmark bridge is unavailable");
+				}
+			},
+		});
+	}, [handleLoadBuiltin, panic, sendNoteOff, sendNoteOn]);
 
 	useEffect(() => {
 		window.__czOnHostPresetSelected = (name: string) => {

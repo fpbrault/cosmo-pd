@@ -7,10 +7,10 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - 'packages/cosmo-synth-engine/**'
-      - 'Cargo.lock'
-      - 'Cargo.toml'
-      - '.github/workflows/build-wasm.yml'
+      - "packages/cosmo-synth-engine/**"
+      - "Cargo.lock"
+      - "Cargo.toml"
+      - ".github/workflows/build-wasm.yml"
 
 jobs:
   build-wasm:
@@ -33,7 +33,7 @@ jobs:
       - name: Build WASM
         working-directory: packages/cosmo-synth-engine
         run: |
-          wasm-pack build . --target no-modules --out-dir ../cz-explorer/public/cosmo-synth-engine-wasm --features wasm
+          wasm-pack build . --release --target no-modules --out-dir ../cz-explorer/public/cosmo-synth-engine-wasm --features wasm
           rm -f ../cz-explorer/public/cosmo-synth-engine-wasm/.gitignore
 
       - name: Upload WASM artifact
@@ -54,7 +54,7 @@ jobs:
 
       - name: Generate Specta TypeScript bindings
         working-directory: packages/cosmo-synth-engine
-        run: cargo run --features specta-bindings --bin export-specta-bindings
+        run: cargo run --release --features specta-bindings --bin export-specta-bindings
 
       - name: Upload bindings artifact
         uses: actions/upload-artifact@v4

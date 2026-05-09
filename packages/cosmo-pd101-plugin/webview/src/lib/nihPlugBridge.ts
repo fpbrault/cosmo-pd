@@ -34,6 +34,8 @@ declare global {
 		__czOnParams?: (json: string) => void;
 		__czGetParams?: () => Promise<unknown>;
 		__czSetParams?: (json: string) => void;
+		__czSetPerformanceMonitorEnabled?: (enabled: boolean) => Promise<unknown>;
+		__czGetPerformanceMetrics?: () => Promise<unknown>;
 		__czOnScope?: (samples: number[], sampleRate: number, hz: number) => void;
 		__czIpcResponse?: (response: IpcRpcResponse) => void;
 	}
@@ -163,6 +165,11 @@ function installIpcRouter() {
 			console.error("[nihPlugBridge] setParams error", error);
 		});
 	};
+
+	window.__czSetPerformanceMonitorEnabled = (enabled: boolean) =>
+		invokeRust("setPerformanceMonitorEnabled", enabled);
+
+	window.__czGetPerformanceMetrics = () => invokeRust("getPerformanceMetrics");
 }
 
 // ─── Native IPC passthrough ───────────────────────────────────────────────────

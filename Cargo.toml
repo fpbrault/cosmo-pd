@@ -2,6 +2,7 @@
 members = [
     "packages/cz-explorer-desktop",
     "packages/cosmo-synth-engine",
+    "packages/cosmo-synth-debug",
     "packages/cosmo-pd101-plugin",
     "packages/xtask",
 ]
@@ -17,7 +18,12 @@ repository = "https://github.com/fpbrault/cosmo-pd"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 log = "0.4"
-syn = { version = "2", features = ["full", "parsing", "printing", "extra-traits"] }
+syn = { version = "2", features = [
+    "full",
+    "parsing",
+    "printing",
+    "extra-traits",
+] }
 quote = "1"
 proc-macro2 = "1"
 nih_plug = { package = "nih_plug", git = "https://github.com/robbert-vdh/nih-plug.git" }
@@ -32,7 +38,7 @@ wry = { git = "https://github.com/fpbrault/wry", branch = "cosmo-pd-objc-prefix-
 
 
 [profile.release]
-lto = true
+lto = "fat"
 strip = "symbols"
 
 # Debug builds keep full symbols so lldb/Instruments can attach and show

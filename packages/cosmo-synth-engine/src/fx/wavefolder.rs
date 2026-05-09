@@ -11,6 +11,12 @@ pub struct WavefolderFx {
     pub mix: f32,
 }
 
+impl Default for WavefolderFx {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl WavefolderFx {
     pub fn new() -> Self {
         Self {

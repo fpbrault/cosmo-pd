@@ -155,6 +155,7 @@ impl KarpunkState {
         self.last_sample = 0.0;
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn advance(
         &mut self,
         effective_freq: f32,

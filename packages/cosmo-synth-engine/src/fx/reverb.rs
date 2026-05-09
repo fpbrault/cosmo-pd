@@ -93,24 +93,24 @@ impl FdnReverb {
         };
 
         let mut er_out = 0.0_f32;
-        for i in 0..ER_N {
-            er_out += self.er_line.read_at_fractional(self.er_tap_samples[i]) * ER_TAP_GAINS[i];
+        for (index, gain) in ER_TAP_GAINS.iter().copied().enumerate().take(ER_N) {
+            er_out += self.er_line.read_at_fractional(self.er_tap_samples[index]) * gain;
         }
         self.er_line.write(pre_delayed);
 
         let mut x = [0.0_f32; FDN_N];
-        for i in 0..FDN_N {
+        for (i, sample) in x.iter_mut().enumerate().take(FDN_N) {
             self.lfo_phases[i] += FDN_LFO_RATES[i] / self.sample_rate;
             if self.lfo_phases[i] >= 1.0 {
                 self.lfo_phases[i] -= 1.0;
             }
             let lfo_val = sinf(self.lfo_phases[i] * TWO_PI);
             let read_pos = (self.base_lengths[i] + lfo_val * lfo_depth).max(1.0);
-            x[i] = self.lines[i].read_at_fractional(read_pos);
+            *sample = self.lines[i].read_at_fractional(read_pos);
         }
 
-        for i in 0..FDN_N {
-            self.lp_state[i] = lp_damp * self.lp_state[i] + (1.0 - lp_damp) * x[i];
+        for (state, sample) in self.lp_state.iter_mut().zip(x.iter()) {
+            *state = lp_damp * *state + (1.0 - lp_damp) * *sample;
         }
 
         let sum_lp: f32 = self.lp_state.iter().sum();

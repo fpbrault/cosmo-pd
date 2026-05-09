@@ -1,3 +1,7 @@
+import {
+	type PerformanceMetrics,
+	PerformanceMonitor,
+} from "@cosmo/cosmo-pd101";
 import { useEffect, useState } from "react";
 import PluginPage from "./PluginPage";
 import "@/index.css";
@@ -8,9 +12,44 @@ import {
 
 declare const __CZ_BUILD_LABEL__: string;
 
+function normalizePerformanceMetrics(
+	value: unknown,
+): PerformanceMetrics | null {
+	if (!value || typeof value !== "object") {
+		return null;
+	}
+
+	const candidate = value as Record<string, unknown>;
+	const readNumber = (key: string) => {
+		const next = candidate[key];
+		return typeof next === "number" && Number.isFinite(next) ? next : 0;
+	};
+
+	return {
+		enabled: candidate.enabled === true,
+		blockCount: readNumber("blockCount"),
+		lastMs: readNumber("lastMs"),
+		avgMs: readNumber("avgMs"),
+		maxMs: readNumber("maxMs"),
+		blockBudgetMs: readNumber("blockBudgetMs"),
+		lastRtPercent: readNumber("lastRtPercent"),
+		avgRtPercent: readNumber("avgRtPercent"),
+		maxRtPercent: readNumber("maxRtPercent"),
+		blockSamples: readNumber("blockSamples"),
+		sampleRate: readNumber("sampleRate"),
+		activeVoices: readNumber("activeVoices"),
+		uiQueueDepth: readNumber("uiQueueDepth"),
+		paramsApplyCount: readNumber("paramsApplyCount"),
+	};
+}
+
 export default function App() {
 	const [updateInfo, setUpdateInfo] = useState<PluginUpdateInfo | null>(null);
 	const [manualStatus, setManualStatus] = useState<string | null>(null);
+	const [performanceMonitorEnabled, setPerformanceMonitorEnabled] =
+		useState(false);
+	const [performanceMetrics, setPerformanceMetrics] =
+		useState<PerformanceMetrics | null>(null);
 
 	useEffect(() => {
 		const isEditableTarget = (target: EventTarget | null): boolean => {
@@ -78,6 +117,47 @@ export default function App() {
 		})();
 	}, []);
 
+	useEffect(() => {
+		void window
+			.__czSetPerformanceMonitorEnabled?.(performanceMonitorEnabled)
+			.catch((error) => {
+				console.error("[plugin] Failed to toggle performance monitor", error);
+			});
+		if (!performanceMonitorEnabled) {
+			setPerformanceMetrics(null);
+		}
+	}, [performanceMonitorEnabled]);
+
+	useEffect(() => {
+		if (!performanceMonitorEnabled) {
+			return;
+		}
+
+		const requestMetrics = () => {
+			void window.__czSetPerformanceMonitorEnabled?.(true).catch((error) => {
+				console.error("[plugin] Failed to enable performance monitor", error);
+			});
+			void window
+				.__czGetPerformanceMetrics?.()
+				.then((value) => {
+					const metrics = normalizePerformanceMetrics(value);
+					if (metrics) {
+						setPerformanceMetrics(metrics);
+					}
+				})
+				.catch((error) => {
+					console.error("[plugin] Failed to read performance metrics", error);
+				});
+		};
+
+		requestMetrics();
+		const intervalId = window.setInterval(requestMetrics, 250);
+
+		return () => {
+			window.clearInterval(intervalId);
+		};
+	}, [performanceMonitorEnabled]);
+
 	const handleManualCheck = () => {
 		void (async () => {
 			const info = await checkForPluginUpdate({ manual: true });
@@ -96,6 +176,14 @@ export default function App() {
 				utilityExtra={
 					<div className="flex items-center gap-2">
 						<span className="text-cz-cream/55">Build {__CZ_BUILD_LABEL__}</span>
+						<PerformanceMonitor
+							enabled={performanceMonitorEnabled}
+							metrics={performanceMetrics}
+							modeLabel="NATIVE"
+							onToggle={() =>
+								setPerformanceMonitorEnabled((enabled) => !enabled)
+							}
+						/>
 						<button
 							type="button"
 							onClick={handleManualCheck}

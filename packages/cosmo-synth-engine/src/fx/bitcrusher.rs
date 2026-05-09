@@ -13,6 +13,12 @@ pub struct BitcrusherFx {
     hold_value: f32,
 }
 
+impl Default for BitcrusherFx {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl BitcrusherFx {
     pub fn new() -> Self {
         Self {
