@@ -14,6 +14,9 @@ use crate::params::{
     ModSource, PortamentoMode, StepEnvData, SynthParams, NUM_ENV_STEPS,
 };
 
+// TODO: Remove after performance testing — disables all modulation matrix routing
+const ENABLE_MODULATION: bool = true;
+
 // TWO_PI for f32
 const TWO_PI: f32 = core::f32::consts::PI * 2.0;
 const DEFAULT_BASE_FREQ: f32 = 220.0;
@@ -199,6 +202,13 @@ impl ModValueCache {
 
 /// Build cached modulation destination values for one render step.
 pub(crate) fn build_mod_value_cache(matrix: &ModMatrix, sources: &ModSources) -> ModValueCache {
+    // TODO: Remove after performance testing — disables all modulation routing
+    if !ENABLE_MODULATION {
+        return ModValueCache {
+            values: [0.0_f32; MOD_DESTINATION_COUNT],
+        };
+    }
+
     if matrix.routes.is_empty() {
         return ModValueCache {
             values: [0.0_f32; MOD_DESTINATION_COUNT],
@@ -206,16 +216,21 @@ pub(crate) fn build_mod_value_cache(matrix: &ModMatrix, sources: &ModSources) ->
     }
 
     let mut values = [0.0_f32; MOD_DESTINATION_COUNT];
+    let mut touched = [false; MOD_DESTINATION_COUNT];
 
     for route in &matrix.routes {
         if !route.enabled || route.amount == 0.0 {
             continue;
         }
-        values[route.destination as usize] += route.amount * sources.source_value(route.source);
+        let idx = route.destination as usize;
+        values[idx] += route.amount * sources.source_value(route.source);
+        touched[idx] = true;
     }
 
-    for value in &mut values {
-        *value = value.clamp(-1.0, 1.0);
+    for (idx, value) in values.iter_mut().enumerate() {
+        if touched[idx] {
+            *value = value.clamp(-1.0, 1.0);
+        }
     }
 
     ModValueCache { values }

@@ -828,8 +828,8 @@ impl CosmoProcessor {
             .count();
 
         for sample_out in output.iter_mut() {
-            let (source_mod_env, source_velocity) = self
-                .runtime_mod_source_voice_index()
+            let mod_source_voice_idx = self.runtime_mod_source_voice_index();
+            let (source_mod_env, source_velocity) = mod_source_voice_idx
                 .map(|voice_idx| {
                     let voice = &self.voices[voice_idx];
                     (voice.mod_env.output, voice.velocity)
@@ -931,8 +931,7 @@ impl CosmoProcessor {
                 );
             }
 
-            let (mod_env, velocity) = self
-                .runtime_mod_source_voice_index()
+            let (mod_env, velocity) = mod_source_voice_idx
                 .map(|voice_idx| {
                     let voice = &self.voices[voice_idx];
                     (voice.mod_env.output, voice.velocity)

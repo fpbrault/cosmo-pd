@@ -5,6 +5,7 @@ use specta::Type;
 
 pub const NUM_VOICES: usize = 8;
 pub const NUM_ENV_STEPS: usize = 8;
+pub const NUM_OPERATORS: usize = 4; // CZ-101 has 4 operators per line
 
 /// A single step in a step envelope
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]

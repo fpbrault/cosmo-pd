@@ -164,6 +164,121 @@ fn scenarios() -> Vec<Scenario> {
             note_churn_blocks: None,
         },
         Scenario {
+            name: "osc-sine-minimal",
+            description: "Sine-only lines, no FX, no matrix modulation",
+            build_params: || {
+                let mut p = SynthParams::default();
+                p.poly_mode = PolyMode::Poly8;
+                p.line_select = LineSelect::L1PlusL2Prime;
+                p.line1.algo = Algo::Sine;
+                p.line1.algo2 = None;
+                p.line1.algo_blend = 0.0;
+                p.line1.dca_base = 0.85;
+                p.line1.dcw_base = 0.0;
+                p.line2.algo = Algo::Sine;
+                p.line2.algo2 = None;
+                p.line2.algo_blend = 0.0;
+                p.line2.dca_base = 0.85;
+                p.line2.dcw_base = 0.0;
+                p.mod_matrix = ModMatrix::default();
+                p.fx_slots = [
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                ];
+                p
+            },
+            note_churn_blocks: None,
+        },
+        Scenario {
+            name: "osc-pd-heavy-no-mod-fx",
+            description: "High-cost PD/warp algorithms only (no matrix, no FX)",
+            build_params: || {
+                let mut p = SynthParams::default();
+                p.poly_mode = PolyMode::Poly8;
+                p.line_select = LineSelect::L1PlusL2Prime;
+                p.line1.algo = Algo::Fof;
+                p.line1.algo2 = Some(Algo::Karpunk);
+                p.line1.algo_blend = 0.65;
+                p.line1.dcw_base = 0.95;
+                p.line1.dca_base = 0.85;
+                p.line2.algo = Algo::Karpunk;
+                p.line2.algo2 = Some(Algo::Ripple);
+                p.line2.algo_blend = 0.65;
+                p.line2.dcw_base = 0.95;
+                p.line2.dca_base = 0.85;
+                p.mod_matrix = ModMatrix::default();
+                p.fx_slots = [
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                ];
+                p
+            },
+            note_churn_blocks: None,
+        },
+        Scenario {
+            name: "mod-only-sine",
+            description: "Sine-only lines with dense matrix modulation (no FX)",
+            build_params: || {
+                let mut p = SynthParams::default();
+                p.poly_mode = PolyMode::Poly8;
+                p.line_select = LineSelect::L1PlusL2Prime;
+                p.line1.algo = Algo::Sine;
+                p.line1.algo2 = None;
+                p.line1.algo_blend = 0.0;
+                p.line2.algo = Algo::Sine;
+                p.line2.algo2 = None;
+                p.line2.algo_blend = 0.0;
+                p.mod_matrix = heavy_mod_matrix();
+                p.lfo.rate = 7.5;
+                p.lfo2.rate = 5.25;
+                p.random.rate = 11.0;
+                p.fx_slots = [
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                ];
+                p
+            },
+            note_churn_blocks: Some(12),
+        },
+        Scenario {
+            name: "fx-only-sine",
+            description: "Sine-only lines with full FX chain (no matrix)",
+            build_params: || {
+                let mut p = SynthParams::default();
+                p.poly_mode = PolyMode::Poly8;
+                p.line_select = LineSelect::L1PlusL2Prime;
+                p.line1.algo = Algo::Sine;
+                p.line1.algo2 = None;
+                p.line1.algo_blend = 0.0;
+                p.line2.algo = Algo::Sine;
+                p.line2.algo2 = None;
+                p.line2.algo_blend = 0.0;
+                p.mod_matrix = ModMatrix::default();
+                p.fx_slots = [
+                    FxSlotConfig::default_for_type(FxSlotType::Chorus),
+                    FxSlotConfig::default_for_type(FxSlotType::Phaser),
+                    FxSlotConfig::default_for_type(FxSlotType::Delay),
+                    FxSlotConfig::default_for_type(FxSlotType::Reverb),
+                    FxSlotConfig::default_for_type(FxSlotType::Compressor),
+                    FxSlotConfig::default_for_type(FxSlotType::Eq5Band),
+                ];
+                p
+            },
+            note_churn_blocks: Some(24),
+        },
+        Scenario {
             name: "fun-bass-like",
             description: "Simpler mono-ish bass style with minimal FX",
             build_params: || {
