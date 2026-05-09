@@ -4,8 +4,45 @@
 //! of a block, then reference cached values during sample generation.
 //! This reduces redundant LFO evaluations and modulation matrix lookups.
 
-use crate::params::NUM_OPERATORS;
+use crate::params::{FxSlotType, SynthParams, NUM_OPERATORS};
 use crate::simd::SimdType;
+
+/// Cached block-level state derived from the current synth parameters.
+#[derive(Debug, Clone, Copy)]
+pub struct RenderBlockCache {
+    /// Master output volume for the current block.
+    pub volume: f32,
+    /// Whether the modulation matrix has any active routes.
+    pub mod_matrix_active: bool,
+    /// Number of active non-utility FX slots.
+    pub active_fx_slots: usize,
+}
+
+impl RenderBlockCache {
+    pub fn from_params(params: &SynthParams) -> Self {
+        let active_fx_slots = params
+            .fx_slots
+            .iter()
+            .filter(|slot| {
+                !matches!(
+                    slot.slot_type(),
+                    FxSlotType::Empty | FxSlotType::Vibrato | FxSlotType::PhaseMod
+                )
+            })
+            .count();
+
+        Self {
+            volume: params.volume,
+            mod_matrix_active: !params.mod_matrix.routes.is_empty(),
+            active_fx_slots,
+        }
+    }
+
+    #[inline]
+    pub fn has_modulation(&self) -> bool {
+        self.mod_matrix_active
+    }
+}
 
 /// Cached parameters for a single voice, laid out for cache efficiency.
 /// Process multiple samples before updating cache to amortize computation.

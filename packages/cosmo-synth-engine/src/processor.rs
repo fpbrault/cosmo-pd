@@ -8,6 +8,7 @@ use alloc::vec::Vec;
 use core::array;
 use serde::Serialize;
 
+use crate::batch_cache::RenderBlockCache;
 use crate::dsp_utils::{lfo_output_with_symmetry, random_hold_value};
 use crate::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use crate::fx::FxChain;
@@ -16,7 +17,7 @@ use crate::module_presets;
 use crate::params::{FxSlotConfig, FxSlotType, ModDestination, PolyMode, SynthParams, NUM_VOICES};
 use crate::voice::{
     build_mod_value_cache, line_modulation_state, render_voice, LineModulationState, ModSources,
-    Voice,
+    ModValueCache, Voice,
 };
 
 const SOFT_CLIP_DRIVE: f32 = 1.0;
@@ -789,7 +790,6 @@ impl CosmoProcessor {
     /// channels if required.
     pub fn process(&mut self, output: &mut [f32]) {
         let p = &self.params;
-        let volume = p.volume;
         let base_lfo1_rate = p.lfo.rate;
         let lfo1_waveform = p.lfo.waveform;
         let base_lfo1_symmetry = p.lfo.symmetry;
@@ -805,7 +805,8 @@ impl CosmoProcessor {
         let headroom_ratio = REFERENCE_LINE_HEADROOM / PER_LINE_HEADROOM.max(0.01);
         let headroom_makeup =
             libm::powf(headroom_ratio, HEADROOM_MAKEUP_EXPONENT).clamp(1.0, MAX_HEADROOM_MAKEUP);
-        let norm = volume * headroom_makeup / libm::sqrtf(NUM_VOICES as f32);
+        let render_cache = RenderBlockCache::from_params(p);
+        let norm = render_cache.volume * headroom_makeup / libm::sqrtf(NUM_VOICES as f32);
         let matrix = &p.mod_matrix;
         let line_modulation_state: LineModulationState = line_modulation_state(matrix);
         let safe_sr = sr.max(1.0);
@@ -816,16 +817,7 @@ impl CosmoProcessor {
         let mut prev_lfo1 = self.last_runtime_mod_sources.lfo1;
         let mut prev_lfo2 = self.last_runtime_mod_sources.lfo2;
         let mut prev_random = self.last_runtime_mod_sources.random;
-        let active_fx_slots = p
-            .fx_slots
-            .iter()
-            .filter(|slot| {
-                !matches!(
-                    slot.slot_type(),
-                    FxSlotType::Empty | FxSlotType::Vibrato | FxSlotType::PhaseMod
-                )
-            })
-            .count();
+        let active_fx_slots = render_cache.active_fx_slots;
 
         for sample_out in output.iter_mut() {
             let mod_source_voice_idx = self.runtime_mod_source_voice_index();
@@ -845,7 +837,11 @@ impl CosmoProcessor {
                 self.mod_wheel,
                 self.aftertouch,
             );
-            let pre_mod_values = build_mod_value_cache(matrix, &pre_sources);
+            let pre_mod_values = if render_cache.has_modulation() {
+                build_mod_value_cache(matrix, &pre_sources)
+            } else {
+                ModValueCache::default()
+            };
 
             let lfo1_rate_mod = pre_mod_values.get(ModDestination::Lfo1Rate);
             let lfo1_depth_mod = pre_mod_values.get(ModDestination::Lfo1Depth);

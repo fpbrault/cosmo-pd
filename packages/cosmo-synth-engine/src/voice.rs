@@ -200,6 +200,14 @@ impl ModValueCache {
     }
 }
 
+impl Default for ModValueCache {
+    fn default() -> Self {
+        Self {
+            values: [0.0_f32; MOD_DESTINATION_COUNT],
+        }
+    }
+}
+
 /// Build cached modulation destination values for one render step.
 pub(crate) fn build_mod_value_cache(matrix: &ModMatrix, sources: &ModSources) -> ModValueCache {
     // TODO: Remove after performance testing — disables all modulation routing
