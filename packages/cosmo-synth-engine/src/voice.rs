@@ -21,23 +21,18 @@ const ENABLE_MODULATION: bool = true;
 // TWO_PI for f32
 const TWO_PI: f32 = core::f32::consts::PI * 2.0;
 const DEFAULT_BASE_FREQ: f32 = 220.0;
-const SILENCE_THRESHOLD: f32 = 0.001;
 pub(crate) const ANTI_CLICK_ATTACK_SAMPLES: u32 = 64;
-/// Number of samples over which to linearly fade out a voice when the DCA
-/// envelope crosses below `SILENCE_THRESHOLD`, preventing audible clicks from
-/// abrupt signal discontinuities (e.g., filter resonance ringing at release).
-const ANTI_CLICK_FADE_SAMPLES: u32 = 64;
-const ANTI_CLICK_FADE_MAX_SAMPLES: u32 = 1024;
 const POP_SUPPRESS_DELTA_THRESHOLD: f32 = 1.2;
 const POP_SUPPRESS_EXCESS_KEEP: f32 = 0.15;
-const RELEASE_TAIL_LEVEL_THRESHOLD: f32 = 0.002;
-const ZERO_CROSS_STOP_THRESHOLD: f32 = 0.0005;
-const ZERO_CROSS_STOP_MAX_WAIT_SAMPLES: u32 = 1024;
 // Lower exponent keeps more level during decay (slower perceived drop-off).
 const DCA_LEVEL_CURVE_EXPONENT: f32 = 1.5;
 // Lower exponent keeps more brightness during DCW envelope decay.
 const DCW_LEVEL_CURVE_EXPONENT: f32 = 0.8;
 const DUAL_LINE_MIX_GAIN: f32 = 0.8;
+
+fn should_finalize_release(env: &EnvelopeSnapshot) -> bool {
+    env.dca1 <= 0.0 && env.dca2 <= 0.0
+}
 
 // ---------------------------------------------------------------------------
 // ADSR modulation envelope
@@ -915,7 +910,7 @@ pub(crate) fn render_voice(
     aftertouch: f32,
     line_modulation_state: LineModulationState,
     dcw_dezipper_alpha: f32,
-    release_tail_alpha: f32,
+    _release_tail_alpha: f32,
 ) -> f32 {
     let base_freq = base_voice_frequency(voice);
 
@@ -965,6 +960,10 @@ pub(crate) fn render_voice(
         voice.zero_cross_stop_pending = false;
         voice.zero_cross_stop_wait = 0;
         return 0.0;
+    }
+
+    if voice.is_releasing && should_finalize_release(&env) {
+        return finalize_voice_silence(voice);
     }
 
     // Advance per-voice ADSR mod envelope.
@@ -1048,33 +1047,6 @@ pub(crate) fn render_voice(
     let volume_mod = mod_values.get(ModDestination::Volume);
     let mut sample = sample * (1.0 + volume_mod);
 
-    voice.release_tail_level +=
-        (libm::fabsf(sample) - voice.release_tail_level) * release_tail_alpha;
-
-    // Start a short fade when the release tail is near silence.
-    // Use both envelope and signal-level checks: the signal check catches
-    // cases where release was initiated via sustain pedal and residual filter
-    // energy does not track DCA envelope level perfectly.
-    if voice.is_releasing && voice.anti_click_fade == 0 {
-        let env_near_silence =
-            libm::fabsf(env.dca1) < SILENCE_THRESHOLD && libm::fabsf(env.dca2) < SILENCE_THRESHOLD;
-        let tail_near_silence = voice.release_tail_level < RELEASE_TAIL_LEVEL_THRESHOLD;
-        let instant_near_silence = libm::fabsf(sample) < RELEASE_TAIL_LEVEL_THRESHOLD * 2.0;
-
-        if (tail_near_silence && instant_near_silence) || (env_near_silence && instant_near_silence)
-        {
-            let min_freq = signal.effective_freq1.min(signal.effective_freq2).max(20.0);
-            let half_cycle_samples = (sr / min_freq / 2.0).round() as u32;
-            let fade_len = half_cycle_samples
-                .clamp(ANTI_CLICK_FADE_SAMPLES, ANTI_CLICK_FADE_MAX_SAMPLES)
-                .max(1);
-            voice.anti_click_fade = fade_len;
-            voice.anti_click_fade_len = fade_len;
-            voice.zero_cross_stop_pending = false;
-            voice.zero_cross_stop_wait = 0;
-        }
-    }
-
     if voice.anti_click_attack > 0 {
         let ramp = 1.0 - (voice.anti_click_attack as f32 / ANTI_CLICK_ATTACK_SAMPLES as f32);
         sample *= ramp;
@@ -1090,42 +1062,6 @@ pub(crate) fn render_voice(
         signal.effective_freq2,
         phase.pm_delta,
     );
-
-    // Apply anti-click fade and silence the voice when the fade completes.
-    if voice.anti_click_fade > 0 {
-        voice.anti_click_fade -= 1;
-        let fade_len = voice.anti_click_fade_len.max(1);
-        let fade = voice.anti_click_fade as f32 / fade_len as f32;
-        let faded = sample * fade;
-
-        if voice.anti_click_fade == 0 {
-            voice.zero_cross_stop_pending = true;
-            voice.zero_cross_stop_wait = ZERO_CROSS_STOP_MAX_WAIT_SAMPLES;
-            // Store the post-fade sample so the subsequent zero-cross detector
-            // can compare sign changes on the same processed signal it will
-            // continue to receive (not a pre-fade "raw" value).
-            voice.last_output_sample = sample;
-            return 0.0;
-        }
-
-        voice.last_output_sample = faded;
-        return faded;
-    }
-
-    if voice.zero_cross_stop_pending {
-        let prev_raw = voice.last_output_sample;
-        let near_zero = libm::fabsf(sample) <= ZERO_CROSS_STOP_THRESHOLD;
-        let crossed_zero = (prev_raw > 0.0 && sample <= 0.0) || (prev_raw < 0.0 && sample >= 0.0);
-
-        voice.last_output_sample = sample;
-
-        if near_zero || crossed_zero || voice.zero_cross_stop_wait == 0 {
-            return finalize_voice_silence(voice);
-        }
-
-        voice.zero_cross_stop_wait -= 1;
-        return 0.0;
-    }
 
     voice.last_output_sample = sample;
     sample
@@ -1709,7 +1645,7 @@ fn wrap_voice_phase(phase: &mut f32, cycle_count: &mut u32) {
 mod tests {
     use super::{
         build_mod_value_cache, cz_dca_env_gain, cz_dco_env_semitones, cz_dcw_env_depth,
-        line_frequency, render_voice, ModSources, Voice,
+        line_frequency, render_voice, should_finalize_release, EnvelopeSnapshot, ModSources, Voice,
     };
     use crate::params::{ModDestination, ModMatrix, ModRoute, ModSource, SynthParams};
 
@@ -1727,6 +1663,24 @@ mod tests {
         assert_eq!(cz_dcw_env_depth(1.0), 1.0);
         assert!(cz_dcw_env_depth(0.5) > 0.5);
         assert!(cz_dcw_env_depth(0.75) > 0.75);
+    }
+
+    #[test]
+    fn release_finishes_when_both_dca_envelopes_end() {
+        let env = EnvelopeSnapshot {
+            dco1_env: 0.5,
+            dco2_env: 0.5,
+            dca1: 0.0,
+            dca2: 0.0,
+            dcw1: 0.5,
+            dcw2: 0.5,
+        };
+
+        assert!(should_finalize_release(&env));
+
+        let env = EnvelopeSnapshot { dca2: 0.1, ..env };
+
+        assert!(!should_finalize_release(&env));
     }
 
     #[test]
