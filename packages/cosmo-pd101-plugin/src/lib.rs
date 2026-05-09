@@ -4,22 +4,25 @@
 
 #![recursion_limit = "256"]
 
-use std::collections::VecDeque;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::Arc;
+use std::sync::Mutex;
 use std::time::Instant;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use arc_swap::ArcSwap;
 use cosmo_synth_engine::params::SynthParams;
 use cosmo_synth_engine::processor::{midi_note_to_freq, CosmoProcessor};
+use crossbeam_queue::ArrayQueue;
 use nih_plug::prelude::*;
 
 pub mod gui;
 
 const PLUGIN_LOG_PATH: &str = "/tmp/cosmo-plugin.log";
 const MAX_UI_INPUT_EVENTS_PER_BLOCK: usize = 64;
+const UI_INPUT_QUEUE_CAPACITY: usize = 1024;
 
 fn log_timestamp_ms() -> u128 {
     SystemTime::now()
@@ -109,7 +112,8 @@ impl ScopeFrame {
 
 /// Thread-safe scope buffer shared between the audio thread and the GUI thread.
 type ScopeBuffer = Arc<Mutex<ScopeFrame>>;
-type UiInputQueue = Arc<Mutex<VecDeque<UiInputEvent>>>;
+type UiInputQueue = Arc<ArrayQueue<UiInputEvent>>;
+type SharedSynthParams = Arc<ArcSwap<SynthParams>>;
 type SynthParamsVersion = Arc<AtomicU64>;
 type PerformanceCountersHandle = Arc<PerformanceCounters>;
 
@@ -274,7 +278,7 @@ pub struct CzParams {}
 fn handle_ipc_invoke(
     method: &str,
     args: &[serde_json::Value],
-    synth_params: &Arc<RwLock<SynthParams>>,
+    synth_params: &SharedSynthParams,
     synth_params_version: &SynthParamsVersion,
     scope_buffer: &ScopeBuffer,
     ui_input_queue: &UiInputQueue,
@@ -300,10 +304,9 @@ fn handle_ipc_invoke(
                 .unwrap_or(0.8_f64) as f32;
             let note = u8::try_from(note).map_err(|_| "noteOn note out of range".to_string())?;
 
-            let mut queue = ui_input_queue
-                .lock()
-                .map_err(|_| "ui input queue is poisoned".to_string())?;
-            queue.push_back(UiInputEvent::NoteOn { note, velocity });
+            ui_input_queue
+                .push(UiInputEvent::NoteOn { note, velocity })
+                .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
         "noteOff" => {
@@ -317,10 +320,9 @@ fn handle_ipc_invoke(
                 .ok_or_else(|| "noteOff payload missing note".to_string())?;
             let note = u8::try_from(note).map_err(|_| "noteOff note out of range".to_string())?;
 
-            let mut queue = ui_input_queue
-                .lock()
-                .map_err(|_| "ui input queue is poisoned".to_string())?;
-            queue.push_back(UiInputEvent::NoteOff { note });
+            ui_input_queue
+                .push(UiInputEvent::NoteOff { note })
+                .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
         "sustain" => {
@@ -333,10 +335,9 @@ fn handle_ipc_invoke(
                 .and_then(serde_json::Value::as_bool)
                 .ok_or_else(|| "sustain payload missing on".to_string())?;
 
-            let mut queue = ui_input_queue
-                .lock()
-                .map_err(|_| "ui input queue is poisoned".to_string())?;
-            queue.push_back(UiInputEvent::Sustain { on });
+            ui_input_queue
+                .push(UiInputEvent::Sustain { on })
+                .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
         "pitchBend" => {
@@ -352,10 +353,9 @@ fn handle_ipc_invoke(
                 .ok_or_else(|| "pitchBend payload missing value".to_string())?
                 as f32;
 
-            let mut queue = ui_input_queue
-                .lock()
-                .map_err(|_| "ui input queue is poisoned".to_string())?;
-            queue.push_back(UiInputEvent::PitchBend { value });
+            ui_input_queue
+                .push(UiInputEvent::PitchBend { value })
+                .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
         "modWheel" => {
@@ -371,10 +371,9 @@ fn handle_ipc_invoke(
                 .ok_or_else(|| "modWheel payload missing value".to_string())?
                 as f32;
 
-            let mut queue = ui_input_queue
-                .lock()
-                .map_err(|_| "ui input queue is poisoned".to_string())?;
-            queue.push_back(UiInputEvent::ModWheel { value });
+            ui_input_queue
+                .push(UiInputEvent::ModWheel { value })
+                .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
         "aftertouch" => {
@@ -390,17 +389,15 @@ fn handle_ipc_invoke(
                 .ok_or_else(|| "aftertouch payload missing value".to_string())?
                 as f32;
 
-            let mut queue = ui_input_queue
-                .lock()
-                .map_err(|_| "ui input queue is poisoned".to_string())?;
-            queue.push_back(UiInputEvent::Aftertouch { value });
+            ui_input_queue
+                .push(UiInputEvent::Aftertouch { value })
+                .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
         "panic" => {
-            let mut queue = ui_input_queue
-                .lock()
-                .map_err(|_| "ui input queue is poisoned".to_string())?;
-            queue.push_back(UiInputEvent::Panic);
+            ui_input_queue
+                .push(UiInputEvent::Panic)
+                .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
         "setParams" => {
@@ -410,18 +407,13 @@ fn handle_ipc_invoke(
                 .ok_or_else(|| "setParams expects a JSON string as first argument".to_string())?;
             let params: SynthParams = serde_json::from_str(json_str)
                 .map_err(|e| format!("invalid SynthParams payload: {e}"))?;
-            let mut sp = synth_params
-                .write()
-                .map_err(|_| "synth params store is poisoned".to_string())?;
-            *sp = params;
+            synth_params.store(Arc::new(params));
             synth_params_version.fetch_add(1, Ordering::Release);
             Ok(serde_json::Value::Null)
         }
         "getParams" => {
-            let sp = synth_params
-                .read()
-                .map_err(|_| "synth params store is poisoned".to_string())?;
-            serde_json::to_value(&*sp).map_err(|e| e.to_string())
+            let sp = synth_params.load();
+            serde_json::to_value(sp.as_ref()).map_err(|e| e.to_string())
         }
         "getScopeData" => {
             let scope = scope_buffer
@@ -475,7 +467,7 @@ pub struct CzPlugin {
     /// DSP engine, present after `initialize()`.
     processor: Option<CosmoProcessor>,
     /// Synth parameters shared with the GUI thread (set via `setParams` IPC).
-    synth_params: Arc<RwLock<SynthParams>>,
+    synth_params: SharedSynthParams,
     synth_params_version: SynthParamsVersion,
     cached_synth_params_version: u64,
     /// Per-frame cached copy read by the audio thread.
@@ -491,12 +483,12 @@ impl Default for CzPlugin {
         Self {
             params: Arc::new(CzParams::default()),
             processor: None,
-            synth_params: Arc::new(RwLock::new(SynthParams::default())),
+            synth_params: Arc::new(ArcSwap::from_pointee(SynthParams::default())),
             synth_params_version: Arc::new(AtomicU64::new(0)),
             cached_synth_params_version: 0,
             cached_synth_params: SynthParams::default(),
             scope_buffer: Arc::new(Mutex::new(ScopeFrame::default())),
-            ui_input_queue: Arc::new(Mutex::new(VecDeque::with_capacity(256))),
+            ui_input_queue: Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY)),
             mono_output: Vec::new(),
             performance_counters: Arc::new(PerformanceCounters::default()),
         }
@@ -512,16 +504,13 @@ impl CzPlugin {
     }
 
     fn drain_ui_input_events(&mut self) {
-        let Ok(mut queue) = self.ui_input_queue.try_lock() else {
-            return;
-        };
         if self.performance_counters.enabled.load(Ordering::Acquire) {
             self.performance_counters
                 .ui_queue_depth
-                .store(queue.len() as u32, Ordering::Relaxed);
+                .store(self.ui_input_queue.len() as u32, Ordering::Relaxed);
         }
         for _ in 0..MAX_UI_INPUT_EVENTS_PER_BLOCK {
-            let Some(event) = queue.pop_front() else {
+            let Some(event) = self.ui_input_queue.pop() else {
                 break;
             };
             if let Some(proc) = &mut self.processor {
@@ -594,7 +583,8 @@ impl Plugin for CzPlugin {
         self.cached_synth_params = synth_params;
         self.cached_synth_params_version = self.synth_params_version.load(Ordering::Acquire);
         self.processor = Some(processor);
-        self.mono_output.resize(buffer_config.max_buffer_size as usize, 0.0);
+        self.mono_output
+            .resize(buffer_config.max_buffer_size as usize, 0.0);
         self.performance_counters
             .sample_rate_bits
             .store(buffer_config.sample_rate.to_bits(), Ordering::Release);
@@ -668,11 +658,10 @@ impl Plugin for CzPlugin {
         let params_changed = params_version != self.cached_synth_params_version;
         let mut apply_params_update = false;
         if params_changed {
-            if let Ok(sp) = self.synth_params.try_read() {
-                self.cached_synth_params.clone_from(&sp);
-                self.cached_synth_params_version = params_version;
-                apply_params_update = true;
-            }
+            let sp = self.synth_params.load();
+            self.cached_synth_params.clone_from(sp.as_ref());
+            self.cached_synth_params_version = params_version;
+            apply_params_update = true;
         }
 
         if let Some(proc) = &mut self.processor {
@@ -707,14 +696,7 @@ impl Plugin for CzPlugin {
                 0
             };
             let ui_queue_depth = if monitor_enabled {
-                self.ui_input_queue
-                    .try_lock()
-                    .map(|queue| queue.len())
-                    .unwrap_or_else(|_| {
-                        self.performance_counters
-                            .ui_queue_depth
-                            .load(Ordering::Relaxed) as usize
-                    })
+                self.ui_input_queue.len()
             } else {
                 0
             };
@@ -788,9 +770,9 @@ mod tests {
 
     #[test]
     fn set_params_rpc_updates_synth_params() {
-        let synth_params = Arc::new(RwLock::new(SynthParams::default()));
+        let synth_params = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
         let scope_buffer: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
-        let ui_input_queue: UiInputQueue = Arc::new(Mutex::new(VecDeque::new()));
+        let ui_input_queue: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
 
         let mut new_params = SynthParams::default();
         new_params.volume = 0.42;
@@ -806,16 +788,17 @@ mod tests {
             &Arc::new(PerformanceCounters::default()),
         );
         assert!(result.is_ok());
-        assert_eq!(synth_params.read().unwrap().volume, 0.42);
+        let current = synth_params.load();
+        assert_eq!(current.volume, 0.42);
     }
 
     #[test]
     fn get_params_rpc_returns_current_synth_params() {
         let mut initial = SynthParams::default();
         initial.volume = 0.77;
-        let synth_params = Arc::new(RwLock::new(initial));
+        let synth_params = Arc::new(ArcSwap::new(Arc::new(initial)));
         let scope_buffer: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
-        let ui_input_queue: UiInputQueue = Arc::new(Mutex::new(VecDeque::new()));
+        let ui_input_queue: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
 
         let result = handle_ipc_invoke(
             "getParams",
@@ -834,9 +817,9 @@ mod tests {
 
     #[test]
     fn note_on_rpc_enqueues_ui_input_event() {
-        let synth_params = Arc::new(RwLock::new(SynthParams::default()));
+        let synth_params = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
         let scope_buffer: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
-        let ui_input_queue: UiInputQueue = Arc::new(Mutex::new(VecDeque::new()));
+        let ui_input_queue: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
 
         let result = handle_ipc_invoke(
             "noteOn",
@@ -849,8 +832,7 @@ mod tests {
         );
 
         assert!(result.is_ok());
-        let mut queue = ui_input_queue.lock().unwrap();
-        match queue.pop_front() {
+        match ui_input_queue.pop() {
             Some(UiInputEvent::NoteOn { note, velocity }) => {
                 assert_eq!(note, 60);
                 assert!((velocity - 0.75).abs() < f32::EPSILON);

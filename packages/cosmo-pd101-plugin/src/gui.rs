@@ -26,8 +26,9 @@
 use std::any::Any;
 use std::panic::{self, AssertUnwindSafe};
 use std::sync::atomic::AtomicU64;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex};
 
+use arc_swap::ArcSwap;
 use nih_plug::prelude::*;
 #[cfg(target_os = "macos")]
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -133,7 +134,7 @@ unsafe impl Send for CzEditorHandle {}
 
 /// nih-plug `Editor` implementation for the Cosmo PD-101 plugin.
 pub struct CzEditor {
-    synth_params: Arc<RwLock<SynthParams>>,
+    synth_params: Arc<ArcSwap<SynthParams>>,
     synth_params_version: Arc<AtomicU64>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
@@ -147,7 +148,7 @@ pub struct CzEditor {
 
 impl CzEditor {
     pub(crate) fn new(
-        synth_params: Arc<RwLock<SynthParams>>,
+        synth_params: Arc<ArcSwap<SynthParams>>,
         synth_params_version: Arc<AtomicU64>,
         scope_buffer: ScopeBuffer,
         ui_input_queue: UiInputQueue,
@@ -166,10 +167,8 @@ impl CzEditor {
 
     /// Push the current parameter snapshot to the WebView's `__czOnParams` hook.
     fn push_params(&self) {
-        let Ok(sp) = self.synth_params.read() else {
-            return;
-        };
-        let Ok(json_str) = serde_json::to_string(&*sp) else {
+        let sp = self.synth_params.load();
+        let Ok(json_str) = serde_json::to_string(sp.as_ref()) else {
             return;
         };
         // Escape the JSON string for embedding inside a JS string literal.
@@ -494,7 +493,7 @@ unsafe fn ensure_parent_has_window(ns_view: *mut std::ffi::c_void) -> Option<Tem
 unsafe fn build_webview_from_ns_view(
     ns_view: *mut std::ffi::c_void,
     resource_dir: std::path::PathBuf,
-    synth_params: Arc<RwLock<SynthParams>>,
+    synth_params: Arc<ArcSwap<SynthParams>>,
     synth_params_version: Arc<AtomicU64>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
@@ -591,16 +590,15 @@ unsafe fn build_webview_from_ns_view(
                             .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
                             .is_ok()
                         {
-                            if let Ok(sp) = synth_params.read() {
-                                if let Ok(json_str) = serde_json::to_string(&*sp) {
-                                    let escaped = json_str
-                                        .replace('\\', "\\\\")
-                                        .replace('"', "\\\"");
-                                    let params_script = format!(
-                                        "if(typeof window.__czOnParams === 'function') {{ window.__czOnParams(\"{escaped}\"); }}"
-                                    );
-                                    let _ = wv.evaluate_script(&params_script);
-                                }
+                            let sp = synth_params.load();
+                            if let Ok(json_str) = serde_json::to_string(sp.as_ref()) {
+                                let escaped = json_str
+                                    .replace('\\', "\\\\")
+                                    .replace('"', "\\\"");
+                                let params_script = format!(
+                                    "if(typeof window.__czOnParams === 'function') {{ window.__czOnParams(\"{escaped}\"); }}"
+                                );
+                                let _ = wv.evaluate_script(&params_script);
                             }
                         }
                     }
