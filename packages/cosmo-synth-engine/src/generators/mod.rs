@@ -2,6 +2,7 @@ use crate::dsp_utils::apply_window;
 use crate::params::{
     Algo, AlgoControlValueV1, BaseWaveform, EngineParamReadoutFormatV1, LineParams,
 };
+use dasp_interpolate::{linear::Linear, Interpolator};
 use serde::Serialize;
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
@@ -507,7 +508,8 @@ pub(crate) fn wrap01(v: f32) -> f32 {
 /// Linear interpolation helper used by several generator transfer functions.
 #[inline]
 pub(crate) fn lerp(a: f32, b: f32, t: f32) -> f32 {
-    a + (b - a) * t
+    let interp = Linear::new([a], [b]);
+    interp.interpolate(t as f64)[0]
 }
 
 /// Unified algorithm phase warp dispatcher.

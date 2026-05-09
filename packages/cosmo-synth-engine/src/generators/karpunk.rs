@@ -2,6 +2,7 @@ extern crate alloc;
 
 use alloc::vec;
 use alloc::vec::Vec;
+use dasp_interpolate::{linear::Linear, Interpolator};
 
 use crate::params::{Algo, EngineParamReadoutFormatV1};
 
@@ -276,7 +277,8 @@ pub fn blend(primary_algo: Algo, primary: f32, secondary: f32, blend: f32) -> f3
 
 #[inline(always)]
 fn lerp(a: f32, b: f32, t: f32) -> f32 {
-    a + (b - a) * t
+    let interp = Linear::new([a], [b]);
+    interp.interpolate(t as f64)[0]
 }
 
 /// Simple LCG PRNG — produces a value in [-1.0, 1.0].

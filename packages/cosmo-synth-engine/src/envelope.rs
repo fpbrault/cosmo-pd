@@ -3,6 +3,7 @@ use crate::envelope_map::{
     human_level_to_raw, human_rate_to_raw, raw_level_to_human, raw_rate_to_human,
 };
 use crate::params::{StepEnvData, SynthParams};
+use dasp_interpolate::{linear::Linear, Interpolator};
 
 pub fn normalize_env_to_raw_if_human(kind: EnvelopeKind, env: &mut StepEnvData) {
     for step in env.steps.iter_mut() {
@@ -202,7 +203,8 @@ impl EnvGen {
 
 #[inline]
 fn lerp(a: f32, b: f32, t: f32) -> f32 {
-    a + (b - a) * t
+    let interp = Linear::new([a], [b]);
+    interp.interpolate(t as f64)[0]
 }
 
 /// Converts a human rate [0..99] to a transition duration in seconds.

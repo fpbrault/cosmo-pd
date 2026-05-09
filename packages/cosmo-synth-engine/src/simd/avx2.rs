@@ -84,7 +84,7 @@ impl SimdType for Avx2 {
 
     #[inline]
     fn mul_scalar(self, val: f32) -> Self {
-        self.mul(Self::splat(val))
+        SimdType::mul(self, Self::splat(val))
     }
 
     #[inline]
@@ -129,7 +129,7 @@ impl Add for Avx2 {
 impl AddAssign for Avx2 {
     #[inline]
     fn add_assign(&mut self, other: Self) {
-        *self = self.add(other);
+        *self = SimdType::add(*self, other);
     }
 }
 
@@ -152,7 +152,7 @@ impl Mul for Avx2 {
 impl MulAssign for Avx2 {
     #[inline]
     fn mul_assign(&mut self, other: Self) {
-        *self = self.mul(other);
+        *self = SimdType::mul(*self, other);
     }
 }
 

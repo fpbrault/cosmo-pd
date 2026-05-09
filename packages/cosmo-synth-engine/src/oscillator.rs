@@ -1,4 +1,5 @@
 use crate::params::{LfoWaveform, WindowType};
+use dasp_interpolate::{linear::Linear, Interpolator};
 
 const TWO_PI: f32 = core::f32::consts::TAU;
 
@@ -16,7 +17,8 @@ pub fn wrap01(v: f32) -> f32 {
 /// Linear interpolation.
 #[inline]
 pub fn lerp(a: f32, b: f32, t: f32) -> f32 {
-    a + (b - a) * t
+    let interp = Linear::new([a], [b]);
+    interp.interpolate(t as f64)[0]
 }
 
 // ─── Optimized Wave Functions (Branch-Free) ─────────────────────────────────
