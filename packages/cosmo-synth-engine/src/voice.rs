@@ -6,7 +6,7 @@ extern crate alloc;
 
 use libm::sinf;
 
-use crate::dsp_utils::{lfo_output, wrap01};
+use crate::dsp_utils::{lfo_output, wrap01, TWO_PI};
 use crate::envelope::{EnvGen, EnvelopeKind};
 use crate::generators::{self, AlgoRuntimeState, LineRenderConfig};
 use crate::params::{
@@ -14,8 +14,6 @@ use crate::params::{
     ModSource, PortamentoMode, StepEnvData, SynthParams, NUM_ENV_STEPS,
 };
 
-// TWO_PI for f32
-const TWO_PI: f32 = core::f32::consts::PI * 2.0;
 const DEFAULT_BASE_FREQ: f32 = 220.0;
 const SILENCE_THRESHOLD: f32 = 0.001;
 pub(crate) const ANTI_CLICK_ATTACK_SAMPLES: u32 = 64;

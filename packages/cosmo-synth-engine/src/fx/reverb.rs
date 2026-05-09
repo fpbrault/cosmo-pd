@@ -1,9 +1,9 @@
 use libm::{cosf, sinf};
 
 use super::delay_line::DelayLine;
+use crate::dsp_utils::TWO_PI;
 
 const SMOOTH_COEFF: f32 = 0.005;
-const TWO_PI: f32 = core::f32::consts::PI * 2.0;
 
 // ---------------------------------------------------------------------------
 // FDN reverb constants

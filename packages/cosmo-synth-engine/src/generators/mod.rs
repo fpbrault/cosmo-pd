@@ -1,4 +1,4 @@
-use crate::dsp_utils::apply_window;
+use crate::dsp_utils::{apply_window, lerp, wrap01, TWO_PI};
 use crate::params::{
     Algo, AlgoControlValueV1, BaseWaveform, EngineParamReadoutFormatV1, LineParams,
 };
@@ -6,7 +6,6 @@ use serde::Serialize;
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
 
-const TWO_PI: f32 = core::f32::consts::TAU;
 /// Reference per-line output headroom used by processor normalization.
 pub const PER_LINE_HEADROOM: f32 = 0.25;
 
@@ -462,23 +461,6 @@ pub fn algo_ui_catalog_v1() -> &'static [AlgoUiEntryV1] {
     ];
 
     &CATALOG
-}
-
-/// Wrap a phase value into the normalized range [0.0, 1.0).
-#[inline]
-pub(crate) fn wrap01(v: f32) -> f32 {
-    let w = v - libm::floorf(v);
-    if w < 0.0 {
-        w + 1.0
-    } else {
-        w
-    }
-}
-
-/// Linear interpolation helper used by several generator transfer functions.
-#[inline]
-pub(crate) fn lerp(a: f32, b: f32, t: f32) -> f32 {
-    a + (b - a) * t
 }
 
 /// Unified algorithm phase warp dispatcher.

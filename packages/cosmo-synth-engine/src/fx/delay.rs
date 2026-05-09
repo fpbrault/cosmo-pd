@@ -1,9 +1,9 @@
 use libm::{cosf, expf, tanhf};
 
 use super::delay_line::DelayLine;
+use crate::dsp_utils::{wrap01, TWO_PI};
 
 const SMOOTH_COEFF: f32 = 0.005;
-const TWO_PI: f32 = core::f32::consts::PI * 2.0;
 const TAPE_BRIGHT_CUTOFF_HZ: f32 = 20000.0;
 const TAPE_WARM_RANGE_HZ: f32 = 19700.0;
 const TAPE_SATURATION_DRIVE: f32 = 2.1;
@@ -80,15 +80,6 @@ impl DelayFx {
         let dry_gain = cosf(mix_angle);
         let wet_gain = sinf_approx(mix_angle);
         sample * dry_gain + wet * wet_gain
-    }
-}
-
-#[inline]
-fn wrap01(value: f32) -> f32 {
-    if value >= 1.0 {
-        value - 1.0
-    } else {
-        value
     }
 }
 

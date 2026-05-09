@@ -1,6 +1,6 @@
 use crate::params::{LfoWaveform, WindowType};
 
-const TWO_PI: f32 = core::f32::consts::TAU;
+pub const TWO_PI: f32 = core::f32::consts::TAU;
 
 /// Wrap a value into [0, 1).
 #[inline]

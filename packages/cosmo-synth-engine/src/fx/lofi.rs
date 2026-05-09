@@ -1,8 +1,8 @@
 use libm::{cosf, expf, sinf, tanhf};
 
 use super::delay_line::DelayLine;
+use crate::dsp_utils::{wrap01, TWO_PI};
 
-const TWO_PI: f32 = core::f32::consts::PI * 2.0;
 const CENTER_DELAY_S: f32 = 0.012;
 const MAX_MOD_S: f32 = 0.010;
 const MAX_WOW_FLUTTER_DEPTH: f32 = 0.20;
@@ -105,15 +105,6 @@ impl LoFiFx {
         let lp_g = expf(-TWO_PI * lp_fc / self.sample_rate);
         self.lp_state = lp_g * self.lp_state + (1.0 - lp_g) * high_passed;
         self.lp_state
-    }
-}
-
-#[inline]
-fn wrap01(value: f32) -> f32 {
-    if value >= 1.0 {
-        value - 1.0
-    } else {
-        value
     }
 }
 
