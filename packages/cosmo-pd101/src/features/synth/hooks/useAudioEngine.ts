@@ -30,6 +30,21 @@ export type RuntimeVoiceDebugState = {
 	line2: RuntimeVoiceLineState;
 };
 
+export type WorkletPerformanceMetrics = {
+	enabled: boolean;
+	blockCount: number;
+	lastMs: number;
+	avgMs: number;
+	maxMs: number;
+	blockBudgetMs: number;
+	lastRtPercent: number;
+	avgRtPercent: number;
+	maxRtPercent: number;
+	blockSamples: number;
+	sampleRate: number;
+	activeVoices: number;
+};
+
 const RUNTIME_MOD_SOURCE_KEYS = {
 	lfo1: true,
 	lfo2: true,
@@ -95,6 +110,7 @@ export function useAudioEngine({
 	const gainNodeRef = useRef<GainNode | null>(null);
 	const analyserNodeRef = useRef<AnalyserNode | null>(null);
 	const workletNodeRef = useRef<AudioWorkletNode | null>(null);
+	const telemetryPollRef = useRef<number | null>(null);
 	const audioInitRef = useRef(false);
 	const [audioContextState, setAudioContextState] =
 		useState<AudioContextState | null>(null);
@@ -183,6 +199,32 @@ export function useAudioEngine({
 			});
 		};
 
+		const requestRuntimeTelemetry = () => {
+			const workletNode = workletNodeRef.current;
+			if (!workletNode) {
+				return;
+			}
+			workletNode.port.postMessage({ type: "requestRuntimeTelemetry" });
+		};
+
+		const startTelemetryPolling = () => {
+			if (telemetryPollRef.current !== null) {
+				return;
+			}
+			telemetryPollRef.current = window.setInterval(() => {
+				requestRuntimeTelemetry();
+			}, 33);
+			requestRuntimeTelemetry();
+		};
+
+		const stopTelemetryPolling = () => {
+			if (telemetryPollRef.current === null) {
+				return;
+			}
+			window.clearInterval(telemetryPollRef.current);
+			telemetryPollRef.current = null;
+		};
+
 		const init = async () => {
 			try {
 				const ctx = new AudioContext();
@@ -245,6 +287,7 @@ export function useAudioEngine({
 				workletNode.port.onmessage = (e) => {
 					if (e.data?.type === "ready") {
 						workletNodeRef.current = workletNode;
+						startTelemetryPolling();
 						workletNode.port.postMessage({
 							type: "setParams",
 							params: paramsRef.current,
@@ -268,6 +311,13 @@ export function useAudioEngine({
 								),
 							);
 						}
+					} else if (e.data?.type === "performanceMetrics") {
+						window.dispatchEvent(
+							new CustomEvent<WorkletPerformanceMetrics>(
+								"cz-performance-metrics",
+								{ detail: e.data.metrics },
+							),
+						);
 					} else if (e.data?.type === "error") {
 						console.error("[CZ Synth WASM] Worklet error:", e.data.message);
 					}
@@ -304,6 +354,7 @@ export function useAudioEngine({
 
 		return () => {
 			disposed = true;
+			stopTelemetryPolling();
 			audioInitRef.current = false;
 			workletNodeRef.current?.disconnect();
 			workletNodeRef.current = null;

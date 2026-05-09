@@ -43,7 +43,7 @@ impl CompressorFx {
         if abs_sample > self.envelope {
             self.envelope = attack_coeff * self.envelope + (1.0 - attack_coeff) * abs_sample;
         } else {
-            self.envelope = release_coeff * self.envelope;
+            self.envelope *= release_coeff;
         }
 
         let threshold_linear = db_to_linear(self.threshold_db);

@@ -19,6 +19,14 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install wasm-pack
+        run: |
+          curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.13.1/wasm-pack-v0.13.1-x86_64-unknown-linux-musl.tar.gz | tar xz
+          mv wasm-pack-v0.13.1-x86_64-unknown-linux-musl/wasm-pack ~/.cargo/bin/
+
       - name: Install dependencies
         run: bun install
 
@@ -92,7 +100,7 @@ jobs:
         run: choco install nsis -y
 
       - name: Package plugin installers
-        run: bun run scripts/package-plugin-installers.mjs --platform ${{ matrix.platform }}
+        run: bun run ./scripts/package-plugin-installers.mjs --platform ${{ matrix.platform }}
 
       - name: Validate plugin release artifacts
         shell: bash

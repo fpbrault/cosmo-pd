@@ -2,8 +2,11 @@ import {
 	convertDecodedPatchToSynthPreset,
 	DEFAULT_SYNTH_PRESETS,
 	decodeCzPatch,
+	installBenchmarkApi,
 	type LibraryPreset,
 	noteToFreq,
+	type PerformanceMetrics,
+	PerformanceMonitor,
 	pdVisualizerWorkletUrl,
 	type StepEnvData,
 	SYNTH_UI_STATE_STORAGE_KEY,
@@ -41,6 +44,7 @@ import { fetchPresetData, type Preset } from "@/lib/presets/presetManager";
 type PhaseDistortionVisualizerProps = {
 	frameStyle?: CSSProperties;
 	headerExtra?: ReactNode;
+	bottomBarExtra?: ReactNode;
 };
 
 type PhaseDistortionVisualizerBaseProps = PhaseDistortionVisualizerProps & {
@@ -55,6 +59,7 @@ const VISUALIZER_FRAME_PADDING = 30;
 export function SharedPhaseDistortionVisualizer({
 	frameStyle,
 	headerExtra,
+	bottomBarExtra,
 	libraryPresets = [],
 	onAudioLevelChange,
 }: PhaseDistortionVisualizerBaseProps = {}) {
@@ -77,6 +82,11 @@ export function SharedPhaseDistortionVisualizer({
 	const presetStateKey = useSynthStore((s) => JSON.stringify(s.gatherState()));
 
 	const [extPmAmount] = useState(0);
+	const [performanceMonitorEnabled, setPerformanceMonitorEnabled] =
+		useState(false);
+	const [performanceMetrics, setPerformanceMetrics] =
+		useState<PerformanceMetrics | null>(null);
+	const performanceMetricsRef = useRef<PerformanceMetrics | null>(null);
 	const activeAsidePanel = useSynthUiStore((s) => s.activeAsidePanel);
 	const setActiveAsidePanel = useSynthUiStore((s) => s.setActiveAsidePanel);
 
@@ -104,6 +114,54 @@ export function SharedPhaseDistortionVisualizer({
 		synthBindingsUrl,
 		pdVisualizerWorkletUrl,
 	});
+
+	useEffect(() => {
+		performanceMetricsRef.current = performanceMetrics;
+	}, [performanceMetrics]);
+
+	useEffect(() => {
+		const workletNode = workletNodeRef.current;
+		workletNode?.port.postMessage({
+			type: "setPerformanceMonitorEnabled",
+			enabled: performanceMonitorEnabled,
+		});
+		if (!performanceMonitorEnabled) {
+			setPerformanceMetrics(null);
+		}
+	}, [performanceMonitorEnabled, workletNodeRef]);
+
+	useEffect(() => {
+		if (!performanceMonitorEnabled) {
+			return;
+		}
+
+		const handleMetrics = (event: Event) => {
+			const detail = (event as CustomEvent<PerformanceMetrics | undefined>)
+				.detail;
+			if (detail) {
+				setPerformanceMetrics(detail);
+			}
+		};
+
+		const requestMetrics = () => {
+			workletNodeRef.current?.port.postMessage({
+				type: "setPerformanceMonitorEnabled",
+				enabled: true,
+			});
+			workletNodeRef.current?.port.postMessage({
+				type: "getPerformanceMetrics",
+			});
+		};
+
+		window.addEventListener("cz-performance-metrics", handleMetrics);
+		requestMetrics();
+		const intervalId = window.setInterval(requestMetrics, 250);
+
+		return () => {
+			window.removeEventListener("cz-performance-metrics", handleMetrics);
+			window.clearInterval(intervalId);
+		};
+	}, [performanceMonitorEnabled, workletNodeRef]);
 
 	const { activeNotes, sendNoteOn, sendNoteOff, panic } = useNoteHandling({
 		workletNodeRef,
@@ -236,6 +294,50 @@ export function SharedPhaseDistortionVisualizer({
 		presetStateKey,
 	});
 
+	useEffect(() => {
+		return installBenchmarkApi({
+			mode: "web",
+			listBuiltinPresets: () => Object.keys(DEFAULT_SYNTH_PRESETS),
+			loadBuiltinPreset: (name: string) => {
+				handleLoadBuiltin(name);
+			},
+			setPerformanceMonitorEnabled: (enabled: boolean) => {
+				setPerformanceMonitorEnabled(enabled);
+				if (enabled) {
+					workletNodeRef.current?.port.postMessage({
+						type: "setPerformanceMonitorEnabled",
+						enabled: true,
+					});
+				}
+			},
+			getPerformanceMetrics: () => performanceMetricsRef.current,
+			noteOn: (note: number, velocity?: number) => sendNoteOn(note, velocity),
+			noteOff: (note: number) => sendNoteOff(note),
+			panic,
+			ensureReady: async () => {
+				resumeAudio();
+				const deadline = performance.now() + 5000;
+				while (
+					performance.now() < deadline &&
+					audioCtxRef.current?.state !== "running"
+				) {
+					await new Promise((resolve) => window.setTimeout(resolve, 50));
+				}
+				if (audioCtxRef.current?.state !== "running") {
+					throw new Error("Audio context failed to enter running state");
+				}
+			},
+		});
+	}, [
+		audioCtxRef,
+		handleLoadBuiltin,
+		panic,
+		resumeAudio,
+		sendNoteOff,
+		sendNoteOn,
+		workletNodeRef,
+	]);
+
 	const lastHeldFreqRef = useRef(currentFreq);
 	lastHeldFreqRef.current = currentFreq;
 	const effectivePitchHz = lastHeldFreqRef.current;
@@ -332,6 +434,17 @@ export function SharedPhaseDistortionVisualizer({
 			frameClassName="h-full min-h-0 min-w-0 bg-cz-panel flex flex-col overflow-hidden w-full"
 			frameStyle={frameStyle}
 			headerExtra={headerExtra}
+			bottomBarExtra={
+				<div className="flex items-center gap-2">
+					{bottomBarExtra}
+					<PerformanceMonitor
+						enabled={performanceMonitorEnabled}
+						metrics={performanceMetrics}
+						modeLabel="WEB"
+						onToggle={() => setPerformanceMonitorEnabled((enabled) => !enabled)}
+					/>
+				</div>
+			}
 			lcdPrimaryText={lcdPrimaryText}
 			lcdSecondaryText={""}
 			lcdTransientReadout={lcdControlReadout}

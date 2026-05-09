@@ -4,7 +4,8 @@
 	"version": "0.1.0",
 	"type": "module",
 	"scripts": {
-		"build": "bun run ../../scripts/build-plugin.mjs --release --auv2 --vst3 --clap",
+		"build": "bun run build:release",
+		"build:release": "bun run ../../scripts/build-plugin.mjs --release --auv2 --vst3 --clap",
 		"plugin:install": "bash ../../scripts/install-plugin.sh",
 		"build:web": "bun --filter @cosmo/cosmo-pd101-plugin-webview build",
 		"dev": "cd webview && bun run dev:test",
