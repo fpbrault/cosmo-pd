@@ -4,6 +4,7 @@ import PluginPage from "./PluginPage";
 
 const mockUseSynthPresetManager = vi.hoisted(() => vi.fn());
 const mockUsePluginParamBridge = vi.hoisted(() => vi.fn());
+const mockInstallBenchmarkApi = vi.hoisted(() => vi.fn(() => vi.fn()));
 
 vi.mock("./hooks/usePluginParamBridge", () => ({
 	usePluginParamBridge: mockUsePluginParamBridge,
@@ -23,6 +24,7 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 	return {
 		DEFAULT_SYNTH_PRESETS: {},
 		SynthRenderer: () => <div data-testid="synth-renderer" />,
+		installBenchmarkApi: mockInstallBenchmarkApi,
 		useLcdControlReadout: () => ({
 			lcdControlReadout: "",
 			pushLcdControlReadout: vi.fn(),
@@ -42,6 +44,7 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 
 describe("PluginPage", () => {
 	beforeEach(() => {
+		mockInstallBenchmarkApi.mockClear();
 		mockUsePluginParamBridge.mockReset();
 		mockUseSynthPresetManager.mockReset();
 		mockUseSynthPresetManager.mockReturnValue({

@@ -28,11 +28,11 @@ impl Default for BenchmarkConfig {
         Self {
             scenario: "default".to_string(),
             voices: 3,
-            seconds: 12.0,
+            seconds: 4.0,
             sample_rate: 48_000.0,
             block_size: 128,
-            iterations: 7,
-            warmup_iterations: 2,
+            iterations: 3,
+            warmup_iterations: 1,
             json: false,
             all: false,
         }
@@ -675,6 +675,7 @@ fn run_case(config: &BenchmarkConfig, scenario: &Scenario) -> Result<CaseResult,
         let mut processor = CosmoProcessor::new(config.sample_rate);
         let params = (scenario.build_params)();
         processor.set_params(params);
+        let mut block = vec![0.0_f32; config.block_size];
 
         for note in DEFAULT_NOTES.iter().take(config.voices) {
             let frequency = midi_note_to_freq(*note);
@@ -688,9 +689,8 @@ fn run_case(config: &BenchmarkConfig, scenario: &Scenario) -> Result<CaseResult,
         while rendered_samples < total_samples {
             let remaining = total_samples - rendered_samples;
             let this_block = remaining.min(config.block_size);
-            let mut block = vec![0.0_f32; this_block];
-            processor.process(&mut block);
-            checksum += block
+            processor.process(&mut block[..this_block]);
+            checksum += block[..this_block]
                 .iter()
                 .map(|sample| f64::from(sample.abs()))
                 .sum::<f64>();
