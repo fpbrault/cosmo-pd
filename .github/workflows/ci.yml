@@ -281,6 +281,7 @@ jobs:
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
+<<<<<<< HEAD
       - name: Install Linux system dependencies for plugin checks
         run: |
           sudo apt-get update
@@ -301,6 +302,8 @@ jobs:
           mv wasm-pack-v0.13.1-x86_64-unknown-linux-musl/wasm-pack ~/.cargo/bin/
         shell: bash
 
+=======
+>>>>>>> 3cd96dcef (feat(performance): add performance benchmarking capabilities for UI and engine, including scripts for comparison and reporting)
       - name: Install dependencies
         run: bun install
         shell: bash
@@ -333,20 +336,32 @@ jobs:
           cd "$main_dir"
           mkdir -p target/perf/engine target/perf/ui
 
+<<<<<<< HEAD
           if bun run perf:engine:all > target/perf/engine/main.json.tmp 2> target/perf/engine/main.stderr.log; then
             mv target/perf/engine/main.json.tmp target/perf/engine/main.json
             echo "Comparing against origin/main" > target/perf/engine/status.txt
           else
             rm -f target/perf/engine/main.json.tmp
+=======
+          if bun run perf:engine:all > target/perf/engine/main.json 2> target/perf/engine/main.stderr.log; then
+            echo "Comparing against origin/main" > target/perf/engine/status.txt
+          else
+>>>>>>> 3cd96dcef (feat(performance): add performance benchmarking capabilities for UI and engine, including scripts for comparison and reporting)
             printf 'Baseline unavailable: origin/main could not run engine benchmark.\n\n' > target/perf/engine/status.txt
             cat target/perf/engine/main.stderr.log >> target/perf/engine/status.txt
           fi
 
+<<<<<<< HEAD
           if bun run perf:web --out target/perf/ui/web-main.json.tmp > target/perf/ui/main.stdout.log 2> target/perf/ui/main.stderr.log; then
             mv target/perf/ui/web-main.json.tmp target/perf/ui/web-main.json
             echo "Comparing against origin/main" > target/perf/ui/status.txt
           else
             rm -f target/perf/ui/web-main.json.tmp
+=======
+          if bun run perf:web --out target/perf/ui/web-main.json > target/perf/ui/main.stdout.log 2> target/perf/ui/main.stderr.log; then
+            echo "Comparing against origin/main" > target/perf/ui/status.txt
+          else
+>>>>>>> 3cd96dcef (feat(performance): add performance benchmarking capabilities for UI and engine, including scripts for comparison and reporting)
             printf 'Baseline unavailable: origin/main could not run web benchmark.\n\n' > target/perf/ui/status.txt
             cat target/perf/ui/main.stderr.log >> target/perf/ui/status.txt
           fi
@@ -393,7 +408,11 @@ jobs:
             target/perf/pr-comment.md
 
       - name: Update PR perf comment
+<<<<<<< HEAD
         if: always() && github.event.pull_request.head.repo.full_name == github.repository && hashFiles('target/perf/pr-comment.md') != ''
+=======
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository
+>>>>>>> 3cd96dcef (feat(performance): add performance benchmarking capabilities for UI and engine, including scripts for comparison and reporting)
         uses: actions/github-script@v8
         with:
           script: |

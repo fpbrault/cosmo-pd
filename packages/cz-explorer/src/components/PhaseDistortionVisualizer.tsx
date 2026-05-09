@@ -59,7 +59,7 @@ const VISUALIZER_FRAME_PADDING = 30;
 export function SharedPhaseDistortionVisualizer({
 	frameStyle,
 	headerExtra,
-	bottomBarExtra: providedBottomBarExtra,
+	bottomBarExtra,
 	libraryPresets = [],
 	onAudioLevelChange,
 }: PhaseDistortionVisualizerBaseProps = {}) {
@@ -436,7 +436,7 @@ export function SharedPhaseDistortionVisualizer({
 			headerExtra={headerExtra}
 			bottomBarExtra={
 				<div className="flex items-center gap-2">
-					{providedBottomBarExtra}
+					{bottomBarExtra}
 					<PerformanceMonitor
 						enabled={performanceMonitorEnabled}
 						metrics={performanceMetrics}
