@@ -426,6 +426,128 @@ fn scenarios() -> Vec<Scenario> {
             },
             note_churn_blocks: Some(4),
         },
+        // ─────────────────────────────────────────────────────────────────
+        // Optimization benchmark scenarios (parameter interpolation, vectorization, cubic sine)
+        // ─────────────────────────────────────────────────────────────────
+        Scenario {
+            name: "opt-sine-lfo-heavy",
+            description: "Pure sine LFO benchmark (tests cubic sine approx)",
+            build_params: || {
+                let mut p = SynthParams::default();
+                p.poly_mode = PolyMode::Poly8;
+                p.line1.algo = Algo::Sine;
+                p.line1.algo2 = None;
+                p.line2.algo = Algo::Sine;
+                p.line2.algo2 = None;
+                p.lfo.rate = 20.0; // Fast LFO (high sine sample rate)
+                p.lfo2.rate = 18.5;
+                p.random.rate = 0.5; // Minimal random
+                p.mod_matrix = heavy_mod_matrix();
+                p.fx_slots = [
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                ];
+                p
+            },
+            note_churn_blocks: None,
+        },
+        Scenario {
+            name: "opt-param-interp-light",
+            description: "Light modulation (tests parameter interpolation overhead)",
+            build_params: || {
+                let mut p = SynthParams::default();
+                p.poly_mode = PolyMode::Poly8;
+                p.line1.algo = Algo::Sine;
+                p.line2.algo = Algo::Saw;
+                p.lfo.rate = 3.5;
+                p.lfo2.rate = 2.75;
+                p.mod_matrix = ModMatrix {
+                    routes: vec![
+                        ModRoute {
+                            source: ModSource::Lfo1,
+                            destination: ModDestination::Line1DcwBase,
+                            amount: 0.5,
+                            enabled: true,
+                        },
+                        ModRoute {
+                            source: ModSource::Lfo2,
+                            destination: ModDestination::Line2AlgoBlend,
+                            amount: 0.6,
+                            enabled: true,
+                        },
+                    ],
+                };
+                p.fx_slots = [
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                ];
+                p
+            },
+            note_churn_blocks: Some(32),
+        },
+        Scenario {
+            name: "opt-render-vectorization",
+            description: "Mid-cost algorithms for render-loop vectorization test",
+            build_params: || {
+                let mut p = SynthParams::default();
+                p.poly_mode = PolyMode::Poly8;
+                p.line1.algo = Algo::MultiSine;
+                p.line1.algo2 = Some(Algo::Saw);
+                p.line1.algo_blend = 0.5;
+                p.line2.algo = Algo::Pulse;
+                p.line2.algo2 = Some(Algo::Sine);
+                p.line2.algo_blend = 0.3;
+                p.lfo.rate = 4.0;
+                p.lfo2.rate = 3.25;
+                p.mod_matrix = ModMatrix::default();
+                p.fx_slots = [
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                ];
+                p
+            },
+            note_churn_blocks: Some(16),
+        },
+        Scenario {
+            name: "opt-all-combined",
+            description: "All optimizations active: cubic sine, param interp, vectorization",
+            build_params: || {
+                let mut p = SynthParams::default();
+                p.poly_mode = PolyMode::Poly8;
+                p.line1.algo = Algo::Fof;
+                p.line1.algo2 = Some(Algo::MultiSine);
+                p.line1.algo_blend = 0.55;
+                p.line2.algo = Algo::Karpunk;
+                p.line2.algo2 = Some(Algo::Saw);
+                p.line2.algo_blend = 0.45;
+                p.lfo.rate = 7.5;
+                p.lfo2.rate = 5.5;
+                p.random.rate = 12.0;
+                p.mod_matrix = heavy_mod_matrix();
+                p.fx_slots = [
+                    FxSlotConfig::default_for_type(FxSlotType::Chorus),
+                    FxSlotConfig::default_for_type(FxSlotType::Delay),
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                ];
+                p
+            },
+            note_churn_blocks: Some(12),
+        },
     ]
 }
 
@@ -529,6 +651,11 @@ fn scenario_matrix() -> Vec<(String, usize)> {
         "mod-heavy",
         "fx-heavy",
         "worst-poly",
+        // Optimization-focused scenarios
+        "opt-sine-lfo-heavy",
+        "opt-param-interp-light",
+        "opt-render-vectorization",
+        "opt-all-combined",
     ];
 
     let mut matrix = Vec::new();

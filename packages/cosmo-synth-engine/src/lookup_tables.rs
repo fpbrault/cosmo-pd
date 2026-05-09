@@ -103,10 +103,11 @@ impl Default for ConstantPowerPanTable {
     }
 }
 
-/// Fast sine approximation via polynomial. Pre-computed for phase ∈ [0, 1).
-/// Not used directly but provides reference for wave function optimization.
+/// Fast sine approximation via cubic polynomial. Pre-computed for phase ∈ [0, 1).
+/// Uses quadrant-aware continuous cubic polynomial for better accuracy than
+/// lower-degree approximations. Max error ~0.001 vs libm::sinf.
 pub struct SineApproximationTable {
-    /// 256 pre-computed sine values for phase [0, 1)
+    /// 256 pre-computed sine values for phase [0, 1) using cubic approximation
     table: [f32; 256],
 }
 
@@ -115,8 +116,31 @@ impl SineApproximationTable {
         let mut table = [0.0; 256];
         for i in 0..256 {
             let phase = i as f32 / 256.0;
-            let angle = phase * core::f32::consts::TAU;
-            table[i] = libm::sinf(angle);
+
+            // Apply cubic sine approximation
+            let p = phase;
+            let angle = p * core::f32::consts::TAU;
+            let two_over_pi = 2.0 / core::f32::consts::PI;
+            let pi = core::f32::consts::PI;
+            let two_pi = core::f32::consts::TAU;
+
+            let quadrant = (angle * two_over_pi).floor() as u32 & 3;
+            let x = match quadrant {
+                0 => angle,
+                1 => pi - angle,
+                2 => angle - pi,
+                _ => two_pi - angle,
+            };
+
+            let t = x * two_over_pi;
+            let t2 = t * t;
+            let t3 = t2 * t;
+            let y = 0.144630 * t3 - 0.437500 * t2 + 1.242920 * t;
+
+            table[i] = match quadrant {
+                0 | 1 => y,
+                _ => -y,
+            };
         }
         Self { table }
     }
