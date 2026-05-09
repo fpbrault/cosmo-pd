@@ -30,6 +30,7 @@ export default defineConfig({
 		// Vite defines needed by App.tsx / main.tsx when running under Vitest.
 		__CZ_BUILD_LABEL__: JSON.stringify("test"),
 		__CZ_APP_VERSION__: JSON.stringify("0.0.0"),
+		__RUST_BUILD_PROFILE__: JSON.stringify("debug"),
 	},
 	test: {
 		globals: true,
