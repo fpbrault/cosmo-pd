@@ -177,7 +177,9 @@ export default function App() {
 				utilityExtra={
 					<div className="flex items-center gap-2">
 						<span className="text-cz-cream/55">Build {__CZ_BUILD_LABEL__}</span>
-						<span className={`rounded-sm border px-1 py-0.5 font-mono text-[0.54rem] tracking-[0.14em] uppercase ${__RUST_BUILD_PROFILE__ === "release" ? "border-emerald-700/60 text-emerald-400/80" : "border-amber-600/60 text-amber-400/80"}`}>
+						<span
+							className={`rounded-sm border px-1 py-0.5 font-mono text-[0.54rem] uppercase tracking-[0.14em] ${__RUST_BUILD_PROFILE__ === "release" ? "border-emerald-700/60 text-emerald-400/80" : "border-amber-600/60 text-amber-400/80"}`}
+						>
 							RUST {__RUST_BUILD_PROFILE__}
 						</span>
 						<PerformanceMonitor
