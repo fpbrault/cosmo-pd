@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Cross-platform replacement for build-plugin.sh
- * Usage: bun run scripts/build-plugin.mjs [--release] [--arch native|arm64|x86_64|universal|all] [--platform macos|windows|linux] [--auv2]
+ * Usage: bun run ./scripts/build-plugin.mjs [--release] [--arch native|arm64|x86_64|universal|all] [--platform macos|windows|linux] [--auv2]
  *
  * macOS note: VST3 is built via the custom xtask. CLAP and AU wrapper inputs are
  * built as separate dylibs so each format can use distinct macOS WebView class names.

@@ -83,14 +83,24 @@ pub fn warp_phase(
     phase_offset: f32,
     shape: f32,
 ) -> f32 {
-    let two_pi = core::f32::consts::TAU;
     let cycles = 2.0 + ripple_freq * 22.0;
     let depth = 0.01 + ripple_depth * 0.12;
-    let ripple = libm::sinf(two_pi * (phase + phase_offset) * cycles);
+    let shape_exp = 0.35 + shape * 2.4;
+    let ripple = (core::f32::consts::TAU * (phase + phase_offset) * cycles).sin();
+    let shaped_mag = ripple.abs().powf(shape_exp);
     let shaped = if ripple >= 0.0 {
-        libm::powf(ripple, 0.35 + shape * 2.4)
+        shaped_mag
     } else {
-        -libm::powf(-ripple, 0.35 + shape * 2.4)
+        -shaped_mag
     };
-    wrap01(phase + amt * depth * shaped)
+    let warped = phase + amt * depth * shaped;
+    if (0.0..1.0).contains(&warped) {
+        warped
+    } else if warped >= 1.0 && warped < 2.0 {
+        warped - 1.0
+    } else if warped >= -1.0 && warped < 0.0 {
+        warped + 1.0
+    } else {
+        wrap01(warped)
+    }
 }

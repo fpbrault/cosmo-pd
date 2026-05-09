@@ -1,7 +1,4 @@
-extern crate alloc;
-
-use alloc::vec;
-use alloc::vec::Vec;
+use dasp_interpolate::{linear::Linear, Interpolator};
 
 use crate::params::{Algo, EngineParamReadoutFormatV1};
 
@@ -127,7 +124,7 @@ impl Default for KarpunkPair {
 /// Stateful Karplus-Strong engine state for one oscillator line.
 #[derive(Debug, Clone)]
 pub struct KarpunkState {
-    pub buffer: Vec<f32>,
+    pub buffer: [f32; KS_BUFFER_SIZE],
     pub write_pos: usize,
     pub last_sample: f32,
     pub prng: u32,
@@ -136,7 +133,7 @@ pub struct KarpunkState {
 impl KarpunkState {
     pub fn new(prng_seed: u32) -> Self {
         Self {
-            buffer: vec![0.0_f32; KS_BUFFER_SIZE],
+            buffer: [0.0_f32; KS_BUFFER_SIZE],
             write_pos: 0,
             last_sample: 0.0,
             prng: prng_seed,
@@ -276,7 +273,8 @@ pub fn blend(primary_algo: Algo, primary: f32, secondary: f32, blend: f32) -> f3
 
 #[inline(always)]
 fn lerp(a: f32, b: f32, t: f32) -> f32 {
-    a + (b - a) * t
+    let interp = Linear::new([a], [b]);
+    interp.interpolate(t as f64)[0]
 }
 
 /// Simple LCG PRNG — produces a value in [-1.0, 1.0].

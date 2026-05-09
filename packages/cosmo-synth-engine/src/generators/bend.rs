@@ -63,19 +63,17 @@ pub fn warp_phase(phase: f32, amt: f32, curve: f32, bias: f32, knee: f32) -> f32
     // bias is bipolar [-1, 1]; remap to [0, 1] equivalent: old = (bias + 1) / 2
     let centered = (phase - 0.5) * (1.25 + bias * 0.75) + 0.5;
     let warped_phase = centered.clamp(0.0, 1.0);
+    let knee_exp = 0.25 + knee * 2.75;
+    let knee_norm = (1.0 - (2.0 * warped_phase - 1.0).abs()).clamp(0.0, 1.0);
+    let knee_mag = 0.5 * knee_norm.powf(knee_exp);
     let knee_shaped = if warped_phase < 0.5 {
-        0.5 * libm::powf((warped_phase * 2.0).clamp(0.0, 1.0), 0.25 + knee * 2.75)
+        knee_mag
     } else {
-        0.5 + 0.5
-            * (1.0
-                - libm::powf(
-                    ((1.0 - warped_phase) * 2.0).clamp(0.0, 1.0),
-                    0.25 + knee * 2.75,
-                ))
+        1.0 - knee_mag
     };
     let scale = -10.0 * (amt * (0.5 + curve * 1.5));
-    let num = libm::expm1f(knee_shaped * scale);
-    let den = libm::expm1f(scale);
+    let num = (knee_shaped * scale).exp_m1();
+    let den = scale.exp_m1();
     if den == 0.0 {
         phase
     } else {

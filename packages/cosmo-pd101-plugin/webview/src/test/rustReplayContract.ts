@@ -16,7 +16,7 @@
  * contract that both the TypeScript test-recorder side and the future Rust CLI
  * side must agree on.
  *
- * TODO: Implement scripts/rust-replay.mts once the Rust CLI entrypoint exists.
+ * TODO: Implement ./scripts/rust-replay.mts once the Rust CLI entrypoint exists.
  */
 
 // ---------------------------------------------------------------------------

@@ -85,10 +85,13 @@ pub fn warp_phase(
 ) -> f32 {
     let mult = 1.0 + amt * (4.0 + ratio * 14.0);
     let synced = wrap01((phase + phase_offset) * mult);
+    let curve_exp = 0.35 + curve * 2.4;
+    let sync_norm = (1.0 - (2.0 * synced - 1.0).abs()).clamp(0.0, 1.0);
+    let sync_mag = 0.5 * sync_norm.powf(curve_exp);
     let shaped = if synced < 0.5 {
-        0.5 * libm::powf((synced * 2.0).clamp(0.0, 1.0), 0.35 + curve * 2.4)
+        sync_mag
     } else {
-        0.5 + 0.5 * (1.0 - libm::powf(((1.0 - synced) * 2.0).clamp(0.0, 1.0), 0.35 + curve * 2.4))
+        1.0 - sync_mag
     };
     phase + (shaped - phase) * (0.25 + window * 0.75)
 }
