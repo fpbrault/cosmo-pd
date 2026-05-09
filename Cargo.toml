@@ -46,3 +46,9 @@ strip = "symbols"
 [profile.dev]
 strip = "none"
 debug = true
+
+[profile.bench]
+inherits = "release"
+lto = false
+strip = "none"
+debug = true

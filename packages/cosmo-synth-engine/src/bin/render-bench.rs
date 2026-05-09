@@ -662,8 +662,48 @@ fn scenario_matrix() -> Vec<(String, usize)> {
     for name in names {
         matrix.push((name.to_string(), 3));
         matrix.push((name.to_string(), 6));
+        matrix.push((name.to_string(), 8));
     }
     matrix
+}
+
+fn render_pass(config: &BenchmarkConfig, scenario: &Scenario, total_samples: usize) -> f64 {
+    let mut processor = CosmoProcessor::new(config.sample_rate);
+    let params = (scenario.build_params)();
+    processor.set_params(params);
+
+    for note in DEFAULT_NOTES.iter().take(config.voices) {
+        let frequency = midi_note_to_freq(*note);
+        processor.note_on(*note, frequency, 0.85);
+    }
+
+    let mut rendered_samples = 0usize;
+    let mut checksum = 0.0_f64;
+    let mut block_index = 0usize;
+
+    while rendered_samples < total_samples {
+        let remaining = total_samples - rendered_samples;
+        let this_block = remaining.min(config.block_size);
+        let mut block = vec![0.0_f32; this_block];
+        processor.process(&mut block);
+        checksum += block
+            .iter()
+            .map(|sample| f64::from(sample.abs()))
+            .sum::<f64>();
+        rendered_samples += this_block;
+        block_index += 1;
+
+        if let Some(churn_blocks) = scenario.note_churn_blocks {
+            if block_index % churn_blocks == 0 {
+                let lead = DEFAULT_NOTES[(block_index / churn_blocks) % config.voices];
+                let release = DEFAULT_NOTES[(block_index / churn_blocks + 1) % config.voices];
+                processor.note_off(release);
+                processor.note_on(lead, midi_note_to_freq(lead), 0.92);
+            }
+        }
+    }
+
+    checksum
 }
 
 fn run_case(config: &BenchmarkConfig, scenario: &Scenario) -> Result<CaseResult, String> {
@@ -672,40 +712,8 @@ fn run_case(config: &BenchmarkConfig, scenario: &Scenario) -> Result<CaseResult,
     let mut final_checksum = 0.0_f64;
 
     for run_idx in 0..(config.warmup_iterations + config.iterations) {
-        let mut processor = CosmoProcessor::new(config.sample_rate);
-        let params = (scenario.build_params)();
-        processor.set_params(params);
-
-        for note in DEFAULT_NOTES.iter().take(config.voices) {
-            let frequency = midi_note_to_freq(*note);
-            processor.note_on(*note, frequency, 0.85);
-        }
-
-        let mut rendered_samples = 0usize;
-        let mut checksum = 0.0_f64;
-        let mut block_index = 0usize;
         let start = Instant::now();
-        while rendered_samples < total_samples {
-            let remaining = total_samples - rendered_samples;
-            let this_block = remaining.min(config.block_size);
-            let mut block = vec![0.0_f32; this_block];
-            processor.process(&mut block);
-            checksum += block
-                .iter()
-                .map(|sample| f64::from(sample.abs()))
-                .sum::<f64>();
-            rendered_samples += this_block;
-            block_index += 1;
-
-            if let Some(churn_blocks) = scenario.note_churn_blocks {
-                if block_index % churn_blocks == 0 {
-                    let lead = DEFAULT_NOTES[(block_index / churn_blocks) % config.voices];
-                    let release = DEFAULT_NOTES[(block_index / churn_blocks + 1) % config.voices];
-                    processor.note_off(release);
-                    processor.note_on(lead, midi_note_to_freq(lead), 0.92);
-                }
-            }
-        }
+        let checksum = render_pass(config, scenario, total_samples);
 
         let elapsed_ms = start.elapsed().as_secs_f64() * 1000.0;
         if run_idx >= config.warmup_iterations {
@@ -881,4 +889,18 @@ fn main() {
             std::process::exit(1);
         }
     }
+}
+
+#[cfg_attr(not(test), allow(dead_code))]
+pub(crate) fn benchmark_case(
+    scenario_name: &str,
+    voices: usize,
+    total_samples: usize,
+) -> Result<f64, String> {
+    let scenario =
+        find_scenario(scenario_name).ok_or_else(|| format!("unknown scenario: {scenario_name}"))?;
+    let mut config = BenchmarkConfig::default();
+    config.scenario = scenario_name.to_string();
+    config.voices = voices;
+    Ok(render_pass(&config, &scenario, total_samples))
 }
