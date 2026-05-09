@@ -1,4 +1,5 @@
 use super::{AlgoControlKindV1, AlgoControlV1, AlgoDefinitionV1, NO_CONTROL_OPTIONS};
+use crate::dsp_utils::pow01;
 use crate::params::{Algo, EngineParamReadoutFormatV1};
 
 const CONTROLS: [AlgoControlV1; 4] = [
@@ -72,52 +73,6 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
     default_base_waveform: crate::params::BaseWaveform::Sine,
     controls: &CONTROLS,
 };
-
-/// Fast power approximation for phase distortion using piecewise interpolation.
-/// Custom tuned for exponent ranges [0.5, 8] typical in phase distortion.
-/// Avoids expensive libm::powf and f32→f64 conversion overhead.
-#[inline]
-fn pow01(base: f32, exponent: f32) -> f32 {
-    let x = base.clamp(0.0, 1.0);
-    if x <= 0.0 {
-        return 0.0;
-    }
-    if x >= 1.0 {
-        return 1.0;
-    }
-
-    let x2 = x * x;
-    let x4 = x2 * x2;
-    let x8 = x4 * x4;
-    let x16 = x8 * x8;
-
-    if exponent <= 0.5 {
-        let x025 = libm::sqrtf(libm::sqrtf(x));
-        let x05 = libm::sqrtf(x);
-        let t = ((exponent - 0.25) / 0.25).clamp(0.0, 1.0);
-        return x025 + (x05 - x025) * t;
-    }
-    if exponent <= 1.0 {
-        let x05 = libm::sqrtf(x);
-        let t = (exponent - 0.5) / 0.5;
-        return x05 + (x - x05) * t;
-    }
-    if exponent <= 2.0 {
-        let t = exponent - 1.0;
-        return x + (x2 - x) * t;
-    }
-    if exponent <= 4.0 {
-        let t = (exponent - 2.0) * 0.5;
-        return x2 + (x4 - x2) * t;
-    }
-    if exponent <= 8.0 {
-        let t = (exponent - 4.0) * 0.25;
-        return x4 + (x8 - x4) * t;
-    }
-
-    let t = ((exponent - 8.0) * 0.125).clamp(0.0, 1.0);
-    x8 + (x16 - x8) * t
-}
 
 /// Pinch algorithm phase warp.
 pub fn warp_phase(phase: f32, amt: f32, focus: f32, asym: f32, curve: f32, drive: f32) -> f32 {

@@ -23,6 +23,51 @@ pub fn lerp(a: f32, b: f32, t: f32) -> f32 {
     interp.interpolate(t as f64)[0]
 }
 
+/// Fast power approximation on [0, 1] using piecewise interpolation.
+/// Tuned for exponent ranges common in phase distortion shaping.
+#[inline]
+pub fn pow01(base: f32, exponent: f32) -> f32 {
+    let x = base.clamp(0.0, 1.0);
+    if x <= 0.0 {
+        return 0.0;
+    }
+    if x >= 1.0 {
+        return 1.0;
+    }
+
+    let x2 = x * x;
+    let x4 = x2 * x2;
+    let x8 = x4 * x4;
+    let x16 = x8 * x8;
+
+    if exponent <= 0.5 {
+        let x025 = libm::sqrtf(libm::sqrtf(x));
+        let x05 = libm::sqrtf(x);
+        let t = ((exponent - 0.25) / 0.25).clamp(0.0, 1.0);
+        return x025 + (x05 - x025) * t;
+    }
+    if exponent <= 1.0 {
+        let x05 = libm::sqrtf(x);
+        let t = (exponent - 0.5) / 0.5;
+        return x05 + (x - x05) * t;
+    }
+    if exponent <= 2.0 {
+        let t = exponent - 1.0;
+        return x + (x2 - x) * t;
+    }
+    if exponent <= 4.0 {
+        let t = (exponent - 2.0) * 0.5;
+        return x2 + (x4 - x2) * t;
+    }
+    if exponent <= 8.0 {
+        let t = (exponent - 4.0) * 0.25;
+        return x4 + (x8 - x4) * t;
+    }
+
+    let t = ((exponent - 8.0) * 0.125).clamp(0.0, 1.0);
+    x8 + (x16 - x8) * t
+}
+
 /// Fast cubic sine approximation for phase ∈ [0, 1) → [-1, 1].
 /// Based on quadrant-aware continuous cubic polynomial approach.
 ///
