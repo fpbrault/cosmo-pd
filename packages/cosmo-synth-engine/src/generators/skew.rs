@@ -86,9 +86,7 @@ pub fn warp_phase(phase: f32, amt: f32, bias: f32, curve: f32, spread: f32, tilt
     let target = if phase < bp {
         left_span * (phase * inv_bp).clamp(0.0, 1.0).powf(left_exp)
     } else {
-        left_span
-            + right_span
-                * ((phase - bp) * inv_right).clamp(0.0, 1.0).powf(right_exp)
+        left_span + right_span * ((phase - bp) * inv_right).clamp(0.0, 1.0).powf(right_exp)
     };
     phase + (target - phase) * amt
 }
