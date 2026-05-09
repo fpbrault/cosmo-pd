@@ -683,7 +683,6 @@ pub struct Voice {
 
     /// Per-voice runtime state owned by generator algorithms.
     pub algo_runtime: AlgoRuntimeState,
-
 }
 
 impl Voice {
