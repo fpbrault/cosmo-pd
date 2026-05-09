@@ -1,8 +1,8 @@
-use libm::{cosf, floorf, sinf};
+use libm::{floorf, sinf};
 
 use super::delay_line::DelayLine;
 
-const GRAIN_COUNT: usize = 6;
+const GRAIN_COUNT: usize = 4;
 const OCTAVE_UP_RATE_DELTA: f32 = 1.0;
 
 #[derive(Clone, Copy)]
@@ -79,7 +79,8 @@ impl GrainDelayFx {
                 grain.active = false;
                 continue;
             }
-            let window = sinf(phase * core::f32::consts::PI).max(0.0);
+            // ECO quality mode: triangle grain window avoids per-sample sinf cost.
+            let window = (1.0 - 2.0 * (phase - 0.5).abs()).max(0.0);
             let read_offset = (grain.offset - grain.age * OCTAVE_UP_RATE_DELTA).max(1.0);
             wet += self.delay_line.read_at_fractional(read_offset) * window;
             gain_sum += window;
@@ -93,8 +94,9 @@ impl GrainDelayFx {
         self.delay_line
             .write(sample + wet * self.feedback.clamp(0.0, 0.85));
 
-        let mix_angle = self.mix.clamp(0.0, 1.0) * core::f32::consts::PI * 0.5;
-        sample * cosf(mix_angle) + wet * sinf(mix_angle)
+        // ECO quality mode: linear crossfade is cheaper than equal-power trig mix.
+        let mix = self.mix.clamp(0.0, 1.0);
+        sample * (1.0 - mix) + wet * mix
     }
 
     fn spawn_grain(&mut self) {

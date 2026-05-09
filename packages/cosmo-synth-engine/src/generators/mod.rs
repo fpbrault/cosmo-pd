@@ -9,6 +9,7 @@ use specta::Type;
 const TWO_PI: f32 = core::f32::consts::TAU;
 /// Reference per-line output headroom used by processor normalization.
 pub const PER_LINE_HEADROOM: f32 = 0.25;
+const BLEND_SHORT_CIRCUIT_EPSILON: f32 = 0.03;
 
 pub mod bend;
 pub mod clip;
@@ -146,29 +147,53 @@ impl AlgoRuntimeState {
 #[inline(always)]
 fn render_line_stateless(config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
     let sample = if let Some(secondary_algo) = config.secondary_algo {
-        let secondary_dcw = config.final_dcw * config.blend;
-        let primary_dcw = config.final_dcw * (1.0 - config.blend);
-        let primary = render_algo_sample(
-            config.primary_algo,
-            config.phase,
-            primary_dcw,
-            config.primary_base_waveform,
-            config.primary_algo_controls,
-            config.algo_param_mods,
-            None,
-            config.pm_post_mod,
-        ) * config.primary_window_gain;
-        let secondary = render_algo_sample(
-            secondary_algo,
-            config.phase,
-            secondary_dcw,
-            config.secondary_base_waveform,
-            config.secondary_algo_controls,
-            config.algo_param_mods,
-            None,
-            config.pm_post_mod,
-        ) * config.secondary_window_gain;
-        blend_line_samples(config.primary_algo, primary, secondary, config.blend)
+        if config.blend <= BLEND_SHORT_CIRCUIT_EPSILON {
+            render_algo_sample(
+                config.primary_algo,
+                config.phase,
+                config.final_dcw,
+                config.primary_base_waveform,
+                config.primary_algo_controls,
+                config.algo_param_mods,
+                None,
+                config.pm_post_mod,
+            ) * config.primary_window_gain
+        } else if config.blend >= 1.0 - BLEND_SHORT_CIRCUIT_EPSILON {
+            render_algo_sample(
+                secondary_algo,
+                config.phase,
+                config.final_dcw,
+                config.secondary_base_waveform,
+                config.secondary_algo_controls,
+                config.algo_param_mods,
+                None,
+                config.pm_post_mod,
+            ) * config.secondary_window_gain
+        } else {
+            let secondary_dcw = config.final_dcw * config.blend;
+            let primary_dcw = config.final_dcw * (1.0 - config.blend);
+            let primary = render_algo_sample(
+                config.primary_algo,
+                config.phase,
+                primary_dcw,
+                config.primary_base_waveform,
+                config.primary_algo_controls,
+                config.algo_param_mods,
+                None,
+                config.pm_post_mod,
+            ) * config.primary_window_gain;
+            let secondary = render_algo_sample(
+                secondary_algo,
+                config.phase,
+                secondary_dcw,
+                config.secondary_base_waveform,
+                config.secondary_algo_controls,
+                config.algo_param_mods,
+                None,
+                config.pm_post_mod,
+            ) * config.secondary_window_gain;
+            blend_line_samples(config.primary_algo, primary, secondary, config.blend)
+        }
     } else {
         render_algo_sample(
             config.primary_algo,

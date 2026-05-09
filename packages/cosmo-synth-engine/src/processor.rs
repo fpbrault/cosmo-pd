@@ -38,6 +38,8 @@ const CZ_DAC_AIR_HP_HZ: f32 = 5_500.0;
 const CZ_DAC_HF_ROLLOFF_HZ: f32 = 20_000.0;
 const DCW_DEZIPPER_TIME_SECONDS: f32 = 0.0015;
 const RELEASE_TAIL_LEVEL_TIME_SECONDS: f32 = 0.01;
+const DYNAMIC_ECO_VOICE_THRESHOLD: usize = 4;
+const DYNAMIC_ECO_FX_SLOT_THRESHOLD: usize = 4;
 
 #[derive(Debug, Clone, Copy)]
 struct CzDacColor {
@@ -214,6 +216,9 @@ pub struct CosmoProcessor {
     pub aftertouch: f32,
     /// Latest modulation-source snapshot for UI telemetry.
     pub last_runtime_mod_sources: RuntimeModSources,
+    /// Dynamic quality mode toggle for load-shedding FX under heavy runtime cost.
+    fx_eco_toggle: bool,
+    fx_last_out: f32,
 }
 
 impl CosmoProcessor {
@@ -237,6 +242,8 @@ impl CosmoProcessor {
             mod_wheel: 0.0,
             aftertouch: 0.0,
             last_runtime_mod_sources: RuntimeModSources::default(),
+            fx_eco_toggle: false,
+            fx_last_out: 0.0,
         };
         proc.update_fx();
         proc
@@ -809,6 +816,16 @@ impl CosmoProcessor {
         let mut prev_lfo1 = self.last_runtime_mod_sources.lfo1;
         let mut prev_lfo2 = self.last_runtime_mod_sources.lfo2;
         let mut prev_random = self.last_runtime_mod_sources.random;
+        let active_fx_slots = p
+            .fx_slots
+            .iter()
+            .filter(|slot| {
+                !matches!(
+                    slot.slot_type(),
+                    FxSlotType::Empty | FxSlotType::Vibrato | FxSlotType::PhaseMod
+                )
+            })
+            .count();
 
         for sample_out in output.iter_mut() {
             let (source_mod_env, source_velocity) = self
@@ -890,10 +907,12 @@ impl CosmoProcessor {
             } else {
                 libm::exp2f(pitch_bend_semitones / 12.0)
             };
+            let mut active_voice_count = 0usize;
             for v in 0..NUM_VOICES {
                 if self.voices[v].is_silent && self.voices[v].note.is_none() {
                     continue;
                 }
+                active_voice_count += 1;
                 // SAFETY: params is read-only here and voices[v] is the only mutated field.
                 let p_ref: &SynthParams = unsafe { &*params_ptr };
                 mixed += render_voice(
@@ -934,7 +953,26 @@ impl CosmoProcessor {
 
             mixed *= norm;
 
-            let fx_out = self.fx.process(mixed);
+            let dynamic_eco_active = active_voice_count >= DYNAMIC_ECO_VOICE_THRESHOLD
+                && active_fx_slots >= DYNAMIC_ECO_FX_SLOT_THRESHOLD;
+            let fx_out = if dynamic_eco_active {
+                if self.fx_eco_toggle {
+                    self.fx_last_out
+                } else {
+                    let out = self.fx.process(mixed);
+                    self.fx_last_out = out;
+                    out
+                }
+            } else {
+                let out = self.fx.process(mixed);
+                self.fx_eco_toggle = false;
+                self.fx_last_out = out;
+                out
+            };
+            if dynamic_eco_active {
+                self.fx_eco_toggle = !self.fx_eco_toggle;
+            }
+
             let colored = if ENABLE_CZ_DAC_COLOR {
                 self.cz_dac_color.process(fx_out, sr)
             } else {
