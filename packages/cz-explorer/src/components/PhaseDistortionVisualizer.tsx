@@ -480,6 +480,13 @@ export default function PhaseDistortionVisualizer(
 ) {
 	const frameRef = useRef<HTMLDivElement | null>(null);
 	const [frameScale, setFrameScale] = useState(1);
+	const [isMobileViewport, setIsMobileViewport] = useState<boolean>(() => {
+		if (typeof window === "undefined") {
+			return false;
+		}
+
+		return window.matchMedia("(max-width: 1000px)").matches;
+	});
 	const mainPanelMode = useSynthUiStore((s) => s.mainPanelMode);
 	const libraryModeOpen = useSynthUiStore((s) => s.libraryModeOpen);
 	const isOverlayOpen = libraryModeOpen || mainPanelMode !== "phase";
@@ -587,19 +594,35 @@ export default function PhaseDistortionVisualizer(
 	}, [cursorTargetX, cursorTargetY]);
 
 	useEffect(() => {
+		const mediaQuery = window.matchMedia("(max-width: 1000px)");
+
+		const updateViewportMode = (event: MediaQueryListEvent) => {
+			setIsMobileViewport(event.matches);
+		};
+
+		setIsMobileViewport(mediaQuery.matches);
+		mediaQuery.addEventListener("change", updateViewportMode);
+
+		return () => {
+			mediaQuery.removeEventListener("change", updateViewportMode);
+		};
+	}, []);
+
+	useEffect(() => {
 		const element = frameRef.current;
 		if (!element) {
 			return;
 		}
 
 		const updateFrameSize = () => {
+			const framePadding = isMobileViewport ? 0 : VISUALIZER_FRAME_PADDING;
 			const bounds = element.getBoundingClientRect();
 			const availableWidth = Math.max(
-				bounds.width - VISUALIZER_FRAME_PADDING * 2,
+				bounds.width - framePadding * 2,
 				0,
 			);
 			const availableHeight = Math.max(
-				bounds.height - VISUALIZER_FRAME_PADDING * 2,
+				bounds.height - framePadding * 2,
 				0,
 			);
 			if (availableWidth <= 0 || availableHeight <= 0) {
@@ -629,7 +652,7 @@ export default function PhaseDistortionVisualizer(
 		return () => {
 			resizeObserver.disconnect();
 		};
-	}, []);
+	}, [isMobileViewport]);
 
 	const { data } = useQuery({
 		queryKey: ["presets"],
@@ -648,46 +671,52 @@ export default function PhaseDistortionVisualizer(
 		[audioTarget, isOverlayOpen],
 	);
 
+	const shouldRenderAmbientEffects = !isMobileViewport;
+
 	return (
 		<div
 			ref={frameRef}
-			className="relative flex h-full w-full items-center justify-center overflow-hidden bg-black p-7.5"
+			className={`relative flex h-full w-full items-center justify-center overflow-hidden bg-black ${isMobileViewport ? "p-0" : "p-7.5"}`}
 			data-ui-overlay-open={isOverlayOpen ? "true" : "false"}
-			onPointerMove={handlePointerMove}
-			onPointerLeave={handlePointerLeave}
+			onPointerMove={isMobileViewport ? undefined : handlePointerMove}
+			onPointerLeave={isMobileViewport ? undefined : handlePointerLeave}
 		>
-			{/* Reactive background layers: cursor gradient, grain, and audio glow */}
-			<motion.div
-				aria-hidden="true"
-				className="cz-reactive-bg pointer-events-none absolute inset-0"
-				style={{ background: reactiveBackground, filter: reactiveFilter }}
-			/>
-			<motion.div
-				aria-hidden="true"
-				className="cz-reactive-bg-audio pointer-events-none absolute inset-0"
-				style={{
-					background: audioBackground,
-					filter: audioFilter,
-					opacity: audioGlowOpacity,
-					scale: audioGlowScale,
-				}}
-			/>
-			<motion.div
-				aria-hidden="true"
-				className="cz-reactive-bg-noise pointer-events-none absolute inset-0"
-				animate={
-					isOverlayOpen
-						? { x: 0, y: 0 }
-						: { x: [0, -1, 2, -2, 1, 0], y: [0, 2, -1, -2, 1, 0] }
-				}
-				transition={{ duration: 0.68, repeat: Infinity, ease: "linear" }}
-				style={{ opacity: noiseOpacity }}
-			/>
-			{/* Radial vignette to focus on the panel */}
-			<div
-				aria-hidden="true"
-				className="cz-vignette pointer-events-none absolute inset-0"
-			/>
+			{shouldRenderAmbientEffects ? (
+				<>
+					{/* Reactive background layers: cursor gradient, grain, and audio glow */}
+					<motion.div
+						aria-hidden="true"
+						className="cz-reactive-bg pointer-events-none absolute inset-0"
+						style={{ background: reactiveBackground, filter: reactiveFilter }}
+					/>
+					<motion.div
+						aria-hidden="true"
+						className="cz-reactive-bg-audio pointer-events-none absolute inset-0"
+						style={{
+							background: audioBackground,
+							filter: audioFilter,
+							opacity: audioGlowOpacity,
+							scale: audioGlowScale,
+						}}
+					/>
+					<motion.div
+						aria-hidden="true"
+						className="cz-reactive-bg-noise pointer-events-none absolute inset-0"
+						animate={
+							isOverlayOpen
+								? { x: 0, y: 0 }
+								: { x: [0, -1, 2, -2, 1, 0], y: [0, 2, -1, -2, 1, 0] }
+						}
+						transition={{ duration: 0.68, repeat: Infinity, ease: "linear" }}
+						style={{ opacity: noiseOpacity }}
+					/>
+					{/* Radial vignette to focus on the panel */}
+					<div
+						aria-hidden="true"
+						className="cz-vignette pointer-events-none absolute inset-0"
+					/>
+				</>
+			) : null}
 			{/* Synth panel */}
 			<div
 				className="relative shrink-0 overflow-visible"
@@ -708,7 +737,9 @@ export default function PhaseDistortionVisualizer(
 					<SharedPhaseDistortionVisualizer
 						{...props}
 						libraryPresets={libraryPresets}
-						onAudioLevelChange={handleAudioLevelChange}
+						onAudioLevelChange={
+							shouldRenderAmbientEffects ? handleAudioLevelChange : undefined
+						}
 					/>
 				</div>
 			</div>
