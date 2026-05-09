@@ -968,10 +968,11 @@ pub enum FxSlotType {
 /// Per-slot FX configuration — wraps effect-specific parameters with the slot type.
 /// Serializes as `{"type": "chorus", "params": {...}}` for effects,
 /// or `{"type": "empty"}` for empty slots.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
 #[serde(tag = "type", content = "params", rename_all = "camelCase")]
 pub enum FxSlotConfig {
+	#[default]
     Empty,
     Chorus(ChorusParams),
     Phaser(PhaserParams),
@@ -990,12 +991,6 @@ pub enum FxSlotConfig {
     Tremolo(TremoloParams),
     Wavefolder(WavefolderParams),
     LoFi(LoFiParams),
-}
-
-impl Default for FxSlotConfig {
-    fn default() -> Self {
-        Self::Empty
-    }
 }
 
 impl FxSlotConfig {

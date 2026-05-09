@@ -428,10 +428,12 @@ mod tests {
             rate: 99,
         };
 
-        let mut gen = EnvGen::default();
-        gen.prev_level = 0.7;
-        gen.output = 0.7;
-        gen.step = 1; // at sustain
+        let mut gen = EnvGen {
+            prev_level: 0.7,
+            output: 0.7,
+            step: 1,
+            ..Default::default()
+        }; // at sustain
 
         gen.start_release(&env);
 

@@ -333,16 +333,20 @@ jobs:
           cd "$main_dir"
           mkdir -p target/perf/engine target/perf/ui
 
-          if bun run perf:engine:all > target/perf/engine/main.json 2> target/perf/engine/main.stderr.log; then
+          if bun run perf:engine:all > target/perf/engine/main.json.tmp 2> target/perf/engine/main.stderr.log; then
+            mv target/perf/engine/main.json.tmp target/perf/engine/main.json
             echo "Comparing against origin/main" > target/perf/engine/status.txt
           else
+            rm -f target/perf/engine/main.json.tmp
             printf 'Baseline unavailable: origin/main could not run engine benchmark.\n\n' > target/perf/engine/status.txt
             cat target/perf/engine/main.stderr.log >> target/perf/engine/status.txt
           fi
 
-          if bun run perf:web --out target/perf/ui/web-main.json > target/perf/ui/main.stdout.log 2> target/perf/ui/main.stderr.log; then
+          if bun run perf:web --out target/perf/ui/web-main.json.tmp > target/perf/ui/main.stdout.log 2> target/perf/ui/main.stderr.log; then
+            mv target/perf/ui/web-main.json.tmp target/perf/ui/web-main.json
             echo "Comparing against origin/main" > target/perf/ui/status.txt
           else
+            rm -f target/perf/ui/web-main.json.tmp
             printf 'Baseline unavailable: origin/main could not run web benchmark.\n\n' > target/perf/ui/status.txt
             cat target/perf/ui/main.stderr.log >> target/perf/ui/status.txt
           fi

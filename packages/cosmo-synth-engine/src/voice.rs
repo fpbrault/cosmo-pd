@@ -587,6 +587,7 @@ struct PhaseFrame {
 /// * `lfo_mod_val` – pre-computed LFO output value for this sample
 /// * `lfo2_mod_val` – pre-computed LFO2 output value for this sample
 /// * `sr`          – sample rate in Hz
+#[allow(clippy::too_many_arguments)]
 pub fn render_voice(
     voice: &mut Voice,
     p: &SynthParams,
@@ -722,8 +723,7 @@ pub fn render_voice(
         let tail_near_silence = voice.release_tail_level < RELEASE_TAIL_LEVEL_THRESHOLD;
         let instant_near_silence = libm::fabsf(sample) < RELEASE_TAIL_LEVEL_THRESHOLD * 2.0;
 
-        if (tail_near_silence && instant_near_silence) || (env_near_silence && instant_near_silence)
-        {
+        if (env_near_silence || tail_near_silence) && instant_near_silence {
             let min_freq = signal.effective_freq1.min(signal.effective_freq2).max(20.0);
             let half_cycle_samples = (sr / min_freq / 2.0).round() as u32;
             let fade_len = half_cycle_samples
@@ -956,7 +956,7 @@ fn suppress_sample_discontinuity(prev_sample: f32, sample: f32) -> f32 {
 /// The CZ-101 display levels 0–99 map to pitch as follows:
 ///   - Levels  0–64: linear, 1 semitone per 8 levels  (max 8 st)
 ///   - Levels >64: each increment raises pitch by a whole tone (+2 semitones)
-///                 (max 8 + 35*2 = 78 st at level 99)
+///     (max 8 + 35*2 = 78 st at level 99)
 ///
 /// This function returns a semitone offset in [0.0, 78.0].
 /// The input is clamped to [0.0, 1.0] before conversion.
@@ -1143,6 +1143,7 @@ fn build_phase_frame(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn mix_line_outputs(
     p: &SynthParams,
     phi1: f32,
@@ -1202,6 +1203,7 @@ fn mix_line_outputs(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn select_line_sources(
     p: &SynthParams,
     _phi1: f32,
@@ -1630,8 +1632,10 @@ mod tests {
 
     #[test]
     fn env_step_modulation_affects_rendered_audio_output() {
-        let mut base_params = SynthParams::default();
-        base_params.mod_matrix = ModMatrix::default();
+        let base_params = SynthParams {
+            mod_matrix: ModMatrix::default(),
+            ..Default::default()
+        };
 
         let mut modded_params = base_params.clone();
         modded_params.mod_matrix = ModMatrix {

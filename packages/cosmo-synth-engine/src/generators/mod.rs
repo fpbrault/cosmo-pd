@@ -51,6 +51,7 @@ pub struct LineRenderConfig<'a> {
 impl<'a> LineRenderConfig<'a> {
     /// Build a `LineRenderConfig` from line parameters, resolving algorithm and window
     /// choices internally without exposing CZ-specific details to the caller.
+    #[allow(clippy::too_many_arguments)]
     pub fn from_line(
         line: &'a LineParams,
         cycle_count: u32,
@@ -641,14 +642,14 @@ pub fn warp_phase(
 }
 
 fn render_direct_algo_sample(algo: Algo) -> Option<f32> {
-    match algo {
-        _ => None,
-    }
+    let _ = algo;
+    None
 }
 
 /// Unified algorithm sample renderer used by voice and utility paths.
 ///
 /// `runtime_sample` is used only when an algorithm is rendered by per-voice state.
+#[allow(clippy::too_many_arguments)]
 pub fn render_algo_sample(
     algo: Algo,
     phase: f32,

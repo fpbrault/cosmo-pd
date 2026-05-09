@@ -1,3 +1,5 @@
+#![allow(clippy::field_reassign_with_default)]
+
 use std::collections::BTreeMap;
 use std::env;
 use std::time::Instant;
@@ -698,7 +700,7 @@ fn run_case(config: &BenchmarkConfig, scenario: &Scenario) -> Result<CaseResult,
             block_index += 1;
 
             if let Some(churn_blocks) = scenario.note_churn_blocks {
-                if block_index % churn_blocks == 0 {
+                if block_index.is_multiple_of(churn_blocks) {
                     let lead = DEFAULT_NOTES[(block_index / churn_blocks) % config.voices];
                     let release = DEFAULT_NOTES[(block_index / churn_blocks + 1) % config.voices];
                     processor.note_off(release);
