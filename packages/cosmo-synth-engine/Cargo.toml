@@ -13,6 +13,11 @@ name = "export-specta-bindings"
 path = "export_specta_bindings.rs"
 required-features = ["specta-bindings"]
 
+[[bin]]
+name = "render-bench"
+path = "src/bin/render-bench.rs"
+required-features = ["std"]
+
 [features]
 default = ["std"]
 std = ["serde/std", "serde_json"]
@@ -29,6 +34,8 @@ specta-bindings = [
 serde = { version = "1", features = ["derive"], default-features = false }
 serde_json = { version = "1", optional = true }
 libm = "0.2"
+dasp_ring_buffer = { version = "0.11" }
+dasp_interpolate = { version = "0.11", features = ["linear"] }
 
 [dependencies.specta]
 version = "=2.0.0-rc.22"

@@ -5,8 +5,10 @@
 	"type": "module",
 	"scripts": {
 		"dev": "bun ./scripts/dev-with-lib.mjs",
-		"prebuild": "bun --filter @cosmo/cosmo-pd101 build:lib",
-		"build": "tsc && vite build",
+		"prebuild": "bun --filter @cosmo/cosmo-pd101 build:lib:release",
+		"build": "bun run build:production",
+		"build:production": "tsc && vite build --mode production",
+		"build:vercel": "bun run build && if [ \"$VERCEL_ENV\" = \"production\" ]; then bun run db:migrate; fi",
 		"preview": "vite preview",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",

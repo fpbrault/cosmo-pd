@@ -14,8 +14,10 @@
 	"scripts": {
 		"build": "bun run build:lib",
 		"build:lib": "bun run gen:bindings && tsc --noEmit && bunx tsdown",
+		"build:lib:release": "bun run gen:bindings:release && tsc --noEmit && bunx tsdown",
 		"build:lib:watch": "bunx tsdown --watch",
 		"gen:bindings": "bun ./scripts/gen-bindings.mjs",
+		"gen:bindings:release": "COSMO_BINDINGS_RELEASE=1 bun ./scripts/gen-bindings.mjs",
 		"test": "bunx vitest --project unit --run",
 		"test:unit": "bunx vitest --project unit --run",
 		"test:unit:watch": "bunx vitest --project unit",
@@ -40,6 +42,7 @@
 		"tailwindcss": "^4.2.2",
 		"tsdown": "latest",
 		"typescript": "^6.0.2",
+		"unrun": "0.2.37",
 		"vite": "^8.0.3",
 		"vitest": "^4.1.4"
 	},

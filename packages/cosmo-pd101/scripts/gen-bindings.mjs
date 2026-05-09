@@ -9,8 +9,11 @@ const packageDir = resolve(scriptDir, "..");
 
 const outputPath = resolve(packageDir, "src/lib/synth/bindings/synth.ts");
 
+const releaseBindings = process.env.COSMO_BINDINGS_RELEASE === "1";
+
 const cargoArgs = [
 	"run",
+	...(releaseBindings ? ["--release"] : []),
 	"--features",
 	"specta-bindings",
 	"--bin",

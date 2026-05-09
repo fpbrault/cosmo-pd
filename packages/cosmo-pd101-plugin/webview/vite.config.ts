@@ -41,6 +41,34 @@ const appVersion = explicitTag?.replace(/^v/i, "") || packageVersion;
 const buildLabel =
 	explicitTag || safeGit("git rev-parse --short HEAD") || `v${packageVersion}`;
 
+function getManualChunkName(id: string): string | undefined {
+	if (id.includes("/cosmo-pd101/lib-dist/")) {
+		return "vendor-cosmo-pd101";
+	}
+
+	if (!id.includes("node_modules")) {
+		return undefined;
+	}
+
+	if (id.includes("/react/") || id.includes("/react-dom/")) {
+		return "vendor-react";
+	}
+
+	if (id.includes("/i18next/") || id.includes("/react-i18next/")) {
+		return "vendor-i18n";
+	}
+
+	if (id.includes("/motion/")) {
+		return "vendor-motion";
+	}
+
+	if (id.includes("/zustand/")) {
+		return "vendor-state";
+	}
+
+	return "vendor";
+}
+
 export default defineConfig({
 	plugins: [react(), tailwindcss()],
 	define: {
@@ -68,6 +96,7 @@ export default defineConfig({
 				assetFileNames: "assets/[name][extname]",
 				chunkFileNames: "assets/[name].js",
 				entryFileNames: "assets/[name].js",
+				manualChunks: getManualChunkName,
 			},
 		},
 	},

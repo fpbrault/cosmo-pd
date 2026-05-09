@@ -12,6 +12,8 @@ export function createWorkletSynthEngineAdapter({
 	workletNodeRef,
 	paramsRef,
 }: CreateWorkletSynthEngineAdapterParams): SynthEngineAdapter {
+	let lastSentParamsJson: string | null = null;
+
 	return {
 		sync(snapshot: SynthEngineSnapshot) {
 			const baseParams = snapshot.params;
@@ -38,6 +40,12 @@ export function createWorkletSynthEngineAdapter({
 				},
 				modMatrix: { routes: baseParams.modMatrix?.routes ?? [] },
 			};
+			const paramsJson = JSON.stringify(params);
+			if (paramsJson === lastSentParamsJson) {
+				paramsRef.current = params;
+				return;
+			}
+			lastSentParamsJson = paramsJson;
 			paramsRef.current = params;
 			if (!workletNodeRef.current) return;
 			workletNodeRef.current.port.postMessage({

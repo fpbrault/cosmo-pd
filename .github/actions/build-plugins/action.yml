@@ -23,3 +23,11 @@ runs:
     - name: Build plugins
       run: ${{ inputs.buildCmd }}
       shell: pwsh
+
+    - name: Validate release plugin bundle exists
+      run: |
+        if (!(Test-Path "packages/cosmo-pd101-plugin/target/release/CosmoPd101.vst3")) {
+          Write-Error "Expected release plugin bundle not found at packages/cosmo-pd101-plugin/target/release/CosmoPd101.vst3"
+          exit 1
+        }
+      shell: pwsh
