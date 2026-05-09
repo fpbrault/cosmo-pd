@@ -19,6 +19,7 @@ use nih_plug::prelude::*;
 pub mod gui;
 
 const PLUGIN_LOG_PATH: &str = "/tmp/cosmo-plugin.log";
+const MAX_UI_INPUT_EVENTS_PER_BLOCK: usize = 64;
 
 fn log_timestamp_ms() -> u128 {
     SystemTime::now()
@@ -519,7 +520,10 @@ impl CzPlugin {
                 .ui_queue_depth
                 .store(queue.len() as u32, Ordering::Relaxed);
         }
-        while let Some(event) = queue.pop_front() {
+        for _ in 0..MAX_UI_INPUT_EVENTS_PER_BLOCK {
+            let Some(event) = queue.pop_front() else {
+                break;
+            };
             if let Some(proc) = &mut self.processor {
                 match event {
                     UiInputEvent::NoteOn { note, velocity } => {
@@ -590,6 +594,7 @@ impl Plugin for CzPlugin {
         self.cached_synth_params = synth_params;
         self.cached_synth_params_version = self.synth_params_version.load(Ordering::Acquire);
         self.processor = Some(processor);
+        self.mono_output.resize(buffer_config.max_buffer_size as usize, 0.0);
         self.performance_counters
             .sample_rate_bits
             .store(buffer_config.sample_rate.to_bits(), Ordering::Release);
@@ -664,7 +669,7 @@ impl Plugin for CzPlugin {
         let mut apply_params_update = false;
         if params_changed {
             if let Ok(sp) = self.synth_params.try_read() {
-                self.cached_synth_params = sp.clone();
+                self.cached_synth_params.clone_from(&sp);
                 self.cached_synth_params_version = params_version;
                 apply_params_update = true;
             }
@@ -672,13 +677,19 @@ impl Plugin for CzPlugin {
 
         if let Some(proc) = &mut self.processor {
             if apply_params_update {
-                proc.set_params(self.cached_synth_params.clone());
+                proc.set_params_from_ref(&self.cached_synth_params);
                 self.performance_counters.record_param_apply();
             }
             let num_samples = buffer.samples();
-            self.mono_output.resize(num_samples, 0.0);
+            if num_samples > self.mono_output.len() {
+                for channel_slice in buffer.as_slice() {
+                    channel_slice.fill(0.0);
+                }
+                return ProcessStatus::Normal;
+            }
+            let mono_output = &mut self.mono_output[..num_samples];
             let process_start = monitor_enabled.then(Instant::now);
-            proc.process(&mut self.mono_output);
+            proc.process(mono_output);
             let elapsed_ns = process_start
                 .map(|start| start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64)
                 .unwrap_or(0);
@@ -715,11 +726,11 @@ impl Plugin for CzPlugin {
                 ui_queue_depth,
             );
             if let Ok(mut scope) = self.scope_buffer.try_lock() {
-                scope.push_block(&self.mono_output, proc.sample_rate, hz);
+                scope.push_block(mono_output, proc.sample_rate, hz);
             }
 
             for channel_slice in buffer.as_slice() {
-                channel_slice.copy_from_slice(&self.mono_output);
+                channel_slice.copy_from_slice(mono_output);
             }
         }
 

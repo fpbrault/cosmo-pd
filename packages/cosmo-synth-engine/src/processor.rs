@@ -363,6 +363,13 @@ impl CosmoProcessor {
         self.update_fx();
     }
 
+    /// Copy parameter values into the processor while reusing existing heap storage.
+    pub fn set_params_from_ref(&mut self, params: &SynthParams) {
+        self.params.clone_from(params);
+        normalize_synth_params_envelopes_to_raw_if_human(&mut self.params);
+        self.update_fx();
+    }
+
     /// Hard reset runtime voice/FX state while keeping current parameters.
     ///
     /// Used when loading a new preset so held notes and effect tails are cut
