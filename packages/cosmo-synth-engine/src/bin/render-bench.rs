@@ -670,12 +670,7 @@ fn scenario_matrix() -> Vec<(String, usize)> {
 fn is_heavy_scenario(name: &str) -> bool {
     matches!(
         name,
-        "chants-like"
-            | "chops-like"
-            | "fx-heavy"
-            | "mod-heavy"
-            | "worst-poly"
-            | "opt-all-combined"
+        "chants-like" | "chops-like" | "fx-heavy" | "mod-heavy" | "worst-poly" | "opt-all-combined"
     )
 }
 
