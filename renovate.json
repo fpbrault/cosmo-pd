@@ -47,15 +47,21 @@
 		},
 		{
 			"description": "Group Tauri plugins and core together",
-			"matchPackagePrefixes": ["@tauri-apps/", "tauri", "tauri-"],
 			"groupName": "Tauri packages",
-			"groupSlug": "tauri"
+			"groupSlug": "tauri",
+			"matchPackageNames": [
+				"@tauri-apps/{/,}**",
+				"tauri{/,}**",
+				"tauri-{/,}**"
+			]
 		},
 		{
 			"description": "Group Tanstack packages together",
-			"matchPackagePrefixes": ["@tanstack/"],
 			"groupName": "Tanstack packages",
-			"groupSlug": "tanstack"
+			"groupSlug": "tanstack",
+			"matchPackageNames": [
+				"@tanstack/{/,}**"
+			]
 		}
 	]
 }
