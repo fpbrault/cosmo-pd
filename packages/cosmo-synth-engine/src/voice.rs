@@ -7,11 +7,12 @@ extern crate alloc;
 use libm::sinf;
 
 use crate::dsp_utils::{lfo_output, wrap01};
-use crate::envelope::{EnvGen, EnvelopeKind};
+use crate::envelope::{EnvGen, EnvelopeKind, EnvelopeTimingCache};
 use crate::generators::{self, AlgoRuntimeState, LineRenderConfig};
 use crate::params::{
-    EnvStep, LfoWaveform, LineParams, LineSelect, ModDestination, ModEnvParams, ModMatrix, ModMode,
-    ModSource, PortamentoMode, StepEnvData, SynthParams, NUM_ENV_STEPS,
+    AlgoControlValueV1, BaseWaveform, EnvStep, LfoWaveform, LineParams, LineSelect, ModDestination,
+    ModEnvParams, ModMatrix, ModMode, ModSource, PortamentoMode, StepEnvData, SynthParams,
+    NUM_ENV_STEPS,
 };
 
 // TODO: Remove after performance testing — disables all modulation matrix routing
@@ -488,34 +489,124 @@ fn apply_env_step_modulation(
     modded
 }
 
-fn modulated_line_params(
-    line: &LineParams,
+#[derive(Debug, Clone)]
+struct LineRuntimeParams<'a> {
+    algo: crate::params::Algo,
+    algo2: Option<crate::params::Algo>,
+    algo_blend: f32,
+    base_waveform_a: BaseWaveform,
+    base_waveform_b: BaseWaveform,
+    window: crate::params::WindowType,
+    dca_base: f32,
+    dcw_base: f32,
+    detune_note: f32,
+    detune_fine: f32,
+    octave: f32,
+    dco_env: StepEnvData,
+    dcw_env: StepEnvData,
+    dca_env: StepEnvData,
+    key_follow: f32,
+    algo_controls_a: Option<&'a [AlgoControlValueV1]>,
+    algo_controls_b: Option<&'a [AlgoControlValueV1]>,
+}
+
+impl<'a> LineRuntimeParams<'a> {
+    fn from_line(line: &'a LineParams) -> Self {
+        Self {
+            algo: line.algo,
+            algo2: line.algo2,
+            algo_blend: line.algo_blend,
+            base_waveform_a: line.base_waveform_a,
+            base_waveform_b: line.base_waveform_b,
+            window: line.window,
+            dca_base: line.dca_base,
+            dcw_base: line.dcw_base,
+            detune_note: line.detune_note,
+            detune_fine: line.detune_fine,
+            octave: line.octave,
+            dco_env: line.dco_env.clone(),
+            dcw_env: line.dcw_env.clone(),
+            dca_env: line.dca_env.clone(),
+            key_follow: line.key_follow,
+            algo_controls_a: line.algo_controls_a.as_deref(),
+            algo_controls_b: line.algo_controls_b.as_deref(),
+        }
+    }
+
+    fn apply_modulation(
+        &self,
+        line_index: u8,
+        mod_values: &ModValueCache,
+        targets: LineModTargets,
+    ) -> Self {
+        let mut modded = self.clone();
+        if targets.algo_blend {
+            let algo_blend_dest = if line_index == 2 {
+                ModDestination::Line2AlgoBlend
+            } else {
+                ModDestination::Line1AlgoBlend
+            };
+            modded.algo_blend =
+                (modded.algo_blend + mod_values.get(algo_blend_dest)).clamp(0.0, 1.0);
+        }
+        if targets.dco_env {
+            modded.dco_env =
+                apply_env_step_modulation(&modded.dco_env, line_index, EnvKindKey::Dco, mod_values);
+        }
+        if targets.dcw_env {
+            modded.dcw_env =
+                apply_env_step_modulation(&modded.dcw_env, line_index, EnvKindKey::Dcw, mod_values);
+        }
+        if targets.dca_env {
+            modded.dca_env =
+                apply_env_step_modulation(&modded.dca_env, line_index, EnvKindKey::Dca, mod_values);
+        }
+        modded
+    }
+}
+
+#[cfg(test)]
+fn modulated_line_params<'a>(
+    line: &'a LineParams,
     line_index: u8,
     mod_values: &ModValueCache,
     targets: LineModTargets,
-) -> LineParams {
-    let mut modded = line.clone();
-    if targets.algo_blend {
-        let algo_blend_dest = if line_index == 2 {
-            ModDestination::Line2AlgoBlend
-        } else {
-            ModDestination::Line1AlgoBlend
-        };
-        modded.algo_blend = (line.algo_blend + mod_values.get(algo_blend_dest)).clamp(0.0, 1.0);
+) -> LineRuntimeParams<'a> {
+    LineRuntimeParams::from_line(line).apply_modulation(line_index, mod_values, targets)
+}
+
+trait LineFrequencySource {
+    fn octave(&self) -> f32;
+    fn detune_note(&self) -> f32;
+    fn detune_fine(&self) -> f32;
+}
+
+impl LineFrequencySource for LineParams {
+    fn octave(&self) -> f32 {
+        self.octave
     }
-    if targets.dco_env {
-        modded.dco_env =
-            apply_env_step_modulation(&line.dco_env, line_index, EnvKindKey::Dco, mod_values);
+
+    fn detune_note(&self) -> f32 {
+        self.detune_note
     }
-    if targets.dcw_env {
-        modded.dcw_env =
-            apply_env_step_modulation(&line.dcw_env, line_index, EnvKindKey::Dcw, mod_values);
+
+    fn detune_fine(&self) -> f32 {
+        self.detune_fine
     }
-    if targets.dca_env {
-        modded.dca_env =
-            apply_env_step_modulation(&line.dca_env, line_index, EnvKindKey::Dca, mod_values);
+}
+
+impl<'a> LineFrequencySource for LineRuntimeParams<'a> {
+    fn octave(&self) -> f32 {
+        self.octave
     }
-    modded
+
+    fn detune_note(&self) -> f32 {
+        self.detune_note
+    }
+
+    fn detune_fine(&self) -> f32 {
+        self.detune_fine
+    }
 }
 
 #[inline]
@@ -818,6 +909,7 @@ pub(crate) fn render_voice(
     lfo2_mod_val: f32,
     random_mod_val: f32,
     sr: f32,
+    timing: &EnvelopeTimingCache,
     pitch_bend_ratio: f32,
     mod_wheel: f32,
     aftertouch: f32,
@@ -838,38 +930,32 @@ pub(crate) fn render_voice(
         mod_wheel,
         aftertouch,
     );
+    let line1_base = LineRuntimeParams::from_line(&p.line1);
+    let line2_base = LineRuntimeParams::from_line(&p.line2);
     let line1_modded_storage;
     let line2_modded_storage;
     let (line1_modded, line2_modded) = if line_modulation_state.has_any() {
         let preview_mod_values = build_mod_value_cache(&p.mod_matrix, &preview_mod_sources);
         let line1 = if line_modulation_state.line1.has_any() {
-            line1_modded_storage = modulated_line_params(
-                &p.line1,
-                1,
-                &preview_mod_values,
-                line_modulation_state.line1,
-            );
+            line1_modded_storage =
+                line1_base.apply_modulation(1, &preview_mod_values, line_modulation_state.line1);
             &line1_modded_storage
         } else {
-            &p.line1
+            &line1_base
         };
         let line2 = if line_modulation_state.line2.has_any() {
-            line2_modded_storage = modulated_line_params(
-                &p.line2,
-                2,
-                &preview_mod_values,
-                line_modulation_state.line2,
-            );
+            line2_modded_storage =
+                line2_base.apply_modulation(2, &preview_mod_values, line_modulation_state.line2);
             &line2_modded_storage
         } else {
-            &p.line2
+            &line2_base
         };
         (line1, line2)
     } else {
-        (&p.line1, &p.line2)
+        (&line1_base, &line2_base)
     };
 
-    let env = advance_envelopes(voice, line1_modded, line2_modded, sr);
+    let env = advance_envelopes(voice, line1_modded, line2_modded, timing);
 
     if voice.is_silent {
         advance_silent_voice(voice, line1_modded, line2_modded, p, sr, base_freq);
@@ -909,30 +995,34 @@ pub(crate) fn render_voice(
     );
 
     let phase = build_phase_frame(voice, p, sr, base_freq, &mod_values);
-    let (s1, ks_raw1) = voice.algo_runtime.render_line1(LineRenderConfig::from_line(
-        line1_modded,
-        voice.cycle_count1,
-        phase.phi1,
-        phase.phase_a_post,
-        signal.final_dcw1,
-        signal.final_dca1,
-        signal.effective_freq1,
-        sr,
-        line1_algo_param_mods,
-        phase.pm_post_mod,
-    ));
-    let (s2, ks_raw2) = voice.algo_runtime.render_line2(LineRenderConfig::from_line(
-        line2_modded,
-        voice.cycle_count2,
-        phase.phi2,
-        phase.phase_b_post,
-        signal.final_dcw2,
-        signal.final_dca2,
-        signal.effective_freq2,
-        sr,
-        line2_algo_param_mods,
-        phase.pm_post_mod,
-    ));
+    let (s1, ks_raw1) = voice
+        .algo_runtime
+        .render_line1(line_render_config_from_runtime(
+            line1_modded,
+            voice.cycle_count1,
+            phase.phi1,
+            phase.phase_a_post,
+            signal.final_dcw1,
+            signal.final_dca1,
+            signal.effective_freq1,
+            sr,
+            line1_algo_param_mods,
+            phase.pm_post_mod,
+        ));
+    let (s2, ks_raw2) = voice
+        .algo_runtime
+        .render_line2(line_render_config_from_runtime(
+            line2_modded,
+            voice.cycle_count2,
+            phase.phi2,
+            phase.phase_b_post,
+            signal.final_dcw2,
+            signal.final_dca2,
+            signal.effective_freq2,
+            sr,
+            line2_algo_param_mods,
+            phase.pm_post_mod,
+        ));
 
     let sample = mix_line_outputs(
         p,
@@ -1071,51 +1161,51 @@ fn base_voice_frequency(voice: &Voice) -> f32 {
 
 fn advance_envelopes(
     voice: &mut Voice,
-    line1: &LineParams,
-    line2: &LineParams,
-    sr: f32,
+    line1: &LineRuntimeParams<'_>,
+    line2: &LineRuntimeParams<'_>,
+    timing: &EnvelopeTimingCache,
 ) -> EnvelopeSnapshot {
     let note = voice.env_note;
 
     voice.line1_env.dco.advance(
         EnvelopeKind::Dco,
         &line1.dco_env,
-        sr,
+        timing,
         line1.key_follow,
         note,
     );
     voice.line1_env.dcw.advance(
         EnvelopeKind::Dcw,
         &line1.dcw_env,
-        sr,
+        timing,
         line1.key_follow,
         note,
     );
     voice.line1_env.dca.advance(
         EnvelopeKind::Dca,
         &line1.dca_env,
-        sr,
+        timing,
         line1.key_follow,
         note,
     );
     voice.line2_env.dco.advance(
         EnvelopeKind::Dco,
         &line2.dco_env,
-        sr,
+        timing,
         line2.key_follow,
         note,
     );
     voice.line2_env.dcw.advance(
         EnvelopeKind::Dcw,
         &line2.dcw_env,
-        sr,
+        timing,
         line2.key_follow,
         note,
     );
     voice.line2_env.dca.advance(
         EnvelopeKind::Dca,
         &line2.dca_env,
-        sr,
+        timing,
         line2.key_follow,
         note,
     );
@@ -1132,8 +1222,8 @@ fn advance_envelopes(
 
 fn advance_silent_voice(
     voice: &mut Voice,
-    line1: &LineParams,
-    line2: &LineParams,
+    line1: &LineRuntimeParams<'_>,
+    line2: &LineRuntimeParams<'_>,
     p: &SynthParams,
     sr: f32,
     base_freq: f32,
@@ -1149,8 +1239,8 @@ fn advance_silent_voice(
 }
 
 fn build_signal_state(
-    line1: &LineParams,
-    line2: &LineParams,
+    line1: &LineRuntimeParams<'_>,
+    line2: &LineRuntimeParams<'_>,
     mod_values: &ModValueCache,
     env: &EnvelopeSnapshot,
     base_freq: f32,
@@ -1226,10 +1316,10 @@ fn cz_dcw_env_depth(dcw_env: f32) -> f32 {
     libm::powf(level, DCW_LEVEL_CURVE_EXPONENT).clamp(0.0, 1.0)
 }
 
-fn line_frequency(base_freq: f32, line: &LineParams, dco_env: f32) -> f32 {
+fn line_frequency<T: LineFrequencySource>(base_freq: f32, line: &T, dco_env: f32) -> f32 {
     let dco_semitones = cz_dco_env_semitones(dco_env);
     let tuning_ratio =
-        libm::exp2f(line.octave + line.detune_note / 12.0 + line.detune_fine / 720.0);
+        libm::exp2f(line.octave() + line.detune_note() / 12.0 + line.detune_fine() / 720.0);
     base_freq * tuning_ratio * libm::exp2f(dco_semitones / 12.0)
 }
 
@@ -1384,14 +1474,65 @@ fn build_phase_frame(
     }
 }
 
+fn line_render_config_from_runtime<'a>(
+    line: &'a LineRuntimeParams<'a>,
+    cycle_count: u32,
+    window_phi: f32,
+    phase: f32,
+    final_dcw: f32,
+    final_dca: f32,
+    effective_freq: f32,
+    sample_rate: f32,
+    algo_param_mods: [f32; 8],
+    pm_post_mod: f32,
+) -> LineRenderConfig<'a> {
+    let primary_algo =
+        generators::cz101::resolve_algo(line.algo, line.algo_controls_a, cycle_count);
+    let secondary_algo = line
+        .algo2
+        .map(|algo| generators::cz101::resolve_algo(algo, line.algo_controls_b, cycle_count));
+    let primary_window_gain = crate::dsp_utils::apply_window(
+        window_phi,
+        generators::cz101::resolve_window(line.algo, line.algo_controls_a, line.window),
+    );
+    let secondary_window_gain = line
+        .algo2
+        .map(|algo| {
+            crate::dsp_utils::apply_window(
+                window_phi,
+                generators::cz101::resolve_window(algo, line.algo_controls_b, line.window),
+            )
+        })
+        .unwrap_or(primary_window_gain);
+
+    LineRenderConfig {
+        primary_algo,
+        secondary_algo,
+        blend: line.algo_blend,
+        phase,
+        primary_window_gain,
+        secondary_window_gain,
+        final_dcw,
+        final_dca,
+        primary_base_waveform: line.base_waveform_a,
+        secondary_base_waveform: line.base_waveform_b,
+        effective_freq,
+        sample_rate,
+        primary_algo_controls: line.algo_controls_a,
+        secondary_algo_controls: line.algo_controls_b,
+        algo_param_mods,
+        pm_post_mod,
+    }
+}
+
 fn mix_line_outputs(
     p: &SynthParams,
     phi1: f32,
     phi2: f32,
     s1: f32,
     s2: f32,
-    l1: &LineParams,
-    l2: &LineParams,
+    l1: &LineRuntimeParams<'_>,
+    l2: &LineRuntimeParams<'_>,
     cycle_count1: u32,
     cycle_count2: u32,
     ks_raw1: Option<f32>,
@@ -1449,8 +1590,8 @@ fn select_line_sources(
     phi2: f32,
     s1: f32,
     s2: f32,
-    l1: &LineParams,
-    l2: &LineParams,
+    l1: &LineRuntimeParams<'_>,
+    l2: &LineRuntimeParams<'_>,
     cycle_count1: u32,
     cycle_count2: u32,
     ks_raw1: Option<f32>,
@@ -1464,7 +1605,7 @@ fn select_line_sources(
 ) -> (f32, f32) {
     match p.line_select {
         LineSelect::L1PlusL1Prime => {
-            let cfg = LineRenderConfig::from_line(
+            let cfg = line_render_config_from_runtime(
                 l1,
                 cycle_count1,
                 phi2,
@@ -1480,7 +1621,7 @@ fn select_line_sources(
             (s1, s1_prime)
         }
         LineSelect::L1PlusL2Prime => {
-            let cfg = LineRenderConfig::from_line(
+            let cfg = line_render_config_from_runtime(
                 l2,
                 cycle_count2,
                 phi2,
@@ -1880,6 +2021,7 @@ mod tests {
     fn env_step_modulation_affects_rendered_audio_output() {
         let mut base_params = SynthParams::default();
         base_params.mod_matrix = ModMatrix::default();
+        let timing = crate::envelope::EnvelopeTimingCache::new(48_000.0);
 
         let mut modded_params = base_params.clone();
         modded_params.mod_matrix = ModMatrix {
@@ -1912,6 +2054,7 @@ mod tests {
                 0.0,
                 0.0,
                 48_000.0,
+                &timing,
                 1.0,
                 1.0,
                 0.0,
@@ -1927,6 +2070,7 @@ mod tests {
                 0.0,
                 0.0,
                 48_000.0,
+                &timing,
                 1.0,
                 1.0,
                 0.0,

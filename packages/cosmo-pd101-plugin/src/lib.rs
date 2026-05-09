@@ -70,7 +70,7 @@ struct ScopeFrame {
 impl Default for ScopeFrame {
     fn default() -> Self {
         Self {
-            samples: Vec::with_capacity(SCOPE_CAPACITY),
+            samples: vec![0.0; SCOPE_CAPACITY],
             cursor: 0,
             sample_rate: 44100.0,
             hz: 0.0,
@@ -495,7 +495,7 @@ impl Default for CzPlugin {
             cached_synth_params_version: 0,
             cached_synth_params: SynthParams::default(),
             scope_buffer: Arc::new(Mutex::new(ScopeFrame::default())),
-            ui_input_queue: Arc::new(Mutex::new(VecDeque::new())),
+            ui_input_queue: Arc::new(Mutex::new(VecDeque::with_capacity(256))),
             mono_output: Vec::new(),
             performance_counters: Arc::new(PerformanceCounters::default()),
         }

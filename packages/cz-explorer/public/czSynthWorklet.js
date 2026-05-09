@@ -175,8 +175,6 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 		this._params = JSON.parse(JSON.stringify(DEFAULT_PARAMS));
 		this._queue = []; // messages received before WASM is ready
 		this._supportedModDestinations = null;
-		this._runtimeTelemetryDivider = 4;
-		this._runtimeTelemetryCounter = 0;
 		this._performanceMonitorEnabled = false;
 		this._performanceMetrics = {
 			blockCount: 0,
@@ -593,12 +591,6 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 		this._synth.process(ch0);
 		if (this._performanceMonitorEnabled) {
 			this._recordPerformanceBlock(this._nowMs() - processStart, ch0.length);
-		}
-		this._runtimeTelemetryCounter += 1;
-		if (this._runtimeTelemetryCounter >= this._runtimeTelemetryDivider) {
-			this._runtimeTelemetryCounter = 0;
-			this._emitRuntimeModSources();
-			this._emitRuntimeVoiceStates();
 		}
 
 		// Copy to right channel if present

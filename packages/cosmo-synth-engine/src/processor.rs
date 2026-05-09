@@ -10,7 +10,7 @@ use serde::Serialize;
 
 use crate::batch_cache::RenderBlockCache;
 use crate::dsp_utils::{lfo_output_with_symmetry, random_hold_value};
-use crate::envelope::normalize_synth_params_envelopes_to_raw_if_human;
+use crate::envelope::{normalize_synth_params_envelopes_to_raw_if_human, EnvelopeTimingCache};
 use crate::fx::FxChain;
 use crate::generators::PER_LINE_HEADROOM;
 use crate::module_presets;
@@ -220,6 +220,7 @@ pub struct CosmoProcessor {
     /// Dynamic quality mode toggle for load-shedding FX under heavy runtime cost.
     fx_eco_toggle: bool,
     fx_last_out: f32,
+    envelope_timing: EnvelopeTimingCache,
 }
 
 impl CosmoProcessor {
@@ -229,8 +230,8 @@ impl CosmoProcessor {
             voices: array::from_fn(|_| Voice::new()),
             fx: FxChain::new(sample_rate),
             cz_dac_color: CzDacColor::new(),
-            active_notes: Vec::new(),
-            mono_stack: Vec::new(),
+            active_notes: Vec::with_capacity(NUM_VOICES),
+            mono_stack: Vec::with_capacity(NUM_VOICES),
             sustain_on: false,
             lfo_phase: 0.0,
             lfo2_phase: 0.0,
@@ -245,6 +246,7 @@ impl CosmoProcessor {
             last_runtime_mod_sources: RuntimeModSources::default(),
             fx_eco_toggle: false,
             fx_last_out: 0.0,
+            envelope_timing: EnvelopeTimingCache::new(sample_rate),
         };
         proc.update_fx();
         proc
@@ -918,6 +920,7 @@ impl CosmoProcessor {
                     lfo2_mod_val,
                     random_mod_val,
                     sr,
+                    &self.envelope_timing,
                     pitch_bend_ratio,
                     mod_wheel,
                     aftertouch,
