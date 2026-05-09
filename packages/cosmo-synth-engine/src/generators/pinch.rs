@@ -73,9 +73,9 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
     controls: &CONTROLS,
 };
 
-/// Fast approximation for pow(base, exponent) where base ∈ [0, 1].
-/// Uses piecewise interpolation to avoid expensive libm::powf per sample.
-/// Reduces pinch algorithm CPU cost by ~33% with imperceptible timbre drift.
+/// Fast power approximation for phase distortion using piecewise interpolation.
+/// Custom tuned for exponent ranges [0.5, 8] typical in phase distortion.
+/// Avoids expensive libm::powf and f32→f64 conversion overhead.
 #[inline]
 fn pow01(base: f32, exponent: f32) -> f32 {
     let x = base.clamp(0.0, 1.0);

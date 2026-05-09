@@ -74,6 +74,51 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
     controls: &CONTROLS,
 };
 
+/// Fast power approximation for sync curve shaping using piecewise interpolation.
+/// Tuned for exponent ranges typical in phase distortion algorithms.
+#[inline]
+fn pow01(base: f32, exponent: f32) -> f32 {
+    let x = base.clamp(0.0, 1.0);
+    if x <= 0.0 {
+        return 0.0;
+    }
+    if x >= 1.0 {
+        return 1.0;
+    }
+
+    let x2 = x * x;
+    let x4 = x2 * x2;
+    let x8 = x4 * x4;
+    let x16 = x8 * x8;
+
+    if exponent <= 0.5 {
+        let x025 = libm::sqrtf(libm::sqrtf(x));
+        let x05 = libm::sqrtf(x);
+        let t = ((exponent - 0.25) / 0.25).clamp(0.0, 1.0);
+        return x025 + (x05 - x025) * t;
+    }
+    if exponent <= 1.0 {
+        let x05 = libm::sqrtf(x);
+        let t = (exponent - 0.5) / 0.5;
+        return x05 + (x - x05) * t;
+    }
+    if exponent <= 2.0 {
+        let t = exponent - 1.0;
+        return x + (x2 - x) * t;
+    }
+    if exponent <= 4.0 {
+        let t = (exponent - 2.0) * 0.5;
+        return x2 + (x4 - x2) * t;
+    }
+    if exponent <= 8.0 {
+        let t = (exponent - 4.0) * 0.25;
+        return x4 + (x8 - x4) * t;
+    }
+
+    let t = ((exponent - 8.0) * 0.125).clamp(0.0, 1.0);
+    x8 + (x16 - x8) * t
+}
+
 /// Sync algorithm phase warp.
 pub fn warp_phase(
     phase: f32,
@@ -87,7 +132,7 @@ pub fn warp_phase(
     let synced = wrap01((phase + phase_offset) * mult);
     let curve_exp = 0.35 + curve * 2.4;
     let sync_norm = (1.0 - (2.0 * synced - 1.0).abs()).clamp(0.0, 1.0);
-    let sync_mag = 0.5 * sync_norm.powf(curve_exp);
+    let sync_mag = 0.5 * pow01(sync_norm, curve_exp);
     let shaped = if synced < 0.5 {
         sync_mag
     } else {

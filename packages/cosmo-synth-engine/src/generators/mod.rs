@@ -220,7 +220,7 @@ fn sample_base_wave(base_waveform: BaseWaveform, phase: f32) -> f32 {
     };
     match base_waveform {
         BaseWaveform::Cosine => -libm::cosf(TWO_PI * p),
-        BaseWaveform::Sine => libm::sinf(TWO_PI * p),
+        BaseWaveform::Sine => libm::sinf(TWO_PI as f32 * p),
         BaseWaveform::Triangle => 1.0 - 4.0 * libm::fabsf(p - 0.5),
         BaseWaveform::Saw => p * 2.0 - 1.0,
         BaseWaveform::Square => {

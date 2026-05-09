@@ -58,6 +58,50 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
     controls: &CONTROLS,
 };
 
+/// Fast power approximation for bend knee shaping using piecewise interpolation.
+#[inline]
+fn pow01(base: f32, exponent: f32) -> f32 {
+    let x = base.clamp(0.0, 1.0);
+    if x <= 0.0 {
+        return 0.0;
+    }
+    if x >= 1.0 {
+        return 1.0;
+    }
+
+    let x2 = x * x;
+    let x4 = x2 * x2;
+    let x8 = x4 * x4;
+    let x16 = x8 * x8;
+
+    if exponent <= 0.5 {
+        let x025 = libm::sqrtf(libm::sqrtf(x));
+        let x05 = libm::sqrtf(x);
+        let t = ((exponent - 0.25) / 0.25).clamp(0.0, 1.0);
+        return x025 + (x05 - x025) * t;
+    }
+    if exponent <= 1.0 {
+        let x05 = libm::sqrtf(x);
+        let t = (exponent - 0.5) / 0.5;
+        return x05 + (x - x05) * t;
+    }
+    if exponent <= 2.0 {
+        let t = exponent - 1.0;
+        return x + (x2 - x) * t;
+    }
+    if exponent <= 4.0 {
+        let t = (exponent - 2.0) * 0.5;
+        return x2 + (x4 - x2) * t;
+    }
+    if exponent <= 8.0 {
+        let t = (exponent - 4.0) * 0.25;
+        return x4 + (x8 - x4) * t;
+    }
+
+    let t = ((exponent - 8.0) * 0.125).clamp(0.0, 1.0);
+    x8 + (x16 - x8) * t
+}
+
 /// Bend algorithm phase warp.
 pub fn warp_phase(phase: f32, amt: f32, curve: f32, bias: f32, knee: f32) -> f32 {
     // bias is bipolar [-1, 1]; remap to [0, 1] equivalent: old = (bias + 1) / 2
@@ -65,15 +109,15 @@ pub fn warp_phase(phase: f32, amt: f32, curve: f32, bias: f32, knee: f32) -> f32
     let warped_phase = centered.clamp(0.0, 1.0);
     let knee_exp = 0.25 + knee * 2.75;
     let knee_norm = (1.0 - (2.0 * warped_phase - 1.0).abs()).clamp(0.0, 1.0);
-    let knee_mag = 0.5 * knee_norm.powf(knee_exp);
+    let knee_mag = 0.5 * pow01(knee_norm, knee_exp);
     let knee_shaped = if warped_phase < 0.5 {
         knee_mag
     } else {
         1.0 - knee_mag
     };
     let scale = -10.0 * (amt * (0.5 + curve * 1.5));
-    let num = (knee_shaped * scale).exp_m1();
-    let den = scale.exp_m1();
+    let num = libm::expm1f(knee_shaped * scale);
+    let den = libm::expm1f(scale);
     if den == 0.0 {
         phase
     } else {
