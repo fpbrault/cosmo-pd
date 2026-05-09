@@ -437,6 +437,16 @@ export function SharedPhaseDistortionVisualizer({
 			bottomBarExtra={
 				<div className="flex items-center gap-2">
 					{bottomBarExtra}
+					<span
+						className={`rounded-sm border px-1 py-0.5 font-mono text-[0.54rem] uppercase tracking-[0.14em] ${__WASM_BUILD_PROFILE__ === "release" ? "border-emerald-700/60 text-emerald-400/80" : "border-amber-600/60 text-amber-400/80"}`}
+					>
+						WASM {__WASM_BUILD_PROFILE__}
+					</span>
+					<span
+						className={`rounded-sm border px-1 py-0.5 font-mono text-[0.54rem] uppercase tracking-[0.14em] ${import.meta.env.PROD ? "border-emerald-700/60 text-emerald-400/80" : "border-amber-600/60 text-amber-400/80"}`}
+					>
+						WEB {import.meta.env.PROD ? "prod" : "dev"}
+					</span>
 					<PerformanceMonitor
 						enabled={performanceMonitorEnabled}
 						metrics={performanceMetrics}

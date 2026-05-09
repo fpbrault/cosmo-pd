@@ -179,6 +179,21 @@ impl CzSynthProcessor {
 }
 
 // ---------------------------------------------------------------------------
+// Free functions
+// ---------------------------------------------------------------------------
+
+/// Returns the Rust build profile this WASM binary was compiled with:
+/// `"release"` when built with `--release`, `"debug"` otherwise.
+#[wasm_bindgen(js_name = engineBuildProfile)]
+pub fn engine_build_profile() -> String {
+    if cfg!(debug_assertions) {
+        "debug".to_string()
+    } else {
+        "release".to_string()
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 

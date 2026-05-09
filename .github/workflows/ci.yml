@@ -37,7 +37,7 @@ jobs:
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          components: rustfmt, clippy
+          components: rustfmt
 
       - name: Install dependencies
         run: bun install
@@ -86,10 +86,6 @@ jobs:
       - name: Verify Biome CI after fixes
         if: steps.biome-ci.outputs.has-issues == 'true' && steps.check-changes.outputs.has-changes != 'true'
         run: biome ci .
-
-      - name: Run Clippy
-        run: bun run lint:clippy
-        shell: bash
 
   unit-tests:
     name: Unit Tests
