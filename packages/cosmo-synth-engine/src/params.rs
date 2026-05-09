@@ -972,7 +972,7 @@ pub enum FxSlotType {
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
 #[serde(tag = "type", content = "params", rename_all = "camelCase")]
 pub enum FxSlotConfig {
-	#[default]
+    #[default]
     Empty,
     Chorus(ChorusParams),
     Phaser(PhaserParams),
