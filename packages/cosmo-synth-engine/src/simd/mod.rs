@@ -44,6 +44,11 @@ pub trait SimdType: Sized + Copy {
     /// Helper: get as vector
     fn to_vec(&self) -> [f32; 4];
 
+    /// Helper: get as array
+    fn to_array(&self) -> [f32; 4] {
+        self.to_vec()
+    }
+
     /// Element-wise addition
     fn add(self, other: Self) -> Self;
 
@@ -188,20 +193,41 @@ mod avx2;
 #[cfg(all(target_arch = "x86_64", target_feature = "avx2"))]
 pub use avx2::Avx2;
 
+#[cfg(all(
+    target_arch = "x86_64",
+    target_feature = "sse2",
+    not(target_feature = "avx2")
+))]
+mod sse2;
+#[cfg(all(
+    target_arch = "x86_64",
+    target_feature = "sse2",
+    not(target_feature = "avx2")
+))]
+pub use sse2::Sse2;
+
+#[cfg(all(target_arch = "wasm32", target_feature = "simd128"))]
+mod wasm_simd;
+#[cfg(all(target_arch = "wasm32", target_feature = "simd128"))]
+pub use wasm_simd::WasmSimd;
+
 #[cfg(all(target_arch = "x86_64", target_feature = "avx2"))]
 pub type NativeSimd = Avx2;
 
-#[cfg(all(target_arch = "x86_64", target_feature = "sse2", not(target_feature = "avx2")))]
-pub type NativeSimd = Scalar; // TODO: Sse2 implementation
-
-#[cfg(target_arch = "wasm32")]
-pub type NativeSimd = Scalar; // TODO: WasmSimd when stable
-
-#[cfg(not(any(
+#[cfg(all(
     target_arch = "x86_64",
-    target_arch = "x86",
-    target_arch = "wasm32"
-)))]
+    target_feature = "sse2",
+    not(target_feature = "avx2")
+))]
+pub type NativeSimd = Sse2;
+
+#[cfg(all(target_arch = "wasm32", target_feature = "simd128"))]
+pub type NativeSimd = WasmSimd;
+
+#[cfg(all(target_arch = "wasm32", not(target_feature = "simd128")))]
+pub type NativeSimd = Scalar;
+
+#[cfg(not(any(target_arch = "x86_64", target_arch = "x86", target_arch = "wasm32")))]
 pub type NativeSimd = Scalar;
 
 #[cfg(test)]
