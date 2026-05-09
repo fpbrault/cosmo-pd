@@ -617,14 +617,8 @@ export default function PhaseDistortionVisualizer(
 		const updateFrameSize = () => {
 			const framePadding = isMobileViewport ? 0 : VISUALIZER_FRAME_PADDING;
 			const bounds = element.getBoundingClientRect();
-			const availableWidth = Math.max(
-				bounds.width - framePadding * 2,
-				0,
-			);
-			const availableHeight = Math.max(
-				bounds.height - framePadding * 2,
-				0,
-			);
+			const availableWidth = Math.max(bounds.width - framePadding * 2, 0);
+			const availableHeight = Math.max(bounds.height - framePadding * 2, 0);
 			if (availableWidth <= 0 || availableHeight <= 0) {
 				return;
 			}
