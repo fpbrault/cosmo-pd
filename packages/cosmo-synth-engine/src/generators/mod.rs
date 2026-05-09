@@ -187,7 +187,11 @@ fn render_line_stateless(config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
 
 #[inline(always)]
 fn sample_base_wave(base_waveform: BaseWaveform, phase: f32) -> f32 {
-    let p = wrap01(phase);
+    let p = if (0.0..1.0).contains(&phase) {
+        phase
+    } else {
+        wrap01(phase)
+    };
     match base_waveform {
         BaseWaveform::Cosine => -libm::cosf(TWO_PI * p),
         BaseWaveform::Sine => libm::sinf(TWO_PI * p),
