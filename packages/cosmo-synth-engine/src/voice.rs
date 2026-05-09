@@ -246,6 +246,32 @@ pub(crate) fn build_mod_value_cache(matrix: &ModMatrix, sources: &ModSources) ->
     ModValueCache { values }
 }
 
+fn apply_mod_env_delta_to_cache(matrix: &ModMatrix, cache: &mut ModValueCache, delta: f32) {
+    if delta == 0.0 {
+        return;
+    }
+
+    let mut touched = [false; MOD_DESTINATION_COUNT];
+    let mut touched_indices = ArrayVec::<usize, MOD_DESTINATION_COUNT>::new();
+    for route in &matrix.routes {
+        if !route.enabled || route.amount == 0.0 || route.source != ModSource::ModEnv {
+            continue;
+        }
+        let idx = route.destination as usize;
+        if !touched[idx] {
+            touched[idx] = true;
+            touched_indices
+                .try_push(idx)
+                .expect("mod destination tracking exceeded capacity");
+        }
+        cache.values[idx] += route.amount * delta;
+    }
+
+    for idx in touched_indices {
+        cache.values[idx] = cache.values[idx].clamp(-1.0, 1.0);
+    }
+}
+
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct LineModTargets {
     pub algo_blend: bool,
@@ -931,22 +957,22 @@ pub(crate) fn render_voice(
         mod_wheel,
         aftertouch,
     );
+    let mut mod_values = build_mod_value_cache(&p.mod_matrix, &preview_mod_sources);
     let line1_base = LineRuntimeParams::from_line(&p.line1);
     let line2_base = LineRuntimeParams::from_line(&p.line2);
     let line1_modded_storage;
     let line2_modded_storage;
     let (line1_modded, line2_modded) = if line_modulation_state.has_any() {
-        let preview_mod_values = build_mod_value_cache(&p.mod_matrix, &preview_mod_sources);
         let line1 = if line_modulation_state.line1.has_any() {
             line1_modded_storage =
-                line1_base.apply_modulation(1, &preview_mod_values, line_modulation_state.line1);
+                line1_base.apply_modulation(1, &mod_values, line_modulation_state.line1);
             &line1_modded_storage
         } else {
             &line1_base
         };
         let line2 = if line_modulation_state.line2.has_any() {
             line2_modded_storage =
-                line2_base.apply_modulation(2, &preview_mod_values, line_modulation_state.line2);
+                line2_base.apply_modulation(2, &mod_values, line_modulation_state.line2);
             &line2_modded_storage
         } else {
             &line2_base
@@ -974,17 +1000,11 @@ pub(crate) fn render_voice(
 
     // Advance per-voice ADSR mod envelope.
     let mod_env_val = voice.mod_env.advance(&p.mod_env, sr);
-
-    let mod_sources = ModSources::new(
-        lfo_mod_val,
-        lfo2_mod_val,
-        random_mod_val,
-        mod_env_val,
-        voice.velocity,
-        mod_wheel,
-        aftertouch,
+    apply_mod_env_delta_to_cache(
+        &p.mod_matrix,
+        &mut mod_values,
+        mod_env_val - preview_mod_sources.mod_env,
     );
-    let mod_values = build_mod_value_cache(&p.mod_matrix, &mod_sources);
     let line1_algo_param_mods = algo_param_slot_mods_for_line(1, &mod_values);
     let line2_algo_param_mods = algo_param_slot_mods_for_line(2, &mod_values);
     let mut signal = build_signal_state(line1_modded, line2_modded, &mod_values, &env, base_freq);

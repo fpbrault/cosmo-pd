@@ -574,6 +574,23 @@ pub(crate) fn resolve_algo_control_value(
     value
 }
 
+#[inline]
+fn resolve_algo_control_value_known_slot(
+    algo_controls: Option<&[AlgoControlValueV1]>,
+    id: &str,
+    fallback: f32,
+    slot_index: usize,
+    algo_param_mods: &[f32; 8],
+) -> f32 {
+    let mut value = fallback;
+    if let Some(entries) = algo_controls {
+        if let Some(entry) = entries.iter().find(|entry| entry.id == id) {
+            value = entry.value;
+        }
+    }
+    value + algo_param_mods[slot_index]
+}
+
 pub fn warp_phase(
     algo: Algo,
     phase: f32,
@@ -675,10 +692,34 @@ pub fn warp_phase(
         Algo::Ripple => ripple::warp_phase(
             phase,
             amt,
-            resolve_algo_control_value(algo, algo_controls, "rippleFreq", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "rippleDepth", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "ripplePhase", 0.0, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "rippleShape", 0.5, algo_param_mods),
+            resolve_algo_control_value_known_slot(
+                algo_controls,
+                "rippleFreq",
+                0.5,
+                0,
+                algo_param_mods,
+            ),
+            resolve_algo_control_value_known_slot(
+                algo_controls,
+                "rippleDepth",
+                0.5,
+                1,
+                algo_param_mods,
+            ),
+            resolve_algo_control_value_known_slot(
+                algo_controls,
+                "ripplePhase",
+                0.0,
+                2,
+                algo_param_mods,
+            ),
+            resolve_algo_control_value_known_slot(
+                algo_controls,
+                "rippleShape",
+                0.5,
+                3,
+                algo_param_mods,
+            ),
         ),
         Algo::Mirror => mirror::warp_phase(
             phase,
@@ -691,10 +732,34 @@ pub fn warp_phase(
         Algo::Fof => fof::warp_phase(
             phase,
             amt,
-            resolve_algo_control_value(algo, algo_controls, "fofRatio", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "fofTightness", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "fofOffset", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "fofSkew", 0.5, algo_param_mods),
+            resolve_algo_control_value_known_slot(
+                algo_controls,
+                "fofRatio",
+                0.5,
+                0,
+                algo_param_mods,
+            ),
+            resolve_algo_control_value_known_slot(
+                algo_controls,
+                "fofTightness",
+                0.5,
+                1,
+                algo_param_mods,
+            ),
+            resolve_algo_control_value_known_slot(
+                algo_controls,
+                "fofOffset",
+                0.5,
+                2,
+                algo_param_mods,
+            ),
+            resolve_algo_control_value_known_slot(
+                algo_controls,
+                "fofSkew",
+                0.5,
+                3,
+                algo_param_mods,
+            ),
         ),
         Algo::Sine => sine::warp_phase(phase, amt),
         Algo::Karpunk => phase,
