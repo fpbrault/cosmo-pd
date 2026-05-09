@@ -6,6 +6,7 @@ extern crate alloc;
 
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use arrayvec::ArrayVec;
 use core::array;
 use serde::Serialize;
 
@@ -194,9 +195,9 @@ pub struct CosmoProcessor {
     pub fx: FxChain,
     cz_dac_color: CzDacColor,
     /// Active note → voice mapping (replaces JS `activeNoteMap`).
-    pub active_notes: Vec<NoteEntry>,
+    pub active_notes: ArrayVec<NoteEntry, NUM_VOICES>,
     /// Note stack for mono mode (last-note priority), stores full voice state.
-    pub mono_stack: Vec<MonoStackEntry>,
+    pub mono_stack: ArrayVec<MonoStackEntry, NUM_VOICES>,
     pub sustain_on: bool,
     pub lfo_phase: f32,
     pub lfo2_phase: f32,
@@ -231,8 +232,8 @@ impl CosmoProcessor {
             voices: array::from_fn(|_| Voice::new()),
             fx: FxChain::new(sample_rate),
             cz_dac_color: CzDacColor::new(),
-            active_notes: Vec::with_capacity(NUM_VOICES),
-            mono_stack: Vec::with_capacity(NUM_VOICES),
+            active_notes: ArrayVec::new(),
+            mono_stack: ArrayVec::new(),
             sustain_on: false,
             lfo_phase: 0.0,
             lfo2_phase: 0.0,
@@ -430,8 +431,8 @@ impl CosmoProcessor {
     fn debug_assert_note_storage_bounds(&self) {
         debug_assert!(self.active_notes.len() <= NUM_VOICES);
         debug_assert!(self.mono_stack.len() <= NUM_VOICES);
-        debug_assert!(self.active_notes.capacity() >= NUM_VOICES);
-        debug_assert!(self.mono_stack.capacity() >= NUM_VOICES);
+        debug_assert_eq!(self.active_notes.capacity(), NUM_VOICES);
+        debug_assert_eq!(self.mono_stack.capacity(), NUM_VOICES);
     }
 
     /// Reset all envelope generators for the selected voice.
@@ -555,7 +556,9 @@ impl CosmoProcessor {
     fn replace_active_note_entry(&mut self, voice_idx: usize, note: u8) {
         self.active_notes.retain(|e| e.voice_idx != voice_idx);
         debug_assert!(self.active_notes.len() < NUM_VOICES);
-        self.active_notes.push(NoteEntry { note, voice_idx });
+        self.active_notes
+            .try_push(NoteEntry { note, voice_idx })
+            .expect("active_notes exceeded voice capacity");
         self.debug_assert_note_storage_bounds();
     }
 
@@ -563,7 +566,9 @@ impl CosmoProcessor {
     fn push_mono_stack_entry(&mut self, entry: MonoStackEntry) {
         self.mono_stack.retain(|e| e.note != entry.note);
         debug_assert!(self.mono_stack.len() < NUM_VOICES);
-        self.mono_stack.push(entry);
+        self.mono_stack
+            .try_push(entry)
+            .expect("mono_stack exceeded voice capacity");
         self.debug_assert_note_storage_bounds();
     }
 

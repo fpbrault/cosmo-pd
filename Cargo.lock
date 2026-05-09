@@ -1225,6 +1225,7 @@ dependencies = [
 name = "cosmo-synth-engine"
 version = "0.1.0"
 dependencies = [
+ "arrayvec",
  "dasp_interpolate",
  "dasp_ring_buffer",
  "getrandom 0.4.2",

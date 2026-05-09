@@ -1,10 +1,12 @@
 use std::collections::BTreeMap;
 use std::env;
+use std::sync::Arc;
 use std::time::Instant;
 
+use cosmo_synth_engine::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use cosmo_synth_engine::params::{
-    Algo, FxSlotConfig, FxSlotType, LineSelect, ModDestination, ModMatrix, ModRoute, ModSource,
-    PolyMode, SynthParams,
+    Algo, AlgoControlValueV1, FxSlotConfig, FxSlotType, LineSelect, ModDestination, ModMatrix,
+    ModRoute, ModSource, PolyMode, SynthParams,
 };
 use cosmo_synth_engine::processor::{midi_note_to_freq, CosmoProcessor};
 
@@ -13,6 +15,7 @@ const DEFAULT_NOTES: [u8; 8] = [36, 40, 43, 48, 52, 55, 60, 64];
 #[derive(Clone)]
 struct BenchmarkConfig {
     scenario: String,
+    suite: Option<String>,
     voices: usize,
     seconds: f32,
     sample_rate: f32,
@@ -27,6 +30,7 @@ impl Default for BenchmarkConfig {
     fn default() -> Self {
         Self {
             scenario: "default".to_string(),
+            suite: None,
             voices: 3,
             seconds: 12.0,
             sample_rate: 48_000.0,
@@ -45,6 +49,8 @@ struct Scenario {
     description: &'static str,
     build_params: fn() -> SynthParams,
     note_churn_blocks: Option<usize>,
+    param_swap_blocks: Option<usize>,
+    build_param_variants: Option<fn() -> Vec<SynthParams>>,
 }
 
 #[derive(Clone)]
@@ -63,7 +69,7 @@ struct CaseResult {
 
 fn usage() {
     println!(
-		"render-bench options:\n  --scenario <name>\n  --voices <n>\n  --seconds <s>\n  --sample-rate <hz>\n  --block-size <n>\n  --iterations <n>\n  --warmup <n>\n  --all\n  --json"
+        "render-bench options:\n  --scenario <name>\n  --suite <name>\n  --voices <n>\n  --seconds <s>\n  --sample-rate <hz>\n  --block-size <n>\n  --iterations <n>\n  --warmup <n>\n  --all\n  --json"
 	);
 }
 
@@ -77,6 +83,12 @@ fn parse_args() -> Result<BenchmarkConfig, String> {
                 cfg.scenario = args
                     .next()
                     .ok_or_else(|| "missing value for --scenario".to_string())?;
+            }
+            "--suite" => {
+                cfg.suite = Some(
+                    args.next()
+                        .ok_or_else(|| "missing value for --suite".to_string())?,
+                );
             }
             "--voices" => {
                 cfg.voices = args
@@ -162,6 +174,8 @@ fn scenarios() -> Vec<Scenario> {
             description: "Factory default parameters",
             build_params: || SynthParams::default(),
             note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
         },
         Scenario {
             name: "osc-sine-minimal",
@@ -192,6 +206,8 @@ fn scenarios() -> Vec<Scenario> {
                 p
             },
             note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
         },
         Scenario {
             name: "osc-pd-heavy-no-mod-fx",
@@ -222,6 +238,8 @@ fn scenarios() -> Vec<Scenario> {
                 p
             },
             note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
         },
         Scenario {
             name: "mod-only-sine",
@@ -251,6 +269,8 @@ fn scenarios() -> Vec<Scenario> {
                 p
             },
             note_churn_blocks: Some(12),
+            param_swap_blocks: None,
+            build_param_variants: None,
         },
         Scenario {
             name: "fx-only-sine",
@@ -277,6 +297,8 @@ fn scenarios() -> Vec<Scenario> {
                 p
             },
             note_churn_blocks: Some(24),
+            param_swap_blocks: None,
+            build_param_variants: None,
         },
         Scenario {
             name: "fun-bass-like",
@@ -304,6 +326,8 @@ fn scenarios() -> Vec<Scenario> {
                 p
             },
             note_churn_blocks: Some(64),
+            param_swap_blocks: None,
+            build_param_variants: None,
         },
         Scenario {
             name: "chants-like",
@@ -336,6 +360,8 @@ fn scenarios() -> Vec<Scenario> {
                 p
             },
             note_churn_blocks: Some(16),
+            param_swap_blocks: None,
+            build_param_variants: None,
         },
         Scenario {
             name: "chops-like",
@@ -364,6 +390,8 @@ fn scenarios() -> Vec<Scenario> {
                 p
             },
             note_churn_blocks: Some(8),
+            param_swap_blocks: None,
+            build_param_variants: None,
         },
         Scenario {
             name: "fx-heavy",
@@ -381,6 +409,8 @@ fn scenarios() -> Vec<Scenario> {
                 p
             },
             note_churn_blocks: Some(24),
+            param_swap_blocks: None,
+            build_param_variants: None,
         },
         Scenario {
             name: "mod-heavy",
@@ -394,6 +424,8 @@ fn scenarios() -> Vec<Scenario> {
                 p
             },
             note_churn_blocks: Some(12),
+            param_swap_blocks: None,
+            build_param_variants: None,
         },
         Scenario {
             name: "worst-poly",
@@ -425,6 +457,174 @@ fn scenarios() -> Vec<Scenario> {
                 p
             },
             note_churn_blocks: Some(4),
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "hotspot-param-swap",
+            description: "Measures shared param snapshot swap overhead with prebuilt variants",
+            build_params: || {
+                let mut p = SynthParams::default();
+                p.poly_mode = PolyMode::Poly8;
+                p.line1.algo = Algo::Sine;
+                p.line1.algo2 = None;
+                p.line2.algo = Algo::Sine;
+                p.line2.algo2 = None;
+                p.mod_matrix = ModMatrix::default();
+                p.fx_slots = [
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                ];
+                p
+            },
+            note_churn_blocks: None,
+            param_swap_blocks: Some(1),
+            build_param_variants: Some(|| {
+                let mut a = SynthParams::default();
+                a.poly_mode = PolyMode::Poly8;
+                a.line1.algo = Algo::Sine;
+                a.line1.algo2 = None;
+                a.line2.algo = Algo::Sine;
+                a.line2.algo2 = None;
+                a.volume = 0.35;
+                a.lfo.rate = 2.0;
+
+                let mut b = a.clone();
+                b.volume = 0.65;
+                b.lfo.rate = 7.5;
+                b.lfo2.rate = 5.0;
+                b.random.rate = 9.0;
+                b.line1.dcw_base = 0.6;
+                b.line2.dcw_base = 0.4;
+
+                vec![a, b]
+            }),
+        },
+        Scenario {
+            name: "hotspot-note-churn",
+            description: "Measures note bookkeeping with minimal oscillator and FX cost",
+            build_params: || {
+                let mut p = SynthParams::default();
+                p.poly_mode = PolyMode::Poly8;
+                p.line_select = LineSelect::L1PlusL2Prime;
+                p.line1.algo = Algo::Sine;
+                p.line1.algo2 = None;
+                p.line2.algo = Algo::Sine;
+                p.line2.algo2 = None;
+                p.mod_matrix = ModMatrix::default();
+                p.fx_slots = [
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                ];
+                p
+            },
+            note_churn_blocks: Some(1),
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "hotspot-algo-controls",
+            description: "Measures algorithm-control lookup and CZ-style control resolution",
+            build_params: || {
+                let mut p = SynthParams::default();
+                p.poly_mode = PolyMode::Poly8;
+                p.line_select = LineSelect::L1PlusL2Prime;
+                p.line1.algo = Algo::Cz101;
+                p.line1.algo2 = Some(Algo::Sync);
+                p.line1.algo_blend = 0.55;
+                p.line1.algo_controls_a = Some(vec![
+                    AlgoControlValueV1 {
+                        id: "preset".to_string(),
+                        value: 6.0,
+                    },
+                    AlgoControlValueV1 {
+                        id: "waveform1".to_string(),
+                        value: 5.0,
+                    },
+                    AlgoControlValueV1 {
+                        id: "waveform2".to_string(),
+                        value: 6.0,
+                    },
+                    AlgoControlValueV1 {
+                        id: "windowFunction".to_string(),
+                        value: 3.0,
+                    },
+                ]);
+                p.line1.algo_controls_b = Some(vec![
+                    AlgoControlValueV1 {
+                        id: "syncRatio".to_string(),
+                        value: 0.7,
+                    },
+                    AlgoControlValueV1 {
+                        id: "syncPhase".to_string(),
+                        value: 0.2,
+                    },
+                    AlgoControlValueV1 {
+                        id: "syncCurve".to_string(),
+                        value: 0.85,
+                    },
+                    AlgoControlValueV1 {
+                        id: "syncWindow".to_string(),
+                        value: 0.65,
+                    },
+                ]);
+                p.line2.algo = Algo::Skew;
+                p.line2.algo2 = Some(Algo::Bend);
+                p.line2.algo_blend = 0.45;
+                p.line2.algo_controls_a = Some(vec![
+                    AlgoControlValueV1 {
+                        id: "skewBias".to_string(),
+                        value: 0.55,
+                    },
+                    AlgoControlValueV1 {
+                        id: "skewCurve".to_string(),
+                        value: 0.72,
+                    },
+                    AlgoControlValueV1 {
+                        id: "skewSpread".to_string(),
+                        value: 0.48,
+                    },
+                    AlgoControlValueV1 {
+                        id: "skewTilt".to_string(),
+                        value: 0.38,
+                    },
+                ]);
+                p.line2.algo_controls_b = Some(vec![
+                    AlgoControlValueV1 {
+                        id: "bendCurve".to_string(),
+                        value: 0.84,
+                    },
+                    AlgoControlValueV1 {
+                        id: "bendBias".to_string(),
+                        value: 0.44,
+                    },
+                    AlgoControlValueV1 {
+                        id: "bendKnee".to_string(),
+                        value: 0.36,
+                    },
+                ]);
+                p.mod_matrix = ModMatrix::default();
+                p.fx_slots = [
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                ];
+                p
+            },
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
         },
         // ─────────────────────────────────────────────────────────────────
         // Optimization benchmark scenarios (parameter interpolation, vectorization, cubic sine)
@@ -454,6 +654,8 @@ fn scenarios() -> Vec<Scenario> {
                 p
             },
             note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
         },
         Scenario {
             name: "opt-param-interp-light",
@@ -492,6 +694,8 @@ fn scenarios() -> Vec<Scenario> {
                 p
             },
             note_churn_blocks: Some(32),
+            param_swap_blocks: None,
+            build_param_variants: None,
         },
         Scenario {
             name: "opt-render-vectorization",
@@ -519,6 +723,8 @@ fn scenarios() -> Vec<Scenario> {
                 p
             },
             note_churn_blocks: Some(16),
+            param_swap_blocks: None,
+            build_param_variants: None,
         },
         Scenario {
             name: "opt-all-combined",
@@ -547,6 +753,8 @@ fn scenarios() -> Vec<Scenario> {
                 p
             },
             note_churn_blocks: Some(12),
+            param_swap_blocks: None,
+            build_param_variants: None,
         },
     ]
 }
@@ -667,6 +875,19 @@ fn scenario_matrix() -> Vec<(String, usize)> {
     matrix
 }
 
+fn hotspot_matrix() -> Vec<(String, usize)> {
+    vec![
+        ("default".to_string(), 8),
+        ("hotspot-param-swap".to_string(), 8),
+        ("hotspot-note-churn".to_string(), 8),
+        ("mod-only-sine".to_string(), 8),
+        ("hotspot-algo-controls".to_string(), 8),
+        ("osc-pd-heavy-no-mod-fx".to_string(), 8),
+        ("fx-only-sine".to_string(), 8),
+        ("worst-poly".to_string(), 8),
+    ]
+}
+
 fn is_heavy_scenario(name: &str) -> bool {
     matches!(
         name,
@@ -705,10 +926,37 @@ fn tune_all_case_config(case_cfg: &mut BenchmarkConfig) {
     }
 }
 
+fn tune_hotspot_case_config(case_cfg: &mut BenchmarkConfig) {
+    case_cfg.seconds = case_cfg.seconds.min(4.0);
+    case_cfg.iterations = case_cfg.iterations.min(3);
+    case_cfg.warmup_iterations = case_cfg.warmup_iterations.min(1);
+
+    if matches!(
+        case_cfg.scenario.as_str(),
+        "hotspot-param-swap" | "hotspot-note-churn" | "hotspot-algo-controls"
+    ) {
+        case_cfg.seconds = case_cfg.seconds.min(3.0);
+    }
+
+    if matches!(case_cfg.scenario.as_str(), "fx-only-sine" | "worst-poly") {
+        case_cfg.seconds = case_cfg.seconds.min(3.0);
+        case_cfg.iterations = case_cfg.iterations.min(2);
+    }
+}
+
 fn render_pass(config: &BenchmarkConfig, scenario: &Scenario, total_samples: usize) -> f64 {
     let mut processor = CosmoProcessor::new(config.sample_rate);
     let params = (scenario.build_params)();
     processor.set_params(params);
+    let param_variants = scenario.build_param_variants.map(|build_param_variants| {
+        build_param_variants()
+            .into_iter()
+            .map(|mut params| {
+                normalize_synth_params_envelopes_to_raw_if_human(&mut params);
+                Arc::new(params)
+            })
+            .collect::<Vec<_>>()
+    });
 
     for note in DEFAULT_NOTES.iter().take(config.voices) {
         let frequency = midi_note_to_freq(*note);
@@ -737,6 +985,13 @@ fn render_pass(config: &BenchmarkConfig, scenario: &Scenario, total_samples: usi
                 let release = DEFAULT_NOTES[(block_index / churn_blocks + 1) % config.voices];
                 processor.note_off(release);
                 processor.note_on(lead, midi_note_to_freq(lead), 0.92);
+            }
+        }
+
+        if let (Some(swap_blocks), Some(variants)) = (scenario.param_swap_blocks, &param_variants) {
+            if block_index % swap_blocks == 0 {
+                let variant_index = (block_index / swap_blocks) % variants.len();
+                processor.set_shared_params(Arc::clone(&variants[variant_index]));
             }
         }
     }
@@ -891,6 +1146,25 @@ fn run_all(config: &BenchmarkConfig) -> Result<Vec<serde_json::Value>, String> {
     Ok(cases)
 }
 
+fn run_hotspots(config: &BenchmarkConfig) -> Result<Vec<serde_json::Value>, String> {
+    let mut cases = Vec::new();
+    for (scenario_name, voices) in hotspot_matrix() {
+        let scenario = find_scenario(&scenario_name)
+            .ok_or_else(|| format!("unknown scenario in hotspot suite: {scenario_name}"))?;
+        let mut case_cfg = config.clone();
+        case_cfg.scenario = scenario_name;
+        case_cfg.voices = voices;
+        tune_hotspot_case_config(&mut case_cfg);
+        let case = run_case(&case_cfg, &scenario)?;
+        let summary = summarize(&case);
+        if !config.json {
+            print_text(&case, &summary, scenario.description);
+        }
+        cases.push(case_json(&case, &summary));
+    }
+    Ok(cases)
+}
+
 fn main() {
     let config = match parse_args() {
         Ok(cfg) => cfg,
@@ -901,7 +1175,9 @@ fn main() {
         }
     };
 
-    let output = if config.all {
+    let output = if matches!(config.suite.as_deref(), Some("hotspots")) {
+        run_hotspots(&config)
+    } else if config.all {
         run_all(&config)
     } else {
         run_single(&config)

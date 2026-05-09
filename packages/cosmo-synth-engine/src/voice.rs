@@ -1,3 +1,5 @@
+use arrayvec::ArrayVec;
+
 /// Per-voice state and sample rendering for the Cosmo PD-101 engine.
 ///
 /// Ported from `createVoice` / `renderVoice` in `pdVisualizerProcessor.js`
@@ -221,20 +223,24 @@ pub(crate) fn build_mod_value_cache(matrix: &ModMatrix, sources: &ModSources) ->
 
     let mut values = [0.0_f32; MOD_DESTINATION_COUNT];
     let mut touched = [false; MOD_DESTINATION_COUNT];
+    let mut touched_indices = ArrayVec::<usize, MOD_DESTINATION_COUNT>::new();
 
     for route in &matrix.routes {
         if !route.enabled || route.amount == 0.0 {
             continue;
         }
         let idx = route.destination as usize;
+        if !touched[idx] {
+            touched[idx] = true;
+            touched_indices
+                .try_push(idx)
+                .expect("mod destination tracking exceeded capacity");
+        }
         values[idx] += route.amount * sources.source_value(route.source);
-        touched[idx] = true;
     }
 
-    for (idx, value) in values.iter_mut().enumerate() {
-        if touched[idx] {
-            *value = value.clamp(-1.0, 1.0);
-        }
+    for idx in touched_indices {
+        values[idx] = values[idx].clamp(-1.0, 1.0);
     }
 
     ModValueCache { values }

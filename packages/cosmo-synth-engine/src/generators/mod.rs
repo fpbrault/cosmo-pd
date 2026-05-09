@@ -532,6 +532,29 @@ fn algo_control_slot_index(algo: Algo, id: &str) -> Option<usize> {
     None
 }
 
+#[inline]
+fn algo_param_mods_are_zero(algo_param_mods: &[f32; 8]) -> bool {
+    algo_param_mods.iter().all(|amount| *amount == 0.0)
+}
+
+#[inline]
+fn warp_phase_with_default_controls(algo: Algo, phase: f32, amt: f32) -> Option<f32> {
+    match algo {
+        Algo::Bend => Some(bend::warp_phase(phase, amt, 0.5, 0.5, 0.5)),
+        Algo::Sync => Some(sync::warp_phase(phase, amt, 0.5, 0.0, 0.5, 0.5)),
+        Algo::Pinch => Some(pinch::warp_phase(phase, amt, 0.5, 0.0, 0.5, 0.5)),
+        Algo::Fold => Some(fold::warp_phase(phase, amt, 0.5, 0.5, 0.5, 0.0)),
+        Algo::Skew => Some(skew::warp_phase(phase, amt, 0.2, 0.5, 0.5, 0.5)),
+        Algo::Quantize => Some(quantize::warp_phase(phase, amt, 0.5, 0.5)),
+        Algo::Twist => Some(twist::warp_phase(phase, amt, 0.5, 0.5, 0.0, 0.5)),
+        Algo::Clip => Some(clip::warp_phase(phase, amt, 0.5, 0.5, 0.5, 0.0)),
+        Algo::Ripple => Some(ripple::warp_phase(phase, amt, 0.5, 0.5, 0.0, 0.5)),
+        Algo::Mirror => Some(mirror::warp_phase(phase, amt, 0.5, 0.5, 0.0, 0.5)),
+        Algo::Fof => Some(fof::warp_phase(phase, amt, 0.5, 0.5, 0.5, 0.5)),
+        _ => None,
+    }
+}
+
 pub(crate) fn resolve_algo_control_value(
     algo: Algo,
     algo_controls: Option<&[AlgoControlValueV1]>,
@@ -560,6 +583,12 @@ pub fn warp_phase(
 ) -> f32 {
     if amt == 0.0 && !algo.is_cz_waveform() {
         return phase;
+    }
+
+    if algo_controls.is_none() && algo_param_mods_are_zero(algo_param_mods) {
+        if let Some(warped) = warp_phase_with_default_controls(algo, phase, amt) {
+            return warped;
+        }
     }
 
     match algo {
