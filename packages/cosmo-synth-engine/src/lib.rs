@@ -15,7 +15,6 @@ pub mod fx;
 pub mod generators;
 pub mod lookup_tables;
 pub mod module_presets;
-pub mod operator_analysis;
 pub mod params;
 pub mod preset_wire;
 pub mod processor;
