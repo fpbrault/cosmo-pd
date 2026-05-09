@@ -17,6 +17,7 @@
 		"build:web": "bun --filter @cosmo/cosmo-synth-engine build:wasm && cargo check -p cosmo-pd101-plugin --quiet && bun --filter @cosmo/cz-explorer build",
 		"perf:engine": "cargo run -p cosmo-synth-engine --release --bin render-bench --",
 		"perf:engine:all": "cargo run -p cosmo-synth-engine --release --bin render-bench -- --all --json",
+		"perf:engine:bench": "cargo +nightly bench -p cosmo-synth-engine --bench render-bench -- --nocapture",
 		"perf:engine:baseline": "mkdir -p target/perf/engine && cargo run -p cosmo-synth-engine --release --bin render-bench -- --all --json > target/perf/engine/baseline.json",
 		"perf:engine:current": "mkdir -p target/perf/engine && cargo run -p cosmo-synth-engine --release --bin render-bench -- --all --json > target/perf/engine/current.json",
 		"perf:engine:compare": "bun run ./scripts/perf-engine-compare.mjs target/perf/engine/baseline.json target/perf/engine/current.json",

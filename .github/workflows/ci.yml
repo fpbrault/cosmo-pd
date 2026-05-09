@@ -262,171 +262,68 @@ jobs:
         shell: bash
 
   perf-benchmarks:
-    name: Perf Benchmarks
+    name: Engine Benchmarks
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: write
+      contents: write
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Benchmark target branch
+        run: |
+          mkdir -p target/perf/engine
+          base_ref="${{ github.base_ref }}"
+          base_dir="$RUNNER_TEMP/cosmo-pd-base"
+          git fetch origin "$base_ref" --depth=1
+          rm -rf "$base_dir"
+          git worktree add --detach "$base_dir" "origin/$base_ref"
+          cd "$base_dir"
+          cargo bench -p cosmo-synth-engine --bench render-bench -- --nocapture | tee "$GITHUB_WORKSPACE/target/perf/engine/base-bench.txt"
+        shell: bash
+
+      - name: Seed baseline from target branch
+        uses: benchmark-action/github-action-benchmark@v1
         with:
-          bun-version: latest
+          name: cosmo-synth-engine
+          tool: cargo
+          output-file-path: target/perf/engine/base-bench.txt
+          external-data-json-path: target/perf/engine/baseline.json
+          save-data-file: true
+          fail-on-alert: false
 
-      - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install Linux system dependencies for plugin checks
+      - name: Benchmark pull request head
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            pkg-config \
-            libglib2.0-dev \
-            libgtk-3-dev \
-            libwebkit2gtk-4.1-dev \
-            libxdo-dev \
-            libssl-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev
+          cargo bench -p cosmo-synth-engine --bench render-bench -- --nocapture | tee target/perf/engine/pr-bench.txt
         shell: bash
 
-      - name: Install wasm-pack
-        run: |
-          curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.13.1/wasm-pack-v0.13.1-x86_64-unknown-linux-musl.tar.gz | tar xz
-          mv wasm-pack-v0.13.1-x86_64-unknown-linux-musl/wasm-pack ~/.cargo/bin/
-        shell: bash
+      - name: Compare PR against target branch
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: cosmo-synth-engine
+          tool: cargo
+          output-file-path: target/perf/engine/pr-bench.txt
+          external-data-json-path: target/perf/engine/baseline.json
+          save-data-file: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          comment-on-alert: true
+          fail-on-alert: true
+          summary-always: true
+          alert-threshold: 130%
 
-      - name: Install dependencies
-        run: bun install
-        shell: bash
-
-      - name: Install Playwright Chromium
-        run: bunx playwright install chromium chromium-headless-shell --with-deps
-        shell: bash
-
-      - name: Benchmark current branch
-        run: |
-          mkdir -p target/perf/engine target/perf/ui
-          bun run perf:engine:all > target/perf/engine/current.json
-          bun run perf:web --out target/perf/ui/web-current.json
-        shell: bash
-
-      - name: Prepare main worktree
-        run: |
-          git fetch origin main --depth=1
-          main_dir="$RUNNER_TEMP/cosmo-pd-main"
-          rm -rf "$main_dir"
-          git worktree add --detach "$main_dir" origin/main
-          cd "$main_dir"
-          bun install
-        shell: bash
-
-      - name: Benchmark main baseline
-        run: |
-          set +e
-          main_dir="$RUNNER_TEMP/cosmo-pd-main"
-          cd "$main_dir"
-          mkdir -p target/perf/engine target/perf/ui
-
-          if bun run perf:engine:all > target/perf/engine/main.json.tmp 2> target/perf/engine/main.stderr.log; then
-            mv target/perf/engine/main.json.tmp target/perf/engine/main.json
-            echo "Comparing against origin/main" > target/perf/engine/status.txt
-          else
-            rm -f target/perf/engine/main.json.tmp
-            printf 'Baseline unavailable: origin/main could not run engine benchmark.\n\n' > target/perf/engine/status.txt
-            cat target/perf/engine/main.stderr.log >> target/perf/engine/status.txt
-          fi
-
-          if bun run perf:web --out target/perf/ui/web-main.json.tmp > target/perf/ui/main.stdout.log 2> target/perf/ui/main.stderr.log; then
-            mv target/perf/ui/web-main.json.tmp target/perf/ui/web-main.json
-            echo "Comparing against origin/main" > target/perf/ui/status.txt
-          else
-            rm -f target/perf/ui/web-main.json.tmp
-            printf 'Baseline unavailable: origin/main could not run web benchmark.\n\n' > target/perf/ui/status.txt
-            cat target/perf/ui/main.stderr.log >> target/perf/ui/status.txt
-          fi
-        shell: bash
-
-      - name: Compare perf reports
-        run: |
-          main_dir="$RUNNER_TEMP/cosmo-pd-main"
-
-          if [[ -f "$main_dir/target/perf/engine/main.json" ]]; then
-            bun run ./scripts/perf-engine-compare.mjs \
-              "$main_dir/target/perf/engine/main.json" \
-              "target/perf/engine/current.json" \
-              > target/perf/engine/compare.txt
-          else
-            cp "$main_dir/target/perf/engine/status.txt" target/perf/engine/compare.txt
-          fi
-
-          if [[ -f "$main_dir/target/perf/ui/web-main.json" ]]; then
-            bun run ./scripts/perf-ui-compare.mjs \
-              "$main_dir/target/perf/ui/web-main.json" \
-              "target/perf/ui/web-current.json" \
-              > target/perf/ui/compare.txt
-          else
-            cp "$main_dir/target/perf/ui/status.txt" target/perf/ui/compare.txt
-          fi
-
-          bun run ./scripts/perf-pr-comment.mjs \
-            --engine-compare target/perf/engine/compare.txt \
-            --ui-compare target/perf/ui/compare.txt \
-            --base-ref main \
-            --out target/perf/pr-comment.md
-        shell: bash
-
-      - name: Upload perf artifacts
+      - name: Upload benchmark artifact
         uses: actions/upload-artifact@v4
         with:
-          name: perf-benchmarks
+          name: engine-benchmark
           path: |
-            target/perf/engine/current.json
-            target/perf/engine/compare.txt
-            target/perf/ui/web-current.json
-            target/perf/ui/compare.txt
-            target/perf/pr-comment.md
-
-      - name: Update PR perf comment
-        if: always() && github.event.pull_request.head.repo.full_name == github.repository && hashFiles('target/perf/pr-comment.md') != ''
-        uses: actions/github-script@v8
-        with:
-          script: |
-            const fs = require('node:fs');
-            const body = fs.readFileSync('target/perf/pr-comment.md', 'utf8');
-            const marker = '<!-- perf-benchmark-comment -->';
-            const { owner, repo } = context.repo;
-            const issue_number = context.issue.number;
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              owner,
-              repo,
-              issue_number,
-              per_page: 100,
-            });
-            const existing = comments.find((comment) =>
-              comment.user?.type === 'Bot' && comment.body?.includes(marker),
-            );
-
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner,
-                repo,
-                comment_id: existing.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number,
-                body,
-              });
-            }
+            target/perf/engine/base-bench.txt
+            target/perf/engine/pr-bench.txt
+            target/perf/engine/baseline.json
 
   build-plugins:
     name: Build plugins (${{ matrix.platform }})
