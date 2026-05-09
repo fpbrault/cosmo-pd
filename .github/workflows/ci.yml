@@ -312,7 +312,7 @@ jobs:
           fail-on-alert: true
           comment-always: true
           summary-always: true
-          alert-threshold: 130%
+          alert-threshold: 108%
 
       - name: Upload benchmark artifact
         uses: actions/upload-artifact@v4

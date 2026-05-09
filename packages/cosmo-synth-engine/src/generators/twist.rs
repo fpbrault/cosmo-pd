@@ -83,14 +83,15 @@ pub fn warp_phase(
     phase_offset: f32,
     shape: f32,
 ) -> f32 {
-    let two_pi = core::f32::consts::TAU;
     let partials = 1.0 + harmonics * 11.0;
     let depth_scale = 0.03 + depth * 0.25;
-    let driver = libm::sinf(two_pi * (phase + phase_offset) * partials);
+    let shape_exp = 0.35 + shape * 2.2;
+    let driver = libm::sinf(core::f32::consts::TAU * (phase + phase_offset) * partials);
+    let shaped_mag = libm::powf(libm::fabsf(driver), shape_exp);
     let shaped = if driver >= 0.0 {
-        libm::powf(driver, 0.35 + shape * 2.2)
+        shaped_mag
     } else {
-        -libm::powf(-driver, 0.35 + shape * 2.2)
+        -shaped_mag
     };
     wrap01(phase + amt * depth_scale * shaped)
 }

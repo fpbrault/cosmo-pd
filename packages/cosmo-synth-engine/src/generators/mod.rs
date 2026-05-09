@@ -575,34 +575,59 @@ pub(crate) fn resolve_algo_control_value(
 }
 
 #[inline]
-fn resolve_algo_control_value_known_slot(
+fn resolve_algo_control_values_known_slots<const N: usize>(
     algo_controls: Option<&[AlgoControlValueV1]>,
-    id: &str,
-    fallback: f32,
-    slot_index: usize,
+    ids: [&str; N],
+    fallbacks: [f32; N],
     algo_param_mods: &[f32; 8],
-) -> f32 {
-    let mut value = fallback;
+) -> [f32; N] {
+    let mut values = [0.0; N];
+    let mut slot = 0usize;
+    while slot < N {
+        values[slot] = fallbacks[slot] + algo_param_mods[slot];
+        slot += 1;
+    }
+
     if let Some(entries) = algo_controls {
-        if let Some(entry) = entries.iter().find(|entry| entry.id == id) {
-            value = entry.value;
+        for entry in entries {
+            let entry_id = entry.id.as_str();
+            let mut idx = 0usize;
+            while idx < N {
+                if entry_id == ids[idx] {
+                    values[idx] = entry.value + algo_param_mods[idx];
+                    break;
+                }
+                idx += 1;
+            }
         }
     }
-    value + algo_param_mods[slot_index]
+
+    values
 }
 
 #[inline]
-fn resolve_algo_control_value_no_slot(
+fn resolve_algo_control_values_no_slot<const N: usize>(
     algo_controls: Option<&[AlgoControlValueV1]>,
-    id: &str,
-    fallback: f32,
-) -> f32 {
+    ids: [&str; N],
+    fallbacks: [f32; N],
+) -> [f32; N] {
+    let mut values = fallbacks;
+
     if let Some(entries) = algo_controls {
-        if let Some(entry) = entries.iter().find(|entry| entry.id == id) {
-            return entry.value;
+        for entry in entries {
+            let entry_id = entry.id.as_str();
+            let mut idx = 0usize;
+            while idx < N {
+                if entry_id == ids[idx] {
+                    values[idx] = entry.value;
+                    break;
+                }
+                idx += 1;
+            }
         }
     }
-    fallback
+
+    values
 }
 
 pub fn warp_phase(
@@ -642,325 +667,104 @@ pub fn warp_phase(
             cz101::warp_phase_for_waveform(crate::params::CzWaveform::Pulse2, phase, amt)
         }
         Algo::Cz101 => cz101::warp_phase(phase, amt),
-        Algo::Bend => bend::warp_phase(
-            phase,
-            amt,
-            resolve_algo_control_value_known_slot(
+        Algo::Bend => {
+            let [curve, bias, knee] = resolve_algo_control_values_known_slots(
                 algo_controls,
-                "bendCurve",
-                0.5,
-                0,
+                ["bendCurve", "bendBias", "bendKnee"],
+                [0.5, 0.5, 0.5],
                 algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
+            );
+            bend::warp_phase(phase, amt, curve, bias, knee)
+        }
+        Algo::Sync => {
+            let [ratio, phase_offset, curve, window] = resolve_algo_control_values_known_slots(
                 algo_controls,
-                "bendBias",
-                0.5,
-                1,
+                ["syncRatio", "syncPhase", "syncCurve", "syncWindow"],
+                [0.5, 0.0, 0.5, 0.5],
                 algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
+            );
+            sync::warp_phase(phase, amt, ratio, phase_offset, curve, window)
+        }
+        Algo::Pinch => {
+            let [focus, asym, curve, drive] = resolve_algo_control_values_known_slots(
                 algo_controls,
-                "bendKnee",
-                0.5,
-                2,
+                ["pinchFocus", "pinchAsym", "pinchCurve", "pinchDrive"],
+                [0.5, 0.0, 0.5, 0.5],
                 algo_param_mods,
-            ),
-        ),
-        Algo::Sync => sync::warp_phase(
-            phase,
-            amt,
-            resolve_algo_control_value_known_slot(
+            );
+            pinch::warp_phase(phase, amt, focus, asym, curve, drive)
+        }
+        Algo::Fold => {
+            let [stages, tilt, symmetry, softness] = resolve_algo_control_values_known_slots(
                 algo_controls,
-                "syncRatio",
-                0.5,
-                0,
+                ["foldStages", "foldTilt", "foldSymmetry", "foldSoftness"],
+                [0.5, 0.5, 0.5, 0.0],
                 algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
+            );
+            fold::warp_phase(phase, amt, stages, tilt, symmetry, softness)
+        }
+        Algo::Skew => {
+            let [bias, curve, spread, tilt] = resolve_algo_control_values_known_slots(
                 algo_controls,
-                "syncPhase",
-                0.0,
-                1,
+                ["skewBias", "skewCurve", "skewSpread", "skewTilt"],
+                [0.2, 0.5, 0.5, 0.5],
                 algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
+            );
+            skew::warp_phase(phase, amt, bias, curve, spread, tilt)
+        }
+        Algo::Quantize => {
+            let [amount, steps, skew] = resolve_algo_control_values_no_slot(
                 algo_controls,
-                "syncCurve",
-                0.5,
-                2,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
+                ["quantizeAmount", "quantizeSteps", "quantizeSkew"],
+                [amt, 0.5, 0.5],
+            );
+            quantize::warp_phase(phase, amount, steps, skew)
+        }
+        Algo::Twist => {
+            let [harmonics, depth, phase_offset, shape] = resolve_algo_control_values_known_slots(
                 algo_controls,
-                "syncWindow",
-                0.5,
-                3,
+                ["twistHarmonics", "twistDepth", "twistPhase", "twistShape"],
+                [0.5, 0.5, 0.0, 0.5],
                 algo_param_mods,
-            ),
-        ),
-        Algo::Pinch => pinch::warp_phase(
-            phase,
-            amt,
-            resolve_algo_control_value_known_slot(
+            );
+            twist::warp_phase(phase, amt, harmonics, depth, phase_offset, shape)
+        }
+        Algo::Clip => {
+            let [drive, shape, bias, soft] = resolve_algo_control_values_known_slots(
                 algo_controls,
-                "pinchFocus",
-                0.5,
-                0,
+                ["clipDrive", "clipShape", "clipBias", "clipSoft"],
+                [0.5, 0.5, 0.5, 0.0],
                 algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
+            );
+            clip::warp_phase(phase, amt, drive, shape, bias, soft)
+        }
+        Algo::Ripple => {
+            let [freq, depth, phase_offset, shape] = resolve_algo_control_values_known_slots(
                 algo_controls,
-                "pinchAsym",
-                0.0,
-                1,
+                ["rippleFreq", "rippleDepth", "ripplePhase", "rippleShape"],
+                [0.5, 0.5, 0.0, 0.5],
                 algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
+            );
+            ripple::warp_phase(phase, amt, freq, depth, phase_offset, shape)
+        }
+        Algo::Mirror => {
+            let [center, blend, clip, skew] = resolve_algo_control_values_known_slots(
                 algo_controls,
-                "pinchCurve",
-                0.5,
-                2,
+                ["mirrorCenter", "mirrorBlend", "mirrorClip", "mirrorSkew"],
+                [0.5, 0.5, 0.0, 0.5],
                 algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
+            );
+            mirror::warp_phase(phase, amt, center, blend, clip, skew)
+        }
+        Algo::Fof => {
+            let [ratio, tightness, offset, skew] = resolve_algo_control_values_known_slots(
                 algo_controls,
-                "pinchDrive",
-                0.5,
-                3,
+                ["fofRatio", "fofTightness", "fofOffset", "fofSkew"],
+                [0.5, 0.5, 0.5, 0.5],
                 algo_param_mods,
-            ),
-        ),
-        Algo::Fold => fold::warp_phase(
-            phase,
-            amt,
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "foldStages",
-                0.5,
-                0,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "foldTilt",
-                0.5,
-                1,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "foldSymmetry",
-                0.5,
-                2,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "foldSoftness",
-                0.0,
-                3,
-                algo_param_mods,
-            ),
-        ),
-        Algo::Skew => skew::warp_phase(
-            phase,
-            amt,
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "skewBias",
-                0.2,
-                0,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "skewCurve",
-                0.5,
-                1,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "skewSpread",
-                0.5,
-                2,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "skewTilt",
-                0.5,
-                3,
-                algo_param_mods,
-            ),
-        ),
-        Algo::Quantize => quantize::warp_phase(
-            phase,
-            resolve_algo_control_value_no_slot(algo_controls, "quantizeAmount", amt),
-            resolve_algo_control_value_no_slot(algo_controls, "quantizeSteps", 0.5),
-            resolve_algo_control_value_no_slot(algo_controls, "quantizeSkew", 0.5),
-        ),
-        Algo::Twist => twist::warp_phase(
-            phase,
-            amt,
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "twistHarmonics",
-                0.5,
-                0,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "twistDepth",
-                0.5,
-                1,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "twistPhase",
-                0.0,
-                2,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "twistShape",
-                0.5,
-                3,
-                algo_param_mods,
-            ),
-        ),
-        Algo::Clip => clip::warp_phase(
-            phase,
-            amt,
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "clipDrive",
-                0.5,
-                0,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "clipShape",
-                0.5,
-                1,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "clipBias",
-                0.5,
-                2,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "clipSoft",
-                0.0,
-                3,
-                algo_param_mods,
-            ),
-        ),
-        Algo::Ripple => ripple::warp_phase(
-            phase,
-            amt,
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "rippleFreq",
-                0.5,
-                0,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "rippleDepth",
-                0.5,
-                1,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "ripplePhase",
-                0.0,
-                2,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "rippleShape",
-                0.5,
-                3,
-                algo_param_mods,
-            ),
-        ),
-        Algo::Mirror => mirror::warp_phase(
-            phase,
-            amt,
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "mirrorCenter",
-                0.5,
-                0,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "mirrorBlend",
-                0.5,
-                1,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "mirrorClip",
-                0.0,
-                2,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "mirrorSkew",
-                0.5,
-                3,
-                algo_param_mods,
-            ),
-        ),
-        Algo::Fof => fof::warp_phase(
-            phase,
-            amt,
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "fofRatio",
-                0.5,
-                0,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "fofTightness",
-                0.5,
-                1,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "fofOffset",
-                0.5,
-                2,
-                algo_param_mods,
-            ),
-            resolve_algo_control_value_known_slot(
-                algo_controls,
-                "fofSkew",
-                0.5,
-                3,
-                algo_param_mods,
-            ),
-        ),
+            );
+            fof::warp_phase(phase, amt, ratio, tightness, offset, skew)
+        }
         Algo::Sine => sine::warp_phase(phase, amt),
         Algo::Karpunk => phase,
     }

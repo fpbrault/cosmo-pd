@@ -69,8 +69,34 @@ struct CaseResult {
 
 fn usage() {
     println!(
-        "render-bench options:\n  --scenario <name>\n  --suite <name>\n  --voices <n>\n  --seconds <s>\n  --sample-rate <hz>\n  --block-size <n>\n  --iterations <n>\n  --warmup <n>\n  --all\n  --json"
+        "render-bench options:\n  --scenario <name>\n  --suite <name> (hotspots|algos)\n  --voices <n>\n  --seconds <s>\n  --sample-rate <hz>\n  --block-size <n>\n  --iterations <n>\n  --warmup <n>\n  --all\n  --json"
 	);
+}
+
+fn build_algo_bench_params(algo: Algo) -> SynthParams {
+    let mut p = SynthParams::default();
+    p.poly_mode = PolyMode::Poly8;
+    p.line_select = LineSelect::L1PlusL2Prime;
+    p.line1.algo = algo;
+    p.line1.algo2 = None;
+    p.line1.algo_blend = 0.0;
+    p.line1.dcw_base = 0.85;
+    p.line1.dca_base = 0.85;
+    p.line2.algo = algo;
+    p.line2.algo2 = None;
+    p.line2.algo_blend = 0.0;
+    p.line2.dcw_base = 0.85;
+    p.line2.dca_base = 0.85;
+    p.mod_matrix = ModMatrix::default();
+    p.fx_slots = [
+        FxSlotConfig::Empty,
+        FxSlotConfig::Empty,
+        FxSlotConfig::Empty,
+        FxSlotConfig::Empty,
+        FxSlotConfig::Empty,
+        FxSlotConfig::Empty,
+    ];
+    p
 }
 
 fn parse_args() -> Result<BenchmarkConfig, String> {
@@ -756,6 +782,182 @@ fn scenarios() -> Vec<Scenario> {
             param_swap_blocks: None,
             build_param_variants: None,
         },
+        Scenario {
+            name: "algo-saw",
+            description: "Per-algo benchmark: Saw",
+            build_params: || build_algo_bench_params(Algo::Saw),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-square",
+            description: "Per-algo benchmark: Square",
+            build_params: || build_algo_bench_params(Algo::Square),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-pulse",
+            description: "Per-algo benchmark: Pulse",
+            build_params: || build_algo_bench_params(Algo::Pulse),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-null",
+            description: "Per-algo benchmark: Null",
+            build_params: || build_algo_bench_params(Algo::Null),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-sine-pulse",
+            description: "Per-algo benchmark: SinePulse",
+            build_params: || build_algo_bench_params(Algo::SinePulse),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-saw-pulse",
+            description: "Per-algo benchmark: SawPulse",
+            build_params: || build_algo_bench_params(Algo::SawPulse),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-multi-sine",
+            description: "Per-algo benchmark: MultiSine",
+            build_params: || build_algo_bench_params(Algo::MultiSine),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-pulse2",
+            description: "Per-algo benchmark: Pulse2",
+            build_params: || build_algo_bench_params(Algo::Pulse2),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-cz101",
+            description: "Per-algo benchmark: Cz101",
+            build_params: || build_algo_bench_params(Algo::Cz101),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-bend",
+            description: "Per-algo benchmark: Bend",
+            build_params: || build_algo_bench_params(Algo::Bend),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-sync",
+            description: "Per-algo benchmark: Sync",
+            build_params: || build_algo_bench_params(Algo::Sync),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-pinch",
+            description: "Per-algo benchmark: Pinch",
+            build_params: || build_algo_bench_params(Algo::Pinch),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-fold",
+            description: "Per-algo benchmark: Fold",
+            build_params: || build_algo_bench_params(Algo::Fold),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-skew",
+            description: "Per-algo benchmark: Skew",
+            build_params: || build_algo_bench_params(Algo::Skew),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-quantize",
+            description: "Per-algo benchmark: Quantize",
+            build_params: || build_algo_bench_params(Algo::Quantize),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-twist",
+            description: "Per-algo benchmark: Twist",
+            build_params: || build_algo_bench_params(Algo::Twist),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-clip",
+            description: "Per-algo benchmark: Clip",
+            build_params: || build_algo_bench_params(Algo::Clip),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-ripple",
+            description: "Per-algo benchmark: Ripple",
+            build_params: || build_algo_bench_params(Algo::Ripple),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-mirror",
+            description: "Per-algo benchmark: Mirror",
+            build_params: || build_algo_bench_params(Algo::Mirror),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-fof",
+            description: "Per-algo benchmark: Fof",
+            build_params: || build_algo_bench_params(Algo::Fof),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-karpunk",
+            description: "Per-algo benchmark: Karpunk",
+            build_params: || build_algo_bench_params(Algo::Karpunk),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-sine",
+            description: "Per-algo benchmark: Sine",
+            build_params: || build_algo_bench_params(Algo::Sine),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
     ]
 }
 
@@ -888,6 +1090,33 @@ fn hotspot_matrix() -> Vec<(String, usize)> {
     ]
 }
 
+fn algo_matrix() -> Vec<&'static str> {
+    vec![
+        "algo-saw",
+        "algo-square",
+        "algo-pulse",
+        "algo-null",
+        "algo-sine-pulse",
+        "algo-saw-pulse",
+        "algo-multi-sine",
+        "algo-pulse2",
+        "algo-cz101",
+        "algo-bend",
+        "algo-sync",
+        "algo-pinch",
+        "algo-fold",
+        "algo-skew",
+        "algo-quantize",
+        "algo-twist",
+        "algo-clip",
+        "algo-ripple",
+        "algo-mirror",
+        "algo-fof",
+        "algo-karpunk",
+        "algo-sine",
+    ]
+}
+
 fn is_heavy_scenario(name: &str) -> bool {
     matches!(
         name,
@@ -942,6 +1171,12 @@ fn tune_hotspot_case_config(case_cfg: &mut BenchmarkConfig) {
         case_cfg.seconds = case_cfg.seconds.min(3.0);
         case_cfg.iterations = case_cfg.iterations.min(2);
     }
+}
+
+fn tune_algo_case_config(case_cfg: &mut BenchmarkConfig) {
+    case_cfg.seconds = case_cfg.seconds.min(2.5);
+    case_cfg.iterations = case_cfg.iterations.min(3);
+    case_cfg.warmup_iterations = case_cfg.warmup_iterations.min(1);
 }
 
 fn render_pass(config: &BenchmarkConfig, scenario: &Scenario, total_samples: usize) -> f64 {
@@ -1165,6 +1400,24 @@ fn run_hotspots(config: &BenchmarkConfig) -> Result<Vec<serde_json::Value>, Stri
     Ok(cases)
 }
 
+fn run_algos(config: &BenchmarkConfig) -> Result<Vec<serde_json::Value>, String> {
+    let mut cases = Vec::new();
+    for scenario_name in algo_matrix() {
+        let scenario = find_scenario(scenario_name)
+            .ok_or_else(|| format!("unknown scenario in algo suite: {scenario_name}"))?;
+        let mut case_cfg = config.clone();
+        case_cfg.scenario = scenario_name.to_string();
+        tune_algo_case_config(&mut case_cfg);
+        let case = run_case(&case_cfg, &scenario)?;
+        let summary = summarize(&case);
+        if !config.json {
+            print_text(&case, &summary, scenario.description);
+        }
+        cases.push(case_json(&case, &summary));
+    }
+    Ok(cases)
+}
+
 fn main() {
     let config = match parse_args() {
         Ok(cfg) => cfg,
@@ -1177,6 +1430,8 @@ fn main() {
 
     let output = if matches!(config.suite.as_deref(), Some("hotspots")) {
         run_hotspots(&config)
+    } else if matches!(config.suite.as_deref(), Some("algos")) {
+        run_algos(&config)
     } else if config.all {
         run_all(&config)
     } else {
@@ -1206,7 +1461,7 @@ fn main() {
     }
 }
 
-#[cfg_attr(not(test), allow(dead_code))]
+#[allow(dead_code)]
 pub(crate) fn benchmark_case(
     scenario_name: &str,
     voices: usize,
