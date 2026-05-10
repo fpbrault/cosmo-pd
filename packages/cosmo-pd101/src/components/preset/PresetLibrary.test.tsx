@@ -308,9 +308,7 @@ describe("PresetLibrary", () => {
 			throw new Error("invalid");
 		});
 		class ErrorFileReader {
-			public onload:
-				| ((event: ProgressEvent<FileReader>) => void)
-				| null = null;
+			public onload: ((event: ProgressEvent<FileReader>) => void) | null = null;
 
 			readAsText() {
 				this.onload?.({
