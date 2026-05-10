@@ -1,5 +1,8 @@
 import { useState } from "react";
-import type { FxSlotModuleConfig } from "@/components/panels/drawer-modules/fxSlotModuleConfig";
+import {
+	getSlotParams,
+	type FxSlotModuleConfig,
+} from "@/components/panels/drawer-modules/fxSlotModuleConfig";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthStore } from "@/features/synth/synthStore";
 import { resolvePresetPatchParams } from "./utils";
@@ -12,8 +15,7 @@ export function useFxModuleController(
 	const rawSlot = useSynthStore((state) => state.fxSlots[slot]);
 	const setFxSlotParams = useSynthStore((state) => state.setFxSlotParams);
 
-	const rawParams =
-		(rawSlot as { params: Record<string, unknown> })?.params ?? {};
+	const rawParams = getSlotParams(rawSlot);
 	const enabled = Boolean(rawParams.enabled);
 
 	const handlePresetChange = (presetId: string) => {
