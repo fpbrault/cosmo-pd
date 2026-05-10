@@ -1,7 +1,5 @@
-use super::{lerp, wrap01, AlgoControlKindV1, AlgoControlV1, AlgoDefinitionV1, NO_CONTROL_OPTIONS};
+use super::{AlgoControlKindV1, AlgoControlV1, AlgoDefinitionV1, NO_CONTROL_OPTIONS};
 use crate::params::{Algo, EngineParamReadoutFormatV1};
-
-const TWO_PI: f32 = core::f32::consts::TAU;
 
 const CONTROLS: [AlgoControlV1; 3] = [
     AlgoControlV1 {
@@ -68,14 +66,16 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
 /// integer orders produce pure overtones; fractional orders blend adjacent ones.
 /// `tilt` shifts the fold phase; `warp` pre-distorts the input phase.
 pub fn warp_phase(phase: f32, amt: f32, order: f32, tilt: f32, warp: f32, mix: f32) -> f32 {
+    let mix_amt = mix * amt;
+    if mix_amt == 0.0 {
+        return phase;
+    }
+
     // Map order [0..1] → n [1..6]
     let n = 1.0 + order * 5.0;
-    // Pre-warp: shift fold start points (max quarter-cycle offset)
-    let pre_phase = wrap01(phase + warp * 0.25);
-    // Chebyshev triangle remap: acos(cos(n·θ)) ∈ [0, π], divide by π → [0, 1]
-    let inner_theta = n * TWO_PI * pre_phase + tilt * TWO_PI;
-    let poly = libm::acosf(libm::cosf(inner_theta)) / core::f32::consts::PI;
-    // Mix between linear phase and polynomial phase
-    let mixed = lerp(phase, poly, mix);
-    lerp(phase, mixed, amt)
+    // Equivalent triangle identity for acos(cos(2πx))/π: 1 - |2*fract(x) - 1|
+    let x = n * (phase + warp * 0.25) + tilt;
+    let frac = x - libm::floorf(x);
+    let poly = 1.0 - libm::fabsf(2.0 * frac - 1.0);
+    phase + (poly - phase) * mix_amt
 }

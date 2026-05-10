@@ -1,7 +1,6 @@
-use super::{lerp, wrap01, AlgoControlKindV1, AlgoControlV1, AlgoDefinitionV1, NO_CONTROL_OPTIONS};
+use super::{AlgoControlKindV1, AlgoControlV1, AlgoDefinitionV1, NO_CONTROL_OPTIONS};
+use crate::dsp_utils::cubic_sine_approx;
 use crate::params::{Algo, EngineParamReadoutFormatV1};
-
-const TWO_PI: f32 = core::f32::consts::TAU;
 
 const CONTROLS: [AlgoControlV1; 4] = [
     AlgoControlV1 {
@@ -81,15 +80,34 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
 /// times the fundamental, creating FM-like sidebands through the PD engine.
 /// `shape` morphs the modulator from sine to sawtooth for richer sideband sets.
 pub fn warp_phase(phase: f32, amt: f32, ratio: f32, depth: f32, fm_phase: f32, shape: f32) -> f32 {
+    let displacement_scale = amt * depth * 0.35;
+    if displacement_scale == 0.0 {
+        return phase;
+    }
+
     let fm_x = ratio * phase + fm_phase;
-    // Sine modulator
-    let sin_mod = libm::sinf(TWO_PI * fm_x);
-    // Sawtooth modulator in [-1, 1]
-    let saw_x = fm_x - libm::floorf(fm_x);
-    let saw_mod = 2.0 * saw_x - 1.0;
-    // Blend between sine and saw
-    let modulator = lerp(sin_mod, saw_mod, shape.clamp(0.0, 1.0));
-    // Scale so that full depth + full amt displaces by at most ~0.35 of the cycle
-    let displacement = amt * depth * 0.35 * modulator;
-    wrap01(phase + displacement)
+    let shape_clamped = shape.clamp(0.0, 1.0);
+
+    let modulator = if shape_clamped <= 0.0 {
+        cubic_sine_approx(fm_x)
+    } else {
+        // Sawtooth modulator in [-1, 1]
+        let saw_x = fm_x - libm::floorf(fm_x);
+        let saw_mod = 2.0 * saw_x - 1.0;
+        if shape_clamped >= 1.0 {
+            saw_mod
+        } else {
+            let sin_mod = cubic_sine_approx(fm_x);
+            sin_mod + (saw_mod - sin_mod) * shape_clamped
+        }
+    };
+
+    let warped = phase + displacement_scale * modulator;
+    if (0.0..1.0).contains(&warped) {
+        warped
+    } else if warped >= 1.0 {
+        warped - 1.0
+    } else {
+        warped + 1.0
+    }
 }

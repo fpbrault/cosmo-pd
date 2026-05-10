@@ -440,6 +440,76 @@ function pdMirror(
 	return phase + (clipped - phase) * (amount * (0.2 + blend * 0.8));
 }
 
+function pdTerrain(
+	phase: number,
+	amount: number,
+	ratio = 2,
+	depth = 0.5,
+	fmPhase = 0,
+	shape = 0,
+): number {
+	const displacementScale = amount * depth * 0.35;
+	if (displacementScale === 0) return phase;
+
+	const fmX = ratio * phase + fmPhase;
+	const shapeClamped = clamp(shape, 0, 1);
+	const sawX = fmX - Math.floor(fmX);
+	const sawMod = 2 * sawX - 1;
+
+	const modulator =
+		shapeClamped <= 0
+			? Math.sin(TAU * fmX)
+			: shapeClamped >= 1
+				? sawMod
+				: lerp(Math.sin(TAU * fmX), sawMod, shapeClamped);
+
+	return wrap01(phase + displacementScale * modulator);
+}
+
+function pdStutter(
+	phase: number,
+	amount: number,
+	segs = 0.25,
+	reverse = 1,
+	slip = 0,
+	spacing = 0,
+): number {
+	if (amount === 0) return phase;
+
+	const n = clamp(2 + Math.round(segs * 6), 2, 8);
+	const invN = 1 / n;
+	const scaled = phase * n;
+	const seg = Math.floor(scaled);
+	const local = scaled - seg;
+
+	const period = 2 + clamp(Math.round(spacing * 2), 0, 2);
+	const shouldReverse = seg % period === 1;
+	const revBlend = shouldReverse ? reverse : 0;
+	const localWarped = local + (1 - 2 * local) * revBlend;
+
+	const slipOffset = slip * seg * invN * 0.5;
+	const warped = wrap01(seg * invN + localWarped * invN + slipOffset);
+	return lerp(phase, warped, amount);
+}
+
+function pdCheby(
+	phase: number,
+	amount: number,
+	order = 0.2,
+	tilt = 0,
+	warp = 0,
+	mix = 1,
+): number {
+	const mixAmt = mix * amount;
+	if (mixAmt === 0) return phase;
+
+	const n = 1 + order * 5;
+	const prePhase = warp === 0 ? phase : wrap01(phase + warp * 0.25);
+	const innerTheta = n * TAU * prePhase + tilt * TAU;
+	const poly = Math.acos(Math.cos(innerTheta)) / Math.PI;
+	return phase + (poly - phase) * mixAmt;
+}
+
 function sampleDirectAlgoPreview(algo: PdAlgo, _phase: number): number | null {
 	switch (algo) {
 		default:
@@ -625,6 +695,33 @@ function applyPdAlgo(
 				controlValue("mirrorBlend", 0.5),
 				controlValue("mirrorClip", 0),
 				controlValue("mirrorSkew", 0),
+			);
+		case "terrain":
+			return pdTerrain(
+				phase,
+				amount,
+				controlValue("terrainRatio", 2),
+				controlValue("terrainDepth", 0.5),
+				controlValue("terrainFmPhase", 0),
+				controlValue("terrainShape", 0),
+			);
+		case "stutter":
+			return pdStutter(
+				phase,
+				amount,
+				controlValue("stutterSegs", 0.25),
+				controlValue("stutterReverse", 1),
+				controlValue("stutterSlip", 0),
+				controlValue("stutterSpacing", 0),
+			);
+		case "cheby":
+			return pdCheby(
+				phase,
+				amount,
+				controlValue("chebyOrder", 0.2),
+				controlValue("chebyTilt", 0),
+				controlValue("chebyWarp", 0),
+				controlValue("chebyMix", 1),
 			);
 		case "karpunk":
 			// Stateless approximation: decaying resonant phase distortion

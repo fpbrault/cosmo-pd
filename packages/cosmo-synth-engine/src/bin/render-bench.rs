@@ -951,6 +951,30 @@ fn scenarios() -> Vec<Scenario> {
             build_param_variants: None,
         },
         Scenario {
+            name: "algo-terrain",
+            description: "Per-algo benchmark: Terrain",
+            build_params: || build_algo_bench_params(Algo::Terrain),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-stutter",
+            description: "Per-algo benchmark: Stutter",
+            build_params: || build_algo_bench_params(Algo::Stutter),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-cheby",
+            description: "Per-algo benchmark: Cheby",
+            build_params: || build_algo_bench_params(Algo::Cheby),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
             name: "algo-sine",
             description: "Per-algo benchmark: Sine",
             build_params: || build_algo_bench_params(Algo::Sine),
@@ -1113,6 +1137,9 @@ fn algo_matrix() -> Vec<&'static str> {
         "algo-mirror",
         "algo-fof",
         "algo-karpunk",
+        "algo-terrain",
+        "algo-stutter",
+        "algo-cheby",
         "algo-sine",
     ]
 }
