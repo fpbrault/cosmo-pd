@@ -252,9 +252,21 @@ function buildMacosPluginDylib(
 /** Build the plugin webview (cosmo-pd101 lib-dist + plugin webview). */
 function buildWebview() {
 	const webviewDir = join(ROOT, "packages", "cosmo-pd101-plugin", "webview");
+	const webviewDist = join(webviewDir, "dist");
 	console.log("==> Building plugin webview...");
 	// The webview's prebuild hook runs `bun --filter @cosmo/cosmo-pd101 build:lib` automatically.
-	execSync("bun run build", { stdio: "inherit", cwd: webviewDir });
+	try {
+		execSync("bun run build", { stdio: "inherit", cwd: webviewDir });
+	} catch (error) {
+		if (existsSync(webviewDist)) {
+			console.warn(
+				`==> WARNING: plugin webview build failed, reusing existing dist at ${webviewDist}`,
+			);
+			return;
+		}
+
+		throw error;
+	}
 }
 
 /** Copy the built webview dist into a plugin bundle's Resources/ui/. */
@@ -515,6 +527,9 @@ if (targetPlatform === "macos") {
 		throw new Error(`Unsupported plugin platform '${targetPlatform}'.`);
 	}
 
+	// Non-macOS bundles also need the webview payload in Contents/Resources/ui.
+	buildWebview();
+
 	const targets = resolveTargets(targetPlatform, effectiveArchArg);
 	const outRoot = targetRoot();
 	const bundleDir = join(outRoot, profile, `${PLUGIN_BASENAME}.vst3`);
@@ -548,6 +563,8 @@ if (targetPlatform === "macos") {
 		mkdirSync(join(bundleDir, "Contents", platformSubdir), { recursive: true });
 		copyFileSync(srcBinary, dstBinary);
 	}
+
+	copyWebviewAssets(join(bundleDir, "Contents"));
 
 	console.log(`==> Created ${bundleDir}`);
 }

@@ -3,10 +3,10 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "bunx --bun vite",
-		"dev:test": "VITE_TEST_HARNESS=1 VITE_DEBUG_PANEL=1 bunx --bun vite",
+		"dev": "bunx vite",
+		"dev:test": "VITE_TEST_HARNESS=1 VITE_DEBUG_PANEL=1 bunx vite",
 		"prebuild": "bun --filter @cosmo/cosmo-pd101 build:lib",
-		"build": "bunx --bun vite build",
+		"build": "bunx vite build",
 		"test": "bunx vitest --project unit --run",
 		"test:unit": "bunx vitest --project unit --run",
 		"test:unit:watch": "bunx vitest --project unit",

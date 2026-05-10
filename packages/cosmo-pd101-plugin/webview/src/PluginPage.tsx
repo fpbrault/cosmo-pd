@@ -304,7 +304,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	return (
 		<div
 			ref={frameRef}
-			className="relative flex h-full w-full items-center justify-center overflow-hidden bg-cz-panel"
+			className="fixed inset-0 flex items-center justify-center overflow-hidden bg-cz-panel"
 		>
 			<div
 				className="relative shrink-0 overflow-hidden"

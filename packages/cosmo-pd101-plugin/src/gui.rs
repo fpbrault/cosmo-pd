@@ -24,16 +24,19 @@
 #![cfg_attr(target_os = "macos", allow(deprecated, unexpected_cfgs))]
 
 use std::any::Any;
+#[cfg(target_os = "linux")]
+use std::ffi::c_ulong;
 use std::panic::{self, AssertUnwindSafe};
 use std::sync::atomic::AtomicU64;
 use std::sync::{Arc, Mutex};
 
 use arc_swap::ArcSwap;
 use nih_plug::prelude::*;
-#[cfg(target_os = "macos")]
 use std::sync::atomic::{AtomicBool, Ordering};
 
-#[cfg(target_os = "macos")]
+#[cfg(target_os = "linux")]
+use rwh_06::{HasWindowHandle, RawWindowHandle, WindowHandle};
+
 use wry::WebViewBuilder;
 
 #[cfg(target_os = "macos")]
@@ -41,7 +44,6 @@ use cocoa;
 #[cfg(target_os = "macos")]
 use objc;
 
-#[cfg(target_os = "macos")]
 use crate::handle_ipc_invoke;
 use crate::{append_log, PerformanceCountersHandle, ScopeBuffer, UiInputQueue};
 use cosmo_synth_engine::params::SynthParams;
@@ -66,6 +68,22 @@ const WEBVIEW_SCHEME: &str = match option_env!("WRY_CUSTOM_SCHEME") {
     Some(s) => s,
     None => "cz",
 };
+
+#[cfg(target_os = "linux")]
+struct ParentWindowHandleAdapter(ParentWindowHandle);
+
+#[cfg(target_os = "linux")]
+impl HasWindowHandle for ParentWindowHandleAdapter {
+    fn window_handle(&self) -> Result<WindowHandle<'_>, rwh_06::HandleError> {
+        match self.0 {
+            ParentWindowHandle::X11Window(window) => {
+                let handle = rwh_06::XlibWindowHandle::new(window as c_ulong);
+                Ok(unsafe { WindowHandle::borrow_raw(RawWindowHandle::Xlib(handle)) })
+            }
+            _ => Err(rwh_06::HandleError::Unavailable),
+        }
+    }
+}
 
 // ─── WebViewContainer ────────────────────────────────────────────────────────
 
@@ -237,7 +255,63 @@ impl Editor for CzEditor {
         };
 
         let spawn_result = panic::catch_unwind(AssertUnwindSafe(|| {
-            #[cfg(not(target_os = "macos"))]
+            #[cfg(target_os = "linux")]
+            {
+                let parent_handle = match _parent {
+                    ParentWindowHandle::X11Window(window) => window,
+                    other => {
+                        append_log(&format!(
+                            "CzEditor::spawn: unsupported Linux window handle: {other:?}",
+                        ));
+                        return fallback_handle();
+                    }
+                };
+
+                let Some(resource_dir) = plugin_resource_dir() else {
+                    append_log(
+                        "CzEditor::spawn: resource dir unavailable; skipping WebView creation",
+                    );
+                    return fallback_handle();
+                };
+                append_log(&format!("resource_dir: {}", resource_dir.display()));
+
+                let synth_params = self.synth_params.clone();
+                let rt_synth_params = self.rt_synth_params.clone();
+                let synth_params_version = self.synth_params_version.clone();
+                let scope_buffer = self.scope_buffer.clone();
+                let ui_input_queue = self.ui_input_queue.clone();
+                let performance_counters = self.performance_counters.clone();
+                let webview_state_for_ipc = self.webview_state.clone();
+
+                let webview = unsafe {
+                    build_webview_from_x11_window(
+                        parent_handle,
+                        resource_dir,
+                        synth_params,
+                        rt_synth_params,
+                        synth_params_version,
+                        scope_buffer,
+                        ui_input_queue,
+                        performance_counters,
+                        webview_state_for_ipc.clone(),
+                    )
+                };
+
+                if let Ok(mut container) = self.webview_state.lock() {
+                    container.webview = webview;
+                }
+
+                self.push_params();
+                self.apply_scale_normalization();
+
+                return Box::new(CzEditorHandle {
+                    webview_state: self.webview_state.clone(),
+                    #[cfg(target_os = "macos")]
+                    _temp_window: None,
+                }) as Box<dyn Any + Send>;
+            }
+
+            #[cfg(all(not(target_os = "macos"), not(target_os = "linux")))]
             {
                 append_log("CzEditor::spawn: non-macOS build; returning no-op editor handle");
                 return fallback_handle();
@@ -624,6 +698,105 @@ unsafe fn build_webview_from_ns_view(
         Err(e) => {
             append_log(&format!("failed to create plugin WebView: {e}"));
             (None, temp_window)
+        }
+    }
+}
+
+#[cfg(target_os = "linux")]
+unsafe fn build_webview_from_x11_window(
+    window: u32,
+    resource_dir: std::path::PathBuf,
+    synth_params: Arc<ArcSwap<SynthParams>>,
+    rt_synth_params: Arc<ArcSwap<SynthParams>>,
+    synth_params_version: Arc<AtomicU64>,
+    scope_buffer: ScopeBuffer,
+    ui_input_queue: UiInputQueue,
+    performance_counters: PerformanceCountersHandle,
+    webview_state: Arc<Mutex<WebViewContainer>>,
+) -> Option<wry::WebView> {
+    if gtk::init().is_err() {
+        append_log("failed to initialize GTK for Linux plugin WebView");
+        return None;
+    }
+
+    let parent = ParentWindowHandleAdapter(ParentWindowHandle::X11Window(window));
+    let webview_state_for_response = webview_state.clone();
+    let params_repush_done = Arc::new(AtomicBool::new(false));
+
+    let webview = WebViewBuilder::new()
+        .with_bounds(wry::Rect {
+            position: wry::dpi::LogicalPosition::new(0, 0).into(),
+            size: wry::dpi::LogicalSize::new(DEFAULT_WIDTH, DEFAULT_HEIGHT).into(),
+        })
+        .with_custom_protocol(WEBVIEW_SCHEME.to_string(), move |_id, request| {
+            serve_file(&resource_dir, request)
+        })
+        .with_ipc_handler(move |request| {
+            let body = request.body();
+            let params_repush_done = params_repush_done.clone();
+
+            if let Ok(msg) = serde_json::from_str::<serde_json::Value>(body) {
+                let id = msg.get("id").cloned().unwrap_or(serde_json::Value::Null);
+                let method = msg.get("method").and_then(|m| m.as_str()).unwrap_or("");
+                let args = msg
+                    .get("args")
+                    .and_then(|a| a.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+
+                let result = handle_ipc_invoke(
+                    method,
+                    &args,
+                    &synth_params,
+                    &rt_synth_params,
+                    &synth_params_version,
+                    &scope_buffer,
+                    &ui_input_queue,
+                    &performance_counters,
+                );
+
+                let response = match result {
+                    Ok(val) => serde_json::json!({ "id": id, "result": val }),
+                    Err(e) => serde_json::json!({ "id": id, "error": e }),
+                };
+
+                let script = format!(
+                    "window.__czIpcResponse && window.__czIpcResponse({})",
+                    response
+                );
+                if let Ok(container) = webview_state_for_response.lock() {
+                    if let Some(wv) = &container.webview {
+                        let _ = wv.evaluate_script(&script);
+
+                        if params_repush_done
+                            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+                            .is_ok()
+                        {
+                            let sp = synth_params.load();
+                            if let Ok(json_str) = serde_json::to_string(sp.as_ref()) {
+                                let escaped = json_str.replace('\\', "\\\\").replace('"', "\\\"");
+                                let params_script = format!(
+                                    "if(typeof window.__czOnParams === 'function') {{ window.__czOnParams(\"{escaped}\"); }}"
+                                );
+                                let _ = wv.evaluate_script(&params_script);
+                            }
+                        }
+                    }
+                }
+            }
+        })
+        .with_devtools(inspector_enabled())
+        .with_url(&format!("{}://localhost/", WEBVIEW_SCHEME))
+        .build_as_child(&parent);
+
+    match webview {
+        Ok(webview) => {
+            append_log("build_as_child returned — Linux WebView created");
+            Some(webview)
+        }
+        Err(e) => {
+            append_log(&format!("failed to create Linux plugin WebView: {e}"));
+            None
         }
     }
 }
