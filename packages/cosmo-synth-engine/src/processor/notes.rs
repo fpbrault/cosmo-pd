@@ -97,6 +97,7 @@ impl CosmoProcessor {
     ) {
         self.configure_voice_pitch(voice_idx, note, frequency);
         self.voices[voice_idx].velocity = velocity;
+        self.voices[voice_idx].reseed_noise_for_note(note, voice_idx);
         self.reset_voice_runtime(voice_idx);
         self.reset_voice_envs(voice_idx);
         self.reset_generator_runtime_for_note(voice_idx, note);

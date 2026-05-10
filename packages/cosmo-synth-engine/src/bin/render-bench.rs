@@ -950,6 +950,46 @@ fn scenarios() -> Vec<Scenario> {
             param_swap_blocks: None,
             build_param_variants: None,
         },
+        Scenario {
+            name: "algo-pwm",
+            description: "Per-algo benchmark: Pwm",
+            build_params: || build_algo_bench_params(Algo::Pwm),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-phaz-diff",
+            description: "Per-algo benchmark: PhazDiff",
+            build_params: || build_algo_bench_params(Algo::PhazDiff),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-noise-lab",
+            description: "Per-algo benchmark: NoiseLab",
+            build_params: || build_algo_bench_params(Algo::NoiseLab),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-modal-strike",
+            description: "Per-algo benchmark: ModalStrike",
+            build_params: || build_algo_bench_params(Algo::ModalStrike),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
+            name: "algo-feedback-fm",
+            description: "Per-algo benchmark: FeedbackFm",
+            build_params: || build_algo_bench_params(Algo::FeedbackFm),
+            note_churn_blocks: None,
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
     ]
 }
 

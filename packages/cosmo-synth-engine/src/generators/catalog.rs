@@ -7,11 +7,16 @@ use super::bend::DEFINITION as BEND;
 use super::cheby::DEFINITION as CHEBY;
 use super::clip::DEFINITION as CLIP;
 use super::cz101::DEFINITION as CZ101;
+use super::feedback_fm::DEFINITION as FEEDBACK_FM;
 use super::fof::DEFINITION as FOF;
 use super::fold::DEFINITION as FOLD;
 use super::karpunk::DEFINITION as KARPUNK;
 use super::mirror::DEFINITION as MIRROR;
+use super::modal_strike::DEFINITION as MODAL_STRIKE;
+use super::noise_lab::DEFINITION as NOISE_LAB;
+use super::phaz_diff::DEFINITION as PHAZ_DIFF;
 use super::pinch::DEFINITION as PINCH;
+use super::pwm::DEFINITION as PWM;
 use super::ripple::DEFINITION as RIPPLE;
 use super::skew::DEFINITION as SKEW;
 use super::stutter::DEFINITION as STUTTER;
@@ -196,11 +201,29 @@ pub const DCW_CONTROL: [AlgoControlV1; 1] = [AlgoControlV1 {
     readout_format: EngineParamReadoutFormatV1::Percent,
 }];
 
-const ALGO_DEFINITION_COUNT: usize = 15;
+const ALGO_DEFINITION_COUNT: usize = 20;
 
 pub const ALGO_DEFINITIONS_V1: [AlgoDefinitionV1; ALGO_DEFINITION_COUNT] = [
-    CZ101, BEND, SYNC, PINCH, FOLD, SKEW, TWIST, CLIP, RIPPLE, MIRROR, KARPUNK, FOF, TERRAIN,
-    STUTTER, CHEBY,
+    CZ101,
+    BEND,
+    SYNC,
+    PINCH,
+    FOLD,
+    SKEW,
+    TWIST,
+    CLIP,
+    RIPPLE,
+    MIRROR,
+    KARPUNK,
+    FOF,
+    TERRAIN,
+    STUTTER,
+    CHEBY,
+    PWM,
+    PHAZ_DIFF,
+    NOISE_LAB,
+    MODAL_STRIKE,
+    FEEDBACK_FM,
 ];
 
 pub fn algo_definitions_v1() -> &'static [AlgoDefinitionV1] {
@@ -235,6 +258,11 @@ pub fn algo_ui_catalog_v1() -> &'static [AlgoUiEntryV1] {
         entry!(12),
         entry!(13),
         entry!(14),
+        entry!(15),
+        entry!(16),
+        entry!(17),
+        entry!(18),
+        entry!(19),
     ];
 
     &CATALOG

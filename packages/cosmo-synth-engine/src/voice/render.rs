@@ -220,6 +220,7 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
             ));
 
     let sample = mix_line_outputs(
+        voice,
         p,
         phase.phi1,
         phase.phi2,
@@ -747,6 +748,7 @@ fn build_phase_frame(
 
 #[allow(clippy::too_many_arguments)]
 fn mix_line_outputs(
+    voice: &mut Voice,
     p: &SynthParams,
     phi1: f32,
     phi2: f32,
@@ -792,8 +794,7 @@ fn mix_line_outputs(
     match p.mod_mode {
         ModMode::Ring => mix_a * mix_b * p.ring_gain.max(0.0),
         ModMode::Noise => {
-            // Placeholder noise remains deterministic so renders stay repeatable.
-            let noise = (phi1 * 12_345.679).sin() * 2.0 - 1.0;
+            let noise = white_noise_sample(&mut voice.noise_prng);
             let mixed = match p.line_select {
                 LineSelect::L1 => mix_a,
                 LineSelect::L2 => mix_b,
@@ -807,6 +808,13 @@ fn mix_line_outputs(
             _ => (mix_a + mix_b) * DUAL_LINE_MIX_GAIN,
         },
     }
+}
+
+#[inline(always)]
+fn white_noise_sample(state: &mut u32) -> f32 {
+    *state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+    let bits = (*state >> 16) as f32;
+    bits / 32767.5 - 1.0
 }
 
 #[allow(clippy::too_many_arguments)]

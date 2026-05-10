@@ -48,7 +48,7 @@ export type BaseWaveform = "cosine" | "sine" | "triangle" | "saw" | "square"
 /**
  * Flat algorithm selector — unifies CZ waveforms and warp variants.
  */
-export type Algo = "saw" | "square" | "pulse" | "null" | "sinePulse" | "sawPulse" | "multiSine" | "pulse2" | "cz101" | "bend" | "sync" | "pinch" | "fold" | "skew" | "quantize" | "twist" | "clip" | "ripple" | "mirror" | "fof" | "karpunk" | "sine" | "terrain" | "cheby" | "stutter"
+export type Algo = "saw" | "square" | "pulse" | "null" | "sinePulse" | "sawPulse" | "multiSine" | "pulse2" | "cz101" | "bend" | "sync" | "pinch" | "fold" | "skew" | "quantize" | "twist" | "clip" | "ripple" | "mirror" | "fof" | "karpunk" | "sine" | "terrain" | "cheby" | "stutter" | "pwm" | "phazDiff" | "noiseLab" | "modalStrike" | "feedbackFm"
 
 /**
  * Window type applied to oscillator output
@@ -412,6 +412,36 @@ export const ALGO_UI_CATALOG_V1: AlgoUiEntryV1[] = [
     "id": "cheby",
     "label": "Cheby",
     "iconPath": "M4,20 L7,4 L10,20 L12,12 L14,4 L17,20 L20,12",
+    "visible": true
+  },
+  {
+    "id": "pwm",
+    "label": "Pwm",
+    "iconPath": "M4,16 L4,8 L10,8 L10,16 L16,16 L16,8 L20,8",
+    "visible": true
+  },
+  {
+    "id": "phazDiff",
+    "label": "PhazDiff",
+    "iconPath": "M4,12 C6,8 8,16 10,12 C12,8 14,16 16,12 C17,11 18,10 20,10",
+    "visible": true
+  },
+  {
+    "id": "noiseLab",
+    "label": "NoiseLab",
+    "iconPath": "M4,12 L6,8 L8,15 L10,6 L12,16 L14,9 L16,13 L18,7 L20,12",
+    "visible": true
+  },
+  {
+    "id": "modalStrike",
+    "label": "ModalStrike",
+    "iconPath": "M4,16 L7,8 L9,16 L12,6 L14,16 L17,10 L20,12",
+    "visible": true
+  },
+  {
+    "id": "feedbackFm",
+    "label": "FeedbackFm",
+    "iconPath": "M4,14 C7,6 10,18 13,10 C15,6 17,14 20,8",
     "visible": true
   }
 ];
@@ -1677,6 +1707,276 @@ export const ALGO_DEFINITIONS_V1 = [
         "options": [],
         "readoutFormat": {
           "kind": "percent"
+        }
+      }
+    ]
+  },
+  {
+    "id": "pwm",
+    "name": "Pwm",
+    "iconPath": "M4,16 L4,8 L10,8 L10,16 L16,16 L16,8 L20,8",
+    "visible": true,
+    "defaultBaseWaveform": "sine",
+    "controls": [
+      {
+        "id": "pwmWidth",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 0.5,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
+      },
+      {
+        "id": "pwmShape",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 0.5,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
+      },
+      {
+        "id": "pwmDrift",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": true,
+        "iconName": null,
+        "min": -1.0,
+        "max": 1.0,
+        "default": 0.0,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "bipolarPercent"
+        }
+      }
+    ]
+  },
+  {
+    "id": "phazDiff",
+    "name": "PhazDiff",
+    "iconPath": "M4,12 C6,8 8,16 10,12 C12,8 14,16 16,12 C17,11 18,10 20,10",
+    "visible": true,
+    "defaultBaseWaveform": "sine",
+    "controls": [
+      {
+        "id": "phazDiffDrive",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 0.6,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
+      },
+      {
+        "id": "phazDiffFeedback",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 0.25,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
+      },
+      {
+        "id": "phazDiffCenter",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 0.5,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
+      }
+    ]
+  },
+  {
+    "id": "noiseLab",
+    "name": "NoiseLab",
+    "iconPath": "M4,12 L6,8 L8,15 L10,6 L12,16 L14,9 L16,13 L18,7 L20,12",
+    "visible": true,
+    "defaultBaseWaveform": "cosine",
+    "controls": [
+      {
+        "id": "noiseLabDensity",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 0.5,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
+      },
+      {
+        "id": "noiseLabJitter",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 0.4,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
+      },
+      {
+        "id": "noiseLabBlend",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 0.5,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
+      }
+    ]
+  },
+  {
+    "id": "modalStrike",
+    "name": "ModalStrike",
+    "iconPath": "M4,16 L7,8 L9,16 L12,6 L14,16 L17,10 L20,12",
+    "visible": true,
+    "defaultBaseWaveform": "triangle",
+    "controls": [
+      {
+        "id": "modalStrikeModes",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 0.4,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
+      },
+      {
+        "id": "modalStrikeDecay",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.4,
+        "max": 1.0,
+        "default": 0.85,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
+      },
+      {
+        "id": "modalStrikeTone",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 0.6,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
+      }
+    ]
+  },
+  {
+    "id": "feedbackFm",
+    "name": "FeedbackFm",
+    "iconPath": "M4,14 C7,6 10,18 13,10 C15,6 17,14 20,8",
+    "visible": true,
+    "defaultBaseWaveform": "sine",
+    "controls": [
+      {
+        "id": "feedbackFmRatio",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 0.3,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
+      },
+      {
+        "id": "feedbackFmFeedback",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 0.4,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
+      },
+      {
+        "id": "feedbackFmSkew",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": true,
+        "iconName": null,
+        "min": -1.0,
+        "max": 1.0,
+        "default": 0.0,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "bipolarPercent"
         }
       }
     ]

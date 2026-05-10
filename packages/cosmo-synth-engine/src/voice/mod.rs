@@ -72,6 +72,7 @@ pub struct Voice {
     pub smoothed_dcw2: f32,
     pub last_output_sample: f32,
     pub release_tail_level: f32,
+    pub noise_prng: u32,
     pub algo_runtime: AlgoRuntimeState,
 }
 
@@ -109,8 +110,15 @@ impl Voice {
             smoothed_dcw2: 0.0,
             last_output_sample: 0.0,
             release_tail_level: 0.0,
+            noise_prng: 0xA341_316C,
             algo_runtime: AlgoRuntimeState::default(),
         }
+    }
+
+    pub fn reseed_noise_for_note(&mut self, note: u8, voice_index: usize) {
+        let note_mix = (note as u32).wrapping_mul(0x9E37_79B9);
+        let voice_mix = ((voice_index as u32) + 1).wrapping_mul(0x85EB_CA6B);
+        self.noise_prng = 0xA341_316C ^ note_mix ^ voice_mix;
     }
 
     pub fn reset_envs(&mut self) {

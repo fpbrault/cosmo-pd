@@ -521,6 +521,128 @@ export function pdCheby(
 	return phase + (poly - phase) * mixAmt;
 }
 
+function pdPwm(
+	phase: number,
+	amount: number,
+	width = 0.5,
+	shape = 0.5,
+	drift = 0,
+): number {
+	const driftedWidth = width + drift * 0.2 * Math.sin(TAU * phase);
+	const pivot = clamp(driftedWidth, 0.05, 0.95);
+
+	const segmented =
+		phase < pivot
+			? 0.5 * (phase / pivot)
+			: 0.5 + 0.5 * ((phase - pivot) / (1 - pivot));
+
+	const expo = 0.3 + clamp(shape, 0, 1) * 3;
+	const curved =
+		segmented < 0.5
+			? 0.5 * clamp(segmented * 2, 0, 1) ** expo
+			: 1 - 0.5 * clamp((1 - segmented) * 2, 0, 1) ** expo;
+
+	const squarePhase = segmented < 0.5 ? 0.25 : 0.75;
+	const hardness = 0.25 + 0.75 * clamp(shape, 0, 1);
+	const pwmTarget = lerp(curved, squarePhase, hardness);
+	return wrap01(phase + (pwmTarget - phase) * amount);
+}
+
+function pdPhazDiff(
+	phase: number,
+	amount: number,
+	drive = 0.6,
+	feedback = 0.25,
+	center = 0.5,
+): number {
+	const delayed = wrap01(phase - 0.5);
+	let diff = phase - delayed;
+	if (diff > 0.5) diff -= 1;
+	else if (diff < -0.5) diff += 1;
+
+	const driven = Math.tanh(diff * (0.5 + clamp(drive, 0, 1) * 4.5));
+	const centerOffset = (clamp(center, 0, 1) - 0.5) * 0.25;
+	const modulation = diff + driven * clamp(feedback, 0, 1);
+	return wrap01(phase + (centerOffset + modulation * 0.35) * amount);
+}
+
+function noiseHash01(x: number): number {
+	const h = Math.sin(x * 127.1 + 311.7) * 43758.5453;
+	return h - Math.floor(h);
+}
+
+function cosineToSawPhase(phase: number): number {
+	return Math.acos(clamp(1 - phase * 2, -1, 1)) / TAU;
+}
+
+function pdNoiseLab(
+	phase: number,
+	amount: number,
+	density = 0.5,
+	jitter = 0.4,
+	blend = 0.5,
+): number {
+	const amtClamped = clamp(amount, 0, 1);
+	const sawPhase = cosineToSawPhase(phase);
+	const basePhase = lerp(phase, sawPhase, amtClamped);
+
+	const segments = 2 + clamp(density, 0, 1) * 34;
+	const pSeg = basePhase * segments;
+	const segIndex = Math.floor(pSeg);
+	const local = pSeg - segIndex;
+
+	const randA = noiseHash01(segIndex + 1) * 2 - 1;
+	const randB = noiseHash01(segIndex + 2) * 2 - 1;
+	const walk = lerp(randA, randB, smoothstep01(local));
+
+	const edgeNoise =
+		(noiseHash01(segIndex + 19) - 0.5) * clamp(jitter, 0, 1) * 0.35;
+	const edge = clamp(0.5 + edgeNoise, 0.05, 0.95);
+	const gate = local < edge ? 1 : -1;
+
+	const jitterMod = clamp(jitter, 0, 1);
+	const offset =
+		walk * gate * (0.01 + 0.14 * jitterMod) * (0.2 + 0.8 * clamp(blend, 0, 1));
+	return wrap01(
+		basePhase + offset * (0.35 + 0.65 * clamp(density, 0, 1)) * amtClamped,
+	);
+}
+
+function pdModalStrike(
+	phase: number,
+	amount: number,
+	modes = 0.4,
+	decay = 0.5,
+	tone = 0.6,
+): number {
+	const modeCount = 2 + clamp(modes, 0, 1) * 10;
+	const shiftedDecay = clamp(decay, 0.4, 1);
+	const decayExp = 0.4 + (1 - shiftedDecay) * 4;
+	const env = clamp(1 - clamp(phase, 0, 1), 0, 1) ** decayExp;
+
+	const m1 = Math.sin(TAU * phase * modeCount);
+	const m2 = Math.sin(TAU * phase * (modeCount * (1.4 + tone * 0.8)) + 0.3);
+	const resonant = lerp(m1, m2, clamp(tone, 0, 1)) * env;
+	return wrap01(phase + resonant * (0.02 + 0.14 * amount));
+}
+
+function pdFeedbackFm(
+	phase: number,
+	amount: number,
+	ratio = 0.3,
+	feedback = 0.4,
+	skew = 0,
+): number {
+	const r = 1 + clamp(ratio, 0, 1) * 12;
+	const fb = clamp(feedback, 0, 1) * 0.45;
+	const skewed = wrap01(phase + clamp(skew, -1, 1) * 0.2);
+
+	const m1 = Math.sin(TAU * skewed * r);
+	const m2 = Math.sin(TAU * (skewed * r + fb * m1));
+	const offset = (m1 * 0.5 + m2 * 0.5) * (0.03 + 0.15 * amount);
+	return wrap01(phase + offset);
+}
+
 function sampleDirectAlgoPreview(algo: PdAlgo, _phase: number): number | null {
 	switch (algo) {
 		default:
@@ -733,6 +855,46 @@ function applyPdAlgo(
 				controlValue("chebyTilt", 0),
 				controlValue("chebyWarp", 0),
 				controlValue("chebyMix", 1),
+			);
+		case "pwm":
+			return pdPwm(
+				phase,
+				amount,
+				controlValue("pwmWidth", 0.5),
+				controlValue("pwmShape", 0.5),
+				controlValue("pwmDrift", 0),
+			);
+		case "phazDiff":
+			return pdPhazDiff(
+				phase,
+				amount,
+				controlValue("phazDiffDrive", 0.6),
+				controlValue("phazDiffFeedback", 0.25),
+				controlValue("phazDiffCenter", 0.5),
+			);
+		case "noiseLab":
+			return pdNoiseLab(
+				phase,
+				amount,
+				controlValue("noiseLabDensity", 0.5),
+				controlValue("noiseLabJitter", 0.4),
+				controlValue("noiseLabBlend", 0.5),
+			);
+		case "modalStrike":
+			return pdModalStrike(
+				phase,
+				amount,
+				controlValue("modalStrikeModes", 0.4),
+				controlValue("modalStrikeDecay", 0.5),
+				controlValue("modalStrikeTone", 0.6),
+			);
+		case "feedbackFm":
+			return pdFeedbackFm(
+				phase,
+				amount,
+				controlValue("feedbackFmRatio", 0.3),
+				controlValue("feedbackFmFeedback", 0.4),
+				controlValue("feedbackFmSkew", 0),
 			);
 		case "karpunk":
 			// Stateless approximation: decaying resonant phase distortion

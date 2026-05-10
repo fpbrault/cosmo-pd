@@ -109,6 +109,11 @@ pub enum Algo {
     Terrain,
     Cheby,
     Stutter,
+    Pwm,
+    PhazDiff,
+    NoiseLab,
+    ModalStrike,
+    FeedbackFm,
 }
 
 impl Algo {

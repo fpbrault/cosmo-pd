@@ -31,11 +31,16 @@ pub mod clip;
 pub mod cz101;
 pub use cz101::{CZ_PRESETS, CzPresetV1};
 pub mod cheby;
+pub mod feedback_fm;
 pub mod fof;
 pub mod fold;
 pub mod karpunk;
 pub mod mirror;
+pub mod modal_strike;
+pub mod noise_lab;
+pub mod phaz_diff;
 pub mod pinch;
+pub mod pwm;
 pub mod quantize;
 pub mod ripple;
 pub mod sine;
@@ -458,6 +463,11 @@ pub fn warp_phase(
         Algo::Terrain => terrain::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Stutter => stutter::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Cheby => cheby::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
+        Algo::Pwm => pwm::warp_phase(phase, amt, c(0), c(1), c(2)),
+        Algo::PhazDiff => phaz_diff::warp_phase(phase, amt, c(0), c(1), c(2)),
+        Algo::NoiseLab => noise_lab::warp_phase(phase, amt, c(0), c(1), c(2)),
+        Algo::ModalStrike => modal_strike::warp_phase(phase, amt, c(0), c(1), c(2)),
+        Algo::FeedbackFm => feedback_fm::warp_phase(phase, amt, c(0), c(1), c(2)),
     }
 }
 
