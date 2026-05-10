@@ -110,7 +110,7 @@ impl CosmoProcessor {
             let random_mod_val = self.random_hold;
 
             let mut mixed = 0.0_f32;
-            let params_ptr: *const crate::params::SynthParams = &self.params;
+            let params_ptr: *const crate::params::SynthParams = self.params.as_ref();
             let pitch_bend_semitones = self.pitch_bend * self.params.pitch_bend_range;
             let mod_wheel = self.mod_wheel;
             let aftertouch = self.aftertouch;
@@ -123,6 +123,7 @@ impl CosmoProcessor {
                     lfo2_mod_val,
                     random_mod_val,
                     sr,
+                    &self.envelope_timing,
                     pitch_bend_semitones,
                     mod_wheel,
                     aftertouch,

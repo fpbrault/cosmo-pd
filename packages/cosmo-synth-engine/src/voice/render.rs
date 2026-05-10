@@ -2,6 +2,7 @@ use libm::sinf;
 
 use crate::dsp_utils::{lfo_output, wrap01, TWO_PI};
 use crate::envelope::EnvelopeKind;
+use crate::envelope::EnvelopeTimingCache;
 use crate::generators::{self, LineRenderConfig};
 use crate::params::{
     LfoWaveform, LineParams, LineSelect, ModDestination, ModMatrix, ModMode,
@@ -67,14 +68,13 @@ pub fn render_voice(
     lfo2_mod_val: f32,
     random_mod_val: f32,
     sr: f32,
+    timing: &EnvelopeTimingCache,
     pitch_bend_semitones: f32,
     mod_wheel: f32,
     aftertouch: f32,
 ) -> f32 {
     let base_freq = base_voice_frequency(voice);
 
-    // Apply per-line modulation destinations before any per-sample envelope/
-    // algorithm work so all downstream stages use a consistent modulated view.
     let preview_mod_sources = ModSources::new(
         lfo_mod_val,
         lfo2_mod_val,
@@ -87,7 +87,7 @@ pub fn render_voice(
     let line1_modded = modulated_line_params(&p.line1, 1, &p.mod_matrix, &preview_mod_sources);
     let line2_modded = modulated_line_params(&p.line2, 2, &p.mod_matrix, &preview_mod_sources);
 
-    let env = advance_envelopes(voice, &line1_modded, &line2_modded, sr);
+    let env = advance_envelopes(voice, &line1_modded, &line2_modded, timing);
 
     if voice.is_silent {
         advance_silent_voice(voice, &line1_modded, &line2_modded, p, sr, base_freq);
@@ -296,49 +296,49 @@ fn advance_envelopes(
     voice: &mut Voice,
     line1: &LineParams,
     line2: &LineParams,
-    sr: f32,
+    timing: &EnvelopeTimingCache,
 ) -> EnvelopeSnapshot {
     let note = voice.env_note;
 
     voice.line1_env.dco.advance(
         EnvelopeKind::Dco,
         &line1.dco_env,
-        sr,
+        timing,
         line1.key_follow,
         note,
     );
     voice.line1_env.dcw.advance(
         EnvelopeKind::Dcw,
         &line1.dcw_env,
-        sr,
+        timing,
         line1.key_follow,
         note,
     );
     voice.line1_env.dca.advance(
         EnvelopeKind::Dca,
         &line1.dca_env,
-        sr,
+        timing,
         line1.key_follow,
         note,
     );
     voice.line2_env.dco.advance(
         EnvelopeKind::Dco,
         &line2.dco_env,
-        sr,
+        timing,
         line2.key_follow,
         note,
     );
     voice.line2_env.dcw.advance(
         EnvelopeKind::Dcw,
         &line2.dcw_env,
-        sr,
+        timing,
         line2.key_follow,
         note,
     );
     voice.line2_env.dca.advance(
         EnvelopeKind::Dca,
         &line2.dca_env,
-        sr,
+        timing,
         line2.key_follow,
         note,
     );

@@ -24,7 +24,7 @@ pub use line::{AlgoControlValueV1, LineParams, LineSelect, ModMode, PolyMode};
 pub use lfo::{LfoParams, LfoWaveform};
 pub use modulation::{ModDestination, ModMatrix, ModRoute, ModSource};
 pub use portamento::{PortamentoMode, PortamentoParams};
-pub use synth_params::{ModEnvParams, RandomParams, SynthParams, NUM_VOICES};
+pub use synth_params::{ModEnvParams, RandomParams, SynthParams, NUM_OPERATORS, NUM_VOICES};
 pub use ui_meta::{
     EngineEnumValueLabelV1, EngineEnumValueTooltipV1, EngineParamRangeV1,
     EngineParamReadoutFormatV1, EngineParamUiMetaV1, engine_enum_value_tooltips_v1,

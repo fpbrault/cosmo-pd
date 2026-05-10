@@ -11,7 +11,7 @@ impl CosmoProcessor {
     }
 
     pub(crate) fn start_env_release_for_voice(&mut self, voice_idx: usize) {
-        let p = &self.params;
+        let p = self.params.as_ref();
         let voice = &mut self.voices[voice_idx];
         voice.line1_env.dco.start_release(&p.line1.dco_env);
         voice.line1_env.dcw.start_release(&p.line1.dcw_env);
@@ -125,12 +125,20 @@ impl CosmoProcessor {
         note: u8,
     ) {
         self.active_notes.retain(|e| e.voice_idx != voice_idx);
-        self.active_notes.push(NoteEntry { note, voice_idx });
+        debug_assert!(self.active_notes.len() < NUM_VOICES);
+        self.active_notes
+            .try_push(NoteEntry { note, voice_idx })
+            .expect("active_notes exceeded voice capacity");
+        self.debug_assert_note_storage_bounds();
     }
 
     pub(crate) fn push_mono_stack_entry(&mut self, entry: MonoStackEntry) {
         self.mono_stack.retain(|e| e.note != entry.note);
-        self.mono_stack.push(entry);
+        debug_assert!(self.mono_stack.len() < NUM_VOICES);
+        self.mono_stack
+            .try_push(entry)
+            .expect("mono_stack exceeded voice capacity");
+        self.debug_assert_note_storage_bounds();
     }
 
     fn mono_active_voice_index(&self) -> Option<usize> {

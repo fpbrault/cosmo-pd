@@ -259,7 +259,8 @@ mod tests {
         let mut voice = Voice::new();
         voice.is_silent = true;
         let p = SynthParams::default();
-        let out = render_voice(&mut voice, &p, 0.0, 0.0, 0.0, 48_000.0, 0.0, 0.0, 0.0);
+        let timing = crate::envelope::EnvelopeTimingCache::new(48_000.0);
+        let out = render_voice(&mut voice, &p, 0.0, 0.0, 0.0, 48_000.0, &timing, 0.0, 0.0, 0.0);
         assert_eq!(out, 0.0);
     }
 
@@ -270,9 +271,10 @@ mod tests {
         voice.env_note = 60;
         voice.is_silent = false;
         let p = SynthParams::default();
+        let timing = crate::envelope::EnvelopeTimingCache::new(48_000.0);
         let mut any_nonzero = false;
         for _ in 0..64 {
-            let out = render_voice(&mut voice, &p, 0.0, 0.0, 0.0, 48_000.0, 0.0, 0.0, 0.0);
+            let out = render_voice(&mut voice, &p, 0.0, 0.0, 0.0, 48_000.0, &timing, 0.0, 0.0, 0.0);
             if out.abs() > 1e-6 {
                 any_nonzero = true;
                 break;

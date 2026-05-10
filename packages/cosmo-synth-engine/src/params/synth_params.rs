@@ -9,6 +9,7 @@ use super::modulation::ModMatrix;
 use super::portamento::PortamentoParams;
 
 pub const NUM_VOICES: usize = 8;
+pub const NUM_OPERATORS: usize = 4; // CZ-101 has 4 operators per line
 
 /// Parameters for the random (sample-and-hold) modulation source.
 #[derive(Debug, Clone, Serialize, Deserialize)]
