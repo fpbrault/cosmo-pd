@@ -1,7 +1,11 @@
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import Button from "@/components/controls/Button";
 import ControlKnob from "@/components/controls/ControlKnob";
-import type { FxSlotModuleConfig } from "@/components/panels/drawer-modules/fxSlotModuleConfig";
+import type {
+	ButtonGroupControlDef,
+	FxSlotModuleConfig,
+	KnobControlDef,
+} from "@/components/panels/drawer-modules/fxSlotModuleConfig";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
@@ -81,6 +85,139 @@ function resolveBinaryToggleState(
 	};
 }
 
+type KnobControlProps = {
+	ctrl: KnobControlDef;
+	params: Record<string, unknown>;
+	knobMetaByParam: Record<string, EngineKnobMeta>;
+	moduleColumns: number;
+	modDestinationByParam: Record<string, string>;
+	color: string;
+	setFxSlotParams: (slot: number, params: Record<string, unknown>) => void;
+	slot: number;
+};
+
+const KnobControl = memo(function KnobControl({
+	ctrl,
+	params,
+	knobMetaByParam,
+	moduleColumns,
+	modDestinationByParam,
+	color,
+	setFxSlotParams,
+	slot,
+}: KnobControlProps) {
+	const engineMeta = knobMetaByParam[ctrl.param];
+	const min = engineMeta?.min ?? ctrl.min;
+	const max = engineMeta?.max ?? ctrl.max;
+	const defaultValue = engineMeta?.defaultValue ?? ctrl.defaultValue;
+	const gridPlacementStyle = resolveGridPlacementStyle({
+		colSpan: ctrl.colSpan,
+		colStart: ctrl.colStart,
+		row: ctrl.row,
+		columns: moduleColumns,
+	});
+
+	return (
+		<div className="min-w-0" style={gridPlacementStyle}>
+			<ControlKnob
+				value={(params[ctrl.param] as number) ?? defaultValue}
+				onChange={(v) => setFxSlotParams(slot, { [ctrl.param]: v })}
+				min={min}
+				max={max}
+				defaultValue={defaultValue}
+				size={ctrl.size ?? 64}
+				color={color}
+				label={ctrl.label}
+				valueFormatter={ctrl.formatter}
+				modDestination={
+					modDestinationByParam[ctrl.param] as ModDestination | undefined
+				}
+			/>
+		</div>
+	);
+});
+
+type ButtonGroupControlProps = {
+	ctrl: ButtonGroupControlDef;
+	params: Record<string, unknown>;
+	moduleColumns: number;
+	setFxSlotParams: (slot: number, params: Record<string, unknown>) => void;
+	slot: number;
+};
+
+const ButtonGroupControl = memo(function ButtonGroupControl({
+	ctrl,
+	params,
+	moduleColumns,
+	setFxSlotParams,
+	slot,
+}: ButtonGroupControlProps) {
+	const fallbackColSpan = resolveButtonGroupSpan(ctrl.options, moduleColumns);
+	const gridPlacementStyle = resolveGridPlacementStyle({
+		colSpan: ctrl.colSpan ?? fallbackColSpan,
+		colStart: ctrl.colStart,
+		row: ctrl.row,
+		columns: moduleColumns,
+	});
+	const binaryToggleState =
+		ctrl.buttonPresentation === "compactBinaryToggle"
+			? resolveBinaryToggleState(ctrl.options, params[ctrl.param])
+			: null;
+	const groupAlignment = ctrl.centered ? "items-center" : "items-stretch";
+
+	return (
+		<div className="min-w-0" style={gridPlacementStyle}>
+			<div className={`flex flex-col gap-1.5 ${groupAlignment}`}>
+				{!ctrl.hideLabel && (
+					<span className="text-center text-3xs text-base-content/58 uppercase tracking-[0.2em]">
+						{ctrl.label}
+					</span>
+				)}
+				{binaryToggleState ? (
+					<Button
+						type="button"
+						onClick={() =>
+							setFxSlotParams(slot, {
+								[ctrl.param]: binaryToggleState.isOn
+									? binaryToggleState.offOption.value
+									: binaryToggleState.onOption.value,
+							})
+						}
+						className={`btn btn-xs h-8 min-h-0 justify-self-center px-4 ${
+							binaryToggleState.isOn
+								? "border-amber-500/60 bg-amber-500/20 text-amber-300"
+								: "border-cz-border bg-transparent text-cz-cream/60 hover:text-cz-cream/90"
+						}`}
+					>
+						{binaryToggleState.isOn
+							? `● ${binaryToggleState.onOption.label.toUpperCase()}`
+							: `○ ${binaryToggleState.onOption.label.toUpperCase()}`}
+					</Button>
+				) : (
+					<div className="join w-full overflow-hidden rounded-md border border-cz-border/65">
+						{ctrl.options.map((opt) => (
+							<Button
+								key={opt.value}
+								type="button"
+								className={`join-item btn btn-xs h-8 min-h-0 flex-1 rounded-none border-0 px-2 ${
+									(params[ctrl.param] as number) === opt.value
+										? "border-amber-500/60 bg-amber-500/20 text-amber-300"
+										: "bg-transparent text-cz-cream/60 hover:text-cz-cream/90"
+								}`}
+								onClick={() =>
+									setFxSlotParams(slot, { [ctrl.param]: opt.value })
+								}
+							>
+								{opt.label}
+							</Button>
+						))}
+					</div>
+				)}
+			</div>
+		</div>
+	);
+});
+
 export default function GenericFxSlotModule({
 	config,
 	slot,
@@ -92,7 +229,6 @@ export default function GenericFxSlotModule({
 	const rawSlot = useSynthStore((s) => s.fxSlots[slot]);
 	const setFxSlotParams = useSynthStore((s) => s.setFxSlotParams);
 
-	// Build a param→modDestinationKey lookup from FX_DEFINITIONS_V1
 	const modDestinationByParam = useMemo(() => {
 		const def = FX_DEFINITIONS_V1.find((d) => d.slotType === config.type);
 		const map: Record<string, string> = {};
@@ -193,118 +329,28 @@ export default function GenericFxSlotModule({
 			onToggle={() => setFxSlotParams(slot, { enabled: !enabled })}
 		>
 			{visibleControls.map((ctrl) =>
-				ctrl.kind === "knob"
-					? (() => {
-							const engineMeta = knobMetaByParam[ctrl.param];
-							const min = engineMeta?.min ?? ctrl.min;
-							const max = engineMeta?.max ?? ctrl.max;
-							const defaultValue =
-								engineMeta?.defaultValue ?? ctrl.defaultValue;
-							const gridPlacementStyle = resolveGridPlacementStyle({
-								colSpan: ctrl.colSpan,
-								colStart: ctrl.colStart,
-								row: ctrl.row,
-								columns: moduleColumns,
-							});
-							return (
-								<div
-									key={ctrl.param}
-									className="min-w-0"
-									style={gridPlacementStyle}
-								>
-									<ControlKnob
-										value={(params[ctrl.param] as number) ?? defaultValue}
-										onChange={(v) => setFxSlotParams(slot, { [ctrl.param]: v })}
-										min={min}
-										max={max}
-										defaultValue={defaultValue}
-										size={ctrl.size ?? 64}
-										color={config.color}
-										label={ctrl.label}
-										valueFormatter={ctrl.formatter}
-										modDestination={
-											modDestinationByParam[ctrl.param] as
-												| ModDestination
-												| undefined
-										}
-									/>
-								</div>
-							);
-						})()
-					: (() => {
-							const fallbackColSpan = resolveButtonGroupSpan(
-								ctrl.options,
-								moduleColumns,
-							);
-							const gridPlacementStyle = resolveGridPlacementStyle({
-								colSpan: ctrl.colSpan ?? fallbackColSpan,
-								colStart: ctrl.colStart,
-								row: ctrl.row,
-								columns: moduleColumns,
-							});
-							const binaryToggleState =
-								ctrl.buttonPresentation === "compactBinaryToggle"
-									? resolveBinaryToggleState(ctrl.options, params[ctrl.param])
-									: null;
-							const groupAlignment = ctrl.centered
-								? "items-center"
-								: "items-stretch";
-							return (
-								<div
-									key={ctrl.param}
-									className="min-w-0"
-									style={gridPlacementStyle}
-								>
-									<div className={`flex flex-col gap-1.5 ${groupAlignment}`}>
-										{!ctrl.hideLabel && (
-											<span className="text-center text-3xs text-base-content/58 uppercase tracking-[0.2em]">
-												{ctrl.label}
-											</span>
-										)}
-										{binaryToggleState ? (
-											<Button
-												type="button"
-												onClick={() =>
-													setFxSlotParams(slot, {
-														[ctrl.param]: binaryToggleState.isOn
-															? binaryToggleState.offOption.value
-															: binaryToggleState.onOption.value,
-													})
-												}
-												className={`btn btn-xs h-8 min-h-0 justify-self-center px-4 ${
-													binaryToggleState.isOn
-														? "border-amber-500/60 bg-amber-500/20 text-amber-300"
-														: "border-cz-border bg-transparent text-cz-cream/60 hover:text-cz-cream/90"
-												}`}
-											>
-												{binaryToggleState.isOn
-													? `● ${binaryToggleState.onOption.label.toUpperCase()}`
-													: `○ ${binaryToggleState.onOption.label.toUpperCase()}`}
-											</Button>
-										) : (
-											<div className="join w-full overflow-hidden rounded-md border border-cz-border/65">
-												{ctrl.options.map((opt) => (
-													<Button
-														key={opt.value}
-														type="button"
-														className={`join-item btn btn-xs h-8 min-h-0 flex-1 rounded-none border-0 px-2 ${
-															(params[ctrl.param] as number) === opt.value
-																? "border-amber-500/60 bg-amber-500/20 text-amber-300"
-																: "bg-transparent text-cz-cream/60 hover:text-cz-cream/90"
-														}`}
-														onClick={() =>
-															setFxSlotParams(slot, { [ctrl.param]: opt.value })
-														}
-													>
-														{opt.label}
-													</Button>
-												))}
-											</div>
-										)}
-									</div>
-								</div>
-							);
-						})(),
+				ctrl.kind === "knob" ? (
+					<KnobControl
+						key={ctrl.param}
+						ctrl={ctrl}
+						params={params}
+						knobMetaByParam={knobMetaByParam}
+						moduleColumns={moduleColumns}
+						modDestinationByParam={modDestinationByParam}
+						color={config.color}
+						setFxSlotParams={setFxSlotParams}
+						slot={slot}
+					/>
+				) : (
+					<ButtonGroupControl
+						key={ctrl.param}
+						ctrl={ctrl}
+						params={params}
+						moduleColumns={moduleColumns}
+						setFxSlotParams={setFxSlotParams}
+						slot={slot}
+					/>
+				),
 			)}
 		</ModuleFrame>
 	);
