@@ -2,13 +2,13 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import AlgoControlSelect from "./AlgoControlSelect";
 
-	const control = {
-		id: "shape",
-		label: "Shape",
-		description: "Select algorithm shape",
-		kind: "select" as const,
-		algo: "cz101" as const,
-		options: [
+const control = {
+	id: "shape",
+	label: "Shape",
+	description: "Select algorithm shape",
+	kind: "select" as const,
+	algo: "cz101" as const,
+	options: [
 		{ value: "a", label: "A", set: [] },
 		{ value: "b", label: "B", set: [{ controlId: "x", value: 1 }] },
 	],

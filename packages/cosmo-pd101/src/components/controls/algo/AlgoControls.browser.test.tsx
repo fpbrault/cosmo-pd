@@ -35,13 +35,13 @@ vi.mock("@/lib/synth/pdAlgorithms", () => ({
 	getPdAlgoBehaviorDescription: () => "mock behavior",
 }));
 
-	const selectControl = {
-		id: "shape",
-		label: "Shape",
-		description: "Select algorithm shape",
-		kind: "select" as const,
-		algo: "cz101" as const,
-		options: [
+const selectControl = {
+	id: "shape",
+	label: "Shape",
+	description: "Select algorithm shape",
+	kind: "select" as const,
+	algo: "cz101" as const,
+	options: [
 		{ value: "a", label: "A", set: [] },
 		{ value: "b", label: "B", set: [{ controlId: "x", value: 1 }] },
 	],
@@ -134,7 +134,14 @@ describe("algo controls (browser)", () => {
 		algoParamTargetFromSlotMock.mockReturnValue("algoParam2");
 		render(
 			<AlgoControlNumber
-				control={{ id: "depth", label: "Depth", min: 0, max: 2, default: 0.5, algo: "cz101" }}
+				control={{
+					id: "depth",
+					label: "Depth",
+					min: 0,
+					max: 2,
+					default: 0.5,
+					algo: "cz101",
+				}}
 				lineIndex={1}
 				algoParamSlotIndex={{ depth: 2 }}
 				getAlgoControlValue={() => 1.25}
@@ -164,14 +171,22 @@ describe("algo controls (browser)", () => {
 		};
 
 		const { rerender } = render(
-				<AlgoControlItem {...baseProps} control={{ id: "num", label: "Num", algo: "cz101" }} />,
+			<AlgoControlItem
+				{...baseProps}
+				control={{ id: "num", label: "Num", algo: "cz101" }}
+			/>,
 		);
 		expect(screen.getByTestId("mock-knob")).toBeInTheDocument();
 
 		rerender(
 			<AlgoControlItem
 				{...baseProps}
-					control={{ id: "toggle", label: "Toggle", kind: "toggle", algo: "cz101" }}
+				control={{
+					id: "toggle",
+					label: "Toggle",
+					kind: "toggle",
+					algo: "cz101",
+				}}
 			/>,
 		);
 		expect(screen.getByRole("checkbox")).toBeInTheDocument();

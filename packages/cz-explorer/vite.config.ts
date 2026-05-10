@@ -131,7 +131,10 @@ export default defineConfig(async ({ command }) => ({
 			{
 				find: "@cosmo/cosmo-pd101/i18n",
 				replacement: fileURLToPath(
-					new URL("../cosmo-pd101/src/i18n/locales/en/synth.json", import.meta.url),
+					new URL(
+						"../cosmo-pd101/src/i18n/locales/en/synth.json",
+						import.meta.url,
+					),
 				),
 			},
 			{

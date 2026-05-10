@@ -80,10 +80,9 @@ export function getAlgoControlOptionLabel(
 	controlId: string,
 	optionValue: string,
 ): string {
-	return i18n.t(
-		`algos.${algo}.controls.${controlId}.options.${optionValue}`,
-		{ defaultValue: optionValue },
-	);
+	return i18n.t(`algos.${algo}.controls.${controlId}.options.${optionValue}`, {
+		defaultValue: optionValue,
+	});
 }
 
 // ── Parameter tooltip ───────────────────────────────────────────────────────

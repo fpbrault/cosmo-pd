@@ -31,7 +31,11 @@ export default function PhaseModModuleRenderer({
 	const ratioControl = getKnobControl(config, "intPmRatio");
 	const pmPreEnabled = Boolean(params.pmPre);
 	const modDestinationByParam = getModDestinationByParam(config.type);
-	const amountLabel = getFxControlLabel(config.type, "intPmAmount", "intPmAmount");
+	const amountLabel = getFxControlLabel(
+		config.type,
+		"intPmAmount",
+		"intPmAmount",
+	);
 	const ratioLabel = getFxControlLabel(config.type, "intPmRatio", "intPmRatio");
 
 	return (

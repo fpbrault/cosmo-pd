@@ -91,7 +91,10 @@ const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 57] = [
         key: "line1Level",
         readout_format: EngineParamReadoutFormatV1::Percent,
     },
-    EngineParamUiMetaV1 { key: "line2Level", readout_format: EngineParamReadoutFormatV1::Percent },
+    EngineParamUiMetaV1 {
+        key: "line2Level",
+        readout_format: EngineParamReadoutFormatV1::Percent,
+    },
     EngineParamUiMetaV1 {
         key: "line1Octave",
         readout_format: EngineParamReadoutFormatV1::Integer,
@@ -384,5 +387,3 @@ pub fn engine_param_default_v1(key: &str) -> Option<f32> {
         _ => None,
     }
 }
-
-

@@ -68,11 +68,7 @@ export default function VibratoModuleRenderer({
 						}`}
 						onClick={() => setFxSlotParams(slot, { waveform: option.value })}
 					>
-						{getFxControlOptionLabel(
-							config.type,
-							"waveform",
-							option.value,
-						)}
+						{getFxControlOptionLabel(config.type, "waveform", option.value)}
 					</Button>
 				))}
 			</div>
