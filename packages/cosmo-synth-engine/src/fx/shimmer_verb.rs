@@ -1,5 +1,6 @@
 use super::delay_line::DelayLine;
 use super::reverb::FdnReverb;
+use crate::dsp_utils::wrap01;
 
 // ---------------------------------------------------------------------------
 // ShimmerVerbFx — FDN reverb with pitch-shifted feedback (octave up)
@@ -72,15 +73,6 @@ impl ShimmerVerbFx {
     fn pitch_head(&self, phase: f32) -> f32 {
         let offset = 1.0 + (1.0 - phase) * self.pitch_window_samples;
         self.pitch_line.read_at_fractional(offset)
-    }
-}
-
-#[inline]
-fn wrap01(value: f32) -> f32 {
-    if value >= 1.0 {
-        value - 1.0
-    } else {
-        value
     }
 }
 
