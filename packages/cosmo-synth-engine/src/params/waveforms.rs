@@ -106,6 +106,9 @@ pub enum Algo {
     Fof,
     Karpunk,
     Sine,
+    Terrain,
+    Cheby,
+    Stutter,
 }
 
 impl Algo {

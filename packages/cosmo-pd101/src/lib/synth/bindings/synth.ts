@@ -48,7 +48,7 @@ export type BaseWaveform = "cosine" | "sine" | "triangle" | "saw" | "square"
 /**
  * Flat algorithm selector — unifies CZ waveforms and warp variants.
  */
-export type Algo = "saw" | "square" | "pulse" | "null" | "sinePulse" | "sawPulse" | "multiSine" | "pulse2" | "cz101" | "bend" | "sync" | "pinch" | "fold" | "skew" | "quantize" | "twist" | "clip" | "ripple" | "mirror" | "fof" | "karpunk" | "sine"
+export type Algo = "saw" | "square" | "pulse" | "null" | "sinePulse" | "sawPulse" | "multiSine" | "pulse2" | "cz101" | "bend" | "sync" | "pinch" | "fold" | "skew" | "quantize" | "twist" | "clip" | "ripple" | "mirror" | "fof" | "karpunk" | "sine" | "terrain" | "cheby" | "stutter"
 
 /**
  * Window type applied to oscillator output
@@ -384,6 +384,24 @@ export const ALGO_UI_CATALOG_V1: AlgoUiEntryV1[] = [
     "id": "fof",
     "label": "FOF",
     "iconPath": "M4,16 C8,4 10,4 12,16 C14,4 16,4 20,16",
+    "visible": true
+  },
+  {
+    "id": "terrain",
+    "label": "Terrain",
+    "iconPath": "M4,12 C6,4 9,20 12,12 C15,4 18,20 20,12",
+    "visible": true
+  },
+  {
+    "id": "stutter",
+    "label": "Stutter",
+    "iconPath": "M4,20 L8,20 L8,4 L12,4 L12,20 L16,20 L16,4 L20,4",
+    "visible": true
+  },
+  {
+    "id": "cheby",
+    "label": "Cheby",
+    "iconPath": "M4,20 L7,4 L10,20 L12,12 L14,4 L17,20 L20,12",
     "visible": true
   }
 ];
@@ -1551,6 +1569,220 @@ export const ALGO_DEFINITIONS_V1 = [
         "options": [],
         "readoutFormat": {
           "kind": "bipolarPercent"
+        }
+      }
+    ]
+  },
+  {
+    "id": "terrain",
+    "name": "Terrain",
+    "iconPath": "M4,12 C6,4 9,20 12,12 C15,4 18,20 20,12",
+    "visible": true,
+    "defaultBaseWaveform": "sine",
+    "controls": [
+      {
+        "id": "terrainRatio",
+        "label": "Ratio",
+        "description": "Sets the frequency ratio of the phase-modulating oscillator (1–8).",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 1.0,
+        "max": 8.0,
+        "default": 2.0,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "decimal"
+        }
+      },
+      {
+        "id": "terrainDepth",
+        "label": "Depth",
+        "description": "Controls how far the modulator displaces the phase path.",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 0.5,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
+      },
+      {
+        "id": "terrainFmPhase",
+        "label": "FM Phase",
+        "description": "Offsets the modulator's start phase within the cycle.",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 0.0,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "degrees"
+        }
+      },
+      {
+        "id": "terrainShape",
+        "label": "Shape",
+        "description": "Morphs the modulator waveform from a sine (0) to a sawtooth (1).",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 0.0,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
+      }
+    ]
+  },
+  {
+    "id": "stutter",
+    "name": "Stutter",
+    "iconPath": "M4,20 L8,20 L8,4 L12,4 L12,20 L16,20 L16,4 L20,4",
+    "visible": true,
+    "defaultBaseWaveform": "sine",
+    "controls": [
+      {
+        "id": "stutterSegs",
+        "label": "Segs",
+        "description": "Number of equal segments the cycle is split into (2–8).",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 0.25,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
+      },
+      {
+        "id": "stutterReverse",
+        "label": "Reverse",
+        "description": "Blends alternate segments toward time-reversed playback.",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 1.0,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
+      },
+      {
+        "id": "stutterSlip",
+        "label": "Slip",
+        "description": "Adds a cumulative phase slip at each segment boundary.",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 0.0,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
+      },
+      {
+        "id": "stutterSpacing",
+        "label": "Spacing",
+        "description": "Sets how many segments separate each reversed segment (2, 3, or 4).",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 0.0,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
+      }
+    ]
+  },
+  {
+    "id": "cheby",
+    "name": "Cheby",
+    "iconPath": "M4,20 L7,4 L10,20 L12,12 L14,4 L17,20 L20,12",
+    "visible": true,
+    "defaultBaseWaveform": "sine",
+    "controls": [
+      {
+        "id": "chebyOrder",
+        "label": "Order",
+        "description": "Chebyshev polynomial degree (maps 0→1 to harmonic orders 1→6).",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 0.2,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "decimal"
+        }
+      },
+      {
+        "id": "chebyTilt",
+        "label": "Tilt",
+        "description": "Phase-shifts the fold points within the super-cycle for asymmetric spectra.",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": true,
+        "iconName": null,
+        "min": -1.0,
+        "max": 1.0,
+        "default": 0.0,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "degrees"
+        }
+      },
+      {
+        "id": "chebyWarp",
+        "label": "Warp",
+        "description": "Pre-warps the input phase before the polynomial, shifting harmonic peaks.",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 0.0,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
         }
       }
     ]

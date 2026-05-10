@@ -16,6 +16,7 @@ pub mod catalog;
 pub mod clip;
 pub mod cz101;
 pub use cz101::{CzPresetV1, CZ_PRESETS};
+pub mod cheby;
 pub mod fof;
 pub mod fold;
 pub mod karpunk;
@@ -25,7 +26,9 @@ pub mod quantize;
 pub mod ripple;
 pub mod sine;
 pub mod skew;
+pub mod stutter;
 pub mod sync;
+pub mod terrain;
 pub mod twist;
 
 pub use catalog::{
@@ -510,6 +513,30 @@ pub fn warp_phase(
         }
         Algo::Sine => sine::warp_phase(phase, amt),
         Algo::Karpunk => phase,
+        Algo::Terrain => terrain::warp_phase(
+            phase,
+            amt,
+            resolve_algo_control_value(algo, algo_controls, "terrainRatio", 2.0, algo_param_mods),
+            resolve_algo_control_value(algo, algo_controls, "terrainDepth", 0.5, algo_param_mods),
+            resolve_algo_control_value(algo, algo_controls, "terrainFmPhase", 0.0, algo_param_mods),
+            resolve_algo_control_value(algo, algo_controls, "terrainShape", 0.0, algo_param_mods),
+        ),
+        Algo::Stutter => stutter::warp_phase(
+            phase,
+            amt,
+            resolve_algo_control_value(algo, algo_controls, "stutterSegs", 0.25, algo_param_mods),
+            resolve_algo_control_value(algo, algo_controls, "stutterReverse", 1.0, algo_param_mods),
+            resolve_algo_control_value(algo, algo_controls, "stutterSlip", 0.0, algo_param_mods),
+            resolve_algo_control_value(algo, algo_controls, "stutterSpacing", 0.0, algo_param_mods),
+        ),
+        Algo::Cheby => cheby::warp_phase(
+            phase,
+            amt,
+            resolve_algo_control_value(algo, algo_controls, "chebyOrder", 0.2, algo_param_mods),
+            resolve_algo_control_value(algo, algo_controls, "chebyTilt", 0.0, algo_param_mods),
+            resolve_algo_control_value(algo, algo_controls, "chebyWarp", 0.0, algo_param_mods),
+            resolve_algo_control_value(algo, algo_controls, "chebyMix", 1.0, algo_param_mods),
+        ),
     }
 }
 
