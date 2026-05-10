@@ -1,17 +1,32 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import type { BaseWaveform } from "@/lib/synth/bindings/synth";
 import type { PdAlgo } from "@/lib/synth/pdAlgorithms";
+import type { LineIndex } from "../controls/algo/algoControlTypes";
 import { PerLineWarpBlock } from "./PerLineWarpBlock";
 
 vi.mock("@/components/controls/algo/AlgoControlsGroup", () => ({
-	default: ({ onChange }: { onChange?: (id: string, value: number) => void }) => (
-		<button type="button" data-testid="mock-control" onClick={() => onChange?.("test", 50)}>Control</button>
+	default: ({
+		onChange,
+	}: {
+		onChange?: (id: string, value: number) => void;
+	}) => (
+		<button
+			type="button"
+			data-testid="mock-control"
+			onClick={() => onChange?.("test", 50)}
+		>
+			Control
+		</button>
 	),
 }));
 
 vi.mock("@/components/controls/algo/AlgoIconGrid", () => ({
 	default: ({ onChange }: { onChange?: (value: PdAlgo) => void }) => (
-		<select data-testid="algo-select" onChange={(e) => onChange?.(Number(e.target.value) as PdAlgo)}>
+		<select
+			data-testid="algo-select"
+			onChange={(e) => onChange?.(Number(e.target.value) as unknown as PdAlgo)}
+		>
 			<option value={0}>Algo 0</option>
 			<option value={1}>Algo 1</option>
 		</select>
@@ -19,8 +34,18 @@ vi.mock("@/components/controls/algo/AlgoIconGrid", () => ({
 }));
 
 vi.mock("./BaseWaveSelector", () => ({
-	BaseWaveSelector: ({ onChange, disabled }: { onChange?: (v: string) => void; disabled?: boolean }) => (
-		<select data-testid="wave-select" disabled={disabled} onChange={(e) => onChange?.(e.target.value)}>
+	BaseWaveSelector: ({
+		onChange,
+		disabled,
+	}: {
+		onChange?: (v: string) => void;
+		disabled?: boolean;
+	}) => (
+		<select
+			data-testid="wave-select"
+			disabled={disabled}
+			onChange={(e) => onChange?.(e.target.value)}
+		>
 			<option value="saw">Saw</option>
 			<option value="square">Square</option>
 		</select>
@@ -33,18 +58,30 @@ vi.mock("./SingleCycleDisplay", () => ({
 
 vi.mock("./PerLineParametersCard", () => ({
 	default: ({ setWarpAmount }: { setWarpAmount?: (v: number) => void }) => (
-		<button type="button" data-testid="per-line-params" onClick={() => setWarpAmount?.(0.5)}>
+		<button
+			type="button"
+			data-testid="per-line-params"
+			onClick={() => setWarpAmount?.(0.5)}
+		>
 			PerLineParams
 		</button>
 	),
 }));
 
 vi.mock("@/components/primitives/Card", () => ({
-	default: ({ children }: { children: React.ReactNode }) => <div data-testid="card">{children}</div>,
+	default: ({ children }: { children: React.ReactNode }) => (
+		<div data-testid="card">{children}</div>
+	),
 }));
 
 vi.mock("@/components/controls/SynthParamKnob", () => ({
-	default: ({ label, onChange }: { label?: string; onChange?: (v: number) => void }) => (
+	default: ({
+		label,
+		onChange,
+	}: {
+		label?: string;
+		onChange?: (v: number) => void;
+	}) => (
 		<button type="button" aria-label={label} onClick={() => onChange?.(0.3)}>
 			{label}
 		</button>
@@ -56,8 +93,19 @@ vi.mock("./EnvelopesSection", () => ({
 }));
 
 vi.mock("./AlgoSectionCard", () => ({
-	default: ({ onChange, disabled }: { onChange?: (v: PdAlgo) => void; disabled?: boolean }) => (
-		<button type="button" data-testid="algo-card" disabled={disabled} onClick={() => onChange?.(1 as PdAlgo)}>
+	default: ({
+		onChange,
+		disabled,
+	}: {
+		onChange?: (v: PdAlgo) => void;
+		disabled?: boolean;
+	}) => (
+		<button
+			type="button"
+			data-testid="algo-card"
+			disabled={disabled}
+			onClick={() => onChange?.(1 as unknown as PdAlgo)}
+		>
 			AlgoCard
 		</button>
 	),
@@ -67,7 +115,7 @@ function createProps() {
 	return {
 		label: "Line 1",
 		color: "#ff0000",
-		algo: 0 as PdAlgo,
+		algo: "saw" as PdAlgo,
 		setAlgo: vi.fn(),
 		algo2: null as PdAlgo | null,
 		setAlgo2: vi.fn(),
@@ -80,35 +128,44 @@ function createProps() {
 		octave: 3,
 		setOctave: vi.fn(),
 		dcoEnv: {
-			steps: Array.from({ length: 8 }, (_, i) => ({ level: Math.max(0, 99 - i * 10), rate: 50 })),
+			steps: Array.from({ length: 8 }, (_, i) => ({
+				level: Math.max(0, 99 - i * 10),
+				rate: 50,
+			})),
 			sustainStep: 1,
 			stepCount: 4,
 			loop: false,
 		},
 		setDcoEnv: vi.fn(),
 		dcwEnv: {
-			steps: Array.from({ length: 8 }, (_, i) => ({ level: Math.max(0, 99 - i * 10), rate: 50 })),
+			steps: Array.from({ length: 8 }, (_, i) => ({
+				level: Math.max(0, 99 - i * 10),
+				rate: 50,
+			})),
 			sustainStep: 1,
 			stepCount: 4,
 			loop: false,
 		},
 		setDcwEnv: vi.fn(),
 		dcaEnv: {
-			steps: Array.from({ length: 8 }, (_, i) => ({ level: Math.max(0, 99 - i * 10), rate: 50 })),
+			steps: Array.from({ length: 8 }, (_, i) => ({
+				level: Math.max(0, 99 - i * 10),
+				rate: 50,
+			})),
 			sustainStep: 1,
 			stepCount: 4,
 			loop: false,
 		},
 		setDcaEnv: vi.fn(),
-		baseWaveformA: "saw",
+		baseWaveformA: "saw" as BaseWaveform,
 		setBaseWaveformA: vi.fn(),
-		baseWaveformB: "square",
+		baseWaveformB: "square" as BaseWaveform,
 		setBaseWaveformB: vi.fn(),
 		algoControlsA: [],
 		setAlgoControlsA: vi.fn(),
 		algoControlsB: [],
 		setAlgoControlsB: vi.fn(),
-		lineIndex: 1,
+		lineIndex: 1 as LineIndex,
 		activeSection: "algos" as const,
 	};
 }
@@ -161,7 +218,13 @@ describe("PerLineWarpBlock", () => {
 
 	it("has Algo B card enabled when blend > 0", () => {
 		const props = createProps();
-		render(<PerLineWarpBlock {...props} algoBlend={0.5} algo2={1 as PdAlgo} />);
+		render(
+			<PerLineWarpBlock
+				{...props}
+				algoBlend={0.5}
+				algo2={1 as unknown as PdAlgo}
+			/>,
+		);
 
 		const algoBCards = screen.getAllByTestId("algo-card");
 		expect(algoBCards[1]).not.toBeDisabled();
