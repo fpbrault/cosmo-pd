@@ -260,4 +260,89 @@ describe("PresetLibrary", () => {
 		expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
 		expect(screen.getByRole("button", { name: "Save As" })).toBeEnabled();
 	});
+
+	it("filters presets when typing in the search box", () => {
+		const props = createProps();
+		render(<PresetLibrary {...props} />);
+
+		expect(
+			screen.getByRole("button", { name: "Factory Bass" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Local Keys" }),
+		).toBeInTheDocument();
+
+		fireEvent.change(screen.getByPlaceholderText("Search presets"), {
+			target: { value: "keys" },
+		});
+
+		expect(
+			screen.queryByRole("button", { name: "Factory Bass" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Local Keys" }),
+		).toBeInTheDocument();
+	});
+
+	it("toggles favorite on a local preset", () => {
+		const props = createProps();
+		render(<PresetLibrary {...props} />);
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Favorite Local Keys" }),
+		);
+
+		expect(props.onSetPresetFavorite).toHaveBeenCalledWith("Local Keys", true);
+	});
+
+	it("shows empty state when no presets are available", () => {
+		const props = createProps();
+		render(<PresetLibrary {...props} allEntries={[]} />);
+
+		expect(screen.getByText("No presets available.")).toBeInTheDocument();
+	});
+
+	it("shows error on invalid JSON import", () => {
+		const props = createProps();
+		props.onImportPreset = vi.fn(() => {
+			throw new Error("invalid");
+		});
+		class ErrorFileReader {
+			public onload:
+				| ((event: ProgressEvent<FileReader>) => void)
+				| null = null;
+
+			readAsText() {
+				this.onload?.({
+					target: { result: "not-json" },
+				} as ProgressEvent<FileReader>);
+			}
+		}
+		vi.stubGlobal("FileReader", ErrorFileReader);
+
+		const { container } = render(<PresetLibrary {...props} />);
+
+		const fileInput = container.querySelector('input[type="file"]');
+		if (!(fileInput instanceof HTMLInputElement)) {
+			throw new Error("expected hidden file input");
+		}
+		fireEvent.change(fileInput, {
+			target: {
+				files: [new File(["not-json"], "bad.json")],
+			},
+		});
+
+		expect(screen.getByText("Invalid preset file.")).toBeInTheDocument();
+	});
+
+	it("toggles factory presets visibility", () => {
+		const props = createProps();
+		render(<PresetLibrary {...props} />);
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Factory Presets: Visible" }),
+		);
+
+		expect(props.onToggleLibraryPresets).toHaveBeenCalled();
+	});
 });
