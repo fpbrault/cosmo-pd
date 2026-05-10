@@ -8,6 +8,7 @@ use crate::params::{
     LfoWaveform, LineParams, LineSelect, ModDestination, ModMatrix, ModMode, PortamentoMode,
     SynthParams,
 };
+use crate::simd::SimdBackend;
 
 use super::modulation::{
     algo_param_slot_mods_for_line, mod_value_for, modulated_line_params, ModSources,
@@ -73,6 +74,7 @@ pub fn render_voice(
     pitch_bend_semitones: f32,
     mod_wheel: f32,
     aftertouch: f32,
+    backend: SimdBackend,
 ) -> f32 {
     let base_freq = base_voice_frequency(voice);
 
@@ -85,8 +87,10 @@ pub fn render_voice(
         mod_wheel,
         aftertouch,
     );
-    let line1_modded = modulated_line_params(&p.line1, 1, &p.mod_matrix, &preview_mod_sources);
-    let line2_modded = modulated_line_params(&p.line2, 2, &p.mod_matrix, &preview_mod_sources);
+    let line1_modded =
+        modulated_line_params(&p.line1, 1, &p.mod_matrix, &preview_mod_sources, backend);
+    let line2_modded =
+        modulated_line_params(&p.line2, 2, &p.mod_matrix, &preview_mod_sources, backend);
 
     let env = advance_envelopes(voice, &line1_modded, &line2_modded, timing);
 
@@ -112,8 +116,10 @@ pub fn render_voice(
         mod_wheel,
         aftertouch,
     );
-    let line1_algo_param_mods = algo_param_slot_mods_for_line(1, &p.mod_matrix, &mod_sources);
-    let line2_algo_param_mods = algo_param_slot_mods_for_line(2, &p.mod_matrix, &mod_sources);
+    let line1_algo_param_mods =
+        algo_param_slot_mods_for_line(1, &p.mod_matrix, &mod_sources, backend);
+    let line2_algo_param_mods =
+        algo_param_slot_mods_for_line(2, &p.mod_matrix, &mod_sources, backend);
     let mut signal = build_signal_state(
         &line1_modded,
         &line2_modded,

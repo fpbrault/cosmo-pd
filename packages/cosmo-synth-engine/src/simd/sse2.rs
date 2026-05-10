@@ -3,17 +3,28 @@
 //! This backend keeps the same 4-wide API as AVX2 so the higher-level code
 //! can target a single abstraction across native x86 targets.
 
-#![cfg(all(
-    target_arch = "x86_64",
-    target_feature = "sse2",
-    not(target_feature = "avx2")
-))]
+#![cfg(target_arch = "x86_64")]
 
 use super::SimdType;
+use core::arch::x86_64::*;
 use core::ops::{Add, AddAssign, Mul, MulAssign, Sub};
 
 #[derive(Clone, Copy)]
 pub struct Sse2([f32; 4]);
+
+impl Sse2 {
+    #[inline]
+    unsafe fn from_m128(v: __m128) -> Self {
+        let mut arr = [0.0; 4];
+        _mm_storeu_ps(arr.as_mut_ptr(), v);
+        Self(arr)
+    }
+
+    #[inline]
+    unsafe fn to_m128(&self) -> __m128 {
+        _mm_loadu_ps(self.0.as_ptr())
+    }
+}
 
 impl SimdType for Sse2 {
     const WIDTH: usize = 4;
@@ -44,62 +55,52 @@ impl SimdType for Sse2 {
 
     #[inline]
     fn add(self, other: Self) -> Self {
-        Self([
-            self.0[0] + other.0[0],
-            self.0[1] + other.0[1],
-            self.0[2] + other.0[2],
-            self.0[3] + other.0[3],
-        ])
+        unsafe {
+            let lhs = self.to_m128();
+            let rhs = other.to_m128();
+            Self::from_m128(_mm_add_ps(lhs, rhs))
+        }
     }
 
     #[inline]
     fn sub(self, other: Self) -> Self {
-        Self([
-            self.0[0] - other.0[0],
-            self.0[1] - other.0[1],
-            self.0[2] - other.0[2],
-            self.0[3] - other.0[3],
-        ])
+        unsafe {
+            let lhs = self.to_m128();
+            let rhs = other.to_m128();
+            Self::from_m128(_mm_sub_ps(lhs, rhs))
+        }
     }
 
     #[inline]
     fn mul(self, other: Self) -> Self {
-        Self([
-            self.0[0] * other.0[0],
-            self.0[1] * other.0[1],
-            self.0[2] * other.0[2],
-            self.0[3] * other.0[3],
-        ])
+        unsafe {
+            let lhs = self.to_m128();
+            let rhs = other.to_m128();
+            Self::from_m128(_mm_mul_ps(lhs, rhs))
+        }
     }
 
     #[inline]
     fn mul_scalar(self, val: f32) -> Self {
-        Self([
-            self.0[0] * val,
-            self.0[1] * val,
-            self.0[2] * val,
-            self.0[3] * val,
-        ])
+        self.mul(Self::splat(val))
     }
 
     #[inline]
     fn max(self, other: Self) -> Self {
-        Self([
-            self.0[0].max(other.0[0]),
-            self.0[1].max(other.0[1]),
-            self.0[2].max(other.0[2]),
-            self.0[3].max(other.0[3]),
-        ])
+        unsafe {
+            let lhs = self.to_m128();
+            let rhs = other.to_m128();
+            Self::from_m128(_mm_max_ps(lhs, rhs))
+        }
     }
 
     #[inline]
     fn min(self, other: Self) -> Self {
-        Self([
-            self.0[0].min(other.0[0]),
-            self.0[1].min(other.0[1]),
-            self.0[2].min(other.0[2]),
-            self.0[3].min(other.0[3]),
-        ])
+        unsafe {
+            let lhs = self.to_m128();
+            let rhs = other.to_m128();
+            Self::from_m128(_mm_min_ps(lhs, rhs))
+        }
     }
 
     #[inline]
@@ -109,12 +110,11 @@ impl SimdType for Sse2 {
 
     #[inline]
     fn abs(self) -> Self {
-        Self([
-            self.0[0].abs(),
-            self.0[1].abs(),
-            self.0[2].abs(),
-            self.0[3].abs(),
-        ])
+        unsafe {
+            let v = self.to_m128();
+            let sign_mask = _mm_set1_epi32(0x7fff_ffff_u32 as i32);
+            Self::from_m128(_mm_and_ps(v, _mm_castsi128_ps(sign_mask)))
+        }
     }
 }
 

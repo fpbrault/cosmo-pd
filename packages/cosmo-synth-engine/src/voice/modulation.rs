@@ -1,6 +1,7 @@
 use crate::params::{
     EnvStep, LineParams, ModDestination, ModMatrix, ModSource, StepEnvData, NUM_ENV_STEPS,
 };
+use crate::simd::SimdBackend;
 
 // Modulation helpers
 // ---------------------------------------------------------------------------
@@ -63,10 +64,89 @@ pub(crate) fn mod_value_for(dest: ModDestination, matrix: &ModMatrix, sources: &
     total.clamp(-1.0, 1.0)
 }
 
+pub(crate) fn mod_values_for_destinations4(
+    destinations: [ModDestination; 4],
+    matrix: &ModMatrix,
+    sources: &ModSources,
+    backend: SimdBackend,
+) -> [f32; 4] {
+    let mut totals = [0.0_f32; 4];
+
+    for route in &matrix.routes {
+        if !route.enabled {
+            continue;
+        }
+
+        let scaled = route.amount * sources.source_value(route.source);
+        let values = [scaled; 4];
+        let mask = [
+            if route.destination == destinations[0] {
+                1.0
+            } else {
+                0.0
+            },
+            if route.destination == destinations[1] {
+                1.0
+            } else {
+                0.0
+            },
+            if route.destination == destinations[2] {
+                1.0
+            } else {
+                0.0
+            },
+            if route.destination == destinations[3] {
+                1.0
+            } else {
+                0.0
+            },
+        ];
+
+        totals = backend.add4(totals, backend.mul4(values, mask));
+    }
+
+    backend.clamp4(totals, -1.0, 1.0)
+}
+
+pub(crate) fn mod_values_for_destinations8(
+    destinations: [ModDestination; 8],
+    matrix: &ModMatrix,
+    sources: &ModSources,
+    backend: SimdBackend,
+) -> [f32; 8] {
+    let first = mod_values_for_destinations4(
+        [
+            destinations[0],
+            destinations[1],
+            destinations[2],
+            destinations[3],
+        ],
+        matrix,
+        sources,
+        backend,
+    );
+    let second = mod_values_for_destinations4(
+        [
+            destinations[4],
+            destinations[5],
+            destinations[6],
+            destinations[7],
+        ],
+        matrix,
+        sources,
+        backend,
+    );
+
+    [
+        first[0], first[1], first[2], first[3], second[0], second[1], second[2], second[3],
+    ]
+}
+
 pub(crate) fn algo_param_slot_mods_for_line(
     line_index: u8,
     matrix: &ModMatrix,
     sources: &ModSources,
+    backend: SimdBackend,
 ) -> [f32; 8] {
     let destinations = if line_index == 2 {
         [
@@ -92,11 +172,7 @@ pub(crate) fn algo_param_slot_mods_for_line(
         ]
     };
 
-    let mut out = [0.0_f32; 8];
-    for (idx, dest) in destinations.iter().enumerate() {
-        out[idx] = mod_value_for(*dest, matrix, sources);
-    }
-    out
+    mod_values_for_destinations8(destinations, matrix, sources, backend)
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -228,21 +304,40 @@ fn apply_env_step_modulation(
     env_kind: EnvKindKey,
     matrix: &ModMatrix,
     sources: &ModSources,
+    backend: SimdBackend,
 ) -> StepEnvData {
     let mut modded = env.clone();
 
+    let level_destinations = [
+        env_step_level_destination(line_index, env_kind, 0),
+        env_step_level_destination(line_index, env_kind, 1),
+        env_step_level_destination(line_index, env_kind, 2),
+        env_step_level_destination(line_index, env_kind, 3),
+        env_step_level_destination(line_index, env_kind, 4),
+        env_step_level_destination(line_index, env_kind, 5),
+        env_step_level_destination(line_index, env_kind, 6),
+        env_step_level_destination(line_index, env_kind, 7),
+    ];
+    let rate_destinations = [
+        env_step_rate_destination(line_index, env_kind, 0),
+        env_step_rate_destination(line_index, env_kind, 1),
+        env_step_rate_destination(line_index, env_kind, 2),
+        env_step_rate_destination(line_index, env_kind, 3),
+        env_step_rate_destination(line_index, env_kind, 4),
+        env_step_rate_destination(line_index, env_kind, 5),
+        env_step_rate_destination(line_index, env_kind, 6),
+        env_step_rate_destination(line_index, env_kind, 7),
+    ];
+
+    let level_mods = mod_values_for_destinations8(level_destinations, matrix, sources, backend);
+    let rate_mods = mod_values_for_destinations8(rate_destinations, matrix, sources, backend);
+
     for step_index in 0..NUM_ENV_STEPS {
-        let level_dest = env_step_level_destination(line_index, env_kind, step_index);
-        let rate_dest = env_step_rate_destination(line_index, env_kind, step_index);
-
-        let level_mod = mod_value_for(level_dest, matrix, sources);
-        let rate_mod = mod_value_for(rate_dest, matrix, sources);
-
         let step: &mut EnvStep = &mut modded.steps[step_index];
-        let next_level = (step.level as f32 + level_mod * 127.0)
+        let next_level = (step.level as f32 + level_mods[step_index] * 127.0)
             .round()
             .clamp(0.0, 127.0) as u8;
-        let next_rate = (step.rate as f32 + rate_mod * 127.0)
+        let next_rate = (step.rate as f32 + rate_mods[step_index] * 127.0)
             .round()
             .clamp(0.0, 127.0) as u8;
         step.level = next_level;
@@ -257,6 +352,7 @@ pub(crate) fn modulated_line_params(
     line_index: u8,
     matrix: &ModMatrix,
     sources: &ModSources,
+    backend: SimdBackend,
 ) -> LineParams {
     let algo_blend_dest = if line_index == 2 {
         ModDestination::Line2AlgoBlend
@@ -268,12 +364,30 @@ pub(crate) fn modulated_line_params(
 
     let mut modded = line.clone();
     modded.algo_blend = (line.algo_blend + algo_blend_mod).clamp(0.0, 1.0);
-    modded.dco_env =
-        apply_env_step_modulation(&line.dco_env, line_index, EnvKindKey::Dco, matrix, sources);
-    modded.dcw_env =
-        apply_env_step_modulation(&line.dcw_env, line_index, EnvKindKey::Dcw, matrix, sources);
-    modded.dca_env =
-        apply_env_step_modulation(&line.dca_env, line_index, EnvKindKey::Dca, matrix, sources);
+    modded.dco_env = apply_env_step_modulation(
+        &line.dco_env,
+        line_index,
+        EnvKindKey::Dco,
+        matrix,
+        sources,
+        backend,
+    );
+    modded.dcw_env = apply_env_step_modulation(
+        &line.dcw_env,
+        line_index,
+        EnvKindKey::Dcw,
+        matrix,
+        sources,
+        backend,
+    );
+    modded.dca_env = apply_env_step_modulation(
+        &line.dca_env,
+        line_index,
+        EnvKindKey::Dca,
+        matrix,
+        sources,
+        backend,
+    );
     modded
 }
 // ---------------------------------------------------------------------------
