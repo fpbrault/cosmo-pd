@@ -1,19 +1,15 @@
-import { useState } from "react";
 import ControlKnob from "@/components/controls/ControlKnob";
 import {
 	asNumber,
 	getKnobControl,
 	getModDestinationByParam,
 	getTooltip,
-	resolveEnabled,
-	resolvePresetPatchParams,
 } from "@/components/panels/drawer-modules/custom/utils";
+import { useFxModuleController } from "@/components/panels/drawer-modules/custom/useFxModuleController";
 import type { FxSlotModuleConfig } from "@/components/panels/drawer-modules/fxSlotModuleConfig";
 import BadgeToggle from "@/components/primitives/BadgeToggle";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
-import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
-import { useSynthStore } from "@/features/synth/synthStore";
 
 export default function DelayModuleRenderer({
 	config,
@@ -22,16 +18,14 @@ export default function DelayModuleRenderer({
 	config: FxSlotModuleConfig;
 	slot: number;
 }) {
-	const [selectedPreset, setSelectedPreset] = useState<string>("");
-	const rawSlot = useSynthStore((state) => state.fxSlots[slot]);
-	const setFxSlotParams = useSynthStore((state) => state.setFxSlotParams);
+	const {
+		selectedPreset,
+		setFxSlotParams,
+		params,
+		enabled,
+		handlePresetChange,
+	} = useFxModuleController(config, slot);
 
-	if (rawSlot?.type !== config.type) {
-		return null;
-	}
-
-	const params = (rawSlot as { params: Record<string, unknown> }).params;
-	const enabled = resolveEnabled(params);
 	const tapeMode = asNumber(params.tapeMode, 0) === 1;
 	const columns = tapeMode ? 4 : 3;
 	const timeControl = getKnobControl(config, "time");
@@ -40,29 +34,6 @@ export default function DelayModuleRenderer({
 	const mixControl = getKnobControl(config, "mix");
 	const modeLabel = tapeMode ? "Tape Echo" : "Digital";
 	const modDestinationByParam = getModDestinationByParam(config.type);
-
-	const handlePresetChange = (presetId: string) => {
-		setSelectedPreset(presetId);
-		const preset = config.presets.find((entry) => entry.id === presetId);
-		if (!preset) {
-			return;
-		}
-
-		const patchParams = resolvePresetPatchParams(
-			config,
-			preset.patch as Record<string, unknown>,
-		);
-		if (!patchParams) {
-			return;
-		}
-
-		setFxSlotParams(slot, patchParams);
-		requestApplyModulePreset({
-			module: config.moduleKey,
-			preset: preset.id,
-			patch: preset.patch,
-		});
-	};
 
 	return (
 		<ModuleFrame
