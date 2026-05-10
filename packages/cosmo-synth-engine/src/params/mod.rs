@@ -3,8 +3,8 @@
 mod envelopes;
 mod filter;
 mod fx_params;
-mod line;
 mod lfo;
+mod line;
 mod modulation;
 mod portamento;
 mod synth_params;
@@ -20,15 +20,15 @@ pub use fx_params::{
     PhaserParams, ReverbParams, RingModParams, ShimmerVerbParams, TremoloParams, VibratoParams,
     WavefolderParams,
 };
-pub use line::{AlgoControlValueV1, LineParams, LineSelect, ModMode, PolyMode};
 pub use lfo::{LfoParams, LfoWaveform};
+pub use line::{AlgoControlValueV1, LineParams, LineSelect, ModMode, PolyMode};
 pub use modulation::{ModDestination, ModMatrix, ModRoute, ModSource};
 pub use portamento::{PortamentoMode, PortamentoParams};
 pub use synth_params::{ModEnvParams, RandomParams, SynthParams, NUM_OPERATORS, NUM_VOICES};
 pub use ui_meta::{
-    EngineEnumValueLabelV1, EngineEnumValueTooltipV1, EngineParamRangeV1,
-    EngineParamReadoutFormatV1, EngineParamUiMetaV1, engine_enum_value_tooltips_v1,
-    engine_param_default_v1, engine_param_ranges_v1, engine_param_ui_meta_v1,
+    engine_enum_value_tooltips_v1, engine_param_default_v1, engine_param_ranges_v1,
+    engine_param_ui_meta_v1, EngineEnumValueLabelV1, EngineEnumValueTooltipV1, EngineParamRangeV1,
+    EngineParamReadoutFormatV1, EngineParamUiMetaV1,
 };
 pub use waveforms::{Algo, BaseWaveform, CzAlgo, CzWaveform, WindowType};
 

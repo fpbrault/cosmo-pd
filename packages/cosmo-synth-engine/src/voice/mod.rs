@@ -7,9 +7,9 @@ mod modulation;
 mod render;
 
 pub use adsr::AdsrEnv;
-pub use render::render_voice;
 pub(crate) use modulation::mod_value_for;
 pub(crate) use modulation::ModSources;
+pub use render::render_voice;
 
 use crate::envelope::EnvGen;
 use crate::generators::AlgoRuntimeState;
@@ -132,9 +132,9 @@ impl Default for Voice {
 
 #[cfg(test)]
 mod tests {
+    use super::modulation::{mod_value_for, ModSources};
     use super::{render::*, Voice};
     use crate::params::{ModDestination, ModMatrix, ModRoute, ModSource, SynthParams};
-    use super::modulation::{mod_value_for, ModSources};
 
     #[test]
     fn dca_gain_uses_gentle_power_taper() {
@@ -155,9 +155,17 @@ mod tests {
     #[test]
     fn dco_env_matches_cz_reference_semitone_points() {
         let cases = [
-            (8_u8, 1.0_f32), (16_u8, 2.0_f32), (24_u8, 3.0_f32), (32_u8, 4.0_f32),
-            (40_u8, 5.0_f32), (48_u8, 6.0_f32), (56_u8, 7.0_f32), (64_u8, 8.0_f32),
-            (65_u8, 10.0_f32), (66_u8, 12.0_f32), (72_u8, 24.0_f32),
+            (8_u8, 1.0_f32),
+            (16_u8, 2.0_f32),
+            (24_u8, 3.0_f32),
+            (32_u8, 4.0_f32),
+            (40_u8, 5.0_f32),
+            (48_u8, 6.0_f32),
+            (56_u8, 7.0_f32),
+            (64_u8, 8.0_f32),
+            (65_u8, 10.0_f32),
+            (66_u8, 12.0_f32),
+            (72_u8, 24.0_f32),
         ];
         for (level, expected_semitones) in cases {
             let normalized_level = level as f32 / 99.0;
@@ -184,37 +192,68 @@ mod tests {
 
     fn all_sources() -> [ModSource; 7] {
         [
-            ModSource::Lfo1, ModSource::Lfo2, ModSource::Random, ModSource::ModEnv,
-            ModSource::Velocity, ModSource::ModWheel, ModSource::Aftertouch,
+            ModSource::Lfo1,
+            ModSource::Lfo2,
+            ModSource::Random,
+            ModSource::ModEnv,
+            ModSource::Velocity,
+            ModSource::ModWheel,
+            ModSource::Aftertouch,
         ]
     }
 
     fn all_destinations() -> [ModDestination; 51] {
         [
-            ModDestination::Volume, ModDestination::Pitch, ModDestination::Line1DcwBase,
-            ModDestination::Line1DcaBase, ModDestination::Line1AlgoBlend,
-            ModDestination::Line2DetuneNote, ModDestination::Line1Octave,
-            ModDestination::Line1AlgoParam1, ModDestination::Line1AlgoParam2,
-            ModDestination::Line1AlgoParam3, ModDestination::Line1AlgoParam4,
-            ModDestination::Line1AlgoParam5, ModDestination::Line1AlgoParam6,
-            ModDestination::Line1AlgoParam7, ModDestination::Line1AlgoParam8,
-            ModDestination::Line2DcwBase, ModDestination::Line2DcaBase,
-            ModDestination::Line2AlgoBlend, ModDestination::Line2DetuneFine,
-            ModDestination::Line2DetuneOctave, ModDestination::Line2AlgoParam1,
-            ModDestination::Line2AlgoParam2, ModDestination::Line2AlgoParam3,
-            ModDestination::Line2AlgoParam4, ModDestination::Line2AlgoParam5,
-            ModDestination::Line2AlgoParam6, ModDestination::Line2AlgoParam7,
-            ModDestination::Line2AlgoParam8, ModDestination::VibratoDepth,
-            ModDestination::VibratoRate, ModDestination::IntPmRatio,
-            ModDestination::Line1DcoEnvStep1Level, ModDestination::Line1DcoEnvStep1Rate,
-            ModDestination::Line1DcwEnvStep3Level, ModDestination::Line1DcaEnvStep4Rate,
-            ModDestination::Line2DcoEnvStep2Level, ModDestination::Line2DcwEnvStep6Rate,
-            ModDestination::Line2DcaEnvStep8Level, ModDestination::PhaserRate,
-            ModDestination::PhaserDepth, ModDestination::PhaserFeedback,
-            ModDestination::PhaserMix, ModDestination::Lfo1Rate, ModDestination::Lfo1Depth,
-            ModDestination::Lfo1Symmetry, ModDestination::Lfo1Offset,
-            ModDestination::Lfo2Rate, ModDestination::Lfo2Depth,
-            ModDestination::Lfo2Symmetry, ModDestination::Lfo2Offset,
+            ModDestination::Volume,
+            ModDestination::Pitch,
+            ModDestination::Line1DcwBase,
+            ModDestination::Line1DcaBase,
+            ModDestination::Line1AlgoBlend,
+            ModDestination::Line2DetuneNote,
+            ModDestination::Line1Octave,
+            ModDestination::Line1AlgoParam1,
+            ModDestination::Line1AlgoParam2,
+            ModDestination::Line1AlgoParam3,
+            ModDestination::Line1AlgoParam4,
+            ModDestination::Line1AlgoParam5,
+            ModDestination::Line1AlgoParam6,
+            ModDestination::Line1AlgoParam7,
+            ModDestination::Line1AlgoParam8,
+            ModDestination::Line2DcwBase,
+            ModDestination::Line2DcaBase,
+            ModDestination::Line2AlgoBlend,
+            ModDestination::Line2DetuneFine,
+            ModDestination::Line2DetuneOctave,
+            ModDestination::Line2AlgoParam1,
+            ModDestination::Line2AlgoParam2,
+            ModDestination::Line2AlgoParam3,
+            ModDestination::Line2AlgoParam4,
+            ModDestination::Line2AlgoParam5,
+            ModDestination::Line2AlgoParam6,
+            ModDestination::Line2AlgoParam7,
+            ModDestination::Line2AlgoParam8,
+            ModDestination::VibratoDepth,
+            ModDestination::VibratoRate,
+            ModDestination::IntPmRatio,
+            ModDestination::Line1DcoEnvStep1Level,
+            ModDestination::Line1DcoEnvStep1Rate,
+            ModDestination::Line1DcwEnvStep3Level,
+            ModDestination::Line1DcaEnvStep4Rate,
+            ModDestination::Line2DcoEnvStep2Level,
+            ModDestination::Line2DcwEnvStep6Rate,
+            ModDestination::Line2DcaEnvStep8Level,
+            ModDestination::PhaserRate,
+            ModDestination::PhaserDepth,
+            ModDestination::PhaserFeedback,
+            ModDestination::PhaserMix,
+            ModDestination::Lfo1Rate,
+            ModDestination::Lfo1Depth,
+            ModDestination::Lfo1Symmetry,
+            ModDestination::Lfo1Offset,
+            ModDestination::Lfo2Rate,
+            ModDestination::Lfo2Depth,
+            ModDestination::Lfo2Symmetry,
+            ModDestination::Lfo2Offset,
             ModDestination::RandomRate,
         ]
     }
@@ -234,21 +273,34 @@ mod tests {
     #[test]
     fn every_source_can_drive_every_destination() {
         let sources = ModSources {
-            lfo1: 0.25, lfo2: -0.4, velocity: 0.8, mod_wheel: 0.6,
-            aftertouch: 0.3, mod_env: 0.5, random: -0.2,
+            lfo1: 0.25,
+            lfo2: -0.4,
+            velocity: 0.8,
+            mod_wheel: 0.6,
+            aftertouch: 0.3,
+            mod_env: 0.5,
+            random: -0.2,
         };
         let amount = 0.5;
         for destination in all_destinations() {
             for source in all_sources() {
                 let matrix = ModMatrix {
-                    routes: vec![ModRoute { source, destination, amount, enabled: true }],
+                    routes: vec![ModRoute {
+                        source,
+                        destination,
+                        amount,
+                        enabled: true,
+                    }],
                 };
                 let got = mod_value_for(destination, &matrix, &sources);
                 let expected = (amount * source_value(&sources, source)).clamp(-1.0, 1.0);
                 assert!(
                     (got - expected).abs() < 1e-6,
                     "unexpected route value for source={:?} destination={:?}: got {}, expected {}",
-                    source, destination, got, expected
+                    source,
+                    destination,
+                    got,
+                    expected
                 );
             }
         }
@@ -260,7 +312,9 @@ mod tests {
         voice.is_silent = true;
         let p = SynthParams::default();
         let timing = crate::envelope::EnvelopeTimingCache::new(48_000.0);
-        let out = render_voice(&mut voice, &p, 0.0, 0.0, 0.0, 48_000.0, &timing, 0.0, 0.0, 0.0);
+        let out = render_voice(
+            &mut voice, &p, 0.0, 0.0, 0.0, 48_000.0, &timing, 0.0, 0.0, 0.0,
+        );
         assert_eq!(out, 0.0);
     }
 
@@ -274,7 +328,9 @@ mod tests {
         let timing = crate::envelope::EnvelopeTimingCache::new(48_000.0);
         let mut any_nonzero = false;
         for _ in 0..64 {
-            let out = render_voice(&mut voice, &p, 0.0, 0.0, 0.0, 48_000.0, &timing, 0.0, 0.0, 0.0);
+            let out = render_voice(
+                &mut voice, &p, 0.0, 0.0, 0.0, 48_000.0, &timing, 0.0, 0.0, 0.0,
+            );
             if out.abs() > 1e-6 {
                 any_nonzero = true;
                 break;

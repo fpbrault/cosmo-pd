@@ -5,18 +5,19 @@ use crate::envelope::EnvelopeKind;
 use crate::envelope::EnvelopeTimingCache;
 use crate::generators::{self, LineRenderConfig};
 use crate::params::{
-    LfoWaveform, LineParams, LineSelect, ModDestination, ModMatrix, ModMode,
-    PortamentoMode, SynthParams,
+    LfoWaveform, LineParams, LineSelect, ModDestination, ModMatrix, ModMode, PortamentoMode,
+    SynthParams,
 };
 
-use super::modulation::{algo_param_slot_mods_for_line, mod_value_for, modulated_line_params, ModSources};
+use super::modulation::{
+    algo_param_slot_mods_for_line, mod_value_for, modulated_line_params, ModSources,
+};
 use super::{
-    Voice,
-    ANTI_CLICK_ATTACK_SAMPLES, ANTI_CLICK_FADE_MAX_SAMPLES, ANTI_CLICK_FADE_SAMPLES,
-    DCW_DEZIPPER_TIME_SECONDS, DCW_LEVEL_CURVE_EXPONENT, DEFAULT_BASE_FREQ,
-    DCA_LEVEL_CURVE_EXPONENT, DUAL_LINE_MIX_GAIN, POP_SUPPRESS_DELTA_THRESHOLD,
-    POP_SUPPRESS_EXCESS_KEEP, RELEASE_TAIL_LEVEL_THRESHOLD, RELEASE_TAIL_LEVEL_TIME_SECONDS,
-    SILENCE_THRESHOLD, ZERO_CROSS_STOP_MAX_WAIT_SAMPLES, ZERO_CROSS_STOP_THRESHOLD,
+    Voice, ANTI_CLICK_ATTACK_SAMPLES, ANTI_CLICK_FADE_MAX_SAMPLES, ANTI_CLICK_FADE_SAMPLES,
+    DCA_LEVEL_CURVE_EXPONENT, DCW_DEZIPPER_TIME_SECONDS, DCW_LEVEL_CURVE_EXPONENT,
+    DEFAULT_BASE_FREQ, DUAL_LINE_MIX_GAIN, POP_SUPPRESS_DELTA_THRESHOLD, POP_SUPPRESS_EXCESS_KEEP,
+    RELEASE_TAIL_LEVEL_THRESHOLD, RELEASE_TAIL_LEVEL_TIME_SECONDS, SILENCE_THRESHOLD,
+    ZERO_CROSS_STOP_MAX_WAIT_SAMPLES, ZERO_CROSS_STOP_THRESHOLD,
 };
 
 /// Envelope values snapshot for one render step.
@@ -796,4 +797,3 @@ fn wrap_voice_phase(phase: &mut f32, cycle_count: &mut u32) {
         *cycle_count = cycle_count.wrapping_add(1);
     }
 }
-

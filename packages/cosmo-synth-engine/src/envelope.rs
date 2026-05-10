@@ -1,9 +1,9 @@
+use crate::dsp_utils::lerp;
 pub use crate::envelope_map::EnvelopeKind;
 use crate::envelope_map::{
     human_level_to_raw, human_rate_to_raw, raw_level_to_human, raw_rate_to_human,
 };
 use crate::params::{StepEnvData, SynthParams};
-use crate::dsp_utils::lerp;
 
 pub fn normalize_env_to_raw_if_human(kind: EnvelopeKind, env: &mut StepEnvData) {
     for step in env.steps.iter_mut() {

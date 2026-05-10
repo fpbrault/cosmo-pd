@@ -1,4 +1,6 @@
-use crate::params::{EnvStep, LineParams, ModDestination, ModMatrix, ModSource, StepEnvData, NUM_ENV_STEPS};
+use crate::params::{
+    EnvStep, LineParams, ModDestination, ModMatrix, ModSource, StepEnvData, NUM_ENV_STEPS,
+};
 
 // Modulation helpers
 // ---------------------------------------------------------------------------

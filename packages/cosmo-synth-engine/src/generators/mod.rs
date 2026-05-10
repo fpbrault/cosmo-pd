@@ -30,10 +30,10 @@ pub mod twist;
 
 pub use catalog::{
     algo_definitions_v1, algo_ui_catalog_v1, AlgoControlAssignmentV1, AlgoControlKindV1,
-    AlgoControlOptionV1, AlgoControlPresentationV1, AlgoControlV1, AlgoDefinitionV1,
-    AlgoUiEntryV1, ALGO_DEFINITIONS_V1, ALGO_BLEND_NUMBER_CONTROL, DCW_CONTROL,
-    FINE_DETUNE_NUMBER_CONTROL, KEY_FOLLOW_NUMBER_CONTROL, LEVEL_NUMBER_CONTROL, NO_CONTROLS,
-    NO_CONTROL_OPTIONS, OCTAVE_NUMBER_CONTROL, WARP_AMOUNT_CONTROL, WARP_AMOUNT_NUMBER_CONTROL,
+    AlgoControlOptionV1, AlgoControlPresentationV1, AlgoControlV1, AlgoDefinitionV1, AlgoUiEntryV1,
+    ALGO_BLEND_NUMBER_CONTROL, ALGO_DEFINITIONS_V1, DCW_CONTROL, FINE_DETUNE_NUMBER_CONTROL,
+    KEY_FOLLOW_NUMBER_CONTROL, LEVEL_NUMBER_CONTROL, NO_CONTROLS, NO_CONTROL_OPTIONS,
+    OCTAVE_NUMBER_CONTROL, WARP_AMOUNT_CONTROL, WARP_AMOUNT_NUMBER_CONTROL,
 };
 
 /// Per-line render inputs passed to a voice's generator for one sample.
@@ -254,7 +254,6 @@ pub(crate) fn blend_line_samples(
         primary + (secondary - primary) * blend
     }
 }
-
 
 /// Unified algorithm phase warp dispatcher.
 fn algo_control_slot_index(algo: Algo, id: &str) -> Option<usize> {

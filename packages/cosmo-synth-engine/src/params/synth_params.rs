@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 use super::fx_params::{default_fx_slot_configs, FxSlotConfig, PhaseModParams, VibratoParams};
-use super::line::{LineParams, LineSelect, ModMode, PolyMode};
 use super::lfo::LfoParams;
+use super::line::{LineParams, LineSelect, ModMode, PolyMode};
 use super::modulation::ModMatrix;
 use super::portamento::PortamentoParams;
 

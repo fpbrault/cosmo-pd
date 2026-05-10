@@ -2,8 +2,10 @@ use serde::Serialize;
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
 
-use super::fx_params::{ChorusParams, DelayParams, PhaseModParams, PhaserParams, ReverbParams, VibratoParams};
 use super::filter::FilterParams;
+use super::fx_params::{
+    ChorusParams, DelayParams, PhaseModParams, PhaserParams, ReverbParams, VibratoParams,
+};
 use super::synth_params::SynthParams;
 
 /// Readout label for one string enum value.

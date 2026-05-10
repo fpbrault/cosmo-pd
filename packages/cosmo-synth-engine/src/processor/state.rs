@@ -59,13 +59,28 @@ impl CzDacColor {
         let compressed = signed_pow(quantized, COMPRESS_GAMMA);
 
         let low = one_pole_lp(compressed, &mut self.low_state, LOW_BUMP_HZ, SAMPLE_RATE_HZ);
-        let honk_hp = one_pole_hp(compressed, &mut self.honk_hp_state, HONK_HP_HZ, SAMPLE_RATE_HZ);
+        let honk_hp = one_pole_hp(
+            compressed,
+            &mut self.honk_hp_state,
+            HONK_HP_HZ,
+            SAMPLE_RATE_HZ,
+        );
         let honk_lp = one_pole_lp(honk_hp, &mut self.honk_lp_state, HONK_LP_HZ, SAMPLE_RATE_HZ);
-        let air_hp = one_pole_hp(compressed, &mut self.air_hp_state, AIR_HP_HZ, SAMPLE_RATE_HZ);
+        let air_hp = one_pole_hp(
+            compressed,
+            &mut self.air_hp_state,
+            AIR_HP_HZ,
+            SAMPLE_RATE_HZ,
+        );
 
         let mut out = low + honk_lp * 0.5 + air_hp * 0.3;
         out = signed_pow(out, EXPAND_GAMMA);
-        out = one_pole_lp(out, &mut self.output_lp_state, HF_ROLLOFF_HZ, SAMPLE_RATE_HZ);
+        out = one_pole_lp(
+            out,
+            &mut self.output_lp_state,
+            HF_ROLLOFF_HZ,
+            SAMPLE_RATE_HZ,
+        );
 
         out.clamp(-1.0, 1.0)
     }

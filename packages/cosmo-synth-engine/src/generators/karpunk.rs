@@ -270,7 +270,6 @@ pub fn blend(primary_algo: Algo, primary: f32, secondary: f32, blend: f32) -> f3
     }
 }
 
-
 /// Simple LCG PRNG — produces a value in [-1.0, 1.0].
 ///
 /// Parameters from Numerical Recipes (Knuth): multiplier 1664525, increment 1013904223.

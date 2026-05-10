@@ -86,19 +86,18 @@ impl CosmoProcessor {
             if self.lfo_phase >= 1.0 {
                 self.lfo_phase -= 1.0;
             }
-            let lfo1_mod_val = lfo_output_with_symmetry(
-                self.lfo_phase, lfo1_waveform, lfo1_symmetry,
-            ) * lfo1_depth
-                + lfo1_offset;
+            let lfo1_mod_val =
+                lfo_output_with_symmetry(self.lfo_phase, lfo1_waveform, lfo1_symmetry) * lfo1_depth
+                    + lfo1_offset;
 
             self.lfo2_phase += lfo2_rate / sr;
             if self.lfo2_phase >= 1.0 {
                 self.lfo2_phase -= 1.0;
             }
-            let lfo2_mod_val = lfo_output_with_symmetry(
-                self.lfo2_phase, lfo2_waveform, lfo2_symmetry,
-            ) * lfo2_depth
-                + lfo2_offset;
+            let lfo2_mod_val =
+                lfo_output_with_symmetry(self.lfo2_phase, lfo2_waveform, lfo2_symmetry)
+                    * lfo2_depth
+                    + lfo2_offset;
 
             let random_rate = (base_random_rate + random_rate_mod * 20.0).clamp(0.0, 200.0);
             self.random_phase += random_rate / sr;

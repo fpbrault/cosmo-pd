@@ -73,12 +73,7 @@ impl CosmoProcessor {
         }
     }
 
-    pub(crate) fn configure_voice_pitch(
-        &mut self,
-        voice_idx: usize,
-        note: u8,
-        frequency: f32,
-    ) {
+    pub(crate) fn configure_voice_pitch(&mut self, voice_idx: usize, note: u8, frequency: f32) {
         let voice = &mut self.voices[voice_idx];
         voice.note = Some(note);
         voice.env_note = note;
@@ -110,20 +105,12 @@ impl CosmoProcessor {
         self.voices[voice_idx].mod_env.note_on();
     }
 
-    pub(crate) fn reset_generator_runtime_for_note(
-        &mut self,
-        voice_idx: usize,
-        note: u8,
-    ) {
+    pub(crate) fn reset_generator_runtime_for_note(&mut self, voice_idx: usize, note: u8) {
         let voice = &mut self.voices[voice_idx];
         voice.algo_runtime.note_on(note);
     }
 
-    pub(crate) fn replace_active_note_entry(
-        &mut self,
-        voice_idx: usize,
-        note: u8,
-    ) {
+    pub(crate) fn replace_active_note_entry(&mut self, voice_idx: usize, note: u8) {
         self.active_notes.retain(|e| e.voice_idx != voice_idx);
         debug_assert!(self.active_notes.len() < NUM_VOICES);
         self.active_notes
