@@ -1,5 +1,5 @@
 use super::{lerp, wrap01, AlgoControlKindV1, AlgoControlV1, AlgoDefinitionV1, NO_CONTROL_OPTIONS};
-use crate::params::Algo;
+use crate::params::{Algo, EngineParamReadoutFormatV1};
 
 const TWO_PI: f32 = core::f32::consts::TAU;
 
@@ -17,6 +17,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(2.0),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Decimal,
     },
     AlgoControlV1 {
         id: "terrainDepth",
@@ -31,6 +32,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.5),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
     AlgoControlV1 {
         id: "terrainFmPhase",
@@ -45,6 +47,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.0),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Degrees,
     },
     AlgoControlV1 {
         id: "terrainShape",
@@ -59,6 +62,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.0),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
 ];
 
@@ -67,6 +71,7 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
     name: "Terrain",
     icon_path: "M4,12 C6,4 9,20 12,12 C15,4 18,20 20,12",
     visible: true,
+    default_base_waveform: crate::params::BaseWaveform::Sine,
     controls: &CONTROLS,
 };
 

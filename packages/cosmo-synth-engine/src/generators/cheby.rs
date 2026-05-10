@@ -1,9 +1,9 @@
 use super::{lerp, wrap01, AlgoControlKindV1, AlgoControlV1, AlgoDefinitionV1, NO_CONTROL_OPTIONS};
-use crate::params::Algo;
+use crate::params::{Algo, EngineParamReadoutFormatV1};
 
 const TWO_PI: f32 = core::f32::consts::TAU;
 
-const CONTROLS: [AlgoControlV1; 4] = [
+const CONTROLS: [AlgoControlV1; 3] = [
     AlgoControlV1 {
         id: "chebyOrder",
         label: "Order",
@@ -17,6 +17,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.2),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Decimal,
     },
     AlgoControlV1 {
         id: "chebyTilt",
@@ -31,6 +32,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.0),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Degrees,
     },
     AlgoControlV1 {
         id: "chebyWarp",
@@ -45,20 +47,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.0),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
-    },
-    AlgoControlV1 {
-        id: "chebyMix",
-        label: "Mix",
-        description: "Blends between the original linear phase and the polynomial-warped phase.",
-        kind: AlgoControlKindV1::Number,
-        control_type: super::AlgoControlPresentationV1::Knob,
-        bipolar: false,
-        icon_name: None,
-        min: Some(0.0),
-        max: Some(1.0),
-        default: Some(1.0),
-        default_toggle: None,
-        options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
 ];
 
@@ -67,6 +56,7 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
     name: "Cheby",
     icon_path: "M4,20 L7,4 L10,20 L12,12 L14,4 L17,20 L20,12",
     visible: true,
+    default_base_waveform: crate::params::BaseWaveform::Sine,
     controls: &CONTROLS,
 };
 

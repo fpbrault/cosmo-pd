@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ALGO_UI_CATALOG_V1 } from "@/lib/synth/bindings/synth";
 import type { AlgoControlValueV1 } from "@/lib/synth/bindings/synth";
+import { ALGO_UI_CATALOG_V1 } from "@/lib/synth/bindings/synth";
 import {
 	computeWaveform,
 	getPdAlgoBehaviorDescription,

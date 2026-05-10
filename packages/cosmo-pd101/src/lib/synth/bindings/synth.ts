@@ -48,7 +48,7 @@ export type BaseWaveform = "cosine" | "sine" | "triangle" | "saw" | "square"
 /**
  * Flat algorithm selector — unifies CZ waveforms and warp variants.
  */
-export type Algo = "saw" | "square" | "pulse" | "null" | "sinePulse" | "sawPulse" | "multiSine" | "pulse2" | "cz101" | "bend" | "sync" | "pinch" | "fold" | "skew" | "quantize" | "twist" | "clip" | "ripple" | "mirror" | "fof" | "karpunk" | "sine" | "terrain" | "stutter" | "cheby"
+export type Algo = "saw" | "square" | "pulse" | "null" | "sinePulse" | "sawPulse" | "multiSine" | "pulse2" | "cz101" | "bend" | "sync" | "pinch" | "fold" | "skew" | "quantize" | "twist" | "clip" | "ripple" | "mirror" | "fof" | "karpunk" | "sine" | "terrain" | "cheby" | "stutter"
 
 /**
  * Window type applied to oscillator output
@@ -1578,6 +1578,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Terrain",
     "iconPath": "M4,12 C6,4 9,20 12,12 C15,4 18,20 20,12",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "terrainRatio",
@@ -1591,7 +1592,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 8.0,
         "default": 2.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "decimal"
+        }
       },
       {
         "id": "terrainDepth",
@@ -1605,7 +1609,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.5,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "terrainFmPhase",
@@ -1619,7 +1626,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "degrees"
+        }
       },
       {
         "id": "terrainShape",
@@ -1633,7 +1643,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       }
     ]
   },
@@ -1642,6 +1655,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Stutter",
     "iconPath": "M4,20 L8,20 L8,4 L12,4 L12,20 L16,20 L16,4 L20,4",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "stutterSegs",
@@ -1655,7 +1669,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.25,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "stutterReverse",
@@ -1669,7 +1686,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 1.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "stutterSlip",
@@ -1683,7 +1703,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       },
       {
         "id": "stutterSpacing",
@@ -1697,7 +1720,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       }
     ]
   },
@@ -1706,6 +1732,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "name": "Cheby",
     "iconPath": "M4,20 L7,4 L10,20 L12,12 L14,4 L17,20 L20,12",
     "visible": true,
+    "defaultBaseWaveform": "sine",
     "controls": [
       {
         "id": "chebyOrder",
@@ -1719,7 +1746,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.2,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "decimal"
+        }
       },
       {
         "id": "chebyTilt",
@@ -1733,7 +1763,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "degrees"
+        }
       },
       {
         "id": "chebyWarp",
@@ -1747,21 +1780,10 @@ export const ALGO_DEFINITIONS_V1 = [
         "max": 1.0,
         "default": 0.0,
         "defaultToggle": null,
-        "options": []
-      },
-      {
-        "id": "chebyMix",
-        "label": "Mix",
-        "description": "Blends between the original linear phase and the polynomial-warped phase.",
-        "kind": "number",
-        "controlType": "knob",
-        "bipolar": false,
-        "iconName": null,
-        "min": 0.0,
-        "max": 1.0,
-        "default": 1.0,
-        "defaultToggle": null,
-        "options": []
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       }
     ]
   }

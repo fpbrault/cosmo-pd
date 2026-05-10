@@ -283,17 +283,22 @@ describe("findClosestPoint", () => {
 	it("finds closest point by distance", () => {
 		const result = findClosestPoint(points, 25, 95);
 		expect(result).not.toBeNull();
-		expect(result!.point.index).toBe(0);
+		expect(result?.point.index).toBe(0);
 	});
 
 	it("finds a different closest point", () => {
 		const result = findClosestPoint(points, 105, 45);
 		expect(result).not.toBeNull();
-		expect(result!.point.index).toBe(1);
+		expect(result?.point.index).toBe(1);
 	});
 
 	it("returns correct distance", () => {
-		const { point, distanceSquared } = findClosestPoint(points, 20, 100)!;
+		const result = findClosestPoint(points, 20, 100);
+		expect(result).not.toBeNull();
+		if (result === null) {
+			throw new Error("Expected a closest point");
+		}
+		const { point, distanceSquared } = result;
 		expect(point.index).toBe(0);
 		expect(distanceSquared).toBe(0);
 	});
@@ -306,7 +311,7 @@ describe("findClosestPoint", () => {
 	it("handles single point", () => {
 		const result = findClosestPoint([points[0]], 999, 999);
 		expect(result).not.toBeNull();
-		expect(result!.point.index).toBe(0);
+		expect(result?.point.index).toBe(0);
 	});
 });
 
