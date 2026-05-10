@@ -251,10 +251,23 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            engine:
+              - 'packages/cosmo-synth-engine/**'
+
+      - name: Check for engine changes
+        if: steps.filter.outputs.engine != 'true'
+        run: echo "No changes to cosmo-synth-engine, skipping benchmarks"
+
       - name: Setup Rust nightly
+        if: steps.filter.outputs.engine == 'true'
         uses: dtolnay/rust-toolchain@nightly
 
       - name: Benchmark target branch
+        if: steps.filter.outputs.engine == 'true'
         run: |
           mkdir -p target/perf/engine
           base_ref="${{ github.base_ref }}"
@@ -267,6 +280,7 @@ jobs:
         shell: bash
 
       - name: Seed baseline from target branch
+        if: steps.filter.outputs.engine == 'true'
         uses: benchmark-action/github-action-benchmark@v1
         with:
           name: cosmo-synth-engine
@@ -277,11 +291,13 @@ jobs:
           fail-on-alert: false
 
       - name: Benchmark pull request head
+        if: steps.filter.outputs.engine == 'true'
         run: |
           cargo bench -p cosmo-synth-engine --bench render-bench -- --nocapture | tee target/perf/engine/pr-bench.txt
         shell: bash
 
       - name: Compare PR against target branch
+        if: steps.filter.outputs.engine == 'true'
         uses: benchmark-action/github-action-benchmark@v1
         with:
           name: cosmo-synth-engine
@@ -297,6 +313,7 @@ jobs:
           alert-threshold: 108%
 
       - name: Upload benchmark artifact
+        if: steps.filter.outputs.engine == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: engine-benchmark
