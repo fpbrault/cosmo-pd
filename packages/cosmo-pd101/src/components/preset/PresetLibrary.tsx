@@ -570,10 +570,8 @@ export default function PresetLibrary({
 					onClearTagFilters={() => setSelectedTagFilters([])}
 					tagSortMode={tagSortMode}
 					onTagSortModeChange={setTagSortMode}
-					sortState={sortState}
 					onToggleSort={toggleSort}
 					sortIndicator={sortIndicator}
-					searchInputRef={searchInputRef}
 				/>
 
 				<div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_17rem]">
