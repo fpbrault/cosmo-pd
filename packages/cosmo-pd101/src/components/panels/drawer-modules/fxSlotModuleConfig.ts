@@ -434,10 +434,10 @@ function buildControls(type: FxSlotType, meta: FxUiMeta): ControlDef[] {
 				{
 					kind: "buttonGroup",
 					param: ctrl.id,
-					label: layout?.label ?? ctrl.label,
+					label: layout?.label ?? ctrl.id,
 					options: ctrl.options.map((opt) => ({
 						value: opt.value,
-						label: opt.label,
+						label: String(opt.value),
 					})),
 					buttonPresentation: layout?.buttonPresentation,
 					centered: layout?.centered,
@@ -459,7 +459,7 @@ function buildControls(type: FxSlotType, meta: FxUiMeta): ControlDef[] {
 			{
 				kind: "knob",
 				param: ctrl.id,
-				label: layout?.label ?? ctrl.label,
+				label: layout?.label ?? ctrl.id,
 				min,
 				max,
 				defaultValue,
@@ -477,12 +477,11 @@ function buildControls(type: FxSlotType, meta: FxUiMeta): ControlDef[] {
 }
 
 function buildConfig(type: FxSlotType, meta: FxUiMeta): FxSlotModuleConfig {
-	const definition = FX_DEFINITIONS_V1.find((entry) => entry.slotType === type);
 	return {
 		type,
 		patchKey: meta.patchKey,
 		moduleKey: meta.moduleKey,
-		title: meta.title ?? definition?.name ?? type,
+		title: meta.title ?? type,
 		color: meta.color,
 		meta: meta.meta,
 		columns: meta.columns,

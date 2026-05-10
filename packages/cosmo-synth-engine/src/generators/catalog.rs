@@ -65,8 +65,6 @@ pub struct AlgoControlOptionV1 {
 #[serde(rename_all = "camelCase")]
 pub struct AlgoControlV1 {
     pub id: &'static str,
-    pub label: &'static str,
-    pub description: &'static str,
     pub kind: AlgoControlKindV1,
     pub control_type: AlgoControlPresentationV1,
     pub bipolar: bool,
@@ -107,8 +105,6 @@ pub const NO_CONTROLS: [AlgoControlV1; 0] = [];
 pub const NO_CONTROL_OPTIONS: [AlgoControlOptionV1; 0] = [];
 pub const WARP_AMOUNT_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
     id: "warpAmount",
-    label: "Warp Amount",
-    description: "Sets the overall phase distortion amount for the current algorithm.",
     kind: AlgoControlKindV1::Number,
     control_type: AlgoControlPresentationV1::Knob,
     bipolar: false,
@@ -122,8 +118,6 @@ pub const WARP_AMOUNT_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
 };
 pub const LEVEL_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
     id: "level",
-    label: "Level",
-    description: "Sets the base output level for this line.",
     kind: AlgoControlKindV1::Number,
     control_type: AlgoControlPresentationV1::Slider,
     bipolar: false,
@@ -137,8 +131,6 @@ pub const LEVEL_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
 };
 pub const OCTAVE_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
     id: "octave",
-    label: "Octave",
-    description: "Offsets oscillator pitch by whole octaves.",
     kind: AlgoControlKindV1::Number,
     control_type: AlgoControlPresentationV1::Knob,
     bipolar: true,
@@ -152,8 +144,6 @@ pub const OCTAVE_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
 };
 pub const FINE_DETUNE_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
     id: "fineDetune",
-    label: "Fine",
-    description: "Applies a fine pitch offset in cents.",
     kind: AlgoControlKindV1::Number,
     control_type: AlgoControlPresentationV1::Knob,
     bipolar: true,
@@ -167,8 +157,6 @@ pub const FINE_DETUNE_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
 };
 pub const KEY_FOLLOW_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
     id: "keyFollow",
-    label: "Key Follow",
-    description: "Adjusts how strongly keyboard pitch affects this parameter.",
     kind: AlgoControlKindV1::Number,
     control_type: AlgoControlPresentationV1::Knob,
     bipolar: false,
@@ -182,8 +170,6 @@ pub const KEY_FOLLOW_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
 };
 pub const ALGO_BLEND_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
     id: "algoBlend",
-    label: "Algo Blend",
-    description: "Blends between the primary and secondary algorithm outputs.",
     kind: AlgoControlKindV1::Number,
     control_type: AlgoControlPresentationV1::Slider,
     bipolar: false,
@@ -198,8 +184,6 @@ pub const ALGO_BLEND_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
 pub const WARP_AMOUNT_CONTROL: [AlgoControlV1; 1] = [WARP_AMOUNT_NUMBER_CONTROL];
 pub const DCW_CONTROL: [AlgoControlV1; 1] = [AlgoControlV1 {
     id: "dcw",
-    label: "DCW",
-    description: "Controls distortion depth for algorithms that expose direct DCW mapping.",
     kind: AlgoControlKindV1::Number,
     control_type: AlgoControlPresentationV1::Knob,
     bipolar: false,

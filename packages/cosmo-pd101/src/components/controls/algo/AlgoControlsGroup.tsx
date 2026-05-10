@@ -1,5 +1,6 @@
 import { memo } from "react";
 import Card from "@/components/primitives/Card";
+import { useAlgoUiText } from "@/lib/synth/i18nAlgo";
 import AlgoControlItem from "./AlgoControlItem";
 import type {
 	AlgoControlBinding,
@@ -37,6 +38,7 @@ function AlgoControlsGroupInner({
 	applyOptionAssignments,
 	color,
 }: AlgoControlsGroupProps) {
+	const noControlsLabel = useAlgoUiText("noControlsForThisAlgo");
 	const presetControl = controls.find((control) => control.id === "preset");
 	const waveform1Control = controls.find(
 		(control) => control.id === "waveform1",
@@ -118,7 +120,7 @@ function AlgoControlsGroupInner({
 				</div>
 			) : (
 				<div className="text-3xs text-cz-cream/70 uppercase tracking-[0.2em]">
-					No controls for this algo
+					{noControlsLabel}
 				</div>
 			)}
 		</>

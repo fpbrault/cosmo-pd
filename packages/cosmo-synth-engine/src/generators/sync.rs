@@ -6,8 +6,6 @@ use crate::params::{Algo, EngineParamReadoutFormatV1};
 const CONTROLS: [AlgoControlV1; 4] = [
     AlgoControlV1 {
         id: "syncRatio",
-        label: "Ratio",
-        description: "Sets how many internal sync resets occur within one cycle.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,
@@ -21,8 +19,6 @@ const CONTROLS: [AlgoControlV1; 4] = [
     },
     AlgoControlV1 {
         id: "syncPhase",
-        label: "Phase",
-        description: "Offsets where the sync restart begins inside the cycle.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,
@@ -36,8 +32,6 @@ const CONTROLS: [AlgoControlV1; 4] = [
     },
     AlgoControlV1 {
         id: "syncCurve",
-        label: "Curve",
-        description: "Shapes the post-sync ramp after each internal reset.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,
@@ -51,8 +45,6 @@ const CONTROLS: [AlgoControlV1; 4] = [
     },
     AlgoControlV1 {
         id: "syncWindow",
-        label: "Window",
-        description: "Controls how strongly the sync-shaped phase replaces the original phase.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,

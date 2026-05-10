@@ -131,10 +131,7 @@ export function useLcdControlReadout(): UseLcdControlReadoutResult {
 
 	const pushLcdControlReadout = useCallback(
 		(key: string, value: unknown) => {
-			const engineMeta = getEngineParamUiMeta(key);
-			const label =
-				engineMeta?.readoutLabel ??
-				t(`lcdControls.${key}`, { defaultValue: key });
+			const label = t(`lcdControls.${key}`, { defaultValue: key });
 			if (
 				typeof value !== "string" &&
 				typeof value !== "number" &&
@@ -160,13 +157,13 @@ export function useLcdControlReadout(): UseLcdControlReadoutResult {
 	const formatEnvReadout = useCallback(
 		(prev: StepEnvData, next: StepEnvData): string => {
 			if (prev.stepCount !== next.stepCount) {
-				return `STEPS ${next.stepCount}`;
+				return t("lcd.envSteps", { count: next.stepCount });
 			}
 			if (prev.loop !== next.loop) {
-				return `LOOP ${next.loop ? "ON" : "OFF"}`;
+				return next.loop ? t("lcd.envLoopOn") : t("lcd.envLoopOff");
 			}
 			if (prev.sustainStep !== next.sustainStep) {
-				return `SUS S${next.sustainStep + 1}`;
+				return t("lcd.envSustain", { step: next.sustainStep + 1 });
 			}
 
 			const maxSteps = Math.max(prev.steps.length, next.steps.length);
@@ -181,7 +178,7 @@ export function useLcdControlReadout(): UseLcdControlReadoutResult {
 				) {
 					const level = Math.round(nextStep.level * 99);
 					const rate = Math.round(nextStep.rate);
-					return `S${index + 1} L${level} R${rate}`;
+					return t("lcd.envStep", { step: index + 1, level, rate });
 				}
 			}
 
@@ -192,9 +189,13 @@ export function useLcdControlReadout(): UseLcdControlReadoutResult {
 			const sustain = next.steps[sustainIndex];
 			const sustainLevel = Math.round((sustain?.level ?? 0) * 99);
 			const sustainRate = Math.round(sustain?.rate ?? 0);
-			return `S${sustainIndex + 1} L${sustainLevel} R${sustainRate}`;
+			return t("lcd.envStep", {
+				step: sustainIndex + 1,
+				level: sustainLevel,
+				rate: sustainRate,
+			});
 		},
-		[],
+		[t],
 	);
 
 	useEffect(() => {

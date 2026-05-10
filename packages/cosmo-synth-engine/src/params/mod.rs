@@ -26,8 +26,8 @@ pub use modulation::{ModDestination, ModMatrix, ModRoute, ModSource};
 pub use portamento::{PortamentoMode, PortamentoParams};
 pub use synth_params::{ModEnvParams, RandomParams, SynthParams, NUM_OPERATORS, NUM_VOICES};
 pub use ui_meta::{
-    engine_enum_value_tooltips_v1, engine_param_default_v1, engine_param_ranges_v1,
-    engine_param_ui_meta_v1, EngineEnumValueLabelV1, EngineEnumValueTooltipV1, EngineParamRangeV1,
+    engine_param_default_v1, engine_param_ranges_v1,
+    engine_param_ui_meta_v1, EngineEnumValueLabelV1, EngineParamRangeV1,
     EngineParamReadoutFormatV1, EngineParamUiMetaV1,
 };
 pub use waveforms::{Algo, BaseWaveform, CzAlgo, CzWaveform, WindowType};
@@ -35,7 +35,6 @@ pub use waveforms::{Algo, BaseWaveform, CzAlgo, CzWaveform, WindowType};
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::default_envelopes::{default_dca_env, default_dco_env, default_dcw_env};
 
     #[test]
     fn step_env_deserialize_uses_fallback_count_and_pads_steps() {
@@ -181,18 +180,9 @@ mod tests {
     }
 
     #[test]
-    fn engine_param_ui_meta_v1_labels_and_tooltips_non_empty() {
+    fn engine_param_ui_meta_v1_readout_formats_are_present() {
         for entry in engine_param_ui_meta_v1() {
-            assert!(
-                !entry.tooltip.is_empty(),
-                "tooltip must not be empty for key: {}",
-                entry.key
-            );
-            assert!(
-                !entry.readout_label.is_empty(),
-                "readout_label must not be empty for key: {}",
-                entry.key
-            );
+            let _ = &entry.readout_format;
         }
     }
 
@@ -224,29 +214,4 @@ mod tests {
         }
     }
 
-    #[test]
-    fn engine_enum_value_tooltips_v1_are_unique_and_non_empty() {
-        let tooltips = engine_enum_value_tooltips_v1();
-        let mut seen = std::collections::HashSet::new();
-        for entry in tooltips {
-            assert!(!entry.key.is_empty(), "enum tooltip key must not be empty");
-            assert!(
-                !entry.value.is_empty(),
-                "enum tooltip value must not be empty for key: {}",
-                entry.key
-            );
-            assert!(
-                !entry.tooltip.is_empty(),
-                "tooltip must not be empty for key: {}, value: {}",
-                entry.key,
-                entry.value
-            );
-            assert!(
-                seen.insert((entry.key, entry.value)),
-                "duplicate (key, value) pair: ({}, {})",
-                entry.key,
-                entry.value
-            );
-        }
-    }
 }

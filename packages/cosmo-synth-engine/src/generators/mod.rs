@@ -1,11 +1,5 @@
 use crate::dsp_utils::{apply_window, lerp, wrap01, TWO_PI};
-use crate::params::{
-    Algo, AlgoControlValueV1, BaseWaveform, EngineParamReadoutFormatV1, LineParams,
-};
-use dasp_interpolate::{linear::Linear, Interpolator};
-use serde::Serialize;
-#[cfg(feature = "specta-bindings")]
-use specta::Type;
+use crate::params::{Algo, AlgoControlValueV1, BaseWaveform, LineParams};
 
 /// Reference per-line output headroom used by processor normalization.
 pub const PER_LINE_HEADROOM: f32 = 0.25;

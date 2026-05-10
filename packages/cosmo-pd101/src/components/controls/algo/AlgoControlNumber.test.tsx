@@ -29,7 +29,14 @@ describe("AlgoControlNumber", () => {
 
 		render(
 			<AlgoControlNumber
-				control={{ id: "depth", label: "Depth", min: 0, max: 2, default: 0.5 }}
+				control={{
+					id: "depth",
+					label: "Depth",
+					min: 0,
+					max: 2,
+					default: 0.5,
+					algo: "cz101",
+				}}
 				binding={{ getNumber: () => 1.25, setNumber }}
 				lineIndex={1}
 				algoParamSlotIndex={{ depth: 2 }}
@@ -54,7 +61,14 @@ describe("AlgoControlNumber", () => {
 		const setAlgoControlValue = vi.fn();
 		render(
 			<AlgoControlNumber
-				control={{ id: "res", label: "Res", min: 0, max: 1, default: 0.4 }}
+				control={{
+					id: "res",
+					label: "Res",
+					min: 0,
+					max: 1,
+					default: 0.4,
+					algo: "cz101",
+				}}
 				lineIndex={2}
 				algoParamSlotIndex={{}}
 				getAlgoControlValue={() => 0.61}
@@ -78,6 +92,7 @@ describe("AlgoControlNumber", () => {
 					control={{
 						id: "twistPhase",
 						label: "Phase",
+						algo: "cz101",
 						min: 0,
 						max: 1,
 						default: 0,
@@ -92,6 +107,7 @@ describe("AlgoControlNumber", () => {
 					control={{
 						id: "fineDetune",
 						label: "Fine",
+						algo: "cz101",
 						min: -50,
 						max: 50,
 						default: 0,

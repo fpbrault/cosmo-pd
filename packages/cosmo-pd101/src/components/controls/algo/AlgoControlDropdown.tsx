@@ -1,6 +1,10 @@
 import { memo } from "react";
 import Button from "@/components/controls/Button";
 import { HoverInfoTrigger, useHoverInfo } from "@/components/layout/HoverInfo";
+import {
+	getAlgoControlOptionLabel,
+	useAlgoControl,
+} from "@/lib/synth/i18nAlgo";
 import type {
 	AlgoControlBinding,
 	AlgoControlOptionRuntime,
@@ -137,6 +141,7 @@ function AlgoControlDropdownInner({
 	applyOptionAssignments,
 }: AlgoControlDropdownProps) {
 	const { setControlReadout } = useHoverInfo();
+	const { label, description } = useAlgoControl(control.algo, control.id);
 	const options = control.options ?? [];
 	const activeOption = getActiveSelectOption(control);
 	const useSingleLineLayout =
@@ -146,7 +151,7 @@ function AlgoControlDropdownInner({
 	return (
 		<div className="space-y-1.5">
 			<div className="flex items-end text-3xs text-cz-cream/85 uppercase leading-tight tracking-[0.2em]">
-				{control.label}
+				{label}
 			</div>
 			<div
 				className={
@@ -155,17 +160,22 @@ function AlgoControlDropdownInner({
 						: "grid grid-cols-2 gap-0"
 				}
 			>
-				{options.map((option, index) => {
-					const buttonTooltip = control.description
-						? `${control.label} ${option.label}: ${control.description}`
-						: `${control.label} ${option.label}`;
+				{options.map((option) => {
+					const optionLabel = getAlgoControlOptionLabel(
+						control.algo,
+						control.id,
+						option.value,
+					);
+					const buttonTooltip = description
+						? `${label} ${optionLabel}: ${description}`
+						: `${label} ${optionLabel}`;
 
 					return (
 						<HoverInfoTrigger key={option.value} message={buttonTooltip}>
 							{(hoverHandlers) => (
 								<Button
-									title={option.label}
-									aria-label={option.label}
+									title={optionLabel}
+									aria-label={optionLabel}
 									disabled={disabled}
 									data-hover-info={buttonTooltip}
 									{...hoverHandlers}
@@ -175,8 +185,8 @@ function AlgoControlDropdownInner({
 										}
 
 										setControlReadout({
-											label: control.label,
-											value: option.label,
+											label,
+											value: optionLabel,
 										});
 
 										if (option.set.length > 0) {
@@ -184,7 +194,9 @@ function AlgoControlDropdownInner({
 											return;
 										}
 
-										binding?.setNumber?.(index);
+										binding?.setNumber?.(
+											options.findIndex((o) => o.value === option.value),
+										);
 									}}
 									className={[
 										"relative flex items-center justify-center border-cz-light-blue border-t-0 border-r border-b border-l text-cz-gold transition-colors focus:outline-none",
@@ -198,7 +210,7 @@ function AlgoControlDropdownInner({
 								>
 									{isPresetControl ? (
 										<span className="pointer-events-none absolute top-0.5 left-1/2 z-10 -translate-x-1/2 text-[0.45rem] text-current/85 leading-none">
-											{index + 1}
+											{options.findIndex((o) => o.value === option.value) + 1}
 										</span>
 									) : null}
 									<svg

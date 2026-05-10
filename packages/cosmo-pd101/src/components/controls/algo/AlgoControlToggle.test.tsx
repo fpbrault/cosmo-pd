@@ -7,7 +7,12 @@ describe("AlgoControlToggle", () => {
 		const setToggle = vi.fn();
 		render(
 			<AlgoControlToggle
-				control={{ id: "sync", label: "Sync", kind: "toggle" }}
+				control={{
+					id: "sync",
+					label: "Sync",
+					kind: "toggle",
+					algo: "cz101",
+				}}
 				binding={{ getToggle: () => true, setToggle }}
 			/>,
 		);
@@ -25,6 +30,7 @@ describe("AlgoControlToggle", () => {
 					id: "sync",
 					label: "Sync",
 					kind: "toggle",
+					algo: "cz101",
 					defaultToggle: true,
 				}}
 			/>,

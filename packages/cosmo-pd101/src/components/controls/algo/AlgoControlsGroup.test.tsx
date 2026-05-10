@@ -36,8 +36,8 @@ describe("AlgoControlsGroup", () => {
 			<AlgoControlsGroup
 				{...sharedProps}
 				controls={[
-					{ id: "a", label: "A" },
-					{ id: "b", label: "B" },
+					{ id: "a", label: "A", algo: "cz101" },
+					{ id: "b", label: "B", algo: "cz101" },
 				]}
 			/>,
 		);
