@@ -82,7 +82,7 @@ impl SimdType for Sse2 {
 
     #[inline]
     fn mul_scalar(self, val: f32) -> Self {
-        self.mul(Self::splat(val))
+        SimdType::mul(self, Self::splat(val))
     }
 
     #[inline]

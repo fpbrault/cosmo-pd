@@ -100,9 +100,7 @@ impl SimdBackend {
             SimdBackend::Sse2 => {
                 #[cfg(target_arch = "x86_64")]
                 {
-                    Sse2::from_array(&lhs)
-                        .add(Sse2::from_array(&rhs))
-                        .to_array()
+                    SimdType::add(Sse2::from_array(&lhs), Sse2::from_array(&rhs)).to_array()
                 }
                 #[cfg(not(target_arch = "x86_64"))]
                 {
@@ -117,9 +115,7 @@ impl SimdBackend {
             SimdBackend::Avx2 => {
                 #[cfg(target_arch = "x86_64")]
                 {
-                    Avx2::from_array(&lhs)
-                        .add(Avx2::from_array(&rhs))
-                        .to_array()
+                    SimdType::add(Avx2::from_array(&lhs), Avx2::from_array(&rhs)).to_array()
                 }
                 #[cfg(not(target_arch = "x86_64"))]
                 {
@@ -161,9 +157,7 @@ impl SimdBackend {
             SimdBackend::Sse2 => {
                 #[cfg(target_arch = "x86_64")]
                 {
-                    Sse2::from_array(&lhs)
-                        .mul(Sse2::from_array(&rhs))
-                        .to_array()
+                    SimdType::mul(Sse2::from_array(&lhs), Sse2::from_array(&rhs)).to_array()
                 }
                 #[cfg(not(target_arch = "x86_64"))]
                 {
@@ -178,9 +172,7 @@ impl SimdBackend {
             SimdBackend::Avx2 => {
                 #[cfg(target_arch = "x86_64")]
                 {
-                    Avx2::from_array(&lhs)
-                        .mul(Avx2::from_array(&rhs))
-                        .to_array()
+                    SimdType::mul(Avx2::from_array(&lhs), Avx2::from_array(&rhs)).to_array()
                 }
                 #[cfg(not(target_arch = "x86_64"))]
                 {
