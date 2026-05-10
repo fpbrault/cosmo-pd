@@ -20,10 +20,11 @@ use crate::module_presets;
 use crate::params::{FxSlotConfig, FxSlotType, SynthParams, NUM_VOICES};
 use crate::voice::Voice;
 
-use self::state::{
-    CzDacColor, MonoStackEntry, NoteEntry, RuntimeModSources, RuntimeVoiceDebugState,
+pub use self::state::{
+    MonoStackEntry, NoteEntry, RuntimeModSources, RuntimeVoiceDebugState,
     RuntimeVoiceEnvState, RuntimeVoiceLineState,
 };
+use self::state::CzDacColor;
 
 /// The main synthesizer processor, managing voices, FX, modulation sources,
 /// and the sample-by-sample audio process loop.

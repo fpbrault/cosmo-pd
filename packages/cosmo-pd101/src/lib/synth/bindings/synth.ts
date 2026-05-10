@@ -15,10 +15,6 @@ rate: number }
 
 /**
  * Step envelope data (CZ-style)
- * 
- * Field names match the JS `StepEnvData` type exactly (camelCase).
- * `steps` is always stored as a fixed [EnvStep; 8] internally; JS may
- * send a shorter array which gets padded with silent steps.
  */
 export type StepEnvData = { steps: EnvStep[]; 
 /**
@@ -36,8 +32,6 @@ loop: boolean }
 
 /**
  * Front-panel CZ algorithm shortcuts.
- * 
- * These map to a `(CzWaveform, WindowType)` pair.
  */
 export type CzAlgo = "saw" | "square" | "pulse" | "doubleSine" | "sawPulse" | "reso1" | "reso2" | "reso3"
 
@@ -53,7 +47,6 @@ export type BaseWaveform = "cosine" | "sine" | "triangle" | "saw" | "square"
 
 /**
  * Flat algorithm selector — unifies CZ waveforms and warp variants.
- * Serializes as plain camelCase string (e.g., "saw", "bend", "sync").
  */
 export type Algo = "saw" | "square" | "pulse" | "null" | "sinePulse" | "sawPulse" | "multiSine" | "pulse2" | "cz101" | "bend" | "sync" | "pinch" | "fold" | "skew" | "quantize" | "twist" | "clip" | "ripple" | "mirror" | "fof" | "karpunk" | "sine"
 
@@ -95,125 +88,37 @@ export type ChorusParams = { enabled?: boolean; rate: number; depth: number; mix
 /**
  * Delay parameters
  */
-export type DelayParams = { enabled?: boolean; time: number; feedback: number; mix: number; 
-/**
- * When true, applies tape echo characteristics (LP filter + soft saturation in feedback).
- */
-tapeMode?: boolean; 
-/**
- * Tape warmth (0 = bright, 1 = warm). Only effective when `tape_mode` is true.
- */
-warmth?: number }
+export type DelayParams = { enabled?: boolean; time: number; feedback: number; mix: number; tapeMode?: boolean; warmth?: number }
 
 /**
- * Reverb parameters for the FDN reverb engine.
+ * Reverb parameters
  */
-export type ReverbParams = { enabled?: boolean; mix?: number; 
-/**
- * Decay time / room size. 0 = dead, 1 = large hall.
- */
-space?: number; 
-/**
- * Pre-delay time in seconds (0–0.1 s). Default 0.
- */
-predelay?: number; 
-/**
- * Near/far blend between early reflections and late reverb. Default 0.3.
- */
-distance?: number; 
-/**
- * Combined reverb tone and motion: 0 = dark/static, 1 = bright/shimmery. Default 0.65.
- */
-character?: number }
+export type ReverbParams = { enabled?: boolean; mix?: number; space?: number; predelay?: number; distance?: number; character?: number }
 
 /**
  * Phaser parameters
  */
-export type PhaserParams = { enabled?: boolean; 
-/**
- * LFO rate in Hz (0.1–10 Hz)
- */
-rate: number; 
-/**
- * LFO depth: how much the all-pass center frequency is swept (0–1)
- */
-depth: number; 
-/**
- * Wet/dry mix (0–1)
- */
-mix: number; 
-/**
- * Feedback amount from phaser output back to input (-0.9–0.9)
- */
-feedback: number }
+export type PhaserParams = { enabled?: boolean; rate: number; depth: number; mix: number; feedback: number }
 
 /**
  * Vibrato parameters
  */
-export type VibratoParams = { enabled: boolean; 
-/**
- * Waveform as integer 1-4 (JS sends a number: 1=sine 2=tri 3=sq 4=saw)
- */
-waveform: number; 
-/**
- * Rate in Hz
- */
-rate: number; 
-/**
- * Depth in "per mille" (divide by 1000 for pitch multiplier)
- */
-depth: number; 
-/**
- * Delay in milliseconds
- */
-delay: number }
+export type VibratoParams = { enabled: boolean; waveform: number; rate: number; depth: number; delay: number }
 
 /**
  * Phase modulation parameters
  */
-export type PhaseModParams = { enabled: boolean; 
-/**
- * Internal PM depth (0.0–0.5)
- */
-amount: number; 
-/**
- * Modulator-to-carrier frequency ratio (0.5–8.0)
- */
-ratio: number; 
-/**
- * Apply PM before warp shaping when true
- */
-pmPre: boolean }
+export type PhaseModParams = { enabled: boolean; amount: number; ratio: number; pmPre: boolean }
 
 /**
  * Parameters for the random (sample-and-hold) modulation source.
  */
-export type RandomParams = { 
-/**
- * Rate in Hz — how often the held value steps to a new random value.
- */
-rate: number }
+export type RandomParams = { rate: number }
 
 /**
  * ADSR mod envelope parameters.
  */
-export type ModEnvParams = { 
-/**
- * Attack time in seconds.
- */
-attack: number; 
-/**
- * Decay time in seconds.
- */
-decay: number; 
-/**
- * Sustain level [0, 1].
- */
-sustain: number; 
-/**
- * Release time in seconds.
- */
-release: number }
+export type ModEnvParams = { attack: number; decay: number; sustain: number; release: number }
 
 /**
  * Portamento parameters
@@ -223,27 +128,7 @@ export type PortamentoParams = { enabled: boolean; mode: PortamentoMode; rate: n
 /**
  * LFO parameters
  */
-export type LfoParams = { waveform: LfoWaveform; 
-/**
- * Rate in Hz
- */
-rate: number; 
-/**
- * Depth [0, 1]
- */
-depth: number; 
-/**
- * Symmetry [0, 1] (0 = saw, 0.5 = triangle, 1 = reverse saw)
- */
-symmetry: number; 
-/**
- * Retrigger LFO on note-on
- */
-retrigger: boolean; 
-/**
- * DC offset/bias applied to LFO output [-1, 1]
- */
-offset?: number }
+export type LfoParams = { waveform: LfoWaveform; rate: number; depth: number; symmetry: number; retrigger: boolean; offset?: number }
 
 /**
  * One algorithm-specific control value persisted on a line.
@@ -253,15 +138,7 @@ export type AlgoControlValueV1 = { id: string; value: number }
 /**
  * Per-line parameters
  */
-export type LineParams = { algo: Algo; algo2: Algo | null; algoBlend: number; baseWaveformA?: BaseWaveform; baseWaveformB?: BaseWaveform; window: WindowType; dcaBase: number; dcwBase: number; modulation: number; 
-/**
- * Semitone offset for this line (±11 semitones). CZ SysEx "detuneNote".
- */
-detuneNote?: number; 
-/**
- * Fine detune in CZ units (±60, 1 unit ≈ 1.67 cents). CZ SysEx "detuneFine".
- */
-detuneFine?: number; octave: number; dcoEnv: StepEnvData; dcwEnv: StepEnvData; dcaEnv: StepEnvData; keyFollow: number; algoControlsA?: AlgoControlValueV1[] | null; algoControlsB?: AlgoControlValueV1[] | null }
+export type LineParams = { algo: Algo; algo2: Algo | null; algoBlend: number; baseWaveformA?: BaseWaveform; baseWaveformB?: BaseWaveform; window: WindowType; dcaBase: number; dcwBase: number; modulation: number; detuneNote?: number; detuneFine?: number; octave: number; dcoEnv: StepEnvData; dcwEnv: StepEnvData; dcaEnv: StepEnvData; keyFollow: number; algoControlsA?: AlgoControlValueV1[] | null; algoControlsB?: AlgoControlValueV1[] | null }
 
 /**
  * Describes one control surfaced by an algorithm package.
@@ -286,11 +163,7 @@ export type AlgoControlOptionV1 = { value: string; label: string; set: AlgoContr
 /**
  * Describes one control surfaced by an algorithm package.
  */
-export type AlgoControlV1 = { id: string; label: string; description: string; kind: AlgoControlKindV1; controlType: AlgoControlPresentationV1; bipolar: boolean; iconName: string | null; min: number | null; max: number | null; default: number | null; defaultToggle: boolean | null; options: AlgoControlOptionV1[]; 
-/**
- * Engine-owned display format for infobar readouts.
- */
-readoutFormat: EngineParamReadoutFormatV1 }
+export type AlgoControlV1 = { id: string; label: string; description: string; kind: AlgoControlKindV1; controlType: AlgoControlPresentationV1; bipolar: boolean; iconName: string | null; min: number | null; max: number | null; default: number | null; defaultToggle: boolean | null; options: AlgoControlOptionV1[]; readoutFormat: EngineParamReadoutFormatV1 }
 
 /**
  * Complete algorithm package definition.
@@ -299,27 +172,13 @@ export type AlgoDefinitionV1 = { id: Algo; name: string; iconPath: string; visib
 
 /**
  * UI catalog entry for algorithm pickers.
- * 
- * This is exported to TypeScript so frontend option labels/icons are Rust-owned.
  */
 export type AlgoUiEntryV1 = { id: Algo; label: string; iconPath: string; visible: boolean }
 
 /**
  * Modulation source selector for modulation matrix routes.
  */
-export type ModSource = "lfo1" | 
-/**
- * Secondary LFO source.
- */
-"lfo2" | 
-/**
- * Sample-and-hold random source with configurable rate.
- */
-"random" | 
-/**
- * Dedicated ADSR mod envelope.
- */
-"modEnv" | "velocity" | "modWheel" | "aftertouch"
+export type ModSource = "lfo1" | "lfo2" | "random" | "modEnv" | "velocity" | "modWheel" | "aftertouch"
 
 /**
  * Modulation destination selector for modulation matrix routes.
@@ -329,11 +188,7 @@ export type ModDestination = "volume" | "pitch" | "line1DcwBase" | "line1DcaBase
 /**
  * A single modulation route assignment.
  */
-export type ModRoute = { source: ModSource; destination: ModDestination; 
-/**
- * Modulation amount in range [-1.0, 1.0].
- */
-amount: number; enabled: boolean }
+export type ModRoute = { source: ModSource; destination: ModDestination; amount: number; enabled: boolean }
 
 /**
  * Collection of modulation routes.
@@ -341,7 +196,7 @@ amount: number; enabled: boolean }
 export type ModMatrix = { routes?: ModRoute[] }
 
 /**
- * FX slot type selector — determines which effect is active in a given slot.
+ * FX slot type selector
  */
 export type FxSlotType = "empty" | "chorus" | "phaser" | "delay" | "reverb" | "vibrato" | "phaseMod" | "compressor" | "eq5Band" | "grainDelay" | "bitcrusher" | "shimmerVerb" | "distortion" | "junoChorus" | "ringMod" | "tremolo" | "wavefolder" | "loFi"
 
@@ -401,40 +256,14 @@ export type WavefolderParams = { enabled?: boolean; drive?: number; folds?: numb
 export type LoFiParams = { enabled?: boolean; degrade?: number; wowDepth?: number; wowRate?: number; flutterDepth?: number; flutterRate?: number; tone?: number; mix?: number }
 
 /**
- * Per-slot FX configuration — wraps effect-specific parameters with the slot type.
- * Serializes as `{"type": "chorus", "params": {...}}` for effects,
- * or `{"type": "empty"}` for empty slots.
+ * Per-slot FX configuration
  */
 export type FxSlotConfig = { type: "empty" } | { type: "chorus"; params: ChorusParams } | { type: "phaser"; params: PhaserParams } | { type: "delay"; params: DelayParams } | { type: "reverb"; params: ReverbParams } | { type: "vibrato"; params: VibratoParams } | { type: "phaseMod"; params: PhaseModParams } | { type: "compressor"; params: CompressorParams } | { type: "eq5Band"; params: EqParams } | { type: "grainDelay"; params: GrainDelayParams } | { type: "bitcrusher"; params: BitcrusherParams } | { type: "shimmerVerb"; params: ShimmerVerbParams } | { type: "distortion"; params: DistortionParams } | { type: "junoChorus"; params: JunoChorusParams } | { type: "ringMod"; params: RingModParams } | { type: "tremolo"; params: TremoloParams } | { type: "wavefolder"; params: WavefolderParams } | { type: "loFi"; params: LoFiParams }
 
 /**
- * Top-level synth parameters (mirrors this.params in the JS)
+ * Top-level synth parameters
  */
-export type SynthParams = { lineSelect: LineSelect; modMode: ModMode; ringGain?: number; octave: number; line1: LineParams; line2: LineParams; frequency: number; volume: number; polyMode: PolyMode; legato: boolean; portamento: PortamentoParams; lfo: LfoParams; lfo2?: LfoParams; 
-/**
- * Velocity curve exponent [-1, 1]. 0 = linear, >0 = convex, <0 = concave.
- */
-velocityCurve?: number; 
-/**
- * Pitch bend wheel range in semitones (1-24). Default 2.
- */
-pitchBendRange?: number; 
-/**
- * Modulation matrix routes for source-to-destination parameter modulation.
- */
-modMatrix?: ModMatrix; 
-/**
- * Parameters for the random (sample-and-hold) modulation source.
- */
-random?: RandomParams; 
-/**
- * Parameters for the ADSR mod envelope.
- */
-modEnv?: ModEnvParams; 
-/**
- * Per-slot FX configuration. Default is all 6 slots empty.
- */
-fxSlots?: [FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig] }
+export type SynthParams = { lineSelect: LineSelect; modMode: ModMode; ringGain?: number; octave: number; line1: LineParams; line2: LineParams; frequency: number; volume: number; polyMode: PolyMode; legato: boolean; portamento: PortamentoParams; lfo: LfoParams; lfo2?: LfoParams; velocityCurve?: number; pitchBendRange?: number; modMatrix?: ModMatrix; random?: RandomParams; modEnv?: ModEnvParams; fxSlots?: [FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig] }
 
 /**
  * Canonical, versioned synth preset wire contract.
