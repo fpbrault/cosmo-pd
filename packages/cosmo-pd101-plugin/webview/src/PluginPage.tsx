@@ -3,7 +3,6 @@ import {
 	installBenchmarkApi,
 	noteToFreq,
 	SynthRenderer,
-	useLcdControlReadout,
 	useNoteHandling,
 	useSynthPresetManager,
 	useSynthStore,
@@ -14,7 +13,6 @@ import {
 	type ReactNode,
 	useCallback,
 	useEffect,
-	useMemo,
 	useRef,
 	useState,
 } from "react";
@@ -89,7 +87,6 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	const audioCtxRef = useRef<AudioContext | null>(null);
 	const activeAsidePanel = useSynthUiStore((s) => s.activeAsidePanel);
 	const setActiveAsidePanel = useSynthUiStore((s) => s.setActiveAsidePanel);
-	const { lcdControlReadout, pushLcdControlReadout } = useLcdControlReadout();
 	const sendNativeEngineEvent = useCallback(
 		(type: string, payload: Record<string, unknown>) => {
 			window.ipc?.postMessage(
@@ -293,13 +290,6 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	}
 	const effectivePitchHz = lastFreqRef.current;
 
-	const lcdPrimaryText = useMemo(() => {
-		if (heldNote != null) {
-			return `NOTE ${heldNote} ${effectivePitchHz.toFixed(1)}HZ`;
-		}
-		return `PRESET ${activePresetName.toUpperCase()}`;
-	}, [heldNote, effectivePitchHz, activePresetName]);
-
 	const combinedScale = rendererFrame.scale;
 	const scaledWidth = rendererFrame.width * combinedScale;
 	const scaledHeight = rendererFrame.height * combinedScale;
@@ -352,16 +342,12 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 						}}
 						frameClassName="h-full min-h-0 min-w-0 w-full bg-cz-panel flex flex-col overflow-hidden"
 						bottomBarExtra={utilityExtra}
-						lcdPrimaryText={lcdPrimaryText}
-						lcdSecondaryText={""}
-						lcdTransientReadout={lcdControlReadout}
 						effectivePitchHz={effectivePitchHz}
 						analyserNodeRef={analyserNodeRef}
 						audioCtxRef={audioCtxRef}
 						subscribeScopeFrames={subscribeScopeFrames}
 						activeAsidePanel={activeAsidePanel}
 						onAsidePanelChange={setActiveAsidePanel}
-						onControlReadout={pushLcdControlReadout}
 						miniKeyboard={{
 							activeNotes,
 							onNoteOn: sendNoteOn,

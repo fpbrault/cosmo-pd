@@ -7,7 +7,6 @@ export {
 export { default as SynthRenderer } from "./components/renderer/SynthRenderer";
 export { usePluginBridgeSynthEngine } from "./features/synth/engine/pluginBridgeSynthEngineAdapter";
 export { useAudioEngine } from "./features/synth/hooks/useAudioEngine";
-export { useLcdControlReadout } from "./features/synth/hooks/useLcdControlReadout";
 export { useNoteHandling } from "./features/synth/hooks/useNoteHandling";
 export { useSynthParamsToWorklet } from "./features/synth/hooks/useSynthParamsToWorklet";
 export { getSynthRuntimeCapabilities } from "./features/synth/runtimeCapabilities";

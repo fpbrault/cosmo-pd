@@ -95,12 +95,6 @@ type SynthRendererProps = {
 	frameStyle?: CSSProperties;
 	headerExtra?: ReactNode;
 	bottomBarExtra?: ReactNode;
-	lcdPrimaryText: string;
-	lcdSecondaryText: string;
-	lcdTransientReadout?: {
-		label: string;
-		value: string;
-	} | null;
 	effectivePitchHz: number;
 	analyserNodeRef: RefObject<AnalyserNode | null>;
 	audioCtxRef: RefObject<AudioContext | null>;
@@ -114,7 +108,6 @@ type SynthRendererProps = {
 	activeAsidePanel: AsidePanelTab;
 	onAsidePanelChange: (tab: AsidePanelTab) => void;
 	envOverrideHandlers?: EnvOverrideHandlers;
-	onControlReadout?: (key: string, value: string | number | boolean) => void;
 	miniKeyboard?: {
 		activeNotes: number[];
 		onNoteOn: (note: number, velocity?: number) => void;
@@ -133,9 +126,6 @@ export default function SynthRenderer({
 	frameStyle,
 	headerExtra,
 	bottomBarExtra,
-	lcdPrimaryText,
-	lcdSecondaryText,
-	lcdTransientReadout = null,
 	effectivePitchHz,
 	analyserNodeRef,
 	audioCtxRef,
@@ -143,21 +133,17 @@ export default function SynthRenderer({
 	activeAsidePanel,
 	onAsidePanelChange,
 	envOverrideHandlers,
-	onControlReadout,
 	miniKeyboard,
 	audioGate,
 }: SynthRendererProps) {
 	return (
-		<HoverInfoProvider externalReadout={lcdTransientReadout}>
+		<HoverInfoProvider>
 			<SynthRendererContent
 				headerProps={headerProps}
 				frameClassName={frameClassName}
 				frameStyle={frameStyle}
 				headerExtra={headerExtra}
 				bottomBarExtra={bottomBarExtra}
-				lcdPrimaryText={lcdPrimaryText}
-				lcdSecondaryText={lcdSecondaryText}
-				lcdTransientReadout={lcdTransientReadout}
 				effectivePitchHz={effectivePitchHz}
 				analyserNodeRef={analyserNodeRef}
 				audioCtxRef={audioCtxRef}
@@ -165,7 +151,6 @@ export default function SynthRenderer({
 				activeAsidePanel={activeAsidePanel}
 				onAsidePanelChange={onAsidePanelChange}
 				envOverrideHandlers={envOverrideHandlers}
-				onControlReadout={onControlReadout}
 				miniKeyboard={miniKeyboard}
 				audioGate={audioGate}
 			/>
@@ -179,8 +164,6 @@ function SynthRendererContent({
 	frameStyle,
 	headerExtra,
 	bottomBarExtra,
-	lcdPrimaryText: _lcdPrimaryText,
-	lcdSecondaryText: _lcdSecondaryText,
 	effectivePitchHz,
 	analyserNodeRef,
 	audioCtxRef,
@@ -188,7 +171,6 @@ function SynthRendererContent({
 	activeAsidePanel,
 	onAsidePanelChange,
 	envOverrideHandlers,
-	onControlReadout,
 	miniKeyboard,
 	audioGate,
 }: SynthRendererProps) {
@@ -200,7 +182,7 @@ function SynthRendererContent({
 	const setKeyboardVisible = useSynthUiStore((s) => s.setKeyboardVisible);
 	const libraryModeOpen = useSynthUiStore((s) => s.libraryModeOpen);
 	const setLibraryModeOpen = useSynthUiStore((s) => s.setLibraryModeOpen);
-	const { infoText, setControlReadout } = useHoverInfo();
+	const { infoText } = useHoverInfo();
 	const drawerOpen = isDrawerPanel(mainPanelMode);
 	const waveDrawerOpen = mainPanelMode === "display";
 	const [activeDrawerPanel, setActiveDrawerPanel] = useState<DrawerPanel>(
@@ -237,7 +219,7 @@ function SynthRendererContent({
 
 	return (
 		<ModMatrixProvider modMatrix={modMatrix} setModMatrix={setModMatrix}>
-			<SynthParamControllerProvider onControlReadout={onControlReadout}>
+			<SynthParamControllerProvider>
 				<div
 					data-theme="cz101"
 					className={`${frameClassName} relative select-none`}
@@ -290,10 +272,6 @@ function SynthRendererContent({
 													active={mainPanelMode === "phase"}
 													onClick={() => {
 														setMainPanelMode("phase");
-														setControlReadout({
-															label: "Main Panel",
-															value: "PHASE",
-														});
 													}}
 													topLabel="Main"
 													bottomLabel=""
@@ -307,10 +285,6 @@ function SynthRendererContent({
 														const nextMode =
 															mainPanelMode === "fx" ? "phase" : "fx";
 														setMainPanelMode(nextMode);
-														setControlReadout({
-															label: "Main Panel",
-															value: nextMode.toUpperCase(),
-														});
 													}}
 													topLabel="FX"
 													bottomLabel=""
@@ -324,10 +298,6 @@ function SynthRendererContent({
 														const nextMode =
 															mainPanelMode === "mod" ? "phase" : "mod";
 														setMainPanelMode(nextMode);
-														setControlReadout({
-															label: "Main Panel",
-															value: nextMode.toUpperCase(),
-														});
 													}}
 													topLabel="MOD"
 													bottomLabel=""
@@ -341,10 +311,6 @@ function SynthRendererContent({
 														const nextMode =
 															mainPanelMode === "display" ? "phase" : "display";
 														setMainPanelMode(nextMode);
-														setControlReadout({
-															label: "Main Panel",
-															value: nextMode.toUpperCase(),
-														});
 													}}
 													topLabel="DISPLAY"
 													bottomLabel=""

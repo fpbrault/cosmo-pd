@@ -31,6 +31,46 @@ type PdAlgoDef = {
 	icon: string;
 };
 
+type AlgoIconPreviewOverride = {
+	dcw?: number;
+	controls?: AlgoControlValueV1[];
+};
+
+const ALGO_ICON_PREVIEW_OVERRIDES: Partial<
+	Record<PdAlgo, AlgoIconPreviewOverride>
+> = {
+	sync: {
+		dcw: 0.5,
+		controls: [
+			{ id: "syncRatio", value: 0.0 },
+			{ id: "syncPhase", value: 0 },
+			{ id: "syncCurve", value: 0.35 },
+			{ id: "syncWindow", value: 0.9 },
+		],
+	},
+	fold: {
+		dcw: 0,
+		controls: [
+			{ id: "foldStages", value: 0 },
+			{ id: "foldTilt", value: 0 },
+			{ id: "foldSymmetry", value: 0 },
+			{ id: "foldSoftness", value: 0.0 },
+		],
+	},
+	twist: {
+		dcw: 1,
+		controls: [
+			{ id: "twistHarmonics", value: 0.2 },
+			{ id: "twistDepth", value: 0.5 },
+			{ id: "twistPhase", value: 0 },
+			{ id: "twistShape", value: 0.5 },
+		],
+	},
+};
+
+const CZ_MONOGRAM_ICON =
+	"M10.8 7.8C8.6 7.8 7.2 9.3 7.2 12C7.2 14.7 8.6 16.2 10.8 16.2M13.6 8H18.2L13.9 12H18.2L13.6 16H18.2";
+
 /**
  * Generates an SVG path by sampling a function
  * x: 4 to 20, y: 4 to 20 (center 12)
@@ -50,12 +90,19 @@ const generatePath = (fn: (phase: number) => number, res = 64): string => {
 	return steps.join("");
 };
 
-const sampleAlgoFullDcw = (algo: PdAlgo, phase: number): number => {
+const sampleAlgoForIcon = (algo: PdAlgo, phase: number): number => {
+	const previewOverride = ALGO_ICON_PREVIEW_OVERRIDES[algo];
+	const iconDcw = previewOverride?.dcw ?? 1;
+	const iconControls = previewOverride?.controls;
+
 	const resolved = resolveAlgoRef(algo);
 	if (resolved.warpAlgo === "cz101") {
-		const raw = czWaveform(resolved.waveform, phase);
-		const w = resolved.windowType ? applyWindow(phase, resolved.windowType) : 1;
-		return raw * w;
+		const warpedPhase = pdCz101(phase, 0.72);
+		const raw = czWaveform(resolved.waveform, warpedPhase);
+		const window = 0.35 + 0.65 * applyWindow(phase, "triangle");
+		const accent =
+			0.14 * Math.sin(TAU * phase * 2) * (1 - Math.abs(phase - 0.5));
+		return clamp(raw * window + accent, -1, 1);
 	}
 
 	const direct = sampleDirectAlgoPreview(algo, phase);
@@ -64,14 +111,15 @@ const sampleAlgoFullDcw = (algo: PdAlgo, phase: number): number => {
 	return renderAlgoSample(
 		algo,
 		phase,
-		1,
+		iconDcw,
 		getAlgoDefinition(algo)?.defaultBaseWaveform ?? "sine",
-		undefined,
+		iconControls,
 	);
 };
 
 const getAlgoIcon = (algo: PdAlgo): string => {
-	return generatePath((phase) => sampleAlgoFullDcw(algo, phase));
+	if (algo === "cz101") return CZ_MONOGRAM_ICON;
+	return generatePath((phase) => sampleAlgoForIcon(algo, phase));
 };
 
 export const PD_ALGOS: PdAlgoDef[] = [

@@ -25,10 +25,6 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 		DEFAULT_SYNTH_PRESETS: {},
 		SynthRenderer: () => <div data-testid="synth-renderer" />,
 		installBenchmarkApi: mockInstallBenchmarkApi,
-		useLcdControlReadout: () => ({
-			lcdControlReadout: "",
-			pushLcdControlReadout: vi.fn(),
-		}),
 		useNoteHandling: () => ({
 			activeNotes: [],
 			sendNoteOn: vi.fn(),

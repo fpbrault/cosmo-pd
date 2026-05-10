@@ -14,7 +14,6 @@ import {
 	synthBindingsUrl,
 	synthWasmUrl,
 	useAudioEngine,
-	useLcdControlReadout,
 	useNoteHandling,
 	useSynthParamsToWorklet,
 	useSynthPresetManager,
@@ -34,11 +33,9 @@ import {
 	type ReactNode,
 	useCallback,
 	useEffect,
-	useMemo,
 	useRef,
 	useState,
 } from "react";
-import { useTranslation } from "react-i18next";
 import { fetchPresetData, type Preset } from "@/lib/presets/presetManager";
 
 type PhaseDistortionVisualizerProps = {
@@ -63,18 +60,11 @@ export function SharedPhaseDistortionVisualizer({
 	libraryPresets = [],
 	onAudioLevelChange,
 }: PhaseDistortionVisualizerBaseProps = {}) {
-	const { t } = useTranslation("synth");
-	const line1DcoEnv = useSynthStore((s) => s.line1DcoEnv);
 	const setLine1DcoEnv = useSynthStore((s) => s.setLine1DcoEnv);
-	const line1DcwEnv = useSynthStore((s) => s.line1DcwEnv);
 	const setLine1DcwEnv = useSynthStore((s) => s.setLine1DcwEnv);
-	const line1DcaEnv = useSynthStore((s) => s.line1DcaEnv);
 	const setLine1DcaEnv = useSynthStore((s) => s.setLine1DcaEnv);
-	const line2DcoEnv = useSynthStore((s) => s.line2DcoEnv);
 	const setLine2DcoEnv = useSynthStore((s) => s.setLine2DcoEnv);
-	const line2DcwEnv = useSynthStore((s) => s.line2DcwEnv);
 	const setLine2DcwEnv = useSynthStore((s) => s.setLine2DcwEnv);
-	const line2DcaEnv = useSynthStore((s) => s.line2DcaEnv);
 	const setLine2DcaEnv = useSynthStore((s) => s.setLine2DcaEnv);
 	const velocityCurve = useSynthStore((s) => s.velocityCurve);
 	const gatherState = useSynthStore((s) => s.gatherState);
@@ -232,9 +222,6 @@ export function SharedPhaseDistortionVisualizer({
 		};
 	}, [analyserNodeRef, onAudioLevelChange]);
 
-	const { lcdControlReadout, pushLcdControlReadout, formatEnvReadout } =
-		useLcdControlReadout();
-
 	const heldNote =
 		activeNotes.length > 0 ? activeNotes[activeNotes.length - 1] : null;
 	const currentFreq = heldNote != null ? noteToFreq(heldNote) : 220;
@@ -345,64 +332,44 @@ export function SharedPhaseDistortionVisualizer({
 	const handleLine1DcoEnvChange = useCallback(
 		(next: StepEnvData) => {
 			setLine1DcoEnv(next);
-			pushLcdControlReadout("line1DcoEnv", formatEnvReadout(line1DcoEnv, next));
 		},
-		[formatEnvReadout, line1DcoEnv, pushLcdControlReadout, setLine1DcoEnv],
+		[setLine1DcoEnv],
 	);
 
 	const handleLine1DcwEnvChange = useCallback(
 		(next: StepEnvData) => {
 			setLine1DcwEnv(next);
-			pushLcdControlReadout("line1DcwEnv", formatEnvReadout(line1DcwEnv, next));
 		},
-		[formatEnvReadout, line1DcwEnv, pushLcdControlReadout, setLine1DcwEnv],
+		[setLine1DcwEnv],
 	);
 
 	const handleLine1DcaEnvChange = useCallback(
 		(next: StepEnvData) => {
 			setLine1DcaEnv(next);
-			pushLcdControlReadout("line1DcaEnv", formatEnvReadout(line1DcaEnv, next));
 		},
-		[formatEnvReadout, line1DcaEnv, pushLcdControlReadout, setLine1DcaEnv],
+		[setLine1DcaEnv],
 	);
 
 	const handleLine2DcoEnvChange = useCallback(
 		(next: StepEnvData) => {
 			setLine2DcoEnv(next);
-			pushLcdControlReadout("line2DcoEnv", formatEnvReadout(line2DcoEnv, next));
 		},
-		[formatEnvReadout, line2DcoEnv, pushLcdControlReadout, setLine2DcoEnv],
+		[setLine2DcoEnv],
 	);
 
 	const handleLine2DcwEnvChange = useCallback(
 		(next: StepEnvData) => {
 			setLine2DcwEnv(next);
-			pushLcdControlReadout("line2DcwEnv", formatEnvReadout(line2DcwEnv, next));
 		},
-		[formatEnvReadout, line2DcwEnv, pushLcdControlReadout, setLine2DcwEnv],
+		[setLine2DcwEnv],
 	);
 
 	const handleLine2DcaEnvChange = useCallback(
 		(next: StepEnvData) => {
 			setLine2DcaEnv(next);
-			pushLcdControlReadout("line2DcaEnv", formatEnvReadout(line2DcaEnv, next));
 		},
-		[formatEnvReadout, line2DcaEnv, pushLcdControlReadout, setLine2DcaEnv],
+		[setLine2DcaEnv],
 	);
-
-	const lcdPrimaryText = useMemo(() => {
-		if (heldNote != null) {
-			return t("display.noteWithFreq", {
-				note: heldNote,
-				freq: effectivePitchHz.toFixed(1),
-				defaultValue: `NOTE ${heldNote} ${effectivePitchHz.toFixed(1)}HZ`,
-			});
-		}
-		return t("display.preset", {
-			preset: activePresetName.toUpperCase(),
-			defaultValue: `PRESET ${activePresetName.toUpperCase()}`,
-		});
-	}, [heldNote, effectivePitchHz, activePresetName, t]);
 
 	return (
 		<SynthRenderer
@@ -455,15 +422,11 @@ export function SharedPhaseDistortionVisualizer({
 					/>
 				</div>
 			}
-			lcdPrimaryText={lcdPrimaryText}
-			lcdSecondaryText={""}
-			lcdTransientReadout={lcdControlReadout}
 			effectivePitchHz={effectivePitchHz}
 			analyserNodeRef={analyserNodeRef}
 			audioCtxRef={audioCtxRef}
 			activeAsidePanel={activeAsidePanel}
 			onAsidePanelChange={setActiveAsidePanel}
-			onControlReadout={pushLcdControlReadout}
 			envOverrideHandlers={{
 				onLine1DcoEnvChange: handleLine1DcoEnvChange,
 				onLine1DcwEnvChange: handleLine1DcwEnvChange,

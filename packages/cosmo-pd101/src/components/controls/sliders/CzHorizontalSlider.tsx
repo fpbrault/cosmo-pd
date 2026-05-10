@@ -1,9 +1,6 @@
 import { useCallback } from "react";
 import ModulatableControl from "@/components/controls/modulation/ModulatableControl";
-import {
-	useHoverInfo,
-	useHoverInfoHandlers,
-} from "@/components/layout/HoverInfo";
+import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
 import type { ModDestination } from "@/lib/synth/bindings/synth";
 import {
 	type ModTarget,
@@ -44,27 +41,18 @@ export default function CzHorizontalSlider({
 	className = "",
 	label,
 	tooltip,
-	valueFormatter,
+	valueFormatter: _valueFormatter,
 	modulatable,
 	lineIndex = 1,
 	modDestination,
 }: CzHorizontalSliderProps) {
-	const { setControlReadout } = useHoverInfo();
 	const resolvedTooltip = tooltip?.trim() ? tooltip : label?.trim();
 	const hoverHandlers = useHoverInfoHandlers(resolvedTooltip);
 	const emitChange = useCallback(
 		(nextValue: number) => {
 			onChange(nextValue);
-			setControlReadout({
-				label: label ?? "Value",
-				value: valueFormatter
-					? valueFormatter(nextValue)
-					: Number.isInteger(nextValue)
-						? `${nextValue}`
-						: nextValue.toFixed(2),
-			});
 		},
-		[label, onChange, setControlReadout, valueFormatter],
+		[onChange],
 	);
 
 	const input = (

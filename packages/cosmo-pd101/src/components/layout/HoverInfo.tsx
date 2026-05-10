@@ -5,61 +5,35 @@ import {
 	type ReactNode,
 	useCallback,
 	useContext,
-	useEffect,
 	useMemo,
-	useRef,
 	useState,
 } from "react";
-
-type InfoReadout = {
-	label: string;
-	value: string;
-};
 
 type HoverInfoContextValue = {
 	hoverInfo: string | null;
 	infoText: string;
 	setHoverInfo: (message: string | null | undefined) => void;
 	clearHoverInfo: () => void;
-	setControlReadout: (readout: InfoReadout | null | undefined) => void;
-	clearControlReadout: () => void;
 };
 
 const HoverInfoContext = createContext<HoverInfoContextValue | null>(null);
 
 type HoverInfoProviderProps = PropsWithChildren<{
 	defaultInfoText?: string;
-	externalReadout?: InfoReadout | null;
 }>;
 
 function formatInfoText(
 	hoverInfo: string | null,
-	readout: InfoReadout | null,
 	defaultInfoText: string,
 ): string {
-	if (hoverInfo && readout) {
-		return `${hoverInfo} | ${readout.label}: ${readout.value}`;
-	}
-
-	if (hoverInfo) {
-		return hoverInfo;
-	}
-
-	if (readout) {
-		return `${readout.label}: ${readout.value}`;
-	}
-
-	return defaultInfoText;
+	return hoverInfo ?? defaultInfoText;
 }
 
 export function HoverInfoProvider({
 	children,
 	defaultInfoText = "Hover any control for context.",
-	externalReadout = null,
 }: HoverInfoProviderProps) {
 	const [hoverInfo, setHoverInfoState] = useState<string | null>(null);
-	const [localReadout, setLocalReadout] = useState<InfoReadout | null>(null);
-	const localReadoutTimeoutRef = useRef<number | null>(null);
 
 	const setHoverInfo = useCallback((message: string | null | undefined) => {
 		setHoverInfoState(message?.trim() ? message : null);
@@ -69,52 +43,7 @@ export function HoverInfoProvider({
 		setHoverInfoState(null);
 	}, []);
 
-	const setControlReadout = useCallback(
-		(readout: InfoReadout | null | undefined) => {
-			if (localReadoutTimeoutRef.current != null) {
-				window.clearTimeout(localReadoutTimeoutRef.current);
-				localReadoutTimeoutRef.current = null;
-			}
-
-			if (!readout) {
-				setLocalReadout(null);
-				return;
-			}
-
-			if (!readout.label.trim() || !readout.value.trim()) {
-				setLocalReadout(null);
-				return;
-			}
-
-			setLocalReadout({
-				label: readout.label,
-				value: readout.value,
-			});
-			localReadoutTimeoutRef.current = window.setTimeout(() => {
-				setLocalReadout(null);
-			}, 1200);
-		},
-		[],
-	);
-
-	const clearControlReadout = useCallback(() => {
-		if (localReadoutTimeoutRef.current != null) {
-			window.clearTimeout(localReadoutTimeoutRef.current);
-			localReadoutTimeoutRef.current = null;
-		}
-		setLocalReadout(null);
-	}, []);
-
-	useEffect(() => {
-		return () => {
-			if (localReadoutTimeoutRef.current != null) {
-				window.clearTimeout(localReadoutTimeoutRef.current);
-			}
-		};
-	}, []);
-
-	const resolvedReadout = localReadout ?? externalReadout;
-	const infoText = formatInfoText(hoverInfo, resolvedReadout, defaultInfoText);
+	const infoText = formatInfoText(hoverInfo, defaultInfoText);
 
 	const value = useMemo(
 		() => ({
@@ -122,17 +51,8 @@ export function HoverInfoProvider({
 			infoText,
 			setHoverInfo,
 			clearHoverInfo,
-			setControlReadout,
-			clearControlReadout,
 		}),
-		[
-			hoverInfo,
-			infoText,
-			setHoverInfo,
-			clearHoverInfo,
-			setControlReadout,
-			clearControlReadout,
-		],
+		[hoverInfo, infoText, setHoverInfo, clearHoverInfo],
 	);
 
 	return (
@@ -151,8 +71,6 @@ export function useHoverInfo() {
 			infoText: "Hover any control for context.",
 			setHoverInfo: (_message: string | null | undefined) => {},
 			clearHoverInfo: () => {},
-			setControlReadout: (_readout: InfoReadout | null | undefined) => {},
-			clearControlReadout: () => {},
 		};
 	}
 

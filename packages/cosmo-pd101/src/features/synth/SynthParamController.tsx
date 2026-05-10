@@ -91,8 +91,6 @@ const SYNTH_PARAM_SETTERS = {
 
 export type SynthParamKey = keyof typeof SYNTH_PARAM_SETTERS;
 
-type ReadoutValue = string | number | boolean;
-
 type LiveModSources = Readonly<RuntimeModSources>;
 type LiveVoiceStates = ReadonlyArray<RuntimeVoiceDebugState>;
 
@@ -130,12 +128,10 @@ const SynthParamControllerContext = createContext<SynthParamController | null>(
 
 type SynthParamControllerProviderProps = {
 	children: ReactNode;
-	onControlReadout?: (key: string, value: ReadoutValue) => void;
 };
 
 export function SynthParamControllerProvider({
 	children,
-	onControlReadout,
 }: SynthParamControllerProviderProps) {
 	const maybeModMatrix = useOptionalModMatrix();
 	const modRoutes = maybeModMatrix?.modMatrix.routes ?? [];
@@ -172,16 +168,8 @@ export function SynthParamControllerProvider({
 				next: UseSynthStateResult[K],
 			) => void;
 			setter(value);
-
-			if (
-				typeof value === "string" ||
-				typeof value === "number" ||
-				typeof value === "boolean"
-			) {
-				onControlReadout?.(key, value as ReadoutValue);
-			}
 		},
-		[onControlReadout],
+		[],
 	);
 
 	useEffect(() => {

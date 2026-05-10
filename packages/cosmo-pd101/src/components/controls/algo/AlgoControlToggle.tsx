@@ -1,8 +1,5 @@
 import { memo } from "react";
-import {
-	useHoverInfo,
-	useHoverInfoHandlers,
-} from "@/components/layout/HoverInfo";
+import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
 import { useAlgoControl } from "@/lib/synth/i18nAlgo";
 import AlgoControlTooltip from "./AlgoControlTooltip";
 import type {
@@ -22,7 +19,6 @@ function AlgoControlToggleInner({
 	binding,
 }: AlgoControlToggleProps) {
 	const { label, description } = useAlgoControl(control.algo, control.id);
-	const { setControlReadout } = useHoverInfo();
 	const toggleValue = binding?.getToggle?.() ?? control.defaultToggle ?? false;
 	const hoverHandlers = useHoverInfoHandlers(description ?? label ?? "");
 
@@ -38,12 +34,7 @@ function AlgoControlToggleInner({
 				type="checkbox"
 				checked={toggleValue}
 				onChange={(event) => {
-					const nextValue = event.target.checked;
-					setControlReadout({
-						label,
-						value: nextValue ? "ON" : "OFF",
-					});
-					binding?.setToggle?.(nextValue);
+					binding?.setToggle?.(event.target.checked);
 				}}
 				data-hover-info={description ?? label ?? ""}
 				{...hoverHandlers}
