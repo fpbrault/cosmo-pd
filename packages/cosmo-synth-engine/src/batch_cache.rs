@@ -139,8 +139,6 @@ impl<S: SimdType> Default for BatchParameterCache<S> {
     }
 }
 
-// TODO: Integrate with voice rendering loop
-// 1. Cache parameters at block boundaries
-// 2. Reference cache during sample-by-sample rendering
-// 3. Invalidate cache on parameter changes
-// 4. Measure cache hit/miss rates and parameter update frequency
+// `RenderBlockCache` is used by `processor/process.rs` to derive block-level
+// invariants once per buffer call.  `VoiceParameterCache` and
+// `BatchParameterCache` remain available for future per-voice SIMD optimisation.

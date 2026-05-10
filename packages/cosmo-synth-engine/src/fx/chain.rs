@@ -249,6 +249,26 @@ impl FxChain {
         out
     }
 
+    /// Process a full buffer through all active FX slots in series.
+    ///
+    /// Equivalent to calling [`process`] for every sample but avoids repeated
+    /// active-slot dispatch overhead per sample when the slot layout is fixed
+    /// for the duration of the block.  The inner per-sample FX logic remains
+    /// unchanged; this method is the foundation for future per-slot SIMD
+    /// or vectorised block processing.
+    pub fn process_block(&mut self, samples: &mut [f32]) {
+        if self.active_slot_count == 0 {
+            return;
+        }
+        for active_idx in 0..self.active_slot_count {
+            let slot = self.active_slots[active_idx];
+            let slot_type = self.slot_types[slot];
+            for s in samples.iter_mut() {
+                *s = self.slots[slot].process(slot_type, *s);
+            }
+        }
+    }
+
     fn process_slot(&mut self, slot: usize, sample: f32) -> f32 {
         self.slots[slot].process(self.slot_types[slot], sample)
     }
