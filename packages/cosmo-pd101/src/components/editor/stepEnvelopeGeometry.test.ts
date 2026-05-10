@@ -337,7 +337,7 @@ describe("drawEnvPreview", () => {
 					lineWidth: 1,
 					strokeStyle: "",
 				}) as unknown as CanvasRenderingContext2D,
-		} as HTMLCanvasElement;
+		} as unknown as HTMLCanvasElement;
 	}
 
 	function createEnv(overrides: Partial<StepEnvData> = {}): StepEnvData {
