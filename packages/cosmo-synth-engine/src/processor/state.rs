@@ -1,5 +1,5 @@
-use serde::Serialize;
 use crate::voice::Voice;
+use serde::Serialize;
 
 /// DAC coloration effect state (experimental CZ-1 emulation).
 #[derive(Debug, Clone, Copy)]
