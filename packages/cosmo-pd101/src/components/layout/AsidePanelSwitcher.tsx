@@ -60,6 +60,11 @@ const FX_TYPE_COLORS: Record<FxSlotType, string> = {
 	tremolo: "#4ade80",
 	wavefolder: "#c084fc",
 	loFi: "#38bdf8",
+	multimodeFilter: "#fca5a5",
+	flanger: "#67e8f9",
+	rotarySpeaker: "#fde68a",
+	autoWah: "#86efac",
+	stereoWidener: "#93c5fd",
 };
 
 const FX_TYPE_SHORT_LABELS: Record<FxSlotType, string> = {
@@ -81,6 +86,11 @@ const FX_TYPE_SHORT_LABELS: Record<FxSlotType, string> = {
 	tremolo: "Trem",
 	wavefolder: "Wave",
 	loFi: "LoFi",
+	multimodeFilter: "MMF",
+	flanger: "Flng",
+	rotarySpeaker: "Rot",
+	autoWah: "AWah",
+	stereoWidener: "Wide",
 };
 
 export type AsidePanelTabMeta = {

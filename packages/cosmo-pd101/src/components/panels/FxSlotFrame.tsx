@@ -31,6 +31,11 @@ const FX_EFFECT_OPTIONS: { value: FxSlotType; label: string }[] = [
 	{ value: "tremolo", label: "Tremolo" },
 	{ value: "wavefolder", label: "Wavefolder" },
 	{ value: "loFi", label: "LoFi" },
+	{ value: "multimodeFilter", label: "Multimode Filter" },
+	{ value: "flanger", label: "Flanger" },
+	{ value: "rotarySpeaker", label: "Rotary Speaker" },
+	{ value: "autoWah", label: "Auto-Wah" },
+	{ value: "stereoWidener", label: "Stereo Widener" },
 ];
 
 /** For active slots: includes a "Remove" option at the top. */

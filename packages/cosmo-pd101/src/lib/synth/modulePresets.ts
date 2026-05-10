@@ -23,7 +23,12 @@ export type ModulePresetModule =
 	| "ringMod"
 	| "tremolo"
 	| "wavefolder"
-	| "loFi";
+	| "loFi"
+	| "multimodeFilter"
+	| "flanger"
+	| "rotarySpeaker"
+	| "autoWah"
+	| "stereoWidener";
 
 export type ModulePresetPatch = Record<string, unknown>;
 
@@ -795,6 +800,284 @@ export const LOFI_PRESETS: ModulePresetDefinition<{
 	},
 ];
 
+export const MULTIMODE_FILTER_PRESETS: ModulePresetDefinition<{
+	multimodeFilter: {
+		enabled: boolean;
+		mode: number;
+		fourPole: boolean;
+		cutoffHz: number;
+		resonance: number;
+		drive: number;
+		mix: number;
+	};
+}>[] = [
+	{
+		id: "warmLowPass",
+		label: "Warm LP",
+		patch: {
+			multimodeFilter: {
+				enabled: true,
+				mode: 0,
+				fourPole: true,
+				cutoffHz: 1400,
+				resonance: 0.28,
+				drive: 0.22,
+				mix: 1,
+			},
+		},
+	},
+	{
+		id: "tightHighPass",
+		label: "Tight HP",
+		patch: {
+			multimodeFilter: {
+				enabled: true,
+				mode: 1,
+				fourPole: false,
+				cutoffHz: 380,
+				resonance: 0.18,
+				drive: 0.08,
+				mix: 0.9,
+			},
+		},
+	},
+	{
+		id: "vocalBandPass",
+		label: "Vocal BP",
+		patch: {
+			multimodeFilter: {
+				enabled: true,
+				mode: 2,
+				fourPole: true,
+				cutoffHz: 1150,
+				resonance: 0.62,
+				drive: 0.18,
+				mix: 0.95,
+			},
+		},
+	},
+];
+
+export const FLANGER_PRESETS: ModulePresetDefinition<{
+	flanger: {
+		enabled: boolean;
+		rate: number;
+		depth: number;
+		delayMs: number;
+		feedback: number;
+		throughZero: boolean;
+		mix: number;
+	};
+}>[] = [
+	{
+		id: "softSweep",
+		label: "Soft Sweep",
+		patch: {
+			flanger: {
+				enabled: true,
+				rate: 0.2,
+				depth: 0.35,
+				delayMs: 2.8,
+				feedback: 0.18,
+				throughZero: false,
+				mix: 0.42,
+			},
+		},
+	},
+	{
+		id: "jetPlane",
+		label: "Jet Plane",
+		patch: {
+			flanger: {
+				enabled: true,
+				rate: 0.45,
+				depth: 0.78,
+				delayMs: 1.2,
+				feedback: 0.62,
+				throughZero: false,
+				mix: 0.55,
+			},
+		},
+	},
+	{
+		id: "throughZero",
+		label: "Through-Zero",
+		patch: {
+			flanger: {
+				enabled: true,
+				rate: 0.33,
+				depth: 0.7,
+				delayMs: 0.8,
+				feedback: 0.36,
+				throughZero: true,
+				mix: 0.58,
+			},
+		},
+	},
+];
+
+export const ROTARY_SPEAKER_PRESETS: ModulePresetDefinition<{
+	rotarySpeaker: {
+		enabled: boolean;
+		speed: number;
+		depth: number;
+		drive: number;
+		mix: number;
+	};
+}>[] = [
+	{
+		id: "classicSpin",
+		label: "Classic Spin",
+		patch: {
+			rotarySpeaker: {
+				enabled: true,
+				speed: 0.9,
+				depth: 0.62,
+				drive: 0.08,
+				mix: 0.58,
+			},
+		},
+	},
+	{
+		id: "fastHorn",
+		label: "Fast Horn",
+		patch: {
+			rotarySpeaker: {
+				enabled: true,
+				speed: 4.2,
+				depth: 0.84,
+				drive: 0.12,
+				mix: 0.66,
+			},
+		},
+	},
+	{
+		id: "dirtyCab",
+		label: "Dirty Cab",
+		patch: {
+			rotarySpeaker: {
+				enabled: true,
+				speed: 1.8,
+				depth: 0.72,
+				drive: 0.48,
+				mix: 0.74,
+			},
+		},
+	},
+];
+
+export const AUTO_WAH_PRESETS: ModulePresetDefinition<{
+	autoWah: {
+		enabled: boolean;
+		mode: number;
+		sensitivity: number;
+		cutoffHz: number;
+		resonance: number;
+		attackMs: number;
+		releaseMs: number;
+		mix: number;
+	};
+}>[] = [
+	{
+		id: "vowelQuack",
+		label: "Vowel Quack",
+		patch: {
+			autoWah: {
+				enabled: true,
+				mode: 2,
+				sensitivity: 0.75,
+				cutoffHz: 520,
+				resonance: 0.78,
+				attackMs: 6,
+				releaseMs: 95,
+				mix: 0.84,
+			},
+		},
+	},
+	{
+		id: "funkSweep",
+		label: "Funk Sweep",
+		patch: {
+			autoWah: {
+				enabled: true,
+				mode: 1,
+				sensitivity: 0.62,
+				cutoffHz: 280,
+				resonance: 0.58,
+				attackMs: 12,
+				releaseMs: 170,
+				mix: 0.76,
+			},
+		},
+	},
+	{
+		id: "softTouch",
+		label: "Soft Touch",
+		patch: {
+			autoWah: {
+				enabled: true,
+				mode: 0,
+				sensitivity: 0.34,
+				cutoffHz: 700,
+				resonance: 0.32,
+				attackMs: 24,
+				releaseMs: 240,
+				mix: 0.66,
+			},
+		},
+	},
+];
+
+export const STEREO_WIDENER_PRESETS: ModulePresetDefinition<{
+	stereoWidener: {
+		enabled: boolean;
+		width: number;
+		delayMs: number;
+		tone: number;
+		mix: number;
+	};
+}>[] = [
+	{
+		id: "subtleSpread",
+		label: "Subtle Spread",
+		patch: {
+			stereoWidener: {
+				enabled: true,
+				width: 0.35,
+				delayMs: 9,
+				tone: 0.45,
+				mix: 0.45,
+			},
+		},
+	},
+	{
+		id: "widePad",
+		label: "Wide Pad",
+		patch: {
+			stereoWidener: {
+				enabled: true,
+				width: 0.72,
+				delayMs: 14,
+				tone: 0.62,
+				mix: 0.62,
+			},
+		},
+	},
+	{
+		id: "haasPush",
+		label: "Haas Push",
+		patch: {
+			stereoWidener: {
+				enabled: true,
+				width: 0.9,
+				delayMs: 22,
+				tone: 0.72,
+				mix: 0.7,
+			},
+		},
+	},
+];
+
 // TODO: Remove these local patch payload definitions once the engine exports
 // full module preset parameter payloads and the frontend no longer mirrors them.
 applyRustPresetCatalog("chorus", CHORUS_PRESETS);
@@ -817,6 +1100,11 @@ applyRustPresetCatalog("ringMod", RING_MOD_PRESETS);
 applyRustPresetCatalog("tremolo", TREMOLO_PRESETS);
 applyRustPresetCatalog("wavefolder", WAVEFOLDER_PRESETS);
 applyRustPresetCatalog("loFi", LOFI_PRESETS);
+applyRustPresetCatalog("multimodeFilter", MULTIMODE_FILTER_PRESETS);
+applyRustPresetCatalog("flanger", FLANGER_PRESETS);
+applyRustPresetCatalog("rotarySpeaker", ROTARY_SPEAKER_PRESETS);
+applyRustPresetCatalog("autoWah", AUTO_WAH_PRESETS);
+applyRustPresetCatalog("stereoWidener", STEREO_WIDENER_PRESETS);
 
 export function getLfoModulePatch(id: 1 | 2, patch: Record<string, unknown>) {
 	return id === 1 ? { lfo: patch } : { lfo2: patch };
