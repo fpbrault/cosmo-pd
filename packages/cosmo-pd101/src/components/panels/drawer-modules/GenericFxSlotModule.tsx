@@ -2,9 +2,9 @@ import { memo, useMemo, useState } from "react";
 import Button from "@/components/controls/Button";
 import ControlKnob from "@/components/controls/ControlKnob";
 import {
-	getSlotParams,
 	type ButtonGroupControlDef,
 	type FxSlotModuleConfig,
+	getSlotParams,
 	type KnobControlDef,
 } from "@/components/panels/drawer-modules/fxSlotModuleConfig";
 import ModuleFrame from "@/components/primitives/ModuleFrame";

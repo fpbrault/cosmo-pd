@@ -72,32 +72,34 @@ interface UsePerLineWarpOutput {
 	controlBindingsB: Record<string, AlgoControlBinding>;
 	getAlgoControlValueA: (id: string, fallback: number) => number;
 	setAlgoControlValueA: (id: string, value: number) => void;
-	getActiveSelectOptionA: (control: AlgoControlRuntime) => AlgoControlOptionRuntime | null;
+	getActiveSelectOptionA: (
+		control: AlgoControlRuntime,
+	) => AlgoControlOptionRuntime | null;
 	applyOptionAssignmentsA: (option: AlgoControlOptionRuntime) => void;
 	getAlgoControlValueB: (id: string, fallback: number) => number;
 	setAlgoControlValueB: (id: string, value: number) => void;
-	getActiveSelectOptionB: (control: AlgoControlRuntime) => AlgoControlOptionRuntime | null;
+	getActiveSelectOptionB: (
+		control: AlgoControlRuntime,
+	) => AlgoControlOptionRuntime | null;
 	applyOptionAssignmentsB: (option: AlgoControlOptionRuntime) => void;
 }
 
-export function usePerLineWarp(input: UsePerLineWarpInput): UsePerLineWarpOutput {
+export function usePerLineWarp(
+	input: UsePerLineWarpInput,
+): UsePerLineWarpOutput {
 	const {
 		label,
-		color,
 		algo,
 		setAlgo,
 		algo2,
 		setAlgo2,
 		algoBlend,
-		setAlgoBlend,
 		algoControlsA,
 		setAlgoControlsA,
 		algoControlsB,
 		setAlgoControlsB,
-		baseWaveformA,
-		setBaseWaveformA,
-		baseWaveformB,
 		setBaseWaveformB,
+		setBaseWaveformA,
 		dcoEnv,
 		setDcoEnv,
 		dcwEnv,

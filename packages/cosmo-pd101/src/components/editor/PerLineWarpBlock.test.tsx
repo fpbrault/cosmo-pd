@@ -4,14 +4,27 @@ import type { PdAlgo } from "@/lib/synth/pdAlgorithms";
 import { PerLineWarpBlock } from "./PerLineWarpBlock";
 
 vi.mock("@/components/controls/algo/AlgoControlsGroup", () => ({
-	default: ({ onChange }: { onChange?: (id: string, value: number) => void }) => (
-		<button type="button" data-testid="mock-control" onClick={() => onChange?.("test", 50)}>Control</button>
+	default: ({
+		onChange,
+	}: {
+		onChange?: (id: string, value: number) => void;
+	}) => (
+		<button
+			type="button"
+			data-testid="mock-control"
+			onClick={() => onChange?.("test", 50)}
+		>
+			Control
+		</button>
 	),
 }));
 
 vi.mock("@/components/controls/algo/AlgoIconGrid", () => ({
 	default: ({ onChange }: { onChange?: (value: PdAlgo) => void }) => (
-		<select data-testid="algo-select" onChange={(e) => onChange?.(Number(e.target.value) as PdAlgo)}>
+		<select
+			data-testid="algo-select"
+			onChange={(e) => onChange?.(Number(e.target.value) as PdAlgo)}
+		>
 			<option value={0}>Algo 0</option>
 			<option value={1}>Algo 1</option>
 		</select>
@@ -19,8 +32,18 @@ vi.mock("@/components/controls/algo/AlgoIconGrid", () => ({
 }));
 
 vi.mock("./BaseWaveSelector", () => ({
-	BaseWaveSelector: ({ onChange, disabled }: { onChange?: (v: string) => void; disabled?: boolean }) => (
-		<select data-testid="wave-select" disabled={disabled} onChange={(e) => onChange?.(e.target.value)}>
+	BaseWaveSelector: ({
+		onChange,
+		disabled,
+	}: {
+		onChange?: (v: string) => void;
+		disabled?: boolean;
+	}) => (
+		<select
+			data-testid="wave-select"
+			disabled={disabled}
+			onChange={(e) => onChange?.(e.target.value)}
+		>
 			<option value="saw">Saw</option>
 			<option value="square">Square</option>
 		</select>
@@ -33,18 +56,30 @@ vi.mock("./SingleCycleDisplay", () => ({
 
 vi.mock("./PerLineParametersCard", () => ({
 	default: ({ setWarpAmount }: { setWarpAmount?: (v: number) => void }) => (
-		<button type="button" data-testid="per-line-params" onClick={() => setWarpAmount?.(0.5)}>
+		<button
+			type="button"
+			data-testid="per-line-params"
+			onClick={() => setWarpAmount?.(0.5)}
+		>
 			PerLineParams
 		</button>
 	),
 }));
 
 vi.mock("@/components/primitives/Card", () => ({
-	default: ({ children }: { children: React.ReactNode }) => <div data-testid="card">{children}</div>,
+	default: ({ children }: { children: React.ReactNode }) => (
+		<div data-testid="card">{children}</div>
+	),
 }));
 
 vi.mock("@/components/controls/SynthParamKnob", () => ({
-	default: ({ label, onChange }: { label?: string; onChange?: (v: number) => void }) => (
+	default: ({
+		label,
+		onChange,
+	}: {
+		label?: string;
+		onChange?: (v: number) => void;
+	}) => (
 		<button type="button" aria-label={label} onClick={() => onChange?.(0.3)}>
 			{label}
 		</button>
@@ -56,8 +91,19 @@ vi.mock("./EnvelopesSection", () => ({
 }));
 
 vi.mock("./AlgoSectionCard", () => ({
-	default: ({ onChange, disabled }: { onChange?: (v: PdAlgo) => void; disabled?: boolean }) => (
-		<button type="button" data-testid="algo-card" disabled={disabled} onClick={() => onChange?.(1 as PdAlgo)}>
+	default: ({
+		onChange,
+		disabled,
+	}: {
+		onChange?: (v: PdAlgo) => void;
+		disabled?: boolean;
+	}) => (
+		<button
+			type="button"
+			data-testid="algo-card"
+			disabled={disabled}
+			onClick={() => onChange?.(1 as PdAlgo)}
+		>
 			AlgoCard
 		</button>
 	),
@@ -80,21 +126,30 @@ function createProps() {
 		octave: 3,
 		setOctave: vi.fn(),
 		dcoEnv: {
-			steps: Array.from({ length: 8 }, (_, i) => ({ level: Math.max(0, 99 - i * 10), rate: 50 })),
+			steps: Array.from({ length: 8 }, (_, i) => ({
+				level: Math.max(0, 99 - i * 10),
+				rate: 50,
+			})),
 			sustainStep: 1,
 			stepCount: 4,
 			loop: false,
 		},
 		setDcoEnv: vi.fn(),
 		dcwEnv: {
-			steps: Array.from({ length: 8 }, (_, i) => ({ level: Math.max(0, 99 - i * 10), rate: 50 })),
+			steps: Array.from({ length: 8 }, (_, i) => ({
+				level: Math.max(0, 99 - i * 10),
+				rate: 50,
+			})),
 			sustainStep: 1,
 			stepCount: 4,
 			loop: false,
 		},
 		setDcwEnv: vi.fn(),
 		dcaEnv: {
-			steps: Array.from({ length: 8 }, (_, i) => ({ level: Math.max(0, 99 - i * 10), rate: 50 })),
+			steps: Array.from({ length: 8 }, (_, i) => ({
+				level: Math.max(0, 99 - i * 10),
+				rate: 50,
+			})),
 			sustainStep: 1,
 			stepCount: 4,
 			loop: false,

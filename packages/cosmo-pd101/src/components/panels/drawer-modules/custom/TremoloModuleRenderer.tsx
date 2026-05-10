@@ -1,5 +1,6 @@
 import Button from "@/components/controls/Button";
 import ControlKnob from "@/components/controls/ControlKnob";
+import { useFxModuleController } from "@/components/panels/drawer-modules/custom/useFxModuleController";
 import {
 	asNumber,
 	getButtonGroupControl,
@@ -7,7 +8,6 @@ import {
 	getModDestinationByParam,
 	getTooltip,
 } from "@/components/panels/drawer-modules/custom/utils";
-import { useFxModuleController } from "@/components/panels/drawer-modules/custom/useFxModuleController";
 import type { FxSlotModuleConfig } from "@/components/panels/drawer-modules/fxSlotModuleConfig";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";

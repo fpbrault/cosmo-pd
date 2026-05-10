@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
-	getSlotParams,
 	type FxSlotModuleConfig,
+	getSlotParams,
 } from "@/components/panels/drawer-modules/fxSlotModuleConfig";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthStore } from "@/features/synth/synthStore";

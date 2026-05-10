@@ -1,4 +1,8 @@
-import { FX_DEFINITIONS_V1, type FxSlotConfig, type FxSlotType } from "@/lib/synth/bindings/synth";
+import {
+	FX_DEFINITIONS_V1,
+	type FxSlotConfig,
+	type FxSlotType,
+} from "@/lib/synth/bindings/synth";
 import {
 	BITCRUSHER_PRESETS,
 	CHORUS_PRESETS,
