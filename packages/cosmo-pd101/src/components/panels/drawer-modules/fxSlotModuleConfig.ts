@@ -1,4 +1,4 @@
-import { FX_DEFINITIONS_V1, type FxSlotType } from "@/lib/synth/bindings/synth";
+import { FX_DEFINITIONS_V1, type FxSlotConfig, type FxSlotType } from "@/lib/synth/bindings/synth";
 import {
 	BITCRUSHER_PRESETS,
 	CHORUS_PRESETS,
@@ -89,6 +89,14 @@ export type FxSlotModuleConfig = {
 	presetTitle: string;
 	controls: ControlDef[];
 };
+
+export function getSlotParams(
+	slot: FxSlotConfig | undefined,
+): Record<string, unknown> {
+	if (!slot || slot.type === "empty") return {};
+	return slot.params as unknown as Record<string, unknown>;
+}
+
 function pct(v: number) {
 	return `${Math.round(v * 100)}%`;
 }

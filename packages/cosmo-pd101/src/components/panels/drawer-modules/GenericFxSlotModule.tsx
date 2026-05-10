@@ -1,10 +1,11 @@
 import { memo, useMemo, useState } from "react";
 import Button from "@/components/controls/Button";
 import ControlKnob from "@/components/controls/ControlKnob";
-import type {
-	ButtonGroupControlDef,
-	FxSlotModuleConfig,
-	KnobControlDef,
+import {
+	getSlotParams,
+	type ButtonGroupControlDef,
+	type FxSlotModuleConfig,
+	type KnobControlDef,
 } from "@/components/panels/drawer-modules/fxSlotModuleConfig";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
@@ -261,7 +262,7 @@ export default function GenericFxSlotModule({
 	}, [config.type]);
 
 	if (rawSlot?.type !== config.type) return null;
-	const params = (rawSlot as { params: Record<string, unknown> }).params;
+	const params = getSlotParams(rawSlot);
 	const enabled = (params.enabled as boolean) ?? false;
 	const defaultColumns = clampGridColumns(config.columns ?? 4);
 	const dynamicColumnRule = config.dynamicColumns;
