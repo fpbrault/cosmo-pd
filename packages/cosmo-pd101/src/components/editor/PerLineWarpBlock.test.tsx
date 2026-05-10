@@ -1,6 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import type { BaseWaveform } from "@/lib/synth/bindings/synth";
 import type { PdAlgo } from "@/lib/synth/pdAlgorithms";
+import type { LineIndex } from "../controls/algo/algoControlTypes";
 import { PerLineWarpBlock } from "./PerLineWarpBlock";
 
 vi.mock("@/components/controls/algo/AlgoControlsGroup", () => ({
@@ -23,7 +25,7 @@ vi.mock("@/components/controls/algo/AlgoIconGrid", () => ({
 	default: ({ onChange }: { onChange?: (value: PdAlgo) => void }) => (
 		<select
 			data-testid="algo-select"
-			onChange={(e) => onChange?.(Number(e.target.value) as PdAlgo)}
+			onChange={(e) => onChange?.(Number(e.target.value) as unknown as PdAlgo)}
 		>
 			<option value={0}>Algo 0</option>
 			<option value={1}>Algo 1</option>
@@ -102,7 +104,7 @@ vi.mock("./AlgoSectionCard", () => ({
 			type="button"
 			data-testid="algo-card"
 			disabled={disabled}
-			onClick={() => onChange?.(1 as PdAlgo)}
+			onClick={() => onChange?.(1 as unknown as PdAlgo)}
 		>
 			AlgoCard
 		</button>
@@ -113,7 +115,7 @@ function createProps() {
 	return {
 		label: "Line 1",
 		color: "#ff0000",
-		algo: 0 as PdAlgo,
+		algo: "saw" as PdAlgo,
 		setAlgo: vi.fn(),
 		algo2: null as PdAlgo | null,
 		setAlgo2: vi.fn(),
@@ -155,15 +157,15 @@ function createProps() {
 			loop: false,
 		},
 		setDcaEnv: vi.fn(),
-		baseWaveformA: "saw",
+		baseWaveformA: "saw" as BaseWaveform,
 		setBaseWaveformA: vi.fn(),
-		baseWaveformB: "square",
+		baseWaveformB: "square" as BaseWaveform,
 		setBaseWaveformB: vi.fn(),
 		algoControlsA: [],
 		setAlgoControlsA: vi.fn(),
 		algoControlsB: [],
 		setAlgoControlsB: vi.fn(),
-		lineIndex: 1,
+		lineIndex: 1 as LineIndex,
 		activeSection: "algos" as const,
 	};
 }
@@ -216,7 +218,13 @@ describe("PerLineWarpBlock", () => {
 
 	it("has Algo B card enabled when blend > 0", () => {
 		const props = createProps();
-		render(<PerLineWarpBlock {...props} algoBlend={0.5} algo2={1 as PdAlgo} />);
+		render(
+			<PerLineWarpBlock
+				{...props}
+				algoBlend={0.5}
+				algo2={1 as unknown as PdAlgo}
+			/>,
+		);
 
 		const algoBCards = screen.getAllByTestId("algo-card");
 		expect(algoBCards[1]).not.toBeDisabled();
