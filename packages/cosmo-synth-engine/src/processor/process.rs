@@ -21,7 +21,7 @@ const ENABLE_CZ_DAC_COLOR: bool = false;
 /// sample loop can reference cheap stack copies instead of re-deriving them
 /// every sample.
 struct BlockContext {
-    /// Master output normalisation factor (volume × headroom makeup ÷ √voices).
+    /// Master output normalization factor (volume × headroom makeup ÷ √voices).
     norm: f32,
     /// Pitch bend in semitones for the current block.
     pitch_bend_semitones: f32,
