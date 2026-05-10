@@ -69,11 +69,14 @@ function getManualChunkName(id: string): string | undefined {
 	return "vendor";
 }
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
 	plugins: [react(), tailwindcss()],
 	define: {
 		__CZ_APP_VERSION__: JSON.stringify(appVersion),
 		__CZ_BUILD_LABEL__: JSON.stringify(buildLabel),
+		__RUST_BUILD_PROFILE__: JSON.stringify(
+			command === "build" ? "release" : "debug",
+		),
 	},
 	resolve: {
 		alias: [
@@ -100,4 +103,4 @@ export default defineConfig({
 			},
 		},
 	},
-});
+}));

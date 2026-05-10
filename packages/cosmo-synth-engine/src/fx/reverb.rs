@@ -1,4 +1,4 @@
-use libm::{cosf, sinf};
+use libm::fabsf;
 
 use super::delay_line::DelayLine;
 use crate::dsp_utils::TWO_PI;
@@ -104,8 +104,9 @@ impl FdnReverb {
             if self.lfo_phases[i] >= 1.0 {
                 self.lfo_phases[i] -= 1.0;
             }
-            let lfo_val = sinf(self.lfo_phases[i] * TWO_PI);
-            let read_pos = (self.base_lengths[i] + lfo_val * lfo_depth).max(1.0);
+            // ECO quality mode: triangle LFO avoids per-sample sinf cost.
+            let tri_lfo = 1.0 - 4.0 * fabsf(self.lfo_phases[i] - 0.5);
+            let read_pos = (self.base_lengths[i] + tri_lfo * lfo_depth).max(1.0);
             *sample = self.lines[i].read_at_fractional(read_pos);
         }
 
@@ -126,10 +127,9 @@ impl FdnReverb {
         let lr_gain = 0.4 + self.distance * 0.6;
         let wet = er_out * er_gain + late_out * lr_gain;
 
-        let mix_angle = self.mix * core::f32::consts::PI * 0.5;
-        let dry_gain = cosf(mix_angle);
-        let wet_gain = sinf(mix_angle);
-        sample * dry_gain + wet * wet_gain
+        // ECO quality mode: linear crossfade is cheaper than equal-power trig mix.
+        let mix = self.mix.clamp(0.0, 1.0);
+        sample * (1.0 - mix) + wet * mix
     }
 
     #[inline]

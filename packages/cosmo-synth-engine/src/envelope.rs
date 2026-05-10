@@ -21,6 +21,44 @@ pub fn normalize_synth_params_envelopes_to_raw_if_human(params: &mut SynthParams
     normalize_env_to_raw_if_human(EnvelopeKind::Dca, &mut params.line2.dca_env);
 }
 
+#[derive(Debug, Clone)]
+pub struct EnvelopeTimingCache {
+    dco_rate_samples: [u32; 100],
+    dcw_rate_samples: [u32; 100],
+    dca_rate_samples: [u32; 100],
+}
+
+impl EnvelopeTimingCache {
+    pub fn new(sample_rate: f32) -> Self {
+        let mut dco_rate_samples = [0_u32; 100];
+        let mut dcw_rate_samples = [0_u32; 100];
+        let mut dca_rate_samples = [0_u32; 100];
+
+        for rate in 0..100 {
+            let rate = rate as u8;
+            dco_rate_samples[rate as usize] = rate_to_samples(EnvelopeKind::Dco, rate, sample_rate);
+            dcw_rate_samples[rate as usize] = rate_to_samples(EnvelopeKind::Dcw, rate, sample_rate);
+            dca_rate_samples[rate as usize] = rate_to_samples(EnvelopeKind::Dca, rate, sample_rate);
+        }
+
+        Self {
+            dco_rate_samples,
+            dcw_rate_samples,
+            dca_rate_samples,
+        }
+    }
+
+    #[inline]
+    pub fn rate_to_samples(&self, kind: EnvelopeKind, rate: u8) -> u32 {
+        let idx = rate.min(99) as usize;
+        match kind {
+            EnvelopeKind::Dco => self.dco_rate_samples[idx],
+            EnvelopeKind::Dcw => self.dcw_rate_samples[idx],
+            EnvelopeKind::Dca => self.dca_rate_samples[idx],
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct EnvGen {
     pub step: usize,
@@ -52,7 +90,7 @@ impl EnvGen {
         &mut self,
         kind: EnvelopeKind,
         env_data: &StepEnvData,
-        sr: f32,
+        timing: &EnvelopeTimingCache,
         key_follow: f32,
         note: u8,
     ) {
@@ -78,8 +116,11 @@ impl EnvGen {
             step_target_level
         };
         let frozen_step = is_frozen_step(self.prev_level, target_level, step_rate);
-        let raw_duration =
-            step_duration_samples(kind, self.prev_level, target_level, step_rate, sr);
+        let raw_duration = step_duration_samples(
+            self.prev_level,
+            target_level,
+            timing.rate_to_samples(kind, step_data.rate),
+        );
         // Apply key-follow speed multiplier, ensure at least 1
         let duration = if raw_duration == 0 {
             0
@@ -135,7 +176,11 @@ impl EnvGen {
             step_target_level2
         };
         let frozen_step2 = is_frozen_step(self.prev_level, target_level2, step_rate2);
-        let duration2 = step_duration_samples(kind, self.prev_level, target_level2, step_rate2, sr);
+        let duration2 = step_duration_samples(
+            self.prev_level,
+            target_level2,
+            timing.rate_to_samples(kind, step_data2.rate),
+        );
 
         if frozen_step2 {
             // CZ-style hold: stop advancing this envelope step.
@@ -235,19 +280,12 @@ fn rate_to_samples(kind: EnvelopeKind, rate: u8, sr: f32) -> u32 {
 /// JS: `Math.max(1, Math.round(rateToSamples(rate, sr) * |toLevel - fromLevel|))`
 /// Returns 0 when distance is 0 (no movement needed).
 #[inline]
-fn step_duration_samples(
-    kind: EnvelopeKind,
-    from_level: f32,
-    to_level: f32,
-    rate: u8,
-    sr: f32,
-) -> u32 {
+fn step_duration_samples(from_level: f32, to_level: f32, base_samples: u32) -> u32 {
     let distance = libm::fabsf(to_level - from_level);
     if distance <= 0.0 {
         return 0;
     }
-    let base = rate_to_samples(kind, rate, sr);
-    ((base as f32 * distance).max(1.0).round()) as u32
+    ((base_samples as f32 * distance).max(1.0).round()) as u32
 }
 
 #[inline]
@@ -424,19 +462,18 @@ mod tests {
             rate: 99,
         };
 
-        let mut gen = EnvGen {
-            prev_level: 0.7,
-            output: 0.7,
-            step: 1,
-            ..Default::default()
-        }; // at sustain
+        let timing = EnvelopeTimingCache::new(48_000.0);
+        let mut gen = EnvGen::default();
+        gen.prev_level = 0.7;
+        gen.output = 0.7;
+        gen.step = 1; // at sustain
 
         gen.start_release(&env);
 
         // Consume release step 2 completely so generator transitions to step 3.
         // We don't need exact sample count, just enough to guarantee transition.
         for _ in 0..8192 {
-            gen.advance(EnvelopeKind::Dca, &env, 48_000.0, 0.0, 60);
+            gen.advance(EnvelopeKind::Dca, &env, &timing, 0.0, 60);
             if gen.step >= 3 {
                 break;
             }

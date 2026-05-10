@@ -208,6 +208,8 @@ pub struct FxChain {
 
     /// Which effect type is in each of the 6 FX slots.
     pub slot_types: [FxSlotType; 6],
+    active_slots: [usize; 6],
+    active_slot_count: usize,
 }
 
 impl FxChain {
@@ -215,20 +217,33 @@ impl FxChain {
         Self {
             slots: core::array::from_fn(|_| FxSlotProcessors::new(sr)),
             slot_types: [FxSlotType::Empty; 6],
+            active_slots: [0, 1, 2, 3, 4, 5],
+            active_slot_count: 0,
         }
     }
 
     pub fn sync_from_params(&mut self, params: &SynthParams) {
+        self.active_slot_count = 0;
         for (i, config) in params.fx_slots.iter().enumerate() {
             self.slots[i].sync_from_config(config);
-            self.slot_types[i] = config.slot_type();
+            let slot_type = config.slot_type();
+            self.slot_types[i] = slot_type;
+            // Voice-level or empty effects are handled elsewhere and can be skipped here.
+            if !matches!(
+                slot_type,
+                FxSlotType::Empty | FxSlotType::Vibrato | FxSlotType::PhaseMod
+            ) {
+                self.active_slots[self.active_slot_count] = i;
+                self.active_slot_count += 1;
+            }
         }
     }
 
     /// Process one sample through all 6 FX slots in series.
     pub fn process(&mut self, sample: f32) -> f32 {
         let mut out = sample;
-        for slot in 0..6 {
+        for active_idx in 0..self.active_slot_count {
+            let slot = self.active_slots[active_idx];
             out = self.process_slot(slot, out);
         }
         out

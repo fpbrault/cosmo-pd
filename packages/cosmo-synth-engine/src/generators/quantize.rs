@@ -60,8 +60,8 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
 
 /// Quantize algorithm phase warp.
 pub fn warp_phase(phase: f32, amt: f32, steps: f32, skew: f32) -> f32 {
-    let levels = 2.0 + libm::floorf(steps * 30.0);
-    let warped_phase = libm::powf(phase.clamp(0.0, 1.0), 0.4 + skew * 2.2);
-    let target = libm::roundf(warped_phase * levels) / levels;
+    let levels = 2.0 + (steps * 30.0).floor();
+    let warped_phase = phase.clamp(0.0, 1.0).powf(0.4 + skew * 2.2);
+    let target = (warped_phase * levels).round() / levels;
     phase + (target - phase) * amt
 }

@@ -18,7 +18,9 @@ cargo-clippy = []
 debug_gui = []
 
 [dependencies]
+arc-swap = "1.7"
 cosmo-synth-engine = { path = "../cosmo-synth-engine" }
+crossbeam-queue = "0.3"
 nih_plug = { workspace = true, features = ["vst3"] }
 wry = { workspace = true }
 raw-window-handle = { workspace = true }
