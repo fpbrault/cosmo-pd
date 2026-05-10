@@ -1,5 +1,4 @@
-use dasp_interpolate::{linear::Linear, Interpolator};
-
+use crate::dsp_utils::lerp;
 use crate::params::{Algo, EngineParamReadoutFormatV1};
 
 use super::{
@@ -269,12 +268,6 @@ pub fn blend(primary_algo: Algo, primary: f32, secondary: f32, blend: f32) -> f3
     } else {
         lerp(primary, secondary, blend)
     }
-}
-
-#[inline(always)]
-fn lerp(a: f32, b: f32, t: f32) -> f32 {
-    let interp = Linear::new([a], [b]);
-    interp.interpolate(t as f64)[0]
 }
 
 /// Simple LCG PRNG — produces a value in [-1.0, 1.0].

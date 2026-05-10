@@ -1,6 +1,6 @@
 use libm::{cosf, sinf};
 
-const TWO_PI: f32 = core::f32::consts::PI * 2.0;
+use crate::dsp_utils::TWO_PI;
 
 // ---------------------------------------------------------------------------
 // PhaserStage (first-order all-pass)

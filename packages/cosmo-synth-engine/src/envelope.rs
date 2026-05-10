@@ -1,3 +1,4 @@
+use crate::dsp_utils::lerp;
 pub use crate::envelope_map::EnvelopeKind;
 use crate::envelope_map::{
     human_level_to_raw, human_rate_to_raw, raw_level_to_human, raw_rate_to_human,
@@ -243,11 +244,6 @@ impl EnvGen {
 
         self.prev_level = self.output;
     }
-}
-
-#[inline]
-fn lerp(a: f32, b: f32, t: f32) -> f32 {
-    a + (b - a) * t
 }
 
 /// Converts a human rate [0..99] to a transition duration in seconds.

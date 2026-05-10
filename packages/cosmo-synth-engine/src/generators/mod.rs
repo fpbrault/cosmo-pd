@@ -1,4 +1,4 @@
-use crate::dsp_utils::apply_window;
+use crate::dsp_utils::{apply_window, lerp, wrap01, TWO_PI};
 use crate::params::{
     Algo, AlgoControlValueV1, BaseWaveform, EngineParamReadoutFormatV1, LineParams,
 };
@@ -7,12 +7,12 @@ use serde::Serialize;
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
 
-const TWO_PI: f32 = core::f32::consts::TAU;
 /// Reference per-line output headroom used by processor normalization.
 pub const PER_LINE_HEADROOM: f32 = 0.25;
 const BLEND_SHORT_CIRCUIT_EPSILON: f32 = 0.03;
 
 pub mod bend;
+pub mod catalog;
 pub mod clip;
 pub mod cz101;
 pub use cz101::{CzPresetV1, CZ_PRESETS};
@@ -27,6 +27,14 @@ pub mod sine;
 pub mod skew;
 pub mod sync;
 pub mod twist;
+
+pub use catalog::{
+    algo_definitions_v1, algo_ui_catalog_v1, AlgoControlAssignmentV1, AlgoControlKindV1,
+    AlgoControlOptionV1, AlgoControlPresentationV1, AlgoControlV1, AlgoDefinitionV1, AlgoUiEntryV1,
+    ALGO_BLEND_NUMBER_CONTROL, ALGO_DEFINITIONS_V1, DCW_CONTROL, FINE_DETUNE_NUMBER_CONTROL,
+    KEY_FOLLOW_NUMBER_CONTROL, LEVEL_NUMBER_CONTROL, NO_CONTROLS, NO_CONTROL_OPTIONS,
+    OCTAVE_NUMBER_CONTROL, WARP_AMOUNT_CONTROL, WARP_AMOUNT_NUMBER_CONTROL,
+};
 
 /// Per-line render inputs passed to a voice's generator for one sample.
 #[derive(Debug, Clone, Copy)]
@@ -245,271 +253,6 @@ pub(crate) fn blend_line_samples(
     } else {
         primary + (secondary - primary) * blend
     }
-}
-
-/// Describes one control surfaced by an algorithm package.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[cfg_attr(feature = "specta-bindings", derive(Type))]
-#[serde(rename_all = "camelCase")]
-pub enum AlgoControlKindV1 {
-    Number,
-    Select,
-    Toggle,
-}
-
-/// Intended presentation for a control in synth UIs.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[cfg_attr(feature = "specta-bindings", derive(Type))]
-#[serde(rename_all = "camelCase")]
-pub enum AlgoControlPresentationV1 {
-    Knob,
-    Slider,
-    ButtonGroup,
-    Dropdown,
-}
-
-/// Assignment emitted by a select option to update one or more numeric controls.
-#[derive(Debug, Clone, Copy, Serialize)]
-#[cfg_attr(feature = "specta-bindings", derive(Type))]
-#[serde(rename_all = "camelCase")]
-pub struct AlgoControlAssignmentV1 {
-    pub control_id: &'static str,
-    pub value: f32,
-}
-
-/// One selectable option for list-based controls.
-#[derive(Debug, Clone, Copy, Serialize)]
-#[cfg_attr(feature = "specta-bindings", derive(Type))]
-#[serde(rename_all = "camelCase")]
-pub struct AlgoControlOptionV1 {
-    pub value: &'static str,
-    pub label: &'static str,
-    pub set: &'static [AlgoControlAssignmentV1],
-}
-
-/// Describes one control surfaced by an algorithm package.
-#[derive(Debug, Clone, Copy, Serialize)]
-#[cfg_attr(feature = "specta-bindings", derive(Type))]
-#[serde(rename_all = "camelCase")]
-pub struct AlgoControlV1 {
-    pub id: &'static str,
-    pub label: &'static str,
-    pub description: &'static str,
-    pub kind: AlgoControlKindV1,
-    pub control_type: AlgoControlPresentationV1,
-    pub bipolar: bool,
-    pub icon_name: Option<&'static str>,
-    pub min: Option<f32>,
-    pub max: Option<f32>,
-    pub default: Option<f32>,
-    pub default_toggle: Option<bool>,
-    pub options: &'static [AlgoControlOptionV1],
-    /// Engine-owned display format for infobar readouts.
-    pub readout_format: crate::params::EngineParamReadoutFormatV1,
-}
-
-/// Complete algorithm package definition.
-#[derive(Debug, Clone, Copy, Serialize)]
-#[cfg_attr(feature = "specta-bindings", derive(Type))]
-#[serde(rename_all = "camelCase")]
-pub struct AlgoDefinitionV1 {
-    pub id: Algo,
-    pub name: &'static str,
-    pub icon_path: &'static str,
-    pub visible: bool,
-    pub default_base_waveform: BaseWaveform,
-    pub controls: &'static [AlgoControlV1],
-}
-
-/// UI catalog entry for algorithm pickers.
-///
-/// This is exported to TypeScript so frontend option labels/icons are Rust-owned.
-#[derive(Debug, Clone, Copy, Serialize)]
-#[cfg_attr(feature = "specta-bindings", derive(Type))]
-#[serde(rename_all = "camelCase")]
-pub struct AlgoUiEntryV1 {
-    pub id: Algo,
-    pub label: &'static str,
-    pub icon_path: &'static str,
-    pub visible: bool,
-}
-
-pub const NO_CONTROLS: [AlgoControlV1; 0] = [];
-pub const NO_CONTROL_OPTIONS: [AlgoControlOptionV1; 0] = [];
-pub const WARP_AMOUNT_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
-    id: "warpAmount",
-    label: "Warp Amount",
-    description: "Sets the overall phase distortion amount for the current algorithm.",
-    kind: AlgoControlKindV1::Number,
-    control_type: AlgoControlPresentationV1::Knob,
-    bipolar: false,
-    icon_name: None,
-    min: Some(0.0),
-    max: Some(1.0),
-    default: Some(0.0),
-    default_toggle: None,
-    options: &NO_CONTROL_OPTIONS,
-    readout_format: EngineParamReadoutFormatV1::Percent,
-};
-pub const LEVEL_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
-    id: "level",
-    label: "Level",
-    description: "Sets the base output level for this line.",
-    kind: AlgoControlKindV1::Number,
-    control_type: AlgoControlPresentationV1::Slider,
-    bipolar: false,
-    icon_name: Some("volume"),
-    min: Some(0.0),
-    max: Some(1.0),
-    default: Some(1.0),
-    default_toggle: None,
-    options: &NO_CONTROL_OPTIONS,
-    readout_format: EngineParamReadoutFormatV1::Percent,
-};
-pub const OCTAVE_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
-    id: "octave",
-    label: "Octave",
-    description: "Offsets oscillator pitch by whole octaves.",
-    kind: AlgoControlKindV1::Number,
-    control_type: AlgoControlPresentationV1::Knob,
-    bipolar: true,
-    icon_name: Some("octave"),
-    min: Some(-2.0),
-    max: Some(2.0),
-    default: Some(0.0),
-    default_toggle: None,
-    options: &NO_CONTROL_OPTIONS,
-    readout_format: EngineParamReadoutFormatV1::Integer,
-};
-pub const FINE_DETUNE_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
-    id: "fineDetune",
-    label: "Fine",
-    description: "Applies a fine pitch offset in cents.",
-    kind: AlgoControlKindV1::Number,
-    control_type: AlgoControlPresentationV1::Knob,
-    bipolar: true,
-    icon_name: Some("tuningFork"),
-    min: Some(-50.0),
-    max: Some(50.0),
-    default: Some(0.0),
-    default_toggle: None,
-    options: &NO_CONTROL_OPTIONS,
-    readout_format: EngineParamReadoutFormatV1::Integer,
-};
-pub const KEY_FOLLOW_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
-    id: "keyFollow",
-    label: "Key Follow",
-    description: "Adjusts how strongly keyboard pitch affects this parameter.",
-    kind: AlgoControlKindV1::Number,
-    control_type: AlgoControlPresentationV1::Knob,
-    bipolar: false,
-    icon_name: Some("keyboard"),
-    min: Some(0.0),
-    max: Some(9.0),
-    default: Some(0.0),
-    default_toggle: None,
-    options: &NO_CONTROL_OPTIONS,
-    readout_format: EngineParamReadoutFormatV1::Decimal,
-};
-pub const ALGO_BLEND_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
-    id: "algoBlend",
-    label: "Algo Blend",
-    description: "Blends between the primary and secondary algorithm outputs.",
-    kind: AlgoControlKindV1::Number,
-    control_type: AlgoControlPresentationV1::Slider,
-    bipolar: false,
-    icon_name: Some("blend"),
-    min: Some(0.0),
-    max: Some(1.0),
-    default: Some(0.0),
-    default_toggle: None,
-    options: &NO_CONTROL_OPTIONS,
-    readout_format: EngineParamReadoutFormatV1::Percent,
-};
-pub const WARP_AMOUNT_CONTROL: [AlgoControlV1; 1] = [WARP_AMOUNT_NUMBER_CONTROL];
-pub const DCW_CONTROL: [AlgoControlV1; 1] = [AlgoControlV1 {
-    id: "dcw",
-    label: "DCW",
-    description: "Controls distortion depth for algorithms that expose direct DCW mapping.",
-    kind: AlgoControlKindV1::Number,
-    control_type: AlgoControlPresentationV1::Knob,
-    bipolar: false,
-    icon_name: Some("waveSine"),
-    min: Some(0.0),
-    max: Some(1.0),
-    default: Some(0.0),
-    default_toggle: None,
-    options: &NO_CONTROL_OPTIONS,
-    readout_format: EngineParamReadoutFormatV1::Percent,
-}];
-
-const ALGO_DEFINITION_COUNT: usize = 12;
-
-pub const ALGO_DEFINITIONS_V1: [AlgoDefinitionV1; ALGO_DEFINITION_COUNT] = [
-    cz101::DEFINITION,
-    bend::DEFINITION,
-    sync::DEFINITION,
-    pinch::DEFINITION,
-    fold::DEFINITION,
-    skew::DEFINITION,
-    twist::DEFINITION,
-    clip::DEFINITION,
-    ripple::DEFINITION,
-    mirror::DEFINITION,
-    karpunk::DEFINITION,
-    fof::DEFINITION,
-];
-
-pub fn algo_definitions_v1() -> &'static [AlgoDefinitionV1] {
-    &ALGO_DEFINITIONS_V1
-}
-
-pub fn algo_ui_catalog_v1() -> &'static [AlgoUiEntryV1] {
-    macro_rules! entry {
-        ($index:expr) => {
-            AlgoUiEntryV1 {
-                id: ALGO_DEFINITIONS_V1[$index].id,
-                label: ALGO_DEFINITIONS_V1[$index].name,
-                icon_path: ALGO_DEFINITIONS_V1[$index].icon_path,
-                visible: ALGO_DEFINITIONS_V1[$index].visible,
-            }
-        };
-    }
-
-    const CATALOG: [AlgoUiEntryV1; ALGO_DEFINITION_COUNT] = [
-        entry!(0),
-        entry!(1),
-        entry!(2),
-        entry!(3),
-        entry!(4),
-        entry!(5),
-        entry!(6),
-        entry!(7),
-        entry!(8),
-        entry!(9),
-        entry!(10),
-        entry!(11),
-    ];
-
-    &CATALOG
-}
-
-/// Wrap a phase value into the normalized range [0.0, 1.0).
-#[inline]
-pub(crate) fn wrap01(v: f32) -> f32 {
-    let w = v - libm::floorf(v);
-    if w < 0.0 {
-        w + 1.0
-    } else {
-        w
-    }
-}
-
-/// Linear interpolation helper used by several generator transfer functions.
-#[inline]
-pub(crate) fn lerp(a: f32, b: f32, t: f32) -> f32 {
-    let interp = Linear::new([a], [b]);
-    interp.interpolate(t as f64)[0]
 }
 
 /// Unified algorithm phase warp dispatcher.

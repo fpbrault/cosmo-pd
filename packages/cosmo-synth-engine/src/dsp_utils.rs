@@ -1,7 +1,7 @@
 use crate::params::{LfoWaveform, WindowType};
 use dasp_interpolate::{linear::Linear, Interpolator};
 
-const TWO_PI: f32 = core::f32::consts::TAU;
+pub const TWO_PI: f32 = core::f32::consts::TAU;
 const PI: f32 = core::f32::consts::PI;
 const TWO_OVER_PI: f32 = 2.0 / PI;
 
