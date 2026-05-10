@@ -7,6 +7,25 @@ import {
 } from "@/lib/synth/pdAlgorithms";
 import { HoverInfoTrigger } from "../../layout/HoverInfo";
 
+function CzMonogramIcon({ size }: { size: number }) {
+	return (
+		<svg
+			viewBox="0 0 24 24"
+			width={size}
+			height={size}
+			stroke="currentColor"
+			strokeWidth="1.5"
+			fill="none"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			aria-hidden="true"
+		>
+			<path d="M10.8 7.8C8.6 7.8 7.2 9.3 7.2 12C7.2 14.7 8.6 16 10.8 16" />
+			<path d="M13.8 8H18L13.8 16H18" />
+		</svg>
+	);
+}
+
 export default function AlgoIconGrid({
 	value,
 	onChange,
@@ -32,6 +51,7 @@ export default function AlgoIconGrid({
 	const currentIndex = PD_ALGOS.findIndex((a) => a.value === value);
 	const currentAlgo = PD_ALGOS[Math.max(0, currentIndex)];
 	const iconSize = size - 12;
+	const isCz101 = currentAlgo.value === "cz101";
 
 	const navigate = (dir: 1 | -1) => {
 		if (disabled) return;
@@ -79,20 +99,24 @@ export default function AlgoIconGrid({
 							].join(" ")}
 							style={{ width: size + 8, height: size }}
 						>
-							<svg
-								viewBox="0 0 24 24"
-								width={iconSize}
-								height={iconSize}
-								stroke="currentColor"
-								strokeWidth="1.5"
-								fill="none"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								aria-hidden="true"
-							>
-								<title>{currentAlgo.label}</title>
-								<path d={currentAlgo.icon} />
-							</svg>
+							{isCz101 ? (
+								<CzMonogramIcon size={iconSize} />
+							) : (
+								<svg
+									viewBox="0 0 24 24"
+									width={iconSize}
+									height={iconSize}
+									stroke="currentColor"
+									strokeWidth="1.5"
+									fill="none"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									aria-hidden="true"
+								>
+									<title>{currentAlgo.label}</title>
+									<path d={currentAlgo.icon} />
+								</svg>
+							)}
 						</button>
 					)}
 				</HoverInfoTrigger>
@@ -169,20 +193,24 @@ export default function AlgoIconGrid({
 										<span className="mb-0.5 text-4xs leading-none">
 											{index + 1}
 										</span>
-										<svg
-											viewBox="0 0 24 24"
-											width={24}
-											height={24}
-											stroke="currentColor"
-											strokeWidth="1.5"
-											fill="none"
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											aria-hidden="true"
-										>
-											<title>{algo.label}</title>
-											<path d={algo.icon} />
-										</svg>
+										{algo.value === "cz101" ? (
+											<CzMonogramIcon size={24} />
+										) : (
+											<svg
+												viewBox="0 0 24 24"
+												width={24}
+												height={24}
+												stroke="currentColor"
+												strokeWidth="1.5"
+												fill="none"
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												aria-hidden="true"
+											>
+												<title>{algo.label}</title>
+												<path d={algo.icon} />
+											</svg>
+										)}
 									</button>
 								</div>
 							)}

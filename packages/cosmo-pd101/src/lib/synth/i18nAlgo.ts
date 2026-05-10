@@ -133,18 +133,6 @@ export function useCzPresetLabel(presetId: string): string {
 		presetId
 	);
 }
-
-// ── LCD readout helpers ─────────────────────────────────────────────────────
-
-/**
- * Returns a human-readable label for a synth parameter, preferring i18n.
- * No longer depends on engineMeta.readoutLabel — fully i18n-driven.
- */
-export function useLcdControlLabel(key: string): string {
-	const { t } = useTranslation("synth");
-	return t(`lcdControls.${key}`, { defaultValue: key });
-}
-
 export function useAlgoUiText(key: string): string {
 	const { t } = useTranslation("synth");
 	const translated = t(`algoUi.${key}`, { defaultValue: "" });

@@ -1,7 +1,6 @@
 use libm::fabsf;
 
 use super::delay_line::DelayLine;
-use crate::dsp_utils::TWO_PI;
 
 const SMOOTH_COEFF: f32 = 0.005;
 

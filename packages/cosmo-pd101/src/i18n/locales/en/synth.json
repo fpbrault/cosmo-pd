@@ -251,14 +251,6 @@
 		"czReso2": "CZ Reso 2",
 		"czReso3": "CZ Reso 3"
 	},
-	"lcd": {
-		"envSteps": "STEPS {{count}}",
-		"envLoop": "LOOP {{state}}",
-		"envLoopOn": "ON",
-		"envLoopOff": "OFF",
-		"envSustain": "SUS S{{step}}",
-		"envStep": "S{{step}} L{{level}} R{{rate}}"
-	},
 	"algos": {
 		"cz101": {
 			"name": "CZ101",

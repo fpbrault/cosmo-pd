@@ -1,6 +1,6 @@
 import { memo } from "react";
 import Button from "@/components/controls/Button";
-import { HoverInfoTrigger, useHoverInfo } from "@/components/layout/HoverInfo";
+import { HoverInfoTrigger } from "@/components/layout/HoverInfo";
 import {
 	getAlgoControlOptionLabel,
 	useAlgoControl,
@@ -140,7 +140,6 @@ function AlgoControlDropdownInner({
 	getActiveSelectOption,
 	applyOptionAssignments,
 }: AlgoControlDropdownProps) {
-	const { setControlReadout } = useHoverInfo();
 	const { label, description } = useAlgoControl(control.algo, control.id);
 	const options = control.options ?? [];
 	const activeOption = getActiveSelectOption(control);
@@ -183,11 +182,6 @@ function AlgoControlDropdownInner({
 										if (disabled) {
 											return;
 										}
-
-										setControlReadout({
-											label,
-											value: optionLabel,
-										});
 
 										if (option.set.length > 0) {
 											applyOptionAssignments(option);

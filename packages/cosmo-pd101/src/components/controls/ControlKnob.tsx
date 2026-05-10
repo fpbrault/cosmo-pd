@@ -13,7 +13,7 @@ import {
 	type ModTarget,
 	resolveModDestination,
 } from "@/lib/synth/modDestination";
-import { useHoverInfo, useHoverInfoHandlers } from "../layout/HoverInfo";
+import { useHoverInfoHandlers } from "../layout/HoverInfo";
 import { type KnobVariant, KnobView } from "./knob/KnobView";
 import {
 	bipolarCenterNorm,
@@ -123,50 +123,12 @@ export function ControlKnob({
 	const buttonRef = useRef<HTMLButtonElement | null>(null);
 	const [hovered, setHovered] = useState(false);
 	const [, setModulationTick] = useState(0);
-	const { setControlReadout } = useHoverInfo();
 	const resolvedTooltip = tooltip?.trim() ? tooltip : label?.trim();
-	const readoutRafRef = useRef<number | null>(null);
-	const pendingReadoutRef = useRef<{ label: string; value: string } | null>(
-		null,
-	);
-
-	useEffect(() => {
-		return () => {
-			if (readoutRafRef.current !== null) {
-				cancelAnimationFrame(readoutRafRef.current);
-			}
-		};
-	}, []);
-
-	const formatDisplayValue = useCallback(
-		(nextValue: number) => {
-			if (valueFormatter) {
-				return valueFormatter(nextValue);
-			}
-
-			return Number.isInteger(nextValue)
-				? `${nextValue}`
-				: nextValue?.toFixed(2);
-		},
-		[valueFormatter],
-	);
 	const emitChange = useCallback(
 		(nextValue: number) => {
 			onChange(nextValue);
-			pendingReadoutRef.current = {
-				label: label ?? "Value",
-				value: formatDisplayValue(nextValue),
-			};
-			if (readoutRafRef.current === null) {
-				readoutRafRef.current = requestAnimationFrame(() => {
-					readoutRafRef.current = null;
-					if (pendingReadoutRef.current) {
-						setControlReadout(pendingReadoutRef.current);
-					}
-				});
-			}
 		},
-		[formatDisplayValue, label, onChange, setControlReadout],
+		[onChange],
 	);
 
 	const {

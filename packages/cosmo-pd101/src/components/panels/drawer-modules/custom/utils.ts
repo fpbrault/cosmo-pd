@@ -82,10 +82,12 @@ export function getFxControlLabel(
 	}
 
 	if (paramKey) {
-		const lcdLabel = i18n.t(`lcdControls.${paramKey}`, { defaultValue: "" });
-		if (lcdLabel) {
-			return lcdLabel;
+		const paramLabel = i18n.t(`params.${paramKey}.label`, { defaultValue: "" });
+		if (paramLabel) {
+			return paramLabel;
 		}
+
+		return humanizeIdentifier(paramKey);
 	}
 
 	return humanizeIdentifier(controlId);

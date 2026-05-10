@@ -1,9 +1,6 @@
 import { useCallback, useRef } from "react";
 import ModulatableControl from "@/components/controls/modulation/ModulatableControl";
-import {
-	useHoverInfo,
-	useHoverInfoHandlers,
-} from "@/components/layout/HoverInfo";
+import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
 import type { ModDestination } from "@/lib/synth/bindings/synth";
 import {
 	type ModTarget,
@@ -43,13 +40,12 @@ export default function CzVerticalSlider({
 	color = "#9cb937",
 	ariaLabel,
 	tooltip,
-	valueFormatter,
+	valueFormatter: _valueFormatter,
 	trackHeight,
 	modulatable,
 	lineIndex = 1,
 	modDestination,
 }: CzVerticalSliderProps) {
-	const { setControlReadout } = useHoverInfo();
 	const trackRef = useRef<HTMLDivElement>(null);
 	const resolvedLabel = ariaLabel?.trim() ? ariaLabel : "Value";
 	const resolvedTooltip = tooltip?.trim() ? tooltip : resolvedLabel;
@@ -57,16 +53,8 @@ export default function CzVerticalSlider({
 	const emitChange = useCallback(
 		(nextValue: number) => {
 			onChange(nextValue);
-			setControlReadout({
-				label: resolvedLabel,
-				value: valueFormatter
-					? valueFormatter(nextValue)
-					: Number.isInteger(nextValue)
-						? `${nextValue}`
-						: nextValue.toFixed(2),
-			});
 		},
-		[onChange, resolvedLabel, setControlReadout, valueFormatter],
+		[onChange],
 	);
 
 	const capH = 30; // height of the fader cap in px
