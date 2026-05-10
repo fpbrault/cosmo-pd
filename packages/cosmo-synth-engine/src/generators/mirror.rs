@@ -4,8 +4,6 @@ use crate::params::{Algo, EngineParamReadoutFormatV1};
 const CONTROLS: [AlgoControlV1; 4] = [
     AlgoControlV1 {
         id: "mirrorCenter",
-        label: "Center",
-        description: "Chooses the pivot around which the phase is mirrored.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,
@@ -19,8 +17,6 @@ const CONTROLS: [AlgoControlV1; 4] = [
     },
     AlgoControlV1 {
         id: "mirrorBlend",
-        label: "Blend",
-        description: "Controls how strongly the mirrored phase replaces the original phase.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,
@@ -34,8 +30,6 @@ const CONTROLS: [AlgoControlV1; 4] = [
     },
     AlgoControlV1 {
         id: "mirrorClip",
-        label: "Clip",
-        description: "Clamps the mirrored excursion for a tighter folded reflection.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,
@@ -49,8 +43,6 @@ const CONTROLS: [AlgoControlV1; 4] = [
     },
     AlgoControlV1 {
         id: "mirrorSkew",
-        label: "Skew",
-        description: "Skews the mirrored side so reflection distance changes across the cycle.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: true,

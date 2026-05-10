@@ -2,6 +2,7 @@ import ControlKnob from "@/components/controls/ControlKnob";
 import { useFxModuleController } from "@/components/panels/drawer-modules/custom/useFxModuleController";
 import {
 	asNumber,
+	getFxControlLabel,
 	getKnobControl,
 	getModDestinationByParam,
 	getTooltip,
@@ -30,6 +31,12 @@ export default function PhaseModModuleRenderer({
 	const ratioControl = getKnobControl(config, "intPmRatio");
 	const pmPreEnabled = Boolean(params.pmPre);
 	const modDestinationByParam = getModDestinationByParam(config.type);
+	const amountLabel = getFxControlLabel(
+		config.type,
+		"intPmAmount",
+		"intPmAmount",
+	);
+	const ratioLabel = getFxControlLabel(config.type, "intPmRatio", "intPmRatio");
 
 	return (
 		<ModuleFrame
@@ -67,7 +74,7 @@ export default function PhaseModModuleRenderer({
 					defaultValue={amountControl.defaultValue}
 					size={64}
 					color={config.color}
-					label="Amount"
+					label={amountLabel}
 					tooltip={getTooltip("intPmAmount")}
 					valueFormatter={amountControl.formatter}
 					modDestination={modDestinationByParam.intPmAmount}
@@ -85,7 +92,7 @@ export default function PhaseModModuleRenderer({
 					defaultValue={ratioControl.defaultValue}
 					size={64}
 					color={config.color}
-					label="Ratio"
+					label={ratioLabel}
 					tooltip={getTooltip("intPmRatio")}
 					valueFormatter={ratioControl.formatter}
 					modDestination={modDestinationByParam.intPmRatio}

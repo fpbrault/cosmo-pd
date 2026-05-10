@@ -163,7 +163,7 @@ export type AlgoControlOptionV1 = { value: string; label: string; set: AlgoContr
 /**
  * Describes one control surfaced by an algorithm package.
  */
-export type AlgoControlV1 = { id: string; label: string; description: string; kind: AlgoControlKindV1; controlType: AlgoControlPresentationV1; bipolar: boolean; iconName: string | null; min: number | null; max: number | null; default: number | null; defaultToggle: boolean | null; options: AlgoControlOptionV1[]; readoutFormat: EngineParamReadoutFormatV1 }
+export type AlgoControlV1 = { id: string; kind: AlgoControlKindV1; controlType: AlgoControlPresentationV1; bipolar: boolean; iconName: string | null; min: number | null; max: number | null; default: number | null; defaultToggle: boolean | null; options: AlgoControlOptionV1[]; readoutFormat: EngineParamReadoutFormatV1 }
 
 /**
  * Complete algorithm package definition.
@@ -417,8 +417,6 @@ export const ALGO_DEFINITIONS_V1 = [
     "controls": [
       {
         "id": "preset",
-        "label": "Preset",
-        "description": "Loads a predefined CZ waveform and window combination.",
         "kind": "select",
         "controlType": "dropdown",
         "bipolar": false,
@@ -579,8 +577,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "waveform1",
-        "label": "Waveform 1",
-        "description": "Selects the first CZ waveform slot used by the line.",
         "kind": "select",
         "controlType": "dropdown",
         "bipolar": false,
@@ -637,8 +633,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "waveform2",
-        "label": "Waveform 2",
-        "description": "Selects the second CZ waveform slot used by the line.",
         "kind": "select",
         "controlType": "dropdown",
         "bipolar": false,
@@ -695,8 +689,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "windowFunction",
-        "label": "Window Function",
-        "description": "Chooses the CZ windowing shape applied to the oscillator cycle.",
         "kind": "select",
         "controlType": "dropdown",
         "bipolar": false,
@@ -752,8 +744,6 @@ export const ALGO_DEFINITIONS_V1 = [
     "controls": [
       {
         "id": "bendCurve",
-        "label": "Curve",
-        "description": "Changes how aggressively the phase bends along the curve.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -769,8 +759,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "bendBias",
-        "label": "Bias",
-        "description": "Offsets the bend toward the start or end of the cycle.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": true,
@@ -786,8 +774,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "bendKnee",
-        "label": "Knee",
-        "description": "Shapes the transition point between the flatter and steeper bend regions.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -812,8 +798,6 @@ export const ALGO_DEFINITIONS_V1 = [
     "controls": [
       {
         "id": "syncRatio",
-        "label": "Ratio",
-        "description": "Sets how many internal sync resets occur within one cycle.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -829,8 +813,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "syncPhase",
-        "label": "Phase",
-        "description": "Offsets where the sync restart begins inside the cycle.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -846,8 +828,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "syncCurve",
-        "label": "Curve",
-        "description": "Shapes the post-sync ramp after each internal reset.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -863,8 +843,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "syncWindow",
-        "label": "Window",
-        "description": "Controls how strongly the sync-shaped phase replaces the original phase.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -889,8 +867,6 @@ export const ALGO_DEFINITIONS_V1 = [
     "controls": [
       {
         "id": "pinchFocus",
-        "label": "Focus",
-        "description": "Moves the pinch center toward the start or end of the cycle.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -906,8 +882,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "pinchAsym",
-        "label": "Asym",
-        "description": "Adds asymmetry so one side of the pinch shifts more than the other.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": true,
@@ -923,8 +897,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "pinchCurve",
-        "label": "Curve",
-        "description": "Changes the curvature of the pinched center region.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -940,8 +912,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "pinchDrive",
-        "label": "Drive",
-        "description": "Pushes the pinch harder for a tighter, more exaggerated distortion.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -966,8 +936,6 @@ export const ALGO_DEFINITIONS_V1 = [
     "controls": [
       {
         "id": "foldStages",
-        "label": "Stages",
-        "description": "Sets how many fold passes are applied across the cycle.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -983,8 +951,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "foldTilt",
-        "label": "Tilt",
-        "description": "Moves the fold pivot toward the start or end of the cycle.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": true,
@@ -1000,8 +966,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "foldSymmetry",
-        "label": "Symmetry",
-        "description": "Offsets fold balance to make one side of the cycle fold harder than the other.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": true,
@@ -1017,8 +981,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "foldSoftness",
-        "label": "Softness",
-        "description": "Softens each fold pass so the phase wraps less abruptly.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1043,8 +1005,6 @@ export const ALGO_DEFINITIONS_V1 = [
     "controls": [
       {
         "id": "skewBias",
-        "label": "Bias",
-        "description": "Moves the breakpoint where the skewed ramp changes slope.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1060,8 +1020,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "skewCurve",
-        "label": "Curve",
-        "description": "Adjusts the curvature on both sides of the skew breakpoint.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1077,8 +1035,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "skewSpread",
-        "label": "Spread",
-        "description": "Redistributes how much of the cycle is assigned to each side of the skew.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": true,
@@ -1094,8 +1050,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "skewTilt",
-        "label": "Tilt",
-        "description": "Tilts the skewed ramp so one side becomes steeper than the other.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": true,
@@ -1120,8 +1074,6 @@ export const ALGO_DEFINITIONS_V1 = [
     "controls": [
       {
         "id": "twistHarmonics",
-        "label": "Harm",
-        "description": "Sets the internal modulation harmonic used to twist the phase.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1137,8 +1089,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "twistDepth",
-        "label": "Depth",
-        "description": "Controls how far the phase is displaced by the twist modulator.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1154,8 +1104,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "twistPhase",
-        "label": "Phase",
-        "description": "Offsets the phase of the internal twist modulation signal.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1171,8 +1119,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "twistShape",
-        "label": "Shape",
-        "description": "Changes the contour of the twist modulation from smooth to sharp.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1197,8 +1143,6 @@ export const ALGO_DEFINITIONS_V1 = [
     "controls": [
       {
         "id": "clipDrive",
-        "label": "Drive",
-        "description": "Increases the gain before clipping for a stronger flattened peak.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1214,8 +1158,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "clipShape",
-        "label": "Shape",
-        "description": "Sets the clip threshold width from narrow to wide.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1231,8 +1173,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "clipBias",
-        "label": "Bias",
-        "description": "Offsets the clipped region toward the start or end of the cycle.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": true,
@@ -1248,8 +1188,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "clipSoft",
-        "label": "Soft",
-        "description": "Blends from hard clipping into a softer rounded saturation.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1274,8 +1212,6 @@ export const ALGO_DEFINITIONS_V1 = [
     "controls": [
       {
         "id": "rippleFreq",
-        "label": "Freq",
-        "description": "Sets how many ripple oscillations appear across the cycle.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1291,8 +1227,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "rippleDepth",
-        "label": "Depth",
-        "description": "Controls the amplitude of the ripple imposed on the phase.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1308,8 +1242,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "ripplePhase",
-        "label": "Phase",
-        "description": "Offsets where the ripple pattern begins inside the cycle.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1325,8 +1257,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "rippleShape",
-        "label": "Shape",
-        "description": "Changes the ripple from a smooth sine to a sharper contour.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1351,8 +1281,6 @@ export const ALGO_DEFINITIONS_V1 = [
     "controls": [
       {
         "id": "mirrorCenter",
-        "label": "Center",
-        "description": "Chooses the pivot around which the phase is mirrored.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1368,8 +1296,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "mirrorBlend",
-        "label": "Blend",
-        "description": "Controls how strongly the mirrored phase replaces the original phase.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1385,8 +1311,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "mirrorClip",
-        "label": "Clip",
-        "description": "Clamps the mirrored excursion for a tighter folded reflection.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1402,8 +1326,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "mirrorSkew",
-        "label": "Skew",
-        "description": "Skews the mirrored side so reflection distance changes across the cycle.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": true,
@@ -1428,8 +1350,6 @@ export const ALGO_DEFINITIONS_V1 = [
     "controls": [
       {
         "id": "karpunkDamp",
-        "label": "Damp",
-        "description": "Controls how quickly high-frequency energy is damped in the string model.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1445,8 +1365,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "karpunkBright",
-        "label": "Bright",
-        "description": "Adjusts the brightness of the feedback filter inside the string loop.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1462,8 +1380,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "karpunkDecay",
-        "label": "Decay",
-        "description": "Sets how long the plucked string sustains before fading out.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1479,8 +1395,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "karpunkExcite",
-        "label": "Excite",
-        "description": "Injects fresh noise into the delay line for a noisier or raspier pluck.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1505,8 +1419,6 @@ export const ALGO_DEFINITIONS_V1 = [
     "controls": [
       {
         "id": "fofRatio",
-        "label": "Ratio",
-        "description": "Sets the internal carrier multiplier used for the formant-like repetition.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1522,8 +1434,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "fofTightness",
-        "label": "Tight",
-        "description": "Narrows or widens the Gaussian-like formant window.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1539,8 +1449,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "fofOffset",
-        "label": "Offset",
-        "description": "Offsets the repeated carrier phase before the formant window is applied.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": true,
@@ -1556,8 +1464,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "fofSkew",
-        "label": "Skew",
-        "description": "Moves the center of the formant window toward the start or end of the cycle.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": true,
@@ -1582,8 +1488,6 @@ export const ALGO_DEFINITIONS_V1 = [
     "controls": [
       {
         "id": "terrainRatio",
-        "label": "Ratio",
-        "description": "Sets the frequency ratio of the phase-modulating oscillator (1–8).",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1599,8 +1503,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "terrainDepth",
-        "label": "Depth",
-        "description": "Controls how far the modulator displaces the phase path.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1616,8 +1518,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "terrainFmPhase",
-        "label": "FM Phase",
-        "description": "Offsets the modulator's start phase within the cycle.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1633,8 +1533,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "terrainShape",
-        "label": "Shape",
-        "description": "Morphs the modulator waveform from a sine (0) to a sawtooth (1).",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1659,8 +1557,6 @@ export const ALGO_DEFINITIONS_V1 = [
     "controls": [
       {
         "id": "stutterSegs",
-        "label": "Segs",
-        "description": "Number of equal segments the cycle is split into (2–8).",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1676,8 +1572,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "stutterReverse",
-        "label": "Reverse",
-        "description": "Blends alternate segments toward time-reversed playback.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1693,8 +1587,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "stutterSlip",
-        "label": "Slip",
-        "description": "Adds a cumulative phase slip at each segment boundary.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1710,8 +1602,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "stutterSpacing",
-        "label": "Spacing",
-        "description": "Sets how many segments separate each reversed segment (2, 3, or 4).",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1736,8 +1626,6 @@ export const ALGO_DEFINITIONS_V1 = [
     "controls": [
       {
         "id": "chebyOrder",
-        "label": "Order",
-        "description": "Chebyshev polynomial degree (maps 0→1 to harmonic orders 1→6).",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -1753,8 +1641,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "chebyTilt",
-        "label": "Tilt",
-        "description": "Phase-shifts the fold points within the super-cycle for asymmetric spectra.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": true,
@@ -1770,8 +1656,6 @@ export const ALGO_DEFINITIONS_V1 = [
       },
       {
         "id": "chebyWarp",
-        "label": "Warp",
-        "description": "Pre-warps the input phase before the polynomial, shifting harmonic peaks.",
         "kind": "number",
         "controlType": "knob",
         "bipolar": false,
@@ -3380,10 +3264,8 @@ export type EngineParamReadoutFormatV1 =
   | { kind: "seconds2" }
   | { kind: "hertz" }
   | { kind: "enumMap"; values: EngineEnumValueLabelV1[] };
-export type EngineParamUiMetaV1 = { key: string; tooltip: string; readoutLabel: string; readoutFormat: EngineParamReadoutFormatV1; paramDefault: number | null };
+export type EngineParamUiMetaV1 = { key: string; readoutFormat: EngineParamReadoutFormatV1; paramDefault: number | null };
 export type EngineParamRangeV1 = { key: string; min: number; max: number };
-export type EngineEnumValueTooltipV1 = { key: string; value: string; tooltip: string };
-
 /** Rust-owned engine parameter tooltip and readout metadata. */
 export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
   {
@@ -3391,117 +3273,91 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "paramDefault": 0.4000000059604645,
     "readoutFormat": {
       "kind": "percent"
-    },
-    "readoutLabel": "Volume",
-    "tooltip": "Sets the global synth output level."
+    }
   },
   {
     "key": "warpAAmount",
     "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "Line 1 DCW",
-    "tooltip": "Sets base harmonic warp amount for this line."
+    }
   },
   {
     "key": "warpBAmount",
     "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "Line 2 DCW",
-    "tooltip": "Sets base harmonic warp amount for this line."
+    }
   },
   {
     "key": "algoBlendA",
     "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "Line 1 Blend",
-    "tooltip": "Crossfades between Algo A and Algo B outputs."
+    }
   },
   {
     "key": "algoBlendB",
     "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "Line 2 Blend",
-    "tooltip": "Crossfades between Algo A and Algo B outputs."
+    }
   },
   {
     "key": "line1Level",
     "paramDefault": 1.0,
     "readoutFormat": {
       "kind": "percent"
-    },
-    "readoutLabel": "Line 1 Level",
-    "tooltip": "Sets base output level for this line."
+    }
   },
   {
     "key": "line2Level",
     "paramDefault": 1.0,
     "readoutFormat": {
       "kind": "percent"
-    },
-    "readoutLabel": "Line 2 Level",
-    "tooltip": "Sets base output level for this line."
+    }
   },
   {
     "key": "line1Octave",
     "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "integer"
-    },
-    "readoutLabel": "Octave",
-    "tooltip": "Transposes both lines by octave steps (shared)."
+    }
   },
   {
     "key": "line2Octave",
     "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "integer"
-    },
-    "readoutLabel": "L2 Oct",
-    "tooltip": "Relative octave shift for line 2."
+    }
   },
   {
     "key": "line2DetuneNote",
     "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "integer"
-    },
-    "readoutLabel": "L2 Note",
-    "tooltip": "Semitone offset for line 2 (0–11)."
+    }
   },
   {
     "key": "line2DetuneFine",
     "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "integer"
-    },
-    "readoutLabel": "L2 Fine",
-    "tooltip": "Fine detune for line 2 in CZ units (±60)."
+    }
   },
   {
     "key": "lineSelect",
     "paramDefault": null,
     "readoutFormat": {
       "kind": "raw"
-    },
-    "readoutLabel": "Line Select",
-    "tooltip": "Selects which oscillator lines are heard together."
+    }
   },
   {
     "key": "modMode",
     "paramDefault": null,
     "readoutFormat": {
       "kind": "uppercase"
-    },
-    "readoutLabel": "Modulation",
-    "tooltip": "Chooses the interaction mode between oscillator lines."
+    }
   },
   {
     "key": "polyMode",
@@ -3518,396 +3374,308 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
           "value": "mono"
         }
       ]
-    },
-    "readoutLabel": "Voice Mode",
-    "tooltip": "Switches between polyphonic and monophonic note allocation."
+    }
   },
   {
     "key": "intPmAmount",
     "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "PM Amount",
-    "tooltip": "Sets internal phase modulation depth."
+    }
   },
   {
     "key": "intPmRatio",
     "paramDefault": 1.0,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "PM Ratio",
-    "tooltip": "Sets modulator-to-carrier frequency ratio."
+    }
   },
   {
     "key": "pmPre",
     "paramDefault": 1.0,
     "readoutFormat": {
       "kind": "onOff"
-    },
-    "readoutLabel": "PM Mode",
-    "tooltip": "Apply phase modulation before warp shaping."
+    }
   },
   {
     "key": "vibratoRate",
     "paramDefault": 55.0,
     "readoutFormat": {
       "kind": "integer"
-    },
-    "readoutLabel": "Vibrato Rate",
-    "tooltip": "Sets vibrato speed."
+    }
   },
   {
     "key": "vibratoDepth",
     "paramDefault": 8.0,
     "readoutFormat": {
       "kind": "integer"
-    },
-    "readoutLabel": "Vibrato Depth",
-    "tooltip": "Sets vibrato pitch modulation depth."
+    }
   },
   {
     "key": "vibratoDelay",
     "paramDefault": 120.0,
     "readoutFormat": {
       "kind": "milliseconds"
-    },
-    "readoutLabel": "Vibrato Delay",
-    "tooltip": "Delays vibrato onset after note start."
+    }
   },
   {
     "key": "lfoWaveform",
     "paramDefault": null,
     "readoutFormat": {
       "kind": "uppercase"
-    },
-    "readoutLabel": "LFO Wave",
-    "tooltip": "Selects LFO 1 waveform shape."
+    }
   },
   {
     "key": "lfoRate",
     "paramDefault": 2.0,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "LFO Rate",
-    "tooltip": "Sets LFO 1 speed."
+    }
   },
   {
     "key": "lfoDepth",
     "paramDefault": 1.0,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "LFO Depth",
-    "tooltip": "Sets LFO 1 modulation depth."
+    }
   },
   {
     "key": "lfoSymmetry",
     "paramDefault": 0.5,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "LFO Symmetry",
-    "tooltip": "Skews LFO 1 waveform timing around the midpoint."
+    }
   },
   {
     "key": "lfoOffset",
     "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "LFO Offset",
-    "tooltip": "Offsets LFO 1 output around zero."
+    }
   },
   {
     "key": "lfo2Rate",
     "paramDefault": 2.0,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "LFO 2 Rate",
-    "tooltip": "Sets LFO 2 speed."
+    }
   },
   {
     "key": "lfo2Depth",
     "paramDefault": 1.0,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "LFO 2 Depth",
-    "tooltip": "Sets LFO 2 modulation depth."
+    }
   },
   {
     "key": "lfo2Symmetry",
     "paramDefault": 0.5,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "LFO 2 Symmetry",
-    "tooltip": "Skews LFO 2 waveform timing around the midpoint."
+    }
   },
   {
     "key": "lfo2Offset",
     "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "LFO 2 Offset",
-    "tooltip": "Offsets LFO 2 output around zero."
+    }
   },
   {
     "key": "randomRate",
     "paramDefault": 2.0,
     "readoutFormat": {
       "kind": "hertz"
-    },
-    "readoutLabel": "Random Rate",
-    "tooltip": "Sets sample-and-hold random modulation refresh rate."
+    }
   },
   {
     "key": "modEnvAttack",
     "paramDefault": 0.009999999776482582,
     "readoutFormat": {
       "kind": "seconds2"
-    },
-    "readoutLabel": "Mod Env Attack",
-    "tooltip": "Sets modulation envelope attack time."
+    }
   },
   {
     "key": "modEnvDecay",
     "paramDefault": 0.10000000149011612,
     "readoutFormat": {
       "kind": "seconds2"
-    },
-    "readoutLabel": "Mod Env Decay",
-    "tooltip": "Sets modulation envelope decay time."
+    }
   },
   {
     "key": "modEnvSustain",
     "paramDefault": 0.5,
     "readoutFormat": {
       "kind": "percent"
-    },
-    "readoutLabel": "Mod Env Sustain",
-    "tooltip": "Sets sustained modulation level while note is held."
+    }
   },
   {
     "key": "modEnvRelease",
     "paramDefault": 0.20000000298023224,
     "readoutFormat": {
       "kind": "seconds2"
-    },
-    "readoutLabel": "Mod Env Release",
-    "tooltip": "Sets modulation envelope release time after note off."
+    }
   },
   {
     "key": "filterType",
     "paramDefault": null,
     "readoutFormat": {
       "kind": "uppercase"
-    },
-    "readoutLabel": "Filter Type",
-    "tooltip": "Selects the filter response shape."
+    }
   },
   {
     "key": "filterCutoff",
     "paramDefault": 5000.0,
     "readoutFormat": {
       "kind": "hertz"
-    },
-    "readoutLabel": "Filter Cutoff",
-    "tooltip": "Sets the filter cutoff frequency."
+    }
   },
   {
     "key": "filterResonance",
     "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "Filter Resonance",
-    "tooltip": "Boosts frequencies around the cutoff point."
+    }
   },
   {
     "key": "filterEnvAmount",
     "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "Filter Env",
-    "tooltip": "Applies envelope modulation amount to the cutoff."
+    }
   },
   {
     "key": "chorusRate",
     "paramDefault": 0.800000011920929,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "Chorus Rate",
-    "tooltip": "Sets chorus modulation speed."
+    }
   },
   {
     "key": "chorusDepth",
     "paramDefault": 0.003000000026077032,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "Chorus Depth",
-    "tooltip": "Sets intensity of chorus pitch modulation."
+    }
   },
   {
     "key": "chorusMix",
     "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "Chorus Mix",
-    "tooltip": "Blends dry signal with chorus effect."
+    }
   },
   {
     "key": "delayTime",
     "paramDefault": 0.30000001192092896,
     "readoutFormat": {
       "kind": "seconds2"
-    },
-    "readoutLabel": "Delay Time",
-    "tooltip": "Sets the delay repeat interval."
+    }
   },
   {
     "key": "delayFeedback",
     "paramDefault": 0.3499999940395355,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "Delay Feedback",
-    "tooltip": "Feeds delayed signal back for additional repeats."
+    }
   },
   {
     "key": "delayWarmth",
     "paramDefault": 0.5,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "Delay Warmth",
-    "tooltip": "Adds tape-style saturation and high-frequency rolloff."
+    }
   },
   {
     "key": "delayMix",
     "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "Delay Mix",
-    "tooltip": "Blends dry signal with delayed signal."
+    }
   },
   {
     "key": "delayTapeMode",
     "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "onOff"
-    },
-    "readoutLabel": "Tape Mode",
-    "tooltip": "Toggle tape echo coloration for delay repeats."
+    }
   },
   {
     "key": "reverbSpace",
     "paramDefault": 0.5,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "Reverb Space",
-    "tooltip": "Sets the virtual room size for reverb reflections."
+    }
   },
   {
     "key": "reverbPredelay",
     "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "milliseconds"
-    },
-    "readoutLabel": "Reverb Pre-Delay",
-    "tooltip": "Adds delay before the reverb tail starts."
+    }
   },
   {
     "key": "reverbDistance",
     "paramDefault": 0.30000001192092896,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "Reverb Distance",
-    "tooltip": "Moves source position deeper into the reverb space."
+    }
   },
   {
     "key": "reverbCharacter",
     "paramDefault": 0.6499999761581421,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "Reverb Character",
-    "tooltip": "Shapes reverb tone from dark to bright."
+    }
   },
   {
     "key": "reverbMix",
     "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "Reverb Mix",
-    "tooltip": "Blends dry signal with reverb output."
+    }
   },
   {
     "key": "portamentoMode",
     "paramDefault": null,
     "readoutFormat": {
       "kind": "uppercase"
-    },
-    "readoutLabel": "Portamento Mode",
-    "tooltip": "Chooses whether glide uses rate or fixed time behavior."
+    }
   },
   {
     "key": "portamentoRate",
     "paramDefault": 85.0,
     "readoutFormat": {
       "kind": "integer"
-    },
-    "readoutLabel": "Portamento Rate",
-    "tooltip": "Sets glide speed when portamento mode is Rate."
+    }
   },
   {
     "key": "portamentoTime",
     "paramDefault": 0.10000000149011612,
     "readoutFormat": {
       "kind": "seconds2"
-    },
-    "readoutLabel": "Portamento Time",
-    "tooltip": "Sets glide duration when portamento mode is Time."
+    }
   },
   {
     "key": "pitchBendRange",
     "paramDefault": 2.0,
     "readoutFormat": {
       "kind": "semitones"
-    },
-    "readoutLabel": "Bend Range",
-    "tooltip": "Sets maximum pitch bend range in semitones."
+    }
   },
   {
     "key": "velocityCurve",
     "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "Vel Curve",
-    "tooltip": "Shapes how keyboard velocity maps to output level."
+    }
   },
   {
     "key": "modWheelVibratoDepth",
     "paramDefault": 0.0,
     "readoutFormat": {
       "kind": "decimal"
-    },
-    "readoutLabel": "Mod to Vibrato",
-    "tooltip": "Sets how much mod wheel movement affects vibrato depth."
+    }
   }
 ];
 
@@ -3920,71 +3688,3 @@ export const ENGINE_PARAM_RANGES_V1: EngineParamRangeV1[] = [
   }
 ];
 
-/** Rust-owned tooltip metadata for enum/select values. */
-export const ENGINE_ENUM_VALUE_TOOLTIPS_V1: EngineEnumValueTooltipV1[] = [
-  {
-    "key": "lineSelect",
-    "value": "L1",
-    "tooltip": "Play oscillator line 1 only."
-  },
-  {
-    "key": "lineSelect",
-    "value": "L1+L2",
-    "tooltip": "Layer oscillator lines 1 and 2."
-  },
-  {
-    "key": "lineSelect",
-    "value": "L2",
-    "tooltip": "Play oscillator line 2 only."
-  },
-  {
-    "key": "lineSelect",
-    "value": "L1+L1'",
-    "tooltip": "Stack line 1 with a detuned variant."
-  },
-  {
-    "key": "lineSelect",
-    "value": "L1+L2'",
-    "tooltip": "Layer line 1 with a detuned line 2 variant."
-  },
-  {
-    "key": "modMode",
-    "value": "normal",
-    "tooltip": "Standard phase modulation behavior."
-  },
-  {
-    "key": "modMode",
-    "value": "ring",
-    "tooltip": "Enable ring modulation between lines."
-  },
-  {
-    "key": "modMode",
-    "value": "noise",
-    "tooltip": "Mix noise source into modulation path."
-  },
-  {
-    "key": "filterType",
-    "value": "lp",
-    "tooltip": "Low-pass mode: attenuates frequencies above cutoff."
-  },
-  {
-    "key": "filterType",
-    "value": "hp",
-    "tooltip": "High-pass mode: attenuates frequencies below cutoff."
-  },
-  {
-    "key": "filterType",
-    "value": "bp",
-    "tooltip": "Band-pass mode: emphasizes a narrow band around cutoff."
-  },
-  {
-    "key": "portamentoMode",
-    "value": "rate",
-    "tooltip": "Portamento time scales with note interval distance."
-  },
-  {
-    "key": "portamentoMode",
-    "value": "time",
-    "tooltip": "Portamento uses a fixed glide time between notes."
-  }
-];

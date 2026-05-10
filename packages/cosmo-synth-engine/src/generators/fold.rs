@@ -5,8 +5,6 @@ use crate::params::{Algo, EngineParamReadoutFormatV1};
 const CONTROLS: [AlgoControlV1; 4] = [
     AlgoControlV1 {
         id: "foldStages",
-        label: "Stages",
-        description: "Sets how many fold passes are applied across the cycle.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,
@@ -20,8 +18,6 @@ const CONTROLS: [AlgoControlV1; 4] = [
     },
     AlgoControlV1 {
         id: "foldTilt",
-        label: "Tilt",
-        description: "Moves the fold pivot toward the start or end of the cycle.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: true,
@@ -35,9 +31,6 @@ const CONTROLS: [AlgoControlV1; 4] = [
     },
     AlgoControlV1 {
         id: "foldSymmetry",
-        label: "Symmetry",
-        description:
-            "Offsets fold balance to make one side of the cycle fold harder than the other.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: true,
@@ -51,8 +44,6 @@ const CONTROLS: [AlgoControlV1; 4] = [
     },
     AlgoControlV1 {
         id: "foldSoftness",
-        label: "Softness",
-        description: "Softens each fold pass so the phase wraps less abruptly.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,

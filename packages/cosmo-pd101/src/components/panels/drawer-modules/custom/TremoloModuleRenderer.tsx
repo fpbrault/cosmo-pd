@@ -4,6 +4,8 @@ import { useFxModuleController } from "@/components/panels/drawer-modules/custom
 import {
 	asNumber,
 	getButtonGroupControl,
+	getFxControlLabel,
+	getFxControlOptionLabel,
 	getKnobControl,
 	getModDestinationByParam,
 	getTooltip,
@@ -33,6 +35,9 @@ export default function TremoloModuleRenderer({
 	const mixControl = getKnobControl(config, "mix");
 	const waveformValue = asNumber(params.waveform, 0);
 	const modDestinationByParam = getModDestinationByParam(config.type);
+	const rateLabel = getFxControlLabel(config.type, "rate", "tremoloRate");
+	const depthLabel = getFxControlLabel(config.type, "depth", "tremoloDepth");
+	const mixLabel = getFxControlLabel(config.type, "mix", "tremoloMix");
 
 	return (
 		<ModuleFrame
@@ -63,7 +68,7 @@ export default function TremoloModuleRenderer({
 						}`}
 						onClick={() => setFxSlotParams(slot, { waveform: option.value })}
 					>
-						{option.label}
+						{getFxControlOptionLabel(config.type, "waveform", option.value)}
 					</Button>
 				))}
 			</div>
@@ -75,7 +80,7 @@ export default function TremoloModuleRenderer({
 					max={rateControl.max}
 					defaultValue={rateControl.defaultValue}
 					color={config.color}
-					label="Rate"
+					label={rateLabel}
 					tooltip={getTooltip("tremoloRate")}
 					valueFormatter={rateControl.formatter}
 					modDestination={modDestinationByParam.rate}
@@ -89,7 +94,7 @@ export default function TremoloModuleRenderer({
 					max={depthControl.max}
 					defaultValue={depthControl.defaultValue}
 					color={config.color}
-					label="Depth"
+					label={depthLabel}
 					tooltip={getTooltip("tremoloDepth")}
 					valueFormatter={depthControl.formatter}
 					modDestination={modDestinationByParam.depth}
@@ -103,7 +108,7 @@ export default function TremoloModuleRenderer({
 					max={mixControl.max}
 					defaultValue={mixControl.defaultValue}
 					color={config.color}
-					label="Mix"
+					label={mixLabel}
 					tooltip={getTooltip("tremoloMix")}
 					valueFormatter={mixControl.formatter}
 					modDestination={modDestinationByParam.mix}

@@ -1,6 +1,6 @@
 import type { SynthParamKey } from "@/features/synth/SynthParamController";
+import { i18n } from "@/i18n";
 import {
-	ENGINE_ENUM_VALUE_TOOLTIPS_V1,
 	ENGINE_PARAM_RANGES_V1,
 	ENGINE_PARAM_UI_META_V1,
 	type EngineParamRangeV1,
@@ -34,11 +34,16 @@ export const ENGINE_PARAM_UI_META_BY_KEY: Partial<
 	{} as Partial<Record<SynthParamKey, EngineParamUiMetaWithRangeV1>>,
 );
 
-/** Canonical tooltip text for engine parameters, owned by the engine metadata export. */
+/** Canonical tooltip text for engine parameters, owned by the frontend i18n resources. */
 export const PARAM_META: Partial<Record<SynthParamKey, ParamMeta>> =
 	ENGINE_PARAM_UI_META_V1.reduce(
 		(acc, meta) => {
-			acc[meta.key as SynthParamKey] = { tooltip: meta.tooltip };
+			acc[meta.key as SynthParamKey] = {
+				tooltip:
+					i18n.t(`params.${meta.key}.tooltip`, {
+						defaultValue: meta.key,
+					}) || meta.key,
+			};
 			return acc;
 		},
 		{} as Partial<Record<SynthParamKey, ParamMeta>>,
@@ -69,12 +74,22 @@ export function requireEngineParamDefault(key: string): number {
 	throw new Error(`Missing engine numeric default for parameter: ${key}`);
 }
 
+/** Frontend-owned enum value keys for controls. */
+const ENUM_VALUE_KEYS: Partial<Record<string, readonly string[]>> = {
+	lineSelect: ["L1", "L1+L2", "L2", "L1+L1'", "L1+L2'"],
+	modMode: ["normal", "ring", "noise"],
+	filterType: ["lp", "hp", "bp"],
+	portamentoMode: ["rate", "time"],
+};
+
 function buildEnumTooltipMap(key: string): Partial<Record<string, string>> {
-	return ENGINE_ENUM_VALUE_TOOLTIPS_V1.filter(
-		(entry) => entry.key === key,
-	).reduce(
-		(acc, entry) => {
-			acc[entry.value] = entry.tooltip;
+	const values = ENUM_VALUE_KEYS[key] ?? [];
+	return values.reduce(
+		(acc, value) => {
+			acc[value] =
+				i18n.t(`enumTooltips.${key}.${value}`, {
+					defaultValue: value,
+				}) || value;
 			return acc;
 		},
 		{} as Partial<Record<string, string>>,

@@ -1,6 +1,12 @@
 import { memo, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 import ControlKnob from "@/components/controls/ControlKnob";
+import {
+	getFxControlLabel,
+	getFxControlOptionLabel,
+	getFxControlTooltip,
+} from "@/components/panels/drawer-modules/custom/utils";
 import type {
 	ButtonGroupControlDef,
 	FxSlotModuleConfig,
@@ -11,7 +17,7 @@ import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthStore } from "@/features/synth/synthStore";
 import type { ModDestination } from "@/lib/synth/bindings/synth";
-import { FX_DEFINITIONS_V1 } from "@/lib/synth/bindings/synth";
+import { FX_DEFINITIONS_V1, type FxSlotType } from "@/lib/synth/bindings/synth";
 
 type EngineKnobMeta = {
 	min?: number;
@@ -91,6 +97,7 @@ type KnobControlProps = {
 	knobMetaByParam: Record<string, EngineKnobMeta>;
 	moduleColumns: number;
 	modDestinationByParam: Record<string, string>;
+	fxType: FxSlotType;
 	color: string;
 	setFxSlotParams: (slot: number, params: Record<string, unknown>) => void;
 	slot: number;
@@ -102,6 +109,7 @@ const KnobControl = memo(function KnobControl({
 	knobMetaByParam,
 	moduleColumns,
 	modDestinationByParam,
+	fxType,
 	color,
 	setFxSlotParams,
 	slot,
@@ -117,6 +125,18 @@ const KnobControl = memo(function KnobControl({
 		columns: moduleColumns,
 	});
 
+	const modDestinationKey = modDestinationByParam[ctrl.param];
+	const resolvedLabel = getFxControlLabel(
+		fxType,
+		ctrl.param,
+		modDestinationKey,
+	);
+	const resolvedTooltip = getFxControlTooltip(
+		fxType,
+		ctrl.param,
+		modDestinationKey,
+	);
+
 	return (
 		<div className="min-w-0" style={gridPlacementStyle}>
 			<ControlKnob
@@ -127,7 +147,8 @@ const KnobControl = memo(function KnobControl({
 				defaultValue={defaultValue}
 				size={ctrl.size ?? 64}
 				color={color}
-				label={ctrl.label}
+				label={resolvedLabel}
+				tooltip={resolvedTooltip}
 				valueFormatter={ctrl.formatter}
 				modDestination={
 					modDestinationByParam[ctrl.param] as ModDestination | undefined
@@ -141,6 +162,7 @@ type ButtonGroupControlProps = {
 	ctrl: ButtonGroupControlDef;
 	params: Record<string, unknown>;
 	moduleColumns: number;
+	fxType: FxSlotType;
 	setFxSlotParams: (slot: number, params: Record<string, unknown>) => void;
 	slot: number;
 };
@@ -149,10 +171,18 @@ const ButtonGroupControl = memo(function ButtonGroupControl({
 	ctrl,
 	params,
 	moduleColumns,
+	fxType,
 	setFxSlotParams,
 	slot,
 }: ButtonGroupControlProps) {
-	const fallbackColSpan = resolveButtonGroupSpan(ctrl.options, moduleColumns);
+	const localizedOptions = ctrl.options.map((option) => ({
+		...option,
+		label: getFxControlOptionLabel(fxType, ctrl.param, option.value),
+	}));
+	const fallbackColSpan = resolveButtonGroupSpan(
+		localizedOptions,
+		moduleColumns,
+	);
 	const gridPlacementStyle = resolveGridPlacementStyle({
 		colSpan: ctrl.colSpan ?? fallbackColSpan,
 		colStart: ctrl.colStart,
@@ -161,8 +191,9 @@ const ButtonGroupControl = memo(function ButtonGroupControl({
 	});
 	const binaryToggleState =
 		ctrl.buttonPresentation === "compactBinaryToggle"
-			? resolveBinaryToggleState(ctrl.options, params[ctrl.param])
+			? resolveBinaryToggleState(localizedOptions, params[ctrl.param])
 			: null;
+	const resolvedLabel = getFxControlLabel(fxType, ctrl.param);
 	const groupAlignment = ctrl.centered ? "items-center" : "items-stretch";
 
 	return (
@@ -170,7 +201,7 @@ const ButtonGroupControl = memo(function ButtonGroupControl({
 			<div className={`flex flex-col gap-1.5 ${groupAlignment}`}>
 				{!ctrl.hideLabel && (
 					<span className="text-center text-3xs text-base-content/58 uppercase tracking-[0.2em]">
-						{ctrl.label}
+						{resolvedLabel}
 					</span>
 				)}
 				{binaryToggleState ? (
@@ -195,7 +226,7 @@ const ButtonGroupControl = memo(function ButtonGroupControl({
 					</Button>
 				) : (
 					<div className="join w-full overflow-hidden rounded-md border border-cz-border/65">
-						{ctrl.options.map((opt) => (
+						{localizedOptions.map((opt) => (
 							<Button
 								key={opt.value}
 								type="button"
@@ -225,6 +256,7 @@ export default function GenericFxSlotModule({
 	config: FxSlotModuleConfig;
 	slot: number;
 }) {
+	const { t } = useTranslation("synth");
 	const [selectedPreset, setSelectedPreset] = useState<string>("");
 	const rawSlot = useSynthStore((s) => s.fxSlots[slot]);
 	const setFxSlotParams = useSynthStore((s) => s.setFxSlotParams);
@@ -310,9 +342,12 @@ export default function GenericFxSlotModule({
 		});
 	};
 
+	const moduleTitle =
+		t(`fx.modules.${config.type}.title`, { defaultValue: "" }) || config.title;
+
 	return (
 		<ModuleFrame
-			title={config.title}
+			title={moduleTitle}
 			color={config.color}
 			meta={config.meta}
 			columns={moduleColumns}
@@ -337,6 +372,7 @@ export default function GenericFxSlotModule({
 						knobMetaByParam={knobMetaByParam}
 						moduleColumns={moduleColumns}
 						modDestinationByParam={modDestinationByParam}
+						fxType={config.type}
 						color={config.color}
 						setFxSlotParams={setFxSlotParams}
 						slot={slot}
@@ -347,6 +383,7 @@ export default function GenericFxSlotModule({
 						ctrl={ctrl}
 						params={params}
 						moduleColumns={moduleColumns}
+						fxType={config.type}
 						setFxSlotParams={setFxSlotParams}
 						slot={slot}
 					/>

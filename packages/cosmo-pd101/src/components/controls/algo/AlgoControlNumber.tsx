@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useAlgoControl } from "@/lib/synth/i18nAlgo";
 import { algoParamTargetFromSlot } from "@/lib/synth/modDestination";
 import ControlKnob from "../ControlKnob";
 import type {
@@ -82,6 +83,7 @@ function AlgoControlNumberInner({
 	setAlgoControlValue,
 	color = "cyan",
 }: AlgoControlNumberProps) {
+	const { label, description } = useAlgoControl(control.algo, control.id);
 	const min = control.min ?? 0;
 	const max = control.max ?? 1;
 	const value =
@@ -95,8 +97,8 @@ function AlgoControlNumberInner({
 	return (
 		<div className="flex flex-col items-center">
 			<ControlKnob
-				label={control.label}
-				tooltip={control.description ?? undefined}
+				label={label}
+				tooltip={description ?? undefined}
 				disabled={disabled}
 				min={min}
 				max={max}

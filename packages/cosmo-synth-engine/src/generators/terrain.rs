@@ -5,8 +5,6 @@ use crate::params::{Algo, EngineParamReadoutFormatV1};
 const CONTROLS: [AlgoControlV1; 4] = [
     AlgoControlV1 {
         id: "terrainRatio",
-        label: "Ratio",
-        description: "Sets the frequency ratio of the phase-modulating oscillator (1–8).",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,
@@ -20,8 +18,6 @@ const CONTROLS: [AlgoControlV1; 4] = [
     },
     AlgoControlV1 {
         id: "terrainDepth",
-        label: "Depth",
-        description: "Controls how far the modulator displaces the phase path.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,
@@ -35,8 +31,6 @@ const CONTROLS: [AlgoControlV1; 4] = [
     },
     AlgoControlV1 {
         id: "terrainFmPhase",
-        label: "FM Phase",
-        description: "Offsets the modulator's start phase within the cycle.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,
@@ -50,8 +44,6 @@ const CONTROLS: [AlgoControlV1; 4] = [
     },
     AlgoControlV1 {
         id: "terrainShape",
-        label: "Shape",
-        description: "Morphs the modulator waveform from a sine (0) to a sawtooth (1).",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,

@@ -7,7 +7,8 @@
 		".": {
 			"types": "./lib-dist/index.d.mts",
 			"import": "./lib-dist/index.mjs"
-		}
+		},
+		"./i18n": "./src/i18n/locales/en/synth.json"
 	},
 	"main": "./lib-dist/index.mjs",
 	"types": "./lib-dist/index.d.mts",

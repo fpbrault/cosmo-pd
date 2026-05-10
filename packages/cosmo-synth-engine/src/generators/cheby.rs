@@ -4,8 +4,6 @@ use crate::params::{Algo, EngineParamReadoutFormatV1};
 const CONTROLS: [AlgoControlV1; 3] = [
     AlgoControlV1 {
         id: "chebyOrder",
-        label: "Order",
-        description: "Chebyshev polynomial degree (maps 0→1 to harmonic orders 1→6).",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,
@@ -19,8 +17,6 @@ const CONTROLS: [AlgoControlV1; 3] = [
     },
     AlgoControlV1 {
         id: "chebyTilt",
-        label: "Tilt",
-        description: "Phase-shifts the fold points within the super-cycle for asymmetric spectra.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: true,
@@ -34,8 +30,6 @@ const CONTROLS: [AlgoControlV1; 3] = [
     },
     AlgoControlV1 {
         id: "chebyWarp",
-        label: "Warp",
-        description: "Pre-warps the input phase before the polynomial, shifting harmonic peaks.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,

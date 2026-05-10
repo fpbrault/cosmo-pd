@@ -1,5 +1,9 @@
 import { memo } from "react";
 import CzButton from "@/components/primitives/CzButton";
+import {
+	getAlgoControlOptionLabel,
+	useAlgoControl,
+} from "@/lib/synth/i18nAlgo";
 import type {
 	AlgoControlBinding,
 	AlgoControlOptionRuntime,
@@ -23,6 +27,7 @@ function AlgoControlSelectInner({
 	getActiveSelectOption,
 	applyOptionAssignments,
 }: AlgoControlSelectProps) {
+	const { label, description } = useAlgoControl(control.algo, control.id);
 	const options = control.options ?? [];
 	const activeOption = getActiveSelectOption(control);
 
@@ -30,9 +35,14 @@ function AlgoControlSelectInner({
 		<div className="space-y-1.5">
 			<div className="grid grid-cols-4 gap-1.5">
 				{options.map((option, index) => {
-					const buttonTooltip = control.description
-						? `${control.label} ${option.label}: ${control.description}`
-						: `${control.label} ${option.label}`;
+					const optionLabel = getAlgoControlOptionLabel(
+						control.algo,
+						control.id,
+						option.value,
+					);
+					const buttonTooltip = description
+						? `${label} ${optionLabel}: ${description}`
+						: `${label} ${optionLabel}`;
 
 					return (
 						<CzButton
@@ -53,7 +63,7 @@ function AlgoControlSelectInner({
 							}}
 							className="[&_button]:w-full"
 						>
-							{option.label}
+							{optionLabel}
 						</CzButton>
 					);
 				})}

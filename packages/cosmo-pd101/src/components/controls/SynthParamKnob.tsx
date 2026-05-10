@@ -9,6 +9,7 @@ import type {
 import {
 	ENGINE_PARAM_UI_META_BY_KEY,
 	getEngineParamDefault,
+	PARAM_META,
 } from "@/lib/synth/paramMeta";
 import type { KnobVariant } from "./knob/KnobView";
 
@@ -117,7 +118,7 @@ function SynthParamKnobInner({
 			disabled={disabled}
 			label={label}
 			labelClassName={labelClassName}
-			tooltip={meta?.tooltip}
+			tooltip={PARAM_META[paramKey]?.tooltip}
 			min={min ?? meta?.min ?? 0}
 			max={max ?? meta?.max ?? 1}
 			step={step ?? meta?.step ?? undefined}

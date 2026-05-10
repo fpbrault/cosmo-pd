@@ -33,7 +33,7 @@ describe("AlgoControlItem", () => {
 		render(
 			<AlgoControlItem
 				{...baseProps}
-				control={{ id: "x", label: "X", kind: "select" }}
+				control={{ id: "x", label: "X", kind: "select", algo: "cz101" }}
 			/>,
 		);
 		expect(screen.getByTestId("select-control")).toBeInTheDocument();
@@ -48,6 +48,7 @@ describe("AlgoControlItem", () => {
 					label: "X",
 					kind: "select",
 					controlType: "dropdown",
+					algo: "cz101",
 				}}
 			/>,
 		);
@@ -56,7 +57,10 @@ describe("AlgoControlItem", () => {
 
 	it("renders number control by default", () => {
 		render(
-			<AlgoControlItem {...baseProps} control={{ id: "x", label: "X" }} />,
+			<AlgoControlItem
+				{...baseProps}
+				control={{ id: "x", label: "X", algo: "cz101" }}
+			/>,
 		);
 		expect(screen.getByTestId("number-control")).toBeInTheDocument();
 	});
@@ -65,7 +69,7 @@ describe("AlgoControlItem", () => {
 		render(
 			<AlgoControlItem
 				{...baseProps}
-				control={{ id: "x", label: "X", kind: "toggle" }}
+				control={{ id: "x", label: "X", kind: "toggle", algo: "cz101" }}
 			/>,
 		);
 		expect(screen.getByTestId("toggle-control")).toBeInTheDocument();

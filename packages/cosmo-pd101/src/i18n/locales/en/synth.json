@@ -1,72 +1,4 @@
 {
-	"lcdControls": {
-		"warpAAmount": "Line 1 DCW",
-		"warpBAmount": "Line 2 DCW",
-		"warpAAlgo": "Line 1 Wave",
-		"warpBAlgo": "Line 2 Wave",
-		"algoBlendA": "Line 1 Blend",
-		"algoBlendB": "Line 2 Blend",
-		"intPmAmount": "PM Amount",
-		"intPmRatio": "PM Ratio",
-		"phaseModEnabled": "Phase Mod",
-		"pmPre": "PM Mode",
-		"windowType": "Window",
-		"volume": "Volume",
-		"line1Level": "Line 1 Level",
-		"line2Level": "Line 2 Level",
-		"line1Octave": "Line 1 Octave",
-		"lineOctave": "Octave",
-		"line2DetuneOctave": "L2 Detune Octave",
-		"line2DetuneNote": "L2 Detune Note",
-		"line2DetuneFine": "L2 Detune Fine",
-		"line1DcoEnv": "Line 1 DCO Env",
-		"line1DcwEnv": "Line 1 DCW Env",
-		"line1DcaEnv": "Line 1 DCA Env",
-		"line2DcoEnv": "Line 2 DCO Env",
-		"line2DcwEnv": "Line 2 DCW Env",
-		"line2DcaEnv": "Line 2 DCA Env",
-		"polyMode": "Voice Mode",
-		"velocityCurve": "Vel Curve",
-		"pitchBendRange": "Bend Range",
-		"modWheelVibratoDepth": "Mod to Vibrato",
-		"lineSelect": "Line Select",
-		"modMode": "Modulation",
-		"vibratoEnabled": "Vibrato",
-		"vibratoWave": "Vibrato Wave",
-		"vibratoRate": "Vibrato Rate",
-		"vibratoDepth": "Vibrato Depth",
-		"vibratoDelay": "Vibrato Delay",
-		"portamentoEnabled": "Portamento",
-		"portamentoMode": "Portamento Mode",
-		"portamentoRate": "Portamento Rate",
-		"portamentoTime": "Portamento Time",
-		"lfoWaveform": "LFO Wave",
-		"lfoRate": "LFO Rate",
-		"lfoDepth": "LFO Depth",
-		"lfoOffset": "LFO Offset",
-		"filterEnabled": "Filter",
-		"filterType": "Filter Type",
-		"filterCutoff": "Filter Cutoff",
-		"filterResonance": "Filter Resonance",
-		"filterEnvAmount": "Filter Env",
-		"chorusRate": "Chorus Rate",
-		"chorusDepth": "Chorus Depth",
-		"chorusEnabled": "Chorus",
-		"chorusMix": "Chorus Mix",
-		"delayTime": "Delay Time",
-		"delayFeedback": "Delay Feedback",
-		"delayEnabled": "Delay",
-		"delayMix": "Delay Mix",
-		"reverbEnabled": "Reverb",
-		"reverbMix": "Reverb Mix",
-		"reverbSpace": "Reverb Space",
-		"reverbPredelay": "Reverb Pre-Delay",
-		"reverbDistance": "Reverb Distance",
-		"reverbCharacter": "Reverb Character",
-		"scopeCycles": "Scope Cycles",
-		"scopeVerticalZoom": "Scope Zoom",
-		"scopeTriggerLevel": "Scope Trigger"
-	},
 	"units": {
 		"percent": "{{value}}%",
 		"semitones": "{{value}} ST",
@@ -93,6 +25,7 @@
 		"portamento": "Portamento",
 		"phaseMod": "Phase Mod",
 		"vibrato": "Vibrato",
+		"lfo": "LFO",
 		"scope": "Scope",
 		"filter": "Filter",
 		"chorus": "Chorus",
@@ -111,5 +44,720 @@
 		"line": "Line",
 		"filtOn": "FILT ON",
 		"filtOff": "FILT OFF"
+	},
+	"params": {
+		"volume": {
+			"tooltip": "Sets the global synth output level."
+		},
+		"warpAAmount": {
+			"tooltip": "Sets base harmonic warp amount for this line."
+		},
+		"warpBAmount": {
+			"tooltip": "Sets base harmonic warp amount for this line."
+		},
+		"algoBlendA": {
+			"tooltip": "Crossfades between Algo A and Algo B outputs."
+		},
+		"algoBlendB": {
+			"tooltip": "Crossfades between Algo A and Algo B outputs."
+		},
+		"line1Level": {
+			"tooltip": "Sets base output level for this line."
+		},
+		"line2Level": {
+			"tooltip": "Sets base output level for this line."
+		},
+		"line1Octave": {
+			"tooltip": "Transposes both lines by octave steps (shared)."
+		},
+		"line2Octave": {
+			"tooltip": "Relative octave shift for line 2."
+		},
+		"line2DetuneNote": {
+			"tooltip": "Semitone offset for line 2 (0–11)."
+		},
+		"line2DetuneFine": {
+			"tooltip": "Fine detune for line 2 in CZ units (±60)."
+		},
+		"lineSelect": {
+			"tooltip": "Selects which oscillator lines are heard together."
+		},
+		"modMode": {
+			"tooltip": "Chooses the interaction mode between oscillator lines."
+		},
+		"polyMode": {
+			"tooltip": "Switches between polyphonic and monophonic note allocation."
+		},
+		"intPmAmount": {
+			"tooltip": "Sets internal phase modulation depth."
+		},
+		"intPmRatio": {
+			"tooltip": "Sets modulator-to-carrier frequency ratio."
+		},
+		"pmPre": {
+			"tooltip": "Apply phase modulation before warp shaping."
+		},
+		"vibratoRate": {
+			"tooltip": "Sets vibrato speed."
+		},
+		"vibratoDepth": {
+			"tooltip": "Sets vibrato pitch modulation depth."
+		},
+		"vibratoDelay": {
+			"tooltip": "Delays vibrato onset after note start."
+		},
+		"lfoWaveform": {
+			"tooltip": "Selects LFO 1 waveform shape."
+		},
+		"lfoRate": {
+			"tooltip": "Sets LFO 1 speed."
+		},
+		"lfoDepth": {
+			"tooltip": "Sets LFO 1 modulation depth."
+		},
+		"lfoSymmetry": {
+			"tooltip": "Skews LFO 1 waveform timing around the midpoint."
+		},
+		"lfoOffset": {
+			"tooltip": "Offsets LFO 1 output around zero."
+		},
+		"lfo2Rate": {
+			"tooltip": "Sets LFO 2 speed."
+		},
+		"lfo2Depth": {
+			"tooltip": "Sets LFO 2 modulation depth."
+		},
+		"lfo2Symmetry": {
+			"tooltip": "Skews LFO 2 waveform timing around the midpoint."
+		},
+		"lfo2Offset": {
+			"tooltip": "Offsets LFO 2 output around zero."
+		},
+		"randomRate": {
+			"tooltip": "Sets sample-and-hold random modulation refresh rate."
+		},
+		"modEnvAttack": {
+			"tooltip": "Sets modulation envelope attack time."
+		},
+		"modEnvDecay": {
+			"tooltip": "Sets modulation envelope decay time."
+		},
+		"modEnvSustain": {
+			"tooltip": "Sets sustained modulation level while note is held."
+		},
+		"modEnvRelease": {
+			"tooltip": "Sets modulation envelope release time after note off."
+		},
+		"filterType": {
+			"tooltip": "Selects the filter response shape."
+		},
+		"filterCutoff": {
+			"tooltip": "Sets the filter cutoff frequency."
+		},
+		"filterResonance": {
+			"tooltip": "Boosts frequencies around the cutoff point."
+		},
+		"filterEnvAmount": {
+			"tooltip": "Applies envelope modulation amount to the cutoff."
+		},
+		"chorusRate": {
+			"tooltip": "Sets chorus modulation speed."
+		},
+		"chorusDepth": {
+			"tooltip": "Sets intensity of chorus pitch modulation."
+		},
+		"chorusMix": {
+			"tooltip": "Blends dry signal with chorus effect."
+		},
+		"delayTime": {
+			"tooltip": "Sets the delay repeat interval."
+		},
+		"delayFeedback": {
+			"tooltip": "Feeds delayed signal back for additional repeats."
+		},
+		"delayWarmth": {
+			"tooltip": "Adds tape-style saturation and high-frequency rolloff."
+		},
+		"delayMix": {
+			"tooltip": "Blends dry signal with delayed signal."
+		},
+		"delayTapeMode": {
+			"tooltip": "Toggle tape echo coloration for delay repeats."
+		},
+		"reverbSpace": {
+			"tooltip": "Sets the virtual room size for reverb reflections."
+		},
+		"reverbPredelay": {
+			"tooltip": "Adds delay before the reverb tail starts."
+		},
+		"reverbDistance": {
+			"tooltip": "Moves source position deeper into the reverb space."
+		},
+		"reverbCharacter": {
+			"tooltip": "Shapes reverb tone from dark to bright."
+		},
+		"reverbMix": {
+			"tooltip": "Blends dry signal with reverb output."
+		},
+		"portamentoMode": {
+			"tooltip": "Chooses whether glide uses rate or fixed time behavior."
+		},
+		"portamentoRate": {
+			"tooltip": "Sets glide speed when portamento mode is Rate."
+		},
+		"portamentoTime": {
+			"tooltip": "Sets glide duration when portamento mode is Time."
+		},
+		"pitchBendRange": {
+			"tooltip": "Sets maximum pitch bend range in semitones."
+		},
+		"velocityCurve": {
+			"tooltip": "Shapes how keyboard velocity maps to output level."
+		},
+		"modWheelVibratoDepth": {
+			"tooltip": "Sets how much mod wheel movement affects vibrato depth."
+		}
+	},
+	"enumTooltips": {
+		"lineSelect": {
+			"L1": "Play oscillator line 1 only.",
+			"L1+L2": "Layer oscillator lines 1 and 2.",
+			"L2": "Play oscillator line 2 only.",
+			"L1+L1'": "Stack line 1 with a detuned variant.",
+			"L1+L2'": "Layer line 1 with a detuned line 2 variant."
+		},
+		"modMode": {
+			"normal": "Standard phase modulation behavior.",
+			"ring": "Enable ring modulation between lines.",
+			"noise": "Mix noise source into modulation path."
+		},
+		"filterType": {
+			"lp": "Low-pass mode: attenuates frequencies above cutoff.",
+			"hp": "High-pass mode: attenuates frequencies below cutoff.",
+			"bp": "Band-pass mode: emphasizes a narrow band around cutoff."
+		},
+		"portamentoMode": {
+			"rate": "Portamento time scales with note interval distance.",
+			"time": "Portamento uses a fixed glide time between notes."
+		}
+	},
+	"czPresets": {
+		"czSaw": "CZ Saw",
+		"czSquare": "CZ Square",
+		"czPulse": "CZ Pulse",
+		"czDoubleSine": "CZ Double Sine",
+		"czSawPulse": "CZ Saw Pulse",
+		"czReso1": "CZ Reso 1",
+		"czReso2": "CZ Reso 2",
+		"czReso3": "CZ Reso 3"
+	},
+	"lcd": {
+		"envSteps": "STEPS {{count}}",
+		"envLoop": "LOOP {{state}}",
+		"envLoopOn": "ON",
+		"envLoopOff": "OFF",
+		"envSustain": "SUS S{{step}}",
+		"envStep": "S{{step}} L{{level}} R{{rate}}"
+	},
+	"algos": {
+		"cz101": {
+			"name": "CZ101",
+			"behavior": "Classic CZ phase-distortion core. Use DCW and the CZ preset controls to shape the harmonic contour.",
+			"controls": {
+				"preset": {
+					"label": "Preset",
+					"description": "Loads a predefined CZ waveform and window combination.",
+					"options": {
+						"czSaw": "CZ Saw",
+						"czSquare": "CZ Square",
+						"czPulse": "CZ Pulse",
+						"czDoubleSine": "CZ Double Sine",
+						"czSawPulse": "CZ Saw Pulse",
+						"czReso1": "CZ Reso 1",
+						"czReso2": "CZ Reso 2",
+						"czReso3": "CZ Reso 3"
+					}
+				},
+				"waveform1": {
+					"label": "Waveform 1",
+					"description": "Selects the first CZ waveform slot used by the line.",
+					"options": {
+						"saw": "Saw",
+						"square": "Square",
+						"pulse": "Pulse",
+						"null": "Null",
+						"sinePulse": "Sine Pulse",
+						"sawPulse": "Saw Pulse",
+						"multiSine": "Multi Sine",
+						"pulse2": "Pulse 2"
+					}
+				},
+				"waveform2": {
+					"label": "Waveform 2",
+					"description": "Selects the second CZ waveform slot used by the line.",
+					"options": {
+						"saw": "Saw",
+						"square": "Square",
+						"pulse": "Pulse",
+						"null": "Null",
+						"sinePulse": "Sine Pulse",
+						"sawPulse": "Saw Pulse",
+						"multiSine": "Multi Sine",
+						"pulse2": "Pulse 2"
+					}
+				},
+				"windowFunction": {
+					"label": "Window Function",
+					"description": "Chooses the CZ windowing shape applied to the oscillator cycle.",
+					"options": {
+						"off": "Off",
+						"saw": "Saw",
+						"triangle": "Triangle",
+						"trapezoid": "Trapezoid",
+						"pulse": "Pulse",
+						"doubleSaw": "Double Saw"
+					}
+				}
+			}
+		},
+		"bend": {
+			"name": "Bend",
+			"behavior": "Bends phase toward one side, adding asymmetry and a brighter edge as depth increases.",
+			"controls": {
+				"bendCurve": {
+					"label": "Curve",
+					"description": "Changes how aggressively the phase bends along the curve."
+				},
+				"bendBias": {
+					"label": "Bias",
+					"description": "Offsets the bend toward the start or end of the cycle."
+				},
+				"bendKnee": {
+					"label": "Knee",
+					"description": "Shapes the transition point between the flatter and steeper bend regions."
+				}
+			}
+		},
+		"sync": {
+			"name": "Sync",
+			"behavior": "Applies hard-sync style phase resets for harmonic-rich, edgy tones.",
+			"controls": {
+				"syncRatio": {
+					"label": "Ratio",
+					"description": "Sets how many internal sync resets occur within one cycle."
+				},
+				"syncPhase": {
+					"label": "Phase",
+					"description": "Offsets where the sync restart begins inside the cycle."
+				},
+				"syncCurve": {
+					"label": "Curve",
+					"description": "Shapes the post-sync ramp after each internal reset."
+				},
+				"syncWindow": {
+					"label": "Window",
+					"description": "Controls how strongly the sync-shaped phase replaces the original phase."
+				}
+			}
+		},
+		"pinch": {
+			"name": "Pinch",
+			"behavior": "Compresses phase around the center, emphasizing mid-cycle detail and nasal character.",
+			"controls": {
+				"pinchFocus": {
+					"label": "Focus",
+					"description": "Moves the pinch center toward the start or end of the cycle."
+				},
+				"pinchAsym": {
+					"label": "Asym",
+					"description": "Adds asymmetry so one side of the pinch shifts more than the other."
+				},
+				"pinchCurve": {
+					"label": "Curve",
+					"description": "Changes the curvature of the pinched center region."
+				},
+				"pinchDrive": {
+					"label": "Drive",
+					"description": "Pushes the pinch harder for a tighter, more exaggerated distortion."
+				}
+			}
+		},
+		"fold": {
+			"name": "Fold",
+			"behavior": "Folds the phase path back on itself for wavefold-style harmonics and sharper timbre.",
+			"controls": {
+				"foldStages": {
+					"label": "Stages",
+					"description": "Sets how many fold passes are applied across the cycle."
+				},
+				"foldTilt": {
+					"label": "Tilt",
+					"description": "Moves the fold pivot toward the start or end of the cycle."
+				},
+				"foldSymmetry": {
+					"label": "Symmetry",
+					"description": "Offsets fold balance to make one side of the cycle fold harder than the other."
+				},
+				"foldSoftness": {
+					"label": "Softness",
+					"description": "Softens each fold pass so the phase wraps less abruptly."
+				}
+			}
+		},
+		"skew": {
+			"name": "Skew",
+			"behavior": "Tilts phase timing earlier vs later to shift harmonic balance and attack character.",
+			"controls": {
+				"skewBias": {
+					"label": "Bias",
+					"description": "Moves the breakpoint where the skewed ramp changes slope."
+				},
+				"skewCurve": {
+					"label": "Curve",
+					"description": "Adjusts the curvature on both sides of the skew breakpoint."
+				},
+				"skewSpread": {
+					"label": "Spread",
+					"description": "Redistributes how much of the cycle is assigned to each side of the skew."
+				},
+				"skewTilt": {
+					"label": "Tilt",
+					"description": "Tilts the skewed ramp so one side becomes steeper than the other."
+				}
+			}
+		},
+		"quantize": {
+			"name": "Quantize",
+			"behavior": "Steps the phase into discrete levels for a digitized, stair-stepped texture.",
+			"controls": {
+				"quantizeAmount": {
+					"label": "Amount",
+					"description": "Sets the overall phase distortion amount for the current algorithm."
+				},
+				"quantizeSteps": {
+					"label": "Steps",
+					"description": "Adjusts the curvature on both sides of the skew breakpoint."
+				},
+				"quantizeSkew": {
+					"label": "Skew",
+					"description": "Adjusts the curvature on both sides of the skew breakpoint."
+				}
+			}
+		},
+		"twist": {
+			"name": "Twist",
+			"behavior": "Applies sinusoidal phase twisting for animated, swirling harmonic motion.",
+			"controls": {
+				"twistHarmonics": {
+					"label": "Harm",
+					"description": "Sets the internal modulation harmonic used to twist the phase."
+				},
+				"twistDepth": {
+					"label": "Depth",
+					"description": "Controls how far the phase is displaced by the twist modulator."
+				},
+				"twistPhase": {
+					"label": "Phase",
+					"description": "Offsets the phase of the internal twist modulation signal."
+				},
+				"twistShape": {
+					"label": "Shape",
+					"description": "Changes the contour of the twist modulation from smooth to sharp."
+				}
+			}
+		},
+		"clip": {
+			"name": "Clip",
+			"behavior": "Limits phase excursion, flattening peaks for a harder, clipped tone.",
+			"controls": {
+				"clipDrive": {
+					"label": "Drive",
+					"description": "Increases the gain before clipping for a stronger flattened peak."
+				},
+				"clipShape": {
+					"label": "Shape",
+					"description": "Sets the clip threshold width from narrow to wide."
+				},
+				"clipBias": {
+					"label": "Bias",
+					"description": "Offsets the clipped region toward the start or end of the cycle."
+				},
+				"clipSoft": {
+					"label": "Soft",
+					"description": "Blends from hard clipping into a softer rounded saturation."
+				}
+			}
+		},
+		"ripple": {
+			"name": "Ripple",
+			"behavior": "Adds high-frequency ripple to the phase trajectory for fine, buzzy harmonic detail.",
+			"controls": {
+				"rippleFreq": {
+					"label": "Freq",
+					"description": "Sets how many ripple oscillations appear across the cycle."
+				},
+				"rippleDepth": {
+					"label": "Depth",
+					"description": "Controls the amplitude of the ripple imposed on the phase."
+				},
+				"ripplePhase": {
+					"label": "Phase",
+					"description": "Offsets where the ripple pattern begins inside the cycle."
+				},
+				"rippleShape": {
+					"label": "Shape",
+					"description": "Changes the ripple from a smooth sine to a sharper contour."
+				}
+			}
+		},
+		"mirror": {
+			"name": "Mirror",
+			"behavior": "Blends toward an inverted phase path to create mirrored, symmetrical timbres.",
+			"controls": {
+				"mirrorCenter": {
+					"label": "Center",
+					"description": "Chooses the pivot around which the phase is mirrored."
+				},
+				"mirrorBlend": {
+					"label": "Blend",
+					"description": "Controls how strongly the mirrored phase replaces the original phase."
+				},
+				"mirrorClip": {
+					"label": "Clip",
+					"description": "Clamps the mirrored excursion for a tighter folded reflection."
+				},
+				"mirrorSkew": {
+					"label": "Skew",
+					"description": "Skews the mirrored side so reflection distance changes across the cycle."
+				}
+			}
+		},
+		"karpunk": {
+			"name": "Karpunk",
+			"behavior": "Plucked/resonant distortion character with decaying inharmonic overtones.",
+			"controls": {
+				"karpunkDamp": {
+					"label": "Damp",
+					"description": "Controls how quickly high-frequency energy is damped in the string model."
+				},
+				"karpunkBright": {
+					"label": "Bright",
+					"description": "Adjusts the brightness of the feedback filter inside the string loop."
+				},
+				"karpunkDecay": {
+					"label": "Decay",
+					"description": "Sets how long the plucked string sustains before fading out."
+				},
+				"karpunkExcite": {
+					"label": "Excite",
+					"description": "Injects fresh noise into the delay line for a noisier or raspier pluck."
+				}
+			}
+		},
+		"fof": {
+			"name": "FOF",
+			"behavior": "Formant-like shaping with windowed resonant emphasis suited to vocal-style colors.",
+			"controls": {
+				"fofRatio": {
+					"label": "Ratio",
+					"description": "Sets the internal carrier multiplier used for the formant-like repetition."
+				},
+				"fofTightness": {
+					"label": "Tight",
+					"description": "Narrows or widens the Gaussian-like formant window."
+				},
+				"fofOffset": {
+					"label": "Offset",
+					"description": "Offsets the repeated carrier phase before the formant window is applied."
+				},
+				"fofSkew": {
+					"label": "Skew",
+					"description": "Moves the center of the formant window toward the start or end of the cycle."
+				}
+			}
+		},
+		"sine": {
+			"name": "Sine",
+			"behavior": "Pure sine phase path with minimal harmonics and smooth tone."
+		},
+		"terrain": {
+			"name": "Terrain",
+			"behavior": "FM-inside-PD: a secondary oscillator displaces the phase path, producing FM-like sideband spectra through the PD engine.",
+			"controls": {
+				"terrainRatio": {
+					"label": "Ratio",
+					"description": "Sets the frequency ratio of the phase-modulating oscillator (1–8)."
+				},
+				"terrainDepth": {
+					"label": "Depth",
+					"description": "Controls how far the modulator displaces the phase path."
+				},
+				"terrainFmPhase": {
+					"label": "FM Phase",
+					"description": "Offsets the modulator's start phase within the cycle."
+				},
+				"terrainShape": {
+					"label": "Shape",
+					"description": "Morphs the modulator waveform from a sine (0) to a sawtooth (1)."
+				}
+			}
+		},
+		"stutter": {
+			"name": "Stutter",
+			"behavior": "Splits the cycle into segments and plays alternating ones backwards, creating glitchy, asymmetric timbres.",
+			"controls": {
+				"stutterSegs": {
+					"label": "Segs",
+					"description": "Number of equal segments the cycle is split into (2–8)."
+				},
+				"stutterReverse": {
+					"label": "Reverse",
+					"description": "Blends alternate segments toward time-reversed playback."
+				},
+				"stutterSlip": {
+					"label": "Slip",
+					"description": "Adds a cumulative phase slip at each segment boundary."
+				},
+				"stutterSpacing": {
+					"label": "Spacing",
+					"description": "Sets how many segments separate each reversed segment (2, 3, or 4)."
+				}
+			}
+		},
+		"cheby": {
+			"name": "Cheby",
+			"behavior": "Chebyshev polynomial harmonic stacking — integer orders multiply the fundamental cleanly; fractional orders blend adjacent harmonics.",
+			"controls": {
+				"chebyOrder": {
+					"label": "Order",
+					"description": "Chebyshev polynomial degree (maps 0→1 to harmonic orders 1→6)."
+				},
+				"chebyTilt": {
+					"label": "Tilt",
+					"description": "Phase-shifts the fold points within the super-cycle for asymmetric spectra."
+				},
+				"chebyWarp": {
+					"label": "Warp",
+					"description": "Pre-warps the input phase before the polynomial, shifting harmonic peaks."
+				}
+			}
+		},
+		"saw": {
+			"name": "Saw",
+			"behavior": "Saw transfer shape with a bright, harmonically rich spectrum."
+		},
+		"square": {
+			"name": "Square",
+			"behavior": "Square transfer shape emphasizing odd harmonics for hollow tone."
+		},
+		"pulse": {
+			"name": "Pulse",
+			"behavior": "Pulse transfer shape with a narrow-duty harmonic profile."
+		},
+		"null": {
+			"name": "Null",
+			"behavior": "Sparse transfer shape with thin, subdued harmonic content."
+		},
+		"sinePulse": {
+			"name": "Sine Pulse",
+			"behavior": "Hybrid sine/pulse transfer for mixed smooth and buzzy harmonics."
+		},
+		"sawPulse": {
+			"name": "Saw Pulse",
+			"behavior": "Hybrid saw/pulse transfer balancing edge and body."
+		},
+		"multiSine": {
+			"name": "Multi Sine",
+			"behavior": "Multi-sine resonant transfer emphasizing vocal-like peaks."
+		},
+		"pulse2": {
+			"name": "Pulse 2",
+			"behavior": "Dual-pulse style transfer with hollow, comb-like harmonic spacing."
+		}
+	},
+	"fx": {
+		"modules": {
+			"phaseMod": {
+				"title": "Phase Mod"
+			},
+			"junoChorus": {
+				"title": "Juno Chorus"
+			},
+			"loFi": {
+				"title": "LoFi"
+			},
+			"ringMod": {
+				"title": "Ring Mod"
+			},
+			"wavefolder": {
+				"title": "Wavefolder"
+			},
+			"eq5Band": {
+				"title": "EQ"
+			},
+			"shimmerVerb": {
+				"title": "Shimmer Verb"
+			}
+		},
+		"controls": {
+			"delay": {
+				"tapeMode": {
+					"label": "Mode",
+					"options": {
+						"0": "Digital",
+						"1": "Tape"
+					}
+				}
+			},
+			"vibrato": {
+				"waveform": {
+					"label": "Wave",
+					"options": {
+						"1": "Sine",
+						"2": "Tri",
+						"3": "Sq",
+						"4": "Saw"
+					}
+				}
+			},
+			"tremolo": {
+				"waveform": {
+					"label": "Wave",
+					"options": {
+						"0": "Sine",
+						"1": "Tri",
+						"2": "Sq"
+					}
+				}
+			},
+			"distortion": {
+				"mode": {
+					"label": "Type",
+					"options": {
+						"0": "OD",
+						"1": "Dist",
+						"2": "Fuzz"
+					}
+				}
+			},
+			"junoChorus": {
+				"mode": {
+					"label": "Mode",
+					"options": {
+						"0": "I",
+						"1": "II",
+						"2": "I+II"
+					}
+				}
+			}
+		}
+	},
+	"algoUi": {
+		"noControlsForThisAlgo": "No controls for this algo",
+		"showControlDescription": "Show control description",
+		"previousAlgorithm": "Previous algorithm",
+		"nextAlgorithm": "Next algorithm",
+		"changeAlgorithm": "Algorithm {{index}}: {{label}}. Click to change.",
+		"behaviorTooltip": "Algorithm {{index}}: {{behavior}}"
 	}
 }

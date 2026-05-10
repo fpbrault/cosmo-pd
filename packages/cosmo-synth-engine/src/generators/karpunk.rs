@@ -9,8 +9,6 @@ use super::{
 const CONTROLS: [AlgoControlV1; 4] = [
     AlgoControlV1 {
         id: "karpunkDamp",
-        label: "Damp",
-        description: "Controls how quickly high-frequency energy is damped in the string model.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,
@@ -24,8 +22,6 @@ const CONTROLS: [AlgoControlV1; 4] = [
     },
     AlgoControlV1 {
         id: "karpunkBright",
-        label: "Bright",
-        description: "Adjusts the brightness of the feedback filter inside the string loop.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,
@@ -39,8 +35,6 @@ const CONTROLS: [AlgoControlV1; 4] = [
     },
     AlgoControlV1 {
         id: "karpunkDecay",
-        label: "Decay",
-        description: "Sets how long the plucked string sustains before fading out.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,
@@ -54,8 +48,6 @@ const CONTROLS: [AlgoControlV1; 4] = [
     },
     AlgoControlV1 {
         id: "karpunkExcite",
-        label: "Excite",
-        description: "Injects fresh noise into the delay line for a noisier or raspier pluck.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,

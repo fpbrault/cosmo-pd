@@ -2,6 +2,7 @@ import ControlKnob from "@/components/controls/ControlKnob";
 import { useFxModuleController } from "@/components/panels/drawer-modules/custom/useFxModuleController";
 import {
 	asNumber,
+	getFxControlLabel,
 	getKnobControl,
 	getModDestinationByParam,
 	getTooltip,
@@ -34,6 +35,14 @@ export default function DelayModuleRenderer({
 	const mixControl = getKnobControl(config, "mix");
 	const modeLabel = tapeMode ? "Tape Echo" : "Digital";
 	const modDestinationByParam = getModDestinationByParam(config.type);
+	const timeLabel = getFxControlLabel(config.type, "time", "delayTime");
+	const feedbackLabel = getFxControlLabel(
+		config.type,
+		"feedback",
+		"delayFeedback",
+	);
+	const warmthLabel = getFxControlLabel(config.type, "warmth", "delayWarmth");
+	const mixLabel = getFxControlLabel(config.type, "mix", "delayMix");
 
 	return (
 		<ModuleFrame
@@ -69,7 +78,7 @@ export default function DelayModuleRenderer({
 					defaultValue={timeControl.defaultValue}
 					size={64}
 					color={config.color}
-					label="Time"
+					label={timeLabel}
 					tooltip={getTooltip("delayTime")}
 					valueFormatter={timeControl.formatter}
 					modDestination={modDestinationByParam.time}
@@ -84,7 +93,7 @@ export default function DelayModuleRenderer({
 					defaultValue={feedbackControl.defaultValue}
 					size={64}
 					color={config.color}
-					label="Fdbk"
+					label={feedbackLabel}
 					tooltip={getTooltip("delayFeedback")}
 					valueFormatter={feedbackControl.formatter}
 					modDestination={modDestinationByParam.feedback}
@@ -99,7 +108,7 @@ export default function DelayModuleRenderer({
 					defaultValue={warmthControl.defaultValue}
 					size={64}
 					color={config.color}
-					label="Warmth"
+					label={warmthLabel}
 					tooltip={getTooltip("delayWarmth")}
 					valueFormatter={warmthControl.formatter}
 					modDestination={modDestinationByParam.warmth}
@@ -114,7 +123,7 @@ export default function DelayModuleRenderer({
 					defaultValue={mixControl.defaultValue}
 					size={64}
 					color={config.color}
-					label="Mix"
+					label={mixLabel}
 					tooltip={getTooltip("delayMix")}
 					valueFormatter={mixControl.formatter}
 					modDestination={modDestinationByParam.mix}

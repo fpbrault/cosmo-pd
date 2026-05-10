@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useAlgoUiText } from "@/lib/synth/i18nAlgo";
 import {
 	getPdAlgoBehaviorDescription,
 	PD_ALGOS,
@@ -23,6 +24,10 @@ export default function AlgoIconGrid({
 }) {
 	const [popoverOpen, setPopoverOpen] = useState(false);
 	const rootRef = useRef<HTMLDivElement | null>(null);
+	const previousLabel = useAlgoUiText("previousAlgorithm");
+	const nextLabel = useAlgoUiText("nextAlgorithm");
+	const behaviorPrefix = useAlgoUiText("behaviorTooltip");
+	const changeAlgorithmLabel = useAlgoUiText("changeAlgorithm");
 
 	const currentIndex = PD_ALGOS.findIndex((a) => a.value === value);
 	const currentAlgo = PD_ALGOS[Math.max(0, currentIndex)];
@@ -44,7 +49,9 @@ export default function AlgoIconGrid({
 		return () => document.removeEventListener("pointerdown", handlePointerDown);
 	}, [popoverOpen]);
 
-	const tooltipText = `Algorithm ${currentIndex + 1}: ${getPdAlgoBehaviorDescription(value)}`;
+	const tooltipText = behaviorPrefix
+		.replace("{{index}}", `${currentIndex + 1}`)
+		.replace("{{behavior}}", getPdAlgoBehaviorDescription(value));
 
 	return (
 		<div
@@ -63,7 +70,9 @@ export default function AlgoIconGrid({
 							type="button"
 							{...hoverHandlers}
 							onClick={() => setPopoverOpen((o) => !o)}
-							aria-label={`Algorithm ${currentIndex + 1}: ${currentAlgo.label}. Click to change.`}
+							aria-label={changeAlgorithmLabel
+								.replace("{{index}}", `${currentIndex + 1}`)
+								.replace("{{label}}", currentAlgo.label)}
 							className={[
 								"flex items-center justify-center text-cz-gold transition-colors focus:outline-none",
 								popoverOpen ? "bg-cz-inset" : "hover:bg-cz-inset",
@@ -92,7 +101,7 @@ export default function AlgoIconGrid({
 					<button
 						type="button"
 						onClick={() => navigate(-1)}
-						aria-label="Previous algorithm"
+						aria-label={previousLabel}
 						className="flex flex-1 items-center justify-center border-cz-border border-b px-1.5 text-xs transition-colors hover:bg-cz-inset focus:outline-none"
 						style={color ? { color } : undefined}
 					>
@@ -101,7 +110,7 @@ export default function AlgoIconGrid({
 					<button
 						type="button"
 						onClick={() => navigate(1)}
-						aria-label="Next algorithm"
+						aria-label={nextLabel}
 						className="flex flex-1 items-center justify-center px-1.5 text-xs transition-colors hover:bg-cz-inset focus:outline-none"
 						style={color ? { color } : undefined}
 					>
@@ -131,7 +140,12 @@ export default function AlgoIconGrid({
 					{PD_ALGOS.map((algo, index) => (
 						<HoverInfoTrigger
 							key={algo.key}
-							message={`Algorithm ${index + 1}: ${getPdAlgoBehaviorDescription(algo.value)}`}
+							message={behaviorPrefix
+								.replace("{{index}}", `${index + 1}`)
+								.replace(
+									"{{behavior}}",
+									getPdAlgoBehaviorDescription(algo.value),
+								)}
 						>
 							{(hoverHandlers) => (
 								<div className="tooltip tooltip-top" data-tip={algo.label}>

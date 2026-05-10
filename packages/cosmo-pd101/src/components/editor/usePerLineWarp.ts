@@ -227,8 +227,22 @@ export function usePerLineWarp(
 			),
 		[algo2],
 	);
-	const algoDefinitionControlsA = activeAlgoDefinition?.controls ?? [];
-	const algoDefinitionControlsB = activeAlgoDefinitionB?.controls ?? [];
+	const algoDefinitionControlsA = useMemo(
+		() =>
+			activeAlgoDefinition?.controls.map((ctrl) => ({
+				...ctrl,
+				algo: activeAlgoDefinition.id,
+			})) ?? [],
+		[activeAlgoDefinition],
+	);
+	const algoDefinitionControlsB = useMemo(
+		() =>
+			activeAlgoDefinitionB?.controls.map((ctrl) => ({
+				...ctrl,
+				algo: activeAlgoDefinitionB.id,
+			})) ?? [],
+		[activeAlgoDefinitionB],
+	);
 
 	const { algoParamSlotIndex, algoParamSlotIndexB } = useMemo(() => {
 		const nextSlotIndexA: Record<string, number> = {};

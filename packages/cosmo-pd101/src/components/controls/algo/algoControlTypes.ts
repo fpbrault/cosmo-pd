@@ -1,4 +1,7 @@
-import type { EngineParamReadoutFormatV1 } from "@/lib/synth/bindings/synth";
+import type {
+	Algo,
+	EngineParamReadoutFormatV1,
+} from "@/lib/synth/bindings/synth";
 
 export type LineIndex = 1 | 2;
 
@@ -15,7 +18,7 @@ export type AlgoControlOptionRuntime = {
 
 export type AlgoControlRuntime = {
 	id: string;
-	label: string;
+	label?: string;
 	description?: string | null;
 	kind?: "number" | "select" | "toggle";
 	controlType?: "knob" | "slider" | "buttonGroup" | "dropdown";
@@ -27,6 +30,7 @@ export type AlgoControlRuntime = {
 	defaultToggle?: boolean | null;
 	options?: AlgoControlOptionRuntime[];
 	readoutFormat?: EngineParamReadoutFormatV1;
+	algo: Algo;
 };
 
 export type AlgoControlBinding = {

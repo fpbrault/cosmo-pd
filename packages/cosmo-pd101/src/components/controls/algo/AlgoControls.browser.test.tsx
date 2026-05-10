@@ -40,6 +40,7 @@ const selectControl = {
 	label: "Shape",
 	description: "Select algorithm shape",
 	kind: "select" as const,
+	algo: "cz101" as const,
 	options: [
 		{ value: "a", label: "A", set: [] },
 		{ value: "b", label: "B", set: [{ controlId: "x", value: 1 }] },
@@ -57,7 +58,7 @@ describe("algo controls (browser)", () => {
 			<AlgoControlTooltip description="Helpful info" />,
 		);
 		expect(
-			screen.getByRole("button", { name: "Show control description" }),
+			screen.getByRole("button", { name: "showControlDescription" }),
 		).toHaveAttribute("data-hover-info", "Helpful info");
 
 		rerender(<AlgoControlTooltip description={undefined} />);
@@ -104,10 +105,10 @@ describe("algo controls (browser)", () => {
 		);
 
 		expect(screen.getAllByRole("button")).toHaveLength(2);
-		fireEvent.click(screen.getByRole("button", { name: "A" }));
+		fireEvent.click(screen.getByRole("button", { name: "a" }));
 		expect(setNumber).toHaveBeenCalledWith(0);
 
-		fireEvent.click(screen.getByRole("button", { name: "B" }));
+		fireEvent.click(screen.getByRole("button", { name: "b" }));
 		expect(applyOptionAssignments).toHaveBeenCalledWith(
 			selectControl.options[1],
 		);
@@ -117,7 +118,7 @@ describe("algo controls (browser)", () => {
 		const setToggle = vi.fn();
 		render(
 			<AlgoControlToggle
-				control={{ id: "sync", label: "Sync", kind: "toggle" }}
+				control={{ id: "sync", label: "Sync", kind: "toggle", algo: "cz101" }}
 				binding={{ getToggle: () => true, setToggle }}
 			/>,
 		);
@@ -133,7 +134,14 @@ describe("algo controls (browser)", () => {
 		algoParamTargetFromSlotMock.mockReturnValue("algoParam2");
 		render(
 			<AlgoControlNumber
-				control={{ id: "depth", label: "Depth", min: 0, max: 2, default: 0.5 }}
+				control={{
+					id: "depth",
+					label: "Depth",
+					min: 0,
+					max: 2,
+					default: 0.5,
+					algo: "cz101",
+				}}
 				lineIndex={1}
 				algoParamSlotIndex={{ depth: 2 }}
 				getAlgoControlValue={() => 1.25}
@@ -141,7 +149,7 @@ describe("algo controls (browser)", () => {
 			/>,
 		);
 
-		expect(screen.getByTestId("mock-knob")).toHaveTextContent("Depth");
+		expect(screen.getByTestId("mock-knob")).toHaveTextContent("depth");
 		const props = knobSpy.mock.calls[0][0] as {
 			onChange: (value: number) => void;
 			modulatable: string;
@@ -163,14 +171,22 @@ describe("algo controls (browser)", () => {
 		};
 
 		const { rerender } = render(
-			<AlgoControlItem {...baseProps} control={{ id: "num", label: "Num" }} />,
+			<AlgoControlItem
+				{...baseProps}
+				control={{ id: "num", label: "Num", algo: "cz101" }}
+			/>,
 		);
 		expect(screen.getByTestId("mock-knob")).toBeInTheDocument();
 
 		rerender(
 			<AlgoControlItem
 				{...baseProps}
-				control={{ id: "toggle", label: "Toggle", kind: "toggle" }}
+				control={{
+					id: "toggle",
+					label: "Toggle",
+					kind: "toggle",
+					algo: "cz101",
+				}}
 			/>,
 		);
 		expect(screen.getByRole("checkbox")).toBeInTheDocument();
@@ -192,12 +208,12 @@ describe("algo controls (browser)", () => {
 		const { rerender } = render(
 			<AlgoControlsGroup {...sharedProps} controls={[]} />,
 		);
-		expect(screen.getByText("No controls for this algo")).toBeInTheDocument();
+		expect(screen.getByText("noControlsForThisAlgo")).toBeInTheDocument();
 
 		rerender(
 			<AlgoControlsGroup
 				{...sharedProps}
-				controls={[{ id: "depth", label: "Depth" }]}
+				controls={[{ id: "depth", label: "Depth", algo: "cz101" }]}
 			/>,
 		);
 		expect(screen.getByTestId("mock-knob")).toBeInTheDocument();

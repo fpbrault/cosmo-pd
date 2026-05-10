@@ -4,6 +4,8 @@ import { useFxModuleController } from "@/components/panels/drawer-modules/custom
 import {
 	asNumber,
 	getButtonGroupControl,
+	getFxControlLabel,
+	getFxControlOptionLabel,
 	getKnobControl,
 	getModDestinationByParam,
 	getTooltip,
@@ -33,6 +35,9 @@ export default function VibratoModuleRenderer({
 	const delayControl = getKnobControl(config, "delay");
 	const waveformValue = asNumber(params.waveform, 1);
 	const modDestinationByParam = getModDestinationByParam(config.type);
+	const rateLabel = getFxControlLabel(config.type, "rate", "vibratoRate");
+	const depthLabel = getFxControlLabel(config.type, "depth", "vibratoDepth");
+	const delayLabel = getFxControlLabel(config.type, "delay", "vibratoDelay");
 
 	return (
 		<ModuleFrame
@@ -63,7 +68,7 @@ export default function VibratoModuleRenderer({
 						}`}
 						onClick={() => setFxSlotParams(slot, { waveform: option.value })}
 					>
-						{option.label}
+						{getFxControlOptionLabel(config.type, "waveform", option.value)}
 					</Button>
 				))}
 			</div>
@@ -75,7 +80,7 @@ export default function VibratoModuleRenderer({
 					max={rateControl.max}
 					defaultValue={rateControl.defaultValue}
 					color={config.color}
-					label="Rate"
+					label={rateLabel}
 					tooltip={getTooltip("vibratoRate")}
 					valueFormatter={rateControl.formatter}
 					modDestination={modDestinationByParam.rate}
@@ -89,7 +94,7 @@ export default function VibratoModuleRenderer({
 					max={depthControl.max}
 					defaultValue={depthControl.defaultValue}
 					color={config.color}
-					label="Depth"
+					label={depthLabel}
 					tooltip={getTooltip("vibratoDepth")}
 					valueFormatter={depthControl.formatter}
 					modDestination={modDestinationByParam.depth}
@@ -103,7 +108,7 @@ export default function VibratoModuleRenderer({
 					max={delayControl.max}
 					defaultValue={delayControl.defaultValue}
 					color={config.color}
-					label="Delay"
+					label={delayLabel}
 					tooltip={getTooltip("vibratoDelay")}
 					valueFormatter={delayControl.formatter}
 					modDestination={modDestinationByParam.delay}

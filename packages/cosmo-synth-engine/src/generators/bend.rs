@@ -5,8 +5,6 @@ use crate::params::{Algo, EngineParamReadoutFormatV1};
 const CONTROLS: [AlgoControlV1; 3] = [
     AlgoControlV1 {
         id: "bendCurve",
-        label: "Curve",
-        description: "Changes how aggressively the phase bends along the curve.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,
@@ -20,8 +18,6 @@ const CONTROLS: [AlgoControlV1; 3] = [
     },
     AlgoControlV1 {
         id: "bendBias",
-        label: "Bias",
-        description: "Offsets the bend toward the start or end of the cycle.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: true,
@@ -35,8 +31,6 @@ const CONTROLS: [AlgoControlV1; 3] = [
     },
     AlgoControlV1 {
         id: "bendKnee",
-        label: "Knee",
-        description: "Shapes the transition point between the flatter and steeper bend regions.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,

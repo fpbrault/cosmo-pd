@@ -4,8 +4,6 @@ use crate::params::{Algo, EngineParamReadoutFormatV1};
 const CONTROLS: [AlgoControlV1; 4] = [
     AlgoControlV1 {
         id: "stutterSegs",
-        label: "Segs",
-        description: "Number of equal segments the cycle is split into (2–8).",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,
@@ -19,8 +17,6 @@ const CONTROLS: [AlgoControlV1; 4] = [
     },
     AlgoControlV1 {
         id: "stutterReverse",
-        label: "Reverse",
-        description: "Blends alternate segments toward time-reversed playback.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,
@@ -34,8 +30,6 @@ const CONTROLS: [AlgoControlV1; 4] = [
     },
     AlgoControlV1 {
         id: "stutterSlip",
-        label: "Slip",
-        description: "Adds a cumulative phase slip at each segment boundary.",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,
@@ -49,8 +43,6 @@ const CONTROLS: [AlgoControlV1; 4] = [
     },
     AlgoControlV1 {
         id: "stutterSpacing",
-        label: "Spacing",
-        description: "Sets how many segments separate each reversed segment (2, 3, or 4).",
         kind: AlgoControlKindV1::Number,
         control_type: super::AlgoControlPresentationV1::Knob,
         bipolar: false,

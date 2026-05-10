@@ -17,14 +17,13 @@ use cosmo_synth_engine::generators::{
 use cosmo_synth_engine::module_presets::{module_preset_catalog_v1, ModulePresetGroupV1};
 use cosmo_synth_engine::params::engine_param_default_v1;
 use cosmo_synth_engine::params::{
-    engine_enum_value_tooltips_v1, engine_param_ranges_v1, engine_param_ui_meta_v1, Algo,
-    AlgoControlValueV1, BaseWaveform, BitcrusherParams, ChorusParams, CompressorParams, CzAlgo,
-    CzWaveform, DelayParams, DistortionParams, EnvStep, EqParams, FxSlotConfig, FxSlotType,
-    GrainDelayParams, JunoChorusParams, LfoParams, LfoWaveform, LineParams, LineSelect, LoFiParams,
-    ModDestination, ModEnvParams, ModMatrix, ModMode, ModRoute, ModSource, PhaseModParams,
-    PhaserParams, PolyMode, PortamentoMode, PortamentoParams, RandomParams, ReverbParams,
-    RingModParams, ShimmerVerbParams, StepEnvData, SynthParams, TremoloParams, VibratoParams,
-    WavefolderParams, WindowType,
+    engine_param_ranges_v1, engine_param_ui_meta_v1, Algo, AlgoControlValueV1, BaseWaveform,
+    BitcrusherParams, ChorusParams, CompressorParams, CzAlgo, CzWaveform, DelayParams,
+    DistortionParams, EnvStep, EqParams, FxSlotConfig, FxSlotType, GrainDelayParams,
+    JunoChorusParams, LfoParams, LfoWaveform, LineParams, LineSelect, LoFiParams, ModDestination,
+    ModEnvParams, ModMatrix, ModMode, ModRoute, ModSource, PhaseModParams, PhaserParams, PolyMode,
+    PortamentoMode, PortamentoParams, RandomParams, ReverbParams, RingModParams, ShimmerVerbParams,
+    StepEnvData, SynthParams, TremoloParams, VibratoParams, WavefolderParams, WindowType,
 };
 use cosmo_synth_engine::preset_wire::{
     algo_definitions_v1, algo_ui_catalog_v1, cz_presets, SynthPresetV1,
@@ -242,9 +241,6 @@ fn main() {
         .expect("Failed to serialize ENGINE_PARAM_UI_META_V1");
     let engine_param_ranges_json = serde_json::to_string_pretty(engine_param_ranges_v1())
         .expect("Failed to serialize ENGINE_PARAM_RANGES_V1");
-    let engine_enum_value_tooltips_json =
-        serde_json::to_string_pretty(engine_enum_value_tooltips_v1())
-            .expect("Failed to serialize ENGINE_ENUM_VALUE_TOOLTIPS_V1");
 
     out.push_str("export type EngineEnumValueLabelV1 = { value: string; label: string };\n");
     out.push_str("export type EngineParamReadoutFormatV1 =\n");
@@ -262,12 +258,9 @@ fn main() {
     out.push_str("  | { kind: \"hertz\" }\n");
     out.push_str("  | { kind: \"enumMap\"; values: EngineEnumValueLabelV1[] };\n");
     out.push_str(
-        "export type EngineParamUiMetaV1 = { key: string; tooltip: string; readoutLabel: string; readoutFormat: EngineParamReadoutFormatV1; paramDefault: number | null };\n"
+        "export type EngineParamUiMetaV1 = { key: string; readoutFormat: EngineParamReadoutFormatV1; paramDefault: number | null };\n"
     );
     out.push_str("export type EngineParamRangeV1 = { key: string; min: number; max: number };\n");
-    out.push_str(
-        "export type EngineEnumValueTooltipV1 = { key: string; value: string; tooltip: string };\n\n"
-    );
     out.push_str("/** Rust-owned engine parameter tooltip and readout metadata. */\n");
     out.push_str("export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = ");
     out.push_str(&engine_param_ui_meta_json);
@@ -276,11 +269,6 @@ fn main() {
     out.push_str("export const ENGINE_PARAM_RANGES_V1: EngineParamRangeV1[] = ");
     out.push_str(&engine_param_ranges_json);
     out.push_str(";\n\n");
-    out.push_str("/** Rust-owned tooltip metadata for enum/select values. */\n");
-    out.push_str("export const ENGINE_ENUM_VALUE_TOOLTIPS_V1: EngineEnumValueTooltipV1[] = ");
-    out.push_str(&engine_enum_value_tooltips_json);
-    out.push_str(";\n");
-
     std::fs::write(&ts_path, out)
         .unwrap_or_else(|e| panic!("Failed to write TypeScript bindings to '{ts_path}': {e}"));
 

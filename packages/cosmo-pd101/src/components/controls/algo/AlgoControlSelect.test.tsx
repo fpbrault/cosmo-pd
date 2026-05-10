@@ -7,6 +7,7 @@ const control = {
 	label: "Shape",
 	description: "Select algorithm shape",
 	kind: "select" as const,
+	algo: "cz101" as const,
 	options: [
 		{ value: "a", label: "A", set: [] },
 		{ value: "b", label: "B", set: [{ controlId: "x", value: 1 }] },
