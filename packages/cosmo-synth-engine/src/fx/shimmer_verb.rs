@@ -1,5 +1,6 @@
 use super::delay_line::DelayLine;
 use super::reverb::FdnReverb;
+use crate::dsp_utils::wrap01;
 
 // ---------------------------------------------------------------------------
 // ShimmerVerbFx — FDN reverb with pitch-shifted feedback (octave up)
@@ -76,15 +77,6 @@ impl ShimmerVerbFx {
 }
 
 #[inline]
-fn wrap01(value: f32) -> f32 {
-    if value >= 1.0 {
-        value - 1.0
-    } else {
-        value
-    }
-}
-
-#[inline]
 fn raised_sine_window(phase: f32) -> f32 {
     libm::sinf(phase * core::f32::consts::PI).max(0.0)
 }
@@ -123,6 +115,7 @@ const CONTROLS: [FxControlV1; 3] = [
         max: Some(1.0),
         default_f32: Some(0.4),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("shimmerVerbShimmer"),
     },
     FxControlV1 {
         id: "space",
@@ -133,6 +126,7 @@ const CONTROLS: [FxControlV1; 3] = [
         max: Some(1.0),
         default_f32: Some(0.7),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("shimmerVerbSpace"),
     },
     FxControlV1 {
         id: "mix",
@@ -143,6 +137,7 @@ const CONTROLS: [FxControlV1; 3] = [
         max: Some(1.0),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("shimmerVerbMix"),
     },
 ];
 

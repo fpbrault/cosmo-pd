@@ -284,39 +284,27 @@ export const VIBRATO_PRESETS: ModulePresetDefinition<{
 ];
 
 export const PHASE_MOD_PRESETS: ModulePresetDefinition<{
-	intPmEnabled: boolean;
-	intPmAmount: number;
-	intPmRatio: number;
-	pmPre: boolean;
+	phaseMod: { enabled: boolean; amount: number; ratio: number; pmPre: boolean };
 }>[] = [
 	{
 		id: "glassBell",
 		label: "Glass Bell",
 		patch: {
-			intPmEnabled: true,
-			intPmAmount: 0.06,
-			intPmRatio: 2.0,
-			pmPre: true,
+			phaseMod: { enabled: true, amount: 0.06, ratio: 2.0, pmPre: true },
 		},
 	},
 	{
 		id: "metalFold",
 		label: "Metal Fold",
 		patch: {
-			intPmEnabled: true,
-			intPmAmount: 0.11,
-			intPmRatio: 2.7,
-			pmPre: true,
+			phaseMod: { enabled: true, amount: 0.11, ratio: 2.7, pmPre: true },
 		},
 	},
 	{
 		id: "aggressiveSync",
 		label: "Aggressive Sync",
 		patch: {
-			intPmEnabled: true,
-			intPmAmount: 0.18,
-			intPmRatio: 3.4,
-			pmPre: false,
+			phaseMod: { enabled: true, amount: 0.18, ratio: 3.4, pmPre: false },
 		},
 	},
 ];
@@ -350,18 +338,6 @@ export const LFO_PRESETS: ModulePresetDefinition<{
 			depth: 0.48,
 			symmetry: 0.5,
 			retrigger: true,
-			offset: 0,
-		},
-	},
-	{
-		id: "randomDrift",
-		label: "Random Drift",
-		patch: {
-			waveform: "random",
-			rate: 4.4,
-			depth: 0.36,
-			symmetry: 0.5,
-			retrigger: false,
 			offset: 0,
 		},
 	},

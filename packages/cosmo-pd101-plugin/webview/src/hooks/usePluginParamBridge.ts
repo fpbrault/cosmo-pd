@@ -1,49 +1,40 @@
 import { usePluginBridgeSynthEngine } from "@cosmo/cosmo-pd101";
-import { useEffect, useState } from "react";
-import { ensureBeamerBridge } from "@/lib/beamerBridge";
+import { useEffect, useRef } from "react";
+import { ensureNihPlugBridge } from "@/lib/nihPlugBridge";
+
+function ensurePluginBridge(): boolean {
+	try {
+		return ensureNihPlugBridge();
+	} catch (error) {
+		console.error("[pluginBridge] ensureNihPlugBridge failed", error);
+		return false;
+	}
+}
 
 export function usePluginParamBridge(): void {
-	const [bridgeReady, setBridgeReady] = useState(false);
+	const bridgeReadyRef = useRef(false);
 
 	useEffect(() => {
-		if (bridgeReady) {
+		if (bridgeReadyRef.current) {
 			return;
 		}
 
-		let cancelled = false;
-		const finalizeBridgeReady = () => {
-			void window.__BEAMER__?.ready
-				.then(() => {
-					if (!cancelled) {
-						setBridgeReady(true);
-					}
-				})
-				.catch(() => {
-					if (!cancelled) {
-						setBridgeReady(true);
-					}
-				});
-		};
-
-		if (ensureBeamerBridge()) {
-			finalizeBridgeReady();
-			return () => {
-				cancelled = true;
-			};
+		if (ensurePluginBridge()) {
+			bridgeReadyRef.current = true;
+			return;
 		}
 
 		const intervalId = window.setInterval(() => {
-			if (ensureBeamerBridge()) {
+			if (ensurePluginBridge()) {
+				bridgeReadyRef.current = true;
 				window.clearInterval(intervalId);
-				finalizeBridgeReady();
 			}
 		}, 50);
 
 		return () => {
-			cancelled = true;
 			window.clearInterval(intervalId);
 		};
-	}, [bridgeReady]);
+	}, []);
 
-	usePluginBridgeSynthEngine({ enabled: bridgeReady });
+	usePluginBridgeSynthEngine();
 }

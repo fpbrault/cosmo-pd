@@ -1,9 +1,5 @@
-extern crate alloc;
-
-use alloc::vec;
-use alloc::vec::Vec;
-
-use crate::params::Algo;
+use crate::dsp_utils::lerp;
+use crate::params::{Algo, EngineParamReadoutFormatV1};
 
 use super::{
     AlgoControlKindV1, AlgoControlV1, AlgoDefinitionV1, LineRenderConfig, NO_CONTROL_OPTIONS,
@@ -24,6 +20,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.5),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
     AlgoControlV1 {
         id: "karpunkBright",
@@ -38,6 +35,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.5),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
     AlgoControlV1 {
         id: "karpunkDecay",
@@ -52,6 +50,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.5),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
     AlgoControlV1 {
         id: "karpunkExcite",
@@ -66,6 +65,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.0),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
 ];
 
@@ -74,6 +74,7 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
     name: "Karpunk",
     icon_path: "M4,16 C8,2 12,22 16,8 L20,12",
     visible: true,
+    default_base_waveform: crate::params::BaseWaveform::Sine,
     controls: &CONTROLS,
 };
 
@@ -122,7 +123,7 @@ impl Default for KarpunkPair {
 /// Stateful Karplus-Strong engine state for one oscillator line.
 #[derive(Debug, Clone)]
 pub struct KarpunkState {
-    pub buffer: Vec<f32>,
+    pub buffer: [f32; KS_BUFFER_SIZE],
     pub write_pos: usize,
     pub last_sample: f32,
     pub prng: u32,
@@ -131,7 +132,7 @@ pub struct KarpunkState {
 impl KarpunkState {
     pub fn new(prng_seed: u32) -> Self {
         Self {
-            buffer: vec![0.0_f32; KS_BUFFER_SIZE],
+            buffer: [0.0_f32; KS_BUFFER_SIZE],
             write_pos: 0,
             last_sample: 0.0,
             prng: prng_seed,
@@ -150,6 +151,7 @@ impl KarpunkState {
         self.last_sample = 0.0;
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn advance(
         &mut self,
         effective_freq: f32,
@@ -221,34 +223,37 @@ fn render_line(ks_state: &mut KarpunkState, config: LineRenderConfig<'_>) -> (f3
             config.primary_algo,
             config.phase,
             primary_dcw,
+            config.primary_base_waveform,
             config.primary_algo_controls,
             config.algo_param_mods,
             ks_raw,
-        );
+            config.pm_post_mod,
+        ) * config.primary_window_gain;
         let secondary = super::render_algo_sample(
             secondary_algo,
             config.phase,
             secondary_dcw,
+            config.secondary_base_waveform,
             config.secondary_algo_controls,
             config.algo_param_mods,
             ks_raw,
-        );
+            config.pm_post_mod,
+        ) * config.secondary_window_gain;
         blend(config.primary_algo, primary, secondary, config.blend)
     } else {
         super::render_algo_sample(
             config.primary_algo,
             config.phase,
             config.final_dcw,
+            config.primary_base_waveform,
             config.primary_algo_controls,
             config.algo_param_mods,
             ks_raw,
-        )
+            config.pm_post_mod,
+        ) * config.primary_window_gain
     };
 
-    (
-        sample * config.window_gain * config.final_dca * PER_LINE_HEADROOM,
-        ks_raw,
-    )
+    (sample * config.final_dca * PER_LINE_HEADROOM, ks_raw)
 }
 
 #[inline(always)]
@@ -263,11 +268,6 @@ pub fn blend(primary_algo: Algo, primary: f32, secondary: f32, blend: f32) -> f3
     } else {
         lerp(primary, secondary, blend)
     }
-}
-
-#[inline(always)]
-fn lerp(a: f32, b: f32, t: f32) -> f32 {
-    a + (b - a) * t
 }
 
 /// Simple LCG PRNG — produces a value in [-1.0, 1.0].

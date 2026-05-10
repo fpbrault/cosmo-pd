@@ -1,14 +1,18 @@
-use crate::dsp_utils::apply_window;
-use crate::params::{Algo, AlgoControlValueV1, LineParams};
+use crate::dsp_utils::{apply_window, lerp, wrap01, TWO_PI};
+use crate::params::{
+    Algo, AlgoControlValueV1, BaseWaveform, EngineParamReadoutFormatV1, LineParams,
+};
+use dasp_interpolate::{linear::Linear, Interpolator};
 use serde::Serialize;
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
 
-const TWO_PI: f32 = core::f32::consts::TAU;
 /// Reference per-line output headroom used by processor normalization.
 pub const PER_LINE_HEADROOM: f32 = 0.25;
+const BLEND_SHORT_CIRCUIT_EPSILON: f32 = 0.03;
 
 pub mod bend;
+pub mod catalog;
 pub mod clip;
 pub mod cz101;
 pub use cz101::{CzPresetV1, CZ_PRESETS};
@@ -27,6 +31,14 @@ pub mod sync;
 pub mod terrain;
 pub mod twist;
 
+pub use catalog::{
+    algo_definitions_v1, algo_ui_catalog_v1, AlgoControlAssignmentV1, AlgoControlKindV1,
+    AlgoControlOptionV1, AlgoControlPresentationV1, AlgoControlV1, AlgoDefinitionV1, AlgoUiEntryV1,
+    ALGO_BLEND_NUMBER_CONTROL, ALGO_DEFINITIONS_V1, DCW_CONTROL, FINE_DETUNE_NUMBER_CONTROL,
+    KEY_FOLLOW_NUMBER_CONTROL, LEVEL_NUMBER_CONTROL, NO_CONTROLS, NO_CONTROL_OPTIONS,
+    OCTAVE_NUMBER_CONTROL, WARP_AMOUNT_CONTROL, WARP_AMOUNT_NUMBER_CONTROL,
+};
+
 /// Per-line render inputs passed to a voice's generator for one sample.
 #[derive(Debug, Clone, Copy)]
 pub struct LineRenderConfig<'a> {
@@ -34,19 +46,25 @@ pub struct LineRenderConfig<'a> {
     pub secondary_algo: Option<Algo>,
     pub blend: f32,
     pub phase: f32,
-    pub window_gain: f32,
+    pub primary_window_gain: f32,
+    pub secondary_window_gain: f32,
     pub final_dcw: f32,
     pub final_dca: f32,
+    pub primary_base_waveform: BaseWaveform,
+    pub secondary_base_waveform: BaseWaveform,
     pub effective_freq: f32,
     pub sample_rate: f32,
     pub primary_algo_controls: Option<&'a [AlgoControlValueV1]>,
     pub secondary_algo_controls: Option<&'a [AlgoControlValueV1]>,
     pub algo_param_mods: [f32; 8],
+    /// Post-warp phase modulation offset (non-zero only when pm_pre=false).
+    pub pm_post_mod: f32,
 }
 
 impl<'a> LineRenderConfig<'a> {
     /// Build a `LineRenderConfig` from line parameters, resolving algorithm and window
     /// choices internally without exposing CZ-specific details to the caller.
+    #[allow(clippy::too_many_arguments)]
     pub fn from_line(
         line: &'a LineParams,
         cycle_count: u32,
@@ -57,23 +75,44 @@ impl<'a> LineRenderConfig<'a> {
         effective_freq: f32,
         sample_rate: f32,
         algo_param_mods: [f32; 8],
+        pm_post_mod: f32,
     ) -> Self {
-        let primary_algo = cz101::resolve_line_primary_algo(line, cycle_count);
-        let secondary_algo = cz101::resolve_line_secondary_algo(line, cycle_count);
-        let window_gain = apply_window(window_phi, cz101::resolve_line_window(line));
+        let primary_algo_controls = line.algo_controls_a.as_deref();
+        let secondary_algo_controls = line.algo_controls_b.as_deref();
+        let primary_algo = cz101::resolve_algo(line.algo, primary_algo_controls, cycle_count);
+        let secondary_algo = line
+            .algo2
+            .map(|algo| cz101::resolve_algo(algo, secondary_algo_controls, cycle_count));
+        let primary_window_gain = apply_window(
+            window_phi,
+            cz101::resolve_window(line.algo, primary_algo_controls, line.window),
+        );
+        let secondary_window_gain = line
+            .algo2
+            .map(|algo| {
+                apply_window(
+                    window_phi,
+                    cz101::resolve_window(algo, secondary_algo_controls, line.window),
+                )
+            })
+            .unwrap_or(primary_window_gain);
         Self {
             primary_algo,
             secondary_algo,
             blend: line.algo_blend,
             phase,
-            window_gain,
+            primary_window_gain,
+            secondary_window_gain,
             final_dcw,
             final_dca,
+            primary_base_waveform: line.base_waveform_a,
+            secondary_base_waveform: line.base_waveform_b,
             effective_freq,
             sample_rate,
-            primary_algo_controls: line.algo_controls_a.as_deref(),
-            secondary_algo_controls: line.algo_controls_b.as_deref(),
+            primary_algo_controls,
+            secondary_algo_controls,
             algo_param_mods,
+            pm_post_mod,
         }
     }
 }
@@ -120,371 +159,103 @@ impl AlgoRuntimeState {
 #[inline(always)]
 fn render_line_stateless(config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
     let sample = if let Some(secondary_algo) = config.secondary_algo {
-        let secondary_dcw = config.final_dcw * config.blend;
-        let primary_dcw = config.final_dcw * (1.0 - config.blend);
-        let primary = render_algo_sample(
-            config.primary_algo,
-            config.phase,
-            primary_dcw,
-            config.primary_algo_controls,
-            config.algo_param_mods,
-            None,
-        );
-        let secondary = render_algo_sample(
-            secondary_algo,
-            config.phase,
-            secondary_dcw,
-            config.secondary_algo_controls,
-            config.algo_param_mods,
-            None,
-        );
-        blend_line_samples(config.primary_algo, primary, secondary, config.blend)
+        if config.blend <= BLEND_SHORT_CIRCUIT_EPSILON {
+            render_algo_sample(
+                config.primary_algo,
+                config.phase,
+                config.final_dcw,
+                config.primary_base_waveform,
+                config.primary_algo_controls,
+                config.algo_param_mods,
+                None,
+                config.pm_post_mod,
+            ) * config.primary_window_gain
+        } else if config.blend >= 1.0 - BLEND_SHORT_CIRCUIT_EPSILON {
+            render_algo_sample(
+                secondary_algo,
+                config.phase,
+                config.final_dcw,
+                config.secondary_base_waveform,
+                config.secondary_algo_controls,
+                config.algo_param_mods,
+                None,
+                config.pm_post_mod,
+            ) * config.secondary_window_gain
+        } else {
+            let secondary_dcw = config.final_dcw * config.blend;
+            let primary_dcw = config.final_dcw * (1.0 - config.blend);
+            let primary = render_algo_sample(
+                config.primary_algo,
+                config.phase,
+                primary_dcw,
+                config.primary_base_waveform,
+                config.primary_algo_controls,
+                config.algo_param_mods,
+                None,
+                config.pm_post_mod,
+            ) * config.primary_window_gain;
+            let secondary = render_algo_sample(
+                secondary_algo,
+                config.phase,
+                secondary_dcw,
+                config.secondary_base_waveform,
+                config.secondary_algo_controls,
+                config.algo_param_mods,
+                None,
+                config.pm_post_mod,
+            ) * config.secondary_window_gain;
+            blend_line_samples(config.primary_algo, primary, secondary, config.blend)
+        }
     } else {
         render_algo_sample(
             config.primary_algo,
             config.phase,
             config.final_dcw,
+            config.primary_base_waveform,
             config.primary_algo_controls,
             config.algo_param_mods,
             None,
-        )
+            config.pm_post_mod,
+        ) * config.primary_window_gain
     };
 
-    (
-        sample * config.window_gain * config.final_dca * PER_LINE_HEADROOM,
-        None,
-    )
+    (sample * config.final_dca * PER_LINE_HEADROOM, None)
 }
 
 #[inline(always)]
-fn blend_line_samples(primary_algo: Algo, primary: f32, secondary: f32, blend: f32) -> f32 {
+fn sample_base_wave(base_waveform: BaseWaveform, phase: f32) -> f32 {
+    let p = if (0.0..1.0).contains(&phase) {
+        phase
+    } else {
+        wrap01(phase)
+    };
+    match base_waveform {
+        BaseWaveform::Cosine => -libm::cosf(TWO_PI * p),
+        BaseWaveform::Sine => libm::sinf(TWO_PI as f32 * p),
+        BaseWaveform::Triangle => 1.0 - 4.0 * libm::fabsf(p - 0.5),
+        BaseWaveform::Saw => p * 2.0 - 1.0,
+        BaseWaveform::Square => {
+            if p < 0.5 {
+                1.0
+            } else {
+                -1.0
+            }
+        }
+    }
+}
+
+#[inline(always)]
+pub(crate) fn blend_line_samples(
+    primary_algo: Algo,
+    primary: f32,
+    secondary: f32,
+    blend: f32,
+) -> f32 {
     if primary_algo == Algo::Karpunk {
         primary + (primary * secondary * 2.0 - primary) * blend
     } else {
         primary + (secondary - primary) * blend
     }
-}
-
-/// Describes one control surfaced by an algorithm package.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[cfg_attr(feature = "specta-bindings", derive(Type))]
-#[serde(rename_all = "camelCase")]
-pub enum AlgoControlKindV1 {
-    Number,
-    Select,
-    Toggle,
-}
-
-/// Intended presentation for a control in synth UIs.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[cfg_attr(feature = "specta-bindings", derive(Type))]
-#[serde(rename_all = "camelCase")]
-pub enum AlgoControlPresentationV1 {
-    Knob,
-    Slider,
-    ButtonGroup,
-    Dropdown,
-}
-
-/// Assignment emitted by a select option to update one or more numeric controls.
-#[derive(Debug, Clone, Copy, Serialize)]
-#[cfg_attr(feature = "specta-bindings", derive(Type))]
-#[serde(rename_all = "camelCase")]
-pub struct AlgoControlAssignmentV1 {
-    pub control_id: &'static str,
-    pub value: f32,
-}
-
-/// One selectable option for list-based controls.
-#[derive(Debug, Clone, Copy, Serialize)]
-#[cfg_attr(feature = "specta-bindings", derive(Type))]
-#[serde(rename_all = "camelCase")]
-pub struct AlgoControlOptionV1 {
-    pub value: &'static str,
-    pub label: &'static str,
-    pub set: &'static [AlgoControlAssignmentV1],
-}
-
-/// Describes one control surfaced by an algorithm package.
-#[derive(Debug, Clone, Copy, Serialize)]
-#[cfg_attr(feature = "specta-bindings", derive(Type))]
-#[serde(rename_all = "camelCase")]
-pub struct AlgoControlV1 {
-    pub id: &'static str,
-    pub label: &'static str,
-    pub description: &'static str,
-    pub kind: AlgoControlKindV1,
-    pub control_type: AlgoControlPresentationV1,
-    pub bipolar: bool,
-    pub icon_name: Option<&'static str>,
-    pub min: Option<f32>,
-    pub max: Option<f32>,
-    pub default: Option<f32>,
-    pub default_toggle: Option<bool>,
-    pub options: &'static [AlgoControlOptionV1],
-}
-
-/// Complete algorithm package definition.
-#[derive(Debug, Clone, Copy, Serialize)]
-#[cfg_attr(feature = "specta-bindings", derive(Type))]
-#[serde(rename_all = "camelCase")]
-pub struct AlgoDefinitionV1 {
-    pub id: Algo,
-    pub name: &'static str,
-    pub icon_path: &'static str,
-    pub visible: bool,
-    pub controls: &'static [AlgoControlV1],
-}
-
-/// UI catalog entry for algorithm pickers.
-///
-/// This is exported to TypeScript so frontend option labels/icons are Rust-owned.
-#[derive(Debug, Clone, Copy, Serialize)]
-#[cfg_attr(feature = "specta-bindings", derive(Type))]
-#[serde(rename_all = "camelCase")]
-pub struct AlgoUiEntryV1 {
-    pub id: Algo,
-    pub label: &'static str,
-    pub icon_path: &'static str,
-    pub visible: bool,
-}
-
-pub const NO_CONTROLS: [AlgoControlV1; 0] = [];
-pub const NO_CONTROL_OPTIONS: [AlgoControlOptionV1; 0] = [];
-pub const WARP_AMOUNT_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
-    id: "warpAmount",
-    label: "Warp Amount",
-    description: "Sets the overall phase distortion amount for the current algorithm.",
-    kind: AlgoControlKindV1::Number,
-    control_type: AlgoControlPresentationV1::Knob,
-    bipolar: false,
-    icon_name: None,
-    min: Some(0.0),
-    max: Some(1.0),
-    default: Some(0.0),
-    default_toggle: None,
-    options: &NO_CONTROL_OPTIONS,
-};
-pub const LEVEL_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
-    id: "level",
-    label: "Level",
-    description: "Sets the base output level for this line.",
-    kind: AlgoControlKindV1::Number,
-    control_type: AlgoControlPresentationV1::Slider,
-    bipolar: false,
-    icon_name: Some("volume"),
-    min: Some(0.0),
-    max: Some(1.0),
-    default: Some(1.0),
-    default_toggle: None,
-    options: &NO_CONTROL_OPTIONS,
-};
-pub const OCTAVE_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
-    id: "octave",
-    label: "Octave",
-    description: "Offsets oscillator pitch by whole octaves.",
-    kind: AlgoControlKindV1::Number,
-    control_type: AlgoControlPresentationV1::Knob,
-    bipolar: true,
-    icon_name: Some("octave"),
-    min: Some(-2.0),
-    max: Some(2.0),
-    default: Some(0.0),
-    default_toggle: None,
-    options: &NO_CONTROL_OPTIONS,
-};
-pub const FINE_DETUNE_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
-    id: "fineDetune",
-    label: "Fine",
-    description: "Applies a fine pitch offset in cents.",
-    kind: AlgoControlKindV1::Number,
-    control_type: AlgoControlPresentationV1::Knob,
-    bipolar: true,
-    icon_name: Some("tuningFork"),
-    min: Some(-50.0),
-    max: Some(50.0),
-    default: Some(0.0),
-    default_toggle: None,
-    options: &NO_CONTROL_OPTIONS,
-};
-pub const KEY_FOLLOW_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
-    id: "keyFollow",
-    label: "Key Follow",
-    description: "Adjusts how strongly keyboard pitch affects this parameter.",
-    kind: AlgoControlKindV1::Number,
-    control_type: AlgoControlPresentationV1::Knob,
-    bipolar: false,
-    icon_name: Some("keyboard"),
-    min: Some(0.0),
-    max: Some(9.0),
-    default: Some(0.0),
-    default_toggle: None,
-    options: &NO_CONTROL_OPTIONS,
-};
-pub const ALGO_BLEND_NUMBER_CONTROL: AlgoControlV1 = AlgoControlV1 {
-    id: "algoBlend",
-    label: "Algo Blend",
-    description: "Blends between the primary and secondary algorithm outputs.",
-    kind: AlgoControlKindV1::Number,
-    control_type: AlgoControlPresentationV1::Slider,
-    bipolar: false,
-    icon_name: Some("blend"),
-    min: Some(0.0),
-    max: Some(1.0),
-    default: Some(0.0),
-    default_toggle: None,
-    options: &NO_CONTROL_OPTIONS,
-};
-pub const WARP_AMOUNT_CONTROL: [AlgoControlV1; 1] = [WARP_AMOUNT_NUMBER_CONTROL];
-pub const DCW_CONTROL: [AlgoControlV1; 1] = [AlgoControlV1 {
-    id: "dcw",
-    label: "DCW",
-    description: "Controls distortion depth for algorithms that expose direct DCW mapping.",
-    kind: AlgoControlKindV1::Number,
-    control_type: AlgoControlPresentationV1::Knob,
-    bipolar: false,
-    icon_name: Some("waveSine"),
-    min: Some(0.0),
-    max: Some(1.0),
-    default: Some(0.0),
-    default_toggle: None,
-    options: &NO_CONTROL_OPTIONS,
-}];
-
-pub const ALGO_DEFINITIONS_V1: [AlgoDefinitionV1; 15] = [
-    cz101::DEFINITION,
-    bend::DEFINITION,
-    sync::DEFINITION,
-    pinch::DEFINITION,
-    fold::DEFINITION,
-    skew::DEFINITION,
-    twist::DEFINITION,
-    clip::DEFINITION,
-    ripple::DEFINITION,
-    mirror::DEFINITION,
-    karpunk::DEFINITION,
-    fof::DEFINITION,
-    terrain::DEFINITION,
-    stutter::DEFINITION,
-    cheby::DEFINITION,
-];
-
-pub fn algo_definitions_v1() -> &'static [AlgoDefinitionV1] {
-    &ALGO_DEFINITIONS_V1
-}
-
-pub fn algo_ui_catalog_v1() -> &'static [AlgoUiEntryV1] {
-    const CATALOG: [AlgoUiEntryV1; 15] = [
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[0].id,
-            label: ALGO_DEFINITIONS_V1[0].name,
-            icon_path: ALGO_DEFINITIONS_V1[0].icon_path,
-            visible: ALGO_DEFINITIONS_V1[0].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[1].id,
-            label: ALGO_DEFINITIONS_V1[1].name,
-            icon_path: ALGO_DEFINITIONS_V1[1].icon_path,
-            visible: ALGO_DEFINITIONS_V1[1].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[2].id,
-            label: ALGO_DEFINITIONS_V1[2].name,
-            icon_path: ALGO_DEFINITIONS_V1[2].icon_path,
-            visible: ALGO_DEFINITIONS_V1[2].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[3].id,
-            label: ALGO_DEFINITIONS_V1[3].name,
-            icon_path: ALGO_DEFINITIONS_V1[3].icon_path,
-            visible: ALGO_DEFINITIONS_V1[3].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[4].id,
-            label: ALGO_DEFINITIONS_V1[4].name,
-            icon_path: ALGO_DEFINITIONS_V1[4].icon_path,
-            visible: ALGO_DEFINITIONS_V1[4].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[5].id,
-            label: ALGO_DEFINITIONS_V1[5].name,
-            icon_path: ALGO_DEFINITIONS_V1[5].icon_path,
-            visible: ALGO_DEFINITIONS_V1[5].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[6].id,
-            label: ALGO_DEFINITIONS_V1[6].name,
-            icon_path: ALGO_DEFINITIONS_V1[6].icon_path,
-            visible: ALGO_DEFINITIONS_V1[6].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[7].id,
-            label: ALGO_DEFINITIONS_V1[7].name,
-            icon_path: ALGO_DEFINITIONS_V1[7].icon_path,
-            visible: ALGO_DEFINITIONS_V1[7].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[8].id,
-            label: ALGO_DEFINITIONS_V1[8].name,
-            icon_path: ALGO_DEFINITIONS_V1[8].icon_path,
-            visible: ALGO_DEFINITIONS_V1[8].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[9].id,
-            label: ALGO_DEFINITIONS_V1[9].name,
-            icon_path: ALGO_DEFINITIONS_V1[9].icon_path,
-            visible: ALGO_DEFINITIONS_V1[9].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[10].id,
-            label: ALGO_DEFINITIONS_V1[10].name,
-            icon_path: ALGO_DEFINITIONS_V1[10].icon_path,
-            visible: ALGO_DEFINITIONS_V1[10].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[11].id,
-            label: ALGO_DEFINITIONS_V1[11].name,
-            icon_path: ALGO_DEFINITIONS_V1[11].icon_path,
-            visible: ALGO_DEFINITIONS_V1[11].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[12].id,
-            label: ALGO_DEFINITIONS_V1[12].name,
-            icon_path: ALGO_DEFINITIONS_V1[12].icon_path,
-            visible: ALGO_DEFINITIONS_V1[12].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[13].id,
-            label: ALGO_DEFINITIONS_V1[13].name,
-            icon_path: ALGO_DEFINITIONS_V1[13].icon_path,
-            visible: ALGO_DEFINITIONS_V1[13].visible,
-        },
-        AlgoUiEntryV1 {
-            id: ALGO_DEFINITIONS_V1[14].id,
-            label: ALGO_DEFINITIONS_V1[14].name,
-            icon_path: ALGO_DEFINITIONS_V1[14].icon_path,
-            visible: ALGO_DEFINITIONS_V1[14].visible,
-        },
-    ];
-
-    &CATALOG
-}
-
-/// Wrap a phase value into the normalized range [0.0, 1.0).
-#[inline]
-pub(crate) fn wrap01(v: f32) -> f32 {
-    let w = v - libm::floorf(v);
-    if w < 0.0 {
-        w + 1.0
-    } else {
-        w
-    }
-}
-
-/// Linear interpolation helper used by several generator transfer functions.
-#[inline]
-pub(crate) fn lerp(a: f32, b: f32, t: f32) -> f32 {
-    a + (b - a) * t
 }
 
 /// Unified algorithm phase warp dispatcher.
@@ -507,6 +278,29 @@ fn algo_control_slot_index(algo: Algo, id: &str) -> Option<usize> {
     None
 }
 
+#[inline]
+fn algo_param_mods_are_zero(algo_param_mods: &[f32; 8]) -> bool {
+    algo_param_mods.iter().all(|amount| *amount == 0.0)
+}
+
+#[inline]
+fn warp_phase_with_default_controls(algo: Algo, phase: f32, amt: f32) -> Option<f32> {
+    match algo {
+        Algo::Bend => Some(bend::warp_phase(phase, amt, 0.5, 0.5, 0.5)),
+        Algo::Sync => Some(sync::warp_phase(phase, amt, 0.5, 0.0, 0.5, 0.5)),
+        Algo::Pinch => Some(pinch::warp_phase(phase, amt, 0.5, 0.0, 0.5, 0.5)),
+        Algo::Fold => Some(fold::warp_phase(phase, amt, 0.5, 0.5, 0.5, 0.0)),
+        Algo::Skew => Some(skew::warp_phase(phase, amt, 0.2, 0.5, 0.5, 0.5)),
+        Algo::Quantize => Some(quantize::warp_phase(phase, amt, 0.5, 0.5)),
+        Algo::Twist => Some(twist::warp_phase(phase, amt, 0.5, 0.5, 0.0, 0.5)),
+        Algo::Clip => Some(clip::warp_phase(phase, amt, 0.5, 0.5, 0.5, 0.0)),
+        Algo::Ripple => Some(ripple::warp_phase(phase, amt, 0.5, 0.5, 0.0, 0.5)),
+        Algo::Mirror => Some(mirror::warp_phase(phase, amt, 0.5, 0.5, 0.0, 0.5)),
+        Algo::Fof => Some(fof::warp_phase(phase, amt, 0.5, 0.5, 0.5, 0.5)),
+        _ => None,
+    }
+}
+
 pub(crate) fn resolve_algo_control_value(
     algo: Algo,
     algo_controls: Option<&[AlgoControlValueV1]>,
@@ -526,6 +320,62 @@ pub(crate) fn resolve_algo_control_value(
     value
 }
 
+#[inline]
+fn resolve_algo_control_values_known_slots<const N: usize>(
+    algo_controls: Option<&[AlgoControlValueV1]>,
+    ids: [&str; N],
+    fallbacks: [f32; N],
+    algo_param_mods: &[f32; 8],
+) -> [f32; N] {
+    let mut values = [0.0; N];
+    let mut slot = 0usize;
+    while slot < N {
+        values[slot] = fallbacks[slot] + algo_param_mods[slot];
+        slot += 1;
+    }
+
+    if let Some(entries) = algo_controls {
+        for entry in entries {
+            let entry_id = entry.id.as_str();
+            let mut idx = 0usize;
+            while idx < N {
+                if entry_id == ids[idx] {
+                    values[idx] = entry.value + algo_param_mods[idx];
+                    break;
+                }
+                idx += 1;
+            }
+        }
+    }
+
+    values
+}
+
+#[inline]
+fn resolve_algo_control_values_no_slot<const N: usize>(
+    algo_controls: Option<&[AlgoControlValueV1]>,
+    ids: [&str; N],
+    fallbacks: [f32; N],
+) -> [f32; N] {
+    let mut values = fallbacks;
+
+    if let Some(entries) = algo_controls {
+        for entry in entries {
+            let entry_id = entry.id.as_str();
+            let mut idx = 0usize;
+            while idx < N {
+                if entry_id == ids[idx] {
+                    values[idx] = entry.value;
+                    break;
+                }
+                idx += 1;
+            }
+        }
+    }
+
+    values
+}
+
 pub fn warp_phase(
     algo: Algo,
     phase: f32,
@@ -535,6 +385,12 @@ pub fn warp_phase(
 ) -> f32 {
     if amt == 0.0 && !algo.is_cz_waveform() {
         return phase;
+    }
+
+    if algo_controls.is_none() && algo_param_mods_are_zero(algo_param_mods) {
+        if let Some(warped) = warp_phase_with_default_controls(algo, phase, amt) {
+            return warped;
+        }
     }
 
     match algo {
@@ -557,91 +413,104 @@ pub fn warp_phase(
             cz101::warp_phase_for_waveform(crate::params::CzWaveform::Pulse2, phase, amt)
         }
         Algo::Cz101 => cz101::warp_phase(phase, amt),
-        Algo::Bend => bend::warp_phase(
-            phase,
-            amt,
-            resolve_algo_control_value(algo, algo_controls, "bendCurve", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "bendBias", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "bendKnee", 0.5, algo_param_mods),
-        ),
-        Algo::Sync => sync::warp_phase(
-            phase,
-            amt,
-            resolve_algo_control_value(algo, algo_controls, "syncRatio", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "syncPhase", 0.0, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "syncCurve", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "syncWindow", 0.5, algo_param_mods),
-        ),
-        Algo::Pinch => pinch::warp_phase(
-            phase,
-            amt,
-            resolve_algo_control_value(algo, algo_controls, "pinchFocus", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "pinchAsym", 0.0, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "pinchCurve", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "pinchDrive", 0.5, algo_param_mods),
-        ),
-        Algo::Fold => fold::warp_phase(
-            phase,
-            amt,
-            resolve_algo_control_value(algo, algo_controls, "foldStages", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "foldTilt", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "foldSymmetry", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "foldSoftness", 0.0, algo_param_mods),
-        ),
-        Algo::Skew => skew::warp_phase(
-            phase,
-            amt,
-            resolve_algo_control_value(algo, algo_controls, "skewBias", 0.2, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "skewCurve", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "skewSpread", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "skewTilt", 0.5, algo_param_mods),
-        ),
-        Algo::Quantize => quantize::warp_phase(
-            phase,
-            resolve_algo_control_value(algo, algo_controls, "quantizeAmount", amt, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "quantizeSteps", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "quantizeSkew", 0.5, algo_param_mods),
-        ),
-        Algo::Twist => twist::warp_phase(
-            phase,
-            amt,
-            resolve_algo_control_value(algo, algo_controls, "twistHarmonics", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "twistDepth", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "twistPhase", 0.0, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "twistShape", 0.5, algo_param_mods),
-        ),
-        Algo::Clip => clip::warp_phase(
-            phase,
-            amt,
-            resolve_algo_control_value(algo, algo_controls, "clipDrive", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "clipShape", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "clipBias", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "clipSoft", 0.0, algo_param_mods),
-        ),
-        Algo::Ripple => ripple::warp_phase(
-            phase,
-            amt,
-            resolve_algo_control_value(algo, algo_controls, "rippleFreq", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "rippleDepth", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "ripplePhase", 0.0, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "rippleShape", 0.5, algo_param_mods),
-        ),
-        Algo::Mirror => mirror::warp_phase(
-            phase,
-            amt,
-            resolve_algo_control_value(algo, algo_controls, "mirrorCenter", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "mirrorBlend", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "mirrorClip", 0.0, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "mirrorSkew", 0.5, algo_param_mods),
-        ),
-        Algo::Fof => fof::warp_phase(
-            phase,
-            amt,
-            resolve_algo_control_value(algo, algo_controls, "fofRatio", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "fofTightness", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "fofOffset", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "fofSkew", 0.5, algo_param_mods),
-        ),
+        Algo::Bend => {
+            let [curve, bias, knee] = resolve_algo_control_values_known_slots(
+                algo_controls,
+                ["bendCurve", "bendBias", "bendKnee"],
+                [0.5, 0.5, 0.5],
+                algo_param_mods,
+            );
+            bend::warp_phase(phase, amt, curve, bias, knee)
+        }
+        Algo::Sync => {
+            let [ratio, phase_offset, curve, window] = resolve_algo_control_values_known_slots(
+                algo_controls,
+                ["syncRatio", "syncPhase", "syncCurve", "syncWindow"],
+                [0.5, 0.0, 0.5, 0.5],
+                algo_param_mods,
+            );
+            sync::warp_phase(phase, amt, ratio, phase_offset, curve, window)
+        }
+        Algo::Pinch => {
+            let [focus, asym, curve, drive] = resolve_algo_control_values_known_slots(
+                algo_controls,
+                ["pinchFocus", "pinchAsym", "pinchCurve", "pinchDrive"],
+                [0.5, 0.0, 0.5, 0.5],
+                algo_param_mods,
+            );
+            pinch::warp_phase(phase, amt, focus, asym, curve, drive)
+        }
+        Algo::Fold => {
+            let [stages, tilt, symmetry, softness] = resolve_algo_control_values_known_slots(
+                algo_controls,
+                ["foldStages", "foldTilt", "foldSymmetry", "foldSoftness"],
+                [0.5, 0.5, 0.5, 0.0],
+                algo_param_mods,
+            );
+            fold::warp_phase(phase, amt, stages, tilt, symmetry, softness)
+        }
+        Algo::Skew => {
+            let [bias, curve, spread, tilt] = resolve_algo_control_values_known_slots(
+                algo_controls,
+                ["skewBias", "skewCurve", "skewSpread", "skewTilt"],
+                [0.2, 0.5, 0.5, 0.5],
+                algo_param_mods,
+            );
+            skew::warp_phase(phase, amt, bias, curve, spread, tilt)
+        }
+        Algo::Quantize => {
+            let [amount, steps, skew] = resolve_algo_control_values_no_slot(
+                algo_controls,
+                ["quantizeAmount", "quantizeSteps", "quantizeSkew"],
+                [amt, 0.5, 0.5],
+            );
+            quantize::warp_phase(phase, amount, steps, skew)
+        }
+        Algo::Twist => {
+            let [harmonics, depth, phase_offset, shape] = resolve_algo_control_values_known_slots(
+                algo_controls,
+                ["twistHarmonics", "twistDepth", "twistPhase", "twistShape"],
+                [0.5, 0.5, 0.0, 0.5],
+                algo_param_mods,
+            );
+            twist::warp_phase(phase, amt, harmonics, depth, phase_offset, shape)
+        }
+        Algo::Clip => {
+            let [drive, shape, bias, soft] = resolve_algo_control_values_known_slots(
+                algo_controls,
+                ["clipDrive", "clipShape", "clipBias", "clipSoft"],
+                [0.5, 0.5, 0.5, 0.0],
+                algo_param_mods,
+            );
+            clip::warp_phase(phase, amt, drive, shape, bias, soft)
+        }
+        Algo::Ripple => {
+            let [freq, depth, phase_offset, shape] = resolve_algo_control_values_known_slots(
+                algo_controls,
+                ["rippleFreq", "rippleDepth", "ripplePhase", "rippleShape"],
+                [0.5, 0.5, 0.0, 0.5],
+                algo_param_mods,
+            );
+            ripple::warp_phase(phase, amt, freq, depth, phase_offset, shape)
+        }
+        Algo::Mirror => {
+            let [center, blend, clip, skew] = resolve_algo_control_values_known_slots(
+                algo_controls,
+                ["mirrorCenter", "mirrorBlend", "mirrorClip", "mirrorSkew"],
+                [0.5, 0.5, 0.0, 0.5],
+                algo_param_mods,
+            );
+            mirror::warp_phase(phase, amt, center, blend, clip, skew)
+        }
+        Algo::Fof => {
+            let [ratio, tightness, offset, skew] = resolve_algo_control_values_known_slots(
+                algo_controls,
+                ["fofRatio", "fofTightness", "fofOffset", "fofSkew"],
+                [0.5, 0.5, 0.5, 0.5],
+                algo_param_mods,
+            );
+            fof::warp_phase(phase, amt, ratio, tightness, offset, skew)
+        }
         Algo::Sine => sine::warp_phase(phase, amt),
         Algo::Karpunk => phase,
         Algo::Terrain => terrain::warp_phase(
@@ -671,28 +540,40 @@ pub fn warp_phase(
     }
 }
 
+fn render_direct_algo_sample(algo: Algo) -> Option<f32> {
+    let _ = algo;
+    None
+}
+
 /// Unified algorithm sample renderer used by voice and utility paths.
 ///
-/// `karpunk_sample` is used only when `algo == Algo::Karpunk`.
+/// `runtime_sample` is used only when an algorithm is rendered by per-voice state.
+#[allow(clippy::too_many_arguments)]
 pub fn render_algo_sample(
     algo: Algo,
     phase: f32,
     dcw: f32,
+    base_waveform: BaseWaveform,
     algo_controls: Option<&[AlgoControlValueV1]>,
     algo_param_mods: [f32; 8],
-    karpunk_sample: Option<f32>,
+    runtime_sample: Option<f32>,
+    pm_post_mod: f32,
 ) -> f32 {
     if algo == Algo::Karpunk {
-        return karpunk_sample.unwrap_or(0.0);
+        return runtime_sample.unwrap_or(0.0);
+    }
+    if let Some(sample) = render_direct_algo_sample(algo) {
+        return sample;
     }
     let warped = warp_phase(algo, phase, dcw, algo_controls, &algo_param_mods);
-    -libm::cosf(TWO_PI * warped)
+    sample_base_wave(base_waveform, warped + pm_post_mod)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{render_line_stateless, LineRenderConfig};
-    use crate::params::Algo;
+    use super::render_line_stateless;
+    use super::LineRenderConfig;
+    use crate::params::{Algo, BaseWaveform};
 
     #[test]
     fn stateless_render_applies_algo_param_mods() {
@@ -701,14 +582,18 @@ mod tests {
             secondary_algo: None,
             blend: 0.0,
             phase: 0.37,
-            window_gain: 1.0,
+            primary_window_gain: 1.0,
+            secondary_window_gain: 1.0,
             final_dcw: 1.0,
             final_dca: 1.0,
+            primary_base_waveform: BaseWaveform::Cosine,
+            secondary_base_waveform: BaseWaveform::Cosine,
             effective_freq: 220.0,
             sample_rate: 44100.0,
             primary_algo_controls: None,
             secondary_algo_controls: None,
             algo_param_mods: [0.0; 8],
+            pm_post_mod: 0.0,
         };
 
         let modded = LineRenderConfig {

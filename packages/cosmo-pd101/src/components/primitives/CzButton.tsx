@@ -61,7 +61,7 @@ export default function CzButton({
 			}
 			whileHover={disabled ? undefined : { y: -1 }}
 			transition={{ duration: 0.08, ease: "easeOut" }}
-			className={`inline-flex h-5 w-8 items-center justify-center px-2 py-0.75 rounded-[3px] border cursor-pointer select-none disabled:opacity-40 disabled:cursor-not-allowed bg-cz-btn border-cz-btn-border ${
+			className={`inline-flex h-5 w-8 cursor-pointer select-none items-center justify-center rounded-[3px] border border-cz-btn-border bg-cz-btn px-2 py-0.75 disabled:cursor-not-allowed disabled:opacity-40 ${
 				active ? "text-cz-cream" : "text-cz-cream-dim"
 			}`}
 		/>
@@ -94,16 +94,16 @@ export default function CzButton({
 						scaleX: { type: "spring", stiffness: 900, damping: 16 },
 						boxShadow: { duration: 0.12, ease: "easeOut" },
 					}}
-					className={`inline-block h-1 w-3 mb-1 rounded-[1px] ${active ? "bg-cz-led-on" : "bg-cz-led-off"}`}
+					className={`mb-1 inline-block h-1 w-3 rounded-[1px] ${active ? "bg-cz-led-on" : "bg-cz-led-off"}`}
 					aria-hidden="true"
 				/>
 			) : (
 				// Placeholder to keep buttons aligned when LED is disabled
-				<span className="inline-block h-1 w-3 mb-1" aria-hidden="true" />
+				<span className="mb-1 inline-block h-1 w-3" aria-hidden="true" />
 			)}
 			{/* Button face */}
 			{buttonFace}
-			<div className="font-mono text-[0.6rem] font-semibold uppercase tracking-[0.12em] ">
+			<div className="font-mono font-semibold text-[0.6rem] uppercase tracking-[0.12em]">
 				{children}
 			</div>
 		</div>

@@ -3,6 +3,8 @@ import { useMemo, useState } from "react";
 import InlineNotice from "@/components/feedback/InlineNotice";
 import { useMidiChannel } from "@/context/MidiChannelContext";
 import { useMidiPort } from "@/context/MidiPortContext";
+import SaveDraftPresetModal from "@/features/presets/components/SaveDraftPresetModal";
+import { usePresetMode } from "@/features/presets/hooks/usePresetMode";
 import SendEntryModal from "@/features/synthBackups/components/SendEntryModal";
 import SynthBackupDetailsHeader from "@/features/synthBackups/components/SynthBackupDetailsHeader";
 import SynthBackupEntriesTable from "@/features/synthBackups/components/SynthBackupEntriesTable";
@@ -77,14 +79,14 @@ export const SynthBackupsPageView: React.FC<SynthBackupsPageViewProps> = ({
 	);
 
 	useSidebarContent(
-		<div className="p-2 rounded-lg bg-base-300 text-xs">
+		<div className="rounded-lg bg-base-300 p-2 text-xs">
 			<div>Backups: {backups.length}</div>
 			<div>Entries: {totalEntries}</div>
 		</div>,
 	);
 
 	return (
-		<div className="flex grow h-full overflow-hidden bg-base-300">
+		<div className="flex h-full grow overflow-hidden bg-base-300">
 			<SynthBackupsSidebar
 				backups={backups}
 				selectedBackupId={selectedBackupId}
@@ -96,9 +98,9 @@ export const SynthBackupsPageView: React.FC<SynthBackupsPageViewProps> = ({
 				onImportBackup={onImportBackup}
 			/>
 
-			<section className="flex flex-col grow h-full overflow-hidden">
+			<section className="flex h-full grow flex-col overflow-hidden">
 				{!selectedBackup && (
-					<div className="flex items-center justify-center grow px-4">
+					<div className="flex grow items-center justify-center px-4">
 						<InlineNotice
 							message="Select a synth backup to view its entries."
 							tone="neutral"
@@ -154,29 +156,56 @@ export default function SynthBackupsRoutePage() {
 
 	useMidiSetup(setMidiPorts);
 
+	const presetMode = usePresetMode({
+		selectedMidiPort,
+		selectedMidiChannel,
+		setCurrentPreset: () => {},
+	});
+
 	const synthBackupMode = useSynthBackupMode({
 		selectedMidiPort,
 		selectedMidiChannel,
-		openSaveDraftPresetModal: () => {},
+		openSaveDraftPresetModal: presetMode.openSaveDraftPresetModal,
 	});
 
 	return (
-		<SynthBackupsPageView
-			backups={synthBackupMode.backups}
-			selectedBackupId={synthBackupMode.selectedBackupId}
-			isBackingUp={synthBackupMode.isBackingUp}
-			backupProgress={synthBackupMode.backupProgress}
-			isRestoring={synthBackupMode.isRestoringBackup}
-			restoreProgress={synthBackupMode.restoreProgress}
-			onSelectBackup={synthBackupMode.setSelectedBackupId}
-			onCreateBackup={synthBackupMode.handleCreateBackup}
-			onRestoreBackupToSynth={synthBackupMode.handleRestoreBackupToSynth}
-			onDeleteBackup={synthBackupMode.handleDeleteBackup}
-			onExportBackup={synthBackupMode.handleExportBackup}
-			onImportBackup={synthBackupMode.handleImportBackup}
-			onSaveEntryAsPreset={synthBackupMode.handleSaveBackupEntryAsPreset}
-			onSendEntryToSlot={synthBackupMode.handleSendBackupEntryToSlot}
-			onPreviewEntryInBuffer={synthBackupMode.handlePreviewBackupEntryInBuffer}
-		/>
+		<>
+			<SynthBackupsPageView
+				backups={synthBackupMode.backups}
+				selectedBackupId={synthBackupMode.selectedBackupId}
+				isBackingUp={synthBackupMode.isBackingUp}
+				backupProgress={synthBackupMode.backupProgress}
+				isRestoring={synthBackupMode.isRestoringBackup}
+				restoreProgress={synthBackupMode.restoreProgress}
+				onSelectBackup={synthBackupMode.setSelectedBackupId}
+				onCreateBackup={synthBackupMode.handleCreateBackup}
+				onRestoreBackupToSynth={synthBackupMode.handleRestoreBackupToSynth}
+				onDeleteBackup={synthBackupMode.handleDeleteBackup}
+				onExportBackup={synthBackupMode.handleExportBackup}
+				onImportBackup={synthBackupMode.handleImportBackup}
+				onSaveEntryAsPreset={synthBackupMode.handleSaveBackupEntryAsPreset}
+				onSendEntryToSlot={synthBackupMode.handleSendBackupEntryToSlot}
+				onPreviewEntryInBuffer={
+					synthBackupMode.handlePreviewBackupEntryInBuffer
+				}
+			/>
+
+			<SaveDraftPresetModal
+				isOpen={Boolean(presetMode.saveDraftPresetState)}
+				matchingPresetName={
+					presetMode.saveDraftPresetState?.matchingPreset?.name
+				}
+				name={presetMode.saveDraftName}
+				author={presetMode.saveDraftAuthor}
+				tags={presetMode.saveDraftTags}
+				description={presetMode.saveDraftDescription}
+				onNameChange={presetMode.setSaveDraftName}
+				onAuthorChange={presetMode.setSaveDraftAuthor}
+				onTagsChange={presetMode.setSaveDraftTags}
+				onDescriptionChange={presetMode.setSaveDraftDescription}
+				onCancel={presetMode.closeSaveDraftPresetModal}
+				onSave={presetMode.handleSaveDraftPreset}
+			/>
+		</>
 	);
 }

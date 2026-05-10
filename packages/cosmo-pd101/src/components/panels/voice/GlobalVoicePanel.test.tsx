@@ -9,10 +9,16 @@ vi.mock("@/features/synth/SynthParamController", () => ({
 	useSynthParam: (key: string) => useSynthParamMock(key),
 }));
 
-vi.mock("@/components/controls/ControlKnob", () => ({
-	default: ({ label }: { label?: string }) => (
+const { MockControlKnob } = vi.hoisted(() => {
+	const MockControlKnob = ({ label }: { label?: string }) => (
 		<div data-testid={`knob-${label}`}>{label}</div>
-	),
+	);
+	return { MockControlKnob };
+});
+
+vi.mock("@/components/controls/ControlKnob", () => ({
+	default: MockControlKnob,
+	ControlKnob: MockControlKnob,
 }));
 
 vi.mock("@/components/primitives/CzButton", () => ({

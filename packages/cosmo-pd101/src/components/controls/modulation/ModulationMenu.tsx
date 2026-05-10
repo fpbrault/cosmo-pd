@@ -2,17 +2,8 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import Button from "@/components/controls/Button";
 import type { ModRoute, ModSource } from "@/lib/synth/bindings/synth";
-import ModRouteRow, { MOD_SOURCE_META } from "./ModRouteRow";
-
-const MOD_SOURCES: { label: string; value: ModSource }[] = [
-	{ label: "LFO 1", value: "lfo1" },
-	{ label: "LFO 2", value: "lfo2" },
-	{ label: "Random", value: "random" },
-	{ label: "Mod Env", value: "modEnv" },
-	{ label: "Velocity", value: "velocity" },
-	{ label: "Mod Wheel", value: "modWheel" },
-	{ label: "Aftertouch", value: "aftertouch" },
-];
+import ModRouteRow from "./ModRouteRow";
+import { MOD_SOURCE_META, MOD_SOURCE_OPTIONS } from "./modRouteMeta";
 
 interface ModulationMenuProps {
 	title: string;
@@ -35,6 +26,8 @@ export default function ModulationMenu({
 }: ModulationMenuProps) {
 	const nextRouteKeyRef = useRef(0);
 	const [selectedSource, setSelectedSource] = useState<ModSource>("lfo1");
+	const [isAddPopoverOpen, setIsAddPopoverOpen] = useState(false);
+	const addPopoverRef = useRef<HTMLDivElement | null>(null);
 	const [routeKeys, setRouteKeys] = useState<string[]>(() =>
 		routes.map(() => `mod-route-${nextRouteKeyRef.current++}`),
 	);
@@ -65,6 +58,7 @@ export default function ModulationMenu({
 			`mod-route-${nextRouteKeyRef.current++}`,
 		]);
 		onAddRoute(selectedSource);
+		setIsAddPopoverOpen(false);
 	};
 
 	const handleRemoveRoute = (index: number) => {
@@ -73,6 +67,27 @@ export default function ModulationMenu({
 		);
 		onRemoveRoute(index);
 	};
+
+	useEffect(() => {
+		if (!isAddPopoverOpen) {
+			return;
+		}
+
+		const handlePointerDown = (event: PointerEvent) => {
+			const container = addPopoverRef.current;
+			if (!container) {
+				return;
+			}
+			if (!container.contains(event.target as Node)) {
+				setIsAddPopoverOpen(false);
+			}
+		};
+
+		window.addEventListener("pointerdown", handlePointerDown);
+		return () => {
+			window.removeEventListener("pointerdown", handlePointerDown);
+		};
+	}, [isAddPopoverOpen]);
 
 	return (
 		<motion.div
@@ -86,10 +101,10 @@ export default function ModulationMenu({
 			style={{ transformOrigin: "top center" }}
 		>
 			{/* Header */}
-			<div className="flex items-center justify-between border-b border-cz-border/60 bg-cz-surface/80 px-3 py-2">
+			<div className="flex items-center justify-between border-cz-border/60 border-b bg-cz-surface/80 px-3 py-2">
 				<div className="flex items-center gap-2">
 					<span className="h-1.5 w-1.5 rounded-full bg-cz-gold" />
-					<span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.25em] text-cz-cream">
+					<span className="font-bold font-mono text-[0.62rem] text-cz-cream uppercase tracking-[0.25em]">
 						{title}
 					</span>
 				</div>
@@ -107,7 +122,7 @@ export default function ModulationMenu({
 				{/* Active routes */}
 				{routes.length > 0 ? (
 					<div className="space-y-1.5">
-						<div className="font-mono text-5xs uppercase tracking-[0.2em] text-cz-cream-dim/60">
+						<div className="font-mono text-5xs text-cz-cream-dim/60 uppercase tracking-[0.2em]">
 							Active
 						</div>
 						<AnimatePresence initial={false}>
@@ -134,40 +149,47 @@ export default function ModulationMenu({
 						</AnimatePresence>
 					</div>
 				) : (
-					<div className="flex items-center justify-center rounded-lg border border-dashed border-cz-border/50 py-3 font-mono text-[0.55rem] uppercase tracking-[0.18em] text-cz-cream-dim/50">
+					<div className="flex items-center justify-center rounded-lg border border-cz-border/50 border-dashed py-3 font-mono text-[0.55rem] text-cz-cream-dim/50 uppercase tracking-[0.18em]">
 						No modulations
 					</div>
 				)}
 
 				{/* Add source */}
-				<div className="border-t border-cz-border/40 pt-2">
-					<div className="mb-1.5 font-mono text-5xs uppercase tracking-[0.2em] text-cz-cream-dim/60">
+				<div className="border-cz-border/40 border-t pt-2" ref={addPopoverRef}>
+					<div className="mb-1.5 font-mono text-5xs text-cz-cream-dim/60 uppercase tracking-[0.2em]">
 						Add source
 					</div>
-					<div className="flex gap-1.5">
-						<div className="relative flex-1">
-							<select
-								value={selectedSource}
-								onChange={(e) => setSelectedSource(e.target.value as ModSource)}
-								aria-label="Select modulation source"
-								className="w-full appearance-none rounded-md border border-cz-border bg-cz-inset px-2 py-1.5 font-mono text-[0.58rem] uppercase tracking-widest text-cz-cream outline-none transition-colors hover:border-cz-light-blue/60 focus:border-cz-light-blue"
-							>
-								{MOD_SOURCES.map((src) => (
-									<option key={src.value} value={src.value}>
-										{src.label}
-									</option>
+					<div className="space-y-1.5">
+						<Button
+							type="button"
+							onClick={() => setIsAddPopoverOpen((open) => !open)}
+							className={`btn btn-sm w-full px-2.5 py-1 font-bold font-mono text-[0.55rem] uppercase tracking-[0.15em] ${MOD_SOURCE_META[selectedSource].colorClass} border-current/30 bg-current/10 hover:bg-current/20`}
+						>
+							Pick Source
+						</Button>
+						{isAddPopoverOpen && (
+							<div className="grid grid-cols-2 gap-1 rounded-lg border border-cz-border/70 bg-cz-panel p-1.5">
+								{MOD_SOURCE_OPTIONS.map((source) => (
+									<Button
+										key={source.value}
+										type="button"
+										onClick={() => {
+											setSelectedSource(source.value);
+											setIsAddPopoverOpen(false);
+										}}
+										className={`btn btn-xs justify-start px-2 font-mono text-[0.52rem] uppercase tracking-[0.12em] ${MOD_SOURCE_META[source.value].colorClass} border-current/30 ${selectedSource === source.value ? "bg-current/30" : "bg-current/10"} hover:bg-current/20`}
+									>
+										{source.label}
+									</Button>
 								))}
-							</select>
-							<span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-5xs text-cz-cream-dim/60">
-								▾
-							</span>
-						</div>
+							</div>
+						)}
 						<Button
 							type="button"
 							onClick={handleAddRoute}
-							className={`btn btn-sm shrink-0 px-2.5 py-1 font-mono text-[0.55rem] font-bold uppercase tracking-[0.15em] ${MOD_SOURCE_META[selectedSource].colorClass} border-current/30 bg-current/10 hover:bg-current/20`}
+							className={`btn btn-sm w-full px-2.5 py-1 font-bold font-mono text-[0.55rem] uppercase tracking-[0.15em] ${MOD_SOURCE_META[selectedSource].colorClass} border-current/30 bg-current/10 hover:bg-current/20`}
 						>
-							Add
+							Add {MOD_SOURCE_META[selectedSource].label}
 						</Button>
 					</div>
 				</div>

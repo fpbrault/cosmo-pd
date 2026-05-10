@@ -1,6 +1,7 @@
 use super::wrap01;
 use super::{AlgoControlKindV1, AlgoControlV1, AlgoDefinitionV1, NO_CONTROL_OPTIONS};
-use crate::params::Algo;
+use crate::dsp_utils::pow01;
+use crate::params::{Algo, EngineParamReadoutFormatV1};
 
 const CONTROLS: [AlgoControlV1; 4] = [
     AlgoControlV1 {
@@ -16,6 +17,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.5),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Decimal,
     },
     AlgoControlV1 {
         id: "syncPhase",
@@ -30,6 +32,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.0),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Degrees,
     },
     AlgoControlV1 {
         id: "syncCurve",
@@ -44,6 +47,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.5),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
     AlgoControlV1 {
         id: "syncWindow",
@@ -58,6 +62,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.5),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
 ];
 
@@ -66,6 +71,7 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
     name: "Sync",
     icon_path: "M4,20 L8,4 L8,20 L12,4 L12,20 L16,4 L16,20 L20,4",
     visible: true,
+    default_base_waveform: crate::params::BaseWaveform::Sine,
     controls: &CONTROLS,
 };
 
@@ -80,10 +86,13 @@ pub fn warp_phase(
 ) -> f32 {
     let mult = 1.0 + amt * (4.0 + ratio * 14.0);
     let synced = wrap01((phase + phase_offset) * mult);
+    let curve_exp = 0.35 + curve * 2.4;
+    let sync_norm = (1.0 - (2.0 * synced - 1.0).abs()).clamp(0.0, 1.0);
+    let sync_mag = 0.5 * pow01(sync_norm, curve_exp);
     let shaped = if synced < 0.5 {
-        0.5 * libm::powf((synced * 2.0).clamp(0.0, 1.0), 0.35 + curve * 2.4)
+        sync_mag
     } else {
-        0.5 + 0.5 * (1.0 - libm::powf(((1.0 - synced) * 2.0).clamp(0.0, 1.0), 0.35 + curve * 2.4))
+        1.0 - sync_mag
     };
     phase + (shaped - phase) * (0.25 + window * 0.75)
 }

@@ -203,7 +203,7 @@ const PerformanceMode: React.FC<PerformanceModeProps> = ({
 		<div
 			ref={containerRef}
 			data-theme="cyberpunk"
-			className="flex flex-col w-full h-full gap-4 p-2"
+			className="flex h-full w-full flex-col gap-4 p-2"
 		>
 			<div className="flex flex-wrap items-start gap-3">
 				<Button
@@ -214,8 +214,8 @@ const PerformanceMode: React.FC<PerformanceModeProps> = ({
 					Toggle Fullscreen
 				</Button>
 
-				<div className="flex flex-wrap items-start flex-1 gap-3 min-w-0">
-					<div className="flex flex-wrap content-start flex-1 min-w-[16rem] max-h-24 gap-2 overflow-auto">
+				<div className="flex min-w-0 flex-1 flex-wrap items-start gap-3">
+					<div className="flex max-h-24 min-w-[16rem] flex-1 flex-wrap content-start gap-2 overflow-auto">
 						Filters:
 						{Object.entries(
 							presets
@@ -238,7 +238,7 @@ const PerformanceMode: React.FC<PerformanceModeProps> = ({
 								type="button"
 								unstyled
 								key={tag}
-								className={`badge badge-lg font-bold capitalize badge-neutral ${
+								className={`badge badge-lg badge-neutral font-bold capitalize ${
 									selectedTags.includes(tag) ? "badge-primary" : ""
 								}`}
 								onClick={() => handleTagClick(tag)}
@@ -248,9 +248,9 @@ const PerformanceMode: React.FC<PerformanceModeProps> = ({
 						))}
 					</div>
 
-					<div className="flex items-center justify-center flex-1 min-w-[16rem] p-4 rounded-md shadow-md bg-base-300 max-w-96">
+					<div className="flex min-w-[16rem] max-w-96 flex-1 items-center justify-center rounded-md bg-base-300 p-4 shadow-md">
 						<div className="flex flex-col">
-							<span className="ml-2 text-2xl font-bold font-performanceMode">
+							<span className="ml-2 font-bold font-performanceMode text-2xl">
 								{currentPresets.find((p) => p.id === currentPreset?.id)?.number}{" "}
 								| {currentPreset?.name || "None"}
 							</span>
@@ -259,14 +259,14 @@ const PerformanceMode: React.FC<PerformanceModeProps> = ({
 								{selectedMidiChannel}
 							</span>
 							{activePlaylist && (
-								<span className="flex items-center gap-1 ml-2 mt-1">
+								<span className="mt-1 ml-2 flex items-center gap-1">
 									<span className="badge badge-accent badge-sm font-semibold">
 										{activePlaylist.name}
 									</span>
 									<Button
 										type="button"
 										unstyled
-										className="btn btn-xs btn-ghost opacity-60 hover:opacity-100 px-1"
+										className="btn btn-xs btn-ghost px-1 opacity-60 hover:opacity-100"
 										aria-label="Clear setlist filter"
 										title="Clear setlist filter"
 										onClick={() => setActivePlaylistId(null)}
@@ -286,8 +286,8 @@ const PerformanceMode: React.FC<PerformanceModeProps> = ({
 						{favoritesOnly ? "Show All" : "Show Favorites"}
 					</Button>
 
-					<div className="flex flex-col flex-1 min-w-[18rem] gap-2 p-3 rounded-md shadow-md bg-base-300 max-w-md">
-						<div className="text-sm font-semibold">Performance Controls</div>
+					<div className="flex min-w-[18rem] max-w-md flex-1 flex-col gap-2 rounded-md bg-base-300 p-3 shadow-md">
+						<div className="font-semibold text-sm">Performance Controls</div>
 						<div className="flex flex-wrap gap-2">
 							<Button
 								onClick={handleToggleVibrato}
@@ -326,20 +326,20 @@ const PerformanceMode: React.FC<PerformanceModeProps> = ({
 				</div>
 			</div>
 			<div className="flex h-full gap-4 pb-16">
-				<div className="grid grow grid-cols-2 grid-rows-4 gap-4 w-ful lg:grid-cols-4 lg:grid-rows-2 font-performanceMode">
+				<div className="grid w-ful grow grid-cols-2 grid-rows-4 gap-4 font-performanceMode lg:grid-cols-4 lg:grid-rows-2">
 					{currentPresets.map((preset) => (
 						<Button
 							type="button"
 							key={preset.id}
 							onClick={() => handleSelectPreset(preset)}
 							className={
-								"h-full btn btn-lg text-xl md:text-2xl xl:text-4xl flex flex-col justify-between items-center uppercase break-all sm:break-normal" +
+								"btn btn-lg flex h-full flex-col items-center justify-between break-all text-xl uppercase sm:break-normal md:text-2xl xl:text-4xl" +
 								(currentPreset?.id === preset.id
-									? " btn-primary"
-									: " btn-secondary")
+									? "btn-primary"
+									: "btn-secondary")
 							}
 						>
-							<span className="flex items-center grow font-bold">
+							<span className="flex grow items-center font-bold">
 								{preset.name}
 							</span>
 
@@ -347,12 +347,12 @@ const PerformanceMode: React.FC<PerformanceModeProps> = ({
 						</Button>
 					))}
 				</div>
-				<div className="flex flex-col w-full gap-4 max-w-48">
+				<div className="flex w-full max-w-48 flex-col gap-4">
 					<Button
 						type="button"
 						onClick={handlePreviousBank}
 						disabled={currentBank === 0}
-						className="grow w-full text-2xl btn btn-lg btn-secondary"
+						className="btn btn-lg btn-secondary w-full grow text-2xl"
 					>
 						Previous Bank
 					</Button>
@@ -378,7 +378,7 @@ const PerformanceMode: React.FC<PerformanceModeProps> = ({
 						type="button"
 						onClick={handleNextBank}
 						disabled={(currentBank + 1) * 8 >= presets.length}
-						className="grow text-2xl btn btn-lg btn-secondary"
+						className="btn btn-lg btn-secondary grow text-2xl"
 					>
 						Next Bank
 					</Button>
@@ -386,13 +386,13 @@ const PerformanceMode: React.FC<PerformanceModeProps> = ({
 			</div>
 			{isNumPadOpen && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 font-performanceMode">
-					<div className="p-4 shadow-lg bg-base-100 rounded-xl">
+					<div className="rounded-xl bg-base-100 p-4 shadow-lg">
 						<h2 className="mb-4 text-xl">Select Bank</h2>
 						<input
 							type="text"
 							value={bankInput}
 							aria-label="Selected bank number"
-							className="mb-2 text-xl form-input input input-primary w-fit"
+							className="form-input input input-primary mb-2 w-fit text-xl"
 							readOnly
 						/>
 						<div className="grid grid-cols-3 gap-2">
@@ -401,7 +401,7 @@ const PerformanceMode: React.FC<PerformanceModeProps> = ({
 									type="button"
 									key={num + 1}
 									onClick={() => handleNumPadClick((num + 1).toString())}
-									className="text-3xl btn btn-primary"
+									className="btn btn-primary text-3xl"
 									disabled={parseInt(bankInput + (num + 1), 10) > totalBanks}
 								>
 									{num + 1}
@@ -419,14 +419,14 @@ const PerformanceMode: React.FC<PerformanceModeProps> = ({
 								type="button"
 								disabled={parseInt(`${bankInput}0`, 10) > totalBanks}
 								onClick={() => handleNumPadClick("0")}
-								className="text-3xl btn btn-primary"
+								className="btn btn-primary text-3xl"
 							>
 								0
 							</Button>
 							<Button
 								type="button"
 								onClick={handleSelectBank}
-								className="col-span-1 text-xl btn btn-primary"
+								className="btn btn-primary col-span-1 text-xl"
 							>
 								Select
 							</Button>
@@ -434,7 +434,7 @@ const PerformanceMode: React.FC<PerformanceModeProps> = ({
 						<Button
 							type="button"
 							onClick={handleCloseNumPad}
-							className="mt-4 btn"
+							className="btn mt-4"
 						>
 							Close
 						</Button>

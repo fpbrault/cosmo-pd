@@ -1,4 +1,9 @@
 export type { AsidePanelTab } from "./components/layout/AsidePanelSwitcher";
+export { WavetableWaterfall } from "./components/panels/analysis/scope-visualizations/WavetableWaterfall";
+export {
+	type PerformanceMetrics,
+	PerformanceMonitor,
+} from "./components/performance/PerformanceMonitor";
 export { default as SynthRenderer } from "./components/renderer/SynthRenderer";
 export { usePluginBridgeSynthEngine } from "./features/synth/engine/pluginBridgeSynthEngineAdapter";
 export { useAudioEngine } from "./features/synth/hooks/useAudioEngine";
@@ -30,6 +35,14 @@ export type {
 } from "./lib/midi/czSysexDecoder";
 export { decodeCzPatch, WF_NAMES } from "./lib/midi/czSysexDecoder";
 export type {
+	BenchmarkApi,
+	BenchmarkCaseResult,
+	BenchmarkMode,
+	BenchmarkReport,
+	BenchmarkScenarioDefinition,
+} from "./lib/performance/benchmarkHarness";
+export { installBenchmarkApi } from "./lib/performance/benchmarkHarness";
+export type {
 	AlgoControlValueV1,
 	FxSlotConfig,
 	FxSlotType,
@@ -44,3 +57,8 @@ export {
 	synthBindingsUrl,
 	synthWasmUrl,
 } from "./lib/synth/pdVisualizerWorkletUrl";
+export type {
+	EnginePresetV1,
+	FrontendPresetV1,
+	PresetMetadata,
+} from "./lib/synth/presetTypes";

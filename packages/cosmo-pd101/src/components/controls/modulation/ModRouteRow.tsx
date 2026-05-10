@@ -1,56 +1,8 @@
 import { memo } from "react";
 import Button from "@/components/controls/Button";
 import { ControlKnob } from "@/components/controls/ControlKnob";
-import type { ModRoute, ModSource } from "@/lib/synth/bindings/synth";
-
-/** Visible label + colour for each modulation source. */
-export const MOD_SOURCE_META: Record<
-	ModSource,
-	{ label: string; shortLabel: string; colorClass: string; bgClass: string }
-> = {
-	lfo1: {
-		label: "LFO 1",
-		shortLabel: "LFO1",
-		colorClass: "text-cz-light-blue",
-		bgClass: "bg-cz-light-blue/20 border-cz-light-blue/40",
-	},
-	lfo2: {
-		label: "LFO 2",
-		shortLabel: "LFO2",
-		colorClass: "text-cz-light-blue/60",
-		bgClass: "bg-cz-light-blue/10 border-cz-light-blue/20",
-	},
-	random: {
-		label: "Random",
-		shortLabel: "RND",
-		colorClass: "text-orange-400",
-		bgClass: "bg-orange-500/20 border-orange-500/40",
-	},
-	modEnv: {
-		label: "Mod Env",
-		shortLabel: "ENV",
-		colorClass: "text-pink-400",
-		bgClass: "bg-pink-500/20 border-pink-500/40",
-	},
-	velocity: {
-		label: "Velocity",
-		shortLabel: "VEL",
-		colorClass: "text-emerald-400",
-		bgClass: "bg-emerald-500/20 border-emerald-500/40",
-	},
-	modWheel: {
-		label: "Mod Wheel",
-		shortLabel: "MW",
-		colorClass: "text-violet-400",
-		bgClass: "bg-violet-500/20 border-violet-500/40",
-	},
-	aftertouch: {
-		label: "Aftertouch",
-		shortLabel: "AT",
-		colorClass: "text-amber-400",
-		bgClass: "bg-amber-500/20 border-amber-500/40",
-	},
-};
+import type { ModRoute } from "@/lib/synth/bindings/synth";
+import { MOD_SOURCE_META } from "./modRouteMeta";
 
 interface ModRouteRowProps {
 	route: ModRoute;
@@ -61,6 +13,7 @@ interface ModRouteRowProps {
 	onToggleEnabled: () => void;
 	onRemove: () => void;
 	onAmountChange: (amount: number) => void;
+	onEditRoute?: () => void;
 }
 
 const ModRouteRow = memo(function ModRouteRow({
@@ -70,77 +23,83 @@ const ModRouteRow = memo(function ModRouteRow({
 	onToggleEnabled,
 	onRemove,
 	onAmountChange,
+	onEditRoute,
 }: ModRouteRowProps) {
 	const meta = MOD_SOURCE_META[route.source];
 
 	return (
 		<div
-			className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 transition-colors ${
+			className={`rounded-lg border px-2 py-1.5 transition-colors ${
 				route.enabled
 					? "border-cz-border/60 bg-cz-inset/80"
 					: "border-cz-border/30 bg-cz-inset/30 opacity-60"
 			}`}
 		>
-			{/* Source badge */}
-			<span
-				className={`shrink-0 rounded border px-1 py-0.5 font-mono text-[0.52rem] font-bold uppercase tracking-[0.15em] ${meta.colorClass} ${meta.bgClass}`}
-			>
-				{meta.shortLabel}
-			</span>
-
-			{/* Destination (optional) */}
-			{showDestination && (
-				<>
-					<span className="text-[0.55rem] text-cz-cream-dim/50">→</span>
+			<div className="flex flex-col pr-1">
+				<div className="flex w-full items-center justify-between gap-2">
+					<div className="grow">
+						<input
+							type="checkbox"
+							className="toggle toggle-secondary toggle-xs ml-3"
+							checked={route.enabled}
+							onChange={onToggleEnabled}
+							aria-label={route.enabled ? "Disable route" : "Enable route"}
+						/>
+					</div>
 					<span
-						className="min-w-0 flex-1 truncate font-mono text-[0.55rem] uppercase tracking-widest text-cz-cream-dim"
-						title={destinationLabel}
+						className={`badge badge-xs shrink-0 font-bold font-mono text-[0.52rem] uppercase tracking-[0.15em] ${meta.colorClass} ${meta.bgClass}`}
 					>
-						{destinationLabel ?? route.destination}
+						{meta.shortLabel}
 					</span>
-				</>
-			)}
+					{showDestination ? (
+						<div className="flex min-w-0 items-center gap-1">
+							<span className="text-[0.55rem] text-cz-cream-dim/50">→</span>
+							<span
+								className="min-w-0 truncate font-mono text-[0.55rem] text-cz-cream-dim uppercase tracking-widest"
+								title={destinationLabel}
+							>
+								{destinationLabel ?? route.destination}
+							</span>
+						</div>
+					) : null}
+				</div>
+				<div className="mt-1 flex w-full items-center justify-between">
+					<ControlKnob
+						value={route.amount}
+						onChange={onAmountChange}
+						min={-1}
+						max={1}
+						bipolar
+						color="#7f9de4"
+						size={48}
+						tooltip="Sets modulation depth and direction from source to destination."
+						valueFormatter={(v) => v.toFixed(2)}
+						valueVisibility="hover"
+					/>
 
-			{/* Amount knob */}
-			<div className="shrink-0">
-				<ControlKnob
-					value={route.amount}
-					onChange={onAmountChange}
-					min={-1}
-					max={1}
-					bipolar
-					size={32}
-					color="#7f9de4"
-					label="Amount"
-					tooltip="Sets modulation depth and direction from source to destination."
-					valueFormatter={(v) => v.toFixed(2)}
-					valueVisibility="hover"
-				/>
+					<div className="flex gap-2">
+						{onEditRoute ? (
+							<Button
+								type="button"
+								onClick={onEditRoute}
+								aria-label="Edit route source and destination"
+								className="btn btn-accent btn-xs"
+							>
+								{" "}
+								Edit
+							</Button>
+						) : null}{" "}
+						<Button
+							type="button"
+							onClick={onRemove}
+							aria-label="Remove route"
+							className="btn btn-error btn-xs"
+						>
+							✕
+						</Button>
+					</div>
+				</div>
 			</div>
-
-			{/* Enabled toggle */}
-			<Button
-				type="button"
-				onClick={onToggleEnabled}
-				aria-label={route.enabled ? "Disable route" : "Enable route"}
-				className={`btn btn-sm shrink-0 px-1.5 py-0.5 font-mono text-5xs font-bold uppercase tracking-[0.12em] ${
-					route.enabled
-						? "border-cz-gold/50 bg-cz-gold/10 text-cz-gold"
-						: "border-cz-border bg-transparent text-cz-cream-dim hover:text-cz-cream"
-				}`}
-			>
-				{route.enabled ? "On" : "Off"}
-			</Button>
-
-			{/* Remove */}
-			<Button
-				type="button"
-				onClick={onRemove}
-				aria-label="Remove route"
-				className="btn btn-ghost btn-square btn-xs shrink-0 h-4 w-4 text-[0.6rem] text-cz-cream-dim/60 hover:bg-red-500/20 hover:text-red-400"
-			>
-				✕
-			</Button>
 		</div>
 	);
 });

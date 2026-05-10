@@ -3,15 +3,15 @@ import { setupPluginPage, waitForBridge } from "./helpers/pluginBridge";
 
 test.beforeEach(async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 980 });
-	await setupPluginPage(page);
+	await setupPluginPage(page, { keyboard: true });
 });
 
 test.describe("Plugin shell visual smoke", () => {
-	test("captures plugin shell at 1280x800", async ({ page }, testInfo) => {
-		await page.setViewportSize({ width: 1280, height: 800 });
+	test("captures plugin shell at 1152x864", async ({ page }, testInfo) => {
+		await page.setViewportSize({ width: 1152, height: 864 });
 		await expect(page.getByTestId("test-harness")).toBeVisible();
 		await page.screenshot({
-			path: testInfo.outputPath("plugin-shell-1280x800.png"),
+			path: testInfo.outputPath("plugin-shell-1152x864.png"),
 			fullPage: true,
 		});
 	});

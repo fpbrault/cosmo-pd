@@ -7,9 +7,9 @@ interface ModulationIconButtonProps {
 	label: string;
 	onClick: () => void;
 	forceVisible?: boolean;
-	className?: string;
-	style?: React.CSSProperties;
+	accentColor?: string;
 	triggerRef?: React.RefCallback<HTMLButtonElement>;
+	buttonStyle?: React.CSSProperties;
 }
 
 export default function ModulationIconButton({
@@ -18,12 +18,10 @@ export default function ModulationIconButton({
 	label,
 	onClick,
 	forceVisible = false,
-	className = "",
-	style,
+	accentColor,
 	triggerRef,
+	buttonStyle,
 }: ModulationIconButtonProps) {
-	const isVisible = hasActiveRoutes || forceVisible;
-
 	return (
 		<Button
 			type="button"
@@ -31,22 +29,25 @@ export default function ModulationIconButton({
 			onClick={onClick}
 			ref={triggerRef}
 			className={[
-				"absolute -bottom-1 -right-1 z-10 flex h-3.5 w-3.5 items-center justify-center rounded-full border text-4xs transition-all focus:outline-none",
+				"absolute top-1 right-1 z-10 flex h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-4xs transition-all focus:outline-none",
 				hasActiveRoutes
-					? "bg-cz-light-blue border-cz-light-blue text-white"
-					: "bg-cz-surface border-cz-border text-cz-cream hover:border-cz-light-blue",
-				// Always visible/tappable on touch devices; hover-reveal on pointer devices
-				isVisible
-					? "opacity-100 pointer-events-auto"
-					: [
-							"opacity-0 pointer-events-none",
-							"group-hover:opacity-100 group-hover:pointer-events-auto",
-							// Touch devices: always visible so the badge is tappable
-							"[@media(hover:none)]:opacity-100 [@media(hover:none)]:pointer-events-auto",
-						].join(" "),
-				className,
+					? "text-white"
+					: "border-cz-border bg-cz-surface text-cz-cream",
+				// Always hover-reveal (even when active); always visible on touch
+				[
+					"pointer-events-none opacity-0",
+					"group-hover:pointer-events-auto group-hover:opacity-100",
+					// Touch devices: always visible so the badge is tappable
+					"[@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100",
+				].join(" "),
+				forceVisible ? "pointer-events-auto! opacity-100!" : "",
 			].join(" ")}
-			style={style}
+			style={{
+				...buttonStyle,
+				...(hasActiveRoutes && accentColor
+					? { backgroundColor: accentColor, borderColor: accentColor }
+					: {}),
+			}}
 		>
 			{hasActiveRoutes ? routeCount : "+"}
 		</Button>

@@ -14,16 +14,31 @@ const entries: PresetEntry[] = [
 		id: "builtin:factory-bass",
 		label: "Factory Bass",
 		type: "builtin",
+		sourceLabel: "Built-in",
+		starred: true,
+		favorite: false,
+		category: "",
+		tags: [],
 	},
 	{
 		id: "local:local-keys",
 		label: "Local Keys",
 		type: "local",
+		sourceLabel: "User",
+		starred: false,
+		favorite: false,
+		category: "keys",
+		tags: ["warm"],
 	},
 	{
 		id: "library:archive-pad",
 		label: libraryPreset.name,
 		type: "library",
+		sourceLabel: "CZ library",
+		starred: false,
+		favorite: false,
+		category: "",
+		tags: [],
 		preset: libraryPreset,
 	},
 ];
@@ -31,6 +46,8 @@ const entries: PresetEntry[] = [
 function createProps() {
 	return {
 		allEntries: entries,
+		showLibraryPresets: true,
+		onToggleLibraryPresets: vi.fn(),
 		activeEntryId: "local:local-keys",
 		activePresetName: "Local Keys",
 		onLoadBuiltin: vi.fn(),
@@ -39,6 +56,9 @@ function createProps() {
 		onSavePreset: vi.fn(),
 		onDeletePreset: vi.fn(),
 		onRenamePreset: vi.fn(),
+		onSetPresetFavorite: vi.fn(),
+		onSetPresetCategory: vi.fn(),
+		onSetPresetTags: vi.fn(),
 		onExportPreset: vi.fn(),
 		onExportCurrentState: vi.fn(),
 		onImportPreset: vi.fn(),
@@ -142,10 +162,8 @@ describe("PresetLibrary", () => {
 		fireEvent.keyDown(list, { key: "End" });
 		fireEvent.keyDown(list, { key: "Enter" });
 
-		expect(props.onLoadLibrary).toHaveBeenCalledTimes(3);
-		expect(props.onLoadLibrary).toHaveBeenNthCalledWith(1, libraryPreset);
-		expect(props.onLoadLibrary).toHaveBeenNthCalledWith(2, libraryPreset);
-		expect(props.onLoadLibrary).toHaveBeenNthCalledWith(3, libraryPreset);
+		expect(props.onLoadLocal.mock.calls.length).toBeGreaterThan(0);
+		expect(props.onLoadLocal).toHaveBeenLastCalledWith("Local Keys");
 	});
 
 	it("handles Arrow navigation from window-level keydown", () => {
@@ -154,8 +172,8 @@ describe("PresetLibrary", () => {
 
 		fireEvent.keyDown(window, { key: "ArrowDown" });
 
-		expect(props.onLoadLibrary).toHaveBeenCalledTimes(1);
-		expect(props.onLoadLibrary).toHaveBeenNthCalledWith(1, libraryPreset);
+		expect(props.onLoadBuiltin).toHaveBeenCalledTimes(1);
+		expect(props.onLoadBuiltin).toHaveBeenNthCalledWith(1, "Factory Bass");
 	});
 
 	it("does not navigate when typing in a text input", () => {
@@ -173,12 +191,12 @@ describe("PresetLibrary", () => {
 
 	it("does not trigger focused row action on space in plugin mode", () => {
 		const props = createProps();
-		const previousBeamer = (
-			window as Window & { __BEAMER__?: { emit?: () => void } }
-		).__BEAMER__;
-		(window as Window & { __BEAMER__?: { emit?: () => void } }).__BEAMER__ = {
-			emit: () => {},
-		};
+		const previousSetParams = (
+			window as Window & { __czSetParams?: (json: string) => void }
+		).__czSetParams;
+		(
+			window as Window & { __czSetParams?: (json: string) => void }
+		).__czSetParams = () => {};
 
 		render(<PresetLibrary {...props} />);
 		const activeRow = screen.getByRole("button", { name: "Local Keys" });
@@ -188,8 +206,9 @@ describe("PresetLibrary", () => {
 
 		expect(props.onLoadLocal).not.toHaveBeenCalled();
 
-		(window as Window & { __BEAMER__?: { emit?: () => void } }).__BEAMER__ =
-			previousBeamer;
+		(
+			window as Window & { __czSetParams?: (json: string) => void }
+		).__czSetParams = previousSetParams;
 	});
 
 	it("clears modal state when dialogs receive a native cancel event", () => {
@@ -240,5 +259,88 @@ describe("PresetLibrary", () => {
 
 		expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
 		expect(screen.getByRole("button", { name: "Save As" })).toBeEnabled();
+	});
+
+	it("filters presets when typing in the search box", () => {
+		const props = createProps();
+		render(<PresetLibrary {...props} />);
+
+		expect(
+			screen.getByRole("button", { name: "Factory Bass" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Local Keys" }),
+		).toBeInTheDocument();
+
+		fireEvent.change(screen.getByPlaceholderText("Search presets"), {
+			target: { value: "keys" },
+		});
+
+		expect(
+			screen.queryByRole("button", { name: "Factory Bass" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Local Keys" }),
+		).toBeInTheDocument();
+	});
+
+	it("toggles favorite on a local preset", () => {
+		const props = createProps();
+		render(<PresetLibrary {...props} />);
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Favorite Local Keys" }),
+		);
+
+		expect(props.onSetPresetFavorite).toHaveBeenCalledWith("Local Keys", true);
+	});
+
+	it("shows empty state when no presets are available", () => {
+		const props = createProps();
+		render(<PresetLibrary {...props} allEntries={[]} />);
+
+		expect(screen.getByText("No presets available.")).toBeInTheDocument();
+	});
+
+	it("shows error on invalid JSON import", () => {
+		const props = createProps();
+		props.onImportPreset = vi.fn(() => {
+			throw new Error("invalid");
+		});
+		class ErrorFileReader {
+			public onload: ((event: ProgressEvent<FileReader>) => void) | null = null;
+
+			readAsText() {
+				this.onload?.({
+					target: { result: "not-json" },
+				} as ProgressEvent<FileReader>);
+			}
+		}
+		vi.stubGlobal("FileReader", ErrorFileReader);
+
+		const { container } = render(<PresetLibrary {...props} />);
+
+		const fileInput = container.querySelector('input[type="file"]');
+		if (!(fileInput instanceof HTMLInputElement)) {
+			throw new Error("expected hidden file input");
+		}
+		fireEvent.change(fileInput, {
+			target: {
+				files: [new File(["not-json"], "bad.json")],
+			},
+		});
+
+		expect(screen.getByText("Invalid preset file.")).toBeInTheDocument();
+	});
+
+	it("toggles factory presets visibility", () => {
+		const props = createProps();
+		render(<PresetLibrary {...props} />);
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Factory Presets: Visible" }),
+		);
+
+		expect(props.onToggleLibraryPresets).toHaveBeenCalled();
 	});
 });

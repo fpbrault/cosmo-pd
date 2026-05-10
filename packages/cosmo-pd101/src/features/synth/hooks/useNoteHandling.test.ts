@@ -184,12 +184,12 @@ describe("useNoteHandling", () => {
 	});
 
 	it("disables PC keyboard note mapping in plugin runtime", () => {
-		const previousBeamer = (
-			window as Window & { __BEAMER__?: { emit?: () => void } }
-		).__BEAMER__;
-		(window as Window & { __BEAMER__?: { emit?: () => void } }).__BEAMER__ = {
-			emit: () => {},
-		};
+		const previousSetParams = (
+			window as Window & { __czSetParams?: (json: string) => void }
+		).__czSetParams;
+		(
+			window as Window & { __czSetParams?: (json: string) => void }
+		).__czSetParams = () => {};
 
 		renderHook(() => useNoteHandling({ eventSink }));
 
@@ -199,8 +199,9 @@ describe("useNoteHandling", () => {
 
 		expect(events.some((event) => event.type === "noteOn")).toBe(false);
 
-		(window as Window & { __BEAMER__?: { emit?: () => void } }).__BEAMER__ =
-			previousBeamer;
+		(
+			window as Window & { __czSetParams?: (json: string) => void }
+		).__czSetParams = previousSetParams;
 	});
 
 	it("ignores keyboard mapping when document is not focused", () => {

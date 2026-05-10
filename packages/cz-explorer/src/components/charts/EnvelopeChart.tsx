@@ -89,8 +89,8 @@ const EnvelopeChart: React.FC<EnvelopeChartProps> = memo(
 			` L ${points[points.length - 1][0]},${PAD_T + INNER_H} Z`;
 
 		return (
-			<div className="flex flex-col gap-0.5 min-w-0">
-				<span className="text-xs text-base-content/50 font-mono tracking-wider">
+			<div className="flex min-w-0 flex-col gap-0.5">
+				<span className="font-mono text-base-content/50 text-xs tracking-wider">
 					{label}
 				</span>
 				<svg
@@ -98,7 +98,7 @@ const EnvelopeChart: React.FC<EnvelopeChartProps> = memo(
 					height={H}
 					viewBox={`0 0 ${W} ${H}`}
 					preserveAspectRatio="none"
-					className="rounded overflow-hidden"
+					className="overflow-hidden rounded"
 					style={{ background: "rgba(0,0,0,0.25)" }}
 					aria-label={label}
 				>
@@ -186,24 +186,24 @@ const EnvelopeChart: React.FC<EnvelopeChartProps> = memo(
 				</svg>
 
 				{/* Per-step readout: makes rate and level explicit like a classic CZ panel. */}
-				<div className="grid grid-cols-8 gap-1 mt-1">
+				<div className="mt-1 grid grid-cols-8 gap-1">
 					{Array.from({ length: 8 }).map((_, i) => {
 						const step = activeSteps[i];
 						const inactive = !step;
 						return (
 							<div
 								key={`meta-${i}`}
-								className={`rounded px-1 py-0.5 text-center border ${
+								className={`rounded border px-1 py-0.5 text-center ${
 									inactive
 										? "border-base-content/5 text-base-content/20"
 										: "border-base-content/10 text-base-content/60"
 								}`}
 							>
-								<div className="text-5xs leading-tight font-mono">{i + 1}</div>
-								<div className="text-5xs leading-tight font-mono">
+								<div className="font-mono text-5xs leading-tight">{i + 1}</div>
+								<div className="font-mono text-5xs leading-tight">
 									{inactive ? "--" : `R${step.rate}`}
 								</div>
-								<div className="text-5xs leading-tight font-mono">
+								<div className="font-mono text-5xs leading-tight">
 									{inactive ? "--" : `L${step.level}`}
 								</div>
 							</div>

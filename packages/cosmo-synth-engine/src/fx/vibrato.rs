@@ -1,29 +1,53 @@
-use crate::params::SynthParams;
+use crate::params::{FxSlotConfig, SynthParams, VibratoParams};
+
+fn set_vibrato(params: &mut SynthParams, p: VibratoParams) {
+    for slot in params.fx_slots.iter_mut() {
+        if let FxSlotConfig::Vibrato(vib) = slot {
+            *vib = p;
+            return;
+        }
+    }
+}
 
 pub fn apply_vibrato_preset(params: &mut SynthParams, preset: &str) -> bool {
     match preset {
         "subtle" => {
-            params.vibrato.enabled = true;
-            params.vibrato.waveform = 1;
-            params.vibrato.rate = 20.0;
-            params.vibrato.depth = 6.0;
-            params.vibrato.delay = 160.0;
+            set_vibrato(
+                params,
+                VibratoParams {
+                    enabled: true,
+                    waveform: 1,
+                    rate: 20.0,
+                    depth: 6.0,
+                    delay: 160.0,
+                },
+            );
             true
         }
         "chorused" => {
-            params.vibrato.enabled = true;
-            params.vibrato.waveform = 2;
-            params.vibrato.rate = 38.0;
-            params.vibrato.depth = 14.0;
-            params.vibrato.delay = 80.0;
+            set_vibrato(
+                params,
+                VibratoParams {
+                    enabled: true,
+                    waveform: 2,
+                    rate: 38.0,
+                    depth: 14.0,
+                    delay: 80.0,
+                },
+            );
             true
         }
         "warble" => {
-            params.vibrato.enabled = true;
-            params.vibrato.waveform = 4;
-            params.vibrato.rate = 62.0;
-            params.vibrato.depth = 26.0;
-            params.vibrato.delay = 20.0;
+            set_vibrato(
+                params,
+                VibratoParams {
+                    enabled: true,
+                    waveform: 4,
+                    rate: 62.0,
+                    depth: 26.0,
+                    delay: 20.0,
+                },
+            );
             true
         }
         _ => false,
@@ -88,6 +112,7 @@ const CONTROLS: [FxControlV1; 4] = [
         max: None,
         default_f32: Some(1.0),
         options: &WAVEFORM_OPTIONS,
+        mod_destination_key: None,
     },
     FxControlV1 {
         id: "rate",
@@ -98,6 +123,7 @@ const CONTROLS: [FxControlV1; 4] = [
         max: Some(200.0),
         default_f32: Some(55.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("vibratoRate"),
     },
     FxControlV1 {
         id: "depth",
@@ -108,6 +134,7 @@ const CONTROLS: [FxControlV1; 4] = [
         max: Some(50.0),
         default_f32: Some(8.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("vibratoDepth"),
     },
     FxControlV1 {
         id: "delay",
@@ -115,9 +142,10 @@ const CONTROLS: [FxControlV1; 4] = [
         kind: FxControlKindV1::Knob,
         bipolar: false,
         min: Some(0.0),
-        max: Some(500.0),
+        max: Some(5000.0),
         default_f32: Some(120.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("vibratoDelay"),
     },
 ];
 

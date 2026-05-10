@@ -18,7 +18,7 @@ describe("LineSelectControl", () => {
 		render(<LineSelectControl />);
 
 		expect(screen.getByText("Line Select")).toBeInTheDocument();
-		expect(screen.getAllByRole("button")).toHaveLength(5);
+		expect(screen.getAllByRole("button")).toHaveLength(4);
 	});
 
 	it("calls setValue with selected line", () => {
@@ -27,7 +27,7 @@ describe("LineSelectControl", () => {
 		render(<LineSelectControl />);
 
 		fireEvent.click(screen.getAllByRole("button")[3]);
-		expect(setValue).toHaveBeenCalledWith("L1+L1'");
+		expect(setValue).toHaveBeenCalledWith("L1+L2'");
 	});
 
 	it("marks the active button", () => {

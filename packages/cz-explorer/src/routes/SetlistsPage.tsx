@@ -78,13 +78,13 @@ export const SetlistsPageView: React.FC<SetlistsPageViewProps> = ({
 	}, [selectedPlaylist, quickSendIndex, presets]);
 
 	useSidebarContent(
-		<div className="p-2 rounded-lg bg-base-300 text-xs">
+		<div className="rounded-lg bg-base-300 p-2 text-xs">
 			<div>Setlists: {playlists.length}</div>
 		</div>,
 	);
 
 	return (
-		<div className="flex grow h-full overflow-hidden bg-base-300">
+		<div className="flex h-full grow overflow-hidden bg-base-300">
 			<SetlistsSidebar
 				playlists={playlists}
 				selectedPlaylistId={selectedPlaylistId}
@@ -94,9 +94,9 @@ export const SetlistsPageView: React.FC<SetlistsPageViewProps> = ({
 				onDeletePlaylist={onDeletePlaylist}
 			/>
 
-			<section className="flex flex-col grow h-full overflow-hidden">
+			<section className="flex h-full grow flex-col overflow-hidden">
 				{!selectedPlaylist && (
-					<div className="flex items-center justify-center grow px-4">
+					<div className="flex grow items-center justify-center px-4">
 						<InlineNotice
 							message="Select a setlist or create a new one."
 							tone="neutral"
@@ -109,15 +109,15 @@ export const SetlistsPageView: React.FC<SetlistsPageViewProps> = ({
 				{selectedPlaylist && (
 					<>
 						{/* Header */}
-						<div className="flex items-center justify-between p-4 border-b border-base-content/10 bg-base-200/50">
+						<div className="flex items-center justify-between border-base-content/10 border-b bg-base-200/50 p-4">
 							<div>
-								<div className="text-lg font-bold">{selectedPlaylist.name}</div>
+								<div className="font-bold text-lg">{selectedPlaylist.name}</div>
 								<div className="text-xs opacity-70">
 									{selectedPlaylist.entries.length} preset
 									{selectedPlaylist.entries.length !== 1 ? "s" : ""}
 								</div>
 							</div>
-							<div className="flex gap-2 items-center">
+							<div className="flex items-center gap-2">
 								<Button
 									variant="accent"
 									size="sm"
@@ -173,13 +173,13 @@ export const SetlistsPageView: React.FC<SetlistsPageViewProps> = ({
 
 						{/* Quick-send current step display */}
 						{isQuickSending && (
-							<div className="px-4 py-2 bg-accent/10 border-b border-accent/20 flex items-center gap-3">
+							<div className="flex items-center gap-3 border-accent/20 border-b bg-accent/10 px-4 py-2">
 								<span className="text-xs opacity-70">
 									Step {quickSendIndex !== null ? quickSendIndex + 1 : "-"} of{" "}
 									{selectedPlaylist.entries.length}
 								</span>
 								{currentStepPreset && (
-									<span className="text-sm font-bold text-accent">
+									<span className="font-bold text-accent text-sm">
 										▶ {currentStepPreset.name}
 									</span>
 								)}
@@ -199,17 +199,17 @@ export const SetlistsPageView: React.FC<SetlistsPageViewProps> = ({
 
 			{/* Add Preset Modal */}
 			{showAddPresetModal && selectedPlaylist && (
-				<div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-					<div className="bg-base-100 rounded-xl shadow-xl p-5 w-lg max-h-[80vh] flex flex-col gap-3">
-						<h2 className="text-lg font-bold">Add Preset to Setlist</h2>
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+					<div className="flex max-h-[80vh] w-lg flex-col gap-3 rounded-xl bg-base-100 p-5 shadow-xl">
+						<h2 className="font-bold text-lg">Add Preset to Setlist</h2>
 						<input
 							className="input input-sm input-bordered w-full"
 							placeholder="Search by name or author…"
 							value={addPresetSearch}
 							onChange={(e) => setAddPresetSearch(e.target.value)}
 						/>
-						<div className="overflow-auto grow">
-							<table className="table table-xs table-zebra w-full">
+						<div className="grow overflow-auto">
+							<table className="table-xs table-zebra table w-full">
 								<thead>
 									<tr>
 										<th>Name</th>

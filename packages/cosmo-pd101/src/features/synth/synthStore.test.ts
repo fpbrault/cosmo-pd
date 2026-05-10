@@ -67,4 +67,15 @@ describe("synthStore gatherState", () => {
 			expect(config.params.ratio).toBe(6);
 		}
 	});
+
+	it("applyPreset leaves missing fxSlots empty", () => {
+		const preset = useSynthStore.getState().gatherState();
+		delete preset.params.fxSlots;
+
+		useSynthStore.getState().applyPreset(preset);
+
+		const { fxSlots } = useSynthStore.getState();
+		expect(fxSlots[3].type).toBe("empty");
+		expect(fxSlots[4].type).toBe("empty");
+	});
 });

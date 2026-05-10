@@ -127,7 +127,7 @@ export default function AppSidebar({
 	return (
 		<div
 			className={
-				"relative flex flex-col h-full gap-3 p-3 bg-base-200 transition-all duration-200 border-r border-base-content/10 " +
+				"relative flex h-full flex-col gap-3 border-base-content/10 border-r bg-base-200 p-3 transition-all duration-200" +
 				(leftPanelCollapsed ? "w-20 min-w-20" : "w-80 min-w-80")
 			}
 		>
@@ -145,13 +145,13 @@ export default function AppSidebar({
 				>
 					<div
 						className={
-							"grid place-items-center rounded-xl border border-warning/40 bg-linear-to-br from-warning/25 via-accent/20 to-primary/25 p-0.5 shadow-sm shadow-base-content/10 " +
+							"grid place-items-center rounded-xl border border-warning/40 bg-linear-to-br from-warning/25 via-accent/20 to-primary/25 p-0.5 shadow-base-content/10 shadow-sm" +
 							(leftPanelCollapsed ? "size-8" : "size-10")
 						}
 					>
 						<div
 							className={
-								"flex size-full flex-col items-center justify-center rounded-[0.65rem] bg-base-200 font-black italic uppercase leading-none text-warning " +
+								"flex size-full flex-col items-center justify-center rounded-[0.65rem] bg-base-200 font-black text-warning uppercase italic leading-none" +
 								(leftPanelCollapsed ? "text-[0.54rem]" : "text-[0.66rem]")
 							}
 						>
@@ -162,7 +162,7 @@ export default function AppSidebar({
 					</div>
 				</Button>
 				{!leftPanelCollapsed && (
-					<span className="text-sm font-extrabold tracking-wide text-base-content">
+					<span className="font-extrabold text-base-content text-sm tracking-wide">
 						CZ Explorer
 					</span>
 				)}
@@ -173,7 +173,7 @@ export default function AppSidebar({
 				type="button"
 				unstyled
 				onClick={() => setLeftPanelCollapsed((prev) => !prev)}
-				className="absolute -right-3 top-12 z-10 grid size-7 place-items-center rounded-full border border-base-content/20 bg-base-100 text-base-content/70 shadow transition-colors hover:bg-base-300 hover:text-base-content"
+				className="absolute top-12 -right-3 z-10 grid size-7 place-items-center rounded-full border border-base-content/20 bg-base-100 text-base-content/70 shadow transition-colors hover:bg-base-300 hover:text-base-content"
 				aria-label={leftPanelCollapsed ? "Expand sidebar" : "Collapse sidebar"}
 				title={leftPanelCollapsed ? "Expand sidebar" : "Collapse sidebar"}
 			>
@@ -256,7 +256,7 @@ export default function AppSidebar({
 						>
 							<FaCopy size={16} />
 							{hasDuplicates && (
-								<span className="badge badge-error badge-xs absolute -right-1 -top-1 min-h-0 h-3 w-3 p-0" />
+								<span className="badge badge-error badge-xs absolute -top-1 -right-1 h-3 min-h-0 w-3 p-0" />
 							)}
 						</Button>
 

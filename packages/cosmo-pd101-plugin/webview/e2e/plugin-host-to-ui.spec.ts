@@ -30,11 +30,11 @@ test.describe("Host to UI inbound updates", () => {
 		await expect(dspState).toContainText("id:volume", { timeout: 2000 });
 	});
 
-	test("pushBeamerParamUpdate through _onParams updates the volume display", async ({
+	test("pushPluginParamUpdate through mock host path updates the volume display", async ({
 		page,
 	}) => {
 		await page.evaluate(() =>
-			window.__MOCK_BRIDGE__?.pushBeamerParamUpdate({
+			window.__MOCK_BRIDGE__?.pushPluginParamUpdate({
 				volume: [0.33, 0.33, "33%"],
 			}),
 		);

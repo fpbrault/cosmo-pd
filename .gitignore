@@ -40,5 +40,11 @@ venv/
 # Plans (local only)
 plans/
 
+# Refactoring and test plan files
+REFACTOR*.md
+TEST-PLAN*.md
+**/REFACTOR*.md
+**/TEST-PLAN*.md
+
 target/
 test-results/

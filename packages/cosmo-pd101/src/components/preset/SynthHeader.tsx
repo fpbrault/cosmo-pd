@@ -5,8 +5,11 @@ import PresetNavigator from "./PresetNavigator";
 
 export type SynthHeaderProps = {
 	allEntries: PresetEntry[];
+	showLibraryPresets: boolean;
+	onToggleLibraryPresets: () => void;
 	activeEntryId: string | null;
 	activePresetName: string;
+	onBrandInfoClick?: () => void;
 	pendingPresetChange?: {
 		activePresetName: string;
 		activeLocalName: string | null;
@@ -24,6 +27,9 @@ export type SynthHeaderProps = {
 	onSavePreset: (name: string) => void;
 	onDeletePreset: (name: string) => void;
 	onRenamePreset: (oldName: string, newName: string) => void;
+	onSetPresetFavorite: (name: string, favorite: boolean) => void;
+	onSetPresetCategory: (name: string, category: string) => void;
+	onSetPresetTags: (name: string, tags: string[]) => void;
 	onExportPreset: (name: string) => void;
 	onExportCurrentState: (name: string) => void;
 	onImportPreset: (json: string, filename: string) => void;
@@ -38,48 +44,59 @@ export type SynthHeaderProps = {
 
 export default function SynthHeader({
 	allEntries,
+	activeEntryId,
 	activePresetName,
+	onBrandInfoClick,
 	onStepPreset,
 	isLibraryModeOpen = false,
 	onLibraryModeChange,
 	trailingContent,
 }: SynthHeaderProps) {
+	const activeEntry = allEntries.find((entry) => entry.id === activeEntryId);
+	const activePresetSource = activeEntry?.sourceLabel ?? "Current State";
+
 	return (
-		<header className="shrink-0 flex flex-col gap-3 border-b-4 border-cz-border bg-cz-body px-8 py-2 shadow-inner lg:flex-row lg:items-center lg:justify-between">
+		<header className="flex shrink-0 flex-row items-center justify-between gap-3 border-cz-border border-b-4 bg-cz-body px-8 py-2 shadow-inner">
 			{/* Hardware nameplate logo */}
-			<div className="flex items-center gap-4 shrink-0">
-				<div className="flex flex-col items-start leading-none select-none">
+			<div className="flex shrink-0 items-center gap-4">
+				<div className="flex select-none flex-col items-start leading-none">
 					<div className="flex items-baseline gap-2">
 						<span
-							className="text-[2.1rem] font-black uppercase leading-none text-cz-cream"
+							className="font-black text-[2.1rem] text-cz-cream uppercase leading-none"
 							style={{ fontFamily: "'Michroma', sans-serif" }}
 						>
 							COSMO
 						</span>
-						<span className="text-[2.1rem] font-black uppercase leading-none font-['Arial_Narrow','Arial',sans-serif] tracking-[-0.02em] [-webkit-text-stroke:1.5px_var(--color-cz-gold)] text-transparent">
+						<span className="font-['Arial_Narrow','Arial',sans-serif] font-black text-[2.1rem] text-transparent uppercase leading-none tracking-[-0.02em] [-webkit-text-stroke:1.5px_var(--color-cz-gold)]">
 							PD-101
 						</span>
 					</div>
-					<span className="mt-0.75 block h-0.75 w-full bg-cz-gold rounded-full" />
+					<span className="mt-0.75 block h-0.75 w-full rounded-full bg-cz-gold" />
 				</div>
 			</div>
 
 			<PresetNavigator
 				allEntries={allEntries}
 				activePresetName={activePresetName}
+				activePresetSource={activePresetSource}
 				onStepPreset={onStepPreset}
 				isLibraryModeOpen={isLibraryModeOpen}
 				onLibraryModeChange={onLibraryModeChange}
 			/>
 
-			<div className="hidden sm:flex flex-col justify-center border-l border-cz-border pl-4">
-				<span className="text-4xs font-mono uppercase tracking-[0.3em] text-cz-light-blue">
+			<button
+				type="button"
+				className="group flex flex-col justify-center border-cz-border border-l pl-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cz-light-blue/70"
+				aria-label="Open synthesizer lab information"
+				onClick={onBrandInfoClick}
+			>
+				<span className="font-mono text-4xs text-cz-light-blue uppercase tracking-[0.3em] transition-colors group-hover:text-cz-cream group-focus-visible:text-cz-cream">
 					Phase Distortion
 				</span>
-				<span className="text-xs font-mono font-semibold uppercase tracking-[0.18em] text-cz-cream">
+				<span className="font-mono font-semibold text-cz-cream text-xs uppercase tracking-[0.18em] transition-colors group-hover:text-cz-gold group-focus-visible:text-cz-gold">
 					Synthesizer Lab
 				</span>
-			</div>
+			</button>
 
 			{trailingContent}
 		</header>

@@ -24,7 +24,7 @@ describe("Card", () => {
 
 	it("applies custom classes after the variant classes", () => {
 		renderWithProviders(
-			<Card variant="subtle" className="bg-error/20 custom-class">
+			<Card variant="subtle" className="custom-class bg-error/20">
 				Custom panel
 			</Card>,
 		);

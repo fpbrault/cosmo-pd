@@ -27,7 +27,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: true
           fetch-depth: 0
 
       - name: Setup Bun
@@ -35,17 +34,23 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
       - name: Install dependencies
         run: bun install
         shell: bash
 
+      - name: Setup Biome
+        uses: biomejs/setup-biome@v2
+        with:
+          version: latest
+
       - name: Run Biome CI
         id: biome-ci
-        run: bunx biome ci . || echo "has-issues=true" >> $GITHUB_OUTPUT
-
-      - name: Fix Biome issues
-        if: steps.biome-ci.outputs.has-issues == 'true'
-        run: bunx biome check --write .
+        run: biome ci .
 
       - name: Run Cargo fmt
         run: bun run lint:fix:cargo || true
@@ -59,24 +64,10 @@ jobs:
           fi
         shell: bash
 
-      - name: Auto-commit all fixes
-        if: github.event_name == 'pull_request' && steps.check-changes.outputs.has-changes == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "chore(ci): apply lint fixes"
-          git push origin HEAD:${{ github.head_ref }}
-        shell: bash
-
       - name: Fail if formatting changes were needed
         if: steps.check-changes.outputs.has-changes == 'true'
         run: exit 1
         shell: bash
-
-      - name: Verify Biome CI after fixes
-        if: steps.biome-ci.outputs.has-issues == 'true' && steps.check-changes.outputs.has-changes != 'true'
-        run: bunx biome ci .
 
   unit-tests:
     name: Unit Tests
@@ -248,6 +239,89 @@ jobs:
         run: bun --filter @cosmo/cosmo-pd101-plugin test:e2e
         shell: bash
 
+  perf-benchmarks:
+    name: Engine Benchmarks
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            engine:
+              - 'packages/cosmo-synth-engine/**'
+
+      - name: Check for engine changes
+        if: steps.filter.outputs.engine != 'true'
+        run: echo "No changes to cosmo-synth-engine, skipping benchmarks"
+
+      - name: Setup Rust nightly
+        if: steps.filter.outputs.engine == 'true'
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Benchmark target branch
+        if: steps.filter.outputs.engine == 'true'
+        run: |
+          mkdir -p target/perf/engine
+          base_ref="${{ github.base_ref }}"
+          base_dir="$RUNNER_TEMP/cosmo-pd-base"
+          git fetch origin "$base_ref" --depth=1
+          rm -rf "$base_dir"
+          git worktree add --detach "$base_dir" "origin/$base_ref"
+          cd "$base_dir"
+          cargo bench -p cosmo-synth-engine --bench render-bench -- --nocapture | tee "$GITHUB_WORKSPACE/target/perf/engine/base-bench.txt"
+        shell: bash
+
+      - name: Seed baseline from target branch
+        if: steps.filter.outputs.engine == 'true'
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: cosmo-synth-engine
+          tool: cargo
+          output-file-path: target/perf/engine/base-bench.txt
+          external-data-json-path: target/perf/engine/baseline.json
+          save-data-file: true
+          fail-on-alert: false
+
+      - name: Benchmark pull request head
+        if: steps.filter.outputs.engine == 'true'
+        run: |
+          cargo bench -p cosmo-synth-engine --bench render-bench -- --nocapture | tee target/perf/engine/pr-bench.txt
+        shell: bash
+
+      - name: Compare PR against target branch
+        if: steps.filter.outputs.engine == 'true'
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: cosmo-synth-engine
+          tool: cargo
+          output-file-path: target/perf/engine/pr-bench.txt
+          external-data-json-path: target/perf/engine/baseline.json
+          save-data-file: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          comment-on-alert: true
+          fail-on-alert: true
+          comment-always: true
+          summary-always: true
+          alert-threshold: 108%
+
+      - name: Upload benchmark artifact
+        if: steps.filter.outputs.engine == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: engine-benchmark
+          path: |
+            target/perf/engine/base-bench.txt
+            target/perf/engine/pr-bench.txt
+            target/perf/engine/baseline.json
+
   build-plugins:
     name: Build plugins (${{ matrix.platform }})
     strategy:
@@ -256,15 +330,13 @@ jobs:
         include:
           - os: macos-latest
             platform: macos
-            build_cmd: $env:ARCH='universal'; bun run build:plugin
+            build_cmd: $env:ARCH='universal'; bun run build:plugin:release
           - os: windows-latest
             platform: windows
-            build_cmd: bun run build:plugin
+            build_cmd: bun run build:plugin:release
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
-        with:
-          submodules: true
 
       - name: Run plugin build action
         uses: ./.github/actions/build-plugins
@@ -281,8 +353,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
-        with:
-          submodules: true
 
       - name: Run desktop build action
         uses: ./.github/actions/build-desktop

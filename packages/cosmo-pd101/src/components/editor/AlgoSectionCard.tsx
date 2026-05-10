@@ -1,3 +1,4 @@
+import { memo } from "react";
 import AlgoControlsGroup from "@/components/controls/algo/AlgoControlsGroup";
 import AlgoIconGrid from "@/components/controls/algo/AlgoIconGrid";
 import type {
@@ -10,8 +11,6 @@ import Card from "@/components/primitives/Card";
 import type { PdAlgo } from "@/lib/synth/pdAlgorithms";
 
 type AlgoSectionCardProps = {
-	title: string;
-	algoLabel?: string;
 	value: PdAlgo;
 	onChange: (value: PdAlgo) => void;
 	disabled?: boolean;
@@ -25,11 +24,10 @@ type AlgoSectionCardProps = {
 		control: AlgoControlRuntime,
 	) => AlgoControlOptionRuntime | null;
 	applyOptionAssignments: (option: AlgoControlOptionRuntime) => void;
+	color?: string;
 };
 
-export default function AlgoSectionCard({
-	title,
-	algoLabel,
+function AlgoSectionCard({
 	value,
 	onChange,
 	disabled = false,
@@ -41,30 +39,24 @@ export default function AlgoSectionCard({
 	setAlgoControlValue,
 	getActiveSelectOption,
 	applyOptionAssignments,
+	color,
 }: AlgoSectionCardProps) {
 	return (
 		<Card
 			variant="subtle"
-			className={`min-h-0 flex flex-col ${disabled ? "opacity-45" : ""}`}
+			className={`flex min-h-0 flex-col ${disabled ? "opacity-45" : ""}`}
 		>
-			<div className="flex justify-between">
-				<div className="mb-2 text-3xs uppercase tracking-[0.24em] text-cz-cream">
-					{title}
-				</div>
-				<span className="text-3xs uppercase tracking-[0.2em] text-cz-light-blue font-bold">
-					{algoLabel}
-				</span>
+			<div className="flex justify-center">
+				<AlgoIconGrid
+					value={value}
+					onChange={onChange}
+					disabled={disabled}
+					color={color}
+				/>
 			</div>
-			<AlgoIconGrid
-				value={value}
-				onChange={onChange}
-				size={36}
-				disabled={disabled}
-			/>
-			<div className="mt-2 border-t border-cz-border/70 pt-4">
+			<div className="mt-2 border-cz-border/70 border-t pt-4">
 				<AlgoControlsGroup
 					embedded
-					title="Controls"
 					disabled={disabled}
 					controls={controls}
 					controlBindings={controlBindings}
@@ -74,8 +66,11 @@ export default function AlgoSectionCard({
 					setAlgoControlValue={setAlgoControlValue}
 					getActiveSelectOption={getActiveSelectOption}
 					applyOptionAssignments={applyOptionAssignments}
+					color={color}
 				/>
 			</div>
 		</Card>
 	);
 }
+
+export default memo(AlgoSectionCard);

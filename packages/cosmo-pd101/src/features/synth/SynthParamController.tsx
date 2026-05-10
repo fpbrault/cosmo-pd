@@ -5,6 +5,7 @@ import {
 	useContext,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from "react";
 import { useOptionalModMatrix } from "@/context/ModMatrixContext";
@@ -30,6 +31,10 @@ import {
 const SYNTH_PARAM_SETTERS = {
 	lineSelect: "setLineSelect",
 	modMode: "setModMode",
+	line1BaseWaveformA: "setLine1BaseWaveformA",
+	line1BaseWaveformB: "setLine1BaseWaveformB",
+	line2BaseWaveformA: "setLine2BaseWaveformA",
+	line2BaseWaveformB: "setLine2BaseWaveformB",
 	warpAAmount: "setWarpAAmount",
 	warpBAmount: "setWarpBAmount",
 	warpAAlgo: "setWarpAAlgo",
@@ -40,24 +45,18 @@ const SYNTH_PARAM_SETTERS = {
 	algoBlendB: "setAlgoBlendB",
 	line1Level: "setLine1Level",
 	line2Level: "setLine2Level",
-	line1Octave: "setLine1Octave",
-	line2Octave: "setLine2Octave",
-	line1Detune: "setLine1Detune",
-	line2Detune: "setLine2Detune",
+	lineOctave: "setLineOctave",
+	line2DetuneOctave: "setLine2DetuneOctave",
+	line2DetuneNote: "setLine2DetuneNote",
+	line2DetuneFine: "setLine2DetuneFine",
 	line1DcoEnv: "setLine1DcoEnv",
 	line1DcwEnv: "setLine1DcwEnv",
 	line1DcaEnv: "setLine1DcaEnv",
-	line1CzSlotAWaveform: "setLine1CzSlotAWaveform",
-	line1CzSlotBWaveform: "setLine1CzSlotBWaveform",
-	line1CzWindow: "setLine1CzWindow",
 	line1AlgoControlsA: "setLine1AlgoControlsA",
 	line1AlgoControlsB: "setLine1AlgoControlsB",
 	line2DcoEnv: "setLine2DcoEnv",
 	line2DcwEnv: "setLine2DcwEnv",
 	line2DcaEnv: "setLine2DcaEnv",
-	line2CzSlotAWaveform: "setLine2CzSlotAWaveform",
-	line2CzSlotBWaveform: "setLine2CzSlotBWaveform",
-	line2CzWindow: "setLine2CzWindow",
 	line2AlgoControlsA: "setLine2AlgoControlsA",
 	line2AlgoControlsB: "setLine2AlgoControlsB",
 	line1DcwKeyFollow: "setLine1DcwKeyFollow",
@@ -66,17 +65,7 @@ const SYNTH_PARAM_SETTERS = {
 	polyMode: "setPolyMode",
 	velocityCurve: "setVelocityCurve",
 	pitchBendRange: "setPitchBendRange",
-	modWheelVibratoDepth: "setModWheelVibratoDepth",
-	phaseModEnabled: "setPhaseModEnabled",
 	windowType: "setWindowType",
-	intPmAmount: "setIntPmAmount",
-	intPmRatio: "setIntPmRatio",
-	pmPre: "setPmPre",
-	vibratoEnabled: "setVibratoEnabled",
-	vibratoWave: "setVibratoWave",
-	vibratoRate: "setVibratoRate",
-	vibratoDepth: "setVibratoDepth",
-	vibratoDelay: "setVibratoDelay",
 	portamentoEnabled: "setPortamentoEnabled",
 	portamentoMode: "setPortamentoMode",
 	portamentoRate: "setPortamentoRate",
@@ -98,32 +87,6 @@ const SYNTH_PARAM_SETTERS = {
 	modEnvDecay: "setModEnvDecay",
 	modEnvSustain: "setModEnvSustain",
 	modEnvRelease: "setModEnvRelease",
-	filterEnabled: "setFilterEnabled",
-	filterType: "setFilterType",
-	filterCutoff: "setFilterCutoff",
-	filterResonance: "setFilterResonance",
-	filterEnvAmount: "setFilterEnvAmount",
-	chorusEnabled: "setChorusEnabled",
-	chorusRate: "setChorusRate",
-	chorusDepth: "setChorusDepth",
-	chorusMix: "setChorusMix",
-	delayEnabled: "setDelayEnabled",
-	delayTime: "setDelayTime",
-	delayFeedback: "setDelayFeedback",
-	delayMix: "setDelayMix",
-	delayTapeMode: "setDelayTapeMode",
-	delayWarmth: "setDelayWarmth",
-	reverbEnabled: "setReverbEnabled",
-	reverbMix: "setReverbMix",
-	reverbSpace: "setReverbSpace",
-	reverbPredelay: "setReverbPredelay",
-	reverbDistance: "setReverbDistance",
-	reverbCharacter: "setReverbCharacter",
-	phaserEnabled: "setPhaserEnabled",
-	phaserRate: "setPhaserRate",
-	phaserDepth: "setPhaserDepth",
-	phaserMix: "setPhaserMix",
-	phaserFeedback: "setPhaserFeedback",
 } as const;
 
 export type SynthParamKey = keyof typeof SYNTH_PARAM_SETTERS;
@@ -182,6 +145,18 @@ export function SynthParamControllerProvider({
 	const [liveVoiceStates, setLiveVoiceStates] = useState<LiveVoiceStates>(
 		EMPTY_RUNTIME_VOICE_STATES,
 	);
+	const liveSourcesRef = useRef<LiveModSources>(EMPTY_RUNTIME_MOD_SOURCES);
+	const liveVoiceStatesRef = useRef<LiveVoiceStates>(
+		EMPTY_RUNTIME_VOICE_STATES,
+	);
+
+	useEffect(() => {
+		liveSourcesRef.current = liveSources;
+	}, [liveSources]);
+
+	useEffect(() => {
+		liveVoiceStatesRef.current = liveVoiceStates;
+	}, [liveVoiceStates]);
 
 	const getParam = useCallback(
 		<K extends SynthParamKey>(key: K): UseSynthStateResult[K] => {
@@ -311,9 +286,10 @@ export function SynthParamControllerProvider({
 				return undefined;
 			}
 
+			const runtimeSources = liveSourcesRef.current;
 			let liveModDelta = 0;
 			for (const route of activeRoutes) {
-				const sourceValue = liveSources[route.source] ?? 0;
+				const sourceValue = runtimeSources[route.source] ?? 0;
 				liveModDelta += route.amount * sourceValue;
 			}
 
@@ -321,8 +297,11 @@ export function SynthParamControllerProvider({
 			const visualModScale = destination.includes("EnvStep") ? 127 : 1;
 			return baseValue + clampedLiveModDelta * visualModScale;
 		},
-		[liveSources, modRoutes],
+		[modRoutes],
 	);
+
+	const getLiveSources = useCallback(() => liveSourcesRef.current, []);
+	const getLiveVoiceStates = useCallback(() => liveVoiceStatesRef.current, []);
 
 	const controller = useMemo(
 		() => ({
@@ -333,8 +312,8 @@ export function SynthParamControllerProvider({
 			getRouteCount,
 			hasActiveRoutes,
 			hasActiveRoutesForKey,
-			getLiveSources: () => liveSources,
-			getLiveVoiceStates: () => liveVoiceStates,
+			getLiveSources,
+			getLiveVoiceStates,
 			getModulatedValue,
 		}),
 		[
@@ -345,8 +324,8 @@ export function SynthParamControllerProvider({
 			getRouteCount,
 			hasActiveRoutes,
 			hasActiveRoutesForKey,
-			liveSources,
-			liveVoiceStates,
+			getLiveSources,
+			getLiveVoiceStates,
 			getModulatedValue,
 		],
 	);
@@ -372,10 +351,14 @@ export function useSynthParam<K extends SynthParamKey>(
 			"useSynthParam must be used within SynthParamControllerProvider",
 		);
 	}
+	const setValue = useCallback(
+		(v: UseSynthStateResult[K]) => controller.setParam(key, v),
+		[controller.setParam, key],
+	);
 
 	return {
 		value,
-		setValue: (v) => controller.setParam(key, v),
+		setValue,
 	};
 }
 

@@ -74,7 +74,7 @@ const isCompactColumn = (columnId: string) =>
 const TagsCell = memo(({ tags }: { tags: string[] }) => (
 	<div className="flex gap-2">
 		{tags.map((tag: string) => (
-			<span key={tag} className="capitalize badge badge-primary">
+			<span key={tag} className="badge badge-primary capitalize">
 				{tag.toLowerCase()}
 			</span>
 		))}
@@ -156,7 +156,7 @@ function PresetListTopBar(props: {
 	const [isTagsPanelOpen, setIsTagsPanelOpen] = useState(false);
 
 	return (
-		<div className="relative border-b bg-base-200 border-base-content/10">
+		<div className="relative border-base-content/10 border-b bg-base-200">
 			<div className="flex flex-wrap items-center gap-2 px-4 py-2">
 				<div className="relative inline-block">
 					<input
@@ -164,13 +164,13 @@ function PresetListTopBar(props: {
 						placeholder="Search..."
 						value={props.searchTerm}
 						onChange={(e) => props.setSearchTerm(e.target.value)}
-						className="pr-8 input input-secondary input-md"
+						className="input input-secondary input-md pr-8"
 					/>
 					{props.searchTerm && (
 						<Button
 							type="button"
 							unstyled
-							className="absolute text-gray-500 -translate-y-1/2 right-6 top-1/2 hover:text-gray-700"
+							className="absolute top-1/2 right-6 -translate-y-1/2 text-gray-500 hover:text-gray-700"
 							onClick={() => props.setSearchTerm("")}
 						>
 							<FaTimes size={20} />
@@ -178,7 +178,7 @@ function PresetListTopBar(props: {
 					)}
 				</div>
 
-				<span className="ml-1 text-xs font-semibold tracking-wide uppercase opacity-65">
+				<span className="ml-1 font-semibold text-xs uppercase tracking-wide opacity-65">
 					{props.totalDBRowCount} presets
 				</span>
 
@@ -216,10 +216,10 @@ function PresetListTopBar(props: {
 					</label>
 				</div>
 
-				<div className="flex items-center gap-2 ml-auto">
+				<div className="ml-auto flex items-center gap-2">
 					<Button
 						type="button"
-						className={`btn btn-sm sm:btn-md normal-case font-semibold shadow-md ${
+						className={`btn btn-sm sm:btn-md font-semibold normal-case shadow-md ${
 							props.userPresetsOnly ? "btn-primary" : "btn-neutral"
 						}`}
 						onClick={props.onToggleUserPresetsOnly}
@@ -230,7 +230,7 @@ function PresetListTopBar(props: {
 
 					<Button
 						type="button"
-						className={`btn btn-sm sm:btn-md normal-case font-semibold shadow-md ${
+						className={`btn btn-sm sm:btn-md font-semibold normal-case shadow-md ${
 							isTagsPanelOpen
 								? "btn-primary ring-2 ring-primary/40"
 								: "btn-accent text-accent-content"
@@ -264,9 +264,9 @@ function PresetListTopBar(props: {
 						onClick={() => setIsTagsPanelOpen(false)}
 						aria-label="Close tag filters"
 					/>
-					<div className="absolute left-2 right-2 z-40 p-3 mt-2 border shadow-xl sm:left-4 sm:right-4 lg:left-auto lg:right-4 lg:w-176 rounded-xl bg-base-100 border-base-content/20">
-						<div className="flex items-center justify-between gap-2 mb-3">
-							<h3 className="text-lg font-semibold">Tag Filters</h3>
+					<div className="absolute right-2 left-2 z-40 mt-2 rounded-xl border border-base-content/20 bg-base-100 p-3 shadow-xl sm:right-4 sm:left-4 lg:right-4 lg:left-auto lg:w-176">
+						<div className="mb-3 flex items-center justify-between gap-2">
+							<h3 className="font-semibold text-lg">Tag Filters</h3>
 							<Button
 								type="button"
 								onClick={() => setIsTagsPanelOpen(false)}
@@ -277,7 +277,7 @@ function PresetListTopBar(props: {
 							</Button>
 						</div>
 
-						<div className="flex flex-wrap items-center gap-2 mb-3">
+						<div className="mb-3 flex flex-wrap items-center gap-2">
 							<Button
 								type="button"
 								onClick={props.onToggleFilterMode}
@@ -321,7 +321,7 @@ function PresetListTopBar(props: {
 											unstyled
 											key={tag}
 											onClick={() => props.onToggleTag(tag)}
-											className={`badge badge-lg h-10 px-4 text-sm font-semibold capitalize ${
+											className={`badge badge-lg h-10 px-4 font-semibold text-sm capitalize ${
 												selected
 													? "badge-primary"
 													: "badge-neutral border-base-content/20"
@@ -338,7 +338,7 @@ function PresetListTopBar(props: {
 			)}
 
 			{props.selectedTags.length > 0 && (
-				<div className="flex items-center gap-2 px-4 pb-3 overflow-x-auto">
+				<div className="flex items-center gap-2 overflow-x-auto px-4 pb-3">
 					{props.selectedTags.map((tag) => (
 						<Button
 							type="button"
@@ -546,7 +546,7 @@ const PresetList: React.FC<PresetListProps> = ({
 						{row.original.favorite ? (
 							<FaHeart
 								size={20}
-								className="hover:text-base-content text-primary"
+								className="text-primary hover:text-base-content"
 							/>
 						) : (
 							<FaRegHeart size={20} className="hover:text-primary" />
@@ -890,7 +890,7 @@ const PresetList: React.FC<PresetListProps> = ({
 	});
 
 	return (
-		<div className="flex h-full min-h-0 grow flex-col min-w-0 select-none bg-base-300">
+		<div className="flex h-full min-h-0 min-w-0 grow select-none flex-col bg-base-300">
 			<PresetListTopBar
 				currentPreset={currentPreset}
 				totalDBRowCount={totalDBRowCount}
@@ -928,7 +928,7 @@ const PresetList: React.FC<PresetListProps> = ({
 							Retrieve current preset
 						</Button>
 					</div>
-					<div className="mb-2 text-xs font-semibold tracking-wide uppercase opacity-60">
+					<div className="mb-2 font-semibold text-xs uppercase tracking-wide opacity-60">
 						Or retrieve from slot
 					</div>
 					<div className="mb-4">
@@ -954,13 +954,13 @@ const PresetList: React.FC<PresetListProps> = ({
 									setIsRetrieveModalOpen(false);
 								}}
 								variant="primary"
-								className="text-2xl font-bold"
+								className="font-bold text-2xl"
 							>
 								{slot}
 							</Button>
 						))}
 					</div>
-					<div className="flex justify-end mt-4">
+					<div className="mt-4 flex justify-end">
 						<Button
 							onClick={() => setIsRetrieveModalOpen(false)}
 							variant="error"
@@ -977,12 +977,12 @@ const PresetList: React.FC<PresetListProps> = ({
 				ref={tableContainerRef}
 			>
 				<table
-					className="table table-lg min-w-full border-separate border-spacing-0"
+					className="table-lg table min-w-full border-separate border-spacing-0"
 					style={{ width: table.getTotalSize() }}
 				>
 					<thead className="sticky top-0 z-20 bg-base-300 shadow-sm">
 						{table.getHeaderGroups().map((headerGroup) => (
-							<tr key={headerGroup.id} className="flex w-full text-xl group">
+							<tr key={headerGroup.id} className="group flex w-full text-xl">
 								{headerGroup.headers.map((column) => (
 									<th
 										key={column.id}
@@ -1063,7 +1063,7 @@ const PresetList: React.FC<PresetListProps> = ({
 											onDoubleClick={() => column.column.resetSize()}
 											onMouseDown={column.getResizeHandler()}
 											onTouchStart={column.getResizeHandler()}
-											className={`absolute top-0 right-0 h-full w-1 cursor-col-resize touch-none select-none hover:bg-primary transition-opacity ${
+											className={`absolute top-0 right-0 h-full w-1 cursor-col-resize touch-none select-none transition-opacity hover:bg-primary ${
 												column.column.getIsResizing()
 													? "bg-primary opacity-100"
 													: "bg-base-content/20 opacity-0 group-hover:opacity-100"
@@ -1096,7 +1096,7 @@ const PresetList: React.FC<PresetListProps> = ({
 										e.dataTransfer.effectAllowed = "copy";
 									}}
 									className={
-										"justifybetween " +
+										"justifybetween" +
 										(visualSelectedId === row.original.id ||
 										(!visualSelectedId && currentPreset?.id === row.original.id)
 											? "bg-base-100"

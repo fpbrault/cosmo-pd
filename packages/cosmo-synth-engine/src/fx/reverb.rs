@@ -1,9 +1,9 @@
-use libm::{cosf, sinf};
+use libm::fabsf;
 
 use super::delay_line::DelayLine;
+use crate::dsp_utils::TWO_PI;
 
 const SMOOTH_COEFF: f32 = 0.005;
-const TWO_PI: f32 = core::f32::consts::PI * 2.0;
 
 // ---------------------------------------------------------------------------
 // FDN reverb constants
@@ -93,24 +93,25 @@ impl FdnReverb {
         };
 
         let mut er_out = 0.0_f32;
-        for i in 0..ER_N {
-            er_out += self.er_line.read_at_fractional(self.er_tap_samples[i]) * ER_TAP_GAINS[i];
+        for (index, gain) in ER_TAP_GAINS.iter().copied().enumerate().take(ER_N) {
+            er_out += self.er_line.read_at_fractional(self.er_tap_samples[index]) * gain;
         }
         self.er_line.write(pre_delayed);
 
         let mut x = [0.0_f32; FDN_N];
-        for i in 0..FDN_N {
+        for (i, sample) in x.iter_mut().enumerate().take(FDN_N) {
             self.lfo_phases[i] += FDN_LFO_RATES[i] / self.sample_rate;
             if self.lfo_phases[i] >= 1.0 {
                 self.lfo_phases[i] -= 1.0;
             }
-            let lfo_val = sinf(self.lfo_phases[i] * TWO_PI);
-            let read_pos = (self.base_lengths[i] + lfo_val * lfo_depth).max(1.0);
-            x[i] = self.lines[i].read_at_fractional(read_pos);
+            // ECO quality mode: triangle LFO avoids per-sample sinf cost.
+            let tri_lfo = 1.0 - 4.0 * fabsf(self.lfo_phases[i] - 0.5);
+            let read_pos = (self.base_lengths[i] + tri_lfo * lfo_depth).max(1.0);
+            *sample = self.lines[i].read_at_fractional(read_pos);
         }
 
-        for i in 0..FDN_N {
-            self.lp_state[i] = lp_damp * self.lp_state[i] + (1.0 - lp_damp) * x[i];
+        for (state, sample) in self.lp_state.iter_mut().zip(x.iter()) {
+            *state = lp_damp * *state + (1.0 - lp_damp) * *sample;
         }
 
         let sum_lp: f32 = self.lp_state.iter().sum();
@@ -126,10 +127,9 @@ impl FdnReverb {
         let lr_gain = 0.4 + self.distance * 0.6;
         let wet = er_out * er_gain + late_out * lr_gain;
 
-        let mix_angle = self.mix * core::f32::consts::PI * 0.5;
-        let dry_gain = cosf(mix_angle);
-        let wet_gain = sinf(mix_angle);
-        sample * dry_gain + wet * wet_gain
+        // ECO quality mode: linear crossfade is cheaper than equal-power trig mix.
+        let mix = self.mix.clamp(0.0, 1.0);
+        sample * (1.0 - mix) + wet * mix
     }
 
     #[inline]
@@ -144,7 +144,7 @@ impl FdnReverb {
 
 use crate::{
     fx::{FxControlKindV1, FxControlV1, FxDefinitionV1, FxPresetOptionV1, NO_FX_CONTROL_OPTIONS},
-    params::{FxSlotType, SynthParams},
+    params::{FxSlotConfig, FxSlotType, SynthParams},
 };
 
 const PRESET_OPTIONS: [FxPresetOptionV1; 3] = [
@@ -172,6 +172,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(1.0),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("reverbMix"),
     },
     FxControlV1 {
         id: "space",
@@ -182,6 +183,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(1.0),
         default_f32: Some(0.5),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("reverbSpace"),
     },
     FxControlV1 {
         id: "predelay",
@@ -192,6 +194,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(0.1),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("reverbPredelay"),
     },
     FxControlV1 {
         id: "distance",
@@ -202,6 +205,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(1.0),
         default_f32: Some(0.3),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("reverbDistance"),
     },
     FxControlV1 {
         id: "character",
@@ -212,6 +216,7 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(1.0),
         default_f32: Some(0.65),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("reverbCharacter"),
     },
 ];
 
@@ -223,32 +228,43 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
 };
 
 pub fn apply_reverb_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::Reverb(r) = s {
+            Some(r)
+        } else {
+            None
+        }
+    });
+    let Some(r) = slot else {
+        return false;
+    };
+
     match preset {
         "smallRoom" => {
-            params.reverb.enabled = true;
-            params.reverb.mix = 0.22;
-            params.reverb.space = 0.32;
-            params.reverb.predelay = 0.006;
-            params.reverb.distance = 0.28;
-            params.reverb.character = 0.45;
+            r.enabled = true;
+            r.mix = 0.22;
+            r.space = 0.32;
+            r.predelay = 0.006;
+            r.distance = 0.28;
+            r.character = 0.45;
             true
         }
         "plateAir" => {
-            params.reverb.enabled = true;
-            params.reverb.mix = 0.31;
-            params.reverb.space = 0.58;
-            params.reverb.predelay = 0.012;
-            params.reverb.distance = 0.4;
-            params.reverb.character = 0.74;
+            r.enabled = true;
+            r.mix = 0.31;
+            r.space = 0.58;
+            r.predelay = 0.012;
+            r.distance = 0.4;
+            r.character = 0.74;
             true
         }
         "cathedral" => {
-            params.reverb.enabled = true;
-            params.reverb.mix = 0.47;
-            params.reverb.space = 0.9;
-            params.reverb.predelay = 0.03;
-            params.reverb.distance = 0.68;
-            params.reverb.character = 0.66;
+            r.enabled = true;
+            r.mix = 0.47;
+            r.space = 0.9;
+            r.predelay = 0.03;
+            r.distance = 0.68;
+            r.character = 0.66;
             true
         }
         _ => false,

@@ -13,7 +13,15 @@ test.describe("UI to host outbound messages", () => {
 	test("changing Line 1 algo records a param:set message for l1_warp_algo", async ({
 		page,
 	}) => {
-		const bendAlgoButton = page.getByTitle("Bend").first();
+		const algoPicker = page
+			.getByRole("button", { name: /algorithm \d+:/i })
+			.first();
+		await expect(algoPicker).toBeVisible();
+		await algoPicker.click();
+
+		const bendAlgoButton = page
+			.getByRole("button", { name: /^bend$/i })
+			.first();
 		await expect(bendAlgoButton).toBeVisible();
 		await bendAlgoButton.click();
 
@@ -31,20 +39,13 @@ test.describe("UI to host outbound messages", () => {
 	test("dragging DCW Amt records a param:set message for l1_dcw_base", async ({
 		page,
 	}) => {
-		const dcwAmtSlider = page
+		const dcwAmtKnob = page
 			.getByRole("spinbutton", { name: /dcw amt/i })
 			.first();
-		await expect(dcwAmtSlider).toBeVisible();
+		await expect(dcwAmtKnob).toBeVisible();
 
-		const box = await dcwAmtSlider.boundingBox();
-		if (!box) throw new Error("DCW Amt knob not found in layout");
-
-		const cx = box.x + box.width / 2;
-		const cy = box.y + box.height * 0.75;
-		await page.mouse.move(cx, cy);
-		await page.mouse.down();
-		await page.mouse.move(cx, cy - 20, { steps: 4 });
-		await page.mouse.up();
+		await dcwAmtKnob.focus();
+		await dcwAmtKnob.press("ArrowUp");
 
 		await waitForMessage(page, "param:set", "l1_dcw_base");
 	});
@@ -63,7 +64,7 @@ test.describe("UI to host outbound messages", () => {
 
 		const displayButton = page.getByRole("button", { name: "Volume value" });
 		await expect(displayButton).toBeVisible();
-		await displayButton.click();
+		await displayButton.dblclick();
 
 		const editInput = page.getByRole("textbox", { name: "Volume value" });
 		await expect(editInput).toBeVisible();

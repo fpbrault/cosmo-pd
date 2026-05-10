@@ -36,8 +36,8 @@ export default function SetlistsSidebar({
 	};
 
 	return (
-		<aside className="w-[24rem] min-w-[20rem] border-r border-base-content/10 bg-base-200/70 overflow-auto p-4">
-			<div className="flex flex-col gap-2 mb-4">
+		<aside className="w-[24rem] min-w-[20rem] overflow-auto border-base-content/10 border-r bg-base-200/70 p-4">
+			<div className="mb-4 flex flex-col gap-2">
 				<Button variant="accent" onClick={onCreatePlaylist}>
 					New Setlist
 				</Button>
@@ -54,10 +54,10 @@ export default function SetlistsSidebar({
 					<div
 						key={playlist.id}
 						className={
-							"w-full text-left p-3 rounded-lg border transition-colors " +
+							"w-full rounded-lg border p-3 text-left transition-colors" +
 							(selectedPlaylistId === playlist.id
-								? "bg-base-100 border-primary/60"
-								: "bg-base-200 border-base-content/10 hover:bg-base-100/60")
+								? "border-primary/60 bg-base-100"
+								: "border-base-content/10 bg-base-200 hover:bg-base-100/60")
 						}
 					>
 						{editingId === playlist.id ? (
@@ -80,7 +80,7 @@ export default function SetlistsSidebar({
 								className="w-full text-left"
 								onClick={() => onSelectPlaylist(playlist.id)}
 							>
-								<div className="text-sm font-bold truncate">
+								<div className="truncate font-bold text-sm">
 									{playlist.name}
 								</div>
 								<div className="text-xs opacity-70">
@@ -89,7 +89,7 @@ export default function SetlistsSidebar({
 								</div>
 							</Button>
 						)}
-						<div className="flex gap-1 mt-1 justify-end">
+						<div className="mt-1 flex justify-end gap-1">
 							<Button
 								variant="neutral"
 								size="sm"

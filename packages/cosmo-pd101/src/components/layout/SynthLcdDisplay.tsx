@@ -15,9 +15,9 @@ function SynthLcdDisplay({
 	transientReadout = null,
 }: SynthLcdDisplayProps) {
 	return (
-		<div className="relative w-full rounded-xl border border-cz-btn-border bg-linear-to-b from-[#3f3e3c] to-[#252422] py-2 mb-4 shadow-md">
+		<div className="relative mb-4 w-full rounded-xl border border-cz-btn-border bg-linear-to-b from-[#3f3e3c] to-[#252422] py-2 shadow-md">
 			<div className="rounded-lg border border-black/80 bg-[#1a1a18] px-3 pb-3 shadow-inner">
-				<div className="mb-2 flex items-center justify-between text-4xs font-mono uppercase tracking-[0.22em] text-cz-cream-dim">
+				<div className="mb-2 flex items-center justify-between font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.22em]">
 					<span>COSMO</span>
 					<span>Digital Synthesizer</span>
 				</div>
@@ -27,12 +27,12 @@ function SynthLcdDisplay({
 					<div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(34,40,32,0.16)_85%)]" />
 
 					<div className="relative z-10 grid h-[3.6rem] grid-rows-2 text-[#24331e]">
-						<div className="truncate self-center whitespace-nowrap text-sm font-bold uppercase leading-none tracking-widest">
+						<div className="self-center truncate whitespace-nowrap font-bold text-sm uppercase leading-none tracking-widest">
 							{transientReadout
 								? `${transientReadout.label}: ${transientReadout.value}`
 								: primaryText}
 						</div>
-						<div className="truncate self-center whitespace-nowrap text-2xs uppercase leading-none tracking-[0.08em] text-[#2f4327]/95">
+						<div className="self-center truncate whitespace-nowrap text-2xs text-[#2f4327]/95 uppercase leading-none tracking-[0.08em]">
 							{transientReadout ? "Control Adjust" : secondaryText}
 						</div>
 					</div>

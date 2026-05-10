@@ -121,6 +121,7 @@ const CONTROLS: [FxControlV1; 4] = [
         max: Some(20.0),
         default_f32: Some(4.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("tremoloRate"),
     },
     FxControlV1 {
         id: "depth",
@@ -131,6 +132,7 @@ const CONTROLS: [FxControlV1; 4] = [
         max: Some(1.0),
         default_f32: Some(0.5),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("tremoloDepth"),
     },
     FxControlV1 {
         id: "waveform",
@@ -141,6 +143,7 @@ const CONTROLS: [FxControlV1; 4] = [
         max: None,
         default_f32: Some(0.0),
         options: &WAVEFORM_OPTIONS,
+        mod_destination_key: None,
     },
     FxControlV1 {
         id: "mix",
@@ -151,6 +154,7 @@ const CONTROLS: [FxControlV1; 4] = [
         max: Some(1.0),
         default_f32: Some(1.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("tremoloMix"),
     },
 ];
 

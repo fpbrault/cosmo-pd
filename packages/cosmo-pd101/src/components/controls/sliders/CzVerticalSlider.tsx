@@ -134,7 +134,7 @@ export default function CzVerticalSlider({
 			onWheel={handleWheel}
 			data-hover-info={resolvedTooltip}
 			{...hoverHandlers}
-			className="relative h-full min-h-64 select-none cursor-ns-resize"
+			className="relative h-full min-h-64 cursor-ns-resize select-none"
 			style={{
 				width: trackW,
 				height: trackHeight ?? "100%",

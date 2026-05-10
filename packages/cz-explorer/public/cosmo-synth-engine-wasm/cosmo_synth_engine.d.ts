@@ -54,6 +54,10 @@ declare namespace wasm_bindgen {
          */
         process(output: Float32Array): void;
         /**
+         * Hard reset runtime voice and FX state while preserving current params.
+         */
+        resetAudioState(): void;
+        /**
          * Set aftertouch/channel pressure value. `value` is normalised [0.0, 1.0].
          */
         setAftertouch(value: number): void;
@@ -87,6 +91,12 @@ declare namespace wasm_bindgen {
         setSustain(on: boolean): void;
     }
 
+    /**
+     * Returns the Rust build profile this WASM binary was compiled with:
+     * `"release"` when built with `--release`, `"debug"` otherwise.
+     */
+    export function engineBuildProfile(): string;
+
 }
 declare type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
@@ -101,12 +111,14 @@ declare interface InitOutput {
     readonly czsynthprocessor_noteOff: (a: number, b: number) => void;
     readonly czsynthprocessor_noteOn: (a: number, b: number, c: number, d: number) => void;
     readonly czsynthprocessor_process: (a: number, b: number, c: number, d: number) => void;
+    readonly czsynthprocessor_resetAudioState: (a: number) => void;
     readonly czsynthprocessor_setAftertouch: (a: number, b: number) => void;
     readonly czsynthprocessor_setFxSlotType: (a: number, b: number, c: number, d: number) => number;
     readonly czsynthprocessor_setModWheel: (a: number, b: number) => void;
     readonly czsynthprocessor_setParams: (a: number, b: number, c: number) => void;
     readonly czsynthprocessor_setPitchBend: (a: number, b: number) => void;
     readonly czsynthprocessor_setSustain: (a: number, b: number) => void;
+    readonly engineBuildProfile: (a: number) => void;
     readonly __wbindgen_export: (a: number, b: number) => number;
     readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_add_to_stack_pointer: (a: number) => number;

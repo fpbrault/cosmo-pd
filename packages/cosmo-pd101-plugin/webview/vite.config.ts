@@ -41,11 +41,42 @@ const appVersion = explicitTag?.replace(/^v/i, "") || packageVersion;
 const buildLabel =
 	explicitTag || safeGit("git rev-parse --short HEAD") || `v${packageVersion}`;
 
-export default defineConfig({
+function getManualChunkName(id: string): string | undefined {
+	if (id.includes("/cosmo-pd101/lib-dist/")) {
+		return "vendor-cosmo-pd101";
+	}
+
+	if (!id.includes("node_modules")) {
+		return undefined;
+	}
+
+	if (id.includes("/react/") || id.includes("/react-dom/")) {
+		return "vendor-react";
+	}
+
+	if (id.includes("/i18next/") || id.includes("/react-i18next/")) {
+		return "vendor-i18n";
+	}
+
+	if (id.includes("/motion/")) {
+		return "vendor-motion";
+	}
+
+	if (id.includes("/zustand/")) {
+		return "vendor-state";
+	}
+
+	return "vendor";
+}
+
+export default defineConfig(({ command }) => ({
 	plugins: [react(), tailwindcss()],
 	define: {
 		__CZ_APP_VERSION__: JSON.stringify(appVersion),
 		__CZ_BUILD_LABEL__: JSON.stringify(buildLabel),
+		__RUST_BUILD_PROFILE__: JSON.stringify(
+			command === "build" ? "release" : "debug",
+		),
 	},
 	resolve: {
 		alias: [
@@ -63,5 +94,13 @@ export default defineConfig({
 	build: {
 		outDir: "dist",
 		sourcemap: true,
+		rollupOptions: {
+			output: {
+				assetFileNames: "assets/[name][extname]",
+				chunkFileNames: "assets/[name].js",
+				entryFileNames: "assets/[name].js",
+				manualChunks: getManualChunkName,
+			},
+		},
 	},
-});
+}));

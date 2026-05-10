@@ -15,12 +15,13 @@ use cosmo_synth_engine::generators::{
     AlgoControlV1, AlgoDefinitionV1, AlgoUiEntryV1, CzPresetV1,
 };
 use cosmo_synth_engine::module_presets::{module_preset_catalog_v1, ModulePresetGroupV1};
+use cosmo_synth_engine::params::engine_param_default_v1;
 use cosmo_synth_engine::params::{
-    engine_enum_value_tooltips_v1, engine_param_ui_meta_v1, Algo, AlgoControlValueV1,
-    BitcrusherParams, ChorusParams, CompressorParams, CzAlgo, CzLineParams, CzWaveform,
-    DelayParams, DistortionParams, EnvStep, EqParams, FilterParams, FilterType, FxSlotConfig,
-    FxSlotType, GrainDelayParams, JunoChorusParams, LfoParams, LfoWaveform, LineParams, LineSelect,
-    LoFiParams, ModDestination, ModEnvParams, ModMatrix, ModMode, ModRoute, ModSource,
+    engine_enum_value_tooltips_v1, engine_param_ranges_v1, engine_param_ui_meta_v1, Algo,
+    AlgoControlValueV1, BaseWaveform, BitcrusherParams, ChorusParams, CompressorParams, CzAlgo,
+    CzWaveform, DelayParams, DistortionParams, EnvStep, EqParams, FxSlotConfig, FxSlotType,
+    GrainDelayParams, JunoChorusParams, LfoParams, LfoWaveform, LineParams, LineSelect, LoFiParams,
+    ModDestination, ModEnvParams, ModMatrix, ModMode, ModRoute, ModSource, PhaseModParams,
     PhaserParams, PolyMode, PortamentoMode, PortamentoParams, RandomParams, ReverbParams,
     RingModParams, ShimmerVerbParams, StepEnvData, SynthParams, TremoloParams, VibratoParams,
     WavefolderParams, WindowType,
@@ -55,7 +56,7 @@ fn main() {
     out.push_str("\n\n");
     out.push_str(&export::<CzWaveform>(&config).expect("Failed to export CzWaveform"));
     out.push_str("\n\n");
-    out.push_str(&export::<CzLineParams>(&config).expect("Failed to export CzLineParams"));
+    out.push_str(&export::<BaseWaveform>(&config).expect("Failed to export BaseWaveform"));
     out.push_str("\n\n");
     out.push_str(&export::<Algo>(&config).expect("Failed to export Algo"));
     out.push_str("\n\n");
@@ -69,8 +70,6 @@ fn main() {
     out.push_str("\n\n");
     out.push_str(&export::<LfoWaveform>(&config).expect("Failed to export LfoWaveform"));
     out.push_str("\n\n");
-    out.push_str(&export::<FilterType>(&config).expect("Failed to export FilterType"));
-    out.push_str("\n\n");
     out.push_str(&export::<PortamentoMode>(&config).expect("Failed to export PortamentoMode"));
     out.push_str("\n\n");
     out.push_str(&export::<ChorusParams>(&config).expect("Failed to export ChorusParams"));
@@ -83,6 +82,8 @@ fn main() {
     out.push_str("\n\n");
     out.push_str(&export::<VibratoParams>(&config).expect("Failed to export VibratoParams"));
     out.push_str("\n\n");
+    out.push_str(&export::<PhaseModParams>(&config).expect("Failed to export PhaseModParams"));
+    out.push_str("\n\n");
     out.push_str(&export::<RandomParams>(&config).expect("Failed to export RandomParams"));
     out.push_str("\n\n");
     out.push_str(&export::<ModEnvParams>(&config).expect("Failed to export ModEnvParams"));
@@ -90,8 +91,6 @@ fn main() {
     out.push_str(&export::<PortamentoParams>(&config).expect("Failed to export PortamentoParams"));
     out.push_str("\n\n");
     out.push_str(&export::<LfoParams>(&config).expect("Failed to export LfoParams"));
-    out.push_str("\n\n");
-    out.push_str(&export::<FilterParams>(&config).expect("Failed to export FilterParams"));
     out.push_str("\n\n");
     out.push_str(
         &export::<AlgoControlValueV1>(&config).expect("Failed to export AlgoControlValueV1"),
@@ -218,8 +217,31 @@ fn main() {
     out.push_str(";\n");
     out.push_str("\n");
 
-    let engine_param_ui_meta_json = serde_json::to_string_pretty(engine_param_ui_meta_v1())
+    let mut engine_param_ui_meta_value = serde_json::to_value(engine_param_ui_meta_v1())
         .expect("Failed to serialize ENGINE_PARAM_UI_META_V1");
+    if let Some(items) = engine_param_ui_meta_value.as_array_mut() {
+        for item in items {
+            if let Some(obj) = item.as_object_mut() {
+                let key = obj.get("key").and_then(|v| v.as_str()).unwrap_or_default();
+                match engine_param_default_v1(key) {
+                    Some(default) => {
+                        let rounded = (default * 1_000_000.0).round() / 1_000_000.0;
+                        obj.insert(
+                            "paramDefault".to_string(),
+                            serde_json::Value::from(rounded as f64),
+                        );
+                    }
+                    None => {
+                        obj.insert("paramDefault".to_string(), serde_json::Value::Null);
+                    }
+                }
+            }
+        }
+    }
+    let engine_param_ui_meta_json = serde_json::to_string_pretty(&engine_param_ui_meta_value)
+        .expect("Failed to serialize ENGINE_PARAM_UI_META_V1");
+    let engine_param_ranges_json = serde_json::to_string_pretty(engine_param_ranges_v1())
+        .expect("Failed to serialize ENGINE_PARAM_RANGES_V1");
     let engine_enum_value_tooltips_json =
         serde_json::to_string_pretty(engine_enum_value_tooltips_v1())
             .expect("Failed to serialize ENGINE_ENUM_VALUE_TOOLTIPS_V1");
@@ -232,20 +254,27 @@ fn main() {
     out.push_str("  | { kind: \"integer\" }\n");
     out.push_str("  | { kind: \"decimal\" }\n");
     out.push_str("  | { kind: \"percent\" }\n");
+    out.push_str("  | { kind: \"bipolarPercent\" }\n");
+    out.push_str("  | { kind: \"degrees\" }\n");
     out.push_str("  | { kind: \"semitones\" }\n");
     out.push_str("  | { kind: \"milliseconds\" }\n");
     out.push_str("  | { kind: \"seconds2\" }\n");
     out.push_str("  | { kind: \"hertz\" }\n");
     out.push_str("  | { kind: \"enumMap\"; values: EngineEnumValueLabelV1[] };\n");
     out.push_str(
-        "export type EngineParamUiMetaV1 = { key: string; tooltip: string; readoutLabel: string; readoutFormat: EngineParamReadoutFormatV1 };\n"
+        "export type EngineParamUiMetaV1 = { key: string; tooltip: string; readoutLabel: string; readoutFormat: EngineParamReadoutFormatV1; paramDefault: number | null };\n"
     );
+    out.push_str("export type EngineParamRangeV1 = { key: string; min: number; max: number };\n");
     out.push_str(
         "export type EngineEnumValueTooltipV1 = { key: string; value: string; tooltip: string };\n\n"
     );
     out.push_str("/** Rust-owned engine parameter tooltip and readout metadata. */\n");
     out.push_str("export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = ");
     out.push_str(&engine_param_ui_meta_json);
+    out.push_str(";\n\n");
+    out.push_str("/** Rust-owned numeric range metadata for engine parameters. */\n");
+    out.push_str("export const ENGINE_PARAM_RANGES_V1: EngineParamRangeV1[] = ");
+    out.push_str(&engine_param_ranges_json);
     out.push_str(";\n\n");
     out.push_str("/** Rust-owned tooltip metadata for enum/select values. */\n");
     out.push_str("export const ENGINE_ENUM_VALUE_TOOLTIPS_V1: EngineEnumValueTooltipV1[] = ");

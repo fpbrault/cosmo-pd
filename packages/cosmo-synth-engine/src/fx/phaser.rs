@@ -1,6 +1,6 @@
 use libm::{cosf, sinf};
 
-const TWO_PI: f32 = core::f32::consts::PI * 2.0;
+use crate::dsp_utils::TWO_PI;
 
 // ---------------------------------------------------------------------------
 // PhaserStage (first-order all-pass)
@@ -99,7 +99,7 @@ impl PhaserFx {
 
 use crate::{
     fx::{FxControlKindV1, FxControlV1, FxDefinitionV1, FxPresetOptionV1, NO_FX_CONTROL_OPTIONS},
-    params::{FxSlotType, SynthParams},
+    params::{FxSlotConfig, FxSlotType, SynthParams},
 };
 
 const PRESET_OPTIONS: [FxPresetOptionV1; 3] = [
@@ -127,6 +127,7 @@ const CONTROLS: [FxControlV1; 4] = [
         max: Some(10.0),
         default_f32: Some(0.5),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("phaserRate"),
     },
     FxControlV1 {
         id: "depth",
@@ -137,6 +138,7 @@ const CONTROLS: [FxControlV1; 4] = [
         max: Some(1.0),
         default_f32: Some(1.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("phaserDepth"),
     },
     FxControlV1 {
         id: "feedback",
@@ -147,6 +149,7 @@ const CONTROLS: [FxControlV1; 4] = [
         max: Some(0.9),
         default_f32: Some(0.5),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("phaserFeedback"),
     },
     FxControlV1 {
         id: "mix",
@@ -157,6 +160,7 @@ const CONTROLS: [FxControlV1; 4] = [
         max: Some(1.0),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("phaserMix"),
     },
 ];
 
@@ -168,29 +172,40 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
 };
 
 pub fn apply_phaser_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let slot = params.fx_slots.iter_mut().find_map(|s| {
+        if let FxSlotConfig::Phaser(p) = s {
+            Some(p)
+        } else {
+            None
+        }
+    });
+    let Some(p) = slot else {
+        return false;
+    };
+
     match preset {
         "gentleSweep" => {
-            params.phaser.enabled = true;
-            params.phaser.rate = 0.35;
-            params.phaser.depth = 0.45;
-            params.phaser.feedback = 0.2;
-            params.phaser.mix = 0.25;
+            p.enabled = true;
+            p.rate = 0.35;
+            p.depth = 0.45;
+            p.feedback = 0.2;
+            p.mix = 0.25;
             true
         }
         "jetWash" => {
-            params.phaser.enabled = true;
-            params.phaser.rate = 0.9;
-            params.phaser.depth = 0.78;
-            params.phaser.feedback = 0.55;
-            params.phaser.mix = 0.43;
+            p.enabled = true;
+            p.rate = 0.9;
+            p.depth = 0.78;
+            p.feedback = 0.55;
+            p.mix = 0.43;
             true
         }
         "wideNotch" => {
-            params.phaser.enabled = true;
-            params.phaser.rate = 0.18;
-            params.phaser.depth = 1.0;
-            params.phaser.feedback = 0.72;
-            params.phaser.mix = 0.52;
+            p.enabled = true;
+            p.rate = 0.18;
+            p.depth = 1.0;
+            p.feedback = 0.72;
+            p.mix = 0.52;
             true
         }
         _ => false,

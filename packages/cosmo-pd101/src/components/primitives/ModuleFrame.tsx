@@ -22,6 +22,15 @@ type ModuleFrameProps = {
 	children: React.ReactNode;
 };
 
+const MODULE_GRID_COLUMN_CLASS: Record<number, string> = {
+	1: "grid-cols-1",
+	2: "grid-cols-2",
+	3: "grid-cols-3",
+	4: "grid-cols-4",
+	5: "grid-cols-5",
+	6: "grid-cols-6",
+};
+
 export default function ModuleFrame({
 	title,
 	color,
@@ -38,12 +47,14 @@ export default function ModuleFrame({
 	const textColor = contrastColor(color);
 
 	const slotCtx = useFxSlotContext();
+	const safeColumns = Math.min(Math.max(columns, 1), 6);
+	const columnClass = MODULE_GRID_COLUMN_CLASS[safeColumns] ?? "grid-cols-4";
 
 	return (
 		<section
 			style={{ borderColor: color }}
 			className={[
-				"relative flex h-full min-h-0 flex-col overflow-hidden border-4 rounded-b-sm bg-cz-surface shadow-lg rounded-t-lg transition-[filter]",
+				"relative flex h-full min-h-0 flex-col overflow-hidden rounded-t-lg rounded-b-sm border-4 bg-cz-surface shadow-lg transition-[filter]",
 				dimmed ? "brightness-80" : "",
 				className,
 			]
@@ -91,7 +102,7 @@ export default function ModuleFrame({
 					<div
 						{...(slotCtx.dragListeners as React.HTMLAttributes<HTMLDivElement>)}
 						{...(slotCtx.dragAttributes as React.HTMLAttributes<HTMLDivElement>)}
-						className="group/drag relative z-10 flex flex-1 cursor-grab select-none items-center justify-center gap-1.5 active:cursor-grabbing"
+						className="group/drag relative z-10 flex flex-1 cursor-grab touch-none select-none items-center justify-center gap-1.5 active:cursor-grabbing"
 					>
 						{/* 4-direction move icon — fades in on hover */}
 						<svg
@@ -103,13 +114,13 @@ export default function ModuleFrame({
 						>
 							<path d="M7 0L5 3h4L7 0ZM7 14l-2-3h4l-2 3ZM0 7l3-2v4L0 7ZM14 7l-3-2v4l3-2Z" />
 						</svg>
-						<span className="pointer-events-none font-mono text-xs font-bold uppercase tracking-[0.28em]">
+						<span className="pointer-events-none font-bold font-mono text-xs uppercase tracking-[0.28em]">
 							{title}
 						</span>
 					</div>
 				) : (
 					/* No drag context — plain centered title */
-					<span className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center font-mono text-xs font-bold uppercase tracking-[0.28em]">
+					<span className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center font-bold font-mono text-xs uppercase tracking-[0.28em]">
 						{title}
 					</span>
 				)}
@@ -134,7 +145,7 @@ export default function ModuleFrame({
 						<div className="flex justify-end">{headerControl}</div>
 					)}
 					<div
-						className={`grid grid-cols-${columns} w-full gap-2.5 ${
+						className={`grid ${columnClass} w-full items-end justify-center justify-items-center gap-2.5 ${
 							headerControl ? "" : "my-auto"
 						}`}
 					>

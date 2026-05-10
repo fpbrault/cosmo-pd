@@ -6,16 +6,14 @@ import { fileURLToPath } from "node:url";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const packageDir = resolve(scriptDir, "..");
-const repoRoot = resolve(packageDir, "..", "..");
 
 const outputPath = resolve(packageDir, "src/lib/synth/bindings/synth.ts");
-const beamerManifestPath = resolve(
-	repoRoot,
-	"vendor/beamer/crates/beamer/Cargo.toml",
-);
+
+const releaseBindings = process.env.COSMO_BINDINGS_RELEASE === "1";
 
 const cargoArgs = [
 	"run",
+	...(releaseBindings ? ["--release"] : []),
 	"--features",
 	"specta-bindings",
 	"--bin",
@@ -44,22 +42,11 @@ const runCargo = () => {
 	}
 };
 
-if (existsSync(beamerManifestPath)) {
-	runCargo();
-	process.exit(0);
-}
+runCargo();
 
 if (!existsSync(outputPath)) {
 	console.error(
-		"[gen:bindings] vendor/beamer is missing and synth bindings file does not exist.",
+		"[gen:bindings] Expected bindings output was not generated at src/lib/synth/bindings/synth.ts.",
 	);
-	console.error("[gen:bindings] Cannot continue without generating bindings.");
 	process.exit(1);
 }
-
-console.warn(
-	"[gen:bindings] Skipping Rust bindings generation because vendor/beamer is missing.",
-);
-console.warn(
-	"[gen:bindings] Using committed src/lib/synth/bindings/synth.ts for this build.",
-);

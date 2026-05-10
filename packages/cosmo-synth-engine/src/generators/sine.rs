@@ -6,6 +6,7 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
     name: "Sine",
     icon_path: "M4,12 C6,4 10,4 12,12 C14,20 18,20 20,12",
     visible: false,
+    default_base_waveform: crate::params::BaseWaveform::Sine,
     controls: &NO_CONTROLS,
 };
 

@@ -6,16 +6,19 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+pub mod batch_cache;
 pub mod default_envelopes;
 pub mod dsp_utils;
 pub mod envelope;
 pub mod envelope_map;
 pub mod fx;
 pub mod generators;
+pub mod lookup_tables;
 pub mod module_presets;
 pub mod params;
 pub mod preset_wire;
 pub mod processor;
+pub mod simd;
 pub mod voice;
 
 #[cfg(target_arch = "wasm32")]

@@ -63,22 +63,22 @@ export default function DuplicateReviewModal({
 
 	return (
 		<Modal panelClassName="w-full max-w-4xl" onClose={onClose}>
-			<h2 className="mb-1 text-xl font-bold">Duplicate Preset Review</h2>
+			<h2 className="mb-1 font-bold text-xl">Duplicate Preset Review</h2>
 			<p className="mb-4 text-sm opacity-70">
 				{groups.length} duplicate groups, {totalDuplicates} total duplicate
 				presets.
 			</p>
 
 			{groups.length === 0 ? (
-				<div className="p-4 rounded-md bg-base-200">No duplicates found.</div>
+				<div className="rounded-md bg-base-200 p-4">No duplicates found.</div>
 			) : (
-				<div className="max-h-[55vh] overflow-auto space-y-3 pr-1">
+				<div className="max-h-[55vh] space-y-3 overflow-auto pr-1">
 					{groups.map((group, groupIndex) => (
 						<div
 							key={group.fingerprint}
-							className="p-3 border rounded-lg border-base-content/15"
+							className="rounded-lg border border-base-content/15 p-3"
 						>
-							<div className="mb-2 text-sm font-semibold">
+							<div className="mb-2 font-semibold text-sm">
 								Group {groupIndex + 1} ({group.presets.length} presets)
 							</div>
 							<div className="space-y-2">
@@ -89,7 +89,7 @@ export default function DuplicateReviewModal({
 										return (
 											<label
 												key={preset.id}
-												className="flex items-center justify-between gap-3 p-2 rounded-md cursor-pointer bg-base-200/60"
+												className="flex cursor-pointer items-center justify-between gap-3 rounded-md bg-base-200/60 p-2"
 											>
 												<div className="flex items-center gap-2">
 													<input
@@ -123,7 +123,7 @@ export default function DuplicateReviewModal({
 				</div>
 			)}
 
-			<div className="flex flex-wrap justify-end gap-2 mt-4">
+			<div className="mt-4 flex flex-wrap justify-end gap-2">
 				<Button variant="secondary" onClick={onClose} disabled={isDeleting}>
 					Close
 				</Button>

@@ -33,9 +33,9 @@ describe("core controls (browser)", () => {
 		useSynthParamMock.mockReturnValue({ value: "L1", setValue });
 		render(<LineSelectControl />);
 
-		expect(screen.getAllByRole("button")).toHaveLength(5);
+		expect(screen.getAllByRole("button")).toHaveLength(4);
 		fireEvent.click(screen.getAllByRole("button")[2]);
-		expect(setValue).toHaveBeenCalledWith("L2");
+		expect(setValue).toHaveBeenCalledWith("L1+L1'");
 	});
 
 	it("renders and updates ModModeControl", () => {
@@ -59,7 +59,7 @@ describe("core controls (browser)", () => {
 			/>,
 		);
 
-		fireEvent.click(screen.getByRole("button", { name: "Cutoff value" }));
+		fireEvent.doubleClick(screen.getByRole("button", { name: "Cutoff value" }));
 		const input = screen.getByRole("textbox", { name: "Cutoff value" });
 		fireEvent.change(input, { target: { value: "0.75" } });
 		fireEvent.keyDown(input, { key: "Enter" });

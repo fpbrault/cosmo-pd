@@ -1,12 +1,12 @@
 name = "Cosmo PD-101"
 category = "instrument"
-manufacturer_code = "FpbC"
+manufacturer_code = "PurA"
 plugin_code = "Copd"
-vendor = "Felix Perron-Brault"
-bundle_identifier_prefix = "ca.fpbrault"
+vendor = "Purr Audio"
+bundle_identifier_prefix = "ca.purraudio"
 url = "https://github.com/fpbrault/cosmo-pd"
-email = "felix@perron-brault.com"
+email = "fpbrault@gmail.com"
 has_gui = true
-gui_size = [1280, 800]
+gui_size = [1152, 864]
 gui_background_color = "#0a0a0a"
 subcategories = ["synth", "piano"]

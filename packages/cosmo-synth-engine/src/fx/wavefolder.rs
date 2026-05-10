@@ -11,6 +11,12 @@ pub struct WavefolderFx {
     pub mix: f32,
 }
 
+impl Default for WavefolderFx {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl WavefolderFx {
     pub fn new() -> Self {
         Self {
@@ -100,6 +106,7 @@ const CONTROLS: [FxControlV1; 3] = [
         max: Some(1.0),
         default_f32: Some(0.5),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("wavefolderDrive"),
     },
     FxControlV1 {
         id: "folds",
@@ -110,6 +117,7 @@ const CONTROLS: [FxControlV1; 3] = [
         max: Some(1.0),
         default_f32: Some(0.5),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("wavefolderFolds"),
     },
     FxControlV1 {
         id: "mix",
@@ -120,6 +128,7 @@ const CONTROLS: [FxControlV1; 3] = [
         max: Some(1.0),
         default_f32: Some(1.0),
         options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("wavefolderMix"),
     },
 ];
 

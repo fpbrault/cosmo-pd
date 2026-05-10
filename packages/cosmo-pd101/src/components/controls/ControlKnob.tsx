@@ -1,4 +1,10 @@
-import { type ReactNode, useCallback, useRef, useState } from "react";
+import {
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import Button from "@/components/controls/Button";
 import ModulatableControl from "@/components/controls/modulation/ModulatableControl";
 import { useOptionalSynthController } from "@/features/synth/SynthParamController";
@@ -13,7 +19,8 @@ import {
 	bipolarCenterNorm,
 	clampValue,
 	DEFAULT_ARC_GEOMETRY,
-	normalizeValue,
+	type KnobCurve,
+	normalizeValueCurved,
 } from "./knob/knobGeometry";
 import { useKnobInteraction } from "./knob/useKnobInteraction";
 
@@ -26,6 +33,7 @@ export interface ControlKnobProps {
 	/** Quantize to nearest step. Undefined = continuous. */
 	step?: number;
 	label?: string;
+	labelClassName?: string;
 	tooltip?: string;
 	/** Semantic color variant. Prefer this over `color`. */
 	variant?: KnobVariant;
@@ -42,10 +50,6 @@ export interface ControlKnobProps {
 	defaultValue?: number;
 	/** When true, renders a bipolar arc anchored at value = 0. */
 	bipolar?: boolean;
-	/** Arc start angle in degrees. Default -230. */
-	arcStartAngle?: number;
-	/** Arc total sweep in degrees. Default 280. */
-	arcSweepAngle?: number;
 	/** Pixels of vertical drag to traverse the full range. Default 200. */
 	sensitivity?: number;
 	/** Sensitivity divisor when Shift is held. Default 5. */
@@ -70,7 +74,20 @@ export interface ControlKnobProps {
 	modulatedValue?: number;
 	/** How long (ms) each trail dot persists. Set to 0 to disable trail. */
 	modTrailDuration?: number;
+	/** Non-linear scaling curve for pointer/wheel interaction and rendered position. */
+	curve?: KnobCurve;
 }
+
+const VARIANT_ACCENT_COLOR: Record<
+	NonNullable<ControlKnobProps["variant"]>,
+	string
+> = {
+	default: "var(--color-cz-gold)",
+	accent: "var(--color-cz-light-blue)",
+	muted: "rgba(191, 189, 48, 0.5)",
+	light: "#a0a0a0",
+	dark: "var(--color-cz-gold)",
+};
 
 export function ControlKnob({
 	value,
@@ -80,17 +97,16 @@ export function ControlKnob({
 	max = 1,
 	step,
 	label,
+	labelClassName,
 	tooltip,
-	variant = "default",
+	variant = "dark",
 	className,
 	color,
-	size = 32,
+	size = 80,
 	valueFormatter,
-	valueVisibility = "always",
+	valueVisibility = "hover",
 	defaultValue,
 	bipolar = false,
-	arcStartAngle,
-	arcSweepAngle,
 	sensitivity,
 	fineSensitivity,
 	wheelStep,
@@ -101,12 +117,27 @@ export function ControlKnob({
 	modDestination,
 	modulatedValue,
 	modTrailDuration = 220,
+	curve = "linear",
 }: ControlKnobProps) {
 	const svgRef = useRef<SVGSVGElement | null>(null);
 	const buttonRef = useRef<HTMLButtonElement | null>(null);
 	const [hovered, setHovered] = useState(false);
+	const [, setModulationTick] = useState(0);
 	const { setControlReadout } = useHoverInfo();
 	const resolvedTooltip = tooltip?.trim() ? tooltip : label?.trim();
+	const readoutRafRef = useRef<number | null>(null);
+	const pendingReadoutRef = useRef<{ label: string; value: string } | null>(
+		null,
+	);
+
+	useEffect(() => {
+		return () => {
+			if (readoutRafRef.current !== null) {
+				cancelAnimationFrame(readoutRafRef.current);
+			}
+		};
+	}, []);
+
 	const formatDisplayValue = useCallback(
 		(nextValue: number) => {
 			if (valueFormatter) {
@@ -115,29 +146,28 @@ export function ControlKnob({
 
 			return Number.isInteger(nextValue)
 				? `${nextValue}`
-				: nextValue.toFixed(2);
+				: nextValue?.toFixed(2);
 		},
 		[valueFormatter],
 	);
 	const emitChange = useCallback(
 		(nextValue: number) => {
 			onChange(nextValue);
-			setControlReadout({
+			pendingReadoutRef.current = {
 				label: label ?? "Value",
 				value: formatDisplayValue(nextValue),
-			});
+			};
+			if (readoutRafRef.current === null) {
+				readoutRafRef.current = requestAnimationFrame(() => {
+					readoutRafRef.current = null;
+					if (pendingReadoutRef.current) {
+						setControlReadout(pendingReadoutRef.current);
+					}
+				});
+			}
 		},
 		[formatDisplayValue, label, onChange, setControlReadout],
 	);
-
-	const arcGeometry =
-		arcStartAngle !== undefined || arcSweepAngle !== undefined
-			? {
-					...DEFAULT_ARC_GEOMETRY,
-					startAngle: arcStartAngle ?? DEFAULT_ARC_GEOMETRY.startAngle,
-					sweepAngle: arcSweepAngle ?? DEFAULT_ARC_GEOMETRY.sweepAngle,
-				}
-			: DEFAULT_ARC_GEOMETRY;
 
 	const {
 		dragging,
@@ -145,6 +175,10 @@ export function ControlKnob({
 		editValue,
 		inputRef,
 		onPointerDown,
+		onPointerMove,
+		onPointerUp,
+		onPointerCancel,
+		onLostPointerCapture,
 		onDoubleClick,
 		onKeyDown,
 		beginEdit,
@@ -163,9 +197,9 @@ export function ControlKnob({
 		fineWheelStep,
 		disabled,
 		onChange: emitChange,
-		arcGeometry,
 		svgRef,
 		buttonRef,
+		curve,
 	});
 
 	const maybeSynthController = useOptionalSynthController();
@@ -174,6 +208,29 @@ export function ControlKnob({
 		modDestination ??
 		maybeSynthController?.resolveDestination(modulatable, { lineIndex }) ??
 		resolveModDestination(modulatable, { lineIndex });
+
+	useEffect(() => {
+		if (!maybeSynthController || modulatedValue !== undefined) {
+			return;
+		}
+
+		if (!resolvedDestination) {
+			return;
+		}
+
+		if (!maybeSynthController.hasActiveRoutes(resolvedDestination)) {
+			return;
+		}
+
+		const onRuntimeModSources = () => {
+			setModulationTick((tick) => (tick + 1) % 1_000_000);
+		};
+
+		window.addEventListener("cz-runtime-mod-sources", onRuntimeModSources);
+		return () => {
+			window.removeEventListener("cz-runtime-mod-sources", onRuntimeModSources);
+		};
+	}, [maybeSynthController, resolvedDestination, modulatedValue]);
 
 	const computedModulatedValue = maybeSynthController?.getModulatedValue({
 		destination: resolvedDestination,
@@ -184,11 +241,31 @@ export function ControlKnob({
 	// Normalize the effective modulated value for KnobView
 	const modulatedNorm =
 		effectiveModulatedValue !== undefined && effectiveModulatedValue !== null
-			? normalizeValue(clampValue(effectiveModulatedValue, min, max), min, max)
+			? normalizeValueCurved(
+					clampValue(effectiveModulatedValue, min, max),
+					min,
+					max,
+					curve,
+				)
 			: undefined;
 
-	const normalizedValue = normalizeValue(value, min, max);
+	const normalizedValue = normalizeValueCurved(value, min, max, curve);
 	const bipolarNorm = bipolar ? bipolarCenterNorm(min, max) : null;
+	const arcOuterPx =
+		((DEFAULT_ARC_GEOMETRY.radius + DEFAULT_ARC_GEOMETRY.trackWidth / 2) /
+			DEFAULT_ARC_GEOMETRY.viewBoxSize) *
+		size;
+	const modButtonOffsetY = Math.round(arcOuterPx * 1.2);
+
+	// Crop empty SVG space below the arc track
+	const bottomDeadPx = Math.round(
+		((DEFAULT_ARC_GEOMETRY.viewBoxSize -
+			DEFAULT_ARC_GEOMETRY.cy -
+			DEFAULT_ARC_GEOMETRY.radius -
+			DEFAULT_ARC_GEOMETRY.trackWidth / 2) /
+			DEFAULT_ARC_GEOMETRY.viewBoxSize) *
+			size,
+	);
 
 	const displayValue = valueFormatter
 		? valueFormatter(value)
@@ -198,24 +275,57 @@ export function ControlKnob({
 		useCapture: true,
 	});
 
-	const inner = (
-		<div
-			className={`group flex flex-col items-center gap-0.5 text-center ${className ?? ""}`}
-			data-hover-info={resolvedTooltip}
-			{...hoverHandlers}
-		>
-			{label && (
-				<div className="space-y-0.5">
-					<div className="flex items-center justify-center text-3xs uppercase tracking-[0.24em] text-base-content/55">
-						<span>{label}</span>
-					</div>
-				</div>
-			)}
+	const valueIndicatorEl =
+		valueVisibility !== "never" ? (
+			<div
+				className="pointer-events-none flex items-center justify-center"
+				onPointerEnter={() => setHovered(true)}
+				onPointerLeave={() => setHovered(false)}
+			>
+				{editing ? (
+					<input
+						ref={inputRef as React.RefObject<HTMLInputElement>}
+						type="text"
+						aria-label={valueControlLabel}
+						className="pointer-events-auto w-16 rounded-sm border border-base-content/25 bg-base-300/95 px-1.5 py-0.5 text-center font-semibold text-2xs text-base-content shadow-[0_2px_6px_rgba(0,0,0,0.5)] outline-none focus:border-primary"
+						value={editValue}
+						onChange={(e) => setEditValue(e.target.value)}
+						onBlur={onEditBlur}
+						onKeyDown={onEditKeyDown}
+					/>
+				) : (
+					<Button
+						type="button"
+						aria-label={valueControlLabel}
+						className={`pointer-events-auto whitespace-nowrap rounded-sm border px-1.5 py-0.5 font-semibold text-2xs leading-none shadow-[0_2px_6px_rgba(0,0,0,0.5)] transition-all duration-150 ${
+							disabled
+								? "cursor-not-allowed border-base-content/15 bg-base-300/85 text-base-content/50"
+								: "cursor-pointer border-base-content/25 bg-base-300/95 text-base-content/80 hover:text-base-content"
+						} ${
+							valueVisibility === "always" || dragging || hovered
+								? "translate-y-0 opacity-100"
+								: "translate-y-1 opacity-0 group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:translate-y-0 group-hover:opacity-100"
+						}`}
+						disabled={disabled}
+						onDoubleClick={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							beginEdit(displayValue);
+						}}
+					>
+						{displayValue}
+					</Button>
+				)}
+			</div>
+		) : null;
+
+	const knobButton = (
+		<div className="relative" style={{ marginBottom: -bottomDeadPx }}>
 			<Button
 				ref={buttonRef}
 				type="button"
 				role="spinbutton"
-				className={`rounded-full border border-base-300/80 bg-base-300/40 p-0 shadow-lg backdrop-blur-sm touch-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-base-content/30 ${
+				className={`block touch-none rounded-full p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-base-content/30 disabled:border-transparent! disabled:bg-transparent! disabled:shadow-none! ${
 					disabled
 						? "cursor-not-allowed opacity-60"
 						: "cursor-grab active:cursor-grabbing"
@@ -232,6 +342,10 @@ export function ControlKnob({
 				onFocus={() => setHovered(true)}
 				onBlur={() => setHovered(false)}
 				onPointerDown={onPointerDown}
+				onPointerMove={onPointerMove}
+				onPointerUp={onPointerUp}
+				onPointerCancel={onPointerCancel}
+				onLostPointerCapture={onLostPointerCapture}
 				onDoubleClick={onDoubleClick}
 				onKeyDown={onKeyDown}
 			>
@@ -239,69 +353,55 @@ export function ControlKnob({
 					normalizedValue={normalizedValue}
 					bipolarNorm={bipolarNorm}
 					modulatedNorm={modulatedNorm}
-					arcGeometry={arcGeometry}
 					variant={variant}
 					colorOverride={color}
 					size={size}
-					dragging={dragging}
 					hovered={hovered}
 					modTrailDuration={modTrailDuration}
 					htmlOverlay={children}
 					svgRef={svgRef}
 				/>
 			</Button>
-			{label && (
-				<div className="min-h-2 -mt-1.5 space-y-0">
-					{valueVisibility !== "never" && editing ? (
-						<input
-							ref={inputRef as React.RefObject<HTMLInputElement>}
-							type="text"
-							aria-label={valueControlLabel}
-							className="w-14 border border-base-300 bg-cz-surface px-1 text-center text-2xs font-semibold text-base-content/80 outline-none focus:border-primary"
-							value={editValue}
-							onChange={(e) => setEditValue(e.target.value)}
-							onBlur={onEditBlur}
-							onKeyDown={onEditKeyDown}
-						/>
-					) : valueVisibility !== "never" ? (
-						<Button
-							type="button"
-							aria-label={valueControlLabel}
-							className={`text-2xs leading-none font-semibold transition-opacity ${
-								disabled
-									? "cursor-not-allowed text-base-content/55"
-									: "cursor-pointer text-base-content/80 hover:text-base-content"
-							} ${
-								valueVisibility === "always" || dragging
-									? "opacity-100"
-									: "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
-							}`}
-							disabled={disabled}
-							onClick={() => beginEdit(displayValue)}
-						>
-							{displayValue}
-						</Button>
-					) : null}
-				</div>
-			)}
 		</div>
 	);
 
-	if (resolvedDestination) {
-		const knobLabelOffset = label ? 16 : 0;
-		const iconTop = knobLabelOffset + size - 6;
+	const labelEl = label ? (
+		<div
+			className={`flex items-center justify-center text-4xs text-base-content/55 uppercase tracking-[0.24em] ${labelClassName ?? ""}`}
+		>
+			<span>{label}</span>
+		</div>
+	) : null;
 
-		return (
-			<ModulatableControl
-				destinationId={resolvedDestination}
-				label={label}
-				iconClassName="!right-[0px] !bottom-auto"
-				iconStyle={{ top: iconTop }}
-			>
-				{inner}
-			</ModulatableControl>
-		);
-	}
+	const inner = (
+		<div
+			className={`group relative flex flex-col items-center gap-0.5 text-center ${className ?? ""}`}
+			data-hover-info={resolvedTooltip}
+			{...hoverHandlers}
+		>
+			{resolvedDestination ? (
+				<ModulatableControl
+					destinationId={resolvedDestination}
+					label={label}
+					accentColor={color ?? VARIANT_ACCENT_COLOR[variant]}
+					iconButtonStyle={{
+						left: "50%",
+						top: `calc(50% - ${modButtonOffsetY}px)`,
+					}}
+				>
+					{knobButton}
+				</ModulatableControl>
+			) : (
+				knobButton
+			)}
+			{labelEl}
+			<div className="relative h-0 w-full">
+				<div className="absolute top-0 left-1/2 z-20 -translate-x-1/2">
+					{valueIndicatorEl}
+				</div>
+			</div>
+		</div>
+	);
 
 	return inner;
 }

@@ -1,15 +1,12 @@
-import { useSortable } from "@dnd-kit/sortable";
+import { defaultAnimateLayoutChanges, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { memo, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Button from "@/components/controls/Button";
 import { useSynthStore } from "@/features/synth/synthStore";
 import type { FxSlotType } from "@/lib/synth/bindings/synth";
-import DelayModule from "./drawer-modules/DelayModule";
+import FxSlotModuleRenderer from "./drawer-modules/FxSlotModuleRenderer";
 import { FX_SLOT_MODULE_CONFIGS } from "./drawer-modules/fxSlotModuleConfig";
-import GenericFxSlotModule from "./drawer-modules/GenericFxSlotModule";
-import PhaseModModule from "./drawer-modules/PhaseModModule";
-import VibratoModule from "./drawer-modules/VibratoModule";
 import { FxSlotContext } from "./FxSlotContext";
 
 // ---------------------------------------------------------------------------
@@ -124,7 +121,7 @@ function TypeSelectorPopover({
 			role="dialog"
 			aria-label="Select effect type"
 		>
-			<div className="border-b border-cz-border/60 bg-cz-surface/80 px-3 py-2 font-mono text-[0.58rem] font-bold uppercase tracking-[0.22em] text-cz-cream">
+			<div className="border-cz-border/60 border-b bg-cz-surface/80 px-3 py-2 font-bold font-mono text-[0.58rem] text-cz-cream uppercase tracking-[0.22em]">
 				Effect Type
 			</div>
 			<div className="min-h-0 flex-1 overflow-y-auto p-1.5">
@@ -134,7 +131,7 @@ function TypeSelectorPopover({
 						type="button"
 						onClick={() => onSelect(o.value)}
 						className={[
-							"btn btn-ghost btn-sm min-h-0 h-8 justify-start w-full rounded-md px-2.5 py-1 font-mono text-[0.58rem] uppercase tracking-[0.12em] hover:bg-white/10",
+							"btn btn-ghost btn-sm h-8 min-h-0 w-full justify-start rounded-md px-2.5 py-1 font-mono text-[0.58rem] uppercase tracking-[0.12em] hover:bg-white/10",
 							o.value === "empty"
 								? "text-red-400/80 hover:text-red-300"
 								: currentType === o.value
@@ -232,13 +229,13 @@ function EmptySlot({ slot }: { slot: number }) {
 	};
 
 	return (
-		<div className="flex h-full items-center justify-center rounded-lg border-2 border-dashed border-white/15">
+		<div className="flex h-full items-center justify-center rounded-lg border-2 border-white/15 border-dashed">
 			<Button
 				ref={triggerRef}
 				type="button"
 				onClick={openPopover}
 				aria-label="Add effect to slot"
-				className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 text-xl text-white/40 transition-all hover:border-white/50 hover:text-white/80"
+				className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 text-white/40 text-xl transition-all hover:border-white/50 hover:text-white/80"
 			>
 				+
 			</Button>
@@ -260,14 +257,8 @@ function EmptySlot({ slot }: { slot: number }) {
 // ---------------------------------------------------------------------------
 
 function SlotModule({ type, slot }: { type: FxSlotType; slot: number }) {
-	// Modules with custom layouts handled by dedicated components
-	if (type === "delay") return <DelayModule slot={slot} />;
-	if (type === "vibrato") return <VibratoModule />;
-	if (type === "phaseMod") return <PhaseModModule />;
-
-	// All other slot-based FX modules are driven by config
 	const config = FX_SLOT_MODULE_CONFIGS[type];
-	if (config) return <GenericFxSlotModule config={config} slot={slot} />;
+	if (config) return <FxSlotModuleRenderer config={config} slot={slot} />;
 
 	return null;
 }
@@ -287,7 +278,16 @@ export default memo(function FxSlotFrame({ slot }: { slot: number }) {
 		transform,
 		transition,
 		isDragging,
-	} = useSortable({ id: slot });
+	} = useSortable({
+		id: slot,
+		animateLayoutChanges: (args) => {
+			if (args.wasDragging) {
+				return false;
+			}
+
+			return defaultAnimateLayoutChanges(args);
+		},
+	});
 
 	const style: React.CSSProperties = {
 		transform: CSS.Transform.toString(transform),
@@ -309,7 +309,7 @@ export default memo(function FxSlotFrame({ slot }: { slot: number }) {
 		dragListeners: listeners as
 			| Record<string, React.EventHandler<React.SyntheticEvent>>
 			| undefined,
-		dragAttributes: attributes as Record<
+		dragAttributes: attributes as unknown as Record<
 			string,
 			string | boolean | number | undefined
 		>,

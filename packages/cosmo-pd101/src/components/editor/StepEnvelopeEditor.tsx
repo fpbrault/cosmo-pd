@@ -1,312 +1,46 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import ControlKnob from "@/components/controls/ControlKnob";
-import Card from "@/components/primitives/Card";
+
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
 import type { EnvKind } from "@/lib/synth/modTargets";
 import { resolveTargetFromMetadata } from "@/lib/synth/modTargets";
+import type { StepEnvelopeVoiceMarker } from "./stepEnvelopeGeometry";
+import {
+	buildEnvelopePoints,
+	CHART_PADDING_X,
+	clamp,
+	drawEnvPreview,
+	editorStepDuration,
+	findClosestPoint,
+	getStepAllowedXRange,
+	normalizeEnvelope,
+} from "./stepEnvelopeGeometry";
+
+export { StepEnvelopePreview } from "./StepEnvelopePreview";
 
 const STEP_KEYS = ["s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7"] as const;
-const DEFAULT_STEP = { level: 0, rate: 50 };
 
 interface StepEnvelopeEditorProps {
 	title: string;
 	env: StepEnvData;
 	onChange: (env: StepEnvData) => void;
 	color?: string;
-	compact?: boolean;
+	levelKnobColor?: string;
 	lineIndex?: 1 | 2;
 	envKind?: EnvKind;
 	voiceMarkers?: StepEnvelopeVoiceMarker[];
 }
 
-export type StepEnvelopeVoiceMarker = {
-	id: string | number;
-	step: number;
-	progress?: number;
-	releasing?: boolean;
-	color?: string;
-};
-
-type StepEnvelopePreviewProps = {
-	env: StepEnvData;
-	color: string;
-	title: string;
-	active?: boolean;
-	onClick: () => void;
-};
-
-type EnvPoint = {
-	index: number;
-	x: number;
-	y: number;
-};
-
-const CHART_PADDING_Y = 8;
-const CHART_PADDING_X = 12;
 const HOVER_RADIUS_PX = 22;
 
-function clamp(value: number, min: number, max: number) {
-	return Math.max(min, Math.min(max, value));
-}
-
-function normalizeStepCount(stepCount: number) {
-	return clamp(Math.round(stepCount), 1, STEP_KEYS.length);
-}
-
-function getPaddedSteps(steps: StepEnvData["steps"]) {
-	return STEP_KEYS.map((_, index) => {
-		const step = steps[index];
-		return step ? { ...step } : { ...DEFAULT_STEP };
-	});
-}
-
-function normalizeEnvelope(env: StepEnvData): StepEnvData {
-	const stepCount = normalizeStepCount(env.stepCount);
-	return {
-		...env,
-		steps: getPaddedSteps(env.steps),
-		stepCount,
-		sustainStep: clamp(Math.round(env.sustainStep), 0, stepCount - 1),
-	};
-}
-
-function editorStepDuration(rate: number): number {
-	// Rate-based duration: higher rate = shorter duration (steeper visually).
-	// Direct reciprocal of rate for linear, rate-driven envelope appearance.
-	const clampedRate = clamp(Math.round(rate), 0, 99);
-	return 1 / (clampedRate + 1);
-}
-
-function getStepAllowedXRange(
-	stepIndex: number,
-	activeStepCount: number,
-	canvasWidth: number,
-) {
-	const drawWidth = canvasWidth - CHART_PADDING_X * 2;
-	const safeStepCount = Math.max(1, activeStepCount);
-	const cellWidth = drawWidth / safeStepCount;
-	const minX = CHART_PADDING_X + stepIndex * cellWidth;
-	const maxX = CHART_PADDING_X + (stepIndex + 1) * cellWidth;
-	return { minX, maxX };
-}
-
-function buildEnvelopePoints(
-	env: StepEnvData,
-	width: number,
-	height: number,
-): EnvPoint[] {
-	const activeSteps = env.steps.slice(0, env.stepCount);
-	if (activeSteps.length === 0) return [];
-	const _activeStepCount = activeSteps.length;
-
-	const drawWidth = width - CHART_PADDING_X * 2;
-	const drawHeight = height - CHART_PADDING_Y * 2;
-
-	let totalTime = 0;
-	for (const step of activeSteps) totalTime += editorStepDuration(step.rate);
-	if (totalTime <= 0) totalTime = 1;
-
-	const points: EnvPoint[] = [];
-	let x = CHART_PADDING_X;
-
-	for (let i = 0; i < activeSteps.length; i++) {
-		const step = activeSteps[i];
-		const isLastStep = i === activeSteps.length - 1;
-		// CZ behaviour: last step always resolves to 0
-		const effectiveLevel = isLastStep ? 0 : step.level;
-		const duration = editorStepDuration(step.rate);
-		const dx = (duration / totalTime) * drawWidth;
-		x += dx;
-		points.push({
-			index: i,
-			x,
-			y: CHART_PADDING_Y + (1 - effectiveLevel / 99) * drawHeight,
-		});
-	}
-
-	return points;
-}
-
-function getMarkerX(
-	points: EnvPoint[],
-	marker: StepEnvelopeVoiceMarker,
-): number | null {
-	if (points.length === 0) return null;
-	const stepIndex = clamp(Math.round(marker.step), 0, points.length - 1);
-	const point = points[stepIndex];
-	if (!point) return null;
-
-	if (marker.progress === undefined) return point.x;
-
-	const fromX = stepIndex === 0 ? CHART_PADDING_X : points[stepIndex - 1].x;
-	const progress = clamp(marker.progress, 0, 1);
-	return fromX + (point.x - fromX) * progress;
-}
-
-function findClosestPoint(
-	points: EnvPoint[],
-	x: number,
-	y: number,
-): { point: EnvPoint; distanceSquared: number } | null {
-	if (points.length === 0) return null;
-
-	let closest = points[0];
-	let bestDist = Number.POSITIVE_INFINITY;
-
-	for (const point of points) {
-		const dx = point.x - x;
-		const dy = point.y - y;
-		const dist = dx * dx + dy * dy;
-		if (dist < bestDist) {
-			bestDist = dist;
-			closest = point;
-		}
-	}
-
-	return { point: closest, distanceSquared: bestDist };
-}
-
-function drawEnvPreview(
-	canvas: HTMLCanvasElement,
-	env: StepEnvData,
-	color: string,
-	highlightStep: number | null,
-	voiceMarkers: StepEnvelopeVoiceMarker[] = [],
-	preview = false,
-) {
-	const ctx = canvas.getContext("2d");
-	if (!ctx) return;
-	const w = canvas.width;
-	const h = canvas.height;
-	const drawHeight = h - CHART_PADDING_Y * 2;
-	ctx.clearRect(0, 0, w, h);
-
-	ctx.fillStyle = "rgba(0,0,0,0.3)";
-	ctx.fillRect(0, 0, w, h);
-
-	ctx.strokeStyle = preview
-		? "rgba(100,100,100,0.18)"
-		: "rgba(100,100,100,0.3)";
-	ctx.lineWidth = 1;
-	for (let y = 0.25; y < 1; y += 0.25) {
-		ctx.beginPath();
-		ctx.moveTo(CHART_PADDING_X, h * (1 - y));
-		ctx.lineTo(w - CHART_PADDING_X, h * (1 - y));
-		ctx.stroke();
-	}
-	const points = buildEnvelopePoints(env, w, h);
-
-	ctx.strokeStyle = color;
-	ctx.lineWidth = preview ? 1.5 : 2;
-	ctx.beginPath();
-	ctx.moveTo(CHART_PADDING_X, CHART_PADDING_Y + drawHeight);
-	for (let i = 0; i < points.length; i++) {
-		ctx.lineTo(points[i].x, points[i].y);
-	}
-	ctx.stroke();
-
-	const susStep = Math.min(env.sustainStep, env.stepCount - 1);
-	if (susStep >= 0 && susStep < points.length) {
-		const sp = points[susStep];
-		ctx.strokeStyle = preview ? "rgba(255,200,0,0.45)" : "rgba(255,200,0,0.6)";
-		ctx.lineWidth = preview ? 0.8 : 1;
-		ctx.setLineDash([3, 3]);
-		ctx.beginPath();
-		ctx.moveTo(sp.x, CHART_PADDING_Y);
-		ctx.lineTo(sp.x, h - CHART_PADDING_Y);
-		ctx.stroke();
-		ctx.setLineDash([]);
-	}
-
-	for (const marker of voiceMarkers) {
-		const x = getMarkerX(points, marker);
-		if (x === null) continue;
-
-		ctx.strokeStyle =
-			marker.color ?? (marker.releasing ? "#f59e0b" : "#f8fafc");
-		ctx.lineWidth = marker.releasing ? 1 : 1.5;
-		ctx.globalAlpha = marker.releasing ? 0.65 : 0.9;
-		ctx.beginPath();
-		ctx.moveTo(x, CHART_PADDING_Y);
-		ctx.lineTo(x, h - CHART_PADDING_Y);
-		ctx.stroke();
-		ctx.globalAlpha = 1;
-	}
-
-	if (preview) return;
-
-	for (let i = 0; i < points.length; i++) {
-		const p = points[i];
-		const isHighlighted = highlightStep === p.index;
-		if (isHighlighted) {
-			ctx.strokeStyle = "rgba(255,255,255,0.8)";
-			ctx.lineWidth = 2;
-			ctx.beginPath();
-			ctx.arc(p.x, p.y, 11, 0, Math.PI * 2);
-			ctx.stroke();
-		}
-
-		ctx.fillStyle = p.index === susStep ? "#fbbf24" : color;
-		ctx.beginPath();
-		ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
-		ctx.fill();
-	}
-}
-
-export const StepEnvelopePreview = memo(function StepEnvelopePreview({
-	env,
-	color,
-	title,
-	active = false,
-	onClick,
-}: StepEnvelopePreviewProps) {
-	const canvasRef = useRef<HTMLCanvasElement>(null);
-	const normalizedEnv = normalizeEnvelope(env);
-
-	useEffect(() => {
-		if (canvasRef.current) {
-			drawEnvPreview(canvasRef.current, normalizedEnv, color, null, [], true);
-		}
-	}, [normalizedEnv, color]);
-
-	return (
-		<button
-			type="button"
-			onClick={onClick}
-			aria-pressed={active}
-			aria-label={`Show ${title} envelope`}
-			className={`group min-w-0 rounded-md border bg-cz-inset/80 p-1.5 transition-colors focus:outline-none focus:ring-1 focus:ring-cz-light-blue ${
-				active
-					? "border-cz-gold/70 shadow-[0_0_0_1px_rgba(251,191,36,0.28)]"
-					: "border-cz-border/70 hover:border-cz-cream/50"
-			}`}
-		>
-			<canvas
-				ref={canvasRef}
-				width={220}
-				height={54}
-				className="block h-12 w-full rounded bg-black/25"
-			/>
-			<div className="mt-1 flex items-center justify-between gap-2 px-0.5">
-				<span className="truncate text-[0.55rem] font-semibold uppercase tracking-[0.18em] text-cz-cream-dim group-hover:text-cz-cream">
-					{title}
-				</span>
-				<span
-					className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-						active ? "bg-cz-gold" : "bg-cz-border"
-					}`}
-				/>
-			</div>
-		</button>
-	);
-});
+export type { StepEnvelopeVoiceMarker };
 
 export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 	title,
 	env,
 	onChange,
 	color = "#60a5fa",
-	compact = false,
+	levelKnobColor = color,
 	lineIndex = 1,
 	envKind = "dco",
 	voiceMarkers = [],
@@ -413,7 +147,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 
 				for (let i = 0; i < activeSteps.length; i++) {
 					const rate = i === stepIndex ? candidateRate : activeSteps[i].rate;
-					const duration = editorStepDuration(rate, visibleStepCount);
+					const duration = editorStepDuration(rate);
 					totalTime += duration;
 					if (i <= stepIndex) cumulative += duration;
 				}
@@ -439,8 +173,10 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 			if (!canvas) return null;
 
 			const rect = canvas.getBoundingClientRect();
-			const x = ((clientX - rect.left) / rect.width) * canvas.width;
-			const y = ((clientY - rect.top) / rect.height) * canvas.height;
+			const scaleX = canvas.clientWidth / Math.max(1, rect.width);
+			const scaleY = canvas.clientHeight / Math.max(1, rect.height);
+			const x = (clientX - rect.left) * scaleX;
+			const y = (clientY - rect.top) * scaleY;
 			return { x, y, rect };
 		},
 		[],
@@ -451,7 +187,13 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 			const pos = getRelativePointerPosition(clientX, clientY);
 			if (!pos) return null;
 
-			const points = buildEnvelopePoints(normalizedEnv, 1000, 200);
+			const canvas = canvasRef.current;
+			if (!canvas) return null;
+			const points = buildEnvelopePoints(
+				normalizedEnv,
+				canvas.clientWidth,
+				canvas.clientHeight,
+			);
 			const closest = findClosestPoint(points, pos.x, pos.y);
 			if (!closest) return null;
 
@@ -497,10 +239,11 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 					(dragState.startClientY - e.clientY) / pos.rect.height;
 				const level = clamp(dragState.startLevel + levelDelta * 99, 0, 99);
 				const isLastActiveStep = dragState.stepIndex === activeStepCount - 1;
+				const canvasW = canvasRef.current?.clientWidth ?? 1200;
 				const allowed = getStepAllowedXRange(
 					dragState.stepIndex,
 					activeStepCount,
-					canvasRef.current?.width ?? 1000,
+					canvasW,
 				);
 				const clampedX = clamp(pos.x, allowed.minX, allowed.maxX);
 				const rate = isLastActiveStep
@@ -513,11 +256,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 							0,
 							99,
 						)
-					: getRateForPointerX(
-							dragState.stepIndex,
-							clampedX,
-							canvasRef.current?.width ?? 1000,
-						);
+					: getRateForPointerX(dragState.stepIndex, clampedX, canvasW);
 				updateStepValues(dragState.stepIndex, level, rate);
 				setHoverStep(dragState.stepIndex);
 				return;
@@ -558,18 +297,13 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 	}, [dragState]);
 
 	return (
-		<Card
-			variant="subtle"
-			className={`bg-base-200/70 shadow-lg ${
-				compact ? "space-y-2" : "space-y-3"
-			}`}
-		>
+		<div className="flex h-full flex-col space-y-3">
 			<div className="flex items-center justify-between">
-				<span className="text-2xs font-semibold uppercase tracking-[0.24em] text-base-content/70">
+				<span className="font-semibold text-2xs text-base-content/70 uppercase tracking-[0.24em]">
 					{title}
 				</span>
 				<div className="flex items-center gap-2">
-					<label className="text-xs flex items-center gap-1">
+					<label className="flex items-center gap-1 text-xs">
 						<input
 							type="checkbox"
 							checked={normalizedEnv.loop}
@@ -588,9 +322,9 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 
 			<canvas
 				ref={canvasRef}
-				width={1000}
-				height={compact ? 150 : 200}
-				className="max-w-full rounded-xl cursor-crosshair border border-base-300/60 bg-base-300/30 touch-none"
+				width={1200}
+				height={200}
+				className="max-w-full cursor-crosshair touch-none rounded-xl border border-base-300/60 bg-base-300/30"
 				style={{ imageRendering: "auto" }}
 				onPointerDown={handleCanvasPointerDown}
 				onPointerMove={handleCanvasPointerMove}
@@ -599,13 +333,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 				onPointerLeave={handleCanvasPointerLeave}
 			/>
 
-			<div
-				className={
-					compact
-						? "grid grid-cols-4 gap-2 lg:grid-cols-8"
-						: "grid grid-cols-2 gap-2 sm:grid-cols-4 2xl:grid-cols-8"
-				}
-			>
+			<div className="grid grid-cols-8 gap-2">
 				{steps.map((step, i) => {
 					const isActiveStep = i < activeStepCount;
 					const isEndStep = i === activeStepCount - 1;
@@ -614,14 +342,14 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 						<fieldset
 							key={STEP_KEYS[i]}
 							aria-label={`Step ${i + 1}`}
-							className={`flex flex-col rounded-xl border px-1 transition-colors ${
+							className={`flex flex-col rounded-xl border px-1 py-2 transition-colors ${
 								!isActiveStep
 									? "border-base-300/30 bg-base-300/10"
 									: "border-base-300/60 bg-base-300/20"
-							} ${compact ? "py-1.5" : "py-2"}`}
+							}`}
 						>
 							<div className="mb-1 flex items-center justify-start px-1">
-								<div className="text-4xs uppercase tracking-[0.2em] text-base-content/45">
+								<div className="text-4xs text-base-content/45 uppercase tracking-[0.2em]">
 									{i + 1}
 								</div>
 							</div>
@@ -631,21 +359,16 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 								<ControlKnob
 									value={step.level}
 									onChange={(v) => updateStep(i, "level", v)}
-									disabled={!isActiveStep}
+									disabled={!isActiveStep || isEndStep}
+									size={64}
 									min={0}
 									max={99}
 									label="Lvl"
 									tooltip={`Sets envelope level for step ${i + 1}.`}
-									// CZ behaviour: last step always outputs 0; show effective
-									// value as 0 but the stored value is still editable so it
-									// is preserved when the step count is increased.
-									valueFormatter={(v) =>
-										isEndStep ? "0*" : `${Math.round(v)}`
-									}
+									valueFormatter={(v) => `${Math.round(v)}`}
 									color={
-										!isActiveStep ? "#6b7280" : isEndStep ? "#f59e0b" : color
+										!isActiveStep || isEndStep ? "#6b7280" : levelKnobColor
 									}
-									size={compact ? 26 : 30}
 									modDestination={resolveTargetFromMetadata("env.stepLevel", {
 										lineIndex,
 										envKind,
@@ -662,7 +385,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 									tooltip={`Sets envelope transition speed for step ${i + 1}.`}
 									valueFormatter={(v) => `${Math.round(v)}`}
 									color={!isActiveStep ? "#6b7280" : "#a3a3a3"}
-									size={compact ? 26 : 30}
+									size={64}
 									modDestination={resolveTargetFromMetadata("env.stepRate", {
 										lineIndex,
 										envKind,
@@ -676,7 +399,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 									onClick={() => setSustainStepForIndex(i)}
 									disabled={!isActiveStep}
 									aria-pressed={isSustainStep}
-									className={`rounded border px-1 py-1 text-[0.55rem] font-semibold uppercase tracking-[0.18em] transition-colors ${
+									className={`rounded border px-1 py-1 font-semibold text-[0.55rem] uppercase tracking-[0.18em] transition-colors ${
 										isSustainStep
 											? "border-warning/60 bg-warning/15 text-warning"
 											: "border-base-300/60 bg-base-100/40 text-base-content/70"
@@ -688,7 +411,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 									type="button"
 									onClick={() => setEndStepForIndex(i)}
 									aria-pressed={isEndStep}
-									className={`rounded border px-1 py-1 text-[0.55rem] font-semibold uppercase tracking-[0.18em] transition-colors ${
+									className={`rounded border px-1 py-1 font-semibold text-[0.55rem] uppercase tracking-[0.18em] transition-colors ${
 										isEndStep
 											? "border-cz-gold/60 bg-cz-gold/15 text-cz-gold"
 											: "border-base-300/60 bg-base-100/40 text-base-content/70"
@@ -701,7 +424,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 					);
 				})}
 			</div>
-		</Card>
+		</div>
 	);
 });
 

@@ -24,8 +24,10 @@ interface ModulatableControlProps {
 	/** The label shown next to the mod indicator. */
 	label?: string;
 	children: ReactNode;
-	iconClassName?: string;
-	iconStyle?: React.CSSProperties;
+	/** CSS color used for the active-state indicator badge. */
+	accentColor?: string;
+	/** Optional absolute positioning override for the modulation badge. */
+	iconButtonStyle?: React.CSSProperties;
 }
 
 /** Panel dimensions used for edge-flip calculation. */
@@ -41,8 +43,8 @@ const ModulatableControl = memo(function ModulatableControl({
 	destinationId,
 	label,
 	children,
-	iconClassName,
-	iconStyle,
+	accentColor,
+	iconButtonStyle,
 }: ModulatableControlProps) {
 	const { modMatrix, setModMatrix } = useModMatrix();
 	const [popoverOpen, setPopoverOpen] = useState(false);
@@ -173,7 +175,7 @@ const ModulatableControl = memo(function ModulatableControl({
 	}, [popoverOpen, closePopover]);
 
 	return (
-		<div className="group relative inline-block">
+		<div className="group relative inline-flex">
 			{children}
 			<ModulationIconButton
 				hasActiveRoutes={hasActiveRoutes}
@@ -181,8 +183,8 @@ const ModulatableControl = memo(function ModulatableControl({
 				label={`Modulation for ${label ?? destinationId}`}
 				onClick={() => (popoverOpen ? closePopover() : openPopover())}
 				forceVisible={popoverOpen}
-				className={iconClassName}
-				style={iconStyle}
+				accentColor={accentColor}
+				buttonStyle={iconButtonStyle}
 				triggerRef={(el) => {
 					triggerRef.current = el;
 				}}

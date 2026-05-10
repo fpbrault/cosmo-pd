@@ -1,3 +1,0 @@
-[submodule "vendor/beamer"]
-	path = vendor/beamer
-	url = https://github.com/fpbrault/beamer.git

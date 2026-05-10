@@ -1,56 +1,20 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import {
-	type SynthEngineAdapter,
-	SynthEngineController,
-} from "@/features/synth/engine/synthEngineAdapter";
-import { createSynthEngineSnapshot } from "@/features/synth/engine/synthEngineSnapshot";
-import { type SynthStore, useSynthStore } from "@/features/synth/synthStore";
-import { isWaveformId } from "@/lib/synth/algoRef";
-import type {
-	Algo,
-	AlgoControlValueV1,
-	CzWaveform,
-	LfoWaveform,
-	LineSelect,
-	ModMatrix,
-	ModMode,
-	PolyMode,
-	PortamentoMode,
-	StepEnvData,
-	SynthParams,
-} from "@/lib/synth/bindings/synth";
+import { useCallback, useEffect, useRef } from "react";
 
-type EnvelopeId =
-	| "l1_dco"
-	| "l1_dcw"
-	| "l1_dca"
-	| "l2_dco"
-	| "l2_dcw"
-	| "l2_dca";
-
-type EnvelopeMap = Partial<Record<EnvelopeId, StepEnvData>>;
-
-type PresetSessionPayload = {
-	activePresetId?: string | null;
-	activePresetNameBase?: string;
-	loadedPresetFingerprint?: string | null;
-};
+import { useSynthStore } from "@/features/synth/synthStore";
+import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
 
 declare global {
 	interface Window {
 		ipc?: { postMessage: (message: string) => void };
 		__czOnParams?: (json: string) => void;
-		__czGetEnvelopes?: () => Promise<EnvelopeMap>;
-		__czGetAlgoControls?: () => Promise<AlgoControlsSnapshot | null>;
-		__czGetModMatrix?: () => Promise<ModMatrix>;
-		__czGetFxSlots?: () => Promise<SynthParams["fxSlots"]>;
-		__czGetPresetSession?: () => Promise<PresetSessionPayload>;
+		__czGetParams?: () => Promise<unknown>;
+		__czSetParams?: (json: string) => void;
 	}
 }
 
 // ---------------------------------------------------------------------------
 // Enum ↔ integer maps
-// Integers are the plain values Beamer uses for EnumParameter fields.
+// Integers are the plain values the plugin uses for EnumParameter fields.
 // ---------------------------------------------------------------------------
 
 type EnumToIdMap<T extends string> = Record<T, number>;
@@ -180,8 +144,7 @@ function algoKeyToWaveform(key: Algo | null, slotWaveform: CzWaveform): number {
 
 // ---------------------------------------------------------------------------
 // Descriptor table
-// Each entry maps a Beamer string param ID to a read (snapshot → number) and
-// apply (inbound value → React state setter) function.
+// Each entry maps a string param ID to a read and apply function.
 // ---------------------------------------------------------------------------
 
 type PluginParamDescriptor = {
@@ -519,493 +482,243 @@ export const PLUGIN_PARAM_DESCRIPTOR_BY_ID = new Map(
 
 type UsePluginBridgeSynthEngineOptions = {
 	enabled?: boolean;
-	hydrationGraceMs?: number;
 };
 
-type AlgoControlsSnapshot = {
-	line1?: { a?: AlgoControlValueV1[]; b?: AlgoControlValueV1[] };
-	line2?: { a?: AlgoControlValueV1[]; b?: AlgoControlValueV1[] };
-};
+type EnvelopeKind = "dco" | "dcw" | "dca";
 
-type InboundHydrationState = {
-	params: boolean;
-	envelopes: boolean;
-	algoControls: boolean;
-	modMatrix: boolean;
-	fxSlots: boolean;
-	presetSession: boolean;
-};
+type StepEnv = SynthPresetV1["params"]["line1"]["dcoEnv"];
 
-// ---------------------------------------------------------------------------
-// Outbound: send plain value via the bridge IPC
-// ---------------------------------------------------------------------------
+function clampRounded(value: number, min: number, max: number): number {
+	return Math.max(min, Math.min(max, Math.round(value)));
+}
 
-function sendParam(paramId: string, value: number) {
-	if (window.ipc) {
-		window.ipc.postMessage(JSON.stringify({ param_id: paramId, value }));
+function rawRateToHuman(kind: EnvelopeKind, raw: number): number {
+	const b = clampRounded(raw, 0, 127);
+	switch (kind) {
+		case "dco":
+			if (b === 0) return 0;
+			if (b === 127) return 99;
+			return Math.floor((b * 99) / 127) + 1;
+		case "dcw":
+			if (b <= 8) return 0;
+			if (b >= 127) return 99;
+			return Math.floor(((b - 8) * 99) / 119) + 1;
+		case "dca":
+			if (b === 0) return 0;
+			if (b >= 119) return 99;
+			return Math.floor((b * 99) / 119) + 1;
 	}
 }
 
-function sendEnvelope(envId: EnvelopeId, env: StepEnvData) {
-	if (window.ipc) {
-		window.ipc.postMessage(JSON.stringify({ envelope_id: envId, data: env }));
+function rawLevelToHuman(kind: EnvelopeKind, raw: number): number {
+	const b = clampRounded(raw, 0, 127);
+	switch (kind) {
+		case "dco":
+			return b > 63 ? b - 4 : b;
+		case "dcw":
+			if (b === 0) return 0;
+			if (b === 127) return 99;
+			return Math.floor((b * 99) / 127) + 1;
+		case "dca":
+			return b === 0 ? 0 : Math.max(0, b - 28);
 	}
 }
 
-function sendAlgoControls(
-	line: 1 | 2,
-	bank: "a" | "b",
-	controls: AlgoControlValueV1[],
-) {
-	if (window.ipc) {
-		window.ipc.postMessage(
-			JSON.stringify({ algo_controls: { line, bank, controls } }),
-		);
-	}
+function mapEnvelope(env: StepEnv, kind: EnvelopeKind): StepEnv {
+	return {
+		...env,
+		steps: env.steps.map((step) => ({
+			...step,
+			level: rawLevelToHuman(kind, step.level),
+			rate: rawRateToHuman(kind, step.rate),
+		})),
+	};
 }
 
-function sendModMatrix(matrix: ModMatrix) {
-	if (window.ipc) {
-		window.ipc.postMessage(JSON.stringify({ mod_matrix: matrix }));
+function hasRawEnvelopeValues(params: SynthPresetV1["params"]): boolean {
+	const envelopes = [
+		params.line1.dcoEnv,
+		params.line1.dcwEnv,
+		params.line1.dcaEnv,
+		params.line2.dcoEnv,
+		params.line2.dcwEnv,
+		params.line2.dcaEnv,
+	];
+
+	for (const envelope of envelopes) {
+		for (const step of envelope.steps) {
+			if (step.level > 99 || step.rate > 99) {
+				return true;
+			}
+		}
 	}
+
+	return false;
 }
 
-function sendFxSlots(fxSlots: SynthParams["fxSlots"]) {
-	if (window.ipc) {
-		window.ipc.postMessage(JSON.stringify({ fx_slots: fxSlots }));
+function normalizeHostParamsIfRaw(
+	params: SynthPresetV1["params"],
+): SynthPresetV1["params"] {
+	if (!hasRawEnvelopeValues(params)) {
+		return params;
 	}
-}
 
-// ---------------------------------------------------------------------------
-// createPluginBridgeSynthEngineAdapter
-// Builds a SynthEngineAdapter that syncs a SynthEngineSnapshot to the
-// Beamer plugin host over the bridge IPC protocol.
-// ---------------------------------------------------------------------------
+	return {
+		...params,
+		line1: {
+			...params.line1,
+			dcoEnv: mapEnvelope(params.line1.dcoEnv, "dco"),
+			dcwEnv: mapEnvelope(params.line1.dcwEnv, "dcw"),
+			dcaEnv: mapEnvelope(params.line1.dcaEnv, "dca"),
+		},
+		line2: {
+			...params.line2,
+			dcoEnv: mapEnvelope(params.line2.dcoEnv, "dco"),
+			dcwEnv: mapEnvelope(params.line2.dcwEnv, "dcw"),
+			dcaEnv: mapEnvelope(params.line2.dcaEnv, "dca"),
+		},
+	};
+}
 
 export function usePluginBridgeSynthEngine(
 	options: UsePluginBridgeSynthEngineOptions = {},
 ): void {
 	const gatherState = useSynthStore((s) => s.gatherState);
+	const applyPreset = useSynthStore((s) => s.applyPreset);
 	const enabled = options.enabled ?? true;
-	const hydrationGraceMs = options.hydrationGraceMs ?? 1000;
-
-	const sentParamsRef = useRef<Map<string, number>>(new Map());
-	const pendingLocalParamsRef = useRef<
-		Map<string, { value: number; sentAt: number }>
-	>(new Map());
-	const sentEnvelopesRef = useRef<Map<EnvelopeId, string>>(new Map());
-	const sentAlgoControlsRef = useRef<Map<string, string>>(new Map());
-	const sentModMatrixRef = useRef("");
-	const sentFxSlotsRef = useRef("");
-	const outboundSyncEnabledRef = useRef(false);
-	const inboundHydrationRef = useRef<InboundHydrationState>({
-		params: false,
-		envelopes: false,
-		algoControls: false,
-		modMatrix: false,
-		fxSlots: false,
-		presetSession: false,
-	});
+	const outboundEnabledRef = useRef(false);
+	const sentParamsRef = useRef("");
 	const syncRef = useRef<(() => void) | null>(null);
-	const PENDING_PARAM_TTL_MS = 250;
-	const PARAM_EPSILON = 1e-6;
 
-	const queueParam = useCallback((id: string, value: number) => {
-		const prev = sentParamsRef.current.get(id);
-		if (prev === value) return;
-		sentParamsRef.current.set(id, value);
-		pendingLocalParamsRef.current.set(id, {
-			value,
-			sentAt:
-				typeof performance !== "undefined" ? performance.now() : Date.now(),
-		});
-		sendParam(id, value);
+	const send = useCallback((params: SynthPresetV1["params"]) => {
+		const json = JSON.stringify(params);
+		if (sentParamsRef.current === json) return;
+		sentParamsRef.current = json;
+		window.__czSetParams?.(json);
 	}, []);
 
-	const queueEnvelope = useCallback((envId: EnvelopeId, env: StepEnvData) => {
-		const serialized = JSON.stringify(env);
-		if (sentEnvelopesRef.current.get(envId) === serialized) return;
-		sentEnvelopesRef.current.set(envId, serialized);
-		sendEnvelope(envId, env);
-	}, []);
-
-	const queueAlgoControls = useCallback(
-		(line: 1 | 2, bank: "a" | "b", controls: AlgoControlValueV1[]) => {
-			const serialized = JSON.stringify(controls);
-			const cacheKey = `${line}:${bank}`;
-			if (sentAlgoControlsRef.current.get(cacheKey) === serialized) return;
-			sentAlgoControlsRef.current.set(cacheKey, serialized);
-			sendAlgoControls(line, bank, controls);
-		},
-		[],
-	);
-
-	const queueModMatrix = useCallback((matrix: ModMatrix) => {
-		const serialized = JSON.stringify(matrix ?? { routes: [] });
-		if (sentModMatrixRef.current === serialized) return;
-		sentModMatrixRef.current = serialized;
-		sendModMatrix(matrix);
-	}, []);
-
-	const queueFxSlots = useCallback((fxSlots: SynthParams["fxSlots"]) => {
-		const serialized = JSON.stringify(fxSlots ?? []);
-		if (sentFxSlotsRef.current === serialized) return;
-		sentFxSlotsRef.current = serialized;
-		sendFxSlots(fxSlots);
-	}, []);
-
-	const tryEnableOutboundSync = useCallback(() => {
-		const hydration = inboundHydrationRef.current;
-		if (
-			hydration.params &&
-			hydration.envelopes &&
-			hydration.algoControls &&
-			hydration.modMatrix &&
-			hydration.fxSlots &&
-			hydration.presetSession
-		) {
-			outboundSyncEnabledRef.current = true;
-			syncRef.current?.();
-		}
-	}, []);
-
-	const enableOutboundSyncAfterParamReplay = useCallback(() => {
-		if (!inboundHydrationRef.current.params) {
-			return;
-		}
-		outboundSyncEnabledRef.current = true;
-		syncRef.current?.();
-	}, []);
-
-	const markHydrated = useCallback(
-		(key: keyof InboundHydrationState) => {
-			if (inboundHydrationRef.current[key]) {
-				return;
-			}
-			inboundHydrationRef.current[key] = true;
-			tryEnableOutboundSync();
-		},
-		[tryEnableOutboundSync],
-	);
-
-	const adapter = useMemo<SynthEngineAdapter>(
-		() => ({
-			sync(snapshot) {
-				const params = snapshot.params;
-				for (const descriptor of PLUGIN_PARAM_DESCRIPTORS) {
-					queueParam(descriptor.id, descriptor.read(params));
-				}
-				queueEnvelope("l1_dco", params.line1.dcoEnv);
-				queueEnvelope("l1_dcw", params.line1.dcwEnv);
-				queueEnvelope("l1_dca", params.line1.dcaEnv);
-				queueEnvelope("l2_dco", params.line2.dcoEnv);
-				queueEnvelope("l2_dcw", params.line2.dcwEnv);
-				queueEnvelope("l2_dca", params.line2.dcaEnv);
-				queueAlgoControls(1, "a", params.line1.algoControlsA ?? []);
-				queueAlgoControls(1, "b", params.line1.algoControlsB ?? []);
-				queueAlgoControls(2, "a", params.line2.algoControlsA ?? []);
-				queueAlgoControls(2, "b", params.line2.algoControlsB ?? []);
-				queueModMatrix(params.modMatrix ?? { routes: [] });
-				queueFxSlots(
-					(params.fxSlots ??
-						useSynthStore.getState().fxSlots) as SynthParams["fxSlots"],
-				);
-			},
-		}),
-		[
-			queueParam,
-			queueEnvelope,
-			queueAlgoControls,
-			queueModMatrix,
-			queueFxSlots,
-		],
-	);
-
-	// Lifecycle: connect / dispose
+	// Inbound: Rust → React state
 	useEffect(() => {
-		if (!enabled) {
-			return;
-		}
-		const controller = new SynthEngineController(adapter);
-		controller.connect();
-		return () => controller.dispose();
-	}, [adapter, enabled]);
-
-	// Mark non-parameter hydration stages as complete when bridge helpers
-	// are unavailable (e.g. lightweight harnesses).
-	useEffect(() => {
-		if (!enabled) {
-			return;
-		}
-		if (!window.__czGetEnvelopes) {
-			markHydrated("envelopes");
-		}
-		if (!window.__czGetAlgoControls) {
-			markHydrated("algoControls");
-		}
-		if (!window.__czGetModMatrix) {
-			markHydrated("modMatrix");
-		}
-		if (!window.__czGetFxSlots) {
-			markHydrated("fxSlots");
-		}
-		if (!window.__czGetPresetSession) {
-			markHydrated("presetSession");
-		}
-	}, [enabled, markHydrated]);
-
-	// Inbound: Rust → React state via __czOnParams (string ID → plain value)
-	useEffect(() => {
-		if (!enabled) {
-			return;
-		}
+		if (!enabled) return;
 		window.__czOnParams = (json: string) => {
 			try {
-				const params = JSON.parse(json) as Record<string, number>;
-				const hasParams = Object.keys(params).length > 0;
-				const now =
-					typeof performance !== "undefined" ? performance.now() : Date.now();
-				for (const [id, value] of Object.entries(params)) {
-					const pendingLocal = pendingLocalParamsRef.current.get(id);
-					if (pendingLocal) {
-						const ageMs = now - pendingLocal.sentAt;
-						if (Math.abs(pendingLocal.value - value) <= PARAM_EPSILON) {
-							pendingLocalParamsRef.current.delete(id);
-							continue;
-						}
-						if (ageMs < PENDING_PARAM_TTL_MS) {
-							continue;
-						}
-						pendingLocalParamsRef.current.delete(id);
-					}
-
-					sentParamsRef.current.set(id, value);
-
-					PLUGIN_PARAM_DESCRIPTOR_BY_ID.get(id)?.apply(
-						value,
-						useSynthStore.getState(),
-					);
-				}
-				if (hasParams) {
-					markHydrated("params");
-				}
+				const params = JSON.parse(json) as SynthPresetV1["params"];
+				const uiParams = normalizeHostParamsIfRaw(params);
+				applyPreset({ schemaVersion: 1, params: uiParams });
 			} catch (e) {
-				console.error("[PluginPage] Failed to parse params from Rust:", e);
+				console.error("[PluginBridge] Failed to parse params from Rust:", e);
 			}
+			outboundEnabledRef.current = true;
+			syncRef.current?.();
 		};
 		return () => {
 			window.__czOnParams = undefined;
 		};
-	}, [enabled, markHydrated]);
+	}, [enabled, applyPreset]);
 
-	// Outbound sync: subscribe directly to Zustand so every state change
-	// flows to the host without causing component re-renders.
-	// Outbound sync: subscribe directly to Zustand so every state change
-	// flows to the host without causing component re-renders.
+	// Outbound: React state → Rust
 	useEffect(() => {
-		if (!enabled) {
-			return;
-		}
+		if (!enabled) return;
 		const sync = () => {
-			if (!outboundSyncEnabledRef.current) {
-				return;
-			}
-			const snapshot = createSynthEngineSnapshot({
-				gatherState,
-				effectivePitchHz: 220,
-				extPmAmount: 0,
-			});
-			adapter.sync(snapshot);
+			if (!outboundEnabledRef.current) return;
+			send(gatherState().params);
 		};
-
 		syncRef.current = sync;
 		const unsubscribe = useSynthStore.subscribe(sync);
-
-		// In environments that do not expose host hydration helpers, allow a
-		// fallback initial sync so local-only harnesses keep working.
-		const shouldAllowFallbackSync =
-			!window.__czGetEnvelopes &&
-			!window.__czGetAlgoControls &&
-			!window.__czGetModMatrix &&
-			!window.__czGetFxSlots &&
-			!window.__czGetPresetSession;
-		const timeoutId = window.setTimeout(() => {
-			if (shouldAllowFallbackSync) {
-				outboundSyncEnabledRef.current = true;
-				sync();
-				return;
-			}
-
-			enableOutboundSyncAfterParamReplay();
-		}, hydrationGraceMs);
-
 		return () => {
 			syncRef.current = null;
-			if (timeoutId !== null) {
-				window.clearTimeout(timeoutId);
-			}
 			unsubscribe();
 		};
-	}, [
-		adapter,
-		enableOutboundSyncAfterParamReplay,
-		enabled,
-		gatherState,
-		hydrationGraceMs,
-	]);
+	}, [enabled, gatherState, send]);
 
-	// Inbound: initial envelope state from Rust
+	// Hydration: getParams from Rust once on mount
 	useEffect(() => {
-		if (!enabled) {
-			return;
-		}
-		if (!window.__czGetEnvelopes) {
+		if (!enabled) return;
+		if (!window.__czGetParams) {
+			// Running in WASM/standalone mode — outbound sync can start immediately.
+			outboundEnabledRef.current = true;
 			return;
 		}
 		let cancelled = false;
-		void window
-			.__czGetEnvelopes()
-			.then((envelopes) => {
-				if (cancelled) return;
-				if (envelopes) {
-					const s = useSynthStore.getState();
-					if (envelopes.l1_dco) s.setLine1DcoEnv(envelopes.l1_dco);
-					if (envelopes.l1_dcw) s.setLine1DcwEnv(envelopes.l1_dcw);
-					if (envelopes.l1_dca) s.setLine1DcaEnv(envelopes.l1_dca);
-					if (envelopes.l2_dco) s.setLine2DcoEnv(envelopes.l2_dco);
-					if (envelopes.l2_dcw) s.setLine2DcwEnv(envelopes.l2_dcw);
-					if (envelopes.l2_dca) s.setLine2DcaEnv(envelopes.l2_dca);
-				}
-				markHydrated("envelopes");
-			})
-			.catch((error) => {
-				console.error("[PluginPage] Failed to load envelope state:", error);
-			});
-		return () => {
-			cancelled = true;
-		};
-	}, [enabled, markHydrated]);
+		let retryCount = 0;
+		const MAX_RETRIES = 10;
+		const RETRY_DELAY_MS = 500;
+		let retryId = 0;
+		let fallbackId = 0;
 
-	// Inbound: initial fx-slot state from Rust
-	useEffect(() => {
-		if (!enabled) {
-			return;
-		}
-		if (!window.__czGetFxSlots) {
-			return;
-		}
-		let cancelled = false;
-		void window
-			.__czGetFxSlots()
-			.then((fxSlots) => {
-				if (cancelled) return;
-				if (Array.isArray(fxSlots) && fxSlots.length === 6) {
-					useSynthStore.setState({
-						fxSlots: fxSlots as SynthStore["fxSlots"],
-					});
-				}
-				markHydrated("fxSlots");
-			})
-			.catch((error) => {
-				console.error("[PluginPage] Failed to load fx slots:", error);
-				markHydrated("fxSlots");
-			});
-		return () => {
-			cancelled = true;
-		};
-	}, [enabled, markHydrated]);
-
-	// Inbound: initial algo-controls state from Rust
-	useEffect(() => {
-		if (!enabled) {
-			return;
-		}
-		if (!window.__czGetAlgoControls) {
-			return;
-		}
-		let cancelled = false;
-		void window
-			.__czGetAlgoControls()
-			.then((snapshot) => {
-				if (cancelled || !snapshot || typeof snapshot !== "object") return;
-				const typedSnapshot = snapshot as AlgoControlsSnapshot;
-				const s = useSynthStore.getState();
-				s.setLine1AlgoControlsA(typedSnapshot.line1?.a ?? []);
-				s.setLine1AlgoControlsB(typedSnapshot.line1?.b ?? []);
-				s.setLine2AlgoControlsA(typedSnapshot.line2?.a ?? []);
-				s.setLine2AlgoControlsB(typedSnapshot.line2?.b ?? []);
-				markHydrated("algoControls");
-			})
-			.catch((error) => {
-				console.error("[PluginPage] Failed to load algo controls:", error);
-			});
-		return () => {
-			cancelled = true;
-		};
-	}, [enabled, markHydrated]);
-
-	// Inbound: initial mod matrix state from Rust
-	useEffect(() => {
-		if (!enabled) {
-			return;
-		}
-		if (!window.__czGetModMatrix) {
-			return;
-		}
-		let cancelled = false;
-		void window
-			.__czGetModMatrix()
-			.then((matrix) => {
-				if (cancelled) return;
-				if (matrix && typeof matrix === "object") {
-					useSynthStore.getState().setModMatrix(matrix);
-				}
-				markHydrated("modMatrix");
-			})
-			.catch((error) => {
-				console.error("[PluginPage] Failed to load mod matrix state:", error);
-			});
-		return () => {
-			cancelled = true;
-		};
-	}, [enabled, markHydrated]);
-
-	// Inbound: initial preset session metadata from Rust
-	useEffect(() => {
-		if (!enabled) {
-			return;
-		}
-		if (!window.__czGetPresetSession) {
-			markHydrated("presetSession");
-			return;
-		}
-		let cancelled = false;
-		void window
-			.__czGetPresetSession()
-			.then((session) => {
-				if (cancelled) return;
-				if (session && typeof session === "object") {
-					// Restore preset session to localStorage so that useSynthPresetManager
-					// picks it up when it loads the initial state
-					const presetSessionData = {
-						activePresetId: session.activePresetId ?? null,
-						activePresetNameBase:
-							session.activePresetNameBase ?? "Current State",
-						loadedPresetFingerprint: session.loadedPresetFingerprint ?? null,
-					};
-					localStorage.setItem(
-						"cz101-current-preset-session",
-						JSON.stringify(presetSessionData),
+		const applyResult = (result: unknown) => {
+			if (result && typeof result === "object") {
+				try {
+					const uiParams = normalizeHostParamsIfRaw(
+						result as SynthPresetV1["params"],
 					);
+					applyPreset({
+						schemaVersion: 1,
+						params: uiParams,
+					});
+				} catch {
+					// Partial/empty params — ignore, keep current UI state.
 				}
-				markHydrated("presetSession");
-			})
-			.catch((error) => {
-				console.error("[PluginPage] Failed to load preset session:", error);
-				markHydrated("presetSession");
-			});
+			}
+			outboundEnabledRef.current = true;
+			syncRef.current?.();
+		};
+
+		const tryGetParams = () => {
+			if (cancelled) return;
+			const getParams = window.__czGetParams;
+			if (!getParams) return;
+			void getParams()
+				.then((result) => {
+					window.clearTimeout(fallbackId);
+					if (cancelled) return;
+					applyResult(result);
+				})
+				.catch((error) => {
+					if (cancelled) return;
+					retryCount++;
+					if (retryCount <= MAX_RETRIES) {
+						console.warn(
+							`[PluginBridge] getParams failed (attempt ${retryCount}/${MAX_RETRIES}):`,
+							error,
+						);
+						// Open the gate so controls work immediately while we retry.
+						if (!outboundEnabledRef.current) {
+							outboundEnabledRef.current = true;
+							syncRef.current?.();
+						}
+						retryId = window.setTimeout(tryGetParams, RETRY_DELAY_MS);
+					} else {
+						window.clearTimeout(fallbackId);
+						console.error(
+							"[PluginBridge] getParams failed after all retries:",
+							error,
+						);
+						if (!outboundEnabledRef.current) {
+							outboundEnabledRef.current = true;
+							syncRef.current?.();
+						}
+					}
+				});
+		};
+
+		// Safety fallback: open the outbound gate after 10 s no matter what.
+		fallbackId = window.setTimeout(() => {
+			if (!cancelled && !outboundEnabledRef.current) {
+				console.warn(
+					"[PluginBridge] getParams timed out — opening outbound gate anyway",
+				);
+				outboundEnabledRef.current = true;
+				syncRef.current?.();
+			}
+		}, 10000);
+
+		tryGetParams();
+
 		return () => {
 			cancelled = true;
+			window.clearTimeout(retryId);
+			window.clearTimeout(fallbackId);
 		};
-	}, [enabled, markHydrated]);
+	}, [enabled, applyPreset]);
 }

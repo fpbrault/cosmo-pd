@@ -332,7 +332,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 							: "Settings"
 					}
 					className={
-						"grid size-9 place-items-center text-base-content/55 transition-colors hover:text-warning " +
+						"grid size-9 place-items-center text-base-content/55 transition-colors hover:text-warning" +
 						(triggerType === "login" && onlineAuthSession ? "text-warning" : "")
 					}
 				>
@@ -348,7 +348,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 					variant={onlineAuthSession ? "accent" : "secondary"}
 					size={iconOnly ? "md" : "sm"}
 					title={onlineAuthSession ? "Account" : "Login / Connect Account"}
-					className={iconOnly ? "px-0 w-10 min-w-10" : "gap-2"}
+					className={iconOnly ? "w-10 min-w-10 px-0" : "gap-2"}
 				>
 					{renderAccountTriggerIcon()}
 					{!iconOnly && (onlineAuthSession ? "Account" : "Login")}
@@ -359,7 +359,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 					variant="secondary"
 					size={iconOnly ? "md" : "sm"}
 					title="Settings"
-					className={iconOnly ? "px-0 w-10 min-w-10" : "gap-2"}
+					className={iconOnly ? "w-10 min-w-10 px-0" : "gap-2"}
 				>
 					<FaCog size={14} />
 					{!iconOnly && "Settings"}
@@ -368,14 +368,14 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
 			{isModalOpen && (
 				<dialog open className="modal modal-open">
-					<div className="modal-box w-[min(96vw,840px)] max-w-none max-h-[90vh] overflow-y-auto p-6 shadow-xl bg-base-100 rounded-2xl">
-						<h2 className="mb-5 text-2xl font-semibold text-center">
+					<div className="modal-box max-h-[90vh] w-[min(96vw,840px)] max-w-none overflow-y-auto rounded-2xl bg-base-100 p-6 shadow-xl">
+						<h2 className="mb-5 text-center font-semibold text-2xl">
 							{triggerType === "login" ? "Account & Sync" : "Settings"}
 						</h2>
 						<div className="space-y-4">
 							{triggerType === "login" ? (
-								<div className="p-4 border rounded-xl border-base-content/15 bg-base-200/40">
-									<div className="mb-3 text-base font-semibold">
+								<div className="rounded-xl border border-base-content/15 bg-base-200/40 p-4">
+									<div className="mb-3 font-semibold text-base">
 										Online Sync
 									</div>
 									<div className="mb-3 text-sm opacity-80">
@@ -384,7 +384,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 									</div>
 
 									{!onlineAuthSession ? (
-										<div className="grid grid-cols-1 gap-2 mb-3 sm:grid-cols-2">
+										<div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
 											<Button
 												variant="primary"
 												className="justify-center gap-2"
@@ -401,7 +401,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 											</Button>
 										</div>
 									) : (
-										<div className="flex flex-wrap gap-2 mb-3">
+										<div className="mb-3 flex flex-wrap gap-2">
 											<Button variant="error" onClick={handleDisconnectAccount}>
 												Disconnect Account
 											</Button>
@@ -420,7 +420,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 									</div>
 
 									{onlineSyncSettings.enabled && (
-										<div className="grid grid-cols-1 gap-2 mt-3 sm:grid-cols-2">
+										<div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
 											<Button
 												variant="primary"
 												className="gap-2"
@@ -440,7 +440,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 							) : (
 								<>
 									<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-										<div className="w-full form-control">
+										<div className="form-control w-full">
 											<div className="label">
 												<span className="label-text">
 													Factory Preset Library
@@ -454,7 +454,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 											</Button>
 										</div>
 
-										<div className="w-full form-control">
+										<div className="form-control w-full">
 											<div className="label">
 												<span className="label-text">Reset Data</span>
 											</div>
@@ -464,12 +464,12 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 										</div>
 									</div>
 
-									<div className="pt-2 border-t border-base-content/10">
-										<div className="mb-2 text-sm font-semibold opacity-80">
+									<div className="border-base-content/10 border-t pt-2">
+										<div className="mb-2 font-semibold text-sm opacity-80">
 											Backup & Import
 										</div>
 										<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-											<div className="w-full form-control">
+											<div className="form-control w-full">
 												<div className="label">
 													<span className="label-text">
 														Export Full Workspace Backup
@@ -483,7 +483,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 												</Button>
 											</div>
 
-											<div className="w-full form-control">
+											<div className="form-control w-full">
 												<div className="label">
 													<span className="label-text">Export Database</span>
 												</div>
@@ -492,7 +492,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 												</Button>
 											</div>
 
-											<div className="w-full form-control md:col-span-2">
+											<div className="form-control w-full md:col-span-2">
 												<div className="label">
 													<span className="label-text">Import Database</span>
 												</div>
@@ -529,13 +529,13 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 			{isResetModalOpen && (
 				<dialog open className="modal modal-open">
 					<div className="modal-box">
-						<h3 className="text-lg font-bold">Reset Local Data</h3>
+						<h3 className="font-bold text-lg">Reset Local Data</h3>
 						<p className="py-2 text-sm opacity-80">
 							This will permanently delete all local presets and synth backups
 							on this device.
 						</p>
 
-						<label className="justify-start gap-3 cursor-pointer label">
+						<label className="label cursor-pointer justify-start gap-3">
 							<input
 								type="checkbox"
 								className="checkbox checkbox-error"

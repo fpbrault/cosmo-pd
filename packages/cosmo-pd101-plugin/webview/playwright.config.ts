@@ -16,6 +16,7 @@ export default defineConfig({
 	fullyParallel: false, // plugin tests share a single virtual DSP state
 	forbidOnly: !!process.env.CI,
 	retries: process.env.CI ? 1 : 0,
+	timeout: 10_000,
 	reporter: process.env.CI ? "github" : "list",
 
 	use: {

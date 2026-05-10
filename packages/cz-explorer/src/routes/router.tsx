@@ -5,6 +5,7 @@ import {
 	Outlet,
 	RouterProvider,
 	redirect,
+	useLocation,
 } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 import AppLayout from "@/components/layout/AppLayout";
@@ -16,16 +17,32 @@ const SetlistsPage = lazy(() => import("./SetlistsPage"));
 const TagManagerPage = lazy(() => import("./TagManagerPage"));
 const DuplicateFinderPage = lazy(() => import("./DuplicateFinderPage"));
 const VisualizerPage = lazy(() => import("./VisualizerPage"));
+const FullscreenSynthRendererPage = lazy(
+	() => import("./FullscreenSynthRendererPage"),
+);
+
+const FULLSCREEN_ROUTE_PATHS = new Set(["/synth-renderer"]);
 
 function PageLoader() {
 	return (
-		<div className="flex items-center justify-center h-full">
+		<div className="flex h-full items-center justify-center">
 			<span className="loading loading-spinner loading-lg" />
 		</div>
 	);
 }
 
 function RootLayout() {
+	const location = useLocation();
+	const isFullscreenRoute = FULLSCREEN_ROUTE_PATHS.has(location.pathname);
+
+	if (isFullscreenRoute) {
+		return (
+			<Suspense fallback={<PageLoader />}>
+				<Outlet />
+			</Suspense>
+		);
+	}
+
 	return (
 		<AppLayout>
 			<Suspense fallback={<PageLoader />}>
@@ -89,6 +106,12 @@ const visualizerRoute = createRoute({
 	component: VisualizerPage,
 });
 
+const fullscreenSynthRendererRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/synth-renderer",
+	component: FullscreenSynthRendererPage,
+});
+
 export const routeTree = rootRoute.addChildren([
 	indexRoute,
 	presetsRoute,
@@ -98,6 +121,7 @@ export const routeTree = rootRoute.addChildren([
 	tagsRoute,
 	duplicatesRoute,
 	visualizerRoute,
+	fullscreenSynthRendererRoute,
 ]);
 
 export const router = createRouter({

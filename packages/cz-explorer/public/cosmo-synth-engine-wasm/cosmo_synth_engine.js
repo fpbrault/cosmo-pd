@@ -141,6 +141,12 @@ let wasm_bindgen = (function(exports) {
             wasm.czsynthprocessor_process(this.__wbg_ptr, ptr0, len0, addHeapObject(output));
         }
         /**
+         * Hard reset runtime voice and FX state while preserving current params.
+         */
+        resetAudioState() {
+            wasm.czsynthprocessor_resetAudioState(this.__wbg_ptr);
+        }
+        /**
          * Set aftertouch/channel pressure value. `value` is normalised [0.0, 1.0].
          * @param {number} value
          */
@@ -200,6 +206,29 @@ let wasm_bindgen = (function(exports) {
     }
     if (Symbol.dispose) CzSynthProcessor.prototype[Symbol.dispose] = CzSynthProcessor.prototype.free;
     exports.CzSynthProcessor = CzSynthProcessor;
+
+    /**
+     * Returns the Rust build profile this WASM binary was compiled with:
+     * `"release"` when built with `--release`, `"debug"` otherwise.
+     * @returns {string}
+     */
+    function engineBuildProfile() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            wasm.engineBuildProfile(retptr);
+            var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+            var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+            deferred1_0 = r0;
+            deferred1_1 = r1;
+            return getStringFromWasm0(r0, r1);
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+            wasm.__wbindgen_export3(deferred1_0, deferred1_1, 1);
+        }
+    }
+    exports.engineBuildProfile = engineBuildProfile;
 
     function __wbg_get_imports() {
         const import0 = {

@@ -23,7 +23,7 @@ export function drawOscilloscope(
 	const ctx = canvas.getContext("2d");
 	if (!ctx) return;
 
-	const dpr = window.devicePixelRatio || 1;
+	const dpr = Math.max(2, window.devicePixelRatio || 1);
 	const drawWidth = Math.max(1, Math.floor(canvas.clientWidth));
 	const drawHeight = Math.max(1, Math.floor(canvas.clientHeight));
 	const pixelWidth = Math.floor(drawWidth * dpr);
@@ -112,7 +112,7 @@ export function drawOscilloscope(
 	ctx.strokeStyle = color;
 	ctx.lineWidth = 2;
 	ctx.beginPath();
-	const amplitudeGain = 2;
+	const amplitudeGain = 5;
 
 	for (let i = 0; i < viewSamples; i++) {
 		const x = (i / (viewSamples - 1)) * drawWidth;

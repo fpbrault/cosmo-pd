@@ -31,7 +31,7 @@ Bun monorepo. Main packages:
 - `packages/cz-explorer-desktop` — Tauri 2 desktop wrapper
 - `packages/cosmo-synth-engine` — Rust/WASM phase distortion engine
 - `packages/cosmo-pd101` — reusable synth UI/library package; exports synth-specific components, hooks, preset utilities, and SysEx utilities consumed by `cz-explorer` and the plugin webview
-- `packages/cosmo-pd101-plugin` — VST3/AUv2/AUv3 plugin host (beamer); contains a thin `webview/` app shell that embeds the shared `cosmo-pd101` library
+- `packages/cosmo-pd101-plugin` — VST3/CLAP/AUv2 plugin host (nih-plug); contains a thin `webview/` app shell that embeds the shared `cosmo-pd101` library
 - `packages/xtask` — Build automation
 
 ### `packages/cz-explorer/src/`
@@ -54,8 +54,8 @@ Bun monorepo. Main packages:
 
 ### `packages/cosmo-pd101-plugin/`
 
-- `src/` — Rust Beamer plugin wrapper and native IPC bridge
-- `webview/src/` — Thin plugin app shell, Beamer bridge, plugin-only harness/tests, update checks
+- `src/` — Rust nih-plug plugin wrapper and native IPC bridge
+- `webview/src/` — Thin plugin app shell, nih-plug bridge, plugin-only harness/tests, update checks
 
 ## Conventions
 

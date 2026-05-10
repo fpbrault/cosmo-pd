@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ModSource } from "@/lib/synth/bindings/synth";
 import { noteToFreq, PC_KEY_TO_NOTE } from "@/lib/synth/pdAlgorithms";
-import { applyVelocityCurve } from "@/lib/synth/velocityCurve";
 
 type UseNoteHandlingParams = {
 	workletNodeRef?: React.MutableRefObject<AudioWorkletNode | null> | null;
 	eventSink?: (type: string, payload: Record<string, unknown>) => void;
-	/** Velocity curve exponent parameter in range [-1, 1]. 0 = linear. */
+	/**
+	 * Deprecated: velocity curve is now applied in the engine.
+	 * Kept for call-site compatibility during migration.
+	 */
 	velocityCurve?: number;
 	/**
 	 * When enabled, mapped PC keyboard keys are not preventDefault()'d so the
@@ -19,6 +21,7 @@ export type NoteHandlingApi = {
 	activeNotes: number[];
 	sendNoteOn: (note: number, velocity?: number) => void;
 	sendNoteOff: (note: number) => void;
+	panic: () => void;
 	setSustain: (on: boolean) => void;
 	sendPitchBend: (value: number) => void;
 	sendModWheel: (value: number) => void;
@@ -28,7 +31,7 @@ export type NoteHandlingApi = {
 export function useNoteHandling({
 	workletNodeRef,
 	eventSink,
-	velocityCurve = 0,
+	velocityCurve: _velocityCurve,
 	keyboardPassthrough = false,
 }: UseNoteHandlingParams): NoteHandlingApi {
 	const dispatchEngineEvent = useCallback(
@@ -63,15 +66,15 @@ export function useNoteHandling({
 			if (activeNotesRef.current.has(note)) return;
 			activeNotesRef.current.add(note);
 			setActiveNotes((prev) => (prev.includes(note) ? prev : [...prev, note]));
-			const curvedVelocity = applyVelocityCurve(velocity / 127, velocityCurve);
+			const normalizedVelocity = velocity / 127;
 			dispatchEngineEvent("noteOn", {
 				note,
 				frequency: noteToFreq(note),
-				velocity: curvedVelocity,
+				velocity: normalizedVelocity,
 			});
-			emitModSourceValue("velocity", curvedVelocity);
+			emitModSourceValue("velocity", normalizedVelocity);
 		},
-		[dispatchEngineEvent, emitModSourceValue, velocityCurve],
+		[dispatchEngineEvent, emitModSourceValue],
 	);
 
 	const sendNoteOff = useCallback(
@@ -126,14 +129,22 @@ export function useNoteHandling({
 		[dispatchEngineEvent, emitModSourceValue],
 	);
 
+	const panic = useCallback(() => {
+		activeNotesRef.current.clear();
+		sustainedButReleasedRef.current.clear();
+		sustainRef.current = false;
+		setActiveNotes([]);
+		dispatchEngineEvent("panic", {});
+	}, [dispatchEngineEvent]);
+
 	// Keyboard input
 	useEffect(() => {
-		const beamerRuntime = (
+		const pluginBridgeRuntime = (
 			window as Window & {
-				__BEAMER__?: { emit?: (event: string, data?: unknown) => void };
+				__czSetParams?: (json: string) => void;
 			}
-		).__BEAMER__;
-		const isPluginRuntime = typeof beamerRuntime?.emit === "function";
+		).__czSetParams;
+		const isPluginRuntime = typeof pluginBridgeRuntime === "function";
 
 		// In plugin runtime, keep keyboard ownership with the host and disable
 		// the in-webview PC keyboard note mapping (A/S/D... + space sustain).
@@ -305,6 +316,7 @@ export function useNoteHandling({
 		activeNotes,
 		sendNoteOn,
 		sendNoteOff,
+		panic,
 		setSustain,
 		sendPitchBend,
 		sendModWheel,

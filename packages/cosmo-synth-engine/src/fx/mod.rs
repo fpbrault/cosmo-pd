@@ -77,6 +77,8 @@ pub struct FxControlV1 {
     pub default_f32: Option<f32>,
     /// Options for `ButtonGroup` controls (empty slice for knobs/toggles).
     pub options: &'static [FxControlOptionV1],
+    /// Mod matrix destination key for this control, if it can be a mod target.
+    pub mod_destination_key: Option<&'static str>,
 }
 
 /// Complete definition of an FX slot module — controls, name, and preset catalog.

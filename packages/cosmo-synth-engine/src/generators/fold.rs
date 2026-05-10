@@ -1,6 +1,6 @@
 use super::wrap01;
 use super::{AlgoControlKindV1, AlgoControlV1, AlgoDefinitionV1, NO_CONTROL_OPTIONS};
-use crate::params::Algo;
+use crate::params::{Algo, EngineParamReadoutFormatV1};
 
 const CONTROLS: [AlgoControlV1; 4] = [
     AlgoControlV1 {
@@ -16,6 +16,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.5),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
     AlgoControlV1 {
         id: "foldTilt",
@@ -30,6 +31,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.0),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::BipolarPercent,
     },
     AlgoControlV1 {
         id: "foldSymmetry",
@@ -45,6 +47,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.0),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::BipolarPercent,
     },
     AlgoControlV1 {
         id: "foldSoftness",
@@ -59,6 +62,7 @@ const CONTROLS: [AlgoControlV1; 4] = [
         default: Some(0.0),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
     },
 ];
 
@@ -67,26 +71,25 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
     name: "Fold",
     icon_path: "M4,20 L8,4 L12,20 L16,4 L20,20",
     visible: true,
+    default_base_waveform: crate::params::BaseWaveform::Sine,
     controls: &CONTROLS,
 };
 
 #[inline]
-fn fold_pass(mut p: f32, pivot: f32, softness: f32) -> f32 {
+fn fold_pass(mut p: f32, pivot: f32, softened_gain: f32) -> f32 {
     if p > pivot {
         // Reflect around the configured pivot for continuity at the fold edge.
         // Use abs() for true reflection so values above 2*pivot fold back
         // rather than clamping to 0 (which would create a flat region and aliasing).
         p = (2.0 * pivot - p).abs();
     }
-    let fold_gain = (1.0 / pivot).min(8.0);
-    let softened_gain = fold_gain * (1.0 - softness.clamp(0.0, 1.0)) + softness.clamp(0.0, 1.0);
     p * softened_gain
 }
 
 #[inline]
-fn apply_folds(mut p: f32, fold_count: u32, pivot: f32, softness: f32) -> f32 {
+fn apply_folds(mut p: f32, fold_count: u32, pivot: f32, softened_gain: f32) -> f32 {
     for _ in 0..fold_count {
-        p = fold_pass(p, pivot, softness);
+        p = fold_pass(p, pivot, softened_gain);
     }
     wrap01(p)
 }
@@ -128,11 +131,15 @@ pub fn warp_phase(
 
     // tilt and symmetry are bipolar [-1, 1]; remap: old = (x + 1) / 2
     let pivot = (0.5 + tilt * 0.3 + symmetry * 0.125).clamp(0.05, 0.95);
-    let base_phase = apply_folds(phase, base_folds, pivot, softness);
+    let softness_clamped = softness.clamp(0.0, 1.0);
+    let fold_gain = (1.0 / pivot).min(8.0);
+    let softened_gain = fold_gain * (1.0 - softness_clamped) + softness_clamped;
+
+    let base_phase = apply_folds(phase, base_folds, pivot, softened_gain);
     if fold_frac <= 0.0 {
         return base_phase;
     }
 
-    let next_phase = apply_folds(phase, next_folds, pivot, softness);
+    let next_phase = apply_folds(phase, next_folds, pivot, softened_gain);
     lerp_phase(base_phase, next_phase, fold_frac)
 }

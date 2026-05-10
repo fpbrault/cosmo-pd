@@ -13,9 +13,11 @@
 	"types": "./lib-dist/index.d.mts",
 	"scripts": {
 		"build": "bun run build:lib",
-		"build:lib": "bun run gen:bindings && bunx tsdown src/index.ts --format esm --dts --out-dir lib-dist --clean --no-bundle",
-		"build:lib:watch": "bunx tsdown src/index.ts --format esm --dts --out-dir lib-dist --no-bundle --watch",
+		"build:lib": "bun run gen:bindings && tsc --noEmit && bunx tsdown",
+		"build:lib:release": "bun run gen:bindings:release && tsc --noEmit && bunx tsdown",
+		"build:lib:watch": "bunx tsdown --watch",
 		"gen:bindings": "bun ./scripts/gen-bindings.mjs",
+		"gen:bindings:release": "COSMO_BINDINGS_RELEASE=1 bun ./scripts/gen-bindings.mjs",
 		"test": "bunx vitest --project unit --run",
 		"test:unit": "bunx vitest --project unit --run",
 		"test:unit:watch": "bunx vitest --project unit",
@@ -29,6 +31,7 @@
 		"@testing-library/react": "^16.3.2",
 		"@types/react": "^18.3.28",
 		"@types/react-dom": "^18.3.7",
+		"@types/three": "^0.184.0",
 		"@vitejs/plugin-react": "^6.0.1",
 		"@vitest/browser": "^4.1.4",
 		"@vitest/browser-playwright": "^4.1.4",
@@ -39,6 +42,7 @@
 		"tailwindcss": "^4.2.2",
 		"tsdown": "latest",
 		"typescript": "^6.0.2",
+		"unrun": "0.2.37",
 		"vite": "^8.0.3",
 		"vitest": "^4.1.4"
 	},
@@ -50,9 +54,12 @@
 		"@dnd-kit/core": "^6.3.1",
 		"@dnd-kit/sortable": "^10.0.0",
 		"@dnd-kit/utilities": "^3.2.2",
+		"@react-three/drei": "9.120.4",
+		"@react-three/fiber": "8.17.10",
 		"i18next": "^26.0.6",
 		"motion": "^12.38.0",
 		"react-i18next": "^17.0.4",
+		"three": "^0.184.0",
 		"zustand": "^5.0.12"
 	}
 }

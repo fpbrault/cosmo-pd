@@ -5,7 +5,6 @@ import {
 	useId,
 } from "react";
 import {
-	type ArcGeometry,
 	DEFAULT_ARC_GEOMETRY,
 	describeArc,
 	describeValuePath,
@@ -14,7 +13,7 @@ import {
 	valueToAngle,
 } from "./knobGeometry";
 
-export type KnobVariant = "default" | "accent" | "muted";
+export type KnobVariant = "default" | "accent" | "muted" | "light" | "dark";
 
 export interface KnobViewProps {
 	normalizedValue: number;
@@ -22,13 +21,11 @@ export interface KnobViewProps {
 	bipolarNorm?: number | null;
 	/** Normalized position of the modulated value; renders animated mod dot when set. */
 	modulatedNorm?: number;
-	arcGeometry?: ArcGeometry;
 	variant?: KnobVariant;
 	/** Escape-hatch raw CSS color; overrides the variant's value/indicator tokens. */
 	colorOverride?: string;
 	/** Pixel width and height of the rendered knob. */
-	size: number;
-	dragging?: boolean;
+	size?: number;
 	hovered?: boolean;
 	modTrailDuration?: number;
 	/** HTML content rendered as a centered overlay on top of the SVG face. */
@@ -41,44 +38,26 @@ export function KnobView({
 	normalizedValue,
 	bipolarNorm = null,
 	modulatedNorm,
-	arcGeometry = DEFAULT_ARC_GEOMETRY,
 	variant = "default",
 	colorOverride,
-	size,
-	dragging = false,
+	size = 64,
 	hovered = false,
 	modTrailDuration = 220,
 	htmlOverlay,
 	svgRef,
 }: KnobViewProps) {
-	const uid = useId().replace(/:/g, "");
-	const gradId = `knobGrad-${uid}`;
-	const innerGradId = `knobInner-${uid}`;
+	const _uid = useId().replace(/:/g, "");
 
-	const cx = Number.isFinite(arcGeometry.cx)
-		? arcGeometry.cx
-		: DEFAULT_ARC_GEOMETRY.cx;
-	const cy = Number.isFinite(arcGeometry.cy)
-		? arcGeometry.cy
-		: DEFAULT_ARC_GEOMETRY.cy;
-	const radius = Number.isFinite(arcGeometry.radius)
-		? arcGeometry.radius
-		: DEFAULT_ARC_GEOMETRY.radius;
-	const trackWidth = Number.isFinite(arcGeometry.trackWidth)
-		? arcGeometry.trackWidth
-		: DEFAULT_ARC_GEOMETRY.trackWidth;
-	const viewBoxSize = Number.isFinite(arcGeometry.viewBoxSize)
-		? arcGeometry.viewBoxSize
-		: DEFAULT_ARC_GEOMETRY.viewBoxSize;
-	const startAngle = Number.isFinite(arcGeometry.startAngle)
-		? arcGeometry.startAngle
-		: DEFAULT_ARC_GEOMETRY.startAngle;
-	const sweepAngle = Number.isFinite(arcGeometry.sweepAngle)
-		? arcGeometry.sweepAngle
-		: DEFAULT_ARC_GEOMETRY.sweepAngle;
-	const indicatorRadius = Number.isFinite(arcGeometry.indicatorRadius)
-		? arcGeometry.indicatorRadius
-		: DEFAULT_ARC_GEOMETRY.indicatorRadius;
+	const {
+		cx,
+		cy,
+		radius,
+		trackWidth,
+		viewBoxSize,
+		startAngle,
+		sweepAngle,
+		modOrbitRadius,
+	} = DEFAULT_ARC_GEOMETRY;
 
 	const safeNormalizedValue = Number.isFinite(normalizedValue)
 		? normalizedValue
@@ -98,12 +77,6 @@ export function KnobView({
 		startAngle,
 		sweepAngle,
 	);
-	const indicatorTip = polarToCartesian(
-		cx,
-		cy,
-		indicatorRadius,
-		indicatorAngle,
-	);
 	const thinTrackWidth = Math.max(1, trackWidth - 2);
 	const thickTrackWidth = trackWidth + 1;
 	const currentTrackWidth = hovered ? thickTrackWidth : thinTrackWidth;
@@ -115,31 +88,14 @@ export function KnobView({
 		startAngle,
 		startAngle + sweepAngle,
 	);
-	const valuePath = describeValuePath(safeNormalizedValue, bipolarNorm, {
-		...arcGeometry,
-		cx,
-		cy,
-		radius,
-		trackWidth,
-		viewBoxSize,
-		startAngle,
-		sweepAngle,
-		indicatorRadius,
-	});
-	const safeGeometry: ArcGeometry = {
-		...arcGeometry,
-		cx,
-		cy,
-		radius,
-		trackWidth,
-		viewBoxSize,
-		startAngle,
-		sweepAngle,
-		indicatorRadius,
-	};
+	const valuePath = describeValuePath(
+		safeNormalizedValue,
+		bipolarNorm,
+		DEFAULT_ARC_GEOMETRY,
+	);
 	const modulatedPoint =
 		safeModulatedNorm !== undefined
-			? modTargetPoint(safeModulatedNorm, safeGeometry)
+			? modTargetPoint(safeModulatedNorm, DEFAULT_ARC_GEOMETRY)
 			: null;
 	const modulatedTrailPath =
 		safeModulatedNorm !== undefined &&
@@ -159,7 +115,7 @@ export function KnobView({
 						safeModulatedNorm >= safeNormalizedValue
 							? [baseAngle, modulatedAngle]
 							: [modulatedAngle, baseAngle];
-					return describeArc(cx, cy, safeGeometry.modOrbitRadius, from, to);
+					return describeArc(cx, cy, modOrbitRadius, from, to);
 				})()
 			: "";
 
@@ -190,6 +146,56 @@ export function KnobView({
 			} as CSSProperties)
 		: undefined;
 
+	// Calculate knob body dimensions - centered at arc center (cx, cy)
+	const knobBodyRadius = radius * 0.8; // Main knob body, proportional to arc radius
+	const centerBrightenOpacity = hovered ? 0.14 : 0;
+
+	const resolvedVariant: KnobVariant =
+		variant === "light" || colorOverride === "#a0a0a0" ? "light" : variant;
+	const bodyGradientByVariant: Record<
+		KnobVariant,
+		{
+			top: string;
+			bottom: string;
+			tick: string;
+			outerEdge: string;
+		}
+	> = {
+		default: {
+			top: "#434851",
+			bottom: "#232830",
+			tick: "#f4f5f6",
+			outerEdge: "#1a1f27",
+		},
+		accent: {
+			top: "var(--knob-value-color)",
+			bottom: "var(--knob-value-color)",
+			tick: "#f4f5f6",
+			outerEdge: "var(--knob-value-color)",
+		},
+		muted: {
+			top: "color-mix(in srgb, var(--knob-value-color) 62%, black)",
+			bottom: "color-mix(in srgb, var(--knob-value-color) 62%, black)",
+			tick: "#f4f5f6",
+			outerEdge: "color-mix(in srgb, var(--knob-value-color) 62%, black)",
+		},
+		light: {
+			top: "#e5e5e5",
+			bottom: "#c4c4c4",
+			tick: "#333",
+			outerEdge: "#b0b0b0",
+		},
+		dark: {
+			top: "#323232",
+			bottom: "#303030",
+			tick: "#f7f7f8",
+			outerEdge: "#454545",
+		},
+	};
+	const bodyGradient = bodyGradientByVariant[resolvedVariant];
+	const isAccentOrMuted =
+		resolvedVariant === "accent" || resolvedVariant === "muted";
+
 	return (
 		<div
 			className={`relative knob-variant-${variant}`}
@@ -198,41 +204,44 @@ export function KnobView({
 			<svg
 				ref={svgRef}
 				width={size}
-				height={size}
-				viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
+				height={size - 12}
+				viewBox={`0 0 ${viewBoxSize} ${viewBoxSize - 12}`}
 				role="presentation"
 				aria-hidden="true"
 			>
+				{/* SVG Definitions: Filters and Gradients */}
 				<defs>
-					<linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
-						<stop
-							offset="0%"
-							stopColor="var(--knob-value-color)"
-							stopOpacity="0.18"
+					{/* Soft drop shadow for the knob base */}
+					<filter
+						id={`knob-shadow-${_uid}`}
+						x="-40%"
+						y="-40%"
+						width="180%"
+						height="180%"
+					>
+						<feDropShadow
+							dx="0"
+							dy="0"
+							stdDeviation="1.8"
+							floodColor="#2c2c2c"
+							floodOpacity="0.52"
 						/>
-						<stop
-							offset="100%"
-							stopColor="var(--knob-value-color)"
-							stopOpacity="0"
-						/>
+					</filter>
+
+					{/* Knob body gradient */}
+					<linearGradient
+						id={`knob-grad-body-${_uid}`}
+						x1="0%"
+						y1="0%"
+						x2="100%"
+						y2="100%"
+					>
+						<stop offset="0%" stopColor={bodyGradient.top} />
+						<stop offset="100%" stopColor={bodyGradient.bottom} />
 					</linearGradient>
-					<radialGradient id={innerGradId} cx="50%" cy="50%" r="50%">
-						<stop offset="60%" stopColor="rgba(0,0,0,0)" />
-						<stop offset="100%" stopColor="rgba(0,0,0,0.45)" />
-					</radialGradient>
 				</defs>
 
-				<circle
-					cx={cx}
-					cy={cy}
-					r={cx - 6}
-					fill="var(--knob-bg)"
-					stroke="var(--knob-border)"
-					strokeWidth="1"
-				/>
-				<circle cx={cx} cy={cy} r={cx - 7} fill={`url(#${gradId})`} />
-				<circle cx={cx} cy={cy} r={cx - 7} fill={`url(#${innerGradId})`} />
-
+				{/* Background Track Arc (Thin, grey) */}
 				<path
 					d={trackPath}
 					fill="none"
@@ -241,6 +250,7 @@ export function KnobView({
 					strokeWidth={currentTrackWidth}
 				/>
 
+				{/* Value Arc (Thicker, colored) */}
 				{valuePath && (
 					<path
 						d={valuePath}
@@ -251,6 +261,7 @@ export function KnobView({
 					/>
 				)}
 
+				{/* Center tick for bipolar mode */}
 				{centerTick && (
 					<line
 						x1={centerTick.inner.x}
@@ -263,24 +274,7 @@ export function KnobView({
 					/>
 				)}
 
-				<line
-					x1={cx}
-					y1={cy}
-					x2={indicatorTip.x}
-					y2={indicatorTip.y}
-					stroke="var(--knob-indicator-color)"
-					strokeWidth="3.5"
-					strokeLinecap="round"
-					className={dragging ? "opacity-100" : "opacity-90"}
-				/>
-				<circle
-					cx={cx}
-					cy={cy}
-					r="3"
-					fill="var(--knob-indicator-color)"
-					fillOpacity="0.85"
-				/>
-
+				{/* Modulation Arc Trail */}
 				{safeModulatedNorm !== undefined && trailDuration > 0 && (
 					<>
 						{modulatedTrailPath ? (
@@ -290,7 +284,7 @@ export function KnobView({
 								stroke="var(--knob-value-color)"
 								strokeWidth="2"
 								strokeLinecap="round"
-								strokeOpacity="0.35"
+								strokeOpacity="0.55"
 							/>
 						) : null}
 						{modulatedPoint ? (
@@ -304,6 +298,49 @@ export function KnobView({
 						) : null}
 					</>
 				)}
+
+				{/* 3D Knob Body */}
+				<circle
+					cx={cx}
+					cy={cy}
+					r={knobBodyRadius}
+					fill={`url(#knob-grad-body-${_uid})`}
+					filter={`url(#knob-shadow-${_uid})`}
+					className="stroke-[0.5px] stroke-base-content/10"
+				/>
+				<circle
+					cx={cx}
+					cy={cy}
+					r={knobBodyRadius - 1}
+					fill="#ffffff"
+					style={{
+						opacity: centerBrightenOpacity,
+						transition: "opacity 420ms ease-out",
+					}}
+				/>
+				<circle
+					cx={cx}
+					cy={cy}
+					r={knobBodyRadius - 0.25}
+					fill="none"
+					stroke={bodyGradient.outerEdge}
+					strokeWidth="1.25"
+					opacity={isAccentOrMuted ? 0.72 : 0.95}
+				/>
+
+				{/* Indicator Tick on Knob Body */}
+				<g transform={`rotate(${indicatorAngle + 90} ${cx} ${cy})`}>
+					<line
+						x1={cx}
+						y1={cy - knobBodyRadius + 3}
+						x2={cx}
+						y2={cy - knobBodyRadius + 10}
+						stroke={bodyGradient.tick}
+						strokeWidth="2.5"
+						strokeLinecap="round"
+						className="opacity-90"
+					/>
+				</g>
 			</svg>
 
 			{htmlOverlay && (

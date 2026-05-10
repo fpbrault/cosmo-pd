@@ -11,6 +11,7 @@ const wasmOutDir = fileURLToPath(
 const wasmCargoTargetDir = fileURLToPath(
 	new URL("../cosmo-synth-engine/target", import.meta.url),
 );
+const releaseCargoForDev = process.env.COSMO_DEV_RELEASE === "1";
 
 function wasmDevPlugin() {
 	const wasmSrcDir = fileURLToPath(
@@ -20,7 +21,7 @@ function wasmDevPlugin() {
 		console.log("[wasm-dev] Building WASM...");
 		try {
 			execSync(
-				`wasm-pack build ../cosmo-synth-engine --target no-modules --out-dir ${wasmOutDir} --features wasm`,
+				`wasm-pack build ../cosmo-synth-engine ${releaseCargoForDev ? "--release" : ""} --target no-modules --out-dir ${wasmOutDir} --features wasm`,
 				{
 					stdio: "inherit",
 					env: {
@@ -77,7 +78,7 @@ function spectaBindingsDevPlugin() {
 				},
 			);
 			execSync(
-				"cargo run --features specta-bindings --bin export-specta-bindings",
+				`cargo run ${releaseCargoForDev ? "--release" : ""} --features specta-bindings --bin export-specta-bindings`,
 				{
 					stdio: "inherit",
 					cwd: cosmoSynthEngineDir,
@@ -114,12 +115,17 @@ function spectaBindingsDevPlugin() {
 const _host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
-export default defineConfig(async () => ({
+export default defineConfig(async ({ command }) => ({
 	publicDir: "public",
 	plugins: [spectaBindingsDevPlugin(), wasmDevPlugin(), react(), tailwindcss()],
 	// Ensure .env is resolved relative to this config file even when launched via tauri tooling.
 	envDir: fileURLToPath(new URL(".", import.meta.url)),
 	envPrefix: ["VITE_", "TAURI_ENV_"],
+	define: {
+		__WASM_BUILD_PROFILE__: JSON.stringify(
+			command === "build" || releaseCargoForDev ? "release" : "debug",
+		),
+	},
 	resolve: {
 		alias: [
 			{

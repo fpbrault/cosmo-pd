@@ -8,6 +8,11 @@ const entries: PresetEntry[] = [
 		id: "builtin:factory-bass",
 		label: "Factory Bass",
 		type: "builtin",
+		sourceLabel: "Built-in",
+		starred: true,
+		favorite: false,
+		category: "",
+		tags: [],
 	},
 ];
 
@@ -19,6 +24,7 @@ describe("PresetNavigator", () => {
 			<PresetNavigator
 				allEntries={entries}
 				activePresetName="Current State"
+				activePresetSource="Current State"
 				onStepPreset={vi.fn()}
 				onLibraryModeChange={onLibraryModeChange}
 			/>,
@@ -37,6 +43,7 @@ describe("PresetNavigator", () => {
 			<PresetNavigator
 				allEntries={entries}
 				activePresetName="Current State"
+				activePresetSource="Current State"
 				onStepPreset={vi.fn()}
 				isLibraryModeOpen={true}
 				onLibraryModeChange={onLibraryModeChange}
@@ -58,6 +65,7 @@ describe("PresetNavigator", () => {
 			<PresetNavigator
 				allEntries={entries}
 				activePresetName="Current State"
+				activePresetSource="Current State"
 				onStepPreset={onStepPreset}
 			/>,
 		);

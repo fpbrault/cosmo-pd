@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Button from "@/components/controls/Button";
 import type { LibraryPreset } from "@/features/synth/types/libraryPreset";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
+import PresetLibraryDialogs from "./PresetLibraryDialogs";
+import PresetLibraryHeader from "./PresetLibraryHeader";
+import PresetLibraryRow from "./PresetLibraryRow";
+import PresetLibrarySidebar from "./PresetLibrarySidebar";
 
-type PresetLibrary = {
+type PresetLibraryProps = {
 	allEntries: PresetEntry[];
+	showLibraryPresets: boolean;
+	onToggleLibraryPresets: () => void;
 	activeEntryId: string | null;
 	activePresetName: string;
 	onLoadLocal: (name: string) => void;
@@ -13,42 +18,40 @@ type PresetLibrary = {
 	onSavePreset: (name: string) => void;
 	onDeletePreset: (name: string) => void;
 	onRenamePreset: (oldName: string, newName: string) => void;
+	onSetPresetFavorite: (name: string, favorite: boolean) => void;
+	onSetPresetCategory: (name: string, category: string) => void;
+	onSetPresetTags: (name: string, tags: string[]) => void;
 	onExportPreset: (name: string) => void;
 	onExportCurrentState: (name: string) => void;
 	onImportPreset: (json: string, filename: string) => void;
 	onInitPreset: () => void;
 	onClose: () => void;
+	isOpen?: boolean;
 };
 
-const sectionLabels: Record<PresetEntry["type"], string> = {
-	builtin: "Built-in",
-	local: "My Presets",
-	library: "Library",
-};
+type VirtualPresetRow = { id: string; kind: "entry"; entry: PresetEntry };
 
-const typeLabels: Record<PresetEntry["type"], string> = {
-	builtin: "Built-in",
-	local: "User",
-	library: "Library",
-};
+type SortKey = "star" | "favorite" | "name" | "source" | "tags";
+type SortDirection = "asc" | "desc";
+
+const TABLE_HEADER_HEIGHT = 32;
+const ENTRY_ROW_HEIGHT = 52;
+const VIRTUAL_OVERSCAN_PX = ENTRY_ROW_HEIGHT * 8;
+
+function getVirtualRowHeight() {
+	return ENTRY_ROW_HEIGHT;
+}
 
 function getEntrySearchText(entry: PresetEntry) {
-	return `${entry.label} ${sectionLabels[entry.type]}`.toLowerCase();
+	return `${entry.label} ${entry.sourceLabel} ${entry.category} ${entry.tags.join(" ")}`.toLowerCase();
 }
 
 function isEditableTarget(target: EventTarget | null): boolean {
-	if (!(target instanceof HTMLElement)) {
-		return false;
-	}
-	if (target.isContentEditable || target.closest("[contenteditable='true']")) {
+	if (!(target instanceof HTMLElement)) return false;
+	if (target.isContentEditable || target.closest("[contenteditable='true']"))
 		return true;
-	}
-	if (target.tagName === "TEXTAREA" || target.tagName === "SELECT") {
-		return true;
-	}
-	if (target.tagName !== "INPUT") {
-		return false;
-	}
+	if (target.tagName === "TEXTAREA" || target.tagName === "SELECT") return true;
+	if (target.tagName !== "INPUT") return false;
 	const input = target as HTMLInputElement;
 	return !(
 		input.type === "range" ||
@@ -60,6 +63,8 @@ function isEditableTarget(target: EventTarget | null): boolean {
 
 export default function PresetLibrary({
 	allEntries,
+	showLibraryPresets,
+	onToggleLibraryPresets,
 	activeEntryId,
 	activePresetName,
 	onLoadLocal,
@@ -68,18 +73,22 @@ export default function PresetLibrary({
 	onSavePreset,
 	onDeletePreset,
 	onRenamePreset,
+	onSetPresetFavorite,
+	onSetPresetCategory,
+	onSetPresetTags,
 	onExportPreset,
 	onExportCurrentState,
 	onImportPreset,
 	onInitPreset,
 	onClose,
-}: PresetLibrary) {
+	isOpen = true,
+}: PresetLibraryProps) {
 	const isPluginRuntime =
 		typeof (
 			window as Window & {
-				__BEAMER__?: { emit?: (event: string, data?: unknown) => void };
+				__czSetParams?: (json: string) => void;
 			}
-		).__BEAMER__?.emit === "function";
+		).__czSetParams === "function";
 	const [search, setSearch] = useState("");
 	const [saveName, setSaveName] = useState("");
 	const [saveAsOpen, setSaveAsOpen] = useState(false);
@@ -87,27 +96,186 @@ export default function PresetLibrary({
 	const [importError, setImportError] = useState<string | null>(null);
 	const [renameEntry, setRenameEntry] = useState<PresetEntry | null>(null);
 	const [renameValue, setRenameValue] = useState("");
+	const [metadataEntry, setMetadataEntry] = useState<PresetEntry | null>(null);
+	const [metadataCategoryValue, setMetadataCategoryValue] = useState("");
+	const [metadataTagsValue, setMetadataTagsValue] = useState("");
+	const [selectedTagFilters, setSelectedTagFilters] = useState<string[]>([]);
+	const [tagSortMode, setTagSortMode] = useState<"name" | "tag">("name");
+	const [sortState, setSortState] = useState<{
+		key: SortKey;
+		direction: SortDirection;
+	}>({ key: "star", direction: "desc" });
 	const [deleteEntry, setDeleteEntry] = useState<PresetEntry | null>(null);
 	const [focusedEntryId, setFocusedEntryId] = useState(activeEntryId);
 	const importFileRef = useRef<HTMLInputElement>(null);
-	const rowRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+	const searchInputRef = useRef<HTMLInputElement>(null);
+	const scrollContainerRef = useRef<HTMLDivElement>(null);
+	const [virtualScrollTop, setVirtualScrollTop] = useState(0);
+	const [virtualViewportHeight, setVirtualViewportHeight] = useState(0);
+
+	const availableTags = useMemo(
+		() =>
+			Array.from(
+				new Set(
+					allEntries
+						.flatMap((entry) => entry.tags)
+						.map((tag) => tag.trim().toLowerCase())
+						.filter((tag) => tag.length > 0),
+				),
+			).sort((a, b) => a.localeCompare(b)),
+		[allEntries],
+	);
 
 	const filteredEntries = useMemo(() => {
 		const normalizedSearch = search.trim().toLowerCase();
-		if (!normalizedSearch) return allEntries;
-		return allEntries.filter((entry) =>
-			getEntrySearchText(entry).includes(normalizedSearch),
-		);
-	}, [allEntries, search]);
+		const bySearch = normalizedSearch
+			? allEntries.filter((entry) =>
+					getEntrySearchText(entry).includes(normalizedSearch),
+				)
+			: allEntries;
 
-	const sections = (["builtin", "local", "library"] as const)
-		.map((type) => ({
-			type,
-			entries: filteredEntries.filter((entry) => entry.type === type),
-		}))
-		.filter((section) => section.entries.length > 0);
+		const byTags =
+			selectedTagFilters.length > 0
+				? bySearch.filter((entry) =>
+						selectedTagFilters.every((tag) => entry.tags.includes(tag)),
+					)
+				: bySearch;
 
-	const focusedEntry = filteredEntries.find(
+		return [...byTags].sort((a, b) => {
+			if (tagSortMode === "tag") {
+				const aTag = a.tags[0] ?? "";
+				const bTag = b.tags[0] ?? "";
+				const tagCompare = aTag.localeCompare(bTag);
+				if (tagCompare !== 0) return tagCompare;
+			}
+			return a.label.localeCompare(b.label, undefined, {
+				numeric: true,
+				sensitivity: "base",
+			});
+		});
+	}, [allEntries, search, selectedTagFilters, tagSortMode]);
+
+	const sortedEntries = useMemo(() => {
+		return [...filteredEntries].sort((a, b) => {
+			if (sortState.key === "star") {
+				const aValue = a.starred ? 1 : 0;
+				const bValue = b.starred ? 1 : 0;
+				if (aValue === bValue) {
+					return a.label.localeCompare(b.label, undefined, {
+						numeric: true,
+						sensitivity: "base",
+					});
+				}
+				return sortState.direction === "asc"
+					? aValue - bValue
+					: bValue - aValue;
+			}
+
+			if (sortState.key === "favorite") {
+				const aValue = a.favorite ? 1 : 0;
+				const bValue = b.favorite ? 1 : 0;
+				if (aValue === bValue) {
+					return a.label.localeCompare(b.label, undefined, {
+						numeric: true,
+						sensitivity: "base",
+					});
+				}
+				return sortState.direction === "asc"
+					? aValue - bValue
+					: bValue - aValue;
+			}
+
+			if (sortState.key === "source") {
+				const sourceCompare = a.sourceLabel.localeCompare(
+					b.sourceLabel,
+					undefined,
+					{ sensitivity: "base" },
+				);
+				if (sourceCompare !== 0)
+					return sortState.direction === "asc" ? sourceCompare : -sourceCompare;
+				const nameCompare = a.label.localeCompare(b.label, undefined, {
+					numeric: true,
+					sensitivity: "base",
+				});
+				return sortState.direction === "asc" ? nameCompare : -nameCompare;
+			}
+
+			if (sortState.key === "tags") {
+				const aTagLabel = a.tags.join(", ");
+				const bTagLabel = b.tags.join(", ");
+				const tagCompare = aTagLabel.localeCompare(bTagLabel, undefined, {
+					sensitivity: "base",
+				});
+				if (tagCompare !== 0)
+					return sortState.direction === "asc" ? tagCompare : -tagCompare;
+				const nameCompare = a.label.localeCompare(b.label, undefined, {
+					numeric: true,
+					sensitivity: "base",
+				});
+				return sortState.direction === "asc" ? nameCompare : -nameCompare;
+			}
+
+			const nameCompare = a.label.localeCompare(b.label, undefined, {
+				numeric: true,
+				sensitivity: "base",
+			});
+			return sortState.direction === "asc" ? nameCompare : -nameCompare;
+		});
+	}, [filteredEntries, sortState]);
+
+	const virtualRows = useMemo<VirtualPresetRow[]>(
+		() =>
+			sortedEntries.map((entry) => ({
+				id: entry.id,
+				kind: "entry" as const,
+				entry,
+			})),
+		[sortedEntries],
+	);
+
+	const virtualLayout = useMemo(() => {
+		let totalHeight = 0;
+		const offsets = virtualRows.map(() => {
+			const offset = totalHeight;
+			totalHeight += getVirtualRowHeight();
+			return offset;
+		});
+		return { offsets, totalHeight };
+	}, [virtualRows]);
+
+	const visibleVirtualRows = useMemo(() => {
+		const listScrollTop = Math.max(0, virtualScrollTop - TABLE_HEADER_HEIGHT);
+		const startBoundary = Math.max(0, listScrollTop - VIRTUAL_OVERSCAN_PX);
+		const endBoundary =
+			listScrollTop + virtualViewportHeight + VIRTUAL_OVERSCAN_PX;
+		let startIndex = 0;
+		while (
+			startIndex < virtualRows.length &&
+			virtualLayout.offsets[startIndex] + getVirtualRowHeight() < startBoundary
+		) {
+			startIndex++;
+		}
+
+		let endIndex = startIndex;
+		while (
+			endIndex < virtualRows.length &&
+			virtualLayout.offsets[endIndex] < endBoundary
+		) {
+			endIndex++;
+		}
+
+		return virtualRows.slice(startIndex, endIndex).map((row, index) => {
+			const rowIndex = startIndex + index;
+			return { row, rowIndex, top: virtualLayout.offsets[rowIndex] };
+		});
+	}, [
+		virtualLayout.offsets,
+		virtualRows,
+		virtualScrollTop,
+		virtualViewportHeight,
+	]);
+
+	const focusedEntry = sortedEntries.find(
 		(entry) => entry.id === focusedEntryId,
 	);
 	const activeLocalEntry =
@@ -118,19 +286,56 @@ export default function PresetLibrary({
 				);
 
 	useEffect(() => {
-		if (filteredEntries.length === 0) {
+		if (!isOpen) return;
+		if (sortedEntries.length === 0) {
 			setFocusedEntryId(null);
 			return;
 		}
-		if (!filteredEntries.some((entry) => entry.id === focusedEntryId)) {
-			setFocusedEntryId(activeEntryId ?? filteredEntries[0]?.id ?? null);
+		if (!sortedEntries.some((entry) => entry.id === focusedEntryId)) {
+			setFocusedEntryId(activeEntryId ?? sortedEntries[0]?.id ?? null);
 		}
-	}, [activeEntryId, filteredEntries, focusedEntryId]);
+	}, [activeEntryId, sortedEntries, focusedEntryId, isOpen]);
 
 	useEffect(() => {
+		if (!isOpen) return;
 		if (!focusedEntryId) return;
-		rowRefs.current[focusedEntryId]?.focus();
-	}, [focusedEntryId]);
+		if (document.activeElement === searchInputRef.current) return;
+
+		const rowIndex = virtualRows.findIndex(
+			(row) => row.kind === "entry" && row.entry.id === focusedEntryId,
+		);
+		const scrollContainer = scrollContainerRef.current;
+		if (rowIndex < 0 || !scrollContainer) return;
+
+		const top = virtualLayout.offsets[rowIndex] + TABLE_HEADER_HEIGHT;
+		const bottom = top + getVirtualRowHeight();
+		if (top < scrollContainer.scrollTop) {
+			scrollContainer.scrollTop = top;
+			setVirtualScrollTop(top);
+		}
+		if (bottom > scrollContainer.scrollTop + scrollContainer.clientHeight) {
+			const nextScrollTop = bottom - scrollContainer.clientHeight;
+			scrollContainer.scrollTop = nextScrollTop;
+			setVirtualScrollTop(nextScrollTop);
+		}
+	}, [focusedEntryId, isOpen, virtualLayout.offsets, virtualRows]);
+
+	useEffect(() => {
+		const scrollContainer = scrollContainerRef.current;
+		if (!scrollContainer) return;
+
+		const updateViewportHeight = () => {
+			setVirtualViewportHeight(scrollContainer.clientHeight);
+			setVirtualScrollTop(scrollContainer.scrollTop);
+		};
+
+		updateViewportHeight();
+		const resizeObserver = new ResizeObserver(updateViewportHeight);
+		resizeObserver.observe(scrollContainer);
+		return () => {
+			resizeObserver.disconnect();
+		};
+	}, []);
 
 	const handleLoad = useCallback(
 		(entry: PresetEntry) => {
@@ -151,15 +356,15 @@ export default function PresetLibrary({
 
 	const handleKeyboardNavigation = useCallback(
 		(event: { key: string; preventDefault: () => void }) => {
-			if (filteredEntries.length === 0) return;
+			if (sortedEntries.length === 0) return;
 			const currentIndex = Math.max(
 				0,
-				filteredEntries.findIndex((entry) => entry.id === focusedEntryId),
+				sortedEntries.findIndex((entry) => entry.id === focusedEntryId),
 			);
 			if (event.key === "ArrowDown") {
 				event.preventDefault();
 				const nextEntry =
-					filteredEntries[(currentIndex + 1) % filteredEntries.length];
+					sortedEntries[(currentIndex + 1) % sortedEntries.length];
 				if (nextEntry) {
 					setFocusedEntryId(nextEntry.id);
 					handleLoad(nextEntry);
@@ -168,8 +373,8 @@ export default function PresetLibrary({
 			if (event.key === "ArrowUp") {
 				event.preventDefault();
 				const prevEntry =
-					filteredEntries[
-						(currentIndex - 1 + filteredEntries.length) % filteredEntries.length
+					sortedEntries[
+						(currentIndex - 1 + sortedEntries.length) % sortedEntries.length
 					];
 				if (prevEntry) {
 					setFocusedEntryId(prevEntry.id);
@@ -178,7 +383,7 @@ export default function PresetLibrary({
 			}
 			if (event.key === "Home") {
 				event.preventDefault();
-				const firstEntry = filteredEntries[0];
+				const firstEntry = sortedEntries[0];
 				if (firstEntry) {
 					setFocusedEntryId(firstEntry.id);
 					handleLoad(firstEntry);
@@ -186,7 +391,7 @@ export default function PresetLibrary({
 			}
 			if (event.key === "End") {
 				event.preventDefault();
-				const lastEntry = filteredEntries[filteredEntries.length - 1];
+				const lastEntry = sortedEntries[sortedEntries.length - 1];
 				if (lastEntry) {
 					setFocusedEntryId(lastEntry.id);
 					handleLoad(lastEntry);
@@ -201,88 +406,109 @@ export default function PresetLibrary({
 				onClose();
 			}
 		},
-		[filteredEntries, focusedEntry, focusedEntryId, handleLoad, onClose],
+		[sortedEntries, focusedEntry, focusedEntryId, handleLoad, onClose],
+	);
+
+	const toggleSort = useCallback((key: SortKey) => {
+		const scrollContainer = scrollContainerRef.current;
+		if (scrollContainer) scrollContainer.scrollTop = 0;
+		setVirtualScrollTop(0);
+		setSortState((prev) => {
+			if (prev.key === key) {
+				return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
+			}
+			return {
+				key,
+				direction: key === "favorite" || key === "star" ? "desc" : "asc",
+			};
+		});
+	}, []);
+
+	const sortIndicator = useCallback(
+		(key: SortKey) => {
+			if (sortState.key !== key) return "";
+			return sortState.direction === "asc" ? " ▲" : " ▼";
+		},
+		[sortState],
 	);
 
 	useEffect(() => {
+		if (!isOpen) return;
 		const handleWindowKeyDown = (event: KeyboardEvent) => {
-			if (!document.hasFocus()) {
-				return;
-			}
-			if (event.defaultPrevented) {
-				return;
-			}
-			if (isEditableTarget(event.target)) {
-				return;
-			}
+			if (!document.hasFocus()) return;
+			if (event.defaultPrevented) return;
+			if (isEditableTarget(event.target)) return;
 			if (
 				event.key !== "ArrowDown" &&
 				event.key !== "ArrowUp" &&
 				event.key !== "Home" &&
 				event.key !== "End"
-			) {
+			)
 				return;
-			}
 			handleKeyboardNavigation(event);
 		};
 
 		window.addEventListener("keydown", handleWindowKeyDown);
-		return () => {
-			window.removeEventListener("keydown", handleWindowKeyDown);
-		};
-	}, [handleKeyboardNavigation]);
+		return () => window.removeEventListener("keydown", handleWindowKeyDown);
+	}, [handleKeyboardNavigation, isOpen]);
 
-	const handleSave = () => {
+	const handleSave = useCallback(() => {
 		if (!activeLocalEntry) return;
 		onSavePreset(activeLocalEntry.label);
-	};
+	}, [activeLocalEntry, onSavePreset]);
 
-	const openSaveAsModal = () => {
+	const toggleTagFilter = useCallback((tag: string) => {
+		setSelectedTagFilters((prev) =>
+			prev.includes(tag)
+				? prev.filter((value) => value !== tag)
+				: [...prev, tag],
+		);
+	}, []);
+
+	const openSaveAsModal = useCallback(() => {
 		setSaveAsName(
 			activeLocalEntry?.label ?? activePresetName.replace(/\s+\*$/, ""),
 		);
 		setSaveAsOpen(true);
-	};
+	}, [activeLocalEntry, activePresetName]);
 
-	const commitSaveAs = () => {
+	const commitSaveAs = useCallback(() => {
 		const name = saveAsName.trim();
 		if (!name) return;
 		onSavePreset(name);
 		setSaveAsOpen(false);
 		setSaveAsName("");
-	};
+	}, [saveAsName, onSavePreset]);
 
-	const handleExportCurrentState = () => {
+	const handleExportCurrentState = useCallback(() => {
 		const name = saveName.trim();
 		if (!name) return;
 		onExportCurrentState(name);
-	};
+	}, [saveName, onExportCurrentState]);
 
-	const handleImportFile = (event: React.ChangeEvent<HTMLInputElement>) => {
-		const file = event.target.files?.[0];
-		if (!file) return;
-		const filename = file.name.replace(/\.json$/i, "");
-		const reader = new FileReader();
-		reader.onload = (readerEvent) => {
-			const text = readerEvent.target?.result;
-			if (typeof text !== "string") return;
-			try {
-				onImportPreset(text, filename);
-				setImportError(null);
-			} catch {
-				setImportError("Invalid preset file.");
-			}
-		};
-		reader.readAsText(file);
-		event.target.value = "";
-	};
+	const handleImportFile = useCallback(
+		(event: React.ChangeEvent<HTMLInputElement>) => {
+			const file = event.target.files?.[0];
+			if (!file) return;
+			const filename = file.name.replace(/\.json$/i, "");
+			const reader = new FileReader();
+			reader.onload = (readerEvent) => {
+				const text = readerEvent.target?.result;
+				if (typeof text !== "string") return;
+				try {
+					onImportPreset(text, filename);
+					setImportError(null);
+				} catch {
+					setImportError("Invalid preset file.");
+				}
+			};
+			reader.readAsText(file);
+			event.target.value = "";
+		},
+		[onImportPreset],
+	);
 
-	const openRenameModal = (entry: PresetEntry) => {
-		setRenameEntry(entry);
-		setRenameValue(entry.label);
-	};
-
-	const commitRename = () => {
+	const commitRename = useCallback(() => {
 		if (!renameEntry) return;
 		const nextName = renameValue.trim();
 		if (nextName && nextName !== renameEntry.label) {
@@ -290,357 +516,181 @@ export default function PresetLibrary({
 		}
 		setRenameEntry(null);
 		setRenameValue("");
-	};
+	}, [renameEntry, renameValue, onRenamePreset]);
 
-	const commitDelete = () => {
+	const commitMetadata = useCallback(() => {
+		if (!metadataEntry) return;
+		const category = metadataCategoryValue.trim();
+		const tags = Array.from(
+			new Set(
+				metadataTagsValue
+					.split(",")
+					.map((tag) => tag.trim())
+					.filter((tag) => tag.length > 0)
+					.map((tag) => tag.toLowerCase()),
+			),
+		);
+		onSetPresetCategory(metadataEntry.label, category);
+		onSetPresetTags(metadataEntry.label, tags);
+		setMetadataEntry(null);
+		setMetadataCategoryValue("");
+		setMetadataTagsValue("");
+	}, [
+		metadataEntry,
+		metadataCategoryValue,
+		metadataTagsValue,
+		onSetPresetCategory,
+		onSetPresetTags,
+	]);
+
+	const commitDelete = useCallback(() => {
 		if (!deleteEntry) return;
 		onDeletePreset(deleteEntry.label);
 		setDeleteEntry(null);
-	};
+	}, [deleteEntry, onDeletePreset]);
+
+	const handleImportClick = useCallback(() => {
+		importFileRef.current?.click();
+	}, []);
 
 	return (
 		<div className="relative z-10 flex min-h-0 flex-1 flex-col">
-			<div className="flex min-h-0 flex-1 flex-col overflow-hidden  border border-cz-border bg-cz-panel">
-				<div className="grid gap-3 border-b border-cz-border bg-cz-body px-5 py-4 lg:grid-cols-[1fr_auto] lg:items-center">
-					<div>
-						<p className="text-3xs font-mono uppercase tracking-[0.32em] text-cz-gold">
-							Preset Library
-						</p>
-						<h2 className="mt-1 truncate text-xl font-mono font-bold text-cz-cream">
-							{activePresetName}
-						</h2>
-					</div>
-					<div className="flex flex-wrap items-center gap-2">
-						<input
-							type="text"
-							className="h-10 min-w-48 rounded-md border border-cz-border bg-cz-inset px-3 text-sm text-cz-cream placeholder-cz-cream-dim/70 outline-none focus:border-cz-light-blue"
-							placeholder="Search presets"
-							value={search}
-							onChange={(event) => setSearch(event.target.value)}
-						/>
-						<Button
-							type="button"
-							className="btn btn-sm border-cz-border bg-cz-inset text-cz-cream hover:bg-cz-body"
-							onClick={onClose}
-						>
-							Return
-						</Button>
-					</div>
-				</div>
+			<div className="flex min-h-0 flex-1 flex-col overflow-hidden border border-cz-border bg-cz-panel">
+				<PresetLibraryHeader
+					activePresetName={activePresetName}
+					totalCount={sortedEntries.length}
+					search={search}
+					onSearchChange={setSearch}
+					showLibraryPresets={showLibraryPresets}
+					onToggleLibraryPresets={onToggleLibraryPresets}
+					onClose={onClose}
+					availableTags={availableTags}
+					selectedTagFilters={selectedTagFilters}
+					onToggleTagFilter={toggleTagFilter}
+					onClearTagFilters={() => setSelectedTagFilters([])}
+					tagSortMode={tagSortMode}
+					onTagSortModeChange={setTagSortMode}
+					onToggleSort={toggleSort}
+					sortIndicator={sortIndicator}
+				/>
 
-				<div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1fr)_17rem]">
+				<div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_17rem]">
 					<div
+						ref={scrollContainerRef}
 						className="min-h-0 overflow-y-auto [scrollbar-gutter:stable]"
 						role="listbox"
 						aria-label="Preset library"
 						data-preset-library="true"
 						tabIndex={-1}
+						onScroll={(event) => {
+							setVirtualScrollTop(event.currentTarget.scrollTop);
+						}}
 						onKeyDownCapture={(event) => {
-							if (!isPluginRuntime) {
-								return;
-							}
-							if (event.key !== " ") {
-								return;
-							}
-							if (isEditableTarget(event.target)) {
-								return;
-							}
-							const target = event.target;
-							if (target instanceof HTMLElement) {
-								target.blur();
-							}
+							if (!isPluginRuntime) return;
+							if (event.key !== " ") return;
+							if (isEditableTarget(event.target)) return;
+							if (event.target instanceof HTMLElement) event.target.blur();
 						}}
 						onKeyDown={(event) => {
-							if (isEditableTarget(event.target)) {
-								return;
-							}
+							if (isEditableTarget(event.target)) return;
 							handleKeyboardNavigation(event);
 						}}
 					>
-						<div className="grid grid-cols-[2rem_minmax(12rem,1.5fr)_8rem_7rem] border-b border-cz-border bg-cz-body px-4 py-2 text-4xs font-mono uppercase tracking-[0.22em] text-cz-cream-dim">
-							<span />
-							<span>Name</span>
-							<span>Source</span>
-							<span className="text-right">Actions</span>
-						</div>
-						{sections.length === 0 ? (
-							<div className="px-5 py-10 text-sm text-cz-cream">
+						{sortedEntries.length === 0 ? (
+							<div className="px-5 py-10 text-cz-cream text-sm">
 								No presets available.
 							</div>
 						) : (
-							sections.map((section) => (
-								<section key={section.type}>
-									<div className="border-b border-cz-border/70 bg-cz-surface px-4 py-2 text-4xs font-mono uppercase tracking-[0.3em] text-cz-gold">
-										{sectionLabels[section.type]}
-									</div>
-									{section.entries.map((entry) => {
-										const active = entry.id === activeEntryId;
-										const focused = entry.id === focusedEntryId;
-										return (
-											<div
-												key={entry.id}
-												className={`grid grid-cols-[2rem_minmax(12rem,1.5fr)_8rem_7rem] items-center border-b border-cz-border px-4 py-0.5 text-sm transition ${
-													active
-														? "bg-cz-surface/20"
-														: focused
-															? "bg-cz-surface/50 text-cz-cream"
-															: "text-cz-cream bg-cz-surface hover:bg-cz-surface/30"
-												}`}
-											>
-												<span className="font-mono text-cz-gold ">
-													{active ? "*" : ""}
-												</span>
-												<Button
-													type="button"
-													ref={(node) => {
-														rowRefs.current[entry.id] = node;
-													}}
-													className="btn btn-ghost btn-sm justify-start w-full min-w-0 truncate py-2 font-semibold outline-none text-cz-cream"
-													onFocus={() => setFocusedEntryId(entry.id)}
-													onClick={() => handleLoad(entry)}
-												>
-													{entry.label}
-												</Button>
-												<span className="truncate text-3xs font-mono uppercase tracking-[0.18em] text-cz-cream-dim">
-													{typeLabels[entry.type]}
-												</span>
-												<div className="flex justify-end gap-1">
-													{entry.type === "local" ? (
-														<>
-															<Button
-																type="button"
-																className="btn btn-ghost text-cz-cream"
-																aria-label={`Rename ${entry.label}`}
-																onClick={() => openRenameModal(entry)}
-															>
-																Rename
-															</Button>
-															<Button
-																type="button"
-																className="btn btn-ghost text-cz-light-blue"
-																aria-label={`Export ${entry.label}`}
-																onClick={() => onExportPreset(entry.label)}
-															>
-																Export
-															</Button>
-															<Button
-																type="button"
-																className="btn btn-ghost text-red-400"
-																aria-label={`Delete ${entry.label}`}
-																onClick={() => setDeleteEntry(entry)}
-															>
-																Delete
-															</Button>
-														</>
-													) : null}
-												</div>
-											</div>
-										);
-									})}
-								</section>
-							))
+							<div
+								className="relative"
+								style={{ height: virtualLayout.totalHeight }}
+							>
+								{visibleVirtualRows.map(({ row, top }) => {
+									const entry = row.entry;
+									const active = entry.id === activeEntryId;
+									const focused = entry.id === focusedEntryId;
+									const canToggleFavorite = entry.type === "local";
+									return (
+										<PresetLibraryRow
+											key={entry.id}
+											entry={entry}
+											top={top}
+											active={active}
+											focused={focused}
+											canToggleFavorite={canToggleFavorite}
+											onSelect={handleLoad}
+											onSetFocus={setFocusedEntryId}
+											onSetFavorite={onSetPresetFavorite}
+											onOpenRename={(e) => {
+												setRenameEntry(e);
+												setRenameValue(e.label);
+											}}
+											onOpenMetadata={(e) => {
+												setMetadataEntry(e);
+												setMetadataCategoryValue(e.category);
+												setMetadataTagsValue(e.tags.join(", "));
+											}}
+											onExportPreset={onExportPreset}
+											onDeleteEntry={setDeleteEntry}
+											onToggleTagFilter={toggleTagFilter}
+										/>
+									);
+								})}
+							</div>
 						)}
 					</div>
 
-					<aside className="border-t border-cz-border bg-cz-surface p-4 lg:border-l lg:border-t-0">
-						<div className="space-y-5">
-							<section>
-								<h3 className="mb-2 text-4xs font-mono uppercase tracking-[0.28em] text-cz-gold">
-									Current State
-								</h3>
-								<div className="mt-2 grid grid-cols-2 gap-2">
-									<Button
-										type="button"
-										className="btn btn-sm btn-warning"
-										disabled={!activeLocalEntry}
-										onClick={handleSave}
-									>
-										Save
-									</Button>
-									<Button
-										type="button"
-										className="btn btn-sm btn-success"
-										onClick={openSaveAsModal}
-									>
-										Save As
-									</Button>
-								</div>
-								<div className="mt-3">
-									<input
-										type="text"
-										className="input input-sm w-full border-cz-border bg-cz-inset text-cz-cream placeholder-cz-cream-dim/70"
-										placeholder="Export file name"
-										value={saveName}
-										onChange={(event) => setSaveName(event.target.value)}
-										onKeyDown={(event) => {
-											if (event.key === "Enter") handleExportCurrentState();
-										}}
-									/>
-								</div>
-								<div className="mt-2 grid grid-cols-1 gap-2">
-									<Button
-										type="button"
-										className="btn btn-sm border-cz-border bg-cz-inset text-cz-light-blue"
-										aria-label="Export current state"
-										disabled={!saveName.trim()}
-										onClick={handleExportCurrentState}
-									>
-										Export
-									</Button>
-								</div>
-							</section>
-
-							<section>
-								<h3 className="mb-2 text-4xs font-mono uppercase tracking-[0.28em] text-cz-gold">
-									File
-								</h3>
-								<div className="grid grid-cols-2 gap-2">
-									<Button
-										type="button"
-										className="btn btn-sm border-cz-border bg-cz-inset text-cz-cream"
-										onClick={() => importFileRef.current?.click()}
-									>
-										Import
-									</Button>
-									<Button
-										type="button"
-										className="btn btn-sm border-cz-border bg-cz-inset text-red-400"
-										onClick={onInitPreset}
-									>
-										Init
-									</Button>
-								</div>
-								<input
-									ref={importFileRef}
-									type="file"
-									accept=".json,application/json"
-									className="hidden"
-									onChange={handleImportFile}
-								/>
-								{importError ? (
-									<p className="mt-2 text-xs text-red-400">{importError}</p>
-								) : null}
-							</section>
-						</div>
-					</aside>
+					<PresetLibrarySidebar
+						activeLocalEntryLabel={activeLocalEntry?.label ?? null}
+						saveName={saveName}
+						onSaveNameChange={setSaveName}
+						onSave={handleSave}
+						onOpenSaveAs={openSaveAsModal}
+						onExportCurrentState={handleExportCurrentState}
+						onImportClick={handleImportClick}
+						onInitPreset={onInitPreset}
+						importError={importError}
+					/>
 				</div>
 			</div>
 
-			<dialog
-				className="modal"
-				open={renameEntry !== null}
-				onCancel={(event) => {
-					event.preventDefault();
+			<input
+				ref={importFileRef}
+				type="file"
+				accept=".json,application/json"
+				className="hidden"
+				onChange={handleImportFile}
+			/>
+
+			<PresetLibraryDialogs
+				renameEntry={renameEntry}
+				renameValue={renameValue}
+				onRenameValueChange={setRenameValue}
+				onCommitRename={commitRename}
+				onCancelRename={() => {
 					setRenameEntry(null);
 					setRenameValue("");
 				}}
-			>
-				<div className="modal-box rounded-md border border-cz-border bg-cz-surface text-cz-cream">
-					<h3 className="font-mono text-lg font-bold">Rename preset</h3>
-					<input
-						type="text"
-						className="input mt-4 w-full border-cz-border bg-cz-inset text-cz-cream"
-						value={renameValue}
-						onChange={(event) => setRenameValue(event.target.value)}
-						onKeyDown={(event) => {
-							if (event.key === "Enter") commitRename();
-							if (event.key === "Escape") setRenameEntry(null);
-						}}
-					/>
-					<div className="modal-action">
-						<Button
-							type="button"
-							className="btn border-cz-border bg-cz-inset text-cz-cream"
-							onClick={() => setRenameEntry(null)}
-						>
-							Cancel
-						</Button>
-						<Button
-							type="button"
-							className="btn btn-primary"
-							aria-label="Confirm rename"
-							onClick={commitRename}
-						>
-							Rename
-						</Button>
-					</div>
-				</div>
-			</dialog>
-
-			<dialog
-				className="modal"
-				open={deleteEntry !== null}
-				onCancel={(event) => {
-					event.preventDefault();
-					setDeleteEntry(null);
+				deleteEntry={deleteEntry}
+				onCommitDelete={commitDelete}
+				onCancelDelete={() => setDeleteEntry(null)}
+				metadataEntry={metadataEntry}
+				metadataCategoryValue={metadataCategoryValue}
+				onMetadataCategoryValueChange={setMetadataCategoryValue}
+				metadataTagsValue={metadataTagsValue}
+				onMetadataTagsValueChange={setMetadataTagsValue}
+				onCommitMetadata={commitMetadata}
+				onCancelMetadata={() => {
+					setMetadataEntry(null);
+					setMetadataCategoryValue("");
+					setMetadataTagsValue("");
 				}}
-			>
-				<div className="modal-box rounded-md border border-cz-border bg-cz-surface text-cz-cream">
-					<h3 className="font-mono text-lg font-bold">Delete preset?</h3>
-					<p className="mt-3 text-sm text-cz-cream-dim">
-						{deleteEntry?.label} will be removed from your local presets.
-					</p>
-					<div className="modal-action">
-						<Button
-							type="button"
-							className="btn border-cz-border bg-cz-inset text-cz-cream"
-							onClick={() => setDeleteEntry(null)}
-						>
-							Cancel
-						</Button>
-						<Button
-							type="button"
-							className="btn bg-red-700 text-white"
-							aria-label="Confirm delete"
-							onClick={commitDelete}
-						>
-							Delete
-						</Button>
-					</div>
-				</div>
-			</dialog>
-
-			<dialog
-				className="modal"
-				open={saveAsOpen}
-				onCancel={(event) => {
-					event.preventDefault();
-					setSaveAsOpen(false);
-				}}
-			>
-				<div className="modal-box rounded-md border border-cz-border bg-cz-surface text-cz-cream">
-					<h3 className="font-mono text-lg font-bold">Save preset as</h3>
-					<input
-						type="text"
-						className="input mt-4 w-full border-cz-border bg-cz-inset text-cz-cream"
-						placeholder="New preset name"
-						value={saveAsName}
-						onChange={(event) => setSaveAsName(event.target.value)}
-						onKeyDown={(event) => {
-							if (event.key === "Enter") commitSaveAs();
-							if (event.key === "Escape") setSaveAsOpen(false);
-						}}
-					/>
-					<div className="modal-action">
-						<Button
-							type="button"
-							className="btn border-cz-border bg-cz-inset text-cz-cream"
-							onClick={() => setSaveAsOpen(false)}
-						>
-							Cancel
-						</Button>
-						<Button
-							type="button"
-							className="btn bg-cz-gold text-white"
-							aria-label="Confirm save as"
-							disabled={!saveAsName.trim()}
-							onClick={commitSaveAs}
-						>
-							Save As
-						</Button>
-					</div>
-				</div>
-			</dialog>
+				saveAsOpen={saveAsOpen}
+				saveAsName={saveAsName}
+				onSaveAsNameChange={setSaveAsName}
+				onCommitSaveAs={commitSaveAs}
+				onCancelSaveAs={() => setSaveAsOpen(false)}
+			/>
 		</div>
 	);
 }
