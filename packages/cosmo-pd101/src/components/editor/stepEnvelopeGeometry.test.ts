@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
 import {
+	buildEnvelopePoints,
 	CHART_PADDING_X,
 	CHART_PADDING_Y,
-	buildEnvelopePoints,
 	clamp,
 	drawEnvPreview,
 	editorStepDuration,
@@ -193,10 +193,7 @@ describe("buildEnvelopePoints", () => {
 		const env = makeEnv({ stepCount: 3 });
 		const points = buildEnvelopePoints(env, WIDTH, HEIGHT);
 		const last = points[points.length - 1];
-		expect(last.y).toBe(
-			CHART_PADDING_Y +
-				(HEIGHT - CHART_PADDING_Y * 2),
-		);
+		expect(last.y).toBe(CHART_PADDING_Y + (HEIGHT - CHART_PADDING_Y * 2));
 	});
 
 	it("returns empty array for no steps", () => {
@@ -393,17 +390,13 @@ describe("drawEnvPreview", () => {
 			getContext: () => null,
 		} as unknown as HTMLCanvasElement;
 		const env = createEnv();
-		expect(() =>
-			drawEnvPreview(canvas, env, "#ff0000", null),
-		).not.toThrow();
+		expect(() => drawEnvPreview(canvas, env, "#ff0000", null)).not.toThrow();
 	});
 
 	it("handles empty env", () => {
 		const canvas = createMockCanvas();
 		const env = createEnv({ steps: [], stepCount: 0 });
-		expect(() =>
-			drawEnvPreview(canvas, env, "#ff0000", null),
-		).not.toThrow();
+		expect(() => drawEnvPreview(canvas, env, "#ff0000", null)).not.toThrow();
 	});
 
 	it("handles highlighted step without throwing", () => {
