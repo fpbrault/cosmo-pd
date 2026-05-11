@@ -7,7 +7,6 @@ pub const PER_LINE_HEADROOM: f32 = 0.25;
 const BLEND_SHORT_CIRCUIT_EPSILON: f32 = 0.03;
 
 /// O(1) lookup table mapping `Algo as u8` → its definition.
-/// O(1) lookup table mapping `Algo as u8` → its definition.
 static ALGO_DEF_TABLE: LazyLock<[Option<&'static AlgoDefinitionV1>; 256]> = LazyLock::new(|| {
     let mut table = [None; 256];
     for def in &ALGO_DEFINITIONS_V1 {
@@ -409,12 +408,16 @@ pub fn warp_phase(
             let tilt = control_values[3] + algo_param_mods[3];
             skew::warp_phase(phase, amt, bias, curve, spread, tilt)
         }
-        Algo::Quantize => quantize::warp_phase(
-            phase,
-            amt,
-            control_values[1] + algo_param_mods[1],
-            control_values[2] + algo_param_mods[2],
-        ),
+        Algo::Quantize => {
+            let amount_mod = control_values[0] + algo_param_mods[0];
+            let amount = if amount_mod == 0.0 { amt } else { amount_mod };
+            quantize::warp_phase(
+                phase,
+                amount,
+                control_values[1] + algo_param_mods[1],
+                control_values[2] + algo_param_mods[2],
+            )
+        }
         Algo::Twist => {
             let harmonics = control_values[0] + algo_param_mods[0];
             let depth = control_values[1] + algo_param_mods[1];

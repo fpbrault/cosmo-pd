@@ -49,7 +49,7 @@ impl DistortionFx {
         let clipped = match self.mode {
             1 => hard_clip((driven * 0.75).tanh() * 1.2 + driven * 0.08),
             2 => fuzz_clip(driven),
-            _ => driven + driven.max(0.0).tanh() * 0.35,
+            _ => (driven + driven.max(0.0) * 0.35).tanh(),
         };
 
         // Tone control: LP filter; tone=0 → cutoff=800Hz, tone=1 → cutoff=12kHz

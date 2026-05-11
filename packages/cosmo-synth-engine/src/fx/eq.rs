@@ -49,7 +49,7 @@ impl BiquadFilter {
         let w0 = 2.0 * core::f32::consts::PI * freq_hz / sr;
         let cos_w0 = (w0).cos();
         let sin_w0 = (w0).sin();
-        let alpha = sin_w0 / 2.0 * ((a + 1.0 / a).sqrt() * (1.0 / 0.707 - 1.0) + 2.0);
+        let alpha = sin_w0 / 2.0 * (((a + 1.0 / a) * (1.0 / 0.707 - 1.0) + 2.0).sqrt());
         let a0_inv = 1.0 / ((a + 1.0) + (a - 1.0) * cos_w0 + 2.0 * (a).sqrt() * alpha);
         self.b0 = a * ((a + 1.0) - (a - 1.0) * cos_w0 + 2.0 * (a).sqrt() * alpha) * a0_inv;
         self.b1 = 2.0 * a * ((a - 1.0) - (a + 1.0) * cos_w0) * a0_inv;
@@ -64,7 +64,7 @@ impl BiquadFilter {
         let w0 = 2.0 * core::f32::consts::PI * freq_hz / sr;
         let cos_w0 = (w0).cos();
         let sin_w0 = (w0).sin();
-        let alpha = sin_w0 / 2.0 * ((a + 1.0 / a).sqrt() * (1.0 / 0.707 - 1.0) + 2.0);
+        let alpha = sin_w0 / 2.0 * (((a + 1.0 / a) * (1.0 / 0.707 - 1.0) + 2.0).sqrt());
         let a0_inv = 1.0 / ((a + 1.0) - (a - 1.0) * cos_w0 + 2.0 * (a).sqrt() * alpha);
         self.b0 = a * ((a + 1.0) + (a - 1.0) * cos_w0 + 2.0 * (a).sqrt() * alpha) * a0_inv;
         self.b1 = -2.0 * a * ((a - 1.0) + (a + 1.0) * cos_w0) * a0_inv;

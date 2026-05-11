@@ -7,8 +7,8 @@ pub(crate) struct ModMatrixCache {
     pub ref_mod_env: f32,
     pub ref_velocity: f32,
     pub has_env_step_routes: bool,
-    per_voice_dests: [(usize, f32, f32); 16],
-    num_per_voice: usize,
+    per_voice_mod_env_amounts: [f32; NUM_MOD_DESTINATIONS],
+    per_voice_velocity_amounts: [f32; NUM_MOD_DESTINATIONS],
 }
 
 impl ModMatrixCache {
@@ -18,7 +18,8 @@ impl ModMatrixCache {
 
     pub fn compute(&mut self, matrix: &ModMatrix, sources: &ModSources) {
         self.values.fill(0.0);
-        self.num_per_voice = 0;
+        self.per_voice_mod_env_amounts.fill(0.0);
+        self.per_voice_velocity_amounts.fill(0.0);
         self.has_env_step_routes = false;
 
         for route in &matrix.routes {
@@ -33,28 +34,10 @@ impl ModMatrixCache {
             }
 
             if route.source == ModSource::ModEnv || route.source == ModSource::Velocity {
-                let env_amt = if route.source == ModSource::ModEnv {
-                    route.amount
+                if route.source == ModSource::ModEnv {
+                    self.per_voice_mod_env_amounts[idx] += route.amount;
                 } else {
-                    0.0
-                };
-                let vel_amt = if route.source == ModSource::Velocity {
-                    route.amount
-                } else {
-                    0.0
-                };
-                let mut found = false;
-                for i in 0..self.num_per_voice {
-                    if self.per_voice_dests[i].0 == idx {
-                        self.per_voice_dests[i].1 += env_amt;
-                        self.per_voice_dests[i].2 += vel_amt;
-                        found = true;
-                        break;
-                    }
-                }
-                if !found && self.num_per_voice < 16 {
-                    self.per_voice_dests[self.num_per_voice] = (idx, env_amt, vel_amt);
-                    self.num_per_voice += 1;
+                    self.per_voice_velocity_amounts[idx] += route.amount;
                 }
             }
         }
@@ -71,20 +54,13 @@ impl ModMatrixCache {
     pub fn get(&self, dest: ModDestination, sources: &ModSources) -> f32 {
         let idx = dest as usize;
         let mut v = self.values[idx];
-
-        let mut i = 0;
-        while i < self.num_per_voice {
-            let (d, env_amt, vel_amt) = self.per_voice_dests[i];
-            if d == idx {
-                if env_amt != 0.0 {
-                    v += env_amt * (sources.mod_env - self.ref_mod_env);
-                }
-                if vel_amt != 0.0 {
-                    v += vel_amt * (sources.velocity - self.ref_velocity);
-                }
-                break;
-            }
-            i += 1;
+        let env_amt = self.per_voice_mod_env_amounts[idx];
+        if env_amt != 0.0 {
+            v += env_amt * (sources.mod_env - self.ref_mod_env);
+        }
+        let vel_amt = self.per_voice_velocity_amounts[idx];
+        if vel_amt != 0.0 {
+            v += vel_amt * (sources.velocity - self.ref_velocity);
         }
 
         v.clamp(-1.0, 1.0)
@@ -98,8 +74,8 @@ impl Default for ModMatrixCache {
             ref_mod_env: 0.0,
             ref_velocity: 0.0,
             has_env_step_routes: false,
-            per_voice_dests: [(0, 0.0, 0.0); 16],
-            num_per_voice: 0,
+            per_voice_mod_env_amounts: [0.0; NUM_MOD_DESTINATIONS],
+            per_voice_velocity_amounts: [0.0; NUM_MOD_DESTINATIONS],
         }
     }
 }
