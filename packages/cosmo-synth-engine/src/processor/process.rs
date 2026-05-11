@@ -83,6 +83,20 @@ impl CosmoProcessor {
         let mut prev_random = self.last_runtime_mod_sources.random;
 
         let mut mod_cache = ModMatrixCache::new();
+        mod_cache.rebuild_routes(matrix);
+
+        let l1_ctrl_p = pre_resolve_controls(p.line1.algo, &p.line1.algo_controls_a);
+        let l1_ctrl_s = p
+            .line1
+            .algo2
+            .map(|a| pre_resolve_controls(a, &p.line1.algo_controls_b))
+            .unwrap_or([0.0; 8]);
+        let l2_ctrl_p = pre_resolve_controls(p.line2.algo, &p.line2.algo_controls_a);
+        let l2_ctrl_s = p
+            .line2
+            .algo2
+            .map(|a| pre_resolve_controls(a, &p.line2.algo_controls_b))
+            .unwrap_or([0.0; 8]);
 
         for sample_out in output.iter_mut() {
             let (source_mod_env, source_velocity) = self
@@ -103,7 +117,7 @@ impl CosmoProcessor {
                 self.aftertouch,
             );
 
-            mod_cache.compute(matrix, &pre_sources);
+            mod_cache.compute(&pre_sources);
 
             let lfo1_rate_mod = mod_cache.get(ModDestination::Lfo1Rate, &pre_sources);
             let lfo1_depth_mod = mod_cache.get(ModDestination::Lfo1Depth, &pre_sources);
@@ -169,17 +183,6 @@ impl CosmoProcessor {
             );
             let line1_modded = self.line1_scratch;
             let line2_modded = self.line2_scratch;
-
-            let l1_ctrl_p = pre_resolve_controls(line1_modded.algo, &line1_modded.algo_controls_a);
-            let l1_ctrl_s = line1_modded
-                .algo2
-                .map(|a| pre_resolve_controls(a, &line1_modded.algo_controls_b))
-                .unwrap_or([0.0; 8]);
-            let l2_ctrl_p = pre_resolve_controls(line2_modded.algo, &line2_modded.algo_controls_a);
-            let l2_ctrl_s = line2_modded
-                .algo2
-                .map(|a| pre_resolve_controls(a, &line2_modded.algo_controls_b))
-                .unwrap_or([0.0; 8]);
 
             let mut mixed = 0.0_f32;
             let pitch_bend_semitones = self.pitch_bend * params.pitch_bend_range;
