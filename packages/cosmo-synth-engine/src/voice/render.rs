@@ -1,5 +1,5 @@
 
-use crate::dsp_utils::{lfo_output, wrap01, TWO_PI};
+use crate::dsp_utils::{lfo_output, pow01, wrap01, TWO_PI};
 use crate::envelope::EnvelopeKind;
 use crate::envelope::EnvelopeTimingCache;
 use crate::generators::{self, LineRenderConfig};
@@ -450,13 +450,13 @@ pub(crate) fn cz_dco_env_semitones(dco_env: f32) -> f32 {
 #[inline]
 pub(crate) fn cz_dca_env_gain(dca_env: f32) -> f32 {
     let level = dca_env.clamp(0.0, 1.0);
-    level.powf(DCA_LEVEL_CURVE_EXPONENT).clamp(0.0, 1.0)
+    pow01(level, DCA_LEVEL_CURVE_EXPONENT)
 }
 
 #[inline]
 pub(crate) fn cz_dcw_env_depth(dcw_env: f32) -> f32 {
     let level = dcw_env.clamp(0.0, 1.0);
-    level.powf(DCW_LEVEL_CURVE_EXPONENT).clamp(0.0, 1.0)
+    pow01(level, DCW_LEVEL_CURVE_EXPONENT)
 }
 
 pub(crate) fn line_frequency(base_freq: f32, line: &LineParams, dco_env: f32) -> f32 {
