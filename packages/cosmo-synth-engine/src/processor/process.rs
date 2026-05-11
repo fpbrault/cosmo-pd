@@ -186,11 +186,10 @@ impl CosmoProcessor {
             let pitch_bend_semitones = self.pitch_bend * params.pitch_bend_range;
             let mod_wheel = self.mod_wheel;
             let aftertouch = self.aftertouch;
-            let mut vector_acc = [0.0_f32; 4];
             let mut v = 0;
-            while v + 4 <= NUM_VOICES {
-                let voice_samples = [
-                    crate::voice::render_voice(
+            if matches!(self.simd_backend, crate::simd::SimdBackend::Scalar) {
+                while v + 4 <= NUM_VOICES {
+                    mixed += crate::voice::render_voice(
                         &mut self.voices[v],
                         params.as_ref(),
                         lfo1_mod_val,
@@ -208,8 +207,8 @@ impl CosmoProcessor {
                         l1_ctrl_s,
                         l2_ctrl_p,
                         l2_ctrl_s,
-                    ),
-                    crate::voice::render_voice(
+                    );
+                    mixed += crate::voice::render_voice(
                         &mut self.voices[v + 1],
                         params.as_ref(),
                         lfo1_mod_val,
@@ -227,8 +226,8 @@ impl CosmoProcessor {
                         l1_ctrl_s,
                         l2_ctrl_p,
                         l2_ctrl_s,
-                    ),
-                    crate::voice::render_voice(
+                    );
+                    mixed += crate::voice::render_voice(
                         &mut self.voices[v + 2],
                         params.as_ref(),
                         lfo1_mod_val,
@@ -246,8 +245,8 @@ impl CosmoProcessor {
                         l1_ctrl_s,
                         l2_ctrl_p,
                         l2_ctrl_s,
-                    ),
-                    crate::voice::render_voice(
+                    );
+                    mixed += crate::voice::render_voice(
                         &mut self.voices[v + 3],
                         params.as_ref(),
                         lfo1_mod_val,
@@ -265,13 +264,95 @@ impl CosmoProcessor {
                         l1_ctrl_s,
                         l2_ctrl_p,
                         l2_ctrl_s,
-                    ),
-                ];
-                vector_acc = self.simd_backend.add4(vector_acc, voice_samples);
-                v += 4;
+                    );
+                    v += 4;
+                }
+            } else {
+                let mut vector_acc = [0.0_f32; 4];
+                while v + 4 <= NUM_VOICES {
+                    let voice_samples = [
+                        crate::voice::render_voice(
+                            &mut self.voices[v],
+                            params.as_ref(),
+                            lfo1_mod_val,
+                            lfo2_mod_val,
+                            random_mod_val,
+                            &line1_modded,
+                            &line2_modded,
+                            sr,
+                            &self.envelope_timing,
+                            pitch_bend_semitones,
+                            mod_wheel,
+                            aftertouch,
+                            &mod_cache,
+                            l1_ctrl_p,
+                            l1_ctrl_s,
+                            l2_ctrl_p,
+                            l2_ctrl_s,
+                        ),
+                        crate::voice::render_voice(
+                            &mut self.voices[v + 1],
+                            params.as_ref(),
+                            lfo1_mod_val,
+                            lfo2_mod_val,
+                            random_mod_val,
+                            &line1_modded,
+                            &line2_modded,
+                            sr,
+                            &self.envelope_timing,
+                            pitch_bend_semitones,
+                            mod_wheel,
+                            aftertouch,
+                            &mod_cache,
+                            l1_ctrl_p,
+                            l1_ctrl_s,
+                            l2_ctrl_p,
+                            l2_ctrl_s,
+                        ),
+                        crate::voice::render_voice(
+                            &mut self.voices[v + 2],
+                            params.as_ref(),
+                            lfo1_mod_val,
+                            lfo2_mod_val,
+                            random_mod_val,
+                            &line1_modded,
+                            &line2_modded,
+                            sr,
+                            &self.envelope_timing,
+                            pitch_bend_semitones,
+                            mod_wheel,
+                            aftertouch,
+                            &mod_cache,
+                            l1_ctrl_p,
+                            l1_ctrl_s,
+                            l2_ctrl_p,
+                            l2_ctrl_s,
+                        ),
+                        crate::voice::render_voice(
+                            &mut self.voices[v + 3],
+                            params.as_ref(),
+                            lfo1_mod_val,
+                            lfo2_mod_val,
+                            random_mod_val,
+                            &line1_modded,
+                            &line2_modded,
+                            sr,
+                            &self.envelope_timing,
+                            pitch_bend_semitones,
+                            mod_wheel,
+                            aftertouch,
+                            &mod_cache,
+                            l1_ctrl_p,
+                            l1_ctrl_s,
+                            l2_ctrl_p,
+                            l2_ctrl_s,
+                        ),
+                    ];
+                    vector_acc = self.simd_backend.add4(vector_acc, voice_samples);
+                    v += 4;
+                }
+                mixed += self.simd_backend.horizontal_sum4(vector_acc);
             }
-
-            mixed += self.simd_backend.horizontal_sum4(vector_acc);
 
             while v < NUM_VOICES {
                 mixed += crate::voice::render_voice(
