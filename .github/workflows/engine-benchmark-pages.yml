@@ -37,3 +37,28 @@ jobs:
           summary-always: true
           alert-threshold: 130%
           fail-on-alert: true
+
+      - name: Regenerate grouped line charts page
+        run: |
+          set -euo pipefail
+
+          pages_dir="$RUNNER_TEMP/cosmo-pd-pages"
+          rm -rf "$pages_dir"
+          git fetch origin gh-pages --depth=1
+          git worktree add --detach "$pages_dir" origin/gh-pages
+
+          node scripts/generate-benchmark-pages-index.mjs \
+            "$pages_dir/dev/bench/data.js" \
+            "$pages_dir/dev/bench/index.html"
+
+          cd "$pages_dir"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dev/bench/index.html
+          if git diff --cached --quiet; then
+            echo "No chart page updates to publish"
+          else
+            git commit -m "chore(bench): group benchmark lines by family"
+            git push origin HEAD:gh-pages
+          fi
+        shell: bash
