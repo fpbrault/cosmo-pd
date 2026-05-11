@@ -14,7 +14,7 @@ use super::state::RuntimeModSources;
 use super::utils::soft_clip_tanh;
 use super::CosmoProcessor;
 
-#[cfg(feature = "no_denormals")]
+#[cfg(all(feature = "no_denormals", not(target_arch = "wasm32")))]
 use no_denormals::no_denormals;
 
 #[cfg(all(debug_assertions, feature = "std"))]
@@ -46,12 +46,10 @@ impl CosmoProcessor {
     }
 
     fn process_with_denormal_guard(&mut self, output: &mut [f32]) {
-        #[cfg(feature = "no_denormals")]
-        unsafe {
-            no_denormals(|| self.process_inner(output))
-        }
+        #[cfg(all(feature = "no_denormals", not(target_arch = "wasm32")))]
+        no_denormals(|| self.process_inner(output));
 
-        #[cfg(not(feature = "no_denormals"))]
+        #[cfg(not(all(feature = "no_denormals", not(target_arch = "wasm32"))))]
         self.process_inner(output);
     }
 

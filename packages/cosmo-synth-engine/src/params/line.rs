@@ -375,6 +375,7 @@ pub struct LineParams {
     pub dcw_env: StepEnvData,
     pub dca_env: StepEnvData,
     pub key_follow: f32,
+    #[cfg_attr(feature = "specta-bindings", specta(optional, type = Vec<AlgoControlValueV1>))]
     #[serde(
         default = "default_algo_controls",
         serialize_with = "serialize_algo_controls",
@@ -382,6 +383,7 @@ pub struct LineParams {
         skip_serializing_if = "algo_controls_is_empty"
     )]
     pub algo_controls_a: AlgoControlSlots,
+    #[cfg_attr(feature = "specta-bindings", specta(optional, type = Vec<AlgoControlValueV1>))]
     #[serde(
         default = "default_algo_controls",
         serialize_with = "serialize_algo_controls",

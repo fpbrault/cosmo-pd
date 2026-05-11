@@ -23,9 +23,10 @@ default = ["std"]
 std = [
 	"serde/std",
 	"serde_json",
-	"dep:no_denormals",
+	"no_denormals",
 	"dep:assert_no_alloc",
 ]
+no_denormals = ["dep:no_denormals"]
 wasm = ["wasm-bindgen", "web-sys", "getrandom/wasm_js", "serde_json"]
 rtsan = ["dep:rtsan-standalone"]
 specta-bindings = [
@@ -43,7 +44,6 @@ libm = "0.2"
 arrayvec = { version = "0.7", default-features = false }
 dasp_ring_buffer = { version = "0.11" }
 dasp_interpolate = { version = "0.11", features = ["linear"] }
-no_denormals = { version = "0.1", optional = true }
 assert_no_alloc = { version = "1", optional = true }
 rtsan-standalone = { version = "0.3.0", optional = true }
 
@@ -73,8 +73,8 @@ features = ["console"]
 version = "0.4"
 optional = true
 
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+no_denormals = { version = "0.1", optional = true }
+
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = false
-
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ["cfg(feature, values(\"no_denormals\"))"] }

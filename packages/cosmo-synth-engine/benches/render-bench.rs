@@ -76,27 +76,39 @@ render_bench_case!(worst_poly_3_voices, "worst-poly", 3);
 render_bench_case!(worst_poly_6_voices, "worst-poly", 6);
 #[cfg(nightly)]
 render_bench_case!(worst_poly_8_voices, "worst-poly", 8);
+#[cfg(nightly)]
 render_bench_case!(opt_sine_lfo_heavy_3_voices, "opt-sine-lfo-heavy", 3);
+#[cfg(nightly)]
 render_bench_case!(opt_sine_lfo_heavy_6_voices, "opt-sine-lfo-heavy", 6);
+#[cfg(nightly)]
 render_bench_case!(opt_sine_lfo_heavy_8_voices, "opt-sine-lfo-heavy", 8);
+#[cfg(nightly)]
 render_bench_case!(opt_param_interp_light_3_voices, "opt-param-interp-light", 3);
+#[cfg(nightly)]
 render_bench_case!(opt_param_interp_light_6_voices, "opt-param-interp-light", 6);
+#[cfg(nightly)]
 render_bench_case!(opt_param_interp_light_8_voices, "opt-param-interp-light", 8);
+#[cfg(nightly)]
 render_bench_case!(
     opt_render_vectorization_3_voices,
     "opt-render-vectorization",
     3
 );
+#[cfg(nightly)]
 render_bench_case!(
     opt_render_vectorization_6_voices,
     "opt-render-vectorization",
     6
 );
+#[cfg(nightly)]
 render_bench_case!(
     opt_render_vectorization_8_voices,
     "opt-render-vectorization",
     8
 );
+#[cfg(nightly)]
 render_bench_case!(opt_all_combined_3_voices, "opt-all-combined", 3);
+#[cfg(nightly)]
 render_bench_case!(opt_all_combined_6_voices, "opt-all-combined", 6);
+#[cfg(nightly)]
 render_bench_case!(opt_all_combined_8_voices, "opt-all-combined", 8);
