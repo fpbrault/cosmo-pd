@@ -313,6 +313,74 @@ jobs:
           summary-always: true
           alert-threshold: 108%
 
+      - name: Build benchmark PR comment body
+        if: always() && steps.filter.outputs.engine == 'true'
+        run: |
+          mkdir -p target/perf/engine
+          summary_file="$GITHUB_STEP_SUMMARY"
+          comment_file="target/perf/engine/pr-comment.md"
+
+          {
+            echo "<!-- perf-benchmark-comment -->"
+            echo "## Engine Benchmarks vs \`${{ github.base_ref }}\`"
+            echo
+            if [[ -s "$summary_file" ]]; then
+              cat "$summary_file"
+            else
+              echo "_Benchmark summary unavailable for this run._"
+            fi
+            echo
+            echo "_Updated: $(date -u +%Y-%m-%dT%H:%M:%SZ)_"
+          } > "$comment_file"
+        shell: bash
+
+      - name: Upsert PR benchmark comment
+        if: always() && steps.filter.outputs.engine == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require("node:fs");
+
+            const marker = "<!-- perf-benchmark-comment -->";
+            const body = fs.readFileSync("target/perf/engine/pr-comment.md", "utf8");
+            const issueNumber = context.payload.pull_request?.number;
+
+            if (!issueNumber) {
+              core.info("No pull_request context found; skipping benchmark PR comment.");
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: issueNumber,
+              per_page: 100,
+            });
+
+            const existing = comments.find((comment) =>
+              comment.body?.includes(marker),
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+              core.info(`Updated benchmark PR comment: ${existing.id}`);
+            } else {
+              const created = await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                body,
+              });
+              core.info(`Created benchmark PR comment: ${created.data.id}`);
+            }
+
       - name: Upload benchmark artifact
         if: steps.filter.outputs.engine == 'true'
         uses: actions/upload-artifact@v4
@@ -322,6 +390,7 @@ jobs:
             target/perf/engine/base-bench.txt
             target/perf/engine/pr-bench.txt
             target/perf/engine/baseline.json
+            target/perf/engine/pr-comment.md
 
   build-plugins:
     name: Build plugins (${{ matrix.platform }})
