@@ -7,10 +7,29 @@ pub const PER_LINE_HEADROOM: f32 = 0.25;
 const BLEND_SHORT_CIRCUIT_EPSILON: f32 = 0.03;
 
 /// O(1) lookup table mapping `Algo as u8` → its definition.
+/// O(1) lookup table mapping `Algo as u8` → its definition.
 static ALGO_DEF_TABLE: LazyLock<[Option<&'static AlgoDefinitionV1>; 256]> = LazyLock::new(|| {
 	let mut table = [None; 256];
 	for def in &ALGO_DEFINITIONS_V1 {
 		table[def.id as usize] = Some(def);
+	}
+	table
+});
+
+/// Pre-computed per-algo default control values, keyed by `Algo as u8`.
+static ALGO_DEFAULT_VALUES: LazyLock<[[f32; 8]; 256]> = LazyLock::new(|| {
+	let mut table = [[0.0; 8]; 256];
+	for def in &ALGO_DEFINITIONS_V1 {
+		let mut slot = 0usize;
+		for ctrl in def.controls {
+			if ctrl.kind == AlgoControlKindV1::Number {
+				table[def.id as usize][slot] = ctrl.default.unwrap_or(0.0);
+				slot += 1;
+				if slot >= 8 {
+					break;
+				}
+			}
+		}
 	}
 	table
 });
@@ -285,19 +304,7 @@ fn algo_control_slot_index(algo: Algo, id: &str) -> Option<usize> {
 /// (at config-build time) instead of inside `warp_phase` (per-sample).
 #[inline(always)]
 pub fn pre_resolve_controls(algo: Algo, controls: Option<&[AlgoControlValueV1]>) -> [f32; 8] {
-	let mut values = [0.0f32; 8];
-	if let Some(def) = ALGO_DEF_TABLE[algo as usize] {
-		let mut slot = 0usize;
-		for ctrl in def.controls {
-			if ctrl.kind == AlgoControlKindV1::Number {
-				values[slot] = ctrl.default.unwrap_or(0.0);
-				slot += 1;
-				if slot >= 8 {
-					break;
-				}
-			}
-		}
-	}
+	let mut values = ALGO_DEFAULT_VALUES[algo as usize];
 	if let Some(entries) = controls {
 		for entry in entries {
 			if let Some(slot) = algo_control_slot_index(algo, &entry.id) {
