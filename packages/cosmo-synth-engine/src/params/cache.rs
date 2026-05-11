@@ -27,7 +27,8 @@ impl ModMatrixCache {
             }
             let idx = route.destination as usize;
             self.values[idx] += route.amount * sources.source_value(route.source);
-            if !self.has_env_step_routes && idx >= ENV_STEP_DEST_FIRST && idx <= ENV_STEP_DEST_LAST {
+            if !self.has_env_step_routes && idx >= ENV_STEP_DEST_FIRST && idx <= ENV_STEP_DEST_LAST
+            {
                 self.has_env_step_routes = true;
             }
 

@@ -1,4 +1,3 @@
-
 use super::delay_line::DelayLine;
 
 const SMOOTH_COEFF: f32 = 0.005;

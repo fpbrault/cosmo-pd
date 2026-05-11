@@ -256,7 +256,10 @@ impl CosmoProcessor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::params::{ModDestination, ModRoute, ModSource, PolyMode};
+    use crate::envelope_map::{human_level_to_raw, human_rate_to_raw, EnvelopeKind};
+    use crate::params::{
+        EnvStep, LineSelect, ModDestination, ModRoute, ModSource, PolyMode, StepEnvData,
+    };
 
     fn active_voice_indices_for_note(proc: &CosmoProcessor, note: u8) -> Vec<usize> {
         proc.voices
@@ -384,6 +387,50 @@ mod tests {
 
         let expected_without_mod = base_rate / proc.sample_rate;
         assert!(proc.random_phase > expected_without_mod);
+    }
+
+    #[test]
+    fn one_shot_envelope_voice_auto_releases_without_note_off() {
+        fn dca_step(level: u8, rate: u8) -> EnvStep {
+            EnvStep {
+                level: human_level_to_raw(EnvelopeKind::Dca, level),
+                rate: human_rate_to_raw(EnvelopeKind::Dca, rate),
+                level_norm: level as f32 / 99.0,
+            }
+        }
+
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().line_select = LineSelect::L1;
+        proc.params_mut().line1.dca_env = StepEnvData {
+            steps: [
+                dca_step(99, 99),
+                dca_step(0, 99),
+                dca_step(0, 99),
+                dca_step(0, 99),
+                dca_step(0, 99),
+                dca_step(0, 99),
+                dca_step(0, 99),
+                dca_step(0, 99),
+            ],
+            sustain_step: 1,
+            step_count: 2,
+            loop_: false,
+        };
+
+        let note = 60_u8;
+        let freq = utils::midi_note_to_freq(note);
+        proc.note_on(note, freq, 1.0);
+
+        let mut scratch = [0.0_f32; 128];
+        for _ in 0..128 {
+            proc.process(&mut scratch);
+        }
+
+        let still_active = proc.voices.iter().any(|voice| !voice.is_silent);
+        assert!(
+            !still_active,
+            "one-shot voice should auto-release at envelope end"
+        );
     }
 
     #[test]

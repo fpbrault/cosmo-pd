@@ -1,4 +1,3 @@
-
 use super::delay_line::DelayLine;
 
 const GRAIN_COUNT: usize = 4;

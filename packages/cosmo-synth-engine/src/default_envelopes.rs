@@ -2,11 +2,11 @@ use crate::envelope_map::{human_level_to_raw, human_rate_to_raw, EnvelopeKind};
 use crate::params::{EnvStep, StepEnvData};
 
 fn step(kind: EnvelopeKind, level: u8, rate: u8) -> EnvStep {
-	EnvStep {
-		level: human_level_to_raw(kind, level),
-		rate: human_rate_to_raw(kind, rate),
-		level_norm: level as f32 * (1.0 / 99.0),
-	}
+    EnvStep {
+        level: human_level_to_raw(kind, level),
+        rate: human_rate_to_raw(kind, rate),
+        level_norm: level as f32 * (1.0 / 99.0),
+    }
 }
 
 /// Default DCA (amplitude) envelope — full level attack, gentle sustain, release to 0.

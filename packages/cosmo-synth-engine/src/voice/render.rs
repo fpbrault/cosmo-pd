@@ -1,16 +1,13 @@
-
 use crate::dsp_utils::{lfo_output, pow01, wrap01, TWO_PI};
 use crate::envelope::EnvelopeKind;
 use crate::envelope::EnvelopeTimingCache;
 use crate::generators::{self, LineRenderConfig};
 use crate::params::{
-    LfoWaveform, LineParams, LineSelect, ModDestination, ModMatrixCache, ModMode,
-    PortamentoMode, SynthParams,
+    LfoWaveform, LineParams, LineSelect, ModDestination, ModMatrixCache, ModMode, PortamentoMode,
+    SynthParams,
 };
 
-use super::modulation::{
-    algo_param_slot_mods_for_line, ModSources,
-};
+use super::modulation::{algo_param_slot_mods_for_line, ModSources};
 use super::{
     Voice, ANTI_CLICK_ATTACK_SAMPLES, ANTI_CLICK_FADE_MAX_SAMPLES, ANTI_CLICK_FADE_SAMPLES,
     DCA_LEVEL_CURVE_EXPONENT, DCW_DEZIPPER_TIME_SECONDS, DCW_LEVEL_CURVE_EXPONENT,
@@ -83,6 +80,27 @@ pub fn render_voice(
     let base_freq = base_voice_frequency(voice);
 
     let env = advance_envelopes(voice, line1_modded, line2_modded, timing);
+    let line1_active = uses_line1(p.line_select);
+    let line2_active = uses_line2(p.line_select);
+    let env_gate_open = (line1_active && (env.dca1).abs() >= SILENCE_THRESHOLD)
+        || (line2_active && (env.dca2).abs() >= SILENCE_THRESHOLD);
+    let env_gate_closed = (!line1_active || (env.dca1).abs() < SILENCE_THRESHOLD)
+        && (!line2_active || (env.dca2).abs() < SILENCE_THRESHOLD);
+    let active_dca_non_loop = (!line1_active || !line1_modded.dca_env.loop_)
+        && (!line2_active || !line2_modded.dca_env.loop_);
+
+    if env_gate_open {
+        voice.gate_was_open = true;
+    }
+
+    if !voice.is_releasing
+        && !voice.sustained
+        && active_dca_non_loop
+        && voice.gate_was_open
+        && env_gate_closed
+    {
+        voice.is_releasing = true;
+    }
 
     if voice.is_silent {
         advance_silent_voice(voice, &line1_modded, &line2_modded, p, sr, base_freq);
@@ -106,10 +124,8 @@ pub fn render_voice(
         mod_wheel,
         aftertouch,
     );
-    let line1_algo_param_mods =
-        algo_param_slot_mods_for_line(1, cache, &mod_sources);
-    let line2_algo_param_mods =
-        algo_param_slot_mods_for_line(2, cache, &mod_sources);
+    let line1_algo_param_mods = algo_param_slot_mods_for_line(1, cache, &mod_sources);
+    let line2_algo_param_mods = algo_param_slot_mods_for_line(2, cache, &mod_sources);
     let mut signal = build_signal_state(
         &line1_modded,
         &line2_modded,
@@ -195,9 +211,9 @@ pub fn render_voice(
     // Use both envelope and signal-level checks: the signal check catches
     // cases where release was initiated via sustain pedal and residual filter
     // energy does not track DCA envelope level perfectly.
-    if voice.is_releasing && voice.anti_click_fade == 0 {
-        let env_near_silence =
-            (env.dca1).abs() < SILENCE_THRESHOLD && (env.dca2).abs() < SILENCE_THRESHOLD;
+    if voice.is_releasing && voice.anti_click_fade == 0 && !voice.zero_cross_stop_pending {
+        let env_near_silence = (!line1_active || (env.dca1).abs() < SILENCE_THRESHOLD)
+            && (!line2_active || (env.dca2).abs() < SILENCE_THRESHOLD);
         let tail_near_silence = voice.release_tail_level < RELEASE_TAIL_LEVEL_THRESHOLD;
         let instant_near_silence = (sample).abs() < RELEASE_TAIL_LEVEL_THRESHOLD * 2.0;
 
@@ -274,6 +290,7 @@ fn finalize_voice_silence(voice: &mut Voice) -> f32 {
     voice.is_silent = true;
     voice.note = None;
     voice.env_note = 60;
+    voice.gate_was_open = false;
     voice.line1_env.dca.output = 0.0;
     voice.line2_env.dca.output = 0.0;
     voice.mod_env.reset();
@@ -284,6 +301,19 @@ fn finalize_voice_silence(voice: &mut Voice) -> f32 {
     voice.zero_cross_stop_pending = false;
     voice.zero_cross_stop_wait = 0;
     0.0
+}
+
+#[inline]
+fn uses_line1(line_select: LineSelect) -> bool {
+    matches!(
+        line_select,
+        LineSelect::L1 | LineSelect::L1PlusL1Prime | LineSelect::L1PlusL2Prime
+    )
+}
+
+#[inline]
+fn uses_line2(line_select: LineSelect) -> bool {
+    matches!(line_select, LineSelect::L2 | LineSelect::L1PlusL2Prime)
 }
 
 // ---------------------------------------------------------------------------
@@ -489,7 +519,8 @@ fn apply_pitch_and_lfo_modulation(
 }
 
 fn apply_portamento(
-    voice: &mut Voice, port: &crate::params::PortamentoParams,
+    voice: &mut Voice,
+    port: &crate::params::PortamentoParams,
     sr: f32,
     base_freq: f32,
     signal: &mut SignalState,
@@ -754,44 +785,44 @@ fn select_line_sources(
 }
 
 fn render_prime_line_sample(cfg: LineRenderConfig, ks_raw: Option<f32>) -> f32 {
-	let sample = if let Some(secondary_algo) = cfg.secondary_algo {
-		let secondary_dcw = cfg.final_dcw * cfg.blend;
-		let primary_dcw = cfg.final_dcw * (1.0 - cfg.blend);
-		let primary = generators::render_algo_sample(
-			cfg.primary_algo,
-			cfg.phase,
-			primary_dcw,
-			cfg.primary_base_waveform,
-			&cfg.primary_control_values,
-			cfg.algo_param_mods,
-			ks_raw,
-			cfg.pm_post_mod,
-		) * cfg.primary_window_gain;
-		let secondary = generators::render_algo_sample(
-			secondary_algo,
-			cfg.phase,
-			secondary_dcw,
-			cfg.secondary_base_waveform,
-			&cfg.secondary_control_values,
-			cfg.algo_param_mods,
-			ks_raw,
-			cfg.pm_post_mod,
-		) * cfg.secondary_window_gain;
-		generators::blend_line_samples(cfg.primary_algo, primary, secondary, cfg.blend)
-	} else {
-		generators::render_algo_sample(
-			cfg.primary_algo,
-			cfg.phase,
-			cfg.final_dcw,
-			cfg.primary_base_waveform,
-			&cfg.primary_control_values,
-			cfg.algo_param_mods,
-			ks_raw,
-			cfg.pm_post_mod,
-		) * cfg.primary_window_gain
-	};
+    let sample = if let Some(secondary_algo) = cfg.secondary_algo {
+        let secondary_dcw = cfg.final_dcw * cfg.blend;
+        let primary_dcw = cfg.final_dcw * (1.0 - cfg.blend);
+        let primary = generators::render_algo_sample(
+            cfg.primary_algo,
+            cfg.phase,
+            primary_dcw,
+            cfg.primary_base_waveform,
+            &cfg.primary_control_values,
+            cfg.algo_param_mods,
+            ks_raw,
+            cfg.pm_post_mod,
+        ) * cfg.primary_window_gain;
+        let secondary = generators::render_algo_sample(
+            secondary_algo,
+            cfg.phase,
+            secondary_dcw,
+            cfg.secondary_base_waveform,
+            &cfg.secondary_control_values,
+            cfg.algo_param_mods,
+            ks_raw,
+            cfg.pm_post_mod,
+        ) * cfg.secondary_window_gain;
+        generators::blend_line_samples(cfg.primary_algo, primary, secondary, cfg.blend)
+    } else {
+        generators::render_algo_sample(
+            cfg.primary_algo,
+            cfg.phase,
+            cfg.final_dcw,
+            cfg.primary_base_waveform,
+            &cfg.primary_control_values,
+            cfg.algo_param_mods,
+            ks_raw,
+            cfg.pm_post_mod,
+        ) * cfg.primary_window_gain
+    };
 
-	sample * cfg.final_dca * generators::PER_LINE_HEADROOM
+    sample * cfg.final_dca * generators::PER_LINE_HEADROOM
 }
 
 fn advance_voice_phase(

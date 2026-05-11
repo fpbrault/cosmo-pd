@@ -1,4 +1,3 @@
-
 // ---------------------------------------------------------------------------
 // CompressorFx — feed-forward peak compressor
 // ---------------------------------------------------------------------------
@@ -35,8 +34,7 @@ impl CompressorFx {
             return sample;
         }
         let attack_coeff = -1.0 / (self.attack_ms * 0.001 * self.sample_rate).exp().max(1.0);
-        let release_coeff =
-            -1.0 / (self.release_ms * 0.001 * self.sample_rate).exp().max(1.0);
+        let release_coeff = -1.0 / (self.release_ms * 0.001 * self.sample_rate).exp().max(1.0);
 
         let abs_sample = (sample).abs();
         if abs_sample > self.envelope {

@@ -9,29 +9,29 @@ const BLEND_SHORT_CIRCUIT_EPSILON: f32 = 0.03;
 /// O(1) lookup table mapping `Algo as u8` → its definition.
 /// O(1) lookup table mapping `Algo as u8` → its definition.
 static ALGO_DEF_TABLE: LazyLock<[Option<&'static AlgoDefinitionV1>; 256]> = LazyLock::new(|| {
-	let mut table = [None; 256];
-	for def in &ALGO_DEFINITIONS_V1 {
-		table[def.id as usize] = Some(def);
-	}
-	table
+    let mut table = [None; 256];
+    for def in &ALGO_DEFINITIONS_V1 {
+        table[def.id as usize] = Some(def);
+    }
+    table
 });
 
 /// Pre-computed per-algo default control values, keyed by `Algo as u8`.
 static ALGO_DEFAULT_VALUES: LazyLock<[[f32; 8]; 256]> = LazyLock::new(|| {
-	let mut table = [[0.0; 8]; 256];
-	for def in &ALGO_DEFINITIONS_V1 {
-		let mut slot = 0usize;
-		for ctrl in def.controls {
-			if ctrl.kind == AlgoControlKindV1::Number {
-				table[def.id as usize][slot] = ctrl.default.unwrap_or(0.0);
-				slot += 1;
-				if slot >= 8 {
-					break;
-				}
-			}
-		}
-	}
-	table
+    let mut table = [[0.0; 8]; 256];
+    for def in &ALGO_DEFINITIONS_V1 {
+        let mut slot = 0usize;
+        for ctrl in def.controls {
+            if ctrl.kind == AlgoControlKindV1::Number {
+                table[def.id as usize][slot] = ctrl.default.unwrap_or(0.0);
+                slot += 1;
+                if slot >= 8 {
+                    break;
+                }
+            }
+        }
+    }
+    table
 });
 
 pub mod bend;
@@ -77,16 +77,16 @@ pub struct LineRenderConfig {
     pub secondary_base_waveform: BaseWaveform,
     pub effective_freq: f32,
     pub sample_rate: f32,
-	pub primary_control_values: [f32; 8],
-	pub secondary_control_values: [f32; 8],
-	pub algo_param_mods: [f32; 8],
+    pub primary_control_values: [f32; 8],
+    pub secondary_control_values: [f32; 8],
+    pub algo_param_mods: [f32; 8],
     pub pm_post_mod: f32,
 }
 
 impl LineRenderConfig {
-	#[inline(always)]
-	#[allow(clippy::too_many_arguments)]
-	pub fn from_line(
+    #[inline(always)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn from_line(
         line: &LineParams,
         cycle_count: u32,
         window_phi: f32,
@@ -119,25 +119,25 @@ impl LineRenderConfig {
                 )
             })
             .unwrap_or(primary_window_gain);
-		Self {
-			primary_algo,
-			secondary_algo,
-			blend: line.algo_blend,
-			phase,
-			primary_window_gain,
-			secondary_window_gain,
-			final_dcw,
-			final_dca,
-			primary_base_waveform: line.base_waveform_a,
-			secondary_base_waveform: line.base_waveform_b,
-			effective_freq,
-			sample_rate,
-			primary_control_values,
-			secondary_control_values,
-			algo_param_mods,
-			pm_post_mod,
-		}
-	}
+        Self {
+            primary_algo,
+            secondary_algo,
+            blend: line.algo_blend,
+            phase,
+            primary_window_gain,
+            secondary_window_gain,
+            final_dcw,
+            final_dca,
+            primary_base_waveform: line.base_waveform_a,
+            secondary_base_waveform: line.base_waveform_b,
+            effective_freq,
+            sample_rate,
+            primary_control_values,
+            secondary_control_values,
+            algo_param_mods,
+            pm_post_mod,
+        }
+    }
 }
 
 /// Per-voice state for any generator algorithms that need note-lifetime memory.
@@ -183,71 +183,71 @@ impl AlgoRuntimeState {
 fn render_line_stateless(config: LineRenderConfig) -> (f32, Option<f32>) {
     let sample = if let Some(secondary_algo) = config.secondary_algo {
         if config.blend <= BLEND_SHORT_CIRCUIT_EPSILON {
-		render_algo_sample(
-			config.primary_algo,
-			config.phase,
-			config.final_dcw,
-			config.primary_base_waveform,
-			&config.primary_control_values,
-			config.algo_param_mods,
-			None,
-			config.pm_post_mod,
-		) * config.primary_window_gain
-	} else if config.blend >= 1.0 - BLEND_SHORT_CIRCUIT_EPSILON {
-		render_algo_sample(
-			secondary_algo,
-			config.phase,
-			config.final_dcw,
-			config.secondary_base_waveform,
-			&config.secondary_control_values,
-			config.algo_param_mods,
-			None,
-			config.pm_post_mod,
-		) * config.secondary_window_gain
-	} else {
-		let secondary_dcw = config.final_dcw * config.blend;
-		let primary_dcw = config.final_dcw * (1.0 - config.blend);
-		let primary = render_algo_sample(
-			config.primary_algo,
-			config.phase,
-			primary_dcw,
-			config.primary_base_waveform,
-			&config.primary_control_values,
-			config.algo_param_mods,
-			None,
-			config.pm_post_mod,
-		) * config.primary_window_gain;
-		let secondary = render_algo_sample(
-			secondary_algo,
-			config.phase,
-			secondary_dcw,
-			config.secondary_base_waveform,
-			&config.secondary_control_values,
-			config.algo_param_mods,
-			None,
-			config.pm_post_mod,
-		) * config.secondary_window_gain;
+            render_algo_sample(
+                config.primary_algo,
+                config.phase,
+                config.final_dcw,
+                config.primary_base_waveform,
+                &config.primary_control_values,
+                config.algo_param_mods,
+                None,
+                config.pm_post_mod,
+            ) * config.primary_window_gain
+        } else if config.blend >= 1.0 - BLEND_SHORT_CIRCUIT_EPSILON {
+            render_algo_sample(
+                secondary_algo,
+                config.phase,
+                config.final_dcw,
+                config.secondary_base_waveform,
+                &config.secondary_control_values,
+                config.algo_param_mods,
+                None,
+                config.pm_post_mod,
+            ) * config.secondary_window_gain
+        } else {
+            let secondary_dcw = config.final_dcw * config.blend;
+            let primary_dcw = config.final_dcw * (1.0 - config.blend);
+            let primary = render_algo_sample(
+                config.primary_algo,
+                config.phase,
+                primary_dcw,
+                config.primary_base_waveform,
+                &config.primary_control_values,
+                config.algo_param_mods,
+                None,
+                config.pm_post_mod,
+            ) * config.primary_window_gain;
+            let secondary = render_algo_sample(
+                secondary_algo,
+                config.phase,
+                secondary_dcw,
+                config.secondary_base_waveform,
+                &config.secondary_control_values,
+                config.algo_param_mods,
+                None,
+                config.pm_post_mod,
+            ) * config.secondary_window_gain;
             blend_line_samples(config.primary_algo, primary, secondary, config.blend)
         }
     } else {
-		render_algo_sample(
-			config.primary_algo,
-			config.phase,
-			config.final_dcw,
-			config.primary_base_waveform,
-			&config.primary_control_values,
-			config.algo_param_mods,
-			None,
-			config.pm_post_mod,
-		) * config.primary_window_gain
-	};
+        render_algo_sample(
+            config.primary_algo,
+            config.phase,
+            config.final_dcw,
+            config.primary_base_waveform,
+            &config.primary_control_values,
+            config.algo_param_mods,
+            None,
+            config.pm_post_mod,
+        ) * config.primary_window_gain
+    };
 
-	(sample * config.final_dca * PER_LINE_HEADROOM, None)
+    (sample * config.final_dca * PER_LINE_HEADROOM, None)
 }
 
 #[inline(always)]
 fn sample_base_wave(base_waveform: BaseWaveform, phase: f32) -> f32 {
-	let p = if (0.0..1.0).contains(&phase) {
+    let p = if (0.0..1.0).contains(&phase) {
         phase
     } else {
         wrap01(phase)
@@ -283,20 +283,20 @@ pub(crate) fn blend_line_samples(
 
 #[inline]
 fn algo_control_slot_index(algo: Algo, id: &str) -> Option<usize> {
-	let definition = ALGO_DEF_TABLE[algo as usize]?;
-	let mut slot_index = 0usize;
-	for control in definition.controls {
-		if control.kind == AlgoControlKindV1::Number {
-			if control.id == id {
-				return Some(slot_index);
-			}
-			slot_index += 1;
-			if slot_index >= 8 {
-				break;
-			}
-		}
-	}
-	None
+    let definition = ALGO_DEF_TABLE[algo as usize]?;
+    let mut slot_index = 0usize;
+    for control in definition.controls {
+        if control.kind == AlgoControlKindV1::Number {
+            if control.id == id {
+                return Some(slot_index);
+            }
+            slot_index += 1;
+            if slot_index >= 8 {
+                break;
+            }
+        }
+    }
+    None
 }
 
 /// Build a `[f32; 8]` from `ALGO_DEFINITIONS_V1` defaults, then apply any
@@ -304,15 +304,15 @@ fn algo_control_slot_index(algo: Algo, id: &str) -> Option<usize> {
 /// (at config-build time) instead of inside `warp_phase` (per-sample).
 #[inline(always)]
 pub fn pre_resolve_controls(algo: Algo, controls: Option<&[AlgoControlValueV1]>) -> [f32; 8] {
-	let mut values = ALGO_DEFAULT_VALUES[algo as usize];
-	if let Some(entries) = controls {
-		for entry in entries {
-			if let Some(slot) = algo_control_slot_index(algo, &entry.id) {
-				values[slot] = entry.value;
-			}
-		}
-	}
-	values
+    let mut values = ALGO_DEFAULT_VALUES[algo as usize];
+    if let Some(entries) = controls {
+        for entry in entries {
+            if let Some(slot) = algo_control_slot_index(algo, &entry.id) {
+                values[slot] = entry.value;
+            }
+        }
+    }
+    values
 }
 
 #[inline]
@@ -339,144 +339,144 @@ fn warp_phase_with_default_controls(algo: Algo, phase: f32, amt: f32) -> Option<
 }
 
 pub fn warp_phase(
-	algo: Algo,
-	phase: f32,
-	amt: f32,
-	control_values: &[f32; 8],
-	algo_param_mods: &[f32; 8],
+    algo: Algo,
+    phase: f32,
+    amt: f32,
+    control_values: &[f32; 8],
+    algo_param_mods: &[f32; 8],
 ) -> f32 {
-	if amt == 0.0 && !algo.is_cz_waveform() {
-		return phase;
-	}
+    if amt == 0.0 && !algo.is_cz_waveform() {
+        return phase;
+    }
 
-	if algo_param_mods_are_zero(algo_param_mods) {
-		if let Some(warped) = warp_phase_with_default_controls(algo, phase, amt) {
-			return warped;
-		}
-	}
+    if algo_param_mods_are_zero(algo_param_mods) {
+        if let Some(warped) = warp_phase_with_default_controls(algo, phase, amt) {
+            return warped;
+        }
+    }
 
-	match algo {
-		Algo::Saw => cz101::warp_phase_for_waveform(crate::params::CzWaveform::Saw, phase, amt),
-		Algo::Square => {
-			cz101::warp_phase_for_waveform(crate::params::CzWaveform::Square, phase, amt)
-		}
-		Algo::Pulse => cz101::warp_phase_for_waveform(crate::params::CzWaveform::Pulse, phase, amt),
-		Algo::Null => cz101::warp_phase_for_waveform(crate::params::CzWaveform::Null, phase, amt),
-		Algo::SinePulse => {
-			cz101::warp_phase_for_waveform(crate::params::CzWaveform::SinePulse, phase, amt)
-		}
-		Algo::SawPulse => {
-			cz101::warp_phase_for_waveform(crate::params::CzWaveform::SawPulse, phase, amt)
-		}
-		Algo::MultiSine => {
-			cz101::warp_phase_for_waveform(crate::params::CzWaveform::MultiSine, phase, amt)
-		}
-		Algo::Pulse2 => {
-			cz101::warp_phase_for_waveform(crate::params::CzWaveform::Pulse2, phase, amt)
-		}
-		Algo::Cz101 => cz101::warp_phase(phase, amt),
-		Algo::Bend => {
-			let curve = control_values[0] + algo_param_mods[0];
-			let bias = control_values[1] + algo_param_mods[1];
-			let knee = control_values[2] + algo_param_mods[2];
-			bend::warp_phase(phase, amt, curve, bias, knee)
-		}
-		Algo::Sync => {
-			let ratio = control_values[0] + algo_param_mods[0];
-			let phase_offset = control_values[1] + algo_param_mods[1];
-			let curve = control_values[2] + algo_param_mods[2];
-			let window = control_values[3] + algo_param_mods[3];
-			sync::warp_phase(phase, amt, ratio, phase_offset, curve, window)
-		}
-		Algo::Pinch => {
-			let focus = control_values[0] + algo_param_mods[0];
-			let asym = control_values[1] + algo_param_mods[1];
-			let curve = control_values[2] + algo_param_mods[2];
-			let drive = control_values[3] + algo_param_mods[3];
-			pinch::warp_phase(phase, amt, focus, asym, curve, drive)
-		}
-		Algo::Fold => {
-			let stages = control_values[0] + algo_param_mods[0];
-			let tilt = control_values[1] + algo_param_mods[1];
-			let symmetry = control_values[2] + algo_param_mods[2];
-			let softness = control_values[3] + algo_param_mods[3];
-			fold::warp_phase(phase, amt, stages, tilt, symmetry, softness)
-		}
-		Algo::Skew => {
-			let bias = control_values[0] + algo_param_mods[0];
-			let curve = control_values[1] + algo_param_mods[1];
-			let spread = control_values[2] + algo_param_mods[2];
-			let tilt = control_values[3] + algo_param_mods[3];
-			skew::warp_phase(phase, amt, bias, curve, spread, tilt)
-		}
-		Algo::Quantize => quantize::warp_phase(
-			phase,
-			amt,
-			control_values[1] + algo_param_mods[1],
-			control_values[2] + algo_param_mods[2],
-		),
-		Algo::Twist => {
-			let harmonics = control_values[0] + algo_param_mods[0];
-			let depth = control_values[1] + algo_param_mods[1];
-			let phase_offset = control_values[2] + algo_param_mods[2];
-			let shape = control_values[3] + algo_param_mods[3];
-			twist::warp_phase(phase, amt, harmonics, depth, phase_offset, shape)
-		}
-		Algo::Clip => {
-			let drive = control_values[0] + algo_param_mods[0];
-			let shape = control_values[1] + algo_param_mods[1];
-			let bias = control_values[2] + algo_param_mods[2];
-			let soft = control_values[3] + algo_param_mods[3];
-			clip::warp_phase(phase, amt, drive, shape, bias, soft)
-		}
-		Algo::Ripple => {
-			let freq = control_values[0] + algo_param_mods[0];
-			let depth = control_values[1] + algo_param_mods[1];
-			let phase_offset = control_values[2] + algo_param_mods[2];
-			let shape = control_values[3] + algo_param_mods[3];
-			ripple::warp_phase(phase, amt, freq, depth, phase_offset, shape)
-		}
-		Algo::Mirror => {
-			let center = control_values[0] + algo_param_mods[0];
-			let blend = control_values[1] + algo_param_mods[1];
-			let clip = control_values[2] + algo_param_mods[2];
-			let skew = control_values[3] + algo_param_mods[3];
-			mirror::warp_phase(phase, amt, center, blend, clip, skew)
-		}
-		Algo::Fof => {
-			let ratio = control_values[0] + algo_param_mods[0];
-			let tightness = control_values[1] + algo_param_mods[1];
-			let offset = control_values[2] + algo_param_mods[2];
-			let skew = control_values[3] + algo_param_mods[3];
-			fof::warp_phase(phase, amt, ratio, tightness, offset, skew)
-		}
-		Algo::Sine => sine::warp_phase(phase, amt),
-		Algo::Karpunk => phase,
-		Algo::Terrain => terrain::warp_phase(
-			phase,
-			amt,
-			control_values[0] + algo_param_mods[0],
-			control_values[1] + algo_param_mods[1],
-			control_values[2] + algo_param_mods[2],
-			control_values[3] + algo_param_mods[3],
-		),
-		Algo::Stutter => stutter::warp_phase(
-			phase,
-			amt,
-			control_values[0] + algo_param_mods[0],
-			control_values[1] + algo_param_mods[1],
-			control_values[2] + algo_param_mods[2],
-			control_values[3] + algo_param_mods[3],
-		),
-		Algo::Cheby => cheby::warp_phase(
-			phase,
-			amt,
-			control_values[0] + algo_param_mods[0],
-			control_values[1] + algo_param_mods[1],
-			control_values[2] + algo_param_mods[2],
-			control_values[3] + algo_param_mods[3],
-		),
-	}
+    match algo {
+        Algo::Saw => cz101::warp_phase_for_waveform(crate::params::CzWaveform::Saw, phase, amt),
+        Algo::Square => {
+            cz101::warp_phase_for_waveform(crate::params::CzWaveform::Square, phase, amt)
+        }
+        Algo::Pulse => cz101::warp_phase_for_waveform(crate::params::CzWaveform::Pulse, phase, amt),
+        Algo::Null => cz101::warp_phase_for_waveform(crate::params::CzWaveform::Null, phase, amt),
+        Algo::SinePulse => {
+            cz101::warp_phase_for_waveform(crate::params::CzWaveform::SinePulse, phase, amt)
+        }
+        Algo::SawPulse => {
+            cz101::warp_phase_for_waveform(crate::params::CzWaveform::SawPulse, phase, amt)
+        }
+        Algo::MultiSine => {
+            cz101::warp_phase_for_waveform(crate::params::CzWaveform::MultiSine, phase, amt)
+        }
+        Algo::Pulse2 => {
+            cz101::warp_phase_for_waveform(crate::params::CzWaveform::Pulse2, phase, amt)
+        }
+        Algo::Cz101 => cz101::warp_phase(phase, amt),
+        Algo::Bend => {
+            let curve = control_values[0] + algo_param_mods[0];
+            let bias = control_values[1] + algo_param_mods[1];
+            let knee = control_values[2] + algo_param_mods[2];
+            bend::warp_phase(phase, amt, curve, bias, knee)
+        }
+        Algo::Sync => {
+            let ratio = control_values[0] + algo_param_mods[0];
+            let phase_offset = control_values[1] + algo_param_mods[1];
+            let curve = control_values[2] + algo_param_mods[2];
+            let window = control_values[3] + algo_param_mods[3];
+            sync::warp_phase(phase, amt, ratio, phase_offset, curve, window)
+        }
+        Algo::Pinch => {
+            let focus = control_values[0] + algo_param_mods[0];
+            let asym = control_values[1] + algo_param_mods[1];
+            let curve = control_values[2] + algo_param_mods[2];
+            let drive = control_values[3] + algo_param_mods[3];
+            pinch::warp_phase(phase, amt, focus, asym, curve, drive)
+        }
+        Algo::Fold => {
+            let stages = control_values[0] + algo_param_mods[0];
+            let tilt = control_values[1] + algo_param_mods[1];
+            let symmetry = control_values[2] + algo_param_mods[2];
+            let softness = control_values[3] + algo_param_mods[3];
+            fold::warp_phase(phase, amt, stages, tilt, symmetry, softness)
+        }
+        Algo::Skew => {
+            let bias = control_values[0] + algo_param_mods[0];
+            let curve = control_values[1] + algo_param_mods[1];
+            let spread = control_values[2] + algo_param_mods[2];
+            let tilt = control_values[3] + algo_param_mods[3];
+            skew::warp_phase(phase, amt, bias, curve, spread, tilt)
+        }
+        Algo::Quantize => quantize::warp_phase(
+            phase,
+            amt,
+            control_values[1] + algo_param_mods[1],
+            control_values[2] + algo_param_mods[2],
+        ),
+        Algo::Twist => {
+            let harmonics = control_values[0] + algo_param_mods[0];
+            let depth = control_values[1] + algo_param_mods[1];
+            let phase_offset = control_values[2] + algo_param_mods[2];
+            let shape = control_values[3] + algo_param_mods[3];
+            twist::warp_phase(phase, amt, harmonics, depth, phase_offset, shape)
+        }
+        Algo::Clip => {
+            let drive = control_values[0] + algo_param_mods[0];
+            let shape = control_values[1] + algo_param_mods[1];
+            let bias = control_values[2] + algo_param_mods[2];
+            let soft = control_values[3] + algo_param_mods[3];
+            clip::warp_phase(phase, amt, drive, shape, bias, soft)
+        }
+        Algo::Ripple => {
+            let freq = control_values[0] + algo_param_mods[0];
+            let depth = control_values[1] + algo_param_mods[1];
+            let phase_offset = control_values[2] + algo_param_mods[2];
+            let shape = control_values[3] + algo_param_mods[3];
+            ripple::warp_phase(phase, amt, freq, depth, phase_offset, shape)
+        }
+        Algo::Mirror => {
+            let center = control_values[0] + algo_param_mods[0];
+            let blend = control_values[1] + algo_param_mods[1];
+            let clip = control_values[2] + algo_param_mods[2];
+            let skew = control_values[3] + algo_param_mods[3];
+            mirror::warp_phase(phase, amt, center, blend, clip, skew)
+        }
+        Algo::Fof => {
+            let ratio = control_values[0] + algo_param_mods[0];
+            let tightness = control_values[1] + algo_param_mods[1];
+            let offset = control_values[2] + algo_param_mods[2];
+            let skew = control_values[3] + algo_param_mods[3];
+            fof::warp_phase(phase, amt, ratio, tightness, offset, skew)
+        }
+        Algo::Sine => sine::warp_phase(phase, amt),
+        Algo::Karpunk => phase,
+        Algo::Terrain => terrain::warp_phase(
+            phase,
+            amt,
+            control_values[0] + algo_param_mods[0],
+            control_values[1] + algo_param_mods[1],
+            control_values[2] + algo_param_mods[2],
+            control_values[3] + algo_param_mods[3],
+        ),
+        Algo::Stutter => stutter::warp_phase(
+            phase,
+            amt,
+            control_values[0] + algo_param_mods[0],
+            control_values[1] + algo_param_mods[1],
+            control_values[2] + algo_param_mods[2],
+            control_values[3] + algo_param_mods[3],
+        ),
+        Algo::Cheby => cheby::warp_phase(
+            phase,
+            amt,
+            control_values[0] + algo_param_mods[0],
+            control_values[1] + algo_param_mods[1],
+            control_values[2] + algo_param_mods[2],
+            control_values[3] + algo_param_mods[3],
+        ),
+    }
 }
 
 fn render_direct_algo_sample(algo: Algo) -> Option<f32> {
@@ -489,23 +489,23 @@ fn render_direct_algo_sample(algo: Algo) -> Option<f32> {
 /// `runtime_sample` is used only when an algorithm is rendered by per-voice state.
 #[allow(clippy::too_many_arguments)]
 pub fn render_algo_sample(
-	algo: Algo,
-	phase: f32,
-	dcw: f32,
-	base_waveform: BaseWaveform,
-	control_values: &[f32; 8],
-	algo_param_mods: [f32; 8],
-	runtime_sample: Option<f32>,
-	pm_post_mod: f32,
+    algo: Algo,
+    phase: f32,
+    dcw: f32,
+    base_waveform: BaseWaveform,
+    control_values: &[f32; 8],
+    algo_param_mods: [f32; 8],
+    runtime_sample: Option<f32>,
+    pm_post_mod: f32,
 ) -> f32 {
-	if algo == Algo::Karpunk {
-		return runtime_sample.unwrap_or(0.0);
-	}
-	if let Some(sample) = render_direct_algo_sample(algo) {
-		return sample;
-	}
-	let warped = warp_phase(algo, phase, dcw, control_values, &algo_param_mods);
-	sample_base_wave(base_waveform, warped + pm_post_mod)
+    if algo == Algo::Karpunk {
+        return runtime_sample.unwrap_or(0.0);
+    }
+    if let Some(sample) = render_direct_algo_sample(algo) {
+        return sample;
+    }
+    let warped = warp_phase(algo, phase, dcw, control_values, &algo_param_mods);
+    sample_base_wave(base_waveform, warped + pm_post_mod)
 }
 
 #[cfg(test)]
@@ -529,8 +529,8 @@ mod tests {
             secondary_base_waveform: BaseWaveform::Cosine,
             effective_freq: 220.0,
             sample_rate: 44100.0,
-			primary_control_values: [0.5, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0],
-			secondary_control_values: [0.0f32; 8],
+            primary_control_values: [0.5, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0],
+            secondary_control_values: [0.0f32; 8],
             algo_param_mods: [0.0; 8],
             pm_post_mod: 0.0,
         };

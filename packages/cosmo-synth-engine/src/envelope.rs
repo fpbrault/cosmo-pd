@@ -1,12 +1,12 @@
 use crate::dsp_utils::lerp;
-pub use crate::envelope_map::EnvelopeKind;
 use crate::envelope_map::human_level_to_raw;
 use crate::envelope_map::human_rate_to_raw;
 use crate::envelope_map::raw_level_to_human;
+pub use crate::envelope_map::EnvelopeKind;
 use crate::params::{StepEnvData, SynthParams};
 
 pub fn normalize_env_to_raw_if_human(kind: EnvelopeKind, env: &mut StepEnvData) {
-	const INV_99: f32 = 1.0 / 99.0;
+    const INV_99: f32 = 1.0 / 99.0;
     for step in env.steps.iter_mut() {
         step.level = human_level_to_raw(kind, step.level);
         step.rate = human_rate_to_raw(kind, step.rate);
@@ -310,7 +310,11 @@ mod tests {
         // so no step starts as already-raw. This prevents double-conversion of
         // default/untouched steps.
         let blank = || StepEnvData {
-            steps: [EnvStep { level: 0, rate: 0, level_norm: 0.0 }; NUM_ENV_STEPS],
+            steps: [EnvStep {
+                level: 0,
+                rate: 0,
+                level_norm: 0.0,
+            }; NUM_ENV_STEPS],
             sustain_step: 0,
             step_count: 1,
             loop_: false,
@@ -323,9 +327,17 @@ mod tests {
             level_norm: 0.0,
         };
         params.line1.dcw_env = blank();
-        params.line1.dcw_env.steps[0] = EnvStep { level: 99, rate: 0, level_norm: 0.0 };
+        params.line1.dcw_env.steps[0] = EnvStep {
+            level: 99,
+            rate: 0,
+            level_norm: 0.0,
+        };
         params.line1.dca_env = blank();
-        params.line1.dca_env.steps[0] = EnvStep { level: 1, rate: 99, level_norm: 0.0 };
+        params.line1.dca_env.steps[0] = EnvStep {
+            level: 1,
+            rate: 99,
+            level_norm: 0.0,
+        };
         params.line2.dco_env = blank();
         params.line2.dcw_env = blank();
         params.line2.dca_env = blank();
@@ -404,7 +416,11 @@ mod tests {
         use crate::params::{EnvStep, StepEnvData, NUM_ENV_STEPS};
 
         let mut env = StepEnvData {
-            steps: [EnvStep { level: 0, rate: 99, level_norm: 0.0 }; NUM_ENV_STEPS],
+            steps: [EnvStep {
+                level: 0,
+                rate: 99,
+                level_norm: 0.0,
+            }; NUM_ENV_STEPS],
             sustain_step: 1,
             step_count: 4,
             loop_: false,

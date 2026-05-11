@@ -67,8 +67,7 @@ impl CosmoProcessor {
             if vib.enabled {
                 voice.vibrato_phase = 0.0;
                 let delay_ms = vib.delay;
-                voice.vibrato_delay_counter =
-                    (delay_ms * self.sample_rate / 1000.0).round() as u32;
+                voice.vibrato_delay_counter = (delay_ms * self.sample_rate / 1000.0).round() as u32;
             }
         }
     }

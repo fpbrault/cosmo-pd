@@ -32,8 +32,9 @@ impl CosmoProcessor {
         let base_random_rate = p.random.rate;
         let sr = self.sample_rate;
         let headroom_ratio = REFERENCE_LINE_HEADROOM / PER_LINE_HEADROOM.max(0.01);
-        let headroom_makeup =
-            (headroom_ratio).powf(HEADROOM_MAKEUP_EXPONENT).clamp(1.0, MAX_HEADROOM_MAKEUP);
+        let headroom_makeup = (headroom_ratio)
+            .powf(HEADROOM_MAKEUP_EXPONENT)
+            .clamp(1.0, MAX_HEADROOM_MAKEUP);
         let norm = volume * headroom_makeup / (NUM_VOICES as f32).sqrt();
         let matrix = &p.mod_matrix;
 
@@ -115,10 +116,18 @@ impl CosmoProcessor {
             let line1_modded = modulated_line_params(&p.line1, 1, &mod_cache, &pre_sources);
             let line2_modded = modulated_line_params(&p.line2, 2, &mod_cache, &pre_sources);
 
-            let l1_ctrl_p = pre_resolve_controls(line1_modded.algo, line1_modded.algo_controls_a.as_deref());
-            let l1_ctrl_s = line1_modded.algo2.map(|a| pre_resolve_controls(a, line1_modded.algo_controls_b.as_deref())).unwrap_or([0.0; 8]);
-            let l2_ctrl_p = pre_resolve_controls(line2_modded.algo, line2_modded.algo_controls_a.as_deref());
-            let l2_ctrl_s = line2_modded.algo2.map(|a| pre_resolve_controls(a, line2_modded.algo_controls_b.as_deref())).unwrap_or([0.0; 8]);
+            let l1_ctrl_p =
+                pre_resolve_controls(line1_modded.algo, line1_modded.algo_controls_a.as_deref());
+            let l1_ctrl_s = line1_modded
+                .algo2
+                .map(|a| pre_resolve_controls(a, line1_modded.algo_controls_b.as_deref()))
+                .unwrap_or([0.0; 8]);
+            let l2_ctrl_p =
+                pre_resolve_controls(line2_modded.algo, line2_modded.algo_controls_a.as_deref());
+            let l2_ctrl_s = line2_modded
+                .algo2
+                .map(|a| pre_resolve_controls(a, line2_modded.algo_controls_b.as_deref()))
+                .unwrap_or([0.0; 8]);
 
             let mut mixed = 0.0_f32;
             let params_ptr: *const crate::params::SynthParams = self.params.as_ref();
