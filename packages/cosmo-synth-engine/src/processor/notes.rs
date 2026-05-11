@@ -264,8 +264,10 @@ impl CosmoProcessor {
             crate::params::LineSelect::L2 | crate::params::LineSelect::L1PlusL2Prime
         );
 
-        let line1_reached = !line1_active || voice.line1_env.dca.step >= p.line1.dca_env.sustain_step;
-        let line2_reached = !line2_active || voice.line2_env.dca.step >= p.line2.dca_env.sustain_step;
+        let line1_reached =
+            !line1_active || voice.line1_env.dca.step >= p.line1.dca_env.sustain_step;
+        let line2_reached =
+            !line2_active || voice.line2_env.dca.step >= p.line2.dca_env.sustain_step;
 
         line1_reached && line2_reached
     }
