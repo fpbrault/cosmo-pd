@@ -4,7 +4,9 @@ import fs from "node:fs";
 import path from "node:path";
 
 function usage() {
-	console.error("Usage: node scripts/generate-benchmark-pages-index.mjs <data.js> <index.html>");
+	console.error(
+		"Usage: node scripts/generate-benchmark-pages-index.mjs <data.js> <index.html>",
+	);
 	process.exit(1);
 }
 
@@ -15,7 +17,10 @@ function parseBenchmarkData(dataJsContent) {
 		throw new Error("Could not find BENCHMARK_DATA assignment in data.js");
 	}
 
-	const jsonText = dataJsContent.slice(markerIndex + marker.length).trim().replace(/;\s*$/, "");
+	const jsonText = dataJsContent
+		.slice(markerIndex + marker.length)
+		.trim()
+		.replace(/;\s*$/, "");
 	return JSON.parse(jsonText);
 }
 
@@ -318,7 +323,9 @@ function main() {
 
 	fs.mkdirSync(path.dirname(indexHtmlPath), { recursive: true });
 	fs.writeFileSync(indexHtmlPath, renderHtml(payload), "utf8");
-	console.log(`Generated ${indexHtmlPath} with ${payload.charts.length} grouped charts`);
+	console.log(
+		`Generated ${indexHtmlPath} with ${payload.charts.length} grouped charts`,
+	);
 }
 
 main();
