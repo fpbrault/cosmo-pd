@@ -66,6 +66,7 @@ pub struct EnvGen {
     pub prev_level: f32,
     pub output: f32,
     pub releasing: bool,
+    pub holding: bool,
     pub release_start_level: f32,
     pub release_progress: f32,
     pub release_duration: u32,
@@ -78,6 +79,7 @@ impl EnvGen {
         self.prev_level = 0.0;
         self.output = 0.0;
         self.releasing = false;
+        self.holding = false;
         self.release_start_level = 0.0;
         self.release_progress = 0.0;
         self.release_duration = 0;
@@ -93,6 +95,10 @@ impl EnvGen {
         key_follow: f32,
         note: u8,
     ) {
+        if self.holding {
+            return;
+        }
+
         let steps = &env_data.steps;
         let step_count = env_data.step_count.clamp(1, steps.len());
         let effective_end_step = step_count - 1;
@@ -163,6 +169,7 @@ impl EnvGen {
 
         if !env_data.loop_ && current_step == sustain_step && progress >= 1.0 {
             self.output = target_level;
+            self.holding = true;
             return;
         }
 
@@ -199,6 +206,7 @@ impl EnvGen {
         let effective_end_step = step_count - 1;
 
         self.releasing = true;
+        self.holding = false;
         self.release_progress = 0.0;
 
         if self.step <= sustain_step {
