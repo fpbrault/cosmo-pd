@@ -84,8 +84,7 @@ impl EnvGen {
     }
 
     /// Advance the envelope by one sample.
-    ///
-    /// Mirrors `advanceEnv` in pdVisualizerProcessor.js exactly.
+    #[inline(always)]
     pub fn advance(
         &mut self,
         kind: EnvelopeKind,
@@ -95,46 +94,35 @@ impl EnvGen {
         note: u8,
     ) {
         let steps = &env_data.steps;
-        // Use step_count to honour the active-step window (matches JS `stepCount`)
         let step_count = env_data.step_count.clamp(1, steps.len());
-        let sustain_step = env_data.sustain_step.min(step_count - 1);
         let effective_end_step = step_count - 1;
         let current_step = self.step.min(effective_end_step);
-
-        let note_offset = (note as f32 - 60.0) / 60.0;
-        let speed_mult = 1.0 + key_follow * note_offset * 0.1;
+        let sustain_step = env_data.sustain_step.min(step_count - 1);
 
         let step_data = &steps[current_step];
         let step_rate = raw_rate_to_human(kind, step_data.rate);
-        let step_target_level = raw_level_to_human(kind, step_data.level) as f32 / 99.0;
-        // CZ behaviour: the last active step always targets 0 (silence / neutral
-        // pitch) so that all envelopes return to their rest state.  The stored
-        // value is left untouched so it is available when step count is raised.
         let target_level = if current_step == effective_end_step {
             0.0
         } else {
-            step_target_level
+            raw_level_to_human(kind, step_data.level) as f32 / 99.0
         };
         let frozen_step = is_frozen_step(self.prev_level, target_level, step_rate);
-        let raw_duration = step_duration_samples(
-            self.prev_level,
-            target_level,
-            timing.rate_to_samples(kind, step_data.rate),
-        );
-        // Apply key-follow speed multiplier, ensure at least 1
-        let duration = if raw_duration == 0 {
-            0
-        } else {
-            (raw_duration as f32 / speed_mult).max(1.0).round() as u32
-        };
+        let rate_samples = timing.rate_to_samples(kind, step_data.rate);
+        let raw_duration = step_duration_samples(self.prev_level, target_level, rate_samples);
 
         if self.releasing {
             if frozen_step {
-                // CZ-style hold: rate=0 means no progression toward target.
-                // Keep current level indefinitely while key is released.
                 self.output = self.prev_level;
                 return;
             }
+
+            let note_offset = (note as f32 - 60.0) / 60.0;
+            let speed_mult = 1.0 + key_follow * note_offset * 0.1;
+            let duration = if raw_duration == 0 {
+                0
+            } else {
+                (raw_duration as f32 / speed_mult).max(1.0).round() as u32
+            };
 
             if duration == 0 {
                 self.output = target_level;
@@ -148,78 +136,54 @@ impl EnvGen {
                 self.prev_level = target_level;
                 self.step_pos = 0;
                 self.step += 1;
-
-                // Allow entering the final active step so its own rate controls
-                // the release to zero; only clamp once we've advanced past it.
                 if self.step > effective_end_step {
                     self.step = effective_end_step;
-                    self.output = 0.0; // last step always ends at 0
+                    self.output = 0.0;
                 }
             }
             return;
         }
 
-        // Normal (non-releasing) path
-        let num_steps = step_count;
-        if num_steps == 0 {
+        if step_count == 0 {
             return;
         }
 
-        // Re-read using current_step (matches JS which re-assigns stepData).
-        // CZ behaviour: last step always targets 0.
-        let step_data2 = &steps[current_step];
-        let step_rate2 = raw_rate_to_human(kind, step_data2.rate);
-        let step_target_level2 = raw_level_to_human(kind, step_data2.level) as f32 / 99.0;
-        let target_level2 = if current_step == effective_end_step {
-            0.0
-        } else {
-            step_target_level2
-        };
-        let frozen_step2 = is_frozen_step(self.prev_level, target_level2, step_rate2);
-        let duration2 = step_duration_samples(
-            self.prev_level,
-            target_level2,
-            timing.rate_to_samples(kind, step_data2.rate),
-        );
-
-        if frozen_step2 {
-            // CZ-style hold: stop advancing this envelope step.
+        if frozen_step {
             self.output = self.prev_level;
             return;
         }
 
-        let progress = if duration2 == 0 {
-            1.0_f32
+        let progress = if raw_duration == 0 {
+            1.0
         } else {
-            (self.step_pos as f32 / duration2 as f32).min(1.0)
+            (self.step_pos as f32 / raw_duration as f32).min(1.0)
         };
 
-        self.output = lerp(self.prev_level, target_level2, progress);
+        self.output = lerp(self.prev_level, target_level, progress);
 
-        // Sustain hold check
         if !env_data.loop_ && current_step == sustain_step && progress >= 1.0 {
-            self.output = target_level2;
+            self.output = target_level;
             return;
         }
 
         self.step_pos += 1;
-        if self.step_pos >= duration2.max(1) {
-            self.prev_level = target_level2;
+        if self.step_pos >= raw_duration.max(1) {
+            self.prev_level = target_level;
             self.step_pos = 0;
 
             if !env_data.loop_ && current_step == sustain_step {
-                self.output = target_level2;
+                self.output = target_level;
                 return;
             }
 
             self.step += 1;
 
-            if self.step >= num_steps {
+            if self.step >= step_count {
                 if env_data.loop_ {
                     self.step = 0;
                 } else {
                     self.step = effective_end_step;
-                    self.output = 0.0; // last step always ends at 0
+                    self.output = 0.0;
                 }
             }
         }
