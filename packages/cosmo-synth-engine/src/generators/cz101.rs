@@ -2,7 +2,7 @@ use super::{
     lerp, wrap01, AlgoControlAssignmentV1, AlgoControlKindV1, AlgoControlOptionV1, AlgoControlV1,
     AlgoDefinitionV1,
 };
-use crate::params::{Algo, AlgoControlValueV1, CzWaveform, WindowType};
+use crate::params::{Algo, AlgoControlId, AlgoControlSlots, CzWaveform, WindowType};
 use serde::Serialize;
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
@@ -424,9 +424,10 @@ impl Default for ResolvedCzControls {
     }
 }
 
-fn find_control_value(entries: Option<&[AlgoControlValueV1]>, control_id: &str) -> Option<f32> {
-    entries?
+fn find_control_value(entries: &AlgoControlSlots, control_id: AlgoControlId) -> Option<f32> {
+    entries
         .iter()
+        .flatten()
         .find(|entry| entry.id == control_id)
         .map(|entry| entry.value)
 }
@@ -457,25 +458,21 @@ fn decode_window(value: f32) -> WindowType {
     }
 }
 
-pub fn resolve_cz_controls(entries: Option<&[AlgoControlValueV1]>) -> ResolvedCzControls {
+pub fn resolve_cz_controls(entries: &AlgoControlSlots) -> ResolvedCzControls {
     ResolvedCzControls {
-        waveform1: find_control_value(entries, "waveform1")
+        waveform1: find_control_value(entries, AlgoControlId::Waveform1)
             .map(decode_waveform)
             .unwrap_or(CzWaveform::Saw),
-        waveform2: find_control_value(entries, "waveform2")
+        waveform2: find_control_value(entries, AlgoControlId::Waveform2)
             .map(decode_waveform)
             .unwrap_or(CzWaveform::Saw),
-        window_function: find_control_value(entries, "windowFunction")
+        window_function: find_control_value(entries, AlgoControlId::WindowFunction)
             .map(decode_window)
             .unwrap_or(WindowType::Off),
     }
 }
 
-pub fn resolve_algo(
-    algo: Algo,
-    algo_controls: Option<&[AlgoControlValueV1]>,
-    cycle_count: u32,
-) -> Algo {
+pub fn resolve_algo(algo: Algo, algo_controls: &AlgoControlSlots, cycle_count: u32) -> Algo {
     if algo == Algo::Cz101 {
         let controls = resolve_cz_controls(algo_controls);
         return Algo::from_cz_waveform(resolve_cycle_waveform(
@@ -490,7 +487,7 @@ pub fn resolve_algo(
 
 pub fn resolve_window(
     algo: Algo,
-    algo_controls: Option<&[AlgoControlValueV1]>,
+    algo_controls: &AlgoControlSlots,
     fallback: WindowType,
 ) -> WindowType {
     if algo == Algo::Cz101 {

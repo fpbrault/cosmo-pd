@@ -17,6 +17,9 @@ use super::CosmoProcessor;
 #[cfg(feature = "no_denormals")]
 use no_denormals::no_denormals;
 
+#[cfg(all(debug_assertions, feature = "std"))]
+use assert_no_alloc::assert_no_alloc;
+
 const SOFT_CLIP_DRIVE: f32 = 1.0;
 const REFERENCE_LINE_HEADROOM: f32 = 0.75;
 const HEADROOM_MAKEUP_EXPONENT: f32 = 0.8;
@@ -30,7 +33,19 @@ impl CosmoProcessor {
     /// call to prevent the ~100x CPU stalls that subnormal floats cause in
     /// IIR filters and feedback delay paths. The FTZ/DAZ CPU flags are
     /// restored on exit.
+    #[cfg_attr(feature = "rtsan", rtsan_standalone::nonblocking)]
     pub fn process(&mut self, output: &mut [f32]) {
+        #[cfg(all(debug_assertions, feature = "std"))]
+        {
+            assert_no_alloc(|| self.process_with_denormal_guard(output));
+            return;
+        }
+
+        #[cfg(not(all(debug_assertions, feature = "std")))]
+        self.process_with_denormal_guard(output);
+    }
+
+    fn process_with_denormal_guard(&mut self, output: &mut [f32]) {
         #[cfg(feature = "no_denormals")]
         unsafe {
             no_denormals(|| self.process_inner(output))
@@ -41,7 +56,8 @@ impl CosmoProcessor {
     }
 
     fn process_inner(&mut self, output: &mut [f32]) {
-        let p = &self.params;
+        let params = Arc::clone(&self.params);
+        let p = params.as_ref();
         let volume = p.volume;
         let base_lfo1_rate = p.lfo.rate;
         let lfo1_waveform = p.lfo.waveform;
@@ -137,23 +153,34 @@ impl CosmoProcessor {
             }
             let random_mod_val = self.random_hold;
 
-            let line1_modded = modulated_line_params(&p.line1, 1, &mod_cache, &pre_sources);
-            let line2_modded = modulated_line_params(&p.line2, 2, &mod_cache, &pre_sources);
+            modulated_line_params(
+                &p.line1,
+                &mut self.line1_scratch,
+                1,
+                &mod_cache,
+                &pre_sources,
+            );
+            modulated_line_params(
+                &p.line2,
+                &mut self.line2_scratch,
+                2,
+                &mod_cache,
+                &pre_sources,
+            );
+            let line1_modded = self.line1_scratch;
+            let line2_modded = self.line2_scratch;
 
-            let l1_ctrl_p =
-                pre_resolve_controls(line1_modded.algo, line1_modded.algo_controls_a.as_deref());
+            let l1_ctrl_p = pre_resolve_controls(line1_modded.algo, &line1_modded.algo_controls_a);
             let l1_ctrl_s = line1_modded
                 .algo2
-                .map(|a| pre_resolve_controls(a, line1_modded.algo_controls_b.as_deref()))
+                .map(|a| pre_resolve_controls(a, &line1_modded.algo_controls_b))
                 .unwrap_or([0.0; 8]);
-            let l2_ctrl_p =
-                pre_resolve_controls(line2_modded.algo, line2_modded.algo_controls_a.as_deref());
+            let l2_ctrl_p = pre_resolve_controls(line2_modded.algo, &line2_modded.algo_controls_a);
             let l2_ctrl_s = line2_modded
                 .algo2
-                .map(|a| pre_resolve_controls(a, line2_modded.algo_controls_b.as_deref()))
+                .map(|a| pre_resolve_controls(a, &line2_modded.algo_controls_b))
                 .unwrap_or([0.0; 8]);
 
-            let params = Arc::clone(&self.params);
             let mut mixed = 0.0_f32;
             let pitch_bend_semitones = self.pitch_bend * params.pitch_bend_range;
             let mod_wheel = self.mod_wheel;
@@ -164,7 +191,7 @@ impl CosmoProcessor {
                 let voice_samples = [
                     crate::voice::render_voice(
                         &mut self.voices[v],
-                        &params,
+                        params.as_ref(),
                         lfo1_mod_val,
                         lfo2_mod_val,
                         random_mod_val,
@@ -183,7 +210,7 @@ impl CosmoProcessor {
                     ),
                     crate::voice::render_voice(
                         &mut self.voices[v + 1],
-                        &params,
+                        params.as_ref(),
                         lfo1_mod_val,
                         lfo2_mod_val,
                         random_mod_val,
@@ -202,7 +229,7 @@ impl CosmoProcessor {
                     ),
                     crate::voice::render_voice(
                         &mut self.voices[v + 2],
-                        &params,
+                        params.as_ref(),
                         lfo1_mod_val,
                         lfo2_mod_val,
                         random_mod_val,
@@ -221,7 +248,7 @@ impl CosmoProcessor {
                     ),
                     crate::voice::render_voice(
                         &mut self.voices[v + 3],
-                        &params,
+                        params.as_ref(),
                         lfo1_mod_val,
                         lfo2_mod_val,
                         random_mod_val,
@@ -248,7 +275,7 @@ impl CosmoProcessor {
             while v < NUM_VOICES {
                 mixed += crate::voice::render_voice(
                     &mut self.voices[v],
-                    &params,
+                    params.as_ref(),
                     lfo1_mod_val,
                     lfo2_mod_val,
                     random_mod_val,

@@ -306,7 +306,7 @@ fn apply_env_step_modulation(
     cache: &ModMatrixCache,
     sources: &ModSources,
 ) -> StepEnvData {
-    let mut modded = env.clone();
+    let mut modded = *env;
 
     for step_index in 0..NUM_ENV_STEPS {
         let level_dest = env_step_level_destination(line_index, env_kind, step_index);
@@ -330,10 +330,11 @@ fn apply_env_step_modulation(
 
 pub(crate) fn modulated_line_params(
     line: &LineParams,
+    scratch: &mut LineParams,
     line_index: u8,
     cache: &ModMatrixCache,
     sources: &ModSources,
-) -> LineParams {
+) {
     let algo_blend_dest = if line_index == 2 {
         ModDestination::Line2AlgoBlend
     } else {
@@ -342,17 +343,16 @@ pub(crate) fn modulated_line_params(
 
     let algo_blend_mod = cache.get(algo_blend_dest, sources);
 
-    let mut modded = line.clone();
-    modded.algo_blend = (line.algo_blend + algo_blend_mod).clamp(0.0, 1.0);
+    *scratch = *line;
+    scratch.algo_blend = (line.algo_blend + algo_blend_mod).clamp(0.0, 1.0);
     if cache.has_env_step_routes {
-        modded.dco_env =
+        scratch.dco_env =
             apply_env_step_modulation(&line.dco_env, line_index, EnvKindKey::Dco, cache, sources);
-        modded.dcw_env =
+        scratch.dcw_env =
             apply_env_step_modulation(&line.dcw_env, line_index, EnvKindKey::Dcw, cache, sources);
-        modded.dca_env =
+        scratch.dca_env =
             apply_env_step_modulation(&line.dca_env, line_index, EnvKindKey::Dca, cache, sources);
     }
-    modded
 }
 // ---------------------------------------------------------------------------
 // LineEnvs — per-line group of three envelope generators

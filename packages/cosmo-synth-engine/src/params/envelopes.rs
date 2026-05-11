@@ -36,7 +36,7 @@ fn deserialize_step_value<'de, D: Deserializer<'de>>(d: D) -> Result<u8, D::Erro
 }
 
 /// Step envelope data (CZ-style)
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
 #[serde(rename_all = "camelCase")]
 pub struct StepEnvData {

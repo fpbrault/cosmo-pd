@@ -5,12 +5,23 @@ use std::time::Instant;
 
 use cosmo_synth_engine::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use cosmo_synth_engine::params::{
-    Algo, AlgoControlValueV1, FxSlotConfig, FxSlotType, LineSelect, ModDestination, ModMatrix,
-    ModRoute, ModSource, PolyMode, SynthParams,
+    Algo, AlgoControlId, AlgoControlValueV1, FxSlotConfig, FxSlotType, LineSelect, ModDestination,
+    ModMatrix, ModRoute, ModSource, PolyMode, SynthParams,
 };
 use cosmo_synth_engine::processor::{midi_note_to_freq, CosmoProcessor};
 
 const DEFAULT_NOTES: [u8; 8] = [36, 40, 43, 48, 52, 55, 60, 64];
+
+fn algo_control_slots(entries: &[(AlgoControlId, f32)]) -> [Option<AlgoControlValueV1>; 8] {
+    let mut slots = [None; 8];
+    for (index, (id, value)) in entries.iter().take(8).enumerate() {
+        slots[index] = Some(AlgoControlValueV1 {
+            id: *id,
+            value: *value,
+        });
+    }
+    slots
+}
 
 #[derive(Clone)]
 struct BenchmarkConfig {
@@ -566,76 +577,31 @@ fn scenarios() -> Vec<Scenario> {
                 p.line1.algo = Algo::Cz101;
                 p.line1.algo2 = Some(Algo::Sync);
                 p.line1.algo_blend = 0.55;
-                p.line1.algo_controls_a = Some(vec![
-                    AlgoControlValueV1 {
-                        id: "preset".to_string(),
-                        value: 6.0,
-                    },
-                    AlgoControlValueV1 {
-                        id: "waveform1".to_string(),
-                        value: 5.0,
-                    },
-                    AlgoControlValueV1 {
-                        id: "waveform2".to_string(),
-                        value: 6.0,
-                    },
-                    AlgoControlValueV1 {
-                        id: "windowFunction".to_string(),
-                        value: 3.0,
-                    },
+                p.line1.algo_controls_a = algo_control_slots(&[
+                    (AlgoControlId::Preset, 6.0),
+                    (AlgoControlId::Waveform1, 5.0),
+                    (AlgoControlId::Waveform2, 6.0),
+                    (AlgoControlId::WindowFunction, 3.0),
                 ]);
-                p.line1.algo_controls_b = Some(vec![
-                    AlgoControlValueV1 {
-                        id: "syncRatio".to_string(),
-                        value: 0.7,
-                    },
-                    AlgoControlValueV1 {
-                        id: "syncPhase".to_string(),
-                        value: 0.2,
-                    },
-                    AlgoControlValueV1 {
-                        id: "syncCurve".to_string(),
-                        value: 0.85,
-                    },
-                    AlgoControlValueV1 {
-                        id: "syncWindow".to_string(),
-                        value: 0.65,
-                    },
+                p.line1.algo_controls_b = algo_control_slots(&[
+                    (AlgoControlId::SyncRatio, 0.7),
+                    (AlgoControlId::SyncPhase, 0.2),
+                    (AlgoControlId::SyncCurve, 0.85),
+                    (AlgoControlId::SyncWindow, 0.65),
                 ]);
                 p.line2.algo = Algo::Skew;
                 p.line2.algo2 = Some(Algo::Bend);
                 p.line2.algo_blend = 0.45;
-                p.line2.algo_controls_a = Some(vec![
-                    AlgoControlValueV1 {
-                        id: "skewBias".to_string(),
-                        value: 0.55,
-                    },
-                    AlgoControlValueV1 {
-                        id: "skewCurve".to_string(),
-                        value: 0.72,
-                    },
-                    AlgoControlValueV1 {
-                        id: "skewSpread".to_string(),
-                        value: 0.48,
-                    },
-                    AlgoControlValueV1 {
-                        id: "skewTilt".to_string(),
-                        value: 0.38,
-                    },
+                p.line2.algo_controls_a = algo_control_slots(&[
+                    (AlgoControlId::SkewBias, 0.55),
+                    (AlgoControlId::SkewCurve, 0.72),
+                    (AlgoControlId::SkewSpread, 0.48),
+                    (AlgoControlId::SkewTilt, 0.38),
                 ]);
-                p.line2.algo_controls_b = Some(vec![
-                    AlgoControlValueV1 {
-                        id: "bendCurve".to_string(),
-                        value: 0.84,
-                    },
-                    AlgoControlValueV1 {
-                        id: "bendBias".to_string(),
-                        value: 0.44,
-                    },
-                    AlgoControlValueV1 {
-                        id: "bendKnee".to_string(),
-                        value: 0.36,
-                    },
+                p.line2.algo_controls_b = algo_control_slots(&[
+                    (AlgoControlId::BendCurve, 0.84),
+                    (AlgoControlId::BendBias, 0.44),
+                    (AlgoControlId::BendKnee, 0.36),
                 ]);
                 p.mod_matrix = ModMatrix::default();
                 p.fx_slots = [

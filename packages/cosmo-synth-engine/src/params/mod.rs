@@ -23,7 +23,10 @@ pub use fx_params::{
     WavefolderParams,
 };
 pub use lfo::{LfoParams, LfoWaveform};
-pub use line::{AlgoControlValueV1, LineParams, LineSelect, ModMode, PolyMode};
+pub use line::{
+    AlgoControlId, AlgoControlSlots, AlgoControlValueV1, LineParams, LineSelect, ModMode, PolyMode,
+    MAX_ALGO_CONTROLS,
+};
 pub use modulation::{
     ModDestination, ModMatrix, ModRoute, ModSource, ENV_STEP_DEST_FIRST, ENV_STEP_DEST_LAST,
     NUM_MOD_DESTINATIONS,

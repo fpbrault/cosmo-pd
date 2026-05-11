@@ -17,7 +17,7 @@ use crate::dsp_utils::random_hold_value;
 use crate::envelope::{normalize_synth_params_envelopes_to_raw_if_human, EnvelopeTimingCache};
 use crate::fx::FxChain;
 use crate::module_presets;
-use crate::params::{FxSlotConfig, FxSlotType, SynthParams, NUM_VOICES};
+use crate::params::{FxSlotConfig, FxSlotType, LineParams, SynthParams, NUM_VOICES};
 use crate::simd::{detect_simd_backend, SimdBackend};
 use crate::voice::Voice;
 
@@ -52,6 +52,8 @@ pub struct CosmoProcessor {
     fx_eco_toggle: bool,
     #[allow(dead_code)]
     fx_last_out: f32,
+    line1_scratch: LineParams,
+    line2_scratch: LineParams,
     envelope_timing: EnvelopeTimingCache,
 }
 
@@ -79,6 +81,8 @@ impl CosmoProcessor {
             simd_backend: detect_simd_backend(),
             fx_eco_toggle: false,
             fx_last_out: 0.0,
+            line1_scratch: LineParams::default(),
+            line2_scratch: LineParams::default(),
             envelope_timing: EnvelopeTimingCache::new(sample_rate),
         };
         proc.update_fx();
@@ -177,6 +181,8 @@ impl CosmoProcessor {
 
     /// Swap in a pre-normalized shared parameter snapshot without cloning.
     pub fn set_shared_params(&mut self, params: Arc<SynthParams>) {
+        self.line1_scratch = params.line1;
+        self.line2_scratch = params.line2;
         self.params = params;
         self.update_fx();
     }
@@ -212,6 +218,8 @@ impl CosmoProcessor {
         self.aftertouch = 0.0;
         self.last_runtime_mod_sources = RuntimeModSources::default();
         self.simd_backend = detect_simd_backend();
+        self.line1_scratch = self.params.line1;
+        self.line2_scratch = self.params.line2;
         self.envelope_timing = EnvelopeTimingCache::new(self.sample_rate);
     }
 

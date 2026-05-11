@@ -1,5 +1,5 @@
 use crate::dsp_utils::{apply_window, lerp, wrap01, TWO_PI};
-use crate::params::{Algo, AlgoControlValueV1, BaseWaveform, LineParams};
+use crate::params::{Algo, AlgoControlSlots, BaseWaveform, LineParams};
 use std::sync::LazyLock;
 
 /// Reference per-line output headroom used by processor normalization.
@@ -99,8 +99,8 @@ impl LineRenderConfig {
         primary_control_values: [f32; 8],
         secondary_control_values: [f32; 8],
     ) -> Self {
-        let primary_algo_controls = line.algo_controls_a.as_deref();
-        let secondary_algo_controls = line.algo_controls_b.as_deref();
+        let primary_algo_controls = &line.algo_controls_a;
+        let secondary_algo_controls = &line.algo_controls_b;
         let primary_algo = cz101::resolve_algo(line.algo, primary_algo_controls, cycle_count);
         let secondary_algo = line
             .algo2
@@ -302,13 +302,11 @@ fn algo_control_slot_index(algo: Algo, id: &str) -> Option<usize> {
 /// preset-level overrides from `algo_controls`. String lookups happen here
 /// (at config-build time) instead of inside `warp_phase` (per-sample).
 #[inline(always)]
-pub fn pre_resolve_controls(algo: Algo, controls: Option<&[AlgoControlValueV1]>) -> [f32; 8] {
+pub fn pre_resolve_controls(algo: Algo, controls: &AlgoControlSlots) -> [f32; 8] {
     let mut values = ALGO_DEFAULT_VALUES[algo as usize];
-    if let Some(entries) = controls {
-        for entry in entries {
-            if let Some(slot) = algo_control_slot_index(algo, &entry.id) {
-                values[slot] = entry.value;
-            }
+    for entry in controls.iter().flatten() {
+        if let Some(slot) = algo_control_slot_index(algo, entry.id.as_str()) {
+            values[slot] = entry.value;
         }
     }
     values
