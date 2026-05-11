@@ -236,7 +236,11 @@ pub fn render_voice(
         voice.anti_click_attack -= 1;
     }
 
-    sample = suppress_sample_discontinuity(voice.last_output_sample, sample);
+    sample = suppress_sample_discontinuity(
+        voice.last_output_sample,
+        sample,
+        POP_SUPPRESS_DELTA_THRESHOLD,
+    );
 
     advance_voice_phase(
         voice,
@@ -446,15 +450,19 @@ fn apply_dcw_dezipper(voice: &mut Voice, sr: f32, signal: &mut SignalState) {
 }
 
 #[inline]
-fn suppress_sample_discontinuity(prev_sample: f32, sample: f32) -> f32 {
+pub(crate) fn suppress_sample_discontinuity(
+    prev_sample: f32,
+    sample: f32,
+    delta_threshold: f32,
+) -> f32 {
     let delta = sample - prev_sample;
     let delta_abs = (delta).abs();
-    if delta_abs <= POP_SUPPRESS_DELTA_THRESHOLD {
+    if delta_abs <= delta_threshold {
         return sample;
     }
 
-    let excess = delta_abs - POP_SUPPRESS_DELTA_THRESHOLD;
-    let allowed = POP_SUPPRESS_DELTA_THRESHOLD + excess * POP_SUPPRESS_EXCESS_KEEP;
+    let excess = delta_abs - delta_threshold;
+    let allowed = delta_threshold + excess * POP_SUPPRESS_EXCESS_KEEP;
     prev_sample + delta.signum() * allowed
 }
 

@@ -202,19 +202,72 @@ impl CosmoProcessor {
             return voice_idx;
         }
 
-        let mut min_amp = f32::INFINITY;
-        let mut min_idx = 0usize;
+        let mut min_releasing_amp = f32::INFINITY;
+        let mut min_releasing_idx: Option<usize> = None;
         for (idx, voice) in self.voices.iter().enumerate() {
             if voice.is_releasing {
                 let amp = voice.line1_env.dca.output.max(voice.line2_env.dca.output);
-                if amp < min_amp {
-                    min_amp = amp;
-                    min_idx = idx;
+                if amp < min_releasing_amp {
+                    min_releasing_amp = amp;
+                    min_releasing_idx = Some(idx);
                 }
             }
         }
 
-        min_idx
+        if let Some(idx) = min_releasing_idx {
+            return idx;
+        }
+
+        let mut min_sustained_amp = f32::INFINITY;
+        let mut min_sustained_idx: Option<usize> = None;
+        for (idx, voice) in self.voices.iter().enumerate() {
+            if !voice.is_releasing && self.voice_has_reached_sustain(idx) {
+                let amp = voice.line1_env.dca.output.max(voice.line2_env.dca.output);
+                if amp < min_sustained_amp {
+                    min_sustained_amp = amp;
+                    min_sustained_idx = Some(idx);
+                }
+            }
+        }
+
+        if let Some(idx) = min_sustained_idx {
+            return idx;
+        }
+
+        // If every voice is currently active, steal the quietest one instead
+        // of always voice 0 to reduce audible discontinuities.
+        let mut min_active_amp = f32::INFINITY;
+        let mut min_active_idx = 0usize;
+        for (idx, voice) in self.voices.iter().enumerate() {
+            let amp = voice.line1_env.dca.output.max(voice.line2_env.dca.output);
+            if amp < min_active_amp {
+                min_active_amp = amp;
+                min_active_idx = idx;
+            }
+        }
+
+        min_active_idx
+    }
+
+    fn voice_has_reached_sustain(&self, voice_idx: usize) -> bool {
+        let voice = &self.voices[voice_idx];
+        let p = self.params.as_ref();
+
+        let line1_active = matches!(
+            p.line_select,
+            crate::params::LineSelect::L1
+                | crate::params::LineSelect::L1PlusL1Prime
+                | crate::params::LineSelect::L1PlusL2Prime
+        );
+        let line2_active = matches!(
+            p.line_select,
+            crate::params::LineSelect::L2 | crate::params::LineSelect::L1PlusL2Prime
+        );
+
+        let line1_reached = !line1_active || voice.line1_env.dca.step >= p.line1.dca_env.sustain_step;
+        let line2_reached = !line2_active || voice.line2_env.dca.step >= p.line2.dca_env.sustain_step;
+
+        line1_reached && line2_reached
     }
 
     fn handle_mono_note_on(&mut self, note: u8, frequency: f32, velocity: f32) {
