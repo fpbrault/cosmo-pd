@@ -1,5 +1,5 @@
 use crate::dsp_utils::{lfo_output_with_symmetry, random_hold_value};
-use crate::generators::PER_LINE_HEADROOM;
+use crate::generators::{pre_resolve_controls, PER_LINE_HEADROOM};
 use crate::params::{ModDestination, ModMatrixCache, NUM_VOICES};
 use crate::voice::modulated_line_params;
 use crate::voice::ModSources;
@@ -115,6 +115,11 @@ impl CosmoProcessor {
             let line1_modded = modulated_line_params(&p.line1, 1, &mod_cache, &pre_sources);
             let line2_modded = modulated_line_params(&p.line2, 2, &mod_cache, &pre_sources);
 
+            let l1_ctrl_p = pre_resolve_controls(line1_modded.algo, line1_modded.algo_controls_a.as_deref());
+            let l1_ctrl_s = line1_modded.algo2.map(|a| pre_resolve_controls(a, line1_modded.algo_controls_b.as_deref())).unwrap_or([0.0; 8]);
+            let l2_ctrl_p = pre_resolve_controls(line2_modded.algo, line2_modded.algo_controls_a.as_deref());
+            let l2_ctrl_s = line2_modded.algo2.map(|a| pre_resolve_controls(a, line2_modded.algo_controls_b.as_deref())).unwrap_or([0.0; 8]);
+
             let mut mixed = 0.0_f32;
             let params_ptr: *const crate::params::SynthParams = self.params.as_ref();
             let pitch_bend_semitones = self.pitch_bend * self.params.pitch_bend_range;
@@ -139,6 +144,10 @@ impl CosmoProcessor {
                         mod_wheel,
                         aftertouch,
                         &mod_cache,
+                        l1_ctrl_p,
+                        l1_ctrl_s,
+                        l2_ctrl_p,
+                        l2_ctrl_s,
                     ),
                     crate::voice::render_voice(
                         &mut self.voices[v + 1],
@@ -154,6 +163,10 @@ impl CosmoProcessor {
                         mod_wheel,
                         aftertouch,
                         &mod_cache,
+                        l1_ctrl_p,
+                        l1_ctrl_s,
+                        l2_ctrl_p,
+                        l2_ctrl_s,
                     ),
                     crate::voice::render_voice(
                         &mut self.voices[v + 2],
@@ -169,6 +182,10 @@ impl CosmoProcessor {
                         mod_wheel,
                         aftertouch,
                         &mod_cache,
+                        l1_ctrl_p,
+                        l1_ctrl_s,
+                        l2_ctrl_p,
+                        l2_ctrl_s,
                     ),
                     crate::voice::render_voice(
                         &mut self.voices[v + 3],
@@ -184,6 +201,10 @@ impl CosmoProcessor {
                         mod_wheel,
                         aftertouch,
                         &mod_cache,
+                        l1_ctrl_p,
+                        l1_ctrl_s,
+                        l2_ctrl_p,
+                        l2_ctrl_s,
                     ),
                 ];
                 vector_acc = self.simd_backend.add4(vector_acc, voice_samples);
@@ -208,6 +229,10 @@ impl CosmoProcessor {
                     mod_wheel,
                     aftertouch,
                     &mod_cache,
+                    l1_ctrl_p,
+                    l1_ctrl_s,
+                    l2_ctrl_p,
+                    l2_ctrl_s,
                 );
                 v += 1;
             }

@@ -75,6 +75,10 @@ pub fn render_voice(
     mod_wheel: f32,
     aftertouch: f32,
     cache: &ModMatrixCache,
+    line1_primary_control_values: [f32; 8],
+    line1_secondary_control_values: [f32; 8],
+    line2_primary_control_values: [f32; 8],
+    line2_secondary_control_values: [f32; 8],
 ) -> f32 {
     let base_freq = base_voice_frequency(voice);
 
@@ -138,6 +142,8 @@ pub fn render_voice(
         sr,
         line1_algo_param_mods,
         phase.pm_post_mod,
+        line1_primary_control_values,
+        line1_secondary_control_values,
     ));
     let (s2, ks_raw2) = voice.algo_runtime.render_line2(LineRenderConfig::from_line(
         &line2_modded,
@@ -150,6 +156,8 @@ pub fn render_voice(
         sr,
         line2_algo_param_mods,
         phase.pm_post_mod,
+        line2_primary_control_values,
+        line2_secondary_control_values,
     ));
 
     let sample = mix_line_outputs(
@@ -170,6 +178,10 @@ pub fn render_voice(
         signal.final_dca2,
         line1_algo_param_mods,
         line2_algo_param_mods,
+        line1_primary_control_values,
+        line1_secondary_control_values,
+        line2_primary_control_values,
+        line2_secondary_control_values,
     );
 
     // Apply volume modulation from mod matrix
@@ -627,6 +639,10 @@ fn mix_line_outputs(
     final_dca2: f32,
     line1_algo_param_mods: [f32; 8],
     line2_algo_param_mods: [f32; 8],
+    line1_primary_control_values: [f32; 8],
+    line1_secondary_control_values: [f32; 8],
+    line2_primary_control_values: [f32; 8],
+    line2_secondary_control_values: [f32; 8],
 ) -> f32 {
     let (mix_a, mix_b) = select_line_sources(
         p,
@@ -646,6 +662,10 @@ fn mix_line_outputs(
         final_dca2,
         line1_algo_param_mods,
         line2_algo_param_mods,
+        line1_primary_control_values,
+        line1_secondary_control_values,
+        line2_primary_control_values,
+        line2_secondary_control_values,
     );
 
     match p.mod_mode {
@@ -687,6 +707,10 @@ fn select_line_sources(
     final_dca2: f32,
     line1_algo_param_mods: [f32; 8],
     line2_algo_param_mods: [f32; 8],
+    line1_primary_control_values: [f32; 8],
+    line1_secondary_control_values: [f32; 8],
+    line2_primary_control_values: [f32; 8],
+    line2_secondary_control_values: [f32; 8],
 ) -> (f32, f32) {
     match p.line_select {
         LineSelect::L1PlusL1Prime => {
@@ -701,6 +725,8 @@ fn select_line_sources(
                 1.0,
                 line1_algo_param_mods,
                 0.0,
+                line1_primary_control_values,
+                line1_secondary_control_values,
             );
             let s1_prime = render_prime_line_sample(cfg, ks_raw1);
             (s1, s1_prime)
@@ -717,6 +743,8 @@ fn select_line_sources(
                 1.0,
                 line2_algo_param_mods,
                 0.0,
+                line2_primary_control_values,
+                line2_secondary_control_values,
             );
             let s2_prime = render_prime_line_sample(cfg, ks_raw2);
             (s1, s2_prime)
@@ -725,45 +753,45 @@ fn select_line_sources(
     }
 }
 
-fn render_prime_line_sample(cfg: LineRenderConfig<'_>, ks_raw: Option<f32>) -> f32 {
-    let sample = if let Some(secondary_algo) = cfg.secondary_algo {
-        let secondary_dcw = cfg.final_dcw * cfg.blend;
-        let primary_dcw = cfg.final_dcw * (1.0 - cfg.blend);
-        let primary = generators::render_algo_sample(
-            cfg.primary_algo,
-            cfg.phase,
-            primary_dcw,
-            cfg.primary_base_waveform,
-            cfg.primary_algo_controls,
-            cfg.algo_param_mods,
-            ks_raw,
-            cfg.pm_post_mod,
-        ) * cfg.primary_window_gain;
-        let secondary = generators::render_algo_sample(
-            secondary_algo,
-            cfg.phase,
-            secondary_dcw,
-            cfg.secondary_base_waveform,
-            cfg.secondary_algo_controls,
-            cfg.algo_param_mods,
-            ks_raw,
-            cfg.pm_post_mod,
-        ) * cfg.secondary_window_gain;
-        generators::blend_line_samples(cfg.primary_algo, primary, secondary, cfg.blend)
-    } else {
-        generators::render_algo_sample(
-            cfg.primary_algo,
-            cfg.phase,
-            cfg.final_dcw,
-            cfg.primary_base_waveform,
-            cfg.primary_algo_controls,
-            cfg.algo_param_mods,
-            ks_raw,
-            cfg.pm_post_mod,
-        ) * cfg.primary_window_gain
-    };
+fn render_prime_line_sample(cfg: LineRenderConfig, ks_raw: Option<f32>) -> f32 {
+	let sample = if let Some(secondary_algo) = cfg.secondary_algo {
+		let secondary_dcw = cfg.final_dcw * cfg.blend;
+		let primary_dcw = cfg.final_dcw * (1.0 - cfg.blend);
+		let primary = generators::render_algo_sample(
+			cfg.primary_algo,
+			cfg.phase,
+			primary_dcw,
+			cfg.primary_base_waveform,
+			&cfg.primary_control_values,
+			cfg.algo_param_mods,
+			ks_raw,
+			cfg.pm_post_mod,
+		) * cfg.primary_window_gain;
+		let secondary = generators::render_algo_sample(
+			secondary_algo,
+			cfg.phase,
+			secondary_dcw,
+			cfg.secondary_base_waveform,
+			&cfg.secondary_control_values,
+			cfg.algo_param_mods,
+			ks_raw,
+			cfg.pm_post_mod,
+		) * cfg.secondary_window_gain;
+		generators::blend_line_samples(cfg.primary_algo, primary, secondary, cfg.blend)
+	} else {
+		generators::render_algo_sample(
+			cfg.primary_algo,
+			cfg.phase,
+			cfg.final_dcw,
+			cfg.primary_base_waveform,
+			&cfg.primary_control_values,
+			cfg.algo_param_mods,
+			ks_raw,
+			cfg.pm_post_mod,
+		) * cfg.primary_window_gain
+	};
 
-    sample * cfg.final_dca * generators::PER_LINE_HEADROOM
+	sample * cfg.final_dca * generators::PER_LINE_HEADROOM
 }
 
 fn advance_voice_phase(
