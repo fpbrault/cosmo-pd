@@ -1,14 +1,16 @@
 use crate::dsp_utils::lerp;
 pub use crate::envelope_map::EnvelopeKind;
-use crate::envelope_map::{
-    human_level_to_raw, human_rate_to_raw, raw_level_to_human, raw_rate_to_human,
-};
+use crate::envelope_map::human_level_to_raw;
+use crate::envelope_map::human_rate_to_raw;
+use crate::envelope_map::raw_level_to_human;
 use crate::params::{StepEnvData, SynthParams};
 
 pub fn normalize_env_to_raw_if_human(kind: EnvelopeKind, env: &mut StepEnvData) {
+	const INV_99: f32 = 1.0 / 99.0;
     for step in env.steps.iter_mut() {
         step.level = human_level_to_raw(kind, step.level);
         step.rate = human_rate_to_raw(kind, step.rate);
+        step.level_norm = raw_level_to_human(kind, step.level) as f32 * INV_99;
     }
 }
 
@@ -106,13 +108,12 @@ impl EnvGen {
         let sustain_step = env_data.sustain_step.min(step_count - 1);
 
         let step_data = &steps[current_step];
-        let step_rate = raw_rate_to_human(kind, step_data.rate);
         let target_level = if current_step == effective_end_step {
             0.0
         } else {
-            raw_level_to_human(kind, step_data.level) as f32 / 99.0
+            step_data.level_norm
         };
-        let frozen_step = is_frozen_step(self.prev_level, target_level, step_rate);
+        let frozen_step = step_data.rate == 0 && (target_level - self.prev_level).abs() > 0.0;
         let rate_samples = timing.rate_to_samples(kind, step_data.rate);
         let raw_duration = step_duration_samples(self.prev_level, target_level, rate_samples);
 
@@ -260,14 +261,10 @@ fn step_duration_samples(from_level: f32, to_level: f32, base_samples: u32) -> u
     ((base_samples as f32 * distance).max(1.0).round()) as u32
 }
 
-#[inline]
-fn is_frozen_step(from_level: f32, to_level: f32, rate: u8) -> bool {
-    rate == 0 && (to_level - from_level).abs() > 0.0
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::envelope_map::raw_rate_to_human;
     use crate::params::SynthParams;
 
     #[test]
@@ -313,7 +310,7 @@ mod tests {
         // so no step starts as already-raw. This prevents double-conversion of
         // default/untouched steps.
         let blank = || StepEnvData {
-            steps: [EnvStep { level: 0, rate: 0 }; NUM_ENV_STEPS],
+            steps: [EnvStep { level: 0, rate: 0, level_norm: 0.0 }; NUM_ENV_STEPS],
             sustain_step: 0,
             step_count: 1,
             loop_: false,
@@ -323,11 +320,12 @@ mod tests {
         params.line1.dco_env.steps[0] = EnvStep {
             level: 66,
             rate: 99,
+            level_norm: 0.0,
         };
         params.line1.dcw_env = blank();
-        params.line1.dcw_env.steps[0] = EnvStep { level: 99, rate: 0 };
+        params.line1.dcw_env.steps[0] = EnvStep { level: 99, rate: 0, level_norm: 0.0 };
         params.line1.dca_env = blank();
-        params.line1.dca_env.steps[0] = EnvStep { level: 1, rate: 99 };
+        params.line1.dca_env.steps[0] = EnvStep { level: 1, rate: 99, level_norm: 0.0 };
         params.line2.dco_env = blank();
         params.line2.dcw_env = blank();
         params.line2.dca_env = blank();
@@ -406,7 +404,7 @@ mod tests {
         use crate::params::{EnvStep, StepEnvData, NUM_ENV_STEPS};
 
         let mut env = StepEnvData {
-            steps: [EnvStep { level: 0, rate: 99 }; NUM_ENV_STEPS],
+            steps: [EnvStep { level: 0, rate: 99, level_norm: 0.0 }; NUM_ENV_STEPS],
             sustain_step: 1,
             step_count: 4,
             loop_: false,
@@ -420,18 +418,22 @@ mod tests {
         env.steps[0] = EnvStep {
             level: 99,
             rate: 99,
+            level_norm: 0.0,
         };
         env.steps[1] = EnvStep {
             level: 70,
             rate: 99,
+            level_norm: 0.0,
         };
         env.steps[2] = EnvStep {
             level: 40,
             rate: 99,
+            level_norm: 0.0,
         };
         env.steps[3] = EnvStep {
             level: 30,
             rate: 99,
+            level_norm: 0.0,
         };
 
         let timing = EnvelopeTimingCache::new(48_000.0);

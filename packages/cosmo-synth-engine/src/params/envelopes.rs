@@ -14,6 +14,15 @@ pub struct EnvStep {
     /// Internal machine rate [0, 127].
     #[serde(deserialize_with = "deserialize_step_value")]
     pub rate: u8,
+    /// Pre-normalized level [0, 1] computed at load time from kind-specific conversion.
+    #[serde(skip)]
+    pub level_norm: f32,
+}
+
+impl Default for EnvStep {
+    fn default() -> Self {
+        Self { level: 0, rate: 0, level_norm: 0.0 }
+    }
 }
 
 /// Accept value as either integer or float and normalize into [0, 127].
@@ -56,7 +65,7 @@ impl<'de> Deserialize<'de> for StepEnvData {
         if raw.step_count == 0 {
             raw.step_count = raw.steps.len().max(1);
         }
-        let mut steps = [EnvStep { level: 0, rate: 0 }; NUM_ENV_STEPS];
+        let mut steps = [EnvStep { level: 0, rate: 0, level_norm: 0.0 }; NUM_ENV_STEPS];
         for (i, s) in raw.steps.iter().enumerate().take(NUM_ENV_STEPS) {
             steps[i] = *s;
         }
@@ -72,7 +81,7 @@ impl<'de> Deserialize<'de> for StepEnvData {
 impl Default for StepEnvData {
     fn default() -> Self {
         StepEnvData {
-            steps: [EnvStep { level: 0, rate: 0 }; NUM_ENV_STEPS],
+            steps: [EnvStep { level: 0, rate: 0, level_norm: 0.0 }; NUM_ENV_STEPS],
             sustain_step: 0,
             step_count: 1,
             loop_: false,
