@@ -4,12 +4,12 @@ use crate::envelope::EnvelopeKind;
 use crate::envelope::EnvelopeTimingCache;
 use crate::generators::{self, LineRenderConfig};
 use crate::params::{
-    LfoWaveform, LineParams, LineSelect, ModDestination, ModMatrix, ModMatrixCache, ModMode,
+    LfoWaveform, LineParams, LineSelect, ModDestination, ModMatrixCache, ModMode,
     PortamentoMode, SynthParams,
 };
 
 use super::modulation::{
-    algo_param_slot_mods_for_line, mod_value_for, ModSources,
+    algo_param_slot_mods_for_line, ModSources,
 };
 use super::{
     Voice, ANTI_CLICK_ATTACK_SAMPLES, ANTI_CLICK_FADE_MAX_SAMPLES, ANTI_CLICK_FADE_SAMPLES,
@@ -109,7 +109,7 @@ pub fn render_voice(
     let mut signal = build_signal_state(
         &line1_modded,
         &line2_modded,
-        &p.mod_matrix,
+        cache,
         &env,
         base_freq,
         &mod_sources,
@@ -118,6 +118,7 @@ pub fn render_voice(
     apply_pitch_and_lfo_modulation(
         voice,
         p,
+        cache,
         sr,
         base_freq,
         pitch_bend_semitones,
@@ -125,7 +126,7 @@ pub fn render_voice(
         &mut signal,
     );
 
-    let phase = build_phase_frame(voice, p, sr, base_freq, &mod_sources);
+    let phase = build_phase_frame(voice, p, cache, sr, base_freq, &mod_sources);
     let (s1, ks_raw1) = voice.algo_runtime.render_line1(LineRenderConfig::from_line(
         &line1_modded,
         voice.cycle_count1,
@@ -172,7 +173,7 @@ pub fn render_voice(
     );
 
     // Apply volume modulation from mod matrix
-    let volume_mod = mod_value_for(ModDestination::Volume, &p.mod_matrix, &mod_sources);
+    let volume_mod = cache.get(ModDestination::Volume, &mod_sources);
     let mut sample = sample * (1.0 + volume_mod);
 
     let tail_alpha = 1.0 - (-1.0 / (RELEASE_TAIL_LEVEL_TIME_SECONDS * sr.max(1.0))).exp();
@@ -367,7 +368,7 @@ fn advance_silent_voice(
 fn build_signal_state(
     line1: &LineParams,
     line2: &LineParams,
-    matrix: &ModMatrix,
+    cache: &ModMatrixCache,
     env: &EnvelopeSnapshot,
     base_freq: f32,
     sources: &ModSources,
@@ -375,11 +376,11 @@ fn build_signal_state(
     let dca1_level = line1.dca_base * cz_dca_env_gain(env.dca1);
     let dca2_level = line2.dca_base * cz_dca_env_gain(env.dca2);
 
-    // Mod matrix offsets for DCW/DCA
-    let dcw1_mod = mod_value_for(ModDestination::Line1DcwBase, matrix, sources);
-    let dcw2_mod = mod_value_for(ModDestination::Line2DcwBase, matrix, sources);
-    let dca1_mod = mod_value_for(ModDestination::Line1DcaBase, matrix, sources);
-    let dca2_mod = mod_value_for(ModDestination::Line2DcaBase, matrix, sources);
+    // Mod matrix offsets for DCW/DCA (O(1) cache lookup, not O(routes) scan)
+    let dcw1_mod = cache.get(ModDestination::Line1DcwBase, sources);
+    let dcw2_mod = cache.get(ModDestination::Line2DcwBase, sources);
+    let dca1_mod = cache.get(ModDestination::Line1DcaBase, sources);
+    let dca2_mod = cache.get(ModDestination::Line2DcaBase, sources);
 
     SignalState {
         effective_freq1: line_frequency(base_freq, line1, env.dco1_env),
@@ -454,7 +455,9 @@ pub(crate) fn line_frequency(base_freq: f32, line: &LineParams, dco_env: f32) ->
 }
 
 fn apply_pitch_and_lfo_modulation(
-    voice: &mut Voice, p: &SynthParams,
+    voice: &mut Voice,
+    p: &SynthParams,
+    cache: &ModMatrixCache,
     sr: f32,
     base_freq: f32,
     pitch_bend_semitones: f32,
@@ -463,9 +466,9 @@ fn apply_pitch_and_lfo_modulation(
 ) {
     apply_portamento(voice, &p.portamento, sr, base_freq, signal);
     apply_pitch_bend(pitch_bend_semitones, signal);
-    apply_vibrato(voice, p, sr, sources, signal);
-    // Pitch modulation from mod matrix (additive semitone offset via ratio)
-    let pitch_mod = mod_value_for(ModDestination::Pitch, &p.mod_matrix, sources);
+    apply_vibrato(voice, p, cache, sr, sources, signal);
+    // Pitch modulation from mod matrix (O(1) cache lookup)
+    let pitch_mod = cache.get(ModDestination::Pitch, sources);
     if pitch_mod != 0.0 {
         let ratio = (2.0_f32).powf(pitch_mod * 2.0 / 12.0); // ±2 semitones max
         signal.effective_freq1 *= ratio;
@@ -518,7 +521,9 @@ fn apply_pitch_bend(pitch_bend_semitones: f32, signal: &mut SignalState) {
 }
 
 fn apply_vibrato(
-    voice: &mut Voice, p: &SynthParams,
+    voice: &mut Voice,
+    p: &SynthParams,
+    cache: &ModMatrixCache,
     sr: f32,
     sources: &ModSources,
     signal: &mut SignalState,
@@ -535,7 +540,7 @@ fn apply_vibrato(
         return;
     }
 
-    let vibrato_rate_mod = mod_value_for(ModDestination::VibratoRate, &p.mod_matrix, sources);
+    let vibrato_rate_mod = cache.get(ModDestination::VibratoRate, sources);
     let effective_rate = (vibrato.rate + vibrato_rate_mod * 99.0).clamp(0.1, 200.0);
     voice.vibrato_phase += (effective_rate * 0.1) / sr;
     if voice.vibrato_phase >= 1.0 {
@@ -544,7 +549,7 @@ fn apply_vibrato(
 
     let vib_waveform = vibrato_waveform(vibrato.waveform);
     let lfo_val = lfo_output(voice.vibrato_phase, vib_waveform);
-    let vibrato_depth_mod = mod_value_for(ModDestination::VibratoDepth, &p.mod_matrix, sources);
+    let vibrato_depth_mod = cache.get(ModDestination::VibratoDepth, sources);
     let effective_depth = (vibrato.depth + vibrato_depth_mod * 99.0).clamp(0.0, 99.0);
     let pitch_mod = 1.0 + lfo_val * (effective_depth / 1000.0);
     signal.effective_freq1 *= pitch_mod;
@@ -563,11 +568,12 @@ fn vibrato_waveform(waveform: u8) -> LfoWaveform {
 fn build_phase_frame(
     voice: &Voice,
     p: &SynthParams,
+    cache: &ModMatrixCache,
     sr: f32,
     base_freq: f32,
     sources: &ModSources,
 ) -> PhaseFrame {
-    let int_pm_ratio_mod = mod_value_for(ModDestination::IntPmRatio, &p.mod_matrix, sources);
+    let int_pm_ratio_mod = cache.get(ModDestination::IntPmRatio, sources);
     let (int_pm_enabled, int_pm_amount_raw, int_pm_ratio_raw, pm_pre) = p
         .phase_mod_params()
         .map(|pm| (pm.enabled, pm.amount, pm.ratio, pm.pm_pre))
