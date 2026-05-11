@@ -3,13 +3,33 @@
 //! This module keeps the cross-platform 4-wide API available on wasm32
 //! targets with `simd128` enabled.
 
-#![cfg(all(target_arch = "wasm32", target_feature = "simd128"))]
+#![cfg(target_arch = "wasm32")]
 
 use super::SimdType;
+use core::arch::wasm32::*;
 use core::ops::{Add, AddAssign, Mul, MulAssign, Sub};
 
 #[derive(Clone, Copy)]
 pub struct WasmSimd([f32; 4]);
+
+impl WasmSimd {
+    #[target_feature(enable = "simd128")]
+    #[inline]
+    unsafe fn from_v128(v: v128) -> Self {
+        Self([
+            f32x4_extract_lane::<0>(v),
+            f32x4_extract_lane::<1>(v),
+            f32x4_extract_lane::<2>(v),
+            f32x4_extract_lane::<3>(v),
+        ])
+    }
+
+    #[target_feature(enable = "simd128")]
+    #[inline]
+    unsafe fn to_v128(&self) -> v128 {
+        f32x4(self.0[0], self.0[1], self.0[2], self.0[3])
+    }
+}
 
 impl SimdType for WasmSimd {
     const WIDTH: usize = 4;
@@ -40,62 +60,52 @@ impl SimdType for WasmSimd {
 
     #[inline]
     fn add(self, other: Self) -> Self {
-        Self([
-            self.0[0] + other.0[0],
-            self.0[1] + other.0[1],
-            self.0[2] + other.0[2],
-            self.0[3] + other.0[3],
-        ])
+        unsafe {
+            let lhs = self.to_v128();
+            let rhs = other.to_v128();
+            Self::from_v128(f32x4_add(lhs, rhs))
+        }
     }
 
     #[inline]
     fn sub(self, other: Self) -> Self {
-        Self([
-            self.0[0] - other.0[0],
-            self.0[1] - other.0[1],
-            self.0[2] - other.0[2],
-            self.0[3] - other.0[3],
-        ])
+        unsafe {
+            let lhs = self.to_v128();
+            let rhs = other.to_v128();
+            Self::from_v128(f32x4_sub(lhs, rhs))
+        }
     }
 
     #[inline]
     fn mul(self, other: Self) -> Self {
-        Self([
-            self.0[0] * other.0[0],
-            self.0[1] * other.0[1],
-            self.0[2] * other.0[2],
-            self.0[3] * other.0[3],
-        ])
+        unsafe {
+            let lhs = self.to_v128();
+            let rhs = other.to_v128();
+            Self::from_v128(f32x4_mul(lhs, rhs))
+        }
     }
 
     #[inline]
     fn mul_scalar(self, val: f32) -> Self {
-        Self([
-            self.0[0] * val,
-            self.0[1] * val,
-            self.0[2] * val,
-            self.0[3] * val,
-        ])
+        SimdType::mul(self, Self::splat(val))
     }
 
     #[inline]
     fn max(self, other: Self) -> Self {
-        Self([
-            self.0[0].max(other.0[0]),
-            self.0[1].max(other.0[1]),
-            self.0[2].max(other.0[2]),
-            self.0[3].max(other.0[3]),
-        ])
+        unsafe {
+            let lhs = self.to_v128();
+            let rhs = other.to_v128();
+            Self::from_v128(f32x4_max(lhs, rhs))
+        }
     }
 
     #[inline]
     fn min(self, other: Self) -> Self {
-        Self([
-            self.0[0].min(other.0[0]),
-            self.0[1].min(other.0[1]),
-            self.0[2].min(other.0[2]),
-            self.0[3].min(other.0[3]),
-        ])
+        unsafe {
+            let lhs = self.to_v128();
+            let rhs = other.to_v128();
+            Self::from_v128(f32x4_min(lhs, rhs))
+        }
     }
 
     #[inline]
@@ -105,12 +115,16 @@ impl SimdType for WasmSimd {
 
     #[inline]
     fn abs(self) -> Self {
-        Self([
-            self.0[0].abs(),
-            self.0[1].abs(),
-            self.0[2].abs(),
-            self.0[3].abs(),
-        ])
+        unsafe {
+            let v = self.to_v128();
+            let mask = i32x4(
+                0x7fff_ffff_u32 as i32,
+                0x7fff_ffff_u32 as i32,
+                0x7fff_ffff_u32 as i32,
+                0x7fff_ffff_u32 as i32,
+            );
+            Self::from_v128(v128_and(v, mask))
+        }
     }
 }
 

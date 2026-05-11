@@ -1,5 +1,3 @@
-use libm::{cosf, sinf};
-
 // ---------------------------------------------------------------------------
 // RingModFx — ring modulation with configurable carrier frequency
 // ---------------------------------------------------------------------------
@@ -31,10 +29,10 @@ impl RingModFx {
         if self.phase >= 1.0 {
             self.phase -= 1.0;
         }
-        let carrier = sinf(self.phase * core::f32::consts::PI * 2.0);
+        let carrier = (self.phase * core::f32::consts::PI * 2.0).sin();
         let wet = sample * carrier;
         let mix_angle = self.mix * core::f32::consts::PI * 0.5;
-        sample * cosf(mix_angle) + wet * sinf(mix_angle)
+        sample * (mix_angle).cos() + wet * (mix_angle).sin()
     }
 }
 

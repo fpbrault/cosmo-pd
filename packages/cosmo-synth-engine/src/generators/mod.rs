@@ -1,9 +1,37 @@
 use crate::dsp_utils::{apply_window, lerp, wrap01, TWO_PI};
-use crate::params::{Algo, AlgoControlValueV1, BaseWaveform, LineParams};
+use crate::params::{Algo, AlgoControlSlots, BaseWaveform, LineParams};
+use std::sync::LazyLock;
 
 /// Reference per-line output headroom used by processor normalization.
 pub const PER_LINE_HEADROOM: f32 = 0.25;
 const BLEND_SHORT_CIRCUIT_EPSILON: f32 = 0.03;
+
+/// O(1) lookup table mapping `Algo as u8` → its definition.
+static ALGO_DEF_TABLE: LazyLock<[Option<&'static AlgoDefinitionV1>; 256]> = LazyLock::new(|| {
+    let mut table = [None; 256];
+    for def in &ALGO_DEFINITIONS_V1 {
+        table[def.id as usize] = Some(def);
+    }
+    table
+});
+
+/// Pre-computed per-algo default control values, keyed by `Algo as u8`.
+static ALGO_DEFAULT_VALUES: LazyLock<[[f32; 8]; 256]> = LazyLock::new(|| {
+    let mut table = [[0.0; 8]; 256];
+    for def in &ALGO_DEFINITIONS_V1 {
+        let mut slot = 0usize;
+        for ctrl in def.controls {
+            if ctrl.kind == AlgoControlKindV1::Number {
+                table[def.id as usize][slot] = ctrl.default.unwrap_or(0.0);
+                slot += 1;
+                if slot >= 8 {
+                    break;
+                }
+            }
+        }
+    }
+    table
+});
 
 pub mod bend;
 pub mod catalog;
@@ -35,7 +63,7 @@ pub use catalog::{
 
 /// Per-line render inputs passed to a voice's generator for one sample.
 #[derive(Debug, Clone, Copy)]
-pub struct LineRenderConfig<'a> {
+pub struct LineRenderConfig {
     pub primary_algo: Algo,
     pub secondary_algo: Option<Algo>,
     pub blend: f32,
@@ -48,19 +76,17 @@ pub struct LineRenderConfig<'a> {
     pub secondary_base_waveform: BaseWaveform,
     pub effective_freq: f32,
     pub sample_rate: f32,
-    pub primary_algo_controls: Option<&'a [AlgoControlValueV1]>,
-    pub secondary_algo_controls: Option<&'a [AlgoControlValueV1]>,
+    pub primary_control_values: [f32; 8],
+    pub secondary_control_values: [f32; 8],
     pub algo_param_mods: [f32; 8],
-    /// Post-warp phase modulation offset (non-zero only when pm_pre=false).
     pub pm_post_mod: f32,
 }
 
-impl<'a> LineRenderConfig<'a> {
-    /// Build a `LineRenderConfig` from line parameters, resolving algorithm and window
-    /// choices internally without exposing CZ-specific details to the caller.
+impl LineRenderConfig {
+    #[inline(always)]
     #[allow(clippy::too_many_arguments)]
     pub fn from_line(
-        line: &'a LineParams,
+        line: &LineParams,
         cycle_count: u32,
         window_phi: f32,
         phase: f32,
@@ -70,9 +96,11 @@ impl<'a> LineRenderConfig<'a> {
         sample_rate: f32,
         algo_param_mods: [f32; 8],
         pm_post_mod: f32,
+        primary_control_values: [f32; 8],
+        secondary_control_values: [f32; 8],
     ) -> Self {
-        let primary_algo_controls = line.algo_controls_a.as_deref();
-        let secondary_algo_controls = line.algo_controls_b.as_deref();
+        let primary_algo_controls = &line.algo_controls_a;
+        let secondary_algo_controls = &line.algo_controls_b;
         let primary_algo = cz101::resolve_algo(line.algo, primary_algo_controls, cycle_count);
         let secondary_algo = line
             .algo2
@@ -103,8 +131,8 @@ impl<'a> LineRenderConfig<'a> {
             secondary_base_waveform: line.base_waveform_b,
             effective_freq,
             sample_rate,
-            primary_algo_controls,
-            secondary_algo_controls,
+            primary_control_values,
+            secondary_control_values,
             algo_param_mods,
             pm_post_mod,
         }
@@ -132,7 +160,7 @@ impl AlgoRuntimeState {
     }
 
     /// Render line 1, applying any stateful algorithm behavior as needed.
-    pub fn render_line1(&mut self, config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
+    pub fn render_line1(&mut self, config: LineRenderConfig) -> (f32, Option<f32>) {
         if karpunk::requires_state_tick(config.primary_algo, config.secondary_algo) {
             self.karpunk.render_line1(config)
         } else {
@@ -141,7 +169,7 @@ impl AlgoRuntimeState {
     }
 
     /// Render line 2, applying any stateful algorithm behavior as needed.
-    pub fn render_line2(&mut self, config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
+    pub fn render_line2(&mut self, config: LineRenderConfig) -> (f32, Option<f32>) {
         if karpunk::requires_state_tick(config.primary_algo, config.secondary_algo) {
             self.karpunk.render_line2(config)
         } else {
@@ -151,7 +179,7 @@ impl AlgoRuntimeState {
 }
 
 #[inline(always)]
-fn render_line_stateless(config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
+fn render_line_stateless(config: LineRenderConfig) -> (f32, Option<f32>) {
     let sample = if let Some(secondary_algo) = config.secondary_algo {
         if config.blend <= BLEND_SHORT_CIRCUIT_EPSILON {
             render_algo_sample(
@@ -159,7 +187,7 @@ fn render_line_stateless(config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
                 config.phase,
                 config.final_dcw,
                 config.primary_base_waveform,
-                config.primary_algo_controls,
+                &config.primary_control_values,
                 config.algo_param_mods,
                 None,
                 config.pm_post_mod,
@@ -170,7 +198,7 @@ fn render_line_stateless(config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
                 config.phase,
                 config.final_dcw,
                 config.secondary_base_waveform,
-                config.secondary_algo_controls,
+                &config.secondary_control_values,
                 config.algo_param_mods,
                 None,
                 config.pm_post_mod,
@@ -183,7 +211,7 @@ fn render_line_stateless(config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
                 config.phase,
                 primary_dcw,
                 config.primary_base_waveform,
-                config.primary_algo_controls,
+                &config.primary_control_values,
                 config.algo_param_mods,
                 None,
                 config.pm_post_mod,
@@ -193,7 +221,7 @@ fn render_line_stateless(config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
                 config.phase,
                 secondary_dcw,
                 config.secondary_base_waveform,
-                config.secondary_algo_controls,
+                &config.secondary_control_values,
                 config.algo_param_mods,
                 None,
                 config.pm_post_mod,
@@ -206,7 +234,7 @@ fn render_line_stateless(config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
             config.phase,
             config.final_dcw,
             config.primary_base_waveform,
-            config.primary_algo_controls,
+            &config.primary_control_values,
             config.algo_param_mods,
             None,
             config.pm_post_mod,
@@ -224,9 +252,9 @@ fn sample_base_wave(base_waveform: BaseWaveform, phase: f32) -> f32 {
         wrap01(phase)
     };
     match base_waveform {
-        BaseWaveform::Cosine => -libm::cosf(TWO_PI * p),
-        BaseWaveform::Sine => libm::sinf(TWO_PI as f32 * p),
-        BaseWaveform::Triangle => 1.0 - 4.0 * libm::fabsf(p - 0.5),
+        BaseWaveform::Cosine => -(TWO_PI * p).cos(),
+        BaseWaveform::Sine => (TWO_PI as f32 * p).sin(),
+        BaseWaveform::Triangle => 1.0 - 4.0 * (p - 0.5).abs(),
         BaseWaveform::Saw => p * 2.0 - 1.0,
         BaseWaveform::Square => {
             if p < 0.5 {
@@ -252,11 +280,9 @@ pub(crate) fn blend_line_samples(
     }
 }
 
-/// Unified algorithm phase warp dispatcher.
+#[inline]
 fn algo_control_slot_index(algo: Algo, id: &str) -> Option<usize> {
-    let definition = ALGO_DEFINITIONS_V1
-        .iter()
-        .find(|definition| definition.id == algo)?;
+    let definition = ALGO_DEF_TABLE[algo as usize]?;
     let mut slot_index = 0usize;
     for control in definition.controls {
         if control.kind == AlgoControlKindV1::Number {
@@ -270,6 +296,20 @@ fn algo_control_slot_index(algo: Algo, id: &str) -> Option<usize> {
         }
     }
     None
+}
+
+/// Build a `[f32; 8]` from `ALGO_DEFINITIONS_V1` defaults, then apply any
+/// preset-level overrides from `algo_controls`. String lookups happen here
+/// (at config-build time) instead of inside `warp_phase` (per-sample).
+#[inline(always)]
+pub fn pre_resolve_controls(algo: Algo, controls: &AlgoControlSlots) -> [f32; 8] {
+    let mut values = ALGO_DEFAULT_VALUES[algo as usize];
+    for entry in controls.iter().flatten() {
+        if let Some(slot) = algo_control_slot_index(algo, entry.id.as_str()) {
+            values[slot] = entry.value;
+        }
+    }
+    values
 }
 
 #[inline]
@@ -295,93 +335,18 @@ fn warp_phase_with_default_controls(algo: Algo, phase: f32, amt: f32) -> Option<
     }
 }
 
-pub(crate) fn resolve_algo_control_value(
-    algo: Algo,
-    algo_controls: Option<&[AlgoControlValueV1]>,
-    id: &str,
-    fallback: f32,
-    algo_param_mods: &[f32; 8],
-) -> f32 {
-    let mut value = fallback;
-    if let Some(entries) = algo_controls {
-        if let Some(entry) = entries.iter().find(|entry| entry.id == id) {
-            value = entry.value;
-        }
-    }
-    if let Some(slot_index) = algo_control_slot_index(algo, id) {
-        value += algo_param_mods[slot_index];
-    }
-    value
-}
-
-#[inline]
-fn resolve_algo_control_values_known_slots<const N: usize>(
-    algo_controls: Option<&[AlgoControlValueV1]>,
-    ids: [&str; N],
-    fallbacks: [f32; N],
-    algo_param_mods: &[f32; 8],
-) -> [f32; N] {
-    let mut values = [0.0; N];
-    let mut slot = 0usize;
-    while slot < N {
-        values[slot] = fallbacks[slot] + algo_param_mods[slot];
-        slot += 1;
-    }
-
-    if let Some(entries) = algo_controls {
-        for entry in entries {
-            let entry_id = entry.id.as_str();
-            let mut idx = 0usize;
-            while idx < N {
-                if entry_id == ids[idx] {
-                    values[idx] = entry.value + algo_param_mods[idx];
-                    break;
-                }
-                idx += 1;
-            }
-        }
-    }
-
-    values
-}
-
-#[inline]
-fn resolve_algo_control_values_no_slot<const N: usize>(
-    algo_controls: Option<&[AlgoControlValueV1]>,
-    ids: [&str; N],
-    fallbacks: [f32; N],
-) -> [f32; N] {
-    let mut values = fallbacks;
-
-    if let Some(entries) = algo_controls {
-        for entry in entries {
-            let entry_id = entry.id.as_str();
-            let mut idx = 0usize;
-            while idx < N {
-                if entry_id == ids[idx] {
-                    values[idx] = entry.value;
-                    break;
-                }
-                idx += 1;
-            }
-        }
-    }
-
-    values
-}
-
 pub fn warp_phase(
     algo: Algo,
     phase: f32,
     amt: f32,
-    algo_controls: Option<&[AlgoControlValueV1]>,
+    control_values: &[f32; 8],
     algo_param_mods: &[f32; 8],
 ) -> f32 {
     if amt == 0.0 && !algo.is_cz_waveform() {
         return phase;
     }
 
-    if algo_controls.is_none() && algo_param_mods_are_zero(algo_param_mods) {
+    if algo_param_mods_are_zero(algo_param_mods) {
         if let Some(warped) = warp_phase_with_default_controls(algo, phase, amt) {
             return warped;
         }
@@ -408,101 +373,82 @@ pub fn warp_phase(
         }
         Algo::Cz101 => cz101::warp_phase(phase, amt),
         Algo::Bend => {
-            let [curve, bias, knee] = resolve_algo_control_values_known_slots(
-                algo_controls,
-                ["bendCurve", "bendBias", "bendKnee"],
-                [0.5, 0.5, 0.5],
-                algo_param_mods,
-            );
+            let curve = control_values[0] + algo_param_mods[0];
+            let bias = control_values[1] + algo_param_mods[1];
+            let knee = control_values[2] + algo_param_mods[2];
             bend::warp_phase(phase, amt, curve, bias, knee)
         }
         Algo::Sync => {
-            let [ratio, phase_offset, curve, window] = resolve_algo_control_values_known_slots(
-                algo_controls,
-                ["syncRatio", "syncPhase", "syncCurve", "syncWindow"],
-                [0.5, 0.0, 0.5, 0.5],
-                algo_param_mods,
-            );
+            let ratio = control_values[0] + algo_param_mods[0];
+            let phase_offset = control_values[1] + algo_param_mods[1];
+            let curve = control_values[2] + algo_param_mods[2];
+            let window = control_values[3] + algo_param_mods[3];
             sync::warp_phase(phase, amt, ratio, phase_offset, curve, window)
         }
         Algo::Pinch => {
-            let [focus, asym, curve, drive] = resolve_algo_control_values_known_slots(
-                algo_controls,
-                ["pinchFocus", "pinchAsym", "pinchCurve", "pinchDrive"],
-                [0.5, 0.0, 0.5, 0.5],
-                algo_param_mods,
-            );
+            let focus = control_values[0] + algo_param_mods[0];
+            let asym = control_values[1] + algo_param_mods[1];
+            let curve = control_values[2] + algo_param_mods[2];
+            let drive = control_values[3] + algo_param_mods[3];
             pinch::warp_phase(phase, amt, focus, asym, curve, drive)
         }
         Algo::Fold => {
-            let [stages, tilt, symmetry, softness] = resolve_algo_control_values_known_slots(
-                algo_controls,
-                ["foldStages", "foldTilt", "foldSymmetry", "foldSoftness"],
-                [0.5, 0.5, 0.5, 0.0],
-                algo_param_mods,
-            );
+            let stages = control_values[0] + algo_param_mods[0];
+            let tilt = control_values[1] + algo_param_mods[1];
+            let symmetry = control_values[2] + algo_param_mods[2];
+            let softness = control_values[3] + algo_param_mods[3];
             fold::warp_phase(phase, amt, stages, tilt, symmetry, softness)
         }
         Algo::Skew => {
-            let [bias, curve, spread, tilt] = resolve_algo_control_values_known_slots(
-                algo_controls,
-                ["skewBias", "skewCurve", "skewSpread", "skewTilt"],
-                [0.2, 0.5, 0.5, 0.5],
-                algo_param_mods,
-            );
+            let bias = control_values[0] + algo_param_mods[0];
+            let curve = control_values[1] + algo_param_mods[1];
+            let spread = control_values[2] + algo_param_mods[2];
+            let tilt = control_values[3] + algo_param_mods[3];
             skew::warp_phase(phase, amt, bias, curve, spread, tilt)
         }
         Algo::Quantize => {
-            let [amount, steps, skew] = resolve_algo_control_values_no_slot(
-                algo_controls,
-                ["quantizeAmount", "quantizeSteps", "quantizeSkew"],
-                [amt, 0.5, 0.5],
-            );
-            quantize::warp_phase(phase, amount, steps, skew)
+            let amount_mod = control_values[0] + algo_param_mods[0];
+            let amount = if amount_mod == 0.0 { amt } else { amount_mod };
+            quantize::warp_phase(
+                phase,
+                amount,
+                control_values[1] + algo_param_mods[1],
+                control_values[2] + algo_param_mods[2],
+            )
         }
         Algo::Twist => {
-            let [harmonics, depth, phase_offset, shape] = resolve_algo_control_values_known_slots(
-                algo_controls,
-                ["twistHarmonics", "twistDepth", "twistPhase", "twistShape"],
-                [0.5, 0.5, 0.0, 0.5],
-                algo_param_mods,
-            );
+            let harmonics = control_values[0] + algo_param_mods[0];
+            let depth = control_values[1] + algo_param_mods[1];
+            let phase_offset = control_values[2] + algo_param_mods[2];
+            let shape = control_values[3] + algo_param_mods[3];
             twist::warp_phase(phase, amt, harmonics, depth, phase_offset, shape)
         }
         Algo::Clip => {
-            let [drive, shape, bias, soft] = resolve_algo_control_values_known_slots(
-                algo_controls,
-                ["clipDrive", "clipShape", "clipBias", "clipSoft"],
-                [0.5, 0.5, 0.5, 0.0],
-                algo_param_mods,
-            );
+            let drive = control_values[0] + algo_param_mods[0];
+            let shape = control_values[1] + algo_param_mods[1];
+            let bias = control_values[2] + algo_param_mods[2];
+            let soft = control_values[3] + algo_param_mods[3];
             clip::warp_phase(phase, amt, drive, shape, bias, soft)
         }
         Algo::Ripple => {
-            let [freq, depth, phase_offset, shape] = resolve_algo_control_values_known_slots(
-                algo_controls,
-                ["rippleFreq", "rippleDepth", "ripplePhase", "rippleShape"],
-                [0.5, 0.5, 0.0, 0.5],
-                algo_param_mods,
-            );
+            let freq = control_values[0] + algo_param_mods[0];
+            let depth = control_values[1] + algo_param_mods[1];
+            let phase_offset = control_values[2] + algo_param_mods[2];
+            let shape = control_values[3] + algo_param_mods[3];
             ripple::warp_phase(phase, amt, freq, depth, phase_offset, shape)
         }
         Algo::Mirror => {
-            let [center, blend, clip, skew] = resolve_algo_control_values_known_slots(
-                algo_controls,
-                ["mirrorCenter", "mirrorBlend", "mirrorClip", "mirrorSkew"],
-                [0.5, 0.5, 0.0, 0.5],
-                algo_param_mods,
-            );
+            let center = control_values[0] + algo_param_mods[0];
+            let blend = control_values[1] + algo_param_mods[1];
+            let clip = control_values[2] + algo_param_mods[2];
+            let skew = control_values[3] + algo_param_mods[3];
             mirror::warp_phase(phase, amt, center, blend, clip, skew)
         }
         Algo::Fof => {
-            let [ratio, tightness, offset, skew] = resolve_algo_control_values_known_slots(
-                algo_controls,
-                ["fofRatio", "fofTightness", "fofOffset", "fofSkew"],
-                [0.5, 0.5, 0.5, 0.5],
-                algo_param_mods,
-            );
+            let ratio = control_values[0] + algo_param_mods[0];
+            let tightness = control_values[1] + algo_param_mods[1];
+            let offset = control_values[2] + algo_param_mods[2];
+            let skew = control_values[3] + algo_param_mods[3];
             fof::warp_phase(phase, amt, ratio, tightness, offset, skew)
         }
         Algo::Sine => sine::warp_phase(phase, amt),
@@ -510,26 +456,26 @@ pub fn warp_phase(
         Algo::Terrain => terrain::warp_phase(
             phase,
             amt,
-            resolve_algo_control_value(algo, algo_controls, "terrainRatio", 2.0, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "terrainDepth", 0.5, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "terrainFmPhase", 0.0, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "terrainShape", 0.0, algo_param_mods),
+            control_values[0] + algo_param_mods[0],
+            control_values[1] + algo_param_mods[1],
+            control_values[2] + algo_param_mods[2],
+            control_values[3] + algo_param_mods[3],
         ),
         Algo::Stutter => stutter::warp_phase(
             phase,
             amt,
-            resolve_algo_control_value(algo, algo_controls, "stutterSegs", 0.25, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "stutterReverse", 1.0, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "stutterSlip", 0.0, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "stutterSpacing", 0.0, algo_param_mods),
+            control_values[0] + algo_param_mods[0],
+            control_values[1] + algo_param_mods[1],
+            control_values[2] + algo_param_mods[2],
+            control_values[3] + algo_param_mods[3],
         ),
         Algo::Cheby => cheby::warp_phase(
             phase,
             amt,
-            resolve_algo_control_value(algo, algo_controls, "chebyOrder", 0.2, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "chebyTilt", 0.0, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "chebyWarp", 0.0, algo_param_mods),
-            resolve_algo_control_value(algo, algo_controls, "chebyMix", 1.0, algo_param_mods),
+            control_values[0] + algo_param_mods[0],
+            control_values[1] + algo_param_mods[1],
+            control_values[2] + algo_param_mods[2],
+            control_values[3] + algo_param_mods[3],
         ),
     }
 }
@@ -548,7 +494,7 @@ pub fn render_algo_sample(
     phase: f32,
     dcw: f32,
     base_waveform: BaseWaveform,
-    algo_controls: Option<&[AlgoControlValueV1]>,
+    control_values: &[f32; 8],
     algo_param_mods: [f32; 8],
     runtime_sample: Option<f32>,
     pm_post_mod: f32,
@@ -559,7 +505,7 @@ pub fn render_algo_sample(
     if let Some(sample) = render_direct_algo_sample(algo) {
         return sample;
     }
-    let warped = warp_phase(algo, phase, dcw, algo_controls, &algo_param_mods);
+    let warped = warp_phase(algo, phase, dcw, control_values, &algo_param_mods);
     sample_base_wave(base_waveform, warped + pm_post_mod)
 }
 
@@ -584,8 +530,8 @@ mod tests {
             secondary_base_waveform: BaseWaveform::Cosine,
             effective_freq: 220.0,
             sample_rate: 44100.0,
-            primary_algo_controls: None,
-            secondary_algo_controls: None,
+            primary_control_values: [0.5, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0],
+            secondary_control_values: [0.0f32; 8],
             algo_param_mods: [0.0; 8],
             pm_post_mod: 0.0,
         };

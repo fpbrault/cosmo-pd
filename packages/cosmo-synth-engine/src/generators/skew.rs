@@ -1,4 +1,5 @@
 use super::{AlgoControlKindV1, AlgoControlV1, AlgoDefinitionV1, NO_CONTROL_OPTIONS};
+use crate::dsp_utils::pow01;
 use crate::params::{Algo, EngineParamReadoutFormatV1};
 
 const CONTROLS: [AlgoControlV1; 4] = [
@@ -76,9 +77,9 @@ pub fn warp_phase(phase: f32, amt: f32, bias: f32, curve: f32, spread: f32, tilt
     let left_span = 0.675 + spread * 0.325;
     let right_span = 0.675 - spread * 0.325;
     let target = if phase < bp {
-        left_span * (phase * inv_bp).clamp(0.0, 1.0).powf(left_exp)
+        left_span * pow01((phase * inv_bp).clamp(0.0, 1.0), left_exp)
     } else {
-        left_span + right_span * ((phase - bp) * inv_right).clamp(0.0, 1.0).powf(right_exp)
+        left_span + right_span * pow01(((phase - bp) * inv_right).clamp(0.0, 1.0), right_exp)
     };
     phase + (target - phase) * amt
 }

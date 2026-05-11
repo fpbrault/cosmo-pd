@@ -1,5 +1,3 @@
-use libm::{floorf, sinf};
-
 use super::delay_line::DelayLine;
 
 const GRAIN_COUNT: usize = 4;
@@ -40,7 +38,7 @@ pub struct GrainDelayFx {
 
 impl GrainDelayFx {
     pub fn new(sr: f32) -> Self {
-        let buf_len = libm::roundf(2.0 * sr) as usize;
+        let buf_len = (2.0 * sr).round() as usize;
         Self {
             delay_line: DelayLine::new(buf_len),
             time: 0.25,
@@ -124,8 +122,8 @@ impl GrainDelayFx {
 
 fn hash_signed(index: u32) -> f32 {
     let seed = index as f32 * 12.9898 + 78.233;
-    let hash = sinf(seed) * 43_758.547;
-    let fract = hash - floorf(hash);
+    let hash = (seed).sin() * 43_758.547;
+    let fract = hash - (hash).floor();
     fract * 2.0 - 1.0
 }
 

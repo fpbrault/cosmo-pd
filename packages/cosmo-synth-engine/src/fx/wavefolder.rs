@@ -1,5 +1,3 @@
-use libm::{cosf, sinf};
-
 // ---------------------------------------------------------------------------
 // WavefolderFx — waveshaping / folding
 // ---------------------------------------------------------------------------
@@ -45,7 +43,7 @@ impl WavefolderFx {
         let normalized = wet / gain.max(1.0);
 
         let mix_angle = self.mix * core::f32::consts::PI * 0.5;
-        sample * cosf(mix_angle) + normalized * sinf(mix_angle)
+        sample * (mix_angle).cos() + normalized * (mix_angle).sin()
     }
 }
 
@@ -56,7 +54,7 @@ fn fold(mut x: f32, threshold: f32) -> f32 {
     }
     let mut iterations = 0;
     loop {
-        if libm::fabsf(x) <= threshold {
+        if (x).abs() <= threshold {
             break;
         }
         if x > threshold {

@@ -1,5 +1,3 @@
-use libm::fabsf;
-
 use super::delay_line::DelayLine;
 
 const SMOOTH_COEFF: f32 = 0.005;
@@ -49,8 +47,8 @@ impl FdnReverb {
         let lines: [DelayLine; FDN_N] = core::array::from_fn(|i| {
             DelayLine::new(base_lengths[i] as usize + FDN_MAX_MOD as usize + 2)
         });
-        let pre_line = DelayLine::new(libm::roundf(0.1 * sr) as usize + 2);
-        let er_line = DelayLine::new(libm::roundf(0.08 * sr) as usize + 2);
+        let pre_line = DelayLine::new((0.1 * sr).round() as usize + 2);
+        let er_line = DelayLine::new((0.08 * sr).round() as usize + 2);
         let er_tap_samples: [f32; ER_N] =
             core::array::from_fn(|i| (ER_TAP_DELAYS_S[i] * sr).max(1.0));
 
@@ -104,7 +102,7 @@ impl FdnReverb {
                 self.lfo_phases[i] -= 1.0;
             }
             // ECO quality mode: triangle LFO avoids per-sample sinf cost.
-            let tri_lfo = 1.0 - 4.0 * fabsf(self.lfo_phases[i] - 0.5);
+            let tri_lfo = 1.0 - 4.0 * (self.lfo_phases[i] - 0.5).abs();
             let read_pos = (self.base_lengths[i] + tri_lfo * lfo_depth).max(1.0);
             *sample = self.lines[i].read_at_fractional(read_pos);
         }

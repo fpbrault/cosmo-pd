@@ -112,7 +112,7 @@ pub fn warp_phase(
     softness: f32,
 ) -> f32 {
     let fold_drive = (0.5 + stages * 5.5) * amt.max(0.05);
-    let fold_floor = libm::floorf(fold_drive).max(0.0);
+    let fold_floor = (fold_drive).floor().max(0.0);
     let fold_frac = smoothstep01(fold_drive - fold_floor);
 
     // Keep at least one pass; blend toward the next pass smoothly to avoid

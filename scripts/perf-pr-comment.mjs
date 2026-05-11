@@ -55,11 +55,12 @@ function renderSection(title, body) {
 		return `### ${title}\nUnavailable.`;
 	}
 
-	if (trimmed.startsWith("Comparing ")) {
-		return `### ${title}\n\n\`\`\`text\n${trimmed}\n\`\`\``;
+	let normalized = trimmed;
+	if (normalized.includes("\\n")) {
+		normalized = normalized.replaceAll("\\n", "\n");
 	}
 
-	return `### ${title}\n${trimmed}`;
+	return `### ${title}\n\n${normalized}`;
 }
 
 const options = parseArgs(process.argv.slice(2));
@@ -70,7 +71,7 @@ const [engineCompare, uiCompare] = await Promise.all([
 
 const markdown = [
 	COMMENT_MARKER,
-	`## Performance Benchmarks vs \`${options.baseRef}\``,
+	`## Engine Benchmarks vs ${options.baseRef}`,
 	"",
 	`Web UI presets: \`${DEFAULT_HEAVY_PRESET_NAMES.join("`, `")}\``,
 	"",

@@ -267,7 +267,13 @@ jobs:
         if: steps.filter.outputs.engine == 'true'
         uses: dtolnay/rust-toolchain@nightly
 
-      - name: Benchmark target branch
+      - name: Setup Bun
+        if: steps.filter.outputs.engine == 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Benchmark target branch (JSON)
         if: steps.filter.outputs.engine == 'true'
         run: |
           mkdir -p target/perf/engine
@@ -277,41 +283,88 @@ jobs:
           rm -rf "$base_dir"
           git worktree add --detach "$base_dir" "origin/$base_ref"
           cd "$base_dir"
-          cargo bench -p cosmo-synth-engine --bench render-bench -- --nocapture | tee "$GITHUB_WORKSPACE/target/perf/engine/base-bench.txt"
+          cargo run -p cosmo-synth-engine --release --bin render-bench -- --all --json > "$GITHUB_WORKSPACE/target/perf/engine/base-report.json"
         shell: bash
 
-      - name: Seed baseline from target branch
-        if: steps.filter.outputs.engine == 'true'
-        uses: benchmark-action/github-action-benchmark@v1
-        with:
-          name: cosmo-synth-engine
-          tool: cargo
-          output-file-path: target/perf/engine/base-bench.txt
-          external-data-json-path: target/perf/engine/baseline.json
-          save-data-file: true
-          fail-on-alert: false
-
-      - name: Benchmark pull request head
+      - name: Benchmark pull request head (JSON)
         if: steps.filter.outputs.engine == 'true'
         run: |
-          cargo bench -p cosmo-synth-engine --bench render-bench -- --nocapture | tee target/perf/engine/pr-bench.txt
+          cargo run -p cosmo-synth-engine --release --bin render-bench -- --all --json > target/perf/engine/pr-report.json
         shell: bash
 
       - name: Compare PR against target branch
+        id: compare_engine
         if: steps.filter.outputs.engine == 'true'
-        uses: benchmark-action/github-action-benchmark@v1
+        continue-on-error: true
+        run: |
+          bun run ./scripts/perf-engine-compare.mjs \
+            target/perf/engine/base-report.json \
+            target/perf/engine/pr-report.json \
+            --markdown-out target/perf/engine/engine-compare.md \
+            --fail-on-regressions
+        shell: bash
+
+      - name: Generate benchmark comment body
+        if: steps.filter.outputs.engine == 'true'
+        run: |
+          bun run ./scripts/perf-pr-comment.mjs \
+            --engine-compare target/perf/engine/engine-compare.md \
+            --out target/perf/engine/pr-comment.md \
+            --base-ref "${{ github.base_ref }}"
+        shell: bash
+
+      - name: Upsert PR benchmark comment
+        if: steps.filter.outputs.engine == 'true'
+        uses: actions/github-script@v8
         with:
-          name: cosmo-synth-engine
-          tool: cargo
-          output-file-path: target/perf/engine/pr-bench.txt
-          external-data-json-path: target/perf/engine/baseline.json
-          save-data-file: false
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          comment-on-alert: true
-          fail-on-alert: true
-          comment-always: true
-          summary-always: true
-          alert-threshold: 108%
+          script: |
+            const fs = require("node:fs");
+
+            const marker = "<!-- perf-benchmark-comment -->";
+            const body = fs.readFileSync("target/perf/engine/pr-comment.md", "utf8");
+            const issueNumber = context.payload.pull_request?.number;
+
+            if (!issueNumber) {
+              core.info("No pull_request context found; skipping benchmark PR comment.");
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: issueNumber,
+              per_page: 100,
+            });
+
+            const existing = comments.find((comment) =>
+              comment.body?.includes(marker),
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+              core.info(`Updated benchmark PR comment: ${existing.id}`);
+            } else {
+              const created = await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                body,
+              });
+              core.info(`Created benchmark PR comment: ${created.data.id}`);
+            }
+
+      - name: Fail on benchmark regressions
+        if: steps.filter.outputs.engine == 'true' && steps.compare_engine.outcome == 'failure'
+        run: |
+          echo "Performance regression threshold exceeded."
+          exit 1
+        shell: bash
 
       - name: Upload benchmark artifact
         if: steps.filter.outputs.engine == 'true'
@@ -319,9 +372,10 @@ jobs:
         with:
           name: engine-benchmark
           path: |
-            target/perf/engine/base-bench.txt
-            target/perf/engine/pr-bench.txt
-            target/perf/engine/baseline.json
+            target/perf/engine/base-report.json
+            target/perf/engine/pr-report.json
+            target/perf/engine/engine-compare.md
+            target/perf/engine/pr-comment.md
 
   build-plugins:
     name: Build plugins (${{ matrix.platform }})

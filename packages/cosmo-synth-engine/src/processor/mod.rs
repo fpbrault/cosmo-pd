@@ -17,7 +17,8 @@ use crate::dsp_utils::random_hold_value;
 use crate::envelope::{normalize_synth_params_envelopes_to_raw_if_human, EnvelopeTimingCache};
 use crate::fx::FxChain;
 use crate::module_presets;
-use crate::params::{FxSlotConfig, FxSlotType, SynthParams, NUM_VOICES};
+use crate::params::{FxSlotConfig, FxSlotType, LineParams, SynthParams, NUM_VOICES};
+use crate::simd::{detect_simd_backend, SimdBackend};
 use crate::voice::Voice;
 
 use self::state::CzDacColor;
@@ -46,10 +47,13 @@ pub struct CosmoProcessor {
     pub mod_wheel: f32,
     pub aftertouch: f32,
     pub last_runtime_mod_sources: RuntimeModSources,
+    pub simd_backend: SimdBackend,
     #[allow(dead_code)]
     fx_eco_toggle: bool,
     #[allow(dead_code)]
     fx_last_out: f32,
+    line1_scratch: LineParams,
+    line2_scratch: LineParams,
     envelope_timing: EnvelopeTimingCache,
 }
 
@@ -74,8 +78,11 @@ impl CosmoProcessor {
             mod_wheel: 0.0,
             aftertouch: 0.0,
             last_runtime_mod_sources: RuntimeModSources::default(),
+            simd_backend: detect_simd_backend(),
             fx_eco_toggle: false,
             fx_last_out: 0.0,
+            line1_scratch: LineParams::default(),
+            line2_scratch: LineParams::default(),
             envelope_timing: EnvelopeTimingCache::new(sample_rate),
         };
         proc.update_fx();
@@ -174,6 +181,8 @@ impl CosmoProcessor {
 
     /// Swap in a pre-normalized shared parameter snapshot without cloning.
     pub fn set_shared_params(&mut self, params: Arc<SynthParams>) {
+        self.line1_scratch = params.line1;
+        self.line2_scratch = params.line2;
         self.params = params;
         self.update_fx();
     }
@@ -208,6 +217,9 @@ impl CosmoProcessor {
         self.mod_wheel = 0.0;
         self.aftertouch = 0.0;
         self.last_runtime_mod_sources = RuntimeModSources::default();
+        self.simd_backend = detect_simd_backend();
+        self.line1_scratch = self.params.line1;
+        self.line2_scratch = self.params.line2;
         self.envelope_timing = EnvelopeTimingCache::new(self.sample_rate);
     }
 
@@ -252,7 +264,11 @@ impl CosmoProcessor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::params::{ModDestination, ModRoute, ModSource, PolyMode};
+    use crate::envelope_map::{human_level_to_raw, human_rate_to_raw, EnvelopeKind};
+    use crate::params::{
+        DelayParams, EnvStep, FxSlotConfig, LineSelect, ModDestination, ModRoute, ModSource,
+        PolyMode, ShimmerVerbParams, StepEnvData, VibratoParams,
+    };
 
     fn active_voice_indices_for_note(proc: &CosmoProcessor, note: u8) -> Vec<usize> {
         proc.voices
@@ -383,6 +399,50 @@ mod tests {
     }
 
     #[test]
+    fn one_shot_envelope_voice_auto_releases_without_note_off() {
+        fn dca_step(level: u8, rate: u8) -> EnvStep {
+            EnvStep {
+                level: human_level_to_raw(EnvelopeKind::Dca, level),
+                rate: human_rate_to_raw(EnvelopeKind::Dca, rate),
+                level_norm: level as f32 / 99.0,
+            }
+        }
+
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().line_select = LineSelect::L1;
+        proc.params_mut().line1.dca_env = StepEnvData {
+            steps: [
+                dca_step(99, 99),
+                dca_step(0, 99),
+                dca_step(0, 99),
+                dca_step(0, 99),
+                dca_step(0, 99),
+                dca_step(0, 99),
+                dca_step(0, 99),
+                dca_step(0, 99),
+            ],
+            sustain_step: 1,
+            step_count: 2,
+            loop_: false,
+        };
+
+        let note = 60_u8;
+        let freq = utils::midi_note_to_freq(note);
+        proc.note_on(note, freq, 1.0);
+
+        let mut scratch = [0.0_f32; 128];
+        for _ in 0..128 {
+            proc.process(&mut scratch);
+        }
+
+        let still_active = proc.voices.iter().any(|voice| !voice.is_silent);
+        assert!(
+            !still_active,
+            "one-shot voice should auto-release at envelope end"
+        );
+    }
+
+    #[test]
     fn note_storage_remains_bounded_after_repeated_retriggers() {
         let mut proc = CosmoProcessor::new(48_000.0);
         proc.params_mut().poly_mode = PolyMode::Mono;
@@ -403,14 +463,153 @@ mod tests {
     }
 
     #[test]
+    fn mini_keyboard_drag_note_switch_keeps_peak_delta_bounded() {
+        fn dca_step(level: u8, rate: u8) -> EnvStep {
+            EnvStep {
+                level: human_level_to_raw(EnvelopeKind::Dca, level),
+                rate: human_rate_to_raw(EnvelopeKind::Dca, rate),
+                level_norm: level as f32 / 99.0,
+            }
+        }
+
+        fn dcw_step(level: u8, rate: u8) -> EnvStep {
+            EnvStep {
+                level: human_level_to_raw(EnvelopeKind::Dcw, level),
+                rate: human_rate_to_raw(EnvelopeKind::Dcw, rate),
+                level_norm: level as f32 / 99.0,
+            }
+        }
+
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().line_select = LineSelect::L2;
+        proc.params_mut().line2.key_follow = 2.0;
+        proc.params_mut().line2.dca_env = StepEnvData {
+            steps: [
+                dca_step(99, 99),
+                dca_step(99, 99),
+                dca_step(99, 99),
+                dca_step(99, 99),
+                dca_step(99, 99),
+                dca_step(99, 99),
+                dca_step(99, 99),
+                dca_step(99, 99),
+            ],
+            sustain_step: 0,
+            step_count: 2,
+            loop_: false,
+        };
+        proc.params_mut().line2.dcw_env = StepEnvData {
+            steps: [
+                dcw_step(80, 99),
+                dcw_step(80, 99),
+                dcw_step(80, 99),
+                dcw_step(80, 99),
+                dcw_step(80, 99),
+                dcw_step(80, 99),
+                dcw_step(80, 99),
+                dcw_step(80, 99),
+            ],
+            sustain_step: 0,
+            step_count: 2,
+            loop_: false,
+        };
+
+        proc.params_mut().portamento.enabled = true;
+        proc.params_mut().portamento.time = 0.1;
+        proc.params_mut().fx_slots = [
+            FxSlotConfig::Vibrato(VibratoParams {
+                enabled: true,
+                waveform: 1,
+                rate: 40.0,
+                depth: 5.895899,
+                delay: 600.0,
+            }),
+            FxSlotConfig::Empty,
+            FxSlotConfig::Empty,
+            FxSlotConfig::Empty,
+            FxSlotConfig::Delay(DelayParams {
+                enabled: true,
+                time: 0.5151404,
+                feedback: 0.46,
+                mix: 0.34496948,
+                tape_mode: true,
+                warmth: 0.72,
+            }),
+            FxSlotConfig::ShimmerVerb(ShimmerVerbParams {
+                enabled: true,
+                shimmer: 0.85,
+                space: 0.95,
+                mix: 0.1144397,
+            }),
+        ];
+        proc.update_fx();
+
+        let mut peak_delta = 0.0_f32;
+        let mut peak_curvature = 0.0_f32;
+        let mut prev = 0.0_f32;
+        let mut prev_delta = 0.0_f32;
+        let mut block = [0.0_f32; 1];
+
+        let mut current_note = 60_u8;
+        proc.note_on(current_note, utils::midi_note_to_freq(current_note), 1.0);
+        for _ in 0..32 {
+            proc.process(&mut block);
+            let delta = block[0] - prev;
+            peak_delta = peak_delta.max((delta).abs());
+            peak_curvature = peak_curvature.max((delta - prev_delta).abs());
+            prev_delta = delta;
+            prev = block[0];
+        }
+
+        for step in 0..192 {
+            let next_note = 48 + (step % 24) as u8;
+            if next_note != current_note {
+                // Mirror mini-keyboard drag behavior: release old note and
+                // trigger the new one in immediate succession.
+                proc.note_off(current_note);
+                proc.note_on(next_note, utils::midi_note_to_freq(next_note), 1.0);
+                current_note = next_note;
+            }
+
+            proc.process(&mut block);
+            let delta = block[0] - prev;
+            peak_delta = peak_delta.max((delta).abs());
+            peak_curvature = peak_curvature.max((delta - prev_delta).abs());
+            prev_delta = delta;
+            prev = block[0];
+        }
+
+        proc.note_off(current_note);
+        for _ in 0..64 {
+            proc.process(&mut block);
+            let delta = block[0] - prev;
+            peak_delta = peak_delta.max((delta).abs());
+            peak_curvature = peak_curvature.max((delta - prev_delta).abs());
+            prev_delta = delta;
+            prev = block[0];
+        }
+
+        assert!(peak_delta.is_finite());
+        assert!(peak_curvature.is_finite());
+        assert!(
+            peak_delta < 0.02,
+            "mini-keyboard drag transient too sharp (peak delta = {peak_delta})"
+        );
+        assert!(
+            peak_curvature < 0.03,
+            "mini-keyboard drag click-like curvature too high (peak curvature = {peak_curvature})"
+        );
+    }
+
+    #[test]
     fn cz_dac_color_output_is_finite_and_bounded() {
         let mut color = CzDacColor::new();
         for n in 0..4096 {
-            let input = libm::sinf(n as f32 * 0.013) * 1.25;
+            let input = (n as f32 * 0.013).sin() * 1.25;
             let out = color.process(input, 48_000.0);
             assert!(out.is_finite(), "colored sample should be finite");
             assert!(
-                libm::fabsf(out) <= 1.2,
+                (out).abs() <= 1.2,
                 "colored sample should stay within stage bounds",
             );
         }
@@ -428,7 +627,7 @@ mod tests {
 
         let steady_out = steady.process(0.12, 48_000.0);
         let transient_out = transient.process(0.78, 48_000.0);
-        let delta = libm::fabsf(transient_out - steady_out);
+        let delta = (transient_out - steady_out).abs();
 
         assert!(
             delta > 0.1,

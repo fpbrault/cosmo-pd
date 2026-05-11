@@ -5,6 +5,7 @@ fn step(kind: EnvelopeKind, level: u8, rate: u8) -> EnvStep {
     EnvStep {
         level: human_level_to_raw(kind, level),
         rate: human_rate_to_raw(kind, rate),
+        level_norm: level as f32 * (1.0 / 99.0),
     }
 }
 

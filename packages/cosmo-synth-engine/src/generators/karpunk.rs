@@ -96,12 +96,12 @@ impl KarpunkPair {
     }
 
     /// Render line 1 using the first Karpunk state buffer when needed.
-    pub fn render_line1(&mut self, config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
+    pub fn render_line1(&mut self, config: LineRenderConfig) -> (f32, Option<f32>) {
         render_line(&mut self.line1, config)
     }
 
     /// Render line 2 using the second Karpunk state buffer when needed.
-    pub fn render_line2(&mut self, config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
+    pub fn render_line2(&mut self, config: LineRenderConfig) -> (f32, Option<f32>) {
         render_line(&mut self.line2, config)
     }
 }
@@ -159,7 +159,7 @@ impl KarpunkState {
         } else {
             220.0
         };
-        let ks_size = (libm::roundf(sample_rate / safe_freq) as usize).clamp(2, KS_BUFFER_SIZE - 1);
+        let ks_size = ((sample_rate / safe_freq).round() as usize).clamp(2, KS_BUFFER_SIZE - 1);
         let read_pos = (self.write_pos + KS_BUFFER_SIZE - ks_size) % KS_BUFFER_SIZE;
         let out = self.buffer[read_pos];
         let damp = (0.2 + dcw * 0.45 + damp_control.clamp(0.0, 1.0) * 0.35).clamp(0.0, 1.0);
@@ -183,26 +183,16 @@ impl Default for KarpunkState {
     }
 }
 
-fn render_line(ks_state: &mut KarpunkState, config: LineRenderConfig<'_>) -> (f32, Option<f32>) {
-    let control_value = |id: &str, default: f32| {
-        super::resolve_algo_control_value(
-            config.primary_algo,
-            config.primary_algo_controls,
-            id,
-            default,
-            &config.algo_param_mods,
-        )
-    };
-
+fn render_line(ks_state: &mut KarpunkState, config: LineRenderConfig) -> (f32, Option<f32>) {
     let ks_raw = if requires_state_tick(config.primary_algo, config.secondary_algo) {
         Some(ks_state.advance(
             config.effective_freq,
             config.sample_rate,
             config.final_dcw,
-            control_value("karpunkDamp", 0.5),
-            control_value("karpunkBright", 0.5),
-            control_value("karpunkDecay", 0.5),
-            control_value("karpunkExcite", 0.0),
+            config.primary_control_values[0] + config.algo_param_mods[0],
+            config.primary_control_values[1] + config.algo_param_mods[1],
+            config.primary_control_values[2] + config.algo_param_mods[2],
+            config.primary_control_values[3] + config.algo_param_mods[3],
         ))
     } else {
         None
@@ -216,7 +206,7 @@ fn render_line(ks_state: &mut KarpunkState, config: LineRenderConfig<'_>) -> (f3
             config.phase,
             primary_dcw,
             config.primary_base_waveform,
-            config.primary_algo_controls,
+            &config.primary_control_values,
             config.algo_param_mods,
             ks_raw,
             config.pm_post_mod,
@@ -226,7 +216,7 @@ fn render_line(ks_state: &mut KarpunkState, config: LineRenderConfig<'_>) -> (f3
             config.phase,
             secondary_dcw,
             config.secondary_base_waveform,
-            config.secondary_algo_controls,
+            &config.secondary_control_values,
             config.algo_param_mods,
             ks_raw,
             config.pm_post_mod,
@@ -238,7 +228,7 @@ fn render_line(ks_state: &mut KarpunkState, config: LineRenderConfig<'_>) -> (f3
             config.phase,
             config.final_dcw,
             config.primary_base_waveform,
-            config.primary_algo_controls,
+            &config.primary_control_values,
             config.algo_param_mods,
             ks_raw,
             config.pm_post_mod,

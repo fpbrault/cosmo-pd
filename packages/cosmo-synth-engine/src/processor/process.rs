@@ -1,11 +1,24 @@
+#[cfg(feature = "std")]
+use std::sync::Arc;
+
+#[cfg(not(feature = "std"))]
+use alloc::sync::Arc;
+
 use crate::dsp_utils::{lfo_output_with_symmetry, random_hold_value};
-use crate::generators::PER_LINE_HEADROOM;
-use crate::params::{ModDestination, NUM_VOICES};
-use crate::voice::{mod_value_for, ModSources};
+use crate::generators::{pre_resolve_controls, PER_LINE_HEADROOM};
+use crate::params::{ModDestination, ModMatrixCache, NUM_VOICES};
+use crate::voice::modulated_line_params;
+use crate::voice::ModSources;
 
 use super::state::RuntimeModSources;
 use super::utils::soft_clip_tanh;
 use super::CosmoProcessor;
+
+#[cfg(all(feature = "no_denormals", not(target_arch = "wasm32")))]
+use no_denormals::no_denormals;
+
+#[cfg(all(debug_assertions, feature = "std"))]
+use assert_no_alloc::assert_no_alloc;
 
 const SOFT_CLIP_DRIVE: f32 = 1.0;
 const REFERENCE_LINE_HEADROOM: f32 = 0.75;
@@ -15,8 +28,34 @@ const ENABLE_CZ_DAC_COLOR: bool = false;
 
 impl CosmoProcessor {
     /// Fill `output` with mono samples.
+    ///
+    /// On `std` builds, denormals are suppressed for the duration of this
+    /// call to prevent the ~100x CPU stalls that subnormal floats cause in
+    /// IIR filters and feedback delay paths. The FTZ/DAZ CPU flags are
+    /// restored on exit.
+    #[cfg_attr(feature = "rtsan", rtsan_standalone::nonblocking)]
     pub fn process(&mut self, output: &mut [f32]) {
-        let p = &self.params;
+        #[cfg(all(debug_assertions, feature = "std"))]
+        {
+            assert_no_alloc(|| self.process_with_denormal_guard(output));
+            return;
+        }
+
+        #[cfg(not(all(debug_assertions, feature = "std")))]
+        self.process_with_denormal_guard(output);
+    }
+
+    fn process_with_denormal_guard(&mut self, output: &mut [f32]) {
+        #[cfg(all(feature = "no_denormals", not(target_arch = "wasm32")))]
+        no_denormals(|| self.process_inner(output));
+
+        #[cfg(not(all(feature = "no_denormals", not(target_arch = "wasm32"))))]
+        self.process_inner(output);
+    }
+
+    fn process_inner(&mut self, output: &mut [f32]) {
+        let params = Arc::clone(&self.params);
+        let p = params.as_ref();
         let volume = p.volume;
         let base_lfo1_rate = p.lfo.rate;
         let lfo1_waveform = p.lfo.waveform;
@@ -31,14 +70,31 @@ impl CosmoProcessor {
         let base_random_rate = p.random.rate;
         let sr = self.sample_rate;
         let headroom_ratio = REFERENCE_LINE_HEADROOM / PER_LINE_HEADROOM.max(0.01);
-        let headroom_makeup =
-            libm::powf(headroom_ratio, HEADROOM_MAKEUP_EXPONENT).clamp(1.0, MAX_HEADROOM_MAKEUP);
-        let norm = volume * headroom_makeup / libm::sqrtf(NUM_VOICES as f32);
+        let headroom_makeup = (headroom_ratio)
+            .powf(HEADROOM_MAKEUP_EXPONENT)
+            .clamp(1.0, MAX_HEADROOM_MAKEUP);
+        let norm = volume * headroom_makeup / (NUM_VOICES as f32).sqrt();
         let matrix = &p.mod_matrix;
 
         let mut prev_lfo1 = self.last_runtime_mod_sources.lfo1;
         let mut prev_lfo2 = self.last_runtime_mod_sources.lfo2;
         let mut prev_random = self.last_runtime_mod_sources.random;
+
+        let mut mod_cache = ModMatrixCache::new();
+        mod_cache.rebuild_routes(matrix);
+
+        let l1_ctrl_p = pre_resolve_controls(p.line1.algo, &p.line1.algo_controls_a);
+        let l1_ctrl_s = p
+            .line1
+            .algo2
+            .map(|a| pre_resolve_controls(a, &p.line1.algo_controls_b))
+            .unwrap_or([0.0; 8]);
+        let l2_ctrl_p = pre_resolve_controls(p.line2.algo, &p.line2.algo_controls_a);
+        let l2_ctrl_s = p
+            .line2
+            .algo2
+            .map(|a| pre_resolve_controls(a, &p.line2.algo_controls_b))
+            .unwrap_or([0.0; 8]);
 
         for sample_out in output.iter_mut() {
             let (source_mod_env, source_velocity) = self
@@ -59,18 +115,19 @@ impl CosmoProcessor {
                 self.aftertouch,
             );
 
-            let lfo1_rate_mod = mod_value_for(ModDestination::Lfo1Rate, matrix, &pre_sources);
-            let lfo1_depth_mod = mod_value_for(ModDestination::Lfo1Depth, matrix, &pre_sources);
-            let lfo1_symmetry_mod =
-                mod_value_for(ModDestination::Lfo1Symmetry, matrix, &pre_sources);
-            let lfo1_offset_mod = mod_value_for(ModDestination::Lfo1Offset, matrix, &pre_sources);
+            mod_cache.compute(&pre_sources);
 
-            let lfo2_rate_mod = mod_value_for(ModDestination::Lfo2Rate, matrix, &pre_sources);
-            let lfo2_depth_mod = mod_value_for(ModDestination::Lfo2Depth, matrix, &pre_sources);
-            let lfo2_symmetry_mod =
-                mod_value_for(ModDestination::Lfo2Symmetry, matrix, &pre_sources);
-            let lfo2_offset_mod = mod_value_for(ModDestination::Lfo2Offset, matrix, &pre_sources);
-            let random_rate_mod = mod_value_for(ModDestination::RandomRate, matrix, &pre_sources);
+            let lfo1_rate_mod = mod_cache.get(ModDestination::Lfo1Rate, &pre_sources);
+            let lfo1_depth_mod = mod_cache.get(ModDestination::Lfo1Depth, &pre_sources);
+            let lfo1_symmetry_mod = mod_cache.get(ModDestination::Lfo1Symmetry, &pre_sources);
+            let lfo1_offset_mod = mod_cache.get(ModDestination::Lfo1Offset, &pre_sources);
+
+            let lfo2_rate_mod = mod_cache.get(ModDestination::Lfo2Rate, &pre_sources);
+            let lfo2_depth_mod = mod_cache.get(ModDestination::Lfo2Depth, &pre_sources);
+            let lfo2_symmetry_mod = mod_cache.get(ModDestination::Lfo2Symmetry, &pre_sources);
+            let lfo2_offset_mod = mod_cache.get(ModDestination::Lfo2Offset, &pre_sources);
+
+            let random_rate_mod = mod_cache.get(ModDestination::RandomRate, &pre_sources);
 
             let lfo1_rate = (base_lfo1_rate + lfo1_rate_mod * 20.0).clamp(0.01, 40.0);
             let lfo1_depth = (base_lfo1_depth + lfo1_depth_mod).clamp(0.0, 1.0);
@@ -108,25 +165,216 @@ impl CosmoProcessor {
             }
             let random_mod_val = self.random_hold;
 
+            modulated_line_params(
+                &p.line1,
+                &mut self.line1_scratch,
+                1,
+                &mod_cache,
+                &pre_sources,
+            );
+            modulated_line_params(
+                &p.line2,
+                &mut self.line2_scratch,
+                2,
+                &mod_cache,
+                &pre_sources,
+            );
+            let line1_modded = self.line1_scratch;
+            let line2_modded = self.line2_scratch;
+
             let mut mixed = 0.0_f32;
-            let params_ptr: *const crate::params::SynthParams = self.params.as_ref();
-            let pitch_bend_semitones = self.pitch_bend * self.params.pitch_bend_range;
+            let pitch_bend_semitones = self.pitch_bend * params.pitch_bend_range;
             let mod_wheel = self.mod_wheel;
             let aftertouch = self.aftertouch;
-            for v in 0..NUM_VOICES {
-                let p_ref: &crate::params::SynthParams = unsafe { &*params_ptr };
+            let mut v = 0;
+            if matches!(self.simd_backend, crate::simd::SimdBackend::Scalar) {
+                while v + 4 <= NUM_VOICES {
+                    mixed += crate::voice::render_voice(
+                        &mut self.voices[v],
+                        params.as_ref(),
+                        lfo1_mod_val,
+                        lfo2_mod_val,
+                        random_mod_val,
+                        &line1_modded,
+                        &line2_modded,
+                        sr,
+                        &self.envelope_timing,
+                        pitch_bend_semitones,
+                        mod_wheel,
+                        aftertouch,
+                        &mod_cache,
+                        l1_ctrl_p,
+                        l1_ctrl_s,
+                        l2_ctrl_p,
+                        l2_ctrl_s,
+                    );
+                    mixed += crate::voice::render_voice(
+                        &mut self.voices[v + 1],
+                        params.as_ref(),
+                        lfo1_mod_val,
+                        lfo2_mod_val,
+                        random_mod_val,
+                        &line1_modded,
+                        &line2_modded,
+                        sr,
+                        &self.envelope_timing,
+                        pitch_bend_semitones,
+                        mod_wheel,
+                        aftertouch,
+                        &mod_cache,
+                        l1_ctrl_p,
+                        l1_ctrl_s,
+                        l2_ctrl_p,
+                        l2_ctrl_s,
+                    );
+                    mixed += crate::voice::render_voice(
+                        &mut self.voices[v + 2],
+                        params.as_ref(),
+                        lfo1_mod_val,
+                        lfo2_mod_val,
+                        random_mod_val,
+                        &line1_modded,
+                        &line2_modded,
+                        sr,
+                        &self.envelope_timing,
+                        pitch_bend_semitones,
+                        mod_wheel,
+                        aftertouch,
+                        &mod_cache,
+                        l1_ctrl_p,
+                        l1_ctrl_s,
+                        l2_ctrl_p,
+                        l2_ctrl_s,
+                    );
+                    mixed += crate::voice::render_voice(
+                        &mut self.voices[v + 3],
+                        params.as_ref(),
+                        lfo1_mod_val,
+                        lfo2_mod_val,
+                        random_mod_val,
+                        &line1_modded,
+                        &line2_modded,
+                        sr,
+                        &self.envelope_timing,
+                        pitch_bend_semitones,
+                        mod_wheel,
+                        aftertouch,
+                        &mod_cache,
+                        l1_ctrl_p,
+                        l1_ctrl_s,
+                        l2_ctrl_p,
+                        l2_ctrl_s,
+                    );
+                    v += 4;
+                }
+            } else {
+                let mut vector_acc = [0.0_f32; 4];
+                while v + 4 <= NUM_VOICES {
+                    let voice_samples = [
+                        crate::voice::render_voice(
+                            &mut self.voices[v],
+                            params.as_ref(),
+                            lfo1_mod_val,
+                            lfo2_mod_val,
+                            random_mod_val,
+                            &line1_modded,
+                            &line2_modded,
+                            sr,
+                            &self.envelope_timing,
+                            pitch_bend_semitones,
+                            mod_wheel,
+                            aftertouch,
+                            &mod_cache,
+                            l1_ctrl_p,
+                            l1_ctrl_s,
+                            l2_ctrl_p,
+                            l2_ctrl_s,
+                        ),
+                        crate::voice::render_voice(
+                            &mut self.voices[v + 1],
+                            params.as_ref(),
+                            lfo1_mod_val,
+                            lfo2_mod_val,
+                            random_mod_val,
+                            &line1_modded,
+                            &line2_modded,
+                            sr,
+                            &self.envelope_timing,
+                            pitch_bend_semitones,
+                            mod_wheel,
+                            aftertouch,
+                            &mod_cache,
+                            l1_ctrl_p,
+                            l1_ctrl_s,
+                            l2_ctrl_p,
+                            l2_ctrl_s,
+                        ),
+                        crate::voice::render_voice(
+                            &mut self.voices[v + 2],
+                            params.as_ref(),
+                            lfo1_mod_val,
+                            lfo2_mod_val,
+                            random_mod_val,
+                            &line1_modded,
+                            &line2_modded,
+                            sr,
+                            &self.envelope_timing,
+                            pitch_bend_semitones,
+                            mod_wheel,
+                            aftertouch,
+                            &mod_cache,
+                            l1_ctrl_p,
+                            l1_ctrl_s,
+                            l2_ctrl_p,
+                            l2_ctrl_s,
+                        ),
+                        crate::voice::render_voice(
+                            &mut self.voices[v + 3],
+                            params.as_ref(),
+                            lfo1_mod_val,
+                            lfo2_mod_val,
+                            random_mod_val,
+                            &line1_modded,
+                            &line2_modded,
+                            sr,
+                            &self.envelope_timing,
+                            pitch_bend_semitones,
+                            mod_wheel,
+                            aftertouch,
+                            &mod_cache,
+                            l1_ctrl_p,
+                            l1_ctrl_s,
+                            l2_ctrl_p,
+                            l2_ctrl_s,
+                        ),
+                    ];
+                    vector_acc = self.simd_backend.add4(vector_acc, voice_samples);
+                    v += 4;
+                }
+                mixed += self.simd_backend.horizontal_sum4(vector_acc);
+            }
+
+            while v < NUM_VOICES {
                 mixed += crate::voice::render_voice(
                     &mut self.voices[v],
-                    p_ref,
+                    params.as_ref(),
                     lfo1_mod_val,
                     lfo2_mod_val,
                     random_mod_val,
+                    &line1_modded,
+                    &line2_modded,
                     sr,
                     &self.envelope_timing,
                     pitch_bend_semitones,
                     mod_wheel,
                     aftertouch,
+                    &mod_cache,
+                    l1_ctrl_p,
+                    l1_ctrl_s,
+                    l2_ctrl_p,
+                    l2_ctrl_s,
                 );
+                v += 1;
             }
 
             let (mod_env, velocity) = self

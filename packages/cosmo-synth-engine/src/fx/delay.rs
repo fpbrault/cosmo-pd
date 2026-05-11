@@ -1,5 +1,3 @@
-use libm::{cosf, expf, tanhf};
-
 use super::delay_line::DelayLine;
 use crate::dsp_utils::{wrap01, TWO_PI};
 
@@ -29,14 +27,14 @@ pub struct DelayFx {
 
 impl DelayFx {
     pub fn new(sr: f32) -> Self {
-        let buf_len = libm::roundf(2.0 * sr) as usize;
+        let buf_len = (2.0 * sr).round() as usize;
         Self {
             delay_line: DelayLine::new(buf_len),
             time: 0.3,
             feedback: 0.35,
             mix: 0.0,
             enabled: false,
-            smooth_samples: libm::roundf(0.3 * sr),
+            smooth_samples: (0.3 * sr).round(),
             tape_mode: false,
             warmth: 0.5,
             tape_filter_state: 0.0,
@@ -56,8 +54,8 @@ impl DelayFx {
         let wow_flutter = if self.tape_mode {
             self.tape_wow_phase = wrap01(self.tape_wow_phase + 0.42 / self.sample_rate);
             self.tape_flutter_phase = wrap01(self.tape_flutter_phase + 6.2 / self.sample_rate);
-            let wow = libm::sinf(self.tape_wow_phase * TWO_PI) * 0.0025 * self.sample_rate;
-            let flutter = libm::sinf(self.tape_flutter_phase * TWO_PI) * 0.00045 * self.sample_rate;
+            let wow = (self.tape_wow_phase * TWO_PI).sin() * 0.0025 * self.sample_rate;
+            let flutter = (self.tape_flutter_phase * TWO_PI).sin() * 0.00045 * self.sample_rate;
             (wow + flutter) * self.warmth.clamp(0.0, 1.0)
         } else {
             0.0
@@ -67,9 +65,9 @@ impl DelayFx {
 
         let wet = if self.tape_mode {
             let fc = TAPE_BRIGHT_CUTOFF_HZ - self.warmth * TAPE_WARM_RANGE_HZ;
-            let g = expf(-TWO_PI * fc / self.sample_rate);
+            let g = (-TWO_PI * fc / self.sample_rate).exp();
             self.tape_filter_state = self.tape_filter_state * g + delayed * (1.0 - g);
-            tanhf(self.tape_filter_state * TAPE_SATURATION_DRIVE) / TAPE_SATURATION_DRIVE
+            (self.tape_filter_state * TAPE_SATURATION_DRIVE).tanh() / TAPE_SATURATION_DRIVE
         } else {
             delayed
         };
@@ -77,7 +75,7 @@ impl DelayFx {
         self.delay_line
             .write(sample + wet * self.feedback.clamp(0.0, 0.97));
         let mix_angle = self.mix * core::f32::consts::PI * 0.5;
-        let dry_gain = cosf(mix_angle);
+        let dry_gain = (mix_angle).cos();
         let wet_gain = sinf_approx(mix_angle);
         sample * dry_gain + wet * wet_gain
     }
@@ -85,7 +83,7 @@ impl DelayFx {
 
 #[inline]
 fn sinf_approx(x: f32) -> f32 {
-    libm::sinf(x)
+    (x).sin()
 }
 
 // ---------------------------------------------------------------------------

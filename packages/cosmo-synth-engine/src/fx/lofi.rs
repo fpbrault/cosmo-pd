@@ -1,5 +1,3 @@
-use libm::{cosf, expf, sinf, tanhf};
-
 use super::delay_line::DelayLine;
 use crate::dsp_utils::{wrap01, TWO_PI};
 
@@ -28,7 +26,7 @@ pub struct LoFiFx {
 
 impl LoFiFx {
     pub fn new(sr: f32) -> Self {
-        let buf_len = libm::roundf(0.05 * sr) as usize + 4;
+        let buf_len = (0.05 * sr).round() as usize + 4;
         Self {
             delay: DelayLine::new(buf_len),
             enabled: false,
@@ -61,8 +59,8 @@ impl LoFiFx {
 
         let wow_depth = self.wow_depth.clamp(0.0, MAX_WOW_FLUTTER_DEPTH);
         let flutter_depth = self.flutter_depth.clamp(0.0, MAX_WOW_FLUTTER_DEPTH);
-        let wobble = sinf(self.wobble_phase * TWO_PI) * wow_depth;
-        let flutter = sinf(self.flutter_phase * TWO_PI) * flutter_depth;
+        let wobble = (self.wobble_phase * TWO_PI).sin() * wow_depth;
+        let flutter = (self.flutter_phase * TWO_PI).sin() * flutter_depth;
         let mod_seconds = CENTER_DELAY_S + wobble * MAX_MOD_S + flutter * MAX_MOD_S * 0.18;
         let delay_samples = (mod_seconds * self.sample_rate).max(1.0);
 
@@ -76,9 +74,9 @@ impl LoFiFx {
         let flutter_norm = flutter_depth / MAX_WOW_FLUTTER_DEPTH;
         let phase_mod =
             self.wobble_phase * TWO_PI * 0.37 + self.flutter_phase * TWO_PI * flutter_norm;
-        let dropout = 1.0 + 0.14 * degrade * sinf(phase_mod) * wow_norm.max(flutter_norm);
+        let dropout = 1.0 + 0.14 * degrade * (phase_mod).sin() * wow_norm.max(flutter_norm);
         let drive_gain = 1.0 + degrade * 12.0;
-        let dirty_raw = tanhf(shaped * dropout * drive_gain);
+        let dirty_raw = (shaped * dropout * drive_gain).tanh();
 
         // Keep perceived level stable as dirt rises by matching the dirt branch
         // energy to the clean branch with a slow envelope follower.
@@ -91,18 +89,18 @@ impl LoFiFx {
         let saturated = clean * (1.0 - degrade) + dirty * degrade;
 
         let mix_angle = self.mix.clamp(0.0, 1.0) * core::f32::consts::PI * 0.5;
-        sample * cosf(mix_angle) + saturated * sinf(mix_angle)
+        sample * (mix_angle).cos() + saturated * (mix_angle).sin()
     }
 
     fn tone_shape(&mut self, sample: f32) -> f32 {
         let tone = self.tone.clamp(0.0, 1.0);
         let hp_fc = 18.0 + tone * 620.0;
-        let hp_g = expf(-TWO_PI * hp_fc / self.sample_rate);
+        let hp_g = (-TWO_PI * hp_fc / self.sample_rate).exp();
         self.hp_state = hp_g * self.hp_state + (1.0 - hp_g) * sample;
         let high_passed = sample - self.hp_state;
 
         let lp_fc = 380.0 + tone * tone * 17500.0;
-        let lp_g = expf(-TWO_PI * lp_fc / self.sample_rate);
+        let lp_g = (-TWO_PI * lp_fc / self.sample_rate).exp();
         self.lp_state = lp_g * self.lp_state + (1.0 - lp_g) * high_passed;
         self.lp_state
     }

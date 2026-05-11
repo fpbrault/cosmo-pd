@@ -2,11 +2,11 @@
 
 extern crate test;
 
+use test::{black_box, Bencher};
+
 #[allow(dead_code)]
 #[path = "../src/bin/render-bench.rs"]
 mod render_bench;
-
-use test::{black_box, Bencher};
 
 const BENCH_RENDER_SAMPLES: usize = 4_096;
 

@@ -1,14 +1,16 @@
 use crate::dsp_utils::lerp;
+use crate::envelope_map::human_level_to_raw;
+use crate::envelope_map::human_rate_to_raw;
+use crate::envelope_map::raw_level_to_human;
 pub use crate::envelope_map::EnvelopeKind;
-use crate::envelope_map::{
-    human_level_to_raw, human_rate_to_raw, raw_level_to_human, raw_rate_to_human,
-};
 use crate::params::{StepEnvData, SynthParams};
 
 pub fn normalize_env_to_raw_if_human(kind: EnvelopeKind, env: &mut StepEnvData) {
+    const INV_99: f32 = 1.0 / 99.0;
     for step in env.steps.iter_mut() {
         step.level = human_level_to_raw(kind, step.level);
         step.rate = human_rate_to_raw(kind, step.rate);
+        step.level_norm = raw_level_to_human(kind, step.level) as f32 * INV_99;
     }
 }
 
@@ -66,6 +68,7 @@ pub struct EnvGen {
     pub prev_level: f32,
     pub output: f32,
     pub releasing: bool,
+    pub holding: bool,
     pub release_start_level: f32,
     pub release_progress: f32,
     pub release_duration: u32,
@@ -78,14 +81,14 @@ impl EnvGen {
         self.prev_level = 0.0;
         self.output = 0.0;
         self.releasing = false;
+        self.holding = false;
         self.release_start_level = 0.0;
         self.release_progress = 0.0;
         self.release_duration = 0;
     }
 
     /// Advance the envelope by one sample.
-    ///
-    /// Mirrors `advanceEnv` in pdVisualizerProcessor.js exactly.
+    #[inline(always)]
     pub fn advance(
         &mut self,
         kind: EnvelopeKind,
@@ -94,47 +97,39 @@ impl EnvGen {
         key_follow: f32,
         note: u8,
     ) {
+        if self.holding {
+            return;
+        }
+
         let steps = &env_data.steps;
-        // Use step_count to honour the active-step window (matches JS `stepCount`)
         let step_count = env_data.step_count.clamp(1, steps.len());
-        let sustain_step = env_data.sustain_step.min(step_count - 1);
         let effective_end_step = step_count - 1;
         let current_step = self.step.min(effective_end_step);
-
-        let note_offset = (note as f32 - 60.0) / 60.0;
-        let speed_mult = 1.0 + key_follow * note_offset * 0.1;
+        let sustain_step = env_data.sustain_step.min(step_count - 1);
 
         let step_data = &steps[current_step];
-        let step_rate = raw_rate_to_human(kind, step_data.rate);
-        let step_target_level = raw_level_to_human(kind, step_data.level) as f32 / 99.0;
-        // CZ behaviour: the last active step always targets 0 (silence / neutral
-        // pitch) so that all envelopes return to their rest state.  The stored
-        // value is left untouched so it is available when step count is raised.
         let target_level = if current_step == effective_end_step {
             0.0
         } else {
-            step_target_level
+            step_data.level_norm
         };
-        let frozen_step = is_frozen_step(self.prev_level, target_level, step_rate);
-        let raw_duration = step_duration_samples(
-            self.prev_level,
-            target_level,
-            timing.rate_to_samples(kind, step_data.rate),
-        );
-        // Apply key-follow speed multiplier, ensure at least 1
-        let duration = if raw_duration == 0 {
-            0
-        } else {
-            (raw_duration as f32 / speed_mult).max(1.0).round() as u32
-        };
+        let frozen_step = step_data.rate == 0 && (target_level - self.prev_level).abs() > 0.0;
+        let rate_samples = timing.rate_to_samples(kind, step_data.rate);
+        let raw_duration = step_duration_samples(self.prev_level, target_level, rate_samples);
 
         if self.releasing {
             if frozen_step {
-                // CZ-style hold: rate=0 means no progression toward target.
-                // Keep current level indefinitely while key is released.
                 self.output = self.prev_level;
                 return;
             }
+
+            let note_offset = (note as f32 - 60.0) / 60.0;
+            let speed_mult = 1.0 + key_follow * note_offset * 0.1;
+            let duration = if raw_duration == 0 {
+                0
+            } else {
+                (raw_duration as f32 / speed_mult).max(1.0).round() as u32
+            };
 
             if duration == 0 {
                 self.output = target_level;
@@ -148,78 +143,55 @@ impl EnvGen {
                 self.prev_level = target_level;
                 self.step_pos = 0;
                 self.step += 1;
-
-                // Allow entering the final active step so its own rate controls
-                // the release to zero; only clamp once we've advanced past it.
                 if self.step > effective_end_step {
                     self.step = effective_end_step;
-                    self.output = 0.0; // last step always ends at 0
+                    self.output = 0.0;
                 }
             }
             return;
         }
 
-        // Normal (non-releasing) path
-        let num_steps = step_count;
-        if num_steps == 0 {
+        if step_count == 0 {
             return;
         }
 
-        // Re-read using current_step (matches JS which re-assigns stepData).
-        // CZ behaviour: last step always targets 0.
-        let step_data2 = &steps[current_step];
-        let step_rate2 = raw_rate_to_human(kind, step_data2.rate);
-        let step_target_level2 = raw_level_to_human(kind, step_data2.level) as f32 / 99.0;
-        let target_level2 = if current_step == effective_end_step {
-            0.0
-        } else {
-            step_target_level2
-        };
-        let frozen_step2 = is_frozen_step(self.prev_level, target_level2, step_rate2);
-        let duration2 = step_duration_samples(
-            self.prev_level,
-            target_level2,
-            timing.rate_to_samples(kind, step_data2.rate),
-        );
-
-        if frozen_step2 {
-            // CZ-style hold: stop advancing this envelope step.
+        if frozen_step {
             self.output = self.prev_level;
             return;
         }
 
-        let progress = if duration2 == 0 {
-            1.0_f32
+        let progress = if raw_duration == 0 {
+            1.0
         } else {
-            (self.step_pos as f32 / duration2 as f32).min(1.0)
+            (self.step_pos as f32 / raw_duration as f32).min(1.0)
         };
 
-        self.output = lerp(self.prev_level, target_level2, progress);
+        self.output = lerp(self.prev_level, target_level, progress);
 
-        // Sustain hold check
         if !env_data.loop_ && current_step == sustain_step && progress >= 1.0 {
-            self.output = target_level2;
+            self.output = target_level;
+            self.holding = true;
             return;
         }
 
         self.step_pos += 1;
-        if self.step_pos >= duration2.max(1) {
-            self.prev_level = target_level2;
+        if self.step_pos >= raw_duration.max(1) {
+            self.prev_level = target_level;
             self.step_pos = 0;
 
             if !env_data.loop_ && current_step == sustain_step {
-                self.output = target_level2;
+                self.output = target_level;
                 return;
             }
 
             self.step += 1;
 
-            if self.step >= num_steps {
+            if self.step >= step_count {
                 if env_data.loop_ {
                     self.step = 0;
                 } else {
                     self.step = effective_end_step;
-                    self.output = 0.0; // last step always ends at 0
+                    self.output = 0.0;
                 }
             }
         }
@@ -235,6 +207,7 @@ impl EnvGen {
         let effective_end_step = step_count - 1;
 
         self.releasing = true;
+        self.holding = false;
         self.release_progress = 0.0;
 
         if self.step <= sustain_step {
@@ -256,14 +229,14 @@ fn rate_to_seconds(kind: EnvelopeKind, rate: u8) -> f32 {
         EnvelopeKind::Dca | EnvelopeKind::Dcw => {
             // DCA and DCW share the same measured timing curve once their raw
             // machine rates have been converted back to the displayed 0..99 scale.
-            104.04_f32 * libm::powf(0.004_f32 / 104.04_f32, normalized_rate)
+            104.04_f32 * (0.004_f32 / 104.04_f32).powf(normalized_rate)
         }
         EnvelopeKind::Dco => {
             // DCO uses normalized exponential curve: slowest at rate 0 (235.64s),
             // fastest at rate 99 (4ms). Formula: 235.64 * e^(k*x) where
             // k = ln(0.004/235.64) ≈ -10.984.
             const DCO_EXP_K: f32 = -13.984;
-            235.64_f32 * libm::expf(DCO_EXP_K * normalized_rate)
+            235.64_f32 * (DCO_EXP_K * normalized_rate).exp()
         }
     }
 }
@@ -281,21 +254,17 @@ fn rate_to_samples(kind: EnvelopeKind, rate: u8, sr: f32) -> u32 {
 /// Returns 0 when distance is 0 (no movement needed).
 #[inline]
 fn step_duration_samples(from_level: f32, to_level: f32, base_samples: u32) -> u32 {
-    let distance = libm::fabsf(to_level - from_level);
+    let distance = (to_level - from_level).abs();
     if distance <= 0.0 {
         return 0;
     }
     ((base_samples as f32 * distance).max(1.0).round()) as u32
 }
 
-#[inline]
-fn is_frozen_step(from_level: f32, to_level: f32, rate: u8) -> bool {
-    rate == 0 && libm::fabsf(to_level - from_level) > 0.0
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::envelope_map::raw_rate_to_human;
     use crate::params::SynthParams;
 
     #[test]
@@ -341,7 +310,11 @@ mod tests {
         // so no step starts as already-raw. This prevents double-conversion of
         // default/untouched steps.
         let blank = || StepEnvData {
-            steps: [EnvStep { level: 0, rate: 0 }; NUM_ENV_STEPS],
+            steps: [EnvStep {
+                level: 0,
+                rate: 0,
+                level_norm: 0.0,
+            }; NUM_ENV_STEPS],
             sustain_step: 0,
             step_count: 1,
             loop_: false,
@@ -351,11 +324,20 @@ mod tests {
         params.line1.dco_env.steps[0] = EnvStep {
             level: 66,
             rate: 99,
+            level_norm: 0.0,
         };
         params.line1.dcw_env = blank();
-        params.line1.dcw_env.steps[0] = EnvStep { level: 99, rate: 0 };
+        params.line1.dcw_env.steps[0] = EnvStep {
+            level: 99,
+            rate: 0,
+            level_norm: 0.0,
+        };
         params.line1.dca_env = blank();
-        params.line1.dca_env.steps[0] = EnvStep { level: 1, rate: 99 };
+        params.line1.dca_env.steps[0] = EnvStep {
+            level: 1,
+            rate: 99,
+            level_norm: 0.0,
+        };
         params.line2.dco_env = blank();
         params.line2.dcw_env = blank();
         params.line2.dca_env = blank();
@@ -387,7 +369,7 @@ mod tests {
 
         for (rate, seconds) in expected {
             let actual = rate_to_seconds(EnvelopeKind::Dca, rate);
-            let relative_error = libm::fabsf(actual - seconds) / seconds;
+            let relative_error = (actual - seconds).abs() / seconds;
             assert!(
                 relative_error <= 0.20,
                 "rate {rate}: expected about {seconds}s, got {actual}s (relative error {relative_error})"
@@ -421,7 +403,7 @@ mod tests {
 
         for (rate, seconds) in expected {
             let actual = rate_to_seconds(EnvelopeKind::Dco, rate);
-            let relative_error = libm::fabsf(actual - seconds) / seconds;
+            let relative_error = (actual - seconds).abs() / seconds;
             assert!(
                 relative_error <= 0.12,
                 "rate {rate}: expected about {seconds}s, got {actual}s (relative error {relative_error})"
@@ -434,7 +416,11 @@ mod tests {
         use crate::params::{EnvStep, StepEnvData, NUM_ENV_STEPS};
 
         let mut env = StepEnvData {
-            steps: [EnvStep { level: 0, rate: 99 }; NUM_ENV_STEPS],
+            steps: [EnvStep {
+                level: 0,
+                rate: 99,
+                level_norm: 0.0,
+            }; NUM_ENV_STEPS],
             sustain_step: 1,
             step_count: 4,
             loop_: false,
@@ -448,18 +434,22 @@ mod tests {
         env.steps[0] = EnvStep {
             level: 99,
             rate: 99,
+            level_norm: 0.0,
         };
         env.steps[1] = EnvStep {
             level: 70,
             rate: 99,
+            level_norm: 0.0,
         };
         env.steps[2] = EnvStep {
             level: 40,
             rate: 99,
+            level_norm: 0.0,
         };
         env.steps[3] = EnvStep {
             level: 30,
             rate: 99,
+            level_norm: 0.0,
         };
 
         let timing = EnvelopeTimingCache::new(48_000.0);

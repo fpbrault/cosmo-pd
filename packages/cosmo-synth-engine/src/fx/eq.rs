@@ -1,5 +1,3 @@
-use libm::{cosf, sinf};
-
 // ---------------------------------------------------------------------------
 // Biquad peaking / shelving filter for the 5-band EQ
 // ---------------------------------------------------------------------------
@@ -33,10 +31,10 @@ impl BiquadFilter {
 
     /// Set peaking EQ coefficients. `gain_db` is boost/cut in dB, `q` is bandwidth.
     fn set_peaking(&mut self, freq_hz: f32, gain_db: f32, q: f32, sr: f32) {
-        let a = libm::powf(10.0_f32, gain_db / 40.0);
+        let a = (10.0_f32).powf(gain_db / 40.0);
         let w0 = 2.0 * core::f32::consts::PI * freq_hz / sr;
-        let alpha = sinf(w0) / (2.0 * q);
-        let cos_w0 = cosf(w0);
+        let alpha = (w0).sin() / (2.0 * q);
+        let cos_w0 = (w0).cos();
         let a0_inv = 1.0 / (1.0 + alpha / a);
         self.b0 = (1.0 + alpha * a) * a0_inv;
         self.b1 = (-2.0 * cos_w0) * a0_inv;
@@ -47,32 +45,32 @@ impl BiquadFilter {
 
     /// Set low-shelf coefficients.
     fn set_low_shelf(&mut self, freq_hz: f32, gain_db: f32, sr: f32) {
-        let a = libm::powf(10.0_f32, gain_db / 40.0);
+        let a = (10.0_f32).powf(gain_db / 40.0);
         let w0 = 2.0 * core::f32::consts::PI * freq_hz / sr;
-        let cos_w0 = cosf(w0);
-        let sin_w0 = sinf(w0);
-        let alpha = sin_w0 / 2.0 * libm::sqrtf((a + 1.0 / a) * (1.0 / 0.707 - 1.0) + 2.0);
-        let a0_inv = 1.0 / ((a + 1.0) + (a - 1.0) * cos_w0 + 2.0 * libm::sqrtf(a) * alpha);
-        self.b0 = a * ((a + 1.0) - (a - 1.0) * cos_w0 + 2.0 * libm::sqrtf(a) * alpha) * a0_inv;
+        let cos_w0 = (w0).cos();
+        let sin_w0 = (w0).sin();
+        let alpha = sin_w0 / 2.0 * (((a + 1.0 / a) * (1.0 / 0.707 - 1.0) + 2.0).sqrt());
+        let a0_inv = 1.0 / ((a + 1.0) + (a - 1.0) * cos_w0 + 2.0 * (a).sqrt() * alpha);
+        self.b0 = a * ((a + 1.0) - (a - 1.0) * cos_w0 + 2.0 * (a).sqrt() * alpha) * a0_inv;
         self.b1 = 2.0 * a * ((a - 1.0) - (a + 1.0) * cos_w0) * a0_inv;
-        self.b2 = a * ((a + 1.0) - (a - 1.0) * cos_w0 - 2.0 * libm::sqrtf(a) * alpha) * a0_inv;
+        self.b2 = a * ((a + 1.0) - (a - 1.0) * cos_w0 - 2.0 * (a).sqrt() * alpha) * a0_inv;
         self.a1 = -2.0 * ((a - 1.0) + (a + 1.0) * cos_w0) * a0_inv;
-        self.a2 = ((a + 1.0) + (a - 1.0) * cos_w0 - 2.0 * libm::sqrtf(a) * alpha) * a0_inv;
+        self.a2 = ((a + 1.0) + (a - 1.0) * cos_w0 - 2.0 * (a).sqrt() * alpha) * a0_inv;
     }
 
     /// Set high-shelf coefficients.
     fn set_high_shelf(&mut self, freq_hz: f32, gain_db: f32, sr: f32) {
-        let a = libm::powf(10.0_f32, gain_db / 40.0);
+        let a = (10.0_f32).powf(gain_db / 40.0);
         let w0 = 2.0 * core::f32::consts::PI * freq_hz / sr;
-        let cos_w0 = cosf(w0);
-        let sin_w0 = sinf(w0);
-        let alpha = sin_w0 / 2.0 * libm::sqrtf((a + 1.0 / a) * (1.0 / 0.707 - 1.0) + 2.0);
-        let a0_inv = 1.0 / ((a + 1.0) - (a - 1.0) * cos_w0 + 2.0 * libm::sqrtf(a) * alpha);
-        self.b0 = a * ((a + 1.0) + (a - 1.0) * cos_w0 + 2.0 * libm::sqrtf(a) * alpha) * a0_inv;
+        let cos_w0 = (w0).cos();
+        let sin_w0 = (w0).sin();
+        let alpha = sin_w0 / 2.0 * (((a + 1.0 / a) * (1.0 / 0.707 - 1.0) + 2.0).sqrt());
+        let a0_inv = 1.0 / ((a + 1.0) - (a - 1.0) * cos_w0 + 2.0 * (a).sqrt() * alpha);
+        self.b0 = a * ((a + 1.0) + (a - 1.0) * cos_w0 + 2.0 * (a).sqrt() * alpha) * a0_inv;
         self.b1 = -2.0 * a * ((a - 1.0) + (a + 1.0) * cos_w0) * a0_inv;
-        self.b2 = a * ((a + 1.0) + (a - 1.0) * cos_w0 - 2.0 * libm::sqrtf(a) * alpha) * a0_inv;
+        self.b2 = a * ((a + 1.0) + (a - 1.0) * cos_w0 - 2.0 * (a).sqrt() * alpha) * a0_inv;
         self.a1 = 2.0 * ((a - 1.0) - (a + 1.0) * cos_w0) * a0_inv;
-        self.a2 = ((a + 1.0) - (a - 1.0) * cos_w0 - 2.0 * libm::sqrtf(a) * alpha) * a0_inv;
+        self.a2 = ((a + 1.0) - (a - 1.0) * cos_w0 - 2.0 * (a).sqrt() * alpha) * a0_inv;
     }
 
     #[inline]

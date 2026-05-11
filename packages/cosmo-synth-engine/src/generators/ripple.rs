@@ -1,5 +1,6 @@
 use super::wrap01;
 use super::{AlgoControlKindV1, AlgoControlV1, AlgoDefinitionV1, NO_CONTROL_OPTIONS};
+use crate::dsp_utils::pow01;
 use crate::params::{Algo, EngineParamReadoutFormatV1};
 
 const CONTROLS: [AlgoControlV1; 4] = [
@@ -79,7 +80,7 @@ pub fn warp_phase(
     let depth = 0.01 + ripple_depth * 0.12;
     let shape_exp = 0.35 + shape * 2.4;
     let ripple = (core::f32::consts::TAU * (phase + phase_offset) * cycles).sin();
-    let shaped_mag = ripple.abs().powf(shape_exp);
+    let shaped_mag = pow01(ripple.abs(), shape_exp);
     let shaped = if ripple >= 0.0 {
         shaped_mag
     } else {

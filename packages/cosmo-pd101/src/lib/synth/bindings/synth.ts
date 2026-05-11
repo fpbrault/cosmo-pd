@@ -138,7 +138,7 @@ export type AlgoControlValueV1 = { id: string; value: number }
 /**
  * Per-line parameters
  */
-export type LineParams = { algo: Algo; algo2: Algo | null; algoBlend: number; baseWaveformA?: BaseWaveform; baseWaveformB?: BaseWaveform; window: WindowType; dcaBase: number; dcwBase: number; modulation: number; detuneNote?: number; detuneFine?: number; octave: number; dcoEnv: StepEnvData; dcwEnv: StepEnvData; dcaEnv: StepEnvData; keyFollow: number; algoControlsA?: AlgoControlValueV1[] | null; algoControlsB?: AlgoControlValueV1[] | null }
+export type LineParams = { algo: Algo; algo2: Algo | null; algoBlend: number; baseWaveformA?: BaseWaveform; baseWaveformB?: BaseWaveform; window: WindowType; dcaBase: number; dcwBase: number; modulation: number; detuneNote?: number; detuneFine?: number; octave: number; dcoEnv: StepEnvData; dcwEnv: StepEnvData; dcaEnv: StepEnvData; keyFollow: number; algoControlsA: AlgoControlValueV1[]; algoControlsB: AlgoControlValueV1[] }
 
 /**
  * Describes one control surfaced by an algorithm package.

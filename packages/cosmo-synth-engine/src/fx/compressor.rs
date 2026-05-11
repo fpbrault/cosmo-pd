@@ -1,5 +1,3 @@
-use libm::{cosf, sinf};
-
 // ---------------------------------------------------------------------------
 // CompressorFx — feed-forward peak compressor
 // ---------------------------------------------------------------------------
@@ -35,11 +33,10 @@ impl CompressorFx {
         if !self.enabled || self.mix <= 0.0 {
             return sample;
         }
-        let attack_coeff = libm::expf(-1.0 / (self.attack_ms * 0.001 * self.sample_rate).max(1.0));
-        let release_coeff =
-            libm::expf(-1.0 / (self.release_ms * 0.001 * self.sample_rate).max(1.0));
+        let attack_coeff = (-1.0 / (self.attack_ms * 0.001 * self.sample_rate).max(1.0)).exp();
+        let release_coeff = (-1.0 / (self.release_ms * 0.001 * self.sample_rate).max(1.0)).exp();
 
-        let abs_sample = libm::fabsf(sample);
+        let abs_sample = (sample).abs();
         if abs_sample > self.envelope {
             self.envelope = attack_coeff * self.envelope + (1.0 - attack_coeff) * abs_sample;
         } else {
@@ -59,18 +56,18 @@ impl CompressorFx {
         let wet = sample * gain_reduction * makeup;
 
         let mix_angle = self.mix * core::f32::consts::PI * 0.5;
-        sample * cosf(mix_angle) + wet * sinf(mix_angle)
+        sample * (mix_angle).cos() + wet * (mix_angle).sin()
     }
 }
 
 #[inline]
 fn db_to_linear(db: f32) -> f32 {
-    libm::powf(10.0, db / 20.0)
+    (10.0_f32).powf(db / 20.0)
 }
 
 #[inline]
 fn linear_to_db(linear: f32) -> f32 {
-    20.0 * libm::log10f(linear.max(1e-9))
+    20.0 * (linear.max(1e-9).log10())
 }
 
 // ---------------------------------------------------------------------------
