@@ -7,10 +7,9 @@ mod modulation;
 mod render;
 
 pub use adsr::AdsrEnv;
-pub(crate) use modulation::mod_value_for;
-pub(crate) use modulation::mod_values_for_destinations4;
+pub(crate) use modulation::modulated_line_params;
 pub(crate) use modulation::ModSources;
-pub use render::render_voice;
+pub(crate) use render::render_voice;
 
 use crate::envelope::EnvGen;
 use crate::generators::AlgoRuntimeState;
@@ -133,9 +132,12 @@ impl Default for Voice {
 
 #[cfg(test)]
 mod tests {
-    use super::modulation::{mod_value_for, ModSources};
+    use super::modulation::mod_value_for;
+    use super::ModSources;
     use super::{render::*, Voice};
-    use crate::params::{ModDestination, ModMatrix, ModRoute, ModSource, SynthParams};
+    use crate::params::{
+        ModDestination, ModMatrix, ModMatrixCache, ModRoute, ModSource, SynthParams,
+    };
 
     #[test]
     fn dca_gain_uses_gentle_power_taper() {
@@ -313,6 +315,9 @@ mod tests {
         voice.is_silent = true;
         let p = SynthParams::default();
         let timing = crate::envelope::EnvelopeTimingCache::new(48_000.0);
+        let sources = ModSources::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        let mut cache = ModMatrixCache::new();
+        cache.compute(&p.mod_matrix, &sources);
         let out = render_voice(
             &mut voice,
             &p,
@@ -324,7 +329,7 @@ mod tests {
             0.0,
             0.0,
             0.0,
-            crate::simd::SimdBackend::Scalar,
+            &cache,
         );
         assert_eq!(out, 0.0);
     }
@@ -337,6 +342,9 @@ mod tests {
         voice.is_silent = false;
         let p = SynthParams::default();
         let timing = crate::envelope::EnvelopeTimingCache::new(48_000.0);
+        let sources = ModSources::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        let mut cache = ModMatrixCache::new();
+        cache.compute(&p.mod_matrix, &sources);
         let mut any_nonzero = false;
         for _ in 0..64 {
             let out = render_voice(
@@ -350,7 +358,7 @@ mod tests {
                 0.0,
                 0.0,
                 0.0,
-                crate::simd::SimdBackend::Scalar,
+                &cache,
             );
             if out.abs() > 1e-6 {
                 any_nonzero = true;

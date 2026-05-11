@@ -1,5 +1,6 @@
 //! Synth parameter types and UI metadata.
 
+mod cache;
 mod envelopes;
 mod filter;
 mod fx_params;
@@ -12,6 +13,7 @@ mod ui_meta;
 mod waveforms;
 
 // Re-exports for backward compatibility
+pub(crate) use cache::ModMatrixCache;
 pub use envelopes::{EnvStep, StepEnvData, NUM_ENV_STEPS};
 pub use filter::{FilterParams, FilterType};
 pub use fx_params::{
@@ -22,7 +24,7 @@ pub use fx_params::{
 };
 pub use lfo::{LfoParams, LfoWaveform};
 pub use line::{AlgoControlValueV1, LineParams, LineSelect, ModMode, PolyMode};
-pub use modulation::{ModDestination, ModMatrix, ModRoute, ModSource};
+pub use modulation::{ModDestination, ModMatrix, ModRoute, ModSource, NUM_MOD_DESTINATIONS};
 pub use portamento::{PortamentoMode, PortamentoParams};
 pub use synth_params::{ModEnvParams, RandomParams, SynthParams, NUM_OPERATORS, NUM_VOICES};
 pub use ui_meta::{

@@ -220,6 +220,9 @@ pub enum ModDestination {
     EqGain8000,
 }
 
+/// Total number of `ModDestination` variants.
+pub const NUM_MOD_DESTINATIONS: usize = ModDestination::EqGain8000 as usize + 1;
+
 /// A single modulation route assignment.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]

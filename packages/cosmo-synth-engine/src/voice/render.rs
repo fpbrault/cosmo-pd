@@ -5,13 +5,12 @@ use crate::envelope::EnvelopeKind;
 use crate::envelope::EnvelopeTimingCache;
 use crate::generators::{self, LineRenderConfig};
 use crate::params::{
-    LfoWaveform, LineParams, LineSelect, ModDestination, ModMatrix, ModMode, PortamentoMode,
-    SynthParams,
+    LfoWaveform, LineParams, LineSelect, ModDestination, ModMatrix, ModMatrixCache, ModMode,
+    PortamentoMode, SynthParams,
 };
-use crate::simd::SimdBackend;
 
 use super::modulation::{
-    algo_param_slot_mods_for_line, mod_value_for, modulated_line_params, ModSources,
+    algo_param_slot_mods_for_line, mod_value_for, ModSources,
 };
 use super::{
     Voice, ANTI_CLICK_ATTACK_SAMPLES, ANTI_CLICK_FADE_MAX_SAMPLES, ANTI_CLICK_FADE_SAMPLES,
@@ -69,30 +68,18 @@ pub fn render_voice(
     lfo_mod_val: f32,
     lfo2_mod_val: f32,
     random_mod_val: f32,
+    line1_modded: &LineParams,
+    line2_modded: &LineParams,
     sr: f32,
     timing: &EnvelopeTimingCache,
     pitch_bend_semitones: f32,
     mod_wheel: f32,
     aftertouch: f32,
-    backend: SimdBackend,
+    cache: &ModMatrixCache,
 ) -> f32 {
     let base_freq = base_voice_frequency(voice);
 
-    let preview_mod_sources = ModSources::new(
-        lfo_mod_val,
-        lfo2_mod_val,
-        random_mod_val,
-        voice.mod_env.output,
-        voice.velocity,
-        mod_wheel,
-        aftertouch,
-    );
-    let line1_modded =
-        modulated_line_params(&p.line1, 1, &p.mod_matrix, &preview_mod_sources, backend);
-    let line2_modded =
-        modulated_line_params(&p.line2, 2, &p.mod_matrix, &preview_mod_sources, backend);
-
-    let env = advance_envelopes(voice, &line1_modded, &line2_modded, timing);
+    let env = advance_envelopes(voice, line1_modded, line2_modded, timing);
 
     if voice.is_silent {
         advance_silent_voice(voice, &line1_modded, &line2_modded, p, sr, base_freq);
@@ -117,9 +104,9 @@ pub fn render_voice(
         aftertouch,
     );
     let line1_algo_param_mods =
-        algo_param_slot_mods_for_line(1, &p.mod_matrix, &mod_sources, backend);
+        algo_param_slot_mods_for_line(1, cache, &mod_sources);
     let line2_algo_param_mods =
-        algo_param_slot_mods_for_line(2, &p.mod_matrix, &mod_sources, backend);
+        algo_param_slot_mods_for_line(2, cache, &mod_sources);
     let mut signal = build_signal_state(
         &line1_modded,
         &line2_modded,
