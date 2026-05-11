@@ -1,10 +1,46 @@
 #!/usr/bin/env bun
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 
 function usage() {
 	console.error(
-		"Usage: bun run ./scripts/perf-engine-compare.mjs <baseline.json> <current.json>",
+		"Usage: bun run ./scripts/perf-engine-compare.mjs <baseline.json> <current.json> [--markdown-out <path>] [--fail-on-regressions]",
 	);
+}
+
+function parseArgs(argv) {
+	const options = {
+		baselinePath: "",
+		currentPath: "",
+		markdownOutPath: "",
+		failOnRegressions: false,
+	};
+
+	for (let index = 0; index < argv.length; index += 1) {
+		const arg = argv[index];
+		const next = argv[index + 1];
+
+		if (!options.baselinePath && !arg.startsWith("--")) {
+			options.baselinePath = arg;
+			continue;
+		}
+
+		if (!options.currentPath && !arg.startsWith("--")) {
+			options.currentPath = arg;
+			continue;
+		}
+
+		if (arg === "--markdown-out" && next) {
+			options.markdownOutPath = next;
+			index += 1;
+			continue;
+		}
+
+		if (arg === "--fail-on-regressions") {
+			options.failOnRegressions = true;
+		}
+	}
+
+	return options;
 }
 
 function toCaseMap(report) {
@@ -37,7 +73,36 @@ function formatDelta(value) {
 	return `${sign}${value.toFixed(1)}%`;
 }
 
-const [baselinePath, currentPath] = process.argv.slice(2);
+function formatDeltaPrecise(value) {
+	const sign = value > 0 ? "+" : "";
+	return `${sign}${value.toFixed(2)}%`;
+}
+
+function buildMarkdownReport(rows, regressions, meanNsDelta) {
+	const lines = [
+		`Compared ${rows.length} overlapping case(s).`,
+		"",
+		`Mean delta (PR vs base): ${formatDeltaPrecise(meanNsDelta)} (negative is faster).`,
+		"",
+		`Potential regressions detected in ${regressions} case(s) (>5% p50/rt_cpu/ns/sample).`,
+		"",
+		"Full results",
+		"",
+		"| case | p50ms | rt_cpu | realtime | ns/sample | checksum |",
+		"|---|---:|---:|---:|---:|---:|",
+	];
+
+	for (const row of rows) {
+		lines.push(
+			`| ${row.caseKey} | ${formatDelta(row.p50Delta)} | ${formatDelta(row.rtDelta)} | ${formatDelta(row.realtimeDelta)} | ${formatDelta(row.nsDelta)} | ${formatDelta(row.checksumDelta)} |`,
+		);
+	}
+
+	return `${lines.join("\n")}\n`;
+}
+
+const options = parseArgs(process.argv.slice(2));
+const { baselinePath, currentPath } = options;
 if (!baselinePath || !currentPath) {
 	usage();
 	process.exit(2);
@@ -66,6 +131,8 @@ console.log(`Comparing ${keys.length} overlapping cases`);
 console.log("case\t p50ms\t rt_cpu\t realtime\t ns/sample\t checksum");
 
 let regressions = 0;
+let nsDeltaSum = 0;
+const rows = [];
 for (const key of keys) {
 	const baseline = baselineMap.get(key);
 	const current = currentMap.get(key);
@@ -100,18 +167,39 @@ for (const key of keys) {
 	const realtimeDelta = deltaPercent(cRealtime, bRealtime);
 	const nsDelta = deltaPercent(cNs, bNs);
 	const checksumDelta = deltaPercent(cChecksum, bChecksum);
+	nsDeltaSum += nsDelta;
 
 	if (p50Delta > 5 || rtDelta > 5 || nsDelta > 5) {
 		regressions += 1;
 	}
+
+	rows.push({
+		caseKey: key,
+		p50Delta,
+		rtDelta,
+		realtimeDelta,
+		nsDelta,
+		checksumDelta,
+	});
 
 	console.log(
 		`${key}\t ${formatDelta(p50Delta)}\t ${formatDelta(rtDelta)}\t ${formatDelta(realtimeDelta)}\t ${formatDelta(nsDelta)}\t ${formatDelta(checksumDelta)}`,
 	);
 }
 
+const meanNsDelta = nsDeltaSum / rows.length;
+const markdownReport = buildMarkdownReport(rows, regressions, meanNsDelta);
+
+if (options.markdownOutPath) {
+	await writeFile(options.markdownOutPath, markdownReport, "utf8");
+}
+
 if (regressions > 0) {
 	console.log(`\nPotential regressions detected in ${regressions} case(s).`);
 } else {
 	console.log("\nNo obvious regressions detected (>5% thresholds).");
+}
+
+if (options.failOnRegressions && regressions > 0) {
+	process.exit(1);
 }

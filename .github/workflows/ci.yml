@@ -267,7 +267,13 @@ jobs:
         if: steps.filter.outputs.engine == 'true'
         uses: dtolnay/rust-toolchain@nightly
 
-      - name: Benchmark target branch
+      - name: Setup Bun
+        if: steps.filter.outputs.engine == 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Benchmark target branch (JSON)
         if: steps.filter.outputs.engine == 'true'
         run: |
           mkdir -p target/perf/engine
@@ -277,135 +283,40 @@ jobs:
           rm -rf "$base_dir"
           git worktree add --detach "$base_dir" "origin/$base_ref"
           cd "$base_dir"
-          cargo bench -p cosmo-synth-engine --bench render-bench -- --nocapture | tee "$GITHUB_WORKSPACE/target/perf/engine/base-bench.txt"
+          cargo run -p cosmo-synth-engine --release --bin render-bench -- --all --json > "$GITHUB_WORKSPACE/target/perf/engine/base-report.json"
         shell: bash
 
-      - name: Seed baseline from target branch
-        if: steps.filter.outputs.engine == 'true'
-        uses: benchmark-action/github-action-benchmark@v1
-        with:
-          name: cosmo-synth-engine
-          tool: cargo
-          output-file-path: target/perf/engine/base-bench.txt
-          external-data-json-path: target/perf/engine/baseline.json
-          save-data-file: true
-          fail-on-alert: false
-
-      - name: Benchmark pull request head
+      - name: Benchmark pull request head (JSON)
         if: steps.filter.outputs.engine == 'true'
         run: |
-          cargo bench -p cosmo-synth-engine --bench render-bench -- --nocapture | tee target/perf/engine/pr-bench.txt
+          cargo run -p cosmo-synth-engine --release --bin render-bench -- --all --json > target/perf/engine/pr-report.json
         shell: bash
 
       - name: Compare PR against target branch
+        id: compare_engine
         if: steps.filter.outputs.engine == 'true'
-        uses: benchmark-action/github-action-benchmark@v1
-        with:
-          name: cosmo-synth-engine
-          tool: cargo
-          output-file-path: target/perf/engine/pr-bench.txt
-          external-data-json-path: target/perf/engine/baseline.json
-          save-data-file: false
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          comment-on-alert: true
-          fail-on-alert: true
-          comment-always: true
-          summary-always: true
-          alert-threshold: 108%
-
-      - name: Build benchmark PR comment body
-        if: always() && steps.filter.outputs.engine == 'true'
+        continue-on-error: true
         run: |
-          mkdir -p target/perf/engine
-          comment_file="target/perf/engine/pr-comment.md"
+          bun run ./scripts/perf-engine-compare.mjs \
+            target/perf/engine/base-report.json \
+            target/perf/engine/pr-report.json \
+            --markdown-out target/perf/engine/engine-compare.md \
+            --fail-on-regressions
+        shell: bash
 
-          compare_md=$(node - <<'NODE'
-          const fs = require("node:fs");
-
-          function parseBench(path) {
-            if (!fs.existsSync(path)) return new Map();
-            const text = fs.readFileSync(path, "utf8");
-            const map = new Map();
-            const lines = text.split(/\r?\n/);
-            const re = /^test\s+(.+?)\s+\.\.\.\s+bench:\s+([0-9,]+\.?[0-9]*)\s+ns\/iter/;
-            for (const line of lines) {
-              const m = line.match(re);
-              if (!m) continue;
-              const name = m[1].trim();
-              const ns = Number(m[2].replace(/,/g, ""));
-              if (Number.isFinite(ns) && ns > 0) {
-                map.set(name, ns);
-              }
-            }
-            return map;
-          }
-
-          const base = parseBench("target/perf/engine/base-bench.txt");
-          const pr = parseBench("target/perf/engine/pr-bench.txt");
-
-          const keys = [...pr.keys()].filter((k) => base.has(k)).sort();
-          if (!keys.length) {
-            console.log("_Benchmark summary unavailable for this run._");
-            process.exit(0);
-          }
-
-          const rows = keys.map((name) => {
-            const b = base.get(name);
-            const c = pr.get(name);
-            const deltaPct = ((c - b) / b) * 100;
-            return { name, b, c, deltaPct };
-          });
-
-          const regressions = rows
-            .filter((r) => r.deltaPct > 0)
-            .sort((a, b) => b.deltaPct - a.deltaPct)
-            .slice(0, 5);
-          const improvements = rows
-            .filter((r) => r.deltaPct < 0)
-            .sort((a, b) => a.deltaPct - b.deltaPct)
-            .slice(0, 5);
-
-          const meanDelta = rows.reduce((sum, r) => sum + r.deltaPct, 0) / rows.length;
-          const fmtNs = (n) => n.toLocaleString("en-US", { maximumFractionDigits: 2 });
-          const fmtPct = (p) => `${p >= 0 ? "+" : ""}${p.toFixed(2)}%`;
-
-          let md = "";
-          md += `Compared ${rows.length} shared benchmark case(s).\\n\\n`;
-          md += `Mean delta (PR vs base): **${fmtPct(meanDelta)}** (negative is faster).\\n\\n`;
-
-          const section = (title, items) => {
-            if (!items.length) return `${title}: none\\n\\n`;
-            let out = `${title}\\n\\n`;
-            out += "| case | base ns/iter | PR ns/iter | delta |\\n";
-            out += "|---|---:|---:|---:|\\n";
-            for (const r of items) {
-              out += `| ${r.name} | ${fmtNs(r.b)} | ${fmtNs(r.c)} | ${fmtPct(r.deltaPct)} |\\n`;
-            }
-            out += "\\n";
-            return out;
-          };
-
-          md += section("Top regressions", regressions);
-          md += section("Top improvements", improvements);
-          console.log(md.trimEnd());
-          NODE
-          )
-
-          {
-            echo "<!-- perf-benchmark-comment -->"
-            echo "## Engine Benchmarks vs \`${{ github.base_ref }}\`"
-            echo
-            echo "$compare_md"
-            echo
-            echo "_Updated: $(date -u +%Y-%m-%dT%H:%M:%SZ)_"
-          } > "$comment_file"
+      - name: Generate benchmark comment body
+        if: steps.filter.outputs.engine == 'true'
+        run: |
+          bun run ./scripts/perf-pr-comment.mjs \
+            --engine-compare target/perf/engine/engine-compare.md \
+            --out target/perf/engine/pr-comment.md \
+            --base-ref "${{ github.base_ref }}"
         shell: bash
 
       - name: Upsert PR benchmark comment
-        if: always() && steps.filter.outputs.engine == 'true'
-        uses: actions/github-script@v7
+        if: steps.filter.outputs.engine == 'true'
+        uses: actions/github-script@v8
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require("node:fs");
 
@@ -448,15 +359,22 @@ jobs:
               core.info(`Created benchmark PR comment: ${created.data.id}`);
             }
 
+      - name: Fail on benchmark regressions
+        if: steps.filter.outputs.engine == 'true' && steps.compare_engine.outcome == 'failure'
+        run: |
+          echo "Performance regression threshold exceeded."
+          exit 1
+        shell: bash
+
       - name: Upload benchmark artifact
         if: steps.filter.outputs.engine == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: engine-benchmark
           path: |
-            target/perf/engine/base-bench.txt
-            target/perf/engine/pr-bench.txt
-            target/perf/engine/baseline.json
+            target/perf/engine/base-report.json
+            target/perf/engine/pr-report.json
+            target/perf/engine/engine-compare.md
             target/perf/engine/pr-comment.md
 
   build-plugins:
