@@ -317,18 +317,85 @@ jobs:
         if: always() && steps.filter.outputs.engine == 'true'
         run: |
           mkdir -p target/perf/engine
-          summary_file="$GITHUB_STEP_SUMMARY"
           comment_file="target/perf/engine/pr-comment.md"
+
+          compare_md=$(node - <<'NODE'
+          const fs = require("node:fs");
+
+          function parseBench(path) {
+            if (!fs.existsSync(path)) return new Map();
+            const text = fs.readFileSync(path, "utf8");
+            const map = new Map();
+            const lines = text.split(/\r?\n/);
+            const re = /^test\s+(.+?)\s+\.\.\.\s+bench:\s+([0-9,]+\.?[0-9]*)\s+ns\/iter/;
+            for (const line of lines) {
+              const m = line.match(re);
+              if (!m) continue;
+              const name = m[1].trim();
+              const ns = Number(m[2].replace(/,/g, ""));
+              if (Number.isFinite(ns) && ns > 0) {
+                map.set(name, ns);
+              }
+            }
+            return map;
+          }
+
+          const base = parseBench("target/perf/engine/base-bench.txt");
+          const pr = parseBench("target/perf/engine/pr-bench.txt");
+
+          const keys = [...pr.keys()].filter((k) => base.has(k)).sort();
+          if (!keys.length) {
+            console.log("_Benchmark summary unavailable for this run._");
+            process.exit(0);
+          }
+
+          const rows = keys.map((name) => {
+            const b = base.get(name);
+            const c = pr.get(name);
+            const deltaPct = ((c - b) / b) * 100;
+            return { name, b, c, deltaPct };
+          });
+
+          const regressions = rows
+            .filter((r) => r.deltaPct > 0)
+            .sort((a, b) => b.deltaPct - a.deltaPct)
+            .slice(0, 5);
+          const improvements = rows
+            .filter((r) => r.deltaPct < 0)
+            .sort((a, b) => a.deltaPct - b.deltaPct)
+            .slice(0, 5);
+
+          const meanDelta = rows.reduce((sum, r) => sum + r.deltaPct, 0) / rows.length;
+          const fmtNs = (n) => n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+          const fmtPct = (p) => `${p >= 0 ? "+" : ""}${p.toFixed(2)}%`;
+
+          let md = "";
+          md += `Compared ${rows.length} shared benchmark case(s).\\n\\n`;
+          md += `Mean delta (PR vs base): **${fmtPct(meanDelta)}** (negative is faster).\\n\\n`;
+
+          const section = (title, items) => {
+            if (!items.length) return `${title}: none\\n\\n`;
+            let out = `${title}\\n\\n`;
+            out += "| case | base ns/iter | PR ns/iter | delta |\\n";
+            out += "|---|---:|---:|---:|\\n";
+            for (const r of items) {
+              out += `| ${r.name} | ${fmtNs(r.b)} | ${fmtNs(r.c)} | ${fmtPct(r.deltaPct)} |\\n`;
+            }
+            out += "\\n";
+            return out;
+          };
+
+          md += section("Top regressions", regressions);
+          md += section("Top improvements", improvements);
+          console.log(md.trimEnd());
+          NODE
+          )
 
           {
             echo "<!-- perf-benchmark-comment -->"
             echo "## Engine Benchmarks vs \`${{ github.base_ref }}\`"
             echo
-            if [[ -s "$summary_file" ]]; then
-              cat "$summary_file"
-            else
-              echo "_Benchmark summary unavailable for this run._"
-            fi
+            echo "$compare_md"
             echo
             echo "_Updated: $(date -u +%Y-%m-%dT%H:%M:%SZ)_"
           } > "$comment_file"
