@@ -1,4 +1,3 @@
-use libm::{cosf, sinf};
 
 use crate::dsp_utils::TWO_PI;
 
@@ -72,12 +71,12 @@ impl PhaserFx {
         if self.phase >= 1.0 {
             self.phase -= 1.0;
         }
-        let lfo = sinf(TWO_PI * self.phase);
+        let lfo = (TWO_PI * self.phase).sin();
         let min_freq = 100.0_f32;
         let max_freq = 2000.0_f32;
         let depth_clamped = self.depth.clamp(0.0, 1.0);
         let center_freq = min_freq + (max_freq - min_freq) * 0.5 * (1.0 + lfo * depth_clamped);
-        let g = libm::tanf(core::f32::consts::PI * center_freq / self.sample_rate);
+        let g = (core::f32::consts::PI * center_freq / self.sample_rate).tan();
         let a = (g - 1.0) / (g + 1.0);
         let fb = self.feedback.clamp(-0.9, 0.9);
         let input_with_fb = sample + self.feedback_buf * fb;
@@ -87,8 +86,8 @@ impl PhaserFx {
         }
         self.feedback_buf = out;
         let mix_angle = self.mix * core::f32::consts::PI * 0.5;
-        let dry_gain = cosf(mix_angle);
-        let wet_gain = sinf(mix_angle);
+        let dry_gain = (mix_angle).cos();
+        let wet_gain = (mix_angle).sin();
         sample * dry_gain + out * wet_gain
     }
 }

@@ -73,7 +73,7 @@ pub fn warp_phase(phase: f32, amt: f32, drive: f32, shape: f32, bias: f32, soft:
     let x = ((phase - 0.5) + bias * 0.25) * gain;
     let hard = x.clamp(-clip, clip);
     let soft_mix = soft.clamp(0.0, 1.0);
-    let softened = libm::tanhf(x / clip.max(0.001)) * clip;
+    let softened = (x / clip.max(0.001).tanh()) * clip;
     let mixed = hard * (1.0 - soft_mix) + softened * soft_mix;
     mixed / (clip * 2.0) + 0.5
 }

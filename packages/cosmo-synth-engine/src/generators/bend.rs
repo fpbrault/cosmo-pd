@@ -67,8 +67,8 @@ pub fn warp_phase(phase: f32, amt: f32, curve: f32, bias: f32, knee: f32) -> f32
         1.0 - knee_mag
     };
     let scale = -10.0 * (amt * (0.5 + curve * 1.5));
-    let num = libm::expm1f(knee_shaped * scale);
-    let den = libm::expm1f(scale);
+    let num = (knee_shaped * scale).exp_m1();
+    let den = (scale).exp_m1();
     if den == 0.0 {
         phase
     } else {

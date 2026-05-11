@@ -33,8 +33,8 @@ impl CosmoProcessor {
         let sr = self.sample_rate;
         let headroom_ratio = REFERENCE_LINE_HEADROOM / PER_LINE_HEADROOM.max(0.01);
         let headroom_makeup =
-            libm::powf(headroom_ratio, HEADROOM_MAKEUP_EXPONENT).clamp(1.0, MAX_HEADROOM_MAKEUP);
-        let norm = volume * headroom_makeup / libm::sqrtf(NUM_VOICES as f32);
+            (headroom_ratio).powf(HEADROOM_MAKEUP_EXPONENT).clamp(1.0, MAX_HEADROOM_MAKEUP);
+        let norm = volume * headroom_makeup / (NUM_VOICES as f32).sqrt();
         let matrix = &p.mod_matrix;
 
         let mut prev_lfo1 = self.last_runtime_mod_sources.lfo1;

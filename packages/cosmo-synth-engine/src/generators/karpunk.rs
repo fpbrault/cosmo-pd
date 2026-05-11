@@ -159,7 +159,7 @@ impl KarpunkState {
         } else {
             220.0
         };
-        let ks_size = (libm::roundf(sample_rate / safe_freq) as usize).clamp(2, KS_BUFFER_SIZE - 1);
+        let ks_size = ((sample_rate / safe_freq).round() as usize).clamp(2, KS_BUFFER_SIZE - 1);
         let read_pos = (self.write_pos + KS_BUFFER_SIZE - ks_size) % KS_BUFFER_SIZE;
         let out = self.buffer[read_pos];
         let damp = (0.2 + dcw * 0.45 + damp_control.clamp(0.0, 1.0) * 0.35).clamp(0.0, 1.0);

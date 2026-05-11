@@ -1,4 +1,3 @@
-use libm::{cosf, expf, sinf, tanhf};
 
 // ---------------------------------------------------------------------------
 // DistortionFx — soft/hard clipping with tone control (1-pole HP + LP)
@@ -36,7 +35,7 @@ impl DistortionFx {
 
         // High-pass to remove DC before distortion (30 Hz)
         let hp_fc = 30.0_f32;
-        let hp_g = expf(-2.0 * core::f32::consts::PI * hp_fc / self.sample_rate);
+        let hp_g = (-2.0 * core::f32::consts::PI * hp_fc / self.sample_rate).exp();
         self.hp_state = hp_g * self.hp_state + (1.0 - hp_g) * sample;
         let hp_out = sample - self.hp_state;
 
@@ -49,9 +48,9 @@ impl DistortionFx {
         let driven = hp_out * drive_gain;
 
         let clipped = match self.mode {
-            1 => hard_clip(tanhf(driven * 0.75) * 1.2 + driven * 0.08),
+            1 => hard_clip((driven * 0.75).tanh() * 1.2 + driven * 0.08),
             2 => fuzz_clip(driven),
-            _ => tanhf(driven + driven.max(0.0) * 0.35),
+            _ => driven + driven.max(0.0).tanh() * 0.35,
         };
 
         // Tone control: LP filter; tone=0 → cutoff=800Hz, tone=1 → cutoff=12kHz
@@ -61,7 +60,7 @@ impl DistortionFx {
             1 => 900.0 + tone * 9800.0,
             _ => 700.0 + tone * 11200.0,
         };
-        let lp_g = expf(-2.0 * core::f32::consts::PI * lp_cutoff / self.sample_rate);
+        let lp_g = (-2.0 * core::f32::consts::PI * lp_cutoff / self.sample_rate).exp();
         self.lp_state = lp_g * self.lp_state + (1.0 - lp_g) * clipped;
         let toned = self.lp_state;
 
@@ -74,7 +73,7 @@ impl DistortionFx {
         let wet = toned * output_gain;
 
         let mix_angle = self.mix * core::f32::consts::PI * 0.5;
-        sample * cosf(mix_angle) + wet * sinf(mix_angle)
+        sample * (mix_angle).cos() + wet * (mix_angle).sin()
     }
 }
 
@@ -91,7 +90,7 @@ fn fuzz_clip(value: f32) -> f32 {
     } else {
         gated * 0.82
     };
-    hard_clip(tanhf(asymmetric) * 1.35)
+    hard_clip((asymmetric).tanh() * 1.35)
 }
 
 // ---------------------------------------------------------------------------
@@ -248,7 +247,7 @@ mod tests {
             fx.tone = 0.7;
             fx.mix = 1.0;
             for i in 0..1024 {
-                let input = libm::sinf(i as f32 * 0.04) * 0.25;
+                let input = (i as f32 * 0.04).sin() * 0.25;
                 let out = fx.process(input);
                 assert!(out.is_finite());
                 assert!(out.abs() <= 1.1);

@@ -198,5 +198,5 @@ pub fn engine_build_profile() -> String {
 // ---------------------------------------------------------------------------
 
 fn midi_note_to_freq(note: u8) -> f32 {
-    440.0 * libm::powf(2.0_f32, (note as f32 - 69.0) / 12.0)
+    440.0 * (2.0_f32).powf((note as f32 - 69.0) / 12.0)
 }

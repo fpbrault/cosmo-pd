@@ -256,14 +256,14 @@ fn rate_to_seconds(kind: EnvelopeKind, rate: u8) -> f32 {
         EnvelopeKind::Dca | EnvelopeKind::Dcw => {
             // DCA and DCW share the same measured timing curve once their raw
             // machine rates have been converted back to the displayed 0..99 scale.
-            104.04_f32 * libm::powf(0.004_f32 / 104.04_f32, normalized_rate)
+            104.04_f32 * (0.004_f32 / 104.04_f32).powf(normalized_rate)
         }
         EnvelopeKind::Dco => {
             // DCO uses normalized exponential curve: slowest at rate 0 (235.64s),
             // fastest at rate 99 (4ms). Formula: 235.64 * e^(k*x) where
             // k = ln(0.004/235.64) ≈ -10.984.
             const DCO_EXP_K: f32 = -13.984;
-            235.64_f32 * libm::expf(DCO_EXP_K * normalized_rate)
+            235.64_f32 * (DCO_EXP_K * normalized_rate).exp()
         }
     }
 }
@@ -281,7 +281,7 @@ fn rate_to_samples(kind: EnvelopeKind, rate: u8, sr: f32) -> u32 {
 /// Returns 0 when distance is 0 (no movement needed).
 #[inline]
 fn step_duration_samples(from_level: f32, to_level: f32, base_samples: u32) -> u32 {
-    let distance = libm::fabsf(to_level - from_level);
+    let distance = (to_level - from_level).abs();
     if distance <= 0.0 {
         return 0;
     }
@@ -290,7 +290,7 @@ fn step_duration_samples(from_level: f32, to_level: f32, base_samples: u32) -> u
 
 #[inline]
 fn is_frozen_step(from_level: f32, to_level: f32, rate: u8) -> bool {
-    rate == 0 && libm::fabsf(to_level - from_level) > 0.0
+    rate == 0 && (to_level - from_level).abs() > 0.0
 }
 
 #[cfg(test)]
@@ -387,7 +387,7 @@ mod tests {
 
         for (rate, seconds) in expected {
             let actual = rate_to_seconds(EnvelopeKind::Dca, rate);
-            let relative_error = libm::fabsf(actual - seconds) / seconds;
+            let relative_error = (actual - seconds).abs() / seconds;
             assert!(
                 relative_error <= 0.20,
                 "rate {rate}: expected about {seconds}s, got {actual}s (relative error {relative_error})"
@@ -421,7 +421,7 @@ mod tests {
 
         for (rate, seconds) in expected {
             let actual = rate_to_seconds(EnvelopeKind::Dco, rate);
-            let relative_error = libm::fabsf(actual - seconds) / seconds;
+            let relative_error = (actual - seconds).abs() / seconds;
             assert!(
                 relative_error <= 0.12,
                 "rate {rate}: expected about {seconds}s, got {actual}s (relative error {relative_error})"

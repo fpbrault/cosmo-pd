@@ -432,7 +432,7 @@ fn find_control_value(entries: Option<&[AlgoControlValueV1]>, control_id: &str) 
 }
 
 fn decode_waveform(value: f32) -> CzWaveform {
-    match libm::roundf(value).clamp(0.0, 7.0) as i32 {
+    match (value).round().clamp(0.0, 7.0) as i32 {
         0 => CzWaveform::Saw,
         1 => CzWaveform::Square,
         2 => CzWaveform::Pulse,
@@ -446,7 +446,7 @@ fn decode_waveform(value: f32) -> CzWaveform {
 }
 
 fn decode_window(value: f32) -> WindowType {
-    match libm::roundf(value).clamp(0.0, 5.0) as i32 {
+    match (value).round().clamp(0.0, 5.0) as i32 {
         0 => WindowType::Off,
         1 => WindowType::Saw,
         2 => WindowType::Triangle,

@@ -1,4 +1,3 @@
-use libm::{cosf, sinf};
 
 use super::delay_line::DelayLine;
 use crate::dsp_utils::TWO_PI;
@@ -22,7 +21,7 @@ pub struct ChorusFx {
 
 impl ChorusFx {
     pub fn new(sr: f32) -> Self {
-        let buf_len = libm::roundf(0.05 * sr) as usize + 2;
+        let buf_len = (0.05 * sr).round() as usize + 2;
         Self {
             delay: DelayLine::new(buf_len),
             phase: 0.0,
@@ -45,14 +44,14 @@ impl ChorusFx {
         if self.phase >= 1.0 {
             self.phase -= 1.0;
         }
-        let mod_val = sinf(TWO_PI * self.phase);
+        let mod_val = (TWO_PI * self.phase).sin();
         let delay_samples = (0.005 + self.smooth_depth * (mod_val + 1.0)) * self.sample_rate;
         let delay_samples = delay_samples.max(1.0);
         let wet = self.delay.read_at_fractional(delay_samples);
         self.delay.write(sample);
         let mix_angle = self.mix * core::f32::consts::PI * 0.5;
-        let dry_gain = cosf(mix_angle);
-        let wet_gain = sinf(mix_angle);
+        let dry_gain = (mix_angle).cos();
+        let wet_gain = (mix_angle).sin();
         sample * dry_gain + wet * wet_gain
     }
 }

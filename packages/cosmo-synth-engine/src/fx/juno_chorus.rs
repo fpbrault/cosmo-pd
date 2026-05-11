@@ -1,4 +1,3 @@
-use libm::{cosf, sinf};
 
 use super::delay_line::DelayLine;
 
@@ -26,7 +25,7 @@ pub struct JunoChorusFx {
 
 impl JunoChorusFx {
     pub fn new(sr: f32) -> Self {
-        let buf_len = libm::roundf(0.01 * sr) as usize + 2;
+        let buf_len = (0.01 * sr).round() as usize + 2;
         Self {
             delay1: DelayLine::new(buf_len),
             delay2: DelayLine::new(buf_len),
@@ -56,8 +55,8 @@ impl JunoChorusFx {
             self.lfo2_phase -= 1.0;
         }
 
-        let lfo1 = sinf(self.lfo1_phase * core::f32::consts::PI * 2.0);
-        let lfo2 = sinf(self.lfo2_phase * core::f32::consts::PI * 2.0);
+        let lfo1 = (self.lfo1_phase * core::f32::consts::PI * 2.0).sin();
+        let lfo2 = (self.lfo2_phase * core::f32::consts::PI * 2.0).sin();
 
         let center = JUNO_CENTER_S * self.sample_rate;
         let depth = JUNO_DEPTH_S * self.sample_rate;
@@ -79,7 +78,7 @@ impl JunoChorusFx {
         };
 
         let mix_angle = self.mix * core::f32::consts::PI * 0.5;
-        sample * cosf(mix_angle) + wet * sinf(mix_angle)
+        sample * (mix_angle).cos() + wet * (mix_angle).sin()
     }
 }
 

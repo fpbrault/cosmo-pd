@@ -68,7 +68,7 @@ impl CosmoProcessor {
                 voice.vibrato_phase = 0.0;
                 let delay_ms = vib.delay;
                 voice.vibrato_delay_counter =
-                    libm::roundf(delay_ms * self.sample_rate / 1000.0) as u32;
+                    (delay_ms * self.sample_rate / 1000.0).round() as u32;
             }
         }
     }
@@ -256,7 +256,7 @@ impl CosmoProcessor {
             if curve.abs() < 0.001 {
                 vel
             } else {
-                let exponent = libm::powf(2.0_f32, -curve * 2.5);
+                let exponent = (2.0_f32).powf(-curve * 2.5);
                 vel.clamp(0.0, 1.0).powf(exponent)
             }
         };

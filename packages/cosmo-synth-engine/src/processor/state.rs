@@ -46,7 +46,7 @@ impl CzDacColor {
         const AIR_HP_HZ: f32 = 5_500.0;
         const HF_ROLLOFF_HZ: f32 = 20_000.0;
 
-        let slew = libm::fabsf(input - self.prev_q);
+        let slew = (input - self.prev_q).abs();
         self.slew_env = self.slew_env * 0.999 + slew * 0.001;
         self.prev_q = input;
 
@@ -55,7 +55,7 @@ impl CzDacColor {
 
         let mistrack = (self.env * MISTRACK_MAX).clamp(0.0, MISTRACK_MAX);
         let q = QUANT_STEPS + mistrack * 2.0;
-        let quantized = libm::roundf(input * q) / q;
+        let quantized = (input * q).round() / q;
 
         let compressed = signed_pow(quantized, COMPRESS_GAMMA);
 

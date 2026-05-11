@@ -84,7 +84,7 @@ pub fn warp_phase(phase: f32, amt: f32, ratio: f32, depth: f32, fm_phase: f32, s
         cubic_sine_approx(fm_x)
     } else {
         // Sawtooth modulator in [-1, 1]
-        let saw_x = fm_x - libm::floorf(fm_x);
+        let saw_x = fm_x - (fm_x).floor();
         let saw_mod = 2.0 * saw_x - 1.0;
         if shape_clamped >= 1.0 {
             saw_mod

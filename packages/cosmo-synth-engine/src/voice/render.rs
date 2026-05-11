@@ -1,4 +1,3 @@
-use libm::sinf;
 
 use crate::dsp_utils::{lfo_output, wrap01, TWO_PI};
 use crate::envelope::EnvelopeKind;
@@ -176,8 +175,8 @@ pub fn render_voice(
     let volume_mod = mod_value_for(ModDestination::Volume, &p.mod_matrix, &mod_sources);
     let mut sample = sample * (1.0 + volume_mod);
 
-    let tail_alpha = 1.0 - libm::expf(-1.0 / (RELEASE_TAIL_LEVEL_TIME_SECONDS * sr.max(1.0)));
-    voice.release_tail_level += (libm::fabsf(sample) - voice.release_tail_level) * tail_alpha;
+    let tail_alpha = 1.0 - (-1.0 / (RELEASE_TAIL_LEVEL_TIME_SECONDS * sr.max(1.0))).exp();
+    voice.release_tail_level += ((sample).abs() - voice.release_tail_level) * tail_alpha;
 
     // Start a short fade when the release tail is near silence.
     // Use both envelope and signal-level checks: the signal check catches
@@ -185,9 +184,9 @@ pub fn render_voice(
     // energy does not track DCA envelope level perfectly.
     if voice.is_releasing && voice.anti_click_fade == 0 {
         let env_near_silence =
-            libm::fabsf(env.dca1) < SILENCE_THRESHOLD && libm::fabsf(env.dca2) < SILENCE_THRESHOLD;
+            (env.dca1).abs() < SILENCE_THRESHOLD && (env.dca2).abs() < SILENCE_THRESHOLD;
         let tail_near_silence = voice.release_tail_level < RELEASE_TAIL_LEVEL_THRESHOLD;
-        let instant_near_silence = libm::fabsf(sample) < RELEASE_TAIL_LEVEL_THRESHOLD * 2.0;
+        let instant_near_silence = (sample).abs() < RELEASE_TAIL_LEVEL_THRESHOLD * 2.0;
 
         if (env_near_silence || tail_near_silence) && instant_near_silence {
             let min_freq = signal.effective_freq1.min(signal.effective_freq2).max(20.0);
@@ -241,7 +240,7 @@ pub fn render_voice(
 
     if voice.zero_cross_stop_pending {
         let prev_raw = voice.last_output_sample;
-        let near_zero = libm::fabsf(sample) <= ZERO_CROSS_STOP_THRESHOLD;
+        let near_zero = (sample).abs() <= ZERO_CROSS_STOP_THRESHOLD;
         let crossed_zero = (prev_raw > 0.0 && sample <= 0.0) || (prev_raw < 0.0 && sample >= 0.0);
 
         voice.last_output_sample = sample;
@@ -394,7 +393,7 @@ fn build_signal_state(
 
 fn apply_dcw_dezipper(voice: &mut Voice, sr: f32, signal: &mut SignalState) {
     let safe_sr = sr.max(1.0);
-    let alpha = 1.0 - libm::expf(-1.0 / (DCW_DEZIPPER_TIME_SECONDS * safe_sr));
+    let alpha = 1.0 - (-1.0 / (DCW_DEZIPPER_TIME_SECONDS * safe_sr)).exp();
 
     voice.smoothed_dcw1 += (signal.final_dcw1 - voice.smoothed_dcw1) * alpha;
     voice.smoothed_dcw2 += (signal.final_dcw2 - voice.smoothed_dcw2) * alpha;
@@ -406,7 +405,7 @@ fn apply_dcw_dezipper(voice: &mut Voice, sr: f32, signal: &mut SignalState) {
 #[inline]
 fn suppress_sample_discontinuity(prev_sample: f32, sample: f32) -> f32 {
     let delta = sample - prev_sample;
-    let delta_abs = libm::fabsf(delta);
+    let delta_abs = (delta).abs();
     if delta_abs <= POP_SUPPRESS_DELTA_THRESHOLD {
         return sample;
     }
@@ -438,28 +437,24 @@ pub(crate) fn cz_dco_env_semitones(dco_env: f32) -> f32 {
 #[inline]
 pub(crate) fn cz_dca_env_gain(dca_env: f32) -> f32 {
     let level = dca_env.clamp(0.0, 1.0);
-    libm::powf(level, DCA_LEVEL_CURVE_EXPONENT).clamp(0.0, 1.0)
+    level.powf(DCA_LEVEL_CURVE_EXPONENT).clamp(0.0, 1.0)
 }
 
 #[inline]
 pub(crate) fn cz_dcw_env_depth(dcw_env: f32) -> f32 {
     let level = dcw_env.clamp(0.0, 1.0);
-    libm::powf(level, DCW_LEVEL_CURVE_EXPONENT).clamp(0.0, 1.0)
+    level.powf(DCW_LEVEL_CURVE_EXPONENT).clamp(0.0, 1.0)
 }
 
 pub(crate) fn line_frequency(base_freq: f32, line: &LineParams, dco_env: f32) -> f32 {
     let dco_semitones = cz_dco_env_semitones(dco_env);
     base_freq
-        * libm::powf(
-            2.0,
-            line.octave + line.detune_note / 12.0 + line.detune_fine / 720.0,
-        )
-        * libm::powf(2.0, dco_semitones / 12.0)
+        * (2.0_f32).powf(line.octave + line.detune_note / 12.0 + line.detune_fine / 720.0)
+        * (2.0_f32).powf(dco_semitones / 12.0)
 }
 
 fn apply_pitch_and_lfo_modulation(
-    voice: &mut Voice,
-    p: &SynthParams,
+    voice: &mut Voice, p: &SynthParams,
     sr: f32,
     base_freq: f32,
     pitch_bend_semitones: f32,
@@ -472,15 +467,14 @@ fn apply_pitch_and_lfo_modulation(
     // Pitch modulation from mod matrix (additive semitone offset via ratio)
     let pitch_mod = mod_value_for(ModDestination::Pitch, &p.mod_matrix, sources);
     if pitch_mod != 0.0 {
-        let ratio = libm::powf(2.0, pitch_mod * 2.0 / 12.0); // ±2 semitones max
+        let ratio = (2.0_f32).powf(pitch_mod * 2.0 / 12.0); // ±2 semitones max
         signal.effective_freq1 *= ratio;
         signal.effective_freq2 *= ratio;
     }
 }
 
 fn apply_portamento(
-    voice: &mut Voice,
-    port: &crate::params::PortamentoParams,
+    voice: &mut Voice, port: &crate::params::PortamentoParams,
     sr: f32,
     base_freq: f32,
     signal: &mut SignalState,
@@ -493,7 +487,7 @@ fn apply_portamento(
         PortamentoMode::Rate => {
             let t = (port.rate / 99.0).clamp(0.0, 1.0);
             let time_const = 3.0 * (1.0 - t) * (1.0 - t) + 0.001;
-            let alpha = 1.0 - libm::expf(-1.0 / (time_const * sr));
+            let alpha = 1.0 - (-1.0 / (time_const * sr)).exp();
             voice.current_freq += (voice.target_freq - voice.current_freq) * alpha;
         }
         PortamentoMode::Time => {
@@ -518,14 +512,13 @@ fn apply_pitch_bend(pitch_bend_semitones: f32, signal: &mut SignalState) {
         return;
     }
 
-    let bend_ratio = libm::powf(2.0, pitch_bend_semitones / 12.0);
+    let bend_ratio = (2.0_f32).powf(pitch_bend_semitones / 12.0);
     signal.effective_freq1 *= bend_ratio;
     signal.effective_freq2 *= bend_ratio;
 }
 
 fn apply_vibrato(
-    voice: &mut Voice,
-    p: &SynthParams,
+    voice: &mut Voice, p: &SynthParams,
     sr: f32,
     sources: &ModSources,
     signal: &mut SignalState,
@@ -589,7 +582,7 @@ fn build_phase_frame(
     let phi1 = wrap01(voice.phi1);
     let phi2 = wrap01(voice.phi2);
     let pm_phi = wrap01(voice.pm_phi);
-    let pm_mod = int_pm_amount * 10.0 * sinf(TWO_PI * pm_phi);
+    let pm_mod = int_pm_amount * 10.0 * (TWO_PI * pm_phi).sin();
 
     // pm_pre=true:  PM applied before warp shaping (phase_a_post = phi+pm_mod, pm_post_mod=0)
     // pm_pre=false: PM applied after warp shaping  (phase_a_post = phi,         pm_post_mod=pm_mod)
@@ -653,7 +646,7 @@ fn mix_line_outputs(
         ModMode::Ring => mix_a * mix_b * p.ring_gain.max(0.0),
         ModMode::Noise => {
             // Placeholder noise remains deterministic so renders stay repeatable.
-            let noise = sinf(phi1 * 12_345.679) * 2.0 - 1.0;
+            let noise = (phi1 * 12_345.679).sin() * 2.0 - 1.0;
             let mixed = match p.line_select {
                 LineSelect::L1 => mix_a,
                 LineSelect::L2 => mix_b,

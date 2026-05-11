@@ -79,16 +79,16 @@ pub fn warp_phase(phase: f32, amt: f32, segs: f32, reverse: f32, slip: f32, spac
     }
 
     // Map segs [0..1] → integer count [2..8]
-    let n_i = (2.0 + libm::roundf(segs * 6.0)).clamp(2.0, 8.0) as i32;
+    let n_i = (2.0 + (segs * 6.0).round()).clamp(2.0, 8.0) as i32;
     let n = n_i as f32;
     let inv_n = 1.0 / n;
     let scaled = phase * n;
-    let seg_f = libm::floorf(scaled);
+    let seg_f = (scaled).floor();
     let local = scaled - seg_f; // 0..1 within the segment
     let seg_i = seg_f as i32;
 
     // spacing [0..1] → period [2, 3, 4]
-    let period = 2 + (libm::roundf(spacing * 2.0) as i32).clamp(0, 2);
+    let period = 2 + ((spacing * 2.0).round() as i32).clamp(0, 2);
     let should_reverse = (seg_i % period) == 1;
     let rev_blend = if should_reverse { reverse } else { 0.0 };
     let local_warped = local + (1.0 - 2.0 * local) * rev_blend;

@@ -69,7 +69,7 @@ pub fn warp_phase(phase: f32, amt: f32, order: f32, tilt: f32, warp: f32, mix: f
     let n = 1.0 + order * 5.0;
     // Equivalent triangle identity for acos(cos(2πx))/π: 1 - |2*fract(x) - 1|
     let x = n * (phase + warp * 0.25) + tilt;
-    let frac = x - libm::floorf(x);
-    let poly = 1.0 - libm::fabsf(2.0 * frac - 1.0);
+    let frac = x - (x).floor();
+    let poly = 1.0 - (2.0 * frac - 1.0).abs();
     phase + (poly - phase) * mix_amt
 }

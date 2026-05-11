@@ -344,9 +344,11 @@ pub(crate) fn modulated_line_params(
 
     let mut modded = line.clone();
     modded.algo_blend = (line.algo_blend + algo_blend_mod).clamp(0.0, 1.0);
-    modded.dco_env = apply_env_step_modulation(&line.dco_env, line_index, EnvKindKey::Dco, cache, sources);
-    modded.dcw_env = apply_env_step_modulation(&line.dcw_env, line_index, EnvKindKey::Dcw, cache, sources);
-    modded.dca_env = apply_env_step_modulation(&line.dca_env, line_index, EnvKindKey::Dca, cache, sources);
+    if cache.has_env_step_routes {
+        modded.dco_env = apply_env_step_modulation(&line.dco_env, line_index, EnvKindKey::Dco, cache, sources);
+        modded.dcw_env = apply_env_step_modulation(&line.dcw_env, line_index, EnvKindKey::Dcw, cache, sources);
+        modded.dca_env = apply_env_step_modulation(&line.dca_env, line_index, EnvKindKey::Dca, cache, sources);
+    }
     modded
 }
 // ---------------------------------------------------------------------------

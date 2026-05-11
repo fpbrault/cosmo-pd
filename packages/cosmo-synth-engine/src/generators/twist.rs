@@ -79,8 +79,8 @@ pub fn warp_phase(
     let partials = 1.0 + harmonics * 11.0;
     let depth_scale = 0.03 + depth * 0.25;
     let shape_exp = 0.35 + shape * 2.2;
-    let driver = libm::sinf(core::f32::consts::TAU * (phase + phase_offset) * partials);
-    let shaped_mag = pow01(libm::fabsf(driver), shape_exp);
+    let driver = core::f32::consts::TAU * (phase + phase_offset).sin() * partials;
+    let shaped_mag = pow01((driver).abs(), shape_exp);
     let shaped = if driver >= 0.0 {
         shaped_mag
     } else {

@@ -22,7 +22,7 @@ pub struct ShimmerVerbFx {
 impl ShimmerVerbFx {
     pub fn new(sr: f32) -> Self {
         let pitch_window_samples = (0.055 * sr).max(16.0);
-        let pitch_buf_len = libm::roundf((0.08 * sr).max(pitch_window_samples + 4.0)) as usize;
+        let pitch_buf_len = ((0.08 * sr).round().max(pitch_window_samples + 4.0)) as usize;
         let mut reverb = FdnReverb::new(sr);
         reverb.enabled = true;
         reverb.mix = 1.0; // always wet internally; outer mix handled here
@@ -67,7 +67,7 @@ impl ShimmerVerbFx {
         let wet = self.reverb.process(reverb_in);
 
         let mix_angle = self.mix * core::f32::consts::PI * 0.5;
-        sample * libm::cosf(mix_angle) + wet * libm::sinf(mix_angle)
+        sample * (mix_angle).cos() + wet * (mix_angle).sin()
     }
 
     fn pitch_head(&self, phase: f32) -> f32 {
@@ -78,7 +78,7 @@ impl ShimmerVerbFx {
 
 #[inline]
 fn raised_sine_window(phase: f32) -> f32 {
-    libm::sinf(phase * core::f32::consts::PI).max(0.0)
+    (phase * core::f32::consts::PI).sin().max(0.0)
 }
 
 // ---------------------------------------------------------------------------

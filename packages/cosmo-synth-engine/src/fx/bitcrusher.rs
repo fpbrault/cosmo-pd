@@ -1,4 +1,3 @@
-use libm::{cosf, sinf};
 
 // ---------------------------------------------------------------------------
 // BitcrusherFx — bit depth reduction + sample rate reduction
@@ -42,12 +41,12 @@ impl BitcrusherFx {
         if self.hold_counter >= divisor {
             self.hold_counter -= divisor;
             // Bit reduction
-            let levels = libm::powf(2.0, self.bits.clamp(1.0, 16.0));
-            self.hold_value = libm::roundf(sample * levels) / levels;
+            let levels = (2.0_f32).powf(self.bits.clamp(1.0, 16.0));
+            self.hold_value = (sample * levels).round() / levels;
         }
 
         let mix_angle = self.mix * core::f32::consts::PI * 0.5;
-        sample * cosf(mix_angle) + self.hold_value * sinf(mix_angle)
+        sample * (mix_angle).cos() + self.hold_value * (mix_angle).sin()
     }
 }
 

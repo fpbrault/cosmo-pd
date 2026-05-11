@@ -41,7 +41,7 @@ impl DelayLine {
     /// Linear-interpolated read at fractional delay `samples` (≥ 1).
     #[inline]
     pub fn read_at_fractional(&self, samples: f32) -> f32 {
-        let floor = libm::floorf(samples);
+        let floor = (samples).floor();
         let int_part = floor as usize;
         let frac = samples - floor;
         let a = self.read(int_part);

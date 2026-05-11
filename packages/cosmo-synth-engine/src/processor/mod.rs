@@ -410,11 +410,11 @@ mod tests {
     fn cz_dac_color_output_is_finite_and_bounded() {
         let mut color = CzDacColor::new();
         for n in 0..4096 {
-            let input = libm::sinf(n as f32 * 0.013) * 1.25;
+            let input = (n as f32 * 0.013).sin() * 1.25;
             let out = color.process(input, 48_000.0);
             assert!(out.is_finite(), "colored sample should be finite");
             assert!(
-                libm::fabsf(out) <= 1.2,
+                (out).abs() <= 1.2,
                 "colored sample should stay within stage bounds",
             );
         }
@@ -432,7 +432,7 @@ mod tests {
 
         let steady_out = steady.process(0.12, 48_000.0);
         let transient_out = transient.process(0.78, 48_000.0);
-        let delta = libm::fabsf(transient_out - steady_out);
+        let delta = (transient_out - steady_out).abs();
 
         assert!(
             delta > 0.1,

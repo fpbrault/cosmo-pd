@@ -223,6 +223,11 @@ pub enum ModDestination {
 /// Total number of `ModDestination` variants.
 pub const NUM_MOD_DESTINATIONS: usize = ModDestination::EqGain8000 as usize + 1;
 
+/// First env step destination discriminant.
+pub const ENV_STEP_DEST_FIRST: usize = ModDestination::Line1DcoEnvStep1Level as usize;
+/// Last env step destination discriminant.
+pub const ENV_STEP_DEST_LAST: usize = ModDestination::Line2DcaEnvStep8Rate as usize;
+
 /// A single modulation route assignment.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]

@@ -24,7 +24,10 @@ pub use fx_params::{
 };
 pub use lfo::{LfoParams, LfoWaveform};
 pub use line::{AlgoControlValueV1, LineParams, LineSelect, ModMode, PolyMode};
-pub use modulation::{ModDestination, ModMatrix, ModRoute, ModSource, NUM_MOD_DESTINATIONS};
+pub use modulation::{
+    ModDestination, ModMatrix, ModRoute, ModSource, ENV_STEP_DEST_FIRST, ENV_STEP_DEST_LAST,
+    NUM_MOD_DESTINATIONS,
+};
 pub use portamento::{PortamentoMode, PortamentoParams};
 pub use synth_params::{ModEnvParams, RandomParams, SynthParams, NUM_OPERATORS, NUM_VOICES};
 pub use ui_meta::{
