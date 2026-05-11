@@ -1,3 +1,9 @@
+#[cfg(feature = "std")]
+use std::sync::Arc;
+
+#[cfg(not(feature = "std"))]
+use alloc::sync::Arc;
+
 use crate::dsp_utils::{lfo_output_with_symmetry, random_hold_value};
 use crate::generators::{pre_resolve_controls, PER_LINE_HEADROOM};
 use crate::params::{ModDestination, ModMatrixCache, NUM_VOICES};
@@ -8,6 +14,9 @@ use super::state::RuntimeModSources;
 use super::utils::soft_clip_tanh;
 use super::CosmoProcessor;
 
+#[cfg(feature = "no_denormals")]
+use no_denormals::no_denormals;
+
 const SOFT_CLIP_DRIVE: f32 = 1.0;
 const REFERENCE_LINE_HEADROOM: f32 = 0.75;
 const HEADROOM_MAKEUP_EXPONENT: f32 = 0.8;
@@ -16,7 +25,22 @@ const ENABLE_CZ_DAC_COLOR: bool = false;
 
 impl CosmoProcessor {
     /// Fill `output` with mono samples.
+    ///
+    /// On `std` builds, denormals are suppressed for the duration of this
+    /// call to prevent the ~100x CPU stalls that subnormal floats cause in
+    /// IIR filters and feedback delay paths. The FTZ/DAZ CPU flags are
+    /// restored on exit.
     pub fn process(&mut self, output: &mut [f32]) {
+        #[cfg(feature = "no_denormals")]
+        unsafe {
+            no_denormals(|| self.process_inner(output))
+        }
+
+        #[cfg(not(feature = "no_denormals"))]
+        self.process_inner(output);
+    }
+
+    fn process_inner(&mut self, output: &mut [f32]) {
         let p = &self.params;
         let volume = p.volume;
         let base_lfo1_rate = p.lfo.rate;
@@ -129,19 +153,18 @@ impl CosmoProcessor {
                 .map(|a| pre_resolve_controls(a, line2_modded.algo_controls_b.as_deref()))
                 .unwrap_or([0.0; 8]);
 
+            let params = Arc::clone(&self.params);
             let mut mixed = 0.0_f32;
-            let params_ptr: *const crate::params::SynthParams = self.params.as_ref();
-            let pitch_bend_semitones = self.pitch_bend * self.params.pitch_bend_range;
+            let pitch_bend_semitones = self.pitch_bend * params.pitch_bend_range;
             let mod_wheel = self.mod_wheel;
             let aftertouch = self.aftertouch;
             let mut vector_acc = [0.0_f32; 4];
             let mut v = 0;
             while v + 4 <= NUM_VOICES {
-                let p_ref: &crate::params::SynthParams = unsafe { &*params_ptr };
                 let voice_samples = [
                     crate::voice::render_voice(
                         &mut self.voices[v],
-                        p_ref,
+                        &params,
                         lfo1_mod_val,
                         lfo2_mod_val,
                         random_mod_val,
@@ -160,7 +183,7 @@ impl CosmoProcessor {
                     ),
                     crate::voice::render_voice(
                         &mut self.voices[v + 1],
-                        p_ref,
+                        &params,
                         lfo1_mod_val,
                         lfo2_mod_val,
                         random_mod_val,
@@ -179,7 +202,7 @@ impl CosmoProcessor {
                     ),
                     crate::voice::render_voice(
                         &mut self.voices[v + 2],
-                        p_ref,
+                        &params,
                         lfo1_mod_val,
                         lfo2_mod_val,
                         random_mod_val,
@@ -198,7 +221,7 @@ impl CosmoProcessor {
                     ),
                     crate::voice::render_voice(
                         &mut self.voices[v + 3],
-                        p_ref,
+                        &params,
                         lfo1_mod_val,
                         lfo2_mod_val,
                         random_mod_val,
@@ -223,10 +246,9 @@ impl CosmoProcessor {
             mixed += self.simd_backend.horizontal_sum4(vector_acc);
 
             while v < NUM_VOICES {
-                let p_ref: &crate::params::SynthParams = unsafe { &*params_ptr };
                 mixed += crate::voice::render_voice(
                     &mut self.voices[v],
-                    p_ref,
+                    &params,
                     lfo1_mod_val,
                     lfo2_mod_val,
                     random_mod_val,

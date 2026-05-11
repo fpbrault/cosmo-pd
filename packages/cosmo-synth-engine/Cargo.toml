@@ -20,7 +20,7 @@ required-features = ["std"]
 
 [features]
 default = ["std"]
-std = ["serde/std", "serde_json"]
+std = ["serde/std", "serde_json", "dep:no_denormals"]
 wasm = ["wasm-bindgen", "web-sys", "getrandom/wasm_js", "serde_json"]
 specta-bindings = [
 	"dep:specta",
@@ -37,6 +37,7 @@ libm = "0.2"
 arrayvec = { version = "0.7", default-features = false }
 dasp_ring_buffer = { version = "0.11" }
 dasp_interpolate = { version = "0.11", features = ["linear"] }
+no_denormals = { version = "0.1", optional = true }
 
 [dependencies.specta]
 version = "=2.0.0-rc.22"
@@ -64,5 +65,11 @@ features = ["console"]
 version = "0.4"
 optional = true
 
+[dev-dependencies]
+assert_no_alloc = "1"
+
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = false
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(feature, values(\"no_denormals\"))"] }
