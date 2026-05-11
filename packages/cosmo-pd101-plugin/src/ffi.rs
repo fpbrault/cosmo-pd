@@ -377,12 +377,23 @@ fn automatable_param_by_index(index: usize) -> Option<&'static AutomatableParamS
     AUTOMATABLE_PARAMS.get(index)
 }
 
-fn meta_label_for_key(key: &str) -> &'static str {
+fn meta_label_for_key(key: &str) -> String {
     engine_param_ui_meta_v1()
         .iter()
         .find(|meta| meta.key == key)
-        .map(|meta| meta.readout_label)
-        .unwrap_or("Parameter")
+        .map(|meta| match meta.readout_format {
+            EngineParamReadoutFormatV1::Integer => "Int".to_owned(),
+            EngineParamReadoutFormatV1::Semitones => "St".to_owned(),
+            EngineParamReadoutFormatV1::OnOff => "On/Off".to_owned(),
+            EngineParamReadoutFormatV1::Percent => "%".to_owned(),
+            EngineParamReadoutFormatV1::Decimal => "Dec".to_owned(),
+            EngineParamReadoutFormatV1::Hertz => "Hz".to_owned(),
+            EngineParamReadoutFormatV1::Milliseconds => "ms".to_owned(),
+            EngineParamReadoutFormatV1::Seconds2 => "s".to_owned(),
+            EngineParamReadoutFormatV1::Uppercase | EngineParamReadoutFormatV1::Raw | EngineParamReadoutFormatV1::EnumMap { .. } => key.to_owned(),
+            EngineParamReadoutFormatV1::BipolarPercent | EngineParamReadoutFormatV1::Degrees => key.to_owned(),
+        })
+        .unwrap_or_else(|| "Parameter".to_owned())
 }
 
 fn is_stepped_key(key: &str) -> bool {
@@ -563,7 +574,7 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_params_json(
     let Ok(engine) = engine_ref(engine) else {
         return 0;
     };
-    let Ok(json) = serde_json::to_string(&engine.processor.params) else {
+    let Ok(json) = serde_json::to_string(engine.processor.params.as_ref()) else {
         return 0;
     };
     let bytes = json.as_bytes();
@@ -701,7 +712,7 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_parameter_info(
         info.flags |= 1 << 1;
     }
     write_c_char_array(&mut info.key, spec.key);
-    write_c_char_array(&mut info.label, meta_label_for_key(spec.key));
+    write_c_char_array(&mut info.label, &meta_label_for_key(spec.key));
     CosmoPd101FfiStatus::Ok
 }
 
@@ -743,7 +754,7 @@ pub extern "C" fn cosmo_pd101_ffi_set_parameter_value(
         return CosmoPd101FfiStatus::InvalidArgument;
     }
 
-    let mut params = engine.processor.params.clone();
+    let mut params = (*engine.processor.params).clone();
     if !set_parameter_value(&mut params, spec.key, value.clamp(spec.min, spec.max)) {
         return CosmoPd101FfiStatus::InvalidArgument;
     }
