@@ -8,6 +8,7 @@ mod render;
 
 pub use adsr::AdsrEnv;
 pub(crate) use modulation::mod_value_for;
+pub(crate) use modulation::mod_values_for_destinations4;
 pub(crate) use modulation::ModSources;
 pub use render::render_voice;
 
@@ -313,7 +314,17 @@ mod tests {
         let p = SynthParams::default();
         let timing = crate::envelope::EnvelopeTimingCache::new(48_000.0);
         let out = render_voice(
-            &mut voice, &p, 0.0, 0.0, 0.0, 48_000.0, &timing, 0.0, 0.0, 0.0,
+            &mut voice,
+            &p,
+            0.0,
+            0.0,
+            0.0,
+            48_000.0,
+            &timing,
+            0.0,
+            0.0,
+            0.0,
+            crate::simd::SimdBackend::Scalar,
         );
         assert_eq!(out, 0.0);
     }
@@ -329,7 +340,17 @@ mod tests {
         let mut any_nonzero = false;
         for _ in 0..64 {
             let out = render_voice(
-                &mut voice, &p, 0.0, 0.0, 0.0, 48_000.0, &timing, 0.0, 0.0, 0.0,
+                &mut voice,
+                &p,
+                0.0,
+                0.0,
+                0.0,
+                48_000.0,
+                &timing,
+                0.0,
+                0.0,
+                0.0,
+                crate::simd::SimdBackend::Scalar,
             );
             if out.abs() > 1e-6 {
                 any_nonzero = true;

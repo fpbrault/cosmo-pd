@@ -3,7 +3,7 @@
 //! Processes 4 f32 values simultaneously using 256-bit AVX2 instructions.
 //! Requires: x86_64 + avx2 feature support
 
-#![cfg(all(target_arch = "x86_64", target_feature = "avx2"))]
+#![cfg(target_arch = "x86_64")]
 
 use super::SimdType;
 use core::arch::x86_64::*;
@@ -14,20 +14,18 @@ use core::ops::{Add, AddAssign, Mul, MulAssign, Sub};
 pub struct Avx2([f32; 4]);
 
 impl Avx2 {
-    /// Create from 256-bit register (4x f32)
+    #[target_feature(enable = "avx2")]
     #[inline]
-    pub fn from_m256(v: __m256) -> Self {
+    unsafe fn from_m128(v: __m128) -> Self {
         let mut arr = [0.0; 4];
-        unsafe {
-            _mm256_storeu_ps(arr.as_mut_ptr(), v);
-        }
+        _mm_storeu_ps(arr.as_mut_ptr(), v);
         Self(arr)
     }
 
-    /// Convert to 256-bit register
+    #[target_feature(enable = "avx2")]
     #[inline]
-    pub fn to_m256(&self) -> __m256 {
-        unsafe { _mm256_loadu_ps(self.0.as_ptr()) }
+    unsafe fn to_m128(&self) -> __m128 {
+        _mm_loadu_ps(self.0.as_ptr())
     }
 }
 
@@ -60,26 +58,29 @@ impl SimdType for Avx2 {
 
     #[inline]
     fn add(self, other: Self) -> Self {
-        let v1 = self.to_m256();
-        let v2 = other.to_m256();
-        let result = unsafe { _mm256_add_ps(v1, v2) };
-        Self::from_m256(result)
+        unsafe {
+            let v1 = self.to_m128();
+            let v2 = other.to_m128();
+            Self::from_m128(_mm_add_ps(v1, v2))
+        }
     }
 
     #[inline]
     fn sub(self, other: Self) -> Self {
-        let v1 = self.to_m256();
-        let v2 = other.to_m256();
-        let result = unsafe { _mm256_sub_ps(v1, v2) };
-        Self::from_m256(result)
+        unsafe {
+            let v1 = self.to_m128();
+            let v2 = other.to_m128();
+            Self::from_m128(_mm_sub_ps(v1, v2))
+        }
     }
 
     #[inline]
     fn mul(self, other: Self) -> Self {
-        let v1 = self.to_m256();
-        let v2 = other.to_m256();
-        let result = unsafe { _mm256_mul_ps(v1, v2) };
-        Self::from_m256(result)
+        unsafe {
+            let v1 = self.to_m128();
+            let v2 = other.to_m128();
+            Self::from_m128(_mm_mul_ps(v1, v2))
+        }
     }
 
     #[inline]
@@ -89,18 +90,20 @@ impl SimdType for Avx2 {
 
     #[inline]
     fn max(self, other: Self) -> Self {
-        let v1 = self.to_m256();
-        let v2 = other.to_m256();
-        let result = unsafe { _mm256_max_ps(v1, v2) };
-        Self::from_m256(result)
+        unsafe {
+            let v1 = self.to_m128();
+            let v2 = other.to_m128();
+            Self::from_m128(_mm_max_ps(v1, v2))
+        }
     }
 
     #[inline]
     fn min(self, other: Self) -> Self {
-        let v1 = self.to_m256();
-        let v2 = other.to_m256();
-        let result = unsafe { _mm256_min_ps(v1, v2) };
-        Self::from_m256(result)
+        unsafe {
+            let v1 = self.to_m128();
+            let v2 = other.to_m128();
+            Self::from_m128(_mm_min_ps(v1, v2))
+        }
     }
 
     #[inline]
@@ -110,11 +113,11 @@ impl SimdType for Avx2 {
 
     #[inline]
     fn abs(self) -> Self {
-        let v = self.to_m256();
-        // abs: clear sign bit (AND with 0x7FFF_FFFF for each element)
-        let sign_mask = unsafe { _mm256_set1_epi32(0x7fff_ffff as i32) };
-        let result = unsafe { _mm256_and_ps(v, _mm256_castsi256_ps(sign_mask)) };
-        Self::from_m256(result)
+        unsafe {
+            let v = self.to_m128();
+            let sign_mask = _mm_set1_epi32(0x7fff_ffff_u32 as i32);
+            Self::from_m128(_mm_and_ps(v, _mm_castsi128_ps(sign_mask)))
+        }
     }
 }
 

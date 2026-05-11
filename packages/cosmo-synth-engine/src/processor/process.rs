@@ -2,7 +2,7 @@ use crate::batch_cache::RenderBlockCache;
 use crate::dsp_utils::{lfo_output_with_symmetry, random_hold_value};
 use crate::generators::PER_LINE_HEADROOM;
 use crate::params::{ModDestination, NUM_VOICES};
-use crate::voice::{mod_value_for, ModSources};
+use crate::voice::{mod_value_for, mod_values_for_destinations4, ModSources};
 
 use super::state::RuntimeModSources;
 use super::utils::soft_clip_tanh;
@@ -114,23 +114,31 @@ impl CosmoProcessor {
                         block.aftertouch,
                     );
 
-                    let lfo1_rate_mod =
-                        mod_value_for(ModDestination::Lfo1Rate, matrix, &pre_sources);
-                    let lfo1_depth_mod =
-                        mod_value_for(ModDestination::Lfo1Depth, matrix, &pre_sources);
-                    let lfo1_symmetry_mod =
-                        mod_value_for(ModDestination::Lfo1Symmetry, matrix, &pre_sources);
-                    let lfo1_offset_mod =
-                        mod_value_for(ModDestination::Lfo1Offset, matrix, &pre_sources);
+                    let [lfo1_rate_mod, lfo1_depth_mod, lfo1_symmetry_mod, lfo1_offset_mod] =
+                        mod_values_for_destinations4(
+                            [
+                                ModDestination::Lfo1Rate,
+                                ModDestination::Lfo1Depth,
+                                ModDestination::Lfo1Symmetry,
+                                ModDestination::Lfo1Offset,
+                            ],
+                            matrix,
+                            &pre_sources,
+                            self.simd_backend,
+                        );
 
-                    let lfo2_rate_mod =
-                        mod_value_for(ModDestination::Lfo2Rate, matrix, &pre_sources);
-                    let lfo2_depth_mod =
-                        mod_value_for(ModDestination::Lfo2Depth, matrix, &pre_sources);
-                    let lfo2_symmetry_mod =
-                        mod_value_for(ModDestination::Lfo2Symmetry, matrix, &pre_sources);
-                    let lfo2_offset_mod =
-                        mod_value_for(ModDestination::Lfo2Offset, matrix, &pre_sources);
+                    let [lfo2_rate_mod, lfo2_depth_mod, lfo2_symmetry_mod, lfo2_offset_mod] =
+                        mod_values_for_destinations4(
+                            [
+                                ModDestination::Lfo2Rate,
+                                ModDestination::Lfo2Depth,
+                                ModDestination::Lfo2Symmetry,
+                                ModDestination::Lfo2Offset,
+                            ],
+                            matrix,
+                            &pre_sources,
+                            self.simd_backend,
+                        );
                     let random_rate_mod =
                         mod_value_for(ModDestination::RandomRate, matrix, &pre_sources);
 
@@ -188,7 +196,71 @@ impl CosmoProcessor {
 
             let mut mixed = 0.0_f32;
             let params_ptr: *const crate::params::SynthParams = self.params.as_ref();
-            for v in 0..NUM_VOICES {
+            let mut vector_acc = [0.0_f32; 4];
+            let mut v = 0;
+            while v + 4 <= NUM_VOICES {
+                let p_ref: &crate::params::SynthParams = unsafe { &*params_ptr };
+                let voice_samples = [
+                    crate::voice::render_voice(
+                        &mut self.voices[v],
+                        p_ref,
+                        lfo1_mod_val,
+                        lfo2_mod_val,
+                        random_mod_val,
+                        block.sample_rate,
+                        &self.envelope_timing,
+                        block.pitch_bend_semitones,
+                        block.mod_wheel,
+                        block.aftertouch,
+                        self.simd_backend,
+                    ),
+                    crate::voice::render_voice(
+                        &mut self.voices[v + 1],
+                        p_ref,
+                        lfo1_mod_val,
+                        lfo2_mod_val,
+                        random_mod_val,
+                        block.sample_rate,
+                        &self.envelope_timing,
+                        block.pitch_bend_semitones,
+                        block.mod_wheel,
+                        block.aftertouch,
+                        self.simd_backend,
+                    ),
+                    crate::voice::render_voice(
+                        &mut self.voices[v + 2],
+                        p_ref,
+                        lfo1_mod_val,
+                        lfo2_mod_val,
+                        random_mod_val,
+                        block.sample_rate,
+                        &self.envelope_timing,
+                        block.pitch_bend_semitones,
+                        block.mod_wheel,
+                        block.aftertouch,
+                        self.simd_backend,
+                    ),
+                    crate::voice::render_voice(
+                        &mut self.voices[v + 3],
+                        p_ref,
+                        lfo1_mod_val,
+                        lfo2_mod_val,
+                        random_mod_val,
+                        block.sample_rate,
+                        &self.envelope_timing,
+                        block.pitch_bend_semitones,
+                        block.mod_wheel,
+                        block.aftertouch,
+                        self.simd_backend,
+                    ),
+                ];
+                vector_acc = self.simd_backend.add4(vector_acc, voice_samples);
+                v += 4;
+            }
+
+            mixed += self.simd_backend.horizontal_sum4(vector_acc);
+
+            while v < NUM_VOICES {
                 let p_ref: &crate::params::SynthParams = unsafe { &*params_ptr };
                 mixed += crate::voice::render_voice(
                     &mut self.voices[v],
@@ -201,7 +273,9 @@ impl CosmoProcessor {
                     block.pitch_bend_semitones,
                     block.mod_wheel,
                     block.aftertouch,
+                    self.simd_backend,
                 );
+                v += 1;
             }
 
             // Update cached mod sources using the same stable voice index.

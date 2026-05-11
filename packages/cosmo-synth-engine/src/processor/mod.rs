@@ -18,6 +18,7 @@ use crate::envelope::{normalize_synth_params_envelopes_to_raw_if_human, Envelope
 use crate::fx::FxChain;
 use crate::module_presets;
 use crate::params::{FxSlotConfig, FxSlotType, SynthParams, NUM_VOICES};
+use crate::simd::{detect_simd_backend, SimdBackend};
 use crate::voice::Voice;
 
 use self::state::CzDacColor;
@@ -46,6 +47,7 @@ pub struct CosmoProcessor {
     pub mod_wheel: f32,
     pub aftertouch: f32,
     pub last_runtime_mod_sources: RuntimeModSources,
+    pub simd_backend: SimdBackend,
     #[allow(dead_code)]
     fx_eco_toggle: bool,
     #[allow(dead_code)]
@@ -74,6 +76,7 @@ impl CosmoProcessor {
             mod_wheel: 0.0,
             aftertouch: 0.0,
             last_runtime_mod_sources: RuntimeModSources::default(),
+            simd_backend: detect_simd_backend(),
             fx_eco_toggle: false,
             fx_last_out: 0.0,
             envelope_timing: EnvelopeTimingCache::new(sample_rate),
@@ -208,6 +211,7 @@ impl CosmoProcessor {
         self.mod_wheel = 0.0;
         self.aftertouch = 0.0;
         self.last_runtime_mod_sources = RuntimeModSources::default();
+        self.simd_backend = detect_simd_backend();
         self.envelope_timing = EnvelopeTimingCache::new(self.sample_rate);
     }
 
