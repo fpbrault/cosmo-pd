@@ -74,9 +74,11 @@ export function getFxControlLabel(
 	controlId: string,
 	paramKey?: string,
 ): string {
+	console.log("getFxControlLabel called with:", { type, controlId, paramKey });
 	const fxLabel = i18n.t(`fx.controls.${type}.${controlId}.label`, {
 		defaultValue: "",
 	});
+
 	if (fxLabel) {
 		return fxLabel;
 	}
@@ -87,7 +89,7 @@ export function getFxControlLabel(
 			return paramLabel;
 		}
 
-		return humanizeIdentifier(paramKey);
+		return humanizeIdentifier(controlId);
 	}
 
 	return humanizeIdentifier(controlId);
