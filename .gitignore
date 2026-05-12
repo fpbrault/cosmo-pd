@@ -26,6 +26,7 @@ lib-dist
 *.njsproj
 *.sln
 *.sw?
+xcuserdata/
 
 CZSYX/
 package-lock.json

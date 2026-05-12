@@ -1,0 +1,390 @@
+type IpcRpcResponse = {
+	id: number;
+	result?: unknown;
+	error?: string;
+};
+
+type ScopeDataResponse = {
+	samples: number[];
+	sampleRate: number;
+	hz: number;
+};
+
+type RuntimeVoiceStatesResponse = string | unknown[];
+
+type RuntimeModSourcesResponse = string | Record<string, number>;
+
+const SCOPE_POLL_INTERVAL_MS = 33;
+const RUNTIME_VOICE_STATES_POLL_INTERVAL_MS = 16;
+const RUNTIME_MOD_SOURCES_POLL_INTERVAL_MS = 16;
+const IPC_TIMEOUT_MS = 250;
+const SCOPE_SAMPLE_SCALE = 1 / 127.0;
+
+declare global {
+	interface Window {
+		webkit?: {
+			messageHandlers?: {
+				cosmoPd101?: { postMessage: (payload: unknown) => void };
+			};
+		};
+		__czHostPlatform?: "macos" | "ios";
+		ipc?: { postMessage: (msg: string) => void };
+		__czOnParams?: (json: string) => void;
+		__czOnHostPresetSelected?: (name: string) => void;
+		__czGetParams?: () => Promise<unknown>;
+		__czSetParams?: (json: string) => void;
+		__czOnScope?: (samples: number[], sampleRate: number, hz: number) => void;
+		__czIpcResponse?: (response: IpcRpcResponse) => void;
+	}
+}
+
+let installed = false;
+let nextRpcId = 1;
+const pendingRpc = new Map<
+	number,
+	{ resolve: (value: unknown) => void; reject: (reason: unknown) => void }
+>();
+let currentParamHandler: Window["__czOnParams"];
+let currentScopeHandler: Window["__czOnScope"];
+
+function nativeHandler() {
+	return window.webkit?.messageHandlers?.cosmoPd101;
+}
+
+function invokeAuv3(
+	method: string,
+	args: unknown[] = [],
+	timeoutMs = 0,
+): Promise<unknown> {
+	return new Promise((resolve, reject) => {
+		const handler = nativeHandler();
+		if (!handler) {
+			reject(new Error("[auv3Bridge] native message handler not available"));
+			return;
+		}
+
+		const id = nextRpcId++;
+		let timeoutId = 0;
+		pendingRpc.set(id, {
+			resolve(value) {
+				window.clearTimeout(timeoutId);
+				resolve(value);
+			},
+			reject(reason) {
+				window.clearTimeout(timeoutId);
+				reject(reason);
+			},
+		});
+		if (timeoutMs > 0) {
+			timeoutId = window.setTimeout(() => {
+				if (!pendingRpc.delete(id)) {
+					return;
+				}
+				reject(new Error(`[auv3Bridge] ${method} timed out`));
+			}, timeoutMs);
+		}
+		handler.postMessage({ id, method, args });
+	});
+}
+
+function installIpcResponseHandler() {
+	window.__czIpcResponse = (response: IpcRpcResponse) => {
+		const pending = pendingRpc.get(response.id);
+		if (!pending) {
+			return;
+		}
+		pendingRpc.delete(response.id);
+		if (response.error !== undefined) {
+			pending.reject(new Error(response.error));
+		} else {
+			pending.resolve(response.result);
+		}
+	};
+}
+
+function installParamProperty() {
+	currentParamHandler = window.__czOnParams;
+	Object.defineProperty(window, "__czOnParams", {
+		configurable: true,
+		get() {
+			return currentParamHandler;
+		},
+		set(handler: Window["__czOnParams"]) {
+			currentParamHandler = handler;
+		},
+	});
+}
+
+function installIpcRouter() {
+	window.ipc = {
+		postMessage(message: string) {
+			let payload: unknown;
+			try {
+				payload = JSON.parse(message);
+			} catch {
+				console.warn("[auv3Bridge] dropped non-JSON IPC message", message);
+				return;
+			}
+			nativeHandler()?.postMessage(payload);
+		},
+	};
+
+	window.__czGetParams = async () => {
+		const result = await invokeAuv3("getParams", [], 3000);
+		if (typeof result !== "string") {
+			return result;
+		}
+		try {
+			return JSON.parse(result) as unknown;
+		} catch {
+			return null;
+		}
+	};
+	window.__czSetParams = (json: string) => {
+		void invokeAuv3("setParams", [json]).catch((error) => {
+			console.error("[auv3Bridge] setParams error", error);
+		});
+	};
+}
+
+function installScopeProperty(onActiveChange: (active: boolean) => void) {
+	currentScopeHandler = window.__czOnScope;
+	Object.defineProperty(window, "__czOnScope", {
+		configurable: true,
+		get() {
+			return currentScopeHandler;
+		},
+		set(handler: Window["__czOnScope"]) {
+			currentScopeHandler = typeof handler === "function" ? handler : undefined;
+			onActiveChange(currentScopeHandler !== undefined);
+		},
+	});
+	onActiveChange(currentScopeHandler !== undefined);
+}
+
+function installScopePolling() {
+	let rafId = 0;
+	let lastScheduled = 0;
+	let pollInFlight = false;
+	let destroyed = false;
+
+	const normalizeScopeSamples = (samples: number[]) => {
+		let maxAbs = 0;
+		for (const sample of samples) {
+			maxAbs = Math.max(maxAbs, Math.abs(sample));
+		}
+		if (maxAbs <= 1.5) {
+			return samples;
+		}
+		return samples.map((sample) => sample * SCOPE_SAMPLE_SCALE);
+	};
+
+	const scheduleNextFrame = () => {
+		if (destroyed || rafId !== 0 || !currentScopeHandler) {
+			return;
+		}
+		rafId = requestAnimationFrame(tick);
+	};
+
+	const stopPolling = () => {
+		if (rafId !== 0) {
+			cancelAnimationFrame(rafId);
+			rafId = 0;
+		}
+		lastScheduled = 0;
+	};
+
+	const tick = async (now: number) => {
+		rafId = 0;
+		if (destroyed || !currentScopeHandler) {
+			return;
+		}
+		if (now - lastScheduled < SCOPE_POLL_INTERVAL_MS || pollInFlight) {
+			scheduleNextFrame();
+			return;
+		}
+
+		lastScheduled = now;
+		pollInFlight = true;
+		try {
+			await invokeAuv3("getScopeData", [], IPC_TIMEOUT_MS)
+				.then((result) => {
+					const raw = result as ScopeDataResponse;
+					if (raw?.samples.length > 0 && currentScopeHandler) {
+						currentScopeHandler(
+							normalizeScopeSamples(raw.samples),
+							raw.sampleRate,
+							raw.hz,
+						);
+					}
+				})
+				.catch(() => {
+					// Scope data is opportunistic; audio may not be active yet.
+				});
+		} finally {
+			pollInFlight = false;
+			scheduleNextFrame();
+		}
+	};
+
+	installScopeProperty((active) => {
+		if (active) {
+			scheduleNextFrame();
+		} else {
+			stopPolling();
+		}
+	});
+
+	window.addEventListener("pagehide", () => {
+		destroyed = true;
+		stopPolling();
+	});
+}
+
+function installRuntimeVoiceStatesPolling() {
+	let rafId = 0;
+	let lastScheduled = 0;
+	let pollInFlight = false;
+	let destroyed = false;
+	let runtimeVoiceStatesAvailable = true;
+
+	const dispatchRuntimeVoiceStates = (result: RuntimeVoiceStatesResponse) => {
+		const states =
+			typeof result === "string" ? (JSON.parse(result) as unknown) : result;
+		if (!Array.isArray(states)) {
+			return;
+		}
+		window.dispatchEvent(
+			new CustomEvent("cz-runtime-voice-states", { detail: states }),
+		);
+	};
+
+	const scheduleNextFrame = () => {
+		if (destroyed || rafId !== 0 || !runtimeVoiceStatesAvailable) {
+			return;
+		}
+		rafId = requestAnimationFrame(tick);
+	};
+
+	const tick = async (now: number) => {
+		rafId = 0;
+		if (destroyed || !runtimeVoiceStatesAvailable) {
+			return;
+		}
+		if (
+			now - lastScheduled < RUNTIME_VOICE_STATES_POLL_INTERVAL_MS ||
+			pollInFlight
+		) {
+			scheduleNextFrame();
+			return;
+		}
+
+		lastScheduled = now;
+		pollInFlight = true;
+		try {
+			await invokeAuv3("getRuntimeVoiceStates", [], IPC_TIMEOUT_MS)
+				.then((result) => {
+					dispatchRuntimeVoiceStates(result as RuntimeVoiceStatesResponse);
+				})
+				.catch(() => {
+					runtimeVoiceStatesAvailable = false;
+				});
+		} finally {
+			pollInFlight = false;
+			scheduleNextFrame();
+		}
+	};
+
+	scheduleNextFrame();
+	window.addEventListener("pagehide", () => {
+		destroyed = true;
+		if (rafId !== 0) {
+			cancelAnimationFrame(rafId);
+			rafId = 0;
+		}
+	});
+}
+
+function installRuntimeModSourcesPolling() {
+	let rafId = 0;
+	let lastScheduled = 0;
+	let pollInFlight = false;
+	let destroyed = false;
+	let runtimeModSourcesAvailable = true;
+
+	const dispatchRuntimeModSources = (result: RuntimeModSourcesResponse) => {
+		const sources =
+			typeof result === "string"
+				? (JSON.parse(result) as Record<string, number>)
+				: result;
+		if (typeof sources !== "object" || sources === null) {
+			return;
+		}
+		window.dispatchEvent(
+			new CustomEvent("cz-runtime-mod-sources", { detail: sources }),
+		);
+	};
+
+	const scheduleNextFrame = () => {
+		if (destroyed || rafId !== 0 || !runtimeModSourcesAvailable) {
+			return;
+		}
+		rafId = requestAnimationFrame(tick);
+	};
+
+	const tick = async (now: number) => {
+		rafId = 0;
+		if (destroyed || !runtimeModSourcesAvailable) {
+			return;
+		}
+		if (
+			now - lastScheduled < RUNTIME_MOD_SOURCES_POLL_INTERVAL_MS ||
+			pollInFlight
+		) {
+			scheduleNextFrame();
+			return;
+		}
+
+		lastScheduled = now;
+		pollInFlight = true;
+		try {
+			await invokeAuv3("getRuntimeModSources", [], IPC_TIMEOUT_MS)
+				.then((result) => {
+					dispatchRuntimeModSources(result as RuntimeModSourcesResponse);
+				})
+				.catch(() => {
+					runtimeModSourcesAvailable = false;
+				});
+		} finally {
+			pollInFlight = false;
+			scheduleNextFrame();
+		}
+	};
+
+	scheduleNextFrame();
+	window.addEventListener("pagehide", () => {
+		destroyed = true;
+		if (rafId !== 0) {
+			cancelAnimationFrame(rafId);
+			rafId = 0;
+		}
+	});
+}
+
+export function ensureAuv3Bridge(): boolean {
+	if (installed) {
+		return true;
+	}
+	if (!nativeHandler()) {
+		return false;
+	}
+
+	installed = true;
+	installParamProperty();
+	installIpcResponseHandler();
+	installIpcRouter();
+	installScopePolling();
+	installRuntimeVoiceStatesPolling();
+	installRuntimeModSourcesPolling();
+	return true;
+}

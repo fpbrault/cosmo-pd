@@ -1090,6 +1090,7 @@ static void beamer_auv3_on_loaded(void* context) {
         initWithFrame:NSMakeRect(0, 0, width, height)];
     vc.view = container;
     vc.preferredContentSize = NSMakeSize(width, height);
+    vc.view.window.contentAspectRatio = NSMakeSize(width, height);
 
 #ifdef DEBUG
     bool devTools = true;

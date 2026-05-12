@@ -1,0 +1,13 @@
+{
+	"name": "@cosmo/cosmo-pd101-plugin-auv3",
+	"private": true,
+	"version": "0.1.0",
+	"type": "module",
+	"scripts": {
+		"build": "bun run ../../scripts/build-plugin-auv3.mjs",
+		"stage:webview": "bun run ../../scripts/build-plugin-auv3.mjs --webview-only",
+		"build:ios": "bun run ../../scripts/build-plugin-auv3.mjs --ios-xcframework",
+		"bundle": "bun run ../../scripts/build-plugin-auv3.mjs --bundle",
+		"plugin:install": "bun run ../../scripts/build-plugin-auv3.mjs --install"
+	}
+}

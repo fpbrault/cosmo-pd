@@ -170,6 +170,11 @@ static void beamer_auv3_ext_on_loaded(void* context) {
     self.view.autoresizingMask = NSViewMaxXMargin | NSViewMinYMargin;
 }
 
+- (void)viewDidAppear {
+    [super viewDidAppear];
+    self.view.window.contentAspectRatio = NSMakeSize(_guiWidth, _guiHeight);
+}
+
 - (void)_ensureWebView {
     if (_webviewHandle != NULL) {
         beamer_debug_log(@"_ensureWebView skipped existing handle");

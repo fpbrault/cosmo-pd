@@ -19,6 +19,7 @@ use cosmo_synth_engine::processor::{midi_note_to_freq, CosmoProcessor};
 use crossbeam_queue::ArrayQueue;
 use nih_plug::prelude::*;
 
+pub mod ffi;
 pub mod gui;
 
 const PLUGIN_LOG_PATH: &str = "/tmp/cosmo-plugin.log";

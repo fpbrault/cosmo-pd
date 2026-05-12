@@ -5,7 +5,7 @@ edition = "2021"
 description = "Cosmo PD-101 synthesizer VST3/CLAP plugin"
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["staticlib", "cdylib"]
 
 [features]
 default = []
