@@ -175,6 +175,7 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 		this._params = JSON.parse(JSON.stringify(DEFAULT_PARAMS));
 		this._queue = []; // messages received before WASM is ready
 		this._supportedModDestinations = null;
+		this._interleaved = null;
 		this._performanceMonitorEnabled = false;
 		this._performanceMetrics = {
 			blockCount: 0,
@@ -580,22 +581,29 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 
 		if (!this._synth) {
 			// Silence while WASM loads
-			ch0.fill(0);
-			if (outputs[0].length > 1) outputs[0][1].fill(0);
+			for (let ch = 0; ch < (outputs[0]?.length ?? 1); ch++) {
+				outputs[0][ch]?.fill(0);
+			}
 			return true;
+		}
+
+		const blockSize = ch0.length;
+		if (!this._interleaved || this._interleaved.length !== blockSize * 2) {
+			this._interleaved = new Float32Array(blockSize * 2);
 		}
 
 		const processStart = this._performanceMonitorEnabled ? this._nowMs() : 0;
 
-		// Fill the left channel buffer directly
-		this._synth.process(ch0);
+		this._synth.process(this._interleaved);
 		if (this._performanceMonitorEnabled) {
-			this._recordPerformanceBlock(this._nowMs() - processStart, ch0.length);
+			this._recordPerformanceBlock(this._nowMs() - processStart, blockSize);
 		}
 
-		// Copy to right channel if present
-		if (outputs[0].length > 1) {
-			outputs[0][1].set(ch0);
+		// De-interleave into L/R channel buffers
+		const ch1 = outputs[0].length > 1 ? outputs[0][1] : null;
+		for (let i = 0; i < blockSize; i++) {
+			ch0[i] = this._interleaved[i * 2];
+			if (ch1) ch1[i] = this._interleaved[i * 2 + 1];
 		}
 
 		return true;

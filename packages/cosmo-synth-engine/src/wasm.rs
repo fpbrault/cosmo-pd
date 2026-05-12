@@ -167,9 +167,10 @@ impl CzSynthProcessor {
         }
     }
 
-    /// Fill `output` with mono samples rendered by the DSP engine.
+    /// Fill `output` with interleaved stereo samples `[L, R, L, R, ...]`.
     ///
-    /// The caller passes a `Float32Array` slice backed by WASM linear memory.
+    /// The caller passes a `Float32Array` slice backed by WASM linear memory
+    /// whose length must be even (one sample per channel per frame).
     /// The entire slice is filled; returns nothing — same as the JS worklet
     /// `process()` contract.
     #[wasm_bindgen]

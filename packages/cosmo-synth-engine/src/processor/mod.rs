@@ -345,7 +345,7 @@ mod tests {
         }];
 
         let base_rate = proc.params.lfo.rate;
-        let mut out = [0.0_f32; 1];
+        let mut out = [0.0_f32; 2];
         proc.process(&mut out);
 
         let expected_without_mod = base_rate / proc.sample_rate;
@@ -362,7 +362,7 @@ mod tests {
             amount: 1.0,
             enabled: true,
         }];
-        let mut out = [0.0_f32; 1];
+        let mut out = [0.0_f32; 2];
         proc.process(&mut out);
 
         assert!(out[0].is_finite());
@@ -410,7 +410,7 @@ mod tests {
         }];
 
         let base_rate = proc.params.random.rate;
-        let mut out = [0.0_f32; 1];
+        let mut out = [0.0_f32; 2];
         proc.process(&mut out);
 
         let expected_without_mod = base_rate / proc.sample_rate;
@@ -565,7 +565,7 @@ mod tests {
         let mut peak_curvature = 0.0_f32;
         let mut prev = 0.0_f32;
         let mut prev_delta = 0.0_f32;
-        let mut block = [0.0_f32; 1];
+        let mut block = [0.0_f32; 2];
 
         let mut current_note = 60_u8;
         proc.note_on(current_note, utils::midi_note_to_freq(current_note), 1.0);

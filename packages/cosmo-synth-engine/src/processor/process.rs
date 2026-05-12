@@ -27,7 +27,10 @@ const MAX_HEADROOM_MAKEUP: f32 = 1.0;
 const ENABLE_CZ_DAC_COLOR: bool = false;
 
 impl CosmoProcessor {
-    /// Fill `output` with mono samples.
+    /// Fill `output` with interleaved stereo samples `[L, R, L, R, ...]`.
+    ///
+    /// The caller must provide an even-length buffer. Each consecutive pair
+    /// `(output[i], output[i+1])` is one stereo sample frame.
     ///
     /// On `std` builds, denormals are suppressed for the duration of this
     /// call to prevent the ~100x CPU stalls that subnormal floats cause in
@@ -54,6 +57,11 @@ impl CosmoProcessor {
     }
 
     fn process_inner(&mut self, output: &mut [f32]) {
+        assert_eq!(
+            output.len() % 2,
+            0,
+            "stereo output length must be even (interleaved L/R pairs)"
+        );
         let params = Arc::clone(&self.params);
         let p = params.as_ref();
         let volume = p.volume;
@@ -97,7 +105,7 @@ impl CosmoProcessor {
             .map(|a| pre_resolve_controls(a, &p.line2.algo_controls_b))
             .unwrap_or([0.0; 8]);
 
-        for sample_out in output.iter_mut() {
+        for frame in output.chunks_exact_mut(2) {
             let (source_mod_env, source_velocity) = self
                 .runtime_mod_source_voice_index()
                 .map(|voice_idx| {
@@ -400,14 +408,19 @@ impl CosmoProcessor {
 
             mixed *= norm;
 
-            let fx_out = self.fx.process(mixed);
-            let colored = if ENABLE_CZ_DAC_COLOR {
-                self.cz_dac_color.process(fx_out, sr)
+            let (fx_l, fx_r) = self.fx.process_stereo(mixed, mixed);
+            let colored_l = if ENABLE_CZ_DAC_COLOR {
+                self.cz_dac_color.process(fx_l, sr)
             } else {
-                fx_out
+                fx_l
             };
-            let soft_limited = soft_clip_tanh(colored, SOFT_CLIP_DRIVE);
-            *sample_out = soft_limited.clamp(-1.0, 1.0);
+            let colored_r = if ENABLE_CZ_DAC_COLOR {
+                self.cz_dac_color.process(fx_r, sr)
+            } else {
+                fx_r
+            };
+            frame[0] = soft_clip_tanh(colored_l, SOFT_CLIP_DRIVE).clamp(-1.0, 1.0);
+            frame[1] = soft_clip_tanh(colored_r, SOFT_CLIP_DRIVE).clamp(-1.0, 1.0);
         }
     }
 

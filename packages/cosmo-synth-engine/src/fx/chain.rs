@@ -201,6 +201,17 @@ impl FxSlotProcessors {
             FxSlotType::Vibrato | FxSlotType::PhaseMod | FxSlotType::Empty => sample,
         }
     }
+
+    fn process_stereo(
+        &mut self,
+        effect_type: FxSlotType,
+        left: f32,
+        right: f32,
+    ) -> (f32, f32) {
+        let out_l = self.process(effect_type, left);
+        let out_r = self.process(effect_type, right);
+        (out_l, out_r)
+    }
 }
 
 pub struct FxChain {
@@ -239,7 +250,7 @@ impl FxChain {
         }
     }
 
-    /// Process one sample through all 6 FX slots in series.
+    /// Process one sample through all 6 FX slots in series (mono).
     pub fn process(&mut self, sample: f32) -> f32 {
         let mut out = sample;
         for active_idx in 0..self.active_slot_count {
@@ -249,7 +260,23 @@ impl FxChain {
         out
     }
 
+    /// Process a stereo pair through all 6 FX slots in series.
+    /// Each effect is called twice (dual-mono) to maintain stereo separation.
+    pub fn process_stereo(&mut self, left: f32, right: f32) -> (f32, f32) {
+        let mut l = left;
+        let mut r = right;
+        for active_idx in 0..self.active_slot_count {
+            let slot = self.active_slots[active_idx];
+            (l, r) = self.process_slot_stereo(slot, l, r);
+        }
+        (l, r)
+    }
+
     fn process_slot(&mut self, slot: usize, sample: f32) -> f32 {
         self.slots[slot].process(self.slot_types[slot], sample)
+    }
+
+    fn process_slot_stereo(&mut self, slot: usize, left: f32, right: f32) -> (f32, f32) {
+        self.slots[slot].process_stereo(self.slot_types[slot], left, right)
     }
 }

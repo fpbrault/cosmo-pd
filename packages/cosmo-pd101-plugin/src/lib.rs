@@ -9,7 +9,6 @@ use std::io::Write;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::time::Instant;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use arc_swap::ArcSwap;
@@ -487,7 +486,8 @@ pub struct CzPlugin {
     cached_rt_synth_params: Arc<SynthParams>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
-    mono_output: Vec<f32>,
+    stereo_output: Vec<f32>,
+    scope_scratch: Vec<f32>,
     performance_counters: PerformanceCountersHandle,
 }
 
@@ -505,7 +505,8 @@ impl Default for CzPlugin {
             cached_rt_synth_params: Arc::new(default_rt_params),
             scope_buffer: Arc::new(Mutex::new(ScopeFrame::default())),
             ui_input_queue: Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY)),
-            mono_output: Vec::new(),
+            stereo_output: Vec::new(),
+            scope_scratch: Vec::new(),
             performance_counters: Arc::new(PerformanceCounters::default()),
         }
     }
@@ -603,8 +604,8 @@ impl Plugin for CzPlugin {
         self.cached_rt_synth_params = rt_synth_params;
         self.cached_synth_params_version = self.synth_params_version.load(Ordering::Acquire);
         self.processor = Some(processor);
-        self.mono_output
-            .resize(buffer_config.max_buffer_size as usize, 0.0);
+        self.stereo_output
+            .resize(buffer_config.max_buffer_size as usize * 2, 0.0);
         self.performance_counters
             .sample_rate_bits
             .store(buffer_config.sample_rate.to_bits(), Ordering::Release);
@@ -688,16 +689,17 @@ impl Plugin for CzPlugin {
                 proc.set_shared_params(Arc::clone(&self.cached_rt_synth_params));
                 self.performance_counters.record_param_apply();
             }
-            let num_samples = buffer.samples();
-            if num_samples > self.mono_output.len() {
+            let num_frames = buffer.samples();
+            let stereo_len = num_frames * 2;
+            if stereo_len > self.stereo_output.len() {
                 for channel_slice in buffer.as_slice() {
                     channel_slice.fill(0.0);
                 }
                 return ProcessStatus::Normal;
             }
-            let mono_output = &mut self.mono_output[..num_samples];
-            let process_start = monitor_enabled.then(Instant::now);
-            proc.process(mono_output);
+            let stereo_output = &mut self.stereo_output[..stereo_len];
+            let process_start = monitor_enabled.then(std::time::Instant::now);
+            proc.process(stereo_output);
             let elapsed_ns = process_start
                 .map(|start| start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64)
                 .unwrap_or(0);
@@ -721,17 +723,37 @@ impl Plugin for CzPlugin {
             };
             self.performance_counters.record_process_block(
                 elapsed_ns,
-                num_samples,
+                num_frames,
                 proc.sample_rate,
                 active_voice_count,
                 ui_queue_depth,
             );
-            if let Ok(mut scope) = self.scope_buffer.try_lock() {
-                scope.push_block(mono_output, proc.sample_rate, hz);
+
+            // De-interleave stereo output into per-channel buffers
+            let mut ch_idx = 0usize;
+            for channel_slice in buffer.as_slice() {
+                if ch_idx == 0 {
+                    for i in 0..num_frames {
+                        channel_slice[i] = stereo_output[i * 2];
+                    }
+                } else if ch_idx == 1 {
+                    for i in 0..num_frames {
+                        channel_slice[i] = stereo_output[i * 2 + 1];
+                    }
+                } else {
+                    break;
+                }
+                ch_idx += 1;
             }
 
-            for channel_slice in buffer.as_slice() {
-                channel_slice.copy_from_slice(mono_output);
+            // Scope: sum L+R to mono
+            if let Ok(mut scope) = self.scope_buffer.try_lock() {
+                self.scope_scratch.resize(num_frames, 0.0);
+                for i in 0..num_frames {
+                    self.scope_scratch[i] =
+                        (stereo_output[i * 2] + stereo_output[i * 2 + 1]) * 0.5;
+                }
+                scope.push_block(&self.scope_scratch, proc.sample_rate, hz);
             }
         }
 
