@@ -1044,7 +1044,7 @@ mod tests {
             .to_str()
             .unwrap();
         assert_eq!(key, "volume");
-        assert_eq!(label, "Volume");
+        assert_eq!(label, "%");
         assert_eq!(info.min_value, 0.0);
         assert_eq!(info.max_value, 1.0);
         assert_eq!(info.flags & PARAM_FLAG_AUTOMATABLE, PARAM_FLAG_AUTOMATABLE);
