@@ -1,7 +1,7 @@
 use super::{AlgoControlKindV1, AlgoControlV1, AlgoDefinitionV1, NO_CONTROL_OPTIONS};
 use crate::params::{Algo, EngineParamReadoutFormatV1};
 
-const CONTROLS: [AlgoControlV1; 3] = [
+const CONTROLS: [AlgoControlV1; 4] = [
     AlgoControlV1 {
         id: "chebyOrder",
         kind: AlgoControlKindV1::Number,
@@ -37,6 +37,19 @@ const CONTROLS: [AlgoControlV1; 3] = [
         min: Some(0.0),
         max: Some(1.0),
         default: Some(0.0),
+        default_toggle: None,
+        options: &NO_CONTROL_OPTIONS,
+        readout_format: EngineParamReadoutFormatV1::Percent,
+    },
+    AlgoControlV1 {
+        id: "chebyMix",
+        kind: AlgoControlKindV1::Number,
+        control_type: super::AlgoControlPresentationV1::Knob,
+        bipolar: false,
+        icon_name: None,
+        min: Some(0.0),
+        max: Some(1.0),
+        default: Some(1.0),
         default_toggle: None,
         options: &NO_CONTROL_OPTIONS,
         readout_format: EngineParamReadoutFormatV1::Percent,
