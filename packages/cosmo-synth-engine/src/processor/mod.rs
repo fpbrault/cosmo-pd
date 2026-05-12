@@ -10,14 +10,12 @@ pub mod utils;
 pub use utils::midi_note_to_freq;
 
 use alloc::sync::Arc;
-use arrayvec::ArrayVec;
-use core::array;
 
 use crate::dsp_utils::random_hold_value;
 use crate::envelope::{normalize_synth_params_envelopes_to_raw_if_human, EnvelopeTimingCache};
 use crate::fx::FxChain;
 use crate::module_presets;
-use crate::params::{FxSlotConfig, FxSlotType, LineParams, SynthParams, NUM_VOICES};
+use crate::params::{FxSlotConfig, FxSlotType, LineParams, SynthParams, MAX_VOICES, MIN_VOICES};
 use crate::simd::{detect_simd_backend, SimdBackend};
 use crate::voice::Voice;
 
@@ -30,11 +28,11 @@ pub use self::state::{
 /// The main synthesizer processor, managing voices, FX, modulation sources,
 /// and the sample-by-sample audio process loop.
 pub struct CosmoProcessor {
-    pub voices: [Voice; NUM_VOICES],
+    pub voices: Vec<Voice>,
     pub fx: FxChain,
     pub(crate) cz_dac_color: CzDacColor,
-    pub active_notes: ArrayVec<NoteEntry, NUM_VOICES>,
-    pub mono_stack: ArrayVec<MonoStackEntry, NUM_VOICES>,
+    pub active_notes: Vec<NoteEntry>,
+    pub mono_stack: Vec<MonoStackEntry>,
     pub sustain_on: bool,
     pub lfo_phase: f32,
     pub lfo2_phase: f32,
@@ -60,19 +58,21 @@ pub struct CosmoProcessor {
 impl CosmoProcessor {
     /// Create a new processor with default parameters and FX state.
     pub fn new(sample_rate: f32) -> Self {
+        let default_params = SynthParams::default();
+        let voice_count = default_params.voice_count.max(1) as usize;
         let mut proc = Self {
-            voices: array::from_fn(|_| Voice::new()),
+            voices: (0..voice_count).map(|_| Voice::new()).collect(),
             fx: FxChain::new(sample_rate),
             cz_dac_color: CzDacColor::new(),
-            active_notes: ArrayVec::new(),
-            mono_stack: ArrayVec::new(),
+            active_notes: Vec::with_capacity(voice_count),
+            mono_stack: Vec::with_capacity(voice_count),
             sustain_on: false,
             lfo_phase: 0.0,
             lfo2_phase: 0.0,
             random_phase: 0.0,
             random_step: 0,
             random_hold: random_hold_value(0),
-            params: Arc::new(SynthParams::default()),
+            params: Arc::new(default_params),
             sample_rate,
             pitch_bend: 0.0,
             mod_wheel: 0.0,
@@ -181,10 +181,27 @@ impl CosmoProcessor {
 
     /// Swap in a pre-normalized shared parameter snapshot without cloning.
     pub fn set_shared_params(&mut self, params: Arc<SynthParams>) {
+        let new_voice_count = (params.voice_count as usize).clamp(MIN_VOICES, MAX_VOICES);
+        if new_voice_count != self.voices.len() {
+            self.resize_voices(new_voice_count);
+        }
         self.line1_scratch = params.line1;
         self.line2_scratch = params.line2;
         self.params = params;
         self.update_fx();
+    }
+
+    fn resize_voices(&mut self, new_count: usize) {
+        let old_count = self.voices.len();
+        if new_count > old_count {
+            self.voices
+                .extend((old_count..new_count).map(|_| Voice::new()));
+            self.active_notes.reserve(new_count - old_count);
+        } else if new_count < old_count {
+            self.active_notes.retain(|e| e.voice_idx < new_count);
+            self.mono_stack.clear();
+            self.voices.truncate(new_count);
+        }
     }
 
     /// Mutable parameter access for non-real-time mutation paths and tests.
@@ -193,20 +210,22 @@ impl CosmoProcessor {
     }
 
     fn debug_assert_note_storage_bounds(&self) {
-        debug_assert!(self.active_notes.len() <= NUM_VOICES);
-        debug_assert!(self.mono_stack.len() <= NUM_VOICES);
-        debug_assert_eq!(self.active_notes.capacity(), NUM_VOICES);
-        debug_assert_eq!(self.mono_stack.capacity(), NUM_VOICES);
+        let vc = self.voices.len();
+        debug_assert!(self.active_notes.len() <= vc);
+        debug_assert!(self.mono_stack.len() <= vc);
     }
 
     /// Hard reset runtime voice/FX state while keeping current parameters.
     pub fn reset_audio_state(&mut self) {
-        self.voices = array::from_fn(|_| Voice::new());
+        let voice_count = (self.params.voice_count as usize).clamp(MIN_VOICES, MAX_VOICES);
+        self.voices = (0..voice_count).map(|_| Voice::new()).collect();
         self.fx = FxChain::new(self.sample_rate);
         self.cz_dac_color.reset();
         self.update_fx();
         self.active_notes.clear();
+        self.active_notes = Vec::with_capacity(voice_count);
         self.mono_stack.clear();
+        self.mono_stack = Vec::with_capacity(voice_count);
         self.sustain_on = false;
         self.lfo_phase = 0.0;
         self.lfo2_phase = 0.0;
@@ -456,10 +475,8 @@ mod tests {
             }
         }
 
-        assert!(proc.active_notes.len() <= NUM_VOICES);
-        assert!(proc.mono_stack.len() <= NUM_VOICES);
-        assert!(proc.active_notes.capacity() >= NUM_VOICES);
-        assert!(proc.mono_stack.capacity() >= NUM_VOICES);
+        assert!(proc.active_notes.len() <= proc.voices.len());
+        assert!(proc.mono_stack.len() <= proc.voices.len());
     }
 
     #[test]

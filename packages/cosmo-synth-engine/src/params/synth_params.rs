@@ -8,7 +8,9 @@ use super::line::{LineParams, LineSelect, ModMode, PolyMode};
 use super::modulation::ModMatrix;
 use super::portamento::PortamentoParams;
 
-pub const NUM_VOICES: usize = 8;
+pub const MAX_VOICES: usize = 16;
+pub const MIN_VOICES: usize = 4;
+pub const DEFAULT_VOICE_COUNT: u8 = 8;
 pub const NUM_OPERATORS: usize = 4; // CZ-101 has 4 operators per line
 
 /// Parameters for the random (sample-and-hold) modulation source.
@@ -53,6 +55,10 @@ pub(crate) fn default_ring_gain() -> f32 {
     4.0
 }
 
+pub(crate) fn default_voice_count() -> u8 {
+    DEFAULT_VOICE_COUNT
+}
+
 /// Top-level synth parameters
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
@@ -83,6 +89,8 @@ pub struct SynthParams {
     pub random: RandomParams,
     #[serde(default)]
     pub mod_env: ModEnvParams,
+    #[serde(default = "default_voice_count")]
+    pub voice_count: u8,
     #[serde(default = "default_fx_slot_configs")]
     pub fx_slots: [FxSlotConfig; 6],
 }
@@ -130,6 +138,7 @@ impl Default for SynthParams {
             mod_matrix: ModMatrix::default(),
             random: RandomParams::default(),
             mod_env: ModEnvParams::default(),
+            voice_count: default_voice_count(),
             fx_slots: default_fx_slot_configs(),
         }
     }

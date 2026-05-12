@@ -1,6 +1,6 @@
 extern crate alloc;
 
-use crate::params::{PolyMode, NUM_VOICES};
+use crate::params::PolyMode;
 
 use super::state::{MonoStackEntry, NoteEntry};
 use super::CosmoProcessor;
@@ -111,19 +111,15 @@ impl CosmoProcessor {
 
     pub(crate) fn replace_active_note_entry(&mut self, voice_idx: usize, note: u8) {
         self.active_notes.retain(|e| e.voice_idx != voice_idx);
-        debug_assert!(self.active_notes.len() < NUM_VOICES);
-        self.active_notes
-            .try_push(NoteEntry { note, voice_idx })
-            .expect("active_notes exceeded voice capacity");
+        debug_assert!(self.active_notes.len() < self.voices.len());
+        self.active_notes.push(NoteEntry { note, voice_idx });
         self.debug_assert_note_storage_bounds();
     }
 
     pub(crate) fn push_mono_stack_entry(&mut self, entry: MonoStackEntry) {
         self.mono_stack.retain(|e| e.note != entry.note);
-        debug_assert!(self.mono_stack.len() < NUM_VOICES);
-        self.mono_stack
-            .try_push(entry)
-            .expect("mono_stack exceeded voice capacity");
+        debug_assert!(self.mono_stack.len() < self.voices.len());
+        self.mono_stack.push(entry);
         self.debug_assert_note_storage_bounds();
     }
 
@@ -132,7 +128,7 @@ impl CosmoProcessor {
             .last()
             .map(|entry| entry.voice_idx)
             .filter(|idx| {
-                *idx < NUM_VOICES
+                *idx < self.voices.len()
                     && !self.voices[*idx].is_silent
                     && !self.voices[*idx].is_releasing
                     && self.voices[*idx].note.is_some()
@@ -149,7 +145,7 @@ impl CosmoProcessor {
     }
 
     fn quick_fade_other_mono_voices(&mut self, keep_voice_idx: usize) {
-        for idx in 0..NUM_VOICES {
+        for idx in 0..self.voices.len() {
             if idx != keep_voice_idx && !self.voices[idx].is_silent {
                 self.start_quick_release(idx);
             }
@@ -370,7 +366,7 @@ impl CosmoProcessor {
     pub fn set_sustain(&mut self, on: bool) {
         self.sustain_on = on;
         if !on {
-            for i in 0..NUM_VOICES {
+            for i in 0..self.voices.len() {
                 let sustained = self.voices[i].sustained;
                 if sustained {
                     let still_held = self.active_notes.iter().any(|e| e.voice_idx == i);

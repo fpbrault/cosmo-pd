@@ -6,7 +6,7 @@ use alloc::sync::Arc;
 
 use crate::dsp_utils::{lfo_output_with_symmetry, random_hold_value};
 use crate::generators::{pre_resolve_controls, PER_LINE_HEADROOM};
-use crate::params::{ModDestination, ModMatrixCache, NUM_VOICES};
+use crate::params::{ModDestination, ModMatrixCache};
 use crate::voice::modulated_line_params;
 use crate::voice::ModSources;
 
@@ -73,7 +73,8 @@ impl CosmoProcessor {
         let headroom_makeup = (headroom_ratio)
             .powf(HEADROOM_MAKEUP_EXPONENT)
             .clamp(1.0, MAX_HEADROOM_MAKEUP);
-        let norm = volume * headroom_makeup / (NUM_VOICES as f32).sqrt();
+        let voice_count = self.voices.len();
+        let norm = volume * headroom_makeup / (voice_count as f32).sqrt();
         let matrix = &p.mod_matrix;
 
         let mut prev_lfo1 = self.last_runtime_mod_sources.lfo1;
@@ -188,7 +189,7 @@ impl CosmoProcessor {
             let aftertouch = self.aftertouch;
             let mut v = 0;
             if matches!(self.simd_backend, crate::simd::SimdBackend::Scalar) {
-                while v + 4 <= NUM_VOICES {
+                while v + 4 <= voice_count {
                     mixed += crate::voice::render_voice(
                         &mut self.voices[v],
                         params.as_ref(),
@@ -269,7 +270,7 @@ impl CosmoProcessor {
                 }
             } else {
                 let mut vector_acc = [0.0_f32; 4];
-                while v + 4 <= NUM_VOICES {
+                while v + 4 <= voice_count {
                     let voice_samples = [
                         crate::voice::render_voice(
                             &mut self.voices[v],
@@ -354,7 +355,7 @@ impl CosmoProcessor {
                 mixed += self.simd_backend.horizontal_sum4(vector_acc);
             }
 
-            while v < NUM_VOICES {
+            while v < voice_count {
                 mixed += crate::voice::render_voice(
                     &mut self.voices[v],
                     params.as_ref(),
@@ -414,7 +415,7 @@ impl CosmoProcessor {
         self.active_notes
             .last()
             .map(|entry| entry.voice_idx)
-            .filter(|voice_idx| *voice_idx < NUM_VOICES)
+            .filter(|voice_idx| *voice_idx < self.voices.len())
             .or_else(|| {
                 self.voices.iter().position(|voice| {
                     voice.note.is_some() && (!voice.is_silent || voice.mod_env.output > 0.0)

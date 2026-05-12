@@ -150,6 +150,7 @@ export type SynthState = {
 	modMode: ModMode;
 
 	polyMode: PolyMode;
+	voiceCount: number;
 	legato: boolean;
 	velocityCurve: number;
 
@@ -231,6 +232,7 @@ type SynthActions = {
 	setModMode: (v: ModMode) => void;
 
 	setPolyMode: (v: PolyMode) => void;
+	setVoiceCount: (v: number) => void;
 	setLegato: (v: boolean) => void;
 	setVelocityCurve: (v: number) => void;
 
@@ -325,6 +327,7 @@ const DEFAULT_STATE: SynthState = {
 	modMode: "normal",
 
 	polyMode: "poly8",
+	voiceCount: 8,
 	legato: false,
 	velocityCurve: requireEngineParamDefault("velocityCurve"),
 
@@ -411,6 +414,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setModMode: (v) => set({ modMode: v }),
 
 	setPolyMode: (v) => set({ polyMode: v }),
+	setVoiceCount: (v) => set({ voiceCount: toIntegerInRange(v, 4, 16) }),
 	setLegato: (v) => set({ legato: v }),
 	setVelocityCurve: (v) => set({ velocityCurve: v }),
 
@@ -563,6 +567,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			frequency: 440,
 			volume: s.volume,
 			polyMode: s.polyMode,
+			voiceCount: s.voiceCount,
 			legato: s.legato,
 			velocityCurve: s.velocityCurve,
 
@@ -697,6 +702,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 					)
 				: [],
 			polyMode: (p.polyMode as PolyMode) ?? "poly8",
+			voiceCount: toIntegerInRange(p.voiceCount ?? 8, 4, 16),
 			legato: p.legato ?? false,
 			lineSelect: (p.lineSelect as LineSelect) ?? "L1+L2'",
 			modMode: (p.modMode as ModMode) ?? "normal",

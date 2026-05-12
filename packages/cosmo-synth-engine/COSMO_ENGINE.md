@@ -338,7 +338,7 @@ flowchart LR
 
 ## Voice Architecture (8 Voices)
 
-- `NUM_VOICES = 8` polyphonic voices
+- `voice_count` configurable 4–16 (default: 8) polyphonic voices
 - Rendered in SIMD-4 batches for efficiency
 - Auto-detects SIMD backend: AVX2 (x86), SSE2 (x86 fallback), WASM SIMD, or scalar fallback
 - Voice lifecycle: note-on → attack → decay → sustain → note-off → release → fade → zero-cross stop → silence
