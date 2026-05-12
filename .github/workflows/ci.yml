@@ -105,7 +105,7 @@ jobs:
         shell: bash
 
       - name: Install Playwright Chromium
-        run: bun --filter @cosmo/cz-explorer exec playwright install chromium chromium-headless-shell --with-deps
+        run: bunx playwright install chromium chromium-headless-shell --with-deps
         shell: bash
 
       - name: Run browser tests
@@ -198,7 +198,7 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Install Playwright Chromium
-        run: bun --filter @cosmo/cosmo-pd101-plugin-webview exec playwright install chromium chromium-headless-shell --with-deps
+        run: bunx playwright install chromium chromium-headless-shell --with-deps
         shell: bash
 
       - name: Run plugin webview browser tests
@@ -233,7 +233,7 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Install Playwright Chromium
-        run: bun --filter @cosmo/cosmo-pd101-plugin-webview exec playwright install chromium chromium-headless-shell --with-deps
+        run: bunx playwright install chromium chromium-headless-shell --with-deps
         shell: bash
 
       - name: Run plugin webview e2e tests
