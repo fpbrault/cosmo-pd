@@ -57,7 +57,6 @@
 	},
 	"devDependencies": {
 		"@cosmo/cosmo-pd101": "workspace:*",
-		"@biomejs/biome": "2.4.12",
 		"@tauri-apps/cli": "^2.10.1",
 		"@testing-library/jest-dom": "^6.9.1",
 		"@testing-library/react": "^16.3.2",
