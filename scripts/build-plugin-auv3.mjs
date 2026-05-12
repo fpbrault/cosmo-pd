@@ -67,7 +67,7 @@ async function run(command, args, cwd = repoRoot, env = {}) {
 }
 
 async function createIosXcframework(options) {
-	const profile = options.release ? "release" : "debug";
+	const profile = options.release ? "auv3" : "debug";
 	const deviceTarget = "aarch64-apple-ios";
 	const simulatorTarget = "aarch64-apple-ios-sim";
 	const outputPath = join(artifactsDir, "CosmoPd101Plugin.xcframework");
@@ -79,7 +79,7 @@ async function createIosXcframework(options) {
 			"build",
 			"-p",
 			"cosmo-pd101-plugin",
-			...(options.release ? ["--release"] : []),
+			...(options.release ? ["--profile", "auv3"] : []),
 			"--target",
 			deviceTarget,
 		],
@@ -92,7 +92,7 @@ async function createIosXcframework(options) {
 			"build",
 			"-p",
 			"cosmo-pd101-plugin",
-			...(options.release ? ["--release"] : []),
+			...(options.release ? ["--profile", "auv3"] : []),
 			"--target",
 			simulatorTarget,
 		],
@@ -142,7 +142,7 @@ async function copyWebview() {
 }
 
 async function copyRustArtifacts(options) {
-	const profile = options.release ? "release" : "debug";
+	const profile = options.release ? "auv3" : "debug";
 	const targetParts = [repoRoot, "target"];
 	if (options.rustTarget) targetParts.push(options.rustTarget);
 	targetParts.push(profile);
@@ -263,7 +263,7 @@ async function main() {
 	}
 
 	const cargoArgs = ["build", "-p", "cosmo-pd101-plugin"];
-	if (options.release) cargoArgs.push("--release");
+	if (options.release) cargoArgs.push("--profile", "auv3");
 	if (options.rustTarget) cargoArgs.push("--target", options.rustTarget);
 	await run("cargo", cargoArgs, repoRoot, {
 		MACOSX_DEPLOYMENT_TARGET: macosDeploymentTarget,

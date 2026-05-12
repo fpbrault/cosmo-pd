@@ -317,7 +317,7 @@ mod tests {
         let timing = crate::envelope::EnvelopeTimingCache::new(48_000.0);
         let sources = ModSources::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         let mut cache = ModMatrixCache::new();
-        cache.compute(&p.mod_matrix, &sources);
+        cache.compute(&sources);
         let default_line = LineParams::default();
         let out = render_voice(
             &mut voice,
@@ -351,7 +351,7 @@ mod tests {
         let timing = crate::envelope::EnvelopeTimingCache::new(48_000.0);
         let sources = ModSources::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         let mut cache = ModMatrixCache::new();
-        cache.compute(&p.mod_matrix, &sources);
+        cache.compute(&sources);
         let default_line = LineParams::default();
         let mut any_nonzero = false;
         for _ in 0..64 {

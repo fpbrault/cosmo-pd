@@ -114,7 +114,8 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 	}
 
 	public override init(componentDescription: AudioComponentDescription, options: AudioComponentInstantiationOptions = []) throws {
-		let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 2)!
+		let defaultSampleRate: Double = 48_000
+		let format = AVAudioFormat(standardFormatWithSampleRate: defaultSampleRate, channels: 2)!
 		outputBus = try AUAudioUnitBus(format: format)
 		try super.init(componentDescription: componentDescription, options: options)
 		outputBusArrayStorage = AUAudioUnitBusArray(audioUnit: self, busType: .output, busses: [outputBus])

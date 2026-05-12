@@ -113,9 +113,11 @@ impl Default for KarpunkPair {
 }
 
 /// Stateful Karplus-Strong engine state for one oscillator line.
+/// Buffer is heap-allocated via `Vec` to avoid ~8 KB stack usage per state
+/// (8 voices × 2 states = 128 KB on the stack with fixed array).
 #[derive(Debug, Clone)]
 pub struct KarpunkState {
-    pub buffer: [f32; KS_BUFFER_SIZE],
+    pub buffer: Vec<f32>,
     pub write_pos: usize,
     pub last_sample: f32,
     pub prng: u32,
@@ -124,7 +126,7 @@ pub struct KarpunkState {
 impl KarpunkState {
     pub fn new(prng_seed: u32) -> Self {
         Self {
-            buffer: [0.0_f32; KS_BUFFER_SIZE],
+            buffer: vec![0.0_f32; KS_BUFFER_SIZE],
             write_pos: 0,
             last_sample: 0.0,
             prng: prng_seed,

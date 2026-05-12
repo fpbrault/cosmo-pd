@@ -390,8 +390,12 @@ fn meta_label_for_key(key: &str) -> String {
             EngineParamReadoutFormatV1::Hertz => "Hz".to_owned(),
             EngineParamReadoutFormatV1::Milliseconds => "ms".to_owned(),
             EngineParamReadoutFormatV1::Seconds2 => "s".to_owned(),
-            EngineParamReadoutFormatV1::Uppercase | EngineParamReadoutFormatV1::Raw | EngineParamReadoutFormatV1::EnumMap { .. } => key.to_owned(),
-            EngineParamReadoutFormatV1::BipolarPercent | EngineParamReadoutFormatV1::Degrees => key.to_owned(),
+            EngineParamReadoutFormatV1::Uppercase
+            | EngineParamReadoutFormatV1::Raw
+            | EngineParamReadoutFormatV1::EnumMap { .. } => key.to_owned(),
+            EngineParamReadoutFormatV1::BipolarPercent | EngineParamReadoutFormatV1::Degrees => {
+                key.to_owned()
+            }
         })
         .unwrap_or_else(|| "Parameter".to_owned())
 }
@@ -600,7 +604,10 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_factory_preset_name(
     output: *mut u8,
     output_len: usize,
 ) -> usize {
-    let Some(name) = factory_presets().get(index).map(|preset| preset.name.as_str()) else {
+    let Some(name) = factory_presets()
+        .get(index)
+        .map(|preset| preset.name.as_str())
+    else {
         return 0;
     };
     let bytes = name.as_bytes();
@@ -621,7 +628,10 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_factory_preset_params_json(
     output: *mut u8,
     output_len: usize,
 ) -> usize {
-    let Some(params_json) = factory_presets().get(index).map(|preset| &preset.params_json) else {
+    let Some(params_json) = factory_presets()
+        .get(index)
+        .map(|preset| &preset.params_json)
+    else {
         return 0;
     };
     let bytes = params_json.as_bytes();
@@ -1166,15 +1176,17 @@ mod tests {
         let required = unsafe { cosmo_pd101_ffi_get_params_json(engine, ptr::null_mut(), 0) };
         assert!(required > 0);
         let mut buffer = vec![0u8; required];
-        let written = unsafe {
-            cosmo_pd101_ffi_get_params_json(engine, buffer.as_mut_ptr(), buffer.len())
-        };
+        let written =
+            unsafe { cosmo_pd101_ffi_get_params_json(engine, buffer.as_mut_ptr(), buffer.len()) };
         assert_eq!(written, required);
         let decoded: SynthParams = serde_json::from_slice(&buffer).unwrap();
         assert_eq!(decoded.mod_matrix.routes.len(), 1);
         assert!(decoded.mod_matrix.routes[0].enabled);
         assert_eq!(decoded.mod_matrix.routes[0].source, ModSource::Lfo1);
-        assert_eq!(decoded.mod_matrix.routes[0].destination, ModDestination::Volume);
+        assert_eq!(
+            decoded.mod_matrix.routes[0].destination,
+            ModDestination::Volume
+        );
         assert!((decoded.mod_matrix.routes[0].amount - 1.0).abs() < 0.000_001);
 
         // Render two 512-sample blocks with a held note and verify that the peak amplitude

@@ -85,7 +85,13 @@ public final class CosmoPd101AudioUnit: AUAudioUnit {
     }
 
     public override init(componentDescription: AudioComponentDescription, options: AudioComponentInstantiationOptions = []) throws {
-        let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 2)!
+        let sampleRate: Double
+        #if os(iOS)
+        sampleRate = AVAudioSession.sharedInstance().sampleRate
+        #else
+        sampleRate = 48_000
+        #endif
+        let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 2)!
         outputBus = try AUAudioUnitBus(format: format)
         try super.init(componentDescription: componentDescription, options: options)
         outputBusArrayStorage = AUAudioUnitBusArray(audioUnit: self, busType: .output, busses: [outputBus])
