@@ -1668,6 +1668,21 @@ export const ALGO_DEFINITIONS_V1 = [
         "readoutFormat": {
           "kind": "percent"
         }
+      },
+      {
+        "id": "chebyMix",
+        "kind": "number",
+        "controlType": "knob",
+        "bipolar": false,
+        "iconName": null,
+        "min": 0.0,
+        "max": 1.0,
+        "default": 1.0,
+        "defaultToggle": null,
+        "options": [],
+        "readoutFormat": {
+          "kind": "percent"
+        }
       }
     ]
   }
