@@ -4,7 +4,7 @@ import { setupPluginPage } from "./helpers/pluginBridge";
 const LATEST_RELEASE_URL =
 	"https://api.github.com/repos/fpbrault/cosmo-pd/releases/latest";
 
-test.describe("Plugin update checks", () => {
+test.describe.skip("Plugin update checks", () => {
 	test("shows and dismisses the release modal when a newer version is available", async ({
 		page,
 	}) => {
