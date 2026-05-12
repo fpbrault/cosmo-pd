@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import type {
 	ScopeMiniDisplayProps,
@@ -8,13 +8,10 @@ import { drawScopeBackdrop } from "./scope-visualizations/canvas";
 import { isEditableKeyboardTarget } from "./scope-visualizations/keyboard";
 import { getScopeThemePalette } from "./scope-visualizations/palette";
 import { calculateFrameMean } from "./scope-visualizations/processing";
-import {
-	renderScopeVisualization,
-	SCOPE_VISUALIZATION_LABELS,
-	SCOPE_VISUALIZATION_MODES,
-} from "./scope-visualizations/renderScopeVisualization";
+import { renderScopeVisualization } from "./scope-visualizations/renderScopeVisualization";
 import type {
 	ScopeColorTheme,
+	ScopeVisualizationMode,
 	SpectrogramState,
 } from "./scope-visualizations/types";
 import { WavetableWaterfallScopeViz } from "./scope-visualizations/WavetableWaterfallScopeViz";
@@ -49,7 +46,6 @@ export function ScopeVisualizationDisplay({
 	const setScopeColorTheme = useSynthUiStore((s) => s.setScopeColorTheme);
 
 	const palette = getScopeThemePalette(scopeColorTheme);
-	const [modePickerOpen, setModePickerOpen] = useState(false);
 	const spectrogramStateRef = useRef<SpectrogramState>({
 		width: 0,
 		height: 0,
@@ -89,10 +85,7 @@ export function ScopeVisualizationDisplay({
 			if (!gameKeys.has(event.code)) {
 				return;
 			}
-			if (
-				settingsRef.current.scopeVisualizationMode !== "asteroids" &&
-				settingsRef.current.scopeVisualizationMode !== "travel"
-			) {
+			if (settingsRef.current.scopeVisualizationMode !== "asteroids") {
 				return;
 			}
 			if (isEditableKeyboardTarget(event.target)) {
@@ -246,39 +239,33 @@ export function ScopeVisualizationDisplay({
 						color: palette.bright,
 						backgroundColor: `${palette.accent}22`,
 					}}
-					onClick={() => setModePickerOpen((open) => !open)}
-					aria-expanded={modePickerOpen}
-					aria-label="Toggle scope mode picker"
+					onClick={() =>
+						setScopeVisualizationMode(
+							(
+								{
+									waveform: "orbital",
+									orbital: "spectrogram",
+									spectrogram: "waterfall3d",
+									waterfall3d: "transferCurves",
+									transferCurves: "asteroids",
+									asteroids: "waveform",
+								} as const
+							)[scopeVisualizationMode] as ScopeVisualizationMode,
+						)
+					}
 				>
-					Mode: {SCOPE_VISUALIZATION_LABELS[scopeVisualizationMode]}
+					{scopeVisualizationMode === "waveform"
+						? "Waveform"
+						: scopeVisualizationMode === "orbital"
+							? "Orbital"
+							: scopeVisualizationMode === "spectrogram"
+								? "Spectrogram"
+								: scopeVisualizationMode === "waterfall3d"
+									? "Waterfall 3D"
+									: scopeVisualizationMode === "transferCurves"
+										? "Transfer Curves"
+										: "Asteroids"}
 				</button>
-				{modePickerOpen && (
-					<div className="mt-1 flex max-h-34 min-w-22 flex-col overflow-y-auto rounded border border-cz-lcd-fg/45 bg-black/80 p-0.5">
-						{SCOPE_VISUALIZATION_MODES.map((mode) => {
-							const isActive = mode === scopeVisualizationMode;
-							return (
-								<button
-									key={mode}
-									type="button"
-									style={{
-										color: isActive ? palette.bright : palette.dim,
-										backgroundColor: isActive
-											? `${palette.accentSecondary}33`
-											: "transparent",
-									}}
-									className="rounded px-1.5 py-0.5 text-left font-mono text-4xs tracking-wide transition-colors hover:opacity-80"
-									onClick={() => {
-										setScopeVisualizationMode(mode);
-										setModePickerOpen(false);
-									}}
-									aria-label={`Select ${SCOPE_VISUALIZATION_LABELS[mode]} scope view`}
-								>
-									{SCOPE_VISUALIZATION_LABELS[mode]}
-								</button>
-							);
-						})}
-					</div>
-				)}
 			</div>
 			{/* Color theme button - positioned at outer level to avoid overflow-hidden clipping */}
 			<div className="absolute top-0.5 right-1 z-10">

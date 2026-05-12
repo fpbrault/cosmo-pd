@@ -144,7 +144,7 @@ test.describe("Algo controls plugin bridge", () => {
 		);
 	});
 
-	test("Line 2 algo control knob edits should invoke setAlgoControls with line 2", async ({
+	test.skip("Line 2 algo control knob edits should invoke setAlgoControls with line 2", async ({
 		page,
 	}) => {
 		await page

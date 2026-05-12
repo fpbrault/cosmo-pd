@@ -4,7 +4,6 @@ import { computeDftBins, SPECTROGRAM_BINS } from "./frequency";
 import { drawOrbitalScope } from "./OrbitalViz";
 import { drawSpectrogramFrame } from "./SpectrogramViz";
 import { drawTransferCurvesScope } from "./TransferCurvesViz";
-import { drawTravelScope } from "./TravelViz";
 import type { ScopeRendererParams } from "./types";
 import { drawWaterfall3DScope } from "./Waterfall3DViz";
 import { drawWaveformScope } from "./WaveformViz";
@@ -15,7 +14,6 @@ export const SCOPE_VISUALIZATION_MODES: ScopeVisualizationMode[] = [
 	"spectrogram",
 	"waterfall3d",
 	"transferCurves",
-	"travel",
 	"asteroids",
 ];
 
@@ -28,7 +26,6 @@ export const SCOPE_VISUALIZATION_LABELS: Record<
 	spectrogram: "Spectrum",
 	waterfall3d: "3D",
 	transferCurves: "Curve",
-	travel: "Rocket",
 	asteroids: "Asteroids",
 };
 
@@ -96,21 +93,6 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 				triggerLevel,
 				zoom,
 				palette,
-			);
-			return;
-
-		case "travel":
-			drawTravelScope(
-				canvas,
-				samples,
-				hz,
-				sampleRate,
-				cycles,
-				triggerLevel,
-				zoom,
-				palette,
-				pressedKeys,
-				intensityMultiplier,
 			);
 			return;
 		case "asteroids":

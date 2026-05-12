@@ -12,7 +12,6 @@ export type ScopeVisualizationMode =
 	| "spectrogram"
 	| "waterfall3d"
 	| "transferCurves"
-	| "travel"
 	| "asteroids";
 export type PhaseLinePanelTab =
 	| "line1-algos"
@@ -80,7 +79,6 @@ const SCOPE_VISUALIZATION_MODES = new Set<ScopeVisualizationMode>([
 	"spectrogram",
 	"waterfall3d",
 	"transferCurves",
-	"travel",
 	"asteroids",
 ]);
 const SCOPE_COLOR_THEMES = new Set<ScopeColorTheme>([

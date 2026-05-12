@@ -6,7 +6,6 @@ import {
 	type LibraryPreset,
 	noteToFreq,
 	type PerformanceMetrics,
-	PerformanceMonitor,
 	pdVisualizerWorkletUrl,
 	type StepEnvData,
 	SYNTH_UI_STATE_STORAGE_KEY,
@@ -56,7 +55,6 @@ const VISUALIZER_FRAME_PADDING = 30;
 export function SharedPhaseDistortionVisualizer({
 	frameStyle,
 	headerExtra,
-	bottomBarExtra,
 	libraryPresets = [],
 	onAudioLevelChange,
 }: PhaseDistortionVisualizerBaseProps = {}) {
@@ -401,27 +399,6 @@ export function SharedPhaseDistortionVisualizer({
 			frameClassName="h-full min-h-0 min-w-0 bg-cz-panel flex flex-col overflow-hidden w-full"
 			frameStyle={frameStyle}
 			headerExtra={headerExtra}
-			bottomBarExtra={
-				<div className="flex items-center gap-2">
-					{bottomBarExtra}
-					<span
-						className={`rounded-sm border px-1 py-0.5 font-mono text-[0.54rem] uppercase tracking-[0.14em] ${__WASM_BUILD_PROFILE__ === "release" ? "border-emerald-700/60 text-emerald-400/80" : "border-amber-600/60 text-amber-400/80"}`}
-					>
-						WASM {__WASM_BUILD_PROFILE__}
-					</span>
-					<span
-						className={`rounded-sm border px-1 py-0.5 font-mono text-[0.54rem] uppercase tracking-[0.14em] ${import.meta.env.PROD ? "border-emerald-700/60 text-emerald-400/80" : "border-amber-600/60 text-amber-400/80"}`}
-					>
-						WEB {import.meta.env.PROD ? "prod" : "dev"}
-					</span>
-					<PerformanceMonitor
-						enabled={performanceMonitorEnabled}
-						metrics={performanceMetrics}
-						modeLabel="WEB"
-						onToggle={() => setPerformanceMonitorEnabled((enabled) => !enabled)}
-					/>
-				</div>
-			}
 			effectivePitchHz={effectivePitchHz}
 			analyserNodeRef={analyserNodeRef}
 			audioCtxRef={audioCtxRef}
