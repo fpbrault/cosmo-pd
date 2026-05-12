@@ -49,6 +49,8 @@ pub type AlgoControlSlots = [Option<AlgoControlValueV1>; MAX_ALGO_CONTROLS];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
+
+// TODO: refactor this file so we dont need to hardcode all the control IDs in an enum like this.
 pub enum AlgoControlId {
     AlgoBlend,
     BendBias,
@@ -126,6 +128,21 @@ pub enum AlgoControlId {
     Waveform1,
     Waveform2,
     WindowFunction,
+    PwmWidth,
+    PwmShape,
+    PwmDrift,
+    FeedbackFmRatio,
+    FeedbackFmFeedback,
+    FeedbackFmSkew,
+    ModalStrikeModes,
+    ModalStrikeDecay,
+    ModalStrikeTone,
+    NoiseLabDensity,
+    NoiseLabJitter,
+    NoiseLabBlend,
+    PhazDiffDrive,
+    PhazDiffFeedback,
+    PhazDiffCenter,
     #[default]
     Unknown,
 }
@@ -210,6 +227,21 @@ impl AlgoControlId {
             "waveform1" => Self::Waveform1,
             "waveform2" => Self::Waveform2,
             "windowFunction" => Self::WindowFunction,
+            "pwmWidth" => Self::PwmWidth,
+            "pwmShape" => Self::PwmShape,
+            "pwmDrift" => Self::PwmDrift,
+            "feedbackFmRatio" => Self::FeedbackFmRatio,
+            "feedbackFmFeedback" => Self::FeedbackFmFeedback,
+            "feedbackFmSkew" => Self::FeedbackFmSkew,
+            "modalStrikeModes" => Self::ModalStrikeModes,
+            "modalStrikeDecay" => Self::ModalStrikeDecay,
+            "modalStrikeTone" => Self::ModalStrikeTone,
+            "noiseLabDensity" => Self::NoiseLabDensity,
+            "noiseLabJitter" => Self::NoiseLabJitter,
+            "noiseLabBlend" => Self::NoiseLabBlend,
+            "phazDiffDrive" => Self::PhazDiffDrive,
+            "phazDiffFeedback" => Self::PhazDiffFeedback,
+            "phazDiffCenter" => Self::PhazDiffCenter,
             _ => Self::Unknown,
         }
     }
@@ -292,6 +324,21 @@ impl AlgoControlId {
             Self::Waveform1 => "waveform1",
             Self::Waveform2 => "waveform2",
             Self::WindowFunction => "windowFunction",
+            Self::PwmWidth => "pwmWidth",
+            Self::PwmShape => "pwmShape",
+            Self::PwmDrift => "pwmDrift",
+            Self::FeedbackFmRatio => "feedbackFmRatio",
+            Self::FeedbackFmFeedback => "feedbackFmFeedback",
+            Self::FeedbackFmSkew => "feedbackFmSkew",
+            Self::ModalStrikeModes => "modalStrikeModes",
+            Self::ModalStrikeDecay => "modalStrikeDecay",
+            Self::ModalStrikeTone => "modalStrikeTone",
+            Self::NoiseLabDensity => "noiseLabDensity",
+            Self::NoiseLabJitter => "noiseLabJitter",
+            Self::NoiseLabBlend => "noiseLabBlend",
+            Self::PhazDiffDrive => "phazDiffDrive",
+            Self::PhazDiffFeedback => "phazDiffFeedback",
+            Self::PhazDiffCenter => "phazDiffCenter",
             Self::Unknown => "unknown",
         }
     }

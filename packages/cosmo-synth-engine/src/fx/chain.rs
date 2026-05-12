@@ -1,10 +1,3 @@
-use crate::params::FxSlotConfig;
-use crate::params::FxSlotType;
-use crate::params::ModDestination;
-use crate::params::ModMatrix;
-use crate::params::SynthParams;
-use crate::voice::{mod_value_for, ModSources};
-
 use super::auto_wah::AutoWahFx;
 use super::bitcrusher::BitcrusherFx;
 use super::chorus::ChorusFx;
@@ -25,6 +18,9 @@ use super::shimmer_verb::ShimmerVerbFx;
 use super::stereo_widener::StereoWidenerFx;
 use super::tremolo::TremoloFx;
 use super::wavefolder::WavefolderFx;
+use crate::params::FxSlotConfig;
+use crate::params::FxSlotType;
+use crate::params::SynthParams;
 
 // ---------------------------------------------------------------------------
 // FxChain — hosts all effects and dispatches per slot
@@ -304,17 +300,6 @@ impl FxChain {
         }
     }
 
-    pub(crate) fn apply_modulation(&mut self, params: &SynthParams, sources: &ModSources) {
-        let matrix = &params.mod_matrix;
-        if matrix.routes.is_empty() {
-            return;
-        }
-
-        for (i, config) in params.fx_slots.iter().enumerate() {
-            self.apply_slot_modulation(i, config, matrix, sources);
-        }
-    }
-
     /// Process one sample through all 6 FX slots in series.
     pub fn process(&mut self, sample: f32) -> f32 {
         let mut out = sample;
@@ -327,99 +312,5 @@ impl FxChain {
 
     fn process_slot(&mut self, slot: usize, sample: f32) -> f32 {
         self.slots[slot].process(self.slot_types[slot], sample)
-    }
-
-    fn apply_slot_modulation(
-        &mut self,
-        slot_index: usize,
-        config: &FxSlotConfig,
-        matrix: &ModMatrix,
-        sources: &ModSources,
-    ) {
-        let slot = &mut self.slots[slot_index];
-        match config {
-            FxSlotConfig::MultimodeFilter(filter) => {
-                slot.multimode_filter.cutoff_hz = (filter.cutoff_hz
-                    + mod_value_for(ModDestination::MultimodeFilterCutoffHz, matrix, sources)
-                        * 6000.0)
-                    .clamp(20.0, 18_000.0);
-                slot.multimode_filter.resonance = (filter.resonance
-                    + mod_value_for(ModDestination::MultimodeFilterResonance, matrix, sources)
-                        * 0.8)
-                    .clamp(0.0, 1.0);
-                slot.multimode_filter.drive = (filter.drive
-                    + mod_value_for(ModDestination::MultimodeFilterDrive, matrix, sources))
-                .clamp(0.0, 1.0);
-                slot.multimode_filter.mix = (filter.mix
-                    + mod_value_for(ModDestination::MultimodeFilterMix, matrix, sources))
-                .clamp(0.0, 1.0);
-            }
-            FxSlotConfig::Flanger(flanger) => {
-                slot.flanger.rate = (flanger.rate
-                    + mod_value_for(ModDestination::FlangerRate, matrix, sources) * 5.0)
-                    .clamp(0.01, 10.0);
-                slot.flanger.depth = (flanger.depth
-                    + mod_value_for(ModDestination::FlangerDepth, matrix, sources))
-                .clamp(0.0, 1.0);
-                slot.flanger.delay_ms = (flanger.delay_ms
-                    + mod_value_for(ModDestination::FlangerDelayMs, matrix, sources) * 5.0)
-                    .clamp(0.1, 10.0);
-                slot.flanger.feedback = (flanger.feedback
-                    + mod_value_for(ModDestination::FlangerFeedback, matrix, sources) * 0.95)
-                    .clamp(-0.95, 0.95);
-                slot.flanger.mix = (flanger.mix
-                    + mod_value_for(ModDestination::FlangerMix, matrix, sources))
-                .clamp(0.0, 1.0);
-            }
-            FxSlotConfig::RotarySpeaker(rotary) => {
-                slot.rotary_speaker.speed = (rotary.speed
-                    + mod_value_for(ModDestination::RotarySpeakerSpeed, matrix, sources) * 6.0)
-                    .clamp(0.1, 12.0);
-                slot.rotary_speaker.depth = (rotary.depth
-                    + mod_value_for(ModDestination::RotarySpeakerDepth, matrix, sources))
-                .clamp(0.0, 1.0);
-                slot.rotary_speaker.drive = (rotary.drive
-                    + mod_value_for(ModDestination::RotarySpeakerDrive, matrix, sources))
-                .clamp(0.0, 1.0);
-                slot.rotary_speaker.mix = (rotary.mix
-                    + mod_value_for(ModDestination::RotarySpeakerMix, matrix, sources))
-                .clamp(0.0, 1.0);
-            }
-            FxSlotConfig::AutoWah(wah) => {
-                slot.auto_wah.sensitivity = (wah.sensitivity
-                    + mod_value_for(ModDestination::AutoWahSensitivity, matrix, sources))
-                .clamp(0.0, 1.0);
-                slot.auto_wah.cutoff_hz = (wah.cutoff_hz
-                    + mod_value_for(ModDestination::AutoWahCutoffHz, matrix, sources) * 2000.0)
-                    .clamp(40.0, 2500.0);
-                slot.auto_wah.resonance = (wah.resonance
-                    + mod_value_for(ModDestination::AutoWahResonance, matrix, sources))
-                .clamp(0.0, 1.0);
-                slot.auto_wah.attack_ms = (wah.attack_ms
-                    + mod_value_for(ModDestination::AutoWahAttackMs, matrix, sources) * 100.0)
-                    .clamp(0.5, 200.0);
-                slot.auto_wah.release_ms = (wah.release_ms
-                    + mod_value_for(ModDestination::AutoWahReleaseMs, matrix, sources) * 500.0)
-                    .clamp(1.0, 1200.0);
-                slot.auto_wah.mix = (wah.mix
-                    + mod_value_for(ModDestination::AutoWahMix, matrix, sources))
-                .clamp(0.0, 1.0);
-            }
-            FxSlotConfig::StereoWidener(widener) => {
-                slot.stereo_widener.width = (widener.width
-                    + mod_value_for(ModDestination::StereoWidenerWidth, matrix, sources))
-                .clamp(0.0, 1.0);
-                slot.stereo_widener.delay_ms = (widener.delay_ms
-                    + mod_value_for(ModDestination::StereoWidenerDelayMs, matrix, sources) * 15.0)
-                    .clamp(1.0, 30.0);
-                slot.stereo_widener.tone = (widener.tone
-                    + mod_value_for(ModDestination::StereoWidenerTone, matrix, sources))
-                .clamp(0.0, 1.0);
-                slot.stereo_widener.mix = (widener.mix
-                    + mod_value_for(ModDestination::StereoWidenerMix, matrix, sources))
-                .clamp(0.0, 1.0);
-            }
-            _ => {}
-        }
     }
 }
