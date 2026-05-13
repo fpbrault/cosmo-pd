@@ -1115,7 +1115,13 @@ fn algo_matrix() -> Vec<&'static str> {
 fn is_heavy_scenario(name: &str) -> bool {
     matches!(
         name,
-        "chants-like" | "chops-like" | "fx-heavy" | "mod-heavy" | "worst-poly" | "opt-all-combined"
+        "chants-like"
+            | "chops-like"
+            | "fx-heavy"
+            | "mod-heavy"
+            | "worst-poly"
+            | "opt-all-combined"
+            | "fun-bass-like"
     )
 }
 
