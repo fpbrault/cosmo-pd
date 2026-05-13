@@ -20,6 +20,7 @@ import type { LibraryPreset } from "@/features/synth/types/libraryPreset";
 import { useSynthPresetManager } from "@/features/synth/useSynthPresetManager";
 import { decodeCzPatch } from "@/lib/midi/czSysexDecoder";
 import { installBenchmarkApi } from "@/lib/performance/benchmarkHarness";
+import { installBridgeBenchApi } from "@/lib/performance/bridgeBench";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
 import { convertDecodedPatchToSynthPreset } from "@/lib/synth/czPresetConverter";
 import { DEFAULT_SYNTH_PRESETS } from "@/lib/synth/defaultPresets";
@@ -266,7 +267,7 @@ export function SharedPhaseDistortionVisualizer({
 	});
 
 	useEffect(() => {
-		return installBenchmarkApi({
+		const uninstallBenchmark = installBenchmarkApi({
 			mode: "web",
 			listBuiltinPresets: () => Object.keys(DEFAULT_SYNTH_PRESETS),
 			loadBuiltinPreset: (name: string) => {
@@ -299,6 +300,21 @@ export function SharedPhaseDistortionVisualizer({
 				}
 			},
 		});
+
+		const uninstallBridgeBench = installBridgeBenchApi({
+			postMessage: (msg: unknown) => {
+				workletNodeRef.current?.port.postMessage(msg);
+			},
+			getPerformanceMetrics: () => performanceMetricsRef.current,
+			noteOn: (note: number, velocity?: number) => sendNoteOn(note, velocity),
+			noteOff: (note: number) => sendNoteOff(note),
+			panic,
+		});
+
+		return () => {
+			uninstallBenchmark();
+			uninstallBridgeBench();
+		};
 	}, [
 		audioCtxRef,
 		handleLoadBuiltin,

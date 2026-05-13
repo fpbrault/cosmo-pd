@@ -44,6 +44,15 @@ export type {
 } from "./lib/performance/benchmarkHarness";
 export { installBenchmarkApi } from "./lib/performance/benchmarkHarness";
 export type {
+	BridgeBenchApi,
+	BridgeBenchCaseResult,
+	BridgeBenchReport,
+	BridgeBenchRuntime,
+	BridgeBenchSample,
+	BridgeBenchScenarioDefinition,
+} from "./lib/performance/bridgeBench";
+export { installBridgeBenchApi } from "./lib/performance/bridgeBench";
+export type {
 	AlgoControlValueV1,
 	FxSlotConfig,
 	FxSlotType,
