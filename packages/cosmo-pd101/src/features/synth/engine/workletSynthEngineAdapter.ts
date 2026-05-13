@@ -50,7 +50,7 @@ export function createWorkletSynthEngineAdapter({
 			if (!workletNodeRef.current) return;
 			workletNodeRef.current.port.postMessage({
 				type: "setParams",
-				params,
+				paramsJson,
 			});
 		},
 	};

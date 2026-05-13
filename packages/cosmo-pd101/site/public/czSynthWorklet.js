@@ -210,8 +210,20 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 		const synth = this._synth;
 		switch (d.type) {
 			case "setParams": {
-				const p = d.params;
-				this._mergeParams(p);
+				const json = d.paramsJson;
+				if (typeof json === "string" && !this._supportedModDestinations) {
+					// Fast path: adapter already serialized, no mod filtering needed
+					this._params = JSON.parse(json);
+					synth.setParams(json);
+					break;
+				}
+
+				// Legacy object path or mod filtering needed
+				if (typeof json === "string") {
+					this._params = JSON.parse(json);
+				} else {
+					this._mergeParams(d.params);
+				}
 				if (this._supportedModDestinations) {
 					const filteredRoutes = filterRoutesToSupportedDestinations(
 						this._params.modMatrix?.routes ?? [],
@@ -304,9 +316,7 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 				this._emitPerformanceMetrics();
 				break;
 			case "requestRuntimeTelemetry":
-				this._emitRuntimeModSources();
-				this._emitRuntimeVoiceStates();
-				this._emitPerformanceMetrics();
+				this._emitRuntimeTelemetry();
 				break;
 		}
 	}
@@ -469,42 +479,58 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 		}
 	}
 
-	_emitRuntimeModSources() {
+	_emitRuntimeTelemetry() {
 		if (!this._synth) return;
 
 		try {
-			const sources = JSON.parse(this._synth.getRuntimeModSources());
+			const modSources = this._synth.getRuntimeModSources();
+
+			let voiceStates = null;
+			let activeVoices = 0;
+			try {
+				voiceStates = this._synth.getRuntimeVoiceStates();
+				const parsed = JSON.parse(voiceStates);
+				if (Array.isArray(parsed)) {
+					activeVoices = 0;
+					for (let i = 0; i < parsed.length; i++) {
+						if (parsed[i]?.active === true) activeVoices++;
+					}
+				}
+			} catch {
+				voiceStates = null;
+			}
+
+			const metrics = this._performanceMetrics;
+			const blockBudgetMs =
+				metrics.blockSamples > 0
+					? (metrics.blockSamples / sampleRate) * 1000
+					: 0;
+			const avgMs =
+				metrics.blockCount > 0 ? metrics.totalMs / metrics.blockCount : 0;
+
 			this.port.postMessage({
-				type: "runtimeModSources",
-				sources,
+				type: "runtimeTelemetry",
+				modSources,
+				voiceStates,
+				metrics: {
+					enabled: this._performanceMonitorEnabled,
+					blockCount: metrics.blockCount,
+					lastMs: metrics.lastMs,
+					avgMs,
+					maxMs: metrics.maxMs,
+					blockBudgetMs,
+					lastRtPercent:
+						blockBudgetMs > 0 ? (metrics.lastMs / blockBudgetMs) * 100 : 0,
+					avgRtPercent: blockBudgetMs > 0 ? (avgMs / blockBudgetMs) * 100 : 0,
+					maxRtPercent:
+						blockBudgetMs > 0 ? (metrics.maxMs / blockBudgetMs) * 100 : 0,
+					blockSamples: metrics.blockSamples ?? 0,
+					sampleRate,
+					activeVoices,
+				},
 			});
 		} catch (err) {
-			console.error(
-				"[czSynthWorklet] Failed to read runtime mod sources:",
-				err,
-			);
-		}
-	}
-
-	_emitRuntimeVoiceStates() {
-		if (
-			!this._synth ||
-			typeof this._synth.getRuntimeVoiceStates !== "function"
-		) {
-			return;
-		}
-
-		try {
-			const voices = JSON.parse(this._synth.getRuntimeVoiceStates());
-			this.port.postMessage({
-				type: "runtimeVoiceStates",
-				voices,
-			});
-		} catch (err) {
-			console.error(
-				"[czSynthWorklet] Failed to read runtime voice states:",
-				err,
-			);
+			console.error("[czSynthWorklet] Failed to emit runtime telemetry:", err);
 		}
 	}
 
