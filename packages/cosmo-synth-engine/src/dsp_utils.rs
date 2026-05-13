@@ -46,6 +46,7 @@ pub fn lerp(a: f32, b: f32, t: f32) -> f32 {
 
 /// Fast power approximation on [0, 1] using piecewise interpolation.
 /// Tuned for exponent ranges common in phase distortion shaping.
+/// Only computes powers of two as needed (lazy evaluation).
 #[inline]
 pub fn pow01(base: f32, exponent: f32) -> f32 {
     let x = base.clamp(0.0, 1.0);
@@ -55,11 +56,6 @@ pub fn pow01(base: f32, exponent: f32) -> f32 {
     if x >= 1.0 {
         return 1.0;
     }
-
-    let x2 = x * x;
-    let x4 = x2 * x2;
-    let x8 = x4 * x4;
-    let x16 = x8 * x8;
 
     if exponent <= 0.5 {
         let x025 = (x).sqrt().sqrt();
@@ -72,19 +68,26 @@ pub fn pow01(base: f32, exponent: f32) -> f32 {
         let t = (exponent - 0.5) / 0.5;
         return x05 + (x - x05) * t;
     }
+
+    let x2 = x * x;
     if exponent <= 2.0 {
         let t = exponent - 1.0;
         return x + (x2 - x) * t;
     }
+
+    let x4 = x2 * x2;
     if exponent <= 4.0 {
         let t = (exponent - 2.0) * 0.5;
         return x2 + (x4 - x2) * t;
     }
+
+    let x8 = x4 * x4;
     if exponent <= 8.0 {
         let t = (exponent - 4.0) * 0.25;
         return x4 + (x8 - x4) * t;
     }
 
+    let x16 = x8 * x8;
     let t = ((exponent - 8.0) * 0.125).clamp(0.0, 1.0);
     x8 + (x16 - x8) * t
 }
