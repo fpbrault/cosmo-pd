@@ -92,12 +92,15 @@ for (const scenario of scenarios) {
 	const dmax = deltaPercent(cMax, bMax);
 	const davg = deltaPercent(cAvg, bAvg);
 
+	const cSamples = readNumber(c, "sampleCount");
+	const bSamples = readNumber(b, "sampleCount");
+
 	if (dp50 > 10 || dp95 > 10) {
 		regressions += 1;
 	}
 
 	console.log(
-		`${scenario}\t ${formatDelta(dp50)}\t ${formatDelta(dp95)}\t ${formatDelta(dmax)}\t ${formatDelta(davg)}\t ${cSamples ?? "?"}`,
+		`${scenario}\t ${formatDelta(dp50)}\t ${formatDelta(dp95)}\t ${formatDelta(dmax)}\t ${formatDelta(davg)}\t ${cSamples ?? bSamples ?? "?"}`,
 	);
 }
 
