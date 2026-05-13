@@ -191,6 +191,122 @@ mod tests {
         );
     }
 
+    fn all_sources() -> [ModSource; 7] {
+        [
+            ModSource::Lfo1,
+            ModSource::Lfo2,
+            ModSource::Random,
+            ModSource::ModEnv,
+            ModSource::Velocity,
+            ModSource::ModWheel,
+            ModSource::Aftertouch,
+        ]
+    }
+
+    fn all_destinations() -> [ModDestination; 51] {
+        [
+            ModDestination::Volume,
+            ModDestination::Pitch,
+            ModDestination::Line1DcwBase,
+            ModDestination::Line1DcaBase,
+            ModDestination::Line1AlgoBlend,
+            ModDestination::Line2DetuneNote,
+            ModDestination::Line1Octave,
+            ModDestination::Line1AlgoParam1,
+            ModDestination::Line1AlgoParam2,
+            ModDestination::Line1AlgoParam3,
+            ModDestination::Line1AlgoParam4,
+            ModDestination::Line1AlgoParam5,
+            ModDestination::Line1AlgoParam6,
+            ModDestination::Line1AlgoParam7,
+            ModDestination::Line1AlgoParam8,
+            ModDestination::Line2DcwBase,
+            ModDestination::Line2DcaBase,
+            ModDestination::Line2AlgoBlend,
+            ModDestination::Line2DetuneFine,
+            ModDestination::Line2DetuneOctave,
+            ModDestination::Line2AlgoParam1,
+            ModDestination::Line2AlgoParam2,
+            ModDestination::Line2AlgoParam3,
+            ModDestination::Line2AlgoParam4,
+            ModDestination::Line2AlgoParam5,
+            ModDestination::Line2AlgoParam6,
+            ModDestination::Line2AlgoParam7,
+            ModDestination::Line2AlgoParam8,
+            ModDestination::VibratoDepth,
+            ModDestination::VibratoRate,
+            ModDestination::IntPmRatio,
+            ModDestination::Line1DcoEnvStep1Level,
+            ModDestination::Line1DcoEnvStep1Rate,
+            ModDestination::Line1DcwEnvStep3Level,
+            ModDestination::Line1DcaEnvStep4Rate,
+            ModDestination::Line2DcoEnvStep2Level,
+            ModDestination::Line2DcwEnvStep6Rate,
+            ModDestination::Line2DcaEnvStep8Level,
+            ModDestination::PhaserRate,
+            ModDestination::PhaserDepth,
+            ModDestination::PhaserFeedback,
+            ModDestination::PhaserMix,
+            ModDestination::Lfo1Rate,
+            ModDestination::Lfo1Depth,
+            ModDestination::Lfo1Symmetry,
+            ModDestination::Lfo1Offset,
+            ModDestination::Lfo2Rate,
+            ModDestination::Lfo2Depth,
+            ModDestination::Lfo2Symmetry,
+            ModDestination::Lfo2Offset,
+            ModDestination::RandomRate,
+        ]
+    }
+
+    #[test]
+    fn every_source_can_drive_every_destination() {
+        let sources = ModSources {
+            lfo1: 0.25,
+            lfo2: -0.4,
+            velocity: 0.8,
+            mod_wheel: 0.6,
+            aftertouch: 0.3,
+            mod_env: 0.5,
+            random: -0.2,
+        };
+        let amount = 0.5;
+        for destination in all_destinations() {
+            for source in all_sources() {
+                let matrix = ModMatrix {
+                    routes: vec![ModRoute {
+                        source,
+                        destination,
+                        amount,
+                        enabled: true,
+                    }],
+                };
+                let mut cache = ModMatrixCache::new();
+                cache.rebuild_routes(&matrix);
+                cache.compute(&sources);
+                let got = cache.get(destination, &sources);
+                let src_val: f32 = match source {
+                    ModSource::Lfo1 => sources.lfo1,
+                    ModSource::Lfo2 => sources.lfo2,
+                    ModSource::Velocity => sources.velocity,
+                    ModSource::ModWheel => sources.mod_wheel,
+                    ModSource::Aftertouch => sources.aftertouch,
+                    ModSource::ModEnv => sources.mod_env,
+                    ModSource::Random => sources.random,
+                };
+                let expected = (amount * src_val).clamp(-1.0, 1.0);
+                assert!(
+                    (got - expected).abs() < 1e-6,
+                    "unexpected route value for source={:?} destination={:?}: got {}, expected {}",
+                    source,
+                    destination,
+                    got,
+                    expected
+                );
+            }
+        }
+    }
+
     #[test]
     fn render_voice_returns_zero_for_silent_voice() {
         let mut voice = Voice::new();

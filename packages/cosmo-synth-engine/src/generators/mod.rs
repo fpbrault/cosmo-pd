@@ -405,6 +405,7 @@ pub fn pre_resolve_controls(algo: Algo, controls: &AlgoControlSlots) -> [f32; 8]
     values
 }
 
+#[inline]
 pub fn warp_phase(
     algo: Algo,
     phase: f32,
@@ -464,6 +465,7 @@ pub fn warp_phase(
 /// Unified algorithm sample renderer used by voice and utility paths.
 ///
 /// `runtime_sample` is used only when an algorithm is rendered by per-voice state.
+#[inline]
 #[allow(clippy::too_many_arguments)]
 pub fn render_algo_sample(
     algo: Algo,
