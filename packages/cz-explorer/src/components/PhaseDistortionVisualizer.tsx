@@ -3,6 +3,7 @@ import {
 	DEFAULT_SYNTH_PRESETS,
 	decodeCzPatch,
 	installBenchmarkApi,
+	installBridgeBenchApi,
 	type LibraryPreset,
 	noteToFreq,
 	type PerformanceMetrics,
@@ -280,7 +281,7 @@ export function SharedPhaseDistortionVisualizer({
 	});
 
 	useEffect(() => {
-		return installBenchmarkApi({
+		const uninstallBenchmark = installBenchmarkApi({
 			mode: "web",
 			listBuiltinPresets: () => Object.keys(DEFAULT_SYNTH_PRESETS),
 			loadBuiltinPreset: (name: string) => {
@@ -313,6 +314,21 @@ export function SharedPhaseDistortionVisualizer({
 				}
 			},
 		});
+
+		const uninstallBridgeBench = installBridgeBenchApi({
+			postMessage: (msg: unknown) => {
+				workletNodeRef.current?.port.postMessage(msg);
+			},
+			getPerformanceMetrics: () => performanceMetricsRef.current,
+			noteOn: (note: number, velocity?: number) => sendNoteOn(note, velocity),
+			noteOff: (note: number) => sendNoteOff(note),
+			panic,
+		});
+
+		return () => {
+			uninstallBenchmark();
+			uninstallBridgeBench();
+		};
 	}, [
 		audioCtxRef,
 		handleLoadBuiltin,

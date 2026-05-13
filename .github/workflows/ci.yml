@@ -377,6 +377,68 @@ jobs:
             target/perf/engine/engine-compare.md
             target/perf/engine/pr-comment.md
 
+  bridge-benchmarks:
+    name: Bridge Benchmarks
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            bridge:
+              - 'packages/cz-explorer/public/czSynthWorklet.js'
+              - 'packages/cosmo-pd101/src/lib/performance/bridgeBench.ts'
+              - 'packages/cosmo-pd101/src/features/synth/engine/**'
+              - 'packages/cosmo-pd101/src/features/synth/hooks/*.ts'
+              - 'scripts/perf-bridge-*.mjs'
+
+      - name: Check for bridge changes
+        if: steps.filter.outputs.bridge != 'true'
+        run: echo "No changes to bridge files, skipping benchmarks"
+
+      - name: Setup Rust stable
+        if: steps.filter.outputs.bridge == 'true'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Bun
+        if: steps.filter.outputs.bridge == 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Build WASM engine
+        if: steps.filter.outputs.bridge == 'true'
+        run: bun run build:engine
+        shell: bash
+
+      - name: Build cz-explorer web app
+        if: steps.filter.outputs.bridge == 'true'
+        run: bun --filter @cosmo/cz-explorer build
+        shell: bash
+
+      - name: Run bridge benchmarks
+        if: steps.filter.outputs.bridge == 'true'
+        run: |
+          bun run ./scripts/perf-bridge-web.mjs \
+            --host 127.0.0.1 \
+            --port 4173 \
+            --out target/perf/bridge/pr-report.json
+        shell: bash
+
+      - name: Upload bridge benchmark artifact
+        if: steps.filter.outputs.bridge == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: bridge-benchmark
+          path: target/perf/bridge/pr-report.json
+
   build-plugins:
     name: Build plugins (${{ matrix.platform }})
     strategy:
