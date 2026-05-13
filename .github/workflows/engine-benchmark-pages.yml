@@ -47,6 +47,10 @@ jobs:
       - name: Setup Rust stable
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --version 0.13.1
+        shell: bash
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
