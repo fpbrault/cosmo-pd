@@ -1,4 +1,4 @@
-use crate::dsp_utils::{lfo_output, pow01, wrap01, TWO_PI};
+use crate::dsp_utils::{lfo_output, pow01, sin_lut, wrap01};
 use crate::envelope::EnvelopeKind;
 use crate::envelope::EnvelopeTimingCache;
 use crate::generators::{self, LineRenderConfig};
@@ -639,7 +639,7 @@ fn build_phase_frame(
     let phi1 = wrap01(voice.phi1);
     let phi2 = wrap01(voice.phi2);
     let pm_phi = wrap01(voice.pm_phi);
-    let pm_mod = int_pm_amount * 10.0 * (TWO_PI * pm_phi).sin();
+    let pm_mod = int_pm_amount * 10.0 * sin_lut(pm_phi);
 
     // pm_pre=true:  PM applied before warp shaping (phase_a_post = phi+pm_mod, pm_post_mod=0)
     // pm_pre=false: PM applied after warp shaping  (phase_a_post = phi,         pm_post_mod=pm_mod)

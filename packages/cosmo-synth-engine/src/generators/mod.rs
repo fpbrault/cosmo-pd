@@ -1,4 +1,4 @@
-use crate::dsp_utils::{apply_window, lerp, wrap01, TWO_PI};
+use crate::dsp_utils::{apply_window, cos_lut, lerp, sin_lut, wrap01};
 use crate::params::{Algo, AlgoControlSlots, BaseWaveform, LineParams};
 use std::sync::LazyLock;
 
@@ -252,8 +252,8 @@ fn sample_base_wave(base_waveform: BaseWaveform, phase: f32) -> f32 {
         wrap01(phase)
     };
     match base_waveform {
-        BaseWaveform::Cosine => -(TWO_PI * p).cos(),
-        BaseWaveform::Sine => (TWO_PI as f32 * p).sin(),
+        BaseWaveform::Cosine => -cos_lut(p),
+        BaseWaveform::Sine => sin_lut(p),
         BaseWaveform::Triangle => 1.0 - 4.0 * (p - 0.5).abs(),
         BaseWaveform::Saw => p * 2.0 - 1.0,
         BaseWaveform::Square => {

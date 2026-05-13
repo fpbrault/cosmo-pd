@@ -114,6 +114,15 @@ impl SimdType for WasmSimd {
     }
 
     #[inline]
+    fn div(self, other: Self) -> Self {
+        unsafe {
+            let v1 = self.to_v128();
+            let v2 = other.to_v128();
+            Self::from_v128(f32x4_div(v1, v2))
+        }
+    }
+
+    #[inline]
     fn abs(self) -> Self {
         unsafe {
             let v = self.to_v128();
