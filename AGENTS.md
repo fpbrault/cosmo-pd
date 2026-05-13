@@ -166,6 +166,8 @@ skills:
     load: "node_modules/@tanstack/router-core/skills/router-core/path-params/SKILL.md"
   - task: "Environment variables, .env files, process.env setup"
     load: "node_modules/dotenv/skills/dotenv/SKILL.md"
+  - task: "Performance benchmarking — when and how to run engine, bridge, and UI benchmarks; compare against baseline using git worktrees"
+    load: "skills/cosmo-benchmark/SKILL.md"
 <!-- intent-skills:end -->
 
 ## Reference
