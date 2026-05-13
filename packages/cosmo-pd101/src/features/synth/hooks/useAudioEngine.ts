@@ -292,6 +292,34 @@ export function useAudioEngine({
 							type: "setParams",
 							params: paramsRef.current,
 						});
+					} else if (e.data?.type === "runtimeTelemetry") {
+						const modSources = e.data.modSources
+							? normalizeRuntimeModSources(JSON.parse(e.data.modSources))
+							: null;
+						if (modSources) {
+							window.dispatchEvent(
+								new CustomEvent<RuntimeModSources>("cz-runtime-mod-sources", {
+									detail: modSources,
+								}),
+							);
+						}
+						const voices = e.data.voiceStates
+							? normalizeRuntimeVoiceStates(JSON.parse(e.data.voiceStates))
+							: null;
+						if (voices) {
+							window.dispatchEvent(
+								new CustomEvent<RuntimeVoiceDebugState[]>(
+									"cz-runtime-voice-states",
+									{ detail: voices },
+								),
+							);
+						}
+						window.dispatchEvent(
+							new CustomEvent<WorkletPerformanceMetrics>(
+								"cz-performance-metrics",
+								{ detail: e.data.metrics },
+							),
+						);
 					} else if (e.data?.type === "runtimeModSources") {
 						const sources = normalizeRuntimeModSources(e.data.sources);
 						if (sources) {

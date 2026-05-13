@@ -45,12 +45,8 @@ const [baselineText, currentText] = await Promise.all([
 const baseline = parseReport(baselineText);
 const current = parseReport(currentText);
 
-const baselineMap = new Map(
-	baseline.cases.map((c) => [c.scenario, c]),
-);
-const currentMap = new Map(
-	current.cases.map((c) => [c.scenario, c]),
-);
+const baselineMap = new Map(baseline.cases.map((c) => [c.scenario, c]));
+const currentMap = new Map(current.cases.map((c) => [c.scenario, c]));
 
 const scenarios = [...currentMap.keys()]
 	.filter((key) => baselineMap.has(key))
@@ -62,9 +58,7 @@ if (scenarios.length === 0) {
 }
 
 console.log(`Comparing ${scenarios.length} bridge benchmark scenarios`);
-console.log(
-	"scenario\t p50 RTT\t p95 RTT\t max RTT\t avg RTT\t samples",
-);
+console.log("scenario\t p50 RTT\t p95 RTT\t max RTT\t avg RTT\t samples");
 
 let regressions = 0;
 for (const scenario of scenarios) {
@@ -79,14 +73,16 @@ for (const scenario of scenarios) {
 	const cMax = readNumber(c, "maxRttMs");
 	const bAvg = readNumber(b, "avgRttMs");
 	const cAvg = readNumber(c, "avgRttMs");
-	const bSamples = readNumber(b, "sampleCount");
-	const cSamples = readNumber(c, "sampleCount");
 
 	if (
-		bP50 === null || cP50 === null ||
-		bP95 === null || cP95 === null ||
-		bMax === null || cMax === null ||
-		bAvg === null || cAvg === null
+		bP50 === null ||
+		cP50 === null ||
+		bP95 === null ||
+		cP95 === null ||
+		bMax === null ||
+		cMax === null ||
+		bAvg === null ||
+		cAvg === null
 	) {
 		continue;
 	}
