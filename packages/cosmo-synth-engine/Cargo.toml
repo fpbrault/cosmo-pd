@@ -74,4 +74,4 @@ optional = true
 no_denormals = { version = "0.1", optional = true }
 
 [package.metadata.wasm-pack.profile.release]
-wasm-opt = false
+wasm-opt = true

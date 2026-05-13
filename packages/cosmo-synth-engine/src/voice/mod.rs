@@ -132,7 +132,6 @@ impl Default for Voice {
 
 #[cfg(test)]
 mod tests {
-    use super::modulation::mod_value_for;
     use super::ModSources;
     use super::{render::*, Voice};
     use crate::params::{
@@ -261,18 +260,6 @@ mod tests {
         ]
     }
 
-    fn source_value(sources: &ModSources, source: ModSource) -> f32 {
-        match source {
-            ModSource::Lfo1 => sources.lfo1,
-            ModSource::Lfo2 => sources.lfo2,
-            ModSource::Velocity => sources.velocity,
-            ModSource::ModWheel => sources.mod_wheel,
-            ModSource::Aftertouch => sources.aftertouch,
-            ModSource::ModEnv => sources.mod_env,
-            ModSource::Random => sources.random,
-        }
-    }
-
     #[test]
     fn every_source_can_drive_every_destination() {
         let sources = ModSources {
@@ -295,8 +282,20 @@ mod tests {
                         enabled: true,
                     }],
                 };
-                let got = mod_value_for(destination, &matrix, &sources);
-                let expected = (amount * source_value(&sources, source)).clamp(-1.0, 1.0);
+                let mut cache = ModMatrixCache::new();
+                cache.rebuild_routes(&matrix);
+                cache.compute(&sources);
+                let got = cache.get(destination, &sources);
+                let src_val: f32 = match source {
+                    ModSource::Lfo1 => sources.lfo1,
+                    ModSource::Lfo2 => sources.lfo2,
+                    ModSource::Velocity => sources.velocity,
+                    ModSource::ModWheel => sources.mod_wheel,
+                    ModSource::Aftertouch => sources.aftertouch,
+                    ModSource::ModEnv => sources.mod_env,
+                    ModSource::Random => sources.random,
+                };
+                let expected = (amount * src_val).clamp(-1.0, 1.0);
                 assert!(
                     (got - expected).abs() < 1e-6,
                     "unexpected route value for source={:?} destination={:?}: got {}, expected {}",
