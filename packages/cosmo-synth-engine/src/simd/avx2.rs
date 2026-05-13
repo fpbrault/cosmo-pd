@@ -113,6 +113,15 @@ impl SimdType for Avx2 {
     }
 
     #[inline]
+    fn div(self, other: Self) -> Self {
+        unsafe {
+            let v1 = self.to_m128();
+            let v2 = other.to_m128();
+            Self::from_m128(_mm_div_ps(v1, v2))
+        }
+    }
+
+    #[inline]
     fn abs(self) -> Self {
         unsafe {
             let v = self.to_m128();

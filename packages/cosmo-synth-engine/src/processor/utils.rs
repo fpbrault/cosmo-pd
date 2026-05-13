@@ -1,3 +1,5 @@
+use crate::dsp_utils::fast_tanh;
+
 const SOFT_CLIP_THRESHOLD: f32 = 0.9;
 
 /// Standard MIDI note → frequency conversion.
@@ -18,12 +20,12 @@ pub(crate) fn soft_clip_tanh(sample: f32, drive: f32) -> f32 {
         return sample;
     }
 
-    let norm = (drive).tanh();
+    let norm = fast_tanh(drive);
     if norm <= 0.0 {
         return sample;
     }
 
-    let clipped = (sample * drive).tanh() / norm;
+    let clipped = fast_tanh(sample * drive) / norm;
     let blend = ((abs_sample - SOFT_CLIP_THRESHOLD) / (1.0 - SOFT_CLIP_THRESHOLD)).clamp(0.0, 1.0);
     sample + (clipped - sample) * blend
 }

@@ -61,6 +61,9 @@ pub trait SimdType: Sized + Copy {
     /// Element-wise multiplication by scalar
     fn mul_scalar(self, val: f32) -> Self;
 
+    /// Element-wise division
+    fn div(self, other: Self) -> Self;
+
     /// Element-wise maximum
     fn max(self, other: Self) -> Self;
 
@@ -177,6 +180,63 @@ impl SimdBackend {
     }
 
     #[inline]
+    pub fn div4(self, lhs: [f32; 4], rhs: [f32; 4]) -> [f32; 4] {
+        match self {
+            SimdBackend::Scalar => [
+                lhs[0] / rhs[0],
+                lhs[1] / rhs[1],
+                lhs[2] / rhs[2],
+                lhs[3] / rhs[3],
+            ],
+            SimdBackend::Sse2 => {
+                #[cfg(target_arch = "x86_64")]
+                {
+                    SimdType::div(Sse2::from_array(&lhs), Sse2::from_array(&rhs)).to_array()
+                }
+                #[cfg(not(target_arch = "x86_64"))]
+                {
+                    [
+                        lhs[0] / rhs[0],
+                        lhs[1] / rhs[1],
+                        lhs[2] / rhs[2],
+                        lhs[3] / rhs[3],
+                    ]
+                }
+            }
+            SimdBackend::Avx2 => {
+                #[cfg(target_arch = "x86_64")]
+                {
+                    SimdType::div(Avx2::from_array(&lhs), Avx2::from_array(&rhs)).to_array()
+                }
+                #[cfg(not(target_arch = "x86_64"))]
+                {
+                    [
+                        lhs[0] / rhs[0],
+                        lhs[1] / rhs[1],
+                        lhs[2] / rhs[2],
+                        lhs[3] / rhs[3],
+                    ]
+                }
+            }
+            SimdBackend::WasmSimd => {
+                #[cfg(target_arch = "wasm32")]
+                {
+                    SimdType::div(WasmSimd::from_array(&lhs), WasmSimd::from_array(&rhs)).to_array()
+                }
+                #[cfg(not(target_arch = "wasm32"))]
+                {
+                    [
+                        lhs[0] / rhs[0],
+                        lhs[1] / rhs[1],
+                        lhs[2] / rhs[2],
+                        lhs[3] / rhs[3],
+                    ]
+                }
+            }
+        }
+    }
+
+    #[inline]
     pub fn horizontal_sum4(self, values: [f32; 4]) -> f32 {
         simd_dispatch!(
             self,
@@ -260,6 +320,11 @@ impl SimdType for Scalar {
     #[inline]
     fn mul_scalar(self, val: f32) -> Self {
         Scalar(self.0 * val)
+    }
+
+    #[inline]
+    fn div(self, other: Self) -> Self {
+        Scalar(self.0 / other.0)
     }
 
     #[inline]
@@ -386,6 +451,15 @@ mod tests {
         ]
     }
 
+    fn ref_div(lhs: [f32; 4], rhs: [f32; 4]) -> [f32; 4] {
+        [
+            lhs[0] / rhs[0],
+            lhs[1] / rhs[1],
+            lhs[2] / rhs[2],
+            lhs[3] / rhs[3],
+        ]
+    }
+
     fn assert_backend_parity<T: SimdType>(
         values: [f32; 4],
         other: [f32; 4],
@@ -402,6 +476,7 @@ mod tests {
             a.clamp(min_val, max_val).to_array(),
             ref_clamp(values, min_val, max_val)
         );
+        assert_eq!(a.div(b).to_array(), ref_div(values, other));
         assert_eq!(a.abs().to_array(), ref_abs(values));
     }
 

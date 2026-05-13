@@ -1,19 +1,40 @@
 use crate::params::{LfoWaveform, WindowType};
 use dasp_interpolate::{linear::Linear, Interpolator};
+use std::sync::LazyLock;
 
 pub const TWO_PI: f32 = core::f32::consts::TAU;
 const PI: f32 = core::f32::consts::PI;
 const TWO_OVER_PI: f32 = 2.0 / PI;
 
+/// 2048-entry sine lookup table over [0, 1) phase.
+const SIN_TABLE_SIZE: usize = 2048;
+static SIN_TABLE: LazyLock<[f32; SIN_TABLE_SIZE]> = LazyLock::new(|| {
+    let mut table = [0.0_f32; SIN_TABLE_SIZE];
+    for i in 0..SIN_TABLE_SIZE {
+        let phase = i as f32 / SIN_TABLE_SIZE as f32;
+        table[i] = (TWO_PI * phase).sin();
+    }
+    table
+});
+
+#[inline]
+pub fn sin_lut(phase: f32) -> f32 {
+    let p = phase - phase.floor();
+    let idx = (p * SIN_TABLE_SIZE as f32) as usize & (SIN_TABLE_SIZE - 1);
+    SIN_TABLE[idx]
+}
+
+#[inline]
+pub fn cos_lut(phase: f32) -> f32 {
+    let p = phase - phase.floor();
+    let idx = ((p + 0.25) * SIN_TABLE_SIZE as f32) as usize & (SIN_TABLE_SIZE - 1);
+    SIN_TABLE[idx]
+}
+
 /// Wrap a value into [0, 1).
 #[inline]
 pub fn wrap01(v: f32) -> f32 {
-    let w = v - (v).floor();
-    if w < 0.0 {
-        w + 1.0
-    } else {
-        w
-    }
+    v - v.floor()
 }
 
 /// Linear interpolation.
@@ -124,6 +145,20 @@ pub fn sine_benchmark_cubic(phase: f32) -> f32 {
     cubic_sine_approx(phase)
 }
 
+/// Fast tanh approximation using Pade [3/3] approximant.
+/// Accurate to within ~0.1% for |x| < 3, clamps to ±1 beyond that.
+#[inline]
+pub fn fast_tanh(x: f32) -> f32 {
+    if x >= 3.0 {
+        1.0
+    } else if x <= -3.0 {
+        -1.0
+    } else {
+        let x2 = x * x;
+        x * (27.0 + x2) / (27.0 + 9.0 * x2)
+    }
+}
+
 /// Apply amplitude window to oscillator output.
 ///
 /// Returns a gain multiplier [0, 1]. Mirrors `applyWindow` in the JS.
@@ -207,7 +242,7 @@ fn warp_phase_with_symmetry(phase: f32, symmetry: f32) -> f32 {
 pub fn lfo_output_with_symmetry(phase: f32, waveform: LfoWaveform, symmetry: f32) -> f32 {
     let warped = warp_phase_with_symmetry(phase, symmetry);
     match waveform {
-        LfoWaveform::Sine => (TWO_PI * warped).sin(),
+        LfoWaveform::Sine => sin_lut(warped),
         LfoWaveform::Triangle => {
             if warped < 0.5 {
                 warped * 4.0 - 1.0

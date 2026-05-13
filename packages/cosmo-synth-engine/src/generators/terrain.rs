@@ -1,5 +1,5 @@
 use super::{AlgoControlKindV1, AlgoControlV1, AlgoDefinitionV1, NO_CONTROL_OPTIONS};
-use crate::dsp_utils::cubic_sine_approx;
+use crate::dsp_utils::{sin_lut, wrap01};
 use crate::params::{Algo, EngineParamReadoutFormatV1};
 
 const CONTROLS: [AlgoControlV1; 4] = [
@@ -81,7 +81,7 @@ pub fn warp_phase(phase: f32, amt: f32, ratio: f32, depth: f32, fm_phase: f32, s
     let shape_clamped = shape.clamp(0.0, 1.0);
 
     let modulator = if shape_clamped <= 0.0 {
-        cubic_sine_approx(fm_x)
+        sin_lut(fm_x)
     } else {
         // Sawtooth modulator in [-1, 1]
         let saw_x = fm_x - (fm_x).floor();
@@ -89,17 +89,11 @@ pub fn warp_phase(phase: f32, amt: f32, ratio: f32, depth: f32, fm_phase: f32, s
         if shape_clamped >= 1.0 {
             saw_mod
         } else {
-            let sin_mod = cubic_sine_approx(fm_x);
+            let sin_mod = sin_lut(fm_x);
             sin_mod + (saw_mod - sin_mod) * shape_clamped
         }
     };
 
     let warped = phase + displacement_scale * modulator;
-    if (0.0..1.0).contains(&warped) {
-        warped
-    } else if warped >= 1.0 {
-        warped - 1.0
-    } else {
-        warped + 1.0
-    }
+    wrap01(warped)
 }
