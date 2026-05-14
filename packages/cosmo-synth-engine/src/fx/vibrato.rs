@@ -82,23 +82,23 @@ const PRESET_OPTIONS: [FxPresetOptionV1; 3] = [
 const WAVEFORM_OPTIONS: [FxControlOptionV1; 4] = [
     FxControlOptionV1 {
         value: 1,
-        label: "Sine",
-        icon_name: Some("waveSine"),
-    },
-    FxControlOptionV1 {
-        value: 2,
         label: "Tri",
         icon_name: Some("waveTriangle"),
     },
     FxControlOptionV1 {
+        value: 2,
+        label: "Saw",
+        icon_name: Some("waveSawtooth"),
+    },
+    FxControlOptionV1 {
         value: 3,
-        label: "Sq",
-        icon_name: Some("waveSquare"),
+        label: "InvertedSaw",
+        icon_name: Some("waveSawtoothInverted"),
     },
     FxControlOptionV1 {
         value: 4,
-        label: "Saw",
-        icon_name: Some("waveSawtooth"),
+        label: "Sq",
+        icon_name: Some("waveSquare"),
     },
 ];
 

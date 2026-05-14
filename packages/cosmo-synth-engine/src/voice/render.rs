@@ -609,10 +609,10 @@ fn apply_vibrato(
 
 fn vibrato_waveform(waveform: u8) -> LfoWaveform {
     match waveform {
-        2 => LfoWaveform::Triangle,
-        3 => LfoWaveform::Square,
-        4 => LfoWaveform::Saw,
-        _ => LfoWaveform::Sine,
+        2 => LfoWaveform::Saw,
+        3 => LfoWaveform::InvertedSaw,
+        4 => LfoWaveform::Square,
+        _ => LfoWaveform::Triangle,
     }
 }
 

@@ -2043,23 +2043,23 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "options": [
           {
             "value": 1,
-            "label": "Sine",
-            "iconName": "waveSine"
-          },
-          {
-            "value": 2,
             "label": "Tri",
             "iconName": "waveTriangle"
           },
           {
+            "value": 2,
+            "label": "Saw",
+            "iconName": "waveSawtooth"
+          },
+          {
             "value": 3,
-            "label": "Sq",
-            "iconName": "waveSquare"
+            "label": "InvertedSaw",
+            "iconName": "waveSawtoothInverted"
           },
           {
             "value": 4,
-            "label": "Saw",
-            "iconName": "waveSawtooth"
+            "label": "Sq",
+            "iconName": "waveSquare"
           }
         ],
         "modDestinationKey": null
