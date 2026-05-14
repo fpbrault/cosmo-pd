@@ -107,13 +107,13 @@ function AlgoControlsGroupInner({
 								<div>{renderControl(windowFunctionControl)}</div>
 							) : null}
 							{remainingControls.length > 0 ? (
-								<div className="grid grid-cols-2 justify-center gap-2 space-y-3">
+								<div className="grid grid-cols-2 justify-center gap-2">
 									{remainingControls.map((control) => renderControl(control))}
 								</div>
 							) : null}
 						</div>
 					) : (
-						<div className="grid grid-cols-2 justify-center gap-2 space-y-3">
+						<div className="grid grid-cols-2 justify-center gap-2">
 							{controls.map((control) => renderControl(control))}
 						</div>
 					)}
