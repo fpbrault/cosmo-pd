@@ -180,6 +180,10 @@ export type SynthState = {
 
 	pitchBendRange: number;
 	octave: number;
+	voiceCount: number;
+	unisonCount: number;
+	unisonDetune: number;
+	unisonSpread: number;
 	modMatrix: ModMatrix;
 	/** Unified per-slot FX configuration — all 6 slots. */
 	fxSlots: FxSlotTuple;
@@ -261,6 +265,10 @@ type SynthActions = {
 
 	setPitchBendRange: (v: number) => void;
 	setOctave: (v: number) => void;
+	setVoiceCount: (v: number) => void;
+	setUnisonCount: (v: number) => void;
+	setUnisonDetune: (v: number) => void;
+	setUnisonSpread: (v: number) => void;
 	setModMatrix: (v: ModMatrix) => void;
 	/** Replace the effect type in a slot (resets params to enabled defaults). */
 	setFxSlotType: (slot: number, type: FxSlotType) => void;
@@ -355,6 +363,10 @@ const DEFAULT_STATE: SynthState = {
 
 	pitchBendRange: requireEngineParamDefault("pitchBendRange"),
 	octave: 0,
+	voiceCount: requireEngineParamDefault("voiceCount"),
+	unisonCount: requireEngineParamDefault("unisonCount"),
+	unisonDetune: requireEngineParamDefault("unisonDetune"),
+	unisonSpread: requireEngineParamDefault("unisonSpread"),
 	modMatrix: { routes: [] },
 	fxSlots: DEFAULT_FX_SLOTS,
 };
@@ -441,6 +453,10 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 
 	setPitchBendRange: (v) => set({ pitchBendRange: v }),
 	setOctave: (v) => set({ octave: toIntegerInRange(v, -2, 2) }),
+	setVoiceCount: (v) => set({ voiceCount: toIntegerInRange(v, 1, 8) }),
+	setUnisonCount: (v) => set({ unisonCount: toIntegerInRange(v, 1, 4) }),
+	setUnisonDetune: (v) => set({ unisonDetune: Math.max(0, Math.min(1, v)) }),
+	setUnisonSpread: (v) => set({ unisonSpread: Math.max(0, Math.min(1, v)) }),
 	setModMatrix: (v) => set({ modMatrix: v }),
 	setFxSlotType: (slot, type) => {
 		if (slot < 0 || slot > 5) return;
@@ -598,6 +614,10 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				release: s.modEnvRelease,
 			},
 			pitchBendRange: s.pitchBendRange,
+			voiceCount: s.voiceCount,
+			unisonCount: s.unisonCount,
+			unisonDetune: s.unisonDetune,
+			unisonSpread: s.unisonSpread,
 			modMatrix: s.modMatrix,
 			fxSlots: s.fxSlots,
 		} satisfies SynthPresetV1["params"];
@@ -760,6 +780,19 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			velocityCurve: safe(
 				p.velocityCurve,
 				requireEngineParamDefault("velocityCurve"),
+			),
+			voiceCount: safe(p.voiceCount, requireEngineParamDefault("voiceCount")),
+			unisonCount: safe(
+				p.unisonCount,
+				requireEngineParamDefault("unisonCount"),
+			),
+			unisonDetune: safe(
+				p.unisonDetune,
+				requireEngineParamDefault("unisonDetune"),
+			),
+			unisonSpread: safe(
+				p.unisonSpread,
+				requireEngineParamDefault("unisonSpread"),
 			),
 			octave: safe(p.octave, 0),
 			modMatrix:

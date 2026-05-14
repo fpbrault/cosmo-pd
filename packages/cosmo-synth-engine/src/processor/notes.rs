@@ -1,5 +1,7 @@
 extern crate alloc;
 
+use alloc::vec::Vec;
+
 use crate::params::{PolyMode, NUM_VOICES};
 
 use super::state::{MonoStackEntry, NoteEntry};
@@ -287,19 +289,31 @@ impl CosmoProcessor {
     }
 
     fn handle_poly_note_on(&mut self, note: u8, frequency: f32, velocity: f32) {
+        let unison = (self.params.unison_count).clamp(1, 4) as usize;
+
         if let Some(entry) = self.active_notes.iter().find(|e| e.note == note).cloned() {
             let voice = &mut self.voices[entry.voice_idx];
             if voice.note == Some(note) {
                 voice.frequency = frequency;
                 voice.target_freq = frequency;
                 voice.velocity = velocity;
+                for e in self.active_notes.iter().filter(|e| e.note == note) {
+                    let v = &mut self.voices[e.voice_idx];
+                    v.frequency = frequency;
+                    v.target_freq = frequency;
+                    v.velocity = velocity;
+                }
                 return;
             }
         }
 
-        let voice_idx = self.find_poly_voice_for_note_on();
-        self.initialize_voice_for_note(voice_idx, note, frequency, velocity);
-        self.replace_active_note_entry(voice_idx, note);
+        for sub in 0..unison {
+            let voice_idx = self.find_poly_voice_for_note_on();
+            self.initialize_voice_for_note(voice_idx, note, frequency, velocity);
+            self.voices[voice_idx].sub_voice_index = sub as u8;
+            self.voices[voice_idx].sub_voice_count = unison as u8;
+            self.replace_active_note_entry(voice_idx, note);
+        }
     }
 
     /// Handle a note-on event.
@@ -335,34 +349,43 @@ impl CosmoProcessor {
             self.mono_stack.retain(|e| e.note != note);
         }
 
-        let entry = match self.active_notes.iter().find(|e| e.note == note).cloned() {
-            Some(e) => e,
-            None => return,
-        };
+        let entries: Vec<NoteEntry> = self
+            .active_notes
+            .iter()
+            .filter(|e| e.note == note)
+            .cloned()
+            .collect();
+        if entries.is_empty() {
+            return;
+        }
         self.active_notes.retain(|e| e.note != note);
 
-        let voice_idx = entry.voice_idx;
-        if self.voices[voice_idx].note != Some(note) {
-            return;
-        }
+        let is_mono = self.params.poly_mode == PolyMode::Mono;
 
-        if self.sustain_on {
-            self.voices[voice_idx].sustained = true;
-            self.voices[voice_idx].mod_env.note_off();
-            return;
-        }
+        for entry in &entries {
+            let voice_idx = entry.voice_idx;
+            if self.voices[voice_idx].note != Some(note) {
+                continue;
+            }
 
-        if self.params.poly_mode == PolyMode::Mono {
-            if let Some(prev) = self.mono_stack.last() {
-                let voice = &mut self.voices[voice_idx];
-                *voice = prev.voice.clone();
-                voice.note = Some(prev.note);
-                self.replace_active_note_entry(voice_idx, prev.note);
+            if self.sustain_on {
+                self.voices[voice_idx].sustained = true;
+                self.voices[voice_idx].mod_env.note_off();
+                continue;
+            }
+
+            if is_mono {
+                if let Some(prev) = self.mono_stack.last() {
+                    let voice = &mut self.voices[voice_idx];
+                    *voice = prev.voice.clone();
+                    voice.note = Some(prev.note);
+                    self.replace_active_note_entry(voice_idx, prev.note);
+                } else {
+                    self.start_release(voice_idx);
+                }
             } else {
                 self.start_release(voice_idx);
             }
-        } else {
-            self.start_release(voice_idx);
         }
     }
 

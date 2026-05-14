@@ -141,6 +141,17 @@ let wasm_bindgen = (function(exports) {
             wasm.czsynthprocessor_process(this.__wbg_ptr, ptr0, len0, addHeapObject(output));
         }
         /**
+         * Fill `output` with interleaved stereo samples `[L,R,L,R,…]`.
+         *
+         * Requires `output.len()` to be even (an exact multiple of 2).
+         * @param {Float32Array} output
+         */
+        processStereo(output) {
+            var ptr0 = passArrayF32ToWasm0(output, wasm.__wbindgen_export);
+            var len0 = WASM_VECTOR_LEN;
+            wasm.czsynthprocessor_processStereo(this.__wbg_ptr, ptr0, len0, addHeapObject(output));
+        }
+        /**
          * Hard reset runtime voice and FX state while preserving current params.
          */
         resetAudioState() {

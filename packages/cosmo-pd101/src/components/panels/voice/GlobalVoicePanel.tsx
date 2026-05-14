@@ -88,9 +88,17 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 			useSynthParam("portamentoRate");
 		const { value: portamentoTime, setValue: setPortamentoTime } =
 			useSynthParam("portamentoTime");
+		const { value: voiceCount, setValue: setVoiceCount } =
+			useSynthParam("voiceCount");
+		const { value: unisonCount, setValue: setUnisonCount } =
+			useSynthParam("unisonCount");
+		const { value: unisonDetune, setValue: setUnisonDetune } =
+			useSynthParam("unisonDetune");
+		const { value: unisonSpread, setValue: setUnisonSpread } =
+			useSynthParam("unisonSpread");
 		return (
 			<SynthPanelContainer className="p-2">
-				<div className="space-y-2">
+				<div className="space-y-3">
 					<div className="grid grid-cols-[auto_1fr_auto] items-end gap-1.5 pt-0.5">
 						<div className="mt-0.5 flex flex-col justify-center">
 							<Button
@@ -156,6 +164,43 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 								label="Vel Curve"
 							/>
 						</div>
+					</div>
+					<hr className="border-cz-border/40" />
+					<div className="grid grid-cols-4 items-end gap-1.5">
+						<SynthParamKnob
+							paramKey="voiceCount"
+							value={voiceCount}
+							min={1}
+							max={8}
+							step={1}
+							onChange={setVoiceCount}
+							color="#7f9de4"
+							label="Voices"
+						/>
+						<SynthParamKnob
+							paramKey="unisonCount"
+							value={unisonCount}
+							min={1}
+							max={4}
+							step={1}
+							onChange={setUnisonCount}
+							color="#5bc8d4"
+							label="Unison"
+						/>
+						<SynthParamKnob
+							paramKey="unisonDetune"
+							value={unisonDetune}
+							onChange={setUnisonDetune}
+							color="#c46eb4"
+							label="Detune"
+						/>
+						<SynthParamKnob
+							paramKey="unisonSpread"
+							value={unisonSpread}
+							onChange={setUnisonSpread}
+							color="#7f9de4"
+							label="Spread"
+						/>
 					</div>
 				</div>
 			</SynthPanelContainer>

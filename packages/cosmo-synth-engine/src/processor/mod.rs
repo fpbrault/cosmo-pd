@@ -16,6 +16,7 @@ use core::array;
 use crate::dsp_utils::random_hold_value;
 use crate::envelope::{normalize_synth_params_envelopes_to_raw_if_human, EnvelopeTimingCache};
 use crate::fx::FxChain;
+use crate::lookup_tables::ConstantPowerPanTable;
 use crate::module_presets;
 use crate::params::{FxSlotConfig, FxSlotType, LineParams, SynthParams, NUM_VOICES};
 use crate::simd::{detect_simd_backend, SimdBackend};
@@ -55,6 +56,7 @@ pub struct CosmoProcessor {
     line1_scratch: LineParams,
     line2_scratch: LineParams,
     envelope_timing: EnvelopeTimingCache,
+    pan_table: ConstantPowerPanTable,
 }
 
 impl CosmoProcessor {
@@ -84,6 +86,7 @@ impl CosmoProcessor {
             line1_scratch: LineParams::default(),
             line2_scratch: LineParams::default(),
             envelope_timing: EnvelopeTimingCache::new(sample_rate),
+            pan_table: ConstantPowerPanTable::new(),
         };
         proc.update_fx();
         proc
@@ -221,6 +224,7 @@ impl CosmoProcessor {
         self.line1_scratch = self.params.line1;
         self.line2_scratch = self.params.line2;
         self.envelope_timing = EnvelopeTimingCache::new(self.sample_rate);
+        self.pan_table = ConstantPowerPanTable::new();
     }
 
     /// Set which effect type occupies a given FX slot (0–5).

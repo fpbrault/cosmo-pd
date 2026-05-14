@@ -146,6 +146,16 @@ pub fn render_voice(
         &mut signal,
     );
 
+    // Apply unison detune: evenly distribute ±unison_detune cents across sub-voices
+    if voice.sub_voice_count > 1 && p.unison_detune > 0.0 {
+        let n = voice.sub_voice_count as f32;
+        let i = voice.sub_voice_index as f32;
+        let cents = p.unison_detune * 100.0 * (2.0 * i / (n - 1.0) - 1.0);
+        let ratio = (2.0_f32).powf(cents / 1200.0);
+        signal.effective_freq1 *= ratio;
+        signal.effective_freq2 *= ratio;
+    }
+
     let phase = build_phase_frame(voice, p, cache, sr, base_freq, &mod_sources);
     let (s1, ks_raw1) = voice.algo_runtime.render_line1(LineRenderConfig::from_line(
         &line1_modded,

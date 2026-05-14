@@ -239,7 +239,7 @@ impl FxChain {
         }
     }
 
-    /// Process one sample through all 6 FX slots in series.
+    /// Process one sample through all 6 FX slots in series (mono).
     pub fn process(&mut self, sample: f32) -> f32 {
         let mut out = sample;
         for active_idx in 0..self.active_slot_count {
@@ -247,6 +247,18 @@ impl FxChain {
             out = self.process_slot(slot, out);
         }
         out
+    }
+
+    /// Process a stereo pair through all 6 FX slots in series (dual-mono).
+    pub fn process_stereo(&mut self, l: f32, r: f32) -> (f32, f32) {
+        let mut out_l = l;
+        let mut out_r = r;
+        for active_idx in 0..self.active_slot_count {
+            let slot = self.active_slots[active_idx];
+            out_l = self.process_slot(slot, out_l);
+            out_r = self.process_slot(slot, out_r);
+        }
+        (out_l, out_r)
     }
 
     fn process_slot(&mut self, slot: usize, sample: f32) -> f32 {

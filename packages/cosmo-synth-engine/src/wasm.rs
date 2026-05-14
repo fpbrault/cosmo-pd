@@ -176,6 +176,14 @@ impl CzSynthProcessor {
     pub fn process(&mut self, output: &mut [f32]) {
         self.inner.process(output);
     }
+
+    /// Fill `output` with interleaved stereo samples `[L,R,L,R,…]`.
+    ///
+    /// Requires `output.len()` to be even (an exact multiple of 2).
+    #[wasm_bindgen(js_name = processStereo)]
+    pub fn process_stereo(&mut self, output: &mut [f32]) {
+        self.inner.process_stereo(output);
+    }
 }
 
 // ---------------------------------------------------------------------------

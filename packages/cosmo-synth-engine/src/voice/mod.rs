@@ -72,6 +72,8 @@ pub struct Voice {
     pub smoothed_dcw2: f32,
     pub last_output_sample: f32,
     pub release_tail_level: f32,
+    pub sub_voice_index: u8,
+    pub sub_voice_count: u8,
     pub algo_runtime: AlgoRuntimeState,
 }
 
@@ -109,6 +111,8 @@ impl Voice {
             smoothed_dcw2: 0.0,
             last_output_sample: 0.0,
             release_tail_level: 0.0,
+            sub_voice_index: 0,
+            sub_voice_count: 1,
             algo_runtime: AlgoRuntimeState::default(),
         }
     }

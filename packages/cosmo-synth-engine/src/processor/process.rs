@@ -37,23 +37,37 @@ impl CosmoProcessor {
     pub fn process(&mut self, output: &mut [f32]) {
         #[cfg(all(debug_assertions, feature = "std"))]
         {
-            assert_no_alloc(|| self.process_with_denormal_guard(output));
+            assert_no_alloc(|| self.process_with_denormal_guard(output, false));
             return;
         }
 
         #[cfg(not(all(debug_assertions, feature = "std")))]
-        self.process_with_denormal_guard(output);
+        self.process_with_denormal_guard(output, false);
     }
 
-    fn process_with_denormal_guard(&mut self, output: &mut [f32]) {
+    /// Fill `output` with interleaved stereo L,R samples.
+    /// `output.len()` must be even (2 × number of stereo frames).
+    #[cfg_attr(feature = "rtsan", rtsan_standalone::nonblocking)]
+    pub fn process_stereo(&mut self, output: &mut [f32]) {
+        #[cfg(all(debug_assertions, feature = "std"))]
+        {
+            assert_no_alloc(|| self.process_with_denormal_guard(output, true));
+            return;
+        }
+
+        #[cfg(not(all(debug_assertions, feature = "std")))]
+        self.process_with_denormal_guard(output, true);
+    }
+
+    fn process_with_denormal_guard(&mut self, output: &mut [f32], stereo: bool) {
         #[cfg(all(feature = "no_denormals", not(target_arch = "wasm32")))]
-        no_denormals(|| self.process_inner(output));
+        no_denormals(|| self.process_inner(output, stereo));
 
         #[cfg(not(all(feature = "no_denormals", not(target_arch = "wasm32"))))]
-        self.process_inner(output);
+        self.process_inner(output, stereo);
     }
 
-    fn process_inner(&mut self, output: &mut [f32]) {
+    fn process_inner(&mut self, output: &mut [f32], stereo: bool) {
         let params = Arc::clone(&self.params);
         let p = params.as_ref();
         let volume = p.volume;
@@ -73,7 +87,8 @@ impl CosmoProcessor {
         let headroom_makeup = (headroom_ratio)
             .powf(HEADROOM_MAKEUP_EXPONENT)
             .clamp(1.0, MAX_HEADROOM_MAKEUP);
-        let norm = volume * headroom_makeup / (NUM_VOICES as f32).sqrt();
+        let vc = (p.voice_count.max(1)) as f32;
+        let norm = volume * headroom_makeup / vc.sqrt();
         let matrix = &p.mod_matrix;
 
         let mut prev_lfo1 = self.last_runtime_mod_sources.lfo1;
@@ -96,7 +111,15 @@ impl CosmoProcessor {
             .map(|a| pre_resolve_controls(a, &p.line2.algo_controls_b))
             .unwrap_or([0.0; 8]);
 
-        for sample_out in output.iter_mut() {
+        let num_frames = if stereo {
+            output.len() / 2
+        } else {
+            output.len()
+        };
+        let mut out_idx: usize = 0;
+        let unison_spread = p.unison_spread;
+
+        for _ in 0..num_frames {
             let (source_mod_env, source_velocity) = self
                 .runtime_mod_source_voice_index()
                 .map(|voice_idx| {
@@ -182,181 +205,15 @@ impl CosmoProcessor {
             let line1_modded = self.line1_scratch;
             let line2_modded = self.line2_scratch;
 
-            let mut mixed = 0.0_f32;
+            let mut mixed_l = 0.0_f32;
+            let mut mixed_r = 0.0_f32;
             let pitch_bend_semitones = self.pitch_bend * params.pitch_bend_range;
             let mod_wheel = self.mod_wheel;
             let aftertouch = self.aftertouch;
-            let mut v = 0;
-            if matches!(self.simd_backend, crate::simd::SimdBackend::Scalar) {
-                while v + 4 <= NUM_VOICES {
-                    mixed += crate::voice::render_voice(
-                        &mut self.voices[v],
-                        params.as_ref(),
-                        lfo1_mod_val,
-                        lfo2_mod_val,
-                        random_mod_val,
-                        &line1_modded,
-                        &line2_modded,
-                        sr,
-                        &self.envelope_timing,
-                        pitch_bend_semitones,
-                        mod_wheel,
-                        aftertouch,
-                        &mod_cache,
-                        l1_ctrl_p,
-                        l1_ctrl_s,
-                        l2_ctrl_p,
-                        l2_ctrl_s,
-                    );
-                    mixed += crate::voice::render_voice(
-                        &mut self.voices[v + 1],
-                        params.as_ref(),
-                        lfo1_mod_val,
-                        lfo2_mod_val,
-                        random_mod_val,
-                        &line1_modded,
-                        &line2_modded,
-                        sr,
-                        &self.envelope_timing,
-                        pitch_bend_semitones,
-                        mod_wheel,
-                        aftertouch,
-                        &mod_cache,
-                        l1_ctrl_p,
-                        l1_ctrl_s,
-                        l2_ctrl_p,
-                        l2_ctrl_s,
-                    );
-                    mixed += crate::voice::render_voice(
-                        &mut self.voices[v + 2],
-                        params.as_ref(),
-                        lfo1_mod_val,
-                        lfo2_mod_val,
-                        random_mod_val,
-                        &line1_modded,
-                        &line2_modded,
-                        sr,
-                        &self.envelope_timing,
-                        pitch_bend_semitones,
-                        mod_wheel,
-                        aftertouch,
-                        &mod_cache,
-                        l1_ctrl_p,
-                        l1_ctrl_s,
-                        l2_ctrl_p,
-                        l2_ctrl_s,
-                    );
-                    mixed += crate::voice::render_voice(
-                        &mut self.voices[v + 3],
-                        params.as_ref(),
-                        lfo1_mod_val,
-                        lfo2_mod_val,
-                        random_mod_val,
-                        &line1_modded,
-                        &line2_modded,
-                        sr,
-                        &self.envelope_timing,
-                        pitch_bend_semitones,
-                        mod_wheel,
-                        aftertouch,
-                        &mod_cache,
-                        l1_ctrl_p,
-                        l1_ctrl_s,
-                        l2_ctrl_p,
-                        l2_ctrl_s,
-                    );
-                    v += 4;
-                }
-            } else {
-                let mut vector_acc = [0.0_f32; 4];
-                while v + 4 <= NUM_VOICES {
-                    let voice_samples = [
-                        crate::voice::render_voice(
-                            &mut self.voices[v],
-                            params.as_ref(),
-                            lfo1_mod_val,
-                            lfo2_mod_val,
-                            random_mod_val,
-                            &line1_modded,
-                            &line2_modded,
-                            sr,
-                            &self.envelope_timing,
-                            pitch_bend_semitones,
-                            mod_wheel,
-                            aftertouch,
-                            &mod_cache,
-                            l1_ctrl_p,
-                            l1_ctrl_s,
-                            l2_ctrl_p,
-                            l2_ctrl_s,
-                        ),
-                        crate::voice::render_voice(
-                            &mut self.voices[v + 1],
-                            params.as_ref(),
-                            lfo1_mod_val,
-                            lfo2_mod_val,
-                            random_mod_val,
-                            &line1_modded,
-                            &line2_modded,
-                            sr,
-                            &self.envelope_timing,
-                            pitch_bend_semitones,
-                            mod_wheel,
-                            aftertouch,
-                            &mod_cache,
-                            l1_ctrl_p,
-                            l1_ctrl_s,
-                            l2_ctrl_p,
-                            l2_ctrl_s,
-                        ),
-                        crate::voice::render_voice(
-                            &mut self.voices[v + 2],
-                            params.as_ref(),
-                            lfo1_mod_val,
-                            lfo2_mod_val,
-                            random_mod_val,
-                            &line1_modded,
-                            &line2_modded,
-                            sr,
-                            &self.envelope_timing,
-                            pitch_bend_semitones,
-                            mod_wheel,
-                            aftertouch,
-                            &mod_cache,
-                            l1_ctrl_p,
-                            l1_ctrl_s,
-                            l2_ctrl_p,
-                            l2_ctrl_s,
-                        ),
-                        crate::voice::render_voice(
-                            &mut self.voices[v + 3],
-                            params.as_ref(),
-                            lfo1_mod_val,
-                            lfo2_mod_val,
-                            random_mod_val,
-                            &line1_modded,
-                            &line2_modded,
-                            sr,
-                            &self.envelope_timing,
-                            pitch_bend_semitones,
-                            mod_wheel,
-                            aftertouch,
-                            &mod_cache,
-                            l1_ctrl_p,
-                            l1_ctrl_s,
-                            l2_ctrl_p,
-                            l2_ctrl_s,
-                        ),
-                    ];
-                    vector_acc = self.simd_backend.add4(vector_acc, voice_samples);
-                    v += 4;
-                }
-                mixed += self.simd_backend.horizontal_sum4(vector_acc);
-            }
 
-            while v < NUM_VOICES {
-                mixed += crate::voice::render_voice(
-                    &mut self.voices[v],
+            for voice_idx in 0..NUM_VOICES {
+                let sample = crate::voice::render_voice(
+                    &mut self.voices[voice_idx],
                     params.as_ref(),
                     lfo1_mod_val,
                     lfo2_mod_val,
@@ -374,7 +231,17 @@ impl CosmoProcessor {
                     l2_ctrl_p,
                     l2_ctrl_s,
                 );
-                v += 1;
+
+                let pan = if self.voices[voice_idx].sub_voice_count > 1 && unison_spread > 0.0 {
+                    let n = self.voices[voice_idx].sub_voice_count as f32;
+                    let i = self.voices[voice_idx].sub_voice_index as f32;
+                    0.5 + (i / (n - 1.0) - 0.5) * unison_spread
+                } else {
+                    0.5
+                };
+                let (l_gain, r_gain) = self.pan_table.lookup(pan);
+                mixed_l += sample * l_gain;
+                mixed_r += sample * r_gain;
             }
 
             let (mod_env, velocity) = self
@@ -397,16 +264,31 @@ impl CosmoProcessor {
             prev_lfo2 = lfo2_mod_val;
             prev_random = random_mod_val;
 
-            mixed *= norm;
+            mixed_l *= norm;
+            mixed_r *= norm;
 
-            let fx_out = self.fx.process(mixed);
-            let colored = if ENABLE_CZ_DAC_COLOR {
-                self.cz_dac_color.process(fx_out, sr)
+            let (fx_l, fx_r) = self.fx.process_stereo(mixed_l, mixed_r);
+            let colored_l = if ENABLE_CZ_DAC_COLOR {
+                self.cz_dac_color.process(fx_l, sr)
             } else {
-                fx_out
+                fx_l
             };
-            let soft_limited = soft_clip_tanh(colored, SOFT_CLIP_DRIVE);
-            *sample_out = soft_limited.clamp(-1.0, 1.0);
+            let colored_r = if ENABLE_CZ_DAC_COLOR {
+                self.cz_dac_color.process(fx_r, sr)
+            } else {
+                fx_r
+            };
+            let soft_l = soft_clip_tanh(colored_l, SOFT_CLIP_DRIVE);
+            let soft_r = soft_clip_tanh(colored_r, SOFT_CLIP_DRIVE);
+
+            if stereo {
+                output[out_idx] = soft_l.clamp(-1.0, 1.0);
+                output[out_idx + 1] = soft_r.clamp(-1.0, 1.0);
+                out_idx += 2;
+            } else {
+                output[out_idx] = ((soft_l + soft_r) * 0.5).clamp(-1.0, 1.0);
+                out_idx += 1;
+            }
         }
     }
 

@@ -53,6 +53,22 @@ pub(crate) fn default_ring_gain() -> f32 {
     4.0
 }
 
+pub(crate) fn default_voice_count() -> u8 {
+    NUM_VOICES as u8
+}
+
+pub(crate) fn default_unison_count() -> u8 {
+    1
+}
+
+pub(crate) fn default_unison_detune() -> f32 {
+    0.0
+}
+
+pub(crate) fn default_unison_spread() -> f32 {
+    0.0
+}
+
 /// Top-level synth parameters
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
@@ -77,6 +93,14 @@ pub struct SynthParams {
     pub velocity_curve: f32,
     #[serde(default = "default_pitch_bend_range")]
     pub pitch_bend_range: f32,
+    #[serde(default = "default_voice_count")]
+    pub voice_count: u8,
+    #[serde(default = "default_unison_count")]
+    pub unison_count: u8,
+    #[serde(default = "default_unison_detune")]
+    pub unison_detune: f32,
+    #[serde(default = "default_unison_spread")]
+    pub unison_spread: f32,
     #[serde(default)]
     pub mod_matrix: ModMatrix,
     #[serde(default)]
@@ -127,6 +151,10 @@ impl Default for SynthParams {
             lfo2: LfoParams::default(),
             velocity_curve: 0.0,
             pitch_bend_range: 2.0,
+            voice_count: NUM_VOICES as u8,
+            unison_count: 1,
+            unison_detune: 0.0,
+            unison_spread: 0.0,
             mod_matrix: ModMatrix::default(),
             random: RandomParams::default(),
             mod_env: ModEnvParams::default(),

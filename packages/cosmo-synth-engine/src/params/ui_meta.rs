@@ -66,7 +66,7 @@ const POLY_MODE_LABELS_V1: [EngineEnumValueLabelV1; 2] = [
     },
 ];
 
-const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 57] = [
+const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 61] = [
     EngineParamUiMetaV1 {
         key: "volume",
         readout_format: EngineParamReadoutFormatV1::Percent,
@@ -297,6 +297,22 @@ const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 57] = [
         key: "modWheelVibratoDepth",
         readout_format: EngineParamReadoutFormatV1::Decimal,
     },
+    EngineParamUiMetaV1 {
+        key: "voiceCount",
+        readout_format: EngineParamReadoutFormatV1::Integer,
+    },
+    EngineParamUiMetaV1 {
+        key: "unisonCount",
+        readout_format: EngineParamReadoutFormatV1::Integer,
+    },
+    EngineParamUiMetaV1 {
+        key: "unisonDetune",
+        readout_format: EngineParamReadoutFormatV1::Decimal,
+    },
+    EngineParamUiMetaV1 {
+        key: "unisonSpread",
+        readout_format: EngineParamReadoutFormatV1::Decimal,
+    },
 ];
 
 const ENGINE_PARAM_RANGES_V1: [EngineParamRangeV1; 1] = [EngineParamRangeV1 {
@@ -384,6 +400,10 @@ pub fn engine_param_default_v1(key: &str) -> Option<f32> {
         "portamentoTime" => Some(synth.portamento.time),
         "pitchBendRange" => Some(synth.pitch_bend_range),
         "modWheelVibratoDepth" => Some(0.0),
+        "voiceCount" => Some(synth.voice_count as f32),
+        "unisonCount" => Some(synth.unison_count as f32),
+        "unisonDetune" => Some(synth.unison_detune),
+        "unisonSpread" => Some(synth.unison_spread),
         _ => None,
     }
 }

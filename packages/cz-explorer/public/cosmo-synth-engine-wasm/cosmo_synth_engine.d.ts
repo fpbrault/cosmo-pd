@@ -54,6 +54,12 @@ declare namespace wasm_bindgen {
          */
         process(output: Float32Array): void;
         /**
+         * Fill `output` with interleaved stereo samples `[L,R,L,R,…]`.
+         *
+         * Requires `output.len()` to be even (an exact multiple of 2).
+         */
+        processStereo(output: Float32Array): void;
+        /**
          * Hard reset runtime voice and FX state while preserving current params.
          */
         resetAudioState(): void;
@@ -111,6 +117,7 @@ declare interface InitOutput {
     readonly czsynthprocessor_noteOff: (a: number, b: number) => void;
     readonly czsynthprocessor_noteOn: (a: number, b: number, c: number, d: number) => void;
     readonly czsynthprocessor_process: (a: number, b: number, c: number, d: number) => void;
+    readonly czsynthprocessor_processStereo: (a: number, b: number, c: number, d: number) => void;
     readonly czsynthprocessor_resetAudioState: (a: number) => void;
     readonly czsynthprocessor_setAftertouch: (a: number, b: number) => void;
     readonly czsynthprocessor_setFxSlotType: (a: number, b: number, c: number, d: number) => number;
