@@ -29,7 +29,7 @@
 		"@neondatabase/neon-js": "^0.2.0-beta.1",
 		"@tailwindcss/postcss": "^4.2.2",
 		"@tailwindcss/vite": "^4.2.2",
-		"@tanstack/intent": "^0.0.29",
+		"@tanstack/intent": "^0.0.41",
 		"@tanstack/react-query": "^5.99.0",
 		"@tanstack/react-router": "^1.168.22",
 		"@tanstack/react-table": "^8.21.3",
