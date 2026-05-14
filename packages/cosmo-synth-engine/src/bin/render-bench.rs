@@ -5,8 +5,8 @@ use std::time::Instant;
 
 use cosmo_synth_engine::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use cosmo_synth_engine::params::{
-    Algo, AlgoControlId, AlgoControlValueV1, FxSlotConfig, FxSlotType, LineSelect, ModDestination,
-    ModMatrix, ModRoute, ModSource, PolyMode, SynthParams,
+    AdsrData, Algo, AlgoControlId, AlgoControlValueV1, CurveShape, EnvType, FxSlotConfig,
+    FxSlotType, LineSelect, ModDestination, ModMatrix, ModRoute, ModSource, PolyMode, SynthParams,
 };
 use cosmo_synth_engine::processor::{midi_note_to_freq, CosmoProcessor};
 
@@ -749,6 +749,64 @@ fn scenarios() -> Vec<Scenario> {
             build_param_variants: None,
         },
         Scenario {
+            name: "adsr-envelopes",
+            description: "All 6 envelope slots using ADSR with Exp/Log curves, sine oscillators, no FX",
+            build_params: || {
+                let mut p = SynthParams::default();
+                p.poly_mode = PolyMode::Poly8;
+                p.line_select = LineSelect::L1PlusL2Prime;
+                p.line1.algo = Algo::Sine;
+                p.line1.algo2 = None;
+                p.line1.algo_blend = 0.0;
+                p.line1.dcw_base = 0.85;
+                p.line1.dca_base = 0.85;
+                p.line2.algo = Algo::Sine;
+                p.line2.algo2 = None;
+                p.line2.algo_blend = 0.0;
+                p.line2.dcw_base = 0.85;
+                p.line2.dca_base = 0.85;
+
+                let adsr = EnvType::Adsr(AdsrData {
+                    attack_time_secs: 0.005,
+                    decay_time_secs: 0.15,
+                    sustain_level: 0.6,
+                    release_time_secs: 0.3,
+                    attack_curve: CurveShape::Exp,
+                    decay_curve: CurveShape::Log,
+                    release_curve: CurveShape::Log,
+                });
+                let adsr_slow = EnvType::Adsr(AdsrData {
+                    attack_time_secs: 0.05,
+                    decay_time_secs: 0.4,
+                    sustain_level: 0.5,
+                    release_time_secs: 0.8,
+                    attack_curve: CurveShape::Exp,
+                    decay_curve: CurveShape::Log,
+                    release_curve: CurveShape::Log,
+                });
+
+                p.line1.dco_env = adsr;
+                p.line1.dcw_env = adsr;
+                p.line1.dca_env = adsr_slow;
+                p.line2.dco_env = adsr;
+                p.line2.dcw_env = adsr;
+                p.line2.dca_env = adsr_slow;
+                p.mod_matrix = ModMatrix::default();
+                p.fx_slots = [
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                    FxSlotConfig::Empty,
+                ];
+                p
+            },
+            note_churn_blocks: Some(32),
+            param_swap_blocks: None,
+            build_param_variants: None,
+        },
+        Scenario {
             name: "algo-saw",
             description: "Per-algo benchmark: Saw",
             build_params: || build_algo_bench_params(Algo::Saw),
@@ -1051,6 +1109,8 @@ fn scenario_matrix() -> Vec<(String, usize)> {
         "mod-heavy",
         "fx-heavy",
         "worst-poly",
+        // Envelope-focused scenarios
+        "adsr-envelopes",
         // Optimization-focused scenarios
         "opt-sine-lfo-heavy",
         "opt-param-interp-light",
@@ -1074,6 +1134,7 @@ fn hotspot_matrix() -> Vec<(String, usize)> {
         ("hotspot-note-churn".to_string(), 8),
         ("mod-only-sine".to_string(), 8),
         ("hotspot-algo-controls".to_string(), 8),
+        ("adsr-envelopes".to_string(), 8),
         ("osc-pd-heavy-no-mod-fx".to_string(), 8),
         ("fx-only-sine".to_string(), 8),
         ("worst-poly".to_string(), 8),

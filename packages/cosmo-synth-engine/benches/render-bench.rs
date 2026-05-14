@@ -72,3 +72,6 @@ render_bench_case!(
 render_bench_case!(opt_all_combined_3_voices, "opt-all-combined", 3);
 render_bench_case!(opt_all_combined_6_voices, "opt-all-combined", 6);
 render_bench_case!(opt_all_combined_8_voices, "opt-all-combined", 8);
+render_bench_case!(adsr_envelopes_3_voices, "adsr-envelopes", 3);
+render_bench_case!(adsr_envelopes_6_voices, "adsr-envelopes", 6);
+render_bench_case!(adsr_envelopes_8_voices, "adsr-envelopes", 8);
