@@ -115,48 +115,54 @@ impl CosmoProcessor {
                 release_tail_level: voice.release_tail_level,
                 line1: RuntimeVoiceLineState {
                     dco: RuntimeVoiceEnvState {
-                        value: voice.line1_env.dco.output,
-                        step: voice.line1_env.dco.step,
-                        releasing: voice.line1_env.dco.releasing,
-                        step_pos: voice.line1_env.dco.step_pos,
-                        prev_level: voice.line1_env.dco.prev_level,
+                        value: voice.line1_env.dco.output(),
+                        step: voice.line1_env.dco.get_step(),
+                        releasing: voice.line1_env.dco.get_releasing(),
+                        step_pos: voice.line1_env.dco.get_step_pos(),
+                        prev_level: voice.line1_env.dco.get_prev_level(),
+                        phase: voice.line1_env.dco.phase_index(),
                     },
                     dcw: RuntimeVoiceEnvState {
-                        value: voice.line1_env.dcw.output,
-                        step: voice.line1_env.dcw.step,
-                        releasing: voice.line1_env.dcw.releasing,
-                        step_pos: voice.line1_env.dcw.step_pos,
-                        prev_level: voice.line1_env.dcw.prev_level,
+                        value: voice.line1_env.dcw.output(),
+                        step: voice.line1_env.dcw.get_step(),
+                        releasing: voice.line1_env.dcw.get_releasing(),
+                        step_pos: voice.line1_env.dcw.get_step_pos(),
+                        prev_level: voice.line1_env.dcw.get_prev_level(),
+                        phase: voice.line1_env.dcw.phase_index(),
                     },
                     dca: RuntimeVoiceEnvState {
-                        value: voice.line1_env.dca.output,
-                        step: voice.line1_env.dca.step,
-                        releasing: voice.line1_env.dca.releasing,
-                        step_pos: voice.line1_env.dca.step_pos,
-                        prev_level: voice.line1_env.dca.prev_level,
+                        value: voice.line1_env.dca.output(),
+                        step: voice.line1_env.dca.get_step(),
+                        releasing: voice.line1_env.dca.get_releasing(),
+                        step_pos: voice.line1_env.dca.get_step_pos(),
+                        prev_level: voice.line1_env.dca.get_prev_level(),
+                        phase: voice.line1_env.dca.phase_index(),
                     },
                 },
                 line2: RuntimeVoiceLineState {
                     dco: RuntimeVoiceEnvState {
-                        value: voice.line2_env.dco.output,
-                        step: voice.line2_env.dco.step,
-                        releasing: voice.line2_env.dco.releasing,
-                        step_pos: voice.line2_env.dco.step_pos,
-                        prev_level: voice.line2_env.dco.prev_level,
+                        value: voice.line2_env.dco.output(),
+                        step: voice.line2_env.dco.get_step(),
+                        releasing: voice.line2_env.dco.get_releasing(),
+                        step_pos: voice.line2_env.dco.get_step_pos(),
+                        prev_level: voice.line2_env.dco.get_prev_level(),
+                        phase: voice.line2_env.dco.phase_index(),
                     },
                     dcw: RuntimeVoiceEnvState {
-                        value: voice.line2_env.dcw.output,
-                        step: voice.line2_env.dcw.step,
-                        releasing: voice.line2_env.dcw.releasing,
-                        step_pos: voice.line2_env.dcw.step_pos,
-                        prev_level: voice.line2_env.dcw.prev_level,
+                        value: voice.line2_env.dcw.output(),
+                        step: voice.line2_env.dcw.get_step(),
+                        releasing: voice.line2_env.dcw.get_releasing(),
+                        step_pos: voice.line2_env.dcw.get_step_pos(),
+                        prev_level: voice.line2_env.dcw.get_prev_level(),
+                        phase: voice.line2_env.dcw.phase_index(),
                     },
                     dca: RuntimeVoiceEnvState {
-                        value: voice.line2_env.dca.output,
-                        step: voice.line2_env.dca.step,
-                        releasing: voice.line2_env.dca.releasing,
-                        step_pos: voice.line2_env.dca.step_pos,
-                        prev_level: voice.line2_env.dca.prev_level,
+                        value: voice.line2_env.dca.output(),
+                        step: voice.line2_env.dca.get_step(),
+                        releasing: voice.line2_env.dca.get_releasing(),
+                        step_pos: voice.line2_env.dca.get_step_pos(),
+                        prev_level: voice.line2_env.dca.get_prev_level(),
+                        phase: voice.line2_env.dca.phase_index(),
                     },
                 },
             })
@@ -266,8 +272,8 @@ mod tests {
     use super::*;
     use crate::envelope_map::{human_level_to_raw, human_rate_to_raw, EnvelopeKind};
     use crate::params::{
-        DelayParams, EnvStep, FxSlotConfig, LineSelect, ModDestination, ModRoute, ModSource,
-        PolyMode, ShimmerVerbParams, StepEnvData, VibratoParams,
+        DelayParams, EnvStep, EnvType, FxSlotConfig, LineSelect, ModDestination, ModRoute,
+        ModSource, PolyMode, ShimmerVerbParams, StepEnvData, VibratoParams,
     };
 
     fn active_voice_indices_for_note(proc: &CosmoProcessor, note: u8) -> Vec<usize> {
@@ -410,7 +416,7 @@ mod tests {
 
         let mut proc = CosmoProcessor::new(48_000.0);
         proc.params_mut().line_select = LineSelect::L1;
-        proc.params_mut().line1.dca_env = StepEnvData {
+        proc.params_mut().line1.dca_env = EnvType::Step(StepEnvData {
             steps: [
                 dca_step(99, 99),
                 dca_step(0, 99),
@@ -424,7 +430,7 @@ mod tests {
             sustain_step: 1,
             step_count: 2,
             loop_: false,
-        };
+        });
 
         let note = 60_u8;
         let freq = utils::midi_note_to_freq(note);
@@ -483,7 +489,7 @@ mod tests {
         let mut proc = CosmoProcessor::new(48_000.0);
         proc.params_mut().line_select = LineSelect::L2;
         proc.params_mut().line2.key_follow = 2.0;
-        proc.params_mut().line2.dca_env = StepEnvData {
+        proc.params_mut().line2.dca_env = EnvType::Step(StepEnvData {
             steps: [
                 dca_step(99, 99),
                 dca_step(99, 99),
@@ -497,8 +503,8 @@ mod tests {
             sustain_step: 0,
             step_count: 2,
             loop_: false,
-        };
-        proc.params_mut().line2.dcw_env = StepEnvData {
+        });
+        proc.params_mut().line2.dcw_env = EnvType::Step(StepEnvData {
             steps: [
                 dcw_step(80, 99),
                 dcw_step(80, 99),
@@ -512,7 +518,7 @@ mod tests {
             sustain_step: 0,
             step_count: 2,
             loop_: false,
-        };
+        });
 
         proc.params_mut().portamento.enabled = true;
         proc.params_mut().portamento.time = 0.1;

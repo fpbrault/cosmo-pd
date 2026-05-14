@@ -31,6 +31,31 @@ stepCount: number;
 loop: boolean }
 
 /**
+ * Curve shape for a single ADSR stage.
+ */
+export type CurveShape = "linear" | 
+/**
+ * Starts fast, eases to target.
+ */
+"exp" | 
+/**
+ * Starts slow, accelerates to target.
+ */
+"log"
+
+/**
+ * ADSR envelope data with per-stage curve shapes.
+ * Times are in seconds [0.001, 10.0].
+ */
+export type AdsrData = { attackTimeSecs: number; decayTimeSecs: number; sustainLevel: number; releaseTimeSecs: number; attackCurve: CurveShape; decayCurve: CurveShape; releaseCurve: CurveShape }
+
+/**
+ * Unified envelope type: either CZ-style step or traditional ADSR.
+ * Untagged so JSON is transparent (just the inner type), not a tagged union.
+ */
+export type EnvType = StepEnvData | AdsrData
+
+/**
  * Front-panel CZ algorithm shortcuts.
  */
 export type CzAlgo = "saw" | "square" | "pulse" | "doubleSine" | "sawPulse" | "reso1" | "reso2" | "reso3"
@@ -138,7 +163,7 @@ export type AlgoControlValueV1 = { id: string; value: number }
 /**
  * Per-line parameters
  */
-export type LineParams = { algo: Algo; algo2: Algo | null; algoBlend: number; baseWaveformA?: BaseWaveform; baseWaveformB?: BaseWaveform; window: WindowType; dcaBase: number; dcwBase: number; modulation: number; detuneNote?: number; detuneFine?: number; octave: number; dcoEnv: StepEnvData; dcwEnv: StepEnvData; dcaEnv: StepEnvData; keyFollow: number; algoControlsA: AlgoControlValueV1[]; algoControlsB: AlgoControlValueV1[] }
+export type LineParams = { algo: Algo; algo2: Algo | null; algoBlend: number; baseWaveformA?: BaseWaveform; baseWaveformB?: BaseWaveform; window: WindowType; dcaBase: number; dcwBase: number; modulation: number; detuneNote?: number; detuneFine?: number; octave: number; dcoEnv: EnvType; dcwEnv: EnvType; dcaEnv: EnvType; keyFollow: number; algoControlsA: AlgoControlValueV1[]; algoControlsB: AlgoControlValueV1[] }
 
 /**
  * Describes one control surfaced by an algorithm package.

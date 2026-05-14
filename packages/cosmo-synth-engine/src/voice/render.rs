@@ -9,12 +9,13 @@ use crate::params::{
 
 use super::modulation::{algo_param_slot_mods_for_line, ModSources};
 use super::{
-    Voice, ANTI_CLICK_ATTACK_SAMPLES, ANTI_CLICK_FADE_MAX_SAMPLES, ANTI_CLICK_FADE_SAMPLES,
-    DCA_LEVEL_CURVE_EXPONENT, DCW_DEZIPPER_TIME_SECONDS, DCW_LEVEL_CURVE_EXPONENT,
-    DEFAULT_BASE_FREQ, DUAL_LINE_MIX_GAIN, POP_SUPPRESS_DELTA_THRESHOLD, POP_SUPPRESS_EXCESS_KEEP,
-    RELEASE_TAIL_LEVEL_THRESHOLD, RELEASE_TAIL_LEVEL_TIME_SECONDS, SILENCE_THRESHOLD,
-    ZERO_CROSS_STOP_MAX_WAIT_SAMPLES, ZERO_CROSS_STOP_THRESHOLD,
+    EnvSlot, Voice, ANTI_CLICK_ATTACK_SAMPLES, ANTI_CLICK_FADE_MAX_SAMPLES,
+    ANTI_CLICK_FADE_SAMPLES, DCA_LEVEL_CURVE_EXPONENT, DCW_DEZIPPER_TIME_SECONDS,
+    DCW_LEVEL_CURVE_EXPONENT, DEFAULT_BASE_FREQ, DUAL_LINE_MIX_GAIN, POP_SUPPRESS_DELTA_THRESHOLD,
+    POP_SUPPRESS_EXCESS_KEEP, RELEASE_TAIL_LEVEL_THRESHOLD, RELEASE_TAIL_LEVEL_TIME_SECONDS,
+    SILENCE_THRESHOLD, ZERO_CROSS_STOP_MAX_WAIT_SAMPLES, ZERO_CROSS_STOP_THRESHOLD,
 };
+use crate::params::EnvType;
 
 /// Envelope values snapshot for one render step.
 struct EnvelopeSnapshot {
@@ -86,8 +87,8 @@ pub fn render_voice(
         || (line2_active && (env.dca2).abs() >= SILENCE_THRESHOLD);
     let env_gate_closed = (!line1_active || (env.dca1).abs() < SILENCE_THRESHOLD)
         && (!line2_active || (env.dca2).abs() < SILENCE_THRESHOLD);
-    let active_dca_non_loop = (!line1_active || !line1_modded.dca_env.loop_)
-        && (!line2_active || !line2_modded.dca_env.loop_);
+    let active_dca_non_loop = (!line1_active || !env_type_loops(&line1_modded.dca_env))
+        && (!line2_active || !env_type_loops(&line2_modded.dca_env));
 
     if env_gate_open {
         voice.gate_was_open = true;
@@ -295,8 +296,8 @@ fn finalize_voice_silence(voice: &mut Voice) -> f32 {
     voice.note = None;
     voice.env_note = 60;
     voice.gate_was_open = false;
-    voice.line1_env.dca.output = 0.0;
-    voice.line2_env.dca.output = 0.0;
+    voice.line1_env.dca.set_output(0.0);
+    voice.line2_env.dca.set_output(0.0);
     voice.mod_env.reset();
     voice.last_output_sample = 0.0;
     voice.release_tail_level = 0.0;
@@ -340,56 +341,90 @@ fn advance_envelopes(
 ) -> EnvelopeSnapshot {
     let note = voice.env_note;
 
-    voice.line1_env.dco.advance(
-        EnvelopeKind::Dco,
+    advance_env_slot(
+        &mut voice.line1_env.dco,
         &line1.dco_env,
-        timing,
-        line1.key_follow,
-        note,
-    );
-    voice.line1_env.dcw.advance(
-        EnvelopeKind::Dcw,
-        &line1.dcw_env,
-        timing,
-        line1.key_follow,
-        note,
-    );
-    voice.line1_env.dca.advance(
-        EnvelopeKind::Dca,
-        &line1.dca_env,
-        timing,
-        line1.key_follow,
-        note,
-    );
-    voice.line2_env.dco.advance(
         EnvelopeKind::Dco,
-        &line2.dco_env,
         timing,
-        line2.key_follow,
+        line1.key_follow,
         note,
     );
-    voice.line2_env.dcw.advance(
+    advance_env_slot(
+        &mut voice.line1_env.dcw,
+        &line1.dcw_env,
         EnvelopeKind::Dcw,
-        &line2.dcw_env,
+        timing,
+        line1.key_follow,
+        note,
+    );
+    advance_env_slot(
+        &mut voice.line1_env.dca,
+        &line1.dca_env,
+        EnvelopeKind::Dca,
+        timing,
+        line1.key_follow,
+        note,
+    );
+    advance_env_slot(
+        &mut voice.line2_env.dco,
+        &line2.dco_env,
+        EnvelopeKind::Dco,
         timing,
         line2.key_follow,
         note,
     );
-    voice.line2_env.dca.advance(
-        EnvelopeKind::Dca,
+    advance_env_slot(
+        &mut voice.line2_env.dcw,
+        &line2.dcw_env,
+        EnvelopeKind::Dcw,
+        timing,
+        line2.key_follow,
+        note,
+    );
+    advance_env_slot(
+        &mut voice.line2_env.dca,
         &line2.dca_env,
+        EnvelopeKind::Dca,
         timing,
         line2.key_follow,
         note,
     );
 
     EnvelopeSnapshot {
-        dco1_env: voice.line1_env.dco.output,
-        dco2_env: voice.line2_env.dco.output,
-        dca1: voice.line1_env.dca.output,
-        dca2: voice.line2_env.dca.output,
-        dcw1: line1.dcw_base * cz_dcw_env_depth(voice.line1_env.dcw.output),
-        dcw2: line2.dcw_base * cz_dcw_env_depth(voice.line2_env.dcw.output),
+        dco1_env: voice.line1_env.dco.output(),
+        dco2_env: voice.line2_env.dco.output(),
+        dca1: voice.line1_env.dca.output(),
+        dca2: voice.line2_env.dca.output(),
+        dcw1: line1.dcw_base * cz_dcw_env_depth(voice.line1_env.dcw.output()),
+        dcw2: line2.dcw_base * cz_dcw_env_depth(voice.line2_env.dcw.output()),
+    }
+}
+
+#[inline]
+fn advance_env_slot(
+    slot: &mut EnvSlot,
+    env_type: &EnvType,
+    kind: EnvelopeKind,
+    timing: &EnvelopeTimingCache,
+    key_follow: f32,
+    note: u8,
+) {
+    match (slot, env_type) {
+        (EnvSlot::Step(gen), EnvType::Step(data)) => {
+            gen.advance(kind, data, timing, key_follow, note);
+        }
+        (EnvSlot::Adsr(gen), EnvType::Adsr(_)) => {
+            gen.advance();
+        }
+        _ => {}
+    }
+}
+
+#[inline]
+fn env_type_loops(env_type: &EnvType) -> bool {
+    match env_type {
+        EnvType::Step(data) => data.loop_,
+        EnvType::Adsr(_) => false,
     }
 }
 

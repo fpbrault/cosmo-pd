@@ -3,14 +3,16 @@ use crate::envelope_map::human_level_to_raw;
 use crate::envelope_map::human_rate_to_raw;
 use crate::envelope_map::raw_level_to_human;
 pub use crate::envelope_map::EnvelopeKind;
-use crate::params::{StepEnvData, SynthParams};
+use crate::params::{EnvType, StepEnvData, SynthParams};
 
-pub fn normalize_env_to_raw_if_human(kind: EnvelopeKind, env: &mut StepEnvData) {
+pub fn normalize_env_to_raw_if_human(kind: EnvelopeKind, env: &mut EnvType) {
     const INV_99: f32 = 1.0 / 99.0;
-    for step in env.steps.iter_mut() {
-        step.level = human_level_to_raw(kind, step.level);
-        step.rate = human_rate_to_raw(kind, step.rate);
-        step.level_norm = raw_level_to_human(kind, step.level) as f32 * INV_99;
+    if let EnvType::Step(step_env) = env {
+        for step in step_env.steps.iter_mut() {
+            step.level = human_level_to_raw(kind, step.level);
+            step.rate = human_rate_to_raw(kind, step.rate);
+            step.level_norm = raw_level_to_human(kind, step.level) as f32 * INV_99;
+        }
     }
 }
 
@@ -320,36 +322,48 @@ mod tests {
             loop_: false,
         };
         let mut params = SynthParams::default();
-        params.line1.dco_env = blank();
-        params.line1.dco_env.steps[0] = EnvStep {
-            level: 66,
-            rate: 99,
-            level_norm: 0.0,
-        };
-        params.line1.dcw_env = blank();
-        params.line1.dcw_env.steps[0] = EnvStep {
-            level: 99,
-            rate: 0,
-            level_norm: 0.0,
-        };
-        params.line1.dca_env = blank();
-        params.line1.dca_env.steps[0] = EnvStep {
-            level: 1,
-            rate: 99,
-            level_norm: 0.0,
-        };
-        params.line2.dco_env = blank();
-        params.line2.dcw_env = blank();
-        params.line2.dca_env = blank();
+        params.line1.dco_env = EnvType::Step(blank());
+        if let EnvType::Step(ref mut env) = params.line1.dco_env {
+            env.steps[0] = EnvStep {
+                level: 66,
+                rate: 99,
+                level_norm: 0.0,
+            };
+        }
+        params.line1.dcw_env = EnvType::Step(blank());
+        if let EnvType::Step(ref mut env) = params.line1.dcw_env {
+            env.steps[0] = EnvStep {
+                level: 99,
+                rate: 0,
+                level_norm: 0.0,
+            };
+        }
+        params.line1.dca_env = EnvType::Step(blank());
+        if let EnvType::Step(ref mut env) = params.line1.dca_env {
+            env.steps[0] = EnvStep {
+                level: 1,
+                rate: 99,
+                level_norm: 0.0,
+            };
+        }
+        params.line2.dco_env = EnvType::Step(blank());
+        params.line2.dcw_env = EnvType::Step(blank());
+        params.line2.dca_env = EnvType::Step(blank());
 
         normalize_synth_params_envelopes_to_raw_if_human(&mut params);
 
-        assert_eq!(params.line1.dco_env.steps[0].level, 70);
-        assert_eq!(params.line1.dco_env.steps[0].rate, 127);
-        assert_eq!(params.line1.dcw_env.steps[0].level, 127);
-        assert_eq!(params.line1.dcw_env.steps[0].rate, 8);
-        assert_eq!(params.line1.dca_env.steps[0].level, 29);
-        assert_eq!(params.line1.dca_env.steps[0].rate, 119);
+        if let EnvType::Step(ref env) = params.line1.dco_env {
+            assert_eq!(env.steps[0].level, 70);
+            assert_eq!(env.steps[0].rate, 127);
+        }
+        if let EnvType::Step(ref env) = params.line1.dcw_env {
+            assert_eq!(env.steps[0].level, 127);
+            assert_eq!(env.steps[0].rate, 8);
+        }
+        if let EnvType::Step(ref env) = params.line1.dca_env {
+            assert_eq!(env.steps[0].level, 29);
+            assert_eq!(env.steps[0].rate, 119);
+        }
     }
 
     #[test]

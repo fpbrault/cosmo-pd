@@ -43,6 +43,7 @@ export type {
 export { installBenchmarkApi } from "./lib/performance/benchmarkHarness";
 export type {
 	AlgoControlValueV1,
+	EnvType,
 	FxSlotConfig,
 	FxSlotType,
 	ModMatrix,

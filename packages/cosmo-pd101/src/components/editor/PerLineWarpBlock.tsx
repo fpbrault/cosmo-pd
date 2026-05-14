@@ -7,7 +7,7 @@ import Card from "@/components/primitives/Card";
 import type {
 	AlgoControlValueV1,
 	BaseWaveform,
-	StepEnvData,
+	EnvType,
 } from "@/lib/synth/bindings/synth";
 import type { PdAlgo } from "@/lib/synth/pdAlgorithms";
 import { PD_ALGOS } from "@/lib/synth/pdAlgorithms";
@@ -38,12 +38,12 @@ interface PerLineWarpBlockProps {
 	setDetuneNote?: (v: number) => void;
 	fineDetune?: number;
 	setFineDetune?: (v: number) => void;
-	dcoEnv: StepEnvData;
-	setDcoEnv: (e: StepEnvData) => void;
-	dcwEnv: StepEnvData;
-	setDcwEnv: (e: StepEnvData) => void;
-	dcaEnv: StepEnvData;
-	setDcaEnv: (e: StepEnvData) => void;
+	dcoEnv: EnvType;
+	setDcoEnv: (e: EnvType) => void;
+	dcwEnv: EnvType;
+	setDcwEnv: (e: EnvType) => void;
+	dcaEnv: EnvType;
+	setDcaEnv: (e: EnvType) => void;
 	baseWaveformA: BaseWaveform;
 	setBaseWaveformA: (v: BaseWaveform) => void;
 	baseWaveformB: BaseWaveform;
@@ -99,6 +99,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 		algoBEnabled,
 		envMap,
 		activeVoiceMarkers,
+		adsrVoiceMarkers,
 		handleAlgoChange,
 		handleAlgo2Change,
 		baseWaveEnabledA,
@@ -261,6 +262,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 				<EnvelopesSection
 					envMap={envMap}
 					voiceMarkers={activeVoiceMarkers}
+					adsrVoiceMarkers={adsrVoiceMarkers}
 					lineIndex={lineIndex}
 					lineColor={color}
 				/>

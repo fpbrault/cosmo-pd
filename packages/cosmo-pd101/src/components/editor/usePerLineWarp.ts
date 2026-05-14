@@ -6,6 +6,11 @@ import type {
 	LineIndex,
 } from "@/components/controls/algo/algoControlTypes";
 import { useOptionalSynthController } from "@/features/synth/SynthParamController";
+import {
+	isAdsrEnv,
+	isStepEnv,
+	useSynthStore,
+} from "@/features/synth/synthStore";
 import type { EnvTab } from "@/features/synth/synthUiStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import { buildDefaultAlgoControls } from "@/lib/synth/algoRef";
@@ -13,13 +18,17 @@ import type {
 	AlgoControlValueV1,
 	AlgoDefinitionV1,
 	BaseWaveform,
-	StepEnvData,
+	EnvType,
 } from "@/lib/synth/bindings/synth";
 import { ALGO_DEFINITIONS_V1 } from "@/lib/synth/bindings/synth";
 import type { PdAlgo } from "@/lib/synth/pdAlgorithms";
 import { algoUsesBaseWaveform, PD_ALGOS } from "@/lib/synth/pdAlgorithms";
+import type { AdsrVoiceMarker } from "./adsrEnvelopeGeometry";
 import type { EnvMapEntry } from "./EnvelopesSection";
-import { getEnvelopeVoiceProgress } from "./perLineWarpUtils";
+import {
+	getAdsrVoicePhase,
+	getEnvelopeVoiceProgress,
+} from "./perLineWarpUtils";
 import type { StepEnvelopeVoiceMarker } from "./StepEnvelopeEditor";
 
 type SectionTab = "algos" | "envelopes";
@@ -43,12 +52,12 @@ interface UsePerLineWarpInput {
 	setBaseWaveformA: (v: BaseWaveform) => void;
 	baseWaveformB: BaseWaveform;
 	setBaseWaveformB: (v: BaseWaveform) => void;
-	dcoEnv: StepEnvData;
-	setDcoEnv: (e: StepEnvData) => void;
-	dcwEnv: StepEnvData;
-	setDcwEnv: (e: StepEnvData) => void;
-	dcaEnv: StepEnvData;
-	setDcaEnv: (e: StepEnvData) => void;
+	dcoEnv: EnvType;
+	setDcoEnv: (e: EnvType) => void;
+	dcwEnv: EnvType;
+	setDcwEnv: (e: EnvType) => void;
+	dcaEnv: EnvType;
+	setDcaEnv: (e: EnvType) => void;
 	lineIndex?: LineIndex;
 	activeSection?: SectionTab;
 }
@@ -58,6 +67,7 @@ interface UsePerLineWarpOutput {
 	voiceMarkerTick: number;
 	envMap: Record<EnvTab, EnvMapEntry>;
 	activeVoiceMarkers: StepEnvelopeVoiceMarker[];
+	adsrVoiceMarkers: AdsrVoiceMarker[];
 	handleAlgoChange: (nextAlgo: PdAlgo) => void;
 	handleAlgo2Change: (nextAlgo: PdAlgo) => void;
 	baseWaveEnabledA: boolean;
@@ -112,6 +122,15 @@ export function usePerLineWarp(
 
 	const activeEnvTab = useSynthUiStore((s) => s.activeEnvTab);
 	const synthController = useOptionalSynthController();
+	const setDcoEnvType = useSynthStore(
+		lineIndex === 2 ? (s) => s.setLine2DcoEnvType : (s) => s.setLine1DcoEnvType,
+	);
+	const setDcwEnvType = useSynthStore(
+		lineIndex === 2 ? (s) => s.setLine2DcwEnvType : (s) => s.setLine1DcwEnvType,
+	);
+	const setDcaEnvType = useSynthStore(
+		lineIndex === 2 ? (s) => s.setLine2DcaEnvType : (s) => s.setLine1DcaEnvType,
+	);
 	const algoBEnabled = algoBlend > 0.001;
 	const [voiceMarkerTick, setVoiceMarkerTick] = useState(0);
 
@@ -134,31 +153,54 @@ export function usePerLineWarp(
 				env: dcoEnv,
 				setEnv: setDcoEnv,
 				envColor: "#9cb937",
+				onToggleType: () => setDcoEnvType(isStepEnv(dcoEnv) ? "adsr" : "step"),
 			},
 			dcw: {
 				title: `${label} DCW`,
 				env: dcwEnv,
 				setEnv: setDcwEnv,
 				envColor: "#60a5fa",
+				onToggleType: () => setDcwEnvType(isStepEnv(dcwEnv) ? "adsr" : "step"),
 			},
 			dca: {
 				title: `${label} DCA`,
 				env: dcaEnv,
 				setEnv: setDcaEnv,
 				envColor: "#f97316",
+				onToggleType: () => setDcaEnvType(isStepEnv(dcaEnv) ? "adsr" : "step"),
 			},
 		}),
-		[label, dcoEnv, setDcoEnv, dcwEnv, setDcwEnv, dcaEnv, setDcaEnv],
+		[
+			label,
+			dcoEnv,
+			setDcoEnv,
+			dcwEnv,
+			setDcwEnv,
+			dcaEnv,
+			setDcaEnv,
+			setDcoEnvType,
+			setDcwEnvType,
+			setDcaEnvType,
+		],
 	);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: <For updates>
+	const liveVoiceStatesResult = useMemo(() => {
+		if (activeSection !== "envelopes") {
+			return [];
+		}
+		void voiceMarkerTick;
+		return synthController?.getLiveVoiceStates() ?? [];
+	}, [activeSection, synthController, voiceMarkerTick]);
+
 	const activeVoiceMarkers = useMemo<StepEnvelopeVoiceMarker[]>(() => {
 		if (activeSection !== "envelopes") {
 			return [];
 		}
 
 		const activeEnv = envMap[activeEnvTab];
-		const liveVoiceStates = synthController?.getLiveVoiceStates() ?? [];
+		if (!isStepEnv(activeEnv.env)) return [];
+
+		const liveVoiceStates = liveVoiceStatesResult;
 		return liveVoiceStates
 			.filter((voice) => voice.active)
 			.map((voice) => {
@@ -176,14 +218,30 @@ export function usePerLineWarp(
 					color: voice.isReleasing ? "#f59e0b" : "#f8fafc",
 				};
 			});
-	}, [
-		activeSection,
-		activeEnvTab,
-		envMap,
-		lineIndex,
-		synthController,
-		voiceMarkerTick,
-	]);
+	}, [activeSection, activeEnvTab, envMap, lineIndex, liveVoiceStatesResult]);
+
+	const adsrVoiceMarkers = useMemo<AdsrVoiceMarker[]>(() => {
+		if (activeSection !== "envelopes") {
+			return [];
+		}
+
+		const activeEnv = envMap[activeEnvTab];
+		if (!isAdsrEnv(activeEnv.env)) return [];
+
+		const liveVoiceStates = liveVoiceStatesResult;
+		return liveVoiceStates
+			.filter((voice) => voice.active)
+			.map((voice) => {
+				const lineState = lineIndex === 1 ? voice.line1 : voice.line2;
+				const envState = lineState[activeEnvTab];
+				return {
+					id: voice.index,
+					phase: getAdsrVoicePhase(envState.step),
+					releasing: envState.releasing || voice.isReleasing,
+					color: voice.isReleasing ? "#f59e0b" : "#f8fafc",
+				};
+			});
+	}, [activeSection, activeEnvTab, envMap, lineIndex, liveVoiceStatesResult]);
 
 	const handleAlgoChange = useCallback(
 		(nextAlgo: PdAlgo) => {
@@ -493,6 +551,7 @@ export function usePerLineWarp(
 		voiceMarkerTick,
 		envMap,
 		activeVoiceMarkers,
+		adsrVoiceMarkers,
 		handleAlgoChange,
 		handleAlgo2Change,
 		baseWaveEnabledA,

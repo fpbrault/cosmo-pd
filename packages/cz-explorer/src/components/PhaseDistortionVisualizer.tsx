@@ -2,12 +2,12 @@ import {
 	convertDecodedPatchToSynthPreset,
 	DEFAULT_SYNTH_PRESETS,
 	decodeCzPatch,
+	type EnvType,
 	installBenchmarkApi,
 	type LibraryPreset,
 	noteToFreq,
 	type PerformanceMetrics,
 	pdVisualizerWorkletUrl,
-	type StepEnvData,
 	SYNTH_UI_STATE_STORAGE_KEY,
 	SynthRenderer,
 	synthBindingsUrl,
@@ -328,42 +328,42 @@ export function SharedPhaseDistortionVisualizer({
 	const effectivePitchHz = lastHeldFreqRef.current;
 
 	const handleLine1DcoEnvChange = useCallback(
-		(next: StepEnvData) => {
+		(next: EnvType) => {
 			setLine1DcoEnv(next);
 		},
 		[setLine1DcoEnv],
 	);
 
 	const handleLine1DcwEnvChange = useCallback(
-		(next: StepEnvData) => {
+		(next: EnvType) => {
 			setLine1DcwEnv(next);
 		},
 		[setLine1DcwEnv],
 	);
 
 	const handleLine1DcaEnvChange = useCallback(
-		(next: StepEnvData) => {
+		(next: EnvType) => {
 			setLine1DcaEnv(next);
 		},
 		[setLine1DcaEnv],
 	);
 
 	const handleLine2DcoEnvChange = useCallback(
-		(next: StepEnvData) => {
+		(next: EnvType) => {
 			setLine2DcoEnv(next);
 		},
 		[setLine2DcoEnv],
 	);
 
 	const handleLine2DcwEnvChange = useCallback(
-		(next: StepEnvData) => {
+		(next: EnvType) => {
 			setLine2DcwEnv(next);
 		},
 		[setLine2DcwEnv],
 	);
 
 	const handleLine2DcaEnvChange = useCallback(
-		(next: StepEnvData) => {
+		(next: EnvType) => {
 			setLine2DcaEnv(next);
 		},
 		[setLine2DcaEnv],

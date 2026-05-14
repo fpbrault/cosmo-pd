@@ -3,16 +3,136 @@
 extern crate alloc;
 
 mod adsr;
+mod adsr_gen;
 mod modulation;
 mod render;
 
 pub use adsr::AdsrEnv;
+pub(crate) use adsr_gen::AdsrGen;
 pub(crate) use modulation::modulated_line_params;
 pub(crate) use modulation::ModSources;
 pub(crate) use render::render_voice;
 
 use crate::envelope::EnvGen;
 use crate::generators::AlgoRuntimeState;
+use crate::params::EnvType;
+
+/// Per-slot envelope generator: either CZ-style step or ADSR.
+#[derive(Debug, Clone)]
+pub enum EnvSlot {
+    Step(EnvGen),
+    Adsr(AdsrGen),
+}
+
+impl EnvSlot {
+    #[inline]
+    pub fn output(&self) -> f32 {
+        match self {
+            EnvSlot::Step(gen) => gen.output,
+            EnvSlot::Adsr(gen) => gen.output,
+        }
+    }
+
+    pub fn reset(&mut self) {
+        match self {
+            EnvSlot::Step(gen) => gen.reset(),
+            EnvSlot::Adsr(gen) => gen.reset(),
+        }
+    }
+
+    pub fn set_output(&mut self, value: f32) {
+        match self {
+            EnvSlot::Step(gen) => gen.output = value,
+            EnvSlot::Adsr(gen) => gen.output = value,
+        }
+    }
+
+    /// Phase index for telemetry:
+    ///   ADSR: 0=idle, 1=attack, 2=decay, 3=sustain, 4=release, 5=finished
+    ///   Step: 0=idle, 1=running, 2=releasing, 3=held
+    pub fn phase_index(&self) -> u8 {
+        match self {
+            EnvSlot::Step(gen) => {
+                if gen.output == 0.0 && gen.step == 0 && gen.step_pos == 0 && !gen.releasing {
+                    0
+                } else if gen.holding {
+                    3
+                } else if gen.releasing {
+                    2
+                } else {
+                    1
+                }
+            }
+            EnvSlot::Adsr(gen) => gen.phase_index(),
+        }
+    }
+
+    pub fn get_step(&self) -> usize {
+        match self {
+            EnvSlot::Step(gen) => gen.step,
+            EnvSlot::Adsr(gen) => gen.phase_index() as usize,
+        }
+    }
+
+    pub fn get_step_pos(&self) -> u32 {
+        match self {
+            EnvSlot::Step(gen) => gen.step_pos,
+            EnvSlot::Adsr(gen) => gen.elapsed,
+        }
+    }
+
+    pub fn get_prev_level(&self) -> f32 {
+        match self {
+            EnvSlot::Step(gen) => gen.prev_level,
+            EnvSlot::Adsr(_) => 0.0,
+        }
+    }
+
+    pub fn get_releasing(&self) -> bool {
+        match self {
+            EnvSlot::Step(gen) => gen.releasing,
+            EnvSlot::Adsr(gen) => gen.is_releasing(),
+        }
+    }
+
+    pub fn has_reached_sustain(&self, env_type: &EnvType) -> bool {
+        match (self, env_type) {
+            (EnvSlot::Step(gen), EnvType::Step(data)) => gen.step >= data.sustain_step,
+            (EnvSlot::Adsr(gen), EnvType::Adsr(_)) => gen.has_reached_sustain(),
+            _ => true,
+        }
+    }
+}
+
+const _: fn() = || {
+    // Compile-time check: EnvSlot is default-constructible from EnvGen
+    let _ = EnvSlot::Step(EnvGen {
+        step: 0,
+        step_pos: 0,
+        prev_level: 0.0,
+        output: 0.0,
+        releasing: false,
+        holding: false,
+        release_start_level: 0.0,
+        release_progress: 0.0,
+        release_duration: 0,
+    });
+};
+
+impl Default for EnvSlot {
+    fn default() -> Self {
+        EnvSlot::Step(EnvGen::default())
+    }
+}
+
+impl From<&EnvType> for EnvSlot {
+    fn from(env_type: &EnvType) -> Self {
+        match env_type {
+            EnvType::Step(_) => EnvSlot::Step(EnvGen::default()),
+            EnvType::Adsr(_) => EnvSlot::Adsr(AdsrGen::default()),
+        }
+    }
+}
 
 pub(crate) const ANTI_CLICK_ATTACK_SAMPLES: u32 = 64;
 
@@ -32,11 +152,29 @@ const DUAL_LINE_MIX_GAIN: f32 = 0.8;
 const DEFAULT_BASE_FREQ: f32 = 220.0;
 
 /// The three envelope generators for a single oscillator line (DCO, DCW, DCA).
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct LineEnvs {
-    pub dco: EnvGen,
-    pub dcw: EnvGen,
-    pub dca: EnvGen,
+    pub dco: EnvSlot,
+    pub dcw: EnvSlot,
+    pub dca: EnvSlot,
+}
+
+impl LineEnvs {
+    pub fn reset_all(&mut self) {
+        self.dco.reset();
+        self.dcw.reset();
+        self.dca.reset();
+    }
+}
+
+impl Default for LineEnvs {
+    fn default() -> Self {
+        Self {
+            dco: EnvSlot::default(),
+            dcw: EnvSlot::default(),
+            dca: EnvSlot::default(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -114,12 +252,8 @@ impl Voice {
     }
 
     pub fn reset_envs(&mut self) {
-        self.line1_env.dco.reset();
-        self.line1_env.dcw.reset();
-        self.line1_env.dca.reset();
-        self.line2_env.dco.reset();
-        self.line2_env.dcw.reset();
-        self.line2_env.dca.reset();
+        self.line1_env.reset_all();
+        self.line2_env.reset_all();
         self.mod_env.reset();
     }
 }

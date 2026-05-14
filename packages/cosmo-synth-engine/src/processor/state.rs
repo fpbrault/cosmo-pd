@@ -107,6 +107,10 @@ pub struct RuntimeVoiceEnvState {
     pub releasing: bool,
     pub step_pos: u32,
     pub prev_level: f32,
+    /// Envelope phase:
+    ///   ADSR: 0=idle, 1=attack, 2=decay, 3=sustain, 4=release, 5=finished
+    ///   Step: 0=idle, 1=running, 2=releasing, 3=held
+    pub phase: u8,
 }
 
 /// Snapshot of one oscillator line's envelope generators.

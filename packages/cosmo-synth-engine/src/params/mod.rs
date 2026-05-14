@@ -14,7 +14,7 @@ mod waveforms;
 
 // Re-exports for backward compatibility
 pub(crate) use cache::ModMatrixCache;
-pub use envelopes::{EnvStep, StepEnvData, NUM_ENV_STEPS};
+pub use envelopes::{AdsrData, CurveShape, EnvStep, EnvType, StepEnvData, NUM_ENV_STEPS};
 pub use filter::{FilterParams, FilterType};
 pub use fx_params::{
     BitcrusherParams, ChorusParams, CompressorParams, DelayParams, DistortionParams, EqParams,

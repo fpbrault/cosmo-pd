@@ -4,18 +4,18 @@ import CzTabButton from "@/components/primitives/CzTabButton";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import type { PhaseLinePanelTab } from "@/features/synth/synthUiStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
-import type { Algo, StepEnvData } from "@/lib/synth/bindings/synth";
+import type { Algo, EnvType } from "@/lib/synth/bindings/synth";
 import { PerLineWarpBlock } from "./PerLineWarpBlock";
 
 export type LineSelect = "L1" | "L2" | "L1+L1'" | "L1+L2'";
 
 export type EnvOverrideHandlers = {
-	onLine1DcoEnvChange?: (next: StepEnvData) => void;
-	onLine1DcwEnvChange?: (next: StepEnvData) => void;
-	onLine1DcaEnvChange?: (next: StepEnvData) => void;
-	onLine2DcoEnvChange?: (next: StepEnvData) => void;
-	onLine2DcwEnvChange?: (next: StepEnvData) => void;
-	onLine2DcaEnvChange?: (next: StepEnvData) => void;
+	onLine1DcoEnvChange?: (next: EnvType) => void;
+	onLine1DcwEnvChange?: (next: EnvType) => void;
+	onLine1DcaEnvChange?: (next: EnvType) => void;
+	onLine2DcoEnvChange?: (next: EnvType) => void;
+	onLine2DcwEnvChange?: (next: EnvType) => void;
+	onLine2DcaEnvChange?: (next: EnvType) => void;
 };
 
 export type PhaseLinesSectionProps = {

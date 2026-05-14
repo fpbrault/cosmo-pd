@@ -5,10 +5,12 @@ import {
 	toAlgoRefV1,
 } from "@/lib/synth/algoRef";
 import type {
+	AdsrData,
 	Algo,
 	AlgoControlValueV1,
 	AlgoDefinitionV1,
 	BaseWaveform,
+	EnvType,
 	FxDefinitionV1,
 	FxSlotConfig,
 	FxSlotType,
@@ -28,10 +30,25 @@ import {
 } from "@/lib/synth/bindings/synth";
 import { requireEngineParamDefault } from "@/lib/synth/paramMeta";
 import {
+	DEFAULT_DCA_ADSR,
 	DEFAULT_DCA_ENV,
+	DEFAULT_DCO_ADSR,
 	DEFAULT_DCO_ENV,
+	DEFAULT_DCW_ADSR,
 	DEFAULT_DCW_ENV,
 } from "@/lib/synth/pdAlgorithms";
+
+// ---------------------------------------------------------------------------
+// Envelope type guards
+// ---------------------------------------------------------------------------
+
+export function isStepEnv(env: EnvType): env is StepEnvData {
+	return "steps" in env;
+}
+
+export function isAdsrEnv(env: EnvType): env is AdsrData {
+	return "attackTimeSecs" in env;
+}
 
 // ---------------------------------------------------------------------------
 // Helpers (identical to the ones that were in useSynthState)
@@ -128,9 +145,9 @@ export type SynthState = {
 	line2DetuneNote: number;
 	line2DetuneFine: number;
 	line1DcwKeyFollow: number;
-	line1DcoEnv: StepEnvData;
-	line1DcwEnv: StepEnvData;
-	line1DcaEnv: StepEnvData;
+	line1DcoEnv: EnvType;
+	line1DcwEnv: EnvType;
+	line1DcaEnv: EnvType;
 	line1AlgoControlsA: AlgoControlValueV1[];
 	line1AlgoControlsB: AlgoControlValueV1[];
 	line1BaseWaveformA: BaseWaveform;
@@ -138,9 +155,9 @@ export type SynthState = {
 
 	line2Level: number;
 	line2DcwKeyFollow: number;
-	line2DcoEnv: StepEnvData;
-	line2DcwEnv: StepEnvData;
-	line2DcaEnv: StepEnvData;
+	line2DcoEnv: EnvType;
+	line2DcwEnv: EnvType;
+	line2DcaEnv: EnvType;
 	line2AlgoControlsA: AlgoControlValueV1[];
 	line2AlgoControlsB: AlgoControlValueV1[];
 	line2BaseWaveformA: BaseWaveform;
@@ -209,9 +226,12 @@ type SynthActions = {
 	setLine2DetuneNote: (v: number) => void;
 	setLine2DetuneFine: (v: number) => void;
 	setLine1DcwKeyFollow: (v: number) => void;
-	setLine1DcoEnv: (v: StepEnvData) => void;
-	setLine1DcwEnv: (v: StepEnvData) => void;
-	setLine1DcaEnv: (v: StepEnvData) => void;
+	setLine1DcoEnv: (v: EnvType) => void;
+	setLine1DcwEnv: (v: EnvType) => void;
+	setLine1DcaEnv: (v: EnvType) => void;
+	setLine1DcoEnvType: (type: "step" | "adsr") => void;
+	setLine1DcwEnvType: (type: "step" | "adsr") => void;
+	setLine1DcaEnvType: (type: "step" | "adsr") => void;
 	setLine1AlgoControlsA: (v: AlgoControlValueV1[]) => void;
 	setLine1AlgoControlsB: (v: AlgoControlValueV1[]) => void;
 	setLine1BaseWaveformA: (v: BaseWaveform) => void;
@@ -219,9 +239,12 @@ type SynthActions = {
 
 	setLine2Level: (v: number) => void;
 	setLine2DcwKeyFollow: (v: number) => void;
-	setLine2DcoEnv: (v: StepEnvData) => void;
-	setLine2DcwEnv: (v: StepEnvData) => void;
-	setLine2DcaEnv: (v: StepEnvData) => void;
+	setLine2DcoEnv: (v: EnvType) => void;
+	setLine2DcwEnv: (v: EnvType) => void;
+	setLine2DcaEnv: (v: EnvType) => void;
+	setLine2DcoEnvType: (type: "step" | "adsr") => void;
+	setLine2DcwEnvType: (type: "step" | "adsr") => void;
+	setLine2DcaEnvType: (type: "step" | "adsr") => void;
 	setLine2AlgoControlsA: (v: AlgoControlValueV1[]) => void;
 	setLine2AlgoControlsB: (v: AlgoControlValueV1[]) => void;
 	setLine2BaseWaveformA: (v: BaseWaveform) => void;
@@ -392,6 +415,21 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setLine1DcoEnv: (v) => set({ line1DcoEnv: v }),
 	setLine1DcwEnv: (v) => set({ line1DcwEnv: v }),
 	setLine1DcaEnv: (v) => set({ line1DcaEnv: v }),
+	setLine1DcoEnvType: (type) =>
+		set(() => ({
+			line1DcoEnv:
+				type === "adsr" ? { ...DEFAULT_DCO_ADSR } : { ...DEFAULT_DCO_ENV },
+		})),
+	setLine1DcwEnvType: (type) =>
+		set(() => ({
+			line1DcwEnv:
+				type === "adsr" ? { ...DEFAULT_DCW_ADSR } : { ...DEFAULT_DCW_ENV },
+		})),
+	setLine1DcaEnvType: (type) =>
+		set(() => ({
+			line1DcaEnv:
+				type === "adsr" ? { ...DEFAULT_DCA_ADSR } : { ...DEFAULT_DCA_ENV },
+		})),
 	setLine1AlgoControlsA: (v) => set({ line1AlgoControlsA: v }),
 	setLine1AlgoControlsB: (v) => set({ line1AlgoControlsB: v }),
 	setLine1BaseWaveformA: (v) => set({ line1BaseWaveformA: v }),
@@ -402,6 +440,21 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setLine2DcoEnv: (v) => set({ line2DcoEnv: v }),
 	setLine2DcwEnv: (v) => set({ line2DcwEnv: v }),
 	setLine2DcaEnv: (v) => set({ line2DcaEnv: v }),
+	setLine2DcoEnvType: (type) =>
+		set(() => ({
+			line2DcoEnv:
+				type === "adsr" ? { ...DEFAULT_DCO_ADSR } : { ...DEFAULT_DCO_ENV },
+		})),
+	setLine2DcwEnvType: (type) =>
+		set(() => ({
+			line2DcwEnv:
+				type === "adsr" ? { ...DEFAULT_DCW_ADSR } : { ...DEFAULT_DCW_ENV },
+		})),
+	setLine2DcaEnvType: (type) =>
+		set(() => ({
+			line2DcaEnv:
+				type === "adsr" ? { ...DEFAULT_DCA_ADSR } : { ...DEFAULT_DCA_ENV },
+		})),
 	setLine2AlgoControlsA: (v) => set({ line2AlgoControlsA: v }),
 	setLine2AlgoControlsB: (v) => set({ line2AlgoControlsB: v }),
 	setLine2BaseWaveformA: (v) => set({ line2BaseWaveformA: v }),

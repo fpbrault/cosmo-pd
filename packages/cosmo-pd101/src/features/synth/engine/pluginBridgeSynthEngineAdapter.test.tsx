@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useSynthStore } from "@/features/synth/synthStore";
-import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
+import type { StepEnvData, SynthPresetV1 } from "@/lib/synth/bindings/synth";
 import { usePluginBridgeSynthEngine } from "./pluginBridgeSynthEngineAdapter";
 
 /** Build a minimal valid SynthPresetV1 params shape with optional volume override. */
@@ -129,12 +129,12 @@ describe("usePluginBridgeSynthEngine", () => {
 
 	it("converts host raw envelope values to UI range only", async () => {
 		const rawParams = makeParams(0.62);
-		rawParams.line1.dcoEnv.steps[0] = {
-			...rawParams.line1.dcoEnv.steps[0],
+		(rawParams.line1.dcoEnv as StepEnvData).steps[0] = {
+			...(rawParams.line1.dcoEnv as StepEnvData).steps[0],
 			rate: 127,
 		};
-		rawParams.line1.dcaEnv.steps[0] = {
-			...rawParams.line1.dcaEnv.steps[0],
+		(rawParams.line1.dcaEnv as StepEnvData).steps[0] = {
+			...(rawParams.line1.dcaEnv as StepEnvData).steps[0],
 			level: 127,
 		};
 
@@ -148,8 +148,12 @@ describe("usePluginBridgeSynthEngine", () => {
 		const { unmount } = renderHook(() => usePluginBridgeSynthEngine());
 
 		await waitFor(() => {
-			expect(useSynthStore.getState().line1DcoEnv.steps[0]?.rate).toBe(99);
-			expect(useSynthStore.getState().line1DcaEnv.steps[0]?.level).toBe(99);
+			expect(
+				(useSynthStore.getState().line1DcoEnv as StepEnvData).steps[0]?.rate,
+			).toBe(99);
+			expect(
+				(useSynthStore.getState().line1DcaEnv as StepEnvData).steps[0]?.level,
+			).toBe(99);
 		});
 
 		await waitFor(() => {

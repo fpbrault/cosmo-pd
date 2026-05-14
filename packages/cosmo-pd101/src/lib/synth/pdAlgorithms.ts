@@ -8,6 +8,7 @@ import {
 	resolveCzControlsFromEntries,
 } from "@/lib/synth/algoRef";
 import type {
+	AdsrData,
 	Algo,
 	AlgoControlValueV1,
 	BaseWaveform,
@@ -184,6 +185,50 @@ export const DEFAULT_DCW_ENV: StepEnvData = {
 	sustainStep: 2,
 	stepCount: 4,
 	loop: false,
+};
+
+/** ADSR-style envelope — replaces StepEnvData for ADSR-mode per-line envelopes. */
+export const DEFAULT_ADSR: AdsrData = {
+	attackTimeSecs: 0.01,
+	decayTimeSecs: 0.3,
+	sustainLevel: 0.7,
+	releaseTimeSecs: 0.5,
+	attackCurve: "linear",
+	decayCurve: "linear",
+	releaseCurve: "linear",
+};
+
+/** ADSR envelope default optimised for DCO (fast attack, small sustain). */
+export const DEFAULT_DCO_ADSR: AdsrData = {
+	attackTimeSecs: 0.02,
+	decayTimeSecs: 0.1,
+	sustainLevel: 0.0,
+	releaseTimeSecs: 0.1,
+	attackCurve: "linear",
+	decayCurve: "linear",
+	releaseCurve: "linear",
+};
+
+/** ADSR envelope default optimised for DCW (sustained filter sweep). */
+export const DEFAULT_DCW_ADSR: AdsrData = {
+	attackTimeSecs: 0.1,
+	decayTimeSecs: 0.5,
+	sustainLevel: 0.5,
+	releaseTimeSecs: 0.3,
+	attackCurve: "linear",
+	decayCurve: "linear",
+	releaseCurve: "linear",
+};
+
+/** ADSR envelope default optimised for DCA (piano-like amplitude). */
+export const DEFAULT_DCA_ADSR: AdsrData = {
+	attackTimeSecs: 0.01,
+	decayTimeSecs: 0.3,
+	sustainLevel: 0.7,
+	releaseTimeSecs: 0.5,
+	attackCurve: "linear",
+	decayCurve: "linear",
+	releaseCurve: "linear",
 };
 
 export const DEFAULT_DCO_ENV: StepEnvData = {

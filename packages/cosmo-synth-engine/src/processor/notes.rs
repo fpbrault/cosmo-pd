@@ -1,6 +1,7 @@
 extern crate alloc;
 
-use crate::params::{PolyMode, NUM_VOICES};
+use crate::params::{EnvType, PolyMode, NUM_VOICES};
+use crate::voice::{EnvSlot, LineEnvs};
 
 use super::state::{MonoStackEntry, NoteEntry};
 use super::CosmoProcessor;
@@ -13,12 +14,12 @@ impl CosmoProcessor {
     pub(crate) fn start_env_release_for_voice(&mut self, voice_idx: usize) {
         let p = self.params.as_ref();
         let voice = &mut self.voices[voice_idx];
-        voice.line1_env.dco.start_release(&p.line1.dco_env);
-        voice.line1_env.dcw.start_release(&p.line1.dcw_env);
-        voice.line1_env.dca.start_release(&p.line1.dca_env);
-        voice.line2_env.dco.start_release(&p.line2.dco_env);
-        voice.line2_env.dcw.start_release(&p.line2.dcw_env);
-        voice.line2_env.dca.start_release(&p.line2.dca_env);
+        env_slot_start_release(&mut voice.line1_env.dco, &p.line1.dco_env);
+        env_slot_start_release(&mut voice.line1_env.dcw, &p.line1.dcw_env);
+        env_slot_start_release(&mut voice.line1_env.dca, &p.line1.dca_env);
+        env_slot_start_release(&mut voice.line2_env.dco, &p.line2.dco_env);
+        env_slot_start_release(&mut voice.line2_env.dcw, &p.line2.dcw_env);
+        env_slot_start_release(&mut voice.line2_env.dca, &p.line2.dca_env);
         voice.mod_env.note_off();
     }
 
@@ -102,6 +103,18 @@ impl CosmoProcessor {
         self.reset_voice_envs(voice_idx);
         self.reset_generator_runtime_for_note(voice_idx, note);
         self.voices[voice_idx].mod_env.note_on();
+        // Initialize ADSR per-line envelopes
+        let p = self.params.as_ref();
+        init_adsr_line(
+            &mut self.voices[voice_idx].line1_env,
+            &p.line1,
+            self.sample_rate,
+        );
+        init_adsr_line(
+            &mut self.voices[voice_idx].line2_env,
+            &p.line2,
+            self.sample_rate,
+        );
     }
 
     pub(crate) fn reset_generator_runtime_for_note(&mut self, voice_idx: usize, note: u8) {
@@ -206,7 +219,11 @@ impl CosmoProcessor {
         let mut min_releasing_idx: Option<usize> = None;
         for (idx, voice) in self.voices.iter().enumerate() {
             if voice.is_releasing {
-                let amp = voice.line1_env.dca.output.max(voice.line2_env.dca.output);
+                let amp = voice
+                    .line1_env
+                    .dca
+                    .output()
+                    .max(voice.line2_env.dca.output());
                 if amp < min_releasing_amp {
                     min_releasing_amp = amp;
                     min_releasing_idx = Some(idx);
@@ -222,7 +239,11 @@ impl CosmoProcessor {
         let mut min_sustained_idx: Option<usize> = None;
         for (idx, voice) in self.voices.iter().enumerate() {
             if !voice.is_releasing && self.voice_has_reached_sustain(idx) {
-                let amp = voice.line1_env.dca.output.max(voice.line2_env.dca.output);
+                let amp = voice
+                    .line1_env
+                    .dca
+                    .output()
+                    .max(voice.line2_env.dca.output());
                 if amp < min_sustained_amp {
                     min_sustained_amp = amp;
                     min_sustained_idx = Some(idx);
@@ -239,7 +260,11 @@ impl CosmoProcessor {
         let mut min_active_amp = f32::INFINITY;
         let mut min_active_idx = 0usize;
         for (idx, voice) in self.voices.iter().enumerate() {
-            let amp = voice.line1_env.dca.output.max(voice.line2_env.dca.output);
+            let amp = voice
+                .line1_env
+                .dca
+                .output()
+                .max(voice.line2_env.dca.output());
             if amp < min_active_amp {
                 min_active_amp = amp;
                 min_active_idx = idx;
@@ -265,9 +290,9 @@ impl CosmoProcessor {
         );
 
         let line1_reached =
-            !line1_active || voice.line1_env.dca.step >= p.line1.dca_env.sustain_step;
+            !line1_active || voice.line1_env.dca.has_reached_sustain(&p.line1.dca_env);
         let line2_reached =
-            !line2_active || voice.line2_env.dca.step >= p.line2.dca_env.sustain_step;
+            !line2_active || voice.line2_env.dca.has_reached_sustain(&p.line2.dca_env);
 
         line1_reached && line2_reached
     }
@@ -391,6 +416,34 @@ impl CosmoProcessor {
             .iter()
             .find(|e| e.note == note)
             .map(|e| e.voice_idx)
+    }
+}
+
+// ─── Env slot helpers ─────────────────────────────────────────────────────────
+
+fn env_slot_start_release(slot: &mut EnvSlot, env_type: &EnvType) {
+    match (slot, env_type) {
+        (EnvSlot::Step(gen), EnvType::Step(data)) => gen.start_release(data),
+        (EnvSlot::Adsr(gen), EnvType::Adsr(_)) => gen.note_off(),
+        _ => {}
+    }
+}
+
+fn init_adsr_line(line_envs: &mut LineEnvs, line: &crate::params::LineParams, sr: f32) {
+    if let EnvSlot::Adsr(gen) = &mut line_envs.dco {
+        if let EnvType::Adsr(data) = &line.dco_env {
+            gen.note_on(data, sr);
+        }
+    }
+    if let EnvSlot::Adsr(gen) = &mut line_envs.dcw {
+        if let EnvType::Adsr(data) = &line.dcw_env {
+            gen.note_on(data, sr);
+        }
+    }
+    if let EnvSlot::Adsr(gen) = &mut line_envs.dca {
+        if let EnvType::Adsr(data) = &line.dca_env {
+            gen.note_on(data, sr);
+        }
     }
 }
 

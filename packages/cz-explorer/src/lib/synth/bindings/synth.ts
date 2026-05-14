@@ -38,6 +38,32 @@ export type StepEnvData = {
 };
 
 /**
+ * Curve shape for a single ADSR stage.
+ * Matches Rust `CurveShape` enum.
+ */
+export type CurveShape = "linear" | "exp" | "log";
+
+/**
+ * ADSR envelope data with per-stage curve shapes.
+ * Matches Rust `AdsrData` struct.
+ */
+export type AdsrData = {
+	attackTimeSecs: number;
+	decayTimeSecs: number;
+	sustainLevel: number;
+	releaseTimeSecs: number;
+	attackCurve: CurveShape;
+	decayCurve: CurveShape;
+	releaseCurve: CurveShape;
+};
+
+/**
+ * Unified envelope type — either CZ-style step or traditional ADSR.
+ * Matches Rust `EnvType` (transparent serde: no tag, fields determine shape).
+ */
+export type EnvelopeData = StepEnvData | AdsrData;
+
+/**
  * Front-panel CZ algorithm shortcuts.
  *
  * These map to a `(CzWaveform, WindowType)` pair.
@@ -260,9 +286,9 @@ export type LineParams = {
 	/** Fine detune in CZ units (±60). @default 0 */
 	detuneFine?: number;
 	octave: number;
-	dcoEnv: StepEnvData;
-	dcwEnv: StepEnvData;
-	dcaEnv: StepEnvData;
+	dcoEnv: EnvelopeData;
+	dcwEnv: EnvelopeData;
+	dcaEnv: EnvelopeData;
 	keyFollow: number;
 	algoControls?: AlgoControlValueV1[] | null;
 };

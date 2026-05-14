@@ -4,8 +4,66 @@ use specta::Type;
 
 pub const NUM_ENV_STEPS: usize = 8;
 
+/// Curve shape for a single ADSR stage.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub enum CurveShape {
+    #[default]
+    Linear,
+    /// Starts fast, eases to target.
+    Exp,
+    /// Starts slow, accelerates to target.
+    Log,
+}
+
+/// ADSR envelope data with per-stage curve shapes.
+/// Times are in seconds [0.001, 10.0].
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct AdsrData {
+    pub attack_time_secs: f32,
+    pub decay_time_secs: f32,
+    pub sustain_level: f32,
+    pub release_time_secs: f32,
+    pub attack_curve: CurveShape,
+    pub decay_curve: CurveShape,
+    pub release_curve: CurveShape,
+}
+
+impl Default for AdsrData {
+    fn default() -> Self {
+        Self {
+            attack_time_secs: 0.01,
+            decay_time_secs: 0.3,
+            sustain_level: 0.7,
+            release_time_secs: 0.5,
+            attack_curve: CurveShape::default(),
+            decay_curve: CurveShape::default(),
+            release_curve: CurveShape::default(),
+        }
+    }
+}
+
+/// Unified envelope type: either CZ-style step or traditional ADSR.
+/// Untagged so JSON is transparent (just the inner type), not a tagged union.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(untagged)]
+pub enum EnvType {
+    Step(StepEnvData),
+    Adsr(AdsrData),
+}
+
+impl Default for EnvType {
+    fn default() -> Self {
+        Self::Step(StepEnvData::default())
+    }
+}
+
 /// A single step in a step envelope
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
 pub struct EnvStep {
     /// Internal machine level [0, 127].
@@ -36,7 +94,7 @@ fn deserialize_step_value<'de, D: Deserializer<'de>>(d: D) -> Result<u8, D::Erro
 }
 
 /// Step envelope data (CZ-style)
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
 #[serde(rename_all = "camelCase")]
 pub struct StepEnvData {

@@ -7,7 +7,7 @@ import type {
 	RuntimeVoiceEnvState,
 } from "@/features/synth/hooks/useAudioEngine";
 import { useSynthStore } from "@/features/synth/synthStore";
-import type { StepEnvData } from "@/lib/synth/bindings/synth";
+import type { EnvType, StepEnvData } from "@/lib/synth/bindings/synth";
 
 type WavePoint = [number, number, number];
 
@@ -210,20 +210,25 @@ function collectActiveIndicators({
 }: {
 	voices: RuntimeVoiceDebugState[];
 	maxWaveIndex: number;
-	env: StepEnvData;
+	env: EnvType;
 	lineLevel: number;
 	voiceProgressRef: React.MutableRefObject<Map<number, VoiceProgressState>>;
 	isAudible: (voice: RuntimeVoiceDebugState, level: number) => boolean;
 	getRuntimeEnv: (voice: RuntimeVoiceDebugState) => RuntimeVoiceEnvState;
 	getRuntimeDca: (voice: RuntimeVoiceDebugState) => number;
 }): ActiveIndicator[] {
+	if (!("steps" in env)) return [];
+	const stepEnv = env as StepEnvData;
 	const activeVoices = voices.filter(
 		(voice) =>
 			voice.active && voice.note !== null && isAudible(voice, lineLevel),
 	);
 
 	const indicators = activeVoices.map((voice) => {
-		const rawProgress = runtimeEnvelopeToProgress(env, getRuntimeEnv(voice));
+		const rawProgress = runtimeEnvelopeToProgress(
+			stepEnv,
+			getRuntimeEnv(voice),
+		);
 		const strength = clamp(getRuntimeDca(voice) * lineLevel, 0, 1);
 		const previous = voiceProgressRef.current.get(voice.index);
 		const progress =

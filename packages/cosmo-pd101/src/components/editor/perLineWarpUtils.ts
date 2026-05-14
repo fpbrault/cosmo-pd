@@ -32,3 +32,16 @@ export function getEnvelopeVoiceProgress(
 
 	return clamp((value - previousLevel) / distance, 0, 1);
 }
+
+const ADSR_PHASE_POSITIONS: Record<number, number> = {
+	0: 0,
+	1: 0.05,
+	2: 0.25,
+	3: 0.55,
+	4: 0.75,
+	5: 1,
+};
+
+export function getAdsrVoicePhase(step: number): number {
+	return ADSR_PHASE_POSITIONS[step] ?? 0;
+}

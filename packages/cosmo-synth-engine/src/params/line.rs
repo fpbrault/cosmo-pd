@@ -2,7 +2,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
 
-use super::envelopes::StepEnvData;
+use super::envelopes::EnvType;
 use super::waveforms::{Algo, BaseWaveform, WindowType};
 use crate::default_envelopes::{default_dca_env, default_dco_env, default_dcw_env};
 
@@ -371,9 +371,9 @@ pub struct LineParams {
     #[serde(default)]
     pub detune_fine: f32,
     pub octave: f32,
-    pub dco_env: StepEnvData,
-    pub dcw_env: StepEnvData,
-    pub dca_env: StepEnvData,
+    pub dco_env: EnvType,
+    pub dcw_env: EnvType,
+    pub dca_env: EnvType,
     pub key_follow: f32,
     #[cfg_attr(feature = "specta-bindings", specta(optional, type = Vec<AlgoControlValueV1>))]
     #[serde(
@@ -408,9 +408,9 @@ impl Default for LineParams {
             detune_note: 0.0,
             detune_fine: 0.0,
             octave: 0.0,
-            dco_env: default_dco_env(),
-            dcw_env: default_dcw_env(),
-            dca_env: default_dca_env(),
+            dco_env: EnvType::Step(default_dco_env()),
+            dcw_env: EnvType::Step(default_dcw_env()),
+            dca_env: EnvType::Step(default_dca_env()),
             key_follow: 0.0,
             algo_controls_a: default_algo_controls(),
             algo_controls_b: default_algo_controls(),

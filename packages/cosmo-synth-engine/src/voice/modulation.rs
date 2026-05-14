@@ -1,6 +1,6 @@
 use crate::params::{
-    EnvStep, LineParams, ModDestination, ModMatrix, ModMatrixCache, ModSource, StepEnvData,
-    NUM_ENV_STEPS,
+    EnvStep, EnvType, LineParams, ModDestination, ModMatrix, ModMatrixCache, ModSource,
+    StepEnvData, NUM_ENV_STEPS,
 };
 use crate::simd::SimdBackend;
 
@@ -346,12 +346,21 @@ pub(crate) fn modulated_line_params(
     *scratch = *line;
     scratch.algo_blend = (line.algo_blend + algo_blend_mod).clamp(0.0, 1.0);
     if cache.has_env_step_routes {
-        scratch.dco_env =
-            apply_env_step_modulation(&line.dco_env, line_index, EnvKindKey::Dco, cache, sources);
-        scratch.dcw_env =
-            apply_env_step_modulation(&line.dcw_env, line_index, EnvKindKey::Dcw, cache, sources);
-        scratch.dca_env =
-            apply_env_step_modulation(&line.dca_env, line_index, EnvKindKey::Dca, cache, sources);
+        if let EnvType::Step(orig) = &line.dco_env {
+            let modded =
+                apply_env_step_modulation(orig, line_index, EnvKindKey::Dco, cache, sources);
+            scratch.dco_env = EnvType::Step(modded);
+        }
+        if let EnvType::Step(orig) = &line.dcw_env {
+            let modded =
+                apply_env_step_modulation(orig, line_index, EnvKindKey::Dcw, cache, sources);
+            scratch.dcw_env = EnvType::Step(modded);
+        }
+        if let EnvType::Step(orig) = &line.dca_env {
+            let modded =
+                apply_env_step_modulation(orig, line_index, EnvKindKey::Dca, cache, sources);
+            scratch.dca_env = EnvType::Step(modded);
+        }
     }
 }
 // ---------------------------------------------------------------------------
