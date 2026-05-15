@@ -13,9 +13,9 @@
 			"!!**/lib-dist",
 			"!!**/target",
 			"!!vendor",
-			"!!packages/cz-explorer/public/cosmo-synth-engine-wasm",
+			"!!**/public/cosmo-synth-engine-wasm",
 			"!!**/bindings/*.ts",
-			"!!**/packages/cz-explorer-desktop/gen/schemas/*.json"
+			"!!**/gen/schemas/*.json"
 		],
 		"maxSize": 20000000
 	},

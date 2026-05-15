@@ -5,26 +5,13 @@
 	"type": "module",
 	"workspaces": [
 		"packages/*",
-		"packages/*/webview"
+		"packages/*/webview",
+		"packages/cosmo-pd101/site"
 	],
 	"scripts": {
 		"postinstall": "bun run ./scripts/install-wasm-pack.mjs",
-		"dev": "bun --filter @cosmo/cz-explorer dev",
-		"dev:release": "cross-env COSMO_BINDINGS_RELEASE=1 COSMO_DEV_RELEASE=1 bun --filter @cosmo/cz-explorer dev",
-		"build": "bun run build:web && bun run build:standalone",
-		"build:release": "bun run build:web && bun run build:plugin:release && bun run build:standalone",
+		"dev": "bun --filter @cosmo/cosmo-pd101-site dev",
 		"build:engine": "bun --filter @cosmo/cosmo-synth-engine build:wasm",
-		"build:web": "bun --filter @cosmo/cosmo-synth-engine build:wasm && cargo check -p cosmo-pd101-plugin --quiet && bun --filter @cosmo/cz-explorer build",
-		"perf:engine": "cargo run -p cosmo-synth-engine --release --bin render-bench --",
-		"perf:engine:all": "cargo run -p cosmo-synth-engine --release --bin render-bench -- --all --json",
-		"perf:engine:hotspots": "cargo run -p cosmo-synth-engine --release --bin render-bench -- --suite hotspots --json",
-		"perf:engine:bench": "cargo +nightly bench -p cosmo-synth-engine --bench render-bench -- --nocapture",
-		"perf:engine:baseline": "mkdir -p target/perf/engine && cargo run -p cosmo-synth-engine --release --bin render-bench -- --all --json > target/perf/engine/baseline.json",
-		"perf:engine:current": "mkdir -p target/perf/engine && cargo run -p cosmo-synth-engine --release --bin render-bench -- --all --json > target/perf/engine/current.json",
-		"perf:engine:compare": "bun run ./scripts/perf-engine-compare.mjs target/perf/engine/baseline.json target/perf/engine/current.json",
-		"perf:ui": "bun run ./scripts/perf-ui-benchmark.mjs",
-		"perf:ui:compare": "bun run ./scripts/perf-ui-compare.mjs",
-		"perf:web": "bun run ./scripts/perf-web-benchmark.mjs",
 		"build:plugin": "bun --filter @cosmo/cosmo-pd101-plugin build",
 		"build:plugin:release": "bun run ./scripts/build-plugin.mjs --release --auv2 --vst3 --clap",
 		"build:plugin:auv3": "bun --filter @cosmo/cosmo-pd101-plugin-auv3 build",
@@ -32,7 +19,6 @@
 		"bundle:plugin:auv3": "bun --filter @cosmo/cosmo-pd101-plugin-auv3 bundle",
 		"install:plugin:auv3": "bun --filter @cosmo/cosmo-pd101-plugin-auv3 run plugin:install",
 		"plugin:install": "bun --filter @cosmo/cosmo-pd101-plugin plugin:install",
-		"build:standalone": "bun --filter @cosmo/cz-explorer-desktop build",
 		"package:plugin:installer": "bun run ./scripts/package-plugin-installers.mjs",
 		"package:plugin:installer:macos": "bun run ./scripts/package-plugin-installers.mjs --platform macos",
 		"package:plugin:installer:windows": "bun run ./scripts/package-plugin-installers.mjs --platform windows",
@@ -43,6 +29,7 @@
 		"lint:fix:cargo": "bun run ./scripts/cargo-fmt-workspace.mjs",
 		"lint:fix": "bun run lint:fix:biome && bun run lint:fix:cargo",
 		"clean": "rimraf --glob packages/*/dist packages/**/lib-dist packages/*/target src-tauri/target",
+		"build": "bun run build:engine && bun --filter @cosmo/cosmo-pd101 build:lib:release && bun --filter @cosmo/cosmo-pd101-plugin build",
 		"ci": "bun run lint && bun run build && bun run test"
 	},
 	"dependencies": {
