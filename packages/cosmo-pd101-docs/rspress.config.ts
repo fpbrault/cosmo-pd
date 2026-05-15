@@ -60,7 +60,10 @@ export default defineConfig({
 						{ text: "Envelopes", link: "/synth-reference/envelopes" },
 						{ text: "Algorithms", link: "/synth-reference/algorithms" },
 						{ text: "Effects", link: "/synth-reference/effects" },
-						{ text: "Global Controls", link: "/synth-reference/global-controls" },
+						{
+							text: "Global Controls",
+							link: "/synth-reference/global-controls",
+						},
 					],
 				},
 				{
@@ -72,9 +75,7 @@ export default defineConfig({
 				},
 				{
 					text: "Support",
-					items: [
-						{ text: "Troubleshooting", link: "/troubleshooting" },
-					],
+					items: [{ text: "Troubleshooting", link: "/troubleshooting" }],
 				},
 			],
 		},

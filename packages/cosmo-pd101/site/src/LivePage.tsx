@@ -110,7 +110,7 @@ export default function LivePage() {
 		const resizeObserver = new ResizeObserver(updateFrameSize);
 		resizeObserver.observe(element);
 		return () => resizeObserver.disconnect();
-	}, [isMobileViewport, isSynthFullscreen]);
+	}, [isSynthFullscreen]);
 
 	const scaledWidth = SYNTH_RENDERER_MAX_WIDTH * frameScale;
 	const scaledHeight = SYNTH_RENDERER_MAX_HEIGHT * frameScale;
