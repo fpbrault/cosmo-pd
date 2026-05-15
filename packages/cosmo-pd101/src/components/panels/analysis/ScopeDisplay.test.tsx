@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import { ScopeMiniDisplay } from "./ScopeDisplay";
 
 vi.mock("@react-three/fiber", () => ({
@@ -72,6 +73,12 @@ describe("ScopeMiniDisplay", () => {
 	);
 
 	beforeEach(() => {
+		localStorage.clear();
+		useSynthUiStore.persist.clearStorage();
+		useSynthUiStore.setState({
+			scopeVisualizationMode: "waveform",
+			scopeColorTheme: "vintage",
+		});
 		vi.restoreAllMocks();
 	});
 
@@ -99,16 +106,10 @@ describe("ScopeMiniDisplay", () => {
 	});
 
 	it("renders a larger scope canvas without forced pixelated scaling", () => {
-		render(<ScopeMiniDisplay effectivePitchHz={220} />);
+		const { container } = render(<ScopeMiniDisplay effectivePitchHz={220} />);
 
-		const modeButton = screen.getByLabelText("Toggle scope mode picker");
-		const wrapper = modeButton.closest(".flex.w-full.flex-col");
-		if (!(wrapper instanceof HTMLElement)) {
-			throw new Error("expected scope wrapper element");
-		}
-
-		const canvas = wrapper.querySelector("canvas");
-		if (!(canvas instanceof HTMLCanvasElement)) {
+		const canvas = container.querySelector("canvas");
+		if (!canvas) {
 			throw new Error("expected scope canvas");
 		}
 
@@ -134,13 +135,10 @@ describe("ScopeMiniDisplay", () => {
 			get: () => 48,
 		});
 
-		render(<ScopeMiniDisplay effectivePitchHz={220} />);
+		const { container } = render(<ScopeMiniDisplay effectivePitchHz={220} />);
 
-		const canvas = screen
-			.getByLabelText("Toggle scope mode picker")
-			.closest(".flex.w-full.flex-col")
-			?.querySelector("canvas");
-		if (!(canvas instanceof HTMLCanvasElement)) {
+		const canvas = container.querySelector("canvas");
+		if (!canvas) {
 			throw new Error("expected scope canvas");
 		}
 
@@ -148,17 +146,17 @@ describe("ScopeMiniDisplay", () => {
 		expect(canvas.height).toBeGreaterThanOrEqual(96);
 	});
 
-	it("lists Rocket and Asteroids in the mode picker", () => {
+	it("cycles through scope modes on button click", () => {
 		render(<ScopeMiniDisplay effectivePitchHz={220} />);
 
-		fireEvent.click(screen.getByLabelText("Toggle scope mode picker"));
+		const modeButton = screen.getByText("Waveform");
+		expect(modeButton).toBeInTheDocument();
 
-		expect(
-			screen.getByLabelText("Select Rocket scope view"),
-		).toBeInTheDocument();
-		expect(
-			screen.getByLabelText("Select Asteroids scope view"),
-		).toBeInTheDocument();
+		fireEvent.click(modeButton);
+		expect(screen.getByText("Orbital")).toBeInTheDocument();
+
+		fireEvent.click(screen.getByText("Orbital"));
+		expect(screen.getByText("Spectrogram")).toBeInTheDocument();
 	});
 
 	it("shows a placeholder instead of the mini scope while expanded", () => {
@@ -167,19 +165,16 @@ describe("ScopeMiniDisplay", () => {
 		expect(
 			screen.getByText("Wave drawer is showing the full scope view"),
 		).toBeInTheDocument();
-		expect(screen.queryByLabelText("Toggle scope mode picker")).toBeNull();
 	});
 
-	it("renders the 3D waterfall visualization in the mini scope", () => {
+	it("renders the 3D waterfall visualization when mode is set to waterfall3d", () => {
 		render(<ScopeMiniDisplay effectivePitchHz={220} />);
 
-		fireEvent.click(screen.getByLabelText("Toggle scope mode picker"));
-		fireEvent.click(screen.getByLabelText("Select 3D scope view"));
+		// Click mode button 3 times to reach waterfall3d (waveform → orbital → spectrogram → waterfall3d)
+		fireEvent.click(screen.getByText("Waveform"));
+		fireEvent.click(screen.getByText("Orbital"));
+		fireEvent.click(screen.getByText("Spectrogram"));
 
 		expect(screen.getByTestId("mock-three-canvas")).toBeInTheDocument();
-		expect(screen.getByText("LINE 1")).toBeInTheDocument();
-		expect(
-			screen.queryByLabelText("Toggle LINE 1 wavetable line"),
-		).toBeInTheDocument();
 	});
 });

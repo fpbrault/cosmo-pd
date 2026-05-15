@@ -10,6 +10,13 @@ vi.mock("@/lib/synth/modDestination", () => ({
 		algoParamTargetFromSlotMock(...args),
 }));
 
+vi.mock("@/lib/synth/i18nAlgo", () => ({
+	useAlgoControl: (_algo: string, controlId: string) => ({
+		label: controlId.charAt(0).toUpperCase() + controlId.slice(1),
+		description: "",
+	}),
+}));
+
 vi.mock("../ControlKnob", () => ({
 	default: (props: Record<string, unknown>) => {
 		knobSpy(props);

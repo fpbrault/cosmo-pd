@@ -341,6 +341,18 @@ export const LFO_PRESETS: ModulePresetDefinition<{
 			offset: 0,
 		},
 	},
+	{
+		id: "fastSquare",
+		label: "Fast Square",
+		patch: {
+			waveform: "square",
+			rate: 4.0,
+			depth: 0.35,
+			symmetry: 0.5,
+			retrigger: false,
+			offset: 0,
+		},
+	},
 ];
 
 export const MOD_ENV_PRESETS: ModulePresetDefinition<{

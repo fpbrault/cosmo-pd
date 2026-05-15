@@ -21,14 +21,64 @@ vi.mock("@/context/ModMatrixContext", () => ({
 vi.mock("@/components/controls/modulation/ModRouteRow", () => ({
 	default: () => <div data-testid="mod-route-row" />,
 	MOD_SOURCE_META: {
-		lfo1: { colorClass: "text-blue-400" },
-		lfo2: { colorClass: "text-cyan-400" },
-		random: { colorClass: "text-orange-400" },
-		modEnv: { colorClass: "text-emerald-400" },
-		velocity: { colorClass: "text-yellow-400" },
-		modWheel: { colorClass: "text-purple-400" },
-		aftertouch: { colorClass: "text-pink-400" },
+		lfo1: {
+			label: "LFO 1",
+			shortLabel: "LFO1",
+			colorClass: "text-blue-400",
+			bgClass: "bg-blue-400/20",
+		},
+		lfo2: {
+			label: "LFO 2",
+			shortLabel: "LFO2",
+			colorClass: "text-cyan-400",
+			bgClass: "bg-cyan-400/20",
+		},
+		random: {
+			label: "Random",
+			shortLabel: "RND",
+			colorClass: "text-orange-400",
+			bgClass: "bg-orange-400/20",
+		},
+		modEnv: {
+			label: "Mod Env",
+			shortLabel: "ENV",
+			colorClass: "text-emerald-400",
+			bgClass: "bg-emerald-400/20",
+		},
+		velocity: {
+			label: "Velocity",
+			shortLabel: "VEL",
+			colorClass: "text-yellow-400",
+			bgClass: "bg-yellow-400/20",
+		},
+		modWheel: {
+			label: "Mod Wheel",
+			shortLabel: "MW",
+			colorClass: "text-purple-400",
+			bgClass: "bg-purple-400/20",
+		},
+		aftertouch: {
+			label: "Aftertouch",
+			shortLabel: "AT",
+			colorClass: "text-pink-400",
+			bgClass: "bg-pink-400/20",
+		},
 	},
+}));
+
+vi.mock("@/components/controls/modulation/ModRouteEditorPanel", () => ({
+	default: ({
+		title,
+		confirmLabel,
+	}: {
+		title: string;
+		confirmLabel: string;
+	}) => (
+		<div data-testid="mod-route-editor">
+			<span data-testid="editor-title">{title}</span>
+			<span data-testid="editor-confirm">{confirmLabel}</span>
+		</div>
+	),
 }));
 
 describe("ModMatrixPanel", () => {
@@ -40,23 +90,17 @@ describe("ModMatrixPanel", () => {
 		});
 	});
 
-	it("shows registry-provided destinations in add-route selector", () => {
+	it("shows empty state when no routes", () => {
+		render(<ModMatrixPanel />);
+		expect(screen.getByText("No routes")).toBeInTheDocument();
+	});
+
+	it("opens add route editor when Add Route is clicked", () => {
 		render(<ModMatrixPanel />);
 
-		const destinationSelect = screen.getByLabelText("New route destination");
-		fireEvent.focus(destinationSelect);
+		fireEvent.click(screen.getByRole("button", { name: "Add Route" }));
 
-		expect(
-			screen.getByRole("option", { name: "Chorus Rate" }),
-		).toBeInTheDocument();
-		expect(
-			screen.getByRole("option", { name: "L1 DCO Step 1 Level" }),
-		).toBeInTheDocument();
-		expect(
-			screen.getByRole("option", { name: "LFO 2 Symmetry" }),
-		).toBeInTheDocument();
-		expect(
-			screen.getByRole("option", { name: "Random Rate" }),
-		).toBeInTheDocument();
+		expect(screen.getByTestId("mod-route-editor")).toBeInTheDocument();
+		expect(screen.getByTestId("editor-title")).toHaveTextContent("Add Route");
 	});
 });

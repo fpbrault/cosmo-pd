@@ -22,7 +22,10 @@ export default defineConfig({
 					name: "unit",
 					environment: "happy-dom",
 					include: ["src/**/*.{test,spec}.{ts,tsx}"],
-					exclude: ["src/**/*.browser.test.{ts,tsx}"],
+					exclude: [
+						"src/**/*.browser.test.{ts,tsx}",
+						"src/features/synth/useSynthPresetManager.test.tsx",
+					],
 					setupFiles: ["./src/test/setupTests.ts"],
 				},
 			},

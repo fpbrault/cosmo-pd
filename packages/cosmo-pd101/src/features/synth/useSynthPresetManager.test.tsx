@@ -23,22 +23,6 @@ const makePreset = (volume: number): SynthPresetV1 => {
 	return preset;
 };
 
-const makeBuiltinPresets = (
-	presets: Record<string, SynthPresetV1>,
-): Record<string, FrontendPresetV1> =>
-	Object.fromEntries(
-		Object.entries(presets).map(([name, data]) => [
-			name,
-			{
-				name,
-				data,
-				favorite: false,
-				category: "",
-				tags: [],
-			},
-		]),
-	);
-
 describe("useSynthPresetManager", () => {
 	beforeEach(() => {
 		localStorage.clear();
@@ -86,7 +70,7 @@ describe("useSynthPresetManager", () => {
 
 	it("skips preset session hydration when current state hydration is disabled", () => {
 		const savedState = makePreset(0.33);
-		let currentState = clonePreset();
+		let currentState = createMinimalPreset();
 		const applyPreset = vi.fn((preset: SynthPresetV1) => {
 			currentState = preset;
 		});
@@ -126,7 +110,7 @@ describe("useSynthPresetManager", () => {
 	it("queues pending navigation when switching presets with unsaved changes", () => {
 		const alphaPreset = makePreset(0.1);
 		const betaPreset = makePreset(0.9);
-		let currentState = clonePreset();
+		let currentState = createMinimalPreset();
 		const applyPreset = vi.fn((preset: SynthPresetV1) => {
 			currentState = preset;
 		});
@@ -176,7 +160,7 @@ describe("useSynthPresetManager", () => {
 		const localPreset = makePreset(0.25);
 		const editedLocalPreset = makePreset(0.6);
 		const betaPreset = makePreset(0.85);
-		let currentState = clonePreset();
+		let currentState = createMinimalPreset();
 		const applyPreset = vi.fn((preset: SynthPresetV1) => {
 			currentState = preset;
 		});
@@ -224,7 +208,7 @@ describe("useSynthPresetManager", () => {
 
 		const alphaPreset = makePreset(0.2);
 		const editedAlpha = makePreset(0.51);
-		let currentState = clonePreset();
+		let currentState = createMinimalPreset();
 		const applyPreset = vi.fn((preset: SynthPresetV1) => {
 			currentState = preset;
 		});
@@ -276,7 +260,7 @@ describe("useSynthPresetManager", () => {
 						tags: ["pad"],
 					},
 				],
-				gatherState: clonePreset,
+				gatherState: createMinimalPreset,
 				applyPreset: vi.fn(),
 			}),
 		);
@@ -286,3 +270,19 @@ describe("useSynthPresetManager", () => {
 		).toEqual(["builtin:Alpha"]);
 	});
 });
+
+const makeBuiltinPresets = (
+	presets: Record<string, SynthPresetV1>,
+): Record<string, FrontendPresetV1> =>
+	Object.fromEntries(
+		Object.entries(presets).map(([name, data]) => [
+			name,
+			{
+				name,
+				data,
+				favorite: false,
+				category: "",
+				tags: [],
+			},
+		]),
+	);
