@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content="Rspress v1.47.1">
+    <title data-rh="true">Algorithms - Cosmo PD-101 Manual</title><meta data-rh="true" name="description" content="Complete reference of all 25 phase distortion algorithms."/>
+  <script>{;const saved = localStorage.getItem('rspress-theme-appearance');const preferDark = window.matchMedia('(prefers-color-scheme: dark)').matches;const isDark = !saved || saved === 'auto' ? preferDark : saved === 'dark';document.documentElement.classList.toggle('dark', isDark);document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';}</script><script defer src="/cosmo-pd/static/js/styles.62988d21.js"></script><script defer src="/cosmo-pd/static/js/lib-react.ab6833b3.js"></script><script defer src="/cosmo-pd/static/js/lib-router.aca39b98.js"></script><script defer src="/cosmo-pd/static/js/181.09ae251c.js"></script><script defer src="/cosmo-pd/static/js/index.88e1b34e.js"></script><link href="/cosmo-pd/static/css/styles.56b59350.css" rel="stylesheet"></head>
+
+  <body >
+    <div id="root"><div class="navContainer_d18b1 rspress-nav px-6  sticky_ddfa7"><div class="container_e4235 flex justify-between items-center h-full"><div class="navBarTitle_c5f07"><a href="/cosmo-pd/index.html" class="link_a7cea flex items-center w-full h-full text-base font-semibold transition-opacity duration-300 hover:opacity-60"><span>Cosmo PD-101 Manual</span></a></div><div class="flex flex-1 justify-end items-center"><div class="rightNav_a2fea"><div class="flex sm:flex-1 items-center sm:pl-4 sm:pr-2"><div class="rspress-nav-search-button navSearchButton_df1fb"><button><svg width="18" height="18" viewBox="0 0 32 32"><path fill="var(--rp-c-gray)" d="m29 27.586-7.552-7.552a11.018 11.018 0 1 0-1.414 1.414L27.586 29ZM4 13a9 9 0 1 1 9 9 9.01 9.01 0 0 1-9-9"></path></svg><p class="searchWord_af2c1">Search</p><div style="opacity:0"><span></span><span>K</span></div></button></div><div class="mobileNavSearchButton_d85a9"><svg width="24" height="24" viewBox="0 0 32 32"><path fill="var(--rp-c-gray)" d="m29 27.586-7.552-7.552a11.018 11.018 0 1 0-1.414 1.414L27.586 29ZM4 13a9 9 0 1 1 9 9 9.01 9.01 0 0 1-9-9"></path></svg></div></div><div class="rspress-nav-menu menu h-14"><a href="/cosmo-pd/index.html" class="link_a7cea "><div class="rspress-nav-menu-item singleItem_c1154 activeItem_a28b5 text-sm font-medium mx-1.5 px-3 py-2 flex items-center break-keep">Home</div></a><div class="mx-3 last:mr-0"><div class="relative flex-center h-14"><button class="rspress-nav-menu-group-button flex-center items-center font-medium text-sm text-text-1 hover:text-text-2 transition-colors duration-200"><a href="/cosmo-pd/getting-started/index.html" class="link_a7cea "><div class="rspress-nav-menu-item singleItem_c1154  text-sm font-medium mx-1.5 px-3 py-2 flex items-center break-keep">Getting Started<svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M16 22 6 12l1.4-1.4 8.6 8.6 8.6-8.6L26 12z"></path></svg></div></a></button><div class="rspress-nav-menu-group-content absolute mx-0.8 transition-opacity duration-300" style="opacity:0;visibility:hidden;right:0;top:52px"><div class="p-3 pr-2 w-full h-full max-h-100vh whitespace-nowrap" style="box-shadow:var(--rp-shadow-3);z-index:100;border:1px solid var(--rp-c-divider-light);border-radius:var(--rp-radius-large);background:var(--rp-c-bg)"><div><div class="font-medium my-1"><a href="/cosmo-pd/getting-started/index.html" class="link_a7cea "><div class="rounded-2xl hover:bg-mute" style="padding:0.4rem 1.5rem 0.4rem 0.75rem"><div class="flex"><span>Quick Start</span></div></div></a></div></div><div><div class="font-medium my-1"><a href="/cosmo-pd/getting-started/desktop-app.html" class="link_a7cea "><div class="rounded-2xl hover:bg-mute" style="padding:0.4rem 1.5rem 0.4rem 0.75rem"><div class="flex"><span>Desktop App</span></div></div></a></div></div><div><div class="font-medium my-1"><a href="/cosmo-pd/getting-started/web-app.html" class="link_a7cea "><div class="rounded-2xl hover:bg-mute" style="padding:0.4rem 1.5rem 0.4rem 0.75rem"><div class="flex"><span>Web App</span></div></div></a></div></div><div><div class="font-medium my-1"><a href="/cosmo-pd/getting-started/plugin.html" class="link_a7cea "><div class="rounded-2xl hover:bg-mute" style="padding:0.4rem 1.5rem 0.4rem 0.75rem"><div class="flex"><span>DAW Plugin</span></div></div></a></div></div></div></div></div></div><div class="mx-3 last:mr-0"><div class="relative flex-center h-14"><button class="rspress-nav-menu-group-button flex-center items-center font-medium text-sm text-text-1 hover:text-text-2 transition-colors duration-200"><a href="/cosmo-pd/synth-reference/index.html" class="link_a7cea "><div class="rspress-nav-menu-item singleItem_c1154 activeItem_a28b5 text-sm font-medium mx-1.5 px-3 py-2 flex items-center break-keep">Synth Reference<svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M16 22 6 12l1.4-1.4 8.6 8.6 8.6-8.6L26 12z"></path></svg></div></a></button><div class="rspress-nav-menu-group-content absolute mx-0.8 transition-opacity duration-300" style="opacity:0;visibility:hidden;right:0;top:52px"><div class="p-3 pr-2 w-full h-full max-h-100vh whitespace-nowrap" style="box-shadow:var(--rp-shadow-3);z-index:100;border:1px solid var(--rp-c-divider-light);border-radius:var(--rp-radius-large);background:var(--rp-c-bg)"><div><div class="font-medium my-1"><a href="/cosmo-pd/synth-reference/overview.html" class="link_a7cea "><div class="rounded-2xl hover:bg-mute" style="padding:0.4rem 1.5rem 0.4rem 0.75rem"><div class="flex"><span>Overview</span></div></div></a></div></div><div><div class="font-medium my-1"><a href="/cosmo-pd/synth-reference/oscillators.html" class="link_a7cea "><div class="rounded-2xl hover:bg-mute" style="padding:0.4rem 1.5rem 0.4rem 0.75rem"><div class="flex"><span>Oscillators</span></div></div></a></div></div><div><div class="font-medium my-1"><a href="/cosmo-pd/synth-reference/envelopes.html" class="link_a7cea "><div class="rounded-2xl hover:bg-mute" style="padding:0.4rem 1.5rem 0.4rem 0.75rem"><div class="flex"><span>Envelopes</span></div></div></a></div></div><div><div class="rounded-2xl my-1 flex" style="padding:0.4rem 1.5rem 0.4rem 0.75rem"><span class="text-brand">Algorithms</span></div></div><div><div class="font-medium my-1"><a href="/cosmo-pd/synth-reference/effects.html" class="link_a7cea "><div class="rounded-2xl hover:bg-mute" style="padding:0.4rem 1.5rem 0.4rem 0.75rem"><div class="flex"><span>Effects</span></div></div></a></div></div><div><div class="font-medium my-1"><a href="/cosmo-pd/synth-reference/global-controls.html" class="link_a7cea "><div class="rounded-2xl hover:bg-mute" style="padding:0.4rem 1.5rem 0.4rem 0.75rem"><div class="flex"><span>Global Controls</span></div></div></a></div></div></div></div></div></div><div class="mx-3 last:mr-0"><div class="relative flex-center h-14"><button class="rspress-nav-menu-group-button flex-center items-center font-medium text-sm text-text-1 hover:text-text-2 transition-colors duration-200"><a href="/cosmo-pd/presets/index.html" class="link_a7cea "><div class="rspress-nav-menu-item singleItem_c1154  text-sm font-medium mx-1.5 px-3 py-2 flex items-center break-keep">Presets<svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M16 22 6 12l1.4-1.4 8.6 8.6 8.6-8.6L26 12z"></path></svg></div></a></button><div class="rspress-nav-menu-group-content absolute mx-0.8 transition-opacity duration-300" style="opacity:0;visibility:hidden;right:0;top:52px"><div class="p-3 pr-2 w-full h-full max-h-100vh whitespace-nowrap" style="box-shadow:var(--rp-shadow-3);z-index:100;border:1px solid var(--rp-c-divider-light);border-radius:var(--rp-radius-large);background:var(--rp-c-bg)"><div><div class="font-medium my-1"><a href="/cosmo-pd/presets/managing.html" class="link_a7cea "><div class="rounded-2xl hover:bg-mute" style="padding:0.4rem 1.5rem 0.4rem 0.75rem"><div class="flex"><span>Managing Presets</span></div></div></a></div></div><div><div class="font-medium my-1"><a href="/cosmo-pd/presets/sysex.html" class="link_a7cea "><div class="rounded-2xl hover:bg-mute" style="padding:0.4rem 1.5rem 0.4rem 0.75rem"><div class="flex"><span>SysEx Import / Export</span></div></div></a></div></div></div></div></div></div><a href="/cosmo-pd/troubleshooting.html" class="link_a7cea "><div class="rspress-nav-menu-item singleItem_c1154  text-sm font-medium mx-1.5 px-3 py-2 flex items-center break-keep">Troubleshooting</div></a></div><div class="flex-center flex-row"><div class="mx-2"><div class="md:mr-2 rspress-nav-appearance"><div class="p-1 border border-solid border-gray-300 text-gray-400  cursor-pointer rounded-md hover:border-gray-600 hover:text-gray-600 dark:hover:border-gray-200 dark:hover:text-gray-200 transition-all duration-300 w-7 h-7"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" viewBox="0 0 24 24" class="dark:hidden" width="18" height="18" fill="currentColor"><path d="M12 18c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6m0-10c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4M12 4c-.6 0-1-.4-1-1V1c0-.6.4-1 1-1s1 .4 1 1v2c0 .6-.4 1-1 1M12 24c-.6 0-1-.4-1-1v-2c0-.6.4-1 1-1s1 .4 1 1v2c0 .6-.4 1-1 1M5.6 6.6c-.3 0-.5-.1-.7-.3L3.5 4.9c-.4-.4-.4-1 0-1.4s1-.4 1.4 0l1.4 1.4c.4.4.4 1 0 1.4-.1.2-.4.3-.7.3M19.8 20.8c-.3 0-.5-.1-.7-.3l-1.4-1.4c-.4-.4-.4-1 0-1.4s1-.4 1.4 0l1.4 1.4c.4.4.4 1 0 1.4-.2.2-.5.3-.7.3M3 13H1c-.6 0-1-.4-1-1s.4-1 1-1h2c.6 0 1 .4 1 1s-.4 1-1 1M23 13h-2c-.6 0-1-.4-1-1s.4-1 1-1h2c.6 0 1 .4 1 1s-.4 1-1 1M4.2 20.8c-.3 0-.5-.1-.7-.3-.4-.4-.4-1 0-1.4l1.4-1.4c.4-.4 1-.4 1.4 0s.4 1 0 1.4l-1.4 1.4c-.2.2-.4.3-.7.3M18.4 6.6c-.3 0-.5-.1-.7-.3-.4-.4-.4-1 0-1.4l1.4-1.4c.4-.4 1-.4 1.4 0s.4 1 0 1.4l-1.4 1.4c-.2.2-.5.3-.7.3"></path></svg><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" viewBox="0 0 24 24" class="hidden dark:block" width="18" height="18" fill="currentColor"><path d="M12.1 22h-.9c-5.5-.5-9.5-5.4-9-10.9.4-4.8 4.2-8.6 9-9 .4 0 .8.2 1 .5s.2.8-.1 1.1c-2 2.7-1.4 6.4 1.3 8.4 2.1 1.6 5 1.6 7.1 0 .3-.2.7-.3 1.1-.1.3.2.5.6.5 1-.2 2.7-1.5 5.1-3.6 6.8-1.9 1.4-4.1 2.2-6.4 2.2M9.3 4.4c-2.9 1-5 3.6-5.2 6.8-.4 4.4 2.8 8.3 7.2 8.7 2.1.2 4.2-.4 5.8-1.8 1.1-.9 1.9-2.1 2.4-3.4-2.5.9-5.3.5-7.5-1.1-2.8-2.2-3.9-5.9-2.7-9.2"></path></svg></div></div></div></div></div><div class="mobileNavMenu_e7045"><div class="navScreen_ec30c  rspress-nav-screen" id="navScreen"><div class="container_c935d"><div class="navMenu_b887b"><div class="navMenuItem_e7978 w-full"><a href="/cosmo-pd/index.html" class="link_a7cea "><div class="rspress-nav-menu-item singleItem_c1154 activeItem_a28b5 text-sm font-medium mx-1.5 px-3 py-2 flex items-center break-keep">Home</div></a></div><div class="navMenuItem_e7978 w-full"><a href="/cosmo-pd/getting-started/index.html" class="link_a7cea "><div class="rspress-nav-menu-item singleItem_c1154  text-sm font-medium mx-1.5 px-3 py-2 flex items-center break-keep">Getting Started</div></a></div><div class="navMenuItem_e7978 w-full"><a href="/cosmo-pd/synth-reference/index.html" class="link_a7cea "><div class="rspress-nav-menu-item singleItem_c1154 activeItem_a28b5 text-sm font-medium mx-1.5 px-3 py-2 flex items-center break-keep">Synth Reference</div></a></div><div class="navMenuItem_e7978 w-full"><a href="/cosmo-pd/presets/index.html" class="link_a7cea "><div class="rspress-nav-menu-item singleItem_c1154  text-sm font-medium mx-1.5 px-3 py-2 flex items-center break-keep">Presets</div></a></div><div class="navMenuItem_e7978 w-full"><a href="/cosmo-pd/troubleshooting.html" class="link_a7cea "><div class="rspress-nav-menu-item singleItem_c1154  text-sm font-medium mx-1.5 px-3 py-2 flex items-center break-keep">Troubleshooting</div></a></div></div><div class="flex-center flex-col gap-2"><div class="mt-2 navAppearance_bf893 flex justify-center"></div></div></div></div><button aria-label="mobile hamburger" class=" rspress-mobile-hamburger navHamburger_ac64c text-gray-500"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="currentColor"><circle cx="8" cy="16" r="2" fill="currentColor"></circle><circle cx="16" cy="16" r="2" fill="currentColor"></circle><circle cx="24" cy="16" r="2" fill="currentColor"></circle></svg></button></div></div></div></div><section><div class="docLayout_af141 pt-0"><aside class="sidebar_dd719 rspress-sidebar "><div class="navTitleMask_fb17c"><div class="navBarTitle_c5f07"><a href="/cosmo-pd/index.html" class="link_a7cea flex items-center w-full h-full text-base font-semibold transition-opacity duration-300 hover:opacity-60"><span>Cosmo PD-101 Manual</span></a></div></div><div class="rspress-scrollbar sidebarContent_da296"><nav class="pb-2"><section class="rspress-sidebar-section mt-0.5 block" style="margin-left:0"><div class="rspress-sidebar-collapse flex justify-between items-center menuItem_ac22e" style="border-radius:0 var(--rp-radius) var(--rp-radius) 0;cursor:pointer"><h2 class="py-2 px-3 text-sm font-medium flex" style="font-size:14px;padding-left:24px;font-weight:bold"><span class="flex-center" style="font-size:14px">Getting Started</span></h2><div class="collapseContainer_d6e4e p-2 rounded-xl"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div class="transition-all duration-300 ease-in-out" style="overflow:hidden"><div class="rspress-sidebar-group transition-opacity duration-500 ease-in-out" style="opacity:1;margin-left:12px"><div class="rspress-sidebar-item"><a href="/cosmo-pd/getting-started/index.html" class="link_a7cea menuLink_bb039"><div class="menuItem_ac22e mt-0.5 py-2 px-3 font-medium flex" style="font-size:13px;margin-left:18px;border-radius:0 var(--rp-radius) var(--rp-radius) 0"><span>Quick Start</span></div></a></div><div class="rspress-sidebar-item"><a href="/cosmo-pd/getting-started/desktop-app.html" class="link_a7cea menuLink_bb039"><div class="menuItem_ac22e mt-0.5 py-2 px-3 font-medium flex" style="font-size:13px;margin-left:18px;border-radius:0 var(--rp-radius) var(--rp-radius) 0"><span>Desktop App</span></div></a></div><div class="rspress-sidebar-item"><a href="/cosmo-pd/getting-started/web-app.html" class="link_a7cea menuLink_bb039"><div class="menuItem_ac22e mt-0.5 py-2 px-3 font-medium flex" style="font-size:13px;margin-left:18px;border-radius:0 var(--rp-radius) var(--rp-radius) 0"><span>Web App</span></div></a></div><div class="rspress-sidebar-item"><a href="/cosmo-pd/getting-started/plugin.html" class="link_a7cea menuLink_bb039"><div class="menuItem_ac22e mt-0.5 py-2 px-3 font-medium flex" style="font-size:13px;margin-left:18px;border-radius:0 var(--rp-radius) var(--rp-radius) 0"><span>DAW Plugin</span></div></a></div></div></div></section><section class="rspress-sidebar-section mt-0.5 block" style="margin-left:0"><div class="rspress-sidebar-collapse flex justify-between items-center menuItem_ac22e" style="border-radius:0 var(--rp-radius) var(--rp-radius) 0;cursor:pointer"><h2 class="py-2 px-3 text-sm font-medium flex" style="font-size:14px;padding-left:24px;font-weight:bold"><span class="flex-center" style="font-size:14px">Synth Reference</span></h2><div class="collapseContainer_d6e4e p-2 rounded-xl"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div class="transition-all duration-300 ease-in-out" style="overflow:hidden"><div class="rspress-sidebar-group transition-opacity duration-500 ease-in-out" style="opacity:1;margin-left:12px"><div class="rspress-sidebar-item"><a href="/cosmo-pd/synth-reference/overview.html" class="link_a7cea menuLink_bb039"><div class="menuItem_ac22e mt-0.5 py-2 px-3 font-medium flex" style="font-size:13px;margin-left:18px;border-radius:0 var(--rp-radius) var(--rp-radius) 0"><span>Overview</span></div></a></div><div class="rspress-sidebar-item"><a href="/cosmo-pd/synth-reference/oscillators.html" class="link_a7cea menuLink_bb039"><div class="menuItem_ac22e mt-0.5 py-2 px-3 font-medium flex" style="font-size:13px;margin-left:18px;border-radius:0 var(--rp-radius) var(--rp-radius) 0"><span>Oscillators</span></div></a></div><div class="rspress-sidebar-item"><a href="/cosmo-pd/synth-reference/envelopes.html" class="link_a7cea menuLink_bb039"><div class="menuItem_ac22e mt-0.5 py-2 px-3 font-medium flex" style="font-size:13px;margin-left:18px;border-radius:0 var(--rp-radius) var(--rp-radius) 0"><span>Envelopes</span></div></a></div><div class="rspress-sidebar-item"><a href="/cosmo-pd/synth-reference/algorithms.html" class="link_a7cea menuLink_bb039"><div class="menuItemActive_de63c mt-0.5 py-2 px-3 font-medium flex" style="font-size:13px;margin-left:18px;border-radius:0 var(--rp-radius) var(--rp-radius) 0"><span>Algorithms</span></div></a></div><div class="rspress-sidebar-item"><a href="/cosmo-pd/synth-reference/effects.html" class="link_a7cea menuLink_bb039"><div class="menuItem_ac22e mt-0.5 py-2 px-3 font-medium flex" style="font-size:13px;margin-left:18px;border-radius:0 var(--rp-radius) var(--rp-radius) 0"><span>Effects</span></div></a></div><div class="rspress-sidebar-item"><a href="/cosmo-pd/synth-reference/global-controls.html" class="link_a7cea menuLink_bb039"><div class="menuItem_ac22e mt-0.5 py-2 px-3 font-medium flex" style="font-size:13px;margin-left:18px;border-radius:0 var(--rp-radius) var(--rp-radius) 0"><span>Global Controls</span></div></a></div></div></div></section><section class="rspress-sidebar-section mt-0.5 block" style="margin-left:0"><div class="rspress-sidebar-collapse flex justify-between items-center menuItem_ac22e" style="border-radius:0 var(--rp-radius) var(--rp-radius) 0;cursor:pointer"><h2 class="py-2 px-3 text-sm font-medium flex" style="font-size:14px;padding-left:24px;font-weight:bold"><span class="flex-center" style="font-size:14px">Presets</span></h2><div class="collapseContainer_d6e4e p-2 rounded-xl"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div class="transition-all duration-300 ease-in-out" style="overflow:hidden"><div class="rspress-sidebar-group transition-opacity duration-500 ease-in-out" style="opacity:1;margin-left:12px"><div class="rspress-sidebar-item"><a href="/cosmo-pd/presets/managing.html" class="link_a7cea menuLink_bb039"><div class="menuItem_ac22e mt-0.5 py-2 px-3 font-medium flex" style="font-size:13px;margin-left:18px;border-radius:0 var(--rp-radius) var(--rp-radius) 0"><span>Managing Presets</span></div></a></div><div class="rspress-sidebar-item"><a href="/cosmo-pd/presets/sysex.html" class="link_a7cea menuLink_bb039"><div class="menuItem_ac22e mt-0.5 py-2 px-3 font-medium flex" style="font-size:13px;margin-left:18px;border-radius:0 var(--rp-radius) var(--rp-radius) 0"><span>SysEx Import / Export</span></div></a></div></div></div></section><section class="rspress-sidebar-section mt-0.5 block" style="margin-left:0"><div class="rspress-sidebar-collapse flex justify-between items-center menuItem_ac22e" style="border-radius:0 var(--rp-radius) var(--rp-radius) 0;cursor:pointer"><h2 class="py-2 px-3 text-sm font-medium flex" style="font-size:14px;padding-left:24px;font-weight:bold"><span class="flex-center" style="font-size:14px">Support</span></h2><div class="collapseContainer_d6e4e p-2 rounded-xl"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div class="transition-all duration-300 ease-in-out" style="overflow:hidden"><div class="rspress-sidebar-group transition-opacity duration-500 ease-in-out" style="opacity:1;margin-left:12px"><div class="rspress-sidebar-item"><a href="/cosmo-pd/troubleshooting.html" class="link_a7cea menuLink_bb039"><div class="menuItem_ac22e mt-0.5 py-2 px-3 font-medium flex" style="font-size:13px;margin-left:18px;border-radius:0 var(--rp-radius) var(--rp-radius) 0"><span>Troubleshooting</span></div></a></div></div></div></section></nav></div></aside><div class="flex-1 relative min-w-0"><div class="rspress-sidebar-menu-container "><div class="rspress-sidebar-menu"><button type="button" class="flex-center mr-auto"><div class="text-md mr-2"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M4 6h24v2H4zm0 18h24v2H4zm0-12h24v2H4zm0 6h24v2H4z"></path></svg></div><span class="text-sm">Menu</span></button><button type="button" class="flex-center ml-auto"><span class="text-sm">ON THIS PAGE</span><div class="text-md mr-2" style="transform:rotate(0deg);transition:transform 0.2s ease-out;margin-top:2px"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></button><div class="rspress-local-toc-container "><ul><li><a href="#how-to-read-this-reference" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:0"><span class="rspress-toc-link-text block">How to Read This Reference</span></a></li><li><a href="#cz-101-legacy-algorithms" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:0"><span class="rspress-toc-link-text block">CZ-101 Legacy Algorithms</span></a></li><li><a href="#cz-saw" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:12px"><span class="rspress-toc-link-text block">CZ Saw</span></a></li><li><a href="#cz-square" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:12px"><span class="rspress-toc-link-text block">CZ Square</span></a></li><li><a href="#cz-pulse" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:12px"><span class="rspress-toc-link-text block">CZ Pulse</span></a></li><li><a href="#cz-double-sine" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:12px"><span class="rspress-toc-link-text block">CZ Double Sine</span></a></li><li><a href="#cz-saw-pulse" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:12px"><span class="rspress-toc-link-text block">CZ Saw Pulse</span></a></li><li><a href="#cz-reso-1--3" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:12px"><span class="rspress-toc-link-text block">CZ Reso 1 – 3</span></a></li><li><a href="#cosmo-original-warp-algorithms" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:0"><span class="rspress-toc-link-text block">Cosmo Original Warp Algorithms</span></a></li><li><a href="#bend" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:12px"><span class="rspress-toc-link-text block">Bend</span></a></li><li><a href="#sync" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:12px"><span class="rspress-toc-link-text block">Sync</span></a></li><li><a href="#pinch" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:12px"><span class="rspress-toc-link-text block">Pinch</span></a></li><li><a href="#fold" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:12px"><span class="rspress-toc-link-text block">Fold</span></a></li><li><a href="#skew" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:12px"><span class="rspress-toc-link-text block">Skew</span></a></li><li><a href="#twist" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:12px"><span class="rspress-toc-link-text block">Twist</span></a></li><li><a href="#clip" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:12px"><span class="rspress-toc-link-text block">Clip</span></a></li><li><a href="#ripple" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:12px"><span class="rspress-toc-link-text block">Ripple</span></a></li><li><a href="#mirror" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:12px"><span class="rspress-toc-link-text block">Mirror</span></a></li><li><a href="#karpunk" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:12px"><span class="rspress-toc-link-text block">Karpunk</span></a></li><li><a href="#fof-formant" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:12px"><span class="rspress-toc-link-text block">FOF (Formant)</span></a></li><li><a href="#terrain" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:12px"><span class="rspress-toc-link-text block">Terrain</span></a></li><li><a href="#stutter" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:12px"><span class="rspress-toc-link-text block">Stutter</span></a></li><li><a href="#cheby-chebyshev" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:12px"><span class="rspress-toc-link-text block">Cheby (Chebyshev)</span></a></li><li><a href="#algorithm-quick-reference" class="link_a7cea rspress-toc-link sm:text-normal text-sm" style="margin-left:0"><span class="rspress-toc-link-text block">Algorithm Quick Reference</span></a></li></ul></div></div></div><div class="content_ff766 rspress-doc-container flex"><div class="flex-1 overflow-x-auto"><div class="rspress-doc"><!--$--><h1 id="algorithms" class="rspress-doc-title text-3xl mb-10 leading-10 tracking-tight title_fb7eb">Algorithms<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#algorithms">#</a></h1>
+<p class="my-4 leading-7">The Cosmo PD-101 offers <strong class="font-semibold">25 phase distortion algorithms</strong> — 9 inherited from the Casio CZ-101 and 16 original warp algorithms. Each algorithm is a different mathematical function that reshapes the oscillator&#x27;s phase before it reads the base waveform, producing a unique timbral character.</p>
+<h2 id="how-to-read-this-reference" class="mt-12 mb-6 pt-8 text-2xl tracking-tight border-t-[1px] border-divider-light title_fb7eb">How to Read This Reference<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#how-to-read-this-reference">#</a></h2>
+<p class="my-4 leading-7">Each algorithm entry includes:</p>
+<ul class="list-disc pl-5 my-4 leading-7">
+<li class="[&amp;:not(:first-child)]:mt-2"><strong class="font-semibold">Name</strong> — the label shown in the UI</li>
+<li class="[&amp;:not(:first-child)]:mt-2"><strong class="font-semibold">Category</strong> — CZ-101 Legacy or Cosmo Original</li>
+<li class="[&amp;:not(:first-child)]:mt-2"><strong class="font-semibold">Default Base Waveform</strong> — the carrier that sounds best with this algo</li>
+<li class="[&amp;:not(:first-child)]:mt-2"><strong class="font-semibold">Controls</strong> — the adjustable parameters (knobs/dropdowns)</li>
+<li class="[&amp;:not(:first-child)]:mt-2"><strong class="font-semibold">Audio Character</strong> — what the algorithm sounds like at default settings</li>
+</ul>
+<hr class="my-12 border-t border-solid border-divider-light"/>
+<h2 id="cz-101-legacy-algorithms" class="mt-12 mb-6 pt-8 text-2xl tracking-tight border-t-[1px] border-divider-light title_fb7eb">CZ-101 Legacy Algorithms<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#cz-101-legacy-algorithms">#</a></h2>
+<p class="my-4 leading-7">These are faithful recreations of the original Casio CZ-101 phase distortion algorithms. Select them by choosing the <strong class="font-semibold">CZ101</strong> algorithm and picking a <strong class="font-semibold">CZ Preset</strong> from the dropdown.</p>
+<h3 id="cz-saw" class="mt-10 mb-2 leading-7 text-xl title_fb7eb">CZ Saw<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#cz-saw">#</a></h3>
+<table class="block border-collapse text-base my-5 overflow-x-auto leading-7 border-gray-light-3 dark:border-divider">
+<thead>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Parameters</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Default</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Range</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Waveform 1</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Saw</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Saw, Square, Pulse, Null, Sine Pulse, Saw Pulse, Multi Sine, Pulse 2</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Waveform 2</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Saw</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">(same options)</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Window</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Off</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Off, Saw, Triangle, Trapezoid, Pulse, Double Saw</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="border-l-2 border-solid border-divider pl-4 my-6 transition-colors duration-500 blockquote_f1063">
+<p class="my-4 leading-7"><strong class="font-semibold">Sound:</strong> Classic bright sawtooth. The foundation of most CZ patches.</p>
+</blockquote>
+<h3 id="cz-square" class="mt-10 mb-2 leading-7 text-xl title_fb7eb">CZ Square<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#cz-square">#</a></h3>
+<table class="block border-collapse text-base my-5 overflow-x-auto leading-7 border-gray-light-3 dark:border-divider">
+<thead>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Parameters</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Default</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Range</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Waveform 1</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Square</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">(same options as above)</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Waveform 2</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Square</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">(same options)</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Window</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Off</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">(same options)</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="border-l-2 border-solid border-divider pl-4 my-6 transition-colors duration-500 blockquote_f1063">
+<p class="my-4 leading-7"><strong class="font-semibold">Sound:</strong> Hollow, reedy square wave. Good for thin leads and retro basses.</p>
+</blockquote>
+<h3 id="cz-pulse" class="mt-10 mb-2 leading-7 text-xl title_fb7eb">CZ Pulse<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#cz-pulse">#</a></h3>
+<table class="block border-collapse text-base my-5 overflow-x-auto leading-7 border-gray-light-3 dark:border-divider">
+<thead>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Parameters</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Default</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Range</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Waveform 1</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Pulse</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">(same options)</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Waveform 2</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Pulse</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">(same options)</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Window</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Off</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">(same options)</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="border-l-2 border-solid border-divider pl-4 my-6 transition-colors duration-500 blockquote_f1063">
+<p class="my-4 leading-7"><strong class="font-semibold">Sound:</strong> Narrower than saw, with a buzzy quality. Brass-like tones.</p>
+</blockquote>
+<h3 id="cz-double-sine" class="mt-10 mb-2 leading-7 text-xl title_fb7eb">CZ Double Sine<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#cz-double-sine">#</a></h3>
+<table class="block border-collapse text-base my-5 overflow-x-auto leading-7 border-gray-light-3 dark:border-divider">
+<thead>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Parameters</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Default</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Range</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Waveform 1</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sine Pulse</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">(same options)</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Waveform 2</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sine Pulse</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">(same options)</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Window</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Off</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">(same options)</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="border-l-2 border-solid border-divider pl-4 my-6 transition-colors duration-500 blockquote_f1063">
+<p class="my-4 leading-7"><strong class="font-semibold">Sound:</strong> Soft, rounded. Two sine-like components for gentle pads.</p>
+</blockquote>
+<h3 id="cz-saw-pulse" class="mt-10 mb-2 leading-7 text-xl title_fb7eb">CZ Saw Pulse<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#cz-saw-pulse">#</a></h3>
+<table class="block border-collapse text-base my-5 overflow-x-auto leading-7 border-gray-light-3 dark:border-divider">
+<thead>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Parameters</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Default</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Range</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Waveform 1</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Saw Pulse</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">(same options)</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Waveform 2</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Saw Pulse</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">(same options)</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Window</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Off</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">(same options)</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="border-l-2 border-solid border-divider pl-4 my-6 transition-colors duration-500 blockquote_f1063">
+<p class="my-4 leading-7"><strong class="font-semibold">Sound:</strong> Combination of saw brightness with pulse-width character.</p>
+</blockquote>
+<h3 id="cz-reso-1--3" class="mt-10 mb-2 leading-7 text-xl title_fb7eb">CZ Reso 1 – 3<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#cz-reso-1--3">#</a></h3>
+<table class="block border-collapse text-base my-5 overflow-x-auto leading-7 border-gray-light-3 dark:border-divider">
+<thead>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Parameter</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Reso 1</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Reso 2</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Reso 3</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Waveform 1/2</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Multi Sine</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Multi Sine</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Multi Sine</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Window</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Saw</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Triangle</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Trapezoid</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="border-l-2 border-solid border-divider pl-4 my-6 transition-colors duration-500 blockquote_f1063">
+<p class="my-4 leading-7"><strong class="font-semibold">Sound:</strong> Resonant, metallic tones. The window function sweeps the resonance character from bright (Saw) to warm (Triangle) to hollow (Trapezoid).</p>
+</blockquote>
+<hr class="my-12 border-t border-solid border-divider-light"/>
+<h2 id="cosmo-original-warp-algorithms" class="mt-12 mb-6 pt-8 text-2xl tracking-tight border-t-[1px] border-divider-light title_fb7eb">Cosmo Original Warp Algorithms<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#cosmo-original-warp-algorithms">#</a></h2>
+<p class="my-4 leading-7">These 16 algorithms are unique to the Cosmo PD-101 and expand well beyond the original CZ palette.</p>
+<h3 id="bend" class="mt-10 mb-2 leading-7 text-xl title_fb7eb">Bend<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#bend">#</a></h3>
+<table class="block border-collapse text-base my-5 overflow-x-auto leading-7 border-gray-light-3 dark:border-divider">
+<thead>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Parameter</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Default</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Range</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Bend Curve</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Curvature of the bend</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Bend Bias</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">-100% to +100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Asymmetric offset</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Bend Knee</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Softness of the bend point</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="border-l-2 border-solid border-divider pl-4 my-6 transition-colors duration-500 blockquote_f1063">
+<p class="my-4 leading-7"><strong class="font-semibold">Audio:</strong> Pitch-dependent timbral shift. Creates expressive, vocal-like tones that change character across the keyboard.</p>
+</blockquote>
+<h3 id="sync" class="mt-10 mb-2 leading-7 text-xl title_fb7eb">Sync<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#sync">#</a></h3>
+<table class="block border-collapse text-base my-5 overflow-x-auto leading-7 border-gray-light-3 dark:border-divider">
+<thead>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Parameter</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Default</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Range</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sync Ratio</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Ratio of synced to master frequency</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sync Phase</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0°</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0°–360°</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Phase offset on reset</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sync Curve</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Shape of the sync waveform</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sync Window</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Windowing of the sync region</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="border-l-2 border-solid border-divider pl-4 my-6 transition-colors duration-500 blockquote_f1063">
+<p class="my-4 leading-7"><strong class="font-semibold">Audio:</strong> Hard-sync style. Metallic, screaming leads. Classic sync-sweep sounds when modulated by an envelope.</p>
+</blockquote>
+<h3 id="pinch" class="mt-10 mb-2 leading-7 text-xl title_fb7eb">Pinch<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#pinch">#</a></h3>
+<table class="block border-collapse text-base my-5 overflow-x-auto leading-7 border-gray-light-3 dark:border-divider">
+<thead>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Parameter</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Default</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Range</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Pinch Focus</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Center point of the pinch</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Pinch Asym</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">-100% to +100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Asymmetry</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Pinch Curve</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Curve shape</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Pinch Drive</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Intensity</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="border-l-2 border-solid border-divider pl-4 my-6 transition-colors duration-500 blockquote_f1063">
+<p class="my-4 leading-7"><strong class="font-semibold">Audio:</strong> Squeezed, nasal tones. Can range from subtle formant-like shifts to aggressive distortion.</p>
+</blockquote>
+<h3 id="fold" class="mt-10 mb-2 leading-7 text-xl title_fb7eb">Fold<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#fold">#</a></h3>
+<table class="block border-collapse text-base my-5 overflow-x-auto leading-7 border-gray-light-3 dark:border-divider">
+<thead>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Parameter</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Default</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Range</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Fold Stages</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Number of folding stages</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Fold Tilt</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">-100% to +100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Asymmetric tilt</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Fold Symmetry</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">-100% to +100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Symmetry of folding</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Fold Softness</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Smoothing</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="border-l-2 border-solid border-divider pl-4 my-6 transition-colors duration-500 blockquote_f1063">
+<p class="my-4 leading-7"><strong class="font-semibold">Audio:</strong> Wavefolder. Subtle folds add harmonics; extreme settings create chaotic, noisy textures.</p>
+</blockquote>
+<h3 id="skew" class="mt-10 mb-2 leading-7 text-xl title_fb7eb">Skew<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#skew">#</a></h3>
+<table class="block border-collapse text-base my-5 overflow-x-auto leading-7 border-gray-light-3 dark:border-divider">
+<thead>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Parameter</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Default</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Range</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Skew Bias</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">20%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Bias point</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Skew Curve</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Curve intensity</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Skew Spread</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">-100% to +100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Stereo spread</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Skew Tilt</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">-100% to +100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Asymmetry</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="border-l-2 border-solid border-divider pl-4 my-6 transition-colors duration-500 blockquote_f1063">
+<p class="my-4 leading-7"><strong class="font-semibold">Audio:</strong> Skews the phase curve, producing asymmetric waveforms. Great for evolving pad timbres.</p>
+</blockquote>
+<h3 id="twist" class="mt-10 mb-2 leading-7 text-xl title_fb7eb">Twist<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#twist">#</a></h3>
+<table class="block border-collapse text-base my-5 overflow-x-auto leading-7 border-gray-light-3 dark:border-divider">
+<thead>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Parameter</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Default</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Range</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Twist Harmonics</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Harmonic content</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Twist Depth</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Intensity of twist</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Twist Phase</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0°</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0°–360°</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Phase rotation</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Twist Shape</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Shape of the twist curve</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="border-l-2 border-solid border-divider pl-4 my-6 transition-colors duration-500 blockquote_f1063">
+<p class="my-4 leading-7"><strong class="font-semibold">Audio:</strong> Spiraling, vortex-like timbres. Can sound like a slow phaser at low settings, aggressive at high.</p>
+</blockquote>
+<h3 id="clip" class="mt-10 mb-2 leading-7 text-xl title_fb7eb">Clip<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#clip">#</a></h3>
+<table class="block border-collapse text-base my-5 overflow-x-auto leading-7 border-gray-light-3 dark:border-divider">
+<thead>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Parameter</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Default</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Range</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Clip Drive</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Drive amount</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Clip Shape</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Hardness of clipping</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Clip Bias</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">-100% to +100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">DC offset bias</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Clip Soft</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Soft clipping blend</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="border-l-2 border-solid border-divider pl-4 my-6 transition-colors duration-500 blockquote_f1063">
+<p class="my-4 leading-7"><strong class="font-semibold">Audio:</strong> Distortion-style clipping. Ranges from warm tube saturation to hard digital clipping.</p>
+</blockquote>
+<h3 id="ripple" class="mt-10 mb-2 leading-7 text-xl title_fb7eb">Ripple<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#ripple">#</a></h3>
+<table class="block border-collapse text-base my-5 overflow-x-auto leading-7 border-gray-light-3 dark:border-divider">
+<thead>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Parameter</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Default</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Range</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Ripple Freq</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Ripple frequency</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Ripple Depth</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Depth of modulation</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Ripple Phase</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0°</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0°–360°</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Phase offset</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Ripple Shape</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Shape of ripples</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="border-l-2 border-solid border-divider pl-4 my-6 transition-colors duration-500 blockquote_f1063">
+<p class="my-4 leading-7"><strong class="font-semibold">Audio:</strong> Undulating, watery textures. Multiple ripples create complex interference patterns.</p>
+</blockquote>
+<h3 id="mirror" class="mt-10 mb-2 leading-7 text-xl title_fb7eb">Mirror<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#mirror">#</a></h3>
+<table class="block border-collapse text-base my-5 overflow-x-auto leading-7 border-gray-light-3 dark:border-divider">
+<thead>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Parameter</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Default</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Range</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Mirror Center</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Center point</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Mirror Blend</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Dry/wet mix</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Mirror Clip</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Clipping at mirror point</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Mirror Skew</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">-100% to +100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Asymmetry</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="border-l-2 border-solid border-divider pl-4 my-6 transition-colors duration-500 blockquote_f1063">
+<p class="my-4 leading-7"><strong class="font-semibold">Audio:</strong> Mirrors the phase curve around a center point. Creates metallic, bell-like tones.</p>
+</blockquote>
+<h3 id="karpunk" class="mt-10 mb-2 leading-7 text-xl title_fb7eb">Karpunk<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#karpunk">#</a></h3>
+<table class="block border-collapse text-base my-5 overflow-x-auto leading-7 border-gray-light-3 dark:border-divider">
+<thead>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Parameter</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Default</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Range</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Karpunk Damp</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Damping factor</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Karpunk Bright</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Brightness</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Karpunk Decay</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Decay character</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Karpunk Excite</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Excitation amount</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="border-l-2 border-solid border-divider pl-4 my-6 transition-colors duration-500 blockquote_f1063">
+<p class="my-4 leading-7"><strong class="font-semibold">Audio:</strong> Noisy, chaotic. Named for its karplus-strong-like pluck quality with added grit.</p>
+</blockquote>
+<h3 id="fof-formant" class="mt-10 mb-2 leading-7 text-xl title_fb7eb">FOF (Formant)<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#fof-formant">#</a></h3>
+<table class="block border-collapse text-base my-5 overflow-x-auto leading-7 border-gray-light-3 dark:border-divider">
+<thead>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Parameter</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Default</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Range</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">FOF Ratio</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Formant ratio</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">FOF Tightness</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Spectral tightness</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">FOF Offset</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">-100% to +100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Formant offset</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">FOF Skew</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">-100% to +100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Asymmetry</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="border-l-2 border-solid border-divider pl-4 my-6 transition-colors duration-500 blockquote_f1063">
+<p class="my-4 leading-7"><strong class="font-semibold">Audio:</strong> Vocal/formant-like. Can produce vowel-like timbres and talking-bass effects.</p>
+</blockquote>
+<h3 id="terrain" class="mt-10 mb-2 leading-7 text-xl title_fb7eb">Terrain<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#terrain">#</a></h3>
+<table class="block border-collapse text-base my-5 overflow-x-auto leading-7 border-gray-light-3 dark:border-divider">
+<thead>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Parameter</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Default</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Range</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Terrain Ratio</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">2.0</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">1.0–8.0</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Terrain frequency ratio</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Terrain Depth</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">50%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Depth of terrain features</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Terrain FM Phase</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0°</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0°–360°</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">FM phase offset</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Terrain Shape</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Shape complexity</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="border-l-2 border-solid border-divider pl-4 my-6 transition-colors duration-500 blockquote_f1063">
+<p class="my-4 leading-7"><strong class="font-semibold">Audio:</strong> Organic, terrain-like textures. Evolving, landscape-inspired timbres.</p>
+</blockquote>
+<h3 id="stutter" class="mt-10 mb-2 leading-7 text-xl title_fb7eb">Stutter<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#stutter">#</a></h3>
+<table class="block border-collapse text-base my-5 overflow-x-auto leading-7 border-gray-light-3 dark:border-divider">
+<thead>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Parameter</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Default</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Range</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Stutter Segs</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">25%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Number of segments</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Stutter Reverse</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Reversal amount</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Stutter Slip</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Time displacement</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Stutter Spacing</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Spacing between stutters</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="border-l-2 border-solid border-divider pl-4 my-6 transition-colors duration-500 blockquote_f1063">
+<p class="my-4 leading-7"><strong class="font-semibold">Audio:</strong> Granular stutter effect. Rhythmic gating and glitch textures.</p>
+</blockquote>
+<h3 id="cheby-chebyshev" class="mt-10 mb-2 leading-7 text-xl title_fb7eb">Cheby (Chebyshev)<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#cheby-chebyshev">#</a></h3>
+<table class="block border-collapse text-base my-5 overflow-x-auto leading-7 border-gray-light-3 dark:border-divider">
+<thead>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Parameter</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Default</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Range</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Cheby Order</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">20%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Polynomial order</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Cheby Tilt</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">-100% to +100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Spectral tilt</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Cheby Warp</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">0–100%</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Chebyshev warping</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="border-l-2 border-solid border-divider pl-4 my-6 transition-colors duration-500 blockquote_f1063">
+<p class="my-4 leading-7"><strong class="font-semibold">Audio:</strong> Polynomial-based distortion. Clean at low orders, increasingly complex harmonics as order rises.</p>
+</blockquote>
+<hr class="my-12 border-t border-solid border-divider-light"/>
+<h2 id="algorithm-quick-reference" class="mt-12 mb-6 pt-8 text-2xl tracking-tight border-t-[1px] border-divider-light title_fb7eb">Algorithm Quick Reference<a class="link_a7cea header-anchor link_a9ef4 inline-link_f855c" aria-hidden="true" href="#algorithm-quick-reference">#</a></h2>
+<table class="block border-collapse text-base my-5 overflow-x-auto leading-7 border-gray-light-3 dark:border-divider">
+<thead>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Algorithm</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Category</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Best For</th>
+<th class="border border-solid px-4 py-2 text-text-1 text-base font-semibold border-gray-light-3 dark:border-divider">Default Waveform</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">CZ Saw</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">CZ Legacy</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Classic synth leads</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Saw</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">CZ Square</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">CZ Legacy</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Retro / hollow tones</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Square</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">CZ Pulse</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">CZ Legacy</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Brass / reeds</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Pulse</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">CZ Double Sine</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">CZ Legacy</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Soft pads</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sine Pulse</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">CZ Saw Pulse</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">CZ Legacy</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Bright + narrow</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Saw Pulse</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">CZ Reso 1–3</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">CZ Legacy</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Metallic resonance</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Multi Sine</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Bend</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Cosmo</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Expressive / vocal</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sine</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sync</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Cosmo</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Screaming leads</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sine</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Pinch</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Cosmo</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Nasal / formant</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sine</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Fold</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Cosmo</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Wavefolding grit</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sine</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Skew</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Cosmo</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Evolving pads</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sine</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Twist</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Cosmo</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Spiral / vortex</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sine</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Clip</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Cosmo</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Distortion</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sine</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Ripple</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Cosmo</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Watery textures</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sine</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Mirror</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Cosmo</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Metallic / bells</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sine</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Karpunk</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Cosmo</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Noisy / plucky</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sine</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">FOF</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Cosmo</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Vocal formants</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sine</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Terrain</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Cosmo</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Organic textures</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sine</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Stutter</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Cosmo</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Granular glitch</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sine</td>
+</tr>
+<tr class="border border-solid transition-colors duration-500 even:bg-soft border-gray-light-3 dark:border-divider">
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Cheby</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Cosmo</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Polynomial distortion</td>
+<td class="border border-solid px-4 py-2 border-gray-light-3 dark:border-divider">Sine</td>
+</tr>
+</tbody>
+</table>
+<p class="my-4 leading-7">Next: <a href="/cosmo-pd/envelopes.html" class="link_a7cea  link_a9ef4 inline-link_f855c">Envelopes →</a> | Previous: <a href="/cosmo-pd/oscillators.html" class="link_a7cea  link_a9ef4 inline-link_f855c">Oscillators →</a></p><!--/$--></div><div class="rspress-doc-footer"><footer class="mt-8"><div class="xs:flex pb-5 px-2 justify-end items-center"></div><div class="flex flex-col"></div><div class="flex flex-col sm:flex-row sm:justify-around gap-4 pt-6"><div class="prev_c92d1 flex flex-col"><a href="/cosmo-pd/synth-reference/envelopes.html" class="link_a7cea pager-link_e0d2d"><span class="desc_dcc01">Previous Page</span><span class="title_a3acb">Envelopes</span></a></div><div class="next_c11be flex flex-col"><a href="/cosmo-pd/synth-reference/effects.html" class="link_a7cea pager-link_e0d2d next_ad355"><span class="desc_dcc01">Next Page</span><span class="title_a3acb">Effects</span></a></div></div></footer></div></div><div class="aside-container_bc5fa"><div class="flex flex-col"><div id="aside-container" class="relative text-sm font-medium"><div class="leading-7 block text-sm font-semibold pl-3">ON THIS PAGE</div><nav class="mt-1"><ul class="relative"><li><a href="#how-to-read-this-reference" title="How to Read This Reference" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:0;font-weight:semibold"><span class="aside-link-text block">How to Read This Reference</span></a></li><li><a href="#cz-101-legacy-algorithms" title="CZ-101 Legacy Algorithms" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:0;font-weight:semibold"><span class="aside-link-text block">CZ-101 Legacy Algorithms</span></a></li><li><a href="#cz-saw" title="CZ Saw" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:12px;font-weight:semibold"><span class="aside-link-text block">CZ Saw</span></a></li><li><a href="#cz-square" title="CZ Square" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:12px;font-weight:semibold"><span class="aside-link-text block">CZ Square</span></a></li><li><a href="#cz-pulse" title="CZ Pulse" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:12px;font-weight:semibold"><span class="aside-link-text block">CZ Pulse</span></a></li><li><a href="#cz-double-sine" title="CZ Double Sine" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:12px;font-weight:semibold"><span class="aside-link-text block">CZ Double Sine</span></a></li><li><a href="#cz-saw-pulse" title="CZ Saw Pulse" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:12px;font-weight:semibold"><span class="aside-link-text block">CZ Saw Pulse</span></a></li><li><a href="#cz-reso-1--3" title="CZ Reso 1 – 3" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:12px;font-weight:semibold"><span class="aside-link-text block">CZ Reso 1 – 3</span></a></li><li><a href="#cosmo-original-warp-algorithms" title="Cosmo Original Warp Algorithms" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:0;font-weight:semibold"><span class="aside-link-text block">Cosmo Original Warp Algorithms</span></a></li><li><a href="#bend" title="Bend" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:12px;font-weight:semibold"><span class="aside-link-text block">Bend</span></a></li><li><a href="#sync" title="Sync" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:12px;font-weight:semibold"><span class="aside-link-text block">Sync</span></a></li><li><a href="#pinch" title="Pinch" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:12px;font-weight:semibold"><span class="aside-link-text block">Pinch</span></a></li><li><a href="#fold" title="Fold" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:12px;font-weight:semibold"><span class="aside-link-text block">Fold</span></a></li><li><a href="#skew" title="Skew" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:12px;font-weight:semibold"><span class="aside-link-text block">Skew</span></a></li><li><a href="#twist" title="Twist" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:12px;font-weight:semibold"><span class="aside-link-text block">Twist</span></a></li><li><a href="#clip" title="Clip" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:12px;font-weight:semibold"><span class="aside-link-text block">Clip</span></a></li><li><a href="#ripple" title="Ripple" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:12px;font-weight:semibold"><span class="aside-link-text block">Ripple</span></a></li><li><a href="#mirror" title="Mirror" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:12px;font-weight:semibold"><span class="aside-link-text block">Mirror</span></a></li><li><a href="#karpunk" title="Karpunk" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:12px;font-weight:semibold"><span class="aside-link-text block">Karpunk</span></a></li><li><a href="#fof-formant" title="FOF (Formant)" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:12px;font-weight:semibold"><span class="aside-link-text block">FOF (Formant)</span></a></li><li><a href="#terrain" title="Terrain" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:12px;font-weight:semibold"><span class="aside-link-text block">Terrain</span></a></li><li><a href="#stutter" title="Stutter" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:12px;font-weight:semibold"><span class="aside-link-text block">Stutter</span></a></li><li><a href="#cheby-chebyshev" title="Cheby (Chebyshev)" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:12px;font-weight:semibold"><span class="aside-link-text block">Cheby (Chebyshev)</span></a></li><li><a href="#algorithm-quick-reference" title="Algorithm Quick Reference" class="aside-link transition-all duration-300 hover:text-text-1 text-text-2 block" style="margin-left:0;font-weight:semibold"><span class="aside-link-text block">Algorithm Quick Reference</span></a></li></ul></nav></div></div></div></div></div></div></section></div>
+    <div id="search-container"></div>
+  </body>
+</html>
