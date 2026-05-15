@@ -86,7 +86,7 @@ jobs:
         shell: bash
 
       - name: Run unit tests
-        run: bun --filter @cosmo/cz-explorer test:unit
+        run: bun --filter @cosmo/cosmo-pd101 test:unit
         shell: bash
 
   browser-tests:
@@ -109,7 +109,7 @@ jobs:
         shell: bash
 
       - name: Run browser tests
-        run: bun --filter @cosmo/cz-explorer test:browser
+        run: bun --filter @cosmo/cosmo-pd101 test:browser
         shell: bash
 
   cosmo-pd101-lib:

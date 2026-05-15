@@ -98,4 +98,4 @@ The Web App targets **60 FPS** audio rendering. You can monitor CPU usage via th
 
 > **Tip:** If you hear audio glitches, try reducing the polyphony or closing other browser tabs. The AudioWorklet runs off the main thread but shares system resources.
 
-Next: [Desktop App →](desktop-app.md)
+Next: [DAW Plugin →](plugin.md)

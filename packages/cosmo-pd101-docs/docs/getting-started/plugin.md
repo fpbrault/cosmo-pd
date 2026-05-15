@@ -75,4 +75,4 @@ The plugin stores presets within its own state. To save/load:
 
 See [Troubleshooting](troubleshooting.md) for more help.
 
-Previous: [Desktop App](desktop-app.md) | Next: [Overview →](overview.md)
+Previous: [Web App](web-app.md) | Next: [Overview →](overview.md)

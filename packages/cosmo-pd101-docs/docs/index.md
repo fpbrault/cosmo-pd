@@ -44,7 +44,7 @@ description: A phase distortion synthesizer inspired by the Casio CZ-101.
 - **Modulation matrix** — 7 sources routing to 195 destinations
 - **6-slot FX chain** — 17 effect types including chorus, delay, reverb, phaser, distortion, bitcrusher, and lo-fi
 - **8-voice polyphony** rendered in SIMD-4 batches for maximum performance
-- Runs as a **Web Audio AudioWorklet** (Wasm), **Tauri desktop app**, or **VST3/CLAP/AUv2 plugin**
+- Runs as a **Web Audio AudioWorklet** (Wasm) or **VST3/CLAP/AUv2 plugin**
 
 ## Project Links
 

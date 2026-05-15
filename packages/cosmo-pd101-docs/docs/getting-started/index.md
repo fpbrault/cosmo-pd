@@ -5,7 +5,7 @@ description: Get up and running with the Cosmo PD-101 in minutes.
 
 # Getting Started
 
-Welcome to the **Cosmo PD-101** — a phase distortion synthesizer inspired by the legendary Casio CZ-101, extended with modern synthesis capabilities and available as a web app, desktop app, and DAW plugin.
+Welcome to the **Cosmo PD-101** — a phase distortion synthesizer inspired by the legendary Casio CZ-101, extended with modern synthesis capabilities and available as a web app and DAW plugin.
 
 <!-- IMAGE_PLACEHOLDER: Screenshot of the full SynthRenderer UI with all panels visible -->
 
@@ -20,16 +20,6 @@ Welcome to the **Cosmo PD-101** — a phase distortion synthesizer inspired by t
 ### Web App (Fastest Way)
 
 Open [cosmo-pd.app](https://fpbrault.github.io/cosmo-pd/) — you'll see the full synth interface. Press keys on your computer keyboard (**A S D F G H J K** for a C major scale) or connect a MIDI controller.
-
-### Desktop App
-
-Download the latest release for your platform:
-
-| Platform | Download |
-|----------|----------|
-| macOS | `cosmo-pd101-standalone-x64.dmg` |
-| Windows | `cosmo-pd101-standalone-setup.exe` |
-| Linux | `cosmo-pd101-standalone.AppImage` |
 
 ### DAW Plugin
 
@@ -63,4 +53,4 @@ The synth UI is organized into sections:
 | A S D F G H J K | Play notes (C major scale: C4–C5) |
 | Space | Toggle sustain pedal |
 
-Next: [Web App →](web-app.md) | [Desktop App →](desktop-app.md) | [DAW Plugin →](plugin.md)
+Next: [Web App →](web-app.md) | [DAW Plugin →](plugin.md)

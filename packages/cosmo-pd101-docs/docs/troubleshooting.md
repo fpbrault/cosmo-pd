@@ -51,14 +51,6 @@ description: Common issues and how to resolve them.
 | Parameter automation not recording | Automation lane not armed | Right-click the parameter → "Show Automation" in your DAW |
 | High latency | Buffer size too large | Reduce DAW buffer size (128–256 samples recommended) |
 
-## Desktop App Specific
-
-| Symptom | Cause | Solution |
-|---------|-------|----------|
-| App won't launch | Missing dependencies | Ensure latest OS updates are installed |
-| No audio output | Wrong audio device selected | Go to Settings → Audio → select the correct output device |
-| Gatekeeper warning (macOS) | Unsigned app | Right-click → Open to bypass; or go to System Settings → Privacy & Security |
-
 ## Factory Reset
 
 If things get stuck, you can reset to factory defaults:
