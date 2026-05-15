@@ -5,7 +5,7 @@ description: Complete reference of all 25 phase distortion algorithms.
 
 # Algorithms
 
-The Cosmo PD-101 offers **25 phase distortion algorithms** — 9 inherited from the Casio CZ-101 and 16 original warp algorithms. Each algorithm is a different mathematical function that reshapes the oscillator's phase before it reads the base waveform, producing a unique timbral character.
+The Cosmo PD-101 offers **25 phase distortion algorithms** — 8 inherited from the Casio CZ-101 and 16 original warp algorithms. Each algorithm is a different mathematical function that reshapes the oscillator's phase before it reads the base waveform, producing a unique timbral character.
 
 <!-- IMAGE_PLACEHOLDER: Screenshot of the algorithm picker/grid in the Phase Lines panel -->
 

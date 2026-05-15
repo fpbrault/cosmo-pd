@@ -22,13 +22,12 @@ Each line operates independently with its own:
 
 ## Line Select
 
-The **Line Select** control (labeled `L1`, `L2`, `L1+L2`, `L1+L1'`, `L1+L2'`) determines which outputs are summed to the final audio:
+The **Line Select** control (labeled `L1`, `L2`, `L1+L1'`, `L1+L2'`) determines which outputs are summed to the final audio:
 
 | Setting | What It Does |
 |---------|-------------|
 | **L1** | Only Line 1 audible |
 | **L2** | Only Line 2 audible |
-| **L1 + L2** | Both lines summed |
 | **L1 + L1'** | Line 1 + Line 1 with its secondary (blended) algorithm |
 | **L1 + L2'** | Line 1 + Line 2 with its secondary (blended) algorithm |
 

@@ -29,7 +29,7 @@ MIDI Input (Note, Pitch Bend, Mod Wheel, Aftertouch, Velocity)
                ▼
 ┌─────────────────────────────────┐
 │  Modulation Matrix              │
-│  (7 sources → 51 destinations)  │
+│  (7 sources → 195 destinations)  │
 │  Each route has adjustable depth│
 └──────────────┬──────────────────┘
                │
@@ -65,7 +65,7 @@ MIDI Input (Note, Pitch Bend, Mod Wheel, Aftertouch, Velocity)
 │  ┌───────────────────────────────────┐           │
 │  │         Line Mixer                │           │
 │  │  Normal / Ring Mod / Noise /      │           │
-│  │  L1 / L1+L1' / L1+L2 / L1+L2'    │           │
+│  │  L1 / L2 / L1+L1' / L1+L2'    │           │
 │  └───────────────┬───────────────────┘           │
 └──────────────────┼──────────────────────────────┘
                    │
@@ -103,7 +103,7 @@ The PD-101 has **two independent oscillator lines**, each with:
 - Independent **pitch, detune, and octave** settings
 - A **base waveform** selector (sine, cosine, triangle, saw, square)
 
-The two lines can be **mixed** using the Line Select control: L1 only, L2 only, L1+L2 (additive), L1+L1' (with L1's secondary algorithm), or L1+L2' (with L2's secondary algorithm).
+The two lines can be **mixed** using the Line Select control: L1 only, L2 only, L1+L1' (with L1's secondary algorithm), or L1+L2' (with L2's secondary algorithm).
 
 ## Key Concepts
 
@@ -114,7 +114,7 @@ The two lines can be **mixed** using the Line Select control: L1 only, L2 only, 
 | **DCA** | Digitally Controlled Amplifier — controls the amplitude |
 | **Algorithm** | The mathematical function that warps the phase |
 | **Envelope** | An 8-step step-function controlling a parameter over time |
-| **Modulation Matrix** | Routes any of 7 sources to any of 51 destinations |
+| **Modulation Matrix** | Routes any of 7 sources to any of 195 destinations |
 | **FX Chain** | 6 serial effect slots processing the final audio |
 
 ## Performance Specs

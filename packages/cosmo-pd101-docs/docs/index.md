@@ -38,10 +38,10 @@ description: A phase distortion synthesizer inspired by the Casio CZ-101.
 
 **Cosmo PD-101** extends the Casio CZ-101's phase distortion engine with:
 
-- **16 original warp algorithms** — bend, sync, pinch, fold, skew, twist, clip, ripple, mirror, karpunk, fof, terrain, stutter, cheby, plus the classic 9 CZ-101 waveforms
+- **16 original warp algorithms** — bend, sync, pinch, fold, skew, twist, clip, ripple, mirror, karpunk, fof, terrain, stutter, cheby, plus the classic 8 CZ-101 algorithms
 - **Dual oscillator lines** with independent envelopes, detune, and algorithm blending
 - **8-step step-function envelopes** — pitch, waveshape, and amplitude per line
-- **Modulation matrix** — 7 sources routing to 51 destinations
+- **Modulation matrix** — 7 sources routing to 195 destinations
 - **6-slot FX chain** — 17 effect types including chorus, delay, reverb, phaser, distortion, bitcrusher, and lo-fi
 - **8-voice polyphony** rendered in SIMD-4 batches for maximum performance
 - Runs as a **Web Audio AudioWorklet** (Wasm), **Tauri desktop app**, or **VST3/CLAP/AUv2 plugin**

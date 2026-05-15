@@ -43,7 +43,7 @@ The synth UI is organized into sections:
 |---------|-----------------|
 | **Phase Lines** | Two oscillator lines — each with its own algorithm, envelope, and pitch settings |
 | **Envelope Editor** | 8-step step-function envelopes for pitch, waveshape, and amplitude per line |
-| **Modulation Matrix** | Route 7 modulation sources to 51 destinations with adjustable depth |
+| **Modulation Matrix** | Route 7 modulation sources to 195 destinations with adjustable depth |
 | **FX Chain** | 6 serial effect slots with 17 effect types |
 | **Global Controls** | Polyphony, portamento, volume, pitch bend range, velocity sensitivity |
 

@@ -72,7 +72,7 @@ Select algorithms, set pitch/detune, control blend amount for each of the two os
 Visually edit three 8-step envelopes per line (DCO pitch, DCW waveshape, DCA amplitude). Click steps to adjust level and rate.
 
 ### Modulation Matrix (Right Panel)
-A 7×51 grid to route modulation sources (LFOs, envelopes, velocity, etc.) to any parameter.
+A 7×195 grid to route modulation sources (LFOs, envelopes, velocity, etc.) to any parameter.
 
 ### FX Chain (Bottom Panel)
 Six serial effect slots. Click each slot to choose from 17 effect algorithms.

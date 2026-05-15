@@ -34,23 +34,22 @@ Portamento creates a **pitch slide** between consecutive notes.
 
 | Parameter | Range | Default | Description |
 |-----------|-------|---------|-------------|
-| Mode | Rate / Time | Rate | How the portamento speed is defined (see below) |
-| Rate | 0 – 10 | 0 | In Rate mode: speed in semitones per second |
-| Time | 0 – 5000 ms | 0 | In Time mode: duration of the pitch slide |
-| Range | 0 – 12 semitones | 12 | Maximum interval over which portamento applies |
+| Mode | Rate / Time | Time | How the portamento speed is defined (see below) |
+| Rate | 0 – 99 | 85 | In Rate mode: higher = faster glide |
+| Time | 0.01 – 1.00 s | 0.10 s | In Time mode: duration of the pitch slide |
 
 ### Rate Mode vs. Time Mode
 
-- **Rate mode**: The portamento takes a fixed amount of time **per semitone**. A slide of 5 semitones at rate 2 takes 2.5 seconds regardless of interval.
-- **Time mode**: The entire slide takes a fixed duration. A 5-semitone slide and a 2-semitone slide both complete in the same time.
+- **Rate mode**: Exponential pitch glide controlled by the Rate parameter (0–99). Higher values = faster glide. The slide time depends on the interval and the Rate value.
+- **Time mode**: The entire slide takes a fixed duration specified by the Time parameter. A 5-semitone slide and a 2-semitone slide both complete in the same time.
 
 ### Portamento Tips
 
 | Sound | Suggested Setting |
 |-------|-------------------|
-| Subtle legato | Rate = 0.5, Range = 2 |
-| Synth slide (bass) | Time = 300 ms, Range = 12 |
-| Whistle-like lead | Rate = 5, Range = 7 |
+| Subtle legato | Rate = 20 |
+| Synth slide (bass) | Time = 0.30 s |
+| Whistle-like lead | Rate = 60 |
 
 > **Note:** Portamento only applies when legato mode is enabled, or when the new note starts while the previous key is still held.
 
@@ -119,9 +118,8 @@ A **performance overlay** (toggle via the Perf button) shows real-time stats:
 | Polyphony | Poly 8 / Mono | No |
 | Legato | On / Off | No |
 | Portamento Mode | Rate | Time | No |
-| Portamento Rate | 0 – 10 (semitones/sec) | Yes |
-| Portamento Time | 0 – 5000 ms | Yes |
-| Portamento Range | 0 – 12 semitones | Yes |
+| Portamento Rate | 0 – 99 | Yes |
+| Portamento Time | 0.01 – 1.00 s | Yes |
 | Volume | 0 – 100% | Yes |
 | Pitch Bend Range | ±1 – ±24 st | No |
 | Velocity Curve | 0 – 100% | No |

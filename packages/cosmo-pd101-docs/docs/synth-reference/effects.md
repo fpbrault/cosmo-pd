@@ -97,8 +97,8 @@ A dedicated vibrato effect with selectable waveform shapes.
 
 | Parameter | Range | Default | Description |
 |-----------|-------|---------|-------------|
-| Wave | Sine / Tri / Saw / Inv Saw / Sq | Tri | Modulation shape |
-| Rate | 1 – 200 Hz | 55 Hz | Vibrato speed |
+| Wave | Tri / Saw / Inv Saw / Sq | Tri | Modulation shape |
+| Rate | 1 – 200 | 55 | Vibrato rate (effective frequency = value × 0.1 Hz) |
 | Depth | 0 – 50 | 8 | Intensity |
 | Delay | 0 – 5000 ms | 120 ms | Time before vibrato starts |
 
