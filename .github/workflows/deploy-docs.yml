@@ -1,0 +1,68 @@
+name: Deploy Docs to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/cosmo-pd101-docs/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install & Build
+        working-directory: packages/cosmo-pd101-docs
+        run: |
+          bun install
+          bun run build
+
+      - name: Push to gh-pages
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          pages_dir="$RUNNER_TEMP/gh-pages"
+          rm -rf "$pages_dir"
+          git fetch origin gh-pages --depth=1 || true
+
+          if git show-ref --quiet refs/remotes/origin/gh-pages; then
+            git worktree add --detach "$pages_dir" origin/gh-pages
+          else
+            mkdir -p "$pages_dir"
+            cd "$pages_dir"
+            git init
+            git checkout -b gh-pages
+            cd "$GITHUB_WORKSPACE"
+          fi
+
+          # Remove old docs and copy new build into cosmo-pd/ directory
+          rm -rf "$pages_dir/cosmo-pd"
+          mkdir -p "$pages_dir/cosmo-pd"
+          cp -r packages/cosmo-pd101-docs/dist/. "$pages_dir/cosmo-pd/"
+
+          cd "$pages_dir"
+          git add cosmo-pd
+          if git diff --cached --quiet; then
+            echo "No docs changes to publish"
+          else
+            git commit -m "chore(docs): update cosmo-pd manual"
+            git push origin HEAD:gh-pages
+          fi

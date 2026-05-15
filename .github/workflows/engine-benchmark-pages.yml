@@ -10,6 +10,10 @@ permissions:
   contents: write
   deployments: write
 
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
+
 jobs:
   benchmark-pages:
     name: Publish engine benchmark charts
