@@ -19,7 +19,7 @@ Welcome to the **Cosmo PD-101** — a phase distortion synthesizer inspired by t
 
 ### Web App (Fastest Way)
 
-Open [cosmo-pd.app](https://fpbrault.github.io/cosmo-pd/) — you'll see the full synth interface. Press keys on your computer keyboard (A–L for white keys, W–Y and 2–4 for black keys) or connect a MIDI controller.
+Open [cosmo-pd.app](https://fpbrault.github.io/cosmo-pd/) — you'll see the full synth interface. Press keys on your computer keyboard (**A S D F G H J K** for a C major scale) or connect a MIDI controller.
 
 ### Desktop App
 
@@ -60,10 +60,7 @@ The synth UI is organized into sections:
 
 | Key | Action |
 |-----|--------|
-| A–L | Play notes (white keys) |
-| W, E, R, T, 2, 3, 4 | Play notes (black keys / sharps) |
-| Z | Octave down |
-| X | Octave up |
-| Space | Panic (stop all voices) |
+| A S D F G H J K | Play notes (C major scale: C4–C5) |
+| Space | Toggle sustain pedal |
 
 Next: [Web App →](web-app.md) | [Desktop App →](desktop-app.md) | [DAW Plugin →](plugin.md)

@@ -21,7 +21,7 @@ description: Common issues and how to resolve them.
 | Symptom | Cause | Solution |
 |---------|-------|----------|
 | Controller not detected | Browser MIDI permission not granted | Look for a browser permission prompt and allow MIDI access |
-| No response to keyboard | Wrong key mapping | Computer keyboard maps to C3–C4 (QWERTY A–L). Press **Z**/**X** to shift octaves |
+| No response to keyboard | Wrong key mapping | Computer keyboard maps to C4–C5 using **A S D F G H J K** (diatonic C major scale). |
 | MIDI device disconnects | USB issue or driver | Reconnect the device, restart the app |
 | Aftertouch not working | Controller doesn't support it | Not all MIDI controllers send channel pressure. Check your controller's spec |
 

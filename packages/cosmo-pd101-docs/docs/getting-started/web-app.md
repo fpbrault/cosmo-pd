@@ -34,27 +34,20 @@ The synth renders via an **AudioWorklet** — an off-main-thread audio processor
 
 ## Playing with the Computer Keyboard
 
-The default virtual keyboard spans octaves **C3–C5** (mapped to keys A–L on a QWERTY layout):
+The default virtual keyboard maps to a **diatonic C major scale** using letter keys on a QWERTY layout:
 
 | Keyboard Key | Note | MIDI Note |
 |-------------|------|-----------|
-| Z | C3 | 48 |
-| S | C#3 | 49 |
-| X | D3 | 50 |
-| D | D#3 | 51 |
-| C | E3 | 52 |
-| V | F3 | 53 |
-| G | F#3 | 54 |
-| B | G3 | 55 |
-| H | G#3 | 56 |
-| N | A3 | 57 |
-| J | A#3 | 58 |
-| M | B3 | 59 |
-| , | C4 | 60 |
-| L | C#4 | 61 |
-| ; | D4 | 62 |
+| A | C4 | 60 |
+| S | D4 | 62 |
+| D | E4 | 64 |
+| F | F4 | 65 |
+| G | G4 | 67 |
+| H | A4 | 69 |
+| J | B4 | 71 |
+| K | C5 | 72 |
 
-Use **Z** and **X** to shift octaves up or down.
+Press **Space** to toggle the sustain pedal on/off.
 
 ## Using a Physical MIDI Controller
 
