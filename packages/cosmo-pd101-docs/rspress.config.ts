@@ -1,7 +1,7 @@
 import { defineConfig } from "rspress/config";
 
 export default defineConfig({
-	base: "/cosmo-pd/",
+	base: "/",
 	title: "Cosmo PD-101 Manual",
 	description:
 		"User manual for the Cosmo PD-101 — a phase distortion synthesizer inspired by the Casio CZ-101.",
