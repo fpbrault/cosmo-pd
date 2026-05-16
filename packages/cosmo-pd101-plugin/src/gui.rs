@@ -1,38 +1,16 @@
 //! GUI — WebView-based editor for the Cosmo PD-101 plugin.
 //!
-//! Implements nih-plug's [`Editor`] trait, embedding a wry [`WebView`] as a
+//! Implements truce's [`Editor`] trait, embedding a wry [`WebView`] as a
 //! child of the host's parent window (NSView on macOS).
-//!
-//! # Debugging the plugin UI
-//!
-//! ## Log file
-//! All Rust-side events are written to `/tmp/cosmo-plugin.log`.
-//! Tail it while the DAW is running:
-//!
-//! ```sh
-//! tail -f /tmp/cosmo-plugin.log
-//! ```
-//!
-//! ## Safari Web Inspector (WebKit DevTools)
-//! Build with the `debug_gui` feature to enable the WebKit inspector:
-//!
-//! ```sh
-//! cargo build -p cosmo-pd101-plugin --features debug_gui
-//! bun run plugin:build:debug
-//! ```
 
 #![cfg_attr(target_os = "macos", allow(deprecated, unexpected_cfgs))]
 
-use std::any::Any;
-use std::panic::{self, AssertUnwindSafe};
-use std::sync::atomic::AtomicU64;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 use arc_swap::ArcSwap;
-use nih_plug::prelude::*;
-#[cfg(target_os = "macos")]
-use std::sync::atomic::{AtomicBool, Ordering};
-
+use truce_core::editor::{Editor, RawWindowHandle};
+use truce_core::PluginContext;
 #[cfg(target_os = "macos")]
 use wry::WebViewBuilder;
 
@@ -41,7 +19,7 @@ use cocoa;
 #[cfg(target_os = "macos")]
 use objc;
 
-#[cfg(target_os = "macos")]
+use crate::CzPluginParams;
 use crate::handle_ipc_invoke;
 use crate::{append_log, PerformanceCountersHandle, ScopeBuffer, UiInputQueue};
 use cosmo_synth_engine::params::SynthParams;
@@ -53,15 +31,6 @@ pub const DEFAULT_HEIGHT: u32 = 864;
 
 // ─── Per-format URL scheme ───────────────────────────────────────────────────
 
-/// Custom URL scheme used by this binary's WKWebView. Each plugin format
-/// (VST3, CLAP, AUv2) is compiled with a distinct WRY_CUSTOM_SCHEME value so
-/// that loading two different formats in the same host process does not cause
-/// a WKWebView scheme-handler registration collision (the second format would
-/// otherwise load `about:blank` because its scheme is already claimed by the
-/// first format's loaded dylib).
-///
-/// Set via the `WRY_CUSTOM_SCHEME` environment variable at `cargo build` time.
-/// Falls back to `"cz"` for plain `cargo check` / development builds.
 const WEBVIEW_SCHEME: &str = match option_env!("WRY_CUSTOM_SCHEME") {
     Some(s) => s,
     None => "cz",
@@ -69,70 +38,15 @@ const WEBVIEW_SCHEME: &str = match option_env!("WRY_CUSTOM_SCHEME") {
 
 // ─── WebViewContainer ────────────────────────────────────────────────────────
 
-/// Holds the live WebView instance; cleared on Drop to destroy the view.
 struct WebViewContainer {
     webview: Option<wry::WebView>,
 }
 
-// SAFETY: wry::WebView wraps a WKWebView that should only be accessed on the
-// main thread.  In nih-plug, the GUI always runs on the main/UI thread, so
-// we never move the WebView across threads in practice.
 unsafe impl Send for WebViewContainer {}
 unsafe impl Sync for WebViewContainer {}
 
-// ─── CzEditorHandle ──────────────────────────────────────────────────────────
-
-/// Returned from [`CzEditor::spawn`]; destroys the WebView when dropped.
-///
-/// `_temp_window` holds an optional offscreen NSWindow created to satisfy
-/// wry's `ns_view.window().unwrap()` call during `build_as_child`. It is
-/// returned from `build_webview_from_ns_view` and stored here so it is dropped
-/// AFTER the WebView is destroyed (webview_state cleared in Drop). By then the
-/// host has moved ns_view into its own window, so the temp window's content
-/// view has zero subviews and close() completes instantly.
-struct CzEditorHandle {
-    webview_state: Arc<Mutex<WebViewContainer>>,
-    #[cfg(target_os = "macos")]
-    _temp_window: Option<TempWindow>,
-}
-
-impl Drop for CzEditorHandle {
-    fn drop(&mut self) {
-        // Destroy the WebView FIRST, then _temp_window drops automatically.
-        // On macOS, WKWebView teardown must happen on the main thread.
-        if let Ok(mut c) = self.webview_state.lock() {
-            #[cfg(target_os = "macos")]
-            {
-                if !is_main_thread() {
-                    if let Some(wv) = c.webview.take() {
-                        // Avoid crashing in hosts that drop editor handles from a
-                        // non-main thread during processing.
-                        std::mem::forget(wv);
-                        append_log(
-                            "CzEditorHandle dropped off main thread; leaked WebView to avoid crash",
-                        );
-                    }
-                } else {
-                    c.webview = None;
-                    append_log("CzEditorHandle dropped; WebView destroyed on main thread");
-                }
-            }
-
-            #[cfg(not(target_os = "macos"))]
-            {
-                c.webview = None;
-                append_log("CzEditorHandle dropped; WebView destroyed");
-            }
-        }
-    }
-}
-
-// SAFETY: Same reasoning as WebViewContainer.
-unsafe impl Send for CzEditorHandle {}
-
 // ─── CzEditor ────────────────────────────────────────────────────────────────
 
-/// nih-plug `Editor` implementation for the Cosmo PD-101 plugin.
 pub struct CzEditor {
     synth_params: Arc<ArcSwap<SynthParams>>,
     rt_synth_params: Arc<ArcSwap<SynthParams>>,
@@ -141,10 +55,10 @@ pub struct CzEditor {
     ui_input_queue: UiInputQueue,
     performance_counters: PerformanceCountersHandle,
     host_scale_factor: Arc<Mutex<f32>>,
-
-    /// Shared handle to the live WebView (if any).  Held by both the Editor
-    /// and the spawned handle so param pushes can reach the view.
     webview_state: Arc<Mutex<WebViewContainer>>,
+    params: Arc<CzPluginParams>,
+    #[cfg(target_os = "macos")]
+    _temp_window: Option<TempWindow>,
 }
 
 impl CzEditor {
@@ -155,6 +69,7 @@ impl CzEditor {
         scope_buffer: ScopeBuffer,
         ui_input_queue: UiInputQueue,
         performance_counters: PerformanceCountersHandle,
+        params: Arc<CzPluginParams>,
     ) -> Self {
         Self {
             synth_params,
@@ -165,16 +80,17 @@ impl CzEditor {
             performance_counters,
             host_scale_factor: Arc::new(Mutex::new(1.0)),
             webview_state: Arc::new(Mutex::new(WebViewContainer { webview: None })),
+            params,
+            #[cfg(target_os = "macos")]
+            _temp_window: None,
         }
     }
 
-    /// Push the current parameter snapshot to the WebView's `__czOnParams` hook.
     fn push_params(&self) {
         let sp = self.synth_params.load();
         let Ok(json_str) = serde_json::to_string(sp.as_ref()) else {
             return;
         };
-        // Escape the JSON string for embedding inside a JS string literal.
         let escaped = json_str.replace('\\', "\\\\").replace('"', "\\\"");
         let script = format!(
             "if(typeof window.__czOnParams === 'function') {{ window.__czOnParams(\"{escaped}\"); }}"
@@ -186,8 +102,6 @@ impl CzEditor {
         }
     }
 
-    /// Keep the plugin UI visually aligned with the web/wasm version by
-    /// cancelling host DPI scaling inside the WebView.
     fn apply_scale_normalization(&self) {
         let factor = self
             .host_scale_factor
@@ -208,152 +122,107 @@ impl CzEditor {
     }
 }
 
-fn panic_payload_message(payload: Box<dyn Any + Send>) -> String {
-    if let Some(message) = payload.downcast_ref::<&str>() {
-        return (*message).to_string();
-    }
-
-    if let Some(message) = payload.downcast_ref::<String>() {
-        return message.clone();
-    }
-
-    "unknown panic payload".to_string()
-}
-
 impl Editor for CzEditor {
-    fn spawn(
-        &self,
-        _parent: ParentWindowHandle,
-        _context: Arc<dyn GuiContext>,
-    ) -> Box<dyn Any + Send> {
-        append_log("CzEditor::spawn");
-
-        let fallback_handle = || {
-            Box::new(CzEditorHandle {
-                webview_state: self.webview_state.clone(),
-                #[cfg(target_os = "macos")]
-                _temp_window: None,
-            }) as Box<dyn Any + Send>
-        };
-
-        let spawn_result = panic::catch_unwind(AssertUnwindSafe(|| {
-            #[cfg(not(target_os = "macos"))]
-            {
-                append_log("CzEditor::spawn: non-macOS build; returning no-op editor handle");
-                return fallback_handle();
-            }
-
-            #[cfg(target_os = "macos")]
-            {
-                if !is_main_thread() {
-                    append_log(
-                        "CzEditor::spawn called off main thread; skipping WebView creation to avoid Cocoa crash",
-                    );
-                    return fallback_handle();
-                }
-
-                let ns_view = match _parent {
-                    ParentWindowHandle::AppKitNsView(ptr) => ptr,
-                    other => {
-                        append_log(&format!(
-                            "CzEditor::spawn: unsupported window handle: {other:?}"
-                        ));
-                        return fallback_handle();
-                    }
-                };
-
-                let Some(resource_dir) = plugin_resource_dir() else {
-                    append_log(
-                        "CzEditor::spawn: resource dir unavailable; skipping WebView creation",
-                    );
-                    return fallback_handle();
-                };
-                append_log(&format!("resource_dir: {}", resource_dir.display()));
-
-                let synth_params = self.synth_params.clone();
-                let rt_synth_params = self.rt_synth_params.clone();
-                let synth_params_version = self.synth_params_version.clone();
-                let scope_buffer = self.scope_buffer.clone();
-                let ui_input_queue = self.ui_input_queue.clone();
-                let performance_counters = self.performance_counters.clone();
-
-                let webview_state_for_ipc = self.webview_state.clone();
-
-                let (webview, temp_window) = unsafe {
-                    build_webview_from_ns_view(
-                        ns_view,
-                        resource_dir,
-                        synth_params,
-                        rt_synth_params,
-                        synth_params_version,
-                        scope_buffer,
-                        ui_input_queue,
-                        performance_counters,
-                        webview_state_for_ipc.clone(),
-                    )
-                };
-
-                if let Ok(mut container) = self.webview_state.lock() {
-                    container.webview = webview;
-                }
-
-                self.push_params();
-                self.apply_scale_normalization();
-
-                Box::new(CzEditorHandle {
-                    webview_state: self.webview_state.clone(),
-                    #[cfg(target_os = "macos")]
-                    _temp_window: temp_window,
-                }) as Box<dyn Any + Send>
-            }
-        }));
-
-        match spawn_result {
-            Ok(handle) => handle,
-            Err(payload) => {
-                append_log(&format!(
-                    "CzEditor::spawn panicked; returning no-op editor handle: {}",
-                    panic_payload_message(payload)
-                ));
-                fallback_handle()
-            }
-        }
-    }
-
     fn size(&self) -> (u32, u32) {
         (DEFAULT_WIDTH, DEFAULT_HEIGHT)
     }
 
-    fn set_scale_factor(&self, _factor: f32) -> bool {
-        true
+    fn open(
+        &mut self,
+        parent: RawWindowHandle,
+        _context: PluginContext,
+    ) {
+        append_log("CzEditor::open");
+
+        #[cfg(not(target_os = "macos"))]
+        {
+            append_log("CzEditor::open: non-macOS build; no-op");
+            return;
+        }
+
+        #[cfg(target_os = "macos")]
+        {
+            if !is_main_thread() {
+                append_log(
+                    "CzEditor::open called off main thread; skipping WebView creation",
+                );
+                return;
+            }
+
+            let ns_view = match parent {
+                RawWindowHandle::AppKit(ptr) => ptr,
+                _ => {
+                    append_log("CzEditor::open: unsupported window handle");
+                    return;
+                }
+            };
+
+            let Some(resource_dir) = plugin_resource_dir() else {
+                append_log(
+                    "CzEditor::open: resource dir unavailable; skipping WebView creation",
+                );
+                return;
+            };
+            append_log(&format!("resource_dir: {}", resource_dir.display()));
+
+            let synth_params = self.synth_params.clone();
+            let rt_synth_params = self.rt_synth_params.clone();
+            let synth_params_version = self.synth_params_version.clone();
+            let scope_buffer = self.scope_buffer.clone();
+            let ui_input_queue = self.ui_input_queue.clone();
+            let performance_counters = self.performance_counters.clone();
+            let params = self.params.clone();
+            let webview_state_for_ipc = self.webview_state.clone();
+
+            let (webview, temp_window) = unsafe {
+                build_webview_from_ns_view(
+                    ns_view,
+                    resource_dir,
+                    synth_params,
+                    rt_synth_params,
+                    synth_params_version,
+                    scope_buffer,
+                    ui_input_queue,
+                    performance_counters,
+                    params,
+                    webview_state_for_ipc.clone(),
+                )
+            };
+
+            if let Ok(mut container) = self.webview_state.lock() {
+                container.webview = webview;
+            }
+
+            self._temp_window = temp_window;
+            self.push_params();
+            self.apply_scale_normalization();
+        }
     }
 
-    fn param_value_changed(&self, _id: &str, _normalized_value: f32) {
-        // Avoid touching WebKit from parameter callbacks: hosts may call these
-        // while processing and not on the main thread.
+    fn close(&mut self) {
+        append_log("CzEditor::close");
+        if let Ok(mut container) = self.webview_state.lock() {
+            container.webview = None;
+        }
+        self._temp_window = None;
     }
 
-    fn param_modulation_changed(&self, _id: &str, _modulation_offset: f32) {}
+    fn idle(&mut self) {
+        self.push_params();
+    }
 
-    fn param_values_changed(&self) {
-        // Avoid touching WebKit from parameter callbacks: hosts may call these
-        // while processing and not on the main thread.
+    fn set_scale_factor(&mut self, factor: f64) {
+        if let Ok(mut f) = self.host_scale_factor.lock() {
+            *f = factor as f32;
+        }
     }
 }
 
 // ─── Temporary NSWindow helper ───────────────────────────────────────────────
 
-/// Offscreen NSWindow that gives an unparented NSView a window so that
-/// wry 0.47's `ns_view.window().unwrap()` succeeds during `build_as_child`.
-///
-/// The TempWindow is returned to the caller (spawn) and stored in
-/// CzEditorHandle. It is dropped AFTER the WebView is destroyed so that
-/// WKWebView's internal cleanup does not hang waiting for window-association
-/// work. By then ns_view has been reparented into the host's real window, so
-/// the temp window's content view has zero subviews and close() is instant.
 #[cfg(target_os = "macos")]
 struct TempWindow {
-    window: cocoa::base::id, // NSWindow *
+    window: cocoa::base::id,
 }
 
 #[cfg(target_os = "macos")]
@@ -374,16 +243,12 @@ impl Drop for TempWindow {
             let subviews: cocoa::base::id = msg_send![content, subviews];
             let count: usize = msg_send![subviews, count];
             append_log(&format!("[TempWindow] drop: {count} subviews"));
-            // Don't manually removeFromSuperview — the host already moved ns_view
-            // to its own window via addSubview:, which auto-removes from us.
-            // Just close and release the now-empty temp window.
             let () = msg_send![self.window, close];
         }
         append_log("[TempWindow] temporary offscreen NSWindow released");
     }
 }
 
-// SAFETY: TempWindow wraps a raw ObjC pointer; we only touch it on the main thread.
 #[cfg(target_os = "macos")]
 unsafe impl Send for TempWindow {}
 
@@ -431,8 +296,6 @@ unsafe fn wait_for_parent_window(
     parent_has_window(ns_view)
 }
 
-/// If `ns_view` has no window, create an offscreen NSWindow, attach the view,
-/// and return a `TempWindow` guard. Returns `None` if view already has a window.
 #[cfg(target_os = "macos")]
 unsafe fn ensure_parent_has_window(ns_view: *mut std::ffi::c_void) -> Option<TempWindow> {
     use cocoa::base::{id, nil};
@@ -489,11 +352,6 @@ unsafe fn ensure_parent_has_window(ns_view: *mut std::ffi::c_void) -> Option<Tem
 
 // ─── WebView builder ─────────────────────────────────────────────────────────
 
-/// Build a [`wry::WebView`] embedded as a child of `ns_view`.
-///
-/// # Safety
-/// `ns_view` must be a valid `NSView *` on the current macOS main thread, and
-/// must remain valid for the lifetime of the returned WebView.
 #[cfg(target_os = "macos")]
 unsafe fn build_webview_from_ns_view(
     ns_view: *mut std::ffi::c_void,
@@ -504,6 +362,7 @@ unsafe fn build_webview_from_ns_view(
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
     performance_counters: PerformanceCountersHandle,
+    params: Arc<CzPluginParams>,
     webview_state: Arc<Mutex<WebViewContainer>>,
 ) -> (Option<wry::WebView>, Option<TempWindow>) {
     use core::ptr::NonNull;
@@ -513,8 +372,6 @@ unsafe fn build_webview_from_ns_view(
     };
     use wry::dpi;
 
-    // Wrapper that presents the host NSView as an rwh 0.6 window handle target
-    // (wry 0.47 requires rwh 0.6 HasWindowHandle).
     struct NsViewWrapper(pub *mut std::ffi::c_void);
     impl HasWindowHandle for NsViewWrapper {
         fn window_handle(&self) -> Result<WindowHandle<'_>, HandleError> {
@@ -529,17 +386,11 @@ unsafe fn build_webview_from_ns_view(
             Ok(unsafe { DisplayHandle::borrow_raw(RawDisplayHandle::AppKit(handle)) })
         }
     }
-    // SAFETY: We only access the NsViewWrapper from the main thread in the plugin.
     unsafe impl Send for NsViewWrapper {}
     unsafe impl Sync for NsViewWrapper {}
 
     let parent = NsViewWrapper(ns_view);
 
-    // wry 0.47 calls ns_view.window().unwrap() unconditionally to get the
-    // backing scale factor. Some AU hosts (pluginval) haven't inserted ns_view
-    // into a window yet. Attach it to an offscreen NSWindow temporarily.
-    // The TempWindow is returned to spawn() to be stored in CzEditorHandle —
-    // it is dropped AFTER the WebView is destroyed (see CzEditorHandle docs).
     let temp_window = ensure_parent_has_window(ns_view);
 
     let webview_state_for_response = webview_state.clone();
@@ -557,7 +408,6 @@ unsafe fn build_webview_from_ns_view(
             let body = request.body();
             let params_repush_done = params_repush_done.clone();
 
-            // All IPC messages are RPC: { id, method, args }
             if let Ok(msg) = serde_json::from_str::<serde_json::Value>(body) {
                 let id = msg.get("id").cloned().unwrap_or(serde_json::Value::Null);
                 let method = msg.get("method").and_then(|m| m.as_str()).unwrap_or("");
@@ -576,6 +426,7 @@ unsafe fn build_webview_from_ns_view(
                     &scope_buffer,
                     &ui_input_queue,
                     &performance_counters,
+                    &params,
                 );
 
                 let response = match result {
@@ -591,8 +442,6 @@ unsafe fn build_webview_from_ns_view(
                     if let Some(wv) = &container.webview {
                         let _ = wv.evaluate_script(&script);
 
-                        // Re-push params once from the UI thread after the first
-                        // inbound IPC message to avoid startup races without flooding.
                         if params_repush_done
                             .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
                             .is_ok()
@@ -684,10 +533,6 @@ fn mime_from_path(path: &std::path::Path) -> &'static str {
 
 // ─── Plugin resource directory ────────────────────────────────────────────────
 
-/// Returns the directory that contains the plugin's web UI assets.
-///
-/// - **`debug_gui` feature**: `<repo_root>/dist/`
-/// - **Release**: `<bundle>/Contents/Resources/ui/`
 pub fn plugin_resource_dir() -> Option<std::path::PathBuf> {
     #[cfg(feature = "debug_gui")]
     {
@@ -725,7 +570,6 @@ pub fn plugin_resource_dir() -> Option<std::path::PathBuf> {
     }
 }
 
-/// Returns the path to this dylib using `dladdr` on macOS.
 #[cfg(not(feature = "debug_gui"))]
 fn dylib_path() -> Option<std::path::PathBuf> {
     use std::ffi::CStr;
@@ -758,7 +602,6 @@ fn dylib_path() -> Option<std::path::PathBuf> {
     Some(std::path::PathBuf::from(s))
 }
 
-/// Returns `true` when the WebKit inspector should be enabled.
 #[allow(dead_code)]
 pub fn inspector_enabled() -> bool {
     cfg!(feature = "debug_gui")

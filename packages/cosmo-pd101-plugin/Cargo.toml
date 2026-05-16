@@ -2,26 +2,27 @@
 name = "cosmo-pd101-plugin"
 version = "0.1.0"
 edition = "2021"
-description = "Cosmo PD-101 synthesizer VST3/CLAP plugin"
+description = "Cosmo PD-101 synthesizer VST3/CLAP/AUv3 plugin"
 
 [lib]
-crate-type = ["staticlib", "cdylib"]
+crate-type = ["cdylib", "rlib", "staticlib"]
 
 [features]
-default = []
-vst3 = ["nih_plug/vst3"]
-# Reserved for check-cfg compatibility with objc/cocoa macro internals.
+default = ["clap", "vst3"]
+clap = ["truce/clap"]
+vst3 = ["truce/vst3"]
 cargo-clippy = []
-# Enable Safari Web Inspector on the plugin WebView and load UI from the repo's
-# dist/ directory (instead of the bundle).  Build with:
-#   cargo build -p cosmo-pd101-plugin --features debug_gui
 debug_gui = []
 
 [dependencies]
 arc-swap = "1.7"
+clap-sys = "0.5"
 cosmo-synth-engine = { path = "../cosmo-synth-engine" }
 crossbeam-queue = "0.3"
-nih_plug = { workspace = true, features = ["vst3"] }
+truce = { workspace = true, features = ["clap", "vst3"] }
+truce-core = { workspace = true }
+truce-clap = { workspace = true }
+truce-vst3 = { workspace = true }
 wry = { workspace = true }
 raw-window-handle = { workspace = true }
 rwh_06 = { package = "raw-window-handle", version = "0.6" }

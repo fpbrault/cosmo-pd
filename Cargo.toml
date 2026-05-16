@@ -25,7 +25,10 @@ syn = { version = "2", features = [
 ] }
 quote = "1"
 proc-macro2 = "1"
-nih_plug = { package = "nih_plug", git = "https://github.com/robbert-vdh/nih-plug.git" }
+truce = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
+truce-core = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
+truce-clap = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
+truce-vst3 = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
 wry = "0.47"
 raw-window-handle = "0.5"
 
