@@ -65,7 +65,7 @@ const preview = spawn(
 	"bun",
 	[
 		"--filter",
-		"@cosmo/cz-explorer",
+		"@cosmo/cosmo-pd101-plugin-webview",
 		"preview",
 		"--host",
 		options.host,

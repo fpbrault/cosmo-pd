@@ -51,20 +51,6 @@ Current development status and planned features.
 
 ---
 
-## Preset Manager App (`cz-explorer`)
-
-| Feature | Status |
-|---------|--------|
-| Preset library browser | ✅ |
-| Setlist management | ✅ |
-| Synth backups | ✅ |
-| IndexedDB local storage | ✅ |
-| Postgres/Neon sync | ✅ |
-| Tauri 2 desktop wrapper | ✅ |
-| MIDI import (SysEx) | ✅ |
-
----
-
 ## Plugin (`cosmo-pd101-plugin`)
 
 | Feature | Status |

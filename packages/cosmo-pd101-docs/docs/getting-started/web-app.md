@@ -1,13 +1,13 @@
 ---
 title: Web App
-description: Using the Cosmo PD-101 in the browser via cz-explorer.
+description: Using the Cosmo PD-101 in the browser via the webview.
 ---
 
 # Web App
 
 The Cosmo PD-101 runs in the browser as a **Web Audio AudioWorklet** module compiled from Rust (via Wasm). This means near-native audio performance with no plugins required.
 
-<!-- IMAGE_PLACEHOLDER: Screenshot of cz-explorer with the synth panel visible and preset library sidebar -->
+<!-- IMAGE_PLACEHOLDER: Screenshot of the web app with the synth panel visible and preset library sidebar -->
 
 ## Opening the Web App
 
@@ -20,7 +20,7 @@ https://fpbrault.github.io/cosmo-pd/
 Or run locally:
 
 ```bash
-cd packages/cz-explorer
+cd packages/cosmo-pd101-plugin
 bun run dev
 ```
 
@@ -51,7 +51,7 @@ Press **Space** to toggle the sustain pedal on/off.
 
 ## Using a Physical MIDI Controller
 
-The cz-explorer web app supports MIDI via the **Web MIDI API**. Most modern browsers (Chrome, Edge) support this natively:
+The web app supports MIDI via the **Web MIDI API**. Most modern browsers (Chrome, Edge) support this natively:
 
 1. Open the browser's MIDI permission prompt (usually appears automatically, or navigate to browser settings).
 2. Grant permission to your MIDI device.

@@ -7,6 +7,7 @@
 		"dev:test": "VITE_TEST_HARNESS=1 VITE_DEBUG_PANEL=1 bunx --bun vite",
 		"prebuild": "bun --filter @cosmo/cosmo-pd101 build:lib",
 		"build": "bunx --bun vite build",
+		"preview": "vite preview",
 		"test": "bunx vitest --project unit --run",
 		"test:unit": "bunx vitest --project unit --run",
 		"test:unit:watch": "bunx vitest --project unit",

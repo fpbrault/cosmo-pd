@@ -6,10 +6,10 @@
 	"ignorePaths": [
 		"**/dist/**",
 		"vendor/**",
-		"public/**",
-		"packages/cz-explorer/public/cosmo-synth-engine-wasm/**",
-		".opencode/**"
+ 		"public/**",
+ 		".opencode/**"
 	],
+
 	"schedule": ["before 5am on Monday"],
 	"timezone": "America/Montreal",
 	"labels": ["dependencies"],

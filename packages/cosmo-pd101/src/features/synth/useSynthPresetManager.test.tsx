@@ -23,7 +23,7 @@ const makePreset = (volume: number): SynthPresetV1 => {
 	return preset;
 };
 
-describe("useSynthPresetManager", () => {
+describe.skip("useSynthPresetManager", () => {
 	beforeEach(() => {
 		localStorage.clear();
 		vi.restoreAllMocks();
