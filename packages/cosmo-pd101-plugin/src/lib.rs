@@ -95,7 +95,7 @@ impl Default for ScopeFrame {
             samples: vec![0.0; SCOPE_CAPACITY],
             cursor: 0,
             sample_rate: 44100.0,
-            hz: 0.0,
+            hz: 220.0,
         }
     }
 }
@@ -662,6 +662,7 @@ pub struct CzPlugin {
     performance_counters: PerformanceCountersHandle,
     /// Tracks whether DAW param values changed since last process() call.
     daw_params_dirty: bool,
+    last_scope_hz: f32,
 }
 
 impl CzPlugin {
@@ -683,6 +684,7 @@ impl CzPlugin {
             mono_output: Vec::new(),
             performance_counters: Arc::new(PerformanceCounters::default()),
             daw_params_dirty: true,
+            last_scope_hz: 220.0,
         }
     }
 
@@ -844,13 +846,19 @@ impl PluginLogic for CzPlugin {
                 .map(|start| start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64)
                 .unwrap_or(0);
 
-            let hz = proc
+            let raw_hz = proc
                 .voices
                 .iter()
                 .filter(|v| !v.is_silent && v.note.is_some())
                 .map(|v| v.current_freq)
                 .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
                 .unwrap_or(0.0);
+            let hz = if raw_hz > 0.0 {
+                self.last_scope_hz = raw_hz;
+                raw_hz
+            } else {
+                self.last_scope_hz
+            };
             let active_voice_count = if monitor_enabled {
                 proc.voices.iter().filter(|voice| !voice.is_silent).count()
             } else {

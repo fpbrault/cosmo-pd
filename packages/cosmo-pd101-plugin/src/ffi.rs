@@ -263,7 +263,7 @@ impl ScopeRing {
             samples: Vec::with_capacity(SCOPE_CAPACITY),
             cursor: 0,
             sample_rate,
-            hz: 0.0,
+            hz: 220.0,
         }
     }
 
@@ -326,6 +326,7 @@ pub struct CosmoPd101FfiEngine {
     scratch: Vec<f32>,
     max_frames: usize,
     scope: ScopeRing,
+    last_scope_hz: f32,
 }
 
 impl CosmoPd101FfiEngine {
@@ -335,6 +336,7 @@ impl CosmoPd101FfiEngine {
             scratch: vec![0.0; max_frames],
             max_frames,
             scope: ScopeRing::new(sample_rate),
+            last_scope_hz: 220.0,
         }
     }
 
@@ -358,7 +360,13 @@ impl CosmoPd101FfiEngine {
             block.fill(0.0);
             self.processor.process(block);
         }
-        let hz = self.active_hz();
+        let raw_hz = self.active_hz();
+        let hz = if raw_hz > 0.0 {
+            self.last_scope_hz = raw_hz;
+            raw_hz
+        } else {
+            self.last_scope_hz
+        };
         self.scope
             .push_block(&self.scratch[..frames], self.processor.sample_rate, hz);
         CosmoPd101FfiStatus::Ok
