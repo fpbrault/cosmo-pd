@@ -38,43 +38,43 @@ describe("i18nAlgo", () => {
 	});
 
 	it("useAlgoName returns translated name or fallback", () => {
-		const { result: res1 } = renderHook(() => useAlgoName("algo1"));
-		expect(res1.current).toBe("algos.algo1.name");
+		const { result: res1 } = renderHook(() => useAlgoName("saw"));
+		expect(res1.current).toBe("algos.saw.name");
 
 		mockT.mockReturnValueOnce("Translated Algo");
-		const { result: res2 } = renderHook(() => useAlgoName("algo1"));
+		const { result: res2 } = renderHook(() => useAlgoName("saw"));
 		expect(res2.current).toBe("Translated Algo");
 	});
 
 	it("useAlgoBehavior returns translated behavior or default", () => {
-		const { result: res1 } = renderHook(() => useAlgoBehavior("algo1"));
-		expect(res1.current).toBe("algos.algo1.behavior");
+		const { result: res1 } = renderHook(() => useAlgoBehavior("saw"));
+		expect(res1.current).toBe("algos.saw.behavior");
 
 		mockT.mockReturnValueOnce("");
-		const { result: res2 } = renderHook(() => useAlgoBehavior("algo1"));
+		const { result: res2 } = renderHook(() => useAlgoBehavior("saw"));
 		expect(res2.current).toBe(
 			"Phase-distortion algorithm with a distinct harmonic shaping profile.",
 		);
 	});
 
 	it("useAlgoControl returns translated label and description", () => {
-		const { result } = renderHook(() => useAlgoControl("algo1", "ctrl1"));
+		const { result } = renderHook(() => useAlgoControl("saw", "ctrl1"));
 		expect(result.current).toEqual({
-			label: "algos.algo1.controls.ctrl1.label",
-			description: "algos.algo1.controls.ctrl1.description",
+			label: "algos.saw.controls.ctrl1.label",
+			description: "algos.saw.controls.ctrl1.description",
 		});
 	});
 
 	it("useAlgoControlOptionLabel returns translated option label", () => {
 		const { result } = renderHook(() =>
-			useAlgoControlOptionLabel("algo1", "ctrl1", "opt1"),
+			useAlgoControlOptionLabel("saw", "ctrl1", "opt1"),
 		);
-		expect(result.current).toBe("algos.algo1.controls.ctrl1.options.opt1");
+		expect(result.current).toBe("algos.saw.controls.ctrl1.options.opt1");
 	});
 
 	it("getAlgoControlOptionLabel returns translated option label using global i18n", () => {
-		const result = getAlgoControlOptionLabel("algo1", "ctrl1", "opt1");
-		expect(result).toBe("algos.algo1.controls.ctrl1.options.opt1");
+		const result = getAlgoControlOptionLabel("saw", "ctrl1", "opt1");
+		expect(result).toBe("algos.saw.controls.ctrl1.options.opt1");
 		expect(mockT).toHaveBeenCalled();
 	});
 
@@ -120,6 +120,6 @@ describe("i18nAlgo", () => {
 
 	it("getEngineReadoutFormat returns readout format from metadata", () => {
 		const result = getEngineReadoutFormat("volume");
-		expect(typeof result).toBe("object" || "undefined");
+		expect(typeof result).toBe("object");
 	});
 });

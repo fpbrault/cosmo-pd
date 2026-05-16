@@ -2,6 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
 import * as presetStorage from "@/lib/synth/presetStorage";
+import type { FrontendPresetV1 } from "@/lib/synth/presetTypes";
 import { useSynthPresetManager } from "./useSynthPresetManager";
 
 vi.mock("@/lib/synth/presetStorage", () => ({
@@ -24,17 +25,16 @@ vi.mock("@/lib/synth/presetStorage", () => ({
 }));
 
 describe("useSynthPresetManager", () => {
-	const mockBuiltinPresets: Record<
-		string,
-		{ data: SynthPresetV1; favorite: boolean; category: string; tags: string[] }
-	> = {
+	const mockBuiltinPresets: Record<string, FrontendPresetV1> = {
 		"Preset 1": {
+			name: "Preset 1",
 			data: {} as SynthPresetV1,
 			favorite: false,
 			category: "Synth",
 			tags: [],
 		},
 		"Preset 2": {
+			name: "Preset 2",
 			data: {} as SynthPresetV1,
 			favorite: true,
 			category: "Bass",

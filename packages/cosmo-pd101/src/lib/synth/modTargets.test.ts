@@ -16,7 +16,8 @@ describe("modTargets", () => {
 		});
 
 		it("returns false for unregistered targets", () => {
-			expect(isRegisteredModDestination("unknown")).toBe(false);
+			// biome-ignore: lint/suspicious/noExplicitAny
+			expect(isRegisteredModDestination("unknown" as any)).toBe(false);
 		});
 	});
 
@@ -27,7 +28,8 @@ describe("modTargets", () => {
 		});
 
 		it("returns target ID for unregistered targets", () => {
-			expect(getModDestinationLabel("unknown")).toBe("unknown");
+			// biome-ignore: lint/suspicious/noExplicitAny
+			expect(getModDestinationLabel("unknown" as any)).toBe("unknown");
 		});
 	});
 
