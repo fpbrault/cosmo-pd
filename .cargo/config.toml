@@ -1,14 +1,4 @@
-# Cargo workspace configuration
 # Enable SIMD for WebAssembly targets only
-
-[env]
-# Per-plugin ObjC prefix + URL scheme for wry's WKWebView.
-# All plugin formats share one prefix/scheme since they ship as
-# separate binaries loaded by the host. Change this value when
-# forking the project to avoid collisions with other wry-based
-# plugins in the same DAW process.
-WRY_OBJC_CLASS_PREFIX = "CosmoPd101"
-WRY_CUSTOM_SCHEME = "cz"
 
 [target.wasm32-unknown-unknown]
 rustflags = ["-C", "target-feature=+simd128"]

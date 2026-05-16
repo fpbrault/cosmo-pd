@@ -5,7 +5,7 @@
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, Once};
 use std::time::Instant;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -49,6 +49,30 @@ pub fn append_log(message: &str) {
 
 pub fn plugin_log_path() -> &'static str {
     PLUGIN_LOG_PATH
+}
+
+static PANIC_HOOK_INIT: Once = Once::new();
+
+pub fn init_panic_hook() {
+    PANIC_HOOK_INIT.call_once(|| {
+        let default_hook = std::panic::take_hook();
+        std::panic::set_hook(Box::new(move |info| {
+            let payload = info.payload();
+            let msg = if let Some(s) = payload.downcast_ref::<&str>() {
+                s.to_string()
+            } else if let Some(s) = payload.downcast_ref::<String>() {
+                s.clone()
+            } else {
+                format!("{:?}", payload)
+            };
+            let location = info.location()
+                .map(|l| format!(" at {}:{}", l.file(), l.line()))
+                .unwrap_or_default();
+            append_log(&format!("PANIC: {}{}", msg, location));
+            eprintln!("[cosmo-pd101] PANIC: {}{}", msg, location);
+            default_hook(info);
+        }));
+    });
 }
 
 // =============================================================================
@@ -641,6 +665,7 @@ pub struct CzPlugin {
 
 impl CzPlugin {
     fn new(params: Arc<CzPluginParams>) -> Self {
+        init_panic_hook();
         let default_params = SynthParams::default();
         let default_rt_params = build_rt_synth_params(&default_params);
         Self {

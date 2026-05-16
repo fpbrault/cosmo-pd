@@ -13,7 +13,7 @@
 		"dev": "bun --filter @cosmo/cosmo-pd101-site dev",
 		"build:engine": "bun --filter @cosmo/cosmo-synth-engine build:wasm",
 		"build:plugin": "bun --filter @cosmo/cosmo-pd101-plugin build",
-		"build:plugin:release": "bun run ./scripts/build-plugin.mjs --release --auv2 --vst3 --clap",
+		"build:plugin:release": "bun --filter @cosmo/cosmo-pd101-plugin build",
 		"build:plugin:auv3": "bun --filter @cosmo/cosmo-pd101-plugin-auv3 build",
 		"build:plugin:auv3:ios": "bun --filter @cosmo/cosmo-pd101-plugin-auv3 build:ios",
 		"bundle:plugin:auv3": "bun --filter cosmo-pd101-plugin-auv3 bundle",

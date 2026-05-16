@@ -38,16 +38,12 @@ pub const DEFAULT_HEIGHT: u32 = 864;
 static WEBVIEW_SCHEME_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 fn get_instance_scheme() -> String {
-    let base = match option_env!("WRY_CUSTOM_SCHEME") {
-        Some(s) => s,
-        None => "cz",
-    };
     let id = WEBVIEW_SCHEME_COUNTER.fetch_add(1, Ordering::SeqCst);
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|duration| duration.as_nanos())
         .unwrap_or_default();
-    format!("{}-{}-{}-{}", base, std::process::id(), id, now)
+    format!("cz-{}-{}-{}", std::process::id(), id, now)
 }
 
 #[cfg(target_os = "macos")]
@@ -94,7 +90,31 @@ pub struct CzEditor {
     standalone_window: Option<StandaloneWindow>,
 }
 
+impl Drop for CzEditor {
+    fn drop(&mut self) {
+        append_log("CzEditor::drop");
+        self.destroy_webview();
+    }
+}
+
 impl CzEditor {
+    fn destroy_webview(&mut self) {
+        append_log("CzEditor::destroy_webview");
+        if let Ok(mut container) = self.webview_state.lock() {
+            container.webview = None;
+        }
+        self.pending_parent_ns_view = None;
+        self.clear_standalone_window();
+    }
+
+    #[cfg(target_os = "macos")]
+    fn clear_standalone_window(&mut self) {
+        self.standalone_window = None;
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    fn clear_standalone_window(&mut self) {} 
+
     pub(crate) fn new(
         synth_params: Arc<ArcSwap<SynthParams>>,
         rt_synth_params: Arc<ArcSwap<SynthParams>>,
@@ -270,11 +290,7 @@ impl Editor for CzEditor {
 
     fn close(&mut self) {
         append_log("CzEditor::close");
-        if let Ok(mut container) = self.webview_state.lock() {
-            container.webview = None;
-        }
-        self.pending_parent_ns_view = None;
-        self.standalone_window = None;
+        self.destroy_webview();
     }
 
     fn idle(&mut self) {
@@ -308,7 +324,7 @@ impl Editor for CzEditor {
 
 #[cfg(target_os = "macos")]
 fn screenshot_webview() -> Option<(Vec<u8>, u32, u32)> {
-    use objc2_foundation::run_on_main;
+    use dispatch2::run_on_main;
     run_on_main(|_mtm| screenshot_webview_impl())
 }
 
@@ -321,7 +337,7 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
 
     use block2::RcBlock;
     use objc2::rc::{Allocated, Retained};
-    use objc2::{class, msg_send, msg_send_id, ClassType};
+    use objc2::{class, msg_send, msg_send_id, AnyThread};
     use objc2_app_kit::{
         NSBackingStoreType, NSBitmapImageRep, NSImage, NSWindow, NSWindowStyleMask,
     };
@@ -349,7 +365,7 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
             alloc,
             initWithContentRect: frame
             styleMask: NSWindowStyleMask::Borderless
-            backing: NSBackingStoreType::NSBackingStoreBuffered
+            backing: NSBackingStoreType::Buffered
             defer: false
         ]
     };
@@ -587,7 +603,10 @@ unsafe impl Sync for StandaloneWindow {}
 
 impl Drop for StandaloneWindow {
     fn drop(&mut self) {
-        // Let the window be closed
+        use objc::{msg_send, sel, sel_impl};
+        unsafe {
+            let _: () = msg_send![self.window, close];
+        }
     }
 }
 
@@ -611,12 +630,6 @@ unsafe fn parent_has_window(ns_view: *mut std::ffi::c_void) -> bool {
 }
 
 // ─── WebView builder ─────────────────────────────────────────────────────────
-
-fn is_standalone_mode() -> bool {
-    std::env::current_exe()
-        .map(|p| p.to_string_lossy().contains("standalone"))
-        .unwrap_or(false)
-}
 
 #[cfg(target_os = "macos")]
 unsafe fn build_webview_from_ns_view(
@@ -730,7 +743,9 @@ unsafe fn build_webview_from_ns_view(
         })
         .with_devtools(inspector_enabled());
 
-    // Decide: embed in the baseview view (DAW) or create a standalone window (standalone)
+    // Embed the WebView as a child of the host's NSView.
+    // If the NSView is not yet associated with a window (e.g. baseview
+    // window still being set up), defer — idle() will retry.
     if parent_has_window(ns_view) {
         append_log("parent NSView has a real window — embedding as child");
         let parent = NsViewWrapper(ns_view);
@@ -747,39 +762,8 @@ unsafe fn build_webview_from_ns_view(
                 (None, None)
             }
         }
-    } else if is_standalone_mode() {
-        append_log("parent NSView has no window and we are in standalone mode — creating standalone WebView window");
-        let standalone_window = StandaloneWindow::new();
-        let content_view = standalone_window.content_view();
-
-        // Wait a bit for the window to be associated with the content view
-        let mut attempts = 0;
-        while !parent_has_window(content_view) && attempts < 10 {
-            std::thread::sleep(std::time::Duration::from_millis(10));
-            attempts += 1;
-        }
-
-        if !parent_has_window(content_view) {
-            append_log("ERROR: StandaloneWindow content view still has no window");
-            return (None, Some(standalone_window));
-        }
-
-        let parent = NsViewWrapper(content_view);
-        let webview = builder
-            .with_url(&format!("{}://localhost/", scheme))
-            .build_as_child(&parent);
-        match webview {
-            Ok(webview) => {
-                append_log("build_as_child returned — standalone WebView created");
-                (Some(webview), Some(standalone_window))
-            }
-            Err(e) => {
-                append_log(&format!("failed to create standalone WebView: {e}"));
-                (None, Some(standalone_window))
-            }
-        }
     } else {
-        append_log("parent NSView has no window and we are NOT in standalone mode — skipping WebView creation to avoid crash");
+        append_log("parent NSView has no window yet — deferring WebView creation (idle() will retry)");
         (None, None)
     }
 }
