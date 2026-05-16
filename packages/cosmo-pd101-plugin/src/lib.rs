@@ -847,7 +847,7 @@ impl PluginLogic for CzPlugin {
             let hz = proc
                 .voices
                 .iter()
-                .filter(|v| !v.is_silent && !v.is_releasing && v.note.is_some())
+                .filter(|v| !v.is_silent && v.note.is_some())
                 .map(|v| v.current_freq)
                 .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
                 .unwrap_or(0.0);

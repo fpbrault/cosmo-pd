@@ -533,6 +533,44 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
 #[cfg(target_os = "macos")]
 struct StandaloneWindow {
     window: cocoa::base::id,
+    delegate: cocoa::base::id,
+}
+
+#[cfg(target_os = "macos")]
+fn terminate_delegate_class() -> &'static objc::runtime::Class {
+    use objc::{class, declare::ClassDecl, msg_send, sel, sel_impl};
+    static INIT: std::sync::Once = std::sync::Once::new();
+    static mut CLASS: Option<&'static objc::runtime::Class> = None;
+    INIT.call_once(|| {
+        let mut decl = ClassDecl::new("StandaloneWindowCloseDelegate", class!(NSObject))
+            .expect("failed to create delegate class");
+        extern "C" fn window_should_close(
+            _this: &objc::runtime::Object,
+            _cmd: objc::runtime::Sel,
+            _sender: *mut objc::runtime::Object,
+        ) -> objc::runtime::BOOL {
+            unsafe {
+                let app: *mut objc::runtime::Object =
+                    msg_send![class!(NSApplication), sharedApplication];
+                let nil_sender: *mut objc::runtime::Object = std::ptr::null_mut();
+                let _: () = msg_send![app, terminate: nil_sender];
+            }
+            objc::runtime::YES
+        }
+        unsafe {
+            decl.add_method(
+                sel!(windowShouldClose:),
+                window_should_close
+                    as extern "C" fn(
+                        &objc::runtime::Object,
+                        objc::runtime::Sel,
+                        *mut objc::runtime::Object,
+                    ) -> objc::runtime::BOOL,
+            );
+            CLASS = Some(decl.register());
+        }
+    });
+    unsafe { CLASS.unwrap() }
 }
 
 #[cfg(target_os = "macos")]
@@ -585,7 +623,33 @@ impl StandaloneWindow {
             let _: () = msg_send![window, setTitle: title];
             let _: () = msg_send![window, makeKeyAndOrderFront: nil];
         }
-        StandaloneWindow { window }
+
+        let delegate = unsafe {
+            let cls = terminate_delegate_class();
+            let d: id = msg_send![cls, new];
+            let _: () = msg_send![window, setDelegate: d];
+            d
+        };
+
+        let standalone = StandaloneWindow { window, delegate };
+        standalone.hide_other_windows();
+        standalone
+    }
+
+    pub fn hide_other_windows(&self) {
+        use cocoa::base::nil as cocoa_nil;
+        use objc::{class, msg_send, sel, sel_impl};
+        unsafe {
+            let app: cocoa::base::id = msg_send![class!(NSApplication), sharedApplication];
+            let windows: cocoa::base::id = msg_send![app, windows];
+            let count: usize = msg_send![windows, count];
+            for i in 0..count {
+                let w: cocoa::base::id = msg_send![windows, objectAtIndex: i];
+                if w != self.window && w != cocoa_nil {
+                    let _: () = msg_send![w, orderOut: cocoa_nil];
+                }
+            }
+        }
     }
 
     pub fn content_view(&self) -> *mut std::ffi::c_void {
@@ -627,6 +691,13 @@ unsafe fn parent_has_window(ns_view: *mut std::ffi::c_void) -> bool {
     let ns_view = ns_view as id;
     let existing_window: id = msg_send![ns_view, window];
     existing_window != nil
+}
+
+#[cfg(target_os = "macos")]
+fn is_standalone_mode() -> bool {
+    std::env::current_exe()
+        .map(|p| p.to_string_lossy().contains("standalone"))
+        .unwrap_or(false)
 }
 
 // ─── WebView builder ─────────────────────────────────────────────────────────
@@ -743,10 +814,10 @@ unsafe fn build_webview_from_ns_view(
         })
         .with_devtools(inspector_enabled());
 
-    // Embed the WebView as a child of the host's NSView.
-    // If the NSView is not yet associated with a window (e.g. baseview
-    // window still being set up), defer — idle() will retry.
+    // ── DECISION POINT ──
     if parent_has_window(ns_view) {
+        // BRANCH A: ns_view already has an associated NSWindow (DAW mode).
+        // Embed webview as child of the existing window.
         append_log("parent NSView has a real window — embedding as child");
         let parent = NsViewWrapper(ns_view);
         let webview = builder
@@ -762,10 +833,38 @@ unsafe fn build_webview_from_ns_view(
                 (None, None)
             }
         }
+    } else if is_standalone_mode() {
+        // BRANCH B: standalone binary — create our own window (hides baseview
+        // window from truce-standalone) and embed the WebView inside it.
+        append_log("standalone mode — creating standalone NSWindow");
+        let standalone_window = StandaloneWindow::new();
+        let content_view = standalone_window.content_view();
+
+        // Allow a tick for the NSView/NSWindow association to settle.
+        let mut attempts = 0;
+        while !parent_has_window(content_view) && attempts < 10 {
+            std::thread::sleep(std::time::Duration::from_millis(10));
+            attempts += 1;
+        }
+
+        let parent = NsViewWrapper(content_view);
+        let webview = builder
+            .with_url(&format!("{}://localhost/", scheme))
+            .build_as_child(&parent);
+        match webview {
+            Ok(webview) => {
+                append_log("standalone: WebView created in own window");
+                (Some(webview), Some(standalone_window))
+            }
+            Err(e) => {
+                append_log(&format!("standalone: failed to create plugin WebView: {e}"));
+                (None, None)
+            }
+        }
     } else {
-        append_log(
-            "parent NSView has no window yet — deferring WebView creation (idle() will retry)",
-        );
+        // BRANCH C: no window association AND not standalone — defer.
+        // idle() will retry when the host window finishes setting up.
+        append_log("parent NSView has no window — deferring WebView creation (idle() will retry)");
         (None, None)
     }
 }

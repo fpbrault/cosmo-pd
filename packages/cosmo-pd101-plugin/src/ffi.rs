@@ -342,7 +342,7 @@ impl CosmoPd101FfiEngine {
         self.processor
             .voices
             .iter()
-            .filter(|voice| !voice.is_silent && !voice.is_releasing && voice.note.is_some())
+            .filter(|voice| !voice.is_silent && voice.note.is_some())
             .map(|voice| voice.current_freq)
             .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
             .unwrap_or(0.0)

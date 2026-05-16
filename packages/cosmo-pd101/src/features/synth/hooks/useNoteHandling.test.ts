@@ -21,7 +21,8 @@ describe("useNoteHandling", () => {
 	it("sends noteOn event", () => {
 		const { result } = renderHook(() =>
 			useNoteHandling({
-				workletNodeRef: mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
+				workletNodeRef:
+					mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
 				eventSink: mockEventSink,
 			}),
 		);
@@ -42,7 +43,8 @@ describe("useNoteHandling", () => {
 	it("sends noteOff event", () => {
 		const { result } = renderHook(() =>
 			useNoteHandling({
-				workletNodeRef: mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
+				workletNodeRef:
+					mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
 				eventSink: mockEventSink,
 			}),
 		);
@@ -58,7 +60,8 @@ describe("useNoteHandling", () => {
 	it("handles sustain correctly", () => {
 		const { result } = renderHook(() =>
 			useNoteHandling({
-				workletNodeRef: mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
+				workletNodeRef:
+					mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
 				eventSink: mockEventSink,
 			}),
 		);
@@ -83,7 +86,8 @@ describe("useNoteHandling", () => {
 	it("handles panic", () => {
 		const { result } = renderHook(() =>
 			useNoteHandling({
-				workletNodeRef: mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
+				workletNodeRef:
+					mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
 				eventSink: mockEventSink,
 			}),
 		);
@@ -100,7 +104,8 @@ describe("useNoteHandling", () => {
 	it("sends pitch bend, mod wheel, and aftertouch", () => {
 		const { result } = renderHook(() =>
 			useNoteHandling({
-				workletNodeRef: mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
+				workletNodeRef:
+					mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
 				eventSink: mockEventSink,
 			}),
 		);
@@ -125,7 +130,8 @@ describe("useNoteHandling", () => {
 
 		const { result } = renderHook(() =>
 			useNoteHandling({
-				workletNodeRef: mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
+				workletNodeRef:
+					mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
 				eventSink: mockEventSink,
 			}),
 		);
@@ -152,7 +158,8 @@ describe("useNoteHandling", () => {
 		const preventDefaultSpy = vi.fn();
 		renderHook(() =>
 			useNoteHandling({
-				workletNodeRef: mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
+				workletNodeRef:
+					mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
 				eventSink: mockEventSink,
 				keyboardPassthrough: false,
 			}),
@@ -174,7 +181,8 @@ describe("useNoteHandling", () => {
 		const preventDefaultSpy = vi.fn();
 		renderHook(() =>
 			useNoteHandling({
-				workletNodeRef: mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
+				workletNodeRef:
+					mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
 				eventSink: mockEventSink,
 				keyboardPassthrough: true,
 			}),
