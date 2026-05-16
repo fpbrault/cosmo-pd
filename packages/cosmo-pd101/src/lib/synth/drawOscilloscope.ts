@@ -52,6 +52,13 @@ export function drawOscilloscope(
 		return;
 	}
 
+	if (samples.length < 2) {
+		ctx.fillStyle = "#051005";
+		ctx.fillRect(0, 0, drawWidth, drawHeight);
+		drawGrid(ctx, drawWidth, drawHeight, gridColor);
+		return;
+	}
+
 	// Calculate view samples based on pitch and cycles
 	const hz = Math.max(1, pitchHz);
 	const samplesPerCycle = Math.max(8, Math.round(sampleRate / hz));

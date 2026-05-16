@@ -146,9 +146,16 @@ export function useNoteHandling({
 		).__czSetParams;
 		const isPluginRuntime = typeof pluginBridgeRuntime === "function";
 
+		// Standalone mode uses the same nih-plug bridge, but we still want
+		// PC keyboard note entry (A/S/D... + space sustain) since there's
+		// no host DAW to handle keys.
+		const isStandalone =
+			typeof window !== "undefined" &&
+			new URLSearchParams(window.location.search).get("standalone") === "1";
+
 		// In plugin runtime, keep keyboard ownership with the host and disable
 		// the in-webview PC keyboard note mapping (A/S/D... + space sustain).
-		if (isPluginRuntime) {
+		if (isPluginRuntime && !isStandalone) {
 			return;
 		}
 
@@ -157,7 +164,8 @@ export function useNoteHandling({
 			if (!target) return false;
 			if (
 				target.isContentEditable ||
-				target.closest("[contenteditable='true']")
+				(target instanceof Element &&
+					target.closest("[contenteditable='true']"))
 			) {
 				return true;
 			}
