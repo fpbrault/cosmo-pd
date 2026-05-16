@@ -23,6 +23,7 @@ aax = ["dep:truce-aax"]
 standalone = ["dep:truce-standalone"]
 cargo-clippy = []
 debug_gui = []
+shell = ["truce/shell"]
 
 [dependencies]
 arc-swap = "1.7"
@@ -57,3 +58,6 @@ block2 = "0.5"
 
 [dev-dependencies]
 truce-test = { workspace = true }
+
+[profile.shell]
+inherits = "release"

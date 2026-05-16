@@ -344,6 +344,11 @@ pub struct CzPluginParams {
 
     #[param(name = "Mod Env Release", range = "linear(0.0, 10.0)", default = 2.0)]
     pub mod_env_release: FloatParam,
+
+    #[meter]
+    pub meter_l: MeterSlot,
+    #[meter]
+    pub meter_r: MeterSlot,
 }
 
 /// Apply DAW FloatParam values to a SynthParams struct, overwriting matching fields.
@@ -718,7 +723,7 @@ impl PluginLogic for CzPlugin {
         &mut self,
         buffer: &mut AudioBuffer,
         events: &EventList,
-        _context: &mut ProcessContext,
+        context: &mut ProcessContext,
     ) -> ProcessStatus {
         // Handle MIDI events from the host
         for i in 0..events.len() {
@@ -798,7 +803,7 @@ impl PluginLogic for CzPlugin {
             self.daw_params_dirty = false;
         }
 
-        if let Some(ref mut proc) = self.processor {
+        let tail_info = if let Some(ref mut proc) = self.processor {
             let num_samples = buffer.num_samples();
             if num_samples > self.mono_output.len() {
                 for ch in 0..buffer.num_output_channels() {
@@ -844,12 +849,32 @@ impl PluginLogic for CzPlugin {
             self.runtime_mod_sources
                 .store(Arc::new(proc.runtime_mod_sources()));
 
+            let peak = mono_output[..num_samples]
+                .iter()
+                .fold(0.0f32, |a, &s| a.max(s.abs()));
+            context.set_meter(CzPluginParamsParamId::MeterL as u32, peak);
+            context.set_meter(CzPluginParamsParamId::MeterR as u32, peak);
+
             for ch in 0..buffer.num_output_channels() {
                 buffer.output(ch)[..num_samples].copy_from_slice(mono_output);
             }
-        }
 
-        ProcessStatus::Normal
+            let has_tail = proc.voices.iter().any(|v| !v.is_silent);
+            let tail = if has_tail {
+                (proc.sample_rate * 10.0) as u32
+            } else {
+                0
+            };
+            (has_tail, tail)
+        } else {
+            (false, 0)
+        };
+
+        if tail_info.0 {
+            ProcessStatus::Tail(tail_info.1)
+        } else {
+            ProcessStatus::Normal
+        }
     }
 
     fn bus_layouts() -> Vec<BusLayout> {
