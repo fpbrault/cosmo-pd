@@ -1,0 +1,32 @@
+[package]
+name = "truce-au"
+version = "0.41.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.90"
+description = "Audio Unit v3 format wrapper for truce"
+
+# Declaring a cdylib crate-type here (in addition to the default rlib)
+# makes cargo accept this crate's `rustc-link-arg-cdylib=` directives
+# without warning. The real cdylib is produced by the consumer (the
+# plugin's example crate); the empty cdylib cargo builds for this
+# crate is unused. Links cleanly thanks to weak C stubs for
+# `truce_au_init` / `TruceAUFactory` in `shim/au_shim_common.c`, which
+# the consumer's `export_au!`-generated strong definitions override.
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]
+truce-core = { workspace = true }
+truce-params = { workspace = true }
+# Wait-free bounded queue for the host/editor → audio state-load
+# handoff so the audio thread is the only one that ever holds
+# `&mut Plugin`.
+crossbeam-queue = "0.3"
+
+[build-dependencies]
+cc = "1"
+truce-shim-types = { workspace = true }
+
+[lints]
+workspace = true

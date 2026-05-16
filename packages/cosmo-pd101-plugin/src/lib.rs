@@ -12,6 +12,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use arc_swap::ArcSwap;
 use cosmo_synth_engine::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use cosmo_synth_engine::params::SynthParams;
+use cosmo_synth_engine::processor::state::RuntimeModSources;
 use cosmo_synth_engine::processor::{midi_note_to_freq, CosmoProcessor};
 use crossbeam_queue::ArrayQueue;
 use truce::prelude::*;
@@ -104,6 +105,7 @@ type ScopeBuffer = Arc<Mutex<ScopeFrame>>;
 type UiInputQueue = Arc<ArrayQueue<UiInputEvent>>;
 type SharedSynthParams = Arc<ArcSwap<SynthParams>>;
 type SharedRtSynthParams = Arc<ArcSwap<SynthParams>>;
+type SharedRuntimeModSources = Arc<ArcSwap<RuntimeModSources>>;
 type SynthParamsVersion = Arc<AtomicU64>;
 type PerformanceCountersHandle = Arc<PerformanceCounters>;
 
@@ -263,7 +265,6 @@ enum UiInputEvent {
 // DAW-automatable parameters (truce FloatParams)
 // =============================================================================
 
-
 #[derive(Params)]
 pub struct CzPluginParams {
     #[param(name = "Volume", range = "linear(0.0, 1.0)", default = 0.8, unit = "%")]
@@ -375,6 +376,44 @@ fn apply_daw_params(synth: &mut SynthParams, params: &CzPluginParams) {
     synth.mod_env.release = params.mod_env_release.value() as f32;
 }
 
+fn sync_all_daw_params_from_synth(params: &CzPluginParams, synth: &SynthParams) {
+    params.volume.set_value(synth.volume as f64);
+    params.warp_a_amount.set_value(synth.line1.dcw_base as f64);
+    params.warp_b_amount.set_value(synth.line2.dcw_base as f64);
+    params.algo_blend_a.set_value(synth.line1.algo_blend as f64);
+    params.algo_blend_b.set_value(synth.line2.algo_blend as f64);
+    params.line1_level.set_value(synth.line1.dca_base as f64);
+    params.line2_level.set_value(synth.line2.dca_base as f64);
+    params.line1_octave.set_value(synth.line1.octave as f64);
+    params.line2_octave.set_value(synth.line2.octave as f64);
+    params.detune_note.set_value(synth.line2.detune_note as f64);
+    params.detune_fine.set_value(synth.line2.detune_fine as f64);
+    params.velocity_curve.set_value(synth.velocity_curve as f64);
+    params
+        .pitch_bend_range
+        .set_value(synth.pitch_bend_range as f64);
+    params
+        .portamento_rate
+        .set_value(synth.portamento.rate as f64);
+    params
+        .portamento_time
+        .set_value(synth.portamento.time as f64);
+    params.lfo_rate.set_value(synth.lfo.rate as f64);
+    params.lfo_depth.set_value(synth.lfo.depth as f64);
+    params.lfo_offset.set_value(synth.lfo.offset as f64);
+    params.lfo2_rate.set_value(synth.lfo2.rate as f64);
+    params.lfo2_depth.set_value(synth.lfo2.depth as f64);
+    params.lfo2_offset.set_value(synth.lfo2.offset as f64);
+    params.random_rate.set_value(synth.random.rate as f64);
+    params.mod_env_attack.set_value(synth.mod_env.attack as f64);
+    params.mod_env_decay.set_value(synth.mod_env.decay as f64);
+    params
+        .mod_env_sustain
+        .set_value(synth.mod_env.sustain as f64);
+    params
+        .mod_env_release
+        .set_value(synth.mod_env.release as f64);
+}
 
 // =============================================================================
 // IPC dispatch
@@ -385,13 +424,14 @@ fn handle_ipc_invoke(
     args: &[serde_json::Value],
     synth_params: &SharedSynthParams,
     rt_synth_params: &SharedRtSynthParams,
+    runtime_mod_sources: &SharedRuntimeModSources,
     synth_params_version: &SynthParamsVersion,
     scope_buffer: &ScopeBuffer,
     ui_input_queue: &UiInputQueue,
     performance_counters: &PerformanceCountersHandle,
     params: &CzPluginParams,
 ) -> Result<serde_json::Value, String> {
-    if method != "getScopeData" && method != "clientLog" {
+    if method != "getScopeData" && method != "clientLog" && method != "getRuntimeModSources" {
         append_log(&format!("ipc invoke method={method} args={}", args.len()));
     }
 
@@ -515,17 +555,10 @@ fn handle_ipc_invoke(
             let new_params: SynthParams = serde_json::from_str(json_str)
                 .map_err(|e| format!("invalid SynthParams payload: {e}"))?;
 
-            // Update DAW FloatParams for automatable fields.
-            // This lets DAW automation see JS-side changes.
-            if let Ok(obj) = serde_json::from_str::<serde_json::Value>(json_str) {
-                if let Some(map) = obj.as_object() {
-                    for (key, val) in map {
-                        if let Some(v) = val.as_f64() {
-                            sync_daw_param(params, key, v as f32);
-                        }
-                    }
-                }
-            }
+            // Keep truce FloatParams aligned with the nested SynthParams payload so
+            // the next process() block does not overwrite preset state with stale
+            // default automation values.
+            sync_all_daw_params_from_synth(params, &new_params);
 
             let rt_params = build_rt_synth_params(&new_params);
             synth_params.store(Arc::new(new_params));
@@ -537,6 +570,10 @@ fn handle_ipc_invoke(
             let sp = synth_params.load();
             serde_json::to_value(sp.as_ref()).map_err(|e| e.to_string())
         }
+        "getRuntimeModSources" => {
+            let sources = runtime_mod_sources.load();
+            serde_json::to_value(sources.as_ref()).map_err(|e| e.to_string())
+        }
         "getScopeData" => {
             let scope = scope_buffer
                 .lock()
@@ -547,21 +584,15 @@ fn handle_ipc_invoke(
                 );
             }
             let linear = scope.to_linear();
-            let int_samples: Vec<i8> = linear
-                .iter()
-                .map(|&s| (s.clamp(-1.0, 1.0) * 127.0) as i8)
-                .collect();
             Ok(
-                serde_json::json!({ "samples": int_samples, "sampleRate": scope.sample_rate, "hz": scope.hz }),
+                serde_json::json!({ "samples": linear, "sampleRate": scope.sample_rate, "hz": scope.hz }),
             )
         }
         "setPerformanceMonitorEnabled" => {
             let enabled = args
                 .first()
                 .and_then(serde_json::Value::as_bool)
-                .ok_or_else(|| {
-                    "setPerformanceMonitorEnabled expects a boolean".to_string()
-                })?;
+                .ok_or_else(|| "setPerformanceMonitorEnabled expects a boolean".to_string())?;
             performance_counters.set_enabled(enabled);
             Ok(serde_json::Value::Null)
         }
@@ -582,39 +613,6 @@ fn handle_ipc_invoke(
     }
 }
 
-/// Sync a single synth parameter key to the corresponding FloatParam.
-fn sync_daw_param(params: &CzPluginParams, key: &str, value: f32) {
-    match key {
-        "volume" => params.volume.set_value(value as f64),
-        "warpAAmount" => params.warp_a_amount.set_value(value as f64),
-        "warpBAmount" => params.warp_b_amount.set_value(value as f64),
-        "algoBlendA" => params.algo_blend_a.set_value(value as f64),
-        "algoBlendB" => params.algo_blend_b.set_value(value as f64),
-        "line1Level" => params.line1_level.set_value(value as f64),
-        "line2Level" => params.line2_level.set_value(value as f64),
-        "line1Octave" => params.line1_octave.set_value(value as f64),
-        "line2Octave" => params.line2_octave.set_value(value as f64),
-        "line2DetuneNote" => params.detune_note.set_value(value as f64),
-        "line2DetuneFine" => params.detune_fine.set_value(value as f64),
-        "velocityCurve" => params.velocity_curve.set_value(value as f64),
-        "pitchBendRange" => params.pitch_bend_range.set_value(value as f64),
-        "portamentoRate" => params.portamento_rate.set_value(value as f64),
-        "portamentoTime" => params.portamento_time.set_value(value as f64),
-        "lfoRate" => params.lfo_rate.set_value(value as f64),
-        "lfoDepth" => params.lfo_depth.set_value(value as f64),
-        "lfoOffset" => params.lfo_offset.set_value(value as f64),
-        "lfo2Rate" => params.lfo2_rate.set_value(value as f64),
-        "lfo2Depth" => params.lfo2_depth.set_value(value as f64),
-        "lfo2Offset" => params.lfo2_offset.set_value(value as f64),
-        "randomRate" => params.random_rate.set_value(value as f64),
-        "modEnvAttack" => params.mod_env_attack.set_value(value as f64),
-        "modEnvDecay" => params.mod_env_decay.set_value(value as f64),
-        "modEnvSustain" => params.mod_env_sustain.set_value(value as f64),
-        "modEnvRelease" => params.mod_env_release.set_value(value as f64),
-        _ => {}
-    }
-}
-
 // =============================================================================
 // Plugin struct
 // =============================================================================
@@ -624,6 +622,7 @@ pub struct CzPlugin {
     processor: Option<CosmoProcessor>,
     synth_params: SharedSynthParams,
     rt_synth_params: SharedRtSynthParams,
+    runtime_mod_sources: SharedRuntimeModSources,
     synth_params_version: SynthParamsVersion,
     cached_synth_params_version: u64,
     cached_rt_synth_params: Arc<SynthParams>,
@@ -644,6 +643,7 @@ impl CzPlugin {
             processor: None,
             synth_params: Arc::new(ArcSwap::new(Arc::new(default_params))),
             rt_synth_params: Arc::new(ArcSwap::new(Arc::new(default_rt_params.clone()))),
+            runtime_mod_sources: Arc::new(ArcSwap::new(Arc::new(RuntimeModSources::default()))),
             synth_params_version: Arc::new(AtomicU64::new(0)),
             cached_synth_params_version: 0,
             cached_rt_synth_params: Arc::new(default_rt_params),
@@ -698,10 +698,11 @@ impl PluginLogic for CzPlugin {
         ));
         let sr = sample_rate as f32;
         let mut processor = CosmoProcessor::new(sr);
-        let default_params = SynthParams::default();
-        let rt_params = Arc::new(build_rt_synth_params(&default_params));
+        let mut current_params = (*self.synth_params.load_full()).clone();
+        apply_daw_params(&mut current_params, &self.params);
+        let rt_params = Arc::new(build_rt_synth_params(&current_params));
         processor.set_shared_params(Arc::clone(&rt_params));
-        self.synth_params.store(Arc::new(default_params));
+        self.synth_params.store(Arc::new(current_params));
         self.rt_synth_params.store(Arc::clone(&rt_params));
         self.cached_rt_synth_params = rt_params;
         self.cached_synth_params_version = self.synth_params_version.load(Ordering::Acquire);
@@ -710,7 +711,7 @@ impl PluginLogic for CzPlugin {
         self.performance_counters
             .sample_rate_bits
             .store(sr.to_bits(), Ordering::Release);
-        self.daw_params_dirty = true;
+        self.daw_params_dirty = false;
     }
 
     fn process(
@@ -771,17 +772,23 @@ impl PluginLogic for CzPlugin {
             params_version != self.cached_synth_params_version || self.daw_params_dirty;
 
         if params_changed {
-            // Start from the latest JS JSON params (or cached)
-            let mut merged = if params_version != self.cached_synth_params_version {
-                (*self.rt_synth_params.load_full()).clone()
+            // Start from the latest JS JSON params (or cached RT params).
+            // Both rt_synth_params and cached_rt_synth_params have already been
+            // normalized (envelope level/rate → raw 0-127), and apply_daw_params
+            // only touches top-level float fields (no envelope steps), so we
+            // must NOT call build_rt_synth_params again — that would double-convert
+            // envelope values, corrupting levels and rates.
+            let merged = if params_version != self.cached_synth_params_version {
+                let mut p = (*self.rt_synth_params.load_full()).clone();
+                apply_daw_params(&mut p, &self.params);
+                p
             } else {
-                (*self.cached_rt_synth_params).clone()
+                let mut p = (*self.cached_rt_synth_params).clone();
+                apply_daw_params(&mut p, &self.params);
+                p
             };
 
-            // Overlay DAW FloatParams (automation takes priority)
-            apply_daw_params(&mut merged, &self.params);
-
-            let rt_merged = Arc::new(build_rt_synth_params(&merged));
+            let rt_merged = Arc::new(merged);
             self.cached_rt_synth_params = rt_merged.clone();
             if let Some(ref mut proc) = self.processor {
                 proc.set_shared_params(rt_merged);
@@ -795,8 +802,7 @@ impl PluginLogic for CzPlugin {
             let num_samples = buffer.num_samples();
             if num_samples > self.mono_output.len() {
                 for ch in 0..buffer.num_output_channels() {
-                    let (_, out) = buffer.io(ch);
-                    out.fill(0.0);
+                    buffer.output(ch).fill(0.0);
                 }
                 return ProcessStatus::Normal;
             }
@@ -835,9 +841,11 @@ impl PluginLogic for CzPlugin {
                 scope.push_block(mono_output, proc.sample_rate, hz);
             }
 
+            self.runtime_mod_sources
+                .store(Arc::new(proc.runtime_mod_sources()));
+
             for ch in 0..buffer.num_output_channels() {
-                let (_, out) = buffer.io(ch);
-                out[..num_samples].copy_from_slice(mono_output);
+                buffer.output(ch)[..num_samples].copy_from_slice(mono_output);
             }
         }
 
@@ -845,7 +853,7 @@ impl PluginLogic for CzPlugin {
     }
 
     fn bus_layouts() -> Vec<BusLayout> {
-        vec![BusLayout::stereo()]
+        vec![BusLayout::new().with_output("Main", ChannelConfig::Stereo)]
     }
 
     fn save_state(&self) -> Vec<u8> {
@@ -854,8 +862,9 @@ impl PluginLogic for CzPlugin {
     }
 
     fn load_state(&mut self, data: &[u8]) -> Result<(), StateLoadError> {
-        let params: SynthParams =
-            serde_json::from_slice(data).map_err(|_| StateLoadError::Malformed("invalid synth params JSON"))?;
+        let params: SynthParams = serde_json::from_slice(data)
+            .map_err(|_| StateLoadError::Malformed("invalid synth params JSON"))?;
+        sync_all_daw_params_from_synth(&self.params, &params);
         let rt_params = build_rt_synth_params(&params);
         self.synth_params.store(Arc::new(params));
         self.rt_synth_params.store(Arc::new(rt_params));
@@ -872,6 +881,7 @@ impl PluginLogic for CzPlugin {
             self.ui_input_queue.clone(),
             self.performance_counters.clone(),
             self.params.clone(),
+            self.runtime_mod_sources.clone(),
         )))
     }
 }
@@ -892,6 +902,7 @@ mod tests {
     fn make_handler_state() -> (
         SharedSynthParams,
         SharedRtSynthParams,
+        SharedRuntimeModSources,
         SynthParamsVersion,
         ScopeBuffer,
         UiInputQueue,
@@ -900,12 +911,14 @@ mod tests {
     ) {
         let sp = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
         let rsp = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
+        let rms: SharedRuntimeModSources =
+            Arc::new(ArcSwap::from_pointee(RuntimeModSources::default()));
         let ver = Arc::new(AtomicU64::new(0));
         let sc: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
         let q: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
         let pc = Arc::new(PerformanceCounters::default());
         let params = Arc::new(CzPluginParams::new());
-        (sp, rsp, ver, sc, q, pc, params)
+        (sp, rsp, rms, ver, sc, q, pc, params)
     }
 
     #[test]
@@ -925,7 +938,7 @@ mod tests {
 
     #[test]
     fn set_params_rpc_updates_synth_params() {
-        let (sp, rsp, ver, sc, q, pc, params) = make_handler_state();
+        let (sp, rsp, rms, ver, sc, q, pc, params) = make_handler_state();
 
         let mut new_params = SynthParams::default();
         new_params.volume = 0.42;
@@ -936,6 +949,7 @@ mod tests {
             &[serde_json::Value::String(json_str)],
             &sp,
             &rsp,
+            &rms,
             &ver,
             &sc,
             &q,
@@ -955,6 +969,8 @@ mod tests {
         initial.volume = 0.77;
         let sp: SharedSynthParams = Arc::new(ArcSwap::new(Arc::new(initial)));
         let rsp = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
+        let rms: SharedRuntimeModSources =
+            Arc::new(ArcSwap::from_pointee(RuntimeModSources::default()));
         let ver = Arc::new(AtomicU64::new(0));
         let sc: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
         let q: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
@@ -966,6 +982,7 @@ mod tests {
             &[],
             &sp,
             &rsp,
+            &rms,
             &ver,
             &sc,
             &q,
@@ -980,13 +997,14 @@ mod tests {
 
     #[test]
     fn note_on_rpc_enqueues_ui_input_event() {
-        let (sp, rsp, ver, sc, q, pc, params) = make_handler_state();
+        let (sp, rsp, rms, ver, sc, q, pc, params) = make_handler_state();
 
         let result = handle_ipc_invoke(
             "noteOn",
             &[serde_json::json!({ "note": 60, "velocity": 0.75 })],
             &sp,
             &rsp,
+            &rms,
             &ver,
             &sc,
             &q,
@@ -1006,11 +1024,12 @@ mod tests {
 
     #[test]
     fn set_params_rpc_syncs_daw_float_params() {
-        let (sp, rsp, ver, sc, q, pc, params) = make_handler_state();
+        let (sp, rsp, rms, ver, sc, q, pc, params) = make_handler_state();
         assert_eq!(params.volume.value(), 0.8); // default
 
         let mut new_params = SynthParams::default();
         new_params.volume = 0.33;
+        new_params.line1.dcw_base = 0.61;
         let json_str = serde_json::to_string(&new_params).unwrap();
 
         let result = handle_ipc_invoke(
@@ -1018,6 +1037,7 @@ mod tests {
             &[serde_json::Value::String(json_str)],
             &sp,
             &rsp,
+            &rms,
             &ver,
             &sc,
             &q,
@@ -1026,5 +1046,6 @@ mod tests {
         );
         assert!(result.is_ok());
         assert!((params.volume.value() - 0.33).abs() < 0.000_001);
+        assert!((params.warp_a_amount.value() - 0.61).abs() < 0.000_001);
     }
 }
