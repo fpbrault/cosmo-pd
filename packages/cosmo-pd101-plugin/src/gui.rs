@@ -380,9 +380,7 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
         let _: () = msg_send![&*wk, setFrame: frame];
     }
     if let Some(content_view) = _window.contentView() {
-        unsafe {
-            content_view.addSubview(&*wk);
-        }
+        content_view.addSubview(&*wk);
     }
 
     // ── Start local HTTP server for subresource loading ──────────────────
@@ -432,7 +430,7 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
     let url_str = format!("http://127.0.0.1:{}/index.html", port);
     let url = {
         let url_ns = NSString::from_str(&url_str);
-        unsafe { NSURL::URLWithString(&url_ns) }
+        NSURL::URLWithString(&url_ns)
     }?;
     let request: *mut objc2::runtime::AnyObject =
         unsafe { msg_send![class!(NSURLRequest), requestWithURL: &*url] };
@@ -441,7 +439,7 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
     }
 
     // ── Wait for page load ─────────────────────────────────────────────────
-    let rl = unsafe { NSRunLoop::mainRunLoop() };
+    let rl = NSRunLoop::mainRunLoop();
     let start = std::time::Instant::now();
     let max_wait = std::time::Duration::from_secs(15);
 
@@ -454,13 +452,13 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
             append_log("screenshot: timeout waiting for page load");
             return None;
         }
-        let d = unsafe { NSDate::dateWithTimeIntervalSinceNow(0.05) };
-        unsafe { rl.runUntilDate(&d) };
+        let d = NSDate::dateWithTimeIntervalSinceNow(0.05);
+        rl.runUntilDate(&d);
     }
 
     // Extra wait for JS async rendering/layout
-    let d = unsafe { NSDate::dateWithTimeIntervalSinceNow(1.0) };
-    unsafe { rl.runUntilDate(&d) };
+    let d = NSDate::dateWithTimeIntervalSinceNow(1.0);
+    rl.runUntilDate(&d);
 
     // ── Snapshot ──────────────────────────────────────────────────────────
     let done = Arc::new(AtomicBool::new(false));
@@ -473,16 +471,15 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
         move |snapshot_image: *mut NSImage, _error: *mut objc2_foundation::NSError| {
             if !snapshot_image.is_null() {
                 let image = unsafe { &*snapshot_image };
-                if let Some(tiff_data) = unsafe { image.TIFFRepresentation() } {
-                    let bitmap = unsafe {
-                        NSBitmapImageRep::initWithData(NSBitmapImageRep::alloc(), &tiff_data)
-                    };
+                if let Some(tiff_data) = image.TIFFRepresentation() {
+                    let bitmap =
+                        NSBitmapImageRep::initWithData(NSBitmapImageRep::alloc(), &tiff_data);
                     if let Some(ref bm) = bitmap {
-                        let w = unsafe { bm.pixelsWide() } as u32;
-                        let h = unsafe { bm.pixelsHigh() } as u32;
-                        let spp = unsafe { bm.samplesPerPixel() } as usize;
-                        let bpr = unsafe { bm.bytesPerRow() } as usize;
-                        let ptr = unsafe { bm.bitmapData() };
+                        let w = bm.pixelsWide() as u32;
+                        let h = bm.pixelsHigh() as u32;
+                        let spp = bm.samplesPerPixel() as usize;
+                        let bpr = bm.bytesPerRow() as usize;
+                        let ptr = bm.bitmapData();
                         if !ptr.is_null() && w > 0 && h > 0 {
                             let total = (h as usize) * bpr;
                             let raw = unsafe { std::slice::from_raw_parts(ptr, total) };
@@ -520,8 +517,8 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
             append_log("screenshot: timeout waiting for snapshot");
             return None;
         }
-        let d = unsafe { NSDate::dateWithTimeIntervalSinceNow(0.05) };
-        unsafe { rl.runUntilDate(&d) };
+        let d = NSDate::dateWithTimeIntervalSinceNow(0.05);
+        rl.runUntilDate(&d);
     }
 
     let pixels = result.lock().unwrap().take();
@@ -533,6 +530,7 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
 #[cfg(target_os = "macos")]
 struct StandaloneWindow {
     window: cocoa::base::id,
+    #[allow(dead_code)]
     delegate: cocoa::base::id,
 }
 
