@@ -113,7 +113,7 @@ impl CzEditor {
     }
 
     #[cfg(not(target_os = "macos"))]
-    fn clear_standalone_window(&mut self) {} 
+    fn clear_standalone_window(&mut self) {}
 
     pub(crate) fn new(
         synth_params: Arc<ArcSwap<SynthParams>>,
@@ -763,7 +763,9 @@ unsafe fn build_webview_from_ns_view(
             }
         }
     } else {
-        append_log("parent NSView has no window yet — deferring WebView creation (idle() will retry)");
+        append_log(
+            "parent NSView has no window yet — deferring WebView creation (idle() will retry)",
+        );
         (None, None)
     }
 }

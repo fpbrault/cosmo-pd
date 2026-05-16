@@ -65,7 +65,8 @@ pub fn init_panic_hook() {
             } else {
                 format!("{:?}", payload)
             };
-            let location = info.location()
+            let location = info
+                .location()
                 .map(|l| format!(" at {}:{}", l.file(), l.line()))
                 .unwrap_or_default();
             append_log(&format!("PANIC: {}{}", msg, location));
