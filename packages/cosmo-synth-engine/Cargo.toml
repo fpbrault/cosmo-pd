@@ -78,7 +78,7 @@ optional = true
 no_denormals = { version = "0.1", optional = true }
 
 [dev-dependencies]
-criterion = { version = "0.5", default-features = false }
+criterion = { version = "0.8", default-features = false, features = ["cargo_bench_support"] }
 
 [lints.rust]
 unsafe_code = "deny"
