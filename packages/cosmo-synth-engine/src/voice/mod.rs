@@ -342,8 +342,6 @@ mod tests {
         }
     }
 
-=======
->>>>>>> origin/main
     #[test]
     fn render_voice_returns_zero_for_silent_voice() {
         let mut voice = Voice::new();
