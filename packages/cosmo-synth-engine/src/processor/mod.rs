@@ -375,6 +375,28 @@ mod tests {
     }
 
     #[test]
+    fn params_mut_fx_changes_sync_on_next_process() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        assert_eq!(proc.fx.slot_types[0], FxSlotType::Empty);
+
+        proc.params_mut().fx_slots[0] = FxSlotConfig::Delay(DelayParams {
+            enabled: true,
+            time: 0.25,
+            feedback: 0.4,
+            mix: 0.5,
+            tape_mode: false,
+            warmth: 0.5,
+        });
+
+        assert_eq!(proc.fx.slot_types[0], FxSlotType::Empty);
+
+        let mut out = [0.0_f32; 1];
+        proc.process(&mut out);
+
+        assert_eq!(proc.fx.slot_types[0], FxSlotType::Delay);
+    }
+
+    #[test]
     fn set_shared_params_rebuilds_compiled_cz_controls() {
         let mut proc = CosmoProcessor::new(48_000.0);
         let mut params = SynthParams::default();
