@@ -9,9 +9,9 @@ const TWO_OVER_PI: f32 = 2.0 / PI;
 const SIN_TABLE_SIZE: usize = 2048;
 static SIN_TABLE: LazyLock<[f32; SIN_TABLE_SIZE]> = LazyLock::new(|| {
     let mut table = [0.0_f32; SIN_TABLE_SIZE];
-    for i in 0..SIN_TABLE_SIZE {
+    for (i, entry) in table.iter_mut().enumerate() {
         let phase = i as f32 / SIN_TABLE_SIZE as f32;
-        table[i] = (TWO_PI * phase).sin();
+        *entry = (TWO_PI * phase).sin();
     }
     table
 });
