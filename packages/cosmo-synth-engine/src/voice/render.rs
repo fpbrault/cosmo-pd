@@ -178,36 +178,38 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         base_freq,
         &mod_sources,
     );
-    let (s1, ks_raw1) = voice
-        .algo_runtime
-        .render_line1(LineRenderConfig::from_compiled_line(
-            line1_plan,
-            &line1_modded,
-            voice.cycle_count1,
-            phase.phi1,
-            phase.phase_a_post,
-            signal.final_dcw1,
-            signal.final_dca1,
-            signal.effective_freq1,
-            sr,
-            line1_algo_param_mods,
-            phase.pm_post_mod,
-        ));
-    let (s2, ks_raw2) = voice
-        .algo_runtime
-        .render_line2(LineRenderConfig::from_compiled_line(
-            line2_plan,
-            &line2_modded,
-            voice.cycle_count2,
-            phase.phi2,
-            phase.phase_b_post,
-            signal.final_dcw2,
-            signal.final_dca2,
-            signal.effective_freq2,
-            sr,
-            line2_algo_param_mods,
-            phase.pm_post_mod,
-        ));
+    let (s1, karpunk_raw_sample1) =
+        voice
+            .algo_runtime
+            .render_line1(LineRenderConfig::from_compiled_line(
+                line1_plan,
+                &line1_modded,
+                voice.cycle_count1,
+                phase.phi1,
+                phase.phase_a_post,
+                signal.final_dcw1,
+                signal.final_dca1,
+                signal.effective_freq1,
+                sr,
+                line1_algo_param_mods,
+                phase.pm_post_mod,
+            ));
+    let (s2, karpunk_raw_sample2) =
+        voice
+            .algo_runtime
+            .render_line2(LineRenderConfig::from_compiled_line(
+                line2_plan,
+                &line2_modded,
+                voice.cycle_count2,
+                phase.phi2,
+                phase.phase_b_post,
+                signal.final_dcw2,
+                signal.final_dca2,
+                signal.effective_freq2,
+                sr,
+                line2_algo_param_mods,
+                phase.pm_post_mod,
+            ));
 
     let sample = mix_line_outputs(
         p,
@@ -219,8 +221,8 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         &line2_modded,
         voice.cycle_count1,
         voice.cycle_count2,
-        ks_raw1,
-        ks_raw2,
+        karpunk_raw_sample1,
+        karpunk_raw_sample2,
         signal.final_dcw1,
         signal.final_dcw2,
         signal.final_dca1,
@@ -745,8 +747,8 @@ fn mix_line_outputs(
     l2: &LineParams,
     cycle_count1: u32,
     cycle_count2: u32,
-    ks_raw1: Option<f32>,
-    ks_raw2: Option<f32>,
+    karpunk_raw_sample1: Option<f32>,
+    karpunk_raw_sample2: Option<f32>,
     final_dcw1: f32,
     final_dcw2: f32,
     final_dca1: f32,
@@ -766,8 +768,8 @@ fn mix_line_outputs(
         l2,
         cycle_count1,
         cycle_count2,
-        ks_raw1,
-        ks_raw2,
+        karpunk_raw_sample1,
+        karpunk_raw_sample2,
         final_dcw1,
         final_dcw2,
         final_dca1,
@@ -809,8 +811,8 @@ fn select_line_sources(
     l2: &LineParams,
     cycle_count1: u32,
     cycle_count2: u32,
-    ks_raw1: Option<f32>,
-    ks_raw2: Option<f32>,
+    karpunk_raw_sample1: Option<f32>,
+    karpunk_raw_sample2: Option<f32>,
     final_dcw1: f32,
     final_dcw2: f32,
     final_dca1: f32,
@@ -835,7 +837,7 @@ fn select_line_sources(
                 line1_algo_param_mods,
                 0.0,
             );
-            let s1_prime = render_prime_line_sample(cfg, ks_raw1);
+            let s1_prime = render_prime_line_sample(cfg, karpunk_raw_sample1);
             (s1, s1_prime)
         }
         LineSelect::L1PlusL2Prime => {
@@ -852,52 +854,15 @@ fn select_line_sources(
                 line2_algo_param_mods,
                 0.0,
             );
-            let s2_prime = render_prime_line_sample(cfg, ks_raw2);
+            let s2_prime = render_prime_line_sample(cfg, karpunk_raw_sample2);
             (s1, s2_prime)
         }
         _ => (s1, s2),
     }
 }
 
-fn render_prime_line_sample(cfg: LineRenderConfig, ks_raw: Option<f32>) -> f32 {
-    let sample = if let Some(secondary_algo) = cfg.secondary_algo {
-        let secondary_dcw = cfg.final_dcw * cfg.blend;
-        let primary_dcw = cfg.final_dcw * (1.0 - cfg.blend);
-        let primary = generators::render_algo_sample(
-            cfg.primary_algo,
-            cfg.phase,
-            primary_dcw,
-            cfg.primary_base_waveform,
-            &cfg.primary_control_values,
-            cfg.algo_param_mods,
-            ks_raw,
-            cfg.pm_post_mod,
-        ) * cfg.primary_window_gain;
-        let secondary = generators::render_algo_sample(
-            secondary_algo,
-            cfg.phase,
-            secondary_dcw,
-            cfg.secondary_base_waveform,
-            &cfg.secondary_control_values,
-            cfg.algo_param_mods,
-            ks_raw,
-            cfg.pm_post_mod,
-        ) * cfg.secondary_window_gain;
-        generators::blend_line_samples(cfg.primary_algo, primary, secondary, cfg.blend)
-    } else {
-        generators::render_algo_sample(
-            cfg.primary_algo,
-            cfg.phase,
-            cfg.final_dcw,
-            cfg.primary_base_waveform,
-            &cfg.primary_control_values,
-            cfg.algo_param_mods,
-            ks_raw,
-            cfg.pm_post_mod,
-        ) * cfg.primary_window_gain
-    };
-
-    sample * cfg.final_dca * generators::PER_LINE_HEADROOM
+fn render_prime_line_sample(cfg: LineRenderConfig, karpunk_raw_sample: Option<f32>) -> f32 {
+    generators::render_sample_from_config(&cfg, karpunk_raw_sample)
 }
 
 #[inline(always)]
