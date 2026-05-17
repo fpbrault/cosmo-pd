@@ -453,10 +453,12 @@ mod tests {
         };
 
         let timing = EnvelopeTimingCache::new(48_000.0);
-        let mut gen = EnvGen::default();
-        gen.prev_level = 0.7;
-        gen.output = 0.7;
-        gen.step = 1; // at sustain
+        let mut gen = EnvGen {
+            prev_level: 0.7,
+            output: 0.7,
+            step: 1, // at sustain
+            ..Default::default()
+        };
 
         gen.start_release(&env);
 

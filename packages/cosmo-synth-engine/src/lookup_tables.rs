@@ -114,7 +114,7 @@ pub struct SineApproximationTable {
 impl SineApproximationTable {
     pub fn new() -> Self {
         let mut table = [0.0; 256];
-        for i in 0..256 {
+        for (i, item) in table.iter_mut().enumerate() {
             let phase = i as f32 / 256.0;
 
             // Apply cubic sine approximation
@@ -137,7 +137,7 @@ impl SineApproximationTable {
             let t3 = t2 * t;
             let y = 0.144630 * t3 - 0.437500 * t2 + 1.242_92 * t;
 
-            table[i] = match quadrant {
+            *item = match quadrant {
                 0 | 1 => y,
                 _ => -y,
             };

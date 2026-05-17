@@ -134,9 +134,7 @@ impl Default for Voice {
 mod tests {
     use super::ModSources;
     use super::{render::*, Voice};
-    use crate::params::{
-        LineParams, ModDestination, ModMatrixCache, ModRoute, ModSource, SynthParams,
-    };
+    use crate::params::{LineParams, ModMatrixCache, SynthParams};
     use crate::render_cache::CompiledSynthParams;
 
     #[test]
@@ -191,74 +189,6 @@ mod tests {
             (got - expected).abs() <= expected * 0.02,
             "expected about {expected} Hz at level 66, got {got} Hz"
         );
-    }
-
-    fn all_sources() -> [ModSource; 7] {
-        [
-            ModSource::Lfo1,
-            ModSource::Lfo2,
-            ModSource::Random,
-            ModSource::ModEnv,
-            ModSource::Velocity,
-            ModSource::ModWheel,
-            ModSource::Aftertouch,
-        ]
-    }
-
-    fn all_destinations() -> [ModDestination; 51] {
-        [
-            ModDestination::Volume,
-            ModDestination::Pitch,
-            ModDestination::Line1DcwBase,
-            ModDestination::Line1DcaBase,
-            ModDestination::Line1AlgoBlend,
-            ModDestination::Line2DetuneNote,
-            ModDestination::Line1Octave,
-            ModDestination::Line1AlgoParam1,
-            ModDestination::Line1AlgoParam2,
-            ModDestination::Line1AlgoParam3,
-            ModDestination::Line1AlgoParam4,
-            ModDestination::Line1AlgoParam5,
-            ModDestination::Line1AlgoParam6,
-            ModDestination::Line1AlgoParam7,
-            ModDestination::Line1AlgoParam8,
-            ModDestination::Line2DcwBase,
-            ModDestination::Line2DcaBase,
-            ModDestination::Line2AlgoBlend,
-            ModDestination::Line2DetuneFine,
-            ModDestination::Line2DetuneOctave,
-            ModDestination::Line2AlgoParam1,
-            ModDestination::Line2AlgoParam2,
-            ModDestination::Line2AlgoParam3,
-            ModDestination::Line2AlgoParam4,
-            ModDestination::Line2AlgoParam5,
-            ModDestination::Line2AlgoParam6,
-            ModDestination::Line2AlgoParam7,
-            ModDestination::Line2AlgoParam8,
-            ModDestination::VibratoDepth,
-            ModDestination::VibratoRate,
-            ModDestination::IntPmRatio,
-            ModDestination::Line1DcoEnvStep1Level,
-            ModDestination::Line1DcoEnvStep1Rate,
-            ModDestination::Line1DcwEnvStep3Level,
-            ModDestination::Line1DcaEnvStep4Rate,
-            ModDestination::Line2DcoEnvStep2Level,
-            ModDestination::Line2DcwEnvStep6Rate,
-            ModDestination::Line2DcaEnvStep8Level,
-            ModDestination::PhaserRate,
-            ModDestination::PhaserDepth,
-            ModDestination::PhaserFeedback,
-            ModDestination::PhaserMix,
-            ModDestination::Lfo1Rate,
-            ModDestination::Lfo1Depth,
-            ModDestination::Lfo1Symmetry,
-            ModDestination::Lfo1Offset,
-            ModDestination::Lfo2Rate,
-            ModDestination::Lfo2Depth,
-            ModDestination::Lfo2Symmetry,
-            ModDestination::Lfo2Offset,
-            ModDestination::RandomRate,
-        ]
     }
 
     #[test]

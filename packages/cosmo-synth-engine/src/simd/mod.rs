@@ -337,6 +337,7 @@ mod wasm_simd;
 pub use wasm_simd::WasmSimd;
 
 #[cfg(test)]
+#[allow(dead_code)]
 mod tests {
     use super::*;
 
