@@ -1121,6 +1121,7 @@ dependencies = [
  "getrandom 0.4.2",
  "libm",
  "no_denormals",
+ "num_enum",
  "rtsan-standalone",
  "serde",
  "serde_json",

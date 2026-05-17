@@ -183,22 +183,22 @@ enum EnvKindKey {
     Dca,
 }
 
-const ENV_DEST_KIND_OFFSET: [u8; 3] = [0, 16, 32];
+const ENV_DEST_KIND_OFFSET: [u16; 3] = [0, 16, 32];
 
-#[allow(unsafe_code)]
 fn env_destination(
     line_index: u8,
     env_kind: EnvKindKey,
     step_index: usize,
     level: bool,
 ) -> ModDestination {
-    let idx = ENV_STEP_DEST_FIRST as u8
-        + (line_index - 1) * 48
+    let idx = ENV_STEP_DEST_FIRST as u16
+        + u16::from(line_index.saturating_sub(1)) * 48
         + ENV_DEST_KIND_OFFSET[env_kind as u8 as usize]
-        + (step_index as u8) * 2
-        + u8::from(!level);
-    if idx as usize <= ENV_STEP_DEST_LAST {
-        unsafe { core::mem::transmute::<u8, ModDestination>(idx) }
+        + (step_index as u16) * 2
+        + u16::from(!level);
+
+    if usize::from(idx) <= ENV_STEP_DEST_LAST {
+        ModDestination::try_from(idx).unwrap_or(ModDestination::Volume)
     } else {
         ModDestination::Volume
     }

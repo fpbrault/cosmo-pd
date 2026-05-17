@@ -42,6 +42,7 @@ serde = { version = "1", features = ["derive"], default-features = false }
 serde_json = { version = "1", optional = true }
 libm = "0.2"
 arrayvec = { version = "0.7", default-features = false }
+num_enum = { version = "0.7", default-features = false }
 dasp_ring_buffer = { version = "0.11" }
 dasp_interpolate = { version = "0.11", features = ["linear"] }
 assert_no_alloc = { version = "1", optional = true }
