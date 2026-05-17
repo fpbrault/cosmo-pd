@@ -50,8 +50,8 @@ impl CosmoProcessor {
     }
 
     fn process_inner(&mut self, output: &mut [f32]) {
-        if self.render_plan_dirty {
-            self.rebuild_render_plan();
+        if self.compiled_params_dirty {
+            self.rebuild_compiled_params();
         }
 
         let params = Arc::clone(&self.params);
@@ -68,12 +68,12 @@ impl CosmoProcessor {
         let base_lfo2_offset = p.lfo2.offset;
         let base_random_rate = p.random.rate;
         let sr = self.sample_rate;
-        let has_active_mod_routes = self.render_plan.has_active_mod_routes;
-        let _has_env_step_routes = self.render_plan.has_env_step_routes;
-        let line1_plan = self.render_plan.line1;
-        let line2_plan = self.render_plan.line2;
-        let mut mod_cache = self.render_plan.mod_cache.clone();
-        let norm = self.render_plan.norm;
+        let has_active_mod_routes = self.compiled_params.has_active_mod_routes;
+        let _has_env_step_routes = self.compiled_params.has_env_step_routes;
+        let line1_plan = self.compiled_params.line1;
+        let line2_plan = self.compiled_params.line2;
+        let mut mod_cache = self.compiled_params.mod_cache.clone();
+        let norm = self.compiled_params.norm;
 
         let mut prev_lfo1 = self.last_runtime_mod_sources.lfo1;
         let mut prev_lfo2 = self.last_runtime_mod_sources.lfo2;

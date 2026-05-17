@@ -13,7 +13,7 @@ use alloc::sync::Arc;
 use arrayvec::ArrayVec;
 use core::array;
 
-use crate::batch_cache::RenderPlan;
+use crate::render_cache::CompiledSynthParams;
 use crate::dsp_utils::random_hold_value;
 use crate::envelope::{normalize_synth_params_envelopes_to_raw_if_human, EnvelopeTimingCache};
 use crate::fx::FxChain;
@@ -49,8 +49,8 @@ pub struct CosmoProcessor {
     pub aftertouch: f32,
     pub last_runtime_mod_sources: RuntimeModSources,
     pub simd_backend: SimdBackend,
-    render_plan: RenderPlan,
-    render_plan_dirty: bool,
+    compiled_params: CompiledSynthParams,
+    compiled_params_dirty: bool,
     line1_scratch: LineParams,
     line2_scratch: LineParams,
     envelope_timing: EnvelopeTimingCache,
@@ -60,7 +60,7 @@ impl CosmoProcessor {
     /// Create a new processor with default parameters and FX state.
     pub fn new(sample_rate: f32) -> Self {
         let params = Arc::new(SynthParams::default());
-        let render_plan = RenderPlan::from_params(params.as_ref());
+        let compiled_params = CompiledSynthParams::from_params(params.as_ref());
         let mut proc = Self {
             voices: array::from_fn(|_| Voice::new()),
             fx: FxChain::new(sample_rate),
@@ -80,8 +80,8 @@ impl CosmoProcessor {
             aftertouch: 0.0,
             last_runtime_mod_sources: RuntimeModSources::default(),
             simd_backend: detect_simd_backend(),
-            render_plan,
-            render_plan_dirty: false,
+            compiled_params,
+            compiled_params_dirty: false,
             line1_scratch: LineParams::default(),
             line2_scratch: LineParams::default(),
             envelope_timing: EnvelopeTimingCache::new(sample_rate),
@@ -169,9 +169,9 @@ impl CosmoProcessor {
         self.fx.sync_from_params(self.params.as_ref());
     }
 
-    pub(crate) fn rebuild_render_plan(&mut self) {
-        self.render_plan = RenderPlan::from_params(self.params.as_ref());
-        self.render_plan_dirty = false;
+    pub(crate) fn rebuild_compiled_params(&mut self) {
+        self.compiled_params = CompiledSynthParams::from_params(self.params.as_ref());
+        self.compiled_params_dirty = false;
     }
 
     /// Copy a `SynthParams` snapshot into the processor.
@@ -190,13 +190,13 @@ impl CosmoProcessor {
         self.line1_scratch = params.line1;
         self.line2_scratch = params.line2;
         self.params = params;
-        self.rebuild_render_plan();
+        self.rebuild_compiled_params();
         self.update_fx();
     }
 
     /// Mutable parameter access for non-real-time mutation paths and tests.
     pub fn params_mut(&mut self) -> &mut SynthParams {
-        self.render_plan_dirty = true;
+        self.compiled_params_dirty = true;
         Arc::make_mut(&mut self.params)
     }
 
@@ -229,7 +229,7 @@ impl CosmoProcessor {
         self.line1_scratch = self.params.line1;
         self.line2_scratch = self.params.line2;
         self.envelope_timing = EnvelopeTimingCache::new(self.sample_rate);
-        self.rebuild_render_plan();
+        self.rebuild_compiled_params();
     }
 
     /// Set which effect type occupies a given FX slot (0–5).
@@ -237,7 +237,7 @@ impl CosmoProcessor {
         if slot < 6 {
             self.params_mut().fx_slots[slot] = FxSlotConfig::default_for_type(slot_type);
             self.update_fx();
-            self.rebuild_render_plan();
+            self.rebuild_compiled_params();
         }
     }
 
@@ -251,7 +251,7 @@ impl CosmoProcessor {
         let applied = module_presets::apply_module_preset(self.params_mut(), module, preset);
         if applied {
             self.update_fx();
-            self.rebuild_render_plan();
+            self.rebuild_compiled_params();
         }
         applied
     }
@@ -391,11 +391,11 @@ mod tests {
         proc.set_shared_params(Arc::new(params));
 
         assert_eq!(
-            proc.render_plan.line1.primary.algo_for_cycle(0),
+            proc.compiled_params.line1.primary.algo_for_cycle(0),
             Algo::Square
         );
         assert_eq!(
-            proc.render_plan.line1.primary.algo_for_cycle(1),
+            proc.compiled_params.line1.primary.algo_for_cycle(1),
             Algo::Pulse
         );
     }

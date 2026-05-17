@@ -14,7 +14,7 @@ const MAX_HEADROOM_MAKEUP: f32 = 1.0;
 
 /// Stable render metadata compiled from a `SynthParams` snapshot.
 #[derive(Debug, Clone)]
-pub(crate) struct RenderPlan {
+pub(crate) struct CompiledSynthParams {
     pub mod_cache: ModMatrixCache,
     pub has_active_mod_routes: bool,
     pub has_env_step_routes: bool,
@@ -23,7 +23,7 @@ pub(crate) struct RenderPlan {
     pub line2: CompiledLinePlan,
 }
 
-impl RenderPlan {
+impl CompiledSynthParams {
     pub fn from_params(params: &SynthParams) -> Self {
         let mut mod_cache = ModMatrixCache::new();
         mod_cache.rebuild_routes(&params.mod_matrix);
@@ -39,7 +39,7 @@ impl RenderPlan {
     }
 }
 
-impl Default for RenderPlan {
+impl Default for CompiledSynthParams {
     fn default() -> Self {
         Self::from_params(&SynthParams::default())
     }

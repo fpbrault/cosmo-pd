@@ -135,7 +135,7 @@ mod tests {
     use super::modulation::mod_value_for;
     use super::ModSources;
     use super::{render::*, Voice};
-    use crate::batch_cache::RenderPlan;
+    use crate::render_cache::CompiledSynthParams;
     use crate::params::{
         LineParams, ModDestination, ModMatrix, ModMatrixCache, ModRoute, ModSource, SynthParams,
     };
@@ -320,7 +320,7 @@ mod tests {
         let mut cache = ModMatrixCache::new();
         cache.compute(&sources);
         let default_line = LineParams::default();
-        let plan = RenderPlan::from_params(&p);
+        let plan = CompiledSynthParams::from_params(&p);
         let out = render_voice(
             &mut voice,
             &p,
@@ -354,7 +354,7 @@ mod tests {
         let mut cache = ModMatrixCache::new();
         cache.compute(&sources);
         let default_line = LineParams::default();
-        let plan = RenderPlan::from_params(&p);
+        let plan = CompiledSynthParams::from_params(&p);
         let mut any_nonzero = false;
         for _ in 0..64 {
             let out = render_voice(

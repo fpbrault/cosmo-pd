@@ -1,4 +1,4 @@
-use crate::batch_cache::CompiledLinePlan;
+use crate::render_cache::CompiledLinePlan;
 use crate::dsp_utils::{lfo_output, pow01, wrap01, TWO_PI};
 use crate::envelope::EnvelopeKind;
 use crate::envelope::EnvelopeTimingCache;
