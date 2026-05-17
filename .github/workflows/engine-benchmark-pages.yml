@@ -21,14 +21,15 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Run cargo bench on main
-        run: cargo bench -p cosmo-synth-engine --bench render-bench
+        run: cargo bench -p cosmo-synth-engine --bench render-bench -- --output-format bencher | tee output.txt
         shell: bash
 
       - name: Publish benchmark trend to GitHub Pages
         uses: benchmark-action/github-action-benchmark@v1
         with:
           name: cosmo-synth-engine
-          tool: criterion
+          tool: cargo
+          output-file-path: output.txt
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
           summary-always: true
