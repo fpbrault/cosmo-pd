@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778896398561,
+  "lastUpdate": 1779029655986,
   "repoUrl": "https://github.com/fpbrault/cosmo-pd",
   "entries": {
     "cosmo-synth-engine": [
@@ -7325,6 +7325,228 @@ window.BENCHMARK_DATA = {
             "name": "worst_poly_8_voices",
             "value": 14516074,
             "range": "± 106698.7",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "fpbrault@gmail.com",
+            "name": "Felix Perron-Brault",
+            "username": "fpbrault"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "86a33a6c6950d129d6961cbf76839f1c7aded53b",
+          "message": "feat(engine): add compiled render cache and no-mod fast path (#186)\n\n* chore: remove unused filter parameters and related code\n\n* fix tests\n\n* chore: refactor SIMD backend dispatch to reduce code duplication\n\n* feat: Enhance rendering and modulation capabilities in Cosmo Synth Engine\n\n- Introduced `from_compiled_line` method in `LineRenderConfig` to streamline line rendering using compiled plans.\n- Updated `CosmoProcessor` to manage a `RenderPlan`, ensuring efficient rendering and modulation handling.\n- Refactored modulation logic to conditionally apply modulations based on active routes, improving performance.\n- Enhanced voice rendering functions to utilize compiled line plans, optimizing audio output.\n- Added tests to validate rendering behavior with and without modulation, ensuring audio integrity.\n- Minor adjustments to SIMD operations for improved clarity and maintainability.\n\n* refactor(engine): rename RenderPlan to CompiledSynthParams\n\n* linting\n\n* chore: remove unused filter parameters from ENGINE_PARAM_UI_META_V1\n\n* test: add unit test for FX slot changes synchronization in CosmoProcessor\nrefactor: update DCO exponential curve comment for clarity\n\n* chore: update cosmo_synth_engine_bg.wasm binary file",
+          "timestamp": "2026-05-17T10:52:06-04:00",
+          "tree_id": "008ff6cc5d698e56a0530455330c1c981364c45a",
+          "url": "https://github.com/fpbrault/cosmo-pd/commit/86a33a6c6950d129d6961cbf76839f1c7aded53b"
+        },
+        "date": 1779029653684,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "chants_like_3_voices",
+            "value": 9025213.25,
+            "range": "± 122281",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_6_voices",
+            "value": 11711407.8,
+            "range": "± 163380.81",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_8_voices",
+            "value": 13523813.4,
+            "range": "± 209949.24",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_3_voices",
+            "value": 11969673.5,
+            "range": "± 118507.7",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_6_voices",
+            "value": 16533082.8,
+            "range": "± 171747.3",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_8_voices",
+            "value": 18251657,
+            "range": "± 244688.32",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_3_voices",
+            "value": 3342737.3,
+            "range": "± 22227.22",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_6_voices",
+            "value": 5092753.2,
+            "range": "± 21481.65",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_8_voices",
+            "value": 6266185.3,
+            "range": "± 53479.44",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_3_voices",
+            "value": 2740220.6,
+            "range": "± 49756.75",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_6_voices",
+            "value": 3084619.3,
+            "range": "± 76812.96",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_8_voices",
+            "value": 3302258.9,
+            "range": "± 27431.93",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_3_voices",
+            "value": 4626637.4,
+            "range": "± 65948.2",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_6_voices",
+            "value": 6262955.8,
+            "range": "± 143393.74",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_8_voices",
+            "value": 7378867.6,
+            "range": "± 90122.02",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_3_voices",
+            "value": 7433602,
+            "range": "± 130608.41",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_6_voices",
+            "value": 9678813.9,
+            "range": "± 125885.57",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_8_voices",
+            "value": 10980260.9,
+            "range": "± 185454.44",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_3_voices",
+            "value": 7818820.3,
+            "range": "± 106220.18",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_6_voices",
+            "value": 10373326.8,
+            "range": "± 134468.57",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_8_voices",
+            "value": 11820375.7,
+            "range": "± 214991.34",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_3_voices",
+            "value": 4110388.3,
+            "range": "± 68280.19",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_6_voices",
+            "value": 6201630.8,
+            "range": "± 105382.54",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_8_voices",
+            "value": 7620930,
+            "range": "± 130732.1",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_3_voices",
+            "value": 3823611.4,
+            "range": "± 41004.91",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_6_voices",
+            "value": 5789273.2,
+            "range": "± 126801.22",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_8_voices",
+            "value": 7094951.4,
+            "range": "± 145927.4",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_3_voices",
+            "value": 6620647.7,
+            "range": "± 87382.31",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_6_voices",
+            "value": 8635687.8,
+            "range": "± 152245.08",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_8_voices",
+            "value": 9819754.3,
+            "range": "± 130377.02",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_3_voices",
+            "value": 12381052.3,
+            "range": "± 161948.75",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_6_voices",
+            "value": 13978342.4,
+            "range": "± 167296",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_8_voices",
+            "value": 14059783.5,
+            "range": "± 442707.45",
             "unit": "ns/iter"
           }
         ]
