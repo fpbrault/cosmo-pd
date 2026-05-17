@@ -2,6 +2,7 @@
 
 extern crate alloc;
 
+mod cz_dac;
 mod notes;
 mod process;
 pub mod state;
@@ -22,7 +23,7 @@ use crate::render_cache::CompiledSynthParams;
 use crate::simd::{detect_simd_backend, SimdBackend};
 use crate::voice::Voice;
 
-use self::state::CzDacColor;
+use self::cz_dac::CzDacColor;
 pub use self::state::{
     MonoStackEntry, NoteEntry, RuntimeModSources, RuntimeVoiceDebugState, RuntimeVoiceEnvState,
     RuntimeVoiceLineState,

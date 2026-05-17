@@ -53,6 +53,10 @@ pub(crate) fn default_ring_gain() -> f32 {
     4.0
 }
 
+pub(crate) fn default_cz_dac_enabled() -> bool {
+    false
+}
+
 /// Top-level synth parameters
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
@@ -67,6 +71,8 @@ pub struct SynthParams {
     pub line2: LineParams,
     pub frequency: f32,
     pub volume: f32,
+    #[serde(default = "default_cz_dac_enabled")]
+    pub cz_dac_enabled: bool,
     pub poly_mode: PolyMode,
     pub legato: bool,
     pub portamento: PortamentoParams,
@@ -120,6 +126,7 @@ impl Default for SynthParams {
             line2: LineParams::default(),
             frequency: 220.0,
             volume: 0.4,
+            cz_dac_enabled: default_cz_dac_enabled(),
             poly_mode: PolyMode::default(),
             legato: false,
             portamento: PortamentoParams::default(),

@@ -49,6 +49,25 @@ struct PhaseFrame {
     pm_post_mod: f32,
 }
 
+#[derive(Clone, Copy)]
+pub struct VoiceRenderContext<'a> {
+    pub p: &'a SynthParams,
+    pub lfo_mod_val: f32,
+    pub lfo2_mod_val: f32,
+    pub random_mod_val: f32,
+    pub line1_modded: &'a LineParams,
+    pub line2_modded: &'a LineParams,
+    pub sr: f32,
+    pub timing: &'a EnvelopeTimingCache,
+    pub pitch_bend_semitones: f32,
+    pub mod_wheel: f32,
+    pub aftertouch: f32,
+    pub cache: &'a ModMatrixCache,
+    pub modulation_active: bool,
+    pub line1_plan: &'a CompiledLinePlan,
+    pub line2_plan: &'a CompiledLinePlan,
+}
+
 ///
 /// Returns `0.0` when the voice is silent.
 ///
@@ -58,25 +77,19 @@ struct PhaseFrame {
 /// * `lfo_mod_val` – pre-computed LFO output value for this sample
 /// * `lfo2_mod_val` – pre-computed LFO2 output value for this sample
 /// * `sr`          – sample rate in Hz
-#[allow(clippy::too_many_arguments)]
-pub fn render_voice(
-    voice: &mut Voice,
-    p: &SynthParams,
-    lfo_mod_val: f32,
-    lfo2_mod_val: f32,
-    random_mod_val: f32,
-    line1_modded: &LineParams,
-    line2_modded: &LineParams,
-    sr: f32,
-    timing: &EnvelopeTimingCache,
-    pitch_bend_semitones: f32,
-    mod_wheel: f32,
-    aftertouch: f32,
-    cache: &ModMatrixCache,
-    modulation_active: bool,
-    line1_plan: &CompiledLinePlan,
-    line2_plan: &CompiledLinePlan,
-) -> f32 {
+pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
+    let p = ctx.p;
+    let line1_modded = ctx.line1_modded;
+    let line2_modded = ctx.line2_modded;
+    let sr = ctx.sr;
+    let timing = ctx.timing;
+    let pitch_bend_semitones = ctx.pitch_bend_semitones;
+    let mod_wheel = ctx.mod_wheel;
+    let aftertouch = ctx.aftertouch;
+    let cache = ctx.cache;
+    let modulation_active = ctx.modulation_active;
+    let line1_plan = ctx.line1_plan;
+    let line2_plan = ctx.line2_plan;
     let base_freq = base_voice_frequency(voice);
 
     let env = advance_envelopes(voice, line1_modded, line2_modded, timing);
@@ -116,9 +129,9 @@ pub fn render_voice(
     let mod_env_val = voice.mod_env.advance(&p.mod_env, sr);
 
     let mod_sources = ModSources::new(
-        lfo_mod_val,
-        lfo2_mod_val,
-        random_mod_val,
+        ctx.lfo_mod_val,
+        ctx.lfo2_mod_val,
+        ctx.random_mod_val,
         mod_env_val,
         voice.velocity,
         mod_wheel,

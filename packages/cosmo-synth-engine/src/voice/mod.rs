@@ -9,7 +9,7 @@ mod render;
 pub use adsr::AdsrEnv;
 pub(crate) use modulation::modulated_line_params;
 pub(crate) use modulation::ModSources;
-pub(crate) use render::render_voice;
+pub(crate) use render::{render_voice, VoiceRenderContext};
 
 use crate::envelope::EnvGen;
 use crate::generators::AlgoRuntimeState;
@@ -321,24 +321,24 @@ mod tests {
         cache.compute(&sources);
         let default_line = LineParams::default();
         let plan = CompiledSynthParams::from_params(&p);
-        let out = render_voice(
-            &mut voice,
-            &p,
-            0.0,
-            0.0,
-            0.0,
-            &default_line,
-            &default_line,
-            48_000.0,
-            &timing,
-            0.0,
-            0.0,
-            0.0,
-            &cache,
-            false,
-            &plan.line1,
-            &plan.line2,
-        );
+        let ctx = super::VoiceRenderContext {
+            p: &p,
+            lfo_mod_val: 0.0,
+            lfo2_mod_val: 0.0,
+            random_mod_val: 0.0,
+            line1_modded: &default_line,
+            line2_modded: &default_line,
+            sr: 48_000.0,
+            timing: &timing,
+            pitch_bend_semitones: 0.0,
+            mod_wheel: 0.0,
+            aftertouch: 0.0,
+            cache: &cache,
+            modulation_active: false,
+            line1_plan: &plan.line1,
+            line2_plan: &plan.line2,
+        };
+        let out = render_voice(&mut voice, &ctx);
         assert_eq!(out, 0.0);
     }
 
@@ -357,24 +357,24 @@ mod tests {
         let plan = CompiledSynthParams::from_params(&p);
         let mut any_nonzero = false;
         for _ in 0..64 {
-            let out = render_voice(
-                &mut voice,
-                &p,
-                0.0,
-                0.0,
-                0.0,
-                &default_line,
-                &default_line,
-                48_000.0,
-                &timing,
-                0.0,
-                0.0,
-                0.0,
-                &cache,
-                false,
-                &plan.line1,
-                &plan.line2,
-            );
+            let ctx = super::VoiceRenderContext {
+                p: &p,
+                lfo_mod_val: 0.0,
+                lfo2_mod_val: 0.0,
+                random_mod_val: 0.0,
+                line1_modded: &default_line,
+                line2_modded: &default_line,
+                sr: 48_000.0,
+                timing: &timing,
+                pitch_bend_semitones: 0.0,
+                mod_wheel: 0.0,
+                aftertouch: 0.0,
+                cache: &cache,
+                modulation_active: false,
+                line1_plan: &plan.line1,
+                line2_plan: &plan.line2,
+            };
+            let out = render_voice(&mut voice, &ctx);
             if out.abs() > 1e-6 {
                 any_nonzero = true;
                 break;
