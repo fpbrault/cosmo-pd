@@ -25,7 +25,8 @@ function parseBenchmarkData(dataJsContent) {
 }
 
 function groupBenchName(benchName) {
-	const voiceMatch = benchName.match(/^(.*)_([0-9]+)_voices$/);
+	const canonicalBenchName = benchName.replaceAll("-", "_");
+	const voiceMatch = canonicalBenchName.match(/^(.*)_([0-9]+)_voices$/);
 	if (voiceMatch) {
 		return {
 			group: voiceMatch[1],
@@ -34,7 +35,7 @@ function groupBenchName(benchName) {
 	}
 
 	return {
-		group: benchName,
+		group: canonicalBenchName,
 		variant: "value",
 	};
 }
