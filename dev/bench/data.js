@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779029655986,
+  "lastUpdate": 1779030441385,
   "repoUrl": "https://github.com/fpbrault/cosmo-pd",
   "entries": {
     "cosmo-synth-engine": [
@@ -7547,6 +7547,228 @@ window.BENCHMARK_DATA = {
             "name": "worst_poly_8_voices",
             "value": 14059783.5,
             "range": "± 442707.45",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "fpbrault@gmail.com",
+            "name": "Felix Perron-Brault",
+            "username": "fpbrault"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c91e9c169e95b59983c9ec8922baaece7db95b72",
+          "message": "feat: add CZ DAC emulation and enhance synth parameters (#187)\n\n* chore: remove unused filter parameters and related code\n\n* fix tests\n\n* chore: refactor SIMD backend dispatch to reduce code duplication\n\n* feat: Enhance rendering and modulation capabilities in Cosmo Synth Engine\n\n- Introduced `from_compiled_line` method in `LineRenderConfig` to streamline line rendering using compiled plans.\n- Updated `CosmoProcessor` to manage a `RenderPlan`, ensuring efficient rendering and modulation handling.\n- Refactored modulation logic to conditionally apply modulations based on active routes, improving performance.\n- Enhanced voice rendering functions to utilize compiled line plans, optimizing audio output.\n- Added tests to validate rendering behavior with and without modulation, ensuring audio integrity.\n- Minor adjustments to SIMD operations for improved clarity and maintainability.\n\n* refactor(engine): rename RenderPlan to CompiledSynthParams\n\n* linting\n\n* chore: remove unused filter parameters from ENGINE_PARAM_UI_META_V1\n\n* test: add unit test for FX slot changes synchronization in CosmoProcessor\nrefactor: update DCO exponential curve comment for clarity\n\n* chore: update cosmo_synth_engine_bg.wasm binary file\n\n* feat: add CZ DAC emulation and enhance synth parameters\n\n- Introduced `CzDacColor` struct for DAC coloration effect, implementing processing logic for CZ-1 emulation.\n- Updated `SynthParams` to include `czDacEnabled` flag, allowing toggling of the CZ DAC effect.\n- Refactored voice rendering to utilize a new `VoiceRenderContext` struct, simplifying parameter passing.\n- Enhanced LFO processing by consolidating related logic into a dedicated function.\n- Improved overall code organization and readability by separating concerns and reducing argument counts in functions.",
+          "timestamp": "2026-05-17T11:05:05-04:00",
+          "tree_id": "cd865736da5330ec3267c57f45fc0f7de18df351",
+          "url": "https://github.com/fpbrault/cosmo-pd/commit/c91e9c169e95b59983c9ec8922baaece7db95b72"
+        },
+        "date": 1779030438454,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "chants_like_3_voices",
+            "value": 8887568.8,
+            "range": "± 276873.75",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_6_voices",
+            "value": 11602286.6,
+            "range": "± 77892.28",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_8_voices",
+            "value": 13516171.5,
+            "range": "± 156345.32",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_3_voices",
+            "value": 11773960.6,
+            "range": "± 233353.04",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_6_voices",
+            "value": 16193870.6,
+            "range": "± 165098.5",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_8_voices",
+            "value": 17861902.5,
+            "range": "± 151590.91",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_3_voices",
+            "value": 3586882.5,
+            "range": "± 27974.06",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_6_voices",
+            "value": 5212477.3,
+            "range": "± 54532.82",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_8_voices",
+            "value": 6269685.7,
+            "range": "± 46864.65",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_3_voices",
+            "value": 3103732.9,
+            "range": "± 62034.37",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_6_voices",
+            "value": 3430039.4,
+            "range": "± 18505.03",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_8_voices",
+            "value": 3693329.3,
+            "range": "± 51972.09",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_3_voices",
+            "value": 4626340,
+            "range": "± 53004.24",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_6_voices",
+            "value": 6127692.5,
+            "range": "± 60066.35",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_8_voices",
+            "value": 7161943.7,
+            "range": "± 61189.65",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_3_voices",
+            "value": 7496323.1,
+            "range": "± 100984.78",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_6_voices",
+            "value": 9560356.05,
+            "range": "± 54702.94",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_8_voices",
+            "value": 10633483.4,
+            "range": "± 95462.68",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_3_voices",
+            "value": 8028744.7,
+            "range": "± 117380.78",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_6_voices",
+            "value": 10593815.7,
+            "range": "± 68347.48",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_8_voices",
+            "value": 11997397.4,
+            "range": "± 132904.91",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_3_voices",
+            "value": 4328557.1,
+            "range": "± 104712.21",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_6_voices",
+            "value": 6258741,
+            "range": "± 169717.65",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_8_voices",
+            "value": 7516122.7,
+            "range": "± 79406.58",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_3_voices",
+            "value": 4231210.9,
+            "range": "± 51194.53",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_6_voices",
+            "value": 6207198.2,
+            "range": "± 56460.08",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_8_voices",
+            "value": 7531423.8,
+            "range": "± 160871.32",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_3_voices",
+            "value": 6775724.3,
+            "range": "± 53857.82",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_6_voices",
+            "value": 8682068.1,
+            "range": "± 117692.23",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_8_voices",
+            "value": 9895894.1,
+            "range": "± 83116.35",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_3_voices",
+            "value": 12626968.5,
+            "range": "± 116506.27",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_6_voices",
+            "value": 14220361.2,
+            "range": "± 154583.3",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_8_voices",
+            "value": 14325734.4,
+            "range": "± 135849.24",
             "unit": "ns/iter"
           }
         ]
