@@ -48,10 +48,6 @@ pub struct CosmoProcessor {
     pub aftertouch: f32,
     pub last_runtime_mod_sources: RuntimeModSources,
     pub simd_backend: SimdBackend,
-    #[allow(dead_code)]
-    fx_eco_toggle: bool,
-    #[allow(dead_code)]
-    fx_last_out: f32,
     line1_scratch: LineParams,
     line2_scratch: LineParams,
     envelope_timing: EnvelopeTimingCache,
@@ -79,8 +75,6 @@ impl CosmoProcessor {
             aftertouch: 0.0,
             last_runtime_mod_sources: RuntimeModSources::default(),
             simd_backend: detect_simd_backend(),
-            fx_eco_toggle: false,
-            fx_last_out: 0.0,
             line1_scratch: LineParams::default(),
             line2_scratch: LineParams::default(),
             envelope_timing: EnvelopeTimingCache::new(sample_rate),

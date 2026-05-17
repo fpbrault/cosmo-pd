@@ -2,7 +2,6 @@
 
 mod cache;
 mod envelopes;
-mod filter;
 mod fx_params;
 mod lfo;
 mod line;
@@ -15,7 +14,6 @@ mod waveforms;
 // Re-exports for backward compatibility
 pub(crate) use cache::ModMatrixCache;
 pub use envelopes::{EnvStep, StepEnvData, NUM_ENV_STEPS};
-pub use filter::{FilterParams, FilterType};
 pub use fx_params::{
     BitcrusherParams, ChorusParams, CompressorParams, DelayParams, DistortionParams, EqParams,
     FxSlotConfig, FxSlotType, GrainDelayParams, JunoChorusParams, LoFiParams, PhaseModParams,

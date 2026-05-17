@@ -451,11 +451,6 @@ pub fn warp_phase(
     }
 }
 
-fn render_direct_algo_sample(algo: Algo) -> Option<f32> {
-    let _ = algo;
-    None
-}
-
 /// Unified algorithm sample renderer used by voice and utility paths.
 ///
 /// `runtime_sample` is used only when an algorithm is rendered by per-voice state.
@@ -472,9 +467,6 @@ pub fn render_algo_sample(
 ) -> f32 {
     if algo == Algo::Karpunk {
         return runtime_sample.unwrap_or(0.0);
-    }
-    if let Some(sample) = render_direct_algo_sample(algo) {
-        return sample;
     }
     let warped = warp_phase(algo, phase, dcw, control_values, &algo_param_mods);
     sample_base_wave(base_waveform, warped + pm_post_mod)
