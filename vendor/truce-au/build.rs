@@ -61,6 +61,25 @@ fn main() {
         .flag("-mmacosx-version-min=11.0")
         .define("TRUCE_AU_VIEW_FACTORY_NAME", view_factory_name.as_str());
 
+    // Apple's BSD ar doesn't support the GNU `D` (deterministic) flag that
+    // cc >= 1.2 probes by default, producing noisy cargo warnings on each
+    // build. Create a thin wrapper that strips `D` mode modifiers so cc's
+    // probe succeeds silently _and_ all subsequent batches use `cqD`/`sD`
+    // without error.
+    let ar_path = std::path::Path::new(&out_dir).join("ar-wrapper");
+    std::fs::write(
+        &ar_path,
+        "#!/bin/sh\nexec /usr/bin/ar $(echo \"$@\" | sed 's/D//g')",
+    )
+    .unwrap();
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&ar_path, std::fs::Permissions::from_mode(0o755)).unwrap();
+    }
+    // SAFETY: build.rs is single-threaded; pointing AR at our wrapper is
+    // safe and scoped to this build script process.
+    unsafe { std::env::set_var("AR", ar_path.to_str().unwrap()) };
+
     build.compile("au_shim");
 
     // `rustc-link-arg-cdylib` propagates to the downstream cdylib that
