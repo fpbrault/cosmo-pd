@@ -5,7 +5,10 @@
 
 #![cfg_attr(target_os = "macos", allow(deprecated, unexpected_cfgs))]
 
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+#[cfg(target_os = "macos")]
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::AtomicU64;
+use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
 #[cfg(target_os = "macos")]
 use std::{
@@ -21,6 +24,7 @@ use wry::WebViewBuilder;
 #[cfg(target_os = "macos")]
 use wry::WebViewBuilderExtDarwin;
 
+#[cfg(target_os = "macos")]
 use crate::handle_ipc_invoke;
 use crate::CzPluginParams;
 use crate::{
@@ -1004,34 +1008,86 @@ pub fn plugin_resource_dir() -> Option<std::path::PathBuf> {
 
 #[cfg(not(feature = "debug_gui"))]
 fn binary_path() -> Option<std::path::PathBuf> {
-    use std::ffi::CStr;
+    #[cfg(target_os = "windows")]
+    {
+        use std::ffi::OsString;
+        use std::os::windows::ffi::OsStringExt;
+        use std::ptr::null_mut;
 
-    #[repr(C)]
-    struct DlInfo {
-        dli_fname: *const libc::c_char,
-        dli_fbase: *mut libc::c_void,
-        dli_sname: *const libc::c_char,
-        dli_saddr: *mut libc::c_void,
+        #[repr(C)]
+        struct HINSTANCE__(isize);
+
+        type HMODULE = *mut HINSTANCE__;
+        type DWORD = u32;
+        type LPCWSTR = *const u16;
+        type LPWSTR = *mut u16;
+        type BOOL = i32;
+
+        const GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS: DWORD = 0x00000004;
+        const GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT: DWORD = 0x00000002;
+
+        extern "system" {
+            fn GetModuleHandleExW(
+                dwFlags: DWORD,
+                lpModuleName: LPCWSTR,
+                phModule: *mut HMODULE,
+            ) -> BOOL;
+            fn GetModuleFileNameW(hModule: HMODULE, lpFilename: LPWSTR, nSize: DWORD) -> DWORD;
+        }
+
+        let mut module: HMODULE = null_mut();
+        // SAFETY: We pass a valid function pointer address to GetModuleHandleExW
+        unsafe {
+            if GetModuleHandleExW(
+                GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS
+                    | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                binary_path as *const std::ffi::c_void as LPCWSTR,
+                &mut module,
+            ) == 0
+            {
+                return None;
+            }
+            let mut buf = [0u16; 4096];
+            let len = GetModuleFileNameW(module, buf.as_mut_ptr(), buf.len() as DWORD);
+            if len == 0 {
+                return None;
+            }
+            let s = OsString::from_wide(&buf[..len as usize]);
+            Some(std::path::PathBuf::from(s))
+        }
     }
 
-    extern "C" {
-        fn dladdr(addr: *const libc::c_void, info: *mut DlInfo) -> libc::c_int;
-    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        use std::ffi::CStr;
 
-    let probe = binary_path as *const libc::c_void;
-    let mut info = DlInfo {
-        dli_fname: std::ptr::null(),
-        dli_fbase: std::ptr::null_mut(),
-        dli_sname: std::ptr::null(),
-        dli_saddr: std::ptr::null_mut(),
-    };
-    let ret = unsafe { dladdr(probe, &mut info) };
-    if ret == 0 || info.dli_fname.is_null() {
-        return None;
+        #[repr(C)]
+        struct DlInfo {
+            dli_fname: *const libc::c_char,
+            dli_fbase: *mut libc::c_void,
+            dli_sname: *const libc::c_char,
+            dli_saddr: *mut libc::c_void,
+        }
+
+        extern "C" {
+            fn dladdr(addr: *const libc::c_void, info: *mut DlInfo) -> libc::c_int;
+        }
+
+        let probe = binary_path as *const libc::c_void;
+        let mut info = DlInfo {
+            dli_fname: std::ptr::null(),
+            dli_fbase: std::ptr::null_mut(),
+            dli_sname: std::ptr::null(),
+            dli_saddr: std::ptr::null_mut(),
+        };
+        let ret = unsafe { dladdr(probe, &mut info) };
+        if ret == 0 || info.dli_fname.is_null() {
+            return None;
+        }
+        let cstr = unsafe { CStr::from_ptr(info.dli_fname) };
+        let s = cstr.to_str().ok()?;
+        Some(std::path::PathBuf::from(s))
     }
-    let cstr = unsafe { CStr::from_ptr(info.dli_fname) };
-    let s = cstr.to_str().ok()?;
-    Some(std::path::PathBuf::from(s))
 }
 
 #[allow(dead_code)]
