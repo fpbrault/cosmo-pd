@@ -185,6 +185,7 @@ enum EnvKindKey {
 
 const ENV_DEST_KIND_OFFSET: [u8; 3] = [0, 16, 32];
 
+#[allow(unsafe_code)]
 fn env_destination(
     line_index: u8,
     env_kind: EnvKindKey,
@@ -197,7 +198,7 @@ fn env_destination(
         + (step_index as u8) * 2
         + u8::from(!level);
     if idx as usize <= ENV_STEP_DEST_LAST {
-        unsafe { std::mem::transmute::<u8, ModDestination>(idx) }
+        unsafe { core::mem::transmute::<u8, ModDestination>(idx) }
     } else {
         ModDestination::Volume
     }

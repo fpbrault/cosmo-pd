@@ -76,5 +76,18 @@ optional = true
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 no_denormals = { version = "0.1", optional = true }
 
+[dev-dependencies]
+criterion = { version = "0.5", default-features = false }
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+style = "warn"
+correctness = "deny"
+suspicious = "warn"
+complexity = "warn"
+perf = "warn"
+
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = false

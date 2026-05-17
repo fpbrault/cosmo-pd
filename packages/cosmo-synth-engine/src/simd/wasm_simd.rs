@@ -3,6 +3,7 @@
 //! This module keeps the cross-platform 4-wide API available on wasm32
 //! targets with `simd128` enabled.
 
+#![allow(unsafe_code)]
 #![cfg(target_arch = "wasm32")]
 
 use super::SimdType;
