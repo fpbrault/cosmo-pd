@@ -20,6 +20,7 @@ import type { LibraryPreset } from "@/features/synth/types/libraryPreset";
 import { useSynthPresetManager } from "@/features/synth/useSynthPresetManager";
 import { decodeCzPatch } from "@/lib/midi/czSysexDecoder";
 import { installBenchmarkApi } from "@/lib/performance/benchmarkHarness";
+import { installBridgeBenchApi } from "@/lib/performance/bridgeBench";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
 import { convertDecodedPatchToSynthPreset } from "@/lib/synth/czPresetConverter";
 import { DEFAULT_SYNTH_PRESETS } from "@/lib/synth/defaultPresets";
