@@ -2,6 +2,7 @@ use crate::params::modulation::{ModDestination, ModMatrix, ModSource};
 use crate::params::{ENV_STEP_DEST_FIRST, ENV_STEP_DEST_LAST, NUM_MOD_DESTINATIONS};
 use crate::voice::ModSources;
 
+#[derive(Debug, Clone)]
 pub(crate) struct ModMatrixCache {
     pub values: [f32; NUM_MOD_DESTINATIONS],
     pub ref_mod_env: f32,
@@ -41,7 +42,8 @@ impl ModMatrixCache {
                 self.active_destinations[self.active_destination_count] = idx;
                 self.active_destination_count += 1;
             }
-            if !self.has_env_step_routes && idx >= ENV_STEP_DEST_FIRST && idx <= ENV_STEP_DEST_LAST
+            if !self.has_env_step_routes
+                && (ENV_STEP_DEST_FIRST..=ENV_STEP_DEST_LAST).contains(&idx)
             {
                 self.has_env_step_routes = true;
             }

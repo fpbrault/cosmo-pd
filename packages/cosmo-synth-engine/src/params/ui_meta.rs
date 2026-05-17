@@ -1,6 +1,5 @@
 use serde::Serialize;
 
-use super::filter::FilterParams;
 use super::fx_params::{
     ChorusParams, DelayParams, PhaseModParams, PhaserParams, ReverbParams, VibratoParams,
 };
@@ -66,7 +65,7 @@ const POLY_MODE_LABELS_V1: [EngineEnumValueLabelV1; 2] = [
     },
 ];
 
-const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 57] = [
+const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 53] = [
     EngineParamUiMetaV1 {
         key: "volume",
         readout_format: EngineParamReadoutFormatV1::Percent,
@@ -206,22 +205,6 @@ const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 57] = [
         readout_format: EngineParamReadoutFormatV1::Seconds2,
     },
     EngineParamUiMetaV1 {
-        key: "filterType",
-        readout_format: EngineParamReadoutFormatV1::Uppercase,
-    },
-    EngineParamUiMetaV1 {
-        key: "filterCutoff",
-        readout_format: EngineParamReadoutFormatV1::Hertz,
-    },
-    EngineParamUiMetaV1 {
-        key: "filterResonance",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-    },
-    EngineParamUiMetaV1 {
-        key: "filterEnvAmount",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
-    },
-    EngineParamUiMetaV1 {
         key: "chorusRate",
         readout_format: EngineParamReadoutFormatV1::Decimal,
     },
@@ -321,7 +304,6 @@ pub fn engine_param_default_v1(key: &str) -> Option<f32> {
     let line2 = &synth.line2;
     let phase_mod = PhaseModParams::default();
     let vibrato = VibratoParams::default();
-    let filter = FilterParams::default();
     let chorus = ChorusParams::default();
     let delay = DelayParams::default();
     let reverb = ReverbParams::default();
@@ -359,9 +341,6 @@ pub fn engine_param_default_v1(key: &str) -> Option<f32> {
         "modEnvDecay" => Some(synth.mod_env.decay),
         "modEnvSustain" => Some(synth.mod_env.sustain),
         "modEnvRelease" => Some(synth.mod_env.release),
-        "filterCutoff" => Some(filter.cutoff),
-        "filterResonance" => Some(filter.resonance),
-        "filterEnvAmount" => Some(filter.env_amount),
         "chorusRate" => Some(chorus.rate),
         "chorusDepth" => Some(chorus.depth),
         "chorusMix" => Some(chorus.mix),

@@ -537,6 +537,10 @@ pub extern "C" fn cosmo_pd101_ffi_engine_create(
     Box::into_raw(Box::new(CosmoPd101FfiEngine::new(sample_rate, max_frames)))
 }
 
+/// # Safety
+///
+/// `engine` must be a valid, non-null pointer returned by
+/// [`cosmo_pd101_ffi_engine_create`] and must not have been destroyed yet.
 #[no_mangle]
 pub unsafe extern "C" fn cosmo_pd101_ffi_engine_destroy(engine: *mut CosmoPd101FfiEngine) {
     if !engine.is_null() {
@@ -555,6 +559,11 @@ pub extern "C" fn cosmo_pd101_ffi_reset_audio_state(
     CosmoPd101FfiStatus::Ok
 }
 
+/// # Safety
+///
+/// `engine` must be a valid, non-null pointer returned by
+/// [`cosmo_pd101_ffi_engine_create`]. `json` must be a non-null,
+/// nul-terminated C string.
 #[no_mangle]
 pub unsafe extern "C" fn cosmo_pd101_ffi_set_params_json(
     engine: *mut CosmoPd101FfiEngine,
@@ -577,6 +586,11 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_set_params_json(
     CosmoPd101FfiStatus::Ok
 }
 
+/// # Safety
+///
+/// `engine` must be a valid, non-null pointer returned by
+/// [`cosmo_pd101_ffi_engine_create`]. `output` must be non-null and point to a
+/// buffer of at least `output_len` bytes when `output_len > 0`.
 #[no_mangle]
 pub unsafe extern "C" fn cosmo_pd101_ffi_get_params_json(
     engine: *const CosmoPd101FfiEngine,
@@ -606,6 +620,10 @@ pub extern "C" fn cosmo_pd101_ffi_get_factory_preset_count() -> usize {
     factory_presets().len()
 }
 
+/// # Safety
+///
+/// `output` must be non-null and point to a buffer of at least `output_len`
+/// bytes when `output_len > 0`.
 #[no_mangle]
 pub unsafe extern "C" fn cosmo_pd101_ffi_get_factory_preset_name(
     index: usize,
@@ -630,6 +648,10 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_factory_preset_name(
     bytes.len()
 }
 
+/// # Safety
+///
+/// `output` must be non-null and point to a buffer of at least `output_len`
+/// bytes when `output_len > 0`.
 #[no_mangle]
 pub unsafe extern "C" fn cosmo_pd101_ffi_get_factory_preset_params_json(
     index: usize,
@@ -654,6 +676,11 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_factory_preset_params_json(
     bytes.len()
 }
 
+/// # Safety
+///
+/// `engine` must be a valid, non-null pointer returned by
+/// [`cosmo_pd101_ffi_engine_create`]. `output` must be non-null and point to a
+/// buffer of at least `output_len` bytes when `output_len > 0`.
 #[no_mangle]
 pub unsafe extern "C" fn cosmo_pd101_ffi_get_runtime_voice_states_json(
     engine: *const CosmoPd101FfiEngine,
@@ -678,6 +705,11 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_runtime_voice_states_json(
     bytes.len()
 }
 
+/// # Safety
+///
+/// `engine` must be a valid, non-null pointer returned by
+/// [`cosmo_pd101_ffi_engine_create`]. `output` must be non-null and point to a
+/// buffer of at least `output_len` bytes when `output_len > 0`.
 #[no_mangle]
 pub unsafe extern "C" fn cosmo_pd101_ffi_get_runtime_mod_sources_json(
     engine: *const CosmoPd101FfiEngine,
@@ -707,6 +739,9 @@ pub extern "C" fn cosmo_pd101_ffi_get_parameter_count() -> usize {
     AUTOMATABLE_PARAMS.len()
 }
 
+/// # Safety
+///
+/// `out_info` must be non-null and point to a valid `CosmoPd101FfiParamInfo`.
 #[no_mangle]
 pub unsafe extern "C" fn cosmo_pd101_ffi_get_parameter_info(
     index: usize,
@@ -734,6 +769,10 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_parameter_info(
     CosmoPd101FfiStatus::Ok
 }
 
+/// # Safety
+///
+/// `engine` must be a valid, non-null pointer returned by
+/// [`cosmo_pd101_ffi_engine_create`]. `out_value` must be non-null.
 #[no_mangle]
 pub unsafe extern "C" fn cosmo_pd101_ffi_get_parameter_value(
     engine: *const CosmoPd101FfiEngine,
@@ -875,6 +914,11 @@ pub extern "C" fn cosmo_pd101_ffi_set_aftertouch(
     CosmoPd101FfiStatus::Ok
 }
 
+/// # Safety
+///
+/// `engine` must be a valid, non-null pointer returned by
+/// [`cosmo_pd101_ffi_engine_create`]. `output` must be non-null and point to a
+/// buffer of at least `frames` floats.
 #[no_mangle]
 pub unsafe extern "C" fn cosmo_pd101_ffi_render_mono(
     engine: *mut CosmoPd101FfiEngine,
@@ -895,6 +939,11 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_render_mono(
     CosmoPd101FfiStatus::Ok
 }
 
+/// # Safety
+///
+/// `engine` must be a valid, non-null pointer returned by
+/// [`cosmo_pd101_ffi_engine_create`]. `output_left` and `output_right` must be
+/// non-null and each point to a buffer of at least `frames` floats.
 #[no_mangle]
 pub unsafe extern "C" fn cosmo_pd101_ffi_render_stereo(
     engine: *mut CosmoPd101FfiEngine,
@@ -920,6 +969,12 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_render_stereo(
     CosmoPd101FfiStatus::Ok
 }
 
+/// # Safety
+///
+/// `engine` must be a valid, non-null pointer returned by
+/// [`cosmo_pd101_ffi_engine_create`]. `output` must be non-null and point to a
+/// buffer of at least `output_len` i8s when `output_len > 0`.
+/// `out_sample_rate` and `out_hz` may be null.
 #[no_mangle]
 pub unsafe extern "C" fn cosmo_pd101_ffi_copy_scope_i8(
     engine: *const CosmoPd101FfiEngine,
@@ -946,6 +1001,12 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_copy_scope_i8(
     engine.scope.copy_linear_i8(output).unwrap_or(0)
 }
 
+/// # Safety
+///
+/// `engine` must be a valid, non-null pointer returned by
+/// [`cosmo_pd101_ffi_engine_create`]. `output` must be non-null and point to a
+/// buffer of at least `output_len` f32s when `output_len > 0`.
+/// `out_sample_rate` and `out_hz` may be null.
 #[no_mangle]
 pub unsafe extern "C" fn cosmo_pd101_ffi_copy_scope_f32(
     engine: *const CosmoPd101FfiEngine,
@@ -1004,8 +1065,10 @@ mod tests {
         let engine = cosmo_pd101_ffi_engine_create(44_100.0, 64);
         assert!(!engine.is_null());
 
-        let mut params = SynthParams::default();
-        params.volume = 0.23;
+        let params = SynthParams {
+            volume: 0.23,
+            ..Default::default()
+        };
         let json = CString::new(serde_json::to_string(&params).unwrap()).unwrap();
         let status = unsafe { cosmo_pd101_ffi_set_params_json(engine, json.as_ptr()) };
         assert_eq!(status, CosmoPd101FfiStatus::Ok);

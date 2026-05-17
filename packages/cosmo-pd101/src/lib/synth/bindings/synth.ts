@@ -263,7 +263,7 @@ export type FxSlotConfig = { type: "empty" } | { type: "chorus"; params: ChorusP
 /**
  * Top-level synth parameters
  */
-export type SynthParams = { lineSelect: LineSelect; modMode: ModMode; ringGain?: number; octave: number; line1: LineParams; line2: LineParams; frequency: number; volume: number; polyMode: PolyMode; legato: boolean; portamento: PortamentoParams; lfo: LfoParams; lfo2?: LfoParams; velocityCurve?: number; pitchBendRange?: number; modMatrix?: ModMatrix; random?: RandomParams; modEnv?: ModEnvParams; fxSlots?: [FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig] }
+export type SynthParams = { lineSelect: LineSelect; modMode: ModMode; ringGain?: number; octave: number; line1: LineParams; line2: LineParams; frequency: number; volume: number; czDacEnabled?: boolean; polyMode: PolyMode; legato: boolean; portamento: PortamentoParams; lfo: LfoParams; lfo2?: LfoParams; velocityCurve?: number; pitchBendRange?: number; modMatrix?: ModMatrix; random?: RandomParams; modEnv?: ModEnvParams; fxSlots?: [FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig] }
 
 /**
  * Canonical, versioned synth preset wire contract.
@@ -3514,34 +3514,6 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "paramDefault": 0.20000000298023224,
     "readoutFormat": {
       "kind": "seconds2"
-    }
-  },
-  {
-    "key": "filterType",
-    "paramDefault": null,
-    "readoutFormat": {
-      "kind": "uppercase"
-    }
-  },
-  {
-    "key": "filterCutoff",
-    "paramDefault": 5000.0,
-    "readoutFormat": {
-      "kind": "hertz"
-    }
-  },
-  {
-    "key": "filterResonance",
-    "paramDefault": 0.0,
-    "readoutFormat": {
-      "kind": "decimal"
-    }
-  },
-  {
-    "key": "filterEnvAmount",
-    "paramDefault": 0.0,
-    "readoutFormat": {
-      "kind": "decimal"
     }
   },
   {

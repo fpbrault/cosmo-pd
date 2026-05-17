@@ -380,7 +380,7 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
         let _: () = msg_send![&*wk, setFrame: frame];
     }
     if let Some(content_view) = _window.contentView() {
-        content_view.addSubview(&*wk);
+        content_view.addSubview(&wk);
     }
 
     // ── Start local HTTP server for subresource loading ──────────────────
@@ -392,34 +392,32 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
     let port = listener.local_addr().ok()?.port();
     let server_dir = resource_dir.clone();
     thread::spawn(move || {
-        for stream in listener.incoming() {
-            if let Ok(mut stream) = stream {
-                let mut buf = [0u8; 8192];
-                if stream.read(&mut buf).is_ok() {
-                    let req = String::from_utf8_lossy(&buf);
-                    let path = req
-                        .lines()
-                        .next()
-                        .and_then(|l| l.split_whitespace().nth(1))
-                        .unwrap_or("/index.html");
-                    let rel = path.trim_start_matches('/');
-                    let file_path = if rel.is_empty() || rel == "/" {
-                        server_dir.join("index.html")
-                    } else {
-                        server_dir.join(rel)
-                    };
-                    let (mime, data) = if let Ok(d) = std::fs::read(&file_path) {
-                        (mime_from_path(&file_path), d)
-                    } else {
-                        ("text/plain", b"404".to_vec())
-                    };
-                    let header = format!(
-                        "HTTP/1.1 200 OK\r\nContent-Type: {}\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\n\r\n",
-                        mime, data.len()
-                    );
-                    let _ = stream.write_all(header.as_bytes());
-                    let _ = stream.write_all(&data);
-                }
+        for mut stream in listener.incoming().flatten() {
+            let mut buf = [0u8; 8192];
+            if stream.read(&mut buf).is_ok() {
+                let req = String::from_utf8_lossy(&buf);
+                let path = req
+                    .lines()
+                    .next()
+                    .and_then(|l| l.split_whitespace().nth(1))
+                    .unwrap_or("/index.html");
+                let rel = path.trim_start_matches('/');
+                let file_path = if rel.is_empty() || rel == "/" {
+                    server_dir.join("index.html")
+                } else {
+                    server_dir.join(rel)
+                };
+                let (mime, data) = if let Ok(d) = std::fs::read(&file_path) {
+                    (mime_from_path(&file_path), d)
+                } else {
+                    ("text/plain", b"404".to_vec())
+                };
+                let header = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: {}\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\n\r\n",
+                    mime, data.len()
+                );
+                let _ = stream.write_all(header.as_bytes());
+                let _ = stream.write_all(&data);
             }
         }
     });
@@ -701,6 +699,7 @@ fn is_standalone_mode() -> bool {
 // ─── WebView builder ─────────────────────────────────────────────────────────
 
 #[cfg(target_os = "macos")]
+#[allow(clippy::too_many_arguments)]
 unsafe fn build_webview_from_ns_view(
     ns_view: *mut std::ffi::c_void,
     resource_dir: std::path::PathBuf,
@@ -819,7 +818,7 @@ unsafe fn build_webview_from_ns_view(
         append_log("parent NSView has a real window — embedding as child");
         let parent = NsViewWrapper(ns_view);
         let webview = builder
-            .with_url(&format!("{}://localhost/", scheme))
+            .with_url(format!("{}://localhost/", scheme))
             .build_as_child(&parent);
         match webview {
             Ok(webview) => {
@@ -847,7 +846,7 @@ unsafe fn build_webview_from_ns_view(
 
         let parent = NsViewWrapper(content_view);
         let webview = builder
-            .with_url(&format!("{}://localhost/", scheme))
+            .with_url(format!("{}://localhost/", scheme))
             .build_as_child(&parent);
         match webview {
             Ok(webview) => {
@@ -959,7 +958,7 @@ pub fn plugin_resource_dir() -> Option<std::path::PathBuf> {
             //    The binary is at target/debug/cosmo-pd101-standalone,
             //    the webview dist is at packages/cosmo-pd101-plugin/webview/dist/
             let exe_dir = bin_path.parent();
-            if let Some(ref d) = exe_dir {
+            if let Some(d) = exe_dir {
                 // Check if we're in the package's target directory
                 let webview_path = d.parent().and_then(|p| p.parent()).map(|p| {
                     p.join("packages")

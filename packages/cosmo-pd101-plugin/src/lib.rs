@@ -378,32 +378,32 @@ pub struct CzPluginParams {
 
 /// Apply DAW FloatParam values to a SynthParams struct, overwriting matching fields.
 fn apply_daw_params(synth: &mut SynthParams, params: &CzPluginParams) {
-    synth.volume = params.volume.value() as f32;
-    synth.line1.dcw_base = params.warp_a_amount.value() as f32;
-    synth.line2.dcw_base = params.warp_b_amount.value() as f32;
-    synth.line1.algo_blend = params.algo_blend_a.value() as f32;
-    synth.line2.algo_blend = params.algo_blend_b.value() as f32;
-    synth.line1.dca_base = params.line1_level.value() as f32;
-    synth.line2.dca_base = params.line2_level.value() as f32;
-    synth.line1.octave = params.line1_octave.value() as f32;
-    synth.line2.octave = params.line2_octave.value() as f32;
-    synth.line2.detune_note = params.detune_note.value() as f32;
-    synth.line2.detune_fine = params.detune_fine.value() as f32;
-    synth.velocity_curve = params.velocity_curve.value() as f32;
-    synth.pitch_bend_range = params.pitch_bend_range.value() as f32;
-    synth.portamento.rate = params.portamento_rate.value() as f32;
-    synth.portamento.time = params.portamento_time.value() as f32;
-    synth.lfo.rate = params.lfo_rate.value() as f32;
-    synth.lfo.depth = params.lfo_depth.value() as f32;
-    synth.lfo.offset = params.lfo_offset.value() as f32;
-    synth.lfo2.rate = params.lfo2_rate.value() as f32;
-    synth.lfo2.depth = params.lfo2_depth.value() as f32;
-    synth.lfo2.offset = params.lfo2_offset.value() as f32;
-    synth.random.rate = params.random_rate.value() as f32;
-    synth.mod_env.attack = params.mod_env_attack.value() as f32;
-    synth.mod_env.decay = params.mod_env_decay.value() as f32;
-    synth.mod_env.sustain = params.mod_env_sustain.value() as f32;
-    synth.mod_env.release = params.mod_env_release.value() as f32;
+    synth.volume = params.volume.value();
+    synth.line1.dcw_base = params.warp_a_amount.value();
+    synth.line2.dcw_base = params.warp_b_amount.value();
+    synth.line1.algo_blend = params.algo_blend_a.value();
+    synth.line2.algo_blend = params.algo_blend_b.value();
+    synth.line1.dca_base = params.line1_level.value();
+    synth.line2.dca_base = params.line2_level.value();
+    synth.line1.octave = params.line1_octave.value();
+    synth.line2.octave = params.line2_octave.value();
+    synth.line2.detune_note = params.detune_note.value();
+    synth.line2.detune_fine = params.detune_fine.value();
+    synth.velocity_curve = params.velocity_curve.value();
+    synth.pitch_bend_range = params.pitch_bend_range.value();
+    synth.portamento.rate = params.portamento_rate.value();
+    synth.portamento.time = params.portamento_time.value();
+    synth.lfo.rate = params.lfo_rate.value();
+    synth.lfo.depth = params.lfo_depth.value();
+    synth.lfo.offset = params.lfo_offset.value();
+    synth.lfo2.rate = params.lfo2_rate.value();
+    synth.lfo2.depth = params.lfo2_depth.value();
+    synth.lfo2.offset = params.lfo2_offset.value();
+    synth.random.rate = params.random_rate.value();
+    synth.mod_env.attack = params.mod_env_attack.value();
+    synth.mod_env.decay = params.mod_env_decay.value();
+    synth.mod_env.sustain = params.mod_env_sustain.value();
+    synth.mod_env.release = params.mod_env_release.value();
 }
 
 fn sync_all_daw_params_from_synth(params: &CzPluginParams, synth: &SynthParams) {
@@ -449,6 +449,7 @@ fn sync_all_daw_params_from_synth(params: &CzPluginParams, synth: &SynthParams) 
 // IPC dispatch
 // =============================================================================
 
+#[allow(clippy::too_many_arguments)]
 fn handle_ipc_invoke(
     method: &str,
     args: &[serde_json::Value],
@@ -999,8 +1000,10 @@ mod tests {
     fn set_params_rpc_updates_synth_params() {
         let (sp, rsp, rms, ver, sc, q, pc, params) = make_handler_state();
 
-        let mut new_params = SynthParams::default();
-        new_params.volume = 0.42;
+        let new_params = SynthParams {
+            volume: 0.42,
+            ..Default::default()
+        };
         let json_str = serde_json::to_string(&new_params).unwrap();
 
         let result = handle_ipc_invoke(

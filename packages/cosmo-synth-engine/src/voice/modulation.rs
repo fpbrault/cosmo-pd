@@ -1,8 +1,7 @@
 use crate::params::{
-    EnvStep, LineParams, ModDestination, ModMatrix, ModMatrixCache, ModSource, StepEnvData,
-    NUM_ENV_STEPS,
+    EnvStep, LineParams, ModDestination, ModMatrixCache, StepEnvData, ENV_STEP_DEST_FIRST,
+    ENV_STEP_DEST_LAST, NUM_ENV_STEPS,
 };
-use crate::simd::SimdBackend;
 
 // Modulation helpers
 // ---------------------------------------------------------------------------
@@ -40,110 +39,6 @@ impl ModSources {
             aftertouch,
         }
     }
-
-    pub(crate) fn source_value(&self, source: ModSource) -> f32 {
-        match source {
-            ModSource::Lfo1 => self.lfo1,
-            ModSource::Lfo2 => self.lfo2,
-            ModSource::Random => self.random,
-            ModSource::ModEnv => self.mod_env,
-            ModSource::Velocity => self.velocity,
-            ModSource::ModWheel => self.mod_wheel,
-            ModSource::Aftertouch => self.aftertouch,
-        }
-    }
-}
-
-/// Sum all enabled routes targeting `dest`, clamping the total to [-1, 1].
-#[allow(dead_code)]
-pub(crate) fn mod_value_for(dest: ModDestination, matrix: &ModMatrix, sources: &ModSources) -> f32 {
-    let mut total = 0.0_f32;
-    for route in &matrix.routes {
-        if route.enabled && route.destination == dest {
-            total += route.amount * sources.source_value(route.source);
-        }
-    }
-    total.clamp(-1.0, 1.0)
-}
-
-#[allow(dead_code)]
-pub(crate) fn mod_values_for_destinations4(
-    destinations: [ModDestination; 4],
-    matrix: &ModMatrix,
-    sources: &ModSources,
-    backend: SimdBackend,
-) -> [f32; 4] {
-    let mut totals = [0.0_f32; 4];
-
-    for route in &matrix.routes {
-        if !route.enabled {
-            continue;
-        }
-
-        let scaled = route.amount * sources.source_value(route.source);
-        let values = [scaled; 4];
-        let mask = [
-            if route.destination == destinations[0] {
-                1.0
-            } else {
-                0.0
-            },
-            if route.destination == destinations[1] {
-                1.0
-            } else {
-                0.0
-            },
-            if route.destination == destinations[2] {
-                1.0
-            } else {
-                0.0
-            },
-            if route.destination == destinations[3] {
-                1.0
-            } else {
-                0.0
-            },
-        ];
-
-        totals = backend.add4(totals, backend.mul4(values, mask));
-    }
-
-    backend.clamp4(totals, -1.0, 1.0)
-}
-
-#[allow(dead_code)]
-pub(crate) fn mod_values_for_destinations8(
-    destinations: [ModDestination; 8],
-    matrix: &ModMatrix,
-    sources: &ModSources,
-    backend: SimdBackend,
-) -> [f32; 8] {
-    let first = mod_values_for_destinations4(
-        [
-            destinations[0],
-            destinations[1],
-            destinations[2],
-            destinations[3],
-        ],
-        matrix,
-        sources,
-        backend,
-    );
-    let second = mod_values_for_destinations4(
-        [
-            destinations[4],
-            destinations[5],
-            destinations[6],
-            destinations[7],
-        ],
-        matrix,
-        sources,
-        backend,
-    );
-
-    [
-        first[0], first[1], first[2], first[3], second[0], second[1], second[2], second[3],
-    ]
 }
 
 pub(crate) fn algo_param_slot_mods_for_line(
@@ -183,62 +78,33 @@ enum EnvKindKey {
     Dca,
 }
 
+const ENV_DEST_KIND_OFFSET: [u16; 3] = [0, 16, 32];
+
+fn env_destination(
+    line_index: u8,
+    env_kind: EnvKindKey,
+    step_index: usize,
+    level: bool,
+) -> ModDestination {
+    let idx = ENV_STEP_DEST_FIRST as u16
+        + u16::from(line_index.saturating_sub(1)) * 48
+        + ENV_DEST_KIND_OFFSET[env_kind as u8 as usize]
+        + (step_index as u16) * 2
+        + u16::from(!level);
+
+    if usize::from(idx) <= ENV_STEP_DEST_LAST {
+        ModDestination::try_from(idx).unwrap_or(ModDestination::Volume)
+    } else {
+        ModDestination::Volume
+    }
+}
+
 fn env_step_level_destination(
     line_index: u8,
     env_kind: EnvKindKey,
     step_index: usize,
 ) -> ModDestination {
-    match (line_index, env_kind, step_index) {
-        (1, EnvKindKey::Dco, 0) => ModDestination::Line1DcoEnvStep1Level,
-        (1, EnvKindKey::Dco, 1) => ModDestination::Line1DcoEnvStep2Level,
-        (1, EnvKindKey::Dco, 2) => ModDestination::Line1DcoEnvStep3Level,
-        (1, EnvKindKey::Dco, 3) => ModDestination::Line1DcoEnvStep4Level,
-        (1, EnvKindKey::Dco, 4) => ModDestination::Line1DcoEnvStep5Level,
-        (1, EnvKindKey::Dco, 5) => ModDestination::Line1DcoEnvStep6Level,
-        (1, EnvKindKey::Dco, 6) => ModDestination::Line1DcoEnvStep7Level,
-        (1, EnvKindKey::Dco, 7) => ModDestination::Line1DcoEnvStep8Level,
-        (1, EnvKindKey::Dcw, 0) => ModDestination::Line1DcwEnvStep1Level,
-        (1, EnvKindKey::Dcw, 1) => ModDestination::Line1DcwEnvStep2Level,
-        (1, EnvKindKey::Dcw, 2) => ModDestination::Line1DcwEnvStep3Level,
-        (1, EnvKindKey::Dcw, 3) => ModDestination::Line1DcwEnvStep4Level,
-        (1, EnvKindKey::Dcw, 4) => ModDestination::Line1DcwEnvStep5Level,
-        (1, EnvKindKey::Dcw, 5) => ModDestination::Line1DcwEnvStep6Level,
-        (1, EnvKindKey::Dcw, 6) => ModDestination::Line1DcwEnvStep7Level,
-        (1, EnvKindKey::Dcw, 7) => ModDestination::Line1DcwEnvStep8Level,
-        (1, EnvKindKey::Dca, 0) => ModDestination::Line1DcaEnvStep1Level,
-        (1, EnvKindKey::Dca, 1) => ModDestination::Line1DcaEnvStep2Level,
-        (1, EnvKindKey::Dca, 2) => ModDestination::Line1DcaEnvStep3Level,
-        (1, EnvKindKey::Dca, 3) => ModDestination::Line1DcaEnvStep4Level,
-        (1, EnvKindKey::Dca, 4) => ModDestination::Line1DcaEnvStep5Level,
-        (1, EnvKindKey::Dca, 5) => ModDestination::Line1DcaEnvStep6Level,
-        (1, EnvKindKey::Dca, 6) => ModDestination::Line1DcaEnvStep7Level,
-        (1, EnvKindKey::Dca, 7) => ModDestination::Line1DcaEnvStep8Level,
-        (2, EnvKindKey::Dco, 0) => ModDestination::Line2DcoEnvStep1Level,
-        (2, EnvKindKey::Dco, 1) => ModDestination::Line2DcoEnvStep2Level,
-        (2, EnvKindKey::Dco, 2) => ModDestination::Line2DcoEnvStep3Level,
-        (2, EnvKindKey::Dco, 3) => ModDestination::Line2DcoEnvStep4Level,
-        (2, EnvKindKey::Dco, 4) => ModDestination::Line2DcoEnvStep5Level,
-        (2, EnvKindKey::Dco, 5) => ModDestination::Line2DcoEnvStep6Level,
-        (2, EnvKindKey::Dco, 6) => ModDestination::Line2DcoEnvStep7Level,
-        (2, EnvKindKey::Dco, 7) => ModDestination::Line2DcoEnvStep8Level,
-        (2, EnvKindKey::Dcw, 0) => ModDestination::Line2DcwEnvStep1Level,
-        (2, EnvKindKey::Dcw, 1) => ModDestination::Line2DcwEnvStep2Level,
-        (2, EnvKindKey::Dcw, 2) => ModDestination::Line2DcwEnvStep3Level,
-        (2, EnvKindKey::Dcw, 3) => ModDestination::Line2DcwEnvStep4Level,
-        (2, EnvKindKey::Dcw, 4) => ModDestination::Line2DcwEnvStep5Level,
-        (2, EnvKindKey::Dcw, 5) => ModDestination::Line2DcwEnvStep6Level,
-        (2, EnvKindKey::Dcw, 6) => ModDestination::Line2DcwEnvStep7Level,
-        (2, EnvKindKey::Dcw, 7) => ModDestination::Line2DcwEnvStep8Level,
-        (2, EnvKindKey::Dca, 0) => ModDestination::Line2DcaEnvStep1Level,
-        (2, EnvKindKey::Dca, 1) => ModDestination::Line2DcaEnvStep2Level,
-        (2, EnvKindKey::Dca, 2) => ModDestination::Line2DcaEnvStep3Level,
-        (2, EnvKindKey::Dca, 3) => ModDestination::Line2DcaEnvStep4Level,
-        (2, EnvKindKey::Dca, 4) => ModDestination::Line2DcaEnvStep5Level,
-        (2, EnvKindKey::Dca, 5) => ModDestination::Line2DcaEnvStep6Level,
-        (2, EnvKindKey::Dca, 6) => ModDestination::Line2DcaEnvStep7Level,
-        (2, EnvKindKey::Dca, 7) => ModDestination::Line2DcaEnvStep8Level,
-        _ => ModDestination::Volume,
-    }
+    env_destination(line_index, env_kind, step_index, true)
 }
 
 fn env_step_rate_destination(
@@ -246,57 +112,7 @@ fn env_step_rate_destination(
     env_kind: EnvKindKey,
     step_index: usize,
 ) -> ModDestination {
-    match (line_index, env_kind, step_index) {
-        (1, EnvKindKey::Dco, 0) => ModDestination::Line1DcoEnvStep1Rate,
-        (1, EnvKindKey::Dco, 1) => ModDestination::Line1DcoEnvStep2Rate,
-        (1, EnvKindKey::Dco, 2) => ModDestination::Line1DcoEnvStep3Rate,
-        (1, EnvKindKey::Dco, 3) => ModDestination::Line1DcoEnvStep4Rate,
-        (1, EnvKindKey::Dco, 4) => ModDestination::Line1DcoEnvStep5Rate,
-        (1, EnvKindKey::Dco, 5) => ModDestination::Line1DcoEnvStep6Rate,
-        (1, EnvKindKey::Dco, 6) => ModDestination::Line1DcoEnvStep7Rate,
-        (1, EnvKindKey::Dco, 7) => ModDestination::Line1DcoEnvStep8Rate,
-        (1, EnvKindKey::Dcw, 0) => ModDestination::Line1DcwEnvStep1Rate,
-        (1, EnvKindKey::Dcw, 1) => ModDestination::Line1DcwEnvStep2Rate,
-        (1, EnvKindKey::Dcw, 2) => ModDestination::Line1DcwEnvStep3Rate,
-        (1, EnvKindKey::Dcw, 3) => ModDestination::Line1DcwEnvStep4Rate,
-        (1, EnvKindKey::Dcw, 4) => ModDestination::Line1DcwEnvStep5Rate,
-        (1, EnvKindKey::Dcw, 5) => ModDestination::Line1DcwEnvStep6Rate,
-        (1, EnvKindKey::Dcw, 6) => ModDestination::Line1DcwEnvStep7Rate,
-        (1, EnvKindKey::Dcw, 7) => ModDestination::Line1DcwEnvStep8Rate,
-        (1, EnvKindKey::Dca, 0) => ModDestination::Line1DcaEnvStep1Rate,
-        (1, EnvKindKey::Dca, 1) => ModDestination::Line1DcaEnvStep2Rate,
-        (1, EnvKindKey::Dca, 2) => ModDestination::Line1DcaEnvStep3Rate,
-        (1, EnvKindKey::Dca, 3) => ModDestination::Line1DcaEnvStep4Rate,
-        (1, EnvKindKey::Dca, 4) => ModDestination::Line1DcaEnvStep5Rate,
-        (1, EnvKindKey::Dca, 5) => ModDestination::Line1DcaEnvStep6Rate,
-        (1, EnvKindKey::Dca, 6) => ModDestination::Line1DcaEnvStep7Rate,
-        (1, EnvKindKey::Dca, 7) => ModDestination::Line1DcaEnvStep8Rate,
-        (2, EnvKindKey::Dco, 0) => ModDestination::Line2DcoEnvStep1Rate,
-        (2, EnvKindKey::Dco, 1) => ModDestination::Line2DcoEnvStep2Rate,
-        (2, EnvKindKey::Dco, 2) => ModDestination::Line2DcoEnvStep3Rate,
-        (2, EnvKindKey::Dco, 3) => ModDestination::Line2DcoEnvStep4Rate,
-        (2, EnvKindKey::Dco, 4) => ModDestination::Line2DcoEnvStep5Rate,
-        (2, EnvKindKey::Dco, 5) => ModDestination::Line2DcoEnvStep6Rate,
-        (2, EnvKindKey::Dco, 6) => ModDestination::Line2DcoEnvStep7Rate,
-        (2, EnvKindKey::Dco, 7) => ModDestination::Line2DcoEnvStep8Rate,
-        (2, EnvKindKey::Dcw, 0) => ModDestination::Line2DcwEnvStep1Rate,
-        (2, EnvKindKey::Dcw, 1) => ModDestination::Line2DcwEnvStep2Rate,
-        (2, EnvKindKey::Dcw, 2) => ModDestination::Line2DcwEnvStep3Rate,
-        (2, EnvKindKey::Dcw, 3) => ModDestination::Line2DcwEnvStep4Rate,
-        (2, EnvKindKey::Dcw, 4) => ModDestination::Line2DcwEnvStep5Rate,
-        (2, EnvKindKey::Dcw, 5) => ModDestination::Line2DcwEnvStep6Rate,
-        (2, EnvKindKey::Dcw, 6) => ModDestination::Line2DcwEnvStep7Rate,
-        (2, EnvKindKey::Dcw, 7) => ModDestination::Line2DcwEnvStep8Rate,
-        (2, EnvKindKey::Dca, 0) => ModDestination::Line2DcaEnvStep1Rate,
-        (2, EnvKindKey::Dca, 1) => ModDestination::Line2DcaEnvStep2Rate,
-        (2, EnvKindKey::Dca, 2) => ModDestination::Line2DcaEnvStep3Rate,
-        (2, EnvKindKey::Dca, 3) => ModDestination::Line2DcaEnvStep4Rate,
-        (2, EnvKindKey::Dca, 4) => ModDestination::Line2DcaEnvStep5Rate,
-        (2, EnvKindKey::Dca, 5) => ModDestination::Line2DcaEnvStep6Rate,
-        (2, EnvKindKey::Dca, 6) => ModDestination::Line2DcaEnvStep7Rate,
-        (2, EnvKindKey::Dca, 7) => ModDestination::Line2DcaEnvStep8Rate,
-        _ => ModDestination::Volume,
-    }
+    env_destination(line_index, env_kind, step_index, false)
 }
 
 fn apply_env_step_modulation(

@@ -5,8 +5,8 @@
 //! - WebAssembly (AudioWorklet via wasm-bindgen, feature = "wasm")
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![deny(unsafe_code)]
 
-pub mod batch_cache;
 pub mod default_envelopes;
 pub mod dsp_utils;
 pub mod envelope;
@@ -18,6 +18,7 @@ pub mod module_presets;
 pub mod params;
 pub mod preset_wire;
 pub mod processor;
+mod render_cache;
 pub mod simd;
 pub mod voice;
 

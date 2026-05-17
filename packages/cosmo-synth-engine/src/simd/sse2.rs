@@ -3,6 +3,7 @@
 //! This backend keeps the same 4-wide API as AVX2 so the higher-level code
 //! can target a single abstraction across native x86 targets.
 
+#![allow(unsafe_code)]
 #![cfg(target_arch = "x86_64")]
 
 use super::SimdType;
