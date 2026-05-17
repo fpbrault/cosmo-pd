@@ -19,15 +19,13 @@ static SIN_TABLE: LazyLock<[f32; SIN_TABLE_SIZE]> = LazyLock::new(|| {
 #[inline]
 pub fn sin_lut(phase: f32) -> f32 {
     let p = phase - phase.floor();
-    let idx = (p * SIN_TABLE_SIZE as f32) as usize & (SIN_TABLE_SIZE - 1);
-    unsafe { *SIN_TABLE.get_unchecked(idx) }
+    SIN_TABLE[(p * SIN_TABLE_SIZE as f32) as usize & (SIN_TABLE_SIZE - 1)]
 }
 
 #[inline]
 pub fn cos_lut(phase: f32) -> f32 {
     let p = phase - phase.floor();
-    let idx = ((p + 0.25) * SIN_TABLE_SIZE as f32) as usize & (SIN_TABLE_SIZE - 1);
-    unsafe { *SIN_TABLE.get_unchecked(idx) }
+    SIN_TABLE[((p + 0.25) * SIN_TABLE_SIZE as f32) as usize & (SIN_TABLE_SIZE - 1)]
 }
 
 /// Wrap a value into [0, 1).

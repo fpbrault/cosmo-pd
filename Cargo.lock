@@ -1127,6 +1127,7 @@ dependencies = [
  "criterion",
  "getrandom 0.4.2",
  "no_denormals",
+ "num_enum",
  "rtsan-standalone",
  "serde",
  "serde_json",
