@@ -18,7 +18,6 @@ const SCOPE_POLL_INTERVAL_MS = 33;
 const RUNTIME_VOICE_STATES_POLL_INTERVAL_MS = 16;
 const RUNTIME_MOD_SOURCES_POLL_INTERVAL_MS = 16;
 const IPC_TIMEOUT_MS = 250;
-const SCOPE_SAMPLE_SCALE = 1 / 127.0;
 
 declare global {
 	interface Window {
@@ -168,17 +167,6 @@ function installScopePolling() {
 	let pollInFlight = false;
 	let destroyed = false;
 
-	const normalizeScopeSamples = (samples: number[]) => {
-		let maxAbs = 0;
-		for (const sample of samples) {
-			maxAbs = Math.max(maxAbs, Math.abs(sample));
-		}
-		if (maxAbs <= 1.5) {
-			return samples;
-		}
-		return samples.map((sample) => sample * SCOPE_SAMPLE_SCALE);
-	};
-
 	const scheduleNextFrame = () => {
 		if (destroyed || rafId !== 0 || !currentScopeHandler) {
 			return;
@@ -211,11 +199,7 @@ function installScopePolling() {
 				.then((result) => {
 					const raw = result as ScopeDataResponse;
 					if (raw?.samples.length > 0 && currentScopeHandler) {
-						currentScopeHandler(
-							normalizeScopeSamples(raw.samples),
-							raw.sampleRate,
-							raw.hz,
-						);
+						currentScopeHandler(raw.samples, raw.sampleRate, raw.hz);
 					}
 				})
 				.catch(() => {

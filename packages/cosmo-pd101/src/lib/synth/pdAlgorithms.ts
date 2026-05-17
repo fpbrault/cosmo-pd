@@ -222,7 +222,7 @@ function clamp(value: number, min: number, max: number): number {
 	return Math.max(min, Math.min(max, value));
 }
 
-function pdBend(
+export function pdBend(
 	phase: number,
 	amount: number,
 	curve = 0.5,
@@ -242,7 +242,7 @@ function pdBend(
 	return denominator === 0 ? phase : numerator / denominator;
 }
 
-function pdSync(
+export function pdSync(
 	phase: number,
 	amount: number,
 	ratio = 0.5,
@@ -260,7 +260,7 @@ function pdSync(
 	return phase + (shaped - phase) * (0.25 + window * 0.75);
 }
 
-function pdPinch(
+export function pdPinch(
 	phase: number,
 	amount: number,
 	focus = 0.5,
@@ -321,7 +321,7 @@ function lerpPhase(a: number, b: number, t: number): number {
 	return wrap01(a + delta * t);
 }
 
-function pdFold(
+export function pdFold(
 	phase: number,
 	amount: number,
 	stages = 0.5,
@@ -341,7 +341,7 @@ function pdFold(
 	return lerpPhase(basePhase, nextPhase, foldFrac);
 }
 
-function pdSkew(
+export function pdSkew(
 	phase: number,
 	amount: number,
 	bias = 0.2,
@@ -362,7 +362,7 @@ function pdSkew(
 	return phase + (target - phase) * amount;
 }
 
-function pdQuantize(
+export function pdQuantize(
 	phase: number,
 	amount: number,
 	steps = 0.5,
@@ -374,7 +374,7 @@ function pdQuantize(
 	return phase + (target - phase) * amount;
 }
 
-function pdTwist(
+export function pdTwist(
 	phase: number,
 	amount: number,
 	harmonics = 0.5,
@@ -392,7 +392,7 @@ function pdTwist(
 	return wrap01(phase + amount * depthScale * shaped);
 }
 
-function pdClip(
+export function pdClip(
 	phase: number,
 	amount: number,
 	drive = 0.5,
@@ -410,7 +410,7 @@ function pdClip(
 	return mixed / (clip * 2) + 0.5;
 }
 
-function pdRipple(
+export function pdRipple(
 	phase: number,
 	amount: number,
 	rippleFreq = 0.5,
@@ -428,7 +428,7 @@ function pdRipple(
 	return wrap01(phase + amount * depth * shaped);
 }
 
-function pdMirror(
+export function pdMirror(
 	phase: number,
 	amount: number,
 	center = 0.5,
@@ -451,7 +451,7 @@ function pdMirror(
 	return phase + (clipped - phase) * (amount * (0.2 + blend * 0.8));
 }
 
-function pdTerrain(
+export function pdTerrain(
 	phase: number,
 	amount: number,
 	ratio = 2,
@@ -477,7 +477,7 @@ function pdTerrain(
 	return wrap01(phase + displacementScale * modulator);
 }
 
-function pdStutter(
+export function pdStutter(
 	phase: number,
 	amount: number,
 	segs = 0.25,
@@ -503,7 +503,7 @@ function pdStutter(
 	return lerp(phase, warped, amount);
 }
 
-function pdCheby(
+export function pdCheby(
 	phase: number,
 	amount: number,
 	order = 0.2,
@@ -593,7 +593,7 @@ function czWaveform(waveformId: CzWaveform, phi: number): number {
 	}
 }
 
-function pdCz101(phase: number, amount: number): number {
+export function pdCz101(phase: number, amount: number): number {
 	if (amount === 0) return phase;
 	const t = amount;
 	if (t < 0.5) {

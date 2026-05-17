@@ -63,7 +63,7 @@ if [[ "$PLATFORM" == "macos" ]]; then
     ensure_rust_target "aarch64-apple-darwin"
   fi
 
-  echo "    Using nih-plug xtask: cargo xtask bundle cosmo-pd101-plugin ${FORMAT_FLAGS[*]} --arch $ARCH"
+  echo "    Using xtask: cargo xtask bundle cosmo-pd101-plugin ${FORMAT_FLAGS[*]} --arch $ARCH"
   cargo run --target-dir packages/xtask/target -p xtask -- bundle cosmo-pd101-plugin "${FORMAT_FLAGS[@]}" --arch "$ARCH" $PROFILE_ARG
 else
   if [[ "$PLATFORM" != "windows" && "$PLATFORM" != "linux" ]]; then

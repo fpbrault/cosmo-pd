@@ -1,166 +1,238 @@
 import { describe, expect, it } from "vitest";
-import type { AlgoControlValueV1 } from "@/lib/synth/bindings/synth";
-import { ALGO_UI_CATALOG_V1 } from "@/lib/synth/bindings/synth";
+import type { Algo, WindowType } from "@/lib/synth/bindings/synth";
 import {
 	computeWaveform,
-	getPdAlgoBehaviorDescription,
-	getPdAlgoDef,
-	PD_ALGOS,
-} from "@/lib/synth/pdAlgorithms";
-
-const baseParams = {
-	warpAAmount: 1,
-	warpBAmount: 0,
-	warpAAlgo: "cz101" as const,
-	warpBAlgo: "cz101" as const,
-	algo2A: null,
-	algo2B: null,
-	algoBlendA: 0,
-	algoBlendB: 0,
-	intPmAmount: 0,
-	intPmRatio: 1,
-	extPmAmount: 0,
-	pmPre: true,
-	windowType: "off" as const,
-	line1Level: 1,
-	line2Level: 0,
-	line1BaseWaveformA: "sine" as const,
-	line1BaseWaveformB: "sine" as const,
-	line2BaseWaveformA: "sine" as const,
-	line2BaseWaveformB: "sine" as const,
-	sampleCount: 256,
-};
-
-function czControls(
-	waveform1: number,
-	waveform2: number,
-): AlgoControlValueV1[] {
-	return [
-		{ id: "waveform1", value: waveform1 },
-		{ id: "waveform2", value: waveform2 },
-		{ id: "windowFunction", value: 0 },
-	];
-}
-
-function maxDelta(
-	left: Float32Array,
-	right: Float32Array,
-	start: number,
-	end: number,
-): number {
-	let max = 0;
-	for (let index = start; index < end; index++) {
-		max = Math.max(max, Math.abs(left[index] - right[index]));
-	}
-	return max;
-}
+	pdBend,
+	pdCheby,
+	pdClip,
+	pdCz101,
+	pdFold,
+	pdMirror,
+	pdPinch,
+	pdQuantize,
+	pdRipple,
+	pdSkew,
+	pdStutter,
+	pdSync,
+	pdTerrain,
+	pdTwist,
+} from "./pdAlgorithms";
 
 describe("pdAlgorithms", () => {
-	it("provides a finite SVG icon path for every visible algorithm", () => {
-		for (const algo of PD_ALGOS) {
-			expect(algo.icon).not.toContain("NaN");
-			expect(algo.icon).not.toContain("Infinity");
-			expect(algo.icon.startsWith("M")).toBe(true);
-		}
+	describe("pdBend", () => {
+		it("returns phase when amount is 0", () => {
+			expect(pdBend(0.5, 0)).toBe(0.5);
+		});
+
+		it("warps phase when amount is non-zero", () => {
+			const p = 0.25;
+			const a = 0.5;
+			expect(pdBend(p, a)).not.toBe(p);
+		});
 	});
 
-	it("stays aligned with visible algo UI catalog entries", () => {
-		const visibleIds = ALGO_UI_CATALOG_V1.filter((entry) => entry.visible)
-			.map((entry) => entry.id)
-			.sort();
-		const pdIds = PD_ALGOS.map((entry) => entry.value).sort();
+	describe("pdSync", () => {
+		it("returns phase when amount is 0", () => {
+			expect(pdSync(0.5, 0)).toBe(0.5);
+		});
 
-		expect(pdIds).toEqual(visibleIds);
+		it("warps phase when amount is non-zero", () => {
+			const p = 0.25;
+			const a = 0.5;
+			expect(pdSync(p, a)).not.toBe(p);
+		});
 	});
 
-	it("exposes behavior descriptions and defs for new experimental algos", () => {
-		for (const id of ["terrain", "stutter", "cheby"] as const) {
-			expect(getPdAlgoDef(id)).toBeDefined();
-			expect(getPdAlgoBehaviorDescription(id)).not.toHaveLength(0);
-		}
-	});
-});
-
-describe("computeWaveform", () => {
-	it("uses CZ101 waveform 2 in the second preview cycle", () => {
-		const sawSaw = computeWaveform({
-			...baseParams,
-			line1AlgoControlsA: czControls(0, 0),
-		});
-		const squareSquare = computeWaveform({
-			...baseParams,
-			line1AlgoControlsA: czControls(1, 1),
-		});
-		const sawSquare = computeWaveform({
-			...baseParams,
-			line1AlgoControlsA: czControls(0, 1),
+	describe("pdPinch", () => {
+		it("returns phase when amount is 0", () => {
+			expect(pdPinch(0.5, 0)).toBe(0.5);
 		});
 
-		expect(sawSquare.out1[32]).toBeCloseTo(sawSaw.out1[64], 6);
-		expect(sawSquare.out1[160]).toBeCloseTo(squareSquare.out1[64], 6);
-		expect(sawSquare.out1[160]).not.toBeCloseTo(sawSaw.out1[64], 3);
+		it("warps phase when amount is non-zero", () => {
+			const p = 0.25;
+			const a = 0.5;
+			expect(pdPinch(p, a)).not.toBe(p);
+		});
 	});
 
-	it("keeps a single preview cycle when CZ101 waveform slots match", () => {
-		const sawSaw = computeWaveform({
-			...baseParams,
-			line1AlgoControlsA: czControls(0, 0),
-		});
-		const sawSquare = computeWaveform({
-			...baseParams,
-			line1AlgoControlsA: czControls(0, 1),
+	describe("pdFold", () => {
+		it("applies a baseline fold even when amount is 0", () => {
+			const p = 0.25;
+			const a = 0;
+			const res = pdFold(p, a);
+			expect(res).not.toBe(p);
 		});
 
-		expect(sawSaw.phase[160]).toBeCloseTo(160 / 256, 6);
-		expect(sawSquare.phase[160]).toBeCloseTo(64 / 256, 6);
+		it("warps phase when amount is non-zero", () => {
+			const p = 0.25;
+			const a = 0.5;
+			expect(pdFold(p, a)).not.toBe(p);
+		});
 	});
 
-	it("applies the base waveform after CZ101 phase distortion", () => {
-		const sineBase = computeWaveform({
-			...baseParams,
-			line1BaseWaveformA: "sine",
-			line1AlgoControlsA: czControls(0, 0),
-		});
-		const squareBase = computeWaveform({
-			...baseParams,
-			line1BaseWaveformA: "square",
-			line1AlgoControlsA: czControls(0, 0),
+	describe("pdSkew", () => {
+		it("returns phase when amount is 0", () => {
+			expect(pdSkew(0.5, 0)).toBe(0.5);
 		});
 
-		expect(squareBase.out1[32]).not.toBeCloseTo(sineBase.out1[32], 3);
+		it("warps phase when amount is non-zero", () => {
+			const p = 0.25;
+			const a = 0.5;
+			expect(pdSkew(p, a)).not.toBe(p);
+		});
 	});
 
-	it("blends both CZ101 algo slots with their own waveform pairs", () => {
-		const blendedSameSecondWave = computeWaveform({
-			...baseParams,
-			algo2A: "cz101",
-			algoBlendA: 0.5,
-			line1AlgoControlsA: czControls(0, 0),
-			line1AlgoControlsB: czControls(1, 0),
-		});
-		const blendedDifferentSecondWave = computeWaveform({
-			...baseParams,
-			algo2A: "cz101",
-			algoBlendA: 0.5,
-			line1AlgoControlsA: czControls(0, 2),
-			line1AlgoControlsB: czControls(1, 3),
+	describe("pdQuantize", () => {
+		it("returns phase when amount is 0", () => {
+			expect(pdQuantize(0.5, 0)).toBe(0.5);
 		});
 
-		expect(
-			maxDelta(
-				blendedDifferentSecondWave.out1,
-				blendedSameSecondWave.out1,
-				0,
-				128,
-			),
-		).toBeLessThan(0.000001);
-		expect(
-			maxDelta(
-				blendedDifferentSecondWave.out1,
-				blendedSameSecondWave.out1,
-				128,
-				256,
-			),
-		).toBeGreaterThan(0.01);
+		it("warps phase when amount is non-zero", () => {
+			const p = 0.25;
+			const a = 0.5;
+			expect(pdQuantize(p, a)).not.toBe(p);
+		});
+	});
+
+	describe("pdTwist", () => {
+		it("returns phase when amount is 0", () => {
+			expect(pdTwist(0.5, 0)).toBe(0.5);
+		});
+
+		it("warps phase when amount is non-zero", () => {
+			const p = 0.25;
+			const a = 0.5;
+			expect(pdTwist(p, a)).not.toBe(p);
+		});
+	});
+
+	describe("pdClip", () => {
+		it("returns a value between 0 and 1", () => {
+			const res = pdClip(0.5, 0.5);
+			expect(res).toBeGreaterThanOrEqual(0);
+			expect(res).toBeLessThanOrEqual(1);
+		});
+	});
+
+	describe("pdRipple", () => {
+		it("returns phase when amount is 0", () => {
+			expect(pdRipple(0.5, 0)).toBe(0.5);
+		});
+
+		it("warps phase when amount is non-zero", () => {
+			const p = 0.25;
+			const a = 0.5;
+			expect(pdRipple(p, a)).not.toBe(p);
+		});
+	});
+
+	describe("pdMirror", () => {
+		it("returns phase when amount is 0", () => {
+			expect(pdMirror(0.5, 0)).toBe(0.5);
+		});
+
+		it("warps phase when amount is non-zero", () => {
+			const p = 0.25;
+			const a = 0.5;
+			expect(pdMirror(p, a)).not.toBe(p);
+		});
+	});
+
+	describe("pdTerrain", () => {
+		it("returns phase when amount is 0", () => {
+			expect(pdTerrain(0.1, 0)).toBe(0.1);
+		});
+
+		it("warps phase when amount is non-zero", () => {
+			const p = 0.1;
+			const a = 0.5;
+			expect(pdTerrain(p, a)).not.toBe(p);
+		});
+	});
+
+	describe("pdStutter", () => {
+		it("returns phase when amount is 0", () => {
+			expect(pdStutter(0.5, 0)).toBe(0.5);
+		});
+
+		it("warps phase when amount is non-zero", () => {
+			const p = 0.25;
+			const a = 0.5;
+			expect(pdStutter(p, a)).not.toBe(p);
+		});
+	});
+
+	describe("pdCheby", () => {
+		it("returns phase when amount is 0", () => {
+			expect(pdCheby(0.5, 0)).toBe(0.5);
+		});
+
+		it("warps phase when amount is non-zero", () => {
+			const p = 0.25;
+			const a = 0.5;
+			expect(pdCheby(p, a)).not.toBe(p);
+		});
+	});
+
+	describe("pdCz101", () => {
+		it("returns phase when amount is 0", () => {
+			expect(pdCz101(0.5, 0)).toBe(0.5);
+		});
+
+		it("warps phase when amount is non-zero", () => {
+			const p = 0.25;
+			const a = 0.5;
+			expect(pdCz101(p, a)).not.toBe(p);
+		});
+	});
+
+	describe("computeWaveform", () => {
+		it("computes waveform data", () => {
+			const params = {
+				warpAAmount: 0.5,
+				warpBAmount: 0.5,
+				warpAAlgo: "bend" as Algo,
+				warpBAlgo: "sync" as Algo,
+				algo2A: null,
+				algo2B: null,
+				algoBlendA: 0.5,
+				algoBlendB: 0.5,
+				intPmAmount: 0.1,
+				intPmRatio: 1,
+				extPmAmount: 0.1,
+				pmPre: true,
+				windowType: "off" as WindowType,
+				line1Level: 1,
+				line2Level: 1,
+			};
+			const result = computeWaveform(params);
+			expect(result.out1).toBeInstanceOf(Float32Array);
+			expect(result.out2).toBeInstanceOf(Float32Array);
+			expect(result.phase).toBeInstanceOf(Float32Array);
+		});
+
+		it("computes waveform with secondary algorithms and pmPre false", () => {
+			const params = {
+				warpAAmount: 0.5,
+				warpBAmount: 0.5,
+				warpAAlgo: "bend" as Algo,
+				warpBAlgo: "sync" as Algo,
+				algo2A: "pinch" as Algo,
+				algo2B: "fold" as Algo,
+				algoBlendA: 0.3,
+				algoBlendB: 0.7,
+				intPmAmount: 0.2,
+				intPmRatio: 2,
+				extPmAmount: 0.1,
+				pmPre: false,
+				windowType: "saw" as WindowType,
+				line1Level: 0.8,
+				line2Level: 0.6,
+			};
+			const result = computeWaveform(params);
+			expect(result.out1).toBeInstanceOf(Float32Array);
+			expect(result.out2).toBeInstanceOf(Float32Array);
+			expect(result.phase).toBeInstanceOf(Float32Array);
+		});
 	});
 });

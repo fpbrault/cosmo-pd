@@ -27,7 +27,7 @@
 		"perf:bridge:compare": "bun run ./scripts/perf-bridge-compare.mjs",
 		"perf:bridge:benchmark": "bun run ./scripts/perf-bridge-benchmark.mjs",
 		"build:plugin": "bun --filter @cosmo/cosmo-pd101-plugin build",
-		"build:plugin:release": "bun run ./scripts/build-plugin.mjs --release --auv2 --vst3 --clap",
+		"build:plugin:release": "bun --filter @cosmo/cosmo-pd101-plugin build",
 		"build:plugin:auv3": "bun --filter @cosmo/cosmo-pd101-plugin-auv3 build",
 		"build:plugin:auv3:ios": "bun --filter @cosmo/cosmo-pd101-plugin-auv3 build:ios",
 		"bundle:plugin:auv3": "bun --filter cosmo-pd101-plugin-auv3 bundle",

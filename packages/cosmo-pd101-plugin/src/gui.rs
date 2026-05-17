@@ -1,49 +1,35 @@
 //! GUI — WebView-based editor for the Cosmo PD-101 plugin.
 //!
-//! Implements nih-plug's [`Editor`] trait, embedding a wry [`WebView`] as a
+//! Implements truce's [`Editor`] trait, embedding a wry [`WebView`] as a
 //! child of the host's parent window (NSView on macOS).
-//!
-//! # Debugging the plugin UI
-//!
-//! ## Log file
-//! All Rust-side events are written to `/tmp/cosmo-plugin.log`.
-//! Tail it while the DAW is running:
-//!
-//! ```sh
-//! tail -f /tmp/cosmo-plugin.log
-//! ```
-//!
-//! ## Safari Web Inspector (WebKit DevTools)
-//! Build with the `debug_gui` feature to enable the WebKit inspector:
-//!
-//! ```sh
-//! cargo build -p cosmo-pd101-plugin --features debug_gui
-//! bun run plugin:build:debug
-//! ```
 
 #![cfg_attr(target_os = "macos", allow(deprecated, unexpected_cfgs))]
 
-use std::any::Any;
-use std::panic::{self, AssertUnwindSafe};
+#[cfg(target_os = "macos")]
+use std::sync::atomic::AtomicBool;
 use std::sync::atomic::AtomicU64;
+use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
+#[cfg(target_os = "macos")]
+use std::{
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
+};
 
 use arc_swap::ArcSwap;
-use nih_plug::prelude::*;
-#[cfg(target_os = "macos")]
-use std::sync::atomic::{AtomicBool, Ordering};
-
+use truce_core::editor::{Editor, RawWindowHandle};
+use truce_core::PluginContext;
 #[cfg(target_os = "macos")]
 use wry::WebViewBuilder;
-
 #[cfg(target_os = "macos")]
-use cocoa;
-#[cfg(target_os = "macos")]
-use objc;
+use wry::WebViewBuilderExtDarwin;
 
 #[cfg(target_os = "macos")]
 use crate::handle_ipc_invoke;
-use crate::{append_log, PerformanceCountersHandle, ScopeBuffer, UiInputQueue};
+use crate::CzPluginParams;
+use crate::{
+    append_log, PerformanceCountersHandle, ScopeBuffer, SharedRuntimeModSources, UiInputQueue,
+};
 use cosmo_synth_engine::params::SynthParams;
 
 // ─── Size constants ──────────────────────────────────────────────────────────
@@ -53,101 +39,87 @@ pub const DEFAULT_HEIGHT: u32 = 864;
 
 // ─── Per-format URL scheme ───────────────────────────────────────────────────
 
-/// Custom URL scheme used by this binary's WKWebView. Each plugin format
-/// (VST3, CLAP, AUv2) is compiled with a distinct WRY_CUSTOM_SCHEME value so
-/// that loading two different formats in the same host process does not cause
-/// a WKWebView scheme-handler registration collision (the second format would
-/// otherwise load `about:blank` because its scheme is already claimed by the
-/// first format's loaded dylib).
-///
-/// Set via the `WRY_CUSTOM_SCHEME` environment variable at `cargo build` time.
-/// Falls back to `"cz"` for plain `cargo check` / development builds.
-const WEBVIEW_SCHEME: &str = match option_env!("WRY_CUSTOM_SCHEME") {
-    Some(s) => s,
-    None => "cz",
-};
+static WEBVIEW_SCHEME_COUNTER: AtomicU64 = AtomicU64::new(0);
+
+fn get_instance_scheme() -> String {
+    let id = WEBVIEW_SCHEME_COUNTER.fetch_add(1, Ordering::SeqCst);
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_nanos())
+        .unwrap_or_default();
+    format!("cz-{}-{}-{}", std::process::id(), id, now)
+}
+
+#[cfg(target_os = "macos")]
+fn webview_data_store_identifier(seed: &str) -> [u8; 16] {
+    let mut first = DefaultHasher::new();
+    seed.hash(&mut first);
+    let a = first.finish().to_le_bytes();
+
+    let mut second = DefaultHasher::new();
+    "cosmo-pd101".hash(&mut second);
+    seed.hash(&mut second);
+    let b = second.finish().to_le_bytes();
+
+    let mut id = [0_u8; 16];
+    id[..8].copy_from_slice(&a);
+    id[8..].copy_from_slice(&b);
+    id
+}
 
 // ─── WebViewContainer ────────────────────────────────────────────────────────
 
-/// Holds the live WebView instance; cleared on Drop to destroy the view.
 struct WebViewContainer {
     webview: Option<wry::WebView>,
 }
 
-// SAFETY: wry::WebView wraps a WKWebView that should only be accessed on the
-// main thread.  In nih-plug, the GUI always runs on the main/UI thread, so
-// we never move the WebView across threads in practice.
 unsafe impl Send for WebViewContainer {}
 unsafe impl Sync for WebViewContainer {}
 
-// ─── CzEditorHandle ──────────────────────────────────────────────────────────
-
-/// Returned from [`CzEditor::spawn`]; destroys the WebView when dropped.
-///
-/// `_temp_window` holds an optional offscreen NSWindow created to satisfy
-/// wry's `ns_view.window().unwrap()` call during `build_as_child`. It is
-/// returned from `build_webview_from_ns_view` and stored here so it is dropped
-/// AFTER the WebView is destroyed (webview_state cleared in Drop). By then the
-/// host has moved ns_view into its own window, so the temp window's content
-/// view has zero subviews and close() completes instantly.
-struct CzEditorHandle {
-    webview_state: Arc<Mutex<WebViewContainer>>,
-    #[cfg(target_os = "macos")]
-    _temp_window: Option<TempWindow>,
-}
-
-impl Drop for CzEditorHandle {
-    fn drop(&mut self) {
-        // Destroy the WebView FIRST, then _temp_window drops automatically.
-        // On macOS, WKWebView teardown must happen on the main thread.
-        if let Ok(mut c) = self.webview_state.lock() {
-            #[cfg(target_os = "macos")]
-            {
-                if !is_main_thread() {
-                    if let Some(wv) = c.webview.take() {
-                        // Avoid crashing in hosts that drop editor handles from a
-                        // non-main thread during processing.
-                        std::mem::forget(wv);
-                        append_log(
-                            "CzEditorHandle dropped off main thread; leaked WebView to avoid crash",
-                        );
-                    }
-                } else {
-                    c.webview = None;
-                    append_log("CzEditorHandle dropped; WebView destroyed on main thread");
-                }
-            }
-
-            #[cfg(not(target_os = "macos"))]
-            {
-                c.webview = None;
-                append_log("CzEditorHandle dropped; WebView destroyed");
-            }
-        }
-    }
-}
-
-// SAFETY: Same reasoning as WebViewContainer.
-unsafe impl Send for CzEditorHandle {}
-
 // ─── CzEditor ────────────────────────────────────────────────────────────────
 
-/// nih-plug `Editor` implementation for the Cosmo PD-101 plugin.
 pub struct CzEditor {
     synth_params: Arc<ArcSwap<SynthParams>>,
     rt_synth_params: Arc<ArcSwap<SynthParams>>,
+    runtime_mod_sources: SharedRuntimeModSources,
     synth_params_version: Arc<AtomicU64>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
     performance_counters: PerformanceCountersHandle,
     host_scale_factor: Arc<Mutex<f32>>,
-
-    /// Shared handle to the live WebView (if any).  Held by both the Editor
-    /// and the spawned handle so param pushes can reach the view.
     webview_state: Arc<Mutex<WebViewContainer>>,
+    pending_parent_ns_view: Option<usize>,
+    params: Arc<CzPluginParams>,
+    #[cfg(target_os = "macos")]
+    standalone_window: Option<StandaloneWindow>,
+}
+
+impl Drop for CzEditor {
+    fn drop(&mut self) {
+        append_log("CzEditor::drop");
+        self.destroy_webview();
+    }
 }
 
 impl CzEditor {
+    fn destroy_webview(&mut self) {
+        append_log("CzEditor::destroy_webview");
+        if let Ok(mut container) = self.webview_state.lock() {
+            container.webview = None;
+        }
+        self.pending_parent_ns_view = None;
+        self.clear_standalone_window();
+    }
+
+    #[cfg(target_os = "macos")]
+    fn clear_standalone_window(&mut self) {
+        self.standalone_window = None;
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    fn clear_standalone_window(&mut self) {}
+
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
         synth_params: Arc<ArcSwap<SynthParams>>,
         rt_synth_params: Arc<ArcSwap<SynthParams>>,
@@ -155,26 +127,96 @@ impl CzEditor {
         scope_buffer: ScopeBuffer,
         ui_input_queue: UiInputQueue,
         performance_counters: PerformanceCountersHandle,
+        params: Arc<CzPluginParams>,
+        runtime_mod_sources: SharedRuntimeModSources,
     ) -> Self {
         Self {
             synth_params,
             rt_synth_params,
+            runtime_mod_sources,
             synth_params_version,
             scope_buffer,
             ui_input_queue,
             performance_counters,
             host_scale_factor: Arc::new(Mutex::new(1.0)),
             webview_state: Arc::new(Mutex::new(WebViewContainer { webview: None })),
+            pending_parent_ns_view: None,
+            params,
+            #[cfg(target_os = "macos")]
+            standalone_window: None,
         }
     }
 
-    /// Push the current parameter snapshot to the WebView's `__czOnParams` hook.
+    #[cfg(target_os = "macos")]
+    fn has_live_webview(&self) -> bool {
+        self.webview_state
+            .lock()
+            .map(|container| container.webview.is_some())
+            .unwrap_or(false)
+    }
+
+    #[cfg(target_os = "macos")]
+    fn try_create_webview(&mut self, ns_view: *mut std::ffi::c_void) -> bool {
+        let Some(resource_dir) = plugin_resource_dir() else {
+            append_log(
+                "CzEditor::try_create_webview: resource dir unavailable; skipping WebView creation",
+            );
+            return false;
+        };
+        append_log(&format!("resource_dir: {}", resource_dir.display()));
+
+        let synth_params = self.synth_params.clone();
+        let rt_synth_params = self.rt_synth_params.clone();
+        let runtime_mod_sources = self.runtime_mod_sources.clone();
+        let synth_params_version = self.synth_params_version.clone();
+        let scope_buffer = self.scope_buffer.clone();
+        let ui_input_queue = self.ui_input_queue.clone();
+        let performance_counters = self.performance_counters.clone();
+        let params = self.params.clone();
+        let webview_state_for_ipc = self.webview_state.clone();
+
+        let (webview, standalone_window) = unsafe {
+            build_webview_from_ns_view(
+                ns_view,
+                resource_dir,
+                synth_params,
+                rt_synth_params,
+                synth_params_version,
+                scope_buffer,
+                ui_input_queue,
+                performance_counters,
+                params,
+                runtime_mod_sources,
+                webview_state_for_ipc,
+            )
+        };
+
+        if let Ok(mut container) = self.webview_state.lock() {
+            container.webview = webview;
+        }
+
+        self.standalone_window = standalone_window;
+
+        if self.has_live_webview() {
+            self.pending_parent_ns_view = None;
+            self.push_params();
+            self.apply_scale_normalization();
+            true
+        } else {
+            false
+        }
+    }
+
     fn push_params(&self) {
+        #[cfg(target_os = "macos")]
+        if !is_main_thread() {
+            return;
+        }
+
         let sp = self.synth_params.load();
         let Ok(json_str) = serde_json::to_string(sp.as_ref()) else {
             return;
         };
-        // Escape the JSON string for embedding inside a JS string literal.
         let escaped = json_str.replace('\\', "\\\\").replace('"', "\\\"");
         let script = format!(
             "if(typeof window.__czOnParams === 'function') {{ window.__czOnParams(\"{escaped}\"); }}"
@@ -186,9 +228,12 @@ impl CzEditor {
         }
     }
 
-    /// Keep the plugin UI visually aligned with the web/wasm version by
-    /// cancelling host DPI scaling inside the WebView.
     fn apply_scale_normalization(&self) {
+        #[cfg(target_os = "macos")]
+        if !is_main_thread() {
+            return;
+        }
+
         let factor = self
             .host_scale_factor
             .lock()
@@ -208,189 +253,440 @@ impl CzEditor {
     }
 }
 
-fn panic_payload_message(payload: Box<dyn Any + Send>) -> String {
-    if let Some(message) = payload.downcast_ref::<&str>() {
-        return (*message).to_string();
-    }
-
-    if let Some(message) = payload.downcast_ref::<String>() {
-        return message.clone();
-    }
-
-    "unknown panic payload".to_string()
-}
-
 impl Editor for CzEditor {
-    fn spawn(
-        &self,
-        _parent: ParentWindowHandle,
-        _context: Arc<dyn GuiContext>,
-    ) -> Box<dyn Any + Send> {
-        append_log("CzEditor::spawn");
-
-        let fallback_handle = || {
-            Box::new(CzEditorHandle {
-                webview_state: self.webview_state.clone(),
-                #[cfg(target_os = "macos")]
-                _temp_window: None,
-            }) as Box<dyn Any + Send>
-        };
-
-        let spawn_result = panic::catch_unwind(AssertUnwindSafe(|| {
-            #[cfg(not(target_os = "macos"))]
-            {
-                append_log("CzEditor::spawn: non-macOS build; returning no-op editor handle");
-                return fallback_handle();
-            }
-
-            #[cfg(target_os = "macos")]
-            {
-                if !is_main_thread() {
-                    append_log(
-                        "CzEditor::spawn called off main thread; skipping WebView creation to avoid Cocoa crash",
-                    );
-                    return fallback_handle();
-                }
-
-                let ns_view = match _parent {
-                    ParentWindowHandle::AppKitNsView(ptr) => ptr,
-                    other => {
-                        append_log(&format!(
-                            "CzEditor::spawn: unsupported window handle: {other:?}"
-                        ));
-                        return fallback_handle();
-                    }
-                };
-
-                let Some(resource_dir) = plugin_resource_dir() else {
-                    append_log(
-                        "CzEditor::spawn: resource dir unavailable; skipping WebView creation",
-                    );
-                    return fallback_handle();
-                };
-                append_log(&format!("resource_dir: {}", resource_dir.display()));
-
-                let synth_params = self.synth_params.clone();
-                let rt_synth_params = self.rt_synth_params.clone();
-                let synth_params_version = self.synth_params_version.clone();
-                let scope_buffer = self.scope_buffer.clone();
-                let ui_input_queue = self.ui_input_queue.clone();
-                let performance_counters = self.performance_counters.clone();
-
-                let webview_state_for_ipc = self.webview_state.clone();
-
-                let (webview, temp_window) = unsafe {
-                    build_webview_from_ns_view(
-                        ns_view,
-                        resource_dir,
-                        synth_params,
-                        rt_synth_params,
-                        synth_params_version,
-                        scope_buffer,
-                        ui_input_queue,
-                        performance_counters,
-                        webview_state_for_ipc.clone(),
-                    )
-                };
-
-                if let Ok(mut container) = self.webview_state.lock() {
-                    container.webview = webview;
-                }
-
-                self.push_params();
-                self.apply_scale_normalization();
-
-                Box::new(CzEditorHandle {
-                    webview_state: self.webview_state.clone(),
-                    #[cfg(target_os = "macos")]
-                    _temp_window: temp_window,
-                }) as Box<dyn Any + Send>
-            }
-        }));
-
-        match spawn_result {
-            Ok(handle) => handle,
-            Err(payload) => {
-                append_log(&format!(
-                    "CzEditor::spawn panicked; returning no-op editor handle: {}",
-                    panic_payload_message(payload)
-                ));
-                fallback_handle()
-            }
-        }
-    }
-
     fn size(&self) -> (u32, u32) {
         (DEFAULT_WIDTH, DEFAULT_HEIGHT)
     }
 
-    fn set_scale_factor(&self, _factor: f32) -> bool {
-        true
+    fn screenshot(
+        &mut self,
+        _params: Arc<dyn truce_params::Params>,
+    ) -> Option<(Vec<u8>, u32, u32)> {
+        #[cfg(target_os = "macos")]
+        {
+            screenshot_webview()
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            None
+        }
     }
 
-    fn param_value_changed(&self, _id: &str, _normalized_value: f32) {
-        // Avoid touching WebKit from parameter callbacks: hosts may call these
-        // while processing and not on the main thread.
-    }
+    fn open(&mut self, parent: RawWindowHandle, _context: PluginContext) {
+        append_log("CzEditor::open");
 
-    fn param_modulation_changed(&self, _id: &str, _modulation_offset: f32) {}
-
-    fn param_values_changed(&self) {
-        // Avoid touching WebKit from parameter callbacks: hosts may call these
-        // while processing and not on the main thread.
-    }
-}
-
-// ─── Temporary NSWindow helper ───────────────────────────────────────────────
-
-/// Offscreen NSWindow that gives an unparented NSView a window so that
-/// wry 0.47's `ns_view.window().unwrap()` succeeds during `build_as_child`.
-///
-/// The TempWindow is returned to the caller (spawn) and stored in
-/// CzEditorHandle. It is dropped AFTER the WebView is destroyed so that
-/// WKWebView's internal cleanup does not hang waiting for window-association
-/// work. By then ns_view has been reparented into the host's real window, so
-/// the temp window's content view has zero subviews and close() is instant.
-#[cfg(target_os = "macos")]
-struct TempWindow {
-    window: cocoa::base::id, // NSWindow *
-}
-
-#[cfg(target_os = "macos")]
-impl Drop for TempWindow {
-    fn drop(&mut self) {
-        use objc::{msg_send, sel, sel_impl};
-        append_log("[TempWindow] drop: starting");
-
-        if !is_main_thread() {
-            append_log(
-                "[TempWindow] drop off main thread; leaking temporary NSWindow to avoid crash",
-            );
+        #[cfg(not(target_os = "macos"))]
+        {
+            append_log("CzEditor::open: non-macOS build; no-op");
             return;
         }
 
-        unsafe {
-            let content: cocoa::base::id = msg_send![self.window, contentView];
-            let subviews: cocoa::base::id = msg_send![content, subviews];
-            let count: usize = msg_send![subviews, count];
-            append_log(&format!("[TempWindow] drop: {count} subviews"));
-            // Don't manually removeFromSuperview — the host already moved ns_view
-            // to its own window via addSubview:, which auto-removes from us.
-            // Just close and release the now-empty temp window.
-            let () = msg_send![self.window, close];
+        #[cfg(target_os = "macos")]
+        {
+            if !is_main_thread() {
+                append_log("CzEditor::open called off main thread; skipping WebView creation");
+                return;
+            }
+
+            let ns_view = match parent {
+                RawWindowHandle::AppKit(ptr) => ptr,
+                _ => {
+                    append_log("CzEditor::open: unsupported window handle");
+                    return;
+                }
+            };
+            self.pending_parent_ns_view = Some(ns_view as usize);
+            let _ = self.try_create_webview(ns_view);
         }
-        append_log("[TempWindow] temporary offscreen NSWindow released");
+    }
+
+    fn close(&mut self) {
+        append_log("CzEditor::close");
+        self.destroy_webview();
+    }
+
+    fn idle(&mut self) {
+        #[cfg(target_os = "macos")]
+        if !is_main_thread() {
+            return;
+        }
+
+        #[cfg(target_os = "macos")]
+        if !self.has_live_webview() {
+            if let Some(ns_view) = self.pending_parent_ns_view {
+                let ns_view = ns_view as *mut std::ffi::c_void;
+                if unsafe { parent_has_window(ns_view) } {
+                    append_log("idle: retrying deferred WebView creation");
+                    let _ = self.try_create_webview(ns_view);
+                }
+            }
+        }
+
+        self.push_params();
+    }
+
+    fn set_scale_factor(&mut self, factor: f64) {
+        if let Ok(mut f) = self.host_scale_factor.lock() {
+            *f = factor as f32;
+        }
     }
 }
 
-// SAFETY: TempWindow wraps a raw ObjC pointer; we only touch it on the main thread.
+// ─── Screenshot (macOS) ──────────────────────────────────────────────────────
+
 #[cfg(target_os = "macos")]
-unsafe impl Send for TempWindow {}
+fn screenshot_webview() -> Option<(Vec<u8>, u32, u32)> {
+    use dispatch2::run_on_main;
+    run_on_main(|_mtm| screenshot_webview_impl())
+}
+
+/// Create a hidden WKWebView, load the plugin UI, capture a snapshot,
+/// and return RGBA pixel data. Must be called on the main thread.
+#[cfg(target_os = "macos")]
+fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Arc;
+
+    use block2::RcBlock;
+    use objc2::rc::{Allocated, Retained};
+    use objc2::{class, msg_send, msg_send_id, AnyThread};
+    use objc2_app_kit::{
+        NSBackingStoreType, NSBitmapImageRep, NSImage, NSWindow, NSWindowStyleMask,
+    };
+    use objc2_foundation::{NSDate, NSPoint, NSRect, NSRunLoop, NSSize, NSString, NSURL};
+    use objc2_web_kit::{WKWebView, WKWebViewConfiguration};
+
+    let resource_dir = plugin_resource_dir()?;
+    let html_path = resource_dir.join("index.html");
+    if !html_path.is_file() {
+        append_log("screenshot: index.html not found");
+        return None;
+    }
+    append_log(&format!("screenshot: loading {}", html_path.display()));
+
+    let frame = NSRect::new(NSPoint::new(0.0, 0.0), NSSize::new(1152.0, 864.0));
+
+    // ── WKWebViewConfiguration ─────────────────────────────────────────────
+    let config: Retained<WKWebViewConfiguration> =
+        unsafe { msg_send_id![class!(WKWebViewConfiguration), new] };
+
+    // ── Hidden NSWindow to host the WKWebView ──────────────────────────────
+    let _window: Retained<NSWindow> = unsafe {
+        let alloc: Allocated<NSWindow> = msg_send_id![class!(NSWindow), alloc];
+        msg_send_id![
+            alloc,
+            initWithContentRect: frame
+            styleMask: NSWindowStyleMask::Borderless
+            backing: NSBackingStoreType::Buffered
+            defer: false
+        ]
+    };
+
+    // ── WKWebView ──────────────────────────────────────────────────────────
+    let wk: Retained<WKWebView> = unsafe {
+        let alloc: Allocated<WKWebView> = msg_send_id![class!(WKWebView), alloc];
+        msg_send_id![alloc, initWithFrame: frame configuration: &*config]
+    };
+
+    unsafe {
+        let _: () = msg_send![&*wk, setFrame: frame];
+    }
+    if let Some(content_view) = _window.contentView() {
+        content_view.addSubview(&wk);
+    }
+
+    // ── Start local HTTP server for subresource loading ──────────────────
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+    use std::thread;
+
+    let listener = TcpListener::bind("127.0.0.1:0").ok()?;
+    let port = listener.local_addr().ok()?.port();
+    let server_dir = resource_dir.clone();
+    thread::spawn(move || {
+        for mut stream in listener.incoming().flatten() {
+            let mut buf = [0u8; 8192];
+            if stream.read(&mut buf).is_ok() {
+                let req = String::from_utf8_lossy(&buf);
+                let path = req
+                    .lines()
+                    .next()
+                    .and_then(|l| l.split_whitespace().nth(1))
+                    .unwrap_or("/index.html");
+                let rel = path.trim_start_matches('/');
+                let file_path = if rel.is_empty() || rel == "/" {
+                    server_dir.join("index.html")
+                } else {
+                    server_dir.join(rel)
+                };
+                let (mime, data) = if let Ok(d) = std::fs::read(&file_path) {
+                    (mime_from_path(&file_path), d)
+                } else {
+                    ("text/plain", b"404".to_vec())
+                };
+                let header = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: {}\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\n\r\n",
+                    mime, data.len()
+                );
+                let _ = stream.write_all(header.as_bytes());
+                let _ = stream.write_all(&data);
+            }
+        }
+    });
+
+    // Small delay to ensure server is ready
+    thread::sleep(std::time::Duration::from_millis(5));
+
+    let url_str = format!("http://127.0.0.1:{}/index.html", port);
+    let url = {
+        let url_ns = NSString::from_str(&url_str);
+        NSURL::URLWithString(&url_ns)
+    }?;
+    let request: *mut objc2::runtime::AnyObject =
+        unsafe { msg_send![class!(NSURLRequest), requestWithURL: &*url] };
+    unsafe {
+        let _: () = msg_send![&*wk, loadRequest: request];
+    }
+
+    // ── Wait for page load ─────────────────────────────────────────────────
+    let rl = NSRunLoop::mainRunLoop();
+    let start = std::time::Instant::now();
+    let max_wait = std::time::Duration::from_secs(15);
+
+    loop {
+        let is_loading: bool = unsafe { msg_send![&*wk, isLoading] };
+        if !is_loading {
+            break;
+        }
+        if start.elapsed() > max_wait {
+            append_log("screenshot: timeout waiting for page load");
+            return None;
+        }
+        let d = NSDate::dateWithTimeIntervalSinceNow(0.05);
+        rl.runUntilDate(&d);
+    }
+
+    // Extra wait for JS async rendering/layout
+    let d = NSDate::dateWithTimeIntervalSinceNow(1.0);
+    rl.runUntilDate(&d);
+
+    // ── Snapshot ──────────────────────────────────────────────────────────
+    let done = Arc::new(AtomicBool::new(false));
+    #[allow(clippy::type_complexity)]
+    let result: Arc<Mutex<Option<(Vec<u8>, u32, u32)>>> = Arc::new(Mutex::new(None));
+    let done_clone = done.clone();
+    let result_clone = result.clone();
+
+    let block = RcBlock::new(
+        move |snapshot_image: *mut NSImage, _error: *mut objc2_foundation::NSError| {
+            if !snapshot_image.is_null() {
+                let image = unsafe { &*snapshot_image };
+                if let Some(tiff_data) = image.TIFFRepresentation() {
+                    let bitmap =
+                        NSBitmapImageRep::initWithData(NSBitmapImageRep::alloc(), &tiff_data);
+                    if let Some(ref bm) = bitmap {
+                        let w = bm.pixelsWide() as u32;
+                        let h = bm.pixelsHigh() as u32;
+                        let spp = bm.samplesPerPixel() as usize;
+                        let bpr = bm.bytesPerRow() as usize;
+                        let ptr = bm.bitmapData();
+                        if !ptr.is_null() && w > 0 && h > 0 {
+                            let total = (h as usize) * bpr;
+                            let raw = unsafe { std::slice::from_raw_parts(ptr, total) };
+                            let mut rgba = Vec::with_capacity((w * h * 4) as usize);
+                            for y in 0..h as usize {
+                                let row = y * bpr;
+                                for x in 0..w as usize {
+                                    let pos = row + x * spp;
+                                    rgba.push(if pos < total { raw[pos] } else { 0 });
+                                    rgba.push(if pos + 1 < total { raw[pos + 1] } else { 0 });
+                                    rgba.push(if pos + 2 < total { raw[pos + 2] } else { 0 });
+                                    rgba.push(if spp >= 4 && pos + 3 < total {
+                                        raw[pos + 3]
+                                    } else {
+                                        255
+                                    });
+                                }
+                            }
+                            *result_clone.lock().unwrap() = Some((rgba, w, h));
+                        }
+                    }
+                }
+            }
+            done_clone.store(true, Ordering::SeqCst);
+        },
+    );
+
+    unsafe {
+        wk.takeSnapshotWithConfiguration_completionHandler(None, &block);
+    }
+
+    let start = std::time::Instant::now();
+    while !done.load(Ordering::SeqCst) {
+        if start.elapsed() > max_wait {
+            append_log("screenshot: timeout waiting for snapshot");
+            return None;
+        }
+        let d = NSDate::dateWithTimeIntervalSinceNow(0.05);
+        rl.runUntilDate(&d);
+    }
+
+    let pixels = result.lock().unwrap().take();
+    pixels
+}
+
+// ─── Standalone Window helper ─────────────────────────────────────────────────
+
+#[cfg(target_os = "macos")]
+struct StandaloneWindow {
+    window: cocoa::base::id,
+    #[allow(dead_code)]
+    delegate: cocoa::base::id,
+}
+
+#[cfg(target_os = "macos")]
+fn terminate_delegate_class() -> &'static objc::runtime::Class {
+    use objc::{class, declare::ClassDecl, msg_send, sel, sel_impl};
+    static INIT: std::sync::Once = std::sync::Once::new();
+    static mut CLASS: Option<&'static objc::runtime::Class> = None;
+    INIT.call_once(|| {
+        let mut decl = ClassDecl::new("StandaloneWindowCloseDelegate", class!(NSObject))
+            .expect("failed to create delegate class");
+        extern "C" fn window_should_close(
+            _this: &objc::runtime::Object,
+            _cmd: objc::runtime::Sel,
+            _sender: *mut objc::runtime::Object,
+        ) -> objc::runtime::BOOL {
+            unsafe {
+                let app: *mut objc::runtime::Object =
+                    msg_send![class!(NSApplication), sharedApplication];
+                let nil_sender: *mut objc::runtime::Object = std::ptr::null_mut();
+                let _: () = msg_send![app, terminate: nil_sender];
+            }
+            objc::runtime::YES
+        }
+        unsafe {
+            decl.add_method(
+                sel!(windowShouldClose:),
+                window_should_close
+                    as extern "C" fn(
+                        &objc::runtime::Object,
+                        objc::runtime::Sel,
+                        *mut objc::runtime::Object,
+                    ) -> objc::runtime::BOOL,
+            );
+            CLASS = Some(decl.register());
+        }
+    });
+    unsafe { CLASS.unwrap() }
+}
+
+#[cfg(target_os = "macos")]
+impl StandaloneWindow {
+    pub fn new() -> Self {
+        use cocoa::base::{id, nil};
+        use cocoa::foundation::{NSPoint, NSRect, NSSize};
+        use objc::{class, msg_send, sel, sel_impl};
+
+        const NS_TITLED_WINDOW_MASK: usize = 1 << 0;
+        const NS_CLOSABLE_WINDOW_MASK: usize = 1 << 1;
+        const NS_MINIATURIZABLE_WINDOW_MASK: usize = 1 << 2;
+        const NS_RESIZABLE_WINDOW_MASK: usize = 1 << 3;
+        const WINDOW_STYLE_MASK: usize = NS_TITLED_WINDOW_MASK
+            | NS_CLOSABLE_WINDOW_MASK
+            | NS_MINIATURIZABLE_WINDOW_MASK
+            | NS_RESIZABLE_WINDOW_MASK;
+        const NS_BACKING_STORE_BUFFERED: usize = 2;
+
+        let screen: id = unsafe { msg_send![class!(NSScreen), mainScreen] };
+        let screen_frame: NSRect = unsafe { msg_send![screen, frame] };
+        let screen_width = screen_frame.size.width;
+        let screen_height = screen_frame.size.height;
+
+        let frame = NSRect {
+            origin: NSPoint {
+                x: (screen_width - DEFAULT_WIDTH as f64) / 2.0,
+                y: (screen_height - DEFAULT_HEIGHT as f64) / 2.0,
+            },
+            size: NSSize {
+                width: DEFAULT_WIDTH as f64,
+                height: DEFAULT_HEIGHT as f64,
+            },
+        };
+
+        let window_cls = class!(NSWindow);
+        let window: id = unsafe {
+            let w: id = msg_send![window_cls, alloc];
+            msg_send![
+                w,
+                initWithContentRect: frame
+                styleMask:         WINDOW_STYLE_MASK
+                backing:           NS_BACKING_STORE_BUFFERED
+                defer:             cocoa::base::YES
+            ]
+        };
+
+        unsafe {
+            let title: id =
+                msg_send![class!(NSString), stringWithUTF8String: c"Cosmo PD-101".as_ptr()];
+            let _: () = msg_send![window, setTitle: title];
+            let _: () = msg_send![window, makeKeyAndOrderFront: nil];
+        }
+
+        let delegate = unsafe {
+            let cls = terminate_delegate_class();
+            let d: id = msg_send![cls, new];
+            let _: () = msg_send![window, setDelegate: d];
+            d
+        };
+
+        let standalone = StandaloneWindow { window, delegate };
+        standalone.hide_other_windows();
+        standalone
+    }
+
+    pub fn hide_other_windows(&self) {
+        use cocoa::base::nil as cocoa_nil;
+        use objc::{class, msg_send, sel, sel_impl};
+        unsafe {
+            let app: cocoa::base::id = msg_send![class!(NSApplication), sharedApplication];
+            let windows: cocoa::base::id = msg_send![app, windows];
+            let count: usize = msg_send![windows, count];
+            for i in 0..count {
+                let w: cocoa::base::id = msg_send![windows, objectAtIndex: i];
+                if w != self.window && w != cocoa_nil {
+                    let _: () = msg_send![w, orderOut: cocoa_nil];
+                }
+            }
+        }
+    }
+
+    pub fn content_view(&self) -> *mut std::ffi::c_void {
+        use cocoa::base::id;
+        use objc::{msg_send, sel, sel_impl};
+        let content_view: id = unsafe { msg_send![self.window, contentView] };
+        content_view as *mut std::ffi::c_void
+    }
+}
+
+#[cfg(target_os = "macos")]
+unsafe impl Send for StandaloneWindow {}
+#[cfg(target_os = "macos")]
+unsafe impl Sync for StandaloneWindow {}
+
+#[cfg(target_os = "macos")]
+impl Drop for StandaloneWindow {
+    fn drop(&mut self) {
+        use objc::{msg_send, sel, sel_impl};
+        unsafe {
+            let _: () = msg_send![self.window, close];
+        }
+    }
+}
 
 #[cfg(target_os = "macos")]
 fn is_main_thread() -> bool {
     use objc::{class, msg_send, sel, sel_impl};
-
     unsafe {
         let thread_class = class!(NSThread);
         let is_main: bool = msg_send![thread_class, isMainThread];
@@ -402,98 +698,20 @@ fn is_main_thread() -> bool {
 unsafe fn parent_has_window(ns_view: *mut std::ffi::c_void) -> bool {
     use cocoa::base::{id, nil};
     use objc::{msg_send, sel, sel_impl};
-
     let ns_view = ns_view as id;
     let existing_window: id = msg_send![ns_view, window];
     existing_window != nil
 }
 
 #[cfg(target_os = "macos")]
-unsafe fn wait_for_parent_window(
-    ns_view: *mut std::ffi::c_void,
-    timeout: std::time::Duration,
-) -> bool {
-    use objc::{class, msg_send, sel, sel_impl};
-
-    let deadline = std::time::Instant::now() + timeout;
-    let run_loop: cocoa::base::id = msg_send![class!(NSRunLoop), currentRunLoop];
-
-    while std::time::Instant::now() < deadline {
-        if parent_has_window(ns_view) {
-            return true;
-        }
-
-        let until: cocoa::base::id =
-            msg_send![class!(NSDate), dateWithTimeIntervalSinceNow: 0.01_f64];
-        let _: () = msg_send![run_loop, runUntilDate: until];
-    }
-
-    parent_has_window(ns_view)
-}
-
-/// If `ns_view` has no window, create an offscreen NSWindow, attach the view,
-/// and return a `TempWindow` guard. Returns `None` if view already has a window.
-#[cfg(target_os = "macos")]
-unsafe fn ensure_parent_has_window(ns_view: *mut std::ffi::c_void) -> Option<TempWindow> {
-    use cocoa::base::{id, nil};
-    use cocoa::foundation::{NSPoint, NSRect, NSSize};
-    use objc::{class, msg_send, sel, sel_impl};
-
-    if wait_for_parent_window(ns_view, std::time::Duration::from_millis(250)) {
-        append_log("[TempWindow] parent NSView gained a real window during startup wait");
-        return None;
-    }
-
-    let ns_view = ns_view as id;
-    let existing_window: id = msg_send![ns_view, window];
-    if existing_window != nil {
-        return None;
-    }
-
-    append_log("[TempWindow] parent NSView still has no window after startup wait — creating temporary offscreen NSWindow");
-
-    const NS_BORDERLESS_WINDOW_MASK: usize = 0;
-    const NS_BACKING_STORE_BUFFERED: usize = 2;
-
-    let frame = NSRect {
-        origin: NSPoint {
-            x: -100_000.0,
-            y: -100_000.0,
-        },
-        size: NSSize {
-            width: DEFAULT_WIDTH as f64,
-            height: DEFAULT_HEIGHT as f64,
-        },
-    };
-
-    let window_cls = class!(NSWindow);
-    let window: id = msg_send![window_cls, alloc];
-    let window: id = msg_send![
-        window,
-        initWithContentRect: frame
-        styleMask:         NS_BORDERLESS_WINDOW_MASK
-        backing:           NS_BACKING_STORE_BUFFERED
-        defer:             cocoa::base::YES
-    ];
-
-    if window == nil {
-        append_log("[TempWindow] ERROR: failed to create temporary NSWindow");
-        return None;
-    }
-
-    let content_view: id = msg_send![window, contentView];
-    let (): () = msg_send![content_view, addSubview: ns_view];
-
-    Some(TempWindow { window })
+fn is_standalone_mode() -> bool {
+    std::env::current_exe()
+        .map(|p| p.to_string_lossy().contains("standalone"))
+        .unwrap_or(false)
 }
 
 // ─── WebView builder ─────────────────────────────────────────────────────────
 
-/// Build a [`wry::WebView`] embedded as a child of `ns_view`.
-///
-/// # Safety
-/// `ns_view` must be a valid `NSView *` on the current macOS main thread, and
-/// must remain valid for the lifetime of the returned WebView.
 #[cfg(target_os = "macos")]
 #[allow(clippy::too_many_arguments)]
 unsafe fn build_webview_from_ns_view(
@@ -505,8 +723,10 @@ unsafe fn build_webview_from_ns_view(
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
     performance_counters: PerformanceCountersHandle,
+    params: Arc<CzPluginParams>,
+    runtime_mod_sources: SharedRuntimeModSources,
     webview_state: Arc<Mutex<WebViewContainer>>,
-) -> (Option<wry::WebView>, Option<TempWindow>) {
+) -> (Option<wry::WebView>, Option<StandaloneWindow>) {
     use core::ptr::NonNull;
     use rwh_06::{
         AppKitDisplayHandle, AppKitWindowHandle, DisplayHandle, HandleError, HasDisplayHandle,
@@ -514,8 +734,6 @@ unsafe fn build_webview_from_ns_view(
     };
     use wry::dpi;
 
-    // Wrapper that presents the host NSView as an rwh 0.6 window handle target
-    // (wry 0.47 requires rwh 0.6 HasWindowHandle).
     struct NsViewWrapper(pub *mut std::ffi::c_void);
     impl HasWindowHandle for NsViewWrapper {
         fn window_handle(&self) -> Result<WindowHandle<'_>, HandleError> {
@@ -530,35 +748,27 @@ unsafe fn build_webview_from_ns_view(
             Ok(unsafe { DisplayHandle::borrow_raw(RawDisplayHandle::AppKit(handle)) })
         }
     }
-    // SAFETY: We only access the NsViewWrapper from the main thread in the plugin.
     unsafe impl Send for NsViewWrapper {}
     unsafe impl Sync for NsViewWrapper {}
-
-    let parent = NsViewWrapper(ns_view);
-
-    // wry 0.47 calls ns_view.window().unwrap() unconditionally to get the
-    // backing scale factor. Some AU hosts (pluginval) haven't inserted ns_view
-    // into a window yet. Attach it to an offscreen NSWindow temporarily.
-    // The TempWindow is returned to spawn() to be stored in CzEditorHandle —
-    // it is dropped AFTER the WebView is destroyed (see CzEditorHandle docs).
-    let temp_window = ensure_parent_has_window(ns_view);
 
     let webview_state_for_response = webview_state.clone();
     let params_repush_done = Arc::new(AtomicBool::new(false));
 
-    let webview = WebViewBuilder::new()
+    let scheme = get_instance_scheme();
+    append_log(&format!("webview scheme: {scheme}"));
+    let builder = WebViewBuilder::new()
         .with_bounds(wry::Rect {
             position: dpi::LogicalPosition::new(0, 0).into(),
             size: dpi::LogicalSize::new(DEFAULT_WIDTH, DEFAULT_HEIGHT).into(),
         })
-        .with_custom_protocol(WEBVIEW_SCHEME.to_string(), move |_id, request| {
+        .with_data_store_identifier(webview_data_store_identifier(&scheme))
+        .with_custom_protocol(scheme.clone(), move |_id, request| {
             serve_file(&resource_dir, request)
         })
         .with_ipc_handler(move |request| {
             let body = request.body();
             let params_repush_done = params_repush_done.clone();
 
-            // All IPC messages are RPC: { id, method, args }
             if let Ok(msg) = serde_json::from_str::<serde_json::Value>(body) {
                 let id = msg.get("id").cloned().unwrap_or(serde_json::Value::Null);
                 let method = msg.get("method").and_then(|m| m.as_str()).unwrap_or("");
@@ -573,10 +783,12 @@ unsafe fn build_webview_from_ns_view(
                     &args,
                     &synth_params,
                     &rt_synth_params,
+                    &runtime_mod_sources,
                     &synth_params_version,
                     &scope_buffer,
                     &ui_input_queue,
                     &performance_counters,
+                    &params,
                 );
 
                 let response = match result {
@@ -592,8 +804,6 @@ unsafe fn build_webview_from_ns_view(
                     if let Some(wv) = &container.webview {
                         let _ = wv.evaluate_script(&script);
 
-                        // Re-push params once from the UI thread after the first
-                        // inbound IPC message to avoid startup races without flooding.
                         if params_repush_done
                             .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
                             .is_ok()
@@ -613,19 +823,60 @@ unsafe fn build_webview_from_ns_view(
                 }
             }
         })
-        .with_devtools(inspector_enabled())
-        .with_url(format!("{}://localhost/", WEBVIEW_SCHEME))
-        .build_as_child(&parent);
+        .with_devtools(inspector_enabled());
 
-    match webview {
-        Ok(webview) => {
-            append_log("build_as_child returned — WebView created");
-            (Some(webview), temp_window)
+    // ── DECISION POINT ──
+    if parent_has_window(ns_view) {
+        // BRANCH A: ns_view already has an associated NSWindow (DAW mode).
+        // Embed webview as child of the existing window.
+        append_log("parent NSView has a real window — embedding as child");
+        let parent = NsViewWrapper(ns_view);
+        let webview = builder
+            .with_url(format!("{}://localhost/", scheme))
+            .build_as_child(&parent);
+        match webview {
+            Ok(webview) => {
+                append_log("build_as_child returned — WebView created");
+                (Some(webview), None)
+            }
+            Err(e) => {
+                append_log(&format!("failed to create plugin WebView: {e}"));
+                (None, None)
+            }
         }
-        Err(e) => {
-            append_log(&format!("failed to create plugin WebView: {e}"));
-            (None, temp_window)
+    } else if is_standalone_mode() {
+        // BRANCH B: standalone binary — create our own window (hides baseview
+        // window from truce-standalone) and embed the WebView inside it.
+        append_log("standalone mode — creating standalone NSWindow");
+        let standalone_window = StandaloneWindow::new();
+        let content_view = standalone_window.content_view();
+
+        // Allow a tick for the NSView/NSWindow association to settle.
+        let mut attempts = 0;
+        while !parent_has_window(content_view) && attempts < 10 {
+            std::thread::sleep(std::time::Duration::from_millis(10));
+            attempts += 1;
         }
+
+        let parent = NsViewWrapper(content_view);
+        let webview = builder
+            .with_url(format!("{}://localhost/", scheme))
+            .build_as_child(&parent);
+        match webview {
+            Ok(webview) => {
+                append_log("standalone: WebView created in own window");
+                (Some(webview), Some(standalone_window))
+            }
+            Err(e) => {
+                append_log(&format!("standalone: failed to create plugin WebView: {e}"));
+                (None, None)
+            }
+        }
+    } else {
+        // BRANCH C: no window association AND not standalone — defer.
+        // idle() will retry when the host window finishes setting up.
+        append_log("parent NSView has no window — deferring WebView creation (idle() will retry)");
+        (None, None)
     }
 }
 
@@ -685,81 +936,160 @@ fn mime_from_path(path: &std::path::Path) -> &'static str {
 
 // ─── Plugin resource directory ────────────────────────────────────────────────
 
-/// Returns the directory that contains the plugin's web UI assets.
-///
-/// - **`debug_gui` feature**: `<repo_root>/dist/`
-/// - **Release**: `<bundle>/Contents/Resources/ui/`
 pub fn plugin_resource_dir() -> Option<std::path::PathBuf> {
+    // Returns the webview dist path relative to the repo root (for development).
+    // Called by debug_gui and as a fallback for standalone.
+    fn webview_dist_path() -> Option<std::path::PathBuf> {
+        let manifest = env!("CARGO_MANIFEST_DIR");
+        Some(std::path::Path::new(manifest).join("webview").join("dist"))
+    }
+
     #[cfg(feature = "debug_gui")]
     {
-        let manifest = env!("CARGO_MANIFEST_DIR");
-        let repo_root = std::path::Path::new(manifest)
-            .parent()
-            .and_then(|p| p.parent())
-            .map(|p| p.to_path_buf())
-            .unwrap_or_else(|| std::path::PathBuf::from("."));
-        let dir = repo_root.join("dist");
-        append_log(&format!("[debug_gui] resource_dir: {}", dir.display()));
-        return Some(dir);
+        let dir = webview_dist_path();
+        if let Some(ref d) = dir {
+            append_log(&format!("[debug_gui] resource_dir: {}", d.display()));
+        }
+        return dir;
     }
 
     #[cfg(not(feature = "debug_gui"))]
     {
-        if let Some(dylib) = dylib_path() {
-            let dir = dylib
+        // 1. Bundle mode: walk up from binary inside .clap/.vst3/.component
+        if let Some(bin_path) = binary_path() {
+            let bundle_resources = bin_path
                 .parent()
                 .and_then(|p| p.parent())
                 .map(|p| p.join("Resources").join("ui"));
-            if let Some(ref d) = dir {
-                append_log(&format!("[release] resource_dir: {}", d.display()));
+            if let Some(ref d) = bundle_resources {
+                append_log(&format!("[release] trying bundle path: {}", d.display()));
                 if d.exists() {
-                    return dir;
+                    return Some(d.clone());
                 }
-                append_log(&format!(
-                    "[release] WARNING: resource dir not found at {}",
-                    d.display()
-                ));
+            }
+
+            // 2. Standalone dev mode: look for webview dist relative to binary
+            //    The binary is at target/debug/cosmo-pd101-standalone,
+            //    the webview dist is at packages/cosmo-pd101-plugin/webview/dist/
+            let exe_dir = bin_path.parent();
+            if let Some(d) = exe_dir {
+                // Check if we're in the package's target directory
+                let webview_path = d.parent().and_then(|p| p.parent()).map(|p| {
+                    p.join("packages")
+                        .join("cosmo-pd101-plugin")
+                        .join("webview")
+                        .join("dist")
+                });
+                if let Some(ref w) = webview_path {
+                    append_log(&format!(
+                        "[release] trying standalone path: {}",
+                        w.display()
+                    ));
+                    if w.exists() {
+                        return Some(w.clone());
+                    }
+                }
             }
         }
+
+        // 3. Last resort: hardcoded dev path
+        let dev_path = webview_dist_path();
+        if let Some(ref d) = dev_path {
+            append_log(&format!("[release] trying hardcoded path: {}", d.display()));
+            if d.exists() {
+                return Some(d.clone());
+            }
+        }
+
         append_log("[release] WARNING: could not determine resource dir");
         None
     }
 }
 
-/// Returns the path to this dylib using `dladdr` on macOS.
 #[cfg(not(feature = "debug_gui"))]
-fn dylib_path() -> Option<std::path::PathBuf> {
-    use std::ffi::CStr;
+fn binary_path() -> Option<std::path::PathBuf> {
+    #[cfg(target_os = "windows")]
+    {
+        use std::ffi::OsString;
+        use std::os::windows::ffi::OsStringExt;
+        use std::ptr::null_mut;
 
-    #[repr(C)]
-    struct DlInfo {
-        dli_fname: *const libc::c_char,
-        dli_fbase: *mut libc::c_void,
-        dli_sname: *const libc::c_char,
-        dli_saddr: *mut libc::c_void,
+        #[repr(C)]
+        struct HINSTANCE__(isize);
+
+        type HMODULE = *mut HINSTANCE__;
+        type DWORD = u32;
+        type LPCWSTR = *const u16;
+        type LPWSTR = *mut u16;
+        type BOOL = i32;
+
+        const GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS: DWORD = 0x00000004;
+        const GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT: DWORD = 0x00000002;
+
+        extern "system" {
+            fn GetModuleHandleExW(
+                dwFlags: DWORD,
+                lpModuleName: LPCWSTR,
+                phModule: *mut HMODULE,
+            ) -> BOOL;
+            fn GetModuleFileNameW(hModule: HMODULE, lpFilename: LPWSTR, nSize: DWORD) -> DWORD;
+        }
+
+        let mut module: HMODULE = null_mut();
+        // SAFETY: We pass a valid function pointer address to GetModuleHandleExW
+        unsafe {
+            if GetModuleHandleExW(
+                GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS
+                    | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                binary_path as *const std::ffi::c_void as LPCWSTR,
+                &mut module,
+            ) == 0
+            {
+                return None;
+            }
+            let mut buf = [0u16; 4096];
+            let len = GetModuleFileNameW(module, buf.as_mut_ptr(), buf.len() as DWORD);
+            if len == 0 {
+                return None;
+            }
+            let s = OsString::from_wide(&buf[..len as usize]);
+            Some(std::path::PathBuf::from(s))
+        }
     }
 
-    extern "C" {
-        fn dladdr(addr: *const libc::c_void, info: *mut DlInfo) -> libc::c_int;
-    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        use std::ffi::CStr;
 
-    let probe = dylib_path as *const libc::c_void;
-    let mut info = DlInfo {
-        dli_fname: std::ptr::null(),
-        dli_fbase: std::ptr::null_mut(),
-        dli_sname: std::ptr::null(),
-        dli_saddr: std::ptr::null_mut(),
-    };
-    let ret = unsafe { dladdr(probe, &mut info) };
-    if ret == 0 || info.dli_fname.is_null() {
-        return None;
+        #[repr(C)]
+        struct DlInfo {
+            dli_fname: *const libc::c_char,
+            dli_fbase: *mut libc::c_void,
+            dli_sname: *const libc::c_char,
+            dli_saddr: *mut libc::c_void,
+        }
+
+        extern "C" {
+            fn dladdr(addr: *const libc::c_void, info: *mut DlInfo) -> libc::c_int;
+        }
+
+        let probe = binary_path as *const libc::c_void;
+        let mut info = DlInfo {
+            dli_fname: std::ptr::null(),
+            dli_fbase: std::ptr::null_mut(),
+            dli_sname: std::ptr::null(),
+            dli_saddr: std::ptr::null_mut(),
+        };
+        let ret = unsafe { dladdr(probe, &mut info) };
+        if ret == 0 || info.dli_fname.is_null() {
+            return None;
+        }
+        let cstr = unsafe { CStr::from_ptr(info.dli_fname) };
+        let s = cstr.to_str().ok()?;
+        Some(std::path::PathBuf::from(s))
     }
-    let cstr = unsafe { CStr::from_ptr(info.dli_fname) };
-    let s = cstr.to_str().ok()?;
-    Some(std::path::PathBuf::from(s))
 }
 
-/// Returns `true` when the WebKit inspector should be enabled.
 #[allow(dead_code)]
 pub fn inspector_enabled() -> bool {
     cfg!(feature = "debug_gui")

@@ -1,4 +1,3 @@
-# Cargo workspace configuration
 # Enable SIMD for WebAssembly targets only
 
 [target.wasm32-unknown-unknown]

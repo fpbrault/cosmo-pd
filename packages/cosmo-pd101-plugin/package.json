@@ -5,10 +5,12 @@
 	"type": "module",
 	"scripts": {
 		"build": "bun run build:release",
-		"build:release": "bun run ../../scripts/build-plugin.mjs --release --auv2 --vst3 --clap",
-		"build:auv3": "bun run ../../scripts/build-plugin-auv3.mjs",
-		"plugin:install": "bash ../../scripts/install-plugin.sh",
+		"build:release": "bun run build:web && cargo truce build && bun run build:post:assets",
+		"build:debug": "bun run build:web && cargo truce build --debug && bun run build:post:assets",
+		"build:standalone": "bun run build:web && cargo truce build --standalone && bun run build:post:assets",
+		"build:post:assets": "bash -c 'for d in ../../target/bundles/*/Contents/Resources; do mkdir -p \"$d/ui\" && cp -R webview/dist/* \"$d/ui/\"; done'",
 		"build:web": "bun --filter @cosmo/cosmo-pd101-plugin-webview build",
+		"plugin:install": "cargo truce install",
 		"dev": "cd webview && bun run dev:test",
 		"test:unit": "cd webview && bun run test:unit",
 		"test:unit:watch": "cd webview && bun run test:unit:watch",
@@ -20,6 +22,8 @@
 		"package:installer": "bun run package:installer:macos && bun run package:installer:windows && bun run package:installer:linux",
 		"package:installer:macos": "bun run ../../scripts/package-plugin-installers.mjs --platform macos",
 		"package:installer:windows": "bun run ../../scripts/package-plugin-installers.mjs --platform windows",
-		"package:installer:linux": "bun run ../../scripts/package-plugin-installers.mjs --platform linux"
+		"package:installer:linux": "bun run ../../scripts/package-plugin-installers.mjs --platform linux",
+		"validate": "cargo truce validate --clap --pluginval --auval",
+		"uninstall": "cargo truce uninstall --vst3 --clap --au2"
 	}
 }
