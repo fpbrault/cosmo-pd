@@ -135,6 +135,7 @@ mod tests {
     use super::modulation::mod_value_for;
     use super::ModSources;
     use super::{render::*, Voice};
+    use crate::batch_cache::RenderPlan;
     use crate::params::{
         LineParams, ModDestination, ModMatrix, ModMatrixCache, ModRoute, ModSource, SynthParams,
     };
@@ -319,6 +320,7 @@ mod tests {
         let mut cache = ModMatrixCache::new();
         cache.compute(&sources);
         let default_line = LineParams::default();
+        let plan = RenderPlan::from_params(&p);
         let out = render_voice(
             &mut voice,
             &p,
@@ -333,10 +335,9 @@ mod tests {
             0.0,
             0.0,
             &cache,
-            [0.0; 8],
-            [0.0; 8],
-            [0.0; 8],
-            [0.0; 8],
+            false,
+            &plan.line1,
+            &plan.line2,
         );
         assert_eq!(out, 0.0);
     }
@@ -353,6 +354,7 @@ mod tests {
         let mut cache = ModMatrixCache::new();
         cache.compute(&sources);
         let default_line = LineParams::default();
+        let plan = RenderPlan::from_params(&p);
         let mut any_nonzero = false;
         for _ in 0..64 {
             let out = render_voice(
@@ -369,10 +371,9 @@ mod tests {
                 0.0,
                 0.0,
                 &cache,
-                [0.0; 8],
-                [0.0; 8],
-                [0.0; 8],
-                [0.0; 8],
+                false,
+                &plan.line1,
+                &plan.line2,
             );
             if out.abs() > 1e-6 {
                 any_nonzero = true;

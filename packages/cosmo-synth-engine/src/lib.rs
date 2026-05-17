@@ -6,7 +6,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub mod batch_cache;
+mod batch_cache;
 pub mod default_envelopes;
 pub mod dsp_utils;
 pub mod envelope;

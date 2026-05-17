@@ -85,24 +85,36 @@ macro_rules! simd_dispatch {
             SimdBackend::Scalar => $scalar,
             SimdBackend::Sse2 => {
                 #[cfg(target_arch = "x86_64")]
-                { $sse2 }
+                {
+                    $sse2
+                }
                 #[cfg(not(target_arch = "x86_64"))]
-                { $scalar }
+                {
+                    $scalar
+                }
             }
             SimdBackend::Avx2 => {
                 #[cfg(target_arch = "x86_64")]
-                { $avx2 }
+                {
+                    $avx2
+                }
                 #[cfg(not(target_arch = "x86_64"))]
-                { $scalar }
+                {
+                    $scalar
+                }
             }
             SimdBackend::WasmSimd => {
                 #[cfg(target_arch = "wasm32")]
-                { $wasm }
+                {
+                    $wasm
+                }
                 #[cfg(not(target_arch = "wasm32"))]
-                { $scalar }
+                {
+                    $scalar
+                }
             }
         }
-    }
+    };
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -116,8 +128,14 @@ pub enum SimdBackend {
 impl SimdBackend {
     #[inline]
     pub fn add4(self, lhs: [f32; 4], rhs: [f32; 4]) -> [f32; 4] {
-        simd_dispatch!(self,
-            [lhs[0] + rhs[0], lhs[1] + rhs[1], lhs[2] + rhs[2], lhs[3] + rhs[3]],
+        simd_dispatch!(
+            self,
+            [
+                lhs[0] + rhs[0],
+                lhs[1] + rhs[1],
+                lhs[2] + rhs[2],
+                lhs[3] + rhs[3]
+            ],
             SimdType::add(Sse2::from_array(&lhs), Sse2::from_array(&rhs)).to_array(),
             SimdType::add(Avx2::from_array(&lhs), Avx2::from_array(&rhs)).to_array(),
             SimdType::add(WasmSimd::from_array(&lhs), WasmSimd::from_array(&rhs)).to_array()
@@ -126,8 +144,14 @@ impl SimdBackend {
 
     #[inline]
     pub fn mul4(self, lhs: [f32; 4], rhs: [f32; 4]) -> [f32; 4] {
-        simd_dispatch!(self,
-            [lhs[0] * rhs[0], lhs[1] * rhs[1], lhs[2] * rhs[2], lhs[3] * rhs[3]],
+        simd_dispatch!(
+            self,
+            [
+                lhs[0] * rhs[0],
+                lhs[1] * rhs[1],
+                lhs[2] * rhs[2],
+                lhs[3] * rhs[3]
+            ],
             SimdType::mul(Sse2::from_array(&lhs), Sse2::from_array(&rhs)).to_array(),
             SimdType::mul(Avx2::from_array(&lhs), Avx2::from_array(&rhs)).to_array(),
             SimdType::mul(WasmSimd::from_array(&lhs), WasmSimd::from_array(&rhs)).to_array()
@@ -136,18 +160,26 @@ impl SimdBackend {
 
     #[inline]
     pub fn clamp4(self, values: [f32; 4], min_val: f32, max_val: f32) -> [f32; 4] {
-        simd_dispatch!(self,
-            [values[0].clamp(min_val, max_val), values[1].clamp(min_val, max_val),
-             values[2].clamp(min_val, max_val), values[3].clamp(min_val, max_val)],
+        simd_dispatch!(
+            self,
+            [
+                values[0].clamp(min_val, max_val),
+                values[1].clamp(min_val, max_val),
+                values[2].clamp(min_val, max_val),
+                values[3].clamp(min_val, max_val)
+            ],
             Sse2::from_array(&values).clamp(min_val, max_val).to_array(),
             Avx2::from_array(&values).clamp(min_val, max_val).to_array(),
-            WasmSimd::from_array(&values).clamp(min_val, max_val).to_array()
+            WasmSimd::from_array(&values)
+                .clamp(min_val, max_val)
+                .to_array()
         )
     }
 
     #[inline]
     pub fn horizontal_sum4(self, values: [f32; 4]) -> f32 {
-        simd_dispatch!(self,
+        simd_dispatch!(
+            self,
             values[0] + values[1] + values[2] + values[3],
             Sse2::from_array(&values).sum(),
             Avx2::from_array(&values).sum(),

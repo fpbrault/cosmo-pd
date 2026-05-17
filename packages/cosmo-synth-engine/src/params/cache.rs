@@ -2,6 +2,7 @@ use crate::params::modulation::{ModDestination, ModMatrix, ModSource};
 use crate::params::{ENV_STEP_DEST_FIRST, ENV_STEP_DEST_LAST, NUM_MOD_DESTINATIONS};
 use crate::voice::ModSources;
 
+#[derive(Debug, Clone)]
 pub(crate) struct ModMatrixCache {
     pub values: [f32; NUM_MOD_DESTINATIONS],
     pub ref_mod_env: f32,

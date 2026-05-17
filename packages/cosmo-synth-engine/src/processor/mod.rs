@@ -13,6 +13,7 @@ use alloc::sync::Arc;
 use arrayvec::ArrayVec;
 use core::array;
 
+use crate::batch_cache::RenderPlan;
 use crate::dsp_utils::random_hold_value;
 use crate::envelope::{normalize_synth_params_envelopes_to_raw_if_human, EnvelopeTimingCache};
 use crate::fx::FxChain;
@@ -48,6 +49,8 @@ pub struct CosmoProcessor {
     pub aftertouch: f32,
     pub last_runtime_mod_sources: RuntimeModSources,
     pub simd_backend: SimdBackend,
+    render_plan: RenderPlan,
+    render_plan_dirty: bool,
     line1_scratch: LineParams,
     line2_scratch: LineParams,
     envelope_timing: EnvelopeTimingCache,
@@ -56,6 +59,8 @@ pub struct CosmoProcessor {
 impl CosmoProcessor {
     /// Create a new processor with default parameters and FX state.
     pub fn new(sample_rate: f32) -> Self {
+        let params = Arc::new(SynthParams::default());
+        let render_plan = RenderPlan::from_params(params.as_ref());
         let mut proc = Self {
             voices: array::from_fn(|_| Voice::new()),
             fx: FxChain::new(sample_rate),
@@ -68,13 +73,15 @@ impl CosmoProcessor {
             random_phase: 0.0,
             random_step: 0,
             random_hold: random_hold_value(0),
-            params: Arc::new(SynthParams::default()),
+            params,
             sample_rate,
             pitch_bend: 0.0,
             mod_wheel: 0.0,
             aftertouch: 0.0,
             last_runtime_mod_sources: RuntimeModSources::default(),
             simd_backend: detect_simd_backend(),
+            render_plan,
+            render_plan_dirty: false,
             line1_scratch: LineParams::default(),
             line2_scratch: LineParams::default(),
             envelope_timing: EnvelopeTimingCache::new(sample_rate),
@@ -162,6 +169,11 @@ impl CosmoProcessor {
         self.fx.sync_from_params(self.params.as_ref());
     }
 
+    pub(crate) fn rebuild_render_plan(&mut self) {
+        self.render_plan = RenderPlan::from_params(self.params.as_ref());
+        self.render_plan_dirty = false;
+    }
+
     /// Copy a `SynthParams` snapshot into the processor.
     pub fn set_params(&mut self, mut params: SynthParams) {
         normalize_synth_params_envelopes_to_raw_if_human(&mut params);
@@ -178,11 +190,13 @@ impl CosmoProcessor {
         self.line1_scratch = params.line1;
         self.line2_scratch = params.line2;
         self.params = params;
+        self.rebuild_render_plan();
         self.update_fx();
     }
 
     /// Mutable parameter access for non-real-time mutation paths and tests.
     pub fn params_mut(&mut self) -> &mut SynthParams {
+        self.render_plan_dirty = true;
         Arc::make_mut(&mut self.params)
     }
 
@@ -215,6 +229,7 @@ impl CosmoProcessor {
         self.line1_scratch = self.params.line1;
         self.line2_scratch = self.params.line2;
         self.envelope_timing = EnvelopeTimingCache::new(self.sample_rate);
+        self.rebuild_render_plan();
     }
 
     /// Set which effect type occupies a given FX slot (0–5).
@@ -222,6 +237,7 @@ impl CosmoProcessor {
         if slot < 6 {
             self.params_mut().fx_slots[slot] = FxSlotConfig::default_for_type(slot_type);
             self.update_fx();
+            self.rebuild_render_plan();
         }
     }
 
@@ -235,6 +251,7 @@ impl CosmoProcessor {
         let applied = module_presets::apply_module_preset(self.params_mut(), module, preset);
         if applied {
             self.update_fx();
+            self.rebuild_render_plan();
         }
         applied
     }
@@ -260,8 +277,9 @@ mod tests {
     use super::*;
     use crate::envelope_map::{human_level_to_raw, human_rate_to_raw, EnvelopeKind};
     use crate::params::{
-        DelayParams, EnvStep, FxSlotConfig, LineSelect, ModDestination, ModRoute, ModSource,
-        PolyMode, ShimmerVerbParams, StepEnvData, VibratoParams,
+        Algo, AlgoControlId, AlgoControlValueV1, DelayParams, EnvStep, FxSlotConfig, LineSelect,
+        ModDestination, ModRoute, ModSource, PolyMode, ShimmerVerbParams, StepEnvData,
+        VibratoParams,
     };
 
     fn active_voice_indices_for_note(proc: &CosmoProcessor, note: u8) -> Vec<usize> {
@@ -341,6 +359,82 @@ mod tests {
         proc.process(&mut out);
 
         assert!(out[0].is_finite());
+    }
+
+    #[test]
+    fn no_mod_matrix_rendering_remains_finite_and_nonzero() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().mod_matrix.routes.clear();
+        proc.note_on(60, utils::midi_note_to_freq(60), 1.0);
+
+        let mut out = [0.0_f32; 256];
+        proc.process(&mut out);
+
+        assert!(out.iter().all(|sample| sample.is_finite()));
+        assert!(out.iter().any(|sample| sample.abs() > 1e-6));
+    }
+
+    #[test]
+    fn set_shared_params_rebuilds_compiled_cz_controls() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        let mut params = SynthParams::default();
+        params.line1.algo = Algo::Cz101;
+        params.line1.algo_controls_a[0] = Some(AlgoControlValueV1 {
+            id: AlgoControlId::Waveform1,
+            value: 1.0,
+        });
+        params.line1.algo_controls_a[1] = Some(AlgoControlValueV1 {
+            id: AlgoControlId::Waveform2,
+            value: 2.0,
+        });
+
+        proc.set_shared_params(Arc::new(params));
+
+        assert_eq!(
+            proc.render_plan.line1.primary.algo_for_cycle(0),
+            Algo::Square
+        );
+        assert_eq!(
+            proc.render_plan.line1.primary.algo_for_cycle(1),
+            Algo::Pulse
+        );
+    }
+
+    #[test]
+    fn modulated_algo_blend_changes_rendered_audio() {
+        fn render_sum(mut params: SynthParams) -> f32 {
+            let mut proc = CosmoProcessor::new(48_000.0);
+            params.line_select = LineSelect::L1;
+            params.line1.algo = Algo::Sine;
+            params.line1.algo2 = Some(Algo::Saw);
+            params.line1.algo_blend = 0.0;
+            params.line1.dca_base = 0.9;
+            params.line1.dcw_base = 0.7;
+            proc.set_params(params);
+            proc.set_mod_wheel(1.0);
+            proc.note_on(60, utils::midi_note_to_freq(60), 1.0);
+
+            let mut out = [0.0_f32; 512];
+            proc.process(&mut out);
+            out.iter().map(|sample| sample.abs()).sum()
+        }
+
+        let dry = SynthParams::default();
+        let mut modded = SynthParams::default();
+        modded.mod_matrix.routes = vec![ModRoute {
+            source: ModSource::ModWheel,
+            destination: ModDestination::Line1AlgoBlend,
+            amount: 1.0,
+            enabled: true,
+        }];
+
+        let dry_sum = render_sum(dry);
+        let modded_sum = render_sum(modded);
+
+        assert!(
+            (dry_sum - modded_sum).abs() > 1e-4,
+            "expected line blend modulation to affect rendered audio"
+        );
     }
 
     #[test]
