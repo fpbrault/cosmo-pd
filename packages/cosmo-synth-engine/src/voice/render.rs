@@ -563,6 +563,7 @@ pub(crate) fn line_frequency(base_freq: f32, line: &LineParams, dco_env: f32) ->
         * (2.0_f32).powf(dco_semitones / 12.0)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn apply_pitch_and_lfo_modulation(
     voice: &mut Voice,
     p: &SynthParams,

@@ -495,6 +495,7 @@ unsafe fn ensure_parent_has_window(ns_view: *mut std::ffi::c_void) -> Option<Tem
 /// `ns_view` must be a valid `NSView *` on the current macOS main thread, and
 /// must remain valid for the lifetime of the returned WebView.
 #[cfg(target_os = "macos")]
+#[allow(clippy::too_many_arguments)]
 unsafe fn build_webview_from_ns_view(
     ns_view: *mut std::ffi::c_void,
     resource_dir: std::path::PathBuf,

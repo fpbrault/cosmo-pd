@@ -284,6 +284,7 @@ pub struct CzParams {}
 // IPC dispatch
 // =============================================================================
 
+#[allow(clippy::too_many_arguments)]
 fn handle_ipc_invoke(
     method: &str,
     args: &[serde_json::Value],
@@ -794,8 +795,10 @@ mod tests {
         let scope_buffer: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
         let ui_input_queue: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
 
-        let mut new_params = SynthParams::default();
-        new_params.volume = 0.42;
+        let new_params = SynthParams {
+            volume: 0.42,
+            ..Default::default()
+        };
         let json_str = serde_json::to_string(&new_params).unwrap();
 
         let result = handle_ipc_invoke(
@@ -817,8 +820,10 @@ mod tests {
 
     #[test]
     fn get_params_rpc_returns_current_synth_params() {
-        let mut initial = SynthParams::default();
-        initial.volume = 0.77;
+        let initial = SynthParams {
+            volume: 0.77,
+            ..Default::default()
+        };
         let synth_params = Arc::new(ArcSwap::new(Arc::new(initial)));
         let rt_synth_params = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
         let scope_buffer: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
