@@ -3517,34 +3517,6 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     }
   },
   {
-    "key": "filterType",
-    "paramDefault": null,
-    "readoutFormat": {
-      "kind": "uppercase"
-    }
-  },
-  {
-    "key": "filterCutoff",
-    "paramDefault": 5000.0,
-    "readoutFormat": {
-      "kind": "hertz"
-    }
-  },
-  {
-    "key": "filterResonance",
-    "paramDefault": 0.0,
-    "readoutFormat": {
-      "kind": "decimal"
-    }
-  },
-  {
-    "key": "filterEnvAmount",
-    "paramDefault": 0.0,
-    "readoutFormat": {
-      "kind": "decimal"
-    }
-  },
-  {
     "key": "chorusRate",
     "paramDefault": 0.800000011920929,
     "readoutFormat": {

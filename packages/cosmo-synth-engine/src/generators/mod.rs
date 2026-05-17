@@ -1,5 +1,6 @@
 use crate::dsp_utils::{apply_window, lerp, wrap01, TWO_PI};
 use crate::params::{Algo, AlgoControlSlots, BaseWaveform, LineParams};
+use crate::render_cache::CompiledLinePlan;
 use std::sync::LazyLock;
 
 /// Reference per-line output headroom used by processor normalization.
@@ -133,6 +134,54 @@ impl LineRenderConfig {
             sample_rate,
             primary_control_values,
             secondary_control_values,
+            algo_param_mods,
+            pm_post_mod,
+        }
+    }
+
+    #[inline(always)]
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn from_compiled_line(
+        plan: &CompiledLinePlan,
+        line: &LineParams,
+        cycle_count: u32,
+        window_phi: f32,
+        phase: f32,
+        final_dcw: f32,
+        final_dca: f32,
+        effective_freq: f32,
+        sample_rate: f32,
+        algo_param_mods: [f32; 8],
+        pm_post_mod: f32,
+    ) -> Self {
+        let primary = plan.primary;
+        let secondary = plan.secondary;
+        let primary_algo = primary.algo_for_cycle(cycle_count);
+        let secondary_algo = secondary.map(|slot| slot.algo_for_cycle(cycle_count));
+        let primary_window_gain = apply_window(window_phi, primary.window);
+        let secondary_window_gain = secondary
+            .map(|slot| apply_window(window_phi, slot.window))
+            .unwrap_or(primary_window_gain);
+
+        Self {
+            primary_algo,
+            secondary_algo,
+            blend: line.algo_blend,
+            phase,
+            primary_window_gain,
+            secondary_window_gain,
+            final_dcw,
+            final_dca,
+            primary_base_waveform: primary.base_waveform,
+            secondary_base_waveform: secondary
+                .map(|slot| slot.base_waveform)
+                .unwrap_or(primary.base_waveform),
+            effective_freq,
+            sample_rate,
+            primary_control_values: primary.control_values,
+            secondary_control_values: secondary
+                .map(|slot| slot.control_values)
+                .unwrap_or([0.0; 8]),
             algo_param_mods,
             pm_post_mod,
         }
@@ -451,11 +500,6 @@ pub fn warp_phase(
     }
 }
 
-fn render_direct_algo_sample(algo: Algo) -> Option<f32> {
-    let _ = algo;
-    None
-}
-
 /// Unified algorithm sample renderer used by voice and utility paths.
 ///
 /// `runtime_sample` is used only when an algorithm is rendered by per-voice state.
@@ -472,9 +516,6 @@ pub fn render_algo_sample(
 ) -> f32 {
     if algo == Algo::Karpunk {
         return runtime_sample.unwrap_or(0.0);
-    }
-    if let Some(sample) = render_direct_algo_sample(algo) {
-        return sample;
     }
     let warped = warp_phase(algo, phase, dcw, control_values, &algo_param_mods);
     sample_base_wave(base_waveform, warped + pm_post_mod)

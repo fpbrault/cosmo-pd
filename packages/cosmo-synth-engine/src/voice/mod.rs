@@ -138,13 +138,14 @@ mod tests {
     use crate::params::{
         LineParams, ModDestination, ModMatrix, ModMatrixCache, ModRoute, ModSource, SynthParams,
     };
+    use crate::render_cache::CompiledSynthParams;
 
     #[test]
     fn dca_gain_uses_gentle_power_taper() {
         assert_eq!(super::render::cz_dca_env_gain(0.0), 0.0);
         assert_eq!(super::render::cz_dca_env_gain(1.0), 1.0);
-        assert!(super::render::cz_dca_env_gain(0.5) > 0.5);
-        assert!(super::render::cz_dca_env_gain(0.75) > 0.75);
+        assert!(super::render::cz_dca_env_gain(0.5) < 0.5);
+        assert!(super::render::cz_dca_env_gain(0.75) < 0.75);
     }
 
     #[test]
@@ -319,6 +320,7 @@ mod tests {
         let mut cache = ModMatrixCache::new();
         cache.compute(&sources);
         let default_line = LineParams::default();
+        let plan = CompiledSynthParams::from_params(&p);
         let out = render_voice(
             &mut voice,
             &p,
@@ -333,10 +335,9 @@ mod tests {
             0.0,
             0.0,
             &cache,
-            [0.0; 8],
-            [0.0; 8],
-            [0.0; 8],
-            [0.0; 8],
+            false,
+            &plan.line1,
+            &plan.line2,
         );
         assert_eq!(out, 0.0);
     }
@@ -353,6 +354,7 @@ mod tests {
         let mut cache = ModMatrixCache::new();
         cache.compute(&sources);
         let default_line = LineParams::default();
+        let plan = CompiledSynthParams::from_params(&p);
         let mut any_nonzero = false;
         for _ in 0..64 {
             let out = render_voice(
@@ -369,10 +371,9 @@ mod tests {
                 0.0,
                 0.0,
                 &cache,
-                [0.0; 8],
-                [0.0; 8],
-                [0.0; 8],
-                [0.0; 8],
+                false,
+                &plan.line1,
+                &plan.line2,
             );
             if out.abs() > 1e-6 {
                 any_nonzero = true;

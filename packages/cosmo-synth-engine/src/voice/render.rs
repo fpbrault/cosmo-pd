@@ -6,6 +6,7 @@ use crate::params::{
     LfoWaveform, LineParams, LineSelect, ModDestination, ModMatrixCache, ModMode, PortamentoMode,
     SynthParams,
 };
+use crate::render_cache::CompiledLinePlan;
 
 use super::modulation::{algo_param_slot_mods_for_line, ModSources};
 use super::{
@@ -72,10 +73,9 @@ pub fn render_voice(
     mod_wheel: f32,
     aftertouch: f32,
     cache: &ModMatrixCache,
-    line1_primary_control_values: [f32; 8],
-    line1_secondary_control_values: [f32; 8],
-    line2_primary_control_values: [f32; 8],
-    line2_secondary_control_values: [f32; 8],
+    modulation_active: bool,
+    line1_plan: &CompiledLinePlan,
+    line2_plan: &CompiledLinePlan,
 ) -> f32 {
     let base_freq = base_voice_frequency(voice);
 
@@ -124,12 +124,21 @@ pub fn render_voice(
         mod_wheel,
         aftertouch,
     );
-    let line1_algo_param_mods = algo_param_slot_mods_for_line(1, cache, &mod_sources);
-    let line2_algo_param_mods = algo_param_slot_mods_for_line(2, cache, &mod_sources);
+    let line1_algo_param_mods = if modulation_active {
+        algo_param_slot_mods_for_line(1, cache, &mod_sources)
+    } else {
+        [0.0; 8]
+    };
+    let line2_algo_param_mods = if modulation_active {
+        algo_param_slot_mods_for_line(2, cache, &mod_sources)
+    } else {
+        [0.0; 8]
+    };
     let mut signal = build_signal_state(
         &line1_modded,
         &line2_modded,
         cache,
+        modulation_active,
         &env,
         base_freq,
         &mod_sources,
@@ -143,38 +152,49 @@ pub fn render_voice(
         base_freq,
         pitch_bend_semitones,
         &mod_sources,
+        modulation_active,
         &mut signal,
     );
 
-    let phase = build_phase_frame(voice, p, cache, sr, base_freq, &mod_sources);
-    let (s1, ks_raw1) = voice.algo_runtime.render_line1(LineRenderConfig::from_line(
-        &line1_modded,
-        voice.cycle_count1,
-        phase.phi1,
-        phase.phase_a_post,
-        signal.final_dcw1,
-        signal.final_dca1,
-        signal.effective_freq1,
+    let phase = build_phase_frame(
+        voice,
+        p,
+        cache,
+        modulation_active,
         sr,
-        line1_algo_param_mods,
-        phase.pm_post_mod,
-        line1_primary_control_values,
-        line1_secondary_control_values,
-    ));
-    let (s2, ks_raw2) = voice.algo_runtime.render_line2(LineRenderConfig::from_line(
-        &line2_modded,
-        voice.cycle_count2,
-        phase.phi2,
-        phase.phase_b_post,
-        signal.final_dcw2,
-        signal.final_dca2,
-        signal.effective_freq2,
-        sr,
-        line2_algo_param_mods,
-        phase.pm_post_mod,
-        line2_primary_control_values,
-        line2_secondary_control_values,
-    ));
+        base_freq,
+        &mod_sources,
+    );
+    let (s1, ks_raw1) = voice
+        .algo_runtime
+        .render_line1(LineRenderConfig::from_compiled_line(
+            line1_plan,
+            &line1_modded,
+            voice.cycle_count1,
+            phase.phi1,
+            phase.phase_a_post,
+            signal.final_dcw1,
+            signal.final_dca1,
+            signal.effective_freq1,
+            sr,
+            line1_algo_param_mods,
+            phase.pm_post_mod,
+        ));
+    let (s2, ks_raw2) = voice
+        .algo_runtime
+        .render_line2(LineRenderConfig::from_compiled_line(
+            line2_plan,
+            &line2_modded,
+            voice.cycle_count2,
+            phase.phi2,
+            phase.phase_b_post,
+            signal.final_dcw2,
+            signal.final_dca2,
+            signal.effective_freq2,
+            sr,
+            line2_algo_param_mods,
+            phase.pm_post_mod,
+        ));
 
     let sample = mix_line_outputs(
         p,
@@ -194,14 +214,17 @@ pub fn render_voice(
         signal.final_dca2,
         line1_algo_param_mods,
         line2_algo_param_mods,
-        line1_primary_control_values,
-        line1_secondary_control_values,
-        line2_primary_control_values,
-        line2_secondary_control_values,
+        line1_plan,
+        line2_plan,
     );
 
     // Apply volume modulation from mod matrix
-    let volume_mod = cache.get(ModDestination::Volume, &mod_sources);
+    let volume_mod = get_mod_if_active(
+        modulation_active,
+        cache,
+        ModDestination::Volume,
+        &mod_sources,
+    );
     let mut sample = sample * (1.0 + volume_mod);
 
     let tail_alpha = 1.0 - (-1.0 / (RELEASE_TAIL_LEVEL_TIME_SECONDS * sr.max(1.0))).exp();
@@ -415,6 +438,7 @@ fn build_signal_state(
     line1: &LineParams,
     line2: &LineParams,
     cache: &ModMatrixCache,
+    modulation_active: bool,
     env: &EnvelopeSnapshot,
     base_freq: f32,
     sources: &ModSources,
@@ -423,10 +447,30 @@ fn build_signal_state(
     let dca2_level = line2.dca_base * cz_dca_env_gain(env.dca2);
 
     // Mod matrix offsets for DCW/DCA (O(1) cache lookup, not O(routes) scan)
-    let dcw1_mod = cache.get(ModDestination::Line1DcwBase, sources);
-    let dcw2_mod = cache.get(ModDestination::Line2DcwBase, sources);
-    let dca1_mod = cache.get(ModDestination::Line1DcaBase, sources);
-    let dca2_mod = cache.get(ModDestination::Line2DcaBase, sources);
+    let dcw1_mod = get_mod_if_active(
+        modulation_active,
+        cache,
+        ModDestination::Line1DcwBase,
+        sources,
+    );
+    let dcw2_mod = get_mod_if_active(
+        modulation_active,
+        cache,
+        ModDestination::Line2DcwBase,
+        sources,
+    );
+    let dca1_mod = get_mod_if_active(
+        modulation_active,
+        cache,
+        ModDestination::Line1DcaBase,
+        sources,
+    );
+    let dca2_mod = get_mod_if_active(
+        modulation_active,
+        cache,
+        ModDestination::Line2DcaBase,
+        sources,
+    );
 
     SignalState {
         effective_freq1: line_frequency(base_freq, line1, env.dco1_env),
@@ -512,13 +556,14 @@ fn apply_pitch_and_lfo_modulation(
     base_freq: f32,
     pitch_bend_semitones: f32,
     sources: &ModSources,
+    modulation_active: bool,
     signal: &mut SignalState,
 ) {
     apply_portamento(voice, &p.portamento, sr, base_freq, signal);
     apply_pitch_bend(pitch_bend_semitones, signal);
-    apply_vibrato(voice, p, cache, sr, sources, signal);
+    apply_vibrato(voice, p, cache, modulation_active, sr, sources, signal);
     // Pitch modulation from mod matrix (O(1) cache lookup)
-    let pitch_mod = cache.get(ModDestination::Pitch, sources);
+    let pitch_mod = get_mod_if_active(modulation_active, cache, ModDestination::Pitch, sources);
     if pitch_mod != 0.0 {
         let ratio = (2.0_f32).powf(pitch_mod * 2.0 / 12.0); // ±2 semitones max
         signal.effective_freq1 *= ratio;
@@ -575,6 +620,7 @@ fn apply_vibrato(
     voice: &mut Voice,
     p: &SynthParams,
     cache: &ModMatrixCache,
+    modulation_active: bool,
     sr: f32,
     sources: &ModSources,
     signal: &mut SignalState,
@@ -591,7 +637,12 @@ fn apply_vibrato(
         return;
     }
 
-    let vibrato_rate_mod = cache.get(ModDestination::VibratoRate, sources);
+    let vibrato_rate_mod = get_mod_if_active(
+        modulation_active,
+        cache,
+        ModDestination::VibratoRate,
+        sources,
+    );
     let effective_rate = (vibrato.rate + vibrato_rate_mod * 99.0).clamp(0.1, 200.0);
     voice.vibrato_phase += (effective_rate * 0.1) / sr;
     if voice.vibrato_phase >= 1.0 {
@@ -600,7 +651,12 @@ fn apply_vibrato(
 
     let vib_waveform = vibrato_waveform(vibrato.waveform);
     let lfo_val = lfo_output(voice.vibrato_phase, vib_waveform);
-    let vibrato_depth_mod = cache.get(ModDestination::VibratoDepth, sources);
+    let vibrato_depth_mod = get_mod_if_active(
+        modulation_active,
+        cache,
+        ModDestination::VibratoDepth,
+        sources,
+    );
     let effective_depth = (vibrato.depth + vibrato_depth_mod * 99.0).clamp(0.0, 99.0);
     let pitch_mod = 1.0 + lfo_val * (effective_depth / 1000.0);
     signal.effective_freq1 *= pitch_mod;
@@ -620,11 +676,17 @@ fn build_phase_frame(
     voice: &Voice,
     p: &SynthParams,
     cache: &ModMatrixCache,
+    modulation_active: bool,
     sr: f32,
     base_freq: f32,
     sources: &ModSources,
 ) -> PhaseFrame {
-    let int_pm_ratio_mod = cache.get(ModDestination::IntPmRatio, sources);
+    let int_pm_ratio_mod = get_mod_if_active(
+        modulation_active,
+        cache,
+        ModDestination::IntPmRatio,
+        sources,
+    );
     let (int_pm_enabled, int_pm_amount_raw, int_pm_ratio_raw, pm_pre) = p
         .phase_mod_params()
         .map(|pm| (pm.enabled, pm.amount, pm.ratio, pm.pm_pre))
@@ -678,10 +740,8 @@ fn mix_line_outputs(
     final_dca2: f32,
     line1_algo_param_mods: [f32; 8],
     line2_algo_param_mods: [f32; 8],
-    line1_primary_control_values: [f32; 8],
-    line1_secondary_control_values: [f32; 8],
-    line2_primary_control_values: [f32; 8],
-    line2_secondary_control_values: [f32; 8],
+    line1_plan: &CompiledLinePlan,
+    line2_plan: &CompiledLinePlan,
 ) -> f32 {
     let (mix_a, mix_b) = select_line_sources(
         p,
@@ -701,10 +761,8 @@ fn mix_line_outputs(
         final_dca2,
         line1_algo_param_mods,
         line2_algo_param_mods,
-        line1_primary_control_values,
-        line1_secondary_control_values,
-        line2_primary_control_values,
-        line2_secondary_control_values,
+        line1_plan,
+        line2_plan,
     );
 
     match p.mod_mode {
@@ -746,14 +804,13 @@ fn select_line_sources(
     final_dca2: f32,
     line1_algo_param_mods: [f32; 8],
     line2_algo_param_mods: [f32; 8],
-    line1_primary_control_values: [f32; 8],
-    line1_secondary_control_values: [f32; 8],
-    line2_primary_control_values: [f32; 8],
-    line2_secondary_control_values: [f32; 8],
+    line1_plan: &CompiledLinePlan,
+    line2_plan: &CompiledLinePlan,
 ) -> (f32, f32) {
     match p.line_select {
         LineSelect::L1PlusL1Prime => {
-            let cfg = LineRenderConfig::from_line(
+            let cfg = LineRenderConfig::from_compiled_line(
+                line1_plan,
                 l1,
                 cycle_count1,
                 phi2,
@@ -764,14 +821,13 @@ fn select_line_sources(
                 1.0,
                 line1_algo_param_mods,
                 0.0,
-                line1_primary_control_values,
-                line1_secondary_control_values,
             );
             let s1_prime = render_prime_line_sample(cfg, ks_raw1);
             (s1, s1_prime)
         }
         LineSelect::L1PlusL2Prime => {
-            let cfg = LineRenderConfig::from_line(
+            let cfg = LineRenderConfig::from_compiled_line(
+                line2_plan,
                 l2,
                 cycle_count2,
                 phi2,
@@ -782,8 +838,6 @@ fn select_line_sources(
                 1.0,
                 line2_algo_param_mods,
                 0.0,
-                line2_primary_control_values,
-                line2_secondary_control_values,
             );
             let s2_prime = render_prime_line_sample(cfg, ks_raw2);
             (s1, s2_prime)
@@ -831,6 +885,20 @@ fn render_prime_line_sample(cfg: LineRenderConfig, ks_raw: Option<f32>) -> f32 {
     };
 
     sample * cfg.final_dca * generators::PER_LINE_HEADROOM
+}
+
+#[inline(always)]
+fn get_mod_if_active(
+    active: bool,
+    cache: &ModMatrixCache,
+    destination: ModDestination,
+    sources: &ModSources,
+) -> f32 {
+    if active {
+        cache.get(destination, sources)
+    } else {
+        0.0
+    }
 }
 
 fn advance_voice_phase(
