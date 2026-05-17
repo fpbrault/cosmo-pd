@@ -5,6 +5,29 @@ pub const TWO_PI: f32 = core::f32::consts::TAU;
 const PI: f32 = core::f32::consts::PI;
 const TWO_OVER_PI: f32 = 2.0 / PI;
 
+/// 2048-entry sine lookup table over [0, 1) phase.
+const SIN_TABLE_SIZE: usize = 2048;
+static SIN_TABLE: LazyLock<[f32; SIN_TABLE_SIZE]> = LazyLock::new(|| {
+    let mut table = [0.0_f32; SIN_TABLE_SIZE];
+    for i in 0..SIN_TABLE_SIZE {
+        let phase = i as f32 / SIN_TABLE_SIZE as f32;
+        table[i] = (TWO_PI * phase).sin();
+    }
+    table
+});
+
+#[inline]
+pub fn sin_lut(phase: f32) -> f32 {
+    let p = phase - phase.floor();
+    SIN_TABLE[(p * SIN_TABLE_SIZE as f32) as usize & (SIN_TABLE_SIZE - 1)]
+}
+
+#[inline]
+pub fn cos_lut(phase: f32) -> f32 {
+    let p = phase - phase.floor();
+    SIN_TABLE[((p + 0.25) * SIN_TABLE_SIZE as f32) as usize & (SIN_TABLE_SIZE - 1)]
+}
+
 /// Wrap a value into [0, 1).
 #[inline]
 pub fn wrap01(v: f32) -> f32 {
