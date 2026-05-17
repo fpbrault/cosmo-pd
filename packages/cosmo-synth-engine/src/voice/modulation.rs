@@ -80,6 +80,7 @@ enum EnvKindKey {
 
 const ENV_DEST_KIND_OFFSET: [u16; 3] = [0, 16, 32];
 
+#[allow(unsafe_code)]
 fn env_destination(
     line_index: u8,
     env_kind: EnvKindKey,
