@@ -3,6 +3,7 @@ use serde::Serialize;
 
 /// Snapshot of modulation source values for UI telemetry.
 #[derive(Debug, Clone, Copy, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RuntimeModSources {
     pub lfo1: f32,
     pub lfo2: f32,

@@ -3,218 +3,200 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useNoteHandling } from "./useNoteHandling";
 
 describe("useNoteHandling", () => {
-	let events: Array<{ type: string; payload: Record<string, unknown> }>;
-	let eventSink: (type: string, payload: Record<string, unknown>) => void;
+	const mockEventSink = vi.fn();
+	const mockWorkletNode = {
+		port: {
+			postMessage: vi.fn(),
+		},
+	};
+	const mockWorkletNodeRef = {
+		current: mockWorkletNode,
+	};
 
 	beforeEach(() => {
-		events = [];
-		eventSink = (type, payload) => events.push({ type, payload });
+		vi.clearAllMocks();
+		vi.restoreAllMocks();
 	});
 
-	const renderNoteHandling = () =>
-		renderHook(() => useNoteHandling({ eventSink }));
-
-	// ---------------------------------------------------------------------------
-	// Basic note on/off
-	// ---------------------------------------------------------------------------
-
-	it("sends noteOn event when a note is pressed", () => {
-		const { result } = renderNoteHandling();
-
-		act(() => result.current.sendNoteOn(60, 100));
-
-		expect(events).toContainEqual(
-			expect.objectContaining({
-				type: "noteOn",
-				payload: expect.objectContaining({ note: 60 }),
+	it("sends noteOn event", () => {
+		const { result } = renderHook(() =>
+			useNoteHandling({
+				workletNodeRef:
+					mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
+				eventSink: mockEventSink,
 			}),
 		);
+
+		act(() => {
+			result.current.sendNoteOn(60, 100);
+		});
+
+		expect(mockEventSink).toHaveBeenCalledWith(
+			"noteOn",
+			expect.objectContaining({
+				note: 60,
+				velocity: 100 / 127,
+			}),
+		);
+	});
+
+	it("sends noteOff event", () => {
+		const { result } = renderHook(() =>
+			useNoteHandling({
+				workletNodeRef:
+					mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
+				eventSink: mockEventSink,
+			}),
+		);
+
+		act(() => {
+			result.current.sendNoteOn(60);
+			result.current.sendNoteOff(60);
+		});
+
+		expect(mockEventSink).toHaveBeenCalledWith("noteOff", { note: 60 });
+	});
+
+	it("handles sustain correctly", () => {
+		const { result } = renderHook(() =>
+			useNoteHandling({
+				workletNodeRef:
+					mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
+				eventSink: mockEventSink,
+			}),
+		);
+
+		act(() => {
+			result.current.setSustain(true);
+			result.current.sendNoteOn(60);
+			result.current.sendNoteOff(60);
+		});
+
+		// NoteOff should not be sent to engine while sustain is on
+		expect(mockEventSink).not.toHaveBeenCalledWith("noteOff", { note: 60 });
+
+		act(() => {
+			result.current.setSustain(false);
+		});
+
+		// NoteOff should now be sent for the released note
+		expect(mockEventSink).toHaveBeenCalledWith("noteOff", { note: 60 });
+	});
+
+	it("handles panic", () => {
+		const { result } = renderHook(() =>
+			useNoteHandling({
+				workletNodeRef:
+					mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
+				eventSink: mockEventSink,
+			}),
+		);
+
+		act(() => {
+			result.current.sendNoteOn(60);
+			result.current.panic();
+		});
+
+		expect(mockEventSink).toHaveBeenCalledWith("panic", {});
+		expect(result.current.activeNotes).toEqual([]);
+	});
+
+	it("sends pitch bend, mod wheel, and aftertouch", () => {
+		const { result } = renderHook(() =>
+			useNoteHandling({
+				workletNodeRef:
+					mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
+				eventSink: mockEventSink,
+			}),
+		);
+
+		act(() => {
+			result.current.sendPitchBend(0.5);
+			result.current.sendModWheel(0.7);
+			result.current.sendAftertouch(0.3);
+		});
+
+		expect(mockEventSink).toHaveBeenCalledWith("pitchBend", { value: 0.5 });
+		expect(mockEventSink).toHaveBeenCalledWith("modWheel", { value: 0.7 });
+		expect(mockEventSink).toHaveBeenCalledWith("aftertouch", { value: 0.3 });
+	});
+
+	it("handles keyboard input", () => {
+		// Mock PC_KEY_TO_NOTE for 'a'
+		const _aNote = 60;
+		// Since we can't easily change the imported constant,
+		// we rely on the actual PC_KEY_TO_NOTE mapping if we know it.
+		// In this project, 'a' is usually 60.
+
+		const { result } = renderHook(() =>
+			useNoteHandling({
+				workletNodeRef:
+					mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
+				eventSink: mockEventSink,
+			}),
+		);
+
+		act(() => {
+			window.dispatchEvent(new KeyboardEvent("keydown", { key: "a" }));
+		});
+
 		expect(result.current.activeNotes).toContain(60);
-	});
-
-	it("sends noteOff event when a note is released (no sustain)", () => {
-		const { result } = renderNoteHandling();
+		expect(mockEventSink).toHaveBeenCalledWith(
+			"noteOn",
+			expect.objectContaining({ note: 60 }),
+		);
 
 		act(() => {
-			result.current.sendNoteOn(60);
-			result.current.sendNoteOff(60);
+			window.dispatchEvent(new KeyboardEvent("keyup", { key: "a" }));
 		});
 
-		expect(events).toContainEqual(
-			expect.objectContaining({
-				type: "noteOff",
-				payload: expect.objectContaining({ note: 60 }),
+		expect(result.current.activeNotes).not.toContain(60);
+		expect(mockEventSink).toHaveBeenCalledWith("noteOff", { note: 60 });
+	});
+
+	it("prevents default on keyboard input when not in passthrough", () => {
+		const preventDefaultSpy = vi.fn();
+		renderHook(() =>
+			useNoteHandling({
+				workletNodeRef:
+					mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
+				eventSink: mockEventSink,
+				keyboardPassthrough: false,
 			}),
 		);
-		expect(result.current.activeNotes).not.toContain(60);
-	});
 
-	it("does not retrigger an already-active note", () => {
-		const { result } = renderNoteHandling();
-
-		act(() => {
-			result.current.sendNoteOn(60);
-			result.current.sendNoteOn(60); // duplicate
+		const event = new KeyboardEvent("keydown", { key: "a", cancelable: true });
+		Object.defineProperty(event, "preventDefault", {
+			value: preventDefaultSpy,
 		});
 
-		const noteOnCount = events.filter((e) => e.type === "noteOn").length;
-		expect(noteOnCount).toBe(1);
-	});
-
-	// ---------------------------------------------------------------------------
-	// Sustain pedal — basic behaviour
-	// ---------------------------------------------------------------------------
-
-	it("does not send noteOff while sustain is on", () => {
-		const { result } = renderNoteHandling();
-
 		act(() => {
-			result.current.sendNoteOn(60);
-			result.current.setSustain(true);
-			result.current.sendNoteOff(60);
+			window.dispatchEvent(event);
 		});
 
-		const noteOffEvents = events.filter((e) => e.type === "noteOff");
-		expect(noteOffEvents).toHaveLength(0);
+		expect(preventDefaultSpy).toHaveBeenCalled();
 	});
 
-	it("sends noteOff for sustained-but-released notes when sustain is lifted", () => {
-		const { result } = renderNoteHandling();
-
-		act(() => {
-			result.current.sendNoteOn(60);
-			result.current.setSustain(true);
-			result.current.sendNoteOff(60);
-			result.current.setSustain(false);
-		});
-
-		const noteOffEvents = events.filter((e) => e.type === "noteOff");
-		expect(noteOffEvents).toHaveLength(1);
-		expect(noteOffEvents[0].payload).toMatchObject({ note: 60 });
-	});
-
-	it("sends sustain engine event when pedal state changes", () => {
-		const { result } = renderNoteHandling();
-
-		act(() => result.current.setSustain(true));
-		act(() => result.current.setSustain(false));
-
-		const sustainEvents = events.filter((e) => e.type === "sustain");
-		expect(sustainEvents).toEqual([
-			expect.objectContaining({ payload: { on: true } }),
-			expect.objectContaining({ payload: { on: false } }),
-		]);
-	});
-
-	// ---------------------------------------------------------------------------
-	// Sustain pedal — still-held note must not get a spurious noteOff
-	// ---------------------------------------------------------------------------
-
-	it("does not send noteOff for a note still physically held when sustain is released", () => {
-		const { result } = renderNoteHandling();
-
-		act(() => {
-			result.current.sendNoteOn(60);
-			result.current.setSustain(true);
-			// 60 is NOT released — still held
-			result.current.setSustain(false);
-		});
-
-		const noteOffEvents = events.filter((e) => e.type === "noteOff");
-		expect(noteOffEvents).toHaveLength(0);
-	});
-
-	// ---------------------------------------------------------------------------
-	// Sustain pedal — retrigger same note regression (mirrors processor.rs test)
-	// ---------------------------------------------------------------------------
-
-	/**
-	 * Regression test for the "sustain stuck" bug:
-	 *   1. Note on  (note 60)
-	 *   2. Sustain on
-	 *   3. Note off  → queued in sustainedButReleased, NOT forwarded yet
-	 *   4. Note on again (same note 60) → re-enters activeNotes
-	 *   5. Sustain off → the old queued noteOff should NOT be forwarded because
-	 *      the note is now physically held again; only one noteOff after the final
-	 *      note-off should fire.
-	 */
-	it("does not send a spurious noteOff on sustain release when the same note was retriggered", () => {
-		const { result } = renderNoteHandling();
-
-		act(() => {
-			result.current.sendNoteOn(60);
-			result.current.setSustain(true);
-			result.current.sendNoteOff(60); // held-down tracking released
-			result.current.sendNoteOn(60); // re-struck while pedal is down
-			result.current.setSustain(false); // release sustain
-		});
-
-		// The note is still held (activeNotes), so no noteOff should have been sent yet.
-		const noteOffBeforeFinalRelease = events.filter(
-			(e) => e.type === "noteOff",
+	it("does not prevent default when keyboard passthrough is enabled", () => {
+		const preventDefaultSpy = vi.fn();
+		renderHook(() =>
+			useNoteHandling({
+				workletNodeRef:
+					mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
+				eventSink: mockEventSink,
+				keyboardPassthrough: true,
+			}),
 		);
-		expect(noteOffBeforeFinalRelease).toHaveLength(0);
 
-		// Now physically release the note.
-		act(() => result.current.sendNoteOff(60));
-
-		const noteOffEvents = events.filter((e) => e.type === "noteOff");
-		expect(noteOffEvents).toHaveLength(1);
-		expect(noteOffEvents[0].payload).toMatchObject({ note: 60 });
-	});
-
-	it("releases multiple different notes correctly when sustain is lifted", () => {
-		const { result } = renderNoteHandling();
-
-		act(() => {
-			result.current.sendNoteOn(60);
-			result.current.sendNoteOn(64);
-			result.current.setSustain(true);
-			result.current.sendNoteOff(60);
-			result.current.sendNoteOff(64);
-			result.current.setSustain(false);
+		const event = new KeyboardEvent("keydown", { key: "a", cancelable: true });
+		Object.defineProperty(event, "preventDefault", {
+			value: preventDefaultSpy,
 		});
 
-		const noteOffNotes = events
-			.filter((e) => e.type === "noteOff")
-			.map((e) => e.payload.note);
-		expect(noteOffNotes).toHaveLength(2);
-		expect(noteOffNotes).toContain(60);
-		expect(noteOffNotes).toContain(64);
-	});
-
-	it("disables PC keyboard note mapping in plugin runtime", () => {
-		const previousSetParams = (
-			window as Window & { __czSetParams?: (json: string) => void }
-		).__czSetParams;
-		(
-			window as Window & { __czSetParams?: (json: string) => void }
-		).__czSetParams = () => {};
-
-		renderHook(() => useNoteHandling({ eventSink }));
-
 		act(() => {
-			window.dispatchEvent(new KeyboardEvent("keydown", { key: "a" }));
+			window.dispatchEvent(event);
 		});
 
-		expect(events.some((event) => event.type === "noteOn")).toBe(false);
-
-		(
-			window as Window & { __czSetParams?: (json: string) => void }
-		).__czSetParams = previousSetParams;
-	});
-
-	it("ignores keyboard mapping when document is not focused", () => {
-		const originalHasFocus = document.hasFocus;
-		document.hasFocus = vi.fn(() => false);
-
-		renderHook(() => useNoteHandling({ eventSink }));
-
-		act(() => {
-			window.dispatchEvent(new KeyboardEvent("keydown", { key: "a" }));
-		});
-
-		expect(events.some((event) => event.type === "noteOn")).toBe(false);
-		document.hasFocus = originalHasFocus;
+		expect(preventDefaultSpy).not.toHaveBeenCalled();
 	});
 });

@@ -51,3 +51,4 @@ target/
 test-results/
 
 coverage-final.json
+**/coverage

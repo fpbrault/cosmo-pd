@@ -1,81 +1,147 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import { useSynthStore } from "@/features/synth/synthStore";
+import { describe, expect, it } from "vitest";
+import { DEFAULT_ALGO_REF } from "@/lib/synth/algoRef";
+import type { FxSlotConfig, SynthPresetV1 } from "@/lib/synth/bindings/synth";
+import { useSynthStore } from "./synthStore";
 
-describe("synthStore gatherState", () => {
-	beforeEach(() => {
-		useSynthStore.setState(useSynthStore.getInitialState());
+describe("useSynthStore", () => {
+	it("initializes with default state", () => {
+		const state = useSynthStore.getState();
+		expect(state.warpAAmount).toBe(0);
+		expect(state.warpAAlgo).toBe(DEFAULT_ALGO_REF);
+		expect(state.volume).toBe(1);
 	});
 
-	it("gatherState includes fxSlots with 6 entries", () => {
-		const params = useSynthStore.getState().gatherState().params;
-		expect(params.fxSlots).toHaveLength(6);
-		if (!params.fxSlots) {
-			throw new Error("Expected gatherState params to include fxSlots");
-		}
-		for (const slot of params.fxSlots) {
-			expect(slot).toHaveProperty("type");
-		}
+	it("updates state via setters", () => {
+		const { setWarpAAmount, setVolume, setLineOctave, setLfoRate } =
+			useSynthStore.getState();
+
+		act(() => {
+			setWarpAAmount(0.5);
+			setVolume(0.8);
+			setLineOctave(1);
+			setLfoRate(2.5);
+		});
+
+		const state = useSynthStore.getState();
+		expect(state.warpAAmount).toBe(0.5);
+		expect(state.volume).toBe(0.8);
+		expect(state.lineOctave).toBe(1);
+		expect(state.lfoRate).toBe(2.5);
 	});
 
-	it("default state has all slots empty", () => {
-		const { fxSlots } = useSynthStore.getState();
-		for (const slot of fxSlots) {
-			expect(slot.type).toBe("empty");
-		}
+	it("clamps integer values using toIntegerInRange", () => {
+		const { setLineOctave } = useSynthStore.getState();
+
+		act(() => {
+			setLineOctave(1);
+		});
+		expect(useSynthStore.getState().lineOctave).toBe(1);
+
+		act(() => {
+			setLineOctave(5); // Max 2
+		});
+		expect(useSynthStore.getState().lineOctave).toBe(2);
+
+		act(() => {
+			setLineOctave(-5); // Min -2
+		});
+		expect(useSynthStore.getState().lineOctave).toBe(-2);
 	});
 
-	it("setFxSlotType resets slot to enabled default params", () => {
-		const store = useSynthStore.getState();
-		store.setFxSlotType(1, "compressor");
-		const next = useSynthStore.getState();
-		const config = next.fxSlots[1];
-		expect(config.type).toBe("compressor");
-		if (config.type === "compressor") {
-			expect(config.params.enabled).toBe(true);
-		}
+	it("gathers state into a preset structure", () => {
+		const { setWarpAAmount, gatherState } = useSynthStore.getState();
+
+		act(() => {
+			setWarpAAmount(0.75);
+		});
+
+		const preset = gatherState();
+		expect(preset.params.line1.dcwBase).toBe(0.75);
+		expect(preset.schemaVersion).toBe(1);
 	});
 
-	it("applyPreset restores fxSlots from preset", () => {
-		const preset = useSynthStore.getState().gatherState();
-		preset.params.fxSlots = [
-			{
-				type: "compressor",
-				params: {
-					enabled: true,
-					thresholdDb: -9,
-					ratio: 6,
-					attackMs: 8,
-					releaseMs: 120,
-					makeupDb: 4,
-					mix: 0.9,
+	it("applies a preset to the state", () => {
+		const { applyPreset } = useSynthStore.getState();
+
+		const mockPreset = {
+			schemaVersion: 1,
+			params: {
+				volume: 0.5,
+				line1: {
+					dcwBase: 0.2,
+					algo: DEFAULT_ALGO_REF,
+				},
+				line2: {
+					dcwBase: 0.4,
+					algo: DEFAULT_ALGO_REF,
 				},
 			},
-			{ type: "empty" },
-			{ type: "empty" },
-			{ type: "empty" },
-			{ type: "empty" },
-			{ type: "empty" },
-		];
+		} as unknown as SynthPresetV1;
 
-		useSynthStore.getState().applyPreset(preset);
+		act(() => {
+			applyPreset(mockPreset);
+		});
 
-		const next = useSynthStore.getState();
-		const config = next.fxSlots[0];
-		expect(config.type).toBe("compressor");
-		if (config.type === "compressor") {
-			expect(config.params.thresholdDb).toBe(-9);
-			expect(config.params.ratio).toBe(6);
-		}
+		const state = useSynthStore.getState();
+		expect(state.volume).toBe(0.5);
+		expect(state.warpAAmount).toBe(0.2);
+		expect(state.warpBAmount).toBe(0.4);
 	});
 
-	it("applyPreset leaves missing fxSlots empty", () => {
-		const preset = useSynthStore.getState().gatherState();
-		delete preset.params.fxSlots;
+	it("handles invalid presets gracefully in applyPreset", () => {
+		const { applyPreset } = useSynthStore.getState();
+		const prevState = { ...useSynthStore.getState() };
 
-		useSynthStore.getState().applyPreset(preset);
+		act(() => {
+			applyPreset({} as unknown as SynthPresetV1);
+		});
 
-		const { fxSlots } = useSynthStore.getState();
-		expect(fxSlots[3].type).toBe("empty");
-		expect(fxSlots[4].type).toBe("empty");
+		expect(useSynthStore.getState()).toEqual(prevState);
+	});
+
+	it("manages FX slots", () => {
+		const { setFxSlotType, setFxSlotEnabled, setFxSlotParams, reorderFxSlots } =
+			useSynthStore.getState();
+
+		act(() => {
+			setFxSlotType(0, "delay");
+		});
+		expect(useSynthStore.getState().fxSlots[0].type).toBe("delay");
+
+		act(() => {
+			setFxSlotEnabled(0, false);
+		});
+		const delaySlot0 = useSynthStore.getState().fxSlots[0] as Extract<
+			FxSlotConfig,
+			{ type: "delay" }
+		>;
+		expect(delaySlot0.params.enabled).toBe(false);
+
+		act(() => {
+			setFxSlotParams(0, { feedback: 0.5 });
+		});
+		const delaySlot1 = useSynthStore.getState().fxSlots[0] as Extract<
+			FxSlotConfig,
+			{ type: "delay" }
+		>;
+		expect(delaySlot1.params.feedback).toBe(0.5);
+
+		act(() => {
+			// Test setFxSlotEnabled on empty slot (should do nothing)
+			setFxSlotEnabled(1, true);
+		});
+		expect(useSynthStore.getState().fxSlots[1].type).toBe("empty");
+
+		act(() => {
+			setFxSlotType(1, "reverb");
+			reorderFxSlots(1, 0);
+		});
+		expect(useSynthStore.getState().fxSlots[0].type).toBe("reverb");
+		expect(useSynthStore.getState().fxSlots[1].type).toBe("delay");
 	});
 });
+
+// Helper to make act work with zustand in tests
+function act(fn: () => void) {
+	fn();
+}

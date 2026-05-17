@@ -1,0 +1,14 @@
+[vendor]
+name = "Purr Audio"
+id = "jp.cosmo"
+url = "https://github.com/fpbrault/cosmo-pd"
+au_manufacturer = "PurA"
+
+[[plugin]]
+crate = "cosmo-pd101-plugin"
+name = "Cosmo PD-101"
+category = "instrument"
+fourcc = "Copd"
+au3_subtype = "Cpd3"
+au_tag = "Cpd3"
+bundle_id = "ca.purraudio.cosmo-pd101"

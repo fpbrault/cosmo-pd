@@ -25,15 +25,26 @@ syn = { version = "2", features = [
 ] }
 quote = "1"
 proc-macro2 = "1"
-nih_plug = { package = "nih_plug", git = "https://github.com/robbert-vdh/nih-plug.git" }
-wry = "0.47"
+truce = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
+truce-core = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
+truce-params = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
+truce-clap = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
+truce-vst3 = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
+truce-vst2 = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
+truce-lv2 = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
+truce-au = { path = "vendor/truce-au" }
+truce-aax = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
+truce-standalone = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
+truce-gui = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
+truce-build = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
+truce-test = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
+truce-shim-types = { path = "vendor/truce-shim-types" }
+wry = "0.54.3"
 raw-window-handle = "0.5"
 
 [workspace.lints]
 clippy.unused_async = "warn"
 
-[patch.crates-io]
-wry = { git = "https://github.com/fpbrault/wry", branch = "cosmo-pd-objc-prefix-fix" }
 
 
 [profile.release]
@@ -56,3 +67,6 @@ debug = true
 [profile.auv3]
 inherits = "release"
 lto = false
+
+[profile.shell]
+inherits = "release"

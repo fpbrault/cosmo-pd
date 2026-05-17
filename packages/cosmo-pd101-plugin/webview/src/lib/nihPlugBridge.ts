@@ -216,7 +216,6 @@ function installScopeProperty(onActiveChange: (active: boolean) => void) {
 
 function installScopePolling() {
 	const INTERVAL_MS = 33; // ~30 fps
-	const SCALE = 1 / 127.0;
 	let rafId = 0;
 	let lastScheduled = 0;
 	let pollInFlight = false;
@@ -252,8 +251,7 @@ function installScopePolling() {
 		try {
 			const raw = (await invokeRust("getScopeData")) as ScopeDataResponse;
 			if (raw?.samples.length > 0 && currentScopeHandler) {
-				const floats = raw.samples.map((s) => s * SCALE);
-				currentScopeHandler(floats, raw.sampleRate, raw.hz);
+				currentScopeHandler(raw.samples, raw.sampleRate, raw.hz);
 			}
 		} catch {
 			// Ignore — plugin may not be producing audio yet.
@@ -274,6 +272,70 @@ function installScopePolling() {
 	window.addEventListener("pagehide", () => {
 		destroyed = true;
 		stopPolling();
+	});
+}
+
+function installRuntimeModSourcesPolling() {
+	const INTERVAL_MS = 16; // ~60 fps
+	let rafId = 0;
+	let lastScheduled = 0;
+	let pollInFlight = false;
+	let destroyed = false;
+
+	const dispatchRuntimeModSources = (
+		result: string | Record<string, number>,
+	) => {
+		const sources =
+			typeof result === "string"
+				? (JSON.parse(result) as Record<string, number>)
+				: result;
+		if (typeof sources !== "object" || sources === null) {
+			return;
+		}
+		window.dispatchEvent(
+			new CustomEvent("cz-runtime-mod-sources", { detail: sources }),
+		);
+	};
+
+	const scheduleNextFrame = () => {
+		if (destroyed || rafId !== 0) {
+			return;
+		}
+		rafId = requestAnimationFrame(tick);
+	};
+
+	const tick = async (now: number) => {
+		rafId = 0;
+		if (destroyed) {
+			return;
+		}
+		if (now - lastScheduled < INTERVAL_MS || pollInFlight) {
+			scheduleNextFrame();
+			return;
+		}
+
+		lastScheduled = now;
+		pollInFlight = true;
+		try {
+			const result = await invokeRust("getRuntimeModSources");
+			if (result) {
+				dispatchRuntimeModSources(result as string | Record<string, number>);
+			}
+		} catch {
+			// Plugin not yet producing audio — skip this frame.
+		} finally {
+			pollInFlight = false;
+			scheduleNextFrame();
+		}
+	};
+
+	scheduleNextFrame();
+	window.addEventListener("pagehide", () => {
+		destroyed = true;
+		if (rafId !== 0) {
+			cancelAnimationFrame(rafId);
+			rafId = 0;
+		}
 	});
 }
 
@@ -306,6 +368,7 @@ export function ensureNihPlugBridge(): boolean {
 	installIpcResponseHandler();
 	installIpcRouter();
 	installScopePolling();
+	installRuntimeModSourcesPolling();
 
 	// Fallback: if host prevented method patching, route via a getter/setter
 	// shim on window.ipc that preserves the native object identity.

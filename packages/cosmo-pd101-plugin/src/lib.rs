@@ -1,23 +1,21 @@
-//! Cosmo PD-101 Phase Distortion synthesizer — VST3/CLAP plugin via nih-plug.
-//!
-//! Uses nih-plug for VST3/CLAP plugin hosting and cosmo-synth-engine for the DSP engine.
+//! Cosmo PD-101 Phase Distortion synthesizer — VST3/CLAP/AUv3 via truce.audio.
 
 #![recursion_limit = "256"]
 
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
-use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex, Once};
 use std::time::Instant;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use arc_swap::ArcSwap;
 use cosmo_synth_engine::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use cosmo_synth_engine::params::SynthParams;
+use cosmo_synth_engine::processor::state::RuntimeModSources;
 use cosmo_synth_engine::processor::{midi_note_to_freq, CosmoProcessor};
 use crossbeam_queue::ArrayQueue;
-use nih_plug::prelude::*;
+use truce::prelude::*;
 
 pub mod ffi;
 pub mod gui;
@@ -53,23 +51,41 @@ pub fn plugin_log_path() -> &'static str {
     PLUGIN_LOG_PATH
 }
 
+static PANIC_HOOK_INIT: Once = Once::new();
+
+pub fn init_panic_hook() {
+    PANIC_HOOK_INIT.call_once(|| {
+        let default_hook = std::panic::take_hook();
+        std::panic::set_hook(Box::new(move |info| {
+            let payload = info.payload();
+            let msg = if let Some(s) = payload.downcast_ref::<&str>() {
+                s.to_string()
+            } else if let Some(s) = payload.downcast_ref::<String>() {
+                s.clone()
+            } else {
+                format!("{:?}", payload)
+            };
+            let location = info
+                .location()
+                .map(|l| format!(" at {}:{}", l.file(), l.line()))
+                .unwrap_or_default();
+            append_log(&format!("PANIC: {}{}", msg, location));
+            eprintln!("[cosmo-pd101] PANIC: {}{}", msg, location);
+            default_hook(info);
+        }));
+    });
+}
+
 // =============================================================================
 // Scope ring buffer
 // =============================================================================
 
-/// Number of PCM samples kept in the scope ring buffer.
-/// 4096 samples ≈ 93 ms at 44.1 kHz — enough to cover ≥2 cycles at ~22 Hz.
 const SCOPE_CAPACITY: usize = 4096;
 
-/// Rolling PCM buffer written by the audio thread and read by the GUI thread.
 struct ScopeFrame {
-    /// Circular buffer of mono samples in [-1, 1].
     samples: Vec<f32>,
-    /// Write cursor (next position to overwrite once the buffer is full).
     cursor: usize,
-    /// Sample rate reported by the audio engine.
     sample_rate: f32,
-    /// Fundamental frequency of the currently sounding voice, or 0 if silent.
     hz: f32,
 }
 
@@ -79,13 +95,12 @@ impl Default for ScopeFrame {
             samples: vec![0.0; SCOPE_CAPACITY],
             cursor: 0,
             sample_rate: 44100.0,
-            hz: 0.0,
+            hz: 220.0,
         }
     }
 }
 
 impl ScopeFrame {
-    /// Append one audio block to the ring buffer (non-allocating once full).
     fn push_block(&mut self, mono: &[f32], sample_rate: f32, hz: f32) {
         self.sample_rate = sample_rate;
         self.hz = hz;
@@ -99,7 +114,6 @@ impl ScopeFrame {
         }
     }
 
-    /// Return all buffered samples in chronological order (oldest → newest).
     fn to_linear(&self) -> Vec<f32> {
         if self.samples.len() < SCOPE_CAPACITY {
             self.samples.clone()
@@ -112,11 +126,11 @@ impl ScopeFrame {
     }
 }
 
-/// Thread-safe scope buffer shared between the audio thread and the GUI thread.
 type ScopeBuffer = Arc<Mutex<ScopeFrame>>;
 type UiInputQueue = Arc<ArrayQueue<UiInputEvent>>;
 type SharedSynthParams = Arc<ArcSwap<SynthParams>>;
 type SharedRtSynthParams = Arc<ArcSwap<SynthParams>>;
+type SharedRuntimeModSources = Arc<ArcSwap<RuntimeModSources>>;
 type SynthParamsVersion = Arc<AtomicU64>;
 type PerformanceCountersHandle = Arc<PerformanceCounters>;
 
@@ -273,12 +287,163 @@ enum UiInputEvent {
 }
 
 // =============================================================================
-// Minimal nih-plug Params struct (no DAW automation — all state flows through
-// the JSON bridge).
+// DAW-automatable parameters (truce FloatParams)
 // =============================================================================
 
-#[derive(Params, Default)]
-pub struct CzParams {}
+#[derive(Params)]
+pub struct CzPluginParams {
+    #[param(name = "Volume", range = "linear(0.0, 1.0)", default = 0.8, unit = "%")]
+    pub volume: FloatParam,
+
+    #[param(name = "Warp A Amount", range = "linear(0.0, 1.0)", default = 0.0)]
+    pub warp_a_amount: FloatParam,
+
+    #[param(name = "Warp B Amount", range = "linear(0.0, 1.0)", default = 0.0)]
+    pub warp_b_amount: FloatParam,
+
+    #[param(name = "Algo Blend A", range = "linear(0.0, 1.0)", default = 0.5)]
+    pub algo_blend_a: FloatParam,
+
+    #[param(name = "Algo Blend B", range = "linear(0.0, 1.0)", default = 0.5)]
+    pub algo_blend_b: FloatParam,
+
+    #[param(name = "Line 1 Level", range = "linear(0.0, 1.0)", default = 0.8)]
+    pub line1_level: FloatParam,
+
+    #[param(name = "Line 2 Level", range = "linear(0.0, 1.0)", default = 0.8)]
+    pub line2_level: FloatParam,
+
+    #[param(name = "Line 1 Octave", range = "linear(-2.0, 2.0)", default = 0.0)]
+    pub line1_octave: FloatParam,
+
+    #[param(name = "Line 2 Octave", range = "linear(-2.0, 2.0)", default = 0.0)]
+    pub line2_octave: FloatParam,
+
+    #[param(name = "Detune Note", range = "linear(-11.0, 11.0)", default = 0.0)]
+    pub detune_note: FloatParam,
+
+    #[param(name = "Detune Fine", range = "linear(-60.0, 60.0)", default = 0.0)]
+    pub detune_fine: FloatParam,
+
+    #[param(name = "Velocity Curve", range = "linear(-1.0, 1.0)", default = 0.0)]
+    pub velocity_curve: FloatParam,
+
+    #[param(name = "Pitch Bend Range", range = "linear(1.0, 24.0)", default = 2.0)]
+    pub pitch_bend_range: FloatParam,
+
+    #[param(name = "Portamento Rate", range = "linear(0.0, 127.0)", default = 30.0)]
+    pub portamento_rate: FloatParam,
+
+    #[param(name = "Portamento Time", range = "linear(0.0, 5.0)", default = 0.0)]
+    pub portamento_time: FloatParam,
+
+    #[param(name = "LFO Rate", range = "linear(0.01, 30.0)", default = 5.0)]
+    pub lfo_rate: FloatParam,
+
+    #[param(name = "LFO Depth", range = "linear(0.0, 1.0)", default = 0.2)]
+    pub lfo_depth: FloatParam,
+
+    #[param(name = "LFO Offset", range = "linear(-1.0, 1.0)", default = 0.0)]
+    pub lfo_offset: FloatParam,
+
+    #[param(name = "LFO 2 Rate", range = "linear(0.01, 30.0)", default = 3.0)]
+    pub lfo2_rate: FloatParam,
+
+    #[param(name = "LFO 2 Depth", range = "linear(0.0, 1.0)", default = 0.0)]
+    pub lfo2_depth: FloatParam,
+
+    #[param(name = "LFO 2 Offset", range = "linear(-1.0, 1.0)", default = 0.0)]
+    pub lfo2_offset: FloatParam,
+
+    #[param(name = "Random Rate", range = "linear(0.01, 30.0)", default = 2.0)]
+    pub random_rate: FloatParam,
+
+    #[param(name = "Mod Env Attack", range = "linear(0.0, 10.0)", default = 0.1)]
+    pub mod_env_attack: FloatParam,
+
+    #[param(name = "Mod Env Decay", range = "linear(0.0, 10.0)", default = 0.5)]
+    pub mod_env_decay: FloatParam,
+
+    #[param(name = "Mod Env Sustain", range = "linear(0.0, 1.0)", default = 0.5)]
+    pub mod_env_sustain: FloatParam,
+
+    #[param(name = "Mod Env Release", range = "linear(0.0, 10.0)", default = 2.0)]
+    pub mod_env_release: FloatParam,
+
+    #[meter]
+    pub meter_l: MeterSlot,
+    #[meter]
+    pub meter_r: MeterSlot,
+}
+
+/// Apply DAW FloatParam values to a SynthParams struct, overwriting matching fields.
+fn apply_daw_params(synth: &mut SynthParams, params: &CzPluginParams) {
+    synth.volume = params.volume.value();
+    synth.line1.dcw_base = params.warp_a_amount.value();
+    synth.line2.dcw_base = params.warp_b_amount.value();
+    synth.line1.algo_blend = params.algo_blend_a.value();
+    synth.line2.algo_blend = params.algo_blend_b.value();
+    synth.line1.dca_base = params.line1_level.value();
+    synth.line2.dca_base = params.line2_level.value();
+    synth.line1.octave = params.line1_octave.value();
+    synth.line2.octave = params.line2_octave.value();
+    synth.line2.detune_note = params.detune_note.value();
+    synth.line2.detune_fine = params.detune_fine.value();
+    synth.velocity_curve = params.velocity_curve.value();
+    synth.pitch_bend_range = params.pitch_bend_range.value();
+    synth.portamento.rate = params.portamento_rate.value();
+    synth.portamento.time = params.portamento_time.value();
+    synth.lfo.rate = params.lfo_rate.value();
+    synth.lfo.depth = params.lfo_depth.value();
+    synth.lfo.offset = params.lfo_offset.value();
+    synth.lfo2.rate = params.lfo2_rate.value();
+    synth.lfo2.depth = params.lfo2_depth.value();
+    synth.lfo2.offset = params.lfo2_offset.value();
+    synth.random.rate = params.random_rate.value();
+    synth.mod_env.attack = params.mod_env_attack.value();
+    synth.mod_env.decay = params.mod_env_decay.value();
+    synth.mod_env.sustain = params.mod_env_sustain.value();
+    synth.mod_env.release = params.mod_env_release.value();
+}
+
+fn sync_all_daw_params_from_synth(params: &CzPluginParams, synth: &SynthParams) {
+    params.volume.set_value(synth.volume as f64);
+    params.warp_a_amount.set_value(synth.line1.dcw_base as f64);
+    params.warp_b_amount.set_value(synth.line2.dcw_base as f64);
+    params.algo_blend_a.set_value(synth.line1.algo_blend as f64);
+    params.algo_blend_b.set_value(synth.line2.algo_blend as f64);
+    params.line1_level.set_value(synth.line1.dca_base as f64);
+    params.line2_level.set_value(synth.line2.dca_base as f64);
+    params.line1_octave.set_value(synth.line1.octave as f64);
+    params.line2_octave.set_value(synth.line2.octave as f64);
+    params.detune_note.set_value(synth.line2.detune_note as f64);
+    params.detune_fine.set_value(synth.line2.detune_fine as f64);
+    params.velocity_curve.set_value(synth.velocity_curve as f64);
+    params
+        .pitch_bend_range
+        .set_value(synth.pitch_bend_range as f64);
+    params
+        .portamento_rate
+        .set_value(synth.portamento.rate as f64);
+    params
+        .portamento_time
+        .set_value(synth.portamento.time as f64);
+    params.lfo_rate.set_value(synth.lfo.rate as f64);
+    params.lfo_depth.set_value(synth.lfo.depth as f64);
+    params.lfo_offset.set_value(synth.lfo.offset as f64);
+    params.lfo2_rate.set_value(synth.lfo2.rate as f64);
+    params.lfo2_depth.set_value(synth.lfo2.depth as f64);
+    params.lfo2_offset.set_value(synth.lfo2.offset as f64);
+    params.random_rate.set_value(synth.random.rate as f64);
+    params.mod_env_attack.set_value(synth.mod_env.attack as f64);
+    params.mod_env_decay.set_value(synth.mod_env.decay as f64);
+    params
+        .mod_env_sustain
+        .set_value(synth.mod_env.sustain as f64);
+    params
+        .mod_env_release
+        .set_value(synth.mod_env.release as f64);
+}
 
 // =============================================================================
 // IPC dispatch
@@ -290,12 +455,14 @@ fn handle_ipc_invoke(
     args: &[serde_json::Value],
     synth_params: &SharedSynthParams,
     rt_synth_params: &SharedRtSynthParams,
+    runtime_mod_sources: &SharedRuntimeModSources,
     synth_params_version: &SynthParamsVersion,
     scope_buffer: &ScopeBuffer,
     ui_input_queue: &UiInputQueue,
     performance_counters: &PerformanceCountersHandle,
+    params: &CzPluginParams,
 ) -> Result<serde_json::Value, String> {
-    if method != "getScopeData" && method != "clientLog" {
+    if method != "getScopeData" && method != "clientLog" && method != "getRuntimeModSources" {
         append_log(&format!("ipc invoke method={method} args={}", args.len()));
     }
 
@@ -416,10 +583,16 @@ fn handle_ipc_invoke(
                 .first()
                 .and_then(serde_json::Value::as_str)
                 .ok_or_else(|| "setParams expects a JSON string as first argument".to_string())?;
-            let params: SynthParams = serde_json::from_str(json_str)
+            let new_params: SynthParams = serde_json::from_str(json_str)
                 .map_err(|e| format!("invalid SynthParams payload: {e}"))?;
-            let rt_params = build_rt_synth_params(&params);
-            synth_params.store(Arc::new(params));
+
+            // Keep truce FloatParams aligned with the nested SynthParams payload so
+            // the next process() block does not overwrite preset state with stale
+            // default automation values.
+            sync_all_daw_params_from_synth(params, &new_params);
+
+            let rt_params = build_rt_synth_params(&new_params);
+            synth_params.store(Arc::new(new_params));
             rt_synth_params.store(Arc::new(rt_params));
             synth_params_version.fetch_add(1, Ordering::Release);
             Ok(serde_json::Value::Null)
@@ -427,6 +600,10 @@ fn handle_ipc_invoke(
         "getParams" => {
             let sp = synth_params.load();
             serde_json::to_value(sp.as_ref()).map_err(|e| e.to_string())
+        }
+        "getRuntimeModSources" => {
+            let sources = runtime_mod_sources.load();
+            serde_json::to_value(sources.as_ref()).map_err(|e| e.to_string())
         }
         "getScopeData" => {
             let scope = scope_buffer
@@ -438,12 +615,8 @@ fn handle_ipc_invoke(
                 );
             }
             let linear = scope.to_linear();
-            let int_samples: Vec<i8> = linear
-                .iter()
-                .map(|&s| (s.clamp(-1.0, 1.0) * 127.0) as i8)
-                .collect();
             Ok(
-                serde_json::json!({ "samples": int_samples, "sampleRate": scope.sample_rate, "hz": scope.hz }),
+                serde_json::json!({ "samples": linear, "sampleRate": scope.sample_rate, "hz": scope.hz }),
             )
         }
         "setPerformanceMonitorEnabled" => {
@@ -476,31 +649,34 @@ fn handle_ipc_invoke(
 // =============================================================================
 
 pub struct CzPlugin {
-    params: Arc<CzParams>,
-    /// DSP engine, present after `initialize()`.
+    params: Arc<CzPluginParams>,
     processor: Option<CosmoProcessor>,
-    /// Synth parameters shared with the GUI thread (set via `setParams` IPC).
     synth_params: SharedSynthParams,
     rt_synth_params: SharedRtSynthParams,
+    runtime_mod_sources: SharedRuntimeModSources,
     synth_params_version: SynthParamsVersion,
     cached_synth_params_version: u64,
-    /// Per-frame RT-safe cached snapshot for the audio thread.
     cached_rt_synth_params: Arc<SynthParams>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
     mono_output: Vec<f32>,
     performance_counters: PerformanceCountersHandle,
+    /// Tracks whether DAW param values changed since last process() call.
+    daw_params_dirty: bool,
+    last_scope_hz: f32,
 }
 
-impl Default for CzPlugin {
-    fn default() -> Self {
+impl CzPlugin {
+    fn new(params: Arc<CzPluginParams>) -> Self {
+        init_panic_hook();
         let default_params = SynthParams::default();
         let default_rt_params = build_rt_synth_params(&default_params);
         Self {
-            params: Arc::new(CzParams::default()),
+            params,
             processor: None,
             synth_params: Arc::new(ArcSwap::new(Arc::new(default_params))),
             rt_synth_params: Arc::new(ArcSwap::new(Arc::new(default_rt_params.clone()))),
+            runtime_mod_sources: Arc::new(ArcSwap::new(Arc::new(RuntimeModSources::default()))),
             synth_params_version: Arc::new(AtomicU64::new(0)),
             cached_synth_params_version: 0,
             cached_rt_synth_params: Arc::new(default_rt_params),
@@ -508,11 +684,11 @@ impl Default for CzPlugin {
             ui_input_queue: Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY)),
             mono_output: Vec::new(),
             performance_counters: Arc::new(PerformanceCounters::default()),
+            daw_params_dirty: true,
+            last_scope_hz: 220.0,
         }
     }
-}
 
-impl CzPlugin {
     fn all_notes_off(proc: &mut CosmoProcessor) {
         proc.set_sustain(false);
         for note in 0u8..=127u8 {
@@ -547,124 +723,72 @@ impl CzPlugin {
     }
 }
 
-impl Plugin for CzPlugin {
-    const NAME: &'static str = "Cosmo PD-101";
-    const VENDOR: &'static str = "Purr Audio";
-    const URL: &'static str = "https://github.com/fpbrault/cosmo-pd";
-    const EMAIL: &'static str = "";
-    const VERSION: &'static str = env!("CARGO_PKG_VERSION");
-
-    const AUDIO_IO_LAYOUTS: &'static [AudioIOLayout] = &[AudioIOLayout {
-        main_input_channels: None,
-        main_output_channels: NonZeroU32::new(2),
-        aux_input_ports: &[],
-        aux_output_ports: &[],
-        names: PortNames::const_default(),
-    }];
-
-    const MIDI_INPUT: MidiConfig = MidiConfig::Basic;
-    const MIDI_OUTPUT: MidiConfig = MidiConfig::None;
-    const SAMPLE_ACCURATE_AUTOMATION: bool = false;
-
-    type SysExMessage = ();
-    type BackgroundTask = ();
-
-    fn params(&self) -> Arc<dyn Params> {
-        self.params.clone()
-    }
-
-    fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
-        Some(Box::new(crate::gui::CzEditor::new(
-            self.synth_params.clone(),
-            self.rt_synth_params.clone(),
-            self.synth_params_version.clone(),
-            self.scope_buffer.clone(),
-            self.ui_input_queue.clone(),
-            self.performance_counters.clone(),
-        )))
-    }
-
-    fn initialize(
-        &mut self,
-        _audio_io_layout: &AudioIOLayout,
-        buffer_config: &BufferConfig,
-        _context: &mut impl InitContext<Self>,
-    ) -> bool {
+impl PluginLogic for CzPlugin {
+    fn reset(&mut self, sample_rate: f64, max_block_size: usize) {
         append_log(&format!(
-            "initialize sample_rate={} log_path={}",
-            buffer_config.sample_rate,
+            "reset sample_rate={} log_path={}",
+            sample_rate,
             plugin_log_path()
         ));
-        let mut processor = CosmoProcessor::new(buffer_config.sample_rate);
-        let synth_params = SynthParams::default();
-        let rt_synth_params = Arc::new(build_rt_synth_params(&synth_params));
-        processor.set_shared_params(Arc::clone(&rt_synth_params));
-        self.synth_params.store(Arc::new(synth_params));
-        self.rt_synth_params.store(Arc::clone(&rt_synth_params));
-        self.cached_rt_synth_params = rt_synth_params;
+        let sr = sample_rate as f32;
+        let mut processor = CosmoProcessor::new(sr);
+        let mut current_params = (*self.synth_params.load_full()).clone();
+        apply_daw_params(&mut current_params, &self.params);
+        let rt_params = Arc::new(build_rt_synth_params(&current_params));
+        processor.set_shared_params(Arc::clone(&rt_params));
+        self.synth_params.store(Arc::new(current_params));
+        self.rt_synth_params.store(Arc::clone(&rt_params));
+        self.cached_rt_synth_params = rt_params;
         self.cached_synth_params_version = self.synth_params_version.load(Ordering::Acquire);
         self.processor = Some(processor);
-        self.mono_output
-            .resize(buffer_config.max_buffer_size as usize, 0.0);
+        self.mono_output.resize(max_block_size, 0.0);
         self.performance_counters
             .sample_rate_bits
-            .store(buffer_config.sample_rate.to_bits(), Ordering::Release);
-        true
-    }
-
-    fn reset(&mut self) {
-        if let Some(proc) = &mut self.processor {
-            Self::all_notes_off(proc);
-        }
+            .store(sr.to_bits(), Ordering::Release);
+        self.daw_params_dirty = false;
     }
 
     fn process(
         &mut self,
-        buffer: &mut Buffer,
-        _aux: &mut AuxiliaryBuffers,
-        context: &mut impl ProcessContext<Self>,
+        buffer: &mut AudioBuffer,
+        events: &EventList,
+        context: &mut ProcessContext,
     ) -> ProcessStatus {
-        // Handle MIDI events
-        while let Some(event) = context.next_event() {
-            match event {
-                // NoteOn with (near) zero velocity is the standard MIDI equivalent
-                // of NoteOff. Different hosts can encode release events differently.
-                NoteEvent::NoteOn { note, velocity, .. } if velocity <= 0.0001 => {
-                    if let Some(proc) = &mut self.processor {
-                        proc.note_off(note);
+        // Handle MIDI events from the host
+        for i in 0..events.len() {
+            let Some(event) = events.get(i) else {
+                continue;
+            };
+            match &event.body {
+                EventBody::NoteOff { note, .. } => {
+                    if let Some(ref mut proc) = self.processor {
+                        proc.note_off(*note);
                     }
                 }
-                NoteEvent::NoteOff { note, .. } => {
-                    if let Some(proc) = &mut self.processor {
-                        proc.note_off(note);
+                EventBody::NoteOn { note, velocity, .. } => {
+                    if let Some(ref mut proc) = self.processor {
+                        if *velocity == 0 {
+                            proc.note_off(*note);
+                        } else {
+                            let vel = *velocity as f32 / 127.0;
+                            proc.note_on(*note, midi_note_to_freq(*note), vel);
+                        }
                     }
                 }
-                NoteEvent::Choke { note, .. } => {
-                    if let Some(proc) = &mut self.processor {
-                        proc.note_off(note);
-                    }
-                }
-                NoteEvent::NoteOn { note, velocity, .. } => {
-                    if let Some(proc) = &mut self.processor {
-                        proc.note_on(note, midi_note_to_freq(note), velocity);
-                    }
-                }
-                NoteEvent::MidiCC { cc, value, .. } => {
-                    if let Some(proc) = &mut self.processor {
+                EventBody::ControlChange { cc, value, .. } => {
+                    if let Some(ref mut proc) = self.processor {
                         match cc {
-                            1 => proc.set_mod_wheel(value),
-                            64 => proc.set_sustain(value >= 0.5),
-                            // Host transport stop/reset safety: clear held notes.
-                            120 | 123 => {
-                                Self::all_notes_off(proc);
-                            }
+                            1 => proc.set_mod_wheel(*value as f32 / 127.0),
+                            64 => proc.set_sustain(*value >= 64),
+                            120 | 123 => Self::all_notes_off(proc),
                             _ => {}
                         }
                     }
                 }
-                NoteEvent::MidiPitchBend { value, .. } => {
-                    if let Some(proc) = &mut self.processor {
-                        proc.set_pitch_bend(value);
+                EventBody::PitchBend { value, .. } => {
+                    if let Some(ref mut proc) = self.processor {
+                        let normalized = (*value as f32 - 8192.0) / 8192.0;
+                        proc.set_pitch_bend(normalized);
                     }
                 }
                 _ => {}
@@ -675,24 +799,44 @@ impl Plugin for CzPlugin {
 
         let monitor_enabled = self.performance_counters.enabled.load(Ordering::Acquire);
 
+        // Sync DAW params to the engine (DAW automation / host param changes)
+        // Always reset dirty flag and apply since FloatParams are cheap to read.
         let params_version = self.synth_params_version.load(Ordering::Acquire);
-        let params_changed = params_version != self.cached_synth_params_version;
-        let mut apply_params_update = false;
-        if params_changed {
-            self.cached_rt_synth_params = self.rt_synth_params.load_full();
-            self.cached_synth_params_version = params_version;
-            apply_params_update = true;
-        }
+        let params_changed =
+            params_version != self.cached_synth_params_version || self.daw_params_dirty;
 
-        if let Some(proc) = &mut self.processor {
-            if apply_params_update {
-                proc.set_shared_params(Arc::clone(&self.cached_rt_synth_params));
+        if params_changed {
+            // Start from the latest JS JSON params (or cached RT params).
+            // Both rt_synth_params and cached_rt_synth_params have already been
+            // normalized (envelope level/rate → raw 0-127), and apply_daw_params
+            // only touches top-level float fields (no envelope steps), so we
+            // must NOT call build_rt_synth_params again — that would double-convert
+            // envelope values, corrupting levels and rates.
+            let merged = if params_version != self.cached_synth_params_version {
+                let mut p = (*self.rt_synth_params.load_full()).clone();
+                apply_daw_params(&mut p, &self.params);
+                p
+            } else {
+                let mut p = (*self.cached_rt_synth_params).clone();
+                apply_daw_params(&mut p, &self.params);
+                p
+            };
+
+            let rt_merged = Arc::new(merged);
+            self.cached_rt_synth_params = rt_merged.clone();
+            if let Some(ref mut proc) = self.processor {
+                proc.set_shared_params(rt_merged);
                 self.performance_counters.record_param_apply();
             }
-            let num_samples = buffer.samples();
+            self.cached_synth_params_version = params_version;
+            self.daw_params_dirty = false;
+        }
+
+        let tail_info = if let Some(ref mut proc) = self.processor {
+            let num_samples = buffer.num_samples();
             if num_samples > self.mono_output.len() {
-                for channel_slice in buffer.as_slice() {
-                    channel_slice.fill(0.0);
+                for ch in 0..buffer.num_output_channels() {
+                    buffer.output(ch).fill(0.0);
                 }
                 return ProcessStatus::Normal;
             }
@@ -703,13 +847,19 @@ impl Plugin for CzPlugin {
                 .map(|start| start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64)
                 .unwrap_or(0);
 
-            let hz = proc
+            let raw_hz = proc
                 .voices
                 .iter()
-                .filter(|v| !v.is_silent && !v.is_releasing && v.note.is_some())
+                .filter(|v| !v.is_silent && v.note.is_some())
                 .map(|v| v.current_freq)
                 .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
                 .unwrap_or(0.0);
+            let hz = if raw_hz > 0.0 {
+                self.last_scope_hz = raw_hz;
+                raw_hz
+            } else {
+                self.last_scope_hz
+            };
             let active_voice_count = if monitor_enabled {
                 proc.voices.iter().filter(|voice| !voice.is_silent).count()
             } else {
@@ -731,39 +881,75 @@ impl Plugin for CzPlugin {
                 scope.push_block(mono_output, proc.sample_rate, hz);
             }
 
-            for channel_slice in buffer.as_slice() {
-                channel_slice.copy_from_slice(mono_output);
-            }
-        }
+            self.runtime_mod_sources
+                .store(Arc::new(proc.runtime_mod_sources()));
 
-        ProcessStatus::Normal
+            let peak = mono_output[..num_samples]
+                .iter()
+                .fold(0.0f32, |a, &s| a.max(s.abs()));
+            context.set_meter(CzPluginParamsParamId::MeterL as u32, peak);
+            context.set_meter(CzPluginParamsParamId::MeterR as u32, peak);
+
+            for ch in 0..buffer.num_output_channels() {
+                buffer.output(ch)[..num_samples].copy_from_slice(mono_output);
+            }
+
+            let has_tail = proc.voices.iter().any(|v| !v.is_silent);
+            let tail = if has_tail {
+                (proc.sample_rate * 10.0) as u32
+            } else {
+                0
+            };
+            (has_tail, tail)
+        } else {
+            (false, 0)
+        };
+
+        if tail_info.0 {
+            ProcessStatus::Tail(tail_info.1)
+        } else {
+            ProcessStatus::Normal
+        }
+    }
+
+    fn bus_layouts() -> Vec<BusLayout> {
+        vec![BusLayout::new().with_output("Main", ChannelConfig::Stereo)]
+    }
+
+    fn save_state(&self) -> Vec<u8> {
+        let sp = self.synth_params.load();
+        serde_json::to_vec(sp.as_ref()).unwrap_or_default()
+    }
+
+    fn load_state(&mut self, data: &[u8]) -> Result<(), StateLoadError> {
+        let params: SynthParams = serde_json::from_slice(data)
+            .map_err(|_| StateLoadError::Malformed("invalid synth params JSON"))?;
+        sync_all_daw_params_from_synth(&self.params, &params);
+        let rt_params = build_rt_synth_params(&params);
+        self.synth_params.store(Arc::new(params));
+        self.rt_synth_params.store(Arc::new(rt_params));
+        self.synth_params_version.fetch_add(1, Ordering::Release);
+        Ok(())
+    }
+
+    fn custom_editor(&self) -> Option<Box<dyn Editor>> {
+        Some(Box::new(crate::gui::CzEditor::new(
+            self.synth_params.clone(),
+            self.rt_synth_params.clone(),
+            self.synth_params_version.clone(),
+            self.scope_buffer.clone(),
+            self.ui_input_queue.clone(),
+            self.performance_counters.clone(),
+            self.params.clone(),
+            self.runtime_mod_sources.clone(),
+        )))
     }
 }
 
-impl ClapPlugin for CzPlugin {
-    const CLAP_ID: &'static str = "jp.cosmo.pd101";
-    const CLAP_DESCRIPTION: Option<&'static str> =
-        Some("Cosmo PD-101 Phase Distortion Synthesizer");
-    const CLAP_MANUAL_URL: Option<&'static str> = None;
-    const CLAP_SUPPORT_URL: Option<&'static str> = None;
-    const CLAP_FEATURES: &'static [ClapFeature] = &[
-        ClapFeature::Instrument,
-        ClapFeature::Synthesizer,
-        ClapFeature::Stereo,
-    ];
+truce::plugin! {
+    logic: CzPlugin,
+    params: CzPluginParams,
 }
-
-impl Vst3Plugin for CzPlugin {
-    const VST3_CLASS_ID: [u8; 16] = *b"CosmoPD101Synth!";
-    const VST3_SUBCATEGORIES: &'static [Vst3SubCategory] = &[
-        Vst3SubCategory::Instrument,
-        Vst3SubCategory::Synth,
-        Vst3SubCategory::Stereo,
-    ];
-}
-
-nih_export_clap!(CzPlugin);
-nih_export_vst3!(CzPlugin);
 
 // =============================================================================
 // Tests
@@ -772,6 +958,28 @@ nih_export_vst3!(CzPlugin);
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn make_handler_state() -> (
+        SharedSynthParams,
+        SharedRtSynthParams,
+        SharedRuntimeModSources,
+        SynthParamsVersion,
+        ScopeBuffer,
+        UiInputQueue,
+        PerformanceCountersHandle,
+        Arc<CzPluginParams>,
+    ) {
+        let sp = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
+        let rsp = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
+        let rms: SharedRuntimeModSources =
+            Arc::new(ArcSwap::from_pointee(RuntimeModSources::default()));
+        let ver = Arc::new(AtomicU64::new(0));
+        let sc: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
+        let q: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
+        let pc = Arc::new(PerformanceCounters::default());
+        let params = Arc::new(CzPluginParams::new());
+        (sp, rsp, rms, ver, sc, q, pc, params)
+    }
 
     #[test]
     fn scope_frame_keeps_samples_in_chronological_order_after_wrap() {
@@ -790,10 +998,7 @@ mod tests {
 
     #[test]
     fn set_params_rpc_updates_synth_params() {
-        let synth_params = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
-        let rt_synth_params = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
-        let scope_buffer: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
-        let ui_input_queue: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
+        let (sp, rsp, rms, ver, sc, q, pc, params) = make_handler_state();
 
         let new_params = SynthParams {
             volume: 0.42,
@@ -804,40 +1009,48 @@ mod tests {
         let result = handle_ipc_invoke(
             "setParams",
             &[serde_json::Value::String(json_str)],
-            &synth_params,
-            &rt_synth_params,
-            &Arc::new(AtomicU64::new(0)),
-            &scope_buffer,
-            &ui_input_queue,
-            &Arc::new(PerformanceCounters::default()),
+            &sp,
+            &rsp,
+            &rms,
+            &ver,
+            &sc,
+            &q,
+            &pc,
+            &params,
         );
         assert!(result.is_ok());
-        let current = synth_params.load();
+        let current = sp.load();
         assert_eq!(current.volume, 0.42);
-        let rt_current = rt_synth_params.load();
+        let rt_current = rsp.load();
         assert_eq!(rt_current.volume, 0.42);
     }
 
+    #[allow(clippy::field_reassign_with_default)]
     #[test]
     fn get_params_rpc_returns_current_synth_params() {
-        let initial = SynthParams {
-            volume: 0.77,
-            ..Default::default()
-        };
-        let synth_params = Arc::new(ArcSwap::new(Arc::new(initial)));
-        let rt_synth_params = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
-        let scope_buffer: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
-        let ui_input_queue: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
+        let mut initial = SynthParams::default();
+        initial.volume = 0.77;
+        let sp: SharedSynthParams = Arc::new(ArcSwap::new(Arc::new(initial)));
+        let rsp = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
+        let rms: SharedRuntimeModSources =
+            Arc::new(ArcSwap::from_pointee(RuntimeModSources::default()));
+        let ver = Arc::new(AtomicU64::new(0));
+        let sc: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
+        let q: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
+        let pc = Arc::new(PerformanceCounters::default());
+        let params = Arc::new(CzPluginParams::new());
 
         let result = handle_ipc_invoke(
             "getParams",
             &[],
-            &synth_params,
-            &rt_synth_params,
-            &Arc::new(AtomicU64::new(0)),
-            &scope_buffer,
-            &ui_input_queue,
-            &Arc::new(PerformanceCounters::default()),
+            &sp,
+            &rsp,
+            &rms,
+            &ver,
+            &sc,
+            &q,
+            &pc,
+            &params,
         );
         assert!(result.is_ok());
         let val = result.unwrap();
@@ -847,29 +1060,56 @@ mod tests {
 
     #[test]
     fn note_on_rpc_enqueues_ui_input_event() {
-        let synth_params = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
-        let rt_synth_params = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
-        let scope_buffer: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
-        let ui_input_queue: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
+        let (sp, rsp, rms, ver, sc, q, pc, params) = make_handler_state();
 
         let result = handle_ipc_invoke(
             "noteOn",
             &[serde_json::json!({ "note": 60, "velocity": 0.75 })],
-            &synth_params,
-            &rt_synth_params,
-            &Arc::new(AtomicU64::new(0)),
-            &scope_buffer,
-            &ui_input_queue,
-            &Arc::new(PerformanceCounters::default()),
+            &sp,
+            &rsp,
+            &rms,
+            &ver,
+            &sc,
+            &q,
+            &pc,
+            &params,
         );
 
         assert!(result.is_ok());
-        match ui_input_queue.pop() {
+        match q.pop() {
             Some(UiInputEvent::NoteOn { note, velocity }) => {
                 assert_eq!(note, 60);
                 assert!((velocity - 0.75).abs() < f32::EPSILON);
             }
             other => panic!("unexpected queued event: {other:?}"),
         }
+    }
+
+    #[allow(clippy::field_reassign_with_default)]
+    #[test]
+    fn set_params_rpc_syncs_daw_float_params() {
+        let (sp, rsp, rms, ver, sc, q, pc, params) = make_handler_state();
+        assert_eq!(params.volume.value(), 0.8); // default
+
+        let mut new_params = SynthParams::default();
+        new_params.volume = 0.33;
+        new_params.line1.dcw_base = 0.61;
+        let json_str = serde_json::to_string(&new_params).unwrap();
+
+        let result = handle_ipc_invoke(
+            "setParams",
+            &[serde_json::Value::String(json_str)],
+            &sp,
+            &rsp,
+            &rms,
+            &ver,
+            &sc,
+            &q,
+            &pc,
+            &params,
+        );
+        assert!(result.is_ok());
+        assert!((params.volume.value() - 0.33).abs() < 0.000_001);
+        assert!((params.warp_a_amount.value() - 0.61).abs() < 0.000_001);
     }
 }

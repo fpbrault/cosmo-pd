@@ -15,6 +15,9 @@ export default defineConfig({
 	},
 	test: {
 		globals: true,
+		coverage: {
+			enabled: true,
+		},
 		projects: [
 			{
 				extends: true,
