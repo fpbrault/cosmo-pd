@@ -143,8 +143,8 @@ mod tests {
     fn dca_gain_uses_gentle_power_taper() {
         assert_eq!(super::render::cz_dca_env_gain(0.0), 0.0);
         assert_eq!(super::render::cz_dca_env_gain(1.0), 1.0);
-        assert!(super::render::cz_dca_env_gain(0.5) > 0.5);
-        assert!(super::render::cz_dca_env_gain(0.75) > 0.75);
+        assert!(super::render::cz_dca_env_gain(0.5) < 0.5);
+        assert!(super::render::cz_dca_env_gain(0.75) < 0.75);
     }
 
     #[test]
