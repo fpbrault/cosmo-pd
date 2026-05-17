@@ -120,7 +120,7 @@ type SynthRendererProps = {
 	};
 };
 
-export default function SynthRenderer({
+const SynthRenderer = memo(function SynthRenderer({
 	headerProps,
 	frameClassName,
 	frameStyle,
@@ -156,7 +156,9 @@ export default function SynthRenderer({
 			/>
 		</HoverInfoProvider>
 	);
-}
+});
+
+export default SynthRenderer;
 
 function SynthRendererContent({
 	headerProps,
@@ -466,7 +468,7 @@ function MasterVolumeControl() {
 		<div className="shrink-0">
 			<SynthParamKnob
 				paramKey="volume"
-				value={volume}
+				value={volume as number}
 				size={64}
 				onChange={setVolume}
 				color="white"

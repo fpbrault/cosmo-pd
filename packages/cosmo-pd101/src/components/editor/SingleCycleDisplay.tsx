@@ -6,8 +6,11 @@ import {
 } from "@/features/synth/SynthParamController";
 import { useSynthStore } from "@/features/synth/synthStore";
 import type {
+	Algo,
 	AlgoControlValueV1,
+	BaseWaveform,
 	ModDestination,
+	WindowType,
 } from "@/lib/synth/bindings/synth";
 import { computeWaveform } from "@/lib/synth/pdAlgorithms";
 
@@ -205,29 +208,41 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay({
 			}));
 
 		return computeWaveform({
-			warpAAmount: getLiveValue("line1DcwBase", warpAAmount),
-			warpBAmount: getLiveValue("line2DcwBase", warpBAmount),
-			warpAAlgo,
-			warpBAlgo,
-			algo2A,
-			algo2B,
-			algoBlendA: getLiveValue("line1AlgoBlend", algoBlendA),
-			algoBlendB: getLiveValue("line2AlgoBlend", algoBlendB),
+			warpAAmount: getLiveValue("line1DcwBase", warpAAmount as number),
+			warpBAmount: getLiveValue("line2DcwBase", warpBAmount as number),
+			warpAAlgo: warpAAlgo as Algo,
+			warpBAlgo: warpBAlgo as Algo,
+			algo2A: algo2A as Algo | null,
+			algo2B: algo2B as Algo | null,
+			algoBlendA: getLiveValue("line1AlgoBlend", algoBlendA as number),
+			algoBlendB: getLiveValue("line2AlgoBlend", algoBlendB as number),
 			intPmAmount: effectiveIntPmAmount,
 			intPmRatio: getLiveValue("intPmRatio", intPmRatio),
 			extPmAmount: 0,
 			pmPre,
-			windowType,
-			line1Level: getLiveValue("line1DcaBase", line1Level),
-			line2Level: getLiveValue("line2DcaBase", line2Level),
-			line1BaseWaveformA,
-			line1BaseWaveformB,
-			line2BaseWaveformA,
-			line2BaseWaveformB,
-			line1AlgoControlsA: getLiveAlgoControls(line1AlgoControlsA, "line1"),
-			line1AlgoControlsB: getLiveAlgoControls(line1AlgoControlsB, "line1"),
-			line2AlgoControlsA: getLiveAlgoControls(line2AlgoControlsA, "line2"),
-			line2AlgoControlsB: getLiveAlgoControls(line2AlgoControlsB, "line2"),
+			windowType: windowType as WindowType,
+			line1Level: getLiveValue("line1DcaBase", line1Level as number),
+			line2Level: getLiveValue("line2DcaBase", line2Level as number),
+			line1BaseWaveformA: line1BaseWaveformA as BaseWaveform,
+			line1BaseWaveformB: line1BaseWaveformB as BaseWaveform,
+			line2BaseWaveformA: line2BaseWaveformA as BaseWaveform,
+			line2BaseWaveformB: line2BaseWaveformB as BaseWaveform,
+			line1AlgoControlsA: getLiveAlgoControls(
+				line1AlgoControlsA as AlgoControlValueV1[],
+				"line1",
+			),
+			line1AlgoControlsB: getLiveAlgoControls(
+				line1AlgoControlsB as AlgoControlValueV1[],
+				"line1",
+			),
+			line2AlgoControlsA: getLiveAlgoControls(
+				line2AlgoControlsA as AlgoControlValueV1[],
+				"line2",
+			),
+			line2AlgoControlsB: getLiveAlgoControls(
+				line2AlgoControlsB as AlgoControlValueV1[],
+				"line2",
+			),
 			sampleCount: 256,
 		});
 	}, [

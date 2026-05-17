@@ -55,7 +55,6 @@ export function SharedPhaseDistortionVisualizer({
 	const applyPreset = useSynthStore((s) => s.applyPreset);
 	const presetStateKey = useSynthStore((s) => JSON.stringify(s.gatherState()));
 
-	const [extPmAmount] = useState(0);
 	const [performanceMonitorEnabled, setPerformanceMonitorEnabled] =
 		useState(false);
 	const [performanceMetrics, setPerformanceMetrics] =
@@ -214,7 +213,6 @@ export function SharedPhaseDistortionVisualizer({
 		workletNodeRef,
 		paramsRef,
 		effectivePitchHz: currentFreq,
-		extPmAmount,
 		gatherState,
 	});
 
