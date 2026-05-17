@@ -1025,6 +1025,7 @@ mod tests {
         assert_eq!(rt_current.volume, 0.42);
     }
 
+    #[allow(clippy::field_reassign_with_default)]
     #[test]
     fn get_params_rpc_returns_current_synth_params() {
         let mut initial = SynthParams::default();
@@ -1084,6 +1085,7 @@ mod tests {
         }
     }
 
+    #[allow(clippy::field_reassign_with_default)]
     #[test]
     fn set_params_rpc_syncs_daw_float_params() {
         let (sp, rsp, rms, ver, sc, q, pc, params) = make_handler_state();

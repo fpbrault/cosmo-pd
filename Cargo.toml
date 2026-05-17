@@ -67,3 +67,6 @@ debug = true
 [profile.auv3]
 inherits = "release"
 lto = false
+
+[profile.shell]
+inherits = "release"

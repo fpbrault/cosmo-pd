@@ -115,6 +115,7 @@ impl CzEditor {
     #[cfg(not(target_os = "macos"))]
     fn clear_standalone_window(&mut self) {}
 
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
         synth_params: Arc<ArcSwap<SynthParams>>,
         rt_synth_params: Arc<ArcSwap<SynthParams>>,
@@ -257,7 +258,14 @@ impl Editor for CzEditor {
         &mut self,
         _params: Arc<dyn truce_params::Params>,
     ) -> Option<(Vec<u8>, u32, u32)> {
-        screenshot_webview()
+        #[cfg(target_os = "macos")]
+        {
+            screenshot_webview()
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            None
+        }
     }
 
     fn open(&mut self, parent: RawWindowHandle, _context: PluginContext) {
@@ -460,8 +468,8 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
 
     // ── Snapshot ──────────────────────────────────────────────────────────
     let done = Arc::new(AtomicBool::new(false));
-    let result: Arc<std::sync::Mutex<Option<(Vec<u8>, u32, u32)>>> =
-        Arc::new(std::sync::Mutex::new(None));
+    #[allow(clippy::type_complexity)]
+    let result: Arc<Mutex<Option<(Vec<u8>, u32, u32)>>> = Arc::new(Mutex::new(None));
     let done_clone = done.clone();
     let result_clone = result.clone();
 
@@ -615,7 +623,8 @@ impl StandaloneWindow {
         };
 
         unsafe {
-            let title: id = msg_send![class!(NSString), stringWithUTF8String: "Cosmo PD-101\0".as_ptr() as *const core::ffi::c_char];
+            let title: id =
+                msg_send![class!(NSString), stringWithUTF8String: c"Cosmo PD-101".as_ptr()];
             let _: () = msg_send![window, setTitle: title];
             let _: () = msg_send![window, makeKeyAndOrderFront: nil];
         }
@@ -661,6 +670,7 @@ unsafe impl Send for StandaloneWindow {}
 #[cfg(target_os = "macos")]
 unsafe impl Sync for StandaloneWindow {}
 
+#[cfg(target_os = "macos")]
 impl Drop for StandaloneWindow {
     fn drop(&mut self) {
         use objc::{msg_send, sel, sel_impl};
