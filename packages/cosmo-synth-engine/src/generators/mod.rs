@@ -1,6 +1,6 @@
-use crate::render_cache::CompiledLinePlan;
 use crate::dsp_utils::{apply_window, lerp, wrap01, TWO_PI};
 use crate::params::{Algo, AlgoControlSlots, BaseWaveform, LineParams};
+use crate::render_cache::CompiledLinePlan;
 use std::sync::LazyLock;
 
 /// Reference per-line output headroom used by processor normalization.

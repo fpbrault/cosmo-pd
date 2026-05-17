@@ -1,4 +1,3 @@
-use crate::render_cache::CompiledLinePlan;
 use crate::dsp_utils::{lfo_output, pow01, wrap01, TWO_PI};
 use crate::envelope::EnvelopeKind;
 use crate::envelope::EnvelopeTimingCache;
@@ -7,6 +6,7 @@ use crate::params::{
     LfoWaveform, LineParams, LineSelect, ModDestination, ModMatrixCache, ModMode, PortamentoMode,
     SynthParams,
 };
+use crate::render_cache::CompiledLinePlan;
 
 use super::modulation::{algo_param_slot_mods_for_line, ModSources};
 use super::{

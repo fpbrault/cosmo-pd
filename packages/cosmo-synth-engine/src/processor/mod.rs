@@ -13,12 +13,12 @@ use alloc::sync::Arc;
 use arrayvec::ArrayVec;
 use core::array;
 
-use crate::render_cache::CompiledSynthParams;
 use crate::dsp_utils::random_hold_value;
 use crate::envelope::{normalize_synth_params_envelopes_to_raw_if_human, EnvelopeTimingCache};
 use crate::fx::FxChain;
 use crate::module_presets;
 use crate::params::{FxSlotConfig, FxSlotType, LineParams, SynthParams, NUM_VOICES};
+use crate::render_cache::CompiledSynthParams;
 use crate::simd::{detect_simd_backend, SimdBackend};
 use crate::voice::Voice;
 

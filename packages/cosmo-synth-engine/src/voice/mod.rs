@@ -135,10 +135,10 @@ mod tests {
     use super::modulation::mod_value_for;
     use super::ModSources;
     use super::{render::*, Voice};
-    use crate::render_cache::CompiledSynthParams;
     use crate::params::{
         LineParams, ModDestination, ModMatrix, ModMatrixCache, ModRoute, ModSource, SynthParams,
     };
+    use crate::render_cache::CompiledSynthParams;
 
     #[test]
     fn dca_gain_uses_gentle_power_taper() {
