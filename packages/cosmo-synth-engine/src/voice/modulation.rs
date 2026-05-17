@@ -1,8 +1,7 @@
 use crate::params::{
-    EnvStep, LineParams, ModDestination, ModMatrix, ModMatrixCache, ModSource, StepEnvData,
-    ENV_STEP_DEST_FIRST, ENV_STEP_DEST_LAST, NUM_ENV_STEPS,
+    EnvStep, LineParams, ModDestination, ModMatrixCache, StepEnvData, ENV_STEP_DEST_FIRST,
+    ENV_STEP_DEST_LAST, NUM_ENV_STEPS,
 };
-use crate::simd::SimdBackend;
 
 // Modulation helpers
 // ---------------------------------------------------------------------------
@@ -40,110 +39,6 @@ impl ModSources {
             aftertouch,
         }
     }
-
-    pub(crate) fn source_value(&self, source: ModSource) -> f32 {
-        match source {
-            ModSource::Lfo1 => self.lfo1,
-            ModSource::Lfo2 => self.lfo2,
-            ModSource::Random => self.random,
-            ModSource::ModEnv => self.mod_env,
-            ModSource::Velocity => self.velocity,
-            ModSource::ModWheel => self.mod_wheel,
-            ModSource::Aftertouch => self.aftertouch,
-        }
-    }
-}
-
-/// Sum all enabled routes targeting `dest`, clamping the total to [-1, 1].
-#[allow(dead_code)]
-pub(crate) fn mod_value_for(dest: ModDestination, matrix: &ModMatrix, sources: &ModSources) -> f32 {
-    let mut total = 0.0_f32;
-    for route in &matrix.routes {
-        if route.enabled && route.destination == dest {
-            total += route.amount * sources.source_value(route.source);
-        }
-    }
-    total.clamp(-1.0, 1.0)
-}
-
-#[allow(dead_code)]
-pub(crate) fn mod_values_for_destinations4(
-    destinations: [ModDestination; 4],
-    matrix: &ModMatrix,
-    sources: &ModSources,
-    backend: SimdBackend,
-) -> [f32; 4] {
-    let mut totals = [0.0_f32; 4];
-
-    for route in &matrix.routes {
-        if !route.enabled {
-            continue;
-        }
-
-        let scaled = route.amount * sources.source_value(route.source);
-        let values = [scaled; 4];
-        let mask = [
-            if route.destination == destinations[0] {
-                1.0
-            } else {
-                0.0
-            },
-            if route.destination == destinations[1] {
-                1.0
-            } else {
-                0.0
-            },
-            if route.destination == destinations[2] {
-                1.0
-            } else {
-                0.0
-            },
-            if route.destination == destinations[3] {
-                1.0
-            } else {
-                0.0
-            },
-        ];
-
-        totals = backend.add4(totals, backend.mul4(values, mask));
-    }
-
-    backend.clamp4(totals, -1.0, 1.0)
-}
-
-#[allow(dead_code)]
-pub(crate) fn mod_values_for_destinations8(
-    destinations: [ModDestination; 8],
-    matrix: &ModMatrix,
-    sources: &ModSources,
-    backend: SimdBackend,
-) -> [f32; 8] {
-    let first = mod_values_for_destinations4(
-        [
-            destinations[0],
-            destinations[1],
-            destinations[2],
-            destinations[3],
-        ],
-        matrix,
-        sources,
-        backend,
-    );
-    let second = mod_values_for_destinations4(
-        [
-            destinations[4],
-            destinations[5],
-            destinations[6],
-            destinations[7],
-        ],
-        matrix,
-        sources,
-        backend,
-    );
-
-    [
-        first[0], first[1], first[2], first[3], second[0], second[1], second[2], second[3],
-    ]
 }
 
 pub(crate) fn algo_param_slot_mods_for_line(

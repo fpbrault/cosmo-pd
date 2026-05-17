@@ -300,7 +300,7 @@ fn sample_base_wave(base_waveform: BaseWaveform, phase: f32) -> f32 {
     };
     match base_waveform {
         BaseWaveform::Cosine => -(TWO_PI * p).cos(),
-        BaseWaveform::Sine => (TWO_PI as f32 * p).sin(),
+        BaseWaveform::Sine => (TWO_PI * p).sin(),
         BaseWaveform::Triangle => 1.0 - 4.0 * (p - 0.5).abs(),
         BaseWaveform::Saw => p * 2.0 - 1.0,
         BaseWaveform::Square => {

@@ -132,11 +132,10 @@ impl Default for Voice {
 
 #[cfg(test)]
 mod tests {
-    use super::modulation::mod_value_for;
     use super::ModSources;
     use super::{render::*, Voice};
     use crate::params::{
-        LineParams, ModDestination, ModMatrix, ModMatrixCache, ModRoute, ModSource, SynthParams,
+        LineParams, ModDestination, ModMatrixCache, ModRoute, ModSource, SynthParams,
     };
     use crate::render_cache::CompiledSynthParams;
 
@@ -260,54 +259,6 @@ mod tests {
             ModDestination::Lfo2Offset,
             ModDestination::RandomRate,
         ]
-    }
-
-    fn source_value(sources: &ModSources, source: ModSource) -> f32 {
-        match source {
-            ModSource::Lfo1 => sources.lfo1,
-            ModSource::Lfo2 => sources.lfo2,
-            ModSource::Velocity => sources.velocity,
-            ModSource::ModWheel => sources.mod_wheel,
-            ModSource::Aftertouch => sources.aftertouch,
-            ModSource::ModEnv => sources.mod_env,
-            ModSource::Random => sources.random,
-        }
-    }
-
-    #[test]
-    fn every_source_can_drive_every_destination() {
-        let sources = ModSources {
-            lfo1: 0.25,
-            lfo2: -0.4,
-            velocity: 0.8,
-            mod_wheel: 0.6,
-            aftertouch: 0.3,
-            mod_env: 0.5,
-            random: -0.2,
-        };
-        let amount = 0.5;
-        for destination in all_destinations() {
-            for source in all_sources() {
-                let matrix = ModMatrix {
-                    routes: vec![ModRoute {
-                        source,
-                        destination,
-                        amount,
-                        enabled: true,
-                    }],
-                };
-                let got = mod_value_for(destination, &matrix, &sources);
-                let expected = (amount * source_value(&sources, source)).clamp(-1.0, 1.0);
-                assert!(
-                    (got - expected).abs() < 1e-6,
-                    "unexpected route value for source={:?} destination={:?}: got {}, expected {}",
-                    source,
-                    destination,
-                    got,
-                    expected
-                );
-            }
-        }
     }
 
     #[test]

@@ -89,9 +89,9 @@ pub fn warp_phase(
     let warped = phase + amt * depth * shaped;
     if (0.0..1.0).contains(&warped) {
         warped
-    } else if warped >= 1.0 && warped < 2.0 {
+    } else if (1.0..2.0).contains(&warped) {
         warped - 1.0
-    } else if warped >= -1.0 && warped < 0.0 {
+    } else if (-1.0..0.0).contains(&warped) {
         warped + 1.0
     } else {
         wrap01(warped)

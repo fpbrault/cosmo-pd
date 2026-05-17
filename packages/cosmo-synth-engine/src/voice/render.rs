@@ -116,7 +116,7 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
     }
 
     if voice.is_silent {
-        advance_silent_voice(voice, &line1_modded, &line2_modded, p, sr, base_freq);
+        advance_silent_voice(voice, line1_modded, line2_modded, p, sr, base_freq);
         voice.last_output_sample = 0.0;
         voice.release_tail_level = 0.0;
         voice.anti_click_fade_len = 0;
@@ -148,8 +148,8 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         [0.0; 8]
     };
     let mut signal = build_signal_state(
-        &line1_modded,
-        &line2_modded,
+        line1_modded,
+        line2_modded,
         cache,
         modulation_active,
         &env,
@@ -183,7 +183,7 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
             .algo_runtime
             .render_line1(LineRenderConfig::from_compiled_line(
                 line1_plan,
-                &line1_modded,
+                line1_modded,
                 voice.cycle_count1,
                 phase.phi1,
                 phase.phase_a_post,
@@ -199,7 +199,7 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
             .algo_runtime
             .render_line2(LineRenderConfig::from_compiled_line(
                 line2_plan,
-                &line2_modded,
+                line2_modded,
                 voice.cycle_count2,
                 phase.phi2,
                 phase.phase_b_post,
@@ -217,8 +217,8 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         phase.phi2,
         s1,
         s2,
-        &line1_modded,
-        &line2_modded,
+        line1_modded,
+        line2_modded,
         voice.cycle_count1,
         voice.cycle_count2,
         karpunk_raw_sample1,
