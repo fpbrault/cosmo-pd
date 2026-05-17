@@ -1,6 +1,23 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import AlgoControlTooltip from "./AlgoControlTooltip";
+
+vi.mock("@/lib/synth/i18nAlgo", () => ({
+	useAlgoUiText: (key: string) =>
+		(
+			({ showControlDescription: "Show control description" }) as Record<
+				string,
+				string
+			>
+		)[key] ?? key,
+}));
+
+vi.mock("../../layout/HoverInfo", () => ({
+	useHoverInfoHandlers: () => ({
+		onMouseEnter: vi.fn(),
+		onMouseLeave: vi.fn(),
+	}),
+}));
 
 describe("AlgoControlTooltip", () => {
 	it("renders nothing without description", () => {

@@ -1,3 +1,5 @@
+#![allow(clippy::field_reassign_with_default)]
+
 use std::collections::BTreeMap;
 use std::env;
 use std::sync::Arc;
@@ -1214,7 +1216,7 @@ fn render_pass(config: &BenchmarkConfig, scenario: &Scenario, total_samples: usi
         block_index += 1;
 
         if let Some(churn_blocks) = scenario.note_churn_blocks {
-            if block_index % churn_blocks == 0 {
+            if block_index.is_multiple_of(churn_blocks) {
                 let lead = DEFAULT_NOTES[(block_index / churn_blocks) % config.voices];
                 let release = DEFAULT_NOTES[(block_index / churn_blocks + 1) % config.voices];
                 processor.note_off(release);
@@ -1223,7 +1225,7 @@ fn render_pass(config: &BenchmarkConfig, scenario: &Scenario, total_samples: usi
         }
 
         if let (Some(swap_blocks), Some(variants)) = (scenario.param_swap_blocks, &param_variants) {
-            if block_index % swap_blocks == 0 {
+            if block_index.is_multiple_of(swap_blocks) {
                 let variant_index = (block_index / swap_blocks) % variants.len();
                 processor.set_shared_params(Arc::clone(&variants[variant_index]));
             }

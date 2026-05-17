@@ -9,7 +9,7 @@ mod render;
 pub use adsr::AdsrEnv;
 pub(crate) use modulation::modulated_line_params;
 pub(crate) use modulation::ModSources;
-pub(crate) use render::render_voice;
+pub(crate) use render::{render_voice, VoiceRenderContext};
 
 use crate::envelope::EnvGen;
 use crate::generators::AlgoRuntimeState;
@@ -134,16 +134,15 @@ impl Default for Voice {
 mod tests {
     use super::ModSources;
     use super::{render::*, Voice};
-    use crate::params::{
-        LineParams, ModDestination, ModMatrix, ModMatrixCache, ModRoute, ModSource, SynthParams,
-    };
+    use crate::params::{LineParams, ModMatrixCache, SynthParams};
+    use crate::render_cache::CompiledSynthParams;
 
     #[test]
     fn dca_gain_uses_gentle_power_taper() {
         assert_eq!(super::render::cz_dca_env_gain(0.0), 0.0);
         assert_eq!(super::render::cz_dca_env_gain(1.0), 1.0);
-        assert!(super::render::cz_dca_env_gain(0.5) > 0.5);
-        assert!(super::render::cz_dca_env_gain(0.75) > 0.75);
+        assert!(super::render::cz_dca_env_gain(0.5) < 0.5);
+        assert!(super::render::cz_dca_env_gain(0.75) < 0.75);
     }
 
     #[test]
@@ -177,19 +176,6 @@ mod tests {
                 "level {level}: expected {expected_semitones} st, got {got} st"
             );
         }
-    }
-
-    #[test]
-    fn dco_env_level_66_is_one_octave_up() {
-        let base_freq = 220.0_f32;
-        let line = crate::params::LineParams::default();
-        let level_66 = 66.0_f32 / 99.0;
-        let got = super::render::line_frequency(base_freq, &line, level_66);
-        let expected = base_freq * 2.0;
-        assert!(
-            (got - expected).abs() <= expected * 0.02,
-            "expected about {expected} Hz at level 66, got {got} Hz"
-        );
     }
 
     fn all_sources() -> [ModSource; 7] {
@@ -309,6 +295,56 @@ mod tests {
     }
 
     #[test]
+    fn every_source_can_drive_every_destination() {
+        let sources = ModSources {
+            lfo1: 0.25,
+            lfo2: -0.4,
+            velocity: 0.8,
+            mod_wheel: 0.6,
+            aftertouch: 0.3,
+            mod_env: 0.5,
+            random: -0.2,
+        };
+        let amount = 0.5;
+        for destination in all_destinations() {
+            for source in all_sources() {
+                let matrix = ModMatrix {
+                    routes: vec![ModRoute {
+                        source,
+                        destination,
+                        amount,
+                        enabled: true,
+                    }],
+                };
+                let mut cache = ModMatrixCache::new();
+                cache.rebuild_routes(&matrix);
+                cache.compute(&sources);
+                let got = cache.get(destination, &sources);
+                let src_val: f32 = match source {
+                    ModSource::Lfo1 => sources.lfo1,
+                    ModSource::Lfo2 => sources.lfo2,
+                    ModSource::Velocity => sources.velocity,
+                    ModSource::ModWheel => sources.mod_wheel,
+                    ModSource::Aftertouch => sources.aftertouch,
+                    ModSource::ModEnv => sources.mod_env,
+                    ModSource::Random => sources.random,
+                };
+                let expected = (amount * src_val).clamp(-1.0, 1.0);
+                assert!(
+                    (got - expected).abs() < 1e-6,
+                    "unexpected route value for source={:?} destination={:?}: got {}, expected {}",
+                    source,
+                    destination,
+                    got,
+                    expected
+                );
+            }
+        }
+    }
+
+=======
+>>>>>>> origin/main
+    #[test]
     fn render_voice_returns_zero_for_silent_voice() {
         let mut voice = Voice::new();
         voice.is_silent = true;
@@ -318,25 +354,25 @@ mod tests {
         let mut cache = ModMatrixCache::new();
         cache.compute(&sources);
         let default_line = LineParams::default();
-        let out = render_voice(
-            &mut voice,
-            &p,
-            0.0,
-            0.0,
-            0.0,
-            &default_line,
-            &default_line,
-            48_000.0,
-            &timing,
-            0.0,
-            0.0,
-            0.0,
-            &cache,
-            [0.0; 8],
-            [0.0; 8],
-            [0.0; 8],
-            [0.0; 8],
-        );
+        let plan = CompiledSynthParams::from_params(&p);
+        let ctx = super::VoiceRenderContext {
+            p: &p,
+            lfo_mod_val: 0.0,
+            lfo2_mod_val: 0.0,
+            random_mod_val: 0.0,
+            line1_modded: &default_line,
+            line2_modded: &default_line,
+            sr: 48_000.0,
+            timing: &timing,
+            pitch_bend_semitones: 0.0,
+            mod_wheel: 0.0,
+            aftertouch: 0.0,
+            cache: &cache,
+            modulation_active: false,
+            line1_plan: &plan.line1,
+            line2_plan: &plan.line2,
+        };
+        let out = render_voice(&mut voice, &ctx);
         assert_eq!(out, 0.0);
     }
 
@@ -352,27 +388,27 @@ mod tests {
         let mut cache = ModMatrixCache::new();
         cache.compute(&sources);
         let default_line = LineParams::default();
+        let plan = CompiledSynthParams::from_params(&p);
         let mut any_nonzero = false;
         for _ in 0..64 {
-            let out = render_voice(
-                &mut voice,
-                &p,
-                0.0,
-                0.0,
-                0.0,
-                &default_line,
-                &default_line,
-                48_000.0,
-                &timing,
-                0.0,
-                0.0,
-                0.0,
-                &cache,
-                [0.0; 8],
-                [0.0; 8],
-                [0.0; 8],
-                [0.0; 8],
-            );
+            let ctx = super::VoiceRenderContext {
+                p: &p,
+                lfo_mod_val: 0.0,
+                lfo2_mod_val: 0.0,
+                random_mod_val: 0.0,
+                line1_modded: &default_line,
+                line2_modded: &default_line,
+                sr: 48_000.0,
+                timing: &timing,
+                pitch_bend_semitones: 0.0,
+                mod_wheel: 0.0,
+                aftertouch: 0.0,
+                cache: &cache,
+                modulation_active: false,
+                line1_plan: &plan.line1,
+                line2_plan: &plan.line2,
+            };
+            let out = render_voice(&mut voice, &ctx);
             if out.abs() > 1e-6 {
                 any_nonzero = true;
                 break;

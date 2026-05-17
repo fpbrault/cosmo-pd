@@ -1,1 +1,0 @@
-ALTER TABLE "preset_library" ADD COLUMN "presets_encrypted" text;

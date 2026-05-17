@@ -40,8 +40,10 @@ describe("ModulatableControl browser integration", () => {
 		// Open the panel
 		fireEvent.click(modulationButton);
 
-		// Add a route via dropdown + Add button (default source is lfo1)
-		fireEvent.click(screen.getByRole("button", { name: /^Add$/i }));
+		// Add a route via Pick Source popover (default source is lfo1)
+		fireEvent.click(screen.getByRole("button", { name: "Pick Source" }));
+		fireEvent.click(screen.getByRole("button", { name: "LFO 1" }));
+		fireEvent.click(screen.getByRole("button", { name: "Add LFO 1" }));
 		expect(modulationButton).toHaveTextContent("1");
 
 		// Remove the route

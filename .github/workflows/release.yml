@@ -9,30 +9,6 @@ permissions:
   contents: write
 
 jobs:
-  build-web:
-    name: Build web app
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install wasm-pack
-        run: |
-          curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.13.1/wasm-pack-v0.13.1-x86_64-unknown-linux-musl.tar.gz | tar xz
-          mv wasm-pack-v0.13.1-x86_64-unknown-linux-musl/wasm-pack ~/.cargo/bin/
-
-      - name: Install dependencies
-        run: bun install
-
-      - name: Build web app
-        run: bun run build:web
-
   build-plugins:
     name: Build and package plugins (${{ matrix.platform }}-${{ matrix.arch }})
     strategy:
@@ -125,49 +101,6 @@ jobs:
           path: ${{ matrix.artifact_paths }}
           if-no-files-found: error
 
-  build-desktop:
-    name: Build desktop app (${{ matrix.platform }}-${{ matrix.arch }})
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: macos-latest
-            platform: macos
-            arch: arm64
-          - os: macos-15-intel
-            platform: macos
-            arch: x86_64
-          - os: windows-latest
-            platform: windows
-            arch: x86_64
-          - os: windows-11-arm
-            platform: windows
-            arch: arm64
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install dependencies
-        run: bun install
-
-      - name: Build desktop app
-        run: bun --filter @cosmo/cz-explorer-desktop build
-
-      - name: Upload desktop artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: desktop-${{ matrix.platform }}-${{ matrix.arch }}
-          path: |
-            packages/cz-explorer-desktop/target/release/bundle/**/*.dmg
-            packages/cz-explorer-desktop/target/release/bundle/**/*.app.tar.gz
-            packages/cz-explorer-desktop/target/release/bundle/**/*setup.exe
-            packages/cz-explorer-desktop/target/release/bundle/**/*.msi
-          if-no-files-found: error
-
   # TODO: enable when Gumroad distribution is ready
   # Requires secrets: GUMROAD_ACCESS_TOKEN, GUMROAD_PRODUCT_ID
   upload-plugins-to-gumroad:
@@ -214,13 +147,13 @@ jobs:
 
   create-release:
     name: Create GitHub release
-    needs: [build-web, build-desktop]
+    needs: [build-plugins]
     runs-on: ubuntu-latest
     steps:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: desktop-*
+          pattern: plugins-*
           path: release-assets
           merge-multiple: true
 
@@ -229,16 +162,18 @@ jobs:
         run: |
           set -euo pipefail
           shopt -s globstar
-
-          compgen -G "release-assets/**/cz101-presets-library_*.dmg" > /dev/null || compgen -G "release-assets/**/cz101-presets-library_*.app.tar.gz" > /dev/null
-          compgen -G "release-assets/**/cz101-presets-library_*setup.exe" > /dev/null || compgen -G "release-assets/**/cz101-presets-library_*.msi" > /dev/null
+          
+          # Validate plugins are present
+          compgen -G "release-assets/**/*.vst3" > /dev/null || true
+          compgen -G "release-assets/**/*.pkg" > /dev/null || true
+          compgen -G "release-assets/**/*.exe" > /dev/null || true
 
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           files: |
-            release-assets/**/cz101-presets-library_*.dmg
-            release-assets/**/cz101-presets-library_*.app.tar.gz
-            release-assets/**/cz101-presets-library_*setup.exe
-            release-assets/**/cz101-presets-library_*.msi
+            release-assets/**/*.pkg
+            release-assets/**/*.zip
+            release-assets/**/*.exe
+            release-assets/**/*.msi

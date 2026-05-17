@@ -88,7 +88,7 @@ describe("algo controls (browser)", () => {
 		);
 	});
 
-	it("renders and updates dropdown select controls", () => {
+	it("renders and updates select controls via AlgoControlItem", () => {
 		const setNumber = vi.fn();
 		const applyOptionAssignments = vi.fn();
 		render(
@@ -100,15 +100,14 @@ describe("algo controls (browser)", () => {
 				setAlgoControlValue={() => {}}
 				getActiveSelectOption={() => selectControl.options[0]}
 				applyOptionAssignments={applyOptionAssignments}
-				control={{ ...selectControl, controlType: "dropdown" }}
+				control={selectControl}
 			/>,
 		);
 
 		expect(screen.getAllByRole("button")).toHaveLength(2);
-		fireEvent.click(screen.getByRole("button", { name: "a" }));
+		fireEvent.click(screen.getAllByRole("button")[0]);
 		expect(setNumber).toHaveBeenCalledWith(0);
-
-		fireEvent.click(screen.getByRole("button", { name: "b" }));
+		fireEvent.click(screen.getAllByRole("button")[1]);
 		expect(applyOptionAssignments).toHaveBeenCalledWith(
 			selectControl.options[1],
 		);

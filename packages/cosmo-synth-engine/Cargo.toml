@@ -18,6 +18,10 @@ name = "render-bench"
 path = "src/bin/render-bench.rs"
 required-features = ["std"]
 
+[[bench]]
+name = "render-bench"
+harness = false
+
 [features]
 default = ["std"]
 std = [
@@ -72,6 +76,19 @@ optional = true
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 no_denormals = { version = "0.1", optional = true }
+
+[dev-dependencies]
+criterion = { version = "0.8", default-features = false, features = ["cargo_bench_support"] }
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+style = "warn"
+correctness = "deny"
+suspicious = "warn"
+complexity = "warn"
+perf = "warn"
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = false

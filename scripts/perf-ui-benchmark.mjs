@@ -1,14 +1,10 @@
 #!/usr/bin/env bun
 import { mkdir, writeFile } from "node:fs/promises";
-import { createRequire } from "node:module";
 import path from "node:path";
 
 const DEFAULT_HEAVY_PRESET_NAMES = ["Rise", "Flute", "Chants"];
 
-const requireFromExplorer = createRequire(
-	new URL("../packages/cz-explorer/package.json", import.meta.url),
-);
-const { chromium } = requireFromExplorer("playwright");
+import { chromium } from "playwright";
 
 function parseArgs(argv) {
 	const options = {

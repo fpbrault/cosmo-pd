@@ -60,22 +60,15 @@ describe("modulation controls (browser)", () => {
 		expect(screen.getByText("LFO1")).toBeInTheDocument();
 
 		fireEvent.click(
-			screen.getAllByRole("button", { name: /disable route/i })[0],
+			screen.getAllByRole("checkbox", { name: /disable route/i })[0],
 		);
 		fireEvent.click(screen.getAllByRole("button", { name: "Remove route" })[0]);
-		fireEvent.keyDown(
-			screen.getAllByRole("spinbutton", { name: "Amount" })[0],
-			{
-				key: "ArrowDown",
-			},
-		);
-		fireEvent.change(
-			screen.getByRole("combobox", { name: /select modulation source/i }),
-			{
-				target: { value: "velocity" },
-			},
-		);
-		fireEvent.click(screen.getByRole("button", { name: /^Add$/i }));
+		fireEvent.keyDown(screen.getAllByRole("spinbutton")[0], {
+			key: "ArrowDown",
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Pick Source" }));
+		fireEvent.click(screen.getByRole("button", { name: "Velocity" }));
+		fireEvent.click(screen.getByRole("button", { name: "Add Velocity" }));
 		fireEvent.click(
 			screen.getByRole("button", { name: "Close modulation panel" }),
 		);

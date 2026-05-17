@@ -98,9 +98,9 @@ pub fn warp_phase(phase: f32, amt: f32, segs: f32, reverse: f32, slip: f32, spac
     let raw_warped = seg_f * inv_n + local_warped * inv_n + slip_offset;
     let warped = if (0.0..1.0).contains(&raw_warped) {
         raw_warped
-    } else if raw_warped >= 1.0 && raw_warped < 2.0 {
+    } else if (1.0..2.0).contains(&raw_warped) {
         raw_warped - 1.0
-    } else if raw_warped < 0.0 && raw_warped >= -1.0 {
+    } else if (-1.0..0.0).contains(&raw_warped) {
         raw_warped + 1.0
     } else {
         wrap01(raw_warped)

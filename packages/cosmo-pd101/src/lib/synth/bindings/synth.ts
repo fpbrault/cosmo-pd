@@ -263,7 +263,7 @@ export type FxSlotConfig = { type: "empty" } | { type: "chorus"; params: ChorusP
 /**
  * Top-level synth parameters
  */
-export type SynthParams = { lineSelect: LineSelect; modMode: ModMode; ringGain?: number; octave: number; line1: LineParams; line2: LineParams; frequency: number; volume: number; polyMode: PolyMode; legato: boolean; portamento: PortamentoParams; lfo: LfoParams; lfo2?: LfoParams; velocityCurve?: number; pitchBendRange?: number; modMatrix?: ModMatrix; random?: RandomParams; modEnv?: ModEnvParams; fxSlots?: [FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig] }
+export type SynthParams = { lineSelect: LineSelect; modMode: ModMode; ringGain?: number; octave: number; line1: LineParams; line2: LineParams; frequency: number; volume: number; czDacEnabled?: boolean; polyMode: PolyMode; legato: boolean; portamento: PortamentoParams; lfo: LfoParams; lfo2?: LfoParams; velocityCurve?: number; pitchBendRange?: number; modMatrix?: ModMatrix; random?: RandomParams; modEnv?: ModEnvParams; fxSlots?: [FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig] }
 
 /**
  * Canonical, versioned synth preset wire contract.
@@ -1668,21 +1668,6 @@ export const ALGO_DEFINITIONS_V1 = [
         "readoutFormat": {
           "kind": "percent"
         }
-      },
-      {
-        "id": "chebyMix",
-        "kind": "number",
-        "controlType": "knob",
-        "bipolar": false,
-        "iconName": null,
-        "min": 0.0,
-        "max": 1.0,
-        "default": 1.0,
-        "defaultToggle": null,
-        "options": [],
-        "readoutFormat": {
-          "kind": "percent"
-        }
       }
     ]
   }
@@ -2043,23 +2028,23 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "options": [
           {
             "value": 1,
-            "label": "Sine",
-            "iconName": "waveSine"
-          },
-          {
-            "value": 2,
             "label": "Tri",
             "iconName": "waveTriangle"
           },
           {
+            "value": 2,
+            "label": "Saw",
+            "iconName": "waveSawtooth"
+          },
+          {
             "value": 3,
-            "label": "Sq",
-            "iconName": "waveSquare"
+            "label": "InvertedSaw",
+            "iconName": "waveSawtoothInverted"
           },
           {
             "value": 4,
-            "label": "Saw",
-            "iconName": "waveSawtooth"
+            "label": "Sq",
+            "iconName": "waveSquare"
           }
         ],
         "modDestinationKey": null
@@ -3529,34 +3514,6 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "paramDefault": 0.20000000298023224,
     "readoutFormat": {
       "kind": "seconds2"
-    }
-  },
-  {
-    "key": "filterType",
-    "paramDefault": null,
-    "readoutFormat": {
-      "kind": "uppercase"
-    }
-  },
-  {
-    "key": "filterCutoff",
-    "paramDefault": 5000.0,
-    "readoutFormat": {
-      "kind": "hertz"
-    }
-  },
-  {
-    "key": "filterResonance",
-    "paramDefault": 0.0,
-    "readoutFormat": {
-      "kind": "decimal"
-    }
-  },
-  {
-    "key": "filterEnvAmount",
-    "paramDefault": 0.0,
-    "readoutFormat": {
-      "kind": "decimal"
     }
   },
   {

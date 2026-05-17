@@ -14,7 +14,7 @@ describe("Card", () => {
 				padding: "lg",
 				className: "extra",
 			}),
-		).toContain(`${CARD_BASE_CLASSES} rounded-2xl bg-cz-surface p-6 extra`);
+		).toContain(`${CARD_BASE_CLASSES} rounded-2xl bg-cz-surface p-3 extra`);
 	});
 
 	it("renders as the provided element type", () => {
@@ -26,6 +26,6 @@ describe("Card", () => {
 
 		const card = screen.getByTestId("card");
 		expect(card.tagName).toBe("SECTION");
-		expect(card).toHaveClass("card", "text-cz-cream", "cz-section-gold", "p-3");
+		expect(card).toHaveClass("card", "text-cz-cream", "cz-section-gold", "p-1");
 	});
 });

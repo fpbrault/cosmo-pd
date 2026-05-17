@@ -14,7 +14,7 @@ describe("primitive components (browser)", () => {
 
 		const card = screen.getByTestId("card");
 		expect(card.tagName).toBe("SECTION");
-		expect(card).toHaveClass("card", "bg-cz-surface", "p-6");
+		expect(card).toHaveClass("card", "bg-cz-surface", "p-3");
 	});
 
 	it("renders CzButton with tooltip and click behavior", () => {

@@ -4,9 +4,8 @@ This project supports reusable component tests with Vitest + Testing Library, in
 
 ## Current foundation
 
-- `packages/cz-explorer/src/test/TestAppProviders.tsx`: wraps UI with Query + app contexts.
-- `packages/cz-explorer/src/test/renderWithProviders.tsx`: one-call render helper for component tests.
-- `packages/cz-explorer/setupTests.ts`: includes `@testing-library/jest-dom/vitest` matchers.
+- `setupTests.ts`: includes `@testing-library/jest-dom/vitest` matchers.
+- `setupBrowserTests.ts`: setup for browser-based testing.
 
 ## Test Environments
 

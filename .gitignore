@@ -49,3 +49,5 @@ TEST-PLAN*.md
 
 target/
 test-results/
+
+coverage-final.json

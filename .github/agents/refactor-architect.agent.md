@@ -1,5 +1,5 @@
 ---
-description: "Use when auditing a package (especially packages/cz-explorer) for messy structure, dead code, weak separation of concerns, and refactoring opportunities before implementation. Runs tools like knip and static checks, then proposes a staged refactor plan with approval gates."
+description: "Use when auditing a package for messy structure, dead code, weak separation of concerns, and refactoring opportunities before implementation. Runs tools like knip and static checks, then proposes a staged refactor plan with approval gates."
 name: "Refactor Architect"
 tools: [vscode, read, search, execute, edit, todo]
 argument-hint: "Which package should be audited, and what constraints should the refactor respect?"

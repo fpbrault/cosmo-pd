@@ -76,14 +76,9 @@ impl DelayFx {
             .write(sample + wet * self.feedback.clamp(0.0, 0.97));
         let mix_angle = self.mix * core::f32::consts::PI * 0.5;
         let dry_gain = (mix_angle).cos();
-        let wet_gain = sinf_approx(mix_angle);
+        let wet_gain = (mix_angle).sin();
         sample * dry_gain + wet * wet_gain
     }
-}
-
-#[inline]
-fn sinf_approx(x: f32) -> f32 {
-    (x).sin()
 }
 
 // ---------------------------------------------------------------------------

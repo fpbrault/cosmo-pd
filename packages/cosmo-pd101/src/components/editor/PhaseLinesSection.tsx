@@ -212,7 +212,7 @@ export default function PhaseLinesSection({
 				Phase Lines
 			</div>
 			<div className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-cz-panel p-2">
-				<div className="flex max-h-127 min-h-0 min-w-0 flex-1 items-stretch gap-2 overflow-scroll">
+				<div className="flex max-h-127 min-h-0 min-w-0 flex-1 items-stretch gap-2">
 					<div className="flex w-16 shrink-0 flex-col justify-evenly gap-5 self-stretch">
 						{leftTabGroups.map((group) => {
 							return (

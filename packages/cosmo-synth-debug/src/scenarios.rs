@@ -15,6 +15,7 @@ pub fn presets() -> Vec<(&'static str, SynthParams)> {
     ]
 }
 
+#[allow(clippy::field_reassign_with_default)]
 fn build_fun_bass_like() -> SynthParams {
     let mut p = SynthParams::default();
     p.poly_mode = PolyMode::Mono;
@@ -38,6 +39,7 @@ fn build_fun_bass_like() -> SynthParams {
     p
 }
 
+#[allow(clippy::field_reassign_with_default)]
 fn build_chants_like() -> SynthParams {
     let mut p = SynthParams::default();
     p.poly_mode = PolyMode::Poly8;
@@ -66,6 +68,7 @@ fn build_chants_like() -> SynthParams {
     p
 }
 
+#[allow(clippy::field_reassign_with_default)]
 fn build_chops_like() -> SynthParams {
     let mut p = SynthParams::default();
     p.poly_mode = PolyMode::Poly8;
@@ -91,18 +94,20 @@ fn build_chops_like() -> SynthParams {
 }
 
 fn build_fx_heavy() -> SynthParams {
-    let mut p = SynthParams::default();
-    p.fx_slots = [
-        FxSlotConfig::default_for_type(FxSlotType::Chorus),
-        FxSlotConfig::default_for_type(FxSlotType::Phaser),
-        FxSlotConfig::default_for_type(FxSlotType::Delay),
-        FxSlotConfig::default_for_type(FxSlotType::Reverb),
-        FxSlotConfig::default_for_type(FxSlotType::Compressor),
-        FxSlotConfig::default_for_type(FxSlotType::Eq5Band),
-    ];
-    p
+    SynthParams {
+        fx_slots: [
+            FxSlotConfig::default_for_type(FxSlotType::Chorus),
+            FxSlotConfig::default_for_type(FxSlotType::Phaser),
+            FxSlotConfig::default_for_type(FxSlotType::Delay),
+            FxSlotConfig::default_for_type(FxSlotType::Reverb),
+            FxSlotConfig::default_for_type(FxSlotType::Compressor),
+            FxSlotConfig::default_for_type(FxSlotType::Eq5Band),
+        ],
+        ..Default::default()
+    }
 }
 
+#[allow(clippy::field_reassign_with_default)]
 fn build_mod_heavy() -> SynthParams {
     let mut p = SynthParams::default();
     p.mod_matrix = heavy_mod_matrix();
@@ -112,6 +117,7 @@ fn build_mod_heavy() -> SynthParams {
     p
 }
 
+#[allow(clippy::field_reassign_with_default)]
 fn build_worst_poly() -> SynthParams {
     let mut p = SynthParams::default();
     p.poly_mode = PolyMode::Poly8;

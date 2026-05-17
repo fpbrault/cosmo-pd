@@ -17,13 +17,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Setup Rust nightly
-        uses: dtolnay/rust-toolchain@nightly
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Run cargo bench on main
-        run: |
-          mkdir -p target/perf/engine
-          cargo bench -p cosmo-synth-engine --bench render-bench -- --nocapture | tee target/perf/engine/main-bench.txt
+        run: cargo bench -p cosmo-synth-engine --bench render-bench -- --output-format bencher | tee output.txt
         shell: bash
 
       - name: Publish benchmark trend to GitHub Pages
@@ -31,7 +29,7 @@ jobs:
         with:
           name: cosmo-synth-engine
           tool: cargo
-          output-file-path: target/perf/engine/main-bench.txt
+          output-file-path: output.txt
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
           summary-always: true

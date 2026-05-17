@@ -27,22 +27,11 @@
 
 Bun monorepo. Main packages:
 
-- `packages/cz-explorer` — React + Vite web app: preset library, setlists, synth browser UI
-- `packages/cz-explorer-desktop` — Tauri 2 desktop wrapper
 - `packages/cosmo-synth-engine` — Rust/WASM phase distortion engine
-- `packages/cosmo-pd101` — reusable synth UI/library package; exports synth-specific components, hooks, preset utilities, and SysEx utilities consumed by `cz-explorer` and the plugin webview
+- `packages/cosmo-pd101` — reusable synth UI/library package; exports synth-specific components, hooks, preset utilities, and SysEx utilities consumed by the plugin webview
 - `packages/cosmo-pd101-plugin` — VST3/CLAP/AUv2 plugin host (nih-plug); contains a thin `webview/` app shell that embeds the shared `cosmo-pd101` library
 - `packages/xtask` — Build automation
 
-### `packages/cz-explorer/src/`
-
-- `components/` — Reusable UI primitives (buttons, inputs, modals)
-- `features/` — Feature domains: `presets/`, `setlists/`, `synthBackups/`
-- `lib/` — Business logic (no UI): DB adapters, MIDI ops, sync
-- `lib/db/` — `PresetDatabase` interface with `browserDatabase` (IndexedDB), `postgresDatabase`, and `fakePresetDatabase` + runtime fallback
-- `db/schema.ts` — Drizzle ORM schema (Postgres)
-- `context/` — React Context providers (MIDI port, MIDI channel, search, sidebar, toast)
-- `hooks/` — Custom hooks (`useDragDrop`, `useMidiSetup`)
 
 ### `packages/cosmo-pd101/src/`
 
@@ -50,7 +39,7 @@ Bun monorepo. Main packages:
 - `features/synth/` — Synth feature domain: hooks (`useAudioEngine`, `useSynthState`, etc.) and preset management
 - `lib/midi/` — CZ SysEx decoder (`czSysexDecoder`)
 - `lib/synth/` — Synth bindings, preset converter, PD algorithms, worklet URLs
-- `index.ts` — Public library entry point; exports components, hooks, and types for use by `cz-explorer`
+- `index.ts` — Public library entry point; exports components, hooks, and types for use by the plugin webview
 
 ### `packages/cosmo-pd101-plugin/`
 

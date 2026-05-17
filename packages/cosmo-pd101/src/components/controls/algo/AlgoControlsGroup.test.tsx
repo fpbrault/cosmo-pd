@@ -15,6 +15,16 @@ vi.mock("./AlgoControlItem", () => ({
 	),
 }));
 
+vi.mock("@/lib/synth/i18nAlgo", () => ({
+	useAlgoUiText: (key: string) =>
+		(
+			({ noControlsForThisAlgo: "No controls for this algo" }) as Record<
+				string,
+				string
+			>
+		)[key] ?? key,
+}));
+
 const sharedProps = {
 	controlBindings: {},
 	lineIndex: 1 as const,

@@ -9,19 +9,22 @@ vi.mock("@/features/synth/SynthParamController", () => ({
 	useSynthParam: (key: string) => useSynthParamMock(key),
 }));
 
-const { MockControlKnob } = vi.hoisted(() => {
-	const MockControlKnob = ({ label }: { label?: string }) => (
-		<div data-testid={`knob-${label}`}>{label}</div>
-	);
-	return { MockControlKnob };
+const { MockSynthParamKnob } = vi.hoisted(() => {
+	const MockSynthParamKnob = ({
+		label,
+		paramKey,
+	}: {
+		label?: string;
+		paramKey?: string;
+	}) => <div data-testid={`knob-${paramKey ?? label}`}>{label}</div>;
+	return { MockSynthParamKnob };
 });
 
-vi.mock("@/components/controls/ControlKnob", () => ({
-	default: MockControlKnob,
-	ControlKnob: MockControlKnob,
+vi.mock("@/components/controls/SynthParamKnob", () => ({
+	default: MockSynthParamKnob,
 }));
 
-vi.mock("@/components/primitives/CzButton", () => ({
+vi.mock("@/components/controls/Button", () => ({
 	default: ({
 		children,
 		onClick,
@@ -62,18 +65,14 @@ describe("GlobalVoicePanel", () => {
 
 		expect(screen.getByText("Portamento")).toBeInTheDocument();
 		expect(portamentoSection).not.toBeNull();
+		// The portamento mode toggle shows "● Rate" when in rate mode
 		expect(
 			within(portamentoSection as HTMLElement).getByRole("button", {
-				name: "Rate",
+				name: "● Rate",
 			}),
 		).toBeInTheDocument();
-		expect(
-			within(portamentoSection as HTMLElement).getByRole("button", {
-				name: "Time",
-			}),
-		).toBeInTheDocument();
-		expect(screen.getByTestId("knob-Rate")).toBeInTheDocument();
-		expect(screen.getByTestId("knob-Bend")).toBeInTheDocument();
+		expect(screen.getByTestId("knob-portamentoRate")).toBeInTheDocument();
+		expect(screen.getByTestId("knob-pitchBendRange")).toBeInTheDocument();
 	});
 
 	it("does not render master volume or mod wheel vibrato controls", () => {
@@ -88,9 +87,10 @@ describe("GlobalVoicePanel", () => {
 		const portamentoSection = screen.getByText("Portamento").parentElement;
 
 		expect(portamentoSection).not.toBeNull();
+		// Click the mode toggle (currently showing "● Rate") to switch to time
 		fireEvent.click(
 			within(portamentoSection as HTMLElement).getByRole("button", {
-				name: "Time",
+				name: "● Rate",
 			}),
 		);
 

@@ -603,53 +603,47 @@ pub enum FxSlotConfig {
     LoFi(LoFiParams),
 }
 
+macro_rules! fx_slot_fns {
+    ($($variant:ident => $type:ident),+ $(,)?) => {
+        impl FxSlotConfig {
+            pub fn slot_type(&self) -> FxSlotType {
+                match self {
+                    Self::Empty => FxSlotType::Empty,
+                    $(Self::$variant(_) => FxSlotType::$type,)+
+                }
+            }
+
+            pub fn is_enabled(&self) -> bool {
+                match self {
+                    Self::Empty => false,
+                    $(Self::$variant(p) => p.enabled,)+
+                }
+            }
+        }
+    };
+}
+
+fx_slot_fns! {
+    Chorus => Chorus,
+    Phaser => Phaser,
+    Delay => Delay,
+    Reverb => Reverb,
+    Vibrato => Vibrato,
+    PhaseMod => PhaseMod,
+    Compressor => Compressor,
+    Eq5Band => Eq5Band,
+    GrainDelay => GrainDelay,
+    Bitcrusher => Bitcrusher,
+    ShimmerVerb => ShimmerVerb,
+    Distortion => Distortion,
+    JunoChorus => JunoChorus,
+    RingMod => RingMod,
+    Tremolo => Tremolo,
+    Wavefolder => Wavefolder,
+    LoFi => LoFi,
+}
+
 impl FxSlotConfig {
-    pub fn slot_type(&self) -> FxSlotType {
-        match self {
-            Self::Empty => FxSlotType::Empty,
-            Self::Chorus(_) => FxSlotType::Chorus,
-            Self::Phaser(_) => FxSlotType::Phaser,
-            Self::Delay(_) => FxSlotType::Delay,
-            Self::Reverb(_) => FxSlotType::Reverb,
-            Self::Vibrato(_) => FxSlotType::Vibrato,
-            Self::PhaseMod(_) => FxSlotType::PhaseMod,
-            Self::Compressor(_) => FxSlotType::Compressor,
-            Self::Eq5Band(_) => FxSlotType::Eq5Band,
-            Self::GrainDelay(_) => FxSlotType::GrainDelay,
-            Self::Bitcrusher(_) => FxSlotType::Bitcrusher,
-            Self::ShimmerVerb(_) => FxSlotType::ShimmerVerb,
-            Self::Distortion(_) => FxSlotType::Distortion,
-            Self::JunoChorus(_) => FxSlotType::JunoChorus,
-            Self::RingMod(_) => FxSlotType::RingMod,
-            Self::Tremolo(_) => FxSlotType::Tremolo,
-            Self::Wavefolder(_) => FxSlotType::Wavefolder,
-            Self::LoFi(_) => FxSlotType::LoFi,
-        }
-    }
-
-    pub fn is_enabled(&self) -> bool {
-        match self {
-            Self::Empty => false,
-            Self::Chorus(p) => p.enabled,
-            Self::Phaser(p) => p.enabled,
-            Self::Delay(p) => p.enabled,
-            Self::Reverb(p) => p.enabled,
-            Self::Vibrato(p) => p.enabled,
-            Self::PhaseMod(p) => p.enabled,
-            Self::Compressor(p) => p.enabled,
-            Self::Eq5Band(p) => p.enabled,
-            Self::GrainDelay(p) => p.enabled,
-            Self::Bitcrusher(p) => p.enabled,
-            Self::ShimmerVerb(p) => p.enabled,
-            Self::Distortion(p) => p.enabled,
-            Self::JunoChorus(p) => p.enabled,
-            Self::RingMod(p) => p.enabled,
-            Self::Tremolo(p) => p.enabled,
-            Self::Wavefolder(p) => p.enabled,
-            Self::LoFi(p) => p.enabled,
-        }
-    }
-
     pub fn default_for_type(slot_type: FxSlotType) -> Self {
         match slot_type {
             FxSlotType::Empty => Self::Empty,

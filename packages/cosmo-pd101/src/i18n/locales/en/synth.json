@@ -705,10 +705,10 @@
 				"waveform": {
 					"label": "Wave",
 					"options": {
-						"1": "Sine",
-						"2": "Tri",
-						"3": "Sq",
-						"4": "Saw"
+						"1": "Tri",
+						"2": "Saw",
+						"3": "Inverted Saw",
+						"4": "Sq"
 					}
 				}
 			},

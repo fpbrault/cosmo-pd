@@ -3,6 +3,7 @@
 //! Processes 4 f32 values simultaneously using 256-bit AVX2 instructions.
 //! Requires: x86_64 + avx2 feature support
 
+#![allow(unsafe_code)]
 #![cfg(target_arch = "x86_64")]
 
 use super::SimdType;

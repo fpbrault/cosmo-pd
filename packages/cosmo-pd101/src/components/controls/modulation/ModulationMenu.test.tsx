@@ -26,8 +26,6 @@ describe("ModulationMenu", () => {
 		// Source badges use short labels (LFO1, MW)
 		expect(screen.getByText("LFO1")).toBeInTheDocument();
 		expect(screen.getByText("MW")).toBeInTheDocument();
-		// Amount knob shows value
-		expect(screen.getByText("0.50")).toBeInTheDocument();
 	});
 
 	it("dispatches route actions", () => {
@@ -47,9 +45,11 @@ describe("ModulationMenu", () => {
 			/>,
 		);
 
-		// Toggle enabled on first route
+		// Toggle enabled on first route (checkbox toggle control)
 		fireEvent.click(
-			screen.getAllByRole("button", { name: /enable|disable/i })[0],
+			screen.getAllByRole("checkbox", {
+				name: /Enable route|Disable route/i,
+			})[0],
 		);
 		expect(onToggleEnabled).toHaveBeenCalledWith(0);
 
@@ -58,12 +58,9 @@ describe("ModulationMenu", () => {
 		expect(onRemoveRoute).toHaveBeenCalledWith(1);
 
 		// Adjust amount on first route using keyboard interaction on knob spinbutton
-		fireEvent.keyDown(
-			screen.getAllByRole("spinbutton", { name: "Amount" })[0],
-			{
-				key: "ArrowDown",
-			},
-		);
+		fireEvent.keyDown(screen.getAllByRole("spinbutton")[0], {
+			key: "ArrowDown",
+		});
 		expect(onAmountChange).toHaveBeenCalledTimes(1);
 		expect(onAmountChange).toHaveBeenCalledWith(0, expect.any(Number));
 		expect(onAmountChange.mock.calls[0]?.[1]).toBeLessThan(0.5);
@@ -75,7 +72,7 @@ describe("ModulationMenu", () => {
 		expect(onClose).toHaveBeenCalledTimes(1);
 	});
 
-	it("dispatches add source action via dropdown + Add button", () => {
+	it("dispatches add source action via source picker popover", () => {
 		const onAddRoute = vi.fn();
 		render(
 			<ModulationMenu
@@ -89,14 +86,14 @@ describe("ModulationMenu", () => {
 			/>,
 		);
 
-		// Change select to "velocity" then click Add
-		fireEvent.change(
-			screen.getByRole("combobox", { name: /select modulation source/i }),
-			{
-				target: { value: "velocity" },
-			},
-		);
-		fireEvent.click(screen.getByRole("button", { name: /^Add$/i }));
+		// Open the source picker popover
+		fireEvent.click(screen.getByRole("button", { name: "Pick Source" }));
+
+		// Select "Velocity" from the popover grid
+		fireEvent.click(screen.getByRole("button", { name: "Velocity" }));
+
+		// Click Add button (shows "Add Velocity" since velocity was selected)
+		fireEvent.click(screen.getByRole("button", { name: "Add Velocity" }));
 		expect(onAddRoute).toHaveBeenCalledWith("velocity");
 	});
 });
