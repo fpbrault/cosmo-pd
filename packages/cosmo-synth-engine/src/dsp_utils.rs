@@ -107,7 +107,7 @@ pub fn cubic_sine_approx(phase: f32) -> f32 {
     // (Alternative: y ≈ 4/π * t * (1 - t), but cubic is more accurate)
     let t2 = t * t;
     let t3 = t2 * t;
-    let y = 0.144630 * t3 - 0.437500 * t2 + 1.242920 * t;
+    let y = 0.144630 * t3 - 0.437500 * t2 + 1.242_92 * t;
 
     // Restore sign for Q2, Q3, Q4
     match quadrant {

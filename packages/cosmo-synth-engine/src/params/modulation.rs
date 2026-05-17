@@ -1,3 +1,4 @@
+use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
@@ -18,9 +19,10 @@ pub enum ModSource {
 }
 
 /// Modulation destination selector for modulation matrix routes.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default, TryFromPrimitive)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
 #[serde(rename_all = "camelCase")]
+#[repr(u16)]
 pub enum ModDestination {
     #[default]
     Volume,

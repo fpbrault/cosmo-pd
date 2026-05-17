@@ -76,16 +76,12 @@ impl CompiledLinePlan {
 /// Stable metadata for one primary or secondary line algorithm slot.
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct CompiledAlgoSlot {
-    #[allow(dead_code)]
-    pub original_algo: Algo,
     pub resolved_static_algo: Algo,
     pub cz_even_algo: Option<Algo>,
     pub cz_odd_algo: Option<Algo>,
     pub window: WindowType,
     pub base_waveform: BaseWaveform,
     pub control_values: [f32; 8],
-    #[allow(dead_code)]
-    pub is_karpunk_candidate: bool,
 }
 
 impl CompiledAlgoSlot {
@@ -101,26 +97,22 @@ impl CompiledAlgoSlot {
             let even = Algo::from_cz_waveform(resolved.waveform1);
             let odd = Algo::from_cz_waveform(resolved.waveform2);
             return Self {
-                original_algo: algo,
                 resolved_static_algo: even,
                 cz_even_algo: Some(even),
                 cz_odd_algo: Some(odd),
                 window: resolved.window_function,
                 base_waveform,
                 control_values,
-                is_karpunk_candidate: false,
             };
         }
 
         Self {
-            original_algo: algo,
             resolved_static_algo: algo,
             cz_even_algo: None,
             cz_odd_algo: None,
             window: fallback_window,
             base_waveform,
             control_values,
-            is_karpunk_candidate: algo == Algo::Karpunk,
         }
     }
 

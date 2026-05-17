@@ -1,8 +1,4 @@
-#![feature(test)]
-
-extern crate test;
-
-use test::{black_box, Bencher};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 #[allow(dead_code)]
 #[path = "../src/bin/render-bench.rs"]
@@ -10,65 +6,34 @@ mod render_bench;
 
 const BENCH_RENDER_SAMPLES: usize = 4_096;
 
-fn bench_case(bencher: &mut Bencher, scenario: &str, voices: usize) {
-    bencher.iter(|| {
-        let checksum = render_bench::benchmark_case(scenario, voices, BENCH_RENDER_SAMPLES)
-            .expect("benchmark case should run");
-        black_box(checksum);
-    });
-}
+const SCENARIOS: &[(&str, &[usize])] = &[
+    ("default", &[3, 6, 8]),
+    ("fun-bass-like", &[3, 6, 8]),
+    ("chants-like", &[3, 6, 8]),
+    ("chops-like", &[3, 6, 8]),
+    ("mod-heavy", &[3, 6, 8]),
+    ("fx-heavy", &[3, 6, 8]),
+    ("worst-poly", &[3, 6, 8]),
+    ("opt-sine-lfo-heavy", &[3, 6, 8]),
+    ("opt-param-interp-light", &[3, 6, 8]),
+    ("opt-render-vectorization", &[3, 6, 8]),
+    ("opt-all-combined", &[3, 6, 8]),
+];
 
-macro_rules! render_bench_case {
-    ($fn_name:ident, $scenario:literal, $voices:expr) => {
-        #[bench]
-        fn $fn_name(bencher: &mut Bencher) {
-            bench_case(bencher, $scenario, $voices);
+fn bench_all(c: &mut Criterion) {
+    for (scenario, voices) in SCENARIOS {
+        for voice_count in *voices {
+            c.bench_function(&format!("{}_{}_voices", scenario, voice_count), |b| {
+                b.iter(|| {
+                    let checksum =
+                        render_bench::benchmark_case(scenario, *voice_count, BENCH_RENDER_SAMPLES)
+                            .expect("benchmark case should run");
+                    black_box(checksum);
+                });
+            });
         }
-    };
+    }
 }
 
-render_bench_case!(default_3_voices, "default", 3);
-render_bench_case!(default_6_voices, "default", 6);
-render_bench_case!(default_8_voices, "default", 8);
-render_bench_case!(fun_bass_like_3_voices, "fun-bass-like", 3);
-render_bench_case!(fun_bass_like_6_voices, "fun-bass-like", 6);
-render_bench_case!(fun_bass_like_8_voices, "fun-bass-like", 8);
-render_bench_case!(chants_like_3_voices, "chants-like", 3);
-render_bench_case!(chants_like_6_voices, "chants-like", 6);
-render_bench_case!(chants_like_8_voices, "chants-like", 8);
-render_bench_case!(chops_like_3_voices, "chops-like", 3);
-render_bench_case!(chops_like_6_voices, "chops-like", 6);
-render_bench_case!(chops_like_8_voices, "chops-like", 8);
-render_bench_case!(mod_heavy_3_voices, "mod-heavy", 3);
-render_bench_case!(mod_heavy_6_voices, "mod-heavy", 6);
-render_bench_case!(mod_heavy_8_voices, "mod-heavy", 8);
-render_bench_case!(fx_heavy_3_voices, "fx-heavy", 3);
-render_bench_case!(fx_heavy_6_voices, "fx-heavy", 6);
-render_bench_case!(fx_heavy_8_voices, "fx-heavy", 8);
-render_bench_case!(worst_poly_3_voices, "worst-poly", 3);
-render_bench_case!(worst_poly_6_voices, "worst-poly", 6);
-render_bench_case!(worst_poly_8_voices, "worst-poly", 8);
-render_bench_case!(opt_sine_lfo_heavy_3_voices, "opt-sine-lfo-heavy", 3);
-render_bench_case!(opt_sine_lfo_heavy_6_voices, "opt-sine-lfo-heavy", 6);
-render_bench_case!(opt_sine_lfo_heavy_8_voices, "opt-sine-lfo-heavy", 8);
-render_bench_case!(opt_param_interp_light_3_voices, "opt-param-interp-light", 3);
-render_bench_case!(opt_param_interp_light_6_voices, "opt-param-interp-light", 6);
-render_bench_case!(opt_param_interp_light_8_voices, "opt-param-interp-light", 8);
-render_bench_case!(
-    opt_render_vectorization_3_voices,
-    "opt-render-vectorization",
-    3
-);
-render_bench_case!(
-    opt_render_vectorization_6_voices,
-    "opt-render-vectorization",
-    6
-);
-render_bench_case!(
-    opt_render_vectorization_8_voices,
-    "opt-render-vectorization",
-    8
-);
-render_bench_case!(opt_all_combined_3_voices, "opt-all-combined", 3);
-render_bench_case!(opt_all_combined_6_voices, "opt-all-combined", 6);
-render_bench_case!(opt_all_combined_8_voices, "opt-all-combined", 8);
+criterion_group!(benches, bench_all);
+criterion_main!(benches);

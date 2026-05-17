@@ -186,7 +186,7 @@ impl Default for KarpunkState {
 }
 
 fn render_line(ks_state: &mut KarpunkState, config: LineRenderConfig) -> (f32, Option<f32>) {
-    let ks_raw = if requires_state_tick(config.primary_algo, config.secondary_algo) {
+    let karpunk_raw_sample = if requires_state_tick(config.primary_algo, config.secondary_algo) {
         Some(ks_state.advance(
             config.effective_freq,
             config.sample_rate,
@@ -210,7 +210,7 @@ fn render_line(ks_state: &mut KarpunkState, config: LineRenderConfig) -> (f32, O
             config.primary_base_waveform,
             &config.primary_control_values,
             config.algo_param_mods,
-            ks_raw,
+            karpunk_raw_sample,
             config.pm_post_mod,
         ) * config.primary_window_gain;
         let secondary = super::render_algo_sample(
@@ -220,7 +220,7 @@ fn render_line(ks_state: &mut KarpunkState, config: LineRenderConfig) -> (f32, O
             config.secondary_base_waveform,
             &config.secondary_control_values,
             config.algo_param_mods,
-            ks_raw,
+            karpunk_raw_sample,
             config.pm_post_mod,
         ) * config.secondary_window_gain;
         blend(config.primary_algo, primary, secondary, config.blend)
@@ -232,12 +232,15 @@ fn render_line(ks_state: &mut KarpunkState, config: LineRenderConfig) -> (f32, O
             config.primary_base_waveform,
             &config.primary_control_values,
             config.algo_param_mods,
-            ks_raw,
+            karpunk_raw_sample,
             config.pm_post_mod,
         ) * config.primary_window_gain
     };
 
-    (sample * config.final_dca * PER_LINE_HEADROOM, ks_raw)
+    (
+        sample * config.final_dca * PER_LINE_HEADROOM,
+        karpunk_raw_sample,
+    )
 }
 
 #[inline(always)]

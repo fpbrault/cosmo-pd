@@ -613,7 +613,7 @@ unsafe fn build_webview_from_ns_view(
             }
         })
         .with_devtools(inspector_enabled())
-        .with_url(&format!("{}://localhost/", WEBVIEW_SCHEME))
+        .with_url(format!("{}://localhost/", WEBVIEW_SCHEME))
         .build_as_child(&parent);
 
     match webview {

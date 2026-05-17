@@ -5,6 +5,7 @@
 //! - WebAssembly (AudioWorklet via wasm-bindgen, feature = "wasm")
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![deny(unsafe_code)]
 
 pub mod default_envelopes;
 pub mod dsp_utils;

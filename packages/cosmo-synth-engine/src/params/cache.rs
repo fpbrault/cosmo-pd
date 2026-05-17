@@ -42,7 +42,8 @@ impl ModMatrixCache {
                 self.active_destinations[self.active_destination_count] = idx;
                 self.active_destination_count += 1;
             }
-            if !self.has_env_step_routes && idx >= ENV_STEP_DEST_FIRST && idx <= ENV_STEP_DEST_LAST
+            if !self.has_env_step_routes
+                && (ENV_STEP_DEST_FIRST..=ENV_STEP_DEST_LAST).contains(&idx)
             {
                 self.has_env_step_routes = true;
             }

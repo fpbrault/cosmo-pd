@@ -47,7 +47,6 @@ impl CosmoProcessor {
         #[cfg(all(debug_assertions, feature = "std"))]
         {
             assert_no_alloc(|| self.process_with_denormal_guard(output));
-            return;
         }
 
         #[cfg(not(all(debug_assertions, feature = "std")))]
