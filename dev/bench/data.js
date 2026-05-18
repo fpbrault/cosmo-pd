@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779114583837,
+  "lastUpdate": 1779120037665,
   "repoUrl": "https://github.com/fpbrault/cosmo-pd",
   "entries": {
     "cosmo-synth-engine": [
@@ -9545,6 +9545,228 @@ window.BENCHMARK_DATA = {
             "name": "opt_all_combined_8_voices",
             "value": 11349038,
             "range": "± 479846",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "fpbrault@gmail.com",
+            "name": "Felix Perron-Brault",
+            "username": "fpbrault"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a24fa5c20a8ac23c53b3b9ba530f2b70ee78f3e0",
+          "message": "feat(synth): add 4 macro knobs with per-parameter modulation assignments (#199)\n\n* feat(synth): add 4 macro knobs with per-parameter modulation assignments\n\nAdds 4 Arturia-style macro knobs (macro1-4, 0-1 range) to the synth panel, positioned above the mini keyboard on the left side.\n\nEach macro knob supports N parameter assignments with per-depth control:\n- MacroAssignment model (macroIndex, destination ModDestination, depth, enabled)\n- Macro contributions computed in getModulatedValue() alongside existing modulation\n- MacroAssignEditor popover for managing assignments per macro\n- Preset serialization/deserialization via gatherState/applyPreset\n\nNo Rust/engine changes required — macros are purely frontend, values flow through existing snapshot pipeline.\n\n* refactor(synth): move macro knobs to engine ModSource, remove frontend assignment model\n\nMacro1-4 are now first-class ModSource variants in the Rust engine,\nso they route through the existing mod matrix. Removes the frontend\nMacroAssignment model and MacroAssignEditor. Macros are set via\ndedicated IPC/WASM calls following the modWheel/aftertouch pattern.\n\n* feat(synth): implement macro knob functionality and UI integration\n\n* fix build\n\n* feat(synth): enhance modulation routing and optimize ModMatrixCache\n\n* linting",
+          "timestamp": "2026-05-18T11:54:03-04:00",
+          "tree_id": "26920cc3e4d662bd127b57e2a65aef7030b975ba",
+          "url": "https://github.com/fpbrault/cosmo-pd/commit/a24fa5c20a8ac23c53b3b9ba530f2b70ee78f3e0"
+        },
+        "date": 1779120035615,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "default_3_voices",
+            "value": 2815314,
+            "range": "± 111163",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_6_voices",
+            "value": 4349670,
+            "range": "± 41671",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_8_voices",
+            "value": 5424305,
+            "range": "± 43170",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_3_voices",
+            "value": 2327318,
+            "range": "± 6973",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_6_voices",
+            "value": 2669472,
+            "range": "± 16242",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_8_voices",
+            "value": 2882323,
+            "range": "± 10672",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_3_voices",
+            "value": 8860777,
+            "range": "± 85958",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_6_voices",
+            "value": 11585877,
+            "range": "± 56360",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_8_voices",
+            "value": 13477197,
+            "range": "± 52656",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_3_voices",
+            "value": 11937460,
+            "range": "± 50973",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_6_voices",
+            "value": 16520537,
+            "range": "± 61744",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_8_voices",
+            "value": 18219497,
+            "range": "± 57827",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_3_voices",
+            "value": 7181267,
+            "range": "± 102328",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_6_voices",
+            "value": 9307684,
+            "range": "± 54025",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_8_voices",
+            "value": 10443915,
+            "range": "± 218040",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_3_voices",
+            "value": 4053706,
+            "range": "± 10045",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_6_voices",
+            "value": 5505683,
+            "range": "± 45757",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_8_voices",
+            "value": 6492831,
+            "range": "± 36498",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_3_voices",
+            "value": 12118082,
+            "range": "± 132246",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_6_voices",
+            "value": 13684504,
+            "range": "± 61644",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_8_voices",
+            "value": 13828026,
+            "range": "± 85233",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_3_voices",
+            "value": 6396969,
+            "range": "± 26395",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_6_voices",
+            "value": 8278894,
+            "range": "± 54434",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_8_voices",
+            "value": 9529941,
+            "range": "± 190148",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_3_voices",
+            "value": 3471129,
+            "range": "± 13154",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_6_voices",
+            "value": 5396292,
+            "range": "± 33149",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_8_voices",
+            "value": 6692431,
+            "range": "± 36218",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_3_voices",
+            "value": 3398006,
+            "range": "± 14344",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_6_voices",
+            "value": 5330620,
+            "range": "± 34037",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_8_voices",
+            "value": 6642046,
+            "range": "± 80214",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_3_voices",
+            "value": 7685129,
+            "range": "± 46235",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_6_voices",
+            "value": 10245725,
+            "range": "± 71448",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_8_voices",
+            "value": 11570531,
+            "range": "± 65609",
             "unit": "ns/iter"
           }
         ]
