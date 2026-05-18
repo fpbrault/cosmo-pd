@@ -28,8 +28,8 @@ use crate::CzPluginParams;
 #[cfg(target_os = "macos")]
 use crate::handle_ipc_invoke;
 use crate::{
-    append_log, PerformanceCountersHandle, ScopeBuffer, SharedRuntimeModSources,
-    SharedTransportSnapshot, UiInputQueue,
+    PerformanceCountersHandle, ScopeBuffer, SharedRuntimeModSources, SharedTransportSnapshot,
+    UiInputQueue, append_log,
 };
 use cosmo_synth_engine::params::SynthParams;
 

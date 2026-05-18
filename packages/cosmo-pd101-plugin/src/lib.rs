@@ -1057,7 +1057,7 @@ impl CzPlugin {
         let mut next_event = 0usize;
         let mut rendered = 0usize;
 
-        if events.len() > 0 {
+        if !events.is_empty() {
             append_log(&format!(
                 "process_events: num_events={} num_samples={}",
                 events.len(),
@@ -1090,11 +1090,10 @@ impl CzPlugin {
             }
         }
 
-        if rendered < num_samples {
-            if let Some(proc) = self.processor.as_mut() {
+        if rendered < num_samples
+            && let Some(proc) = self.processor.as_mut() {
                 proc.process(&mut self.mono_output[rendered..num_samples]);
             }
-        }
     }
 
     fn drain_ui_input_events(&mut self) {
@@ -1610,7 +1609,7 @@ mod tests {
     #[test]
     fn truce_driver_renders_with_transport_and_block_snapshots() {
         use std::time::Duration;
-        use truce_test::{assertions, driver, TransportSpec};
+        use truce_test::{TransportSpec, assertions, driver};
 
         let result = driver!(Plugin)
             .duration(Duration::from_millis(20))
