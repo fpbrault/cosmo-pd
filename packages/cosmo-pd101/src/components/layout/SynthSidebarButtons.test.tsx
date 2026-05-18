@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import SynthSidebarButtons from "./SynthSidebarButtons";
 
 const setMainPanelMode = vi.fn();
@@ -71,6 +72,11 @@ vi.mock("@/features/synth/synthStore", () => ({
 
 describe("SynthSidebarButtons", () => {
 	beforeEach(() => {
+		vi.mocked(useSynthUiStore).mockImplementation((selector) =>
+			selector({
+				setMainPanelMode,
+			} as never),
+		);
 		setMainPanelMode.mockReset();
 		setPolyMode.mockReset();
 		setPortamentoEnabled.mockReset();
@@ -105,8 +111,8 @@ describe("SynthSidebarButtons", () => {
 		fxSlotsValue[0] = { type: "chorus", params: { enabled: true } };
 		render(<SynthSidebarButtons globalOpen={false} onOpenGlobal={vi.fn()} />);
 		fireEvent.click(screen.getByRole("button", { name: "FX1 Chrs" }));
-		fireEvent.click(screen.getByRole("button", { name: "FX4 Vib" }));
-		fireEvent.click(screen.getByRole("button", { name: "FX5 PhMd" }));
+		fireEvent.click(screen.getByRole("button", { name: "FX4 —" }));
+		fireEvent.click(screen.getByRole("button", { name: "FX5 —" }));
 		expect(setFxSlotEnabled).toHaveBeenCalledWith(0, false);
 		expect(setFxSlotType).toHaveBeenCalledWith(3, "vibrato");
 		expect(setFxSlotType).toHaveBeenCalledWith(4, "phaseMod");
