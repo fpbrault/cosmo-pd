@@ -17,7 +17,7 @@ import {
 } from "@/features/synth/hooks/useAudioEngine";
 import { useSynthStore } from "@/features/synth/synthStore";
 import type { UseSynthStateResult } from "@/features/synth/useSynthState";
-import type { ModDestination } from "@/lib/synth/bindings/synth";
+import type { ModDestination, ModRoute } from "@/lib/synth/bindings/synth";
 import {
 	type ModTarget,
 	resolveModDestination,
@@ -92,6 +92,10 @@ const SYNTH_PARAM_SETTERS = {
 	modEnvDecay: "setModEnvDecay",
 	modEnvSustain: "setModEnvSustain",
 	modEnvRelease: "setModEnvRelease",
+	macro1: "setMacro1",
+	macro2: "setMacro2",
+	macro3: "setMacro3",
+	macro4: "setMacro4",
 } as const;
 
 export type SynthParamKey = keyof typeof SYNTH_PARAM_SETTERS;
@@ -150,6 +154,21 @@ export function SynthParamControllerProvider({
 	const liveVoiceStatesRef = useRef<LiveVoiceStates>(
 		EMPTY_RUNTIME_VOICE_STATES,
 	);
+	const routesByDestination = useMemo(() => {
+		const next = new Map<ModDestination, ModRoute[]>();
+		for (const route of modRoutes) {
+			if (!route.enabled) {
+				continue;
+			}
+			const routes = next.get(route.destination);
+			if (routes) {
+				routes.push(route);
+			} else {
+				next.set(route.destination, [route]);
+			}
+		}
+		return next;
+	}, [modRoutes]);
 
 	useEffect(() => {
 		liveSourcesRef.current = liveSources;
@@ -193,6 +212,10 @@ export function SynthParamControllerProvider({
 				velocity: Number.isFinite(detail.velocity) ? detail.velocity : 0,
 				modWheel: Number.isFinite(detail.modWheel) ? detail.modWheel : 0,
 				aftertouch: Number.isFinite(detail.aftertouch) ? detail.aftertouch : 0,
+				macro1: Number.isFinite(detail.macro1) ? detail.macro1 : 0,
+				macro2: Number.isFinite(detail.macro2) ? detail.macro2 : 0,
+				macro3: Number.isFinite(detail.macro3) ? detail.macro3 : 0,
+				macro4: Number.isFinite(detail.macro4) ? detail.macro4 : 0,
 			});
 		};
 
@@ -240,11 +263,9 @@ export function SynthParamControllerProvider({
 			if (!destination) {
 				return 0;
 			}
-			return modRoutes.filter(
-				(route) => route.enabled && route.destination === destination,
-			).length;
+			return routesByDestination.get(destination)?.length ?? 0;
 		},
-		[modRoutes],
+		[routesByDestination],
 	);
 
 	const hasActiveRoutes = useCallback(
@@ -272,25 +293,28 @@ export function SynthParamControllerProvider({
 				return undefined;
 			}
 
-			const activeRoutes = modRoutes.filter(
-				(route) => route.enabled && route.destination === destination,
-			);
-			if (activeRoutes.length === 0) {
-				return undefined;
+			let liveModDelta = 0;
+			let hasAnyModulation = false;
+
+			const activeRoutes = routesByDestination.get(destination) ?? [];
+			if (activeRoutes.length > 0) {
+				const runtimeSources = liveSourcesRef.current;
+				for (const route of activeRoutes) {
+					const sourceValue = runtimeSources[route.source] ?? 0;
+					liveModDelta += route.amount * sourceValue;
+				}
+				hasAnyModulation = true;
 			}
 
-			const runtimeSources = liveSourcesRef.current;
-			let liveModDelta = 0;
-			for (const route of activeRoutes) {
-				const sourceValue = runtimeSources[route.source] ?? 0;
-				liveModDelta += route.amount * sourceValue;
+			if (!hasAnyModulation) {
+				return undefined;
 			}
 
 			const clampedLiveModDelta = Math.max(-2, Math.min(2, liveModDelta));
 			const visualModScale = destination.includes("EnvStep") ? 127 : 1;
 			return baseValue + clampedLiveModDelta * visualModScale;
 		},
-		[modRoutes],
+		[routesByDestination],
 	);
 
 	const getLiveSources = useCallback(() => liveSourcesRef.current, []);

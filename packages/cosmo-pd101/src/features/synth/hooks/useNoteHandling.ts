@@ -26,6 +26,7 @@ export type NoteHandlingApi = {
 	sendPitchBend: (value: number) => void;
 	sendModWheel: (value: number) => void;
 	sendAftertouch: (value: number) => void;
+	sendMacro: (index: number, value: number) => void;
 };
 
 export function useNoteHandling({
@@ -129,12 +130,37 @@ export function useNoteHandling({
 		[dispatchEngineEvent, emitModSourceValue],
 	);
 
+	const sendMacro = useCallback(
+		(index: number, value: number) => {
+			dispatchEngineEvent("macroValue", { index, value });
+			const sourceName = `macro${index + 1}` as ModSource;
+			emitModSourceValue(sourceName, value);
+		},
+		[dispatchEngineEvent, emitModSourceValue],
+	);
+
 	const panic = useCallback(() => {
 		activeNotesRef.current.clear();
 		sustainedButReleasedRef.current.clear();
 		sustainRef.current = false;
 		setActiveNotes([]);
 		dispatchEngineEvent("panic", {});
+	}, [dispatchEngineEvent]);
+
+	// Listen for macro value changes from MacroKnobsPanel
+	useEffect(() => {
+		const handler = (e: Event) => {
+			const detail = (e as CustomEvent<{ index: number; value: number }>)
+				.detail;
+			if (detail && typeof detail.index === "number") {
+				dispatchEngineEvent("macroValue", {
+					index: detail.index,
+					value: detail.value,
+				});
+			}
+		};
+		window.addEventListener("cz-macro-value", handler);
+		return () => window.removeEventListener("cz-macro-value", handler);
 	}, [dispatchEngineEvent]);
 
 	// Keyboard input
@@ -329,5 +355,6 @@ export function useNoteHandling({
 		sendPitchBend,
 		sendModWheel,
 		sendAftertouch,
+		sendMacro,
 	};
 }

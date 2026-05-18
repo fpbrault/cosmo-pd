@@ -8,7 +8,7 @@ pub(crate) struct ModMatrixCache {
     pub ref_mod_env: f32,
     pub ref_velocity: f32,
     pub has_env_step_routes: bool,
-    amounts_by_source: [[f32; NUM_MOD_DESTINATIONS]; 7],
+    amounts_by_source: [[f32; NUM_MOD_DESTINATIONS]; 11],
     active_destinations: [usize; NUM_MOD_DESTINATIONS],
     active_destination_count: usize,
     per_voice_mod_env_amounts: [f32; NUM_MOD_DESTINATIONS],
@@ -21,6 +21,7 @@ impl ModMatrixCache {
     }
 
     pub fn rebuild_routes(&mut self, matrix: &ModMatrix) {
+        self.values.fill(0.0);
         for source_amounts in &mut self.amounts_by_source {
             source_amounts.fill(0.0);
         }
@@ -59,26 +60,26 @@ impl ModMatrixCache {
     }
 
     pub fn compute(&mut self, sources: &ModSources) {
-        self.values.fill(0.0);
-
         for idx in self.active_destinations[..self.active_destination_count]
             .iter()
             .copied()
         {
-            self.values[idx] = self.amounts_by_source[source_index(ModSource::Lfo1)][idx]
+            self.values[idx] = (self.amounts_by_source[source_index(ModSource::Lfo1)][idx]
                 * sources.lfo1
                 + self.amounts_by_source[source_index(ModSource::Lfo2)][idx] * sources.lfo2
                 + self.amounts_by_source[source_index(ModSource::Random)][idx] * sources.random
                 + self.amounts_by_source[source_index(ModSource::ModEnv)][idx] * sources.mod_env
-                + self.amounts_by_source[source_index(ModSource::Velocity)][idx] * sources.velocity
+                + self.amounts_by_source[source_index(ModSource::Velocity)][idx]
+                    * sources.velocity
                 + self.amounts_by_source[source_index(ModSource::ModWheel)][idx]
                     * sources.mod_wheel
                 + self.amounts_by_source[source_index(ModSource::Aftertouch)][idx]
-                    * sources.aftertouch;
-        }
-
-        for v in &mut self.values {
-            *v = v.clamp(-1.0, 1.0);
+                    * sources.aftertouch
+                + self.amounts_by_source[source_index(ModSource::Macro1)][idx] * sources.macro1
+                + self.amounts_by_source[source_index(ModSource::Macro2)][idx] * sources.macro2
+                + self.amounts_by_source[source_index(ModSource::Macro3)][idx] * sources.macro3
+                + self.amounts_by_source[source_index(ModSource::Macro4)][idx] * sources.macro4)
+                .clamp(-1.0, 1.0);
         }
 
         self.ref_mod_env = sources.mod_env;
@@ -109,7 +110,7 @@ impl Default for ModMatrixCache {
             ref_mod_env: 0.0,
             ref_velocity: 0.0,
             has_env_step_routes: false,
-            amounts_by_source: [[0.0; NUM_MOD_DESTINATIONS]; 7],
+            amounts_by_source: [[0.0; NUM_MOD_DESTINATIONS]; 11],
             active_destinations: [0; NUM_MOD_DESTINATIONS],
             active_destination_count: 0,
             per_voice_mod_env_amounts: [0.0; NUM_MOD_DESTINATIONS],
@@ -128,5 +129,9 @@ fn source_index(source: ModSource) -> usize {
         ModSource::Velocity => 4,
         ModSource::ModWheel => 5,
         ModSource::Aftertouch => 6,
+        ModSource::Macro1 => 7,
+        ModSource::Macro2 => 8,
+        ModSource::Macro3 => 9,
+        ModSource::Macro4 => 10,
     }
 }

@@ -97,6 +97,14 @@ pub struct SynthParams {
     pub mod_env: ModEnvParams,
     #[serde(default = "default_fx_slot_configs")]
     pub fx_slots: [FxSlotConfig; 6],
+    #[serde(default)]
+    pub macro1: f32,
+    #[serde(default)]
+    pub macro2: f32,
+    #[serde(default)]
+    pub macro3: f32,
+    #[serde(default)]
+    pub macro4: f32,
 }
 
 impl SynthParams {
@@ -145,6 +153,10 @@ impl Default for SynthParams {
             random: RandomParams::default(),
             mod_env: ModEnvParams::default(),
             fx_slots: default_fx_slot_configs(),
+            macro1: 0.0,
+            macro2: 0.0,
+            macro3: 0.0,
+            macro4: 0.0,
         }
     }
 }

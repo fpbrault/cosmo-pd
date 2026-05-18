@@ -188,7 +188,7 @@ export type AlgoUiEntryV1 = { id: Algo; label: string; iconPath: string; visible
 /**
  * Modulation source selector for modulation matrix routes.
  */
-export type ModSource = "lfo1" | "lfo2" | "random" | "modEnv" | "velocity" | "modWheel" | "aftertouch"
+export type ModSource = "lfo1" | "lfo2" | "random" | "modEnv" | "velocity" | "modWheel" | "aftertouch" | "macro1" | "macro2" | "macro3" | "macro4"
 
 /**
  * Modulation destination selector for modulation matrix routes.
@@ -273,7 +273,7 @@ export type FxSlotConfig = { type: "empty" } | { type: "chorus"; params: ChorusP
 /**
  * Top-level synth parameters
  */
-export type SynthParams = { lineSelect: LineSelect; modMode: ModMode; ringGain?: number; octave: number; line1: LineParams; line2: LineParams; frequency: number; tempoBpm?: number; volume: number; czDacEnabled?: boolean; polyMode: PolyMode; legato: boolean; portamento: PortamentoParams; lfo: LfoParams; lfo2?: LfoParams; velocityCurve?: number; pitchBendRange?: number; modMatrix?: ModMatrix; random?: RandomParams; modEnv?: ModEnvParams; fxSlots?: [FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig] }
+export type SynthParams = { lineSelect: LineSelect; modMode: ModMode; ringGain?: number; octave: number; line1: LineParams; line2: LineParams; frequency: number; tempoBpm?: number; volume: number; czDacEnabled?: boolean; polyMode: PolyMode; legato: boolean; portamento: PortamentoParams; lfo: LfoParams; lfo2?: LfoParams; velocityCurve?: number; pitchBendRange?: number; modMatrix?: ModMatrix; random?: RandomParams; modEnv?: ModEnvParams; fxSlots?: [FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig]; macro1?: number; macro2?: number; macro3?: number; macro4?: number }
 
 /**
  * Canonical, versioned synth preset wire contract.

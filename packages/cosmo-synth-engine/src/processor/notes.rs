@@ -71,7 +71,6 @@ impl CosmoProcessor {
             voice.vibrato_delay_counter = (delay_ms * self.sample_rate / 1000.0).round() as u32;
         }
     }
-
     pub(crate) fn configure_voice_pitch(&mut self, voice_idx: usize, note: u8, frequency: f32) {
         let voice = &mut self.voices[voice_idx];
         voice.note = Some(note);

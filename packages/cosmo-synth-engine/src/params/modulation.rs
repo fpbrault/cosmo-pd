@@ -16,6 +16,10 @@ pub enum ModSource {
     Velocity,
     ModWheel,
     Aftertouch,
+    Macro1,
+    Macro2,
+    Macro3,
+    Macro4,
 }
 
 /// Modulation destination selector for modulation matrix routes.

@@ -17,9 +17,14 @@ pub(crate) struct ModSources {
     pub mod_wheel: f32,
     /// Aftertouch — stub, always 0.0 this phase.
     pub aftertouch: f32,
+    pub macro1: f32,
+    pub macro2: f32,
+    pub macro3: f32,
+    pub macro4: f32,
 }
 
 impl ModSources {
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
         lfo1: f32,
         lfo2: f32,
@@ -28,6 +33,10 @@ impl ModSources {
         velocity: f32,
         mod_wheel: f32,
         aftertouch: f32,
+        macro1: f32,
+        macro2: f32,
+        macro3: f32,
+        macro4: f32,
     ) -> Self {
         Self {
             lfo1,
@@ -37,6 +46,10 @@ impl ModSources {
             velocity,
             mod_wheel,
             aftertouch,
+            macro1,
+            macro2,
+            macro3,
+            macro4,
         }
     }
 }

@@ -170,6 +170,14 @@ let wasm_bindgen = (function(exports) {
             return ret !== 0;
         }
         /**
+         * Set a macro knob value. `index` is 0–3, `value` is normalised [0.0, 1.0].
+         * @param {number} index
+         * @param {number} value
+         */
+        setMacro(index, value) {
+            wasm.czsynthprocessor_setMacro(this.__wbg_ptr, index, value);
+        }
+        /**
          * Set mod wheel value. `value` is normalised [0.0, 1.0] (CC1 / 127).
          * @param {number} value
          */
