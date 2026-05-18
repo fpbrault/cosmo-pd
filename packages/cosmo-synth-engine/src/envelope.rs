@@ -453,27 +453,27 @@ mod tests {
         };
 
         let timing = EnvelopeTimingCache::new(48_000.0);
-        let mut gen = EnvGen {
+        let mut r#gen = EnvGen {
             prev_level: 0.7,
             output: 0.7,
             step: 1, // at sustain
             ..Default::default()
         };
 
-        gen.start_release(&env);
+        r#gen.start_release(&env);
 
         // Consume release step 2 completely so generator transitions to step 3.
         // We don't need exact sample count, just enough to guarantee transition.
         for _ in 0..8192 {
-            gen.advance(EnvelopeKind::Dca, &env, &timing, 0.0, 60);
-            if gen.step >= 3 {
+            r#gen.advance(EnvelopeKind::Dca, &env, &timing, 0.0, 60);
+            if r#gen.step >= 3 {
                 break;
             }
         }
 
-        assert_eq!(gen.step, 3);
+        assert_eq!(r#gen.step, 3);
         // On entering the final step, output must still be above zero and then
         // decay using the final step's rate, not jump immediately to 0.
-        assert!(gen.output > 0.0);
+        assert!(r#gen.output > 0.0);
     }
 }

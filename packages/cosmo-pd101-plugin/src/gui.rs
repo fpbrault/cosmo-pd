@@ -547,9 +547,9 @@ struct StandaloneWindow {
 #[cfg(target_os = "macos")]
 fn terminate_delegate_class() -> &'static objc::runtime::Class {
     use objc::{class, declare::ClassDecl, msg_send, sel, sel_impl};
-    static INIT: std::sync::Once = std::sync::Once::new();
-    static mut CLASS: Option<&'static objc::runtime::Class> = None;
-    INIT.call_once(|| {
+    static CLASS: std::sync::OnceLock<&'static objc::runtime::Class> =
+        std::sync::OnceLock::new();
+    CLASS.get_or_init(|| {
         let mut decl = ClassDecl::new("StandaloneWindowCloseDelegate", class!(NSObject))
             .expect("failed to create delegate class");
         extern "C" fn window_should_close(
@@ -575,10 +575,10 @@ fn terminate_delegate_class() -> &'static objc::runtime::Class {
                         *mut objc::runtime::Object,
                     ) -> objc::runtime::BOOL,
             );
-            CLASS = Some(decl.register());
+            decl.register()
         }
     });
-    unsafe { CLASS.unwrap() }
+    *CLASS.get().unwrap()
 }
 
 #[cfg(target_os = "macos")]
@@ -726,7 +726,7 @@ unsafe fn build_webview_from_ns_view(
     params: Arc<CzPluginParams>,
     runtime_mod_sources: SharedRuntimeModSources,
     webview_state: Arc<Mutex<WebViewContainer>>,
-) -> (Option<wry::WebView>, Option<StandaloneWindow>) {
+) -> (Option<wry::WebView>, Option<StandaloneWindow>) { unsafe {
     use core::ptr::NonNull;
     use rwh_06::{
         AppKitDisplayHandle, AppKitWindowHandle, DisplayHandle, HandleError, HasDisplayHandle,
@@ -878,7 +878,7 @@ unsafe fn build_webview_from_ns_view(
         append_log("parent NSView has no window — deferring WebView creation (idle() will retry)");
         (None, None)
     }
-}
+}}
 
 // ─── Protocol file server ────────────────────────────────────────────────────
 
@@ -1069,7 +1069,7 @@ fn binary_path() -> Option<std::path::PathBuf> {
             dli_saddr: *mut libc::c_void,
         }
 
-        extern "C" {
+        unsafe extern "C" {
             fn dladdr(addr: *const libc::c_void, info: *mut DlInfo) -> libc::c_int;
         }
 

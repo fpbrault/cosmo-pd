@@ -80,7 +80,7 @@ pub trait SimdType: Sized + Copy {
 }
 
 macro_rules! simd_dispatch {
-    ($self:ident, $scalar:expr, $sse2:expr, $avx2:expr, $wasm:expr) => {
+    ($self:ident, $scalar:expr_2021, $sse2:expr_2021, $avx2:expr_2021, $wasm:expr_2021) => {
         match $self {
             SimdBackend::Scalar => $scalar,
             SimdBackend::Sse2 => {
