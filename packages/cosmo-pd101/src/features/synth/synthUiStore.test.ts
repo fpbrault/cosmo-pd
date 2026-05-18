@@ -9,7 +9,6 @@ describe("synthUiStore", () => {
 		localStorage.clear();
 		useSynthUiStore.persist.clearStorage();
 		useSynthUiStore.setState({
-			activeAsidePanel: "global",
 			mainPanelMode: "phase",
 			phaseLinePanelTab: "line1-algos",
 			activeEnvTab: "dcw",
@@ -18,7 +17,6 @@ describe("synthUiStore", () => {
 	});
 
 	it("persists the current synth UI state", async () => {
-		useSynthUiStore.getState().setActiveAsidePanel("reverb");
 		useSynthUiStore.getState().setMainPanelMode("fx");
 		useSynthUiStore.getState().setPhaseLinePanelTab("line2-envelopes");
 		useSynthUiStore.getState().setActiveEnvTab("dca");
@@ -26,7 +24,6 @@ describe("synthUiStore", () => {
 		const savedState = localStorage.getItem(SYNTH_UI_STATE_STORAGE_KEY);
 
 		useSynthUiStore.setState({
-			activeAsidePanel: "global",
 			mainPanelMode: "phase",
 			phaseLinePanelTab: "line1-algos",
 			activeEnvTab: "dcw",
@@ -38,7 +35,6 @@ describe("synthUiStore", () => {
 		await useSynthUiStore.persist.rehydrate();
 
 		expect(useSynthUiStore.getState()).toMatchObject({
-			activeAsidePanel: "reverb",
 			mainPanelMode: "fx",
 			phaseLinePanelTab: "line2-envelopes",
 			activeEnvTab: "dca",
@@ -51,7 +47,6 @@ describe("synthUiStore", () => {
 			SYNTH_UI_STATE_STORAGE_KEY,
 			JSON.stringify({
 				state: {
-					activeAsidePanel: "missing",
 					mainPanelMode: "drawer",
 					phaseLinePanelTab: "line3-algos",
 					activeEnvTab: "pitch",
@@ -64,43 +59,10 @@ describe("synthUiStore", () => {
 		await useSynthUiStore.persist.rehydrate();
 
 		expect(useSynthUiStore.getState()).toMatchObject({
-			activeAsidePanel: "global",
 			mainPanelMode: "phase",
 			phaseLinePanelTab: "line1-algos",
 			activeEnvTab: "dcw",
 			keyboardVisible: true,
 		});
-	});
-
-	it("falls back to global when persisted side panel was portamento", async () => {
-		localStorage.setItem(
-			SYNTH_UI_STATE_STORAGE_KEY,
-			JSON.stringify({
-				state: {
-					activeAsidePanel: "portamento",
-				},
-				version: 0,
-			}),
-		);
-
-		await useSynthUiStore.persist.rehydrate();
-
-		expect(useSynthUiStore.getState().activeAsidePanel).toBe("global");
-	});
-
-	it("falls back to global when persisted side panel was filter", async () => {
-		localStorage.setItem(
-			SYNTH_UI_STATE_STORAGE_KEY,
-			JSON.stringify({
-				state: {
-					activeAsidePanel: "filter",
-				},
-				version: 0,
-			}),
-		);
-
-		await useSynthUiStore.persist.rehydrate();
-
-		expect(useSynthUiStore.getState().activeAsidePanel).toBe("global");
 	});
 });

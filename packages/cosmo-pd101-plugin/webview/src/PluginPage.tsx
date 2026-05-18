@@ -6,7 +6,6 @@ import {
 	useNoteHandling,
 	useSynthPresetManager,
 	useSynthStore,
-	useSynthUiStore,
 } from "@cosmo/cosmo-pd101";
 import {
 	type CSSProperties,
@@ -84,8 +83,6 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	const [scopeActiveHz, setScopeActiveHz] = useState(220);
 	const analyserNodeRef = useRef<AnalyserNode | null>(null);
 	const audioCtxRef = useRef<AudioContext | null>(null);
-	const activeAsidePanel = useSynthUiStore((s) => s.activeAsidePanel);
-	const setActiveAsidePanel = useSynthUiStore((s) => s.setActiveAsidePanel);
 	const sendNativeEngineEvent = useCallback(
 		(type: string, payload: Record<string, unknown>) => {
 			window.ipc?.postMessage(
@@ -344,8 +341,6 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 						analyserNodeRef={analyserNodeRef}
 						audioCtxRef={audioCtxRef}
 						subscribeScopeFrames={subscribeScopeFrames}
-						activeAsidePanel={activeAsidePanel}
-						onAsidePanelChange={setActiveAsidePanel}
 						miniKeyboard={{
 							activeNotes,
 							onNoteOn: sendNoteOn,

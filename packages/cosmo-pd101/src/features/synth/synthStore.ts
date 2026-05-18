@@ -391,7 +391,7 @@ const DEFAULT_STATE: SynthState = {
 	macro2: 0,
 	macro3: 0,
 	macro4: 0,
-	macroLabels: ["Macro 1", "Macro 2", "Macro 3", "Macro 4"],
+	macroLabels: ["MACRO 1", "MACRO 2", "MACRO 3", "MACRO 4"],
 };
 
 // ---------------------------------------------------------------------------
@@ -543,10 +543,9 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setMacro4: (v) => set({ macro4: v }),
 	setMacroLabel: (index, label) =>
 		set((s) => {
-			if (index < 0 || index > 3) return {};
-			const next = [...s.macroLabels] as [string, string, string, string];
-			next[index] = label.trim().slice(0, 18) || `Macro ${index + 1}`;
-			return { macroLabels: next };
+			const labels = [...s.macroLabels] as [string, string, string, string];
+			labels[index] = label;
+			return { macroLabels: labels };
 		}),
 
 	// --- gatherState ---
@@ -841,21 +840,12 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			macro2: safe((p as Record<string, unknown>).macro2 as number, 0),
 			macro3: safe((p as Record<string, unknown>).macro3 as number, 0),
 			macro4: safe((p as Record<string, unknown>).macro4 as number, 0),
-			macroLabels: (() => {
-				const fallback: [string, string, string, string] = [
-					"Macro 1",
-					"Macro 2",
-					"Macro 3",
-					"Macro 4",
-				];
-				const raw = (p as Record<string, unknown>).macroLabels;
-				if (!Array.isArray(raw) || raw.length !== 4) return fallback;
-				return raw.map((entry, index) =>
-					typeof entry === "string" && entry.trim().length > 0
-						? entry.trim().slice(0, 18)
-						: fallback[index],
-				) as [string, string, string, string];
-			})(),
+			macroLabels: ((p as Record<string, unknown>).macroLabels as [
+				string,
+				string,
+				string,
+				string,
+			]) ?? ["MACRO 1", "MACRO 2", "MACRO 3", "MACRO 4"],
 		});
 	},
 }));
