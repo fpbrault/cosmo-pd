@@ -377,8 +377,8 @@ jobs:
             target/perf/engine/engine-compare.md
             target/perf/engine/pr-comment.md
 
-  build-and-validate-plugins:
-    name: Build and validate plugins (${{ matrix.platform }})
+  build-plugins:
+    name: Build plugins (${{ matrix.platform }})
     strategy:
       fail-fast: false
       matrix:
@@ -398,43 +398,25 @@ jobs:
         with:
           buildCmd: ${{ matrix.build_cmd }}
 
-      - name: Install pluginval (macOS)
-        if: matrix.platform == 'macos'
-        run: |
-          curl -fsSL -o /tmp/pluginval.zip \
-            https://github.com/Tracktion/pluginval/releases/download/v1.0.4/pluginval_macOS.zip
-          unzip -oq /tmp/pluginval.zip -d /tmp/pluginval
-          mkdir -p ~/.local/bin
-          cp /tmp/pluginval/pluginval.app/Contents/MacOS/pluginval ~/.local/bin/pluginval
-          chmod +x ~/.local/bin/pluginval
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+  validate-plugins:
+    name: Validate plugins (${{ matrix.platform }})
+    needs: build-plugins
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: macos
+          - os: windows-latest
+            platform: windows
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
 
-      - name: Install pluginval (Windows)
-        if: matrix.platform == 'windows'
-        shell: pwsh
-        run: |
-          $url = "https://github.com/Tracktion/pluginval/releases/download/v1.0.4/pluginval_Windows.zip"
-          Invoke-WebRequest -Uri $url -OutFile "$env:TEMP\pluginval.zip"
-          $binDir = "$env:USERPROFILE\.local\bin"
-          New-Item -ItemType Directory -Force -Path $binDir | Out-Null
-          Expand-Archive -Path "$env:TEMP\pluginval.zip" -DestinationPath $binDir -Force
-          "$binDir" | Out-File -FilePath $env:GITHUB_PATH -Append
-
-      - name: Install plugin for validation (macOS)
-        if: matrix.platform == 'macos'
-        run: cargo truce install --user --no-build --vst3 --au2 -p cosmo-pd101-plugin
-
-      - name: Install plugin for validation (Windows)
-        if: matrix.platform == 'windows'
-        run: cargo truce install --user --no-build --vst3 -p cosmo-pd101-plugin
-
-      - name: Validate plugins (macOS)
-        if: matrix.platform == 'macos'
-        run: cargo truce validate --pluginval --auval -p cosmo-pd101-plugin
-
-      - name: Validate plugins (Windows)
-        if: matrix.platform == 'windows'
-        run: cargo truce validate --pluginval -p cosmo-pd101-plugin
+      - name: Run plugin validation action
+        uses: ./.github/actions/validate-plugins
+        with:
+          pluginCrate: cosmo-pd101-plugin
 
   build-desktop:
     name: Build desktop app (${{ matrix.os }})
@@ -459,7 +441,8 @@ jobs:
         browser-tests,
         plugin-webview-unit-tests,
         plugin-webview-e2e-tests,
-        build-and-validate-plugins,
+        build-plugins,
+        validate-plugins,
       ]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
