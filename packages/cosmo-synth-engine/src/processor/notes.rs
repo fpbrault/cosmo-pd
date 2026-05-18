@@ -275,6 +275,16 @@ impl CosmoProcessor {
     }
 
     fn handle_mono_note_on(&mut self, note: u8, frequency: f32, velocity: f32) {
+        if let Some(entry) = self.active_notes.iter().find(|e| e.note == note) {
+            if self.voices[entry.voice_idx].note == Some(note) {
+                let voice = &mut self.voices[entry.voice_idx];
+                voice.frequency = frequency;
+                voice.target_freq = frequency;
+                voice.velocity = velocity;
+                return;
+            }
+        }
+
         if self.params.portamento.enabled
             && self.try_handle_mono_note_change_no_retrigger(note, frequency, velocity)
         {
