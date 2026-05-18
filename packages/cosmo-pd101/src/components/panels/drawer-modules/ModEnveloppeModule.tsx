@@ -4,6 +4,7 @@ import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
+import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import { MOD_ENV_PRESETS } from "@/lib/synth/modulePresets";
 import { PARAM_META } from "@/lib/synth/paramMeta";
@@ -225,6 +226,21 @@ export default function ModEnveloppeModule() {
 	const attackNorm = envSecondsToNorm(modEnvAttack as number);
 	const decayNorm = envSecondsToNorm(modEnvDecay as number);
 	const releaseNorm = envSecondsToNorm(modEnvRelease as number);
+	const attackMidiLearn = useMidiLearnTarget({
+		targetKey: "modEnvAttackKnob",
+		label: "Mod Env Attack",
+		apply: (rawValue) => setModEnvAttack(normToEnvSeconds(rawValue / 127)),
+	});
+	const decayMidiLearn = useMidiLearnTarget({
+		targetKey: "modEnvDecayKnob",
+		label: "Mod Env Decay",
+		apply: (rawValue) => setModEnvDecay(normToEnvSeconds(rawValue / 127)),
+	});
+	const releaseMidiLearn = useMidiLearnTarget({
+		targetKey: "modEnvReleaseKnob",
+		label: "Mod Env Release",
+		apply: (rawValue) => setModEnvRelease(normToEnvSeconds(rawValue / 127)),
+	});
 
 	useEffect(() => {
 		const onRuntimeModSources = (event: Event) => {
@@ -457,6 +473,10 @@ export default function ModEnveloppeModule() {
 				label="Atk"
 				tooltip={PARAM_META.modEnvAttack?.tooltip}
 				valueFormatter={(nextNorm) => formatEnvTime(normToEnvSeconds(nextNorm))}
+				onClick={attackMidiLearn.onClick}
+				onContextMenu={attackMidiLearn.onContextMenu}
+				interactionLocked={attackMidiLearn.interactionLocked}
+				midiLearnState={attackMidiLearn.midiLearnState}
 			/>
 			<ControlKnob
 				value={decayNorm}
@@ -468,6 +488,10 @@ export default function ModEnveloppeModule() {
 				label="Dec"
 				tooltip={PARAM_META.modEnvDecay?.tooltip}
 				valueFormatter={(nextNorm) => formatEnvTime(normToEnvSeconds(nextNorm))}
+				onClick={decayMidiLearn.onClick}
+				onContextMenu={decayMidiLearn.onContextMenu}
+				interactionLocked={decayMidiLearn.interactionLocked}
+				midiLearnState={decayMidiLearn.midiLearnState}
 			/>
 			<SynthParamKnob
 				paramKey="modEnvSustain"
@@ -487,6 +511,10 @@ export default function ModEnveloppeModule() {
 				label="Rel"
 				tooltip={PARAM_META.modEnvRelease?.tooltip}
 				valueFormatter={(nextNorm) => formatEnvTime(normToEnvSeconds(nextNorm))}
+				onClick={releaseMidiLearn.onClick}
+				onContextMenu={releaseMidiLearn.onContextMenu}
+				interactionLocked={releaseMidiLearn.interactionLocked}
+				midiLearnState={releaseMidiLearn.midiLearnState}
 			/>
 		</ModuleFrame>
 	);

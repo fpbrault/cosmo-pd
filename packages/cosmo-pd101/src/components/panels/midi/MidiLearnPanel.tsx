@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Button from "@/components/controls/Button";
 import type { AsidePanelComponent } from "@/components/layout/AsidePanelSwitcher";
 import SynthPanelContainer from "@/components/layout/SynthPanelContainer";
+import { getMidiLearnTargetLabel } from "@/features/synth/midiLearnRegistry";
 import { useMidiLearnStore } from "@/features/synth/midiLearnStore";
 
 function clampChannelDisplay(value: number): number {
@@ -13,6 +14,11 @@ function clampCc(value: number): number {
 }
 
 function formatControlLabel(paramKey: string): string {
+	const registeredLabel = getMidiLearnTargetLabel(paramKey);
+	if (registeredLabel) {
+		return registeredLabel;
+	}
+
 	return paramKey
 		.replace(/([a-z0-9])([A-Z])/g, "$1 $2")
 		.replace(/(\D)(\d)/g, "$1 $2")
@@ -52,12 +58,16 @@ const MidiLearnPanel: AsidePanelComponent<"midi", { className?: string }> =
 				resetPendingLearnParam,
 			]);
 
-			const bindingList = Object.values(bindings).sort(
-				(a, b) =>
-					a.channel - b.channel ||
-					a.cc - b.cc ||
-					a.paramKey.localeCompare(b.paramKey),
-			);
+			const bindingList = Object.values(bindings)
+				.filter((binding): binding is NonNullable<typeof binding> =>
+					Boolean(binding),
+				)
+				.sort(
+					(a, b) =>
+						a.channel - b.channel ||
+						a.cc - b.cc ||
+						a.paramKey.localeCompare(b.paramKey),
+				);
 			const bindingCount = bindingList.length;
 			const [editingCell, setEditingCell] = useState<{
 				paramKey: string;

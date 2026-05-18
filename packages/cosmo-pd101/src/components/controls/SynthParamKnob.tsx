@@ -1,6 +1,6 @@
-import { memo, useCallback, useMemo } from "react";
+import { memo, useMemo } from "react";
 import { ControlKnob } from "@/components/controls/ControlKnob";
-import { useMidiLearnStore } from "@/features/synth/midiLearnStore";
+import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import type {
 	EngineParamReadoutFormatV1,
@@ -103,13 +103,7 @@ function SynthParamKnobInner({
 		| EngineParamUiMetaRuntime
 		| undefined;
 	const defaultValue = getEngineParamDefault(paramKey);
-	const learnMode = useMidiLearnStore((state) => state.learnMode);
-	const pendingLearnParam = useMidiLearnStore(
-		(state) => state.pendingLearnParam,
-	);
-	const midiBinding = useMidiLearnStore((state) =>
-		state.getBindingForParam(paramKey),
-	);
+	const midiLearn = useMidiLearnTarget({ targetKey: paramKey });
 
 	const valueFormatter = useMemo(() => {
 		if (valueFormatterOverride) {
@@ -118,33 +112,6 @@ function SynthParamKnobInner({
 		if (!meta) return undefined;
 		return formatFromReadoutFormat(meta.readoutFormat, meta.bipolar ?? false);
 	}, [meta, valueFormatterOverride]);
-
-	const handleContextMenu = useCallback(
-		(e: React.MouseEvent) => {
-			e.preventDefault();
-			const store = useMidiLearnStore.getState();
-			const bindings = store.getBindingsForParam(paramKey);
-			if (bindings.length > 0) {
-				store.removeBindingsForParam(paramKey);
-			}
-		},
-		[paramKey],
-	);
-
-	const handleClick = useCallback(() => {
-		const store = useMidiLearnStore.getState();
-		if (store.learnMode) {
-			store.setPendingLearnParam(paramKey);
-		}
-	}, [paramKey]);
-
-	const midiLearnState = !learnMode
-		? null
-		: pendingLearnParam === paramKey
-			? "targeted"
-			: midiBinding
-				? "mapped"
-				: "available";
 
 	return (
 		<ControlKnob
@@ -167,10 +134,10 @@ function SynthParamKnobInner({
 			modDestination={
 				modDestination ?? (meta?.modDestination as ModDestination | undefined)
 			}
-			onContextMenu={handleContextMenu}
-			onClick={handleClick}
-			interactionLocked={learnMode}
-			midiLearnState={midiLearnState}
+			onContextMenu={midiLearn.onContextMenu}
+			onClick={midiLearn.onClick}
+			interactionLocked={midiLearn.interactionLocked}
+			midiLearnState={midiLearn.midiLearnState}
 		/>
 	);
 }

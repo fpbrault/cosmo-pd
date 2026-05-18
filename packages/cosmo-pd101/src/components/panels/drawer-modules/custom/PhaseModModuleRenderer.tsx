@@ -11,6 +11,7 @@ import type { FxSlotModuleConfig } from "@/components/panels/drawer-modules/fxSl
 import BadgeToggle from "@/components/primitives/BadgeToggle";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
+import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 
 export default function PhaseModModuleRenderer({
 	config,
@@ -37,6 +38,38 @@ export default function PhaseModModuleRenderer({
 		"intPmAmount",
 	);
 	const ratioLabel = getFxControlLabel(config.type, "intPmRatio", "intPmRatio");
+	const amountMidiLearn = useMidiLearnTarget({
+		targetKey: amountControl
+			? `fxSlot${slot + 1}Knob${amountControl.sourceIndex + 1}`
+			: undefined,
+		label: amountControl
+			? `FX ${slot + 1} Knob ${amountControl.sourceIndex + 1}`
+			: undefined,
+		apply: amountControl
+			? (rawValue) =>
+					setFxSlotParams(slot, {
+						amount:
+							amountControl.min +
+							(rawValue / 127) * (amountControl.max - amountControl.min),
+					})
+			: undefined,
+	});
+	const ratioMidiLearn = useMidiLearnTarget({
+		targetKey: ratioControl
+			? `fxSlot${slot + 1}Knob${ratioControl.sourceIndex + 1}`
+			: undefined,
+		label: ratioControl
+			? `FX ${slot + 1} Knob ${ratioControl.sourceIndex + 1}`
+			: undefined,
+		apply: ratioControl
+			? (rawValue) =>
+					setFxSlotParams(slot, {
+						ratio:
+							ratioControl.min +
+							(rawValue / 127) * (ratioControl.max - ratioControl.min),
+					})
+			: undefined,
+	});
 
 	return (
 		<ModuleFrame
@@ -78,6 +111,10 @@ export default function PhaseModModuleRenderer({
 					tooltip={getTooltip("intPmAmount")}
 					valueFormatter={amountControl.formatter}
 					modDestination={modDestinationByParam.intPmAmount}
+					onClick={amountMidiLearn.onClick}
+					onContextMenu={amountMidiLearn.onContextMenu}
+					interactionLocked={amountMidiLearn.interactionLocked}
+					midiLearnState={amountMidiLearn.midiLearnState}
 				/>
 			) : null}
 			{ratioControl ? (
@@ -96,6 +133,10 @@ export default function PhaseModModuleRenderer({
 					tooltip={getTooltip("intPmRatio")}
 					valueFormatter={ratioControl.formatter}
 					modDestination={modDestinationByParam.intPmRatio}
+					onClick={ratioMidiLearn.onClick}
+					onContextMenu={ratioMidiLearn.onContextMenu}
+					interactionLocked={ratioMidiLearn.interactionLocked}
+					midiLearnState={ratioMidiLearn.midiLearnState}
 				/>
 			) : null}
 		</ModuleFrame>

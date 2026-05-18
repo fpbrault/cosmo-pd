@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from "react";
+import { applyRegisteredMidiLearnTarget } from "@/features/synth/midiLearnRegistry";
 import { useMidiLearnStore } from "@/features/synth/midiLearnStore";
 import { SYNTH_PARAM_SETTERS } from "@/features/synth/SynthParamController";
 import { useSynthStore } from "@/features/synth/synthStore";
@@ -13,7 +14,10 @@ export function useMidiLearnBindings() {
 			if (bindings.length === 0) return;
 
 			for (const binding of bindings) {
-				const meta = ENGINE_PARAM_UI_META_BY_KEY[binding.paramKey];
+				const meta =
+					ENGINE_PARAM_UI_META_BY_KEY[
+						binding.paramKey as keyof typeof ENGINE_PARAM_UI_META_BY_KEY
+					];
 				const min = meta?.min ?? 0;
 				const max = meta?.max ?? 1;
 				const range = max - min;
@@ -24,7 +28,10 @@ export function useMidiLearnBindings() {
 					SYNTH_PARAM_SETTERS[
 						binding.paramKey as keyof typeof SYNTH_PARAM_SETTERS
 					];
-				if (!setterName) continue;
+				if (!setterName) {
+					applyRegisteredMidiLearnTarget(binding.paramKey, rawValue);
+					continue;
+				}
 
 				const store = useSynthStore.getState() as unknown as Record<
 					string,

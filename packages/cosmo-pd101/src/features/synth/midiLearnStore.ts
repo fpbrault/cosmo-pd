@@ -1,9 +1,9 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { SynthParamKey } from "./SynthParamController";
+import type { MidiLearnTargetKey } from "./midiLearnRegistry";
 
 export type MidiBinding = {
-	paramKey: SynthParamKey;
+	paramKey: MidiLearnTargetKey;
 	channel: number;
 	cc: number;
 };
@@ -12,29 +12,29 @@ const MIDI_LEARN_STORAGE_KEY = "cosmo-pd101-midi-learn";
 
 type MidiLearnState = {
 	learnMode: boolean;
-	bindings: Partial<Record<SynthParamKey, MidiBinding>>;
+	bindings: Partial<Record<MidiLearnTargetKey, MidiBinding>>;
 	lastCapturedCc: { channel: number; cc: number; rawValue: number } | null;
-	pendingLearnParam: SynthParamKey | null;
+	pendingLearnParam: MidiLearnTargetKey | null;
 };
 
 type MidiLearnActions = {
 	setLearnMode: (on: boolean) => void;
-	setPendingLearnParam: (paramKey: SynthParamKey | null) => void;
+	setPendingLearnParam: (paramKey: MidiLearnTargetKey | null) => void;
 	captureMidiCc: (channel: number, cc: number, rawValue: number) => void;
 	addOrReplaceBinding: (
 		channel: number,
 		cc: number,
-		paramKey: SynthParamKey,
+		paramKey: MidiLearnTargetKey,
 	) => void;
 	updateBinding: (
-		paramKey: SynthParamKey,
+		paramKey: MidiLearnTargetKey,
 		updates: Partial<Pick<MidiBinding, "channel" | "cc">>,
 	) => void;
-	removeBinding: (paramKey: SynthParamKey) => void;
-	removeBindingsForParam: (paramKey: SynthParamKey) => void;
+	removeBinding: (paramKey: MidiLearnTargetKey) => void;
+	removeBindingsForParam: (paramKey: MidiLearnTargetKey) => void;
 	getBindingsForMidi: (channel: number, cc: number) => MidiBinding[];
-	getBindingForParam: (paramKey: SynthParamKey) => MidiBinding | undefined;
-	getBindingsForParam: (paramKey: SynthParamKey) => MidiBinding[];
+	getBindingForParam: (paramKey: MidiLearnTargetKey) => MidiBinding | undefined;
+	getBindingsForParam: (paramKey: MidiLearnTargetKey) => MidiBinding[];
 	clearLastCapturedCc: () => void;
 	resetPendingLearnParam: () => void;
 };
@@ -50,12 +50,12 @@ const DEFAULT_STATE: MidiLearnState = {
 
 function normalizePersistedBindings(
 	persisted: unknown,
-): Partial<Record<SynthParamKey, MidiBinding>> {
+): Partial<Record<MidiLearnTargetKey, MidiBinding>> {
 	if (!persisted || typeof persisted !== "object") {
 		return {};
 	}
 
-	const normalized: Partial<Record<SynthParamKey, MidiBinding>> = {};
+	const normalized: Partial<Record<MidiLearnTargetKey, MidiBinding>> = {};
 	for (const candidate of Object.values(persisted)) {
 		if (!candidate || typeof candidate !== "object") {
 			continue;
@@ -74,8 +74,8 @@ function normalizePersistedBindings(
 		if (typeof maybeBinding.cc !== "number") {
 			continue;
 		}
-		normalized[maybeBinding.paramKey as SynthParamKey] = {
-			paramKey: maybeBinding.paramKey as SynthParamKey,
+		normalized[maybeBinding.paramKey as MidiLearnTargetKey] = {
+			paramKey: maybeBinding.paramKey as MidiLearnTargetKey,
 			channel: maybeBinding.channel,
 			cc: maybeBinding.cc,
 		};
@@ -163,10 +163,13 @@ export const useMidiLearnStore = create<MidiLearnStore>()(
 			getBindingsForMidi: (channel, cc) => {
 				const bindings = get().bindings;
 				return Object.values(bindings).filter(
-					(binding): binding is MidiBinding =>
-						Boolean(binding) &&
-						binding.channel === channel &&
-						binding.cc === cc,
+					(binding): binding is MidiBinding => {
+						if (!binding) {
+							return false;
+						}
+
+						return binding.channel === channel && binding.cc === cc;
+					},
 				);
 			},
 

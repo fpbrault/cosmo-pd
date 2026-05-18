@@ -157,6 +157,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 						</div>
 						<div className="flex min-h-0 flex-1 flex-col gap-2">
 							<AlgoSectionCard
+								sectionId="a"
 								value={algo}
 								onChange={handleAlgoChange}
 								controls={algoDefinitionControlsA}
@@ -234,6 +235,7 @@ export const PerLineWarpBlock = memo(function PerLineWarpBlock({
 						</div>
 						<div className="flex min-h-0 flex-1 flex-col gap-2">
 							<AlgoSectionCard
+								sectionId="b"
 								value={algo2 ?? PD_ALGOS[0].value}
 								onChange={handleAlgo2Change}
 								disabled={!algoBEnabled}
