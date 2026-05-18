@@ -277,6 +277,7 @@ impl Editor for CzEditor {
 
         #[cfg(not(target_os = "macos"))]
         {
+            let _ = &parent;
             append_log("CzEditor::open: non-macOS build; no-op");
             return;
         }
@@ -1027,7 +1028,7 @@ fn binary_path() -> Option<std::path::PathBuf> {
         const GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS: DWORD = 0x00000004;
         const GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT: DWORD = 0x00000002;
 
-        extern "system" {
+        unsafe extern "system" {
             fn GetModuleHandleExW(
                 dwFlags: DWORD,
                 lpModuleName: LPCWSTR,

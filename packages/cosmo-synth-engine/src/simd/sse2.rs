@@ -17,13 +17,13 @@ impl Sse2 {
     #[inline]
     unsafe fn from_m128(v: __m128) -> Self {
         let mut arr = [0.0; 4];
-        _mm_storeu_ps(arr.as_mut_ptr(), v);
+        unsafe { _mm_storeu_ps(arr.as_mut_ptr(), v) };
         Self(arr)
     }
 
     #[inline]
     unsafe fn to_m128(&self) -> __m128 {
-        _mm_loadu_ps(self.0.as_ptr())
+        unsafe { _mm_loadu_ps(self.0.as_ptr()) }
     }
 }
 
