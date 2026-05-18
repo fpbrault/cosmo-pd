@@ -21,7 +21,6 @@ impl ModMatrixCache {
     }
 
     pub fn rebuild_routes(&mut self, matrix: &ModMatrix) {
-        self.values.fill(0.0);
         for source_amounts in &mut self.amounts_by_source {
             source_amounts.fill(0.0);
         }
@@ -60,17 +59,18 @@ impl ModMatrixCache {
     }
 
     pub fn compute(&mut self, sources: &ModSources) {
+        self.values.fill(0.0);
+
         for idx in self.active_destinations[..self.active_destination_count]
             .iter()
             .copied()
         {
-            self.values[idx] = (self.amounts_by_source[source_index(ModSource::Lfo1)][idx]
+            self.values[idx] = self.amounts_by_source[source_index(ModSource::Lfo1)][idx]
                 * sources.lfo1
                 + self.amounts_by_source[source_index(ModSource::Lfo2)][idx] * sources.lfo2
                 + self.amounts_by_source[source_index(ModSource::Random)][idx] * sources.random
                 + self.amounts_by_source[source_index(ModSource::ModEnv)][idx] * sources.mod_env
-                + self.amounts_by_source[source_index(ModSource::Velocity)][idx]
-                    * sources.velocity
+                + self.amounts_by_source[source_index(ModSource::Velocity)][idx] * sources.velocity
                 + self.amounts_by_source[source_index(ModSource::ModWheel)][idx]
                     * sources.mod_wheel
                 + self.amounts_by_source[source_index(ModSource::Aftertouch)][idx]
@@ -78,8 +78,11 @@ impl ModMatrixCache {
                 + self.amounts_by_source[source_index(ModSource::Macro1)][idx] * sources.macro1
                 + self.amounts_by_source[source_index(ModSource::Macro2)][idx] * sources.macro2
                 + self.amounts_by_source[source_index(ModSource::Macro3)][idx] * sources.macro3
-                + self.amounts_by_source[source_index(ModSource::Macro4)][idx] * sources.macro4)
-                .clamp(-1.0, 1.0);
+                + self.amounts_by_source[source_index(ModSource::Macro4)][idx] * sources.macro4;
+        }
+
+        for v in &mut self.values {
+            *v = v.clamp(-1.0, 1.0);
         }
 
         self.ref_mod_env = sources.mod_env;

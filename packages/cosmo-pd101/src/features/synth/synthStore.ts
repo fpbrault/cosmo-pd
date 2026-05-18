@@ -195,7 +195,6 @@ export type SynthState = {
 	macro2: number;
 	macro3: number;
 	macro4: number;
-	macroLabels: [string, string, string, string];
 };
 
 // ---------------------------------------------------------------------------
@@ -295,7 +294,6 @@ type SynthActions = {
 	setMacro2: (v: number) => void;
 	setMacro3: (v: number) => void;
 	setMacro4: (v: number) => void;
-	setMacroLabel: (index: number, label: string) => void;
 
 	gatherState: () => SynthPresetV1;
 	applyPreset: (preset: SynthPresetV1) => void;
@@ -391,7 +389,6 @@ const DEFAULT_STATE: SynthState = {
 	macro2: 0,
 	macro3: 0,
 	macro4: 0,
-	macroLabels: ["Macro 1", "Macro 2", "Macro 3", "Macro 4"],
 };
 
 // ---------------------------------------------------------------------------
@@ -541,13 +538,6 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setMacro2: (v) => set({ macro2: v }),
 	setMacro3: (v) => set({ macro3: v }),
 	setMacro4: (v) => set({ macro4: v }),
-	setMacroLabel: (index, label) =>
-		set((s) => {
-			if (index < 0 || index > 3) return {};
-			const next = [...s.macroLabels] as [string, string, string, string];
-			next[index] = label.trim().slice(0, 18) || `Macro ${index + 1}`;
-			return { macroLabels: next };
-		}),
 
 	// --- gatherState ---
 	gatherState(): SynthPresetV1 {
@@ -661,7 +651,6 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			macro2: s.macro2,
 			macro3: s.macro3,
 			macro4: s.macro4,
-			macroLabels: s.macroLabels,
 		} as SynthPresetV1["params"];
 
 		return {
@@ -841,21 +830,6 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			macro2: safe((p as Record<string, unknown>).macro2 as number, 0),
 			macro3: safe((p as Record<string, unknown>).macro3 as number, 0),
 			macro4: safe((p as Record<string, unknown>).macro4 as number, 0),
-			macroLabels: (() => {
-				const fallback: [string, string, string, string] = [
-					"Macro 1",
-					"Macro 2",
-					"Macro 3",
-					"Macro 4",
-				];
-				const raw = (p as Record<string, unknown>).macroLabels;
-				if (!Array.isArray(raw) || raw.length !== 4) return fallback;
-				return raw.map((entry, index) =>
-					typeof entry === "string" && entry.trim().length > 0
-						? entry.trim().slice(0, 18)
-						: fallback[index],
-				) as [string, string, string, string];
-			})(),
 		});
 	},
 }));

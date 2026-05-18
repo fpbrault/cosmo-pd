@@ -254,7 +254,6 @@ impl DebugApp {
                 {
                     proc.note_off(note);
                 }
-            }
         }
     }
 
