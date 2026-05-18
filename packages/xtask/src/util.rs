@@ -32,7 +32,7 @@ macro_rules! status {
 /// Print verbose message (only in verbose mode)
 #[macro_export]
 macro_rules! verbose {
-    ($verbose:expr, $($arg:tt)*) => {
+    ($verbose:expr_2021, $($arg:tt)*) => {
         if $verbose {
             println!($($arg)*)
         }

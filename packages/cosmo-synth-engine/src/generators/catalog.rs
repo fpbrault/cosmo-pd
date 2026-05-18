@@ -209,7 +209,7 @@ pub fn algo_definitions_v1() -> &'static [AlgoDefinitionV1] {
 
 pub fn algo_ui_catalog_v1() -> &'static [AlgoUiEntryV1] {
     macro_rules! entry {
-        ($index:expr) => {
+        ($index:expr_2021) => {
             AlgoUiEntryV1 {
                 id: ALGO_DEFINITIONS_V1[$index].id,
                 label: ALGO_DEFINITIONS_V1[$index].name,
