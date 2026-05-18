@@ -24,8 +24,8 @@
 		"package:release:macos": "cargo truce package",
 		"package:release:windows": "cargo truce package",
 		"package:release:linux": "cargo truce package",
-		"validate": "cargo truce validate --clap --pluginval --auval",
-		"validate:strict": "cargo truce validate --clap --pluginval --auval -p cosmo-pd101-plugin",
+		"validate": "cargo truce validate --pluginval --auval",
+		"validate:strict": "cargo truce validate --pluginval --auval -p cosmo-pd101-plugin",
 		"uninstall": "cargo truce uninstall --vst3 --clap --au2"
 	}
 }
