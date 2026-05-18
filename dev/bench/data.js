@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779120037665,
+  "lastUpdate": 1779127772938,
   "repoUrl": "https://github.com/fpbrault/cosmo-pd",
   "entries": {
     "cosmo-synth-engine": [
@@ -9767,6 +9767,228 @@ window.BENCHMARK_DATA = {
             "name": "opt_all_combined_8_voices",
             "value": 11570531,
             "range": "± 65609",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "fpbrault@gmail.com",
+            "name": "Felix Perron-Brault",
+            "username": "fpbrault"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2fc58fb5b5d8e78173d4f2003c1d2520aeb9a80d",
+          "message": "refactor: move macros to side panel and use modals for settings instead (#205)\n\n* refactor(synth): move macro knobs to engine ModSource, remove frontend assignment model\n\nMacro1-4 are now first-class ModSource variants in the Rust engine,\nso they route through the existing mod matrix. Removes the frontend\nMacroAssignment model and MacroAssignEditor. Macros are set via\ndedicated IPC/WASM calls following the modWheel/aftertouch pattern.\n\n* feat(synth): enhance modulation routing and optimize ModMatrixCache\n\n* Refactor synth UI components and state management\n\n- Removed AsidePanelTab type and related state from synthUiStore.\n- Simplified GlobalVoicePanel and MacroKnobsPanel components.\n- Introduced SynthSidebar for managing global settings and macro label editing.\n- Added GlobalVoiceModal and MacroLabelEditorModal for better UI handling.\n- Updated SynthRenderer to integrate new sidebar and modal components.\n- Adjusted tests to reflect changes in state management and component structure.\n- Cleaned up unused imports and code related to aside panel management.\n\n* cleanup\n\n* cleanup\n\n* refactor(synth): streamline macro label handling and enhance state management\n\n* feat(synth): enhance MacroKnobsPanel styling and integrate macroLabels into synthStore",
+          "timestamp": "2026-05-18T14:02:58-04:00",
+          "tree_id": "f1e727a747d6fa173385e6cb74db9c47317c9621",
+          "url": "https://github.com/fpbrault/cosmo-pd/commit/2fc58fb5b5d8e78173d4f2003c1d2520aeb9a80d"
+        },
+        "date": 1779127770806,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "default_3_voices",
+            "value": 2933439,
+            "range": "± 42893",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_6_voices",
+            "value": 4506488,
+            "range": "± 74181",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_8_voices",
+            "value": 5600830,
+            "range": "± 88026",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_3_voices",
+            "value": 2568960,
+            "range": "± 31921",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_6_voices",
+            "value": 2888150,
+            "range": "± 27447",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_8_voices",
+            "value": 3173326,
+            "range": "± 56857",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_3_voices",
+            "value": 8309731,
+            "range": "± 82752",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_6_voices",
+            "value": 11268674,
+            "range": "± 162097",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_8_voices",
+            "value": 13297005,
+            "range": "± 127214",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_3_voices",
+            "value": 11412141,
+            "range": "± 40320",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_6_voices",
+            "value": 15893299,
+            "range": "± 381365",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_8_voices",
+            "value": 17544115,
+            "range": "± 146924",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_3_voices",
+            "value": 7088511,
+            "range": "± 40935",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_6_voices",
+            "value": 9026360,
+            "range": "± 73583",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_8_voices",
+            "value": 9978422,
+            "range": "± 57992",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_3_voices",
+            "value": 3965477,
+            "range": "± 25319",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_6_voices",
+            "value": 5474849,
+            "range": "± 46053",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_8_voices",
+            "value": 6513640,
+            "range": "± 133158",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_3_voices",
+            "value": 11961390,
+            "range": "± 249651",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_6_voices",
+            "value": 13500075,
+            "range": "± 125272",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_8_voices",
+            "value": 13692976,
+            "range": "± 86859",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_3_voices",
+            "value": 6184593,
+            "range": "± 36562",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_6_voices",
+            "value": 8035630,
+            "range": "± 26802",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_8_voices",
+            "value": 9320707,
+            "range": "± 164120",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_3_voices",
+            "value": 3536541,
+            "range": "± 19083",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_6_voices",
+            "value": 5397955,
+            "range": "± 88043",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_8_voices",
+            "value": 6667281,
+            "range": "± 23127",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_3_voices",
+            "value": 3629712,
+            "range": "± 17719",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_6_voices",
+            "value": 5705162,
+            "range": "± 38795",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_8_voices",
+            "value": 7091880,
+            "range": "± 45742",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_3_voices",
+            "value": 7425865,
+            "range": "± 62789",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_6_voices",
+            "value": 9956624,
+            "range": "± 157657",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_8_voices",
+            "value": 11406957,
+            "range": "± 31730",
             "unit": "ns/iter"
           }
         ]
