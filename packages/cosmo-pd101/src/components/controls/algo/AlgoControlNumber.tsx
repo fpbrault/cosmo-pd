@@ -87,6 +87,7 @@ function AlgoControlNumberInner({
 	color = "cyan",
 }: AlgoControlNumberProps) {
 	const { label, description } = useAlgoControl(control.algo, control.id);
+	const resolvedSectionId = sectionId === "b" ? "B" : "A";
 	const min = control.min ?? 0;
 	const max = control.max ?? 1;
 	const value =
@@ -97,8 +98,8 @@ function AlgoControlNumberInner({
 		? algoParamTargetFromSlot(slotIdx)
 		: undefined;
 	const midiLearn = useMidiLearnTarget({
-		targetKey: `line${lineIndex}Algo${sectionId.toUpperCase()}Control${control.id}`,
-		label: `Line ${lineIndex} Algo ${sectionId.toUpperCase()} ${label}`,
+		targetKey: `line${lineIndex}Algo${resolvedSectionId}Control${control.id}`,
+		label: `Line ${lineIndex} Algo ${resolvedSectionId} ${label}`,
 		apply: (rawValue) => {
 			const normalized = rawValue / 127;
 			const mappedValue = min + normalized * (max - min);
