@@ -9,7 +9,7 @@ mod vst3;
 use std::path::PathBuf;
 use std::process::Command;
 
-use util::{cargo_target_dir_for_package, print_error, Arch};
+use util::{Arch, cargo_target_dir_for_package, print_error};
 
 /// Configuration for the bundle command
 struct BundleConfig {

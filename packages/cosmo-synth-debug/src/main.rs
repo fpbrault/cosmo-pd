@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-use cosmo_synth_engine::processor::{midi_note_to_freq, CosmoProcessor};
+use cosmo_synth_engine::processor::{CosmoProcessor, midi_note_to_freq};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use eframe::egui;
 
@@ -249,10 +249,10 @@ impl DebugApp {
     fn release_all_active_keys(&mut self, octave_offset: i32) {
         if let Ok(mut proc) = self.processor.lock() {
             for binding in KEY_BINDINGS {
-                if self.prev_keys.contains(&binding.key) {
-                    if let Some(note) = key_to_midi(*binding, octave_offset) {
-                        proc.note_off(note);
-                    }
+                if self.prev_keys.contains(&binding.key)
+                    && let Some(note) = key_to_midi(*binding, octave_offset)
+                {
+                    proc.note_off(note);
                 }
             }
         }

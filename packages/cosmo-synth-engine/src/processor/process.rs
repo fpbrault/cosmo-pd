@@ -5,14 +5,14 @@ use std::sync::Arc;
 use alloc::sync::Arc;
 
 use crate::dsp_utils::{lfo_output_with_symmetry, random_hold_value};
-use crate::params::{LineParams, ModDestination, ModMatrixCache, SynthParams, NUM_VOICES};
+use crate::params::{LineParams, ModDestination, ModMatrixCache, NUM_VOICES, SynthParams};
 use crate::render_cache::CompiledLinePlan;
 use crate::voice::modulated_line_params;
 use crate::voice::{ModSources, VoiceRenderContext};
 
+use super::CosmoProcessor;
 use super::state::RuntimeModSources;
 use super::utils::soft_clip_tanh;
-use super::CosmoProcessor;
 
 #[cfg(all(feature = "no_denormals", not(target_arch = "wasm32")))]
 use no_denormals::no_denormals;

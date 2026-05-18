@@ -80,7 +80,7 @@ impl ConstantPowerPanTable {
         let mut i = 0;
         while i < 128 {
             let pan = i as f32 / 127.0; // [0.0, 1.0]
-                                        // Simplified linear panning (const context limitation)
+            // Simplified linear panning (const context limitation)
             left[i] = 1.0 - pan;
             right[i] = pan;
             i += 1;

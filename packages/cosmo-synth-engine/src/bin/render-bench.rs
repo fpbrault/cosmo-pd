@@ -10,7 +10,7 @@ use cosmo_synth_engine::params::{
     Algo, AlgoControlId, AlgoControlValueV1, FxSlotConfig, FxSlotType, LineSelect, ModDestination,
     ModMatrix, ModRoute, ModSource, PolyMode, SynthParams,
 };
-use cosmo_synth_engine::processor::{midi_note_to_freq, CosmoProcessor};
+use cosmo_synth_engine::processor::{CosmoProcessor, midi_note_to_freq};
 
 const DEFAULT_NOTES: [u8; 8] = [36, 40, 43, 48, 52, 55, 60, 64];
 
@@ -83,7 +83,7 @@ struct CaseResult {
 fn usage() {
     println!(
         "render-bench options:\n  --scenario <name>\n  --suite <name> (hotspots|algos)\n  --voices <n>\n  --seconds <s>\n  --sample-rate <hz>\n  --block-size <n>\n  --iterations <n>\n  --warmup <n>\n  --all\n  --json"
-	);
+    );
 }
 
 fn build_algo_bench_params(algo: Algo) -> SynthParams {
@@ -1209,20 +1209,20 @@ fn render_pass(config: &BenchmarkConfig, scenario: &Scenario, total_samples: usi
         rendered_samples += this_block;
         block_index += 1;
 
-        if let Some(churn_blocks) = scenario.note_churn_blocks {
-            if block_index.is_multiple_of(churn_blocks) {
-                let lead = DEFAULT_NOTES[(block_index / churn_blocks) % config.voices];
-                let release = DEFAULT_NOTES[(block_index / churn_blocks + 1) % config.voices];
-                processor.note_off(release);
-                processor.note_on(lead, midi_note_to_freq(lead), 0.92);
-            }
+        if let Some(churn_blocks) = scenario.note_churn_blocks
+            && block_index.is_multiple_of(churn_blocks)
+        {
+            let lead = DEFAULT_NOTES[(block_index / churn_blocks) % config.voices];
+            let release = DEFAULT_NOTES[(block_index / churn_blocks + 1) % config.voices];
+            processor.note_off(release);
+            processor.note_on(lead, midi_note_to_freq(lead), 0.92);
         }
 
-        if let (Some(swap_blocks), Some(variants)) = (scenario.param_swap_blocks, &param_variants) {
-            if block_index.is_multiple_of(swap_blocks) {
-                let variant_index = (block_index / swap_blocks) % variants.len();
-                processor.set_shared_params(Arc::clone(&variants[variant_index]));
-            }
+        if let (Some(swap_blocks), Some(variants)) = (scenario.param_swap_blocks, &param_variants)
+            && block_index.is_multiple_of(swap_blocks)
+        {
+            let variant_index = (block_index / swap_blocks) % variants.len();
+            processor.set_shared_params(Arc::clone(&variants[variant_index]));
         }
     }
 

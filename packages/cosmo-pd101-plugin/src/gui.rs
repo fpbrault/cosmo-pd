@@ -17,18 +17,18 @@ use std::{
 };
 
 use arc_swap::ArcSwap;
-use truce_core::editor::{Editor, RawWindowHandle};
 use truce_core::PluginContext;
+use truce_core::editor::{Editor, RawWindowHandle};
 #[cfg(target_os = "macos")]
 use wry::WebViewBuilder;
 #[cfg(target_os = "macos")]
 use wry::WebViewBuilderExtDarwin;
 
+use crate::CzPluginParams;
 #[cfg(target_os = "macos")]
 use crate::handle_ipc_invoke;
-use crate::CzPluginParams;
 use crate::{
-    append_log, PerformanceCountersHandle, ScopeBuffer, SharedRuntimeModSources, UiInputQueue,
+    PerformanceCountersHandle, ScopeBuffer, SharedRuntimeModSources, UiInputQueue, append_log,
 };
 use cosmo_synth_engine::params::SynthParams;
 
@@ -221,10 +221,10 @@ impl CzEditor {
         let script = format!(
             "if(typeof window.__czOnParams === 'function') {{ window.__czOnParams(\"{escaped}\"); }}"
         );
-        if let Ok(container) = self.webview_state.lock() {
-            if let Some(wv) = &container.webview {
-                let _ = wv.evaluate_script(&script);
-            }
+        if let Ok(container) = self.webview_state.lock()
+            && let Some(wv) = &container.webview
+        {
+            let _ = wv.evaluate_script(&script);
         }
     }
 
@@ -245,10 +245,10 @@ impl CzEditor {
             "if (document?.documentElement) {{ document.documentElement.style.zoom = '{zoom}'; }}"
         );
 
-        if let Ok(container) = self.webview_state.lock() {
-            if let Some(wv) = &container.webview {
-                let _ = wv.evaluate_script(&script);
-            }
+        if let Ok(container) = self.webview_state.lock()
+            && let Some(wv) = &container.webview
+        {
+            let _ = wv.evaluate_script(&script);
         }
     }
 }
@@ -312,13 +312,13 @@ impl Editor for CzEditor {
         }
 
         #[cfg(target_os = "macos")]
-        if !self.has_live_webview() {
-            if let Some(ns_view) = self.pending_parent_ns_view {
-                let ns_view = ns_view as *mut std::ffi::c_void;
-                if unsafe { parent_has_window(ns_view) } {
-                    append_log("idle: retrying deferred WebView creation");
-                    let _ = self.try_create_webview(ns_view);
-                }
+        if !self.has_live_webview()
+            && let Some(ns_view) = self.pending_parent_ns_view
+        {
+            let ns_view = ns_view as *mut std::ffi::c_void;
+            if unsafe { parent_has_window(ns_view) } {
+                append_log("idle: retrying deferred WebView creation");
+                let _ = self.try_create_webview(ns_view);
             }
         }
 
@@ -344,12 +344,12 @@ fn screenshot_webview() -> Option<(Vec<u8>, u32, u32)> {
 /// and return RGBA pixel data. Must be called on the main thread.
 #[cfg(target_os = "macos")]
 fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
-    use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::Arc;
+    use std::sync::atomic::{AtomicBool, Ordering};
 
     use block2::RcBlock;
     use objc2::rc::{Allocated, Retained};
-    use objc2::{class, msg_send, msg_send_id, AnyThread};
+    use objc2::{AnyThread, class, msg_send, msg_send_id};
     use objc2_app_kit::{
         NSBackingStoreType, NSBitmapImageRep, NSImage, NSWindow, NSWindowStyleMask,
     };
@@ -426,7 +426,8 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
                 };
                 let header = format!(
                     "HTTP/1.1 200 OK\r\nContent-Type: {}\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\n\r\n",
-                    mime, data.len()
+                    mime,
+                    data.len()
                 );
                 let _ = stream.write_all(header.as_bytes());
                 let _ = stream.write_all(&data);
@@ -531,8 +532,7 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
         rl.runUntilDate(&d);
     }
 
-    let pixels = result.lock().unwrap().take();
-    pixels
+    result.lock().unwrap().take()
 }
 
 // ─── Standalone Window helper ─────────────────────────────────────────────────
@@ -547,8 +547,7 @@ struct StandaloneWindow {
 #[cfg(target_os = "macos")]
 fn terminate_delegate_class() -> &'static objc::runtime::Class {
     use objc::{class, declare::ClassDecl, msg_send, sel, sel_impl};
-    static CLASS: std::sync::OnceLock<&'static objc::runtime::Class> =
-        std::sync::OnceLock::new();
+    static CLASS: std::sync::OnceLock<&'static objc::runtime::Class> = std::sync::OnceLock::new();
     CLASS.get_or_init(|| {
         let mut decl = ClassDecl::new("StandaloneWindowCloseDelegate", class!(NSObject))
             .expect("failed to create delegate class");
@@ -578,7 +577,7 @@ fn terminate_delegate_class() -> &'static objc::runtime::Class {
             decl.register()
         }
     });
-    *CLASS.get().unwrap()
+    CLASS.get().unwrap()
 }
 
 #[cfg(target_os = "macos")]
@@ -726,37 +725,38 @@ unsafe fn build_webview_from_ns_view(
     params: Arc<CzPluginParams>,
     runtime_mod_sources: SharedRuntimeModSources,
     webview_state: Arc<Mutex<WebViewContainer>>,
-) -> (Option<wry::WebView>, Option<StandaloneWindow>) { unsafe {
-    use core::ptr::NonNull;
-    use rwh_06::{
-        AppKitDisplayHandle, AppKitWindowHandle, DisplayHandle, HandleError, HasDisplayHandle,
-        HasWindowHandle, RawDisplayHandle, RawWindowHandle, WindowHandle,
-    };
-    use wry::dpi;
+) -> (Option<wry::WebView>, Option<StandaloneWindow>) {
+    unsafe {
+        use core::ptr::NonNull;
+        use rwh_06::{
+            AppKitDisplayHandle, AppKitWindowHandle, DisplayHandle, HandleError, HasDisplayHandle,
+            HasWindowHandle, RawDisplayHandle, RawWindowHandle, WindowHandle,
+        };
+        use wry::dpi;
 
-    struct NsViewWrapper(pub *mut std::ffi::c_void);
-    impl HasWindowHandle for NsViewWrapper {
-        fn window_handle(&self) -> Result<WindowHandle<'_>, HandleError> {
-            let non_null = NonNull::new(self.0).expect("ns_view pointer is null");
-            let handle = AppKitWindowHandle::new(non_null);
-            Ok(unsafe { WindowHandle::borrow_raw(RawWindowHandle::AppKit(handle)) })
+        struct NsViewWrapper(pub *mut std::ffi::c_void);
+        impl HasWindowHandle for NsViewWrapper {
+            fn window_handle(&self) -> Result<WindowHandle<'_>, HandleError> {
+                let non_null = NonNull::new(self.0).expect("ns_view pointer is null");
+                let handle = AppKitWindowHandle::new(non_null);
+                Ok(unsafe { WindowHandle::borrow_raw(RawWindowHandle::AppKit(handle)) })
+            }
         }
-    }
-    impl HasDisplayHandle for NsViewWrapper {
-        fn display_handle(&self) -> Result<DisplayHandle<'_>, HandleError> {
-            let handle = AppKitDisplayHandle::new();
-            Ok(unsafe { DisplayHandle::borrow_raw(RawDisplayHandle::AppKit(handle)) })
+        impl HasDisplayHandle for NsViewWrapper {
+            fn display_handle(&self) -> Result<DisplayHandle<'_>, HandleError> {
+                let handle = AppKitDisplayHandle::new();
+                Ok(unsafe { DisplayHandle::borrow_raw(RawDisplayHandle::AppKit(handle)) })
+            }
         }
-    }
-    unsafe impl Send for NsViewWrapper {}
-    unsafe impl Sync for NsViewWrapper {}
+        unsafe impl Send for NsViewWrapper {}
+        unsafe impl Sync for NsViewWrapper {}
 
-    let webview_state_for_response = webview_state.clone();
-    let params_repush_done = Arc::new(AtomicBool::new(false));
+        let webview_state_for_response = webview_state.clone();
+        let params_repush_done = Arc::new(AtomicBool::new(false));
 
-    let scheme = get_instance_scheme();
-    append_log(&format!("webview scheme: {scheme}"));
-    let builder = WebViewBuilder::new()
+        let scheme = get_instance_scheme();
+        append_log(&format!("webview scheme: {scheme}"));
+        let builder = WebViewBuilder::new()
         .with_bounds(wry::Rect {
             position: dpi::LogicalPosition::new(0, 0).into(),
             size: dpi::LogicalSize::new(DEFAULT_WIDTH, DEFAULT_HEIGHT).into(),
@@ -800,24 +800,22 @@ unsafe fn build_webview_from_ns_view(
                     "window.__czIpcResponse && window.__czIpcResponse({})",
                     response
                 );
-                if let Ok(container) = webview_state_for_response.lock() {
-                    if let Some(wv) = &container.webview {
-                        let _ = wv.evaluate_script(&script);
+                if let Ok(container) = webview_state_for_response.lock() && let Some(wv) = &container.webview {
+                    let _ = wv.evaluate_script(&script);
 
-                        if params_repush_done
-                            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
-                            .is_ok()
-                        {
-                            let sp = synth_params.load();
-                            if let Ok(json_str) = serde_json::to_string(sp.as_ref()) {
-                                let escaped = json_str
-                                    .replace('\\', "\\\\")
-                                    .replace('"', "\\\"");
-                                let params_script = format!(
-                                    "if(typeof window.__czOnParams === 'function') {{ window.__czOnParams(\"{escaped}\"); }}"
-                                );
-                                let _ = wv.evaluate_script(&params_script);
-                            }
+                    if params_repush_done
+                        .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+                        .is_ok()
+                    {
+                        let sp = synth_params.load();
+                        if let Ok(json_str) = serde_json::to_string(sp.as_ref()) {
+                            let escaped = json_str
+                                .replace('\\', "\\\\")
+                                .replace('"', "\\\"");
+                            let params_script = format!(
+                                "if(typeof window.__czOnParams === 'function') {{ window.__czOnParams(\"{escaped}\"); }}"
+                            );
+                            let _ = wv.evaluate_script(&params_script);
                         }
                     }
                 }
@@ -825,60 +823,63 @@ unsafe fn build_webview_from_ns_view(
         })
         .with_devtools(inspector_enabled());
 
-    // ── DECISION POINT ──
-    if parent_has_window(ns_view) {
-        // BRANCH A: ns_view already has an associated NSWindow (DAW mode).
-        // Embed webview as child of the existing window.
-        append_log("parent NSView has a real window — embedding as child");
-        let parent = NsViewWrapper(ns_view);
-        let webview = builder
-            .with_url(format!("{}://localhost/", scheme))
-            .build_as_child(&parent);
-        match webview {
-            Ok(webview) => {
-                append_log("build_as_child returned — WebView created");
-                (Some(webview), None)
+        // ── DECISION POINT ──
+        if parent_has_window(ns_view) {
+            // BRANCH A: ns_view already has an associated NSWindow (DAW mode).
+            // Embed webview as child of the existing window.
+            append_log("parent NSView has a real window — embedding as child");
+            let parent = NsViewWrapper(ns_view);
+            let webview = builder
+                .with_url(format!("{}://localhost/", scheme))
+                .build_as_child(&parent);
+            match webview {
+                Ok(webview) => {
+                    append_log("build_as_child returned — WebView created");
+                    (Some(webview), None)
+                }
+                Err(e) => {
+                    append_log(&format!("failed to create plugin WebView: {e}"));
+                    (None, None)
+                }
             }
-            Err(e) => {
-                append_log(&format!("failed to create plugin WebView: {e}"));
-                (None, None)
-            }
-        }
-    } else if is_standalone_mode() {
-        // BRANCH B: standalone binary — create our own window (hides baseview
-        // window from truce-standalone) and embed the WebView inside it.
-        append_log("standalone mode — creating standalone NSWindow");
-        let standalone_window = StandaloneWindow::new();
-        let content_view = standalone_window.content_view();
+        } else if is_standalone_mode() {
+            // BRANCH B: standalone binary — create our own window (hides baseview
+            // window from truce-standalone) and embed the WebView inside it.
+            append_log("standalone mode — creating standalone NSWindow");
+            let standalone_window = StandaloneWindow::new();
+            let content_view = standalone_window.content_view();
 
-        // Allow a tick for the NSView/NSWindow association to settle.
-        let mut attempts = 0;
-        while !parent_has_window(content_view) && attempts < 10 {
-            std::thread::sleep(std::time::Duration::from_millis(10));
-            attempts += 1;
-        }
+            // Allow a tick for the NSView/NSWindow association to settle.
+            let mut attempts = 0;
+            while !parent_has_window(content_view) && attempts < 10 {
+                std::thread::sleep(std::time::Duration::from_millis(10));
+                attempts += 1;
+            }
 
-        let parent = NsViewWrapper(content_view);
-        let webview = builder
-            .with_url(format!("{}://localhost/", scheme))
-            .build_as_child(&parent);
-        match webview {
-            Ok(webview) => {
-                append_log("standalone: WebView created in own window");
-                (Some(webview), Some(standalone_window))
+            let parent = NsViewWrapper(content_view);
+            let webview = builder
+                .with_url(format!("{}://localhost/", scheme))
+                .build_as_child(&parent);
+            match webview {
+                Ok(webview) => {
+                    append_log("standalone: WebView created in own window");
+                    (Some(webview), Some(standalone_window))
+                }
+                Err(e) => {
+                    append_log(&format!("standalone: failed to create plugin WebView: {e}"));
+                    (None, None)
+                }
             }
-            Err(e) => {
-                append_log(&format!("standalone: failed to create plugin WebView: {e}"));
-                (None, None)
-            }
+        } else {
+            // BRANCH C: no window association AND not standalone — defer.
+            // idle() will retry when the host window finishes setting up.
+            append_log(
+                "parent NSView has no window — deferring WebView creation (idle() will retry)",
+            );
+            (None, None)
         }
-    } else {
-        // BRANCH C: no window association AND not standalone — defer.
-        // idle() will retry when the host window finishes setting up.
-        append_log("parent NSView has no window — deferring WebView creation (idle() will retry)");
-        (None, None)
     }
-}}
+}
 
 // ─── Protocol file server ────────────────────────────────────────────────────
 

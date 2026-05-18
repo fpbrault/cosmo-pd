@@ -1,5 +1,5 @@
 use super::delay_line::DelayLine;
-use crate::dsp_utils::{wrap01, TWO_PI};
+use crate::dsp_utils::{TWO_PI, wrap01};
 
 const SMOOTH_COEFF: f32 = 0.005;
 const TAPE_BRIGHT_CUTOFF_HZ: f32 = 20000.0;

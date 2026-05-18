@@ -1,8 +1,8 @@
 use crate::dsp_utils::lerp;
+pub use crate::envelope_map::EnvelopeKind;
 use crate::envelope_map::human_level_to_raw;
 use crate::envelope_map::human_rate_to_raw;
 use crate::envelope_map::raw_level_to_human;
-pub use crate::envelope_map::EnvelopeKind;
 use crate::params::{StepEnvData, SynthParams};
 
 pub fn normalize_env_to_raw_if_human(kind: EnvelopeKind, env: &mut StepEnvData) {
@@ -413,7 +413,7 @@ mod tests {
 
     #[test]
     fn release_with_multiple_post_sustain_steps_does_not_hard_zero_on_transition() {
-        use crate::params::{EnvStep, StepEnvData, NUM_ENV_STEPS};
+        use crate::params::{EnvStep, NUM_ENV_STEPS, StepEnvData};
 
         let mut env = StepEnvData {
             steps: [EnvStep {

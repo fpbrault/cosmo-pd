@@ -1,4 +1,4 @@
-use crate::dsp_utils::{lfo_output, pow01, wrap01, TWO_PI};
+use crate::dsp_utils::{TWO_PI, lfo_output, pow01, wrap01};
 use crate::envelope::EnvelopeKind;
 use crate::envelope::EnvelopeTimingCache;
 use crate::generators::{self, LineRenderConfig};
@@ -8,12 +8,12 @@ use crate::params::{
 };
 use crate::render_cache::CompiledLinePlan;
 
-use super::modulation::{algo_param_slot_mods_for_line, ModSources};
+use super::modulation::{ModSources, algo_param_slot_mods_for_line};
 use super::{
-    Voice, ANTI_CLICK_ATTACK_SAMPLES, ANTI_CLICK_FADE_MAX_SAMPLES, ANTI_CLICK_FADE_SAMPLES,
+    ANTI_CLICK_ATTACK_SAMPLES, ANTI_CLICK_FADE_MAX_SAMPLES, ANTI_CLICK_FADE_SAMPLES,
     DCA_LEVEL_CURVE_EXPONENT, DCW_DEZIPPER_TIME_SECONDS, DCW_LEVEL_CURVE_EXPONENT,
     DEFAULT_BASE_FREQ, DUAL_LINE_MIX_GAIN, POP_SUPPRESS_DELTA_THRESHOLD, POP_SUPPRESS_EXCESS_KEEP,
-    RELEASE_TAIL_LEVEL_THRESHOLD, RELEASE_TAIL_LEVEL_TIME_SECONDS, SILENCE_THRESHOLD,
+    RELEASE_TAIL_LEVEL_THRESHOLD, RELEASE_TAIL_LEVEL_TIME_SECONDS, SILENCE_THRESHOLD, Voice,
     ZERO_CROSS_STOP_MAX_WAIT_SAMPLES, ZERO_CROSS_STOP_THRESHOLD,
 };
 

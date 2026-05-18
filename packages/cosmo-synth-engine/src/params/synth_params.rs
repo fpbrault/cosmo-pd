@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
 
-use super::fx_params::{default_fx_slot_configs, FxSlotConfig, PhaseModParams, VibratoParams};
+use super::fx_params::{FxSlotConfig, PhaseModParams, VibratoParams, default_fx_slot_configs};
 use super::lfo::LfoParams;
 use super::line::{LineParams, LineSelect, ModMode, PolyMode};
 use super::modulation::ModMatrix;

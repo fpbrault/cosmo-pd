@@ -1,6 +1,6 @@
 use super::{
-    lerp, wrap01, AlgoControlAssignmentV1, AlgoControlKindV1, AlgoControlOptionV1, AlgoControlV1,
-    AlgoDefinitionV1,
+    AlgoControlAssignmentV1, AlgoControlKindV1, AlgoControlOptionV1, AlgoControlV1,
+    AlgoDefinitionV1, lerp, wrap01,
 };
 use crate::params::{Algo, AlgoControlId, AlgoControlSlots, CzWaveform, WindowType};
 use serde::Serialize;
@@ -381,11 +381,7 @@ pub fn resolve_cycle_waveform(
     slot_b: CzWaveform,
     cycle_count: u32,
 ) -> CzWaveform {
-    if cycle_count & 1 == 0 {
-        slot_a
-    } else {
-        slot_b
-    }
+    if cycle_count & 1 == 0 { slot_a } else { slot_b }
 }
 
 /// Compute CZ phase transfer from front-panel CZ controls.

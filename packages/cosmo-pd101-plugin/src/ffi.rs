@@ -5,9 +5,9 @@ use std::slice;
 use std::sync::OnceLock;
 
 use cosmo_synth_engine::params::{
-    engine_param_default_v1, engine_param_ui_meta_v1, EngineParamReadoutFormatV1, SynthParams,
+    EngineParamReadoutFormatV1, SynthParams, engine_param_default_v1, engine_param_ui_meta_v1,
 };
-use cosmo_synth_engine::processor::{midi_note_to_freq, CosmoProcessor};
+use cosmo_synth_engine::processor::{CosmoProcessor, midi_note_to_freq};
 
 const SCOPE_CAPACITY: usize = 4096;
 const PARAM_KEY_CAPACITY: usize = 64;
@@ -518,12 +518,14 @@ fn engine_ref<'a>(
 unsafe fn output_slice_mut<'a, T>(
     output: *mut T,
     len: usize,
-) -> Result<&'a mut [T], CosmoPd101FfiStatus> { unsafe {
-    if output.is_null() && len > 0 {
-        return Err(CosmoPd101FfiStatus::NullPointer);
+) -> Result<&'a mut [T], CosmoPd101FfiStatus> {
+    unsafe {
+        if output.is_null() && len > 0 {
+            return Err(CosmoPd101FfiStatus::NullPointer);
+        }
+        Ok(slice::from_raw_parts_mut(output, len))
     }
-    Ok(slice::from_raw_parts_mut(output, len))
-}}
+}
 
 #[unsafe(no_mangle)]
 pub extern "C" fn cosmo_pd101_ffi_engine_create(
@@ -542,11 +544,13 @@ pub extern "C" fn cosmo_pd101_ffi_engine_create(
 /// `engine` must be a valid, non-null pointer returned by
 /// [`cosmo_pd101_ffi_engine_create`] and must not have been destroyed yet.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn cosmo_pd101_ffi_engine_destroy(engine: *mut CosmoPd101FfiEngine) { unsafe {
-    if !engine.is_null() {
-        drop(Box::from_raw(engine));
+pub unsafe extern "C" fn cosmo_pd101_ffi_engine_destroy(engine: *mut CosmoPd101FfiEngine) {
+    unsafe {
+        if !engine.is_null() {
+            drop(Box::from_raw(engine));
+        }
     }
-}}
+}
 
 #[unsafe(no_mangle)]
 pub extern "C" fn cosmo_pd101_ffi_reset_audio_state(
@@ -568,23 +572,25 @@ pub extern "C" fn cosmo_pd101_ffi_reset_audio_state(
 pub unsafe extern "C" fn cosmo_pd101_ffi_set_params_json(
     engine: *mut CosmoPd101FfiEngine,
     json: *const c_char,
-) -> CosmoPd101FfiStatus { unsafe {
-    let Ok(engine) = engine_mut(engine) else {
-        return CosmoPd101FfiStatus::NullPointer;
-    };
-    if json.is_null() {
-        return CosmoPd101FfiStatus::NullPointer;
-    }
+) -> CosmoPd101FfiStatus {
+    unsafe {
+        let Ok(engine) = engine_mut(engine) else {
+            return CosmoPd101FfiStatus::NullPointer;
+        };
+        if json.is_null() {
+            return CosmoPd101FfiStatus::NullPointer;
+        }
 
-    let Ok(json) = CStr::from_ptr(json).to_str() else {
-        return CosmoPd101FfiStatus::InvalidArgument;
-    };
-    let Ok(params) = serde_json::from_str::<SynthParams>(json) else {
-        return CosmoPd101FfiStatus::JsonError;
-    };
-    engine.processor.set_params(params);
-    CosmoPd101FfiStatus::Ok
-}}
+        let Ok(json) = CStr::from_ptr(json).to_str() else {
+            return CosmoPd101FfiStatus::InvalidArgument;
+        };
+        let Ok(params) = serde_json::from_str::<SynthParams>(json) else {
+            return CosmoPd101FfiStatus::JsonError;
+        };
+        engine.processor.set_params(params);
+        CosmoPd101FfiStatus::Ok
+    }
+}
 
 /// # Safety
 ///
@@ -596,24 +602,26 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_params_json(
     engine: *const CosmoPd101FfiEngine,
     output: *mut u8,
     output_len: usize,
-) -> usize { unsafe {
-    let Ok(engine) = engine_ref(engine) else {
-        return 0;
-    };
-    let Ok(json) = serde_json::to_string(engine.processor.params.as_ref()) else {
-        return 0;
-    };
-    let bytes = json.as_bytes();
-    if output.is_null() || output_len == 0 {
-        return bytes.len();
+) -> usize {
+    unsafe {
+        let Ok(engine) = engine_ref(engine) else {
+            return 0;
+        };
+        let Ok(json) = serde_json::to_string(engine.processor.params.as_ref()) else {
+            return 0;
+        };
+        let bytes = json.as_bytes();
+        if output.is_null() || output_len == 0 {
+            return bytes.len();
+        }
+        let Ok(output) = output_slice_mut(output, output_len) else {
+            return 0;
+        };
+        let bytes_to_write = bytes.len().min(output.len());
+        output[..bytes_to_write].copy_from_slice(&bytes[..bytes_to_write]);
+        bytes.len()
     }
-    let Ok(output) = output_slice_mut(output, output_len) else {
-        return 0;
-    };
-    let bytes_to_write = bytes.len().min(output.len());
-    output[..bytes_to_write].copy_from_slice(&bytes[..bytes_to_write]);
-    bytes.len()
-}}
+}
 
 #[unsafe(no_mangle)]
 pub extern "C" fn cosmo_pd101_ffi_get_factory_preset_count() -> usize {
@@ -629,24 +637,26 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_factory_preset_name(
     index: usize,
     output: *mut u8,
     output_len: usize,
-) -> usize { unsafe {
-    let Some(name) = factory_presets()
-        .get(index)
-        .map(|preset| preset.name.as_str())
-    else {
-        return 0;
-    };
-    let bytes = name.as_bytes();
-    if output.is_null() || output_len == 0 {
-        return bytes.len();
+) -> usize {
+    unsafe {
+        let Some(name) = factory_presets()
+            .get(index)
+            .map(|preset| preset.name.as_str())
+        else {
+            return 0;
+        };
+        let bytes = name.as_bytes();
+        if output.is_null() || output_len == 0 {
+            return bytes.len();
+        }
+        let Ok(output) = output_slice_mut(output, output_len) else {
+            return 0;
+        };
+        let bytes_to_write = bytes.len().min(output.len());
+        output[..bytes_to_write].copy_from_slice(&bytes[..bytes_to_write]);
+        bytes.len()
     }
-    let Ok(output) = output_slice_mut(output, output_len) else {
-        return 0;
-    };
-    let bytes_to_write = bytes.len().min(output.len());
-    output[..bytes_to_write].copy_from_slice(&bytes[..bytes_to_write]);
-    bytes.len()
-}}
+}
 
 /// # Safety
 ///
@@ -657,24 +667,26 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_factory_preset_params_json(
     index: usize,
     output: *mut u8,
     output_len: usize,
-) -> usize { unsafe {
-    let Some(params_json) = factory_presets()
-        .get(index)
-        .map(|preset| &preset.params_json)
-    else {
-        return 0;
-    };
-    let bytes = params_json.as_bytes();
-    if output.is_null() || output_len == 0 {
-        return bytes.len();
+) -> usize {
+    unsafe {
+        let Some(params_json) = factory_presets()
+            .get(index)
+            .map(|preset| &preset.params_json)
+        else {
+            return 0;
+        };
+        let bytes = params_json.as_bytes();
+        if output.is_null() || output_len == 0 {
+            return bytes.len();
+        }
+        let Ok(output) = output_slice_mut(output, output_len) else {
+            return 0;
+        };
+        let bytes_to_write = bytes.len().min(output.len());
+        output[..bytes_to_write].copy_from_slice(&bytes[..bytes_to_write]);
+        bytes.len()
     }
-    let Ok(output) = output_slice_mut(output, output_len) else {
-        return 0;
-    };
-    let bytes_to_write = bytes.len().min(output.len());
-    output[..bytes_to_write].copy_from_slice(&bytes[..bytes_to_write]);
-    bytes.len()
-}}
+}
 
 /// # Safety
 ///
@@ -686,24 +698,26 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_runtime_voice_states_json(
     engine: *const CosmoPd101FfiEngine,
     output: *mut u8,
     output_len: usize,
-) -> usize { unsafe {
-    let Ok(engine) = engine_ref(engine) else {
-        return 0;
-    };
-    let Ok(json) = serde_json::to_string(&engine.processor.runtime_voice_debug_state()) else {
-        return 0;
-    };
-    let bytes = json.as_bytes();
-    if output.is_null() || output_len == 0 {
-        return bytes.len();
+) -> usize {
+    unsafe {
+        let Ok(engine) = engine_ref(engine) else {
+            return 0;
+        };
+        let Ok(json) = serde_json::to_string(&engine.processor.runtime_voice_debug_state()) else {
+            return 0;
+        };
+        let bytes = json.as_bytes();
+        if output.is_null() || output_len == 0 {
+            return bytes.len();
+        }
+        let Ok(output) = output_slice_mut(output, output_len) else {
+            return 0;
+        };
+        let bytes_to_write = bytes.len().min(output.len());
+        output[..bytes_to_write].copy_from_slice(&bytes[..bytes_to_write]);
+        bytes.len()
     }
-    let Ok(output) = output_slice_mut(output, output_len) else {
-        return 0;
-    };
-    let bytes_to_write = bytes.len().min(output.len());
-    output[..bytes_to_write].copy_from_slice(&bytes[..bytes_to_write]);
-    bytes.len()
-}}
+}
 
 /// # Safety
 ///
@@ -715,24 +729,26 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_runtime_mod_sources_json(
     engine: *const CosmoPd101FfiEngine,
     output: *mut u8,
     output_len: usize,
-) -> usize { unsafe {
-    let Ok(engine) = engine_ref(engine) else {
-        return 0;
-    };
-    let Ok(json) = serde_json::to_string(&engine.processor.runtime_mod_sources()) else {
-        return 0;
-    };
-    let bytes = json.as_bytes();
-    if output.is_null() || output_len == 0 {
-        return bytes.len();
+) -> usize {
+    unsafe {
+        let Ok(engine) = engine_ref(engine) else {
+            return 0;
+        };
+        let Ok(json) = serde_json::to_string(&engine.processor.runtime_mod_sources()) else {
+            return 0;
+        };
+        let bytes = json.as_bytes();
+        if output.is_null() || output_len == 0 {
+            return bytes.len();
+        }
+        let Ok(output) = output_slice_mut(output, output_len) else {
+            return 0;
+        };
+        let bytes_to_write = bytes.len().min(output.len());
+        output[..bytes_to_write].copy_from_slice(&bytes[..bytes_to_write]);
+        bytes.len()
     }
-    let Ok(output) = output_slice_mut(output, output_len) else {
-        return 0;
-    };
-    let bytes_to_write = bytes.len().min(output.len());
-    output[..bytes_to_write].copy_from_slice(&bytes[..bytes_to_write]);
-    bytes.len()
-}}
+}
 
 #[unsafe(no_mangle)]
 pub extern "C" fn cosmo_pd101_ffi_get_parameter_count() -> usize {
@@ -746,28 +762,30 @@ pub extern "C" fn cosmo_pd101_ffi_get_parameter_count() -> usize {
 pub unsafe extern "C" fn cosmo_pd101_ffi_get_parameter_info(
     index: usize,
     out_info: *mut CosmoPd101FfiParamInfo,
-) -> CosmoPd101FfiStatus { unsafe {
-    if out_info.is_null() {
-        return CosmoPd101FfiStatus::NullPointer;
-    }
-    let Some(spec) = automatable_param_by_index(index) else {
-        return CosmoPd101FfiStatus::InvalidArgument;
-    };
+) -> CosmoPd101FfiStatus {
+    unsafe {
+        if out_info.is_null() {
+            return CosmoPd101FfiStatus::NullPointer;
+        }
+        let Some(spec) = automatable_param_by_index(index) else {
+            return CosmoPd101FfiStatus::InvalidArgument;
+        };
 
-    let info = &mut *out_info;
-    *info = CosmoPd101FfiParamInfo::default();
-    info.id = spec.id;
-    info.default_value = engine_param_default_v1(spec.key).unwrap_or(spec.min);
-    info.min_value = spec.min;
-    info.max_value = spec.max;
-    info.flags = PARAM_FLAG_AUTOMATABLE;
-    if is_stepped_key(spec.key) {
-        info.flags |= 1 << 1;
+        let info = &mut *out_info;
+        *info = CosmoPd101FfiParamInfo::default();
+        info.id = spec.id;
+        info.default_value = engine_param_default_v1(spec.key).unwrap_or(spec.min);
+        info.min_value = spec.min;
+        info.max_value = spec.max;
+        info.flags = PARAM_FLAG_AUTOMATABLE;
+        if is_stepped_key(spec.key) {
+            info.flags |= 1 << 1;
+        }
+        write_c_char_array(&mut info.key, spec.key);
+        write_c_char_array(&mut info.label, &meta_label_for_key(spec.key));
+        CosmoPd101FfiStatus::Ok
     }
-    write_c_char_array(&mut info.key, spec.key);
-    write_c_char_array(&mut info.label, &meta_label_for_key(spec.key));
-    CosmoPd101FfiStatus::Ok
-}}
+}
 
 /// # Safety
 ///
@@ -778,22 +796,24 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_parameter_value(
     engine: *const CosmoPd101FfiEngine,
     id: u32,
     out_value: *mut f32,
-) -> CosmoPd101FfiStatus { unsafe {
-    let Ok(engine) = engine_ref(engine) else {
-        return CosmoPd101FfiStatus::NullPointer;
-    };
-    if out_value.is_null() {
-        return CosmoPd101FfiStatus::NullPointer;
+) -> CosmoPd101FfiStatus {
+    unsafe {
+        let Ok(engine) = engine_ref(engine) else {
+            return CosmoPd101FfiStatus::NullPointer;
+        };
+        if out_value.is_null() {
+            return CosmoPd101FfiStatus::NullPointer;
+        }
+        let Some(spec) = automatable_param_by_id(id) else {
+            return CosmoPd101FfiStatus::InvalidArgument;
+        };
+        let Some(value) = parameter_value(&engine.processor.params, spec.key) else {
+            return CosmoPd101FfiStatus::InvalidArgument;
+        };
+        *out_value = value;
+        CosmoPd101FfiStatus::Ok
     }
-    let Some(spec) = automatable_param_by_id(id) else {
-        return CosmoPd101FfiStatus::InvalidArgument;
-    };
-    let Some(value) = parameter_value(&engine.processor.params, spec.key) else {
-        return CosmoPd101FfiStatus::InvalidArgument;
-    };
-    *out_value = value;
-    CosmoPd101FfiStatus::Ok
-}}
+}
 
 #[unsafe(no_mangle)]
 pub extern "C" fn cosmo_pd101_ffi_set_parameter_value(
@@ -924,20 +944,22 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_render_mono(
     engine: *mut CosmoPd101FfiEngine,
     output: *mut f32,
     frames: usize,
-) -> CosmoPd101FfiStatus { unsafe {
-    let Ok(engine) = engine_mut(engine) else {
-        return CosmoPd101FfiStatus::NullPointer;
-    };
-    let Ok(output) = output_slice_mut(output, frames) else {
-        return CosmoPd101FfiStatus::NullPointer;
-    };
-    let status = engine.render_to_scratch(frames);
-    if status != CosmoPd101FfiStatus::Ok {
-        return status;
+) -> CosmoPd101FfiStatus {
+    unsafe {
+        let Ok(engine) = engine_mut(engine) else {
+            return CosmoPd101FfiStatus::NullPointer;
+        };
+        let Ok(output) = output_slice_mut(output, frames) else {
+            return CosmoPd101FfiStatus::NullPointer;
+        };
+        let status = engine.render_to_scratch(frames);
+        if status != CosmoPd101FfiStatus::Ok {
+            return status;
+        }
+        output.copy_from_slice(&engine.scratch[..frames]);
+        CosmoPd101FfiStatus::Ok
     }
-    output.copy_from_slice(&engine.scratch[..frames]);
-    CosmoPd101FfiStatus::Ok
-}}
+}
 
 /// # Safety
 ///
@@ -950,24 +972,26 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_render_stereo(
     output_left: *mut f32,
     output_right: *mut f32,
     frames: usize,
-) -> CosmoPd101FfiStatus { unsafe {
-    let Ok(engine) = engine_mut(engine) else {
-        return CosmoPd101FfiStatus::NullPointer;
-    };
-    let Ok(left) = output_slice_mut(output_left, frames) else {
-        return CosmoPd101FfiStatus::NullPointer;
-    };
-    let Ok(right) = output_slice_mut(output_right, frames) else {
-        return CosmoPd101FfiStatus::NullPointer;
-    };
-    let status = engine.render_to_scratch(frames);
-    if status != CosmoPd101FfiStatus::Ok {
-        return status;
+) -> CosmoPd101FfiStatus {
+    unsafe {
+        let Ok(engine) = engine_mut(engine) else {
+            return CosmoPd101FfiStatus::NullPointer;
+        };
+        let Ok(left) = output_slice_mut(output_left, frames) else {
+            return CosmoPd101FfiStatus::NullPointer;
+        };
+        let Ok(right) = output_slice_mut(output_right, frames) else {
+            return CosmoPd101FfiStatus::NullPointer;
+        };
+        let status = engine.render_to_scratch(frames);
+        if status != CosmoPd101FfiStatus::Ok {
+            return status;
+        }
+        left.copy_from_slice(&engine.scratch[..frames]);
+        right.copy_from_slice(&engine.scratch[..frames]);
+        CosmoPd101FfiStatus::Ok
     }
-    left.copy_from_slice(&engine.scratch[..frames]);
-    right.copy_from_slice(&engine.scratch[..frames]);
-    CosmoPd101FfiStatus::Ok
-}}
+}
 
 /// # Safety
 ///
@@ -982,24 +1006,26 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_copy_scope_i8(
     output_len: usize,
     out_sample_rate: *mut f32,
     out_hz: *mut f32,
-) -> usize { unsafe {
-    let Ok(engine) = engine_ref(engine) else {
-        return 0;
-    };
-    if !out_sample_rate.is_null() {
-        *out_sample_rate = engine.scope.sample_rate;
+) -> usize {
+    unsafe {
+        let Ok(engine) = engine_ref(engine) else {
+            return 0;
+        };
+        if !out_sample_rate.is_null() {
+            *out_sample_rate = engine.scope.sample_rate;
+        }
+        if !out_hz.is_null() {
+            *out_hz = engine.scope.hz;
+        }
+        if output.is_null() || output_len == 0 {
+            return engine.scope.samples.len();
+        }
+        let Ok(output) = output_slice_mut(output, output_len) else {
+            return 0;
+        };
+        engine.scope.copy_linear_i8(output).unwrap_or(0)
     }
-    if !out_hz.is_null() {
-        *out_hz = engine.scope.hz;
-    }
-    if output.is_null() || output_len == 0 {
-        return engine.scope.samples.len();
-    }
-    let Ok(output) = output_slice_mut(output, output_len) else {
-        return 0;
-    };
-    engine.scope.copy_linear_i8(output).unwrap_or(0)
-}}
+}
 
 /// # Safety
 ///
@@ -1014,24 +1040,26 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_copy_scope_f32(
     output_len: usize,
     out_sample_rate: *mut f32,
     out_hz: *mut f32,
-) -> usize { unsafe {
-    let Ok(engine) = engine_ref(engine) else {
-        return 0;
-    };
-    if !out_sample_rate.is_null() {
-        *out_sample_rate = engine.scope.sample_rate;
+) -> usize {
+    unsafe {
+        let Ok(engine) = engine_ref(engine) else {
+            return 0;
+        };
+        if !out_sample_rate.is_null() {
+            *out_sample_rate = engine.scope.sample_rate;
+        }
+        if !out_hz.is_null() {
+            *out_hz = engine.scope.hz;
+        }
+        if output.is_null() || output_len == 0 {
+            return engine.scope.samples.len();
+        }
+        let Ok(output) = output_slice_mut(output, output_len) else {
+            return 0;
+        };
+        engine.scope.copy_linear_f32(output).unwrap_or(0)
     }
-    if !out_hz.is_null() {
-        *out_hz = engine.scope.hz;
-    }
-    if output.is_null() || output_len == 0 {
-        return engine.scope.samples.len();
-    }
-    let Ok(output) = output_slice_mut(output, output_len) else {
-        return 0;
-    };
-    engine.scope.copy_linear_f32(output).unwrap_or(0)
-}}
+}
 
 #[cfg(test)]
 mod tests {

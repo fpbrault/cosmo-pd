@@ -15,12 +15,12 @@ use arrayvec::ArrayVec;
 use core::array;
 
 use crate::dsp_utils::random_hold_value;
-use crate::envelope::{normalize_synth_params_envelopes_to_raw_if_human, EnvelopeTimingCache};
+use crate::envelope::{EnvelopeTimingCache, normalize_synth_params_envelopes_to_raw_if_human};
 use crate::fx::FxChain;
 use crate::module_presets;
-use crate::params::{FxSlotConfig, FxSlotType, LineParams, SynthParams, NUM_VOICES};
+use crate::params::{FxSlotConfig, FxSlotType, LineParams, NUM_VOICES, SynthParams};
 use crate::render_cache::CompiledSynthParams;
-use crate::simd::{detect_simd_backend, SimdBackend};
+use crate::simd::{SimdBackend, detect_simd_backend};
 use crate::voice::Voice;
 
 use self::cz_dac::CzDacColor;
@@ -276,7 +276,7 @@ impl CosmoProcessor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::envelope_map::{human_level_to_raw, human_rate_to_raw, EnvelopeKind};
+    use crate::envelope_map::{EnvelopeKind, human_level_to_raw, human_rate_to_raw};
     use crate::params::{
         Algo, AlgoControlId, AlgoControlValueV1, DelayParams, EnvStep, FxSlotConfig, LineSelect,
         ModDestination, ModRoute, ModSource, PolyMode, ShimmerVerbParams, StepEnvData,
