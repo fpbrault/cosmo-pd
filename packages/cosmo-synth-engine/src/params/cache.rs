@@ -69,7 +69,8 @@ impl ModMatrixCache {
                 + self.amounts_by_source[source_index(ModSource::Lfo2)][idx] * sources.lfo2
                 + self.amounts_by_source[source_index(ModSource::Random)][idx] * sources.random
                 + self.amounts_by_source[source_index(ModSource::ModEnv)][idx] * sources.mod_env
-                + self.amounts_by_source[source_index(ModSource::Velocity)][idx] * sources.velocity
+                + self.amounts_by_source[source_index(ModSource::Velocity)][idx]
+                    * sources.velocity
                 + self.amounts_by_source[source_index(ModSource::ModWheel)][idx]
                     * sources.mod_wheel
                 + self.amounts_by_source[source_index(ModSource::Aftertouch)][idx]
