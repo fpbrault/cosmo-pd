@@ -398,9 +398,6 @@ jobs:
         with:
           buildCmd: ${{ matrix.build_cmd }}
 
-      - name: Install clap-validator
-        run: cargo install --locked --git https://github.com/free-audio/clap-validator clap-validator
-
       - name: Install pluginval (macOS)
         if: matrix.platform == 'macos'
         run: |
@@ -425,19 +422,19 @@ jobs:
 
       - name: Install plugin for validation (macOS)
         if: matrix.platform == 'macos'
-        run: cargo truce install --user --no-build --clap --vst3 --au2 -p cosmo-pd101-plugin
+        run: cargo truce install --user --no-build --vst3 --au2 -p cosmo-pd101-plugin
 
       - name: Install plugin for validation (Windows)
         if: matrix.platform == 'windows'
-        run: cargo truce install --user --no-build --clap --vst3 -p cosmo-pd101-plugin
+        run: cargo truce install --user --no-build --vst3 -p cosmo-pd101-plugin
 
       - name: Validate plugins (macOS)
         if: matrix.platform == 'macos'
-        run: cargo truce validate --clap --pluginval --auval -p cosmo-pd101-plugin
+        run: cargo truce validate --pluginval --auval -p cosmo-pd101-plugin
 
       - name: Validate plugins (Windows)
         if: matrix.platform == 'windows'
-        run: cargo truce validate --clap --pluginval -p cosmo-pd101-plugin
+        run: cargo truce validate --pluginval -p cosmo-pd101-plugin
 
   build-desktop:
     name: Build desktop app (${{ matrix.os }})
