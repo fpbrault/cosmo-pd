@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import type { MacroAssignment } from "@/features/synth/types/macro";
 import {
 	buildDefaultAlgoControls,
 	DEFAULT_ALGO_REF,
@@ -196,7 +195,6 @@ export type SynthState = {
 	macro2: number;
 	macro3: number;
 	macro4: number;
-	macroAssignments: MacroAssignment[];
 };
 
 // ---------------------------------------------------------------------------
@@ -296,7 +294,6 @@ type SynthActions = {
 	setMacro2: (v: number) => void;
 	setMacro3: (v: number) => void;
 	setMacro4: (v: number) => void;
-	setMacroAssignments: (v: MacroAssignment[]) => void;
 
 	gatherState: () => SynthPresetV1;
 	applyPreset: (preset: SynthPresetV1) => void;
@@ -392,7 +389,6 @@ const DEFAULT_STATE: SynthState = {
 	macro2: 0,
 	macro3: 0,
 	macro4: 0,
-	macroAssignments: [],
 };
 
 // ---------------------------------------------------------------------------
@@ -542,7 +538,6 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setMacro2: (v) => set({ macro2: v }),
 	setMacro3: (v) => set({ macro3: v }),
 	setMacro4: (v) => set({ macro4: v }),
-	setMacroAssignments: (v) => set({ macroAssignments: v }),
 
 	// --- gatherState ---
 	gatherState(): SynthPresetV1 {
@@ -656,7 +651,6 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			macro2: s.macro2,
 			macro3: s.macro3,
 			macro4: s.macro4,
-			macroAssignments: s.macroAssignments,
 		} as SynthPresetV1["params"];
 
 		return {
@@ -836,11 +830,6 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			macro2: safe((p as Record<string, unknown>).macro2 as number, 0),
 			macro3: safe((p as Record<string, unknown>).macro3 as number, 0),
 			macro4: safe((p as Record<string, unknown>).macro4 as number, 0),
-			macroAssignments: Array.isArray(
-				(p as Record<string, unknown>).macroAssignments,
-			)
-				? ((p as Record<string, unknown>).macroAssignments as MacroAssignment[])
-				: [],
 		});
 	},
 }));

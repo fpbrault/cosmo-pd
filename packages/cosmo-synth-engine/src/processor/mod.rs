@@ -48,6 +48,10 @@ pub struct CosmoProcessor {
     pub pitch_bend: f32,
     pub mod_wheel: f32,
     pub aftertouch: f32,
+    pub macro1: f32,
+    pub macro2: f32,
+    pub macro3: f32,
+    pub macro4: f32,
     pub last_runtime_mod_sources: RuntimeModSources,
     pub simd_backend: SimdBackend,
     host_transport_tempo_bpm: Option<f32>,
@@ -82,6 +86,10 @@ impl CosmoProcessor {
             pitch_bend: 0.0,
             mod_wheel: 0.0,
             aftertouch: 0.0,
+            macro1: 0.0,
+            macro2: 0.0,
+            macro3: 0.0,
+            macro4: 0.0,
             last_runtime_mod_sources: RuntimeModSources::default(),
             simd_backend: detect_simd_backend(),
             host_transport_tempo_bpm: None,
@@ -231,6 +239,10 @@ impl CosmoProcessor {
         self.pitch_bend = 0.0;
         self.mod_wheel = 0.0;
         self.aftertouch = 0.0;
+        self.macro1 = 0.0;
+        self.macro2 = 0.0;
+        self.macro3 = 0.0;
+        self.macro4 = 0.0;
         self.last_runtime_mod_sources = RuntimeModSources::default();
         self.simd_backend = detect_simd_backend();
         self.host_transport_tempo_bpm = None;
@@ -294,6 +306,18 @@ impl CosmoProcessor {
     pub fn clear_host_transport(&mut self) {
         self.host_transport_tempo_bpm = None;
         self.host_transport_playing = false;
+    }
+
+    /// Set a macro knob value. `value` is normalised [0.0, 1.0].
+    pub fn set_macro(&mut self, index: usize, value: f32) {
+        let clamped = value.clamp(0.0, 1.0);
+        match index {
+            0 => self.macro1 = clamped,
+            1 => self.macro2 = clamped,
+            2 => self.macro3 = clamped,
+            3 => self.macro4 = clamped,
+            _ => {}
+        }
     }
 }
 

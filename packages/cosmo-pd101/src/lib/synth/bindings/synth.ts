@@ -188,7 +188,7 @@ export type AlgoUiEntryV1 = { id: Algo; label: string; iconPath: string; visible
 /**
  * Modulation source selector for modulation matrix routes.
  */
-export type ModSource = "lfo1" | "lfo2" | "random" | "modEnv" | "velocity" | "modWheel" | "aftertouch"
+export type ModSource = "lfo1" | "lfo2" | "random" | "modEnv" | "velocity" | "modWheel" | "aftertouch" | "macro1" | "macro2" | "macro3" | "macro4"
 
 /**
  * Modulation destination selector for modulation matrix routes.

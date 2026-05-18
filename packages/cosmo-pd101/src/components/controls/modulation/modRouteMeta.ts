@@ -46,6 +46,30 @@ export const MOD_SOURCE_META: Record<
 		colorClass: "text-amber-400",
 		bgClass: "bg-amber-500/20 border-amber-500/40",
 	},
+	macro1: {
+		label: "Macro 1",
+		shortLabel: "M1",
+		colorClass: "text-cyan-400",
+		bgClass: "bg-cyan-500/20 border-cyan-500/40",
+	},
+	macro2: {
+		label: "Macro 2",
+		shortLabel: "M2",
+		colorClass: "text-teal-400",
+		bgClass: "bg-teal-500/20 border-teal-500/40",
+	},
+	macro3: {
+		label: "Macro 3",
+		shortLabel: "M3",
+		colorClass: "text-sky-400",
+		bgClass: "bg-sky-500/20 border-sky-500/40",
+	},
+	macro4: {
+		label: "Macro 4",
+		shortLabel: "M4",
+		colorClass: "text-indigo-400",
+		bgClass: "bg-indigo-500/20 border-indigo-500/40",
+	},
 };
 
 export const MOD_SOURCE_OPTIONS: { label: string; value: ModSource }[] = [
@@ -56,4 +80,8 @@ export const MOD_SOURCE_OPTIONS: { label: string; value: ModSource }[] = [
 	{ label: "Velocity", value: "velocity" },
 	{ label: "Mod Wheel", value: "modWheel" },
 	{ label: "Aftertouch", value: "aftertouch" },
+	{ label: "Macro 1", value: "macro1" },
+	{ label: "Macro 2", value: "macro2" },
+	{ label: "Macro 3", value: "macro3" },
+	{ label: "Macro 4", value: "macro4" },
 ];

@@ -393,6 +393,7 @@ enum UiInputEvent {
     PitchBend { value: f32 },
     ModWheel { value: f32 },
     Aftertouch { value: f32 },
+    Macro { index: usize, value: f32 },
     Panic,
 }
 
@@ -750,6 +751,29 @@ fn handle_ipc_invoke(
 
             ui_input_queue
                 .push(UiInputEvent::Aftertouch { value })
+                .map_err(|_| "ui input queue is full".to_string())?;
+            Ok(serde_json::Value::Null)
+        }
+        "macroValue" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "macroValue expects an object payload as first argument".to_string()
+                })?;
+            let index = payload
+                .get("index")
+                .and_then(serde_json::Value::as_u64)
+                .ok_or_else(|| "macroValue payload missing index".to_string())?
+                as usize;
+            let value = payload
+                .get("value")
+                .and_then(serde_json::Value::as_f64)
+                .ok_or_else(|| "macroValue payload missing value".to_string())?
+                as f32;
+
+            ui_input_queue
+                .push(UiInputEvent::Macro { index, value })
                 .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
@@ -1117,6 +1141,7 @@ impl CzPlugin {
                     UiInputEvent::PitchBend { value } => proc.set_pitch_bend(value),
                     UiInputEvent::ModWheel { value } => proc.set_mod_wheel(value),
                     UiInputEvent::Aftertouch { value } => proc.set_aftertouch(value),
+                    UiInputEvent::Macro { index, value } => proc.set_macro(index, value),
                     UiInputEvent::Panic => Self::all_notes_off(proc),
                 }
             }

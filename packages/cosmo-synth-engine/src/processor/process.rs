@@ -121,6 +121,10 @@ impl CosmoProcessor {
                 source_velocity,
                 self.mod_wheel,
                 self.aftertouch,
+                self.macro1,
+                self.macro2,
+                self.macro3,
+                self.macro4,
             );
 
             if has_active_mod_routes {
@@ -203,6 +207,10 @@ impl CosmoProcessor {
                 velocity,
                 mod_wheel: self.mod_wheel,
                 aftertouch: self.aftertouch,
+                macro1: self.macro1,
+                macro2: self.macro2,
+                macro3: self.macro3,
+                macro4: self.macro4,
             };
             prev_lfo1 = lfos.lfo1;
             prev_lfo2 = lfos.lfo2;
@@ -381,6 +389,10 @@ impl CosmoProcessor {
             pitch_bend_semitones: self.pitch_bend * p.pitch_bend_range,
             mod_wheel: self.mod_wheel,
             aftertouch: self.aftertouch,
+            macro1: self.macro1,
+            macro2: self.macro2,
+            macro3: self.macro3,
+            macro4: self.macro4,
             cache: mod_cache,
             modulation_active: has_active_mod_routes,
             line1_plan: &line1_plan,

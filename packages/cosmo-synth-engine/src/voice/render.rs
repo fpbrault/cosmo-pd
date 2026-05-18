@@ -62,6 +62,10 @@ pub struct VoiceRenderContext<'a> {
     pub pitch_bend_semitones: f32,
     pub mod_wheel: f32,
     pub aftertouch: f32,
+    pub macro1: f32,
+    pub macro2: f32,
+    pub macro3: f32,
+    pub macro4: f32,
     pub cache: &'a ModMatrixCache,
     pub modulation_active: bool,
     pub line1_plan: &'a CompiledLinePlan,
@@ -136,6 +140,10 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         voice.velocity,
         mod_wheel,
         aftertouch,
+        ctx.macro1,
+        ctx.macro2,
+        ctx.macro3,
+        ctx.macro4,
     );
     let line1_algo_param_mods = if modulation_active {
         algo_param_slot_mods_for_line(1, cache, &mod_sources)

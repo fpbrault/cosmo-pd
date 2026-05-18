@@ -197,6 +197,10 @@ export function SynthParamControllerProvider({
 				velocity: Number.isFinite(detail.velocity) ? detail.velocity : 0,
 				modWheel: Number.isFinite(detail.modWheel) ? detail.modWheel : 0,
 				aftertouch: Number.isFinite(detail.aftertouch) ? detail.aftertouch : 0,
+				macro1: Number.isFinite(detail.macro1) ? detail.macro1 : 0,
+				macro2: Number.isFinite(detail.macro2) ? detail.macro2 : 0,
+				macro3: Number.isFinite(detail.macro3) ? detail.macro3 : 0,
+				macro4: Number.isFinite(detail.macro4) ? detail.macro4 : 0,
 			});
 		};
 
@@ -289,21 +293,6 @@ export function SynthParamControllerProvider({
 					liveModDelta += route.amount * sourceValue;
 				}
 				hasAnyModulation = true;
-			}
-
-			const macroState = useSynthStore.getState();
-			const macroValues = [
-				macroState.macro1,
-				macroState.macro2,
-				macroState.macro3,
-				macroState.macro4,
-			];
-			for (const assignment of macroState.macroAssignments) {
-				if (assignment.enabled && assignment.destination === destination) {
-					const macroValue = macroValues[assignment.macroIndex] ?? 0;
-					liveModDelta += (macroValue - 0.5) * 2 * assignment.depth;
-					hasAnyModulation = true;
-				}
 			}
 
 			if (!hasAnyModulation) {
