@@ -887,7 +887,7 @@ impl CzPlugin {
     }
 
     fn apply_factory_preset(&mut self, index: usize) {
-        let Some(params) = crate::ffi::factory_preset_params(index) else {
+        let Some(params) = crate::ffi::factory_preset_params(index).cloned() else {
             return;
         };
 
@@ -1610,7 +1610,7 @@ mod tests {
     #[test]
     fn truce_driver_renders_with_transport_and_block_snapshots() {
         use std::time::Duration;
-        use truce_test::{assertions, driver, TransportSpec};
+        use truce_test::{TransportSpec, assertions, driver};
 
         let result = driver!(Plugin)
             .duration(Duration::from_millis(20))

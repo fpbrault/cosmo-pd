@@ -315,12 +315,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 						strokeWidth="1"
 					/>
 					<path
-						d={lfoPreviewPath(
-							lfoWaveform,
-							lfoSymmetry,
-							lfoOffset,
-							lfoDepth,
-						)}
+						d={lfoPreviewPath(lfoWaveform, lfoSymmetry, lfoOffset, lfoDepth)}
 						fill="none"
 						stroke={`url(#lfo-preview-${id})`}
 						strokeWidth="2"

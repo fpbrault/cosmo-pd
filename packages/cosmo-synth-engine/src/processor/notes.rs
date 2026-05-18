@@ -171,10 +171,10 @@ impl CosmoProcessor {
             voice: self.voices[voice_idx].clone(),
         });
 
-        if let Some(entry) = prev_entry {
-            if !entry.voice.is_silent {
-                self.push_mono_stack_entry(entry);
-            }
+        if let Some(entry) = prev_entry
+            && !entry.voice.is_silent
+        {
+            self.push_mono_stack_entry(entry);
         }
 
         let voice = &mut self.voices[voice_idx];
@@ -275,14 +275,14 @@ impl CosmoProcessor {
     }
 
     fn handle_mono_note_on(&mut self, note: u8, frequency: f32, velocity: f32) {
-        if let Some(entry) = self.active_notes.iter().find(|e| e.note == note) {
-            if self.voices[entry.voice_idx].note == Some(note) {
-                let voice = &mut self.voices[entry.voice_idx];
-                voice.frequency = frequency;
-                voice.target_freq = frequency;
-                voice.velocity = velocity;
-                return;
-            }
+        if let Some(entry) = self.active_notes.iter().find(|e| e.note == note)
+            && self.voices[entry.voice_idx].note == Some(note)
+        {
+            let voice = &mut self.voices[entry.voice_idx];
+            voice.frequency = frequency;
+            voice.target_freq = frequency;
+            voice.velocity = velocity;
+            return;
         }
 
         if self.params.portamento.enabled
