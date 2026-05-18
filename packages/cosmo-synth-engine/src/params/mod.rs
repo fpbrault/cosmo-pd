@@ -13,7 +13,7 @@ mod waveforms;
 
 // Re-exports for backward compatibility
 pub(crate) use cache::ModMatrixCache;
-pub use envelopes::{EnvStep, StepEnvData, NUM_ENV_STEPS};
+pub use envelopes::{EnvStep, NUM_ENV_STEPS, StepEnvData};
 pub use fx_params::{
     BitcrusherParams, ChorusParams, CompressorParams, DelayParams, DistortionParams, EqParams,
     FxSlotConfig, FxSlotType, GrainDelayParams, JunoChorusParams, LoFiParams, PhaseModParams,
@@ -22,18 +22,18 @@ pub use fx_params::{
 };
 pub use lfo::{LfoParams, LfoWaveform};
 pub use line::{
-    AlgoControlId, AlgoControlSlots, AlgoControlValueV1, LineParams, LineSelect, ModMode, PolyMode,
-    MAX_ALGO_CONTROLS,
+    AlgoControlId, AlgoControlSlots, AlgoControlValueV1, LineParams, LineSelect, MAX_ALGO_CONTROLS,
+    ModMode, PolyMode,
 };
 pub use modulation::{
-    ModDestination, ModMatrix, ModRoute, ModSource, ENV_STEP_DEST_FIRST, ENV_STEP_DEST_LAST,
+    ENV_STEP_DEST_FIRST, ENV_STEP_DEST_LAST, ModDestination, ModMatrix, ModRoute, ModSource,
     NUM_MOD_DESTINATIONS,
 };
 pub use portamento::{PortamentoMode, PortamentoParams};
-pub use synth_params::{ModEnvParams, RandomParams, SynthParams, NUM_OPERATORS, NUM_VOICES};
+pub use synth_params::{ModEnvParams, NUM_OPERATORS, NUM_VOICES, RandomParams, SynthParams};
 pub use ui_meta::{
-    engine_param_default_v1, engine_param_ranges_v1, engine_param_ui_meta_v1,
     EngineEnumValueLabelV1, EngineParamRangeV1, EngineParamReadoutFormatV1, EngineParamUiMetaV1,
+    engine_param_default_v1, engine_param_ranges_v1, engine_param_ui_meta_v1,
 };
 pub use waveforms::{Algo, BaseWaveform, CzAlgo, CzWaveform, WindowType};
 

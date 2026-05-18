@@ -1,7 +1,7 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
-use dasp_interpolate::{linear::Linear, Interpolator};
+use dasp_interpolate::{Interpolator, linear::Linear};
 use dasp_ring_buffer::Fixed;
 
 // ---------------------------------------------------------------------------

@@ -1,8 +1,8 @@
 use crate::dsp_utils::lerp;
+pub use crate::envelope_map::EnvelopeKind;
 use crate::envelope_map::human_level_to_raw;
 use crate::envelope_map::human_rate_to_raw;
 use crate::envelope_map::raw_level_to_human;
-pub use crate::envelope_map::EnvelopeKind;
 use crate::params::{StepEnvData, SynthParams};
 
 pub fn normalize_env_to_raw_if_human(kind: EnvelopeKind, env: &mut StepEnvData) {
@@ -413,7 +413,7 @@ mod tests {
 
     #[test]
     fn release_with_multiple_post_sustain_steps_does_not_hard_zero_on_transition() {
-        use crate::params::{EnvStep, StepEnvData, NUM_ENV_STEPS};
+        use crate::params::{EnvStep, NUM_ENV_STEPS, StepEnvData};
 
         let mut env = StepEnvData {
             steps: [EnvStep {
@@ -453,27 +453,27 @@ mod tests {
         };
 
         let timing = EnvelopeTimingCache::new(48_000.0);
-        let mut gen = EnvGen {
+        let mut r#gen = EnvGen {
             prev_level: 0.7,
             output: 0.7,
             step: 1, // at sustain
             ..Default::default()
         };
 
-        gen.start_release(&env);
+        r#gen.start_release(&env);
 
         // Consume release step 2 completely so generator transitions to step 3.
         // We don't need exact sample count, just enough to guarantee transition.
         for _ in 0..8192 {
-            gen.advance(EnvelopeKind::Dca, &env, &timing, 0.0, 60);
-            if gen.step >= 3 {
+            r#gen.advance(EnvelopeKind::Dca, &env, &timing, 0.0, 60);
+            if r#gen.step >= 3 {
                 break;
             }
         }
 
-        assert_eq!(gen.step, 3);
+        assert_eq!(r#gen.step, 3);
         // On entering the final step, output must still be above zero and then
         // decay using the final step's rate, not jump immediately to 0.
-        assert!(gen.output > 0.0);
+        assert!(r#gen.output > 0.0);
     }
 }

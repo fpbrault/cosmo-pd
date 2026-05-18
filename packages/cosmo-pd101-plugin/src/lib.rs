@@ -13,7 +13,7 @@ use arc_swap::ArcSwap;
 use cosmo_synth_engine::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use cosmo_synth_engine::params::SynthParams;
 use cosmo_synth_engine::processor::state::RuntimeModSources;
-use cosmo_synth_engine::processor::{midi_note_to_freq, CosmoProcessor};
+use cosmo_synth_engine::processor::{CosmoProcessor, midi_note_to_freq};
 use crossbeam_queue::ArrayQueue;
 use truce::prelude::*;
 
@@ -759,37 +759,26 @@ impl PluginLogic for CzPlugin {
             let Some(event) = events.get(i) else {
                 continue;
             };
+            let Some(ref mut proc) = self.processor else {
+                continue;
+            };
             match &event.body {
-                EventBody::NoteOff { note, .. } => {
-                    if let Some(ref mut proc) = self.processor {
-                        proc.note_off(*note);
-                    }
-                }
+                EventBody::NoteOff { note, .. } => proc.note_off(*note),
                 EventBody::NoteOn { note, velocity, .. } => {
-                    if let Some(ref mut proc) = self.processor {
-                        if *velocity == 0 {
-                            proc.note_off(*note);
-                        } else {
-                            let vel = *velocity as f32 / 127.0;
-                            proc.note_on(*note, midi_note_to_freq(*note), vel);
-                        }
+                    if *velocity == 0 {
+                        proc.note_off(*note);
+                    } else {
+                        proc.note_on(*note, midi_note_to_freq(*note), *velocity as f32 / 127.0);
                     }
                 }
-                EventBody::ControlChange { cc, value, .. } => {
-                    if let Some(ref mut proc) = self.processor {
-                        match cc {
-                            1 => proc.set_mod_wheel(*value as f32 / 127.0),
-                            64 => proc.set_sustain(*value >= 64),
-                            120 | 123 => Self::all_notes_off(proc),
-                            _ => {}
-                        }
-                    }
-                }
+                EventBody::ControlChange { cc, value, .. } => match cc {
+                    1 => proc.set_mod_wheel(*value as f32 / 127.0),
+                    64 => proc.set_sustain(*value >= 64),
+                    120 | 123 => Self::all_notes_off(proc),
+                    _ => {}
+                },
                 EventBody::PitchBend { value, .. } => {
-                    if let Some(ref mut proc) = self.processor {
-                        let normalized = (*value as f32 - 8192.0) / 8192.0;
-                        proc.set_pitch_bend(normalized);
-                    }
+                    proc.set_pitch_bend((*value as f32 - 8192.0) / 8192.0);
                 }
                 _ => {}
             }

@@ -7,28 +7,28 @@
 //! - SPECTA_TS_EXPORT_PATH: absolute/relative path to generated TypeScript file
 
 use cosmo_synth_engine::fx::{
-    fx_definitions_v1, FxControlKindV1, FxControlOptionV1, FxControlV1, FxDefinitionV1,
-    FxPresetOptionV1,
+    FxControlKindV1, FxControlOptionV1, FxControlV1, FxDefinitionV1, FxPresetOptionV1,
+    fx_definitions_v1,
 };
 use cosmo_synth_engine::generators::{
     AlgoControlAssignmentV1, AlgoControlKindV1, AlgoControlOptionV1, AlgoControlPresentationV1,
     AlgoControlV1, AlgoDefinitionV1, AlgoUiEntryV1, CzPresetV1,
 };
-use cosmo_synth_engine::module_presets::{module_preset_catalog_v1, ModulePresetGroupV1};
+use cosmo_synth_engine::module_presets::{ModulePresetGroupV1, module_preset_catalog_v1};
 use cosmo_synth_engine::params::engine_param_default_v1;
 use cosmo_synth_engine::params::{
-    engine_param_ranges_v1, engine_param_ui_meta_v1, Algo, AlgoControlValueV1, BaseWaveform,
-    BitcrusherParams, ChorusParams, CompressorParams, CzAlgo, CzWaveform, DelayParams,
-    DistortionParams, EnvStep, EqParams, FxSlotConfig, FxSlotType, GrainDelayParams,
-    JunoChorusParams, LfoParams, LfoWaveform, LineParams, LineSelect, LoFiParams, ModDestination,
-    ModEnvParams, ModMatrix, ModMode, ModRoute, ModSource, PhaseModParams, PhaserParams, PolyMode,
-    PortamentoMode, PortamentoParams, RandomParams, ReverbParams, RingModParams, ShimmerVerbParams,
-    StepEnvData, SynthParams, TremoloParams, VibratoParams, WavefolderParams, WindowType,
+    Algo, AlgoControlValueV1, BaseWaveform, BitcrusherParams, ChorusParams, CompressorParams,
+    CzAlgo, CzWaveform, DelayParams, DistortionParams, EnvStep, EqParams, FxSlotConfig, FxSlotType,
+    GrainDelayParams, JunoChorusParams, LfoParams, LfoWaveform, LineParams, LineSelect, LoFiParams,
+    ModDestination, ModEnvParams, ModMatrix, ModMode, ModRoute, ModSource, PhaseModParams,
+    PhaserParams, PolyMode, PortamentoMode, PortamentoParams, RandomParams, ReverbParams,
+    RingModParams, ShimmerVerbParams, StepEnvData, SynthParams, TremoloParams, VibratoParams,
+    WavefolderParams, WindowType, engine_param_ranges_v1, engine_param_ui_meta_v1,
 };
 use cosmo_synth_engine::preset_wire::{
-    algo_definitions_v1, algo_ui_catalog_v1, cz_presets, SynthPresetV1,
+    SynthPresetV1, algo_definitions_v1, algo_ui_catalog_v1, cz_presets,
 };
-use specta_typescript::{export, Typescript};
+use specta_typescript::{Typescript, export};
 
 fn main() {
     let manifest_dir = env!("CARGO_MANIFEST_DIR");

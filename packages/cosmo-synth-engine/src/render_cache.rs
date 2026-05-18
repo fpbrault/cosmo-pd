@@ -3,9 +3,9 @@
 //! The audio loop runs sample-by-sample, so stable work derived from
 //! `SynthParams` belongs here and is rebuilt only when parameters change.
 
-use crate::generators::{cz101, pre_resolve_controls, PER_LINE_HEADROOM};
+use crate::generators::{PER_LINE_HEADROOM, cz101, pre_resolve_controls};
 use crate::params::{
-    Algo, BaseWaveform, LineParams, ModMatrixCache, SynthParams, WindowType, NUM_VOICES,
+    Algo, BaseWaveform, LineParams, ModMatrixCache, NUM_VOICES, SynthParams, WindowType,
 };
 
 const REFERENCE_LINE_HEADROOM: f32 = 0.75;

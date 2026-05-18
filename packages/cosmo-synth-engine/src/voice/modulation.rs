@@ -1,6 +1,6 @@
 use crate::params::{
-    EnvStep, LineParams, ModDestination, ModMatrixCache, StepEnvData, ENV_STEP_DEST_FIRST,
-    ENV_STEP_DEST_LAST, NUM_ENV_STEPS,
+    ENV_STEP_DEST_FIRST, ENV_STEP_DEST_LAST, EnvStep, LineParams, ModDestination, ModMatrixCache,
+    NUM_ENV_STEPS, StepEnvData,
 };
 
 // Modulation helpers

@@ -46,11 +46,7 @@ impl TremoloFx {
             }
             2 => {
                 // Square
-                if self.phase < 0.5 {
-                    1.0
-                } else {
-                    -1.0
-                }
+                if self.phase < 0.5 { 1.0 } else { -1.0 }
             }
             _ => (self.phase * core::f32::consts::PI * 2.0).sin(),
         };
