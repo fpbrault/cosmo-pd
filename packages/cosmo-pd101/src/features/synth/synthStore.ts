@@ -195,6 +195,7 @@ export type SynthState = {
 	macro2: number;
 	macro3: number;
 	macro4: number;
+	macroLabels: [string, string, string, string];
 };
 
 // ---------------------------------------------------------------------------
@@ -294,6 +295,7 @@ type SynthActions = {
 	setMacro2: (v: number) => void;
 	setMacro3: (v: number) => void;
 	setMacro4: (v: number) => void;
+	setMacroLabel: (index: number, label: string) => void;
 
 	gatherState: () => SynthPresetV1;
 	applyPreset: (preset: SynthPresetV1) => void;
@@ -389,6 +391,7 @@ const DEFAULT_STATE: SynthState = {
 	macro2: 0,
 	macro3: 0,
 	macro4: 0,
+	macroLabels: ["MACRO 1", "MACRO 2", "MACRO 3", "MACRO 4"],
 };
 
 // ---------------------------------------------------------------------------
@@ -538,6 +541,12 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setMacro2: (v) => set({ macro2: v }),
 	setMacro3: (v) => set({ macro3: v }),
 	setMacro4: (v) => set({ macro4: v }),
+	setMacroLabel: (index, label) =>
+		set((s) => {
+			const labels = [...s.macroLabels] as [string, string, string, string];
+			labels[index] = label;
+			return { macroLabels: labels };
+		}),
 
 	// --- gatherState ---
 	gatherState(): SynthPresetV1 {

@@ -123,8 +123,7 @@ export function usePluginBridgeSynthEngine(
 	const syncRef = useRef<(() => void) | null>(null);
 
 	const send = useCallback((params: SynthPresetV1["params"]) => {
-		const { macroLabels, ...engineParams } = params as Record<string, unknown>;
-		const json = JSON.stringify(engineParams);
+		const json = JSON.stringify(params);
 		if (sentParamsRef.current === json) return;
 		sentParamsRef.current = json;
 		window.__czSetParams?.(json);

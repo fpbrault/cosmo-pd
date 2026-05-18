@@ -181,6 +181,7 @@ function SynthRendererContent({
 	const [brandInfoOpen, setBrandInfoOpen] = useState(false);
 	const [globalPanelOpen, setGlobalPanelOpen] = useState(false);
 	const [macroLabelEditorOpen, setMacroLabelEditorOpen] = useState(false);
+
 	const mainPanelBottomInset =
 		keyboardVisible && !libraryModeOpen ? "11rem" : "0rem";
 	const frameStyleWithPanelInset = {
@@ -421,6 +422,7 @@ function SynthRendererContent({
 						open={macroLabelEditorOpen}
 						onClose={() => setMacroLabelEditorOpen(false)}
 					/>
+
 					<PendingModifiedPresetModal
 						pendingPresetChange={headerProps.pendingPresetChange}
 						onSave={headerProps.onSavePendingPresetChange}
