@@ -250,9 +250,10 @@ impl DebugApp {
         if let Ok(mut proc) = self.processor.lock() {
             for binding in KEY_BINDINGS {
                 if self.prev_keys.contains(&binding.key)
-                    && let Some(note) = key_to_midi(*binding, octave_offset) {
-                        proc.note_off(note);
-                    }
+                    && let Some(note) = key_to_midi(*binding, octave_offset)
+                {
+                    proc.note_off(note);
+                }
             }
         }
     }

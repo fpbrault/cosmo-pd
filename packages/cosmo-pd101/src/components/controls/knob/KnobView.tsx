@@ -32,6 +32,7 @@ export interface KnobViewProps {
 	htmlOverlay?: ReactNode;
 	/** Forwarded ref for the inner SVG element (used by useKnobInteraction for coordinate transforms). */
 	svgRef?: RefObject<SVGSVGElement>;
+	midiLearnState?: "available" | "mapped" | "targeted" | null;
 }
 
 export function KnobView({
@@ -45,6 +46,7 @@ export function KnobView({
 	modTrailDuration = 220,
 	htmlOverlay,
 	svgRef,
+	midiLearnState = null,
 }: KnobViewProps) {
 	const _uid = useId().replace(/:/g, "");
 
@@ -195,6 +197,13 @@ export function KnobView({
 	const bodyGradient = bodyGradientByVariant[resolvedVariant];
 	const isAccentOrMuted =
 		resolvedVariant === "accent" || resolvedVariant === "muted";
+	const midiLearnRingColor =
+		midiLearnState === "mapped"
+			? "rgba(192, 132, 252, 0.96)"
+			: "rgba(56, 221, 255, 0.96)";
+	const midiLearnDiskRadius = knobBodyRadius + 4.2;
+	const midiLearnDiskOpacity = 0.6;
+	const bottomCropPx = 12;
 
 	return (
 		<div
@@ -204,8 +213,8 @@ export function KnobView({
 			<svg
 				ref={svgRef}
 				width={size}
-				height={size - 12}
-				viewBox={`0 0 ${viewBoxSize} ${viewBoxSize - 12}`}
+				height={size - bottomCropPx}
+				viewBox={`0 0 ${viewBoxSize} ${viewBoxSize - bottomCropPx}`}
 				role="presentation"
 				aria-hidden="true"
 			>
@@ -298,6 +307,16 @@ export function KnobView({
 						) : null}
 					</>
 				)}
+
+				{midiLearnState ? (
+					<circle
+						cx={cx}
+						cy={cy}
+						r={midiLearnDiskRadius}
+						fill={midiLearnRingColor}
+						opacity={midiLearnDiskOpacity}
+					/>
+				) : null}
 
 				{/* 3D Knob Body */}
 				<circle

@@ -7,31 +7,33 @@ import { ENGINE_PARAM_UI_META_BY_KEY } from "@/lib/synth/paramMeta";
 export function useMidiLearnBindings() {
 	const applyBinding = useCallback(
 		(channel: number, cc: number, rawValue: number) => {
-			const binding = useMidiLearnStore
+			const bindings = useMidiLearnStore
 				.getState()
-				.getBindingForMidi(channel, cc);
-			if (!binding) return;
+				.getBindingsForMidi(channel, cc);
+			if (bindings.length === 0) return;
 
-			const meta = ENGINE_PARAM_UI_META_BY_KEY[binding.paramKey];
-			const min = meta?.min ?? 0;
-			const max = meta?.max ?? 1;
-			const range = max - min;
-			const normalizedValue = rawValue / 127;
-			const mappedValue = min + normalizedValue * range;
+			for (const binding of bindings) {
+				const meta = ENGINE_PARAM_UI_META_BY_KEY[binding.paramKey];
+				const min = meta?.min ?? 0;
+				const max = meta?.max ?? 1;
+				const range = max - min;
+				const normalizedValue = rawValue / 127;
+				const mappedValue = min + normalizedValue * range;
 
-			const setterName =
-				SYNTH_PARAM_SETTERS[
-					binding.paramKey as keyof typeof SYNTH_PARAM_SETTERS
-				];
-			if (!setterName) return;
+				const setterName =
+					SYNTH_PARAM_SETTERS[
+						binding.paramKey as keyof typeof SYNTH_PARAM_SETTERS
+					];
+				if (!setterName) continue;
 
-			const store = useSynthStore.getState() as Record<
-				string,
-				(value: number) => void
-			>;
-			const setter = store[setterName];
-			if (typeof setter === "function") {
-				setter(mappedValue);
+				const store = useSynthStore.getState() as unknown as Record<
+					string,
+					(value: number) => void
+				>;
+				const setter = store[setterName];
+				if (typeof setter === "function") {
+					setter(mappedValue);
+				}
 			}
 		},
 		[],
@@ -51,9 +53,8 @@ export function useMidiLearnBindings() {
 
 			if (store.learnMode) {
 				store.captureMidiCc(channel, cc, rawValue);
-			} else {
-				applyBinding(channel, cc, rawValue);
 			}
+			applyBinding(channel, cc, rawValue);
 		},
 		[applyBinding],
 	);

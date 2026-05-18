@@ -88,8 +88,11 @@ export type AsidePanelTabMeta = {
 	bottomLabel: string;
 };
 
-export type AsidePanelComponent<T extends string = string> = {
-	(props: object): ReactElement;
+export type AsidePanelComponent<
+	T extends string = string,
+	P extends object = object,
+> = {
+	(props: P): ReactElement;
 	panelId: T;
 	panelTab: AsidePanelTabMeta;
 };

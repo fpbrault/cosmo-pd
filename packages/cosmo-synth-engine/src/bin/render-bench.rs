@@ -1210,18 +1210,20 @@ fn render_pass(config: &BenchmarkConfig, scenario: &Scenario, total_samples: usi
         block_index += 1;
 
         if let Some(churn_blocks) = scenario.note_churn_blocks
-            && block_index.is_multiple_of(churn_blocks) {
-                let lead = DEFAULT_NOTES[(block_index / churn_blocks) % config.voices];
-                let release = DEFAULT_NOTES[(block_index / churn_blocks + 1) % config.voices];
-                processor.note_off(release);
-                processor.note_on(lead, midi_note_to_freq(lead), 0.92);
-            }
+            && block_index.is_multiple_of(churn_blocks)
+        {
+            let lead = DEFAULT_NOTES[(block_index / churn_blocks) % config.voices];
+            let release = DEFAULT_NOTES[(block_index / churn_blocks + 1) % config.voices];
+            processor.note_off(release);
+            processor.note_on(lead, midi_note_to_freq(lead), 0.92);
+        }
 
         if let (Some(swap_blocks), Some(variants)) = (scenario.param_swap_blocks, &param_variants)
-            && block_index.is_multiple_of(swap_blocks) {
-                let variant_index = (block_index / swap_blocks) % variants.len();
-                processor.set_shared_params(Arc::clone(&variants[variant_index]));
-            }
+            && block_index.is_multiple_of(swap_blocks)
+        {
+            let variant_index = (block_index / swap_blocks) % variants.len();
+            processor.set_shared_params(Arc::clone(&variants[variant_index]));
+        }
     }
 
     checksum

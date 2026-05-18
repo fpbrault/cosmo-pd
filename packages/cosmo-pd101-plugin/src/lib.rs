@@ -1199,34 +1199,6 @@ impl PluginLogic for CzPlugin {
                 if let Some(proc) = self.processor.as_mut() {
                     Self::all_notes_off(proc);
                 }
-                EventBody::NoteOn { note, velocity, .. } => {
-                    if let Some(ref mut proc) = self.processor {
-                        if *velocity == 0 {
-                            proc.note_off(*note);
-                        } else {
-                            let vel = *velocity as f32 / 127.0;
-                            proc.note_on(*note, midi_note_to_freq(*note), vel);
-                        }
-                    }
-                }
-                EventBody::ControlChange { cc, value, .. } => {
-                    if let Some(ref mut proc) = self.processor {
-                        match cc {
-                            1 => proc.set_mod_wheel(*value as f32 / 127.0),
-                            64 => proc.set_sustain(*value >= 64),
-                            120 | 123 => Self::all_notes_off(proc),
-                            _ => {}
-                        }
-                    }
-                    let _ = self.midi_cc_queue.push((0, *cc, *value));
-                }
-                EventBody::PitchBend { value, .. } => {
-                    if let Some(ref mut proc) = self.processor {
-                        let normalized = (*value as f32 - 8192.0) / 8192.0;
-                        proc.set_pitch_bend(normalized);
-                    }
-                }
-                _ => {}
             }
         }
         self.last_playing = context.transport.playing;

@@ -64,11 +64,12 @@ impl CosmoProcessor {
         voice.smoothed_dcw2 = 0.0;
 
         if let Some(vib) = self.params.vibrato_params()
-            && vib.enabled {
-                voice.vibrato_phase = 0.0;
-                let delay_ms = vib.delay;
-                voice.vibrato_delay_counter = (delay_ms * self.sample_rate / 1000.0).round() as u32;
-            }
+            && vib.enabled
+        {
+            voice.vibrato_phase = 0.0;
+            let delay_ms = vib.delay;
+            voice.vibrato_delay_counter = (delay_ms * self.sample_rate / 1000.0).round() as u32;
+        }
     }
     pub(crate) fn configure_voice_pitch(&mut self, voice_idx: usize, note: u8, frequency: f32) {
         let voice = &mut self.voices[voice_idx];

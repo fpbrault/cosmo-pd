@@ -9,15 +9,10 @@ export type MidiBinding = {
 };
 
 const MIDI_LEARN_STORAGE_KEY = "cosmo-pd101-midi-learn";
-const ALL_CHANNELS = 16;
-
-function bindingKey(channel: number, cc: number): string {
-	return `${channel}:${cc}`;
-}
 
 type MidiLearnState = {
 	learnMode: boolean;
-	bindings: Record<string, MidiBinding>;
+	bindings: Partial<Record<SynthParamKey, MidiBinding>>;
 	lastCapturedCc: { channel: number; cc: number; rawValue: number } | null;
 	pendingLearnParam: SynthParamKey | null;
 };
@@ -31,9 +26,14 @@ type MidiLearnActions = {
 		cc: number,
 		paramKey: SynthParamKey,
 	) => void;
-	removeBinding: (channel: number, cc: number) => void;
+	updateBinding: (
+		paramKey: SynthParamKey,
+		updates: Partial<Pick<MidiBinding, "channel" | "cc">>,
+	) => void;
+	removeBinding: (paramKey: SynthParamKey) => void;
 	removeBindingsForParam: (paramKey: SynthParamKey) => void;
-	getBindingForMidi: (channel: number, cc: number) => MidiBinding | undefined;
+	getBindingsForMidi: (channel: number, cc: number) => MidiBinding[];
+	getBindingForParam: (paramKey: SynthParamKey) => MidiBinding | undefined;
 	getBindingsForParam: (paramKey: SynthParamKey) => MidiBinding[];
 	clearLastCapturedCc: () => void;
 	resetPendingLearnParam: () => void;
@@ -48,6 +48,41 @@ const DEFAULT_STATE: MidiLearnState = {
 	pendingLearnParam: null,
 };
 
+function normalizePersistedBindings(
+	persisted: unknown,
+): Partial<Record<SynthParamKey, MidiBinding>> {
+	if (!persisted || typeof persisted !== "object") {
+		return {};
+	}
+
+	const normalized: Partial<Record<SynthParamKey, MidiBinding>> = {};
+	for (const candidate of Object.values(persisted)) {
+		if (!candidate || typeof candidate !== "object") {
+			continue;
+		}
+		const maybeBinding = candidate as {
+			paramKey?: unknown;
+			channel?: unknown;
+			cc?: unknown;
+		};
+		if (typeof maybeBinding.paramKey !== "string") {
+			continue;
+		}
+		if (typeof maybeBinding.channel !== "number") {
+			continue;
+		}
+		if (typeof maybeBinding.cc !== "number") {
+			continue;
+		}
+		normalized[maybeBinding.paramKey as SynthParamKey] = {
+			paramKey: maybeBinding.paramKey as SynthParamKey,
+			channel: maybeBinding.channel,
+			cc: maybeBinding.cc,
+		};
+	}
+	return normalized;
+}
+
 export const useMidiLearnStore = create<MidiLearnStore>()(
 	persist(
 		(set, get) => ({
@@ -57,28 +92,12 @@ export const useMidiLearnStore = create<MidiLearnStore>()(
 				set({
 					learnMode: on,
 					lastCapturedCc: null,
-					pendingLearnParam: null,
+					pendingLearnParam: on ? get().pendingLearnParam : null,
 				});
 			},
 
 			setPendingLearnParam: (paramKey) => {
 				set({ pendingLearnParam: paramKey });
-				const lastCc = get().lastCapturedCc;
-				if (paramKey !== null && lastCc !== null) {
-					const key = bindingKey(lastCc.channel, lastCc.cc);
-					set((state) => ({
-						bindings: {
-							...state.bindings,
-							[key]: {
-								paramKey,
-								channel: lastCc.channel,
-								cc: lastCc.cc,
-							},
-						},
-						pendingLearnParam: null,
-						lastCapturedCc: null,
-					}));
-				}
 			},
 
 			captureMidiCc: (channel, cc, rawValue) => {
@@ -87,18 +106,16 @@ export const useMidiLearnStore = create<MidiLearnStore>()(
 
 				const pendingKey = state.pendingLearnParam;
 				if (pendingKey) {
-					const key = bindingKey(channel, cc);
 					set((s) => ({
 						bindings: {
 							...s.bindings,
-							[key]: {
+							[pendingKey]: {
 								paramKey: pendingKey,
 								channel,
 								cc,
 							},
 						},
-						pendingLearnParam: null,
-						lastCapturedCc: null,
+						lastCapturedCc: { channel, cc, rawValue },
 					}));
 				} else {
 					set({ lastCapturedCc: { channel, cc, rawValue } });
@@ -106,45 +123,60 @@ export const useMidiLearnStore = create<MidiLearnStore>()(
 			},
 
 			addOrReplaceBinding: (channel, cc, paramKey) => {
-				const key = bindingKey(channel, cc);
 				set((state) => ({
 					bindings: {
 						...state.bindings,
-						[key]: { paramKey, channel, cc },
+						[paramKey]: { paramKey, channel, cc },
 					},
 				}));
 			},
 
-			removeBinding: (channel, cc) => {
-				const key = bindingKey(channel, cc);
+			updateBinding: (paramKey, updates) => {
 				set((state) => {
-					const { [key]: _, ...rest } = state.bindings;
+					const current = state.bindings[paramKey];
+					if (!current) {
+						return state;
+					}
+					return {
+						bindings: {
+							...state.bindings,
+							[paramKey]: {
+								...current,
+								...updates,
+							},
+						},
+					};
+				});
+			},
+
+			removeBinding: (paramKey) => {
+				set((state) => {
+					const { [paramKey]: _, ...rest } = state.bindings;
 					return { bindings: rest };
 				});
 			},
 
 			removeBindingsForParam: (paramKey) => {
-				set((state) => {
-					const updated = { ...state.bindings };
-					for (const [key, binding] of Object.entries(updated)) {
-						if (binding.paramKey === paramKey) {
-							delete updated[key];
-						}
-					}
-					return { bindings: updated };
-				});
+				get().removeBinding(paramKey);
 			},
 
-			getBindingForMidi: (channel, cc) => {
+			getBindingsForMidi: (channel, cc) => {
 				const bindings = get().bindings;
-				const exact = bindings[bindingKey(channel, cc)];
-				if (exact) return exact;
-				return bindings[bindingKey(ALL_CHANNELS, cc)];
+				return Object.values(bindings).filter(
+					(binding): binding is MidiBinding =>
+						Boolean(binding) &&
+						binding.channel === channel &&
+						binding.cc === cc,
+				);
+			},
+
+			getBindingForParam: (paramKey) => {
+				return get().bindings[paramKey];
 			},
 
 			getBindingsForParam: (paramKey) => {
-				const bindings = get().bindings;
-				return Object.values(bindings).filter((b) => b.paramKey === paramKey);
+				const binding = get().bindings[paramKey];
+				return binding ? [binding] : [];
 			},
 
 			clearLastCapturedCc: () => {
@@ -168,8 +200,9 @@ export const useMidiLearnStore = create<MidiLearnStore>()(
 				persisted !== null &&
 				"bindings" in persisted
 					? {
-							bindings: (persisted as { bindings: Record<string, MidiBinding> })
-								.bindings,
+							bindings: normalizePersistedBindings(
+								(persisted as { bindings: unknown }).bindings,
+							),
 						}
 					: {}),
 			}),

@@ -92,15 +92,42 @@ describe("SynthSidebarButtons", () => {
 
 	it("opens global settings when Global is clicked", () => {
 		const onOpenGlobal = vi.fn();
+		const onOpenMidiLearn = vi.fn();
 		render(
-			<SynthSidebarButtons globalOpen={false} onOpenGlobal={onOpenGlobal} />,
+			<SynthSidebarButtons
+				globalOpen={false}
+				onOpenGlobal={onOpenGlobal}
+				midiLearnOpen={false}
+				onOpenMidiLearn={onOpenMidiLearn}
+			/>,
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Global" }));
 		expect(onOpenGlobal).toHaveBeenCalledTimes(1);
 	});
 
+	it("opens midi learn modal when MIDI Learn is clicked", () => {
+		const onOpenMidiLearn = vi.fn();
+		render(
+			<SynthSidebarButtons
+				globalOpen={false}
+				onOpenGlobal={vi.fn()}
+				midiLearnOpen={false}
+				onOpenMidiLearn={onOpenMidiLearn}
+			/>,
+		);
+		fireEvent.click(screen.getByRole("button", { name: "MIDI Learn" }));
+		expect(onOpenMidiLearn).toHaveBeenCalledTimes(1);
+	});
+
 	it("toggles poly and portamento controls", () => {
-		render(<SynthSidebarButtons globalOpen={false} onOpenGlobal={vi.fn()} />);
+		render(
+			<SynthSidebarButtons
+				globalOpen={false}
+				onOpenGlobal={vi.fn()}
+				midiLearnOpen={false}
+				onOpenMidiLearn={vi.fn()}
+			/>,
+		);
 		fireEvent.click(screen.getByRole("button", { name: "Poly8" }));
 		fireEvent.click(screen.getByRole("button", { name: "Porta Mento" }));
 		expect(setPolyMode).toHaveBeenCalledWith("mono");
@@ -109,7 +136,14 @@ describe("SynthSidebarButtons", () => {
 
 	it("toggles enabled fx slots and initializes default empty slots", () => {
 		fxSlotsValue[0] = { type: "chorus", params: { enabled: true } };
-		render(<SynthSidebarButtons globalOpen={false} onOpenGlobal={vi.fn()} />);
+		render(
+			<SynthSidebarButtons
+				globalOpen={false}
+				onOpenGlobal={vi.fn()}
+				midiLearnOpen={false}
+				onOpenMidiLearn={vi.fn()}
+			/>,
+		);
 		fireEvent.click(screen.getByRole("button", { name: "FX1 Chrs" }));
 		fireEvent.click(screen.getByRole("button", { name: "FX4 —" }));
 		fireEvent.click(screen.getByRole("button", { name: "FX5 —" }));
@@ -119,7 +153,14 @@ describe("SynthSidebarButtons", () => {
 	});
 
 	it("opens the fx drawer on fx long press", () => {
-		render(<SynthSidebarButtons globalOpen={false} onOpenGlobal={vi.fn()} />);
+		render(
+			<SynthSidebarButtons
+				globalOpen={false}
+				onOpenGlobal={vi.fn()}
+				midiLearnOpen={false}
+				onOpenMidiLearn={vi.fn()}
+			/>,
+		);
 		fireEvent.contextMenu(screen.getByRole("button", { name: "FX1 —" }));
 		expect(setMainPanelMode).toHaveBeenCalledWith("fx");
 	});

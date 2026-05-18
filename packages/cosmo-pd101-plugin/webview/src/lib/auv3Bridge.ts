@@ -13,12 +13,10 @@ type ScopeDataResponse = {
 type RuntimeVoiceStatesResponse = string | unknown[];
 
 type RuntimeModSourcesResponse = string | Record<string, number>;
-type TransportInfoResponse = string | Record<string, number | boolean>;
 
 const SCOPE_POLL_INTERVAL_MS = 33;
 const RUNTIME_VOICE_STATES_POLL_INTERVAL_MS = 16;
 const RUNTIME_MOD_SOURCES_POLL_INTERVAL_MS = 16;
-const TRANSPORT_POLL_INTERVAL_MS = 100;
 const IPC_TIMEOUT_MS = 250;
 
 declare global {

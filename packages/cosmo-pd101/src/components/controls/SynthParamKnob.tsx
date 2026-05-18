@@ -103,6 +103,13 @@ function SynthParamKnobInner({
 		| EngineParamUiMetaRuntime
 		| undefined;
 	const defaultValue = getEngineParamDefault(paramKey);
+	const learnMode = useMidiLearnStore((state) => state.learnMode);
+	const pendingLearnParam = useMidiLearnStore(
+		(state) => state.pendingLearnParam,
+	);
+	const midiBinding = useMidiLearnStore((state) =>
+		state.getBindingForParam(paramKey),
+	);
 
 	const valueFormatter = useMemo(() => {
 		if (valueFormatterOverride) {
@@ -131,35 +138,40 @@ function SynthParamKnobInner({
 		}
 	}, [paramKey]);
 
+	const midiLearnState = !learnMode
+		? null
+		: pendingLearnParam === paramKey
+			? "targeted"
+			: midiBinding
+				? "mapped"
+				: "available";
+
 	return (
-		<button
-			type="button"
-			className="contents"
+		<ControlKnob
+			value={value}
+			onChange={onChange}
+			disabled={disabled}
+			label={label}
+			labelClassName={labelClassName}
+			tooltip={PARAM_META[paramKey]?.tooltip}
+			min={min ?? meta?.min ?? 0}
+			max={max ?? meta?.max ?? 1}
+			step={step ?? meta?.step ?? undefined}
+			defaultValue={defaultValue}
+			bipolar={bipolar ?? meta?.bipolar ?? false}
+			color={color}
+			size={size}
+			variant={variant}
+			curve={meta?.curve ?? "linear"}
+			valueFormatter={valueFormatter}
+			modDestination={
+				modDestination ?? (meta?.modDestination as ModDestination | undefined)
+			}
 			onContextMenu={handleContextMenu}
 			onClick={handleClick}
-		>
-			<ControlKnob
-				value={value}
-				onChange={onChange}
-				disabled={disabled}
-				label={label}
-				labelClassName={labelClassName}
-				tooltip={PARAM_META[paramKey]?.tooltip}
-				min={min ?? meta?.min ?? 0}
-				max={max ?? meta?.max ?? 1}
-				step={step ?? meta?.step ?? undefined}
-				defaultValue={defaultValue}
-				bipolar={bipolar ?? meta?.bipolar ?? false}
-				color={color}
-				size={size}
-				variant={variant}
-				curve={meta?.curve ?? "linear"}
-				valueFormatter={valueFormatter}
-				modDestination={
-					modDestination ?? (meta?.modDestination as ModDestination | undefined)
-				}
-			/>
-		</button>
+			interactionLocked={learnMode}
+			midiLearnState={midiLearnState}
+		/>
 	);
 }
 

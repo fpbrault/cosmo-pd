@@ -18,8 +18,6 @@ import PhaseLinesSection from "@/components/editor/PhaseLinesSection";
 import SynthSidebar from "@/components/layout/SynthSidebar";
 import FxConsoleDrawer from "@/components/panels/drawers/FxConsoleDrawer";
 import ModConsoleDrawer from "@/components/panels/drawers/ModConsoleDrawer";
-import { FX_SLOT_PANELS } from "@/components/panels/fx/FxSlotPanel";
-import MidiLearnPanel from "@/components/panels/midi/MidiLearnPanel";
 import GlobalVoicePanel from "@/components/panels/voice/GlobalVoicePanel";
 import PresetLibrary from "@/components/preset/PresetLibrary";
 import SynthHeader, {
@@ -184,6 +182,7 @@ function SynthRendererContent({
 	const [drawerSlideDirection, setDrawerSlideDirection] = useState<1 | -1>(1);
 	const [brandInfoOpen, setBrandInfoOpen] = useState(false);
 	const [globalPanelOpen, setGlobalPanelOpen] = useState(false);
+	const [midiLearnOpen, setMidiLearnOpen] = useState(false);
 	const [macroLabelEditorOpen, setMacroLabelEditorOpen] = useState(false);
 
 	const mainPanelBottomInset =
@@ -233,28 +232,19 @@ function SynthRendererContent({
 						{headerExtra}
 					</div>
 					<div className="relative z-10 flex min-h-0 w-full min-w-0 flex-1 gap-2 overflow-hidden px-1">
-						<aside className="min-h-0 min-w-72 overflow-y-auto rounded-[1.15rem] border border-cz-border/80 bg-cz-inset px-0 pb-2 shadow-lg">
-							<div className="mx-auto mt-4 px-4">
-								<ScopeMiniDisplay
-									analyserNodeRef={analyserNodeRef}
-									audioCtxRef={audioCtxRef}
-									effectivePitchHz={effectivePitchHz}
-									subscribeScopeFrames={subscribeScopeFrames}
-									expanded={waveDrawerOpen}
-								/>
-							</div>
-
-							<AsidePanelSwitcher
-								activeTab={activeAsidePanel}
-								onTabChange={onAsidePanelChange}
-							>
-								<GlobalVoicePanel />
-								<MidiLearnPanel />
-								{FX_SLOT_PANELS.map((Panel) => (
-									<Panel key={Panel.panelId} />
-								))}
-							</AsidePanelSwitcher>
-						</aside>
+						<SynthSidebar
+							effectivePitchHz={effectivePitchHz}
+							analyserNodeRef={analyserNodeRef}
+							audioCtxRef={audioCtxRef}
+							subscribeScopeFrames={subscribeScopeFrames}
+							waveDrawerOpen={waveDrawerOpen}
+							libraryModeOpen={libraryModeOpen}
+							globalOpen={globalPanelOpen}
+							onOpenGlobal={() => setGlobalPanelOpen(true)}
+							midiLearnOpen={midiLearnOpen}
+							onOpenMidiLearn={() => setMidiLearnOpen((value) => !value)}
+							onOpenMacroLabels={() => setMacroLabelEditorOpen(true)}
+						/>
 
 						<main className="flex min-h-0 w-full min-w-0 overflow-y-auto overflow-x-hidden">
 							<div className="mx-auto flex min-h-0 w-full flex-1 flex-col rounded-[1.2rem]">

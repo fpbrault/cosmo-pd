@@ -28,8 +28,8 @@ use crate::CzPluginParams;
 #[cfg(target_os = "macos")]
 use crate::handle_ipc_invoke;
 use crate::{
-    MidiCcQueue, PerformanceCountersHandle, ScopeBuffer, SharedRuntimeModSources, UiInputQueue,
-    append_log,
+    MidiCcQueue, PerformanceCountersHandle, ScopeBuffer, SharedRuntimeModSources,
+    SharedTransportSnapshot, UiInputQueue, append_log,
 };
 use cosmo_synth_engine::params::SynthParams;
 
@@ -231,9 +231,10 @@ impl CzEditor {
             "if(typeof window.__czOnParams === 'function') {{ window.__czOnParams(\"{escaped}\"); }}"
         );
         if let Ok(container) = self.webview_state.lock()
-            && let Some(wv) = &container.webview {
-                let _ = wv.evaluate_script(&script);
-            }
+            && let Some(wv) = &container.webview
+        {
+            let _ = wv.evaluate_script(&script);
+        }
     }
 
     fn apply_scale_normalization(&self) {
@@ -254,9 +255,10 @@ impl CzEditor {
         );
 
         if let Ok(container) = self.webview_state.lock()
-            && let Some(wv) = &container.webview {
-                let _ = wv.evaluate_script(&script);
-            }
+            && let Some(wv) = &container.webview
+        {
+            let _ = wv.evaluate_script(&script);
+        }
     }
 }
 
@@ -321,26 +323,28 @@ impl Editor for CzEditor {
 
         #[cfg(target_os = "macos")]
         if !self.has_live_webview()
-            && let Some(ns_view) = self.pending_parent_ns_view {
-                let ns_view = ns_view as *mut std::ffi::c_void;
-                if unsafe { parent_has_window(ns_view) } {
-                    append_log("idle: retrying deferred WebView creation");
-                    let _ = self.try_create_webview(ns_view);
-                }
+            && let Some(ns_view) = self.pending_parent_ns_view
+        {
+            let ns_view = ns_view as *mut std::ffi::c_void;
+            if unsafe { parent_has_window(ns_view) } {
+                append_log("idle: retrying deferred WebView creation");
+                let _ = self.try_create_webview(ns_view);
             }
+        }
 
         self.push_params();
 
         #[cfg(not(any(target_os = "ios", target_os = "android")))]
         if let Ok(container) = self.webview_state.lock()
-            && let Some(wv) = &container.webview {
-                while let Some((channel, cc, value)) = self.midi_cc_queue.pop() {
-                    let script = format!(
-                        "if(typeof window.__czOnMidiCc === 'function') {{ window.__czOnMidiCc({channel},{cc},{value}); }}"
-                    );
-                    let _ = wv.evaluate_script(&script);
-                }
+            && let Some(wv) = &container.webview
+        {
+            while let Some((channel, cc, value)) = self.midi_cc_queue.pop() {
+                let script = format!(
+                    "if(typeof window.__czOnMidiCc === 'function') {{ window.__czOnMidiCc({channel},{cc},{value}); }}"
+                );
+                let _ = wv.evaluate_script(&script);
             }
+        }
     }
 
     fn set_scale_factor(&mut self, factor: f64) {
@@ -550,7 +554,6 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
         rl.runUntilDate(&d);
     }
 
-    
     result.lock().unwrap().take()
 }
 
@@ -822,8 +825,9 @@ unsafe fn build_webview_from_ns_view(
                     response
                 );
                 if let Ok(container) = webview_state_for_response.lock()
-                    && let Some(wv) = &container.webview {
-                        let _ = wv.evaluate_script(&script);
+                    && let Some(wv) = &container.webview
+                {
+                    let _ = wv.evaluate_script(&script);
 
                     if params_repush_done
                         .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
@@ -840,6 +844,7 @@ unsafe fn build_webview_from_ns_view(
                             let _ = wv.evaluate_script(&params_script);
                         }
                     }
+                }
             }
         })
         .with_devtools(inspector_enabled());
