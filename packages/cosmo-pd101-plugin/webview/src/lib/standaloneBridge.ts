@@ -3,6 +3,7 @@ declare global {
 		ipc?: { postMessage: (msg: string) => void };
 		__czGetParams?: () => Promise<unknown>;
 		__czSetParams?: (json: string) => void;
+		__czGetTransportInfo?: () => Promise<unknown>;
 		__czOnScope?: (samples: number[], sampleRate: number, hz: number) => void;
 	}
 }
@@ -42,5 +43,6 @@ export function ensureStandaloneBridge(): boolean {
 	window.__czSetParams = (json: string) => {
 		currentParamsJson = json;
 	};
+	window.__czGetTransportInfo = async () => null;
 	return true;
 }

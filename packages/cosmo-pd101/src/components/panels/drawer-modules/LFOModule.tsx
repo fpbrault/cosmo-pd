@@ -5,8 +5,10 @@ import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
+import { useHostTransport } from "@/features/synth/hooks/useHostTransport";
 import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import type { LfoSyncDivision } from "@/lib/synth/bindings/synth";
 import { resolveTargetFromMetadata } from "@/lib/synth/modTargets";
 import { getLfoModulePatch, LFO_PRESETS } from "@/lib/synth/modulePresets";
 import { PARAM_META } from "@/lib/synth/paramMeta";
@@ -48,6 +50,37 @@ function formatCompactValue(value: number): string {
 		return value.toFixed(2);
 	}
 	return value.toFixed(3);
+}
+
+const LFO_SYNC_DIVISIONS: readonly {
+	value: LfoSyncDivision;
+	label: string;
+	cyclesPerBeat: number;
+}[] = [
+	{ value: "whole", label: "1/1", cyclesPerBeat: 0.25 },
+	{ value: "half", label: "1/2", cyclesPerBeat: 0.5 },
+	{ value: "dottedQuarter", label: "1/4.", cyclesPerBeat: 2 / 3 },
+	{ value: "quarter", label: "1/4", cyclesPerBeat: 1 },
+	{ value: "dottedEighth", label: "1/8.", cyclesPerBeat: 4 / 3 },
+	{ value: "quarterTriplet", label: "1/4T", cyclesPerBeat: 1.5 },
+	{ value: "eighth", label: "1/8", cyclesPerBeat: 2 },
+	{ value: "eighthTriplet", label: "1/8T", cyclesPerBeat: 3 },
+	{ value: "sixteenth", label: "1/16", cyclesPerBeat: 4 },
+	{ value: "thirtySecond", label: "1/32", cyclesPerBeat: 8 },
+];
+
+function getCyclesPerBeat(division: LfoSyncDivision): number {
+	return (
+		LFO_SYNC_DIVISIONS.find((entry) => entry.value === division)
+			?.cyclesPerBeat ?? 1
+	);
+}
+
+function getDivisionIndex(division: LfoSyncDivision): number {
+	return Math.max(
+		0,
+		LFO_SYNC_DIVISIONS.findIndex((entry) => entry.value === division),
+	);
 }
 
 function lfoPreviewPath(
@@ -141,16 +174,24 @@ function lfoPointFromPhase({
 export default function LfoModule({ id, color }: LfoModuleProps) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("");
 	const [playheadPhase, setPlayheadPhase] = useState(0);
+	const transport = useHostTransport();
 	const lfoWaveformKey = id === 1 ? "lfoWaveform" : "lfo2Waveform";
 	const lfoRateKey = id === 1 ? "lfoRate" : "lfo2Rate";
+	const lfoRateModeKey = id === 1 ? "lfoRateMode" : "lfo2RateMode";
+	const lfoSyncDivisionKey = id === 1 ? "lfoSyncDivision" : "lfo2SyncDivision";
 	const lfoDepthKey = id === 1 ? "lfoDepth" : "lfo2Depth";
 	const lfoSymmetryKey = id === 1 ? "lfoSymmetry" : "lfo2Symmetry";
 	const lfoRetriggerKey = id === 1 ? "lfoRetrigger" : "lfo2Retrigger";
 	const lfoOffsetKey = id === 1 ? "lfoOffset" : "lfo2Offset";
+	const { value: tempoBpm } = useSynthParam("tempoBpm");
 
 	const { value: lfoWaveform, setValue: setLfoWaveform } =
 		useSynthParam(lfoWaveformKey);
 	const { value: lfoRate, setValue: setLfoRate } = useSynthParam(lfoRateKey);
+	const { value: lfoRateMode, setValue: setLfoRateMode } =
+		useSynthParam(lfoRateModeKey);
+	const { value: lfoSyncDivision, setValue: setLfoSyncDivision } =
+		useSynthParam(lfoSyncDivisionKey);
 	const { value: lfoDepth, setValue: setLfoDepth } = useSynthParam(lfoDepthKey);
 	const { value: lfoSymmetry, setValue: setLfoSymmetry } =
 		useSynthParam(lfoSymmetryKey);
@@ -158,7 +199,22 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 		useSynthParam(lfoRetriggerKey);
 	const { value: lfoOffset, setValue: setLfoOffset } =
 		useSynthParam(lfoOffsetKey);
-	const lfoRateNorm = lfoRateToNorm(lfoRate as number);
+	const lfoRateNorm = lfoRateToNorm(lfoRate);
+	const syncCyclesPerBeat = getCyclesPerBeat(lfoSyncDivision);
+	const syncDivisionIndex = getDivisionIndex(lfoSyncDivision);
+	const effectiveTempoBpm =
+		transport.available &&
+		Number.isFinite(transport.tempo) &&
+		transport.tempo > 0
+			? transport.tempo
+			: tempoBpm;
+	const previewRateHz =
+		lfoRateMode === "sync"
+			? Math.max(
+					0.01,
+					(Math.max(1, effectiveTempoBpm) / 60) * syncCyclesPerBeat,
+				)
+			: Math.max(0, lfoRate);
 
 	useEffect(() => {
 		let rafId = 0;
@@ -166,24 +222,41 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 		const tick = (now: number) => {
 			const dt = Math.min(0.05, (now - last) / 1000);
 			last = now;
-			setPlayheadPhase(
-				(prev) => (prev + dt * Math.max(0, lfoRate as number)) % 1,
-			);
+			setPlayheadPhase((prev) => (prev + dt * previewRateHz) % 1);
 			rafId = requestAnimationFrame(tick);
 		};
 		rafId = requestAnimationFrame(tick);
 		return () => cancelAnimationFrame(rafId);
-	}, [lfoRate]);
+	}, [previewRateHz]);
+
+	const displayPlayheadPhase = useMemo(() => {
+		if (lfoRateMode === "sync" && transport.available && transport.playing) {
+			const phase = transport.positionBeats * syncCyclesPerBeat;
+			return ((phase % 1) + 1) % 1;
+		}
+		return playheadPhase;
+	}, [
+		lfoRateMode,
+		playheadPhase,
+		transport.available,
+		transport.playing,
+		transport.positionBeats,
+		syncCyclesPerBeat,
+	]);
 
 	const lfoPlayheadPoint = useMemo(() => {
 		return lfoPointFromPhase({
-			waveform: lfoWaveform as string,
-			symmetry: lfoSymmetry as number,
-			offset: lfoOffset as number,
-			depth: lfoDepth as number,
-			phase: playheadPhase,
+			waveform: lfoWaveform,
+			symmetry: lfoSymmetry,
+			offset: lfoOffset,
+			depth: lfoDepth,
+			phase: displayPlayheadPhase,
 		});
-	}, [lfoDepth, lfoOffset, lfoSymmetry, lfoWaveform, playheadPhase]);
+	}, [displayPlayheadPhase, lfoDepth, lfoOffset, lfoSymmetry, lfoWaveform]);
+
+	const transportStatus = transport.available
+		? `${transport.playing ? "Host Run" : "Host Stop"} ${transport.tempo.toFixed(1)} BPM ${transport.timeSigNum}/${transport.timeSigDen}`
+		: `Manual ${tempoBpm.toFixed(1)} BPM`;
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
@@ -262,6 +335,12 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 						strokeWidth="1"
 					/>
 				</svg>
+				<div className="mt-0.5 flex items-center justify-between font-mono text-[0.5rem] text-cz-cream/55 uppercase tracking-[0.18em]">
+					<span>{transportStatus}</span>
+					{transport.available && transport.loopActive ? (
+						<span>Loop</span>
+					) : null}
+				</div>
 			</div>
 			<div className="col-span-4 flex items-center gap-1.5">
 				<div className="join flex-1 overflow-hidden rounded-md border border-cz-border/65">
@@ -298,21 +377,68 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 					Retrig
 				</Button>
 			</div>
-			<ControlKnob
-				value={lfoRateNorm}
-				onChange={(nextNorm) => setLfoRate(normToLfoRate(nextNorm))}
-				min={0}
-				max={1}
-				defaultValue={lfoRateToNorm(2)}
-				color="#27588f"
-				size={54}
-				label="Rate"
-				tooltip={PARAM_META[lfoRateKey as SynthParamKey]?.tooltip}
-				modDestination={resolveTargetFromMetadata("lfo.rate", { lfoIndex: id })}
-				valueFormatter={(nextNorm) =>
-					`${formatCompactValue(normToLfoRate(nextNorm))}Hz`
-				}
-			/>
+			{lfoRateMode === "hz" ? (
+				<ControlKnob
+					value={lfoRateNorm}
+					onChange={(nextNorm) => setLfoRate(normToLfoRate(nextNorm))}
+					min={0}
+					max={1}
+					defaultValue={lfoRateToNorm(2)}
+					color="#27588f"
+					size={54}
+					label="Rate"
+					labelAccessory={
+						<Button
+							type="button"
+							className="btn btn-ghost btn-xs h-4 min-h-0 rounded-sm border border-cz-border/65 px-1 font-mono text-[0.52rem] text-cz-gold/85 normal-case tracking-normal"
+							onClick={() => setLfoRateMode("sync")}
+							title={PARAM_META[lfoRateModeKey as SynthParamKey]?.tooltip}
+						>
+							hz
+						</Button>
+					}
+					tooltip={PARAM_META[lfoRateKey as SynthParamKey]?.tooltip}
+					modDestination={resolveTargetFromMetadata("lfo.rate", {
+						lfoIndex: id,
+					})}
+					valueFormatter={(nextNorm) =>
+						`${formatCompactValue(normToLfoRate(nextNorm))}Hz`
+					}
+				/>
+			) : (
+				<ControlKnob
+					value={syncDivisionIndex}
+					onChange={(nextIndex) => {
+						const nextDivision =
+							LFO_SYNC_DIVISIONS[Math.round(nextIndex)] ??
+							LFO_SYNC_DIVISIONS[0];
+						setLfoSyncDivision(nextDivision.value);
+					}}
+					min={0}
+					max={LFO_SYNC_DIVISIONS.length - 1}
+					step={1}
+					defaultValue={getDivisionIndex("quarter")}
+					color="#27588f"
+					size={54}
+					label="Rate"
+					labelAccessory={
+						<Button
+							type="button"
+							className="btn btn-ghost btn-xs h-4 min-h-0 rounded-sm border border-cz-border/65 px-1 font-mono text-[0.52rem] text-cz-gold/85 normal-case tracking-normal"
+							onClick={() => setLfoRateMode("hz")}
+							title={PARAM_META[lfoRateModeKey as SynthParamKey]?.tooltip}
+						>
+							sync
+						</Button>
+					}
+					tooltip={PARAM_META[lfoSyncDivisionKey as SynthParamKey]?.tooltip}
+					valueFormatter={(value) => {
+						const division =
+							LFO_SYNC_DIVISIONS[Math.round(value)] ?? LFO_SYNC_DIVISIONS[0];
+						return `${division.label} · ${effectiveTempoBpm.toFixed(1)} BPM`;
+					}}
+				/>
+			)}
 			<SynthParamKnob
 				paramKey={lfoDepthKey}
 				value={lfoDepth as number}

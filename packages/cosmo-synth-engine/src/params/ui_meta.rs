@@ -65,7 +65,61 @@ const POLY_MODE_LABELS_V1: [EngineEnumValueLabelV1; 2] = [
     },
 ];
 
-const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 53] = [
+const LFO_RATE_MODE_LABELS_V1: [EngineEnumValueLabelV1; 2] = [
+    EngineEnumValueLabelV1 {
+        value: "hz",
+        label: "HZ",
+    },
+    EngineEnumValueLabelV1 {
+        value: "sync",
+        label: "SYNC",
+    },
+];
+
+const LFO_SYNC_DIVISION_LABELS_V1: [EngineEnumValueLabelV1; 10] = [
+    EngineEnumValueLabelV1 {
+        value: "whole",
+        label: "1/1",
+    },
+    EngineEnumValueLabelV1 {
+        value: "half",
+        label: "1/2",
+    },
+    EngineEnumValueLabelV1 {
+        value: "quarter",
+        label: "1/4",
+    },
+    EngineEnumValueLabelV1 {
+        value: "eighth",
+        label: "1/8",
+    },
+    EngineEnumValueLabelV1 {
+        value: "sixteenth",
+        label: "1/16",
+    },
+    EngineEnumValueLabelV1 {
+        value: "thirtySecond",
+        label: "1/32",
+    },
+    EngineEnumValueLabelV1 {
+        value: "dottedQuarter",
+        label: "1/4.",
+    },
+    EngineEnumValueLabelV1 {
+        value: "dottedEighth",
+        label: "1/8.",
+    },
+    EngineEnumValueLabelV1 {
+        value: "quarterTriplet",
+        label: "1/4T",
+    },
+    EngineEnumValueLabelV1 {
+        value: "eighthTriplet",
+        label: "1/8T",
+    },
+];
+
+const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 58] = [
     EngineParamUiMetaV1 {
         key: "volume",
         readout_format: EngineParamReadoutFormatV1::Percent,
@@ -153,8 +207,24 @@ const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 53] = [
         readout_format: EngineParamReadoutFormatV1::Uppercase,
     },
     EngineParamUiMetaV1 {
-        key: "lfoRate",
+        key: "tempoBpm",
         readout_format: EngineParamReadoutFormatV1::Decimal,
+    },
+    EngineParamUiMetaV1 {
+        key: "lfoRate",
+        readout_format: EngineParamReadoutFormatV1::Hertz,
+    },
+    EngineParamUiMetaV1 {
+        key: "lfoRateMode",
+        readout_format: EngineParamReadoutFormatV1::EnumMap {
+            values: &LFO_RATE_MODE_LABELS_V1,
+        },
+    },
+    EngineParamUiMetaV1 {
+        key: "lfoSyncDivision",
+        readout_format: EngineParamReadoutFormatV1::EnumMap {
+            values: &LFO_SYNC_DIVISION_LABELS_V1,
+        },
     },
     EngineParamUiMetaV1 {
         key: "lfoDepth",
@@ -170,7 +240,19 @@ const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 53] = [
     },
     EngineParamUiMetaV1 {
         key: "lfo2Rate",
-        readout_format: EngineParamReadoutFormatV1::Decimal,
+        readout_format: EngineParamReadoutFormatV1::Hertz,
+    },
+    EngineParamUiMetaV1 {
+        key: "lfo2RateMode",
+        readout_format: EngineParamReadoutFormatV1::EnumMap {
+            values: &LFO_RATE_MODE_LABELS_V1,
+        },
+    },
+    EngineParamUiMetaV1 {
+        key: "lfo2SyncDivision",
+        readout_format: EngineParamReadoutFormatV1::EnumMap {
+            values: &LFO_SYNC_DIVISION_LABELS_V1,
+        },
     },
     EngineParamUiMetaV1 {
         key: "lfo2Depth",
@@ -282,11 +364,18 @@ const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 53] = [
     },
 ];
 
-const ENGINE_PARAM_RANGES_V1: [EngineParamRangeV1; 1] = [EngineParamRangeV1 {
-    key: "randomRate",
-    min: 0.0,
-    max: 200.0,
-}];
+const ENGINE_PARAM_RANGES_V1: [EngineParamRangeV1; 2] = [
+    EngineParamRangeV1 {
+        key: "tempoBpm",
+        min: 20.0,
+        max: 300.0,
+    },
+    EngineParamRangeV1 {
+        key: "randomRate",
+        min: 0.0,
+        max: 200.0,
+    },
+];
 
 pub fn engine_param_ui_meta_v1() -> &'static [EngineParamUiMetaV1] {
     &ENGINE_PARAM_UI_META_V1
@@ -328,6 +417,7 @@ pub fn engine_param_default_v1(key: &str) -> Option<f32> {
         "vibratoRate" => Some(vibrato.rate),
         "vibratoDepth" => Some(vibrato.depth),
         "vibratoDelay" => Some(vibrato.delay),
+        "tempoBpm" => Some(synth.tempo_bpm),
         "lfoRate" => Some(synth.lfo.rate),
         "lfoDepth" => Some(synth.lfo.depth),
         "lfoSymmetry" => Some(synth.lfo.symmetry),

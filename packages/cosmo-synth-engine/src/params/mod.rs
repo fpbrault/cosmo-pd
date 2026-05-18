@@ -20,7 +20,7 @@ pub use fx_params::{
     PhaserParams, ReverbParams, RingModParams, ShimmerVerbParams, TremoloParams, VibratoParams,
     WavefolderParams,
 };
-pub use lfo::{LfoParams, LfoWaveform};
+pub use lfo::{LfoParams, LfoRateMode, LfoSyncDivision, LfoWaveform};
 pub use line::{
     AlgoControlId, AlgoControlSlots, AlgoControlValueV1, LineParams, LineSelect, MAX_ALGO_CONTROLS,
     ModMode, PolyMode,
