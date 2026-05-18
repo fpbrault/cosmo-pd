@@ -43,19 +43,21 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Install validators
-        shell: bash
-        run: |
-          cargo install --locked --git https://github.com/free-audio/clap-validator clap-validator
-          if [[ "${{ runner.os }}" == "macOS" ]]; then
-            curl -fsSL -o /tmp/pluginval.zip \
-              https://github.com/Tracktion/pluginval/releases/download/v1.0.4/pluginval_macOS.zip
-            unzip -oq /tmp/pluginval.zip -d ~/.local/bin
-            chmod +x ~/.local/bin/pluginval
-            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          fi
+      - name: Install clap-validator
+        run: cargo install --locked --git https://github.com/free-audio/clap-validator clap-validator
 
-      - name: Install validators (Windows)
+      - name: Install pluginval (macOS)
+        if: matrix.platform == 'macos'
+        run: |
+          curl -fsSL -o /tmp/pluginval.zip \
+            https://github.com/Tracktion/pluginval/releases/download/v1.0.4/pluginval_macOS.zip
+          unzip -oq /tmp/pluginval.zip -d /tmp/pluginval
+          mkdir -p ~/.local/bin
+          cp /tmp/pluginval/pluginval.app/Contents/MacOS/pluginval ~/.local/bin/pluginval
+          chmod +x ~/.local/bin/pluginval
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install pluginval (Windows)
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
