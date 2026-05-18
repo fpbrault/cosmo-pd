@@ -96,25 +96,27 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 							<Button
 								type="button"
 								onClick={() =>
-									setPortamentoMode(portamentoMode === "rate" ? "time" : "rate")
+									setPortamentoMode(
+										(portamentoMode as string) === "rate" ? "time" : "rate",
+									)
 								}
 								title={
 									PORTAMENTO_MODE_TOOLTIPS[
-										portamentoMode === "rate" ? "time" : "rate"
+										(portamentoMode as string) === "rate" ? "time" : "rate"
 									]
 								}
 								className={`btn btn-xs h-fit min-h-0 w-fit self-center justify-self-center p-2 ${
-									portamentoMode === "rate"
+									(portamentoMode as string) === "rate"
 										? "border-amber-500/60 bg-amber-500/20 text-amber-300"
 										: "border-cz-border bg-transparent text-cz-cream/60 hover:text-cz-cream/90"
 								}`}
 							>
-								{portamentoMode === "rate" ? "● Rate" : "○ Time"}
+								{(portamentoMode as string) === "rate" ? "● Rate" : "○ Time"}
 							</Button>
-							{portamentoMode === "rate" ? (
+							{(portamentoMode as string) === "rate" ? (
 								<SynthParamKnob
 									paramKey="portamentoRate"
-									value={portamentoRate}
+									value={portamentoRate as number}
 									min={0.01}
 									max={100}
 									step={0.01}
@@ -125,18 +127,17 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 							) : (
 								<SynthParamKnob
 									paramKey="portamentoTime"
-									value={portamentoTime}
+									value={portamentoTime as number}
 									onChange={setPortamentoTime}
 									color="#7f9de4"
 									label="Portamento"
 								/>
 							)}
 						</div>
-
 						<div className="flex justify-center">
 							<SynthParamKnob
 								paramKey="pitchBendRange"
-								value={pitchBendRange}
+								value={pitchBendRange as number}
 								min={0}
 								max={24}
 								step={1}
@@ -146,10 +147,10 @@ const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 							/>
 						</div>
 						<div className="flex flex-col justify-center">
-							<VelocityCurvePreview curve={velocityCurve} />
+							<VelocityCurvePreview curve={velocityCurve as number} />
 							<SynthParamKnob
 								paramKey="velocityCurve"
-								value={velocityCurve}
+								value={velocityCurve as number}
 								onChange={setVelocityCurve}
 								min={-1}
 								color="#c46eb4"

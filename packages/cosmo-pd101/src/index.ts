@@ -31,7 +31,6 @@ export {
 } from "./features/synth/synthUiStore";
 export type { LibraryPreset } from "./features/synth/types/libraryPreset";
 export { useSynthPresetManager } from "./features/synth/useSynthPresetManager";
-export { useSynthState } from "./features/synth/useSynthState";
 export { i18n, initI18n } from "./i18n";
 export type {
 	DecodedPatch,

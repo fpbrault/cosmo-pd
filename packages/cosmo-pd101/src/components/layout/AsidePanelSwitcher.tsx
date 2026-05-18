@@ -146,7 +146,7 @@ export default function AsidePanelSwitcher<T extends string>({
 			case "polymode":
 				return polyMode === "mono";
 			case "portamentoenabled":
-				return portamentoEnabled;
+				return portamentoEnabled as boolean;
 			default:
 				return false;
 		}

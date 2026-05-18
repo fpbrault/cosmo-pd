@@ -8,6 +8,7 @@ import type {
 } from "@/features/synth/hooks/useAudioEngine";
 import { useSynthStore } from "@/features/synth/synthStore";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
+import { withAlpha } from "./palette";
 
 type WavePoint = [number, number, number];
 
@@ -306,17 +307,6 @@ function toHexPair(value: number): string {
 	return value.toString(16).padStart(2, "0");
 }
 
-function hexToRgba(hexColor: string, alpha: number): string {
-	const hex = hexColor.startsWith("#") ? hexColor.slice(1) : hexColor;
-	if (hex.length < 6) {
-		return hexColor;
-	}
-	const r = Number.parseInt(hex.slice(0, 2), 16);
-	const g = Number.parseInt(hex.slice(2, 4), 16);
-	const b = Number.parseInt(hex.slice(4, 6), 16);
-	return `rgba(${r}, ${g}, ${b}, ${clamp(alpha, 0, 1)})`;
-}
-
 function WaterfallScene({
 	waveHistory,
 	activeIndicators,
@@ -532,9 +522,9 @@ function WavetableWaterfallPane({
 			? "pointer-events-none absolute bottom-1.5 left-2 z-50 font-mono text-4xs text-base-content/75 uppercase tracking-[0.24em]"
 			: "pointer-events-none absolute top-1 left-2 z-50 font-mono text-4xs text-base-content/75 uppercase tracking-[0.24em]";
 	const frameStyle = {
-		borderColor: hexToRgba(palette.back, 0.62),
+		borderColor: withAlpha(palette.back, 0.62),
 		backgroundColor: palette.background,
-		boxShadow: `inset 0 0 0 1px ${hexToRgba(palette.glowCore, 0.08)}, inset 0 0 70px ${hexToRgba(palette.glowMid, 0.09)}, 0 0 24px ${hexToRgba(palette.glowOuter, 0.2)}`,
+		boxShadow: `inset 0 0 0 1px ${withAlpha(palette.glowCore, 0.08)}, inset 0 0 70px ${withAlpha(palette.glowMid, 0.09)}, 0 0 24px ${withAlpha(palette.glowOuter, 0.2)}`,
 	};
 
 	return (
@@ -552,55 +542,55 @@ function WavetableWaterfallPane({
 			<div
 				className="pointer-events-none absolute inset-0 z-0 rounded-md"
 				style={{
-					background: `radial-gradient(ellipse at 50% 55%, ${hexToRgba(palette.glowMid, 0.09)}, ${hexToRgba(palette.background, 0.22)} 42%, ${hexToRgba(palette.background, 0.76)} 100%)`,
+					background: `radial-gradient(ellipse at 50% 55%, ${withAlpha(palette.glowMid, 0.09)}, ${withAlpha(palette.background, 0.22)} 42%, ${withAlpha(palette.background, 0.76)} 100%)`,
 				}}
 			/>
 			<div
 				className="pointer-events-none absolute inset-0 z-0 rounded-md opacity-70"
 				style={{
-					background: `radial-gradient(ellipse at 50% 50%, transparent 0%, transparent 58%, ${hexToRgba(palette.background, 0.52)} 86%, ${hexToRgba(palette.background, 0.88)} 100%)`,
+					background: `radial-gradient(ellipse at 50% 50%, transparent 0%, transparent 58%, ${withAlpha(palette.background, 0.52)} 86%, ${withAlpha(palette.background, 0.88)} 100%)`,
 				}}
 			/>
 			<div
 				className="pointer-events-none absolute inset-x-0 top-0 z-30 h-1/2 rounded-t-md opacity-[0.18] mix-blend-screen"
 				style={{
-					background: `linear-gradient(105deg, transparent 0%, ${hexToRgba(palette.glowCore, 0.08)} 18%, ${hexToRgba(palette.glowCore, 0.16)} 31%, transparent 46%)`,
+					background: `linear-gradient(105deg, transparent 0%, ${withAlpha(palette.glowCore, 0.08)} 18%, ${withAlpha(palette.glowCore, 0.16)} 31%, transparent 46%)`,
 				}}
 			/>
 			<div
 				className="pointer-events-none absolute inset-0 z-20 rounded-md opacity-35 mix-blend-screen"
 				style={{
-					background: `repeating-linear-gradient(180deg, ${hexToRgba(palette.glowCore, 0.1)} 0px, ${hexToRgba(palette.glowCore, 0.05)} 1px, ${hexToRgba(palette.background, 0.16)} 2px, ${hexToRgba(palette.background, 0.32)} 4px)`,
+					background: `repeating-linear-gradient(180deg, ${withAlpha(palette.glowCore, 0.1)} 0px, ${withAlpha(palette.glowCore, 0.05)} 1px, ${withAlpha(palette.background, 0.16)} 2px, ${withAlpha(palette.background, 0.32)} 4px)`,
 				}}
 			/>
 			<div
 				className="pointer-events-none absolute inset-0 z-20 rounded-md opacity-[0.14] mix-blend-screen"
 				style={{
-					background: `repeating-linear-gradient(90deg, ${hexToRgba(palette.glowMid, 0.18)} 0px, ${hexToRgba(palette.glowMid, 0.18)} 1px, transparent 1px, transparent 3px)`,
+					background: `repeating-linear-gradient(90deg, ${withAlpha(palette.glowMid, 0.18)} 0px, ${withAlpha(palette.glowMid, 0.18)} 1px, transparent 1px, transparent 3px)`,
 				}}
 			/>
 			<div
 				className="pointer-events-none absolute inset-0 z-20 rounded-md bg-size-[4px_4px] opacity-20 mix-blend-screen"
 				style={{
-					backgroundImage: `radial-gradient(circle at 50% 50%, ${hexToRgba(palette.glowCore, 0.08)} 0px, transparent 1.4px)`,
+					backgroundImage: `radial-gradient(circle at 50% 50%, ${withAlpha(palette.glowCore, 0.08)} 0px, transparent 1.4px)`,
 				}}
 			/>
 			<div
 				className="pointer-events-none absolute inset-0 z-30 rounded-md"
 				style={{
-					background: `radial-gradient(ellipse at center, transparent 48%, ${hexToRgba(palette.background, 0.36)} 76%, ${hexToRgba(palette.background, 0.68)} 100%)`,
+					background: `radial-gradient(ellipse at center, transparent 48%, ${withAlpha(palette.background, 0.36)} 76%, ${withAlpha(palette.background, 0.68)} 100%)`,
 				}}
 			/>
 			<div
 				className="pointer-events-none absolute inset-0 z-30 rounded-md opacity-25"
 				style={{
-					background: `linear-gradient(180deg, ${hexToRgba(palette.glowCore, 0.06)} 0%, transparent 9%, transparent 88%, ${hexToRgba(palette.glowMid, 0.06)} 100%)`,
+					background: `linear-gradient(180deg, ${withAlpha(palette.glowCore, 0.06)} 0%, transparent 9%, transparent 88%, ${withAlpha(palette.glowMid, 0.06)} 100%)`,
 				}}
 			/>
 			<div
 				className="pointer-events-none absolute inset-0 z-40 rounded-md"
 				style={{
-					boxShadow: `inset 0 12px 30px ${hexToRgba(palette.glowCore, 0.05)}, inset 0 -28px 58px ${hexToRgba(palette.background, 0.46)}, inset 18px 0 36px ${hexToRgba(palette.glowCore, 0.025)}, inset -22px 0 48px ${hexToRgba(palette.background, 0.32)}`,
+					boxShadow: `inset 0 12px 30px ${withAlpha(palette.glowCore, 0.05)}, inset 0 -28px 58px ${withAlpha(palette.background, 0.46)}, inset 18px 0 36px ${withAlpha(palette.glowCore, 0.025)}, inset -22px 0 48px ${withAlpha(palette.background, 0.32)}`,
 				}}
 			/>
 			<Canvas

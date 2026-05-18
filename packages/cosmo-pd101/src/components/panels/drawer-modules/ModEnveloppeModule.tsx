@@ -222,9 +222,9 @@ export default function ModEnveloppeModule() {
 		useSynthParam("modEnvSustain");
 	const { value: modEnvRelease, setValue: setModEnvRelease } =
 		useSynthParam("modEnvRelease");
-	const attackNorm = envSecondsToNorm(modEnvAttack);
-	const decayNorm = envSecondsToNorm(modEnvDecay);
-	const releaseNorm = envSecondsToNorm(modEnvRelease);
+	const attackNorm = envSecondsToNorm(modEnvAttack as number);
+	const decayNorm = envSecondsToNorm(modEnvDecay as number);
+	const releaseNorm = envSecondsToNorm(modEnvRelease as number);
 
 	useEffect(() => {
 		const onRuntimeModSources = (event: Event) => {
@@ -248,10 +248,10 @@ export default function ModEnveloppeModule() {
 	const envGeometry = useMemo(
 		() =>
 			buildAdsrGeometry(
-				modEnvAttack,
-				modEnvDecay,
-				modEnvSustain,
-				modEnvRelease,
+				modEnvAttack as number,
+				modEnvDecay as number,
+				modEnvSustain as number,
+				modEnvRelease as number,
 			),
 		[modEnvAttack, modEnvDecay, modEnvRelease, modEnvSustain],
 	);
@@ -261,7 +261,7 @@ export default function ModEnveloppeModule() {
 				envGeometry,
 				liveEnvValue,
 				prevLiveEnvValueRef.current,
-				modEnvSustain,
+				modEnvSustain as number,
 				prevMarkerXRef.current,
 			),
 		[envGeometry, liveEnvValue, modEnvSustain],
@@ -374,10 +374,10 @@ export default function ModEnveloppeModule() {
 					/>
 					<path
 						d={adsrPreviewPath(
-							modEnvAttack,
-							modEnvDecay,
-							modEnvSustain,
-							modEnvRelease,
+							modEnvAttack as number,
+							modEnvDecay as number,
+							modEnvSustain as number,
+							modEnvRelease as number,
 						)}
 						fill="none"
 						stroke="url(#mod-env-preview)"
@@ -471,11 +471,11 @@ export default function ModEnveloppeModule() {
 			/>
 			<SynthParamKnob
 				paramKey="modEnvSustain"
-				value={modEnvSustain}
+				value={modEnvSustain as number}
 				onChange={setModEnvSustain}
 				color="#c24587"
 				label="Sus"
-				valueFormatter={(value) => `${Math.round(value * 100)}%`}
+				valueFormatter={(value) => `${Math.round((value as number) * 100)}%`}
 			/>
 			<ControlKnob
 				value={releaseNorm}

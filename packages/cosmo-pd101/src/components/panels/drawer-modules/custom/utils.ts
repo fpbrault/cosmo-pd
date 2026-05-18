@@ -74,7 +74,6 @@ export function getFxControlLabel(
 	controlId: string,
 	paramKey?: string,
 ): string {
-	console.log("getFxControlLabel called with:", { type, controlId, paramKey });
 	const fxLabel = i18n.t(`fx.controls.${type}.${controlId}.label`, {
 		defaultValue: "",
 	});
