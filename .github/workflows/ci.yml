@@ -398,6 +398,26 @@ jobs:
         with:
           buildCmd: ${{ matrix.build_cmd }}
 
+  validate-plugins:
+    name: Validate plugins (${{ matrix.platform }})
+    needs: build-plugins
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # - os: macos-latest
+          #   platform: macos
+          - os: windows-latest
+            platform: windows
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run plugin validation action
+        uses: ./.github/actions/validate-plugins
+        with:
+          pluginCrate: cosmo-pd101-plugin
+
   build-desktop:
     name: Build desktop app (${{ matrix.os }})
     if: false # TODO: re-enable when ready
@@ -422,6 +442,7 @@ jobs:
         plugin-webview-unit-tests,
         plugin-webview-e2e-tests,
         build-plugins,
+        validate-plugins,
       ]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
