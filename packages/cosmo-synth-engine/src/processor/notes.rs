@@ -172,7 +172,9 @@ impl CosmoProcessor {
         });
 
         if let Some(entry) = prev_entry {
-            self.push_mono_stack_entry(entry);
+            if !entry.voice.is_silent {
+                self.push_mono_stack_entry(entry);
+            }
         }
 
         let voice = &mut self.voices[voice_idx];
@@ -352,13 +354,20 @@ impl CosmoProcessor {
             return;
         }
 
-        if self.params.poly_mode == PolyMode::Mono
-            && let Some(prev) = self.mono_stack.last()
-        {
-            let voice = &mut self.voices[voice_idx];
-            *voice = prev.voice.clone();
-            voice.note = Some(prev.note);
-            self.replace_active_note_entry(voice_idx, prev.note);
+        if self.params.poly_mode == PolyMode::Mono {
+            if let Some(prev) = self.mono_stack.last() {
+                if prev.voice.is_silent {
+                    self.mono_stack.pop();
+                    self.start_release(voice_idx);
+                } else {
+                    let voice = &mut self.voices[voice_idx];
+                    *voice = prev.voice.clone();
+                    voice.note = Some(prev.note);
+                    self.replace_active_note_entry(voice_idx, prev.note);
+                }
+            } else {
+                self.start_release(voice_idx);
+            }
         } else {
             self.start_release(voice_idx);
         }

@@ -1091,6 +1091,12 @@ impl CzPlugin {
         }
 
         if rendered < num_samples {
+            append_log(&format!(
+                "  render tail [{}.0..{}.0] ({} samples)",
+                rendered,
+                num_samples,
+                num_samples - rendered
+            ));
             if let Some(proc) = self.processor.as_mut() {
                 proc.process(&mut self.mono_output[rendered..num_samples]);
             }
