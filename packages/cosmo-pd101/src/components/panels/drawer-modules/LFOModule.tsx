@@ -316,10 +316,10 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 					/>
 					<path
 						d={lfoPreviewPath(
-							lfoWaveform as string,
-							lfoSymmetry as number,
-							lfoOffset as number,
-							lfoDepth as number,
+							lfoWaveform,
+							lfoSymmetry,
+							lfoOffset,
+							lfoDepth,
 						)}
 						fill="none"
 						stroke={`url(#lfo-preview-${id})`}
@@ -357,7 +357,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 							key={w}
 							type="button"
 							className={`join-item btn btn-xs h-7 min-h-0 flex-1 rounded-none border-0 px-1.5 ${
-								(lfoWaveform as string) === w ? "btn-secondary" : "btn-outline"
+								lfoWaveform === w ? "btn-secondary" : "btn-outline"
 							}`}
 							onClick={() => setLfoWaveform(w)}
 							title={`Select ${label} waveform for LFO ${id}.`}
@@ -369,9 +369,9 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				<Button
 					type="button"
 					className={`btn btn-xs h-7 min-h-0 px-1.5 ${
-						(lfoRetrigger as boolean) ? "btn-secondary" : "btn-outline"
+						lfoRetrigger ? "btn-secondary" : "btn-outline"
 					}`}
-					onClick={() => setLfoRetrigger(!(lfoRetrigger as boolean))}
+					onClick={() => setLfoRetrigger(!lfoRetrigger)}
 					title={PARAM_META[lfoRetriggerKey as SynthParamKey]?.tooltip}
 				>
 					Retrig

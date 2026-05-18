@@ -887,7 +887,7 @@ impl CzPlugin {
     }
 
     fn apply_factory_preset(&mut self, index: usize) {
-        let Some(params) = crate::ffi::factory_preset_params(index).cloned() else {
+        let Some(params) = crate::ffi::factory_preset_params(index) else {
             return;
         };
 
