@@ -12,6 +12,10 @@ pub struct RuntimeModSources {
     pub velocity: f32,
     pub mod_wheel: f32,
     pub aftertouch: f32,
+    pub macro1: f32,
+    pub macro2: f32,
+    pub macro3: f32,
+    pub macro4: f32,
 }
 
 /// Snapshot of a single envelope generator's runtime state.

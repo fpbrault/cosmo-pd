@@ -70,6 +70,10 @@ declare namespace wasm_bindgen {
          */
         setFxSlotType(slot: number, type_name: string): boolean;
         /**
+         * Set a macro knob value. `index` is 0–3, `value` is normalised [0.0, 1.0].
+         */
+        setMacro(index: number, value: number): void;
+        /**
          * Set mod wheel value. `value` is normalised [0.0, 1.0] (CC1 / 127).
          */
         setModWheel(value: number): void;
@@ -114,6 +118,7 @@ declare interface InitOutput {
     readonly czsynthprocessor_resetAudioState: (a: number) => void;
     readonly czsynthprocessor_setAftertouch: (a: number, b: number) => void;
     readonly czsynthprocessor_setFxSlotType: (a: number, b: number, c: number, d: number) => number;
+    readonly czsynthprocessor_setMacro: (a: number, b: number, c: number) => void;
     readonly czsynthprocessor_setModWheel: (a: number, b: number) => void;
     readonly czsynthprocessor_setParams: (a: number, b: number, c: number) => void;
     readonly czsynthprocessor_setPitchBend: (a: number, b: number) => void;

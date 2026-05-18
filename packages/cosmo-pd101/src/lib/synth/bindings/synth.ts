@@ -76,6 +76,16 @@ export type PolyMode = "poly8" | "mono"
 export type LfoWaveform = "sine" | "triangle" | "square" | "saw" | "invertedSaw"
 
 /**
+ * LFO rate interpretation mode.
+ */
+export type LfoRateMode = "hz" | "sync"
+
+/**
+ * Musical beat division for BPM-synced LFOs.
+ */
+export type LfoSyncDivision = "whole" | "half" | "quarter" | "eighth" | "sixteenth" | "thirtySecond" | "dottedQuarter" | "dottedEighth" | "quarterTriplet" | "eighthTriplet"
+
+/**
  * Portamento mode
  */
 export type PortamentoMode = "rate" | "time"
@@ -128,7 +138,7 @@ export type PortamentoParams = { enabled: boolean; mode: PortamentoMode; rate: n
 /**
  * LFO parameters
  */
-export type LfoParams = { waveform: LfoWaveform; rate: number; depth: number; symmetry: number; retrigger: boolean; offset?: number }
+export type LfoParams = { waveform: LfoWaveform; rate: number; rateMode?: LfoRateMode; syncDivision?: LfoSyncDivision; depth: number; symmetry: number; retrigger: boolean; offset?: number }
 
 /**
  * One algorithm-specific control value persisted on a line.
@@ -178,7 +188,7 @@ export type AlgoUiEntryV1 = { id: Algo; label: string; iconPath: string; visible
 /**
  * Modulation source selector for modulation matrix routes.
  */
-export type ModSource = "lfo1" | "lfo2" | "random" | "modEnv" | "velocity" | "modWheel" | "aftertouch"
+export type ModSource = "lfo1" | "lfo2" | "random" | "modEnv" | "velocity" | "modWheel" | "aftertouch" | "macro1" | "macro2" | "macro3" | "macro4"
 
 /**
  * Modulation destination selector for modulation matrix routes.
@@ -263,7 +273,7 @@ export type FxSlotConfig = { type: "empty" } | { type: "chorus"; params: ChorusP
 /**
  * Top-level synth parameters
  */
-export type SynthParams = { lineSelect: LineSelect; modMode: ModMode; ringGain?: number; octave: number; line1: LineParams; line2: LineParams; frequency: number; volume: number; czDacEnabled?: boolean; polyMode: PolyMode; legato: boolean; portamento: PortamentoParams; lfo: LfoParams; lfo2?: LfoParams; velocityCurve?: number; pitchBendRange?: number; modMatrix?: ModMatrix; random?: RandomParams; modEnv?: ModEnvParams; fxSlots?: [FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig] }
+export type SynthParams = { lineSelect: LineSelect; modMode: ModMode; ringGain?: number; octave: number; line1: LineParams; line2: LineParams; frequency: number; tempoBpm?: number; volume: number; czDacEnabled?: boolean; polyMode: PolyMode; legato: boolean; portamento: PortamentoParams; lfo: LfoParams; lfo2?: LfoParams; velocityCurve?: number; pitchBendRange?: number; modMatrix?: ModMatrix; random?: RandomParams; modEnv?: ModEnvParams; fxSlots?: [FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig]; macro1?: number; macro2?: number; macro3?: number; macro4?: number }
 
 /**
  * Canonical, versioned synth preset wire contract.
@@ -3426,10 +3436,83 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     }
   },
   {
+    "key": "tempoBpm",
+    "paramDefault": 120.0,
+    "readoutFormat": {
+      "kind": "decimal"
+    }
+  },
+  {
     "key": "lfoRate",
     "paramDefault": 2.0,
     "readoutFormat": {
-      "kind": "decimal"
+      "kind": "hertz"
+    }
+  },
+  {
+    "key": "lfoRateMode",
+    "paramDefault": null,
+    "readoutFormat": {
+      "kind": "enumMap",
+      "values": [
+        {
+          "label": "HZ",
+          "value": "hz"
+        },
+        {
+          "label": "SYNC",
+          "value": "sync"
+        }
+      ]
+    }
+  },
+  {
+    "key": "lfoSyncDivision",
+    "paramDefault": null,
+    "readoutFormat": {
+      "kind": "enumMap",
+      "values": [
+        {
+          "label": "1/1",
+          "value": "whole"
+        },
+        {
+          "label": "1/2",
+          "value": "half"
+        },
+        {
+          "label": "1/4",
+          "value": "quarter"
+        },
+        {
+          "label": "1/8",
+          "value": "eighth"
+        },
+        {
+          "label": "1/16",
+          "value": "sixteenth"
+        },
+        {
+          "label": "1/32",
+          "value": "thirtySecond"
+        },
+        {
+          "label": "1/4.",
+          "value": "dottedQuarter"
+        },
+        {
+          "label": "1/8.",
+          "value": "dottedEighth"
+        },
+        {
+          "label": "1/4T",
+          "value": "quarterTriplet"
+        },
+        {
+          "label": "1/8T",
+          "value": "eighthTriplet"
+        }
+      ]
     }
   },
   {
@@ -3457,7 +3540,73 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     "key": "lfo2Rate",
     "paramDefault": 2.0,
     "readoutFormat": {
-      "kind": "decimal"
+      "kind": "hertz"
+    }
+  },
+  {
+    "key": "lfo2RateMode",
+    "paramDefault": null,
+    "readoutFormat": {
+      "kind": "enumMap",
+      "values": [
+        {
+          "label": "HZ",
+          "value": "hz"
+        },
+        {
+          "label": "SYNC",
+          "value": "sync"
+        }
+      ]
+    }
+  },
+  {
+    "key": "lfo2SyncDivision",
+    "paramDefault": null,
+    "readoutFormat": {
+      "kind": "enumMap",
+      "values": [
+        {
+          "label": "1/1",
+          "value": "whole"
+        },
+        {
+          "label": "1/2",
+          "value": "half"
+        },
+        {
+          "label": "1/4",
+          "value": "quarter"
+        },
+        {
+          "label": "1/8",
+          "value": "eighth"
+        },
+        {
+          "label": "1/16",
+          "value": "sixteenth"
+        },
+        {
+          "label": "1/32",
+          "value": "thirtySecond"
+        },
+        {
+          "label": "1/4.",
+          "value": "dottedQuarter"
+        },
+        {
+          "label": "1/8.",
+          "value": "dottedEighth"
+        },
+        {
+          "label": "1/4T",
+          "value": "quarterTriplet"
+        },
+        {
+          "label": "1/8T",
+          "value": "eighthTriplet"
+        }
+      ]
     }
   },
   {
@@ -3653,6 +3802,11 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
 
 /** Rust-owned numeric range metadata for engine parameters. */
 export const ENGINE_PARAM_RANGES_V1: EngineParamRangeV1[] = [
+  {
+    "key": "tempoBpm",
+    "min": 20.0,
+    "max": 300.0
+  },
   {
     "key": "randomRate",
     "min": 0.0,

@@ -83,6 +83,7 @@ pub struct CzEditor {
     synth_params: Arc<ArcSwap<SynthParams>>,
     rt_synth_params: Arc<ArcSwap<SynthParams>>,
     runtime_mod_sources: SharedRuntimeModSources,
+    transport_snapshot: SharedTransportSnapshot,
     synth_params_version: Arc<AtomicU64>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
@@ -125,18 +126,20 @@ impl CzEditor {
     pub(crate) fn new(
         synth_params: Arc<ArcSwap<SynthParams>>,
         rt_synth_params: Arc<ArcSwap<SynthParams>>,
+        runtime_mod_sources: SharedRuntimeModSources,
+        transport_snapshot: SharedTransportSnapshot,
         synth_params_version: Arc<AtomicU64>,
         scope_buffer: ScopeBuffer,
         ui_input_queue: UiInputQueue,
         midi_cc_queue: MidiCcQueue,
         performance_counters: PerformanceCountersHandle,
         params: Arc<CzPluginParams>,
-        runtime_mod_sources: SharedRuntimeModSources,
     ) -> Self {
         Self {
             synth_params,
             rt_synth_params,
             runtime_mod_sources,
+            transport_snapshot,
             synth_params_version,
             scope_buffer,
             ui_input_queue,
@@ -172,6 +175,7 @@ impl CzEditor {
         let synth_params = self.synth_params.clone();
         let rt_synth_params = self.rt_synth_params.clone();
         let runtime_mod_sources = self.runtime_mod_sources.clone();
+        let transport_snapshot = self.transport_snapshot.clone();
         let synth_params_version = self.synth_params_version.clone();
         let scope_buffer = self.scope_buffer.clone();
         let ui_input_queue = self.ui_input_queue.clone();
@@ -185,12 +189,13 @@ impl CzEditor {
                 resource_dir,
                 synth_params,
                 rt_synth_params,
+                runtime_mod_sources,
+                transport_snapshot,
                 synth_params_version,
                 scope_buffer,
                 ui_input_queue,
                 performance_counters,
                 params,
-                runtime_mod_sources,
                 webview_state_for_ipc,
             )
         };
@@ -279,6 +284,7 @@ impl Editor for CzEditor {
 
         #[cfg(not(target_os = "macos"))]
         {
+            let _ = &parent;
             append_log("CzEditor::open: non-macOS build; no-op");
             return;
         }
@@ -731,12 +737,13 @@ unsafe fn build_webview_from_ns_view(
     resource_dir: std::path::PathBuf,
     synth_params: Arc<ArcSwap<SynthParams>>,
     rt_synth_params: Arc<ArcSwap<SynthParams>>,
+    runtime_mod_sources: SharedRuntimeModSources,
+    transport_snapshot: SharedTransportSnapshot,
     synth_params_version: Arc<AtomicU64>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
     performance_counters: PerformanceCountersHandle,
     params: Arc<CzPluginParams>,
-    runtime_mod_sources: SharedRuntimeModSources,
     webview_state: Arc<Mutex<WebViewContainer>>,
 ) -> (Option<wry::WebView>, Option<StandaloneWindow>) {
     unsafe {
@@ -797,6 +804,7 @@ unsafe fn build_webview_from_ns_view(
                     &synth_params,
                     &rt_synth_params,
                     &runtime_mod_sources,
+                    &transport_snapshot,
                     &synth_params_version,
                     &scope_buffer,
                     &ui_input_queue,
@@ -817,20 +825,19 @@ unsafe fn build_webview_from_ns_view(
                     && let Some(wv) = &container.webview {
                         let _ = wv.evaluate_script(&script);
 
-                        if params_repush_done
-                            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
-                            .is_ok()
-                        {
-                            let sp = synth_params.load();
-                            if let Ok(json_str) = serde_json::to_string(sp.as_ref()) {
-                                let escaped = json_str
-                                    .replace('\\', "\\\\")
-                                    .replace('"', "\\\"");
-                                let params_script = format!(
-                                    "if(typeof window.__czOnParams === 'function') {{ window.__czOnParams(\"{escaped}\"); }}"
-                                );
-                                let _ = wv.evaluate_script(&params_script);
-                            }
+                    if params_repush_done
+                        .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+                        .is_ok()
+                    {
+                        let sp = synth_params.load();
+                        if let Ok(json_str) = serde_json::to_string(sp.as_ref()) {
+                            let escaped = json_str
+                                .replace('\\', "\\\\")
+                                .replace('"', "\\\"");
+                            let params_script = format!(
+                                "if(typeof window.__czOnParams === 'function') {{ window.__czOnParams(\"{escaped}\"); }}"
+                            );
+                            let _ = wv.evaluate_script(&params_script);
                         }
                     }
             }
@@ -1041,7 +1048,7 @@ fn binary_path() -> Option<std::path::PathBuf> {
         const GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS: DWORD = 0x00000004;
         const GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT: DWORD = 0x00000002;
 
-        extern "system" {
+        unsafe extern "system" {
             fn GetModuleHandleExW(
                 dwFlags: DWORD,
                 lpModuleName: LPCWSTR,

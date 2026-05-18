@@ -15,8 +15,7 @@ import ModModeControl from "@/components/controls/ModModeControl";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import type { EnvOverrideHandlers } from "@/components/editor/PhaseLinesSection";
 import PhaseLinesSection from "@/components/editor/PhaseLinesSection";
-import type { AsidePanelTab } from "@/components/layout/AsidePanelSwitcher";
-import AsidePanelSwitcher from "@/components/layout/AsidePanelSwitcher";
+import SynthSidebar from "@/components/layout/SynthSidebar";
 import FxConsoleDrawer from "@/components/panels/drawers/FxConsoleDrawer";
 import ModConsoleDrawer from "@/components/panels/drawers/ModConsoleDrawer";
 import { FX_SLOT_PANELS } from "@/components/panels/fx/FxSlotPanel";
@@ -38,10 +37,7 @@ import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import { HoverInfoProvider, useHoverInfo } from "../layout/HoverInfo";
 import MiniKeyboardOverlay from "../layout/MiniKeyboardOverlay";
 import SynthInfoBar from "../layout/SynthInfoBar";
-import {
-	ScopeDrawerDisplay,
-	ScopeMiniDisplay,
-} from "../panels/analysis/ScopeDisplay";
+import { ScopeDrawerDisplay } from "../panels/analysis/ScopeDisplay";
 
 const MemoPresetLibrary = memo(PresetLibrary);
 
@@ -107,8 +103,6 @@ type SynthRendererProps = {
 			hz: number;
 		}) => void,
 	) => () => void;
-	activeAsidePanel: AsidePanelTab;
-	onAsidePanelChange: (tab: AsidePanelTab) => void;
 	envOverrideHandlers?: EnvOverrideHandlers;
 	miniKeyboard?: {
 		activeNotes: number[];
@@ -132,8 +126,6 @@ const SynthRenderer = memo(function SynthRenderer({
 	analyserNodeRef,
 	audioCtxRef,
 	subscribeScopeFrames,
-	activeAsidePanel,
-	onAsidePanelChange,
 	envOverrideHandlers,
 	miniKeyboard,
 	audioGate,
@@ -150,8 +142,6 @@ const SynthRenderer = memo(function SynthRenderer({
 				analyserNodeRef={analyserNodeRef}
 				audioCtxRef={audioCtxRef}
 				subscribeScopeFrames={subscribeScopeFrames}
-				activeAsidePanel={activeAsidePanel}
-				onAsidePanelChange={onAsidePanelChange}
 				envOverrideHandlers={envOverrideHandlers}
 				miniKeyboard={miniKeyboard}
 				audioGate={audioGate}
@@ -172,8 +162,6 @@ function SynthRendererContent({
 	analyserNodeRef,
 	audioCtxRef,
 	subscribeScopeFrames,
-	activeAsidePanel,
-	onAsidePanelChange,
 	envOverrideHandlers,
 	miniKeyboard,
 	audioGate,
@@ -195,6 +183,9 @@ function SynthRendererContent({
 	);
 	const [drawerSlideDirection, setDrawerSlideDirection] = useState<1 | -1>(1);
 	const [brandInfoOpen, setBrandInfoOpen] = useState(false);
+	const [globalPanelOpen, setGlobalPanelOpen] = useState(false);
+	const [macroLabelEditorOpen, setMacroLabelEditorOpen] = useState(false);
+
 	const mainPanelBottomInset =
 		keyboardVisible && !libraryModeOpen ? "11rem" : "0rem";
 	const frameStyleWithPanelInset = {
@@ -438,6 +429,15 @@ function SynthRendererContent({
 						open={brandInfoOpen}
 						onClose={() => setBrandInfoOpen(false)}
 					/>
+					<GlobalVoiceModal
+						open={globalPanelOpen}
+						onClose={() => setGlobalPanelOpen(false)}
+					/>
+					<MacroLabelEditorModal
+						open={macroLabelEditorOpen}
+						onClose={() => setMacroLabelEditorOpen(false)}
+					/>
+
 					<PendingModifiedPresetModal
 						pendingPresetChange={headerProps.pendingPresetChange}
 						onSave={headerProps.onSavePendingPresetChange}
@@ -556,6 +556,131 @@ function SynthBrandInfoModal({
 						For my cats, Basil, Lola, and Latte
 					</p>
 				</div>
+			</div>
+		</div>
+	);
+}
+
+function GlobalVoiceModal({
+	open,
+	onClose,
+}: {
+	open: boolean;
+	onClose: () => void;
+}) {
+	return (
+		<SynthOverlayModal
+			open={open}
+			onClose={onClose}
+			title="Global Settings"
+			ariaLabel="Global settings"
+			widthClassName="w-[min(48rem,96%)]"
+		>
+			<div className="max-h-[72vh] overflow-y-auto rounded-md bg-cz-bg/35 p-2">
+				<GlobalVoicePanel />
+			</div>
+		</SynthOverlayModal>
+	);
+}
+
+function MacroLabelEditorModal({
+	open,
+	onClose,
+}: {
+	open: boolean;
+	onClose: () => void;
+}) {
+	const labels = useSynthStore((s) => s.macroLabels);
+	const setMacroLabel = useSynthStore((s) => s.setMacroLabel);
+
+	return (
+		<SynthOverlayModal
+			open={open}
+			onClose={onClose}
+			title="Macro Labels"
+			ariaLabel="Macro label editor"
+			widthClassName="w-[min(30rem,94vw)]"
+		>
+			<div className="grid grid-cols-2 gap-2">
+				{[0, 1, 2, 3].map((idx) => (
+					<label
+						key={`macro-label-editor-${idx}`}
+						className="flex flex-col gap-1 font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.12em]"
+					>
+						Macro {idx + 1}
+						<input
+							type="text"
+							className="input input-sm w-full border-cz-border bg-cz-inset font-mono text-2xs text-cz-cream"
+							maxLength={18}
+							value={labels[idx]}
+							onChange={(event) =>
+								setMacroLabel(idx, event.currentTarget.value)
+							}
+						/>
+					</label>
+				))}
+			</div>
+		</SynthOverlayModal>
+	);
+}
+
+function SynthOverlayModal({
+	open,
+	onClose,
+	title,
+	ariaLabel,
+	widthClassName,
+	children,
+}: {
+	open: boolean;
+	onClose: () => void;
+	title: string;
+	ariaLabel: string;
+	widthClassName: string;
+	children: ReactNode;
+}) {
+	useEffect(() => {
+		if (!open) return;
+		const handleEscape = (event: KeyboardEvent) => {
+			if (event.key !== "Escape") return;
+			event.preventDefault();
+			onClose();
+		};
+		window.addEventListener("keydown", handleEscape);
+		return () => window.removeEventListener("keydown", handleEscape);
+	}, [open, onClose]);
+
+	if (!open) return null;
+
+	return (
+		<div
+			className="absolute inset-0 z-[45] flex items-center justify-center"
+			role="dialog"
+			aria-modal="true"
+			aria-label={ariaLabel}
+		>
+			<button
+				type="button"
+				className="absolute inset-0 bg-cz-body/80 backdrop-blur-sm"
+				onClick={onClose}
+				aria-label={`Close ${ariaLabel}`}
+			/>
+			<div
+				className={`relative rounded-md border border-cz-border bg-cz-surface p-4 shadow-2xl ${widthClassName}`}
+			>
+				<div className="mb-2 flex items-center justify-between px-1">
+					<p className="font-mono text-2xs text-cz-cream-dim uppercase tracking-[0.18em]">
+						{title}
+					</p>
+					<Button
+						type="button"
+						className="btn btn-sm border-cz-border bg-cz-inset text-cz-cream"
+						onClick={onClose}
+					>
+						Close
+					</Button>
+				</div>
+				{children}
 			</div>
 		</div>
 	);

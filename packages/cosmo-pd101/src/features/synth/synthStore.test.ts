@@ -49,14 +49,26 @@ describe("useSynthStore", () => {
 	});
 
 	it("gathers state into a preset structure", () => {
-		const { setWarpAAmount, gatherState } = useSynthStore.getState();
+		const {
+			setWarpAAmount,
+			setTempoBpm,
+			setLfoRateMode,
+			setLfoSyncDivision,
+			gatherState,
+		} = useSynthStore.getState();
 
 		act(() => {
 			setWarpAAmount(0.75);
+			setTempoBpm(132);
+			setLfoRateMode("sync");
+			setLfoSyncDivision("eighth");
 		});
 
 		const preset = gatherState();
 		expect(preset.params.line1.dcwBase).toBe(0.75);
+		expect(preset.params.tempoBpm).toBe(132);
+		expect(preset.params.lfo.rateMode).toBe("sync");
+		expect(preset.params.lfo.syncDivision).toBe("eighth");
 		expect(preset.schemaVersion).toBe(1);
 	});
 
@@ -67,6 +79,7 @@ describe("useSynthStore", () => {
 			schemaVersion: 1,
 			params: {
 				volume: 0.5,
+				tempoBpm: 96,
 				line1: {
 					dcwBase: 0.2,
 					algo: DEFAULT_ALGO_REF,
@@ -74,6 +87,16 @@ describe("useSynthStore", () => {
 				line2: {
 					dcwBase: 0.4,
 					algo: DEFAULT_ALGO_REF,
+				},
+				lfo: {
+					waveform: "sine",
+					rate: 2,
+					rateMode: "sync",
+					syncDivision: "quarter",
+					depth: 1,
+					symmetry: 0.5,
+					retrigger: false,
+					offset: 0,
 				},
 			},
 		} as unknown as SynthPresetV1;
@@ -84,8 +107,11 @@ describe("useSynthStore", () => {
 
 		const state = useSynthStore.getState();
 		expect(state.volume).toBe(0.5);
+		expect(state.tempoBpm).toBe(96);
 		expect(state.warpAAmount).toBe(0.2);
 		expect(state.warpBAmount).toBe(0.4);
+		expect(state.lfoRateMode).toBe("sync");
+		expect(state.lfoSyncDivision).toBe("quarter");
 	});
 
 	it("handles invalid presets gracefully in applyPreset", () => {

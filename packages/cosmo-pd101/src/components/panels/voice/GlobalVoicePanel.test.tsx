@@ -61,14 +61,18 @@ describe("GlobalVoicePanel", () => {
 
 	it("groups portamento and bend range controls", () => {
 		render(<GlobalVoicePanel />);
-		const portamentoSection = screen.getByText("Portamento").parentElement;
+		const portamentoSection = screen
+			.getByText("Portamento", { selector: "legend" })
+			.closest("fieldset");
 
-		expect(screen.getByText("Portamento")).toBeInTheDocument();
+		expect(
+			screen.getByText("Portamento", { selector: "legend" }),
+		).toBeInTheDocument();
 		expect(portamentoSection).not.toBeNull();
-		// The portamento mode toggle shows "● Rate" when in rate mode
+		// The portamento mode toggle shows "Rate Mode" when in rate mode
 		expect(
 			within(portamentoSection as HTMLElement).getByRole("button", {
-				name: "● Rate",
+				name: "Rate Mode",
 			}),
 		).toBeInTheDocument();
 		expect(screen.getByTestId("knob-portamentoRate")).toBeInTheDocument();
@@ -84,13 +88,15 @@ describe("GlobalVoicePanel", () => {
 
 	it("updates portamento controls", () => {
 		render(<GlobalVoicePanel />);
-		const portamentoSection = screen.getByText("Portamento").parentElement;
+		const portamentoSection = screen
+			.getByText("Portamento", { selector: "legend" })
+			.closest("fieldset");
 
 		expect(portamentoSection).not.toBeNull();
-		// Click the mode toggle (currently showing "● Rate") to switch to time
+		// Click the mode toggle (currently showing "Rate Mode") to switch to time
 		fireEvent.click(
 			within(portamentoSection as HTMLElement).getByRole("button", {
-				name: "● Rate",
+				name: "Rate Mode",
 			}),
 		);
 

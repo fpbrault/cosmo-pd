@@ -109,8 +109,17 @@
 		"lfoWaveform": {
 			"tooltip": "Selects LFO 1 waveform shape."
 		},
+		"tempoBpm": {
+			"tooltip": "Sets the manual tempo used for BPM-synced modulation when no host transport is driving the synth."
+		},
 		"lfoRate": {
 			"tooltip": "Sets LFO 1 speed."
+		},
+		"lfoRateMode": {
+			"tooltip": "Switches LFO 1 between free-running hertz mode and BPM-synced division mode."
+		},
+		"lfoSyncDivision": {
+			"tooltip": "Chooses the rhythmic division for BPM-synced LFO 1."
 		},
 		"lfoDepth": {
 			"tooltip": "Sets LFO 1 modulation depth."
@@ -123,6 +132,12 @@
 		},
 		"lfo2Rate": {
 			"tooltip": "Sets LFO 2 speed."
+		},
+		"lfo2RateMode": {
+			"tooltip": "Switches LFO 2 between free-running hertz mode and BPM-synced division mode."
+		},
+		"lfo2SyncDivision": {
+			"tooltip": "Chooses the rhythmic division for BPM-synced LFO 2."
 		},
 		"lfo2Depth": {
 			"tooltip": "Sets LFO 2 modulation depth."

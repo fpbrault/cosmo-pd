@@ -48,8 +48,15 @@ pub struct CosmoProcessor {
     pub pitch_bend: f32,
     pub mod_wheel: f32,
     pub aftertouch: f32,
+    pub macro1: f32,
+    pub macro2: f32,
+    pub macro3: f32,
+    pub macro4: f32,
     pub last_runtime_mod_sources: RuntimeModSources,
     pub simd_backend: SimdBackend,
+    host_transport_tempo_bpm: Option<f32>,
+    host_transport_playing: bool,
+    host_transport_position_beats: f64,
     compiled_params: CompiledSynthParams,
     compiled_params_dirty: bool,
     line1_scratch: LineParams,
@@ -79,8 +86,15 @@ impl CosmoProcessor {
             pitch_bend: 0.0,
             mod_wheel: 0.0,
             aftertouch: 0.0,
+            macro1: 0.0,
+            macro2: 0.0,
+            macro3: 0.0,
+            macro4: 0.0,
             last_runtime_mod_sources: RuntimeModSources::default(),
             simd_backend: detect_simd_backend(),
+            host_transport_tempo_bpm: None,
+            host_transport_playing: false,
+            host_transport_position_beats: 0.0,
             compiled_params,
             compiled_params_dirty: false,
             line1_scratch: LineParams::default(),
@@ -188,6 +202,10 @@ impl CosmoProcessor {
 
     /// Swap in a pre-normalized shared parameter snapshot without cloning.
     pub fn set_shared_params(&mut self, params: Arc<SynthParams>) {
+        self.macro1 = params.macro1;
+        self.macro2 = params.macro2;
+        self.macro3 = params.macro3;
+        self.macro4 = params.macro4;
         self.line1_scratch = params.line1;
         self.line2_scratch = params.line2;
         self.params = params;
@@ -225,8 +243,15 @@ impl CosmoProcessor {
         self.pitch_bend = 0.0;
         self.mod_wheel = 0.0;
         self.aftertouch = 0.0;
+        self.macro1 = 0.0;
+        self.macro2 = 0.0;
+        self.macro3 = 0.0;
+        self.macro4 = 0.0;
         self.last_runtime_mod_sources = RuntimeModSources::default();
         self.simd_backend = detect_simd_backend();
+        self.host_transport_tempo_bpm = None;
+        self.host_transport_playing = false;
+        self.host_transport_position_beats = 0.0;
         self.line1_scratch = self.params.line1;
         self.line2_scratch = self.params.line2;
         self.envelope_timing = EnvelopeTimingCache::new(self.sample_rate);
@@ -270,6 +295,33 @@ impl CosmoProcessor {
     /// Set aftertouch/channel pressure. `value` is normalised [0.0, 1.0].
     pub fn set_aftertouch(&mut self, value: f32) {
         self.aftertouch = value.clamp(0.0, 1.0);
+    }
+
+    /// Apply host transport timing for BPM-synced modulation.
+    pub fn set_host_transport(&mut self, tempo_bpm: f32, playing: bool, position_beats: f64) {
+        self.host_transport_tempo_bpm = tempo_bpm.is_finite().then_some(tempo_bpm.max(0.0));
+        self.host_transport_playing = playing;
+        if position_beats.is_finite() {
+            self.host_transport_position_beats = position_beats;
+        }
+    }
+
+    /// Clear any active host transport override and fall back to manual tempo.
+    pub fn clear_host_transport(&mut self) {
+        self.host_transport_tempo_bpm = None;
+        self.host_transport_playing = false;
+    }
+
+    /// Set a macro knob value. `value` is normalised [0.0, 1.0].
+    pub fn set_macro(&mut self, index: usize, value: f32) {
+        let clamped = value.clamp(0.0, 1.0);
+        match index {
+            0 => self.macro1 = clamped,
+            1 => self.macro2 = clamped,
+            2 => self.macro3 = clamped,
+            3 => self.macro4 = clamped,
+            _ => {}
+        }
     }
 }
 
@@ -344,6 +396,35 @@ mod tests {
 
         let expected_without_mod = base_rate / proc.sample_rate;
         assert!(proc.lfo_phase > expected_without_mod);
+    }
+
+    #[test]
+    fn sync_lfo_uses_manual_tempo_when_host_transport_is_absent() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().tempo_bpm = 120.0;
+        proc.params_mut().lfo.rate_mode = crate::params::LfoRateMode::Sync;
+        proc.params_mut().lfo.sync_division = crate::params::LfoSyncDivision::Quarter;
+
+        let mut out = [0.0_f32; 1];
+        proc.process(&mut out);
+
+        let expected_phase = 2.0 / 48_000.0;
+        assert!((proc.lfo_phase - expected_phase).abs() < 1.0e-6);
+    }
+
+    #[test]
+    fn sync_lfo_prefers_host_transport_tempo_when_available() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().tempo_bpm = 120.0;
+        proc.params_mut().lfo.rate_mode = crate::params::LfoRateMode::Sync;
+        proc.params_mut().lfo.sync_division = crate::params::LfoSyncDivision::Quarter;
+        proc.set_host_transport(60.0, false, 0.0);
+
+        let mut out = [0.0_f32; 1];
+        proc.process(&mut out);
+
+        let expected_phase = 1.0 / 48_000.0;
+        assert!((proc.lfo_phase - expected_phase).abs() < 1.0e-6);
     }
 
     #[test]

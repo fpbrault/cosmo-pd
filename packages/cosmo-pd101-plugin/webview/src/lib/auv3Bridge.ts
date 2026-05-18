@@ -13,10 +13,12 @@ type ScopeDataResponse = {
 type RuntimeVoiceStatesResponse = string | unknown[];
 
 type RuntimeModSourcesResponse = string | Record<string, number>;
+type TransportInfoResponse = string | Record<string, number | boolean>;
 
 const SCOPE_POLL_INTERVAL_MS = 33;
 const RUNTIME_VOICE_STATES_POLL_INTERVAL_MS = 16;
 const RUNTIME_MOD_SOURCES_POLL_INTERVAL_MS = 16;
+const TRANSPORT_POLL_INTERVAL_MS = 100;
 const IPC_TIMEOUT_MS = 250;
 
 declare global {
@@ -32,6 +34,7 @@ declare global {
 		__czOnHostPresetSelected?: (name: string) => void;
 		__czGetParams?: () => Promise<unknown>;
 		__czSetParams?: (json: string) => void;
+		__czGetTransportInfo?: () => Promise<unknown>;
 		__czOnScope?: (samples: number[], sampleRate: number, hz: number) => void;
 		__czIpcResponse?: (response: IpcRpcResponse) => void;
 		__czOnMidiCc?: (channel: number, cc: number, value: number) => void;
@@ -145,6 +148,7 @@ function installIpcRouter() {
 			console.error("[auv3Bridge] setParams error", error);
 		});
 	};
+	window.__czGetTransportInfo = () => invokeAuv3("getTransportInfo", []);
 }
 
 function installScopeProperty(onActiveChange: (active: boolean) => void) {
@@ -390,5 +394,6 @@ export function ensureAuv3Bridge(): boolean {
 	installScopePolling();
 	installRuntimeVoiceStatesPolling();
 	installRuntimeModSourcesPolling();
+	installTransportPolling();
 	return true;
 }

@@ -1,8 +1,7 @@
-import { memo } from "react";
+import { memo, type ReactNode } from "react";
 import Button from "@/components/controls/Button";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
-import type { AsidePanelComponent } from "@/components/layout/AsidePanelSwitcher";
-import SynthPanelContainer from "@/components/layout/SynthPanelContainer";
+import { useHostTransport } from "@/features/synth/hooks/useHostTransport";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import { PORTAMENTO_MODE_TOOLTIPS } from "@/lib/synth/paramMeta";
 import { applyVelocityCurve } from "@/lib/synth/velocityCurve";
@@ -76,96 +75,138 @@ const VelocityCurvePreview = memo(function VelocityCurvePreview({
 	);
 });
 
-const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
-	function GlobalVoicePanel() {
-		const { value: velocityCurve, setValue: setVelocityCurve } =
-			useSynthParam("velocityCurve");
-		const { value: pitchBendRange, setValue: setPitchBendRange } =
-			useSynthParam("pitchBendRange");
-		const { value: portamentoMode, setValue: setPortamentoMode } =
-			useSynthParam("portamentoMode");
-		const { value: portamentoRate, setValue: setPortamentoRate } =
-			useSynthParam("portamentoRate");
-		const { value: portamentoTime, setValue: setPortamentoTime } =
-			useSynthParam("portamentoTime");
-		return (
-			<SynthPanelContainer className="p-2">
-				<div className="space-y-2">
-					<div className="grid grid-cols-[auto_1fr_auto] items-end gap-1.5 pt-0.5">
-						<div className="mt-0.5 flex flex-col justify-center">
-							<Button
-								type="button"
-								onClick={() =>
-									setPortamentoMode(
-										(portamentoMode as string) === "rate" ? "time" : "rate",
-									)
-								}
-								title={
-									PORTAMENTO_MODE_TOOLTIPS[
-										(portamentoMode as string) === "rate" ? "time" : "rate"
-									]
-								}
-								className={`btn btn-xs h-fit min-h-0 w-fit self-center justify-self-center p-2 ${
-									(portamentoMode as string) === "rate"
-										? "border-amber-500/60 bg-amber-500/20 text-amber-300"
-										: "border-cz-border bg-transparent text-cz-cream/60 hover:text-cz-cream/90"
-								}`}
-							>
-								{(portamentoMode as string) === "rate" ? "● Rate" : "○ Time"}
-							</Button>
-							{(portamentoMode as string) === "rate" ? (
-								<SynthParamKnob
-									paramKey="portamentoRate"
-									value={portamentoRate as number}
-									min={0.01}
-									max={100}
-									step={0.01}
-									onChange={setPortamentoRate}
-									color="#7f9de4"
-									label="Portamento"
-								/>
-							) : (
-								<SynthParamKnob
-									paramKey="portamentoTime"
-									value={portamentoTime as number}
-									onChange={setPortamentoTime}
-									color="#7f9de4"
-									label="Portamento"
-								/>
-							)}
-						</div>
-						<div className="flex justify-center">
-							<SynthParamKnob
-								paramKey="pitchBendRange"
-								value={pitchBendRange as number}
-								min={0}
-								max={24}
-								step={1}
-								onChange={setPitchBendRange}
-								color="#5bc8d4"
-								label="Pitch Bend"
-							/>
-						</div>
-						<div className="flex flex-col justify-center">
-							<VelocityCurvePreview curve={velocityCurve as number} />
-							<SynthParamKnob
-								paramKey="velocityCurve"
-								value={velocityCurve as number}
-								onChange={setVelocityCurve}
-								min={-1}
-								color="#c46eb4"
-								label="Vel Curve"
-							/>
-						</div>
+function GlobalSection({
+	title,
+	children,
+}: {
+	title: string;
+	children: ReactNode;
+}) {
+	return (
+		<fieldset className="fieldset rounded-box border border-cz-cream bg-cz-panel px-3">
+			<legend className="fieldset-legend font-mono text-4xs text-cz-cream/60 uppercase tracking-[0.24em]">
+				{title}
+			</legend>
+			{children}
+		</fieldset>
+	);
+}
+
+export default function GlobalVoicePanel() {
+	const transport = useHostTransport();
+	const { value: velocityCurve, setValue: setVelocityCurve } =
+		useSynthParam("velocityCurve");
+	const { value: pitchBendRange, setValue: setPitchBendRange } =
+		useSynthParam("pitchBendRange");
+	const { value: tempoBpm, setValue: setTempoBpm } = useSynthParam("tempoBpm");
+	const { value: portamentoMode, setValue: setPortamentoMode } =
+		useSynthParam("portamentoMode");
+	const { value: portamentoRate, setValue: setPortamentoRate } =
+		useSynthParam("portamentoRate");
+	const { value: portamentoTime, setValue: setPortamentoTime } =
+		useSynthParam("portamentoTime");
+	const tempoDisplayBpm =
+		typeof tempoBpm === "number" && Number.isFinite(tempoBpm) ? tempoBpm : 120;
+	return (
+		<div className="grid grid-cols-2 gap-4">
+			<GlobalSection title="Transport">
+				<label className="input bg-neutral">
+					<span className="label pr-2 font-mono text-4xs text-cz-cream/55 uppercase tracking-[0.24em]">
+						Tempo
+					</span>
+					<input
+						type="number"
+						min={20}
+						max={300}
+						step={0.1}
+						value={tempoDisplayBpm.toFixed(1)}
+						disabled={transport.available}
+						onChange={(event) => {
+							const nextValue = Number(event.target.value);
+							if (!Number.isFinite(nextValue)) {
+								return;
+							}
+							setTempoBpm(Math.min(300, Math.max(20, nextValue)));
+						}}
+					/>
+					<span className="label font-mono text-4xs text-cz-cream/45 uppercase tracking-[0.18em]">
+						BPM
+					</span>
+				</label>
+			</GlobalSection>
+
+			<GlobalSection title="Portamento">
+				<div className="flex flex-col items-center justify-center">
+					<Button
+						type="button"
+						onClick={() =>
+							setPortamentoMode(
+								(portamentoMode as string) === "rate" ? "time" : "rate",
+							)
+						}
+						title={
+							PORTAMENTO_MODE_TOOLTIPS[
+								(portamentoMode as string) === "rate" ? "time" : "rate"
+							]
+						}
+						className={`btn btn-xs h-fit min-h-0 px-2 py-1 ${
+							(portamentoMode as string) === "rate"
+								? "btn-primary"
+								: "btn-neutral"
+						}`}
+					>
+						{(portamentoMode as string) === "rate" ? "Rate Mode" : "Time Mode"}
+					</Button>
+					{(portamentoMode as string) === "rate" ? (
+						<SynthParamKnob
+							paramKey="portamentoRate"
+							value={portamentoRate as number}
+							min={0.01}
+							max={100}
+							step={0.01}
+							onChange={setPortamentoRate}
+							color="#7f9de4"
+							label="Portamento"
+						/>
+					) : (
+						<SynthParamKnob
+							paramKey="portamentoTime"
+							value={portamentoTime as number}
+							onChange={setPortamentoTime}
+							color="#7f9de4"
+							label="Portamento"
+						/>
+					)}
+				</div>
+			</GlobalSection>
+
+			<GlobalSection title="Expression">
+				<SynthParamKnob
+					paramKey="pitchBendRange"
+					value={pitchBendRange as number}
+					min={0}
+					max={24}
+					step={1}
+					onChange={setPitchBendRange}
+					color="#5bc8d4"
+					label="Pitch Bend"
+				/>
+			</GlobalSection>
+			<GlobalSection title="Expression">
+				<div className="flex flex-col items-center justify-center">
+					<VelocityCurvePreview curve={velocityCurve as number} />
+					<div className="flex justify-center">
+						<SynthParamKnob
+							paramKey="velocityCurve"
+							value={velocityCurve as number}
+							onChange={setVelocityCurve}
+							min={-1}
+							color="#c46eb4"
+							label="Vel Curve"
+						/>
 					</div>
 				</div>
-			</SynthPanelContainer>
-		);
-	},
-	{
-		panelId: "global" as const,
-		panelTab: { topLabel: "Global", bottomLabel: "" },
-	},
-);
-
-export default GlobalVoicePanel;
+			</GlobalSection>
+		</div>
+	);
+}

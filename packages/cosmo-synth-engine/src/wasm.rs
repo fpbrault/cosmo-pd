@@ -107,6 +107,12 @@ impl CzSynthProcessor {
         self.inner.set_aftertouch(value);
     }
 
+    /// Set a macro knob value. `index` is 0–3, `value` is normalised [0.0, 1.0].
+    #[wasm_bindgen(js_name = setMacro)]
+    pub fn set_macro(&mut self, index: usize, value: f32) {
+        self.inner.set_macro(index, value);
+    }
+
     /// Set which effect type occupies a given FX slot (0–5).
     ///
     /// `type_name` is the camelCase string representation of `FxSlotType`

@@ -69,6 +69,10 @@ fn main() {
     out.push_str("\n\n");
     out.push_str(&export::<LfoWaveform>(&config).expect("Failed to export LfoWaveform"));
     out.push_str("\n\n");
+    out.push_str(&export::<LfoRateMode>(&config).expect("Failed to export LfoRateMode"));
+    out.push_str("\n\n");
+    out.push_str(&export::<LfoSyncDivision>(&config).expect("Failed to export LfoSyncDivision"));
+    out.push_str("\n\n");
     out.push_str(&export::<PortamentoMode>(&config).expect("Failed to export PortamentoMode"));
     out.push_str("\n\n");
     out.push_str(&export::<ChorusParams>(&config).expect("Failed to export ChorusParams"));

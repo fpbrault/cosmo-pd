@@ -29,6 +29,10 @@ struct LfoFrame {
     random: f32,
 }
 
+fn sync_rate_hz(tempo_bpm: f32, division: LfoSyncDivision) -> f32 {
+    (tempo_bpm.max(1.0) / 60.0) * division.cycles_per_beat()
+}
+
 #[derive(Clone, Copy)]
 struct VoiceLinesFrame {
     line1: LineParams,
@@ -69,12 +73,17 @@ impl CosmoProcessor {
 
         let params = Arc::clone(&self.params);
         let p = params.as_ref();
+        let manual_tempo_bpm = p.tempo_bpm;
         let base_lfo1_rate = p.lfo.rate;
+        let lfo1_rate_mode = p.lfo.rate_mode;
+        let lfo1_sync_division = p.lfo.sync_division;
         let lfo1_waveform = p.lfo.waveform;
         let base_lfo1_symmetry = p.lfo.symmetry;
         let base_lfo1_depth = p.lfo.depth;
         let base_lfo1_offset = p.lfo.offset;
         let base_lfo2_rate = p.lfo2.rate;
+        let lfo2_rate_mode = p.lfo2.rate_mode;
+        let lfo2_sync_division = p.lfo2.sync_division;
         let lfo2_waveform = p.lfo2.waveform;
         let base_lfo2_symmetry = p.lfo2.symmetry;
         let base_lfo2_depth = p.lfo2.depth;
@@ -109,6 +118,10 @@ impl CosmoProcessor {
                 source_velocity,
                 self.mod_wheel,
                 self.aftertouch,
+                self.macro1,
+                self.macro2,
+                self.macro3,
+                self.macro4,
             );
 
             if has_active_mod_routes {
@@ -120,12 +133,17 @@ impl CosmoProcessor {
                 &pre_sources,
                 &mod_cache,
                 has_active_mod_routes,
+                manual_tempo_bpm,
                 base_lfo1_rate,
+                lfo1_rate_mode,
+                lfo1_sync_division,
                 base_lfo1_depth,
                 base_lfo1_symmetry,
                 base_lfo1_offset,
                 lfo1_waveform,
                 base_lfo2_rate,
+                lfo2_rate_mode,
+                lfo2_sync_division,
                 base_lfo2_depth,
                 base_lfo2_symmetry,
                 base_lfo2_offset,
@@ -186,6 +204,10 @@ impl CosmoProcessor {
                 velocity,
                 mod_wheel: self.mod_wheel,
                 aftertouch: self.aftertouch,
+                macro1: self.macro1,
+                macro2: self.macro2,
+                macro3: self.macro3,
+                macro4: self.macro4,
             };
             prev_lfo1 = lfos.lfo1;
             prev_lfo2 = lfos.lfo2;
@@ -203,12 +225,17 @@ impl CosmoProcessor {
         pre_sources: &ModSources,
         mod_cache: &ModMatrixCache,
         has_active_mod_routes: bool,
+        manual_tempo_bpm: f32,
         base_lfo1_rate: f32,
+        lfo1_rate_mode: LfoRateMode,
+        lfo1_sync_division: LfoSyncDivision,
         base_lfo1_depth: f32,
         base_lfo1_symmetry: f32,
         base_lfo1_offset: f32,
         lfo1_waveform: crate::params::LfoWaveform,
         base_lfo2_rate: f32,
+        lfo2_rate_mode: LfoRateMode,
+        lfo2_sync_division: LfoSyncDivision,
         base_lfo2_depth: f32,
         base_lfo2_symmetry: f32,
         base_lfo2_offset: f32,
@@ -271,26 +298,45 @@ impl CosmoProcessor {
             pre_sources,
         );
 
-        let lfo1_rate = (base_lfo1_rate + lfo1_rate_mod * 20.0).clamp(0.01, 40.0);
+        let effective_tempo_bpm = self.host_transport_tempo_bpm.unwrap_or(manual_tempo_bpm);
+        let lfo1_rate = match lfo1_rate_mode {
+            LfoRateMode::Hz => (base_lfo1_rate + lfo1_rate_mod * 20.0).clamp(0.01, 40.0),
+            LfoRateMode::Sync => sync_rate_hz(effective_tempo_bpm, lfo1_sync_division),
+        };
         let lfo1_depth = (base_lfo1_depth + lfo1_depth_mod).clamp(0.0, 1.0);
         let lfo1_symmetry = (base_lfo1_symmetry + lfo1_symmetry_mod).clamp(0.0, 1.0);
         let lfo1_offset = (base_lfo1_offset + lfo1_offset_mod).clamp(-1.0, 1.0);
-        let lfo2_rate = (base_lfo2_rate + lfo2_rate_mod * 20.0).clamp(0.01, 40.0);
+        let lfo2_rate = match lfo2_rate_mode {
+            LfoRateMode::Hz => (base_lfo2_rate + lfo2_rate_mod * 20.0).clamp(0.01, 40.0),
+            LfoRateMode::Sync => sync_rate_hz(effective_tempo_bpm, lfo2_sync_division),
+        };
         let lfo2_depth = (base_lfo2_depth + lfo2_depth_mod).clamp(0.0, 1.0);
         let lfo2_symmetry = (base_lfo2_symmetry + lfo2_symmetry_mod).clamp(0.0, 1.0);
         let lfo2_offset = (base_lfo2_offset + lfo2_offset_mod).clamp(-1.0, 1.0);
 
-        self.lfo_phase += lfo1_rate / sr;
-        if self.lfo_phase >= 1.0 {
-            self.lfo_phase -= 1.0;
+        if matches!(lfo1_rate_mode, LfoRateMode::Sync) && self.host_transport_playing {
+            self.lfo_phase = (self.host_transport_position_beats as f32
+                * lfo1_sync_division.cycles_per_beat())
+            .fract();
+        } else {
+            self.lfo_phase += lfo1_rate / sr;
+            if self.lfo_phase >= 1.0 {
+                self.lfo_phase -= 1.0;
+            }
         }
         let lfo1_mod_val = lfo_output_with_symmetry(self.lfo_phase, lfo1_waveform, lfo1_symmetry)
             * lfo1_depth
             + lfo1_offset;
 
-        self.lfo2_phase += lfo2_rate / sr;
-        if self.lfo2_phase >= 1.0 {
-            self.lfo2_phase -= 1.0;
+        if matches!(lfo2_rate_mode, LfoRateMode::Sync) && self.host_transport_playing {
+            self.lfo2_phase = (self.host_transport_position_beats as f32
+                * lfo2_sync_division.cycles_per_beat())
+            .fract();
+        } else {
+            self.lfo2_phase += lfo2_rate / sr;
+            if self.lfo2_phase >= 1.0 {
+                self.lfo2_phase -= 1.0;
+            }
         }
         let lfo2_mod_val = lfo_output_with_symmetry(self.lfo2_phase, lfo2_waveform, lfo2_symmetry)
             * lfo2_depth
@@ -302,6 +348,11 @@ impl CosmoProcessor {
             self.random_phase -= 1.0;
             self.random_step = self.random_step.wrapping_add(1);
             self.random_hold = random_hold_value(self.random_step);
+        }
+
+        if self.host_transport_playing {
+            self.host_transport_position_beats +=
+                f64::from(effective_tempo_bpm.max(0.0)) / 60.0 / f64::from(sr.max(1.0));
         }
 
         LfoFrame {
@@ -335,6 +386,10 @@ impl CosmoProcessor {
             pitch_bend_semitones: self.pitch_bend * p.pitch_bend_range,
             mod_wheel: self.mod_wheel,
             aftertouch: self.aftertouch,
+            macro1: self.macro1,
+            macro2: self.macro2,
+            macro3: self.macro3,
+            macro4: self.macro4,
             cache: mod_cache,
             modulation_active: has_active_mod_routes,
             line1_plan: &line1_plan,

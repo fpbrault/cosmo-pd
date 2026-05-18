@@ -12,6 +12,8 @@ import type {
 	FxDefinitionV1,
 	FxSlotConfig,
 	FxSlotType,
+	LfoRateMode,
+	LfoSyncDivision,
 	LfoWaveform,
 	LineSelect,
 	ModMatrix,
@@ -157,15 +159,20 @@ export type SynthState = {
 	portamentoMode: PortamentoMode;
 	portamentoRate: number;
 	portamentoTime: number;
+	tempoBpm: number;
 
 	lfoWaveform: LfoWaveform;
 	lfoRate: number;
+	lfoRateMode: LfoRateMode;
+	lfoSyncDivision: LfoSyncDivision;
 	lfoDepth: number;
 	lfoSymmetry: number;
 	lfoRetrigger: boolean;
 	lfoOffset: number;
 	lfo2Waveform: LfoWaveform;
 	lfo2Rate: number;
+	lfo2RateMode: LfoRateMode;
+	lfo2SyncDivision: LfoSyncDivision;
 	lfo2Depth: number;
 	lfo2Symmetry: number;
 	lfo2Retrigger: boolean;
@@ -183,6 +190,12 @@ export type SynthState = {
 	modMatrix: ModMatrix;
 	/** Unified per-slot FX configuration — all 6 slots. */
 	fxSlots: FxSlotTuple;
+
+	macro1: number;
+	macro2: number;
+	macro3: number;
+	macro4: number;
+	macroLabels: [string, string, string, string];
 };
 
 // ---------------------------------------------------------------------------
@@ -238,15 +251,20 @@ type SynthActions = {
 	setPortamentoMode: (v: PortamentoMode) => void;
 	setPortamentoRate: (v: number) => void;
 	setPortamentoTime: (v: number) => void;
+	setTempoBpm: (v: number) => void;
 
 	setLfoWaveform: (v: LfoWaveform) => void;
 	setLfoRate: (v: number) => void;
+	setLfoRateMode: (v: LfoRateMode) => void;
+	setLfoSyncDivision: (v: LfoSyncDivision) => void;
 	setLfoDepth: (v: number) => void;
 	setLfoSymmetry: (v: number) => void;
 	setLfoRetrigger: (v: boolean) => void;
 	setLfoOffset: (v: number) => void;
 	setLfo2Waveform: (v: LfoWaveform) => void;
 	setLfo2Rate: (v: number) => void;
+	setLfo2RateMode: (v: LfoRateMode) => void;
+	setLfo2SyncDivision: (v: LfoSyncDivision) => void;
 	setLfo2Depth: (v: number) => void;
 	setLfo2Symmetry: (v: number) => void;
 	setLfo2Retrigger: (v: boolean) => void;
@@ -272,6 +290,12 @@ type SynthActions = {
 		patch: Partial<Record<string, unknown>>,
 	) => void;
 	reorderFxSlots: (fromSlot: number, toSlot: number) => void;
+
+	setMacro1: (v: number) => void;
+	setMacro2: (v: number) => void;
+	setMacro3: (v: number) => void;
+	setMacro4: (v: number) => void;
+	setMacroLabel: (index: number, label: string) => void;
 
 	gatherState: () => SynthPresetV1;
 	applyPreset: (preset: SynthPresetV1) => void;
@@ -332,15 +356,20 @@ const DEFAULT_STATE: SynthState = {
 	portamentoMode: "time",
 	portamentoRate: requireEngineParamDefault("portamentoRate"),
 	portamentoTime: requireEngineParamDefault("portamentoTime"),
+	tempoBpm: requireEngineParamDefault("tempoBpm"),
 
 	lfoWaveform: "sine",
 	lfoRate: requireEngineParamDefault("lfoRate"),
+	lfoRateMode: "hz",
+	lfoSyncDivision: "quarter",
 	lfoDepth: requireEngineParamDefault("lfoDepth"),
 	lfoSymmetry: 0.5,
 	lfoRetrigger: false,
 	lfoOffset: requireEngineParamDefault("lfoOffset"),
 	lfo2Waveform: "sine",
 	lfo2Rate: requireEngineParamDefault("lfo2Rate"),
+	lfo2RateMode: "hz",
+	lfo2SyncDivision: "quarter",
 	lfo2Depth: requireEngineParamDefault("lfo2Depth"),
 	lfo2Symmetry: 0.5,
 	lfo2Retrigger: false,
@@ -357,6 +386,12 @@ const DEFAULT_STATE: SynthState = {
 	octave: 0,
 	modMatrix: { routes: [] },
 	fxSlots: DEFAULT_FX_SLOTS,
+
+	macro1: 0,
+	macro2: 0,
+	macro3: 0,
+	macro4: 0,
+	macroLabels: ["MACRO 1", "MACRO 2", "MACRO 3", "MACRO 4"],
 };
 
 // ---------------------------------------------------------------------------
@@ -418,15 +453,20 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setPortamentoMode: (v) => set({ portamentoMode: v }),
 	setPortamentoRate: (v) => set({ portamentoRate: v }),
 	setPortamentoTime: (v) => set({ portamentoTime: v }),
+	setTempoBpm: (v) => set({ tempoBpm: v }),
 
 	setLfoWaveform: (v) => set({ lfoWaveform: v }),
 	setLfoRate: (v) => set({ lfoRate: v }),
+	setLfoRateMode: (v) => set({ lfoRateMode: v }),
+	setLfoSyncDivision: (v) => set({ lfoSyncDivision: v }),
 	setLfoDepth: (v) => set({ lfoDepth: v }),
 	setLfoSymmetry: (v) => set({ lfoSymmetry: v }),
 	setLfoRetrigger: (v) => set({ lfoRetrigger: v }),
 	setLfoOffset: (v) => set({ lfoOffset: v }),
 	setLfo2Waveform: (v) => set({ lfo2Waveform: v }),
 	setLfo2Rate: (v) => set({ lfo2Rate: v }),
+	setLfo2RateMode: (v) => set({ lfo2RateMode: v }),
+	setLfo2SyncDivision: (v) => set({ lfo2SyncDivision: v }),
 	setLfo2Depth: (v) => set({ lfo2Depth: v }),
 	setLfo2Symmetry: (v) => set({ lfo2Symmetry: v }),
 	setLfo2Retrigger: (v) => set({ lfo2Retrigger: v }),
@@ -497,6 +537,17 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			return { fxSlots: slots as FxSlotTuple };
 		}),
 
+	setMacro1: (v) => set({ macro1: v }),
+	setMacro2: (v) => set({ macro2: v }),
+	setMacro3: (v) => set({ macro3: v }),
+	setMacro4: (v) => set({ macro4: v }),
+	setMacroLabel: (index, label) =>
+		set((s) => {
+			const labels = [...s.macroLabels] as [string, string, string, string];
+			labels[index] = label;
+			return { macroLabels: labels };
+		}),
+
 	// --- gatherState ---
 	gatherState(): SynthPresetV1 {
 		const s = get();
@@ -562,6 +613,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			},
 			frequency: 440,
 			volume: s.volume,
+			tempoBpm: s.tempoBpm,
 			polyMode: s.polyMode,
 			legato: s.legato,
 			velocityCurve: s.velocityCurve,
@@ -575,6 +627,8 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			lfo: {
 				waveform: s.lfoWaveform,
 				rate: s.lfoRate,
+				rateMode: s.lfoRateMode,
+				syncDivision: s.lfoSyncDivision,
 				depth: s.lfoDepth,
 				symmetry: s.lfoSymmetry,
 				retrigger: s.lfoRetrigger,
@@ -583,6 +637,8 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			lfo2: {
 				waveform: s.lfo2Waveform,
 				rate: s.lfo2Rate,
+				rateMode: s.lfo2RateMode,
+				syncDivision: s.lfo2SyncDivision,
 				depth: s.lfo2Depth,
 				symmetry: s.lfo2Symmetry,
 				retrigger: s.lfo2Retrigger,
@@ -600,7 +656,12 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			pitchBendRange: s.pitchBendRange,
 			modMatrix: s.modMatrix,
 			fxSlots: s.fxSlots,
-		} satisfies SynthPresetV1["params"];
+			macro1: s.macro1,
+			macro2: s.macro2,
+			macro3: s.macro3,
+			macro4: s.macro4,
+			macroLabels: s.macroLabels,
+		} as SynthPresetV1["params"];
 
 		return {
 			schemaVersion: 1,
@@ -724,14 +785,19 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				p.portamento?.time,
 				requireEngineParamDefault("portamentoTime"),
 			),
+			tempoBpm: safe(p.tempoBpm, requireEngineParamDefault("tempoBpm")),
 			lfoWaveform: (p.lfo?.waveform as LfoWaveform) ?? "sine",
 			lfoRate: safe(p.lfo?.rate, requireEngineParamDefault("lfoRate")),
+			lfoRateMode: (p.lfo?.rateMode as LfoRateMode) ?? "hz",
+			lfoSyncDivision: (p.lfo?.syncDivision as LfoSyncDivision) ?? "quarter",
 			lfoDepth: safe(p.lfo?.depth, requireEngineParamDefault("lfoDepth")),
 			lfoSymmetry: safe(p.lfo?.symmetry, 0.5),
 			lfoRetrigger: p.lfo?.retrigger ?? false,
 			lfoOffset: safe(p.lfo?.offset, requireEngineParamDefault("lfoOffset")),
 			lfo2Waveform: (p.lfo2?.waveform as LfoWaveform) ?? "sine",
 			lfo2Rate: safe(p.lfo2?.rate, requireEngineParamDefault("lfo2Rate")),
+			lfo2RateMode: (p.lfo2?.rateMode as LfoRateMode) ?? "hz",
+			lfo2SyncDivision: (p.lfo2?.syncDivision as LfoSyncDivision) ?? "quarter",
 			lfo2Depth: safe(p.lfo2?.depth, requireEngineParamDefault("lfo2Depth")),
 			lfo2Symmetry: safe(p.lfo2?.symmetry, 0.5),
 			lfo2Retrigger: p.lfo2?.retrigger ?? false,
@@ -770,6 +836,16 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				Array.isArray(p.fxSlots) && p.fxSlots.length === 6
 					? (p.fxSlots as FxSlotTuple)
 					: DEFAULT_FX_SLOTS,
+			macro1: safe((p as Record<string, unknown>).macro1 as number, 0),
+			macro2: safe((p as Record<string, unknown>).macro2 as number, 0),
+			macro3: safe((p as Record<string, unknown>).macro3 as number, 0),
+			macro4: safe((p as Record<string, unknown>).macro4 as number, 0),
+			macroLabels: ((p as Record<string, unknown>).macroLabels as [
+				string,
+				string,
+				string,
+				string,
+			]) ?? ["MACRO 1", "MACRO 2", "MACRO 3", "MACRO 4"],
 		});
 	},
 }));

@@ -34,6 +34,7 @@ export interface ControlKnobProps {
 	step?: number;
 	label?: string;
 	labelClassName?: string;
+	labelAccessory?: ReactNode;
 	tooltip?: string;
 	/** Semantic color variant. Prefer this over `color`. */
 	variant?: KnobVariant;
@@ -100,6 +101,7 @@ export function ControlKnob({
 	step,
 	label,
 	labelClassName,
+	labelAccessory,
 	tooltip,
 	variant = "dark",
 	className,
@@ -333,9 +335,10 @@ export function ControlKnob({
 
 	const labelEl = label ? (
 		<div
-			className={`flex items-center justify-center text-4xs text-base-content/55 uppercase tracking-[0.24em] ${labelClassName ?? ""}`}
+			className={`flex items-center justify-center gap-1 text-4xs text-base-content/55 uppercase tracking-[0.24em] ${labelClassName ?? ""}`}
 		>
 			<span>{label}</span>
+			{labelAccessory}
 		</div>
 	) : null;
 

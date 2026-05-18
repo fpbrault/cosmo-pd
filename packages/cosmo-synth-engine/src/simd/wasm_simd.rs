@@ -17,12 +17,14 @@ impl WasmSimd {
     #[target_feature(enable = "simd128")]
     #[inline]
     unsafe fn from_v128(v: v128) -> Self {
-        Self([
-            f32x4_extract_lane::<0>(v),
-            f32x4_extract_lane::<1>(v),
-            f32x4_extract_lane::<2>(v),
-            f32x4_extract_lane::<3>(v),
-        ])
+        unsafe {
+            Self([
+                f32x4_extract_lane::<0>(v),
+                f32x4_extract_lane::<1>(v),
+                f32x4_extract_lane::<2>(v),
+                f32x4_extract_lane::<3>(v),
+            ])
+        }
     }
 
     #[target_feature(enable = "simd128")]

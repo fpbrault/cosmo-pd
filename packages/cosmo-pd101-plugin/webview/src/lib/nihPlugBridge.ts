@@ -28,6 +28,8 @@ type ScopeDataResponse = {
 	hz: number;
 };
 
+type TransportInfoResponse = string | Record<string, number | boolean>;
+
 declare global {
 	interface Window {
 		ipc?: { postMessage: (msg: string) => void };
@@ -36,6 +38,7 @@ declare global {
 		__czSetParams?: (json: string) => void;
 		__czSetPerformanceMonitorEnabled?: (enabled: boolean) => Promise<unknown>;
 		__czGetPerformanceMetrics?: () => Promise<unknown>;
+		__czGetTransportInfo?: () => Promise<unknown>;
 		__czOnScope?: (samples: number[], sampleRate: number, hz: number) => void;
 		__czIpcResponse?: (response: IpcRpcResponse) => void;
 		__czOnMidiCc?: (channel: number, cc: number, value: number) => void;
@@ -171,6 +174,7 @@ function installIpcRouter() {
 		invokeRust("setPerformanceMonitorEnabled", enabled);
 
 	window.__czGetPerformanceMetrics = () => invokeRust("getPerformanceMetrics");
+	window.__czGetTransportInfo = () => invokeRust("getTransportInfo");
 }
 
 // ─── Native IPC passthrough ───────────────────────────────────────────────────
@@ -360,6 +364,68 @@ function installRuntimeModSourcesPolling() {
 	});
 }
 
+function installTransportPolling() {
+	const INTERVAL_MS = 100;
+	let rafId = 0;
+	let lastScheduled = 0;
+	let pollInFlight = false;
+	let destroyed = false;
+
+	const dispatchTransport = (result: TransportInfoResponse) => {
+		const transport =
+			typeof result === "string"
+				? (JSON.parse(result) as Record<string, number | boolean>)
+				: result;
+		if (typeof transport !== "object" || transport === null) {
+			return;
+		}
+		window.dispatchEvent(
+			new CustomEvent("cz-host-transport", { detail: transport }),
+		);
+	};
+
+	const scheduleNextFrame = () => {
+		if (destroyed || rafId !== 0) {
+			return;
+		}
+		rafId = requestAnimationFrame(tick);
+	};
+
+	const tick = async (now: number) => {
+		rafId = 0;
+		if (destroyed) {
+			return;
+		}
+		if (now - lastScheduled < INTERVAL_MS || pollInFlight) {
+			scheduleNextFrame();
+			return;
+		}
+
+		lastScheduled = now;
+		pollInFlight = true;
+		try {
+			const result = await invokeRust("getTransportInfo");
+			if (result) {
+				dispatchTransport(result as TransportInfoResponse);
+			}
+		} catch {
+			// Transport is opportunistic; some harnesses may not implement it.
+		} finally {
+			pollInFlight = false;
+			scheduleNextFrame();
+		}
+	};
+
+	scheduleNextFrame();
+	window.addEventListener("pagehide", () => {
+		destroyed = true;
+		if (rafId !== 0) {
+			cancelAnimationFrame(rafId);
+			rafId = 0;
+		}
+	});
+}
+
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 /**
@@ -391,6 +457,7 @@ export function ensureNihPlugBridge(): boolean {
 	installIpcRouter();
 	installScopePolling();
 	installRuntimeModSourcesPolling();
+	installTransportPolling();
 
 	// Fallback: if host prevented method patching, route via a getter/setter
 	// shim on window.ipc that preserves the native object identity.

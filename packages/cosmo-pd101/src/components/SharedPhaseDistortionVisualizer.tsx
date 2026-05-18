@@ -12,10 +12,6 @@ import { useAudioEngine } from "@/features/synth/hooks/useAudioEngine";
 import { useNoteHandling } from "@/features/synth/hooks/useNoteHandling";
 import { useSynthParamsToWorklet } from "@/features/synth/hooks/useSynthParamsToWorklet";
 import { useSynthStore } from "@/features/synth/synthStore";
-import {
-	SYNTH_UI_STATE_STORAGE_KEY,
-	useSynthUiStore,
-} from "@/features/synth/synthUiStore";
 import type { LibraryPreset } from "@/features/synth/types/libraryPreset";
 import { useSynthPresetManager } from "@/features/synth/useSynthPresetManager";
 import { decodeCzPatch } from "@/lib/midi/czSysexDecoder";
@@ -60,21 +56,6 @@ export function SharedPhaseDistortionVisualizer({
 	const [performanceMetrics, setPerformanceMetrics] =
 		useState<PerformanceMetrics | null>(null);
 	const performanceMetricsRef = useRef<PerformanceMetrics | null>(null);
-	const activeAsidePanel = useSynthUiStore((s) => s.activeAsidePanel);
-	const setActiveAsidePanel = useSynthUiStore((s) => s.setActiveAsidePanel);
-
-	useEffect(() => {
-		try {
-			if (localStorage.getItem(SYNTH_UI_STATE_STORAGE_KEY) !== null) {
-				return;
-			}
-		} catch {
-			return;
-		}
-
-		setActiveAsidePanel("scope");
-	}, [setActiveAsidePanel]);
-
 	const {
 		audioCtxRef,
 		analyserNodeRef,
@@ -386,8 +367,6 @@ export function SharedPhaseDistortionVisualizer({
 			effectivePitchHz={effectivePitchHz}
 			analyserNodeRef={analyserNodeRef}
 			audioCtxRef={audioCtxRef}
-			activeAsidePanel={activeAsidePanel}
-			onAsidePanelChange={setActiveAsidePanel}
 			envOverrideHandlers={{
 				onLine1DcoEnvChange: handleLine1DcoEnvChange,
 				onLine1DcwEnvChange: handleLine1DcwEnvChange,

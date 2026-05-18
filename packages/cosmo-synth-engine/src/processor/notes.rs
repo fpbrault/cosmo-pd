@@ -70,7 +70,6 @@ impl CosmoProcessor {
                 voice.vibrato_delay_counter = (delay_ms * self.sample_rate / 1000.0).round() as u32;
             }
     }
-
     pub(crate) fn configure_voice_pitch(&mut self, voice_idx: usize, note: u8, frequency: f32) {
         let voice = &mut self.voices[voice_idx];
         voice.note = Some(note);
@@ -170,7 +169,9 @@ impl CosmoProcessor {
             voice: self.voices[voice_idx].clone(),
         });
 
-        if let Some(entry) = prev_entry {
+        if let Some(entry) = prev_entry
+            && !entry.voice.is_silent
+        {
             self.push_mono_stack_entry(entry);
         }
 
@@ -272,6 +273,16 @@ impl CosmoProcessor {
     }
 
     fn handle_mono_note_on(&mut self, note: u8, frequency: f32, velocity: f32) {
+        if let Some(entry) = self.active_notes.iter().find(|e| e.note == note)
+            && self.voices[entry.voice_idx].note == Some(note)
+        {
+            let voice = &mut self.voices[entry.voice_idx];
+            voice.frequency = frequency;
+            voice.target_freq = frequency;
+            voice.velocity = velocity;
+            return;
+        }
+
         if self.params.portamento.enabled
             && self.try_handle_mono_note_change_no_retrigger(note, frequency, velocity)
         {
@@ -353,10 +364,15 @@ impl CosmoProcessor {
 
         if self.params.poly_mode == PolyMode::Mono {
             if let Some(prev) = self.mono_stack.last() {
-                let voice = &mut self.voices[voice_idx];
-                *voice = prev.voice.clone();
-                voice.note = Some(prev.note);
-                self.replace_active_note_entry(voice_idx, prev.note);
+                if prev.voice.is_silent {
+                    self.mono_stack.pop();
+                    self.start_release(voice_idx);
+                } else {
+                    let voice = &mut self.voices[voice_idx];
+                    *voice = prev.voice.clone();
+                    voice.note = Some(prev.note);
+                    self.replace_active_note_entry(voice_idx, prev.note);
+                }
             } else {
                 self.start_release(voice_idx);
             }

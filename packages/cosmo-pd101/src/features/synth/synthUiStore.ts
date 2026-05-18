@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { AsidePanelTab } from "@/components/layout/AsidePanelSwitcher";
 
 export const SYNTH_UI_STATE_STORAGE_KEY = "cosmo-pd101-ui-state";
 
@@ -21,7 +20,6 @@ export type PhaseLinePanelTab =
 export type EnvTab = "dco" | "dcw" | "dca";
 
 type SynthUiState = {
-	activeAsidePanel: AsidePanelTab;
 	mainPanelMode: MainPanelMode;
 	phaseLinePanelTab: PhaseLinePanelTab;
 	activeEnvTab: EnvTab;
@@ -35,7 +33,6 @@ type SynthUiState = {
 };
 
 type SynthUiActions = {
-	setActiveAsidePanel: (tab: AsidePanelTab) => void;
 	setMainPanelMode: (mode: MainPanelMode) => void;
 	setPhaseLinePanelTab: (tab: PhaseLinePanelTab) => void;
 	setActiveEnvTab: (tab: EnvTab) => void;
@@ -50,16 +47,6 @@ type SynthUiActions = {
 
 export type SynthUiStore = SynthUiState & SynthUiActions;
 
-const ASIDE_PANEL_TABS = new Set<AsidePanelTab>([
-	"scope",
-	"global",
-	"phaseMod",
-	"vibrato",
-	"chorus",
-	"delay",
-	"reverb",
-	"phaser",
-]);
 const MAIN_PANEL_MODES = new Set<MainPanelMode>([
 	"phase",
 	"fx",
@@ -88,7 +75,6 @@ const SCOPE_COLOR_THEMES = new Set<ScopeColorTheme>([
 ]);
 
 const DEFAULT_UI_STATE: SynthUiState = {
-	activeAsidePanel: "global",
 	mainPanelMode: "phase",
 	phaseLinePanelTab: "line1-algos",
 	activeEnvTab: "dcw",
@@ -110,7 +96,6 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 	}
 
 	const candidate = value as Partial<Record<keyof SynthUiState, unknown>>;
-	const activeAsidePanel = getStringValue(candidate.activeAsidePanel);
 	const mainPanelMode = getStringValue(candidate.mainPanelMode);
 	const phaseLinePanelTab = getStringValue(candidate.phaseLinePanelTab);
 	const activeEnvTab = getStringValue(candidate.activeEnvTab);
@@ -122,11 +107,6 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 		rawScopeColorTheme === "classic" ? "vintage" : rawScopeColorTheme;
 
 	return {
-		activeAsidePanel:
-			activeAsidePanel &&
-			ASIDE_PANEL_TABS.has(activeAsidePanel as AsidePanelTab)
-				? (activeAsidePanel as AsidePanelTab)
-				: DEFAULT_UI_STATE.activeAsidePanel,
 		mainPanelMode:
 			mainPanelMode && MAIN_PANEL_MODES.has(mainPanelMode as MainPanelMode)
 				? (mainPanelMode as MainPanelMode)
@@ -185,7 +165,6 @@ export const useSynthUiStore = create<SynthUiStore>()(
 	persist(
 		(set) => ({
 			...DEFAULT_UI_STATE,
-			setActiveAsidePanel: (tab) => set({ activeAsidePanel: tab }),
 			setMainPanelMode: (mode) => set({ mainPanelMode: mode }),
 			setPhaseLinePanelTab: (tab) => set({ phaseLinePanelTab: tab }),
 			setActiveEnvTab: (tab) => set({ activeEnvTab: tab }),
@@ -202,7 +181,6 @@ export const useSynthUiStore = create<SynthUiStore>()(
 			name: SYNTH_UI_STATE_STORAGE_KEY,
 			storage: createJSONStorage(() => localStorage),
 			partialize: (state) => ({
-				activeAsidePanel: state.activeAsidePanel,
 				mainPanelMode: state.mainPanelMode,
 				phaseLinePanelTab: state.phaseLinePanelTab,
 				activeEnvTab: state.activeEnvTab,

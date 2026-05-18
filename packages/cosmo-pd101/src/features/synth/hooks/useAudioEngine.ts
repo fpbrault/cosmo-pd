@@ -53,6 +53,10 @@ const RUNTIME_MOD_SOURCE_KEYS = {
 	velocity: true,
 	modWheel: true,
 	aftertouch: true,
+	macro1: true,
+	macro2: true,
+	macro3: true,
+	macro4: true,
 } satisfies Record<ModSource, true>;
 
 const ALL_RUNTIME_MOD_SOURCE_KEYS = Object.keys(

@@ -18,12 +18,17 @@ const FACTORY_PRESETS_JSON: &str = include_str!("factory_presets.json");
 struct FactoryPresetEntry {
     name: String,
     params_json: String,
+    params: SynthParams,
 }
 
 static FACTORY_PRESETS: OnceLock<Vec<FactoryPresetEntry>> = OnceLock::new();
 
 fn factory_presets() -> &'static [FactoryPresetEntry] {
     FACTORY_PRESETS.get_or_init(load_factory_presets).as_slice()
+}
+
+pub(crate) fn factory_preset_count() -> usize {
+    factory_presets().len()
 }
 
 fn load_factory_presets() -> Vec<FactoryPresetEntry> {
@@ -39,12 +44,18 @@ fn load_factory_presets() -> Vec<FactoryPresetEntry> {
         .filter_map(|preset| {
             let name = preset.get("name")?.as_str()?.to_owned();
             let params = preset.get("data")?.get("params")?;
+            let parsed_params = serde_json::from_value::<SynthParams>(params.clone()).ok()?;
             Some(FactoryPresetEntry {
                 name,
                 params_json: params.to_string(),
+                params: parsed_params,
             })
         })
         .collect()
+}
+
+pub(crate) fn factory_preset_params(index: usize) -> Option<&'static SynthParams> {
+    factory_presets().get(index).map(|preset| &preset.params)
 }
 
 #[repr(C)]
@@ -625,7 +636,7 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_params_json(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn cosmo_pd101_ffi_get_factory_preset_count() -> usize {
-    factory_presets().len()
+    factory_preset_count()
 }
 
 /// # Safety

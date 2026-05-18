@@ -13,6 +13,7 @@ export const czsynthprocessor_process: (a: number, b: number, c: number, d: numb
 export const czsynthprocessor_resetAudioState: (a: number) => void;
 export const czsynthprocessor_setAftertouch: (a: number, b: number) => void;
 export const czsynthprocessor_setFxSlotType: (a: number, b: number, c: number, d: number) => number;
+export const czsynthprocessor_setMacro: (a: number, b: number, c: number) => void;
 export const czsynthprocessor_setModWheel: (a: number, b: number) => void;
 export const czsynthprocessor_setParams: (a: number, b: number, c: number) => void;
 export const czsynthprocessor_setPitchBend: (a: number, b: number) => void;
