@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, type ReactNode } from "react";
 import Button from "@/components/controls/Button";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import { useHostTransport } from "@/features/synth/hooks/useHostTransport";
@@ -75,6 +75,23 @@ const VelocityCurvePreview = memo(function VelocityCurvePreview({
 	);
 });
 
+function GlobalSection({
+	title,
+	children,
+}: {
+	title: string;
+	children: ReactNode;
+}) {
+	return (
+		<fieldset className="fieldset rounded-box border border-cz-cream bg-cz-panel px-3">
+			<legend className="fieldset-legend font-mono text-4xs text-cz-cream/60 uppercase tracking-[0.24em]">
+				{title}
+			</legend>
+			{children}
+		</fieldset>
+	);
+}
+
 export default function GlobalVoicePanel() {
 	const transport = useHostTransport();
 	const { value: velocityCurve, setValue: setVelocityCurve } =
@@ -92,10 +109,7 @@ export default function GlobalVoicePanel() {
 		typeof tempoBpm === "number" && Number.isFinite(tempoBpm) ? tempoBpm : 120;
 	return (
 		<div className="grid grid-cols-2 gap-4">
-			<fieldset className="fieldset rounded-box border border-cz-cream bg-cz-panel px-3">
-				<legend className="fieldset-legend font-mono text-4xs text-cz-cream/60 uppercase tracking-[0.24em]">
-					Transport
-				</legend>
+			<GlobalSection title="Transport">
 				<label className="input bg-neutral">
 					<span className="label pr-2 font-mono text-4xs text-cz-cream/55 uppercase tracking-[0.24em]">
 						Tempo
@@ -119,12 +133,9 @@ export default function GlobalVoicePanel() {
 						BPM
 					</span>
 				</label>
-			</fieldset>
+			</GlobalSection>
 
-			<fieldset className="fieldset rounded-box border border-cz-cream bg-cz-panel px-3">
-				<legend className="fieldset-legend font-mono text-3xs text-cz-cream/60 uppercase tracking-[0.24em]">
-					Portamento
-				</legend>
+			<GlobalSection title="Portamento">
 				<div className="flex flex-col items-center justify-center">
 					<Button
 						type="button"
@@ -167,12 +178,9 @@ export default function GlobalVoicePanel() {
 						/>
 					)}
 				</div>
-			</fieldset>
+			</GlobalSection>
 
-			<fieldset className="fieldset rounded-box border border-cz-cream bg-cz-panel px-3">
-				<legend className="fieldset-legend font-mono text-4xs text-cz-cream/60 uppercase tracking-[0.24em]">
-					Expression
-				</legend>
+			<GlobalSection title="Expression">
 				<SynthParamKnob
 					paramKey="pitchBendRange"
 					value={pitchBendRange as number}
@@ -183,11 +191,8 @@ export default function GlobalVoicePanel() {
 					color="#5bc8d4"
 					label="Pitch Bend"
 				/>
-			</fieldset>
-			<fieldset className="fieldset rounded-box border border-cz-cream bg-cz-panel px-3">
-				<legend className="fieldset-legend font-mono text-4xs text-cz-cream/60 uppercase tracking-[0.24em]">
-					Expression
-				</legend>
+			</GlobalSection>
+			<GlobalSection title="Expression">
 				<div className="flex flex-col items-center justify-center">
 					<VelocityCurvePreview curve={velocityCurve as number} />
 					<div className="flex justify-center">
@@ -201,7 +206,7 @@ export default function GlobalVoicePanel() {
 						/>
 					</div>
 				</div>
-			</fieldset>
+			</GlobalSection>
 		</div>
 	);
 }
