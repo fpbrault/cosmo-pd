@@ -1,10 +1,10 @@
 import { render } from "@testing-library/react";
 import { describe, it, vi } from "vitest";
-import AsidePanelSwitcher from "./AsidePanelSwitcher";
 import { HoverInfoProvider, HoverInfoTrigger } from "./HoverInfo";
 import MiniKeyboardOverlay from "./MiniKeyboardOverlay";
 import SynthInfoBar from "./SynthInfoBar";
 import SynthPanelContainer from "./SynthPanelContainer";
+import SynthSidebarButtons from "./SynthSidebarButtons";
 
 vi.mock("@/features/synth/synthUiStore", () => ({
 	useSynthUiStore: vi.fn(() => ({
@@ -21,24 +21,19 @@ vi.mock("@/features/synth/SynthParamController", () => ({
 
 vi.mock("@/features/synth/synthStore", () => ({
 	useSynthStore: vi.fn(() => ({
-		fxSlots: {},
+		fxSlots: Array.from({ length: 6 }, () => ({
+			type: "empty",
+			params: { enabled: false },
+		})),
 		setFxSlotType: vi.fn(),
 		setFxSlotEnabled: vi.fn(),
 	})),
 }));
 
 describe("Layout Components Smoke Tests", () => {
-	describe("AsidePanelSwitcher", () => {
+	describe("SynthSidebarButtons", () => {
 		it("renders without crashing", () => {
-			const MockPanel = () => <div>Panel</div>;
-			MockPanel.panelId = "global";
-			MockPanel.panelTab = { topLabel: "Global", bottomLabel: "Global" };
-
-			render(
-				<AsidePanelSwitcher activeTab="global" onTabChange={vi.fn()}>
-					<MockPanel />
-				</AsidePanelSwitcher>,
-			);
+			render(<SynthSidebarButtons globalOpen={false} onOpenGlobal={vi.fn()} />);
 		});
 	});
 

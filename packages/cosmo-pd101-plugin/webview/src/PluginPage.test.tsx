@@ -16,10 +16,7 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 		applyPreset: vi.fn(),
 		velocityCurve: "linear",
 	};
-	const synthUiStoreState = {
-		activeAsidePanel: null,
-		setActiveAsidePanel: vi.fn(),
-	};
+	const synthUiStoreState = {};
 
 	return {
 		DEFAULT_SYNTH_PRESETS: {},

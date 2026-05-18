@@ -1,4 +1,3 @@
-export type { AsidePanelTab } from "./components/layout/AsidePanelSwitcher";
 export { WavetableWaterfall } from "./components/panels/analysis/scope-visualizations/WavetableWaterfall";
 export { default as MacroKnobsPanel } from "./components/panels/macro/MacroKnobsPanel";
 export {

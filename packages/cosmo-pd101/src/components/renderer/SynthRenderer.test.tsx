@@ -1,13 +1,15 @@
-import { render } from "@testing-library/react";
-import { describe, it, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import SynthRenderer from "./SynthRenderer";
 
 vi.mock("@/components/preset/SynthHeader", () => ({
 	default: () => <div data-testid="synth-header" />,
 }));
-vi.mock("@/components/layout/AsidePanelSwitcher", () => ({
-	default: ({ children }: { children: React.ReactNode }) => (
-		<div data-testid="aside-panel-switcher">{children}</div>
+vi.mock("@/components/layout/SynthSidebar", () => ({
+	default: ({ onOpenGlobal }: { onOpenGlobal: () => void }) => (
+		<button type="button" onClick={onOpenGlobal} data-testid="synth-sidebar">
+			open global
+		</button>
 	),
 }));
 vi.mock("@/components/panels/voice/GlobalVoicePanel", () => ({
@@ -117,8 +119,6 @@ describe("SynthRenderer Smoke Test", () => {
 			effectivePitchHz: 440,
 			analyserNodeRef: { current: null },
 			audioCtxRef: { current: null },
-			activeAsidePanel: "global" as const,
-			onAsidePanelChange: vi.fn(),
 			miniKeyboard: {
 				activeNotes: [],
 				onNoteOn: vi.fn(),
@@ -131,5 +131,43 @@ describe("SynthRenderer Smoke Test", () => {
 		};
 
 		render(<SynthRenderer {...props} />);
+	});
+
+	it("opens global modal from sidebar action", () => {
+		const props = {
+			headerProps: {
+				allEntries: [],
+				activeEntryId: "1",
+				activePresetName: "Test Preset",
+				showLibraryPresets: true,
+				onToggleLibraryPresets: vi.fn(),
+				onLoadLocal: vi.fn(),
+				onLoadLibrary: vi.fn(),
+				onLoadBuiltin: vi.fn(),
+				onSavePreset: vi.fn(),
+				onDeletePreset: vi.fn(),
+				onRenamePreset: vi.fn(),
+				onSetPresetFavorite: vi.fn(),
+				onSetPresetCategory: vi.fn(),
+				onSetPresetTags: vi.fn(),
+				onExportPreset: vi.fn(),
+				onExportCurrentState: vi.fn(),
+				onImportPreset: vi.fn(),
+				onInitPreset: vi.fn(),
+				pendingPresetChange: null,
+				onSavePendingPresetChange: vi.fn(),
+				onDiscardPendingPresetChange: vi.fn(),
+				onCancelPendingPresetChange: vi.fn(),
+				onStepPreset: vi.fn(),
+			},
+			frameClassName: "test-frame",
+			effectivePitchHz: 440,
+			analyserNodeRef: { current: null },
+			audioCtxRef: { current: null },
+		};
+
+		render(<SynthRenderer {...props} />);
+		fireEvent.click(screen.getByTestId("synth-sidebar"));
+		expect(screen.getByTestId("global-voice-panel")).toBeInTheDocument();
 	});
 });
