@@ -17,7 +17,7 @@ import {
 } from "@/features/synth/hooks/useAudioEngine";
 import { useSynthStore } from "@/features/synth/synthStore";
 import type { UseSynthStateResult } from "@/features/synth/useSynthState";
-import type { ModDestination } from "@/lib/synth/bindings/synth";
+import type { ModDestination, ModRoute } from "@/lib/synth/bindings/synth";
 import {
 	type ModTarget,
 	resolveModDestination,
@@ -154,6 +154,21 @@ export function SynthParamControllerProvider({
 	const liveVoiceStatesRef = useRef<LiveVoiceStates>(
 		EMPTY_RUNTIME_VOICE_STATES,
 	);
+	const routesByDestination = useMemo(() => {
+		const next = new Map<ModDestination, ModRoute[]>();
+		for (const route of modRoutes) {
+			if (!route.enabled) {
+				continue;
+			}
+			const routes = next.get(route.destination);
+			if (routes) {
+				routes.push(route);
+			} else {
+				next.set(route.destination, [route]);
+			}
+		}
+		return next;
+	}, [modRoutes]);
 
 	useEffect(() => {
 		liveSourcesRef.current = liveSources;
@@ -248,11 +263,9 @@ export function SynthParamControllerProvider({
 			if (!destination) {
 				return 0;
 			}
-			return modRoutes.filter(
-				(route) => route.enabled && route.destination === destination,
-			).length;
+			return routesByDestination.get(destination)?.length ?? 0;
 		},
-		[modRoutes],
+		[routesByDestination],
 	);
 
 	const hasActiveRoutes = useCallback(
@@ -283,9 +296,7 @@ export function SynthParamControllerProvider({
 			let liveModDelta = 0;
 			let hasAnyModulation = false;
 
-			const activeRoutes = modRoutes.filter(
-				(route) => route.enabled && route.destination === destination,
-			);
+			const activeRoutes = routesByDestination.get(destination) ?? [];
 			if (activeRoutes.length > 0) {
 				const runtimeSources = liveSourcesRef.current;
 				for (const route of activeRoutes) {
@@ -303,7 +314,7 @@ export function SynthParamControllerProvider({
 			const visualModScale = destination.includes("EnvStep") ? 127 : 1;
 			return baseValue + clampedLiveModDelta * visualModScale;
 		},
-		[modRoutes],
+		[routesByDestination],
 	);
 
 	const getLiveSources = useCallback(() => liveSourcesRef.current, []);
