@@ -10,7 +10,6 @@ type UseSynthParamsToWorkletParams = {
 	workletNodeRef: React.MutableRefObject<AudioWorkletNode | null>;
 	paramsRef: React.MutableRefObject<SynthParams>;
 	effectivePitchHz: number;
-	extPmAmount: number;
 	gatherState: () => SynthPresetV1;
 };
 
@@ -33,7 +32,7 @@ export function useSynthParamsToWorklet({
 	}, [adapter]);
 
 	// Outbound sync: subscribe to Zustand so every state change syncs to
-	// the worklet. Also re-run when effectivePitchHz / extPmAmount change.
+	// the worklet. Also re-run when effectivePitchHz changes.
 	useEffect(() => {
 		const sync = () => {
 			const snapshot = createSynthEngineSnapshot({

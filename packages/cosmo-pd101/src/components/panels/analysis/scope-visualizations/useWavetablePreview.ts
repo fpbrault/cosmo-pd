@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useDeferredValue, useMemo } from "react";
 import { useSynthStore } from "@/features/synth/synthStore";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
 import { computeWaveform } from "@/lib/synth/pdAlgorithms";
@@ -93,7 +93,7 @@ export function useWavetablePreview(): {
 	const line2AlgoControlsB = useSynthStore((s) => s.line2AlgoControlsB);
 	const phaseModSlot = useSynthStore((s) => s.fxSlots[4]);
 
-	return useMemo(() => {
+	const snapshot = useMemo(() => {
 		const phaseModParams =
 			phaseModSlot?.type === "phaseMod" ? phaseModSlot.params : null;
 		const phaseModEnabled = phaseModParams?.enabled ?? false;
@@ -184,4 +184,6 @@ export function useWavetablePreview(): {
 		line2AlgoControlsB,
 		phaseModSlot,
 	]);
+
+	return useDeferredValue(snapshot);
 }

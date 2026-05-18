@@ -281,18 +281,6 @@ function decodeWaveform(
 
 	const modulation = ignoreModulation ? "none" : decodeModulation(modBits);
 
-	// TODO: Temporary SysEx waveform decode diagnostics. Remove after investigation.
-	const firstWaveBinary = fwfBits.toString(2).padStart(3, "0");
-	const secondWaveBinary = swfBits.toString(2).padStart(3, "0");
-	const windowBinary = windowBits.toString(2).padStart(3, "0");
-	const modBinary = modBits.toString(2).padStart(3, "0");
-	const secondWaveLabel =
-		secondWaveform == null ? "none" : `${secondWaveBinary}-${secondWaveform}`;
-	console.info(
-		`[CZ SysEx] wf@${logIdx}: first=${firstWaveBinary}-${firstWaveform} second=${secondWaveLabel} ` +
-			`window=${windowBinary}-${windowFunction} slActive=${slActive} mod=${modBinary}-${modulation}`,
-	);
-
 	return { firstWaveform, secondWaveform, windowFunction, modulation };
 }
 

@@ -11,7 +11,6 @@ export { usePluginBridgeSynthEngine } from "./features/synth/engine/pluginBridge
 export { useAudioEngine } from "./features/synth/hooks/useAudioEngine";
 export { useNoteHandling } from "./features/synth/hooks/useNoteHandling";
 export { useSynthParamsToWorklet } from "./features/synth/hooks/useSynthParamsToWorklet";
-export { getSynthRuntimeCapabilities } from "./features/synth/runtimeCapabilities";
 export { useSynthStore } from "./features/synth/synthStore";
 export type {
 	EnvTab,
@@ -25,7 +24,6 @@ export {
 } from "./features/synth/synthUiStore";
 export type { LibraryPreset } from "./features/synth/types/libraryPreset";
 export { useSynthPresetManager } from "./features/synth/useSynthPresetManager";
-export { useSynthState } from "./features/synth/useSynthState";
 export { i18n, initI18n } from "./i18n";
 export type {
 	DecodedPatch,

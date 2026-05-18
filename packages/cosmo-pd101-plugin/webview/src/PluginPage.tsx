@@ -74,7 +74,6 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	const gatherState = useSynthStore((s) => s.gatherState);
 	const applyPreset = useSynthStore((s) => s.applyPreset);
 	const velocityCurve = useSynthStore((s) => s.velocityCurve);
-	const presetStateKey = useSynthStore((s) => JSON.stringify(s.gatherState()));
 
 	const frameRef = useRef<HTMLDivElement | null>(null);
 	const [rendererFrame, setRendererFrame] = useState({
@@ -221,7 +220,6 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		gatherState,
 		applyPreset,
 		shouldLoadCurrentState,
-		presetStateKey,
 	});
 
 	useEffect(() => {

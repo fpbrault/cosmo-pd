@@ -158,29 +158,29 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 		useSynthParam(lfoRetriggerKey);
 	const { value: lfoOffset, setValue: setLfoOffset } =
 		useSynthParam(lfoOffsetKey);
-	const lfoRateNorm = lfoRateToNorm(lfoRate);
+	const lfoRateNorm = lfoRateToNorm(lfoRate as number);
 
 	useEffect(() => {
 		let rafId = 0;
 		let last = performance.now();
-
 		const tick = (now: number) => {
 			const dt = Math.min(0.05, (now - last) / 1000);
 			last = now;
-			setPlayheadPhase((prev) => (prev + dt * Math.max(0, lfoRate)) % 1);
+			setPlayheadPhase(
+				(prev) => (prev + dt * Math.max(0, lfoRate as number)) % 1,
+			);
 			rafId = requestAnimationFrame(tick);
 		};
-
 		rafId = requestAnimationFrame(tick);
 		return () => cancelAnimationFrame(rafId);
 	}, [lfoRate]);
 
 	const lfoPlayheadPoint = useMemo(() => {
 		return lfoPointFromPhase({
-			waveform: lfoWaveform,
-			symmetry: lfoSymmetry,
-			offset: lfoOffset,
-			depth: lfoDepth,
+			waveform: lfoWaveform as string,
+			symmetry: lfoSymmetry as number,
+			offset: lfoOffset as number,
+			depth: lfoDepth as number,
 			phase: playheadPhase,
 		});
 	}, [lfoDepth, lfoOffset, lfoSymmetry, lfoWaveform, playheadPhase]);
@@ -242,7 +242,12 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 						strokeWidth="1"
 					/>
 					<path
-						d={lfoPreviewPath(lfoWaveform, lfoSymmetry, lfoOffset, lfoDepth)}
+						d={lfoPreviewPath(
+							lfoWaveform as string,
+							lfoSymmetry as number,
+							lfoOffset as number,
+							lfoDepth as number,
+						)}
 						fill="none"
 						stroke={`url(#lfo-preview-${id})`}
 						strokeWidth="2"
@@ -273,7 +278,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 							key={w}
 							type="button"
 							className={`join-item btn btn-xs h-7 min-h-0 flex-1 rounded-none border-0 px-1.5 ${
-								lfoWaveform === w ? "btn-secondary" : "btn-outline"
+								(lfoWaveform as string) === w ? "btn-secondary" : "btn-outline"
 							}`}
 							onClick={() => setLfoWaveform(w)}
 							title={`Select ${label} waveform for LFO ${id}.`}
@@ -285,9 +290,9 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				<Button
 					type="button"
 					className={`btn btn-xs h-7 min-h-0 px-1.5 ${
-						lfoRetrigger ? "btn-secondary" : "btn-outline"
+						(lfoRetrigger as boolean) ? "btn-secondary" : "btn-outline"
 					}`}
-					onClick={() => setLfoRetrigger(!lfoRetrigger)}
+					onClick={() => setLfoRetrigger(!(lfoRetrigger as boolean))}
 					title={PARAM_META[lfoRetriggerKey as SynthParamKey]?.tooltip}
 				>
 					Retrig
@@ -310,19 +315,19 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 			/>
 			<SynthParamKnob
 				paramKey={lfoDepthKey}
-				value={lfoDepth}
+				value={lfoDepth as number}
 				onChange={setLfoDepth}
 				color="#27588f"
 				size={54}
 				label="Depth"
-				valueFormatter={(value) => `${Math.round(value * 100)}%`}
+				valueFormatter={(value) => `${Math.round((value as number) * 100)}%`}
 				modDestination={resolveTargetFromMetadata("lfo.depth", {
 					lfoIndex: id,
 				})}
 			/>
 			<SynthParamKnob
 				paramKey={lfoOffsetKey}
-				value={lfoOffset}
+				value={lfoOffset as number}
 				onChange={setLfoOffset}
 				min={-1}
 				max={1}
@@ -331,7 +336,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				size={54}
 				label="Offset"
 				valueFormatter={(value) =>
-					`${value >= 0 ? "+" : ""}${value.toFixed(2)}`
+					`${(value as number) >= 0 ? "+" : ""}${(value as number).toFixed(2)}`
 				}
 				modDestination={resolveTargetFromMetadata("lfo.offset", {
 					lfoIndex: id,
@@ -339,7 +344,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 			/>
 			<SynthParamKnob
 				paramKey={lfoSymmetryKey}
-				value={lfoSymmetry}
+				value={lfoSymmetry as number}
 				onChange={setLfoSymmetry}
 				color="#27588f"
 				size={54}

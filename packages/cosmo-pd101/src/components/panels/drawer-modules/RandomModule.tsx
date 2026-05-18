@@ -9,7 +9,7 @@ export default function RandomModule() {
 		<ModuleFrame title="Random" color="#c2571a" enabled columns={1}>
 			<SynthParamKnob
 				paramKey="randomRate"
-				value={randomRate}
+				value={randomRate as number}
 				onChange={setRandomRate}
 				color="#c2571a"
 				label="Rate"
