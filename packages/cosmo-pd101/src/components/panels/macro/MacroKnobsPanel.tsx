@@ -106,7 +106,16 @@ const MacroKnob = memo(function MacroKnob({ macroIndex }: MacroKnobProps) {
 				max={1}
 				label={label}
 				variant="accent"
-				size={52}
+				color={
+					macroIndex === 0
+						? "var(--color-cz-tab-red)"
+						: macroIndex === 1
+							? "var(--color-cz-tab-red)"
+							: macroIndex === 2
+								? "var(--color-cz-tab-blue)"
+								: "var(--color-cz-tab-blue)"
+				}
+				size={80}
 				valueFormatter={(v) => (v * 100).toFixed(0)}
 				valueVisibility="hover"
 			/>

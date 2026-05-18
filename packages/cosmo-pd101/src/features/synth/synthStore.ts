@@ -660,6 +660,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			macro2: s.macro2,
 			macro3: s.macro3,
 			macro4: s.macro4,
+			macroLabels: s.macroLabels,
 		} as SynthPresetV1["params"];
 
 		return {
@@ -839,6 +840,12 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			macro2: safe((p as Record<string, unknown>).macro2 as number, 0),
 			macro3: safe((p as Record<string, unknown>).macro3 as number, 0),
 			macro4: safe((p as Record<string, unknown>).macro4 as number, 0),
+			macroLabels: ((p as Record<string, unknown>).macroLabels as [
+				string,
+				string,
+				string,
+				string,
+			]) ?? ["MACRO 1", "MACRO 2", "MACRO 3", "MACRO 4"],
 		});
 	},
 }));
