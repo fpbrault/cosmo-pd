@@ -11,6 +11,8 @@ type UseMidiLearnTargetOptions = {
 	apply?: (rawValue: number) => void;
 };
 
+type MidiLearnVisualState = "available" | "mapped" | "targeted" | null;
+
 export function useMidiLearnTarget({
 	targetKey,
 	label,
@@ -55,7 +57,7 @@ export function useMidiLearnTarget({
 		}
 	}, [targetKey]);
 
-	const midiLearnState =
+	const midiLearnState: MidiLearnVisualState =
 		!learnMode || !targetKey
 			? null
 			: pendingLearnParam === targetKey
