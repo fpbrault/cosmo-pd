@@ -1,6 +1,8 @@
 import { useCallback, useRef } from "react";
 import ModulatableControl from "@/components/controls/modulation/ModulatableControl";
 import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
+import { useMidiLearnStore } from "@/features/synth/midiLearnStore";
+import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import type { ModDestination } from "@/lib/synth/bindings/synth";
 import {
 	type ModTarget,
@@ -25,6 +27,8 @@ interface CzVerticalSliderProps {
 	lineIndex?: 1 | 2;
 	/** When provided, wraps the slider in a ModulatableControl for this destination. */
 	modDestination?: ModDestination;
+	/** Param key for MIDI Learn binding/unbinding. */
+	paramKey?: SynthParamKey;
 }
 
 /**
@@ -45,6 +49,7 @@ export default function CzVerticalSlider({
 	modulatable,
 	lineIndex = 1,
 	modDestination,
+	paramKey,
 }: CzVerticalSliderProps) {
 	const trackRef = useRef<HTMLDivElement>(null);
 	const resolvedLabel = ariaLabel?.trim() ? ariaLabel : "Value";
@@ -115,11 +120,25 @@ export default function CzVerticalSlider({
 		[value, min, max, clampToStep, emitChange],
 	);
 
+	const handleContextMenu = useCallback(
+		(e: React.MouseEvent) => {
+			if (!paramKey) return;
+			e.preventDefault();
+			const store = useMidiLearnStore.getState();
+			const bindings = store.getBindingsForParam(paramKey);
+			if (bindings.length > 0) {
+				store.removeBindingsForParam(paramKey);
+			}
+		},
+		[paramKey],
+	);
+
 	const inner = (
 		<div
 			ref={trackRef}
 			onPointerDown={handlePointerDown}
 			onWheel={handleWheel}
+			onContextMenu={handleContextMenu}
 			data-hover-info={resolvedTooltip}
 			{...hoverHandlers}
 			className="relative h-full min-h-64 cursor-ns-resize select-none"

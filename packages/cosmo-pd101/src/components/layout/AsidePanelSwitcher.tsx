@@ -27,7 +27,8 @@ export type AsidePanelTab =
 	| "chorus"
 	| "delay"
 	| "reverb"
-	| "phaser";
+	| "phaser"
+	| "midi";
 
 const TOGGLE_TAB_IDS = new Set(["polymode", "portamentoenabled"]);
 

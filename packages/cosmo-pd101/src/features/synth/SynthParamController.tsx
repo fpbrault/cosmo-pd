@@ -28,7 +28,7 @@ import {
 	resolveTargetFromMetadata,
 } from "@/lib/synth/modTargets";
 
-const SYNTH_PARAM_SETTERS = {
+export const SYNTH_PARAM_SETTERS = {
 	lineSelect: "setLineSelect",
 	modMode: "setModMode",
 	line1BaseWaveformA: "setLine1BaseWaveformA",

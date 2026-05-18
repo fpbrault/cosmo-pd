@@ -7,9 +7,9 @@ mod modulation;
 mod render;
 
 pub use adsr::AdsrEnv;
-pub(crate) use modulation::modulated_line_params;
 pub(crate) use modulation::ModSources;
-pub(crate) use render::{render_voice, VoiceRenderContext};
+pub(crate) use modulation::modulated_line_params;
+pub(crate) use render::{VoiceRenderContext, render_voice};
 
 use crate::envelope::EnvGen;
 use crate::generators::AlgoRuntimeState;
@@ -133,7 +133,7 @@ impl Default for Voice {
 #[cfg(test)]
 mod tests {
     use super::ModSources;
-    use super::{render::*, Voice};
+    use super::{Voice, render::*};
     use crate::params::{LineParams, ModMatrixCache, SynthParams};
     use crate::render_cache::CompiledSynthParams;
 

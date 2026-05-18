@@ -1,5 +1,5 @@
 use super::delay_line::DelayLine;
-use crate::dsp_utils::{wrap01, TWO_PI};
+use crate::dsp_utils::{TWO_PI, wrap01};
 
 const CENTER_DELAY_S: f32 = 0.012;
 const MAX_MOD_S: f32 = 0.010;

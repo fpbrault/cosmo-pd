@@ -1,4 +1,4 @@
-use crate::envelope_map::{human_level_to_raw, human_rate_to_raw, EnvelopeKind};
+use crate::envelope_map::{EnvelopeKind, human_level_to_raw, human_rate_to_raw};
 use crate::params::{EnvStep, StepEnvData};
 
 fn step(kind: EnvelopeKind, level: u8, rate: u8) -> EnvStep {

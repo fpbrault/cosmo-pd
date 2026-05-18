@@ -1,9 +1,9 @@
 extern crate alloc;
 
-use crate::params::{PolyMode, NUM_VOICES};
+use crate::params::{NUM_VOICES, PolyMode};
 
-use super::state::{MonoStackEntry, NoteEntry};
 use super::CosmoProcessor;
+use super::state::{MonoStackEntry, NoteEntry};
 
 impl CosmoProcessor {
     pub(crate) fn reset_voice_envs(&mut self, voice_idx: usize) {
@@ -63,13 +63,12 @@ impl CosmoProcessor {
         voice.smoothed_dcw1 = 0.0;
         voice.smoothed_dcw2 = 0.0;
 
-        if let Some(vib) = self.params.vibrato_params() {
-            if vib.enabled {
+        if let Some(vib) = self.params.vibrato_params()
+            && vib.enabled {
                 voice.vibrato_phase = 0.0;
                 let delay_ms = vib.delay;
                 voice.vibrato_delay_counter = (delay_ms * self.sample_rate / 1000.0).round() as u32;
             }
-        }
     }
 
     pub(crate) fn configure_voice_pitch(&mut self, voice_idx: usize, note: u8, frequency: f32) {

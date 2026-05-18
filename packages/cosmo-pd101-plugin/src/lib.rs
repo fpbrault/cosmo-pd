@@ -13,7 +13,7 @@ use arc_swap::ArcSwap;
 use cosmo_synth_engine::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use cosmo_synth_engine::params::SynthParams;
 use cosmo_synth_engine::processor::state::RuntimeModSources;
-use cosmo_synth_engine::processor::{midi_note_to_freq, CosmoProcessor};
+use cosmo_synth_engine::processor::{CosmoProcessor, midi_note_to_freq};
 use crossbeam_queue::ArrayQueue;
 use truce::prelude::*;
 
@@ -133,6 +133,9 @@ type SharedRtSynthParams = Arc<ArcSwap<SynthParams>>;
 type SharedRuntimeModSources = Arc<ArcSwap<RuntimeModSources>>;
 type SynthParamsVersion = Arc<AtomicU64>;
 type PerformanceCountersHandle = Arc<PerformanceCounters>;
+
+const MIDI_CC_QUEUE_CAPACITY: usize = 128;
+type MidiCcQueue = Arc<ArrayQueue<(u8, u8, u8)>>;
 
 fn build_rt_synth_params(params: &SynthParams) -> SynthParams {
     let mut rt_params = params.clone();
@@ -659,6 +662,7 @@ pub struct CzPlugin {
     cached_rt_synth_params: Arc<SynthParams>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
+    midi_cc_queue: MidiCcQueue,
     mono_output: Vec<f32>,
     performance_counters: PerformanceCountersHandle,
     /// Tracks whether DAW param values changed since last process() call.
@@ -682,6 +686,7 @@ impl CzPlugin {
             cached_rt_synth_params: Arc::new(default_rt_params),
             scope_buffer: Arc::new(Mutex::new(ScopeFrame::default())),
             ui_input_queue: Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY)),
+            midi_cc_queue: Arc::new(ArrayQueue::new(MIDI_CC_QUEUE_CAPACITY)),
             mono_output: Vec::new(),
             performance_counters: Arc::new(PerformanceCounters::default()),
             daw_params_dirty: true,
@@ -784,6 +789,7 @@ impl PluginLogic for CzPlugin {
                             _ => {}
                         }
                     }
+                    let _ = self.midi_cc_queue.push((0, *cc, *value));
                 }
                 EventBody::PitchBend { value, .. } => {
                     if let Some(ref mut proc) = self.processor {
@@ -939,6 +945,7 @@ impl PluginLogic for CzPlugin {
             self.synth_params_version.clone(),
             self.scope_buffer.clone(),
             self.ui_input_queue.clone(),
+            self.midi_cc_queue.clone(),
             self.performance_counters.clone(),
             self.params.clone(),
             self.runtime_mod_sources.clone(),

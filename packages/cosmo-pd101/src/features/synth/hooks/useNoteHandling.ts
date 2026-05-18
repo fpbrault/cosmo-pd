@@ -249,6 +249,15 @@ export function useNoteHandling({
 
 							// CC messages
 							if (status === 0xb0) {
+								window.dispatchEvent(
+									new CustomEvent("cz-midi-cc", {
+										detail: {
+											channel: data[0] & 0x0f,
+											cc: data[1],
+											rawValue: data[2],
+										},
+									}),
+								);
 								if (data[1] === 1) {
 									sendModWheel(data[2] / 127);
 								} else if (data[1] === 64) {

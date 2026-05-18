@@ -1,5 +1,6 @@
-import { memo, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { ControlKnob } from "@/components/controls/ControlKnob";
+import { useMidiLearnStore } from "@/features/synth/midiLearnStore";
 import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import type {
 	EngineParamReadoutFormatV1,
@@ -111,28 +112,54 @@ function SynthParamKnobInner({
 		return formatFromReadoutFormat(meta.readoutFormat, meta.bipolar ?? false);
 	}, [meta, valueFormatterOverride]);
 
-	return (
-		<ControlKnob
-			value={value}
-			onChange={onChange}
-			disabled={disabled}
-			label={label}
-			labelClassName={labelClassName}
-			tooltip={PARAM_META[paramKey]?.tooltip}
-			min={min ?? meta?.min ?? 0}
-			max={max ?? meta?.max ?? 1}
-			step={step ?? meta?.step ?? undefined}
-			defaultValue={defaultValue}
-			bipolar={bipolar ?? meta?.bipolar ?? false}
-			color={color}
-			size={size}
-			variant={variant}
-			curve={meta?.curve ?? "linear"}
-			valueFormatter={valueFormatter}
-			modDestination={
-				modDestination ?? (meta?.modDestination as ModDestination | undefined)
+	const handleContextMenu = useCallback(
+		(e: React.MouseEvent) => {
+			e.preventDefault();
+			const store = useMidiLearnStore.getState();
+			const bindings = store.getBindingsForParam(paramKey);
+			if (bindings.length > 0) {
+				store.removeBindingsForParam(paramKey);
 			}
-		/>
+		},
+		[paramKey],
+	);
+
+	const handleClick = useCallback(() => {
+		const store = useMidiLearnStore.getState();
+		if (store.learnMode) {
+			store.setPendingLearnParam(paramKey);
+		}
+	}, [paramKey]);
+
+	return (
+		<button
+			type="button"
+			className="contents"
+			onContextMenu={handleContextMenu}
+			onClick={handleClick}
+		>
+			<ControlKnob
+				value={value}
+				onChange={onChange}
+				disabled={disabled}
+				label={label}
+				labelClassName={labelClassName}
+				tooltip={PARAM_META[paramKey]?.tooltip}
+				min={min ?? meta?.min ?? 0}
+				max={max ?? meta?.max ?? 1}
+				step={step ?? meta?.step ?? undefined}
+				defaultValue={defaultValue}
+				bipolar={bipolar ?? meta?.bipolar ?? false}
+				color={color}
+				size={size}
+				variant={variant}
+				curve={meta?.curve ?? "linear"}
+				valueFormatter={valueFormatter}
+				modDestination={
+					modDestination ?? (meta?.modDestination as ModDestination | undefined)
+				}
+			/>
+		</button>
 	);
 }
 

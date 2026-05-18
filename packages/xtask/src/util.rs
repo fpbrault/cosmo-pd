@@ -248,16 +248,14 @@ pub fn detect_bundle_identifier_prefix(package: &str, workspace_root: &Path) -> 
         .join(package)
         .join("Config.toml");
 
-    if let Ok(toml_str) = fs::read_to_string(&config_path) {
-        if let Ok(config) = toml::from_str::<ConfigFile>(&toml_str) {
-            if let Some(prefix) = config.bundle_identifier_prefix {
+    if let Ok(toml_str) = fs::read_to_string(&config_path)
+        && let Ok(config) = toml::from_str::<ConfigFile>(&toml_str)
+            && let Some(prefix) = config.bundle_identifier_prefix {
                 let trimmed = prefix.trim();
                 if !trimmed.is_empty() {
                     return trimmed.to_string();
                 }
             }
-        }
-    }
 
     "com.purraudio".to_string()
 }

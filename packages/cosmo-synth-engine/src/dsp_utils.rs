@@ -1,5 +1,5 @@
 use crate::params::{LfoWaveform, WindowType};
-use dasp_interpolate::{linear::Linear, Interpolator};
+use dasp_interpolate::{Interpolator, linear::Linear};
 
 pub const TWO_PI: f32 = core::f32::consts::TAU;
 const PI: f32 = core::f32::consts::PI;
@@ -9,11 +9,7 @@ const TWO_OVER_PI: f32 = 2.0 / PI;
 #[inline]
 pub fn wrap01(v: f32) -> f32 {
     let w = v - (v).floor();
-    if w < 0.0 {
-        w + 1.0
-    } else {
-        w
-    }
+    if w < 0.0 { w + 1.0 } else { w }
 }
 
 /// Linear interpolation.
@@ -173,11 +169,7 @@ pub fn apply_window(phase: f32, window: WindowType) -> f32 {
     // 2. The Casio Rectifier Trick
     // If we are in the second half of the master cycle, flip the window's sign.
     // This perfectly counteracts the carrier wave's negative polarity!
-    if phase >= 0.5 {
-        -amp
-    } else {
-        amp
-    }
+    if phase >= 0.5 { -amp } else { amp }
 }
 // ─── LFO ──────────────────────────────────────────────────────────────────────
 

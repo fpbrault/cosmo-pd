@@ -20,6 +20,7 @@ import AsidePanelSwitcher from "@/components/layout/AsidePanelSwitcher";
 import FxConsoleDrawer from "@/components/panels/drawers/FxConsoleDrawer";
 import ModConsoleDrawer from "@/components/panels/drawers/ModConsoleDrawer";
 import { FX_SLOT_PANELS } from "@/components/panels/fx/FxSlotPanel";
+import MidiLearnPanel from "@/components/panels/midi/MidiLearnPanel";
 import GlobalVoicePanel from "@/components/panels/voice/GlobalVoicePanel";
 import PresetLibrary from "@/components/preset/PresetLibrary";
 import SynthHeader, {
@@ -27,6 +28,7 @@ import SynthHeader, {
 } from "@/components/preset/SynthHeader";
 import CzTabButton from "@/components/primitives/CzTabButton";
 import { ModMatrixProvider } from "@/context/ModMatrixContext";
+import { useMidiLearnBindings } from "@/features/synth/hooks/useMidiLearnBindings";
 import {
 	SynthParamControllerProvider,
 	useSynthParam,
@@ -183,6 +185,7 @@ function SynthRendererContent({
 	const libraryModeOpen = useSynthUiStore((s) => s.libraryModeOpen);
 	const setLibraryModeOpen = useSynthUiStore((s) => s.setLibraryModeOpen);
 	const { infoText } = useHoverInfo();
+	useMidiLearnBindings();
 	const drawerOpen = isDrawerPanel(mainPanelMode);
 	const waveDrawerOpen = mainPanelMode === "display";
 	const [activeDrawerPanel, setActiveDrawerPanel] = useState<DrawerPanel>(
@@ -253,6 +256,7 @@ function SynthRendererContent({
 								onTabChange={onAsidePanelChange}
 							>
 								<GlobalVoicePanel />
+								<MidiLearnPanel />
 								{FX_SLOT_PANELS.map((Panel) => (
 									<Panel key={Panel.panelId} />
 								))}

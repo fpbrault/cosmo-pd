@@ -76,6 +76,8 @@ export interface ControlKnobProps {
 	modTrailDuration?: number;
 	/** Non-linear scaling curve for pointer/wheel interaction and rendered position. */
 	curve?: KnobCurve;
+	/** Right-click handler. Used by MIDI Learn to unlearn bindings. */
+	onContextMenu?: (e: React.MouseEvent) => void;
 }
 
 const VARIANT_ACCENT_COLOR: Record<
@@ -118,6 +120,7 @@ export function ControlKnob({
 	modulatedValue,
 	modTrailDuration = 220,
 	curve = "linear",
+	onContextMenu,
 }: ControlKnobProps) {
 	const svgRef = useRef<SVGSVGElement | null>(null);
 	const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -309,6 +312,7 @@ export function ControlKnob({
 				onPointerCancel={onPointerCancel}
 				onLostPointerCapture={onLostPointerCapture}
 				onDoubleClick={onDoubleClick}
+				onContextMenu={onContextMenu}
 				onKeyDown={onKeyDown}
 			>
 				<KnobView

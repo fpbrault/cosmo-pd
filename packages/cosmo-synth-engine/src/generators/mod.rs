@@ -1,4 +1,4 @@
-use crate::dsp_utils::{apply_window, lerp, wrap01, TWO_PI};
+use crate::dsp_utils::{TWO_PI, apply_window, lerp, wrap01};
 use crate::params::{Algo, AlgoControlSlots, BaseWaveform, LineParams};
 use crate::render_cache::CompiledLinePlan;
 use std::sync::LazyLock;
@@ -29,7 +29,7 @@ pub mod bend;
 pub mod catalog;
 pub mod clip;
 pub mod cz101;
-pub use cz101::{CzPresetV1, CZ_PRESETS};
+pub use cz101::{CZ_PRESETS, CzPresetV1};
 pub mod cheby;
 pub mod fof;
 pub mod fold;
@@ -46,11 +46,11 @@ pub mod terrain;
 pub mod twist;
 
 pub use catalog::{
-    algo_definitions_v1, algo_ui_catalog_v1, AlgoControlAssignmentV1, AlgoControlKindV1,
+    ALGO_BLEND_NUMBER_CONTROL, ALGO_DEFINITIONS_V1, AlgoControlAssignmentV1, AlgoControlKindV1,
     AlgoControlOptionV1, AlgoControlPresentationV1, AlgoControlV1, AlgoDefinitionV1, AlgoUiEntryV1,
-    ALGO_BLEND_NUMBER_CONTROL, ALGO_DEFINITIONS_V1, DCW_CONTROL, FINE_DETUNE_NUMBER_CONTROL,
-    KEY_FOLLOW_NUMBER_CONTROL, LEVEL_NUMBER_CONTROL, NO_CONTROLS, NO_CONTROL_OPTIONS,
-    OCTAVE_NUMBER_CONTROL, WARP_AMOUNT_CONTROL, WARP_AMOUNT_NUMBER_CONTROL,
+    DCW_CONTROL, FINE_DETUNE_NUMBER_CONTROL, KEY_FOLLOW_NUMBER_CONTROL, LEVEL_NUMBER_CONTROL,
+    NO_CONTROL_OPTIONS, NO_CONTROLS, OCTAVE_NUMBER_CONTROL, WARP_AMOUNT_CONTROL,
+    WARP_AMOUNT_NUMBER_CONTROL, algo_definitions_v1, algo_ui_catalog_v1,
 };
 
 /// Per-line render inputs passed to a voice's generator for one sample.
@@ -484,8 +484,8 @@ pub fn render_algo_sample(
 
 #[cfg(test)]
 mod tests {
-    use super::render_line_stateless;
     use super::LineRenderConfig;
+    use super::render_line_stateless;
     use crate::params::{Algo, BaseWaveform};
 
     #[test]

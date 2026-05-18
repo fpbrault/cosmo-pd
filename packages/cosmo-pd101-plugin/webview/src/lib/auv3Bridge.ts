@@ -34,6 +34,7 @@ declare global {
 		__czSetParams?: (json: string) => void;
 		__czOnScope?: (samples: number[], sampleRate: number, hz: number) => void;
 		__czIpcResponse?: (response: IpcRpcResponse) => void;
+		__czOnMidiCc?: (channel: number, cc: number, value: number) => void;
 	}
 }
 
@@ -355,6 +356,24 @@ function installRuntimeModSourcesPolling() {
 	});
 }
 
+function installMidiCcHandler() {
+	try {
+		Object.defineProperty(window, "__czOnMidiCc", {
+			configurable: true,
+			writable: true,
+			value: (channel: number, cc: number, value: number) => {
+				window.dispatchEvent(
+					new CustomEvent("cz-midi-cc", {
+						detail: { channel, cc, rawValue: value },
+					}),
+				);
+			},
+		});
+	} catch {
+		// Host may prevent definition; MIDI Learn will fall back to Web MIDI API.
+	}
+}
+
 export function ensureAuv3Bridge(): boolean {
 	if (installed) {
 		return true;
@@ -366,6 +385,7 @@ export function ensureAuv3Bridge(): boolean {
 	installed = true;
 	installParamProperty();
 	installIpcResponseHandler();
+	installMidiCcHandler();
 	installIpcRouter();
 	installScopePolling();
 	installRuntimeVoiceStatesPolling();
