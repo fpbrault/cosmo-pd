@@ -9,51 +9,16 @@ permissions:
   contents: write
 
 jobs:
-  build-plugins:
-    name: Build and package plugins (${{ matrix.platform }}-${{ matrix.arch }})
+  build-and-package:
+    name: Build, validate, and package plugins (${{ matrix.platform }})
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: macos-latest
             platform: macos
-            arch: universal
-            build_cmd: bun run build:plugin
-            plugin_bundle_path: target/bundles/Cosmo PD-101.vst3
-            secondary_bundle_path: target/bundles/Cosmo PD-101.component
-            installer_glob: dist/plugin-installers/macos/cosmo-plugins-macos-universal-v*.pkg
-            bare_glob: |
-              dist/plugin-installers/macos/cosmo-pd101-plugin-macos-universal-v*-vst3.zip
-              dist/plugin-installers/macos/cosmo-pd101-plugin-macos-universal-v*-auv2.zip
-              dist/plugin-installers/macos/cosmo-pd101-plugin-macos-universal-v*-clap.zip
-            artifact_paths: |
-              dist/plugin-installers/macos/cosmo-plugins-macos-universal-v*.pkg
-              dist/plugin-installers/macos/cosmo-plugins-macos-universal-v*.zip
-              dist/plugin-installers/macos/cosmo-pd101-plugin-macos-universal-v*-vst3.zip
-              dist/plugin-installers/macos/cosmo-pd101-plugin-macos-universal-v*-auv2.zip
-              dist/plugin-installers/macos/cosmo-pd101-plugin-macos-universal-v*-clap.zip
           - os: windows-latest
             platform: windows
-            arch: x86_64
-            build_cmd: bun run build:plugin
-            plugin_bundle_path: target/bundles/Cosmo PD-101.vst3
-            secondary_bundle_path: ""
-            installer_glob: dist/plugin-installers/windows/*x86_64-win-v*.exe
-            bare_glob: dist/plugin-installers/windows/*x86_64-win-v*-vst3.zip
-            artifact_paths: |
-              dist/plugin-installers/windows/*x86_64-win-v*.exe
-              dist/plugin-installers/windows/*x86_64-win-v*-vst3.zip
-          - os: windows-11-arm
-            platform: windows
-            arch: arm64
-            build_cmd: bun run build:plugin
-            plugin_bundle_path: target/bundles/Cosmo PD-101.vst3
-            secondary_bundle_path: ""
-            installer_glob: dist/plugin-installers/windows/*aarch64-win-v*.exe
-            bare_glob: dist/plugin-installers/windows/*aarch64-win-v*-vst3.zip
-            artifact_paths: |
-              dist/plugin-installers/windows/*aarch64-win-v*.exe
-              dist/plugin-installers/windows/*aarch64-win-v*-vst3.zip
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
@@ -69,7 +34,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ~/.cargo/bin/cargo-truce
-          key: cargo-truce-${{ runner.os }}-v1
+          key: cargo-truce-${{ runner.os }}-v2
 
       - name: Install cargo-truce
         if: steps.cargo-truce-cache.outputs.cache-hit != 'true'
@@ -78,48 +43,76 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Build plugins
-        env:
-          ARCH: ${{ matrix.arch }}
-        run: ${{ matrix.build_cmd }}
-
-      - name: Install NSIS
-        if: matrix.platform == 'windows'
-        shell: powershell
-        run: choco install nsis -y
-
-      - name: Package plugin installers
-        run: bun run ./scripts/package-plugin-installers.mjs --platform ${{ matrix.platform }}
-
-      - name: Validate plugin release artifacts
+      - name: Install validators
         shell: bash
         run: |
-          set -euo pipefail
-          test -e "${{ matrix.plugin_bundle_path }}"
-          if [[ -n "${{ matrix.secondary_bundle_path }}" ]]; then
-            test -e "${{ matrix.secondary_bundle_path }}"
+          cargo install --locked --git https://github.com/free-audio/clap-validator clap-validator
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            curl -fsSL -o /tmp/pluginval.zip \
+              https://github.com/Tracktion/pluginval/releases/download/v1.0.4/pluginval_macOS.zip
+            unzip -oq /tmp/pluginval.zip -d ~/.local/bin
+            chmod +x ~/.local/bin/pluginval
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           fi
-          compgen -G "${{ matrix.installer_glob }}" > /dev/null
-          while IFS= read -r pattern; do
-            [[ -z "$pattern" ]] && continue
-            compgen -G "$pattern" > /dev/null
-          done <<'EOF'
-          ${{ matrix.bare_glob }}
-          EOF
+
+      - name: Install validators (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $url = "https://github.com/Tracktion/pluginval/releases/download/v1.0.4/pluginval_Windows.zip"
+          Invoke-WebRequest -Uri $url -OutFile "$env:TEMP\pluginval.zip"
+          $binDir = "$env:USERPROFILE\.local\bin"
+          New-Item -ItemType Directory -Force -Path $binDir | Out-Null
+          Expand-Archive -Path "$env:TEMP\pluginval.zip" -DestinationPath $binDir -Force
+          "$binDir" | Out-File -FilePath $env:GITHUB_PATH -Append
+
+      - name: Build webview
+        run: bun run build:web
+        working-directory: packages/cosmo-pd101-plugin
+
+      - name: Build plugins
+        run: cargo truce build
+
+      - name: Inject webview assets
+        run: bun run build:post:assets
+        working-directory: packages/cosmo-pd101-plugin
+
+      - name: Install plugin for validation (macOS)
+        if: matrix.platform == 'macos'
+        run: cargo truce install --user --no-build --clap --vst3 --au2 -p cosmo-pd101-plugin
+
+      - name: Install plugin for validation (Windows)
+        if: matrix.platform == 'windows'
+        run: cargo truce install --user --no-build --clap --vst3 -p cosmo-pd101-plugin
+
+      - name: Validate plugins (macOS)
+        if: matrix.platform == 'macos'
+        run: cargo truce validate --clap --pluginval --auval -p cosmo-pd101-plugin
+
+      - name: Validate plugins (Windows)
+        if: matrix.platform == 'windows'
+        run: cargo truce validate --clap --pluginval -p cosmo-pd101-plugin
+
+      - name: Install Inno Setup (Windows)
+        if: matrix.platform == 'windows'
+        run: choco install innosetup --no-progress
+        shell: pwsh
+
+      - name: Package plugins (truce)
+        run: cargo truce package
 
       - name: Upload plugin artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: plugins-${{ matrix.platform }}-${{ matrix.arch }}
-          path: ${{ matrix.artifact_paths }}
+          name: plugins-${{ matrix.platform }}
+          path: |
+            target/dist/*.pkg
+            target/dist/*.exe
           if-no-files-found: error
 
-  # TODO: enable when Gumroad distribution is ready
-  # Requires secrets: GUMROAD_ACCESS_TOKEN, GUMROAD_PRODUCT_ID
-  upload-plugins-to-gumroad:
-    name: Upload plugins to Gumroad
-    if: false # disabled — Gumroad distribution not yet configured
-    needs: [build-plugins]
+  upload-to-gumroad:
+    name: Upload to Gumroad
+    needs: [build-and-package]
     runs-on: ubuntu-latest
     steps:
       - name: Download plugin artifacts
@@ -143,24 +136,26 @@ jobs:
             local file="$1"
             local name
             name=$(basename "$file")
+            local display_name="${name%.pkg}"
+            display_name="${display_name%.exe}"
+            display_name="${display_name} (${TAG})"
+
             echo "Uploading $name ..."
             curl --fail-with-body -sS \
               -X POST "https://api.gumroad.com/v2/products/${GUMROAD_PRODUCT_ID}/product_files" \
               -H "Authorization: Bearer ${GUMROAD_ACCESS_TOKEN}" \
               -F "file=@${file}" \
-              -F "description=${name}"
+              -F "name=${display_name}"
             echo
           }
 
-          for f in plugin-assets/**/*.pkg \
-                    plugin-assets/**/*.zip \
-                    plugin-assets/**/*.exe; do
+          for f in plugin-assets/**/*.pkg plugin-assets/**/*.exe; do
             [[ -e "$f" ]] && upload_file "$f"
           done
 
   create-release:
     name: Create GitHub release
-    needs: [build-plugins]
+    needs: [build-and-package]
     runs-on: ubuntu-latest
     steps:
       - name: Download build artifacts
@@ -170,23 +165,10 @@ jobs:
           path: release-assets
           merge-multiple: true
 
-      - name: Validate release assets are present
-        shell: bash
-        run: |
-          set -euo pipefail
-          shopt -s globstar
-          
-          # Validate plugins are present
-          compgen -G "release-assets/**/*.vst3" > /dev/null || true
-          compgen -G "release-assets/**/*.pkg" > /dev/null || true
-          compgen -G "release-assets/**/*.exe" > /dev/null || true
-
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           files: |
             release-assets/**/*.pkg
-            release-assets/**/*.zip
             release-assets/**/*.exe
-            release-assets/**/*.msi

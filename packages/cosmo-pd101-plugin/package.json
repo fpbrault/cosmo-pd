@@ -11,6 +11,7 @@
 		"build:post:assets": "bash -c 'for d in ../../target/bundles/*/Contents/Resources; do mkdir -p \"$d/ui\" && cp -R webview/dist/* \"$d/ui/\"; done'",
 		"build:web": "bun --filter @cosmo/cosmo-pd101-plugin-webview build",
 		"plugin:install": "cargo truce install",
+		"plugin:install:no-build": "cargo truce install --no-build",
 		"dev": "cd webview && bun run dev:test",
 		"test:unit": "cd webview && bun run test:unit",
 		"test:unit:watch": "cd webview && bun run test:unit:watch",
@@ -19,11 +20,12 @@
 		"test:e2e": "cd webview && bun run test:e2e",
 		"test:e2e:ui": "cd webview && bun run test:e2e:ui",
 		"test:e2e:debug": "cd webview && bun run test:e2e:debug",
-		"package:installer": "bun run package:installer:macos && bun run package:installer:windows && bun run package:installer:linux",
-		"package:installer:macos": "bun run ../../scripts/package-plugin-installers.mjs --platform macos",
-		"package:installer:windows": "bun run ../../scripts/package-plugin-installers.mjs --platform windows",
-		"package:installer:linux": "bun run ../../scripts/package-plugin-installers.mjs --platform linux",
+		"package:release": "cargo truce package",
+		"package:release:macos": "cargo truce package",
+		"package:release:windows": "cargo truce package",
+		"package:release:linux": "cargo truce package",
 		"validate": "cargo truce validate --clap --pluginval --auval",
+		"validate:strict": "cargo truce validate --clap --pluginval --auval -p cosmo-pd101-plugin",
 		"uninstall": "cargo truce uninstall --vst3 --clap --au2"
 	}
 }
