@@ -9,6 +9,11 @@ export type { SharedPhaseDistortionVisualizerProps } from "./components/SharedPh
 export { SharedPhaseDistortionVisualizer } from "./components/SharedPhaseDistortionVisualizer";
 export { usePluginBridgeSynthEngine } from "./features/synth/engine/pluginBridgeSynthEngineAdapter";
 export { useAudioEngine } from "./features/synth/hooks/useAudioEngine";
+export {
+	EMPTY_HOST_TRANSPORT,
+	type HostTransportInfo,
+	useHostTransport,
+} from "./features/synth/hooks/useHostTransport";
 export { useNoteHandling } from "./features/synth/hooks/useNoteHandling";
 export { useSynthParamsToWorklet } from "./features/synth/hooks/useSynthParamsToWorklet";
 export { useSynthStore } from "./features/synth/synthStore";

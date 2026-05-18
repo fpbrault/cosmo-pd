@@ -57,6 +57,10 @@ pub(crate) fn default_cz_dac_enabled() -> bool {
     false
 }
 
+pub(crate) fn default_tempo_bpm() -> f32 {
+    120.0
+}
+
 /// Top-level synth parameters
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
@@ -70,6 +74,8 @@ pub struct SynthParams {
     pub line1: LineParams,
     pub line2: LineParams,
     pub frequency: f32,
+    #[serde(default = "default_tempo_bpm")]
+    pub tempo_bpm: f32,
     pub volume: f32,
     #[serde(default = "default_cz_dac_enabled")]
     pub cz_dac_enabled: bool,
@@ -125,6 +131,7 @@ impl Default for SynthParams {
             line1: LineParams::default(),
             line2: LineParams::default(),
             frequency: 220.0,
+            tempo_bpm: default_tempo_bpm(),
             volume: 0.4,
             cz_dac_enabled: default_cz_dac_enabled(),
             poly_mode: PolyMode::default(),

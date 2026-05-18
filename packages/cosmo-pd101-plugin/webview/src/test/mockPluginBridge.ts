@@ -442,6 +442,25 @@ export function installMockPluginBridge(): void {
 				respondIpc(id, { result: null });
 				return;
 			}
+			if (method === "getTransportInfo") {
+				respondIpc(id, {
+					result: {
+						playing: true,
+						recording: false,
+						tempo: 120,
+						timeSigNum: 4,
+						timeSigDen: 4,
+						positionSamples: 0,
+						positionSeconds: 0,
+						positionBeats: 0,
+						barStartBeats: 0,
+						loopActive: false,
+						loopStartBeats: 0,
+						loopEndBeats: 0,
+					},
+				});
+				return;
+			}
 			if (method === "setParams") {
 				const paramsJson = typeof args[0] === "string" ? args[0] : null;
 				if (paramsJson) {

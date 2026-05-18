@@ -3,6 +3,7 @@ import Button from "@/components/controls/Button";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import type { AsidePanelComponent } from "@/components/layout/AsidePanelSwitcher";
 import SynthPanelContainer from "@/components/layout/SynthPanelContainer";
+import { useHostTransport } from "@/features/synth/hooks/useHostTransport";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import { PORTAMENTO_MODE_TOOLTIPS } from "@/lib/synth/paramMeta";
 import { applyVelocityCurve } from "@/lib/synth/velocityCurve";
@@ -78,20 +79,53 @@ const VelocityCurvePreview = memo(function VelocityCurvePreview({
 
 const GlobalVoicePanel: AsidePanelComponent<"global"> = Object.assign(
 	function GlobalVoicePanel() {
+		const transport = useHostTransport();
 		const { value: velocityCurve, setValue: setVelocityCurve } =
 			useSynthParam("velocityCurve");
 		const { value: pitchBendRange, setValue: setPitchBendRange } =
 			useSynthParam("pitchBendRange");
+		const { value: tempoBpm, setValue: setTempoBpm } =
+			useSynthParam("tempoBpm");
 		const { value: portamentoMode, setValue: setPortamentoMode } =
 			useSynthParam("portamentoMode");
 		const { value: portamentoRate, setValue: setPortamentoRate } =
 			useSynthParam("portamentoRate");
 		const { value: portamentoTime, setValue: setPortamentoTime } =
 			useSynthParam("portamentoTime");
+		const tempoDisplayBpm =
+			typeof tempoBpm === "number" && Number.isFinite(tempoBpm)
+				? tempoBpm
+				: 120;
 		return (
 			<SynthPanelContainer className="p-2">
 				<div className="space-y-2">
-					<div className="grid grid-cols-[auto_1fr_auto] items-end gap-1.5 pt-0.5">
+					<div className="flex items-center justify-between gap-2 rounded border border-cz-border/65 bg-cz-bg/35 px-2 py-1">
+						<span className="font-mono text-4xs text-cz-cream/60 uppercase tracking-[0.24em]">
+							Tempo
+						</span>
+						<div className="flex items-center gap-1.5">
+							<input
+								type="number"
+								min={20}
+								max={300}
+								step={0.1}
+								value={tempoDisplayBpm.toFixed(1)}
+								disabled={transport.available}
+								onChange={(event) => {
+									const nextValue = Number(event.target.value);
+									if (!Number.isFinite(nextValue)) {
+										return;
+									}
+									setTempoBpm(Math.min(300, Math.max(20, nextValue)));
+								}}
+								className="input input-xs h-7 w-20 rounded border-cz-border/65 bg-cz-bg text-right font-mono text-2xs text-cz-cream disabled:text-cz-cream/45"
+							/>
+							<span className="font-mono text-4xs text-cz-cream/45 uppercase tracking-[0.18em]">
+								BPM
+							</span>
+						</div>
+					</div>
+					<div className="grid grid-cols-[1fr_auto_auto] items-end gap-1.5 pt-0.5">
 						<div className="mt-0.5 flex flex-col justify-center">
 							<Button
 								type="button"

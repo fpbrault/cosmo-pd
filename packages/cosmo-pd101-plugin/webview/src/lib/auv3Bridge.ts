@@ -13,10 +13,12 @@ type ScopeDataResponse = {
 type RuntimeVoiceStatesResponse = string | unknown[];
 
 type RuntimeModSourcesResponse = string | Record<string, number>;
+type TransportInfoResponse = string | Record<string, number | boolean>;
 
 const SCOPE_POLL_INTERVAL_MS = 33;
 const RUNTIME_VOICE_STATES_POLL_INTERVAL_MS = 16;
 const RUNTIME_MOD_SOURCES_POLL_INTERVAL_MS = 16;
+const TRANSPORT_POLL_INTERVAL_MS = 100;
 const IPC_TIMEOUT_MS = 250;
 
 declare global {
@@ -32,6 +34,7 @@ declare global {
 		__czOnHostPresetSelected?: (name: string) => void;
 		__czGetParams?: () => Promise<unknown>;
 		__czSetParams?: (json: string) => void;
+		__czGetTransportInfo?: () => Promise<unknown>;
 		__czOnScope?: (samples: number[], sampleRate: number, hz: number) => void;
 		__czIpcResponse?: (response: IpcRpcResponse) => void;
 	}
@@ -144,6 +147,7 @@ function installIpcRouter() {
 			console.error("[auv3Bridge] setParams error", error);
 		});
 	};
+	window.__czGetTransportInfo = () => invokeAuv3("getTransportInfo", []);
 }
 
 function installScopeProperty(onActiveChange: (active: boolean) => void) {
@@ -355,6 +359,68 @@ function installRuntimeModSourcesPolling() {
 	});
 }
 
+function installTransportPolling() {
+	let rafId = 0;
+	let lastScheduled = 0;
+	let pollInFlight = false;
+	let destroyed = false;
+
+	const dispatchTransport = (result: TransportInfoResponse) => {
+		const transport =
+			typeof result === "string"
+				? (JSON.parse(result) as Record<string, number | boolean>)
+				: result;
+		if (typeof transport !== "object" || transport === null) {
+			return;
+		}
+		window.dispatchEvent(
+			new CustomEvent("cz-host-transport", { detail: transport }),
+		);
+	};
+
+	const scheduleNextFrame = () => {
+		if (destroyed || rafId !== 0) {
+			return;
+		}
+		rafId = requestAnimationFrame(tick);
+	};
+
+	const tick = async (now: number) => {
+		rafId = 0;
+		if (destroyed) {
+			return;
+		}
+		if (now - lastScheduled < TRANSPORT_POLL_INTERVAL_MS || pollInFlight) {
+			scheduleNextFrame();
+			return;
+		}
+
+		lastScheduled = now;
+		pollInFlight = true;
+		try {
+			await invokeAuv3("getTransportInfo", [], IPC_TIMEOUT_MS)
+				.then((result) => {
+					dispatchTransport(result as TransportInfoResponse);
+				})
+				.catch(() => {
+					// Transport is opportunistic; ignore missing host support.
+				});
+		} finally {
+			pollInFlight = false;
+			scheduleNextFrame();
+		}
+	};
+
+	scheduleNextFrame();
+	window.addEventListener("pagehide", () => {
+		destroyed = true;
+		if (rafId !== 0) {
+			cancelAnimationFrame(rafId);
+			rafId = 0;
+		}
+	});
+}
+
 export function ensureAuv3Bridge(): boolean {
 	if (installed) {
 		return true;
@@ -370,5 +436,6 @@ export function ensureAuv3Bridge(): boolean {
 	installScopePolling();
 	installRuntimeVoiceStatesPolling();
 	installRuntimeModSourcesPolling();
+	installTransportPolling();
 	return true;
 }

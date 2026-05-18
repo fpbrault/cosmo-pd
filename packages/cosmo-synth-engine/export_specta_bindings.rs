@@ -19,11 +19,12 @@ use cosmo_synth_engine::params::engine_param_default_v1;
 use cosmo_synth_engine::params::{
     Algo, AlgoControlValueV1, BaseWaveform, BitcrusherParams, ChorusParams, CompressorParams,
     CzAlgo, CzWaveform, DelayParams, DistortionParams, EnvStep, EqParams, FxSlotConfig, FxSlotType,
-    GrainDelayParams, JunoChorusParams, LfoParams, LfoWaveform, LineParams, LineSelect, LoFiParams,
-    ModDestination, ModEnvParams, ModMatrix, ModMode, ModRoute, ModSource, PhaseModParams,
-    PhaserParams, PolyMode, PortamentoMode, PortamentoParams, RandomParams, ReverbParams,
-    RingModParams, ShimmerVerbParams, StepEnvData, SynthParams, TremoloParams, VibratoParams,
-    WavefolderParams, WindowType, engine_param_ranges_v1, engine_param_ui_meta_v1,
+    GrainDelayParams, JunoChorusParams, LfoParams, LfoRateMode, LfoSyncDivision, LfoWaveform,
+    LineParams, LineSelect, LoFiParams, ModDestination, ModEnvParams, ModMatrix, ModMode, ModRoute,
+    ModSource, PhaseModParams, PhaserParams, PolyMode, PortamentoMode, PortamentoParams,
+    RandomParams, ReverbParams, RingModParams, ShimmerVerbParams, StepEnvData, SynthParams,
+    TremoloParams, VibratoParams, WavefolderParams, WindowType, engine_param_ranges_v1,
+    engine_param_ui_meta_v1,
 };
 use cosmo_synth_engine::preset_wire::{
     SynthPresetV1, algo_definitions_v1, algo_ui_catalog_v1, cz_presets,
@@ -68,6 +69,10 @@ fn main() {
     out.push_str(&export::<PolyMode>(&config).expect("Failed to export PolyMode"));
     out.push_str("\n\n");
     out.push_str(&export::<LfoWaveform>(&config).expect("Failed to export LfoWaveform"));
+    out.push_str("\n\n");
+    out.push_str(&export::<LfoRateMode>(&config).expect("Failed to export LfoRateMode"));
+    out.push_str("\n\n");
+    out.push_str(&export::<LfoSyncDivision>(&config).expect("Failed to export LfoSyncDivision"));
     out.push_str("\n\n");
     out.push_str(&export::<PortamentoMode>(&config).expect("Failed to export PortamentoMode"));
     out.push_str("\n\n");

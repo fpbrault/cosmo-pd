@@ -26,6 +26,15 @@ fn factory_presets() -> &'static [FactoryPresetEntry] {
     FACTORY_PRESETS.get_or_init(load_factory_presets).as_slice()
 }
 
+pub(crate) fn factory_preset_count() -> usize {
+    factory_presets().len()
+}
+
+pub(crate) fn factory_preset_params(index: usize) -> Option<SynthParams> {
+    let params_json = factory_presets().get(index)?.params_json.as_str();
+    serde_json::from_str(params_json).ok()
+}
+
 fn load_factory_presets() -> Vec<FactoryPresetEntry> {
     let Ok(presets_value) = serde_json::from_str::<serde_json::Value>(FACTORY_PRESETS_JSON) else {
         return Vec::new();

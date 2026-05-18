@@ -12,6 +12,8 @@ import type {
 	FxDefinitionV1,
 	FxSlotConfig,
 	FxSlotType,
+	LfoRateMode,
+	LfoSyncDivision,
 	LfoWaveform,
 	LineSelect,
 	ModMatrix,
@@ -157,15 +159,20 @@ export type SynthState = {
 	portamentoMode: PortamentoMode;
 	portamentoRate: number;
 	portamentoTime: number;
+	tempoBpm: number;
 
 	lfoWaveform: LfoWaveform;
 	lfoRate: number;
+	lfoRateMode: LfoRateMode;
+	lfoSyncDivision: LfoSyncDivision;
 	lfoDepth: number;
 	lfoSymmetry: number;
 	lfoRetrigger: boolean;
 	lfoOffset: number;
 	lfo2Waveform: LfoWaveform;
 	lfo2Rate: number;
+	lfo2RateMode: LfoRateMode;
+	lfo2SyncDivision: LfoSyncDivision;
 	lfo2Depth: number;
 	lfo2Symmetry: number;
 	lfo2Retrigger: boolean;
@@ -238,15 +245,20 @@ type SynthActions = {
 	setPortamentoMode: (v: PortamentoMode) => void;
 	setPortamentoRate: (v: number) => void;
 	setPortamentoTime: (v: number) => void;
+	setTempoBpm: (v: number) => void;
 
 	setLfoWaveform: (v: LfoWaveform) => void;
 	setLfoRate: (v: number) => void;
+	setLfoRateMode: (v: LfoRateMode) => void;
+	setLfoSyncDivision: (v: LfoSyncDivision) => void;
 	setLfoDepth: (v: number) => void;
 	setLfoSymmetry: (v: number) => void;
 	setLfoRetrigger: (v: boolean) => void;
 	setLfoOffset: (v: number) => void;
 	setLfo2Waveform: (v: LfoWaveform) => void;
 	setLfo2Rate: (v: number) => void;
+	setLfo2RateMode: (v: LfoRateMode) => void;
+	setLfo2SyncDivision: (v: LfoSyncDivision) => void;
 	setLfo2Depth: (v: number) => void;
 	setLfo2Symmetry: (v: number) => void;
 	setLfo2Retrigger: (v: boolean) => void;
@@ -332,15 +344,20 @@ const DEFAULT_STATE: SynthState = {
 	portamentoMode: "time",
 	portamentoRate: requireEngineParamDefault("portamentoRate"),
 	portamentoTime: requireEngineParamDefault("portamentoTime"),
+	tempoBpm: requireEngineParamDefault("tempoBpm"),
 
 	lfoWaveform: "sine",
 	lfoRate: requireEngineParamDefault("lfoRate"),
+	lfoRateMode: "hz",
+	lfoSyncDivision: "quarter",
 	lfoDepth: requireEngineParamDefault("lfoDepth"),
 	lfoSymmetry: 0.5,
 	lfoRetrigger: false,
 	lfoOffset: requireEngineParamDefault("lfoOffset"),
 	lfo2Waveform: "sine",
 	lfo2Rate: requireEngineParamDefault("lfo2Rate"),
+	lfo2RateMode: "hz",
+	lfo2SyncDivision: "quarter",
 	lfo2Depth: requireEngineParamDefault("lfo2Depth"),
 	lfo2Symmetry: 0.5,
 	lfo2Retrigger: false,
@@ -418,15 +435,20 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setPortamentoMode: (v) => set({ portamentoMode: v }),
 	setPortamentoRate: (v) => set({ portamentoRate: v }),
 	setPortamentoTime: (v) => set({ portamentoTime: v }),
+	setTempoBpm: (v) => set({ tempoBpm: v }),
 
 	setLfoWaveform: (v) => set({ lfoWaveform: v }),
 	setLfoRate: (v) => set({ lfoRate: v }),
+	setLfoRateMode: (v) => set({ lfoRateMode: v }),
+	setLfoSyncDivision: (v) => set({ lfoSyncDivision: v }),
 	setLfoDepth: (v) => set({ lfoDepth: v }),
 	setLfoSymmetry: (v) => set({ lfoSymmetry: v }),
 	setLfoRetrigger: (v) => set({ lfoRetrigger: v }),
 	setLfoOffset: (v) => set({ lfoOffset: v }),
 	setLfo2Waveform: (v) => set({ lfo2Waveform: v }),
 	setLfo2Rate: (v) => set({ lfo2Rate: v }),
+	setLfo2RateMode: (v) => set({ lfo2RateMode: v }),
+	setLfo2SyncDivision: (v) => set({ lfo2SyncDivision: v }),
 	setLfo2Depth: (v) => set({ lfo2Depth: v }),
 	setLfo2Symmetry: (v) => set({ lfo2Symmetry: v }),
 	setLfo2Retrigger: (v) => set({ lfo2Retrigger: v }),
@@ -562,6 +584,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			},
 			frequency: 440,
 			volume: s.volume,
+			tempoBpm: s.tempoBpm,
 			polyMode: s.polyMode,
 			legato: s.legato,
 			velocityCurve: s.velocityCurve,
@@ -575,6 +598,8 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			lfo: {
 				waveform: s.lfoWaveform,
 				rate: s.lfoRate,
+				rateMode: s.lfoRateMode,
+				syncDivision: s.lfoSyncDivision,
 				depth: s.lfoDepth,
 				symmetry: s.lfoSymmetry,
 				retrigger: s.lfoRetrigger,
@@ -583,6 +608,8 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			lfo2: {
 				waveform: s.lfo2Waveform,
 				rate: s.lfo2Rate,
+				rateMode: s.lfo2RateMode,
+				syncDivision: s.lfo2SyncDivision,
 				depth: s.lfo2Depth,
 				symmetry: s.lfo2Symmetry,
 				retrigger: s.lfo2Retrigger,
@@ -724,14 +751,19 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				p.portamento?.time,
 				requireEngineParamDefault("portamentoTime"),
 			),
+			tempoBpm: safe(p.tempoBpm, requireEngineParamDefault("tempoBpm")),
 			lfoWaveform: (p.lfo?.waveform as LfoWaveform) ?? "sine",
 			lfoRate: safe(p.lfo?.rate, requireEngineParamDefault("lfoRate")),
+			lfoRateMode: (p.lfo?.rateMode as LfoRateMode) ?? "hz",
+			lfoSyncDivision: (p.lfo?.syncDivision as LfoSyncDivision) ?? "quarter",
 			lfoDepth: safe(p.lfo?.depth, requireEngineParamDefault("lfoDepth")),
 			lfoSymmetry: safe(p.lfo?.symmetry, 0.5),
 			lfoRetrigger: p.lfo?.retrigger ?? false,
 			lfoOffset: safe(p.lfo?.offset, requireEngineParamDefault("lfoOffset")),
 			lfo2Waveform: (p.lfo2?.waveform as LfoWaveform) ?? "sine",
 			lfo2Rate: safe(p.lfo2?.rate, requireEngineParamDefault("lfo2Rate")),
+			lfo2RateMode: (p.lfo2?.rateMode as LfoRateMode) ?? "hz",
+			lfo2SyncDivision: (p.lfo2?.syncDivision as LfoSyncDivision) ?? "quarter",
 			lfo2Depth: safe(p.lfo2?.depth, requireEngineParamDefault("lfo2Depth")),
 			lfo2Symmetry: safe(p.lfo2?.symmetry, 0.5),
 			lfo2Retrigger: p.lfo2?.retrigger ?? false,

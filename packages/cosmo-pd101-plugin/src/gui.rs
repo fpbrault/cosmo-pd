@@ -28,7 +28,8 @@ use crate::CzPluginParams;
 #[cfg(target_os = "macos")]
 use crate::handle_ipc_invoke;
 use crate::{
-    PerformanceCountersHandle, ScopeBuffer, SharedRuntimeModSources, UiInputQueue, append_log,
+    PerformanceCountersHandle, ScopeBuffer, SharedRuntimeModSources, SharedTransportSnapshot,
+    UiInputQueue, append_log,
 };
 use cosmo_synth_engine::params::SynthParams;
 
@@ -82,6 +83,7 @@ pub struct CzEditor {
     synth_params: Arc<ArcSwap<SynthParams>>,
     rt_synth_params: Arc<ArcSwap<SynthParams>>,
     runtime_mod_sources: SharedRuntimeModSources,
+    transport_snapshot: SharedTransportSnapshot,
     synth_params_version: Arc<AtomicU64>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
@@ -123,17 +125,19 @@ impl CzEditor {
     pub(crate) fn new(
         synth_params: Arc<ArcSwap<SynthParams>>,
         rt_synth_params: Arc<ArcSwap<SynthParams>>,
+        runtime_mod_sources: SharedRuntimeModSources,
+        transport_snapshot: SharedTransportSnapshot,
         synth_params_version: Arc<AtomicU64>,
         scope_buffer: ScopeBuffer,
         ui_input_queue: UiInputQueue,
         performance_counters: PerformanceCountersHandle,
         params: Arc<CzPluginParams>,
-        runtime_mod_sources: SharedRuntimeModSources,
     ) -> Self {
         Self {
             synth_params,
             rt_synth_params,
             runtime_mod_sources,
+            transport_snapshot,
             synth_params_version,
             scope_buffer,
             ui_input_queue,
@@ -168,6 +172,7 @@ impl CzEditor {
         let synth_params = self.synth_params.clone();
         let rt_synth_params = self.rt_synth_params.clone();
         let runtime_mod_sources = self.runtime_mod_sources.clone();
+        let transport_snapshot = self.transport_snapshot.clone();
         let synth_params_version = self.synth_params_version.clone();
         let scope_buffer = self.scope_buffer.clone();
         let ui_input_queue = self.ui_input_queue.clone();
@@ -181,12 +186,13 @@ impl CzEditor {
                 resource_dir,
                 synth_params,
                 rt_synth_params,
+                runtime_mod_sources,
+                transport_snapshot,
                 synth_params_version,
                 scope_buffer,
                 ui_input_queue,
                 performance_counters,
                 params,
-                runtime_mod_sources,
                 webview_state_for_ipc,
             )
         };
@@ -719,12 +725,13 @@ unsafe fn build_webview_from_ns_view(
     resource_dir: std::path::PathBuf,
     synth_params: Arc<ArcSwap<SynthParams>>,
     rt_synth_params: Arc<ArcSwap<SynthParams>>,
+    runtime_mod_sources: SharedRuntimeModSources,
+    transport_snapshot: SharedTransportSnapshot,
     synth_params_version: Arc<AtomicU64>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
     performance_counters: PerformanceCountersHandle,
     params: Arc<CzPluginParams>,
-    runtime_mod_sources: SharedRuntimeModSources,
     webview_state: Arc<Mutex<WebViewContainer>>,
 ) -> (Option<wry::WebView>, Option<StandaloneWindow>) {
     unsafe {
@@ -785,6 +792,7 @@ unsafe fn build_webview_from_ns_view(
                     &synth_params,
                     &rt_synth_params,
                     &runtime_mod_sources,
+                    &transport_snapshot,
                     &synth_params_version,
                     &scope_buffer,
                     &ui_input_queue,
