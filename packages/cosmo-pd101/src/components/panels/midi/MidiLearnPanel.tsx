@@ -24,7 +24,7 @@ function formatControlLabel(paramKey: string): string {
 
 const MidiLearnPanel: AsidePanelComponent<"midi", { className?: string }> =
 	Object.assign(
-		function MidiLearnPanel({ className }: { className?: string }) {
+		function MidiLearnPanel() {
 			const learnMode = useMidiLearnStore((s) => s.learnMode);
 			const setLearnMode = useMidiLearnStore((s) => s.setLearnMode);
 			const bindings = useMidiLearnStore((s) => s.bindings);
@@ -75,9 +75,7 @@ const MidiLearnPanel: AsidePanelComponent<"midi", { className?: string }> =
 			}, [editingCell]);
 
 			return (
-				<SynthPanelContainer
-					className={["h-full", className].filter(Boolean).join(" ")}
-				>
+				<SynthPanelContainer>
 					<div className="flex h-full flex-col gap-3">
 						<button
 							type="button"
