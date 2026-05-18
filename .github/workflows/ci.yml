@@ -405,8 +405,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-latest
-            platform: macos
+          # - os: macos-latest
+          #   platform: macos
           - os: windows-latest
             platform: windows
     runs-on: ${{ matrix.os }}

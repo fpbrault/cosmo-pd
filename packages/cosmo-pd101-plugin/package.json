@@ -7,7 +7,6 @@
 		"build": "bun run build:release",
 		"build:release": "bun run build:web && cargo truce build && bun run build:post:assets",
 		"build:debug": "bun run build:web && cargo truce build --debug && bun run build:post:assets",
-		"build:standalone": "bun run build:web && cargo truce build --standalone && bun run build:post:assets",
 		"build:post:assets": "bash -c 'for d in ../../target/bundles/*/Contents/Resources; do mkdir -p \"$d/ui\" && cp -R webview/dist/* \"$d/ui/\"; done'",
 		"build:web": "bun --filter @cosmo/cosmo-pd101-plugin-webview build",
 		"plugin:install": "cargo truce install",
