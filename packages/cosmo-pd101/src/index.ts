@@ -1,5 +1,7 @@
 export type { AsidePanelTab } from "./components/layout/AsidePanelSwitcher";
 export { WavetableWaterfall } from "./components/panels/analysis/scope-visualizations/WavetableWaterfall";
+export { default as MacroAssignEditor } from "./components/panels/macro/MacroAssignEditor";
+export { default as MacroKnobsPanel } from "./components/panels/macro/MacroKnobsPanel";
 export {
 	type PerformanceMetrics,
 	PerformanceMonitor,
@@ -28,6 +30,7 @@ export {
 	useSynthUiStore,
 } from "./features/synth/synthUiStore";
 export type { LibraryPreset } from "./features/synth/types/libraryPreset";
+export type { MacroAssignment } from "./features/synth/types/macro";
 export { useSynthPresetManager } from "./features/synth/useSynthPresetManager";
 export { i18n, initI18n } from "./i18n";
 export type {

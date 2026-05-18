@@ -40,6 +40,7 @@ import {
 	ScopeDrawerDisplay,
 	ScopeMiniDisplay,
 } from "../panels/analysis/ScopeDisplay";
+import MacroKnobsPanel from "../panels/macro/MacroKnobsPanel";
 
 const MemoPresetLibrary = memo(PresetLibrary);
 
@@ -441,12 +442,15 @@ function SynthRendererContent({
 						onCancel={headerProps.onCancelPendingPresetChange}
 					/>
 					{miniKeyboard && !libraryModeOpen ? (
-						<MiniKeyboardOverlay
-							activeNotes={miniKeyboard.activeNotes}
-							visible={keyboardVisible}
-							onNoteOn={miniKeyboard.onNoteOn}
-							onNoteOff={miniKeyboard.onNoteOff}
-						/>
+						<>
+							{keyboardVisible && <MacroKnobsPanel />}
+							<MiniKeyboardOverlay
+								activeNotes={miniKeyboard.activeNotes}
+								visible={keyboardVisible}
+								onNoteOn={miniKeyboard.onNoteOn}
+								onNoteOff={miniKeyboard.onNoteOff}
+							/>
+						</>
 					) : null}
 					<SynthInfoBar
 						infoText={infoText}

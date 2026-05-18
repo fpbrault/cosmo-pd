@@ -92,6 +92,10 @@ const SYNTH_PARAM_SETTERS = {
 	modEnvDecay: "setModEnvDecay",
 	modEnvSustain: "setModEnvSustain",
 	modEnvRelease: "setModEnvRelease",
+	macro1: "setMacro1",
+	macro2: "setMacro2",
+	macro3: "setMacro3",
+	macro4: "setMacro4",
 } as const;
 
 export type SynthParamKey = keyof typeof SYNTH_PARAM_SETTERS;
@@ -272,18 +276,38 @@ export function SynthParamControllerProvider({
 				return undefined;
 			}
 
+			let liveModDelta = 0;
+			let hasAnyModulation = false;
+
 			const activeRoutes = modRoutes.filter(
 				(route) => route.enabled && route.destination === destination,
 			);
-			if (activeRoutes.length === 0) {
-				return undefined;
+			if (activeRoutes.length > 0) {
+				const runtimeSources = liveSourcesRef.current;
+				for (const route of activeRoutes) {
+					const sourceValue = runtimeSources[route.source] ?? 0;
+					liveModDelta += route.amount * sourceValue;
+				}
+				hasAnyModulation = true;
 			}
 
-			const runtimeSources = liveSourcesRef.current;
-			let liveModDelta = 0;
-			for (const route of activeRoutes) {
-				const sourceValue = runtimeSources[route.source] ?? 0;
-				liveModDelta += route.amount * sourceValue;
+			const macroState = useSynthStore.getState();
+			const macroValues = [
+				macroState.macro1,
+				macroState.macro2,
+				macroState.macro3,
+				macroState.macro4,
+			];
+			for (const assignment of macroState.macroAssignments) {
+				if (assignment.enabled && assignment.destination === destination) {
+					const macroValue = macroValues[assignment.macroIndex] ?? 0;
+					liveModDelta += (macroValue - 0.5) * 2 * assignment.depth;
+					hasAnyModulation = true;
+				}
+			}
+
+			if (!hasAnyModulation) {
+				return undefined;
 			}
 
 			const clampedLiveModDelta = Math.max(-2, Math.min(2, liveModDelta));

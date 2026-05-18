@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { MacroAssignment } from "@/features/synth/types/macro";
 import {
 	buildDefaultAlgoControls,
 	DEFAULT_ALGO_REF,
@@ -190,6 +191,12 @@ export type SynthState = {
 	modMatrix: ModMatrix;
 	/** Unified per-slot FX configuration — all 6 slots. */
 	fxSlots: FxSlotTuple;
+
+	macro1: number;
+	macro2: number;
+	macro3: number;
+	macro4: number;
+	macroAssignments: MacroAssignment[];
 };
 
 // ---------------------------------------------------------------------------
@@ -285,6 +292,12 @@ type SynthActions = {
 	) => void;
 	reorderFxSlots: (fromSlot: number, toSlot: number) => void;
 
+	setMacro1: (v: number) => void;
+	setMacro2: (v: number) => void;
+	setMacro3: (v: number) => void;
+	setMacro4: (v: number) => void;
+	setMacroAssignments: (v: MacroAssignment[]) => void;
+
 	gatherState: () => SynthPresetV1;
 	applyPreset: (preset: SynthPresetV1) => void;
 };
@@ -374,6 +387,12 @@ const DEFAULT_STATE: SynthState = {
 	octave: 0,
 	modMatrix: { routes: [] },
 	fxSlots: DEFAULT_FX_SLOTS,
+
+	macro1: 0,
+	macro2: 0,
+	macro3: 0,
+	macro4: 0,
+	macroAssignments: [],
 };
 
 // ---------------------------------------------------------------------------
@@ -519,6 +538,12 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			return { fxSlots: slots as FxSlotTuple };
 		}),
 
+	setMacro1: (v) => set({ macro1: v }),
+	setMacro2: (v) => set({ macro2: v }),
+	setMacro3: (v) => set({ macro3: v }),
+	setMacro4: (v) => set({ macro4: v }),
+	setMacroAssignments: (v) => set({ macroAssignments: v }),
+
 	// --- gatherState ---
 	gatherState(): SynthPresetV1 {
 		const s = get();
@@ -627,7 +652,12 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			pitchBendRange: s.pitchBendRange,
 			modMatrix: s.modMatrix,
 			fxSlots: s.fxSlots,
-		} satisfies SynthPresetV1["params"];
+			macro1: s.macro1,
+			macro2: s.macro2,
+			macro3: s.macro3,
+			macro4: s.macro4,
+			macroAssignments: s.macroAssignments,
+		} as SynthPresetV1["params"];
 
 		return {
 			schemaVersion: 1,
@@ -802,6 +832,15 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				Array.isArray(p.fxSlots) && p.fxSlots.length === 6
 					? (p.fxSlots as FxSlotTuple)
 					: DEFAULT_FX_SLOTS,
+			macro1: safe((p as Record<string, unknown>).macro1 as number, 0),
+			macro2: safe((p as Record<string, unknown>).macro2 as number, 0),
+			macro3: safe((p as Record<string, unknown>).macro3 as number, 0),
+			macro4: safe((p as Record<string, unknown>).macro4 as number, 0),
+			macroAssignments: Array.isArray(
+				(p as Record<string, unknown>).macroAssignments,
+			)
+				? ((p as Record<string, unknown>).macroAssignments as MacroAssignment[])
+				: [],
 		});
 	},
 }));
