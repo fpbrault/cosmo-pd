@@ -441,16 +441,16 @@ function SynthRendererContent({
 						onDiscard={headerProps.onDiscardPendingPresetChange}
 						onCancel={headerProps.onCancelPendingPresetChange}
 					/>
+					{!libraryModeOpen && (
+						<MacroKnobsPanel keyboardVisible={keyboardVisible} />
+					)}
 					{miniKeyboard && !libraryModeOpen ? (
-						<>
-							{keyboardVisible && <MacroKnobsPanel />}
-							<MiniKeyboardOverlay
-								activeNotes={miniKeyboard.activeNotes}
-								visible={keyboardVisible}
-								onNoteOn={miniKeyboard.onNoteOn}
-								onNoteOff={miniKeyboard.onNoteOff}
-							/>
-						</>
+						<MiniKeyboardOverlay
+							activeNotes={miniKeyboard.activeNotes}
+							visible={keyboardVisible}
+							onNoteOn={miniKeyboard.onNoteOn}
+							onNoteOff={miniKeyboard.onNoteOff}
+						/>
 					) : null}
 					<SynthInfoBar
 						infoText={infoText}

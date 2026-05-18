@@ -202,6 +202,10 @@ impl CosmoProcessor {
 
     /// Swap in a pre-normalized shared parameter snapshot without cloning.
     pub fn set_shared_params(&mut self, params: Arc<SynthParams>) {
+        self.macro1 = params.macro1;
+        self.macro2 = params.macro2;
+        self.macro3 = params.macro3;
+        self.macro4 = params.macro4;
         self.line1_scratch = params.line1;
         self.line2_scratch = params.line2;
         self.params = params;

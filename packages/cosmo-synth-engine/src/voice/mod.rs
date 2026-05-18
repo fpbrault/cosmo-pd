@@ -197,7 +197,7 @@ mod tests {
         voice.is_silent = true;
         let p = SynthParams::default();
         let timing = crate::envelope::EnvelopeTimingCache::new(48_000.0);
-        let sources = ModSources::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        let sources = ModSources::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         let mut cache = ModMatrixCache::new();
         cache.compute(&sources);
         let default_line = LineParams::default();
@@ -214,6 +214,10 @@ mod tests {
             pitch_bend_semitones: 0.0,
             mod_wheel: 0.0,
             aftertouch: 0.0,
+            macro1: 0.0,
+            macro2: 0.0,
+            macro3: 0.0,
+            macro4: 0.0,
             cache: &cache,
             modulation_active: false,
             line1_plan: &plan.line1,
@@ -231,7 +235,7 @@ mod tests {
         voice.is_silent = false;
         let p = SynthParams::default();
         let timing = crate::envelope::EnvelopeTimingCache::new(48_000.0);
-        let sources = ModSources::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        let sources = ModSources::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         let mut cache = ModMatrixCache::new();
         cache.compute(&sources);
         let default_line = LineParams::default();
@@ -250,6 +254,10 @@ mod tests {
                 pitch_bend_semitones: 0.0,
                 mod_wheel: 0.0,
                 aftertouch: 0.0,
+                macro1: 0.0,
+                macro2: 0.0,
+                macro3: 0.0,
+                macro4: 0.0,
                 cache: &cache,
                 modulation_active: false,
                 line1_plan: &plan.line1,
