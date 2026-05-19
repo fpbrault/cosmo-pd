@@ -32,18 +32,18 @@ export default function SynthInfoBar({
 			) : null}
 			{showKeyboardToggle ? (
 				<div className="flex items-center gap-1">
-				<Button
-					type="button"
-					onClick={onKeyboardToggle}
-					aria-label={keyboardVisible ? "Hide Keys" : "Show Keys"}
-					className={`btn btn-sm px-2 py-1 ${
-						keyboardVisible
-							? "border-cz-gold bg-cz-gold/10 text-cz-gold"
-							: "border-cz-border bg-transparent text-cz-cream/70 hover:text-cz-cream"
-					}`}
-				>
-					<MdPiano className="h-3.5 w-3.5" />
-				</Button>
+					<Button
+						type="button"
+						onClick={onKeyboardToggle}
+						aria-label={keyboardVisible ? "Hide Keys" : "Show Keys"}
+						className={`btn btn-sm px-2 py-1 ${
+							keyboardVisible
+								? "border-cz-gold bg-cz-gold/10 text-cz-gold"
+								: "border-cz-border bg-transparent text-cz-cream/70 hover:text-cz-cream"
+						}`}
+					>
+						<MdPiano className="h-3.5 w-3.5" />
+					</Button>
 					{onKeyboardSettingsClick ? (
 						<Button
 							type="button"

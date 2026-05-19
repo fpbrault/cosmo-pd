@@ -160,10 +160,17 @@ export default function MiniKeyboardOverlay({
 
 	const activePointersRef = useRef<Map<number, number>>(new Map());
 	const aftertouchOriginsRef = useRef<Map<number, number>>(new Map());
+	const aftertouchValuesRef = useRef<Map<number, number>>(new Map());
+	const onPolyAftertouchRef = useRef(onPolyAftertouch);
+	const activeReleasesRef = useRef<Set<number>>(new Set());
+	const activeReleaseRafsRef = useRef<Map<number, number>>(new Map());
+
 	const resizeRef = useRef<{ startY: number; startHeight: number } | null>(
 		null,
 	);
 	const activeSet = new Set(activeNotes);
+
+	onPolyAftertouchRef.current = onPolyAftertouch;
 
 	const blackKeyWidth = 50 / (keyboardOctaves * 7);
 
@@ -191,6 +198,13 @@ export default function MiniKeyboardOverlay({
 		(pointerId: number) => {
 			const note = activePointersRef.current.get(pointerId);
 			if (note !== undefined) {
+				const existingHandle = activeReleaseRafsRef.current.get(note);
+				if (existingHandle !== undefined) {
+					cancelAnimationFrame(existingHandle);
+					activeReleaseRafsRef.current.delete(note);
+				}
+				activeReleasesRef.current.delete(pointerId);
+				onPolyAftertouchRef.current?.(note, 0);
 				onNoteOff(note);
 				activePointersRef.current.delete(pointerId);
 			}
@@ -200,13 +214,19 @@ export default function MiniKeyboardOverlay({
 	);
 
 	const releaseAllPointers = useCallback(() => {
+		for (const handle of activeReleaseRafsRef.current.values()) {
+			cancelAnimationFrame(handle);
+		}
+		activeReleaseRafsRef.current.clear();
+		activeReleasesRef.current.clear();
+
 		for (const [, note] of activePointersRef.current.entries()) {
-			onPolyAftertouch?.(note, 0);
+			onPolyAftertouchRef.current?.(note, 0);
 			onNoteOff(note);
 		}
 		activePointersRef.current.clear();
 		aftertouchOriginsRef.current.clear();
-	}, [onNoteOff, onPolyAftertouch]);
+	}, [onNoteOff]);
 
 	const handleAftertouchMove = useCallback(
 		(pointerId: number, currentY: number) => {
@@ -216,9 +236,44 @@ export default function MiniKeyboardOverlay({
 			if (note === undefined) return;
 			const deltaY = initialY - currentY;
 			const value = Math.max(0, Math.min(1, deltaY / AFTERTOUCH_MAX_DRAG));
-			onPolyAftertouch?.(note, value);
+			aftertouchValuesRef.current.set(note, value);
+			onPolyAftertouchRef.current?.(note, value);
 		},
-		[onPolyAftertouch],
+		[],
+	);
+
+	const smoothReleaseToZero = useCallback(
+		(pointerId: number, note: number, fromValue: number) => {
+			if (activeReleasesRef.current.has(pointerId)) return;
+			const existingHandle = activeReleaseRafsRef.current.get(note);
+			if (existingHandle !== undefined) {
+				cancelAnimationFrame(existingHandle);
+			}
+
+			activeReleasesRef.current.add(pointerId);
+			const startTime = performance.now();
+			const DURATION = 100;
+
+			const ramp = (now: number) => {
+				const elapsed = now - startTime;
+				const t = Math.min(elapsed / DURATION, 1);
+				const value = fromValue * Math.max(0, 1 - t);
+				onPolyAftertouchRef.current?.(note, value);
+				aftertouchValuesRef.current.set(note, value);
+				if (t < 1) {
+					const handle = requestAnimationFrame(ramp);
+					activeReleaseRafsRef.current.set(note, handle);
+				} else {
+					activeReleaseRafsRef.current.delete(note);
+					activeReleasesRef.current.delete(pointerId);
+					releasePointer(pointerId);
+				}
+			};
+
+			const handle = requestAnimationFrame(ramp);
+			activeReleaseRafsRef.current.set(note, handle);
+		},
+		[releasePointer],
 	);
 
 	const handleResizePointerDown = useCallback(
@@ -255,7 +310,13 @@ export default function MiniKeyboardOverlay({
 			}
 
 			if (event.pointerType === "mouse" && event.buttons === 0) {
-				releasePointer(event.pointerId);
+				const mouseNote = activePointersRef.current.get(event.pointerId);
+				if (mouseNote !== undefined && keyboardInputMode === "aftertouch") {
+					const mouseValue = aftertouchValuesRef.current.get(mouseNote) ?? 0;
+					smoothReleaseToZero(event.pointerId, mouseNote, mouseValue);
+				} else {
+					releasePointer(event.pointerId);
+				}
 				return;
 			}
 
@@ -299,11 +360,13 @@ export default function MiniKeyboardOverlay({
 			}
 
 			const note = activePointersRef.current.get(event.pointerId);
-			if (keyboardInputMode === "aftertouch" && note !== undefined) {
-				onPolyAftertouch?.(note, 0);
-			}
+			if (note === undefined) return;
 
-			if (activePointersRef.current.has(event.pointerId)) {
+			if (keyboardInputMode === "aftertouch") {
+				const currentValue = aftertouchValuesRef.current.get(note) ?? 0;
+				smoothReleaseToZero(event.pointerId, note, currentValue);
+			} else {
+				onPolyAftertouchRef.current?.(note, 0);
 				releasePointer(event.pointerId);
 			}
 		};
@@ -311,10 +374,13 @@ export default function MiniKeyboardOverlay({
 		const onWindowPointerCancel = (event: PointerEvent) => {
 			resizeRef.current = null;
 			const note = activePointersRef.current.get(event.pointerId);
-			if (keyboardInputMode === "aftertouch" && note !== undefined) {
-				onPolyAftertouch?.(note, 0);
-			}
-			if (activePointersRef.current.has(event.pointerId)) {
+			if (note === undefined) return;
+
+			if (keyboardInputMode === "aftertouch") {
+				const currentValue = aftertouchValuesRef.current.get(note) ?? 0;
+				smoothReleaseToZero(event.pointerId, note, currentValue);
+			} else {
+				onPolyAftertouchRef.current?.(note, 0);
 				releasePointer(event.pointerId);
 			}
 		};
@@ -331,9 +397,9 @@ export default function MiniKeyboardOverlay({
 	}, [
 		playNoteForPointer,
 		releasePointer,
+		smoothReleaseToZero,
 		handleAftertouchMove,
 		keyboardInputMode,
-		onPolyAftertouch,
 		setKeyboardHeight,
 	]);
 
@@ -343,11 +409,26 @@ export default function MiniKeyboardOverlay({
 		}
 	}, [releaseAllPointers, visible]);
 
-	useEffect(() => () => releaseAllPointers(), [releaseAllPointers]);
+	useEffect(
+		() => () => {
+			for (const handle of activeReleaseRafsRef.current.values()) {
+				cancelAnimationFrame(handle);
+			}
+			activeReleaseRafsRef.current.clear();
+			activeReleasesRef.current.clear();
+			releaseAllPointers();
+		},
+		[releaseAllPointers],
+	);
 
 	const handleKeyPointerDown = useCallback(
 		(event: ReactPointerEvent<HTMLButtonElement>, note: number) => {
 			event.preventDefault();
+			const existingHandle = activeReleaseRafsRef.current.get(note);
+			if (existingHandle !== undefined) {
+				cancelAnimationFrame(existingHandle);
+				activeReleaseRafsRef.current.delete(note);
+			}
 			aftertouchOriginsRef.current.set(event.pointerId, event.clientY);
 			if (keyboardInputMode === "velocity") {
 				const velocity = getNoteVelocity(event);
