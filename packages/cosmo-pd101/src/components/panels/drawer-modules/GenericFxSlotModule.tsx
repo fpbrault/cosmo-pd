@@ -15,6 +15,7 @@ import type {
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
+import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 import { useSynthStore } from "@/features/synth/synthStore";
 import type { ModDestination } from "@/lib/synth/bindings/synth";
 import { FX_DEFINITIONS_V1, type FxSlotType } from "@/lib/synth/bindings/synth";
@@ -136,6 +137,15 @@ const KnobControl = memo(function KnobControl({
 		ctrl.param,
 		modDestinationKey,
 	);
+	const midiLearn = useMidiLearnTarget({
+		targetKey: `fxSlot${slot + 1}Knob${ctrl.sourceIndex + 1}`,
+		label: `FX ${slot + 1} Knob ${ctrl.sourceIndex + 1}`,
+		apply: (rawValue) => {
+			const normalized = rawValue / 127;
+			const mappedValue = min + normalized * (max - min);
+			setFxSlotParams(slot, { [ctrl.param]: mappedValue });
+		},
+	});
 
 	return (
 		<div className="min-w-0" style={gridPlacementStyle}>
@@ -153,6 +163,10 @@ const KnobControl = memo(function KnobControl({
 				modDestination={
 					modDestinationByParam[ctrl.param] as ModDestination | undefined
 				}
+				onClick={midiLearn.onClick}
+				onContextMenu={midiLearn.onContextMenu}
+				interactionLocked={midiLearn.interactionLocked}
+				midiLearnState={midiLearn.midiLearnState}
 			/>
 		</div>
 	);

@@ -28,8 +28,8 @@ use crate::CzPluginParams;
 #[cfg(target_os = "macos")]
 use crate::handle_ipc_invoke;
 use crate::{
-    PerformanceCountersHandle, ScopeBuffer, SharedRuntimeModSources, SharedTransportSnapshot,
-    UiInputQueue, append_log,
+    MidiCcQueue, PerformanceCountersHandle, ScopeBuffer, SharedRuntimeModSources,
+    SharedTransportSnapshot, UiInputQueue, append_log,
 };
 use cosmo_synth_engine::params::SynthParams;
 
@@ -87,6 +87,7 @@ pub struct CzEditor {
     synth_params_version: Arc<AtomicU64>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
+    midi_cc_queue: MidiCcQueue,
     performance_counters: PerformanceCountersHandle,
     host_scale_factor: Arc<Mutex<f32>>,
     webview_state: Arc<Mutex<WebViewContainer>>,
@@ -130,6 +131,7 @@ impl CzEditor {
         synth_params_version: Arc<AtomicU64>,
         scope_buffer: ScopeBuffer,
         ui_input_queue: UiInputQueue,
+        midi_cc_queue: MidiCcQueue,
         performance_counters: PerformanceCountersHandle,
         params: Arc<CzPluginParams>,
     ) -> Self {
@@ -141,6 +143,7 @@ impl CzEditor {
             synth_params_version,
             scope_buffer,
             ui_input_queue,
+            midi_cc_queue,
             performance_counters,
             host_scale_factor: Arc::new(Mutex::new(1.0)),
             webview_state: Arc::new(Mutex::new(WebViewContainer { webview: None })),
@@ -330,6 +333,18 @@ impl Editor for CzEditor {
         }
 
         self.push_params();
+
+        #[cfg(not(any(target_os = "ios", target_os = "android")))]
+        if let Ok(container) = self.webview_state.lock()
+            && let Some(wv) = &container.webview
+        {
+            while let Some((channel, cc, value)) = self.midi_cc_queue.pop() {
+                let script = format!(
+                    "if(typeof window.__czOnMidiCc === 'function') {{ window.__czOnMidiCc({channel},{cc},{value}); }}"
+                );
+                let _ = wv.evaluate_script(&script);
+            }
+        }
     }
 
     fn set_scale_factor(&mut self, factor: f64) {
@@ -809,7 +824,9 @@ unsafe fn build_webview_from_ns_view(
                     "window.__czIpcResponse && window.__czIpcResponse({})",
                     response
                 );
-                if let Ok(container) = webview_state_for_response.lock() && let Some(wv) = &container.webview {
+                if let Ok(container) = webview_state_for_response.lock()
+                    && let Some(wv) = &container.webview
+                {
                     let _ = wv.evaluate_script(&script);
 
                     if params_repush_done

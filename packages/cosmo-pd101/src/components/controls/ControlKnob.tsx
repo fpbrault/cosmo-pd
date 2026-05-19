@@ -77,6 +77,14 @@ export interface ControlKnobProps {
 	modTrailDuration?: number;
 	/** Non-linear scaling curve for pointer/wheel interaction and rendered position. */
 	curve?: KnobCurve;
+	/** Right-click handler. Used by MIDI Learn to unlearn bindings. */
+	onContextMenu?: (e: React.MouseEvent) => void;
+	/** Click handler. Used by MIDI Learn to select mapping targets. */
+	onClick?: (e: React.MouseEvent) => void;
+	/** When true, blocks knob value edits while preserving click handling. */
+	interactionLocked?: boolean;
+	/** Visual learn-mode hint state. */
+	midiLearnState?: "available" | "mapped" | "targeted" | null;
 }
 
 const VARIANT_ACCENT_COLOR: Record<
@@ -120,6 +128,10 @@ export function ControlKnob({
 	modulatedValue,
 	modTrailDuration = 220,
 	curve = "linear",
+	onContextMenu,
+	onClick,
+	interactionLocked = false,
+	midiLearnState = null,
 }: ControlKnobProps) {
 	const svgRef = useRef<SVGSVGElement | null>(null);
 	const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -305,18 +317,23 @@ export function ControlKnob({
 				onPointerLeave={() => setHovered(false)}
 				onFocus={() => setHovered(true)}
 				onBlur={() => setHovered(false)}
-				onPointerDown={onPointerDown}
-				onPointerMove={onPointerMove}
-				onPointerUp={onPointerUp}
-				onPointerCancel={onPointerCancel}
-				onLostPointerCapture={onLostPointerCapture}
-				onDoubleClick={onDoubleClick}
-				onKeyDown={onKeyDown}
+				onPointerDown={interactionLocked ? undefined : onPointerDown}
+				onPointerMove={interactionLocked ? undefined : onPointerMove}
+				onPointerUp={interactionLocked ? undefined : onPointerUp}
+				onPointerCancel={interactionLocked ? undefined : onPointerCancel}
+				onLostPointerCapture={
+					interactionLocked ? undefined : onLostPointerCapture
+				}
+				onDoubleClick={interactionLocked ? undefined : onDoubleClick}
+				onContextMenu={onContextMenu}
+				onKeyDown={interactionLocked ? undefined : onKeyDown}
+				onClick={onClick}
 			>
 				<KnobView
 					normalizedValue={normalizedValue}
 					bipolarNorm={bipolarNorm}
 					modulatedNorm={modulatedNorm}
+					midiLearnState={midiLearnState}
 					variant={variant}
 					colorOverride={color}
 					size={size}

@@ -13,6 +13,7 @@ import type {
 interface AlgoControlItemProps {
 	control: AlgoControlRuntime;
 	disabled?: boolean;
+	sectionId?: "a" | "b";
 	binding?: AlgoControlBinding;
 	lineIndex: LineIndex;
 	algoParamSlotIndex: Record<string, number>;
@@ -28,6 +29,7 @@ interface AlgoControlItemProps {
 function AlgoControlItemInner({
 	control,
 	disabled = false,
+	sectionId = "a",
 	binding,
 	lineIndex,
 	algoParamSlotIndex,
@@ -68,6 +70,7 @@ function AlgoControlItemInner({
 			<AlgoControlNumber
 				control={control}
 				disabled={disabled}
+				sectionId={sectionId}
 				binding={binding}
 				lineIndex={lineIndex}
 				algoParamSlotIndex={algoParamSlotIndex}

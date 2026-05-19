@@ -1,5 +1,6 @@
 import { memo, useMemo } from "react";
 import { ControlKnob } from "@/components/controls/ControlKnob";
+import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import type {
 	EngineParamReadoutFormatV1,
@@ -102,6 +103,7 @@ function SynthParamKnobInner({
 		| EngineParamUiMetaRuntime
 		| undefined;
 	const defaultValue = getEngineParamDefault(paramKey);
+	const midiLearn = useMidiLearnTarget({ targetKey: paramKey });
 
 	const valueFormatter = useMemo(() => {
 		if (valueFormatterOverride) {
@@ -132,6 +134,10 @@ function SynthParamKnobInner({
 			modDestination={
 				modDestination ?? (meta?.modDestination as ModDestination | undefined)
 			}
+			onContextMenu={midiLearn.onContextMenu}
+			onClick={midiLearn.onClick}
+			interactionLocked={midiLearn.interactionLocked}
+			midiLearnState={midiLearn.midiLearnState}
 		/>
 	);
 }

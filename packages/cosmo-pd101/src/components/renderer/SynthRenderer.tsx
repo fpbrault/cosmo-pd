@@ -25,6 +25,7 @@ import SynthHeader, {
 } from "@/components/preset/SynthHeader";
 import CzTabButton from "@/components/primitives/CzTabButton";
 import { ModMatrixProvider } from "@/context/ModMatrixContext";
+import { useMidiLearnBindings } from "@/features/synth/hooks/useMidiLearnBindings";
 import {
 	SynthParamControllerProvider,
 	useSynthParam,
@@ -172,6 +173,7 @@ function SynthRendererContent({
 	const libraryModeOpen = useSynthUiStore((s) => s.libraryModeOpen);
 	const setLibraryModeOpen = useSynthUiStore((s) => s.setLibraryModeOpen);
 	const { infoText } = useHoverInfo();
+	useMidiLearnBindings();
 	const drawerOpen = isDrawerPanel(mainPanelMode);
 	const waveDrawerOpen = mainPanelMode === "display";
 	const [activeDrawerPanel, setActiveDrawerPanel] = useState<DrawerPanel>(
@@ -180,6 +182,7 @@ function SynthRendererContent({
 	const [drawerSlideDirection, setDrawerSlideDirection] = useState<1 | -1>(1);
 	const [brandInfoOpen, setBrandInfoOpen] = useState(false);
 	const [globalPanelOpen, setGlobalPanelOpen] = useState(false);
+	const [midiLearnOpen, setMidiLearnOpen] = useState(false);
 	const [macroLabelEditorOpen, setMacroLabelEditorOpen] = useState(false);
 
 	const mainPanelBottomInset =
@@ -238,6 +241,8 @@ function SynthRendererContent({
 							libraryModeOpen={libraryModeOpen}
 							globalOpen={globalPanelOpen}
 							onOpenGlobal={() => setGlobalPanelOpen(true)}
+							midiLearnOpen={midiLearnOpen}
+							onOpenMidiLearn={() => setMidiLearnOpen((value) => !value)}
 							onOpenMacroLabels={() => setMacroLabelEditorOpen(true)}
 						/>
 

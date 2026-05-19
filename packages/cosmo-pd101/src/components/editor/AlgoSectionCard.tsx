@@ -11,6 +11,7 @@ import Card from "@/components/primitives/Card";
 import type { PdAlgo } from "@/lib/synth/pdAlgorithms";
 
 type AlgoSectionCardProps = {
+	sectionId: "a" | "b";
 	value: PdAlgo;
 	onChange: (value: PdAlgo) => void;
 	disabled?: boolean;
@@ -28,6 +29,7 @@ type AlgoSectionCardProps = {
 };
 
 function AlgoSectionCard({
+	sectionId,
 	value,
 	onChange,
 	disabled = false,
@@ -58,6 +60,7 @@ function AlgoSectionCard({
 				<AlgoControlsGroup
 					embedded
 					disabled={disabled}
+					sectionId={sectionId}
 					controls={controls}
 					controlBindings={controlBindings}
 					lineIndex={lineIndex}

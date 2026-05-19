@@ -1,5 +1,6 @@
 import { memo, useCallback } from "react";
 import { ControlKnob } from "@/components/controls/ControlKnob";
+import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 import { useSynthStore } from "@/features/synth/synthStore";
 
 function useMacroValue(index: number): number {
@@ -84,6 +85,9 @@ const MacroKnob = memo(function MacroKnob({ macroIndex }: MacroKnobProps) {
 	const value = useMacroValue(macroIndex);
 	const setter = useMacroSetter(macroIndex);
 	const label = useMacroLabel(macroIndex);
+	const midiLearn = useMidiLearnTarget({
+		targetKey: `macro${macroIndex + 1}`,
+	});
 
 	const handleChange = useCallback(
 		(v: number) => {
@@ -118,6 +122,10 @@ const MacroKnob = memo(function MacroKnob({ macroIndex }: MacroKnobProps) {
 				size={80}
 				valueFormatter={(v) => (v * 100).toFixed(0)}
 				valueVisibility="hover"
+				onClick={midiLearn.onClick}
+				onContextMenu={midiLearn.onContextMenu}
+				interactionLocked={midiLearn.interactionLocked}
+				midiLearnState={midiLearn.midiLearnState}
 			/>
 		</div>
 	);

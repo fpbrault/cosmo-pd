@@ -137,6 +137,9 @@ type SharedTransportSnapshot = Arc<TransportSnapshot>;
 type SynthParamsVersion = Arc<AtomicU64>;
 type PerformanceCountersHandle = Arc<PerformanceCounters>;
 
+const MIDI_CC_QUEUE_CAPACITY: usize = 128;
+type MidiCcQueue = Arc<ArrayQueue<(u8, u8, u8)>>;
+
 fn build_rt_synth_params(params: &SynthParams) -> SynthParams {
     let mut rt_params = params.clone();
     normalize_synth_params_envelopes_to_raw_if_human(&mut rt_params);
@@ -866,6 +869,7 @@ pub struct CzPlugin {
     cached_rt_synth_params: Arc<SynthParams>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
+    midi_cc_queue: MidiCcQueue,
     mono_output: Vec<f32>,
     performance_counters: PerformanceCountersHandle,
     /// Tracks whether DAW param values changed since last process() call.
@@ -894,6 +898,7 @@ impl CzPlugin {
             cached_rt_synth_params: Arc::new(default_rt_params),
             scope_buffer: Arc::new(Mutex::new(ScopeFrame::default())),
             ui_input_queue: Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY)),
+            midi_cc_queue: Arc::new(ArrayQueue::new(MIDI_CC_QUEUE_CAPACITY)),
             mono_output: Vec::new(),
             performance_counters: Arc::new(PerformanceCounters::default()),
             daw_params_dirty: true,
@@ -1373,6 +1378,7 @@ impl PluginLogic for CzPlugin {
             self.synth_params_version.clone(),
             self.scope_buffer.clone(),
             self.ui_input_queue.clone(),
+            self.midi_cc_queue.clone(),
             self.performance_counters.clone(),
             self.params.clone(),
         )))

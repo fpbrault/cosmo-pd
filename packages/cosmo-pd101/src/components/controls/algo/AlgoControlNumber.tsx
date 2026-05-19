@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 import { useAlgoControl } from "@/lib/synth/i18nAlgo";
 import { algoParamTargetFromSlot } from "@/lib/synth/modDestination";
 import ControlKnob from "../ControlKnob";
@@ -11,6 +12,7 @@ import type {
 interface AlgoControlNumberProps {
 	control: AlgoControlRuntime;
 	disabled?: boolean;
+	sectionId?: "a" | "b";
 	binding?: AlgoControlBinding;
 	lineIndex: LineIndex;
 	algoParamSlotIndex: Record<string, number>;
@@ -76,6 +78,7 @@ function formatAlgoControlValue(
 function AlgoControlNumberInner({
 	control,
 	disabled = false,
+	sectionId = "a",
 	binding,
 	lineIndex,
 	algoParamSlotIndex,
@@ -84,6 +87,7 @@ function AlgoControlNumberInner({
 	color = "cyan",
 }: AlgoControlNumberProps) {
 	const { label, description } = useAlgoControl(control.algo, control.id);
+	const resolvedSectionId = sectionId === "b" ? "B" : "A";
 	const min = control.min ?? 0;
 	const max = control.max ?? 1;
 	const value =
@@ -93,6 +97,19 @@ function AlgoControlNumberInner({
 	const algoParamTarget = slotIdx
 		? algoParamTargetFromSlot(slotIdx)
 		: undefined;
+	const midiLearn = useMidiLearnTarget({
+		targetKey: `line${lineIndex}Algo${resolvedSectionId}Control${control.id}`,
+		label: `Line ${lineIndex} Algo ${resolvedSectionId} ${label}`,
+		apply: (rawValue) => {
+			const normalized = rawValue / 127;
+			const mappedValue = min + normalized * (max - min);
+			if (binding?.setNumber) {
+				binding.setNumber(mappedValue);
+				return;
+			}
+			setAlgoControlValue(control.id, mappedValue);
+		},
+	});
 
 	return (
 		<div className="flex flex-col items-center">
@@ -115,6 +132,10 @@ function AlgoControlNumberInner({
 						: setAlgoControlValue(control.id, newVal)
 				}
 				valueFormatter={(v) => formatAlgoControlValue(control, v)}
+				onClick={midiLearn.onClick}
+				onContextMenu={midiLearn.onContextMenu}
+				interactionLocked={midiLearn.interactionLocked}
+				midiLearnState={midiLearn.midiLearnState}
 			/>
 		</div>
 	);

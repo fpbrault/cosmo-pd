@@ -41,6 +41,7 @@ declare global {
 		__czGetTransportInfo?: () => Promise<unknown>;
 		__czOnScope?: (samples: number[], sampleRate: number, hz: number) => void;
 		__czIpcResponse?: (response: IpcRpcResponse) => void;
+		__czOnMidiCc?: (channel: number, cc: number, value: number) => void;
 	}
 }
 
@@ -183,6 +184,26 @@ function installIpcRouter() {
 let _nativePostMessage: (msg: string) => void = (msg) => {
 	console.warn("[nihPlugBridge] native IPC not available yet, dropped:", msg);
 };
+
+// ─── MIDI CC handler ──────────────────────────────────────────────────────────
+
+function installMidiCcHandler() {
+	try {
+		Object.defineProperty(window, "__czOnMidiCc", {
+			configurable: true,
+			writable: true,
+			value: (channel: number, cc: number, value: number) => {
+				window.dispatchEvent(
+					new CustomEvent("cz-midi-cc", {
+						detail: { channel, cc, rawValue: value },
+					}),
+				);
+			},
+		});
+	} catch {
+		// Host may prevent definition; MIDI Learn will fall back to Web MIDI API.
+	}
+}
 
 // ─── Scope polling ────────────────────────────────────────────────────────────
 
@@ -432,6 +453,7 @@ export function ensureNihPlugBridge(): boolean {
 
 	installParamProperty();
 	installIpcResponseHandler();
+	installMidiCcHandler();
 	installIpcRouter();
 	installScopePolling();
 	installRuntimeModSourcesPolling();

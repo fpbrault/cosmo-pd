@@ -33,7 +33,14 @@ vi.mock("@/features/synth/synthStore", () => ({
 describe("Layout Components Smoke Tests", () => {
 	describe("SynthSidebarButtons", () => {
 		it("renders without crashing", () => {
-			render(<SynthSidebarButtons globalOpen={false} onOpenGlobal={vi.fn()} />);
+			render(
+				<SynthSidebarButtons
+					globalOpen={false}
+					onOpenGlobal={vi.fn()}
+					midiLearnOpen={false}
+					onOpenMidiLearn={vi.fn()}
+				/>,
+			);
 		});
 	});
 

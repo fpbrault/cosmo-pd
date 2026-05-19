@@ -11,6 +11,8 @@ import type { FxSlotType } from "@/lib/synth/bindings/synth";
 type SynthSidebarButtonsProps = {
 	globalOpen: boolean;
 	onOpenGlobal: () => void;
+	midiLearnOpen: boolean;
+	onOpenMidiLearn: () => void;
 };
 
 type SidebarButton = {
@@ -73,6 +75,7 @@ const FX_TYPE_SHORT_LABELS: Record<FxSlotType, string> = {
 const LEFT_BUTTONS: SidebarButton[] = [
 	{ id: "global", topLabel: "Global", bottomLabel: "" },
 	{ id: "polyMode", topLabel: "Poly8", bottomLabel: "" },
+	{ id: "midiLearn", topLabel: "MIDI", bottomLabel: "Learn" },
 	{ id: "portamentoEnabled", topLabel: "Porta", bottomLabel: "Mento" },
 ];
 
@@ -88,6 +91,8 @@ const FX_BUTTONS: SidebarButton[] = [
 export default memo(function SynthSidebarButtons({
 	globalOpen,
 	onOpenGlobal,
+	midiLearnOpen,
+	onOpenMidiLearn,
 }: SynthSidebarButtonsProps) {
 	const setMainPanelMode = useSynthUiStore((state) => state.setMainPanelMode);
 	const { value: polyMode, setValue: setPolyMode } = useSynthParam("polyMode");
@@ -126,6 +131,7 @@ export default memo(function SynthSidebarButtons({
 
 	const getButtonColor = (buttonId: string): CzTabButtonColor => {
 		if (buttonId === "global") return "cyan";
+		if (buttonId === "midiLearn") return "grey";
 		if (buttonId === "polyMode" || buttonId === "portamentoEnabled") {
 			return "blue";
 		}
@@ -155,6 +161,10 @@ export default memo(function SynthSidebarButtons({
 			onOpenGlobal();
 			return;
 		}
+		if (buttonId === "midiLearn") {
+			onOpenMidiLearn();
+			return;
+		}
 		if (buttonId === "polyMode") {
 			setPolyMode(polyMode === "poly8" ? "mono" : "poly8");
 			return;
@@ -182,7 +192,12 @@ export default memo(function SynthSidebarButtons({
 			slotType == null
 				? button.bottomLabel
 				: (FX_TYPE_SHORT_LABELS[slotType as FxSlotType] ?? "");
-		const active = button.id === "global" ? globalOpen : isEnabled(button.id);
+		const active =
+			button.id === "global"
+				? globalOpen
+				: button.id === "midiLearn"
+					? midiLearnOpen
+					: isEnabled(button.id);
 		const customColor = getCustomColor(button.id);
 		return (
 			<CzTabButton

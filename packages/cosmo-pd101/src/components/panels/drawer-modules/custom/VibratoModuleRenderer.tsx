@@ -13,6 +13,7 @@ import {
 import type { FxSlotModuleConfig } from "@/components/panels/drawer-modules/fxSlotModuleConfig";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
+import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 
 export default function VibratoModuleRenderer({
 	config,
@@ -38,6 +39,54 @@ export default function VibratoModuleRenderer({
 	const rateLabel = getFxControlLabel(config.type, "rate", "vibratoRate");
 	const depthLabel = getFxControlLabel(config.type, "depth", "vibratoDepth");
 	const delayLabel = getFxControlLabel(config.type, "delay", "vibratoDelay");
+	const rateMidiLearn = useMidiLearnTarget({
+		targetKey: rateControl
+			? `fxSlot${slot + 1}Knob${rateControl.sourceIndex + 1}`
+			: undefined,
+		label: rateControl
+			? `FX ${slot + 1} Knob ${rateControl.sourceIndex + 1}`
+			: undefined,
+		apply: rateControl
+			? (rawValue) =>
+					setFxSlotParams(slot, {
+						rate:
+							rateControl.min +
+							(rawValue / 127) * (rateControl.max - rateControl.min),
+					})
+			: undefined,
+	});
+	const depthMidiLearn = useMidiLearnTarget({
+		targetKey: depthControl
+			? `fxSlot${slot + 1}Knob${depthControl.sourceIndex + 1}`
+			: undefined,
+		label: depthControl
+			? `FX ${slot + 1} Knob ${depthControl.sourceIndex + 1}`
+			: undefined,
+		apply: depthControl
+			? (rawValue) =>
+					setFxSlotParams(slot, {
+						depth:
+							depthControl.min +
+							(rawValue / 127) * (depthControl.max - depthControl.min),
+					})
+			: undefined,
+	});
+	const delayMidiLearn = useMidiLearnTarget({
+		targetKey: delayControl
+			? `fxSlot${slot + 1}Knob${delayControl.sourceIndex + 1}`
+			: undefined,
+		label: delayControl
+			? `FX ${slot + 1} Knob ${delayControl.sourceIndex + 1}`
+			: undefined,
+		apply: delayControl
+			? (rawValue) =>
+					setFxSlotParams(slot, {
+						delay:
+							delayControl.min +
+							(rawValue / 127) * (delayControl.max - delayControl.min),
+					})
+			: undefined,
+	});
 
 	return (
 		<ModuleFrame
@@ -84,6 +133,10 @@ export default function VibratoModuleRenderer({
 					tooltip={getTooltip("vibratoRate")}
 					valueFormatter={rateControl.formatter}
 					modDestination={modDestinationByParam.rate}
+					onClick={rateMidiLearn.onClick}
+					onContextMenu={rateMidiLearn.onContextMenu}
+					interactionLocked={rateMidiLearn.interactionLocked}
+					midiLearnState={rateMidiLearn.midiLearnState}
 				/>
 			) : null}
 			{depthControl ? (
@@ -98,6 +151,10 @@ export default function VibratoModuleRenderer({
 					tooltip={getTooltip("vibratoDepth")}
 					valueFormatter={depthControl.formatter}
 					modDestination={modDestinationByParam.depth}
+					onClick={depthMidiLearn.onClick}
+					onContextMenu={depthMidiLearn.onContextMenu}
+					interactionLocked={depthMidiLearn.interactionLocked}
+					midiLearnState={depthMidiLearn.midiLearnState}
 				/>
 			) : null}
 			{delayControl ? (
@@ -112,6 +169,10 @@ export default function VibratoModuleRenderer({
 					tooltip={getTooltip("vibratoDelay")}
 					valueFormatter={delayControl.formatter}
 					modDestination={modDestinationByParam.delay}
+					onClick={delayMidiLearn.onClick}
+					onContextMenu={delayMidiLearn.onContextMenu}
+					interactionLocked={delayMidiLearn.interactionLocked}
+					midiLearnState={delayMidiLearn.midiLearnState}
 				/>
 			) : null}
 		</ModuleFrame>

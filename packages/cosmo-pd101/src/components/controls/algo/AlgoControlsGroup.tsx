@@ -10,6 +10,7 @@ import type {
 } from "./algoControlTypes";
 
 interface AlgoControlsGroupProps {
+	sectionId?: "a" | "b";
 	controls: AlgoControlRuntime[];
 	disabled?: boolean;
 	embedded?: boolean;
@@ -29,6 +30,7 @@ function AlgoControlsGroupInner({
 	controls,
 	disabled = false,
 	embedded = false,
+	sectionId = "a",
 	controlBindings,
 	lineIndex,
 	algoParamSlotIndex,
@@ -69,6 +71,7 @@ function AlgoControlsGroupInner({
 			key={control.id}
 			control={control}
 			disabled={disabled}
+			sectionId={sectionId}
 			binding={controlBindings[control.id]}
 			lineIndex={lineIndex}
 			algoParamSlotIndex={algoParamSlotIndex}

@@ -3,7 +3,6 @@ import Button from "@/components/controls/Button";
 
 type SynthPanelContainerProps = {
 	children?: ReactNode;
-	className?: string;
 	enabled?: boolean;
 	onToggleEnabled?: (next: boolean) => void;
 	showEnableToggle?: boolean;
@@ -16,7 +15,6 @@ type SynthPanelContainerProps = {
 
 export default function SynthPanelContainer({
 	children,
-	className,
 	enabled = false,
 	onToggleEnabled,
 	showEnableToggle = false,
@@ -27,14 +25,7 @@ export default function SynthPanelContainer({
 	visualClassName,
 }: SynthPanelContainerProps) {
 	return (
-		<div
-			className={[
-				"rounded-lg border border-cz-border bg-cz-inset p-3",
-				className,
-			]
-				.filter(Boolean)
-				.join(" ")}
-		>
+		<div className="h-full bg-cz-inset p-3">
 			{showEnableToggle ? (
 				<div className="mb-2 flex items-center justify-center gap-2">
 					<span className="font-mono text-3xs text-cz-cream-dim uppercase tracking-wider">

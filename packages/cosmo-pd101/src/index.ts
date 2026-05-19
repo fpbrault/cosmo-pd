@@ -1,5 +1,5 @@
 export { WavetableWaterfall } from "./components/panels/analysis/scope-visualizations/WavetableWaterfall";
-export { default as MacroKnobsPanel } from "./components/panels/macro/MacroKnobsPanel";
+export { default as MidiLearnPanel } from "./components/panels/midi/MidiLearnPanel";
 export {
 	type PerformanceMetrics,
 	PerformanceMonitor,
@@ -9,13 +9,13 @@ export type { SharedPhaseDistortionVisualizerProps } from "./components/SharedPh
 export { SharedPhaseDistortionVisualizer } from "./components/SharedPhaseDistortionVisualizer";
 export { usePluginBridgeSynthEngine } from "./features/synth/engine/pluginBridgeSynthEngineAdapter";
 export { useAudioEngine } from "./features/synth/hooks/useAudioEngine";
-export {
-	EMPTY_HOST_TRANSPORT,
-	type HostTransportInfo,
-	useHostTransport,
-} from "./features/synth/hooks/useHostTransport";
+export { useMidiLearnBindings } from "./features/synth/hooks/useMidiLearnBindings";
 export { useNoteHandling } from "./features/synth/hooks/useNoteHandling";
 export { useSynthParamsToWorklet } from "./features/synth/hooks/useSynthParamsToWorklet";
+export type { MidiBinding } from "./features/synth/midiLearnStore";
+export { useMidiLearnStore } from "./features/synth/midiLearnStore";
+export type { SynthParamKey } from "./features/synth/SynthParamController";
+export { SYNTH_PARAM_SETTERS } from "./features/synth/SynthParamController";
 export { useSynthStore } from "./features/synth/synthStore";
 export type {
 	EnvTab,

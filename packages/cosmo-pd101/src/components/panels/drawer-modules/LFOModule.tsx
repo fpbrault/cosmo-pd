@@ -6,6 +6,7 @@ import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useHostTransport } from "@/features/synth/hooks/useHostTransport";
+import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import type { LfoSyncDivision } from "@/lib/synth/bindings/synth";
@@ -202,6 +203,23 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 	const lfoRateNorm = lfoRateToNorm(lfoRate);
 	const syncCyclesPerBeat = getCyclesPerBeat(lfoSyncDivision);
 	const syncDivisionIndex = getDivisionIndex(lfoSyncDivision);
+	const rateMidiLearn = useMidiLearnTarget({
+		targetKey: `lfo${id}RateKnob`,
+		label: `LFO ${id} Rate`,
+		apply: (rawValue) => {
+			const normalized = rawValue / 127;
+			if (lfoRateMode === "hz") {
+				setLfoRate(normToLfoRate(normalized));
+				return;
+			}
+
+			const nextDivision =
+				LFO_SYNC_DIVISIONS[
+					Math.round(normalized * (LFO_SYNC_DIVISIONS.length - 1))
+				] ?? LFO_SYNC_DIVISIONS[0];
+			setLfoSyncDivision(nextDivision.value);
+		},
+	});
 	const effectiveTempoBpm =
 		transport.available &&
 		Number.isFinite(transport.tempo) &&
@@ -399,6 +417,10 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 					valueFormatter={(nextNorm) =>
 						`${formatCompactValue(normToLfoRate(nextNorm))}Hz`
 					}
+					onClick={rateMidiLearn.onClick}
+					onContextMenu={rateMidiLearn.onContextMenu}
+					interactionLocked={rateMidiLearn.interactionLocked}
+					midiLearnState={rateMidiLearn.midiLearnState}
 				/>
 			) : (
 				<ControlKnob
@@ -432,6 +454,10 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 							LFO_SYNC_DIVISIONS[Math.round(value)] ?? LFO_SYNC_DIVISIONS[0];
 						return `${division.label} · ${effectiveTempoBpm.toFixed(1)} BPM`;
 					}}
+					onClick={rateMidiLearn.onClick}
+					onContextMenu={rateMidiLearn.onContextMenu}
+					interactionLocked={rateMidiLearn.interactionLocked}
+					midiLearnState={rateMidiLearn.midiLearnState}
 				/>
 			)}
 			<SynthParamKnob

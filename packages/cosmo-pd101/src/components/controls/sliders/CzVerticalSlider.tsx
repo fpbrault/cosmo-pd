@@ -1,6 +1,8 @@
 import { useCallback, useRef } from "react";
 import ModulatableControl from "@/components/controls/modulation/ModulatableControl";
 import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
+import { useMidiLearnStore } from "@/features/synth/midiLearnStore";
+import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import type { ModDestination } from "@/lib/synth/bindings/synth";
 import {
 	type ModTarget,
@@ -25,6 +27,8 @@ interface CzVerticalSliderProps {
 	lineIndex?: 1 | 2;
 	/** When provided, wraps the slider in a ModulatableControl for this destination. */
 	modDestination?: ModDestination;
+	/** Param key for MIDI Learn binding/unbinding. */
+	paramKey?: SynthParamKey;
 }
 
 /**
@@ -45,8 +49,16 @@ export default function CzVerticalSlider({
 	modulatable,
 	lineIndex = 1,
 	modDestination,
+	paramKey,
 }: CzVerticalSliderProps) {
 	const trackRef = useRef<HTMLDivElement>(null);
+	const learnMode = useMidiLearnStore((state) => state.learnMode);
+	const pendingLearnParam = useMidiLearnStore((state) =>
+		paramKey ? state.pendingLearnParam : null,
+	);
+	const midiBinding = useMidiLearnStore((state) =>
+		paramKey ? state.getBindingForParam(paramKey) : undefined,
+	);
 	const resolvedLabel = ariaLabel?.trim() ? ariaLabel : "Value";
 	const resolvedTooltip = tooltip?.trim() ? tooltip : resolvedLabel;
 	const hoverHandlers = useHoverInfoHandlers(resolvedTooltip);
@@ -84,6 +96,11 @@ export default function CzVerticalSlider({
 
 	const handlePointerDown = useCallback(
 		(e: React.PointerEvent<HTMLDivElement>) => {
+			if (learnMode && paramKey) {
+				e.preventDefault();
+				useMidiLearnStore.getState().setPendingLearnParam(paramKey);
+				return;
+			}
 			e.preventDefault();
 			const el = trackRef.current;
 			if (!el) return;
@@ -102,24 +119,52 @@ export default function CzVerticalSlider({
 			el.addEventListener("pointermove", onMove);
 			el.addEventListener("pointerup", onUp);
 		},
-		[emitChange, posToValue],
+		[emitChange, posToValue, learnMode, paramKey],
 	);
 
 	const handleWheel = useCallback(
 		(e: React.WheelEvent) => {
+			if (learnMode && paramKey) {
+				e.preventDefault();
+				useMidiLearnStore.getState().setPendingLearnParam(paramKey);
+				return;
+			}
 			e.preventDefault();
 			const delta = -e.deltaY / 100;
 			const range = max - min;
 			emitChange(clampToStep(value + delta * range * 0.05));
 		},
-		[value, min, max, clampToStep, emitChange],
+		[value, min, max, clampToStep, emitChange, learnMode, paramKey],
 	);
+
+	const handleContextMenu = useCallback(
+		(e: React.MouseEvent) => {
+			if (!paramKey) return;
+			e.preventDefault();
+			const store = useMidiLearnStore.getState();
+			const bindings = store.getBindingsForParam(paramKey);
+			if (bindings.length > 0) {
+				store.removeBindingsForParam(paramKey);
+			}
+		},
+		[paramKey],
+	);
+
+	const midiLearnState =
+		!learnMode || !paramKey
+			? null
+			: pendingLearnParam === paramKey
+				? "targeted"
+				: midiBinding
+					? "mapped"
+					: "available";
 
 	const inner = (
 		<div
 			ref={trackRef}
 			onPointerDown={handlePointerDown}
 			onWheel={handleWheel}
+			onContextMenu={handleContextMenu}
 			data-hover-info={resolvedTooltip}
 			{...hoverHandlers}
 			className="relative h-full min-h-64 cursor-ns-resize select-none"
@@ -135,11 +180,36 @@ export default function CzVerticalSlider({
 			aria-valuemax={max}
 			tabIndex={0}
 			onKeyDown={(e) => {
+				if (learnMode && paramKey) {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						useMidiLearnStore.getState().setPendingLearnParam(paramKey);
+					}
+					return;
+				}
 				const inc = step || (max - min) / 100;
 				if (e.key === "ArrowUp") emitChange(clampToStep(value + inc));
 				if (e.key === "ArrowDown") emitChange(clampToStep(value - inc));
 			}}
 		>
+			{midiLearnState ? (
+				<div
+					aria-hidden="true"
+					className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-150 ${
+						midiLearnState === "mapped"
+							? "border-red-400/85 shadow-[0_0_18px_rgba(248,113,113,0.32)]"
+							: "border-cyan-300/85 shadow-[0_0_16px_rgba(103,232,249,0.26)]"
+					} ${
+						midiLearnState === "targeted"
+							? "scale-105 border-[3px] shadow-[0_0_22px_rgba(103,232,249,0.42)]"
+							: "scale-100 border-2"
+					}`}
+					style={{
+						width: 44,
+						height: (trackHeight ?? 120) + 18,
+					}}
+				/>
+			) : null}
 			{/* Track channel */}
 			<div
 				className="absolute inset-y-0 left-1/2 -translate-x-1/2 rounded-[7px]"

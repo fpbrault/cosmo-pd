@@ -13,6 +13,7 @@ import {
 import type { FxSlotModuleConfig } from "@/components/panels/drawer-modules/fxSlotModuleConfig";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
+import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 
 export default function TremoloModuleRenderer({
 	config,
@@ -38,6 +39,54 @@ export default function TremoloModuleRenderer({
 	const rateLabel = getFxControlLabel(config.type, "rate", "tremoloRate");
 	const depthLabel = getFxControlLabel(config.type, "depth", "tremoloDepth");
 	const mixLabel = getFxControlLabel(config.type, "mix", "tremoloMix");
+	const rateMidiLearn = useMidiLearnTarget({
+		targetKey: rateControl
+			? `fxSlot${slot + 1}Knob${rateControl.sourceIndex + 1}`
+			: undefined,
+		label: rateControl
+			? `FX ${slot + 1} Knob ${rateControl.sourceIndex + 1}`
+			: undefined,
+		apply: rateControl
+			? (rawValue) =>
+					setFxSlotParams(slot, {
+						rate:
+							rateControl.min +
+							(rawValue / 127) * (rateControl.max - rateControl.min),
+					})
+			: undefined,
+	});
+	const depthMidiLearn = useMidiLearnTarget({
+		targetKey: depthControl
+			? `fxSlot${slot + 1}Knob${depthControl.sourceIndex + 1}`
+			: undefined,
+		label: depthControl
+			? `FX ${slot + 1} Knob ${depthControl.sourceIndex + 1}`
+			: undefined,
+		apply: depthControl
+			? (rawValue) =>
+					setFxSlotParams(slot, {
+						depth:
+							depthControl.min +
+							(rawValue / 127) * (depthControl.max - depthControl.min),
+					})
+			: undefined,
+	});
+	const mixMidiLearn = useMidiLearnTarget({
+		targetKey: mixControl
+			? `fxSlot${slot + 1}Knob${mixControl.sourceIndex + 1}`
+			: undefined,
+		label: mixControl
+			? `FX ${slot + 1} Knob ${mixControl.sourceIndex + 1}`
+			: undefined,
+		apply: mixControl
+			? (rawValue) =>
+					setFxSlotParams(slot, {
+						mix:
+							mixControl.min +
+							(rawValue / 127) * (mixControl.max - mixControl.min),
+					})
+			: undefined,
+	});
 
 	return (
 		<ModuleFrame
@@ -84,6 +133,10 @@ export default function TremoloModuleRenderer({
 					tooltip={getTooltip("tremoloRate")}
 					valueFormatter={rateControl.formatter}
 					modDestination={modDestinationByParam.rate}
+					onClick={rateMidiLearn.onClick}
+					onContextMenu={rateMidiLearn.onContextMenu}
+					interactionLocked={rateMidiLearn.interactionLocked}
+					midiLearnState={rateMidiLearn.midiLearnState}
 				/>
 			) : null}
 			{depthControl ? (
@@ -98,6 +151,10 @@ export default function TremoloModuleRenderer({
 					tooltip={getTooltip("tremoloDepth")}
 					valueFormatter={depthControl.formatter}
 					modDestination={modDestinationByParam.depth}
+					onClick={depthMidiLearn.onClick}
+					onContextMenu={depthMidiLearn.onContextMenu}
+					interactionLocked={depthMidiLearn.interactionLocked}
+					midiLearnState={depthMidiLearn.midiLearnState}
 				/>
 			) : null}
 			{mixControl ? (
@@ -112,6 +169,10 @@ export default function TremoloModuleRenderer({
 					tooltip={getTooltip("tremoloMix")}
 					valueFormatter={mixControl.formatter}
 					modDestination={modDestinationByParam.mix}
+					onClick={mixMidiLearn.onClick}
+					onContextMenu={mixMidiLearn.onContextMenu}
+					interactionLocked={mixMidiLearn.interactionLocked}
+					midiLearnState={mixMidiLearn.midiLearnState}
 				/>
 			) : null}
 		</ModuleFrame>
