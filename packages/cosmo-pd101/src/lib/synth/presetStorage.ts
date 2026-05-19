@@ -13,10 +13,8 @@ import {
 } from "@/lib/synth/presetTags";
 import type { FrontendPresetV1, PresetMetadata } from "@/lib/synth/presetTypes";
 
-const STORAGE_PREFIX = "cz101-preset-v2-";
-const CURRENT_STATE_KEY = "cz101-current-state-v2";
-const CURRENT_PRESET_SESSION_KEY = "cz101-current-preset-session-v2";
-const PRESET_FAVORITES_KEY = "cz101-preset-favorites-v1";
+const DB_NAME = "cosmo-pd101-preset-storage";
+const DB_VERSION = 1;
 
 export type { PresetMetadata };
 export type StoredPreset = FrontendPresetV1;
@@ -27,8 +25,6 @@ export type CurrentPresetSession = {
 	loadedPresetFingerprint: string | null;
 };
 
-type PresetFavoriteMap = Record<string, true | undefined>;
-
 type StoredPresetInput = {
 	id?: string;
 	name: string;
@@ -38,6 +34,82 @@ type StoredPresetInput = {
 	starred?: boolean;
 	tags?: PresetTagOptions[];
 };
+
+let dbPromise: Promise<IDBDatabase> | null = null;
+
+function getDb(): Promise<IDBDatabase> {
+	if (!dbPromise) {
+		dbPromise = new Promise((resolve, reject) => {
+			const request = indexedDB.open(DB_NAME, DB_VERSION);
+			request.onupgradeneeded = () => {
+				const db = request.result;
+				if (!db.objectStoreNames.contains("presets")) {
+					db.createObjectStore("presets", { keyPath: "id" });
+				}
+				if (!db.objectStoreNames.contains("kv")) {
+					db.createObjectStore("kv", { keyPath: "key" });
+				}
+				if (!db.objectStoreNames.contains("favorites")) {
+					db.createObjectStore("favorites", { keyPath: "id" });
+				}
+			};
+			request.onsuccess = () => resolve(request.result);
+			request.onerror = () => {
+				dbPromise = null;
+				reject(request.error);
+			};
+		});
+	}
+	return dbPromise;
+}
+
+function getFromStore<T>(storeName: string, id: string): Promise<T | null> {
+	return getDb().then(
+		(db) =>
+			new Promise((resolve, reject) => {
+				const tx = db.transaction(storeName, "readonly");
+				const request = tx.objectStore(storeName).get(id);
+				request.onsuccess = () => resolve((request.result as T) ?? null);
+				request.onerror = () => reject(request.error);
+			}),
+	);
+}
+
+function getAllFromStore<T>(storeName: string): Promise<T[]> {
+	return getDb().then(
+		(db) =>
+			new Promise((resolve, reject) => {
+				const tx = db.transaction(storeName, "readonly");
+				const request = tx.objectStore(storeName).getAll();
+				request.onsuccess = () => resolve(request.result as T[]);
+				request.onerror = () => reject(request.error);
+			}),
+	);
+}
+
+function putInStore(storeName: string, value: unknown): Promise<void> {
+	return getDb().then(
+		(db) =>
+			new Promise((resolve, reject) => {
+				const tx = db.transaction(storeName, "readwrite");
+				tx.objectStore(storeName).put(value);
+				tx.oncomplete = () => resolve();
+				tx.onerror = () => reject(tx.error);
+			}),
+	);
+}
+
+function deleteFromStore(storeName: string, id: string): Promise<void> {
+	return getDb().then(
+		(db) =>
+			new Promise((resolve, reject) => {
+				const tx = db.transaction(storeName, "readwrite");
+				tx.objectStore(storeName).delete(id);
+				tx.oncomplete = () => resolve();
+				tx.onerror = () => reject(tx.error);
+			}),
+	);
+}
 
 function isSynthPresetV1(value: unknown): value is SynthPresetV1 {
 	if (typeof value !== "object" || value === null) return false;
@@ -117,38 +189,6 @@ function createStoredPreset(input: StoredPresetInput): StoredPreset {
 		id: input.id ?? createPresetId(basePreset),
 		...basePreset,
 	};
-}
-
-function readStoredPreset(id: string): StoredPreset | null {
-	const raw = localStorage.getItem(STORAGE_PREFIX + id);
-	if (!raw) return null;
-
-	try {
-		const parsed = JSON.parse(raw);
-		return isStoredPreset(parsed) ? parsed : null;
-	} catch {
-		return null;
-	}
-}
-
-function readFavoriteMap(): PresetFavoriteMap {
-	const raw = localStorage.getItem(PRESET_FAVORITES_KEY);
-	if (!raw) {
-		return {};
-	}
-
-	try {
-		const parsed = JSON.parse(raw) as Record<string, unknown>;
-		return Object.fromEntries(
-			Object.entries(parsed).filter(([, value]) => value === true),
-		) as PresetFavoriteMap;
-	} catch {
-		return {};
-	}
-}
-
-function writeFavoriteMap(favorites: PresetFavoriteMap): void {
-	localStorage.setItem(PRESET_FAVORITES_KEY, JSON.stringify(favorites));
 }
 
 export const DEFAULT_PRESET: SynthPresetV1 = {
@@ -232,27 +272,16 @@ export const DEFAULT_PRESET: SynthPresetV1 = {
 	},
 };
 
-export function saveStoredPreset(input: StoredPresetInput): StoredPreset {
+export async function saveStoredPreset(
+	input: StoredPresetInput,
+): Promise<StoredPreset> {
 	const stored = createStoredPreset(input);
-	localStorage.setItem(STORAGE_PREFIX + stored.id, JSON.stringify(stored));
+	await putInStore("presets", stored);
 	return stored;
 }
 
-export function listStoredPresets(): StoredPreset[] {
-	const presets: StoredPreset[] = [];
-
-	for (let index = 0; index < localStorage.length; index++) {
-		const key = localStorage.key(index);
-		if (!key?.startsWith(STORAGE_PREFIX)) {
-			continue;
-		}
-
-		const preset = readStoredPreset(key.slice(STORAGE_PREFIX.length));
-		if (preset) {
-			presets.push(preset);
-		}
-	}
-
+export async function listStoredPresets(): Promise<StoredPreset[]> {
+	const presets = await getAllFromStore<StoredPreset>("presets");
 	return presets.sort((left, right) =>
 		left.name.localeCompare(right.name, undefined, {
 			numeric: true,
@@ -261,19 +290,22 @@ export function listStoredPresets(): StoredPreset[] {
 	);
 }
 
-export function loadStoredPreset(id: string): StoredPreset | null {
-	return readStoredPreset(id);
+export async function loadStoredPreset(
+	id: string,
+): Promise<StoredPreset | null> {
+	return getFromStore<StoredPreset>("presets", id);
 }
 
-export function loadPreset(id: string): SynthPresetV1 | null {
-	return readStoredPreset(id)?.data ?? null;
+export async function loadPreset(id: string): Promise<SynthPresetV1 | null> {
+	const stored = await getFromStore<StoredPreset>("presets", id);
+	return stored?.data ?? null;
 }
 
-export function updateStoredPreset(
+export async function updateStoredPreset(
 	id: string,
 	updates: Partial<Omit<StoredPreset, "id">>,
-): StoredPreset | null {
-	const current = readStoredPreset(id);
+): Promise<StoredPreset | null> {
+	const current = await getFromStore<StoredPreset>("presets", id);
 	if (!current) {
 		return null;
 	}
@@ -287,35 +319,39 @@ export function updateStoredPreset(
 		data: updates.data ?? current.data,
 		tags: updates.tags ?? current.tags,
 	});
-	localStorage.setItem(STORAGE_PREFIX + next.id, JSON.stringify(next));
+	await putInStore("presets", next);
 	return next;
 }
 
-export function updatePresetMetadata(
+export async function updatePresetMetadata(
 	id: string,
 	metadata: Partial<PresetMetadata>,
-): boolean {
-	return updateStoredPreset(id, metadata) !== null;
+): Promise<boolean> {
+	const result = await updateStoredPreset(id, metadata);
+	return result !== null;
 }
 
-export function renamePreset(id: string, newName: string): boolean {
-	return updateStoredPreset(id, { name: newName }) !== null;
+export async function renamePreset(
+	id: string,
+	newName: string,
+): Promise<boolean> {
+	const result = await updateStoredPreset(id, { name: newName });
+	return result !== null;
 }
 
-export function deletePreset(id: string): void {
-	localStorage.removeItem(STORAGE_PREFIX + id);
-
-	const favorites = readFavoriteMap();
-	if (!favorites[id]) {
-		return;
-	}
-
-	const { [id]: _, ...rest } = favorites;
-	writeFavoriteMap(rest);
+export async function deletePreset(id: string): Promise<void> {
+	const db = await getDb();
+	await new Promise<void>((resolve, reject) => {
+		const tx = db.transaction(["presets", "favorites"], "readwrite");
+		tx.objectStore("presets").delete(id);
+		tx.objectStore("favorites").delete(id);
+		tx.oncomplete = () => resolve();
+		tx.onerror = () => reject(tx.error);
+	});
 }
 
-export function exportPreset(id: string): string | null {
-	const preset = readStoredPreset(id);
+export async function exportPreset(id: string): Promise<string | null> {
+	const preset = await getFromStore<StoredPreset>("presets", id);
 	if (!preset) {
 		return null;
 	}
@@ -323,7 +359,7 @@ export function exportPreset(id: string): string | null {
 	return JSON.stringify(preset, null, 2);
 }
 
-export function importPreset(json: string): StoredPreset | null {
+export async function importPreset(json: string): Promise<StoredPreset | null> {
 	try {
 		const parsed = JSON.parse(json) as Record<string, unknown>;
 		if (isStoredPreset(parsed)) {
@@ -359,44 +395,44 @@ export function importPreset(json: string): StoredPreset | null {
 	}
 }
 
-export function loadPresetFavorite(id: string): boolean {
-	return readFavoriteMap()[id] === true;
+export async function loadPresetFavorite(id: string): Promise<boolean> {
+	const entry = await getFromStore<{ id: string }>("favorites", id);
+	return entry !== null;
 }
 
-export function setPresetFavorite(id: string, favorite: boolean): void {
-	const favorites = readFavoriteMap();
-
+export async function setPresetFavorite(
+	id: string,
+	favorite: boolean,
+): Promise<void> {
 	if (favorite) {
-		favorites[id] = true;
+		await putInStore("favorites", { id });
 	} else {
-		delete favorites[id];
+		await deleteFromStore("favorites", id);
+	}
+}
+
+export async function listPresetFavorites(): Promise<string[]> {
+	const entries = await getAllFromStore<{ id: string }>("favorites");
+	return entries.map((entry) => entry.id).sort();
+}
+
+export async function saveCurrentState(data: SynthPresetV1): Promise<void> {
+	await putInStore("kv", { key: "currentState", value: data });
+}
+
+export async function loadCurrentState(): Promise<SynthPresetV1 | null> {
+	const entry = await getFromStore<{ key: string; value: SynthPresetV1 }>(
+		"kv",
+		"currentState",
+	);
+	if (!entry) return null;
+
+	if (isSynthPresetV1(entry.value)) {
+		return entry.value;
 	}
 
-	writeFavoriteMap(favorites);
-}
-
-export function listPresetFavorites(): string[] {
-	return Object.keys(readFavoriteMap()).sort();
-}
-
-export function saveCurrentState(data: SynthPresetV1): void {
-	localStorage.setItem(CURRENT_STATE_KEY, JSON.stringify(data));
-}
-
-export function loadCurrentState(): SynthPresetV1 | null {
-	const raw = localStorage.getItem(CURRENT_STATE_KEY);
-	if (!raw) return null;
-	try {
-		const parsed = JSON.parse(raw);
-		if (isSynthPresetV1(parsed)) {
-			return parsed;
-		}
-		localStorage.removeItem(CURRENT_STATE_KEY);
-		return null;
-	} catch {
-		localStorage.removeItem(CURRENT_STATE_KEY);
-		return null;
-	}
+	await deleteFromStore("kv", "currentState");
+	return null;
 }
 
 function isCurrentPresetSession(value: unknown): value is CurrentPresetSession {
@@ -411,22 +447,36 @@ function isCurrentPresetSession(value: unknown): value is CurrentPresetSession {
 	);
 }
 
-export function saveCurrentPresetSession(session: CurrentPresetSession): void {
-	localStorage.setItem(CURRENT_PRESET_SESSION_KEY, JSON.stringify(session));
+export async function saveCurrentPresetSession(
+	session: CurrentPresetSession,
+): Promise<void> {
+	await putInStore("kv", { key: "currentSession", value: session });
 }
 
-export function loadCurrentPresetSession(): CurrentPresetSession | null {
-	const raw = localStorage.getItem(CURRENT_PRESET_SESSION_KEY);
-	if (!raw) return null;
-	try {
-		const parsed = JSON.parse(raw);
-		if (isCurrentPresetSession(parsed)) {
-			return parsed;
-		}
-		localStorage.removeItem(CURRENT_PRESET_SESSION_KEY);
-		return null;
-	} catch {
-		localStorage.removeItem(CURRENT_PRESET_SESSION_KEY);
-		return null;
+export async function loadCurrentPresetSession(): Promise<CurrentPresetSession | null> {
+	const entry = await getFromStore<{ key: string; value: unknown }>(
+		"kv",
+		"currentSession",
+	);
+	if (!entry) return null;
+
+	if (isCurrentPresetSession(entry.value)) {
+		return entry.value;
 	}
+
+	await deleteFromStore("kv", "currentSession");
+	return null;
+}
+
+export async function deleteDatabase(): Promise<void> {
+	if (dbPromise) {
+		const db = await dbPromise;
+		db.close();
+		dbPromise = null;
+	}
+	await new Promise<void>((resolve, reject) => {
+		const request = indexedDB.deleteDatabase(DB_NAME);
+		request.onsuccess = () => resolve();
+		request.onerror = () => reject(request.error);
+	});
 }

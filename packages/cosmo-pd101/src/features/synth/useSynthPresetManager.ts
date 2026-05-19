@@ -15,6 +15,7 @@ import {
 	loadStoredPreset,
 	type PresetMetadata,
 	renamePreset,
+	type StoredPreset,
 	saveCurrentPresetSession,
 	saveCurrentState,
 	saveStoredPreset,
@@ -221,29 +222,20 @@ export function useSynthPresetManager({
 	shouldLoadCurrentState,
 	presetStateKey,
 }: UseSynthPresetManagerOptions): UseSynthPresetManagerResult {
-	const [localPresetEntries, setLocalPresetEntries] = useState(() =>
-		listStoredPresets(),
+	const [localPresetEntries, setLocalPresetEntries] = useState<StoredPreset[]>(
+		[],
 	);
-	const [favoritePresetIds, setFavoritePresetIds] = useState(() =>
-		listPresetFavorites(),
-	);
+	const [favoritePresetIds, setFavoritePresetIds] = useState<string[]>([]);
 	const shouldHydratePersistedState = useMemo(
 		() => (shouldLoadCurrentState ? shouldLoadCurrentState() : true),
 		[shouldLoadCurrentState],
 	);
-	const initialPresetSession = useMemo(
-		() => (shouldHydratePersistedState ? loadCurrentPresetSession() : null),
-		[shouldHydratePersistedState],
-	);
-	const [activePresetId, setActivePresetId] = useState<string | null>(
-		initialPresetSession?.activePresetId ?? null,
-	);
-	const [activePresetNameBase, setActivePresetNameBase] = useState(
-		initialPresetSession?.activePresetNameBase ?? "Current State",
-	);
+	const [activePresetId, setActivePresetId] = useState<string | null>(null);
+	const [activePresetNameBase, setActivePresetNameBase] =
+		useState("Current State");
 	const [loadedPresetFingerprint, setLoadedPresetFingerprint] = useState<
 		string | null
-	>(initialPresetSession?.loadedPresetFingerprint ?? null);
+	>(null);
 	const [pendingNavigation, setPendingNavigation] =
 		useState<PendingNavigation | null>(null);
 	const currentPresetFingerprint =
@@ -304,12 +296,12 @@ export function useSynthPresetManager({
 		setLoadedPresetFingerprint(getPresetFingerprint(gatherState()));
 	}, [gatherState]);
 
-	const refreshLocalPresetEntries = useCallback(() => {
-		setLocalPresetEntries(listStoredPresets());
+	const refreshLocalPresetEntries = useCallback(async () => {
+		setLocalPresetEntries(await listStoredPresets());
 	}, []);
 
-	const refreshFavoritePresetIds = useCallback(() => {
-		setFavoritePresetIds(listPresetFavorites());
+	const refreshFavoritePresetIds = useCallback(async () => {
+		setFavoritePresetIds(await listPresetFavorites());
 	}, []);
 
 	const requestPresetChange = useCallback(
@@ -325,8 +317,8 @@ export function useSynthPresetManager({
 	);
 
 	const loadLocalPreset = useCallback(
-		(id: string) => {
-			const preset = loadStoredPreset(id);
+		async (id: string) => {
+			const preset = await loadStoredPreset(id);
 			if (!preset) return;
 			onBeforeApplyPreset?.();
 			applyPreset(preset.data);
@@ -368,11 +360,11 @@ export function useSynthPresetManager({
 	);
 
 	const handleLoadLocal = useCallback(
-		(id: string) => {
+		async (id: string) => {
 			if (!requestPresetChange({ type: "local", entryId: id, id })) {
 				return;
 			}
-			loadLocalPreset(id);
+			await loadLocalPreset(id);
 		},
 		[loadLocalPreset, requestPresetChange],
 	);
@@ -525,11 +517,11 @@ export function useSynthPresetManager({
 	);
 
 	const completePendingNavigation = useCallback(
-		(navigation: PendingNavigation | null) => {
+		async (navigation: PendingNavigation | null) => {
 			if (!navigation) return;
 			setPendingNavigation(null);
 			if (navigation.type === "local") {
-				loadLocalPreset(navigation.id);
+				await loadLocalPreset(navigation.id);
 				return;
 			}
 			if (navigation.type === "builtin") {
@@ -542,11 +534,11 @@ export function useSynthPresetManager({
 	);
 
 	const saveLocalPreset = useCallback(
-		(name: string) => {
+		async (name: string) => {
 			const metadata: PresetMetadata = {
 				tags: activeLocalPreset?.tags ?? [],
 			};
-			const stored = saveStoredPreset({
+			const stored = await saveStoredPreset({
 				id: activeLocalPreset?.id,
 				name,
 				data: gatherState(),
@@ -555,23 +547,23 @@ export function useSynthPresetManager({
 				starred: activeLocalPreset?.starred ?? false,
 				tags: metadata.tags,
 			});
-			refreshLocalPresetEntries();
+			await refreshLocalPresetEntries();
 			return stored;
 		},
 		[activeLocalPreset, gatherState, refreshLocalPresetEntries],
 	);
 
 	const handleSavePendingPresetChange = useCallback(
-		(name?: string) => {
+		async (name?: string) => {
 			const navigation = pendingNavigation;
 			if (!navigation) return;
 			const saveName = activeLocalName ?? name?.trim();
 			if (!saveName) return;
-			const stored = saveLocalPreset(saveName);
+			const stored = await saveLocalPreset(saveName);
 			setActivePresetId(stored.id);
 			setActivePresetNameBase(stored.name);
 			captureLoadedPresetFingerprint();
-			completePendingNavigation(navigation);
+			await completePendingNavigation(navigation);
 		},
 		[
 			activeLocalName,
@@ -582,8 +574,8 @@ export function useSynthPresetManager({
 		],
 	);
 
-	const handleDiscardPendingPresetChange = useCallback(() => {
-		completePendingNavigation(pendingNavigation);
+	const handleDiscardPendingPresetChange = useCallback(async () => {
+		await completePendingNavigation(pendingNavigation);
 	}, [completePendingNavigation, pendingNavigation]);
 
 	const handleCancelPendingPresetChange = useCallback(() => {
@@ -591,8 +583,8 @@ export function useSynthPresetManager({
 	}, []);
 
 	const handleSavePreset = useCallback(
-		(name: string) => {
-			const stored = saveLocalPreset(name);
+		async (name: string) => {
+			const stored = await saveLocalPreset(name);
 			setActivePresetId(stored.id);
 			setActivePresetNameBase(stored.name);
 			captureLoadedPresetFingerprint();
@@ -601,10 +593,12 @@ export function useSynthPresetManager({
 	);
 
 	const handleDeletePreset = useCallback(
-		(id: string) => {
-			deletePreset(id);
-			refreshLocalPresetEntries();
-			refreshFavoritePresetIds();
+		async (id: string) => {
+			await deletePreset(id);
+			await Promise.all([
+				refreshLocalPresetEntries(),
+				refreshFavoritePresetIds(),
+			]);
 			setActivePresetId((previous) => (previous === id ? null : previous));
 			setActivePresetNameBase((previous) =>
 				activePresetId === id ? "Current State" : previous,
@@ -617,15 +611,15 @@ export function useSynthPresetManager({
 	);
 
 	const handleRenamePreset = useCallback(
-		(id: string, newName: string) => {
+		async (id: string, newName: string) => {
 			const trimmed = newName.trim();
 			if (!trimmed) return;
-			const renamed = loadStoredPreset(id);
+			const renamed = await loadStoredPreset(id);
 			if (renamed?.name === trimmed) {
 				return;
 			}
-			renamePreset(id, trimmed);
-			refreshLocalPresetEntries();
+			await renamePreset(id, trimmed);
+			await refreshLocalPresetEntries();
 			setActivePresetNameBase((previous) =>
 				activePresetId === id ? trimmed : previous,
 			);
@@ -634,29 +628,29 @@ export function useSynthPresetManager({
 	);
 
 	const handleSetPresetFavorite = useCallback(
-		(id: string, favorite: boolean) => {
-			setPresetFavorite(id, favorite);
-			refreshFavoritePresetIds();
+		async (id: string, favorite: boolean) => {
+			await setPresetFavorite(id, favorite);
+			await refreshFavoritePresetIds();
 		},
 		[refreshFavoritePresetIds],
 	);
 
 	const handleSetPresetAuthor = useCallback(
-		(id: string, author: string) => {
-			if (!updateStoredPreset(id, { author: author.trim() })) {
+		async (id: string, author: string) => {
+			if (!(await updateStoredPreset(id, { author: author.trim() }))) {
 				return;
 			}
-			refreshLocalPresetEntries();
+			await refreshLocalPresetEntries();
 		},
 		[refreshLocalPresetEntries],
 	);
 
 	const handleSetPresetTags = useCallback(
-		(id: string, tags: PresetTagOptions[]) => {
-			if (!updatePresetMetadata(id, { tags })) {
+		async (id: string, tags: PresetTagOptions[]) => {
+			if (!(await updatePresetMetadata(id, { tags }))) {
 				return;
 			}
-			refreshLocalPresetEntries();
+			await refreshLocalPresetEntries();
 		},
 		[refreshLocalPresetEntries],
 	);
@@ -669,10 +663,10 @@ export function useSynthPresetManager({
 		captureLoadedPresetFingerprint();
 	}, [applyPreset, captureLoadedPresetFingerprint, onBeforeApplyPreset]);
 
-	const handleExportPreset = useCallback((id: string) => {
-		const json = exportPreset(id);
+	const handleExportPreset = useCallback(async (id: string) => {
+		const json = await exportPreset(id);
 		if (!json) return;
-		const preset = loadStoredPreset(id);
+		const preset = await loadStoredPreset(id);
 		const filename = preset?.name ?? "preset";
 		const blob = new Blob([json], { type: "application/json" });
 		const url = URL.createObjectURL(blob);
@@ -684,8 +678,8 @@ export function useSynthPresetManager({
 	}, []);
 
 	const handleImportPreset = useCallback(
-		(json: string, filename: string) => {
-			const importedPreset = importPreset(json);
+		async (json: string, filename: string) => {
+			const importedPreset = await importPreset(json);
 			if (!importedPreset) return;
 			const name = filename.trim() || importedPreset.name || "imported";
 			const existingNames = new Set(
@@ -696,7 +690,7 @@ export function useSynthPresetManager({
 			while (existingNames.has(candidate)) {
 				candidate = `${name} ${suffix++}`;
 			}
-			const stored = saveStoredPreset({
+			const stored = await saveStoredPreset({
 				name: candidate,
 				data: importedPreset.data,
 				source: "user",
@@ -704,7 +698,7 @@ export function useSynthPresetManager({
 				starred: importedPreset.starred,
 				tags: importedPreset.tags,
 			});
-			refreshLocalPresetEntries();
+			await refreshLocalPresetEntries();
 			onBeforeApplyPreset?.();
 			applyPreset(stored.data);
 			setActivePresetId(stored.id);
@@ -736,10 +730,24 @@ export function useSynthPresetManager({
 	);
 
 	useEffect(() => {
-		refreshLocalPresetEntries();
-		refreshFavoritePresetIds();
-		if (!shouldHydratePersistedState) return;
-		if (!initialPresetSession) {
+		const init = async () => {
+			await Promise.all([
+				refreshLocalPresetEntries(),
+				refreshFavoritePresetIds(),
+			]);
+
+			if (!shouldHydratePersistedState) return;
+
+			const session = await loadCurrentPresetSession();
+			if (session) {
+				setActivePresetId(session.activePresetId);
+				setActivePresetNameBase(session.activePresetNameBase);
+				setLoadedPresetFingerprint(session.loadedPresetFingerprint);
+				const saved = await loadCurrentState();
+				if (saved) applyPreset(saved);
+				return;
+			}
+
 			const isTestMode = import.meta.env.VITE_TEST_HARNESS === "1";
 			if (!isTestMode) {
 				const firstPresetName = Object.keys(builtinPresets)[0];
@@ -748,13 +756,15 @@ export function useSynthPresetManager({
 					return;
 				}
 			}
-		}
-		const saved = loadCurrentState();
-		if (saved) applyPreset(saved);
+
+			const saved = await loadCurrentState();
+			if (saved) applyPreset(saved);
+		};
+
+		init();
 	}, [
 		applyPreset,
 		builtinPresets,
-		initialPresetSession,
 		loadBuiltinPreset,
 		refreshFavoritePresetIds,
 		refreshLocalPresetEntries,

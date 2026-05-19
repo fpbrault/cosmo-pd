@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	DEFAULT_PRESET,
+	deleteDatabase,
 	deletePreset,
 	exportPreset,
 	importPreset,
@@ -21,13 +22,13 @@ import {
 } from "./presetStorage";
 
 describe("presetStorage", () => {
-	beforeEach(() => {
-		localStorage.clear();
+	beforeEach(async () => {
+		await deleteDatabase();
 		vi.clearAllMocks();
 	});
 
-	it("saves and loads a stored preset by id", () => {
-		const stored = saveStoredPreset({
+	it("saves and loads a stored preset by id", async () => {
+		const stored = await saveStoredPreset({
 			name: "Test Preset",
 			data: {
 				...DEFAULT_PRESET,
@@ -39,35 +40,35 @@ describe("presetStorage", () => {
 			tags: ["wind", "synth"],
 		});
 
-		expect(loadStoredPreset(stored.id)).toEqual(stored);
-		expect(loadPreset(stored.id)).toEqual(stored.data);
+		expect(await loadStoredPreset(stored.id)).toEqual(stored);
+		expect(await loadPreset(stored.id)).toEqual(stored.data);
 	});
 
-	it("keeps ids stable when renaming a stored preset", () => {
-		const stored = saveStoredPreset({
+	it("keeps ids stable when renaming a stored preset", async () => {
+		const stored = await saveStoredPreset({
 			name: "Old Name",
 			data: DEFAULT_PRESET,
 			source: "user",
 			tags: ["synth"],
 		});
 
-		expect(renamePreset(stored.id, "New Name")).toBe(true);
-		expect(loadStoredPreset(stored.id)?.name).toBe("New Name");
+		expect(await renamePreset(stored.id, "New Name")).toBe(true);
+		expect((await loadStoredPreset(stored.id))?.name).toBe("New Name");
 	});
 
-	it("updates local metadata without changing the stored id", () => {
-		const stored = saveStoredPreset({
+	it("updates local metadata without changing the stored id", async () => {
+		const stored = await saveStoredPreset({
 			name: "Meta Preset",
 			data: DEFAULT_PRESET,
 			source: "user",
 		});
 
 		expect(
-			updatePresetMetadata(stored.id, {
+			await updatePresetMetadata(stored.id, {
 				tags: ["pad"],
 			}),
 		).toBe(true);
-		expect(loadStoredPreset(stored.id)).toEqual(
+		expect(await loadStoredPreset(stored.id)).toEqual(
 			expect.objectContaining({
 				id: stored.id,
 				tags: ["pad"],
@@ -75,48 +76,56 @@ describe("presetStorage", () => {
 		);
 	});
 
-	it("tracks favorites separately from stored preset payloads", () => {
-		const stored = saveStoredPreset({
+	it("tracks favorites separately from stored preset payloads", async () => {
+		const stored = await saveStoredPreset({
 			name: "Favorite Preset",
 			data: DEFAULT_PRESET,
 			source: "user",
 		});
 
-		setPresetFavorite(stored.id, true);
-		expect(loadPresetFavorite(stored.id)).toBe(true);
-		expect(listPresetFavorites()).toEqual([stored.id]);
+		await setPresetFavorite(stored.id, true);
+		expect(await loadPresetFavorite(stored.id)).toBe(true);
+		expect(await listPresetFavorites()).toEqual([stored.id]);
 
-		setPresetFavorite(stored.id, false);
-		expect(loadPresetFavorite(stored.id)).toBe(false);
-		expect(listPresetFavorites()).toEqual([]);
+		await setPresetFavorite(stored.id, false);
+		expect(await loadPresetFavorite(stored.id)).toBe(false);
+		expect(await listPresetFavorites()).toEqual([]);
 	});
 
-	it("removes favorite state when deleting a stored preset", () => {
-		const stored = saveStoredPreset({
+	it("removes favorite state when deleting a stored preset", async () => {
+		const stored = await saveStoredPreset({
 			name: "Delete Me",
 			data: DEFAULT_PRESET,
 			source: "user",
 		});
-		setPresetFavorite(stored.id, true);
+		await setPresetFavorite(stored.id, true);
 
-		deletePreset(stored.id);
+		await deletePreset(stored.id);
 
-		expect(loadStoredPreset(stored.id)).toBeNull();
-		expect(loadPresetFavorite(stored.id)).toBe(false);
+		expect(await loadStoredPreset(stored.id)).toBeNull();
+		expect(await loadPresetFavorite(stored.id)).toBe(false);
 	});
 
-	it("lists stored presets sorted by name", () => {
-		saveStoredPreset({ name: "Zulu", data: DEFAULT_PRESET, source: "user" });
-		saveStoredPreset({ name: "Alpha", data: DEFAULT_PRESET, source: "user" });
+	it("lists stored presets sorted by name", async () => {
+		await saveStoredPreset({
+			name: "Zulu",
+			data: DEFAULT_PRESET,
+			source: "user",
+		});
+		await saveStoredPreset({
+			name: "Alpha",
+			data: DEFAULT_PRESET,
+			source: "user",
+		});
 
-		expect(listStoredPresets().map((preset) => preset.name)).toEqual([
+		expect((await listStoredPresets()).map((preset) => preset.name)).toEqual([
 			"Alpha",
 			"Zulu",
 		]);
 	});
 
-	it("exports and imports full stored presets", () => {
-		const stored = saveStoredPreset({
+	it("exports and imports full stored presets", async () => {
+		const stored = await saveStoredPreset({
 			name: "Export Me",
 			data: DEFAULT_PRESET,
 			source: "user",
@@ -125,18 +134,18 @@ describe("presetStorage", () => {
 			tags: ["synth", "lead"],
 		});
 
-		const json = exportPreset(stored.id);
+		const json = await exportPreset(stored.id);
 		expect(json).not.toBeNull();
-		expect(importPreset(json as string)).toEqual(stored);
+		expect(await importPreset(json as string)).toEqual(stored);
 	});
 
-	it("imports raw synth preset payloads", () => {
+	it("imports raw synth preset payloads", async () => {
 		const data = {
 			...DEFAULT_PRESET,
 			params: { ...DEFAULT_PRESET.params, volume: 0.2 },
 		};
 
-		expect(importPreset(JSON.stringify(data))).toEqual(
+		expect(await importPreset(JSON.stringify(data))).toEqual(
 			expect.objectContaining({
 				name: "Imported",
 				source: "user",
@@ -145,15 +154,15 @@ describe("presetStorage", () => {
 		);
 	});
 
-	it("updates stored preset fields while preserving the stored id", () => {
-		const stored = saveStoredPreset({
+	it("updates stored preset fields while preserving the stored id", async () => {
+		const stored = await saveStoredPreset({
 			name: "Update Me",
 			data: DEFAULT_PRESET,
 			source: "user",
 		});
 
 		expect(
-			updateStoredPreset(stored.id, {
+			await updateStoredPreset(stored.id, {
 				author: "Updated",
 				starred: true,
 			}),
@@ -166,34 +175,54 @@ describe("presetStorage", () => {
 		);
 	});
 
-	it("saves and loads current state", () => {
+	it("saves and loads current state", async () => {
 		const state = {
 			...DEFAULT_PRESET,
 			params: { ...DEFAULT_PRESET.params, volume: 0.4 },
 		};
-		saveCurrentState(state);
-		expect(loadCurrentState()).toEqual(state);
+		await saveCurrentState(state);
+		expect(await loadCurrentState()).toEqual(state);
 	});
 
-	it("removes invalid current state payloads", () => {
-		localStorage.setItem("cz101-current-state-v2", "invalid");
-		expect(loadCurrentState()).toBeNull();
-		expect(localStorage.getItem("cz101-current-state-v2")).toBeNull();
+	it("removes invalid current state payloads", async () => {
+		await seedKv("currentState", "invalid");
+		expect(await loadCurrentState()).toBeNull();
 	});
 
-	it("saves and loads current preset sessions", () => {
+	it("saves and loads current preset sessions", async () => {
 		const session = {
 			activePresetId: "preset-123",
 			activePresetNameBase: "My Preset",
 			loadedPresetFingerprint: "fingerprint123",
 		};
-		saveCurrentPresetSession(session);
-		expect(loadCurrentPresetSession()).toEqual(session);
+		await saveCurrentPresetSession(session);
+		expect(await loadCurrentPresetSession()).toEqual(session);
 	});
 
-	it("removes invalid preset sessions", () => {
-		localStorage.setItem("cz101-current-preset-session-v2", "invalid");
-		expect(loadCurrentPresetSession()).toBeNull();
-		expect(localStorage.getItem("cz101-current-preset-session-v2")).toBeNull();
+	it("removes invalid preset sessions", async () => {
+		await seedKv("currentSession", "invalid");
+		expect(await loadCurrentPresetSession()).toBeNull();
 	});
 });
+
+async function seedKv(key: string, value: unknown): Promise<void> {
+	await deleteDatabase();
+	const db = await new Promise<IDBDatabase>((resolve, reject) => {
+		const request = indexedDB.open("cosmo-pd101-preset-storage", 1);
+		request.onupgradeneeded = () => {
+			const d = request.result;
+			if (!d.objectStoreNames.contains("kv")) {
+				d.createObjectStore("kv", { keyPath: "key" });
+			}
+		};
+		request.onsuccess = () => resolve(request.result);
+		request.onerror = () => reject(request.error);
+	});
+	await new Promise<void>((resolve, reject) => {
+		const tx = db.transaction("kv", "readwrite");
+		tx.objectStore("kv").put({ key, value });
+		tx.oncomplete = () => resolve();
+		tx.onerror = () => reject(tx.error);
+	});
+	db.close();
+}

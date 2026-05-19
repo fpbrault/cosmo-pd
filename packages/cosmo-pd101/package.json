@@ -39,6 +39,7 @@
 		"@vitest/coverage-v8": "^4.1.4",
 		"@vitest/ui": "4.1.6",
 		"daisyui": "^5.5.19",
+		"fake-indexeddb": "^6.2.5",
 		"happy-dom": "^20.9.0",
 		"tailwindcss": "^4.2.2",
 		"tsdown": "latest",

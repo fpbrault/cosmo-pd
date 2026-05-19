@@ -1,4 +1,4 @@
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
 import * as presetStorage from "@/lib/synth/presetStorage";
@@ -51,8 +51,8 @@ describe("useSynthPresetManager", () => {
 
 	beforeEach(() => {
 		vi.resetAllMocks();
-		vi.mocked(presetStorage.listStoredPresets).mockReturnValue([]);
-		vi.mocked(presetStorage.listPresetFavorites).mockReturnValue([]);
+		vi.mocked(presetStorage.listStoredPresets).mockResolvedValue([]);
+		vi.mocked(presetStorage.listPresetFavorites).mockResolvedValue([]);
 	});
 
 	it("initializes with default state", () => {
@@ -70,11 +70,11 @@ describe("useSynthPresetManager", () => {
 		expect(result.current.visiblePresetEntries.length).toBe(2);
 	});
 
-	it("loads persisted state if available", () => {
-		vi.mocked(presetStorage.loadCurrentState).mockReturnValue({
+	it("loads persisted state if available", async () => {
+		vi.mocked(presetStorage.loadCurrentState).mockResolvedValue({
 			some: "persisted",
 		} as unknown as SynthPresetV1);
-		vi.mocked(presetStorage.loadCurrentPresetSession).mockReturnValue({
+		vi.mocked(presetStorage.loadCurrentPresetSession).mockResolvedValue({
 			activePresetId: "local-preset",
 			activePresetNameBase: "MyPreset",
 			loadedPresetFingerprint: JSON.stringify({ some: "persisted" }),
@@ -88,13 +88,15 @@ describe("useSynthPresetManager", () => {
 			}),
 		);
 
-		expect(mockApplyPreset).toHaveBeenCalledWith({ some: "persisted" });
+		await waitFor(() => {
+			expect(mockApplyPreset).toHaveBeenCalledWith({ some: "persisted" });
+		});
 		expect(result.current.activePresetId).toBe("local-preset");
 		expect(result.current.activePresetNameBase).toBe("MyPreset");
 	});
 
-	it("handles loading a local preset", () => {
-		vi.mocked(presetStorage.loadStoredPreset).mockReturnValue({
+	it("handles loading a local preset", async () => {
+		vi.mocked(presetStorage.loadStoredPreset).mockResolvedValue({
 			id: "local-preset",
 			name: "MyLocalPreset",
 			source: "user",
@@ -109,11 +111,12 @@ describe("useSynthPresetManager", () => {
 				builtinPresets: mockBuiltinPresets,
 				gatherState: mockGatherState,
 				applyPreset: mockApplyPreset,
+				shouldLoadCurrentState: () => false,
 			}),
 		);
 
-		act(() => {
-			result.current.handleLoadLocal("local-preset");
+		await act(async () => {
+			await result.current.handleLoadLocal("local-preset");
 		});
 
 		expect(mockApplyPreset).toHaveBeenCalledWith({ some: "local-data" });
@@ -141,8 +144,8 @@ describe("useSynthPresetManager", () => {
 		expect(result.current.activePresetNameBase).toBe("Preset 1");
 	});
 
-	it("detects unsaved changes", () => {
-		vi.mocked(presetStorage.loadCurrentPresetSession).mockReturnValue({
+	it("detects unsaved changes", async () => {
+		vi.mocked(presetStorage.loadCurrentPresetSession).mockResolvedValue({
 			activePresetId: "local-preset",
 			activePresetNameBase: "MyPreset",
 			loadedPresetFingerprint: JSON.stringify({ a: 1 }),
@@ -157,11 +160,13 @@ describe("useSynthPresetManager", () => {
 			}),
 		);
 
-		expect(result.current.activePresetName).toBe("MyPreset *");
+		await waitFor(() => {
+			expect(result.current.activePresetName).toBe("MyPreset *");
+		});
 	});
 
-	it("handles pending preset change flow", () => {
-		vi.mocked(presetStorage.loadCurrentPresetSession).mockReturnValue({
+	it("handles pending preset change flow", async () => {
+		vi.mocked(presetStorage.loadCurrentPresetSession).mockResolvedValue({
 			activePresetId: "local-preset",
 			activePresetNameBase: "MyPreset",
 			loadedPresetFingerprint: JSON.stringify({ a: 1 }),
@@ -175,6 +180,10 @@ describe("useSynthPresetManager", () => {
 				applyPreset: mockApplyPreset,
 			}),
 		);
+
+		await waitFor(() => {
+			expect(result.current.activePresetName).toBe("MyPreset *");
+		});
 
 		act(() => {
 			result.current.handleLoadBuiltin("Preset 1");
@@ -183,15 +192,15 @@ describe("useSynthPresetManager", () => {
 		expect(result.current.pendingPresetChange).not.toBeNull();
 		expect(result.current.pendingPresetChange?.changes[0].path).toBe("a");
 
-		act(() => {
-			result.current.handleDiscardPendingPresetChange();
+		await act(async () => {
+			await result.current.handleDiscardPendingPresetChange();
 		});
 
 		expect(result.current.pendingPresetChange).toBeNull();
 	});
 
-	it("saves a preset", () => {
-		vi.mocked(presetStorage.saveStoredPreset).mockReturnValue({
+	it("saves a preset", async () => {
+		vi.mocked(presetStorage.saveStoredPreset).mockResolvedValue({
 			id: "saved-preset",
 			name: "NewPreset",
 			source: "user",
@@ -209,8 +218,8 @@ describe("useSynthPresetManager", () => {
 			}),
 		);
 
-		act(() => {
-			result.current.handleSavePreset("NewPreset");
+		await act(async () => {
+			await result.current.handleSavePreset("NewPreset");
 		});
 
 		expect(presetStorage.saveStoredPreset).toHaveBeenCalledWith(
