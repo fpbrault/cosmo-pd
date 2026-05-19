@@ -5,12 +5,18 @@ import {
 	DEFAULT_DCO_ENV,
 	DEFAULT_DCW_ENV,
 } from "@/lib/synth/pdAlgorithms";
+import { createPresetId } from "@/lib/synth/presetIdentity";
+import type { PresetSource } from "@/lib/synth/presetSources";
+import {
+	normalizePresetTags,
+	type PresetTagOptions,
+} from "@/lib/synth/presetTags";
 import type { FrontendPresetV1, PresetMetadata } from "@/lib/synth/presetTypes";
 
-const STORAGE_PREFIX = "cz101-preset-";
-const CURRENT_STATE_KEY = "cz101-current-state";
-const CURRENT_PRESET_SESSION_KEY = "cz101-current-preset-session";
-const SHOW_LIBRARY_PRESETS_KEY = "cz101-show-library-presets";
+const STORAGE_PREFIX = "cz101-preset-v2-";
+const CURRENT_STATE_KEY = "cz101-current-state-v2";
+const CURRENT_PRESET_SESSION_KEY = "cz101-current-preset-session-v2";
+const PRESET_FAVORITES_KEY = "cz101-preset-favorites-v1";
 
 export type { PresetMetadata };
 export type StoredPreset = FrontendPresetV1;
@@ -19,6 +25,18 @@ export type CurrentPresetSession = {
 	activePresetId: string | null;
 	activePresetNameBase: string;
 	loadedPresetFingerprint: string | null;
+};
+
+type PresetFavoriteMap = Record<string, true | undefined>;
+
+type StoredPresetInput = {
+	id?: string;
+	name: string;
+	data: SynthPresetV1;
+	source?: PresetSource;
+	author?: string;
+	starred?: boolean;
+	tags?: PresetTagOptions[];
 };
 
 function isSynthPresetV1(value: unknown): value is SynthPresetV1 {
@@ -58,67 +76,79 @@ function isSynthPresetV1(value: unknown): value is SynthPresetV1 {
 	return true;
 }
 
-function normalizeTags(tags: string[]): string[] {
-	return Array.from(
-		new Set(
-			tags
-				.map((tag) => tag.trim().toLowerCase())
-				.filter((tag) => tag.length > 0),
-		),
-	);
-}
-
 function normalizeMetadata(metadata?: Partial<PresetMetadata>): PresetMetadata {
 	return {
-		favorite: metadata?.favorite ?? false,
-		category: metadata?.category?.trim() ?? "",
-		tags: normalizeTags(metadata?.tags ?? []),
+		tags: normalizePresetTags(metadata?.tags ?? []),
 	};
 }
 
 function isStoredPreset(value: unknown): value is StoredPreset {
 	if (typeof value !== "object" || value === null) return false;
+
 	const candidate = value as Partial<StoredPreset>;
 	return (
+		typeof candidate.id === "string" &&
 		typeof candidate.name === "string" &&
+		(candidate.source === "cosmo-factory" ||
+			candidate.source === "user" ||
+			candidate.source === "cz-factory") &&
+		typeof candidate.author === "string" &&
+		typeof candidate.starred === "boolean" &&
 		isSynthPresetV1(candidate.data) &&
-		typeof candidate.favorite === "boolean" &&
-		typeof candidate.category === "string" &&
 		Array.isArray(candidate.tags) &&
 		candidate.tags.every((tag) => typeof tag === "string")
 	);
 }
 
-function createStoredPreset(
-	name: string,
-	data: SynthPresetV1,
-	metadata?: Partial<PresetMetadata>,
-): StoredPreset {
-	const normalized = normalizeMetadata(metadata);
+function createStoredPreset(input: StoredPresetInput): StoredPreset {
+	const metadata = normalizeMetadata({
+		tags: input.tags,
+	});
+	const basePreset = {
+		name: input.name.trim(),
+		source: input.source ?? "user",
+		author: input.author?.trim() ?? "",
+		starred: input.starred ?? false,
+		data: input.data,
+		tags: metadata.tags,
+	};
+
 	return {
-		name,
-		data,
-		favorite: normalized.favorite,
-		category: normalized.category,
-		tags: normalized.tags,
+		id: input.id ?? createPresetId(basePreset),
+		...basePreset,
 	};
 }
 
-function readStoredPreset(name: string): StoredPreset | null {
-	const raw = localStorage.getItem(STORAGE_PREFIX + name);
+function readStoredPreset(id: string): StoredPreset | null {
+	const raw = localStorage.getItem(STORAGE_PREFIX + id);
 	if (!raw) return null;
+
 	try {
 		const parsed = JSON.parse(raw);
-		if (isStoredPreset(parsed)) {
-			return parsed;
-		}
-		if (isSynthPresetV1(parsed)) {
-			return createStoredPreset(name, parsed);
-		}
-		return null;
+		return isStoredPreset(parsed) ? parsed : null;
 	} catch {
 		return null;
 	}
+}
+
+function readFavoriteMap(): PresetFavoriteMap {
+	const raw = localStorage.getItem(PRESET_FAVORITES_KEY);
+	if (!raw) {
+		return {};
+	}
+
+	try {
+		const parsed = JSON.parse(raw) as Record<string, unknown>;
+		return Object.fromEntries(
+			Object.entries(parsed).filter(([, value]) => value === true),
+		) as PresetFavoriteMap;
+	} catch {
+		return {};
+	}
+}
+
+function writeFavoriteMap(favorites: PresetFavoriteMap): void {
+	localStorage.setItem(PRESET_FAVORITES_KEY, JSON.stringify(favorites));
 }
 
 export const DEFAULT_PRESET: SynthPresetV1 = {
@@ -202,121 +232,151 @@ export const DEFAULT_PRESET: SynthPresetV1 = {
 	},
 };
 
-export function savePreset(
-	name: string,
-	data: SynthPresetV1,
-	metadata?: Partial<PresetMetadata>,
-): void {
-	const existing = readStoredPreset(name);
-	const mergedMetadata = normalizeMetadata({
-		favorite: existing?.favorite,
-		category: existing?.category,
-		tags: existing?.tags,
-		...metadata,
+export function saveStoredPreset(input: StoredPresetInput): StoredPreset {
+	const stored = createStoredPreset(input);
+	localStorage.setItem(STORAGE_PREFIX + stored.id, JSON.stringify(stored));
+	return stored;
+}
+
+export function listStoredPresets(): StoredPreset[] {
+	const presets: StoredPreset[] = [];
+
+	for (let index = 0; index < localStorage.length; index++) {
+		const key = localStorage.key(index);
+		if (!key?.startsWith(STORAGE_PREFIX)) {
+			continue;
+		}
+
+		const preset = readStoredPreset(key.slice(STORAGE_PREFIX.length));
+		if (preset) {
+			presets.push(preset);
+		}
+	}
+
+	return presets.sort((left, right) =>
+		left.name.localeCompare(right.name, undefined, {
+			numeric: true,
+			sensitivity: "base",
+		}),
+	);
+}
+
+export function loadStoredPreset(id: string): StoredPreset | null {
+	return readStoredPreset(id);
+}
+
+export function loadPreset(id: string): SynthPresetV1 | null {
+	return readStoredPreset(id)?.data ?? null;
+}
+
+export function updateStoredPreset(
+	id: string,
+	updates: Partial<Omit<StoredPreset, "id">>,
+): StoredPreset | null {
+	const current = readStoredPreset(id);
+	if (!current) {
+		return null;
+	}
+
+	const next = createStoredPreset({
+		id: current.id,
+		name: updates.name ?? current.name,
+		source: updates.source ?? current.source,
+		author: updates.author ?? current.author,
+		starred: updates.starred ?? current.starred,
+		data: updates.data ?? current.data,
+		tags: updates.tags ?? current.tags,
 	});
-	const stored = createStoredPreset(name, data, mergedMetadata);
-	localStorage.setItem(STORAGE_PREFIX + name, JSON.stringify(stored));
-}
-
-export function saveShowLibraryPresets(value: boolean): void {
-	localStorage.setItem(SHOW_LIBRARY_PRESETS_KEY, value ? "1" : "0");
-}
-
-export function loadShowLibraryPresets(): boolean {
-	const raw = localStorage.getItem(SHOW_LIBRARY_PRESETS_KEY);
-	return raw === null ? true : raw === "1";
-}
-
-export function loadPreset(name: string): SynthPresetV1 | null {
-	return readStoredPreset(name)?.data ?? null;
-}
-
-export function loadStoredPreset(name: string): StoredPreset | null {
-	return readStoredPreset(name);
-}
-
-export function getPresetMetadata(name: string): PresetMetadata | null {
-	const preset = readStoredPreset(name);
-	if (!preset) return null;
-	return {
-		favorite: preset.favorite,
-		category: preset.category,
-		tags: preset.tags,
-	};
+	localStorage.setItem(STORAGE_PREFIX + next.id, JSON.stringify(next));
+	return next;
 }
 
 export function updatePresetMetadata(
-	name: string,
+	id: string,
 	metadata: Partial<PresetMetadata>,
 ): boolean {
-	const preset = readStoredPreset(name);
+	return updateStoredPreset(id, metadata) !== null;
+}
+
+export function renamePreset(id: string, newName: string): boolean {
+	return updateStoredPreset(id, { name: newName }) !== null;
+}
+
+export function deletePreset(id: string): void {
+	localStorage.removeItem(STORAGE_PREFIX + id);
+
+	const favorites = readFavoriteMap();
+	if (!favorites[id]) {
+		return;
+	}
+
+	const { [id]: _, ...rest } = favorites;
+	writeFavoriteMap(rest);
+}
+
+export function exportPreset(id: string): string | null {
+	const preset = readStoredPreset(id);
 	if (!preset) {
-		return false;
+		return null;
 	}
-	const nextMetadata = normalizeMetadata({
-		favorite: preset.favorite,
-		category: preset.category,
-		tags: preset.tags,
-		...metadata,
-	});
-	const nextPreset = createStoredPreset(name, preset.data, nextMetadata);
-	localStorage.setItem(STORAGE_PREFIX + name, JSON.stringify(nextPreset));
-	return true;
-}
 
-export function listPresets(): string[] {
-	const names: string[] = [];
-	for (let i = 0; i < localStorage.length; i++) {
-		const key = localStorage.key(i);
-		if (key?.startsWith(STORAGE_PREFIX)) {
-			names.push(key.slice(STORAGE_PREFIX.length));
-		}
-	}
-	return names.sort();
-}
-
-export function deletePreset(name: string): void {
-	localStorage.removeItem(STORAGE_PREFIX + name);
-}
-
-export function renamePreset(oldName: string, newName: string): boolean {
-	const preset = readStoredPreset(oldName);
-	if (!preset) return false;
-	if (oldName === newName) return true;
-	localStorage.setItem(
-		STORAGE_PREFIX + newName,
-		JSON.stringify({
-			...preset,
-			name: newName,
-		}),
-	);
-	deletePreset(oldName);
-	return true;
-}
-
-export function exportPreset(name: string): string | null {
-	const preset = readStoredPreset(name);
-	if (!preset) return null;
 	return JSON.stringify(preset, null, 2);
 }
 
 export function importPreset(json: string): StoredPreset | null {
 	try {
-		const parsed = JSON.parse(json);
+		const parsed = JSON.parse(json) as Record<string, unknown>;
 		if (isStoredPreset(parsed)) {
-			return {
-				...parsed,
-				category: parsed.category.trim(),
-				tags: normalizeTags(parsed.tags),
-			};
+			return createStoredPreset(parsed);
 		}
+
 		if (isSynthPresetV1(parsed)) {
-			return createStoredPreset("imported", parsed);
+			return createStoredPreset({
+				name: "Imported",
+				data: parsed,
+			});
 		}
+
+		if (
+			typeof parsed._name === "string" &&
+			isSynthPresetV1({
+				schemaVersion: parsed.schemaVersion,
+				params: parsed.params,
+			})
+		) {
+			return createStoredPreset({
+				name: parsed._name,
+				data: {
+					schemaVersion: parsed.schemaVersion as number,
+					params: parsed.params as SynthPresetV1["params"],
+				},
+			});
+		}
+
 		return null;
 	} catch {
 		return null;
 	}
+}
+
+export function loadPresetFavorite(id: string): boolean {
+	return readFavoriteMap()[id] === true;
+}
+
+export function setPresetFavorite(id: string, favorite: boolean): void {
+	const favorites = readFavoriteMap();
+
+	if (favorite) {
+		favorites[id] = true;
+	} else {
+		delete favorites[id];
+	}
+
+	writeFavoriteMap(favorites);
+}
+
+export function listPresetFavorites(): string[] {
+	return Object.keys(readFavoriteMap()).sort();
 }
 
 export function saveCurrentState(data: SynthPresetV1): void {

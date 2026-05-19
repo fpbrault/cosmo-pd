@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LibraryPreset } from "@/features/synth/types/libraryPreset";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
+import {
+	PRESET_TAG_OPTIONS,
+	type PresetTagOptions,
+} from "@/lib/synth/presetTags";
 import PresetLibraryDialogs from "./PresetLibraryDialogs";
 import PresetLibraryHeader from "./PresetLibraryHeader";
 import PresetLibraryRow from "./PresetLibraryRow";
@@ -8,30 +12,29 @@ import PresetLibrarySidebar from "./PresetLibrarySidebar";
 
 type PresetLibraryProps = {
 	allEntries: PresetEntry[];
-	showLibraryPresets: boolean;
-	onToggleLibraryPresets: () => void;
 	activeEntryId: string | null;
 	activePresetName: string;
-	onLoadLocal: (name: string) => void;
+	onLoadLocal: (id: string) => void;
 	onLoadLibrary: (preset: LibraryPreset) => void;
 	onLoadBuiltin: (name: string) => void;
 	onSavePreset: (name: string) => void;
-	onDeletePreset: (name: string) => void;
-	onRenamePreset: (oldName: string, newName: string) => void;
-	onSetPresetFavorite: (name: string, favorite: boolean) => void;
-	onSetPresetCategory: (name: string, category: string) => void;
-	onSetPresetTags: (name: string, tags: string[]) => void;
-	onExportPreset: (name: string) => void;
+	onDeletePreset: (id: string) => void;
+	onRenamePreset: (id: string, newName: string) => void;
+	onSetPresetAuthor: (id: string, author: string) => void;
+	onSetPresetFavorite: (id: string, favorite: boolean) => void;
+	onSetPresetTags: (id: string, tags: PresetTagOptions[]) => void;
+	onExportPreset: (id: string) => void;
 	onExportCurrentState: (name: string) => void;
 	onImportPreset: (json: string, filename: string) => void;
 	onInitPreset: () => void;
 	onClose: () => void;
+	onVisibleEntriesChange?: (entries: PresetEntry[]) => void;
 	isOpen?: boolean;
 };
 
 type VirtualPresetRow = { id: string; kind: "entry"; entry: PresetEntry };
 
-type SortKey = "star" | "favorite" | "name" | "source" | "tags";
+type SortKey = "star" | "favorite" | "name" | "author" | "tags";
 type SortDirection = "asc" | "desc";
 
 const TABLE_HEADER_HEIGHT = 32;
@@ -43,7 +46,7 @@ function getVirtualRowHeight() {
 }
 
 function getEntrySearchText(entry: PresetEntry) {
-	return `${entry.label} ${entry.sourceLabel} ${entry.category} ${entry.tags.join(" ")}`.toLowerCase();
+	return `${entry.label} ${entry.sourceLabel} ${entry.author} ${entry.tags.join(" ")}`.toLowerCase();
 }
 
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -63,8 +66,6 @@ function isEditableTarget(target: EventTarget | null): boolean {
 
 export default function PresetLibrary({
 	allEntries,
-	showLibraryPresets,
-	onToggleLibraryPresets,
 	activeEntryId,
 	activePresetName,
 	onLoadLocal,
@@ -73,14 +74,15 @@ export default function PresetLibrary({
 	onSavePreset,
 	onDeletePreset,
 	onRenamePreset,
+	onSetPresetAuthor,
 	onSetPresetFavorite,
-	onSetPresetCategory,
 	onSetPresetTags,
 	onExportPreset,
 	onExportCurrentState,
 	onImportPreset,
 	onInitPreset,
 	onClose,
+	onVisibleEntriesChange,
 	isOpen = true,
 }: PresetLibraryProps) {
 	const isPluginRuntime =
@@ -94,18 +96,18 @@ export default function PresetLibrary({
 	const [saveAsOpen, setSaveAsOpen] = useState(false);
 	const [saveAsName, setSaveAsName] = useState("");
 	const [importError, setImportError] = useState<string | null>(null);
-	const [renameEntry, setRenameEntry] = useState<PresetEntry | null>(null);
 	const [renameValue, setRenameValue] = useState("");
-	const [metadataEntry, setMetadataEntry] = useState<PresetEntry | null>(null);
-	const [metadataCategoryValue, setMetadataCategoryValue] = useState("");
-	const [metadataTagsValue, setMetadataTagsValue] = useState("");
+	const [authorValue, setAuthorValue] = useState("");
+	const [tagDraft, setTagDraft] = useState("");
+	const [showOnlyUserPresets, setShowOnlyUserPresets] = useState(false);
+	const [selectedAuthorFilters, setSelectedAuthorFilters] = useState<string[]>(
+		[],
+	);
 	const [selectedTagFilters, setSelectedTagFilters] = useState<string[]>([]);
-	const [tagSortMode, setTagSortMode] = useState<"name" | "tag">("name");
 	const [sortState, setSortState] = useState<{
 		key: SortKey;
 		direction: SortDirection;
 	}>({ key: "star", direction: "desc" });
-	const [deleteEntry, setDeleteEntry] = useState<PresetEntry | null>(null);
 	const [focusedEntryId, setFocusedEntryId] = useState(activeEntryId);
 	const importFileRef = useRef<HTMLInputElement>(null);
 	const searchInputRef = useRef<HTMLInputElement>(null);
@@ -113,16 +115,16 @@ export default function PresetLibrary({
 	const [virtualScrollTop, setVirtualScrollTop] = useState(0);
 	const [virtualViewportHeight, setVirtualViewportHeight] = useState(0);
 
-	const availableTags = useMemo(
+	const availableTags = PRESET_TAG_OPTIONS;
+	const availableAuthors = useMemo(
 		() =>
 			Array.from(
 				new Set(
 					allEntries
-						.flatMap((entry) => entry.tags)
-						.map((tag) => tag.trim().toLowerCase())
-						.filter((tag) => tag.length > 0),
+						.map((entry) => entry.author.trim())
+						.filter((author) => author.length > 0),
 				),
-			).sort((a, b) => a.localeCompare(b)),
+			).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" })),
 		[allEntries],
 	);
 
@@ -134,26 +136,37 @@ export default function PresetLibrary({
 				)
 			: allEntries;
 
-		const byTags =
-			selectedTagFilters.length > 0
+		const byAuthor =
+			selectedAuthorFilters.length > 0
 				? bySearch.filter((entry) =>
-						selectedTagFilters.every((tag) => entry.tags.includes(tag)),
+						selectedAuthorFilters.includes(entry.author),
 					)
 				: bySearch;
 
-		return [...byTags].sort((a, b) => {
-			if (tagSortMode === "tag") {
-				const aTag = a.tags[0] ?? "";
-				const bTag = b.tags[0] ?? "";
-				const tagCompare = aTag.localeCompare(bTag);
-				if (tagCompare !== 0) return tagCompare;
-			}
+		const byTags =
+			selectedTagFilters.length > 0
+				? byAuthor.filter((entry) =>
+						selectedTagFilters.every((tag) => entry.tags.includes(tag)),
+					)
+				: byAuthor;
+
+		const byType = showOnlyUserPresets
+			? byTags.filter((entry) => entry.source === "user")
+			: byTags;
+
+		return [...byType].sort((a, b) => {
 			return a.label.localeCompare(b.label, undefined, {
 				numeric: true,
 				sensitivity: "base",
 			});
 		});
-	}, [allEntries, search, selectedTagFilters, tagSortMode]);
+	}, [
+		allEntries,
+		search,
+		selectedAuthorFilters,
+		selectedTagFilters,
+		showOnlyUserPresets,
+	]);
 
 	const sortedEntries = useMemo(() => {
 		return [...filteredEntries].sort((a, b) => {
@@ -185,14 +198,13 @@ export default function PresetLibrary({
 					: bValue - aValue;
 			}
 
-			if (sortState.key === "source") {
-				const sourceCompare = a.sourceLabel.localeCompare(
-					b.sourceLabel,
-					undefined,
-					{ sensitivity: "base" },
-				);
-				if (sourceCompare !== 0)
-					return sortState.direction === "asc" ? sourceCompare : -sourceCompare;
+			if (sortState.key === "author") {
+				const authorCompare = a.author.localeCompare(b.author, undefined, {
+					sensitivity: "base",
+				});
+				if (authorCompare !== 0) {
+					return sortState.direction === "asc" ? authorCompare : -authorCompare;
+				}
 				const nameCompare = a.label.localeCompare(b.label, undefined, {
 					numeric: true,
 					sensitivity: "base",
@@ -284,6 +296,23 @@ export default function PresetLibrary({
 			: allEntries.find(
 					(entry) => entry.id === activeEntryId && entry.type === "local",
 				);
+	const selectedLocalEntry =
+		focusedEntry?.type === "local" ? focusedEntry : activeLocalEntry;
+
+	const tagSuggestions = useMemo(() => {
+		const normalizedDraft = tagDraft.trim().toLowerCase();
+		if (!normalizedDraft) {
+			return PRESET_TAG_OPTIONS.filter(
+				(tag) => !selectedLocalEntry?.tags.includes(tag),
+			);
+		}
+
+		return PRESET_TAG_OPTIONS.filter(
+			(tag) =>
+				tag.includes(normalizedDraft) &&
+				!selectedLocalEntry?.tags.includes(tag),
+		);
+	}, [selectedLocalEntry?.tags, tagDraft]);
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -321,6 +350,10 @@ export default function PresetLibrary({
 	}, [focusedEntryId, isOpen, virtualLayout.offsets, virtualRows]);
 
 	useEffect(() => {
+		onVisibleEntriesChange?.(sortedEntries);
+	}, [onVisibleEntriesChange, sortedEntries]);
+
+	useEffect(() => {
 		const scrollContainer = scrollContainerRef.current;
 		if (!scrollContainer) return;
 
@@ -340,7 +373,7 @@ export default function PresetLibrary({
 	const handleLoad = useCallback(
 		(entry: PresetEntry) => {
 			if (entry.type === "local") {
-				onLoadLocal(entry.label);
+				onLoadLocal(entry.id);
 				return;
 			}
 			if (entry.type === "builtin") {
@@ -464,6 +497,13 @@ export default function PresetLibrary({
 				: [...prev, tag],
 		);
 	}, []);
+	const toggleAuthorFilter = useCallback((author: string) => {
+		setSelectedAuthorFilters((prev) =>
+			prev.includes(author)
+				? prev.filter((value) => value !== author)
+				: [...prev, author],
+		);
+	}, []);
 
 	const openSaveAsModal = useCallback(() => {
 		setSaveAsName(
@@ -508,46 +548,75 @@ export default function PresetLibrary({
 		[onImportPreset],
 	);
 
+	const selectedLocalEntryLabel = selectedLocalEntry?.label ?? "";
+	const selectedLocalEntryAuthor = selectedLocalEntry?.author ?? "";
+
+	useEffect(() => {
+		setRenameValue(selectedLocalEntryLabel);
+		setAuthorValue(selectedLocalEntryAuthor);
+		setTagDraft("");
+	}, [selectedLocalEntryLabel, selectedLocalEntryAuthor]);
+
 	const commitRename = useCallback(() => {
-		if (!renameEntry) return;
+		if (!selectedLocalEntry) return;
 		const nextName = renameValue.trim();
-		if (nextName && nextName !== renameEntry.label) {
-			onRenamePreset(renameEntry.label, nextName);
+		if (nextName && nextName !== selectedLocalEntry.label) {
+			onRenamePreset(selectedLocalEntry.id, nextName);
 		}
-		setRenameEntry(null);
-		setRenameValue("");
-	}, [renameEntry, renameValue, onRenamePreset]);
+	}, [onRenamePreset, renameValue, selectedLocalEntry]);
 
-	const commitMetadata = useCallback(() => {
-		if (!metadataEntry) return;
-		const category = metadataCategoryValue.trim();
-		const tags = Array.from(
-			new Set(
-				metadataTagsValue
-					.split(",")
-					.map((tag) => tag.trim())
-					.filter((tag) => tag.length > 0)
-					.map((tag) => tag.toLowerCase()),
-			),
-		);
-		onSetPresetCategory(metadataEntry.label, category);
-		onSetPresetTags(metadataEntry.label, tags);
-		setMetadataEntry(null);
-		setMetadataCategoryValue("");
-		setMetadataTagsValue("");
-	}, [
-		metadataEntry,
-		metadataCategoryValue,
-		metadataTagsValue,
-		onSetPresetCategory,
-		onSetPresetTags,
-	]);
+	const addTag = useCallback(() => {
+		if (!selectedLocalEntry) return;
+		const nextTag = tagDraft.trim().toLowerCase();
+		if (
+			!PRESET_TAG_OPTIONS.includes(
+				nextTag as (typeof PRESET_TAG_OPTIONS)[number],
+			)
+		) {
+			return;
+		}
+		if (selectedLocalEntry.tags.includes(nextTag)) {
+			setTagDraft("");
+			return;
+		}
+		onSetPresetTags(selectedLocalEntry.id, [
+			...(selectedLocalEntry.tags as PresetTagOptions[]),
+			nextTag as PresetTagOptions,
+		]);
+		setTagDraft("");
+	}, [onSetPresetTags, selectedLocalEntry, tagDraft]);
 
-	const commitDelete = useCallback(() => {
-		if (!deleteEntry) return;
-		onDeletePreset(deleteEntry.label);
-		setDeleteEntry(null);
-	}, [deleteEntry, onDeletePreset]);
+	const commitAuthor = useCallback(() => {
+		if (!selectedLocalEntry) return;
+		const nextAuthor = authorValue.trim();
+		if (nextAuthor === selectedLocalEntry.author) {
+			return;
+		}
+		onSetPresetAuthor(selectedLocalEntry.id, nextAuthor);
+	}, [authorValue, onSetPresetAuthor, selectedLocalEntry]);
+
+	const removeTag = useCallback(
+		(tag: string) => {
+			if (!selectedLocalEntry) return;
+			onSetPresetTags(
+				selectedLocalEntry.id,
+				selectedLocalEntry.tags.filter(
+					(value) => value !== tag,
+				) as PresetTagOptions[],
+			);
+		},
+		[onSetPresetTags, selectedLocalEntry],
+	);
+
+	const deleteSelectedPreset = useCallback(() => {
+		if (!selectedLocalEntry) return;
+		onDeletePreset(selectedLocalEntry.id);
+	}, [onDeletePreset, selectedLocalEntry]);
+
+	const exportSelectedPreset = useCallback(() => {
+		if (!selectedLocalEntry) return;
+		onExportPreset(selectedLocalEntry.id);
+	}, [onExportPreset, selectedLocalEntry]);
 
 	const handleImportClick = useCallback(() => {
 		importFileRef.current?.click();
@@ -561,15 +630,19 @@ export default function PresetLibrary({
 					totalCount={sortedEntries.length}
 					search={search}
 					onSearchChange={setSearch}
-					showLibraryPresets={showLibraryPresets}
-					onToggleLibraryPresets={onToggleLibraryPresets}
 					onClose={onClose}
+					availableAuthors={availableAuthors}
+					selectedAuthorFilters={selectedAuthorFilters}
+					onToggleAuthorFilter={toggleAuthorFilter}
+					onClearAuthorFilters={() => setSelectedAuthorFilters([])}
 					availableTags={availableTags}
 					selectedTagFilters={selectedTagFilters}
 					onToggleTagFilter={toggleTagFilter}
 					onClearTagFilters={() => setSelectedTagFilters([])}
-					tagSortMode={tagSortMode}
-					onTagSortModeChange={setTagSortMode}
+					showOnlyUserPresets={showOnlyUserPresets}
+					onToggleShowOnlyUserPresets={() =>
+						setShowOnlyUserPresets((value) => !value)
+					}
 					onToggleSort={toggleSort}
 					sortIndicator={sortIndicator}
 				/>
@@ -609,7 +682,6 @@ export default function PresetLibrary({
 									const entry = row.entry;
 									const active = entry.id === activeEntryId;
 									const focused = entry.id === focusedEntryId;
-									const canToggleFavorite = entry.type === "local";
 									return (
 										<PresetLibraryRow
 											key={entry.id}
@@ -617,21 +689,9 @@ export default function PresetLibrary({
 											top={top}
 											active={active}
 											focused={focused}
-											canToggleFavorite={canToggleFavorite}
 											onSelect={handleLoad}
 											onSetFocus={setFocusedEntryId}
 											onSetFavorite={onSetPresetFavorite}
-											onOpenRename={(e) => {
-												setRenameEntry(e);
-												setRenameValue(e.label);
-											}}
-											onOpenMetadata={(e) => {
-												setMetadataEntry(e);
-												setMetadataCategoryValue(e.category);
-												setMetadataTagsValue(e.tags.join(", "));
-											}}
-											onExportPreset={onExportPreset}
-											onDeleteEntry={setDeleteEntry}
 											onToggleTagFilter={toggleTagFilter}
 										/>
 									);
@@ -642,6 +702,22 @@ export default function PresetLibrary({
 
 					<PresetLibrarySidebar
 						activeLocalEntryLabel={activeLocalEntry?.label ?? null}
+						selectedLocalEntryLabel={selectedLocalEntry?.label ?? null}
+						selectedLocalEntryAuthor={selectedLocalEntry?.author ?? null}
+						renameValue={renameValue}
+						onRenameValueChange={setRenameValue}
+						onCommitRename={commitRename}
+						authorValue={authorValue}
+						onAuthorValueChange={setAuthorValue}
+						onCommitAuthor={commitAuthor}
+						selectedLocalTags={selectedLocalEntry?.tags ?? []}
+						tagDraft={tagDraft}
+						tagSuggestions={tagSuggestions}
+						onTagDraftChange={setTagDraft}
+						onAddTag={addTag}
+						onRemoveTag={removeTag}
+						onExportSelectedPreset={exportSelectedPreset}
+						onDeleteSelectedPreset={deleteSelectedPreset}
 						saveName={saveName}
 						onSaveNameChange={setSaveName}
 						onSave={handleSave}
@@ -663,28 +739,6 @@ export default function PresetLibrary({
 			/>
 
 			<PresetLibraryDialogs
-				renameEntry={renameEntry}
-				renameValue={renameValue}
-				onRenameValueChange={setRenameValue}
-				onCommitRename={commitRename}
-				onCancelRename={() => {
-					setRenameEntry(null);
-					setRenameValue("");
-				}}
-				deleteEntry={deleteEntry}
-				onCommitDelete={commitDelete}
-				onCancelDelete={() => setDeleteEntry(null)}
-				metadataEntry={metadataEntry}
-				metadataCategoryValue={metadataCategoryValue}
-				onMetadataCategoryValueChange={setMetadataCategoryValue}
-				metadataTagsValue={metadataTagsValue}
-				onMetadataTagsValueChange={setMetadataTagsValue}
-				onCommitMetadata={commitMetadata}
-				onCancelMetadata={() => {
-					setMetadataEntry(null);
-					setMetadataCategoryValue("");
-					setMetadataTagsValue("");
-				}}
 				saveAsOpen={saveAsOpen}
 				saveAsName={saveAsName}
 				onSaveAsNameChange={setSaveAsName}

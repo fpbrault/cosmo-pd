@@ -3,6 +3,8 @@ export type MidiLearnTargetKey = string;
 type MidiLearnTargetRegistration = {
 	label?: string;
 	apply: (rawValue: number) => void;
+	mode?: "continuous" | "edge-trigger";
+	threshold?: number;
 };
 
 const midiLearnRegistry = new Map<
@@ -35,6 +37,12 @@ export function applyRegisteredMidiLearnTarget(
 
 	registration.apply(rawValue);
 	return true;
+}
+
+export function getMidiLearnTargetRegistration(
+	targetKey: MidiLearnTargetKey,
+): MidiLearnTargetRegistration | undefined {
+	return midiLearnRegistry.get(targetKey);
 }
 
 export function getMidiLearnTargetLabel(

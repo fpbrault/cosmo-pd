@@ -1,6 +1,25 @@
+import { createPresetId } from "@/lib/synth/presetIdentity";
 import type { FrontendPresetV1 } from "@/lib/synth/presetTypes";
 
-export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
+const BUILTIN_PRESET_STARRED_BY_NAME: Record<string, boolean> = {
+	Bliss: true,
+	Rise: true,
+	Chops: true,
+	Organ: true,
+	Wow: true,
+	Plucking: true,
+	Clav: true,
+	Chants: true,
+	Flute: true,
+	Tweed: true,
+};
+
+const BUILTIN_PRESET_DEFINITIONS: Record<
+	string,
+	Omit<FrontendPresetV1, "id" | "source" | "author" | "starred"> & {
+		favorite?: boolean;
+	}
+> = {
 	Bliss: {
 		name: "Bliss",
 		data: {
@@ -414,6 +433,12 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 							amount: 0.5,
 							enabled: true,
 						},
+						{
+							source: "macro1",
+							destination: "line1AlgoParam1",
+							amount: 0.5,
+							enabled: true,
+						},
 					],
 				},
 				fxSlots: [
@@ -466,7 +491,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 			},
 		},
 		favorite: false,
-		category: "",
 		tags: ["brass"],
 	},
 	Rise: {
@@ -894,8 +918,7 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 			},
 		},
 		favorite: false,
-		category: "",
-		tags: [],
+		tags: ["keys"],
 	},
 	Chops: {
 		name: "Chops",
@@ -908,7 +931,7 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 				line1: {
 					algo: "pinch",
 					algo2: "clip",
-					algoBlend: 0.01,
+					algoBlend: 0.0,
 					baseWaveformA: "sine",
 					window: "off",
 					dcaBase: 1,
@@ -1038,7 +1061,7 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 					algoControlsA: [
 						{
 							id: "pinchFocus",
-							value: 0.5,
+							value: 0.1,
 						},
 						{
 							id: "pinchAsym",
@@ -1254,6 +1277,12 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 							amount: 0.23492187500000003,
 							enabled: true,
 						},
+						{
+							source: "macro1",
+							destination: "line1AlgoParam1",
+							amount: 1.0,
+							enabled: true,
+						},
 					],
 				},
 				fxSlots: [
@@ -1314,10 +1343,10 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 						},
 					},
 				],
+				macroLabels: ["Brightness", "MACRO 2", "MACRO 3", "MACRO 4"],
 			},
 		},
 		favorite: false,
-		category: "",
 		tags: ["pad"],
 	},
 	Organ: {
@@ -1709,8 +1738,7 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 			},
 		},
 		favorite: false,
-		category: "",
-		tags: [],
+		tags: ["organ"],
 	},
 	Wow: {
 		name: "Wow",
@@ -2099,8 +2127,7 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 			},
 		},
 		favorite: false,
-		category: "",
-		tags: [],
+		tags: ["lead", "synth"],
 	},
 	"Solo Lead": {
 		name: "Solo Lead",
@@ -2529,11 +2556,10 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 			},
 		},
 		favorite: false,
-		category: "",
-		tags: [],
+		tags: ["synth", "lead"],
 	},
-	"Soft Piano": {
-		name: "Soft Piano",
+	"Soft Brass": {
+		name: "Soft Brass",
 		data: {
 			schemaVersion: 1,
 			params: {
@@ -2958,8 +2984,7 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 			},
 		},
 		favorite: false,
-		category: "",
-		tags: [],
+		tags: ["brass"],
 	},
 	Plucking: {
 		name: "Plucking",
@@ -3383,8 +3408,7 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 			},
 		},
 		favorite: false,
-		category: "",
-		tags: [],
+		tags: ["keys", "pluck"],
 	},
 	Clav: {
 		name: "Clav",
@@ -3769,8 +3793,7 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 			},
 		},
 		favorite: false,
-		category: "",
-		tags: ["piano"],
+		tags: ["piano", "keys"],
 	},
 	Chants: {
 		name: "Chants",
@@ -4228,7 +4251,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 			},
 		},
 		favorite: false,
-		category: "",
 		tags: ["brass"],
 	},
 	"Bright Changes": {
@@ -4662,7 +4684,6 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 			},
 		},
 		favorite: false,
-		category: "",
 		tags: ["pad"],
 	},
 	"Thick Bass": {
@@ -5079,8 +5100,7 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 			},
 		},
 		favorite: false,
-		category: "",
-		tags: [],
+		tags: ["bass"],
 	},
 	"Synth Bass": {
 		name: "Synth Bass",
@@ -5522,8 +5542,7 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 			},
 		},
 		favorite: false,
-		category: "",
-		tags: [],
+		tags: ["bass"],
 	},
 	"Waxy Pad": {
 		name: "Waxy Pad",
@@ -5927,8 +5946,7 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 			},
 		},
 		favorite: false,
-		category: "",
-		tags: [],
+		tags: ["pad"],
 	},
 	Flute: {
 		name: "Flute",
@@ -6355,8 +6373,7 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 			},
 		},
 		favorite: false,
-		category: "",
-		tags: [],
+		tags: ["wind"],
 	},
 	"Fun Bass": {
 		name: "Fun Bass",
@@ -6754,8 +6771,7 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 			},
 		},
 		favorite: false,
-		category: "",
-		tags: [],
+		tags: ["bass"],
 	},
 	"Fuzz Lead": {
 		name: "Fuzz Lead",
@@ -7154,8 +7170,7 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 			},
 		},
 		favorite: false,
-		category: "",
-		tags: [],
+		tags: ["synth", "lead"],
 	},
 	"Infinite Wobble": {
 		name: "Infinite Wobble",
@@ -7565,8 +7580,7 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 			},
 		},
 		favorite: false,
-		category: "",
-		tags: [],
+		tags: ["pad"],
 	},
 	"Hot Lead": {
 		name: "Hot Lead",
@@ -7948,8 +7962,7 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 			},
 		},
 		favorite: false,
-		category: "",
-		tags: [],
+		tags: ["lead"],
 	},
 	"Majestic Pad": {
 		name: "Majestic Pad",
@@ -8401,8 +8414,7 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 			},
 		},
 		favorite: true,
-		category: "",
-		tags: [],
+		tags: ["pad"],
 	},
 	"Red Velvet": {
 		name: "Red Velvet",
@@ -8799,8 +8811,7 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 			},
 		},
 		favorite: false,
-		category: "",
-		tags: [],
+		tags: ["pad"],
 	},
 	"Starship 1": {
 		name: "Starship 1",
@@ -9229,8 +9240,7 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 			},
 		},
 		favorite: false,
-		category: "",
-		tags: [],
+		tags: ["synth", "lead"],
 	},
 	Tweed: {
 		name: "Tweed",
@@ -9628,8 +9638,30 @@ export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> = {
 				],
 			},
 		},
-		favorite: false,
-		category: "",
-		tags: [],
+		tags: ["synth"],
 	},
 };
+
+export const DEFAULT_SYNTH_PRESETS: Record<string, FrontendPresetV1> =
+	Object.fromEntries(
+		Object.entries(BUILTIN_PRESET_DEFINITIONS).map(([name, preset]) => {
+			const starred = BUILTIN_PRESET_STARRED_BY_NAME[name] ?? false;
+			const { favorite: _favorite, ...presetFields } = preset;
+			const builtInPreset: FrontendPresetV1 = {
+				...presetFields,
+				id: createPresetId({
+					name: preset.name,
+					source: "cosmo-factory",
+					author: "Purr Audio",
+					starred,
+					tags: preset.tags,
+					data: preset.data,
+				}),
+				source: "cosmo-factory",
+				author: "Purr Audio",
+				starred,
+			};
+
+			return [name, builtInPreset];
+		}),
+	);

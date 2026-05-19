@@ -1,11 +1,15 @@
-import { useCallback, useEffect } from "react";
-import { applyRegisteredMidiLearnTarget } from "@/features/synth/midiLearnRegistry";
+import { useCallback, useEffect, useRef } from "react";
+import {
+	applyRegisteredMidiLearnTarget,
+	getMidiLearnTargetRegistration,
+} from "@/features/synth/midiLearnRegistry";
 import { useMidiLearnStore } from "@/features/synth/midiLearnStore";
 import { SYNTH_PARAM_SETTERS } from "@/features/synth/SynthParamController";
 import { useSynthStore } from "@/features/synth/synthStore";
 import { ENGINE_PARAM_UI_META_BY_KEY } from "@/lib/synth/paramMeta";
 
 export function useMidiLearnBindings() {
+	const edgeTriggeredStates = useRef<Record<string, boolean>>({});
 	const applyBinding = useCallback(
 		(channel: number, cc: number, rawValue: number) => {
 			const bindings = useMidiLearnStore
@@ -29,6 +33,17 @@ export function useMidiLearnBindings() {
 						binding.paramKey as keyof typeof SYNTH_PARAM_SETTERS
 					];
 				if (!setterName) {
+					const registration = getMidiLearnTargetRegistration(binding.paramKey);
+					if (registration?.mode === "edge-trigger") {
+						const threshold = registration.threshold ?? 64;
+						const isHigh = rawValue >= threshold;
+						const wasHigh =
+							edgeTriggeredStates.current[binding.paramKey] === true;
+						edgeTriggeredStates.current[binding.paramKey] = isHigh;
+						if (!isHigh || wasHigh) {
+							continue;
+						}
+					}
 					applyRegisteredMidiLearnTarget(binding.paramKey, rawValue);
 					continue;
 				}

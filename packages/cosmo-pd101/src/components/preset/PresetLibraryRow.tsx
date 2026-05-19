@@ -9,14 +9,9 @@ type PresetLibraryRowProps = {
 	top: number;
 	active: boolean;
 	focused: boolean;
-	canToggleFavorite: boolean;
 	onSelect: (entry: PresetEntry) => void;
 	onSetFocus: (id: string) => void;
-	onSetFavorite: (label: string, favorite: boolean) => void;
-	onOpenRename: (entry: PresetEntry) => void;
-	onOpenMetadata: (entry: PresetEntry) => void;
-	onExportPreset: (label: string) => void;
-	onDeleteEntry: (entry: PresetEntry) => void;
+	onSetFavorite: (id: string, favorite: boolean) => void;
 	onToggleTagFilter: (tag: string) => void;
 };
 
@@ -25,19 +20,14 @@ export default memo(function PresetLibraryRow({
 	top,
 	active,
 	focused,
-	canToggleFavorite,
 	onSelect,
 	onSetFocus,
 	onSetFavorite,
-	onOpenRename,
-	onOpenMetadata,
-	onExportPreset,
-	onDeleteEntry,
 	onToggleTagFilter,
 }: PresetLibraryRowProps) {
 	return (
 		<div
-			className={`absolute inset-x-0 grid grid-cols-[2.5rem_2.5rem_minmax(12rem,1fr)_8rem_minmax(10rem,1fr)_9rem] items-center border-cz-border border-b px-4 py-1 text-sm transition ${
+			className={`absolute inset-x-0 grid grid-cols-[2.5rem_2.5rem_minmax(14rem,1fr)_9rem_minmax(10rem,1fr)] items-center border-cz-border border-b px-4 py-1 text-sm transition ${
 				active
 					? "bg-cz-surface/20"
 					: focused
@@ -86,10 +76,9 @@ export default memo(function PresetLibraryRow({
 			</span>
 			<Button
 				type="button"
-				className={`btn btn-ghost px-2 text-xl leading-none ${entry.favorite ? "text-cz-gold" : "text-cz-cream-dim"} ${!canToggleFavorite ? "cursor-not-allowed opacity-40" : ""}`}
+				className={`btn btn-ghost px-2 text-xl leading-none ${entry.favorite ? "text-cz-gold" : "text-cz-cream-dim"}`}
 				aria-label={`${entry.favorite ? "Unfavorite" : "Favorite"} ${entry.label}`}
-				disabled={!canToggleFavorite}
-				onClick={() => onSetFavorite(entry.label, !entry.favorite)}
+				onClick={() => onSetFavorite(entry.id, !entry.favorite)}
 			>
 				{entry.favorite ? "♥" : "♡"}
 			</Button>
@@ -103,11 +92,11 @@ export default memo(function PresetLibraryRow({
 					{entry.label}
 				</button>
 				<p className="truncate font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.16em]">
-					{entry.category ? `Category: ${entry.category}` : entry.sourceLabel}
+					{entry.sourceLabel}
 				</p>
 			</div>
-			<span className="truncate font-mono text-3xs text-cz-cream-dim uppercase tracking-[0.16em]">
-				{entry.sourceLabel}
+			<span className="truncate font-mono text-3xs text-cz-cream-dim">
+				{entry.author || "-"}
 			</span>
 			<div className="flex flex-wrap gap-2">
 				{entry.tags.length > 0 ? (
@@ -126,44 +115,6 @@ export default memo(function PresetLibraryRow({
 						-
 					</span>
 				)}
-			</div>
-			<div className="flex justify-end gap-1">
-				{entry.type === "local" ? (
-					<>
-						<Button
-							type="button"
-							className="btn btn-ghost text-cz-cream"
-							aria-label={`Edit metadata ${entry.label}`}
-							onClick={() => onOpenMetadata(entry)}
-						>
-							Meta
-						</Button>
-						<Button
-							type="button"
-							className="btn btn-ghost text-cz-cream"
-							aria-label={`Rename ${entry.label}`}
-							onClick={() => onOpenRename(entry)}
-						>
-							Rename
-						</Button>
-						<Button
-							type="button"
-							className="btn btn-ghost text-cz-light-blue"
-							aria-label={`Export ${entry.label}`}
-							onClick={() => onExportPreset(entry.label)}
-						>
-							Export
-						</Button>
-						<Button
-							type="button"
-							className="btn btn-ghost text-red-400"
-							aria-label={`Delete ${entry.label}`}
-							onClick={() => onDeleteEntry(entry)}
-						>
-							Delete
-						</Button>
-					</>
-				) : null}
 			</div>
 		</div>
 	);

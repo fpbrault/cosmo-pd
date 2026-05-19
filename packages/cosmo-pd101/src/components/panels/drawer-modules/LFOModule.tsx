@@ -348,7 +348,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 						strokeWidth="1"
 					/>
 				</svg>
-				<div className="mt-0.5 flex items-center justify-between font-mono text-[0.5rem] text-cz-cream/55 uppercase tracking-[0.18em]">
+				<div className="mt-0.5 flex items-center justify-between font-mono text-5xs text-cz-cream/55 uppercase tracking-[0.18em]">
 					<span>{transportStatus}</span>
 					{transport.available && transport.loopActive ? (
 						<span>Loop</span>

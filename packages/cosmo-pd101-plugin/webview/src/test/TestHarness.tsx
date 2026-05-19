@@ -51,7 +51,7 @@ function MessageRow({ msg }: { msg: MockBridgeMessage }) {
 			className={`flex gap-1 border-base-content/5 border-b px-1 py-0.5 ${color} hover:bg-base-content/5`}
 		>
 			<span className="w-20 shrink-0 font-bold">{msg.type}</span>
-			<span className="flex-1 break-words text-base-content/70">
+			<span className="wrap-break-word flex-1 text-base-content/70">
 				{fullText}
 			</span>
 		</div>
@@ -154,7 +154,7 @@ export default function TestHarness() {
 			{/* Floating toggle button — always present in test mode */}
 			<button
 				type="button"
-				className="fixed bottom-2 left-2 z-[9999] rounded border border-base-content/30 bg-base-300/90 px-2 py-1 font-mono text-2xs text-base-content/80 shadow backdrop-blur hover:bg-base-300"
+				className="fixed bottom-2 left-2 z-9999 rounded border border-base-content/30 bg-base-300/90 px-2 py-1 font-mono text-2xs text-base-content/80 shadow backdrop-blur hover:bg-base-300"
 				onClick={() => setPanelOpen((o) => !o)}
 				data-testid="debug-panel-toggle"
 			>
@@ -164,7 +164,7 @@ export default function TestHarness() {
 			{/* Debug Panel */}
 			{panelOpen && (
 				<div
-					className="fixed bottom-8 left-2 z-[9998] flex max-h-[60vh] w-96 flex-col overflow-hidden rounded border border-base-content/30 bg-base-300/95 shadow-xl backdrop-blur"
+					className="fixed bottom-8 left-2 z-9998 flex max-h-[60vh] w-96 flex-col overflow-hidden rounded border border-base-content/30 bg-base-300/95 shadow-xl backdrop-blur"
 					data-testid="debug-panel"
 				>
 					{/* Header */}

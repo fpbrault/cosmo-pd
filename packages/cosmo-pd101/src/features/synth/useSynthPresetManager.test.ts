@@ -9,35 +9,39 @@ vi.mock("@/lib/synth/presetStorage", () => ({
 	DEFAULT_PRESET: {} as SynthPresetV1,
 	deletePreset: vi.fn(),
 	exportPreset: vi.fn(),
-	getPresetMetadata: vi.fn(),
 	importPreset: vi.fn(),
-	listPresets: vi.fn(),
+	listPresetFavorites: vi.fn(),
+	listStoredPresets: vi.fn(),
 	loadCurrentPresetSession: vi.fn(),
 	loadCurrentState: vi.fn(),
 	loadPreset: vi.fn(),
-	loadShowLibraryPresets: vi.fn(),
+	loadStoredPreset: vi.fn(),
 	renamePreset: vi.fn(),
 	saveCurrentPresetSession: vi.fn(),
 	saveCurrentState: vi.fn(),
-	savePreset: vi.fn(),
-	saveShowLibraryPresets: vi.fn(),
+	saveStoredPreset: vi.fn(),
+	setPresetFavorite: vi.fn(),
 	updatePresetMetadata: vi.fn(),
 }));
 
 describe("useSynthPresetManager", () => {
 	const mockBuiltinPresets: Record<string, FrontendPresetV1> = {
 		"Preset 1": {
+			id: "preset-1",
 			name: "Preset 1",
+			source: "cosmo-factory",
+			author: "Purr Audio",
+			starred: true,
 			data: {} as SynthPresetV1,
-			favorite: false,
-			category: "Synth",
 			tags: [],
 		},
 		"Preset 2": {
+			id: "preset-2",
 			name: "Preset 2",
+			source: "cosmo-factory",
+			author: "Purr Audio",
+			starred: false,
 			data: {} as SynthPresetV1,
-			favorite: true,
-			category: "Bass",
 			tags: ["bass"],
 		},
 	};
@@ -47,13 +51,8 @@ describe("useSynthPresetManager", () => {
 
 	beforeEach(() => {
 		vi.resetAllMocks();
-		vi.mocked(presetStorage.listPresets).mockReturnValue([]);
-		vi.mocked(presetStorage.getPresetMetadata).mockReturnValue({
-			favorite: false,
-			category: "",
-			tags: [],
-		});
-		vi.mocked(presetStorage.loadShowLibraryPresets).mockReturnValue(false);
+		vi.mocked(presetStorage.listStoredPresets).mockReturnValue([]);
+		vi.mocked(presetStorage.listPresetFavorites).mockReturnValue([]);
 	});
 
 	it("initializes with default state", () => {
@@ -67,8 +66,8 @@ describe("useSynthPresetManager", () => {
 		);
 
 		expect(result.current.activePresetNameBase).toBe("Current State");
-		expect(result.current.showLibraryPresets).toBe(false);
 		expect(result.current.allPresetEntries.length).toBe(2);
+		expect(result.current.visiblePresetEntries.length).toBe(2);
 	});
 
 	it("loads persisted state if available", () => {
@@ -76,7 +75,7 @@ describe("useSynthPresetManager", () => {
 			some: "persisted",
 		} as unknown as SynthPresetV1);
 		vi.mocked(presetStorage.loadCurrentPresetSession).mockReturnValue({
-			activePresetId: "local:MyPreset",
+			activePresetId: "local-preset",
 			activePresetNameBase: "MyPreset",
 			loadedPresetFingerprint: JSON.stringify({ some: "persisted" }),
 		});
@@ -90,14 +89,20 @@ describe("useSynthPresetManager", () => {
 		);
 
 		expect(mockApplyPreset).toHaveBeenCalledWith({ some: "persisted" });
-		expect(result.current.activePresetId).toBe("local:MyPreset");
+		expect(result.current.activePresetId).toBe("local-preset");
 		expect(result.current.activePresetNameBase).toBe("MyPreset");
 	});
 
 	it("handles loading a local preset", () => {
-		vi.mocked(presetStorage.loadPreset).mockReturnValue({
-			some: "local-data",
-		} as unknown as SynthPresetV1);
+		vi.mocked(presetStorage.loadStoredPreset).mockReturnValue({
+			id: "local-preset",
+			name: "MyLocalPreset",
+			source: "user",
+			author: "",
+			starred: false,
+			data: { some: "local-data" } as unknown as SynthPresetV1,
+			tags: [],
+		});
 
 		const { result } = renderHook(() =>
 			useSynthPresetManager({
@@ -108,11 +113,11 @@ describe("useSynthPresetManager", () => {
 		);
 
 		act(() => {
-			result.current.handleLoadLocal("MyLocalPreset");
+			result.current.handleLoadLocal("local-preset");
 		});
 
 		expect(mockApplyPreset).toHaveBeenCalledWith({ some: "local-data" });
-		expect(result.current.activePresetId).toBe("local:MyLocalPreset");
+		expect(result.current.activePresetId).toBe("local-preset");
 		expect(result.current.activePresetNameBase).toBe("MyLocalPreset");
 	});
 
@@ -132,13 +137,13 @@ describe("useSynthPresetManager", () => {
 		expect(mockApplyPreset).toHaveBeenCalledWith(
 			mockBuiltinPresets["Preset 1"].data,
 		);
-		expect(result.current.activePresetId).toBe("builtin:Preset 1");
+		expect(result.current.activePresetId).toBe("preset-1");
 		expect(result.current.activePresetNameBase).toBe("Preset 1");
 	});
 
 	it("detects unsaved changes", () => {
 		vi.mocked(presetStorage.loadCurrentPresetSession).mockReturnValue({
-			activePresetId: "local:MyPreset",
+			activePresetId: "local-preset",
 			activePresetNameBase: "MyPreset",
 			loadedPresetFingerprint: JSON.stringify({ a: 1 }),
 		});
@@ -157,7 +162,7 @@ describe("useSynthPresetManager", () => {
 
 	it("handles pending preset change flow", () => {
 		vi.mocked(presetStorage.loadCurrentPresetSession).mockReturnValue({
-			activePresetId: "local:MyPreset",
+			activePresetId: "local-preset",
 			activePresetNameBase: "MyPreset",
 			loadedPresetFingerprint: JSON.stringify({ a: 1 }),
 		});
@@ -172,7 +177,7 @@ describe("useSynthPresetManager", () => {
 		);
 
 		act(() => {
-			result.current.handleLoadLocal("AnotherPreset");
+			result.current.handleLoadBuiltin("Preset 1");
 		});
 
 		expect(result.current.pendingPresetChange).not.toBeNull();
@@ -186,6 +191,16 @@ describe("useSynthPresetManager", () => {
 	});
 
 	it("saves a preset", () => {
+		vi.mocked(presetStorage.saveStoredPreset).mockReturnValue({
+			id: "saved-preset",
+			name: "NewPreset",
+			source: "user",
+			author: "",
+			starred: false,
+			data: {} as SynthPresetV1,
+			tags: [],
+		});
+
 		const { result } = renderHook(() =>
 			useSynthPresetManager({
 				builtinPresets: mockBuiltinPresets,
@@ -198,27 +213,11 @@ describe("useSynthPresetManager", () => {
 			result.current.handleSavePreset("NewPreset");
 		});
 
-		expect(presetStorage.savePreset).toHaveBeenCalledWith(
-			"NewPreset",
-			mockGatherState(),
-			expect.any(Object),
-		);
-	});
-
-	it("toggles library presets", () => {
-		const { result } = renderHook(() =>
-			useSynthPresetManager({
-				builtinPresets: mockBuiltinPresets,
-				gatherState: mockGatherState,
-				applyPreset: mockApplyPreset,
+		expect(presetStorage.saveStoredPreset).toHaveBeenCalledWith(
+			expect.objectContaining({
+				name: "NewPreset",
+				source: "user",
 			}),
 		);
-
-		act(() => {
-			result.current.handleToggleLibraryPresets();
-		});
-
-		expect(result.current.showLibraryPresets).toBe(true);
-		expect(presetStorage.saveShowLibraryPresets).toHaveBeenCalledWith(true);
 	});
 });
