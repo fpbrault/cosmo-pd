@@ -106,31 +106,164 @@ jobs:
         env:
           GUMROAD_ACCESS_TOKEN: ${{ secrets.GUMROAD_ACCESS_TOKEN }}
           GUMROAD_PRODUCT_ID: ${{ secrets.GUMROAD_PRODUCT_ID }}
-          TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          shopt -s globstar
+          shopt -s globstar nullglob
+
+          readonly GUMROAD_API_ROOT="https://api.gumroad.com/v2"
+          readonly PART_SIZE_BYTES=104857600
+
+          abort_upload() {
+            local upload_id="$1"
+            local key="$2"
+            local status="accepted"
+
+            while [[ "$status" == "accepted" ]]; do
+              local response
+              response=$(curl --fail-with-body -sS \
+                -X POST "${GUMROAD_API_ROOT}/files/abort" \
+                -d "access_token=${GUMROAD_ACCESS_TOKEN}" \
+                -d "upload_id=${upload_id}" \
+                -d "key=${key}")
+              status=$(jq -r '.status' <<<"$response")
+              [[ "$status" == "accepted" ]] && sleep 2
+            done
+          }
 
           upload_file() {
             local file="$1"
             local name
-            name=$(basename "$file")
-            local display_name="${name%.pkg}"
-            display_name="${display_name%.exe}"
-            display_name="${display_name} (${TAG})"
+            local size
+            local presign_response
+            local upload_id
+            local key
+            local file_url
+            local parts_dir
+            local -a split_parts=()
+            local -a completion_args=()
+            local index=0
 
-            echo "Uploading $name ..."
-            curl --fail-with-body -sS \
-              -X POST "https://api.gumroad.com/v2/products/${GUMROAD_PRODUCT_ID}/product_files" \
-              -H "Authorization: Bearer ${GUMROAD_ACCESS_TOKEN}" \
-              -F "file=@${file}" \
-              -F "name=${display_name}"
-            echo
+            name=$(basename "$file")
+            size=$(stat -c%s "$file")
+
+            echo "Presigning $name ..." >&2
+            presign_response=$(curl --fail-with-body -sS \
+              -X POST "${GUMROAD_API_ROOT}/files/presign" \
+              -d "access_token=${GUMROAD_ACCESS_TOKEN}" \
+              -d "filename=${name}" \
+              -d "file_size=${size}")
+
+            upload_id=$(jq -r '.upload_id' <<<"$presign_response")
+            key=$(jq -r '.key' <<<"$presign_response")
+            file_url=$(jq -r '.file_url' <<<"$presign_response")
+
+            if [[ -z "$upload_id" || -z "$key" || -z "$file_url" || "$upload_id" == "null" || "$key" == "null" || "$file_url" == "null" ]]; then
+              echo "Gumroad presign response missing required fields for $name" >&2
+              exit 1
+            fi
+
+            parts_dir=$(mktemp -d)
+            split -b "${PART_SIZE_BYTES}" -d -a 6 "$file" "$parts_dir/part-"
+            mapfile -t split_parts < <(printf '%s\n' "$parts_dir"/part-* | sort)
+
+            if [[ ${#split_parts[@]} -eq 0 ]]; then
+              echo "Failed to split $name into upload parts" >&2
+              rm -rf "$parts_dir"
+              exit 1
+            fi
+
+            while IFS= read -r part; do
+              local part_number
+              local presigned_url
+              local part_file
+              local header_file
+              local etag
+
+              part_number=$(jq -r '.part_number' <<<"$part")
+              presigned_url=$(jq -r '.presigned_url' <<<"$part")
+              part_file="${split_parts[$index]:-}"
+              header_file=$(mktemp)
+
+              if [[ -z "$part_file" || ! -f "$part_file" ]]; then
+                echo "Missing local chunk for part ${part_number} of ${name}" >&2
+                rm -f "$header_file"
+                abort_upload "$upload_id" "$key" || true
+                rm -rf "$parts_dir"
+                exit 1
+              fi
+
+              echo "Uploading $name part ${part_number} ..." >&2
+              if ! curl --fail-with-body -sS \
+                -X PUT "$presigned_url" \
+                -D "$header_file" \
+                --upload-file "$part_file" \
+                -o /dev/null; then
+                rm -f "$header_file"
+                abort_upload "$upload_id" "$key" || true
+                rm -rf "$parts_dir"
+                exit 1
+              fi
+
+              etag=$(awk 'BEGIN { IGNORECASE = 1 } /^ETag:/ { gsub("\r", "", $2); print $2; exit }' "$header_file")
+              rm -f "$header_file"
+
+              if [[ -z "$etag" ]]; then
+                echo "Missing ETag for part ${part_number} of ${name}" >&2
+                abort_upload "$upload_id" "$key" || true
+                rm -rf "$parts_dir"
+                exit 1
+              fi
+
+              completion_args+=(-d "parts[$index][part_number]=${part_number}")
+              completion_args+=(-d "parts[$index][etag]=${etag}")
+              index=$((index + 1))
+            done < <(jq -c '.parts[]' <<<"$presign_response")
+
+            echo "Completing $name ..." >&2
+            if ! curl --fail-with-body -sS \
+              -X POST "${GUMROAD_API_ROOT}/files/complete" \
+              -d "access_token=${GUMROAD_ACCESS_TOKEN}" \
+              -d "upload_id=${upload_id}" \
+              -d "key=${key}" \
+              "${completion_args[@]}" >/dev/null; then
+              abort_upload "$upload_id" "$key" || true
+              rm -rf "$parts_dir"
+              exit 1
+            fi
+
+            rm -rf "$parts_dir"
+            printf '%s\n' "$file_url"
           }
 
-          for f in plugin-assets/**/*.pkg plugin-assets/**/*.exe; do
-            [[ -e "$f" ]] && upload_file "$f"
+          attach_files() {
+            local -a urls=("$@")
+            local -a attach_args=()
+            local index=0
+
+            for url in "${urls[@]}"; do
+              attach_args+=(-d "files[$index][url]=${url}")
+              index=$((index + 1))
+            done
+
+            echo "Attaching ${#urls[@]} file(s) to product ${GUMROAD_PRODUCT_ID} ..." >&2
+            curl --fail-with-body -sS \
+              -X PUT "${GUMROAD_API_ROOT}/products/${GUMROAD_PRODUCT_ID}" \
+              -d "access_token=${GUMROAD_ACCESS_TOKEN}" \
+              "${attach_args[@]}" >/dev/null
+          }
+
+          files=(plugin-assets/**/*.pkg plugin-assets/**/*.exe)
+          if [[ ${#files[@]} -eq 0 ]]; then
+            echo "No plugin assets found to upload" >&2
+            exit 1
+          fi
+
+          uploaded_urls=()
+          for f in "${files[@]}"; do
+            uploaded_urls+=("$(upload_file "$f")")
           done
+
+          attach_files "${uploaded_urls[@]}"
 
   create-release:
     name: Create GitHub release
