@@ -49,7 +49,6 @@ pub type AlgoControlSlots = [Option<AlgoControlValueV1>; MAX_ALGO_CONTROLS];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
-
 // TODO: refactor this file so we dont need to hardcode all the control IDs in an enum like this.
 pub enum AlgoControlId {
     AlgoBlend,
