@@ -1,3 +1,4 @@
+import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 import Button from "@/components/controls/Button";
 import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
@@ -48,14 +49,7 @@ export default function PresetNavigator({
 					disabled={allEntries.length === 0}
 					aria-label="Previous preset"
 				>
-					<svg
-						viewBox="0 -960 960 960"
-						className="h-10 w-10 fill-cz-cream"
-						xmlns="http://www.w3.org/2000/svg"
-						aria-hidden="true"
-					>
-						<path d="M640-197 200-477l440-280v560Zm-60-280Zm0 171v-342L311-477l269 171Z" />
-					</svg>
+					<MdChevronLeft className="h-10 w-10 fill-cz-cream" />
 				</Button>
 
 				<div className="flex flex-1 items-stretch overflow-hidden rounded-xl border border-cz-border bg-cz-inset">
@@ -110,14 +104,7 @@ export default function PresetNavigator({
 					disabled={allEntries.length === 0}
 					aria-label="Next preset"
 				>
-					<svg
-						viewBox="0 -960 960 960"
-						className="h-10 w-10 rotate-180 fill-cz-cream"
-						xmlns="http://www.w3.org/2000/svg"
-						aria-hidden="true"
-					>
-						<path d="M640-197 200-477l440-280v560Zm-60-280Zm0 171v-342L311-477l269 171Z" />
-					</svg>
+					<MdChevronRight className="h-10 w-10 fill-cz-cream" />
 				</Button>
 			</div>
 		</div>
