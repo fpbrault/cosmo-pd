@@ -142,6 +142,7 @@ jobs:
             local -a split_parts=()
             local -a completion_args=()
             local index=0
+            local complete_response
 
             name=$(basename "$file")
             size=$(stat -c%s "$file")
@@ -152,6 +153,11 @@ jobs:
               -d "access_token=${GUMROAD_ACCESS_TOKEN}" \
               -d "filename=${name}" \
               -d "file_size=${size}")
+
+            if [[ "$(jq -r '.success // "false"' <<<"$presign_response")" != "true" ]]; then
+              echo "Gumroad presign failed for $name: $presign_response" >&2
+              exit 1
+            fi
 
             upload_id=$(jq -r '.upload_id' <<<"$presign_response")
             key=$(jq -r '.key' <<<"$presign_response")
@@ -220,12 +226,19 @@ jobs:
             done < <(jq -c '.parts[]' <<<"$presign_response")
 
             echo "Completing $name ..." >&2
-            if ! curl --fail-with-body -sS \
+            if ! complete_response=$(curl --fail-with-body -sS \
               -X POST "${GUMROAD_API_ROOT}/files/complete" \
               -d "access_token=${GUMROAD_ACCESS_TOKEN}" \
               -d "upload_id=${upload_id}" \
               -d "key=${key}" \
-              "${completion_args[@]}" >/dev/null; then
+              "${completion_args[@]}"); then
+              abort_upload "$upload_id" "$key" || true
+              rm -rf "$parts_dir"
+              exit 1
+            fi
+
+            if [[ "$(jq -r '.success // "false"' <<<"$complete_response")" != "true" ]]; then
+              echo "Gumroad complete failed for $name: $complete_response" >&2
               abort_upload "$upload_id" "$key" || true
               rm -rf "$parts_dir"
               exit 1
@@ -238,15 +251,23 @@ jobs:
           attach_files() {
             local -a urls=("$@")
             local -a attach_args=()
+            local attach_response
             for url in "${urls[@]}"; do
               attach_args+=(-d "files[][url]=${url}")
             done
 
             echo "Attaching ${#urls[@]} file(s) to product ${GUMROAD_PRODUCT_ID} ..." >&2
-            curl --fail-with-body -sS \
+            attach_response=$(curl --fail-with-body -sS \
               -X PUT "${GUMROAD_API_ROOT}/products/${GUMROAD_PRODUCT_ID}" \
               -d "access_token=${GUMROAD_ACCESS_TOKEN}" \
-              "${attach_args[@]}" >/dev/null
+              "${attach_args[@]}")
+
+            if [[ "$(jq -r '.success // "false"' <<<"$attach_response")" != "true" ]]; then
+              echo "Gumroad attach failed: $attach_response" >&2
+              exit 1
+            fi
+
+            echo "Attach succeeded for product $(jq -r '.product.permalink // "unknown"' <<<"$attach_response")" >&2
           }
 
           files=(plugin-assets/**/*.pkg plugin-assets/**/*.exe)
