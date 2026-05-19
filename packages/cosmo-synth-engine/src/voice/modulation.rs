@@ -298,6 +298,7 @@ pub(crate) fn modulated_line_params(
 
     let algo_blend_mod = cache.get(algo_blend_dest, sources);
 
+    *scratch = *line;
     scratch.algo_blend = (line.algo_blend + algo_blend_mod).clamp(0.0, 1.0);
     if cache.has_env_step_routes {
         scratch.dco_env =
