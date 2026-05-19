@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779205863856,
+  "lastUpdate": 1779216361355,
   "repoUrl": "https://github.com/fpbrault/cosmo-pd",
   "entries": {
     "cosmo-synth-engine": [
@@ -11987,6 +11987,228 @@ window.BENCHMARK_DATA = {
             "name": "opt_all_combined_8_voices",
             "value": 11641895,
             "range": "± 260889",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "fpbrault@gmail.com",
+            "name": "Felix Perron-Brault",
+            "username": "fpbrault"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bf283ea9bb3670d29883bcc73b0431ad344f10b4",
+          "message": "feat: enhance mini keyboard functionality (#209)\n\n* feat: add factory CZ presets and preset identity management\n\n- Introduced factory CZ presets in `factoryCzPresets.ts` using definitions from `factoryCzPresetDefinitions`.\n- Created `presetIdentity.ts` for managing preset identities, including ID creation and normalization of preset data.\n- Added `presetSources.ts` to define preset sources and their labels.\n- Updated `presetStorage.ts` to support new stored preset structure, including favorites management.\n- Enhanced `presetStorage.test.ts` with tests for new functionalities and refactored existing tests for clarity.\n- Implemented `presetTags.ts` for managing and normalizing preset tags.\n- Modified `presetTypes.ts` to include new types for frontend presets and metadata.\n\n* Refactor preset storage to use IndexedDB for better performance and reliability\n\n- Updated preset storage functions to utilize IndexedDB instead of localStorage.\n- Implemented asynchronous operations for saving, loading, and deleting presets.\n- Added functions to manage favorites and current state using IndexedDB.\n- Modified tests to accommodate the new storage mechanism and ensure proper functionality.\n- Removed legacy localStorage code and replaced it with IndexedDB interactions.\n- Updated documentation to reflect changes in preset management and storage.\n\n* feat: add version bump and release scripts for automated version management\n\n* feat: add react-icons and enhance keyboard functionality\n\n- Added `react-icons` dependency to the project.\n- Updated `SharedPhaseDistortionVisualizer` to include `sendAftertouch` in note handling.\n- Enhanced `MiniKeyboardOverlay` to support aftertouch functionality and keyboard settings.\n- Introduced `KeyboardSettingsModal` for configuring keyboard octaves, range, and input mode.\n- Updated `SynthInfoBar` to include a settings button for the keyboard.\n- Refactored `MacroKnobsPanel` and `PresetNavigator` to use icons from `react-icons`.\n- Modified `synthUiStore` to manage keyboard settings and input modes.\n\n* fix: remove unnecessary aftertouch handling in MiniKeyboardOverlay\n\n* feat: implement polyphonic aftertouch functionality across synthesizer components\n\n* feat: enhance MiniKeyboardOverlay with improved aftertouch handling and smooth release functionality\n\n* feat: add tests for MiniKeyboardOverlay and enhance synthStore mock with polyMode",
+          "timestamp": "2026-05-19T14:39:34-04:00",
+          "tree_id": "b6112a9cc8f90adee939575d460e2b42aedc166b",
+          "url": "https://github.com/fpbrault/cosmo-pd/commit/bf283ea9bb3670d29883bcc73b0431ad344f10b4"
+        },
+        "date": 1779216357891,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "default_3_voices",
+            "value": 2934775,
+            "range": "± 89779",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_6_voices",
+            "value": 4492616,
+            "range": "± 47994",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_8_voices",
+            "value": 5537372,
+            "range": "± 46990",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_3_voices",
+            "value": 2524095,
+            "range": "± 27711",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_6_voices",
+            "value": 2856803,
+            "range": "± 27305",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_8_voices",
+            "value": 3100134,
+            "range": "± 49777",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_3_voices",
+            "value": 8346278,
+            "range": "± 45274",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_6_voices",
+            "value": 11179668,
+            "range": "± 42385",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_8_voices",
+            "value": 13048979,
+            "range": "± 44683",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_3_voices",
+            "value": 11245044,
+            "range": "± 76305",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_6_voices",
+            "value": 15765366,
+            "range": "± 128639",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_8_voices",
+            "value": 17458835,
+            "range": "± 130571",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_3_voices",
+            "value": 6889815,
+            "range": "± 92475",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_6_voices",
+            "value": 8944012,
+            "range": "± 48929",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_8_voices",
+            "value": 10123471,
+            "range": "± 85597",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_3_voices",
+            "value": 4018286,
+            "range": "± 37033",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_6_voices",
+            "value": 5535644,
+            "range": "± 44185",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_8_voices",
+            "value": 6595612,
+            "range": "± 132417",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_3_voices",
+            "value": 11900137,
+            "range": "± 77972",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_6_voices",
+            "value": 13546588,
+            "range": "± 55382",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_8_voices",
+            "value": 13710212,
+            "range": "± 43227",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_3_voices",
+            "value": 6395901,
+            "range": "± 42941",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_6_voices",
+            "value": 8180189,
+            "range": "± 41413",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_8_voices",
+            "value": 9381764,
+            "range": "± 52734",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_3_voices",
+            "value": 3512534,
+            "range": "± 34694",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_6_voices",
+            "value": 5443224,
+            "range": "± 77365",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_8_voices",
+            "value": 6754958,
+            "range": "± 100695",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_3_voices",
+            "value": 3565840,
+            "range": "± 36578",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_6_voices",
+            "value": 5635841,
+            "range": "± 69326",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_8_voices",
+            "value": 6907369,
+            "range": "± 65823",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_3_voices",
+            "value": 7578506,
+            "range": "± 71694",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_6_voices",
+            "value": 10230388,
+            "range": "± 141095",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_8_voices",
+            "value": 11667466,
+            "range": "± 46887",
             "unit": "ns/iter"
           }
         ]
