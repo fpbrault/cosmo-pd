@@ -92,10 +92,11 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		},
 		[],
 	);
-	const { activeNotes, sendNoteOn, sendNoteOff, panic } = useNoteHandling({
-		eventSink: sendNativeEngineEvent,
-		velocityCurve,
-	});
+	const { activeNotes, sendNoteOn, sendNoteOff, panic, sendPolyAftertouch } =
+		useNoteHandling({
+			eventSink: sendNativeEngineEvent,
+			velocityCurve,
+		});
 
 	usePluginParamBridge();
 
@@ -343,6 +344,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 							activeNotes,
 							onNoteOn: sendNoteOn,
 							onNoteOff: sendNoteOff,
+							onPolyAftertouch: sendPolyAftertouch,
 						}}
 					/>
 				</div>

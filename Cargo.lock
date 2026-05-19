@@ -532,7 +532,6 @@ checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 [[package]]
 name = "baseview"
 version = "0.1.0"
-source = "git+https://github.com/truce-audio/baseview.git#b2a588bc0098dffd9309934874b9d777834226fd"
 dependencies = [
  "keyboard-types",
  "nix 0.22.3",
@@ -5148,7 +5147,6 @@ name = "truce"
 version = "0.41.0"
 source = "git+https://github.com/truce-audio/truce.git?tag=v0.41.0#9e43810b595ca63ab1df2e329bb8451c4d808f83"
 dependencies = [
- "truce-clap",
  "truce-core",
  "truce-derive",
  "truce-gui",

@@ -7,12 +7,14 @@ pub(crate) struct ModMatrixCache {
     pub values: [f32; NUM_MOD_DESTINATIONS],
     pub ref_mod_env: f32,
     pub ref_velocity: f32,
+    pub ref_aftertouch: f32,
     pub has_env_step_routes: bool,
     amounts_by_source: [[f32; NUM_MOD_DESTINATIONS]; 11],
     active_destinations: [usize; NUM_MOD_DESTINATIONS],
     active_destination_count: usize,
     per_voice_mod_env_amounts: [f32; NUM_MOD_DESTINATIONS],
     per_voice_velocity_amounts: [f32; NUM_MOD_DESTINATIONS],
+    per_voice_aftertouch_amounts: [f32; NUM_MOD_DESTINATIONS],
 }
 
 impl ModMatrixCache {
@@ -28,6 +30,7 @@ impl ModMatrixCache {
         self.active_destination_count = 0;
         self.per_voice_mod_env_amounts.fill(0.0);
         self.per_voice_velocity_amounts.fill(0.0);
+        self.per_voice_aftertouch_amounts.fill(0.0);
         self.has_env_step_routes = false;
 
         let mut active_marks = [false; NUM_MOD_DESTINATIONS];
@@ -55,6 +58,9 @@ impl ModMatrixCache {
                 } else {
                     self.per_voice_velocity_amounts[idx] += route.amount;
                 }
+            }
+            if route.source == ModSource::Aftertouch {
+                self.per_voice_aftertouch_amounts[idx] += route.amount;
             }
         }
     }
@@ -84,6 +90,7 @@ impl ModMatrixCache {
 
         self.ref_mod_env = sources.mod_env;
         self.ref_velocity = sources.velocity;
+        self.ref_aftertouch = sources.aftertouch;
     }
 
     #[inline]
@@ -98,6 +105,10 @@ impl ModMatrixCache {
         if vel_amt != 0.0 {
             v += vel_amt * (sources.velocity - self.ref_velocity);
         }
+        let aftertouch_amt = self.per_voice_aftertouch_amounts[idx];
+        if aftertouch_amt != 0.0 {
+            v += aftertouch_amt * (sources.aftertouch - self.ref_aftertouch);
+        }
 
         v.clamp(-1.0, 1.0)
     }
@@ -109,12 +120,14 @@ impl Default for ModMatrixCache {
             values: [0.0; NUM_MOD_DESTINATIONS],
             ref_mod_env: 0.0,
             ref_velocity: 0.0,
+            ref_aftertouch: 0.0,
             has_env_step_routes: false,
             amounts_by_source: [[0.0; NUM_MOD_DESTINATIONS]; 11],
             active_destinations: [0; NUM_MOD_DESTINATIONS],
             active_destination_count: 0,
             per_voice_mod_env_amounts: [0.0; NUM_MOD_DESTINATIONS],
             per_voice_velocity_amounts: [0.0; NUM_MOD_DESTINATIONS],
+            per_voice_aftertouch_amounts: [0.0; NUM_MOD_DESTINATIONS],
         }
     }
 }

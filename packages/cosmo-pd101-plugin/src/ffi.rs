@@ -945,6 +945,21 @@ pub extern "C" fn cosmo_pd101_ffi_set_aftertouch(
     CosmoPd101FfiStatus::Ok
 }
 
+#[unsafe(no_mangle)]
+pub extern "C" fn cosmo_pd101_ffi_set_poly_aftertouch(
+    engine: *mut CosmoPd101FfiEngine,
+    note: u8,
+    value: f32,
+) -> CosmoPd101FfiStatus {
+    let Ok(engine) = engine_mut(engine) else {
+        return CosmoPd101FfiStatus::NullPointer;
+    };
+    engine
+        .processor
+        .set_poly_aftertouch(note, value.clamp(0.0, 1.0));
+    CosmoPd101FfiStatus::Ok
+}
+
 /// # Safety
 ///
 /// `engine` must be a valid, non-null pointer returned by

@@ -25,7 +25,7 @@ syn = { version = "2", features = [
 ] }
 quote = "1"
 proc-macro2 = "1"
-truce = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
+truce = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0", default-features = false }
 truce-core = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
 truce-params = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
 truce-clap = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
@@ -70,3 +70,6 @@ lto = false
 
 [profile.shell]
 inherits = "release"
+
+[patch."https://github.com/truce-audio/baseview.git"]
+baseview = { path = "vendor/baseview" }

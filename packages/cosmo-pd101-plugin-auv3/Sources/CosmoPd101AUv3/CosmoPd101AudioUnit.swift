@@ -249,6 +249,13 @@ public final class CosmoPd101AudioUnit: AUAudioUnit {
             _ = cosmo_pd101_ffi_set_mod_wheel(engine, Float(payload["value"] as? Double ?? 0))
         case "aftertouch":
             _ = cosmo_pd101_ffi_set_aftertouch(engine, Float(payload["value"] as? Double ?? 0))
+        case "polyAftertouch":
+            let note = UInt8(clamping: payload["note"] as? Int ?? 60)
+            _ = cosmo_pd101_ffi_set_poly_aftertouch(
+                engine,
+                note,
+                Float(payload["value"] as? Double ?? 0)
+            )
         case "panic":
             _ = cosmo_pd101_ffi_all_notes_off(engine)
         default:
@@ -412,6 +419,10 @@ public final class CosmoPd101AudioUnit: AUAudioUnit {
             }
         case 0xB0:
             handleControlChange(cc: data1, value: data2)
+        case 0xD0:
+            _ = cosmo_pd101_ffi_set_aftertouch(engine, Float(data1) / 127.0)
+        case 0xA0:
+            _ = cosmo_pd101_ffi_set_poly_aftertouch(engine, data1, Float(data2) / 127.0)
         case 0xE0:
             let raw = Int(data1) | (Int(data2) << 7)
             let normalized = (Float(raw) - 8192.0) / 8192.0

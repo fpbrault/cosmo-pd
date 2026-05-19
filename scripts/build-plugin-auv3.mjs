@@ -1,4 +1,4 @@
-import { cp, mkdir, rm } from "node:fs/promises";
+import { cp, mkdir, readdir, rm } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -45,10 +45,10 @@ async function run(command, args, cwd = repoRoot, env = {}) {
 
 async function copyWebview() {
 	const webviewDistDir = join(pluginDir, "webview", "dist");
-	for (const entry of await fs.readdir(hostExtensionUiDir)) {
+	for (const entry of await readdir(hostExtensionUiDir)) {
 		await rm(join(hostExtensionUiDir, entry), { recursive: true, force: true });
 	}
-	for (const entry of await fs.readdir(webviewDistDir)) {
+	for (const entry of await readdir(webviewDistDir)) {
 		await cp(join(webviewDistDir, entry), join(hostExtensionUiDir, entry), {
 			recursive: true,
 		});
@@ -62,6 +62,7 @@ async function createIosXcframework(options) {
 	const outputPath = join(artifactsDir, "CosmoPd101Plugin.xcframework");
 
 	await run("rustup", ["target", "add", deviceTarget, simulatorTarget]);
+	const iosFeatures = ["--no-default-features", "--features", "au"];
 	await run(
 		"cargo",
 		[
@@ -69,6 +70,7 @@ async function createIosXcframework(options) {
 			"-p",
 			"cosmo-pd101-plugin",
 			...(options.release ? ["--profile", "auv3"] : []),
+			...iosFeatures,
 			"--target",
 			deviceTarget,
 		],
@@ -82,6 +84,7 @@ async function createIosXcframework(options) {
 			"-p",
 			"cosmo-pd101-plugin",
 			...(options.release ? ["--profile", "auv3"] : []),
+			...iosFeatures,
 			"--target",
 			simulatorTarget,
 		],
