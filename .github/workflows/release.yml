@@ -214,8 +214,8 @@ jobs:
                 exit 1
               fi
 
-              completion_args+=(-d "parts[$index][part_number]=${part_number}")
-              completion_args+=(-d "parts[$index][etag]=${etag}")
+              completion_args+=(-d "parts[][part_number]=${part_number}")
+              completion_args+=(-d "parts[][etag]=${etag}")
               index=$((index + 1))
             done < <(jq -c '.parts[]' <<<"$presign_response")
 
@@ -238,11 +238,8 @@ jobs:
           attach_files() {
             local -a urls=("$@")
             local -a attach_args=()
-            local index=0
-
             for url in "${urls[@]}"; do
-              attach_args+=(-d "files[$index][url]=${url}")
-              index=$((index + 1))
+              attach_args+=(-d "files[][url]=${url}")
             done
 
             echo "Attaching ${#urls[@]} file(s) to product ${GUMROAD_PRODUCT_ID} ..." >&2
