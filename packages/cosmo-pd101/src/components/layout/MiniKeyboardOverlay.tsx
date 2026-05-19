@@ -285,8 +285,6 @@ export default function MiniKeyboardOverlay({
 					handleAftertouchMove(event.pointerId, event.clientY);
 					return;
 				}
-				aftertouchOriginsRef.current.set(event.pointerId, event.clientY);
-				onAftertouch?.(0);
 				playNoteForPointer(event.pointerId, parsedNote, 100);
 				return;
 			}
