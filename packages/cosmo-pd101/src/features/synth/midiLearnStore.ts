@@ -8,7 +8,13 @@ export type MidiBinding = {
 	cc: number;
 };
 
-const MIDI_LEARN_STORAGE_KEY = "cosmo-pd101-midi-learn";
+const MIDI_LEARN_STORAGE_KEY = "cosmo-pd101-midi-learn-v2";
+const DEFAULT_BINDINGS: Partial<Record<MidiLearnTargetKey, MidiBinding>> = {
+	macro1: { paramKey: "macro1", channel: 0, cc: 8 },
+	macro2: { paramKey: "macro2", channel: 0, cc: 41 },
+	macro3: { paramKey: "macro3", channel: 0, cc: 42 },
+	macro4: { paramKey: "macro4", channel: 0, cc: 43 },
+};
 
 type MidiLearnState = {
 	learnMode: boolean;
@@ -43,7 +49,7 @@ export type MidiLearnStore = MidiLearnState & MidiLearnActions;
 
 const DEFAULT_STATE: MidiLearnState = {
 	learnMode: false,
-	bindings: {},
+	bindings: DEFAULT_BINDINGS,
 	lastCapturedCc: null,
 	pendingLearnParam: null,
 };

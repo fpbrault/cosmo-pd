@@ -7,37 +7,43 @@ import PresetLibrary from "./PresetLibrary";
 const libraryPreset: LibraryPreset = {
 	id: "library-1",
 	name: "Archive Pad",
+	source: "cz-factory",
+	author: "Casio",
+	starred: false,
 };
 
 const entries: PresetEntry[] = [
 	{
-		id: "builtin:factory-bass",
+		id: "builtin-factory-bass",
 		label: "Factory Bass",
 		type: "builtin",
-		sourceLabel: "Built-in",
+		source: "cosmo-factory",
+		sourceLabel: "Cosmo Library",
+		author: "Purr Audio",
 		starred: true,
 		favorite: false,
-		category: "",
 		tags: [],
 	},
 	{
-		id: "local:local-keys",
+		id: "local-keys",
 		label: "Local Keys",
 		type: "local",
+		source: "user",
 		sourceLabel: "User",
+		author: "",
 		starred: false,
 		favorite: false,
-		category: "keys",
 		tags: ["warm"],
 	},
 	{
-		id: "library:archive-pad",
+		id: "library-1",
 		label: libraryPreset.name,
 		type: "library",
-		sourceLabel: "CZ library",
+		source: "cz-factory",
+		sourceLabel: "Temple Of CZ",
+		author: "Casio",
 		starred: false,
 		favorite: false,
-		category: "",
 		tags: [],
 		preset: libraryPreset,
 	},
@@ -46,9 +52,7 @@ const entries: PresetEntry[] = [
 function createProps() {
 	return {
 		allEntries: entries,
-		showLibraryPresets: true,
-		onToggleLibraryPresets: vi.fn(),
-		activeEntryId: "local:local-keys",
+		activeEntryId: "local-keys",
 		activePresetName: "Local Keys",
 		onLoadBuiltin: vi.fn(),
 		onLoadLocal: vi.fn(),
@@ -56,8 +60,8 @@ function createProps() {
 		onSavePreset: vi.fn(),
 		onDeletePreset: vi.fn(),
 		onRenamePreset: vi.fn(),
+		onSetPresetAuthor: vi.fn(),
 		onSetPresetFavorite: vi.fn(),
-		onSetPresetCategory: vi.fn(),
 		onSetPresetTags: vi.fn(),
 		onExportPreset: vi.fn(),
 		onExportCurrentState: vi.fn(),
@@ -84,11 +88,11 @@ describe("PresetLibrary", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Archive Pad" }));
 
 		expect(props.onLoadBuiltin).toHaveBeenCalledWith("Factory Bass");
-		expect(props.onLoadLocal).toHaveBeenCalledWith("Local Keys");
+		expect(props.onLoadLocal).toHaveBeenCalledWith("local-keys");
 		expect(props.onLoadLibrary).toHaveBeenCalledWith(libraryPreset);
 	});
 
-	it("saves, exports, imports, initializes, renames, and deletes from full-screen controls", async () => {
+	it("saves, exports, imports, initializes, renames, edits tags, and deletes from library controls", async () => {
 		const props = createProps();
 		class MockFileReader {
 			public onload: ((event: ProgressEvent<FileReader>) => void) | null = null;
@@ -112,14 +116,9 @@ describe("PresetLibrary", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Confirm save as" }));
 		expect(props.onSavePreset).toHaveBeenCalledWith("New Patch");
 
-		const saveInput = screen.getByPlaceholderText("Export file name");
-		fireEvent.change(saveInput, { target: { value: "  Snapshot  " } });
 		fireEvent.click(
-			screen.getByRole("button", { name: "Export current state" }),
+			screen.getByRole("button", { name: "Create Default Preset" }),
 		);
-		expect(props.onExportCurrentState).toHaveBeenCalledWith("Snapshot");
-
-		fireEvent.click(screen.getByRole("button", { name: "Init" }));
 		expect(props.onInitPreset).toHaveBeenCalled();
 
 		const fileInput = container.querySelector('input[type="file"]');
@@ -138,19 +137,34 @@ describe("PresetLibrary", () => {
 			);
 		});
 
-		fireEvent.click(screen.getByRole("button", { name: "Rename Local Keys" }));
-		fireEvent.change(screen.getByDisplayValue("Local Keys"), {
+		const renameInput = screen.getByPlaceholderText("Preset name");
+		fireEvent.change(renameInput, {
 			target: { value: "  Renamed Keys  " },
 		});
-		fireEvent.click(screen.getByRole("button", { name: "Confirm rename" }));
+		fireEvent.blur(renameInput);
 		expect(props.onRenamePreset).toHaveBeenCalledWith(
-			"Local Keys",
+			"local-keys",
 			"Renamed Keys",
 		);
+		const authorInput = screen.getByPlaceholderText("Preset author");
+		fireEvent.change(authorInput, { target: { value: "Jane Doe" } });
+		fireEvent.blur(authorInput);
+		expect(props.onSetPresetAuthor).toHaveBeenCalledWith(
+			"local-keys",
+			"Jane Doe",
+		);
 
-		fireEvent.click(screen.getByRole("button", { name: "Delete Local Keys" }));
-		fireEvent.click(screen.getByRole("button", { name: "Confirm delete" }));
-		expect(props.onDeletePreset).toHaveBeenCalledWith("Local Keys");
+		fireEvent.change(screen.getByPlaceholderText("Add tag"), {
+			target: { value: "bass" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Add" }));
+		expect(props.onSetPresetTags).toHaveBeenCalledWith("local-keys", [
+			"warm",
+			"bass",
+		]);
+
+		fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+		expect(props.onDeletePreset).toHaveBeenCalledWith("local-keys");
 	});
 
 	it("supports keyboard navigation in the list", () => {
@@ -163,7 +177,7 @@ describe("PresetLibrary", () => {
 		fireEvent.keyDown(list, { key: "Enter" });
 
 		expect(props.onLoadLocal.mock.calls.length).toBeGreaterThan(0);
-		expect(props.onLoadLocal).toHaveBeenLastCalledWith("Local Keys");
+		expect(props.onLoadLocal).toHaveBeenLastCalledWith("local-keys");
 	});
 
 	it("handles Arrow navigation from window-level keydown", () => {
@@ -211,31 +225,37 @@ describe("PresetLibrary", () => {
 		).__czSetParams = previousSetParams;
 	});
 
-	it("clears modal state when dialogs receive a native cancel event", () => {
+	it("closes the save-as modal when it receives a native cancel event", () => {
 		const props = createProps();
 		render(<PresetLibrary {...props} />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Rename Local Keys" }));
-		const renameDialog = screen.getByText("Rename preset").closest("dialog");
-		if (!(renameDialog instanceof HTMLDialogElement)) {
-			throw new Error("expected rename dialog");
+		fireEvent.click(screen.getByRole("button", { name: "Save As" }));
+		const saveAsDialog = screen.getByText("Save preset as").closest("dialog");
+		if (!(saveAsDialog instanceof HTMLDialogElement)) {
+			throw new Error("expected save-as dialog");
 		}
 		fireEvent(
-			renameDialog,
+			saveAsDialog,
 			new Event("cancel", { bubbles: false, cancelable: true }),
 		);
-		expect(renameDialog.open).toBe(false);
+		expect(saveAsDialog.open).toBe(false);
+	});
 
-		fireEvent.click(screen.getByRole("button", { name: "Delete Local Keys" }));
-		const deleteDialog = screen.getByText("Delete preset?").closest("dialog");
-		if (!(deleteDialog instanceof HTMLDialogElement)) {
-			throw new Error("expected delete dialog");
-		}
-		fireEvent(
-			deleteDialog,
-			new Event("cancel", { bubbles: false, cancelable: true }),
-		);
-		expect(deleteDialog.open).toBe(false);
+	it("can filter the list down to user presets only", () => {
+		const props = createProps();
+		render(<PresetLibrary {...props} />);
+
+		fireEvent.click(screen.getByRole("button", { name: "User Only" }));
+
+		expect(
+			screen.queryByRole("button", { name: "Factory Bass" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Archive Pad" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Local Keys" }),
+		).toBeInTheDocument();
 	});
 
 	it("closes back to the synth view", () => {
@@ -252,7 +272,7 @@ describe("PresetLibrary", () => {
 		render(
 			<PresetLibrary
 				{...props}
-				activeEntryId="builtin:factory-bass"
+				activeEntryId="builtin-factory-bass"
 				activePresetName="Factory Bass"
 			/>,
 		);
@@ -292,7 +312,7 @@ describe("PresetLibrary", () => {
 			screen.getByRole("button", { name: "Favorite Local Keys" }),
 		);
 
-		expect(props.onSetPresetFavorite).toHaveBeenCalledWith("Local Keys", true);
+		expect(props.onSetPresetFavorite).toHaveBeenCalledWith("local-keys", true);
 	});
 
 	it("shows empty state when no presets are available", () => {
@@ -331,16 +351,5 @@ describe("PresetLibrary", () => {
 		});
 
 		expect(screen.getByText("Invalid preset file.")).toBeInTheDocument();
-	});
-
-	it("toggles factory presets visibility", () => {
-		const props = createProps();
-		render(<PresetLibrary {...props} />);
-
-		fireEvent.click(
-			screen.getByRole("button", { name: "Factory Presets: Visible" }),
-		);
-
-		expect(props.onToggleLibraryPresets).toHaveBeenCalled();
 	});
 });

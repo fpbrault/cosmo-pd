@@ -4,9 +4,11 @@ import { DEFAULT_SYNTH_PRESETS } from "@/lib/synth/defaultPresets";
 describe("DEFAULT_SYNTH_PRESETS", () => {
 	it("stores presets with modern modulation/effects fields", () => {
 		for (const preset of Object.values(DEFAULT_SYNTH_PRESETS)) {
+			expect(typeof preset.id).toBe("string");
 			expect(typeof preset.name).toBe("string");
-			expect(typeof preset.favorite).toBe("boolean");
-			expect(typeof preset.category).toBe("string");
+			expect(preset.source).toBe("cosmo-factory");
+			expect(preset.author).toBe("Purr Audio");
+			expect(typeof preset.starred).toBe("boolean");
 			expect(Array.isArray(preset.tags)).toBe(true);
 
 			const params = preset.data.params as Record<string, unknown>;

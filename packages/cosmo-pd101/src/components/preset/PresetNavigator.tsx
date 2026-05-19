@@ -1,4 +1,5 @@
 import Button from "@/components/controls/Button";
+import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
 
 type PresetNavigatorProps = {
@@ -19,6 +20,16 @@ export default function PresetNavigator({
 	onLibraryModeChange,
 }: PresetNavigatorProps) {
 	const toggleLibrary = () => onLibraryModeChange?.(!isLibraryModeOpen);
+	const previousMidiLearn = useMidiLearnTarget({
+		targetKey: "presetPrevious",
+		label: "Previous Preset",
+		apply: () => onStepPreset(-1),
+	});
+	const nextMidiLearn = useMidiLearnTarget({
+		targetKey: "presetNext",
+		label: "Next Preset",
+		apply: () => onStepPreset(1),
+	});
 
 	return (
 		<div className="relative w-full max-w-3xl">
@@ -26,7 +37,14 @@ export default function PresetNavigator({
 				<Button
 					type="button"
 					className="cz-btn-arrow"
-					onClick={() => onStepPreset(-1)}
+					onClick={() => {
+						if (previousMidiLearn.learnMode) {
+							previousMidiLearn.onClick();
+							return;
+						}
+						onStepPreset(-1);
+					}}
+					onContextMenu={previousMidiLearn.onContextMenu}
 					disabled={allEntries.length === 0}
 					aria-label="Previous preset"
 				>
@@ -81,7 +99,14 @@ export default function PresetNavigator({
 				<Button
 					type="button"
 					className="cz-btn-arrow"
-					onClick={() => onStepPreset(1)}
+					onClick={() => {
+						if (nextMidiLearn.learnMode) {
+							nextMidiLearn.onClick();
+							return;
+						}
+						onStepPreset(1);
+					}}
+					onContextMenu={nextMidiLearn.onContextMenu}
 					disabled={allEntries.length === 0}
 					aria-label="Next preset"
 				>

@@ -19,6 +19,7 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 
 	return {
 		DEFAULT_SYNTH_PRESETS: {},
+		FACTORY_CZ_PRESETS: [],
 		SynthRenderer: () => <div data-testid="synth-renderer" />,
 		installBenchmarkApi: mockInstallBenchmarkApi,
 		useNoteHandling: () => ({

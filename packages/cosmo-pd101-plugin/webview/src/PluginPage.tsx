@@ -1,5 +1,6 @@
 import {
 	DEFAULT_SYNTH_PRESETS,
+	FACTORY_CZ_PRESETS,
 	installBenchmarkApi,
 	noteToFreq,
 	SynthRenderer,
@@ -187,7 +188,6 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 
 	const {
 		allPresetEntries,
-		showLibraryPresets,
 		activePresetId,
 		activePresetNameBase,
 		activePresetName,
@@ -198,12 +198,11 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		handleLoadBuiltin,
 		handleLoadLibrary,
 		handleStepPreset,
-		handleToggleLibraryPresets,
 		handleSavePreset,
 		handleDeletePreset,
 		handleRenamePreset,
+		handleSetPresetAuthor,
 		handleSetPresetFavorite,
-		handleSetPresetCategory,
 		handleSetPresetTags,
 		handleInitPreset,
 		handleExportPreset,
@@ -216,6 +215,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		builtinPresets: DEFAULT_SYNTH_PRESETS,
 		gatherState,
 		applyPreset,
+		libraryPresets: FACTORY_CZ_PRESETS,
 		shouldLoadCurrentState,
 	});
 
@@ -312,8 +312,6 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 					<SynthRenderer
 						headerProps={{
 							allEntries: allPresetEntries,
-							showLibraryPresets,
-							onToggleLibraryPresets: handleToggleLibraryPresets,
 							activeEntryId: activePresetId,
 							activePresetName,
 							pendingPresetChange,
@@ -324,8 +322,8 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 							onSavePreset: handleSavePreset,
 							onDeletePreset: handleDeletePreset,
 							onRenamePreset: handleRenamePreset,
+							onSetPresetAuthor: handleSetPresetAuthor,
 							onSetPresetFavorite: handleSetPresetFavorite,
-							onSetPresetCategory: handleSetPresetCategory,
 							onSetPresetTags: handleSetPresetTags,
 							onInitPreset: handleInitPreset,
 							onExportPreset: handleExportPreset,

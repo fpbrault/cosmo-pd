@@ -55,6 +55,7 @@ export type {
 } from "./lib/synth/bindings/synth";
 export { convertDecodedPatchToSynthPreset } from "./lib/synth/czPresetConverter";
 export { DEFAULT_SYNTH_PRESETS } from "./lib/synth/defaultPresets";
+export { FACTORY_CZ_PRESETS } from "./lib/synth/factoryCzPresets";
 export { noteToFreq } from "./lib/synth/pdAlgorithms";
 export {
 	pdVisualizerWorkletUrl,

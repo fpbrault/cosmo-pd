@@ -5,13 +5,14 @@ import PresetNavigator from "./PresetNavigator";
 
 const entries: PresetEntry[] = [
 	{
-		id: "builtin:factory-bass",
+		id: "builtin-factory-bass",
 		label: "Factory Bass",
 		type: "builtin",
-		sourceLabel: "Built-in",
+		source: "cosmo-factory",
+		sourceLabel: "Cosmo Library",
+		author: "Purr Audio",
 		starred: true,
 		favorite: false,
-		category: "",
 		tags: [],
 	},
 ];

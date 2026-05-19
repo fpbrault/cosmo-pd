@@ -1,12 +1,11 @@
 import type { ReactNode } from "react";
 import type { LibraryPreset } from "@/features/synth/types/libraryPreset";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
+import type { PresetTagOptions } from "@/lib/synth/presetTags";
 import PresetNavigator from "./PresetNavigator";
 
 export type SynthHeaderProps = {
 	allEntries: PresetEntry[];
-	showLibraryPresets: boolean;
-	onToggleLibraryPresets: () => void;
 	activeEntryId: string | null;
 	activePresetName: string;
 	onBrandInfoClick?: () => void;
@@ -20,17 +19,17 @@ export type SynthHeaderProps = {
 			next: string;
 		}>;
 	} | null;
-	onLoadLocal: (name: string) => void;
+	onLoadLocal: (id: string) => void;
 	onLoadLibrary: (preset: LibraryPreset) => void;
 	onLoadBuiltin: (name: string) => void;
 	onStepPreset: (direction: -1 | 1) => void;
 	onSavePreset: (name: string) => void;
-	onDeletePreset: (name: string) => void;
-	onRenamePreset: (oldName: string, newName: string) => void;
-	onSetPresetFavorite: (name: string, favorite: boolean) => void;
-	onSetPresetCategory: (name: string, category: string) => void;
-	onSetPresetTags: (name: string, tags: string[]) => void;
-	onExportPreset: (name: string) => void;
+	onDeletePreset: (id: string) => void;
+	onRenamePreset: (id: string, newName: string) => void;
+	onSetPresetAuthor: (id: string, author: string) => void;
+	onSetPresetFavorite: (id: string, favorite: boolean) => void;
+	onSetPresetTags: (id: string, tags: PresetTagOptions[]) => void;
+	onExportPreset: (id: string) => void;
 	onExportCurrentState: (name: string) => void;
 	onImportPreset: (json: string, filename: string) => void;
 	onInitPreset: () => void;
@@ -53,7 +52,9 @@ export default function SynthHeader({
 	trailingContent,
 }: SynthHeaderProps) {
 	const activeEntry = allEntries.find((entry) => entry.id === activeEntryId);
-	const activePresetSource = activeEntry?.sourceLabel ?? "Current State";
+	const activePresetSource =
+		activeEntry?.author.trim() ||
+		(activeEntry ? "Unknown Author" : "Current State");
 
 	return (
 		<header className="flex shrink-0 flex-row items-center justify-between gap-3 border-cz-border border-b-4 bg-cz-body px-8 py-2 shadow-inner">

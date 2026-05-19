@@ -9,6 +9,8 @@ type UseMidiLearnTargetOptions = {
 	targetKey?: MidiLearnTargetKey;
 	label?: string;
 	apply?: (rawValue: number) => void;
+	mode?: "continuous" | "edge-trigger";
+	threshold?: number;
 };
 
 type MidiLearnVisualState = "available" | "mapped" | "targeted" | null;
@@ -17,6 +19,8 @@ export function useMidiLearnTarget({
 	targetKey,
 	label,
 	apply,
+	mode,
+	threshold,
 }: UseMidiLearnTargetOptions) {
 	const learnMode = useMidiLearnStore((state) => state.learnMode);
 	const pendingLearnParam = useMidiLearnStore((state) =>
@@ -34,8 +38,10 @@ export function useMidiLearnTarget({
 		return registerMidiLearnTarget(targetKey, {
 			label,
 			apply,
+			mode,
+			threshold,
 		});
-	}, [apply, label, targetKey]);
+	}, [apply, label, mode, targetKey, threshold]);
 
 	const handleContextMenu = useCallback(
 		(e: React.MouseEvent) => {

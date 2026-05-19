@@ -229,7 +229,7 @@ const MidiLearnPanel: AsidePanelComponent<"midi", { className?: string }> =
 														</td>
 														<td className="overflow-visible text-cz-cream">
 															<div
-																className="tooltip tooltip-right relative z-20 block max-w-full overflow-visible before:z-[9999] before:max-w-none before:whitespace-nowrap before:font-mono before:text-[0.58rem] before:normal-case before:tracking-[0.06em]"
+																className="tooltip tooltip-right relative z-20 block max-w-full overflow-visible before:z-9999 before:max-w-none before:whitespace-nowrap before:font-mono before:text-[0.58rem] before:normal-case before:tracking-[0.06em]"
 																data-tip={controlLabel}
 															>
 																<span className="block truncate">

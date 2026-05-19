@@ -144,12 +144,12 @@ test.describe("Algo controls plugin bridge", () => {
 		);
 	});
 
-	test.skip("Line 2 algo control knob edits should invoke setAlgoControls with line 2", async ({
+	test("Line 2 algo control knob edits should invoke setAlgoControls with line 2", async ({
 		page,
 	}) => {
 		await page
 			.getByRole("button", { name: /wave\s*form/i })
-			.nth(1)
+			.nth(2)
 			.click();
 		await setLineAlgoToBend(page, 2);
 

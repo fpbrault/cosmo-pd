@@ -32,6 +32,7 @@ import {
 } from "@/features/synth/SynthParamController";
 import { useSynthStore } from "@/features/synth/synthStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
+import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import { HoverInfoProvider, useHoverInfo } from "../layout/HoverInfo";
 import MiniKeyboardOverlay from "../layout/MiniKeyboardOverlay";
 import SynthInfoBar from "../layout/SynthInfoBar";
@@ -184,6 +185,9 @@ function SynthRendererContent({
 	const [globalPanelOpen, setGlobalPanelOpen] = useState(false);
 	const [midiLearnOpen, setMidiLearnOpen] = useState(false);
 	const [macroLabelEditorOpen, setMacroLabelEditorOpen] = useState(false);
+	const [libraryVisibleEntries, setLibraryVisibleEntries] = useState<
+		PresetEntry[]
+	>(headerProps.allEntries);
 
 	const mainPanelBottomInset =
 		keyboardVisible && !libraryModeOpen ? "11rem" : "0rem";
@@ -212,6 +216,49 @@ function SynthRendererContent({
 		setActiveDrawerPanel(mainPanelMode);
 	}, [mainPanelMode, activeDrawerPanel]);
 
+	useEffect(() => {
+		setLibraryVisibleEntries(headerProps.allEntries);
+	}, [headerProps.allEntries]);
+
+	const handleStepPresetInVisibleOrder = useCallback(
+		(direction: -1 | 1) => {
+			const entries =
+				libraryVisibleEntries.length > 0
+					? libraryVisibleEntries
+					: headerProps.allEntries;
+			if (entries.length === 0) {
+				return;
+			}
+
+			const currentIndex = entries.findIndex(
+				(entry) => entry.id === headerProps.activeEntryId,
+			);
+			const nextIndex =
+				currentIndex < 0
+					? direction === 1
+						? 0
+						: entries.length - 1
+					: (currentIndex + direction + entries.length) % entries.length;
+			const entry = entries[nextIndex];
+			if (!entry) {
+				return;
+			}
+
+			if (entry.type === "local") {
+				headerProps.onLoadLocal(entry.id);
+				return;
+			}
+			if (entry.type === "builtin") {
+				headerProps.onLoadBuiltin(entry.label);
+				return;
+			}
+			if (entry.preset) {
+				headerProps.onLoadLibrary(entry.preset);
+			}
+		},
+		[headerProps, libraryVisibleEntries],
+	);
+
 	return (
 		<ModMatrixProvider modMatrix={modMatrix} setModMatrix={setModMatrix}>
 			<SynthParamControllerProvider>
@@ -225,6 +272,7 @@ function SynthRendererContent({
 					<div className="relative z-30">
 						<SynthHeader
 							{...headerProps}
+							onStepPreset={handleStepPresetInVisibleOrder}
 							onBrandInfoClick={() => setBrandInfoOpen(true)}
 							isLibraryModeOpen={libraryModeOpen}
 							onLibraryModeChange={setLibraryModeOpen}
@@ -393,8 +441,6 @@ function SynthRendererContent({
 					>
 						<MemoPresetLibrary
 							allEntries={headerProps.allEntries}
-							showLibraryPresets={headerProps.showLibraryPresets}
-							onToggleLibraryPresets={headerProps.onToggleLibraryPresets}
 							activeEntryId={headerProps.activeEntryId}
 							activePresetName={headerProps.activePresetName}
 							onLoadLocal={headerProps.onLoadLocal}
@@ -403,13 +449,14 @@ function SynthRendererContent({
 							onSavePreset={headerProps.onSavePreset}
 							onDeletePreset={headerProps.onDeletePreset}
 							onRenamePreset={headerProps.onRenamePreset}
+							onSetPresetAuthor={headerProps.onSetPresetAuthor}
 							onSetPresetFavorite={headerProps.onSetPresetFavorite}
-							onSetPresetCategory={headerProps.onSetPresetCategory}
 							onSetPresetTags={headerProps.onSetPresetTags}
 							onExportPreset={headerProps.onExportPreset}
 							onExportCurrentState={headerProps.onExportCurrentState}
 							onImportPreset={headerProps.onImportPreset}
 							onInitPreset={headerProps.onInitPreset}
+							onVisibleEntriesChange={setLibraryVisibleEntries}
 							onClose={handleCloseLibrary}
 							isOpen={libraryModeOpen}
 						/>
@@ -644,7 +691,7 @@ function SynthOverlayModal({
 
 	return (
 		<div
-			className="absolute inset-0 z-[45] flex items-center justify-center"
+			className="absolute inset-0 z-45 flex items-center justify-center"
 			role="dialog"
 			aria-modal="true"
 			aria-label={ariaLabel}

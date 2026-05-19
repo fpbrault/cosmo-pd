@@ -5,12 +5,16 @@ import {
 	DEFAULT_DCO_ENV,
 	DEFAULT_DCW_ENV,
 } from "@/lib/synth/pdAlgorithms";
+import { createPresetId } from "@/lib/synth/presetIdentity";
+import type { PresetSource } from "@/lib/synth/presetSources";
+import {
+	normalizePresetTags,
+	type PresetTagOptions,
+} from "@/lib/synth/presetTags";
 import type { FrontendPresetV1, PresetMetadata } from "@/lib/synth/presetTypes";
 
-const STORAGE_PREFIX = "cz101-preset-";
-const CURRENT_STATE_KEY = "cz101-current-state";
-const CURRENT_PRESET_SESSION_KEY = "cz101-current-preset-session";
-const SHOW_LIBRARY_PRESETS_KEY = "cz101-show-library-presets";
+const DB_NAME = "cosmo-pd101-preset-storage";
+const DB_VERSION = 1;
 
 export type { PresetMetadata };
 export type StoredPreset = FrontendPresetV1;
@@ -20,6 +24,92 @@ export type CurrentPresetSession = {
 	activePresetNameBase: string;
 	loadedPresetFingerprint: string | null;
 };
+
+type StoredPresetInput = {
+	id?: string;
+	name: string;
+	data: SynthPresetV1;
+	source?: PresetSource;
+	author?: string;
+	starred?: boolean;
+	tags?: PresetTagOptions[];
+};
+
+let dbPromise: Promise<IDBDatabase> | null = null;
+
+function getDb(): Promise<IDBDatabase> {
+	if (!dbPromise) {
+		dbPromise = new Promise((resolve, reject) => {
+			const request = indexedDB.open(DB_NAME, DB_VERSION);
+			request.onupgradeneeded = () => {
+				const db = request.result;
+				if (!db.objectStoreNames.contains("presets")) {
+					db.createObjectStore("presets", { keyPath: "id" });
+				}
+				if (!db.objectStoreNames.contains("kv")) {
+					db.createObjectStore("kv", { keyPath: "key" });
+				}
+				if (!db.objectStoreNames.contains("favorites")) {
+					db.createObjectStore("favorites", { keyPath: "id" });
+				}
+			};
+			request.onsuccess = () => resolve(request.result);
+			request.onerror = () => {
+				dbPromise = null;
+				reject(request.error);
+			};
+		});
+	}
+	return dbPromise;
+}
+
+function getFromStore<T>(storeName: string, id: string): Promise<T | null> {
+	return getDb().then(
+		(db) =>
+			new Promise((resolve, reject) => {
+				const tx = db.transaction(storeName, "readonly");
+				const request = tx.objectStore(storeName).get(id);
+				request.onsuccess = () => resolve((request.result as T) ?? null);
+				request.onerror = () => reject(request.error);
+			}),
+	);
+}
+
+function getAllFromStore<T>(storeName: string): Promise<T[]> {
+	return getDb().then(
+		(db) =>
+			new Promise((resolve, reject) => {
+				const tx = db.transaction(storeName, "readonly");
+				const request = tx.objectStore(storeName).getAll();
+				request.onsuccess = () => resolve(request.result as T[]);
+				request.onerror = () => reject(request.error);
+			}),
+	);
+}
+
+function putInStore(storeName: string, value: unknown): Promise<void> {
+	return getDb().then(
+		(db) =>
+			new Promise((resolve, reject) => {
+				const tx = db.transaction(storeName, "readwrite");
+				tx.objectStore(storeName).put(value);
+				tx.oncomplete = () => resolve();
+				tx.onerror = () => reject(tx.error);
+			}),
+	);
+}
+
+function deleteFromStore(storeName: string, id: string): Promise<void> {
+	return getDb().then(
+		(db) =>
+			new Promise((resolve, reject) => {
+				const tx = db.transaction(storeName, "readwrite");
+				tx.objectStore(storeName).delete(id);
+				tx.oncomplete = () => resolve();
+				tx.onerror = () => reject(tx.error);
+			}),
+	);
+}
 
 function isSynthPresetV1(value: unknown): value is SynthPresetV1 {
 	if (typeof value !== "object" || value === null) return false;
@@ -58,67 +148,47 @@ function isSynthPresetV1(value: unknown): value is SynthPresetV1 {
 	return true;
 }
 
-function normalizeTags(tags: string[]): string[] {
-	return Array.from(
-		new Set(
-			tags
-				.map((tag) => tag.trim().toLowerCase())
-				.filter((tag) => tag.length > 0),
-		),
-	);
-}
-
 function normalizeMetadata(metadata?: Partial<PresetMetadata>): PresetMetadata {
 	return {
-		favorite: metadata?.favorite ?? false,
-		category: metadata?.category?.trim() ?? "",
-		tags: normalizeTags(metadata?.tags ?? []),
+		tags: normalizePresetTags(metadata?.tags ?? []),
 	};
 }
 
 function isStoredPreset(value: unknown): value is StoredPreset {
 	if (typeof value !== "object" || value === null) return false;
+
 	const candidate = value as Partial<StoredPreset>;
 	return (
+		typeof candidate.id === "string" &&
 		typeof candidate.name === "string" &&
+		(candidate.source === "cosmo-factory" ||
+			candidate.source === "user" ||
+			candidate.source === "cz-factory") &&
+		typeof candidate.author === "string" &&
+		typeof candidate.starred === "boolean" &&
 		isSynthPresetV1(candidate.data) &&
-		typeof candidate.favorite === "boolean" &&
-		typeof candidate.category === "string" &&
 		Array.isArray(candidate.tags) &&
 		candidate.tags.every((tag) => typeof tag === "string")
 	);
 }
 
-function createStoredPreset(
-	name: string,
-	data: SynthPresetV1,
-	metadata?: Partial<PresetMetadata>,
-): StoredPreset {
-	const normalized = normalizeMetadata(metadata);
-	return {
-		name,
-		data,
-		favorite: normalized.favorite,
-		category: normalized.category,
-		tags: normalized.tags,
+function createStoredPreset(input: StoredPresetInput): StoredPreset {
+	const metadata = normalizeMetadata({
+		tags: input.tags,
+	});
+	const basePreset = {
+		name: input.name.trim(),
+		source: input.source ?? "user",
+		author: input.author?.trim() ?? "",
+		starred: input.starred ?? false,
+		data: input.data,
+		tags: metadata.tags,
 	};
-}
 
-function readStoredPreset(name: string): StoredPreset | null {
-	const raw = localStorage.getItem(STORAGE_PREFIX + name);
-	if (!raw) return null;
-	try {
-		const parsed = JSON.parse(raw);
-		if (isStoredPreset(parsed)) {
-			return parsed;
-		}
-		if (isSynthPresetV1(parsed)) {
-			return createStoredPreset(name, parsed);
-		}
-		return null;
-	} catch {
-		return null;
-	}
+	return {
+		id: input.id ?? createPresetId(basePreset),
+		...basePreset,
+	};
 }
 
 export const DEFAULT_PRESET: SynthPresetV1 = {
@@ -202,141 +272,167 @@ export const DEFAULT_PRESET: SynthPresetV1 = {
 	},
 };
 
-export function savePreset(
-	name: string,
-	data: SynthPresetV1,
-	metadata?: Partial<PresetMetadata>,
-): void {
-	const existing = readStoredPreset(name);
-	const mergedMetadata = normalizeMetadata({
-		favorite: existing?.favorite,
-		category: existing?.category,
-		tags: existing?.tags,
-		...metadata,
-	});
-	const stored = createStoredPreset(name, data, mergedMetadata);
-	localStorage.setItem(STORAGE_PREFIX + name, JSON.stringify(stored));
+export async function saveStoredPreset(
+	input: StoredPresetInput,
+): Promise<StoredPreset> {
+	const stored = createStoredPreset(input);
+	await putInStore("presets", stored);
+	return stored;
 }
 
-export function saveShowLibraryPresets(value: boolean): void {
-	localStorage.setItem(SHOW_LIBRARY_PRESETS_KEY, value ? "1" : "0");
-}
-
-export function loadShowLibraryPresets(): boolean {
-	const raw = localStorage.getItem(SHOW_LIBRARY_PRESETS_KEY);
-	return raw === null ? true : raw === "1";
-}
-
-export function loadPreset(name: string): SynthPresetV1 | null {
-	return readStoredPreset(name)?.data ?? null;
-}
-
-export function loadStoredPreset(name: string): StoredPreset | null {
-	return readStoredPreset(name);
-}
-
-export function getPresetMetadata(name: string): PresetMetadata | null {
-	const preset = readStoredPreset(name);
-	if (!preset) return null;
-	return {
-		favorite: preset.favorite,
-		category: preset.category,
-		tags: preset.tags,
-	};
-}
-
-export function updatePresetMetadata(
-	name: string,
-	metadata: Partial<PresetMetadata>,
-): boolean {
-	const preset = readStoredPreset(name);
-	if (!preset) {
-		return false;
-	}
-	const nextMetadata = normalizeMetadata({
-		favorite: preset.favorite,
-		category: preset.category,
-		tags: preset.tags,
-		...metadata,
-	});
-	const nextPreset = createStoredPreset(name, preset.data, nextMetadata);
-	localStorage.setItem(STORAGE_PREFIX + name, JSON.stringify(nextPreset));
-	return true;
-}
-
-export function listPresets(): string[] {
-	const names: string[] = [];
-	for (let i = 0; i < localStorage.length; i++) {
-		const key = localStorage.key(i);
-		if (key?.startsWith(STORAGE_PREFIX)) {
-			names.push(key.slice(STORAGE_PREFIX.length));
-		}
-	}
-	return names.sort();
-}
-
-export function deletePreset(name: string): void {
-	localStorage.removeItem(STORAGE_PREFIX + name);
-}
-
-export function renamePreset(oldName: string, newName: string): boolean {
-	const preset = readStoredPreset(oldName);
-	if (!preset) return false;
-	if (oldName === newName) return true;
-	localStorage.setItem(
-		STORAGE_PREFIX + newName,
-		JSON.stringify({
-			...preset,
-			name: newName,
+export async function listStoredPresets(): Promise<StoredPreset[]> {
+	const presets = await getAllFromStore<StoredPreset>("presets");
+	return presets.sort((left, right) =>
+		left.name.localeCompare(right.name, undefined, {
+			numeric: true,
+			sensitivity: "base",
 		}),
 	);
-	deletePreset(oldName);
-	return true;
 }
 
-export function exportPreset(name: string): string | null {
-	const preset = readStoredPreset(name);
-	if (!preset) return null;
+export async function loadStoredPreset(
+	id: string,
+): Promise<StoredPreset | null> {
+	return getFromStore<StoredPreset>("presets", id);
+}
+
+export async function loadPreset(id: string): Promise<SynthPresetV1 | null> {
+	const stored = await getFromStore<StoredPreset>("presets", id);
+	return stored?.data ?? null;
+}
+
+export async function updateStoredPreset(
+	id: string,
+	updates: Partial<Omit<StoredPreset, "id">>,
+): Promise<StoredPreset | null> {
+	const current = await getFromStore<StoredPreset>("presets", id);
+	if (!current) {
+		return null;
+	}
+
+	const next = createStoredPreset({
+		id: current.id,
+		name: updates.name ?? current.name,
+		source: updates.source ?? current.source,
+		author: updates.author ?? current.author,
+		starred: updates.starred ?? current.starred,
+		data: updates.data ?? current.data,
+		tags: updates.tags ?? current.tags,
+	});
+	await putInStore("presets", next);
+	return next;
+}
+
+export async function updatePresetMetadata(
+	id: string,
+	metadata: Partial<PresetMetadata>,
+): Promise<boolean> {
+	const result = await updateStoredPreset(id, metadata);
+	return result !== null;
+}
+
+export async function renamePreset(
+	id: string,
+	newName: string,
+): Promise<boolean> {
+	const result = await updateStoredPreset(id, { name: newName });
+	return result !== null;
+}
+
+export async function deletePreset(id: string): Promise<void> {
+	const db = await getDb();
+	await new Promise<void>((resolve, reject) => {
+		const tx = db.transaction(["presets", "favorites"], "readwrite");
+		tx.objectStore("presets").delete(id);
+		tx.objectStore("favorites").delete(id);
+		tx.oncomplete = () => resolve();
+		tx.onerror = () => reject(tx.error);
+	});
+}
+
+export async function exportPreset(id: string): Promise<string | null> {
+	const preset = await getFromStore<StoredPreset>("presets", id);
+	if (!preset) {
+		return null;
+	}
+
 	return JSON.stringify(preset, null, 2);
 }
 
-export function importPreset(json: string): StoredPreset | null {
+export async function importPreset(json: string): Promise<StoredPreset | null> {
 	try {
-		const parsed = JSON.parse(json);
+		const parsed = JSON.parse(json) as Record<string, unknown>;
 		if (isStoredPreset(parsed)) {
-			return {
-				...parsed,
-				category: parsed.category.trim(),
-				tags: normalizeTags(parsed.tags),
-			};
+			return createStoredPreset(parsed);
 		}
+
 		if (isSynthPresetV1(parsed)) {
-			return createStoredPreset("imported", parsed);
+			return createStoredPreset({
+				name: "Imported",
+				data: parsed,
+			});
 		}
+
+		if (
+			typeof parsed._name === "string" &&
+			isSynthPresetV1({
+				schemaVersion: parsed.schemaVersion,
+				params: parsed.params,
+			})
+		) {
+			return createStoredPreset({
+				name: parsed._name,
+				data: {
+					schemaVersion: parsed.schemaVersion as number,
+					params: parsed.params as SynthPresetV1["params"],
+				},
+			});
+		}
+
 		return null;
 	} catch {
 		return null;
 	}
 }
 
-export function saveCurrentState(data: SynthPresetV1): void {
-	localStorage.setItem(CURRENT_STATE_KEY, JSON.stringify(data));
+export async function loadPresetFavorite(id: string): Promise<boolean> {
+	const entry = await getFromStore<{ id: string }>("favorites", id);
+	return entry !== null;
 }
 
-export function loadCurrentState(): SynthPresetV1 | null {
-	const raw = localStorage.getItem(CURRENT_STATE_KEY);
-	if (!raw) return null;
-	try {
-		const parsed = JSON.parse(raw);
-		if (isSynthPresetV1(parsed)) {
-			return parsed;
-		}
-		localStorage.removeItem(CURRENT_STATE_KEY);
-		return null;
-	} catch {
-		localStorage.removeItem(CURRENT_STATE_KEY);
-		return null;
+export async function setPresetFavorite(
+	id: string,
+	favorite: boolean,
+): Promise<void> {
+	if (favorite) {
+		await putInStore("favorites", { id });
+	} else {
+		await deleteFromStore("favorites", id);
 	}
+}
+
+export async function listPresetFavorites(): Promise<string[]> {
+	const entries = await getAllFromStore<{ id: string }>("favorites");
+	return entries.map((entry) => entry.id).sort();
+}
+
+export async function saveCurrentState(data: SynthPresetV1): Promise<void> {
+	await putInStore("kv", { key: "currentState", value: data });
+}
+
+export async function loadCurrentState(): Promise<SynthPresetV1 | null> {
+	const entry = await getFromStore<{ key: string; value: SynthPresetV1 }>(
+		"kv",
+		"currentState",
+	);
+	if (!entry) return null;
+
+	if (isSynthPresetV1(entry.value)) {
+		return entry.value;
+	}
+
+	await deleteFromStore("kv", "currentState");
+	return null;
 }
 
 function isCurrentPresetSession(value: unknown): value is CurrentPresetSession {
@@ -351,22 +447,36 @@ function isCurrentPresetSession(value: unknown): value is CurrentPresetSession {
 	);
 }
 
-export function saveCurrentPresetSession(session: CurrentPresetSession): void {
-	localStorage.setItem(CURRENT_PRESET_SESSION_KEY, JSON.stringify(session));
+export async function saveCurrentPresetSession(
+	session: CurrentPresetSession,
+): Promise<void> {
+	await putInStore("kv", { key: "currentSession", value: session });
 }
 
-export function loadCurrentPresetSession(): CurrentPresetSession | null {
-	const raw = localStorage.getItem(CURRENT_PRESET_SESSION_KEY);
-	if (!raw) return null;
-	try {
-		const parsed = JSON.parse(raw);
-		if (isCurrentPresetSession(parsed)) {
-			return parsed;
-		}
-		localStorage.removeItem(CURRENT_PRESET_SESSION_KEY);
-		return null;
-	} catch {
-		localStorage.removeItem(CURRENT_PRESET_SESSION_KEY);
-		return null;
+export async function loadCurrentPresetSession(): Promise<CurrentPresetSession | null> {
+	const entry = await getFromStore<{ key: string; value: unknown }>(
+		"kv",
+		"currentSession",
+	);
+	if (!entry) return null;
+
+	if (isCurrentPresetSession(entry.value)) {
+		return entry.value;
 	}
+
+	await deleteFromStore("kv", "currentSession");
+	return null;
+}
+
+export async function deleteDatabase(): Promise<void> {
+	if (dbPromise) {
+		const db = await dbPromise;
+		db.close();
+		dbPromise = null;
+	}
+	await new Promise<void>((resolve, reject) => {
+		const request = indexedDB.deleteDatabase(DB_NAME);
+		request.onsuccess = () => resolve();
+		request.onerror = () => reject(request.error);
+	});
 }

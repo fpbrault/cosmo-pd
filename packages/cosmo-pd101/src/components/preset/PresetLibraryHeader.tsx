@@ -1,22 +1,24 @@
 import { memo } from "react";
 import Button from "@/components/controls/Button";
 
-type SortKey = "star" | "favorite" | "name" | "source" | "tags";
+type SortKey = "star" | "favorite" | "name" | "author" | "tags";
 
 type PresetLibraryHeaderProps = {
 	activePresetName: string;
 	totalCount: number;
 	search: string;
 	onSearchChange: (value: string) => void;
-	showLibraryPresets: boolean;
-	onToggleLibraryPresets: () => void;
 	onClose: () => void;
-	availableTags: string[];
+	availableAuthors: readonly string[];
+	selectedAuthorFilters: string[];
+	onToggleAuthorFilter: (author: string) => void;
+	onClearAuthorFilters: () => void;
+	availableTags: readonly string[];
 	selectedTagFilters: string[];
 	onToggleTagFilter: (tag: string) => void;
 	onClearTagFilters: () => void;
-	tagSortMode: "name" | "tag";
-	onTagSortModeChange: (mode: "name" | "tag") => void;
+	showOnlyUserPresets: boolean;
+	onToggleShowOnlyUserPresets: () => void;
 	onToggleSort: (key: SortKey) => void;
 	sortIndicator: (key: SortKey) => string;
 };
@@ -26,15 +28,17 @@ export default memo(function PresetLibraryHeader({
 	totalCount,
 	search,
 	onSearchChange,
-	showLibraryPresets,
-	onToggleLibraryPresets,
 	onClose,
+	availableAuthors,
+	selectedAuthorFilters,
+	onToggleAuthorFilter,
+	onClearAuthorFilters,
 	availableTags,
 	selectedTagFilters,
 	onToggleTagFilter,
 	onClearTagFilters,
-	tagSortMode,
-	onTagSortModeChange,
+	showOnlyUserPresets,
+	onToggleShowOnlyUserPresets,
 	onToggleSort,
 	sortIndicator: getSortIndicator,
 }: PresetLibraryHeaderProps) {
@@ -61,12 +65,10 @@ export default memo(function PresetLibraryHeader({
 				/>
 				<Button
 					type="button"
-					className={`btn btn-sm border-cz-border ${showLibraryPresets ? "bg-cz-gold text-cz-panel" : "bg-cz-inset text-cz-cream hover:bg-cz-body"}`}
-					onClick={onToggleLibraryPresets}
+					className={`btn btn-sm ${showOnlyUserPresets ? "btn-secondary" : "border-cz-border bg-cz-inset text-cz-cream hover:bg-cz-body"}`}
+					onClick={onToggleShowOnlyUserPresets}
 				>
-					{showLibraryPresets
-						? "Factory Presets: Visible"
-						: "Factory Presets: Hidden"}
+					User Only
 				</Button>
 				<Button
 					type="button"
@@ -75,6 +77,31 @@ export default memo(function PresetLibraryHeader({
 				>
 					Return
 				</Button>
+			</div>
+			<div className="col-span-2 flex flex-wrap items-center gap-2">
+				<p className="font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
+					Filter author
+				</p>
+				<button
+					type="button"
+					className={`badge badge-sm capitalize ${selectedAuthorFilters.length === 0 ? "badge-primary" : "badge-neutral"}`}
+					onClick={onClearAuthorFilters}
+				>
+					all
+				</button>
+				{availableAuthors.map((author) => {
+					const active = selectedAuthorFilters.includes(author);
+					return (
+						<button
+							key={author}
+							type="button"
+							className={`badge badge-sm ${active ? "badge-primary" : "badge-neutral"}`}
+							onClick={() => onToggleAuthorFilter(author)}
+						>
+							{author}
+						</button>
+					);
+				})}
 			</div>
 			<div className="col-span-2 flex flex-wrap items-center gap-2">
 				<p className="font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
@@ -100,25 +127,8 @@ export default memo(function PresetLibraryHeader({
 						</button>
 					);
 				})}
-				<p className="ml-2 font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
-					Sort
-				</p>
-				<Button
-					type="button"
-					className={`btn btn-xs ${tagSortMode === "name" ? "btn-secondary" : "border-cz-border bg-cz-inset text-cz-cream"}`}
-					onClick={() => onTagSortModeChange("name")}
-				>
-					Name
-				</Button>
-				<Button
-					type="button"
-					className={`btn btn-xs ${tagSortMode === "tag" ? "btn-secondary" : "border-cz-border bg-cz-inset text-cz-cream"}`}
-					onClick={() => onTagSortModeChange("tag")}
-				>
-					Tag
-				</Button>
 			</div>
-			<div className="col-span-2 grid grid-cols-[2.5rem_2.5rem_minmax(12rem,1fr)_8rem_minmax(10rem,1fr)_9rem] border-cz-border border-b bg-cz-body px-4 py-2 font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.22em]">
+			<div className="col-span-2 mr-68 grid grid-cols-[2.5rem_2.5rem_minmax(14rem,1fr)_9rem_minmax(10rem,1fr)] border-cz-border border-b bg-cz-body px-4 py-2 font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.22em]">
 				<button
 					type="button"
 					className="text-left hover:text-cz-cream"
@@ -143,9 +153,9 @@ export default memo(function PresetLibraryHeader({
 				<button
 					type="button"
 					className="text-left hover:text-cz-cream"
-					onClick={() => onToggleSort("source")}
+					onClick={() => onToggleSort("author")}
 				>
-					Source{getSortIndicator("source")}
+					Author{getSortIndicator("author")}
 				</button>
 				<button
 					type="button"
@@ -154,7 +164,6 @@ export default memo(function PresetLibraryHeader({
 				>
 					Tags{getSortIndicator("tags")}
 				</button>
-				<span className="text-right">Actions</span>
 			</div>
 		</div>
 	);

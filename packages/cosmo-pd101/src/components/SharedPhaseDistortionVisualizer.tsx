@@ -19,6 +19,7 @@ import { installBenchmarkApi } from "@/lib/performance/benchmarkHarness";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
 import { convertDecodedPatchToSynthPreset } from "@/lib/synth/czPresetConverter";
 import { DEFAULT_SYNTH_PRESETS } from "@/lib/synth/defaultPresets";
+import { FACTORY_CZ_PRESETS } from "@/lib/synth/factoryCzPresets";
 import { noteToFreq } from "@/lib/synth/pdAlgorithms";
 import {
 	pdVisualizerWorkletUrl,
@@ -37,7 +38,7 @@ export type SharedPhaseDistortionVisualizerProps = {
 export function SharedPhaseDistortionVisualizer({
 	frameStyle,
 	headerExtra,
-	libraryPresets = [],
+	libraryPresets = FACTORY_CZ_PRESETS,
 	onAudioLevelChange,
 }: SharedPhaseDistortionVisualizerProps = {}) {
 	const setLine1DcoEnv = useSynthStore((s) => s.setLine1DcoEnv);
@@ -199,6 +200,10 @@ export function SharedPhaseDistortionVisualizer({
 
 	const handleLoadLibraryPreset = useCallback(
 		(preset: LibraryPreset) => {
+			if (preset.data) {
+				applyPreset(preset.data);
+				return;
+			}
 			if (preset.sysexData) {
 				const decoded = decodeCzPatch(preset.sysexData);
 				if (decoded) {
@@ -212,7 +217,6 @@ export function SharedPhaseDistortionVisualizer({
 
 	const {
 		visiblePresetEntries,
-		showLibraryPresets,
 		activePresetId,
 		activePresetName,
 		pendingPresetChange,
@@ -220,12 +224,11 @@ export function SharedPhaseDistortionVisualizer({
 		handleLoadBuiltin,
 		handleLoadLibrary,
 		handleStepPreset,
-		handleToggleLibraryPresets,
 		handleSavePreset,
 		handleDeletePreset,
 		handleRenamePreset,
+		handleSetPresetAuthor,
 		handleSetPresetFavorite,
-		handleSetPresetCategory,
 		handleSetPresetTags,
 		handleInitPreset,
 		handleExportPreset,
@@ -338,8 +341,6 @@ export function SharedPhaseDistortionVisualizer({
 		<SynthRenderer
 			headerProps={{
 				allEntries: visiblePresetEntries,
-				showLibraryPresets,
-				onToggleLibraryPresets: handleToggleLibraryPresets,
 				activeEntryId: activePresetId,
 				activePresetName,
 				pendingPresetChange,
@@ -350,8 +351,8 @@ export function SharedPhaseDistortionVisualizer({
 				onSavePreset: handleSavePreset,
 				onDeletePreset: handleDeletePreset,
 				onRenamePreset: handleRenamePreset,
+				onSetPresetAuthor: handleSetPresetAuthor,
 				onSetPresetFavorite: handleSetPresetFavorite,
-				onSetPresetCategory: handleSetPresetCategory,
 				onSetPresetTags: handleSetPresetTags,
 				onInitPreset: handleInitPreset,
 				onExportPreset: handleExportPreset,
