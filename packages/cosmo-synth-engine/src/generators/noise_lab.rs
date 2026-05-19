@@ -55,7 +55,7 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
 
 #[inline]
 fn hash01(x: f32) -> f32 {
-    let h = libm::sinf(x * 127.1 + 311.7) * 43758.5453;
+    let h = libm::sinf(x * 127.1 + 311.7) * 43_758.547;
     h - libm::floorf(h)
 }
 

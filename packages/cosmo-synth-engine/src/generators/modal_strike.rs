@@ -1,5 +1,5 @@
 use super::{AlgoControlKindV1, AlgoControlV1, AlgoDefinitionV1, NO_CONTROL_OPTIONS};
-use crate::dsp_utils::{pow01, wrap01, TWO_PI};
+use crate::dsp_utils::{TWO_PI, pow01, wrap01};
 use crate::params::{Algo, EngineParamReadoutFormatV1};
 
 const CONTROLS: [AlgoControlV1; 3] = [

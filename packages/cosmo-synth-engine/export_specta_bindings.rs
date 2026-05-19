@@ -20,11 +20,11 @@ use cosmo_synth_engine::params::{
     Algo, AlgoControlValueV1, AutoWahParams, BaseWaveform, BitcrusherParams, ChorusParams,
     CompressorParams, CzAlgo, CzWaveform, DelayParams, DistortionParams, EnvStep, EqParams,
     FlangerParams, FxSlotConfig, FxSlotType, GrainDelayParams, JunoChorusParams, LfoParams,
-    LfoRateMode, LfoSyncDivision, LfoWaveform, LineParams, LineSelect, LoFiParams,
-    ModDestination, ModEnvParams, ModMatrix, ModMode, ModRoute, ModSource, MultimodeFilterParams,
-    PhaseModParams, PhaserParams, PolyMode, PortamentoMode, PortamentoParams, RandomParams,
-    ReverbParams, RingModParams, RotarySpeakerParams, ShimmerVerbParams, StepEnvData,
-    StereoWidenerParams, SynthParams, TremoloParams, VibratoParams, WavefolderParams, WindowType,
+    LfoRateMode, LfoSyncDivision, LfoWaveform, LineParams, LineSelect, LoFiParams, ModDestination,
+    ModEnvParams, ModMatrix, ModMode, ModRoute, ModSource, MultimodeFilterParams, PhaseModParams,
+    PhaserParams, PolyMode, PortamentoMode, PortamentoParams, RandomParams, ReverbParams,
+    RingModParams, RotarySpeakerParams, ShimmerVerbParams, StepEnvData, StereoWidenerParams,
+    SynthParams, TremoloParams, VibratoParams, WavefolderParams, WindowType,
     engine_param_ranges_v1, engine_param_ui_meta_v1,
 };
 use cosmo_synth_engine::preset_wire::{

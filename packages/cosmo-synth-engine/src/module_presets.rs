@@ -4,7 +4,7 @@ use specta::Type;
 
 use crate::{
     fx::{
-        auto_wah::apply_auto_wah_preset, bitcrusher::apply_bitcrusher_preset,
+        FxPresetOptionV1, auto_wah::apply_auto_wah_preset, bitcrusher::apply_bitcrusher_preset,
         chorus::apply_chorus_preset, compressor::apply_compressor_preset,
         delay::apply_delay_preset, distortion::apply_distortion_preset, eq::apply_eq_preset,
         flanger::apply_flanger_preset, grain_delay::apply_grain_delay_preset,
@@ -13,7 +13,7 @@ use crate::{
         phaser::apply_phaser_preset, reverb::apply_reverb_preset, ring_mod::apply_ring_mod_preset,
         rotary_speaker::apply_rotary_speaker_preset, shimmer_verb::apply_shimmer_verb_preset,
         stereo_widener::apply_stereo_widener_preset, tremolo::apply_tremolo_preset,
-        vibrato::apply_vibrato_preset, wavefolder::apply_wavefolder_preset, FxPresetOptionV1,
+        vibrato::apply_vibrato_preset, wavefolder::apply_wavefolder_preset,
     },
     params::{LfoWaveform, SynthParams},
 };
