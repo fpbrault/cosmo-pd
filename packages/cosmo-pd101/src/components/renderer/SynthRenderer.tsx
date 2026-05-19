@@ -852,6 +852,7 @@ function PendingModifiedPresetModal({
 	onCancel,
 }: PendingModifiedPresetModalProps) {
 	const [pendingSaveName, setPendingSaveName] = useState("");
+	const open = pendingPresetChange !== null;
 
 	useEffect(() => {
 		if (!pendingPresetChange) return;
@@ -859,21 +860,19 @@ function PendingModifiedPresetModal({
 	}, [pendingPresetChange]);
 
 	return (
-		<dialog
-			className="modal"
-			open={pendingPresetChange !== null}
-			onCancel={(event) => {
-				event.preventDefault();
-				onCancel?.();
-			}}
+		<SynthOverlayModal
+			open={open}
+			onClose={() => onCancel?.()}
+			title="Save Modified Preset"
+			ariaLabel="Save modified preset"
+			widthClassName="w-[min(36rem,94vw)]"
 		>
-			<div className="modal-box rounded-md border border-cz-border bg-cz-surface text-cz-cream">
-				<h3 className="font-bold font-mono text-lg">Save modified preset?</h3>
-				<p className="mt-3 text-cz-cream-dim text-sm">
+			<div className="space-y-4 text-cz-cream">
+				<p className="text-cz-cream-dim text-sm">
 					{pendingPresetChange?.activePresetName} has unsaved changes.
 				</p>
 				{pendingPresetChange?.changes.length ? (
-					<div className="mt-4 rounded-md border border-cz-border bg-cz-inset/70 p-2">
+					<div className="rounded-md border border-cz-border bg-cz-inset/70 p-2">
 						<p className="mb-2 font-mono text-3xs text-cz-light-blue uppercase tracking-[0.24em]">
 							Changed Parameters ({pendingPresetChange.changes.length})
 						</p>
@@ -895,7 +894,7 @@ function PendingModifiedPresetModal({
 				{pendingPresetChange?.activeLocalName ? null : (
 					<input
 						type="text"
-						className="input mt-4 w-full border-cz-border bg-cz-inset text-cz-cream"
+						className="input w-full border-cz-border bg-cz-inset text-cz-cream"
 						placeholder="Preset name"
 						value={pendingSaveName}
 						onChange={(event) => setPendingSaveName(event.target.value)}
@@ -903,13 +902,10 @@ function PendingModifiedPresetModal({
 							if (event.key === "Enter" && pendingSaveName.trim()) {
 								onSave?.(pendingSaveName);
 							}
-							if (event.key === "Escape") {
-								onCancel?.();
-							}
 						}}
 					/>
 				)}
-				<div className="modal-action">
+				<div className="flex justify-end gap-2 pt-1">
 					<Button
 						type="button"
 						className="btn border-cz-border bg-cz-inset text-cz-cream"
@@ -937,7 +933,7 @@ function PendingModifiedPresetModal({
 					</Button>
 				</div>
 			</div>
-		</dialog>
+		</SynthOverlayModal>
 	);
 }
 
