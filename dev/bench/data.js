@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779190883375,
+  "lastUpdate": 1779204644585,
   "repoUrl": "https://github.com/fpbrault/cosmo-pd",
   "entries": {
     "cosmo-synth-engine": [
@@ -11543,6 +11543,228 @@ window.BENCHMARK_DATA = {
             "name": "opt_all_combined_8_voices",
             "value": 11384507,
             "range": "± 68811",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "fpbrault@gmail.com",
+            "name": "Felix Perron-Brault",
+            "username": "fpbrault"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8a8365e89215d07819a071b6661acd00d9306691",
+          "message": "feat: add factory CZ presets and preset identity management (#207)\n\n* feat: add factory CZ presets and preset identity management\n\n- Introduced factory CZ presets in `factoryCzPresets.ts` using definitions from `factoryCzPresetDefinitions`.\n- Created `presetIdentity.ts` for managing preset identities, including ID creation and normalization of preset data.\n- Added `presetSources.ts` to define preset sources and their labels.\n- Updated `presetStorage.ts` to support new stored preset structure, including favorites management.\n- Enhanced `presetStorage.test.ts` with tests for new functionalities and refactored existing tests for clarity.\n- Implemented `presetTags.ts` for managing and normalizing preset tags.\n- Modified `presetTypes.ts` to include new types for frontend presets and metadata.\n\n* Refactor preset storage to use IndexedDB for better performance and reliability\n\n- Updated preset storage functions to utilize IndexedDB instead of localStorage.\n- Implemented asynchronous operations for saving, loading, and deleting presets.\n- Added functions to manage favorites and current state using IndexedDB.\n- Modified tests to accommodate the new storage mechanism and ensure proper functionality.\n- Removed legacy localStorage code and replaced it with IndexedDB interactions.\n- Updated documentation to reflect changes in preset management and storage.",
+          "timestamp": "2026-05-19T15:24:09Z",
+          "tree_id": "23eb7f1e4a29264f137a1d8729721d536e65a5ac",
+          "url": "https://github.com/fpbrault/cosmo-pd/commit/8a8365e89215d07819a071b6661acd00d9306691"
+        },
+        "date": 1779204642539,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "default_3_voices",
+            "value": 2992840,
+            "range": "± 191228",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_6_voices",
+            "value": 4489962,
+            "range": "± 66517",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_8_voices",
+            "value": 5496719,
+            "range": "± 107421",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_3_voices",
+            "value": 2551416,
+            "range": "± 26487",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_6_voices",
+            "value": 2866935,
+            "range": "± 29347",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_8_voices",
+            "value": 3162338,
+            "range": "± 20782",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_3_voices",
+            "value": 8340613,
+            "range": "± 87545",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_6_voices",
+            "value": 11157847,
+            "range": "± 90467",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_8_voices",
+            "value": 13204829,
+            "range": "± 115241",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_3_voices",
+            "value": 11249236,
+            "range": "± 95328",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_6_voices",
+            "value": 15897157,
+            "range": "± 120624",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_8_voices",
+            "value": 17589382,
+            "range": "± 129623",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_3_voices",
+            "value": 7163410,
+            "range": "± 145114",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_6_voices",
+            "value": 9210430,
+            "range": "± 66600",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_8_voices",
+            "value": 10299612,
+            "range": "± 193623",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_3_voices",
+            "value": 4083937,
+            "range": "± 40988",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_6_voices",
+            "value": 5568920,
+            "range": "± 38829",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_8_voices",
+            "value": 6647543,
+            "range": "± 96371",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_3_voices",
+            "value": 12041428,
+            "range": "± 57606",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_6_voices",
+            "value": 13613540,
+            "range": "± 73339",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_8_voices",
+            "value": 13764260,
+            "range": "± 79875",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_3_voices",
+            "value": 6415457,
+            "range": "± 68808",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_6_voices",
+            "value": 8292636,
+            "range": "± 79970",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_8_voices",
+            "value": 9556695,
+            "range": "± 93673",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_3_voices",
+            "value": 3588888,
+            "range": "± 54615",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_6_voices",
+            "value": 5476573,
+            "range": "± 74445",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_8_voices",
+            "value": 6811362,
+            "range": "± 83291",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_3_voices",
+            "value": 3742757,
+            "range": "± 86129",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_6_voices",
+            "value": 5802982,
+            "range": "± 70966",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_8_voices",
+            "value": 7239992,
+            "range": "± 149896",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_3_voices",
+            "value": 7699357,
+            "range": "± 114718",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_6_voices",
+            "value": 10248249,
+            "range": "± 81130",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_8_voices",
+            "value": 11666354,
+            "range": "± 85683",
             "unit": "ns/iter"
           }
         ]
