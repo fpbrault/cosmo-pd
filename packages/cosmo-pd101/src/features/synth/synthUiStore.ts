@@ -18,12 +18,17 @@ export type PhaseLinePanelTab =
 	| "line1-envelopes"
 	| "line2-envelopes";
 export type EnvTab = "dco" | "dcw" | "dca";
+export type KeyboardInputMode = "velocity" | "aftertouch";
 
 type SynthUiState = {
 	mainPanelMode: MainPanelMode;
 	phaseLinePanelTab: PhaseLinePanelTab;
 	activeEnvTab: EnvTab;
 	keyboardVisible: boolean;
+	keyboardOctaves: number;
+	keyboardRange: number;
+	keyboardHeight: number;
+	keyboardInputMode: KeyboardInputMode;
 	libraryModeOpen: boolean;
 	scopeCycles: number;
 	scopeVerticalZoom: number;
@@ -37,6 +42,10 @@ type SynthUiActions = {
 	setPhaseLinePanelTab: (tab: PhaseLinePanelTab) => void;
 	setActiveEnvTab: (tab: EnvTab) => void;
 	setKeyboardVisible: (visible: boolean) => void;
+	setKeyboardOctaves: (octaves: number) => void;
+	setKeyboardRange: (range: number) => void;
+	setKeyboardHeight: (height: number) => void;
+	setKeyboardInputMode: (mode: KeyboardInputMode) => void;
 	setLibraryModeOpen: (open: boolean) => void;
 	setScopeCycles: (cycles: number) => void;
 	setScopeVerticalZoom: (zoom: number) => void;
@@ -74,11 +83,20 @@ const SCOPE_COLOR_THEMES = new Set<ScopeColorTheme>([
 	"plasma",
 ]);
 
+const KEYBOARD_INPUT_MODES = new Set<KeyboardInputMode>([
+	"velocity",
+	"aftertouch",
+]);
+
 const DEFAULT_UI_STATE: SynthUiState = {
 	mainPanelMode: "phase",
 	phaseLinePanelTab: "line1-algos",
 	activeEnvTab: "dcw",
 	keyboardVisible: true,
+	keyboardOctaves: 3,
+	keyboardRange: 0,
+	keyboardHeight: 128,
+	keyboardInputMode: "velocity",
 	libraryModeOpen: false,
 	scopeCycles: 2,
 	scopeVerticalZoom: 1,
@@ -105,6 +123,7 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 	const rawScopeColorTheme = getStringValue(candidate.scopeColorTheme);
 	const scopeColorTheme =
 		rawScopeColorTheme === "classic" ? "vintage" : rawScopeColorTheme;
+	const rawKeyboardInputMode = getStringValue(candidate.keyboardInputMode);
 
 	return {
 		mainPanelMode:
@@ -124,6 +143,29 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 			typeof candidate.keyboardVisible === "boolean"
 				? candidate.keyboardVisible
 				: DEFAULT_UI_STATE.keyboardVisible,
+		keyboardOctaves:
+			typeof candidate.keyboardOctaves === "number" &&
+			candidate.keyboardOctaves >= 1 &&
+			candidate.keyboardOctaves <= 5
+				? candidate.keyboardOctaves
+				: DEFAULT_UI_STATE.keyboardOctaves,
+		keyboardRange:
+			typeof candidate.keyboardRange === "number" &&
+			candidate.keyboardRange >= -2 &&
+			candidate.keyboardRange <= 2
+				? candidate.keyboardRange
+				: DEFAULT_UI_STATE.keyboardRange,
+		keyboardHeight:
+			typeof candidate.keyboardHeight === "number" &&
+			candidate.keyboardHeight >= 64 &&
+			candidate.keyboardHeight <= 256
+				? candidate.keyboardHeight
+				: DEFAULT_UI_STATE.keyboardHeight,
+		keyboardInputMode:
+			rawKeyboardInputMode &&
+			KEYBOARD_INPUT_MODES.has(rawKeyboardInputMode as KeyboardInputMode)
+				? (rawKeyboardInputMode as KeyboardInputMode)
+				: DEFAULT_UI_STATE.keyboardInputMode,
 		libraryModeOpen:
 			typeof candidate.libraryModeOpen === "boolean"
 				? candidate.libraryModeOpen
@@ -169,6 +211,10 @@ export const useSynthUiStore = create<SynthUiStore>()(
 			setPhaseLinePanelTab: (tab) => set({ phaseLinePanelTab: tab }),
 			setActiveEnvTab: (tab) => set({ activeEnvTab: tab }),
 			setKeyboardVisible: (visible) => set({ keyboardVisible: visible }),
+			setKeyboardOctaves: (octaves) => set({ keyboardOctaves: octaves }),
+			setKeyboardRange: (range) => set({ keyboardRange: range }),
+			setKeyboardHeight: (height) => set({ keyboardHeight: height }),
+			setKeyboardInputMode: (mode) => set({ keyboardInputMode: mode }),
 			setLibraryModeOpen: (open) => set({ libraryModeOpen: open }),
 			setScopeCycles: (cycles) => set({ scopeCycles: cycles }),
 			setScopeVerticalZoom: (zoom) => set({ scopeVerticalZoom: zoom }),
@@ -185,6 +231,10 @@ export const useSynthUiStore = create<SynthUiStore>()(
 				phaseLinePanelTab: state.phaseLinePanelTab,
 				activeEnvTab: state.activeEnvTab,
 				keyboardVisible: state.keyboardVisible,
+				keyboardOctaves: state.keyboardOctaves,
+				keyboardRange: state.keyboardRange,
+				keyboardHeight: state.keyboardHeight,
+				keyboardInputMode: state.keyboardInputMode,
 				libraryModeOpen: state.libraryModeOpen,
 				scopeCycles: state.scopeCycles,
 				scopeVerticalZoom: state.scopeVerticalZoom,

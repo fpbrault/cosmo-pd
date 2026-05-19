@@ -20,14 +20,20 @@ vi.mock("@/features/synth/SynthParamController", () => ({
 }));
 
 vi.mock("@/features/synth/synthStore", () => ({
-	useSynthStore: vi.fn(() => ({
-		fxSlots: Array.from({ length: 6 }, () => ({
-			type: "empty",
-			params: { enabled: false },
-		})),
-		setFxSlotType: vi.fn(),
-		setFxSlotEnabled: vi.fn(),
-	})),
+	useSynthStore: vi.fn(
+		(selector?: (state: Record<string, unknown>) => unknown) => {
+			const state = {
+				polyMode: "poly8",
+				fxSlots: Array.from({ length: 6 }, () => ({
+					type: "empty",
+					params: { enabled: false },
+				})),
+				setFxSlotType: vi.fn(),
+				setFxSlotEnabled: vi.fn(),
+			};
+			return typeof selector === "function" ? selector(state) : state;
+		},
+	),
 }));
 
 describe("Layout Components Smoke Tests", () => {

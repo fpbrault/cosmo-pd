@@ -205,6 +205,15 @@ let wasm_bindgen = (function(exports) {
             wasm.czsynthprocessor_setPitchBend(this.__wbg_ptr, value);
         }
         /**
+         * Set polyphonic aftertouch for a specific MIDI note.
+         * `note` is MIDI note number (0–127), `value` is normalised [0.0, 1.0].
+         * @param {number} note
+         * @param {number} value
+         */
+        setPolyAftertouch(note, value) {
+            wasm.czsynthprocessor_setPolyAftertouch(this.__wbg_ptr, note, value);
+        }
+        /**
          * Set the sustain (damper) pedal state.
          * @param {boolean} on
          */

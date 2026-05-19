@@ -61,7 +61,6 @@ pub struct VoiceRenderContext<'a> {
     pub timing: &'a EnvelopeTimingCache,
     pub pitch_bend_semitones: f32,
     pub mod_wheel: f32,
-    pub aftertouch: f32,
     pub macro1: f32,
     pub macro2: f32,
     pub macro3: f32,
@@ -89,7 +88,7 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
     let timing = ctx.timing;
     let pitch_bend_semitones = ctx.pitch_bend_semitones;
     let mod_wheel = ctx.mod_wheel;
-    let aftertouch = ctx.aftertouch;
+    let aftertouch = voice.aftertouch;
     let cache = ctx.cache;
     let modulation_active = ctx.modulation_active;
     let line1_plan = ctx.line1_plan;

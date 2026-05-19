@@ -60,6 +60,7 @@ impl CosmoProcessor {
         voice.anti_click_attack = crate::voice::ANTI_CLICK_ATTACK_SAMPLES;
         voice.last_output_sample = if was_active { prev_output_sample } else { 0.0 };
         voice.release_tail_level = 0.0;
+        voice.aftertouch = 0.0;
         voice.smoothed_dcw1 = 0.0;
         voice.smoothed_dcw2 = 0.0;
 

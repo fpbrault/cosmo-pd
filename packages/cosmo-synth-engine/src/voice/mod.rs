@@ -72,6 +72,7 @@ pub struct Voice {
     pub smoothed_dcw2: f32,
     pub last_output_sample: f32,
     pub release_tail_level: f32,
+    pub aftertouch: f32,
     pub algo_runtime: AlgoRuntimeState,
 }
 
@@ -109,6 +110,7 @@ impl Voice {
             smoothed_dcw2: 0.0,
             last_output_sample: 0.0,
             release_tail_level: 0.0,
+            aftertouch: 0.0,
             algo_runtime: AlgoRuntimeState::default(),
         }
     }
@@ -213,7 +215,6 @@ mod tests {
             timing: &timing,
             pitch_bend_semitones: 0.0,
             mod_wheel: 0.0,
-            aftertouch: 0.0,
             macro1: 0.0,
             macro2: 0.0,
             macro3: 0.0,
@@ -253,7 +254,6 @@ mod tests {
                 timing: &timing,
                 pitch_bend_semitones: 0.0,
                 mod_wheel: 0.0,
-                aftertouch: 0.0,
                 macro1: 0.0,
                 macro2: 0.0,
                 macro3: 0.0,

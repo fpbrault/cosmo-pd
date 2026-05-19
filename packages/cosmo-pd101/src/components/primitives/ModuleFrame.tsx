@@ -1,3 +1,4 @@
+import { MdDragIndicator, MdPowerSettingsNew } from "react-icons/md";
 import Button from "@/components/controls/Button";
 import { useFxSlotContext } from "@/components/panels/FxSlotContext";
 
@@ -80,18 +81,7 @@ export default function ModuleFrame({
 								: "text-white",
 						].join(" ")}
 					>
-						{/* Power symbol */}
-						<svg
-							aria-label={enabled ? "On" : "Off"}
-							viewBox="0 0 10 10"
-							className="h-2 w-2"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="1.8"
-						>
-							<path d="M5 1.5v3" strokeLinecap="round" />
-							<path d="M2.5 2.8A3.5 3.5 0 1 0 7.5 2.8" strokeLinecap="round" />
-						</svg>
+						<MdPowerSettingsNew className="h-2.5 w-2.5" />
 					</Button>
 				) : (
 					<span className="inline-block h-4 w-4 shrink-0" />
@@ -104,16 +94,7 @@ export default function ModuleFrame({
 						{...(slotCtx.dragAttributes as React.HTMLAttributes<HTMLDivElement>)}
 						className="group/drag relative z-10 flex flex-1 cursor-grab touch-none select-none items-center justify-center gap-1.5 active:cursor-grabbing"
 					>
-						{/* 4-direction move icon — fades in on hover */}
-						<svg
-							aria-label="Drag to reorder"
-							viewBox="0 0 14 14"
-							className="h-2.5 w-2.5 shrink-0 opacity-0 transition-opacity duration-150 group-hover/drag:opacity-35"
-							fill="currentColor"
-							aria-hidden
-						>
-							<path d="M7 0L5 3h4L7 0ZM7 14l-2-3h4l-2 3ZM0 7l3-2v4L0 7ZM14 7l-3-2v4l3-2Z" />
-						</svg>
+						<MdDragIndicator className="h-2.5 w-2.5 shrink-0 opacity-0 transition-opacity duration-150 group-hover/drag:opacity-35" />
 						<span className="pointer-events-none font-bold font-mono text-xs uppercase tracking-[0.28em]">
 							{title}
 						</span>

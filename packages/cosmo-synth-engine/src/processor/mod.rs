@@ -295,6 +295,24 @@ impl CosmoProcessor {
     /// Set aftertouch/channel pressure. `value` is normalised [0.0, 1.0].
     pub fn set_aftertouch(&mut self, value: f32) {
         self.aftertouch = value.clamp(0.0, 1.0);
+        for voice in &mut self.voices {
+            if voice.note.is_some() {
+                voice.aftertouch = self.aftertouch;
+            }
+        }
+    }
+
+    /// Set polyphonic aftertouch for a specific MIDI note.
+    /// `value` is normalised [0.0, 1.0].
+    /// Also updates global aftertouch so the per-block mod matrix cache reflects the value.
+    pub fn set_poly_aftertouch(&mut self, note: u8, value: f32) {
+        let clamped = value.clamp(0.0, 1.0);
+        for voice in &mut self.voices {
+            if voice.note == Some(note) {
+                voice.aftertouch = clamped;
+            }
+        }
+        self.aftertouch = clamped;
     }
 
     /// Apply host transport timing for BPM-synced modulation.

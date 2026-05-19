@@ -7,12 +7,15 @@ import {
 	useRef,
 } from "react";
 import Button from "@/components/controls/Button";
+import { useSynthStore } from "@/features/synth/synthStore";
+import { useSynthUiStore } from "@/features/synth/synthUiStore";
 
 type MiniKeyboardOverlayProps = {
 	activeNotes: number[];
 	visible: boolean;
 	onNoteOn: (note: number, velocity?: number) => void;
 	onNoteOff: (note: number) => void;
+	onPolyAftertouch?: (note: number, value: number) => void;
 };
 
 type KeyConfig = {
@@ -20,6 +23,11 @@ type KeyConfig = {
 	label: string;
 	black: boolean;
 	left?: number;
+};
+
+type KeyboardDimensions = {
+	whiteKeys: KeyConfig[];
+	blackKeys: KeyConfig[];
 };
 
 const WHITE_OFFSETS = [0, 2, 4, 5, 7, 9, 11] as const;
@@ -32,15 +40,19 @@ const BLACK_CONFIG = [
 	{ offset: 10, label: "A#", boundary: 6 },
 ] as const;
 
-const START_NOTE = 36;
-const KEYBOARD_OCTAVES = 3;
+const MIN_KEYBOARD_HEIGHT = 64;
+const MAX_KEYBOARD_HEIGHT = 256;
+const AFTERTOUCH_MAX_DRAG = 80;
 
 const WHITE_KEY_CLASS_NAME =
 	"relative flex h-full flex-1 flex-col justify-end rounded-b-xs border border-cz-border/75 bg-white shadow-sm transition-all";
 const BLACK_KEY_CLASS_NAME =
-	"absolute top-0 z-10 h-3/5 w-[2.45%] -translate-x-1/2 rounded-b-xs border border-cz-border/80 bg-cz-inset shadow-md transition-all";
+	"absolute top-0 z-10 h-5/7 -translate-x-1/2 rounded-b-xs border border-cz-border/80 bg-cz-inset shadow-md transition-all";
 
-function buildKeyboardLayout(startNote: number, octaves: number) {
+function buildKeyboardLayout(
+	startNote: number,
+	octaves: number,
+): KeyboardDimensions {
 	const whiteKeys: KeyConfig[] = [];
 	const blackKeys: KeyConfig[] = [];
 	const totalWhiteKeys = octaves * WHITE_OFFSETS.length;
@@ -71,12 +83,24 @@ function buildKeyboardLayout(startNote: number, octaves: number) {
 	return { whiteKeys, blackKeys };
 }
 
+function getNoteVelocity(
+	event: ReactPointerEvent<HTMLButtonElement> | PointerEvent,
+): number {
+	const target = event.target as HTMLElement;
+	const keyElement = target.closest<HTMLElement>("[data-mini-note]");
+	if (!keyElement) return 100;
+	const rect = keyElement.getBoundingClientRect();
+	const relativeY = (event.clientY - rect.top) / rect.height;
+	return Math.max(1, Math.min(127, Math.round((1 - relativeY) * 127)));
+}
+
 function PianoKey({
 	note,
 	label,
 	active,
 	black,
 	left,
+	widthPercent,
 	onPointerDown,
 }: {
 	note: number;
@@ -84,6 +108,7 @@ function PianoKey({
 	active: boolean;
 	black?: boolean;
 	left?: number;
+	widthPercent?: number;
 	onPointerDown: (
 		event: ReactPointerEvent<HTMLButtonElement>,
 		note: number,
@@ -94,15 +119,28 @@ function PianoKey({
 		? "!border-cz-light-blue !bg-cz-light-blue"
 		: "translate-y-px !border-cz-light-blue !bg-cz-light-blue";
 
+	const octave = Math.floor(note / 12) - 1;
+	const noteName = `${label}${octave}`;
+
 	return (
 		<Button
 			type="button"
 			aria-label={`Play ${label}`}
 			className={`${keyClassName} ${active ? activeClassName : ""} touch-none`}
 			data-mini-note={note}
-			style={black && left !== undefined ? { left: `${left}%` } : undefined}
+			style={
+				black && left !== undefined
+					? { left: `${left}%`, width: `${widthPercent}%` }
+					: undefined
+			}
 			onPointerDown={(event) => onPointerDown(event, note)}
-		></Button>
+		>
+			{!black && label === "C" ? (
+				<span className="mb-1 text-center font-semibold text-[0.55rem] text-gray-400 leading-none">
+					{noteName}
+				</span>
+			) : null}
+		</Button>
 	);
 }
 
@@ -111,57 +149,179 @@ export default function MiniKeyboardOverlay({
 	visible,
 	onNoteOn,
 	onNoteOff,
+	onPolyAftertouch,
 }: MiniKeyboardOverlayProps) {
-	// Maps each active pointer ID to the note it is currently pressing.
-	// This enables independent per-finger note lifecycle for multitouch.
+	const keyboardOctaves = useSynthUiStore((s) => s.keyboardOctaves);
+	const keyboardRange = useSynthUiStore((s) => s.keyboardRange);
+	const keyboardHeight = useSynthUiStore((s) => s.keyboardHeight);
+	const keyboardInputMode = useSynthUiStore((s) => s.keyboardInputMode);
+	const setKeyboardHeight = useSynthUiStore((s) => s.setKeyboardHeight);
+	const polyMode = useSynthStore((s) => s.polyMode);
+
+	const startNote = 36 + keyboardRange * 12;
+
 	const activePointersRef = useRef<Map<number, number>>(new Map());
+	const aftertouchOriginsRef = useRef<Map<number, number>>(new Map());
+	const aftertouchValuesRef = useRef<Map<number, number>>(new Map());
+	const onPolyAftertouchRef = useRef(onPolyAftertouch);
+	const activeReleasesRef = useRef<Set<number>>(new Set());
+	const activeReleaseRafsRef = useRef<Map<number, number>>(new Map());
+
+	const resizeRef = useRef<{ startY: number; startHeight: number } | null>(
+		null,
+	);
 	const activeSet = new Set(activeNotes);
+
+	onPolyAftertouchRef.current = onPolyAftertouch;
+
+	const blackKeyWidth = 50 / (keyboardOctaves * 7);
+
 	const { whiteKeys, blackKeys } = useMemo(
-		() => buildKeyboardLayout(START_NOTE, KEYBOARD_OCTAVES),
-		[],
+		() => buildKeyboardLayout(startNote, keyboardOctaves),
+		[startNote, keyboardOctaves],
 	);
 
 	const playNoteForPointer = useCallback(
-		(pointerId: number, note: number) => {
+		(pointerId: number, note: number, velocity = 100) => {
 			const currentNote = activePointersRef.current.get(pointerId);
 			if (currentNote === note) {
 				return;
 			}
-			if (currentNote !== undefined) {
+			activePointersRef.current.set(pointerId, note);
+			if (currentNote !== undefined && polyMode !== "mono") {
 				onNoteOff(currentNote);
 			}
-			activePointersRef.current.set(pointerId, note);
-			onNoteOn(note, 112);
+			onNoteOn(note, velocity);
+			if (currentNote !== undefined && polyMode === "mono") {
+				onNoteOff(currentNote);
+			}
 		},
-		[onNoteOn, onNoteOff],
+		[onNoteOn, onNoteOff, polyMode],
 	);
 
 	const releasePointer = useCallback(
 		(pointerId: number) => {
 			const note = activePointersRef.current.get(pointerId);
 			if (note !== undefined) {
+				const existingHandle = activeReleaseRafsRef.current.get(note);
+				if (existingHandle !== undefined) {
+					cancelAnimationFrame(existingHandle);
+					activeReleaseRafsRef.current.delete(note);
+				}
+				activeReleasesRef.current.delete(pointerId);
+				onPolyAftertouchRef.current?.(note, 0);
 				onNoteOff(note);
 				activePointersRef.current.delete(pointerId);
 			}
+			aftertouchOriginsRef.current.delete(pointerId);
 		},
 		[onNoteOff],
 	);
 
 	const releaseAllPointers = useCallback(() => {
-		for (const note of activePointersRef.current.values()) {
+		for (const handle of activeReleaseRafsRef.current.values()) {
+			cancelAnimationFrame(handle);
+		}
+		activeReleaseRafsRef.current.clear();
+		activeReleasesRef.current.clear();
+
+		for (const [, note] of activePointersRef.current.entries()) {
+			onPolyAftertouchRef.current?.(note, 0);
 			onNoteOff(note);
 		}
 		activePointersRef.current.clear();
+		aftertouchOriginsRef.current.clear();
 	}, [onNoteOff]);
+
+	const handleAftertouchMove = useCallback(
+		(pointerId: number, currentY: number) => {
+			const initialY = aftertouchOriginsRef.current.get(pointerId);
+			if (initialY === undefined) return;
+			const note = activePointersRef.current.get(pointerId);
+			if (note === undefined) return;
+			const deltaY = initialY - currentY;
+			const value = Math.max(0, Math.min(1, deltaY / AFTERTOUCH_MAX_DRAG));
+			aftertouchValuesRef.current.set(note, value);
+			onPolyAftertouchRef.current?.(note, value);
+		},
+		[],
+	);
+
+	const smoothReleaseToZero = useCallback(
+		(pointerId: number, note: number, fromValue: number) => {
+			if (activeReleasesRef.current.has(pointerId)) return;
+			const existingHandle = activeReleaseRafsRef.current.get(note);
+			if (existingHandle !== undefined) {
+				cancelAnimationFrame(existingHandle);
+			}
+
+			activeReleasesRef.current.add(pointerId);
+			const startTime = performance.now();
+			const DURATION = 100;
+
+			const ramp = (now: number) => {
+				const elapsed = now - startTime;
+				const t = Math.min(elapsed / DURATION, 1);
+				const value = fromValue * Math.max(0, 1 - t);
+				onPolyAftertouchRef.current?.(note, value);
+				aftertouchValuesRef.current.set(note, value);
+				if (t < 1) {
+					const handle = requestAnimationFrame(ramp);
+					activeReleaseRafsRef.current.set(note, handle);
+				} else {
+					activeReleaseRafsRef.current.delete(note);
+					activeReleasesRef.current.delete(pointerId);
+					releasePointer(pointerId);
+				}
+			};
+
+			const handle = requestAnimationFrame(ramp);
+			activeReleaseRafsRef.current.set(note, handle);
+		},
+		[releasePointer],
+	);
+
+	const handleResizePointerDown = useCallback(
+		(event: ReactPointerEvent<HTMLDivElement>) => {
+			event.preventDefault();
+			(event.target as HTMLElement).setPointerCapture(event.pointerId);
+			resizeRef.current = {
+				startY: event.clientY,
+				startHeight: keyboardHeight,
+			};
+		},
+		[keyboardHeight],
+	);
 
 	useEffect(() => {
 		const onWindowPointerMove = (event: PointerEvent) => {
+			if (resizeRef.current) {
+				const delta = event.clientY - resizeRef.current.startY;
+				const newHeight = Math.round(
+					Math.max(
+						MIN_KEYBOARD_HEIGHT,
+						Math.min(
+							MAX_KEYBOARD_HEIGHT,
+							resizeRef.current.startHeight - delta,
+						),
+					),
+				);
+				setKeyboardHeight(newHeight);
+				return;
+			}
+
 			if (!activePointersRef.current.has(event.pointerId)) {
 				return;
 			}
 
 			if (event.pointerType === "mouse" && event.buttons === 0) {
-				releasePointer(event.pointerId);
+				const mouseNote = activePointersRef.current.get(event.pointerId);
+				if (mouseNote !== undefined && keyboardInputMode === "aftertouch") {
+					const mouseValue = aftertouchValuesRef.current.get(mouseNote) ?? 0;
+					smoothReleaseToZero(event.pointerId, mouseNote, mouseValue);
+				} else {
+					releasePointer(event.pointerId);
+				}
 				return;
 			}
 
@@ -181,19 +341,51 @@ export default function MiniKeyboardOverlay({
 			}
 
 			const parsedNote = Number(noteAttribute);
-			if (!Number.isNaN(parsedNote)) {
-				playNoteForPointer(event.pointerId, parsedNote);
+			if (Number.isNaN(parsedNote)) {
+				return;
 			}
+
+			if (keyboardInputMode === "aftertouch") {
+				const currentNote = activePointersRef.current.get(event.pointerId);
+				if (currentNote === parsedNote) {
+					handleAftertouchMove(event.pointerId, event.clientY);
+					return;
+				}
+				playNoteForPointer(event.pointerId, parsedNote, 100);
+				return;
+			}
+
+			playNoteForPointer(event.pointerId, parsedNote);
 		};
 
 		const onWindowPointerUp = (event: PointerEvent) => {
-			if (activePointersRef.current.has(event.pointerId)) {
+			if (resizeRef.current) {
+				resizeRef.current = null;
+				return;
+			}
+
+			const note = activePointersRef.current.get(event.pointerId);
+			if (note === undefined) return;
+
+			if (keyboardInputMode === "aftertouch") {
+				const currentValue = aftertouchValuesRef.current.get(note) ?? 0;
+				smoothReleaseToZero(event.pointerId, note, currentValue);
+			} else {
+				onPolyAftertouchRef.current?.(note, 0);
 				releasePointer(event.pointerId);
 			}
 		};
 
 		const onWindowPointerCancel = (event: PointerEvent) => {
-			if (activePointersRef.current.has(event.pointerId)) {
+			resizeRef.current = null;
+			const note = activePointersRef.current.get(event.pointerId);
+			if (note === undefined) return;
+
+			if (keyboardInputMode === "aftertouch") {
+				const currentValue = aftertouchValuesRef.current.get(note) ?? 0;
+				smoothReleaseToZero(event.pointerId, note, currentValue);
+			} else {
+				onPolyAftertouchRef.current?.(note, 0);
 				releasePointer(event.pointerId);
 			}
 		};
@@ -207,7 +399,14 @@ export default function MiniKeyboardOverlay({
 			window.removeEventListener("pointerup", onWindowPointerUp);
 			window.removeEventListener("pointercancel", onWindowPointerCancel);
 		};
-	}, [playNoteForPointer, releasePointer]);
+	}, [
+		playNoteForPointer,
+		releasePointer,
+		smoothReleaseToZero,
+		handleAftertouchMove,
+		keyboardInputMode,
+		setKeyboardHeight,
+	]);
 
 	useEffect(() => {
 		if (!visible) {
@@ -215,14 +414,35 @@ export default function MiniKeyboardOverlay({
 		}
 	}, [releaseAllPointers, visible]);
 
-	useEffect(() => () => releaseAllPointers(), [releaseAllPointers]);
+	useEffect(
+		() => () => {
+			for (const handle of activeReleaseRafsRef.current.values()) {
+				cancelAnimationFrame(handle);
+			}
+			activeReleaseRafsRef.current.clear();
+			activeReleasesRef.current.clear();
+			releaseAllPointers();
+		},
+		[releaseAllPointers],
+	);
 
 	const handleKeyPointerDown = useCallback(
 		(event: ReactPointerEvent<HTMLButtonElement>, note: number) => {
 			event.preventDefault();
-			playNoteForPointer(event.pointerId, note);
+			const existingHandle = activeReleaseRafsRef.current.get(note);
+			if (existingHandle !== undefined) {
+				cancelAnimationFrame(existingHandle);
+				activeReleaseRafsRef.current.delete(note);
+			}
+			aftertouchOriginsRef.current.set(event.pointerId, event.clientY);
+			if (keyboardInputMode === "velocity") {
+				const velocity = getNoteVelocity(event);
+				playNoteForPointer(event.pointerId, note, velocity);
+			} else {
+				playNoteForPointer(event.pointerId, note, 100);
+			}
 		},
-		[playNoteForPointer],
+		[playNoteForPointer, keyboardInputMode],
 	);
 
 	return (
@@ -238,11 +458,22 @@ export default function MiniKeyboardOverlay({
 				>
 					<div
 						data-testid="mini-keyboard-overlay"
-						className="pointer-events-auto w-full overflow-hidden rounded-t-2xl rounded-b-none border border-cz-border border-b-0 bg-cz-body px-0 py-1 shadow-xl backdrop-blur-sm"
+						className="pointer-events-auto w-full overflow-hidden rounded-t-2xl rounded-b-none border border-cz-border border-b-0 bg-cz-body px-0 pt-0 pb-1 shadow-xl backdrop-blur-sm"
 					>
-						<div className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-cz-light-blue/10 opacity-50" />
-						<div className="relative flex h-32 gap-2 overflow-hidden rounded-none border border-cz-border/70 border-x-0 border-b-0 bg-cz-inset px-2">
-							<div className="relative flex min-w-0 flex-1 gap-0.5 overflow-hidden rounded-md border border-cz-border/65 bg-cz-surface p-1">
+						<div
+							className="flex h-4 cursor-row-resize items-center justify-center gap-1 hover:bg-cz-light-blue/10 active:bg-cz-light-blue/20"
+							onPointerDown={handleResizePointerDown}
+						>
+							<div className="h-0.5 w-0.5 rounded-full bg-cz-cream/40" />
+							<div className="h-0.5 w-0.5 rounded-full bg-cz-cream/40" />
+							<div className="h-0.5 w-0.5 rounded-full bg-cz-cream/40" />
+							<div className="h-0.5 w-0.5 rounded-full bg-cz-cream/40" />
+						</div>
+						<div className="relative overflow-hidden rounded-none border border-cz-border/70 border-x-0 border-b-0 bg-cz-inset px-2">
+							<div
+								className="relative flex gap-0.5 overflow-hidden rounded-md border border-cz-border/65 bg-cz-surface p-1"
+								style={{ height: keyboardHeight }}
+							>
 								{whiteKeys.map((key) => (
 									<PianoKey
 										key={key.note}
@@ -259,6 +490,7 @@ export default function MiniKeyboardOverlay({
 										label={key.label}
 										black
 										left={key.left}
+										widthPercent={blackKeyWidth}
 										active={activeSet.has(key.note)}
 										onPointerDown={handleKeyPointerDown}
 									/>

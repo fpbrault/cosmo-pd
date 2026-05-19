@@ -90,6 +90,11 @@ declare namespace wasm_bindgen {
          */
         setPitchBend(value: number): void;
         /**
+         * Set polyphonic aftertouch for a specific MIDI note.
+         * `note` is MIDI note number (0–127), `value` is normalised [0.0, 1.0].
+         */
+        setPolyAftertouch(note: number, value: number): void;
+        /**
          * Set the sustain (damper) pedal state.
          */
         setSustain(on: boolean): void;
@@ -122,6 +127,7 @@ declare interface InitOutput {
     readonly czsynthprocessor_setModWheel: (a: number, b: number) => void;
     readonly czsynthprocessor_setParams: (a: number, b: number, c: number) => void;
     readonly czsynthprocessor_setPitchBend: (a: number, b: number) => void;
+    readonly czsynthprocessor_setPolyAftertouch: (a: number, b: number, c: number) => void;
     readonly czsynthprocessor_setSustain: (a: number, b: number) => void;
     readonly engineBuildProfile: (a: number) => void;
     readonly __wbindgen_export: (a: number, b: number) => number;
