@@ -7,6 +7,7 @@ import {
 	useRef,
 } from "react";
 import Button from "@/components/controls/Button";
+import { useSynthStore } from "@/features/synth/synthStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 
 type MiniKeyboardOverlayProps = {
@@ -155,6 +156,7 @@ export default function MiniKeyboardOverlay({
 	const keyboardHeight = useSynthUiStore((s) => s.keyboardHeight);
 	const keyboardInputMode = useSynthUiStore((s) => s.keyboardInputMode);
 	const setKeyboardHeight = useSynthUiStore((s) => s.setKeyboardHeight);
+	const polyMode = useSynthStore((s) => s.polyMode);
 
 	const startNote = 36 + keyboardRange * 12;
 
@@ -185,13 +187,16 @@ export default function MiniKeyboardOverlay({
 			if (currentNote === note) {
 				return;
 			}
-			if (currentNote !== undefined) {
+			activePointersRef.current.set(pointerId, note);
+			if (currentNote !== undefined && polyMode !== "mono") {
 				onNoteOff(currentNote);
 			}
-			activePointersRef.current.set(pointerId, note);
 			onNoteOn(note, velocity);
+			if (currentNote !== undefined && polyMode === "mono") {
+				onNoteOff(currentNote);
+			}
 		},
-		[onNoteOn, onNoteOff],
+		[onNoteOn, onNoteOff, polyMode],
 	);
 
 	const releasePointer = useCallback(
