@@ -388,7 +388,6 @@ impl CosmoProcessor {
             timing: &self.envelope_timing,
             pitch_bend_semitones: self.pitch_bend * p.pitch_bend_range,
             mod_wheel: self.mod_wheel,
-            aftertouch: self.aftertouch,
             macro1: self.macro1,
             macro2: self.macro2,
             macro3: self.macro3,

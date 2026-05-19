@@ -107,6 +107,13 @@ impl CzSynthProcessor {
         self.inner.set_aftertouch(value);
     }
 
+    /// Set polyphonic aftertouch for a specific MIDI note.
+    /// `note` is MIDI note number (0–127), `value` is normalised [0.0, 1.0].
+    #[wasm_bindgen(js_name = setPolyAftertouch)]
+    pub fn set_poly_aftertouch(&mut self, note: u8, value: f32) {
+        self.inner.set_poly_aftertouch(note, value);
+    }
+
     /// Set a macro knob value. `index` is 0–3, `value` is normalised [0.0, 1.0].
     #[wasm_bindgen(js_name = setMacro)]
     pub fn set_macro(&mut self, index: usize, value: f32) {

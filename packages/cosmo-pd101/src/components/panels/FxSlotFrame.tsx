@@ -2,6 +2,7 @@ import { defaultAnimateLayoutChanges, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { memo, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { MdArrowDropDown } from "react-icons/md";
 import Button from "@/components/controls/Button";
 import { useSynthStore } from "@/features/synth/synthStore";
 import type { FxSlotType } from "@/lib/synth/bindings/synth";
@@ -189,15 +190,7 @@ function TypeSelectorTrigger({
 				aria-label="Change effect type"
 				className="btn btn-ghost btn-square btn-xs h-4 w-4 shrink-0 opacity-60 hover:opacity-100"
 			>
-				{/* Downward-pointing triangle */}
-				<svg
-					aria-label="Change effect type"
-					viewBox="0 0 8 5"
-					className="h-1.5 w-1.5"
-					fill="currentColor"
-				>
-					<path d="M4 5 L0 0 L8 0 Z" />
-				</svg>
+				<MdArrowDropDown className="h-1.5 w-1.5" />
 			</Button>
 			{popoverPos && (
 				<TypeSelectorPopover

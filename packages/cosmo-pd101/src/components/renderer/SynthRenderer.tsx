@@ -107,6 +107,7 @@ type SynthRendererProps = {
 		activeNotes: number[];
 		onNoteOn: (note: number, velocity?: number) => void;
 		onNoteOff: (note: number) => void;
+		onPolyAftertouch?: (note: number, value: number) => void;
 	};
 	/** When provided, shows an overlay asking the user to start audio. */
 	audioGate?: {
@@ -171,6 +172,7 @@ function SynthRendererContent({
 	const setMainPanelMode = useSynthUiStore((s) => s.setMainPanelMode);
 	const keyboardVisible = useSynthUiStore((s) => s.keyboardVisible);
 	const setKeyboardVisible = useSynthUiStore((s) => s.setKeyboardVisible);
+	const keyboardHeight = useSynthUiStore((s) => s.keyboardHeight);
 	const libraryModeOpen = useSynthUiStore((s) => s.libraryModeOpen);
 	const setLibraryModeOpen = useSynthUiStore((s) => s.setLibraryModeOpen);
 	const { infoText } = useHoverInfo();
@@ -185,12 +187,14 @@ function SynthRendererContent({
 	const [globalPanelOpen, setGlobalPanelOpen] = useState(false);
 	const [midiLearnOpen, setMidiLearnOpen] = useState(false);
 	const [macroLabelEditorOpen, setMacroLabelEditorOpen] = useState(false);
+	const [keyboardSettingsOpen, setKeyboardSettingsOpen] = useState(false);
 	const [libraryVisibleEntries, setLibraryVisibleEntries] = useState<
 		PresetEntry[]
 	>(headerProps.allEntries);
 
+	const keyboardInsetPx = keyboardHeight + 48;
 	const mainPanelBottomInset =
-		keyboardVisible && !libraryModeOpen ? "11rem" : "0rem";
+		keyboardVisible && !libraryModeOpen ? `${keyboardInsetPx / 16}rem` : "0rem";
 	const frameStyleWithPanelInset = {
 		...frameStyle,
 		"--main-panel-bottom-inset": mainPanelBottomInset,
@@ -475,6 +479,11 @@ function SynthRendererContent({
 						onClose={() => setMacroLabelEditorOpen(false)}
 					/>
 
+					<KeyboardSettingsModal
+						open={keyboardSettingsOpen}
+						onClose={() => setKeyboardSettingsOpen(false)}
+					/>
+
 					<PendingModifiedPresetModal
 						pendingPresetChange={headerProps.pendingPresetChange}
 						onSave={headerProps.onSavePendingPresetChange}
@@ -487,6 +496,7 @@ function SynthRendererContent({
 							visible={keyboardVisible}
 							onNoteOn={miniKeyboard.onNoteOn}
 							onNoteOff={miniKeyboard.onNoteOff}
+							onPolyAftertouch={miniKeyboard.onPolyAftertouch}
 						/>
 					) : null}
 					<SynthInfoBar
@@ -495,6 +505,7 @@ function SynthRendererContent({
 						showKeyboardToggle={Boolean(miniKeyboard) && !libraryModeOpen}
 						keyboardVisible={keyboardVisible}
 						onKeyboardToggle={() => setKeyboardVisible(!keyboardVisible)}
+						onKeyboardSettingsClick={() => setKeyboardSettingsOpen(true)}
 					/>
 				</div>
 			</SynthParamControllerProvider>
@@ -656,6 +667,110 @@ function MacroLabelEditorModal({
 						/>
 					</label>
 				))}
+			</div>
+		</SynthOverlayModal>
+	);
+}
+
+function KeyboardSettingsModal({
+	open,
+	onClose,
+}: {
+	open: boolean;
+	onClose: () => void;
+}) {
+	const keyboardOctaves = useSynthUiStore((s) => s.keyboardOctaves);
+	const keyboardRange = useSynthUiStore((s) => s.keyboardRange);
+	const keyboardInputMode = useSynthUiStore((s) => s.keyboardInputMode);
+	const setKeyboardOctaves = useSynthUiStore((s) => s.setKeyboardOctaves);
+	const setKeyboardRange = useSynthUiStore((s) => s.setKeyboardRange);
+	const setKeyboardInputMode = useSynthUiStore((s) => s.setKeyboardInputMode);
+
+	return (
+		<SynthOverlayModal
+			open={open}
+			onClose={onClose}
+			title="Keyboard Settings"
+			ariaLabel="Keyboard settings"
+			widthClassName="w-[min(26rem,94vw)]"
+		>
+			<div className="space-y-4">
+				<div className="space-y-1.5">
+					<p className="font-mono text-3xs text-cz-cream-dim uppercase tracking-[0.18em]">
+						Octave Range
+					</p>
+					<div className="flex gap-1">
+						{[-2, -1, 0, 1, 2].map((value) => (
+							<Button
+								key={`range-${value}`}
+								type="button"
+								onClick={() => setKeyboardRange(value)}
+								className={`btn btn-sm flex-1 border text-xs ${
+									keyboardRange === value
+										? "border-cz-gold bg-cz-gold/10 text-cz-gold"
+										: "border-cz-border bg-cz-inset text-cz-cream/70 hover:text-cz-cream"
+								}`}
+							>
+								{value > 0 ? `+${value}` : `${value}`}
+							</Button>
+						))}
+					</div>
+				</div>
+				<div className="space-y-1.5">
+					<p className="font-mono text-3xs text-cz-cream-dim uppercase tracking-[0.18em]">
+						Octaves
+					</p>
+					<div className="flex gap-1">
+						{[1, 2, 3, 4, 5].map((value) => (
+							<Button
+								key={`octaves-${value}`}
+								type="button"
+								onClick={() => setKeyboardOctaves(value)}
+								className={`btn btn-sm flex-1 border text-xs ${
+									keyboardOctaves === value
+										? "border-cz-gold bg-cz-gold/10 text-cz-gold"
+										: "border-cz-border bg-cz-inset text-cz-cream/70 hover:text-cz-cream"
+								}`}
+							>
+								{value}
+							</Button>
+						))}
+					</div>
+				</div>
+				<div className="space-y-1.5">
+					<p className="font-mono text-3xs text-cz-cream-dim uppercase tracking-[0.18em]">
+						Key Touch
+					</p>
+					<div className="flex gap-1">
+						<Button
+							type="button"
+							onClick={() => setKeyboardInputMode("velocity")}
+							className={`btn btn-sm flex-1 border text-xs ${
+								keyboardInputMode === "velocity"
+									? "border-cz-gold bg-cz-gold/10 text-cz-gold"
+									: "border-cz-border bg-cz-inset text-cz-cream/70 hover:text-cz-cream"
+							}`}
+						>
+							Velocity
+						</Button>
+						<Button
+							type="button"
+							onClick={() => setKeyboardInputMode("aftertouch")}
+							className={`btn btn-sm flex-1 border text-xs ${
+								keyboardInputMode === "aftertouch"
+									? "border-cz-gold bg-cz-gold/10 text-cz-gold"
+									: "border-cz-border bg-cz-inset text-cz-cream/70 hover:text-cz-cream"
+							}`}
+						>
+							Aftertouch
+						</Button>
+					</div>
+					<p className="pt-1 font-mono text-4xs text-cz-cream-dim/60">
+						{keyboardInputMode === "velocity"
+							? "Press position on key sets velocity. Top = 127, bottom = 1."
+							: "Note-on uses default velocity. Drag up after pressing for aftertouch."}
+					</p>
+				</div>
 			</div>
 		</SynthOverlayModal>
 	);

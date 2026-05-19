@@ -17,6 +17,7 @@ export const czsynthprocessor_setMacro: (a: number, b: number, c: number) => voi
 export const czsynthprocessor_setModWheel: (a: number, b: number) => void;
 export const czsynthprocessor_setParams: (a: number, b: number, c: number) => void;
 export const czsynthprocessor_setPitchBend: (a: number, b: number) => void;
+export const czsynthprocessor_setPolyAftertouch: (a: number, b: number, c: number) => void;
 export const czsynthprocessor_setSustain: (a: number, b: number) => void;
 export const engineBuildProfile: (a: number) => void;
 export const __wbindgen_export: (a: number, b: number) => number;
