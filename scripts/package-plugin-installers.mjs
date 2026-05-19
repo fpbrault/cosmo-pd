@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import {
 	cpSync,
 	existsSync,
@@ -32,10 +32,19 @@ function toPascalCase(name) {
 		.join("");
 }
 
+function getDevVersionSuffix() {
+	const hash = execFileSync("git", ["rev-parse", "--short", "HEAD"], {
+		cwd: path.dirname(fileURLToPath(import.meta.url)),
+		encoding: "utf8",
+	}).trim();
+	return `-dev.g${hash}`;
+}
+
 function parseArgs() {
 	const args = process.argv.slice(2);
 	let profile = "release";
 	let platform = PLATFORM_ALIASES.get(process.platform) ?? process.platform;
+	let dev = false;
 
 	for (let i = 0; i < args.length; i += 1) {
 		if (args[i] === "--profile" && args[i + 1]) {
@@ -54,9 +63,13 @@ function parseArgs() {
 			platform = normalized;
 			i += 1;
 		}
+
+		if (args[i] === "--dev") {
+			dev = true;
+		}
 	}
 
-	return { profile, platform };
+	return { profile, platform, dev };
 }
 
 function readWorkspaceVersion(rootDir) {
@@ -615,12 +628,13 @@ function packageLinux({ sourceDir, outputDir, version }) {
 }
 
 function main() {
-	const { profile, platform } = parseArgs();
+	const { profile, platform, dev } = parseArgs();
 	const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 	const rootDir = path.resolve(scriptDir, "..");
 	const targetRoot = resolveTargetRoot(rootDir);
 	const sourceDir = path.join(targetRoot, profile);
 	const version = readWorkspaceVersion(rootDir);
+	const effectiveVersion = dev ? `${version}${getDevVersionSuffix()}` : version;
 	const outputDir = path.join(rootDir, "dist", "plugin-installers", platform);
 
 	if (!existsSync(sourceDir)) {
@@ -631,11 +645,23 @@ function main() {
 
 	let artifacts;
 	if (platform === "macos") {
-		artifacts = packageMacos({ sourceDir, outputDir, version });
+		artifacts = packageMacos({
+			sourceDir,
+			outputDir,
+			version: effectiveVersion,
+		});
 	} else if (platform === "windows") {
-		artifacts = packageWindows({ sourceDir, outputDir, version });
+		artifacts = packageWindows({
+			sourceDir,
+			outputDir,
+			version: effectiveVersion,
+		});
 	} else if (platform === "linux") {
-		artifacts = packageLinux({ sourceDir, outputDir, version });
+		artifacts = packageLinux({
+			sourceDir,
+			outputDir,
+			version: effectiveVersion,
+		});
 	} else {
 		throw new Error(`Unsupported platform '${platform}'`);
 	}
