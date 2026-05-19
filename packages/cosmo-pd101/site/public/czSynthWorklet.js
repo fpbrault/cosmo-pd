@@ -289,6 +289,9 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 			case "aftertouch":
 				synth.setAftertouch(d.value);
 				break;
+			case "polyAftertouch":
+				synth.setPolyAftertouch(d.note, d.value);
+				break;
 			case "panic":
 				if (typeof synth.resetAudioState === "function") {
 					synth.resetAudioState();

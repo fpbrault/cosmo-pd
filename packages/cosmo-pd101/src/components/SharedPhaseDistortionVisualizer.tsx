@@ -118,7 +118,7 @@ export function SharedPhaseDistortionVisualizer({
 		};
 	}, [performanceMonitorEnabled, workletNodeRef]);
 
-	const { activeNotes, sendNoteOn, sendNoteOff, sendAftertouch, panic } =
+	const { activeNotes, sendNoteOn, sendNoteOff, sendPolyAftertouch, panic } =
 		useNoteHandling({
 			workletNodeRef,
 			velocityCurve,
@@ -381,7 +381,7 @@ export function SharedPhaseDistortionVisualizer({
 				activeNotes,
 				onNoteOn: sendNoteOn,
 				onNoteOff: sendNoteOff,
-				onAftertouch: sendAftertouch,
+				onPolyAftertouch: sendPolyAftertouch,
 			}}
 			audioGate={{
 				ready: audioContextState === "running",

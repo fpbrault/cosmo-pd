@@ -107,7 +107,7 @@ type SynthRendererProps = {
 		activeNotes: number[];
 		onNoteOn: (note: number, velocity?: number) => void;
 		onNoteOff: (note: number) => void;
-		onAftertouch?: (value: number) => void;
+		onPolyAftertouch?: (note: number, value: number) => void;
 	};
 	/** When provided, shows an overlay asking the user to start audio. */
 	audioGate?: {
@@ -496,7 +496,7 @@ function SynthRendererContent({
 							visible={keyboardVisible}
 							onNoteOn={miniKeyboard.onNoteOn}
 							onNoteOff={miniKeyboard.onNoteOff}
-							onAftertouch={miniKeyboard.onAftertouch}
+							onPolyAftertouch={miniKeyboard.onPolyAftertouch}
 						/>
 					) : null}
 					<SynthInfoBar

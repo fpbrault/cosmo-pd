@@ -26,6 +26,7 @@ export type NoteHandlingApi = {
 	sendPitchBend: (value: number) => void;
 	sendModWheel: (value: number) => void;
 	sendAftertouch: (value: number) => void;
+	sendPolyAftertouch: (note: number, value: number) => void;
 	sendMacro: (index: number, value: number) => void;
 };
 
@@ -125,6 +126,14 @@ export function useNoteHandling({
 	const sendAftertouch = useCallback(
 		(value: number) => {
 			dispatchEngineEvent("aftertouch", { value });
+			emitModSourceValue("aftertouch", value);
+		},
+		[dispatchEngineEvent, emitModSourceValue],
+	);
+
+	const sendPolyAftertouch = useCallback(
+		(note: number, value: number) => {
+			dispatchEngineEvent("polyAftertouch", { note, value });
 			emitModSourceValue("aftertouch", value);
 		},
 		[dispatchEngineEvent, emitModSourceValue],
@@ -307,7 +316,7 @@ export function useNoteHandling({
 
 							// Poly pressure (status 0xA0, per-note pressure in data2)
 							if (status === 0xa0 && data.length >= 3) {
-								sendAftertouch(data[2] / 127);
+								sendPolyAftertouch(data[1], data[2] / 127);
 								return;
 							}
 
@@ -350,6 +359,7 @@ export function useNoteHandling({
 		sendModWheel,
 		sendPitchBend,
 		sendAftertouch,
+		sendPolyAftertouch,
 		sendNoteOn,
 		sendNoteOff,
 		setSustain,
@@ -364,6 +374,7 @@ export function useNoteHandling({
 		sendPitchBend,
 		sendModWheel,
 		sendAftertouch,
+		sendPolyAftertouch,
 		sendMacro,
 	};
 }

@@ -14,7 +14,7 @@ type MiniKeyboardOverlayProps = {
 	visible: boolean;
 	onNoteOn: (note: number, velocity?: number) => void;
 	onNoteOff: (note: number) => void;
-	onAftertouch?: (value: number) => void;
+	onPolyAftertouch?: (note: number, value: number) => void;
 };
 
 type KeyConfig = {
@@ -46,7 +46,7 @@ const AFTERTOUCH_MAX_DRAG = 80;
 const WHITE_KEY_CLASS_NAME =
 	"relative flex h-full flex-1 flex-col justify-end rounded-b-xs border border-cz-border/75 bg-white shadow-sm transition-all";
 const BLACK_KEY_CLASS_NAME =
-	"absolute top-0 z-10 h-3/5 -translate-x-1/2 rounded-b-xs border border-cz-border/80 bg-cz-inset shadow-md transition-all";
+	"absolute top-0 z-10 h-5/7 -translate-x-1/2 rounded-b-xs border border-cz-border/80 bg-cz-inset shadow-md transition-all";
 
 function buildKeyboardLayout(
 	startNote: number,
@@ -148,7 +148,7 @@ export default function MiniKeyboardOverlay({
 	visible,
 	onNoteOn,
 	onNoteOff,
-	onAftertouch,
+	onPolyAftertouch,
 }: MiniKeyboardOverlayProps) {
 	const keyboardOctaves = useSynthUiStore((s) => s.keyboardOctaves);
 	const keyboardRange = useSynthUiStore((s) => s.keyboardRange);
@@ -200,25 +200,25 @@ export default function MiniKeyboardOverlay({
 	);
 
 	const releaseAllPointers = useCallback(() => {
-		if (onAftertouch) {
-			onAftertouch(0);
-		}
-		for (const note of activePointersRef.current.values()) {
+		for (const [, note] of activePointersRef.current.entries()) {
+			onPolyAftertouch?.(note, 0);
 			onNoteOff(note);
 		}
 		activePointersRef.current.clear();
 		aftertouchOriginsRef.current.clear();
-	}, [onNoteOff, onAftertouch]);
+	}, [onNoteOff, onPolyAftertouch]);
 
 	const handleAftertouchMove = useCallback(
 		(pointerId: number, currentY: number) => {
 			const initialY = aftertouchOriginsRef.current.get(pointerId);
 			if (initialY === undefined) return;
+			const note = activePointersRef.current.get(pointerId);
+			if (note === undefined) return;
 			const deltaY = initialY - currentY;
 			const value = Math.max(0, Math.min(1, deltaY / AFTERTOUCH_MAX_DRAG));
-			onAftertouch?.(value);
+			onPolyAftertouch?.(note, value);
 		},
-		[onAftertouch],
+		[onPolyAftertouch],
 	);
 
 	const handleResizePointerDown = useCallback(
@@ -298,8 +298,9 @@ export default function MiniKeyboardOverlay({
 				return;
 			}
 
-			if (keyboardInputMode === "aftertouch") {
-				onAftertouch?.(0);
+			const note = activePointersRef.current.get(event.pointerId);
+			if (keyboardInputMode === "aftertouch" && note !== undefined) {
+				onPolyAftertouch?.(note, 0);
 			}
 
 			if (activePointersRef.current.has(event.pointerId)) {
@@ -309,8 +310,9 @@ export default function MiniKeyboardOverlay({
 
 		const onWindowPointerCancel = (event: PointerEvent) => {
 			resizeRef.current = null;
-			if (keyboardInputMode === "aftertouch") {
-				onAftertouch?.(0);
+			const note = activePointersRef.current.get(event.pointerId);
+			if (keyboardInputMode === "aftertouch" && note !== undefined) {
+				onPolyAftertouch?.(note, 0);
 			}
 			if (activePointersRef.current.has(event.pointerId)) {
 				releasePointer(event.pointerId);
@@ -331,7 +333,7 @@ export default function MiniKeyboardOverlay({
 		releasePointer,
 		handleAftertouchMove,
 		keyboardInputMode,
-		onAftertouch,
+		onPolyAftertouch,
 		setKeyboardHeight,
 	]);
 
