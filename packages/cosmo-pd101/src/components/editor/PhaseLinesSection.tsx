@@ -246,7 +246,7 @@ export default function PhaseLinesSection({
 
 					<div className="relative min-h-0 min-w-0 flex-1">
 						{!activeLineIsAudible && (
-							<div className="absolute inset-0 z-50 flex items-center justify-center rounded bg-black/70 backdrop-blur-[5px]">
+							<div className="absolute inset-0 z-30 flex items-center justify-center rounded bg-black/70 backdrop-blur-[5px]">
 								<div className="px-3 text-center font-semibold text-cz-cream/80 text-xs tracking-wide">
 									{activeLineLabel} is currently inactive in{" "}
 									{inaudibleLineSelectLabel} mode
