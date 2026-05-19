@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779149141918,
+  "lastUpdate": 1779149870983,
   "repoUrl": "https://github.com/fpbrault/cosmo-pd",
   "entries": {
     "cosmo-synth-engine": [
@@ -10211,6 +10211,228 @@ window.BENCHMARK_DATA = {
             "name": "opt_all_combined_8_voices",
             "value": 11432559,
             "range": "± 49386",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "fpbrault@gmail.com",
+            "name": "Felix Perron-Brault",
+            "username": "fpbrault"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7ad34d2b7dda44e586beee06937666f59562e0d9",
+          "message": "feat(synth): add MIDI learn with CC mapping and aside panel (#200)\n\n* chore(rust): migrate workspace to edition 2024\n\n- Bump edition from 2021 to 2024 in all workspace Cargo.toml files\n- cargo fix --edition auto-fixes: #[unsafe(no_mangle)], unsafe_op_in_unsafe_fn,\n  gen→r#gen keyword, expr→expr_2021 fragment specifier\n- Manual fix: replace static mut with OnceLock in terminate_delegate_class()\n- All 70 tests pass, build is warning-free\n\n* feat(synth): add MIDI learn with CC mapping and aside panel\n\nMap arbitrary MIDI CCs to any synth parameter via a MIDI Learn aside panel. Right-click bound controls to unlearn. Works in both standalone (Web MIDI API) and plugin (DAW host MIDI via Rust ArrayQueue + idle() eval) runtimes.\n\n- Add midiLearnStore (Zustand + localStorage persist)\n- Add useMidiLearnBindings hook (cz-midi-cc CustomEvent listener)\n- Add MidiLearnPanel with Learn toggle and status\n- Wire SynthParamKnob context menu and learn click\n- Forward all CCs in Rust lib.rs MidiCcQueue and gui.rs idle handler\n- Bridge handlers for nih-plug and AUv3\n\n* Refactor SynthPanelContainer and SynthSidebar components; add MIDI Learn functionality\n\n- Removed unused className prop from SynthPanelContainer.\n- Simplified layout in SynthPanelContainer.\n- Integrated AnimatePresence and motion for MIDI Learn panel in SynthSidebar.\n- Updated SynthSidebarButtons to handle MIDI Learn toggle.\n- Enhanced tests for SynthSidebarButtons to cover MIDI Learn interactions.\n- Refactored MidiLearnPanel to improve binding management and UI.\n- Updated useMidiLearnStore to support multiple MIDI bindings per parameter.\n- Adjusted SynthRenderer to manage MIDI Learn state.\n- Improved MIDI binding logic in useMidiLearnBindings.\n- Cleaned up Rust code for better readability and performance.\n\n* refactor(MidiLearnPanel): remove unused className prop and simplify component structure\n\n* feat: implement MIDI learn functionality across various components\n\n- Added `sectionId` prop to `AlgoControlItem`, `AlgoControlNumber`, `AlgoControlsGroup`, and `AlgoSectionCard` for better control organization.\n- Integrated MIDI learn capabilities in `AlgoControlNumber`, `KnobControl`, `LfoModule`, `ModEnveloppeModule`, and various custom module renderers (Delay, PhaseMod, Tremolo, Vibrato).\n- Created `useMidiLearnTarget` hook to manage MIDI learn state and interactions.\n- Established a registry for MIDI learn targets to facilitate dynamic binding and application of MIDI control changes.\n- Enhanced `MidiLearnPanel` and `MidiLearnStore` to support new MIDI learn functionalities and improve binding management.\n\n* refactor(AlgoControlsGroup): make sectionId optional and set default value\nrefactor(useMidiLearnTarget): define MidiLearnVisualState type and annotate midiLearnState\n\n* fix(AlgoControlNumber): resolve sectionId handling for MIDI learn target key",
+          "timestamp": "2026-05-18T20:11:18-04:00",
+          "tree_id": "2eea76380a5607b21ba3aa1566d2faa1d9ed0f3b",
+          "url": "https://github.com/fpbrault/cosmo-pd/commit/7ad34d2b7dda44e586beee06937666f59562e0d9"
+        },
+        "date": 1779149869617,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "default_3_voices",
+            "value": 3038717,
+            "range": "± 32865",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_6_voices",
+            "value": 4906686,
+            "range": "± 34939",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_8_voices",
+            "value": 6100079,
+            "range": "± 20939",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_3_voices",
+            "value": 2468576,
+            "range": "± 83125",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_6_voices",
+            "value": 2922411,
+            "range": "± 28390",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_8_voices",
+            "value": 3085854,
+            "range": "± 41411",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_3_voices",
+            "value": 8351214,
+            "range": "± 145429",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_6_voices",
+            "value": 10976880,
+            "range": "± 44350",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_8_voices",
+            "value": 12732085,
+            "range": "± 60841",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_3_voices",
+            "value": 11186859,
+            "range": "± 62138",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_6_voices",
+            "value": 15633647,
+            "range": "± 54750",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_8_voices",
+            "value": 17373285,
+            "range": "± 72515",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_3_voices",
+            "value": 6997650,
+            "range": "± 81099",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_6_voices",
+            "value": 9152406,
+            "range": "± 24328",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_8_voices",
+            "value": 10383596,
+            "range": "± 29937",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_3_voices",
+            "value": 3966812,
+            "range": "± 18129",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_6_voices",
+            "value": 5685778,
+            "range": "± 23311",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_8_voices",
+            "value": 6762761,
+            "range": "± 29228",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_3_voices",
+            "value": 11706592,
+            "range": "± 33417",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_6_voices",
+            "value": 13330699,
+            "range": "± 30844",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_8_voices",
+            "value": 13541214,
+            "range": "± 31717",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_3_voices",
+            "value": 6263012,
+            "range": "± 23390",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_6_voices",
+            "value": 8276007,
+            "range": "± 212273",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_8_voices",
+            "value": 9638495,
+            "range": "± 49064",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_3_voices",
+            "value": 3632230,
+            "range": "± 26086",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_6_voices",
+            "value": 5773299,
+            "range": "± 27798",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_8_voices",
+            "value": 7163348,
+            "range": "± 28382",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_3_voices",
+            "value": 3639179,
+            "range": "± 21493",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_6_voices",
+            "value": 5898735,
+            "range": "± 40916",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_8_voices",
+            "value": 7319188,
+            "range": "± 39623",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_3_voices",
+            "value": 7435984,
+            "range": "± 30003",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_6_voices",
+            "value": 9827326,
+            "range": "± 73834",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_8_voices",
+            "value": 11379996,
+            "range": "± 46553",
             "unit": "ns/iter"
           }
         ]
