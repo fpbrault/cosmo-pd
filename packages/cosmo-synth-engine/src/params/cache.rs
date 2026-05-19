@@ -8,6 +8,8 @@ pub(crate) struct ModMatrixCache {
     pub ref_mod_env: f32,
     pub ref_velocity: f32,
     pub has_env_step_routes: bool,
+    env_level_masks: [[u8; 3]; 2],
+    env_rate_masks: [[u8; 3]; 2],
     amounts_by_source: [[f32; NUM_MOD_DESTINATIONS]; 11],
     active_destinations: [usize; NUM_MOD_DESTINATIONS],
     active_destination_count: usize,
@@ -29,6 +31,8 @@ impl ModMatrixCache {
         self.per_voice_mod_env_amounts.fill(0.0);
         self.per_voice_velocity_amounts.fill(0.0);
         self.has_env_step_routes = false;
+        self.env_level_masks = [[0; 3]; 2];
+        self.env_rate_masks = [[0; 3]; 2];
 
         let mut active_marks = [false; NUM_MOD_DESTINATIONS];
 
@@ -47,6 +51,18 @@ impl ModMatrixCache {
                 && (ENV_STEP_DEST_FIRST..=ENV_STEP_DEST_LAST).contains(&idx)
             {
                 self.has_env_step_routes = true;
+            }
+            if (ENV_STEP_DEST_FIRST..=ENV_STEP_DEST_LAST).contains(&idx) {
+                let relative = idx - ENV_STEP_DEST_FIRST;
+                let line_index = relative / 48;
+                let kind_index = (relative % 48) / 16;
+                let step_index = (relative % 16) / 2;
+                let step_bit = 1u8 << step_index;
+                if relative & 1 == 0 {
+                    self.env_level_masks[line_index][kind_index] |= step_bit;
+                } else {
+                    self.env_rate_masks[line_index][kind_index] |= step_bit;
+                }
             }
 
             if route.source == ModSource::ModEnv || route.source == ModSource::Velocity {
@@ -88,7 +104,11 @@ impl ModMatrixCache {
 
     #[inline]
     pub fn get(&self, dest: ModDestination, sources: &ModSources) -> f32 {
-        let idx = dest as usize;
+        self.get_by_index(dest as usize, sources)
+    }
+
+    #[inline]
+    pub fn get_by_index(&self, idx: usize, sources: &ModSources) -> f32 {
         let mut v = self.values[idx];
         let env_amt = self.per_voice_mod_env_amounts[idx];
         if env_amt != 0.0 {
@@ -101,6 +121,16 @@ impl ModMatrixCache {
 
         v.clamp(-1.0, 1.0)
     }
+
+    #[inline]
+    pub fn env_level_mask(&self, line_index: u8, env_kind_index: usize) -> u8 {
+        self.env_level_masks[(line_index.saturating_sub(1)) as usize][env_kind_index]
+    }
+
+    #[inline]
+    pub fn env_rate_mask(&self, line_index: u8, env_kind_index: usize) -> u8 {
+        self.env_rate_masks[(line_index.saturating_sub(1)) as usize][env_kind_index]
+    }
 }
 
 impl Default for ModMatrixCache {
@@ -110,6 +140,8 @@ impl Default for ModMatrixCache {
             ref_mod_env: 0.0,
             ref_velocity: 0.0,
             has_env_step_routes: false,
+            env_level_masks: [[0; 3]; 2],
+            env_rate_masks: [[0; 3]; 2],
             amounts_by_source: [[0.0; NUM_MOD_DESTINATIONS]; 11],
             active_destinations: [0; NUM_MOD_DESTINATIONS],
             active_destination_count: 0,

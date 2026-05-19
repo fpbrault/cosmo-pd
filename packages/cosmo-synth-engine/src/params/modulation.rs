@@ -250,7 +250,7 @@ pub enum ModDestination {
 }
 
 /// Total number of `ModDestination` variants.
-pub const NUM_MOD_DESTINATIONS: usize = ModDestination::EqGain8000 as usize + 1;
+pub const NUM_MOD_DESTINATIONS: usize = ModDestination::StereoWidenerMix as usize + 1;
 
 /// First env step destination discriminant.
 pub const ENV_STEP_DEST_FIRST: usize = ModDestination::Line1DcoEnvStep1Level as usize;
