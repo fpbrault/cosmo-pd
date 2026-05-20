@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
-import { StepEnvelopeEditor } from "./StepEnvelopeEditor";
+import StepEnvelopeEditor from "./StepEnvelopeEditor";
 
 type CanvasCommand = {
 	name: string;

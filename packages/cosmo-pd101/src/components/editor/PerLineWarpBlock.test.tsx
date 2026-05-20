@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { BaseWaveform } from "@/lib/synth/bindings/synth";
 import type { PdAlgo } from "@/lib/synth/pdAlgorithms";
 import type { LineIndex } from "../controls/algo/algoControlTypes";
-import { PerLineWarpBlock } from "./PerLineWarpBlock";
+import PerLineWarpBlock from "./PerLineWarpBlock";
 
 vi.mock("@/components/controls/algo/AlgoControlsGroup", () => ({
 	default: ({

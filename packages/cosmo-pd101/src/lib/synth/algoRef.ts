@@ -27,7 +27,6 @@ export function isWarpAlgo(value: unknown): value is WarpAlgo {
 	return typeof value === "string" && (WARP_ALGOS as string[]).includes(value);
 }
 
-
 type WaveformId = CzWaveform;
 type WarpAlgo = Algo;
 

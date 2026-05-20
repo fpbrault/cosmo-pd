@@ -8,7 +8,10 @@ import { drawScopeBackdrop } from "./scope-visualizations/canvas";
 import { isEditableKeyboardTarget } from "./scope-visualizations/keyboard";
 import { getScopeThemePalette } from "./scope-visualizations/palette";
 import { calculateFrameMean } from "./scope-visualizations/processing";
-import { renderScopeVisualization, ScopeVisualizationMode } from "./scope-visualizations/renderScopeVisualization";
+import {
+	renderScopeVisualization,
+	type ScopeVisualizationMode,
+} from "./scope-visualizations/renderScopeVisualization";
 import type {
 	ScopeColorTheme,
 	SpectrogramState,

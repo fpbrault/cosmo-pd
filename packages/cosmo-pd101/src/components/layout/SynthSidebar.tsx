@@ -66,9 +66,11 @@ export default memo(function SynthSidebar({
 								animate={{ y: 0 }}
 								exit={{ y: "-108%" }}
 								transition={MIDI_LEARN_PANEL_TRANSITION}
-								className="absolute inset-0 z-10"
+								className="absolute inset-0 z-10 h-full border-cz-light-blue/20 bg-cz-panel/96 shadow-xl backdrop-blur-sm"
 							>
-								<MidiLearnPanel className="h-full border-cz-light-blue/20 bg-cz-panel/96 shadow-xl backdrop-blur-sm" />
+								<div className="h-full">
+									<MidiLearnPanel />
+								</div>
 							</motion.div>
 						) : null}
 					</AnimatePresence>

@@ -1,7 +1,5 @@
-import type {
-	ScopeColorTheme,
-} from "@/features/synth/synthUiStore";
-import { ScopeVisualizationMode } from "./renderScopeVisualization";
+import type { ScopeColorTheme } from "@/features/synth/synthUiStore";
+import type { ScopeVisualizationMode } from "./renderScopeVisualization";
 
 export type { ScopeColorTheme };
 

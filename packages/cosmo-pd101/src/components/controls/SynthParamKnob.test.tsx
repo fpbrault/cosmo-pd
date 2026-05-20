@@ -33,7 +33,7 @@ const { mockMetaByKey, mockParamMeta, mockGetDefault, ControlKnobMock } =
 	}));
 
 vi.mock("@/components/controls/ControlKnob", () => ({
-	ControlKnob: (props: Record<string, unknown> & { children?: ReactNode }) =>
+	default: (props: Record<string, unknown> & { children?: ReactNode }) =>
 		ControlKnobMock(props),
 }));
 
