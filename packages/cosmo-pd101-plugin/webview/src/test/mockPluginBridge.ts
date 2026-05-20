@@ -30,14 +30,12 @@ const ALGO_ORDER = [
 	"pinch",
 	"fold",
 	"skew",
-	"quantize",
 	"twist",
 	"clip",
 	"ripple",
 	"mirror",
 	"fof",
 	"karpunk",
-	"sine",
 ] as const;
 
 // ---------------------------------------------------------------------------

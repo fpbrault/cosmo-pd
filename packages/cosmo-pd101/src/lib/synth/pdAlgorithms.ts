@@ -362,17 +362,6 @@ export function pdSkew(
 	return phase + (target - phase) * amount;
 }
 
-export function pdQuantize(
-	phase: number,
-	amount: number,
-	steps = 0.5,
-	skew = 0.5,
-): number {
-	const levels = 2 + Math.floor(steps * 30);
-	const warpedPhase = clamp(phase, 0, 1) ** (0.4 + skew * 2.2);
-	const target = Math.round(warpedPhase * levels) / levels;
-	return phase + (target - phase) * amount;
-}
 
 export function pdTwist(
 	phase: number,
@@ -663,13 +652,6 @@ function applyPdAlgo(
 				controlValue("skewCurve", 0.5),
 				controlValue("skewSpread", 0),
 				controlValue("skewTilt", 0),
-			);
-		case "quantize":
-			return pdQuantize(
-				phase,
-				controlValue("quantizeAmount", amount),
-				controlValue("quantizeSteps", 0.5),
-				controlValue("quantizeSkew", 0.5),
 			);
 		case "twist":
 			return pdTwist(

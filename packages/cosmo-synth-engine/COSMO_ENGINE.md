@@ -203,7 +203,6 @@ flowchart LR
 | `Pinch` | focus, asym, curve, drive | Squeeze/stretch phase regions |
 | `Fold` | stages, tilt, symmetry, softness | Wavefolding via phase inversion |
 | `Skew` | bias, curve, spread, tilt | Asymmetric phase stretching |
-| `Quantize` | —, steps, blend | Phase quantisation (bit-like) |
 | `Twist` | harmonics, depth, phase_offset, shape | Harmonic twisting |
 | `Clip` | drive, shape, bias, soft | Phase clipping/wrapping |
 | `Ripple` | freq, depth, phase_offset, shape | Ripple modulation filter |
