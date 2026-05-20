@@ -4,9 +4,10 @@ export {
 	type PerformanceMetrics,
 	PerformanceMonitor,
 } from "./components/performance/PerformanceMonitor";
-export { default as SynthRenderer } from "./components/renderer/SynthRenderer";
-export type { SharedPhaseDistortionVisualizerProps } from "./components/SharedPhaseDistortionVisualizer";
-export { SharedPhaseDistortionVisualizer } from "./components/SharedPhaseDistortionVisualizer";
+export {
+	SharedPhaseDistortionVisualizer,
+	type SynthRendererProps as SharedPhaseDistortionVisualizerProps,
+} from "./components/renderer/SynthRenderer";
 export { usePluginBridgeSynthEngine } from "./features/synth/engine/pluginBridgeSynthEngineAdapter";
 export { useAudioEngine } from "./features/synth/hooks/useAudioEngine";
 export { useMidiLearnBindings } from "./features/synth/hooks/useMidiLearnBindings";

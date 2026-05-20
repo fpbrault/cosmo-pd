@@ -1,6 +1,31 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import SynthRenderer from "./SynthRenderer";
+
+const mockSynthStoreState = {
+	modMatrix: {},
+	setModMatrix: vi.fn(),
+	setLine1DcoEnv: vi.fn(),
+	setLine1DcwEnv: vi.fn(),
+	setLine1DcaEnv: vi.fn(),
+	setLine2DcoEnv: vi.fn(),
+	setLine2DcwEnv: vi.fn(),
+	setLine2DcaEnv: vi.fn(),
+	velocityCurve: 0,
+	gatherState: () => ({}),
+	applyPreset: vi.fn(),
+};
+
+const mockSynthUiStoreState = {
+	mainPanelMode: "phase" as const,
+	setMainPanelMode: vi.fn(),
+	keyboardVisible: false,
+	setKeyboardVisible: vi.fn(),
+	keyboardHeight: 0,
+	libraryModeOpen: false,
+	setLibraryModeOpen: vi.fn(),
+};
 
 vi.mock("@/components/preset/SynthHeader", () => ({
 	default: () => <div data-testid="synth-header" />,
@@ -12,8 +37,13 @@ vi.mock("@/components/layout/SynthSidebar", () => ({
 		</button>
 	),
 }));
-vi.mock("@/components/panels/voice/GlobalVoicePanel", () => ({
-	default: () => <div data-testid="global-voice-panel" />,
+vi.mock("@/components/modals", () => ({
+	GlobalVoiceModal: ({ open }: { open: boolean }) =>
+		open ? <div data-testid="global-voice-panel" /> : null,
+	KeyboardSettingsModal: () => null,
+	MacroLabelEditorModal: () => null,
+	PendingModifiedPresetModal: () => null,
+	SynthBrandInfoModal: () => null,
 }));
 vi.mock("@/components/panels/drawers/FxConsoleDrawer", () => ({
 	default: () => <div data-testid="fx-console-drawer" />,
@@ -23,7 +53,6 @@ vi.mock("@/components/panels/drawers/ModConsoleDrawer", () => ({
 }));
 vi.mock("@/components/panels/analysis/ScopeDisplay", () => ({
 	ScopeDrawerDisplay: () => <div data-testid="scope-drawer-display" />,
-	ScopeMiniDisplay: () => <div data-testid="scope-mini-display" />,
 }));
 vi.mock("@/components/controls/LineSelectControl", () => ({
 	default: () => <div data-testid="line-select-control" />,
@@ -31,11 +60,24 @@ vi.mock("@/components/controls/LineSelectControl", () => ({
 vi.mock("@/components/controls/ModModeControl", () => ({
 	default: () => <div data-testid="mod-mode-control" />,
 }));
+vi.mock("@/components/controls/MasterVolumeControl", () => ({
+	default: () => <div data-testid="master-volume-control" />,
+}));
 vi.mock("@/components/editor/PhaseLinesSection", () => ({
 	default: () => <div data-testid="phase-lines-section" />,
 }));
 vi.mock("@/components/preset/PresetLibrary", () => ({
-	default: () => <div data-testid="preset-library" />,
+	default: ({ isOpen, onClose }: { isOpen?: boolean; onClose: () => void }) => (
+		<div data-testid="preset-library" data-open={isOpen ? "true" : "false"}>
+			<button
+				type="button"
+				data-testid="preset-library-close"
+				onClick={onClose}
+			>
+				close
+			</button>
+		</div>
+	),
 }));
 vi.mock("@/components/layout/MiniKeyboardOverlay", () => ({
 	default: () => <div data-testid="mini-keyboard-overlay" />,
@@ -43,30 +85,22 @@ vi.mock("@/components/layout/MiniKeyboardOverlay", () => ({
 vi.mock("@/components/layout/SynthInfoBar", () => ({
 	default: () => <div data-testid="synth-info-bar" />,
 }));
-vi.mock("@/components/controls/SynthParamKnob", () => ({
-	default: () => <div data-testid="synth-param-knob" />,
-}));
 vi.mock("@/components/primitives/CzTabButton", () => ({
-	default: () => <div data-testid="cz-tab-button" />,
+	default: () => <button type="button" data-testid="cz-tab-button" />,
 }));
 
 vi.mock("@/features/synth/synthStore", () => ({
-	useSynthStore: vi.fn(() => ({
-		modMatrix: {},
-		setModMatrix: vi.fn(),
-		fxSlots: {},
-	})),
+	useSynthStore: vi.fn(
+		(selector: (state: typeof mockSynthStoreState) => unknown) =>
+			selector(mockSynthStoreState),
+	),
 }));
 
 vi.mock("@/features/synth/synthUiStore", () => ({
-	useSynthUiStore: vi.fn(() => ({
-		mainPanelMode: "phase",
-		setMainPanelMode: vi.fn(),
-		keyboardVisible: false,
-		setKeyboardVisible: vi.fn(),
-		libraryModeOpen: false,
-		setLibraryModeOpen: vi.fn(),
-	})),
+	useSynthUiStore: vi.fn(
+		(selector: (state: typeof mockSynthUiStoreState) => unknown) =>
+			selector(mockSynthUiStoreState),
+	),
 }));
 
 vi.mock("@/features/synth/SynthParamController", () => ({
@@ -87,83 +121,111 @@ vi.mock("@/context/ModMatrixContext", () => ({
 	),
 }));
 
-describe("SynthRenderer Smoke Test", () => {
-	it("renders without crashing", () => {
-		const props = {
-			headerProps: {
-				allEntries: [],
-				activeEntryId: "1",
-				activePresetName: "Test Preset",
-				onLoadLocal: vi.fn(),
-				onLoadLibrary: vi.fn(),
-				onLoadBuiltin: vi.fn(),
-				onSavePreset: vi.fn(),
-				onDeletePreset: vi.fn(),
-				onRenamePreset: vi.fn(),
-				onSetPresetAuthor: vi.fn(),
-				onSetPresetFavorite: vi.fn(),
-				onSetPresetTags: vi.fn(),
-				onExportPreset: vi.fn(),
-				onExportCurrentState: vi.fn(),
-				onImportPreset: vi.fn(),
-				onInitPreset: vi.fn(),
-				pendingPresetChange: null,
-				onSavePendingPresetChange: vi.fn(),
-				onDiscardPendingPresetChange: vi.fn(),
-				onCancelPendingPresetChange: vi.fn(),
-				onStepPreset: vi.fn(),
-			},
-			frameClassName: "test-frame",
-			effectivePitchHz: 440,
-			analyserNodeRef: { current: null },
-			audioCtxRef: { current: null },
-			miniKeyboard: {
-				activeNotes: [],
-				onNoteOn: vi.fn(),
-				onNoteOff: vi.fn(),
-			},
-			audioGate: {
-				ready: true,
-				onResume: vi.fn(),
-			},
-		};
+vi.mock("@/features/synth/hooks/useAudioEngine", () => ({
+	useAudioEngine: vi.fn(() => ({
+		audioCtxRef: { current: null },
+		analyserNodeRef: { current: null },
+		workletNodeRef: { current: null },
+		paramsRef: { current: null },
+		audioContextState: "running",
+		resumeAudio: vi.fn(),
+	})),
+}));
 
-		render(<SynthRenderer {...props} />);
+vi.mock("@/features/synth/hooks/useNoteHandling", () => ({
+	useNoteHandling: vi.fn(() => ({
+		activeNotes: [],
+		sendNoteOn: vi.fn(),
+		sendNoteOff: vi.fn(),
+		sendPolyAftertouch: vi.fn(),
+		panic: vi.fn(),
+	})),
+}));
+
+vi.mock("@/features/synth/hooks/useSynthParamsToWorklet", () => ({
+	useSynthParamsToWorklet: vi.fn(),
+}));
+
+const mockPresetManager = {
+	visiblePresetEntries: [] as PresetEntry[],
+	activePresetId: "1",
+	activePresetName: "Test Preset",
+	pendingPresetChange: null,
+	handleLoadLocal: vi.fn(),
+	handleLoadBuiltin: vi.fn(),
+	handleLoadLibrary: vi.fn(),
+	handleStepPreset: vi.fn(),
+	handleSavePreset: vi.fn(),
+	handleDeletePreset: vi.fn(),
+	handleRenamePreset: vi.fn(),
+	handleSetPresetAuthor: vi.fn(),
+	handleSetPresetFavorite: vi.fn(),
+	handleSetPresetTags: vi.fn(),
+	handleInitPreset: vi.fn(),
+	handleExportPreset: vi.fn(),
+	handleImportPreset: vi.fn(),
+	handleExportCurrentState: vi.fn(),
+	handleSavePendingPresetChange: vi.fn(),
+	handleDiscardPendingPresetChange: vi.fn(),
+	handleCancelPendingPresetChange: vi.fn(),
+};
+
+vi.mock("@/features/synth/useSynthPresetManager", () => ({
+	useSynthPresetManager: vi.fn(() => mockPresetManager),
+}));
+
+vi.mock("./hooks/usePerformanceMetrics", () => ({
+	usePerformanceMetrics: vi.fn(() => ({
+		enabled: false,
+		setEnabled: vi.fn(),
+		metrics: null,
+		metricsRef: { current: null },
+	})),
+}));
+
+vi.mock("./hooks/useAudioLevelMonitor", () => ({
+	useAudioLevelMonitor: vi.fn(),
+}));
+
+vi.mock("@/features/synth/hooks/useMidiLearnBindings", () => ({
+	useMidiLearnBindings: vi.fn(),
+}));
+
+vi.mock("@/lib/performance/benchmarkHarness", () => ({
+	installBenchmarkApi: vi.fn(() => vi.fn()),
+}));
+
+describe("SynthRenderer Smoke Test", () => {
+	beforeEach(() => {
+		mockSynthUiStoreState.mainPanelMode = "phase";
+		mockSynthUiStoreState.keyboardVisible = false;
+		mockSynthUiStoreState.keyboardHeight = 0;
+		mockSynthUiStoreState.libraryModeOpen = false;
+		mockSynthUiStoreState.setMainPanelMode.mockReset();
+		mockSynthUiStoreState.setKeyboardVisible.mockReset();
+		mockSynthUiStoreState.setLibraryModeOpen.mockReset();
+		mockPresetManager.visiblePresetEntries = [];
+	});
+
+	it("renders without crashing", () => {
+		render(<SynthRenderer />);
+		expect(screen.getByTestId("synth-header")).toBeInTheDocument();
 	});
 
 	it("opens global modal from sidebar action", () => {
-		const props = {
-			headerProps: {
-				allEntries: [],
-				activeEntryId: "1",
-				activePresetName: "Test Preset",
-				onLoadLocal: vi.fn(),
-				onLoadLibrary: vi.fn(),
-				onLoadBuiltin: vi.fn(),
-				onSavePreset: vi.fn(),
-				onDeletePreset: vi.fn(),
-				onRenamePreset: vi.fn(),
-				onSetPresetAuthor: vi.fn(),
-				onSetPresetFavorite: vi.fn(),
-				onSetPresetTags: vi.fn(),
-				onExportPreset: vi.fn(),
-				onExportCurrentState: vi.fn(),
-				onImportPreset: vi.fn(),
-				onInitPreset: vi.fn(),
-				pendingPresetChange: null,
-				onSavePendingPresetChange: vi.fn(),
-				onDiscardPendingPresetChange: vi.fn(),
-				onCancelPendingPresetChange: vi.fn(),
-				onStepPreset: vi.fn(),
-			},
-			frameClassName: "test-frame",
-			effectivePitchHz: 440,
-			analyserNodeRef: { current: null },
-			audioCtxRef: { current: null },
-		};
-
-		render(<SynthRenderer {...props} />);
+		render(<SynthRenderer />);
 		fireEvent.click(screen.getByTestId("synth-sidebar"));
 		expect(screen.getByTestId("global-voice-panel")).toBeInTheDocument();
+	});
+
+	it("closes the library overlay through the extracted library component", () => {
+		mockSynthUiStoreState.libraryModeOpen = true;
+
+		render(<SynthRenderer />);
+		fireEvent.click(screen.getByTestId("preset-library-close"));
+
+		expect(mockSynthUiStoreState.setLibraryModeOpen).toHaveBeenCalledWith(
+			false,
+		);
 	});
 });

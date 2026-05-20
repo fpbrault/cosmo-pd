@@ -1,0 +1,54 @@
+import { memo, type RefObject } from "react";
+import type { EnvOverrideHandlers } from "@/components/editor/PhaseLinesSection";
+import PhaseLinesSection from "@/components/editor/PhaseLinesSection";
+import type { MainPanelMode } from "@/features/synth/synthUiStore";
+import type { DrawerPanel } from "./drawerHelpers";
+import SynthRendererDrawer from "./SynthRendererDrawer";
+import SynthRendererTopBar from "./SynthRendererTopBar";
+
+type SynthRendererMainPanelProps = {
+	mainPanelMode: MainPanelMode;
+	setMainPanelMode: (mode: MainPanelMode) => void;
+	envOverrideHandlers: EnvOverrideHandlers;
+	drawerOpen: boolean;
+	activeDrawerPanel: DrawerPanel;
+	drawerSlideDirection: 1 | -1;
+	analyserNodeRef: RefObject<AnalyserNode | null>;
+	audioCtxRef: RefObject<AudioContext | null>;
+	effectivePitchHz: number;
+};
+
+export default memo(function SynthRendererMainPanel({
+	mainPanelMode,
+	setMainPanelMode,
+	envOverrideHandlers,
+	drawerOpen,
+	activeDrawerPanel,
+	drawerSlideDirection,
+	analyserNodeRef,
+	audioCtxRef,
+	effectivePitchHz,
+}: SynthRendererMainPanelProps) {
+	return (
+		<main className="mx-auto flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden rounded-[1.2rem]">
+			<SynthRendererTopBar
+				mainPanelMode={mainPanelMode}
+				setMainPanelMode={setMainPanelMode}
+			/>
+			<div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
+				<PhaseLinesSection
+					className="main-panel-fill min-h-0"
+					envOverrideHandlers={envOverrideHandlers}
+				/>
+				<SynthRendererDrawer
+					drawerOpen={drawerOpen}
+					activeDrawerPanel={activeDrawerPanel}
+					drawerSlideDirection={drawerSlideDirection}
+					analyserNodeRef={analyserNodeRef}
+					audioCtxRef={audioCtxRef}
+					effectivePitchHz={effectivePitchHz}
+				/>
+			</div>
+		</main>
+	);
+});

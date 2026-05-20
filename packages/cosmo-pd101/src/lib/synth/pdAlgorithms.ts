@@ -2,7 +2,6 @@ import { i18n } from "@/i18n";
 import {
 	algoRefKey,
 	getAlgoDefinition,
-	isAlgoRefEqual,
 	isWarpAlgo,
 	resolveAlgoRef,
 	resolveCzControlsFromEntries,

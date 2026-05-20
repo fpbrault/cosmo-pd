@@ -30,10 +30,7 @@ const CARD_VARIANT_CLASSES: Record<CardVariant, string> = {
 	inset: "rounded-lg bg-cz-inset",
 };
 
-const CARD_PADDING_CLASSES: Record<
-	Exclude<CardPadding, "none">,
-	string
-> = {
+const CARD_PADDING_CLASSES: Record<Exclude<CardPadding, "none">, string> = {
 	sm: "p-1",
 	md: "p-2",
 	lg: "p-3",
