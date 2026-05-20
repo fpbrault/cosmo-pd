@@ -315,7 +315,7 @@ jobs:
 
       - name: Upsert PR benchmark comment
         if: steps.filter.outputs.engine == 'true'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require("node:fs");
