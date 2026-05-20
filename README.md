@@ -2,6 +2,9 @@
 
 A monorepo for Casio CZ-101 phase distortion synthesis — including a preset manager web/desktop app, an in-browser phase distortion synthesizer, and a VST3/CLAP/AUv2 plugin.
 
+Pre-built binaries can be obtained from the [Purr Audio store](https://store.purraudio.dev).
+Live Web version of the synth can be found here: [Cosmo PD-101](https://cosmo.purraudio.dev).
+
 ## Overview
 
 This is a **Bun monorepo** containing:
