@@ -80,7 +80,8 @@ export function buildEnvelopePoints(
 	const drawHeight = height - CHART_PADDING_Y * 2;
 
 	let totalTime = 0;
-	for (const step of activeSteps) totalTime += editorStepDuration(step.rate);
+	for (const step of activeSteps)
+		totalTime += editorStepDuration(step.rate ?? 0);
 	if (totalTime <= 0) totalTime = 1;
 
 	const points: EnvPoint[] = [];
@@ -89,8 +90,8 @@ export function buildEnvelopePoints(
 	for (let i = 0; i < activeSteps.length; i++) {
 		const step = activeSteps[i];
 		const isLastStep = i === activeSteps.length - 1;
-		const effectiveLevel = isLastStep ? 0 : step.level;
-		const duration = editorStepDuration(step.rate);
+		const effectiveLevel = isLastStep ? 0 : (step.level ?? 0);
+		const duration = editorStepDuration(step.rate ?? 0);
 		const dx = (duration / totalTime) * drawWidth;
 		x += dx;
 		points.push({

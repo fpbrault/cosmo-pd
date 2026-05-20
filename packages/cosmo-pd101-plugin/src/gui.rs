@@ -751,7 +751,7 @@ unsafe fn build_webview_from_ns_view(
 ) -> (Option<wry::WebView>, Option<StandaloneWindow>) {
     unsafe {
         use core::ptr::NonNull;
-        use rwh_06::{
+        use raw_window_handle::{
             AppKitDisplayHandle, AppKitWindowHandle, DisplayHandle, HandleError, HasDisplayHandle,
             HasWindowHandle, RawDisplayHandle, RawWindowHandle, WindowHandle,
         };

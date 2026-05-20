@@ -22,9 +22,9 @@ export function getEnvelopeVoiceProgress(
 	}
 
 	const isEndStep = stepIndex === env.stepCount - 1;
-	const targetLevel = isEndStep ? 0 : currentStep.level / 99;
+	const targetLevel = isEndStep ? 0 : (currentStep.level ?? 0) / 99;
 	const previousStep = stepIndex > 0 ? env.steps[stepIndex - 1] : null;
-	const previousLevel = previousStep ? previousStep.level / 99 : 0;
+	const previousLevel = previousStep ? (previousStep.level ?? 0) / 99 : 0;
 	const distance = targetLevel - previousLevel;
 	if (Math.abs(distance) < 0.0001) {
 		return undefined;

@@ -7,7 +7,7 @@ export type LineIndex = 1 | 2;
 
 export type AlgoControlAssignmentRuntime = {
 	controlId: string;
-	value: number;
+	value: number | null;
 };
 
 export type AlgoControlOptionRuntime = {

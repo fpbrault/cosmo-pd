@@ -61,8 +61,8 @@ function mapEnvelope(env: StepEnv, kind: EnvelopeKind): StepEnv {
 		...env,
 		steps: env.steps.map((step) => ({
 			...step,
-			level: rawLevelToHuman(kind, step.level),
-			rate: rawRateToHuman(kind, step.rate),
+			level: rawLevelToHuman(kind, step.level ?? 0),
+			rate: rawRateToHuman(kind, step.rate ?? 0),
 		})),
 	};
 }
@@ -79,7 +79,7 @@ function hasRawEnvelopeValues(params: SynthPresetV1["params"]): boolean {
 
 	for (const envelope of envelopes) {
 		for (const step of envelope.steps) {
-			if (step.level > 99 || step.rate > 99) {
+			if ((step.level ?? 0) > 99 || (step.rate ?? 0) > 99) {
 				return true;
 			}
 		}

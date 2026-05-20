@@ -301,7 +301,7 @@ export function SynthParamControllerProvider({
 				const runtimeSources = liveSourcesRef.current;
 				for (const route of activeRoutes) {
 					const sourceValue = runtimeSources[route.source] ?? 0;
-					liveModDelta += route.amount * sourceValue;
+					liveModDelta += (route.amount ?? 0) * sourceValue;
 				}
 				hasAnyModulation = true;
 			}
