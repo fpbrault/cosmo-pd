@@ -13,8 +13,9 @@ This is a **Bun monorepo** containing:
 |---------|-------------|
 | `packages/cosmo-synth-engine` | Rust WebAssembly phase distortion synth engine |
 | `packages/cosmo-pd101` | Reusable library: synth-specific React components, hooks, preset utilities, and SysEx utilities consumed by the plugin webview |
-| `packages/cosmo-pd101-plugin` | nih-plug-based VST3/CLAP/AUv2 plugin host with a thin React/Vite WebView shell |
-| `packages/xtask` | Build automation (xtask pattern) |
+| `packages/cosmo-pd101-plugin` | VST3/CLAP/AUv2 plugins with a thin React/Vite WebView shell |
+| `packages/cosmo-pd101-plugin-auv3` | AUv3 plugin, deprecated (will be replaced with truce AUv3 plugin) |
+| `packages/cosmo-pd101-docs` | Manual for Cosmo PD-101 |
 
 ## Setup
 
@@ -45,6 +46,12 @@ bun run build            # Full build: plugin + desktop
 bun run build:plugin     # Build VST3/CLAP/AUv2 plugin (macOS, current arch)
 ```
 
+### Install
+
+```bash
+bun run plugin:install
+```
+
 ### Testing
 
 ```bash
@@ -73,14 +80,9 @@ bun run lint:fix         # Biome auto-fix + cargo fmt
 
 ### Plugin (`packages/cosmo-pd101-plugin`)
 
-- **nih-plug** framework: VST3 + CLAP + AUv2 from a single Rust codebase.
+- Built using [**truce**](https://truce.audio) framework: VST3 + CLAP + AUv2 from a single Rust codebase.
 - Embeds the cosmo-synth-engine and a thin React/Vite WebView app via WebView IPC.
 - The plugin `webview/` stays as a direct child of the Rust crate for plugin webview integration and imports reusable UI from `@cosmo/cosmo-pd101`.
-
-### Database
-
-- **Drizzle ORM** with **PostgreSQL** (Neon hosted or local).
-- Browser fallback uses **IndexedDB**.
 
 ## Development Tools
 

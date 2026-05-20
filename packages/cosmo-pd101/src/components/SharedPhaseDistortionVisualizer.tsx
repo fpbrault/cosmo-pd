@@ -17,15 +17,15 @@ import { useSynthPresetManager } from "@/features/synth/useSynthPresetManager";
 import { decodeCzPatch } from "@/lib/midi/czSysexDecoder";
 import { installBenchmarkApi } from "@/lib/performance/benchmarkHarness";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
+import {
+	cosmoWorkletUrl,
+	synthBindingsUrl,
+	synthWasmUrl,
+} from "@/lib/synth/cosmoWorkletUrl";
 import { convertDecodedPatchToSynthPreset } from "@/lib/synth/czPresetConverter";
 import { DEFAULT_SYNTH_PRESETS } from "@/lib/synth/defaultPresets";
 import { FACTORY_CZ_PRESETS } from "@/lib/synth/factoryCzPresets";
 import { noteToFreq } from "@/lib/synth/pdAlgorithms";
-import {
-	pdVisualizerWorkletUrl,
-	synthBindingsUrl,
-	synthWasmUrl,
-} from "@/lib/synth/pdVisualizerWorkletUrl";
 
 export type SharedPhaseDistortionVisualizerProps = {
 	frameStyle?: CSSProperties;
@@ -67,7 +67,7 @@ export function SharedPhaseDistortionVisualizer({
 	} = useAudioEngine({
 		synthWasmUrl,
 		synthBindingsUrl,
-		pdVisualizerWorkletUrl,
+		cosmoWorkletUrl,
 	});
 
 	useEffect(() => {

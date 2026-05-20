@@ -53,15 +53,15 @@ export type {
 	ModMatrix,
 	StepEnvData,
 } from "./lib/synth/bindings/synth";
+export {
+	cosmoWorkletUrl,
+	synthBindingsUrl,
+	synthWasmUrl,
+} from "./lib/synth/cosmoWorkletUrl";
 export { convertDecodedPatchToSynthPreset } from "./lib/synth/czPresetConverter";
 export { DEFAULT_SYNTH_PRESETS } from "./lib/synth/defaultPresets";
 export { FACTORY_CZ_PRESETS } from "./lib/synth/factoryCzPresets";
 export { noteToFreq } from "./lib/synth/pdAlgorithms";
-export {
-	pdVisualizerWorkletUrl,
-	synthBindingsUrl,
-	synthWasmUrl,
-} from "./lib/synth/pdVisualizerWorkletUrl";
 export type {
 	EnginePresetV1,
 	FrontendPresetV1,

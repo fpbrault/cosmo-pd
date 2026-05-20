@@ -1,7 +1,7 @@
 import { memo } from "react";
 import Button from "@/components/controls/Button";
-import { ControlKnob } from "@/components/controls/ControlKnob";
 import type { ModRoute } from "@/lib/synth/bindings/synth";
+import ControlKnob from "../ControlKnob";
 import { MOD_SOURCE_META } from "./modRouteMeta";
 
 interface ModRouteRowProps {

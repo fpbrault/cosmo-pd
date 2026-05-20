@@ -150,10 +150,6 @@ export function getPdAlgoBehaviorDescription(algo: PdAlgo): string {
 	);
 }
 
-export function getPdAlgoDef(algo: PdAlgo): PdAlgoDef | undefined {
-	return PD_ALGOS.find((entry) => isAlgoRefEqual(entry.value, algo));
-}
-
 export const DEFAULT_DCA_ENV: StepEnvData = {
 	steps: [
 		{ level: 99, rate: 75 },

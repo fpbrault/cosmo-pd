@@ -128,7 +128,7 @@ describe("useAudioEngine", () => {
 	const defaultProps = {
 		synthWasmUrl: "/wasm/synth.wasm",
 		synthBindingsUrl: "/wasm/synth.js",
-		pdVisualizerWorkletUrl: "/worklet/processor.js",
+		cosmoWorkletUrl: "/worklet/processor.js",
 	};
 
 	function renderUseAudioEngine() {
@@ -219,7 +219,7 @@ describe("useAudioEngine", () => {
 			await waitFor(
 				() => {
 					expect(mocks.mockCtx.audioWorklet.addModule).toHaveBeenCalledWith(
-						defaultProps.pdVisualizerWorkletUrl,
+						defaultProps.cosmoWorkletUrl,
 					);
 				},
 				{ timeout: 5000 },
@@ -653,7 +653,7 @@ describe("useAudioEngine", () => {
 			await waitFor(
 				() => {
 					expect(mocks.consoleErrorSpy).toHaveBeenCalledWith(
-						"[PD Visualizer] Audio init failed:",
+						"[Cosmo Engine] Audio init failed:",
 						expect.any(Error),
 					);
 				},
@@ -681,7 +681,7 @@ describe("useAudioEngine", () => {
 			await waitFor(
 				() => {
 					expect(mocks.consoleErrorSpy).toHaveBeenCalledWith(
-						"[PD Visualizer] Audio init failed:",
+						"[Cosmo Engine] Audio init failed:",
 						expect.any(Error),
 					);
 				},
@@ -702,7 +702,7 @@ describe("useAudioEngine", () => {
 			await waitFor(
 				() => {
 					expect(mocks.consoleErrorSpy).toHaveBeenCalledWith(
-						"[PD Visualizer] Audio init failed:",
+						"[Cosmo Engine] Audio init failed:",
 						expect.any(Error),
 					);
 				},
@@ -726,7 +726,7 @@ describe("useAudioEngine", () => {
 			await waitFor(
 				() => {
 					expect(mocks.consoleErrorSpy).toHaveBeenCalledWith(
-						"[PD Visualizer] Audio init failed:",
+						"[Cosmo Engine] Audio init failed:",
 						expect.any(Error),
 					);
 				},

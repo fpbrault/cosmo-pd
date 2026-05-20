@@ -61,7 +61,7 @@ const basePatch: DecodedPatch = {
 };
 
 describe("convertDecodedPatchToSynthPreset", () => {
-	it("maps CZ waveforms onto the visualizer algorithms", () => {
+	it("maps CZ waveforms onto the synth algorithms", () => {
 		const preset = convertDecodedPatchToSynthPreset(basePatch);
 
 		expect(preset.params.line1.algo).toBe("cz101");
@@ -95,7 +95,7 @@ describe("convertDecodedPatchToSynthPreset", () => {
 		expect(preset.params.fxSlots?.[4].type).toBe("empty");
 	});
 
-	it("maps dual-line CZ modes into visualizer line modes and preserves line 2", () => {
+	it("maps dual-line CZ modes into synth line modes and preserves line 2", () => {
 		const preset = convertDecodedPatchToSynthPreset({
 			...basePatch,
 			lineSelect: "L1+2'",

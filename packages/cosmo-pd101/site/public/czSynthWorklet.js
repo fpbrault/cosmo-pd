@@ -12,7 +12,7 @@
  *   The worklet calls initSync(), creates CzSynthProcessor, drains the queue
  *   and replies { type: "ready" }.
  *
- * After that the message API is identical to the old pdVisualizerProcessor.js:
+ * After that the message API is identical to the old cosmoProcessor.js:
  *   { type: "setParams",  params: SynthParams }
  *   { type: "applyModulePreset", module, preset, patch? }
  *   { type: "noteOn",     note, frequency?, velocity? }

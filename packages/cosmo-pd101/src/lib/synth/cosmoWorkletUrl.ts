@@ -4,7 +4,7 @@ function withBasePath(path: string): string {
 	return `${normalizedBase}${path.replace(/^\/+/, "")}`;
 }
 
-export const pdVisualizerWorkletUrl = withBasePath("czSynthWorklet.js");
+export const cosmoWorkletUrl = withBasePath("czSynthWorklet.js");
 export const synthWasmUrl = withBasePath(
 	"cosmo-synth-engine-wasm/cosmo_synth_engine_bg.wasm",
 );

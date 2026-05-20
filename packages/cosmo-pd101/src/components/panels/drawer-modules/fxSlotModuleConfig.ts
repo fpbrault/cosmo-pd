@@ -62,9 +62,9 @@ export type ButtonGroupControlDef = {
 	sourceIndex: number;
 };
 
-export type ControlDef = KnobControlDef | ButtonGroupControlDef;
+type ControlDef = KnobControlDef | ButtonGroupControlDef;
 
-export type FxCustomRendererKey =
+type FxCustomRendererKey =
 	| "delayLegacy"
 	| "phaseModLegacy"
 	| "vibratoLegacy"

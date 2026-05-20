@@ -1,5 +1,4 @@
 import { memo, useMemo } from "react";
-import { ControlKnob } from "@/components/controls/ControlKnob";
 import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import type {
@@ -12,6 +11,7 @@ import {
 	getEngineParamDefault,
 	PARAM_META,
 } from "@/lib/synth/paramMeta";
+import ControlKnob from "./ControlKnob";
 import type { KnobVariant } from "./knob/KnobView";
 
 type EngineParamUiMetaRuntime = EngineParamUiMetaV1 & {
@@ -63,7 +63,7 @@ function formatFromReadoutFormat(
 	}
 }
 
-export interface SynthParamKnobProps {
+interface SynthParamKnobProps {
 	paramKey: SynthParamKey;
 	value: number;
 	onChange: (v: number) => void;

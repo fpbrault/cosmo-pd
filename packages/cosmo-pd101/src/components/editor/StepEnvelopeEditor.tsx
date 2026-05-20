@@ -16,8 +16,6 @@ import {
 	normalizeEnvelope,
 } from "./stepEnvelopeGeometry";
 
-export { StepEnvelopePreview } from "./StepEnvelopePreview";
-
 const STEP_KEYS = ["s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7"] as const;
 
 interface StepEnvelopeEditorProps {
@@ -35,7 +33,7 @@ const HOVER_RADIUS_PX = 22;
 
 export type { StepEnvelopeVoiceMarker };
 
-export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
+const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 	title,
 	env,
 	onChange,

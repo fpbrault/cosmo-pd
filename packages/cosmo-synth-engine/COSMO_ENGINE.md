@@ -394,6 +394,6 @@ SynthParams
 | Target | Crate Feature | Platform |
 |--------|--------------|----------|
 | Native (Tauri) | `std` | macOS, Windows, Linux |
-| VST3/AU plugin | `std` | DAW host (via nih-plug) |
+| VST3/AU plugin | `std` | DAW host (via truce) |
 | WASM AudioWorklet | `wasm` | Browser (via wasm-bindgen) |
 | no_std | (none) | Embedded (future) |

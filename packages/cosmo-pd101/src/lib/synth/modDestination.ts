@@ -6,7 +6,7 @@ import {
 	resolveTargetFromMetadata,
 } from "@/lib/synth/modTargets";
 
-export type LineScopedModTarget =
+type LineScopedModTarget =
 	| "dcwBase"
 	| "dcaBase"
 	| "algoBlend"

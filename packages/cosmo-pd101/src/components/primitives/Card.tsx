@@ -21,7 +21,7 @@ type CardProps<T extends React.ElementType = "div"> = {
 
 export const CARD_BASE_CLASSES = "card text-cz-cream outline-none";
 
-export const CARD_VARIANT_CLASSES: Record<CardVariant, string> = {
+const CARD_VARIANT_CLASSES: Record<CardVariant, string> = {
 	panel: "rounded-2xl  ",
 	"panel-slanted": "rounded-none cz-section-slanted",
 	"panel-gold": "rounded-none cz-section-gold",
@@ -30,7 +30,7 @@ export const CARD_VARIANT_CLASSES: Record<CardVariant, string> = {
 	inset: "rounded-lg bg-cz-inset",
 };
 
-export const CARD_PADDING_CLASSES: Record<
+const CARD_PADDING_CLASSES: Record<
 	Exclude<CardPadding, "none">,
 	string
 > = {

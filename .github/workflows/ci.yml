@@ -417,37 +417,3 @@ jobs:
         uses: ./.github/actions/validate-plugins
         with:
           pluginCrate: cosmo-pd101-plugin
-
-  build-desktop:
-    name: Build desktop app (${{ matrix.os }})
-    if: false # TODO: re-enable when ready
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Run desktop build action
-        uses: ./.github/actions/build-desktop
-
-  migrate:
-    name: Database Migration
-    needs:
-      [
-        lint,
-        unit-tests,
-        browser-tests,
-        plugin-webview-unit-tests,
-        plugin-webview-e2e-tests,
-        build-plugins,
-        validate-plugins,
-      ]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Run migration action
-        uses: ./.github/actions/migrate

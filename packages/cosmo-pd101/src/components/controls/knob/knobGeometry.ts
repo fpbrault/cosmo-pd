@@ -1,5 +1,5 @@
-export const DEFAULT_START_ANGLE = -230;
-export const DEFAULT_SWEEP_ANGLE = 280;
+const DEFAULT_START_ANGLE = -230;
+const DEFAULT_SWEEP_ANGLE = 280;
 
 export interface ArcGeometry {
 	/** Arc start angle in degrees. Default -230. */
@@ -233,7 +233,7 @@ export function modTargetPoint(
 }
 
 /** Cartesian position of the tip of the indicator line. */
-export function indicatorEndPoint(
+function indicatorEndPoint(
 	normalizedValue: number,
 	geometry: ArcGeometry,
 ): { x: number; y: number } {

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Button from "@/components/controls/Button";
-import type { AsidePanelComponent } from "@/components/layout/AsidePanelSwitcher";
 import SynthPanelContainer from "@/components/layout/SynthPanelContainer";
 import { getMidiLearnTargetLabel } from "@/features/synth/midiLearnRegistry";
 import { useMidiLearnStore } from "@/features/synth/midiLearnStore";
@@ -28,12 +27,11 @@ function formatControlLabel(paramKey: string): string {
 		.replace(/^./, (value) => value.toUpperCase());
 }
 
-const MidiLearnPanel: AsidePanelComponent<"midi", { className?: string }> =
-	Object.assign(
-		function MidiLearnPanel() {
-			const learnMode = useMidiLearnStore((s) => s.learnMode);
-			const setLearnMode = useMidiLearnStore((s) => s.setLearnMode);
-			const bindings = useMidiLearnStore((s) => s.bindings);
+const MidiLearnPanel = Object.assign(
+	function MidiLearnPanel() {
+		const learnMode = useMidiLearnStore((s) => s.learnMode);
+		const setLearnMode = useMidiLearnStore((s) => s.setLearnMode);
+		const bindings = useMidiLearnStore((s) => s.bindings);
 			const clearLastCapturedCc = useMidiLearnStore(
 				(s) => s.clearLastCapturedCc,
 			);

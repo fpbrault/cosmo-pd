@@ -35,7 +35,7 @@ export interface KnobViewProps {
 	midiLearnState?: "available" | "mapped" | "targeted" | null;
 }
 
-export function KnobView({
+export default function KnobView({
 	normalizedValue,
 	bipolarNorm = null,
 	modulatedNorm,
@@ -370,5 +370,3 @@ export function KnobView({
 		</div>
 	);
 }
-
-export default KnobView;

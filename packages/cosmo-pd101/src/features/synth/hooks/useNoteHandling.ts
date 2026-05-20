@@ -181,7 +181,7 @@ export function useNoteHandling({
 		).__czSetParams;
 		const isPluginRuntime = typeof pluginBridgeRuntime === "function";
 
-		// Standalone mode uses the same nih-plug bridge, but we still want
+		// Standalone mode uses the same truce.audio bridge, but we still want
 		// PC keyboard note entry (A/S/D... + space sustain) since there's
 		// no host DAW to handle keys.
 		const isStandalone =

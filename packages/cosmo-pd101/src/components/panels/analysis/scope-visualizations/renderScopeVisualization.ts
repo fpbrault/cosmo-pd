@@ -1,4 +1,3 @@
-import type { ScopeVisualizationMode } from "@/features/synth/synthUiStore";
 import { drawAsteroidsScope } from "./AsteroidsViz";
 import { computeDftBins, SPECTROGRAM_BINS } from "./frequency";
 import { drawOrbitalScope } from "./OrbitalViz";
@@ -8,6 +7,14 @@ import type { ScopeRendererParams } from "./types";
 import { drawWaterfall3DScope } from "./Waterfall3DViz";
 import { drawWaveformScope } from "./WaveformViz";
 
+export type ScopeVisualizationMode =
+	| "waveform"
+	| "orbital"
+	| "spectrogram"
+	| "waterfall3d"
+	| "transferCurves"
+	| "asteroids";
+
 export const SCOPE_VISUALIZATION_MODES: ScopeVisualizationMode[] = [
 	"waveform",
 	"orbital",
@@ -16,18 +23,6 @@ export const SCOPE_VISUALIZATION_MODES: ScopeVisualizationMode[] = [
 	"transferCurves",
 	"asteroids",
 ];
-
-export const SCOPE_VISUALIZATION_LABELS: Record<
-	ScopeVisualizationMode,
-	string
-> = {
-	waveform: "Wave",
-	orbital: "Orb",
-	spectrogram: "Spectrum",
-	waterfall3d: "3D",
-	transferCurves: "Curve",
-	asteroids: "Asteroids",
-};
 
 export function renderScopeVisualization(params: ScopeRendererParams) {
 	const {

@@ -10,9 +10,7 @@ import type {
 	BaseWaveform,
 	StepEnvData,
 } from "@/lib/synth/bindings/synth";
-import { PerLineWarpBlock } from "./PerLineWarpBlock";
-
-export type LineSelect = "L1" | "L2" | "L1+L1'" | "L1+L2'";
+import PerLineWarpBlock from "./PerLineWarpBlock";
 
 export type EnvOverrideHandlers = {
 	onLine1DcoEnvChange?: (next: StepEnvData) => void;

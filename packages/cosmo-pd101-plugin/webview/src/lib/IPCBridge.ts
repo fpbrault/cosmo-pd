@@ -1,10 +1,10 @@
 /**
- * nih-plug IPC bridge.
+ * IPC bridge.
  *
  * Provides a plugin bridge surface for the webview (window.__czOnParams,
  * window.__czGetParams, window.__czSetParams, window.__czOnScope,
  * window.ipc.postMessage) but wired to the wry WebView IPC channel that
- * nih-plug / Rust uses.
+ * Rust uses.
  *
  * ## Rust → JS (inbound):
  *   - `window.__czOnParams(jsonString)` — pushed by Rust after param changes
@@ -68,7 +68,7 @@ let _routerPostMessage: IpcPostMessage | null = null;
 function invokeRust(method: string, ...args: unknown[]): Promise<unknown> {
 	return new Promise((resolve, reject) => {
 		if (!_nativePostMessage) {
-			reject(new Error("[nihPlugBridge] native IPC not available"));
+			reject(new Error("[IPCBridge] native IPC not available"));
 			return;
 		}
 		const id = nextRpcId++;
@@ -166,7 +166,7 @@ function installIpcRouter() {
 
 	window.__czSetParams = (json: string) => {
 		void invokeRust("setParams", json).catch((error) => {
-			console.error("[nihPlugBridge] setParams error", error);
+			console.error("[IPCBridge] setParams error", error);
 		});
 	};
 
@@ -182,7 +182,7 @@ function installIpcRouter() {
 // wry's native IPC endpoint: the original window.ipc before we override it.
 // We capture it once before installing our router.
 let _nativePostMessage: (msg: string) => void = (msg) => {
-	console.warn("[nihPlugBridge] native IPC not available yet, dropped:", msg);
+	console.warn("[IPCBridge] native IPC not available yet, dropped:", msg);
 };
 
 // ─── MIDI CC handler ──────────────────────────────────────────────────────────
@@ -429,14 +429,14 @@ function installTransportPolling() {
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 /**
- * Installs the nih-plug IPC bridge.  Call this from `usePluginParamBridge`;
+ * Installs the IPC bridge.  Call this from `usePluginParamBridge`;
  * it is safe to call multiple times — subsequent calls are no-ops.
  *
  * Returns `true` if the native `window.ipc` endpoint is present (i.e. we're
  * running inside the plugin WebView), `false` otherwise (e.g. in the browser
  * dev harness).
  */
-export function ensureNihPlugBridge(): boolean {
+export function ensureIPCBridge(): boolean {
 	if (installed) {
 		return true;
 	}
@@ -487,7 +487,7 @@ export function ensureNihPlugBridge(): boolean {
 							? value.postMessage.bind(value)
 							: (msg: string) => {
 									console.warn(
-										"[nihPlugBridge] native IPC unavailable after reassignment, dropped:",
+										"[IPCBridge] native IPC unavailable after reassignment, dropped:",
 										msg,
 									);
 								};

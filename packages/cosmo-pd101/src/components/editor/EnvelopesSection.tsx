@@ -3,11 +3,10 @@ import Card from "@/components/primitives/Card";
 import type { EnvTab } from "@/features/synth/synthUiStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
-import {
-	StepEnvelopeEditor,
-	StepEnvelopePreview,
+import StepEnvelopeEditor, {
 	type StepEnvelopeVoiceMarker,
 } from "./StepEnvelopeEditor";
+import { StepEnvelopePreview } from "./StepEnvelopePreview";
 
 export type EnvMapEntry = {
 	title: string;

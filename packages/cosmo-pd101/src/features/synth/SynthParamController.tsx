@@ -379,13 +379,6 @@ export function useSynthParam<K extends SynthParamKey>(
 	};
 }
 
-export function useOptionalSynthParam<K extends SynthParamKey>(
-	key: K,
-): UseSynthStateResult[K] | undefined {
-	// Selective subscription even in the optional variant.
-	return useSynthStore((s) => s[key] as UseSynthStateResult[K]);
-}
-
 export function useOptionalSynthController() {
 	return useContext(SynthParamControllerContext);
 }

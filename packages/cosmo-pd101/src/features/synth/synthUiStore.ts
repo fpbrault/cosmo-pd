@@ -1,24 +1,17 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-
+import { SCOPE_VISUALIZATION_MODES, ScopeVisualizationMode } from "@/components/panels/analysis/scope-visualizations/renderScopeVisualization";
 export const SYNTH_UI_STATE_STORAGE_KEY = "cosmo-pd101-ui-state";
 
 export type MainPanelMode = "phase" | "fx" | "mod" | "display";
 export type ScopeColorTheme = "vintage" | "amber" | "plasma";
-export type ScopeVisualizationMode =
-	| "waveform"
-	| "orbital"
-	| "spectrogram"
-	| "waterfall3d"
-	| "transferCurves"
-	| "asteroids";
 export type PhaseLinePanelTab =
 	| "line1-algos"
 	| "line2-algos"
 	| "line1-envelopes"
 	| "line2-envelopes";
 export type EnvTab = "dco" | "dcw" | "dca";
-export type KeyboardInputMode = "velocity" | "aftertouch";
+type KeyboardInputMode = "velocity" | "aftertouch";
 
 type SynthUiState = {
 	mainPanelMode: MainPanelMode;
@@ -69,14 +62,6 @@ const PHASE_LINE_PANEL_TABS = new Set<PhaseLinePanelTab>([
 	"line2-envelopes",
 ]);
 const ENV_TABS = new Set<EnvTab>(["dco", "dcw", "dca"]);
-const SCOPE_VISUALIZATION_MODES = new Set<ScopeVisualizationMode>([
-	"waveform",
-	"orbital",
-	"spectrogram",
-	"waterfall3d",
-	"transferCurves",
-	"asteroids",
-]);
 const SCOPE_COLOR_THEMES = new Set<ScopeColorTheme>([
 	"vintage",
 	"amber",
@@ -190,7 +175,7 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 				: DEFAULT_UI_STATE.scopeTriggerLevel,
 		scopeVisualizationMode:
 			scopeVisualizationMode &&
-			SCOPE_VISUALIZATION_MODES.has(
+			SCOPE_VISUALIZATION_MODES.includes(
 				scopeVisualizationMode as ScopeVisualizationMode,
 			)
 				? (scopeVisualizationMode as ScopeVisualizationMode)
