@@ -1,6 +1,6 @@
 //! wasm-bindgen glue for the Cosmo PD-101 DSP engine.
 //!
-//! Exposes `CzSynthProcessor` to JavaScript — used by `czSynthWorklet.js`
+//! Exposes `CzSynthProcessor` to JavaScript — used by `cosmoSynthWorklet.js`
 //! which runs inside an AudioWorklet scope.
 //!
 //! Compile with:

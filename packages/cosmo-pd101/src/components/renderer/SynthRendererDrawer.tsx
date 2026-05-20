@@ -17,6 +17,13 @@ type SynthRendererDrawerProps = {
 	analyserNodeRef: RefObject<AnalyserNode | null>;
 	audioCtxRef: RefObject<AudioContext | null>;
 	effectivePitchHz: number;
+	subscribeScopeFrames?: (
+		onFrame: (frame: {
+			samples: Float32Array;
+			sampleRate: number;
+			hz: number;
+		}) => void,
+	) => () => void;
 };
 
 function renderDrawerPanel(
@@ -38,6 +45,7 @@ function renderDrawerPanel(
 			analyserNodeRef={props.analyserNodeRef}
 			audioCtxRef={props.audioCtxRef}
 			effectivePitchHz={props.effectivePitchHz}
+			subscribeScopeFrames={props.subscribeScopeFrames}
 		/>
 	);
 }
@@ -49,6 +57,7 @@ export default memo(function SynthRendererDrawer({
 	analyserNodeRef,
 	audioCtxRef,
 	effectivePitchHz,
+	subscribeScopeFrames,
 }: SynthRendererDrawerProps) {
 	return (
 		<motion.div
@@ -89,6 +98,7 @@ export default memo(function SynthRendererDrawer({
 											analyserNodeRef,
 											audioCtxRef,
 											effectivePitchHz,
+											subscribeScopeFrames,
 										})
 									: null}
 							</motion.div>

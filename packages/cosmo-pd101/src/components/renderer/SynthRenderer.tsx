@@ -2,9 +2,9 @@ import {
 	type CSSProperties,
 	memo,
 	type ReactNode,
+	type RefObject,
 	useCallback,
 	useEffect,
-	useRef,
 	useState,
 } from "react";
 import SynthSidebar from "@/components/layout/SynthSidebar";
@@ -46,10 +46,34 @@ export type SynthRendererProps = {
 	bottomBarExtra?: ReactNode;
 	libraryPresets?: LibraryPreset[];
 	onAudioLevelChange?: (level: number) => void;
+	disableAudioGate?: boolean;
+	engineEventSink?: (type: string, payload: Record<string, unknown>) => void;
+	effectivePitchHz?: number;
+	analyserNodeRef?: RefObject<AnalyserNode | null>;
+	audioCtxRef?: RefObject<AudioContext | null>;
+	subscribeScopeFrames?: (
+		onFrame: (frame: {
+			samples: Float32Array;
+			sampleRate: number;
+			hz: number;
+		}) => void,
+	) => () => void;
 };
 
 const FRAME_CLASS =
 	"h-full min-h-0 min-w-0 bg-cz-panel flex flex-col overflow-hidden w-full";
+
+type HoverAwareSynthRendererOverlaysProps = Omit<
+	React.ComponentProps<typeof SynthRendererOverlays>,
+	"infoText"
+>;
+
+function HoverAwareSynthRendererOverlays(
+	props: HoverAwareSynthRendererOverlaysProps,
+) {
+	const { infoText } = useHoverInfo();
+	return <SynthRendererOverlays {...props} infoText={infoText} />;
+}
 
 const SynthRenderer = memo(function SynthRenderer({
 	frameStyle,
@@ -57,6 +81,12 @@ const SynthRenderer = memo(function SynthRenderer({
 	bottomBarExtra,
 	libraryPresets = FACTORY_CZ_PRESETS,
 	onAudioLevelChange,
+	disableAudioGate = false,
+	engineEventSink,
+	effectivePitchHz: effectivePitchHzOverride,
+	analyserNodeRef: analyserNodeRefOverride,
+	audioCtxRef: audioCtxRefOverride,
+	subscribeScopeFrames,
 }: SynthRendererProps = {}) {
 	const setLine1DcoEnv = useSynthStore((s) => s.setLine1DcoEnv);
 	const setLine1DcwEnv = useSynthStore((s) => s.setLine1DcwEnv);
@@ -96,18 +126,26 @@ const SynthRenderer = memo(function SynthRenderer({
 		usePerformanceMetrics(workletNodeRef);
 
 	const { activeNotes, sendNoteOn, sendNoteOff, sendPolyAftertouch, panic } =
-		useNoteHandling({ workletNodeRef, velocityCurve });
+		useNoteHandling({
+			workletNodeRef,
+			eventSink: engineEventSink,
+			velocityCurve,
+		});
 	const hasActiveNotes = activeNotes.length > 0;
 
 	useAudioLevelMonitor(analyserNodeRef, onAudioLevelChange);
 
 	const heldNote = hasActiveNotes ? activeNotes[activeNotes.length - 1] : null;
 	const currentFreq = heldNote != null ? noteToFreq(heldNote) : 220;
+	const effectivePitchHz =
+		effectivePitchHzOverride != null ? effectivePitchHzOverride : currentFreq;
+	const resolvedAnalyserNodeRef = analyserNodeRefOverride ?? analyserNodeRef;
+	const resolvedAudioCtxRef = audioCtxRefOverride ?? audioCtxRef;
 
 	useSynthParamsToWorklet({
 		workletNodeRef,
 		paramsRef,
-		effectivePitchHz: currentFreq,
+		effectivePitchHz,
 		gatherState,
 	});
 
@@ -205,10 +243,6 @@ const SynthRenderer = memo(function SynthRenderer({
 		metricsRef,
 	]);
 
-	const lastHeldFreqRef = useRef(currentFreq);
-	lastHeldFreqRef.current = currentFreq;
-	const effectivePitchHz = lastHeldFreqRef.current;
-
 	const envOverrideHandlers = useEnvOverrideHandlers({
 		setLine1DcoEnv,
 		setLine1DcwEnv,
@@ -219,8 +253,6 @@ const SynthRenderer = memo(function SynthRenderer({
 	});
 
 	useMidiLearnBindings();
-
-	const { infoText } = useHoverInfo();
 	const {
 		drawerOpen,
 		waveDrawerOpen,
@@ -299,7 +331,7 @@ const SynthRenderer = memo(function SynthRenderer({
 	);
 
 	const audioGate = {
-		ready: audioContextState === "running",
+		ready: disableAudioGate || audioContextState === "running",
 		onResume: resumeAudio,
 	};
 
@@ -344,8 +376,9 @@ const SynthRenderer = memo(function SynthRenderer({
 						<div className="relative z-10 flex min-h-0 w-full min-w-0 flex-1 gap-2 overflow-hidden px-1">
 							<SynthSidebar
 								effectivePitchHz={effectivePitchHz}
-								analyserNodeRef={analyserNodeRef}
-								audioCtxRef={audioCtxRef}
+								analyserNodeRef={resolvedAnalyserNodeRef}
+								audioCtxRef={resolvedAudioCtxRef}
+								subscribeScopeFrames={subscribeScopeFrames}
 								waveDrawerOpen={waveDrawerOpen}
 								libraryModeOpen={libraryModeOpen}
 								globalOpen={globalPanelOpen}
@@ -361,9 +394,10 @@ const SynthRenderer = memo(function SynthRenderer({
 								drawerOpen={drawerOpen}
 								activeDrawerPanel={activeDrawerPanel}
 								drawerSlideDirection={drawerSlideDirection}
-								analyserNodeRef={analyserNodeRef}
-								audioCtxRef={audioCtxRef}
+								analyserNodeRef={resolvedAnalyserNodeRef}
+								audioCtxRef={resolvedAudioCtxRef}
 								effectivePitchHz={effectivePitchHz}
+								subscribeScopeFrames={subscribeScopeFrames}
 							/>
 						</div>
 						<SynthRendererLibraryOverlay
@@ -387,7 +421,7 @@ const SynthRenderer = memo(function SynthRenderer({
 							onVisibleEntriesChange={setLibraryVisibleEntries}
 							onClose={handleCloseLibrary}
 						/>
-						<SynthRendererOverlays
+						<HoverAwareSynthRendererOverlays
 							audioGate={audioGate}
 							brandInfoOpen={brandInfoOpen}
 							onCloseBrandInfo={() => setBrandInfoOpen(false)}
@@ -407,7 +441,6 @@ const SynthRenderer = memo(function SynthRenderer({
 							onNoteOn={sendNoteOn}
 							onNoteOff={sendNoteOff}
 							onPolyAftertouch={sendPolyAftertouch}
-							infoText={infoText}
 							bottomBarExtra={bottomBarExtra}
 							onKeyboardToggle={() => setKeyboardVisible(!keyboardVisible)}
 							onKeyboardSettingsClick={() => setKeyboardSettingsOpen(true)}

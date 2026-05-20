@@ -1,5 +1,5 @@
 /**
- * czSynthWorklet.js — AudioWorklet processor backed by the Rust WASM DSP engine.
+ * cosmoSynthWorklet.js — AudioWorklet processor backed by the Rust WASM DSP engine.
  *
  * Loading strategy (two-phase):
  *

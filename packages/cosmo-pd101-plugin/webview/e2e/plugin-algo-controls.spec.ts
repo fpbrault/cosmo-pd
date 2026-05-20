@@ -110,8 +110,18 @@ test.describe("Algo controls plugin bridge", () => {
 	}) => {
 		await setLineAlgoToBend(page, 1);
 
-		const curveKnob = page.getByRole("spinbutton", { name: /^curve$/i });
+		const curveKnob = page
+			.getByRole("spinbutton", { name: /^curve$/i })
+			.first();
 		await expect(curveKnob).toBeVisible();
+
+		const hoverTarget = curveKnob.locator(
+			"xpath=ancestor::*[@data-hover-info][1]",
+		);
+		await expect(hoverTarget).toHaveAttribute(
+			"data-hover-info",
+			/changes how aggressively the phase bends along the curve/i,
+		);
 		await curveKnob.hover();
 
 		await expect(

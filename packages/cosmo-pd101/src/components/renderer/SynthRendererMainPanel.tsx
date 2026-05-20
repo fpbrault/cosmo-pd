@@ -16,6 +16,13 @@ type SynthRendererMainPanelProps = {
 	analyserNodeRef: RefObject<AnalyserNode | null>;
 	audioCtxRef: RefObject<AudioContext | null>;
 	effectivePitchHz: number;
+	subscribeScopeFrames?: (
+		onFrame: (frame: {
+			samples: Float32Array;
+			sampleRate: number;
+			hz: number;
+		}) => void,
+	) => () => void;
 };
 
 export default memo(function SynthRendererMainPanel({
@@ -28,6 +35,7 @@ export default memo(function SynthRendererMainPanel({
 	analyserNodeRef,
 	audioCtxRef,
 	effectivePitchHz,
+	subscribeScopeFrames,
 }: SynthRendererMainPanelProps) {
 	return (
 		<main className="mx-auto flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden rounded-[1.2rem]">
@@ -47,6 +55,7 @@ export default memo(function SynthRendererMainPanel({
 					analyserNodeRef={analyserNodeRef}
 					audioCtxRef={audioCtxRef}
 					effectivePitchHz={effectivePitchHz}
+					subscribeScopeFrames={subscribeScopeFrames}
 				/>
 			</div>
 		</main>

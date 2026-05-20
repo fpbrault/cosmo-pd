@@ -27,7 +27,9 @@ function AlgoControlSelectInner({
 	getActiveSelectOption,
 	applyOptionAssignments,
 }: AlgoControlSelectProps) {
-	const { label, description } = useAlgoControl(control.algo, control.id);
+	const translated = useAlgoControl(control.algo, control.id);
+	const label = translated.label || control.label || control.id;
+	const description = translated.description || control.description || "";
 	const options = control.options ?? [];
 	const activeOption = getActiveSelectOption(control);
 

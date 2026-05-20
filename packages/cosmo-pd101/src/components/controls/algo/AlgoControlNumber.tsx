@@ -86,7 +86,9 @@ function AlgoControlNumberInner({
 	setAlgoControlValue,
 	color = "cyan",
 }: AlgoControlNumberProps) {
-	const { label, description } = useAlgoControl(control.algo, control.id);
+	const translated = useAlgoControl(control.algo, control.id);
+	const label = translated.label || control.label || control.id;
+	const description = translated.description || control.description || "";
 	const resolvedSectionId = sectionId === "b" ? "B" : "A";
 	const min = control.min ?? 0;
 	const max = control.max ?? 1;

@@ -140,7 +140,9 @@ function AlgoControlDropdownInner({
 	getActiveSelectOption,
 	applyOptionAssignments,
 }: AlgoControlDropdownProps) {
-	const { label, description } = useAlgoControl(control.algo, control.id);
+	const translated = useAlgoControl(control.algo, control.id);
+	const label = translated.label || control.label || control.id;
+	const description = translated.description || control.description || "";
 	const options = control.options ?? [];
 	const activeOption = getActiveSelectOption(control);
 	const useSingleLineLayout =

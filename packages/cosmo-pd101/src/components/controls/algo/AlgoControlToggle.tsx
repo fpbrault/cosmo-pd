@@ -18,7 +18,9 @@ function AlgoControlToggleInner({
 	disabled = false,
 	binding,
 }: AlgoControlToggleProps) {
-	const { label, description } = useAlgoControl(control.algo, control.id);
+	const translated = useAlgoControl(control.algo, control.id);
+	const label = translated.label || control.label || control.id;
+	const description = translated.description || control.description || "";
 	const toggleValue = binding?.getToggle?.() ?? control.defaultToggle ?? false;
 	const hoverHandlers = useHoverInfoHandlers(description ?? label ?? "");
 
