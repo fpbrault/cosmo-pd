@@ -7,11 +7,9 @@ description: Compilez le moteur de synthèse, l'application web et le plugin Cos
 
 ## Prérequis
 
-| Outil | Version | Utilité |
-|-------|---------|---------|
-| **Rust** | nightly | Moteur de synthèse Rust/WASM (`cosmo-synth-engine`) |
-| **Bun** | dernière | Chaîne d'outils JS, gestion des espaces de travail, scripts de build |
-| **wasm-pack** | dernière | Compilation de Rust vers WebAssembly |
+- **Rust**
+- **Bun**
+- **wasm-pack**
 
 ## Cloner
 
@@ -42,15 +40,11 @@ bun run dev
 
 Lance le serveur de développement Vite.
 
-## Compiler les plugins DAW
-
-La compilation des plugins utilise un processus séparé via le package `xtask` :
+## Compiler les plugins
 
 ```bash
-bun run --filter=xtask build-plugin
+bun run build:plugin
 ```
-
-Ceci compile l'hôte nih-plug (`packages/cosmo-pd101-plugin`) et empaquète la webview aux formats VST3, CLAP et AUv2.
 
 ## Structure du projet
 
@@ -58,7 +52,7 @@ Ceci compile l'hôte nih-plug (`packages/cosmo-pd101-plugin`) et empaquète la w
 |---------|-------------|
 | `packages/cosmo-synth-engine` | Moteur audio Rust/WASM à distorsion de phase |
 | `packages/cosmo-pd101` | Bibliothèque d'interface utilisateur partagée (composants React, hooks) |
-| `packages/cosmo-pd101-plugin` | Hôte nih-plug VST3/CLAP/AUv2 avec webview |
+| `packages/cosmo-pd101-plugin` | Plugins VST3/CLAP/AUv2 avec webview |
 | `packages/cosmo-pd101-docs` | Ce site de documentation |
 | `packages/xtask` | Outils de construction |
 
@@ -66,6 +60,5 @@ Ceci compile l'hôte nih-plug (`packages/cosmo-pd101-plugin`) et empaquète la w
 
 - **wasm-pack introuvable** : Installez via `cargo install wasm-pack`
 - **Rust nightly non installé** : Exécutez `rustup toolchain install nightly`
-- **Échec de compilation du plugin** : Assurez-vous d'avoir les dépendances spécifiques à votre plateforme (voir [docs nih-plug](https://github.com/robbert-vdh/nih-plug))
 
 Suivant : [Démarrage rapide](/getting-started/)

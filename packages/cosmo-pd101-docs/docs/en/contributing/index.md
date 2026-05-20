@@ -7,11 +7,9 @@ description: Build the Cosmo PD-101 synth engine, web app, and plugin from sourc
 
 ## Prerequisites
 
-| Tool | Version | Purpose |
-|------|---------|---------|
-| **Rust** | nightly | Rust/WASM synth engine (`cosmo-synth-engine`) |
-| **Bun** | latest | JS toolchain, workspace management, build scripts |
-| **wasm-pack** | latest | Compile Rust to WebAssembly |
+- **Rust**
+- **Bun**
+- **wasm-pack**
 
 ## Clone
 
@@ -42,15 +40,17 @@ bun run dev
 
 Starts the Vite dev server for local development.
 
-## Build the DAW Plugins
-
-The plugin build uses a separate process via the `xtask` package:
+## Build the plugins
 
 ```bash
-bun run --filter=xtask build-plugin
+bun run build:plugin
 ```
 
-This compiles the nih-plug host (`packages/cosmo-pd101-plugin`) and packages the webview into VST3, CLAP, and AUv2 formats.
+## Installing the plugins
+
+```bash
+bun run plugin:install
+```
 
 ## Project Structure
 
@@ -58,7 +58,7 @@ This compiles the nih-plug host (`packages/cosmo-pd101-plugin`) and packages the
 |---------|-------------|
 | `packages/cosmo-synth-engine` | Rust/WASM phase distortion audio engine |
 | `packages/cosmo-pd101` | Shared synth UI library (React components, hooks) |
-| `packages/cosmo-pd101-plugin` | nih-plug VST3/CLAP/AUv2 host with webview |
+| `packages/cosmo-pd101-plugin` | VST3/CLAP/AUv2 plugins with webview |
 | `packages/cosmo-pd101-docs` | This documentation site |
 | `packages/xtask` | Build tooling |
 
@@ -66,6 +66,5 @@ This compiles the nih-plug host (`packages/cosmo-pd101-plugin`) and packages the
 
 - **wasm-pack not found**: Install via `cargo install wasm-pack`
 - **Rust nightly not installed**: Run `rustup toolchain install nightly`
-- **Plugin build fails**: Ensure you have the platform-specific dependencies (see [nih-plug docs](https://github.com/robbert-vdh/nih-plug))
 
 Next: [Quick Start](/getting-started/)
