@@ -362,7 +362,6 @@ export function pdSkew(
 	return phase + (target - phase) * amount;
 }
 
-
 export function pdTwist(
 	phase: number,
 	amount: number,
@@ -740,8 +739,6 @@ function applyPdAlgo(
 				0,
 				1,
 			);
-		case "sine":
-			return phase;
 		default:
 			return phase;
 	}

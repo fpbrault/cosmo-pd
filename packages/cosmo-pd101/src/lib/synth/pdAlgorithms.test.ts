@@ -80,7 +80,7 @@ describe("pdAlgorithms", () => {
 			expect(pdSkew(p, a)).not.toBe(p);
 		});
 	});
-	
+
 	describe("pdTwist", () => {
 		it("returns phase when amount is 0", () => {
 			expect(pdTwist(0.5, 0)).toBe(0.5);
