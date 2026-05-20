@@ -59,9 +59,8 @@ pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
 /// This identity — T_n(cos θ) = cos(nθ) — gives exact harmonic multiplication:
 /// integer orders produce pure overtones; fractional orders blend adjacent ones.
 /// `tilt` shifts the fold phase; `warp` pre-distorts the input phase.
-pub fn warp_phase(phase: f32, amt: f32, order: f32, tilt: f32, warp: f32, mix: f32) -> f32 {
-    let mix_amt = mix * amt;
-    if mix_amt == 0.0 {
+pub fn warp_phase(phase: f32, amt: f32, order: f32, tilt: f32, warp: f32) -> f32 {
+    if amt == 0.0 {
         return phase;
     }
 
@@ -71,5 +70,5 @@ pub fn warp_phase(phase: f32, amt: f32, order: f32, tilt: f32, warp: f32, mix: f
     let x = n * (phase + warp * 0.25) + tilt;
     let frac = x - (x).floor();
     let poly = 1.0 - (2.0 * frac - 1.0).abs();
-    phase + (poly - phase) * mix_amt
+    phase + (poly - phase) * amt
 }
