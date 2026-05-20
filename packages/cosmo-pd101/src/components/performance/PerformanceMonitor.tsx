@@ -239,7 +239,7 @@ export function PerformanceMonitor({
 									/>
 								) : null}
 							</svg>
-							<div className="mt-1 flex items-center justify-between text-[0.5rem] text-cz-cream/45 tracking-[0.14em]">
+							<div className="mt-1 flex items-center justify-between text-5xs text-cz-cream/45 tracking-[0.14em]">
 								<span>0%</span>
 								<span className="text-cz-light-blue/75">LAST</span>
 								<span className="text-cz-gold/75">AVG</span>

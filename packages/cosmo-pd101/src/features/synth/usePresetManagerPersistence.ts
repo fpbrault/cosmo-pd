@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
 import {
 	loadCurrentPresetSession,
 	loadCurrentState,
@@ -7,13 +8,13 @@ import {
 } from "@/lib/synth/presetStorage";
 
 type UsePresetManagerPersistenceOptions = {
-	applyPreset: (data: unknown) => void;
+	applyPreset: (data: SynthPresetV1) => void;
 	builtinPresets: Record<string, unknown>;
 	loadBuiltinPreset: (name: string) => void;
 	refreshFavoritePresetIds: () => Promise<void>;
 	refreshLocalPresetEntries: () => Promise<void>;
 	shouldHydratePersistedState: boolean;
-	gatherState: () => unknown;
+	gatherState: () => SynthPresetV1;
 	activePresetId: string | null;
 	activePresetNameBase: string;
 	loadedPresetFingerprint: string | null;
