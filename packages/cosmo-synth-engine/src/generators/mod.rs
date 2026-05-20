@@ -36,9 +36,7 @@ pub mod fold;
 pub mod karpunk;
 pub mod mirror;
 pub mod pinch;
-pub mod quantize;
 pub mod ripple;
-pub mod sine;
 pub mod skew;
 pub mod stutter;
 pub mod sync;
@@ -349,9 +347,6 @@ fn algo_control_slot_index(algo: Algo, id: &str) -> Option<usize> {
         (Algo::Skew, "skewCurve") => 1,
         (Algo::Skew, "skewSpread") => 2,
         (Algo::Skew, "skewTilt") => 3,
-        (Algo::Quantize, "quantizeAmount") => 0,
-        (Algo::Quantize, "quantizeSteps") => 1,
-        (Algo::Quantize, "quantizeSkew") => 2,
         (Algo::Twist, "twistHarmonics") => 0,
         (Algo::Twist, "twistDepth") => 1,
         (Algo::Twist, "twistPhase") => 2,
@@ -443,17 +438,11 @@ pub fn warp_phase(
         Algo::Pinch => pinch::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Fold => fold::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Skew => skew::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
-        Algo::Quantize => {
-            let amount_mod = c(0);
-            let amount = if amount_mod == 0.0 { amt } else { amount_mod };
-            quantize::warp_phase(phase, amount, c(1), c(2))
-        }
         Algo::Twist => twist::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Clip => clip::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Ripple => ripple::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Mirror => mirror::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Fof => fof::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
-        Algo::Sine => sine::warp_phase(phase, amt),
         Algo::Karpunk => phase,
         Algo::Terrain => terrain::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Stutter => stutter::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
