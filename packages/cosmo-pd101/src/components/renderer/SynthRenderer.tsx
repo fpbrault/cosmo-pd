@@ -401,7 +401,6 @@ const SynthRenderer = memo(function SynthRenderer({
 							onSavePendingPresetChange={handleSavePendingPresetChange}
 							onDiscardPendingPresetChange={handleDiscardPendingPresetChange}
 							onCancelPendingPresetChange={handleCancelPendingPresetChange}
-							hasActiveNotes={hasActiveNotes}
 							activeNotes={activeNotes}
 							libraryModeOpen={libraryModeOpen}
 							keyboardVisible={keyboardVisible}

@@ -5,7 +5,9 @@ export {
 	PerformanceMonitor,
 } from "./components/performance/PerformanceMonitor";
 export {
+	default as SynthRenderer,
 	SharedPhaseDistortionVisualizer,
+	type SynthRendererProps,
 	type SynthRendererProps as SharedPhaseDistortionVisualizerProps,
 } from "./components/renderer/SynthRenderer";
 export { usePluginBridgeSynthEngine } from "./features/synth/engine/pluginBridgeSynthEngineAdapter";

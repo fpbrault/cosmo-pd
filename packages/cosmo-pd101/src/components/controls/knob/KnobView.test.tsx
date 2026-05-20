@@ -1,6 +1,6 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { KnobView } from "./KnobView";
+import KnobView from "./KnobView";
 
 describe("KnobView", () => {
 	it("renders thin track by default and thicker track on hover", () => {
