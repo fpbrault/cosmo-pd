@@ -457,7 +457,7 @@ pub fn warp_phase(
         Algo::Karpunk => phase,
         Algo::Terrain => terrain::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Stutter => stutter::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
-        Algo::Cheby => cheby::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
+        Algo::Cheby => cheby::warp_phase(phase, amt, c(0), c(1), c(2)),
     }
 }
 
