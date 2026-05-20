@@ -269,7 +269,7 @@ export function usePerLineWarp(
 	const getAlgoControlValue = useCallback(
 		(entries: AlgoControlValueV1[], id: string, fallback: number) => {
 			const existing = entries.find((entry) => entry.id === id);
-			return existing ? existing.value : fallback;
+			return existing ? (existing.value ?? fallback) : fallback;
 		},
 		[],
 	);
@@ -311,7 +311,7 @@ export function usePerLineWarp(
 				nextEntries = upsertAlgoControlValue(
 					nextEntries,
 					assignment.controlId,
-					assignment.value,
+					assignment.value ?? 0,
 				);
 			}
 			setEntries(nextEntries);
@@ -419,7 +419,9 @@ export function usePerLineWarp(
 							if (!Number.isFinite(currentValue)) {
 								return false;
 							}
-							return Math.round(currentValue) === Math.round(assignment.value);
+							return (
+								Math.round(currentValue) === Math.round(assignment.value ?? 0)
+							);
 						}),
 					) ?? null
 				);

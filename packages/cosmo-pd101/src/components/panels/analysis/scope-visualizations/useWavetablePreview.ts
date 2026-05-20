@@ -26,7 +26,7 @@ function evaluateEnvelope(env: StepEnvData, position: number): number {
 		return 1;
 	}
 
-	const durations = steps.map((step) => rateToDuration(step.rate));
+	const durations = steps.map((step) => rateToDuration(step.rate ?? 0));
 	const totalDuration = durations.reduce((sum, duration) => sum + duration, 0);
 	let cursor = 0;
 	let previousLevel = steps[0]?.level ?? 99;
@@ -42,11 +42,11 @@ function evaluateEnvelope(env: StepEnvData, position: number): number {
 		const nextCursor = cursor + duration;
 		if (time <= nextCursor || index === steps.length - 1) {
 			const segmentT = duration > 0 ? (time - cursor) / duration : 1;
-			return clamp(lerp(previousLevel, step.level, segmentT), 0, 99) / 99;
+			return clamp(lerp(previousLevel, step.level ?? 99, segmentT), 0, 99) / 99;
 		}
 
 		cursor = nextCursor;
-		previousLevel = step.level;
+		previousLevel = step.level ?? 99;
 	}
 
 	return clamp(steps[steps.length - 1]?.level ?? 99, 0, 99) / 99;

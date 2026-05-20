@@ -60,9 +60,12 @@ impl CosmoProcessor {
         self.process_with_denormal_guard(output);
     }
 
+    #[allow(unsafe_code)]
     fn process_with_denormal_guard(&mut self, output: &mut [f32]) {
         #[cfg(all(feature = "no_denormals", not(target_arch = "wasm32")))]
-        no_denormals(|| self.process_inner(output));
+        unsafe {
+            no_denormals(|| self.process_inner(output));
+        }
 
         #[cfg(not(all(feature = "no_denormals", not(target_arch = "wasm32"))))]
         self.process_inner(output);

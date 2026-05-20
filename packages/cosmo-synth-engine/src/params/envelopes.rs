@@ -10,9 +10,11 @@ pub const NUM_ENV_STEPS: usize = 8;
 pub struct EnvStep {
     /// Internal machine level [0, 127].
     #[serde(deserialize_with = "deserialize_step_value")]
+    #[cfg_attr(feature = "specta-bindings", specta(type = f64))]
     pub level: u8,
     /// Internal machine rate [0, 127].
     #[serde(deserialize_with = "deserialize_step_value")]
+    #[cfg_attr(feature = "specta-bindings", specta(type = f64))]
     pub rate: u8,
     /// Pre-normalized level [0, 1] computed at load time from kind-specific conversion.
     #[serde(skip)]

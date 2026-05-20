@@ -296,166 +296,160 @@ impl DebugApp {
 }
 
 impl eframe::App for DebugApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        ctx.request_repaint();
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        ui.ctx().request_repaint();
 
-        let held_notes = self.handle_keyboard(ctx);
+        let held_notes = self.handle_keyboard(ui.ctx());
+        ui.heading("Cosmo Synth Debug");
+        ui.label("Minimal native harness to profile engine cost without browser overhead.");
+        ui.separator();
 
-        egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Cosmo Synth Debug");
-            ui.label("Minimal native harness to profile engine cost without browser overhead.");
+        if let Some(err) = &self.audio_error {
+            ui.colored_label(egui::Color32::RED, err);
             ui.separator();
+        }
 
-            if let Some(err) = &self.audio_error {
-                ui.colored_label(egui::Color32::RED, err);
-                ui.separator();
-            }
-
-            let mut preset_changed = false;
-            egui::ComboBox::from_label("Preset")
-                .selected_text(self.presets[self.selected_preset].0)
-                .show_ui(ui, |ui| {
-                    for (idx, (name, _)) in self.presets.iter().enumerate() {
-                        if ui
-                            .selectable_value(&mut self.selected_preset, idx, *name)
-                            .changed()
-                        {
-                            preset_changed = true;
-                        }
+        let mut preset_changed = false;
+        egui::ComboBox::from_label("Preset")
+            .selected_text(self.presets[self.selected_preset].0)
+            .show_ui(ui, |ui| {
+                for (idx, (name, _)) in self.presets.iter().enumerate() {
+                    if ui
+                        .selectable_value(&mut self.selected_preset, idx, *name)
+                        .changed()
+                    {
+                        preset_changed = true;
                     }
-                });
-
-            if preset_changed {
-                self.apply_selected_preset();
-            }
-
-            ui.horizontal(|ui| {
-                ui.label("Octave");
-                if ui.button("-").clicked() && self.octave_offset > OCTAVE_MIN {
-                    let old = self.octave_offset;
-                    self.release_all_active_keys(old);
-                    self.prev_keys.clear();
-                    self.octave_offset -= 1;
-                }
-                ui.label(format!("{}", self.octave_offset));
-                if ui.button("+").clicked() && self.octave_offset < OCTAVE_MAX {
-                    let old = self.octave_offset;
-                    self.release_all_active_keys(old);
-                    self.prev_keys.clear();
-                    self.octave_offset += 1;
                 }
             });
 
-            let peak = f32::from_bits(self.peak_bits.load(Ordering::Relaxed)).clamp(0.0, 1.0);
-            let block_ns = self.block_ns.load(Ordering::Relaxed);
-            let block_samples = self.block_samples.load(Ordering::Relaxed) as f32;
-            let rt_percent = if block_samples > 0.0 {
-                let real_time_ns = (block_samples / self.sample_rate) as f64 * 1_000_000_000.0;
-                if real_time_ns > 0.0 {
-                    (block_ns as f64 / real_time_ns * 100.0) as f32
-                } else {
-                    0.0
-                }
-            } else {
-                0.0
-            };
+        if preset_changed {
+            self.apply_selected_preset();
+        }
 
-            ui.label(format!("Sample rate: {:.0} Hz", self.sample_rate));
-            ui.label(format!(
-                "Block time: {:.3} ms",
-                block_ns as f64 / 1_000_000.0
-            ));
-            ui.label(format!("RT load: {:.1}%", rt_percent));
-            ui.add(
-                egui::ProgressBar::new((rt_percent / 100.0).clamp(0.0, 1.0))
-                    .text("Real-time budget"),
-            );
-            ui.add(egui::ProgressBar::new(peak).text("Peak level"));
-            ui.separator();
-
-            let desired_size = egui::vec2(ui.available_width().max(300.0), 140.0);
-            let (rect, _resp) = ui.allocate_exact_size(desired_size, egui::Sense::hover());
-            let painter = ui.painter_at(rect);
-
-            let white_bindings: Vec<_> = KEY_BINDINGS.iter().filter(|k| !k.black).collect();
-            let black_bindings: Vec<_> = KEY_BINDINGS.iter().filter(|k| k.black).collect();
-
-            let white_w = rect.width() / white_bindings.len() as f32;
-            let white_h = rect.height();
-            let black_w = white_w * 0.62;
-            let black_h = white_h * 0.62;
-
-            for (idx, binding) in white_bindings.iter().enumerate() {
-                let x = rect.left() + idx as f32 * white_w;
-                let r = egui::Rect::from_min_size(
-                    egui::pos2(x, rect.top()),
-                    egui::vec2(white_w - 2.0, white_h),
-                );
-                let held = key_to_midi(**binding, self.octave_offset)
-                    .map(|n| held_notes.contains(&n))
-                    .unwrap_or(false);
-                let fill = if held {
-                    egui::Color32::from_rgb(180, 230, 200)
-                } else {
-                    egui::Color32::from_gray(245)
-                };
-                painter.rect_filled(r, 2.0, fill);
-                painter.rect_stroke(
-                    r,
-                    2.0,
-                    egui::Stroke::new(1.0, egui::Color32::from_gray(80)),
-                    egui::StrokeKind::Inside,
-                );
-                painter.text(
-                    egui::pos2(r.center().x, r.bottom() - 14.0),
-                    egui::Align2::CENTER_CENTER,
-                    binding.label,
-                    egui::FontId::monospace(12.0),
-                    egui::Color32::from_gray(30),
-                );
+        ui.horizontal(|ui| {
+            ui.label("Octave");
+            if ui.button("-").clicked() && self.octave_offset > OCTAVE_MIN {
+                let old = self.octave_offset;
+                self.release_all_active_keys(old);
+                self.prev_keys.clear();
+                self.octave_offset -= 1;
             }
-
-            for binding in black_bindings {
-                let semitone = binding.semitone.rem_euclid(12);
-                let left_white = match semitone {
-                    1 => 0,
-                    3 => 1,
-                    6 => 3,
-                    8 => 4,
-                    10 => 5,
-                    _ => continue,
-                };
-                let octave = binding.semitone / 12;
-                let white_index = octave * 7 + left_white;
-                let x = rect.left() + (white_index as f32 + 1.0) * white_w - black_w * 0.5;
-                let r = egui::Rect::from_min_size(
-                    egui::pos2(x, rect.top()),
-                    egui::vec2(black_w, black_h),
-                );
-                let held = key_to_midi(*binding, self.octave_offset)
-                    .map(|n| held_notes.contains(&n))
-                    .unwrap_or(false);
-                let fill = if held {
-                    egui::Color32::from_rgb(90, 140, 120)
-                } else {
-                    egui::Color32::from_gray(30)
-                };
-                painter.rect_filled(r, 2.0, fill);
-                painter.rect_stroke(
-                    r,
-                    2.0,
-                    egui::Stroke::new(1.0, egui::Color32::from_gray(10)),
-                    egui::StrokeKind::Inside,
-                );
-                painter.text(
-                    egui::pos2(r.center().x, r.bottom() - 12.0),
-                    egui::Align2::CENTER_CENTER,
-                    binding.label,
-                    egui::FontId::monospace(11.0),
-                    egui::Color32::from_gray(235),
-                );
+            ui.label(format!("{}", self.octave_offset));
+            if ui.button("+").clicked() && self.octave_offset < OCTAVE_MAX {
+                let old = self.octave_offset;
+                self.release_all_active_keys(old);
+                self.prev_keys.clear();
+                self.octave_offset += 1;
             }
         });
+
+        let peak = f32::from_bits(self.peak_bits.load(Ordering::Relaxed)).clamp(0.0, 1.0);
+        let block_ns = self.block_ns.load(Ordering::Relaxed);
+        let block_samples = self.block_samples.load(Ordering::Relaxed) as f32;
+        let rt_percent = if block_samples > 0.0 {
+            let real_time_ns = (block_samples / self.sample_rate) as f64 * 1_000_000_000.0;
+            if real_time_ns > 0.0 {
+                (block_ns as f64 / real_time_ns * 100.0) as f32
+            } else {
+                0.0
+            }
+        } else {
+            0.0
+        };
+
+        ui.label(format!("Sample rate: {:.0} Hz", self.sample_rate));
+        ui.label(format!(
+            "Block time: {:.3} ms",
+            block_ns as f64 / 1_000_000.0
+        ));
+        ui.label(format!("RT load: {:.1}%", rt_percent));
+        ui.add(
+            egui::ProgressBar::new((rt_percent / 100.0).clamp(0.0, 1.0)).text("Real-time budget"),
+        );
+        ui.add(egui::ProgressBar::new(peak).text("Peak level"));
+        ui.separator();
+
+        let desired_size = egui::vec2(ui.available_width().max(300.0), 140.0);
+        let (rect, _resp) = ui.allocate_exact_size(desired_size, egui::Sense::hover());
+        let painter = ui.painter_at(rect);
+
+        let white_bindings: Vec<_> = KEY_BINDINGS.iter().filter(|k| !k.black).collect();
+        let black_bindings: Vec<_> = KEY_BINDINGS.iter().filter(|k| k.black).collect();
+
+        let white_w = rect.width() / white_bindings.len() as f32;
+        let white_h = rect.height();
+        let black_w = white_w * 0.62;
+        let black_h = white_h * 0.62;
+
+        for (idx, binding) in white_bindings.iter().enumerate() {
+            let x = rect.left() + idx as f32 * white_w;
+            let r = egui::Rect::from_min_size(
+                egui::pos2(x, rect.top()),
+                egui::vec2(white_w - 2.0, white_h),
+            );
+            let held = key_to_midi(**binding, self.octave_offset)
+                .map(|n| held_notes.contains(&n))
+                .unwrap_or(false);
+            let fill = if held {
+                egui::Color32::from_rgb(180, 230, 200)
+            } else {
+                egui::Color32::from_gray(245)
+            };
+            painter.rect_filled(r, 2.0, fill);
+            painter.rect_stroke(
+                r,
+                2.0,
+                egui::Stroke::new(1.0, egui::Color32::from_gray(80)),
+                egui::StrokeKind::Inside,
+            );
+            painter.text(
+                egui::pos2(r.center().x, r.bottom() - 14.0),
+                egui::Align2::CENTER_CENTER,
+                binding.label,
+                egui::FontId::monospace(12.0),
+                egui::Color32::from_gray(30),
+            );
+        }
+
+        for binding in black_bindings {
+            let semitone = binding.semitone.rem_euclid(12);
+            let left_white = match semitone {
+                1 => 0,
+                3 => 1,
+                6 => 3,
+                8 => 4,
+                10 => 5,
+                _ => continue,
+            };
+            let octave = binding.semitone / 12;
+            let white_index = octave * 7 + left_white;
+            let x = rect.left() + (white_index as f32 + 1.0) * white_w - black_w * 0.5;
+            let r =
+                egui::Rect::from_min_size(egui::pos2(x, rect.top()), egui::vec2(black_w, black_h));
+            let held = key_to_midi(*binding, self.octave_offset)
+                .map(|n| held_notes.contains(&n))
+                .unwrap_or(false);
+            let fill = if held {
+                egui::Color32::from_rgb(90, 140, 120)
+            } else {
+                egui::Color32::from_gray(30)
+            };
+            painter.rect_filled(r, 2.0, fill);
+            painter.rect_stroke(
+                r,
+                2.0,
+                egui::Stroke::new(1.0, egui::Color32::from_gray(10)),
+                egui::StrokeKind::Inside,
+            );
+            painter.text(
+                egui::pos2(r.center().x, r.bottom() - 12.0),
+                egui::Align2::CENTER_CENTER,
+                binding.label,
+                egui::FontId::monospace(11.0),
+                egui::Color32::from_gray(235),
+            );
+        }
     }
 }
 
@@ -472,7 +466,7 @@ fn build_audio_stream(
     let supported_config = device
         .default_output_config()
         .map_err(|e| format!("Failed to query default output config: {e}"))?;
-    let sample_rate = supported_config.sample_rate().0 as f32;
+    let sample_rate = supported_config.sample_rate() as f32;
     let config: cpal::StreamConfig = supported_config.config();
     let channels = config.channels as usize;
 

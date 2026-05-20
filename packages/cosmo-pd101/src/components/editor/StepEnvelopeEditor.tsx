@@ -146,7 +146,8 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 				let cumulative = 0;
 
 				for (let i = 0; i < activeSteps.length; i++) {
-					const rate = i === stepIndex ? candidateRate : activeSteps[i].rate;
+					const rate =
+						i === stepIndex ? candidateRate : (activeSteps[i].rate ?? 0);
 					const duration = editorStepDuration(rate);
 					totalTime += duration;
 					if (i <= stepIndex) cumulative += duration;
@@ -222,8 +223,8 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 				stepIndex: closest.stepIndex,
 				startClientX: e.clientX,
 				startClientY: e.clientY,
-				startLevel: step.level,
-				startRate: step.rate,
+				startLevel: step.level ?? 0,
+				startRate: step.rate ?? 0,
 			});
 		},
 		[getClosestStepAtPointer, steps],
@@ -357,7 +358,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 								className={`flex flex-col items-center justify-center gap-2 ${!isActiveStep ? "opacity-40" : ""}`}
 							>
 								<ControlKnob
-									value={step.level}
+									value={step.level ?? 0}
 									onChange={(v) => updateStep(i, "level", v)}
 									disabled={!isActiveStep || isEndStep}
 									size={64}
@@ -376,7 +377,7 @@ export const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 									})}
 								/>
 								<ControlKnob
-									value={step.rate}
+									value={step.rate ?? 0}
 									onChange={(v) => updateStep(i, "rate", v)}
 									disabled={!isActiveStep}
 									min={0}

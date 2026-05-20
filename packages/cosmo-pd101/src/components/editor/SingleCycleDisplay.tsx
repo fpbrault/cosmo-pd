@@ -203,7 +203,7 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay({
 				...entry,
 				value: getLiveValue(
 					`${linePrefix}AlgoParam${index + 1}` as ModDestination,
-					entry.value,
+					entry.value ?? 0,
 				),
 			}));
 

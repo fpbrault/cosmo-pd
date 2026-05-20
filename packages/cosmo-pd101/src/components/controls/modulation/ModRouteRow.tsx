@@ -65,7 +65,7 @@ const ModRouteRow = memo(function ModRouteRow({
 				</div>
 				<div className="mt-1 flex w-full items-center justify-between">
 					<ControlKnob
-						value={route.amount}
+						value={route.amount ?? 0}
 						onChange={onAmountChange}
 						min={-1}
 						max={1}

@@ -3,7 +3,7 @@ import type { DecodedPatch } from "@/lib/midi/czSysexDecoder";
 import { convertDecodedPatchToSynthPreset } from "@/lib/synth/czPresetConverter";
 
 function getControlValue(
-	controls: Array<{ id: string; value: number }> | null | undefined,
+	controls: Array<{ id: string; value: number | null }> | null | undefined,
 	id: string,
 ) {
 	return controls?.find((entry) => entry.id === id)?.value;

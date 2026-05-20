@@ -25,22 +25,22 @@ syn = { version = "2", features = [
 ] }
 quote = "1"
 proc-macro2 = "1"
-truce = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
-truce-core = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
-truce-params = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
-truce-clap = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
-truce-vst3 = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
-truce-vst2 = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
-truce-lv2 = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
+truce = { git = "https://github.com/truce-audio/truce.git", tag = "v0.45.4" }
+truce-core = { git = "https://github.com/truce-audio/truce.git", tag = "v0.45.4" }
+truce-params = { git = "https://github.com/truce-audio/truce.git", tag = "v0.45.4" }
+truce-clap = { git = "https://github.com/truce-audio/truce.git", tag = "v0.45.4" }
+truce-vst3 = { git = "https://github.com/truce-audio/truce.git", tag = "v0.45.4" }
+truce-vst2 = { git = "https://github.com/truce-audio/truce.git", tag = "v0.45.4" }
+truce-lv2 = { git = "https://github.com/truce-audio/truce.git", tag = "v0.45.4" }
 truce-au = { path = "vendor/truce-au" }
-truce-aax = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
-truce-standalone = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
-truce-gui = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
-truce-build = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
-truce-test = { git = "https://github.com/truce-audio/truce.git", tag = "v0.41.0" }
+truce-aax = { git = "https://github.com/truce-audio/truce.git", tag = "v0.45.4" }
+truce-standalone = { git = "https://github.com/truce-audio/truce.git", tag = "v0.45.4" }
+truce-gui = { git = "https://github.com/truce-audio/truce.git", tag = "v0.45.4" }
+truce-build = { git = "https://github.com/truce-audio/truce.git", tag = "v0.45.4" }
+truce-test = { git = "https://github.com/truce-audio/truce.git", tag = "v0.45.4" }
 truce-shim-types = { path = "vendor/truce-shim-types" }
-wry = "0.54.3"
-raw-window-handle = "0.5"
+wry = "0.55.0"
+raw-window-handle = "0.6"
 
 [workspace.lints]
 clippy.unused_async = "warn"
