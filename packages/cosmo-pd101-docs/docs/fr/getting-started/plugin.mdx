@@ -1,0 +1,71 @@
+---
+title: Plugin DAW
+description: Utilisation du Cosmo PD-101 en tant que plugin VST3, CLAP ou AUv2 dans votre DAW.
+---
+
+import { Steps } from '@rspress/core/theme';
+
+# Plugin DAW
+
+<img src="../../assets/ModDrawerInLogicPro.jpeg" />
+
+Le **Plugin Cosmo PD-101** fonctionne en tant que plugin **VST3**, **CLAP** ou **AUv2** dans votre DAW. Il utilise le moteur de synthèse Rust natif via le framework truce et une webview intégrée pour l'interface utilisateur.
+
+## Formats supportés
+
+| Format | Plateforme | Compatibilité DAW |
+|--------|-----------|-------------------|
+| **VST3** | Windows, macOS | Ableton Live, FL Studio, Bitwig, Reaper, Cubase, etc. |
+| **CLAP** | Windows, macOS, Linux | Bitwig 5+, Waveform 12+, Reaper 7+ |
+| **AUv2** | macOS uniquement | Logic Pro, Ableton Live (macOS), MainStage |
+
+## Installation
+
+
+:::warning ATTENTION
+Les versions des plugins ne sont actuellement pas signées, donc macOS peut empêcher leur chargement. Pour contourner Gatekeeper :
+
+1. Ouvrez **Réglages Système → Confidentialité et sécurité**.
+2. Dans la section **Sécurité**, assurez-vous que **App Store et développeurs identifiés** est sélectionné.
+3. Ouvrez **Terminal** et exécutez :
+
+```bash
+sudo xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/VST3/CosmoPD-101.vst3
+sudo xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/Components/CosmoPD-101.component
+sudo xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/CLAP/CosmoPD-101.clap
+```
+
+Entrez votre mot de passe lorsque demandé.
+
+Remplacez `~/Library/Audio/Plug-Ins/` par le chemin d'installation réel si vous avez installé les plugins ailleurs. Exécutez uniquement la commande pour les formats que vous utilisez.
+:::
+
+<Steps>
+
+### Téléchargez
+
+Téléchargez le dernier package de plugin depuis la [boutique Purr Audio](https://store.purraudio.dev/) ou clonez le dépôt et [compilez depuis les sources](/contributing/).
+
+### Installez
+
+Copiez le fichier du plugin dans le répertoire de plugins de votre DAW.
+
+### Actualisez
+
+Actualisez la liste des plugins de votre DAW pour découvrir le Cosmo PD-101.
+
+</Steps>
+
+## Utilisation du plugin
+
+1. Créez une piste MIDI dans votre DAW.
+2. Insérez **Cosmo PD-101** comme plugin instrument.
+3. Armez la piste pour l'entrée MIDI.
+4. Jouez !
+
+### Presets dans le plugin
+
+- Les **presets d'usine** sont préchargés.
+- Les **presets utilisateur** sont sauvegardés via le navigateur de presets et stockés dans le répertoire de données du plugin de la DAW.
+
+Précédent : [Application Web](/getting-started/web-app) | Suivant : [Vue d'ensemble](/synth-reference/overview)

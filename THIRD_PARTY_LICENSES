@@ -1,0 +1,153 @@
+Third-Party Licenses for Cosmo PD-101
+======================================
+
+This file lists the licenses of all third-party dependencies used by
+Cosmo PD-101. The Cosmo PD-101 source code is GPL-3.0-only; dependencies
+are used under their respective licenses.
+
+Rust Crates (runtime dependencies, non-dev)
+-------------------------------------------
+
+Licensed under Apache-2.0 OR MIT:
+  adler2, allocator-api2, alsa, alsa-sys, android_system_properties,
+  anyhow, arc-swap, arrayvec, ash, base64, bit-set, bit-vec, bitflags,
+  block-buffer, bumpalo, bytes, cfg-if, clap-sys, cocoa, cocoa-foundation,
+  combine, cookie, core-foundation, core-foundation-sys, core-graphics,
+  core-graphics-types, coreaudio-rs, coreaudio-sys, coremidi, coremidi-sys,
+  cpufeatures, crc32fast, crossbeam-channel, crossbeam-queue,
+  crossbeam-utils, crypto-common, dasp_frame, dasp_interpolate,
+  dasp_ring_buffer, dasp_sample, deranged, digest, dirs, dirs-sys,
+  displaydoc, document-features, dpi, dtoa, dunce, equivalent, errno,
+  euclid, fastrand, fdeflate, field-offset, flate2, foldhash, fontdue,
+  foreign-types, foreign-types-macros, foreign-types-shared,
+  form_urlencoded, futures-channel, futures-core, futures-executor,
+  futures-io, futures-macro, futures-task, futures-util, generic-array,
+  getrandom, gpu-alloc, gpu-alloc-types, gpu-allocator, gpu-descriptor,
+  gpu-descriptor-types, hashbrown, heck, html5ever, http, id-arena, idna,
+  idna_adapter, indexmap, itoa, jni, jni-sys, jni-sys-macros, js-sys,
+  keyboard-types, khronos-egl, leb128fmt, libc, litemap, litrs, lock_api,
+  log, lyon_geom, lyon_path, lyon_tessellation, markup5ever, memchr,
+  metal, naga, ndk, ndk-context, ndk-sys, num-conv, num-derive,
+  num-traits, once_cell, parking_lot, parking_lot_core, paste,
+  percent-encoding, pin-project-lite, plain, png, pollster, powerfmt,
+  presser, prettyplease, proc-macro-crate, proc-macro-error,
+  proc-macro-error-attr, proc-macro2, profiling, quote, range-alloc,
+  renderdoc-sys, rustc-hash, rustversion, scopeguard, semver, serde,
+  serde_core, serde_derive, serde_json, serde_spanned, servo_arc, sha2,
+  siphasher, smallvec, stable_deref_trait, static_assertions,
+  string_cache, syn, synstructure, tao-macros, tendril, thiserror,
+  thiserror-impl, time, time-core, time-macros, toml, toml_datetime,
+  toml_edit, ttf-parser, typenum, unicode-ident, unicode-segmentation,
+  unicode-width, unicode-xid, url, utf-8, utf8_iter, wasm-bindgen,
+  wasm-bindgen-futures, wasm-bindgen-macro, wasm-bindgen-macro-support,
+  wasm-bindgen-shared, web-sys, web_atoms, wgpu, wgpu-core, wgpu-hal,
+  wgpu-types, winapi, winapi-i686-pc-windows-gnu, winapi-util,
+  winapi-x86_64-pc-windows-gnu, windows, windows-collections,
+  windows-core, windows-future, windows-implement, windows-interface,
+  windows-link, windows-numerics, windows-result, windows-strings,
+  windows-sys, windows-targets, windows-threading, windows-version,
+  windows_aarch64_gnullvm, windows_aarch64_msvc, windows_i686_gnu,
+  windows_i686_gnullvm, windows_i686_msvc, windows_x86_64_gnu,
+  windows_x86_64_gnullvm, windows_x86_64_msvc, winnow, wry, x11rb,
+  x11rb-protocol
+
+Licensed under MIT:
+  arrayref, block, block2, cesu8, combine, coreaudio-sys, coremidi,
+  coremidi-sys, cssparser, cssparser-macros, derive_more,
+  derive_more-impl, dom_query, dtoa-short, float_next_after, gdk,
+  gdk-pixbuf, gdk-pixbuf-sys, gdk-sys, gdkx11, gdkx11-sys, gio, gio-sys,
+  glib, glib-macros, glib-sys, gobject-sys, gtk, gtk-sys, gtk3-macros,
+  Inflector, javascriptcore-rs, javascriptcore-rs-sys, libm, libredox,
+  malloc_buf, memoffset, midir, new_debug_unreachable, nix, no_denormals,
+  objc, objc2, objc2-encode, objc2-foundation, oboe, oboe-sys,
+  ordered-float, pango, pango-sys, phf, phf_generator, phf_macros,
+  phf_shared, pico-args, precomputed-hash, redox_syscall, redox_users,
+  rfd, simd-adler32, slab, soup3, soup3-sys, specta, specta-macros,
+  specta-serde, specta-typescript, strict-num, strum, strum_macros,
+  tiny-skia, tiny-skia-path, webkit2gtk, webkit2gtk-sys, webview2-com,
+  webview2-com-macros, webview2-com-sys, x11, x11-dl, xcursor, zmij,
+  selectors, option-ext, cookie, baseview (vendor)
+
+Licensed under Apache-2.0 OR MIT OR Zlib:
+  bytemuck, bytemuck_derive, dispatch2, fontdue, glow, miniz_oxide,
+  objc2-app-kit, objc2-cloud-kit, objc2-core-data, objc2-core-foundation,
+  objc2-core-graphics, objc2-core-image, objc2-core-location,
+  objc2-core-text, objc2-core-video, objc2-exception-helper,
+  objc2-io-surface, objc2-javascript-core, objc2-metal, objc2-quartz-core,
+  objc2-security, objc2-ui-kit, objc2-user-notifications, objc2-web-kit,
+  raw-window-handle
+
+Licensed under Apache-2.0:
+  codespan-reporting, cpal, gethostname, glutin_wgl_sys, rtsan-standalone,
+  rtsan-standalone-macros, rtsan-standalone-sys, spirv, truce-font
+
+Licensed under Unicode-3.0:
+  icu_collections, icu_locale_core, icu_normalizer, icu_normalizer_data,
+  icu_properties, icu_properties_data, icu_provider, potential_utf,
+  tinystr, writeable, yoke, yoke-derive, zerofrom, zerofrom-derive,
+  zerotrie, zerovec, zerovec-derive
+
+Licensed under MPL-2.0:
+  cssparser, cssparser-macros, dtoa-short, option-ext, selectors
+
+Licensed under MIT OR Unlicense:
+  memchr, termcolor, winapi-util
+
+Licensed under BSD-2-Clause:
+  arrayref, Inflector
+
+Licensed under BSD-3-Clause:
+  tiny-skia, tiny-skia-path
+
+Licensed under BSD-1-Clause:
+  assert_no_alloc
+
+Licensed under ISC:
+  libloading
+
+Licensed under CC0-1.0:
+  hexf-parse
+
+Licensed under Zlib:
+  foldhash, slotmap
+
+Licensed under 0BSD OR Apache-2.0 OR MIT:
+  adler2
+
+Licensed under Apache-2.0 OR CC0-1.0 OR MIT-0:
+  dunce
+
+Licensed under Apache-2.0 OR BSD-2-Clause OR MIT:
+  mach2
+
+Licensed under Apache-2.0 OR BSD-3-Clause OR MIT:
+  num_enum, num_enum_derive
+
+Licensed under Apache-2.0 OR LGPL-2.1-or-later OR MIT:
+  r-efi
+
+Licensed under Apache-2.0 AND MIT:
+  dpi
+
+Licensed under (Apache-2.0 OR MIT) AND Unicode-3.0:
+  unicode-ident
+
+Licensed under Apache-2.0 OR Apache-2.0 WITH LLVM-exception OR MIT:
+  linux-raw-sys, rustix, wasi, wasip2, wasip3, wasm-encoder,
+  wasm-metadata, wasmparser, wit-bindgen, wit-bindgen-core,
+  wit-bindgen-rust, wit-bindgen-rust-macro, wit-component, wit-parser
+
+npm Packages (runtime, non-dev)
+-------------------------------
+
+Licensed under MIT:
+  @dnd-kit/accessibility, @dnd-kit/core, @dnd-kit/sortable,
+  @dnd-kit/utilities, @react-three/drei, @react-three/fiber,
+  i18next, motion, react-i18next, react-icons, three, zustand,
+  @epic-web/invariant
+
+Licensed under MIT OR Apache-2.0:
+  @mediapipe/tasks-vision, truce and its sub-crates (truce, truce-aax, truce-build, truce-clap,
+truce-core, truce-derive, truce-gpu, truce-gui, truce-gui-types,
+truce-loader, truce-lv2, truce-params, truce-plugin, truce-standalone,
+truce-utils, truce-vst2, truce-vst3)

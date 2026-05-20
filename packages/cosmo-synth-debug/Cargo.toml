@@ -2,6 +2,7 @@
 name = "cosmo-synth-debug"
 version = "0.1.0"
 edition = "2024"
+license.workspace = true
 description = "Minimalist egui debug harness for cosmo-synth-engine"
 
 [[bin]]

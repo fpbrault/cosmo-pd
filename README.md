@@ -95,6 +95,23 @@ Two Vitest projects: `unit` (Happy DOM) and `browser` (Playwright/Chromium).
 
 For detailed testing patterns, see [docs/component-testing.md](docs/component-testing.md).
 
+## Licensing
+
+Cosmo PD-101 is **dual-licensed**:
+
+| Channel | License | Applies To |
+|---------|---------|------------|
+| GitHub (source) | **GPL-3.0-only** — see [`LICENSE`](LICENSE) | Source code, forks, and self-compiled builds |
+| Gumroad (binaries) | **Commercial EULA** — see [`LICENSE-COMMERCIAL`](LICENSE-COMMERCIAL) | Pre-compiled signed installers |
+
+**Source code** on GitHub is free to view, fork, and compile via `cargo build`.
+**Pre-compiled binaries** sold on Gumroad are distributed under a standard
+commercial end-user license agreement that prohibits re-distribution of the
+installer files.
+
+Third-party dependency licenses are documented in
+[`THIRD_PARTY_LICENSES`](THIRD_PARTY_LICENSES).
+
 ## SysEx Reference
 
 CZ-101 patch format documentation: [docs/CZ101_SYSEX_FORMAT.md](docs/CZ101_SYSEX_FORMAT.md).

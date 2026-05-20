@@ -1,0 +1,5 @@
+[
+	{ "type": "file", "name": "index", "label": "quickStart" },
+	{ "type": "file", "name": "web-app", "label": "webApp" },
+	{ "type": "file", "name": "plugin", "label": "dawPlugin" }
+]
