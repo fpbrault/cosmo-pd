@@ -70,6 +70,3 @@ lto = false
 
 [profile.shell]
 inherits = "release"
-
-[patch."https://github.com/truce-audio/baseview.git"]
-baseview = { path = "vendor/baseview" }

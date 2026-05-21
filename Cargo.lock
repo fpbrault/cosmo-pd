@@ -529,7 +529,8 @@ checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
 name = "baseview"
-version = "0.1.0"
+version = "0.1.1"
+source = "git+https://github.com/truce-audio/baseview.git#ed5d57b0379495e7a75f0bde77c647a40f860aac"
 dependencies = [
  "keyboard-types",
  "nix",
@@ -538,7 +539,9 @@ dependencies = [
  "objc2-core-foundation",
  "objc2-foundation 0.3.2",
  "raw-window-handle 0.5.2",
- "winapi",
+ "windows 0.61.3",
+ "windows-core 0.61.2",
+ "windows-sys 0.61.2",
  "x11-dl",
  "x11rb",
 ]
