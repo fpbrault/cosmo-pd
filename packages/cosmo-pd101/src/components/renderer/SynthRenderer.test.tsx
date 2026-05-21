@@ -14,6 +14,7 @@ const mockSynthStoreState = {
 	setLine2DcaEnv: vi.fn(),
 	velocityCurve: 0,
 	gatherState: () => ({}),
+	gatherPresetState: () => ({}),
 	applyPreset: vi.fn(),
 };
 

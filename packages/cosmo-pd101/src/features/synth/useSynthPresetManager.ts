@@ -30,7 +30,7 @@ import { usePresetManagerPersistence } from "./usePresetManagerPersistence";
 
 type UseSynthPresetManagerOptions = {
 	builtinPresets: Record<string, FrontendPresetV1>;
-	gatherState: () => SynthPresetV1;
+	gatherPresetState: () => SynthPresetV1;
 	applyPreset: (data: SynthPresetV1) => void;
 	onBeforeApplyPreset?: () => void;
 	libraryPresets?: LibraryPreset[];
@@ -81,7 +81,7 @@ type PendingPresetChange = {
 
 export function useSynthPresetManager({
 	builtinPresets,
-	gatherState,
+	gatherPresetState,
 	applyPreset,
 	onBeforeApplyPreset,
 	libraryPresets = [],
@@ -106,7 +106,7 @@ export function useSynthPresetManager({
 	const [pendingNavigation, setPendingNavigation] =
 		useState<PendingNavigation | null>(null);
 	const currentPresetFingerprint =
-		presetStateKey ?? getPresetFingerprint(gatherState());
+		presetStateKey ?? getPresetFingerprint(gatherPresetState());
 	const hasUnsavedChanges =
 		loadedPresetFingerprint !== null &&
 		currentPresetFingerprint !== loadedPresetFingerprint;
@@ -148,8 +148,8 @@ export function useSynthPresetManager({
 	]);
 
 	const captureLoadedPresetFingerprint = useCallback(() => {
-		setLoadedPresetFingerprint(getPresetFingerprint(gatherState()));
-	}, [gatherState]);
+		setLoadedPresetFingerprint(getPresetFingerprint(gatherPresetState()));
+	}, [gatherPresetState]);
 
 	const refreshLocalPresetEntries = useCallback(async () => {
 		setLocalPresetEntries(await listStoredPresets());
@@ -343,7 +343,7 @@ export function useSynthPresetManager({
 			const stored = await saveStoredPreset({
 				id: activeLocalPreset?.id,
 				name,
-				data: gatherState(),
+				data: gatherPresetState(),
 				source: "user",
 				author: activeLocalPreset?.author ?? "",
 				starred: activeLocalPreset?.starred ?? false,
@@ -352,7 +352,7 @@ export function useSynthPresetManager({
 			await refreshLocalPresetEntries();
 			return stored;
 		},
-		[activeLocalPreset, gatherState, refreshLocalPresetEntries],
+		[activeLocalPreset, gatherPresetState, refreshLocalPresetEntries],
 	);
 
 	const handleSavePendingPresetChange = useCallback(
@@ -518,8 +518,8 @@ export function useSynthPresetManager({
 
 	const handleExportCurrentState = useCallback(
 		(name: string) => {
-			const state = gatherState();
-			const json = JSON.stringify({ _name: name, ...state }, null, 2);
+			const presetState = gatherPresetState();
+			const json = JSON.stringify({ _name: name, ...presetState }, null, 2);
 			const blob = new Blob([json], { type: "application/json" });
 			const url = URL.createObjectURL(blob);
 			const anchor = document.createElement("a");
@@ -528,7 +528,7 @@ export function useSynthPresetManager({
 			anchor.click();
 			URL.revokeObjectURL(url);
 		},
-		[gatherState],
+		[gatherPresetState],
 	);
 
 	usePresetManagerPersistence({
@@ -538,7 +538,7 @@ export function useSynthPresetManager({
 		refreshFavoritePresetIds,
 		refreshLocalPresetEntries,
 		shouldHydratePersistedState,
-		gatherState,
+		gatherState: gatherPresetState,
 		activePresetId,
 		activePresetNameBase,
 		loadedPresetFingerprint,

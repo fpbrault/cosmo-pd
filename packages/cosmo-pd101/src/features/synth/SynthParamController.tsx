@@ -62,6 +62,7 @@ export const SYNTH_PARAM_SETTERS = {
 	line1DcwKeyFollow: "setLine1DcwKeyFollow",
 	line2DcwKeyFollow: "setLine2DcwKeyFollow",
 	volume: "setVolume",
+	czDacEnabled: "setCzDacEnabled",
 	polyMode: "setPolyMode",
 	velocityCurve: "setVelocityCurve",
 	pitchBendRange: "setPitchBendRange",

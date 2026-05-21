@@ -46,11 +46,14 @@ describe("useSynthPresetManager", () => {
 		},
 	};
 
-	const mockGatherState = vi.fn((): SynthPresetV1 => ({}) as SynthPresetV1);
+	const mockGatherPresetState = vi.fn(
+		(): SynthPresetV1 => ({}) as SynthPresetV1,
+	);
 	const mockApplyPreset = vi.fn();
 
 	beforeEach(() => {
 		vi.resetAllMocks();
+		mockGatherPresetState.mockReturnValue({} as SynthPresetV1);
 		vi.mocked(presetStorage.listStoredPresets).mockResolvedValue([]);
 		vi.mocked(presetStorage.listPresetFavorites).mockResolvedValue([]);
 	});
@@ -59,7 +62,7 @@ describe("useSynthPresetManager", () => {
 		const { result } = renderHook(() =>
 			useSynthPresetManager({
 				builtinPresets: mockBuiltinPresets,
-				gatherState: mockGatherState,
+				gatherPresetState: mockGatherPresetState,
 				applyPreset: mockApplyPreset,
 				shouldLoadCurrentState: () => false,
 			}),
@@ -83,7 +86,7 @@ describe("useSynthPresetManager", () => {
 		const { result } = renderHook(() =>
 			useSynthPresetManager({
 				builtinPresets: mockBuiltinPresets,
-				gatherState: mockGatherState,
+				gatherPresetState: mockGatherPresetState,
 				applyPreset: mockApplyPreset,
 			}),
 		);
@@ -109,7 +112,7 @@ describe("useSynthPresetManager", () => {
 		const { result } = renderHook(() =>
 			useSynthPresetManager({
 				builtinPresets: mockBuiltinPresets,
-				gatherState: mockGatherState,
+				gatherPresetState: mockGatherPresetState,
 				applyPreset: mockApplyPreset,
 				shouldLoadCurrentState: () => false,
 			}),
@@ -128,7 +131,7 @@ describe("useSynthPresetManager", () => {
 		const { result } = renderHook(() =>
 			useSynthPresetManager({
 				builtinPresets: mockBuiltinPresets,
-				gatherState: mockGatherState,
+				gatherPresetState: mockGatherPresetState,
 				applyPreset: mockApplyPreset,
 			}),
 		);
@@ -150,12 +153,12 @@ describe("useSynthPresetManager", () => {
 			activePresetNameBase: "MyPreset",
 			loadedPresetFingerprint: JSON.stringify({ a: 1 }),
 		});
-		mockGatherState.mockReturnValue({ a: 2 } as unknown as SynthPresetV1);
+		mockGatherPresetState.mockReturnValue({ a: 2 } as unknown as SynthPresetV1);
 
 		const { result } = renderHook(() =>
 			useSynthPresetManager({
 				builtinPresets: mockBuiltinPresets,
-				gatherState: mockGatherState,
+				gatherPresetState: mockGatherPresetState,
 				applyPreset: mockApplyPreset,
 			}),
 		);
@@ -171,12 +174,12 @@ describe("useSynthPresetManager", () => {
 			activePresetNameBase: "MyPreset",
 			loadedPresetFingerprint: JSON.stringify({ a: 1 }),
 		});
-		mockGatherState.mockReturnValue({ a: 2 } as unknown as SynthPresetV1);
+		mockGatherPresetState.mockReturnValue({ a: 2 } as unknown as SynthPresetV1);
 
 		const { result } = renderHook(() =>
 			useSynthPresetManager({
 				builtinPresets: mockBuiltinPresets,
-				gatherState: mockGatherState,
+				gatherPresetState: mockGatherPresetState,
 				applyPreset: mockApplyPreset,
 			}),
 		);
@@ -213,7 +216,7 @@ describe("useSynthPresetManager", () => {
 		const { result } = renderHook(() =>
 			useSynthPresetManager({
 				builtinPresets: mockBuiltinPresets,
-				gatherState: mockGatherState,
+				gatherPresetState: mockGatherPresetState,
 				applyPreset: mockApplyPreset,
 			}),
 		);

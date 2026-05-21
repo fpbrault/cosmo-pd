@@ -9,17 +9,24 @@ describe("useSynthStore", () => {
 		expect(state.warpAAmount).toBe(0);
 		expect(state.warpAAlgo).toBe(DEFAULT_ALGO_REF);
 		expect(state.volume).toBe(1);
+		expect(state.czDacEnabled).toBe(false);
 	});
 
 	it("updates state via setters", () => {
-		const { setWarpAAmount, setVolume, setLineOctave, setLfoRate } =
-			useSynthStore.getState();
+		const {
+			setWarpAAmount,
+			setVolume,
+			setLineOctave,
+			setLfoRate,
+			setCzDacEnabled,
+		} = useSynthStore.getState();
 
 		act(() => {
 			setWarpAAmount(0.5);
 			setVolume(0.8);
 			setLineOctave(1);
 			setLfoRate(2.5);
+			setCzDacEnabled(true);
 		});
 
 		const state = useSynthStore.getState();
@@ -27,6 +34,7 @@ describe("useSynthStore", () => {
 		expect(state.volume).toBe(0.8);
 		expect(state.lineOctave).toBe(1);
 		expect(state.lfoRate).toBe(2.5);
+		expect(state.czDacEnabled).toBe(true);
 	});
 
 	it("clamps integer values using toIntegerInRange", () => {
@@ -54,7 +62,9 @@ describe("useSynthStore", () => {
 			setTempoBpm,
 			setLfoRateMode,
 			setLfoSyncDivision,
+			setCzDacEnabled,
 			gatherState,
+			gatherPresetState,
 		} = useSynthStore.getState();
 
 		act(() => {
@@ -62,6 +72,7 @@ describe("useSynthStore", () => {
 			setTempoBpm(132);
 			setLfoRateMode("sync");
 			setLfoSyncDivision("eighth");
+			setCzDacEnabled(true);
 		});
 
 		const preset = gatherState();
@@ -69,7 +80,11 @@ describe("useSynthStore", () => {
 		expect(preset.params.tempoBpm).toBe(132);
 		expect(preset.params.lfo.rateMode).toBe("sync");
 		expect(preset.params.lfo.syncDivision).toBe("eighth");
+		expect(preset.params.czDacEnabled).toBe(true);
 		expect(preset.schemaVersion).toBe(1);
+
+		const presetState = gatherPresetState();
+		expect(presetState.params.czDacEnabled).toBeUndefined();
 	});
 
 	it("applies a preset to the state", () => {
@@ -102,11 +117,13 @@ describe("useSynthStore", () => {
 		} as unknown as SynthPresetV1;
 
 		act(() => {
+			useSynthStore.getState().setCzDacEnabled(true);
 			applyPreset(mockPreset);
 		});
 
 		const state = useSynthStore.getState();
 		expect(state.volume).toBe(0.5);
+		expect(state.czDacEnabled).toBe(true);
 		expect(state.tempoBpm).toBe(96);
 		expect(state.warpAAmount).toBe(0.2);
 		expect(state.warpBAmount).toBe(0.4);
