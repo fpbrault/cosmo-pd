@@ -43,6 +43,7 @@ pub struct LineEnvs {
 pub struct Voice {
     pub phi1: f32,
     pub phi2: f32,
+    pub noise_step: u32,
     pub cycle_count1: u32,
     pub cycle_count2: u32,
     pub pm_phi: f32,
@@ -81,6 +82,7 @@ impl Voice {
         Self {
             phi1: 0.0,
             phi2: 0.0,
+            noise_step: 0,
             cycle_count1: 0,
             cycle_count2: 0,
             pm_phi: 0.0,
@@ -133,11 +135,60 @@ impl Default for Voice {
 }
 
 #[cfg(test)]
+#[allow(clippy::field_reassign_with_default)]
 mod tests {
     use super::ModSources;
     use super::{Voice, render::*};
-    use crate::params::{LineParams, ModMatrixCache, SynthParams};
+    use crate::params::{LineParams, LineSelect, ModMatrixCache, ModMode, SynthParams};
+    use crate::processor::utils;
     use crate::render_cache::CompiledSynthParams;
+
+    fn render_sequence(params: SynthParams, note: u8, sample_count: usize) -> Vec<f32> {
+        let mut voice = Voice::new();
+        voice.frequency = utils::midi_note_to_freq(note);
+        voice.current_freq = voice.frequency;
+        voice.target_freq = voice.frequency;
+        voice.glide_start_freq = voice.frequency;
+        voice.env_note = note;
+        voice.is_silent = false;
+        voice.velocity = 1.0;
+
+        let timing = crate::envelope::EnvelopeTimingCache::new(48_000.0);
+        let sources = ModSources::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        let mut cache = ModMatrixCache::new();
+        cache.compute(&sources);
+        let plan = CompiledSynthParams::from_params(&params);
+
+        (0..sample_count)
+            .map(|_| {
+                let ctx = super::VoiceRenderContext {
+                    p: &params,
+                    lfo_mod_val: 0.0,
+                    lfo2_mod_val: 0.0,
+                    random_mod_val: 0.0,
+                    line1_modded: &params.line1,
+                    line2_modded: &params.line2,
+                    sr: 48_000.0,
+                    timing: &timing,
+                    pitch_bend_semitones: 0.0,
+                    mod_wheel: 0.0,
+                    macro1: 0.0,
+                    macro2: 0.0,
+                    macro3: 0.0,
+                    macro4: 0.0,
+                    cache: &cache,
+                    modulation_active: false,
+                    line1_plan: &plan.line1,
+                    line2_plan: &plan.line2,
+                };
+                render_voice(&mut voice, &ctx)
+            })
+            .collect()
+    }
+
+    fn sum_abs(samples: &[f32]) -> f32 {
+        samples.iter().map(|sample| sample.abs()).sum()
+    }
 
     #[test]
     fn dca_gain_uses_gentle_power_taper() {
@@ -287,5 +338,111 @@ mod tests {
             }
         }
         assert!(any_nonzero, "expected nonzero output from active voice");
+    }
+
+    #[test]
+    fn noise_mode_is_unpitched_and_varies_per_sample() {
+        let mut params = SynthParams::default();
+        params.line_select = LineSelect::L1PlusL2Prime;
+        params.mod_mode = ModMode::Noise;
+        params.line1.dca_base = 0.0;
+        params.line2.dca_base = 1.0;
+        params.line2.dcw_base = 0.85;
+
+        let low_note = render_sequence(params.clone(), 48, 16);
+        let high_note = render_sequence(params, 84, 16);
+
+        assert!(
+            low_note
+                .windows(2)
+                .any(|pair| (pair[0] - pair[1]).abs() > 1e-6),
+            "expected white noise to vary between successive samples"
+        );
+        assert_eq!(
+            low_note, high_note,
+            "noise-only output should not change pitch with the played note"
+        );
+    }
+
+    #[test]
+    fn l1_prime_noise_uses_line1_dcw_and_dca() {
+        let mut params = SynthParams::default();
+        params.line_select = LineSelect::L1PlusL1Prime;
+        params.mod_mode = ModMode::Noise;
+        params.line1.dca_base = 1.0;
+        params.line1.dcw_base = 0.1;
+        params.line2.dca_base = 0.0;
+
+        let quiet = render_sequence(params.clone(), 60, 16);
+        params.line1.dca_base = 0.0;
+        let silent = render_sequence(params.clone(), 60, 16);
+        params.line1.dca_base = 1.0;
+        params.line1.dcw_base = 0.9;
+        let bright = render_sequence(params, 60, 16);
+
+        assert!(
+            sum_abs(&silent) < 1e-6,
+            "line 1 DCA should silence noise output"
+        );
+        assert!(
+            sum_abs(&quiet) > 1e-4,
+            "line 1 DCA should allow audible noise"
+        );
+        assert_ne!(quiet, bright, "line 1 DCW should reshape noise output");
+    }
+
+    #[test]
+    fn l2_prime_noise_uses_line2_dcw_and_dca() {
+        let mut params = SynthParams::default();
+        params.line_select = LineSelect::L1PlusL2Prime;
+        params.mod_mode = ModMode::Noise;
+        params.line1.dca_base = 0.0;
+        params.line2.dca_base = 1.0;
+        params.line2.dcw_base = 0.15;
+
+        let mellow = render_sequence(params.clone(), 60, 16);
+        params.line2.dca_base = 0.0;
+        let silent = render_sequence(params.clone(), 60, 16);
+        params.line2.dca_base = 1.0;
+        params.line2.dcw_base = 0.95;
+        let bright = render_sequence(params, 60, 16);
+
+        assert!(
+            sum_abs(&silent) < 1e-6,
+            "line 2 DCA should silence noise output"
+        );
+        assert!(
+            sum_abs(&mellow) > 1e-4,
+            "line 2 DCA should allow audible noise"
+        );
+        assert_ne!(mellow, bright, "line 2 DCW should reshape noise output");
+    }
+
+    #[test]
+    fn single_line_modes_ignore_ring_and_noise() {
+        let mut noise = SynthParams::default();
+        noise.line_select = LineSelect::L1;
+        noise.mod_mode = ModMode::Noise;
+        noise.line1.dca_base = 1.0;
+
+        let mut normal = noise.clone();
+        normal.mod_mode = ModMode::Normal;
+
+        let mut ring = SynthParams::default();
+        ring.line_select = LineSelect::L2;
+        ring.mod_mode = ModMode::Ring;
+        ring.line2.dca_base = 1.0;
+
+        let mut ring_normal = ring.clone();
+        ring_normal.mod_mode = ModMode::Normal;
+
+        assert_eq!(
+            render_sequence(noise, 60, 16),
+            render_sequence(normal, 60, 16)
+        );
+        assert_eq!(
+            render_sequence(ring, 60, 16),
+            render_sequence(ring_normal, 60, 16)
+        );
     }
 }

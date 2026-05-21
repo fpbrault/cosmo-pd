@@ -1,9 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { DEFAULT_ALGO_REF } from "@/lib/synth/algoRef";
 import type { FxSlotConfig, SynthPresetV1 } from "@/lib/synth/bindings/synth";
 import { useSynthStore } from "./synthStore";
 
 describe("useSynthStore", () => {
+	beforeEach(() => {
+		useSynthStore.setState(useSynthStore.getInitialState());
+	});
+
 	it("initializes with default state", () => {
 		const state = useSynthStore.getState();
 		expect(state.warpAAmount).toBe(0);
@@ -181,6 +185,72 @@ describe("useSynthStore", () => {
 		});
 		expect(useSynthStore.getState().fxSlots[0].type).toBe("reverb");
 		expect(useSynthStore.getState().fxSlots[1].type).toBe("delay");
+	});
+
+	it("coerces modulation mode to normal when switching to a single line", () => {
+		const { setLineSelect, setModMode } = useSynthStore.getState();
+
+		act(() => {
+			setLineSelect("L1+L2'");
+			setModMode("noise");
+			setLineSelect("L1");
+		});
+
+		const state = useSynthStore.getState();
+		expect(state.lineSelect).toBe("L1");
+		expect(state.modMode).toBe("normal");
+	});
+
+	it("rejects incompatible modulation modes on single-line selections", () => {
+		const { setLineSelect, setModMode } = useSynthStore.getState();
+
+		act(() => {
+			setLineSelect("L2");
+			setModMode("ring");
+		});
+		expect(useSynthStore.getState().modMode).toBe("normal");
+
+		act(() => {
+			setLineSelect("L1+L1'");
+			setModMode("noise");
+		});
+		expect(useSynthStore.getState().modMode).toBe("noise");
+	});
+
+	it("normalizes incompatible modulation modes when applying presets", () => {
+		const { applyPreset } = useSynthStore.getState();
+
+		act(() => {
+			applyPreset({
+				schemaVersion: 1,
+				params: {
+					lineSelect: "L1",
+					modMode: "noise",
+					line1: {
+						dcwBase: 0.2,
+						algo: DEFAULT_ALGO_REF,
+					},
+					line2: {
+						dcwBase: 0.4,
+						algo: DEFAULT_ALGO_REF,
+					},
+					lfo: {
+						waveform: "sine",
+						rate: 2,
+						rateMode: "sync",
+						syncDivision: "quarter",
+						depth: 1,
+						symmetry: 0.5,
+						retrigger: false,
+						offset: 0,
+					},
+				},
+			} as SynthPresetV1);
+		});
+
+		const state = useSynthStore.getState();
+		expect(state.lineSelect).toBe("L1");
+		expect(state.modMode).toBe("normal");
 	});
 });
 
