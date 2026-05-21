@@ -57,26 +57,25 @@ describe("modulation controls (browser)", () => {
 			/>,
 		);
 
-		expect(screen.getByText("LFO1")).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Remove LFO 1 route" }),
+		).toBeInTheDocument();
 
 		fireEvent.click(
 			screen.getAllByRole("checkbox", { name: /disable route/i })[0],
 		);
-		fireEvent.click(screen.getAllByRole("button", { name: "Remove route" })[0]);
-		fireEvent.keyDown(screen.getAllByRole("spinbutton")[0], {
-			key: "ArrowDown",
+		fireEvent.click(screen.getByRole("button", { name: "Remove LFO 1 route" }));
+		fireEvent.change(screen.getByRole("slider", { name: "LFO 1 depth" }), {
+			target: { value: "0.25" },
 		});
-		fireEvent.click(screen.getByRole("button", { name: "Pick Source" }));
-		fireEvent.click(screen.getByRole("button", { name: "Velocity" }));
-		fireEvent.click(screen.getByRole("button", { name: "Add Velocity" }));
+		fireEvent.click(screen.getByRole("button", { name: /velocity\s*add/i }));
 		fireEvent.click(
 			screen.getByRole("button", { name: "Close modulation panel" }),
 		);
 
 		expect(onToggleEnabled).toHaveBeenCalledWith(0);
 		expect(onRemoveRoute).toHaveBeenCalledWith(0);
-		expect(onAmountChange).toHaveBeenCalledWith(0, expect.any(Number));
-		expect(onAmountChange.mock.calls[0]?.[1]).toBeLessThan(0.5);
+		expect(onAmountChange).toHaveBeenCalledWith(0, 0.25);
 		expect(onAddRoute).toHaveBeenCalledWith("velocity");
 		expect(onClose).toHaveBeenCalledTimes(1);
 	});

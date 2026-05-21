@@ -3,22 +3,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import ModulatableControl from "./ModulatableControl";
 
 const useModMatrixMock = vi.fn();
-const modulationIconPropsSpy = vi.fn();
 const modulationMenuPropsSpy = vi.fn();
+const useModulationTargetMock = vi.fn();
 
 vi.mock("@/context/ModMatrixContext", () => ({
 	useModMatrix: () => useModMatrixMock(),
 }));
 
-vi.mock("./ModulationIconButton", () => ({
-	default: (props: Record<string, unknown>) => {
-		modulationIconPropsSpy(props);
-		return (
-			<button type="button" onClick={props.onClick as () => void}>
-				icon
-			</button>
-		);
-	},
+vi.mock("@/features/synth/hooks/useModulationTarget", () => ({
+	useModulationTarget: (args: Record<string, unknown>) =>
+		useModulationTargetMock(args),
 }));
 
 vi.mock("./ModulationMenu", () => ({
@@ -37,11 +31,19 @@ vi.mock("./ModulationMenu", () => ({
 describe("ModulatableControl", () => {
 	beforeEach(() => {
 		useModMatrixMock.mockReset();
-		modulationIconPropsSpy.mockReset();
 		modulationMenuPropsSpy.mockReset();
+		useModulationTargetMock.mockReset();
+		useModulationTargetMock.mockReturnValue({
+			modMode: false,
+			modulationTargetState: null,
+			interactionLocked: false,
+			isTargeted: false,
+			onTarget: vi.fn(),
+			onClose: vi.fn(),
+		});
 	});
 
-	it("passes active route count for destination to icon", () => {
+	it("shows route count only while modulation targeting is active", () => {
 		useModMatrixMock.mockReturnValue({
 			modMatrix: {
 				routes: [
@@ -69,17 +71,27 @@ describe("ModulatableControl", () => {
 			</ModulatableControl>,
 		);
 
-		const props = modulationIconPropsSpy.mock.calls[0][0] as {
-			hasActiveRoutes: boolean;
-			routeCount: number;
-			label: string;
-		};
-		expect(props.hasActiveRoutes).toBe(true);
-		expect(props.routeCount).toBe(2);
-		expect(props.label).toBe("Modulation for Volume");
+		expect(screen.queryByText("2")).not.toBeInTheDocument();
+
+		useModulationTargetMock.mockReturnValue({
+			modMode: true,
+			modulationTargetState: "available",
+			interactionLocked: true,
+			isTargeted: false,
+			onTarget: vi.fn(),
+			onClose: vi.fn(),
+		});
+
+		render(
+			<ModulatableControl destinationId="volume" label="Volume">
+				<div>child</div>
+			</ModulatableControl>,
+		);
+
+		expect(screen.getByText("2")).toBeInTheDocument();
 	});
 
-	it("opens menu and supports route mutations", () => {
+	it("shows the focused menu in mod mode and supports route mutations", () => {
 		const setModMatrix = vi.fn();
 		useModMatrixMock.mockReturnValue({
 			modMatrix: {
@@ -95,6 +107,14 @@ describe("ModulatableControl", () => {
 			},
 			setModMatrix,
 		});
+		useModulationTargetMock.mockReturnValue({
+			modMode: true,
+			modulationTargetState: "targeted",
+			interactionLocked: true,
+			isTargeted: true,
+			onTarget: vi.fn(),
+			onClose: vi.fn(),
+		});
 
 		render(
 			<ModulatableControl destinationId="volume" label="Volume">
@@ -102,7 +122,6 @@ describe("ModulatableControl", () => {
 			</ModulatableControl>,
 		);
 
-		fireEvent.click(screen.getByRole("button", { name: "icon" }));
 		expect(screen.getByTestId("modulation-menu")).toBeInTheDocument();
 
 		const menuProps = modulationMenuPropsSpy.mock.calls[0][0] as {
@@ -117,5 +136,6 @@ describe("ModulatableControl", () => {
 		menuProps.onRemoveRoute(0);
 
 		expect(setModMatrix).toHaveBeenCalledTimes(4);
+		fireEvent.click(screen.getByText("close menu"));
 	});
 });
