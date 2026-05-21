@@ -190,7 +190,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		handleLoadBuiltin,
 	} = useSynthPresetManager({
 		builtinPresets: DEFAULT_SYNTH_PRESETS,
-		gatherState,
+		gatherPresetState: gatherState,
 		applyPreset,
 		libraryPresets: FACTORY_CZ_PRESETS,
 		shouldLoadCurrentState,

@@ -20,7 +20,7 @@ export default defineConfig({
 	reporter: process.env.CI ? "github" : "list",
 
 	use: {
-		baseURL: "http://127.0.0.1:4175",
+		baseURL: "http://127.0.0.1:5175",
 		trace: "on-first-retry",
 		screenshot: "only-on-failure",
 	},
@@ -34,8 +34,8 @@ export default defineConfig({
 
 	webServer: {
 		command:
-			"bun --filter @cosmo/cosmo-pd101 build:lib && bunx --bun vite --host 127.0.0.1 --port 4175 --strictPort",
-		url: "http://127.0.0.1:4175",
+			"bun --filter @cosmo/cosmo-pd101 build:lib && bunx --bun vite --host 127.0.0.1 --port 5175 --strictPort",
+		url: "http://127.0.0.1:5175",
 		reuseExistingServer: false,
 		env: {
 			VITE_TEST_HARNESS: "1",
