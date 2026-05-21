@@ -64,6 +64,7 @@ describe("useSynthStore", () => {
 			setLfoSyncDivision,
 			setCzDacEnabled,
 			gatherState,
+			gatherPresetState,
 		} = useSynthStore.getState();
 
 		act(() => {
@@ -81,6 +82,9 @@ describe("useSynthStore", () => {
 		expect(preset.params.lfo.syncDivision).toBe("eighth");
 		expect(preset.params.czDacEnabled).toBe(true);
 		expect(preset.schemaVersion).toBe(1);
+
+		const presetState = gatherPresetState();
+		expect(presetState.params.czDacEnabled).toBeUndefined();
 	});
 
 	it("applies a preset to the state", () => {
@@ -90,7 +94,6 @@ describe("useSynthStore", () => {
 			schemaVersion: 1,
 			params: {
 				volume: 0.5,
-				czDacEnabled: true,
 				tempoBpm: 96,
 				line1: {
 					dcwBase: 0.2,
@@ -114,6 +117,7 @@ describe("useSynthStore", () => {
 		} as unknown as SynthPresetV1;
 
 		act(() => {
+			useSynthStore.getState().setCzDacEnabled(true);
 			applyPreset(mockPreset);
 		});
 

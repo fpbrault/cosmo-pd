@@ -96,8 +96,11 @@ const SynthRenderer = memo(function SynthRenderer({
 	const setLine2DcaEnv = useSynthStore((s) => s.setLine2DcaEnv);
 	const velocityCurve = useSynthStore((s) => s.velocityCurve);
 	const gatherState = useSynthStore((s) => s.gatherState);
+	const gatherPresetState = useSynthStore((s) => s.gatherPresetState);
 	const applyPreset = useSynthStore((s) => s.applyPreset);
-	const presetStateKey = useSynthStore((s) => JSON.stringify(s.gatherState()));
+	const presetStateKey = useSynthStore((s) =>
+		JSON.stringify(s.gatherPresetState()),
+	);
 	const modMatrix = useSynthStore((s) => s.modMatrix);
 	const setModMatrix = useSynthStore((s) => s.setModMatrix);
 
@@ -189,7 +192,7 @@ const SynthRenderer = memo(function SynthRenderer({
 		handleCancelPendingPresetChange,
 	} = useSynthPresetManager({
 		builtinPresets: DEFAULT_SYNTH_PRESETS,
-		gatherState,
+		gatherPresetState,
 		applyPreset,
 		onBeforeApplyPreset: panic,
 		libraryPresets,

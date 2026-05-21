@@ -300,6 +300,7 @@ type SynthActions = {
 	setMacroLabel: (index: number, label: string) => void;
 
 	gatherState: () => SynthPresetV1;
+	gatherPresetState: () => SynthPresetV1;
 	applyPreset: (preset: SynthPresetV1) => void;
 };
 
@@ -674,6 +675,17 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 		};
 	},
 
+	gatherPresetState(): SynthPresetV1 {
+		const state = get().gatherState();
+		return {
+			...state,
+			params: {
+				...state.params,
+				czDacEnabled: undefined,
+			},
+		};
+	},
+
 	// --- applyPreset ---
 	applyPreset(preset: SynthPresetV1) {
 		if (
@@ -690,6 +702,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			return;
 		}
 		const p = preset.params;
+		const currentCzDacEnabled = get().czDacEnabled;
 		const safe = (v: unknown, fallback: number) =>
 			typeof v === "number" && !Number.isNaN(v) ? v : fallback;
 
@@ -721,7 +734,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			algoBlendB: safe(p.line2?.algoBlend, 0),
 			windowType: (p.line1?.window as WindowType) ?? "off",
 			volume: safe(p.volume, 1),
-			czDacEnabled: p.czDacEnabled ?? false,
+			czDacEnabled: currentCzDacEnabled,
 			line1Level: safe(p.line1?.dcaBase, 1),
 			line2Level: safe(p.line2?.dcaBase, 1),
 			lineOctave: safe(p.line1?.octave, 0),
