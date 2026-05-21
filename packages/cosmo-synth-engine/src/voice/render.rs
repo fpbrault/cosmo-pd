@@ -990,13 +990,14 @@ fn render_noise_line_sample(
 ) -> f32 {
     let white_noise = random_hold_value(noise_step as i32);
     let noise_phase = ((white_noise + 1.0) * 0.5).clamp(0.0, 1.0);
+    let noise_dcw = pow01(final_dcw.clamp(0.0, 1.0), 0.6);
     let cfg = LineRenderConfig::from_compiled_line(
         plan,
         line,
         cycle_count,
         noise_phase,
         noise_phase,
-        final_dcw,
+        noise_dcw,
         final_dca,
         0.0,
         1.0,
