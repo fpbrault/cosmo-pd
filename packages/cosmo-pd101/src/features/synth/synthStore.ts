@@ -122,6 +122,7 @@ type SynthState = {
 
 	windowType: WindowType;
 	volume: number;
+	czDacEnabled: boolean;
 
 	line1Level: number;
 	/** Shared OCT knob — sets octave for both lines. */
@@ -215,6 +216,7 @@ type SynthActions = {
 
 	setWindowType: (v: WindowType) => void;
 	setVolume: (v: number) => void;
+	setCzDacEnabled: (v: boolean) => void;
 
 	setLine1Level: (v: number) => void;
 	setLineOctave: (v: number) => void;
@@ -320,6 +322,7 @@ const DEFAULT_STATE: SynthState = {
 
 	windowType: "off",
 	volume: 1,
+	czDacEnabled: false,
 
 	line1Level: 1,
 	lineOctave: 0,
@@ -414,6 +417,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 
 	setWindowType: (v) => set({ windowType: v }),
 	setVolume: (v) => set({ volume: v }),
+	setCzDacEnabled: (v) => set({ czDacEnabled: v }),
 
 	setLine1Level: (v) => set({ line1Level: v }),
 	setLineOctave: (v) => set({ lineOctave: toIntegerInRange(v, -2, 2) }),
@@ -613,6 +617,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			},
 			frequency: 440,
 			volume: s.volume,
+			czDacEnabled: s.czDacEnabled,
 			tempoBpm: s.tempoBpm,
 			polyMode: s.polyMode,
 			legato: s.legato,
@@ -716,6 +721,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			algoBlendB: safe(p.line2?.algoBlend, 0),
 			windowType: (p.line1?.window as WindowType) ?? "off",
 			volume: safe(p.volume, 1),
+			czDacEnabled: p.czDacEnabled ?? false,
 			line1Level: safe(p.line1?.dcaBase, 1),
 			line2Level: safe(p.line2?.dcaBase, 1),
 			lineOctave: safe(p.line1?.octave, 0),

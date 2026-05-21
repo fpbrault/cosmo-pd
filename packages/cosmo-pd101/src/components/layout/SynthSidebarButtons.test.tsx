@@ -6,11 +6,13 @@ import SynthSidebarButtons from "./SynthSidebarButtons";
 const setMainPanelMode = vi.fn();
 const setFxSlotType = vi.fn();
 const setFxSlotEnabled = vi.fn();
+const setCzDacEnabled = vi.fn();
 const setModMode = vi.fn();
 const clearPendingDestination = vi.fn();
 const setLearnMode = vi.fn();
 
 let modModeValue = false;
+let czDacEnabledValue = false;
 let fxSlotsValue = Array.from({ length: 6 }, () => ({
 	type: "empty",
 	params: { enabled: false },
@@ -71,8 +73,10 @@ vi.mock("@/features/synth/synthStore", () => ({
 		(selector: (state: Record<string, unknown>) => unknown) =>
 			selector({
 				fxSlots: fxSlotsValue,
+				czDacEnabled: czDacEnabledValue,
 				setFxSlotType,
 				setFxSlotEnabled,
+				setCzDacEnabled,
 			}),
 	),
 }));
@@ -87,10 +91,12 @@ describe("SynthSidebarButtons", () => {
 		setMainPanelMode.mockReset();
 		setFxSlotType.mockReset();
 		setFxSlotEnabled.mockReset();
+		setCzDacEnabled.mockReset();
 		setModMode.mockReset();
 		clearPendingDestination.mockReset();
 		setLearnMode.mockReset();
 		modModeValue = false;
+		czDacEnabledValue = false;
 		fxSlotsValue = Array.from({ length: 6 }, () => ({
 			type: "empty",
 			params: { enabled: false },
@@ -141,7 +147,7 @@ describe("SynthSidebarButtons", () => {
 		expect(setLearnMode).toHaveBeenCalledWith(false);
 	});
 
-	it("renders a Vintage button that is currently inert", () => {
+	it("toggles the CZ DAC when Vintage is clicked", () => {
 		const onOpenGlobal = vi.fn();
 		const onOpenMidiLearn = vi.fn();
 		render(
@@ -152,10 +158,11 @@ describe("SynthSidebarButtons", () => {
 				onOpenMidiLearn={onOpenMidiLearn}
 			/>,
 		);
-		fireEvent.click(screen.getByRole("button", { name: "Vintage" }));
+		fireEvent.click(screen.getByRole("button", { name: "Vint age" }));
 		expect(onOpenGlobal).not.toHaveBeenCalled();
 		expect(onOpenMidiLearn).not.toHaveBeenCalled();
 		expect(setModMode).not.toHaveBeenCalled();
+		expect(setCzDacEnabled).toHaveBeenCalledWith(true);
 		expect(setFxSlotEnabled).not.toHaveBeenCalled();
 		expect(setFxSlotType).not.toHaveBeenCalled();
 	});

@@ -77,7 +77,7 @@ const LEFT_BUTTONS: SidebarButton[] = [
 	{ id: "global", topLabel: "Global", bottomLabel: "" },
 	{ id: "midiLearn", topLabel: "MIDI", bottomLabel: "Learn" },
 	{ id: "modTarget", topLabel: "MOD+", bottomLabel: "" },
-	{ id: "vintage", topLabel: "Vintage", bottomLabel: "" },
+	{ id: "vintage", topLabel: "Vint", bottomLabel: "age" },
 ];
 
 const FX_BUTTONS: SidebarButton[] = [
@@ -105,8 +105,10 @@ export default memo(function SynthSidebarButtons({
 	);
 
 	const fxSlots = useSynthStore((s) => s.fxSlots);
+	const czDacEnabled = useSynthStore((s) => s.czDacEnabled);
 	const setFxSlotType = useSynthStore((s) => s.setFxSlotType);
 	const setFxSlotEnabled = useSynthStore((s) => s.setFxSlotEnabled);
+	const setCzDacEnabled = useSynthStore((s) => s.setCzDacEnabled);
 
 	const getSlotEnabled = (slot: number): boolean => {
 		const config = fxSlots[slot];
@@ -128,6 +130,7 @@ export default memo(function SynthSidebarButtons({
 
 	const isEnabled = (buttonId: string): boolean => {
 		if (buttonId === "modTarget") return modTargetMode;
+		if (buttonId === "vintage") return czDacEnabled;
 		const slot = FX_BUTTON_SLOT_INDEX[buttonId];
 		if (slot != null) return getSlotEnabled(slot);
 		return false;
@@ -177,6 +180,7 @@ export default memo(function SynthSidebarButtons({
 			return;
 		}
 		if (buttonId === "vintage") {
+			setCzDacEnabled(!czDacEnabled);
 			return;
 		}
 
