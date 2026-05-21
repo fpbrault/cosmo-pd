@@ -37,7 +37,7 @@ jobs:
            rm -f ../../cosmo-pd101-plugin/webview/public/cosmo-synth-engine-wasm/.gitignore
 
       - name: Upload WASM artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
            name: cosmo-synth-engine-wasm
            path: packages/cosmo-pd101-plugin/webview/public/cosmo-synth-engine-wasm/
@@ -58,7 +58,7 @@ jobs:
         run: cargo run --release --features specta-bindings --bin export-specta-bindings
 
       - name: Upload bindings artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: specta-bindings
           path: packages/cosmo-pd101/src/lib/synth/bindings/synth.ts
