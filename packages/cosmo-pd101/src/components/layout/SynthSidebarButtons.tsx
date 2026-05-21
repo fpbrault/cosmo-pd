@@ -3,7 +3,8 @@ import CzTabButton, {
 	type CzTabButtonColor,
 	type CzTabButtonLedColor,
 } from "@/components/primitives/CzTabButton";
-import { useSynthParam } from "@/features/synth/SynthParamController";
+import { useMidiLearnStore } from "@/features/synth/midiLearnStore";
+import { useModulationTargetStore } from "@/features/synth/modulationTargetStore";
 import { useSynthStore } from "@/features/synth/synthStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import type { FxSlotType } from "@/lib/synth/bindings/synth";
@@ -74,9 +75,9 @@ const FX_TYPE_SHORT_LABELS: Record<FxSlotType, string> = {
 
 const LEFT_BUTTONS: SidebarButton[] = [
 	{ id: "global", topLabel: "Global", bottomLabel: "" },
-	{ id: "polyMode", topLabel: "Poly8", bottomLabel: "" },
 	{ id: "midiLearn", topLabel: "MIDI", bottomLabel: "Learn" },
-	{ id: "portamentoEnabled", topLabel: "Porta", bottomLabel: "Mento" },
+	{ id: "modTarget", topLabel: "MOD+", bottomLabel: "" },
+	{ id: "vintage", topLabel: "Vintage", bottomLabel: "" },
 ];
 
 const FX_BUTTONS: SidebarButton[] = [
@@ -95,9 +96,13 @@ export default memo(function SynthSidebarButtons({
 	onOpenMidiLearn,
 }: SynthSidebarButtonsProps) {
 	const setMainPanelMode = useSynthUiStore((state) => state.setMainPanelMode);
-	const { value: polyMode, setValue: setPolyMode } = useSynthParam("polyMode");
-	const { value: portamentoEnabled, setValue: setPortamentoEnabled } =
-		useSynthParam("portamentoEnabled");
+	const modTargetMode = useModulationTargetStore((state) => state.modMode);
+	const setModTargetMode = useModulationTargetStore(
+		(state) => state.setModMode,
+	);
+	const clearPendingDestination = useModulationTargetStore(
+		(state) => state.clearPendingDestination,
+	);
 
 	const fxSlots = useSynthStore((s) => s.fxSlots);
 	const setFxSlotType = useSynthStore((s) => s.setFxSlotType);
@@ -122,20 +127,17 @@ export default memo(function SynthSidebarButtons({
 	};
 
 	const isEnabled = (buttonId: string): boolean => {
-		if (buttonId === "polyMode") return polyMode === "mono";
-		if (buttonId === "portamentoEnabled") return portamentoEnabled as boolean;
+		if (buttonId === "modTarget") return modTargetMode;
 		const slot = FX_BUTTON_SLOT_INDEX[buttonId];
 		if (slot != null) return getSlotEnabled(slot);
 		return false;
 	};
 
 	const getButtonColor = (buttonId: string): CzTabButtonColor => {
-		if (buttonId === "global") return "cyan";
-		if (buttonId === "midiLearn") return "grey";
-		if (buttonId === "polyMode" || buttonId === "portamentoEnabled") {
-			return "blue";
-		}
-		return "black";
+		if (buttonId === "global") return "grey";
+		if (buttonId === "midiLearn") return "red";
+		if (buttonId === "modTarget") return "cyan";
+		return "blue";
 	};
 
 	const getCustomColor = (buttonId: string): string | undefined => {
@@ -165,12 +167,16 @@ export default memo(function SynthSidebarButtons({
 			onOpenMidiLearn();
 			return;
 		}
-		if (buttonId === "polyMode") {
-			setPolyMode(polyMode === "poly8" ? "mono" : "poly8");
+		if (buttonId === "modTarget") {
+			const nextMode = !modTargetMode;
+			setModTargetMode(nextMode);
+			clearPendingDestination();
+			if (nextMode) {
+				useMidiLearnStore.getState().setLearnMode(false);
+			}
 			return;
 		}
-		if (buttonId === "portamentoEnabled") {
-			setPortamentoEnabled(!portamentoEnabled);
+		if (buttonId === "vintage") {
 			return;
 		}
 
@@ -210,13 +216,7 @@ export default memo(function SynthSidebarButtons({
 				onLongPress={
 					slot != null ? () => handleLongPress(button.id) : undefined
 				}
-				topLabel={
-					button.id === "polyMode"
-						? active
-							? "Mono"
-							: "Poly8"
-						: button.topLabel
-				}
+				topLabel={button.topLabel}
 				bottomLabel={bottomLabel}
 			/>
 		);

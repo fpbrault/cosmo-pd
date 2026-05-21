@@ -227,11 +227,6 @@ export default function ControlKnob({
 
 	const normalizedValue = normalizeValueCurved(value, min, max, curve);
 	const bipolarNorm = bipolar ? bipolarCenterNorm(min, max) : null;
-	const arcOuterPx =
-		((DEFAULT_ARC_GEOMETRY.radius + DEFAULT_ARC_GEOMETRY.trackWidth / 2) /
-			DEFAULT_ARC_GEOMETRY.viewBoxSize) *
-		size;
-	const modButtonOffsetY = Math.round(arcOuterPx * 1.2);
 
 	// Crop empty SVG space below the arc track
 	const bottomDeadPx = Math.round(
@@ -242,6 +237,7 @@ export default function ControlKnob({
 			DEFAULT_ARC_GEOMETRY.viewBoxSize) *
 			size,
 	);
+	const topDeadPx = Math.round((8 / DEFAULT_ARC_GEOMETRY.viewBoxSize) * size);
 
 	const displayValue = valueFormatter
 		? valueFormatter(value)
@@ -297,7 +293,10 @@ export default function ControlKnob({
 		) : null;
 
 	const knobButton = (
-		<div className="relative" style={{ marginBottom: -bottomDeadPx }}>
+		<div
+			className="relative"
+			style={{ marginTop: -topDeadPx, marginBottom: -bottomDeadPx }}
+		>
 			<Button
 				ref={buttonRef}
 				type="button"
@@ -379,10 +378,6 @@ export default function ControlKnob({
 					destinationId={resolvedDestination}
 					label={label}
 					accentColor={color ?? VARIANT_ACCENT_COLOR[variant]}
-					iconButtonStyle={{
-						left: "50%",
-						top: `calc(50% - ${modButtonOffsetY}px)`,
-					}}
 				>
 					{knobButton}
 				</ModulatableControl>

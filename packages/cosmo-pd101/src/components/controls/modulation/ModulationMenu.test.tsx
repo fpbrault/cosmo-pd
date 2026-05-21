@@ -23,9 +23,9 @@ describe("ModulationMenu", () => {
 		);
 
 		expect(screen.getByText("Volume")).toBeInTheDocument();
-		// Source badges use short labels (LFO1, MW)
-		expect(screen.getByText("LFO1")).toBeInTheDocument();
-		expect(screen.getByText("MW")).toBeInTheDocument();
+		expect(screen.getAllByText("LFO 1").length).toBeGreaterThan(0);
+		expect(screen.getAllByText("Mod Wheel").length).toBeGreaterThan(0);
+		expect(screen.getByText("+50%")).toBeInTheDocument();
 	});
 
 	it("dispatches route actions", () => {
@@ -54,16 +54,17 @@ describe("ModulationMenu", () => {
 		expect(onToggleEnabled).toHaveBeenCalledWith(0);
 
 		// Remove second route (index 1 among remove buttons)
-		fireEvent.click(screen.getAllByRole("button", { name: "Remove route" })[1]);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Remove Mod Wheel route" }),
+		);
 		expect(onRemoveRoute).toHaveBeenCalledWith(1);
 
-		// Adjust amount on first route using keyboard interaction on knob spinbutton
-		fireEvent.keyDown(screen.getAllByRole("spinbutton")[0], {
-			key: "ArrowDown",
+		// Adjust amount on first route using the route depth slider
+		fireEvent.change(screen.getByRole("slider", { name: "LFO 1 depth" }), {
+			target: { value: "0.1" },
 		});
 		expect(onAmountChange).toHaveBeenCalledTimes(1);
-		expect(onAmountChange).toHaveBeenCalledWith(0, expect.any(Number));
-		expect(onAmountChange.mock.calls[0]?.[1]).toBeLessThan(0.5);
+		expect(onAmountChange).toHaveBeenCalledWith(0, 0.1);
 
 		// Close via header × button
 		fireEvent.click(
@@ -72,7 +73,7 @@ describe("ModulationMenu", () => {
 		expect(onClose).toHaveBeenCalledTimes(1);
 	});
 
-	it("dispatches add source action via source picker popover", () => {
+	it("dispatches add source action from source cards", () => {
 		const onAddRoute = vi.fn();
 		render(
 			<ModulationMenu
@@ -86,14 +87,7 @@ describe("ModulationMenu", () => {
 			/>,
 		);
 
-		// Open the source picker popover
-		fireEvent.click(screen.getByRole("button", { name: "Pick Source" }));
-
-		// Select "Velocity" from the popover grid
-		fireEvent.click(screen.getByRole("button", { name: "Velocity" }));
-
-		// Click Add button (shows "Add Velocity" since velocity was selected)
-		fireEvent.click(screen.getByRole("button", { name: "Add Velocity" }));
+		fireEvent.click(screen.getByRole("button", { name: "Velocity Add" }));
 		expect(onAddRoute).toHaveBeenCalledWith("velocity");
 	});
 });

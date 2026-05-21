@@ -12,7 +12,6 @@ async function expectAddRouteForDestination(
 	page: Page,
 	options: {
 		controlName: RegExp;
-		modulationButtonName: RegExp;
 		dialogName: RegExp;
 		expectedDestination: string;
 		beforeAdd?: () => Promise<void>;
@@ -20,17 +19,15 @@ async function expectAddRouteForDestination(
 ): Promise<void> {
 	await options.beforeAdd?.();
 
+	const modButton = page.getByRole("button", { name: /^mod\+$/i });
+	await expect(modButton).toBeVisible();
+	await modButton.click();
+
 	const control = page.getByRole("spinbutton", { name: options.controlName });
 	await expect(control.first()).toBeVisible();
-	await control.first().hover();
-
-	const modulationButton = page.getByRole("button", {
-		name: options.modulationButtonName,
-	});
-	await expect(modulationButton.first()).toBeVisible();
 
 	await page.evaluate(() => window.__MOCK_BRIDGE__?.clearMessages());
-	await modulationButton.first().click();
+	await control.first().click();
 
 	const modulationMenu = page.getByRole("dialog", {
 		name: options.dialogName,
@@ -38,7 +35,7 @@ async function expectAddRouteForDestination(
 	await expect(modulationMenu.first()).toBeVisible();
 	await modulationMenu
 		.first()
-		.getByRole("button", { name: /^add\s+/i })
+		.getByRole("button", { name: /lfo 1\s*add/i })
 		.click();
 
 	await waitForMessageMatching(page, (message) => {
@@ -77,7 +74,6 @@ test.describe("Mod matrix plugin bridge", () => {
 	test("adding a mod route should invoke setModMatrix", async ({ page }) => {
 		await expectAddRouteForDestination(page, {
 			controlName: /^main volume$/i,
-			modulationButtonName: /modulation for main volume/i,
 			dialogName: /modulation for main volume/i,
 			expectedDestination: "volume",
 		});
@@ -88,7 +84,6 @@ test.describe("Mod matrix plugin bridge", () => {
 	}) => {
 		await expectAddRouteForDestination(page, {
 			controlName: /^curve$/i,
-			modulationButtonName: /modulation for curve/i,
 			dialogName: /modulation for curve/i,
 			expectedDestination: "line1AlgoParam1",
 			beforeAdd: async () => {
@@ -112,7 +107,6 @@ test.describe("Mod matrix plugin bridge", () => {
 	}) => {
 		await expectAddRouteForDestination(page, {
 			controlName: /^dcw amt$/i,
-			modulationButtonName: /modulation for dcw amt/i,
 			dialogName: /modulation for dcw amt/i,
 			expectedDestination: "line1DcwBase",
 		});
@@ -123,7 +117,6 @@ test.describe("Mod matrix plugin bridge", () => {
 	}) => {
 		await expectAddRouteForDestination(page, {
 			controlName: /mix/i,
-			modulationButtonName: /modulation for .*mix/i,
 			dialogName: /modulation for .*mix/i,
 			expectedDestination: "chorusMix",
 			beforeAdd: async () => {

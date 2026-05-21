@@ -8,6 +8,7 @@ import {
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
 import { ModMatrixProvider } from "@/context/ModMatrixContext";
+import { useModulationTargetStore } from "@/features/synth/modulationTargetStore";
 import type { ModMatrix } from "@/lib/synth/bindings/synth";
 import ControlKnob from "../ControlKnob";
 
@@ -31,31 +32,33 @@ function ModulationHarness() {
 
 describe("ModulatableControl browser integration", () => {
 	it("adds and removes routes through the modulation menu", async () => {
+		useModulationTargetStore.getState().setModMode(true);
+		useModulationTargetStore.getState().clearPendingDestination();
 		render(<ModulationHarness />);
 
-		const modulationButton = screen.getByRole("button", {
-			name: /modulation for volume/i,
+		const knob = screen.getByRole("spinbutton", {
+			name: /volume/i,
 		});
 
-		// Open the panel
-		fireEvent.click(modulationButton);
+		fireEvent.pointerDown(knob);
 
-		// Add a route via Pick Source popover (default source is lfo1)
-		fireEvent.click(screen.getByRole("button", { name: "Pick Source" }));
-		fireEvent.click(screen.getByRole("button", { name: "LFO 1" }));
-		fireEvent.click(screen.getByRole("button", { name: "Add LFO 1" }));
-		expect(modulationButton).toHaveTextContent("1");
-
-		// Remove the route
 		const dialog = screen.getByRole("dialog", {
 			name: /modulation for volume/i,
 		});
-		const removeButtons = within(dialog).getAllByRole("button", {
-			name: "Remove route",
-		});
-		fireEvent.click(removeButtons[0]);
+
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: /lfo 1\s*add/i }),
+		);
+		expect(within(dialog).getByText("1 Route")).toBeInTheDocument();
+
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Remove LFO 1 route" }),
+		);
 		await waitFor(() => {
-			expect(modulationButton).toHaveTextContent("+");
+			expect(within(dialog).getByText("0 Routes")).toBeInTheDocument();
 		});
+
+		useModulationTargetStore.getState().setModMode(false);
+		useModulationTargetStore.getState().clearPendingDestination();
 	});
 });

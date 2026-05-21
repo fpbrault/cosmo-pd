@@ -4,13 +4,13 @@ import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import SynthSidebarButtons from "./SynthSidebarButtons";
 
 const setMainPanelMode = vi.fn();
-const setPolyMode = vi.fn();
-const setPortamentoEnabled = vi.fn();
 const setFxSlotType = vi.fn();
 const setFxSlotEnabled = vi.fn();
+const setModMode = vi.fn();
+const clearPendingDestination = vi.fn();
+const setLearnMode = vi.fn();
 
-let polyModeValue: "poly8" | "mono" = "poly8";
-let portamentoEnabledValue = false;
+let modModeValue = false;
 let fxSlotsValue = Array.from({ length: 6 }, () => ({
 	type: "empty",
 	params: { enabled: false },
@@ -47,16 +47,23 @@ vi.mock("@/features/synth/synthUiStore", () => ({
 	})),
 }));
 
-vi.mock("@/features/synth/SynthParamController", () => ({
-	useSynthParam: vi.fn((key: string) => {
-		if (key === "polyMode") {
-			return { value: polyModeValue, setValue: setPolyMode };
-		}
-		return {
-			value: portamentoEnabledValue,
-			setValue: setPortamentoEnabled,
-		};
-	}),
+vi.mock("@/features/synth/modulationTargetStore", () => ({
+	useModulationTargetStore: vi.fn(
+		(selector: (state: Record<string, unknown>) => unknown) =>
+			selector({
+				modMode: modModeValue,
+				setModMode,
+				clearPendingDestination,
+			}),
+	),
+}));
+
+vi.mock("@/features/synth/midiLearnStore", () => ({
+	useMidiLearnStore: {
+		getState: () => ({
+			setLearnMode,
+		}),
+	},
 }));
 
 vi.mock("@/features/synth/synthStore", () => ({
@@ -78,12 +85,12 @@ describe("SynthSidebarButtons", () => {
 			} as never),
 		);
 		setMainPanelMode.mockReset();
-		setPolyMode.mockReset();
-		setPortamentoEnabled.mockReset();
 		setFxSlotType.mockReset();
 		setFxSlotEnabled.mockReset();
-		polyModeValue = "poly8";
-		portamentoEnabledValue = false;
+		setModMode.mockReset();
+		clearPendingDestination.mockReset();
+		setLearnMode.mockReset();
+		modModeValue = false;
 		fxSlotsValue = Array.from({ length: 6 }, () => ({
 			type: "empty",
 			params: { enabled: false },
@@ -119,7 +126,7 @@ describe("SynthSidebarButtons", () => {
 		expect(onOpenMidiLearn).toHaveBeenCalledTimes(1);
 	});
 
-	it("toggles poly and portamento controls", () => {
+	it("toggles modulation targeting mode", () => {
 		render(
 			<SynthSidebarButtons
 				globalOpen={false}
@@ -128,10 +135,29 @@ describe("SynthSidebarButtons", () => {
 				onOpenMidiLearn={vi.fn()}
 			/>,
 		);
-		fireEvent.click(screen.getByRole("button", { name: "Poly8" }));
-		fireEvent.click(screen.getByRole("button", { name: "Porta Mento" }));
-		expect(setPolyMode).toHaveBeenCalledWith("mono");
-		expect(setPortamentoEnabled).toHaveBeenCalledWith(true);
+		fireEvent.click(screen.getByRole("button", { name: "MOD+" }));
+		expect(setModMode).toHaveBeenCalledWith(true);
+		expect(clearPendingDestination).toHaveBeenCalledTimes(1);
+		expect(setLearnMode).toHaveBeenCalledWith(false);
+	});
+
+	it("renders a Vintage button that is currently inert", () => {
+		const onOpenGlobal = vi.fn();
+		const onOpenMidiLearn = vi.fn();
+		render(
+			<SynthSidebarButtons
+				globalOpen={false}
+				onOpenGlobal={onOpenGlobal}
+				midiLearnOpen={false}
+				onOpenMidiLearn={onOpenMidiLearn}
+			/>,
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Vintage" }));
+		expect(onOpenGlobal).not.toHaveBeenCalled();
+		expect(onOpenMidiLearn).not.toHaveBeenCalled();
+		expect(setModMode).not.toHaveBeenCalled();
+		expect(setFxSlotEnabled).not.toHaveBeenCalled();
+		expect(setFxSlotType).not.toHaveBeenCalled();
 	});
 
 	it("toggles enabled fx slots and initializes default empty slots", () => {
