@@ -94,7 +94,6 @@ describe("useSynthStore", () => {
 			schemaVersion: 1,
 			params: {
 				volume: 0.5,
-				czDacEnabled: true,
 				tempoBpm: 96,
 				line1: {
 					dcwBase: 0.2,
