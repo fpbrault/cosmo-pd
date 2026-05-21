@@ -4,10 +4,6 @@ pub(crate) struct CzDacColor {
     pub env: f32,
     pub slew_env: f32,
     pub prev_q: f32,
-    pub in_level_env_sq: f32,
-    pub out_level_env_sq: f32,
-    pub makeup_gain: f32,
-    pub was_quiet: bool,
     pub low_state: f32,
     pub honk_hp_state: f32,
     pub honk_lp_state: f32,
@@ -21,10 +17,6 @@ impl CzDacColor {
             env: 0.0,
             slew_env: 0.0,
             prev_q: 0.0,
-            in_level_env_sq: 0.0,
-            out_level_env_sq: 0.0,
-            makeup_gain: 1.0,
-            was_quiet: true,
             low_state: 0.0,
             honk_hp_state: 0.0,
             honk_lp_state: 0.0,
@@ -49,14 +41,7 @@ impl CzDacColor {
         const HONK_LP_HZ: f32 = 1_700.0;
         const AIR_HP_HZ: f32 = 5_500.0;
         const HF_ROLLOFF_HZ: f32 = 40_000.0;
-        const LOUDNESS_TRACK_TIME_SECONDS: f32 = 0.08;
-        const MAKEUP_GAIN_ATTACK_SECONDS: f32 = 0.012;
-        const MAKEUP_GAIN_RELEASE_SECONDS: f32 = 0.12;
-        const MIN_MAKEUP_GAIN: f32 = 0.25;
-        const MAX_MAKEUP_GAIN: f32 = 8.0;
-        const LEVEL_FLOOR: f32 = 1.0e-5;
-        const STATIC_COLOR_TRIM: f32 = 1.58; // ~+4 dB
-        const QUIET_THRESHOLD: f32 = 1.0e-4;
+        const STATIC_COLOR_TRIM: f32 = 2.084_508; // Geometric-mean loudness match across factory preset calibration.
 
         let sample_rate_hz = sr.max(1.0);
 
@@ -97,34 +82,6 @@ impl CzDacColor {
             sample_rate_hz,
         );
 
-        let level_alpha = 1.0 - (-1.0 / (LOUDNESS_TRACK_TIME_SECONDS * sample_rate_hz)).exp();
-        let in_sq = input * input;
-        let out_sq = out * out;
-        let input_abs = input.abs();
-        let quiet_now = input_abs <= QUIET_THRESHOLD;
-
-        // Keep the last stable gain through silence to avoid re-trigger clicks.
-        // Resume tracking once signal is present.
-        if !quiet_now {
-            self.in_level_env_sq += (in_sq - self.in_level_env_sq) * level_alpha;
-            self.out_level_env_sq += (out_sq - self.out_level_env_sq) * level_alpha;
-        }
-
-        let in_rms = self.in_level_env_sq.max(LEVEL_FLOOR).sqrt();
-        let out_rms = self.out_level_env_sq.max(LEVEL_FLOOR).sqrt();
-        let target_gain =
-            ((in_rms / out_rms) * STATIC_COLOR_TRIM).clamp(MIN_MAKEUP_GAIN, MAX_MAKEUP_GAIN);
-
-        let gain_alpha = if target_gain > self.makeup_gain {
-            1.0 - (-1.0 / (MAKEUP_GAIN_ATTACK_SECONDS * sample_rate_hz)).exp()
-        } else {
-            1.0 - (-1.0 / (MAKEUP_GAIN_RELEASE_SECONDS * sample_rate_hz)).exp()
-        };
-        if !quiet_now {
-            self.makeup_gain += (target_gain - self.makeup_gain) * gain_alpha;
-        }
-        self.was_quiet = quiet_now;
-
-        (out * self.makeup_gain).clamp(-1.0, 1.0)
+        (out * STATIC_COLOR_TRIM).clamp(-1.0, 1.0)
     }
 }
