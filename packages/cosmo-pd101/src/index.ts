@@ -4,9 +4,12 @@ export {
 	type PerformanceMetrics,
 	PerformanceMonitor,
 } from "./components/performance/PerformanceMonitor";
-export { default as SynthRenderer } from "./components/renderer/SynthRenderer";
-export type { SharedPhaseDistortionVisualizerProps } from "./components/SharedPhaseDistortionVisualizer";
-export { SharedPhaseDistortionVisualizer } from "./components/SharedPhaseDistortionVisualizer";
+export {
+	default as SynthRenderer,
+	SharedPhaseDistortionVisualizer,
+	type SynthRendererProps,
+	type SynthRendererProps as SharedPhaseDistortionVisualizerProps,
+} from "./components/renderer/SynthRenderer";
 export { usePluginBridgeSynthEngine } from "./features/synth/engine/pluginBridgeSynthEngineAdapter";
 export { useAudioEngine } from "./features/synth/hooks/useAudioEngine";
 export { useMidiLearnBindings } from "./features/synth/hooks/useMidiLearnBindings";
@@ -53,15 +56,15 @@ export type {
 	ModMatrix,
 	StepEnvData,
 } from "./lib/synth/bindings/synth";
+export {
+	cosmoWorkletUrl,
+	synthBindingsUrl,
+	synthWasmUrl,
+} from "./lib/synth/cosmoWorkletUrl";
 export { convertDecodedPatchToSynthPreset } from "./lib/synth/czPresetConverter";
 export { DEFAULT_SYNTH_PRESETS } from "./lib/synth/defaultPresets";
 export { FACTORY_CZ_PRESETS } from "./lib/synth/factoryCzPresets";
 export { noteToFreq } from "./lib/synth/pdAlgorithms";
-export {
-	pdVisualizerWorkletUrl,
-	synthBindingsUrl,
-	synthWasmUrl,
-} from "./lib/synth/pdVisualizerWorkletUrl";
 export type {
 	EnginePresetV1,
 	FrontendPresetV1,

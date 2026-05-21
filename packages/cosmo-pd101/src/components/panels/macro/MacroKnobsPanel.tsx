@@ -1,6 +1,6 @@
 import { memo, useCallback } from "react";
 import { MdSettings } from "react-icons/md";
-import { ControlKnob } from "@/components/controls/ControlKnob";
+import ControlKnob from "@/components/controls/ControlKnob";
 import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 import { useSynthStore } from "@/features/synth/synthStore";
 

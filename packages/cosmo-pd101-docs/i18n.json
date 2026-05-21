@@ -1,0 +1,46 @@
+{
+	"home": { "en": "Home", "fr": "Accueil" },
+	"guide": { "en": "Guide", "fr": "Guide" },
+	"gettingStarted": { "en": "Getting Started", "fr": "Pour commencer" },
+	"quickStart": { "en": "Quick Start", "fr": "Démarrage rapide" },
+	"webApp": { "en": "Web App", "fr": "Application Web" },
+	"dawPlugin": { "en": "DAW Plugin", "fr": "Plugin DAW" },
+	"synthReference": {
+		"en": "Synth Reference",
+		"fr": "Référence du synthétiseur"
+	},
+	"overview": { "en": "Overview", "fr": "Vue d'ensemble" },
+	"oscillators": { "en": "Oscillators", "fr": "Oscillateurs" },
+	"algorithms": { "en": "Algorithms", "fr": "Algorithmes" },
+	"envelopes": { "en": "Envelopes", "fr": "Enveloppes" },
+	"modulation": { "en": "Modulation", "fr": "Modulation" },
+	"effects": { "en": "Effects", "fr": "Effets" },
+	"globalControls": { "en": "Global Controls", "fr": "Commandes globales" },
+	"presets": { "en": "Presets", "fr": "Presets" },
+	"managingPresets": { "en": "Managing Presets", "fr": "Gestion des presets" },
+	"sysex": { "en": "SysEx Import / Export", "fr": "Import / Export SysEx" },
+	"troubleshooting": { "en": "Troubleshooting", "fr": "Dépannage" },
+	"support": { "en": "Support", "fr": "Assistance" },
+	"whatYouNeed": { "en": "What You Need", "fr": "Ce dont vous avez besoin" },
+	"firstSound": { "en": "First Sound", "fr": "Premier son" },
+	"interfaceAtGlance": {
+		"en": "The Interface at a Glance",
+		"fr": "L'interface en un coup d'œil"
+	},
+	"midiController": {
+		"en": "Connecting a MIDI Controller",
+		"fr": "Connexion d'un contrôleur MIDI"
+	},
+	"keyboardShortcuts": {
+		"en": "Keyboard Shortcuts",
+		"fr": "Raccourcis clavier"
+	},
+	"midiLearn": { "en": "MIDI Learn", "fr": "MIDI Learn" },
+	"miniKeyboard": { "en": "Mini Keyboard", "fr": "Mini-clavier" },
+	"supportProject": { "en": "Support the Project", "fr": "Soutenir le projet" },
+	"buildingFromSource": {
+		"en": "Building from Source",
+		"fr": "Compiler depuis les sources"
+	},
+	"gatekeeper": { "en": "macOS Gatekeeper", "fr": "Gatekeeper macOS" }
+}

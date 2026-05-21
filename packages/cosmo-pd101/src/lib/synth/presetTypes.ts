@@ -8,13 +8,13 @@ export type PresetMetadata = {
 	tags: PresetTagOptions[];
 };
 
-export type ExtraParams = {
+type ExtraParams = {
 	params: {
 		macroLabels?: string[];
 	};
 };
 
-export type FrontendPresetData = EnginePresetV1 & ExtraParams;
+type FrontendPresetData = EnginePresetV1 & ExtraParams;
 
 export type FrontendPresetV1 = {
 	id: string;

@@ -10,16 +10,9 @@
 |------|---------|
 | Dev server | `bun run dev` |
 | Build | `bun run build` (runs `tsc && vite build`) |
-| Tauri dev | `bun run tauri dev` |
-| Lint | `bun run lint` (Biome check) |
+| Lint | `bun run lint` |
 | Lint & fix | `bun run lint:fix` |
-| Unit tests | `bun run test:unit` |
-| Browser tests | `bun run test:browser` |
-| All tests | `bun run test:all` |
-| Component tests | `bun run test:component` |
-| Coverage | `bun run test:coverage` |
-| DB generate migration | `bun run db:generate` |
-| DB migrate | `bun run db:migrate` (requires `DATABASE_URL`) |
+| Unit tests | `bun run test` |
 
 **Order**: lint → typecheck (via `bun run build`) → test.
 
@@ -29,8 +22,9 @@ Bun monorepo. Main packages:
 
 - `packages/cosmo-synth-engine` — Rust/WASM phase distortion engine
 - `packages/cosmo-pd101` — reusable synth UI/library package; exports synth-specific components, hooks, preset utilities, and SysEx utilities consumed by the plugin webview
-- `packages/cosmo-pd101-plugin` — VST3/CLAP/AUv2 plugin host (nih-plug); contains a thin `webview/` app shell that embeds the shared `cosmo-pd101` library
-- `packages/xtask` — Build automation
+- `packages/cosmo-pd101-plugin` — VST3/CLAP/AUv2 plugin; contains a thin `webview/` app shell that embeds the shared `cosmo-pd101` library
+- `packages/cosmo-pd101-plugin-auv3` — AUv3 plugin host xcode project
+- `packages/xtask` — Build automation. Only used for auv3
 
 
 ### `packages/cosmo-pd101/src/`
@@ -43,8 +37,8 @@ Bun monorepo. Main packages:
 
 ### `packages/cosmo-pd101-plugin/`
 
-- `src/` — Rust nih-plug plugin wrapper and native IPC bridge
-- `webview/src/` — Thin plugin app shell, nih-plug bridge, plugin-only harness/tests, update checks
+- `src/` — Rust truce (truce.audio) plugin wrapper and native IPC bridge
+- `webview/src/` — Thin plugin app shell, truce bridge, plugin-only harness/tests, update checks
 
 ## Conventions
 
@@ -72,12 +66,6 @@ Bun monorepo. Main packages:
 - Unit test files use `*.{test,spec}.{ts,tsx}` (excluding `.browser.test.`)
 - Setup injects `fake-indexeddb/auto` and `vitest-axe/extend-expect` for unit tests
 - CI runs `test:unit --run` then installs Playwright + runs `test:browser --run`
-
-## Database
-
-- Drizzle ORM with Postgres dialect; schema in `src/db/schema.ts`; migrations output to `drizzle/`
-- `db:migrate` requires `DATABASE_URL` env var
-- `db:generate` works with fallback connection string (no DB access needed)
 
 ## React Best Practices
 
@@ -131,17 +119,6 @@ Bun monorepo. Main packages:
 - Path alias `@/*` for absolute imports
 - No inline styles — use Tailwind/DaisyUI classes
 
-## Memory Management
-
-- **Memory Tools**: Use `memory_set`, `memory_replace`, and `memory_list` to:
-  - Remember information when explicitly asked.
-  - Recall information when asked.
-  - Proactively store useful project context or user preferences to maintain continuity.
-
-## Multi-agent Attribution
-
-This session may involve multiple agents. To determine which agent produced each response, call the `agent_attribution` tool.
-
 <!-- intent-skills:start -->
 # Skill mappings - when working in these areas, load the linked skill file into context.
 skills:
@@ -156,7 +133,3 @@ skills:
   - task: "Environment variables, .env files, process.env setup"
     load: "node_modules/dotenv/skills/dotenv/SKILL.md"
 <!-- intent-skills:end -->
-
-## Reference
-
-- Memory Plugin: https://github.com/joshuadavidthomas/opencode-agent-memory

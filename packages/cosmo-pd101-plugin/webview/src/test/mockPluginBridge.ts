@@ -30,14 +30,12 @@ const ALGO_ORDER = [
 	"pinch",
 	"fold",
 	"skew",
-	"quantize",
 	"twist",
 	"clip",
 	"ripple",
 	"mirror",
 	"fof",
 	"karpunk",
-	"sine",
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -345,7 +343,7 @@ export function installMockPluginBridge(): void {
 	let pendingInvokeReject: ((error: string) => void) | null = null;
 	let virtualModMatrix: { routes: unknown[] } = { routes: [] };
 
-	// Full params blob received from the last setParams IPC call (nih-plug bridge).
+	// Full params blob received from the last setParams IPC call.
 	// Used by pushParamUpdate/pushPluginParamUpdate to build valid full-param updates.
 	let virtualFullParams: FullParamsBlob | null = null;
 	// Scalar param snapshot from last setParams — used for change detection.

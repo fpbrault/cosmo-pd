@@ -23,32 +23,20 @@ const ALL_ALGOS = ALGO_DEFINITIONS.map((d) => d.id);
 const WARP_ALGOS = ALL_ALGOS.filter(
 	(id) => !(WAVEFORMS as string[]).includes(id),
 );
+export function isWarpAlgo(value: unknown): value is WarpAlgo {
+	return typeof value === "string" && (WARP_ALGOS as string[]).includes(value);
+}
 
 type WaveformId = CzWaveform;
 type WarpAlgo = Algo;
 
 export const DEFAULT_ALGO_REF: Algo = "cz101";
 
-export function isCzAlgo(value: unknown): value is "cz101" {
-	return value === "cz101";
-}
-
-export function isWarpAlgo(value: unknown): value is WarpAlgo {
-	return typeof value === "string" && (WARP_ALGOS as string[]).includes(value);
-}
-
-export function isWaveformId(value: unknown): value is WaveformId {
+function isWaveformId(value: unknown): value is WaveformId {
 	return typeof value === "string" && (WAVEFORMS as string[]).includes(value);
 }
 
-export function normalizeWaveformId(value: unknown): WaveformId {
-	if (typeof value === "string" && (WAVEFORMS as string[]).includes(value)) {
-		return value as WaveformId;
-	}
-	return "saw";
-}
-
-export function isAlgo(value: unknown): value is Algo {
+function isAlgo(value: unknown): value is Algo {
 	return typeof value === "string" && (ALL_ALGOS as string[]).includes(value);
 }
 
@@ -117,7 +105,7 @@ export function buildDefaultAlgoControls(algo: Algo): AlgoControlValueV1[] {
 	}));
 }
 
-export function getCzPresetDefaults(algo: Algo): {
+function getCzPresetDefaults(algo: Algo): {
 	waveform1: CzWaveform;
 	waveform2: CzWaveform;
 	windowFunction: WindowType;

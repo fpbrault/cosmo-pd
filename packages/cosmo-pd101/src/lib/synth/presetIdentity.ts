@@ -63,9 +63,7 @@ function fnv1a64(input: string): string {
 	return hash.toString(16).padStart(16, "0");
 }
 
-export function getPresetIdentityInput(
-	preset: PresetIdentityFields,
-): CanonicalJson {
+function getPresetIdentityInput(preset: PresetIdentityFields): CanonicalJson {
 	return normalizeCanonicalValue({
 		name: preset.name,
 		source: preset.source,

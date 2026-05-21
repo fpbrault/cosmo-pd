@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Button from "@/components/controls/Button";
-import { ControlKnob } from "@/components/controls/ControlKnob";
+import ControlKnob from "@/components/controls/ControlKnob";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";

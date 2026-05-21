@@ -223,12 +223,12 @@ fn scenarios() -> Vec<Scenario> {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
                 p.line_select = LineSelect::L1PlusL2Prime;
-                p.line1.algo = Algo::Sine;
+                p.line1.algo = Algo::Skew;
                 p.line1.algo2 = None;
                 p.line1.algo_blend = 0.0;
                 p.line1.dca_base = 0.85;
                 p.line1.dcw_base = 0.0;
-                p.line2.algo = Algo::Sine;
+                p.line2.algo = Algo::Skew;
                 p.line2.algo2 = None;
                 p.line2.algo_blend = 0.0;
                 p.line2.dca_base = 0.85;
@@ -287,10 +287,10 @@ fn scenarios() -> Vec<Scenario> {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
                 p.line_select = LineSelect::L1PlusL2Prime;
-                p.line1.algo = Algo::Sine;
+                p.line1.algo = Algo::Skew;
                 p.line1.algo2 = None;
                 p.line1.algo_blend = 0.0;
-                p.line2.algo = Algo::Sine;
+                p.line2.algo = Algo::Skew;
                 p.line2.algo2 = None;
                 p.line2.algo_blend = 0.0;
                 p.mod_matrix = heavy_mod_matrix();
@@ -318,10 +318,10 @@ fn scenarios() -> Vec<Scenario> {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
                 p.line_select = LineSelect::L1PlusL2Prime;
-                p.line1.algo = Algo::Sine;
+                p.line1.algo = Algo::Skew;
                 p.line1.algo2 = None;
                 p.line1.algo_blend = 0.0;
-                p.line2.algo = Algo::Sine;
+                p.line2.algo = Algo::Skew;
                 p.line2.algo2 = None;
                 p.line2.algo_blend = 0.0;
                 p.mod_matrix = ModMatrix::default();
@@ -347,7 +347,7 @@ fn scenarios() -> Vec<Scenario> {
                 p.poly_mode = PolyMode::Mono;
                 p.line_select = LineSelect::L1PlusL2Prime;
                 p.line1.algo = Algo::Saw;
-                p.line1.algo2 = Some(Algo::Sine);
+                p.line1.algo2 = Some(Algo::Skew);
                 p.line1.algo_blend = 0.15;
                 p.line1.dca_base = 0.85;
                 p.line2.algo = Algo::Pulse;
@@ -505,9 +505,9 @@ fn scenarios() -> Vec<Scenario> {
             build_params: || {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
-                p.line1.algo = Algo::Sine;
+                p.line1.algo = Algo::Skew;
                 p.line1.algo2 = None;
-                p.line2.algo = Algo::Sine;
+                p.line2.algo = Algo::Skew;
                 p.line2.algo2 = None;
                 p.mod_matrix = ModMatrix::default();
                 p.fx_slots = [
@@ -525,9 +525,9 @@ fn scenarios() -> Vec<Scenario> {
             build_param_variants: Some(|| {
                 let mut a = SynthParams::default();
                 a.poly_mode = PolyMode::Poly8;
-                a.line1.algo = Algo::Sine;
+                a.line1.algo = Algo::Skew;
                 a.line1.algo2 = None;
-                a.line2.algo = Algo::Sine;
+                a.line2.algo = Algo::Skew;
                 a.line2.algo2 = None;
                 a.volume = 0.35;
                 a.lfo.rate = 2.0;
@@ -550,9 +550,9 @@ fn scenarios() -> Vec<Scenario> {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
                 p.line_select = LineSelect::L1PlusL2Prime;
-                p.line1.algo = Algo::Sine;
+                p.line1.algo = Algo::Skew;
                 p.line1.algo2 = None;
-                p.line2.algo = Algo::Sine;
+                p.line2.algo = Algo::Skew;
                 p.line2.algo2 = None;
                 p.mod_matrix = ModMatrix::default();
                 p.fx_slots = [
@@ -629,9 +629,9 @@ fn scenarios() -> Vec<Scenario> {
             build_params: || {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
-                p.line1.algo = Algo::Sine;
+                p.line1.algo = Algo::Skew;
                 p.line1.algo2 = None;
-                p.line2.algo = Algo::Sine;
+                p.line2.algo = Algo::Skew;
                 p.line2.algo2 = None;
                 p.lfo.rate = 20.0; // Fast LFO (high sine sample rate)
                 p.lfo2.rate = 18.5;
@@ -657,7 +657,7 @@ fn scenarios() -> Vec<Scenario> {
             build_params: || {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
-                p.line1.algo = Algo::Sine;
+                p.line1.algo = Algo::Skew;
                 p.line2.algo = Algo::Saw;
                 p.lfo.rate = 3.5;
                 p.lfo2.rate = 2.75;
@@ -701,7 +701,7 @@ fn scenarios() -> Vec<Scenario> {
                 p.line1.algo2 = Some(Algo::Saw);
                 p.line1.algo_blend = 0.5;
                 p.line2.algo = Algo::Pulse;
-                p.line2.algo2 = Some(Algo::Sine);
+                p.line2.algo2 = Some(Algo::Skew);
                 p.line2.algo_blend = 0.3;
                 p.lfo.rate = 4.0;
                 p.lfo2.rate = 3.25;
@@ -863,14 +863,6 @@ fn scenarios() -> Vec<Scenario> {
             build_param_variants: None,
         },
         Scenario {
-            name: "algo-quantize",
-            description: "Per-algo benchmark: Quantize",
-            build_params: || build_algo_bench_params(Algo::Quantize),
-            note_churn_blocks: None,
-            param_swap_blocks: None,
-            build_param_variants: None,
-        },
-        Scenario {
             name: "algo-twist",
             description: "Per-algo benchmark: Twist",
             build_params: || build_algo_bench_params(Algo::Twist),
@@ -938,14 +930,6 @@ fn scenarios() -> Vec<Scenario> {
             name: "algo-cheby",
             description: "Per-algo benchmark: Cheby",
             build_params: || build_algo_bench_params(Algo::Cheby),
-            note_churn_blocks: None,
-            param_swap_blocks: None,
-            build_param_variants: None,
-        },
-        Scenario {
-            name: "algo-sine",
-            description: "Per-algo benchmark: Sine",
-            build_params: || build_algo_bench_params(Algo::Sine),
             note_churn_blocks: None,
             param_swap_blocks: None,
             build_param_variants: None,
@@ -1098,7 +1082,6 @@ fn algo_matrix() -> Vec<&'static str> {
         "algo-pinch",
         "algo-fold",
         "algo-skew",
-        "algo-quantize",
         "algo-twist",
         "algo-clip",
         "algo-ripple",
@@ -1108,7 +1091,6 @@ fn algo_matrix() -> Vec<&'static str> {
         "algo-terrain",
         "algo-stutter",
         "algo-cheby",
-        "algo-sine",
     ]
 }
 

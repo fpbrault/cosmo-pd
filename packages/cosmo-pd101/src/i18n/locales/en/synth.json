@@ -433,24 +433,6 @@
 				}
 			}
 		},
-		"quantize": {
-			"name": "Quantize",
-			"behavior": "Steps the phase into discrete levels for a digitized, stair-stepped texture.",
-			"controls": {
-				"quantizeAmount": {
-					"label": "Amount",
-					"description": "Sets the overall phase distortion amount for the current algorithm."
-				},
-				"quantizeSteps": {
-					"label": "Steps",
-					"description": "Adjusts the curvature on both sides of the skew breakpoint."
-				},
-				"quantizeSkew": {
-					"label": "Skew",
-					"description": "Adjusts the curvature on both sides of the skew breakpoint."
-				}
-			}
-		},
 		"twist": {
 			"name": "Twist",
 			"behavior": "Applies sinusoidal phase twisting for animated, swirling harmonic motion.",
@@ -582,10 +564,6 @@
 					"description": "Moves the center of the formant window toward the start or end of the cycle."
 				}
 			}
-		},
-		"sine": {
-			"name": "Sine",
-			"behavior": "Pure sine phase path with minimal harmonics and smooth tone."
 		},
 		"terrain": {
 			"name": "Terrain",

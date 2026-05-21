@@ -1,0 +1,9 @@
+[
+	{ "type": "file", "name": "overview", "label": "overview" },
+	{ "type": "file", "name": "oscillators", "label": "oscillators" },
+	{ "type": "file", "name": "algorithms", "label": "algorithms" },
+	{ "type": "file", "name": "envelopes", "label": "envelopes" },
+	{ "type": "file", "name": "modulation", "label": "modulation" },
+	{ "type": "file", "name": "effects", "label": "effects" },
+	{ "type": "file", "name": "global-controls", "label": "globalControls" }
+]

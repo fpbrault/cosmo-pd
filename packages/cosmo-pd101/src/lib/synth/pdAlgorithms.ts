@@ -2,7 +2,6 @@ import { i18n } from "@/i18n";
 import {
 	algoRefKey,
 	getAlgoDefinition,
-	isAlgoRefEqual,
 	isWarpAlgo,
 	resolveAlgoRef,
 	resolveCzControlsFromEntries,
@@ -148,10 +147,6 @@ export function getPdAlgoBehaviorDescription(algo: PdAlgo): string {
 		translated ||
 		"Phase-distortion algorithm with a distinct harmonic shaping profile."
 	);
-}
-
-export function getPdAlgoDef(algo: PdAlgo): PdAlgoDef | undefined {
-	return PD_ALGOS.find((entry) => isAlgoRefEqual(entry.value, algo));
 }
 
 export const DEFAULT_DCA_ENV: StepEnvData = {
@@ -359,18 +354,6 @@ export function pdSkew(
 				rightSpan *
 					clamp((phase - breakpoint) / (1 - breakpoint), 0, 1) **
 						(0.4 + (1 - curve + tilt * 0.25) * 2.2);
-	return phase + (target - phase) * amount;
-}
-
-export function pdQuantize(
-	phase: number,
-	amount: number,
-	steps = 0.5,
-	skew = 0.5,
-): number {
-	const levels = 2 + Math.floor(steps * 30);
-	const warpedPhase = clamp(phase, 0, 1) ** (0.4 + skew * 2.2);
-	const target = Math.round(warpedPhase * levels) / levels;
 	return phase + (target - phase) * amount;
 }
 
@@ -664,13 +647,6 @@ function applyPdAlgo(
 				controlValue("skewSpread", 0),
 				controlValue("skewTilt", 0),
 			);
-		case "quantize":
-			return pdQuantize(
-				phase,
-				controlValue("quantizeAmount", amount),
-				controlValue("quantizeSteps", 0.5),
-				controlValue("quantizeSkew", 0.5),
-			);
 		case "twist":
 			return pdTwist(
 				phase,
@@ -758,8 +734,6 @@ function applyPdAlgo(
 				0,
 				1,
 			);
-		case "sine":
-			return phase;
 		default:
 			return phase;
 	}

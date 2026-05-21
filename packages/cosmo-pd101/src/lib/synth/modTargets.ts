@@ -1,7 +1,7 @@
 import type { ModDestination } from "@/lib/synth/bindings/synth";
 import { FX_DEFINITIONS_V1 } from "@/lib/synth/bindings/synth";
 
-export type ModTargetGroup =
+type ModTargetGroup =
 	| "Global"
 	| "Line 1"
 	| "Line 2"
@@ -32,7 +32,7 @@ export type ModTargetKey =
 	| "lfo.offset"
 	| "random.rate";
 
-export type ModTargetMeta = {
+type ModTargetMeta = {
 	id: ModDestination;
 	label: string;
 	group: ModTargetGroup;
@@ -153,7 +153,7 @@ const FX_TARGETS: ModTargetMeta[] = FX_DEFINITIONS_V1.flatMap((def) =>
 		})),
 );
 
-export const MOD_TARGET_REGISTRY: ModTargetMeta[] = [
+const MOD_TARGET_REGISTRY: ModTargetMeta[] = [
 	...CORE_TARGETS,
 	...FX_TARGETS,
 	...ENVELOPE_TARGETS,

@@ -1,0 +1,40 @@
+COSMO PD-101 — Commercial End-User License Agreement
+
+Copyright (C) 2024-2026 fpbrault
+
+This license applies to the pre-compiled, signed binaries of Cosmo PD-101
+distributed on Gumroad and other authorized commercial channels. The source
+code is available under GPL-3.0-only at https://github.com/fpbrault/cosmo-pd.
+
+1. Grant of License
+   Subject to payment of the applicable license fee, the Licensor grants you
+   a non-exclusive, non-transferable, perpetual license to install and use
+   the pre-compiled binaries on any computer(s) you own or control for
+   personal or commercial music production.
+
+2. Restrictions
+   You may NOT:
+   a) Distribute, sublicense, sell, rent, lease, or transfer the binaries
+      to any third party.
+   b) Decompile, reverse-engineer, disassemble, or otherwise derive the
+      source code from the binaries (except as explicitly permitted by law).
+   c) Use the binaries in any way that violates applicable law.
+
+3. Ownership
+   The Licensor retains all right, title, and interest in and to the
+   software, including all intellectual property rights. The source code
+   remains available under the GNU General Public License v3.0 only.
+
+4. Disclaimer of Warranty
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+
+5. Limitation of Liability
+   IN NO EVENT SHALL THE LICENSOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY ARISING FROM THE USE OF THE BINARIES.
+
+6. Termination
+   This license terminates automatically if you breach any of its terms.
+   Upon termination, you must destroy all copies of the binaries in your
+   possession.

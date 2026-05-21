@@ -13,8 +13,8 @@ import {
 	type ModTarget,
 	resolveModDestination,
 } from "@/lib/synth/modDestination";
-import { useHoverInfoHandlers } from "../layout/HoverInfo";
-import { type KnobVariant, KnobView } from "./knob/KnobView";
+import { useHoverInfo, useHoverInfoHandlers } from "../layout/HoverInfo";
+import KnobView, { type KnobVariant } from "./knob/KnobView";
 import {
 	bipolarCenterNorm,
 	clampValue,
@@ -98,7 +98,7 @@ const VARIANT_ACCENT_COLOR: Record<
 	dark: "var(--color-cz-gold)",
 };
 
-export function ControlKnob({
+export default function ControlKnob({
 	value,
 	onChange,
 	disabled = false,
@@ -247,6 +247,7 @@ export function ControlKnob({
 		? valueFormatter(value)
 		: value.toFixed(2);
 	const valueControlLabel = label ? `${label} value` : "knob value";
+	const { setHoverInfo, clearHoverInfo } = useHoverInfo();
 	const hoverHandlers = useHoverInfoHandlers(resolvedTooltip, {
 		useCapture: true,
 	});
@@ -313,10 +314,22 @@ export function ControlKnob({
 				aria-valuetext={displayValue}
 				aria-disabled={disabled}
 				disabled={disabled}
-				onPointerEnter={() => setHovered(true)}
-				onPointerLeave={() => setHovered(false)}
-				onFocus={() => setHovered(true)}
-				onBlur={() => setHovered(false)}
+				onPointerEnter={() => {
+					setHovered(true);
+					setHoverInfo(resolvedTooltip);
+				}}
+				onPointerLeave={() => {
+					setHovered(false);
+					clearHoverInfo();
+				}}
+				onFocus={() => {
+					setHovered(true);
+					setHoverInfo(resolvedTooltip);
+				}}
+				onBlur={() => {
+					setHovered(false);
+					clearHoverInfo();
+				}}
 				onPointerDown={interactionLocked ? undefined : onPointerDown}
 				onPointerMove={interactionLocked ? undefined : onPointerMove}
 				onPointerUp={interactionLocked ? undefined : onPointerUp}
@@ -387,5 +400,3 @@ export function ControlKnob({
 
 	return inner;
 }
-
-export default ControlKnob;

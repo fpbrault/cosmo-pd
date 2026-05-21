@@ -527,7 +527,7 @@ mod tests {
         fn render_sum(mut params: SynthParams) -> f32 {
             let mut proc = CosmoProcessor::new(48_000.0);
             params.line_select = LineSelect::L1;
-            params.line1.algo = Algo::Sine;
+            params.line1.algo = Algo::Skew;
             params.line1.algo2 = Some(Algo::Saw);
             params.line1.algo_blend = 0.0;
             params.line1.dca_base = 0.9;

@@ -2,6 +2,7 @@
 name = "cosmo-synth-debug"
 version = "0.1.0"
 edition = "2024"
+license.workspace = true
 description = "Minimalist egui debug harness for cosmo-synth-engine"
 
 [[bin]]
@@ -10,6 +11,6 @@ path = "src/main.rs"
 
 [dependencies]
 cosmo-synth-engine = { path = "../cosmo-synth-engine", features = ["std"] }
-eframe = "0.31"
-cpal = "0.15"
+eframe = "0.34"
+cpal = "0.17"
 serde_json = "1"

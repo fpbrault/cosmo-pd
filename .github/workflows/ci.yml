@@ -315,7 +315,7 @@ jobs:
 
       - name: Upsert PR benchmark comment
         if: steps.filter.outputs.engine == 'true'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require("node:fs");
@@ -368,7 +368,7 @@ jobs:
 
       - name: Upload benchmark artifact
         if: steps.filter.outputs.engine == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: engine-benchmark
           path: |
@@ -417,37 +417,3 @@ jobs:
         uses: ./.github/actions/validate-plugins
         with:
           pluginCrate: cosmo-pd101-plugin
-
-  build-desktop:
-    name: Build desktop app (${{ matrix.os }})
-    if: false # TODO: re-enable when ready
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Run desktop build action
-        uses: ./.github/actions/build-desktop
-
-  migrate:
-    name: Database Migration
-    needs:
-      [
-        lint,
-        unit-tests,
-        browser-tests,
-        plugin-webview-unit-tests,
-        plugin-webview-e2e-tests,
-        build-plugins,
-        validate-plugins,
-      ]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Run migration action
-        uses: ./.github/actions/migrate

@@ -301,7 +301,7 @@ export function SynthParamControllerProvider({
 				const runtimeSources = liveSourcesRef.current;
 				for (const route of activeRoutes) {
 					const sourceValue = runtimeSources[route.source] ?? 0;
-					liveModDelta += route.amount * sourceValue;
+					liveModDelta += (route.amount ?? 0) * sourceValue;
 				}
 				hasAnyModulation = true;
 			}
@@ -377,13 +377,6 @@ export function useSynthParam<K extends SynthParamKey>(
 		value,
 		setValue,
 	};
-}
-
-export function useOptionalSynthParam<K extends SynthParamKey>(
-	key: K,
-): UseSynthStateResult[K] | undefined {
-	// Selective subscription even in the optional variant.
-	return useSynthStore((s) => s[key] as UseSynthStateResult[K]);
 }
 
 export function useOptionalSynthController() {

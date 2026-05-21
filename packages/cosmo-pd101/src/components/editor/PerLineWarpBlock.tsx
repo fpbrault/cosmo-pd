@@ -57,7 +57,7 @@ interface PerLineWarpBlockProps {
 	activeSection?: "algos" | "envelopes";
 }
 
-export const PerLineWarpBlock = memo(function PerLineWarpBlock({
+const PerLineWarpBlock = memo(function PerLineWarpBlock({
 	label,
 	color,
 	algo,

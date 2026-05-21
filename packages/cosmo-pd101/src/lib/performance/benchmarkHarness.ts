@@ -9,7 +9,7 @@ export type BenchmarkScenarioDefinition = {
 	estimatedDurationMs: number;
 };
 
-export type BenchmarkMetricSample = PerformanceMetrics & {
+type BenchmarkMetricSample = PerformanceMetrics & {
 	elapsedMs: number;
 	timestampMs: number;
 };
@@ -41,7 +41,7 @@ export type BenchmarkReport = {
 	cases: BenchmarkCaseResult[];
 };
 
-export type BenchmarkRunOptions = {
+type BenchmarkRunOptions = {
 	presetName?: string;
 	scenarioIds?: string[];
 	sampleIntervalMs?: number;
@@ -228,7 +228,7 @@ function scenarioById(id: string) {
 	return BENCHMARK_SCENARIOS.find((scenario) => scenario.id === id) ?? null;
 }
 
-export function createBenchmarkApi(runtime: BenchmarkRuntime): BenchmarkApi {
+function createBenchmarkApi(runtime: BenchmarkRuntime): BenchmarkApi {
 	const api: BenchmarkApi = {
 		listScenarios: () =>
 			BENCHMARK_SCENARIOS.map(

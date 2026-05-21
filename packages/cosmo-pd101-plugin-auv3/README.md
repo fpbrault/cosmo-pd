@@ -80,4 +80,3 @@ The extension target should:
 - Add `Artifacts/` to header search paths for `cosmo_pd101_ffi.h` if a C bridge is preferred.
 - Copy `CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/UI` into the extension bundle resources.
 
-The existing `nih-plug` VST3/CLAP path remains separate and unchanged.

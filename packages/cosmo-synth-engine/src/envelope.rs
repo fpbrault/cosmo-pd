@@ -199,7 +199,7 @@ impl EnvGen {
 
     /// Begin the release phase of the envelope.
     ///
-    /// Mirrors `startEnvRelease` in pdVisualizerProcessor.js exactly.
+    /// Mirrors `startEnvRelease` in cosmoProcessor.js exactly.
     pub fn start_release(&mut self, env_data: &StepEnvData) {
         let steps = &env_data.steps;
         let step_count = env_data.step_count.clamp(1, steps.len());

@@ -95,9 +95,6 @@ pub enum AlgoControlId {
     PinchDrive,
     PinchFocus,
     Preset,
-    QuantizeAmount,
-    QuantizeSkew,
-    QuantizeSteps,
     RippleDepth,
     RippleFreq,
     RipplePhase,
@@ -179,9 +176,6 @@ impl AlgoControlId {
             "pinchDrive" => Self::PinchDrive,
             "pinchFocus" => Self::PinchFocus,
             "preset" => Self::Preset,
-            "quantizeAmount" => Self::QuantizeAmount,
-            "quantizeSkew" => Self::QuantizeSkew,
-            "quantizeSteps" => Self::QuantizeSteps,
             "rippleDepth" => Self::RippleDepth,
             "rippleFreq" => Self::RippleFreq,
             "ripplePhase" => Self::RipplePhase,
@@ -261,9 +255,6 @@ impl AlgoControlId {
             Self::PinchDrive => "pinchDrive",
             Self::PinchFocus => "pinchFocus",
             Self::Preset => "preset",
-            Self::QuantizeAmount => "quantizeAmount",
-            Self::QuantizeSkew => "quantizeSkew",
-            Self::QuantizeSteps => "quantizeSteps",
             Self::RippleDepth => "rippleDepth",
             Self::RippleFreq => "rippleFreq",
             Self::RipplePhase => "ripplePhase",
@@ -324,10 +315,6 @@ fn default_algo_controls() -> AlgoControlSlots {
     [None; MAX_ALGO_CONTROLS]
 }
 
-fn algo_controls_is_empty(controls: &AlgoControlSlots) -> bool {
-    controls.iter().all(Option::is_none)
-}
-
 fn serialize_algo_controls<S: Serializer>(
     controls: &AlgoControlSlots,
     serializer: S,
@@ -380,16 +367,14 @@ pub struct LineParams {
     #[serde(
         default = "default_algo_controls",
         serialize_with = "serialize_algo_controls",
-        deserialize_with = "deserialize_algo_controls",
-        skip_serializing_if = "algo_controls_is_empty"
+        deserialize_with = "deserialize_algo_controls"
     )]
     pub algo_controls_a: AlgoControlSlots,
     #[cfg_attr(feature = "specta-bindings", specta(optional, type = Vec<AlgoControlValueV1>))]
     #[serde(
         default = "default_algo_controls",
         serialize_with = "serialize_algo_controls",
-        deserialize_with = "deserialize_algo_controls",
-        skip_serializing_if = "algo_controls_is_empty"
+        deserialize_with = "deserialize_algo_controls"
     )]
     pub algo_controls_b: AlgoControlSlots,
 }

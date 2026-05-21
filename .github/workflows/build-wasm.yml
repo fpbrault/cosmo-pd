@@ -30,15 +30,15 @@ jobs:
           curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.13.1/wasm-pack-v0.13.1-x86_64-unknown-linux-musl.tar.gz | tar xz
           mv wasm-pack-v0.13.1-x86_64-unknown-linux-musl/wasm-pack ~/.cargo/bin/
 
-       - name: Build WASM
-         working-directory: packages/cosmo-synth-engine
-         run: |
+      - name: Build WASM
+        working-directory: packages/cosmo-synth-engine
+        run: |
            wasm-pack build . --release --target no-modules --out-dir ../../cosmo-pd101-plugin/webview/public/cosmo-synth-engine-wasm --features wasm
            rm -f ../../cosmo-pd101-plugin/webview/public/cosmo-synth-engine-wasm/.gitignore
 
-       - name: Upload WASM artifact
-         uses: actions/upload-artifact@v4
-         with:
+      - name: Upload WASM artifact
+        uses: actions/upload-artifact@v7
+        with:
            name: cosmo-synth-engine-wasm
            path: packages/cosmo-pd101-plugin/webview/public/cosmo-synth-engine-wasm/
 
@@ -58,7 +58,7 @@ jobs:
         run: cargo run --release --features specta-bindings --bin export-specta-bindings
 
       - name: Upload bindings artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: specta-bindings
           path: packages/cosmo-pd101/src/lib/synth/bindings/synth.ts

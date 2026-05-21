@@ -5,9 +5,9 @@ import type {
 
 export type LineIndex = 1 | 2;
 
-export type AlgoControlAssignmentRuntime = {
+type AlgoControlAssignmentRuntime = {
 	controlId: string;
-	value: number;
+	value: number | null;
 };
 
 export type AlgoControlOptionRuntime = {

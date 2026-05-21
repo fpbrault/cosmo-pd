@@ -2,7 +2,6 @@ import {
 	DEFAULT_SYNTH_PRESETS,
 	FACTORY_CZ_PRESETS,
 	installBenchmarkApi,
-	noteToFreq,
 	SynthRenderer,
 	useNoteHandling,
 	useSynthPresetManager,
@@ -81,9 +80,6 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		height: SYNTH_RENDERER_DESIGN_HEIGHT,
 		scale: 1,
 	});
-	const [scopeActiveHz, setScopeActiveHz] = useState(220);
-	const analyserNodeRef = useRef<AnalyserNode | null>(null);
-	const audioCtxRef = useRef<AudioContext | null>(null);
 	const sendNativeEngineEvent = useCallback(
 		(type: string, payload: Record<string, unknown>) => {
 			window.ipc?.postMessage(
@@ -99,7 +95,9 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		});
 
 	usePluginParamBridge();
-
+	const [scopeActiveHz, setScopeActiveHz] = useState(220);
+	const analyserNodeRef = useRef<AnalyserNode | null>(null);
+	const audioCtxRef = useRef<AudioContext | null>(null);
 	const subscribeScopeFrames = useCallback(
 		(
 			onFrame: (frame: {
@@ -108,25 +106,22 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 				hz: number;
 			}) => void,
 		) => {
-			window.__czOnScope = (
-				samples: number[],
-				sampleRate: number,
-				hz: number,
-			) => {
+			window.__czOnScope = (samples, sampleRate, hz) => {
+				setScopeActiveHz(Number.isFinite(hz) && hz > 0 ? hz : 220);
 				onFrame({
-					samples: new Float32Array(samples),
+					samples: Float32Array.from(samples),
 					sampleRate,
 					hz,
 				});
-				setScopeActiveHz(Math.round(hz * 10) / 10);
 			};
-
 			return () => {
 				window.__czOnScope = undefined;
 			};
 		},
 		[],
 	);
+
+	usePluginParamBridge();
 
 	useEffect(() => {
 		const element = frameRef.current;
@@ -188,30 +183,11 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	const shouldLoadCurrentState = useCallback(() => !window.ipc, []);
 
 	const {
-		allPresetEntries,
 		activePresetId,
 		activePresetNameBase,
-		activePresetName,
 		loadedPresetFingerprint,
-		pendingPresetChange,
 		handleSyncBuiltinSelection,
-		handleLoadLocal,
 		handleLoadBuiltin,
-		handleLoadLibrary,
-		handleStepPreset,
-		handleSavePreset,
-		handleDeletePreset,
-		handleRenamePreset,
-		handleSetPresetAuthor,
-		handleSetPresetFavorite,
-		handleSetPresetTags,
-		handleInitPreset,
-		handleExportPreset,
-		handleImportPreset,
-		handleExportCurrentState,
-		handleSavePendingPresetChange,
-		handleDiscardPendingPresetChange,
-		handleCancelPendingPresetChange,
 	} = useSynthPresetManager({
 		builtinPresets: DEFAULT_SYNTH_PRESETS,
 		gatherState,
@@ -272,20 +248,6 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		);
 	}, [activePresetId, activePresetNameBase, loadedPresetFingerprint]);
 
-	const heldNote =
-		activeNotes.length > 0 ? activeNotes[activeNotes.length - 1] : null;
-	const currentFreq =
-		heldNote != null
-			? noteToFreq(heldNote)
-			: scopeActiveHz > 0
-				? scopeActiveHz
-				: 220;
-	const lastFreqRef = useRef(currentFreq);
-	if (currentFreq > 0) {
-		lastFreqRef.current = currentFreq;
-	}
-	const effectivePitchHz = lastFreqRef.current;
-
 	const combinedScale = rendererFrame.scale;
 	const scaledWidth = rendererFrame.width * combinedScale;
 	const scaledHeight = rendererFrame.height * combinedScale;
@@ -311,32 +273,10 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 			>
 				<div className="absolute top-0 left-0" style={zoomStyle}>
 					<SynthRenderer
-						headerProps={{
-							allEntries: allPresetEntries,
-							activeEntryId: activePresetId,
-							activePresetName,
-							pendingPresetChange,
-							onLoadLocal: handleLoadLocal,
-							onLoadLibrary: handleLoadLibrary,
-							onLoadBuiltin: handleLoadBuiltin,
-							onStepPreset: handleStepPreset,
-							onSavePreset: handleSavePreset,
-							onDeletePreset: handleDeletePreset,
-							onRenamePreset: handleRenamePreset,
-							onSetPresetAuthor: handleSetPresetAuthor,
-							onSetPresetFavorite: handleSetPresetFavorite,
-							onSetPresetTags: handleSetPresetTags,
-							onInitPreset: handleInitPreset,
-							onExportPreset: handleExportPreset,
-							onExportCurrentState: handleExportCurrentState,
-							onImportPreset: handleImportPreset,
-							onSavePendingPresetChange: handleSavePendingPresetChange,
-							onDiscardPendingPresetChange: handleDiscardPendingPresetChange,
-							onCancelPendingPresetChange: handleCancelPendingPresetChange,
-						}}
-						frameClassName="h-full min-h-0 min-w-0 w-full bg-cz-panel flex flex-col overflow-hidden"
 						bottomBarExtra={utilityExtra}
-						effectivePitchHz={effectivePitchHz}
+						disableAudioGate
+						engineEventSink={sendNativeEngineEvent}
+						effectivePitchHz={scopeActiveHz}
 						analyserNodeRef={analyserNodeRef}
 						audioCtxRef={audioCtxRef}
 						subscribeScopeFrames={subscribeScopeFrames}

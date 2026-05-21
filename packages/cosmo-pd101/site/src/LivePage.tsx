@@ -6,7 +6,7 @@ import {
 	useTransform,
 } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { SharedPhaseDistortionVisualizer } from "../../src/components/SharedPhaseDistortionVisualizer";
+import { SharedPhaseDistortionVisualizer } from "../../src/components/renderer/SynthRenderer";
 
 const SYNTH_RENDERER_MAX_WIDTH = 1152;
 const SYNTH_RENDERER_MAX_HEIGHT = 864;

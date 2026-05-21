@@ -97,7 +97,7 @@ cd packages/cosmo-synth-engine && cargo test
 ## WASM → TypeScript Boundary
 - `src/wasm.rs` exports via `wasm-bindgen`
 - Corresponding TS types in `packages/cosmo-pd101/src/lib/synth/bindings/synth.ts`
-- Worklet URL exposed via `src/lib/synth/pdVisualizerWorkletUrl.ts`
+- Worklet URL exposed via `src/lib/synth/cosmoWorkletUrl.ts`
 
 ## Commands
 ```bash

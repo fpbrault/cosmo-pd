@@ -1,0 +1,4 @@
+[
+	{ "type": "file", "name": "managing", "label": "managingPresets" },
+	{ "type": "file", "name": "sysex", "label": "sysex" }
+]

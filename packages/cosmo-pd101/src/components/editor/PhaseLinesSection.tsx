@@ -10,17 +10,14 @@ import type {
 	BaseWaveform,
 	StepEnvData,
 } from "@/lib/synth/bindings/synth";
-import { PerLineWarpBlock } from "./PerLineWarpBlock";
-
-export type LineSelect = "L1" | "L2" | "L1+L1'" | "L1+L2'";
+import PerLineWarpBlock from "./PerLineWarpBlock";
 
 export type EnvOverrideHandlers = {
-	onLine1DcoEnvChange?: (next: StepEnvData) => void;
-	onLine1DcwEnvChange?: (next: StepEnvData) => void;
-	onLine1DcaEnvChange?: (next: StepEnvData) => void;
-	onLine2DcoEnvChange?: (next: StepEnvData) => void;
-	onLine2DcwEnvChange?: (next: StepEnvData) => void;
-	onLine2DcaEnvChange?: (next: StepEnvData) => void;
+	onEnvChange?: (
+		lineIndex: 1 | 2,
+		envType: "dco" | "dcw" | "dca",
+		next: StepEnvData,
+	) => void;
 };
 
 export type PhaseLinesSectionProps = {
@@ -34,6 +31,7 @@ export default function PhaseLinesSection({
 	className,
 	envOverrideHandlers,
 }: PhaseLinesSectionProps) {
+	const envOverrideHandler = envOverrideHandlers?.onEnvChange;
 	const { value: warpAAmount, setValue: setWarpAAmount } =
 		useSynthParam("warpAAmount");
 	const { value: warpBAmount, setValue: setWarpBAmount } =
@@ -108,11 +106,20 @@ export default function PhaseLinesSection({
 		fineDetune: line2DetuneFine as number,
 		setFineDetune: setLine2DetuneFine,
 		dcoEnv: line1DcoEnv as StepEnvData,
-		setDcoEnv: envOverrideHandlers?.onLine1DcoEnvChange ?? setLine1DcoEnv,
+		setDcoEnv:
+			envOverrideHandler == null
+				? setLine1DcoEnv
+				: (next: StepEnvData) => envOverrideHandler(1, "dco", next),
 		dcwEnv: line1DcwEnv as StepEnvData,
-		setDcwEnv: envOverrideHandlers?.onLine1DcwEnvChange ?? setLine1DcwEnv,
+		setDcwEnv:
+			envOverrideHandler == null
+				? setLine1DcwEnv
+				: (next: StepEnvData) => envOverrideHandler(1, "dcw", next),
 		dcaEnv: line1DcaEnv as StepEnvData,
-		setDcaEnv: envOverrideHandlers?.onLine1DcaEnvChange ?? setLine1DcaEnv,
+		setDcaEnv:
+			envOverrideHandler == null
+				? setLine1DcaEnv
+				: (next: StepEnvData) => envOverrideHandler(1, "dca", next),
 		algoControlsA: line1AlgoControlsA as AlgoControlValueV1[],
 		setAlgoControlsA: setLine1AlgoControlsA,
 		algoControlsB: line1AlgoControlsB as AlgoControlValueV1[],
@@ -143,11 +150,20 @@ export default function PhaseLinesSection({
 		fineDetune: line2DetuneFine as number,
 		setFineDetune: setLine2DetuneFine,
 		dcoEnv: line2DcoEnv as StepEnvData,
-		setDcoEnv: envOverrideHandlers?.onLine2DcoEnvChange ?? setLine2DcoEnv,
+		setDcoEnv:
+			envOverrideHandler == null
+				? setLine2DcoEnv
+				: (next: StepEnvData) => envOverrideHandler(2, "dco", next),
 		dcwEnv: line2DcwEnv as StepEnvData,
-		setDcwEnv: envOverrideHandlers?.onLine2DcwEnvChange ?? setLine2DcwEnv,
+		setDcwEnv:
+			envOverrideHandler == null
+				? setLine2DcwEnv
+				: (next: StepEnvData) => envOverrideHandler(2, "dcw", next),
 		dcaEnv: line2DcaEnv as StepEnvData,
-		setDcaEnv: envOverrideHandlers?.onLine2DcaEnvChange ?? setLine2DcaEnv,
+		setDcaEnv:
+			envOverrideHandler == null
+				? setLine2DcaEnv
+				: (next: StepEnvData) => envOverrideHandler(2, "dca", next),
 		algoControlsA: line2AlgoControlsA as AlgoControlValueV1[],
 		setAlgoControlsA: setLine2AlgoControlsA,
 		algoControlsB: line2AlgoControlsB as AlgoControlValueV1[],

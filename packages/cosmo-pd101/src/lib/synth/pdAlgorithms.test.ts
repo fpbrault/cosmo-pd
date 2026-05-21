@@ -9,7 +9,6 @@ import {
 	pdFold,
 	pdMirror,
 	pdPinch,
-	pdQuantize,
 	pdRipple,
 	pdSkew,
 	pdStutter,
@@ -79,18 +78,6 @@ describe("pdAlgorithms", () => {
 			const p = 0.25;
 			const a = 0.5;
 			expect(pdSkew(p, a)).not.toBe(p);
-		});
-	});
-
-	describe("pdQuantize", () => {
-		it("returns phase when amount is 0", () => {
-			expect(pdQuantize(0.5, 0)).toBe(0.5);
-		});
-
-		it("warps phase when amount is non-zero", () => {
-			const p = 0.25;
-			const a = 0.5;
-			expect(pdQuantize(p, a)).not.toBe(p);
 		});
 	});
 

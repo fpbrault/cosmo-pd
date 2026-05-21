@@ -12,7 +12,7 @@ export type RuntimeVoiceEnvState = {
 	prevLevel: number;
 };
 
-export type RuntimeVoiceLineState = {
+type RuntimeVoiceLineState = {
 	dco: RuntimeVoiceEnvState;
 	dcw: RuntimeVoiceEnvState;
 	dca: RuntimeVoiceEnvState;
@@ -30,7 +30,7 @@ export type RuntimeVoiceDebugState = {
 	line2: RuntimeVoiceLineState;
 };
 
-export type WorkletPerformanceMetrics = {
+type WorkletPerformanceMetrics = {
 	enabled: boolean;
 	blockCount: number;
 	lastMs: number;
@@ -80,10 +80,10 @@ export const EMPTY_RUNTIME_VOICE_STATES: RuntimeVoiceDebugState[] = [];
 export type UseAudioSynthParams = {
 	synthWasmUrl: string;
 	synthBindingsUrl: string;
-	pdVisualizerWorkletUrl: string;
+	cosmoWorkletUrl: string;
 };
 
-export type AudioContextState = "suspended" | "running" | "closed";
+type AudioContextState = "suspended" | "running" | "closed";
 
 export type AudioEngineRefs = {
 	audioCtxRef: React.MutableRefObject<AudioContext | null>;
@@ -108,7 +108,7 @@ function createInitialSynthParams(): SynthParams {
 export function useAudioEngine({
 	synthWasmUrl,
 	synthBindingsUrl,
-	pdVisualizerWorkletUrl,
+	cosmoWorkletUrl,
 }: UseAudioSynthParams): AudioEngineRefs {
 	const audioCtxRef = useRef<AudioContext | null>(null);
 	const gainNodeRef = useRef<GainNode | null>(null);
@@ -269,7 +269,7 @@ export function useAudioEngine({
 					bindingsResponse.text(),
 				]);
 
-				await ctx.audioWorklet.addModule(pdVisualizerWorkletUrl);
+				await ctx.audioWorklet.addModule(cosmoWorkletUrl);
 
 				// Async init can outlive this effect (React Strict Mode mount/unmount,
 				// route changes, etc.). If the context was closed/disposed in the
@@ -349,7 +349,7 @@ export function useAudioEngine({
 				});
 				audioCtxRef.current = null;
 				setAudioContextState(null);
-				console.error("[PD Visualizer] Audio init failed:", err);
+				console.error("[Cosmo Engine] Audio init failed:", err);
 				audioInitRef.current = false;
 			}
 		};
@@ -369,7 +369,7 @@ export function useAudioEngine({
 			audioCtxRef.current?.close();
 			audioCtxRef.current = null;
 		};
-	}, [synthWasmUrl, synthBindingsUrl, pdVisualizerWorkletUrl]);
+	}, [synthWasmUrl, synthBindingsUrl, cosmoWorkletUrl]);
 
 	const resumeAudio = useCallback(() => {
 		const ctx = audioCtxRef.current;

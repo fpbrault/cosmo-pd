@@ -1,0 +1,27 @@
+[
+	{
+		"type": "dir-section-header",
+		"name": "getting-started",
+		"label": "gettingStarted"
+	},
+	{
+		"type": "dir-section-header",
+		"name": "synth-reference",
+		"label": "synthReference"
+	},
+	{
+		"type": "dir-section-header",
+		"name": "presets",
+		"label": "presets"
+	},
+	{
+		"type": "dir-section-header",
+		"name": "troubleshooting",
+		"label": "troubleshooting"
+	},
+	{
+		"type": "dir-section-header",
+		"name": "contributing",
+		"label": "buildingFromSource"
+	}
+]

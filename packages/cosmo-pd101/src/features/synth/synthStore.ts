@@ -109,7 +109,7 @@ const DEFAULT_FX_SLOTS: FxSlotTuple = [
 // Flat state shape — mirrors the old individual useState fields
 // ---------------------------------------------------------------------------
 
-export type SynthState = {
+type SynthState = {
 	warpAAmount: number;
 	warpAAlgo: Algo;
 	algo2A: Algo | null;

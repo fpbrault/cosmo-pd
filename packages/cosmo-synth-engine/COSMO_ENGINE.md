@@ -203,7 +203,6 @@ flowchart LR
 | `Pinch` | focus, asym, curve, drive | Squeeze/stretch phase regions |
 | `Fold` | stages, tilt, symmetry, softness | Wavefolding via phase inversion |
 | `Skew` | bias, curve, spread, tilt | Asymmetric phase stretching |
-| `Quantize` | —, steps, blend | Phase quantisation (bit-like) |
 | `Twist` | harmonics, depth, phase_offset, shape | Harmonic twisting |
 | `Clip` | drive, shape, bias, soft | Phase clipping/wrapping |
 | `Ripple` | freq, depth, phase_offset, shape | Ripple modulation filter |
@@ -395,6 +394,6 @@ SynthParams
 | Target | Crate Feature | Platform |
 |--------|--------------|----------|
 | Native (Tauri) | `std` | macOS, Windows, Linux |
-| VST3/AU plugin | `std` | DAW host (via nih-plug) |
+| VST3/AU plugin | `std` | DAW host (via truce) |
 | WASM AudioWorklet | `wasm` | Browser (via wasm-bindgen) |
 | no_std | (none) | Embedded (future) |

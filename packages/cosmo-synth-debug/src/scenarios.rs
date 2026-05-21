@@ -21,7 +21,7 @@ fn build_fun_bass_like() -> SynthParams {
     p.poly_mode = PolyMode::Mono;
     p.line_select = LineSelect::L1PlusL2Prime;
     p.line1.algo = Algo::Saw;
-    p.line1.algo2 = Some(Algo::Sine);
+    p.line1.algo2 = Some(Algo::Skew);
     p.line1.algo_blend = 0.15;
     p.line1.dca_base = 0.85;
     p.line2.algo = Algo::Pulse;
