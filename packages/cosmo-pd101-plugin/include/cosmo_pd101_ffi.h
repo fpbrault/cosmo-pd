@@ -81,6 +81,11 @@ CosmoPd101FfiStatus cosmo_pd101_ffi_set_sustain(CosmoPd101FfiEngine* engine, boo
 CosmoPd101FfiStatus cosmo_pd101_ffi_set_pitch_bend(CosmoPd101FfiEngine* engine, float value);
 CosmoPd101FfiStatus cosmo_pd101_ffi_set_mod_wheel(CosmoPd101FfiEngine* engine, float value);
 CosmoPd101FfiStatus cosmo_pd101_ffi_set_aftertouch(CosmoPd101FfiEngine* engine, float value);
+CosmoPd101FfiStatus cosmo_pd101_ffi_set_poly_aftertouch(
+    CosmoPd101FfiEngine* engine,
+    uint8_t note,
+    float value
+);
 
 CosmoPd101FfiStatus cosmo_pd101_ffi_render_mono(
     CosmoPd101FfiEngine* engine,

@@ -66,6 +66,8 @@ func cosmo_pd101_ffi_set_mod_wheel(_ engine: CosmoPd101FfiEngineRef?, _ value: F
 
 @_silgen_name("cosmo_pd101_ffi_set_aftertouch")
 func cosmo_pd101_ffi_set_aftertouch(_ engine: CosmoPd101FfiEngineRef?, _ value: Float) -> Int32
+@_silgen_name("cosmo_pd101_ffi_set_poly_aftertouch")
+func cosmo_pd101_ffi_set_poly_aftertouch(_ engine: CosmoPd101FfiEngineRef?, _ note: UInt8, _ value: Float) -> Int32
 
 @_silgen_name("cosmo_pd101_ffi_render_stereo")
 func cosmo_pd101_ffi_render_stereo(_ engine: CosmoPd101FfiEngineRef?, _ left: UnsafeMutablePointer<Float>?, _ right: UnsafeMutablePointer<Float>?, _ frames: Int) -> Int32

@@ -88,10 +88,13 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		},
 		[],
 	);
-	const { sendNoteOn, sendNoteOff, panic } = useNoteHandling({
-		eventSink: sendNativeEngineEvent,
-		velocityCurve,
-	});
+	const { activeNotes, sendNoteOn, sendNoteOff, panic, sendPolyAftertouch } =
+		useNoteHandling({
+			eventSink: sendNativeEngineEvent,
+			velocityCurve,
+		});
+
+	usePluginParamBridge();
 	const [scopeActiveHz, setScopeActiveHz] = useState(220);
 	const analyserNodeRef = useRef<AnalyserNode | null>(null);
 	const audioCtxRef = useRef<AudioContext | null>(null);
@@ -277,6 +280,12 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 						analyserNodeRef={analyserNodeRef}
 						audioCtxRef={audioCtxRef}
 						subscribeScopeFrames={subscribeScopeFrames}
+						miniKeyboard={{
+							activeNotes,
+							onNoteOn: sendNoteOn,
+							onNoteOff: sendNoteOff,
+							onPolyAftertouch: sendPolyAftertouch,
+						}}
 					/>
 				</div>
 			</div>

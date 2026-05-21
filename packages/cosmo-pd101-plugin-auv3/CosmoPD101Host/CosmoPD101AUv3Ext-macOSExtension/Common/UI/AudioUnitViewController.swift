@@ -125,7 +125,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			let logMessage = args.count > 1 ? (args[1] as? String ?? "") : ""
 			NSLog("[CzWebView][%@] %@", logLevel, logMessage)
 			sendResponse(id: id, result: NSNull())
-		case "noteOn", "noteOff", "sustain", "pitchBend", "modWheel", "aftertouch", "panic":
+		case "noteOn", "noteOff", "sustain", "pitchBend", "modWheel", "aftertouch", "polyAftertouch", "panic":
 			audioUnit.handleEngineEvent(type: method, payload: args.first as? [String: Any] ?? [:])
 			sendResponse(id: id, result: NSNull())
 		default:

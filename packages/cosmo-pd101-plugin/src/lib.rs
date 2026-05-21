@@ -396,6 +396,7 @@ enum UiInputEvent {
     PitchBend { value: f32 },
     ModWheel { value: f32 },
     Aftertouch { value: f32 },
+    PolyAftertouch { note: u8, value: f32 },
     Macro { index: usize, value: f32 },
     Panic,
 }
@@ -754,6 +755,30 @@ fn handle_ipc_invoke(
 
             ui_input_queue
                 .push(UiInputEvent::Aftertouch { value })
+                .map_err(|_| "ui input queue is full".to_string())?;
+            Ok(serde_json::Value::Null)
+        }
+        "polyAftertouch" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "polyAftertouch expects an object payload as first argument".to_string()
+                })?;
+            let note = payload
+                .get("note")
+                .and_then(serde_json::Value::as_u64)
+                .ok_or_else(|| "polyAftertouch payload missing note".to_string())?;
+            let note =
+                u8::try_from(note).map_err(|_| "polyAftertouch note out of range".to_string())?;
+            let value = payload
+                .get("value")
+                .and_then(serde_json::Value::as_f64)
+                .ok_or_else(|| "polyAftertouch payload missing value".to_string())?
+                as f32;
+
+            ui_input_queue
+                .push(UiInputEvent::PolyAftertouch { note, value })
                 .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
@@ -1146,6 +1171,9 @@ impl CzPlugin {
                     UiInputEvent::PitchBend { value } => proc.set_pitch_bend(value),
                     UiInputEvent::ModWheel { value } => proc.set_mod_wheel(value),
                     UiInputEvent::Aftertouch { value } => proc.set_aftertouch(value),
+                    UiInputEvent::PolyAftertouch { note, value } => {
+                        proc.set_poly_aftertouch(note, value)
+                    }
                     UiInputEvent::Macro { index, value } => proc.set_macro(index, value),
                     UiInputEvent::Panic => Self::all_notes_off(proc),
                 }
