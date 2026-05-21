@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useRef } from "react";
+import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
 import type { EnvKind } from "@/lib/synth/modTargets";
 import StepEnvelopeStepCard from "./StepEnvelopeStepCard";
@@ -17,6 +18,10 @@ interface StepEnvelopeEditorProps {
 	lineIndex?: 1 | 2;
 	envKind?: EnvKind;
 	voiceMarkers?: StepEnvelopeVoiceMarker[];
+	dcwKeyFollow?: number;
+	onDcwKeyFollowChange?: (value: number) => void;
+	dcaKeyFollow?: number;
+	onDcaKeyFollowChange?: (value: number) => void;
 }
 
 export type { StepEnvelopeVoiceMarker };
@@ -30,6 +35,10 @@ const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 	lineIndex = 1,
 	envKind = "dco",
 	voiceMarkers = [],
+	dcwKeyFollow = 0,
+	onDcwKeyFollowChange,
+	dcaKeyFollow = 0,
+	onDcaKeyFollowChange,
 }: StepEnvelopeEditorProps) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const commitEnvelope = useCallback(
@@ -104,6 +113,31 @@ const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 		[commitEnvelope, normalizedEnv],
 	);
 
+	const keyFollowControl =
+		envKind === "dcw" && onDcwKeyFollowChange ? (
+			<SynthParamKnob
+				paramKey={lineIndex === 1 ? "line1DcwKeyFollow" : "line2DcwKeyFollow"}
+				label="Key Follow"
+				value={dcwKeyFollow}
+				size={44}
+				min={0}
+				max={9}
+				step={1}
+				onChange={(value) => onDcwKeyFollowChange(Math.round(value))}
+			/>
+		) : envKind === "dca" && onDcaKeyFollowChange ? (
+			<SynthParamKnob
+				paramKey={lineIndex === 1 ? "line1DcaKeyFollow" : "line2DcaKeyFollow"}
+				label="Key Follow"
+				value={dcaKeyFollow}
+				size={44}
+				min={0}
+				max={9}
+				step={1}
+				onChange={(value) => onDcaKeyFollowChange(Math.round(value))}
+			/>
+		) : null;
+
 	return (
 		<div className="flex h-full flex-col space-y-3">
 			<div className="flex items-center justify-between">
@@ -111,6 +145,7 @@ const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 					{title}
 				</span>
 				<div className="flex items-center gap-2">
+					{keyFollowControl}
 					<label className="flex items-center gap-1 text-xs">
 						<input
 							type="checkbox"

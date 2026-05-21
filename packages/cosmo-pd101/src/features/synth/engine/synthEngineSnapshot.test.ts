@@ -20,7 +20,8 @@ const MINIMAL_PRESET = {
 			dcoEnv: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
 			dcwEnv: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
 			dcaEnv: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
-			keyFollow: 0,
+			dcwKeyFollow: 0,
+			dcaKeyFollow: 0,
 			algoControlsA: [{ id: "a", value: 1 }],
 			algoControlsB: [{ id: "b", value: 2 }],
 		},
@@ -36,7 +37,8 @@ const MINIMAL_PRESET = {
 			dcoEnv: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
 			dcwEnv: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
 			dcaEnv: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
-			keyFollow: 0,
+			dcwKeyFollow: 0,
+			dcaKeyFollow: 0,
 			algoControlsA: [{ id: "c", value: 3 }],
 			algoControlsB: [{ id: "d", value: 4 }],
 		},
@@ -67,6 +69,8 @@ describe("createSynthEngineSnapshot", () => {
 		expect(result.params.frequency).toBe(440);
 		expect(result.params.volume).toBe(0);
 		expect(result.params.octave).toBe(0);
+		expect("keyFollow" in result.params.line1).toBe(false);
+		expect("keyFollow" in result.params.line2).toBe(false);
 	});
 
 	it("normalizes phaseMod slot params: intPmAmount → amount, intPmRatio → ratio", () => {

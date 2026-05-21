@@ -362,7 +362,8 @@ pub struct LineParams {
     pub dco_env: StepEnvData,
     pub dcw_env: StepEnvData,
     pub dca_env: StepEnvData,
-    pub key_follow: f32,
+    pub dcw_key_follow: f32,
+    pub dca_key_follow: f32,
     #[cfg_attr(feature = "specta-bindings", specta(optional, type = Vec<AlgoControlValueV1>))]
     #[serde(
         default = "default_algo_controls",
@@ -397,7 +398,8 @@ impl Default for LineParams {
             dco_env: default_dco_env(),
             dcw_env: default_dcw_env(),
             dca_env: default_dca_env(),
-            key_follow: 0.0,
+            dcw_key_follow: 0.0,
+            dca_key_follow: 0.0,
             algo_controls_a: default_algo_controls(),
             algo_controls_b: default_algo_controls(),
         }

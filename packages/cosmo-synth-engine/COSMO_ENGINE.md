@@ -372,7 +372,8 @@ SynthParams
 │   ├── dca_base / dcw_base: f32
 │   ├── octave / detune_note / detune_fine: f32
 │   ├── dco_env / dcw_env / dca_env: StepEnvData (8-step)
-│   ├── key_follow: f32
+│   ├── dcw_key_follow: f32
+│   ├── dca_key_follow: f32
 │   └── algo_controls_a/b: Vec<AlgoControlValueV1>
 ├── line2: LineParams (same structure as line1)
 ├── lfo / lfo2: LfoParams

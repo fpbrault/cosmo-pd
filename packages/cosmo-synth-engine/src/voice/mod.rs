@@ -156,6 +156,23 @@ mod tests {
     }
 
     #[test]
+    fn dcw_key_follow_leaves_lower_notes_unchanged() {
+        assert_eq!(super::render::dcw_key_follow_scale(0.0, 96), 1.0);
+        assert_eq!(super::render::dcw_key_follow_scale(9.0, 60), 1.0);
+        assert_eq!(super::render::dcw_key_follow_scale(9.0, 48), 1.0);
+    }
+
+    #[test]
+    fn dcw_key_follow_reduces_higher_note_depth() {
+        let medium_note = super::render::dcw_key_follow_scale(9.0, 72);
+        let high_note = super::render::dcw_key_follow_scale(9.0, 96);
+
+        assert!(medium_note < 1.0);
+        assert!(high_note < medium_note);
+        assert!(high_note >= 0.15);
+    }
+
+    #[test]
     fn dco_env_matches_cz_reference_semitone_points() {
         let cases = [
             (8_u8, 1.0_f32),

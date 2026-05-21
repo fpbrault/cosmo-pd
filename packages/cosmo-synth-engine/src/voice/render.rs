@@ -17,6 +17,11 @@ use super::{
     ZERO_CROSS_STOP_MAX_WAIT_SAMPLES, ZERO_CROSS_STOP_THRESHOLD,
 };
 
+const DCW_KEY_FOLLOW_REFERENCE_NOTE: f32 = 60.0;
+const DCW_KEY_FOLLOW_SEMITONE_SPAN: f32 = 48.0;
+const DCW_KEY_FOLLOW_MAX_ATTENUATION: f32 = 0.85;
+const DCW_KEY_FOLLOW_MIN_SCALE: f32 = 0.15;
+
 /// Envelope values snapshot for one render step.
 struct EnvelopeSnapshot {
     dco1_env: f32,
@@ -385,46 +390,34 @@ fn advance_envelopes(
 ) -> EnvelopeSnapshot {
     let note = voice.env_note;
 
-    voice.line1_env.dco.advance(
-        EnvelopeKind::Dco,
-        &line1.dco_env,
-        timing,
-        line1.key_follow,
-        note,
-    );
-    voice.line1_env.dcw.advance(
-        EnvelopeKind::Dcw,
-        &line1.dcw_env,
-        timing,
-        line1.key_follow,
-        note,
-    );
+    voice
+        .line1_env
+        .dco
+        .advance(EnvelopeKind::Dco, &line1.dco_env, timing, 0.0, note);
+    voice
+        .line1_env
+        .dcw
+        .advance(EnvelopeKind::Dcw, &line1.dcw_env, timing, 0.0, note);
     voice.line1_env.dca.advance(
         EnvelopeKind::Dca,
         &line1.dca_env,
         timing,
-        line1.key_follow,
+        line1.dca_key_follow,
         note,
     );
-    voice.line2_env.dco.advance(
-        EnvelopeKind::Dco,
-        &line2.dco_env,
-        timing,
-        line2.key_follow,
-        note,
-    );
-    voice.line2_env.dcw.advance(
-        EnvelopeKind::Dcw,
-        &line2.dcw_env,
-        timing,
-        line2.key_follow,
-        note,
-    );
+    voice
+        .line2_env
+        .dco
+        .advance(EnvelopeKind::Dco, &line2.dco_env, timing, 0.0, note);
+    voice
+        .line2_env
+        .dcw
+        .advance(EnvelopeKind::Dcw, &line2.dcw_env, timing, 0.0, note);
     voice.line2_env.dca.advance(
         EnvelopeKind::Dca,
         &line2.dca_env,
         timing,
-        line2.key_follow,
+        line2.dca_key_follow,
         note,
     );
 
@@ -433,8 +426,12 @@ fn advance_envelopes(
         dco2_env: voice.line2_env.dco.output,
         dca1: voice.line1_env.dca.output,
         dca2: voice.line2_env.dca.output,
-        dcw1: line1.dcw_base * cz_dcw_env_depth(voice.line1_env.dcw.output),
-        dcw2: line2.dcw_base * cz_dcw_env_depth(voice.line2_env.dcw.output),
+        dcw1: line1.dcw_base
+            * cz_dcw_env_depth(voice.line1_env.dcw.output)
+            * dcw_key_follow_scale(line1.dcw_key_follow, note),
+        dcw2: line2.dcw_base
+            * cz_dcw_env_depth(voice.line2_env.dcw.output)
+            * dcw_key_follow_scale(line2.dcw_key_follow, note),
     }
 }
 
@@ -561,6 +558,20 @@ pub(crate) fn cz_dca_env_gain(dca_env: f32) -> f32 {
 pub(crate) fn cz_dcw_env_depth(dcw_env: f32) -> f32 {
     let level = dcw_env.clamp(0.0, 1.0);
     pow01(level, DCW_LEVEL_CURVE_EXPONENT)
+}
+
+#[inline]
+pub(crate) fn dcw_key_follow_scale(key_follow_amount: f32, note: u8) -> f32 {
+    let key_follow = (key_follow_amount / 9.0).clamp(0.0, 1.0);
+    if key_follow <= 0.0 {
+        return 1.0;
+    }
+
+    let pitch_progress = ((note as f32 - DCW_KEY_FOLLOW_REFERENCE_NOTE)
+        / DCW_KEY_FOLLOW_SEMITONE_SPAN)
+        .clamp(0.0, 1.0);
+    let attenuation = key_follow * pitch_progress * DCW_KEY_FOLLOW_MAX_ATTENUATION;
+    (1.0 - attenuation).clamp(DCW_KEY_FOLLOW_MIN_SCALE, 1.0)
 }
 
 pub(crate) fn line_frequency(base_freq: f32, line: &LineParams, dco_env: f32) -> f32 {

@@ -20,6 +20,10 @@ interface EnvelopesSectionProps {
 	voiceMarkers: StepEnvelopeVoiceMarker[];
 	lineIndex: LineIndex;
 	lineColor: string;
+	dcwKeyFollow: number;
+	onDcwKeyFollowChange: (value: number) => void;
+	dcaKeyFollow: number;
+	onDcaKeyFollowChange: (value: number) => void;
 }
 
 export function EnvelopesSection({
@@ -27,6 +31,10 @@ export function EnvelopesSection({
 	voiceMarkers,
 	lineIndex,
 	lineColor,
+	dcwKeyFollow,
+	onDcwKeyFollowChange,
+	dcaKeyFollow,
+	onDcaKeyFollowChange,
 }: EnvelopesSectionProps) {
 	const activeEnvTab = useSynthUiStore((s) => s.activeEnvTab);
 	const setActiveEnvTab = useSynthUiStore((s) => s.setActiveEnvTab);
@@ -59,6 +67,10 @@ export function EnvelopesSection({
 				lineIndex={lineIndex}
 				envKind={activeEnvTab}
 				voiceMarkers={voiceMarkers}
+				dcwKeyFollow={dcwKeyFollow}
+				onDcwKeyFollowChange={onDcwKeyFollowChange}
+				dcaKeyFollow={dcaKeyFollow}
+				onDcaKeyFollowChange={onDcaKeyFollowChange}
 			/>
 		</Card>
 	);

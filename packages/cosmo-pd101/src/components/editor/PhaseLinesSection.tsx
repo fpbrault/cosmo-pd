@@ -60,6 +60,10 @@ export default function PhaseLinesSection({
 		useSynthParam("line2DetuneFine");
 	const { value: line1DcoEnv, setValue: setLine1DcoEnv } =
 		useSynthParam("line1DcoEnv");
+	const { value: line1DcwKeyFollow, setValue: setLine1DcwKeyFollow } =
+		useSynthParam("line1DcwKeyFollow");
+	const { value: line1DcaKeyFollow, setValue: setLine1DcaKeyFollow } =
+		useSynthParam("line1DcaKeyFollow");
 	const { value: line1DcwEnv, setValue: setLine1DcwEnv } =
 		useSynthParam("line1DcwEnv");
 	const { value: line1DcaEnv, setValue: setLine1DcaEnv } =
@@ -74,6 +78,10 @@ export default function PhaseLinesSection({
 		useSynthParam("line1BaseWaveformB");
 	const { value: line2DcoEnv, setValue: setLine2DcoEnv } =
 		useSynthParam("line2DcoEnv");
+	const { value: line2DcwKeyFollow, setValue: setLine2DcwKeyFollow } =
+		useSynthParam("line2DcwKeyFollow");
+	const { value: line2DcaKeyFollow, setValue: setLine2DcaKeyFollow } =
+		useSynthParam("line2DcaKeyFollow");
 	const { value: line2DcwEnv, setValue: setLine2DcwEnv } =
 		useSynthParam("line2DcwEnv");
 	const { value: line2DcaEnv, setValue: setLine2DcaEnv } =
@@ -120,6 +128,10 @@ export default function PhaseLinesSection({
 			envOverrideHandler == null
 				? setLine1DcaEnv
 				: (next: StepEnvData) => envOverrideHandler(1, "dca", next),
+		dcwKeyFollow: line1DcwKeyFollow as number,
+		setDcwKeyFollow: setLine1DcwKeyFollow,
+		dcaKeyFollow: line1DcaKeyFollow as number,
+		setDcaKeyFollow: setLine1DcaKeyFollow,
 		algoControlsA: line1AlgoControlsA as AlgoControlValueV1[],
 		setAlgoControlsA: setLine1AlgoControlsA,
 		algoControlsB: line1AlgoControlsB as AlgoControlValueV1[],
@@ -164,6 +176,10 @@ export default function PhaseLinesSection({
 			envOverrideHandler == null
 				? setLine2DcaEnv
 				: (next: StepEnvData) => envOverrideHandler(2, "dca", next),
+		dcwKeyFollow: line2DcwKeyFollow as number,
+		setDcwKeyFollow: setLine2DcwKeyFollow,
+		dcaKeyFollow: line2DcaKeyFollow as number,
+		setDcaKeyFollow: setLine2DcaKeyFollow,
 		algoControlsA: line2AlgoControlsA as AlgoControlValueV1[],
 		setAlgoControlsA: setLine2AlgoControlsA,
 		algoControlsB: line2AlgoControlsB as AlgoControlValueV1[],
@@ -298,6 +314,10 @@ export default function PhaseLinesSection({
 							setDcwEnv={activeLineConfig.setDcwEnv}
 							dcaEnv={activeLineConfig.dcaEnv}
 							setDcaEnv={activeLineConfig.setDcaEnv}
+							dcwKeyFollow={activeLineConfig.dcwKeyFollow}
+							setDcwKeyFollow={activeLineConfig.setDcwKeyFollow}
+							dcaKeyFollow={activeLineConfig.dcaKeyFollow}
+							setDcaKeyFollow={activeLineConfig.setDcaKeyFollow}
 							baseWaveformA={activeLineConfig.baseWaveformA}
 							setBaseWaveformA={activeLineConfig.setBaseWaveformA}
 							baseWaveformB={activeLineConfig.baseWaveformB}

@@ -44,6 +44,11 @@ describe("presetStorage", () => {
 		expect(await loadPreset(stored.id)).toEqual(stored.data);
 	});
 
+	it("ships default presets without the legacy keyFollow field", () => {
+		expect("keyFollow" in DEFAULT_PRESET.params.line1).toBe(false);
+		expect("keyFollow" in DEFAULT_PRESET.params.line2).toBe(false);
+	});
+
 	it("keeps ids stable when renaming a stored preset", async () => {
 		const stored = await saveStoredPreset({
 			name: "Old Name",
