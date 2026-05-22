@@ -225,6 +225,20 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
+      - name: Cache Bun install cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.bun/install/cache
+          key: bun-cache-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            bun-cache-${{ runner.os }}-
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            . -> target
+
       - name: Cache cargo-truce
         id: cargo-truce-cache
         uses: actions/cache@v5
@@ -261,12 +275,18 @@ jobs:
           CERT_P12: ${{ secrets.MACOS_CERT_P12_BASE64 }}
           CERT_PW: ${{ secrets.MACOS_CERT_PASSWORD }}
         run: |
+          set -euo pipefail
+
           echo "$CERT_P12" | base64 --decode > cert.p12
           security create-keychain -p "" build.keychain
+          security set-keychain-settings -lut 21600 build.keychain
+          security unlock-keychain -p "" build.keychain
           security import cert.p12 -k build.keychain -P "$CERT_PW" \
             -T /usr/bin/codesign -T /usr/bin/productbuild
           security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+          security list-keychains -d user -s build.keychain login.keychain-db
           security default-keychain -s build.keychain
+          security find-identity -v -p codesigning build.keychain
 
       - name: Store notarization creds
         if: matrix.platform == 'macos'
