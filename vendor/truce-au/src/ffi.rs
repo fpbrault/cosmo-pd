@@ -80,6 +80,8 @@ pub struct AuCallbacks {
         num_frames: u32,
         events: *const AuMidiEvent,
         num_events: u32,
+        events2: *const AuMidi2Event,
+        num_events2: u32,
         transport: *const AuTransportSnapshot,
     ),
 
@@ -120,6 +122,25 @@ pub struct AuCallbacks {
     pub output_event_count: unsafe extern "C" fn(ctx: *mut c_void) -> u32,
     /// Fill `out` with the index-th encodable output event.
     pub output_event_at: unsafe extern "C" fn(ctx: *mut c_void, index: u32, out: *mut AuMidiEvent),
+    /// Count of `SysEx`-shaped events the plug-in pushed during the
+    /// most recent `process()` call. The AU v3 shim drains these
+    /// after the channel-voice events, fragments each into UMP
+    /// `SysEx`-8 packets, and emits via
+    /// `midiOutputEventListBlock`. The AU v2 shim uses the
+    /// `midiOutputCallback` framed-bytestream path.
+    pub output_sysex_count: unsafe extern "C" fn(ctx: *mut c_void) -> u32,
+    /// Fill `out_delta_frames`, `out_bytes`, `out_len` with the
+    /// index-th `SysEx` output event. Returns inner bytes (no
+    /// `0xF0` / `0xF7` framing); the shim re-adds framing for the
+    /// AU v2 legacy callback path, and fragments into UMP packets
+    /// for the AU v3 path.
+    pub output_sysex_at: unsafe extern "C" fn(
+        ctx: *mut c_void,
+        index: u32,
+        out_delta_frames: *mut u32,
+        out_bytes: *mut *const u8,
+        out_len: *mut u32,
+    ),
 
     // GUI
     pub gui_has_editor: unsafe extern "C" fn(ctx: *mut c_void) -> i32,
@@ -147,6 +168,29 @@ pub struct AuMidiEvent {
     // shim's offset calculations agree.
     #[allow(clippy::pub_underscore_fields)]
     pub _pad: u8,
+}
+
+/// Universal MIDI Packet container - carries MIDI 2.0 channel-voice
+/// messages (64-bit UMPs, words[0..2]) and forward-compat slots for
+/// SysEx-8 / data (128-bit UMPs, all four words). AU v3 hosts on iOS
+/// 17+ / macOS 14+ deliver MIDI through `AURenderEvent.MIDIEventList`
+/// which carries UMPs natively; the Swift shim walks the packet list,
+/// classifies each word group by its UMP message type nibble (top 4
+/// bits of `words[0]`), and forwards MIDI 2.0 messages here while
+/// continuing to down-convert MIDI 1.0 ones to the legacy `AuMidiEvent`
+/// path.
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct AuMidi2Event {
+    /// Sample offset within the current block.
+    pub sample_offset: u32,
+    /// Up to four 32-bit UMP words, MSB-first. UMP message types:
+    /// 0x0 = utility (32-bit), 0x1 = system real-time (32-bit),
+    /// 0x2 = MIDI 1.0 CV (32-bit), 0x3 = SysEx-7 (64-bit),
+    /// 0x4 = MIDI 2.0 CV (64-bit), 0x5 = data 128 (128-bit).
+    /// Types 0x3 (SysEx-7), 0x4 (MIDI 2.0 CV), and 0x5 (data 128
+    /// / SysEx-8) are decoded; 0x0 / 0x1 / 0x2 are reserved.
+    pub words: [u32; 4],
 }
 
 /// Transport snapshot filled by the shim from `HostCallbackInfo` (AU v2)

@@ -1,7 +1,7 @@
 // Bundle identifier configuration for iOS app + AUv3 extension
 
 // Main app bundle identifier
-APP_BUNDLE_IDENTIFIER = ca.purraudio.cosmo-pd101
+APP_BUNDLE_IDENTIFIER = dev.purraudio.cosmo-pd101
 
 // Extension bundle identifier (must be app ID + suffix)
 EXTENSION_BUNDLE_IDENTIFIER = $(APP_BUNDLE_IDENTIFIER).auv3

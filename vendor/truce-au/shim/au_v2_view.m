@@ -10,16 +10,17 @@
  * load every installed `.component` into one process; if two plugins
  * publish a class with the same name, `libobjc` keeps the first one
  * and `[NSBundle classNamed:name]` on the loser's bundle returns nil
- * — the host then thinks the plugin has no GUI. Uniqueness comes
+ * - the host then thinks the plugin has no GUI. Uniqueness comes
  * from the `TRUCE_AU_PLUGIN_ID` env var that `cargo-truce` sets at
  * build time; the build.rs sanitises and passes it as a `-D` define.
  * Without that env (plain `cargo build` for unit tests), the class
- * falls back to a default name — fine for isolated tests, not for
+ * falls back to a default name - fine for isolated tests, not for
  * multi-plugin hosting.
  */
 
 @import AppKit;
 @import AudioToolbox;
+#import <dispatch/dispatch.h>
 #import <AudioUnit/AUCocoaUIView.h>
 
 #include "au_shim_types.h"
@@ -28,13 +29,13 @@
 //   64000: AuPlugin context pointer (rustCtx)
 //   64001: pointer to the AU's AuCallbacks table (g_callbacks of the
 //          dylib that owns this AudioUnit). Reading both via the AU
-//          dispatch table keeps the methods plugin-agnostic — per-
+//          dispatch table keeps the methods plugin-agnostic - per-
 //          dylib globals reached are always the right ones.
 #define kTrucePrivateProperty_RustContext  64000
 #define kTrucePrivateProperty_AuCallbacks  64001
 
 #ifndef TRUCE_AU_VIEW_FACTORY_NAME
-// Default name when `TRUCE_AU_PLUGIN_ID` is unset — keeps `cargo build`
+// Default name when `TRUCE_AU_PLUGIN_ID` is unset - keeps `cargo build`
 // of the workspace cdylibs working for unit tests.
 #define TRUCE_AU_VIEW_FACTORY_NAME TruceAUCocoaViewProxy
 #endif
@@ -72,14 +73,11 @@
     NSRect frame = NSMakeRect(0, 0, w, h);
     NSView *container = [[NSView alloc] initWithFrame:frame];
 
-    // Defer gui_open to the next main runloop iteration so the host
-    // has added the container view to its window first. This is
-    // required because the Rust/Cosmo GUI checks parent_has_window()
-    // (i.e. [NSView window] != nil) before embedding a WKWebView
-    // child, and AUv2 hosts call us before adding our view to their
-    // window hierarchy. On non-Editor hosts (e.g. Logic's "No GUI"
-    // mode) the block never fires, which is harmless — no crash, no
-    // stranded WebView, just a nil return as before.
+    // PATCH: defer gui_open until the host has attached our
+    // container to its window. The Cosmo editor validates that the
+    // parent NSView already belongs to a window before embedding the
+    // WKWebView child, and AUv2 hosts often call this factory method
+    // before the view hierarchy is live.
     dispatch_async(dispatch_get_main_queue(), ^{
         cb->gui_open(ctx, (__bridge void *)container);
     });

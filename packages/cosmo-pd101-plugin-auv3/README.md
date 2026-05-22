@@ -15,7 +15,7 @@ From the repository root:
 bun run build:plugin:auv3
 ```
 
-This builds the shared webview, builds the Rust `staticlib`, copies the UI bundle into Swift resources, and stages the Rust library/header in `Artifacts/`.
+This builds the shared webview, copies the UI bundle into Swift resources, and stages the macOS Rust library/header in `Artifacts/`.
 
 To create a local AUv3 containing app bundle:
 
@@ -23,7 +23,7 @@ To create a local AUv3 containing app bundle:
 bun run bundle:plugin:auv3
 ```
 
-This command now uses `xcodebuild` against `CosmoPD101Host.xcodeproj` and writes the staged app to `packages/cosmo-pd101-plugin-auv3/Build/Cosmo PD-101.app`.
+This command uses `xcodebuild` against `CosmoPD101Host.xcodeproj` and writes the staged app to `packages/cosmo-pd101-plugin-auv3/Build/Cosmo PD-101.app`.
 
 To install and register the AUv3 for local testing:
 
@@ -31,7 +31,7 @@ To install and register the AUv3 for local testing:
 bun run install:plugin:auv3
 ```
 
-This installs a containing app at `~/Applications/Cosmo PD-101.app`, registers the `.appex` with `pluginkit`, and opens the app.
+This installs a containing app at `~/Applications/Cosmo PD-101.app` and registers the embedded `.appex` with `pluginkit`.
 
 The AUv3 uses subtype `Cpd3` so it can coexist with the existing AUv2 component, which uses subtype `Copd`.
 
@@ -41,18 +41,6 @@ Then validate the registered Audio Unit:
 
 ```sh
 auval -v aumu Cpd3 PurA
-```
-
-For a Swift syntax-only check without app bundling:
-
-```sh
-bun run build:plugin:auv3 -- --swift-build
-```
-
-For a specific Rust target:
-
-```sh
-bun run build:plugin:auv3 -- --target=aarch64-apple-darwin
 ```
 
 ## iPad / iOS Simulator Assets
@@ -66,6 +54,7 @@ bun run build:plugin:auv3:ios
 This stages:
 
 - `CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/UI` — bundled React plugin UI consumed by the extension target.
+- `Artifacts/libcosmo_pd101_plugin.a` and `Artifacts/cosmo_pd101_ffi.h` for the macOS containing app flow.
 - `Artifacts/CosmoPd101Plugin.xcframework` — Rust DSP FFI library for `aarch64-apple-ios` and `aarch64-apple-ios-sim`.
 - `Artifacts/cosmo_pd101_ffi.h` — C ABI header for bridge-header workflows.
 
@@ -79,4 +68,3 @@ The extension target should:
 - Link `Artifacts/libcosmo_pd101_plugin.a` for macOS or `Artifacts/CosmoPd101Plugin.xcframework` for iOS/iPadOS.
 - Add `Artifacts/` to header search paths for `cosmo_pd101_ffi.h` if a C bridge is preferred.
 - Copy `CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/UI` into the extension bundle resources.
-
