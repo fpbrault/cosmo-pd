@@ -4,13 +4,203 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: "Release type"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - exact
+      exact_version:
+        description: "Exact version for non-bumping releases, e.g. 0.2.0-rc.1"
+        required: false
+        type: string
+      prerelease:
+        description: "Mark the GitHub release as a prerelease"
+        required: true
+        default: false
+        type: boolean
+      target_ref:
+        description: "Optional commit-ish on the default branch to tag for exact releases"
+        required: false
+        type: string
 
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.repository }}
+  cancel-in-progress: false
+
 jobs:
+  prepare-release:
+    name: Prepare release
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      tag: ${{ steps.resolve.outputs.tag }}
+      is_prerelease: ${{ steps.resolve.outputs.is_prerelease }}
+      version_source: ${{ steps.resolve.outputs.version_source }}
+      release_sha: ${{ steps.publish.outputs.release_sha }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release version
+        id: resolve
+        run: |
+          node scripts/release-workflow.mjs resolve \
+            --release-type "${{ inputs.release_type }}" \
+            --exact-version "${{ inputs.exact_version }}" \
+            --prerelease "${{ inputs.prerelease }}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve release target
+        id: target
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          default_branch="${{ github.event.repository.default_branch }}"
+          run_ref="${GITHUB_REF_NAME}"
+          target_ref="${{ inputs.target_ref }}"
+
+          git fetch origin "${default_branch}" --tags
+
+          if [[ "${run_ref}" != "${default_branch}" ]]; then
+            echo "workflow_dispatch releases must be started from ${default_branch}, got ${run_ref}" >&2
+            exit 1
+          fi
+
+          if [[ -z "${target_ref}" ]]; then
+            target_ref="origin/${default_branch}"
+          fi
+
+          release_sha="$(git rev-parse "${target_ref}^{commit}")"
+          default_branch_sha="$(git rev-parse "origin/${default_branch}^{commit}")"
+
+          if ! git merge-base --is-ancestor "${release_sha}" "${default_branch_sha}"; then
+            echo "target_ref must resolve to a commit contained in origin/${default_branch}" >&2
+            exit 1
+          fi
+
+          if [[ "${{ steps.resolve.outputs.version_source }}" == "bumped" ]]; then
+            if [[ -n "${target_ref}" && "${target_ref}" != "origin/${default_branch}" && "${target_ref}" != "${default_branch}" ]]; then
+              echo "target_ref is only supported for exact releases; bumped releases always cut from origin/${default_branch}" >&2
+              exit 1
+            fi
+            release_sha="${default_branch_sha}"
+          fi
+
+          echo "release_sha=${release_sha}" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure tag does not exist
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${{ steps.resolve.outputs.tag }}"
+
+          if git rev-parse --verify --quiet "refs/tags/${tag}" >/dev/null; then
+            echo "Tag ${tag} already exists locally" >&2
+            exit 1
+          fi
+
+          if git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
+            echo "Tag ${tag} already exists on origin" >&2
+            exit 1
+          fi
+
+      - name: Configure git author
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create bumped release commit
+        if: steps.resolve.outputs.version_source == 'bumped'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          default_branch="${{ github.event.repository.default_branch }}"
+          git checkout -B "${default_branch}" "${{ steps.target.outputs.release_sha }}"
+          node scripts/bump-version.mjs "${{ steps.resolve.outputs.version }}"
+          git add Cargo.toml package.json packages/cosmo-pd101/package.json packages/cosmo-pd101-plugin/package.json packages/cosmo-pd101-plugin-auv3/package.json packages/cosmo-pd101-docs/package.json packages/cosmo-synth-engine/package.json
+          git commit -m "chore(release): ${{ steps.resolve.outputs.tag }}"
+
+      - name: Push commit and tag
+        id: publish
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          default_branch="${{ github.event.repository.default_branch }}"
+          tag="${{ steps.resolve.outputs.tag }}"
+
+          if [[ "${{ steps.resolve.outputs.version_source }}" == "bumped" ]]; then
+            release_sha="$(git rev-parse HEAD)"
+            git push origin "HEAD:refs/heads/${default_branch}"
+          else
+            release_sha="${{ steps.target.outputs.release_sha }}"
+          fi
+
+          git tag "${tag}" "${release_sha}"
+          git push origin "refs/tags/${tag}"
+
+          echo "release_sha=${release_sha}" >> "$GITHUB_OUTPUT"
+
+  release-metadata:
+    name: Resolve release metadata
+    if: always() && (github.event_name != 'push' || github.actor != 'github-actions[bot]') && (github.event_name != 'workflow_dispatch' || needs.prepare-release.result == 'success')
+    needs: [prepare-release]
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.metadata.outputs.version }}
+      tag: ${{ steps.metadata.outputs.tag }}
+      is_prerelease: ${{ steps.metadata.outputs.is_prerelease }}
+      version_source: ${{ steps.metadata.outputs.version_source }}
+      release_ref: ${{ steps.metadata.outputs.release_ref }}
+      release_sha: ${{ steps.metadata.outputs.release_sha }}
+    steps:
+      - name: Compute metadata
+        id: metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "version=${{ needs.prepare-release.outputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "tag=${{ needs.prepare-release.outputs.tag }}" >> "$GITHUB_OUTPUT"
+            echo "is_prerelease=${{ needs.prepare-release.outputs.is_prerelease }}" >> "$GITHUB_OUTPUT"
+            echo "version_source=${{ needs.prepare-release.outputs.version_source }}" >> "$GITHUB_OUTPUT"
+            echo "release_ref=${{ needs.prepare-release.outputs.tag }}" >> "$GITHUB_OUTPUT"
+            echo "release_sha=${{ needs.prepare-release.outputs.release_sha }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          tag="${GITHUB_REF_NAME}"
+          version="${tag#v}"
+          is_prerelease="false"
+          if [[ "${version}" == *-* ]]; then
+            is_prerelease="true"
+          fi
+
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "is_prerelease=${is_prerelease}" >> "$GITHUB_OUTPUT"
+          echo "version_source=tag" >> "$GITHUB_OUTPUT"
+          echo "release_ref=${tag}" >> "$GITHUB_OUTPUT"
+          echo "release_sha=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
   build-and-package:
     name: Build and package plugins (${{ matrix.platform }})
+    if: github.event_name != 'push' || github.actor != 'github-actions[bot]'
+    needs: [release-metadata]
     env:
       TRUCE_SIGNING_IDENTITY: ${{ secrets.TRUCE_SIGNING_IDENTITY }}
       TRUCE_INSTALLER_SIGNING_IDENTITY: ${{ secrets.TRUCE_INSTALLER_SIGNING_IDENTITY }}
@@ -25,6 +215,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.release-metadata.outputs.release_ref }}
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -86,6 +279,13 @@ jobs:
       - name: Package plugins (truce)
         run: cargo truce package
 
+      - name: Rename exact-release artifacts
+        if: needs.release-metadata.outputs.version_source == 'exact'
+        run: |
+          node scripts/release-workflow.mjs rename-artifacts \
+            --release-version "${{ needs.release-metadata.outputs.version }}" \
+            --dist-dir target/dist
+
       - name: Upload plugin artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -97,7 +297,8 @@ jobs:
 
   validate-plugins:
     name: Validate plugins (${{ matrix.platform }})
-    needs: build-and-package
+    if: github.event_name != 'push' || github.actor != 'github-actions[bot]'
+    needs: [build-and-package, release-metadata]
     strategy:
       fail-fast: false
       matrix:
@@ -107,6 +308,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.release-metadata.outputs.release_ref }}
 
       - name: Run plugin validation action
         uses: ./.github/actions/validate-plugins
@@ -115,6 +319,7 @@ jobs:
 
   upload-to-gumroad:
     name: Upload to Gumroad
+    if: github.event_name != 'push' || github.actor != 'github-actions[bot]'
     needs: [build-and-package]
     runs-on: ubuntu-latest
     steps:
@@ -309,17 +514,14 @@ jobs:
 
   create-release:
     name: Create GitHub release
-    needs: [build-and-package]
+    if: github.event_name != 'push' || github.actor != 'github-actions[bot]'
+    needs: [build-and-package, release-metadata]
     runs-on: ubuntu-latest
     steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v8
-        with:
-          pattern: plugins-*
-          path: release-assets
-          merge-multiple: true
-
       - name: Create release
         uses: softprops/action-gh-release@v3
         with:
+          tag_name: ${{ needs.release-metadata.outputs.tag }}
+          name: ${{ needs.release-metadata.outputs.tag }}
+          prerelease: ${{ needs.release-metadata.outputs.is_prerelease == 'true' }}
           generate_release_notes: true

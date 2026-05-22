@@ -9,6 +9,7 @@
 		"stage:webview": "bun run ../../scripts/build-plugin-auv3.mjs --webview-only",
 		"build:ios": "bun run ../../scripts/build-plugin-auv3.mjs --ios-xcframework",
 		"bundle": "bun run ../../scripts/build-plugin-auv3.mjs --bundle",
-		"plugin:install": "bun run ../../scripts/build-plugin-auv3.mjs --install"
+		"plugin:install": "bun run ../../scripts/build-plugin-auv3.mjs --install",
+		"generate:icons": "bun ../../scripts/generate-plugin-icons.mjs"
 	}
 }

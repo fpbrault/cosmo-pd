@@ -12,6 +12,8 @@ fourcc = "Copd"
 au3_subtype = "Cpd3"
 au_tag = "Synthesizer"
 bundle_id = "dev.purraudio.cosmo-pd101"
+windows_icon = "packages/cosmo-pd101-plugin/static/icons/cosmo-pd101.ico"
+macos_icon = "packages/cosmo-pd101-plugin/static/icons/cosmo-pd101.icns"
 
 [packaging]
 formats = ["clap", "vst3", "au2"]
@@ -21,3 +23,4 @@ notarize = true
 
 [windows.packaging]
 publisher = "Purr Audio"
+installer_icon = "packages/cosmo-pd101-plugin/static/icons/cosmo-pd101.ico"
