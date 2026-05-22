@@ -17,7 +17,7 @@ bundle_id = "dev.purraudio.cosmo-pd101"
 formats = ["clap", "vst3", "au2"]
 
 [macos.packaging]
-notarize = false
+notarize = true
 
 [windows.packaging]
 publisher = "Purr Audio"

@@ -10,27 +10,45 @@ use std::ffi::CString;
 use std::os::raw::c_char;
 use std::slice;
 
+use std::sync::Arc;
+use std::sync::atomic::{AtomicU32, Ordering};
+
+// `Float::from_f64` is only invoked from the macOS-only `set_param`
+// closure in `cb_gui_open` (the AU v2 host notifier path). Gate the
+// import so iOS builds, which take a `_id`-no-op branch instead,
+// don't flag it as unused.
+#[cfg(target_os = "macos")]
 use truce_core::Float;
+use truce_core::SYSEX_POOL_PREALLOC;
 use truce_core::cast::{len_u32, sample_pos_i64};
-use truce_core::editor::{ClosureBridge, Editor, PluginContext, RawWindowHandle, SendPtr};
+use truce_core::editor::Editor;
+// `ClosureBridge`, `PluginContext`, `SendPtr`, `RawWindowHandle` are
+// consumed only inside the apple-gated body of `cb_gui_open` - the
+// AppKit/UiKit variants don't exist on Linux/Windows. Importing them
+// from a non-apple module would also trigger the unused-import lint
+// there.
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+use truce_core::editor::{ClosureBridge, PluginContext, RawWindowHandle, SendPtr};
 use truce_core::events::{EVENT_LIST_PREALLOC, Event, EventBody, EventList, TransportInfo};
 use truce_core::export::PluginExport;
 use truce_core::info::PluginCategory;
-use truce_core::midi::{pitch_bend_from_bytes, pitch_bend_to_bytes};
+use truce_core::midi::{decode_short_message, pitch_bend_to_bytes};
 use truce_core::process::ProcessContext;
 use truce_core::state;
+use truce_core::ump::{SysExAssembler, SysExFeed, decode_ump_channel_voice_2};
 use truce_core::wrapper::{
     default_io_channels, log_missing_bus_layout, run_audio_block, run_extern_callback_with,
     run_register,
 };
 use truce_params::{ParamFlags, Params};
 
-use ffi::{AuCallbacks, AuMidiEvent, AuParamDescriptor, AuPluginDescriptor, AuTransportSnapshot};
-use std::sync::Arc;
-use std::sync::atomic::{AtomicU32, Ordering};
+use ffi::{
+    AuCallbacks, AuMidi2Event, AuMidiEvent, AuParamDescriptor, AuPluginDescriptor,
+    AuTransportSnapshot,
+};
 
 // ---------------------------------------------------------------------------
-// Instance wrapper — one per plugin instance, stored as the opaque ctx
+// Instance wrapper - one per plugin instance, stored as the opaque ctx
 // ---------------------------------------------------------------------------
 
 /// Bounded handoff slot for state loads. Capacity 1: presets don't
@@ -53,6 +71,17 @@ struct AuInstance<P: PluginExport> {
     tail_cache: AtomicU32,
     event_list: EventList,
     output_events: EventList,
+    /// Per-instance UMP `SysEx` reassembler. AU v3 hosts deliver
+    /// long `SysEx` payloads as a chain of `SysEx`-7 (6-byte) or
+    /// `SysEx`-8 (13-byte) UMPs; the assembler concatenates them
+    /// into one logical [`EventBody::SysEx`] before pushing to the
+    /// plugin's `event_list`. Holds
+    /// [`truce_core::ump::SYSEX_ASSEMBLER_SLOTS`] ×
+    /// [`SYSEX_POOL_PREALLOC`] (4 × 128 KiB = 512 KiB) of buffer
+    /// space so concurrent streams across UMP groups don't bleed
+    /// into each other. Cleared at the top of `cb_process` so a
+    /// partial message can't bleed across blocks.
+    sysex_assembler: SysExAssembler,
     plugin_id_hash: u64,
     sample_rate: f64,
     /// Max block size declared by the host via
@@ -89,7 +118,7 @@ struct AuInstance<P: PluginExport> {
 // in this file feeds a `*const c_char` (or `*const SomeDesc`) into a
 // descriptor that the AU host caches for the process lifetime. Hosts
 // re-read these pointers on demand (display, parameter sweeps,
-// validation) — there's no signal back to Rust saying "you may free
+// validation) - there's no signal back to Rust saying "you may free
 // this now". Freeing is therefore unsound.
 //
 // The leak is bounded: O(plugin_count × (param_count + a few strings))
@@ -98,7 +127,7 @@ struct AuInstance<P: PluginExport> {
 // the host process, which reclaims the allocation.
 //
 // `Box::into_raw(boxed_instance)` in `cb_create` follows the same
-// pattern but is *paired* with `cb_destroy` reconstituting the Box —
+// pattern but is *paired* with `cb_destroy` reconstituting the Box -
 // so it isn't a leak, just a C-lifetime handoff.
 //
 // ---------------------------------------------------------------------------
@@ -131,6 +160,7 @@ unsafe extern "C" fn cb_create<P: PluginExport>() -> *mut std::ffi::c_void {
         tail_cache,
         event_list: EventList::with_capacity(EVENT_LIST_PREALLOC),
         output_events: EventList::with_capacity(EVENT_LIST_PREALLOC),
+        sysex_assembler: SysExAssembler::with_capacity(SYSEX_POOL_PREALLOC),
         plugin_id_hash: state::shared_plugin_state_hash(&info),
         sample_rate: 44100.0,
         max_block_size: 8192,
@@ -175,6 +205,7 @@ unsafe extern "C" fn cb_reset<P: PluginExport>(
     }
 }
 
+#[allow(clippy::too_many_lines)] // step-by-step block processing reads top-to-bottom
 unsafe extern "C" fn cb_process<P: PluginExport>(
     ctx: *mut std::ffi::c_void,
     inputs: *const *const f32,
@@ -184,6 +215,8 @@ unsafe extern "C" fn cb_process<P: PluginExport>(
     num_frames: u32,
     events: *const AuMidiEvent,
     num_events: u32,
+    events2: *const AuMidi2Event,
+    num_events2: u32,
     transport_ptr: *const AuTransportSnapshot,
 ) {
     let nf = num_frames as usize;
@@ -191,7 +224,7 @@ unsafe extern "C" fn cb_process<P: PluginExport>(
         let inst = &mut *ctx.cast::<AuInstance<P>>();
         let num_frames = nf;
 
-        // Host called render before AU initialized us — sample rate
+        // Host called render before AU initialized us - sample rate
         // and smoothers haven't been primed. Zero outputs and bail.
         if !inst.prepared {
             for ch in 0..num_output_channels as usize {
@@ -216,51 +249,59 @@ unsafe extern "C" fn cb_process<P: PluginExport>(
         if !events.is_null() && num_events > 0 {
             let event_slice = slice::from_raw_parts(events, num_events as usize);
             for ev in event_slice {
-                let status = ev.status & 0xF0;
-                let channel = ev.status & 0x0F;
-                let body = match status {
-                    0x90 if ev.data2 > 0 => Some(EventBody::NoteOn {
-                        group: 0,
-                        channel,
-                        note: ev.data1,
-                        velocity: ev.data2,
-                    }),
-                    0x90 => Some(EventBody::NoteOff {
-                        group: 0,
-                        channel,
-                        note: ev.data1,
-                        velocity: 0,
-                    }),
-                    0x80 => Some(EventBody::NoteOff {
-                        group: 0,
-                        channel,
-                        note: ev.data1,
-                        velocity: ev.data2,
-                    }),
-                    0xA0 => Some(EventBody::Aftertouch {
-                        group: 0,
-                        channel,
-                        note: ev.data1,
-                        pressure: ev.data2,
-                    }),
-                    0xB0 => Some(EventBody::ControlChange {
-                        group: 0,
-                        channel,
-                        cc: ev.data1,
-                        value: ev.data2,
-                    }),
-                    0xE0 => Some(EventBody::PitchBend {
-                        group: 0,
-                        channel,
-                        value: pitch_bend_from_bytes(ev.data1, ev.data2),
-                    }),
-                    _ => None,
-                };
-                if let Some(body) = body {
+                if let Some(body) = decode_short_message(ev.status, ev.data1, ev.data2) {
                     inst.event_list.push(Event {
                         sample_offset: ev.sample_offset,
                         body,
                     });
+                }
+            }
+        }
+        // MIDI 2.0 UMP decode. AU v3 hosts on iOS 17+ / macOS 14+
+        // deliver per-note expression + 32-bit-resolution channel
+        // voice messages through `AURenderEvent.MIDIEventList`; the
+        // Swift shim hands them here as 64-bit UMPs (MIDI 2.0 CV
+        // message type 0x4) plus the SysEx-7 (mt 0x3) / SysEx-8
+        // (mt 0x5) variable-length streams that the assembler
+        // reconstitutes into one `EventBody::SysEx` per logical
+        // message. Utility / system / data UMPs are still skipped.
+        inst.sysex_assembler.reset();
+        if !events2.is_null() && num_events2 > 0 {
+            let slice2 = slice::from_raw_parts(events2, num_events2 as usize);
+            for ev in slice2 {
+                let mt = ((ev.words[0] >> 28) & 0xF) as u8;
+                match mt {
+                    0x4 => {
+                        if let Some(body) = decode_ump_channel_voice_2(ev.words) {
+                            inst.event_list.push(Event {
+                                sample_offset: ev.sample_offset,
+                                body,
+                            });
+                        }
+                    }
+                    0x3 => {
+                        let feed = inst
+                            .sysex_assembler
+                            .push_sysex7_packet([ev.words[0], ev.words[1]]);
+                        if let SysExFeed::Complete(p) = feed {
+                            // `push_sysex` failure here would mean the
+                            // pool is full mid-block; drop the
+                            // message rather than corrupt-splitting it.
+                            let _ = inst.event_list.push_sysex(ev.sample_offset, p.bytes);
+                        }
+                    }
+                    0x5 => {
+                        let feed = inst.sysex_assembler.push_sysex8_packet(ev.words);
+                        if let SysExFeed::Complete(p) = feed {
+                            let _ = inst.event_list.push_sysex(ev.sample_offset, p.bytes);
+                        }
+                    }
+                    _ => {
+                        // mt 0x0 (utility), 0x1 (system real-time),
+                        // 0x2 (MIDI 1 CV, already arrived via the
+                        // legacy `events` slice above), 0xD / 0xF
+                        // (flex / stream): not decoded.
+                    }
                 }
             }
         }
@@ -418,16 +459,14 @@ unsafe extern "C" fn cb_state_save<P: PluginExport>(
         //
         // Allocator pin: this wrapper allocates with libc `malloc` and
         // the AU shim frees with libc `free`. The Rust global allocator
-        // must not appear on either side. (VST2 uses the Rust global
-        // allocator for both save + free; do not cross wires when
-        // refactoring `_save_state` paths together.)
+        // must not appear on either side; mixing allocators is UB.
         let extra = inst.plugin.save_state();
         let blob = state::serialize_state(inst.plugin_id_hash, &ids, &values, &extra);
 
         let len = blob.len();
         let ptr = malloc(len).cast::<u8>();
         if ptr.is_null() {
-            // malloc failed — `*out_data` is already null and
+            // malloc failed - `*out_data` is already null and
             // `*out_len` already 0 from the pre-zero above.
             return;
         }
@@ -458,7 +497,7 @@ unsafe extern "C" fn cb_state_load<P: PluginExport>(
             state::apply_params(&*inst.params_arc, &deserialized);
             // Hand the deserialized state to the audio thread for
             // application. `force_push` overwrites any older pending
-            // blob — see the `pending_state` field comment for why
+            // blob - see the `pending_state` field comment for why
             // newest-wins is the right policy.
             let _ = inst.pending_state.force_push(deserialized);
             if let Some(ref mut editor) = inst.editor {
@@ -480,9 +519,13 @@ unsafe extern "C" fn cb_state_free(data: *mut u8, _len: u32) {
 // Output event callbacks (plugin → host MIDI)
 // ---------------------------------------------------------------------------
 
+// UMP MIDI 2.0 CV decoder lives in `truce-core::ump` so the same
+// codec backs CLAP's `CLAP_EVENT_MIDI2` path and AU's MIDIEventList
+// path.
+
 /// Map a truce `Event` body to a 3-byte AU MIDI packet. Returns
 /// `None` for event types that don't fit (MIDI 2.0, `ParamChange`,
-/// Transport, etc.). Mirrors the VST2/VST3 encoders.
+/// Transport, etc.).
 fn try_encode_au_midi(event: &Event) -> Option<AuMidiEvent> {
     let (status, data1, data2) = match &event.body {
         EventBody::NoteOn {
@@ -557,6 +600,41 @@ unsafe extern "C" fn cb_output_event_at<P: PluginExport>(
     }
 }
 
+unsafe extern "C" fn cb_output_sysex_count<P: PluginExport>(ctx: *mut std::ffi::c_void) -> u32 {
+    unsafe {
+        let inst = &*ctx.cast::<AuInstance<P>>();
+        len_u32(
+            inst.output_events
+                .iter()
+                .filter(|e| matches!(e.body, EventBody::SysEx { .. }))
+                .count(),
+        )
+    }
+}
+
+unsafe extern "C" fn cb_output_sysex_at<P: PluginExport>(
+    ctx: *mut std::ffi::c_void,
+    index: u32,
+    out_delta_frames: *mut u32,
+    out_bytes: *mut *const u8,
+    out_len: *mut u32,
+) {
+    unsafe {
+        let inst = &*ctx.cast::<AuInstance<P>>();
+        if let Some(event) = inst
+            .output_events
+            .iter()
+            .filter(|e| matches!(e.body, EventBody::SysEx { .. }))
+            .nth(index as usize)
+        {
+            let bytes = inst.output_events.sysex_bytes(&event.body);
+            *out_delta_frames = event.sample_offset;
+            *out_bytes = bytes.as_ptr();
+            *out_len = len_u32(bytes.len());
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // GUI callbacks
 // ---------------------------------------------------------------------------
@@ -583,13 +661,13 @@ unsafe extern "C" fn cb_gui_get_size<P: PluginExport>(
         if ctx.is_null() {
             return;
         }
-        // Lazily install the editor here too — some AU validators
+        // Lazily install the editor here too. Some AU validators
         // (`auval`, Logic Pro's plugin validator) call `..._get_size`
         // before `..._has_editor`, which is the canonical install
-        // site. Without this, those validators saw `inst.editor ==
-        // None` and silently received a 0×0 view, which shows up as
-        // "plugin reports invalid size" in their reports. Mirrors
-        // `cb_gui_has_editor`'s `&mut *` install.
+        // site. Without the lazy install here those validators see
+        // `inst.editor == None` and silently receive a 0x0 view,
+        // which shows up as "plugin reports invalid size" in their
+        // reports.
         let inst = &mut *ctx.cast::<AuInstance<P>>();
         if inst.editor.is_none() {
             inst.editor = inst.plugin.editor();
@@ -598,7 +676,7 @@ unsafe extern "C" fn cb_gui_get_size<P: PluginExport>(
             // AU is macOS-only; hosts embed our NSView inside a Cocoa
             // container at logical-point coordinates and AppKit handles
             // the Retina backing transparently. Report the editor size
-            // as-is — no scaling.
+            // as-is - no scaling.
             let (ew, eh) = editor.size();
             *w = ew;
             *h = eh;
@@ -610,6 +688,19 @@ unsafe extern "C" fn cb_gui_open<P: PluginExport>(
     ctx: *mut std::ffi::c_void,
     parent: *mut std::ffi::c_void,
 ) {
+    // AU is macOS+iOS-only at runtime. Linux/Windows builds compile
+    // the wrapper crate for completeness (it's part of the workspace
+    // build matrix) but the body references AppKit / UIKit /
+    // AUEventListener APIs that don't exist off-Apple. Stubbing the
+    // body keeps the FFI table population in `register_au_inner`
+    // type-checking on every platform.
+    #[cfg(not(any(target_os = "macos", target_os = "ios")))]
+    {
+        let _ = ctx;
+        let _ = parent;
+        let _ = std::marker::PhantomData::<P>;
+    }
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
     unsafe {
         let inst = &mut *ctx.cast::<AuInstance<P>>();
         if let Some(ref mut editor) = inst.editor {
@@ -627,8 +718,15 @@ unsafe extern "C" fn cb_gui_open<P: PluginExport>(
             let transport_slot = inst.transport_slot.clone();
             let ctx_for_begin = ctx_raw;
             let ctx_for_end = ctx_raw;
+            // iOS AU v3 hosts the editor inside an .appex; v2's
+            // `AUEventListener` doesn't exist there. Parameter
+            // changes from the editor flow to the host directly
+            // through the AUParameterTree's setter (handled by the
+            // Swift shim). The begin/set/end closures are no-ops on
+            // iOS so the plugin's editor code stays platform-agnostic.
             let context = PluginContext::from_closures(
                 ClosureBridge {
+                    #[cfg(target_os = "macos")]
                     begin_edit: Box::new(move |id| {
                         // Broadcasts kAudioUnitEvent_BeginParameterChangeGesture
                         // via AUEventListenerNotify so hosts (Logic, Live,
@@ -636,20 +734,38 @@ unsafe extern "C" fn cb_gui_open<P: PluginExport>(
                         // undo step and one automation gesture.
                         truce_au_v2_host_begin_param_gesture(ctx_for_begin.as_ptr().cast_mut(), id);
                     }),
+                    #[cfg(target_os = "ios")]
+                    begin_edit: Box::new(move |_id| {
+                        let _ = ctx_for_begin;
+                    }),
+                    #[cfg(target_os = "macos")]
                     set_param: Box::new(move |id, value| {
                         // One combined trait dispatch (set_normalized
-                        // + get_plain) instead of two — the
+                        // + get_plain) instead of two - the
                         // `#[derive(Params)]` impl can compute both in
                         // a single match-arm walk.
                         let plain =
                             f32::from_f64(params_for_set.set_normalized_returning_plain(id, value));
                         truce_au_v2_host_set_param(ctx_raw.as_ptr().cast_mut(), id, plain);
                     }),
+                    #[cfg(target_os = "ios")]
+                    set_param: Box::new(move |id, value| {
+                        // No host-notify on iOS; just write the
+                        // normalised value through. The Swift shim
+                        // polls the parameter tree.
+                        let _ = ctx_raw;
+                        let _ = params_for_set.set_normalized_returning_plain(id, value);
+                    }),
+                    #[cfg(target_os = "macos")]
                     end_edit: Box::new(move |id| {
                         // Closes the gesture started by begin_edit so the
                         // host commits the undo group / stops automation
                         // recording.
                         truce_au_v2_host_end_param_gesture(ctx_for_end.as_ptr().cast_mut(), id);
+                    }),
+                    #[cfg(target_os = "ios")]
+                    end_edit: Box::new(move |_id| {
+                        let _ = ctx_for_end;
                     }),
                     request_resize: Box::new(|_w, _h| false),
                     get_param: Box::new(move |id| params_for_get.get_normalized(id).unwrap_or(0.0)),
@@ -676,7 +792,6 @@ unsafe extern "C" fn cb_gui_open<P: PluginExport>(
                         {
                             // Apply params synchronously so the editor
                             // sees the restore on its own thread.
-                            // Mirrors `cb_state_load`.
                             state::apply_params(&*params_for_state, &deserialized);
                             let _ = pending_state_for_set.force_push(deserialized);
                         }
@@ -685,7 +800,10 @@ unsafe extern "C" fn cb_gui_open<P: PluginExport>(
                 },
                 params_for_ctx,
             );
+            #[cfg(target_os = "macos")]
             let handle = RawWindowHandle::AppKit(parent);
+            #[cfg(target_os = "ios")]
+            let handle = RawWindowHandle::UiKit(parent);
             editor.open(handle, context);
         }
     }
@@ -697,7 +815,7 @@ unsafe extern "C" fn cb_gui_close<P: PluginExport>(ctx: *mut std::ffi::c_void) {
         if let Some(ref mut editor) = inst.editor {
             editor.close();
         }
-        // Keep the editor alive — just closed, not dropped.
+        // Keep the editor alive - just closed, not dropped.
         //
         // Dropping the editor here would synchronously deallocate its
         // baseview NSWindow + content NSView. Logic / Pro Tools tend
@@ -707,17 +825,23 @@ unsafe extern "C" fn cb_gui_close<P: PluginExport>(ctx: *mut std::ffi::c_void) {
         // `[NSTimer invalidate]` (which baseview's drop chain calls
         // via `WindowHandle::drop`) re-enters that pool's pop
         // sequence, the host crashes inside `objc_release` on a
-        // freed `NSAutoreleasePool*` (same root cause as the AAX
-        // incident in `aax_editor_crash` memory note). The editor's
-        // `close()` has already released the NSView contents and
-        // Metal resources; the lightweight Rust struct that survives
-        // is reopened in-place by the next `gui_open` call.
+        // freed `NSAutoreleasePool*`. The editor's `close()` has
+        // already released the NSView contents and Metal resources;
+        // the lightweight Rust struct that survives is reopened
+        // in-place by the next `gui_open` call.
     }
 }
 
 unsafe extern "C" {
     fn malloc(size: usize) -> *mut std::ffi::c_void;
     fn free(ptr: *mut std::ffi::c_void);
+}
+
+// AU v2 host-side automation notifiers: gated to macOS because v2 is
+// macOS-only. iOS uses AU v3 exclusively, where host notification
+// goes through the parameter tree directly.
+#[cfg(target_os = "macos")]
+unsafe extern "C" {
     fn truce_au_v2_host_set_param(ctx: *mut std::ffi::c_void, param_id: u32, value: f32);
     fn truce_au_v2_host_begin_param_gesture(ctx: *mut std::ffi::c_void, param_id: u32);
     fn truce_au_v2_host_end_param_gesture(ctx: *mut std::ffi::c_void, param_id: u32);
@@ -734,7 +858,7 @@ unsafe extern "C" {
 /// to `PluginInfo::name`. The v3 host gets its display name out of
 /// the appex's `Info.plist` (`AUNAME`, populated by
 /// `cargo truce install --au3` from `au3_name`), not from this
-/// function — `g_descriptor->name` only feeds the v2 bridge's
+/// function - `g_descriptor->name` only feeds the v2 bridge's
 /// internal scanning responses, so the same value works for both
 /// build flavours.
 fn resolved_plugin_name(info: &truce_core::info::PluginInfo) -> &'static str {
@@ -763,7 +887,7 @@ fn register_au_inner<P: PluginExport>(num_inputs: u32, num_outputs: u32) {
     // `PluginExport` impls without a `Params::param_infos_static`
     // override fall back to the historical
     // `Self::create().params().param_infos()` walk inside the trait
-    // default — see `PluginExport::param_infos_static`.
+    // default - see `PluginExport::param_infos_static`.
     let param_infos = P::param_infos_static();
     let mut param_descs: Vec<AuParamDescriptor> = Vec::with_capacity(param_infos.len());
 
@@ -822,6 +946,8 @@ fn register_au_inner<P: PluginExport>(num_inputs: u32, num_outputs: u32) {
         state_free: cb_state_free,
         output_event_count: cb_output_event_count::<P>,
         output_event_at: cb_output_event_at::<P>,
+        output_sysex_count: cb_output_sysex_count::<P>,
+        output_sysex_at: cb_output_sysex_at::<P>,
         gui_has_editor: cb_gui_has_editor::<P>,
         gui_get_size: cb_gui_get_size::<P>,
         gui_open: cb_gui_open::<P>,
@@ -855,6 +981,8 @@ fn register_au_inner<P: PluginExport>(num_inputs: u32, num_outputs: u32) {
 #[macro_export]
 macro_rules! export_au {
     ($plugin_type:ty) => {
+        // macOS: register both AU v2 (`.component`) and AU v3 (`.appex`)
+        // entry points. AU v2's factory delegates to the C shim.
         #[cfg(target_os = "macos")]
         mod _au_entry {
             use super::*;
@@ -865,8 +993,10 @@ macro_rules! export_au {
                 ::truce_au::register_au::<$plugin_type>();
             }
 
-            // AU v2 factory — delegates to au_v2_shim.c, which the
-            // build.rs always compiles into the shim static lib.
+            // AU v2 factory: delegates to au_v2_shim.c. The whole
+            // `_au_entry` module is gated on `target_os = "macos"`
+            // because v2 only exists on macOS, matching `build.rs`'s
+            // `is_macos` gate on compiling au_v2_shim.c.
             unsafe extern "C" {
                 fn truce_au_v2_factory_bridge(
                     desc: *const ::std::ffi::c_void,
@@ -880,5 +1010,50 @@ macro_rules! export_au {
                 truce_au_v2_factory_bridge(desc)
             }
         }
+        // iOS: AU v3 only. The Swift `AudioUnitFactory` /
+        // `TruceAUAudioUnit` in the .appex bundle reads our exported
+        // globals (g_callbacks / g_descriptor / ...) at runtime via
+        // the dynamic symbol table; we just need `truce_au_init` to
+        // run from the dylib constructor.
+        #[cfg(target_os = "ios")]
+        mod _au_entry {
+            use super::*;
+
+            #[unsafe(no_mangle)]
+            pub extern "C" fn truce_au_init() {
+                ::truce_au::register_au::<$plugin_type>();
+            }
+        }
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use truce_core::SYSEX_POOL_PREALLOC;
+    use truce_shim_types::AU_SHIM_TYPES_H;
+
+    #[test]
+    fn sysex_pool_prealloc_matches_header() {
+        // The Swift AU v3 template (`AudioUnitFactory.swift`)
+        // reads `TRUCE_SYSEX_POOL_PREALLOC` from `au_shim_types.h`
+        // to size its per-render `sysexOutScratch`. Confirm the C
+        // macro still expands to the same value as the Rust const
+        // - otherwise the scratch is either undersized (event
+        // drops) or wasteful (memory bloat per AU instance).
+        let needle = format!("#define TRUCE_SYSEX_POOL_PREALLOC ({SYSEX_POOL_PREALLOC})");
+        let needle_paren = format!(
+            "#define TRUCE_SYSEX_POOL_PREALLOC ({} * 1024)",
+            SYSEX_POOL_PREALLOC / 1024,
+        );
+        assert!(
+            AU_SHIM_TYPES_H.contains(&needle) || AU_SHIM_TYPES_H.contains(&needle_paren),
+            "au_shim_types.h::TRUCE_SYSEX_POOL_PREALLOC must equal \
+             truce_core::SYSEX_POOL_PREALLOC ({} bytes / {} KiB). \
+             Looked for `{}` or `{}` in the header.",
+            SYSEX_POOL_PREALLOC,
+            SYSEX_POOL_PREALLOC / 1024,
+            needle,
+            needle_paren,
+        );
+    }
 }

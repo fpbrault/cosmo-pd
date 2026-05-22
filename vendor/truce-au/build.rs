@@ -1,5 +1,8 @@
 fn main() {
-    if std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default() != "macos" {
+    let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
+    let is_macos = target_os == "macos";
+    let is_ios = target_os == "ios";
+    if !is_macos && !is_ios {
         return;
     }
 
@@ -20,13 +23,13 @@ fn main() {
     //   it appears in `__objc_classlist` (required by REAPER's
     //   `[NSBundle classNamed:]` lookup). The class name must be
     //   unique per plugin: hosts load every installed `.component`
-    //   into one process, and libobjc dedupes by name — the loser's
+    //   into one process, and libobjc dedupes by name - the loser's
     //   bundle then returns nil from `classNamed:` and the host
     //   thinks it has no GUI. Uniqueness comes from the
     //   `TRUCE_AU_PLUGIN_ID` env var (cargo-truce sets it from
     //   truce.toml); sanitised into an alphanumeric suffix and
     //   handed to the .m via `-DTRUCE_AU_VIEW_FACTORY_NAME=...`.
-    //   Plain `cargo build` (no env) uses a default name — fine for
+    //   Plain `cargo build` (no env) uses a default name - fine for
     //   unit tests, not for multi-plugin hosting.
     //
     // - AU v3 (.appex): the AUAudioUnit subclass + factory are
@@ -50,35 +53,31 @@ fn main() {
 
     let mut build = cc::Build::new();
     build.file("shim/au_shim_common.c");
-    build.file("shim/au_v2_shim.c");
-    build.file("shim/au_v2_view.m");
+    if is_macos {
+        // AU v2 only exists on macOS; the .component bundle layout
+        // and AudioComponentPlugInInterface dispatch are macOS-only.
+        // iOS hosts AU v3 exclusively via the App Extension shim
+        // (Swift-side, compiled by xcodebuild - not from this build).
+        build.file("shim/au_v2_shim.c");
+        build.file("shim/au_v2_view.m");
+    }
 
     build
         .include(&shim_include)
         .flag("-fobjc-arc")
         .flag("-fmodules")
-        .flag("-fvisibility=default")
-        .flag("-mmacosx-version-min=11.0")
-        .define("TRUCE_AU_VIEW_FACTORY_NAME", view_factory_name.as_str());
-
-    // Apple's BSD ar doesn't support the GNU `D` (deterministic) flag that
-    // cc >= 1.2 probes by default, producing noisy cargo warnings on each
-    // build. Create a thin wrapper that strips `D` mode modifiers so cc's
-    // probe succeeds silently _and_ all subsequent batches use `cqD`/`sD`
-    // without error.
-    let ar_path = std::path::Path::new(&out_dir).join("ar-wrapper");
-    std::fs::write(
-        &ar_path,
-        "#!/bin/sh\nexec /usr/bin/ar $(echo \"$@\" | sed 's/D//g')",
-    )
-    .unwrap();
-    {
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&ar_path, std::fs::Permissions::from_mode(0o755)).unwrap();
+        .flag("-fvisibility=default");
+    if is_macos {
+        build.flag("-mmacosx-version-min=11.0");
+    } else {
+        // iOS deployment target. AU v3 requires iOS 11.0+ (when AU
+        // App Extensions arrived); we set 16.0 to match the current
+        // Swift template's minimum.
+        build.flag("-mios-version-min=16.0");
     }
-    // SAFETY: build.rs is single-threaded; pointing AR at our wrapper is
-    // safe and scoped to this build script process.
-    unsafe { std::env::set_var("AR", ar_path.to_str().unwrap()) };
+    if is_macos {
+        build.define("TRUCE_AU_VIEW_FACTORY_NAME", view_factory_name.as_str());
+    }
 
     build.compile("au_shim");
 
@@ -98,19 +97,24 @@ fn main() {
     println!("cargo:rustc-link-arg-cdylib=-Wl,-exported_symbol,_g_param_descriptors");
     println!("cargo:rustc-link-arg-cdylib=-Wl,-exported_symbol,_g_num_params");
 
-    // Always export the v2 factory symbol — hosts use the v2 API to
-    // instantiate, including the v3→v2 bridge that GarageBand /
-    // AULab use during scanning.
-    println!("cargo:rustc-link-arg-cdylib=-Wl,-exported_symbol,_TruceAUFactory");
-
-    // The cocoa view class-name lookup function lives in au_v2_view.m;
-    // force its symbol to be exported so `au_v2_shim.c`'s extern call links.
-    println!("cargo:rustc-link-arg-cdylib=-Wl,-exported_symbol,_truce_au_view_factory_class_name");
+    if is_macos {
+        // AU v2 factory + v2 cocoa-view class-name lookup. Both
+        // symbols come from `au_v2_*.{c,m}` which we only compile
+        // on macOS; force-export only when they exist.
+        println!("cargo:rustc-link-arg-cdylib=-Wl,-exported_symbol,_TruceAUFactory");
+        println!(
+            "cargo:rustc-link-arg-cdylib=-Wl,-exported_symbol,_truce_au_view_factory_class_name"
+        );
+    }
 
     println!("cargo:rustc-link-lib=framework=AudioToolbox");
     println!("cargo:rustc-link-lib=framework=AVFAudio");
     println!("cargo:rustc-link-lib=framework=CoreAudio");
     println!("cargo:rustc-link-lib=framework=CoreMIDI");
     println!("cargo:rustc-link-lib=framework=Foundation");
-    println!("cargo:rustc-link-lib=framework=AppKit");
+    if is_macos {
+        // AppKit lives only on macOS; iOS uses UIKit (linked from
+        // the Swift extension binary, not the Rust framework).
+        println!("cargo:rustc-link-lib=framework=AppKit");
+    }
 }

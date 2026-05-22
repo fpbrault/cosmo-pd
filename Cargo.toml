@@ -25,7 +25,7 @@ syn = { version = "2", features = [
 ] }
 quote = "1"
 proc-macro2 = "1"
-truce = { git = "https://github.com/truce-audio/truce.git", tag = "v0.45.4" }
+truce = { git = "https://github.com/truce-audio/truce.git", tag = "v0.45.4", default-features = false }
 truce-core = { git = "https://github.com/truce-audio/truce.git", tag = "v0.45.4" }
 truce-params = { git = "https://github.com/truce-audio/truce.git", tag = "v0.45.4" }
 truce-clap = { git = "https://github.com/truce-audio/truce.git", tag = "v0.45.4" }

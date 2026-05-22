@@ -23,14 +23,21 @@ typedef struct {
     AudioComponentPlugInInterface interface; // MUST be first
     AudioComponentInstance componentInstance;
     void *rustCtx;
-    CFStringRef currentPresetName;
-    SInt32 currentPresetNumber;
 
     AudioStreamBasicDescription inputFormat;
     AudioStreamBasicDescription outputFormat;
     double sampleRate;
     UInt32 maxFramesPerSlice;
     Boolean initialized;
+
+    // kAudioUnitProperty_PresentPreset (= 36) state. The host writes
+    // an AUPreset (presetNumber + retained CFStringRef name) here and
+    // reads it back; we also round-trip the name through
+    // kAudioUnitProperty_ClassInfo's `kAUPresetNameKey` (= "name") so
+    // auval's "Preset name is not retained in retrieved class data"
+    // check passes. Negative presetNumber means "user preset, not from
+    // the factory list" per Apple convention.
+    AUPreset currentPreset;
 
     // Internal output buffers
     float *outputBuffers[32];
@@ -55,6 +62,22 @@ typedef struct {
     // of each render block and forward via this callback.
     AUMIDIOutputCallback midiOutputCallback;
     void *midiOutputUserData;
+
+    // Heap-allocated scratch for SysEx output packet lists. Sized
+    // to hold one MIDIPacketList of up to 256 SysEx events whose
+    // total framed payload tops out at truce_core::SYSEX_POOL_PREALLOC
+    // (128 KiB) + 2 framing bytes per event. Per-packet overhead is
+    // ~14 B (timestamp + length + headers) - we allocate enough
+    // headroom that the entire pool of SysEx events fits in one
+    // call to midiOutputCallback.
+    Byte *sysexPacketBuf;
+    uint32_t sysexPacketBufSize;
+    // One-event framing scratch: `0xF0` + inner bytes + `0xF7`.
+    // `MIDIPacketListAdd` copies the byte buffer synchronously, so
+    // we only need enough space for the single largest event we'll
+    // ever pass in. Sized to truce_core::SYSEX_POOL_PREALLOC + 2.
+    Byte *sysexFrameScratch;
+    uint32_t sysexFrameScratchSize;
 
     // Host callbacks (set via kAudioUnitProperty_HostCallbacks). Used to
     // query tempo / play state / bar position from the host each render.
@@ -145,7 +168,7 @@ static void fill_param_event(AudioUnitEvent *event, AudioUnit unit,
  * cached value) and broadcasts a `kAudioUnitEvent_ParameterValueChange`
  * via `AUEventListenerNotify` so any registered AUEventListener sees
  * the change and records automation. `AudioUnitSetParameter` alone does
- * not synthesise the listener notification — hosts that thin / record
+ * not synthesise the listener notification - hosts that thin / record
  * automation rely on the explicit broadcast. */
 void truce_au_v2_host_set_param(void *ctx, uint32_t param_id, float value) {
     TruceAUv2 *inst = au_ctx_map_lookup(ctx);
@@ -195,17 +218,36 @@ static int is_instrument(void) {
             g_descriptor->component_type[3] == 'u');
 }
 
-static void set_current_preset_name(TruceAUv2 *inst, CFStringRef name) {
-    if (inst->currentPresetName) {
-        CFRelease(inst->currentPresetName);
-        inst->currentPresetName = NULL;
+/* Append one packet to the in-progress `MIDIPacketList`, flushing
+ * to the host and retrying on overflow.
+ *
+ * Returns the next free `MIDIPacket *` for further appends, or NULL
+ * when even an empty list can't hold this packet (the event is
+ * dropped - truncating MIDI / `SysEx` is corrupt). On flush the
+ * callsite's `*pkt` is replaced with a fresh init pointer.
+ *
+ * Centralised here so the channel-voice and `SysEx` drains share
+ * one overflow policy. The audio thread does the work, so all
+ * inputs are stack / pool memory the helper never owns. */
+static MIDIPacket *append_or_flush_retry(MIDIPacketList *pktList,
+                                         MIDIPacket *pkt,
+                                         TruceAUv2 *inst,
+                                         const AudioTimeStamp *inTimeStamp,
+                                         MIDITimeStamp ts,
+                                         ByteCount len,
+                                         const Byte *data) {
+    if (!pkt) return NULL;
+    MIDIPacket *next = MIDIPacketListAdd(
+        pktList, inst->sysexPacketBufSize, pkt, ts, len, data);
+    if (!next) {
+        inst->midiOutputCallback(inst->midiOutputUserData,
+                                 inTimeStamp, 0 /* outputIndex */,
+                                 pktList);
+        pkt = MIDIPacketListInit(pktList);
+        next = MIDIPacketListAdd(
+            pktList, inst->sysexPacketBufSize, pkt, ts, len, data);
     }
-    if (name) {
-        inst->currentPresetName = CFStringCreateCopy(NULL, name);
-    } else {
-        inst->currentPresetName = CFSTR("Current State");
-        CFRetain(inst->currentPresetName);
-    }
+    return next;
 }
 
 // ---------------------------------------------------------------------------
@@ -215,8 +257,6 @@ static void set_current_preset_name(TruceAUv2 *inst, CFStringRef name) {
 static OSStatus au_v2_open(void *self_, AudioComponentInstance instance) {
     TruceAUv2 *inst = (TruceAUv2 *)self_;
     inst->componentInstance = instance;
-    inst->currentPresetNumber = -1;
-    set_current_preset_name(inst, NULL);
 
     if (!g_callbacks) return kAudioUnitErr_FailedInitialization;
     inst->rustCtx = g_callbacks->create();
@@ -230,6 +270,13 @@ static OSStatus au_v2_open(void *self_, AudioComponentInstance instance) {
         build_asbd(&inst->outputFormat, inst->sampleRate, g_descriptor->num_outputs);
     if (g_descriptor->num_inputs > 0)
         build_asbd(&inst->inputFormat, inst->sampleRate, g_descriptor->num_inputs);
+
+    // Default preset. presetNumber = -1 is Apple's "no factory preset
+    // selected, this is a user / default state" sentinel. The name is
+    // CFRetained here and released in au_v2_close.
+    inst->currentPreset.presetNumber = -1;
+    inst->currentPreset.presetName = CFSTR("Untitled");
+    CFRetain(inst->currentPreset.presetName);
 
     return noErr;
 }
@@ -245,9 +292,13 @@ static OSStatus au_v2_close(void *self_) {
         free(inst->outputBuffers[c]);
         inst->outputBuffers[c] = NULL;
     }
-    if (inst->currentPresetName) {
-        CFRelease(inst->currentPresetName);
-        inst->currentPresetName = NULL;
+    free(inst->sysexPacketBuf);
+    inst->sysexPacketBuf = NULL;
+    free(inst->sysexFrameScratch);
+    inst->sysexFrameScratch = NULL;
+    if (inst->currentPreset.presetName) {
+        CFRelease(inst->currentPreset.presetName);
+        inst->currentPreset.presetName = NULL;
     }
     free(inst);
     return noErr;
@@ -510,7 +561,7 @@ static OSStatus au_v2_get_property(void *self_, AudioUnitPropertyID prop,
 
         case kAudioUnitProperty_MIDIOutputCallbackInfo: {
             /* Hosts that read this expect a CFArray of CFString port
-             * names — one entry per logical MIDI output port. truce
+             * names - one entry per logical MIDI output port. truce
              * exposes a single port; "Truce MIDI Out" is the visible
              * label in the host's MIDI routing UI. The CFArray
              * ownership transfers to the caller. */
@@ -590,7 +641,7 @@ static OSStatus au_v2_get_property(void *self_, AudioUnitPropertyID prop,
             // `au_v2_view.m` and registered with the ObjC runtime
             // automatically when the dylib loads (via the compiler's
             // `__objc_classlist`). `truce_au_view_factory_class_name`
-            // returns this dylib's unique class name — see au_v2_view.m
+            // returns this dylib's unique class name - see au_v2_view.m
             // for why each plugin needs its own.
             extern const char *truce_au_view_factory_class_name(void);
             viewInfo->mCocoaAUViewClass[0] = CFStringCreateWithCString(
@@ -612,15 +663,34 @@ static OSStatus au_v2_get_property(void *self_, AudioUnitPropertyID prop,
              * rather than touching dylib globals directly. That keeps
              * the view shim source identical across plugins, even
              * though each plugin compiles its own uniquely-named
-             * class — every property fetch lands in the dylib that
+             * class - every property fetch lands in the dylib that
              * owns the AU instance, which is always the correct one. */
             *(const AuCallbacks **)outData = g_callbacks;
             *ioSize = sizeof(void*);
             return noErr;
         }
 
+        case kAudioUnitProperty_PresentPreset: {
+            if (scope != kAudioUnitScope_Global) return kAudioUnitErr_InvalidScope;
+            if (*ioSize < sizeof(AUPreset)) return kAudioUnitErr_InvalidPropertyValue;
+            // Hand the caller a struct copy. The host receives ownership
+            // of the name reference and is expected to CFRelease it,
+            // so we balance with an extra CFRetain here.
+            *(AUPreset *)outData = inst->currentPreset;
+            if (inst->currentPreset.presetName) {
+                CFRetain(inst->currentPreset.presetName);
+            }
+            *ioSize = sizeof(AUPreset);
+            return noErr;
+        }
+
         case kAudioUnitProperty_ClassInfo: {
-            // State save — build a CFDictionary
+            // State save: build a CFDictionary using Apple's standard
+            // preset keys. The "name" slot carries the current preset
+            // name (set by the host via kAudioUnitProperty_PresentPreset
+            // or by a prior ClassInfo round-trip), not the component
+            // name. auval's "preset name is not retained" check reads
+            // this slot.
             if (!g_callbacks || !inst->rustCtx) return kAudioUnitErr_Uninitialized;
 
             CFMutableDictionaryRef dict = CFDictionaryCreateMutable(NULL, 0,
@@ -636,9 +706,9 @@ static OSStatus au_v2_get_property(void *self_, AudioUnitPropertyID prop,
             CFNumberRef nSub = CFNumberCreate(NULL, kCFNumberSInt32Type, &compSubType);
             CFNumberRef nMfr = CFNumberCreate(NULL, kCFNumberSInt32Type, &compMfr);
             CFNumberRef nVer = CFNumberCreate(NULL, kCFNumberSInt32Type, &compVer);
-            CFStringRef sName = inst->currentPresetName
-                ? (CFStringRef)CFRetain(inst->currentPresetName)
-                : CFStringCreateWithCString(NULL, g_descriptor->name, kCFStringEncodingUTF8);
+            CFStringRef sName = inst->currentPreset.presetName
+                ? (CFStringRef)CFRetain(inst->currentPreset.presetName)
+                : CFSTR("Untitled");
 
             CFDictionarySetValue(dict, CFSTR("type"), nType);
             CFDictionarySetValue(dict, CFSTR("subtype"), nSub);
@@ -646,7 +716,8 @@ static OSStatus au_v2_get_property(void *self_, AudioUnitPropertyID prop,
             CFDictionarySetValue(dict, CFSTR("version"), nVer);
             CFDictionarySetValue(dict, CFSTR("name"), sName);
 
-            CFRelease(nType); CFRelease(nSub); CFRelease(nMfr); CFRelease(nVer); CFRelease(sName);
+            CFRelease(nType); CFRelease(nSub); CFRelease(nMfr); CFRelease(nVer);
+            if (inst->currentPreset.presetName) CFRelease(sName);
 
             // Plugin state blob
             uint8_t *data = NULL; uint32_t len = 0;
@@ -660,19 +731,6 @@ static OSStatus au_v2_get_property(void *self_, AudioUnitPropertyID prop,
 
             *(CFPropertyListRef *)outData = dict;
             *ioSize = sizeof(CFPropertyListRef);
-            return noErr;
-        }
-
-        case kAudioUnitProperty_PresentPreset: {
-            if (scope != kAudioUnitScope_Global) return kAudioUnitErr_InvalidScope;
-            if (*ioSize < sizeof(AUPreset))
-                return kAudioUnitErr_InvalidPropertyValue;
-            AUPreset *preset = (AUPreset *)outData;
-            preset->presetNumber = inst->currentPresetNumber;
-            preset->presetName = inst->currentPresetName
-                ? (CFStringRef)CFRetain(inst->currentPresetName)
-                : CFRetain(CFSTR("Current State"));
-            *ioSize = sizeof(AUPreset);
             return noErr;
         }
 
@@ -796,6 +854,26 @@ static OSStatus au_v2_set_property(void *self_, AudioUnitPropertyID prop,
             }
             return noErr;
         }
+        case kAudioUnitProperty_PresentPreset: {
+            if (scope != kAudioUnitScope_Global) return kAudioUnitErr_InvalidScope;
+            if (!inData || inSize < sizeof(AUPreset))
+                return kAudioUnitErr_InvalidPropertyValue;
+            const AUPreset *src = (const AUPreset *)inData;
+            // Release the old name and retain the incoming one. The
+            // host owns its copy independently of ours.
+            if (inst->currentPreset.presetName) {
+                CFRelease(inst->currentPreset.presetName);
+                inst->currentPreset.presetName = NULL;
+            }
+            inst->currentPreset.presetNumber = src->presetNumber;
+            if (src->presetName) {
+                inst->currentPreset.presetName = (CFStringRef)CFRetain(src->presetName);
+            }
+            notify_listeners(inst, kAudioUnitProperty_PresentPreset,
+                             kAudioUnitScope_Global, 0);
+            return noErr;
+        }
+
         case kAudioUnitProperty_ClassInfo: {
             // State load
             if (!g_callbacks || !inst->rustCtx) return kAudioUnitErr_Uninitialized;
@@ -810,26 +888,30 @@ static OSStatus au_v2_set_property(void *self_, AudioUnitPropertyID prop,
                 return kAudioUnitErr_InvalidPropertyValue;
 
             CFDictionaryRef dict = (CFDictionaryRef)plist;
-            CFStringRef class_name = CFDictionaryGetValue(dict, CFSTR("name"));
-            if (class_name && CFGetTypeID(class_name) == CFStringGetTypeID()) {
-                set_current_preset_name(inst, class_name);
+
+            // Round-trip the preset name through the standard "name"
+            // slot so auval's "preset name is not retained" check
+            // passes. We accept whatever the host wrote into ClassInfo
+            // even if it never called PresentPreset.
+            CFStringRef savedName = CFDictionaryGetValue(dict, CFSTR("name"));
+            if (savedName && CFGetTypeID(savedName) == CFStringGetTypeID()) {
+                if (inst->currentPreset.presetName) {
+                    CFRelease(inst->currentPreset.presetName);
+                }
+                inst->currentPreset.presetName = (CFStringRef)CFRetain(savedName);
+                // A user-loaded blob isn't tied to a factory preset
+                // index, so reset the number to -1 per Apple convention.
+                inst->currentPreset.presetNumber = -1;
+                notify_listeners(inst, kAudioUnitProperty_PresentPreset,
+                                 kAudioUnitScope_Global, 0);
             }
+
             CFDataRef cfData = CFDictionaryGetValue(dict, CFSTR("truce_state"));
             if (cfData && CFGetTypeID(cfData) == CFDataGetTypeID()) {
                 const uint8_t *bytes = CFDataGetBytePtr(cfData);
                 uint32_t len = (uint32_t)CFDataGetLength(cfData);
                 g_callbacks->state_load(inst->rustCtx, bytes, len);
             }
-            return noErr;
-        }
-
-        case kAudioUnitProperty_PresentPreset: {
-            if (scope != kAudioUnitScope_Global) return kAudioUnitErr_InvalidScope;
-            if (!inData || inSize < sizeof(AUPreset))
-                return kAudioUnitErr_InvalidPropertyValue;
-            const AUPreset *preset = (const AUPreset *)inData;
-            inst->currentPresetNumber = preset->presetNumber;
-            set_current_preset_name(inst, preset->presetName);
             return noErr;
         }
 
@@ -880,7 +962,7 @@ static OSStatus au_v2_schedule_parameters(void *self_,
 // Render
 // ---------------------------------------------------------------------------
 
-/* Fill `out` from HostCallbackInfo. Each proc is optional — missing
+/* Fill `out` from HostCallbackInfo. Each proc is optional - missing
  * callbacks leave their corresponding fields at zero. `valid` is set
  * to 1 as long as at least one proc returned successfully. */
 static void fill_transport_snapshot(TruceAUv2 *inst,
@@ -942,7 +1024,7 @@ static void fill_transport_snapshot(TruceAUv2 *inst,
     }
     if (ok == 0 && ts && (ts->mFlags & kAudioTimeStampSampleTimeValid)) {
         // Fall back to the render timestamp if the host has no transport
-        // procs — at least gives the plugin a sample position.
+        // procs - at least gives the plugin a sample position.
         out->position_samples = ts->mSampleTime;
         ok = 1;
     }
@@ -960,7 +1042,7 @@ static OSStatus au_v2_render(void *self_,
     if (!inst->initialized || !g_callbacks || !inst->rustCtx)
         return kAudioUnitErr_Uninitialized;
 
-    // Clear the output-is-silence flag — we produce audio
+    // Clear the output-is-silence flag - we produce audio
     if (ioFlags) *ioFlags &= ~kAudioUnitRenderAction_OutputIsSilence;
 
     if (inFrameCount > inst->maxFramesPerSlice)
@@ -1013,12 +1095,12 @@ static OSStatus au_v2_render(void *self_,
         }
     }
 
-    // Save host's original buffer pointers — we MUST write back to these
+    // Save host's original buffer pointers - we MUST write back to these
     void *hostBufs[32] = {0};
     for (uint32_t c = 0; c < ioData->mNumberBuffers && c < 32; c++)
         hostBufs[c] = ioData->mBuffers[c].mData;
 
-    // Build channel pointers — process into our internal buffers
+    // Build channel pointers - process into our internal buffers
     const float *inPtrs[32];
     float *outPtrs[32];
 
@@ -1031,30 +1113,42 @@ static OSStatus au_v2_render(void *self_,
     AuTransportSnapshot transport;
     fill_transport_snapshot(inst, inTimeStamp, &transport);
 
+    /* AU v2 hosts deliver MIDI exclusively through the legacy
+     * `MusicDeviceMIDIEvent` path (3-byte MIDI 1.0); they don't have a
+     * MIDIEventList equivalent. Forward NULL / 0 for the MIDI 2.0
+     * UMP array so the Rust event-decoder skips it. */
     g_callbacks->process(inst->rustCtx, inPtrs, outPtrs,
                          numIn, numOut, inFrameCount,
                          inst->midiBuffer, inst->midiCount,
+                         NULL, 0,
                          &transport);
     inst->midiCount = 0;
 
-    /* Drain plugin → host MIDI. The Rust side has already filtered
-     * the queue down to events that fit in 3-byte MIDI 1.0 packets.
-     * Build one MIDIPacket per event (variable-length packet list)
-     * and call the host's registered output callback. Events with
-     * `sample_offset >= inFrameCount` (out-of-block) are clamped
-     * rather than dropped; AU hosts schedule these for the boundary
-     * sample. */
+    /* Drain plugin → host MIDI. Channel-voice events go through
+     * `output_event_at` (filtered to fit in 3-byte MIDI 1.0
+     * packets); SysEx events go through `output_sysex_at` with
+     * inner bytes the shim wraps in `0xF0` / `0xF7` framing before
+     * the MIDIPacketListAdd call. Both end up in the same
+     * MIDIPacketList so the host callback fires once per render
+     * block. Events with `sample_offset >= inFrameCount`
+     * (out-of-block) are clamped rather than dropped; AU hosts
+     * schedule these for the boundary sample. */
     if (inst->midiOutputCallback) {
-        uint32_t out_count = g_callbacks->output_event_count(inst->rustCtx);
-        if (out_count > 0) {
-            /* Cap matches the input direction; deeper queues are
-             * truncated rather than allocated through. 256 packets
-             * × ~16 bytes each fits in stack comfortably. */
-            if (out_count > 256) out_count = 256;
-            Byte packet_buf[256 * 32]; /* generous; per-packet ≤ 16B */
-            MIDIPacketList *pktList = (MIDIPacketList *)packet_buf;
+        uint32_t cv_count = g_callbacks->output_event_count(inst->rustCtx);
+        uint32_t sx_count = g_callbacks->output_sysex_count(inst->rustCtx);
+        if (cv_count > 256) cv_count = 256;
+        if (sx_count > 256) sx_count = 256;
+        if (cv_count > 0 || sx_count > 0) {
+            MIDIPacketList *pktList =
+                (MIDIPacketList *)inst->sysexPacketBuf;
             MIDIPacket *pkt = MIDIPacketListInit(pktList);
-            for (uint32_t i = 0; i < out_count; i++) {
+
+            /* Channel-voice drain. `append_or_flush_retry` handles
+             * the overflow path: on `MIDIPacketListAdd` failure it
+             * sends the partial list to the host, reinits, and
+             * retries the current event. Both drains share the
+             * helper so the overflow policy stays in one place. */
+            for (uint32_t i = 0; pkt && i < cv_count; i++) {
                 AuMidiEvent ev = {0};
                 g_callbacks->output_event_at(inst->rustCtx, i, &ev);
                 Byte data[3] = { ev.status, ev.data1, ev.data2 };
@@ -1068,13 +1162,52 @@ static OSStatus au_v2_render(void *self_,
                 if (ev.sample_offset >= inFrameCount) {
                     ts = inFrameCount > 0 ? (inFrameCount - 1) : 0;
                 }
-                pkt = MIDIPacketListAdd(pktList, sizeof(packet_buf), pkt,
-                                       ts, byteCount, data);
-                if (!pkt) break; /* list full */
+                pkt = append_or_flush_retry(
+                    pktList, pkt, inst, inTimeStamp, ts, byteCount, data);
             }
-            inst->midiOutputCallback(inst->midiOutputUserData,
-                                     inTimeStamp, 0 /* outputIndex */,
-                                     pktList);
+            /* SysEx drain. MIDIPacketListAdd accepts the framed
+             * (`0xF0` + inner + `0xF7`) byte stream as a single
+             * packet of length `2 + len`; CoreMIDI carries SysEx
+             * payloads of arbitrary size through one packet (no
+             * 4-byte cap like AAX's `AAX_CMidiPacket`). We build
+             * the framed bytes in `sysexFrameScratch` per event;
+             * `MIDIPacketListAdd` copies them into the list
+             * synchronously so reusing the scratch for the next
+             * event is sound. If a single event exceeds the
+             * packet-list size even on a freshly-flushed buffer,
+             * skip it - truncating SysEx is corrupt. */
+            for (uint32_t i = 0; pkt && i < sx_count; i++) {
+                uint32_t delta = 0;
+                const uint8_t *bytes = NULL;
+                uint32_t len = 0;
+                g_callbacks->output_sysex_at(inst->rustCtx, i,
+                                              &delta, &bytes, &len);
+                if (!bytes && len > 0) continue;
+                uint32_t framedLen = len + 2;
+                if (framedLen > inst->sysexFrameScratchSize) continue;
+                inst->sysexFrameScratch[0] = 0xF0;
+                if (len > 0) {
+                    memcpy(inst->sysexFrameScratch + 1, bytes, len);
+                }
+                inst->sysexFrameScratch[1 + len] = 0xF7;
+                MIDITimeStamp ts = delta;
+                if (delta >= inFrameCount) {
+                    ts = inFrameCount > 0 ? (inFrameCount - 1) : 0;
+                }
+                pkt = append_or_flush_retry(
+                    pktList, pkt, inst, inTimeStamp, ts, framedLen,
+                    inst->sysexFrameScratch);
+            }
+
+            /* Flush whatever's left in the list. The loop above
+             * already flushed once per `add` failure, so the final
+             * `pktList` may be empty - `numPackets == 0` is the
+             * documented signal not to call the host callback. */
+            if (pktList->numPackets > 0) {
+                inst->midiOutputCallback(inst->midiOutputUserData,
+                                         inTimeStamp, 0 /* outputIndex */,
+                                         pktList);
+            }
         }
     }
 
@@ -1153,7 +1286,7 @@ static OSStatus au_v2_remove_render_notify(void *self_, AURenderCallback proc, v
 }
 
 // ---------------------------------------------------------------------------
-// Lookup — maps selectors to method function pointers
+// Lookup - maps selectors to method function pointers
 // ---------------------------------------------------------------------------
 
 static AudioComponentMethod au_v2_lookup(SInt16 selector) {
@@ -1205,10 +1338,10 @@ static AudioComponentMethod au_v2_lookup(SInt16 selector) {
 }
 
 // ---------------------------------------------------------------------------
-// Factory function — exported symbol, referenced by Info.plist factoryFunction.
+// Factory function - exported symbol, referenced by Info.plist factoryFunction.
 // Returns an AudioComponentPlugInInterface* (AU v2 interface). The
 // real definition is in the consumer cdylib via the Rust `export_au!`
-// macro — it forwards to `truce_au_v2_factory_bridge` defined below.
+// macro - it forwards to `truce_au_v2_factory_bridge` defined below.
 // ---------------------------------------------------------------------------
 
 static void *truce_au_v2_factory(const AudioComponentDescription *desc) {
@@ -1220,6 +1353,21 @@ static void *truce_au_v2_factory(const AudioComponentDescription *desc) {
     inst->interface.Close = au_v2_close;
     inst->interface.Lookup = au_v2_lookup;
     inst->interface.reserved = NULL;
+
+    /* 132 KiB: matches truce_core::SYSEX_POOL_PREALLOC (128 KiB)
+     * plus headroom for per-packet headers (≈14 B × ≤256 events).
+     * Heap-allocated to keep the TruceAUv2 struct itself small;
+     * never reallocated after this point. */
+    inst->sysexPacketBufSize = 132 * 1024;
+    inst->sysexPacketBuf = (Byte *)malloc(inst->sysexPacketBufSize);
+    inst->sysexFrameScratchSize = 128 * 1024 + 2; /* SYSEX_POOL_PREALLOC + framing */
+    inst->sysexFrameScratch = (Byte *)malloc(inst->sysexFrameScratchSize);
+    if (!inst->sysexPacketBuf || !inst->sysexFrameScratch) {
+        free(inst->sysexPacketBuf);
+        free(inst->sysexFrameScratch);
+        free(inst);
+        return NULL;
+    }
 
     return &inst->interface;
 }
