@@ -1,4 +1,4 @@
-use crate::dsp_utils::{TWO_PI, lfo_output, pow01, random_hold_value, wrap01};
+use crate::dsp_utils::{TWO_PI, lfo_output, pow01, wrap01};
 use crate::envelope::EnvelopeKind;
 use crate::envelope::EnvelopeTimingCache;
 use crate::generators::{self, LineRenderConfig, PER_LINE_HEADROOM};
@@ -941,12 +941,20 @@ fn render_prime_line_sample(cfg: LineRenderConfig, karpunk_raw_sample: Option<f3
 }
 
 fn render_noise_line_sample(final_dcw: f32, final_dca: f32, noise_step: u32) -> f32 {
-    let white_noise = random_hold_value(noise_step as i32);
+    let white_noise = noise_hash_signed(noise_step);
     let dcw = final_dcw.clamp(0.0, 1.0);
     let drive = 1.8 - dcw * 1.35;
     let gain = 0.25 + dcw * 0.75;
     let shaped = white_noise.signum() * pow01(white_noise.abs(), drive);
     shaped * gain * final_dca.max(0.0) * PER_LINE_HEADROOM
+}
+
+#[inline]
+fn noise_hash_signed(step: u32) -> f32 {
+    let mut bits = step.wrapping_mul(747_796_405).wrapping_add(2_891_336_453);
+    bits = ((bits >> ((bits >> 28) + 4)) ^ bits).wrapping_mul(277_803_737);
+    bits = (bits >> 22) ^ bits;
+    (bits as f32 / u32::MAX as f32) * 2.0 - 1.0
 }
 
 #[inline(always)]
