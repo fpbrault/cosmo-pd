@@ -1,7 +1,7 @@
 use crate::dsp_utils::{TWO_PI, lfo_output, pow01, random_hold_value, wrap01};
 use crate::envelope::EnvelopeKind;
 use crate::envelope::EnvelopeTimingCache;
-use crate::generators::{self, LineRenderConfig};
+use crate::generators::{self, LineRenderConfig, PER_LINE_HEADROOM};
 use crate::params::{
     LfoWaveform, LineParams, LineSelect, ModDestination, ModMatrixCache, ModMode, PortamentoMode,
     SynthParams,
@@ -807,22 +807,7 @@ fn mix_line_outputs(
         }
         ModMode::Noise => {
             let (mix_a, mix_b) = select_noise_line_sources(
-                p,
-                noise_step,
-                s1,
-                s2,
-                l1,
-                l2,
-                cycle_count1,
-                cycle_count2,
-                final_dcw1,
-                final_dcw2,
-                final_dca1,
-                final_dca2,
-                line1_algo_param_mods,
-                line2_algo_param_mods,
-                line1_plan,
-                line2_plan,
+                p, noise_step, s1, s2, final_dcw1, final_dcw2, final_dca1, final_dca2,
             );
             (mix_a + mix_b) * DUAL_LINE_MIX_GAIN
         }
@@ -932,43 +917,19 @@ fn select_noise_line_sources(
     noise_step: u32,
     s1: f32,
     s2: f32,
-    l1: &LineParams,
-    l2: &LineParams,
-    cycle_count1: u32,
-    cycle_count2: u32,
     final_dcw1: f32,
     final_dcw2: f32,
     final_dca1: f32,
     final_dca2: f32,
-    line1_algo_param_mods: [f32; 8],
-    line2_algo_param_mods: [f32; 8],
-    line1_plan: &CompiledLinePlan,
-    line2_plan: &CompiledLinePlan,
 ) -> (f32, f32) {
     match p.line_select {
         LineSelect::L1PlusL1Prime => (
             s1,
-            render_noise_line_sample(
-                line1_plan,
-                l1,
-                cycle_count1,
-                final_dcw1,
-                final_dca1,
-                line1_algo_param_mods,
-                noise_step,
-            ),
+            render_noise_line_sample(final_dcw1, final_dca1, noise_step),
         ),
         LineSelect::L1PlusL2Prime => (
             s1,
-            render_noise_line_sample(
-                line2_plan,
-                l2,
-                cycle_count2,
-                final_dcw2,
-                final_dca2,
-                line2_algo_param_mods,
-                noise_step.wrapping_add(17_219),
-            ),
+            render_noise_line_sample(final_dcw2, final_dca2, noise_step.wrapping_add(17_219)),
         ),
         LineSelect::L1 => (s1, 0.0),
         LineSelect::L2 => (0.0, s2),
@@ -979,32 +940,13 @@ fn render_prime_line_sample(cfg: LineRenderConfig, karpunk_raw_sample: Option<f3
     generators::render_sample_from_config(&cfg, karpunk_raw_sample)
 }
 
-fn render_noise_line_sample(
-    plan: &CompiledLinePlan,
-    line: &LineParams,
-    cycle_count: u32,
-    final_dcw: f32,
-    final_dca: f32,
-    algo_param_mods: [f32; 8],
-    noise_step: u32,
-) -> f32 {
+fn render_noise_line_sample(final_dcw: f32, final_dca: f32, noise_step: u32) -> f32 {
     let white_noise = random_hold_value(noise_step as i32);
-    let noise_phase = ((white_noise + 1.0) * 0.5).clamp(0.0, 1.0);
-    let noise_dcw = pow01(final_dcw.clamp(0.0, 1.0), 0.6);
-    let cfg = LineRenderConfig::from_compiled_line(
-        plan,
-        line,
-        cycle_count,
-        noise_phase,
-        noise_phase,
-        noise_dcw,
-        final_dca,
-        0.0,
-        1.0,
-        algo_param_mods,
-        0.0,
-    );
-    generators::render_sample_from_config(&cfg, None)
+    let dcw = final_dcw.clamp(0.0, 1.0);
+    let drive = 1.8 - dcw * 1.35;
+    let gain = 0.25 + dcw * 0.75;
+    let shaped = white_noise.signum() * pow01(white_noise.abs(), drive);
+    shaped * gain * final_dca.max(0.0) * PER_LINE_HEADROOM
 }
 
 #[inline(always)]
