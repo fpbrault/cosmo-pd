@@ -268,6 +268,7 @@ jobs:
           CERT_P12: ${{ secrets.MACOS_CERT_P12_BASE64 }}
           CERT_PW: ${{ secrets.MACOS_CERT_PASSWORD }}
           TRUCE_SIGNING_IDENTITY: ${{ secrets.TRUCE_SIGNING_IDENTITY }}
+          TRUCE_INSTALLER_SIGNING_IDENTITY: ${{ secrets.TRUCE_INSTALLER_SIGNING_IDENTITY }}
         run: |
           set -euo pipefail
 
@@ -285,8 +286,15 @@ jobs:
             "$HOME/Library/Keychains/login.keychain-db" \
             "/Library/Keychains/System.keychain"
           security default-keychain -s "$KEYCHAIN_PATH"
-          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
-          security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -F "$TRUCE_SIGNING_IDENTITY"
+          if ! security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -Fq "$TRUCE_SIGNING_IDENTITY"; then
+            echo "Expected signing identity not found in imported keychain" >&2
+            exit 1
+          fi
+
+          if ! security find-identity -v "$KEYCHAIN_PATH" | grep -Fq "$TRUCE_INSTALLER_SIGNING_IDENTITY"; then
+            echo "Expected installer signing identity not found in imported keychain" >&2
+            exit 1
+          fi
 
       - name: Store notarization creds
         if: matrix.platform == 'macos'
