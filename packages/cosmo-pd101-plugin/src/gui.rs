@@ -17,6 +17,7 @@ use std::{
 };
 
 use arc_swap::ArcSwap;
+use include_dir::{Dir, include_dir};
 use truce_core::PluginContext;
 use truce_core::editor::{Editor, RawWindowHandle};
 #[cfg(target_os = "macos")]
@@ -37,6 +38,8 @@ use cosmo_synth_engine::params::SynthParams;
 
 pub const DEFAULT_WIDTH: u32 = 1152;
 pub const DEFAULT_HEIGHT: u32 = 864;
+
+static EMBEDDED_WEBVIEW_DIST: Dir<'_> = include_dir!("$OUT_DIR/embedded-webview");
 
 // ─── Per-format URL scheme ───────────────────────────────────────────────────
 
@@ -76,6 +79,21 @@ struct WebViewContainer {
 
 unsafe impl Send for WebViewContainer {}
 unsafe impl Sync for WebViewContainer {}
+
+#[derive(Clone, Debug)]
+enum WebAssetSource {
+    Filesystem(std::path::PathBuf),
+    Embedded,
+}
+
+impl WebAssetSource {
+    fn describe(&self) -> String {
+        match self {
+            Self::Filesystem(path) => path.display().to_string(),
+            Self::Embedded => "embedded-webview-dist".to_string(),
+        }
+    }
+}
 
 // ─── CzEditor ────────────────────────────────────────────────────────────────
 
@@ -164,13 +182,13 @@ impl CzEditor {
 
     #[cfg(target_os = "macos")]
     fn try_create_webview(&mut self, ns_view: *mut std::ffi::c_void) -> bool {
-        let Some(resource_dir) = plugin_resource_dir() else {
+        let Some(asset_source) = plugin_asset_source() else {
             append_log(
-                "CzEditor::try_create_webview: resource dir unavailable; skipping WebView creation",
+                "CzEditor::try_create_webview: web assets unavailable; skipping WebView creation",
             );
             return false;
         };
-        append_log(&format!("resource_dir: {}", resource_dir.display()));
+        append_log(&format!("web assets: {}", asset_source.describe()));
 
         let synth_params = self.synth_params.clone();
         let rt_synth_params = self.rt_synth_params.clone();
@@ -186,7 +204,7 @@ impl CzEditor {
         let (webview, standalone_window) = unsafe {
             build_webview_from_ns_view(
                 ns_view,
-                resource_dir,
+                asset_source,
                 synth_params,
                 rt_synth_params,
                 runtime_mod_sources,
@@ -378,13 +396,8 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
     use objc2_foundation::{NSDate, NSPoint, NSRect, NSRunLoop, NSSize, NSString, NSURL};
     use objc2_web_kit::{WKWebView, WKWebViewConfiguration};
 
-    let resource_dir = plugin_resource_dir()?;
-    let html_path = resource_dir.join("index.html");
-    if !html_path.is_file() {
-        append_log("screenshot: index.html not found");
-        return None;
-    }
-    append_log(&format!("screenshot: loading {}", html_path.display()));
+    let asset_source = plugin_asset_source()?;
+    append_log(&format!("screenshot: loading {}", asset_source.describe()));
 
     let frame = NSRect::new(NSPoint::new(0.0, 0.0), NSSize::new(1152.0, 864.0));
 
@@ -424,7 +437,7 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
 
     let listener = TcpListener::bind("127.0.0.1:0").ok()?;
     let port = listener.local_addr().ok()?.port();
-    let server_dir = resource_dir.clone();
+    let server_assets = asset_source.clone();
     thread::spawn(move || {
         for mut stream in listener.incoming().flatten() {
             let mut buf = [0u8; 8192];
@@ -435,20 +448,14 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
                     .next()
                     .and_then(|l| l.split_whitespace().nth(1))
                     .unwrap_or("/index.html");
-                let rel = path.trim_start_matches('/');
-                let file_path = if rel.is_empty() || rel == "/" {
-                    server_dir.join("index.html")
+                let response = read_web_asset(&server_assets, path);
+                let (status, mime, data) = if let Some(asset) = response {
+                    ("200 OK", asset.mime, asset.bytes)
                 } else {
-                    server_dir.join(rel)
-                };
-                let (mime, data) = if let Ok(d) = std::fs::read(&file_path) {
-                    (mime_from_path(&file_path), d)
-                } else {
-                    ("text/plain", b"404".to_vec())
+                    ("404 Not Found", "text/plain", b"404".to_vec())
                 };
                 let header = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: {}\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\n\r\n",
-                    mime,
+                    "HTTP/1.1 {status}\r\nContent-Type: {mime}\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\n\r\n",
                     data.len()
                 );
                 let _ = stream.write_all(header.as_bytes());
@@ -737,7 +744,7 @@ fn is_standalone_mode() -> bool {
 #[allow(clippy::too_many_arguments)]
 unsafe fn build_webview_from_ns_view(
     ns_view: *mut std::ffi::c_void,
-    resource_dir: std::path::PathBuf,
+    asset_source: WebAssetSource,
     synth_params: Arc<ArcSwap<SynthParams>>,
     rt_synth_params: Arc<ArcSwap<SynthParams>>,
     runtime_mod_sources: SharedRuntimeModSources,
@@ -786,7 +793,7 @@ unsafe fn build_webview_from_ns_view(
         })
         .with_data_store_identifier(webview_data_store_identifier(&scheme))
         .with_custom_protocol(scheme.clone(), move |_id, request| {
-            serve_file(&resource_dir, request)
+            serve_file(&asset_source, request)
         })
         .with_ipc_handler(move |request| {
             let body = request.body();
@@ -909,42 +916,64 @@ unsafe fn build_webview_from_ns_view(
 
 // ─── Protocol file server ────────────────────────────────────────────────────
 
+struct WebAssetResponse {
+    mime: &'static str,
+    bytes: Vec<u8>,
+}
+
 fn serve_file(
-    resource_dir: &std::path::Path,
+    asset_source: &WebAssetSource,
     request: wry::http::Request<Vec<u8>>,
 ) -> wry::http::Response<std::borrow::Cow<'static, [u8]>> {
-    use std::fs;
     use wry::http::Response;
 
     let path = request.uri().path();
-    let rel = path.trim_start_matches('/');
-    let file_path = if rel.is_empty() {
-        resource_dir.join("index.html")
-    } else {
-        resource_dir.join(rel)
-    };
+    append_log(&format!("serve_file: {}", path));
 
-    append_log(&format!("serve_file: {}", file_path.display()));
+    if let Some(asset) = read_web_asset(asset_source, path) {
+        return Response::builder()
+            .status(200)
+            .header("Content-Type", asset.mime)
+            .body(std::borrow::Cow::Owned(asset.bytes))
+            .unwrap();
+    }
 
-    match fs::read(&file_path) {
-        Ok(data) => {
-            let mime = mime_from_path(&file_path);
-            Response::builder()
-                .status(200)
-                .header("Content-Type", mime)
-                .body(std::borrow::Cow::Owned(data))
-                .unwrap()
+    append_log(&format!("serve_file 404: {path}"));
+    Response::builder()
+        .status(404)
+        .body(std::borrow::Cow::Owned(
+            format!("not found: {path}").into_bytes(),
+        ))
+        .unwrap()
+}
+
+fn read_web_asset(asset_source: &WebAssetSource, request_path: &str) -> Option<WebAssetResponse> {
+    let rel = request_path.trim_start_matches('/');
+    let rel = if rel.is_empty() { "index.html" } else { rel };
+
+    match asset_source {
+        WebAssetSource::Filesystem(root) => {
+            let file_path = root.join(rel);
+            std::fs::read(&file_path)
+                .ok()
+                .map(|bytes| WebAssetResponse {
+                    mime: mime_from_rel_path(rel),
+                    bytes,
+                })
         }
-        Err(e) => {
-            append_log(&format!("serve_file 404: {} — {e}", file_path.display()));
-            Response::builder()
-                .status(404)
-                .body(std::borrow::Cow::Owned(
-                    format!("not found: {}", file_path.display()).into_bytes(),
-                ))
-                .unwrap()
+        WebAssetSource::Embedded => {
+            EMBEDDED_WEBVIEW_DIST
+                .get_file(rel)
+                .map(|file| WebAssetResponse {
+                    mime: mime_from_rel_path(rel),
+                    bytes: file.contents().to_vec(),
+                })
         }
     }
+}
+
+fn mime_from_rel_path(path: &str) -> &'static str {
+    mime_from_path(std::path::Path::new(path))
 }
 
 fn mime_from_path(path: &std::path::Path) -> &'static str {
@@ -963,7 +992,11 @@ fn mime_from_path(path: &std::path::Path) -> &'static str {
 
 // ─── Plugin resource directory ────────────────────────────────────────────────
 
-pub fn plugin_resource_dir() -> Option<std::path::PathBuf> {
+fn has_embedded_web_assets() -> bool {
+    EMBEDDED_WEBVIEW_DIST.get_file("index.html").is_some()
+}
+
+fn plugin_asset_source() -> Option<WebAssetSource> {
     // Returns the webview dist path relative to the repo root (for development).
     // Called by debug_gui and as a fallback for standalone.
     fn webview_dist_path() -> Option<std::path::PathBuf> {
@@ -977,7 +1010,7 @@ pub fn plugin_resource_dir() -> Option<std::path::PathBuf> {
         if let Some(ref d) = dir {
             append_log(&format!("[debug_gui] resource_dir: {}", d.display()));
         }
-        return dir;
+        return dir.map(WebAssetSource::Filesystem);
     }
 
     #[cfg(not(feature = "debug_gui"))]
@@ -991,7 +1024,7 @@ pub fn plugin_resource_dir() -> Option<std::path::PathBuf> {
             if let Some(ref d) = bundle_resources {
                 append_log(&format!("[release] trying bundle path: {}", d.display()));
                 if d.exists() {
-                    return Some(d.clone());
+                    return Some(WebAssetSource::Filesystem(d.clone()));
                 }
             }
 
@@ -1013,7 +1046,7 @@ pub fn plugin_resource_dir() -> Option<std::path::PathBuf> {
                         w.display()
                     ));
                     if w.exists() {
-                        return Some(w.clone());
+                        return Some(WebAssetSource::Filesystem(w.clone()));
                     }
                 }
             }
@@ -1024,11 +1057,16 @@ pub fn plugin_resource_dir() -> Option<std::path::PathBuf> {
         if let Some(ref d) = dev_path {
             append_log(&format!("[release] trying hardcoded path: {}", d.display()));
             if d.exists() {
-                return Some(d.clone());
+                return Some(WebAssetSource::Filesystem(d.clone()));
             }
         }
 
-        append_log("[release] WARNING: could not determine resource dir");
+        if has_embedded_web_assets() {
+            append_log("[release] using embedded web assets");
+            return Some(WebAssetSource::Embedded);
+        }
+
+        append_log("[release] WARNING: could not determine web assets");
         None
     }
 }

@@ -257,13 +257,6 @@ jobs:
         run: bun run build:web
         working-directory: packages/cosmo-pd101-plugin
 
-      - name: Build plugins
-        run: cargo truce build
-
-      - name: Inject webview assets
-        run: bun run build:post:assets
-        working-directory: packages/cosmo-pd101-plugin
-
       - name: Install Inno Setup (Windows)
         if: matrix.platform == 'windows'
         run: choco install innosetup --no-progress
@@ -274,19 +267,26 @@ jobs:
         env:
           CERT_P12: ${{ secrets.MACOS_CERT_P12_BASE64 }}
           CERT_PW: ${{ secrets.MACOS_CERT_PASSWORD }}
+          TRUCE_SIGNING_IDENTITY: ${{ secrets.TRUCE_SIGNING_IDENTITY }}
         run: |
           set -euo pipefail
 
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
+
           echo "$CERT_P12" | base64 --decode > cert.p12
-          security create-keychain -p "" build.keychain
-          security set-keychain-settings -lut 21600 build.keychain
-          security unlock-keychain -p "" build.keychain
-          security import cert.p12 -k build.keychain -P "$CERT_PW" \
-            -T /usr/bin/codesign -T /usr/bin/productbuild
-          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
-          security list-keychains -d user -s build.keychain login.keychain-db
-          security default-keychain -s build.keychain
-          security find-identity -v -p codesigning build.keychain
+          security create-keychain -p "" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "" "$KEYCHAIN_PATH"
+          security import cert.p12 -k "$KEYCHAIN_PATH" -P "$CERT_PW" \
+            -A -T /usr/bin/codesign -T /usr/bin/productbuild
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KEYCHAIN_PATH"
+          security list-keychains -d user -s \
+            "$KEYCHAIN_PATH" \
+            "$HOME/Library/Keychains/login.keychain-db" \
+            "/Library/Keychains/System.keychain"
+          security default-keychain -s "$KEYCHAIN_PATH"
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -F "$TRUCE_SIGNING_IDENTITY"
 
       - name: Store notarization creds
         if: matrix.platform == 'macos'
@@ -301,6 +301,7 @@ jobs:
 
       - name: Rename exact-release artifacts
         if: needs.release-metadata.outputs.version_source == 'exact'
+        shell: bash
         run: |
           node scripts/release-workflow.mjs rename-artifacts \
             --release-version "${{ needs.release-metadata.outputs.version }}" \

@@ -81,15 +81,6 @@ runs:
       working-directory: packages/cosmo-pd101-plugin
       shell: bash
 
-    - name: Build plugins
-      run: cargo truce build
-      shell: bash
-
-    - name: Inject webview assets
-      run: bun run build:post:assets
-      working-directory: packages/cosmo-pd101-plugin
-      shell: bash
-
     - name: Install plugin
       run: cargo truce install --user -p ${{ inputs.pluginCrate }}
       shell: bash

@@ -56,3 +56,4 @@ coverage-final.json
 **/coverage
 
 .cargo/config.toml
+.clang-module-cache
