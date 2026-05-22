@@ -40,7 +40,11 @@ describe("core controls (browser)", () => {
 
 	it("renders and updates ModModeControl", () => {
 		const setValue = vi.fn();
-		useSynthParamMock.mockReturnValue({ value: "normal", setValue });
+		useSynthParamMock.mockImplementation((key: string) =>
+			key === "lineSelect"
+				? { value: "L1+L2'" }
+				: { value: "normal", setValue },
+		);
 		render(<ModModeControl />);
 
 		fireEvent.click(screen.getAllByRole("button")[1]);

@@ -1,7 +1,7 @@
 use crate::dsp_utils::{TWO_PI, lfo_output, pow01, wrap01};
 use crate::envelope::EnvelopeKind;
 use crate::envelope::EnvelopeTimingCache;
-use crate::generators::{self, LineRenderConfig};
+use crate::generators::{self, LineRenderConfig, PER_LINE_HEADROOM};
 use crate::params::{
     LfoWaveform, LineParams, LineSelect, ModDestination, ModMatrixCache, ModMode, PortamentoMode,
     SynthParams,
@@ -227,6 +227,7 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         p,
         phase.phi1,
         phase.phi2,
+        voice.noise_step,
         s1,
         s2,
         line1_modded,
@@ -244,6 +245,7 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         line1_plan,
         line2_plan,
     );
+    voice.noise_step = voice.noise_step.wrapping_add(1);
 
     // Apply volume modulation from mod matrix
     let volume_mod = get_mod_if_active(
@@ -760,6 +762,7 @@ fn mix_line_outputs(
     p: &SynthParams,
     phi1: f32,
     phi2: f32,
+    noise_step: u32,
     s1: f32,
     s2: f32,
     l1: &LineParams,
@@ -777,45 +780,73 @@ fn mix_line_outputs(
     line1_plan: &CompiledLinePlan,
     line2_plan: &CompiledLinePlan,
 ) -> f32 {
-    let (mix_a, mix_b) = select_line_sources(
-        p,
-        phi1,
-        phi2,
-        s1,
-        s2,
-        l1,
-        l2,
-        cycle_count1,
-        cycle_count2,
-        karpunk_raw_sample1,
-        karpunk_raw_sample2,
-        final_dcw1,
-        final_dcw2,
-        final_dca1,
-        final_dca2,
-        line1_algo_param_mods,
-        line2_algo_param_mods,
-        line1_plan,
-        line2_plan,
-    );
-
-    match p.mod_mode {
-        ModMode::Ring => mix_a * mix_b * p.ring_gain.max(0.0),
+    match effective_mod_mode(p) {
+        ModMode::Ring => {
+            let (mix_a, mix_b) = select_line_sources(
+                p,
+                phi1,
+                phi2,
+                s1,
+                s2,
+                l1,
+                l2,
+                cycle_count1,
+                cycle_count2,
+                karpunk_raw_sample1,
+                karpunk_raw_sample2,
+                final_dcw1,
+                final_dcw2,
+                final_dca1,
+                final_dca2,
+                line1_algo_param_mods,
+                line2_algo_param_mods,
+                line1_plan,
+                line2_plan,
+            );
+            mix_a * mix_b * p.ring_gain.max(0.0)
+        }
         ModMode::Noise => {
-            // Placeholder noise remains deterministic so renders stay repeatable.
-            let noise = (phi1 * 12_345.679).sin() * 2.0 - 1.0;
-            let mixed = match p.line_select {
+            let (mix_a, mix_b) = select_noise_line_sources(
+                p, noise_step, s1, s2, final_dcw1, final_dcw2, final_dca1, final_dca2,
+            );
+            (mix_a + mix_b) * DUAL_LINE_MIX_GAIN
+        }
+        ModMode::Normal => {
+            let (mix_a, mix_b) = select_line_sources(
+                p,
+                phi1,
+                phi2,
+                s1,
+                s2,
+                l1,
+                l2,
+                cycle_count1,
+                cycle_count2,
+                karpunk_raw_sample1,
+                karpunk_raw_sample2,
+                final_dcw1,
+                final_dcw2,
+                final_dca1,
+                final_dca2,
+                line1_algo_param_mods,
+                line2_algo_param_mods,
+                line1_plan,
+                line2_plan,
+            );
+            match p.line_select {
                 LineSelect::L1 => mix_a,
                 LineSelect::L2 => mix_b,
                 _ => (mix_a + mix_b) * DUAL_LINE_MIX_GAIN,
-            };
-            mixed + mixed * noise * 0.5
+            }
         }
-        ModMode::Normal => match p.line_select {
-            LineSelect::L1 => mix_a,
-            LineSelect::L2 => mix_b,
-            _ => (mix_a + mix_b) * DUAL_LINE_MIX_GAIN,
-        },
+    }
+}
+
+#[inline]
+fn effective_mod_mode(p: &SynthParams) -> ModMode {
+    match p.line_select {
+        LineSelect::L1 | LineSelect::L2 => ModMode::Normal,
+        _ => p.mod_mode,
     }
 }
 
@@ -880,8 +911,50 @@ fn select_line_sources(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
+fn select_noise_line_sources(
+    p: &SynthParams,
+    noise_step: u32,
+    s1: f32,
+    s2: f32,
+    final_dcw1: f32,
+    final_dcw2: f32,
+    final_dca1: f32,
+    final_dca2: f32,
+) -> (f32, f32) {
+    match p.line_select {
+        LineSelect::L1PlusL1Prime => (
+            s1,
+            render_noise_line_sample(final_dcw1, final_dca1, noise_step),
+        ),
+        LineSelect::L1PlusL2Prime => (
+            s1,
+            render_noise_line_sample(final_dcw2, final_dca2, noise_step.wrapping_add(17_219)),
+        ),
+        LineSelect::L1 => (s1, 0.0),
+        LineSelect::L2 => (0.0, s2),
+    }
+}
+
 fn render_prime_line_sample(cfg: LineRenderConfig, karpunk_raw_sample: Option<f32>) -> f32 {
     generators::render_sample_from_config(&cfg, karpunk_raw_sample)
+}
+
+fn render_noise_line_sample(final_dcw: f32, final_dca: f32, noise_step: u32) -> f32 {
+    let white_noise = noise_hash_signed(noise_step);
+    let dcw = final_dcw.clamp(0.0, 1.0);
+    let drive = 1.8 - dcw * 1.35;
+    let gain = 0.25 + dcw * 0.75;
+    let shaped = white_noise.signum() * pow01(white_noise.abs(), drive);
+    shaped * gain * final_dca.max(0.0) * PER_LINE_HEADROOM
+}
+
+#[inline]
+fn noise_hash_signed(step: u32) -> f32 {
+    let mut bits = step.wrapping_mul(747_796_405).wrapping_add(2_891_336_453);
+    bits = ((bits >> ((bits >> 28) + 4)) ^ bits).wrapping_mul(277_803_737);
+    bits = (bits >> 22) ^ bits;
+    (bits as f32 / u32::MAX as f32) * 2.0 - 1.0
 }
 
 #[inline(always)]

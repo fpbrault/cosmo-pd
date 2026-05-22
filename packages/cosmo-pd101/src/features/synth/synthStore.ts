@@ -65,6 +65,17 @@ function toIntegerInRange(value: number, min: number, max: number): number {
 	return Math.max(min, Math.min(max, Math.round(value)));
 }
 
+function isDualLineSelect(lineSelect: LineSelect): boolean {
+	return lineSelect === "L1+L1'" || lineSelect === "L1+L2'";
+}
+
+function normalizeModMode(lineSelect: LineSelect, modMode: ModMode): ModMode {
+	if (!isDualLineSelect(lineSelect) && modMode !== "normal") {
+		return "normal";
+	}
+	return modMode;
+}
+
 // ---------------------------------------------------------------------------
 // FX slot helpers
 // ---------------------------------------------------------------------------
@@ -459,8 +470,15 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setLine2BaseWaveformA: (v) => set({ line2BaseWaveformA: v }),
 	setLine2BaseWaveformB: (v) => set({ line2BaseWaveformB: v }),
 
-	setLineSelect: (v) => set({ lineSelect: v }),
-	setModMode: (v) => set({ modMode: v }),
+	setLineSelect: (v) =>
+		set((s) => ({
+			lineSelect: v,
+			modMode: normalizeModMode(v, s.modMode),
+		})),
+	setModMode: (v) =>
+		set((s) => ({
+			modMode: normalizeModMode(s.lineSelect, v),
+		})),
 
 	setPolyMode: (v) => set({ polyMode: v }),
 	setLegato: (v) => set({ legato: v }),
@@ -793,7 +811,10 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			polyMode: (p.polyMode as PolyMode) ?? "poly8",
 			legato: p.legato ?? false,
 			lineSelect: (p.lineSelect as LineSelect) ?? "L1+L2'",
-			modMode: (p.modMode as ModMode) ?? "normal",
+			modMode: normalizeModMode(
+				((p.lineSelect as LineSelect) ?? "L1+L2'") as LineSelect,
+				((p.modMode as ModMode) ?? "normal") as ModMode,
+			),
 			line1BaseWaveformA:
 				(p.line1?.baseWaveformA as BaseWaveform) ??
 				resolveAlgoDefaultBaseWaveform(line1PrimaryAlgo),

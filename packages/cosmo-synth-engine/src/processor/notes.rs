@@ -46,6 +46,7 @@ impl CosmoProcessor {
         let prev_output_sample = voice.last_output_sample;
         voice.phi1 = 0.0;
         voice.phi2 = 0.0;
+        voice.noise_step = 0;
         voice.cycle_count1 = 0;
         voice.cycle_count2 = 0;
         voice.pm_phi = 0.0;
