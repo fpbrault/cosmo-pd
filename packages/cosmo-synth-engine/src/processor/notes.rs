@@ -46,7 +46,6 @@ impl CosmoProcessor {
         let prev_output_sample = voice.last_output_sample;
         voice.phi1 = 0.0;
         voice.phi2 = 0.0;
-        voice.noise_step = 0;
         voice.cycle_count1 = 0;
         voice.cycle_count2 = 0;
         voice.pm_phi = 0.0;
@@ -100,6 +99,7 @@ impl CosmoProcessor {
         self.configure_voice_pitch(voice_idx, note, frequency);
         self.voices[voice_idx].velocity = velocity;
         self.reset_voice_runtime(voice_idx);
+        self.voices[voice_idx].noise_step = 0;
         self.reset_voice_envs(voice_idx);
         self.reset_generator_runtime_for_note(voice_idx, note);
         self.voices[voice_idx].mod_env.note_on();
