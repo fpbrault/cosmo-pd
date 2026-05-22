@@ -222,12 +222,21 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
                 line2_algo_param_mods,
                 phase.pm_post_mod,
             ));
+    let mod_mode = effective_mod_mode(p);
+    let noise_step = if mod_mode == ModMode::Noise {
+        let step = voice.noise_step;
+        voice.noise_step = voice.noise_step.wrapping_add(1);
+        step
+    } else {
+        0
+    };
 
     let sample = mix_line_outputs(
         p,
+        mod_mode,
         phase.phi1,
         phase.phi2,
-        voice.noise_step,
+        noise_step,
         s1,
         s2,
         line1_modded,
@@ -245,7 +254,6 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         line1_plan,
         line2_plan,
     );
-    voice.noise_step = voice.noise_step.wrapping_add(1);
 
     // Apply volume modulation from mod matrix
     let volume_mod = get_mod_if_active(
@@ -760,6 +768,7 @@ fn build_phase_frame(
 #[allow(clippy::too_many_arguments)]
 fn mix_line_outputs(
     p: &SynthParams,
+    mod_mode: ModMode,
     phi1: f32,
     phi2: f32,
     noise_step: u32,
@@ -780,7 +789,7 @@ fn mix_line_outputs(
     line1_plan: &CompiledLinePlan,
     line2_plan: &CompiledLinePlan,
 ) -> f32 {
-    match effective_mod_mode(p) {
+    match mod_mode {
         ModMode::Ring => {
             let (mix_a, mix_b) = select_line_sources(
                 p,
