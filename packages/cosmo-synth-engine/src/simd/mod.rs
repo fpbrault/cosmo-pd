@@ -143,6 +143,38 @@ impl SimdBackend {
     }
 
     #[inline]
+    pub fn sub4(self, lhs: [f32; 4], rhs: [f32; 4]) -> [f32; 4] {
+        simd_dispatch!(
+            self,
+            [
+                lhs[0] - rhs[0],
+                lhs[1] - rhs[1],
+                lhs[2] - rhs[2],
+                lhs[3] - rhs[3]
+            ],
+            SimdType::sub(Sse2::from_array(&lhs), Sse2::from_array(&rhs)).to_array(),
+            SimdType::sub(Avx2::from_array(&lhs), Avx2::from_array(&rhs)).to_array(),
+            SimdType::sub(WasmSimd::from_array(&lhs), WasmSimd::from_array(&rhs)).to_array()
+        )
+    }
+
+    #[inline]
+    pub fn abs4(self, values: [f32; 4]) -> [f32; 4] {
+        simd_dispatch!(
+            self,
+            [
+                values[0].abs(),
+                values[1].abs(),
+                values[2].abs(),
+                values[3].abs()
+            ],
+            Sse2::from_array(&values).abs().to_array(),
+            Avx2::from_array(&values).abs().to_array(),
+            WasmSimd::from_array(&values).abs().to_array()
+        )
+    }
+
+    #[inline]
     pub fn mul4(self, lhs: [f32; 4], rhs: [f32; 4]) -> [f32; 4] {
         simd_dispatch!(
             self,
@@ -173,6 +205,38 @@ impl SimdBackend {
             WasmSimd::from_array(&values)
                 .clamp(min_val, max_val)
                 .to_array()
+        )
+    }
+
+    #[inline]
+    pub fn cmplt4(self, a: [f32; 4], b: [f32; 4]) -> [i32; 4] {
+        simd_dispatch!(
+            self,
+            [
+                if a[0] < b[0] { -1 } else { 0 },
+                if a[1] < b[1] { -1 } else { 0 },
+                if a[2] < b[2] { -1 } else { 0 },
+                if a[3] < b[3] { -1 } else { 0 },
+            ],
+            Sse2::cmplt4(a, b),
+            Avx2::cmplt4(a, b),
+            WasmSimd::cmplt4(a, b)
+        )
+    }
+
+    #[inline]
+    pub fn blend4(self, a: [f32; 4], b: [f32; 4], mask: [i32; 4]) -> [f32; 4] {
+        simd_dispatch!(
+            self,
+            [
+                if mask[0] != 0 { a[0] } else { b[0] },
+                if mask[1] != 0 { a[1] } else { b[1] },
+                if mask[2] != 0 { a[2] } else { b[2] },
+                if mask[3] != 0 { a[3] } else { b[3] },
+            ],
+            Sse2::blend4(a, b, mask),
+            Avx2::blend4(a, b, mask),
+            WasmSimd::blend4(a, b, mask)
         )
     }
 

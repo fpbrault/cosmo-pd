@@ -49,6 +49,7 @@ TEST-PLAN*.md
 
 target/
 test-results/
+vendor/baseview/
 
 coverage-final.json
 **/coverage

@@ -30,6 +30,33 @@ impl WasmSimd {
     unsafe fn to_v128(&self) -> v128 {
         f32x4(self.0[0], self.0[1], self.0[2], self.0[3])
     }
+
+    #[inline]
+    pub(crate) fn cmplt4(a: [f32; 4], b: [f32; 4]) -> [i32; 4] {
+        let a_vec = f32x4(a[0], a[1], a[2], a[3]);
+        let b_vec = f32x4(b[0], b[1], b[2], b[3]);
+        let cmp = f32x4_lt(a_vec, b_vec);
+        [
+            i32x4_extract_lane::<0>(cmp),
+            i32x4_extract_lane::<1>(cmp),
+            i32x4_extract_lane::<2>(cmp),
+            i32x4_extract_lane::<3>(cmp),
+        ]
+    }
+
+    #[inline]
+    pub(crate) fn blend4(a: [f32; 4], b: [f32; 4], mask: [i32; 4]) -> [f32; 4] {
+        let a_vec = f32x4(a[0], a[1], a[2], a[3]);
+        let b_vec = f32x4(b[0], b[1], b[2], b[3]);
+        let mask_vec = i32x4(mask[0], mask[1], mask[2], mask[3]);
+        let result = v128_bitselect(a_vec, b_vec, mask_vec);
+        [
+            f32x4_extract_lane::<0>(result),
+            f32x4_extract_lane::<1>(result),
+            f32x4_extract_lane::<2>(result),
+            f32x4_extract_lane::<3>(result),
+        ]
+    }
 }
 
 impl SimdType for WasmSimd {

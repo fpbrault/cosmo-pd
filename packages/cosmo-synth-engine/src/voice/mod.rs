@@ -204,53 +204,6 @@ mod tests {
         voice
     }
 
-    fn render_sequence(params: SynthParams, note: u8, sample_count: usize) -> Vec<f32> {
-        let mut voice = Voice::new();
-        voice.frequency = utils::midi_note_to_freq(note);
-        voice.current_freq = voice.frequency;
-        voice.target_freq = voice.frequency;
-        voice.glide_start_freq = voice.frequency;
-        voice.env_note = note;
-        voice.is_silent = false;
-        voice.velocity = 1.0;
-
-        let timing = crate::envelope::EnvelopeTimingCache::new(48_000.0);
-        let sources = ModSources::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-        let mut cache = ModMatrixCache::new();
-        cache.compute(&sources);
-        let plan = CompiledSynthParams::from_params(&params);
-
-        (0..sample_count)
-            .map(|_| {
-                let ctx = super::VoiceRenderContext {
-                    p: &params,
-                    lfo_mod_val: 0.0,
-                    lfo2_mod_val: 0.0,
-                    random_mod_val: 0.0,
-                    line1_modded: &params.line1,
-                    line2_modded: &params.line2,
-                    sr: 48_000.0,
-                    timing: &timing,
-                    pitch_bend_semitones: 0.0,
-                    mod_wheel: 0.0,
-                    macro1: 0.0,
-                    macro2: 0.0,
-                    macro3: 0.0,
-                    macro4: 0.0,
-                    cache: &cache,
-                    modulation_active: false,
-                    line1_plan: &plan.line1,
-                    line2_plan: &plan.line2,
-                };
-                render_voice(&mut voice, &ctx)
-            })
-            .collect()
-    }
-
-    fn sum_abs(samples: &[f32]) -> f32 {
-        samples.iter().map(|sample| sample.abs()).sum()
-    }
-
     #[test]
     fn dca_gain_uses_gentle_power_taper() {
         assert_eq!(super::render::cz_dca_env_gain(0.0), 0.0);

@@ -534,7 +534,6 @@ fn render_primary_batch4(
 
     for index in 0..4 {
         let config = &configs[index];
-        let phase = config.phase;
         let dcw = if config.secondary_algo.is_some() && !secondary {
             config.final_dcw * (1.0 - config.blend)
         } else if config.secondary_algo.is_some() && secondary {
@@ -547,24 +546,56 @@ fn render_primary_batch4(
         } else {
             &config.primary_control_values
         };
-        let window_gain = if secondary {
+        window_gains[index] = if secondary {
             config.secondary_window_gain
         } else {
             config.primary_window_gain
         };
-
-        samples[index] = render_algo_sample(
-            algo,
-            phase,
-            dcw,
-            base_waveform,
-            control_values,
-            config.algo_param_mods,
-            None,
-            config.pm_post_mod,
-        );
-        window_gains[index] = window_gain;
         final_dca[index] = config.final_dca;
+
+        samples[index] = {
+            let phase = config.phase;
+            let warped = warp_phase(algo, phase, dcw, control_values, &config.algo_param_mods);
+            warped + config.pm_post_mod
+        };
+    }
+
+    let raw = samples;
+
+    if algo != Algo::Karpunk {
+        let mut wrapped = raw;
+        for i in 0..4 {
+            if !(0.0..1.0).contains(&raw[i]) {
+                wrapped[i] = wrap01(raw[i]);
+            }
+        }
+
+        samples = match base_waveform {
+            BaseWaveform::Triangle => {
+                let half = [0.5; 4];
+                let four = [4.0; 4];
+                let one = [1.0; 4];
+                let centered = simd_backend.sub4(wrapped, half);
+                let abs_centered = simd_backend.abs4(centered);
+                simd_backend.sub4(one, simd_backend.mul4(abs_centered, four))
+            }
+            BaseWaveform::Saw => {
+                let two = [2.0; 4];
+                let one = [1.0; 4];
+                simd_backend.sub4(simd_backend.mul4(wrapped, two), one)
+            }
+            BaseWaveform::Square => {
+                let mask = simd_backend.cmplt4(wrapped, [0.5; 4]);
+                simd_backend.blend4([1.0; 4], [-1.0; 4], mask)
+            }
+            _ => core::array::from_fn(|i| {
+                match base_waveform {
+                    BaseWaveform::Cosine => -(TWO_PI * wrapped[i]).cos(),
+                    BaseWaveform::Sine => (TWO_PI * wrapped[i]).sin(),
+                    _ => unreachable!(),
+                }
+            }),
+        };
     }
 
     let with_window = simd_backend.mul4(samples, window_gains);
