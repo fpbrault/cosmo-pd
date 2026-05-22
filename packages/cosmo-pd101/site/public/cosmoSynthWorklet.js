@@ -51,7 +51,8 @@ const DEFAULT_LINE = {
 	dcoEnv: DEFAULT_STEP_ENV,
 	dcwEnv: DEFAULT_STEP_ENV,
 	dcaEnv: DEFAULT_STEP_ENV,
-	keyFollow: 0,
+	dcwKeyFollow: 0,
+	dcaKeyFollow: 0,
 };
 
 const DEFAULT_PARAMS = {

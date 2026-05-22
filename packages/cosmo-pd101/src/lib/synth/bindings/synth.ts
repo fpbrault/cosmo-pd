@@ -253,7 +253,8 @@ export type LineParams = {
 	dcoEnv: StepEnvData,
 	dcwEnv: StepEnvData,
 	dcaEnv: StepEnvData,
-	keyFollow: number | null,
+	dcwKeyFollow: number | null,
+	dcaKeyFollow: number | null,
 	algoControlsA?: AlgoControlValueV1[],
 	algoControlsB?: AlgoControlValueV1[],
 };

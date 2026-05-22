@@ -44,6 +44,10 @@ interface PerLineWarpBlockProps {
 	setDcwEnv: (e: StepEnvData) => void;
 	dcaEnv: StepEnvData;
 	setDcaEnv: (e: StepEnvData) => void;
+	dcwKeyFollow: number;
+	setDcwKeyFollow: (value: number) => void;
+	dcaKeyFollow: number;
+	setDcaKeyFollow: (value: number) => void;
 	baseWaveformA: BaseWaveform;
 	setBaseWaveformA: (v: BaseWaveform) => void;
 	baseWaveformB: BaseWaveform;
@@ -84,6 +88,10 @@ const PerLineWarpBlock = memo(function PerLineWarpBlock({
 	setDcwEnv,
 	dcaEnv,
 	setDcaEnv,
+	dcwKeyFollow,
+	setDcwKeyFollow,
+	dcaKeyFollow,
+	setDcaKeyFollow,
 	baseWaveformA,
 	setBaseWaveformA,
 	baseWaveformB,
@@ -265,6 +273,10 @@ const PerLineWarpBlock = memo(function PerLineWarpBlock({
 					voiceMarkers={activeVoiceMarkers}
 					lineIndex={lineIndex}
 					lineColor={color}
+					dcwKeyFollow={dcwKeyFollow}
+					onDcwKeyFollowChange={setDcwKeyFollow}
+					dcaKeyFollow={dcaKeyFollow}
+					onDcaKeyFollowChange={setDcaKeyFollow}
 				/>
 			)}
 		</>

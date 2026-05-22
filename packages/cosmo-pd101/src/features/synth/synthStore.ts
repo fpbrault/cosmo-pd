@@ -131,6 +131,7 @@ type SynthState = {
 	line2DetuneNote: number;
 	line2DetuneFine: number;
 	line1DcwKeyFollow: number;
+	line1DcaKeyFollow: number;
 	line1DcoEnv: StepEnvData;
 	line1DcwEnv: StepEnvData;
 	line1DcaEnv: StepEnvData;
@@ -141,6 +142,7 @@ type SynthState = {
 
 	line2Level: number;
 	line2DcwKeyFollow: number;
+	line2DcaKeyFollow: number;
 	line2DcoEnv: StepEnvData;
 	line2DcwEnv: StepEnvData;
 	line2DcaEnv: StepEnvData;
@@ -224,6 +226,7 @@ type SynthActions = {
 	setLine2DetuneNote: (v: number) => void;
 	setLine2DetuneFine: (v: number) => void;
 	setLine1DcwKeyFollow: (v: number) => void;
+	setLine1DcaKeyFollow: (v: number) => void;
 	setLine1DcoEnv: (v: StepEnvData) => void;
 	setLine1DcwEnv: (v: StepEnvData) => void;
 	setLine1DcaEnv: (v: StepEnvData) => void;
@@ -234,6 +237,7 @@ type SynthActions = {
 
 	setLine2Level: (v: number) => void;
 	setLine2DcwKeyFollow: (v: number) => void;
+	setLine2DcaKeyFollow: (v: number) => void;
 	setLine2DcoEnv: (v: StepEnvData) => void;
 	setLine2DcwEnv: (v: StepEnvData) => void;
 	setLine2DcaEnv: (v: StepEnvData) => void;
@@ -331,6 +335,7 @@ const DEFAULT_STATE: SynthState = {
 	line2DetuneNote: 0,
 	line2DetuneFine: 0,
 	line1DcwKeyFollow: 0,
+	line1DcaKeyFollow: 0,
 	line1DcoEnv: DEFAULT_DCO_ENV,
 	line1DcwEnv: DEFAULT_DCW_ENV,
 	line1DcaEnv: DEFAULT_DCA_ENV,
@@ -341,6 +346,7 @@ const DEFAULT_STATE: SynthState = {
 
 	line2Level: 1,
 	line2DcwKeyFollow: 0,
+	line2DcaKeyFollow: 0,
 	line2DcoEnv: DEFAULT_DCO_ENV,
 	line2DcwEnv: DEFAULT_DCW_ENV,
 	line2DcaEnv: DEFAULT_DCA_ENV,
@@ -428,7 +434,10 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 		set({ line2DetuneNote: toIntegerInRange(v, -11, 11) }),
 	setLine2DetuneFine: (v) =>
 		set({ line2DetuneFine: toIntegerInRange(v, -60, 60) }),
-	setLine1DcwKeyFollow: (v) => set({ line1DcwKeyFollow: v }),
+	setLine1DcwKeyFollow: (v) =>
+		set({ line1DcwKeyFollow: toIntegerInRange(v, 0, 9) }),
+	setLine1DcaKeyFollow: (v) =>
+		set({ line1DcaKeyFollow: toIntegerInRange(v, 0, 9) }),
 	setLine1DcoEnv: (v) => set({ line1DcoEnv: v }),
 	setLine1DcwEnv: (v) => set({ line1DcwEnv: v }),
 	setLine1DcaEnv: (v) => set({ line1DcaEnv: v }),
@@ -438,7 +447,10 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 	setLine1BaseWaveformB: (v) => set({ line1BaseWaveformB: v }),
 
 	setLine2Level: (v) => set({ line2Level: v }),
-	setLine2DcwKeyFollow: (v) => set({ line2DcwKeyFollow: v }),
+	setLine2DcwKeyFollow: (v) =>
+		set({ line2DcwKeyFollow: toIntegerInRange(v, 0, 9) }),
+	setLine2DcaKeyFollow: (v) =>
+		set({ line2DcaKeyFollow: toIntegerInRange(v, 0, 9) }),
 	setLine2DcoEnv: (v) => set({ line2DcoEnv: v }),
 	setLine2DcwEnv: (v) => set({ line2DcwEnv: v }),
 	setLine2DcaEnv: (v) => set({ line2DcaEnv: v }),
@@ -592,7 +604,8 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				dcoEnv: s.line1DcoEnv,
 				dcwEnv: s.line1DcwEnv,
 				dcaEnv: s.line1DcaEnv,
-				keyFollow: s.line1DcwKeyFollow,
+				dcwKeyFollow: s.line1DcwKeyFollow,
+				dcaKeyFollow: s.line1DcaKeyFollow,
 				algoControlsA: line1NormalizedAlgoControlsA,
 				algoControlsB: line1NormalizedAlgoControlsB,
 			},
@@ -612,7 +625,8 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				dcoEnv: s.line2DcoEnv,
 				dcwEnv: s.line2DcwEnv,
 				dcaEnv: s.line2DcaEnv,
-				keyFollow: s.line2DcwKeyFollow,
+				dcwKeyFollow: s.line2DcwKeyFollow,
+				dcaKeyFollow: s.line2DcaKeyFollow,
 				algoControlsA: line2NormalizedAlgoControlsA,
 				algoControlsB: line2NormalizedAlgoControlsB,
 			},
@@ -792,8 +806,10 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			line2BaseWaveformB:
 				(p.line2?.baseWaveformB as BaseWaveform) ??
 				resolveAlgoDefaultBaseWaveform(line2SecondaryAlgo ?? line2PrimaryAlgo),
-			line1DcwKeyFollow: safe(p.line1?.keyFollow, 0),
-			line2DcwKeyFollow: safe(p.line2?.keyFollow, 0),
+			line1DcwKeyFollow: safe(p.line1?.dcwKeyFollow, 0),
+			line1DcaKeyFollow: safe(p.line1?.dcaKeyFollow, 0),
+			line2DcwKeyFollow: safe(p.line2?.dcwKeyFollow, 0),
+			line2DcaKeyFollow: safe(p.line2?.dcaKeyFollow, 0),
 			portamentoEnabled: p.portamento?.enabled ?? false,
 			portamentoMode: (p.portamento?.mode as PortamentoMode) ?? "rate",
 			portamentoRate: safe(

@@ -137,7 +137,8 @@
 						"stepCount": 2,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -305,7 +306,8 @@
 						"stepCount": 2,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "pinchFocus",
@@ -601,7 +603,8 @@
 						"stepCount": 2,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "pinchFocus",
@@ -763,7 +766,8 @@
 						"stepCount": 8,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [],
 					"algoControlsB": []
 				},
@@ -1005,7 +1009,8 @@
 						"stepCount": 4,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "pinchFocus",
@@ -1171,7 +1176,8 @@
 						"stepCount": 4,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [],
 					"algoControlsB": []
 				},
@@ -1425,7 +1431,8 @@
 						"stepCount": 3,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "foldStages",
@@ -1574,7 +1581,8 @@
 						"stepCount": 3,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [],
 					"algoControlsB": []
 				},
@@ -1814,7 +1822,8 @@
 						"stepCount": 4,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "syncRatio",
@@ -1963,7 +1972,8 @@
 						"stepCount": 2,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [],
 					"algoControlsB": []
 				},
@@ -2202,7 +2212,8 @@
 						"stepCount": 2,
 						"loop": false
 					},
-					"keyFollow": 8,
+					"dcwKeyFollow": 8,
+					"dcaKeyFollow": 8,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -2370,7 +2381,8 @@
 						"stepCount": 2,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -2629,7 +2641,8 @@
 						"stepCount": 2,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "bendCurve",
@@ -2776,7 +2789,8 @@
 						"stepCount": 8,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -3054,7 +3068,8 @@
 						"stepCount": 2,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "bendCurve",
@@ -3199,7 +3214,8 @@
 						"stepCount": 2,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "pinchFocus",
@@ -3473,7 +3489,8 @@
 						"stepCount": 2,
 						"loop": false
 					},
-					"keyFollow": 9,
+					"dcwKeyFollow": 9,
+					"dcaKeyFollow": 9,
 					"algoControlsA": [],
 					"algoControlsB": []
 				},
@@ -3605,7 +3622,8 @@
 						"stepCount": 2,
 						"loop": false
 					},
-					"keyFollow": 9,
+					"dcwKeyFollow": 9,
+					"dcaKeyFollow": 9,
 					"algoControlsA": [
 						{
 							"id": "twistHarmonics",
@@ -3856,7 +3874,8 @@
 						"stepCount": 3,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "pinchFocus",
@@ -4024,7 +4043,8 @@
 						"stepCount": 2,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "pinchFocus",
@@ -4296,7 +4316,8 @@
 						"stepCount": 4,
 						"loop": false
 					},
-					"keyFollow": 8,
+					"dcwKeyFollow": 8,
+					"dcaKeyFollow": 8,
 					"algoControlsA": [
 						{
 							"id": "twistHarmonics",
@@ -4458,7 +4479,8 @@
 						"stepCount": 4,
 						"loop": false
 					},
-					"keyFollow": 9,
+					"dcwKeyFollow": 9,
+					"dcaKeyFollow": 9,
 					"algoControlsA": [
 						{
 							"id": "foldStages",
@@ -4724,7 +4746,8 @@
 						"stepCount": 3,
 						"loop": false
 					},
-					"keyFollow": 7,
+					"dcwKeyFollow": 7,
+					"dcaKeyFollow": 7,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -4892,7 +4915,8 @@
 						"stepCount": 3,
 						"loop": false
 					},
-					"keyFollow": 7,
+					"dcwKeyFollow": 7,
+					"dcaKeyFollow": 7,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -5138,7 +5162,8 @@
 						"stepCount": 3,
 						"loop": false
 					},
-					"keyFollow": 7,
+					"dcwKeyFollow": 7,
+					"dcaKeyFollow": 7,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -5306,7 +5331,8 @@
 						"stepCount": 3,
 						"loop": false
 					},
-					"keyFollow": 7,
+					"dcwKeyFollow": 7,
+					"dcaKeyFollow": 7,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -5552,7 +5578,8 @@
 						"stepCount": 8,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -5720,7 +5747,8 @@
 						"stepCount": 8,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -5954,7 +5982,8 @@
 						"stepCount": 4,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -6105,7 +6134,8 @@
 						"stepCount": 2,
 						"loop": false
 					},
-					"keyFollow": 2,
+					"dcwKeyFollow": 2,
+					"dcaKeyFollow": 2,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -6334,7 +6364,8 @@
 						"stepCount": 2,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -6485,7 +6516,8 @@
 						"stepCount": 4,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -6714,7 +6746,8 @@
 						"stepCount": 4,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -6865,7 +6898,8 @@
 						"stepCount": 2,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -7111,7 +7145,8 @@
 						"stepCount": 3,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -7262,7 +7297,8 @@
 						"stepCount": 1,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -7491,7 +7527,8 @@
 						"stepCount": 4,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -7642,7 +7679,8 @@
 						"stepCount": 2,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -7871,7 +7909,8 @@
 						"stepCount": 3,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "foldStages",
@@ -8039,7 +8078,8 @@
 						"stepCount": 2,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -8321,7 +8361,8 @@
 						"stepCount": 4,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -8472,7 +8513,8 @@
 						"stepCount": 1,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -8701,7 +8743,8 @@
 						"stepCount": 2,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -8869,7 +8912,8 @@
 						"stepCount": 2,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -9115,7 +9159,8 @@
 						"stepCount": 2,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "preset",
@@ -9283,7 +9328,8 @@
 						"stepCount": 2,
 						"loop": false
 					},
-					"keyFollow": 0,
+					"dcwKeyFollow": 0,
+					"dcaKeyFollow": 0,
 					"algoControlsA": [
 						{
 							"id": "preset",

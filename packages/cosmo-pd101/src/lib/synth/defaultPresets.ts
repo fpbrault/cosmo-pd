@@ -158,7 +158,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -326,7 +327,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "pinchFocus",
@@ -631,7 +633,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "foldStages",
@@ -795,7 +798,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -1057,7 +1061,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "pinchFocus",
@@ -1223,7 +1228,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [],
 					algoControlsB: [],
 				},
@@ -1486,7 +1492,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "foldStages",
@@ -1635,7 +1642,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [],
 					algoControlsB: [],
 				},
@@ -1877,7 +1885,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "syncRatio",
@@ -2026,7 +2035,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [],
 					algoControlsB: [],
 				},
@@ -2267,7 +2277,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 8,
+					dcwKeyFollow: 8,
+					dcaKeyFollow: 8,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -2435,7 +2446,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -2696,7 +2708,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "bendCurve",
@@ -2843,7 +2856,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -3124,7 +3138,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "bendCurve",
@@ -3271,7 +3286,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "pinchFocus",
@@ -3548,7 +3564,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [],
 					algoControlsB: [],
 				},
@@ -3680,7 +3697,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "twistHarmonics",
@@ -3933,7 +3951,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "pinchFocus",
@@ -4101,7 +4120,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "pinchFocus",
@@ -4391,7 +4411,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 8,
+					dcwKeyFollow: 8,
+					dcaKeyFollow: 8,
 					algoControlsA: [
 						{
 							id: "twistHarmonics",
@@ -4555,7 +4576,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "foldStages",
@@ -4824,7 +4846,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 7,
+					dcwKeyFollow: 7,
+					dcaKeyFollow: 7,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -4992,7 +5015,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 7,
+					dcwKeyFollow: 7,
+					dcaKeyFollow: 7,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -5240,7 +5264,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 7,
+					dcwKeyFollow: 7,
+					dcaKeyFollow: 7,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -5408,7 +5433,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 7,
+					dcwKeyFollow: 7,
+					dcaKeyFollow: 7,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -5682,7 +5708,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -5850,7 +5877,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -6086,7 +6114,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -6237,7 +6266,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 2,
+					dcwKeyFollow: 2,
+					dcaKeyFollow: 2,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -6513,7 +6543,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -6664,7 +6695,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -6911,7 +6943,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -7062,7 +7095,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -7310,7 +7344,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -7461,7 +7496,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 1,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -7720,7 +7756,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -7871,7 +7908,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -8102,7 +8140,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "foldStages",
@@ -8270,7 +8309,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -8554,7 +8594,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -8705,7 +8746,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 1,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -8951,7 +8993,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -9119,7 +9162,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -9380,7 +9424,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -9548,7 +9593,8 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",

@@ -146,7 +146,8 @@ export function convertDecodedPatchToSynthPreset(
 	p.line1.dcoEnv = convertEnvelope(decoded.dco1Env);
 	p.line1.dcwEnv = convertEnvelope(decoded.dcw1);
 	p.line1.dcaEnv = convertEnvelope(decoded.dca1);
-	p.line1.keyFollow = decoded.dcw1KeyFollow;
+	p.line1.dcwKeyFollow = decoded.dcw1KeyFollow;
+	p.line1.dcaKeyFollow = decoded.dca1KeyFollow;
 
 	p.line2.algo = "cz101";
 	p.line2.algo2 = decoded.dco2.secondWaveform ? "cz101" : null;
@@ -169,7 +170,8 @@ export function convertDecodedPatchToSynthPreset(
 	p.line2.dcoEnv = convertEnvelope(decoded.dco2Env);
 	p.line2.dcwEnv = convertEnvelope(decoded.dcw2);
 	p.line2.dcaEnv = convertEnvelope(decoded.dca2);
-	p.line2.keyFollow = decoded.dcw2KeyFollow;
+	p.line2.dcwKeyFollow = decoded.dcw2KeyFollow;
+	p.line2.dcaKeyFollow = decoded.dca2KeyFollow;
 
 	if (decoded.dco1.modulation === "ring") p.modMode = "ring";
 	else if (decoded.dco1.modulation === "noise") p.modMode = "noise";
@@ -183,7 +185,8 @@ export function convertDecodedPatchToSynthPreset(
 		p.line2.dcoEnv = DEFAULT_DCO_ENV;
 		p.line2.dcwEnv = DEFAULT_DCW_ENV;
 		p.line2.dcaEnv = DEFAULT_DCA_ENV;
-		p.line2.keyFollow = 0;
+		p.line2.dcwKeyFollow = 0;
+		p.line2.dcaKeyFollow = 0;
 		p.line2.algo = DEFAULT_PRESET.params.line2.algo;
 		p.line2.algo2 = DEFAULT_PRESET.params.line2.algo2;
 	}
@@ -196,7 +199,8 @@ export function convertDecodedPatchToSynthPreset(
 		p.line1.dcoEnv = DEFAULT_DCO_ENV;
 		p.line1.dcwEnv = DEFAULT_DCW_ENV;
 		p.line1.dcaEnv = DEFAULT_DCA_ENV;
-		p.line1.keyFollow = 0;
+		p.line1.dcwKeyFollow = 0;
+		p.line1.dcaKeyFollow = 0;
 		p.line1.algo = DEFAULT_PRESET.params.line1.algo;
 		p.line1.algo2 = DEFAULT_PRESET.params.line1.algo2;
 	}

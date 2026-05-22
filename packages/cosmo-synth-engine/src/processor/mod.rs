@@ -692,7 +692,8 @@ mod tests {
 
         let mut proc = CosmoProcessor::new(48_000.0);
         proc.params_mut().line_select = LineSelect::L2;
-        proc.params_mut().line2.key_follow = 2.0;
+        proc.params_mut().line2.dcw_key_follow = 2.0;
+        proc.params_mut().line2.dca_key_follow = 2.0;
         proc.params_mut().line2.dca_env = StepEnvData {
             steps: [
                 dca_step(99, 99),

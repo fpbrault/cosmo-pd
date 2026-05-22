@@ -147,7 +147,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 3,
+					dcwKeyFollow: 3,
+					dcaKeyFollow: 3,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -315,7 +316,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 1,
+					dcwKeyFollow: 1,
+					dcaKeyFollow: 1,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -562,7 +564,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -730,7 +733,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 1,
+					dcwKeyFollow: 1,
+					dcaKeyFollow: 1,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -960,7 +964,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -1128,7 +1133,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -1358,7 +1364,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 5,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -1526,7 +1533,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -1756,7 +1764,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 4,
+					dcwKeyFollow: 4,
+					dcaKeyFollow: 4,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -1924,7 +1933,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 6,
+					dcwKeyFollow: 6,
+					dcaKeyFollow: 6,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -2171,7 +2181,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -2339,7 +2350,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -2586,7 +2598,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -2737,7 +2750,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -2967,7 +2981,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -3135,7 +3150,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -3382,7 +3398,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 5,
 						loop: false,
 					},
-					keyFollow: 7,
+					dcwKeyFollow: 7,
+					dcaKeyFollow: 7,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -3550,7 +3567,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -3780,7 +3798,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -3931,7 +3950,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 8,
+					dcwKeyFollow: 8,
+					dcaKeyFollow: 8,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -4161,7 +4181,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -4329,7 +4350,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -4559,7 +4581,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -4710,7 +4733,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -4940,7 +4964,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -5091,7 +5116,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 7,
+					dcwKeyFollow: 7,
+					dcaKeyFollow: 7,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -5338,7 +5364,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 4,
+					dcwKeyFollow: 4,
+					dcaKeyFollow: 4,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -5506,7 +5533,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 4,
+					dcwKeyFollow: 4,
+					dcaKeyFollow: 4,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -5753,7 +5781,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -5921,7 +5950,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -6168,7 +6198,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -6336,7 +6367,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -6583,7 +6615,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -6751,7 +6784,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -6998,7 +7032,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -7166,7 +7201,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -7396,7 +7432,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -7547,7 +7584,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 5,
+					dcwKeyFollow: 5,
+					dcaKeyFollow: 5,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -7794,7 +7832,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 6,
+					dcwKeyFollow: 6,
+					dcaKeyFollow: 6,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -7945,7 +7984,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 1,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -8175,7 +8215,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 2,
+					dcwKeyFollow: 2,
+					dcaKeyFollow: 2,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -8343,7 +8384,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 2,
+					dcwKeyFollow: 2,
+					dcaKeyFollow: 2,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -8573,7 +8615,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -8741,7 +8784,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -8988,7 +9032,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -9156,7 +9201,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -9386,7 +9432,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 7,
+					dcwKeyFollow: 7,
+					dcaKeyFollow: 7,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -9537,7 +9584,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 7,
+					dcwKeyFollow: 7,
+					dcaKeyFollow: 7,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -9784,7 +9832,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -9952,7 +10001,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 7,
+					dcwKeyFollow: 7,
+					dcaKeyFollow: 7,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -10199,7 +10249,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 7,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -10350,7 +10401,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -10580,7 +10632,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -10748,7 +10801,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -10995,7 +11049,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -11163,7 +11218,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -11393,7 +11449,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 5,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -11561,7 +11618,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 7,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -11791,7 +11849,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -11959,7 +12018,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 5,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -12189,7 +12249,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 5,
 						loop: false,
 					},
-					keyFollow: 6,
+					dcwKeyFollow: 6,
+					dcaKeyFollow: 6,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -12340,7 +12401,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 5,
 						loop: false,
 					},
-					keyFollow: 6,
+					dcwKeyFollow: 6,
+					dcaKeyFollow: 6,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -12587,7 +12649,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 5,
 						loop: false,
 					},
-					keyFollow: 6,
+					dcwKeyFollow: 6,
+					dcaKeyFollow: 6,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -12738,7 +12801,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 5,
 						loop: false,
 					},
-					keyFollow: 6,
+					dcwKeyFollow: 6,
+					dcaKeyFollow: 6,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -12968,7 +13032,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -13136,7 +13201,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 1,
+					dcwKeyFollow: 1,
+					dcaKeyFollow: 1,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -13383,7 +13449,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -13534,7 +13601,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -13764,7 +13832,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -13932,7 +14001,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -14179,7 +14249,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -14347,7 +14418,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 1,
+					dcwKeyFollow: 1,
+					dcaKeyFollow: 1,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -14577,7 +14649,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 1,
+					dcwKeyFollow: 1,
+					dcaKeyFollow: 1,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -14728,7 +14801,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -14958,7 +15032,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -15109,7 +15184,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -15339,7 +15415,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 5,
+					dcwKeyFollow: 5,
+					dcaKeyFollow: 5,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -15490,7 +15567,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 5,
 						loop: false,
 					},
-					keyFollow: 8,
+					dcwKeyFollow: 8,
+					dcaKeyFollow: 8,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -15737,7 +15815,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -15888,7 +15967,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -16118,7 +16198,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -16269,7 +16350,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -16499,7 +16581,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 1,
+					dcwKeyFollow: 1,
+					dcaKeyFollow: 1,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -16650,7 +16733,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 1,
+					dcwKeyFollow: 1,
+					dcaKeyFollow: 1,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -16880,7 +16964,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -17031,7 +17116,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 8,
+					dcwKeyFollow: 8,
+					dcaKeyFollow: 8,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -17278,7 +17364,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 3,
+					dcwKeyFollow: 3,
+					dcaKeyFollow: 3,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -17429,7 +17516,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -17659,7 +17747,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 2,
+					dcwKeyFollow: 2,
+					dcaKeyFollow: 2,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -17827,7 +17916,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 5,
 						loop: false,
 					},
-					keyFollow: 2,
+					dcwKeyFollow: 2,
+					dcaKeyFollow: 2,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -18074,7 +18164,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 7,
 						loop: false,
 					},
-					keyFollow: 6,
+					dcwKeyFollow: 6,
+					dcaKeyFollow: 6,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -18242,7 +18333,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 1,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -18472,7 +18564,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -18623,7 +18716,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -18853,7 +18947,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -19021,7 +19116,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 8,
+					dcwKeyFollow: 8,
+					dcaKeyFollow: 8,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -19268,7 +19364,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -19419,7 +19516,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -19666,7 +19764,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -19817,7 +19916,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 1,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -20047,7 +20147,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 6,
+					dcwKeyFollow: 6,
+					dcaKeyFollow: 6,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -20215,7 +20316,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -20445,7 +20547,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -20613,7 +20716,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -20860,7 +20964,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 7,
+					dcwKeyFollow: 7,
+					dcaKeyFollow: 7,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -21028,7 +21133,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 4,
+					dcwKeyFollow: 4,
+					dcaKeyFollow: 4,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -21258,7 +21364,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 7,
+					dcwKeyFollow: 7,
+					dcaKeyFollow: 7,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -21409,7 +21516,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 7,
+					dcwKeyFollow: 7,
+					dcaKeyFollow: 7,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -21656,7 +21764,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 3,
+					dcwKeyFollow: 3,
+					dcaKeyFollow: 3,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -21807,7 +21916,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 8,
+					dcwKeyFollow: 8,
+					dcaKeyFollow: 8,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -22054,7 +22164,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -22222,7 +22333,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 8,
+					dcwKeyFollow: 8,
+					dcaKeyFollow: 8,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -22452,7 +22564,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 6,
+					dcwKeyFollow: 6,
+					dcaKeyFollow: 6,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -22620,7 +22733,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -22850,7 +22964,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 6,
+					dcwKeyFollow: 6,
+					dcaKeyFollow: 6,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -23018,7 +23133,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 6,
+					dcwKeyFollow: 6,
+					dcaKeyFollow: 6,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -23265,7 +23381,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 7,
+					dcwKeyFollow: 7,
+					dcaKeyFollow: 7,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -23433,7 +23550,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 7,
+					dcwKeyFollow: 7,
+					dcaKeyFollow: 7,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -23680,7 +23798,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 6,
+					dcwKeyFollow: 6,
+					dcaKeyFollow: 6,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -23848,7 +23967,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 6,
+					dcwKeyFollow: 6,
+					dcaKeyFollow: 6,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -24095,7 +24215,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 5,
 						loop: false,
 					},
-					keyFollow: 6,
+					dcwKeyFollow: 6,
+					dcaKeyFollow: 6,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -24263,7 +24384,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 5,
 						loop: false,
 					},
-					keyFollow: 6,
+					dcwKeyFollow: 6,
+					dcaKeyFollow: 6,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -24493,7 +24615,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 1,
+					dcwKeyFollow: 1,
+					dcaKeyFollow: 1,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -24644,7 +24767,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 2,
+					dcwKeyFollow: 2,
+					dcaKeyFollow: 2,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -24874,7 +24998,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -25025,7 +25150,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -25255,7 +25381,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 8,
+					dcwKeyFollow: 8,
+					dcaKeyFollow: 8,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -25406,7 +25533,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 6,
+					dcwKeyFollow: 6,
+					dcaKeyFollow: 6,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -25636,7 +25764,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -25787,7 +25916,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -26017,7 +26147,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -26168,7 +26299,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -26398,7 +26530,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -26566,7 +26699,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 5,
 						loop: false,
 					},
-					keyFollow: 6,
+					dcwKeyFollow: 6,
+					dcaKeyFollow: 6,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -26813,7 +26947,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -26981,7 +27116,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 4,
+					dcwKeyFollow: 4,
+					dcaKeyFollow: 4,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -27211,7 +27347,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -27362,7 +27499,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 5,
+					dcwKeyFollow: 5,
+					dcaKeyFollow: 5,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -27609,7 +27747,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -27760,7 +27899,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 1,
+					dcwKeyFollow: 1,
+					dcaKeyFollow: 1,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -27990,7 +28130,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 6,
 						loop: false,
 					},
-					keyFollow: 4,
+					dcwKeyFollow: 4,
+					dcaKeyFollow: 4,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -28158,7 +28299,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 6,
 						loop: false,
 					},
-					keyFollow: 4,
+					dcwKeyFollow: 4,
+					dcaKeyFollow: 4,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -28388,7 +28530,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 4,
+					dcwKeyFollow: 4,
+					dcaKeyFollow: 4,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -28556,7 +28699,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 4,
+					dcwKeyFollow: 4,
+					dcaKeyFollow: 4,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -28803,7 +28947,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -28954,7 +29099,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -29184,7 +29330,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 3,
+					dcwKeyFollow: 3,
+					dcaKeyFollow: 3,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -29335,7 +29482,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 1,
+					dcwKeyFollow: 1,
+					dcaKeyFollow: 1,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -29565,7 +29713,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 5,
 						loop: false,
 					},
-					keyFollow: 8,
+					dcwKeyFollow: 8,
+					dcaKeyFollow: 8,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -29733,7 +29882,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -29963,7 +30113,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -30131,7 +30282,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -30378,7 +30530,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 7,
+					dcwKeyFollow: 7,
+					dcaKeyFollow: 7,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -30546,7 +30699,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -30793,7 +30947,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -30961,7 +31116,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 5,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -31208,7 +31364,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -31359,7 +31516,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 2,
+					dcwKeyFollow: 2,
+					dcaKeyFollow: 2,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -31606,7 +31764,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -31774,7 +31933,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 11,
+					dcwKeyFollow: 11,
+					dcaKeyFollow: 11,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -32021,7 +32181,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 2,
+					dcwKeyFollow: 2,
+					dcaKeyFollow: 2,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -32172,7 +32333,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 2,
+					dcwKeyFollow: 2,
+					dcaKeyFollow: 2,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -32419,7 +32581,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -32570,7 +32733,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 2,
+					dcwKeyFollow: 2,
+					dcaKeyFollow: 2,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -32817,7 +32981,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -32985,7 +33150,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 2,
+					dcwKeyFollow: 2,
+					dcaKeyFollow: 2,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -33232,7 +33398,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 2,
+					dcwKeyFollow: 2,
+					dcaKeyFollow: 2,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -33400,7 +33567,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 2,
+					dcwKeyFollow: 2,
+					dcaKeyFollow: 2,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -33647,7 +33815,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 2,
+					dcwKeyFollow: 2,
+					dcaKeyFollow: 2,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -33798,7 +33967,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 2,
+					dcwKeyFollow: 2,
+					dcaKeyFollow: 2,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -34028,7 +34198,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -34179,7 +34350,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 5,
+					dcwKeyFollow: 5,
+					dcaKeyFollow: 5,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -34409,7 +34581,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 7,
+					dcwKeyFollow: 7,
+					dcaKeyFollow: 7,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -34577,7 +34750,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 7,
+					dcwKeyFollow: 7,
+					dcaKeyFollow: 7,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -34824,7 +34998,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -34992,7 +35167,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 2,
+					dcwKeyFollow: 2,
+					dcaKeyFollow: 2,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -35239,7 +35415,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 2,
+					dcwKeyFollow: 2,
+					dcaKeyFollow: 2,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -35407,7 +35584,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 2,
+					dcwKeyFollow: 2,
+					dcaKeyFollow: 2,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -35654,7 +35832,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -35822,7 +36001,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 2,
+					dcwKeyFollow: 2,
+					dcaKeyFollow: 2,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -36069,7 +36249,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 7,
+					dcwKeyFollow: 7,
+					dcaKeyFollow: 7,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -36220,7 +36401,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -36467,7 +36649,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -36635,7 +36818,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 2,
+					dcwKeyFollow: 2,
+					dcaKeyFollow: 2,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -36882,7 +37066,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -37033,7 +37218,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -37263,7 +37449,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -37431,7 +37618,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -37661,7 +37849,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 1,
+					dcwKeyFollow: 1,
+					dcaKeyFollow: 1,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -37812,7 +38001,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 6,
+					dcwKeyFollow: 6,
+					dcaKeyFollow: 6,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -38042,7 +38232,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -38210,7 +38401,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 7,
+					dcwKeyFollow: 7,
+					dcaKeyFollow: 7,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -38440,7 +38632,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 5,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -38608,7 +38801,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 1,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -38838,7 +39032,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -38989,7 +39184,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -39219,7 +39415,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -39370,7 +39567,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -39600,7 +39798,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 1,
+					dcwKeyFollow: 1,
+					dcaKeyFollow: 1,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -39768,7 +39967,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -39998,7 +40198,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -40149,7 +40350,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -40379,7 +40581,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -40547,7 +40750,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -40794,7 +40998,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 8,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -40962,7 +41167,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 4,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -41192,7 +41398,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -41360,7 +41567,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 2,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -41607,7 +41815,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 9,
+					dcwKeyFollow: 9,
+					dcaKeyFollow: 9,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -41758,7 +41967,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 7,
+					dcwKeyFollow: 7,
+					dcaKeyFollow: 7,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -41988,7 +42198,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",
@@ -42139,7 +42350,8 @@ export const FACTORY_CZ_PRESET_DEFINITIONS: FactoryPresetDefinition[] = [
 						stepCount: 3,
 						loop: false,
 					},
-					keyFollow: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
 					algoControlsA: [
 						{
 							id: "preset",

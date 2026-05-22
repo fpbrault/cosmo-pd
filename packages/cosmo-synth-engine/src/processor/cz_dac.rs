@@ -44,7 +44,7 @@ impl CzDacColor {
         const MISTRACK_BIAS_AMOUNT: f32 = 0.014;
         const RECONSTRUCTION_LPF_HZ: f32 = 20_000.0;
         const OUTPUT_DC_BLOCK_HZ: f32 = 12.0;
-        const STATIC_COLOR_TRIM: f32 = 1.0_31_6; // Geometric-mean loudness match across factory preset calibration.
+        const STATIC_COLOR_TRIM: f32 = 1.031_6; // Geometric-mean loudness match across factory preset calibration.
 
         let sample_rate_hz = sr.max(1.0);
         let normalized = input.clamp(-1.0, 1.0);

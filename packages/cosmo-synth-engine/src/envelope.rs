@@ -5,6 +5,11 @@ use crate::envelope_map::human_rate_to_raw;
 use crate::envelope_map::raw_level_to_human;
 use crate::params::{StepEnvData, SynthParams};
 
+const KEY_FOLLOW_REFERENCE_NOTE: f32 = 48.0;
+const DCA_KEY_FOLLOW_SEMITONE_SPAN: f32 = 48.0;
+const DCA_KEY_FOLLOW_MAX_DURATION_REDUCTION: f32 = 1.0;
+const DCA_KEY_FOLLOW_MIN_DURATION_SCALE: f32 = 0.01;
+
 pub fn normalize_env_to_raw_if_human(kind: EnvelopeKind, env: &mut StepEnvData) {
     const INV_99: f32 = 1.0 / 99.0;
     for step in env.steps.iter_mut() {
@@ -94,7 +99,7 @@ impl EnvGen {
         kind: EnvelopeKind,
         env_data: &StepEnvData,
         timing: &EnvelopeTimingCache,
-        key_follow: f32,
+        key_follow_amount: f32,
         note: u8,
     ) {
         if self.holding {
@@ -116,20 +121,13 @@ impl EnvGen {
         let frozen_step = step_data.rate == 0 && (target_level - self.prev_level).abs() > 0.0;
         let rate_samples = timing.rate_to_samples(kind, step_data.rate);
         let raw_duration = step_duration_samples(self.prev_level, target_level, rate_samples);
+        let duration = apply_key_follow_to_duration(raw_duration, key_follow_amount, note);
 
         if self.releasing {
             if frozen_step {
                 self.output = self.prev_level;
                 return;
             }
-
-            let note_offset = (note as f32 - 60.0) / 60.0;
-            let speed_mult = 1.0 + key_follow * note_offset * 0.1;
-            let duration = if raw_duration == 0 {
-                0
-            } else {
-                (raw_duration as f32 / speed_mult).max(1.0).round() as u32
-            };
 
             if duration == 0 {
                 self.output = target_level;
@@ -163,7 +161,7 @@ impl EnvGen {
         let progress = if raw_duration == 0 {
             1.0
         } else {
-            (self.step_pos as f32 / raw_duration as f32).min(1.0)
+            (self.step_pos as f32 / duration as f32).min(1.0)
         };
 
         self.output = lerp(self.prev_level, target_level, progress);
@@ -175,7 +173,7 @@ impl EnvGen {
         }
 
         self.step_pos += 1;
-        if self.step_pos >= raw_duration.max(1) {
+        if self.step_pos >= duration.max(1) {
             self.prev_level = target_level;
             self.step_pos = 0;
 
@@ -259,6 +257,41 @@ fn step_duration_samples(from_level: f32, to_level: f32, base_samples: u32) -> u
         return 0;
     }
     ((base_samples as f32 * distance).max(1.0).round()) as u32
+}
+
+#[inline]
+fn key_follow_note_progress(note: u8, reference_note: f32, semitone_span: f32) -> f32 {
+    if semitone_span <= 0.0 {
+        return 0.0;
+    }
+
+    ((note as f32 - reference_note) / semitone_span).clamp(0.0, 1.0)
+}
+
+#[inline]
+fn dca_key_follow_duration_scale(key_follow_amount: f32, note: u8) -> f32 {
+    let key_follow = (key_follow_amount / 9.0).clamp(0.0, 1.0);
+    if key_follow <= 0.0 {
+        return 1.0;
+    }
+
+    let pitch_progress = key_follow_note_progress(
+        note,
+        KEY_FOLLOW_REFERENCE_NOTE,
+        DCA_KEY_FOLLOW_SEMITONE_SPAN,
+    );
+    let reduction = key_follow * pitch_progress * DCA_KEY_FOLLOW_MAX_DURATION_REDUCTION;
+    (1.0 - reduction).clamp(DCA_KEY_FOLLOW_MIN_DURATION_SCALE, 1.0)
+}
+
+#[inline]
+fn apply_key_follow_to_duration(raw_duration: u32, key_follow_amount: f32, note: u8) -> u32 {
+    if raw_duration == 0 {
+        return 0;
+    }
+
+    let duration_scale = dca_key_follow_duration_scale(key_follow_amount, note);
+    (raw_duration as f32 * duration_scale).round().max(1.0) as u32
 }
 
 #[cfg(test)]
@@ -475,5 +508,59 @@ mod tests {
         // On entering the final step, output must still be above zero and then
         // decay using the final step's rate, not jump immediately to 0.
         assert!(r#gen.output > 0.0);
+    }
+
+    #[test]
+    fn dca_key_follow_leaves_lower_notes_unchanged() {
+        assert_eq!(dca_key_follow_duration_scale(0.0, 84), 1.0);
+        assert_eq!(dca_key_follow_duration_scale(9.0, 60), 1.0);
+        assert_eq!(dca_key_follow_duration_scale(9.0, 48), 1.0);
+    }
+
+    #[test]
+    fn dca_key_follow_shortens_higher_notes() {
+        let medium_note = dca_key_follow_duration_scale(9.0, 72);
+        let high_note = dca_key_follow_duration_scale(9.0, 96);
+
+        assert!(medium_note < 1.0);
+        assert!(high_note < medium_note);
+        assert!(high_note >= DCA_KEY_FOLLOW_MIN_DURATION_SCALE);
+    }
+
+    #[test]
+    fn dca_key_follow_affects_active_progression_not_just_release() {
+        use crate::params::{EnvStep, NUM_ENV_STEPS, StepEnvData};
+
+        let mut env = StepEnvData {
+            steps: [EnvStep {
+                level: 0,
+                rate: 50,
+                level_norm: 0.0,
+            }; NUM_ENV_STEPS],
+            sustain_step: 7,
+            step_count: 2,
+            loop_: false,
+        };
+        env.steps[0] = EnvStep {
+            level: 99,
+            rate: 50,
+            level_norm: 1.0,
+        };
+        env.steps[1] = EnvStep {
+            level: 0,
+            rate: 50,
+            level_norm: 0.0,
+        };
+
+        let timing = EnvelopeTimingCache::new(48_000.0);
+        let mut base = EnvGen::default();
+        let mut high = EnvGen::default();
+
+        for _ in 0..64 {
+            base.advance(EnvelopeKind::Dca, &env, &timing, 0.0, 60);
+            high.advance(EnvelopeKind::Dca, &env, &timing, 9.0, 96);
+        }
+
+        assert!(high.output > base.output);
     }
 }

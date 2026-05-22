@@ -115,7 +115,8 @@ describe("convertDecodedPatchToSynthPreset", () => {
 		expect(preset.params.line2.detuneNote).toBe(5);
 		expect(preset.params.line2.detuneFine).toBe(10);
 		expect(preset.params.line2.octave).toBe(2);
-		expect(preset.params.line2.keyFollow).toBe(4);
+		expect(preset.params.line2.dcwKeyFollow).toBe(4);
+		expect(preset.params.line2.dcaKeyFollow).toBe(3);
 	});
 
 	it("keeps single-wave CZ waveforms aligned with preset slots", () => {
