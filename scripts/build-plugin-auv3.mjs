@@ -166,7 +166,7 @@ async function buildMacHostApp(options) {
 		macConfiguration,
 		"-derivedDataPath",
 		xcodeDerivedDataDir,
-		"CONFIGURATION_BUILD_DIR=" + xcodeProductsDir,
+		`CONFIGURATION_BUILD_DIR=${xcodeProductsDir}`,
 		"CODE_SIGN_STYLE=Automatic",
 		"CODE_SIGNING_ALLOWED=YES",
 		"CODE_SIGNING_REQUIRED=YES",
