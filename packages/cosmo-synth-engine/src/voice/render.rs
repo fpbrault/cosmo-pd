@@ -3,8 +3,8 @@ use crate::envelope::EnvelopeKind;
 use crate::envelope::EnvelopeTimingCache;
 use crate::generators::{self, LineRenderConfig, PER_LINE_HEADROOM};
 use crate::params::{
-    Algo, LfoWaveform, LineParams, LineSelect, ModDestination, ModMatrixCache, ModMode,
-    PortamentoMode, SynthParams,
+    Algo, BaseWaveform, LfoWaveform, LineParams, LineSelect, ModDestination, ModMatrixCache,
+    ModMode, PortamentoMode, SynthParams,
 };
 use crate::render_cache::CompiledLinePlan;
 use crate::simd::SimdBackend;
@@ -66,6 +66,14 @@ struct BatchLane {
     volume_mod: f32,
     line1_active: bool,
     line2_active: bool,
+}
+
+#[derive(Clone, Copy)]
+struct BatchVoiceEligibility {
+    source_a_algo: Algo,
+    source_b_algo: Option<Algo>,
+    source_a_base_waveform: BaseWaveform,
+    source_b_base_waveform: Option<BaseWaveform>,
 }
 
 #[derive(Clone, Copy)]
@@ -390,6 +398,11 @@ pub fn render_voice_batch4(
     }
 
     let line_select = ctx.p.line_select;
+    let Some(batch_eligibility) =
+        batch_eligibility_for_voices([&*voices[0], &*voices[1], &*voices[2], &*voices[3]], ctx)
+    else {
+        return core::array::from_fn(|index| render_voice(voices[index], ctx));
+    };
     let mut lanes = [None; 4];
     let mut source_a = [None; 4];
     let mut source_b = [None; 4];
@@ -411,18 +424,16 @@ pub fn render_voice_batch4(
             return core::array::from_fn(|lane| render_voice(voices[lane], ctx));
         };
 
-        if config_requires_state(&src_a)
-            || src_b.is_some_and(|config| config_requires_state(&config))
-        {
-            return core::array::from_fn(|lane| render_voice(voices[lane], ctx));
-        }
-
         lanes[index] = Some(prepared);
         source_a[index] = Some(src_a);
         source_b[index] = src_b;
     }
 
     let source_a = source_a.map(|config| config.expect("batch source_a must exist"));
+    debug_assert!(source_a.iter().all(|config| {
+        config.primary_algo == batch_eligibility.source_a_algo
+            && config.primary_base_waveform == batch_eligibility.source_a_base_waveform
+    }));
     let source_a_samples = generators::render_samples_from_configs_batch4(&source_a, simd_backend);
 
     let mut mixed = source_a_samples;
@@ -430,6 +441,11 @@ pub fn render_voice_batch4(
         LineSelect::L1PlusL1Prime | LineSelect::L1PlusL2Prime => {
             let source_b =
                 source_b.map(|config| config.expect("prime line select requires source_b"));
+            debug_assert!(source_b.iter().all(|config| {
+                Some(config.primary_algo) == batch_eligibility.source_b_algo
+                    && Some(config.primary_base_waveform)
+                        == batch_eligibility.source_b_base_waveform
+            }));
             let source_b_samples =
                 generators::render_samples_from_configs_batch4(&source_b, simd_backend);
             mixed = simd_backend.mul4(
@@ -756,6 +772,97 @@ fn finish_rendered_voice_sample(
 
     voice.last_output_sample = sample;
     sample
+}
+
+fn batch_eligibility_for_voices(
+    voices: [&Voice; 4],
+    ctx: &VoiceRenderContext<'_>,
+) -> Option<BatchVoiceEligibility> {
+    let mut batch = None;
+    for voice in voices {
+        let eligibility = classify_batch_voice(voice, ctx)?;
+        match batch {
+            None => batch = Some(eligibility),
+            Some(current)
+                if current.source_a_algo == eligibility.source_a_algo
+                    && current.source_b_algo == eligibility.source_b_algo
+                    && current.source_a_base_waveform == eligibility.source_a_base_waveform
+                    && current.source_b_base_waveform == eligibility.source_b_base_waveform => {}
+            Some(_) => return None,
+        }
+    }
+    batch
+}
+
+fn classify_batch_voice(
+    voice: &Voice,
+    ctx: &VoiceRenderContext<'_>,
+) -> Option<BatchVoiceEligibility> {
+    if voice.is_silent {
+        return None;
+    }
+
+    let source_a = selected_line_plan_slot(
+        ctx.p.line_select,
+        true,
+        voice,
+        ctx.line1_plan,
+        ctx.line2_plan,
+    )?;
+    let source_b = selected_line_plan_slot(
+        ctx.p.line_select,
+        false,
+        voice,
+        ctx.line1_plan,
+        ctx.line2_plan,
+    );
+
+    if source_a.algo == Algo::Karpunk || source_b.is_some_and(|slot| slot.algo == Algo::Karpunk) {
+        return None;
+    }
+
+    Some(BatchVoiceEligibility {
+        source_a_algo: source_a.algo,
+        source_b_algo: source_b.map(|slot| slot.algo),
+        source_a_base_waveform: source_a.base_waveform,
+        source_b_base_waveform: source_b.map(|slot| slot.base_waveform),
+    })
+}
+
+#[derive(Clone, Copy)]
+struct SelectedPlanSlot {
+    algo: Algo,
+    base_waveform: BaseWaveform,
+}
+
+fn selected_line_plan_slot(
+    line_select: LineSelect,
+    source_a: bool,
+    voice: &Voice,
+    line1_plan: &CompiledLinePlan,
+    line2_plan: &CompiledLinePlan,
+) -> Option<SelectedPlanSlot> {
+    match (line_select, source_a) {
+        (LineSelect::L1, true)
+        | (LineSelect::L1PlusL1Prime, true)
+        | (LineSelect::L1PlusL2Prime, true) => Some(SelectedPlanSlot {
+            algo: line1_plan.primary.algo_for_cycle(voice.cycle_count1),
+            base_waveform: line1_plan.primary.base_waveform,
+        }),
+        (LineSelect::L2, true) => Some(SelectedPlanSlot {
+            algo: line2_plan.primary.algo_for_cycle(voice.cycle_count2),
+            base_waveform: line2_plan.primary.base_waveform,
+        }),
+        (LineSelect::L1PlusL1Prime, false) => Some(SelectedPlanSlot {
+            algo: line1_plan.primary.algo_for_cycle(voice.cycle_count1),
+            base_waveform: line1_plan.primary.base_waveform,
+        }),
+        (LineSelect::L1PlusL2Prime, false) => Some(SelectedPlanSlot {
+            algo: line2_plan.primary.algo_for_cycle(voice.cycle_count2),
+            base_waveform: line2_plan.primary.base_waveform,
+        }),
+        _ => None,
+    }
 }
 
 #[inline]

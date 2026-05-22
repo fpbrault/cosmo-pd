@@ -588,12 +588,10 @@ fn render_primary_batch4(
                 let mask = simd_backend.cmplt4(wrapped, [0.5; 4]);
                 simd_backend.blend4([1.0; 4], [-1.0; 4], mask)
             }
-            _ => core::array::from_fn(|i| {
-                match base_waveform {
-                    BaseWaveform::Cosine => -(TWO_PI * wrapped[i]).cos(),
-                    BaseWaveform::Sine => (TWO_PI * wrapped[i]).sin(),
-                    _ => unreachable!(),
-                }
+            _ => core::array::from_fn(|i| match base_waveform {
+                BaseWaveform::Cosine => -(TWO_PI * wrapped[i]).cos(),
+                BaseWaveform::Sine => (TWO_PI * wrapped[i]).sin(),
+                _ => unreachable!(),
             }),
         };
     }

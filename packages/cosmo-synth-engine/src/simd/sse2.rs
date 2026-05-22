@@ -45,10 +45,7 @@ impl Sse2 {
             let a_vec = _mm_loadu_ps(a.as_ptr());
             let b_vec = _mm_loadu_ps(b.as_ptr());
             let mask_ps = _mm_castsi128_ps(_mm_loadu_si128(mask.as_ptr() as *const __m128i));
-            let result = _mm_or_ps(
-                _mm_and_ps(mask_ps, a_vec),
-                _mm_andnot_ps(mask_ps, b_vec),
-            );
+            let result = _mm_or_ps(_mm_and_ps(mask_ps, a_vec), _mm_andnot_ps(mask_ps, b_vec));
             let mut out = [0.0; 4];
             _mm_storeu_ps(out.as_mut_ptr(), result);
             out

@@ -282,6 +282,76 @@ mod tests {
     }
 
     #[test]
+    fn batch4_fallback_does_not_double_advance_supported_lanes() {
+        let mut params = SynthParams::default();
+        params.line_select = LineSelect::L1PlusL2Prime;
+        params.mod_mode = ModMode::Normal;
+        params.line1.algo = crate::params::Algo::MultiSine;
+        params.line1.algo2 = Some(crate::params::Algo::Saw);
+        params.line1.algo_blend = 0.5;
+        params.line2.algo = crate::params::Algo::Pulse;
+        params.line2.algo2 = Some(crate::params::Algo::Skew);
+        params.line2.algo_blend = 0.3;
+
+        let timing = crate::envelope::EnvelopeTimingCache::new(48_000.0);
+        let sources = ModSources::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        let mut cache = ModMatrixCache::new();
+        cache.compute(&sources);
+        let plan = CompiledSynthParams::from_params(&params);
+        let ctx = super::VoiceRenderContext {
+            p: &params,
+            lfo_mod_val: 0.0,
+            lfo2_mod_val: 0.0,
+            random_mod_val: 0.0,
+            line1_modded: &params.line1,
+            line2_modded: &params.line2,
+            sr: 48_000.0,
+            timing: &timing,
+            pitch_bend_semitones: 0.0,
+            mod_wheel: 0.0,
+            macro1: 0.0,
+            macro2: 0.0,
+            macro3: 0.0,
+            macro4: 0.0,
+            cache: &cache,
+            modulation_active: false,
+            line1_plan: &plan.line1,
+            line2_plan: &plan.line2,
+        };
+
+        let seed = [48_u8, 52, 55, 60];
+        let mut scalar_voices = seed.map(make_voice);
+        scalar_voices[3].cycle_count2 = 1;
+        let expected: [f32; 4] =
+            core::array::from_fn(|index| render_voice(&mut scalar_voices[index], &ctx));
+
+        let mut batch_voices = seed.map(make_voice);
+        batch_voices[3].cycle_count2 = 1;
+        let (voice0, tail) = batch_voices.split_at_mut(1);
+        let (voice1, tail) = tail.split_at_mut(1);
+        let (voice2, voice3) = tail.split_at_mut(1);
+        let got = render_voice_batch4(
+            [
+                &mut voice0[0],
+                &mut voice1[0],
+                &mut voice2[0],
+                &mut voice3[0],
+            ],
+            &ctx,
+            SimdBackend::Scalar,
+        );
+
+        for index in 0..4 {
+            assert!(
+                (expected[index] - got[index]).abs() <= 1.0e-6,
+                "lane {index}: expected {}, got {}",
+                expected[index],
+                got[index]
+            );
+        }
+    }
+
+    #[test]
     fn dcw_depth_uses_gentle_power_taper() {
         assert_eq!(super::render::cz_dcw_env_depth(0.0), 0.0);
         assert_eq!(super::render::cz_dcw_env_depth(1.0), 1.0);
