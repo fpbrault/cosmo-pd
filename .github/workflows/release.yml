@@ -12,8 +12,8 @@ jobs:
   build-and-package:
     name: Build and package plugins (${{ matrix.platform }})
     env:
-      TRUCE_SIGNING_IDENTITY: ${{ vars.TRUCE_SIGNING_IDENTITY }}
-      TRUCE_INSTALLER_SIGNING_IDENTITY: ${{ vars.TRUCE_INSTALLER_SIGNING_IDENTITY }}
+      TRUCE_SIGNING_IDENTITY: ${{ secrets.TRUCE_SIGNING_IDENTITY }}
+      TRUCE_INSTALLER_SIGNING_IDENTITY: ${{ secrets.TRUCE_INSTALLER_SIGNING_IDENTITY }}
     strategy:
       fail-fast: false
       matrix:
