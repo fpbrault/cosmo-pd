@@ -27,6 +27,8 @@ lib-dist
 *.sln
 *.sw?
 xcuserdata/
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
 
 CZSYX/
 package-lock.json
