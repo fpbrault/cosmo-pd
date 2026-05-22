@@ -3,10 +3,11 @@ use crate::envelope::EnvelopeKind;
 use crate::envelope::EnvelopeTimingCache;
 use crate::generators::{self, LineRenderConfig, PER_LINE_HEADROOM};
 use crate::params::{
-    LfoWaveform, LineParams, LineSelect, ModDestination, ModMatrixCache, ModMode, PortamentoMode,
-    SynthParams,
+    Algo, LfoWaveform, LineParams, LineSelect, ModDestination, ModMatrixCache, ModMode,
+    PortamentoMode, SynthParams,
 };
 use crate::render_cache::CompiledLinePlan;
+use crate::simd::SimdBackend;
 
 use super::modulation::{ModSources, algo_param_slot_mods_for_line};
 use super::{
@@ -23,6 +24,7 @@ const DCW_KEY_FOLLOW_MAX_ATTENUATION: f32 = 0.85;
 const DCW_KEY_FOLLOW_MIN_SCALE: f32 = 0.15;
 
 /// Envelope values snapshot for one render step.
+#[derive(Clone, Copy)]
 struct EnvelopeSnapshot {
     dco1_env: f32,
     dco2_env: f32,
@@ -52,6 +54,18 @@ struct PhaseFrame {
     phase_a_post: f32,
     phase_b_post: f32,
     pm_post_mod: f32,
+}
+
+#[derive(Clone, Copy)]
+struct BatchLane {
+    env: EnvelopeSnapshot,
+    signal: SignalState,
+    phase: PhaseFrame,
+    line1_algo_param_mods: [f32; 8],
+    line2_algo_param_mods: [f32; 8],
+    volume_mod: f32,
+    line1_active: bool,
+    line2_active: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -190,70 +204,86 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         base_freq,
         &mod_sources,
     );
-    let (s1, karpunk_raw_sample1) =
-        voice
-            .algo_runtime
-            .render_line1(LineRenderConfig::from_compiled_line(
-                line1_plan,
-                line1_modded,
-                voice.cycle_count1,
-                phase.phi1,
-                phase.phase_a_post,
-                signal.final_dcw1,
-                signal.final_dca1,
-                signal.effective_freq1,
-                sr,
-                line1_algo_param_mods,
-                phase.pm_post_mod,
-            ));
-    let (s2, karpunk_raw_sample2) =
-        voice
-            .algo_runtime
-            .render_line2(LineRenderConfig::from_compiled_line(
-                line2_plan,
-                line2_modded,
-                voice.cycle_count2,
-                phase.phi2,
-                phase.phase_b_post,
-                signal.final_dcw2,
-                signal.final_dca2,
-                signal.effective_freq2,
-                sr,
-                line2_algo_param_mods,
-                phase.pm_post_mod,
-            ));
     let mod_mode = effective_mod_mode(p);
-    let noise_step = if mod_mode == ModMode::Noise {
-        let step = voice.noise_step;
-        voice.noise_step = voice.noise_step.wrapping_add(1);
-        step
+    let sample = if mod_mode == ModMode::Normal {
+        render_normal_mode_sample(
+            voice,
+            p.line_select,
+            line1_modded,
+            line2_modded,
+            &signal,
+            &phase,
+            sr,
+            line1_algo_param_mods,
+            line2_algo_param_mods,
+            line1_plan,
+            line2_plan,
+        )
     } else {
-        0
-    };
+        let (s1, karpunk_raw_sample1) =
+            voice
+                .algo_runtime
+                .render_line1(LineRenderConfig::from_compiled_line(
+                    line1_plan,
+                    line1_modded,
+                    voice.cycle_count1,
+                    phase.phi1,
+                    phase.phase_a_post,
+                    signal.final_dcw1,
+                    signal.final_dca1,
+                    signal.effective_freq1,
+                    sr,
+                    line1_algo_param_mods,
+                    phase.pm_post_mod,
+                ));
+        let (s2, karpunk_raw_sample2) =
+            voice
+                .algo_runtime
+                .render_line2(LineRenderConfig::from_compiled_line(
+                    line2_plan,
+                    line2_modded,
+                    voice.cycle_count2,
+                    phase.phi2,
+                    phase.phase_b_post,
+                    signal.final_dcw2,
+                    signal.final_dca2,
+                    signal.effective_freq2,
+                    sr,
+                    line2_algo_param_mods,
+                    phase.pm_post_mod,
+                ));
+        let noise_step = if mod_mode == ModMode::Noise {
+            let step = voice.noise_step;
+            voice.noise_step = voice.noise_step.wrapping_add(1);
+            step
+        } else {
+            0
+        };
 
-    let sample = mix_line_outputs(
-        p,
-        mod_mode,
-        phase.phi1,
-        phase.phi2,
-        noise_step,
-        s1,
-        s2,
-        line1_modded,
-        line2_modded,
-        voice.cycle_count1,
-        voice.cycle_count2,
-        karpunk_raw_sample1,
-        karpunk_raw_sample2,
-        signal.final_dcw1,
-        signal.final_dcw2,
-        signal.final_dca1,
-        signal.final_dca2,
-        line1_algo_param_mods,
-        line2_algo_param_mods,
-        line1_plan,
-        line2_plan,
-    );
+        mix_line_outputs(
+            p,
+            mod_mode,
+            phase.phi1,
+            phase.phi2,
+            noise_step,
+            s1,
+            s2,
+            line1_modded,
+            line2_modded,
+            voice.cycle_count1,
+            voice.cycle_count2,
+            karpunk_raw_sample1,
+            karpunk_raw_sample2,
+            signal.final_dcw1,
+            signal.final_dcw2,
+            signal.final_dca1,
+            signal.final_dca2,
+            line1_algo_param_mods,
+            line2_algo_param_mods,
+            line1_plan,
+            line2_plan,
+        )
+    };
 
     // Apply volume modulation from mod matrix
     let volume_mod = get_mod_if_active(
@@ -350,6 +380,86 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
     sample
 }
 
+pub fn render_voice_batch4(
+    voices: [&mut Voice; 4],
+    ctx: &VoiceRenderContext<'_>,
+    simd_backend: SimdBackend,
+) -> [f32; 4] {
+    if ctx.p.mod_mode != ModMode::Normal {
+        return core::array::from_fn(|index| render_voice(voices[index], ctx));
+    }
+
+    let line_select = ctx.p.line_select;
+    let mut lanes = [None; 4];
+    let mut source_a = [None; 4];
+    let mut source_b = [None; 4];
+
+    for index in 0..4 {
+        let Some(prepared) = prepare_batch_lane(voices[index], ctx) else {
+            return core::array::from_fn(|lane| render_voice(voices[lane], ctx));
+        };
+
+        let Some((src_a, src_b)) = selected_line_configs(
+            line_select,
+            ctx,
+            voices[index],
+            &prepared.signal,
+            &prepared.phase,
+            prepared.line1_algo_param_mods,
+            prepared.line2_algo_param_mods,
+        ) else {
+            return core::array::from_fn(|lane| render_voice(voices[lane], ctx));
+        };
+
+        if config_requires_state(&src_a)
+            || src_b.is_some_and(|config| config_requires_state(&config))
+        {
+            return core::array::from_fn(|lane| render_voice(voices[lane], ctx));
+        }
+
+        lanes[index] = Some(prepared);
+        source_a[index] = Some(src_a);
+        source_b[index] = src_b;
+    }
+
+    let source_a = source_a.map(|config| config.expect("batch source_a must exist"));
+    let source_a_samples = generators::render_samples_from_configs_batch4(&source_a, simd_backend);
+
+    let mut mixed = source_a_samples;
+    match line_select {
+        LineSelect::L1PlusL1Prime | LineSelect::L1PlusL2Prime => {
+            let source_b =
+                source_b.map(|config| config.expect("prime line select requires source_b"));
+            let source_b_samples =
+                generators::render_samples_from_configs_batch4(&source_b, simd_backend);
+            mixed = simd_backend.mul4(
+                simd_backend.add4(source_a_samples, source_b_samples),
+                [DUAL_LINE_MIX_GAIN; 4],
+            );
+        }
+        LineSelect::L1 | LineSelect::L2 => {}
+    }
+
+    let volume = core::array::from_fn(|index| {
+        1.0 + lanes[index].as_ref().expect("lane must exist").volume_mod
+    });
+    let mixed = simd_backend.mul4(mixed, volume);
+
+    core::array::from_fn(|index| {
+        let lane = lanes[index].as_ref().expect("lane must exist");
+        finish_rendered_voice_sample(
+            voices[index],
+            mixed[index],
+            &lane.env,
+            &lane.signal,
+            lane.line1_active,
+            lane.line2_active,
+            lane.phase.pm_delta,
+            ctx.sr,
+        )
+    })
+}
+
 fn finalize_voice_silence(voice: &mut Voice) -> f32 {
     voice.is_silent = true;
     voice.note = None;
@@ -365,6 +475,287 @@ fn finalize_voice_silence(voice: &mut Voice) -> f32 {
     voice.zero_cross_stop_pending = false;
     voice.zero_cross_stop_wait = 0;
     0.0
+}
+
+fn config_requires_state(config: &LineRenderConfig) -> bool {
+    config.primary_algo == Algo::Karpunk || config.secondary_algo == Some(Algo::Karpunk)
+}
+
+fn prepare_batch_lane(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> Option<BatchLane> {
+    let p = ctx.p;
+    let line1_modded = ctx.line1_modded;
+    let line2_modded = ctx.line2_modded;
+    let sr = ctx.sr;
+    let timing = ctx.timing;
+    let pitch_bend_semitones = ctx.pitch_bend_semitones;
+    let mod_wheel = ctx.mod_wheel;
+    let aftertouch = voice.aftertouch;
+    let cache = ctx.cache;
+    let modulation_active = ctx.modulation_active;
+    let base_freq = base_voice_frequency(voice);
+
+    let env = advance_envelopes(voice, line1_modded, line2_modded, timing);
+    let line1_active = uses_line1(p.line_select);
+    let line2_active = uses_line2(p.line_select);
+    let env_gate_open = (line1_active && env.dca1.abs() >= SILENCE_THRESHOLD)
+        || (line2_active && env.dca2.abs() >= SILENCE_THRESHOLD);
+    let env_gate_closed = (!line1_active || env.dca1.abs() < SILENCE_THRESHOLD)
+        && (!line2_active || env.dca2.abs() < SILENCE_THRESHOLD);
+    let active_dca_non_loop = (!line1_active || !line1_modded.dca_env.loop_)
+        && (!line2_active || !line2_modded.dca_env.loop_);
+
+    if env_gate_open {
+        voice.gate_was_open = true;
+    }
+
+    if !voice.is_releasing
+        && !voice.sustained
+        && active_dca_non_loop
+        && voice.gate_was_open
+        && env_gate_closed
+    {
+        voice.is_releasing = true;
+    }
+
+    if voice.is_silent {
+        return None;
+    }
+
+    let mod_env_val = voice.mod_env.advance(&p.mod_env, sr);
+    let mod_sources = ModSources::new(
+        ctx.lfo_mod_val,
+        ctx.lfo2_mod_val,
+        ctx.random_mod_val,
+        mod_env_val,
+        voice.velocity,
+        mod_wheel,
+        aftertouch,
+        ctx.macro1,
+        ctx.macro2,
+        ctx.macro3,
+        ctx.macro4,
+    );
+    let line1_algo_param_mods = if modulation_active {
+        algo_param_slot_mods_for_line(1, cache, &mod_sources)
+    } else {
+        [0.0; 8]
+    };
+    let line2_algo_param_mods = if modulation_active {
+        algo_param_slot_mods_for_line(2, cache, &mod_sources)
+    } else {
+        [0.0; 8]
+    };
+
+    let mut signal = build_signal_state(
+        line1_modded,
+        line2_modded,
+        cache,
+        modulation_active,
+        &env,
+        base_freq,
+        &mod_sources,
+    );
+    apply_dcw_dezipper(voice, sr, &mut signal);
+    apply_pitch_and_lfo_modulation(
+        voice,
+        p,
+        cache,
+        sr,
+        base_freq,
+        pitch_bend_semitones,
+        &mod_sources,
+        modulation_active,
+        &mut signal,
+    );
+    let phase = build_phase_frame(
+        voice,
+        p,
+        cache,
+        modulation_active,
+        sr,
+        base_freq,
+        &mod_sources,
+    );
+    let volume_mod = get_mod_if_active(
+        modulation_active,
+        cache,
+        ModDestination::Volume,
+        &mod_sources,
+    );
+
+    Some(BatchLane {
+        env,
+        signal,
+        phase,
+        line1_algo_param_mods,
+        line2_algo_param_mods,
+        volume_mod,
+        line1_active,
+        line2_active,
+    })
+}
+
+fn selected_line_configs(
+    line_select: LineSelect,
+    ctx: &VoiceRenderContext<'_>,
+    voice: &Voice,
+    signal: &SignalState,
+    phase: &PhaseFrame,
+    line1_algo_param_mods: [f32; 8],
+    line2_algo_param_mods: [f32; 8],
+) -> Option<(LineRenderConfig, Option<LineRenderConfig>)> {
+    let line1 = LineRenderConfig::from_compiled_line(
+        ctx.line1_plan,
+        ctx.line1_modded,
+        voice.cycle_count1,
+        phase.phi1,
+        phase.phase_a_post,
+        signal.final_dcw1,
+        signal.final_dca1,
+        signal.effective_freq1,
+        ctx.sr,
+        line1_algo_param_mods,
+        phase.pm_post_mod,
+    );
+    let line2 = LineRenderConfig::from_compiled_line(
+        ctx.line2_plan,
+        ctx.line2_modded,
+        voice.cycle_count2,
+        phase.phi2,
+        phase.phase_b_post,
+        signal.final_dcw2,
+        signal.final_dca2,
+        signal.effective_freq2,
+        ctx.sr,
+        line2_algo_param_mods,
+        phase.pm_post_mod,
+    );
+
+    match line_select {
+        LineSelect::L1 => Some((line1, None)),
+        LineSelect::L2 => Some((line2, None)),
+        LineSelect::L1PlusL1Prime => Some((
+            line1,
+            Some(LineRenderConfig::from_compiled_line(
+                ctx.line1_plan,
+                ctx.line1_modded,
+                voice.cycle_count1,
+                phase.phi2,
+                phase.phi2,
+                signal.final_dcw1,
+                signal.final_dca1,
+                0.0,
+                1.0,
+                line1_algo_param_mods,
+                0.0,
+            )),
+        )),
+        LineSelect::L1PlusL2Prime => Some((
+            line1,
+            Some(LineRenderConfig::from_compiled_line(
+                ctx.line2_plan,
+                ctx.line2_modded,
+                voice.cycle_count2,
+                phase.phi2,
+                phase.phi2,
+                signal.final_dcw2,
+                signal.final_dca2,
+                0.0,
+                1.0,
+                line2_algo_param_mods,
+                0.0,
+            )),
+        )),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn finish_rendered_voice_sample(
+    voice: &mut Voice,
+    mut sample: f32,
+    env: &EnvelopeSnapshot,
+    signal: &SignalState,
+    line1_active: bool,
+    line2_active: bool,
+    pm_delta: f32,
+    sr: f32,
+) -> f32 {
+    let tail_alpha = 1.0 - (-1.0 / (RELEASE_TAIL_LEVEL_TIME_SECONDS * sr.max(1.0))).exp();
+    voice.release_tail_level += (sample.abs() - voice.release_tail_level) * tail_alpha;
+
+    if voice.is_releasing && voice.anti_click_fade == 0 && !voice.zero_cross_stop_pending {
+        let env_near_silence = (!line1_active || env.dca1.abs() < SILENCE_THRESHOLD)
+            && (!line2_active || env.dca2.abs() < SILENCE_THRESHOLD);
+        let tail_near_silence = voice.release_tail_level < RELEASE_TAIL_LEVEL_THRESHOLD;
+        let instant_near_silence = sample.abs() < RELEASE_TAIL_LEVEL_THRESHOLD * 2.0;
+
+        if (env_near_silence || tail_near_silence) && instant_near_silence {
+            let min_freq = signal.effective_freq1.min(signal.effective_freq2).max(20.0);
+            let half_cycle_samples = (sr / min_freq / 2.0).round() as u32;
+            let fade_len = half_cycle_samples
+                .clamp(ANTI_CLICK_FADE_SAMPLES, ANTI_CLICK_FADE_MAX_SAMPLES)
+                .max(1);
+            voice.anti_click_fade = fade_len;
+            voice.anti_click_fade_len = fade_len;
+            voice.zero_cross_stop_pending = false;
+            voice.zero_cross_stop_wait = 0;
+        }
+    }
+
+    if voice.anti_click_attack > 0 {
+        let ramp = 1.0 - (voice.anti_click_attack as f32 / ANTI_CLICK_ATTACK_SAMPLES as f32);
+        sample *= ramp;
+        voice.anti_click_attack -= 1;
+    }
+
+    sample = suppress_sample_discontinuity(
+        voice.last_output_sample,
+        sample,
+        POP_SUPPRESS_DELTA_THRESHOLD,
+    );
+
+    advance_voice_phase(
+        voice,
+        sr,
+        signal.effective_freq1,
+        signal.effective_freq2,
+        pm_delta,
+    );
+
+    if voice.anti_click_fade > 0 {
+        voice.anti_click_fade -= 1;
+        let fade_len = voice.anti_click_fade_len.max(1);
+        let fade = voice.anti_click_fade as f32 / fade_len as f32;
+        let faded = sample * fade;
+
+        if voice.anti_click_fade == 0 {
+            voice.zero_cross_stop_pending = true;
+            voice.zero_cross_stop_wait = ZERO_CROSS_STOP_MAX_WAIT_SAMPLES;
+            voice.last_output_sample = sample;
+            return 0.0;
+        }
+
+        voice.last_output_sample = faded;
+        return faded;
+    }
+
+    if voice.zero_cross_stop_pending {
+        let prev_raw = voice.last_output_sample;
+        let near_zero = sample.abs() <= ZERO_CROSS_STOP_THRESHOLD;
+        let crossed_zero = (prev_raw > 0.0 && sample <= 0.0) || (prev_raw < 0.0 && sample >= 0.0);
+
+        voice.last_output_sample = sample;
+
+        if near_zero || crossed_zero || voice.zero_cross_stop_wait == 0 {
+            return finalize_voice_silence(voice);
+        }
+
+        voice.zero_cross_stop_wait -= 1;
+        return 0.0;
+    }
+
+    voice.last_output_sample = sample;
+    sample
 }
 
 #[inline]
@@ -762,6 +1153,108 @@ fn build_phase_frame(
         phase_a_post,
         phase_b_post,
         pm_post_mod,
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn render_normal_mode_sample(
+    voice: &mut Voice,
+    line_select: LineSelect,
+    l1: &LineParams,
+    l2: &LineParams,
+    signal: &SignalState,
+    phase: &PhaseFrame,
+    sr: f32,
+    line1_algo_param_mods: [f32; 8],
+    line2_algo_param_mods: [f32; 8],
+    line1_plan: &CompiledLinePlan,
+    line2_plan: &CompiledLinePlan,
+) -> f32 {
+    let line1 = LineRenderConfig::from_compiled_line(
+        line1_plan,
+        l1,
+        voice.cycle_count1,
+        phase.phi1,
+        phase.phase_a_post,
+        signal.final_dcw1,
+        signal.final_dca1,
+        signal.effective_freq1,
+        sr,
+        line1_algo_param_mods,
+        phase.pm_post_mod,
+    );
+    let (s1, karpunk_raw_sample1) = voice.algo_runtime.render_line1(line1);
+
+    match line_select {
+        LineSelect::L1 => s1,
+        LineSelect::L2 => {
+            let line2 = LineRenderConfig::from_compiled_line(
+                line2_plan,
+                l2,
+                voice.cycle_count2,
+                phase.phi2,
+                phase.phase_b_post,
+                signal.final_dcw2,
+                signal.final_dca2,
+                signal.effective_freq2,
+                sr,
+                line2_algo_param_mods,
+                phase.pm_post_mod,
+            );
+            voice.algo_runtime.render_line2(line2).0
+        }
+        LineSelect::L1PlusL1Prime => {
+            let prime = LineRenderConfig::from_compiled_line(
+                line1_plan,
+                l1,
+                voice.cycle_count1,
+                phase.phi2,
+                phase.phi2,
+                signal.final_dcw1,
+                signal.final_dca1,
+                0.0,
+                1.0,
+                line1_algo_param_mods,
+                0.0,
+            );
+            let s1_prime = render_prime_line_sample(prime, karpunk_raw_sample1);
+            (s1 + s1_prime) * DUAL_LINE_MIX_GAIN
+        }
+        LineSelect::L1PlusL2Prime => {
+            let line2 = LineRenderConfig::from_compiled_line(
+                line2_plan,
+                l2,
+                voice.cycle_count2,
+                phase.phi2,
+                phase.phase_b_post,
+                signal.final_dcw2,
+                signal.final_dca2,
+                signal.effective_freq2,
+                sr,
+                line2_algo_param_mods,
+                phase.pm_post_mod,
+            );
+            let karpunk_raw_sample2 = if config_requires_state(&line2) {
+                voice.algo_runtime.render_line2(line2).1
+            } else {
+                None
+            };
+            let prime = LineRenderConfig::from_compiled_line(
+                line2_plan,
+                l2,
+                voice.cycle_count2,
+                phase.phi2,
+                phase.phi2,
+                signal.final_dcw2,
+                signal.final_dca2,
+                0.0,
+                1.0,
+                line2_algo_param_mods,
+                0.0,
+            );
+            let s2_prime = render_prime_line_sample(prime, karpunk_raw_sample2);
+            (s1 + s2_prime) * DUAL_LINE_MIX_GAIN
+        }
     }
 }
 

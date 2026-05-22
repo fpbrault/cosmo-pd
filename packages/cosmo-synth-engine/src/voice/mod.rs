@@ -9,7 +9,7 @@ mod render;
 pub use adsr::AdsrEnv;
 pub(crate) use modulation::ModSources;
 pub(crate) use modulation::modulated_line_params;
-pub(crate) use render::{VoiceRenderContext, render_voice};
+pub(crate) use render::{VoiceRenderContext, render_voice, render_voice_batch4};
 
 use crate::envelope::EnvGen;
 use crate::generators::AlgoRuntimeState;
@@ -142,6 +142,67 @@ mod tests {
     use crate::params::{LineParams, LineSelect, ModMatrixCache, ModMode, SynthParams};
     use crate::processor::utils;
     use crate::render_cache::CompiledSynthParams;
+    use crate::simd::SimdBackend;
+
+    fn render_sequence(params: SynthParams, note: u8, sample_count: usize) -> Vec<f32> {
+        let mut voice = Voice::new();
+        voice.frequency = utils::midi_note_to_freq(note);
+        voice.current_freq = voice.frequency;
+        voice.target_freq = voice.frequency;
+        voice.glide_start_freq = voice.frequency;
+        voice.env_note = note;
+        voice.is_silent = false;
+        voice.velocity = 1.0;
+
+        let timing = crate::envelope::EnvelopeTimingCache::new(48_000.0);
+        let sources = ModSources::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        let mut cache = ModMatrixCache::new();
+        cache.compute(&sources);
+        let plan = CompiledSynthParams::from_params(&params);
+
+        (0..sample_count)
+            .map(|_| {
+                let ctx = super::VoiceRenderContext {
+                    p: &params,
+                    lfo_mod_val: 0.0,
+                    lfo2_mod_val: 0.0,
+                    random_mod_val: 0.0,
+                    line1_modded: &params.line1,
+                    line2_modded: &params.line2,
+                    sr: 48_000.0,
+                    timing: &timing,
+                    pitch_bend_semitones: 0.0,
+                    mod_wheel: 0.0,
+                    macro1: 0.0,
+                    macro2: 0.0,
+                    macro3: 0.0,
+                    macro4: 0.0,
+                    cache: &cache,
+                    modulation_active: false,
+                    line1_plan: &plan.line1,
+                    line2_plan: &plan.line2,
+                };
+                render_voice(&mut voice, &ctx)
+            })
+            .collect()
+    }
+
+    fn sum_abs(samples: &[f32]) -> f32 {
+        samples.iter().map(|sample| sample.abs()).sum()
+    }
+
+    fn make_voice(note: u8) -> Voice {
+        let mut voice = Voice::new();
+        voice.frequency = utils::midi_note_to_freq(note);
+        voice.current_freq = voice.frequency;
+        voice.target_freq = voice.frequency;
+        voice.glide_start_freq = voice.frequency;
+        voice.env_note = note;
+        voice.note = Some(note);
+        voice.is_silent = false;
+        voice.velocity = 1.0;
+        voice
+    }
 
     fn render_sequence(params: SynthParams, note: u8, sample_count: usize) -> Vec<f32> {
         let mut voice = Voice::new();
@@ -196,6 +257,75 @@ mod tests {
         assert_eq!(super::render::cz_dca_env_gain(1.0), 1.0);
         assert!(super::render::cz_dca_env_gain(0.5) < 0.5);
         assert!(super::render::cz_dca_env_gain(0.75) < 0.75);
+    }
+
+    #[test]
+    fn batch4_matches_scalar_stateless_render() {
+        let mut params = SynthParams::default();
+        params.line_select = LineSelect::L1PlusL2Prime;
+        params.mod_mode = ModMode::Normal;
+        params.line1.algo = crate::params::Algo::MultiSine;
+        params.line1.algo2 = Some(crate::params::Algo::Saw);
+        params.line1.algo_blend = 0.5;
+        params.line2.algo = crate::params::Algo::Pulse;
+        params.line2.algo2 = Some(crate::params::Algo::Skew);
+        params.line2.algo_blend = 0.3;
+
+        let timing = crate::envelope::EnvelopeTimingCache::new(48_000.0);
+        let sources = ModSources::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        let mut cache = ModMatrixCache::new();
+        cache.compute(&sources);
+        let plan = CompiledSynthParams::from_params(&params);
+        let ctx = super::VoiceRenderContext {
+            p: &params,
+            lfo_mod_val: 0.0,
+            lfo2_mod_val: 0.0,
+            random_mod_val: 0.0,
+            line1_modded: &params.line1,
+            line2_modded: &params.line2,
+            sr: 48_000.0,
+            timing: &timing,
+            pitch_bend_semitones: 0.0,
+            mod_wheel: 0.0,
+            macro1: 0.0,
+            macro2: 0.0,
+            macro3: 0.0,
+            macro4: 0.0,
+            cache: &cache,
+            modulation_active: false,
+            line1_plan: &plan.line1,
+            line2_plan: &plan.line2,
+        };
+
+        let scalar_seed = [48_u8, 52, 55, 60];
+        let mut scalar_voices = scalar_seed.map(make_voice);
+        let expected: [f32; 4] =
+            core::array::from_fn(|index| render_voice(&mut scalar_voices[index], &ctx));
+
+        let batch_seed = [48_u8, 52, 55, 60];
+        let mut batch_voices = batch_seed.map(make_voice);
+        let (voice0, tail) = batch_voices.split_at_mut(1);
+        let (voice1, tail) = tail.split_at_mut(1);
+        let (voice2, voice3) = tail.split_at_mut(1);
+        let got = render_voice_batch4(
+            [
+                &mut voice0[0],
+                &mut voice1[0],
+                &mut voice2[0],
+                &mut voice3[0],
+            ],
+            &ctx,
+            SimdBackend::Scalar,
+        );
+
+        for index in 0..4 {
+            assert!(
+                (expected[index] - got[index]).abs() <= 1.0e-6,
+                "lane {index}: expected {}, got {}",
+                expected[index],
+                got[index]
+            );
+        }
     }
 
     #[test]

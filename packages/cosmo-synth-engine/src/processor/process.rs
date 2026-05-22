@@ -413,12 +413,22 @@ impl CosmoProcessor {
         } else {
             let mut vector_acc = [0.0_f32; 4];
             while v + 4 <= NUM_VOICES {
-                let voice_samples = [
-                    crate::voice::render_voice(&mut self.voices[v], &render_ctx),
-                    crate::voice::render_voice(&mut self.voices[v + 1], &render_ctx),
-                    crate::voice::render_voice(&mut self.voices[v + 2], &render_ctx),
-                    crate::voice::render_voice(&mut self.voices[v + 3], &render_ctx),
-                ];
+                let voice_samples = {
+                    let voices = &mut self.voices[v..v + 4];
+                    let (voice0, tail) = voices.split_at_mut(1);
+                    let (voice1, tail) = tail.split_at_mut(1);
+                    let (voice2, voice3) = tail.split_at_mut(1);
+                    crate::voice::render_voice_batch4(
+                        [
+                            &mut voice0[0],
+                            &mut voice1[0],
+                            &mut voice2[0],
+                            &mut voice3[0],
+                        ],
+                        &render_ctx,
+                        self.simd_backend,
+                    )
+                };
                 vector_acc = self.simd_backend.add4(vector_acc, voice_samples);
                 v += 4;
             }

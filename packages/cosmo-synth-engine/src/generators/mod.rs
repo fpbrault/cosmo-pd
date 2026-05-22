@@ -1,6 +1,7 @@
 use crate::dsp_utils::{TWO_PI, apply_window, lerp, wrap01};
 use crate::params::{Algo, AlgoControlSlots, BaseWaveform, LineParams};
 use crate::render_cache::CompiledLinePlan;
+use crate::simd::SimdBackend;
 use std::sync::LazyLock;
 
 /// Reference per-line output headroom used by processor normalization.
@@ -285,6 +286,54 @@ pub(crate) fn render_sample_from_config(
 }
 
 #[inline(always)]
+pub(crate) fn render_samples_from_configs_batch4(
+    configs: &[LineRenderConfig; 4],
+    simd_backend: SimdBackend,
+) -> [f32; 4] {
+    let primary_algo = configs[0].primary_algo;
+    let secondary_algo = configs[0].secondary_algo;
+    let primary_base_waveform = configs[0].primary_base_waveform;
+    let secondary_base_waveform = configs[0].secondary_base_waveform;
+
+    let uniform = configs.iter().skip(1).all(|config| {
+        config.primary_algo == primary_algo
+            && config.secondary_algo == secondary_algo
+            && config.primary_base_waveform == primary_base_waveform
+            && config.secondary_base_waveform == secondary_base_waveform
+    });
+
+    if !uniform || karpunk::requires_state_tick(primary_algo, secondary_algo) {
+        return core::array::from_fn(|index| render_sample_from_config(&configs[index], None));
+    }
+
+    let primary = render_primary_batch4(
+        primary_algo,
+        primary_base_waveform,
+        configs,
+        simd_backend,
+        false,
+    );
+
+    if let Some(algo) = secondary_algo {
+        let secondary =
+            render_primary_batch4(algo, secondary_base_waveform, configs, simd_backend, true);
+
+        let mut blended = [0.0_f32; 4];
+        for index in 0..4 {
+            blended[index] = blend_line_samples(
+                primary_algo,
+                primary[index],
+                secondary[index],
+                configs[index].blend,
+            );
+        }
+        return blended;
+    }
+
+    primary
+}
+
+#[inline(always)]
 fn render_line_stateless(config: LineRenderConfig) -> (f32, Option<f32>) {
     (render_sample_from_config(&config, None), None)
 }
@@ -469,6 +518,58 @@ pub fn render_algo_sample(
     }
     let warped = warp_phase(algo, phase, dcw, control_values, &algo_param_mods);
     sample_base_wave(base_waveform, warped + pm_post_mod)
+}
+
+#[inline(always)]
+fn render_primary_batch4(
+    algo: Algo,
+    base_waveform: BaseWaveform,
+    configs: &[LineRenderConfig; 4],
+    simd_backend: SimdBackend,
+    secondary: bool,
+) -> [f32; 4] {
+    let mut samples = [0.0_f32; 4];
+    let mut window_gains = [0.0_f32; 4];
+    let mut final_dca = [0.0_f32; 4];
+
+    for index in 0..4 {
+        let config = &configs[index];
+        let phase = config.phase;
+        let dcw = if config.secondary_algo.is_some() && !secondary {
+            config.final_dcw * (1.0 - config.blend)
+        } else if config.secondary_algo.is_some() && secondary {
+            config.final_dcw * config.blend
+        } else {
+            config.final_dcw
+        };
+        let control_values = if secondary {
+            &config.secondary_control_values
+        } else {
+            &config.primary_control_values
+        };
+        let window_gain = if secondary {
+            config.secondary_window_gain
+        } else {
+            config.primary_window_gain
+        };
+
+        samples[index] = render_algo_sample(
+            algo,
+            phase,
+            dcw,
+            base_waveform,
+            control_values,
+            config.algo_param_mods,
+            None,
+            config.pm_post_mod,
+        );
+        window_gains[index] = window_gain;
+        final_dca[index] = config.final_dca;
+    }
+
+    let with_window = simd_backend.mul4(samples, window_gains);
+    let with_dca = simd_backend.mul4(with_window, final_dca);
+    simd_backend.mul4(with_dca, [PER_LINE_HEADROOM; 4])
 }
 
 #[cfg(test)]
