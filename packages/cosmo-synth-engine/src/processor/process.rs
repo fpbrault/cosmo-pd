@@ -97,6 +97,8 @@ impl CosmoProcessor {
         let base_random_rate = p.random.rate;
         let sr = self.sample_rate;
         let has_active_mod_routes = self.compiled_params.has_active_mod_routes;
+        let has_fx_mod_routes = self.compiled_params.has_fx_mod_routes;
+        let has_line_pitch_routes = self.compiled_params.has_line_pitch_routes;
         let _has_env_step_routes = self.compiled_params.has_env_step_routes;
         let line1_plan = self.compiled_params.line1;
         let line2_plan = self.compiled_params.line2;
@@ -132,8 +134,10 @@ impl CosmoProcessor {
 
             if has_active_mod_routes {
                 mod_cache.compute(&pre_sources);
-                self.fx
-                    .apply_modulated_params(p, &mod_cache, &pre_sources, true);
+                if has_fx_mod_routes && self.fx.active_slot_count > 0 {
+                    self.fx
+                        .apply_modulated_params(p, &mod_cache, &pre_sources, true);
+                }
             }
 
             let lfos = self.compute_lfos(
@@ -167,6 +171,7 @@ impl CosmoProcessor {
                     1,
                     &mod_cache,
                     &pre_sources,
+                    has_line_pitch_routes,
                 );
                 modulated_line_params(
                     &p.line2,
@@ -174,6 +179,7 @@ impl CosmoProcessor {
                     2,
                     &mod_cache,
                     &pre_sources,
+                    has_line_pitch_routes,
                 );
                 VoiceLinesFrame {
                     line1: self.line1_scratch,

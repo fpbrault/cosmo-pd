@@ -173,6 +173,7 @@ pub(crate) fn modulated_line_params(
     line_index: u8,
     cache: &ModMatrixCache,
     sources: &ModSources,
+    has_line_pitch_routes: bool,
 ) {
     let algo_blend_dest = if line_index == 2 {
         ModDestination::Line2AlgoBlend
@@ -184,21 +185,23 @@ pub(crate) fn modulated_line_params(
 
     *scratch = *line;
     scratch.algo_blend = (line.algo_blend + algo_blend_mod).clamp(0.0, 1.0);
-    // 100% modulation amount maps to full control span for line pitch/detune controls.
-    if line_index == 1 {
-        scratch.octave = (line.octave
-            + destination_delta(cache, ModDestination::Line1Octave, sources, 4.0))
-        .clamp(-2.0, 2.0);
-    } else {
-        scratch.octave = (line.octave
-            + destination_delta(cache, ModDestination::Line2DetuneOctave, sources, 6.0))
-        .clamp(-5.0, 5.0);
-        scratch.detune_note = (line.detune_note
-            + destination_delta(cache, ModDestination::Line2DetuneNote, sources, 22.0))
-        .clamp(-11.0, 11.0);
-        scratch.detune_fine = (line.detune_fine
-            + destination_delta(cache, ModDestination::Line2DetuneFine, sources, 120.0))
-        .clamp(-60.0, 60.0);
+    if has_line_pitch_routes {
+        // 100% modulation amount maps to full control span for line pitch/detune controls.
+        if line_index == 1 {
+            scratch.octave = (line.octave
+                + destination_delta(cache, ModDestination::Line1Octave, sources, 4.0))
+            .clamp(-2.0, 2.0);
+        } else {
+            scratch.octave = (line.octave
+                + destination_delta(cache, ModDestination::Line2DetuneOctave, sources, 6.0))
+            .clamp(-5.0, 5.0);
+            scratch.detune_note = (line.detune_note
+                + destination_delta(cache, ModDestination::Line2DetuneNote, sources, 22.0))
+            .clamp(-11.0, 11.0);
+            scratch.detune_fine = (line.detune_fine
+                + destination_delta(cache, ModDestination::Line2DetuneFine, sources, 120.0))
+            .clamp(-60.0, 60.0);
+        }
     }
     if cache.has_env_step_routes {
         scratch.dco_env =

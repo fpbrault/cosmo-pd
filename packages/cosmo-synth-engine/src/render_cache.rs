@@ -18,6 +18,8 @@ pub(crate) struct CompiledSynthParams {
     pub mod_cache: ModMatrixCache,
     pub has_active_mod_routes: bool,
     pub has_env_step_routes: bool,
+    pub has_fx_mod_routes: bool,
+    pub has_line_pitch_routes: bool,
     pub norm: f32,
     pub line1: CompiledLinePlan,
     pub line2: CompiledLinePlan,
@@ -28,9 +30,23 @@ impl CompiledSynthParams {
         let mut mod_cache = ModMatrixCache::new();
         mod_cache.rebuild_routes(&params.mod_matrix);
 
+        let has_active_mod_routes = params.mod_matrix.routes.iter().any(|route| route.enabled);
+
         Self {
-            has_active_mod_routes: params.mod_matrix.routes.iter().any(|route| route.enabled),
+            has_active_mod_routes,
             has_env_step_routes: mod_cache.has_env_step_routes,
+            has_fx_mod_routes: has_active_mod_routes
+                && params
+                    .mod_matrix
+                    .routes
+                    .iter()
+                    .any(|r| r.enabled && r.destination.is_fx_destination()),
+            has_line_pitch_routes: has_active_mod_routes
+                && params
+                    .mod_matrix
+                    .routes
+                    .iter()
+                    .any(|r| r.enabled && r.destination.is_line_pitch_destination()),
             mod_cache,
             norm: compute_norm(params),
             line1: CompiledLinePlan::from_line(&params.line1),

@@ -212,7 +212,7 @@ pub struct FxChain {
     /// Which effect type is in each of the 6 FX slots.
     pub slot_types: [FxSlotType; 6],
     active_slots: [usize; 6],
-    active_slot_count: usize,
+    pub(crate) active_slot_count: usize,
 }
 
 impl FxChain {
