@@ -1,11 +1,8 @@
-import Button from "@/components/controls/Button";
 import ControlKnob from "@/components/controls/ControlKnob";
 import { useFxModuleController } from "@/components/panels/drawer-modules/custom/useFxModuleController";
 import {
 	asNumber,
-	getButtonGroupControl,
 	getFxControlLabel,
-	getFxControlOptionLabel,
 	getKnobControl,
 	getModDestinationByParam,
 	getTooltip,
@@ -41,7 +38,7 @@ function getDivisionIndex(value: LfoSyncDivision): number {
 	);
 }
 
-export default function TremoloModuleRenderer({
+export default function GrainDelayModuleRenderer({
 	config,
 	slot,
 }: {
@@ -56,11 +53,7 @@ export default function TremoloModuleRenderer({
 		handlePresetChange,
 	} = useFxModuleController(config, slot);
 
-	const waveformControl = getButtonGroupControl(config, "waveform");
-	const rateControl = getKnobControl(config, "rate");
-	const depthControl = getKnobControl(config, "depth");
-	const mixControl = getKnobControl(config, "mix");
-	const rateMode = params.rateMode === "sync" ? "sync" : "hz";
+	const timeMode = params.timeMode === "sync" ? "sync" : "hz";
 	const syncDivision = (params.syncDivision as LfoSyncDivision) ?? "quarter";
 	const syncDivisionIndex = getDivisionIndex(syncDivision);
 	const transport = useHostTransport();
@@ -71,25 +64,47 @@ export default function TremoloModuleRenderer({
 		transport.tempo > 0
 			? transport.tempo
 			: tempoBpm;
-	const waveformValue = asNumber(params.waveform, 0);
+
+	const timeControl = getKnobControl(config, "time");
+	const feedbackControl = getKnobControl(config, "feedback");
+	const scatterControl = getKnobControl(config, "scatter");
+	const densityControl = getKnobControl(config, "density");
+	const mixControl = getKnobControl(config, "mix");
+	const pitchControl = getKnobControl(config, "pitchSemitones");
 	const modDestinationByParam = getModDestinationByParam(config.type);
-	const rateLabel = getFxControlLabel(config.type, "rate", "tremoloRate");
-	const depthLabel = getFxControlLabel(config.type, "depth", "tremoloDepth");
-	const mixLabel = getFxControlLabel(config.type, "mix", "tremoloMix");
-	const rateMidiLearn = useMidiLearnTarget({
-		targetKey: rateControl
-			? `fxSlot${slot + 1}Knob${rateControl.sourceIndex + 1}`
+	const timeLabel = getFxControlLabel(config.type, "time", "grainDelayTime");
+	const feedbackLabel = getFxControlLabel(
+		config.type,
+		"feedback",
+		"grainDelayFeedback",
+	);
+	const scatterLabel = getFxControlLabel(
+		config.type,
+		"scatter",
+		"grainDelayScatter",
+	);
+	const densityLabel = getFxControlLabel(
+		config.type,
+		"density",
+		"grainDelayDensity",
+	);
+	const mixLabel = getFxControlLabel(config.type, "mix", "grainDelayMix");
+	const pitchLabel = getFxControlLabel(config.type, "pitchSemitones", "pitch");
+
+	const timeMidiLearn = useMidiLearnTarget({
+		targetKey: timeControl
+			? `fxSlot${slot + 1}Knob${timeControl.sourceIndex + 1}`
 			: undefined,
-		label: rateControl
-			? `FX ${slot + 1} Knob ${rateControl.sourceIndex + 1}`
+		label: timeControl
+			? `FX ${slot + 1} Knob ${timeControl.sourceIndex + 1}`
 			: undefined,
-		apply: rateControl
+		apply: timeControl
 			? (rawValue) => {
-					if (rateMode === "hz") {
+					if (timeMode === "hz") {
 						setFxSlotParams(slot, {
-							rate:
-								rateControl.min +
-								(rawValue / 127) * (rateControl.max - rateControl.min),
+							time:
+								timeControl.min +
+								(rawValue / 127) * (timeControl.max - timeControl.min),
 						});
 						return;
 					}
@@ -99,38 +114,6 @@ export default function TremoloModuleRenderer({
 						] ?? SYNC_DIVISIONS[0];
 					setFxSlotParams(slot, { syncDivision: nextDivision.value });
 				}
-			: undefined,
-	});
-	const depthMidiLearn = useMidiLearnTarget({
-		targetKey: depthControl
-			? `fxSlot${slot + 1}Knob${depthControl.sourceIndex + 1}`
-			: undefined,
-		label: depthControl
-			? `FX ${slot + 1} Knob ${depthControl.sourceIndex + 1}`
-			: undefined,
-		apply: depthControl
-			? (rawValue) =>
-					setFxSlotParams(slot, {
-						depth:
-							depthControl.min +
-							(rawValue / 127) * (depthControl.max - depthControl.min),
-					})
-			: undefined,
-	});
-	const mixMidiLearn = useMidiLearnTarget({
-		targetKey: mixControl
-			? `fxSlot${slot + 1}Knob${mixControl.sourceIndex + 1}`
-			: undefined,
-		label: mixControl
-			? `FX ${slot + 1} Knob ${mixControl.sourceIndex + 1}`
-			: undefined,
-		apply: mixControl
-			? (rawValue) =>
-					setFxSlotParams(slot, {
-						mix:
-							mixControl.min +
-							(rawValue / 127) * (mixControl.max - mixControl.min),
-					})
 			: undefined,
 	});
 
@@ -151,50 +134,34 @@ export default function TremoloModuleRenderer({
 				/>
 			}
 		>
-			<div className="join col-span-3 w-full overflow-hidden rounded-md border border-cz-border/65">
-				{waveformControl?.options.map((option) => (
-					<Button
-						key={option.value}
-						type="button"
-						className={`join-item btn btn-xs h-8 min-h-0 flex-1 rounded-none border-0 px-2 ${
-							waveformValue === option.value
-								? "border-amber-500/60 bg-amber-500/20 text-amber-300"
-								: "bg-transparent text-cz-cream/60 hover:text-cz-cream/90"
-						}`}
-						onClick={() => setFxSlotParams(slot, { waveform: option.value })}
-					>
-						{getFxControlOptionLabel(config.type, "waveform", option.value)}
-					</Button>
-				))}
-			</div>
-			{rateControl && rateMode === "hz" ? (
+			{timeControl && timeMode === "hz" ? (
 				<ControlKnob
-					value={asNumber(params.rate, rateControl.defaultValue)}
-					onChange={(value) => setFxSlotParams(slot, { rate: value })}
-					min={rateControl.min}
-					max={rateControl.max}
-					defaultValue={rateControl.defaultValue}
+					value={asNumber(params.time, timeControl.defaultValue)}
+					onChange={(value) => setFxSlotParams(slot, { time: value })}
+					min={timeControl.min}
+					max={timeControl.max}
+					defaultValue={timeControl.defaultValue}
 					color={config.color}
-					label={rateLabel}
+					label={timeLabel}
 					labelAccessory={
 						<button
 							type="button"
 							className="btn btn-ghost btn-xs h-4 min-h-0 rounded-sm border border-cz-border/65 px-1 font-mono text-[0.52rem] text-cz-gold/85 normal-case tracking-normal"
-							onClick={() => setFxSlotParams(slot, { rateMode: "sync" })}
+							onClick={() => setFxSlotParams(slot, { timeMode: "sync" })}
 						>
 							hz
 						</button>
 					}
-					tooltip={getTooltip("tremoloRate")}
-					valueFormatter={rateControl.formatter}
-					modDestination={modDestinationByParam.rate}
-					onClick={rateMidiLearn.onClick}
-					onContextMenu={rateMidiLearn.onContextMenu}
-					interactionLocked={rateMidiLearn.interactionLocked}
-					midiLearnState={rateMidiLearn.midiLearnState}
+					tooltip={getTooltip("grainDelayTime")}
+					valueFormatter={timeControl.formatter}
+					modDestination={modDestinationByParam.time}
+					onClick={timeMidiLearn.onClick}
+					onContextMenu={timeMidiLearn.onContextMenu}
+					interactionLocked={timeMidiLearn.interactionLocked}
+					midiLearnState={timeMidiLearn.midiLearnState}
 				/>
 			) : null}
-			{rateControl && rateMode === "sync" ? (
+			{timeControl && timeMode === "sync" ? (
 				<ControlKnob
 					value={syncDivisionIndex}
 					onChange={(value) => {
@@ -207,44 +174,68 @@ export default function TremoloModuleRenderer({
 					step={1}
 					defaultValue={getDivisionIndex("quarter")}
 					color={config.color}
-					label={rateLabel}
+					label={timeLabel}
 					labelAccessory={
 						<button
 							type="button"
 							className="btn btn-ghost btn-xs h-4 min-h-0 rounded-sm border border-cz-border/65 px-1 font-mono text-[0.52rem] text-cz-gold/85 normal-case tracking-normal"
-							onClick={() => setFxSlotParams(slot, { rateMode: "hz" })}
+							onClick={() => setFxSlotParams(slot, { timeMode: "hz" })}
 						>
 							sync
 						</button>
 					}
-					tooltip={getTooltip("tremoloRate")}
+					tooltip={getTooltip("grainDelayTime")}
 					valueFormatter={(value) => {
 						const division =
 							SYNC_DIVISIONS[Math.round(value)] ?? SYNC_DIVISIONS[0];
 						return `${division.label} · ${effectiveTempoBpm.toFixed(1)} BPM`;
 					}}
-					onClick={rateMidiLearn.onClick}
-					onContextMenu={rateMidiLearn.onContextMenu}
-					interactionLocked={rateMidiLearn.interactionLocked}
-					midiLearnState={rateMidiLearn.midiLearnState}
+					onClick={timeMidiLearn.onClick}
+					onContextMenu={timeMidiLearn.onContextMenu}
+					interactionLocked={timeMidiLearn.interactionLocked}
+					midiLearnState={timeMidiLearn.midiLearnState}
 				/>
 			) : null}
-			{depthControl ? (
+			{feedbackControl ? (
 				<ControlKnob
-					value={asNumber(params.depth, depthControl.defaultValue)}
-					onChange={(value) => setFxSlotParams(slot, { depth: value })}
-					min={depthControl.min}
-					max={depthControl.max}
-					defaultValue={depthControl.defaultValue}
+					value={asNumber(params.feedback, feedbackControl.defaultValue)}
+					onChange={(value) => setFxSlotParams(slot, { feedback: value })}
+					min={feedbackControl.min}
+					max={feedbackControl.max}
+					defaultValue={feedbackControl.defaultValue}
 					color={config.color}
-					label={depthLabel}
-					tooltip={getTooltip("tremoloDepth")}
-					valueFormatter={depthControl.formatter}
-					modDestination={modDestinationByParam.depth}
-					onClick={depthMidiLearn.onClick}
-					onContextMenu={depthMidiLearn.onContextMenu}
-					interactionLocked={depthMidiLearn.interactionLocked}
-					midiLearnState={depthMidiLearn.midiLearnState}
+					label={feedbackLabel}
+					tooltip={getTooltip("grainDelayFeedback")}
+					valueFormatter={feedbackControl.formatter}
+					modDestination={modDestinationByParam.feedback}
+				/>
+			) : null}
+			{scatterControl ? (
+				<ControlKnob
+					value={asNumber(params.scatter, scatterControl.defaultValue)}
+					onChange={(value) => setFxSlotParams(slot, { scatter: value })}
+					min={scatterControl.min}
+					max={scatterControl.max}
+					defaultValue={scatterControl.defaultValue}
+					color={config.color}
+					label={scatterLabel}
+					tooltip={getTooltip("grainDelayScatter")}
+					valueFormatter={scatterControl.formatter}
+					modDestination={modDestinationByParam.scatter}
+				/>
+			) : null}
+			{densityControl ? (
+				<ControlKnob
+					value={asNumber(params.density, densityControl.defaultValue)}
+					onChange={(value) => setFxSlotParams(slot, { density: value })}
+					min={densityControl.min}
+					max={densityControl.max}
+					defaultValue={densityControl.defaultValue}
+					color={config.color}
+					label={densityLabel}
+					tooltip={getTooltip("grainDelayDensity")}
+					valueFormatter={densityControl.formatter}
+					modDestination={modDestinationByParam.density}
 				/>
 			) : null}
 			{mixControl ? (
@@ -256,13 +247,25 @@ export default function TremoloModuleRenderer({
 					defaultValue={mixControl.defaultValue}
 					color={config.color}
 					label={mixLabel}
-					tooltip={getTooltip("tremoloMix")}
+					tooltip={getTooltip("grainDelayMix")}
 					valueFormatter={mixControl.formatter}
 					modDestination={modDestinationByParam.mix}
-					onClick={mixMidiLearn.onClick}
-					onContextMenu={mixMidiLearn.onContextMenu}
-					interactionLocked={mixMidiLearn.interactionLocked}
-					midiLearnState={mixMidiLearn.midiLearnState}
+				/>
+			) : null}
+			{pitchControl ? (
+				<ControlKnob
+					value={asNumber(params.pitchSemitones, pitchControl.defaultValue)}
+					onChange={(value) => setFxSlotParams(slot, { pitchSemitones: value })}
+					min={pitchControl.min}
+					max={pitchControl.max}
+					step={1}
+					defaultValue={pitchControl.defaultValue}
+					bipolar
+					color={config.color}
+					label={pitchLabel}
+					valueFormatter={(value) =>
+						`${value > 0 ? "+" : ""}${Math.round(value)} st`
+					}
 				/>
 			) : null}
 		</ModuleFrame>

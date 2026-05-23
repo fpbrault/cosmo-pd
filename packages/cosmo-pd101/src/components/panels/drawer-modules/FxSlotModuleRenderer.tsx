@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import DelayModuleRenderer from "@/components/panels/drawer-modules/custom/DelayModuleRenderer";
+import GrainDelayModuleRenderer from "@/components/panels/drawer-modules/custom/GrainDelayModuleRenderer";
 import PhaseModModuleRenderer from "@/components/panels/drawer-modules/custom/PhaseModModuleRenderer";
 import TremoloModuleRenderer from "@/components/panels/drawer-modules/custom/TremoloModuleRenderer";
 import VibratoModuleRenderer from "@/components/panels/drawer-modules/custom/VibratoModuleRenderer";
@@ -8,6 +9,7 @@ import GenericFxSlotModule from "@/components/panels/drawer-modules/GenericFxSlo
 
 const FX_CUSTOM_RENDERERS = {
 	delayLegacy: DelayModuleRenderer,
+	grainDelayLegacy: GrainDelayModuleRenderer,
 	phaseModLegacy: PhaseModModuleRenderer,
 	tremoloLegacy: TremoloModuleRenderer,
 	vibratoLegacy: VibratoModuleRenderer,

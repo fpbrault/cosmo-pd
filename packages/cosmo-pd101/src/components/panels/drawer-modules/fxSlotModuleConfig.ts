@@ -66,6 +66,7 @@ type ControlDef = KnobControlDef | ButtonGroupControlDef;
 
 type FxCustomRendererKey =
 	| "delayLegacy"
+	| "grainDelayLegacy"
 	| "phaseModLegacy"
 	| "vibratoLegacy"
 	| "tremoloLegacy";
@@ -277,6 +278,7 @@ const FX_UI_META = {
 		moduleKey: "grainDelay",
 		color: "#a78bfa",
 		columns: 4,
+		customRenderer: "grainDelayLegacy",
 		presets: GRAIN_DELAY_PRESETS,
 		presetTitle: "Grain Delay Presets",
 		formatters: {

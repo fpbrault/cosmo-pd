@@ -20,6 +20,8 @@ pub fn apply_vibrato_preset(params: &mut SynthParams, preset: &str) -> bool {
                     rate: 20.0,
                     depth: 6.0,
                     delay: 160.0,
+                    rate_mode: crate::params::LfoRateMode::Hz,
+                    sync_division: crate::params::LfoSyncDivision::Quarter,
                 },
             );
             true
@@ -33,6 +35,8 @@ pub fn apply_vibrato_preset(params: &mut SynthParams, preset: &str) -> bool {
                     rate: 38.0,
                     depth: 14.0,
                     delay: 80.0,
+                    rate_mode: crate::params::LfoRateMode::Hz,
+                    sync_division: crate::params::LfoSyncDivision::Quarter,
                 },
             );
             true
@@ -46,6 +50,8 @@ pub fn apply_vibrato_preset(params: &mut SynthParams, preset: &str) -> bool {
                     rate: 62.0,
                     depth: 26.0,
                     delay: 20.0,
+                    rate_mode: crate::params::LfoRateMode::Hz,
+                    sync_division: crate::params::LfoSyncDivision::Quarter,
                 },
             );
             true
@@ -102,7 +108,7 @@ const WAVEFORM_OPTIONS: [FxControlOptionV1; 4] = [
     },
 ];
 
-const CONTROLS: [FxControlV1; 4] = [
+const CONTROLS: [FxControlV1; 6] = [
     FxControlV1 {
         id: "waveform",
         label: "Wave",
@@ -124,6 +130,28 @@ const CONTROLS: [FxControlV1; 4] = [
         default_f32: Some(55.0),
         options: &NO_FX_CONTROL_OPTIONS,
         mod_destination_key: Some("vibratoRate"),
+    },
+    FxControlV1 {
+        id: "rateMode",
+        label: "Rate Mode",
+        kind: FxControlKindV1::ButtonGroup,
+        bipolar: false,
+        min: None,
+        max: None,
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: None,
+    },
+    FxControlV1 {
+        id: "syncDivision",
+        label: "Sync Division",
+        kind: FxControlKindV1::ButtonGroup,
+        bipolar: false,
+        min: None,
+        max: None,
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: None,
     },
     FxControlV1 {
         id: "depth",

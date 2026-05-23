@@ -2,7 +2,6 @@ use super::delay_line::DelayLine;
 use crate::params::{GrainDelayParams, ModDestination};
 
 const GRAIN_COUNT: usize = 4;
-const OCTAVE_UP_RATE_DELTA: f32 = 1.0;
 
 #[derive(Clone, Copy)]
 struct Grain {
@@ -31,6 +30,10 @@ pub struct GrainDelayFx {
     pub density: f32,
     pub mix: f32,
     pub enabled: bool,
+    pub time_mode: crate::params::LfoRateMode,
+    pub sync_division: crate::params::LfoSyncDivision,
+    pub pitch_semitones: f32,
+    pub tempo_bpm: f32,
     grains: [Grain; GRAIN_COUNT],
     spawn_counter: f32,
     spawn_index: u32,
@@ -48,6 +51,10 @@ impl GrainDelayFx {
             density: 0.5,
             mix: 0.0,
             enabled: false,
+            time_mode: crate::params::LfoRateMode::Hz,
+            sync_division: crate::params::LfoSyncDivision::Quarter,
+            pitch_semitones: 0.0,
+            tempo_bpm: 120.0,
             grains: [Grain::inactive(); GRAIN_COUNT],
             spawn_counter: 0.0,
             spawn_index: 0,
@@ -80,7 +87,9 @@ impl GrainDelayFx {
             }
             // ECO quality mode: triangle grain window avoids per-sample sinf cost.
             let window = (1.0 - 2.0 * (phase - 0.5).abs()).max(0.0);
-            let read_offset = (grain.offset - grain.age * OCTAVE_UP_RATE_DELTA).max(1.0);
+            let pitch_ratio = (2.0_f32).powf(self.pitch_semitones.clamp(-24.0, 24.0) / 12.0);
+            let read_rate_delta = pitch_ratio - 1.0;
+            let read_offset = (grain.offset - grain.age * read_rate_delta).max(1.0);
             wet += self.delay_line.read_at_fractional(read_offset) * window;
             gain_sum += window;
             grain.age += 1.0;
@@ -101,7 +110,14 @@ impl GrainDelayFx {
     fn spawn_grain(&mut self) {
         let density = self.density.clamp(0.0, 1.0);
         let duration = (0.12 + density * 0.16) * self.sample_rate;
-        let base = (self.time.clamp(0.01, 1.0) * self.sample_rate).max(duration + 1.0);
+        let time_seconds = match self.time_mode {
+            crate::params::LfoRateMode::Hz => self.time.clamp(0.01, 1.0),
+            crate::params::LfoRateMode::Sync => {
+                let beats = self.sync_division.beats_per_cycle();
+                ((60.0 / self.tempo_bpm.max(1.0)) * beats).clamp(0.01, 1.0)
+            }
+        };
+        let base = (time_seconds * self.sample_rate).max(duration + 1.0);
         let scatter_width = self.scatter.clamp(0.0, 1.0) * 0.14 * self.sample_rate;
         let random = hash_signed(self.spawn_index);
         let offset = (base + random * scatter_width).max(duration + 1.0);
@@ -173,7 +189,7 @@ const PRESET_OPTIONS: [FxPresetOptionV1; 3] = [
     },
 ];
 
-const CONTROLS: [FxControlV1; 5] = [
+const CONTROLS: [FxControlV1; 8] = [
     FxControlV1 {
         id: "time",
         label: "Time",
@@ -229,6 +245,39 @@ const CONTROLS: [FxControlV1; 5] = [
         options: &NO_FX_CONTROL_OPTIONS,
         mod_destination_key: Some("grainDelayMix"),
     },
+    FxControlV1 {
+        id: "timeMode",
+        label: "Time Mode",
+        kind: FxControlKindV1::ButtonGroup,
+        bipolar: false,
+        min: None,
+        max: None,
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: None,
+    },
+    FxControlV1 {
+        id: "syncDivision",
+        label: "Sync Division",
+        kind: FxControlKindV1::ButtonGroup,
+        bipolar: false,
+        min: None,
+        max: None,
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: None,
+    },
+    FxControlV1 {
+        id: "pitchSemitones",
+        label: "Pitch",
+        kind: FxControlKindV1::Knob,
+        bipolar: true,
+        min: Some(-24.0),
+        max: Some(24.0),
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: None,
+    },
 ];
 
 pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
@@ -257,6 +306,9 @@ pub fn apply_grain_delay_preset(params: &mut SynthParams, preset: &str) -> bool 
             gd.scatter = 0.32;
             gd.density = 0.58;
             gd.mix = 0.4;
+            gd.time_mode = crate::params::LfoRateMode::Hz;
+            gd.sync_division = crate::params::LfoSyncDivision::Quarter;
+            gd.pitch_semitones = 0.0;
             true
         }
         "glitchDelay" => {
@@ -266,6 +318,9 @@ pub fn apply_grain_delay_preset(params: &mut SynthParams, preset: &str) -> bool 
             gd.scatter = 0.42;
             gd.density = 0.7;
             gd.mix = 0.5;
+            gd.time_mode = crate::params::LfoRateMode::Hz;
+            gd.sync_division = crate::params::LfoSyncDivision::Quarter;
+            gd.pitch_semitones = 0.0;
             true
         }
         "shimmerEcho" => {
@@ -275,6 +330,9 @@ pub fn apply_grain_delay_preset(params: &mut SynthParams, preset: &str) -> bool 
             gd.scatter = 0.24;
             gd.density = 0.5;
             gd.mix = 0.35;
+            gd.time_mode = crate::params::LfoRateMode::Hz;
+            gd.sync_division = crate::params::LfoSyncDivision::Quarter;
+            gd.pitch_semitones = 0.0;
             true
         }
         _ => false,

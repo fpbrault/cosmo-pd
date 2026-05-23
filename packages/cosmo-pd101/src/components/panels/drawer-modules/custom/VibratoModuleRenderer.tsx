@@ -13,7 +13,33 @@ import {
 import type { FxSlotModuleConfig } from "@/components/panels/drawer-modules/fxSlotModuleConfig";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
+import { useHostTransport } from "@/features/synth/hooks/useHostTransport";
 import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
+import { useSynthParam } from "@/features/synth/SynthParamController";
+import type { LfoSyncDivision } from "@/lib/synth/bindings/synth";
+
+const SYNC_DIVISIONS: readonly {
+	value: LfoSyncDivision;
+	label: string;
+}[] = [
+	{ value: "whole", label: "1/1" },
+	{ value: "half", label: "1/2" },
+	{ value: "dottedQuarter", label: "1/4." },
+	{ value: "quarter", label: "1/4" },
+	{ value: "dottedEighth", label: "1/8." },
+	{ value: "quarterTriplet", label: "1/4T" },
+	{ value: "eighth", label: "1/8" },
+	{ value: "eighthTriplet", label: "1/8T" },
+	{ value: "sixteenth", label: "1/16" },
+	{ value: "thirtySecond", label: "1/32" },
+];
+
+function getDivisionIndex(value: LfoSyncDivision): number {
+	return Math.max(
+		0,
+		SYNC_DIVISIONS.findIndex((entry) => entry.value === value),
+	);
+}
 
 export default function VibratoModuleRenderer({
 	config,
@@ -34,6 +60,17 @@ export default function VibratoModuleRenderer({
 	const rateControl = getKnobControl(config, "rate");
 	const depthControl = getKnobControl(config, "depth");
 	const delayControl = getKnobControl(config, "delay");
+	const rateMode = params.rateMode === "sync" ? "sync" : "hz";
+	const syncDivision = (params.syncDivision as LfoSyncDivision) ?? "quarter";
+	const syncDivisionIndex = getDivisionIndex(syncDivision);
+	const transport = useHostTransport();
+	const { value: tempoBpm } = useSynthParam("tempoBpm");
+	const effectiveTempoBpm =
+		transport.available &&
+		Number.isFinite(transport.tempo) &&
+		transport.tempo > 0
+			? transport.tempo
+			: tempoBpm;
 	const waveformValue = asNumber(params.waveform, 1);
 	const modDestinationByParam = getModDestinationByParam(config.type);
 	const rateLabel = getFxControlLabel(config.type, "rate", "vibratoRate");
@@ -47,12 +84,21 @@ export default function VibratoModuleRenderer({
 			? `FX ${slot + 1} Knob ${rateControl.sourceIndex + 1}`
 			: undefined,
 		apply: rateControl
-			? (rawValue) =>
-					setFxSlotParams(slot, {
-						rate:
-							rateControl.min +
-							(rawValue / 127) * (rateControl.max - rateControl.min),
-					})
+			? (rawValue) => {
+					if (rateMode === "hz") {
+						setFxSlotParams(slot, {
+							rate:
+								rateControl.min +
+								(rawValue / 127) * (rateControl.max - rateControl.min),
+						});
+						return;
+					}
+					const nextDivision =
+						SYNC_DIVISIONS[
+							Math.round((rawValue / 127) * (SYNC_DIVISIONS.length - 1))
+						] ?? SYNC_DIVISIONS[0];
+					setFxSlotParams(slot, { syncDivision: nextDivision.value });
+				}
 			: undefined,
 	});
 	const depthMidiLearn = useMidiLearnTarget({
@@ -121,7 +167,7 @@ export default function VibratoModuleRenderer({
 					</Button>
 				))}
 			</div>
-			{rateControl ? (
+			{rateControl && rateMode === "hz" ? (
 				<ControlKnob
 					value={asNumber(params.rate, rateControl.defaultValue)}
 					onChange={(value) => setFxSlotParams(slot, { rate: value })}
@@ -130,9 +176,53 @@ export default function VibratoModuleRenderer({
 					defaultValue={rateControl.defaultValue}
 					color={config.color}
 					label={rateLabel}
+					labelAccessory={
+						<button
+							type="button"
+							className="btn btn-ghost btn-xs h-4 min-h-0 rounded-sm border border-cz-border/65 px-1 font-mono text-[0.52rem] text-cz-gold/85 normal-case tracking-normal"
+							onClick={() => setFxSlotParams(slot, { rateMode: "sync" })}
+						>
+							hz
+						</button>
+					}
 					tooltip={getTooltip("vibratoRate")}
 					valueFormatter={rateControl.formatter}
 					modDestination={modDestinationByParam.rate}
+					onClick={rateMidiLearn.onClick}
+					onContextMenu={rateMidiLearn.onContextMenu}
+					interactionLocked={rateMidiLearn.interactionLocked}
+					midiLearnState={rateMidiLearn.midiLearnState}
+				/>
+			) : null}
+			{rateControl && rateMode === "sync" ? (
+				<ControlKnob
+					value={syncDivisionIndex}
+					onChange={(value) => {
+						const nextDivision =
+							SYNC_DIVISIONS[Math.round(value)] ?? SYNC_DIVISIONS[0];
+						setFxSlotParams(slot, { syncDivision: nextDivision.value });
+					}}
+					min={0}
+					max={SYNC_DIVISIONS.length - 1}
+					step={1}
+					defaultValue={getDivisionIndex("quarter")}
+					color={config.color}
+					label={rateLabel}
+					labelAccessory={
+						<button
+							type="button"
+							className="btn btn-ghost btn-xs h-4 min-h-0 rounded-sm border border-cz-border/65 px-1 font-mono text-[0.52rem] text-cz-gold/85 normal-case tracking-normal"
+							onClick={() => setFxSlotParams(slot, { rateMode: "hz" })}
+						>
+							sync
+						</button>
+					}
+					tooltip={getTooltip("vibratoRate")}
+					valueFormatter={(value) => {
+						const division =
+							SYNC_DIVISIONS[Math.round(value)] ?? SYNC_DIVISIONS[0];
+						return `${division.label} · ${effectiveTempoBpm.toFixed(1)} BPM`;
+					}}
 					onClick={rateMidiLearn.onClick}
 					onContextMenu={rateMidiLearn.onContextMenu}
 					interactionLocked={rateMidiLearn.interactionLocked}

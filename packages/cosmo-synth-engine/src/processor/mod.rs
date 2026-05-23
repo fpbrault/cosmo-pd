@@ -486,6 +486,8 @@ mod tests {
             mix: 0.5,
             tape_mode: false,
             warmth: 0.5,
+            time_mode: crate::params::LfoRateMode::Hz,
+            sync_division: crate::params::LfoSyncDivision::Quarter,
         });
 
         assert_eq!(proc.fx.slot_types[0], FxSlotType::Empty);
@@ -612,6 +614,8 @@ mod tests {
                 mix: 0.0,
                 tape_mode: false,
                 warmth: 0.5,
+                time_mode: crate::params::LfoRateMode::Hz,
+                sync_division: crate::params::LfoSyncDivision::Quarter,
             });
             if with_route {
                 proc.params_mut().mod_matrix.routes = vec![ModRoute {
@@ -852,6 +856,8 @@ mod tests {
                 rate: 40.0,
                 depth: 5.895899,
                 delay: 600.0,
+                rate_mode: crate::params::LfoRateMode::Hz,
+                sync_division: crate::params::LfoSyncDivision::Quarter,
             }),
             FxSlotConfig::Empty,
             FxSlotConfig::Empty,
@@ -863,6 +869,8 @@ mod tests {
                 mix: 0.34496948,
                 tape_mode: true,
                 warmth: 0.72,
+                time_mode: crate::params::LfoRateMode::Hz,
+                sync_division: crate::params::LfoSyncDivision::Quarter,
             }),
             FxSlotConfig::ShimmerVerb(ShimmerVerbParams {
                 enabled: true,

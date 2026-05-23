@@ -20,6 +20,9 @@ pub struct DelayFx {
     smooth_samples: f32,
     pub tape_mode: bool,
     pub warmth: f32,
+    pub time_mode: crate::params::LfoRateMode,
+    pub sync_division: crate::params::LfoSyncDivision,
+    pub tempo_bpm: f32,
     tape_filter_state: f32,
     tape_wow_phase: f32,
     tape_flutter_phase: f32,
@@ -38,6 +41,9 @@ impl DelayFx {
             smooth_samples: (0.3 * sr).round(),
             tape_mode: false,
             warmth: 0.5,
+            time_mode: crate::params::LfoRateMode::Hz,
+            sync_division: crate::params::LfoSyncDivision::Quarter,
+            tempo_bpm: 120.0,
             tape_filter_state: 0.0,
             tape_wow_phase: 0.0,
             tape_flutter_phase: 0.31,
@@ -49,7 +55,14 @@ impl DelayFx {
         if !self.enabled || self.mix <= 0.0 {
             return sample;
         }
-        let target_samples = self.time * self.sample_rate;
+        let time_seconds = match self.time_mode {
+            crate::params::LfoRateMode::Hz => self.time,
+            crate::params::LfoRateMode::Sync => {
+                let beats = self.sync_division.beats_per_cycle();
+                (60.0 / self.tempo_bpm.max(1.0)) * beats
+            }
+        };
+        let target_samples = time_seconds * self.sample_rate;
         let smooth_coeff = if self.tape_mode { 0.0009 } else { SMOOTH_COEFF };
         self.smooth_samples += (target_samples - self.smooth_samples) * smooth_coeff;
         let wow_flutter = if self.tape_mode {
@@ -143,7 +156,7 @@ const TAPE_MODE_OPTIONS: [FxControlOptionV1; 2] = [
     },
 ];
 
-const CONTROLS: [FxControlV1; 5] = [
+const CONTROLS: [FxControlV1; 7] = [
     FxControlV1 {
         id: "time",
         label: "Time",
@@ -176,6 +189,28 @@ const CONTROLS: [FxControlV1; 5] = [
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
         mod_destination_key: Some("delayMix"),
+    },
+    FxControlV1 {
+        id: "timeMode",
+        label: "Time Mode",
+        kind: FxControlKindV1::ButtonGroup,
+        bipolar: false,
+        min: None,
+        max: None,
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: None,
+    },
+    FxControlV1 {
+        id: "syncDivision",
+        label: "Sync Division",
+        kind: FxControlKindV1::ButtonGroup,
+        bipolar: false,
+        min: None,
+        max: None,
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: None,
     },
     FxControlV1 {
         id: "tapeMode",
@@ -228,6 +263,8 @@ pub fn apply_delay_preset(params: &mut SynthParams, preset: &str) -> bool {
             d.mix = 0.27;
             d.tape_mode = false;
             d.warmth = 0.2;
+            d.time_mode = crate::params::LfoRateMode::Hz;
+            d.sync_division = crate::params::LfoSyncDivision::Quarter;
             true
         }
         "tapeEcho" => {
@@ -237,6 +274,8 @@ pub fn apply_delay_preset(params: &mut SynthParams, preset: &str) -> bool {
             d.mix = 0.35;
             d.tape_mode = true;
             d.warmth = 0.72;
+            d.time_mode = crate::params::LfoRateMode::Hz;
+            d.sync_division = crate::params::LfoSyncDivision::Quarter;
             true
         }
         "dubFeedback" => {
@@ -246,6 +285,8 @@ pub fn apply_delay_preset(params: &mut SynthParams, preset: &str) -> bool {
             d.mix = 0.4;
             d.tape_mode = true;
             d.warmth = 0.55;
+            d.time_mode = crate::params::LfoRateMode::Hz;
+            d.sync_division = crate::params::LfoSyncDivision::Quarter;
             true
         }
         _ => false,

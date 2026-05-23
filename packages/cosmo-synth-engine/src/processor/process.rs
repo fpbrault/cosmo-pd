@@ -95,6 +95,8 @@ impl CosmoProcessor {
         let base_lfo2_offset = p.lfo2.offset;
         let base_random_rate = p.random.rate;
         let sr = self.sample_rate;
+        let effective_tempo_bpm = self.host_transport_tempo_bpm.unwrap_or(manual_tempo_bpm);
+        self.fx.set_tempo_bpm(effective_tempo_bpm);
         let has_active_mod_routes = self.compiled_params.has_active_mod_routes;
         let has_env_step_routes = self.compiled_params.has_env_step_routes;
         let line1_plan = self.compiled_params.line1;
@@ -189,6 +191,7 @@ impl CosmoProcessor {
                 &mod_cache,
                 has_active_mod_routes,
                 sr,
+                effective_tempo_bpm,
                 line1_plan,
                 line2_plan,
             );
@@ -375,6 +378,7 @@ impl CosmoProcessor {
         mod_cache: &ModMatrixCache,
         has_active_mod_routes: bool,
         sr: f32,
+        effective_tempo_bpm: f32,
         line1_plan: CompiledLinePlan,
         line2_plan: CompiledLinePlan,
     ) -> f32 {
@@ -395,6 +399,7 @@ impl CosmoProcessor {
             macro4: self.macro4,
             cache: mod_cache,
             modulation_active: has_active_mod_routes,
+            effective_tempo_bpm,
             line1_plan: &line1_plan,
             line2_plan: &line2_plan,
         };

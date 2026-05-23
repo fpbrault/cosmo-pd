@@ -177,6 +177,7 @@ mod tests {
                     macro4: 0.0,
                     cache: &cache,
                     modulation_active: false,
+                    effective_tempo_bpm: 120.0,
                     line1_plan: &plan.line1,
                     line2_plan: &plan.line2,
                 };
@@ -288,6 +289,7 @@ mod tests {
             macro4: 0.0,
             cache: &cache,
             modulation_active: false,
+            effective_tempo_bpm: 120.0,
             line1_plan: &plan.line1,
             line2_plan: &plan.line2,
         };
@@ -327,6 +329,7 @@ mod tests {
                 macro4: 0.0,
                 cache: &cache,
                 modulation_active: false,
+                effective_tempo_bpm: 120.0,
                 line1_plan: &plan.line1,
                 line2_plan: &plan.line2,
             };
