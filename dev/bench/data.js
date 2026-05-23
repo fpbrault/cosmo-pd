@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779488347108,
+  "lastUpdate": 1779555415935,
   "repoUrl": "https://github.com/fpbrault/cosmo-pd",
   "entries": {
     "cosmo-synth-engine": [
@@ -19091,6 +19091,228 @@ window.BENCHMARK_DATA = {
             "name": "opt_all_combined_8_voices",
             "value": 11562444,
             "range": "± 24370",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "fpbrault@gmail.com",
+            "name": "Felix Perron-Brault",
+            "username": "fpbrault"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "58bd3ea98621bb778aa81cdb4e6dfd6e8906713d",
+          "message": "fix: mod not working on detune and fx controls (#228)\n\n* fix mod not working on detune and fx controls\n\n* perf: gate per-sample modulation work behind pre-computed flags\n\nAdd compile-time flags (has_fx_mod_routes, has_line_pitch_routes) to CompiledSynthParams so the per-sample FX modulation and octave/detune modulation code paths are skipped when no routes target those destinations.\n\nBenchmark results (block-size=64, 8 voices, 48kHz):\n- mod-only-sine: +14.6% -> +6.7% (72% regression recovered)\n- mod-heavy:     +13.8% -> +3.0% (92% regression recovered)\n- chants-like:   +11.5% -> +6.7% (73% regression recovered)\n- fx-only-sine:  +0.9%  -> ~0%  (100% regression recovered)\n\n* refactor: simplify modulation parameter application in FX processing\n\n* feat: implement modulation for various effects including Bitcrusher, Chorus, Phaser, and more\n\n* refactor: replace modulated_line_params with per-line apply mods methods\n\nReplaced the fragile modulated_line_params/destination_delta\ndispatch with LineParams::apply_line1_mods/apply_line2_mods\nmethods using direct mod_values[] reads instead of cache.get().\n\nRemoved pre-computed bools has_line_pitch_routes and\nhas_fx_mod_routes along with their dependent methods\nis_line_pitch_destination() and is_fx_destination().\nSwitched apply_env_step_modulation to mod_values[] directly.\n\nAdding a new modulatable line param is now a single-field addition\nin one method rather than touching 3+ files.\n\n* linting\n\n* fix: update dcaBase value in BUILTIN_PRESET_DEFINITIONS for improved sound quality",
+          "timestamp": "2026-05-23T12:50:35-04:00",
+          "tree_id": "6607a7461ebeca740f03d1bd5c75ab388af031e1",
+          "url": "https://github.com/fpbrault/cosmo-pd/commit/58bd3ea98621bb778aa81cdb4e6dfd6e8906713d"
+        },
+        "date": 1779555414662,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "default_3_voices",
+            "value": 3189622,
+            "range": "± 24847",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_6_voices",
+            "value": 4907690,
+            "range": "± 71054",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_8_voices",
+            "value": 6036109,
+            "range": "± 23745",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_3_voices",
+            "value": 2437238,
+            "range": "± 19187",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_6_voices",
+            "value": 2804671,
+            "range": "± 49224",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_8_voices",
+            "value": 3009850,
+            "range": "± 29310",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_3_voices",
+            "value": 8127814,
+            "range": "± 38668",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_6_voices",
+            "value": 10788138,
+            "range": "± 37321",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_8_voices",
+            "value": 12694640,
+            "range": "± 44972",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_3_voices",
+            "value": 11307631,
+            "range": "± 181000",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_6_voices",
+            "value": 15815523,
+            "range": "± 145898",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_8_voices",
+            "value": 17647753,
+            "range": "± 59336",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_3_voices",
+            "value": 6462800,
+            "range": "± 33629",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_6_voices",
+            "value": 8625818,
+            "range": "± 120292",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_8_voices",
+            "value": 9869393,
+            "range": "± 33371",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_3_voices",
+            "value": 4146374,
+            "range": "± 87797",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_6_voices",
+            "value": 5728638,
+            "range": "± 21386",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_8_voices",
+            "value": 6828918,
+            "range": "± 23975",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_3_voices",
+            "value": 11519064,
+            "range": "± 44642",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_6_voices",
+            "value": 13219982,
+            "range": "± 52311",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_8_voices",
+            "value": 13543517,
+            "range": "± 255963",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_3_voices",
+            "value": 6346435,
+            "range": "± 115782",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_6_voices",
+            "value": 8817897,
+            "range": "± 55058",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_8_voices",
+            "value": 10523700,
+            "range": "± 48591",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_3_voices",
+            "value": 4058458,
+            "range": "± 29351",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_6_voices",
+            "value": 6309232,
+            "range": "± 27850",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_8_voices",
+            "value": 7873735,
+            "range": "± 39582",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_3_voices",
+            "value": 3691576,
+            "range": "± 81682",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_6_voices",
+            "value": 5738349,
+            "range": "± 22591",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_8_voices",
+            "value": 7135848,
+            "range": "± 26776",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_3_voices",
+            "value": 7100311,
+            "range": "± 57112",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_6_voices",
+            "value": 9630297,
+            "range": "± 55029",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_8_voices",
+            "value": 11126007,
+            "range": "± 68460",
             "unit": "ns/iter"
           }
         ]
