@@ -8,7 +8,6 @@ mod render;
 
 pub use adsr::AdsrEnv;
 pub(crate) use modulation::ModSources;
-pub(crate) use modulation::modulated_line_params;
 pub(crate) use render::{VoiceRenderContext, render_voice};
 
 use crate::envelope::EnvGen;
