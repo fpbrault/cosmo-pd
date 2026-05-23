@@ -1,15 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import Button from "@/components/controls/Button";
-import ControlKnob from "@/components/controls/ControlKnob";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
+import LfoDisplay from "@/components/panels/drawer-modules/LfoDisplay";
+import { getSyncCyclesPerBeat } from "@/components/panels/drawer-modules/syncDivisions";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
-import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useHostTransport } from "@/features/synth/hooks/useHostTransport";
-import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import { useSynthParam } from "@/features/synth/SynthParamController";
-import type { LfoSyncDivision } from "@/lib/synth/bindings/synth";
 import { resolveTargetFromMetadata } from "@/lib/synth/modTargets";
 import { getLfoModulePatch, LFO_PRESETS } from "@/lib/synth/modulePresets";
 import { PARAM_META } from "@/lib/synth/paramMeta";
@@ -22,19 +20,18 @@ interface LfoModuleProps {
 const LFO_RATE_MAX_HZ = 200;
 const LFO_RATE_EXPONENT = 5.643856189774724; // 50% travel ~= 4Hz
 
-function clamp01(value: number): number {
-	return Math.max(0, Math.min(1, value));
-}
-
 function normToLfoRate(norm: number): number {
-	return LFO_RATE_MAX_HZ * clamp01(norm) ** LFO_RATE_EXPONENT;
+	return LFO_RATE_MAX_HZ * Math.max(0, Math.min(1, norm)) ** LFO_RATE_EXPONENT;
 }
 
 function lfoRateToNorm(hz: number): number {
 	if (hz <= 0) {
 		return 0;
 	}
-	return clamp01((hz / LFO_RATE_MAX_HZ) ** (1 / LFO_RATE_EXPONENT));
+	return Math.max(
+		0,
+		Math.min(1, (hz / LFO_RATE_MAX_HZ) ** (1 / LFO_RATE_EXPONENT)),
+	);
 }
 
 function formatCompactValue(value: number): string {
@@ -53,124 +50,15 @@ function formatCompactValue(value: number): string {
 	return value.toFixed(3);
 }
 
-const LFO_SYNC_DIVISIONS: readonly {
-	value: LfoSyncDivision;
-	label: string;
-	cyclesPerBeat: number;
-}[] = [
-	{ value: "whole", label: "1/1", cyclesPerBeat: 0.25 },
-	{ value: "half", label: "1/2", cyclesPerBeat: 0.5 },
-	{ value: "dottedQuarter", label: "1/4.", cyclesPerBeat: 2 / 3 },
-	{ value: "quarter", label: "1/4", cyclesPerBeat: 1 },
-	{ value: "dottedEighth", label: "1/8.", cyclesPerBeat: 4 / 3 },
-	{ value: "quarterTriplet", label: "1/4T", cyclesPerBeat: 1.5 },
-	{ value: "eighth", label: "1/8", cyclesPerBeat: 2 },
-	{ value: "eighthTriplet", label: "1/8T", cyclesPerBeat: 3 },
-	{ value: "sixteenth", label: "1/16", cyclesPerBeat: 4 },
-	{ value: "thirtySecond", label: "1/32", cyclesPerBeat: 8 },
-];
-
-function getCyclesPerBeat(division: LfoSyncDivision): number {
-	return (
-		LFO_SYNC_DIVISIONS.find((entry) => entry.value === division)
-			?.cyclesPerBeat ?? 1
-	);
-}
-
-function getDivisionIndex(division: LfoSyncDivision): number {
-	return Math.max(
-		0,
-		LFO_SYNC_DIVISIONS.findIndex((entry) => entry.value === division),
-	);
-}
-
-function lfoPreviewPath(
-	waveform: string,
-	symmetry: number,
-	offset: number,
-	depth: number,
-): string {
-	const width = 220;
-	const height = 56;
-	const centerY = height / 2;
-	const points = 72;
-	const amp = 6 + clamp01(depth) * 14;
-	const cycles = 1;
-
-	let d = "";
-	for (let i = 0; i < points; i++) {
-		const x = (i / (points - 1)) * width;
-		const phase = ((i / (points - 1)) * cycles) % 1;
-		const sample = sampleLfoWaveform(waveform, symmetry, phase, i);
-		const shaped = Math.max(-1, Math.min(1, sample + offset));
-		const y = centerY - shaped * amp;
-		d += `${i === 0 ? "M" : "L"}${x.toFixed(2)} ${y.toFixed(2)} `;
-	}
-
-	return d.trim();
-}
-
-function warpPhase(phase: number, symmetry: number): number {
-	const p = ((phase % 1) + 1) % 1;
-	const center = 0.5;
-	const offset = (clamp01(symmetry) - center) * 0.8;
-	const pivot = Math.max(0.1, Math.min(0.9, center + offset));
-	if (p <= pivot) {
-		return (p / pivot) * 0.5;
-	}
-	return 0.5 + ((p - pivot) / (1 - pivot)) * 0.5;
-}
-
-function sampleLfoWaveform(
-	waveform: string,
-	symmetry: number,
-	phase: number,
-	index: number,
-): number {
-	const sym = clamp01(symmetry);
-	const p = ((phase % 1) + 1) % 1;
-	const warped = warpPhase(p, sym);
-	const duty = Math.max(0.1, Math.min(0.9, 0.5 + (sym - 0.5) * 0.8));
-
-	switch (waveform) {
-		case "triangle": {
-			return warped < duty
-				? -1 + (warped / duty) * 2
-				: 1 - ((warped - duty) / (1 - duty)) * 2;
-		}
-		case "square":
-			return warped < duty ? 1 : -1;
-		case "saw":
-			return warped * 2 - 1;
-		case "invertedSaw":
-			return 1 - warped * 2;
-		default:
-			return Math.sin(warped * Math.PI * 2 + index * 0.001);
-	}
-}
-
-function lfoPointFromPhase({
-	waveform,
-	symmetry,
-	offset,
-	depth,
-	phase,
-}: {
-	waveform: string;
-	symmetry: number;
-	offset: number;
-	depth: number;
-	phase: number;
-}) {
-	const width = 220;
-	const centerY = 28;
-	const amp = 6 + clamp01(depth) * 14;
-	const x = (((phase % 1) + 1) % 1) * width;
-	const sample = sampleLfoWaveform(waveform, symmetry, phase, Math.floor(x));
-	const shaped = Math.max(-1, Math.min(1, sample + offset));
-	const y = centerY - shaped * amp;
-	return { x, y };
-}
+const LFO_RATE_TRANSFORM = {
+	toControlValue: lfoRateToNorm,
+	fromControlValue: normToLfoRate,
+	min: 0,
+	max: 1,
+	defaultValue: lfoRateToNorm(2),
+	valueFormatter: (_controlValue: number, engineValue: number) =>
+		`${formatCompactValue(engineValue)}Hz`,
+} as const;
 
 export default function LfoModule({ id, color }: LfoModuleProps) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("");
@@ -189,10 +77,8 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 	const { value: lfoWaveform, setValue: setLfoWaveform } =
 		useSynthParam(lfoWaveformKey);
 	const { value: lfoRate, setValue: setLfoRate } = useSynthParam(lfoRateKey);
-	const { value: lfoRateMode, setValue: setLfoRateMode } =
-		useSynthParam(lfoRateModeKey);
-	const { value: lfoSyncDivision, setValue: setLfoSyncDivision } =
-		useSynthParam(lfoSyncDivisionKey);
+	const { value: lfoRateMode } = useSynthParam(lfoRateModeKey);
+	const { value: lfoSyncDivision } = useSynthParam(lfoSyncDivisionKey);
 	const { value: lfoDepth, setValue: setLfoDepth } = useSynthParam(lfoDepthKey);
 	const { value: lfoSymmetry, setValue: setLfoSymmetry } =
 		useSynthParam(lfoSymmetryKey);
@@ -200,26 +86,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 		useSynthParam(lfoRetriggerKey);
 	const { value: lfoOffset, setValue: setLfoOffset } =
 		useSynthParam(lfoOffsetKey);
-	const lfoRateNorm = lfoRateToNorm(lfoRate);
-	const syncCyclesPerBeat = getCyclesPerBeat(lfoSyncDivision);
-	const syncDivisionIndex = getDivisionIndex(lfoSyncDivision);
-	const rateMidiLearn = useMidiLearnTarget({
-		targetKey: `lfo${id}RateKnob`,
-		label: `LFO ${id} Rate`,
-		apply: (rawValue) => {
-			const normalized = rawValue / 127;
-			if (lfoRateMode === "hz") {
-				setLfoRate(normToLfoRate(normalized));
-				return;
-			}
-
-			const nextDivision =
-				LFO_SYNC_DIVISIONS[
-					Math.round(normalized * (LFO_SYNC_DIVISIONS.length - 1))
-				] ?? LFO_SYNC_DIVISIONS[0];
-			setLfoSyncDivision(nextDivision.value);
-		},
-	});
+	const syncCyclesPerBeat = getSyncCyclesPerBeat(lfoSyncDivision);
 	const effectiveTempoBpm =
 		transport.available &&
 		Number.isFinite(transport.tempo) &&
@@ -262,16 +129,6 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 		syncCyclesPerBeat,
 	]);
 
-	const lfoPlayheadPoint = useMemo(() => {
-		return lfoPointFromPhase({
-			waveform: lfoWaveform,
-			symmetry: lfoSymmetry,
-			offset: lfoOffset,
-			depth: lfoDepth,
-			phase: displayPlayheadPhase,
-		});
-	}, [displayPlayheadPhase, lfoDepth, lfoOffset, lfoSymmetry, lfoWaveform]);
-
 	const transportStatus = transport.available
 		? `${transport.playing ? "Host Run" : "Host Stop"} ${transport.tempo.toFixed(1)} BPM ${transport.timeSigNum}/${transport.timeSigDen}`
 		: `Manual ${tempoBpm.toFixed(1)} BPM`;
@@ -301,60 +158,22 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 			title={`LFO ${id}`}
 			color={color}
 			enabled
-			headerControl={
-				<ModulePresetPopover
-					title={`LFO ${id} Presets`}
-					value={selectedPreset}
-					options={LFO_PRESETS}
-					onChange={handlePresetChange}
-				/>
-			}
+			presetTitle={`LFO ${id} Presets`}
+			presetValue={selectedPreset}
+			presetOptions={LFO_PRESETS}
+			onPresetChange={handlePresetChange}
 		>
-			<div className="col-span-4 rounded-md border border-cz-border/55 bg-cz-bg/35 px-2 py-0.5">
-				<svg viewBox="0 0 220 56" className="h-10 w-full" aria-hidden="true">
-					<defs>
-						<linearGradient
-							id={`lfo-preview-${id}`}
-							x1="0"
-							y1="0"
-							x2="1"
-							y2="0"
-						>
-							<stop offset="0%" stopColor={color} stopOpacity="0.55" />
-							<stop offset="100%" stopColor={color} stopOpacity="0.9" />
-						</linearGradient>
-					</defs>
-					<line
-						x1="0"
-						y1="28"
-						x2="220"
-						y2="28"
-						stroke="rgba(255,255,255,0.1)"
-						strokeWidth="1"
-					/>
-					<path
-						d={lfoPreviewPath(lfoWaveform, lfoSymmetry, lfoOffset, lfoDepth)}
-						fill="none"
-						stroke={`url(#lfo-preview-${id})`}
-						strokeWidth="2"
-						strokeLinecap="round"
-					/>
-					<circle
-						cx={lfoPlayheadPoint.x}
-						cy={lfoPlayheadPoint.y}
-						r={4.5}
-						fill={color}
-						stroke={color}
-						strokeWidth="1"
-					/>
-				</svg>
-				<div className="mt-0.5 flex items-center justify-between font-mono text-5xs text-cz-cream/55 uppercase tracking-[0.18em]">
-					<span>{transportStatus}</span>
-					{transport.available && transport.loopActive ? (
-						<span>Loop</span>
-					) : null}
-				</div>
-			</div>
+			<LfoDisplay
+				id={id}
+				color={color}
+				waveform={lfoWaveform}
+				symmetry={lfoSymmetry}
+				offset={lfoOffset}
+				depth={lfoDepth}
+				phase={displayPlayheadPhase}
+				transportStatus={transportStatus}
+				showLoop={transport.available && transport.loopActive}
+			/>
 			<div className="col-span-4 flex items-center gap-1.5">
 				<div className="join flex-1 overflow-hidden rounded-md border border-cz-border/65">
 					{(
@@ -390,80 +209,21 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 					Retrig
 				</Button>
 			</div>
-			{lfoRateMode === "hz" ? (
-				<ControlKnob
-					value={lfoRateNorm}
-					onChange={(nextNorm) => setLfoRate(normToLfoRate(nextNorm))}
-					min={0}
-					max={1}
-					defaultValue={lfoRateToNorm(2)}
-					color="#27588f"
-					size={54}
-					label="Rate"
-					labelAccessory={
-						<Button
-							type="button"
-							className="btn btn-ghost btn-xs h-4 min-h-0 rounded-sm border border-cz-border/65 px-1 font-mono text-[0.52rem] text-cz-gold/85 normal-case tracking-normal"
-							onClick={() => setLfoRateMode("sync")}
-							title={PARAM_META[lfoRateModeKey as SynthParamKey]?.tooltip}
-						>
-							hz
-						</Button>
-					}
-					tooltip={PARAM_META[lfoRateKey as SynthParamKey]?.tooltip}
-					modDestination={resolveTargetFromMetadata("lfo.rate", {
-						lfoIndex: id,
-					})}
-					valueFormatter={(nextNorm) =>
-						`${formatCompactValue(normToLfoRate(nextNorm))}Hz`
-					}
-					onClick={rateMidiLearn.onClick}
-					onContextMenu={rateMidiLearn.onContextMenu}
-					interactionLocked={rateMidiLearn.interactionLocked}
-					midiLearnState={rateMidiLearn.midiLearnState}
-				/>
-			) : (
-				<ControlKnob
-					value={syncDivisionIndex}
-					onChange={(nextIndex) => {
-						const nextDivision =
-							LFO_SYNC_DIVISIONS[Math.round(nextIndex)] ??
-							LFO_SYNC_DIVISIONS[0];
-						setLfoSyncDivision(nextDivision.value);
-					}}
-					min={0}
-					max={LFO_SYNC_DIVISIONS.length - 1}
-					step={1}
-					defaultValue={getDivisionIndex("quarter")}
-					color="#27588f"
-					size={54}
-					label="Rate"
-					labelAccessory={
-						<Button
-							type="button"
-							className="btn btn-ghost btn-xs h-4 min-h-0 rounded-sm border border-cz-border/65 px-1 font-mono text-[0.52rem] text-cz-gold/85 normal-case tracking-normal"
-							onClick={() => setLfoRateMode("hz")}
-							title={PARAM_META[lfoRateModeKey as SynthParamKey]?.tooltip}
-						>
-							sync
-						</Button>
-					}
-					tooltip={PARAM_META[lfoSyncDivisionKey as SynthParamKey]?.tooltip}
-					valueFormatter={(value) => {
-						const division =
-							LFO_SYNC_DIVISIONS[Math.round(value)] ?? LFO_SYNC_DIVISIONS[0];
-						return `${division.label} · ${effectiveTempoBpm.toFixed(1)} BPM`;
-					}}
-					onClick={rateMidiLearn.onClick}
-					onContextMenu={rateMidiLearn.onContextMenu}
-					interactionLocked={rateMidiLearn.interactionLocked}
-					midiLearnState={rateMidiLearn.midiLearnState}
-				/>
-			)}
+			<SynthParamKnob
+				paramKey={lfoRateKey}
+				label="Rate"
+				color="#27588f"
+				size={54}
+				modDestination={resolveTargetFromMetadata("lfo.rate", {
+					lfoIndex: id,
+				})}
+				midiTargetKey={`lfo${id}RateKnob`}
+				midiLabel={`LFO ${id} Rate`}
+				uiTransform={LFO_RATE_TRANSFORM}
+				sync
+			/>
 			<SynthParamKnob
 				paramKey={lfoDepthKey}
-				value={lfoDepth as number}
-				onChange={setLfoDepth}
 				color="#27588f"
 				size={54}
 				label="Depth"
@@ -474,8 +234,6 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 			/>
 			<SynthParamKnob
 				paramKey={lfoOffsetKey}
-				value={lfoOffset as number}
-				onChange={setLfoOffset}
 				min={-1}
 				max={1}
 				bipolar
@@ -491,8 +249,6 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 			/>
 			<SynthParamKnob
 				paramKey={lfoSymmetryKey}
-				value={lfoSymmetry as number}
-				onChange={setLfoSymmetry}
 				color="#27588f"
 				size={54}
 				label="Sym."

@@ -12,6 +12,7 @@ type ModulePresetPopoverProps = {
 	options: ModulePresetOption[];
 	onChange: (value: string) => void;
 	accentColor?: string;
+	disabled?: boolean;
 };
 
 function hexToRgb(hex: string) {
@@ -42,12 +43,11 @@ export default function ModulePresetPopover({
 	options,
 	onChange,
 	accentColor,
+	disabled = false,
 }: ModulePresetPopoverProps) {
 	const detailsRef = useRef<HTMLDetailsElement | null>(null);
 	const borderColor = colorAlpha(accentColor ?? "", 0.65);
-	const softBorderColor = colorAlpha(accentColor ?? "", 0.5);
 	const activeBgColor = colorAlpha(accentColor ?? "", 0.34);
-	const triggerBgColor = colorAlpha(accentColor ?? "", 0.3);
 
 	useEffect(() => {
 		const handleClickOutside = (e: MouseEvent) => {
@@ -73,28 +73,39 @@ export default function ModulePresetPopover({
 		};
 	}, []);
 
+	if (disabled) {
+		return (
+			<Button
+				type="button"
+				disabled
+				className="btn btn-xs flex h-5 min-h-0 min-w-20 cursor-not-allowed flex-nowrap items-center gap-1.5 rounded-sm border border-cz-border/65 px-2 font-bold font-mono text-[0.54rem] text-cz-cream/40 uppercase tracking-[0.14em] opacity-70"
+				aria-label={`${title} presets unavailable`}
+			>
+				<span className="inline-block h-1 w-1 shrink-0 rounded-full bg-cz-cream/25" />
+				<span>presets</span>
+				<span className="text-cz-cream/30">▾</span>
+			</Button>
+		);
+	}
+
 	return (
 		<details
 			ref={detailsRef}
-			className="dropdown dropdown-end [&_summary::-webkit-details-marker]:hidden"
+			className="dropdown dropdown-top dropdown-end [&_summary::-webkit-details-marker]:hidden"
 		>
 			<summary
-				className="flex h-5 min-w-20 cursor-pointer items-center justify-center gap-1.5 rounded-sm border border-cz-border bg-cz-inset px-2 font-bold font-mono text-[0.54rem] text-cz-cream-light uppercase tracking-[0.14em] shadow-[0_1px_0_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.08)] transition-colors hover:bg-cz-surface"
-				style={{
-					borderColor: softBorderColor,
-					backgroundColor: triggerBgColor,
-				}}
+				className="btn btn-xs flex h-5 min-h-0 min-w-20 flex-nowrap items-center gap-1.5 rounded-sm border px-2 font-bold font-mono text-[0.54rem] text-cz-cream-light uppercase tracking-[0.14em] shadow-[0_1px_0_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.08)] hover:brightness-125"
 				aria-label={`${title} presets`}
 			>
 				<span
-					className="inline-block h-1 w-1 rounded-full"
+					className="inline-block h-1 w-1 shrink-0 rounded-full"
 					style={{ backgroundColor: borderColor }}
 				/>
 				<span>presets</span>
 				<span className="text-cz-cream-dim">▾</span>
 			</summary>
 			<ul
-				className="menu dropdown-content z-9999 mt-1.5 w-44 rounded-md border border-cz-border bg-cz-panel p-1 shadow-[0_10px_24px_rgba(0,0,0,0.5)]"
+				className="menu dropdown-content z-9999 mb-1.5 w-44 rounded-md border border-cz-border bg-cz-panel p-1 shadow-[0_10px_24px_rgba(0,0,0,0.5)]"
 				style={{ borderColor: borderColor }}
 			>
 				{options.map((option) => {

@@ -1,30 +1,14 @@
-import { memo, useMemo, useState } from "react";
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
-import ControlKnob from "@/components/controls/ControlKnob";
 import {
 	getFxControlLabel,
 	getFxControlOptionLabel,
-	getFxControlTooltip,
 } from "@/components/panels/drawer-modules/custom/utils";
-import type {
-	ButtonGroupControlDef,
-	FxSlotModuleConfig,
-	KnobControlDef,
-} from "@/components/panels/drawer-modules/fxSlotModuleConfig";
+import FxSlotKnob from "@/components/panels/drawer-modules/FxSlotKnob";
+import { useFxSlotModule } from "@/components/panels/drawer-modules/FxSlotModuleContext";
+import type { ButtonGroupControlDef } from "@/components/panels/drawer-modules/fxSlotModuleConfig";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
-import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
-import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
-import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
-import { useSynthStore } from "@/features/synth/synthStore";
-import type { ModDestination } from "@/lib/synth/bindings/synth";
-import { FX_DEFINITIONS_V1, type FxSlotType } from "@/lib/synth/bindings/synth";
-
-type EngineKnobMeta = {
-	min?: number;
-	max?: number;
-	defaultValue?: number;
-};
 
 function clampToColumns(value: number, columns: number) {
 	return Math.min(Math.max(value, 1), columns);
@@ -69,7 +53,7 @@ function resolveButtonGroupSpan(
 	}
 
 	const needsExtraWidth =
-		options.length >= 3 || options.some((opt) => opt.label.length > 4);
+		options.length >= 3 || options.some((option) => option.label.length > 4);
 	return needsExtraWidth ? 2 : 1;
 }
 
@@ -83,115 +67,24 @@ function resolveBinaryToggleState(
 
 	const offOption = options[0];
 	const onOption = options[1];
-	const isOn = value === onOption.value;
-
 	return {
 		offOption,
 		onOption,
-		isOn,
+		isOn: value === onOption.value,
 	};
 }
 
-type KnobControlProps = {
-	ctrl: KnobControlDef;
-	params: Record<string, unknown>;
-	knobMetaByParam: Record<string, EngineKnobMeta>;
-	moduleColumns: number;
-	modDestinationByParam: Record<string, string>;
-	fxType: FxSlotType;
-	color: string;
-	setFxSlotParams: (slot: number, params: Record<string, unknown>) => void;
-	slot: number;
-};
-
-const KnobControl = memo(function KnobControl({
+const FxButtonGroupControl = memo(function FxButtonGroupControl({
 	ctrl,
-	params,
-	knobMetaByParam,
 	moduleColumns,
-	modDestinationByParam,
-	fxType,
-	color,
-	setFxSlotParams,
-	slot,
-}: KnobControlProps) {
-	const engineMeta = knobMetaByParam[ctrl.param];
-	const min = engineMeta?.min ?? ctrl.min;
-	const max = engineMeta?.max ?? ctrl.max;
-	const defaultValue = engineMeta?.defaultValue ?? ctrl.defaultValue;
-	const gridPlacementStyle = resolveGridPlacementStyle({
-		colSpan: ctrl.colSpan,
-		colStart: ctrl.colStart,
-		row: ctrl.row,
-		columns: moduleColumns,
-	});
-
-	const modDestinationKey = modDestinationByParam[ctrl.param];
-	const resolvedLabel = getFxControlLabel(
-		fxType,
-		ctrl.param,
-		modDestinationKey,
-	);
-	const resolvedTooltip = getFxControlTooltip(
-		fxType,
-		ctrl.param,
-		modDestinationKey,
-	);
-	const midiLearn = useMidiLearnTarget({
-		targetKey: `fxSlot${slot + 1}Knob${ctrl.sourceIndex + 1}`,
-		label: `FX ${slot + 1} Knob ${ctrl.sourceIndex + 1}`,
-		apply: (rawValue) => {
-			const normalized = rawValue / 127;
-			const mappedValue = min + normalized * (max - min);
-			setFxSlotParams(slot, { [ctrl.param]: mappedValue });
-		},
-	});
-
-	return (
-		<div className="min-w-0" style={gridPlacementStyle}>
-			<ControlKnob
-				value={(params[ctrl.param] as number) ?? defaultValue}
-				onChange={(v) => setFxSlotParams(slot, { [ctrl.param]: v })}
-				min={min}
-				max={max}
-				defaultValue={defaultValue}
-				size={ctrl.size ?? 64}
-				color={color}
-				label={resolvedLabel}
-				tooltip={resolvedTooltip}
-				valueFormatter={ctrl.formatter}
-				modDestination={
-					modDestinationByParam[ctrl.param] as ModDestination | undefined
-				}
-				onClick={midiLearn.onClick}
-				onContextMenu={midiLearn.onContextMenu}
-				interactionLocked={midiLearn.interactionLocked}
-				midiLearnState={midiLearn.midiLearnState}
-			/>
-		</div>
-	);
-});
-
-type ButtonGroupControlProps = {
+}: {
 	ctrl: ButtonGroupControlDef;
-	params: Record<string, unknown>;
 	moduleColumns: number;
-	fxType: FxSlotType;
-	setFxSlotParams: (slot: number, params: Record<string, unknown>) => void;
-	slot: number;
-};
-
-const ButtonGroupControl = memo(function ButtonGroupControl({
-	ctrl,
-	params,
-	moduleColumns,
-	fxType,
-	setFxSlotParams,
-	slot,
-}: ButtonGroupControlProps) {
+}) {
+	const { config, slot, params, setFxSlotParams } = useFxSlotModule();
 	const localizedOptions = ctrl.options.map((option) => ({
 		...option,
-		label: getFxControlOptionLabel(fxType, ctrl.param, option.value),
+		label: getFxControlOptionLabel(config.type, ctrl.param, option.value),
 	}));
 	const fallbackColSpan = resolveButtonGroupSpan(
 		localizedOptions,
@@ -207,17 +100,17 @@ const ButtonGroupControl = memo(function ButtonGroupControl({
 		ctrl.buttonPresentation === "compactBinaryToggle"
 			? resolveBinaryToggleState(localizedOptions, params[ctrl.param])
 			: null;
-	const resolvedLabel = getFxControlLabel(fxType, ctrl.param);
+	const resolvedLabel = getFxControlLabel(config.type, ctrl.param);
 	const groupAlignment = ctrl.centered ? "items-center" : "items-stretch";
 
 	return (
 		<div className="min-w-0" style={gridPlacementStyle}>
 			<div className={`flex flex-col gap-1.5 ${groupAlignment}`}>
-				{!ctrl.hideLabel && (
+				{!ctrl.hideLabel ? (
 					<span className="text-center text-3xs text-base-content/58 uppercase tracking-[0.2em]">
 						{resolvedLabel}
 					</span>
-				)}
+				) : null}
 				{binaryToggleState ? (
 					<Button
 						type="button"
@@ -240,20 +133,20 @@ const ButtonGroupControl = memo(function ButtonGroupControl({
 					</Button>
 				) : (
 					<div className="join w-full overflow-hidden rounded-md border border-cz-border/65">
-						{localizedOptions.map((opt) => (
+						{localizedOptions.map((option) => (
 							<Button
-								key={opt.value}
+								key={option.value}
 								type="button"
 								className={`join-item btn btn-xs h-8 min-h-0 flex-1 rounded-none border-0 px-2 ${
-									(params[ctrl.param] as number) === opt.value
+									params[ctrl.param] === option.value
 										? "border-amber-500/60 bg-amber-500/20 text-amber-300"
 										: "bg-transparent text-cz-cream/60 hover:text-cz-cream/90"
 								}`}
 								onClick={() =>
-									setFxSlotParams(slot, { [ctrl.param]: opt.value })
+									setFxSlotParams(slot, { [ctrl.param]: option.value })
 								}
 							>
-								{opt.label}
+								{option.label}
 							</Button>
 						))}
 					</div>
@@ -263,52 +156,10 @@ const ButtonGroupControl = memo(function ButtonGroupControl({
 	);
 });
 
-export default function GenericFxSlotModule({
-	config,
-	slot,
-}: {
-	config: FxSlotModuleConfig;
-	slot: number;
-}) {
+export default function GenericFxSlotModule() {
 	const { t } = useTranslation("synth");
-	const [selectedPreset, setSelectedPreset] = useState<string>("");
-	const rawSlot = useSynthStore((s) => s.fxSlots[slot]);
-	const setFxSlotParams = useSynthStore((s) => s.setFxSlotParams);
-
-	const modDestinationByParam = useMemo(() => {
-		const def = FX_DEFINITIONS_V1.find((d) => d.slotType === config.type);
-		const map: Record<string, string> = {};
-		if (def) {
-			for (const ctrl of def.controls) {
-				if (ctrl.modDestinationKey) {
-					map[ctrl.id] = ctrl.modDestinationKey;
-				}
-			}
-		}
-		return map;
-	}, [config.type]);
-
-	const knobMetaByParam = useMemo(() => {
-		const def = FX_DEFINITIONS_V1.find((d) => d.slotType === config.type);
-		const map: Record<string, EngineKnobMeta> = {};
-		if (def) {
-			for (const ctrl of def.controls) {
-				if (ctrl.kind !== "knob") {
-					continue;
-				}
-				map[ctrl.id] = {
-					min: ctrl.min ?? undefined,
-					max: ctrl.max ?? undefined,
-					defaultValue: ctrl.defaultF32 ?? undefined,
-				};
-			}
-		}
-		return map;
-	}, [config.type]);
-
-	if (rawSlot?.type !== config.type) return null;
-	const params = (rawSlot as { params: Record<string, unknown> }).params;
-	const enabled = (params.enabled as boolean) ?? false;
+	const { config, selectedPreset, params, enabled, handlePresetChange } =
+		useFxSlotModule();
 	const defaultColumns = clampGridColumns(config.columns ?? 4);
 	const dynamicColumnRule = config.dynamicColumns;
 	const dynamicColumns = dynamicColumnRule
@@ -318,11 +169,11 @@ export default function GenericFxSlotModule({
 		: defaultColumns;
 	const moduleColumns = clampGridColumns(dynamicColumns);
 	const visibleControls = config.controls
-		.filter((ctrl) => {
-			if (!ctrl.visibleWhen) {
+		.filter((control) => {
+			if (!control.visibleWhen) {
 				return true;
 			}
-			return params[ctrl.visibleWhen.param] === ctrl.visibleWhen.equals;
+			return params[control.visibleWhen.param] === control.visibleWhen.equals;
 		})
 		.slice()
 		.sort((a, b) => {
@@ -341,21 +192,6 @@ export default function GenericFxSlotModule({
 			return a.sourceIndex - b.sourceIndex;
 		});
 
-	const handlePresetChange = (presetId: string) => {
-		setSelectedPreset(presetId);
-		const preset = config.presets.find((e) => e.id === presetId);
-		if (!preset) return;
-		const patchParams = (preset.patch as Record<string, unknown>)[
-			config.patchKey
-		] as Record<string, unknown>;
-		setFxSlotParams(slot, patchParams);
-		requestApplyModulePreset({
-			module: config.moduleKey,
-			preset: preset.id,
-			patch: preset.patch,
-		});
-	};
-
 	const moduleTitle =
 		t(`fx.modules.${config.type}.title`, { defaultValue: "" }) || config.title;
 
@@ -365,41 +201,36 @@ export default function GenericFxSlotModule({
 			color={config.color}
 			meta={config.meta}
 			columns={moduleColumns}
-			headerControl={
-				<ModulePresetPopover
-					title={config.presetTitle}
-					value={selectedPreset}
-					options={config.presets}
-					onChange={handlePresetChange}
-					accentColor={config.color}
-				/>
-			}
 			enabled={enabled}
-			onToggle={() => setFxSlotParams(slot, { enabled: !enabled })}
+			presetTitle={config.presetTitle}
+			presetValue={selectedPreset}
+			presetOptions={config.presets}
+			onPresetChange={handlePresetChange}
 		>
-			{visibleControls.map((ctrl) =>
-				ctrl.kind === "knob" ? (
-					<KnobControl
-						key={ctrl.param}
-						ctrl={ctrl}
-						params={params}
-						knobMetaByParam={knobMetaByParam}
-						moduleColumns={moduleColumns}
-						modDestinationByParam={modDestinationByParam}
-						fxType={config.type}
-						color={config.color}
-						setFxSlotParams={setFxSlotParams}
-						slot={slot}
-					/>
+			{visibleControls.map((control) =>
+				control.kind === "knob" ? (
+					<div
+						key={control.param}
+						className="min-w-0"
+						style={resolveGridPlacementStyle({
+							colSpan: control.colSpan,
+							colStart: control.colStart,
+							row: control.row,
+							columns: moduleColumns,
+						})}
+					>
+						<FxSlotKnob
+							param={control.param}
+							control={control}
+							color={config.color}
+							size={control.size ?? 64}
+						/>
+					</div>
 				) : (
-					<ButtonGroupControl
-						key={ctrl.param}
-						ctrl={ctrl}
-						params={params}
+					<FxButtonGroupControl
+						key={control.param}
+						ctrl={control}
 						moduleColumns={moduleColumns}
-						fxType={config.type}
-						setFxSlotParams={setFxSlotParams}
-						slot={slot}
 					/>
 				),
 			)}

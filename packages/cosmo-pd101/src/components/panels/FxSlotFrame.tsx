@@ -40,6 +40,12 @@ const FX_CHANGE_OPTIONS: { value: FxSlotType; label: string }[] = [
 	...FX_EFFECT_OPTIONS,
 ];
 
+function getFxTypeLabel(type: FxSlotType): string {
+	return (
+		FX_EFFECT_OPTIONS.find((option) => option.value === type)?.label ?? "Effect"
+	);
+}
+
 // ---------------------------------------------------------------------------
 // TypeSelectorPopover — portal-based so overflow:hidden parents don't clip it
 // ---------------------------------------------------------------------------
@@ -175,6 +181,7 @@ function TypeSelectorTrigger({
 		setFxSlotType(slot, type);
 		setPopoverPos(null);
 	};
+	const currentLabel = getFxTypeLabel(currentType);
 
 	return (
 		<>
@@ -182,10 +189,10 @@ function TypeSelectorTrigger({
 				ref={triggerRef}
 				type="button"
 				onClick={openPopover}
-				aria-label="Change effect type"
-				className="btn btn-ghost btn-square btn-xs h-4 w-4 shrink-0 opacity-60 hover:opacity-100"
+				aria-label={`Change effect type (${currentLabel})`}
+				className="btn btn-xs btn-ghost btn-neutral btn-square"
 			>
-				<MdArrowDropDown className="h-1.5 w-1.5" />
+				<MdArrowDropDown className="h-6 w-6 shrink-0" />
 			</Button>
 			{popoverPos && (
 				<TypeSelectorPopover

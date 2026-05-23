@@ -1,36 +1,88 @@
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { EngineParamUiMetaWithRangeV1 } from "@/lib/synth/paramMeta";
 import SynthParamKnob from "./SynthParamKnob";
 
-const { mockMetaByKey, mockParamMeta, mockGetDefault, ControlKnobMock } =
-	vi.hoisted(() => ({
-		mockMetaByKey: {} as Partial<Record<string, EngineParamUiMetaWithRangeV1>>,
-		mockParamMeta: {} as Partial<Record<string, { tooltip: string }>>,
-		mockGetDefault: vi.fn(),
-		ControlKnobMock: vi.fn(
-			({
-				children,
-				...props
-			}: {
-				children?: ReactNode;
-				[key: string]: unknown;
-			}) => (
-				<div
-					data-testid="control-knob"
-					{...Object.fromEntries(
-						Object.entries(props).map(([k, v]) => [
-							`data-prop-${k}`,
-							typeof v === "function" ? "fn" : String(v ?? ""),
-						]),
-					)}
-				>
-					{children}
-				</div>
-			),
+const {
+	mockMetaByKey,
+	mockParamMeta,
+	mockGetDefault,
+	mockSetParam,
+	mockUseHostTransport,
+	mockUseMidiLearnTarget,
+	mockUseOptionalSynthController,
+	mockUseSynthStore,
+	mockSynthState,
+	ControlKnobMock,
+} = vi.hoisted(() => ({
+	mockMetaByKey: {} as Partial<Record<string, EngineParamUiMetaWithRangeV1>>,
+	mockParamMeta: {} as Partial<Record<string, { tooltip: string }>>,
+	mockGetDefault: vi.fn(),
+	mockSetParam: vi.fn(),
+	mockUseHostTransport: vi.fn(() => ({
+		available: false,
+		tempo: 120,
+		playing: false,
+		positionBeats: 0,
+		timeSigNum: 4,
+		timeSigDen: 4,
+		loopActive: false,
+	})),
+	mockUseMidiLearnTarget: vi.fn((_options?: unknown) => ({
+		onClick: vi.fn(),
+		onContextMenu: vi.fn(),
+		interactionLocked: false,
+		midiLearnState: null,
+	})),
+	mockUseOptionalSynthController: vi.fn(() => ({
+		setParam: mockSetParam,
+	})),
+	mockSynthState: {
+		volume: 0.5,
+		lfoRate: 2,
+		lfoRateMode: "hz",
+		lfoSyncDivision: "quarter",
+		lfo2Rate: 2,
+		lfo2RateMode: "hz",
+		lfo2SyncDivision: "quarter",
+		tempoBpm: 120,
+		warpAAmount: 0,
+		warpBAmount: 0,
+		pitchBendRange: 0,
+		portamentoRate: 0,
+		portamentoEnabled: 0,
+		modEnvAttack: 100,
+		modEnvRelease: 1,
+		algo2A: 0,
+		algo2B: 0,
+	} as Record<string, unknown>,
+	mockUseSynthStore: vi.fn(
+		(selector: (state: Record<string, unknown>) => unknown) =>
+			selector(mockSynthState),
+	),
+	ControlKnobMock: vi.fn(
+		({
+			children,
+			...props
+		}: {
+			children?: ReactNode;
+			[key: string]: unknown;
+		}) => (
+			<div
+				data-testid="control-knob"
+				{...Object.fromEntries(
+					Object.entries(props).map(([k, v]) => [
+						`data-prop-${k}`,
+						typeof v === "function" ? "fn" : String(v ?? ""),
+					]),
+				)}
+			>
+				{children}
+			</div>
 		),
-	}));
+	),
+}));
 
 vi.mock("@/components/controls/ControlKnob", () => ({
 	default: (props: Record<string, unknown> & { children?: ReactNode }) =>
@@ -41,6 +93,29 @@ vi.mock("@/lib/synth/paramMeta", () => ({
 	ENGINE_PARAM_UI_META_BY_KEY: mockMetaByKey,
 	PARAM_META: mockParamMeta,
 	getEngineParamDefault: (...args: unknown[]) => mockGetDefault(...args),
+}));
+
+vi.mock("@/features/synth/hooks/useHostTransport", () => ({
+	useHostTransport: () => mockUseHostTransport(),
+}));
+
+vi.mock("@/features/synth/hooks/useMidiLearnTarget", () => ({
+	useMidiLearnTarget: (options: unknown) => mockUseMidiLearnTarget(options),
+}));
+
+vi.mock("@/features/synth/SynthParamController", async () => {
+	const actual = await vi.importActual<
+		typeof import("@/features/synth/SynthParamController")
+	>("@/features/synth/SynthParamController");
+	return {
+		...actual,
+		useOptionalSynthController: () => mockUseOptionalSynthController(),
+	};
+});
+
+vi.mock("@/features/synth/synthStore", () => ({
+	useSynthStore: (selector: (state: Record<string, unknown>) => unknown) =>
+		mockUseSynthStore(selector),
 }));
 
 function buildMeta(
@@ -54,6 +129,55 @@ function buildMeta(
 }
 
 describe("SynthParamKnob", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		for (const key of Object.keys(mockMetaByKey)) {
+			delete mockMetaByKey[key];
+		}
+		for (const key of Object.keys(mockParamMeta)) {
+			delete mockParamMeta[key];
+		}
+		mockGetDefault.mockReset();
+		mockUseHostTransport.mockReturnValue({
+			available: false,
+			tempo: 120,
+			playing: false,
+			positionBeats: 0,
+			timeSigNum: 4,
+			timeSigDen: 4,
+			loopActive: false,
+		});
+		mockUseMidiLearnTarget.mockReturnValue({
+			onClick: vi.fn(),
+			onContextMenu: vi.fn(),
+			interactionLocked: false,
+			midiLearnState: null,
+		});
+		mockUseOptionalSynthController.mockReturnValue({
+			setParam: mockSetParam,
+		});
+		mockSetParam.mockReset();
+		Object.assign(mockSynthState, {
+			volume: 0.5,
+			lfoRate: 2,
+			lfoRateMode: "hz",
+			lfoSyncDivision: "quarter",
+			lfo2Rate: 2,
+			lfo2RateMode: "hz",
+			lfo2SyncDivision: "quarter",
+			tempoBpm: 120,
+			warpAAmount: 0,
+			warpBAmount: 0,
+			pitchBendRange: 0,
+			portamentoRate: 0,
+			portamentoEnabled: 0,
+			modEnvAttack: 100,
+			modEnvRelease: 1,
+			algo2A: 0,
+			algo2B: 0,
+		});
+	});
+
 	it("renders ControlKnob with value, onChange, label", () => {
 		const onChange = vi.fn();
 		render(
@@ -232,6 +356,53 @@ describe("SynthParamKnob", () => {
 		expect(knob).toHaveAttribute("data-prop-variant", "accent");
 		expect(knob).toHaveAttribute("data-prop-disabled", "true");
 		expect(knob).toHaveAttribute("data-prop-labelClassName", "my-label");
+	});
+
+	it("maps uiTransform to the control range", () => {
+		render(
+			<SynthParamKnob
+				paramKey="lfoRate"
+				value={32}
+				uiTransform={{
+					toControlValue: (engineValue) => engineValue / 100,
+					fromControlValue: (controlValue) => controlValue * 100,
+					min: 0,
+					max: 1,
+					defaultValue: 0.25,
+				}}
+			/>,
+		);
+
+		const knob = screen.getByTestId("control-knob");
+		expect(knob).toHaveAttribute("data-prop-value", "0.32");
+		expect(knob).toHaveAttribute("data-prop-min", "0");
+		expect(knob).toHaveAttribute("data-prop-max", "1");
+		expect(knob).toHaveAttribute("data-prop-defaultValue", "0.25");
+	});
+
+	it("switches to sync divisions when sync mode is active", () => {
+		mockSynthState.lfoRateMode = "sync";
+		mockSynthState.lfoSyncDivision = "half";
+		mockSynthState.tempoBpm = 132;
+		mockUseHostTransport.mockReturnValue({
+			available: true,
+			tempo: 132,
+			playing: true,
+			positionBeats: 8,
+			timeSigNum: 4,
+			timeSigDen: 4,
+			loopActive: false,
+		});
+
+		render(<SynthParamKnob paramKey="lfoRate" sync />);
+
+		const knob = screen.getByTestId("control-knob");
+		expect(knob).toHaveAttribute("data-prop-value", "1");
+		expect(knob).toHaveAttribute("data-prop-min", "0");
+		expect(knob).toHaveAttribute("data-prop-step", "1");
+		expect(knob).toHaveAttribute("data-prop-curve", "linear");
+		expect(knob).toHaveAttribute("data-prop-tooltip", "");
+		expect(knob).toHaveAttribute("data-prop-labelAccessory", "[object Object]");
 	});
 
 	describe("valueFormatter", () => {
