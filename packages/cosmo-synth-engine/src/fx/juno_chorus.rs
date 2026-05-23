@@ -1,4 +1,5 @@
 use super::delay_line::DelayLine;
+use crate::params::{JunoChorusParams, ModDestination};
 
 // ---------------------------------------------------------------------------
 // JunoChorusFx — dual BBD-style chorus inspired by the Roland Juno
@@ -78,6 +79,15 @@ impl JunoChorusFx {
 
         let mix_angle = self.mix * core::f32::consts::PI * 0.5;
         sample * (mix_angle).cos() + wet * (mix_angle).sin()
+    }
+}
+
+impl JunoChorusFx {
+    pub fn apply_modulation(&mut self, config: &JunoChorusParams, mod_values: &[f32]) {
+        let mix = mod_values[ModDestination::JunoChorusMix as usize];
+        if mix != 0.0 {
+            self.mix = (config.mix + mix).clamp(0.0, 1.0);
+        }
     }
 }
 

@@ -1,4 +1,6 @@
 // ---------------------------------------------------------------------------
+use crate::params::{CompressorParams, ModDestination};
+
 // CompressorFx — feed-forward peak compressor
 // ---------------------------------------------------------------------------
 
@@ -68,6 +70,27 @@ fn db_to_linear(db: f32) -> f32 {
 #[inline]
 fn linear_to_db(linear: f32) -> f32 {
     20.0 * (linear.max(1e-9).log10())
+}
+
+impl CompressorFx {
+    pub fn apply_modulation(&mut self, config: &CompressorParams, mod_values: &[f32]) {
+        let threshold = mod_values[ModDestination::CompressorThreshold as usize];
+        if threshold != 0.0 {
+            self.threshold_db = (config.threshold_db + threshold * 30.0).clamp(-60.0, 0.0);
+        }
+        let ratio = mod_values[ModDestination::CompressorRatio as usize];
+        if ratio != 0.0 {
+            self.ratio = (config.ratio + ratio * 50.0).clamp(1.0, 50.0);
+        }
+        let makeup = mod_values[ModDestination::CompressorMakeup as usize];
+        if makeup != 0.0 {
+            self.makeup_db = (config.makeup_db + makeup * 20.0).clamp(0.0, 20.0);
+        }
+        let mix = mod_values[ModDestination::CompressorMix as usize];
+        if mix != 0.0 {
+            self.mix = (config.mix + mix).clamp(0.0, 1.0);
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------

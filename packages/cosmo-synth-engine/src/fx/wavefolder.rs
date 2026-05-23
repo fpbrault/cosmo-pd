@@ -1,4 +1,6 @@
 // ---------------------------------------------------------------------------
+use crate::params::{ModDestination, WavefolderParams};
+
 // WavefolderFx — waveshaping / folding
 // ---------------------------------------------------------------------------
 
@@ -68,6 +70,23 @@ fn fold(mut x: f32, threshold: f32) -> f32 {
         }
     }
     x
+}
+
+impl WavefolderFx {
+    pub fn apply_modulation(&mut self, config: &WavefolderParams, mod_values: &[f32]) {
+        let drive = mod_values[ModDestination::WavefolderDrive as usize];
+        if drive != 0.0 {
+            self.drive = (config.drive + drive).clamp(0.0, 1.0);
+        }
+        let folds = mod_values[ModDestination::WavefolderFolds as usize];
+        if folds != 0.0 {
+            self.folds = (config.folds + folds).clamp(0.0, 1.0);
+        }
+        let mix = mod_values[ModDestination::WavefolderMix as usize];
+        if mix != 0.0 {
+            self.mix = (config.mix + mix).clamp(0.0, 1.0);
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------

@@ -1,6 +1,5 @@
 use crate::params::FxSlotConfig;
 use crate::params::FxSlotType;
-use crate::params::ModDestination;
 use crate::params::ModMatrixCache;
 use crate::params::SynthParams;
 
@@ -246,181 +245,42 @@ impl FxChain {
         params: &SynthParams,
         mod_cache: &ModMatrixCache,
     ) {
-        let v = &mod_cache.values;
         for active_idx in 0..self.active_slot_count {
             let slot_idx = self.active_slots[active_idx];
             let config = &params.fx_slots[slot_idx];
             let slot = &mut self.slots[slot_idx];
             match config {
-                FxSlotConfig::Chorus(ch) => {
-                    slot.chorus.rate =
-                        (ch.rate + v[ModDestination::ChorusRate as usize] * 20.0).clamp(0.01, 20.0);
-                    slot.chorus.depth =
-                        (ch.depth + v[ModDestination::ChorusDepth as usize]).clamp(0.0, 1.0);
-                    slot.chorus.mix =
-                        (ch.mix + v[ModDestination::ChorusMix as usize]).clamp(0.0, 1.0);
-                }
-                FxSlotConfig::Phaser(ph) => {
-                    slot.phaser.rate =
-                        (ph.rate + v[ModDestination::PhaserRate as usize] * 20.0).clamp(0.01, 20.0);
-                    slot.phaser.depth =
-                        (ph.depth + v[ModDestination::PhaserDepth as usize]).clamp(0.0, 1.0);
-                    slot.phaser.feedback =
-                        (ph.feedback + v[ModDestination::PhaserFeedback as usize]).clamp(0.0, 0.99);
-                    slot.phaser.mix =
-                        (ph.mix + v[ModDestination::PhaserMix as usize]).clamp(0.0, 1.0);
-                }
-                FxSlotConfig::Delay(d) => {
-                    slot.delay.time =
-                        (d.time + v[ModDestination::DelayTime as usize]).clamp(0.01, 2.0);
-                    slot.delay.feedback =
-                        (d.feedback + v[ModDestination::DelayFeedback as usize]).clamp(0.0, 0.99);
-                    slot.delay.warmth =
-                        (d.warmth + v[ModDestination::DelayWarmth as usize]).clamp(0.0, 1.0);
-                    slot.delay.mix = (d.mix + v[ModDestination::DelayMix as usize]).clamp(0.0, 1.0);
-                }
-                FxSlotConfig::Reverb(rv) => {
-                    slot.reverb.mix =
-                        (rv.mix + v[ModDestination::ReverbMix as usize]).clamp(0.0, 1.0);
-                    slot.reverb.space =
-                        (rv.space + v[ModDestination::ReverbSpace as usize]).clamp(0.0, 1.0);
-                    slot.reverb.predelay =
-                        (rv.predelay + v[ModDestination::ReverbPredelay as usize]).clamp(0.0, 0.2);
-                    slot.reverb.distance =
-                        (rv.distance + v[ModDestination::ReverbDistance as usize]).clamp(0.0, 1.0);
-                    slot.reverb.character = (rv.character
-                        + v[ModDestination::ReverbCharacter as usize])
-                        .clamp(0.0, 1.0);
-                }
+                FxSlotConfig::Chorus(ch) => slot.chorus.apply_modulation(ch, &mod_cache.values),
+                FxSlotConfig::Phaser(ph) => slot.phaser.apply_modulation(ph, &mod_cache.values),
+                FxSlotConfig::Delay(d) => slot.delay.apply_modulation(d, &mod_cache.values),
+                FxSlotConfig::Reverb(rv) => slot.reverb.apply_modulation(rv, &mod_cache.values),
                 FxSlotConfig::Compressor(c) => {
-                    slot.compressor.threshold_db = (c.threshold_db
-                        + v[ModDestination::CompressorThreshold as usize] * 36.0)
-                        .clamp(-60.0, 0.0);
-                    slot.compressor.ratio = (c.ratio
-                        + v[ModDestination::CompressorRatio as usize] * 20.0)
-                        .clamp(1.0, 20.0);
-                    slot.compressor.makeup_db = (c.makeup_db
-                        + v[ModDestination::CompressorMakeup as usize] * 24.0)
-                        .clamp(0.0, 24.0);
-                    slot.compressor.mix =
-                        (c.mix + v[ModDestination::CompressorMix as usize]).clamp(0.0, 1.0);
+                    slot.compressor.apply_modulation(c, &mod_cache.values);
                 }
-                FxSlotConfig::Eq5Band(eq) => {
-                    slot.eq.set_gain(
-                        0,
-                        (eq.gain80 + v[ModDestination::EqGain80 as usize] * 24.0)
-                            .clamp(-24.0, 24.0),
-                    );
-                    slot.eq.set_gain(
-                        1,
-                        (eq.gain240 + v[ModDestination::EqGain240 as usize] * 24.0)
-                            .clamp(-24.0, 24.0),
-                    );
-                    slot.eq.set_gain(
-                        2,
-                        (eq.gain750 + v[ModDestination::EqGain750 as usize] * 24.0)
-                            .clamp(-24.0, 24.0),
-                    );
-                    slot.eq.set_gain(
-                        3,
-                        (eq.gain2200 + v[ModDestination::EqGain2200 as usize] * 24.0)
-                            .clamp(-24.0, 24.0),
-                    );
-                    slot.eq.set_gain(
-                        4,
-                        (eq.gain8000 + v[ModDestination::EqGain8000 as usize] * 24.0)
-                            .clamp(-24.0, 24.0),
-                    );
-                }
+                FxSlotConfig::Eq5Band(eq) => slot.eq.apply_modulation(eq, &mod_cache.values),
                 FxSlotConfig::GrainDelay(gd) => {
-                    slot.grain_delay.time =
-                        (gd.time + v[ModDestination::GrainDelayTime as usize]).clamp(0.01, 2.0);
-                    slot.grain_delay.feedback = (gd.feedback
-                        + v[ModDestination::GrainDelayFeedback as usize])
-                        .clamp(0.0, 0.99);
-                    slot.grain_delay.scatter = (gd.scatter
-                        + v[ModDestination::GrainDelayScatter as usize])
-                        .clamp(0.0, 1.0);
-                    slot.grain_delay.density = (gd.density
-                        + v[ModDestination::GrainDelayDensity as usize])
-                        .clamp(0.0, 1.0);
-                    slot.grain_delay.mix =
-                        (gd.mix + v[ModDestination::GrainDelayMix as usize]).clamp(0.0, 1.0);
+                    slot.grain_delay.apply_modulation(gd, &mod_cache.values);
                 }
                 FxSlotConfig::Bitcrusher(bc) => {
-                    slot.bitcrusher.bits = (bc.bits
-                        + v[ModDestination::BitcrusherBits as usize] * 12.0)
-                        .clamp(1.0, 16.0);
-                    slot.bitcrusher.rate_reduction = (bc.rate_reduction
-                        + v[ModDestination::BitcrusherRateReduction as usize])
-                        .clamp(0.0, 0.99);
-                    slot.bitcrusher.mix =
-                        (bc.mix + v[ModDestination::BitcrusherMix as usize]).clamp(0.0, 1.0);
+                    slot.bitcrusher.apply_modulation(bc, &mod_cache.values);
                 }
                 FxSlotConfig::ShimmerVerb(sv) => {
-                    slot.shimmer_verb.shimmer = (sv.shimmer
-                        + v[ModDestination::ShimmerVerbShimmer as usize])
-                        .clamp(0.0, 1.0);
-                    slot.shimmer_verb.space =
-                        (sv.space + v[ModDestination::ShimmerVerbSpace as usize]).clamp(0.0, 1.0);
-                    slot.shimmer_verb.mix =
-                        (sv.mix + v[ModDestination::ShimmerVerbMix as usize]).clamp(0.0, 1.0);
+                    slot.shimmer_verb.apply_modulation(sv, &mod_cache.values);
                 }
                 FxSlotConfig::Distortion(dist) => {
-                    slot.distortion.drive =
-                        (dist.drive + v[ModDestination::DistortionDrive as usize]).clamp(0.0, 1.0);
-                    slot.distortion.tone =
-                        (dist.tone + v[ModDestination::DistortionTone as usize]).clamp(0.0, 1.0);
-                    slot.distortion.mix =
-                        (dist.mix + v[ModDestination::DistortionMix as usize]).clamp(0.0, 1.0);
+                    slot.distortion.apply_modulation(dist, &mod_cache.values);
                 }
                 FxSlotConfig::JunoChorus(jc) => {
-                    slot.juno_chorus.mix =
-                        (jc.mix + v[ModDestination::JunoChorusMix as usize]).clamp(0.0, 1.0);
+                    slot.juno_chorus.apply_modulation(jc, &mod_cache.values);
                 }
                 FxSlotConfig::RingMod(rm) => {
-                    slot.ring_mod.carrier_hz = (rm.carrier_hz
-                        + v[ModDestination::RingModCarrierHz as usize] * 5000.0)
-                        .clamp(20.0, 8_000.0);
-                    slot.ring_mod.mix =
-                        (rm.mix + v[ModDestination::RingModMix as usize]).clamp(0.0, 1.0);
+                    slot.ring_mod.apply_modulation(rm, &mod_cache.values);
                 }
-                FxSlotConfig::Tremolo(tr) => {
-                    slot.tremolo.rate =
-                        (tr.rate + v[ModDestination::TremoloRate as usize] * 20.0).clamp(0.1, 40.0);
-                    slot.tremolo.depth =
-                        (tr.depth + v[ModDestination::TremoloDepth as usize]).clamp(0.0, 1.0);
-                    slot.tremolo.mix =
-                        (tr.mix + v[ModDestination::TremoloMix as usize]).clamp(0.0, 1.0);
-                }
+                FxSlotConfig::Tremolo(tr) => slot.tremolo.apply_modulation(tr, &mod_cache.values),
                 FxSlotConfig::Wavefolder(wf) => {
-                    slot.wavefolder.drive =
-                        (wf.drive + v[ModDestination::WavefolderDrive as usize]).clamp(0.0, 2.0);
-                    slot.wavefolder.folds = (wf.folds
-                        + v[ModDestination::WavefolderFolds as usize] * 8.0)
-                        .clamp(1.0, 10.0);
-                    slot.wavefolder.mix =
-                        (wf.mix + v[ModDestination::WavefolderMix as usize]).clamp(0.0, 1.0);
+                    slot.wavefolder.apply_modulation(wf, &mod_cache.values);
                 }
-                FxSlotConfig::LoFi(lofi) => {
-                    slot.lofi.degrade =
-                        (lofi.degrade + v[ModDestination::LoFiDegrade as usize]).clamp(0.0, 1.0);
-                    slot.lofi.wow_depth =
-                        (lofi.wow_depth + v[ModDestination::LoFiWowDepth as usize]).clamp(0.0, 1.0);
-                    slot.lofi.wow_rate = (lofi.wow_rate
-                        + v[ModDestination::LoFiWowRate as usize] * 20.0)
-                        .clamp(0.0, 20.0);
-                    slot.lofi.flutter_depth = (lofi.flutter_depth
-                        + v[ModDestination::LoFiFlutterDepth as usize])
-                        .clamp(0.0, 1.0);
-                    slot.lofi.flutter_rate = (lofi.flutter_rate
-                        + v[ModDestination::LoFiFlutterRate as usize] * 40.0)
-                        .clamp(0.0, 40.0);
-                    slot.lofi.tone =
-                        (lofi.tone + v[ModDestination::LoFiTone as usize]).clamp(0.0, 1.0);
-                    slot.lofi.mix =
-                        (lofi.mix + v[ModDestination::LoFiMix as usize]).clamp(0.0, 1.0);
-                }
+                FxSlotConfig::LoFi(lofi) => slot.lofi.apply_modulation(lofi, &mod_cache.values),
                 FxSlotConfig::Empty | FxSlotConfig::Vibrato(_) | FxSlotConfig::PhaseMod(_) => {}
             }
         }

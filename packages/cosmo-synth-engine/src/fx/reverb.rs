@@ -1,4 +1,5 @@
 use super::delay_line::DelayLine;
+use crate::params::{ModDestination, ReverbParams};
 
 const SMOOTH_COEFF: f32 = 0.005;
 
@@ -132,6 +133,31 @@ impl FdnReverb {
     #[inline]
     fn smooth(current: f32, target: f32, coeff: f32) -> f32 {
         current + (target - current) * coeff
+    }
+}
+
+impl FdnReverb {
+    pub fn apply_modulation(&mut self, config: &ReverbParams, mod_values: &[f32]) {
+        let mix = mod_values[ModDestination::ReverbMix as usize];
+        if mix != 0.0 {
+            self.mix = (config.mix + mix).clamp(0.0, 1.0);
+        }
+        let space = mod_values[ModDestination::ReverbSpace as usize];
+        if space != 0.0 {
+            self.space = (config.space + space).clamp(0.0, 1.0);
+        }
+        let predelay = mod_values[ModDestination::ReverbPredelay as usize];
+        if predelay != 0.0 {
+            self.predelay = (config.predelay + predelay * 50.0).clamp(0.0, 200.0);
+        }
+        let distance = mod_values[ModDestination::ReverbDistance as usize];
+        if distance != 0.0 {
+            self.distance = (config.distance + distance).clamp(0.0, 1.0);
+        }
+        let character = mod_values[ModDestination::ReverbCharacter as usize];
+        if character != 0.0 {
+            self.character = (config.character + character).clamp(0.0, 1.0);
+        }
     }
 }
 
