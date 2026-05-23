@@ -35,7 +35,7 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 					baseWaveformA: "cosine",
 					baseWaveformB: "cosine",
 					window: "off",
-					dcaBase: 0.532193603515625,
+					dcaBase: 1.0,
 					dcwBase: 0.81119873046875,
 					modulation: 0,
 					detuneNote: 0,
