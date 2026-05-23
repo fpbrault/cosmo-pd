@@ -1,4 +1,5 @@
 use crate::dsp_utils::TWO_PI;
+use crate::params::{ModDestination, PhaserParams};
 
 // ---------------------------------------------------------------------------
 // PhaserStage (first-order all-pass)
@@ -88,6 +89,27 @@ impl PhaserFx {
         let dry_gain = (mix_angle).cos();
         let wet_gain = (mix_angle).sin();
         sample * dry_gain + out * wet_gain
+    }
+}
+
+impl PhaserFx {
+    pub fn apply_modulation(&mut self, config: &PhaserParams, mod_values: &[f32]) {
+        let rate = mod_values[ModDestination::PhaserRate as usize];
+        if rate != 0.0 {
+            self.rate = (config.rate + rate * 15.0).clamp(0.05, 20.0);
+        }
+        let depth = mod_values[ModDestination::PhaserDepth as usize];
+        if depth != 0.0 {
+            self.depth = (config.depth + depth).clamp(0.0, 1.0);
+        }
+        let feedback = mod_values[ModDestination::PhaserFeedback as usize];
+        if feedback != 0.0 {
+            self.feedback = (config.feedback + feedback).clamp(0.0, 0.98);
+        }
+        let mix = mod_values[ModDestination::PhaserMix as usize];
+        if mix != 0.0 {
+            self.mix = (config.mix + mix).clamp(0.0, 1.0);
+        }
     }
 }
 

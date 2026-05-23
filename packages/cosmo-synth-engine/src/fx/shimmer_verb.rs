@@ -1,6 +1,7 @@
 use super::delay_line::DelayLine;
 use super::reverb::FdnReverb;
 use crate::dsp_utils::wrap01;
+use crate::params::{ModDestination, ShimmerVerbParams};
 
 // ---------------------------------------------------------------------------
 // ShimmerVerbFx — FDN reverb with pitch-shifted feedback (octave up)
@@ -79,6 +80,23 @@ impl ShimmerVerbFx {
 #[inline]
 fn raised_sine_window(phase: f32) -> f32 {
     (phase * core::f32::consts::PI).sin().max(0.0)
+}
+
+impl ShimmerVerbFx {
+    pub fn apply_modulation(&mut self, config: &ShimmerVerbParams, mod_values: &[f32]) {
+        let shimmer = mod_values[ModDestination::ShimmerVerbShimmer as usize];
+        if shimmer != 0.0 {
+            self.shimmer = (config.shimmer + shimmer).clamp(0.0, 1.0);
+        }
+        let space = mod_values[ModDestination::ShimmerVerbSpace as usize];
+        if space != 0.0 {
+            self.space = (config.space + space).clamp(0.0, 1.0);
+        }
+        let mix = mod_values[ModDestination::ShimmerVerbMix as usize];
+        if mix != 0.0 {
+            self.mix = (config.mix + mix).clamp(0.0, 1.0);
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------

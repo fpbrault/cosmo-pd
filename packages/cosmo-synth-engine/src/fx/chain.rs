@@ -1,5 +1,6 @@
 use crate::params::FxSlotConfig;
 use crate::params::FxSlotType;
+use crate::params::ModMatrixCache;
 use crate::params::SynthParams;
 
 use super::bitcrusher::BitcrusherFx;
@@ -209,7 +210,7 @@ pub struct FxChain {
     /// Which effect type is in each of the 6 FX slots.
     pub slot_types: [FxSlotType; 6],
     active_slots: [usize; 6],
-    active_slot_count: usize,
+    pub(crate) active_slot_count: usize,
 }
 
 impl FxChain {
@@ -235,6 +236,52 @@ impl FxChain {
             ) {
                 self.active_slots[self.active_slot_count] = i;
                 self.active_slot_count += 1;
+            }
+        }
+    }
+
+    pub(crate) fn apply_modulated_params(
+        &mut self,
+        params: &SynthParams,
+        mod_cache: &ModMatrixCache,
+    ) {
+        for active_idx in 0..self.active_slot_count {
+            let slot_idx = self.active_slots[active_idx];
+            let config = &params.fx_slots[slot_idx];
+            let slot = &mut self.slots[slot_idx];
+            match config {
+                FxSlotConfig::Chorus(ch) => slot.chorus.apply_modulation(ch, &mod_cache.values),
+                FxSlotConfig::Phaser(ph) => slot.phaser.apply_modulation(ph, &mod_cache.values),
+                FxSlotConfig::Delay(d) => slot.delay.apply_modulation(d, &mod_cache.values),
+                FxSlotConfig::Reverb(rv) => slot.reverb.apply_modulation(rv, &mod_cache.values),
+                FxSlotConfig::Compressor(c) => {
+                    slot.compressor.apply_modulation(c, &mod_cache.values);
+                }
+                FxSlotConfig::Eq5Band(eq) => slot.eq.apply_modulation(eq, &mod_cache.values),
+                FxSlotConfig::GrainDelay(gd) => {
+                    slot.grain_delay.apply_modulation(gd, &mod_cache.values);
+                }
+                FxSlotConfig::Bitcrusher(bc) => {
+                    slot.bitcrusher.apply_modulation(bc, &mod_cache.values);
+                }
+                FxSlotConfig::ShimmerVerb(sv) => {
+                    slot.shimmer_verb.apply_modulation(sv, &mod_cache.values);
+                }
+                FxSlotConfig::Distortion(dist) => {
+                    slot.distortion.apply_modulation(dist, &mod_cache.values);
+                }
+                FxSlotConfig::JunoChorus(jc) => {
+                    slot.juno_chorus.apply_modulation(jc, &mod_cache.values);
+                }
+                FxSlotConfig::RingMod(rm) => {
+                    slot.ring_mod.apply_modulation(rm, &mod_cache.values);
+                }
+                FxSlotConfig::Tremolo(tr) => slot.tremolo.apply_modulation(tr, &mod_cache.values),
+                FxSlotConfig::Wavefolder(wf) => {
+                    slot.wavefolder.apply_modulation(wf, &mod_cache.values);
+                }
+                FxSlotConfig::LoFi(lofi) => slot.lofi.apply_modulation(lofi, &mod_cache.values),
+                FxSlotConfig::Empty | FxSlotConfig::Vibrato(_) | FxSlotConfig::PhaseMod(_) => {}
             }
         }
     }

@@ -132,16 +132,15 @@ fn apply_env_step_modulation(
     env: &StepEnvData,
     line_index: u8,
     env_kind: EnvKindKey,
-    cache: &ModMatrixCache,
-    sources: &ModSources,
+    mod_values: &[f32],
 ) -> StepEnvData {
     let mut modded = *env;
 
     for step_index in 0..NUM_ENV_STEPS {
         let level_dest = env_step_level_destination(line_index, env_kind, step_index);
         let rate_dest = env_step_rate_destination(line_index, env_kind, step_index);
-        let level_mod = cache.get(level_dest, sources);
-        let rate_mod = cache.get(rate_dest, sources);
+        let level_mod = mod_values[level_dest as usize];
+        let rate_mod = mod_values[rate_dest as usize];
 
         let step: &mut EnvStep = &mut modded.steps[step_index];
         let next_level = (step.level as f32 + level_mod * 127.0)
@@ -157,30 +156,51 @@ fn apply_env_step_modulation(
     modded
 }
 
-pub(crate) fn modulated_line_params(
-    line: &LineParams,
-    scratch: &mut LineParams,
-    line_index: u8,
-    cache: &ModMatrixCache,
-    sources: &ModSources,
-) {
-    let algo_blend_dest = if line_index == 2 {
-        ModDestination::Line2AlgoBlend
-    } else {
-        ModDestination::Line1AlgoBlend
-    };
+impl LineParams {
+    pub(crate) fn apply_line1_mods(
+        &mut self,
+        base: &Self,
+        mod_values: &[f32],
+        has_env_step_routes: bool,
+    ) {
+        *self = *base;
 
-    let algo_blend_mod = cache.get(algo_blend_dest, sources);
+        self.algo_blend =
+            (base.algo_blend + mod_values[ModDestination::Line1AlgoBlend as usize]).clamp(0.0, 1.0);
+        self.octave =
+            (base.octave + mod_values[ModDestination::Line1Octave as usize] * 4.0).clamp(-2.0, 2.0);
 
-    *scratch = *line;
-    scratch.algo_blend = (line.algo_blend + algo_blend_mod).clamp(0.0, 1.0);
-    if cache.has_env_step_routes {
-        scratch.dco_env =
-            apply_env_step_modulation(&line.dco_env, line_index, EnvKindKey::Dco, cache, sources);
-        scratch.dcw_env =
-            apply_env_step_modulation(&line.dcw_env, line_index, EnvKindKey::Dcw, cache, sources);
-        scratch.dca_env =
-            apply_env_step_modulation(&line.dca_env, line_index, EnvKindKey::Dca, cache, sources);
+        if has_env_step_routes {
+            self.dco_env = apply_env_step_modulation(&base.dco_env, 1, EnvKindKey::Dco, mod_values);
+            self.dcw_env = apply_env_step_modulation(&base.dcw_env, 1, EnvKindKey::Dcw, mod_values);
+            self.dca_env = apply_env_step_modulation(&base.dca_env, 1, EnvKindKey::Dca, mod_values);
+        }
+    }
+
+    pub(crate) fn apply_line2_mods(
+        &mut self,
+        base: &Self,
+        mod_values: &[f32],
+        has_env_step_routes: bool,
+    ) {
+        *self = *base;
+
+        self.algo_blend =
+            (base.algo_blend + mod_values[ModDestination::Line2AlgoBlend as usize]).clamp(0.0, 1.0);
+        self.octave = (base.octave + mod_values[ModDestination::Line2DetuneOctave as usize] * 6.0)
+            .clamp(-5.0, 5.0);
+        self.detune_note = (base.detune_note
+            + mod_values[ModDestination::Line2DetuneNote as usize] * 22.0)
+            .clamp(-11.0, 11.0);
+        self.detune_fine = (base.detune_fine
+            + mod_values[ModDestination::Line2DetuneFine as usize] * 120.0)
+            .clamp(-60.0, 60.0);
+
+        if has_env_step_routes {
+            self.dco_env = apply_env_step_modulation(&base.dco_env, 2, EnvKindKey::Dco, mod_values);
+            self.dcw_env = apply_env_step_modulation(&base.dcw_env, 2, EnvKindKey::Dcw, mod_values);
+            self.dca_env = apply_env_step_modulation(&base.dca_env, 2, EnvKindKey::Dca, mod_values);
+        }
     }
 }
 // ---------------------------------------------------------------------------

@@ -1,4 +1,6 @@
 // ---------------------------------------------------------------------------
+use crate::params::{ModDestination, TremoloParams};
+
 // TremoloFx — amplitude modulation (volume LFO)
 // ---------------------------------------------------------------------------
 
@@ -57,6 +59,23 @@ impl TremoloFx {
 
         let mix_angle = self.mix * core::f32::consts::PI * 0.5;
         sample * (mix_angle).cos() + wet * (mix_angle).sin()
+    }
+}
+
+impl TremoloFx {
+    pub fn apply_modulation(&mut self, config: &TremoloParams, mod_values: &[f32]) {
+        let rate = mod_values[ModDestination::TremoloRate as usize];
+        if rate != 0.0 {
+            self.rate = (config.rate + rate * 15.0).clamp(0.1, 20.0);
+        }
+        let depth = mod_values[ModDestination::TremoloDepth as usize];
+        if depth != 0.0 {
+            self.depth = (config.depth + depth).clamp(0.0, 1.0);
+        }
+        let mix = mod_values[ModDestination::TremoloMix as usize];
+        if mix != 0.0 {
+            self.mix = (config.mix + mix).clamp(0.0, 1.0);
+        }
     }
 }
 

@@ -1,4 +1,5 @@
 use super::delay_line::DelayLine;
+use crate::params::{GrainDelayParams, ModDestination};
 
 const GRAIN_COUNT: usize = 4;
 const OCTAVE_UP_RATE_DELTA: f32 = 1.0;
@@ -125,6 +126,31 @@ fn hash_signed(index: u32) -> f32 {
     let hash = (seed).sin() * 43_758.547;
     let fract = hash - (hash).floor();
     fract * 2.0 - 1.0
+}
+
+impl GrainDelayFx {
+    pub fn apply_modulation(&mut self, config: &GrainDelayParams, mod_values: &[f32]) {
+        let time = mod_values[ModDestination::GrainDelayTime as usize];
+        if time != 0.0 {
+            self.time = (config.time + time * 2000.0).clamp(1.0, 3000.0);
+        }
+        let feedback = mod_values[ModDestination::GrainDelayFeedback as usize];
+        if feedback != 0.0 {
+            self.feedback = (config.feedback + feedback).clamp(0.0, 0.99);
+        }
+        let scatter = mod_values[ModDestination::GrainDelayScatter as usize];
+        if scatter != 0.0 {
+            self.scatter = (config.scatter + scatter).clamp(0.0, 1.0);
+        }
+        let density = mod_values[ModDestination::GrainDelayDensity as usize];
+        if density != 0.0 {
+            self.density = (config.density + density).clamp(0.0, 1.0);
+        }
+        let mix = mod_values[ModDestination::GrainDelayMix as usize];
+        if mix != 0.0 {
+            self.mix = (config.mix + mix).clamp(0.0, 1.0);
+        }
+    }
 }
 
 use crate::{

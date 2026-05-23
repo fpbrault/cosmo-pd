@@ -131,8 +131,25 @@ type SynthParamController = {
 	getModulatedValue: (params: {
 		destination: ModDestination | undefined;
 		baseValue: number;
+		min?: number;
+		max?: number;
 	}) => number | undefined;
 };
+
+export function visualModulationScale(params: {
+	destination: ModDestination;
+	min?: number;
+	max?: number;
+}): number {
+	const { destination, min, max } = params;
+	if (typeof min === "number" && typeof max === "number" && max > min) {
+		return max - min;
+	}
+	if (destination.includes("EnvStep")) {
+		return 127;
+	}
+	return 1;
+}
 
 const SynthParamControllerContext = createContext<SynthParamController | null>(
 	null,
@@ -288,9 +305,13 @@ export function SynthParamControllerProvider({
 		({
 			destination,
 			baseValue,
+			min,
+			max,
 		}: {
 			destination: ModDestination | undefined;
 			baseValue: number;
+			min?: number;
+			max?: number;
 		}): number | undefined => {
 			if (!destination) {
 				return undefined;
@@ -314,7 +335,11 @@ export function SynthParamControllerProvider({
 			}
 
 			const clampedLiveModDelta = Math.max(-2, Math.min(2, liveModDelta));
-			const visualModScale = destination.includes("EnvStep") ? 127 : 1;
+			const visualModScale = visualModulationScale({
+				destination,
+				min,
+				max,
+			});
 			return baseValue + clampedLiveModDelta * visualModScale;
 		},
 		[routesByDestination],

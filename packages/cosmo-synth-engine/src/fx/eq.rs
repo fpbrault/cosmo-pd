@@ -1,4 +1,6 @@
 // ---------------------------------------------------------------------------
+use crate::params::{EqParams, ModDestination};
+
 // Biquad peaking / shelving filter for the 5-band EQ
 // ---------------------------------------------------------------------------
 
@@ -149,6 +151,36 @@ impl EqFx {
             out = filter.process(out);
         }
         out
+    }
+}
+
+impl EqFx {
+    pub fn apply_modulation(&mut self, config: &EqParams, mod_values: &[f32]) {
+        let v = mod_values[ModDestination::EqGain80 as usize];
+        if v != 0.0 {
+            self.gains[0] = (config.gain80 + v * 24.0).clamp(-12.0, 12.0);
+            self.dirty = true;
+        }
+        let v = mod_values[ModDestination::EqGain240 as usize];
+        if v != 0.0 {
+            self.gains[1] = (config.gain240 + v * 24.0).clamp(-12.0, 12.0);
+            self.dirty = true;
+        }
+        let v = mod_values[ModDestination::EqGain750 as usize];
+        if v != 0.0 {
+            self.gains[2] = (config.gain750 + v * 24.0).clamp(-12.0, 12.0);
+            self.dirty = true;
+        }
+        let v = mod_values[ModDestination::EqGain2200 as usize];
+        if v != 0.0 {
+            self.gains[3] = (config.gain2200 + v * 24.0).clamp(-12.0, 12.0);
+            self.dirty = true;
+        }
+        let v = mod_values[ModDestination::EqGain8000 as usize];
+        if v != 0.0 {
+            self.gains[4] = (config.gain8000 + v * 24.0).clamp(-12.0, 12.0);
+            self.dirty = true;
+        }
     }
 }
 

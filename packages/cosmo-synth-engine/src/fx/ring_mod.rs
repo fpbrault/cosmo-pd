@@ -1,4 +1,6 @@
 // ---------------------------------------------------------------------------
+use crate::params::{ModDestination, RingModParams};
+
 // RingModFx — ring modulation with configurable carrier frequency
 // ---------------------------------------------------------------------------
 
@@ -33,6 +35,19 @@ impl RingModFx {
         let wet = sample * carrier;
         let mix_angle = self.mix * core::f32::consts::PI * 0.5;
         sample * (mix_angle).cos() + wet * (mix_angle).sin()
+    }
+}
+
+impl RingModFx {
+    pub fn apply_modulation(&mut self, config: &RingModParams, mod_values: &[f32]) {
+        let carrier = mod_values[ModDestination::RingModCarrierHz as usize];
+        if carrier != 0.0 {
+            self.carrier_hz = (config.carrier_hz + carrier * 2000.0).clamp(20.0, 4000.0);
+        }
+        let mix = mod_values[ModDestination::RingModMix as usize];
+        if mix != 0.0 {
+            self.mix = (config.mix + mix).clamp(0.0, 1.0);
+        }
     }
 }
 

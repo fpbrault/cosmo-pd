@@ -28,8 +28,10 @@ impl CompiledSynthParams {
         let mut mod_cache = ModMatrixCache::new();
         mod_cache.rebuild_routes(&params.mod_matrix);
 
+        let has_active_mod_routes = params.mod_matrix.routes.iter().any(|route| route.enabled);
+
         Self {
-            has_active_mod_routes: params.mod_matrix.routes.iter().any(|route| route.enabled),
+            has_active_mod_routes,
             has_env_step_routes: mod_cache.has_env_step_routes,
             mod_cache,
             norm: compute_norm(params),

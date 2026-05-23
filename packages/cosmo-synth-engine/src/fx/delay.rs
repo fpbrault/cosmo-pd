@@ -1,5 +1,6 @@
 use super::delay_line::DelayLine;
 use crate::dsp_utils::{TWO_PI, wrap01};
+use crate::params::{DelayParams, ModDestination};
 
 const SMOOTH_COEFF: f32 = 0.005;
 const TAPE_BRIGHT_CUTOFF_HZ: f32 = 20000.0;
@@ -78,6 +79,27 @@ impl DelayFx {
         let dry_gain = (mix_angle).cos();
         let wet_gain = (mix_angle).sin();
         sample * dry_gain + wet * wet_gain
+    }
+}
+
+impl DelayFx {
+    pub fn apply_modulation(&mut self, config: &DelayParams, mod_values: &[f32]) {
+        let time = mod_values[ModDestination::DelayTime as usize];
+        if time != 0.0 {
+            self.time = (config.time + time * 2000.0).clamp(1.0, 4000.0);
+        }
+        let feedback = mod_values[ModDestination::DelayFeedback as usize];
+        if feedback != 0.0 {
+            self.feedback = (config.feedback + feedback).clamp(0.0, 0.99);
+        }
+        let warmth = mod_values[ModDestination::DelayWarmth as usize];
+        if warmth != 0.0 {
+            self.warmth = (config.warmth + warmth).clamp(0.0, 1.0);
+        }
+        let mix = mod_values[ModDestination::DelayMix as usize];
+        if mix != 0.0 {
+            self.mix = (config.mix + mix).clamp(0.0, 1.0);
+        }
     }
 }
 

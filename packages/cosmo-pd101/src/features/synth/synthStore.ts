@@ -412,7 +412,7 @@ const DEFAULT_STATE: SynthState = {
 	macro2: 0,
 	macro3: 0,
 	macro4: 0,
-	macroLabels: ["MACRO 1", "MACRO 2", "MACRO 3", "MACRO 4"],
+	macroLabels: ["Brightness", "Timbre", "Time", "Movement"],
 };
 
 // ---------------------------------------------------------------------------
@@ -901,7 +901,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				string,
 				string,
 				string,
-			]) ?? ["MACRO 1", "MACRO 2", "MACRO 3", "MACRO 4"],
+			]) ?? ["Brightness", "Timbre", "Time", "Movement"],
 		});
 	},
 }));

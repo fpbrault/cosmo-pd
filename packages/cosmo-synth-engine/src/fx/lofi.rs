@@ -1,5 +1,6 @@
 use super::delay_line::DelayLine;
 use crate::dsp_utils::{TWO_PI, wrap01};
+use crate::params::{LoFiParams, ModDestination};
 
 const CENTER_DELAY_S: f32 = 0.012;
 const MAX_MOD_S: f32 = 0.010;
@@ -103,6 +104,41 @@ impl LoFiFx {
         let lp_g = (-TWO_PI * lp_fc / self.sample_rate).exp();
         self.lp_state = lp_g * self.lp_state + (1.0 - lp_g) * high_passed;
         self.lp_state
+    }
+}
+
+impl LoFiFx {
+    pub fn apply_modulation(&mut self, config: &LoFiParams, mod_values: &[f32]) {
+        let degrade = mod_values[ModDestination::LoFiDegrade as usize];
+        if degrade != 0.0 {
+            self.degrade = (config.degrade + degrade).clamp(0.0, 1.0);
+        }
+        let wow_depth = mod_values[ModDestination::LoFiWowDepth as usize];
+        if wow_depth != 0.0 {
+            self.wow_depth = (config.wow_depth + wow_depth * MAX_WOW_FLUTTER_DEPTH)
+                .clamp(0.0, MAX_WOW_FLUTTER_DEPTH);
+        }
+        let wow_rate = mod_values[ModDestination::LoFiWowRate as usize];
+        if wow_rate != 0.0 {
+            self.wow_rate = (config.wow_rate + wow_rate * 2.50).clamp(0.03, 2.50);
+        }
+        let flutter_depth = mod_values[ModDestination::LoFiFlutterDepth as usize];
+        if flutter_depth != 0.0 {
+            self.flutter_depth = (config.flutter_depth + flutter_depth * MAX_WOW_FLUTTER_DEPTH)
+                .clamp(0.0, MAX_WOW_FLUTTER_DEPTH);
+        }
+        let flutter_rate = mod_values[ModDestination::LoFiFlutterRate as usize];
+        if flutter_rate != 0.0 {
+            self.flutter_rate = (config.flutter_rate + flutter_rate * 18.0).clamp(0.5, 18.0);
+        }
+        let tone = mod_values[ModDestination::LoFiTone as usize];
+        if tone != 0.0 {
+            self.tone = (config.tone + tone).clamp(0.0, 1.0);
+        }
+        let mix = mod_values[ModDestination::LoFiMix as usize];
+        if mix != 0.0 {
+            self.mix = (config.mix + mix).clamp(0.0, 1.0);
+        }
     }
 }
 

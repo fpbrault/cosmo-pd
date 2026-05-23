@@ -1,4 +1,6 @@
 // ---------------------------------------------------------------------------
+use crate::params::{DistortionParams, ModDestination};
+
 // DistortionFx — soft/hard clipping with tone control (1-pole HP + LP)
 // ---------------------------------------------------------------------------
 
@@ -90,6 +92,23 @@ fn fuzz_clip(value: f32) -> f32 {
         gated * 0.82
     };
     hard_clip((asymmetric).tanh() * 1.35)
+}
+
+impl DistortionFx {
+    pub fn apply_modulation(&mut self, config: &DistortionParams, mod_values: &[f32]) {
+        let drive = mod_values[ModDestination::DistortionDrive as usize];
+        if drive != 0.0 {
+            self.drive = (config.drive + drive).clamp(0.0, 1.0);
+        }
+        let tone = mod_values[ModDestination::DistortionTone as usize];
+        if tone != 0.0 {
+            self.tone = (config.tone + tone).clamp(0.0, 1.0);
+        }
+        let mix = mod_values[ModDestination::DistortionMix as usize];
+        if mix != 0.0 {
+            self.mix = (config.mix + mix).clamp(0.0, 1.0);
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------

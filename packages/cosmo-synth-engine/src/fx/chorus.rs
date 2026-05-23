@@ -1,5 +1,6 @@
 use super::delay_line::DelayLine;
 use crate::dsp_utils::TWO_PI;
+use crate::params::{ChorusParams, ModDestination};
 
 const SMOOTH_COEFF: f32 = 0.005;
 
@@ -52,6 +53,23 @@ impl ChorusFx {
         let dry_gain = (mix_angle).cos();
         let wet_gain = (mix_angle).sin();
         sample * dry_gain + wet * wet_gain
+    }
+}
+
+impl ChorusFx {
+    pub fn apply_modulation(&mut self, config: &ChorusParams, mod_values: &[f32]) {
+        let rate = mod_values[ModDestination::ChorusRate as usize];
+        if rate != 0.0 {
+            self.rate = (config.rate + rate * 20.0).clamp(0.01, 20.0);
+        }
+        let depth = mod_values[ModDestination::ChorusDepth as usize];
+        if depth != 0.0 {
+            self.depth = (config.depth + depth).clamp(0.0, 5.0);
+        }
+        let mix = mod_values[ModDestination::ChorusMix as usize];
+        if mix != 0.0 {
+            self.mix = (config.mix + mix).clamp(0.0, 1.0);
+        }
     }
 }
 

@@ -1,4 +1,6 @@
 // ---------------------------------------------------------------------------
+use crate::params::{BitcrusherParams, ModDestination};
+
 // BitcrusherFx — bit depth reduction + sample rate reduction
 // ---------------------------------------------------------------------------
 
@@ -46,6 +48,23 @@ impl BitcrusherFx {
 
         let mix_angle = self.mix * core::f32::consts::PI * 0.5;
         sample * (mix_angle).cos() + self.hold_value * (mix_angle).sin()
+    }
+}
+
+impl BitcrusherFx {
+    pub fn apply_modulation(&mut self, config: &BitcrusherParams, mod_values: &[f32]) {
+        let bits = mod_values[ModDestination::BitcrusherBits as usize];
+        if bits != 0.0 {
+            self.bits = (config.bits + bits * 16.0).clamp(1.0, 16.0);
+        }
+        let rate = mod_values[ModDestination::BitcrusherRateReduction as usize];
+        if rate != 0.0 {
+            self.rate_reduction = (config.rate_reduction + rate).clamp(1.0, 32.0);
+        }
+        let mix = mod_values[ModDestination::BitcrusherMix as usize];
+        if mix != 0.0 {
+            self.mix = (config.mix + mix).clamp(0.0, 1.0);
+        }
     }
 }
 
