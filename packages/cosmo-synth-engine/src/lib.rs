@@ -20,6 +20,7 @@ pub mod preset_wire;
 pub mod processor;
 mod render_cache;
 pub mod simd;
+pub mod synth_engine;
 pub mod voice;
 
 #[cfg(target_arch = "wasm32")]

@@ -20,48 +20,112 @@ use super::tremolo::TremoloFx;
 use super::wavefolder::WavefolderFx;
 
 // ---------------------------------------------------------------------------
-// FxChain — hosts all effects and dispatches per slot
+// Dispatch macros — reduce boilerplate for the 5 match-site patterns.
+// Adding a new effect: add one entry to each macro invocation below.
 // ---------------------------------------------------------------------------
 
-struct FxSlotProcessors {
-    chorus: ChorusFx,
-    phaser: PhaserFx,
-    delay: DelayFx,
-    reverb: FdnReverb,
-    compressor: CompressorFx,
-    eq: EqFx,
-    grain_delay: GrainDelayFx,
-    bitcrusher: BitcrusherFx,
-    shimmer_verb: ShimmerVerbFx,
-    distortion: DistortionFx,
-    juno_chorus: JunoChorusFx,
-    ring_mod: RingModFx,
-    tremolo: TremoloFx,
-    wavefolder: WavefolderFx,
-    lofi: LoFiFx,
+/// Generates the FxSlotProcessors struct fields and constructor.
+/// `sr` is generated internally by the macro to avoid hygiene issues.
+macro_rules! fx_processors_struct_and_new {
+    (
+        with_sr: [$($field:ident: $fx_type:ty),* $(,)?]
+        no_args: [$($nofield:ident: $no_type:ty),* $(,)?]
+    ) => {
+        struct FxSlotProcessors {
+            $( $field: $fx_type, )*
+            $( $nofield: $no_type, )*
+        }
+
+        impl FxSlotProcessors {
+            fn new(sr: f32) -> Self {
+                Self {
+                    $( $field: <$fx_type>::new(sr), )*
+                    $( $nofield: <$no_type>::new(), )*
+                }
+            }
+        }
+    };
+}
+
+/// Generates the process() dispatch match on FxSlotType.
+macro_rules! fx_process_dispatch {
+    (
+        standard: [$(($variant:ident, $field:ident)),* $(,)?]
+        guarded: [$(($gvariant:ident, $gfield:ident)),* $(,)?]
+        passthrough: [$($pvariant:ident),* $(,)?]
+    ) => {
+        fn process(&mut self, effect_type: FxSlotType, sample: f32) -> f32 {
+            match effect_type {
+                $( FxSlotType::$variant => self.$field.process(sample), )*
+                $(
+                    FxSlotType::$gvariant => {
+                        if !self.$gfield.enabled {
+                            sample
+                        } else {
+                            self.$gfield.process(sample)
+                        }
+                    }
+                )*
+                $( FxSlotType::$pvariant => sample, )*
+            }
+        }
+    };
+}
+
+/// Generates the apply_modulated_params() dispatch match on FxChain.
+macro_rules! fx_modulate_dispatch {
+    ($(($variant:ident, $field:ident)),* $(,)?) => {
+        pub(crate) fn apply_modulated_params(
+            &mut self,
+            params: &SynthParams,
+            mod_cache: &ModMatrixCache,
+        ) {
+            for active_idx in 0..self.active_slot_count {
+                let slot_idx = self.active_slots[active_idx];
+                let config = &params.fx_slots[slot_idx];
+                let slot = &mut self.slots[slot_idx];
+                match config {
+                    $(
+                        FxSlotConfig::$variant(v) => {
+                            slot.$field.apply_modulation(v, &mod_cache.values);
+                        }
+                    )*
+                    FxSlotConfig::Empty
+                    | FxSlotConfig::Vibrato(_)
+                    | FxSlotConfig::PhaseMod(_) => {}
+                }
+            }
+        }
+    };
+}
+
+// ---------------------------------------------------------------------------
+// FxSlotProcessors — one processor per effect type
+// ---------------------------------------------------------------------------
+
+fx_processors_struct_and_new! {
+    with_sr: [
+        chorus: ChorusFx,
+        phaser: PhaserFx,
+        delay: DelayFx,
+        reverb: FdnReverb,
+        compressor: CompressorFx,
+        eq: EqFx,
+        grain_delay: GrainDelayFx,
+        shimmer_verb: ShimmerVerbFx,
+        distortion: DistortionFx,
+        juno_chorus: JunoChorusFx,
+        ring_mod: RingModFx,
+        tremolo: TremoloFx,
+        lofi: LoFiFx,
+    ]
+    no_args: [
+        bitcrusher: BitcrusherFx,
+        wavefolder: WavefolderFx,
+    ]
 }
 
 impl FxSlotProcessors {
-    fn new(sr: f32) -> Self {
-        Self {
-            chorus: ChorusFx::new(sr),
-            phaser: PhaserFx::new(sr),
-            delay: DelayFx::new(sr),
-            reverb: FdnReverb::new(sr),
-            compressor: CompressorFx::new(sr),
-            eq: EqFx::new(sr),
-            grain_delay: GrainDelayFx::new(sr),
-            bitcrusher: BitcrusherFx::new(),
-            shimmer_verb: ShimmerVerbFx::new(sr),
-            distortion: DistortionFx::new(sr),
-            juno_chorus: JunoChorusFx::new(sr),
-            ring_mod: RingModFx::new(sr),
-            tremolo: TremoloFx::new(sr),
-            wavefolder: WavefolderFx::new(),
-            lofi: LoFiFx::new(sr),
-        }
-    }
-
     fn sync_from_config(&mut self, config: &FxSlotConfig) {
         match config {
             FxSlotConfig::Chorus(ch) => {
@@ -175,34 +239,33 @@ impl FxSlotProcessors {
         }
     }
 
-    fn process(&mut self, effect_type: FxSlotType, sample: f32) -> f32 {
-        match effect_type {
-            FxSlotType::Chorus => self.chorus.process(sample),
-            FxSlotType::Phaser => self.phaser.process(sample),
-            FxSlotType::Delay => self.delay.process(sample),
-            FxSlotType::Reverb => {
-                if !self.reverb.enabled {
-                    sample
-                } else {
-                    self.reverb.process(sample)
-                }
-            }
-            FxSlotType::Compressor => self.compressor.process(sample),
-            FxSlotType::Eq5Band => self.eq.process(sample),
-            FxSlotType::GrainDelay => self.grain_delay.process(sample),
-            FxSlotType::Bitcrusher => self.bitcrusher.process(sample),
-            FxSlotType::ShimmerVerb => self.shimmer_verb.process(sample),
-            FxSlotType::Distortion => self.distortion.process(sample),
-            FxSlotType::JunoChorus => self.juno_chorus.process(sample),
-            FxSlotType::RingMod => self.ring_mod.process(sample),
-            FxSlotType::Tremolo => self.tremolo.process(sample),
-            FxSlotType::Wavefolder => self.wavefolder.process(sample),
-            FxSlotType::LoFi => self.lofi.process(sample),
-            // Voice-level effects and empty slots pass through.
-            FxSlotType::Vibrato | FxSlotType::PhaseMod | FxSlotType::Empty => sample,
-        }
+    fx_process_dispatch! {
+        standard: [
+            (Chorus, chorus),
+            (Phaser, phaser),
+            (Delay, delay),
+            (Compressor, compressor),
+            (Eq5Band, eq),
+            (GrainDelay, grain_delay),
+            (Bitcrusher, bitcrusher),
+            (ShimmerVerb, shimmer_verb),
+            (Distortion, distortion),
+            (JunoChorus, juno_chorus),
+            (RingMod, ring_mod),
+            (Tremolo, tremolo),
+            (Wavefolder, wavefolder),
+            (LoFi, lofi),
+        ]
+        guarded: [
+            (Reverb, reverb),
+        ]
+        passthrough: [Vibrato, PhaseMod, Empty]
     }
 }
+
+// ---------------------------------------------------------------------------
+// FxChain — hosts all effects and dispatches per slot
+// ---------------------------------------------------------------------------
 
 pub struct FxChain {
     slots: [FxSlotProcessors; 6],
@@ -240,50 +303,22 @@ impl FxChain {
         }
     }
 
-    pub(crate) fn apply_modulated_params(
-        &mut self,
-        params: &SynthParams,
-        mod_cache: &ModMatrixCache,
-    ) {
-        for active_idx in 0..self.active_slot_count {
-            let slot_idx = self.active_slots[active_idx];
-            let config = &params.fx_slots[slot_idx];
-            let slot = &mut self.slots[slot_idx];
-            match config {
-                FxSlotConfig::Chorus(ch) => slot.chorus.apply_modulation(ch, &mod_cache.values),
-                FxSlotConfig::Phaser(ph) => slot.phaser.apply_modulation(ph, &mod_cache.values),
-                FxSlotConfig::Delay(d) => slot.delay.apply_modulation(d, &mod_cache.values),
-                FxSlotConfig::Reverb(rv) => slot.reverb.apply_modulation(rv, &mod_cache.values),
-                FxSlotConfig::Compressor(c) => {
-                    slot.compressor.apply_modulation(c, &mod_cache.values);
-                }
-                FxSlotConfig::Eq5Band(eq) => slot.eq.apply_modulation(eq, &mod_cache.values),
-                FxSlotConfig::GrainDelay(gd) => {
-                    slot.grain_delay.apply_modulation(gd, &mod_cache.values);
-                }
-                FxSlotConfig::Bitcrusher(bc) => {
-                    slot.bitcrusher.apply_modulation(bc, &mod_cache.values);
-                }
-                FxSlotConfig::ShimmerVerb(sv) => {
-                    slot.shimmer_verb.apply_modulation(sv, &mod_cache.values);
-                }
-                FxSlotConfig::Distortion(dist) => {
-                    slot.distortion.apply_modulation(dist, &mod_cache.values);
-                }
-                FxSlotConfig::JunoChorus(jc) => {
-                    slot.juno_chorus.apply_modulation(jc, &mod_cache.values);
-                }
-                FxSlotConfig::RingMod(rm) => {
-                    slot.ring_mod.apply_modulation(rm, &mod_cache.values);
-                }
-                FxSlotConfig::Tremolo(tr) => slot.tremolo.apply_modulation(tr, &mod_cache.values),
-                FxSlotConfig::Wavefolder(wf) => {
-                    slot.wavefolder.apply_modulation(wf, &mod_cache.values);
-                }
-                FxSlotConfig::LoFi(lofi) => slot.lofi.apply_modulation(lofi, &mod_cache.values),
-                FxSlotConfig::Empty | FxSlotConfig::Vibrato(_) | FxSlotConfig::PhaseMod(_) => {}
-            }
-        }
+    fx_modulate_dispatch! {
+        (Chorus, chorus),
+        (Phaser, phaser),
+        (Delay, delay),
+        (Reverb, reverb),
+        (Compressor, compressor),
+        (Eq5Band, eq),
+        (GrainDelay, grain_delay),
+        (Bitcrusher, bitcrusher),
+        (ShimmerVerb, shimmer_verb),
+        (Distortion, distortion),
+        (JunoChorus, juno_chorus),
+        (RingMod, ring_mod),
+        (Tremolo, tremolo),
+        (Wavefolder, wavefolder),
+        (LoFi, lofi),
     }
 
     /// Process one sample through all 6 FX slots in series.

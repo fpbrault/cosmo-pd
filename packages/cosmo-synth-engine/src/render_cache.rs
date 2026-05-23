@@ -3,7 +3,8 @@
 //! The audio loop runs sample-by-sample, so stable work derived from
 //! `SynthParams` belongs here and is rebuilt only when parameters change.
 
-use crate::generators::{PER_LINE_HEADROOM, cz101, pre_resolve_controls};
+use crate::generators::{PER_LINE_HEADROOM, cz101};
+use crate::synth_engine::pd;
 use crate::params::{
     Algo, BaseWaveform, LineParams, ModMatrixCache, NUM_VOICES, SynthParams, WindowType,
 };
@@ -93,7 +94,7 @@ impl CompiledAlgoSlot {
         fallback_window: WindowType,
         base_waveform: BaseWaveform,
     ) -> Self {
-        let control_values = pre_resolve_controls(algo, controls);
+        let control_values = pd::pre_resolve_controls(algo, controls);
         if algo == Algo::Cz101 {
             let resolved = cz101::resolve_cz_controls(controls);
             let even = Algo::from_cz_waveform(resolved.waveform1);

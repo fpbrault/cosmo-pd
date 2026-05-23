@@ -190,38 +190,36 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         base_freq,
         &mod_sources,
     );
-    let (s1, karpunk_raw_sample1) =
-        voice
-            .algo_runtime
-            .render_line1(LineRenderConfig::from_compiled_line(
-                line1_plan,
-                line1_modded,
-                voice.cycle_count1,
-                phase.phi1,
-                phase.phase_a_post,
-                signal.final_dcw1,
-                signal.final_dca1,
-                signal.effective_freq1,
-                sr,
-                line1_algo_param_mods,
-                phase.pm_post_mod,
-            ));
-    let (s2, karpunk_raw_sample2) =
-        voice
-            .algo_runtime
-            .render_line2(LineRenderConfig::from_compiled_line(
-                line2_plan,
-                line2_modded,
-                voice.cycle_count2,
-                phase.phi2,
-                phase.phase_b_post,
-                signal.final_dcw2,
-                signal.final_dca2,
-                signal.effective_freq2,
-                sr,
-                line2_algo_param_mods,
-                phase.pm_post_mod,
-            ));
+    let (s1, karpunk_raw_sample1) = render_algo_line(
+        voice,
+        0,
+        line1_plan,
+        line1_modded,
+        voice.cycle_count1,
+        phase.phi1,
+        phase.phase_a_post,
+        signal.final_dcw1,
+        signal.final_dca1,
+        signal.effective_freq1,
+        sr,
+        line1_algo_param_mods,
+        phase.pm_post_mod,
+    );
+    let (s2, karpunk_raw_sample2) = render_algo_line(
+        voice,
+        1,
+        line2_plan,
+        line2_modded,
+        voice.cycle_count2,
+        phase.phi2,
+        phase.phase_b_post,
+        signal.final_dcw2,
+        signal.final_dca2,
+        signal.effective_freq2,
+        sr,
+        line2_algo_param_mods,
+        phase.pm_post_mod,
+    );
     let mod_mode = effective_mod_mode(p);
     let noise_step = if mod_mode == ModMode::Noise {
         let step = voice.noise_step;
@@ -392,6 +390,25 @@ fn base_voice_frequency(voice: &Voice) -> f32 {
     }
 }
 
+fn advance_line_envs(
+    envs: &mut super::LineEnvs,
+    line: &LineParams,
+    note: u8,
+    timing: &EnvelopeTimingCache,
+) {
+    envs.dco
+        .advance(EnvelopeKind::Dco, &line.dco_env, timing, 0.0, note);
+    envs.dcw
+        .advance(EnvelopeKind::Dcw, &line.dcw_env, timing, 0.0, note);
+    envs.dca.advance(
+        EnvelopeKind::Dca,
+        &line.dca_env,
+        timing,
+        line.dca_key_follow,
+        note,
+    );
+}
+
 fn advance_envelopes(
     voice: &mut Voice,
     line1: &LineParams,
@@ -400,36 +417,8 @@ fn advance_envelopes(
 ) -> EnvelopeSnapshot {
     let note = voice.env_note;
 
-    voice
-        .line1_env
-        .dco
-        .advance(EnvelopeKind::Dco, &line1.dco_env, timing, 0.0, note);
-    voice
-        .line1_env
-        .dcw
-        .advance(EnvelopeKind::Dcw, &line1.dcw_env, timing, 0.0, note);
-    voice.line1_env.dca.advance(
-        EnvelopeKind::Dca,
-        &line1.dca_env,
-        timing,
-        line1.dca_key_follow,
-        note,
-    );
-    voice
-        .line2_env
-        .dco
-        .advance(EnvelopeKind::Dco, &line2.dco_env, timing, 0.0, note);
-    voice
-        .line2_env
-        .dcw
-        .advance(EnvelopeKind::Dcw, &line2.dcw_env, timing, 0.0, note);
-    voice.line2_env.dca.advance(
-        EnvelopeKind::Dca,
-        &line2.dca_env,
-        timing,
-        line2.dca_key_follow,
-        note,
-    );
+    advance_line_envs(&mut voice.line1_env, line1, note, timing);
+    advance_line_envs(&mut voice.line2_env, line2, note, timing);
 
     EnvelopeSnapshot {
         dco1_env: voice.line1_env.dco.output,
@@ -978,6 +967,38 @@ fn get_mod_if_active(
     } else {
         0.0
     }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn render_algo_line(
+    voice: &mut Voice,
+    line_idx: usize,
+    plan: &CompiledLinePlan,
+    modded: &LineParams,
+    cycle_count: u32,
+    window_phi: f32,
+    phase: f32,
+    final_dcw: f32,
+    final_dca: f32,
+    effective_freq: f32,
+    sr: f32,
+    algo_param_mods: [f32; 8],
+    pm_post_mod: f32,
+) -> (f32, Option<f32>) {
+    let cfg = generators::LineRenderConfig::from_compiled_line(
+        plan,
+        modded,
+        cycle_count,
+        window_phi,
+        phase,
+        final_dcw,
+        final_dca,
+        effective_freq,
+        sr,
+        algo_param_mods,
+        pm_post_mod,
+    );
+    voice.algo_runtime.render_line(line_idx, cfg)
 }
 
 fn advance_voice_phase(

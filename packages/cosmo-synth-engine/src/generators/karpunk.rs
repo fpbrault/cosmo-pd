@@ -95,14 +95,14 @@ impl KarpunkPair {
         self.line2.reseed_for_note(note.wrapping_add(1));
     }
 
-    /// Render line 1 using the first Karpunk state buffer when needed.
-    pub fn render_line1(&mut self, config: LineRenderConfig) -> (f32, Option<f32>) {
-        render_line(&mut self.line1, config)
-    }
-
-    /// Render line 2 using the second Karpunk state buffer when needed.
-    pub fn render_line2(&mut self, config: LineRenderConfig) -> (f32, Option<f32>) {
-        render_line(&mut self.line2, config)
+    /// Render a line (0 or 1) using the corresponding Karpunk state buffer when needed.
+    pub fn render_line(&mut self, line_idx: usize, config: LineRenderConfig) -> (f32, Option<f32>) {
+        let state = if line_idx == 0 {
+            &mut self.line1
+        } else {
+            &mut self.line2
+        };
+        render_stateful_line(state, config)
     }
 }
 
@@ -185,7 +185,7 @@ impl Default for KarpunkState {
     }
 }
 
-fn render_line(ks_state: &mut KarpunkState, config: LineRenderConfig) -> (f32, Option<f32>) {
+pub(crate) fn render_stateful_line(ks_state: &mut KarpunkState, config: LineRenderConfig) -> (f32, Option<f32>) {
     let karpunk_raw_sample = if requires_state_tick(config.primary_algo, config.secondary_algo) {
         Some(ks_state.advance(
             config.effective_freq,

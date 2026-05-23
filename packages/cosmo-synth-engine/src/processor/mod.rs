@@ -59,9 +59,26 @@ pub struct CosmoProcessor {
     host_transport_position_beats: f64,
     compiled_params: CompiledSynthParams,
     compiled_params_dirty: bool,
-    line1_scratch: LineParams,
-    line2_scratch: LineParams,
+    line_scratch: [LineParams; 2],
     envelope_timing: EnvelopeTimingCache,
+}
+
+fn env_state(env: &crate::envelope::EnvGen) -> RuntimeVoiceEnvState {
+    RuntimeVoiceEnvState {
+        value: env.output,
+        step: env.step,
+        releasing: env.releasing,
+        step_pos: env.step_pos,
+        prev_level: env.prev_level,
+    }
+}
+
+fn line_env_state(envs: &crate::voice::LineEnvs) -> RuntimeVoiceLineState {
+    RuntimeVoiceLineState {
+        dco: env_state(&envs.dco),
+        dcw: env_state(&envs.dcw),
+        dca: env_state(&envs.dca),
+    }
 }
 
 impl CosmoProcessor {
@@ -97,8 +114,7 @@ impl CosmoProcessor {
             host_transport_position_beats: 0.0,
             compiled_params,
             compiled_params_dirty: false,
-            line1_scratch: LineParams::default(),
-            line2_scratch: LineParams::default(),
+            line_scratch: [LineParams::default(), LineParams::default()],
             envelope_timing: EnvelopeTimingCache::new(sample_rate),
         };
         proc.update_fx();
@@ -129,52 +145,8 @@ impl CosmoProcessor {
                 anti_click_fade: voice.anti_click_fade,
                 anti_click_attack: voice.anti_click_attack,
                 release_tail_level: voice.release_tail_level,
-                line1: RuntimeVoiceLineState {
-                    dco: RuntimeVoiceEnvState {
-                        value: voice.line1_env.dco.output,
-                        step: voice.line1_env.dco.step,
-                        releasing: voice.line1_env.dco.releasing,
-                        step_pos: voice.line1_env.dco.step_pos,
-                        prev_level: voice.line1_env.dco.prev_level,
-                    },
-                    dcw: RuntimeVoiceEnvState {
-                        value: voice.line1_env.dcw.output,
-                        step: voice.line1_env.dcw.step,
-                        releasing: voice.line1_env.dcw.releasing,
-                        step_pos: voice.line1_env.dcw.step_pos,
-                        prev_level: voice.line1_env.dcw.prev_level,
-                    },
-                    dca: RuntimeVoiceEnvState {
-                        value: voice.line1_env.dca.output,
-                        step: voice.line1_env.dca.step,
-                        releasing: voice.line1_env.dca.releasing,
-                        step_pos: voice.line1_env.dca.step_pos,
-                        prev_level: voice.line1_env.dca.prev_level,
-                    },
-                },
-                line2: RuntimeVoiceLineState {
-                    dco: RuntimeVoiceEnvState {
-                        value: voice.line2_env.dco.output,
-                        step: voice.line2_env.dco.step,
-                        releasing: voice.line2_env.dco.releasing,
-                        step_pos: voice.line2_env.dco.step_pos,
-                        prev_level: voice.line2_env.dco.prev_level,
-                    },
-                    dcw: RuntimeVoiceEnvState {
-                        value: voice.line2_env.dcw.output,
-                        step: voice.line2_env.dcw.step,
-                        releasing: voice.line2_env.dcw.releasing,
-                        step_pos: voice.line2_env.dcw.step_pos,
-                        prev_level: voice.line2_env.dcw.prev_level,
-                    },
-                    dca: RuntimeVoiceEnvState {
-                        value: voice.line2_env.dca.output,
-                        step: voice.line2_env.dca.step,
-                        releasing: voice.line2_env.dca.releasing,
-                        step_pos: voice.line2_env.dca.step_pos,
-                        prev_level: voice.line2_env.dca.prev_level,
-                    },
-                },
+                line1: line_env_state(&voice.line1_env),
+                line2: line_env_state(&voice.line2_env),
             })
             .collect()
     }
@@ -206,8 +178,7 @@ impl CosmoProcessor {
         self.macro2 = params.macro2;
         self.macro3 = params.macro3;
         self.macro4 = params.macro4;
-        self.line1_scratch = params.line1;
-        self.line2_scratch = params.line2;
+        self.line_scratch = [params.line1, params.line2];
         self.params = params;
         self.rebuild_compiled_params();
         self.update_fx();
@@ -252,8 +223,7 @@ impl CosmoProcessor {
         self.host_transport_tempo_bpm = None;
         self.host_transport_playing = false;
         self.host_transport_position_beats = 0.0;
-        self.line1_scratch = self.params.line1;
-        self.line2_scratch = self.params.line2;
+        self.line_scratch = [self.params.line1, self.params.line2];
         self.envelope_timing = EnvelopeTimingCache::new(self.sample_rate);
         self.rebuild_compiled_params();
     }
@@ -573,7 +543,7 @@ mod tests {
         proc.process(&mut out);
 
         assert_eq!(
-            proc.line2_scratch.detune_note, 11.0,
+            proc.line_scratch[1].detune_note, 11.0,
             "line2 detune note should reach full +11 semitone span at 100% modulation",
         );
     }
@@ -592,7 +562,7 @@ mod tests {
         proc.process(&mut out);
 
         assert_eq!(
-            proc.line2_scratch.detune_fine, 60.0,
+            proc.line_scratch[1].detune_fine, 60.0,
             "line2 detune fine should reach full +60 span at 100% modulation",
         );
     }

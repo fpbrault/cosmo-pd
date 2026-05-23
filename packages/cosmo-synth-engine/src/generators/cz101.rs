@@ -1,7 +1,8 @@
 use super::{
     AlgoControlAssignmentV1, AlgoControlKindV1, AlgoControlOptionV1, AlgoControlV1,
-    AlgoDefinitionV1, lerp, wrap01,
+    AlgoDefinitionV1, wrap01,
 };
+use crate::dsp_utils::lerp;
 use crate::params::{Algo, AlgoControlId, AlgoControlSlots, CzWaveform, WindowType};
 use serde::Serialize;
 #[cfg(feature = "specta-bindings")]

@@ -6,8 +6,8 @@ use alloc::sync::Arc;
 
 use crate::dsp_utils::{lfo_output_with_symmetry, random_hold_value};
 use crate::params::{
-    LfoRateMode, LfoSyncDivision, LineParams, ModDestination, ModMatrixCache, NUM_VOICES,
-    SynthParams,
+    LfoRateMode, LfoSyncDivision, LfoWaveform, LineParams, ModDestination, ModMatrixCache,
+    NUM_VOICES, SynthParams,
 };
 use crate::render_cache::CompiledLinePlan;
 use crate::voice::{ModSources, VoiceRenderContext};
@@ -29,6 +29,27 @@ struct LfoFrame {
     lfo1: f32,
     lfo2: f32,
     random: f32,
+}
+
+#[derive(Clone, Copy)]
+struct LfoComputeInputs {
+    manual_tempo_bpm: f32,
+    lfo1_rate: f32,
+    lfo1_rate_mode: LfoRateMode,
+    lfo1_sync_division: LfoSyncDivision,
+    lfo1_depth: f32,
+    lfo1_symmetry: f32,
+    lfo1_offset: f32,
+    lfo1_waveform: LfoWaveform,
+    lfo2_rate: f32,
+    lfo2_rate_mode: LfoRateMode,
+    lfo2_sync_division: LfoSyncDivision,
+    lfo2_depth: f32,
+    lfo2_symmetry: f32,
+    lfo2_offset: f32,
+    lfo2_waveform: LfoWaveform,
+    random_rate: f32,
+    sr: f32,
 }
 
 fn sync_rate_hz(tempo_bpm: f32, division: LfoSyncDivision) -> f32 {
@@ -141,39 +162,41 @@ impl CosmoProcessor {
                 &pre_sources,
                 &mod_cache,
                 has_active_mod_routes,
-                manual_tempo_bpm,
-                base_lfo1_rate,
-                lfo1_rate_mode,
-                lfo1_sync_division,
-                base_lfo1_depth,
-                base_lfo1_symmetry,
-                base_lfo1_offset,
-                lfo1_waveform,
-                base_lfo2_rate,
-                lfo2_rate_mode,
-                lfo2_sync_division,
-                base_lfo2_depth,
-                base_lfo2_symmetry,
-                base_lfo2_offset,
-                lfo2_waveform,
-                base_random_rate,
-                sr,
+                &LfoComputeInputs {
+                    manual_tempo_bpm,
+                    lfo1_rate: base_lfo1_rate,
+                    lfo1_rate_mode,
+                    lfo1_sync_division,
+                    lfo1_depth: base_lfo1_depth,
+                    lfo1_symmetry: base_lfo1_symmetry,
+                    lfo1_offset: base_lfo1_offset,
+                    lfo1_waveform,
+                    lfo2_rate: base_lfo2_rate,
+                    lfo2_rate_mode,
+                    lfo2_sync_division,
+                    lfo2_depth: base_lfo2_depth,
+                    lfo2_symmetry: base_lfo2_symmetry,
+                    lfo2_offset: base_lfo2_offset,
+                    lfo2_waveform,
+                    random_rate: base_random_rate,
+                    sr,
+                },
             );
 
             let lines = if has_active_mod_routes {
-                self.line1_scratch.apply_line1_mods(
+                self.line_scratch[0].apply_line1_mods(
                     &p.line1,
                     &mod_cache.values,
                     has_env_step_routes,
                 );
-                self.line2_scratch.apply_line2_mods(
+                self.line_scratch[1].apply_line2_mods(
                     &p.line2,
                     &mod_cache.values,
                     has_env_step_routes,
                 );
                 VoiceLinesFrame {
-                    line1: self.line1_scratch,
-                    line2: self.line2_scratch,
+                    line1: self.line_scratch[0],
+                    line2: self.line_scratch[1],
                 }
             } else {
                 VoiceLinesFrame {
@@ -222,30 +245,13 @@ impl CosmoProcessor {
         }
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn compute_lfos(
         &mut self,
         _p: &SynthParams,
         pre_sources: &ModSources,
         mod_cache: &ModMatrixCache,
         has_active_mod_routes: bool,
-        manual_tempo_bpm: f32,
-        base_lfo1_rate: f32,
-        lfo1_rate_mode: LfoRateMode,
-        lfo1_sync_division: LfoSyncDivision,
-        base_lfo1_depth: f32,
-        base_lfo1_symmetry: f32,
-        base_lfo1_offset: f32,
-        lfo1_waveform: crate::params::LfoWaveform,
-        base_lfo2_rate: f32,
-        lfo2_rate_mode: LfoRateMode,
-        lfo2_sync_division: LfoSyncDivision,
-        base_lfo2_depth: f32,
-        base_lfo2_symmetry: f32,
-        base_lfo2_offset: f32,
-        lfo2_waveform: crate::params::LfoWaveform,
-        base_random_rate: f32,
-        sr: f32,
+        inputs: &LfoComputeInputs,
     ) -> LfoFrame {
         let lfo1_rate_mod = get_mod_if_active(
             has_active_mod_routes,
@@ -302,52 +308,56 @@ impl CosmoProcessor {
             pre_sources,
         );
 
-        let effective_tempo_bpm = self.host_transport_tempo_bpm.unwrap_or(manual_tempo_bpm);
-        let lfo1_rate = match lfo1_rate_mode {
-            LfoRateMode::Hz => (base_lfo1_rate + lfo1_rate_mod * 20.0).clamp(0.01, 40.0),
-            LfoRateMode::Sync => sync_rate_hz(effective_tempo_bpm, lfo1_sync_division),
+        let effective_tempo_bpm = self
+            .host_transport_tempo_bpm
+            .unwrap_or(inputs.manual_tempo_bpm);
+        let lfo1_rate = match inputs.lfo1_rate_mode {
+            LfoRateMode::Hz => (inputs.lfo1_rate + lfo1_rate_mod * 20.0).clamp(0.01, 40.0),
+            LfoRateMode::Sync => sync_rate_hz(effective_tempo_bpm, inputs.lfo1_sync_division),
         };
-        let lfo1_depth = (base_lfo1_depth + lfo1_depth_mod).clamp(0.0, 1.0);
-        let lfo1_symmetry = (base_lfo1_symmetry + lfo1_symmetry_mod).clamp(0.0, 1.0);
-        let lfo1_offset = (base_lfo1_offset + lfo1_offset_mod).clamp(-1.0, 1.0);
-        let lfo2_rate = match lfo2_rate_mode {
-            LfoRateMode::Hz => (base_lfo2_rate + lfo2_rate_mod * 20.0).clamp(0.01, 40.0),
-            LfoRateMode::Sync => sync_rate_hz(effective_tempo_bpm, lfo2_sync_division),
+        let lfo1_depth = (inputs.lfo1_depth + lfo1_depth_mod).clamp(0.0, 1.0);
+        let lfo1_symmetry = (inputs.lfo1_symmetry + lfo1_symmetry_mod).clamp(0.0, 1.0);
+        let lfo1_offset = (inputs.lfo1_offset + lfo1_offset_mod).clamp(-1.0, 1.0);
+        let lfo2_rate = match inputs.lfo2_rate_mode {
+            LfoRateMode::Hz => (inputs.lfo2_rate + lfo2_rate_mod * 20.0).clamp(0.01, 40.0),
+            LfoRateMode::Sync => sync_rate_hz(effective_tempo_bpm, inputs.lfo2_sync_division),
         };
-        let lfo2_depth = (base_lfo2_depth + lfo2_depth_mod).clamp(0.0, 1.0);
-        let lfo2_symmetry = (base_lfo2_symmetry + lfo2_symmetry_mod).clamp(0.0, 1.0);
-        let lfo2_offset = (base_lfo2_offset + lfo2_offset_mod).clamp(-1.0, 1.0);
+        let lfo2_depth = (inputs.lfo2_depth + lfo2_depth_mod).clamp(0.0, 1.0);
+        let lfo2_symmetry = (inputs.lfo2_symmetry + lfo2_symmetry_mod).clamp(0.0, 1.0);
+        let lfo2_offset = (inputs.lfo2_offset + lfo2_offset_mod).clamp(-1.0, 1.0);
 
-        if matches!(lfo1_rate_mode, LfoRateMode::Sync) && self.host_transport_playing {
+        if matches!(inputs.lfo1_rate_mode, LfoRateMode::Sync) && self.host_transport_playing {
             self.lfo_phase = (self.host_transport_position_beats as f32
-                * lfo1_sync_division.cycles_per_beat())
+                * inputs.lfo1_sync_division.cycles_per_beat())
             .fract();
         } else {
-            self.lfo_phase += lfo1_rate / sr;
+            self.lfo_phase += lfo1_rate / inputs.sr;
             if self.lfo_phase >= 1.0 {
                 self.lfo_phase -= 1.0;
             }
         }
-        let lfo1_mod_val = lfo_output_with_symmetry(self.lfo_phase, lfo1_waveform, lfo1_symmetry)
-            * lfo1_depth
-            + lfo1_offset;
+        let lfo1_mod_val =
+            lfo_output_with_symmetry(self.lfo_phase, inputs.lfo1_waveform, lfo1_symmetry)
+                * lfo1_depth
+                + lfo1_offset;
 
-        if matches!(lfo2_rate_mode, LfoRateMode::Sync) && self.host_transport_playing {
+        if matches!(inputs.lfo2_rate_mode, LfoRateMode::Sync) && self.host_transport_playing {
             self.lfo2_phase = (self.host_transport_position_beats as f32
-                * lfo2_sync_division.cycles_per_beat())
+                * inputs.lfo2_sync_division.cycles_per_beat())
             .fract();
         } else {
-            self.lfo2_phase += lfo2_rate / sr;
+            self.lfo2_phase += lfo2_rate / inputs.sr;
             if self.lfo2_phase >= 1.0 {
                 self.lfo2_phase -= 1.0;
             }
         }
-        let lfo2_mod_val = lfo_output_with_symmetry(self.lfo2_phase, lfo2_waveform, lfo2_symmetry)
-            * lfo2_depth
-            + lfo2_offset;
+        let lfo2_mod_val =
+            lfo_output_with_symmetry(self.lfo2_phase, inputs.lfo2_waveform, lfo2_symmetry)
+                * lfo2_depth
+                + lfo2_offset;
 
-        let random_rate = (base_random_rate + random_rate_mod * 20.0).clamp(0.0, 200.0);
-        self.random_phase += random_rate / sr;
+        let random_rate = (inputs.random_rate + random_rate_mod * 20.0).clamp(0.0, 200.0);
+        self.random_phase += random_rate / inputs.sr;
         if self.random_phase >= 1.0 {
             self.random_phase -= 1.0;
             self.random_step = self.random_step.wrapping_add(1);
@@ -356,7 +366,7 @@ impl CosmoProcessor {
 
         if self.host_transport_playing {
             self.host_transport_position_beats +=
-                f64::from(effective_tempo_bpm.max(0.0)) / 60.0 / f64::from(sr.max(1.0));
+                f64::from(effective_tempo_bpm.max(0.0)) / 60.0 / f64::from(inputs.sr.max(1.0));
         }
 
         LfoFrame {
