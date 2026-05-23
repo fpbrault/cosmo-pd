@@ -1,15 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import ControlKnob from "@/components/controls/ControlKnob";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
+import ModEnvDisplay from "@/components/panels/drawer-modules/ModEnvDisplay";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
-import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
-import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import { MOD_ENV_PRESETS } from "@/lib/synth/modulePresets";
-import { PARAM_META } from "@/lib/synth/paramMeta";
 import {
-	adsrPreviewPath,
 	buildAdsrGeometry,
 	envSecondsToNorm,
 	estimateEnvelopeMarker,
@@ -32,24 +28,6 @@ export default function ModEnveloppeModule() {
 		useSynthParam("modEnvSustain");
 	const { value: modEnvRelease, setValue: setModEnvRelease } =
 		useSynthParam("modEnvRelease");
-	const attackNorm = envSecondsToNorm(modEnvAttack as number);
-	const decayNorm = envSecondsToNorm(modEnvDecay as number);
-	const releaseNorm = envSecondsToNorm(modEnvRelease as number);
-	const attackMidiLearn = useMidiLearnTarget({
-		targetKey: "modEnvAttackKnob",
-		label: "Mod Env Attack",
-		apply: (rawValue) => setModEnvAttack(normToEnvSeconds(rawValue / 127)),
-	});
-	const decayMidiLearn = useMidiLearnTarget({
-		targetKey: "modEnvDecayKnob",
-		label: "Mod Env Decay",
-		apply: (rawValue) => setModEnvDecay(normToEnvSeconds(rawValue / 127)),
-	});
-	const releaseMidiLearn = useMidiLearnTarget({
-		targetKey: "modEnvReleaseKnob",
-		label: "Mod Env Release",
-		apply: (rawValue) => setModEnvRelease(normToEnvSeconds(rawValue / 127)),
-	});
 
 	useEffect(() => {
 		const onRuntimeModSources = (event: Event) => {
@@ -128,160 +106,74 @@ export default function ModEnveloppeModule() {
 			title="Mod Env"
 			color="#c24587"
 			enabled
-			headerControl={
-				<ModulePresetPopover
-					title="Mod Env Presets"
-					accentColor="#c24587"
-					value={selectedPreset}
-					options={MOD_ENV_PRESETS}
-					onChange={handlePresetChange}
-				/>
-			}
+			presetTitle="Mod Env Presets"
+			presetValue={selectedPreset}
+			presetOptions={MOD_ENV_PRESETS}
+			onPresetChange={handlePresetChange}
 		>
-			<div className="col-span-4 rounded-md border border-cz-border/55 bg-cz-bg/35 px-2 py-1.5">
-				<svg ref={previewSvgRef} viewBox="0 0 220 64" className="h-16 w-full">
-					<title>Modulation envelope preview</title>
-					<defs>
-						<linearGradient id="mod-env-preview" x1="0" y1="0" x2="1" y2="0">
-							<stop offset="0%" stopColor="#c24587" stopOpacity="0.55" />
-							<stop offset="100%" stopColor="#c24587" stopOpacity="0.9" />
-						</linearGradient>
-					</defs>
-					<line
-						x1="0"
-						y1="56"
-						x2="220"
-						y2="56"
-						stroke="rgba(255,255,255,0.1)"
-						strokeWidth="1"
-					/>
-					<path
-						d={adsrPreviewPath(
-							modEnvAttack as number,
-							modEnvDecay as number,
-							modEnvSustain as number,
-							modEnvRelease as number,
-						)}
-						fill="none"
-						stroke="url(#mod-env-preview)"
-						strokeWidth="2"
-						strokeLinecap="round"
-					/>
-					<g>
-						<circle
-							cx={envGeometry.x1}
-							cy={envGeometry.top}
-							r={8}
-							fill="transparent"
-							onPointerDown={() => setDragHandle("attack")}
-							style={{ cursor: "ew-resize" }}
-						/>
-						<circle
-							cx={envGeometry.x1}
-							cy={envGeometry.top}
-							r={3.5}
-							fill="#2a2a2a"
-							stroke="#c24587"
-							strokeWidth="1.4"
-							pointerEvents="none"
-						/>
-						<circle
-							cx={envGeometry.x2}
-							cy={envGeometry.ySustain}
-							r={8}
-							fill="transparent"
-							onPointerDown={() => setDragHandle("decaySustain")}
-							style={{ cursor: "move" }}
-						/>
-						<circle
-							cx={envGeometry.x2}
-							cy={envGeometry.ySustain}
-							r={3.5}
-							fill="#2a2a2a"
-							stroke="#c24587"
-							strokeWidth="1.4"
-							pointerEvents="none"
-						/>
-						<circle
-							cx={envGeometry.x4}
-							cy={envGeometry.bottom}
-							r={8}
-							fill="transparent"
-							onPointerDown={() => setDragHandle("release")}
-							style={{ cursor: "ew-resize" }}
-						/>
-						<circle
-							cx={envGeometry.x4}
-							cy={envGeometry.bottom}
-							r={3.5}
-							fill="#2a2a2a"
-							stroke="#c24587"
-							strokeWidth="1.4"
-							pointerEvents="none"
-						/>
-					</g>
-					<circle
-						cx={envMarker.x}
-						cy={envMarker.y}
-						r={3}
-						fill="#c24587"
-						stroke="rgba(10,10,10,0.85)"
-						strokeWidth="1"
-					/>
-				</svg>
-			</div>
-			<ControlKnob
-				value={attackNorm}
-				onChange={(nextNorm) => setModEnvAttack(normToEnvSeconds(nextNorm))}
-				min={0}
-				max={1}
-				defaultValue={envSecondsToNorm(0.01)}
+			<ModEnvDisplay
+				previewSvgRef={previewSvgRef}
+				envGeometry={envGeometry}
+				envMarker={envMarker}
+				attack={modEnvAttack as number}
+				decay={modEnvDecay as number}
+				sustain={modEnvSustain as number}
+				release={modEnvRelease as number}
+				onDragHandle={setDragHandle}
+			/>
+			<SynthParamKnob
+				paramKey="modEnvAttack"
 				color="#c24587"
 				label="Atk"
-				tooltip={PARAM_META.modEnvAttack?.tooltip}
-				valueFormatter={(nextNorm) => formatEnvTime(normToEnvSeconds(nextNorm))}
-				onClick={attackMidiLearn.onClick}
-				onContextMenu={attackMidiLearn.onContextMenu}
-				interactionLocked={attackMidiLearn.interactionLocked}
-				midiLearnState={attackMidiLearn.midiLearnState}
+				midiTargetKey="modEnvAttackKnob"
+				midiLabel="Mod Env Attack"
+				uiTransform={{
+					toControlValue: envSecondsToNorm,
+					fromControlValue: normToEnvSeconds,
+					min: 0,
+					max: 1,
+					defaultValue: envSecondsToNorm(0.01),
+					valueFormatter: (_controlValue, engineValue) =>
+						formatEnvTime(engineValue),
+				}}
 			/>
-			<ControlKnob
-				value={decayNorm}
-				onChange={(nextNorm) => setModEnvDecay(normToEnvSeconds(nextNorm))}
-				min={0}
-				max={1}
-				defaultValue={envSecondsToNorm(0.2)}
+			<SynthParamKnob
+				paramKey="modEnvDecay"
 				color="#c24587"
 				label="Dec"
-				tooltip={PARAM_META.modEnvDecay?.tooltip}
-				valueFormatter={(nextNorm) => formatEnvTime(normToEnvSeconds(nextNorm))}
-				onClick={decayMidiLearn.onClick}
-				onContextMenu={decayMidiLearn.onContextMenu}
-				interactionLocked={decayMidiLearn.interactionLocked}
-				midiLearnState={decayMidiLearn.midiLearnState}
+				midiTargetKey="modEnvDecayKnob"
+				midiLabel="Mod Env Decay"
+				uiTransform={{
+					toControlValue: envSecondsToNorm,
+					fromControlValue: normToEnvSeconds,
+					min: 0,
+					max: 1,
+					defaultValue: envSecondsToNorm(0.2),
+					valueFormatter: (_controlValue, engineValue) =>
+						formatEnvTime(engineValue),
+				}}
 			/>
 			<SynthParamKnob
 				paramKey="modEnvSustain"
-				value={modEnvSustain as number}
-				onChange={setModEnvSustain}
 				color="#c24587"
 				label="Sus"
 				valueFormatter={(value) => `${Math.round((value as number) * 100)}%`}
 			/>
-			<ControlKnob
-				value={releaseNorm}
-				onChange={(nextNorm) => setModEnvRelease(normToEnvSeconds(nextNorm))}
-				min={0}
-				max={1}
-				defaultValue={envSecondsToNorm(0.4)}
+			<SynthParamKnob
+				paramKey="modEnvRelease"
 				color="#c24587"
 				label="Rel"
-				tooltip={PARAM_META.modEnvRelease?.tooltip}
-				valueFormatter={(nextNorm) => formatEnvTime(normToEnvSeconds(nextNorm))}
-				onClick={releaseMidiLearn.onClick}
-				onContextMenu={releaseMidiLearn.onContextMenu}
-				interactionLocked={releaseMidiLearn.interactionLocked}
-				midiLearnState={releaseMidiLearn.midiLearnState}
+				midiTargetKey="modEnvReleaseKnob"
+				midiLabel="Mod Env Release"
+				uiTransform={{
+					toControlValue: envSecondsToNorm,
+					fromControlValue: normToEnvSeconds,
+					min: 0,
+					max: 1,
+					defaultValue: envSecondsToNorm(0.4),
+					valueFormatter: (_controlValue, engineValue) =>
+						formatEnvTime(engineValue),
+				}}
 			/>
 		</ModuleFrame>
 	);

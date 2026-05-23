@@ -4,6 +4,7 @@ import GrainDelayModuleRenderer from "@/components/panels/drawer-modules/custom/
 import PhaseModModuleRenderer from "@/components/panels/drawer-modules/custom/PhaseModModuleRenderer";
 import TremoloModuleRenderer from "@/components/panels/drawer-modules/custom/TremoloModuleRenderer";
 import VibratoModuleRenderer from "@/components/panels/drawer-modules/custom/VibratoModuleRenderer";
+import { FxSlotModuleProvider } from "@/components/panels/drawer-modules/FxSlotModuleContext";
 import type { FxSlotModuleConfig } from "@/components/panels/drawer-modules/fxSlotModuleConfig";
 import GenericFxSlotModule from "@/components/panels/drawer-modules/GenericFxSlotModule";
 
@@ -29,9 +30,11 @@ export default function FxSlotModuleRenderer({
 		return FX_CUSTOM_RENDERERS[config.customRenderer] ?? null;
 	}, [config.customRenderer]);
 
-	if (CustomRenderer) {
-		return <CustomRenderer config={config} slot={slot} />;
-	}
+	const Renderer = CustomRenderer ?? GenericFxSlotModule;
 
-	return <GenericFxSlotModule config={config} slot={slot} />;
+	return (
+		<FxSlotModuleProvider config={config} slot={slot}>
+			<Renderer />
+		</FxSlotModuleProvider>
+	);
 }
