@@ -1,3 +1,4 @@
+use crate::envelope_map::EnvelopeKind;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
@@ -402,6 +403,24 @@ impl Default for LineParams {
             dca_key_follow: 0.0,
             algo_controls_a: default_algo_controls(),
             algo_controls_b: default_algo_controls(),
+        }
+    }
+}
+
+impl LineParams {
+    pub fn env(&self, kind: EnvelopeKind) -> &StepEnvData {
+        match kind {
+            EnvelopeKind::Dco => &self.dco_env,
+            EnvelopeKind::Dcw => &self.dcw_env,
+            EnvelopeKind::Dca => &self.dca_env,
+        }
+    }
+
+    pub fn env_mut(&mut self, kind: EnvelopeKind) -> &mut StepEnvData {
+        match kind {
+            EnvelopeKind::Dco => &mut self.dco_env,
+            EnvelopeKind::Dcw => &mut self.dcw_env,
+            EnvelopeKind::Dca => &mut self.dca_env,
         }
     }
 }

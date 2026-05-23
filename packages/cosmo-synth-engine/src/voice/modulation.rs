@@ -1,3 +1,4 @@
+use crate::envelope_map::EnvelopeKind;
 use crate::params::{
     ENV_STEP_DEST_FIRST, ENV_STEP_DEST_LAST, EnvStep, LineParams, ModDestination, ModMatrixCache,
     NUM_ENV_STEPS, StepEnvData,
@@ -156,6 +157,14 @@ fn apply_env_step_modulation(
     modded
 }
 
+fn env_kind_key(kind: EnvelopeKind) -> EnvKindKey {
+    match kind {
+        EnvelopeKind::Dco => EnvKindKey::Dco,
+        EnvelopeKind::Dcw => EnvKindKey::Dcw,
+        EnvelopeKind::Dca => EnvKindKey::Dca,
+    }
+}
+
 impl LineParams {
     pub(crate) fn apply_line1_mods(
         &mut self,
@@ -171,9 +180,10 @@ impl LineParams {
             (base.octave + mod_values[ModDestination::Line1Octave as usize] * 4.0).clamp(-2.0, 2.0);
 
         if has_env_step_routes {
-            self.dco_env = apply_env_step_modulation(&base.dco_env, 1, EnvKindKey::Dco, mod_values);
-            self.dcw_env = apply_env_step_modulation(&base.dcw_env, 1, EnvKindKey::Dcw, mod_values);
-            self.dca_env = apply_env_step_modulation(&base.dca_env, 1, EnvKindKey::Dca, mod_values);
+            for kind in EnvelopeKind::ALL {
+                let key = env_kind_key(kind);
+                *self.env_mut(kind) = apply_env_step_modulation(base.env(kind), 1, key, mod_values);
+            }
         }
     }
 
@@ -197,9 +207,10 @@ impl LineParams {
             .clamp(-60.0, 60.0);
 
         if has_env_step_routes {
-            self.dco_env = apply_env_step_modulation(&base.dco_env, 2, EnvKindKey::Dco, mod_values);
-            self.dcw_env = apply_env_step_modulation(&base.dcw_env, 2, EnvKindKey::Dcw, mod_values);
-            self.dca_env = apply_env_step_modulation(&base.dca_env, 2, EnvKindKey::Dca, mod_values);
+            for kind in EnvelopeKind::ALL {
+                let key = env_kind_key(kind);
+                *self.env_mut(kind) = apply_env_step_modulation(base.env(kind), 2, key, mod_values);
+            }
         }
     }
 }

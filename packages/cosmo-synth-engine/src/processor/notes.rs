@@ -1,6 +1,6 @@
 extern crate alloc;
 
-use crate::params::{NUM_VOICES, PolyMode};
+use crate::params::{LineParams, NUM_VOICES, PolyMode};
 
 use super::CosmoProcessor;
 use super::state::{MonoStackEntry, NoteEntry};
@@ -13,12 +13,15 @@ impl CosmoProcessor {
     pub(crate) fn start_env_release_for_voice(&mut self, voice_idx: usize) {
         let p = self.params.as_ref();
         let voice = &mut self.voices[voice_idx];
-        voice.line1_env.dco.start_release(&p.line1.dco_env);
-        voice.line1_env.dcw.start_release(&p.line1.dcw_env);
-        voice.line1_env.dca.start_release(&p.line1.dca_env);
-        voice.line2_env.dco.start_release(&p.line2.dco_env);
-        voice.line2_env.dcw.start_release(&p.line2.dcw_env);
-        voice.line2_env.dca.start_release(&p.line2.dca_env);
+        let lines: [(&LineParams, &mut _); 2] = [
+            (&p.line1, &mut voice.line1_env),
+            (&p.line2, &mut voice.line2_env),
+        ];
+        for (line_params, line_envs) in lines {
+            line_envs.for_each_env(|kind, env| {
+                env.start_release(line_params.env(kind));
+            });
+        }
         voice.mod_env.note_off();
     }
 

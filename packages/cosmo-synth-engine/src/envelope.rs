@@ -20,49 +20,37 @@ pub fn normalize_env_to_raw_if_human(kind: EnvelopeKind, env: &mut StepEnvData) 
 }
 
 pub fn normalize_synth_params_envelopes_to_raw_if_human(params: &mut SynthParams) {
-    normalize_env_to_raw_if_human(EnvelopeKind::Dco, &mut params.line1.dco_env);
-    normalize_env_to_raw_if_human(EnvelopeKind::Dcw, &mut params.line1.dcw_env);
-    normalize_env_to_raw_if_human(EnvelopeKind::Dca, &mut params.line1.dca_env);
-    normalize_env_to_raw_if_human(EnvelopeKind::Dco, &mut params.line2.dco_env);
-    normalize_env_to_raw_if_human(EnvelopeKind::Dcw, &mut params.line2.dcw_env);
-    normalize_env_to_raw_if_human(EnvelopeKind::Dca, &mut params.line2.dca_env);
+    let lines = [&mut params.line1, &mut params.line2];
+    for line in lines {
+        for kind in EnvelopeKind::ALL {
+            normalize_env_to_raw_if_human(kind, line.env_mut(kind));
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct EnvelopeTimingCache {
-    dco_rate_samples: [u32; 100],
-    dcw_rate_samples: [u32; 100],
-    dca_rate_samples: [u32; 100],
+    rate_samples: [[u32; 100]; 3],
 }
 
 impl EnvelopeTimingCache {
     pub fn new(sample_rate: f32) -> Self {
-        let mut dco_rate_samples = [0_u32; 100];
-        let mut dcw_rate_samples = [0_u32; 100];
-        let mut dca_rate_samples = [0_u32; 100];
+        let mut rate_samples = [[0_u32; 100]; 3];
 
-        for rate in 0..100 {
-            let rate = rate as u8;
-            dco_rate_samples[rate as usize] = rate_to_samples(EnvelopeKind::Dco, rate, sample_rate);
-            dcw_rate_samples[rate as usize] = rate_to_samples(EnvelopeKind::Dcw, rate, sample_rate);
-            dca_rate_samples[rate as usize] = rate_to_samples(EnvelopeKind::Dca, rate, sample_rate);
+        for kind in EnvelopeKind::ALL {
+            for rate in 0..100u8 {
+                rate_samples[kind.as_index()][rate as usize] =
+                    rate_to_samples(kind, rate, sample_rate);
+            }
         }
 
-        Self {
-            dco_rate_samples,
-            dcw_rate_samples,
-            dca_rate_samples,
-        }
+        Self { rate_samples }
     }
 
     #[inline]
     pub fn rate_to_samples(&self, kind: EnvelopeKind, rate: u8) -> u32 {
         let idx = rate.min(99) as usize;
-        match kind {
-            EnvelopeKind::Dco => self.dco_rate_samples[idx],
-            EnvelopeKind::Dcw => self.dcw_rate_samples[idx],
-            EnvelopeKind::Dca => self.dca_rate_samples[idx],
-        }
+        self.rate_samples[kind.as_index()][idx]
     }
 }
 

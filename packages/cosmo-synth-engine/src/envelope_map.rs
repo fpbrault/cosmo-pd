@@ -57,6 +57,18 @@ pub fn raw_rate_to_human(kind: EnvelopeKind, raw: u8) -> u8 {
     }
 }
 
+impl EnvelopeKind {
+    pub const ALL: [EnvelopeKind; 3] = [EnvelopeKind::Dco, EnvelopeKind::Dcw, EnvelopeKind::Dca];
+
+    pub const fn as_index(self) -> usize {
+        match self {
+            EnvelopeKind::Dco => 0,
+            EnvelopeKind::Dcw => 1,
+            EnvelopeKind::Dca => 2,
+        }
+    }
+}
+
 /// Convert a human-readable level value [0, 99] to the internal raw level [0, 127].
 #[inline]
 pub fn human_level_to_raw(kind: EnvelopeKind, human: u8) -> u8 {

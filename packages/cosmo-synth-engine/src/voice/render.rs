@@ -396,17 +396,14 @@ fn advance_line_envs(
     note: u8,
     timing: &EnvelopeTimingCache,
 ) {
-    envs.dco
-        .advance(EnvelopeKind::Dco, &line.dco_env, timing, 0.0, note);
-    envs.dcw
-        .advance(EnvelopeKind::Dcw, &line.dcw_env, timing, 0.0, note);
-    envs.dca.advance(
-        EnvelopeKind::Dca,
-        &line.dca_env,
-        timing,
-        line.dca_key_follow,
-        note,
-    );
+    for kind in EnvelopeKind::ALL {
+        let key_follow = match kind {
+            EnvelopeKind::Dco | EnvelopeKind::Dcw => 0.0,
+            EnvelopeKind::Dca => line.dca_key_follow,
+        };
+        envs.env_mut(kind)
+            .advance(kind, line.env(kind), timing, key_follow, note);
+    }
 }
 
 fn advance_envelopes(

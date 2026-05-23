@@ -11,6 +11,7 @@ pub(crate) use modulation::ModSources;
 pub(crate) use render::{VoiceRenderContext, render_voice};
 
 use crate::envelope::EnvGen;
+use crate::envelope_map::EnvelopeKind;
 use crate::generators::AlgoRuntimeState;
 
 pub(crate) const ANTI_CLICK_ATTACK_SAMPLES: u32 = 64;
@@ -36,6 +37,30 @@ pub struct LineEnvs {
     pub dco: EnvGen,
     pub dcw: EnvGen,
     pub dca: EnvGen,
+}
+
+impl LineEnvs {
+    pub fn for_each_env(&mut self, mut f: impl FnMut(EnvelopeKind, &mut EnvGen)) {
+        f(EnvelopeKind::Dco, &mut self.dco);
+        f(EnvelopeKind::Dcw, &mut self.dcw);
+        f(EnvelopeKind::Dca, &mut self.dca);
+    }
+
+    pub fn env(&self, kind: EnvelopeKind) -> &EnvGen {
+        match kind {
+            EnvelopeKind::Dco => &self.dco,
+            EnvelopeKind::Dcw => &self.dcw,
+            EnvelopeKind::Dca => &self.dca,
+        }
+    }
+
+    pub fn env_mut(&mut self, kind: EnvelopeKind) -> &mut EnvGen {
+        match kind {
+            EnvelopeKind::Dco => &mut self.dco,
+            EnvelopeKind::Dcw => &mut self.dcw,
+            EnvelopeKind::Dca => &mut self.dca,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -117,12 +142,9 @@ impl Voice {
     }
 
     pub fn reset_envs(&mut self) {
-        self.line1_env.dco.reset();
-        self.line1_env.dcw.reset();
-        self.line1_env.dca.reset();
-        self.line2_env.dco.reset();
-        self.line2_env.dcw.reset();
-        self.line2_env.dca.reset();
+        for line_envs in [&mut self.line1_env, &mut self.line2_env] {
+            line_envs.for_each_env(|_, env| env.reset());
+        }
         self.mod_env.reset();
     }
 }
