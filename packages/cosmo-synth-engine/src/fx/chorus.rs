@@ -1,6 +1,6 @@
 use super::delay_line::DelayLine;
 use crate::dsp_utils::TWO_PI;
-use crate::params::{ModDestination, ChorusParams};
+use crate::params::{ChorusParams, ModDestination};
 
 const SMOOTH_COEFF: f32 = 0.005;
 

@@ -1,6 +1,6 @@
 use super::delay_line::DelayLine;
 use crate::dsp_utils::{TWO_PI, wrap01};
-use crate::params::{ModDestination, DelayParams};
+use crate::params::{DelayParams, ModDestination};
 
 const SMOOTH_COEFF: f32 = 0.005;
 const TAPE_BRIGHT_CUTOFF_HZ: f32 = 20000.0;

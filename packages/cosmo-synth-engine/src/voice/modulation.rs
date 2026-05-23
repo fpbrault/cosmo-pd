@@ -165,18 +165,15 @@ impl LineParams {
     ) {
         *self = *base;
 
-        self.algo_blend = (base.algo_blend + mod_values[ModDestination::Line1AlgoBlend as usize])
-            .clamp(0.0, 1.0);
-        self.octave = (base.octave + mod_values[ModDestination::Line1Octave as usize] * 4.0)
-            .clamp(-2.0, 2.0);
+        self.algo_blend =
+            (base.algo_blend + mod_values[ModDestination::Line1AlgoBlend as usize]).clamp(0.0, 1.0);
+        self.octave =
+            (base.octave + mod_values[ModDestination::Line1Octave as usize] * 4.0).clamp(-2.0, 2.0);
 
         if has_env_step_routes {
-            self.dco_env =
-                apply_env_step_modulation(&base.dco_env, 1, EnvKindKey::Dco, mod_values);
-            self.dcw_env =
-                apply_env_step_modulation(&base.dcw_env, 1, EnvKindKey::Dcw, mod_values);
-            self.dca_env =
-                apply_env_step_modulation(&base.dca_env, 1, EnvKindKey::Dca, mod_values);
+            self.dco_env = apply_env_step_modulation(&base.dco_env, 1, EnvKindKey::Dco, mod_values);
+            self.dcw_env = apply_env_step_modulation(&base.dcw_env, 1, EnvKindKey::Dcw, mod_values);
+            self.dca_env = apply_env_step_modulation(&base.dca_env, 1, EnvKindKey::Dca, mod_values);
         }
     }
 
@@ -188,24 +185,21 @@ impl LineParams {
     ) {
         *self = *base;
 
-        self.algo_blend = (base.algo_blend + mod_values[ModDestination::Line2AlgoBlend as usize])
-            .clamp(0.0, 1.0);
+        self.algo_blend =
+            (base.algo_blend + mod_values[ModDestination::Line2AlgoBlend as usize]).clamp(0.0, 1.0);
         self.octave = (base.octave + mod_values[ModDestination::Line2DetuneOctave as usize] * 6.0)
             .clamp(-5.0, 5.0);
-        self.detune_note =
-            (base.detune_note + mod_values[ModDestination::Line2DetuneNote as usize] * 22.0)
-                .clamp(-11.0, 11.0);
-        self.detune_fine =
-            (base.detune_fine + mod_values[ModDestination::Line2DetuneFine as usize] * 120.0)
-                .clamp(-60.0, 60.0);
+        self.detune_note = (base.detune_note
+            + mod_values[ModDestination::Line2DetuneNote as usize] * 22.0)
+            .clamp(-11.0, 11.0);
+        self.detune_fine = (base.detune_fine
+            + mod_values[ModDestination::Line2DetuneFine as usize] * 120.0)
+            .clamp(-60.0, 60.0);
 
         if has_env_step_routes {
-            self.dco_env =
-                apply_env_step_modulation(&base.dco_env, 2, EnvKindKey::Dco, mod_values);
-            self.dcw_env =
-                apply_env_step_modulation(&base.dcw_env, 2, EnvKindKey::Dcw, mod_values);
-            self.dca_env =
-                apply_env_step_modulation(&base.dca_env, 2, EnvKindKey::Dca, mod_values);
+            self.dco_env = apply_env_step_modulation(&base.dco_env, 2, EnvKindKey::Dco, mod_values);
+            self.dcw_env = apply_env_step_modulation(&base.dcw_env, 2, EnvKindKey::Dcw, mod_values);
+            self.dca_env = apply_env_step_modulation(&base.dca_env, 2, EnvKindKey::Dca, mod_values);
         }
     }
 }
