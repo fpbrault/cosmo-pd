@@ -142,13 +142,7 @@ export function visualModulationScale(params: {
 	max?: number;
 }): number {
 	const { destination, min, max } = params;
-	if (
-		typeof min === "number" &&
-		Number.isFinite(min) &&
-		typeof max === "number" &&
-		Number.isFinite(max) &&
-		max > min
-	) {
+	if (typeof min === "number" && typeof max === "number" && max > min) {
 		return max - min;
 	}
 	if (destination.includes("EnvStep")) {
@@ -340,7 +334,7 @@ export function SynthParamControllerProvider({
 				return undefined;
 			}
 
-			const clampedLiveModDelta = Math.max(-1, Math.min(1, liveModDelta));
+			const clampedLiveModDelta = Math.max(-2, Math.min(2, liveModDelta));
 			const visualModScale = visualModulationScale({
 				destination,
 				min,

@@ -135,8 +135,7 @@ impl CosmoProcessor {
             if has_active_mod_routes {
                 mod_cache.compute(&pre_sources);
                 if has_fx_mod_routes && self.fx.active_slot_count > 0 {
-                    self.fx
-                        .apply_modulated_params(p, &mod_cache, &pre_sources, true);
+                    self.fx.apply_modulated_params(p, &mod_cache);
                 }
             }
 
