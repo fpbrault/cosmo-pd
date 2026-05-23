@@ -25,7 +25,7 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 		data: {
 			schemaVersion: 1,
 			params: {
-				lineSelect: "L1",
+				lineSelect: "L1+L1'",
 				modMode: "normal",
 				octave: 0,
 				line1: {
@@ -33,10 +33,10 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 					algo2: "cz101",
 					algoBlend: 0,
 					baseWaveformA: "cosine",
-					baseWaveformB: "sine",
+					baseWaveformB: "cosine",
 					window: "off",
-					dcaBase: 1,
-					dcwBase: 1,
+					dcaBase: 0.532193603515625,
+					dcwBase: 0.81119873046875,
 					modulation: 0,
 					detuneNote: 0,
 					detuneFine: 0,
@@ -84,11 +84,11 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						steps: [
 							{
 								level: 99,
-								rate: 71.56609348024641,
+								rate: 99,
 							},
 							{
 								level: 0,
-								rate: 43.08371174676078,
+								rate: 34.512714843750004,
 							},
 							{
 								level: 60,
@@ -185,15 +185,15 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						},
 						{
 							id: "waveform1",
-							value: 0,
+							value: 6,
 						},
 						{
 							id: "waveform2",
-							value: 0,
+							value: 6,
 						},
 						{
 							id: "windowFunction",
-							value: 0,
+							value: 1,
 						},
 					],
 				},
@@ -209,7 +209,7 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 					modulation: 0,
 					detuneNote: 0,
 					detuneFine: 0,
-					octave: 0,
+					octave: -1,
 					dcoEnv: {
 						steps: [
 							{
@@ -368,6 +368,7 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 				},
 				frequency: 440,
 				volume: 1,
+				tempoBpm: 120,
 				polyMode: "poly8",
 				legato: false,
 				velocityCurve: 0,
@@ -379,15 +380,19 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 				},
 				lfo: {
 					waveform: "sine",
-					rate: 5,
-					depth: 0,
-					symmetry: 0,
+					rate: 2.000000000000001,
+					rateMode: "hz",
+					syncDivision: "quarter",
+					depth: 1,
+					symmetry: 0.5,
 					retrigger: false,
 					offset: 0,
 				},
 				lfo2: {
 					waveform: "sine",
 					rate: 5,
+					rateMode: "hz",
+					syncDivision: "quarter",
 					depth: 0,
 					symmetry: 0.5,
 					retrigger: false,
@@ -430,14 +435,50 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 							enabled: true,
 						},
 						{
+							source: "macro1",
+							destination: "line1AlgoParam1",
+							amount: 0.5,
+							enabled: true,
+						},
+						{
+							source: "macro1",
+							destination: "line1DcwBase",
+							amount: 0.28,
+							enabled: true,
+						},
+						{
+							source: "macro3",
+							destination: "line1DcaEnvStep2Rate",
+							amount: -0.21,
+							enabled: true,
+						},
+						{
+							source: "macro3",
+							destination: "line1DcwEnvStep1Rate",
+							amount: -0.23,
+							enabled: true,
+						},
+						{
 							source: "modWheel",
 							destination: "vibratoDepth",
 							amount: 0.5,
 							enabled: true,
 						},
 						{
-							source: "macro1",
-							destination: "line1AlgoParam1",
+							source: "macro2",
+							destination: "line2DetuneFine",
+							amount: 0.19,
+							enabled: true,
+						},
+						{
+							source: "macro4",
+							destination: "delayMix",
+							amount: 0.5,
+							enabled: true,
+						},
+						{
+							source: "macro4",
+							destination: "shimmerVerbMix",
 							amount: 0.5,
 							enabled: true,
 						},
@@ -469,7 +510,7 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 							enabled: true,
 							time: 0.34,
 							feedback: 0.46,
-							mix: 0.35,
+							mix: 0,
 							tapeMode: true,
 							warmth: 0.72,
 						},
@@ -480,7 +521,7 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 							enabled: true,
 							shimmer: 0.638798828125,
 							space: 0.6546679530824934,
-							mix: 0.41625120299203056,
+							mix: 0,
 						},
 					},
 					{
@@ -490,6 +531,11 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						type: "empty",
 					},
 				],
+				macro1: 0.6000276436392716,
+				macro2: 0,
+				macro3: 0,
+				macro4: 0,
+				macroLabels: ["Brightness", "Detune", "Time", "FX"],
 			},
 		},
 		favorite: false,
@@ -4284,12 +4330,12 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 				line1: {
 					algo: "twist",
 					algo2: "bend",
-					algoBlend: 0.55732421875,
+					algoBlend: 0.4749960817609515,
 					baseWaveformA: "sine",
 					baseWaveformB: "sine",
 					window: "off",
 					dcaBase: 1,
-					dcwBase: 1,
+					dcwBase: 0.513468017578125,
 					modulation: 0,
 					detuneNote: 0,
 					detuneFine: 0,
@@ -4337,7 +4383,7 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						steps: [
 							{
 								level: 99,
-								rate: 59.895293710572375,
+								rate: 54.615011728150506,
 							},
 							{
 								level: 21,
@@ -4416,11 +4462,11 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 					algoControlsA: [
 						{
 							id: "twistHarmonics",
-							value: 0.64541015625,
+							value: 0.6020153172509924,
 						},
 						{
 							id: "twistDepth",
-							value: 0.5,
+							value: 0.47964999880109516,
 						},
 						{
 							id: "twistPhase",
@@ -4428,7 +4474,7 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						},
 						{
 							id: "twistShape",
-							value: 0.5,
+							value: 0.5320704664457991,
 						},
 					],
 					algoControlsB: [
@@ -4454,7 +4500,7 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 					baseWaveformB: "sine",
 					window: "off",
 					dcaBase: 1,
-					dcwBase: 1,
+					dcwBase: 0.49362854172590814,
 					modulation: 0,
 					detuneNote: 0,
 					detuneFine: 3,
@@ -4502,7 +4548,7 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						steps: [
 							{
 								level: 99,
-								rate: 60,
+								rate: 50.06628295898438,
 							},
 							{
 								level: 21,
@@ -4553,7 +4599,7 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 							},
 							{
 								level: 0,
-								rate: 39.68896504606519,
+								rate: 40.30952779020582,
 							},
 							{
 								level: 0,
@@ -4617,6 +4663,7 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 				},
 				frequency: 440,
 				volume: 1,
+				tempoBpm: 120,
 				polyMode: "poly8",
 				legato: false,
 				velocityCurve: 0,
@@ -4628,16 +4675,20 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 				},
 				lfo: {
 					waveform: "sine",
-					rate: 5,
-					depth: 0,
-					symmetry: 0,
+					rate: 2.000000000000001,
+					rateMode: "hz",
+					syncDivision: "quarter",
+					depth: 1,
+					symmetry: 0.5,
 					retrigger: false,
 					offset: 0,
 				},
 				lfo2: {
 					waveform: "sine",
-					rate: 5,
-					depth: 0,
+					rate: 2.000000000000001,
+					rateMode: "hz",
+					syncDivision: "quarter",
+					depth: 1,
 					symmetry: 0.5,
 					retrigger: false,
 					offset: 0,
@@ -4660,6 +4711,60 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 							amount: 0.5,
 							enabled: true,
 						},
+						{
+							source: "macro1",
+							destination: "line1DcwBase",
+							amount: 0.5,
+							enabled: true,
+						},
+						{
+							source: "macro1",
+							destination: "line2DcwBase",
+							amount: 1,
+							enabled: true,
+						},
+						{
+							source: "macro2",
+							destination: "line2AlgoParam2",
+							amount: -0.5,
+							enabled: true,
+						},
+						{
+							source: "macro2",
+							destination: "line1AlgoParam1",
+							amount: 0.5,
+							enabled: true,
+						},
+						{
+							source: "macro3",
+							destination: "line2DcaEnvStep4Rate",
+							amount: -0.1,
+							enabled: true,
+						},
+						{
+							source: "macro3",
+							destination: "line2DcwEnvStep4Rate",
+							amount: -0.32,
+							enabled: true,
+						},
+						{
+							source: "macro3",
+							destination: "line1DcwEnvStep4Rate",
+							amount: -0.42,
+							enabled: true,
+						},
+						{
+							source: "macro3",
+							destination: "line1DcaEnvStep4Rate",
+							amount: -0.1,
+							enabled: true,
+						},
+						{
+							source: "macro4",
+							destination: "tremoloDepth",
+							amount: 1,
+							enabled: true,
+						},
 					],
 				},
 				fxSlots: [
@@ -4674,12 +4779,22 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						},
 					},
 					{
+						type: "tremolo",
+						params: {
+							enabled: true,
+							rate: 6.742607525008064,
+							depth: 0.0244873046875,
+							waveform: 2,
+							mix: 1,
+						},
+					},
+					{
 						type: "chorus",
 						params: {
 							enabled: false,
-							rate: 1.1257715511322022,
-							depth: 2.2394140686307633,
-							mix: 0.56,
+							rate: 0.35,
+							depth: 3.3994445800781254,
+							mix: 0.44,
 						},
 					},
 					{
@@ -4699,10 +4814,12 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 					{
 						type: "empty",
 					},
-					{
-						type: "empty",
-					},
 				],
+				macro1: 0.5039370078740157,
+				macro2: 0,
+				macro3: 0,
+				macro4: 0,
+				macroLabels: ["Brightness", "Timbre", "Time", "Movement"],
 			},
 		},
 		favorite: false,

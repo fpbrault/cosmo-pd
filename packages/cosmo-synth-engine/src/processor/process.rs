@@ -132,6 +132,8 @@ impl CosmoProcessor {
 
             if has_active_mod_routes {
                 mod_cache.compute(&pre_sources);
+                self.fx
+                    .apply_modulated_params(p, &mod_cache, &pre_sources, true);
             }
 
             let lfos = self.compute_lfos(

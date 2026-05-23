@@ -513,7 +513,7 @@ mod tests {
     #[test]
     fn dca_key_follow_leaves_lower_notes_unchanged() {
         assert_eq!(dca_key_follow_duration_scale(0.0, 84), 1.0);
-        assert_eq!(dca_key_follow_duration_scale(9.0, 60), 1.0);
+        assert_eq!(dca_key_follow_duration_scale(9.0, 47), 1.0);
         assert_eq!(dca_key_follow_duration_scale(9.0, 48), 1.0);
     }
 

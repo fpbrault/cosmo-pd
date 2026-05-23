@@ -211,6 +211,8 @@ export default function ControlKnob({
 	const computedModulatedValue = maybeSynthController?.getModulatedValue({
 		destination: resolvedDestination,
 		baseValue: value,
+		min,
+		max,
 	});
 	const effectiveModulatedValue = modulatedValue ?? computedModulatedValue;
 

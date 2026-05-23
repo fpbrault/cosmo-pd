@@ -1,6 +1,9 @@
 use crate::params::FxSlotConfig;
 use crate::params::FxSlotType;
+use crate::params::ModDestination;
+use crate::params::ModMatrixCache;
 use crate::params::SynthParams;
+use crate::voice::ModSources;
 
 use super::bitcrusher::BitcrusherFx;
 use super::chorus::ChorusFx;
@@ -235,6 +238,223 @@ impl FxChain {
             ) {
                 self.active_slots[self.active_slot_count] = i;
                 self.active_slot_count += 1;
+            }
+        }
+    }
+
+    pub(crate) fn apply_modulated_params(
+        &mut self,
+        params: &SynthParams,
+        mod_cache: &ModMatrixCache,
+        sources: &ModSources,
+        modulation_active: bool,
+    ) {
+        if !modulation_active {
+            return;
+        }
+
+        for (slot_idx, config) in params.fx_slots.iter().enumerate() {
+            let slot = &mut self.slots[slot_idx];
+            match config {
+                FxSlotConfig::Chorus(ch) => {
+                    slot.chorus.rate = (ch.rate
+                        + mod_cache.get(ModDestination::ChorusRate, sources) * 20.0)
+                        .clamp(0.01, 20.0);
+                    slot.chorus.depth = (ch.depth
+                        + mod_cache.get(ModDestination::ChorusDepth, sources))
+                    .clamp(0.0, 1.0);
+                    slot.chorus.mix = (ch.mix + mod_cache.get(ModDestination::ChorusMix, sources))
+                        .clamp(0.0, 1.0);
+                }
+                FxSlotConfig::Phaser(ph) => {
+                    slot.phaser.rate = (ph.rate
+                        + mod_cache.get(ModDestination::PhaserRate, sources) * 20.0)
+                        .clamp(0.01, 20.0);
+                    slot.phaser.depth = (ph.depth
+                        + mod_cache.get(ModDestination::PhaserDepth, sources))
+                    .clamp(0.0, 1.0);
+                    slot.phaser.feedback = (ph.feedback
+                        + mod_cache.get(ModDestination::PhaserFeedback, sources))
+                    .clamp(0.0, 0.99);
+                    slot.phaser.mix = (ph.mix + mod_cache.get(ModDestination::PhaserMix, sources))
+                        .clamp(0.0, 1.0);
+                }
+                FxSlotConfig::Delay(d) => {
+                    slot.delay.time = (d.time + mod_cache.get(ModDestination::DelayTime, sources))
+                        .clamp(0.01, 2.0);
+                    slot.delay.feedback = (d.feedback
+                        + mod_cache.get(ModDestination::DelayFeedback, sources))
+                    .clamp(0.0, 0.99);
+                    slot.delay.warmth = (d.warmth
+                        + mod_cache.get(ModDestination::DelayWarmth, sources))
+                    .clamp(0.0, 1.0);
+                    slot.delay.mix =
+                        (d.mix + mod_cache.get(ModDestination::DelayMix, sources)).clamp(0.0, 1.0);
+                }
+                FxSlotConfig::Reverb(rv) => {
+                    slot.reverb.mix = (rv.mix + mod_cache.get(ModDestination::ReverbMix, sources))
+                        .clamp(0.0, 1.0);
+                    slot.reverb.space = (rv.space
+                        + mod_cache.get(ModDestination::ReverbSpace, sources))
+                    .clamp(0.0, 1.0);
+                    slot.reverb.predelay = (rv.predelay
+                        + mod_cache.get(ModDestination::ReverbPredelay, sources))
+                    .clamp(0.0, 0.2);
+                    slot.reverb.distance = (rv.distance
+                        + mod_cache.get(ModDestination::ReverbDistance, sources))
+                    .clamp(0.0, 1.0);
+                    slot.reverb.character = (rv.character
+                        + mod_cache.get(ModDestination::ReverbCharacter, sources))
+                    .clamp(0.0, 1.0);
+                }
+                FxSlotConfig::Compressor(c) => {
+                    slot.compressor.threshold_db = (c.threshold_db
+                        + mod_cache.get(ModDestination::CompressorThreshold, sources) * 36.0)
+                        .clamp(-60.0, 0.0);
+                    slot.compressor.ratio = (c.ratio
+                        + mod_cache.get(ModDestination::CompressorRatio, sources) * 20.0)
+                        .clamp(1.0, 20.0);
+                    slot.compressor.makeup_db = (c.makeup_db
+                        + mod_cache.get(ModDestination::CompressorMakeup, sources) * 24.0)
+                        .clamp(0.0, 24.0);
+                    slot.compressor.mix = (c.mix
+                        + mod_cache.get(ModDestination::CompressorMix, sources))
+                    .clamp(0.0, 1.0);
+                }
+                FxSlotConfig::Eq5Band(eq) => {
+                    slot.eq.set_gain(
+                        0,
+                        (eq.gain80 + mod_cache.get(ModDestination::EqGain80, sources) * 24.0)
+                            .clamp(-24.0, 24.0),
+                    );
+                    slot.eq.set_gain(
+                        1,
+                        (eq.gain240 + mod_cache.get(ModDestination::EqGain240, sources) * 24.0)
+                            .clamp(-24.0, 24.0),
+                    );
+                    slot.eq.set_gain(
+                        2,
+                        (eq.gain750 + mod_cache.get(ModDestination::EqGain750, sources) * 24.0)
+                            .clamp(-24.0, 24.0),
+                    );
+                    slot.eq.set_gain(
+                        3,
+                        (eq.gain2200 + mod_cache.get(ModDestination::EqGain2200, sources) * 24.0)
+                            .clamp(-24.0, 24.0),
+                    );
+                    slot.eq.set_gain(
+                        4,
+                        (eq.gain8000 + mod_cache.get(ModDestination::EqGain8000, sources) * 24.0)
+                            .clamp(-24.0, 24.0),
+                    );
+                }
+                FxSlotConfig::GrainDelay(gd) => {
+                    slot.grain_delay.time = (gd.time
+                        + mod_cache.get(ModDestination::GrainDelayTime, sources))
+                    .clamp(0.01, 2.0);
+                    slot.grain_delay.feedback = (gd.feedback
+                        + mod_cache.get(ModDestination::GrainDelayFeedback, sources))
+                    .clamp(0.0, 0.99);
+                    slot.grain_delay.scatter = (gd.scatter
+                        + mod_cache.get(ModDestination::GrainDelayScatter, sources))
+                    .clamp(0.0, 1.0);
+                    slot.grain_delay.density = (gd.density
+                        + mod_cache.get(ModDestination::GrainDelayDensity, sources))
+                    .clamp(0.0, 1.0);
+                    slot.grain_delay.mix = (gd.mix
+                        + mod_cache.get(ModDestination::GrainDelayMix, sources))
+                    .clamp(0.0, 1.0);
+                }
+                FxSlotConfig::Bitcrusher(bc) => {
+                    slot.bitcrusher.bits = (bc.bits
+                        + mod_cache.get(ModDestination::BitcrusherBits, sources) * 12.0)
+                        .clamp(1.0, 16.0);
+                    slot.bitcrusher.rate_reduction = (bc.rate_reduction
+                        + mod_cache.get(ModDestination::BitcrusherRateReduction, sources))
+                    .clamp(0.0, 0.99);
+                    slot.bitcrusher.mix = (bc.mix
+                        + mod_cache.get(ModDestination::BitcrusherMix, sources))
+                    .clamp(0.0, 1.0);
+                }
+                FxSlotConfig::ShimmerVerb(sv) => {
+                    slot.shimmer_verb.shimmer = (sv.shimmer
+                        + mod_cache.get(ModDestination::ShimmerVerbShimmer, sources))
+                    .clamp(0.0, 1.0);
+                    slot.shimmer_verb.space = (sv.space
+                        + mod_cache.get(ModDestination::ShimmerVerbSpace, sources))
+                    .clamp(0.0, 1.0);
+                    slot.shimmer_verb.mix = (sv.mix
+                        + mod_cache.get(ModDestination::ShimmerVerbMix, sources))
+                    .clamp(0.0, 1.0);
+                }
+                FxSlotConfig::Distortion(dist) => {
+                    slot.distortion.drive = (dist.drive
+                        + mod_cache.get(ModDestination::DistortionDrive, sources))
+                    .clamp(0.0, 1.0);
+                    slot.distortion.tone = (dist.tone
+                        + mod_cache.get(ModDestination::DistortionTone, sources))
+                    .clamp(0.0, 1.0);
+                    slot.distortion.mix = (dist.mix
+                        + mod_cache.get(ModDestination::DistortionMix, sources))
+                    .clamp(0.0, 1.0);
+                }
+                FxSlotConfig::JunoChorus(jc) => {
+                    slot.juno_chorus.mix = (jc.mix
+                        + mod_cache.get(ModDestination::JunoChorusMix, sources))
+                    .clamp(0.0, 1.0);
+                }
+                FxSlotConfig::RingMod(rm) => {
+                    slot.ring_mod.carrier_hz = (rm.carrier_hz
+                        + mod_cache.get(ModDestination::RingModCarrierHz, sources) * 5000.0)
+                        .clamp(20.0, 8_000.0);
+                    slot.ring_mod.mix = (rm.mix
+                        + mod_cache.get(ModDestination::RingModMix, sources))
+                    .clamp(0.0, 1.0);
+                }
+                FxSlotConfig::Tremolo(tr) => {
+                    slot.tremolo.rate = (tr.rate
+                        + mod_cache.get(ModDestination::TremoloRate, sources) * 20.0)
+                        .clamp(0.1, 40.0);
+                    slot.tremolo.depth = (tr.depth
+                        + mod_cache.get(ModDestination::TremoloDepth, sources))
+                    .clamp(0.0, 1.0);
+                    slot.tremolo.mix = (tr.mix
+                        + mod_cache.get(ModDestination::TremoloMix, sources))
+                    .clamp(0.0, 1.0);
+                }
+                FxSlotConfig::Wavefolder(wf) => {
+                    slot.wavefolder.drive = (wf.drive
+                        + mod_cache.get(ModDestination::WavefolderDrive, sources))
+                    .clamp(0.0, 2.0);
+                    slot.wavefolder.folds = (wf.folds
+                        + mod_cache.get(ModDestination::WavefolderFolds, sources) * 8.0)
+                        .clamp(1.0, 10.0);
+                    slot.wavefolder.mix = (wf.mix
+                        + mod_cache.get(ModDestination::WavefolderMix, sources))
+                    .clamp(0.0, 1.0);
+                }
+                FxSlotConfig::LoFi(lofi) => {
+                    slot.lofi.degrade = (lofi.degrade
+                        + mod_cache.get(ModDestination::LoFiDegrade, sources))
+                    .clamp(0.0, 1.0);
+                    slot.lofi.wow_depth = (lofi.wow_depth
+                        + mod_cache.get(ModDestination::LoFiWowDepth, sources))
+                    .clamp(0.0, 1.0);
+                    slot.lofi.wow_rate = (lofi.wow_rate
+                        + mod_cache.get(ModDestination::LoFiWowRate, sources) * 20.0)
+                        .clamp(0.0, 20.0);
+                    slot.lofi.flutter_depth = (lofi.flutter_depth
+                        + mod_cache.get(ModDestination::LoFiFlutterDepth, sources))
+                    .clamp(0.0, 1.0);
+                    slot.lofi.flutter_rate = (lofi.flutter_rate
+                        + mod_cache.get(ModDestination::LoFiFlutterRate, sources) * 40.0)
+                        .clamp(0.0, 40.0);
+                    slot.lofi.tone = (lofi.tone + mod_cache.get(ModDestination::LoFiTone, sources))
+                        .clamp(0.0, 1.0);
+                    slot.lofi.mix = (lofi.mix + mod_cache.get(ModDestination::LoFiMix, sources))
+                        .clamp(0.0, 1.0);
+                }
+                FxSlotConfig::Empty | FxSlotConfig::Vibrato(_) | FxSlotConfig::PhaseMod(_) => {}
             }
         }
     }

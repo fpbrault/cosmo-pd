@@ -560,6 +560,124 @@ mod tests {
     }
 
     #[test]
+    fn line2_detune_note_modulation_reaches_full_span() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.set_mod_wheel(1.0);
+        proc.params_mut().mod_matrix.routes = vec![ModRoute {
+            source: ModSource::ModWheel,
+            destination: ModDestination::Line2DetuneNote,
+            amount: 1.0,
+            enabled: true,
+        }];
+        let mut out = [0.0_f32; 1];
+        proc.process(&mut out);
+
+        assert_eq!(
+            proc.line2_scratch.detune_note, 11.0,
+            "line2 detune note should reach full +11 semitone span at 100% modulation",
+        );
+    }
+
+    #[test]
+    fn line2_detune_fine_modulation_reaches_full_span() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.set_mod_wheel(1.0);
+        proc.params_mut().mod_matrix.routes = vec![ModRoute {
+            source: ModSource::ModWheel,
+            destination: ModDestination::Line2DetuneFine,
+            amount: 1.0,
+            enabled: true,
+        }];
+        let mut out = [0.0_f32; 1];
+        proc.process(&mut out);
+
+        assert_eq!(
+            proc.line2_scratch.detune_fine, 60.0,
+            "line2 detune fine should reach full +60 span at 100% modulation",
+        );
+    }
+
+    #[test]
+    fn modulated_delay_mix_changes_rendered_audio_when_base_mix_is_zero() {
+        fn render_sum(with_route: bool) -> f32 {
+            let mut proc = CosmoProcessor::new(48_000.0);
+            proc.params_mut().line_select = LineSelect::L1;
+            proc.params_mut().line1.dca_base = 1.0;
+            proc.params_mut().line1.dcw_base = 0.8;
+            proc.params_mut().line1.algo = Algo::Skew;
+            proc.params_mut().fx_slots[0] = FxSlotConfig::Delay(DelayParams {
+                enabled: true,
+                time: 0.1,
+                feedback: 0.6,
+                mix: 0.0,
+                tape_mode: false,
+                warmth: 0.5,
+            });
+            if with_route {
+                proc.params_mut().mod_matrix.routes = vec![ModRoute {
+                    source: ModSource::ModWheel,
+                    destination: ModDestination::DelayMix,
+                    amount: 1.0,
+                    enabled: true,
+                }];
+                proc.set_mod_wheel(1.0);
+            }
+            proc.update_fx();
+            proc.note_on(60, utils::midi_note_to_freq(60), 1.0);
+            let mut out = [0.0_f32; 1024];
+            proc.process(&mut out);
+            out.iter().map(|sample| sample.abs()).sum()
+        }
+
+        let dry = render_sum(false);
+        let modded = render_sum(true);
+        assert!(
+            (modded - dry).abs() > 1e-3,
+            "delay mix modulation should alter rendered output when base mix is zero",
+        );
+    }
+
+    #[test]
+    fn modulated_reverb_mix_changes_rendered_audio_when_base_mix_is_zero() {
+        fn render_sum(with_route: bool) -> f32 {
+            let mut proc = CosmoProcessor::new(48_000.0);
+            proc.params_mut().line_select = LineSelect::L1;
+            proc.params_mut().line1.dca_base = 1.0;
+            proc.params_mut().line1.dcw_base = 0.8;
+            proc.params_mut().line1.algo = Algo::Skew;
+            proc.params_mut().fx_slots[0] = FxSlotConfig::Reverb(crate::params::ReverbParams {
+                enabled: true,
+                mix: 0.0,
+                space: 0.8,
+                predelay: 0.02,
+                distance: 0.3,
+                character: 0.65,
+            });
+            if with_route {
+                proc.params_mut().mod_matrix.routes = vec![ModRoute {
+                    source: ModSource::ModWheel,
+                    destination: ModDestination::ReverbMix,
+                    amount: 1.0,
+                    enabled: true,
+                }];
+                proc.set_mod_wheel(1.0);
+            }
+            proc.update_fx();
+            proc.note_on(60, utils::midi_note_to_freq(60), 1.0);
+            let mut out = [0.0_f32; 1024];
+            proc.process(&mut out);
+            out.iter().map(|sample| sample.abs()).sum()
+        }
+
+        let dry = render_sum(false);
+        let modded = render_sum(true);
+        assert!(
+            (modded - dry).abs() > 1e-3,
+            "reverb mix modulation should alter rendered output when base mix is zero",
+        );
+    }
+
+    #[test]
     fn mono_releasing_previous_note_is_not_restored_after_new_note_off() {
         let mut proc = CosmoProcessor::new(48_000.0);
         proc.params_mut().poly_mode = PolyMode::Mono;
