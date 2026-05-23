@@ -3,8 +3,8 @@ use crate::envelope::EnvelopeKind;
 use crate::envelope::EnvelopeTimingCache;
 use crate::generators::{self, LineRenderConfig, PER_LINE_HEADROOM};
 use crate::params::{
-    LfoWaveform, LineParams, LineSelect, ModDestination, ModMatrixCache, ModMode, PortamentoMode,
-    SynthParams,
+    LfoRateMode, LfoWaveform, LineParams, LineSelect, ModDestination, ModMatrixCache, ModMode,
+    PortamentoMode, SynthParams,
 };
 use crate::render_cache::CompiledLinePlan;
 
@@ -72,6 +72,7 @@ pub struct VoiceRenderContext<'a> {
     pub macro4: f32,
     pub cache: &'a ModMatrixCache,
     pub modulation_active: bool,
+    pub effective_tempo_bpm: f32,
     pub line1_plan: &'a CompiledLinePlan,
     pub line2_plan: &'a CompiledLinePlan,
 }
@@ -178,6 +179,7 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         pitch_bend_semitones,
         &mod_sources,
         modulation_active,
+        ctx.effective_tempo_bpm,
         &mut signal,
     );
 
@@ -601,11 +603,21 @@ fn apply_pitch_and_lfo_modulation(
     pitch_bend_semitones: f32,
     sources: &ModSources,
     modulation_active: bool,
+    effective_tempo_bpm: f32,
     signal: &mut SignalState,
 ) {
     apply_portamento(voice, &p.portamento, sr, base_freq, signal);
     apply_pitch_bend(pitch_bend_semitones, signal);
-    apply_vibrato(voice, p, cache, modulation_active, sr, sources, signal);
+    apply_vibrato(
+        voice,
+        p,
+        cache,
+        modulation_active,
+        sr,
+        sources,
+        effective_tempo_bpm,
+        signal,
+    );
     // Pitch modulation from mod matrix (O(1) cache lookup)
     let pitch_mod = get_mod_if_active(modulation_active, cache, ModDestination::Pitch, sources);
     if pitch_mod != 0.0 {
@@ -660,6 +672,7 @@ fn apply_pitch_bend(pitch_bend_semitones: f32, signal: &mut SignalState) {
     signal.effective_freq2 *= bend_ratio;
 }
 
+#[allow(clippy::too_many_arguments)]
 fn apply_vibrato(
     voice: &mut Voice,
     p: &SynthParams,
@@ -667,6 +680,7 @@ fn apply_vibrato(
     modulation_active: bool,
     sr: f32,
     sources: &ModSources,
+    effective_tempo_bpm: f32,
     signal: &mut SignalState,
 ) {
     let Some(vibrato) = p.vibrato_params() else {
@@ -687,7 +701,12 @@ fn apply_vibrato(
         ModDestination::VibratoRate,
         sources,
     );
-    let effective_rate = (vibrato.rate + vibrato_rate_mod * 99.0).clamp(0.1, 200.0);
+    let effective_rate = match vibrato.rate_mode {
+        LfoRateMode::Hz => (vibrato.rate + vibrato_rate_mod * 99.0).clamp(0.1, 200.0),
+        LfoRateMode::Sync => {
+            (effective_tempo_bpm.max(1.0) / 60.0) * vibrato.sync_division.cycles_per_beat()
+        }
+    };
     voice.vibrato_phase += (effective_rate * 0.1) / sr;
     if voice.vibrato_phase >= 1.0 {
         voice.vibrato_phase -= 1.0;

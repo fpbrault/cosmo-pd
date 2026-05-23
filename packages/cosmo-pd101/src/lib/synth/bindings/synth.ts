@@ -115,6 +115,8 @@ export type DelayParams = {
 	mix: number | null,
 	tapeMode?: boolean,
 	warmth?: number | null,
+	timeMode?: LfoRateMode,
+	syncDivision?: LfoSyncDivision,
 };
 
 /**  Distortion parameters */
@@ -206,6 +208,9 @@ export type GrainDelayParams = {
 	scatter?: number | null,
 	density?: number | null,
 	mix?: number | null,
+	timeMode?: LfoRateMode,
+	syncDivision?: LfoSyncDivision,
+	pitchSemitones?: number | null,
 };
 
 /**  Juno-style chorus parameters */
@@ -423,6 +428,8 @@ export type TremoloParams = {
 	depth?: number | null,
 	waveform?: number,
 	mix?: number | null,
+	rateMode?: LfoRateMode,
+	syncDivision?: LfoSyncDivision,
 };
 
 /**  Vibrato parameters */
@@ -432,6 +439,8 @@ export type VibratoParams = {
 	rate: number | null,
 	depth: number | null,
 	delay: number | null,
+	rate_mode?: LfoRateMode,
+	sync_division?: LfoSyncDivision,
 };
 
 /**  Wavefolder parameters */
@@ -1962,6 +1971,28 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "modDestinationKey": "delayMix"
       },
       {
+        "id": "timeMode",
+        "label": "Time Mode",
+        "kind": "buttonGroup",
+        "bipolar": false,
+        "min": null,
+        "max": null,
+        "defaultF32": 0.0,
+        "options": [],
+        "modDestinationKey": null
+      },
+      {
+        "id": "syncDivision",
+        "label": "Sync Division",
+        "kind": "buttonGroup",
+        "bipolar": false,
+        "min": null,
+        "max": null,
+        "defaultF32": 0.0,
+        "options": [],
+        "modDestinationKey": null
+      },
+      {
         "id": "tapeMode",
         "label": "Mode",
         "kind": "buttonGroup",
@@ -2195,6 +2226,28 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "defaultF32": 55.0,
         "options": [],
         "modDestinationKey": "vibratoRate"
+      },
+      {
+        "id": "rateMode",
+        "label": "Rate Mode",
+        "kind": "buttonGroup",
+        "bipolar": false,
+        "min": null,
+        "max": null,
+        "defaultF32": 0.0,
+        "options": [],
+        "modDestinationKey": null
+      },
+      {
+        "id": "syncDivision",
+        "label": "Sync Division",
+        "kind": "buttonGroup",
+        "bipolar": false,
+        "min": null,
+        "max": null,
+        "defaultF32": 0.0,
+        "options": [],
+        "modDestinationKey": null
       },
       {
         "id": "depth",
@@ -2506,6 +2559,39 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "defaultF32": 0.0,
         "options": [],
         "modDestinationKey": "grainDelayMix"
+      },
+      {
+        "id": "timeMode",
+        "label": "Time Mode",
+        "kind": "buttonGroup",
+        "bipolar": false,
+        "min": null,
+        "max": null,
+        "defaultF32": 0.0,
+        "options": [],
+        "modDestinationKey": null
+      },
+      {
+        "id": "syncDivision",
+        "label": "Sync Division",
+        "kind": "buttonGroup",
+        "bipolar": false,
+        "min": null,
+        "max": null,
+        "defaultF32": 0.0,
+        "options": [],
+        "modDestinationKey": null
+      },
+      {
+        "id": "pitchSemitones",
+        "label": "Pitch",
+        "kind": "knob",
+        "bipolar": true,
+        "min": -24.0,
+        "max": 24.0,
+        "defaultF32": 0.0,
+        "options": [],
+        "modDestinationKey": null
       }
     ],
     "presets": [
@@ -2823,6 +2909,28 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "defaultF32": 4.0,
         "options": [],
         "modDestinationKey": "tremoloRate"
+      },
+      {
+        "id": "rateMode",
+        "label": "Rate Mode",
+        "kind": "buttonGroup",
+        "bipolar": false,
+        "min": null,
+        "max": null,
+        "defaultF32": 0.0,
+        "options": [],
+        "modDestinationKey": null
+      },
+      {
+        "id": "syncDivision",
+        "label": "Sync Division",
+        "kind": "buttonGroup",
+        "bipolar": false,
+        "min": null,
+        "max": null,
+        "defaultF32": 0.0,
+        "options": [],
+        "modDestinationKey": null
       },
       {
         "id": "depth",

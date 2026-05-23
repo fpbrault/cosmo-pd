@@ -10,7 +10,11 @@ pub struct TremoloFx {
     pub depth: f32,   // 0..1
     pub waveform: u8, // 0=sine, 1=triangle, 2=square
     pub mix: f32,
+    pub rate_mode: crate::params::LfoRateMode,
+    pub sync_division: crate::params::LfoSyncDivision,
+    pub tempo_bpm: f32,
     phase: f32,
+    smoothed_gain: f32,
     sample_rate: f32,
 }
 
@@ -22,7 +26,11 @@ impl TremoloFx {
             depth: 0.5,
             waveform: 0,
             mix: 1.0,
+            rate_mode: crate::params::LfoRateMode::Hz,
+            sync_division: crate::params::LfoSyncDivision::Quarter,
+            tempo_bpm: 120.0,
             phase: 0.0,
+            smoothed_gain: 1.0,
             sample_rate: sr,
         }
     }
@@ -31,7 +39,13 @@ impl TremoloFx {
         if !self.enabled || self.mix <= 0.0 {
             return sample;
         }
-        self.phase += self.rate / self.sample_rate;
+        let rate_hz = match self.rate_mode {
+            crate::params::LfoRateMode::Hz => self.rate,
+            crate::params::LfoRateMode::Sync => {
+                (self.tempo_bpm.max(1.0) / 60.0) * self.sync_division.cycles_per_beat()
+            }
+        };
+        self.phase += rate_hz / self.sample_rate;
         if self.phase >= 1.0 {
             self.phase -= 1.0;
         }
@@ -53,9 +67,11 @@ impl TremoloFx {
             _ => (self.phase * core::f32::consts::PI * 2.0).sin(),
         };
 
-        // Convert LFO [-1,1] to amplitude gain [1-depth, 1]
-        let gain = 1.0 - self.depth * (1.0 - lfo) * 0.5;
-        let wet = sample * gain;
+        // Convert LFO [-1,1] to amplitude gain [1-depth, 1].
+        // A short slew avoids hard square-wave gain steps that click at high depth.
+        let target_gain = 1.0 - self.depth * (1.0 - lfo) * 0.5;
+        self.smoothed_gain += (target_gain - self.smoothed_gain) * 0.02;
+        let wet = sample * self.smoothed_gain;
 
         let mix_angle = self.mix * core::f32::consts::PI * 0.5;
         sample * (mix_angle).cos() + wet * (mix_angle).sin()
@@ -124,7 +140,7 @@ const WAVEFORM_OPTIONS: [FxControlOptionV1; 3] = [
     },
 ];
 
-const CONTROLS: [FxControlV1; 4] = [
+const CONTROLS: [FxControlV1; 6] = [
     FxControlV1 {
         id: "rate",
         label: "Rate",
@@ -135,6 +151,28 @@ const CONTROLS: [FxControlV1; 4] = [
         default_f32: Some(4.0),
         options: &NO_FX_CONTROL_OPTIONS,
         mod_destination_key: Some("tremoloRate"),
+    },
+    FxControlV1 {
+        id: "rateMode",
+        label: "Rate Mode",
+        kind: FxControlKindV1::ButtonGroup,
+        bipolar: false,
+        min: None,
+        max: None,
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: None,
+    },
+    FxControlV1 {
+        id: "syncDivision",
+        label: "Sync Division",
+        kind: FxControlKindV1::ButtonGroup,
+        bipolar: false,
+        min: None,
+        max: None,
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: None,
     },
     FxControlV1 {
         id: "depth",
@@ -196,6 +234,8 @@ pub fn apply_tremolo_preset(params: &mut SynthParams, preset: &str) -> bool {
             tr.depth = 0.5;
             tr.waveform = 0;
             tr.mix = 1.0;
+            tr.rate_mode = crate::params::LfoRateMode::Hz;
+            tr.sync_division = crate::params::LfoSyncDivision::Quarter;
             true
         }
         "fastChop" => {
@@ -204,6 +244,8 @@ pub fn apply_tremolo_preset(params: &mut SynthParams, preset: &str) -> bool {
             tr.depth = 0.75;
             tr.waveform = 2;
             tr.mix = 1.0;
+            tr.rate_mode = crate::params::LfoRateMode::Hz;
+            tr.sync_division = crate::params::LfoSyncDivision::Quarter;
             true
         }
         "triPulse" => {
@@ -212,6 +254,8 @@ pub fn apply_tremolo_preset(params: &mut SynthParams, preset: &str) -> bool {
             tr.depth = 0.6;
             tr.waveform = 1;
             tr.mix = 1.0;
+            tr.rate_mode = crate::params::LfoRateMode::Hz;
+            tr.sync_division = crate::params::LfoSyncDivision::Quarter;
             true
         }
         _ => false,
