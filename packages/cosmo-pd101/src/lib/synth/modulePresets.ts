@@ -1,7 +1,30 @@
 import {
+	type AutoWahParams,
+	type BitcrusherParams,
+	type ChorusParams,
+	type CompressorParams,
+	type DelayParams,
+	type DistortionParams,
+	type EqParams,
+	type FlangerParams,
 	type FxSlotType,
+	type GrainDelayParams,
+	type JunoChorusParams,
 	type LfoWaveform,
+	type LoFiParams,
 	MODULE_PRESET_CATALOG_V1,
+	type ModEnvParams,
+	type MultimodeFilterParams,
+	type PhaseModParams,
+	type PhaserParams,
+	type ReverbParams,
+	type RingModParams,
+	type RotarySpeakerParams,
+	type ShimmerVerbParams,
+	type StereoWidenerParams,
+	type TremoloParams,
+	type VibratoParams,
+	type WavefolderParams,
 } from "@/lib/synth/bindings/synth";
 
 export type ModulePresetModule =
@@ -54,7 +77,7 @@ function applyRustPresetCatalog<TPatch extends ModulePresetPatch>(
 }
 
 export const CHORUS_PRESETS: ModulePresetDefinition<{
-	chorus: { enabled: boolean; rate: number; depth: number; mix: number };
+	chorus: Required<ChorusParams>;
 }>[] = [
 	{
 		id: "classicWide",
@@ -80,14 +103,7 @@ export const CHORUS_PRESETS: ModulePresetDefinition<{
 ];
 
 export const DELAY_PRESETS: ModulePresetDefinition<{
-	delay: {
-		enabled: boolean;
-		time: number;
-		feedback: number;
-		mix: number;
-		tapeMode: boolean;
-		warmth: number;
-	};
+	delay: Required<DelayParams>;
 }>[] = [
 	{
 		id: "digitalSlap",
@@ -100,6 +116,8 @@ export const DELAY_PRESETS: ModulePresetDefinition<{
 				mix: 0.27,
 				tapeMode: false,
 				warmth: 0.2,
+				timeMode: "hz",
+				syncDivision: "quarter",
 			},
 		},
 	},
@@ -114,6 +132,8 @@ export const DELAY_PRESETS: ModulePresetDefinition<{
 				mix: 0.35,
 				tapeMode: true,
 				warmth: 0.72,
+				timeMode: "hz",
+				syncDivision: "quarter",
 			},
 		},
 	},
@@ -128,20 +148,15 @@ export const DELAY_PRESETS: ModulePresetDefinition<{
 				mix: 0.4,
 				tapeMode: true,
 				warmth: 0.55,
+				timeMode: "hz",
+				syncDivision: "half",
 			},
 		},
 	},
 ];
 
 export const REVERB_PRESETS: ModulePresetDefinition<{
-	reverb: {
-		enabled: boolean;
-		mix: number;
-		space: number;
-		predelay: number;
-		distance: number;
-		character: number;
-	};
+	reverb: Required<ReverbParams>;
 }>[] = [
 	{
 		id: "smallRoom",
@@ -188,13 +203,7 @@ export const REVERB_PRESETS: ModulePresetDefinition<{
 ];
 
 export const PHASER_PRESETS: ModulePresetDefinition<{
-	phaser: {
-		enabled: boolean;
-		rate: number;
-		depth: number;
-		feedback: number;
-		mix: number;
-	};
+	phaser: Required<PhaserParams>;
 }>[] = [
 	{
 		id: "gentleSweep",
@@ -238,39 +247,57 @@ export const PHASER_PRESETS: ModulePresetDefinition<{
 ];
 
 export const VIBRATO_PRESETS: ModulePresetDefinition<{
-	vibrato: {
-		enabled: boolean;
-		waveform: number;
-		rate: number;
-		depth: number;
-		delay: number;
-	};
+	vibrato: Required<VibratoParams>;
 }>[] = [
 	{
 		id: "subtle",
 		label: "Subtle",
 		patch: {
-			vibrato: { enabled: true, waveform: 1, rate: 20, depth: 6, delay: 160 },
+			vibrato: {
+				enabled: true,
+				waveform: 1,
+				rate: 20,
+				depth: 6,
+				delay: 160,
+				rate_mode: "hz",
+				sync_division: "quarter",
+			},
 		},
 	},
 	{
 		id: "chorused",
 		label: "Chorused",
 		patch: {
-			vibrato: { enabled: true, waveform: 2, rate: 38, depth: 14, delay: 80 },
+			vibrato: {
+				enabled: true,
+				waveform: 2,
+				rate: 38,
+				depth: 14,
+				delay: 80,
+				rate_mode: "hz",
+				sync_division: "quarter",
+			},
 		},
 	},
 	{
 		id: "warble",
 		label: "Warble",
 		patch: {
-			vibrato: { enabled: true, waveform: 4, rate: 62, depth: 26, delay: 20 },
+			vibrato: {
+				enabled: true,
+				waveform: 4,
+				rate: 62,
+				depth: 26,
+				delay: 20,
+				rate_mode: "hz",
+				sync_division: "quarter",
+			},
 		},
 	},
 ];
 
 export const PHASE_MOD_PRESETS: ModulePresetDefinition<{
-	phaseMod: { enabled: boolean; amount: number; ratio: number; pmPre: boolean };
+	phaseMod: Required<PhaseModParams>;
 }>[] = [
 	{
 		id: "glassBell",
@@ -342,7 +369,7 @@ export const LFO_PRESETS: ModulePresetDefinition<{
 ];
 
 export const MOD_ENV_PRESETS: ModulePresetDefinition<{
-	modEnv: { attack: number; decay: number; sustain: number; release: number };
+	modEnv: Required<ModEnvParams>;
 }>[] = [
 	{
 		id: "pluck",
@@ -368,15 +395,7 @@ export const MOD_ENV_PRESETS: ModulePresetDefinition<{
 ];
 
 export const COMPRESSOR_PRESETS: ModulePresetDefinition<{
-	compressor: {
-		enabled: boolean;
-		thresholdDb: number;
-		ratio: number;
-		attackMs: number;
-		releaseMs: number;
-		makeupDb: number;
-		mix: number;
-	};
+	compressor: Required<CompressorParams>;
 }>[] = [
 	{
 		id: "gentle",
@@ -426,14 +445,7 @@ export const COMPRESSOR_PRESETS: ModulePresetDefinition<{
 ];
 
 export const EQ_PRESETS: ModulePresetDefinition<{
-	eq: {
-		enabled: boolean;
-		gain80: number;
-		gain240: number;
-		gain750: number;
-		gain2200: number;
-		gain8000: number;
-	};
+	eq: Required<EqParams>;
 }>[] = [
 	{
 		id: "bassBoost",
@@ -480,14 +492,7 @@ export const EQ_PRESETS: ModulePresetDefinition<{
 ];
 
 export const GRAIN_DELAY_PRESETS: ModulePresetDefinition<{
-	grainDelay: {
-		enabled: boolean;
-		time: number;
-		feedback: number;
-		scatter: number;
-		density: number;
-		mix: number;
-	};
+	grainDelay: Required<GrainDelayParams>;
 }>[] = [
 	{
 		id: "cloudEcho",
@@ -495,11 +500,14 @@ export const GRAIN_DELAY_PRESETS: ModulePresetDefinition<{
 		patch: {
 			grainDelay: {
 				enabled: true,
-				time: 0.35,
-				feedback: 0.22,
-				scatter: 0.32,
+				time: 0.645,
+				feedback: 0.6,
+				scatter: 0.52,
 				density: 0.58,
 				mix: 0.4,
+				timeMode: "hz",
+				syncDivision: "quarter",
+				pitchSemitones: 0,
 			},
 		},
 	},
@@ -514,6 +522,9 @@ export const GRAIN_DELAY_PRESETS: ModulePresetDefinition<{
 				scatter: 0.42,
 				density: 0.7,
 				mix: 0.5,
+				timeMode: "hz",
+				syncDivision: "quarter",
+				pitchSemitones: 24,
 			},
 		},
 	},
@@ -528,18 +539,16 @@ export const GRAIN_DELAY_PRESETS: ModulePresetDefinition<{
 				scatter: 0.24,
 				density: 0.5,
 				mix: 0.35,
+				timeMode: "hz",
+				syncDivision: "quarter",
+				pitchSemitones: 12,
 			},
 		},
 	},
 ];
 
 export const BITCRUSHER_PRESETS: ModulePresetDefinition<{
-	bitcrusher: {
-		enabled: boolean;
-		bits: number;
-		rateReduction: number;
-		mix: number;
-	};
+	bitcrusher: Required<BitcrusherParams>;
 }>[] = [
 	{
 		id: "retroGame",
@@ -563,12 +572,7 @@ export const BITCRUSHER_PRESETS: ModulePresetDefinition<{
 ];
 
 export const SHIMMER_VERB_PRESETS: ModulePresetDefinition<{
-	shimmerVerb: {
-		enabled: boolean;
-		shimmer: number;
-		space: number;
-		mix: number;
-	};
+	shimmerVerb: Required<ShimmerVerbParams>;
 }>[] = [
 	{
 		id: "crystalHall",
@@ -594,13 +598,7 @@ export const SHIMMER_VERB_PRESETS: ModulePresetDefinition<{
 ];
 
 export const DISTORTION_PRESETS: ModulePresetDefinition<{
-	distortion: {
-		enabled: boolean;
-		mode: number;
-		drive: number;
-		tone: number;
-		mix: number;
-	};
+	distortion: Required<DistortionParams>;
 }>[] = [
 	{
 		id: "warmOverdrive",
@@ -626,7 +624,7 @@ export const DISTORTION_PRESETS: ModulePresetDefinition<{
 ];
 
 export const JUNO_CHORUS_PRESETS: ModulePresetDefinition<{
-	junoChorus: { enabled: boolean; mode: number; mix: number };
+	junoChorus: Required<JunoChorusParams>;
 }>[] = [
 	{
 		id: "junoI",
@@ -646,7 +644,7 @@ export const JUNO_CHORUS_PRESETS: ModulePresetDefinition<{
 ];
 
 export const RING_MOD_PRESETS: ModulePresetDefinition<{
-	ringMod: { enabled: boolean; carrierHz: number; mix: number };
+	ringMod: Required<RingModParams>;
 }>[] = [
 	{
 		id: "metallic",
@@ -666,39 +664,57 @@ export const RING_MOD_PRESETS: ModulePresetDefinition<{
 ];
 
 export const TREMOLO_PRESETS: ModulePresetDefinition<{
-	tremolo: {
-		enabled: boolean;
-		rate: number;
-		depth: number;
-		waveform: number;
-		mix: number;
-	};
+	tremolo: Required<TremoloParams>;
 }>[] = [
 	{
 		id: "slowWave",
 		label: "Slow Wave",
 		patch: {
-			tremolo: { enabled: true, rate: 2, depth: 0.5, waveform: 0, mix: 1 },
+			tremolo: {
+				enabled: true,
+				rate: 2,
+				depth: 0.5,
+				waveform: 0,
+				mix: 1,
+				rateMode: "hz",
+				syncDivision: "quarter",
+			},
 		},
 	},
 	{
 		id: "fastChop",
 		label: "Fast Chop",
 		patch: {
-			tremolo: { enabled: true, rate: 8, depth: 0.75, waveform: 2, mix: 1 },
+			tremolo: {
+				enabled: true,
+				rate: 8,
+				depth: 0.75,
+				waveform: 2,
+				mix: 1,
+				rateMode: "hz",
+				syncDivision: "quarter",
+			},
 		},
 	},
 	{
 		id: "triPulse",
 		label: "Tri Pulse",
 		patch: {
-			tremolo: { enabled: true, rate: 5, depth: 0.6, waveform: 1, mix: 1 },
+			tremolo: {
+				enabled: true,
+				rate: 5,
+				depth: 0.6,
+				waveform: 1,
+				mix: 1,
+				rateMode: "hz",
+				syncDivision: "quarter",
+			},
 		},
 	},
 ];
 
 export const WAVEFOLDER_PRESETS: ModulePresetDefinition<{
-	wavefolder: { enabled: boolean; drive: number; folds: number; mix: number };
+	wavefolder: Required<WavefolderParams>;
 }>[] = [
 	{
 		id: "gentle",
@@ -720,16 +736,7 @@ export const WAVEFOLDER_PRESETS: ModulePresetDefinition<{
 ];
 
 export const LOFI_PRESETS: ModulePresetDefinition<{
-	loFi: {
-		enabled: boolean;
-		degrade: number;
-		wowDepth: number;
-		wowRate: number;
-		flutterDepth: number;
-		flutterRate: number;
-		tone: number;
-		mix: number;
-	};
+	loFi: Required<LoFiParams>;
 }>[] = [
 	{
 		id: "warpedCassette",
@@ -782,15 +789,7 @@ export const LOFI_PRESETS: ModulePresetDefinition<{
 ];
 
 export const MULTIMODE_FILTER_PRESETS: ModulePresetDefinition<{
-	multimodeFilter: {
-		enabled: boolean;
-		mode: number;
-		fourPole: boolean;
-		cutoffHz: number;
-		resonance: number;
-		drive: number;
-		mix: number;
-	};
+	multimodeFilter: Required<MultimodeFilterParams>;
 }>[] = [
 	{
 		id: "warmLowPass",
@@ -840,15 +839,7 @@ export const MULTIMODE_FILTER_PRESETS: ModulePresetDefinition<{
 ];
 
 export const FLANGER_PRESETS: ModulePresetDefinition<{
-	flanger: {
-		enabled: boolean;
-		rate: number;
-		depth: number;
-		delayMs: number;
-		feedback: number;
-		throughZero: boolean;
-		mix: number;
-	};
+	flanger: Required<FlangerParams>;
 }>[] = [
 	{
 		id: "softSweep",
@@ -898,13 +889,7 @@ export const FLANGER_PRESETS: ModulePresetDefinition<{
 ];
 
 export const ROTARY_SPEAKER_PRESETS: ModulePresetDefinition<{
-	rotarySpeaker: {
-		enabled: boolean;
-		speed: number;
-		depth: number;
-		drive: number;
-		mix: number;
-	};
+	rotarySpeaker: Required<RotarySpeakerParams>;
 }>[] = [
 	{
 		id: "classicSpin",
@@ -948,16 +933,7 @@ export const ROTARY_SPEAKER_PRESETS: ModulePresetDefinition<{
 ];
 
 export const AUTO_WAH_PRESETS: ModulePresetDefinition<{
-	autoWah: {
-		enabled: boolean;
-		mode: number;
-		sensitivity: number;
-		cutoffHz: number;
-		resonance: number;
-		attackMs: number;
-		releaseMs: number;
-		mix: number;
-	};
+	autoWah: Required<AutoWahParams>;
 }>[] = [
 	{
 		id: "vowelQuack",
@@ -1010,13 +986,7 @@ export const AUTO_WAH_PRESETS: ModulePresetDefinition<{
 ];
 
 export const STEREO_WIDENER_PRESETS: ModulePresetDefinition<{
-	stereoWidener: {
-		enabled: boolean;
-		width: number;
-		delayMs: number;
-		tone: number;
-		mix: number;
-	};
+	stereoWidener: Required<StereoWidenerParams>;
 }>[] = [
 	{
 		id: "subtleSpread",

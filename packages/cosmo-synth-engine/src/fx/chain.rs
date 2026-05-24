@@ -98,6 +98,8 @@ impl FxSlotProcessors {
                 self.delay.mix = d.mix;
                 self.delay.tape_mode = d.tape_mode;
                 self.delay.warmth = d.warmth;
+                self.delay.time_mode = d.time_mode;
+                self.delay.sync_division = d.sync_division;
             }
             FxSlotConfig::Reverb(rv) => {
                 self.reverb.enabled = rv.enabled;
@@ -131,6 +133,9 @@ impl FxSlotProcessors {
                 self.grain_delay.scatter = gd.scatter;
                 self.grain_delay.density = gd.density;
                 self.grain_delay.mix = gd.mix;
+                self.grain_delay.time_mode = gd.time_mode;
+                self.grain_delay.sync_division = gd.sync_division;
+                self.grain_delay.pitch_semitones = gd.pitch_semitones;
             }
             FxSlotConfig::Bitcrusher(bc) => {
                 self.bitcrusher.enabled = bc.enabled;
@@ -167,6 +172,8 @@ impl FxSlotProcessors {
                 self.tremolo.depth = tr.depth;
                 self.tremolo.waveform = tr.waveform;
                 self.tremolo.mix = tr.mix;
+                self.tremolo.rate_mode = tr.rate_mode;
+                self.tremolo.sync_division = tr.sync_division;
             }
             FxSlotConfig::Wavefolder(wf) => {
                 self.wavefolder.enabled = wf.enabled;
