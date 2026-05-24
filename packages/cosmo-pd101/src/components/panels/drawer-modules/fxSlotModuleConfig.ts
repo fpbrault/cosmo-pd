@@ -67,6 +67,7 @@ export type ButtonGroupControlDef = {
 export type ControlDef = KnobControlDef | ButtonGroupControlDef;
 export type FxCustomRendererKey =
 	| "delayModuleRenderer"
+	| "grainDelayModuleRenderer"
 	| "phaseModModuleRenderer"
 	| "vibratoModuleRenderer"
 	| "tremoloModuleRenderer";
@@ -256,6 +257,7 @@ export const FX_UI_META = {
 		shortTitle: "GrDl",
 		color: "#a78bfa",
 		columns: 4,
+		customRenderer: "grainDelayModuleRenderer",
 		presets: GRAIN_DELAY_PRESETS,
 		formatters: {
 			time: (v) => `${(v * 1000).toFixed(0)}ms`,

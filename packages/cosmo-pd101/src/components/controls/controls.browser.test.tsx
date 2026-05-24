@@ -51,7 +51,7 @@ describe("core controls (browser)", () => {
 		expect(setValue).toHaveBeenCalledWith("ring");
 	});
 
-	it("supports ControlKnob value editing", () => {
+	it("supports ControlKnob value editing", async () => {
 		const onChange = vi.fn();
 		render(
 			<ControlKnob
@@ -64,7 +64,8 @@ describe("core controls (browser)", () => {
 			/>,
 		);
 
-		fireEvent.doubleClick(screen.getByRole("button", { name: "Cutoff value" }));
+		const button = await screen.findByRole("button", { name: "Cutoff value" });
+		fireEvent.doubleClick(button);
 		const input = screen.getByRole("textbox", { name: "Cutoff value" });
 		fireEvent.change(input, { target: { value: "0.75" } });
 		fireEvent.keyDown(input, { key: "Enter" });
