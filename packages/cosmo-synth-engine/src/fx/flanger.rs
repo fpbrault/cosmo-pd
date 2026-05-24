@@ -1,6 +1,7 @@
 use libm::{cosf, sinf};
 
 use super::delay_line::DelayLine;
+use crate::params::ModDestination;
 
 // ---------------------------------------------------------------------------
 // FlangerFx — short modulated delay with feedback and through-zero option
@@ -66,6 +67,19 @@ impl FlangerFx {
 
         let mix_angle = self.mix.clamp(0.0, 1.0) * core::f32::consts::PI * 0.5;
         sample * cosf(mix_angle) + wet * sinf(mix_angle)
+    }
+
+    pub fn apply_modulation(&mut self, config: &crate::params::FlangerParams, mod_values: &[f32]) {
+        let rate = mod_values[ModDestination::FlangerRate as usize];
+        self.rate = (config.rate + rate).clamp(0.01, 10.0);
+        let depth = mod_values[ModDestination::FlangerDepth as usize];
+        self.depth = (config.depth + depth).clamp(0.0, 1.0);
+        let delay_ms = mod_values[ModDestination::FlangerDelayMs as usize];
+        self.delay_ms = (config.delay_ms + delay_ms).clamp(0.1, 10.0);
+        let feedback = mod_values[ModDestination::FlangerFeedback as usize];
+        self.feedback = (config.feedback + feedback).clamp(-0.95, 0.95);
+        let mix = mod_values[ModDestination::FlangerMix as usize];
+        self.mix = (config.mix + mix).clamp(0.0, 1.0);
     }
 }
 

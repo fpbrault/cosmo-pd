@@ -1,3 +1,4 @@
+use crate::params::ModDestination;
 use libm::{cosf, sinf};
 
 // ---------------------------------------------------------------------------
@@ -140,6 +141,21 @@ impl MultimodeFilterFx {
 
         let mix_angle = self.mix.clamp(0.0, 1.0) * core::f32::consts::PI * 0.5;
         sample * cosf(mix_angle) + wet * sinf(mix_angle)
+    }
+
+    pub fn apply_modulation(
+        &mut self,
+        config: &crate::params::MultimodeFilterParams,
+        mod_values: &[f32],
+    ) {
+        let cutoff = mod_values[ModDestination::MultimodeFilterCutoffHz as usize];
+        self.cutoff_hz = (config.cutoff_hz + cutoff).clamp(20.0, 18_000.0);
+        let resonance = mod_values[ModDestination::MultimodeFilterResonance as usize];
+        self.resonance = (config.resonance + resonance).clamp(0.0, 1.0);
+        let drive = mod_values[ModDestination::MultimodeFilterDrive as usize];
+        self.drive = (config.drive + drive).clamp(0.0, 1.0);
+        let mix = mod_values[ModDestination::MultimodeFilterMix as usize];
+        self.mix = (config.mix + mix).clamp(0.0, 1.0);
     }
 }
 

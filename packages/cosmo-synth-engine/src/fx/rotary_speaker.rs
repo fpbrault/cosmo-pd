@@ -1,3 +1,4 @@
+use crate::params::ModDestination;
 use libm::{cosf, sinf};
 
 // ---------------------------------------------------------------------------
@@ -95,6 +96,21 @@ impl RotarySpeakerFx {
 
         let mix_angle = self.mix.clamp(0.0, 1.0) * core::f32::consts::PI * 0.5;
         sample * cosf(mix_angle) + wet * sinf(mix_angle)
+    }
+
+    pub fn apply_modulation(
+        &mut self,
+        config: &crate::params::RotarySpeakerParams,
+        mod_values: &[f32],
+    ) {
+        let speed = mod_values[ModDestination::RotarySpeakerSpeed as usize];
+        self.speed = (config.speed + speed).clamp(0.1, 12.0);
+        let depth = mod_values[ModDestination::RotarySpeakerDepth as usize];
+        self.depth = (config.depth + depth).clamp(0.0, 1.0);
+        let drive = mod_values[ModDestination::RotarySpeakerDrive as usize];
+        self.drive = (config.drive + drive).clamp(0.0, 1.0);
+        let mix = mod_values[ModDestination::RotarySpeakerMix as usize];
+        self.mix = (config.mix + mix).clamp(0.0, 1.0);
     }
 }
 

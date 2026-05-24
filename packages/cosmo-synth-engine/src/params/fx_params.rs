@@ -1,3 +1,4 @@
+use crate::params::{LfoRateMode, LfoSyncDivision};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
@@ -69,6 +70,10 @@ pub struct DelayParams {
     pub tape_mode: bool,
     #[serde(default = "default_delay_warmth")]
     pub warmth: f32,
+    #[serde(default)]
+    pub time_mode: LfoRateMode,
+    #[serde(default)]
+    pub sync_division: LfoSyncDivision,
 }
 
 fn default_delay_warmth() -> f32 {
@@ -84,6 +89,8 @@ impl Default for DelayParams {
             mix: 0.0,
             tape_mode: false,
             warmth: 0.5,
+            time_mode: LfoRateMode::Hz,
+            sync_division: LfoSyncDivision::Quarter,
         }
     }
 }
@@ -185,6 +192,10 @@ pub struct VibratoParams {
     pub rate: f32,
     pub depth: f32,
     pub delay: f32,
+    #[serde(default)]
+    pub rate_mode: LfoRateMode,
+    #[serde(default)]
+    pub sync_division: LfoSyncDivision,
 }
 
 impl Default for VibratoParams {
@@ -195,6 +206,8 @@ impl Default for VibratoParams {
             rate: 55.0,
             depth: 8.0,
             delay: 120.0,
+            rate_mode: LfoRateMode::Hz,
+            sync_division: LfoSyncDivision::Quarter,
         }
     }
 }
@@ -302,6 +315,12 @@ pub struct GrainDelayParams {
     pub density: f32,
     #[serde(default)]
     pub mix: f32,
+    #[serde(default)]
+    pub time_mode: LfoRateMode,
+    #[serde(default)]
+    pub sync_division: LfoSyncDivision,
+    #[serde(default)]
+    pub pitch_semitones: f32,
 }
 
 fn default_grain_delay_time() -> f32 {
@@ -320,6 +339,9 @@ impl Default for GrainDelayParams {
             scatter: 0.0,
             density: 0.5,
             mix: 0.0,
+            time_mode: LfoRateMode::Hz,
+            sync_division: LfoSyncDivision::Quarter,
+            pitch_semitones: 0.0,
         }
     }
 }
@@ -780,6 +802,10 @@ pub struct TremoloParams {
     pub waveform: u8,
     #[serde(default = "default_one")]
     pub mix: f32,
+    #[serde(default)]
+    pub rate_mode: LfoRateMode,
+    #[serde(default)]
+    pub sync_division: LfoSyncDivision,
 }
 
 fn default_tremolo_rate() -> f32 {
@@ -794,6 +820,8 @@ impl Default for TremoloParams {
             depth: 0.5,
             waveform: 0,
             mix: 1.0,
+            rate_mode: LfoRateMode::Hz,
+            sync_division: LfoSyncDivision::Quarter,
         }
     }
 }

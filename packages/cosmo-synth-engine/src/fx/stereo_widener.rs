@@ -1,3 +1,4 @@
+use crate::params::ModDestination;
 use libm::{cosf, sinf};
 
 use super::delay_line::DelayLine;
@@ -53,6 +54,21 @@ impl StereoWidenerFx {
 
         let mix_angle = self.mix.clamp(0.0, 1.0) * core::f32::consts::PI * 0.5;
         sample * cosf(mix_angle) + wet * sinf(mix_angle)
+    }
+
+    pub fn apply_modulation(
+        &mut self,
+        config: &crate::params::StereoWidenerParams,
+        mod_values: &[f32],
+    ) {
+        let width = mod_values[ModDestination::StereoWidenerWidth as usize];
+        self.width = (config.width + width).clamp(0.0, 1.0);
+        let delay_ms = mod_values[ModDestination::StereoWidenerDelayMs as usize];
+        self.delay_ms = (config.delay_ms + delay_ms).clamp(1.0, 30.0);
+        let tone = mod_values[ModDestination::StereoWidenerTone as usize];
+        self.tone = (config.tone + tone).clamp(0.0, 1.0);
+        let mix = mod_values[ModDestination::StereoWidenerMix as usize];
+        self.mix = (config.mix + mix).clamp(0.0, 1.0);
     }
 }
 

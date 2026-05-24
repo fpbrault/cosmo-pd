@@ -1,3 +1,4 @@
+use crate::params::ModDestination;
 use libm::{cosf, fabsf, sinf};
 
 // ---------------------------------------------------------------------------
@@ -138,6 +139,21 @@ impl AutoWahFx {
         let wet = self.stage.process(sample);
         let mix_angle = self.mix.clamp(0.0, 1.0) * core::f32::consts::PI * 0.5;
         sample * cosf(mix_angle) + wet * sinf(mix_angle)
+    }
+
+    pub fn apply_modulation(&mut self, config: &crate::params::AutoWahParams, mod_values: &[f32]) {
+        let sensitivity = mod_values[ModDestination::AutoWahSensitivity as usize];
+        self.sensitivity = (config.sensitivity + sensitivity).clamp(0.0, 1.0);
+        let cutoff = mod_values[ModDestination::AutoWahCutoffHz as usize];
+        self.cutoff_hz = (config.cutoff_hz + cutoff).clamp(40.0, 2500.0);
+        let resonance = mod_values[ModDestination::AutoWahResonance as usize];
+        self.resonance = (config.resonance + resonance).clamp(0.0, 1.0);
+        let attack = mod_values[ModDestination::AutoWahAttackMs as usize];
+        self.attack_ms = (config.attack_ms + attack).clamp(0.5, 200.0);
+        let release = mod_values[ModDestination::AutoWahReleaseMs as usize];
+        self.release_ms = (config.release_ms + release).clamp(1.0, 1200.0);
+        let mix = mod_values[ModDestination::AutoWahMix as usize];
+        self.mix = (config.mix + mix).clamp(0.0, 1.0);
     }
 }
 
