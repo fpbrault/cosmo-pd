@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ControlKnob from "./ControlKnob";
@@ -203,8 +203,7 @@ describe("ControlKnob", () => {
 		expect(bubble).toHaveAttribute("data-placement", "above");
 	});
 
-	it("reveals on hover only after delay", () => {
-		vi.useFakeTimers();
+	it("reveals on hover only after delay", async () => {
 		render(<ControlKnob value={0.5} onChange={vi.fn()} label="Depth" />);
 
 		const knob = screen.getByRole("spinbutton", { name: "Depth" });
@@ -214,12 +213,11 @@ describe("ControlKnob", () => {
 			"opacity-0",
 		);
 
-		act(() => {
-			vi.advanceTimersByTime(220);
+		await waitFor(() => {
+			expect(screen.getByRole("button", { name: "Depth value" })).toHaveClass(
+				"opacity-100",
+			);
 		});
-		expect(screen.getByRole("button", { name: "Depth value" })).toHaveClass(
-			"opacity-100",
-		);
 	});
 
 	it("cancels delayed reveal when leaving hover before timeout", () => {
