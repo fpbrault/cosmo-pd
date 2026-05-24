@@ -7,32 +7,19 @@ import Button from "@/components/controls/Button";
 import { useSynthStore } from "@/features/synth/synthStore";
 import type { FxSlotType } from "@/lib/synth/bindings/synth";
 import FxSlotModuleRenderer from "./drawer-modules/FxSlotModuleRenderer";
-import { FX_SLOT_MODULE_CONFIGS } from "./drawer-modules/fxSlotModuleConfig";
+import {
+	FX_SLOT_MODULE_CONFIGS,
+	FX_UI_META,
+} from "./drawer-modules/fxSlotModuleConfig";
 import { FxSlotContext } from "./FxSlotContext";
 
 // ---------------------------------------------------------------------------
 // FX type option lists
 // ---------------------------------------------------------------------------
 
-const FX_EFFECT_OPTIONS: { value: FxSlotType; label: string }[] = [
-	{ value: "chorus", label: "Chorus" },
-	{ value: "phaser", label: "Phaser" },
-	{ value: "delay", label: "Delay" },
-	{ value: "reverb", label: "Reverb" },
-	{ value: "vibrato", label: "Vibrato" },
-	{ value: "phaseMod", label: "Phase Mod" },
-	{ value: "compressor", label: "Compressor" },
-	{ value: "eq5Band", label: "5-Band EQ" },
-	{ value: "grainDelay", label: "Grain Delay" },
-	{ value: "bitcrusher", label: "Bitcrusher" },
-	{ value: "shimmerVerb", label: "Shimmer Verb" },
-	{ value: "distortion", label: "Distortion" },
-	{ value: "junoChorus", label: "Juno Chorus" },
-	{ value: "ringMod", label: "Ring Mod" },
-	{ value: "tremolo", label: "Tremolo" },
-	{ value: "wavefolder", label: "Wavefolder" },
-	{ value: "loFi", label: "LoFi" },
-];
+const FX_EFFECT_OPTIONS: { value: FxSlotType; label: string }[] = Object.values(
+	FX_UI_META,
+).map((fx) => ({ value: fx.moduleKey satisfies FxSlotType, label: fx.title }));
 
 /** For active slots: includes a "Remove" option at the top. */
 const FX_CHANGE_OPTIONS: { value: FxSlotType; label: string }[] = [
@@ -181,6 +168,7 @@ function TypeSelectorTrigger({
 		setFxSlotType(slot, type);
 		setPopoverPos(null);
 	};
+
 	const currentLabel = getFxTypeLabel(currentType);
 
 	return (

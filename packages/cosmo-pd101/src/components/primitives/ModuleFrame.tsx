@@ -30,7 +30,6 @@ function ModuleHeader({
 	title,
 	color,
 	textColor,
-	meta,
 	headerAction,
 }: ModuleHeaderProps) {
 	const slotCtx = useFxSlotContext();
@@ -64,14 +63,7 @@ function ModuleHeader({
 			<span className="inline-block h-4 w-4 shrink-0" />
 
 			<div className="relative z-20 flex shrink-0 items-center">
-				{resolvedHeaderAction ??
-					(meta ? (
-						<span className="font-mono text-5xs uppercase tracking-[0.15em] opacity-60">
-							{meta}
-						</span>
-					) : (
-						<span className="inline-block h-4 w-4" />
-					))}
+				{resolvedHeaderAction}
 			</div>
 		</div>
 	);
@@ -81,9 +73,7 @@ function ModuleHeader({
 type ModuleFrameProps = {
 	title: string;
 	color: string;
-	meta?: string;
 	headerAction?: React.ReactNode;
-	presetTitle?: string;
 	presetValue?: string;
 	presetOptions?: ModulePresetOption[];
 	onPresetChange?: (value: string) => void;
@@ -106,9 +96,7 @@ const MODULE_GRID_COLUMN_CLASS: Record<number, string> = {
 export default function ModuleFrame({
 	title,
 	color,
-	meta,
 	headerAction,
-	presetTitle,
 	presetValue,
 	presetOptions,
 	onPresetChange,
@@ -138,7 +126,6 @@ export default function ModuleFrame({
 				title={title}
 				color={color}
 				textColor={textColor}
-				meta={meta}
 				headerAction={headerAction}
 			/>
 
@@ -159,7 +146,7 @@ export default function ModuleFrame({
 					className="relative flex w-full items-end justify-end pt-1 font-medium text-xs"
 				>
 					<ModulePresetPopover
-						title={presetTitle ?? title}
+						title={`${title} Presets`}
 						value={presetValue ?? ""}
 						options={presetOptions}
 						onChange={onPresetChange}

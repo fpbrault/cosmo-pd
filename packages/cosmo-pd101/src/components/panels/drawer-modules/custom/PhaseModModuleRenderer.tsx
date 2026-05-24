@@ -22,7 +22,6 @@ export default function PhaseModModuleRenderer() {
 			color={config.color}
 			columns={2}
 			enabled={enabled}
-			presetTitle={config.presetTitle}
 			presetValue={selectedPreset}
 			presetOptions={config.presets}
 			onPresetChange={handlePresetChange}

@@ -8,7 +8,6 @@ export default function RandomModule() {
 			color="#c2571a"
 			enabled
 			columns={1}
-			presetTitle="Random Presets"
 			presetValue=""
 			presetOptions={[]}
 			onPresetChange={() => {}}

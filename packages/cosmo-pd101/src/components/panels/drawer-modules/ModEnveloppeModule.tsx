@@ -106,7 +106,6 @@ export default function ModEnveloppeModule() {
 			title="Mod Env"
 			color="#c24587"
 			enabled
-			presetTitle="Mod Env Presets"
 			presetValue={selectedPreset}
 			presetOptions={MOD_ENV_PRESETS}
 			onPresetChange={handlePresetChange}

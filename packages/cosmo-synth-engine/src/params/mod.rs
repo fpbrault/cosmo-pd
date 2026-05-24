@@ -15,9 +15,10 @@ mod waveforms;
 pub(crate) use cache::ModMatrixCache;
 pub use envelopes::{EnvStep, NUM_ENV_STEPS, StepEnvData};
 pub use fx_params::{
-    BitcrusherParams, ChorusParams, CompressorParams, DelayParams, DistortionParams, EqParams,
-    FxSlotConfig, FxSlotType, GrainDelayParams, JunoChorusParams, LoFiParams, PhaseModParams,
-    PhaserParams, ReverbParams, RingModParams, ShimmerVerbParams, TremoloParams, VibratoParams,
+    AutoWahParams, BitcrusherParams, ChorusParams, CompressorParams, DelayParams, DistortionParams,
+    EqParams, FlangerParams, FxSlotConfig, FxSlotType, GrainDelayParams, JunoChorusParams,
+    LoFiParams, MultimodeFilterParams, PhaseModParams, PhaserParams, ReverbParams, RingModParams,
+    RotarySpeakerParams, ShimmerVerbParams, StereoWidenerParams, TremoloParams, VibratoParams,
     WavefolderParams,
 };
 pub use lfo::{LfoParams, LfoRateMode, LfoSyncDivision, LfoWaveform};

@@ -8,6 +8,7 @@ import { useModulationTargetStore } from "@/features/synth/modulationTargetStore
 import { useSynthStore } from "@/features/synth/synthStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import type { FxSlotType } from "@/lib/synth/bindings/synth";
+import { FX_UI_META } from "../panels/drawer-modules/fxSlotModuleConfig";
 
 type SynthSidebarButtonsProps = {
 	globalOpen: boolean;
@@ -29,48 +30,6 @@ const FX_BUTTON_SLOT_INDEX: Record<string, number> = {
 	fx4: 3,
 	fx5: 4,
 	fx6: 5,
-};
-
-const FX_TYPE_COLORS: Record<FxSlotType, string> = {
-	empty: "#3b3b3b",
-	chorus: "#818cf8",
-	phaser: "#a78bfa",
-	delay: "#fbbf24",
-	reverb: "#f97316",
-	vibrato: "#307948",
-	phaseMod: "#be3330",
-	compressor: "#facc15",
-	eq5Band: "#34d399",
-	grainDelay: "#f59e0b",
-	bitcrusher: "#f87171",
-	shimmerVerb: "#60a5fa",
-	distortion: "#f59e0b",
-	junoChorus: "#22d3ee",
-	ringMod: "#e879f9",
-	tremolo: "#4ade80",
-	wavefolder: "#c084fc",
-	loFi: "#38bdf8",
-};
-
-const FX_TYPE_SHORT_LABELS: Record<FxSlotType, string> = {
-	empty: "—",
-	chorus: "Chrs",
-	phaser: "Phsr",
-	delay: "Dly",
-	reverb: "Rvb",
-	vibrato: "Vib",
-	phaseMod: "PhMd",
-	compressor: "Comp",
-	eq5Band: "EQ",
-	grainDelay: "GrDl",
-	bitcrusher: "Bit",
-	shimmerVerb: "Shim",
-	distortion: "Dist",
-	junoChorus: "Juno",
-	ringMod: "Ring",
-	tremolo: "Trem",
-	wavefolder: "Wave",
-	loFi: "LoFi",
 };
 
 const LEFT_BUTTONS: SidebarButton[] = [
@@ -147,7 +106,7 @@ export default memo(function SynthSidebarButtons({
 		const slot = FX_BUTTON_SLOT_INDEX[buttonId];
 		if (slot == null) return undefined;
 		const slotType = (fxSlots[slot]?.type ?? "empty") as FxSlotType;
-		return FX_TYPE_COLORS[slotType];
+		return FX_UI_META[slotType]?.color;
 	};
 
 	const getLedColor = (
@@ -201,7 +160,8 @@ export default memo(function SynthSidebarButtons({
 		const bottomLabel =
 			slotType == null
 				? button.bottomLabel
-				: (FX_TYPE_SHORT_LABELS[slotType as FxSlotType] ?? "");
+				: (FX_UI_META[slotType as FxSlotType]?.shortTitle ??
+					button.bottomLabel);
 		const active =
 			button.id === "global"
 				? globalOpen
