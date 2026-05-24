@@ -23,12 +23,16 @@ describe("useEnvOverrideHandlers", () => {
 		);
 
 		const env = { steps: [], sustainStep: 0, stepCount: 0, loop: false };
-		result.current.onEnvChange(1, "dco", env);
-		result.current.onEnvChange(1, "dcw", env);
-		result.current.onEnvChange(1, "dca", env);
-		result.current.onEnvChange(2, "dco", env);
-		result.current.onEnvChange(2, "dcw", env);
-		result.current.onEnvChange(2, "dca", env);
+		expect(result.current.onEnvChange).toBeDefined();
+		const onEnvChange = result.current.onEnvChange as NonNullable<
+			typeof result.current.onEnvChange
+		>;
+		onEnvChange(1, "dco", env);
+		onEnvChange(1, "dcw", env);
+		onEnvChange(1, "dca", env);
+		onEnvChange(2, "dco", env);
+		onEnvChange(2, "dcw", env);
+		onEnvChange(2, "dca", env);
 
 		expect(setLine1DcoEnv).toHaveBeenCalledWith(env);
 		expect(setLine1DcwEnv).toHaveBeenCalledWith(env);
