@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ControlKnob from "./ControlKnob";
 
 const useOptionalSynthControllerMock = vi.fn();
@@ -19,6 +19,11 @@ describe("ControlKnob", () => {
 	beforeEach(() => {
 		useOptionalSynthControllerMock.mockReset();
 		useOptionalSynthControllerMock.mockReturnValue(null);
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.restoreAllMocks();
 	});
 
 	it("renders label and formatted value", () => {
@@ -187,6 +192,76 @@ describe("ControlKnob", () => {
 		);
 
 		expect(screen.queryByRole("button", { name: "Pitch value" })).toBeNull();
+	});
+
+	it("places value bubble above the knob", () => {
+		render(<ControlKnob value={0.5} onChange={vi.fn()} label="Pan" />);
+
+		fireEvent.pointerEnter(screen.getByRole("spinbutton", { name: "Pan" }));
+
+		const bubble = screen.getByTestId("knob-value-bubble");
+		expect(bubble).toHaveAttribute("data-placement", "above");
+	});
+
+	it("reveals on hover only after delay", () => {
+		vi.useFakeTimers();
+		render(<ControlKnob value={0.5} onChange={vi.fn()} label="Depth" />);
+
+		const knob = screen.getByRole("spinbutton", { name: "Depth" });
+		fireEvent.focus(knob);
+
+		expect(screen.getByRole("button", { name: "Depth value" })).toHaveClass(
+			"opacity-0",
+		);
+
+		act(() => {
+			vi.advanceTimersByTime(220);
+		});
+		expect(screen.getByRole("button", { name: "Depth value" })).toHaveClass(
+			"opacity-100",
+		);
+	});
+
+	it("cancels delayed reveal when leaving hover before timeout", () => {
+		vi.useFakeTimers();
+		render(<ControlKnob value={0.5} onChange={vi.fn()} label="Depth" />);
+
+		const knob = screen.getByRole("spinbutton", { name: "Depth" });
+		fireEvent.pointerEnter(knob);
+		fireEvent.pointerLeave(knob);
+
+		act(() => {
+			vi.advanceTimersByTime(300);
+		});
+		expect(screen.getByRole("button", { name: "Depth value" })).toHaveClass(
+			"opacity-0",
+		);
+	});
+
+	it("shows bubble immediately while dragging", () => {
+		vi.useFakeTimers();
+		const onChange = vi.fn();
+		render(
+			<ControlKnob
+				value={0.4}
+				onChange={onChange}
+				label="Drive"
+				min={0}
+				max={1}
+			/>,
+		);
+
+		const knob = screen.getByRole("spinbutton", { name: "Drive" });
+		fireEvent.pointerDown(knob, {
+			pointerId: 1,
+			pointerType: "mouse",
+			clientX: 28,
+			clientY: 28,
+		});
+
+		expect(screen.getByRole("button", { name: "Drive value" })).toHaveClass(
+			"opacity-100",
+		);
 	});
 
 	it("wraps knob with modulatable control when destination resolves", () => {

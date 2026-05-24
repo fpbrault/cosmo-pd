@@ -1,10 +1,14 @@
 import {
+	type CSSProperties,
 	type ReactNode,
 	useCallback,
 	useEffect,
+	useLayoutEffect,
+	useMemo,
 	useRef,
 	useState,
 } from "react";
+import { createPortal } from "react-dom";
 import Button from "@/components/controls/Button";
 import ModulatableControl from "@/components/controls/modulation/ModulatableControl";
 import { useOptionalSynthController } from "@/features/synth/SynthParamController";
@@ -98,6 +102,22 @@ const VARIANT_ACCENT_COLOR: Record<
 	dark: "var(--color-cz-gold)",
 };
 
+const VALUE_BUBBLE_REVEAL_DELAY_MS = 500;
+const VALUE_BUBBLE_EDGE_PADDING_PX = 8;
+const VALUE_BUBBLE_GAP_PX = 1;
+const VALUE_BUBBLE_ARROW_HALF_WIDTH_PX = 5;
+const VALUE_BUBBLE_LEAVE_GRACE_MS = 120;
+
+type ValueBubblePlacement = "above" | "below";
+
+type ValueBubbleLayout = {
+	top: number;
+	left: number;
+	arrowLeft: number;
+	placement: ValueBubblePlacement;
+	ready: boolean;
+};
+
 export default function ControlKnob({
 	value,
 	onChange,
@@ -135,7 +155,22 @@ export default function ControlKnob({
 }: ControlKnobProps) {
 	const svgRef = useRef<SVGSVGElement | null>(null);
 	const buttonRef = useRef<HTMLButtonElement | null>(null);
+	const valueBubbleRef = useRef<HTMLDivElement | null>(null);
+	const revealTimerRef = useRef<number | null>(null);
+	const hoverLeaveTimerRef = useRef<number | null>(null);
 	const [hovered, setHovered] = useState(false);
+	const [passiveHovered, setPassiveHovered] = useState(false);
+	const [bubblePinned, setBubblePinned] = useState(false);
+	const [passiveRevealReady, setPassiveRevealReady] = useState(false);
+	const [valueBubbleLayout, setValueBubbleLayout] = useState<ValueBubbleLayout>(
+		{
+			top: 0,
+			left: 0,
+			arrowLeft: 0,
+			placement: "above",
+			ready: false,
+		},
+	);
 	const [, setModulationTick] = useState(0);
 	const resolvedTooltip = tooltip?.trim() ? tooltip : label?.trim();
 	const emitChange = useCallback(
@@ -250,19 +285,233 @@ export default function ControlKnob({
 		useCapture: true,
 	});
 
+	const immediateBubbleVisible =
+		valueVisibility === "always" || dragging || editing;
+	const passiveBubbleActive = passiveHovered || bubblePinned;
+
+	const clearHoverLeaveTimer = useCallback(() => {
+		if (hoverLeaveTimerRef.current !== null) {
+			window.clearTimeout(hoverLeaveTimerRef.current);
+			hoverLeaveTimerRef.current = null;
+		}
+	}, []);
+
+	const schedulePassiveHoverClear = useCallback(() => {
+		clearHoverLeaveTimer();
+		hoverLeaveTimerRef.current = window.setTimeout(() => {
+			setPassiveHovered(false);
+			setBubblePinned(false);
+			hoverLeaveTimerRef.current = null;
+		}, VALUE_BUBBLE_LEAVE_GRACE_MS);
+	}, [clearHoverLeaveTimer]);
+
+	useEffect(() => {
+		return () => {
+			clearHoverLeaveTimer();
+		};
+	}, [clearHoverLeaveTimer]);
+
+	useEffect(() => {
+		if (revealTimerRef.current !== null) {
+			window.clearTimeout(revealTimerRef.current);
+			revealTimerRef.current = null;
+		}
+		if (valueVisibility === "never") {
+			setPassiveRevealReady(false);
+			return;
+		}
+		if (immediateBubbleVisible) {
+			setPassiveRevealReady(true);
+			return;
+		}
+		if (!passiveBubbleActive) {
+			setPassiveRevealReady(false);
+			return;
+		}
+		revealTimerRef.current = window.setTimeout(() => {
+			setPassiveRevealReady(true);
+			revealTimerRef.current = null;
+		}, VALUE_BUBBLE_REVEAL_DELAY_MS);
+		return () => {
+			if (revealTimerRef.current !== null) {
+				window.clearTimeout(revealTimerRef.current);
+				revealTimerRef.current = null;
+			}
+		};
+	}, [immediateBubbleVisible, passiveBubbleActive, valueVisibility]);
+
+	const valueBubbleVisible = useMemo(
+		() =>
+			valueVisibility !== "never" &&
+			(immediateBubbleVisible || passiveRevealReady),
+		[immediateBubbleVisible, passiveRevealReady, valueVisibility],
+	);
+
+	const updateValueBubbleLayout = useCallback(() => {
+		if (typeof window === "undefined") {
+			return;
+		}
+		const knobEl = buttonRef.current;
+		if (!knobEl?.isConnected) {
+			setValueBubbleLayout((prev) =>
+				prev.ready ? { ...prev, ready: false } : prev,
+			);
+			return;
+		}
+		const knobRect = knobEl?.getBoundingClientRect();
+		const bubbleRect = valueBubbleRef.current?.getBoundingClientRect();
+		if (!knobRect || !bubbleRect) {
+			setValueBubbleLayout((prev) =>
+				prev.ready ? { ...prev, ready: false } : prev,
+			);
+			return;
+		}
+		if (
+			knobRect.width < 2 ||
+			knobRect.height < 2 ||
+			bubbleRect.width < 2 ||
+			bubbleRect.height < 2
+		) {
+			setValueBubbleLayout((prev) =>
+				prev.ready ? { ...prev, ready: false } : prev,
+			);
+			return;
+		}
+		const knobOffscreen =
+			knobRect.bottom <= 0 ||
+			knobRect.right <= 0 ||
+			knobRect.top >= window.innerHeight ||
+			knobRect.left >= window.innerWidth;
+		if (knobOffscreen) {
+			setValueBubbleLayout((prev) =>
+				prev.ready ? { ...prev, ready: false } : prev,
+			);
+			return;
+		}
+
+		const bubbleWidth = bubbleRect.width;
+		const bubbleHeight = bubbleRect.height;
+		const knobCenterX = knobRect.left + knobRect.width / 2;
+		const knobScale = size / DEFAULT_ARC_GEOMETRY.viewBoxSize;
+		// Anchor the tooltip to the visible knob body (not the whole SVG/button box)
+		// so the pointer sits close to the knob face.
+		const knobBodyRadiusPx = DEFAULT_ARC_GEOMETRY.radius * 0.8 * knobScale;
+		const knobBodyCenterYPx = DEFAULT_ARC_GEOMETRY.cy * knobScale;
+		const knobBodyTop = knobRect.top + knobBodyCenterYPx - knobBodyRadiusPx;
+		const knobBodyBottom = knobRect.top + knobBodyCenterYPx + knobBodyRadiusPx;
+		const hasRoomAbove =
+			knobBodyTop - VALUE_BUBBLE_GAP_PX - bubbleHeight >=
+			VALUE_BUBBLE_EDGE_PADDING_PX;
+		const placement: ValueBubblePlacement = hasRoomAbove ? "above" : "below";
+		const rawLeft = knobCenterX - bubbleWidth / 2;
+		const minLeft = VALUE_BUBBLE_EDGE_PADDING_PX;
+		const maxLeft = Math.max(
+			minLeft,
+			window.innerWidth - VALUE_BUBBLE_EDGE_PADDING_PX - bubbleWidth,
+		);
+		const left = Math.min(Math.max(rawLeft, minLeft), maxLeft);
+		const top =
+			placement === "above"
+				? knobBodyTop - VALUE_BUBBLE_GAP_PX - bubbleHeight
+				: knobBodyBottom + VALUE_BUBBLE_GAP_PX;
+		const arrowMin = VALUE_BUBBLE_ARROW_HALF_WIDTH_PX + 2;
+		const arrowMax = Math.max(
+			arrowMin,
+			bubbleWidth - VALUE_BUBBLE_ARROW_HALF_WIDTH_PX - 2,
+		);
+		const arrowLeft = Math.min(
+			Math.max(knobCenterX - left, arrowMin),
+			arrowMax,
+		);
+
+		setValueBubbleLayout((prev) => {
+			if (
+				prev.top === top &&
+				prev.left === left &&
+				prev.arrowLeft === arrowLeft &&
+				prev.placement === placement &&
+				prev.ready
+			) {
+				return prev;
+			}
+			return { top, left, arrowLeft, placement, ready: true };
+		});
+	}, [size]);
+
+	useLayoutEffect(() => {
+		if (!valueBubbleVisible) {
+			setValueBubbleLayout((prev) =>
+				prev.ready ? { ...prev, ready: false } : prev,
+			);
+			return;
+		}
+		updateValueBubbleLayout();
+	}, [updateValueBubbleLayout, valueBubbleVisible]);
+
+	useEffect(() => {
+		if (!valueBubbleVisible) {
+			return;
+		}
+		const onLayoutChange = () => updateValueBubbleLayout();
+		window.addEventListener("resize", onLayoutChange);
+		window.addEventListener("scroll", onLayoutChange, true);
+		return () => {
+			window.removeEventListener("resize", onLayoutChange);
+			window.removeEventListener("scroll", onLayoutChange, true);
+		};
+	}, [updateValueBubbleLayout, valueBubbleVisible]);
+
+	const valueBubbleShellClass = "pointer-events-none fixed z-[9999]";
+	const valueBubbleArrowClass =
+		valueBubbleLayout.placement === "above"
+			? "before:pointer-events-none before:absolute before:top-full before:left-[var(--knob-bubble-arrow-left)] before:-translate-x-1/2 before:border-x-[5px] before:border-t-[5px] before:border-x-transparent before:border-t-white"
+			: "before:pointer-events-none before:absolute before:bottom-full before:left-[var(--knob-bubble-arrow-left)] before:-translate-x-1/2 before:border-x-[5px] before:border-b-[5px] before:border-x-transparent before:border-b-white";
+
+	const valueBubbleBodyClass = `pointer-events-auto relative whitespace-nowrap rounded-sm border-transparent bg-white px-1.5 py-0.5 font-semibold text-2xs leading-none text-black shadow-[0_2px_6px_rgba(0,0,0,0.5)] transition-all duration-150 ${valueBubbleArrowClass} ${
+		disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer"
+	} ${valueBubbleVisible ? "opacity-100" : "pointer-events-none opacity-0"}`;
+
 	const valueIndicatorEl =
 		valueVisibility !== "never" ? (
 			<div
-				className="pointer-events-none flex items-center justify-center"
-				onPointerEnter={() => setHovered(true)}
-				onPointerLeave={() => setHovered(false)}
+				ref={valueBubbleRef}
+				className={valueBubbleShellClass}
+				data-testid="knob-value-bubble"
+				data-placement={valueBubbleLayout.placement}
+				style={
+					{
+						top:
+							!valueBubbleVisible || !valueBubbleLayout.ready
+								? -10000
+								: valueBubbleLayout.top,
+						left:
+							!valueBubbleVisible || !valueBubbleLayout.ready
+								? -10000
+								: valueBubbleLayout.left,
+					} as CSSProperties
+				}
+				onPointerEnter={() => {
+					clearHoverLeaveTimer();
+					setHovered(true);
+					setPassiveHovered(true);
+					setBubblePinned(true);
+				}}
+				onPointerLeave={() => {
+					setHovered(false);
+					schedulePassiveHoverClear();
+				}}
 			>
 				{editing ? (
 					<input
 						ref={inputRef as React.RefObject<HTMLInputElement>}
 						type="text"
 						aria-label={valueControlLabel}
-						className="pointer-events-auto w-16 rounded-sm border border-base-content/25 bg-base-300/95 px-1.5 py-0.5 text-center font-semibold text-2xs text-base-content shadow-[0_2px_6px_rgba(0,0,0,0.5)] outline-none focus:border-primary"
+						className={`${valueBubbleBodyClass} w-16 text-center text-base-content outline-none focus:border-primary`}
+						style={
+							{
+								"--knob-bubble-arrow-left": `${valueBubbleLayout.arrowLeft}px`,
+							} as CSSProperties
+						}
 						value={editValue}
 						onChange={(e) => setEditValue(e.target.value)}
 						onBlur={onEditBlur}
@@ -272,15 +521,12 @@ export default function ControlKnob({
 					<Button
 						type="button"
 						aria-label={valueControlLabel}
-						className={`pointer-events-auto whitespace-nowrap rounded-sm border px-1.5 py-0.5 font-semibold text-2xs leading-none shadow-[0_2px_6px_rgba(0,0,0,0.5)] transition-all duration-150 ${
-							disabled
-								? "cursor-not-allowed border-base-content/15 bg-base-300/85 text-base-content/50"
-								: "cursor-pointer border-base-content/25 bg-base-300/95 text-base-content/80 hover:text-base-content"
-						} ${
-							valueVisibility === "always" || dragging || hovered
-								? "translate-y-0 opacity-100"
-								: "translate-y-1 opacity-0 group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:translate-y-0 group-hover:opacity-100"
-						}`}
+						className={valueBubbleBodyClass}
+						style={
+							{
+								"--knob-bubble-arrow-left": `${valueBubbleLayout.arrowLeft}px`,
+							} as CSSProperties
+						}
 						disabled={disabled}
 						onDoubleClick={(e) => {
 							e.preventDefault();
@@ -293,6 +539,14 @@ export default function ControlKnob({
 				)}
 			</div>
 		) : null;
+
+	const valueBubblePortalEl =
+		valueIndicatorEl && typeof document !== "undefined"
+			? createPortal(
+					valueIndicatorEl,
+					(document.fullscreenElement as Element | null) ?? document.body,
+				)
+			: null;
 
 	const knobButton = (
 		<div
@@ -316,19 +570,25 @@ export default function ControlKnob({
 				aria-disabled={disabled}
 				disabled={disabled}
 				onPointerEnter={() => {
+					clearHoverLeaveTimer();
 					setHovered(true);
+					setPassiveHovered(true);
 					setHoverInfo(resolvedTooltip);
 				}}
 				onPointerLeave={() => {
 					setHovered(false);
+					schedulePassiveHoverClear();
 					clearHoverInfo();
 				}}
 				onFocus={() => {
+					clearHoverLeaveTimer();
 					setHovered(true);
+					setPassiveHovered(true);
 					setHoverInfo(resolvedTooltip);
 				}}
 				onBlur={() => {
 					setHovered(false);
+					schedulePassiveHoverClear();
 					clearHoverInfo();
 				}}
 				onPointerDown={interactionLocked ? undefined : onPointerDown}
@@ -386,12 +646,8 @@ export default function ControlKnob({
 			) : (
 				knobButton
 			)}
+			{valueBubblePortalEl}
 			{labelEl}
-			<div className="relative h-0 w-full">
-				<div className="absolute top-0 left-1/2 z-20 -translate-x-1/2">
-					{valueIndicatorEl}
-				</div>
-			</div>
 		</div>
 	);
 
