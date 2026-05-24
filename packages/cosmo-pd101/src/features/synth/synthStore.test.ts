@@ -154,6 +154,12 @@ describe("useSynthStore", () => {
 			setFxSlotType(0, "delay");
 		});
 		expect(useSynthStore.getState().fxSlots[0].type).toBe("delay");
+		const manualDelaySlot = useSynthStore.getState().fxSlots[0] as Extract<
+			FxSlotConfig,
+			{ type: "delay" }
+		>;
+		expect(manualDelaySlot.params.timeMode).toBe("hz");
+		expect(manualDelaySlot.params.syncDivision).toBe("quarter");
 
 		act(() => {
 			setFxSlotEnabled(0, false);
@@ -185,6 +191,16 @@ describe("useSynthStore", () => {
 		});
 		expect(useSynthStore.getState().fxSlots[0].type).toBe("reverb");
 		expect(useSynthStore.getState().fxSlots[1].type).toBe("delay");
+
+		act(() => {
+			setFxSlotType(2, "grainDelay");
+		});
+		const manualGrainDelaySlot = useSynthStore.getState().fxSlots[2] as Extract<
+			FxSlotConfig,
+			{ type: "grainDelay" }
+		>;
+		expect(manualGrainDelaySlot.params.timeMode).toBe("hz");
+		expect(manualGrainDelaySlot.params.syncDivision).toBe("quarter");
 	});
 
 	it("coerces modulation mode to normal when switching to a single line", () => {

@@ -189,6 +189,41 @@ describe("usePluginBridgeSynthEngine", () => {
 		});
 	});
 
+	it("sanitizes delay FX params before outbound setParams", async () => {
+		window.__czGetParams = undefined;
+
+		const outboundJsons: string[] = [];
+		window.__czSetParams = (json: string) => {
+			outboundJsons.push(json);
+		};
+
+		renderHook(() => usePluginBridgeSynthEngine());
+
+		act(() => {
+			const store = useSynthStore.getState();
+			store.setFxSlotType(0, "delay");
+			store.setFxSlotParams(0, {
+				tapeMode: 1,
+				timeMode: "sync",
+				syncDivision: "eighthTriplet",
+			});
+		});
+
+		await waitFor(() => {
+			expect(outboundJsons.length).toBeGreaterThan(0);
+		});
+
+		const lastOutbound = JSON.parse(outboundJsons.at(-1) ?? "{}") as {
+			fxSlots?: Array<{ type: string; params: Record<string, unknown> }>;
+		};
+		const delaySlot = lastOutbound.fxSlots?.[0];
+		expect(delaySlot?.type).toBe("delay");
+		expect(delaySlot?.params.tapeMode).toBe(true);
+		expect(typeof delaySlot?.params.tapeMode).toBe("boolean");
+		expect(delaySlot?.params.timeMode).toBe("sync");
+		expect(delaySlot?.params.syncDivision).toBe("eighthTriplet");
+	});
+
 	it("does nothing when disabled", async () => {
 		let registered = false;
 		Object.defineProperty(window, "__czOnParams", {

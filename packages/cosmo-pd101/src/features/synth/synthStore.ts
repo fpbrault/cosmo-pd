@@ -9,7 +9,6 @@ import type {
 	AlgoControlValueV1,
 	AlgoDefinitionV1,
 	BaseWaveform,
-	FxDefinitionV1,
 	FxSlotConfig,
 	FxSlotType,
 	LfoRateMode,
@@ -24,10 +23,12 @@ import type {
 	SynthPresetV1,
 	WindowType,
 } from "@/lib/synth/bindings/synth";
+import { ALGO_DEFINITIONS_V1 } from "@/lib/synth/bindings/synth";
 import {
-	ALGO_DEFINITIONS_V1,
-	FX_DEFINITIONS_V1,
-} from "@/lib/synth/bindings/synth";
+	createDefaultFxSlotConfig,
+	sanitizeFxSlotConfig,
+	sanitizeFxSlots,
+} from "@/lib/synth/fxSlotSanitizer";
 import { requireEngineParamDefault } from "@/lib/synth/paramMeta";
 import {
 	DEFAULT_DCA_ENV,
@@ -80,22 +81,8 @@ function normalizeModMode(lineSelect: LineSelect, modMode: ModMode): ModMode {
 // FX slot helpers
 // ---------------------------------------------------------------------------
 
-/** Builds an enabled FxSlotConfig from Rust defaults in FX_DEFINITIONS_V1. */
 function makeDefaultFxSlotConfig(type: FxSlotType): FxSlotConfig {
-	if (type === "empty") return { type: "empty" };
-	const def = (FX_DEFINITIONS_V1 as FxDefinitionV1[]).find(
-		(d) => d.slotType === type,
-	);
-	if (!def) return { type: "empty" };
-	const params = def.controls.reduce<Record<string, number | boolean>>(
-		(acc, c) => {
-			const v = c.defaultF32 ?? 0;
-			acc[c.id] = c.kind === "toggle" ? v !== 0 : v;
-			return acc;
-		},
-		{ enabled: true },
-	);
-	return { type, params } as FxSlotConfig;
+	return createDefaultFxSlotConfig(type);
 }
 
 type FxSlotTuple = [
@@ -530,13 +517,13 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			const config = s.fxSlots[slot];
 			if (!config || config.type === "empty") return {};
 			const slots = [...s.fxSlots] as FxSlotTuple;
-			slots[slot] = {
+			slots[slot] = sanitizeFxSlotConfig({
 				...config,
 				params: {
 					...(config as { params: Record<string, unknown> }).params,
 					enabled,
 				},
-			} as FxSlotConfig;
+			} as FxSlotConfig);
 			return { fxSlots: slots };
 		});
 	},
@@ -545,13 +532,13 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			const config = s.fxSlots[slot];
 			if (!config || config.type === "empty") return {};
 			const slots = [...s.fxSlots] as FxSlotTuple;
-			slots[slot] = {
+			slots[slot] = sanitizeFxSlotConfig({
 				...config,
 				params: {
 					...(config as { params: Record<string, unknown> }).params,
 					...patch,
 				},
-			} as FxSlotConfig;
+			} as FxSlotConfig);
 			return { fxSlots: slots };
 		});
 	},
@@ -693,7 +680,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			},
 			pitchBendRange: s.pitchBendRange,
 			modMatrix: s.modMatrix,
-			fxSlots: s.fxSlots,
+			fxSlots: sanitizeFxSlots(s.fxSlots),
 			macro1: s.macro1,
 			macro2: s.macro2,
 			macro3: s.macro3,
@@ -890,7 +877,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 					: { routes: [] },
 			fxSlots:
 				Array.isArray(p.fxSlots) && p.fxSlots.length === 6
-					? (p.fxSlots as FxSlotTuple)
+					? (sanitizeFxSlots(p.fxSlots as FxSlotTuple) as FxSlotTuple)
 					: DEFAULT_FX_SLOTS,
 			macro1: safe((p as Record<string, unknown>).macro1 as number, 0),
 			macro2: safe((p as Record<string, unknown>).macro2 as number, 0),

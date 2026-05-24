@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 
 import { useSynthStore } from "@/features/synth/synthStore";
 import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
+import { sanitizeSynthParamsForEngine } from "@/lib/synth/fxSlotSanitizer";
 
 declare global {
 	interface Window {
@@ -123,7 +124,9 @@ export function usePluginBridgeSynthEngine(
 	const syncRef = useRef<(() => void) | null>(null);
 
 	const send = useCallback((params: SynthPresetV1["params"]) => {
-		const json = JSON.stringify(params);
+		const json = JSON.stringify(
+			sanitizeSynthParamsForEngine(params as SynthPresetV1["params"]),
+		);
 		if (sentParamsRef.current === json) return;
 		sentParamsRef.current = json;
 		window.__czSetParams?.(json);

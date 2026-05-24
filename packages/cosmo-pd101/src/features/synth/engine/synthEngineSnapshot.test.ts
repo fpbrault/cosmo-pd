@@ -146,10 +146,18 @@ describe("createSynthEngineSnapshot", () => {
 		}
 	});
 
-	it("passes non-phaseMod slots through unchanged", () => {
+	it("sanitizes non-phaseMod slots into engine-safe payloads", () => {
 		const fxSlot = {
 			type: "delay",
-			params: { enabled: true, time: 200, feedback: 0.3, mix: 0.5 },
+			params: {
+				enabled: true,
+				time: 200,
+				feedback: 0.3,
+				mix: 0.5,
+				tapeMode: 1,
+				timeMode: "sync",
+				syncDivision: "eighth",
+			},
 		} as const;
 		const preset = {
 			...MINIMAL_PRESET,
@@ -166,7 +174,19 @@ describe("createSynthEngineSnapshot", () => {
 		});
 
 		expect(result.params.fxSlots).toHaveLength(1);
-		expect(result.params.fxSlots?.[0]).toBe(fxSlot);
+		expect(result.params.fxSlots?.[0]).toEqual({
+			type: "delay",
+			params: {
+				enabled: true,
+				time: 200,
+				feedback: 0.3,
+				mix: 0.5,
+				tapeMode: true,
+				warmth: 0.5,
+				timeMode: "sync",
+				syncDivision: "eighth",
+			},
+		});
 	});
 
 	it("passes null/undefined fxSlots through", () => {
