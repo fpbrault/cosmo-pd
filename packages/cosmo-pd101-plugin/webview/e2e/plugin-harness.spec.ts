@@ -1,5 +1,12 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { setupPluginPage } from "./helpers/pluginBridge";
+
+async function revealMainVolumeValueBubble(page: Page) {
+	const knob = page.getByRole("spinbutton", { name: "Main Volume" });
+	await expect(knob).toBeVisible();
+	await knob.hover();
+	return page.getByRole("button", { name: "Main Volume value" });
+}
 
 test.beforeEach(async ({ page }) => {
 	await setupPluginPage(page);
@@ -38,9 +45,8 @@ test.describe("Harness shell", () => {
 		await page.getByTestId("debug-push-value").fill("0.9");
 		await page.getByTestId("debug-push-btn").click();
 
-		// TODO: Verify the actual parameter name and expected text value match the UI
-		await expect(
-			page.getByRole("button", { name: "Volume value" }).first(),
-		).toContainText("90%", { timeout: 2000 });
+		await expect(await revealMainVolumeValueBubble(page)).toContainText("90%", {
+			timeout: 2000,
+		});
 	});
 });

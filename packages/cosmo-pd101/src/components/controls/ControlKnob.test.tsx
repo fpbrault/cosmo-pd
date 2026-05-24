@@ -1,9 +1,47 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import type { ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ControlKnob from "./ControlKnob";
 
 const useOptionalSynthControllerMock = vi.fn();
+
+function mockControlKnobRects() {
+	return vi
+		.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+		.mockImplementation(function (this: HTMLElement) {
+			if (this.getAttribute("role") === "spinbutton") {
+				return {
+					x: 120,
+					y: 120,
+					width: 80,
+					height: 80,
+					top: 120,
+					right: 200,
+					bottom: 200,
+					left: 120,
+					toJSON: () => ({}),
+				};
+			}
+
+			return {
+				x: 124,
+				y: 88,
+				width: 72,
+				height: 24,
+				top: 88,
+				right: 196,
+				bottom: 112,
+				left: 124,
+				toJSON: () => ({}),
+			};
+		});
+}
 
 vi.mock("@/features/synth/SynthParamController", () => ({
 	useOptionalSynthController: () => useOptionalSynthControllerMock(),
@@ -19,6 +57,12 @@ describe("ControlKnob", () => {
 	beforeEach(() => {
 		useOptionalSynthControllerMock.mockReset();
 		useOptionalSynthControllerMock.mockReturnValue(null);
+		mockControlKnobRects();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.restoreAllMocks();
 	});
 
 	it("renders label and formatted value", () => {
@@ -29,6 +73,7 @@ describe("ControlKnob", () => {
 				label="Cutoff"
 				min={0}
 				max={1}
+				valueVisibility="always"
 			/>,
 		);
 
@@ -47,6 +92,7 @@ describe("ControlKnob", () => {
 				label="Cutoff"
 				min={0}
 				max={1}
+				valueVisibility="always"
 			/>,
 		);
 
@@ -189,6 +235,70 @@ describe("ControlKnob", () => {
 		expect(screen.queryByRole("button", { name: "Pitch value" })).toBeNull();
 	});
 
+	it("places value bubble above the knob", () => {
+		render(<ControlKnob value={0.5} onChange={vi.fn()} label="Pan" />);
+
+		fireEvent.pointerEnter(screen.getByRole("spinbutton", { name: "Pan" }));
+
+		const bubble = screen.getByTestId("knob-value-bubble");
+		expect(bubble).toHaveAttribute("data-placement", "above");
+	});
+
+	it("reveals on hover only after delay", async () => {
+		render(<ControlKnob value={0.5} onChange={vi.fn()} label="Depth" />);
+
+		const knob = screen.getByRole("spinbutton", { name: "Depth" });
+		fireEvent.focus(knob);
+
+		expect(screen.queryByRole("button", { name: "Depth value" })).toBeNull();
+
+		await waitFor(() => {
+			expect(screen.getByRole("button", { name: "Depth value" })).toHaveClass(
+				"opacity-100",
+			);
+		});
+	});
+
+	it("cancels delayed reveal when leaving hover before timeout", () => {
+		vi.useFakeTimers();
+		render(<ControlKnob value={0.5} onChange={vi.fn()} label="Depth" />);
+
+		const knob = screen.getByRole("spinbutton", { name: "Depth" });
+		fireEvent.pointerEnter(knob);
+		fireEvent.pointerLeave(knob);
+
+		act(() => {
+			vi.advanceTimersByTime(300);
+		});
+		expect(screen.queryByRole("button", { name: "Depth value" })).toBeNull();
+	});
+
+	it("shows bubble immediately while dragging", () => {
+		vi.useFakeTimers();
+		const onChange = vi.fn();
+		render(
+			<ControlKnob
+				value={0.4}
+				onChange={onChange}
+				label="Drive"
+				min={0}
+				max={1}
+			/>,
+		);
+
+		const knob = screen.getByRole("spinbutton", { name: "Drive" });
+		fireEvent.pointerDown(knob, {
+			pointerId: 1,
+			pointerType: "mouse",
+			clientX: 28,
+			clientY: 28,
+		});
+
+		expect(screen.getByRole("button", { name: "Drive value" })).toHaveClass(
+			"opacity-100",
+		);
+	});
+
 	it("wraps knob with modulatable control when destination resolves", () => {
 		render(
 			<ControlKnob
@@ -231,6 +341,7 @@ describe("ControlKnob", () => {
 				label="Freq"
 				min={20}
 				max={20000}
+				valueVisibility="always"
 				valueFormatter={(v) => `${v}Hz`}
 			/>,
 		);
@@ -261,6 +372,7 @@ describe("ControlKnob", () => {
 				label="Vol"
 				min={0}
 				max={1}
+				valueVisibility="always"
 			/>,
 		);
 
