@@ -268,6 +268,112 @@ describe("useSynthStore", () => {
 		expect(state.lineSelect).toBe("L1");
 		expect(state.modMode).toBe("normal");
 	});
+
+	it("clamps all integer-backed setters with min/mid/max coverage", () => {
+		const {
+			setLineOctave,
+			setLine2DetuneOctave,
+			setLine2DetuneNote,
+			setLine2DetuneFine,
+			setLine1DcwKeyFollow,
+			setLine1DcaKeyFollow,
+			setLine2DcwKeyFollow,
+			setLine2DcaKeyFollow,
+			setOctave,
+		} = useSynthStore.getState();
+
+		act(() => {
+			setLineOctave(99);
+			setLine2DetuneOctave(-99);
+			setLine2DetuneNote(99);
+			setLine2DetuneFine(-99);
+			setLine1DcwKeyFollow(99);
+			setLine1DcaKeyFollow(-99);
+			setLine2DcwKeyFollow(4);
+			setLine2DcaKeyFollow(5);
+			setOctave(99);
+		});
+
+		const state = useSynthStore.getState();
+		expect(state.lineOctave).toBe(2);
+		expect(state.line2DetuneOctave).toBe(-3);
+		expect(state.line2DetuneNote).toBe(11);
+		expect(state.line2DetuneFine).toBe(-60);
+		expect(state.line1DcwKeyFollow).toBe(9);
+		expect(state.line1DcaKeyFollow).toBe(0);
+		expect(state.line2DcwKeyFollow).toBe(4);
+		expect(state.line2DcaKeyFollow).toBe(5);
+		expect(state.octave).toBe(2);
+	});
+
+	it("preserves ring/noise only on dual-line selections", () => {
+		const { setLineSelect, setModMode } = useSynthStore.getState();
+		const dualLineSelects = ["L1+L2'", "L1+L1'"] as const;
+		const singleLineSelects = ["L1", "L2"] as const;
+		const nonNormalModes = ["ring", "noise"] as const;
+
+		for (const lineSelect of dualLineSelects) {
+			for (const mode of nonNormalModes) {
+				act(() => {
+					setLineSelect(lineSelect);
+					setModMode(mode);
+				});
+				expect(useSynthStore.getState().modMode).toBe(mode);
+			}
+		}
+
+		for (const lineSelect of singleLineSelects) {
+			for (const mode of nonNormalModes) {
+				act(() => {
+					setLineSelect(lineSelect);
+					setModMode(mode);
+				});
+				expect(useSynthStore.getState().modMode).toBe("normal");
+			}
+		}
+	});
+
+	it("zeroes line2 detune in gatherState for single-line mode", () => {
+		const {
+			setLineSelect,
+			setLine2DetuneNote,
+			setLine2DetuneFine,
+			setLine2DetuneOctave,
+			gatherState,
+		} = useSynthStore.getState();
+		act(() => {
+			setLine2DetuneNote(8);
+			setLine2DetuneFine(30);
+			setLine2DetuneOctave(2);
+			setLineSelect("L1");
+		});
+		const singleLine = gatherState();
+		expect(singleLine.params.line2.detuneNote).toBe(0);
+		expect(singleLine.params.line2.detuneFine).toBe(0);
+
+		act(() => {
+			setLineSelect("L1+L2'");
+		});
+		const dualLine = gatherState();
+		expect(dualLine.params.line2.detuneNote).toBe(8);
+		expect(dualLine.params.line2.detuneFine).toBe(30);
+	});
+
+	it("updates macro labels by index", () => {
+		const { setMacroLabel } = useSynthStore.getState();
+		act(() => {
+			setMacroLabel(0, "One");
+			setMacroLabel(1, "");
+			setMacroLabel(2, "Three");
+			setMacroLabel(3, "Long Macro Label");
+		});
+		expect(useSynthStore.getState().macroLabels).toEqual([
+			"One",
+			"",
+			"Three",
+			"Long Macro Label",
+		]);
+	});
 });
 
 // Helper to make act work with zustand in tests

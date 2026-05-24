@@ -1,5 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { SynthHeaderProps } from "@/components/preset/SynthHeader";
+import type { MainPanelMode } from "@/features/synth/synthUiStore";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import SynthRenderer from "./SynthRenderer";
 
@@ -19,7 +21,7 @@ const mockSynthStoreState = {
 };
 
 const mockSynthUiStoreState = {
-	mainPanelMode: "phase" as const,
+	mainPanelMode: "phase" as MainPanelMode,
 	setMainPanelMode: vi.fn(),
 	keyboardVisible: false,
 	setKeyboardVisible: vi.fn(),
@@ -43,7 +45,12 @@ vi.mock("@/components/modals", () => ({
 		open ? <div data-testid="global-voice-panel" /> : null,
 	KeyboardSettingsModal: () => null,
 	MacroLabelEditorModal: () => null,
-	PendingModifiedPresetModal: () => null,
+	PendingModifiedPresetModal: ({
+		pendingPresetChange,
+	}: {
+		pendingPresetChange: unknown;
+	}) =>
+		pendingPresetChange ? <div data-testid="pending-preset-modal" /> : null,
 	SynthBrandInfoModal: () => null,
 }));
 vi.mock("@/components/panels/drawers/FxConsoleDrawer", () => ({
@@ -151,7 +158,7 @@ const mockPresetManager = {
 	visiblePresetEntries: [] as PresetEntry[],
 	activePresetId: "1",
 	activePresetName: "Test Preset",
-	pendingPresetChange: null,
+	pendingPresetChange: null as SynthHeaderProps["pendingPresetChange"],
 	handleLoadLocal: vi.fn(),
 	handleLoadBuiltin: vi.fn(),
 	handleLoadLibrary: vi.fn(),
@@ -206,6 +213,7 @@ describe("SynthRenderer Smoke Test", () => {
 		mockSynthUiStoreState.setKeyboardVisible.mockReset();
 		mockSynthUiStoreState.setLibraryModeOpen.mockReset();
 		mockPresetManager.visiblePresetEntries = [];
+		mockPresetManager.pendingPresetChange = null;
 	});
 
 	it("renders without crashing", () => {
@@ -228,5 +236,23 @@ describe("SynthRenderer Smoke Test", () => {
 		expect(mockSynthUiStoreState.setLibraryModeOpen).toHaveBeenCalledWith(
 			false,
 		);
+	});
+
+	it("renders modulation drawer content in mod mode", () => {
+		mockSynthUiStoreState.mainPanelMode = "mod";
+		render(<SynthRenderer />);
+		expect(screen.getByTestId("mod-console-drawer")).toBeInTheDocument();
+	});
+
+	it("renders pending preset modal when pending changes exist", () => {
+		mockPresetManager.pendingPresetChange = {
+			activePresetName: "Init",
+			activeLocalName: null,
+			suggestedName: "Init 2",
+			changes: [{ path: "volume", previous: "0.1", next: "0.2" }],
+		};
+
+		render(<SynthRenderer />);
+		expect(screen.getByTestId("pending-preset-modal")).toBeInTheDocument();
 	});
 });
