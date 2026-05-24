@@ -11,6 +11,38 @@ import ControlKnob from "./ControlKnob";
 
 const useOptionalSynthControllerMock = vi.fn();
 
+function mockControlKnobRects() {
+	return vi
+		.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+		.mockImplementation(function (this: HTMLElement) {
+			if (this.getAttribute("role") === "spinbutton") {
+				return {
+					x: 120,
+					y: 120,
+					width: 80,
+					height: 80,
+					top: 120,
+					right: 200,
+					bottom: 200,
+					left: 120,
+					toJSON: () => ({}),
+				};
+			}
+
+			return {
+				x: 124,
+				y: 88,
+				width: 72,
+				height: 24,
+				top: 88,
+				right: 196,
+				bottom: 112,
+				left: 124,
+				toJSON: () => ({}),
+			};
+		});
+}
+
 vi.mock("@/features/synth/SynthParamController", () => ({
 	useOptionalSynthController: () => useOptionalSynthControllerMock(),
 }));
@@ -25,6 +57,7 @@ describe("ControlKnob", () => {
 	beforeEach(() => {
 		useOptionalSynthControllerMock.mockReset();
 		useOptionalSynthControllerMock.mockReturnValue(null);
+		mockControlKnobRects();
 	});
 
 	afterEach(() => {
@@ -40,6 +73,7 @@ describe("ControlKnob", () => {
 				label="Cutoff"
 				min={0}
 				max={1}
+				valueVisibility="always"
 			/>,
 		);
 
@@ -58,6 +92,7 @@ describe("ControlKnob", () => {
 				label="Cutoff"
 				min={0}
 				max={1}
+				valueVisibility="always"
 			/>,
 		);
 
@@ -215,9 +250,7 @@ describe("ControlKnob", () => {
 		const knob = screen.getByRole("spinbutton", { name: "Depth" });
 		fireEvent.focus(knob);
 
-		expect(screen.getByRole("button", { name: "Depth value" })).toHaveClass(
-			"opacity-0",
-		);
+		expect(screen.queryByRole("button", { name: "Depth value" })).toBeNull();
 
 		await waitFor(() => {
 			expect(screen.getByRole("button", { name: "Depth value" })).toHaveClass(
@@ -237,9 +270,7 @@ describe("ControlKnob", () => {
 		act(() => {
 			vi.advanceTimersByTime(300);
 		});
-		expect(screen.getByRole("button", { name: "Depth value" })).toHaveClass(
-			"opacity-0",
-		);
+		expect(screen.queryByRole("button", { name: "Depth value" })).toBeNull();
 	});
 
 	it("shows bubble immediately while dragging", () => {
@@ -310,6 +341,7 @@ describe("ControlKnob", () => {
 				label="Freq"
 				min={20}
 				max={20000}
+				valueVisibility="always"
 				valueFormatter={(v) => `${v}Hz`}
 			/>,
 		);
@@ -340,6 +372,7 @@ describe("ControlKnob", () => {
 				label="Vol"
 				min={0}
 				max={1}
+				valueVisibility="always"
 			/>,
 		);
 

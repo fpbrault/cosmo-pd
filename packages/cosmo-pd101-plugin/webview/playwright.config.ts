@@ -2,6 +2,9 @@
 
 import { defineConfig, devices } from "@playwright/test";
 
+const playwrightPort = process.env.PLAYWRIGHT_WEB_PORT ?? "5175";
+const baseUrl = `http://127.0.0.1:${playwrightPort}`;
+
 /**
  * Playwright E2E config for the cosmo-pd101 webview mock-host harness.
  *
@@ -20,7 +23,7 @@ export default defineConfig({
 	reporter: process.env.CI ? "github" : "list",
 
 	use: {
-		baseURL: "http://127.0.0.1:5175",
+		baseURL: baseUrl,
 		trace: "on-first-retry",
 		screenshot: "only-on-failure",
 	},
@@ -33,10 +36,9 @@ export default defineConfig({
 	],
 
 	webServer: {
-		command:
-			"bun --filter @cosmo/cosmo-pd101 build:lib && bunx --bun vite --host 127.0.0.1 --port 5175 --strictPort",
-		url: "http://127.0.0.1:5175",
-		reuseExistingServer: false,
+		command: `bun --filter @cosmo/cosmo-pd101 build:lib && bunx --bun vite --host 127.0.0.1 --port ${playwrightPort} --strictPort`,
+		url: baseUrl,
+		reuseExistingServer: !process.env.CI,
 		env: {
 			VITE_TEST_HARNESS: "1",
 			VITE_DEBUG_PANEL: "0",

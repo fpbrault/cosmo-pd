@@ -1,9 +1,16 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import {
 	getMessages,
 	setupPluginPage,
 	waitForMessage,
 } from "./helpers/pluginBridge";
+
+async function revealMainVolumeValueBubble(page: Page) {
+	const knob = page.getByRole("spinbutton", { name: "Main Volume" });
+	await expect(knob).toBeVisible();
+	await knob.hover();
+	return page.getByRole("button", { name: "Main Volume value" });
+}
 
 test.beforeEach(async ({ page }) => {
 	await setupPluginPage(page);
@@ -62,11 +69,11 @@ test.describe("UI to host outbound messages", () => {
 		await page.evaluate(() => window.__MOCK_BRIDGE__?.pushParamUpdate(0, 0.8));
 		await page.evaluate(() => window.__MOCK_BRIDGE__?.clearMessages());
 
-		const displayButton = page.getByRole("button", { name: "Volume value" });
+		const displayButton = await revealMainVolumeValueBubble(page);
 		await expect(displayButton).toBeVisible();
 		await displayButton.dblclick();
 
-		const editInput = page.getByRole("textbox", { name: "Volume value" });
+		const editInput = page.getByRole("textbox", { name: "Main Volume value" });
 		await expect(editInput).toBeVisible();
 		await editInput.fill("0.5");
 		await editInput.press("Enter");

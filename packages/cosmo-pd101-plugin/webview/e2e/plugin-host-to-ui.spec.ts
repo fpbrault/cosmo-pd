@@ -1,5 +1,12 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { setupPluginPage } from "./helpers/pluginBridge";
+
+async function revealMainVolumeValueBubble(page: Page) {
+	const knob = page.getByRole("spinbutton", { name: "Main Volume" });
+	await expect(knob).toBeVisible();
+	await knob.hover();
+	return page.getByRole("button", { name: "Main Volume value" });
+}
 
 test.beforeEach(async ({ page }) => {
 	await setupPluginPage(page);
@@ -11,9 +18,9 @@ test.describe("Host to UI inbound updates", () => {
 	}) => {
 		await page.evaluate(() => window.__MOCK_BRIDGE__?.pushParamUpdate(0, 0.6));
 
-		await expect(
-			page.getByRole("button", { name: "Volume value" }).first(),
-		).toHaveText("60%", { timeout: 2000 });
+		await expect(await revealMainVolumeValueBubble(page)).toHaveText("60%", {
+			timeout: 2000,
+		});
 	});
 
 	test("debug panel DSP state reflects pushed param update", async ({
@@ -39,8 +46,8 @@ test.describe("Host to UI inbound updates", () => {
 			}),
 		);
 
-		await expect(
-			page.getByRole("button", { name: "Main Volume value" }).first(),
-		).toHaveText("33%", { timeout: 2000 });
+		await expect(await revealMainVolumeValueBubble(page)).toHaveText("33%", {
+			timeout: 2000,
+		});
 	});
 });

@@ -1,5 +1,6 @@
 import {
 	type CSSProperties,
+	type MutableRefObject,
 	type ReactNode,
 	useCallback,
 	useEffect,
@@ -102,9 +103,9 @@ const VARIANT_ACCENT_COLOR: Record<
 	dark: "var(--color-cz-gold)",
 };
 
-const VALUE_BUBBLE_REVEAL_DELAY_MS = 500;
+const VALUE_BUBBLE_REVEAL_DELAY_MS = 180;
 const VALUE_BUBBLE_EDGE_PADDING_PX = 8;
-const VALUE_BUBBLE_GAP_PX = 1;
+const VALUE_BUBBLE_GAP_PX = 20;
 const VALUE_BUBBLE_ARROW_HALF_WIDTH_PX = 5;
 const VALUE_BUBBLE_LEAVE_GRACE_MS = 120;
 
@@ -155,7 +156,9 @@ export default function ControlKnob({
 }: ControlKnobProps) {
 	const svgRef = useRef<SVGSVGElement | null>(null);
 	const buttonRef = useRef<HTMLButtonElement | null>(null);
-	const valueBubbleRef = useRef<HTMLDivElement | null>(null);
+	const valueBubbleRef = useRef<
+		HTMLDivElement | HTMLButtonElement | HTMLInputElement | null
+	>(null);
 	const revealTimerRef = useRef<number | null>(null);
 	const hoverLeaveTimerRef = useRef<number | null>(null);
 	const [hovered, setHovered] = useState(false);
@@ -471,15 +474,34 @@ export default function ControlKnob({
 		disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer"
 	} ${valueBubbleVisible ? "opacity-100" : "pointer-events-none opacity-0"}`;
 	const valueBubbleInteractive = valueBubbleVisible && valueBubbleLayout.ready;
+	const shouldRenderValueBubbleControl = editing || valueBubbleInteractive;
+	const shouldRenderValueBubbleMeasurement =
+		valueBubbleVisible && !valueBubbleInteractive && !editing;
+	const setValueBubbleNodeRef = useCallback(
+		(node: HTMLDivElement | HTMLButtonElement | HTMLInputElement | null) => {
+			valueBubbleRef.current = node;
+			if (node && valueBubbleVisible) {
+				requestAnimationFrame(() => {
+					updateValueBubbleLayout();
+				});
+			}
+		},
+		[updateValueBubbleLayout, valueBubbleVisible],
+	);
+	const setValueBubbleInputRef = useCallback(
+		(node: HTMLInputElement | null) => {
+			setValueBubbleNodeRef(node);
+			(inputRef as MutableRefObject<HTMLInputElement | null>).current = node;
+		},
+		[inputRef, setValueBubbleNodeRef],
+	);
 
 	const valueIndicatorEl =
 		valueVisibility !== "never" ? (
 			<div
-				ref={valueBubbleRef}
 				className={valueBubbleShellClass}
 				data-testid="knob-value-bubble"
 				data-placement={valueBubbleLayout.placement}
-				aria-hidden={!valueBubbleInteractive}
 				style={
 					{
 						top:
@@ -505,11 +527,9 @@ export default function ControlKnob({
 			>
 				{editing ? (
 					<input
-						ref={inputRef as React.RefObject<HTMLInputElement>}
+						ref={setValueBubbleInputRef}
 						type="text"
 						aria-label={valueControlLabel}
-						aria-hidden={!valueBubbleInteractive}
-						tabIndex={valueBubbleInteractive ? 0 : -1}
 						className={`${valueBubbleBodyClass} w-16 text-center text-base-content outline-none focus:border-primary`}
 						style={
 							{
@@ -521,19 +541,31 @@ export default function ControlKnob({
 						onBlur={onEditBlur}
 						onKeyDown={onEditKeyDown}
 					/>
-				) : (
-					<Button
-						type="button"
-						aria-label={valueControlLabel}
-						aria-hidden={!valueBubbleInteractive}
-						tabIndex={valueBubbleInteractive ? 0 : -1}
+				) : shouldRenderValueBubbleMeasurement ? (
+					<div
+						ref={setValueBubbleNodeRef}
+						aria-hidden="true"
 						className={valueBubbleBodyClass}
 						style={
 							{
 								"--knob-bubble-arrow-left": `${valueBubbleLayout.arrowLeft}px`,
 							} as CSSProperties
 						}
-						disabled={disabled || !valueBubbleInteractive}
+					>
+						{displayValue}
+					</div>
+				) : shouldRenderValueBubbleControl ? (
+					<Button
+						ref={setValueBubbleNodeRef}
+						type="button"
+						aria-label={valueControlLabel}
+						className={valueBubbleBodyClass}
+						style={
+							{
+								"--knob-bubble-arrow-left": `${valueBubbleLayout.arrowLeft}px`,
+							} as CSSProperties
+						}
+						disabled={disabled}
 						onDoubleClick={(e) => {
 							e.preventDefault();
 							e.stopPropagation();
@@ -542,7 +574,7 @@ export default function ControlKnob({
 					>
 						{displayValue}
 					</Button>
-				)}
+				) : null}
 			</div>
 		) : null;
 
