@@ -470,6 +470,7 @@ export default function ControlKnob({
 	const valueBubbleBodyClass = `pointer-events-auto relative whitespace-nowrap rounded-sm border-transparent bg-white px-1.5 py-0.5 font-semibold text-2xs leading-none text-black shadow-[0_2px_6px_rgba(0,0,0,0.5)] transition-all duration-150 ${valueBubbleArrowClass} ${
 		disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer"
 	} ${valueBubbleVisible ? "opacity-100" : "pointer-events-none opacity-0"}`;
+	const valueBubbleInteractive = valueBubbleVisible && valueBubbleLayout.ready;
 
 	const valueIndicatorEl =
 		valueVisibility !== "never" ? (
@@ -478,6 +479,7 @@ export default function ControlKnob({
 				className={valueBubbleShellClass}
 				data-testid="knob-value-bubble"
 				data-placement={valueBubbleLayout.placement}
+				aria-hidden={!valueBubbleInteractive}
 				style={
 					{
 						top:
@@ -506,6 +508,8 @@ export default function ControlKnob({
 						ref={inputRef as React.RefObject<HTMLInputElement>}
 						type="text"
 						aria-label={valueControlLabel}
+						aria-hidden={!valueBubbleInteractive}
+						tabIndex={valueBubbleInteractive ? 0 : -1}
 						className={`${valueBubbleBodyClass} w-16 text-center text-base-content outline-none focus:border-primary`}
 						style={
 							{
@@ -521,13 +525,15 @@ export default function ControlKnob({
 					<Button
 						type="button"
 						aria-label={valueControlLabel}
+						aria-hidden={!valueBubbleInteractive}
+						tabIndex={valueBubbleInteractive ? 0 : -1}
 						className={valueBubbleBodyClass}
 						style={
 							{
 								"--knob-bubble-arrow-left": `${valueBubbleLayout.arrowLeft}px`,
 							} as CSSProperties
 						}
-						disabled={disabled}
+						disabled={disabled || !valueBubbleInteractive}
 						onDoubleClick={(e) => {
 							e.preventDefault();
 							e.stopPropagation();
