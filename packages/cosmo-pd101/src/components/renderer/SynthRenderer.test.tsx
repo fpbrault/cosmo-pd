@@ -1,5 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { SynthHeaderProps } from "@/components/preset/SynthHeader";
+import type { MainPanelMode } from "@/features/synth/synthUiStore";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import SynthRenderer from "./SynthRenderer";
 
@@ -19,7 +21,7 @@ const mockSynthStoreState = {
 };
 
 const mockSynthUiStoreState = {
-	mainPanelMode: "phase" as const,
+	mainPanelMode: "phase" as MainPanelMode,
 	setMainPanelMode: vi.fn(),
 	keyboardVisible: false,
 	setKeyboardVisible: vi.fn(),
@@ -156,7 +158,7 @@ const mockPresetManager = {
 	visiblePresetEntries: [] as PresetEntry[],
 	activePresetId: "1",
 	activePresetName: "Test Preset",
-	pendingPresetChange: null,
+	pendingPresetChange: null as SynthHeaderProps["pendingPresetChange"],
 	handleLoadLocal: vi.fn(),
 	handleLoadBuiltin: vi.fn(),
 	handleLoadLibrary: vi.fn(),
