@@ -130,7 +130,7 @@ export function resolvePresetPatchParams(
 	config: FxSlotModuleConfig,
 	presetPatch: Record<string, unknown>,
 ): Record<string, unknown> | null {
-	const patchParams = presetPatch[config.patchKey];
+	const patchParams = presetPatch[config.moduleKey];
 	if (!patchParams || typeof patchParams !== "object") {
 		return null;
 	}

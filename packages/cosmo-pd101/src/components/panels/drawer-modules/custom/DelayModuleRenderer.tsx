@@ -19,16 +19,12 @@ export default function DelayModuleRenderer() {
 	} = useFxSlotModule();
 	const tapeMode = asNumber(params.tapeMode, 0) === 1;
 	const columns = tapeMode ? 4 : 3;
-	const modeLabel = tapeMode ? "Tape Echo" : "Digital";
-
 	return (
 		<ModuleFrame
 			title={config.title}
 			color={config.color}
-			meta={modeLabel}
 			columns={columns}
 			enabled={enabled}
-			presetTitle={config.presetTitle}
 			presetValue={selectedPreset}
 			presetOptions={config.presets}
 			onPresetChange={handlePresetChange}

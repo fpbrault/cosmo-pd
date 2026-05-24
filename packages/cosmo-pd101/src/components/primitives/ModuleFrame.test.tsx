@@ -9,7 +9,6 @@ describe("ModuleFrame", () => {
 				title="Delay"
 				color="#fbbf24"
 				enabled
-				presetTitle="Delay Presets"
 				presetValue=""
 				presetOptions={[{ id: "wide", label: "Wide" }]}
 				onPresetChange={vi.fn()}
@@ -30,7 +29,6 @@ describe("ModuleFrame", () => {
 				title="Random"
 				color="#c2571a"
 				enabled
-				presetTitle="Random Presets"
 				presetValue=""
 				presetOptions={[]}
 				onPresetChange={vi.fn()}

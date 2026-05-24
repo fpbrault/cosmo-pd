@@ -199,10 +199,8 @@ export default function GenericFxSlotModule() {
 		<ModuleFrame
 			title={moduleTitle}
 			color={config.color}
-			meta={config.meta}
 			columns={moduleColumns}
 			enabled={enabled}
-			presetTitle={config.presetTitle}
 			presetValue={selectedPreset}
 			presetOptions={config.presets}
 			onPresetChange={handlePresetChange}

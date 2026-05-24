@@ -56,7 +56,9 @@ describe("FxSlotFrame", () => {
 	it("shows a visible effect-type pill and keeps the selector working", () => {
 		render(<FxSlotFrame slot={0} />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Change effect type" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Change effect type (Delay)" }),
+		);
 
 		expect(
 			screen.getByRole("dialog", { name: "Select effect type" }),

@@ -48,7 +48,7 @@ export default memo(function SynthSidebar({
 	return (
 		<aside className="flex min-h-0 min-w-72 flex-col overflow-hidden rounded-[1.15rem] border border-cz-border/80 bg-cz-inset px-0 pb-2 shadow-lg">
 			<div className="min-w-full">
-				<div className="relative h-[15rem] overflow-hidden">
+				<div className="relative h-60 overflow-hidden">
 					<div className="absolute inset-0 p-3">
 						<ScopeMiniDisplay
 							analyserNodeRef={analyserNodeRef}

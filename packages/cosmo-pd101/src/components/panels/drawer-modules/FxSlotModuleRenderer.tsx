@@ -9,11 +9,11 @@ import type { FxSlotModuleConfig } from "@/components/panels/drawer-modules/fxSl
 import GenericFxSlotModule from "@/components/panels/drawer-modules/GenericFxSlotModule";
 
 const FX_CUSTOM_RENDERERS = {
-	delayLegacy: DelayModuleRenderer,
-	grainDelayLegacy: GrainDelayModuleRenderer,
-	phaseModLegacy: PhaseModModuleRenderer,
-	tremoloLegacy: TremoloModuleRenderer,
-	vibratoLegacy: VibratoModuleRenderer,
+	delayModuleRenderer: DelayModuleRenderer,
+	graindelayModuleRenderer: GrainDelayModuleRenderer,
+	phaseModModuleRenderer: PhaseModModuleRenderer,
+	tremoloModuleRenderer: TremoloModuleRenderer,
+	vibratoModuleRenderer: VibratoModuleRenderer,
 } as const;
 
 export default function FxSlotModuleRenderer({

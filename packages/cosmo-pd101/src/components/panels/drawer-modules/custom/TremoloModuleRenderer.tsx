@@ -27,7 +27,6 @@ export default function TremoloModuleRenderer() {
 			color={config.color}
 			columns={3}
 			enabled={enabled}
-			presetTitle={config.presetTitle}
 			presetValue={selectedPreset}
 			presetOptions={config.presets}
 			onPresetChange={handlePresetChange}

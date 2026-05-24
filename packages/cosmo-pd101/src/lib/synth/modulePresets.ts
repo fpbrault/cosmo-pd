@@ -1,34 +1,15 @@
 import {
+	type FxSlotType,
 	type LfoWaveform,
 	MODULE_PRESET_CATALOG_V1,
 } from "@/lib/synth/bindings/synth";
 
 export type ModulePresetModule =
-	| "chorus"
-	| "delay"
-	| "reverb"
-	| "phaser"
-	| "vibrato"
-	| "phaseMod"
+	| FxSlotType
 	| "lfo1"
 	| "lfo2"
 	| "modEnv"
-	| "compressor"
-	| "eq"
-	| "grainDelay"
-	| "bitcrusher"
-	| "shimmerVerb"
-	| "distortion"
-	| "junoChorus"
-	| "ringMod"
-	| "tremolo"
-	| "wavefolder"
-	| "loFi"
-	| "multimodeFilter"
-	| "flanger"
-	| "rotarySpeaker"
-	| "autoWah"
-	| "stereoWidener";
+	| "random";
 
 export type ModulePresetPatch = Record<string, unknown>;
 
@@ -1090,7 +1071,7 @@ applyRustPresetCatalog("lfo1", LFO_PRESETS);
 applyRustPresetCatalog("lfo2", LFO_PRESETS);
 applyRustPresetCatalog("modEnv", MOD_ENV_PRESETS);
 applyRustPresetCatalog("compressor", COMPRESSOR_PRESETS);
-applyRustPresetCatalog("eq", EQ_PRESETS);
+applyRustPresetCatalog("eq5Band", EQ_PRESETS);
 applyRustPresetCatalog("grainDelay", GRAIN_DELAY_PRESETS);
 applyRustPresetCatalog("bitcrusher", BITCRUSHER_PRESETS);
 applyRustPresetCatalog("shimmerVerb", SHIMMER_VERB_PRESETS);

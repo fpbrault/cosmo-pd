@@ -12,7 +12,6 @@ import {
 	JUNO_CHORUS_PRESETS,
 	LOFI_PRESETS,
 	type ModulePresetDefinition,
-	type ModulePresetModule,
 	type ModulePresetPatch,
 	MULTIMODE_FILTER_PRESETS,
 	PHASE_MOD_PRESETS,
@@ -22,11 +21,11 @@ import {
 	ROTARY_SPEAKER_PRESETS,
 	SHIMMER_VERB_PRESETS,
 	STEREO_WIDENER_PRESETS,
+	type ModulePresetModule as SynthModuleType,
 	TREMOLO_PRESETS,
 	VIBRATO_PRESETS,
 	WAVEFOLDER_PRESETS,
 } from "@/lib/synth/modulePresets";
-
 export type KnobControlDef = {
 	kind: "knob";
 	param: string;
@@ -47,7 +46,6 @@ export type KnobControlDef = {
 	};
 	sourceIndex: number;
 };
-
 export type ButtonGroupControlDef = {
 	kind: "buttonGroup";
 	param: string;
@@ -66,22 +64,18 @@ export type ButtonGroupControlDef = {
 	};
 	sourceIndex: number;
 };
-
 export type ControlDef = KnobControlDef | ButtonGroupControlDef;
-
 export type FxCustomRendererKey =
-	| "delayLegacy"
-	| "phaseModLegacy"
-	| "vibratoLegacy"
-	| "tremoloLegacy";
-
+	| "delayModuleRenderer"
+	| "phaseModModuleRenderer"
+	| "vibratoModuleRenderer"
+	| "tremoloModuleRenderer";
 export type FxSlotModuleConfig = {
 	type: FxSlotType;
-	patchKey: string;
-	moduleKey: ModulePresetModule;
+	moduleKey: SynthModuleType;
 	title: string;
+	shortTitle: string;
 	color: string;
-	meta?: string;
 	columns?: number;
 	dynamicColumns?: {
 		param: string;
@@ -91,15 +85,14 @@ export type FxSlotModuleConfig = {
 	};
 	customRenderer?: FxCustomRendererKey;
 	presets: ModulePresetDefinition<ModulePresetPatch>[];
-	presetTitle: string;
+	formatters?: Partial<Record<string, FormatterFn>>;
+	controlLayout?: Partial<Record<string, ControlLayoutRule>>;
 	controls: ControlDef[];
 };
 function pct(v: number) {
 	return `${Math.round(v * 100)}%`;
 }
-
 type FormatterFn = (v: number) => string;
-
 type ControlLayoutRule = {
 	label?: string;
 	buttonPresentation?: "segmented" | "compactBinaryToggle";
@@ -114,34 +107,21 @@ type ControlLayoutRule = {
 		equals: number | boolean | string;
 	};
 };
-
-type FxUiMeta = {
-	patchKey: string;
-	moduleKey: ModulePresetModule;
-	title?: string;
-	color: string;
-	meta?: string;
-	columns?: number;
-	dynamicColumns?: {
-		param: string;
-		equals: number | boolean | string;
-		columns: number;
-		otherwiseColumns?: number;
-	};
-	customRenderer?: FxCustomRendererKey;
-	presets: ModulePresetDefinition<ModulePresetPatch>[];
-	presetTitle: string;
-	formatters?: Partial<Record<string, FormatterFn>>;
-	controlLayout?: Partial<Record<string, ControlLayoutRule>>;
-};
-const FX_UI_META = {
+export const FX_UI_META = {
+	empty: {
+		moduleKey: "empty",
+		shortTitle: "—",
+		color: "#3b3b3b",
+		presets: [],
+		title: "Empty",
+	},
 	chorus: {
-		patchKey: "chorus",
 		moduleKey: "chorus",
+		title: "Chorus",
+		shortTitle: "Chrs",
 		color: "#818cf8",
 		columns: 3,
 		presets: CHORUS_PRESETS,
-		presetTitle: "Chorus Presets",
 		formatters: {
 			rate: (v) => `${v.toFixed(1)}Hz`,
 			depth: (v) => `${Math.round(v / 5)}%`,
@@ -149,13 +129,13 @@ const FX_UI_META = {
 		},
 	},
 	delay: {
-		patchKey: "delay",
 		moduleKey: "delay",
+		title: "Delay",
+		shortTitle: "Dly",
 		color: "#fbbf24",
 		columns: 4,
-		customRenderer: "delayLegacy",
+		customRenderer: "delayModuleRenderer",
 		presets: DELAY_PRESETS,
-		presetTitle: "Delay Presets",
 		formatters: {
 			time: (v) => `${Math.round(v * 1000)}ms`,
 			feedback: pct,
@@ -165,14 +145,13 @@ const FX_UI_META = {
 		},
 	},
 	phaseMod: {
-		patchKey: "phaseMod",
 		moduleKey: "phaseMod",
 		title: "Phase Mod",
+		shortTitle: "PhMd",
 		color: "#f43f5e",
 		columns: 3,
-		customRenderer: "phaseModLegacy",
+		customRenderer: "phaseModModuleRenderer",
 		presets: PHASE_MOD_PRESETS,
-		presetTitle: "Phase Mod Presets",
 		formatters: {
 			amount: pct,
 			ratio: (v) => `${v.toFixed(2)}x`,
@@ -180,14 +159,13 @@ const FX_UI_META = {
 		},
 	},
 	vibrato: {
-		patchKey: "vibrato",
 		moduleKey: "vibrato",
 		title: "Vibrato",
+		shortTitle: "Vib",
 		color: "#f472b6",
 		columns: 2,
-		customRenderer: "vibratoLegacy",
+		customRenderer: "vibratoModuleRenderer",
 		presets: VIBRATO_PRESETS,
-		presetTitle: "Vibrato Presets",
 		formatters: {
 			rate: (v) => `${v.toFixed(1)}Hz`,
 			depth: (v) => `${Math.round(v)}%`,
@@ -212,14 +190,12 @@ const FX_UI_META = {
 			},
 		},
 	},
-
 	phaser: {
-		patchKey: "phaser",
 		moduleKey: "phaser",
+		title: "Phaser",
+		shortTitle: "Phsr",
 		color: "#a78bfa",
-		meta: "4-Stage",
 		presets: PHASER_PRESETS,
-		presetTitle: "Phaser Presets",
 		formatters: {
 			rate: (v) => `${v.toFixed(1)}Hz`,
 			depth: pct,
@@ -229,13 +205,12 @@ const FX_UI_META = {
 		},
 	},
 	reverb: {
-		patchKey: "reverb",
 		moduleKey: "reverb",
+		title: "Reverb",
+		shortTitle: "Rvb",
 		color: "#f97316",
-		meta: "FDN",
 		columns: 3,
 		presets: REVERB_PRESETS,
-		presetTitle: "Reverb Presets",
 		formatters: {
 			mix: pct,
 			space: pct,
@@ -245,13 +220,12 @@ const FX_UI_META = {
 		},
 	},
 	compressor: {
-		patchKey: "compressor",
 		moduleKey: "compressor",
 		title: "Compressor",
+		shortTitle: "Comp",
 		color: "#fb923c",
 		columns: 3,
 		presets: COMPRESSOR_PRESETS,
-		presetTitle: "Compressor Presets",
 		formatters: {
 			thresholdDb: (v) => `${v.toFixed(0)}dB`,
 			ratio: (v) => `${v.toFixed(1)}:1`,
@@ -262,13 +236,12 @@ const FX_UI_META = {
 		},
 	},
 	eq5Band: {
-		patchKey: "eq",
-		moduleKey: "eq",
+		moduleKey: "eq5Band",
 		title: "EQ",
+		shortTitle: "EQ",
 		color: "#34d399",
 		columns: 5,
 		presets: EQ_PRESETS,
-		presetTitle: "EQ Presets",
 		formatters: {
 			gain80: (v) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`,
 			gain240: (v) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`,
@@ -278,12 +251,12 @@ const FX_UI_META = {
 		},
 	},
 	grainDelay: {
-		patchKey: "grainDelay",
 		moduleKey: "grainDelay",
+		title: "Grain Delay",
+		shortTitle: "GrDl",
 		color: "#a78bfa",
 		columns: 4,
 		presets: GRAIN_DELAY_PRESETS,
-		presetTitle: "Grain Delay Presets",
 		formatters: {
 			time: (v) => `${(v * 1000).toFixed(0)}ms`,
 			feedback: pct,
@@ -293,12 +266,12 @@ const FX_UI_META = {
 		},
 	},
 	bitcrusher: {
-		patchKey: "bitcrusher",
 		moduleKey: "bitcrusher",
+		title: "Bitcrusher",
+		shortTitle: "Bit",
 		color: "#f87171",
 		columns: 3,
 		presets: BITCRUSHER_PRESETS,
-		presetTitle: "Bitcrusher Presets",
 		formatters: {
 			bits: (v) => v.toFixed(1),
 			rateReduction: (v) => `÷${v.toFixed(1)}`,
@@ -306,13 +279,12 @@ const FX_UI_META = {
 		},
 	},
 	shimmerVerb: {
-		patchKey: "shimmerVerb",
 		moduleKey: "shimmerVerb",
 		title: "Shimmer Verb",
+		shortTitle: "Shim",
 		color: "#60a5fa",
 		columns: 3,
 		presets: SHIMMER_VERB_PRESETS,
-		presetTitle: "Shimmer Verb Presets",
 		formatters: {
 			shimmer: pct,
 			space: pct,
@@ -320,12 +292,12 @@ const FX_UI_META = {
 		},
 	},
 	distortion: {
-		patchKey: "distortion",
 		moduleKey: "distortion",
+		title: "Distortion",
+		shortTitle: "Dist",
 		color: "#f59e0b",
 		columns: 4,
 		presets: DISTORTION_PRESETS,
-		presetTitle: "Distortion Presets",
 		formatters: {
 			drive: pct,
 			tone: pct,
@@ -333,13 +305,12 @@ const FX_UI_META = {
 		},
 	},
 	loFi: {
-		patchKey: "loFi",
 		moduleKey: "loFi",
 		title: "LoFi",
+		shortTitle: "LoFi",
 		color: "#38bdf8",
 		columns: 4,
 		presets: LOFI_PRESETS,
-		presetTitle: "LoFi Presets",
 		formatters: {
 			degrade: pct,
 			wowDepth: pct,
@@ -357,26 +328,24 @@ const FX_UI_META = {
 		},
 	},
 	ringMod: {
-		patchKey: "ringMod",
 		moduleKey: "ringMod",
 		title: "Ring Mod",
+		shortTitle: "Ring",
 		color: "#e879f9",
 		columns: 2,
 		presets: RING_MOD_PRESETS,
-		presetTitle: "Ring Mod Presets",
 		formatters: {
 			carrierHz: (v) => `${v.toFixed(0)} Hz`,
 			mix: pct,
 		},
 	},
 	wavefolder: {
-		patchKey: "wavefolder",
 		moduleKey: "wavefolder",
 		title: "Wavefolder",
+		shortTitle: "Wave",
 		color: "#c084fc",
 		columns: 3,
 		presets: WAVEFOLDER_PRESETS,
-		presetTitle: "Wavefolder Presets",
 		formatters: {
 			drive: pct,
 			folds: pct,
@@ -384,25 +353,24 @@ const FX_UI_META = {
 		},
 	},
 	junoChorus: {
-		patchKey: "junoChorus",
 		moduleKey: "junoChorus",
 		title: "Juno Chorus",
+		shortTitle: "Juno",
 		color: "#22d3ee",
 		columns: 1,
 		presets: JUNO_CHORUS_PRESETS,
-		presetTitle: "Juno Chorus Presets",
 		formatters: {
 			mix: pct,
 		},
 	},
 	tremolo: {
-		patchKey: "tremolo",
 		moduleKey: "tremolo",
+		title: "Tremolo",
+		shortTitle: "Trem",
 		color: "#4ade80",
 		columns: 3,
-		customRenderer: "tremoloLegacy",
+		customRenderer: "tremoloModuleRenderer",
 		presets: TREMOLO_PRESETS,
-		presetTitle: "Tremolo Presets",
 		formatters: {
 			rate: (v) => `${v.toFixed(1)}Hz`,
 			depth: pct,
@@ -410,13 +378,12 @@ const FX_UI_META = {
 		},
 	},
 	multimodeFilter: {
-		patchKey: "multimodeFilter",
 		moduleKey: "multimodeFilter",
 		title: "Multimode Filter",
+		shortTitle: "MMF",
 		color: "#fca5a5",
 		columns: 3,
 		presets: MULTIMODE_FILTER_PRESETS,
-		presetTitle: "Multimode Filter Presets",
 		formatters: {
 			cutoffHz: (v) => `${Math.round(v)}Hz`,
 			resonance: pct,
@@ -425,13 +392,12 @@ const FX_UI_META = {
 		},
 	},
 	flanger: {
-		patchKey: "flanger",
 		moduleKey: "flanger",
 		title: "Flanger",
+		shortTitle: "Flng",
 		color: "#67e8f9",
 		columns: 3,
 		presets: FLANGER_PRESETS,
-		presetTitle: "Flanger Presets",
 		formatters: {
 			rate: (v) => `${v.toFixed(2)}Hz`,
 			depth: pct,
@@ -441,13 +407,12 @@ const FX_UI_META = {
 		},
 	},
 	rotarySpeaker: {
-		patchKey: "rotarySpeaker",
 		moduleKey: "rotarySpeaker",
 		title: "Rotary Speaker",
+		shortTitle: "Rot",
 		color: "#fde68a",
 		columns: 2,
 		presets: ROTARY_SPEAKER_PRESETS,
-		presetTitle: "Rotary Speaker Presets",
 		formatters: {
 			speed: (v) => `${v.toFixed(1)}Hz`,
 			depth: pct,
@@ -456,13 +421,12 @@ const FX_UI_META = {
 		},
 	},
 	autoWah: {
-		patchKey: "autoWah",
 		moduleKey: "autoWah",
 		title: "Auto-Wah",
+		shortTitle: "AWah",
 		color: "#86efac",
 		columns: 3,
 		presets: AUTO_WAH_PRESETS,
-		presetTitle: "Auto-Wah Presets",
 		formatters: {
 			sensitivity: pct,
 			cutoffHz: (v) => `${Math.round(v)}Hz`,
@@ -473,13 +437,12 @@ const FX_UI_META = {
 		},
 	},
 	stereoWidener: {
-		patchKey: "stereoWidener",
 		moduleKey: "stereoWidener",
 		title: "Stereo Widener",
+		shortTitle: "SWid",
 		color: "#93c5fd",
 		columns: 2,
 		presets: STEREO_WIDENER_PRESETS,
-		presetTitle: "Stereo Widener Presets",
 		formatters: {
 			width: pct,
 			delayMs: (v) => `${v.toFixed(1)}ms`,
@@ -487,31 +450,31 @@ const FX_UI_META = {
 			mix: pct,
 		},
 	},
-} satisfies Partial<Record<FxSlotType, FxUiMeta>>;
-
+} satisfies Partial<
+	Record<FxSlotType, Omit<FxSlotModuleConfig, "type" | "controls">>
+>;
 function defaultKnobFormatter(v: number) {
 	return v.toFixed(2);
 }
-
 function resolveKnobFormatter(
 	param: string,
-	meta: FxUiMeta,
+	meta: Omit<FxSlotModuleConfig, "type" | "controls">,
 ): (v: number) => string {
 	return meta.formatters?.[param] ?? defaultKnobFormatter;
 }
-
-function buildControls(type: FxSlotType, meta: FxUiMeta): ControlDef[] {
+function buildControls(
+	type: FxSlotType,
+	meta: Omit<FxSlotModuleConfig, "type" | "controls">,
+): ControlDef[] {
 	const def = FX_DEFINITIONS_V1.find((entry) => entry.slotType === type);
 	if (!def) {
 		return [];
 	}
-
 	return def.controls.flatMap((ctrl): ControlDef[] => {
 		const layout = meta.controlLayout?.[ctrl.id];
 		if (ctrl.kind === "toggle") {
 			return [];
 		}
-
 		if (ctrl.kind === "buttonGroup") {
 			return [
 				{
@@ -534,7 +497,6 @@ function buildControls(type: FxSlotType, meta: FxUiMeta): ControlDef[] {
 				},
 			];
 		}
-
 		const min = ctrl.min ?? 0;
 		const max = ctrl.max ?? 1;
 		const defaultValue = ctrl.defaultF32 ?? min;
@@ -558,28 +520,23 @@ function buildControls(type: FxSlotType, meta: FxUiMeta): ControlDef[] {
 		];
 	});
 }
-
-function buildConfig(type: FxSlotType, meta: FxUiMeta): FxSlotModuleConfig {
+function buildConfig(
+	type: FxSlotType,
+	meta: Omit<FxSlotModuleConfig, "type" | "controls">,
+): FxSlotModuleConfig {
 	return {
 		type,
-		patchKey: meta.patchKey,
-		moduleKey: meta.moduleKey,
-		title: meta.title ?? type,
-		color: meta.color,
-		meta: meta.meta,
-		columns: meta.columns,
-		dynamicColumns: meta.dynamicColumns,
-		customRenderer: meta.customRenderer,
-		presets: meta.presets,
-		presetTitle: meta.presetTitle,
+		...meta,
 		controls: buildControls(type, meta),
 	};
 }
-
 export const FX_SLOT_MODULE_CONFIGS: Partial<
 	Record<FxSlotType, FxSlotModuleConfig>
 > = Object.fromEntries(
-	(Object.entries(FX_UI_META) as [FxSlotType, FxUiMeta][]).map(
-		([type, meta]) => [type, buildConfig(type, meta)],
-	),
+	(
+		Object.entries(FX_UI_META) as [
+			FxSlotType,
+			Omit<FxSlotModuleConfig, "type" | "controls">,
+		][]
+	).map(([type, meta]) => [type, buildConfig(type, meta)]),
 );

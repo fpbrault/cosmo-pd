@@ -10,8 +10,6 @@ const setCzDacEnabled = vi.fn();
 const setModMode = vi.fn();
 const clearPendingDestination = vi.fn();
 const setLearnMode = vi.fn();
-const setPolyMode = vi.fn();
-const setPortamentoEnabled = vi.fn();
 
 let modModeValue = false;
 let czDacEnabledValue = false;
@@ -49,18 +47,6 @@ vi.mock("@/features/synth/synthUiStore", () => ({
 	useSynthUiStore: vi.fn(() => ({
 		setMainPanelMode,
 	})),
-}));
-
-vi.mock("@/features/synth/SynthParamController", () => ({
-	useSynthParam: vi.fn((key: string) => {
-		if (key === "polyMode") {
-			return { value: "poly8", setValue: setPolyMode };
-		}
-		if (key === "portamentoEnabled") {
-			return { value: false, setValue: setPortamentoEnabled };
-		}
-		return { value: undefined, setValue: vi.fn() };
-	}),
 }));
 
 vi.mock("@/features/synth/modulationTargetStore", () => ({
@@ -109,8 +95,6 @@ describe("SynthSidebarButtons", () => {
 		setModMode.mockReset();
 		clearPendingDestination.mockReset();
 		setLearnMode.mockReset();
-		setPolyMode.mockReset();
-		setPortamentoEnabled.mockReset();
 		modModeValue = false;
 		czDacEnabledValue = false;
 		fxSlotsValue = Array.from({ length: 6 }, () => ({
@@ -148,7 +132,7 @@ describe("SynthSidebarButtons", () => {
 		expect(onOpenMidiLearn).toHaveBeenCalledTimes(1);
 	});
 
-	it("toggles poly mode", () => {
+	it("toggles modulation targeting mode", () => {
 		render(
 			<SynthSidebarButtons
 				globalOpen={false}
@@ -157,11 +141,13 @@ describe("SynthSidebarButtons", () => {
 				onOpenMidiLearn={vi.fn()}
 			/>,
 		);
-		fireEvent.click(screen.getByRole("button", { name: "Poly8" }));
-		expect(setPolyMode).toHaveBeenCalledWith("mono");
+		fireEvent.click(screen.getByRole("button", { name: "MOD+" }));
+		expect(setModMode).toHaveBeenCalledWith(true);
+		expect(clearPendingDestination).toHaveBeenCalledTimes(1);
+		expect(setLearnMode).toHaveBeenCalledWith(false);
 	});
 
-	it("toggles portamento", () => {
+	it("toggles the CZ DAC when Vintage is clicked", () => {
 		const onOpenGlobal = vi.fn();
 		const onOpenMidiLearn = vi.fn();
 		render(
@@ -172,10 +158,11 @@ describe("SynthSidebarButtons", () => {
 				onOpenMidiLearn={onOpenMidiLearn}
 			/>,
 		);
-		fireEvent.click(screen.getByRole("button", { name: "Porta Mento" }));
+		fireEvent.click(screen.getByRole("button", { name: "Vint age" }));
 		expect(onOpenGlobal).not.toHaveBeenCalled();
 		expect(onOpenMidiLearn).not.toHaveBeenCalled();
-		expect(setPortamentoEnabled).toHaveBeenCalledWith(true);
+		expect(setModMode).not.toHaveBeenCalled();
+		expect(setCzDacEnabled).toHaveBeenCalledWith(true);
 		expect(setFxSlotEnabled).not.toHaveBeenCalled();
 		expect(setFxSlotType).not.toHaveBeenCalled();
 	});
