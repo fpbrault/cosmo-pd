@@ -60,6 +60,7 @@ describe("core controls (browser)", () => {
 				label="Cutoff"
 				min={0}
 				max={1}
+				valueVisibility="always"
 			/>,
 		);
 
