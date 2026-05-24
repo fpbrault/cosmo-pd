@@ -10,7 +10,7 @@ import GenericFxSlotModule from "@/components/panels/drawer-modules/GenericFxSlo
 
 const FX_CUSTOM_RENDERERS = {
 	delayModuleRenderer: DelayModuleRenderer,
-	graindelayModuleRenderer: GrainDelayModuleRenderer,
+	grainDelayModuleRenderer: GrainDelayModuleRenderer,
 	phaseModModuleRenderer: PhaseModModuleRenderer,
 	tremoloModuleRenderer: TremoloModuleRenderer,
 	vibratoModuleRenderer: VibratoModuleRenderer,
