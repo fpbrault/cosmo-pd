@@ -90,10 +90,10 @@ export default function ModEnveloppeModule() {
 			return;
 		}
 
-		setModEnvAttack(preset.patch.modEnv.attack);
-		setModEnvDecay(preset.patch.modEnv.decay);
-		setModEnvSustain(preset.patch.modEnv.sustain);
-		setModEnvRelease(preset.patch.modEnv.release);
+		setModEnvAttack(preset.patch.modEnv.attack as number);
+		setModEnvDecay(preset.patch.modEnv.decay as number);
+		setModEnvSustain(preset.patch.modEnv.sustain as number);
+		setModEnvRelease(preset.patch.modEnv.release as number);
 		requestApplyModulePreset({
 			module: "modEnv",
 			preset: preset.id,
