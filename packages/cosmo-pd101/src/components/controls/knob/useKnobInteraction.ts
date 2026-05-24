@@ -32,6 +32,8 @@ export interface UseKnobInteractionProps {
 	buttonRef: React.RefObject<HTMLButtonElement | null>;
 	/** Non-linear scaling curve. Default linear. */
 	curve?: KnobCurve;
+	/** Optional parser from display text to raw engine value. */
+	parseDisplayValue?: (input: string) => number | null;
 }
 
 export interface UseKnobInteractionResult {
@@ -69,11 +71,13 @@ export function useKnobInteraction({
 	svgRef,
 	buttonRef,
 	curve = "linear",
+	parseDisplayValue,
 }: UseKnobInteractionProps): UseKnobInteractionResult {
 	const arcGeometry = DEFAULT_ARC_GEOMETRY;
 	const [dragging, setDragging] = useState(false);
 	const [editing, setEditing] = useState(false);
 	const [editValue, setEditValue] = useState("");
+	const editValueModeRef = useRef<"raw" | "percent">("raw");
 	const inputRef = useRef<HTMLInputElement>(null);
 	const lastTouchTapAtRef = useRef(0);
 	const activePointerIdRef = useRef<number | null>(null);
@@ -277,6 +281,9 @@ export function useKnobInteraction({
 	const beginEdit = useCallback(
 		(currentDisplay: string) => {
 			if (disabled) return;
+			editValueModeRef.current = currentDisplay.includes("%")
+				? "percent"
+				: "raw";
 			setEditValue(currentDisplay);
 			setEditing(true);
 		},
@@ -285,11 +292,21 @@ export function useKnobInteraction({
 
 	const commitEdit = useCallback(() => {
 		setEditing(false);
+		if (parseDisplayValue) {
+			const parsedDisplay = parseDisplayValue(editValue);
+			if (parsedDisplay !== null && Number.isFinite(parsedDisplay)) {
+				emit(parsedDisplay);
+			}
+			return;
+		}
+
 		const parsed = Number.parseFloat(editValue);
 		if (!Number.isNaN(parsed)) {
-			emit(parsed);
+			const engineValue =
+				editValueModeRef.current === "percent" ? parsed / 100 : parsed;
+			emit(engineValue);
 		}
-	}, [editValue, emit]);
+	}, [editValue, emit, parseDisplayValue]);
 
 	const cancelEdit = useCallback(() => {
 		setEditing(false);

@@ -109,6 +109,15 @@ const VALUE_BUBBLE_GAP_PX = 20;
 const VALUE_BUBBLE_ARROW_HALF_WIDTH_PX = 5;
 const VALUE_BUBBLE_LEAVE_GRACE_MS = 120;
 
+function extractFirstNumber(text: string): number | null {
+	const match = text.match(/[-+]?\d*\.?\d+/);
+	if (!match) {
+		return null;
+	}
+	const parsed = Number.parseFloat(match[0]);
+	return Number.isFinite(parsed) ? parsed : null;
+}
+
 type ValueBubblePlacement = "above" | "below";
 
 type ValueBubbleLayout = {
@@ -182,6 +191,41 @@ export default function ControlKnob({
 		},
 		[onChange],
 	);
+	const displayValue = valueFormatter
+		? valueFormatter(value)
+		: value.toFixed(2);
+	const parseDisplayValue = useMemo(() => {
+		if (!valueFormatter) {
+			return undefined;
+		}
+
+		const getDisplayNumber = (raw: number) =>
+			extractFirstNumber(valueFormatter(raw));
+		const currentDisplay = getDisplayNumber(value);
+		const maxDisplay = getDisplayNumber(max);
+		const minDisplay = getDisplayNumber(min);
+
+		let scale: number | null = null;
+		if (currentDisplay !== null && Math.abs(currentDisplay) > 1e-9) {
+			scale = value / currentDisplay;
+		} else if (maxDisplay !== null && Math.abs(maxDisplay) > 1e-9) {
+			scale = max / maxDisplay;
+		} else if (minDisplay !== null && Math.abs(minDisplay) > 1e-9) {
+			scale = min / minDisplay;
+		}
+
+		const fallbackPercentScale =
+			displayValue.includes("%") && min >= -1 && max <= 1 ? 0.01 : 1;
+		const resolvedScale = scale ?? fallbackPercentScale;
+
+		return (input: string): number | null => {
+			const parsed = extractFirstNumber(input);
+			if (parsed === null) {
+				return null;
+			}
+			return parsed * resolvedScale;
+		};
+	}, [displayValue, max, min, value, valueFormatter]);
 
 	const {
 		dragging,
@@ -214,6 +258,7 @@ export default function ControlKnob({
 		svgRef,
 		buttonRef,
 		curve,
+		parseDisplayValue,
 	});
 
 	const maybeSynthController = useOptionalSynthController();
@@ -279,9 +324,6 @@ export default function ControlKnob({
 	);
 	const topDeadPx = Math.round((8 / DEFAULT_ARC_GEOMETRY.viewBoxSize) * size);
 
-	const displayValue = valueFormatter
-		? valueFormatter(value)
-		: value.toFixed(2);
 	const valueControlLabel = label ? `${label} value` : "knob value";
 	const { setHoverInfo, clearHoverInfo } = useHoverInfo();
 	const hoverHandlers = useHoverInfoHandlers(resolvedTooltip, {

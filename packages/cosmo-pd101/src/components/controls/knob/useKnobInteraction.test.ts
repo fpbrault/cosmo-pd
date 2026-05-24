@@ -72,6 +72,52 @@ describe("useKnobInteraction – text editing", () => {
 		expect(result.current.editing).toBe(false);
 	});
 
+	it("commitEdit interprets percent-formatted edits as display units", () => {
+		const onChange = vi.fn();
+		const { svgRef, buttonRef } = makeRefs();
+		const { result } = renderHook(() =>
+			useKnobInteraction({
+				value: 0.5,
+				min: 0,
+				max: 1,
+				onChange,
+				svgRef,
+				buttonRef,
+			}),
+		);
+
+		act(() => result.current.beginEdit("50%"));
+		act(() => result.current.setEditValue("40"));
+		act(() => result.current.commitEdit());
+
+		expect(onChange).toHaveBeenCalledWith(0.4);
+	});
+
+	it("commitEdit uses parseDisplayValue when provided", () => {
+		const onChange = vi.fn();
+		const { svgRef, buttonRef } = makeRefs();
+		const { result } = renderHook(() =>
+			useKnobInteraction({
+				value: 250,
+				min: 0,
+				max: 500,
+				onChange,
+				svgRef,
+				buttonRef,
+				parseDisplayValue: (input) => {
+					const parsed = Number.parseFloat(input);
+					return Number.isNaN(parsed) ? null : parsed * 5;
+				},
+			}),
+		);
+
+		act(() => result.current.beginEdit("50%"));
+		act(() => result.current.setEditValue("40"));
+		act(() => result.current.commitEdit());
+
+		expect(onChange).toHaveBeenCalledWith(200);
+	});
+
 	it("commitEdit clamps to max", () => {
 		const onChange = vi.fn();
 		const { svgRef, buttonRef } = makeRefs();

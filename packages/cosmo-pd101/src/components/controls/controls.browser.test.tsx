@@ -72,6 +72,28 @@ describe("core controls (browser)", () => {
 		expect(onChange).toHaveBeenCalledWith(0.75);
 	});
 
+	it("parses percent-formatted manual input using displayed units", async () => {
+		const onChange = vi.fn();
+		render(
+			<ControlKnob
+				value={0.4}
+				onChange={onChange}
+				label="Mix"
+				min={0}
+				max={1}
+				valueVisibility="always"
+				valueFormatter={(value) => `${Math.round(value * 100)}%`}
+			/>,
+		);
+
+		const button = await screen.findByRole("button", { name: "Mix value" });
+		fireEvent.doubleClick(button);
+		const input = screen.getByRole("textbox", { name: "Mix value" });
+		fireEvent.change(input, { target: { value: "40" } });
+		fireEvent.keyDown(input, { key: "Enter" });
+		expect(onChange).toHaveBeenCalledWith(0.4);
+	});
+
 	it("renders horizontal slider inside modulation wrapper when destination exists", () => {
 		const onChange = vi.fn();
 		render(

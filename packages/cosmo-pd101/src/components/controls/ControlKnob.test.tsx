@@ -386,6 +386,52 @@ describe("ControlKnob", () => {
 		expect(screen.queryByRole("textbox", { name: "Vol value" })).toBeNull();
 	});
 
+	it("maps percent-formatted manual input to engine value", () => {
+		const onChange = vi.fn();
+		render(
+			<ControlKnob
+				value={0.4}
+				onChange={onChange}
+				label="Mix"
+				min={0}
+				max={1}
+				valueVisibility="always"
+				valueFormatter={(value) => `${Math.round(value * 100)}%`}
+			/>,
+		);
+
+		fireEvent.doubleClick(screen.getByRole("button", { name: "Mix value" }));
+		const input = screen.getByRole("textbox", { name: "Mix value" });
+		fireEvent.change(input, { target: { value: "40" } });
+		fireEvent.keyDown(input, { key: "Enter" });
+
+		expect(onChange).toHaveBeenCalledWith(0.4);
+	});
+
+	it("maps scaled percent display input back to raw value", () => {
+		const onChange = vi.fn();
+		render(
+			<ControlKnob
+				value={250}
+				onChange={onChange}
+				label="Vibrato depth"
+				min={0}
+				max={500}
+				valueVisibility="always"
+				valueFormatter={(value) => `${Math.round(value / 5)}%`}
+			/>,
+		);
+
+		fireEvent.doubleClick(
+			screen.getByRole("button", { name: "Vibrato depth value" }),
+		);
+		const input = screen.getByRole("textbox", { name: "Vibrato depth value" });
+		fireEvent.change(input, { target: { value: "40" } });
+		fireEvent.keyDown(input, { key: "Enter" });
+
+		expect(onChange).toHaveBeenCalledWith(200);
+	});
+
 	it("does not render value display when disabled", () => {
 		render(
 			<ControlKnob
