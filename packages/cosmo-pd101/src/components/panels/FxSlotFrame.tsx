@@ -32,6 +32,11 @@ const FX_EFFECT_OPTIONS: { value: FxSlotType; label: string }[] = [
 	{ value: "tremolo", label: "Tremolo" },
 	{ value: "wavefolder", label: "Wavefolder" },
 	{ value: "loFi", label: "LoFi" },
+	{ value: "multimodeFilter", label: "Multimode Filter" },
+	{ value: "flanger", label: "Flanger" },
+	{ value: "rotarySpeaker", label: "Rotary Speaker" },
+	{ value: "autoWah", label: "Auto-Wah" },
+	{ value: "stereoWidener", label: "Stereo Widener" },
 ];
 
 /** For active slots: includes a "Remove" option at the top. */
@@ -39,12 +44,6 @@ const FX_CHANGE_OPTIONS: { value: FxSlotType; label: string }[] = [
 	{ value: "empty", label: "Remove" },
 	...FX_EFFECT_OPTIONS,
 ];
-
-function getFxTypeLabel(type: FxSlotType): string {
-	return (
-		FX_EFFECT_OPTIONS.find((option) => option.value === type)?.label ?? "Effect"
-	);
-}
 
 // ---------------------------------------------------------------------------
 // TypeSelectorPopover — portal-based so overflow:hidden parents don't clip it
@@ -181,7 +180,6 @@ function TypeSelectorTrigger({
 		setFxSlotType(slot, type);
 		setPopoverPos(null);
 	};
-	const currentLabel = getFxTypeLabel(currentType);
 
 	return (
 		<>
@@ -189,10 +187,10 @@ function TypeSelectorTrigger({
 				ref={triggerRef}
 				type="button"
 				onClick={openPopover}
-				aria-label={`Change effect type (${currentLabel})`}
-				className="btn btn-xs btn-ghost btn-neutral btn-square"
+				aria-label="Change effect type"
+				className="btn btn-ghost btn-square btn-xs h-4 w-4 shrink-0 opacity-60 hover:opacity-100"
 			>
-				<MdArrowDropDown className="h-6 w-6 shrink-0" />
+				<MdArrowDropDown className="h-1.5 w-1.5" />
 			</Button>
 			{popoverPos && (
 				<TypeSelectorPopover

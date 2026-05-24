@@ -1,22 +1,27 @@
 import { FX_DEFINITIONS_V1, type FxSlotType } from "@/lib/synth/bindings/synth";
 import {
+	AUTO_WAH_PRESETS,
 	BITCRUSHER_PRESETS,
 	CHORUS_PRESETS,
 	COMPRESSOR_PRESETS,
 	DELAY_PRESETS,
 	DISTORTION_PRESETS,
 	EQ_PRESETS,
+	FLANGER_PRESETS,
 	GRAIN_DELAY_PRESETS,
 	JUNO_CHORUS_PRESETS,
 	LOFI_PRESETS,
 	type ModulePresetDefinition,
 	type ModulePresetModule,
 	type ModulePresetPatch,
+	MULTIMODE_FILTER_PRESETS,
 	PHASE_MOD_PRESETS,
 	PHASER_PRESETS,
 	REVERB_PRESETS,
 	RING_MOD_PRESETS,
+	ROTARY_SPEAKER_PRESETS,
 	SHIMMER_VERB_PRESETS,
+	STEREO_WIDENER_PRESETS,
 	TREMOLO_PRESETS,
 	VIBRATO_PRESETS,
 	WAVEFOLDER_PRESETS,
@@ -62,11 +67,10 @@ export type ButtonGroupControlDef = {
 	sourceIndex: number;
 };
 
-type ControlDef = KnobControlDef | ButtonGroupControlDef;
+export type ControlDef = KnobControlDef | ButtonGroupControlDef;
 
-type FxCustomRendererKey =
+export type FxCustomRendererKey =
 	| "delayLegacy"
-	| "grainDelayLegacy"
 	| "phaseModLegacy"
 	| "vibratoLegacy"
 	| "tremoloLegacy";
@@ -278,7 +282,6 @@ const FX_UI_META = {
 		moduleKey: "grainDelay",
 		color: "#a78bfa",
 		columns: 4,
-		customRenderer: "grainDelayLegacy",
 		presets: GRAIN_DELAY_PRESETS,
 		presetTitle: "Grain Delay Presets",
 		formatters: {
@@ -403,6 +406,84 @@ const FX_UI_META = {
 		formatters: {
 			rate: (v) => `${v.toFixed(1)}Hz`,
 			depth: pct,
+			mix: pct,
+		},
+	},
+	multimodeFilter: {
+		patchKey: "multimodeFilter",
+		moduleKey: "multimodeFilter",
+		title: "Multimode Filter",
+		color: "#fca5a5",
+		columns: 3,
+		presets: MULTIMODE_FILTER_PRESETS,
+		presetTitle: "Multimode Filter Presets",
+		formatters: {
+			cutoffHz: (v) => `${Math.round(v)}Hz`,
+			resonance: pct,
+			drive: pct,
+			mix: pct,
+		},
+	},
+	flanger: {
+		patchKey: "flanger",
+		moduleKey: "flanger",
+		title: "Flanger",
+		color: "#67e8f9",
+		columns: 3,
+		presets: FLANGER_PRESETS,
+		presetTitle: "Flanger Presets",
+		formatters: {
+			rate: (v) => `${v.toFixed(2)}Hz`,
+			depth: pct,
+			delayMs: (v) => `${v.toFixed(1)}ms`,
+			feedback: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)}%`,
+			mix: pct,
+		},
+	},
+	rotarySpeaker: {
+		patchKey: "rotarySpeaker",
+		moduleKey: "rotarySpeaker",
+		title: "Rotary Speaker",
+		color: "#fde68a",
+		columns: 2,
+		presets: ROTARY_SPEAKER_PRESETS,
+		presetTitle: "Rotary Speaker Presets",
+		formatters: {
+			speed: (v) => `${v.toFixed(1)}Hz`,
+			depth: pct,
+			drive: pct,
+			mix: pct,
+		},
+	},
+	autoWah: {
+		patchKey: "autoWah",
+		moduleKey: "autoWah",
+		title: "Auto-Wah",
+		color: "#86efac",
+		columns: 3,
+		presets: AUTO_WAH_PRESETS,
+		presetTitle: "Auto-Wah Presets",
+		formatters: {
+			sensitivity: pct,
+			cutoffHz: (v) => `${Math.round(v)}Hz`,
+			resonance: pct,
+			attackMs: (v) => `${v.toFixed(1)}ms`,
+			releaseMs: (v) => `${v.toFixed(0)}ms`,
+			mix: pct,
+		},
+	},
+	stereoWidener: {
+		patchKey: "stereoWidener",
+		moduleKey: "stereoWidener",
+		title: "Stereo Widener",
+		color: "#93c5fd",
+		columns: 2,
+		presets: STEREO_WIDENER_PRESETS,
+		presetTitle: "Stereo Widener Presets",
+		formatters: {
+			width: pct,
+			delayMs: (v) => `${v.toFixed(1)}ms`,
+			tone: pct,
 			mix: pct,
 		},
 	},

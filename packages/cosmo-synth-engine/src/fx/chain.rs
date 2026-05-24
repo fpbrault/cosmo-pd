@@ -1,23 +1,26 @@
-use crate::params::FxSlotConfig;
-use crate::params::FxSlotType;
-use crate::params::ModMatrixCache;
-use crate::params::SynthParams;
-
+use super::auto_wah::AutoWahFx;
 use super::bitcrusher::BitcrusherFx;
 use super::chorus::ChorusFx;
 use super::compressor::CompressorFx;
 use super::delay::DelayFx;
 use super::distortion::DistortionFx;
 use super::eq::EqFx;
+use super::flanger::FlangerFx;
 use super::grain_delay::GrainDelayFx;
 use super::juno_chorus::JunoChorusFx;
 use super::lofi::LoFiFx;
+use super::multimode_filter::MultimodeFilterFx;
 use super::phaser::PhaserFx;
 use super::reverb::FdnReverb;
 use super::ring_mod::RingModFx;
+use super::rotary_speaker::RotarySpeakerFx;
 use super::shimmer_verb::ShimmerVerbFx;
+use super::stereo_widener::StereoWidenerFx;
 use super::tremolo::TremoloFx;
 use super::wavefolder::WavefolderFx;
+use crate::params::FxSlotConfig;
+use crate::params::FxSlotType;
+use crate::params::SynthParams;
 
 // ---------------------------------------------------------------------------
 // FxChain — hosts all effects and dispatches per slot
@@ -39,6 +42,11 @@ struct FxSlotProcessors {
     tremolo: TremoloFx,
     wavefolder: WavefolderFx,
     lofi: LoFiFx,
+    multimode_filter: MultimodeFilterFx,
+    flanger: FlangerFx,
+    rotary_speaker: RotarySpeakerFx,
+    auto_wah: AutoWahFx,
+    stereo_widener: StereoWidenerFx,
 }
 
 impl FxSlotProcessors {
@@ -59,6 +67,11 @@ impl FxSlotProcessors {
             tremolo: TremoloFx::new(sr),
             wavefolder: WavefolderFx::new(),
             lofi: LoFiFx::new(sr),
+            multimode_filter: MultimodeFilterFx::new(sr),
+            flanger: FlangerFx::new(sr),
+            rotary_speaker: RotarySpeakerFx::new(sr),
+            auto_wah: AutoWahFx::new(sr),
+            stereo_widener: StereoWidenerFx::new(sr),
         }
     }
 
@@ -84,8 +97,6 @@ impl FxSlotProcessors {
                 self.delay.mix = d.mix;
                 self.delay.tape_mode = d.tape_mode;
                 self.delay.warmth = d.warmth;
-                self.delay.time_mode = d.time_mode;
-                self.delay.sync_division = d.sync_division;
             }
             FxSlotConfig::Reverb(rv) => {
                 self.reverb.enabled = rv.enabled;
@@ -119,9 +130,6 @@ impl FxSlotProcessors {
                 self.grain_delay.scatter = gd.scatter;
                 self.grain_delay.density = gd.density;
                 self.grain_delay.mix = gd.mix;
-                self.grain_delay.time_mode = gd.time_mode;
-                self.grain_delay.sync_division = gd.sync_division;
-                self.grain_delay.pitch_semitones = gd.pitch_semitones;
             }
             FxSlotConfig::Bitcrusher(bc) => {
                 self.bitcrusher.enabled = bc.enabled;
@@ -158,8 +166,6 @@ impl FxSlotProcessors {
                 self.tremolo.depth = tr.depth;
                 self.tremolo.waveform = tr.waveform;
                 self.tremolo.mix = tr.mix;
-                self.tremolo.rate_mode = tr.rate_mode;
-                self.tremolo.sync_division = tr.sync_division;
             }
             FxSlotConfig::Wavefolder(wf) => {
                 self.wavefolder.enabled = wf.enabled;
@@ -176,6 +182,48 @@ impl FxSlotProcessors {
                 self.lofi.flutter_rate = lofi.flutter_rate;
                 self.lofi.tone = lofi.tone;
                 self.lofi.mix = lofi.mix;
+            }
+            FxSlotConfig::MultimodeFilter(filter) => {
+                self.multimode_filter.enabled = filter.enabled;
+                self.multimode_filter.mode = filter.mode;
+                self.multimode_filter.four_pole = filter.four_pole;
+                self.multimode_filter.cutoff_hz = filter.cutoff_hz;
+                self.multimode_filter.resonance = filter.resonance;
+                self.multimode_filter.drive = filter.drive;
+                self.multimode_filter.mix = filter.mix;
+            }
+            FxSlotConfig::Flanger(flanger) => {
+                self.flanger.enabled = flanger.enabled;
+                self.flanger.rate = flanger.rate;
+                self.flanger.depth = flanger.depth;
+                self.flanger.delay_ms = flanger.delay_ms;
+                self.flanger.feedback = flanger.feedback;
+                self.flanger.through_zero = flanger.through_zero;
+                self.flanger.mix = flanger.mix;
+            }
+            FxSlotConfig::RotarySpeaker(rotary) => {
+                self.rotary_speaker.enabled = rotary.enabled;
+                self.rotary_speaker.speed = rotary.speed;
+                self.rotary_speaker.depth = rotary.depth;
+                self.rotary_speaker.drive = rotary.drive;
+                self.rotary_speaker.mix = rotary.mix;
+            }
+            FxSlotConfig::AutoWah(wah) => {
+                self.auto_wah.enabled = wah.enabled;
+                self.auto_wah.mode = wah.mode;
+                self.auto_wah.sensitivity = wah.sensitivity;
+                self.auto_wah.cutoff_hz = wah.cutoff_hz;
+                self.auto_wah.resonance = wah.resonance;
+                self.auto_wah.attack_ms = wah.attack_ms;
+                self.auto_wah.release_ms = wah.release_ms;
+                self.auto_wah.mix = wah.mix;
+            }
+            FxSlotConfig::StereoWidener(widener) => {
+                self.stereo_widener.enabled = widener.enabled;
+                self.stereo_widener.width = widener.width;
+                self.stereo_widener.delay_ms = widener.delay_ms;
+                self.stereo_widener.tone = widener.tone;
+                self.stereo_widener.mix = widener.mix;
             }
             // Empty, Vibrato, PhaseMod are handled at voice level or pass through.
             FxSlotConfig::Empty | FxSlotConfig::Vibrato(_) | FxSlotConfig::PhaseMod(_) => {}
@@ -205,6 +253,11 @@ impl FxSlotProcessors {
             FxSlotType::Tremolo => self.tremolo.process(sample),
             FxSlotType::Wavefolder => self.wavefolder.process(sample),
             FxSlotType::LoFi => self.lofi.process(sample),
+            FxSlotType::MultimodeFilter => self.multimode_filter.process(sample),
+            FxSlotType::Flanger => self.flanger.process(sample),
+            FxSlotType::RotarySpeaker => self.rotary_speaker.process(sample),
+            FxSlotType::AutoWah => self.auto_wah.process(sample),
+            FxSlotType::StereoWidener => self.stereo_widener.process(sample),
             // Voice-level effects and empty slots pass through.
             FxSlotType::Vibrato | FxSlotType::PhaseMod | FxSlotType::Empty => sample,
         }
@@ -217,7 +270,7 @@ pub struct FxChain {
     /// Which effect type is in each of the 6 FX slots.
     pub slot_types: [FxSlotType; 6],
     active_slots: [usize; 6],
-    pub(crate) active_slot_count: usize,
+    active_slot_count: usize,
 }
 
 impl FxChain {
@@ -243,61 +296,6 @@ impl FxChain {
             ) {
                 self.active_slots[self.active_slot_count] = i;
                 self.active_slot_count += 1;
-            }
-        }
-    }
-
-    pub fn set_tempo_bpm(&mut self, tempo_bpm: f32) {
-        let tempo = tempo_bpm.max(1.0);
-        for slot in &mut self.slots {
-            slot.delay.tempo_bpm = tempo;
-            slot.grain_delay.tempo_bpm = tempo;
-            slot.tremolo.tempo_bpm = tempo;
-        }
-    }
-
-    pub(crate) fn apply_modulated_params(
-        &mut self,
-        params: &SynthParams,
-        mod_cache: &ModMatrixCache,
-    ) {
-        for active_idx in 0..self.active_slot_count {
-            let slot_idx = self.active_slots[active_idx];
-            let config = &params.fx_slots[slot_idx];
-            let slot = &mut self.slots[slot_idx];
-            match config {
-                FxSlotConfig::Chorus(ch) => slot.chorus.apply_modulation(ch, &mod_cache.values),
-                FxSlotConfig::Phaser(ph) => slot.phaser.apply_modulation(ph, &mod_cache.values),
-                FxSlotConfig::Delay(d) => slot.delay.apply_modulation(d, &mod_cache.values),
-                FxSlotConfig::Reverb(rv) => slot.reverb.apply_modulation(rv, &mod_cache.values),
-                FxSlotConfig::Compressor(c) => {
-                    slot.compressor.apply_modulation(c, &mod_cache.values);
-                }
-                FxSlotConfig::Eq5Band(eq) => slot.eq.apply_modulation(eq, &mod_cache.values),
-                FxSlotConfig::GrainDelay(gd) => {
-                    slot.grain_delay.apply_modulation(gd, &mod_cache.values);
-                }
-                FxSlotConfig::Bitcrusher(bc) => {
-                    slot.bitcrusher.apply_modulation(bc, &mod_cache.values);
-                }
-                FxSlotConfig::ShimmerVerb(sv) => {
-                    slot.shimmer_verb.apply_modulation(sv, &mod_cache.values);
-                }
-                FxSlotConfig::Distortion(dist) => {
-                    slot.distortion.apply_modulation(dist, &mod_cache.values);
-                }
-                FxSlotConfig::JunoChorus(jc) => {
-                    slot.juno_chorus.apply_modulation(jc, &mod_cache.values);
-                }
-                FxSlotConfig::RingMod(rm) => {
-                    slot.ring_mod.apply_modulation(rm, &mod_cache.values);
-                }
-                FxSlotConfig::Tremolo(tr) => slot.tremolo.apply_modulation(tr, &mod_cache.values),
-                FxSlotConfig::Wavefolder(wf) => {
-                    slot.wavefolder.apply_modulation(wf, &mod_cache.values);
-                }
-                FxSlotConfig::LoFi(lofi) => slot.lofi.apply_modulation(lofi, &mod_cache.values),
-                FxSlotConfig::Empty | FxSlotConfig::Vibrato(_) | FxSlotConfig::PhaseMod(_) => {}
             }
         }
     }

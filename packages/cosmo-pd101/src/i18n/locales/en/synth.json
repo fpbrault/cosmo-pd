@@ -433,6 +433,24 @@
 				}
 			}
 		},
+		"quantize": {
+			"name": "Quantize",
+			"behavior": "Steps the phase into discrete levels for a digitized, stair-stepped texture.",
+			"controls": {
+				"quantizeAmount": {
+					"label": "Amount",
+					"description": "Sets the overall phase distortion amount for the current algorithm."
+				},
+				"quantizeSteps": {
+					"label": "Steps",
+					"description": "Adjusts the curvature on both sides of the skew breakpoint."
+				},
+				"quantizeSkew": {
+					"label": "Skew",
+					"description": "Adjusts the curvature on both sides of the skew breakpoint."
+				}
+			}
+		},
 		"twist": {
 			"name": "Twist",
 			"behavior": "Applies sinusoidal phase twisting for animated, swirling harmonic motion.",
@@ -565,6 +583,10 @@
 				}
 			}
 		},
+		"sine": {
+			"name": "Sine",
+			"behavior": "Pure sine phase path with minimal harmonics and smooth tone."
+		},
 		"terrain": {
 			"name": "Terrain",
 			"behavior": "FM-inside-PD: a secondary oscillator displaces the phase path, producing FM-like sideband spectra through the PD engine.",
@@ -624,6 +646,96 @@
 				"chebyWarp": {
 					"label": "Warp",
 					"description": "Pre-warps the input phase before the polynomial, shifting harmonic peaks."
+				}
+			}
+		},
+		"pwm": {
+			"name": "PWM",
+			"behavior": "Sine-base PWM that hardens toward square-duty character as DCW increases.",
+			"controls": {
+				"pwmWidth": {
+					"label": "Width",
+					"description": "Sets pulse-width balance between early and late portions of the cycle."
+				},
+				"pwmShape": {
+					"label": "Shape",
+					"description": "Controls PWM curvature and hardness toward a square-like duty edge."
+				},
+				"pwmDrift": {
+					"label": "Drift",
+					"description": "Adds cyclic width drift for animated PWM movement."
+				}
+			}
+		},
+		"phazDiff": {
+			"name": "PhazDiff",
+			"behavior": "Half-cycle phase differencing with drive and feedback for aggressive asymmetric distortion.",
+			"controls": {
+				"phazDiffDrive": {
+					"label": "Drive",
+					"description": "Pushes the differenced phase through non-linear saturation."
+				},
+				"phazDiffFeedback": {
+					"label": "Feedback",
+					"description": "Feeds the driven differential term back into the phase path."
+				},
+				"phazDiffCenter": {
+					"label": "Center",
+					"description": "Offsets the differencing center point across the cycle."
+				}
+			}
+		},
+		"noiseLab": {
+			"name": "NoiseLab",
+			"behavior": "Cosine-to-saw phase morph followed by segmented noisy displacement for unstable digital textures.",
+			"controls": {
+				"noiseLabDensity": {
+					"label": "Density",
+					"description": "Sets the number of noisy phase segments per cycle."
+				},
+				"noiseLabJitter": {
+					"label": "Jitter",
+					"description": "Increases random edge motion and segment instability."
+				},
+				"noiseLabBlend": {
+					"label": "Blend",
+					"description": "Blends between smoother random walk and harder gated texture."
+				}
+			}
+		},
+		"modalStrike": {
+			"name": "ModalStrike",
+			"behavior": "Decaying modal resonances for struck, metallic transients and tuned body tones.",
+			"controls": {
+				"modalStrikeModes": {
+					"label": "Modes",
+					"description": "Sets the modal resonance count and spacing."
+				},
+				"modalStrikeDecay": {
+					"label": "Decay",
+					"description": "Controls modal decay time in the upper shifted range for longer tails."
+				},
+				"modalStrikeTone": {
+					"label": "Tone",
+					"description": "Crossfades between darker and brighter modal partial emphasis."
+				}
+			}
+		},
+		"feedbackFm": {
+			"name": "Feedback FM",
+			"behavior": "Two-pass self-feedback FM displacement for dense, animated harmonic clusters.",
+			"controls": {
+				"feedbackFmRatio": {
+					"label": "Ratio",
+					"description": "Sets carrier/modulator ratio for internal feedback FM motion."
+				},
+				"feedbackFmFeedback": {
+					"label": "Feedback",
+					"description": "Increases recursive FM influence inside the phase displacement."
+				},
+				"feedbackFmSkew": {
+					"label": "Skew",
+					"description": "Offsets modulation phase balance toward early or late cycle regions."
 				}
 			}
 		},

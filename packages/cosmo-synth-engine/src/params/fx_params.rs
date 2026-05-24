@@ -1,4 +1,3 @@
-use crate::params::{LfoRateMode, LfoSyncDivision};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
@@ -27,6 +26,11 @@ pub enum FxSlotType {
     Tremolo,
     Wavefolder,
     LoFi,
+    MultimodeFilter,
+    Flanger,
+    RotarySpeaker,
+    AutoWah,
+    StereoWidener,
 }
 
 /// Chorus parameters
@@ -65,10 +69,6 @@ pub struct DelayParams {
     pub tape_mode: bool,
     #[serde(default = "default_delay_warmth")]
     pub warmth: f32,
-    #[serde(default)]
-    pub time_mode: LfoRateMode,
-    #[serde(default)]
-    pub sync_division: LfoSyncDivision,
 }
 
 fn default_delay_warmth() -> f32 {
@@ -84,8 +84,6 @@ impl Default for DelayParams {
             mix: 0.0,
             tape_mode: false,
             warmth: 0.5,
-            time_mode: LfoRateMode::Hz,
-            sync_division: LfoSyncDivision::Quarter,
         }
     }
 }
@@ -187,10 +185,6 @@ pub struct VibratoParams {
     pub rate: f32,
     pub depth: f32,
     pub delay: f32,
-    #[serde(default)]
-    pub rate_mode: LfoRateMode,
-    #[serde(default)]
-    pub sync_division: LfoSyncDivision,
 }
 
 impl Default for VibratoParams {
@@ -201,8 +195,6 @@ impl Default for VibratoParams {
             rate: 55.0,
             depth: 8.0,
             delay: 120.0,
-            rate_mode: LfoRateMode::Hz,
-            sync_division: LfoSyncDivision::Quarter,
         }
     }
 }
@@ -310,12 +302,6 @@ pub struct GrainDelayParams {
     pub density: f32,
     #[serde(default)]
     pub mix: f32,
-    #[serde(default)]
-    pub time_mode: LfoRateMode,
-    #[serde(default)]
-    pub sync_division: LfoSyncDivision,
-    #[serde(default)]
-    pub pitch_semitones: f32,
 }
 
 fn default_grain_delay_time() -> f32 {
@@ -334,9 +320,6 @@ impl Default for GrainDelayParams {
             scatter: 0.0,
             density: 0.5,
             mix: 0.0,
-            time_mode: LfoRateMode::Hz,
-            sync_division: LfoSyncDivision::Quarter,
-            pitch_semitones: 0.0,
         }
     }
 }
@@ -490,6 +473,248 @@ impl Default for LoFiParams {
     }
 }
 
+/// Multimode filter parameters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct MultimodeFilterParams {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default)]
+    pub mode: u8,
+    #[serde(default)]
+    pub four_pole: bool,
+    #[serde(default = "default_multimode_filter_cutoff")]
+    pub cutoff_hz: f32,
+    #[serde(default = "default_multimode_filter_resonance")]
+    pub resonance: f32,
+    #[serde(default)]
+    pub drive: f32,
+    #[serde(default = "default_one")]
+    pub mix: f32,
+}
+
+fn default_multimode_filter_cutoff() -> f32 {
+    1200.0
+}
+
+fn default_multimode_filter_resonance() -> f32 {
+    0.2
+}
+
+impl Default for MultimodeFilterParams {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            mode: 0,
+            four_pole: false,
+            cutoff_hz: 1200.0,
+            resonance: 0.2,
+            drive: 0.0,
+            mix: 1.0,
+        }
+    }
+}
+
+/// Flanger parameters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct FlangerParams {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "default_flanger_rate")]
+    pub rate: f32,
+    #[serde(default = "default_flanger_depth")]
+    pub depth: f32,
+    #[serde(default = "default_flanger_delay_ms")]
+    pub delay_ms: f32,
+    #[serde(default = "default_flanger_feedback")]
+    pub feedback: f32,
+    #[serde(default)]
+    pub through_zero: bool,
+    #[serde(default = "default_half")]
+    pub mix: f32,
+}
+
+fn default_flanger_rate() -> f32 {
+    0.25
+}
+
+fn default_flanger_depth() -> f32 {
+    0.45
+}
+
+fn default_flanger_delay_ms() -> f32 {
+    2.0
+}
+
+fn default_flanger_feedback() -> f32 {
+    0.2
+}
+
+impl Default for FlangerParams {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            rate: 0.25,
+            depth: 0.45,
+            delay_ms: 2.0,
+            feedback: 0.2,
+            through_zero: false,
+            mix: 0.5,
+        }
+    }
+}
+
+/// Rotary speaker parameters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct RotarySpeakerParams {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "default_rotary_speed")]
+    pub speed: f32,
+    #[serde(default = "default_rotary_depth")]
+    pub depth: f32,
+    #[serde(default = "default_rotary_drive")]
+    pub drive: f32,
+    #[serde(default = "default_rotary_mix")]
+    pub mix: f32,
+}
+
+fn default_rotary_speed() -> f32 {
+    0.9
+}
+
+fn default_rotary_depth() -> f32 {
+    0.6
+}
+
+fn default_rotary_drive() -> f32 {
+    0.1
+}
+
+fn default_rotary_mix() -> f32 {
+    0.6
+}
+
+impl Default for RotarySpeakerParams {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            speed: 0.9,
+            depth: 0.6,
+            drive: 0.1,
+            mix: 0.6,
+        }
+    }
+}
+
+/// Auto-wah parameters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct AutoWahParams {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "default_auto_wah_mode")]
+    pub mode: u8,
+    #[serde(default = "default_auto_wah_sensitivity")]
+    pub sensitivity: f32,
+    #[serde(default = "default_auto_wah_cutoff")]
+    pub cutoff_hz: f32,
+    #[serde(default = "default_auto_wah_resonance")]
+    pub resonance: f32,
+    #[serde(default = "default_auto_wah_attack")]
+    pub attack_ms: f32,
+    #[serde(default = "default_auto_wah_release")]
+    pub release_ms: f32,
+    #[serde(default = "default_auto_wah_mix")]
+    pub mix: f32,
+}
+
+fn default_auto_wah_mode() -> u8 {
+    2
+}
+
+fn default_auto_wah_sensitivity() -> f32 {
+    0.55
+}
+
+fn default_auto_wah_cutoff() -> f32 {
+    450.0
+}
+
+fn default_auto_wah_resonance() -> f32 {
+    0.6
+}
+
+fn default_auto_wah_attack() -> f32 {
+    8.0
+}
+
+fn default_auto_wah_release() -> f32 {
+    110.0
+}
+
+fn default_auto_wah_mix() -> f32 {
+    0.8
+}
+
+impl Default for AutoWahParams {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            mode: 2,
+            sensitivity: 0.55,
+            cutoff_hz: 450.0,
+            resonance: 0.6,
+            attack_ms: 8.0,
+            release_ms: 110.0,
+            mix: 0.8,
+        }
+    }
+}
+
+/// Stereo widener parameters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct StereoWidenerParams {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "default_stereo_widener_width")]
+    pub width: f32,
+    #[serde(default = "default_stereo_widener_delay_ms")]
+    pub delay_ms: f32,
+    #[serde(default = "default_half")]
+    pub tone: f32,
+    #[serde(default = "default_half")]
+    pub mix: f32,
+}
+
+fn default_stereo_widener_width() -> f32 {
+    0.55
+}
+
+fn default_stereo_widener_delay_ms() -> f32 {
+    12.0
+}
+
+impl Default for StereoWidenerParams {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            width: 0.55,
+            delay_ms: 12.0,
+            tone: 0.5,
+            mix: 0.5,
+        }
+    }
+}
+
 /// Juno-style chorus parameters
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
@@ -555,10 +780,6 @@ pub struct TremoloParams {
     pub waveform: u8,
     #[serde(default = "default_one")]
     pub mix: f32,
-    #[serde(default)]
-    pub rate_mode: LfoRateMode,
-    #[serde(default)]
-    pub sync_division: LfoSyncDivision,
 }
 
 fn default_tremolo_rate() -> f32 {
@@ -573,8 +794,6 @@ impl Default for TremoloParams {
             depth: 0.5,
             waveform: 0,
             mix: 1.0,
-            rate_mode: LfoRateMode::Hz,
-            sync_division: LfoSyncDivision::Quarter,
         }
     }
 }
@@ -629,6 +848,11 @@ pub enum FxSlotConfig {
     Tremolo(TremoloParams),
     Wavefolder(WavefolderParams),
     LoFi(LoFiParams),
+    MultimodeFilter(MultimodeFilterParams),
+    Flanger(FlangerParams),
+    RotarySpeaker(RotarySpeakerParams),
+    AutoWah(AutoWahParams),
+    StereoWidener(StereoWidenerParams),
 }
 
 macro_rules! fx_slot_fns {
@@ -669,6 +893,11 @@ fx_slot_fns! {
     Tremolo => Tremolo,
     Wavefolder => Wavefolder,
     LoFi => LoFi,
+    MultimodeFilter => MultimodeFilter,
+    Flanger => Flanger,
+    RotarySpeaker => RotarySpeaker,
+    AutoWah => AutoWah,
+    StereoWidener => StereoWidener,
 }
 
 impl FxSlotConfig {
@@ -742,6 +971,26 @@ impl FxSlotConfig {
             FxSlotType::LoFi => Self::LoFi(LoFiParams {
                 enabled: true,
                 ..LoFiParams::default()
+            }),
+            FxSlotType::MultimodeFilter => Self::MultimodeFilter(MultimodeFilterParams {
+                enabled: true,
+                ..MultimodeFilterParams::default()
+            }),
+            FxSlotType::Flanger => Self::Flanger(FlangerParams {
+                enabled: true,
+                ..FlangerParams::default()
+            }),
+            FxSlotType::RotarySpeaker => Self::RotarySpeaker(RotarySpeakerParams {
+                enabled: true,
+                ..RotarySpeakerParams::default()
+            }),
+            FxSlotType::AutoWah => Self::AutoWah(AutoWahParams {
+                enabled: true,
+                ..AutoWahParams::default()
+            }),
+            FxSlotType::StereoWidener => Self::StereoWidener(StereoWidenerParams {
+                enabled: true,
+                ..StereoWidenerParams::default()
             }),
         }
     }
