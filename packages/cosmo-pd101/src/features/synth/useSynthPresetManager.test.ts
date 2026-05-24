@@ -232,4 +232,134 @@ describe("useSynthPresetManager", () => {
 			}),
 		);
 	});
+
+	it("handles empty builtins without crashing", () => {
+		const { result } = renderHook(() =>
+			useSynthPresetManager({
+				builtinPresets: {},
+				gatherPresetState: mockGatherPresetState,
+				applyPreset: mockApplyPreset,
+				shouldLoadCurrentState: () => false,
+			}),
+		);
+
+		expect(result.current.allPresetEntries).toEqual([]);
+		expect(result.current.visiblePresetEntries).toEqual([]);
+	});
+
+	it("sorts duplicate names deterministically by id", async () => {
+		vi.mocked(presetStorage.listStoredPresets).mockResolvedValue([
+			{
+				id: "z-2",
+				name: "Dup",
+				source: "user",
+				author: "",
+				starred: false,
+				data: {} as SynthPresetV1,
+				tags: [],
+			},
+			{
+				id: "a-1",
+				name: "Dup",
+				source: "user",
+				author: "",
+				starred: false,
+				data: {} as SynthPresetV1,
+				tags: [],
+			},
+		]);
+
+		const { result } = renderHook(() =>
+			useSynthPresetManager({
+				builtinPresets: {},
+				gatherPresetState: mockGatherPresetState,
+				applyPreset: mockApplyPreset,
+				shouldLoadCurrentState: () => false,
+			}),
+		);
+
+		await waitFor(() => {
+			expect(result.current.allPresetEntries.length).toBe(2);
+		});
+		expect(result.current.allPresetEntries.map((entry) => entry.id)).toEqual([
+			"a-1",
+			"z-2",
+		]);
+	});
+
+	it("toggles favorites through storage API", async () => {
+		const { result } = renderHook(() =>
+			useSynthPresetManager({
+				builtinPresets: mockBuiltinPresets,
+				gatherPresetState: mockGatherPresetState,
+				applyPreset: mockApplyPreset,
+				shouldLoadCurrentState: () => false,
+			}),
+		);
+
+		await act(async () => {
+			await result.current.handleSetPresetFavorite("preset-1", true);
+		});
+		expect(presetStorage.setPresetFavorite).toHaveBeenCalledWith(
+			"preset-1",
+			true,
+		);
+		expect(presetStorage.listPresetFavorites).toHaveBeenCalled();
+	});
+
+	it("imports a preset and disambiguates duplicate names", async () => {
+		vi.mocked(presetStorage.listStoredPresets).mockResolvedValue([
+			{
+				id: "id-1",
+				name: "Imported Name",
+				source: "user",
+				author: "",
+				starred: false,
+				data: {} as SynthPresetV1,
+				tags: [],
+			},
+		]);
+		vi.mocked(presetStorage.importPreset).mockResolvedValue({
+			id: "x",
+			name: "Imported Name",
+			source: "user",
+			author: "A",
+			starred: false,
+			data: { imported: true } as unknown as SynthPresetV1,
+			tags: ["bass"],
+		});
+		vi.mocked(presetStorage.saveStoredPreset).mockResolvedValue({
+			id: "id-2",
+			name: "Imported Name 2",
+			source: "user",
+			author: "A",
+			starred: false,
+			data: { imported: true } as unknown as SynthPresetV1,
+			tags: ["bass"],
+		});
+
+		const { result } = renderHook(() =>
+			useSynthPresetManager({
+				builtinPresets: {},
+				gatherPresetState: mockGatherPresetState,
+				applyPreset: mockApplyPreset,
+				shouldLoadCurrentState: () => false,
+			}),
+		);
+
+		await waitFor(() => {
+			expect(presetStorage.listStoredPresets).toHaveBeenCalled();
+		});
+
+		await act(async () => {
+			await result.current.handleImportPreset("{}", "Imported Name");
+		});
+
+		expect(presetStorage.importPreset).toHaveBeenCalledWith("{}");
+		expect(presetStorage.saveStoredPreset).toHaveBeenCalledWith(
+			expect.objectContaining({ name: "Imported Name 2", source: "user" }),
+		);
+		expect(mockApplyPreset).toHaveBeenCalledWith({ imported: true });
+		expect(result.current.activePresetNameBase).toBe("Imported Name 2");
+	});
 });
