@@ -31,12 +31,19 @@ pub mod clip;
 pub mod cz101;
 pub use cz101::{CZ_PRESETS, CzPresetV1};
 pub mod cheby;
+pub mod feedback_fm;
 pub mod fof;
 pub mod fold;
 pub mod karpunk;
 pub mod mirror;
+pub mod modal_strike;
+pub mod noise_lab;
+pub mod phaz_diff;
 pub mod pinch;
+pub mod pwm;
+pub mod quantize;
 pub mod ripple;
+pub mod sine;
 pub mod skew;
 pub mod stutter;
 pub mod sync;
@@ -347,6 +354,9 @@ fn algo_control_slot_index(algo: Algo, id: &str) -> Option<usize> {
         (Algo::Skew, "skewCurve") => 1,
         (Algo::Skew, "skewSpread") => 2,
         (Algo::Skew, "skewTilt") => 3,
+        (Algo::Quantize, "quantizeAmount") => 0,
+        (Algo::Quantize, "quantizeSteps") => 1,
+        (Algo::Quantize, "quantizeSkew") => 2,
         (Algo::Twist, "twistHarmonics") => 0,
         (Algo::Twist, "twistDepth") => 1,
         (Algo::Twist, "twistPhase") => 2,
@@ -438,15 +448,39 @@ pub fn warp_phase(
         Algo::Pinch => pinch::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Fold => fold::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Skew => skew::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
+        Algo::Quantize => {
+            let amount_mod = c(0);
+            let amount = if amount_mod == 0.0 { amt } else { amount_mod };
+            quantize::warp_phase(phase, amount, c(1), c(2))
+        }
         Algo::Twist => twist::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Clip => clip::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Ripple => ripple::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Mirror => mirror::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Fof => fof::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
+        Algo::Sine => sine::warp_phase(phase, amt),
         Algo::Karpunk => phase,
         Algo::Terrain => terrain::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Stutter => stutter::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
-        Algo::Cheby => cheby::warp_phase(phase, amt, c(0), c(1), c(2)),
+        Algo::Cheby => cheby::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
+        Algo::Pwm => warp_phase_extended(algo, phase, amt, c),
+        Algo::PhazDiff => warp_phase_extended(algo, phase, amt, c),
+        Algo::NoiseLab => warp_phase_extended(algo, phase, amt, c),
+        Algo::ModalStrike => warp_phase_extended(algo, phase, amt, c),
+        Algo::FeedbackFm => warp_phase_extended(algo, phase, amt, c),
+    }
+}
+
+#[cold]
+#[inline(never)]
+fn warp_phase_extended(algo: Algo, phase: f32, amt: f32, c: impl Fn(usize) -> f32) -> f32 {
+    match algo {
+        Algo::Pwm => pwm::warp_phase(phase, amt, c(0), c(1), c(2)),
+        Algo::PhazDiff => phaz_diff::warp_phase(phase, amt, c(0), c(1), c(2)),
+        Algo::NoiseLab => noise_lab::warp_phase(phase, amt, c(0), c(1), c(2)),
+        Algo::ModalStrike => modal_strike::warp_phase(phase, amt, c(0), c(1), c(2)),
+        Algo::FeedbackFm => feedback_fm::warp_phase(phase, amt, c(0), c(1), c(2)),
+        _ => unreachable!("extended warp path only handles newer algorithms"),
     }
 }
 
@@ -467,6 +501,57 @@ pub fn render_algo_sample(
     if algo == Algo::Karpunk {
         return runtime_sample.unwrap_or(0.0);
     }
+
+    let fast_warped = match algo {
+        Algo::Saw => Some(cz101::warp_phase_for_waveform(
+            crate::params::CzWaveform::Saw,
+            phase,
+            dcw,
+        )),
+        Algo::Square => Some(cz101::warp_phase_for_waveform(
+            crate::params::CzWaveform::Square,
+            phase,
+            dcw,
+        )),
+        Algo::Pulse => Some(cz101::warp_phase_for_waveform(
+            crate::params::CzWaveform::Pulse,
+            phase,
+            dcw,
+        )),
+        Algo::Null => Some(cz101::warp_phase_for_waveform(
+            crate::params::CzWaveform::Null,
+            phase,
+            dcw,
+        )),
+        Algo::SinePulse => Some(cz101::warp_phase_for_waveform(
+            crate::params::CzWaveform::SinePulse,
+            phase,
+            dcw,
+        )),
+        Algo::SawPulse => Some(cz101::warp_phase_for_waveform(
+            crate::params::CzWaveform::SawPulse,
+            phase,
+            dcw,
+        )),
+        Algo::MultiSine => Some(cz101::warp_phase_for_waveform(
+            crate::params::CzWaveform::MultiSine,
+            phase,
+            dcw,
+        )),
+        Algo::Pulse2 => Some(cz101::warp_phase_for_waveform(
+            crate::params::CzWaveform::Pulse2,
+            phase,
+            dcw,
+        )),
+        Algo::Cz101 => Some(cz101::warp_phase(phase, dcw)),
+        Algo::Sine => Some(sine::warp_phase(phase, dcw)),
+        _ => None,
+    };
+
+    if let Some(warped) = fast_warped {
+        return sample_base_wave(base_waveform, warped + pm_post_mod);
+    }
+
     let warped = warp_phase(algo, phase, dcw, control_values, &algo_param_mods);
     sample_base_wave(base_waveform, warped + pm_post_mod)
 }

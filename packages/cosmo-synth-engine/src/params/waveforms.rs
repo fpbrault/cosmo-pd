@@ -98,15 +98,22 @@ pub enum Algo {
     Pinch,
     Fold,
     Skew,
+    Quantize,
     Twist,
     Clip,
     Ripple,
     Mirror,
     Fof,
     Karpunk,
+    Sine,
     Terrain,
     Cheby,
     Stutter,
+    Pwm,
+    PhazDiff,
+    NoiseLab,
+    ModalStrike,
+    FeedbackFm,
 }
 
 impl Algo {
