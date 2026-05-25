@@ -70,7 +70,7 @@ export default memo(function SynthRendererDrawer({
 				drawerOpen ? "pointer-events-auto" : "pointer-events-none"
 			}`}
 		>
-			<div className="relative flex h-full max-h-130 min-h-0 flex-col rounded-lg border border-cz-border bg-cz-body">
+			<div className="relative flex h-full max-h-144 min-h-0 flex-col rounded-lg border border-cz-border bg-cz-body">
 				<div className="pointer-events-none absolute inset-0 rounded-lg bg-white/5" />
 				<div className="pointer-events-none absolute inset-x-0 top-0 h-14 rounded-t-lg opacity-60" />
 				<div className="relative min-h-0 flex-1 overflow-hidden">

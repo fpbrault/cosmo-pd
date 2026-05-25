@@ -8,14 +8,15 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SharedPhaseDistortionVisualizer } from "../../src/components/renderer/SynthRenderer";
 
-const SYNTH_RENDERER_MAX_WIDTH = 1152;
-const SYNTH_RENDERER_MAX_HEIGHT = 864;
+const SYNTH_RENDERER_MAX_WIDTH = 1368;
+const SYNTH_RENDERER_MAX_HEIGHT = 912;
 const VISUALIZER_FRAME_PADDING = 30;
+const MANUAL_RENDERER_SCALE = 0.85;
 
 export default function LivePage() {
 	const frameRef = useRef<HTMLDivElement | null>(null);
 	const containerRef = useRef<HTMLDivElement | null>(null);
-	const [frameScale, setFrameScale] = useState(1);
+	const [fitScale, setFitScale] = useState(1);
 	const [isMobileViewport, setIsMobileViewport] = useState<boolean>(() => {
 		if (typeof window === "undefined") {
 			return false;
@@ -95,12 +96,18 @@ export default function LivePage() {
 			const availableHeight = Math.max(bounds.height - framePadding * 2, 0);
 			if (availableWidth <= 0 || availableHeight <= 0) return;
 
-			const nextScale = Math.min(
+			// 1. Calculate the absolute maximum scale that perfectly fits the screen
+			const maxScreenScale = Math.min(
 				availableWidth / SYNTH_RENDERER_MAX_WIDTH,
 				availableHeight / SYNTH_RENDERER_MAX_HEIGHT,
-				isSynthFullscreen ? Infinity : 1,
 			);
-			setFrameScale((current) => {
+
+			// 2. Apply rules based on fullscreen vs regular layout
+			const nextScale = isSynthFullscreen
+				? maxScreenScale
+				: Math.min(maxScreenScale, MANUAL_RENDERER_SCALE);
+
+			setFitScale((current) => {
 				if (Math.abs(current - nextScale) < 0.001) return current;
 				return nextScale;
 			});
@@ -112,6 +119,9 @@ export default function LivePage() {
 		return () => resizeObserver.disconnect();
 	}, [isSynthFullscreen]);
 
+	// The manual scale is now cleanly handled inside the useEffect,
+	// so we just pass the calculated fitScale directly.
+	const frameScale = fitScale;
 	const scaledWidth = SYNTH_RENDERER_MAX_WIDTH * frameScale;
 	const scaledHeight = SYNTH_RENDERER_MAX_HEIGHT * frameScale;
 
@@ -175,8 +185,7 @@ export default function LivePage() {
 					style={{
 						width: SYNTH_RENDERER_MAX_WIDTH,
 						height: SYNTH_RENDERER_MAX_HEIGHT,
-						transform: `scale(${frameScale})`,
-						transformOrigin: isSynthFullscreen ? "center center" : "top left",
+						zoom: frameScale,
 					}}
 				>
 					<SharedPhaseDistortionVisualizer />
