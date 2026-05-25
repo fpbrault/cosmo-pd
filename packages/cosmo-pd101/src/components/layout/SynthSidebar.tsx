@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "motion/react";
-import { memo, type RefObject } from "react";
+import { memo } from "react";
 import { ScopeMiniDisplay } from "@/components/panels/analysis/ScopeDisplay";
 import MacroKnobsPanel from "@/components/panels/macro/MacroKnobsPanel";
 import MidiLearnPanel from "@/components/panels/midi/MidiLearnPanel";
@@ -14,18 +14,8 @@ const MIDI_LEARN_PANEL_TRANSITION = {
 } as const;
 
 type SynthSidebarProps = {
-	effectivePitchHz: number;
-	analyserNodeRef: RefObject<AnalyserNode | null>;
-	audioCtxRef: RefObject<AudioContext | null>;
 	sidebarMinWidthRem?: number;
 	fillAvailableHeight?: boolean;
-	subscribeScopeFrames?: (
-		onFrame: (frame: {
-			samples: Float32Array;
-			sampleRate: number;
-			hz: number;
-		}) => void,
-	) => () => void;
 	waveDrawerOpen: boolean;
 	libraryModeOpen: boolean;
 	globalOpen: boolean;
@@ -36,12 +26,8 @@ type SynthSidebarProps = {
 };
 
 export default memo(function SynthSidebar({
-	effectivePitchHz,
-	analyserNodeRef,
-	audioCtxRef,
 	sidebarMinWidthRem = 18,
 	fillAvailableHeight = true,
-	subscribeScopeFrames,
 	waveDrawerOpen,
 	libraryModeOpen,
 	globalOpen,
@@ -67,13 +53,7 @@ export default memo(function SynthSidebar({
 			<div className="min-w-full">
 				<div className="relative h-60 overflow-hidden">
 					<div className="absolute inset-0 p-3">
-						<ScopeMiniDisplay
-							analyserNodeRef={analyserNodeRef}
-							audioCtxRef={audioCtxRef}
-							effectivePitchHz={effectivePitchHz}
-							subscribeScopeFrames={subscribeScopeFrames}
-							expanded={waveDrawerOpen}
-						/>
+						<ScopeMiniDisplay expanded={waveDrawerOpen} />
 					</div>
 					<AnimatePresence initial={false}>
 						{midiLearnOpen ? (

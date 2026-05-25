@@ -1,16 +1,7 @@
 import { ScopeControls } from "./ScopeControls";
-import type {
-	ScopeMiniDisplayProps,
-	ScopeMiniDisplayWithStateProps,
-} from "./ScopeDisplay.types";
 import { ScopeVisualizationDisplay } from "./ScopeVisualizationDisplay";
 
-export type { ScopeMiniDisplayProps } from "./ScopeDisplay.types";
-
-export function ScopeMiniDisplay({
-	expanded = false,
-	...scopeProps
-}: ScopeMiniDisplayWithStateProps) {
+export function ScopeMiniDisplay({ expanded = false }: { expanded?: boolean }) {
 	if (expanded) {
 		return (
 			<div className="flex w-full flex-col">
@@ -24,16 +15,16 @@ export function ScopeMiniDisplay({
 
 	return (
 		<div className="flex w-full flex-col">
-			<ScopeVisualizationDisplay {...scopeProps} variant="mini" />
+			<ScopeVisualizationDisplay variant="mini" />
 			<ScopeControls />
 		</div>
 	);
 }
 
-export function ScopeDrawerDisplay(props: ScopeMiniDisplayProps) {
+export function ScopeDrawerDisplay() {
 	return (
 		<div className="h-full min-h-0 p-3">
-			<ScopeVisualizationDisplay {...props} variant="drawer" />
+			<ScopeVisualizationDisplay variant="drawer" />
 		</div>
 	);
 }

@@ -1,4 +1,4 @@
-import { memo, type RefObject } from "react";
+import { memo } from "react";
 import type { EnvOverrideHandlers } from "@/components/editor/PhaseLinesSection";
 import PhaseLinesSection from "@/components/editor/PhaseLinesSection";
 import type { MainPanelMode } from "@/features/synth/synthUiStore";
@@ -13,16 +13,6 @@ type SynthRendererMainPanelProps = {
 	drawerOpen: boolean;
 	activeDrawerPanel: DrawerPanel;
 	drawerSlideDirection: 1 | -1;
-	analyserNodeRef: RefObject<AnalyserNode | null>;
-	audioCtxRef: RefObject<AudioContext | null>;
-	effectivePitchHz: number;
-	subscribeScopeFrames?: (
-		onFrame: (frame: {
-			samples: Float32Array;
-			sampleRate: number;
-			hz: number;
-		}) => void,
-	) => () => void;
 };
 
 export default memo(function SynthRendererMainPanel({
@@ -32,10 +22,6 @@ export default memo(function SynthRendererMainPanel({
 	drawerOpen,
 	activeDrawerPanel,
 	drawerSlideDirection,
-	analyserNodeRef,
-	audioCtxRef,
-	effectivePitchHz,
-	subscribeScopeFrames,
 }: SynthRendererMainPanelProps) {
 	return (
 		<main
@@ -59,10 +45,6 @@ export default memo(function SynthRendererMainPanel({
 					drawerOpen={drawerOpen}
 					activeDrawerPanel={activeDrawerPanel}
 					drawerSlideDirection={drawerSlideDirection}
-					analyserNodeRef={analyserNodeRef}
-					audioCtxRef={audioCtxRef}
-					effectivePitchHz={effectivePitchHz}
-					subscribeScopeFrames={subscribeScopeFrames}
 				/>
 			</div>
 		</main>
