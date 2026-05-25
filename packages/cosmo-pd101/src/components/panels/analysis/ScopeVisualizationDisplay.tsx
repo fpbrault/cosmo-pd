@@ -304,7 +304,6 @@ export function ScopeVisualizationDisplay({
 				{isWaterfall3D ? (
 					<div className={isDrawer ? "h-full min-h-80 w-full" : "h-43 w-full"}>
 						<WavetableWaterfallScopeViz
-							displayMode="single"
 							palette={palette}
 							visualIntensity={isDrawer ? 1 : 0.65}
 						/>

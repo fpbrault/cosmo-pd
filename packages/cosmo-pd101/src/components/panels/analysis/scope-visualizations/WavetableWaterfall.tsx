@@ -539,60 +539,7 @@ function WavetableWaterfallPane({
 			<div className={labelClass}>
 				<span style={{ color: palette.glowCore }}>{label}</span>
 			</div>
-			<div
-				className="pointer-events-none absolute inset-0 z-0 rounded-md"
-				style={{
-					background: `radial-gradient(ellipse at 50% 55%, ${withAlpha(palette.glowMid, 0.09)}, ${withAlpha(palette.background, 0.22)} 42%, ${withAlpha(palette.background, 0.76)} 100%)`,
-				}}
-			/>
-			<div
-				className="pointer-events-none absolute inset-0 z-0 rounded-md opacity-70"
-				style={{
-					background: `radial-gradient(ellipse at 50% 50%, transparent 0%, transparent 58%, ${withAlpha(palette.background, 0.52)} 86%, ${withAlpha(palette.background, 0.88)} 100%)`,
-				}}
-			/>
-			<div
-				className="pointer-events-none absolute inset-x-0 top-0 z-30 h-1/2 rounded-t-md opacity-[0.18] mix-blend-screen"
-				style={{
-					background: `linear-gradient(105deg, transparent 0%, ${withAlpha(palette.glowCore, 0.08)} 18%, ${withAlpha(palette.glowCore, 0.16)} 31%, transparent 46%)`,
-				}}
-			/>
-			<div
-				className="pointer-events-none absolute inset-0 z-20 rounded-md opacity-35 mix-blend-screen"
-				style={{
-					background: `repeating-linear-gradient(180deg, ${withAlpha(palette.glowCore, 0.1)} 0px, ${withAlpha(palette.glowCore, 0.05)} 1px, ${withAlpha(palette.background, 0.16)} 2px, ${withAlpha(palette.background, 0.32)} 4px)`,
-				}}
-			/>
-			<div
-				className="pointer-events-none absolute inset-0 z-20 rounded-md opacity-[0.14] mix-blend-screen"
-				style={{
-					background: `repeating-linear-gradient(90deg, ${withAlpha(palette.glowMid, 0.18)} 0px, ${withAlpha(palette.glowMid, 0.18)} 1px, transparent 1px, transparent 3px)`,
-				}}
-			/>
-			<div
-				className="pointer-events-none absolute inset-0 z-20 rounded-md bg-size-[4px_4px] opacity-20 mix-blend-screen"
-				style={{
-					backgroundImage: `radial-gradient(circle at 50% 50%, ${withAlpha(palette.glowCore, 0.08)} 0px, transparent 1.4px)`,
-				}}
-			/>
-			<div
-				className="pointer-events-none absolute inset-0 z-30 rounded-md"
-				style={{
-					background: `radial-gradient(ellipse at center, transparent 48%, ${withAlpha(palette.background, 0.36)} 76%, ${withAlpha(palette.background, 0.68)} 100%)`,
-				}}
-			/>
-			<div
-				className="pointer-events-none absolute inset-0 z-30 rounded-md opacity-25"
-				style={{
-					background: `linear-gradient(180deg, ${withAlpha(palette.glowCore, 0.06)} 0%, transparent 9%, transparent 88%, ${withAlpha(palette.glowMid, 0.06)} 100%)`,
-				}}
-			/>
-			<div
-				className="pointer-events-none absolute inset-0 z-40 rounded-md"
-				style={{
-					boxShadow: `inset 0 12px 30px ${withAlpha(palette.glowCore, 0.05)}, inset 0 -28px 58px ${withAlpha(palette.background, 0.46)}, inset 18px 0 36px ${withAlpha(palette.glowCore, 0.025)}, inset -22px 0 48px ${withAlpha(palette.background, 0.32)}`,
-				}}
-			/>
+		
 			<Canvas
 				className="relative z-10 h-full w-full opacity-95 contrast-125 saturate-150"
 				dpr={[1, 1.75]}
@@ -614,7 +561,6 @@ export function WavetableWaterfall({
 	line2WaveHistory,
 	line1Palette,
 	line2Palette,
-	displayMode = "both",
 	labelPosition = "top-left",
 	visualIntensity = 1,
 }: WavetableWaterfallProps) {
@@ -684,7 +630,6 @@ export function WavetableWaterfall({
 
 	const toggleSingleLine = () => setSingleLine((line) => (line === 1 ? 2 : 1));
 
-	if (displayMode === "single") {
 		const showingLine1 = singleLine === 1;
 		const palette = showingLine1 ? line1Palette : line2Palette;
 		return (
@@ -702,26 +647,4 @@ export function WavetableWaterfall({
 				/>
 			</div>
 		);
-	}
-
-	return (
-		<div className="flex h-full min-h-0 w-full flex-col gap-2">
-			<WavetableWaterfallPane
-				label="LINE 1"
-				waveHistory={line1WaveHistory}
-				activeIndicators={line1ActiveIndicators}
-				palette={line1Palette}
-				labelPosition={labelPosition}
-				visualIntensity={visualIntensity}
-			/>
-			<WavetableWaterfallPane
-				label="LINE 2"
-				waveHistory={line2WaveHistory}
-				activeIndicators={line2ActiveIndicators}
-				palette={line2Palette}
-				labelPosition={labelPosition}
-				visualIntensity={visualIntensity}
-			/>
-		</div>
-	);
 }

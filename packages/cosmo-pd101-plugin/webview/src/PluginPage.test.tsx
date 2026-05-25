@@ -18,14 +18,36 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 	};
 
 	return {
+		computeRendererFrameLayout: vi.fn(
+			({
+				availableWidth,
+				availableHeight,
+				targetAspectRatio,
+			}: {
+				availableWidth: number;
+				availableHeight: number;
+				targetAspectRatio?: number;
+			}) => ({
+				frameWidth: availableWidth,
+				frameHeight: availableHeight,
+				frameScale: 1,
+				effectiveAspectRatio:
+					targetAspectRatio ?? availableWidth / availableHeight,
+				sidebarMinWidthRem: 18,
+			}),
+		),
 		DEFAULT_SYNTH_PRESETS: {},
 		FACTORY_CZ_PRESETS: [],
+		SYNTH_RENDERER_DESIGN_HEIGHT: 912,
+		SYNTH_RENDERER_MIN_ASPECT_RATIO: 4 / 3,
 		SynthRenderer: () => <div data-testid="synth-renderer" />,
 		installBenchmarkApi: mockInstallBenchmarkApi,
 		useNoteHandling: () => ({
 			activeNotes: [],
 			sendNoteOn: vi.fn(),
 			sendNoteOff: vi.fn(),
+			sendPolyAftertouch: vi.fn(),
+			panic: vi.fn(),
 		}),
 		useSynthPresetManager: mockUseSynthPresetManager,
 		useSynthStore: (selector: (state: typeof synthStoreState) => unknown) =>

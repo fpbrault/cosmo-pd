@@ -1,7 +1,10 @@
 import {
+	computeRendererFrameLayout,
 	DEFAULT_SYNTH_PRESETS,
 	FACTORY_CZ_PRESETS,
 	installBenchmarkApi,
+	SYNTH_RENDERER_DESIGN_HEIGHT,
+	SYNTH_RENDERER_MIN_ASPECT_RATIO,
 	SynthRenderer,
 	useNoteHandling,
 	useSynthPresetManager,
@@ -46,25 +49,11 @@ function normalizeBenchmarkMetrics(value: unknown) {
 	};
 }
 
-const SYNTH_RENDERER_DESIGN_WIDTH = 1368;
-const SYNTH_RENDERER_DESIGN_HEIGHT = 912;
-const SYNTH_RENDERER_BASE_HEIGHT_IOS = 912;
-const SYNTH_RENDERER_MIN_ASPECT_RATIO_IOS = 4 / 3;
-const SYNTH_RENDERER_MAX_ASPECT_RATIO_IOS = 3 / 2;
-
-function clampRendererAspectRatioIOS(aspectRatio: number): number {
-	return Math.min(
-		SYNTH_RENDERER_MAX_ASPECT_RATIO_IOS,
-		Math.max(SYNTH_RENDERER_MIN_ASPECT_RATIO_IOS, aspectRatio),
-	);
-}
-
 type PluginPageProps = {
 	utilityExtra?: ReactNode;
 };
 
 export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
-	const isMacHost = window.__czHostPlatform === "macos";
 	const isIosHost = window.__czHostPlatform === "ios";
 	const isLikelyIosDevice =
 		/iPad|iPhone|iPod/.test(window.navigator.userAgent) ||
@@ -75,11 +64,14 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	const velocityCurve = useSynthStore((s) => s.velocityCurve);
 
 	const frameRef = useRef<HTMLDivElement | null>(null);
-	const [rendererFrame, setRendererFrame] = useState({
-		width: SYNTH_RENDERER_DESIGN_WIDTH,
-		height: SYNTH_RENDERER_DESIGN_HEIGHT,
-		scale: 1,
-	});
+	const [rendererFrame, setRendererFrame] = useState(() =>
+		computeRendererFrameLayout({
+			availableWidth:
+				SYNTH_RENDERER_DESIGN_HEIGHT * SYNTH_RENDERER_MIN_ASPECT_RATIO,
+			availableHeight: SYNTH_RENDERER_DESIGN_HEIGHT,
+			targetAspectRatio: SYNTH_RENDERER_MIN_ASPECT_RATIO,
+		}),
+	);
 	const sendNativeEngineEvent = useCallback(
 		(type: string, payload: Record<string, unknown>) => {
 			window.ipc?.postMessage(
@@ -135,36 +127,29 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 				return;
 			}
 
-			const shouldFillViewport = isMacHost || isIosHost || isLikelyIosDevice;
-
-			const nextWidth = shouldFillViewport
-				? bounds.width
-				: SYNTH_RENDERER_BASE_HEIGHT_IOS *
-					clampRendererAspectRatioIOS(bounds.width / bounds.height);
-			const nextHeight = shouldFillViewport
-				? bounds.height
-				: SYNTH_RENDERER_BASE_HEIGHT_IOS;
-			const scaleToFillWidth = bounds.width / nextWidth;
-			const scaleToFitHeight = bounds.height / nextHeight;
-			const nextScale = shouldFillViewport
-				? 1
-				: bounds.width / bounds.height > SYNTH_RENDERER_MAX_ASPECT_RATIO_IOS
-					? scaleToFillWidth
-					: Math.min(scaleToFillWidth, scaleToFitHeight);
+			const targetAspectRatio =
+				isIosHost || isLikelyIosDevice
+					? undefined
+					: SYNTH_RENDERER_MIN_ASPECT_RATIO;
+			const nextLayout = computeRendererFrameLayout({
+				availableWidth: bounds.width,
+				availableHeight: bounds.height,
+				targetAspectRatio,
+			});
+			if (!nextLayout) {
+				return;
+			}
 
 			setRendererFrame((current) => {
 				if (
-					Math.abs(current.width - nextWidth) < 0.5 &&
-					Math.abs(current.height - nextHeight) < 0.5 &&
-					Math.abs(current.scale - nextScale) < 0.001
+					current &&
+					Math.abs(current.frameWidth - nextLayout.frameWidth) < 0.5 &&
+					Math.abs(current.frameHeight - nextLayout.frameHeight) < 0.5 &&
+					Math.abs(current.frameScale - nextLayout.frameScale) < 0.001
 				) {
 					return current;
 				}
-				return {
-					width: nextWidth,
-					height: nextHeight,
-					scale: nextScale,
-				};
+				return nextLayout;
 			});
 		};
 
@@ -178,7 +163,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 			resizeObserver.disconnect();
 			window.removeEventListener("resize", updateFrameSize);
 		};
-	}, [isIosHost, isLikelyIosDevice, isMacHost]);
+	}, [isIosHost, isLikelyIosDevice]);
 
 	const shouldLoadCurrentState = useCallback(() => !window.ipc, []);
 
@@ -248,13 +233,19 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		);
 	}, [activePresetId, activePresetNameBase, loadedPresetFingerprint]);
 
-	const combinedScale = rendererFrame.scale;
-	const scaledWidth = rendererFrame.width * combinedScale;
-	const scaledHeight = rendererFrame.height * combinedScale;
+	const combinedScale = rendererFrame?.frameScale ?? 1;
+	const frameWidth =
+		rendererFrame?.frameWidth ??
+		SYNTH_RENDERER_DESIGN_HEIGHT * SYNTH_RENDERER_MIN_ASPECT_RATIO;
+	const frameHeight =
+		rendererFrame?.frameHeight ?? SYNTH_RENDERER_DESIGN_HEIGHT;
+	const sidebarMinWidthRem = rendererFrame?.sidebarMinWidthRem ?? 18;
+	const scaledWidth = frameWidth * combinedScale;
+	const scaledHeight = frameHeight * combinedScale;
 
 	const zoomStyle: CSSProperties = {
-		width: rendererFrame.width,
-		height: rendererFrame.height,
+		width: frameWidth,
+		height: frameHeight,
 		transform: `scale(${combinedScale})`,
 		transformOrigin: "top left",
 	};
@@ -279,6 +270,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 						effectivePitchHz={scopeActiveHz}
 						analyserNodeRef={analyserNodeRef}
 						audioCtxRef={audioCtxRef}
+						sidebarMinWidthRem={sidebarMinWidthRem}
 						subscribeScopeFrames={subscribeScopeFrames}
 						miniKeyboard={{
 							activeNotes,

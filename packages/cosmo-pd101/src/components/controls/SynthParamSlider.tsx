@@ -52,6 +52,7 @@ interface SynthParamSliderProps {
 	showLabels?: boolean;
 	centerDetent?: boolean;
 	centerDetentThreshold?: number;
+	centerMarker?: boolean;
 	showValueOnInteraction?: boolean;
 	curveMode?: SliderCurveMode;
 }
@@ -102,6 +103,7 @@ function SynthParamSliderInner({
 	majorTickEvery = 3,
 	showLabels = false,
 	centerDetent = false,
+	centerMarker = false,
 	centerDetentThreshold,
 	showValueOnInteraction = true,
 	curveMode = "linear",
@@ -479,7 +481,7 @@ function SynthParamSliderInner({
 					}
 				/>
 
-				{orientation === "horizontal" ? (
+				{centerMarker ? (
 					<div
 						aria-hidden="true"
 						className="pointer-events-none absolute top-1/2 left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-cz-cream/80 bg-cz-panel shadow-[0_0_6px_rgba(255,255,255,0.35)]"

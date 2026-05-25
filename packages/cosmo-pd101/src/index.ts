@@ -5,6 +5,15 @@ export {
 	PerformanceMonitor,
 } from "./components/performance/PerformanceMonitor";
 export {
+	computeRendererFrameLayout,
+	computeSidebarMinWidthRem,
+	type RendererFrameLayout,
+	SYNTH_RENDERER_DESIGN_HEIGHT,
+	SYNTH_RENDERER_DESIGN_WIDTH,
+	SYNTH_RENDERER_MAX_ASPECT_RATIO,
+	SYNTH_RENDERER_MIN_ASPECT_RATIO,
+} from "./components/renderer/rendererFrameLayout";
+export {
 	default as SynthRenderer,
 	SharedPhaseDistortionVisualizer,
 	type SynthRendererProps,

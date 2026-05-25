@@ -6,7 +6,8 @@ export type CardVariant =
 	| "panel-gold"
 	| "hero"
 	| "subtle"
-	| "inset";
+	| "inset"
+	| "ghost";
 export type CardPadding = "none" | "sm" | "md" | "lg";
 
 type CardProps<T extends React.ElementType = "div"> = {
@@ -28,6 +29,7 @@ const CARD_VARIANT_CLASSES: Record<CardVariant, string> = {
 	hero: "rounded-2xl bg-cz-surface",
 	subtle: "rounded-none bg-cz-surface/50",
 	inset: "rounded-lg bg-cz-inset",
+	ghost: "rounded-none bg-transparent",
 };
 
 const CARD_PADDING_CLASSES: Record<Exclude<CardPadding, "none">, string> = {

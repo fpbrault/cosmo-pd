@@ -38,11 +38,9 @@ function toWaterfallPalettes(palette: ScopeThemePalette) {
 }
 
 export function WavetableWaterfallScopeViz({
-	displayMode = "single",
 	palette,
 	visualIntensity = 1,
 }: {
-	displayMode?: "both" | "single";
 	palette: ScopeThemePalette;
 	visualIntensity?: number;
 }) {
@@ -50,16 +48,13 @@ export function WavetableWaterfallScopeViz({
 	const waterfallPalettes = toWaterfallPalettes(palette);
 
 	return (
-		<div className="h-full min-h-0 w-full">
-			<WavetableWaterfall
-				line1WaveHistory={wavetablePreview.line1History}
-				line2WaveHistory={wavetablePreview.line2History}
-				displayMode={displayMode}
-				line1Palette={waterfallPalettes.line1}
-				line2Palette={waterfallPalettes.line2}
-				labelPosition="bottom-left"
-				visualIntensity={visualIntensity}
-			/>
-		</div>
+		<WavetableWaterfall
+			line1WaveHistory={wavetablePreview.line1History}
+			line2WaveHistory={wavetablePreview.line2History}
+			line1Palette={waterfallPalettes.line1}
+			line2Palette={waterfallPalettes.line2}
+			labelPosition="bottom-left"
+			visualIntensity={visualIntensity}
+		/>
 	);
 }

@@ -43,8 +43,8 @@ export default function StepEnvelopeStepCard({
 					: "border-base-300/60 bg-base-300/20"
 			}`}
 		>
-			<div className="mb-1 flex items-center justify-start px-1">
-				<div className="text-4xs text-base-content/45 uppercase tracking-[0.2em]">
+			<div className="absolute mb-1 flex items-center justify-start px-1">
+				<div className="text-base-content/45 text-md uppercase tracking-[0.2em]">
 					{stepIndex + 1}
 				</div>
 			</div>
