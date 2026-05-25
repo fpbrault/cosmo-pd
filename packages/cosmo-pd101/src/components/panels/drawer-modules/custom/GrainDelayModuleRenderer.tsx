@@ -3,8 +3,14 @@ import { useFxSlotModule } from "@/components/panels/drawer-modules/FxSlotModule
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 
 export default function GrainDelayModuleRenderer() {
-	const { config, selectedPreset, enabled, handlePresetChange } =
-		useFxSlotModule();
+	const {
+		config,
+		slot,
+		selectedPreset,
+		setFxSlotParams,
+		enabled,
+		handlePresetChange,
+	} = useFxSlotModule();
 
 	return (
 		<ModuleFrame
@@ -12,6 +18,7 @@ export default function GrainDelayModuleRenderer() {
 			color={config.color}
 			columns={3}
 			enabled={enabled}
+			onToggleEnabled={() => setFxSlotParams(slot, { enabled: !enabled })}
 			presetValue={selectedPreset}
 			presetOptions={config.presets}
 			onPresetChange={handlePresetChange}

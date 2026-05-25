@@ -158,8 +158,15 @@ const FxButtonGroupControl = memo(function FxButtonGroupControl({
 
 export default function GenericFxSlotModule() {
 	const { t } = useTranslation("synth");
-	const { config, selectedPreset, params, enabled, handlePresetChange } =
-		useFxSlotModule();
+	const {
+		config,
+		slot,
+		selectedPreset,
+		params,
+		enabled,
+		setFxSlotParams,
+		handlePresetChange,
+	} = useFxSlotModule();
 	const defaultColumns = clampGridColumns(config.columns ?? 4);
 	const dynamicColumnRule = config.dynamicColumns;
 	const dynamicColumns = dynamicColumnRule
@@ -201,6 +208,7 @@ export default function GenericFxSlotModule() {
 			color={config.color}
 			columns={moduleColumns}
 			enabled={enabled}
+			onToggleEnabled={() => setFxSlotParams(slot, { enabled: !enabled })}
 			presetValue={selectedPreset}
 			presetOptions={config.presets}
 			onPresetChange={handlePresetChange}

@@ -33,6 +33,7 @@ export default function Eq5BandModuleRenderer() {
 			color={config.color}
 			columns={5}
 			enabled={enabled}
+			onToggleEnabled={() => setFxSlotParams(slot, { enabled: !enabled })}
 			presetValue={selectedPreset}
 			presetOptions={config.presets}
 			onPresetChange={handlePresetChange}

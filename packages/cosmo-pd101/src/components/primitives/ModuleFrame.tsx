@@ -1,4 +1,5 @@
-import { MdDragIndicator } from "react-icons/md";
+import { MdDragIndicator, MdPowerSettingsNew } from "react-icons/md";
+import Button from "@/components/controls/Button";
 import { useFxSlotContext } from "@/components/panels/FxSlotContext";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 
@@ -24,6 +25,8 @@ type ModuleHeaderProps = {
 	textColor: "black" | "white";
 	meta?: string;
 	headerAction?: React.ReactNode;
+	enabled: boolean;
+	onToggleEnabled?: () => void;
 };
 
 function ModuleHeader({
@@ -31,6 +34,8 @@ function ModuleHeader({
 	color,
 	textColor,
 	headerAction,
+	enabled,
+	onToggleEnabled,
 }: ModuleHeaderProps) {
 	const slotCtx = useFxSlotContext();
 	const resolvedHeaderAction = headerAction ?? slotCtx?.typeSelector;
@@ -41,7 +46,15 @@ function ModuleHeader({
 			style={{ backgroundColor: color, color: textColor }}
 			className="relative flex w-full items-center gap-1 px-1.5 pb-1"
 		>
-			<span className="inline-block h-4 w-6" />
+			<Button
+				type="button"
+				onClick={onToggleEnabled}
+				disabled={!onToggleEnabled}
+				aria-label={enabled ? `Disable ${title}` : `Enable ${title}`}
+				className={`btn btn-circle btn-neutral size-6 p-0 ${enabled ? "text-cyan-300" : ""}`}
+			>
+				<MdPowerSettingsNew />
+			</Button>
 
 			<div
 				{...(slotCtx?.dragListeners as React.HTMLAttributes<HTMLDivElement>)}
@@ -79,6 +92,7 @@ type ModuleFrameProps = {
 	onPresetChange?: (value: string) => void;
 	presetDisabled?: boolean;
 	enabled: boolean;
+	onToggleEnabled?: () => void;
 	className?: string;
 	columns?: number;
 	children: React.ReactNode;
@@ -102,6 +116,7 @@ export default function ModuleFrame({
 	onPresetChange,
 	presetDisabled = false,
 	enabled,
+	onToggleEnabled,
 	className = "",
 	columns = 4,
 	children,
@@ -127,6 +142,8 @@ export default function ModuleFrame({
 				color={color}
 				textColor={textColor}
 				headerAction={headerAction}
+				enabled={enabled}
+				onToggleEnabled={onToggleEnabled}
 			/>
 
 			<div className="flex min-h-0 flex-1 px-3 py-3">

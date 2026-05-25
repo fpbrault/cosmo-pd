@@ -27,6 +27,7 @@ export default function VibratoModuleRenderer() {
 			color={config.color}
 			columns={3}
 			enabled={enabled}
+			onToggleEnabled={() => setFxSlotParams(slot, { enabled: !enabled })}
 			presetValue={selectedPreset}
 			presetOptions={config.presets}
 			onPresetChange={handlePresetChange}

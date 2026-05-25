@@ -272,15 +272,7 @@ export default function FxSlotSlider({
 							: (trackThickness ?? 20),
 				}}
 			>
-				<div
-					className="absolute inset-0 rounded-md"
-					style={{
-						background:
-							orientation === "vertical"
-								? "linear-gradient(to bottom, rgba(18,21,24,0.95), rgba(36,41,45,0.92))"
-								: "linear-gradient(to right, rgba(18,21,24,0.95), rgba(36,41,45,0.92))",
-					}}
-				/>
+				<div className="absolute inset-0 rounded-md" />
 				<div
 					className="absolute rounded-sm"
 					style={(() => {

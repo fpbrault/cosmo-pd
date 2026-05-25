@@ -405,16 +405,7 @@ function SynthParamSliderInner({
 					height: orientation === "vertical" ? length : thickness,
 				}}
 			>
-				<div
-					aria-hidden="true"
-					className="absolute inset-0 rounded-md"
-					style={{
-						background:
-							orientation === "vertical"
-								? "linear-gradient(to bottom, rgba(18,21,24,0.95), rgba(36,41,45,0.92))"
-								: "linear-gradient(to right, rgba(18,21,24,0.95), rgba(36,41,45,0.92))",
-					}}
-				/>
+				<div aria-hidden="true" className="absolute inset-0 rounded-md" />
 
 				<div
 					aria-hidden="true"
@@ -501,8 +492,8 @@ function SynthParamSliderInner({
 				<div
 					className={`pointer-events-none absolute text-cz-cream/75 ${
 						orientation === "vertical"
-							? "top-5 right-[-18px] bottom-0 w-4"
-							: "right-0 bottom-[-14px] left-0 h-4"
+							? "top-5 -right-4.5 bottom-0 w-4"
+							: "right-0 -bottom-3.5 left-0 h-4"
 					}`}
 				>
 					{ticks.map((tick) => (
@@ -538,7 +529,7 @@ function SynthParamSliderInner({
 			) : null}
 
 			{showLabels && orientation === "vertical" ? (
-				<div className="mt-1 text-center font-mono text-[0.5rem] text-cz-cream/80 uppercase tracking-[0.16em]">
+				<div className="mt-1 text-center font-mono text-5xs text-cz-cream/80 uppercase tracking-[0.16em]">
 					{formatTickLabel(state.controlMin)} /{" "}
 					{formatTickLabel(state.controlMax)}
 				</div>
