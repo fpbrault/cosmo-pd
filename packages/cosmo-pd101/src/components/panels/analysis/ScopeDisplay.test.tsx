@@ -1,7 +1,20 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ScopeProvider } from "@/context/ScopeContext";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import { ScopeMiniDisplay } from "./ScopeDisplay";
+
+function renderWithScope(ui: React.ReactElement) {
+	return render(
+		<ScopeProvider
+			analyserNodeRef={{ current: null }}
+			audioCtxRef={{ current: null }}
+			effectivePitchHz={220}
+		>
+			{ui}
+		</ScopeProvider>,
+	);
+}
 
 function createMockCanvasContext() {
 	return {
@@ -77,7 +90,7 @@ describe("ScopeMiniDisplay", () => {
 	});
 
 	it("renders a larger scope canvas without forced pixelated scaling", () => {
-		const { container } = render(<ScopeMiniDisplay effectivePitchHz={220} />);
+		const { container } = renderWithScope(<ScopeMiniDisplay />);
 
 		const canvas = container.querySelector("canvas");
 		if (!canvas) {
@@ -106,7 +119,7 @@ describe("ScopeMiniDisplay", () => {
 			get: () => 48,
 		});
 
-		const { container } = render(<ScopeMiniDisplay effectivePitchHz={220} />);
+		const { container } = renderWithScope(<ScopeMiniDisplay />);
 
 		const canvas = container.querySelector("canvas");
 		if (!canvas) {
@@ -118,7 +131,7 @@ describe("ScopeMiniDisplay", () => {
 	});
 
 	it("cycles through scope modes on button click", () => {
-		render(<ScopeMiniDisplay effectivePitchHz={220} />);
+		renderWithScope(<ScopeMiniDisplay />);
 
 		const modeButton = screen.getByText("Waveform");
 		expect(modeButton).toBeInTheDocument();
@@ -131,7 +144,7 @@ describe("ScopeMiniDisplay", () => {
 	});
 
 	it("shows a placeholder instead of the mini scope while expanded", () => {
-		render(<ScopeMiniDisplay effectivePitchHz={220} expanded />);
+		renderWithScope(<ScopeMiniDisplay expanded />);
 
 		expect(
 			screen.getByText("Wave drawer is showing the full scope view"),
@@ -139,7 +152,7 @@ describe("ScopeMiniDisplay", () => {
 	});
 
 	it("renders the 3D waterfall visualization when mode is set to waterfall3d", () => {
-		const { container } = render(<ScopeMiniDisplay effectivePitchHz={220} />);
+		const { container } = renderWithScope(<ScopeMiniDisplay />);
 
 		// Click mode button 3 times to reach waterfall3d (waveform → orbital → spectrogram → waterfall3d)
 		fireEvent.click(screen.getByText("Waveform"));

@@ -41,9 +41,6 @@ describe("SynthSidebar", () => {
 		const onOpenMacroLabels = vi.fn();
 		render(
 			<SynthSidebar
-				effectivePitchHz={440}
-				analyserNodeRef={{ current: null }}
-				audioCtxRef={{ current: null }}
 				waveDrawerOpen={false}
 				libraryModeOpen={false}
 				globalOpen={false}
@@ -66,9 +63,6 @@ describe("SynthSidebar", () => {
 	it("applies a custom min width", () => {
 		const { container } = render(
 			<SynthSidebar
-				effectivePitchHz={440}
-				analyserNodeRef={{ current: null }}
-				audioCtxRef={{ current: null }}
 				sidebarMinWidthRem={19.625}
 				waveDrawerOpen={false}
 				libraryModeOpen={false}
@@ -88,9 +82,6 @@ describe("SynthSidebar", () => {
 	it("shrinks to content height when not filling the available height", () => {
 		render(
 			<SynthSidebar
-				effectivePitchHz={440}
-				analyserNodeRef={{ current: null }}
-				audioCtxRef={{ current: null }}
 				fillAvailableHeight={false}
 				waveDrawerOpen={false}
 				libraryModeOpen={false}

@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { memo, type RefObject } from "react";
+import { memo } from "react";
 import { ScopeDrawerDisplay } from "@/components/panels/analysis/ScopeDisplay";
 import FxConsoleDrawer from "@/components/panels/drawers/FxConsoleDrawer";
 import ModConsoleDrawer from "@/components/panels/drawers/ModConsoleDrawer";
@@ -14,50 +14,18 @@ type SynthRendererDrawerProps = {
 	drawerOpen: boolean;
 	activeDrawerPanel: DrawerPanel;
 	drawerSlideDirection: 1 | -1;
-	analyserNodeRef: RefObject<AnalyserNode | null>;
-	audioCtxRef: RefObject<AudioContext | null>;
-	effectivePitchHz: number;
-	subscribeScopeFrames?: (
-		onFrame: (frame: {
-			samples: Float32Array;
-			sampleRate: number;
-			hz: number;
-		}) => void,
-	) => () => void;
 };
 
-function renderDrawerPanel(
-	panel: DrawerPanel,
-	props: Omit<
-		SynthRendererDrawerProps,
-		"activeDrawerPanel" | "drawerOpen" | "drawerSlideDirection"
-	>,
-) {
-	if (panel === "fx") {
-		return <FxConsoleDrawer />;
-	}
-	if (panel === "mod") {
-		return <ModConsoleDrawer />;
-	}
-
-	return (
-		<ScopeDrawerDisplay
-			analyserNodeRef={props.analyserNodeRef}
-			audioCtxRef={props.audioCtxRef}
-			effectivePitchHz={props.effectivePitchHz}
-			subscribeScopeFrames={props.subscribeScopeFrames}
-		/>
-	);
-}
+const DRAWER_CONTENT: Record<DrawerPanel, React.ReactNode> = {
+	fx: <FxConsoleDrawer />,
+	mod: <ModConsoleDrawer />,
+	display: <ScopeDrawerDisplay />,
+};
 
 export default memo(function SynthRendererDrawer({
 	drawerOpen,
 	activeDrawerPanel,
 	drawerSlideDirection,
-	analyserNodeRef,
-	audioCtxRef,
-	effectivePitchHz,
-	subscribeScopeFrames,
 }: SynthRendererDrawerProps) {
 	return (
 		<motion.div
@@ -93,14 +61,7 @@ export default memo(function SynthRendererDrawer({
 									isActivePanel ? "pointer-events-auto" : "pointer-events-none"
 								}`}
 							>
-								{drawerOpen && isActivePanel
-									? renderDrawerPanel(panel, {
-											analyserNodeRef,
-											audioCtxRef,
-											effectivePitchHz,
-											subscribeScopeFrames,
-										})
-									: null}
+								{drawerOpen && isActivePanel ? DRAWER_CONTENT[panel] : null}
 							</motion.div>
 						);
 					})}

@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { useScopeContext } from "@/context/ScopeContext";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
-import type {
-	ScopeMiniDisplayProps,
-	ScopeVisualizationVariant,
-} from "./ScopeDisplay.types";
 import { drawScopeBackdrop } from "./scope-visualizations/canvas";
 import { isEditableKeyboardTarget } from "./scope-visualizations/keyboard";
 import { getScopeThemePalette } from "./scope-visualizations/palette";
@@ -18,17 +15,21 @@ import type {
 } from "./scope-visualizations/types";
 import { useWavetableWaterfallPreview } from "./scope-visualizations/useWavetableWaterfallPreview";
 
-type ScopeVisualizationDisplayProps = ScopeMiniDisplayProps & {
+type ScopeVisualizationVariant = "mini" | "drawer";
+
+type ScopeVisualizationDisplayProps = {
 	variant: ScopeVisualizationVariant;
 };
 
 export function ScopeVisualizationDisplay({
-	analyserNodeRef,
-	audioCtxRef,
-	effectivePitchHz,
-	subscribeScopeFrames,
 	variant,
 }: ScopeVisualizationDisplayProps) {
+	const {
+		analyserNodeRef,
+		audioCtxRef,
+		effectivePitchHz,
+		subscribeScopeFrames,
+	} = useScopeContext();
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const rafIdRef = useRef(0);
 	const unsubscribeRef = useRef<(() => void) | null>(null);
