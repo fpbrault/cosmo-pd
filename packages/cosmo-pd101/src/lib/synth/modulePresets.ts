@@ -29,6 +29,7 @@ import {
 
 export type ModulePresetModule =
 	| FxSlotType
+	| "eq"
 	| "lfo1"
 	| "lfo2"
 	| "modEnv"
@@ -447,6 +448,20 @@ export const COMPRESSOR_PRESETS: ModulePresetDefinition<{
 export const EQ_PRESETS: ModulePresetDefinition<{
 	eq: Required<EqParams>;
 }>[] = [
+	{
+		id: "flat",
+		label: "Flat",
+		patch: {
+			eq: {
+				enabled: true,
+				gain80: 0,
+				gain240: 0,
+				gain750: 0,
+				gain2200: 0,
+				gain8000: 0,
+			},
+		},
+	},
 	{
 		id: "bassBoost",
 		label: "Bass Boost",

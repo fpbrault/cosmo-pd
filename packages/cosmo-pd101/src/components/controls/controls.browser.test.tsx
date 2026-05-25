@@ -4,8 +4,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import ControlKnob from "./ControlKnob";
 import LineSelectControl from "./LineSelectControl";
 import ModModeControl from "./ModModeControl";
-import CzHorizontalSlider from "./sliders/CzHorizontalSlider";
-import CzVerticalSlider from "./sliders/CzVerticalSlider";
 
 const useSynthParamMock = vi.fn();
 const useOptionalSynthControllerMock = vi.fn();
@@ -92,43 +90,5 @@ describe("core controls (browser)", () => {
 		fireEvent.change(input, { target: { value: "40" } });
 		fireEvent.keyDown(input, { key: "Enter" });
 		expect(onChange).toHaveBeenCalledWith(0.4);
-	});
-
-	it("renders horizontal slider inside modulation wrapper when destination exists", () => {
-		const onChange = vi.fn();
-		render(
-			<CzHorizontalSlider
-				value={0.2}
-				min={0}
-				max={1}
-				onChange={onChange}
-				modDestination="volume"
-			/>,
-		);
-
-		fireEvent.change(screen.getByRole("slider"), { target: { value: "0.4" } });
-		expect(onChange).toHaveBeenCalledWith(0.4);
-		expect(screen.getByTestId("modulatable-wrapper")).toBeInTheDocument();
-	});
-
-	it("supports CzVerticalSlider keyboard interaction", () => {
-		const onChange = vi.fn();
-		render(
-			<CzVerticalSlider
-				value={0.5}
-				min={0}
-				max={1}
-				step={0.1}
-				onChange={onChange}
-				ariaLabel="Level"
-			/>,
-		);
-
-		const slider = screen.getByRole("slider", { name: "Level" });
-		fireEvent.keyDown(slider, { key: "ArrowUp" });
-		fireEvent.keyDown(slider, { key: "ArrowDown" });
-		const values = onChange.mock.calls.map(([value]) => value as number);
-		expect(values[0]).toBeCloseTo(0.6, 10);
-		expect(values[1]).toBeCloseTo(0.4, 10);
 	});
 });

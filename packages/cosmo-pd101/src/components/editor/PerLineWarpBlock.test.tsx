@@ -87,6 +87,26 @@ vi.mock("@/components/controls/SynthParamKnob", () => ({
 		</button>
 	),
 }));
+vi.mock("@/components/controls/SynthParamSlider", () => ({
+	default: ({
+		label,
+		onChange,
+	}: {
+		label?: string;
+		onChange?: (v: number) => void;
+	}) => {
+		const resolvedLabel = label?.trim() ? label : "BlendSlider";
+		return (
+			<button
+				type="button"
+				aria-label={resolvedLabel}
+				onClick={() => onChange?.(0.3)}
+			>
+				{resolvedLabel}
+			</button>
+		);
+	},
+}));
 
 vi.mock("./EnvelopesSection", () => ({
 	EnvelopesSection: () => <div data-testid="envelopes-section" />,
@@ -205,11 +225,14 @@ describe("PerLineWarpBlock", () => {
 		expect(screen.getByTestId("per-line-params")).toBeInTheDocument();
 	});
 
-	it("renders blend knob in algos view", () => {
+	it("renders blend slider in algos view", () => {
 		const props = createProps();
 		render(<PerLineWarpBlock {...props} />);
 
-		expect(screen.getByRole("button", { name: "Blend" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "BlendSlider" }),
+		).toBeInTheDocument();
+		expect(screen.getByText("Blend")).toBeInTheDocument();
 	});
 
 	it("has Algo B card disabled when blend is 0", () => {
@@ -243,11 +266,11 @@ describe("PerLineWarpBlock", () => {
 		expect(props.setWarpAmount).toHaveBeenCalledWith(0.5);
 	});
 
-	it("passes blend change through knob", () => {
+	it("passes blend change through slider", () => {
 		const props = createProps();
 		render(<PerLineWarpBlock {...props} />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Blend" }));
+		fireEvent.click(screen.getByRole("button", { name: "BlendSlider" }));
 
 		expect(props.setAlgoBlend).toHaveBeenCalledWith(0.3);
 	});

@@ -10,6 +10,7 @@ import {
 	type FxSlotType,
 	type ModDestination,
 } from "@/lib/synth/bindings/synth";
+import type { ModulePresetModule } from "@/lib/synth/modulePresets";
 import { PARAM_META } from "@/lib/synth/paramMeta";
 
 function humanizeIdentifier(value: string): string {
@@ -136,11 +137,17 @@ export function resolvePresetPatchParams(
 	config: FxSlotModuleConfig,
 	presetPatch: Record<string, unknown>,
 ): Record<string, unknown> | null {
-	const patchParams = presetPatch[config.moduleKey];
+	const patchParams = presetPatch[getPresetModuleKey(config.moduleKey)];
 	if (!patchParams || typeof patchParams !== "object") {
 		return null;
 	}
 	return patchParams as Record<string, unknown>;
+}
+
+export function getPresetModuleKey(
+	moduleKey: FxSlotModuleConfig["moduleKey"],
+): ModulePresetModule {
+	return moduleKey === "eq5Band" ? "eq" : moduleKey;
 }
 
 export function getModDestinationByParam(
