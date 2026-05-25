@@ -67,6 +67,7 @@ export type ButtonGroupControlDef = {
 export type ControlDef = KnobControlDef | ButtonGroupControlDef;
 export type FxCustomRendererKey =
 	| "delayModuleRenderer"
+	| "eq5BandModuleRenderer"
 	| "grainDelayModuleRenderer"
 	| "phaseModModuleRenderer"
 	| "vibratoModuleRenderer"
@@ -242,6 +243,7 @@ export const FX_UI_META = {
 		shortTitle: "EQ",
 		color: "#34d399",
 		columns: 5,
+		customRenderer: "eq5BandModuleRenderer",
 		presets: EQ_PRESETS,
 		formatters: {
 			gain80: (v) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`,

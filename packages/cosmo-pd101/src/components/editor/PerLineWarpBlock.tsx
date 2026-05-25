@@ -1,6 +1,6 @@
 import { memo } from "react";
 import type { LineIndex } from "@/components/controls/algo/algoControlTypes";
-import SynthParamKnob from "@/components/controls/SynthParamKnob";
+import SynthParamSlider from "@/components/controls/SynthParamSlider";
 import AlgoSectionCard from "@/components/editor/AlgoSectionCard";
 import { SynthSingleCycleDisplay } from "@/components/editor/SingleCycleDisplay";
 import Card from "@/components/primitives/Card";
@@ -221,17 +221,27 @@ const PerLineWarpBlock = memo(function PerLineWarpBlock({
 						/>
 
 						<div className="mt-2 grow rounded-none bg-cz-surface/50 pb-1.5">
-							<SynthParamKnob
-								paramKey={lineIndex === 2 ? "algoBlendB" : "algoBlendA"}
-								label="Blend"
-								labelClassName="text-lg font-bold tracking-[0.3em] text-base-content/75"
-								value={algoBlend}
-								size={100}
-								variant="light"
-								onChange={setAlgoBlend}
-								color={color}
-								valueFormatter={formatAlgoBlendReadout}
-							/>
+							<div className="flex w-full flex-col items-center gap-1 overflow-hidden px-4 pt-4">
+								<div className="flex w-full max-w-60 items-center justify-between px-1 font-semibold text-cz-cream/80 text-xs uppercase tracking-[0.22em]">
+									<span>A</span>
+									<span>Blend</span>
+									<span>B</span>
+								</div>
+								<SynthParamSlider
+									paramKey={lineIndex === 2 ? "algoBlendB" : "algoBlendA"}
+									orientation="horizontal"
+									label=""
+									labelClassName="text-lg font-bold tracking-[0.3em] text-base-content/75"
+									value={algoBlend}
+									onChange={setAlgoBlend}
+									color={color}
+									showTicks
+									majorTickEvery={2}
+									trackThickness={20}
+									valueFormatter={formatAlgoBlendReadout}
+									className="w-full max-w-60 pb-4"
+								/>
+							</div>
 						</div>
 					</div>
 					<div className="flex min-h-0 flex-1 flex-col gap-0">
