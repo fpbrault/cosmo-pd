@@ -18,6 +18,8 @@ public final class CosmoPd101AudioUnit: AUAudioUnit {
     /// Called on the main thread when engine state changes from the native side (preset load, state restore).
     /// The ViewController sets this to push params and optional preset metadata to the WebView.
     var paramsChangedHandler: ((String, String?) -> Void)?
+    private var selectedViewConfigurationSize: CGSize?
+    var selectedViewSize: CGSize? { selectedViewConfigurationSize }
 
     public override var parameterTree: AUParameterTree? {
         get { internalParameterTree }
@@ -28,6 +30,36 @@ public final class CosmoPd101AudioUnit: AUAudioUnit {
 
     public override var outputBusses: AUAudioUnitBusArray { outputBusArrayStorage }
     public override var inputBusses: AUAudioUnitBusArray { inputBusArrayStorage }
+
+    public override func supportedViewConfigurations(_ availableViewConfigurations: [AUAudioUnitViewConfiguration]) -> IndexSet {
+        if availableViewConfigurations.isEmpty {
+            NSLog("[CzAU] supportedViewConfigurations: no host configurations provided")
+            return IndexSet()
+        }
+
+        for config in availableViewConfigurations {
+            NSLog(
+                "[CzAU] host view config: %.0fx%.0f hostHasController=%@",
+                config.width,
+                config.height,
+                config.hostHasController ? "yes" : "no"
+            )
+        }
+
+        // The WebView renderer adapts to the selected AU host bounds.
+        return IndexSet(integersIn: availableViewConfigurations.indices)
+    }
+
+    public override func select(_ viewConfiguration: AUAudioUnitViewConfiguration) {
+        super.select(viewConfiguration)
+        selectedViewConfigurationSize = CGSize(width: viewConfiguration.width, height: viewConfiguration.height)
+        NSLog(
+            "[CzAU] selected view config: %.0fx%.0f hostHasController=%@",
+            viewConfiguration.width,
+            viewConfiguration.height,
+            viewConfiguration.hostHasController ? "yes" : "no"
+        )
+    }
 
     public override var supportsUserPresets: Bool { true }
     public override var factoryPresets: [AUAudioUnitPreset]? { availableFactoryPresets }
