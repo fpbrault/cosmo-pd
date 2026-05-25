@@ -22,6 +22,7 @@ export default function PhaseModModuleRenderer() {
 			color={config.color}
 			columns={2}
 			enabled={enabled}
+			onToggleEnabled={() => setFxSlotParams(slot, { enabled: !enabled })}
 			presetValue={selectedPreset}
 			presetOptions={config.presets}
 			onPresetChange={handlePresetChange}
