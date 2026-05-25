@@ -1,4 +1,3 @@
-export { WavetableWaterfall } from "./components/panels/analysis/scope-visualizations/WavetableWaterfall";
 export { default as MidiLearnPanel } from "./components/panels/midi/MidiLearnPanel";
 export {
 	type PerformanceMetrics,
