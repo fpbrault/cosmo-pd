@@ -9,6 +9,7 @@ import {
 	useNoteHandling,
 	useSynthPresetManager,
 	useSynthStore,
+	useSynthUiStore,
 } from "@cosmo/cosmo-pd101";
 import {
 	type CSSProperties,
@@ -53,6 +54,32 @@ type PluginPageProps = {
 	utilityExtra?: ReactNode;
 };
 
+const MIN_PLUGIN_KEYBOARD_HEIGHT = 64;
+const MAX_PLUGIN_KEYBOARD_HEIGHT = 160;
+const MAX_KEYBOARD_VIEWPORT_RATIO = 0.28;
+
+export function clampPluginKeyboardHeight({
+	keyboardHeight,
+	viewportHeight,
+	frameScale,
+}: {
+	keyboardHeight: number;
+	viewportHeight: number;
+	frameScale: number;
+}) {
+	const scaledViewportMax =
+		frameScale > 0
+			? Math.floor((viewportHeight * MAX_KEYBOARD_VIEWPORT_RATIO) / frameScale)
+			: MAX_PLUGIN_KEYBOARD_HEIGHT;
+	const maxHeight = Math.max(
+		MIN_PLUGIN_KEYBOARD_HEIGHT,
+		Math.min(MAX_PLUGIN_KEYBOARD_HEIGHT, scaledViewportMax),
+	);
+	return Math.round(
+		Math.max(MIN_PLUGIN_KEYBOARD_HEIGHT, Math.min(maxHeight, keyboardHeight)),
+	);
+}
+
 export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	const isIosHost = window.__czHostPlatform === "ios";
 	const isLikelyIosDevice =
@@ -62,6 +89,8 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	const gatherState = useSynthStore((s) => s.gatherState);
 	const applyPreset = useSynthStore((s) => s.applyPreset);
 	const velocityCurve = useSynthStore((s) => s.velocityCurve);
+	const keyboardHeight = useSynthUiStore((s) => s.keyboardHeight);
+	const setKeyboardHeight = useSynthUiStore((s) => s.setKeyboardHeight);
 
 	const frameRef = useRef<HTMLDivElement | null>(null);
 	const [rendererFrame, setRendererFrame] = useState(() =>
@@ -140,6 +169,15 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 				return;
 			}
 
+			const clampedKeyboardHeight = clampPluginKeyboardHeight({
+				keyboardHeight,
+				viewportHeight: bounds.height,
+				frameScale: nextLayout.frameScale,
+			});
+			if (clampedKeyboardHeight !== keyboardHeight) {
+				setKeyboardHeight(clampedKeyboardHeight);
+			}
+
 			setRendererFrame((current) => {
 				if (
 					current &&
@@ -163,7 +201,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 			resizeObserver.disconnect();
 			window.removeEventListener("resize", updateFrameSize);
 		};
-	}, [isIosHost, isLikelyIosDevice]);
+	}, [isIosHost, isLikelyIosDevice, keyboardHeight, setKeyboardHeight]);
 
 	const shouldLoadCurrentState = useCallback(() => !window.ipc, []);
 

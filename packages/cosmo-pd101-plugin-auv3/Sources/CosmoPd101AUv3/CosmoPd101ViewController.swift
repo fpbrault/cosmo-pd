@@ -7,11 +7,11 @@ import UIKit
 #endif
 
 public final class CosmoPd101ViewController: AUViewController, @preconcurrency AUAudioUnitFactory, WKNavigationDelegate, WKScriptMessageHandler {
-    private static let preferredWidth: CGFloat = 1024
-    private static let preferredHeight: CGFloat = 1536
-    private static let minimumWidth: CGFloat = 1024
-    private static let minimumHeight: CGFloat = 768
-    private static let preferredAspectRatio = preferredWidth / preferredHeight
+    private static let designWidth: CGFloat = 1368
+    private static let designHeight: CGFloat = 912
+    private static let minimumWidth: CGFloat = 640
+    private static let minimumHeight: CGFloat = 427
+    private static let preferredAspectRatio = designWidth / designHeight
 
     private var webView: WKWebView?
     private var audioUnit: CosmoPd101AudioUnit?
@@ -24,12 +24,13 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
 
     public override func loadView() {
         #if os(iOS)
-        view = UIView(frame: CGRect(x: 0, y: 0, width: Self.preferredWidth, height: Self.preferredHeight))
+        let initialSize = preferredSizeForCurrentContext()
+        view = UIView(frame: CGRect(origin: .zero, size: initialSize))
         view.backgroundColor = .black
-        preferredContentSize = CGSize(width: Self.preferredWidth, height: Self.preferredHeight)
+        preferredContentSize = initialSize
         #else
-        view = NSView(frame: NSRect(x: 0, y: 0, width: Self.preferredWidth, height: Self.preferredHeight))
-        preferredContentSize = NSSize(width: Self.preferredWidth, height: Self.preferredHeight)
+        view = NSView(frame: NSRect(x: 0, y: 0, width: Self.designWidth, height: Self.designHeight))
+        preferredContentSize = NSSize(width: Self.designWidth, height: Self.designHeight)
         #endif
         installWebView()
     }
@@ -38,13 +39,14 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
     public override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         configureWindowSceneSizing()
+        preferredContentSize = preferredSizeForCurrentContext()
         layoutWebView()
     }
     #else
     public override func viewDidAppear() {
         super.viewDidAppear()
         view.window?.contentMinSize = NSSize(width: Self.minimumWidth, height: Self.minimumHeight)
-        view.window?.contentAspectRatio = NSSize(width: Self.preferredWidth, height: Self.preferredHeight)
+        view.window?.contentAspectRatio = NSSize(width: Self.designWidth, height: Self.designHeight)
     }
 
     public override func viewDidLayout() {
@@ -56,6 +58,49 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
     #if os(iOS)
     private func configureWindowSceneSizing() {
         view.window?.windowScene?.sizeRestrictions?.minimumSize = CGSize(width: Self.minimumWidth, height: Self.minimumHeight)
+    }
+
+    private func preferredSizeForCurrentContext() -> CGSize {
+        return preferredContentSize(for: currentAvailableSize())
+    }
+
+    private func currentAvailableSize() -> CGSize {
+        if let bounds = viewIfLoaded?.bounds, Self.isUsableSize(bounds.size) {
+            return bounds.size
+        }
+
+        if let selectedViewSize = audioUnit?.selectedViewSize, Self.isUsableSize(selectedViewSize) {
+            return selectedViewSize
+        }
+
+        if let windowSize = viewIfLoaded?.window?.bounds.size, Self.isUsableSize(windowSize) {
+            return windowSize
+        }
+
+        if let sceneSize = viewIfLoaded?.window?.windowScene?.coordinateSpace.bounds.size, Self.isUsableSize(sceneSize) {
+            return sceneSize
+        }
+
+        return CGSize(width: Self.designWidth, height: Self.designHeight)
+    }
+
+    private static func isUsableSize(_ size: CGSize) -> Bool {
+        size.width > 0 && size.height > 0
+    }
+
+    private func preferredContentSize(for availableSize: CGSize) -> CGSize {
+        guard availableSize.width > 0, availableSize.height > 0 else {
+            return CGSize(width: Self.designWidth, height: Self.designHeight)
+        }
+
+        if availableSize.width >= availableSize.height {
+            return availableSize
+        }
+
+        return CGSize(
+            width: availableSize.width,
+            height: min(availableSize.height, availableSize.width / Self.preferredAspectRatio)
+        )
     }
     #endif
 
@@ -126,6 +171,14 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
         configuration.allowsAirPlayForMediaPlayback = false
         configuration.mediaTypesRequiringUserActionForPlayback = .all
         configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+        #if os(macOS)
+        let hostPlatformScript = "window.__czHostPlatform='macos';"
+        #else
+        let hostPlatformScript = "window.__czHostPlatform='ios';"
+        #endif
+        configuration.userContentController.addUserScript(
+            WKUserScript(source: hostPlatformScript, injectionTime: .atDocumentStart, forMainFrameOnly: true)
+        )
                 let diagnosticsScript = """
                 (function () {
                     if (window.__czDiagInstalled) return;

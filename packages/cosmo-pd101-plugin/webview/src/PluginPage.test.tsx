@@ -1,10 +1,11 @@
 import { render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import PluginPage from "./PluginPage";
+import PluginPage, { clampPluginKeyboardHeight } from "./PluginPage";
 
 const mockUseSynthPresetManager = vi.hoisted(() => vi.fn());
 const mockUsePluginParamBridge = vi.hoisted(() => vi.fn());
 const mockInstallBenchmarkApi = vi.hoisted(() => vi.fn(() => vi.fn()));
+const mockSetKeyboardHeight = vi.hoisted(() => vi.fn());
 
 vi.mock("./hooks/usePluginParamBridge", () => ({
 	usePluginParamBridge: mockUsePluginParamBridge,
@@ -15,6 +16,10 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 		gatherState: () => ({ params: { volume: 1 } }),
 		applyPreset: vi.fn(),
 		velocityCurve: "linear",
+	};
+	const synthUiStoreState = {
+		keyboardHeight: 160,
+		setKeyboardHeight: mockSetKeyboardHeight,
 	};
 
 	return {
@@ -52,12 +57,15 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 		useSynthPresetManager: mockUseSynthPresetManager,
 		useSynthStore: (selector: (state: typeof synthStoreState) => unknown) =>
 			selector(synthStoreState),
+		useSynthUiStore: (selector: (state: typeof synthUiStoreState) => unknown) =>
+			selector(synthUiStoreState),
 	};
 });
 
 describe("PluginPage", () => {
 	beforeEach(() => {
 		mockInstallBenchmarkApi.mockClear();
+		mockSetKeyboardHeight.mockClear();
 		mockUsePluginParamBridge.mockReset();
 		mockUseSynthPresetManager.mockReset();
 		mockUseSynthPresetManager.mockReturnValue({
@@ -137,5 +145,22 @@ describe("PluginPage", () => {
 				loadedPresetFingerprint: "baseline-fingerprint",
 			},
 		});
+	});
+
+	it("clamps persisted keyboard height for plugin viewports", () => {
+		expect(
+			clampPluginKeyboardHeight({
+				keyboardHeight: 256,
+				viewportHeight: 834,
+				frameScale: 0.91,
+			}),
+		).toBe(160);
+		expect(
+			clampPluginKeyboardHeight({
+				keyboardHeight: 120,
+				viewportHeight: 834,
+				frameScale: 0.91,
+			}),
+		).toBe(120);
 	});
 });
