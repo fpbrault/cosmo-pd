@@ -4,8 +4,8 @@ import { drawOrbitalScope } from "./OrbitalViz";
 import { drawSpectrogramFrame } from "./SpectrogramViz";
 import { drawTransferCurvesScope } from "./TransferCurvesViz";
 import type { ScopeRendererParams } from "./types";
-import { drawWaterfall3DScope } from "./Waterfall3DViz";
 import { drawWaveformScope } from "./WaveformViz";
+import { drawWavetableWaterfallScope } from "./WavetableWaterfallCanvasViz";
 
 export type ScopeVisualizationMode =
 	| "waveform"
@@ -39,6 +39,8 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 		spectrogramStateRef,
 		pressedKeys,
 		intensityMultiplier = 1,
+		waterfallPreview,
+		waterfallActiveLine = 1,
 	} = params as ScopeRendererParams & { mode: ScopeVisualizationMode };
 
 	if (mode === "spectrogram") {
@@ -67,15 +69,12 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 			return;
 
 		case "waterfall3d":
-			drawWaterfall3DScope(
+			drawWavetableWaterfallScope(
 				canvas,
-				samples,
-				hz,
-				sampleRate,
-				cycles,
-				triggerLevel,
-				zoom,
 				palette,
+				waterfallPreview,
+				waterfallActiveLine,
+				intensityMultiplier,
 			);
 			return;
 		case "transferCurves":

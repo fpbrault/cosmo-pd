@@ -34,8 +34,19 @@ vi.mock("@/components/preset/SynthHeader", () => ({
 	default: () => <div data-testid="synth-header" />,
 }));
 vi.mock("@/components/layout/SynthSidebar", () => ({
-	default: ({ onOpenGlobal }: { onOpenGlobal: () => void }) => (
-		<button type="button" onClick={onOpenGlobal} data-testid="synth-sidebar">
+	default: ({
+		onOpenGlobal,
+		sidebarMinWidthRem,
+	}: {
+		onOpenGlobal: () => void;
+		sidebarMinWidthRem?: number;
+	}) => (
+		<button
+			type="button"
+			onClick={onOpenGlobal}
+			data-testid="synth-sidebar"
+			data-sidebar-min-width={sidebarMinWidthRem}
+		>
 			open global
 		</button>
 	),
@@ -225,6 +236,14 @@ describe("SynthRenderer Smoke Test", () => {
 		render(<SynthRenderer />);
 		fireEvent.click(screen.getByTestId("synth-sidebar"));
 		expect(screen.getByTestId("global-voice-panel")).toBeInTheDocument();
+	});
+
+	it("passes a custom sidebar width through to the sidebar", () => {
+		render(<SynthRenderer sidebarMinWidthRem={20.3125} />);
+		expect(screen.getByTestId("synth-sidebar")).toHaveAttribute(
+			"data-sidebar-min-width",
+			"20.3125",
+		);
 	});
 
 	it("closes the library overlay through the extracted library component", () => {

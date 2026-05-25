@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useRef } from "react";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
 import type { EnvKind } from "@/lib/synth/modTargets";
+import SynthParamSlider from "../controls/SynthParamSlider";
 import StepEnvelopeStepCard from "./StepEnvelopeStepCard";
 import type { StepEnvelopeVoiceMarker } from "./stepEnvelopeGeometry";
 import { drawEnvPreview, normalizeEnvelope } from "./stepEnvelopeGeometry";
@@ -115,15 +116,18 @@ const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 
 	const keyFollowControl =
 		envKind === "dcw" && onDcwKeyFollowChange ? (
-			<SynthParamKnob
+			<SynthParamSlider
 				paramKey={lineIndex === 1 ? "line1DcwKeyFollow" : "line2DcwKeyFollow"}
 				label="Key Follow"
 				value={dcwKeyFollow}
-				size={44}
 				min={0}
+				showTicks={false}
+				centerDetent={false}
 				max={9}
+				className="w-64"
 				step={1}
 				onChange={(value) => onDcwKeyFollowChange(Math.round(value))}
+				orientation={"horizontal"}
 			/>
 		) : envKind === "dca" && onDcaKeyFollowChange ? (
 			<SynthParamKnob

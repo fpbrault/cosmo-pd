@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import type {
 	ScopeMiniDisplayProps,
@@ -16,7 +16,7 @@ import type {
 	ScopeColorTheme,
 	SpectrogramState,
 } from "./scope-visualizations/types";
-import { WavetableWaterfallScopeViz } from "./scope-visualizations/WavetableWaterfallScopeViz";
+import { useWavetableWaterfallPreview } from "./scope-visualizations/useWavetableWaterfallPreview";
 
 type ScopeVisualizationDisplayProps = ScopeMiniDisplayProps & {
 	variant: ScopeVisualizationVariant;
@@ -34,6 +34,7 @@ export function ScopeVisualizationDisplay({
 	const unsubscribeRef = useRef<(() => void) | null>(null);
 	const smoothedTriggerRef = useRef<number | null>(null);
 	const pressedKeysRef = useRef<Set<string>>(new Set());
+	const [waterfallActiveLine, setWaterfallActiveLine] = useState<1 | 2>(1);
 
 	const scopeCycles = useSynthUiStore((s) => s.scopeCycles);
 	const scopeVerticalZoom = useSynthUiStore((s) => s.scopeVerticalZoom);
@@ -48,6 +49,9 @@ export function ScopeVisualizationDisplay({
 	const setScopeColorTheme = useSynthUiStore((s) => s.setScopeColorTheme);
 
 	const palette = getScopeThemePalette(scopeColorTheme);
+	const waterfallPreview = useWavetableWaterfallPreview(
+		scopeVisualizationMode === "waterfall3d",
+	);
 	const spectrogramStateRef = useRef<SpectrogramState>({
 		width: 0,
 		height: 0,
@@ -156,6 +160,8 @@ export function ScopeVisualizationDisplay({
 			spectrogramStateRef,
 			pressedKeys: pressedKeysRef.current,
 			intensityMultiplier: variant === "drawer" ? 1.55 : 1,
+			waterfallPreview,
+			waterfallActiveLine,
 		});
 	};
 
@@ -226,7 +232,6 @@ export function ScopeVisualizationDisplay({
 	}, []); // Runs once on mount; reads latest values through refs.
 
 	const isDrawer = variant === "drawer";
-	const isWaterfall3D = scopeVisualizationMode === "waterfall3d";
 
 	return (
 		<div
@@ -301,20 +306,18 @@ export function ScopeVisualizationDisplay({
 			<div
 				className={`relative w-full overflow-hidden rounded border border-cz-border bg-cz-lcd-bg ${isDrawer ? "min-h-0 flex-1" : ""}`}
 			>
-				{isWaterfall3D ? (
-					<div className={isDrawer ? "h-full min-h-80 w-full" : "h-43 w-full"}>
-						<WavetableWaterfallScopeViz
-							displayMode="single"
-							palette={palette}
-							visualIntensity={isDrawer ? 1 : 0.65}
-						/>
-					</div>
-				) : (
-					<canvas
-						ref={canvasRef}
-						className={isDrawer ? "h-full min-h-80 w-full" : "h-43 w-full"}
-					/>
-				)}
+				<canvas
+					ref={canvasRef}
+					className={`${isDrawer ? "h-full min-h-80 w-full" : "h-43 w-full"} ${
+						scopeVisualizationMode === "waterfall3d" ? "cursor-pointer" : ""
+					}`}
+					onClick={() => {
+						if (scopeVisualizationMode !== "waterfall3d") {
+							return;
+						}
+						setWaterfallActiveLine((line) => (line === 1 ? 2 : 1));
+					}}
+				/>
 			</div>
 		</div>
 	);

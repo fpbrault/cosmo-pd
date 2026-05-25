@@ -3,36 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import { ScopeMiniDisplay } from "./ScopeDisplay";
 
-vi.mock("@react-three/fiber", () => ({
-	Canvas: ({
-		children,
-		className,
-	}: {
-		children: React.ReactNode;
-		className?: string;
-	}) => (
-		<div className={className} data-testid="mock-three-canvas">
-			{children}
-		</div>
-	),
-	useFrame: vi.fn(),
-	useThree: () => ({
-		camera: {
-			position: { set: vi.fn() },
-			lookAt: vi.fn(),
-			updateProjectionMatrix: vi.fn(),
-		},
-	}),
-}));
-
-vi.mock("@react-three/drei", () => ({
-	Line: () => <div data-testid="mock-three-line" />,
-}));
-
-vi.mock("three", () => ({
-	AdditiveBlending: "AdditiveBlending",
-}));
-
 function createMockCanvasContext() {
 	return {
 		beginPath: vi.fn(),
@@ -43,6 +13,7 @@ function createMockCanvasContext() {
 		ellipse: vi.fn(),
 		fill: vi.fn(),
 		fillRect: vi.fn(),
+		fillText: vi.fn(),
 		lineTo: vi.fn(),
 		moveTo: vi.fn(),
 		restore: vi.fn(),
@@ -168,13 +139,20 @@ describe("ScopeMiniDisplay", () => {
 	});
 
 	it("renders the 3D waterfall visualization when mode is set to waterfall3d", () => {
-		render(<ScopeMiniDisplay effectivePitchHz={220} />);
+		const { container } = render(<ScopeMiniDisplay effectivePitchHz={220} />);
 
 		// Click mode button 3 times to reach waterfall3d (waveform → orbital → spectrogram → waterfall3d)
 		fireEvent.click(screen.getByText("Waveform"));
 		fireEvent.click(screen.getByText("Orbital"));
 		fireEvent.click(screen.getByText("Spectrogram"));
 
-		expect(screen.getByTestId("mock-three-canvas")).toBeInTheDocument();
+		const canvas = container.querySelector("canvas");
+		if (!canvas) {
+			throw new Error("expected scope canvas");
+		}
+
+		expect(canvas).toBeInTheDocument();
+		expect(screen.getByText("Waterfall 3D")).toBeInTheDocument();
+		expect(canvas.className).toContain("cursor-pointer");
 	});
 });

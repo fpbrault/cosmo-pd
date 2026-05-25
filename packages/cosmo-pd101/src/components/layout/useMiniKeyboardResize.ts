@@ -2,7 +2,7 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import { useCallback, useEffect, useRef } from "react";
 
 const MIN_KEYBOARD_HEIGHT = 64;
-const MAX_KEYBOARD_HEIGHT = 256;
+const MAX_KEYBOARD_HEIGHT = 160;
 
 export function useMiniKeyboardResize({
 	keyboardHeight,

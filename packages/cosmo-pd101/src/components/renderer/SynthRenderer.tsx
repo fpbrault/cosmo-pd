@@ -40,10 +40,18 @@ import SynthRendererOverlays from "./SynthRendererOverlays";
 import { useDrawerPanelState } from "./useDrawerPanelState";
 import { useEnvOverrideHandlers } from "./useEnvOverrideHandlers";
 
+export type MiniKeyboardProps = {
+	activeNotes: number[];
+	onNoteOn: (note: number, velocity?: number) => void;
+	onNoteOff: (note: number) => void;
+	onPolyAftertouch: (note: number, pressure: number) => void;
+};
+
 export type SynthRendererProps = {
 	frameStyle?: CSSProperties;
 	headerExtra?: ReactNode;
 	bottomBarExtra?: ReactNode;
+	sidebarMinWidthRem?: number;
 	libraryPresets?: LibraryPreset[];
 	onAudioLevelChange?: (level: number) => void;
 	disableAudioGate?: boolean;
@@ -58,6 +66,7 @@ export type SynthRendererProps = {
 			hz: number;
 		}) => void,
 	) => () => void;
+	miniKeyboard?: MiniKeyboardProps;
 };
 
 const FRAME_CLASS =
@@ -86,7 +95,9 @@ const SynthRenderer = memo(function SynthRenderer({
 	effectivePitchHz: effectivePitchHzOverride,
 	analyserNodeRef: analyserNodeRefOverride,
 	audioCtxRef: audioCtxRefOverride,
+	sidebarMinWidthRem = 18,
 	subscribeScopeFrames,
+	miniKeyboard,
 }: SynthRendererProps = {}) {
 	const setLine1DcoEnv = useSynthStore((s) => s.setLine1DcoEnv);
 	const setLine1DcwEnv = useSynthStore((s) => s.setLine1DcwEnv);
@@ -128,12 +139,19 @@ const SynthRenderer = memo(function SynthRenderer({
 	const { setEnabled: setPerfEnabled, metricsRef } =
 		usePerformanceMetrics(workletNodeRef);
 
-	const { activeNotes, sendNoteOn, sendNoteOff, sendPolyAftertouch, panic } =
-		useNoteHandling({
-			workletNodeRef,
-			eventSink: engineEventSink,
-			velocityCurve,
-		});
+	const internalNoteHandling = useNoteHandling({
+		workletNodeRef,
+		eventSink: engineEventSink,
+		velocityCurve,
+	});
+	const activeNotes =
+		miniKeyboard?.activeNotes ?? internalNoteHandling.activeNotes;
+	const sendNoteOn = miniKeyboard?.onNoteOn ?? internalNoteHandling.sendNoteOn;
+	const sendNoteOff =
+		miniKeyboard?.onNoteOff ?? internalNoteHandling.sendNoteOff;
+	const sendPolyAftertouch =
+		miniKeyboard?.onPolyAftertouch ?? internalNoteHandling.sendPolyAftertouch;
+	const panic = internalNoteHandling.panic;
 	const hasActiveNotes = activeNotes.length > 0;
 
 	useAudioLevelMonitor(analyserNodeRef, onAudioLevelChange);
@@ -271,9 +289,15 @@ const SynthRenderer = memo(function SynthRenderer({
 	const [libraryVisibleEntries, setLibraryVisibleEntries] =
 		useState<PresetEntry[]>(visiblePresetEntries);
 
-	const keyboardInsetPx = keyboardHeight + 48;
+	const keyboardInsetPx = keyboardHeight + 16;
 	const mainPanelBottomInset =
 		keyboardVisible && !libraryModeOpen ? `${keyboardInsetPx / 16}rem` : "0rem";
+	const mainPanelPaddingBottom =
+		keyboardVisible && !libraryModeOpen ? `${keyboardInsetPx}px` : "0px";
+	const sidebarAvailableHeight =
+		keyboardVisible && !libraryModeOpen
+			? `calc(100% - ${mainPanelPaddingBottom})`
+			: "100%";
 	const frameStyleWithPanelInset = {
 		...frameStyle,
 		"--main-panel-bottom-inset": mainPanelBottomInset,
@@ -376,32 +400,44 @@ const SynthRenderer = memo(function SynthRenderer({
 							/>
 							{headerExtra}
 						</div>
-						<div className="relative z-10 flex min-h-0 w-full min-w-0 flex-1 gap-2 overflow-hidden px-1">
-							<SynthSidebar
-								effectivePitchHz={effectivePitchHz}
-								analyserNodeRef={resolvedAnalyserNodeRef}
-								audioCtxRef={resolvedAudioCtxRef}
-								subscribeScopeFrames={subscribeScopeFrames}
-								waveDrawerOpen={waveDrawerOpen}
-								libraryModeOpen={libraryModeOpen}
-								globalOpen={globalPanelOpen}
-								onOpenGlobal={() => setGlobalPanelOpen(true)}
-								midiLearnOpen={midiLearnOpen}
-								onOpenMidiLearn={() => setMidiLearnOpen((value) => !value)}
-								onOpenMacroLabels={() => setMacroLabelEditorOpen(true)}
-							/>
-							<SynthRendererMainPanel
-								mainPanelMode={mainPanelMode}
-								setMainPanelMode={setMainPanelMode}
-								envOverrideHandlers={envOverrideHandlers}
-								drawerOpen={drawerOpen}
-								activeDrawerPanel={activeDrawerPanel}
-								drawerSlideDirection={drawerSlideDirection}
-								analyserNodeRef={resolvedAnalyserNodeRef}
-								audioCtxRef={resolvedAudioCtxRef}
-								effectivePitchHz={effectivePitchHz}
-								subscribeScopeFrames={subscribeScopeFrames}
-							/>
+						<div className="relative z-10 flex min-h-0 w-full min-w-0 flex-1 gap-2 overflow-hidden bg-cz-surface px-1">
+							<div
+								className="flex min-h-0 items-stretch overflow-hidden"
+								style={{ height: sidebarAvailableHeight }}
+							>
+								<SynthSidebar
+									effectivePitchHz={effectivePitchHz}
+									analyserNodeRef={resolvedAnalyserNodeRef}
+									audioCtxRef={resolvedAudioCtxRef}
+									sidebarMinWidthRem={sidebarMinWidthRem}
+									fillAvailableHeight
+									subscribeScopeFrames={subscribeScopeFrames}
+									waveDrawerOpen={waveDrawerOpen}
+									libraryModeOpen={libraryModeOpen}
+									globalOpen={globalPanelOpen}
+									onOpenGlobal={() => setGlobalPanelOpen(true)}
+									midiLearnOpen={midiLearnOpen}
+									onOpenMidiLearn={() => setMidiLearnOpen((value) => !value)}
+									onOpenMacroLabels={() => setMacroLabelEditorOpen(true)}
+								/>
+							</div>
+							<div
+								className="flex min-h-0 flex-1 items-stretch justify-center overflow-hidden"
+								style={{ paddingBottom: mainPanelPaddingBottom }}
+							>
+								<SynthRendererMainPanel
+									mainPanelMode={mainPanelMode}
+									setMainPanelMode={setMainPanelMode}
+									envOverrideHandlers={envOverrideHandlers}
+									drawerOpen={drawerOpen}
+									activeDrawerPanel={activeDrawerPanel}
+									drawerSlideDirection={drawerSlideDirection}
+									analyserNodeRef={resolvedAnalyserNodeRef}
+									audioCtxRef={resolvedAudioCtxRef}
+									effectivePitchHz={effectivePitchHz}
+									subscribeScopeFrames={subscribeScopeFrames}
+								/>
+							</div>
 						</div>
 						<SynthRendererLibraryOverlay
 							isOpen={libraryModeOpen}

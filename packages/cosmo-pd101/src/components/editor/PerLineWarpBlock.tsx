@@ -236,6 +236,8 @@ const PerLineWarpBlock = memo(function PerLineWarpBlock({
 									onChange={setAlgoBlend}
 									color={color}
 									showTicks
+									centerMarker
+									centerDetent
 									majorTickEvery={2}
 									trackThickness={20}
 									valueFormatter={formatAlgoBlendReadout}

@@ -62,4 +62,48 @@ describe("SynthSidebar", () => {
 		expect(onOpenMidiLearn).toHaveBeenCalled();
 		expect(onOpenMacroLabels).toHaveBeenCalled();
 	});
+
+	it("applies a custom min width", () => {
+		const { container } = render(
+			<SynthSidebar
+				effectivePitchHz={440}
+				analyserNodeRef={{ current: null }}
+				audioCtxRef={{ current: null }}
+				sidebarMinWidthRem={19.625}
+				waveDrawerOpen={false}
+				libraryModeOpen={false}
+				globalOpen={false}
+				onOpenGlobal={() => {}}
+				midiLearnOpen={false}
+				onOpenMidiLearn={() => {}}
+				onOpenMacroLabels={() => {}}
+			/>,
+		);
+
+		expect(
+			(container.firstElementChild as HTMLElement | null)?.style.minWidth,
+		).toBe("19.625rem");
+	});
+
+	it("shrinks to content height when not filling the available height", () => {
+		render(
+			<SynthSidebar
+				effectivePitchHz={440}
+				analyserNodeRef={{ current: null }}
+				audioCtxRef={{ current: null }}
+				fillAvailableHeight={false}
+				waveDrawerOpen={false}
+				libraryModeOpen={false}
+				globalOpen={false}
+				onOpenGlobal={() => {}}
+				midiLearnOpen={false}
+				onOpenMidiLearn={() => {}}
+				onOpenMacroLabels={() => {}}
+			/>,
+		);
+
+		expect(screen.getByTestId("macro-panel").parentElement).toHaveClass(
+			"flex-none",
+		);
+	});
 });

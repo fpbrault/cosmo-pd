@@ -187,7 +187,7 @@ export default memo(function SynthSidebarButtons({
 	};
 
 	return (
-		<div className="mt-2 grid grid-cols-[2fr_3fr] gap-1.5 px-2">
+		<div className="mx-auto mt-2 grid max-w-fit grid-cols-[2fr_3fr] gap-1.5 px-2">
 			<div className="grid grid-cols-2 gap-1 gap-y-2">
 				{LEFT_BUTTONS.map(renderButton)}
 			</div>

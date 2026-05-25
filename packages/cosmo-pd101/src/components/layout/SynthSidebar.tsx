@@ -3,6 +3,7 @@ import { memo, type RefObject } from "react";
 import { ScopeMiniDisplay } from "@/components/panels/analysis/ScopeDisplay";
 import MacroKnobsPanel from "@/components/panels/macro/MacroKnobsPanel";
 import MidiLearnPanel from "@/components/panels/midi/MidiLearnPanel";
+import { joinClasses } from "@/components/primitives/Card";
 import SynthSidebarButtons from "./SynthSidebarButtons";
 
 const MIDI_LEARN_PANEL_TRANSITION = {
@@ -16,6 +17,8 @@ type SynthSidebarProps = {
 	effectivePitchHz: number;
 	analyserNodeRef: RefObject<AnalyserNode | null>;
 	audioCtxRef: RefObject<AudioContext | null>;
+	sidebarMinWidthRem?: number;
+	fillAvailableHeight?: boolean;
 	subscribeScopeFrames?: (
 		onFrame: (frame: {
 			samples: Float32Array;
@@ -36,6 +39,8 @@ export default memo(function SynthSidebar({
 	effectivePitchHz,
 	analyserNodeRef,
 	audioCtxRef,
+	sidebarMinWidthRem = 18,
+	fillAvailableHeight = true,
 	subscribeScopeFrames,
 	waveDrawerOpen,
 	libraryModeOpen,
@@ -45,8 +50,20 @@ export default memo(function SynthSidebar({
 	onOpenMidiLearn,
 	onOpenMacroLabels,
 }: SynthSidebarProps) {
+	const containerClassName = joinClasses(
+		"flex min-h-0 flex-col overflow-hidden rounded-[1.15rem] border border-cz-border/80 bg-cz-inset px-0 pb-2 shadow-lg",
+		fillAvailableHeight ? "self-stretch" : "self-start",
+	);
+	const macroPanelClassName = joinClasses(
+		"mt-2 min-h-0 px-2 pb-1",
+		fillAvailableHeight ? "flex-1" : "flex-none",
+	);
+
 	return (
-		<aside className="flex min-h-0 min-w-72 flex-col overflow-hidden rounded-[1.15rem] border border-cz-border/80 bg-cz-inset px-0 pb-2 shadow-lg">
+		<aside
+			className={containerClassName}
+			style={{ minWidth: `${sidebarMinWidthRem}rem` }}
+		>
 			<div className="min-w-full">
 				<div className="relative h-60 overflow-hidden">
 					<div className="absolute inset-0 p-3">
@@ -83,7 +100,7 @@ export default memo(function SynthSidebar({
 				onOpenMidiLearn={onOpenMidiLearn}
 			/>
 			{!libraryModeOpen ? (
-				<div className="mt-2 min-h-0 flex-1 px-2 pb-1">
+				<div className={macroPanelClassName}>
 					<MacroKnobsPanel onOpenLabelEditor={onOpenMacroLabels} />
 				</div>
 			) : (

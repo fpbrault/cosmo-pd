@@ -83,7 +83,7 @@ const DEFAULT_UI_STATE: SynthUiState = {
 	keyboardVisible: true,
 	keyboardOctaves: 3,
 	keyboardRange: 0,
-	keyboardHeight: 128,
+	keyboardHeight: 160,
 	keyboardInputMode: "velocity",
 	libraryModeOpen: false,
 	scopeCycles: 2,

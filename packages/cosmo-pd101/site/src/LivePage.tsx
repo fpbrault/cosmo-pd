@@ -6,17 +6,27 @@ import {
 	useTransform,
 } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	computeRendererFrameLayout,
+	SYNTH_RENDERER_DESIGN_HEIGHT,
+	SYNTH_RENDERER_DESIGN_WIDTH,
+	SYNTH_RENDERER_MAX_ASPECT_RATIO,
+} from "../../src/components/renderer/rendererFrameLayout";
 import { SharedPhaseDistortionVisualizer } from "../../src/components/renderer/SynthRenderer";
 
-const SYNTH_RENDERER_MAX_WIDTH = 1368;
-const SYNTH_RENDERER_MAX_HEIGHT = 912;
-const VISUALIZER_FRAME_PADDING = 30;
-const MANUAL_RENDERER_SCALE = 0.85;
+const FRAME_PADDING = 30;
+const WEB_MAX_SCALE = 0.85;
 
 export default function LivePage() {
 	const frameRef = useRef<HTMLDivElement | null>(null);
-	const containerRef = useRef<HTMLDivElement | null>(null);
-	const [fitScale, setFitScale] = useState(1);
+	const [frameLayout, setFrameLayout] = useState(() =>
+		computeRendererFrameLayout({
+			availableWidth: SYNTH_RENDERER_DESIGN_WIDTH,
+			availableHeight: SYNTH_RENDERER_DESIGN_HEIGHT,
+			targetAspectRatio: SYNTH_RENDERER_MAX_ASPECT_RATIO,
+			maxScale: WEB_MAX_SCALE,
+		}),
+	);
 	const [isMobileViewport, setIsMobileViewport] = useState<boolean>(() => {
 		if (typeof window === "undefined") {
 			return false;
@@ -90,26 +100,28 @@ export default function LivePage() {
 		if (!element) return;
 
 		const updateFrameSize = () => {
-			const framePadding = isSynthFullscreen ? 0 : VISUALIZER_FRAME_PADDING;
 			const bounds = element.getBoundingClientRect();
-			const availableWidth = Math.max(bounds.width - framePadding * 2, 0);
-			const availableHeight = Math.max(bounds.height - framePadding * 2, 0);
-			if (availableWidth <= 0 || availableHeight <= 0) return;
+			const nextLayout = computeRendererFrameLayout({
+				availableWidth: bounds.width,
+				availableHeight: bounds.height,
+				targetAspectRatio: SYNTH_RENDERER_MAX_ASPECT_RATIO,
+				outerPadding: isSynthFullscreen ? 0 : FRAME_PADDING,
+				maxScale: isSynthFullscreen ? undefined : WEB_MAX_SCALE,
+			});
+			if (!nextLayout) {
+				return;
+			}
 
-			// 1. Calculate the absolute maximum scale that perfectly fits the screen
-			const maxScreenScale = Math.min(
-				availableWidth / SYNTH_RENDERER_MAX_WIDTH,
-				availableHeight / SYNTH_RENDERER_MAX_HEIGHT,
-			);
-
-			// 2. Apply rules based on fullscreen vs regular layout
-			const nextScale = isSynthFullscreen
-				? maxScreenScale
-				: Math.min(maxScreenScale, MANUAL_RENDERER_SCALE);
-
-			setFitScale((current) => {
-				if (Math.abs(current - nextScale) < 0.001) return current;
-				return nextScale;
+			setFrameLayout((current) => {
+				if (
+					current &&
+					Math.abs(current.frameWidth - nextLayout.frameWidth) < 0.5 &&
+					Math.abs(current.frameHeight - nextLayout.frameHeight) < 0.5 &&
+					Math.abs(current.frameScale - nextLayout.frameScale) < 0.001
+				) {
+					return current;
+				}
+				return nextLayout;
 			});
 		};
 
@@ -119,11 +131,12 @@ export default function LivePage() {
 		return () => resizeObserver.disconnect();
 	}, [isSynthFullscreen]);
 
-	// The manual scale is now cleanly handled inside the useEffect,
-	// so we just pass the calculated fitScale directly.
-	const frameScale = fitScale;
-	const scaledWidth = SYNTH_RENDERER_MAX_WIDTH * frameScale;
-	const scaledHeight = SYNTH_RENDERER_MAX_HEIGHT * frameScale;
+	const frameScale = frameLayout?.frameScale ?? 1;
+	const frameWidth = frameLayout?.frameWidth ?? SYNTH_RENDERER_DESIGN_WIDTH;
+	const frameHeight = frameLayout?.frameHeight ?? SYNTH_RENDERER_DESIGN_HEIGHT;
+	const sidebarMinWidthRem = frameLayout?.sidebarMinWidthRem ?? 21;
+	const scaledWidth = frameWidth * frameScale;
+	const scaledHeight = frameHeight * frameScale;
 
 	const synthPanelInlineSize = isSynthFullscreen
 		? {}
@@ -155,7 +168,6 @@ export default function LivePage() {
 		<div
 			ref={(node) => {
 				frameRef.current = node;
-				containerRef.current = node;
 			}}
 			className="relative flex h-full w-full items-center justify-center overflow-hidden bg-black"
 			onPointerMove={isMobileViewport ? undefined : handlePointerMove}
@@ -183,12 +195,14 @@ export default function LivePage() {
 				<div
 					className={isSynthFullscreen ? "" : "absolute top-0 left-0"}
 					style={{
-						width: SYNTH_RENDERER_MAX_WIDTH,
-						height: SYNTH_RENDERER_MAX_HEIGHT,
+						width: frameWidth,
+						height: frameHeight,
 						zoom: frameScale,
 					}}
 				>
-					<SharedPhaseDistortionVisualizer />
+					<SharedPhaseDistortionVisualizer
+						sidebarMinWidthRem={sidebarMinWidthRem}
+					/>
 				</div>
 			</div>
 			<button
