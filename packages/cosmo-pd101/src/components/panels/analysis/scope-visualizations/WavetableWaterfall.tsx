@@ -539,7 +539,7 @@ function WavetableWaterfallPane({
 			<div className={labelClass}>
 				<span style={{ color: palette.glowCore }}>{label}</span>
 			</div>
-		
+
 			<Canvas
 				className="relative z-10 h-full w-full opacity-95 contrast-125 saturate-150"
 				dpr={[1, 1.75]}
@@ -630,21 +630,21 @@ export function WavetableWaterfall({
 
 	const toggleSingleLine = () => setSingleLine((line) => (line === 1 ? 2 : 1));
 
-		const showingLine1 = singleLine === 1;
-		const palette = showingLine1 ? line1Palette : line2Palette;
-		return (
-			<div className="flex h-full min-h-0 w-full flex-col">
-				<WavetableWaterfallPane
-					label={showingLine1 ? "LINE 1" : "LINE 2"}
-					waveHistory={showingLine1 ? line1WaveHistory : line2WaveHistory}
-					activeIndicators={
-						showingLine1 ? line1ActiveIndicators : line2ActiveIndicators
-					}
-					palette={palette}
-					labelPosition={labelPosition}
-					onToggleLine={toggleSingleLine}
-					visualIntensity={visualIntensity}
-				/>
-			</div>
-		);
+	const showingLine1 = singleLine === 1;
+	const palette = showingLine1 ? line1Palette : line2Palette;
+	return (
+		<div className="flex h-full min-h-0 w-full flex-col">
+			<WavetableWaterfallPane
+				label={showingLine1 ? "LINE 1" : "LINE 2"}
+				waveHistory={showingLine1 ? line1WaveHistory : line2WaveHistory}
+				activeIndicators={
+					showingLine1 ? line1ActiveIndicators : line2ActiveIndicators
+				}
+				palette={palette}
+				labelPosition={labelPosition}
+				onToggleLine={toggleSingleLine}
+				visualIntensity={visualIntensity}
+			/>
+		</div>
+	);
 }
