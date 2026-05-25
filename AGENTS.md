@@ -9,12 +9,21 @@
 | Task | Command |
 |------|---------|
 | Dev server | `bun run dev` |
-| Build | `bun run build` (runs `tsc && vite build`) |
+| Build | `bun run build` (builds engine WASM + `@cosmo/cosmo-pd101` lib + plugin) |
 | Lint | `bun run lint` |
 | Lint & fix | `bun run lint:fix` |
-| Unit tests | `bun run test` |
+| Full test suite | `bun run test` (workspace package tests + `cargo test --workspace`) |
+| Playwright E2E (plugin webview) | `cd packages/cosmo-pd101-plugin/webview && bun run test:e2e` |
 
 **Order**: lint → typecheck (via `bun run build`) → test.
+
+### Validation Is Mandatory
+
+- Do not assume lint/tests still pass after edits. Run the full validation order before declaring work complete.
+- Minimum required local verification after code changes:
+  1. `bun run lint`
+  2. `bun run test`
+- If any step fails, report it clearly and do not claim the change is done.
 
 ## Architecture
 
@@ -52,6 +61,12 @@ Bun monorepo. Main packages:
 - **MIDI/SysEx**: Always use `Uint8Array` for raw MIDI data, never `number[]`. SysEx starts `0xF0`, ends `0xF7`.
 - **Temporary code**: If a change is temporary, add an explicit `TODO:` comment at the relevant code location so follow-up work is trackable.
 
+## Synth Engine WASM Artifacts
+
+- Treat generated synth engine WASM/bindgen outputs as potentially first-order outputs of your code changes, not unrelated noise.
+- When edits touch `packages/cosmo-synth-engine` or engine-facing bindings/build scripts, check whether generated artifacts changed and evaluate them as part of the same change.
+- Do not discard or ignore WASM diffs by default. If you exclude them, justify why they are unrelated.
+
 ## Git & Pull Requests
 
 - **Commit messages**: Follow [Conventional Commits](https://www.conventionalcommits.org/) format: `type(scope): description`
@@ -65,7 +80,15 @@ Bun monorepo. Main packages:
 - Browser test files must use `*.browser.test.{ts,tsx}` naming
 - Unit test files use `*.{test,spec}.{ts,tsx}` (excluding `.browser.test.`)
 - Setup injects `fake-indexeddb/auto` and `vitest-axe/extend-expect` for unit tests
-- CI runs `test:unit --run` then installs Playwright + runs `test:browser --run`
+- CI runs separate jobs for:
+  - `@cosmo/cosmo-pd101` unit + browser tests
+  - plugin webview unit + browser tests
+  - plugin webview Playwright E2E tests
+- Playwright E2E tests for the plugin webview live in `packages/cosmo-pd101-plugin/webview`:
+  - `bun run test:e2e`
+  - `bun run test:e2e:ui`
+  - `bun run test:e2e:debug`
+- Run Playwright E2E whenever changes touch plugin-webview user flows, routing/navigation, bridge/IPC behavior, or anything covered by E2E specs. Do not assume Vitest coverage is sufficient for those flows.
 
 ## React Best Practices
 

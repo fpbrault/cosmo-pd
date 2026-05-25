@@ -8,11 +8,16 @@ import {
 	useState,
 	type WheelEvent,
 } from "react";
+import { ControlValueTooltipPortal } from "@/components/controls/ControlValueTooltip";
 import ModulatableControl from "@/components/controls/modulation/ModulatableControl";
 import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
 import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import type { ModDestination } from "@/lib/synth/bindings/synth";
 import type { KnobCurve } from "./knob/knobGeometry";
+import {
+	mapPointerDeltaWithCurve,
+	type SliderCurveMode,
+} from "./sliderInteractionCurve";
 import type { SyncConfig, UiTransform } from "./synthParamControlShared";
 import { useSynthParamControl } from "./synthParamControlShared";
 
@@ -48,6 +53,7 @@ interface SynthParamSliderProps {
 	centerDetent?: boolean;
 	centerDetentThreshold?: number;
 	showValueOnInteraction?: boolean;
+	curveMode?: SliderCurveMode;
 }
 
 const FINE_FACTOR = 0.2;
@@ -98,6 +104,7 @@ function SynthParamSliderInner({
 	centerDetent = false,
 	centerDetentThreshold,
 	showValueOnInteraction = true,
+	curveMode = "linear",
 }: SynthParamSliderProps) {
 	const state = useSynthParamControl({
 		paramKey,
@@ -125,9 +132,15 @@ function SynthParamSliderInner({
 			? state.syncTooltip
 			: state.boundTooltip;
 	const hoverHandlers = useHoverInfoHandlers(resolvedTooltip);
+	const containerRef = useRef<HTMLDivElement>(null);
 	const rootRef = useRef<HTMLDivElement>(null);
+	const pointerIdRef = useRef<number | null>(null);
+	const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
+	const pointerStartValueRef = useRef<number>(state.displayedValue);
+	const pointerDragActiveRef = useRef(false);
 	const [dragging, setDragging] = useState(false);
 	const [hovered, setHovered] = useState(false);
+	const [hoverSession, setHoverSession] = useState(0);
 
 	const length = trackLength ?? (orientation === "vertical" ? 126 : 300);
 	const thickness = trackThickness ?? (orientation === "vertical" ? 22 : 18);
@@ -140,6 +153,9 @@ function SynthParamSliderInner({
 		0,
 		1,
 	);
+	const isBipolarVisual =
+		state.controlBipolar && state.controlMin < 0 && state.controlMax > 0;
+	const zeroNormalized = clamp((0 - state.controlMin) / safeRange, 0, 1);
 	const fillPercent = normalized * 100;
 	const valueText = state.valueFormatter
 		? state.valueFormatter(state.displayedValue)
@@ -151,15 +167,31 @@ function SynthParamSliderInner({
 		Math.max((state.controlStep ?? safeRange / 100) * 1.2, 0.001);
 
 	const controlToValue = useCallback(
-		(clientX: number, clientY: number, useFineStep: boolean) => {
+		(
+			clientX: number,
+			clientY: number,
+			useFineStep: boolean,
+			startValue: number,
+		) => {
 			const rect = rootRef.current?.getBoundingClientRect();
 			if (!rect) return state.displayedValue;
 
-			const ratio =
+			const start = pointerStartRef.current;
+			if (!start) return state.displayedValue;
+			const deltaPx =
+				orientation === "vertical" ? start.y - clientY : clientX - start.x;
+			const trackPx =
 				orientation === "vertical"
-					? 1 - clamp((clientY - rect.top) / Math.max(rect.height, 1), 0, 1)
-					: clamp((clientX - rect.left) / Math.max(rect.width, 1), 0, 1);
-			let nextValue = state.controlMin + ratio * safeRange;
+					? Math.max(rect.height, 1)
+					: Math.max(rect.width, 1);
+			let nextValue = mapPointerDeltaWithCurve({
+				startValue,
+				deltaPx,
+				trackPx,
+				curveMode,
+				min: state.controlMin,
+				max: state.controlMax,
+			});
 
 			if (state.controlStep && state.controlStep > 0) {
 				const usedStep = useFineStep
@@ -182,11 +214,11 @@ function SynthParamSliderInner({
 			centerValue,
 			detentThreshold,
 			orientation,
-			safeRange,
 			state.controlMax,
 			state.controlMin,
 			state.controlStep,
 			state.displayedValue,
+			curveMode,
 		],
 	);
 
@@ -215,29 +247,50 @@ function SynthParamSliderInner({
 		(e: PointerEvent<HTMLDivElement>) => {
 			if (disabled || state.midiLearn.interactionLocked) return;
 			e.preventDefault();
-			setDragging(true);
+			pointerIdRef.current = e.pointerId;
+			pointerStartRef.current = { x: e.clientX, y: e.clientY };
+			pointerStartValueRef.current = state.displayedValue;
+			pointerDragActiveRef.current = false;
 			e.currentTarget.setPointerCapture(e.pointerId);
+		},
+		[disabled, state],
+	);
+
+	const handlePointerMove = useCallback(
+		(e: PointerEvent<HTMLDivElement>) => {
+			if (pointerIdRef.current !== e.pointerId) return;
+			if (disabled || state.midiLearn.interactionLocked) return;
+			if (!pointerDragActiveRef.current) {
+				const start = pointerStartRef.current;
+				if (!start) return;
+				const dx = e.clientX - start.x;
+				const dy = e.clientY - start.y;
+				if (Math.hypot(dx, dy) < 2) {
+					return;
+				}
+				pointerDragActiveRef.current = true;
+				setDragging(true);
+			}
+			e.preventDefault();
 			state.handleControlChange(
-				controlToValue(e.clientX, e.clientY, e.shiftKey),
+				controlToValue(
+					e.clientX,
+					e.clientY,
+					e.shiftKey,
+					pointerStartValueRef.current,
+				),
 			);
 		},
 		[controlToValue, disabled, state],
 	);
 
-	const handlePointerMove = useCallback(
-		(e: PointerEvent<HTMLDivElement>) => {
-			if (!dragging || disabled || state.midiLearn.interactionLocked) return;
-			e.preventDefault();
-			state.handleControlChange(
-				controlToValue(e.clientX, e.clientY, e.shiftKey),
-			);
-		},
-		[controlToValue, disabled, dragging, state],
-	);
-
 	const handlePointerUp = useCallback(() => {
+		pointerIdRef.current = null;
+		pointerStartRef.current = null;
+		pointerStartValueRef.current = state.displayedValue;
+		pointerDragActiveRef.current = false;
 		setDragging(false);
-	}, []);
+	}, [state.displayedValue]);
 
 	const handleWheel = useCallback(
 		(e: WheelEvent<HTMLDivElement>) => {
@@ -296,7 +349,17 @@ function SynthParamSliderInner({
 
 	const slider = (
 		<div
+			ref={containerRef}
 			className={`relative select-none ${disabled ? "opacity-50" : ""} ${className}`.trim()}
+			onPointerEnter={() => {
+				setHovered((wasHovered) => {
+					if (!wasHovered) {
+						setHoverSession((session) => session + 1);
+					}
+					return true;
+				});
+			}}
+			onPointerLeave={() => setHovered(false)}
 		>
 			{label ? (
 				<div
@@ -318,6 +381,7 @@ function SynthParamSliderInner({
 				onPointerMove={handlePointerMove}
 				onPointerUp={handlePointerUp}
 				onPointerCancel={handlePointerUp}
+				onLostPointerCapture={handlePointerUp}
 				onWheel={handleWheel}
 				onKeyDown={handleKeyDown}
 				onDoubleClick={() =>
@@ -327,8 +391,6 @@ function SynthParamSliderInner({
 				}
 				onClick={state.midiLearn.onClick}
 				onContextMenu={state.midiLearn.onContextMenu}
-				onMouseEnter={() => setHovered(true)}
-				onMouseLeave={() => setHovered(false)}
 				data-hover-info={resolvedTooltip}
 				{...hoverHandlers}
 				className={`relative rounded-md border border-cz-border/80 bg-cz-inset/85 shadow-inner ${
@@ -357,25 +419,51 @@ function SynthParamSliderInner({
 				<div
 					aria-hidden="true"
 					className="absolute rounded-sm"
-					style={
-						orientation === "vertical"
-							? {
+					style={(() => {
+						if (orientation === "vertical") {
+							if (isBipolarVisual) {
+								const start = Math.min(normalized, zeroNormalized);
+								const span = Math.abs(normalized - zeroNormalized);
+								return {
 									left: 3,
 									right: 3,
-									bottom: 3,
-									height: `calc(${fillPercent}% - 3px)`,
+									bottom: `calc(3px + (100% - 6px) * ${start})`,
+									height: `max(calc((100% - 6px) * ${span}), 1px)`,
 									minHeight: 0,
 									background: color,
-								}
-							: {
-									top: 3,
-									bottom: 3,
-									left: 3,
-									width: `calc(${fillPercent}% - 3px)`,
-									minWidth: 0,
-									background: color,
-								}
-					}
+								};
+							}
+							return {
+								left: 3,
+								right: 3,
+								bottom: 3,
+								height: `calc(${fillPercent}% - 3px)`,
+								minHeight: 0,
+								background: color,
+							};
+						}
+
+						if (isBipolarVisual) {
+							const start = Math.min(normalized, zeroNormalized);
+							const span = Math.abs(normalized - zeroNormalized);
+							return {
+								top: 3,
+								bottom: 3,
+								left: `calc(3px + (100% - 6px) * ${start})`,
+								width: `max(calc((100% - 6px) * ${span}), 1px)`,
+								minWidth: 0,
+								background: color,
+							};
+						}
+						return {
+							top: 3,
+							bottom: 3,
+							left: 3,
+							width: `calc(${fillPercent}% - 3px)`,
+							minWidth: 0,
+							background: color,
+						};
+					})()}
 				/>
 
 				<div
@@ -457,9 +545,16 @@ function SynthParamSliderInner({
 			) : null}
 
 			{showValueOnInteraction && (hovered || dragging) ? (
-				<div className="pointer-events-none absolute top-[-1.1rem] left-1/2 -translate-x-1/2 rounded border border-cz-border/70 bg-cz-panel/95 px-1.5 py-0.5 font-mono text-[0.52rem] text-cz-cream shadow-md">
-					{valueText}
-				</div>
+				<ControlValueTooltipPortal
+					key={hoverSession}
+					value={valueText}
+					visible
+					placement="above"
+					anchorRef={containerRef}
+					gapPx={14}
+					onPointerEnter={() => setHovered(true)}
+					onPointerLeave={() => setHovered(false)}
+				/>
 			) : null}
 		</div>
 	);

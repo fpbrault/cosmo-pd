@@ -29,6 +29,7 @@ import {
 
 export type ModulePresetModule =
 	| FxSlotType
+	| "eq"
 	| "lfo1"
 	| "lfo2"
 	| "modEnv"

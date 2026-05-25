@@ -11,6 +11,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import Button from "@/components/controls/Button";
+import { getControlValueTooltipClassName } from "@/components/controls/ControlValueTooltip";
 import ModulatableControl from "@/components/controls/modulation/ModulatableControl";
 import { useOptionalSynthController } from "@/features/synth/SynthParamController";
 import type { ModDestination } from "@/lib/synth/bindings/synth";
@@ -507,14 +508,11 @@ export default function ControlKnob({
 	}, [updateValueBubbleLayout, valueBubbleVisible]);
 
 	const valueBubbleShellClass = "pointer-events-none fixed z-[9999]";
-	const valueBubbleArrowClass =
-		valueBubbleLayout.placement === "above"
-			? "before:pointer-events-none before:absolute before:top-full before:left-[var(--knob-bubble-arrow-left)] before:-translate-x-1/2 before:border-x-[5px] before:border-t-[5px] before:border-x-transparent before:border-t-white"
-			: "before:pointer-events-none before:absolute before:bottom-full before:left-[var(--knob-bubble-arrow-left)] before:-translate-x-1/2 before:border-x-[5px] before:border-b-[5px] before:border-x-transparent before:border-b-white";
-
-	const valueBubbleBodyClass = `pointer-events-auto relative whitespace-nowrap rounded-sm border-transparent bg-white px-1.5 py-0.5 font-semibold text-2xs leading-none text-black shadow-[0_2px_6px_rgba(0,0,0,0.5)] transition-all duration-150 ${valueBubbleArrowClass} ${
-		disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer"
-	} ${valueBubbleVisible ? "opacity-100" : "pointer-events-none opacity-0"}`;
+	const valueBubbleBodyClass = getControlValueTooltipClassName({
+		placement: valueBubbleLayout.placement,
+		visible: valueBubbleVisible,
+		disabled,
+	});
 	const valueBubbleInteractive = valueBubbleVisible && valueBubbleLayout.ready;
 	const shouldRenderValueBubbleControl = editing || valueBubbleInteractive;
 	const shouldRenderValueBubbleMeasurement =

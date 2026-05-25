@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { FxSlotModuleConfig } from "@/components/panels/drawer-modules/fxSlotModuleConfig";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthStore } from "@/features/synth/synthStore";
-import { resolvePresetPatchParams } from "./utils";
+import { getPresetModuleKey, resolvePresetPatchParams } from "./utils";
 
 export function useFxModuleController(
 	config: FxSlotModuleConfig,
@@ -33,7 +33,7 @@ export function useFxModuleController(
 
 		setFxSlotParams(slot, patchParams);
 		requestApplyModulePreset({
-			module: config.moduleKey,
+			module: getPresetModuleKey(config.moduleKey),
 			preset: preset.id,
 			patch: preset.patch,
 		});

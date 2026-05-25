@@ -69,11 +69,11 @@ test.describe("Algo controls plugin bridge", () => {
 				),
 		);
 
-		const blendKnob = page
-			.getByRole("spinbutton", { name: /^blend$/i })
+		const blendSlider = page
+			.getByRole("slider", { name: /^algoBlendA$/i })
 			.first();
-		await expect(blendKnob).toBeVisible();
-		await blendKnob.press("ArrowUp");
+		await expect(blendSlider).toBeVisible();
+		await blendSlider.press("ArrowUp");
 
 		const nextAlgoButtonB = page
 			.getByRole("button", { name: /^next algorithm$/i })
