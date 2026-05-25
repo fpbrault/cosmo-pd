@@ -339,9 +339,7 @@ function SynthParamSliderInner({
 				style={{
 					touchAction: "none",
 					width:
-						orientation === "vertical"
-							? thickness
-							: (trackLength ?? "100%"),
+						orientation === "vertical" ? thickness : (trackLength ?? "100%"),
 					height: orientation === "vertical" ? length : thickness,
 				}}
 			>

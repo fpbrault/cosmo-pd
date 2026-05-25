@@ -97,13 +97,13 @@ vi.mock("@/components/controls/SynthParamSlider", () => ({
 	}) => {
 		const resolvedLabel = label?.trim() ? label : "BlendSlider";
 		return (
-		<button
-			type="button"
-			aria-label={resolvedLabel}
-			onClick={() => onChange?.(0.3)}
-		>
-			{resolvedLabel}
-		</button>
+			<button
+				type="button"
+				aria-label={resolvedLabel}
+				onClick={() => onChange?.(0.3)}
+			>
+				{resolvedLabel}
+			</button>
 		);
 	},
 }));
@@ -229,7 +229,9 @@ describe("PerLineWarpBlock", () => {
 		const props = createProps();
 		render(<PerLineWarpBlock {...props} />);
 
-		expect(screen.getByRole("button", { name: "BlendSlider" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "BlendSlider" }),
+		).toBeInTheDocument();
 		expect(screen.getByText("Blend")).toBeInTheDocument();
 	});
 
