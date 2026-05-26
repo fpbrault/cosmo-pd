@@ -40,7 +40,7 @@ import SynthRendererLibraryOverlay from "./SynthRendererLibraryOverlay";
 import SynthRendererMainPanel from "./SynthRendererMainPanel";
 import SynthRendererOverlays from "./SynthRendererOverlays";
 
-export type MiniKeyboardProps = {
+type MiniKeyboardProps = {
 	activeNotes: number[];
 	onNoteOn: (note: number, velocity?: number) => void;
 	onNoteOff: (note: number) => void;
@@ -435,4 +435,3 @@ const SynthRenderer = memo(function SynthRenderer({
 
 export default SynthRenderer;
 export const SharedPhaseDistortionVisualizer = SynthRenderer;
-export type { SynthRendererProps as SharedPhaseDistortionVisualizerProps };

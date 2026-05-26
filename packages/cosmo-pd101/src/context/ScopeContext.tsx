@@ -54,5 +54,3 @@ export const useScopeContext = () => {
 	}
 	return context;
 };
-
-export const useOptionalScopeContext = () => useContext(ScopeContext);

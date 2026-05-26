@@ -7,6 +7,7 @@ export default function RandomModule() {
 			title="Random"
 			color="#c2571a"
 			enabled
+			hideToggle
 			columns={1}
 			presetValue=""
 			presetOptions={[]}

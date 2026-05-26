@@ -106,6 +106,7 @@ export default function ModEnveloppeModule() {
 			title="Mod Env"
 			color="#c24587"
 			enabled
+			hideToggle
 			presetValue={selectedPreset}
 			presetOptions={MOD_ENV_PRESETS}
 			onPresetChange={handlePresetChange}

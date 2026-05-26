@@ -64,8 +64,8 @@ export type ButtonGroupControlDef = {
 	};
 	sourceIndex: number;
 };
-export type ControlDef = KnobControlDef | ButtonGroupControlDef;
-export type FxCustomRendererKey =
+type ControlDef = KnobControlDef | ButtonGroupControlDef;
+type FxCustomRendererKey =
 	| "delayModuleRenderer"
 	| "eq8BandModuleRenderer"
 	| "grainDelayModuleRenderer"

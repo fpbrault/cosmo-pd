@@ -60,7 +60,7 @@ export function getControlValueTooltipClassName({
 	} ${visible ? "inline-block opacity-100" : "pointer-events-none inline-block opacity-0"}`;
 }
 
-export default function ControlValueTooltip({
+function ControlValueTooltip({
 	value,
 	visible,
 	placement = "above",
