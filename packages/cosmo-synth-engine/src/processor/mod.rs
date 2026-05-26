@@ -29,6 +29,16 @@ pub use self::state::{
     RuntimeVoiceLineState,
 };
 
+#[derive(Debug, Clone, Copy)]
+struct PendingMonoRetrigger {
+    note: u8,
+    frequency: f32,
+    velocity: f32,
+    source_voice_idx: usize,
+    timeout_samples: u32,
+    previous_sample: f32,
+}
+
 /// The main synthesizer processor, managing voices, FX, modulation sources,
 /// and the sample-by-sample audio process loop.
 pub struct CosmoProcessor {
@@ -37,6 +47,8 @@ pub struct CosmoProcessor {
     pub(crate) cz_dac_color: CzDacColor,
     pub active_notes: ArrayVec<NoteEntry, NUM_VOICES>,
     pub mono_stack: ArrayVec<MonoStackEntry, NUM_VOICES>,
+    pub mono_held_notes: ArrayVec<u8, NUM_VOICES>,
+    pending_mono_retrigger: Option<PendingMonoRetrigger>,
     pub sustain_on: bool,
     pub lfo_phase: f32,
     pub lfo2_phase: f32,
@@ -52,6 +64,7 @@ pub struct CosmoProcessor {
     pub macro2: f32,
     pub macro3: f32,
     pub macro4: f32,
+    pub note_on_counter: u64,
     pub last_runtime_mod_sources: RuntimeModSources,
     pub simd_backend: SimdBackend,
     host_transport_tempo_bpm: Option<f32>,
@@ -75,6 +88,8 @@ impl CosmoProcessor {
             cz_dac_color: CzDacColor::new(),
             active_notes: ArrayVec::new(),
             mono_stack: ArrayVec::new(),
+            mono_held_notes: ArrayVec::new(),
+            pending_mono_retrigger: None,
             sustain_on: false,
             lfo_phase: 0.0,
             lfo2_phase: 0.0,
@@ -90,6 +105,7 @@ impl CosmoProcessor {
             macro2: 0.0,
             macro3: 0.0,
             macro4: 0.0,
+            note_on_counter: 0,
             last_runtime_mod_sources: RuntimeModSources::default(),
             simd_backend: detect_simd_backend(),
             host_transport_tempo_bpm: None,
@@ -222,8 +238,10 @@ impl CosmoProcessor {
     fn debug_assert_note_storage_bounds(&self) {
         debug_assert!(self.active_notes.len() <= NUM_VOICES);
         debug_assert!(self.mono_stack.len() <= NUM_VOICES);
+        debug_assert!(self.mono_held_notes.len() <= NUM_VOICES);
         debug_assert_eq!(self.active_notes.capacity(), NUM_VOICES);
         debug_assert_eq!(self.mono_stack.capacity(), NUM_VOICES);
+        debug_assert_eq!(self.mono_held_notes.capacity(), NUM_VOICES);
     }
 
     /// Hard reset runtime voice/FX state while keeping current parameters.
@@ -234,6 +252,8 @@ impl CosmoProcessor {
         self.update_fx();
         self.active_notes.clear();
         self.mono_stack.clear();
+        self.mono_held_notes.clear();
+        self.pending_mono_retrigger = None;
         self.sustain_on = false;
         self.lfo_phase = 0.0;
         self.lfo2_phase = 0.0;
@@ -247,6 +267,7 @@ impl CosmoProcessor {
         self.macro2 = 0.0;
         self.macro3 = 0.0;
         self.macro4 = 0.0;
+        self.note_on_counter = 0;
         self.last_runtime_mod_sources = RuntimeModSources::default();
         self.simd_backend = detect_simd_backend();
         self.host_transport_tempo_bpm = None;
@@ -361,6 +382,20 @@ mod tests {
                 (voice.note == Some(note) && !voice.is_releasing && !voice.is_silent).then_some(idx)
             })
             .collect()
+    }
+
+    fn current_active_note(proc: &CosmoProcessor) -> Option<u8> {
+        proc.active_notes.last().map(|entry| entry.note)
+    }
+
+    fn process_until_pending_mono_retrigger_clears(proc: &mut CosmoProcessor) {
+        let mut scratch = [0.0_f32; 1];
+        for _ in 0..512 {
+            if proc.pending_mono_retrigger.is_none() {
+                break;
+            }
+            proc.process(&mut scratch);
+        }
     }
 
     #[test]
@@ -696,6 +731,7 @@ mod tests {
         assert!(proc.voices[0].is_releasing);
 
         proc.note_on(note_b, freq_b, 1.0);
+        process_until_pending_mono_retrigger_clears(&mut proc);
         let active_b = active_voice_indices_for_note(&proc, note_b);
         assert_eq!(active_b.len(), 1, "expected one active voice for note B");
         let b_idx = active_b[0];
@@ -708,6 +744,348 @@ mod tests {
         assert!(
             active_a.is_empty(),
             "old note A should not be restored as an active note after releasing B"
+        );
+    }
+
+    #[test]
+    fn poly_sustain_steals_oldest_sounding_voice_first() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        let notes: Vec<u8> = (60_u8..60_u8 + NUM_VOICES as u8).collect();
+
+        for &note in &notes {
+            proc.note_on(note, utils::midi_note_to_freq(note), 1.0);
+        }
+
+        proc.set_sustain(true);
+        proc.note_off(notes[0]);
+
+        let replacement = 84_u8;
+        proc.note_on(replacement, utils::midi_note_to_freq(replacement), 1.0);
+
+        assert!(
+            proc.voices.iter().all(|voice| voice.note != Some(notes[0])),
+            "oldest sounding sustained note should be stolen first"
+        );
+        assert_eq!(active_voice_indices_for_note(&proc, replacement).len(), 1);
+    }
+
+    #[test]
+    fn same_note_note_on_retriggers_active_voice() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        let note = 60_u8;
+
+        proc.note_on(note, utils::midi_note_to_freq(note), 1.0);
+        let voice_idx = proc
+            .find_voice_for_note(note)
+            .expect("missing first active note");
+
+        let mut scratch = [0.0_f32; 32];
+        proc.process(&mut scratch);
+        let previous_step_pos = proc.voices[voice_idx].line1_env.dca.step_pos;
+
+        proc.note_on(note, utils::midi_note_to_freq(note), 1.0);
+
+        assert_eq!(proc.find_voice_for_note(note), Some(voice_idx));
+        assert!(
+            proc.voices[voice_idx].line1_env.dca.step_pos < previous_step_pos,
+            "same-note note-on should retrigger the active voice",
+        );
+    }
+
+    #[test]
+    fn retriggering_bright_voice_preserves_dcw_smoothing_state() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().line_select = LineSelect::L1;
+        proc.params_mut().line1.dcw_base = 1.0;
+        proc.params_mut().line1.dca_base = 1.0;
+        proc.params_mut().line1.algo = Algo::Saw;
+
+        let note = 60_u8;
+        proc.note_on(note, utils::midi_note_to_freq(note), 1.0);
+        let voice_idx = proc
+            .find_voice_for_note(note)
+            .expect("missing bright voice");
+
+        let mut scratch = [0.0_f32; 64];
+        proc.process(&mut scratch);
+        let prev_smoothed_dcw = proc.voices[voice_idx].smoothed_dcw1;
+        assert!(
+            prev_smoothed_dcw > 0.1,
+            "expected bright voice to build DCW state"
+        );
+
+        proc.note_on(note, utils::midi_note_to_freq(note), 1.0);
+
+        assert!(
+            proc.voices[voice_idx].smoothed_dcw1 >= prev_smoothed_dcw * 0.9,
+            "retrigger should preserve most of the live DCW smoothing state",
+        );
+    }
+
+    #[test]
+    fn poly_sustain_same_note_retrigger_allocates_new_voice() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        let note = 60_u8;
+
+        proc.note_on(note, utils::midi_note_to_freq(note), 1.0);
+        let original_voice_idx = proc.find_voice_for_note(note).expect("missing first note");
+
+        proc.set_sustain(true);
+        proc.note_off(note);
+        assert!(proc.voices[original_voice_idx].sustained);
+
+        proc.note_on(note, utils::midi_note_to_freq(note), 1.0);
+
+        let retriggered_voice_idx = proc
+            .find_voice_for_note(note)
+            .expect("missing retriggered note");
+        assert_ne!(retriggered_voice_idx, original_voice_idx);
+        assert_eq!(
+            proc.voices
+                .iter()
+                .filter(|voice| voice.note == Some(note) && !voice.is_silent)
+                .count(),
+            2,
+            "poly sustain retrigger should overlap the old sustained note with a fresh voice",
+        );
+    }
+
+    #[test]
+    fn poly_sustain_same_note_retrigger_steals_oldest_other_voice_when_full() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        let notes: Vec<u8> = (60_u8..60_u8 + NUM_VOICES as u8).collect();
+
+        for &note in &notes {
+            proc.note_on(note, utils::midi_note_to_freq(note), 1.0);
+        }
+
+        let sustained_note = notes[0];
+        proc.set_sustain(true);
+        proc.note_off(sustained_note);
+
+        proc.note_on(
+            sustained_note,
+            utils::midi_note_to_freq(sustained_note),
+            1.0,
+        );
+
+        assert_eq!(
+            proc.voices
+                .iter()
+                .filter(|voice| voice.note == Some(sustained_note) && !voice.is_silent)
+                .count(),
+            2,
+            "retriggered note should overlap with its sustained predecessor even when voices are full",
+        );
+        assert!(
+            proc.voices.iter().all(|voice| voice.note != Some(notes[1])),
+            "oldest other voice should be stolen before the sustained same-note voice",
+        );
+    }
+
+    #[test]
+    fn mono_release_falls_back_to_most_recent_still_held_note() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().poly_mode = PolyMode::Mono;
+
+        for note in [60_u8, 62_u8, 65_u8] {
+            proc.note_on(note, utils::midi_note_to_freq(note), 1.0);
+            process_until_pending_mono_retrigger_clears(&mut proc);
+        }
+        assert_eq!(current_active_note(&proc), Some(65));
+
+        proc.note_off(62);
+        assert_eq!(current_active_note(&proc), Some(65));
+
+        proc.note_off(65);
+        assert!(
+            proc.pending_mono_retrigger.is_some(),
+            "fallback to the previous held note should wait for the mono retrigger gate",
+        );
+        assert_eq!(current_active_note(&proc), None);
+        process_until_pending_mono_retrigger_clears(&mut proc);
+        assert_eq!(current_active_note(&proc), Some(60));
+    }
+
+    #[test]
+    fn mono_current_note_release_fallback_is_delayed_until_process() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().poly_mode = PolyMode::Mono;
+
+        let first_note = 60_u8;
+        let second_note = 64_u8;
+        proc.note_on(first_note, utils::midi_note_to_freq(first_note), 1.0);
+        proc.note_on(second_note, utils::midi_note_to_freq(second_note), 1.0);
+        process_until_pending_mono_retrigger_clears(&mut proc);
+        assert_eq!(current_active_note(&proc), Some(second_note));
+
+        proc.note_off(second_note);
+
+        assert!(
+            proc.pending_mono_retrigger.is_some(),
+            "held-note fallback should not restore the older voice immediately",
+        );
+        assert_eq!(current_active_note(&proc), None);
+
+        process_until_pending_mono_retrigger_clears(&mut proc);
+
+        assert_eq!(current_active_note(&proc), Some(first_note));
+    }
+
+    #[test]
+    fn mono_non_current_note_release_does_not_change_current_note() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().poly_mode = PolyMode::Mono;
+
+        for note in [60_u8, 67_u8, 64_u8, 62_u8] {
+            proc.note_on(note, utils::midi_note_to_freq(note), 1.0);
+            process_until_pending_mono_retrigger_clears(&mut proc);
+        }
+        assert_eq!(current_active_note(&proc), Some(62));
+
+        proc.note_off(67);
+        assert_eq!(current_active_note(&proc), Some(62));
+    }
+
+    #[test]
+    fn mono_portamento_legato_reuses_sustained_voice() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().poly_mode = PolyMode::Mono;
+        proc.params_mut().portamento.enabled = true;
+        proc.params_mut().portamento.time = 0.1;
+
+        let first_note = 60_u8;
+        proc.note_on(first_note, utils::midi_note_to_freq(first_note), 1.0);
+        let original_voice_idx = proc
+            .find_voice_for_note(first_note)
+            .expect("missing first note");
+
+        let mut scratch = [0.0_f32; 32];
+        proc.process(&mut scratch);
+        let previous_step_pos = proc.voices[original_voice_idx].line1_env.dca.step_pos;
+
+        proc.set_sustain(true);
+        proc.note_off(first_note);
+
+        let next_note = 67_u8;
+        proc.note_on(next_note, utils::midi_note_to_freq(next_note), 1.0);
+
+        let reused_voice_idx = proc
+            .find_voice_for_note(next_note)
+            .expect("missing legato note");
+        assert_eq!(reused_voice_idx, original_voice_idx);
+        assert_eq!(proc.voices[reused_voice_idx].note, Some(next_note));
+        assert_eq!(proc.voices[reused_voice_idx].glide_progress, 0.0);
+        assert!(
+            proc.voices[reused_voice_idx].line1_env.dca.step_pos >= previous_step_pos,
+            "legato takeover should not retrigger the envelope from zero",
+        );
+    }
+
+    #[test]
+    fn mono_without_portamento_retriggers_when_taking_over_sustained_note() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().poly_mode = PolyMode::Mono;
+
+        let first_note = 60_u8;
+        proc.note_on(first_note, utils::midi_note_to_freq(first_note), 1.0);
+        let original_voice_idx = proc
+            .find_voice_for_note(first_note)
+            .expect("missing first note");
+
+        let mut scratch = [0.0_f32; 32];
+        proc.process(&mut scratch);
+        let previous_step_pos = proc.voices[original_voice_idx].line1_env.dca.step_pos;
+
+        proc.set_sustain(true);
+        proc.note_off(first_note);
+
+        let next_note = 67_u8;
+        proc.note_on(next_note, utils::midi_note_to_freq(next_note), 1.0);
+        process_until_pending_mono_retrigger_clears(&mut proc);
+
+        let active_voice_idx = proc
+            .find_voice_for_note(next_note)
+            .expect("missing retriggered note");
+        assert_eq!(active_voice_idx, original_voice_idx);
+        assert!(
+            proc.voices[active_voice_idx].line1_env.dca.step_pos < previous_step_pos,
+            "non-portamento takeover should retrigger the envelope",
+        );
+    }
+
+    #[test]
+    fn mono_sustain_same_note_retrigger_queues_until_process() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().poly_mode = PolyMode::Mono;
+        let note = 60_u8;
+
+        proc.note_on(note, utils::midi_note_to_freq(note), 1.0);
+        let voice_idx = proc.find_voice_for_note(note).expect("missing first note");
+        proc.set_sustain(true);
+        proc.note_off(note);
+
+        proc.note_on(note, utils::midi_note_to_freq(note), 1.0);
+
+        assert!(proc.pending_mono_retrigger.is_some());
+        assert!(proc.active_notes.is_empty());
+        assert!(proc.voices[voice_idx].is_releasing);
+    }
+
+    #[test]
+    fn mono_sustain_same_note_retrigger_fires_after_zero_cross_or_timeout() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().poly_mode = PolyMode::Mono;
+        proc.params_mut().line_select = LineSelect::L1;
+        proc.params_mut().line1.dca_base = 1.0;
+        proc.params_mut().line1.algo = Algo::Saw;
+        let note = 60_u8;
+
+        proc.note_on(note, utils::midi_note_to_freq(note), 1.0);
+        proc.set_sustain(true);
+        proc.note_off(note);
+        proc.note_on(note, utils::midi_note_to_freq(note), 1.0);
+
+        let mut scratch = [0.0_f32; 1];
+        for _ in 0..512 {
+            proc.process(&mut scratch);
+            if proc.pending_mono_retrigger.is_none() {
+                break;
+            }
+        }
+
+        assert!(proc.pending_mono_retrigger.is_none());
+        assert_eq!(current_active_note(&proc), Some(note));
+    }
+
+    #[test]
+    fn mono_sustain_release_does_not_restore_displaced_held_note() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().poly_mode = PolyMode::Mono;
+
+        let low_note = 60_u8;
+        let high_note = 67_u8;
+
+        proc.note_on(low_note, utils::midi_note_to_freq(low_note), 1.0);
+        proc.set_sustain(true);
+        proc.note_on(high_note, utils::midi_note_to_freq(high_note), 1.0);
+        process_until_pending_mono_retrigger_clears(&mut proc);
+        proc.note_off(high_note);
+
+        assert!(proc.active_notes.is_empty());
+        assert_eq!(
+            proc.voices
+                .iter()
+                .filter(|voice| voice.note == Some(high_note) && voice.sustained)
+                .count(),
+            1,
+        );
+
+        proc.set_sustain(false);
+
+        assert!(
+            active_voice_indices_for_note(&proc, low_note).is_empty(),
+            "pedal-up should not resurrect the displaced held note",
         );
     }
 

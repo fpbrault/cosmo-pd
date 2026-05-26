@@ -5,6 +5,9 @@ use crate::params::{NUM_VOICES, PolyMode};
 use super::CosmoProcessor;
 use super::state::{MonoStackEntry, NoteEntry};
 
+const MONO_RETRIGGER_TIMEOUT_SAMPLES: u32 = 512;
+const MONO_RETRIGGER_ZERO_THRESHOLD: f32 = 0.0005;
+
 impl CosmoProcessor {
     pub(crate) fn reset_voice_envs(&mut self, voice_idx: usize) {
         self.voices[voice_idx].reset_envs();
@@ -44,6 +47,8 @@ impl CosmoProcessor {
         let voice = &mut self.voices[voice_idx];
         let was_active = !voice.is_silent;
         let prev_output_sample = voice.last_output_sample;
+        let prev_smoothed_dcw1 = voice.smoothed_dcw1;
+        let prev_smoothed_dcw2 = voice.smoothed_dcw2;
         voice.phi1 = 0.0;
         voice.phi2 = 0.0;
         voice.cycle_count1 = 0;
@@ -61,8 +66,8 @@ impl CosmoProcessor {
         voice.last_output_sample = if was_active { prev_output_sample } else { 0.0 };
         voice.release_tail_level = 0.0;
         voice.aftertouch = 0.0;
-        voice.smoothed_dcw1 = 0.0;
-        voice.smoothed_dcw2 = 0.0;
+        voice.smoothed_dcw1 = if was_active { prev_smoothed_dcw1 } else { 0.0 };
+        voice.smoothed_dcw2 = if was_active { prev_smoothed_dcw2 } else { 0.0 };
 
         if let Some(vib) = self.params.vibrato_params()
             && vib.enabled
@@ -99,6 +104,7 @@ impl CosmoProcessor {
         self.configure_voice_pitch(voice_idx, note, frequency);
         self.voices[voice_idx].velocity = velocity;
         self.reset_voice_runtime(voice_idx);
+        self.voices[voice_idx].note_on_sequence = self.next_note_on_sequence();
         self.voices[voice_idx].noise_step = 0;
         self.reset_voice_envs(voice_idx);
         self.reset_generator_runtime_for_note(voice_idx, note);
@@ -128,6 +134,122 @@ impl CosmoProcessor {
         self.debug_assert_note_storage_bounds();
     }
 
+    fn next_note_on_sequence(&mut self) -> u64 {
+        let sequence = self.note_on_counter;
+        self.note_on_counter = self.note_on_counter.wrapping_add(1);
+        sequence
+    }
+
+    fn track_mono_held_note(&mut self, note: u8) {
+        self.mono_held_notes.retain(|held_note| *held_note != note);
+        debug_assert!(self.mono_held_notes.len() < NUM_VOICES);
+        self.mono_held_notes
+            .try_push(note)
+            .expect("mono_held_notes exceeded voice capacity");
+        self.debug_assert_note_storage_bounds();
+    }
+
+    fn release_mono_held_note(&mut self, note: u8) {
+        self.mono_held_notes.retain(|held_note| *held_note != note);
+    }
+
+    fn clear_pending_mono_retrigger(&mut self) {
+        self.pending_mono_retrigger = None;
+    }
+
+    fn queue_pending_mono_retrigger(
+        &mut self,
+        note: u8,
+        frequency: f32,
+        velocity: f32,
+        source_voice_idx: usize,
+    ) {
+        let previous_sample = self.voices[source_voice_idx].last_output_sample;
+        self.pending_mono_retrigger = Some(super::PendingMonoRetrigger {
+            note,
+            frequency,
+            velocity,
+            source_voice_idx,
+            timeout_samples: MONO_RETRIGGER_TIMEOUT_SAMPLES,
+            previous_sample,
+        });
+    }
+
+    fn queue_mono_retrigger_from_voice(
+        &mut self,
+        note: u8,
+        frequency: f32,
+        velocity: f32,
+        source_voice_idx: usize,
+    ) {
+        if source_voice_idx >= NUM_VOICES {
+            self.initialize_voice_for_note(
+                self.find_poly_voice_for_note_on(),
+                note,
+                frequency,
+                velocity,
+            );
+            return;
+        }
+
+        let should_capture_resume = self.voices[source_voice_idx].note != Some(note)
+            && !self.voices[source_voice_idx].sustained;
+        if should_capture_resume {
+            self.capture_mono_resume_state(source_voice_idx);
+        }
+
+        self.active_notes
+            .retain(|entry| entry.voice_idx != source_voice_idx);
+        self.voices[source_voice_idx].sustained = false;
+        if !self.voices[source_voice_idx].is_releasing {
+            self.start_release(source_voice_idx);
+        }
+        self.queue_pending_mono_retrigger(note, frequency, velocity, source_voice_idx);
+    }
+
+    fn mono_note_is_physically_held(&self, note: u8) -> bool {
+        self.mono_held_notes.contains(&note)
+    }
+
+    fn remove_mono_stack_note(&mut self, note: u8) {
+        self.mono_stack.retain(|entry| entry.note != note);
+    }
+
+    fn mono_stack_entry(&self, note: u8) -> Option<&MonoStackEntry> {
+        self.mono_stack
+            .iter()
+            .rev()
+            .find(|entry| entry.note == note)
+    }
+
+    fn capture_mono_resume_state(&mut self, voice_idx: usize) {
+        let Some(note) = self.voices[voice_idx].note else {
+            return;
+        };
+        if !self.mono_note_is_physically_held(note) || self.voices[voice_idx].is_silent {
+            return;
+        }
+        self.push_mono_stack_entry(MonoStackEntry {
+            note,
+            voice: self.voices[voice_idx].clone(),
+        });
+    }
+
+    fn retire_duplicate_note_voices(&mut self, note: u8, keep_voice_idx: usize) {
+        self.active_notes
+            .retain(|entry| entry.note != note || entry.voice_idx == keep_voice_idx);
+        self.remove_mono_stack_note(note);
+
+        for idx in 0..NUM_VOICES {
+            if idx == keep_voice_idx {
+                continue;
+            }
+            if self.voices[idx].note == Some(note) && !self.voices[idx].is_silent {
+                self.start_quick_release(idx);
+            }
+        }
+    }
+
     fn mono_active_voice_index(&self) -> Option<usize> {
         self.active_notes
             .last()
@@ -149,6 +271,80 @@ impl CosmoProcessor {
             })
     }
 
+    fn sustained_voice_index_for_note(&self, note: u8) -> Option<usize> {
+        self.voices.iter().enumerate().find_map(|(idx, voice)| {
+            (voice.note == Some(note) && voice.sustained && !voice.is_silent).then_some(idx)
+        })
+    }
+
+    fn queue_mono_resume_previous_held_note(&mut self, voice_idx: usize) -> bool {
+        let Some(prev_note) = self.mono_held_notes.last().copied() else {
+            return false;
+        };
+
+        let Some(prev_voice) = self
+            .mono_stack_entry(prev_note)
+            .map(|entry| entry.voice.clone())
+        else {
+            return false;
+        };
+
+        self.remove_mono_stack_note(prev_note);
+        self.voices[voice_idx].sustained = false;
+        if !self.voices[voice_idx].is_releasing {
+            self.start_release(voice_idx);
+        }
+        self.queue_pending_mono_retrigger(
+            prev_note,
+            prev_voice.frequency,
+            prev_voice.velocity,
+            voice_idx,
+        );
+        true
+    }
+
+    pub(crate) fn process_pending_mono_retrigger_after_sample(&mut self) {
+        let Some(mut pending) = self.pending_mono_retrigger else {
+            return;
+        };
+
+        if pending.source_voice_idx >= NUM_VOICES {
+            self.initialize_voice_for_note(
+                self.find_poly_voice_for_note_on(),
+                pending.note,
+                pending.frequency,
+                pending.velocity,
+            );
+            return self.clear_pending_mono_retrigger();
+        }
+
+        let voice = &self.voices[pending.source_voice_idx];
+        let current_sample = voice.last_output_sample;
+        let near_zero = current_sample.abs() <= MONO_RETRIGGER_ZERO_THRESHOLD;
+        let crossed_zero = (pending.previous_sample > 0.0 && current_sample <= 0.0)
+            || (pending.previous_sample < 0.0 && current_sample >= 0.0);
+        let should_trigger =
+            voice.is_silent || near_zero || crossed_zero || pending.timeout_samples == 0;
+
+        if should_trigger {
+            let keep_voice_idx = pending.source_voice_idx.min(NUM_VOICES - 1);
+            self.initialize_voice_for_note(
+                keep_voice_idx,
+                pending.note,
+                pending.frequency,
+                pending.velocity,
+            );
+            self.replace_active_note_entry(keep_voice_idx, pending.note);
+            self.quick_fade_other_mono_voices(keep_voice_idx);
+            self.clear_pending_mono_retrigger();
+            return;
+        }
+
+        pending.timeout_samples = pending.timeout_samples.saturating_sub(1);
+        pending.previous_sample = current_sample;
+        self.pending_mono_retrigger = Some(pending);
+    }
+
     fn quick_fade_other_mono_voices(&mut self, keep_voice_idx: usize) {
         for idx in 0..NUM_VOICES {
             if idx != keep_voice_idx && !self.voices[idx].is_silent {
@@ -167,122 +363,72 @@ impl CosmoProcessor {
             return false;
         };
 
-        let prev_entry = self.voices[voice_idx].note.map(|prev_note| MonoStackEntry {
-            note: prev_note,
-            voice: self.voices[voice_idx].clone(),
-        });
-
-        if let Some(entry) = prev_entry
-            && !entry.voice.is_silent
         {
-            self.push_mono_stack_entry(entry);
+            let voice = &self.voices[voice_idx];
+            if voice.is_releasing || voice.is_silent || voice.note == Some(note) {
+                return false;
+            }
         }
+
+        self.capture_mono_resume_state(voice_idx);
+        let next_sequence = self.next_note_on_sequence();
 
         let voice = &mut self.voices[voice_idx];
-        if voice.is_releasing || voice.is_silent || voice.note == Some(note) {
-            return false;
-        }
-
         voice.target_freq = frequency;
-        if self.params.portamento.enabled {
-            voice.glide_start_freq = voice.current_freq;
-            voice.glide_progress = 0.0;
-        } else {
-            voice.current_freq = frequency;
-        }
+        voice.glide_start_freq = voice.current_freq;
+        voice.glide_progress = 0.0;
 
         voice.note = Some(note);
         voice.frequency = frequency;
         voice.velocity = velocity;
         voice.is_releasing = false;
+        voice.sustained = false;
+        voice.note_on_sequence = next_sequence;
 
         self.replace_active_note_entry(voice_idx, note);
+        self.retire_duplicate_note_voices(note, voice_idx);
         true
     }
 
     fn find_poly_voice_for_note_on(&self) -> usize {
-        if let Some(voice_idx) = self.voices.iter().position(|v| v.is_silent) {
+        self.find_poly_voice_for_note_on_excluding(None)
+    }
+
+    fn find_poly_voice_for_note_on_excluding(&self, excluded_voice_idx: Option<usize>) -> usize {
+        if let Some(voice_idx) = self.voices.iter().position(|v| v.is_silent)
+            && Some(voice_idx) != excluded_voice_idx
+        {
             return voice_idx;
         }
 
-        let mut min_releasing_amp = f32::INFINITY;
-        let mut min_releasing_idx: Option<usize> = None;
-        for (idx, voice) in self.voices.iter().enumerate() {
-            if voice.is_releasing {
-                let amp = voice.line1_env.dca.output.max(voice.line2_env.dca.output);
-                if amp < min_releasing_amp {
-                    min_releasing_amp = amp;
-                    min_releasing_idx = Some(idx);
-                }
-            }
-        }
-
-        if let Some(idx) = min_releasing_idx {
-            return idx;
-        }
-
-        let mut min_sustained_amp = f32::INFINITY;
-        let mut min_sustained_idx: Option<usize> = None;
-        for (idx, voice) in self.voices.iter().enumerate() {
-            if !voice.is_releasing && self.voice_has_reached_sustain(idx) {
-                let amp = voice.line1_env.dca.output.max(voice.line2_env.dca.output);
-                if amp < min_sustained_amp {
-                    min_sustained_amp = amp;
-                    min_sustained_idx = Some(idx);
-                }
-            }
-        }
-
-        if let Some(idx) = min_sustained_idx {
-            return idx;
-        }
-
-        // If every voice is currently active, steal the quietest one instead
-        // of always voice 0 to reduce audible discontinuities.
-        let mut min_active_amp = f32::INFINITY;
-        let mut min_active_idx = 0usize;
-        for (idx, voice) in self.voices.iter().enumerate() {
-            let amp = voice.line1_env.dca.output.max(voice.line2_env.dca.output);
-            if amp < min_active_amp {
-                min_active_amp = amp;
-                min_active_idx = idx;
-            }
-        }
-
-        min_active_idx
-    }
-
-    fn voice_has_reached_sustain(&self, voice_idx: usize) -> bool {
-        let voice = &self.voices[voice_idx];
-        let p = self.params.as_ref();
-
-        let line1_active = matches!(
-            p.line_select,
-            crate::params::LineSelect::L1
-                | crate::params::LineSelect::L1PlusL1Prime
-                | crate::params::LineSelect::L1PlusL2Prime
-        );
-        let line2_active = matches!(
-            p.line_select,
-            crate::params::LineSelect::L2 | crate::params::LineSelect::L1PlusL2Prime
-        );
-
-        let line1_reached =
-            !line1_active || voice.line1_env.dca.step >= p.line1.dca_env.sustain_step;
-        let line2_reached =
-            !line2_active || voice.line2_env.dca.step >= p.line2.dca_env.sustain_step;
-
-        line1_reached && line2_reached
+        self.voices
+            .iter()
+            .enumerate()
+            .filter(|(idx, _)| Some(*idx) != excluded_voice_idx)
+            .filter(|(_, voice)| !voice.is_silent && voice.note.is_some())
+            .min_by_key(|(_, voice)| voice.note_on_sequence)
+            .map(|(idx, _)| idx)
+            .or(excluded_voice_idx)
+            .unwrap_or(0)
     }
 
     fn handle_mono_note_on(&mut self, note: u8, frequency: f32, velocity: f32) {
-        if let Some(entry) = self.active_notes.iter().find(|e| e.note == note)
+        self.track_mono_held_note(note);
+
+        if let Some(pending) = self.pending_mono_retrigger {
+            self.queue_pending_mono_retrigger(note, frequency, velocity, pending.source_voice_idx);
+            return;
+        }
+
+        if let Some(entry) = self.active_notes.iter().find(|e| e.note == note).cloned()
             && self.voices[entry.voice_idx].note == Some(note)
         {
-            let voice = &mut self.voices[entry.voice_idx];
-            voice.frequency = frequency;
-            voice.target_freq = frequency;
-            voice.velocity = velocity;
+            self.queue_mono_retrigger_from_voice(note, frequency, velocity, entry.voice_idx);
+            return;
+        }
+
+        if let Some(voice_idx) = self.sustained_voice_index_for_note(note) {
+            self.queue_mono_retrigger_from_voice(note, frequency, velocity, voice_idx);
             return;
         }
 
@@ -292,27 +438,43 @@ impl CosmoProcessor {
             return;
         }
 
+        let source_voice_idx = self.mono_active_voice_index().or_else(|| {
+            self.voices
+                .iter()
+                .position(|voice| !voice.is_silent && voice.note.is_some())
+        });
+        if let Some(source_voice_idx) = source_voice_idx {
+            self.queue_mono_retrigger_from_voice(note, frequency, velocity, source_voice_idx);
+            return;
+        }
+
         let new_voice_idx = self.find_poly_voice_for_note_on();
         self.initialize_voice_for_note(new_voice_idx, note, frequency, velocity);
         self.replace_active_note_entry(new_voice_idx, note);
-        self.mono_stack.clear();
-        self.quick_fade_other_mono_voices(new_voice_idx);
+        self.retire_duplicate_note_voices(note, new_voice_idx);
     }
 
     fn handle_poly_note_on(&mut self, note: u8, frequency: f32, velocity: f32) {
-        if let Some(entry) = self.active_notes.iter().find(|e| e.note == note).cloned() {
-            let voice = &mut self.voices[entry.voice_idx];
-            if voice.note == Some(note) {
-                voice.frequency = frequency;
-                voice.target_freq = frequency;
-                voice.velocity = velocity;
-                return;
-            }
+        if let Some(entry) = self.active_notes.iter().find(|e| e.note == note).cloned()
+            && self.voices[entry.voice_idx].note == Some(note)
+        {
+            self.initialize_voice_for_note(entry.voice_idx, note, frequency, velocity);
+            self.replace_active_note_entry(entry.voice_idx, note);
+            self.retire_duplicate_note_voices(note, entry.voice_idx);
+            return;
+        }
+
+        if let Some(voice_idx) = self.sustained_voice_index_for_note(note) {
+            let new_voice_idx = self.find_poly_voice_for_note_on_excluding(Some(voice_idx));
+            self.initialize_voice_for_note(new_voice_idx, note, frequency, velocity);
+            self.replace_active_note_entry(new_voice_idx, note);
+            return;
         }
 
         let voice_idx = self.find_poly_voice_for_note_on();
         self.initialize_voice_for_note(voice_idx, note, frequency, velocity);
         self.replace_active_note_entry(voice_idx, note);
+        self.retire_duplicate_note_voices(note, voice_idx);
     }
 
     /// Handle a note-on event.
@@ -345,7 +507,14 @@ impl CosmoProcessor {
     /// Handle a note-off event.
     pub fn note_off(&mut self, note: u8) {
         if self.params.poly_mode == PolyMode::Mono {
-            self.mono_stack.retain(|e| e.note != note);
+            self.release_mono_held_note(note);
+            self.remove_mono_stack_note(note);
+            if self
+                .pending_mono_retrigger
+                .is_some_and(|pending| pending.note == note)
+            {
+                self.clear_pending_mono_retrigger();
+            }
         }
 
         let entry = match self.active_notes.iter().find(|e| e.note == note).cloned() {
@@ -362,21 +531,14 @@ impl CosmoProcessor {
         if self.sustain_on {
             self.voices[voice_idx].sustained = true;
             self.voices[voice_idx].mod_env.note_off();
+            if self.params.poly_mode == PolyMode::Mono {
+                self.mono_stack.clear();
+            }
             return;
         }
 
         if self.params.poly_mode == PolyMode::Mono {
-            if let Some(prev) = self.mono_stack.last() {
-                if prev.voice.is_silent {
-                    self.mono_stack.pop();
-                    self.start_release(voice_idx);
-                } else {
-                    let voice = &mut self.voices[voice_idx];
-                    *voice = prev.voice.clone();
-                    voice.note = Some(prev.note);
-                    self.replace_active_note_entry(voice_idx, prev.note);
-                }
-            } else {
+            if !self.queue_mono_resume_previous_held_note(voice_idx) {
                 self.start_release(voice_idx);
             }
         } else {
