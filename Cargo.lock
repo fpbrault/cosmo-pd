@@ -216,9 +216,9 @@ dependencies = [
  "jni 0.22.4",
  "libc",
  "log",
- "ndk 0.9.0",
+ "ndk",
  "ndk-context",
- "ndk-sys 0.6.0+11769913",
+ "ndk-sys",
  "num_enum",
  "thiserror 2.0.18",
 ]
@@ -528,9 +528,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
-name = "baseview"
-version = "0.1.1"
-source = "git+https://github.com/truce-audio/baseview.git#ed5d57b0379495e7a75f0bde77c647a40f860aac"
+name = "baseview-truce"
+version = "0.1.1-truce.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a17dd2f90f82f5c347a8587765d4b8d749300a7143491e0cdc1f18cf7cc2446"
 dependencies = [
  "keyboard-types",
  "nix",
@@ -544,24 +545,6 @@ dependencies = [
  "windows-sys 0.61.2",
  "x11-dl",
  "x11rb",
-]
-
-[[package]]
-name = "bindgen"
-version = "0.72.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "993776b509cfb49c750f11b8f07a46fa23e0a1386ffc01fb1e7d343efc387895"
-dependencies = [
- "bitflags 2.11.1",
- "cexpr",
- "clang-sys",
- "itertools",
- "proc-macro2",
- "quote",
- "regex",
- "rustc-hash 2.1.2",
- "shlex",
- "syn 2.0.117",
 ]
 
 [[package]]
@@ -605,9 +588,6 @@ name = "bitflags"
 version = "2.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c4512299f36f043ab09a583e57bceb5a5aab7a73db1805848e8fef3c9e8c78b3"
-dependencies = [
- "serde_core",
-]
 
 [[package]]
 name = "block"
@@ -794,15 +774,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6d43a04d8753f35258c91f8ec639f792891f748a1edbd759cf1dcea3382ad83c"
 
 [[package]]
-name = "cexpr"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6fac387a98bb7c37292057cffc56d62ecb629900026402633ae9160df93a8766"
-dependencies = [
- "nom",
-]
-
-[[package]]
 name = "cfg-expr"
 version = "0.15.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -858,17 +829,6 @@ checksum = "57663b653d948a338bfb3eeba9bb2fd5fcfaecb9e199e87e1eda4d9e8b240fd9"
 dependencies = [
  "ciborium-io",
  "half",
-]
-
-[[package]]
-name = "clang-sys"
-version = "1.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b023947811758c97c59bf9d1c188fd619ad4718dcaa767947df1cadb14f39f4"
-dependencies = [
- "glob",
- "libc",
- "libloading 0.8.9",
 ]
 
 [[package]]
@@ -942,23 +902,13 @@ dependencies = [
 
 [[package]]
 name = "codespan-reporting"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3538270d33cc669650c4b093848450d380def10c331d38c768e34cac80576e6e"
-dependencies = [
- "termcolor",
- "unicode-width 0.1.14",
-]
-
-[[package]]
-name = "codespan-reporting"
 version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af491d569909a7e4dee0ad7db7f5341fef5c614d5b8ec8cf765732aba3cff681"
 dependencies = [
  "serde",
  "termcolor",
- "unicode-width 0.2.2",
+ "unicode-width",
 ]
 
 [[package]]
@@ -1075,17 +1025,6 @@ dependencies = [
 
 [[package]]
 name = "coreaudio-rs"
-version = "0.11.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "321077172d79c662f64f5071a03120748d5bb652f5231570141be24cfcd2bace"
-dependencies = [
- "bitflags 1.3.2",
- "core-foundation-sys",
- "coreaudio-sys",
-]
-
-[[package]]
-name = "coreaudio-rs"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1aae284fbaf7d27aa0e292f7677dfbe26503b0d555026f702940805a630eac17"
@@ -1096,15 +1035,6 @@ dependencies = [
  "objc2-core-audio",
  "objc2-core-audio-types",
  "objc2-core-foundation",
-]
-
-[[package]]
-name = "coreaudio-sys"
-version = "0.2.17"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ceec7a6067e62d6f931a2baf6f3a751f4a892595bcec1461a3c94ef9949864b6"
-dependencies = [
- "bindgen",
 ]
 
 [[package]]
@@ -1168,7 +1098,7 @@ name = "cosmo-synth-debug"
 version = "0.1.0"
 dependencies = [
  "cosmo-synth-engine",
- "cpal 0.17.1",
+ "cpal",
  "eframe",
  "serde_json",
 ]
@@ -1198,41 +1128,18 @@ dependencies = [
 
 [[package]]
 name = "cpal"
-version = "0.15.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "873dab07c8f743075e57f524c583985fbaf745602acbe916a01539364369a779"
-dependencies = [
- "alsa 0.9.1",
- "core-foundation-sys",
- "coreaudio-rs 0.11.3",
- "dasp_sample",
- "jni 0.21.1",
- "js-sys",
- "libc",
- "mach2 0.4.3",
- "ndk 0.8.0",
- "ndk-context",
- "oboe",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
- "windows 0.54.0",
-]
-
-[[package]]
-name = "cpal"
 version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b1f9c7312f19fc2fa12fd7acaf38de54e8320ba10d1a02dcbe21038def51ccb"
 dependencies = [
  "alsa 0.10.0",
- "coreaudio-rs 0.13.0",
+ "coreaudio-rs",
  "dasp_sample",
  "jni 0.21.1",
  "js-sys",
  "libc",
- "mach2 0.5.0",
- "ndk 0.9.0",
+ "mach2",
+ "ndk",
  "ndk-context",
  "num-derive",
  "num-traits",
@@ -1619,7 +1526,7 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "web-time",
- "wgpu 29.0.3",
+ "wgpu",
  "windows-sys 0.61.2",
  "winit",
 ]
@@ -1658,7 +1565,7 @@ dependencies = [
  "thiserror 2.0.18",
  "type-map",
  "web-time",
- "wgpu 29.0.3",
+ "wgpu",
  "winit",
 ]
 
@@ -1692,7 +1599,7 @@ checksum = "6caa4eca47cc2358e2c5ae60843a94118e338f87099c6af4170e6e968e8d77cb"
 dependencies = [
  "bytemuck",
  "egui",
- "glow 0.17.0",
+ "glow",
  "log",
  "memoffset 0.9.1",
  "profiling",
@@ -2261,24 +2168,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "glob"
-version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0cc23270f6e1808e30a928bdc84dea0b9b4136a8bc82338574f23baf47bbd280"
-
-[[package]]
-name = "glow"
-version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c5e5ea60d70410161c8bf5da3fdfeaa1c72ed2c15f8bbb9d19fe3a4fad085f08"
-dependencies = [
- "js-sys",
- "slotmap",
- "wasm-bindgen",
- "web-sys",
-]
-
-[[package]]
 name = "glow"
 version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2365,37 +2254,6 @@ dependencies = [
  "glib-sys",
  "libc",
  "system-deps",
-]
-
-[[package]]
-name = "gpu-alloc"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fbcd2dba93594b227a1f57ee09b8b9da8892c34d55aa332e034a228d0fe6a171"
-dependencies = [
- "bitflags 2.11.1",
- "gpu-alloc-types",
-]
-
-[[package]]
-name = "gpu-alloc-types"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98ff03b468aa837d70984d55f5d3f846f6ec31fe34bbb97c4f85219caeee1ca4"
-dependencies = [
- "bitflags 2.11.1",
-]
-
-[[package]]
-name = "gpu-allocator"
-version = "0.27.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c151a2a5ef800297b4e79efa4f4bec035c5f51d5ae587287c9b952bdf734cacd"
-dependencies = [
- "log",
- "presser",
- "thiserror 1.0.69",
- "windows 0.58.0",
 ]
 
 [[package]]
@@ -3031,15 +2889,6 @@ dependencies = [
 
 [[package]]
 name = "mach2"
-version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d640282b302c0bb0a2a8e0233ead9035e3bed871f0b7e81fe4a1ec829765db44"
-dependencies = [
- "libc",
-]
-
-[[package]]
-name = "mach2"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a1b95cd5421ec55b445b5ae102f5ea0e768de1f82bd3001e11f426c269c3aea"
@@ -3101,21 +2950,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "metal"
-version = "0.31.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f569fb946490b5743ad69813cb19629130ce9374034abe31614a36402d18f99e"
-dependencies = [
- "bitflags 2.11.1",
- "block",
- "core-graphics-types 0.1.3",
- "foreign-types",
- "log",
- "objc",
- "paste",
-]
-
-[[package]]
 name = "midir"
 version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3131,12 +2965,6 @@ dependencies = [
  "web-sys",
  "windows 0.56.0",
 ]
-
-[[package]]
-name = "minimal-lexical"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 
 [[package]]
 name = "miniz_oxide"
@@ -3160,28 +2988,6 @@ dependencies = [
 
 [[package]]
 name = "naga"
-version = "24.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e380993072e52eef724eddfcde0ed013b0c023c3f0417336ed041aa9f076994e"
-dependencies = [
- "arrayvec",
- "bit-set 0.8.0",
- "bitflags 2.11.1",
- "cfg_aliases",
- "codespan-reporting 0.11.1",
- "hexf-parse",
- "indexmap",
- "log",
- "rustc-hash 1.1.0",
- "spirv 0.3.0+sdk-1.3.268.0",
- "strum",
- "termcolor",
- "thiserror 2.0.18",
- "unicode-xid",
-]
-
-[[package]]
-name = "naga"
 version = "29.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0dd91265cc2454558f659b3b4b9640f0ddb8cc6521277f166b8a8c181c898079"
@@ -3191,7 +2997,7 @@ dependencies = [
  "bitflags 2.11.1",
  "cfg-if",
  "cfg_aliases",
- "codespan-reporting 0.13.1",
+ "codespan-reporting",
  "half",
  "hashbrown 0.16.1",
  "hexf-parse",
@@ -3201,23 +3007,9 @@ dependencies = [
  "num-traits",
  "once_cell",
  "rustc-hash 1.1.0",
- "spirv 0.4.0+sdk-1.4.341.0",
+ "spirv",
  "thiserror 2.0.18",
  "unicode-ident",
-]
-
-[[package]]
-name = "ndk"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2076a31b7010b17a38c01907c45b945e8f11495ee4dd588309718901b1f7a5b7"
-dependencies = [
- "bitflags 2.11.1",
- "jni-sys 0.3.1",
- "log",
- "ndk-sys 0.5.0+25.2.9519653",
- "num_enum",
- "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -3229,7 +3021,7 @@ dependencies = [
  "bitflags 2.11.1",
  "jni-sys 0.3.1",
  "log",
- "ndk-sys 0.6.0+11769913",
+ "ndk-sys",
  "num_enum",
  "raw-window-handle 0.6.2",
  "thiserror 1.0.69",
@@ -3240,15 +3032,6 @@ name = "ndk-context"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "27b02d87554356db9e9a873add8782d4ea6e3e58ea071a9adb9a2e8ddb884a8b"
-
-[[package]]
-name = "ndk-sys"
-version = "0.5.0+25.2.9519653"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c196769dd60fd4f363e11d948139556a344e79d451aeb2fa2fd040738ef7691"
-dependencies = [
- "jni-sys 0.3.1",
-]
 
 [[package]]
 name = "ndk-sys"
@@ -3289,16 +3072,6 @@ name = "nohash-hasher"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
-
-[[package]]
-name = "nom"
-version = "7.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d273983c5a657a70a3e8f2a01329822f3b8c8172b73826411a55751e404a0a4a"
-dependencies = [
- "memchr",
- "minimal-lexical",
-]
 
 [[package]]
 name = "num-conv"
@@ -3874,29 +3647,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "oboe"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8b61bebd49e5d43f5f8cc7ee2891c16e0f41ec7954d36bcb6c14c5e0de867fb"
-dependencies = [
- "jni 0.21.1",
- "ndk 0.8.0",
- "ndk-context",
- "num-derive",
- "num-traits",
- "oboe-sys",
-]
-
-[[package]]
-name = "oboe-sys"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c8bb09a4a2b1d668170cfe0a7d5bc103f8999fb316c98099b6a9939c9f2e79d"
-dependencies = [
- "cc",
-]
-
-[[package]]
 name = "once_cell"
 version = "1.21.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3922,15 +3672,6 @@ checksum = "a570f6bca41d29acb2139229a7c873ec99bc9a313bd10804081d89bfac8ff329"
 dependencies = [
  "libc",
  "libredox",
-]
-
-[[package]]
-name = "ordered-float"
-version = "4.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7bb71e1b3fa6ca1c61f383464aaf2bb0e2f8e772a1f01d486832464de363b951"
-dependencies = [
- "num-traits",
 ]
 
 [[package]]
@@ -4024,12 +3765,6 @@ dependencies = [
  "smallvec",
  "windows-link 0.2.1",
 ]
-
-[[package]]
-name = "paste"
-version = "1.0.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 
 [[package]]
 name = "peniko"
@@ -4964,15 +4699,6 @@ dependencies = [
 
 [[package]]
 name = "spirv"
-version = "0.3.0+sdk-1.3.268.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eda41003dc44290527a59b13432d4a0379379fa074b70174882adfbdfd917844"
-dependencies = [
- "bitflags 2.11.1",
-]
-
-[[package]]
-name = "spirv"
 version = "0.4.0+sdk-1.4.341.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d9571ea910ebd84c86af4b3ed27f9dbdc6ad06f17c5f96146b2b671e2976744f"
@@ -5020,28 +4746,6 @@ dependencies = [
  "phf_shared",
  "proc-macro2",
  "quote",
-]
-
-[[package]]
-name = "strum"
-version = "0.26.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8fec0f0aef304996cf250b31b5a10dee7980c85da9d759361292b8bca5a18f06"
-dependencies = [
- "strum_macros",
-]
-
-[[package]]
-name = "strum_macros"
-version = "0.26.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c6bee85a5a24955dc440386795aa378cd9cf82acd5f764469152d2270e581be"
-dependencies = [
- "heck 0.5.0",
- "proc-macro2",
- "quote",
- "rustversion",
- "syn 2.0.117",
 ]
 
 [[package]]
@@ -5424,25 +5128,32 @@ dependencies = [
 
 [[package]]
 name = "truce"
-version = "0.45.4"
-source = "git+https://github.com/truce-audio/truce.git?tag=v0.45.4#2efb8a2b5a24c591a9145fb6178cb643619c28d8"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
 dependencies = [
  "truce-core",
  "truce-derive",
- "truce-gui",
+ "truce-gui-types",
  "truce-loader",
  "truce-params",
+ "truce-plugin",
 ]
 
 [[package]]
 name = "truce-aax"
-version = "0.45.4"
-source = "git+https://github.com/truce-audio/truce.git?tag=v0.45.4#2efb8a2b5a24c591a9145fb6178cb643619c28d8"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
 dependencies = [
  "crossbeam-queue",
+ "truce-aax-bridge",
  "truce-core",
  "truce-params",
 ]
+
+[[package]]
+name = "truce-aax-bridge"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
 
 [[package]]
 name = "truce-au"
@@ -5457,8 +5168,8 @@ dependencies = [
 
 [[package]]
 name = "truce-build"
-version = "0.45.4"
-source = "git+https://github.com/truce-audio/truce.git?tag=v0.45.4#2efb8a2b5a24c591a9145fb6178cb643619c28d8"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
 dependencies = [
  "serde",
  "toml 1.1.2+spec-1.1.0",
@@ -5466,8 +5177,8 @@ dependencies = [
 
 [[package]]
 name = "truce-clap"
-version = "0.45.4"
-source = "git+https://github.com/truce-audio/truce.git?tag=v0.45.4#2efb8a2b5a24c591a9145fb6178cb643619c28d8"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
 dependencies = [
  "clap-sys",
  "crossbeam-queue",
@@ -5477,8 +5188,8 @@ dependencies = [
 
 [[package]]
 name = "truce-core"
-version = "0.45.4"
-source = "git+https://github.com/truce-audio/truce.git?tag=v0.45.4#2efb8a2b5a24c591a9145fb6178cb643619c28d8"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
 dependencies = [
  "png",
  "truce-params",
@@ -5486,9 +5197,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "truce-cpu"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
+dependencies = [
+ "fontdue",
+ "tiny-skia 0.12.0",
+ "truce-core",
+ "truce-font",
+ "truce-gui-types",
+]
+
+[[package]]
 name = "truce-derive"
-version = "0.45.4"
-source = "git+https://github.com/truce-audio/truce.git?tag=v0.45.4#2efb8a2b5a24c591a9145fb6178cb643619c28d8"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5501,8 +5224,8 @@ dependencies = [
 
 [[package]]
 name = "truce-driver"
-version = "0.45.4"
-source = "git+https://github.com/truce-audio/truce.git?tag=v0.45.4#2efb8a2b5a24c591a9145fb6178cb643619c28d8"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
 dependencies = [
  "truce-core",
  "truce-params",
@@ -5510,33 +5233,34 @@ dependencies = [
 
 [[package]]
 name = "truce-font"
-version = "0.45.4"
-source = "git+https://github.com/truce-audio/truce.git?tag=v0.45.4#2efb8a2b5a24c591a9145fb6178cb643619c28d8"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
 
 [[package]]
 name = "truce-gpu"
-version = "0.45.4"
-source = "git+https://github.com/truce-audio/truce.git?tag=v0.45.4#2efb8a2b5a24c591a9145fb6178cb643619c28d8"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
 dependencies = [
- "baseview",
+ "baseview-truce",
  "bytemuck",
  "fontdue",
+ "log",
  "lyon_tessellation",
  "pollster",
  "raw-window-handle 0.5.2",
  "truce-core",
- "truce-gui",
+ "truce-font",
+ "truce-gui-types",
  "truce-params",
- "wgpu 24.0.5",
+ "wgpu",
 ]
 
 [[package]]
 name = "truce-gui"
-version = "0.45.4"
-source = "git+https://github.com/truce-audio/truce.git?tag=v0.45.4#2efb8a2b5a24c591a9145fb6178cb643619c28d8"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
 dependencies = [
- "baseview",
- "fontdue",
+ "baseview-truce",
  "log",
  "objc",
  "objc2 0.6.4",
@@ -5545,19 +5269,18 @@ dependencies = [
  "objc2-ui-kit 0.3.2",
  "pollster",
  "raw-window-handle 0.5.2",
- "tiny-skia 0.12.0",
  "truce-core",
- "truce-font",
+ "truce-cpu",
  "truce-gui-types",
  "truce-params",
  "truce-plugin",
- "wgpu 24.0.5",
+ "wgpu",
 ]
 
 [[package]]
 name = "truce-gui-types"
-version = "0.45.4"
-source = "git+https://github.com/truce-audio/truce.git?tag=v0.45.4#2efb8a2b5a24c591a9145fb6178cb643619c28d8"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
 dependencies = [
  "objc2 0.6.4",
  "truce-core",
@@ -5565,23 +5288,23 @@ dependencies = [
 
 [[package]]
 name = "truce-loader"
-version = "0.45.4"
-source = "git+https://github.com/truce-audio/truce.git?tag=v0.45.4#2efb8a2b5a24c591a9145fb6178cb643619c28d8"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
 dependencies = [
  "crc32fast",
  "libloading 0.9.0",
  "log",
  "parking_lot",
  "truce-core",
- "truce-gpu",
- "truce-gui",
+ "truce-gui-types",
  "truce-params",
+ "truce-plugin",
 ]
 
 [[package]]
 name = "truce-lv2"
-version = "0.45.4"
-source = "git+https://github.com/truce-audio/truce.git?tag=v0.45.4#2efb8a2b5a24c591a9145fb6178cb643619c28d8"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
 dependencies = [
  "objc",
  "truce-build",
@@ -5591,16 +5314,16 @@ dependencies = [
 
 [[package]]
 name = "truce-params"
-version = "0.45.4"
-source = "git+https://github.com/truce-audio/truce.git?tag=v0.45.4#2efb8a2b5a24c591a9145fb6178cb643619c28d8"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
 dependencies = [
  "bitflags 2.11.1",
 ]
 
 [[package]]
 name = "truce-plugin"
-version = "0.45.4"
-source = "git+https://github.com/truce-audio/truce.git?tag=v0.45.4#2efb8a2b5a24c591a9145fb6178cb643619c28d8"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
 dependencies = [
  "truce-core",
  "truce-gui-types",
@@ -5613,11 +5336,11 @@ version = "0.45.4"
 
 [[package]]
 name = "truce-standalone"
-version = "0.45.4"
-source = "git+https://github.com/truce-audio/truce.git?tag=v0.45.4#2efb8a2b5a24c591a9145fb6178cb643619c28d8"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
 dependencies = [
- "baseview",
- "cpal 0.15.3",
+ "baseview-truce",
+ "cpal",
  "crossbeam-queue",
  "dirs 5.0.1",
  "keyboard-types",
@@ -5636,8 +5359,8 @@ dependencies = [
 
 [[package]]
 name = "truce-test"
-version = "0.45.4"
-source = "git+https://github.com/truce-audio/truce.git?tag=v0.45.4#2efb8a2b5a24c591a9145fb6178cb643619c28d8"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
 dependencies = [
  "png",
  "toml 1.1.2+spec-1.1.0",
@@ -5649,13 +5372,13 @@ dependencies = [
 
 [[package]]
 name = "truce-utils"
-version = "0.45.4"
-source = "git+https://github.com/truce-audio/truce.git?tag=v0.45.4#2efb8a2b5a24c591a9145fb6178cb643619c28d8"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
 
 [[package]]
 name = "truce-vst2"
-version = "0.45.4"
-source = "git+https://github.com/truce-audio/truce.git?tag=v0.45.4#2efb8a2b5a24c591a9145fb6178cb643619c28d8"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
 dependencies = [
  "cc",
  "crossbeam-queue",
@@ -5665,8 +5388,8 @@ dependencies = [
 
 [[package]]
 name = "truce-vst3"
-version = "0.45.4"
-source = "git+https://github.com/truce-audio/truce.git?tag=v0.45.4#2efb8a2b5a24c591a9145fb6178cb643619c28d8"
+version = "0.49.3"
+source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06318ac93bad3267d3a8a276da238"
 dependencies = [
  "cc",
  "crossbeam-queue",
@@ -5723,12 +5446,6 @@ name = "unicode-segmentation"
 version = "1.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9629274872b2bfaf8d66f5f15725007f635594914870f65218920345aa11aa8c"
-
-[[package]]
-name = "unicode-width"
-version = "0.1.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7dd6e30e90baa6f72411720665d41d89b9a3d039dc45b8faea1ddd07f617f6af"
 
 [[package]]
 name = "unicode-width"
@@ -6210,31 +5927,6 @@ checksum = "a28ac98ddc8b9274cb41bb4d9d4d5c425b6020c50c46f25559911905610b4a88"
 
 [[package]]
 name = "wgpu"
-version = "24.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b0b3436f0729f6cdf2e6e9201f3d39dc95813fad61d826c1ed07918b4539353"
-dependencies = [
- "arrayvec",
- "bitflags 2.11.1",
- "cfg_aliases",
- "document-features",
- "js-sys",
- "log",
- "parking_lot",
- "profiling",
- "raw-window-handle 0.6.2",
- "smallvec",
- "static_assertions",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
- "wgpu-core 24.0.5",
- "wgpu-hal 24.0.4",
- "wgpu-types 24.0.0",
-]
-
-[[package]]
-name = "wgpu"
 version = "29.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bb3feacc458f7bee8bc1737149b42b6c731aa461039a4264a67bb6681646b250"
@@ -6248,7 +5940,7 @@ dependencies = [
  "hashbrown 0.16.1",
  "js-sys",
  "log",
- "naga 29.0.3",
+ "naga",
  "parking_lot",
  "portable-atomic",
  "profiling",
@@ -6258,34 +5950,9 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
- "wgpu-core 29.0.3",
- "wgpu-hal 29.0.3",
- "wgpu-types 29.0.3",
-]
-
-[[package]]
-name = "wgpu-core"
-version = "24.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f0aa306497a238d169b9dc70659105b4a096859a34894544ca81719242e1499"
-dependencies = [
- "arrayvec",
- "bit-vec 0.8.0",
- "bitflags 2.11.1",
- "cfg_aliases",
- "document-features",
- "indexmap",
- "log",
- "naga 24.0.0",
- "once_cell",
- "parking_lot",
- "profiling",
- "raw-window-handle 0.6.2",
- "rustc-hash 1.1.0",
- "smallvec",
- "thiserror 2.0.18",
- "wgpu-hal 24.0.4",
- "wgpu-types 24.0.0",
+ "wgpu-core",
+ "wgpu-hal",
+ "wgpu-types",
 ]
 
 [[package]]
@@ -6304,7 +5971,7 @@ dependencies = [
  "hashbrown 0.16.1",
  "indexmap",
  "log",
- "naga 29.0.3",
+ "naga",
  "once_cell",
  "parking_lot",
  "portable-atomic",
@@ -6317,9 +5984,9 @@ dependencies = [
  "wgpu-core-deps-emscripten",
  "wgpu-core-deps-wasm",
  "wgpu-core-deps-windows-linux-android",
- "wgpu-hal 29.0.3",
+ "wgpu-hal",
  "wgpu-naga-bridge",
- "wgpu-types 29.0.3",
+ "wgpu-types",
 ]
 
 [[package]]
@@ -6328,7 +5995,7 @@ version = "29.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62e51b5447e144b3dbba4feb01f80f4fa21696fa0cd99afb2c3df1affd6fdb28"
 dependencies = [
- "wgpu-hal 29.0.3",
+ "wgpu-hal",
 ]
 
 [[package]]
@@ -6337,7 +6004,7 @@ version = "29.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3487cd6293a963bc5c0c0396f6a2192043c50003c07f4efdccbad3d90ec9d819"
 dependencies = [
- "wgpu-hal 29.0.3",
+ "wgpu-hal",
 ]
 
 [[package]]
@@ -6346,7 +6013,7 @@ version = "29.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c2f2fb042f36920771deb0b966543c5751b18f3d327760ffc90f74e20b2dcd4"
 dependencies = [
- "wgpu-hal 29.0.3",
+ "wgpu-hal",
 ]
 
 [[package]]
@@ -6355,53 +6022,7 @@ version = "29.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1bfb01076d0aa08b0ba9bd741e178b5cc440f5abe99d9581323a4c8b5d1a1916"
 dependencies = [
- "wgpu-hal 29.0.3",
-]
-
-[[package]]
-name = "wgpu-hal"
-version = "24.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f112f464674ca69f3533248508ee30cb84c67cf06c25ff6800685f5e0294e259"
-dependencies = [
- "android_system_properties",
- "arrayvec",
- "ash",
- "bit-set 0.8.0",
- "bitflags 2.11.1",
- "block",
- "bytemuck",
- "cfg_aliases",
- "core-graphics-types 0.1.3",
- "glow 0.16.0",
- "glutin_wgl_sys",
- "gpu-alloc",
- "gpu-allocator 0.27.0",
- "gpu-descriptor",
- "js-sys",
- "khronos-egl",
- "libc",
- "libloading 0.8.9",
- "log",
- "metal",
- "naga 24.0.0",
- "ndk-sys 0.5.0+25.2.9519653",
- "objc",
- "once_cell",
- "ordered-float 4.6.0",
- "parking_lot",
- "profiling",
- "range-alloc",
- "raw-window-handle 0.6.2",
- "renderdoc-sys",
- "rustc-hash 1.1.0",
- "smallvec",
- "thiserror 2.0.18",
- "wasm-bindgen",
- "web-sys",
- "wgpu-types 24.0.0",
- "windows 0.58.0",
- "windows-core 0.58.0",
+ "wgpu-hal",
 ]
 
 [[package]]
@@ -6419,9 +6040,9 @@ dependencies = [
  "bytemuck",
  "cfg-if",
  "cfg_aliases",
- "glow 0.17.0",
+ "glow",
  "glutin_wgl_sys",
- "gpu-allocator 0.28.0",
+ "gpu-allocator",
  "gpu-descriptor",
  "hashbrown 0.16.1",
  "js-sys",
@@ -6429,15 +6050,15 @@ dependencies = [
  "libc",
  "libloading 0.8.9",
  "log",
- "naga 29.0.3",
- "ndk-sys 0.6.0+11769913",
+ "naga",
+ "ndk-sys",
  "objc2 0.6.4",
  "objc2-core-foundation",
  "objc2-foundation 0.3.2",
  "objc2-metal 0.3.2",
  "objc2-quartz-core 0.3.2",
  "once_cell",
- "ordered-float 5.3.0",
+ "ordered-float",
  "parking_lot",
  "portable-atomic",
  "portable-atomic-util",
@@ -6452,7 +6073,7 @@ dependencies = [
  "wayland-sys",
  "web-sys",
  "wgpu-naga-bridge",
- "wgpu-types 29.0.3",
+ "wgpu-types",
  "windows 0.62.2",
  "windows-core 0.62.2",
  "windows-result 0.4.1",
@@ -6464,20 +6085,8 @@ version = "29.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59c654c483f058800972c3645e95388a7eca31bf9fe1933bc20e036588a0be02"
 dependencies = [
- "naga 29.0.3",
- "wgpu-types 29.0.3",
-]
-
-[[package]]
-name = "wgpu-types"
-version = "24.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50ac044c0e76c03a0378e7786ac505d010a873665e2d51383dcff8dd227dc69c"
-dependencies = [
- "bitflags 2.11.1",
- "js-sys",
- "log",
- "web-sys",
+ "naga",
+ "wgpu-types",
 ]
 
 [[package]]
@@ -6527,31 +6136,11 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 
 [[package]]
 name = "windows"
-version = "0.54.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9252e5725dbed82865af151df558e754e4a3c2c30818359eb17465f1346a1b49"
-dependencies = [
- "windows-core 0.54.0",
- "windows-targets 0.52.6",
-]
-
-[[package]]
-name = "windows"
 version = "0.56.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1de69df01bdf1ead2f4ac895dc77c9351aefff65b2f3db429a343f9cbf05e132"
 dependencies = [
  "windows-core 0.56.0",
- "windows-targets 0.52.6",
-]
-
-[[package]]
-name = "windows"
-version = "0.58.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd04d41d93c4992d421894c18c8b43496aa748dd4c081bac0dc93eb0489272b6"
-dependencies = [
- "windows-core 0.58.0",
  "windows-targets 0.52.6",
 ]
 
@@ -6600,16 +6189,6 @@ dependencies = [
 
 [[package]]
 name = "windows-core"
-version = "0.54.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12661b9c89351d684a50a8a643ce5f608e20243b9fb84687800163429f161d65"
-dependencies = [
- "windows-result 0.1.2",
- "windows-targets 0.52.6",
-]
-
-[[package]]
-name = "windows-core"
 version = "0.56.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4698e52ed2d08f8658ab0c39512a7c00ee5fe2688c65f8c0a4f06750d729f2a6"
@@ -6617,19 +6196,6 @@ dependencies = [
  "windows-implement 0.56.0",
  "windows-interface 0.56.0",
  "windows-result 0.1.2",
- "windows-targets 0.52.6",
-]
-
-[[package]]
-name = "windows-core"
-version = "0.58.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ba6d44ec8c2591c134257ce647b7ea6b20335bf6379a27dac5f1641fcf59f99"
-dependencies = [
- "windows-implement 0.58.0",
- "windows-interface 0.58.0",
- "windows-result 0.2.0",
- "windows-strings 0.1.0",
  "windows-targets 0.52.6",
 ]
 
@@ -6694,17 +6260,6 @@ dependencies = [
 
 [[package]]
 name = "windows-implement"
-version = "0.58.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2bbd5b46c938e506ecbce286b6628a02171d56153ba733b6c741fc627ec9579b"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.117",
-]
-
-[[package]]
-name = "windows-implement"
 version = "0.60.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "053e2e040ab57b9dc951b72c264860db7eb3b0200ba345b4e4c3b14f67855ddf"
@@ -6719,17 +6274,6 @@ name = "windows-interface"
 version = "0.56.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08990546bf4edef8f431fa6326e032865f27138718c587dc21bc0265bbcb57cc"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.117",
-]
-
-[[package]]
-name = "windows-interface"
-version = "0.58.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "053c4c462dc91d3b1504c6fe5a726dd15e216ba718e84a0e46a88fbe5ded3515"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6790,15 +6334,6 @@ dependencies = [
 
 [[package]]
 name = "windows-result"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d1043d8214f791817bab27572aaa8af63732e11bf84aa21a45a78d6c317ae0e"
-dependencies = [
- "windows-targets 0.52.6",
-]
-
-[[package]]
-name = "windows-result"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56f42bd332cc6c8eac5af113fc0c1fd6a8fd2aa08a0119358686e5160d0586c6"
@@ -6813,16 +6348,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7781fa89eaf60850ac3d2da7af8e5242a5ea78d1a11c49bf2910bb5a73853eb5"
 dependencies = [
  "windows-link 0.2.1",
-]
-
-[[package]]
-name = "windows-strings"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4cd9b125c486025df0eabcb585e62173c6c9eddcec5d117d3b6e8c30e2ee4d10"
-dependencies = [
- "windows-result 0.2.0",
- "windows-targets 0.52.6",
 ]
 
 [[package]]
@@ -7189,7 +6714,7 @@ dependencies = [
  "js-sys",
  "libc",
  "memmap2",
- "ndk 0.9.0",
+ "ndk",
  "objc2 0.5.2",
  "objc2-app-kit 0.2.2",
  "objc2-foundation 0.2.2",
@@ -7357,7 +6882,7 @@ dependencies = [
  "javascriptcore-rs",
  "jni 0.21.1",
  "libc",
- "ndk 0.9.0",
+ "ndk",
  "objc2 0.6.4",
  "objc2-app-kit 0.3.2",
  "objc2-core-foundation",
