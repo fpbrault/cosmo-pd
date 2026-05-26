@@ -20,7 +20,7 @@ Line Mixer Output -> Slot 1 -> Slot 2 -> Slot 3 -> Slot 4 -> Slot 5 -> Slot 6 ->
 5. **Vibrato** — Modulates pitch cyclically using LFO waveforms with an adjustable onset delay. Parameters: Wave (Tri/Saw/InvSaw/Sq), Rate (1-200), Depth (0-50), Delay (0-5000ms)
 6. **Phase Mod** — Phase modulation synthesis inside the FX chain for complex spectral movement. Parameters: Amount (0-50%), Ratio (0.5-8.0), Pre (On/Off)
 7. **Compressor** — Smooths dynamic range with full control over threshold, ratio, attack, release, and makeup gain. Parameters: Threshold (-60 to 0 dB), Ratio (1:1 to 20:1), Attack (0.1-200ms), Release (10-2000ms), Makeup (0-24dB), Mix
-8. **5-Band EQ** — Five fixed-frequency bands (80–8000 Hz) for precise tone shaping with ±12 dB per band. Parameters: 80, 240, 750, 2200, 8000 Hz bands; -12 to +12 dB each
+8. **8-Band EQ** — Eight bands (64–8000 Hz) for precise tone shaping with ±12 dB per band. Band 1 is a low-pass filter, bands 2-7 are peaking, and band 8 is a high-pass filter. Parameters: 64, 125, 250, 500, 1k, 2k, 4k, 8k bands; -12 to +12 dB each
 9. **Grain Delay** — Granular delay that chops the audio into grains for glitchy, textured, and atmospheric echoes. Parameters: Time (0.01-1.0s), Feedback, Scatter, Density, Mix
 10. **Bitcrusher** — Reduces bit depth and sample rate for digital lo-fi crunch and aliasing artefacts. Parameters: Bits (1-16), Rate (1-32x), Mix
 11. **Shimmer Verb** — Reverb with a pitch-shifted feedback path that produces ethereal, shimmering tails. Parameters: Shimmer (0-100%), Space (0-100%), Mix

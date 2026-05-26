@@ -8,14 +8,17 @@ import FxVerticalSliderGroup from "@/components/panels/drawer-modules/FxVertical
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 
 const EQ_BANDS = [
-	{ param: "gain80", label: "80" },
-	{ param: "gain240", label: "240" },
-	{ param: "gain750", label: "750" },
-	{ param: "gain2200", label: "2.2k" },
-	{ param: "gain8000", label: "8k" },
+	{ param: "gainBand1", label: "64" },
+	{ param: "gainBand2", label: "125" },
+	{ param: "gainBand3", label: "250" },
+	{ param: "gainBand4", label: "500" },
+	{ param: "gainBand5", label: "1k" },
+	{ param: "gainBand6", label: "2k" },
+	{ param: "gainBand7", label: "4k" },
+	{ param: "gainBand8", label: "8k" },
 ] as const;
 
-export default function Eq5BandModuleRenderer() {
+export default function Eq8BandModuleRenderer() {
 	const {
 		config,
 		slot,
@@ -31,7 +34,7 @@ export default function Eq5BandModuleRenderer() {
 		<ModuleFrame
 			title={config.title}
 			color={config.color}
-			columns={5}
+			columns={8}
 			enabled={enabled}
 			onToggleEnabled={() => setFxSlotParams(slot, { enabled: !enabled })}
 			presetValue={selectedPreset}
@@ -39,7 +42,13 @@ export default function Eq5BandModuleRenderer() {
 			onPresetChange={handlePresetChange}
 		>
 			<div className="col-span-full rounded-md bg-cz-inset/25 px-2 pt-2 pb-1.5">
-				<FxVerticalSliderGroup rulerTopOffset={17} rulerHeight={122}>
+				<FxVerticalSliderGroup
+					rulerTopOffset={17}
+					rulerHeight={122}
+					rulerLaneWidthClassName="w-1.5"
+					rulerTickWidthMajor={8}
+					rulerTickWidthMinor={4}
+				>
 					{EQ_BANDS.map((band) => {
 						const control = getKnobControl(config, band.param);
 						const sourceIndex = control?.sourceIndex ?? 0;
@@ -65,7 +74,7 @@ export default function Eq5BandModuleRenderer() {
 									tooltip={band.label}
 									color="#fbbf24"
 									trackLength={122}
-									trackThickness={20}
+									trackThickness={14}
 									modDestination={modDestinationByParam[band.param]}
 									midiTargetKey={`fxSlot${slot + 1}Knob${sourceIndex + 1}`}
 									midiLabel={`FX ${slot + 1} Knob ${sourceIndex + 1}`}

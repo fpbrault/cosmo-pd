@@ -331,7 +331,7 @@ fn scenarios() -> Vec<Scenario> {
                     FxSlotConfig::default_for_type(FxSlotType::Delay),
                     FxSlotConfig::default_for_type(FxSlotType::Reverb),
                     FxSlotConfig::default_for_type(FxSlotType::Compressor),
-                    FxSlotConfig::default_for_type(FxSlotType::Eq5Band),
+                    FxSlotConfig::default_for_type(FxSlotType::Eq8Band),
                 ];
                 p
             },
@@ -394,7 +394,7 @@ fn scenarios() -> Vec<Scenario> {
                     FxSlotConfig::default_for_type(FxSlotType::Reverb),
                     FxSlotConfig::default_for_type(FxSlotType::Phaser),
                     FxSlotConfig::default_for_type(FxSlotType::Compressor),
-                    FxSlotConfig::default_for_type(FxSlotType::Eq5Band),
+                    FxSlotConfig::default_for_type(FxSlotType::Eq8Band),
                 ];
                 p
             },
@@ -443,7 +443,7 @@ fn scenarios() -> Vec<Scenario> {
                     FxSlotConfig::default_for_type(FxSlotType::Delay),
                     FxSlotConfig::default_for_type(FxSlotType::Reverb),
                     FxSlotConfig::default_for_type(FxSlotType::Compressor),
-                    FxSlotConfig::default_for_type(FxSlotType::Eq5Band),
+                    FxSlotConfig::default_for_type(FxSlotType::Eq8Band),
                 ];
                 p
             },

@@ -20,7 +20,7 @@ Sortie Mixeur Lignes -> Emplacement 1 -> Emplacement 2 -> Emplacement 3 -> Empla
 5. **Vibrato** — Module cycliquement la hauteur à l'aide de formes d'onde LFO avec un délai d'attaque réglable. Paramètres : Onde (Tri/Scie/ScieInv/Carré), Taux (1-200), Prof (0-50), Délai (0-5000ms)
 6. **Phase Mod** — Synthèse par modulation de phase dans la chaîne FX pour un mouvement spectral complexe. Paramètres : Montant (0-50%), Ratio (0.5-8.0), Pré (On/Off)
 7. **Compressor** — Lisse la dynamique avec contrôle complet du seuil, ratio, attaque, release et gain de compensation. Paramètres : Seuil (-60 à 0 dB), Ratio (1:1 à 20:1), Attaque (0.1-200ms), Release (10-2000ms), Compensation (0-24dB), Mix
-8. **5-Band EQ** — Cinq bandes de fréquences fixes (80–8000 Hz) pour un façonnage tonal précis avec ±12 dB par bande. Paramètres : Bandes 80, 240, 750, 2200, 8000 Hz ; -12 à +12 dB chacune
+8. **8-Band EQ** — Huit bandes (64–8000 Hz) pour un façonnage tonal précis avec ±12 dB par bande. La bande 1 est un filtre passe-bas, les bandes 2-7 sont des pic, et la bande 8 est un filtre passe-haut. Paramètres : Bandes 64, 125, 250, 500, 1k, 2k, 4k, 8k Hz ; -12 à +12 dB chacune
 9. **Grain Delay** — Délai granulaire qui découpe l'audio en grains pour des échos glitchés, texturés et atmosphériques. Paramètres : Temps (0.01-1.0s), Feedback, Dispersion, Densité, Mix
 10. **Bitcrusher** — Réduit la résolution et la fréquence d'échantillonnage pour un crunch numérique lo-fi et des artefacts de repliement. Paramètres : Bits (1-16), Taux (1-32x), Mix
 11. **Shimmer Verb** — Réverbération avec une boucle de feedback transposée qui produit des queues éthérées et scintillantes. Paramètres : Shimmer (0-100%), Espace (0-100%), Mix

@@ -63,7 +63,7 @@ fn build_chants_like() -> SynthParams {
         FxSlotConfig::default_for_type(FxSlotType::Reverb),
         FxSlotConfig::default_for_type(FxSlotType::Phaser),
         FxSlotConfig::default_for_type(FxSlotType::Compressor),
-        FxSlotConfig::default_for_type(FxSlotType::Eq5Band),
+        FxSlotConfig::default_for_type(FxSlotType::Eq8Band),
     ];
     p
 }
@@ -101,7 +101,7 @@ fn build_fx_heavy() -> SynthParams {
             FxSlotConfig::default_for_type(FxSlotType::Delay),
             FxSlotConfig::default_for_type(FxSlotType::Reverb),
             FxSlotConfig::default_for_type(FxSlotType::Compressor),
-            FxSlotConfig::default_for_type(FxSlotType::Eq5Band),
+            FxSlotConfig::default_for_type(FxSlotType::Eq8Band),
         ],
         ..Default::default()
     }

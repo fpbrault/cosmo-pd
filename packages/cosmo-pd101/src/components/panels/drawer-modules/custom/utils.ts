@@ -147,7 +147,7 @@ export function resolvePresetPatchParams(
 export function getPresetModuleKey(
 	moduleKey: FxSlotModuleConfig["moduleKey"],
 ): ModulePresetModule {
-	return moduleKey === "eq5Band" ? "eq" : moduleKey;
+	return moduleKey === "eq8Band" ? "eq" : moduleKey;
 }
 
 export function getModDestinationByParam(

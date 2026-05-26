@@ -118,13 +118,16 @@ impl FxSlotProcessors {
                 self.compressor.makeup_db = c.makeup_db;
                 self.compressor.mix = c.mix;
             }
-            FxSlotConfig::Eq5Band(eq) => {
+            FxSlotConfig::Eq8Band(eq) => {
                 self.eq.enabled = eq.enabled;
-                self.eq.set_gain(0, eq.gain80);
-                self.eq.set_gain(1, eq.gain240);
-                self.eq.set_gain(2, eq.gain750);
-                self.eq.set_gain(3, eq.gain2200);
-                self.eq.set_gain(4, eq.gain8000);
+                self.eq.set_gain(0, eq.gain_band1);
+                self.eq.set_gain(1, eq.gain_band2);
+                self.eq.set_gain(2, eq.gain_band3);
+                self.eq.set_gain(3, eq.gain_band4);
+                self.eq.set_gain(4, eq.gain_band5);
+                self.eq.set_gain(5, eq.gain_band6);
+                self.eq.set_gain(6, eq.gain_band7);
+                self.eq.set_gain(7, eq.gain_band8);
             }
             FxSlotConfig::GrainDelay(gd) => {
                 self.grain_delay.enabled = gd.enabled;
@@ -251,7 +254,7 @@ impl FxSlotProcessors {
                 }
             }
             FxSlotType::Compressor => self.compressor.process(sample),
-            FxSlotType::Eq5Band => self.eq.process(sample),
+            FxSlotType::Eq8Band => self.eq.process(sample),
             FxSlotType::GrainDelay => self.grain_delay.process(sample),
             FxSlotType::Bitcrusher => self.bitcrusher.process(sample),
             FxSlotType::ShimmerVerb => self.shimmer_verb.process(sample),
@@ -334,7 +337,7 @@ impl FxChain {
                 FxSlotConfig::Compressor(c) => {
                     slot.compressor.apply_modulation(c, &mod_cache.values);
                 }
-                FxSlotConfig::Eq5Band(eq) => slot.eq.apply_modulation(eq, &mod_cache.values),
+                FxSlotConfig::Eq8Band(eq) => slot.eq.apply_modulation(eq, &mod_cache.values),
                 FxSlotConfig::GrainDelay(gd) => {
                     slot.grain_delay.apply_modulation(gd, &mod_cache.values);
                 }

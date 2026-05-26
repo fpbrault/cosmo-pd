@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 use crate::params::{EqParams, ModDestination};
 
-// Biquad peaking / shelving filter for the 5-band EQ
+// Biquad filter for the 8-band EQ (shelves, peaking)
 // ---------------------------------------------------------------------------
 
 struct BiquadFilter {
@@ -45,7 +45,36 @@ impl BiquadFilter {
         self.a2 = (1.0 - alpha / a) * a0_inv;
     }
 
-    /// Set low-shelf coefficients.
+    /// Set low-pass filter coefficients. `q` controls resonance.
+    /// Kept for future use (will replace low-shelf band 0).
+    #[allow(dead_code)]
+    fn set_low_pass(&mut self, freq_hz: f32, q: f32, sr: f32) {
+        let w0 = 2.0 * core::f32::consts::PI * freq_hz / sr;
+        let cos_w0 = (w0).cos();
+        let alpha = (w0).sin() / (2.0 * q);
+        let a0_inv = 1.0 / (1.0 + alpha);
+        self.b0 = (1.0 - cos_w0) / 2.0 * a0_inv;
+        self.b1 = (1.0 - cos_w0) * a0_inv;
+        self.b2 = (1.0 - cos_w0) / 2.0 * a0_inv;
+        self.a1 = (-2.0 * cos_w0) * a0_inv;
+        self.a2 = (1.0 - alpha) * a0_inv;
+    }
+
+    /// Set high-pass filter coefficients. `q` controls resonance.
+    /// Kept for future use (will replace high-shelf band 7).
+    #[allow(dead_code)]
+    fn set_high_pass(&mut self, freq_hz: f32, q: f32, sr: f32) {
+        let w0 = 2.0 * core::f32::consts::PI * freq_hz / sr;
+        let cos_w0 = (w0).cos();
+        let alpha = (w0).sin() / (2.0 * q);
+        let a0_inv = 1.0 / (1.0 + alpha);
+        self.b0 = (1.0 + cos_w0) / 2.0 * a0_inv;
+        self.b1 = -(1.0 + cos_w0) * a0_inv;
+        self.b2 = (1.0 + cos_w0) / 2.0 * a0_inv;
+        self.a1 = (-2.0 * cos_w0) * a0_inv;
+        self.a2 = (1.0 - alpha) * a0_inv;
+    }
+
     fn set_low_shelf(&mut self, freq_hz: f32, gain_db: f32, sr: f32) {
         let a = (10.0_f32).powf(gain_db / 40.0);
         let w0 = 2.0 * core::f32::consts::PI * freq_hz / sr;
@@ -60,7 +89,6 @@ impl BiquadFilter {
         self.a2 = ((a + 1.0) + (a - 1.0) * cos_w0 - 2.0 * (a).sqrt() * alpha) * a0_inv;
     }
 
-    /// Set high-shelf coefficients.
     fn set_high_shelf(&mut self, freq_hz: f32, gain_db: f32, sr: f32) {
         let a = (10.0_f32).powf(gain_db / 40.0);
         let w0 = 2.0 * core::f32::consts::PI * freq_hz / sr;
@@ -89,15 +117,15 @@ impl BiquadFilter {
 }
 
 // ---------------------------------------------------------------------------
-// EqFx — 5-band parametric EQ
-// Bands: 80 Hz (shelf), 240 Hz (peak), 750 Hz (peak), 2.2 kHz (peak), 8 kHz (shelf)
+// EqFx — 8-band parametric EQ
+// Band 0: low-shelf (64 Hz), bands 1-6: peaking, band 7: high-shelf (8 kHz)
 // ---------------------------------------------------------------------------
 
-const EQ_FREQS: [f32; 5] = [80.0, 240.0, 750.0, 2200.0, 8000.0];
+const EQ_FREQS: [f32; 8] = [64.0, 125.0, 250.0, 500.0, 1000.0, 2000.0, 4000.0, 8000.0];
 
 pub struct EqFx {
-    filters: [BiquadFilter; 5],
-    pub gains: [f32; 5],
+    filters: [BiquadFilter; 8],
+    pub gains: [f32; 8],
     pub enabled: bool,
     sample_rate: f32,
     dirty: bool,
@@ -112,8 +140,11 @@ impl EqFx {
                 BiquadFilter::new(),
                 BiquadFilter::new(),
                 BiquadFilter::new(),
+                BiquadFilter::new(),
+                BiquadFilter::new(),
+                BiquadFilter::new(),
             ],
-            gains: [0.0; 5],
+            gains: [0.0; 8],
             enabled: false,
             sample_rate: sr,
             dirty: true,
@@ -123,7 +154,7 @@ impl EqFx {
     }
 
     pub fn set_gain(&mut self, band: usize, gain_db: f32) {
-        if band < 5 {
+        if band < 8 {
             self.gains[band] = gain_db;
             self.dirty = true;
         }
@@ -135,7 +166,10 @@ impl EqFx {
         self.filters[1].set_peaking(EQ_FREQS[1], self.gains[1], 1.0, sr);
         self.filters[2].set_peaking(EQ_FREQS[2], self.gains[2], 1.0, sr);
         self.filters[3].set_peaking(EQ_FREQS[3], self.gains[3], 1.0, sr);
-        self.filters[4].set_high_shelf(EQ_FREQS[4], self.gains[4], sr);
+        self.filters[4].set_peaking(EQ_FREQS[4], self.gains[4], 1.0, sr);
+        self.filters[5].set_peaking(EQ_FREQS[5], self.gains[5], 1.0, sr);
+        self.filters[6].set_peaking(EQ_FREQS[6], self.gains[6], 1.0, sr);
+        self.filters[7].set_high_shelf(EQ_FREQS[7], self.gains[7], sr);
         self.dirty = false;
     }
 
@@ -156,29 +190,44 @@ impl EqFx {
 
 impl EqFx {
     pub fn apply_modulation(&mut self, config: &EqParams, mod_values: &[f32]) {
-        let v = mod_values[ModDestination::EqGain80 as usize];
+        let v = mod_values[ModDestination::EqGainBand1 as usize];
         if v != 0.0 {
-            self.gains[0] = (config.gain80 + v * 24.0).clamp(-12.0, 12.0);
+            self.gains[0] = (config.gain_band1 + v * 24.0).clamp(-12.0, 12.0);
             self.dirty = true;
         }
-        let v = mod_values[ModDestination::EqGain240 as usize];
+        let v = mod_values[ModDestination::EqGainBand2 as usize];
         if v != 0.0 {
-            self.gains[1] = (config.gain240 + v * 24.0).clamp(-12.0, 12.0);
+            self.gains[1] = (config.gain_band2 + v * 24.0).clamp(-12.0, 12.0);
             self.dirty = true;
         }
-        let v = mod_values[ModDestination::EqGain750 as usize];
+        let v = mod_values[ModDestination::EqGainBand3 as usize];
         if v != 0.0 {
-            self.gains[2] = (config.gain750 + v * 24.0).clamp(-12.0, 12.0);
+            self.gains[2] = (config.gain_band3 + v * 24.0).clamp(-12.0, 12.0);
             self.dirty = true;
         }
-        let v = mod_values[ModDestination::EqGain2200 as usize];
+        let v = mod_values[ModDestination::EqGainBand4 as usize];
         if v != 0.0 {
-            self.gains[3] = (config.gain2200 + v * 24.0).clamp(-12.0, 12.0);
+            self.gains[3] = (config.gain_band4 + v * 24.0).clamp(-12.0, 12.0);
             self.dirty = true;
         }
-        let v = mod_values[ModDestination::EqGain8000 as usize];
+        let v = mod_values[ModDestination::EqGainBand5 as usize];
         if v != 0.0 {
-            self.gains[4] = (config.gain8000 + v * 24.0).clamp(-12.0, 12.0);
+            self.gains[4] = (config.gain_band5 + v * 24.0).clamp(-12.0, 12.0);
+            self.dirty = true;
+        }
+        let v = mod_values[ModDestination::EqGainBand6 as usize];
+        if v != 0.0 {
+            self.gains[5] = (config.gain_band6 + v * 24.0).clamp(-12.0, 12.0);
+            self.dirty = true;
+        }
+        let v = mod_values[ModDestination::EqGainBand7 as usize];
+        if v != 0.0 {
+            self.gains[6] = (config.gain_band7 + v * 24.0).clamp(-12.0, 12.0);
+            self.dirty = true;
+        }
+        let v = mod_values[ModDestination::EqGainBand8 as usize];
+        if v != 0.0 {
+            self.gains[7] = (config.gain_band8 + v * 24.0).clamp(-12.0, 12.0);
             self.dirty = true;
         }
     }
@@ -208,53 +257,86 @@ const PRESET_OPTIONS: [FxPresetOptionV1; 3] = [
     },
 ];
 
-const CONTROLS: [FxControlV1; 5] = [
+const CONTROLS: [FxControlV1; 8] = [
     FxControlV1 {
-        id: "gain80",
-        label: "80",
+        id: "gainBand1",
+        label: "64",
         kind: FxControlKindV1::Knob,
         bipolar: true,
         min: Some(-12.0),
         max: Some(12.0),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
-        mod_destination_key: Some("eqGain80"),
+        mod_destination_key: Some("eqGainBand1"),
     },
     FxControlV1 {
-        id: "gain240",
-        label: "240",
+        id: "gainBand2",
+        label: "125",
         kind: FxControlKindV1::Knob,
         bipolar: true,
         min: Some(-12.0),
         max: Some(12.0),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
-        mod_destination_key: Some("eqGain240"),
+        mod_destination_key: Some("eqGainBand2"),
     },
     FxControlV1 {
-        id: "gain750",
-        label: "750",
+        id: "gainBand3",
+        label: "250",
         kind: FxControlKindV1::Knob,
         bipolar: true,
         min: Some(-12.0),
         max: Some(12.0),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
-        mod_destination_key: Some("eqGain750"),
+        mod_destination_key: Some("eqGainBand3"),
     },
     FxControlV1 {
-        id: "gain2200",
-        label: "2.2k",
+        id: "gainBand4",
+        label: "500",
         kind: FxControlKindV1::Knob,
         bipolar: true,
         min: Some(-12.0),
         max: Some(12.0),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
-        mod_destination_key: Some("eqGain2200"),
+        mod_destination_key: Some("eqGainBand4"),
     },
     FxControlV1 {
-        id: "gain8000",
+        id: "gainBand5",
+        label: "1k",
+        kind: FxControlKindV1::Knob,
+        bipolar: true,
+        min: Some(-12.0),
+        max: Some(12.0),
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("eqGainBand5"),
+    },
+    FxControlV1 {
+        id: "gainBand6",
+        label: "2k",
+        kind: FxControlKindV1::Knob,
+        bipolar: true,
+        min: Some(-12.0),
+        max: Some(12.0),
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("eqGainBand6"),
+    },
+    FxControlV1 {
+        id: "gainBand7",
+        label: "4k",
+        kind: FxControlKindV1::Knob,
+        bipolar: true,
+        min: Some(-12.0),
+        max: Some(12.0),
+        default_f32: Some(0.0),
+        options: &NO_FX_CONTROL_OPTIONS,
+        mod_destination_key: Some("eqGainBand7"),
+    },
+    FxControlV1 {
+        id: "gainBand8",
         label: "8k",
         kind: FxControlKindV1::Knob,
         bipolar: true,
@@ -262,20 +344,20 @@ const CONTROLS: [FxControlV1; 5] = [
         max: Some(12.0),
         default_f32: Some(0.0),
         options: &NO_FX_CONTROL_OPTIONS,
-        mod_destination_key: Some("eqGain8000"),
+        mod_destination_key: Some("eqGainBand8"),
     },
 ];
 
 pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
-    slot_type: FxSlotType::Eq5Band,
-    name: "5-Band EQ",
+    slot_type: FxSlotType::Eq8Band,
+    name: "8-Band EQ",
     controls: &CONTROLS,
     presets: &PRESET_OPTIONS,
 };
 
 pub fn apply_eq_preset(params: &mut SynthParams, preset: &str) -> bool {
     let slot = params.fx_slots.iter_mut().find_map(|s| {
-        if let FxSlotConfig::Eq5Band(eq) = s {
+        if let FxSlotConfig::Eq8Band(eq) = s {
             Some(eq)
         } else {
             None
@@ -287,29 +369,38 @@ pub fn apply_eq_preset(params: &mut SynthParams, preset: &str) -> bool {
     match preset {
         "bassBoost" => {
             eq.enabled = true;
-            eq.gain80 = 6.0;
-            eq.gain240 = 3.0;
-            eq.gain750 = 0.0;
-            eq.gain2200 = -1.0;
-            eq.gain8000 = -2.0;
+            eq.gain_band1 = 6.0;
+            eq.gain_band2 = 4.0;
+            eq.gain_band3 = 2.0;
+            eq.gain_band4 = 0.0;
+            eq.gain_band5 = 0.0;
+            eq.gain_band6 = -1.0;
+            eq.gain_band7 = -2.0;
+            eq.gain_band8 = -2.0;
             true
         }
         "presence" => {
             eq.enabled = true;
-            eq.gain80 = 0.0;
-            eq.gain240 = -2.0;
-            eq.gain750 = 0.0;
-            eq.gain2200 = 5.0;
-            eq.gain8000 = 3.0;
+            eq.gain_band1 = 0.0;
+            eq.gain_band2 = -2.0;
+            eq.gain_band3 = -1.0;
+            eq.gain_band4 = 0.0;
+            eq.gain_band5 = 2.0;
+            eq.gain_band6 = 5.0;
+            eq.gain_band7 = 4.0;
+            eq.gain_band8 = 3.0;
             true
         }
         "warmth" => {
             eq.enabled = true;
-            eq.gain80 = 3.0;
-            eq.gain240 = 4.0;
-            eq.gain750 = 1.0;
-            eq.gain2200 = -3.0;
-            eq.gain8000 = -5.0;
+            eq.gain_band1 = 3.0;
+            eq.gain_band2 = 4.0;
+            eq.gain_band3 = 3.0;
+            eq.gain_band4 = 1.0;
+            eq.gain_band5 = 0.0;
+            eq.gain_band6 = -2.0;
+            eq.gain_band7 = -4.0;
+            eq.gain_band8 = -5.0;
             true
         }
         _ => false,
