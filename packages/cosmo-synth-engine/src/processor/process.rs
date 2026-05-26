@@ -196,6 +196,8 @@ impl CosmoProcessor {
                 line2_plan,
             );
 
+            self.process_pending_mono_retrigger_after_sample();
+
             let (mod_env, velocity) = self
                 .runtime_mod_source_voice_index()
                 .map(|voice_idx| {
