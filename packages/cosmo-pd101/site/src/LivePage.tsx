@@ -183,11 +183,12 @@ export default function LivePage() {
 				style={synthPanelInlineSize}
 			>
 				<div
-					className={isSynthFullscreen ? "" : "absolute top-0 left-0"}
+					className={isSynthFullscreen ? "absolute" : "absolute top-0 left-0"}
 					style={{
 						width: frameWidth,
 						height: frameHeight,
-						zoom: frameScale,
+						transform: `scale(${frameScale})`,
+						transformOrigin: isSynthFullscreen ? "center" : "top left",
 					}}
 				>
 					<SharedPhaseDistortionVisualizer
