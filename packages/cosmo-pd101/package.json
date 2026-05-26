@@ -24,6 +24,7 @@
 		"test:unit": "bunx vitest --project unit --run",
 		"test:unit:watch": "bunx vitest --project unit",
 		"test:browser": "bunx vitest --project browser --run",
+		"test:browser:ui": "bunx vitest --project browser --ui",
 		"test:all": "bunx vitest --run"
 	},
 	"devDependencies": {
