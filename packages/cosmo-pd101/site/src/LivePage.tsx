@@ -10,8 +10,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import UpdateNotification from "../../src/components/layout/UpdateNotification";
 import {
 	computeRendererFrameLayout,
-	computeSidebarMinWidthRem,
-	type RendererFrameLayout,
 	SYNTH_RENDERER_DESIGN_HEIGHT,
 	SYNTH_RENDERER_DESIGN_WIDTH,
 	SYNTH_RENDERER_MAX_ASPECT_RATIO,
@@ -91,29 +89,14 @@ export default function LivePage() {
 		const updateFrameSize = () => {
 			const bounds = element.getBoundingClientRect();
 
-			let nextLayout: RendererFrameLayout | null;
-
-			if (isMobileViewport) {
-				const scale = bounds.height / SYNTH_RENDERER_DESIGN_HEIGHT;
-				nextLayout = {
-					frameWidth:
-						SYNTH_RENDERER_DESIGN_HEIGHT * SYNTH_RENDERER_MAX_ASPECT_RATIO,
-					frameHeight: SYNTH_RENDERER_DESIGN_HEIGHT,
-					frameScale: scale,
-					effectiveAspectRatio: SYNTH_RENDERER_MAX_ASPECT_RATIO,
-					sidebarMinWidthRem: computeSidebarMinWidthRem(
-						SYNTH_RENDERER_MAX_ASPECT_RATIO,
-					),
-				};
-			} else {
-				nextLayout = computeRendererFrameLayout({
-					availableWidth: bounds.width,
-					availableHeight: bounds.height,
-					targetAspectRatio: SYNTH_RENDERER_MAX_ASPECT_RATIO,
-					outerPadding: isSynthFullscreen ? 0 : FRAME_PADDING,
-					maxScale: isSynthFullscreen ? undefined : WEB_MAX_SCALE,
-				});
-			}
+			const nextLayout = computeRendererFrameLayout({
+				availableWidth: bounds.width,
+				availableHeight: bounds.height,
+				targetAspectRatio: SYNTH_RENDERER_MAX_ASPECT_RATIO,
+				outerPadding: isSynthFullscreen || isMobileViewport ? 0 : FRAME_PADDING,
+				maxScale:
+					isSynthFullscreen || isMobileViewport ? undefined : WEB_MAX_SCALE,
+			});
 
 			if (!nextLayout) {
 				return;
