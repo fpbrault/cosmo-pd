@@ -5157,7 +5157,7 @@ source = "git+https://github.com/truce-audio/truce.git?tag=v0.49.3#5d953b995bd06
 
 [[package]]
 name = "truce-au"
-version = "0.45.4"
+version = "0.49.3"
 dependencies = [
  "cc",
  "crossbeam-queue",
@@ -5332,7 +5332,7 @@ dependencies = [
 
 [[package]]
 name = "truce-shim-types"
-version = "0.45.4"
+version = "0.49.3"
 
 [[package]]
 name = "truce-standalone"
