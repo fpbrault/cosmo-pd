@@ -31,6 +31,11 @@ type SynthUiState = {
 	scopeTriggerLevel: number;
 	scopeVisualizationMode: ScopeVisualizationMode;
 	scopeColorTheme: ScopeColorTheme;
+	brandInfoOpen: boolean;
+	globalPanelOpen: boolean;
+	midiLearnOpen: boolean;
+	macroLabelEditorOpen: boolean;
+	keyboardSettingsOpen: boolean;
 };
 
 type SynthUiActions = {
@@ -48,6 +53,11 @@ type SynthUiActions = {
 	setScopeTriggerLevel: (level: number) => void;
 	setScopeVisualizationMode: (mode: ScopeVisualizationMode) => void;
 	setScopeColorTheme: (theme: ScopeColorTheme) => void;
+	setBrandInfoOpen: (open: boolean) => void;
+	setGlobalPanelOpen: (open: boolean) => void;
+	setMidiLearnOpen: (open: boolean) => void;
+	setMacroLabelEditorOpen: (open: boolean) => void;
+	setKeyboardSettingsOpen: (open: boolean) => void;
 };
 
 export type SynthUiStore = SynthUiState & SynthUiActions;
@@ -91,6 +101,11 @@ const DEFAULT_UI_STATE: SynthUiState = {
 	scopeTriggerLevel: 128,
 	scopeVisualizationMode: "waveform",
 	scopeColorTheme: "vintage",
+	brandInfoOpen: false,
+	globalPanelOpen: false,
+	midiLearnOpen: false,
+	macroLabelEditorOpen: false,
+	keyboardSettingsOpen: false,
 };
 
 const getStringValue = (value: unknown): string | null =>
@@ -188,6 +203,26 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 			SCOPE_COLOR_THEMES.has(scopeColorTheme as ScopeColorTheme)
 				? (scopeColorTheme as ScopeColorTheme)
 				: DEFAULT_UI_STATE.scopeColorTheme,
+		brandInfoOpen:
+			typeof candidate.brandInfoOpen === "boolean"
+				? candidate.brandInfoOpen
+				: DEFAULT_UI_STATE.brandInfoOpen,
+		globalPanelOpen:
+			typeof candidate.globalPanelOpen === "boolean"
+				? candidate.globalPanelOpen
+				: DEFAULT_UI_STATE.globalPanelOpen,
+		midiLearnOpen:
+			typeof candidate.midiLearnOpen === "boolean"
+				? candidate.midiLearnOpen
+				: DEFAULT_UI_STATE.midiLearnOpen,
+		macroLabelEditorOpen:
+			typeof candidate.macroLabelEditorOpen === "boolean"
+				? candidate.macroLabelEditorOpen
+				: DEFAULT_UI_STATE.macroLabelEditorOpen,
+		keyboardSettingsOpen:
+			typeof candidate.keyboardSettingsOpen === "boolean"
+				? candidate.keyboardSettingsOpen
+				: DEFAULT_UI_STATE.keyboardSettingsOpen,
 	};
 };
 
@@ -210,6 +245,11 @@ export const useSynthUiStore = create<SynthUiStore>()(
 			setScopeVisualizationMode: (mode) =>
 				set({ scopeVisualizationMode: mode }),
 			setScopeColorTheme: (theme) => set({ scopeColorTheme: theme }),
+			setBrandInfoOpen: (open) => set({ brandInfoOpen: open }),
+			setGlobalPanelOpen: (open) => set({ globalPanelOpen: open }),
+			setMidiLearnOpen: (open) => set({ midiLearnOpen: open }),
+			setMacroLabelEditorOpen: (open) => set({ macroLabelEditorOpen: open }),
+			setKeyboardSettingsOpen: (open) => set({ keyboardSettingsOpen: open }),
 		}),
 		{
 			name: SYNTH_UI_STATE_STORAGE_KEY,

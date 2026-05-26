@@ -4,6 +4,7 @@ import { ScopeMiniDisplay } from "@/components/panels/analysis/ScopeDisplay";
 import MacroKnobsPanel from "@/components/panels/macro/MacroKnobsPanel";
 import MidiLearnPanel from "@/components/panels/midi/MidiLearnPanel";
 import { joinClasses } from "@/components/primitives/Card";
+import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import SynthSidebarButtons from "./SynthSidebarButtons";
 
 const MIDI_LEARN_PANEL_TRANSITION = {
@@ -16,26 +17,17 @@ const MIDI_LEARN_PANEL_TRANSITION = {
 type SynthSidebarProps = {
 	sidebarMinWidthRem?: number;
 	fillAvailableHeight?: boolean;
-	waveDrawerOpen: boolean;
 	libraryModeOpen: boolean;
-	globalOpen: boolean;
-	onOpenGlobal: () => void;
-	midiLearnOpen: boolean;
-	onOpenMidiLearn: () => void;
-	onOpenMacroLabels: () => void;
 };
 
 export default memo(function SynthSidebar({
 	sidebarMinWidthRem = 18,
 	fillAvailableHeight = true,
-	waveDrawerOpen,
 	libraryModeOpen,
-	globalOpen,
-	onOpenGlobal,
-	midiLearnOpen,
-	onOpenMidiLearn,
-	onOpenMacroLabels,
 }: SynthSidebarProps) {
+	const midiLearnOpen = useSynthUiStore((s) => s.midiLearnOpen);
+	const mainPanelMode = useSynthUiStore((s) => s.mainPanelMode);
+	const waveDrawerOpen = mainPanelMode === "display";
 	const containerClassName = joinClasses(
 		"flex min-h-0 flex-col overflow-hidden rounded-[1.15rem] border border-cz-border/80 bg-cz-inset px-0 pb-2 shadow-lg",
 		fillAvailableHeight ? "self-stretch" : "self-start",
@@ -73,15 +65,10 @@ export default memo(function SynthSidebar({
 					</AnimatePresence>
 				</div>
 			</div>
-			<SynthSidebarButtons
-				globalOpen={globalOpen}
-				onOpenGlobal={onOpenGlobal}
-				midiLearnOpen={midiLearnOpen}
-				onOpenMidiLearn={onOpenMidiLearn}
-			/>
+			<SynthSidebarButtons />
 			{!libraryModeOpen ? (
 				<div className={macroPanelClassName}>
-					<MacroKnobsPanel onOpenLabelEditor={onOpenMacroLabels} />
+					<MacroKnobsPanel />
 				</div>
 			) : (
 				<div className="min-h-0 flex-1" />

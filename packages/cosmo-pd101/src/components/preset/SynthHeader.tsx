@@ -1,57 +1,27 @@
 import type { ReactNode } from "react";
-import type { LibraryPreset } from "@/features/synth/types/libraryPreset";
-import type { PresetEntry } from "@/features/synth/types/presetEntry";
-import type { PresetTagOptions } from "@/lib/synth/presetTags";
+import { usePresetManager } from "@/context/PresetManagerContext";
 import PresetNavigator from "./PresetNavigator";
 
 export type SynthHeaderProps = {
-	allEntries: PresetEntry[];
-	activeEntryId: string | null;
-	activePresetName: string;
 	onBrandInfoClick?: () => void;
-	pendingPresetChange?: {
-		activePresetName: string;
-		activeLocalName: string | null;
-		suggestedName: string;
-		changes: Array<{
-			path: string;
-			previous: string;
-			next: string;
-		}>;
-	} | null;
-	onLoadLocal: (id: string) => void;
-	onLoadLibrary: (preset: LibraryPreset) => void;
-	onLoadBuiltin: (name: string) => void;
 	onStepPreset: (direction: -1 | 1) => void;
-	onSavePreset: (name: string) => void;
-	onDeletePreset: (id: string) => void;
-	onRenamePreset: (id: string, newName: string) => void;
-	onSetPresetAuthor: (id: string, author: string) => void;
-	onSetPresetFavorite: (id: string, favorite: boolean) => void;
-	onSetPresetTags: (id: string, tags: PresetTagOptions[]) => void;
-	onExportPreset: (id: string) => void;
-	onExportCurrentState: (name: string) => void;
-	onImportPreset: (json: string, filename: string) => void;
-	onInitPreset: () => void;
-	onSavePendingPresetChange?: (name?: string) => void;
-	onDiscardPendingPresetChange?: () => void;
-	onCancelPendingPresetChange?: () => void;
-	isLibraryModeOpen?: boolean;
-	onLibraryModeChange?: (open: boolean) => void;
+	isLibraryModeOpen: boolean;
+	onLibraryModeChange: (open: boolean) => void;
 	trailingContent?: ReactNode;
 };
 
 export default function SynthHeader({
-	allEntries,
-	activeEntryId,
-	activePresetName,
 	onBrandInfoClick,
 	onStepPreset,
 	isLibraryModeOpen = false,
 	onLibraryModeChange,
 	trailingContent,
 }: SynthHeaderProps) {
-	const activeEntry = allEntries.find((entry) => entry.id === activeEntryId);
+	const { visiblePresetEntries, activePresetId, activePresetName } =
+		usePresetManager();
+	const activeEntry = visiblePresetEntries.find(
+		(entry) => entry.id === activePresetId,
+	);
 	const activePresetSource =
 		activeEntry?.author.trim() ||
 		(activeEntry ? "Unknown Author" : "Current State");
@@ -77,7 +47,7 @@ export default function SynthHeader({
 			</div>
 
 			<PresetNavigator
-				allEntries={allEntries}
+				allEntries={visiblePresetEntries}
 				activePresetName={activePresetName}
 				activePresetSource={activePresetSource}
 				onStepPreset={onStepPreset}

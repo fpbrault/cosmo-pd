@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SynthHeaderProps } from "@/components/preset/SynthHeader";
+import type { PresetManagerPendingChange } from "@/context/PresetManagerContext";
 import type { MainPanelMode } from "@/features/synth/synthUiStore";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import SynthRenderer from "./SynthRenderer";
@@ -28,27 +28,29 @@ const mockSynthUiStoreState = {
 	keyboardHeight: 0,
 	libraryModeOpen: false,
 	setLibraryModeOpen: vi.fn(),
+	globalPanelOpen: false,
+	setGlobalPanelOpen: vi.fn(),
+	brandInfoOpen: false,
+	setBrandInfoOpen: vi.fn(),
+	midiLearnOpen: false,
+	setMidiLearnOpen: vi.fn(),
+	macroLabelEditorOpen: false,
+	setMacroLabelEditorOpen: vi.fn(),
+	keyboardSettingsOpen: false,
+	setKeyboardSettingsOpen: vi.fn(),
 };
 
 vi.mock("@/components/preset/SynthHeader", () => ({
 	default: () => <div data-testid="synth-header" />,
 }));
 vi.mock("@/components/layout/SynthSidebar", () => ({
-	default: ({
-		onOpenGlobal,
-		sidebarMinWidthRem,
-	}: {
-		onOpenGlobal: () => void;
-		sidebarMinWidthRem?: number;
-	}) => (
-		<button
-			type="button"
-			onClick={onOpenGlobal}
+	default: ({ sidebarMinWidthRem }: { sidebarMinWidthRem?: number }) => (
+		<div
 			data-testid="synth-sidebar"
 			data-sidebar-min-width={sidebarMinWidthRem}
 		>
-			open global
-		</button>
+			sidebar
+		</div>
 	),
 }));
 vi.mock("@/components/modals", () => ({
@@ -169,7 +171,7 @@ const mockPresetManager = {
 	visiblePresetEntries: [] as PresetEntry[],
 	activePresetId: "1",
 	activePresetName: "Test Preset",
-	pendingPresetChange: null as SynthHeaderProps["pendingPresetChange"],
+	pendingPresetChange: null as PresetManagerPendingChange | null,
 	handleLoadLocal: vi.fn(),
 	handleLoadBuiltin: vi.fn(),
 	handleLoadLibrary: vi.fn(),
@@ -220,6 +222,11 @@ describe("SynthRenderer Smoke Test", () => {
 		mockSynthUiStoreState.keyboardVisible = false;
 		mockSynthUiStoreState.keyboardHeight = 0;
 		mockSynthUiStoreState.libraryModeOpen = false;
+		mockSynthUiStoreState.globalPanelOpen = false;
+		mockSynthUiStoreState.brandInfoOpen = false;
+		mockSynthUiStoreState.midiLearnOpen = false;
+		mockSynthUiStoreState.macroLabelEditorOpen = false;
+		mockSynthUiStoreState.keyboardSettingsOpen = false;
 		mockSynthUiStoreState.setMainPanelMode.mockReset();
 		mockSynthUiStoreState.setKeyboardVisible.mockReset();
 		mockSynthUiStoreState.setLibraryModeOpen.mockReset();
@@ -232,9 +239,9 @@ describe("SynthRenderer Smoke Test", () => {
 		expect(screen.getByTestId("synth-header")).toBeInTheDocument();
 	});
 
-	it("opens global modal from sidebar action", () => {
+	it("renders global modal when store flag is set", () => {
+		mockSynthUiStoreState.globalPanelOpen = true;
 		render(<SynthRenderer />);
-		fireEvent.click(screen.getByTestId("synth-sidebar"));
 		expect(screen.getByTestId("global-voice-panel")).toBeInTheDocument();
 	});
 

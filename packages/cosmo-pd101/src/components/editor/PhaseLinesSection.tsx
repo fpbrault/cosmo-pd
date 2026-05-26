@@ -8,30 +8,18 @@ import type {
 	Algo,
 	AlgoControlValueV1,
 	BaseWaveform,
-	StepEnvData,
 } from "@/lib/synth/bindings/synth";
 import PerLineWarpBlock from "./PerLineWarpBlock";
-
-export type EnvOverrideHandlers = {
-	onEnvChange?: (
-		lineIndex: 1 | 2,
-		envType: "dco" | "dcw" | "dca",
-		next: StepEnvData,
-	) => void;
-};
 
 export type PhaseLinesSectionProps = {
 	onActiveTabChange?: (v: "line1" | "line2") => void;
 	className?: string;
-	envOverrideHandlers?: EnvOverrideHandlers;
 };
 
 export default function PhaseLinesSection({
 	onActiveTabChange,
 	className,
-	envOverrideHandlers,
 }: PhaseLinesSectionProps) {
-	const envOverrideHandler = envOverrideHandlers?.onEnvChange;
 	const { value: warpAAmount, setValue: setWarpAAmount } =
 		useSynthParam("warpAAmount");
 	const { value: warpBAmount, setValue: setWarpBAmount } =
@@ -113,21 +101,12 @@ export default function PhaseLinesSection({
 		setDetuneNote: setLine2DetuneNote,
 		fineDetune: line2DetuneFine as number,
 		setFineDetune: setLine2DetuneFine,
-		dcoEnv: line1DcoEnv as StepEnvData,
-		setDcoEnv:
-			envOverrideHandler == null
-				? setLine1DcoEnv
-				: (next: StepEnvData) => envOverrideHandler(1, "dco", next),
-		dcwEnv: line1DcwEnv as StepEnvData,
-		setDcwEnv:
-			envOverrideHandler == null
-				? setLine1DcwEnv
-				: (next: StepEnvData) => envOverrideHandler(1, "dcw", next),
-		dcaEnv: line1DcaEnv as StepEnvData,
-		setDcaEnv:
-			envOverrideHandler == null
-				? setLine1DcaEnv
-				: (next: StepEnvData) => envOverrideHandler(1, "dca", next),
+		dcoEnv: line1DcoEnv,
+		setDcoEnv: setLine1DcoEnv,
+		dcwEnv: line1DcwEnv,
+		setDcwEnv: setLine1DcwEnv,
+		dcaEnv: line1DcaEnv,
+		setDcaEnv: setLine1DcaEnv,
 		dcwKeyFollow: line1DcwKeyFollow as number,
 		setDcwKeyFollow: setLine1DcwKeyFollow,
 		dcaKeyFollow: line1DcaKeyFollow as number,
@@ -161,21 +140,12 @@ export default function PhaseLinesSection({
 		setDetuneNote: setLine2DetuneNote,
 		fineDetune: line2DetuneFine as number,
 		setFineDetune: setLine2DetuneFine,
-		dcoEnv: line2DcoEnv as StepEnvData,
-		setDcoEnv:
-			envOverrideHandler == null
-				? setLine2DcoEnv
-				: (next: StepEnvData) => envOverrideHandler(2, "dco", next),
-		dcwEnv: line2DcwEnv as StepEnvData,
-		setDcwEnv:
-			envOverrideHandler == null
-				? setLine2DcwEnv
-				: (next: StepEnvData) => envOverrideHandler(2, "dcw", next),
-		dcaEnv: line2DcaEnv as StepEnvData,
-		setDcaEnv:
-			envOverrideHandler == null
-				? setLine2DcaEnv
-				: (next: StepEnvData) => envOverrideHandler(2, "dca", next),
+		dcoEnv: line2DcoEnv,
+		setDcoEnv: setLine2DcoEnv,
+		dcwEnv: line2DcwEnv,
+		setDcwEnv: setLine2DcwEnv,
+		dcaEnv: line2DcaEnv,
+		setDcaEnv: setLine2DcaEnv,
 		dcwKeyFollow: line2DcwKeyFollow as number,
 		setDcwKeyFollow: setLine2DcwKeyFollow,
 		dcaKeyFollow: line2DcaKeyFollow as number,

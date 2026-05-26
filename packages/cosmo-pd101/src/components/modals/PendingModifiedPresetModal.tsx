@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import Button from "@/components/controls/Button";
-import type { SynthHeaderProps } from "@/components/preset/SynthHeader";
+import type { PresetManagerPendingChange } from "@/context/PresetManagerContext";
 import { SynthOverlayModal } from "./SynthOverlayModal";
 
 type PendingModifiedPresetModalProps = {
-	pendingPresetChange: SynthHeaderProps["pendingPresetChange"];
+	pendingPresetChange: PresetManagerPendingChange | null;
 	onSave?: (name?: string) => void;
 	onDiscard?: () => void;
 	onCancel?: () => void;

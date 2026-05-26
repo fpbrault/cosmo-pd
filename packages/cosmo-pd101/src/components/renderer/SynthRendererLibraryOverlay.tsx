@@ -1,56 +1,42 @@
 import { motion } from "motion/react";
 import { memo } from "react";
 import PresetLibrary from "@/components/preset/PresetLibrary";
-import type { LibraryPreset } from "@/features/synth/types/libraryPreset";
+import { usePresetManager } from "@/context/PresetManagerContext";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
-import type { PresetTagOptions } from "@/lib/synth/presetTags";
 import { LIBRARY_SLIDE_TRANSITION } from "./drawerHelpers";
 
 const MemoPresetLibrary = memo(PresetLibrary);
 
 type SynthRendererLibraryOverlayProps = {
 	isOpen: boolean;
-	allEntries: PresetEntry[];
-	activeEntryId: string | null;
-	activePresetName: string;
-	onLoadLocal: (id: string) => void;
-	onLoadLibrary: (preset: LibraryPreset) => void;
-	onLoadBuiltin: (name: string) => void;
-	onSavePreset: (name: string) => void;
-	onDeletePreset: (id: string) => void;
-	onRenamePreset: (id: string, newName: string) => void;
-	onSetPresetAuthor: (id: string, author: string) => void;
-	onSetPresetFavorite: (id: string, favorite: boolean) => void;
-	onSetPresetTags: (id: string, tags: PresetTagOptions[]) => void;
-	onExportPreset: (id: string) => void;
-	onExportCurrentState: (name: string) => void;
-	onImportPreset: (json: string, filename: string) => void;
-	onInitPreset: () => void;
 	onVisibleEntriesChange: (entries: PresetEntry[]) => void;
 	onClose: () => void;
 };
 
 export default memo(function SynthRendererLibraryOverlay({
 	isOpen,
-	allEntries,
-	activeEntryId,
-	activePresetName,
-	onLoadLocal,
-	onLoadLibrary,
-	onLoadBuiltin,
-	onSavePreset,
-	onDeletePreset,
-	onRenamePreset,
-	onSetPresetAuthor,
-	onSetPresetFavorite,
-	onSetPresetTags,
-	onExportPreset,
-	onExportCurrentState,
-	onImportPreset,
-	onInitPreset,
 	onVisibleEntriesChange,
 	onClose,
 }: SynthRendererLibraryOverlayProps) {
+	const {
+		visiblePresetEntries,
+		activePresetId,
+		activePresetName,
+		handleLoadLocal,
+		handleLoadLibrary,
+		handleLoadBuiltin,
+		handleSavePreset,
+		handleDeletePreset,
+		handleRenamePreset,
+		handleSetPresetAuthor,
+		handleSetPresetFavorite,
+		handleSetPresetTags,
+		handleExportPreset,
+		handleExportCurrentState,
+		handleImportPreset,
+		handleInitPreset,
+	} = usePresetManager();
+
 	return (
 		<motion.div
 			aria-hidden={!isOpen}
@@ -63,22 +49,22 @@ export default memo(function SynthRendererLibraryOverlay({
 			}`}
 		>
 			<MemoPresetLibrary
-				allEntries={allEntries}
-				activeEntryId={activeEntryId}
+				allEntries={visiblePresetEntries}
+				activeEntryId={activePresetId}
 				activePresetName={activePresetName}
-				onLoadLocal={onLoadLocal}
-				onLoadLibrary={onLoadLibrary}
-				onLoadBuiltin={onLoadBuiltin}
-				onSavePreset={onSavePreset}
-				onDeletePreset={onDeletePreset}
-				onRenamePreset={onRenamePreset}
-				onSetPresetAuthor={onSetPresetAuthor}
-				onSetPresetFavorite={onSetPresetFavorite}
-				onSetPresetTags={onSetPresetTags}
-				onExportPreset={onExportPreset}
-				onExportCurrentState={onExportCurrentState}
-				onImportPreset={onImportPreset}
-				onInitPreset={onInitPreset}
+				onLoadLocal={handleLoadLocal}
+				onLoadLibrary={handleLoadLibrary}
+				onLoadBuiltin={handleLoadBuiltin}
+				onSavePreset={handleSavePreset}
+				onDeletePreset={handleDeletePreset}
+				onRenamePreset={handleRenamePreset}
+				onSetPresetAuthor={handleSetPresetAuthor}
+				onSetPresetFavorite={handleSetPresetFavorite}
+				onSetPresetTags={handleSetPresetTags}
+				onExportPreset={handleExportPreset}
+				onExportCurrentState={handleExportCurrentState}
+				onImportPreset={handleImportPreset}
+				onInitPreset={handleInitPreset}
 				onVisibleEntriesChange={onVisibleEntriesChange}
 				onClose={onClose}
 				isOpen={isOpen}
