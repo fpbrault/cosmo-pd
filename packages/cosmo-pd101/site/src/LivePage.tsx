@@ -6,6 +6,7 @@ import {
 	useTransform,
 } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import UpdateNotification from "../../src/components/layout/UpdateNotification";
 import {
 	computeRendererFrameLayout,
 	SYNTH_RENDERER_DESIGN_HEIGHT,
@@ -13,6 +14,8 @@ import {
 	SYNTH_RENDERER_MAX_ASPECT_RATIO,
 } from "../../src/components/renderer/rendererFrameLayout";
 import { SharedPhaseDistortionVisualizer } from "../../src/components/renderer/SynthRenderer";
+
+declare const __CZ_APP_VERSION__: string;
 
 const FRAME_PADDING = 30;
 const WEB_MAX_SCALE = 0.85;
@@ -202,6 +205,9 @@ export default function LivePage() {
 				>
 					<SharedPhaseDistortionVisualizer
 						sidebarMinWidthRem={sidebarMinWidthRem}
+						bottomBarExtra={
+							<UpdateNotification currentVersion={__CZ_APP_VERSION__} />
+						}
 					/>
 				</div>
 			</div>

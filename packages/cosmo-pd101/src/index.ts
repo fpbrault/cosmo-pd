@@ -1,3 +1,4 @@
+export { default as UpdateNotification } from "./components/layout/UpdateNotification";
 export { default as MidiLearnPanel } from "./components/panels/midi/MidiLearnPanel";
 export {
 	type PerformanceMetrics,
@@ -78,3 +79,5 @@ export type {
 	FrontendPresetV1,
 	PresetMetadata,
 } from "./lib/synth/presetTypes";
+export type { ReleaseInfo } from "./lib/update/checkRelease";
+export { checkLatestRelease } from "./lib/update/checkRelease";
