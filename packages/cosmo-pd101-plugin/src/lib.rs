@@ -1397,8 +1397,8 @@ impl PluginLogic for CzPlugin {
         Ok(())
     }
 
-    fn custom_editor(&self) -> Option<Box<dyn Editor>> {
-        Some(Box::new(crate::gui::CzEditor::new(
+    fn editor(&self) -> Box<dyn Editor> {
+        Box::new(crate::gui::CzEditor::new(
             self.synth_params.clone(),
             self.rt_synth_params.clone(),
             self.runtime_mod_sources.clone(),
@@ -1409,7 +1409,7 @@ impl PluginLogic for CzPlugin {
             self.midi_cc_queue.clone(),
             self.performance_counters.clone(),
             self.params.clone(),
-        )))
+        ))
     }
 }
 

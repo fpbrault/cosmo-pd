@@ -2,7 +2,7 @@
 # PATCH: vendored alongside truce-au so the local AU override stays
 # self-contained instead of relying on upstream workspace-inherited metadata.
 name = "truce-shim-types"
-version = "0.45.4"
+version = "0.49.3"
 repository = "https://github.com/truce-audio/truce"
 homepage = "https://github.com/truce-audio/truce"
 edition = "2024"

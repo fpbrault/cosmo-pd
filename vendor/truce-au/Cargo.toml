@@ -3,7 +3,7 @@
 # fixes on top of upstream Truce. Keep standalone package metadata here so the
 # override does not depend on the original Truce workspace layout.
 name = "truce-au"
-version = "0.45.4"
+version = "0.49.3"
 repository = "https://github.com/truce-audio/truce"
 homepage = "https://github.com/truce-audio/truce"
 edition = "2024"
