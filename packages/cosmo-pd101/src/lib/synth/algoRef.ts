@@ -59,10 +59,6 @@ export function algoRefKey(algo: Algo): string {
 	return algo;
 }
 
-export function isAlgoRefEqual(a: Algo | null, b: Algo | null): boolean {
-	return a === b;
-}
-
 export function resolveAlgoRef(algo: Algo): {
 	waveform: WaveformId;
 	warpAlgo: Algo;

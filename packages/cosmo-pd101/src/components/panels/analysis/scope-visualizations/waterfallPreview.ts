@@ -303,7 +303,7 @@ export function buildWaterfallPreviewHistories(
 	};
 }
 
-export function collectWaterfallActiveIndicators({
+function collectWaterfallActiveIndicators({
 	voices,
 	maxWaveIndex,
 	env,

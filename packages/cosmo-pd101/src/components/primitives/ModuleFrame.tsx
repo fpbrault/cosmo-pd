@@ -4,7 +4,7 @@ import { useFxSlotContext } from "@/components/panels/FxSlotContext";
 import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 
 // --- UTILS ---
-export function contrastColor(hex: string): "black" | "white" {
+function contrastColor(hex: string): "black" | "white" {
 	const r = parseInt(hex.slice(1, 3), 16) / 255;
 	const g = parseInt(hex.slice(3, 5), 16) / 255;
 	const b = parseInt(hex.slice(5, 7), 16) / 255;

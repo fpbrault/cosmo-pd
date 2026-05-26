@@ -23,7 +23,7 @@ import {
 } from "@/lib/synth/paramMeta";
 import type { KnobCurve } from "./knob/knobGeometry";
 
-export type EngineParamUiMetaRuntime = EngineParamUiMetaV1 & {
+type EngineParamUiMetaRuntime = EngineParamUiMetaV1 & {
 	min?: number;
 	max?: number;
 	step?: number;
@@ -52,7 +52,7 @@ export type SyncConfig =
 			syncTooltipParamKey?: SynthParamKey;
 	  };
 
-export function formatFromReadoutFormat(
+function formatFromReadoutFormat(
 	format: EngineParamReadoutFormatV1,
 	bipolar: boolean,
 ): ((value: number) => string) | undefined {
@@ -88,7 +88,7 @@ export function formatFromReadoutFormat(
 	}
 }
 
-export function resolveSyncConfig(
+function resolveSyncConfig(
 	paramKey: SynthParamKey,
 	sync: SyncConfig | undefined,
 ) {

@@ -39,12 +39,12 @@
 		"ci": "bun run lint && bun run build && bun run test"
 	},
 	"dependencies": {
-		"tailwindcss": "^4.2.4"
+		"tailwindcss": "^4.3.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.4.15",
 		"cross-env": "^10.1.0",
-		"playwright": "^1.59.1",
+		"playwright": "^1.60.0",
 		"rimraf": "^6.1.3"
 	}
 }

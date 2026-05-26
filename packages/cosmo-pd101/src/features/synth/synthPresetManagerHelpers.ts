@@ -22,7 +22,7 @@ const presetNameCollator = new Intl.Collator(undefined, {
 	sensitivity: "base",
 });
 
-export function sortPresetEntries(entries: PresetEntry[]): PresetEntry[] {
+function sortPresetEntries(entries: PresetEntry[]): PresetEntry[] {
 	return [...entries].sort((a, b) => {
 		const labelCompare = presetNameCollator.compare(a.label, b.label);
 		return labelCompare === 0

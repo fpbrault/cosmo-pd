@@ -52,10 +52,6 @@ export function getButtonGroupControl(
 	);
 }
 
-export function resolveEnabled(params: Record<string, unknown>): boolean {
-	return Boolean(params.enabled);
-}
-
 export function getTooltip(key: string): string | undefined {
 	const i18nTooltip = i18n.t(`params.${key}.tooltip`, { defaultValue: "" });
 	if (i18nTooltip) {
