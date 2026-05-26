@@ -26,6 +26,7 @@ type ModuleHeaderProps = {
 	meta?: string;
 	headerAction?: React.ReactNode;
 	enabled: boolean;
+	hideToggle?: boolean;
 	onToggleEnabled?: () => void;
 };
 
@@ -35,6 +36,7 @@ function ModuleHeader({
 	textColor,
 	headerAction,
 	enabled,
+	hideToggle = false,
 	onToggleEnabled,
 }: ModuleHeaderProps) {
 	const slotCtx = useFxSlotContext();
@@ -46,15 +48,17 @@ function ModuleHeader({
 			style={{ backgroundColor: color, color: textColor }}
 			className="relative flex w-full items-center gap-1 px-1.5 pb-1"
 		>
-			<Button
-				type="button"
-				onClick={onToggleEnabled}
-				disabled={!onToggleEnabled}
-				aria-label={enabled ? `Disable ${title}` : `Enable ${title}`}
-				className={`btn btn-circle btn-neutral size-6 p-0 ${enabled ? "text-cyan-300" : ""}`}
-			>
-				<MdPowerSettingsNew />
-			</Button>
+			{!hideToggle && (
+				<Button
+					type="button"
+					onClick={onToggleEnabled}
+					disabled={!onToggleEnabled}
+					aria-label={enabled ? `Disable ${title}` : `Enable ${title}`}
+					className={`btn btn-circle btn-neutral size-6 p-0 ${enabled ? "text-cyan-300" : ""}`}
+				>
+					<MdPowerSettingsNew />
+				</Button>
+			)}
 
 			<div
 				{...(slotCtx?.dragListeners as React.HTMLAttributes<HTMLDivElement>)}
@@ -92,6 +96,7 @@ type ModuleFrameProps = {
 	onPresetChange?: (value: string) => void;
 	presetDisabled?: boolean;
 	enabled: boolean;
+	hideToggle?: boolean;
 	onToggleEnabled?: () => void;
 	className?: string;
 	columns?: number;
@@ -118,6 +123,7 @@ export default function ModuleFrame({
 	onPresetChange,
 	presetDisabled = false,
 	enabled,
+	hideToggle = false,
 	onToggleEnabled,
 	className = "",
 	columns = 4,
@@ -145,6 +151,7 @@ export default function ModuleFrame({
 				textColor={textColor}
 				headerAction={headerAction}
 				enabled={enabled}
+				hideToggle={hideToggle}
 				onToggleEnabled={onToggleEnabled}
 			/>
 

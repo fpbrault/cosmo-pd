@@ -158,6 +158,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 			title={`LFO ${id}`}
 			color={color}
 			enabled
+			hideToggle={true}
 			presetValue={selectedPreset}
 			presetOptions={LFO_PRESETS}
 			onPresetChange={handlePresetChange}
