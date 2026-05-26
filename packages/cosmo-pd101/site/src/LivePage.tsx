@@ -1,3 +1,4 @@
+import isMobile from "is-mobile";
 import {
 	motion,
 	useMotionTemplate,
@@ -9,6 +10,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import UpdateNotification from "../../src/components/layout/UpdateNotification";
 import {
 	computeRendererFrameLayout,
+	computeSidebarMinWidthRem,
+	type RendererFrameLayout,
 	SYNTH_RENDERER_DESIGN_HEIGHT,
 	SYNTH_RENDERER_DESIGN_WIDTH,
 	SYNTH_RENDERER_MAX_ASPECT_RATIO,
@@ -30,12 +33,7 @@ export default function LivePage() {
 			maxScale: WEB_MAX_SCALE,
 		}),
 	);
-	const [isMobileViewport, setIsMobileViewport] = useState<boolean>(() => {
-		if (typeof window === "undefined") {
-			return false;
-		}
-		return window.matchMedia("(max-width: 1000px)").matches;
-	});
+	const isMobileViewport = typeof window !== "undefined" ? isMobile() : false;
 
 	const cursorTargetX = useMotionValue(50);
 	const cursorTargetY = useMotionValue(50);
@@ -81,18 +79,6 @@ export default function LivePage() {
 		cursorTargetY.set(50);
 	}, [cursorTargetX, cursorTargetY]);
 
-	useEffect(() => {
-		const mediaQuery = window.matchMedia("(max-width: 1000px)");
-		const updateViewportMode = (event: MediaQueryListEvent) => {
-			setIsMobileViewport(event.matches);
-		};
-		setIsMobileViewport(mediaQuery.matches);
-		mediaQuery.addEventListener("change", updateViewportMode);
-		return () => {
-			mediaQuery.removeEventListener("change", updateViewportMode);
-		};
-	}, []);
-
 	const synthPanelRef = useRef<HTMLDivElement | null>(null);
 	const [isSynthFullscreen, setIsSynthFullscreen] = useState(false);
 
@@ -104,13 +90,31 @@ export default function LivePage() {
 
 		const updateFrameSize = () => {
 			const bounds = element.getBoundingClientRect();
-			const nextLayout = computeRendererFrameLayout({
-				availableWidth: bounds.width,
-				availableHeight: bounds.height,
-				targetAspectRatio: SYNTH_RENDERER_MAX_ASPECT_RATIO,
-				outerPadding: isSynthFullscreen ? 0 : FRAME_PADDING,
-				maxScale: isSynthFullscreen ? undefined : WEB_MAX_SCALE,
-			});
+
+			let nextLayout: RendererFrameLayout | null;
+
+			if (isMobileViewport) {
+				const scale = bounds.height / SYNTH_RENDERER_DESIGN_HEIGHT;
+				nextLayout = {
+					frameWidth:
+						SYNTH_RENDERER_DESIGN_HEIGHT * SYNTH_RENDERER_MAX_ASPECT_RATIO,
+					frameHeight: SYNTH_RENDERER_DESIGN_HEIGHT,
+					frameScale: scale,
+					effectiveAspectRatio: SYNTH_RENDERER_MAX_ASPECT_RATIO,
+					sidebarMinWidthRem: computeSidebarMinWidthRem(
+						SYNTH_RENDERER_MAX_ASPECT_RATIO,
+					),
+				};
+			} else {
+				nextLayout = computeRendererFrameLayout({
+					availableWidth: bounds.width,
+					availableHeight: bounds.height,
+					targetAspectRatio: SYNTH_RENDERER_MAX_ASPECT_RATIO,
+					outerPadding: isSynthFullscreen ? 0 : FRAME_PADDING,
+					maxScale: isSynthFullscreen ? undefined : WEB_MAX_SCALE,
+				});
+			}
+
 			if (!nextLayout) {
 				return;
 			}
@@ -132,7 +136,7 @@ export default function LivePage() {
 		const resizeObserver = new ResizeObserver(updateFrameSize);
 		resizeObserver.observe(element);
 		return () => resizeObserver.disconnect();
-	}, [isSynthFullscreen]);
+	}, [isSynthFullscreen, isMobileViewport]);
 
 	const frameScale = frameLayout?.frameScale ?? 1;
 	const frameWidth = frameLayout?.frameWidth ?? SYNTH_RENDERER_DESIGN_WIDTH;
@@ -172,7 +176,7 @@ export default function LivePage() {
 			ref={(node) => {
 				frameRef.current = node;
 			}}
-			className="relative flex h-full w-full items-center justify-center overflow-hidden bg-black"
+			className={`relative flex h-full w-full items-center justify-center overflow-hidden ${isMobileViewport ? "" : "bg-black"}`}
 			onPointerMove={isMobileViewport ? undefined : handlePointerMove}
 			onPointerLeave={isMobileViewport ? undefined : handlePointerLeave}
 		>
