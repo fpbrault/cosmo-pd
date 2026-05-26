@@ -105,6 +105,8 @@ const MODULE_GRID_COLUMN_CLASS: Record<number, string> = {
 	4: "grid-cols-4",
 	5: "grid-cols-5",
 	6: "grid-cols-6",
+	7: "grid-cols-7",
+	8: "grid-cols-8",
 };
 
 export default function ModuleFrame({
@@ -126,7 +128,7 @@ export default function ModuleFrame({
 	const showPresetFooter =
 		presetOptions !== undefined && onPresetChange !== undefined;
 
-	const safeColumns = Math.min(Math.max(columns, 1), 6);
+	const safeColumns = Math.min(Math.max(columns, 1), 8);
 	const columnClass = MODULE_GRID_COLUMN_CLASS[safeColumns] ?? "grid-cols-4";
 
 	return (

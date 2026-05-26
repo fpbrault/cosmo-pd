@@ -67,7 +67,7 @@ export type ButtonGroupControlDef = {
 export type ControlDef = KnobControlDef | ButtonGroupControlDef;
 export type FxCustomRendererKey =
 	| "delayModuleRenderer"
-	| "eq5BandModuleRenderer"
+	| "eq8BandModuleRenderer"
 	| "grainDelayModuleRenderer"
 	| "phaseModModuleRenderer"
 	| "vibratoModuleRenderer"
@@ -237,20 +237,23 @@ export const FX_UI_META = {
 			mix: pct,
 		},
 	},
-	eq5Band: {
-		moduleKey: "eq5Band",
+	eq8Band: {
+		moduleKey: "eq8Band",
 		title: "EQ",
 		shortTitle: "EQ",
 		color: "#34d399",
-		columns: 5,
-		customRenderer: "eq5BandModuleRenderer",
+		columns: 8,
+		customRenderer: "eq8BandModuleRenderer",
 		presets: EQ_PRESETS,
 		formatters: {
-			gain80: (v) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`,
-			gain240: (v) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`,
-			gain750: (v) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`,
-			gain2200: (v) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`,
-			gain8000: (v) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`,
+			gainBand1: (v) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`,
+			gainBand2: (v) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`,
+			gainBand3: (v) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`,
+			gainBand4: (v) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`,
+			gainBand5: (v) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`,
+			gainBand6: (v) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`,
+			gainBand7: (v) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`,
+			gainBand8: (v) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`,
 		},
 	},
 	grainDelay: {

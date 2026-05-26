@@ -3,15 +3,15 @@ import { FX_SLOT_MODULE_CONFIGS } from "@/components/panels/drawer-modules/fxSlo
 import { getPresetModuleKey, resolvePresetPatchParams } from "./utils";
 
 describe("FX preset module mapping", () => {
-	it("maps eq5Band preset lookups to the eq patch key", () => {
-		const config = FX_SLOT_MODULE_CONFIGS.eq5Band;
+	it("maps eq8Band preset lookups to the eq patch key", () => {
+		const config = FX_SLOT_MODULE_CONFIGS.eq8Band;
 		if (!config) {
-			throw new Error("Missing eq5Band config");
+			throw new Error("Missing eq8Band config");
 		}
 		const presetPatch = {
 			eq: {
 				enabled: true,
-				gain80: 6,
+				gainBand1: 6,
 			},
 		};
 

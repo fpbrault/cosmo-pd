@@ -157,14 +157,17 @@ export type EnvStep = {
 	rate: number | null,
 };
 
-/**  5-band EQ parameters */
+/**  8-band EQ parameters */
 export type EqParams = {
 	enabled?: boolean,
-	gain80?: number | null,
-	gain240?: number | null,
-	gain750?: number | null,
-	gain2200?: number | null,
-	gain8000?: number | null,
+	gainBand1?: number | null,
+	gainBand2?: number | null,
+	gainBand3?: number | null,
+	gainBand4?: number | null,
+	gainBand5?: number | null,
+	gainBand6?: number | null,
+	gainBand7?: number | null,
+	gainBand8?: number | null,
 };
 
 /**  Flanger parameters */
@@ -218,10 +221,10 @@ export type FxPresetOptionV1 = {
 };
 
 /**  Per-slot FX configuration */
-export type FxSlotConfig = { type: "empty" } | { type: "chorus"; params: ChorusParams } | { type: "phaser"; params: PhaserParams } | { type: "delay"; params: DelayParams } | { type: "reverb"; params: ReverbParams } | { type: "vibrato"; params: VibratoParams } | { type: "phaseMod"; params: PhaseModParams } | { type: "compressor"; params: CompressorParams } | { type: "eq5Band"; params: EqParams } | { type: "grainDelay"; params: GrainDelayParams } | { type: "bitcrusher"; params: BitcrusherParams } | { type: "shimmerVerb"; params: ShimmerVerbParams } | { type: "distortion"; params: DistortionParams } | { type: "junoChorus"; params: JunoChorusParams } | { type: "ringMod"; params: RingModParams } | { type: "tremolo"; params: TremoloParams } | { type: "wavefolder"; params: WavefolderParams } | { type: "loFi"; params: LoFiParams } | { type: "multimodeFilter"; params: MultimodeFilterParams } | { type: "flanger"; params: FlangerParams } | { type: "rotarySpeaker"; params: RotarySpeakerParams } | { type: "autoWah"; params: AutoWahParams } | { type: "stereoWidener"; params: StereoWidenerParams };
+export type FxSlotConfig = { type: "empty" } | { type: "chorus"; params: ChorusParams } | { type: "phaser"; params: PhaserParams } | { type: "delay"; params: DelayParams } | { type: "reverb"; params: ReverbParams } | { type: "vibrato"; params: VibratoParams } | { type: "phaseMod"; params: PhaseModParams } | { type: "compressor"; params: CompressorParams } | { type: "eq8Band"; params: EqParams } | { type: "grainDelay"; params: GrainDelayParams } | { type: "bitcrusher"; params: BitcrusherParams } | { type: "shimmerVerb"; params: ShimmerVerbParams } | { type: "distortion"; params: DistortionParams } | { type: "junoChorus"; params: JunoChorusParams } | { type: "ringMod"; params: RingModParams } | { type: "tremolo"; params: TremoloParams } | { type: "wavefolder"; params: WavefolderParams } | { type: "loFi"; params: LoFiParams } | { type: "multimodeFilter"; params: MultimodeFilterParams } | { type: "flanger"; params: FlangerParams } | { type: "rotarySpeaker"; params: RotarySpeakerParams } | { type: "autoWah"; params: AutoWahParams } | { type: "stereoWidener"; params: StereoWidenerParams };
 
 /**  FX slot type selector */
-export type FxSlotType = "empty" | "chorus" | "phaser" | "delay" | "reverb" | "vibrato" | "phaseMod" | "compressor" | "eq5Band" | "grainDelay" | "bitcrusher" | "shimmerVerb" | "distortion" | "junoChorus" | "ringMod" | "tremolo" | "wavefolder" | "loFi" | "multimodeFilter" | "flanger" | "rotarySpeaker" | "autoWah" | "stereoWidener";
+export type FxSlotType = "empty" | "chorus" | "phaser" | "delay" | "reverb" | "vibrato" | "phaseMod" | "compressor" | "eq8Band" | "grainDelay" | "bitcrusher" | "shimmerVerb" | "distortion" | "junoChorus" | "ringMod" | "tremolo" | "wavefolder" | "loFi" | "multimodeFilter" | "flanger" | "rotarySpeaker" | "autoWah" | "stereoWidener";
 
 /**  Grain delay parameters */
 export type GrainDelayParams = {
@@ -303,7 +306,7 @@ export type LoFiParams = {
 };
 
 /**  Modulation destination selector for modulation matrix routes. */
-export type ModDestination = "volume" | "pitch" | "line1DcwBase" | "line1DcaBase" | "line1AlgoBlend" | "line2DetuneNote" | "line1Octave" | "line1AlgoParam1" | "line1AlgoParam2" | "line1AlgoParam3" | "line1AlgoParam4" | "line1AlgoParam5" | "line1AlgoParam6" | "line1AlgoParam7" | "line1AlgoParam8" | "line2DcwBase" | "line2DcaBase" | "line2AlgoBlend" | "line2DetuneFine" | "line2DetuneOctave" | "line2AlgoParam1" | "line2AlgoParam2" | "line2AlgoParam3" | "line2AlgoParam4" | "line2AlgoParam5" | "line2AlgoParam6" | "line2AlgoParam7" | "line2AlgoParam8" | "filterCutoff" | "filterResonance" | "filterEnvAmount" | "chorusMix" | "delayMix" | "reverbMix" | "vibratoDepth" | "vibratoRate" | "intPmRatio" | "line1DcoEnvStep1Level" | "line1DcoEnvStep1Rate" | "line1DcoEnvStep2Level" | "line1DcoEnvStep2Rate" | "line1DcoEnvStep3Level" | "line1DcoEnvStep3Rate" | "line1DcoEnvStep4Level" | "line1DcoEnvStep4Rate" | "line1DcoEnvStep5Level" | "line1DcoEnvStep5Rate" | "line1DcoEnvStep6Level" | "line1DcoEnvStep6Rate" | "line1DcoEnvStep7Level" | "line1DcoEnvStep7Rate" | "line1DcoEnvStep8Level" | "line1DcoEnvStep8Rate" | "line1DcwEnvStep1Level" | "line1DcwEnvStep1Rate" | "line1DcwEnvStep2Level" | "line1DcwEnvStep2Rate" | "line1DcwEnvStep3Level" | "line1DcwEnvStep3Rate" | "line1DcwEnvStep4Level" | "line1DcwEnvStep4Rate" | "line1DcwEnvStep5Level" | "line1DcwEnvStep5Rate" | "line1DcwEnvStep6Level" | "line1DcwEnvStep6Rate" | "line1DcwEnvStep7Level" | "line1DcwEnvStep7Rate" | "line1DcwEnvStep8Level" | "line1DcwEnvStep8Rate" | "line1DcaEnvStep1Level" | "line1DcaEnvStep1Rate" | "line1DcaEnvStep2Level" | "line1DcaEnvStep2Rate" | "line1DcaEnvStep3Level" | "line1DcaEnvStep3Rate" | "line1DcaEnvStep4Level" | "line1DcaEnvStep4Rate" | "line1DcaEnvStep5Level" | "line1DcaEnvStep5Rate" | "line1DcaEnvStep6Level" | "line1DcaEnvStep6Rate" | "line1DcaEnvStep7Level" | "line1DcaEnvStep7Rate" | "line1DcaEnvStep8Level" | "line1DcaEnvStep8Rate" | "line2DcoEnvStep1Level" | "line2DcoEnvStep1Rate" | "line2DcoEnvStep2Level" | "line2DcoEnvStep2Rate" | "line2DcoEnvStep3Level" | "line2DcoEnvStep3Rate" | "line2DcoEnvStep4Level" | "line2DcoEnvStep4Rate" | "line2DcoEnvStep5Level" | "line2DcoEnvStep5Rate" | "line2DcoEnvStep6Level" | "line2DcoEnvStep6Rate" | "line2DcoEnvStep7Level" | "line2DcoEnvStep7Rate" | "line2DcoEnvStep8Level" | "line2DcoEnvStep8Rate" | "line2DcwEnvStep1Level" | "line2DcwEnvStep1Rate" | "line2DcwEnvStep2Level" | "line2DcwEnvStep2Rate" | "line2DcwEnvStep3Level" | "line2DcwEnvStep3Rate" | "line2DcwEnvStep4Level" | "line2DcwEnvStep4Rate" | "line2DcwEnvStep5Level" | "line2DcwEnvStep5Rate" | "line2DcwEnvStep6Level" | "line2DcwEnvStep6Rate" | "line2DcwEnvStep7Level" | "line2DcwEnvStep7Rate" | "line2DcwEnvStep8Level" | "line2DcwEnvStep8Rate" | "line2DcaEnvStep1Level" | "line2DcaEnvStep1Rate" | "line2DcaEnvStep2Level" | "line2DcaEnvStep2Rate" | "line2DcaEnvStep3Level" | "line2DcaEnvStep3Rate" | "line2DcaEnvStep4Level" | "line2DcaEnvStep4Rate" | "line2DcaEnvStep5Level" | "line2DcaEnvStep5Rate" | "line2DcaEnvStep6Level" | "line2DcaEnvStep6Rate" | "line2DcaEnvStep7Level" | "line2DcaEnvStep7Rate" | "line2DcaEnvStep8Level" | "line2DcaEnvStep8Rate" | "chorusRate" | "chorusDepth" | "delayTime" | "delayFeedback" | "delayWarmth" | "reverbSpace" | "reverbPredelay" | "reverbDistance" | "reverbCharacter" | "phaserRate" | "phaserDepth" | "phaserFeedback" | "phaserMix" | "lfo1Rate" | "lfo1Depth" | "lfo1Symmetry" | "lfo1Offset" | "lfo2Rate" | "lfo2Depth" | "lfo2Symmetry" | "lfo2Offset" | "randomRate" | "vibratoDelay" | "compressorThreshold" | "compressorRatio" | "compressorMakeup" | "compressorMix" | "grainDelayTime" | "grainDelayFeedback" | "grainDelayScatter" | "grainDelayDensity" | "grainDelayMix" | "bitcrusherBits" | "bitcrusherRateReduction" | "bitcrusherMix" | "shimmerVerbShimmer" | "shimmerVerbSpace" | "shimmerVerbMix" | "distortionDrive" | "distortionTone" | "distortionMix" | "junoChorusMix" | "ringModCarrierHz" | "ringModMix" | "tremoloRate" | "tremoloDepth" | "tremoloMix" | "wavefolderDrive" | "wavefolderFolds" | "wavefolderMix" | "loFiDegrade" | "loFiWowDepth" | "loFiWowRate" | "loFiFlutterDepth" | "loFiFlutterRate" | "loFiTone" | "loFiMix" | "multimodeFilterCutoffHz" | "multimodeFilterResonance" | "multimodeFilterDrive" | "multimodeFilterMix" | "flangerRate" | "flangerDepth" | "flangerDelayMs" | "flangerFeedback" | "flangerMix" | "rotarySpeakerSpeed" | "rotarySpeakerDepth" | "rotarySpeakerDrive" | "rotarySpeakerMix" | "autoWahSensitivity" | "autoWahCutoffHz" | "autoWahResonance" | "autoWahAttackMs" | "autoWahReleaseMs" | "autoWahMix" | "stereoWidenerWidth" | "stereoWidenerDelayMs" | "stereoWidenerTone" | "stereoWidenerMix" | "eqGain80" | "eqGain240" | "eqGain750" | "eqGain2200" | "eqGain8000";
+export type ModDestination = "volume" | "pitch" | "line1DcwBase" | "line1DcaBase" | "line1AlgoBlend" | "line2DetuneNote" | "line1Octave" | "line1AlgoParam1" | "line1AlgoParam2" | "line1AlgoParam3" | "line1AlgoParam4" | "line1AlgoParam5" | "line1AlgoParam6" | "line1AlgoParam7" | "line1AlgoParam8" | "line2DcwBase" | "line2DcaBase" | "line2AlgoBlend" | "line2DetuneFine" | "line2DetuneOctave" | "line2AlgoParam1" | "line2AlgoParam2" | "line2AlgoParam3" | "line2AlgoParam4" | "line2AlgoParam5" | "line2AlgoParam6" | "line2AlgoParam7" | "line2AlgoParam8" | "filterCutoff" | "filterResonance" | "filterEnvAmount" | "chorusMix" | "delayMix" | "reverbMix" | "vibratoDepth" | "vibratoRate" | "intPmRatio" | "line1DcoEnvStep1Level" | "line1DcoEnvStep1Rate" | "line1DcoEnvStep2Level" | "line1DcoEnvStep2Rate" | "line1DcoEnvStep3Level" | "line1DcoEnvStep3Rate" | "line1DcoEnvStep4Level" | "line1DcoEnvStep4Rate" | "line1DcoEnvStep5Level" | "line1DcoEnvStep5Rate" | "line1DcoEnvStep6Level" | "line1DcoEnvStep6Rate" | "line1DcoEnvStep7Level" | "line1DcoEnvStep7Rate" | "line1DcoEnvStep8Level" | "line1DcoEnvStep8Rate" | "line1DcwEnvStep1Level" | "line1DcwEnvStep1Rate" | "line1DcwEnvStep2Level" | "line1DcwEnvStep2Rate" | "line1DcwEnvStep3Level" | "line1DcwEnvStep3Rate" | "line1DcwEnvStep4Level" | "line1DcwEnvStep4Rate" | "line1DcwEnvStep5Level" | "line1DcwEnvStep5Rate" | "line1DcwEnvStep6Level" | "line1DcwEnvStep6Rate" | "line1DcwEnvStep7Level" | "line1DcwEnvStep7Rate" | "line1DcwEnvStep8Level" | "line1DcwEnvStep8Rate" | "line1DcaEnvStep1Level" | "line1DcaEnvStep1Rate" | "line1DcaEnvStep2Level" | "line1DcaEnvStep2Rate" | "line1DcaEnvStep3Level" | "line1DcaEnvStep3Rate" | "line1DcaEnvStep4Level" | "line1DcaEnvStep4Rate" | "line1DcaEnvStep5Level" | "line1DcaEnvStep5Rate" | "line1DcaEnvStep6Level" | "line1DcaEnvStep6Rate" | "line1DcaEnvStep7Level" | "line1DcaEnvStep7Rate" | "line1DcaEnvStep8Level" | "line1DcaEnvStep8Rate" | "line2DcoEnvStep1Level" | "line2DcoEnvStep1Rate" | "line2DcoEnvStep2Level" | "line2DcoEnvStep2Rate" | "line2DcoEnvStep3Level" | "line2DcoEnvStep3Rate" | "line2DcoEnvStep4Level" | "line2DcoEnvStep4Rate" | "line2DcoEnvStep5Level" | "line2DcoEnvStep5Rate" | "line2DcoEnvStep6Level" | "line2DcoEnvStep6Rate" | "line2DcoEnvStep7Level" | "line2DcoEnvStep7Rate" | "line2DcoEnvStep8Level" | "line2DcoEnvStep8Rate" | "line2DcwEnvStep1Level" | "line2DcwEnvStep1Rate" | "line2DcwEnvStep2Level" | "line2DcwEnvStep2Rate" | "line2DcwEnvStep3Level" | "line2DcwEnvStep3Rate" | "line2DcwEnvStep4Level" | "line2DcwEnvStep4Rate" | "line2DcwEnvStep5Level" | "line2DcwEnvStep5Rate" | "line2DcwEnvStep6Level" | "line2DcwEnvStep6Rate" | "line2DcwEnvStep7Level" | "line2DcwEnvStep7Rate" | "line2DcwEnvStep8Level" | "line2DcwEnvStep8Rate" | "line2DcaEnvStep1Level" | "line2DcaEnvStep1Rate" | "line2DcaEnvStep2Level" | "line2DcaEnvStep2Rate" | "line2DcaEnvStep3Level" | "line2DcaEnvStep3Rate" | "line2DcaEnvStep4Level" | "line2DcaEnvStep4Rate" | "line2DcaEnvStep5Level" | "line2DcaEnvStep5Rate" | "line2DcaEnvStep6Level" | "line2DcaEnvStep6Rate" | "line2DcaEnvStep7Level" | "line2DcaEnvStep7Rate" | "line2DcaEnvStep8Level" | "line2DcaEnvStep8Rate" | "chorusRate" | "chorusDepth" | "delayTime" | "delayFeedback" | "delayWarmth" | "reverbSpace" | "reverbPredelay" | "reverbDistance" | "reverbCharacter" | "phaserRate" | "phaserDepth" | "phaserFeedback" | "phaserMix" | "lfo1Rate" | "lfo1Depth" | "lfo1Symmetry" | "lfo1Offset" | "lfo2Rate" | "lfo2Depth" | "lfo2Symmetry" | "lfo2Offset" | "randomRate" | "vibratoDelay" | "compressorThreshold" | "compressorRatio" | "compressorMakeup" | "compressorMix" | "grainDelayTime" | "grainDelayFeedback" | "grainDelayScatter" | "grainDelayDensity" | "grainDelayMix" | "bitcrusherBits" | "bitcrusherRateReduction" | "bitcrusherMix" | "shimmerVerbShimmer" | "shimmerVerbSpace" | "shimmerVerbMix" | "distortionDrive" | "distortionTone" | "distortionMix" | "junoChorusMix" | "ringModCarrierHz" | "ringModMix" | "tremoloRate" | "tremoloDepth" | "tremoloMix" | "wavefolderDrive" | "wavefolderFolds" | "wavefolderMix" | "loFiDegrade" | "loFiWowDepth" | "loFiWowRate" | "loFiFlutterDepth" | "loFiFlutterRate" | "loFiTone" | "loFiMix" | "multimodeFilterCutoffHz" | "multimodeFilterResonance" | "multimodeFilterDrive" | "multimodeFilterMix" | "flangerRate" | "flangerDepth" | "flangerDelayMs" | "flangerFeedback" | "flangerMix" | "rotarySpeakerSpeed" | "rotarySpeakerDepth" | "rotarySpeakerDrive" | "rotarySpeakerMix" | "autoWahSensitivity" | "autoWahCutoffHz" | "autoWahResonance" | "autoWahAttackMs" | "autoWahReleaseMs" | "autoWahMix" | "stereoWidenerWidth" | "stereoWidenerDelayMs" | "stereoWidenerTone" | "stereoWidenerMix" | "eqGainBand1" | "eqGainBand2" | "eqGainBand3" | "eqGainBand4" | "eqGainBand5" | "eqGainBand6" | "eqGainBand7" | "eqGainBand8";
 
 /**  ADSR mod envelope parameters. */
 export type ModEnvParams = {
@@ -2479,55 +2482,88 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
     ]
   },
   {
-    "slotType": "eq5Band",
-    "name": "5-Band EQ",
+    "slotType": "eq8Band",
+    "name": "8-Band EQ",
     "controls": [
       {
-        "id": "gain80",
-        "label": "80",
+        "id": "gainBand1",
+        "label": "64",
         "kind": "knob",
         "bipolar": true,
         "min": -12.0,
         "max": 12.0,
         "defaultF32": 0.0,
         "options": [],
-        "modDestinationKey": "eqGain80"
+        "modDestinationKey": "eqGainBand1"
       },
       {
-        "id": "gain240",
-        "label": "240",
+        "id": "gainBand2",
+        "label": "125",
         "kind": "knob",
         "bipolar": true,
         "min": -12.0,
         "max": 12.0,
         "defaultF32": 0.0,
         "options": [],
-        "modDestinationKey": "eqGain240"
+        "modDestinationKey": "eqGainBand2"
       },
       {
-        "id": "gain750",
-        "label": "750",
+        "id": "gainBand3",
+        "label": "250",
         "kind": "knob",
         "bipolar": true,
         "min": -12.0,
         "max": 12.0,
         "defaultF32": 0.0,
         "options": [],
-        "modDestinationKey": "eqGain750"
+        "modDestinationKey": "eqGainBand3"
       },
       {
-        "id": "gain2200",
-        "label": "2.2k",
+        "id": "gainBand4",
+        "label": "500",
         "kind": "knob",
         "bipolar": true,
         "min": -12.0,
         "max": 12.0,
         "defaultF32": 0.0,
         "options": [],
-        "modDestinationKey": "eqGain2200"
+        "modDestinationKey": "eqGainBand4"
       },
       {
-        "id": "gain8000",
+        "id": "gainBand5",
+        "label": "1k",
+        "kind": "knob",
+        "bipolar": true,
+        "min": -12.0,
+        "max": 12.0,
+        "defaultF32": 0.0,
+        "options": [],
+        "modDestinationKey": "eqGainBand5"
+      },
+      {
+        "id": "gainBand6",
+        "label": "2k",
+        "kind": "knob",
+        "bipolar": true,
+        "min": -12.0,
+        "max": 12.0,
+        "defaultF32": 0.0,
+        "options": [],
+        "modDestinationKey": "eqGainBand6"
+      },
+      {
+        "id": "gainBand7",
+        "label": "4k",
+        "kind": "knob",
+        "bipolar": true,
+        "min": -12.0,
+        "max": 12.0,
+        "defaultF32": 0.0,
+        "options": [],
+        "modDestinationKey": "eqGainBand7"
+      },
+      {
+        "id": "gainBand8",
         "label": "8k",
         "kind": "knob",
         "bipolar": true,
@@ -2535,7 +2571,7 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "max": 12.0,
         "defaultF32": 0.0,
         "options": [],
-        "modDestinationKey": "eqGain8000"
+        "modDestinationKey": "eqGainBand8"
       }
     ],
     "presets": [

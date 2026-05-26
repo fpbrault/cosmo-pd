@@ -454,11 +454,14 @@ export const EQ_PRESETS: ModulePresetDefinition<{
 		patch: {
 			eq: {
 				enabled: true,
-				gain80: 0,
-				gain240: 0,
-				gain750: 0,
-				gain2200: 0,
-				gain8000: 0,
+				gainBand1: 0,
+				gainBand2: 0,
+				gainBand3: 0,
+				gainBand4: 0,
+				gainBand5: 0,
+				gainBand6: 0,
+				gainBand7: 0,
+				gainBand8: 0,
 			},
 		},
 	},
@@ -468,11 +471,14 @@ export const EQ_PRESETS: ModulePresetDefinition<{
 		patch: {
 			eq: {
 				enabled: true,
-				gain80: 6,
-				gain240: 3,
-				gain750: 0,
-				gain2200: -1,
-				gain8000: -2,
+				gainBand1: 6,
+				gainBand2: 4,
+				gainBand3: 2,
+				gainBand4: 0,
+				gainBand5: 0,
+				gainBand6: -1,
+				gainBand7: -2,
+				gainBand8: -2,
 			},
 		},
 	},
@@ -482,11 +488,14 @@ export const EQ_PRESETS: ModulePresetDefinition<{
 		patch: {
 			eq: {
 				enabled: true,
-				gain80: 0,
-				gain240: -2,
-				gain750: 0,
-				gain2200: 5,
-				gain8000: 3,
+				gainBand1: 0,
+				gainBand2: -2,
+				gainBand3: -1,
+				gainBand4: 0,
+				gainBand5: 2,
+				gainBand6: 5,
+				gainBand7: 4,
+				gainBand8: 3,
 			},
 		},
 	},
@@ -496,11 +505,14 @@ export const EQ_PRESETS: ModulePresetDefinition<{
 		patch: {
 			eq: {
 				enabled: true,
-				gain80: 3,
-				gain240: 4,
-				gain750: 1,
-				gain2200: -3,
-				gain8000: -5,
+				gainBand1: 3,
+				gainBand2: 4,
+				gainBand3: 3,
+				gainBand4: 1,
+				gainBand5: 0,
+				gainBand6: -2,
+				gainBand7: -4,
+				gainBand8: -5,
 			},
 		},
 	},
@@ -1056,7 +1068,7 @@ applyRustPresetCatalog("lfo1", LFO_PRESETS);
 applyRustPresetCatalog("lfo2", LFO_PRESETS);
 applyRustPresetCatalog("modEnv", MOD_ENV_PRESETS);
 applyRustPresetCatalog("compressor", COMPRESSOR_PRESETS);
-applyRustPresetCatalog("eq5Band", EQ_PRESETS);
+applyRustPresetCatalog("eq8Band", EQ_PRESETS);
 applyRustPresetCatalog("grainDelay", GRAIN_DELAY_PRESETS);
 applyRustPresetCatalog("bitcrusher", BITCRUSHER_PRESETS);
 applyRustPresetCatalog("shimmerVerb", SHIMMER_VERB_PRESETS);

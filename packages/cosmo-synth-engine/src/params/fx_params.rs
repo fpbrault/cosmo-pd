@@ -17,7 +17,7 @@ pub enum FxSlotType {
     Vibrato,
     PhaseMod,
     Compressor,
-    Eq5Band,
+    Eq8Band,
     GrainDelay,
     Bitcrusher,
     ShimmerVerb,
@@ -266,7 +266,7 @@ impl Default for CompressorParams {
     }
 }
 
-/// 5-band EQ parameters
+/// 8-band EQ parameters
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
 #[serde(rename_all = "camelCase")]
@@ -274,26 +274,35 @@ pub struct EqParams {
     #[serde(default)]
     pub enabled: bool,
     #[serde(default)]
-    pub gain80: f32,
+    pub gain_band1: f32,
     #[serde(default)]
-    pub gain240: f32,
+    pub gain_band2: f32,
     #[serde(default)]
-    pub gain750: f32,
+    pub gain_band3: f32,
     #[serde(default)]
-    pub gain2200: f32,
+    pub gain_band4: f32,
     #[serde(default)]
-    pub gain8000: f32,
+    pub gain_band5: f32,
+    #[serde(default)]
+    pub gain_band6: f32,
+    #[serde(default)]
+    pub gain_band7: f32,
+    #[serde(default)]
+    pub gain_band8: f32,
 }
 
 impl Default for EqParams {
     fn default() -> Self {
         Self {
             enabled: false,
-            gain80: 0.0,
-            gain240: 0.0,
-            gain750: 0.0,
-            gain2200: 0.0,
-            gain8000: 0.0,
+            gain_band1: 0.0,
+            gain_band2: 0.0,
+            gain_band3: 0.0,
+            gain_band4: 0.0,
+            gain_band5: 0.0,
+            gain_band6: 0.0,
+            gain_band7: 0.0,
+            gain_band8: 0.0,
         }
     }
 }
@@ -866,7 +875,7 @@ pub enum FxSlotConfig {
     Vibrato(VibratoParams),
     PhaseMod(PhaseModParams),
     Compressor(CompressorParams),
-    Eq5Band(EqParams),
+    Eq8Band(EqParams),
     GrainDelay(GrainDelayParams),
     Bitcrusher(BitcrusherParams),
     ShimmerVerb(ShimmerVerbParams),
@@ -911,7 +920,7 @@ fx_slot_fns! {
     Vibrato => Vibrato,
     PhaseMod => PhaseMod,
     Compressor => Compressor,
-    Eq5Band => Eq5Band,
+    Eq8Band => Eq8Band,
     GrainDelay => GrainDelay,
     Bitcrusher => Bitcrusher,
     ShimmerVerb => ShimmerVerb,
@@ -960,7 +969,7 @@ impl FxSlotConfig {
                 enabled: true,
                 ..CompressorParams::default()
             }),
-            FxSlotType::Eq5Band => Self::Eq5Band(EqParams {
+            FxSlotType::Eq8Band => Self::Eq8Band(EqParams {
                 enabled: true,
                 ..EqParams::default()
             }),

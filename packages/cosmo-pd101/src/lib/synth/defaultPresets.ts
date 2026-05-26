@@ -4277,14 +4277,17 @@ const BUILTIN_PRESET_DEFINITIONS: Record<
 						},
 					},
 					{
-						type: "eq5Band",
+						type: "eq8Band",
 						params: {
 							enabled: true,
-							gain80: 3,
-							gain240: 4,
-							gain750: 1,
-							gain2200: -3,
-							gain8000: -6.349765625,
+							gainBand1: 3,
+							gainBand2: 4,
+							gainBand3: 3,
+							gainBand4: 1,
+							gainBand5: 0,
+							gainBand6: -2,
+							gainBand7: -4,
+							gainBand8: -6,
 						},
 					},
 					{

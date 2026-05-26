@@ -242,15 +242,18 @@ pub enum ModDestination {
     StereoWidenerDelayMs,
     StereoWidenerTone,
     StereoWidenerMix,
-    EqGain80,
-    EqGain240,
-    EqGain750,
-    EqGain2200,
-    EqGain8000,
+    EqGainBand1,
+    EqGainBand2,
+    EqGainBand3,
+    EqGainBand4,
+    EqGainBand5,
+    EqGainBand6,
+    EqGainBand7,
+    EqGainBand8,
 }
 
 /// Total number of `ModDestination` variants.
-pub const NUM_MOD_DESTINATIONS: usize = ModDestination::EqGain8000 as usize + 1;
+pub const NUM_MOD_DESTINATIONS: usize = ModDestination::EqGainBand8 as usize + 1;
 
 /// First env step destination discriminant.
 pub const ENV_STEP_DEST_FIRST: usize = ModDestination::Line1DcoEnvStep1Level as usize;

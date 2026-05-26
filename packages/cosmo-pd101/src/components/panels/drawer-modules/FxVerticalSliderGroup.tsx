@@ -4,6 +4,8 @@ type FxVerticalSliderGroupProps = {
 	children: ReactNode;
 	className?: string;
 	rulerTickCount?: number;
+	rulerTickWidthMajor?: number;
+	rulerTickWidthMinor?: number;
 	rulerLaneWidthClassName?: string;
 	rulerTopOffset?: number;
 	rulerHeight?: number;
@@ -31,6 +33,8 @@ export default function FxVerticalSliderGroup({
 	children,
 	className,
 	rulerTickCount = 7,
+	rulerTickWidthMajor = 22,
+	rulerTickWidthMinor = 16,
 	rulerLaneWidthClassName = "w-5",
 	rulerTopOffset = 17,
 	rulerHeight = 100,
@@ -82,8 +86,8 @@ export default function FxVerticalSliderGroup({
 											className="h-px rounded-full bg-cz-cream/65"
 											style={{
 												width: isMajorTick(tick.tickIndex, rulerTickCount)
-													? 22
-													: 16,
+													? rulerTickWidthMajor
+													: rulerTickWidthMinor,
 											}}
 										/>
 									))}
