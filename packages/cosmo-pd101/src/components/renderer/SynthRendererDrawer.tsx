@@ -3,18 +3,14 @@ import { memo } from "react";
 import { ScopeDrawerDisplay } from "@/components/panels/analysis/ScopeDisplay";
 import FxConsoleDrawer from "@/components/panels/drawers/FxConsoleDrawer";
 import ModConsoleDrawer from "@/components/panels/drawers/ModConsoleDrawer";
+import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import type { DrawerPanel } from "./drawerHelpers";
 import {
 	DRAWER_PANELS,
 	DRAWER_SLIDE_TRANSITION,
 	getDrawerOffset,
 } from "./drawerHelpers";
-
-type SynthRendererDrawerProps = {
-	drawerOpen: boolean;
-	activeDrawerPanel: DrawerPanel;
-	drawerSlideDirection: 1 | -1;
-};
+import { useDrawerPanelState } from "./useDrawerPanelState";
 
 const DRAWER_CONTENT: Record<DrawerPanel, React.ReactNode> = {
 	fx: <FxConsoleDrawer />,
@@ -22,11 +18,10 @@ const DRAWER_CONTENT: Record<DrawerPanel, React.ReactNode> = {
 	display: <ScopeDrawerDisplay />,
 };
 
-export default memo(function SynthRendererDrawer({
-	drawerOpen,
-	activeDrawerPanel,
-	drawerSlideDirection,
-}: SynthRendererDrawerProps) {
+export default memo(function SynthRendererDrawer() {
+	const mainPanelMode = useSynthUiStore((s) => s.mainPanelMode);
+	const { drawerOpen, activeDrawerPanel, drawerSlideDirection } =
+		useDrawerPanelState(mainPanelMode);
 	return (
 		<motion.div
 			aria-hidden={!drawerOpen}

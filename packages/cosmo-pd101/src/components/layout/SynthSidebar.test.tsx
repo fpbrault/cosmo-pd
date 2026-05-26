@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import SynthSidebar from "./SynthSidebar";
 
@@ -9,69 +9,34 @@ vi.mock("@/components/panels/midi/MidiLearnPanel", () => ({
 	default: () => <div data-testid="midi-learn-panel" />,
 }));
 vi.mock("@/components/panels/macro/MacroKnobsPanel", () => ({
-	default: ({ onOpenLabelEditor }: { onOpenLabelEditor: () => void }) => (
-		<button type="button" data-testid="macro-panel" onClick={onOpenLabelEditor}>
-			macro
-		</button>
-	),
+	default: () => <div data-testid="macro-panel">macro</div>,
 }));
 vi.mock("./SynthSidebarButtons", () => ({
-	default: ({
-		onOpenGlobal,
-		onOpenMidiLearn,
-	}: {
-		onOpenGlobal: () => void;
-		onOpenMidiLearn: () => void;
-	}) => (
-		<div>
-			<button type="button" data-testid="open-global" onClick={onOpenGlobal}>
-				global
-			</button>
-			<button type="button" data-testid="open-midi" onClick={onOpenMidiLearn}>
-				midi
-			</button>
-		</div>
-	),
+	default: () => <div data-testid="sidebar-buttons" />,
 }));
+
+vi.mock("@/features/synth/synthUiStore", () => {
+	const midiLearnValue = true;
+	return {
+		useSynthUiStore: vi.fn(
+			(selector: (state: Record<string, unknown>) => unknown) =>
+				selector({ midiLearnOpen: midiLearnValue }),
+		),
+	};
+});
 
 describe("SynthSidebar", () => {
 	it("renders core panels and triggers callbacks", () => {
-		const onOpenGlobal = vi.fn();
-		const onOpenMidiLearn = vi.fn();
-		const onOpenMacroLabels = vi.fn();
-		render(
-			<SynthSidebar
-				waveDrawerOpen={false}
-				libraryModeOpen={false}
-				globalOpen={false}
-				onOpenGlobal={onOpenGlobal}
-				midiLearnOpen={true}
-				onOpenMidiLearn={onOpenMidiLearn}
-				onOpenMacroLabels={onOpenMacroLabels}
-			/>,
-		);
+		render(<SynthSidebar libraryModeOpen={false} />);
 		expect(screen.getByTestId("scope-mini-display")).toBeInTheDocument();
 		expect(screen.getByTestId("midi-learn-panel")).toBeInTheDocument();
-		fireEvent.click(screen.getByTestId("open-global"));
-		fireEvent.click(screen.getByTestId("open-midi"));
-		fireEvent.click(screen.getByTestId("macro-panel"));
-		expect(onOpenGlobal).toHaveBeenCalled();
-		expect(onOpenMidiLearn).toHaveBeenCalled();
-		expect(onOpenMacroLabels).toHaveBeenCalled();
+		expect(screen.getByTestId("sidebar-buttons")).toBeInTheDocument();
+		expect(screen.getByTestId("macro-panel")).toBeInTheDocument();
 	});
 
 	it("applies a custom min width", () => {
 		const { container } = render(
-			<SynthSidebar
-				sidebarMinWidthRem={19.625}
-				waveDrawerOpen={false}
-				libraryModeOpen={false}
-				globalOpen={false}
-				onOpenGlobal={() => {}}
-				midiLearnOpen={false}
-				onOpenMidiLearn={() => {}}
-				onOpenMacroLabels={() => {}}
-			/>,
+			<SynthSidebar sidebarMinWidthRem={19.625} libraryModeOpen={false} />,
 		);
 
 		expect(
@@ -81,16 +46,7 @@ describe("SynthSidebar", () => {
 
 	it("shrinks to content height when not filling the available height", () => {
 		render(
-			<SynthSidebar
-				fillAvailableHeight={false}
-				waveDrawerOpen={false}
-				libraryModeOpen={false}
-				globalOpen={false}
-				onOpenGlobal={() => {}}
-				midiLearnOpen={false}
-				onOpenMidiLearn={() => {}}
-				onOpenMacroLabels={() => {}}
-			/>,
+			<SynthSidebar fillAvailableHeight={false} libraryModeOpen={false} />,
 		);
 
 		expect(screen.getByTestId("macro-panel").parentElement).toHaveClass(

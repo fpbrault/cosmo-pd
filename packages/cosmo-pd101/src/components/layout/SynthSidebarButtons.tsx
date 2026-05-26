@@ -10,13 +10,6 @@ import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import type { FxSlotType } from "@/lib/synth/bindings/synth";
 import { FX_UI_META } from "../panels/drawer-modules/fxSlotModuleConfig";
 
-type SynthSidebarButtonsProps = {
-	globalOpen: boolean;
-	onOpenGlobal: () => void;
-	midiLearnOpen: boolean;
-	onOpenMidiLearn: () => void;
-};
-
 type SidebarButton = {
 	id: string;
 	topLabel: string;
@@ -48,12 +41,11 @@ const FX_BUTTONS: SidebarButton[] = [
 	{ id: "fx6", topLabel: "FX6", bottomLabel: "" },
 ];
 
-export default memo(function SynthSidebarButtons({
-	globalOpen,
-	onOpenGlobal,
-	midiLearnOpen,
-	onOpenMidiLearn,
-}: SynthSidebarButtonsProps) {
+export default memo(function SynthSidebarButtons() {
+	const globalOpen = useSynthUiStore((s) => s.globalPanelOpen);
+	const setGlobalPanelOpen = useSynthUiStore((s) => s.setGlobalPanelOpen);
+	const midiLearnOpen = useSynthUiStore((s) => s.midiLearnOpen);
+	const setMidiLearnOpen = useSynthUiStore((s) => s.setMidiLearnOpen);
 	const setMainPanelMode = useSynthUiStore((state) => state.setMainPanelMode);
 	const modTargetMode = useModulationTargetStore((state) => state.modMode);
 	const setModTargetMode = useModulationTargetStore(
@@ -122,11 +114,11 @@ export default memo(function SynthSidebarButtons({
 
 	const handleClick = (buttonId: string) => {
 		if (buttonId === "global") {
-			onOpenGlobal();
+			setGlobalPanelOpen(true);
 			return;
 		}
 		if (buttonId === "midiLearn") {
-			onOpenMidiLearn();
+			setMidiLearnOpen(!midiLearnOpen);
 			return;
 		}
 		if (buttonId === "modTarget") {

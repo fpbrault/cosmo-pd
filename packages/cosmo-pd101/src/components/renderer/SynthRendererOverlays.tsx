@@ -9,7 +9,8 @@ import {
 	PendingModifiedPresetModal,
 	SynthBrandInfoModal,
 } from "@/components/modals";
-import type { SynthHeaderProps } from "@/components/preset/SynthHeader";
+import { usePresetManager } from "@/context/PresetManagerContext";
+import { useSynthUiStore } from "@/features/synth/synthUiStore";
 
 type AudioGate = {
 	ready: boolean;
@@ -18,18 +19,6 @@ type AudioGate = {
 
 type SynthRendererOverlaysProps = {
 	audioGate: AudioGate;
-	brandInfoOpen: boolean;
-	onCloseBrandInfo: () => void;
-	globalPanelOpen: boolean;
-	onCloseGlobalPanel: () => void;
-	macroLabelEditorOpen: boolean;
-	onCloseMacroLabelEditor: () => void;
-	keyboardSettingsOpen: boolean;
-	onCloseKeyboardSettings: () => void;
-	pendingPresetChange: SynthHeaderProps["pendingPresetChange"];
-	onSavePendingPresetChange: () => void;
-	onDiscardPendingPresetChange: () => void;
-	onCancelPendingPresetChange: () => void;
 	activeNotes: number[];
 	libraryModeOpen: boolean;
 	keyboardVisible: boolean;
@@ -44,18 +33,6 @@ type SynthRendererOverlaysProps = {
 
 export default memo(function SynthRendererOverlays({
 	audioGate,
-	brandInfoOpen,
-	onCloseBrandInfo,
-	globalPanelOpen,
-	onCloseGlobalPanel,
-	macroLabelEditorOpen,
-	onCloseMacroLabelEditor,
-	keyboardSettingsOpen,
-	onCloseKeyboardSettings,
-	pendingPresetChange,
-	onSavePendingPresetChange,
-	onDiscardPendingPresetChange,
-	onCancelPendingPresetChange,
 	activeNotes,
 	libraryModeOpen,
 	keyboardVisible,
@@ -67,26 +44,50 @@ export default memo(function SynthRendererOverlays({
 	onKeyboardToggle,
 	onKeyboardSettingsClick,
 }: SynthRendererOverlaysProps) {
+	const brandInfoOpen = useSynthUiStore((s) => s.brandInfoOpen);
+	const setBrandInfoOpen = useSynthUiStore((s) => s.setBrandInfoOpen);
+	const globalPanelOpen = useSynthUiStore((s) => s.globalPanelOpen);
+	const setGlobalPanelOpen = useSynthUiStore((s) => s.setGlobalPanelOpen);
+	const macroLabelEditorOpen = useSynthUiStore((s) => s.macroLabelEditorOpen);
+	const setMacroLabelEditorOpen = useSynthUiStore(
+		(s) => s.setMacroLabelEditorOpen,
+	);
+	const keyboardSettingsOpen = useSynthUiStore((s) => s.keyboardSettingsOpen);
+	const setKeyboardSettingsOpen = useSynthUiStore(
+		(s) => s.setKeyboardSettingsOpen,
+	);
+	const {
+		pendingPresetChange,
+		handleSavePendingPresetChange,
+		handleDiscardPendingPresetChange,
+		handleCancelPendingPresetChange,
+	} = usePresetManager();
 	const showKeyboard = !libraryModeOpen;
 
 	return (
 		<>
 			<AudioStartOverlay audioGate={audioGate} />
-			<SynthBrandInfoModal open={brandInfoOpen} onClose={onCloseBrandInfo} />
-			<GlobalVoiceModal open={globalPanelOpen} onClose={onCloseGlobalPanel} />
+			<SynthBrandInfoModal
+				open={brandInfoOpen}
+				onClose={() => setBrandInfoOpen(false)}
+			/>
+			<GlobalVoiceModal
+				open={globalPanelOpen}
+				onClose={() => setGlobalPanelOpen(false)}
+			/>
 			<MacroLabelEditorModal
 				open={macroLabelEditorOpen}
-				onClose={onCloseMacroLabelEditor}
+				onClose={() => setMacroLabelEditorOpen(false)}
 			/>
 			<KeyboardSettingsModal
 				open={keyboardSettingsOpen}
-				onClose={onCloseKeyboardSettings}
+				onClose={() => setKeyboardSettingsOpen(false)}
 			/>
 			<PendingModifiedPresetModal
 				pendingPresetChange={pendingPresetChange}
-				onSave={onSavePendingPresetChange}
-				onDiscard={onDiscardPendingPresetChange}
-				onCancel={onCancelPendingPresetChange}
+				onSave={handleSavePendingPresetChange}
+				onDiscard={handleDiscardPendingPresetChange}
+				onCancel={handleCancelPendingPresetChange}
 			/>
 			{showKeyboard ? (
 				<MiniKeyboardOverlay

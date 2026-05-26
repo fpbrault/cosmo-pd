@@ -36,6 +36,18 @@ vi.mock("@/features/synth/synthStore", () => ({
 	),
 }));
 
+const setMacroLabelEditorOpen = vi.fn();
+
+vi.mock("@/features/synth/synthUiStore", () => ({
+	useSynthUiStore: vi.fn(
+		(
+			selector: (state: {
+				setMacroLabelEditorOpen: typeof setMacroLabelEditorOpen;
+			}) => unknown,
+		) => selector({ setMacroLabelEditorOpen }),
+	),
+}));
+
 vi.mock("@/features/synth/hooks/useMidiLearnTarget", () => ({
 	useMidiLearnTarget: vi.fn(() => ({
 		onClick: vi.fn(),
@@ -65,11 +77,10 @@ vi.mock("@/components/controls/ControlKnob", () => ({
 
 describe("MacroKnobsPanel", () => {
 	it("renders macro knobs and settings button", () => {
-		const onOpenLabelEditor = vi.fn();
-		render(<MacroKnobsPanel onOpenLabelEditor={onOpenLabelEditor} />);
+		render(<MacroKnobsPanel />);
 		expect(screen.getByTestId("macro-knob-M1")).toBeInTheDocument();
 		fireEvent.click(screen.getByLabelText("Edit macro labels"));
-		expect(onOpenLabelEditor).toHaveBeenCalled();
+		expect(setMacroLabelEditorOpen).toHaveBeenCalledWith(true);
 		fireEvent.click(screen.getByTestId("macro-knob-M1"));
 		expect(setMacro1).toHaveBeenCalledWith(0.75);
 	});

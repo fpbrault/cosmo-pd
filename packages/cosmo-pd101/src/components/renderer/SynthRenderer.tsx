@@ -10,6 +10,7 @@ import {
 import SynthSidebar from "@/components/layout/SynthSidebar";
 import SynthHeader from "@/components/preset/SynthHeader";
 import { ModMatrixProvider } from "@/context/ModMatrixContext";
+import { PresetManagerProvider } from "@/context/PresetManagerContext";
 import { ScopeProvider } from "@/context/ScopeContext";
 import { useAudioEngine } from "@/features/synth/hooks/useAudioEngine";
 import { useMidiLearnBindings } from "@/features/synth/hooks/useMidiLearnBindings";
@@ -38,8 +39,6 @@ import { usePerformanceMetrics } from "./hooks/usePerformanceMetrics";
 import SynthRendererLibraryOverlay from "./SynthRendererLibraryOverlay";
 import SynthRendererMainPanel from "./SynthRendererMainPanel";
 import SynthRendererOverlays from "./SynthRendererOverlays";
-import { useDrawerPanelState } from "./useDrawerPanelState";
-import { useEnvOverrideHandlers } from "./useEnvOverrideHandlers";
 
 export type MiniKeyboardProps = {
 	activeNotes: number[];
@@ -100,12 +99,6 @@ const SynthRenderer = memo(function SynthRenderer({
 	subscribeScopeFrames,
 	miniKeyboard,
 }: SynthRendererProps = {}) {
-	const setLine1DcoEnv = useSynthStore((s) => s.setLine1DcoEnv);
-	const setLine1DcwEnv = useSynthStore((s) => s.setLine1DcwEnv);
-	const setLine1DcaEnv = useSynthStore((s) => s.setLine1DcaEnv);
-	const setLine2DcoEnv = useSynthStore((s) => s.setLine2DcoEnv);
-	const setLine2DcwEnv = useSynthStore((s) => s.setLine2DcwEnv);
-	const setLine2DcaEnv = useSynthStore((s) => s.setLine2DcaEnv);
 	const velocityCurve = useSynthStore((s) => s.velocityCurve);
 	const gatherState = useSynthStore((s) => s.gatherState);
 	const gatherPresetState = useSynthStore((s) => s.gatherPresetState);
@@ -123,6 +116,7 @@ const SynthRenderer = memo(function SynthRenderer({
 	const keyboardHeight = useSynthUiStore((s) => s.keyboardHeight);
 	const libraryModeOpen = useSynthUiStore((s) => s.libraryModeOpen);
 	const setLibraryModeOpen = useSynthUiStore((s) => s.setLibraryModeOpen);
+	const setBrandInfoOpen = useSynthUiStore((s) => s.setBrandInfoOpen);
 
 	const {
 		audioCtxRef,
@@ -265,28 +259,7 @@ const SynthRenderer = memo(function SynthRenderer({
 		metricsRef,
 	]);
 
-	const envOverrideHandlers = useEnvOverrideHandlers({
-		setLine1DcoEnv,
-		setLine1DcwEnv,
-		setLine1DcaEnv,
-		setLine2DcoEnv,
-		setLine2DcwEnv,
-		setLine2DcaEnv,
-	});
-
 	useMidiLearnBindings();
-	const {
-		drawerOpen,
-		waveDrawerOpen,
-		activeDrawerPanel,
-		drawerSlideDirection,
-	} = useDrawerPanelState(mainPanelMode);
-
-	const [brandInfoOpen, setBrandInfoOpen] = useState(false);
-	const [globalPanelOpen, setGlobalPanelOpen] = useState(false);
-	const [midiLearnOpen, setMidiLearnOpen] = useState(false);
-	const [macroLabelEditorOpen, setMacroLabelEditorOpen] = useState(false);
-	const [keyboardSettingsOpen, setKeyboardSettingsOpen] = useState(false);
 	const [libraryVisibleEntries, setLibraryVisibleEntries] =
 		useState<PresetEntry[]>(visiblePresetEntries);
 
@@ -373,119 +346,86 @@ const SynthRenderer = memo(function SynthRenderer({
 						effectivePitchHz={effectivePitchHz}
 						subscribeScopeFrames={subscribeScopeFrames}
 					>
-						<div
-							data-theme="cosmo"
-							className={`${FRAME_CLASS} relative select-none`}
-							style={frameStyleWithPanelInset}
+						<PresetManagerProvider
+							value={{
+								visiblePresetEntries,
+								activePresetId,
+								activePresetName,
+								pendingPresetChange,
+								handleLoadLocal,
+								handleLoadBuiltin,
+								handleLoadLibrary,
+								handleSavePreset,
+								handleDeletePreset,
+								handleRenamePreset,
+								handleSetPresetAuthor,
+								handleSetPresetFavorite,
+								handleSetPresetTags,
+								handleInitPreset,
+								handleExportPreset,
+								handleImportPreset,
+								handleExportCurrentState,
+								handleSavePendingPresetChange,
+								handleDiscardPendingPresetChange,
+								handleCancelPendingPresetChange,
+							}}
 						>
-							<div className="relative z-30">
-								<SynthHeader
-									allEntries={visiblePresetEntries}
-									activeEntryId={activePresetId}
-									activePresetName={activePresetName}
-									pendingPresetChange={pendingPresetChange}
-									onLoadLocal={handleLoadLocal}
-									onLoadLibrary={handleLoadLibrary}
-									onLoadBuiltin={handleLoadBuiltin}
-									onStepPreset={handleStepPresetInVisibleOrder}
-									onSavePreset={handleSavePreset}
-									onDeletePreset={handleDeletePreset}
-									onRenamePreset={handleRenamePreset}
-									onSetPresetAuthor={handleSetPresetAuthor}
-									onSetPresetFavorite={handleSetPresetFavorite}
-									onSetPresetTags={handleSetPresetTags}
-									onInitPreset={handleInitPreset}
-									onExportPreset={handleExportPreset}
-									onExportCurrentState={handleExportCurrentState}
-									onImportPreset={handleImportPreset}
-									onSavePendingPresetChange={handleSavePendingPresetChange}
-									onDiscardPendingPresetChange={
-										handleDiscardPendingPresetChange
-									}
-									onCancelPendingPresetChange={handleCancelPendingPresetChange}
-									onBrandInfoClick={() => setBrandInfoOpen(true)}
-									isLibraryModeOpen={libraryModeOpen}
-									onLibraryModeChange={setLibraryModeOpen}
+							<div
+								data-theme="cosmo"
+								className={`${FRAME_CLASS} relative select-none`}
+								style={frameStyleWithPanelInset}
+							>
+								<div className="relative z-30">
+									<SynthHeader
+										onStepPreset={handleStepPresetInVisibleOrder}
+										onBrandInfoClick={() => setBrandInfoOpen(true)}
+										isLibraryModeOpen={libraryModeOpen}
+										onLibraryModeChange={setLibraryModeOpen}
+									/>
+									{headerExtra}
+								</div>
+								<div className="relative z-10 flex min-h-0 w-full min-w-0 flex-1 gap-2 overflow-hidden bg-cz-surface px-1">
+									<div
+										className="flex min-h-0 items-stretch overflow-hidden"
+										style={{ height: sidebarAvailableHeight }}
+									>
+										<SynthSidebar
+											sidebarMinWidthRem={sidebarMinWidthRem}
+											fillAvailableHeight
+											libraryModeOpen={libraryModeOpen}
+										/>
+									</div>
+									<div
+										className="flex min-h-0 flex-1 items-stretch justify-center overflow-hidden"
+										style={{ paddingBottom: mainPanelPaddingBottom }}
+									>
+										<SynthRendererMainPanel
+											mainPanelMode={mainPanelMode}
+											setMainPanelMode={setMainPanelMode}
+										/>
+									</div>
+								</div>
+								<SynthRendererLibraryOverlay
+									isOpen={libraryModeOpen}
+									onVisibleEntriesChange={setLibraryVisibleEntries}
+									onClose={handleCloseLibrary}
 								/>
-								{headerExtra}
+								<HoverAwareSynthRendererOverlays
+									audioGate={audioGate}
+									activeNotes={activeNotes}
+									libraryModeOpen={libraryModeOpen}
+									keyboardVisible={keyboardVisible}
+									onNoteOn={sendNoteOn}
+									onNoteOff={sendNoteOff}
+									onPolyAftertouch={sendPolyAftertouch}
+									bottomBarExtra={bottomBarExtra}
+									onKeyboardToggle={() => setKeyboardVisible(!keyboardVisible)}
+									onKeyboardSettingsClick={() =>
+										useSynthUiStore.getState().setKeyboardSettingsOpen(true)
+									}
+								/>
 							</div>
-							<div className="relative z-10 flex min-h-0 w-full min-w-0 flex-1 gap-2 overflow-hidden bg-cz-surface px-1">
-								<div
-									className="flex min-h-0 items-stretch overflow-hidden"
-									style={{ height: sidebarAvailableHeight }}
-								>
-									<SynthSidebar
-										sidebarMinWidthRem={sidebarMinWidthRem}
-										fillAvailableHeight
-										waveDrawerOpen={waveDrawerOpen}
-										libraryModeOpen={libraryModeOpen}
-										globalOpen={globalPanelOpen}
-										onOpenGlobal={() => setGlobalPanelOpen(true)}
-										midiLearnOpen={midiLearnOpen}
-										onOpenMidiLearn={() => setMidiLearnOpen((value) => !value)}
-										onOpenMacroLabels={() => setMacroLabelEditorOpen(true)}
-									/>
-								</div>
-								<div
-									className="flex min-h-0 flex-1 items-stretch justify-center overflow-hidden"
-									style={{ paddingBottom: mainPanelPaddingBottom }}
-								>
-									<SynthRendererMainPanel
-										mainPanelMode={mainPanelMode}
-										setMainPanelMode={setMainPanelMode}
-										envOverrideHandlers={envOverrideHandlers}
-										drawerOpen={drawerOpen}
-										activeDrawerPanel={activeDrawerPanel}
-										drawerSlideDirection={drawerSlideDirection}
-									/>
-								</div>
-							</div>
-							<SynthRendererLibraryOverlay
-								isOpen={libraryModeOpen}
-								allEntries={visiblePresetEntries}
-								activeEntryId={activePresetId}
-								activePresetName={activePresetName}
-								onLoadLocal={handleLoadLocal}
-								onLoadLibrary={handleLoadLibrary}
-								onLoadBuiltin={handleLoadBuiltin}
-								onSavePreset={handleSavePreset}
-								onDeletePreset={handleDeletePreset}
-								onRenamePreset={handleRenamePreset}
-								onSetPresetAuthor={handleSetPresetAuthor}
-								onSetPresetFavorite={handleSetPresetFavorite}
-								onSetPresetTags={handleSetPresetTags}
-								onExportPreset={handleExportPreset}
-								onExportCurrentState={handleExportCurrentState}
-								onImportPreset={handleImportPreset}
-								onInitPreset={handleInitPreset}
-								onVisibleEntriesChange={setLibraryVisibleEntries}
-								onClose={handleCloseLibrary}
-							/>
-							<HoverAwareSynthRendererOverlays
-								audioGate={audioGate}
-								brandInfoOpen={brandInfoOpen}
-								onCloseBrandInfo={() => setBrandInfoOpen(false)}
-								globalPanelOpen={globalPanelOpen}
-								onCloseGlobalPanel={() => setGlobalPanelOpen(false)}
-								macroLabelEditorOpen={macroLabelEditorOpen}
-								onCloseMacroLabelEditor={() => setMacroLabelEditorOpen(false)}
-								keyboardSettingsOpen={keyboardSettingsOpen}
-								onCloseKeyboardSettings={() => setKeyboardSettingsOpen(false)}
-								pendingPresetChange={pendingPresetChange}
-								onSavePendingPresetChange={handleSavePendingPresetChange}
-								onDiscardPendingPresetChange={handleDiscardPendingPresetChange}
-								onCancelPendingPresetChange={handleCancelPendingPresetChange}
-								activeNotes={activeNotes}
-								libraryModeOpen={libraryModeOpen}
-								keyboardVisible={keyboardVisible}
-								onNoteOn={sendNoteOn}
-								onNoteOff={sendNoteOff}
-								onPolyAftertouch={sendPolyAftertouch}
-								bottomBarExtra={bottomBarExtra}
-								onKeyboardToggle={() => setKeyboardVisible(!keyboardVisible)}
-								onKeyboardSettingsClick={() => setKeyboardSettingsOpen(true)}
-							/>
-						</div>
+						</PresetManagerProvider>
 					</ScopeProvider>
 				</SynthParamControllerProvider>
 			</ModMatrixProvider>
