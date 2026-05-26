@@ -6,8 +6,8 @@
 	"type": "module",
 	"workspaces": [
 		"packages/*",
-		"packages/*/webview",
-		"packages/cosmo-pd101/site"
+		"packages/cosmo-pd101/site",
+		"packages/cosmo-pd101-plugin/webview"
 	],
 	"scripts": {
 		"postinstall": "bun run ./scripts/install-wasm-pack.mjs",
