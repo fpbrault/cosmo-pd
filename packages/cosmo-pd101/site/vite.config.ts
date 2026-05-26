@@ -1,9 +1,20 @@
 import { execSync } from "node:child_process";
-import { existsSync, rmSync, watch } from "node:fs";
+import { existsSync, readFileSync, rmSync, watch } from "node:fs";
+import path from "node:path";
 import { fileURLToPath, URL } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+
+const rootPackageJsonPath = path.resolve(
+	fileURLToPath(new URL("../../../package.json", import.meta.url)),
+);
+const rootPackageJson = JSON.parse(
+	existsSync(rootPackageJsonPath)
+		? readFileSync(rootPackageJsonPath, "utf8")
+		: '{"version": "0.0.0"}',
+) as { version?: string };
+const packageVersion = rootPackageJson.version ?? "0.0.0";
 
 const wasmOutDir = fileURLToPath(
 	new URL("./public/cosmo-synth-engine-wasm", import.meta.url),
@@ -113,6 +124,7 @@ export default defineConfig(async ({ command }) => ({
 		__WASM_BUILD_PROFILE__: JSON.stringify(
 			command === "build" || releaseCargoForDev ? "release" : "debug",
 		),
+		__CZ_APP_VERSION__: JSON.stringify(packageVersion),
 	},
 	resolve: {
 		alias: [
