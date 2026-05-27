@@ -13,10 +13,7 @@ function contrastColor(hex: string): "black" | "white" {
 }
 
 // --- TYPES ---
-type ModulePresetOption = {
-	id: string;
-	label?: string;
-};
+import type { ModulePresetOption } from "@/components/primitives/ModulePresetPopover";
 
 // --- HEADER COMPONENT ---
 type ModuleHeaderProps = {
@@ -95,6 +92,9 @@ type ModuleFrameProps = {
 	presetOptions?: ModulePresetOption[];
 	onPresetChange?: (value: string) => void;
 	presetDisabled?: boolean;
+	builtinPresetIds?: Set<string>;
+	onSavePreset?: (name: string) => void;
+	onDeletePreset?: (presetId: string) => void;
 	enabled: boolean;
 	hideToggle?: boolean;
 	onToggleEnabled?: () => void;
@@ -122,6 +122,9 @@ export default function ModuleFrame({
 	presetOptions,
 	onPresetChange,
 	presetDisabled = false,
+	builtinPresetIds,
+	onSavePreset,
+	onDeletePreset,
 	enabled,
 	hideToggle = false,
 	onToggleEnabled,
@@ -178,6 +181,9 @@ export default function ModuleFrame({
 						onChange={onPresetChange}
 						accentColor={color}
 						disabled={presetDisabled || presetOptions.length === 0}
+						builtinPresetIds={builtinPresetIds}
+						onSavePreset={onSavePreset}
+						onDeletePreset={onDeletePreset}
 					/>
 				</div>
 			) : null}

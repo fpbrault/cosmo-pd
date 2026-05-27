@@ -9,10 +9,14 @@ export default function PhaseModModuleRenderer() {
 		config,
 		slot,
 		selectedPreset,
+		presetOptions,
 		setFxSlotParams,
 		params,
 		enabled,
 		handlePresetChange,
+		builtinPresetIds,
+		handleSavePreset,
+		handleDeletePreset,
 	} = useFxSlotModule();
 	const pmPreEnabled = Boolean(params.pmPre);
 
@@ -24,8 +28,11 @@ export default function PhaseModModuleRenderer() {
 			enabled={enabled}
 			onToggleEnabled={() => setFxSlotParams(slot, { enabled: !enabled })}
 			presetValue={selectedPreset}
-			presetOptions={config.presets}
+			presetOptions={presetOptions}
 			onPresetChange={handlePresetChange}
+			builtinPresetIds={builtinPresetIds}
+			onSavePreset={handleSavePreset}
+			onDeletePreset={handleDeletePreset}
 		>
 			<BadgeToggle
 				active={pmPreEnabled}

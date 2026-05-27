@@ -1,14 +1,27 @@
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FxSlotModuleConfig } from "@/components/panels/drawer-modules/fxSlotModuleConfig";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthStore } from "@/features/synth/synthStore";
+import type { StoredFxModulePreset } from "@/lib/synth/fxModulePresetStorage";
+import {
+	deleteFxModulePreset,
+	listFxModulePresets,
+	saveFxModulePreset,
+} from "@/lib/synth/fxModulePresetStorage";
 import { getPresetModuleKey, resolvePresetPatchParams } from "./utils";
+
+export type PresetOption = {
+	id: string;
+	label: string;
+	isBuiltin: boolean;
+};
 
 export function useFxModuleController(
 	config: FxSlotModuleConfig,
 	slot: number,
 ) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("");
+	const [userPresets, setUserPresets] = useState<StoredFxModulePreset[]>([]);
 	const rawSlot = useSynthStore((state) => state.fxSlots[slot]);
 	const setFxSlotParams = useSynthStore((state) => state.setFxSlotParams);
 
@@ -16,34 +29,118 @@ export function useFxModuleController(
 		(rawSlot as { params: Record<string, unknown> })?.params ?? {};
 	const enabled = Boolean(rawParams.enabled);
 
-	const handlePresetChange = (presetId: string) => {
-		setSelectedPreset(presetId);
-		const preset = config.presets.find((entry) => entry.id === presetId);
-		if (!preset) {
-			return;
-		}
+	const builtinPresetIds = useMemo(
+		() => new Set(config.presets.map((p) => p.id)),
+		[config.presets],
+	);
 
-		const patchParams = resolvePresetPatchParams(
-			config,
-			preset.patch as Record<string, unknown>,
-		);
-		if (!patchParams) {
-			return;
-		}
+	const presetOptions = useMemo((): PresetOption[] => {
+		const builtins = config.presets.map((p) => ({
+			id: p.id,
+			label: p.label,
+			isBuiltin: true,
+		}));
+		const users = userPresets.map((p) => ({
+			id: p.id,
+			label: p.name,
+			isBuiltin: false,
+		}));
+		return [...builtins, ...users];
+	}, [config.presets, userPresets]);
 
-		setFxSlotParams(slot, patchParams);
-		requestApplyModulePreset({
-			module: getPresetModuleKey(config.moduleKey),
-			preset: preset.id,
-			patch: preset.patch,
-		});
-	};
+	useEffect(() => {
+		listFxModulePresets(config.type).then(setUserPresets);
+	}, [config.type]);
+
+	useEffect(() => {
+		if (config.presets.length > 0) {
+			const first = config.presets[0];
+			setSelectedPreset(first.id);
+			const patchParams = resolvePresetPatchParams(
+				config,
+				first.patch as Record<string, unknown>,
+			);
+			if (patchParams) {
+				setFxSlotParams(slot, patchParams);
+			}
+			requestApplyModulePreset({
+				module: getPresetModuleKey(config.moduleKey),
+				preset: first.id,
+				patch: first.patch,
+			});
+		}
+	}, [config, slot, setFxSlotParams]);
+
+	const handlePresetChange = useCallback(
+		(presetId: string) => {
+			setSelectedPreset(presetId);
+
+			const userPreset = userPresets.find((p) => p.id === presetId);
+			if (userPreset) {
+				const patchParams = resolvePresetPatchParams(
+					config,
+					userPreset.patch as Record<string, unknown>,
+				);
+				if (patchParams) {
+					setFxSlotParams(slot, patchParams);
+				}
+				return;
+			}
+
+			const builtinPreset = config.presets.find(
+				(entry) => entry.id === presetId,
+			);
+			if (!builtinPreset) {
+				return;
+			}
+
+			const patchParams = resolvePresetPatchParams(
+				config,
+				builtinPreset.patch as Record<string, unknown>,
+			);
+			if (!patchParams) {
+				return;
+			}
+
+			setFxSlotParams(slot, patchParams);
+			requestApplyModulePreset({
+				module: getPresetModuleKey(config.moduleKey),
+				preset: builtinPreset.id,
+				patch: builtinPreset.patch,
+			});
+		},
+		[config, slot, userPresets, setFxSlotParams],
+	);
+
+	const handleSavePreset = useCallback(
+		async (name: string) => {
+			const moduleKey = getPresetModuleKey(config.moduleKey);
+			const patch = { [moduleKey]: { ...rawParams } };
+			const saved = await saveFxModulePreset({
+				name,
+				moduleType: config.type,
+				patch,
+			});
+			setUserPresets((prev) => [...prev, saved]);
+			setSelectedPreset(saved.id);
+		},
+		[config.moduleKey, config.type, rawParams],
+	);
+
+	const handleDeletePreset = useCallback(async (presetId: string) => {
+		await deleteFxModulePreset(presetId);
+		setUserPresets((prev) => prev.filter((p) => p.id !== presetId));
+	}, []);
 
 	return {
 		selectedPreset,
+		presetOptions,
 		setFxSlotParams,
 		params: rawParams,
 		enabled,
+		builtinPresetIds,
 		handlePresetChange,
+		handleSavePreset,
+		handleDeletePreset,
 	};
 }

@@ -162,10 +162,14 @@ export default function GenericFxSlotModule() {
 		config,
 		slot,
 		selectedPreset,
+		presetOptions,
 		params,
 		enabled,
 		setFxSlotParams,
 		handlePresetChange,
+		builtinPresetIds,
+		handleSavePreset,
+		handleDeletePreset,
 	} = useFxSlotModule();
 	const defaultColumns = clampGridColumns(config.columns ?? 4);
 	const dynamicColumnRule = config.dynamicColumns;
@@ -210,8 +214,11 @@ export default function GenericFxSlotModule() {
 			enabled={enabled}
 			onToggleEnabled={() => setFxSlotParams(slot, { enabled: !enabled })}
 			presetValue={selectedPreset}
-			presetOptions={config.presets}
+			presetOptions={presetOptions}
 			onPresetChange={handlePresetChange}
+			builtinPresetIds={builtinPresetIds}
+			onSavePreset={handleSavePreset}
+			onDeletePreset={handleDeletePreset}
 		>
 			{visibleControls.map((control) =>
 				control.kind === "knob" ? (
