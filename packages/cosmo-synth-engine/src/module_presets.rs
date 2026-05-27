@@ -15,7 +15,7 @@ use crate::{
         stereo_widener::apply_stereo_widener_preset, tremolo::apply_tremolo_preset,
         vibrato::apply_vibrato_preset, wavefolder::apply_wavefolder_preset,
     },
-    params::{LfoWaveform, SynthParams},
+    params::{LfoParams, LfoWaveform, ModEnvParams, SynthParams},
 };
 
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -24,6 +24,24 @@ use crate::{
 pub struct ModulePresetGroupV1 {
     pub module: &'static str,
     pub presets: &'static [FxPresetOptionV1],
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct LfoPresetV1 {
+    pub id: &'static str,
+    pub label: &'static str,
+    pub params: LfoParams,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct ModEnvPresetV1 {
+    pub id: &'static str,
+    pub label: &'static str,
+    pub params: ModEnvParams,
 }
 
 const LFO_PRESET_OPTIONS_V1: [FxPresetOptionV1; 3] = [
@@ -53,6 +71,84 @@ const MOD_ENV_PRESET_OPTIONS_V1: [FxPresetOptionV1; 3] = [
     FxPresetOptionV1 {
         id: "reverseSwell",
         label: "Reverse Swell",
+    },
+];
+
+const LFO_PRESET_DATA: [LfoPresetV1; 3] = [
+    LfoPresetV1 {
+        id: "slowSine",
+        label: "Slow Sine",
+        params: LfoParams {
+            waveform: LfoWaveform::Sine,
+            rate: 0.6,
+            depth: 1.0,
+            rate_mode: crate::params::LfoRateMode::Hz,
+            sync_division: crate::params::LfoSyncDivision::Quarter,
+            symmetry: 0.5,
+            retrigger: false,
+            offset: 0.0,
+        },
+    },
+    LfoPresetV1 {
+        id: "tempoTri",
+        label: "Tempo Tri",
+        params: LfoParams {
+            waveform: LfoWaveform::Triangle,
+            rate: 2.25,
+            depth: 1.0,
+            rate_mode: crate::params::LfoRateMode::Hz,
+            sync_division: crate::params::LfoSyncDivision::Quarter,
+            symmetry: 0.5,
+            retrigger: true,
+            offset: 0.0,
+        },
+    },
+    LfoPresetV1 {
+        id: "randomDrift",
+        label: "Random Drift",
+        params: LfoParams {
+            waveform: LfoWaveform::Square,
+            rate: 4.0,
+            depth: 0.35,
+            rate_mode: crate::params::LfoRateMode::Hz,
+            sync_division: crate::params::LfoSyncDivision::Quarter,
+            symmetry: 0.5,
+            retrigger: false,
+            offset: 0.0,
+        },
+    },
+];
+
+const MOD_ENV_PRESET_DATA: [ModEnvPresetV1; 3] = [
+    ModEnvPresetV1 {
+        id: "pluck",
+        label: "Pluck",
+        params: ModEnvParams {
+            attack: 0.005,
+            decay: 0.16,
+            sustain: 0.08,
+            release: 0.14,
+        },
+    },
+    ModEnvPresetV1 {
+        id: "pad",
+        label: "Pad",
+        params: ModEnvParams {
+            attack: 0.7,
+            decay: 1.2,
+            sustain: 0.75,
+            release: 1.5,
+        },
+    },
+    ModEnvPresetV1 {
+        id: "reverseSwell",
+        label: "Reverse Swell",
+        params: ModEnvParams {
+            attack: 1.8,
+            decay: 0.28,
+            sustain: 0.66,
+            release: 0.95,
+        },
     },
 ];
 
@@ -159,6 +255,14 @@ const MODULE_PRESET_CATALOG_V1: [ModulePresetGroupV1; 25] = [
     },
 ];
 
+pub fn lfo_preset_data() -> &'static [LfoPresetV1] {
+    &LFO_PRESET_DATA
+}
+
+pub fn mod_env_preset_data() -> &'static [ModEnvPresetV1] {
+    &MOD_ENV_PRESET_DATA
+}
+
 pub fn module_preset_catalog_v1() -> &'static [ModulePresetGroupV1] {
     &MODULE_PRESET_CATALOG_V1
 }
@@ -195,58 +299,27 @@ pub fn apply_module_preset(params: &mut SynthParams, module: &str, preset: &str)
 }
 
 fn apply_lfo_preset(params: &mut SynthParams, preset: &str, secondary: bool) -> bool {
+    let Some(p) = LFO_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
     let lfo = if secondary {
         &mut params.lfo2
     } else {
         &mut params.lfo
     };
-
-    match preset {
-        "slowSine" => {
-            lfo.waveform = LfoWaveform::Sine;
-            lfo.rate = 0.6;
-            lfo.depth = 1.0;
-            lfo.symmetry = 0.5;
-            lfo.retrigger = false;
-            lfo.offset = 0.0;
-            true
-        }
-        "tempoTri" => {
-            lfo.waveform = LfoWaveform::Triangle;
-            lfo.rate = 2.25;
-            lfo.depth = 1.0;
-            lfo.symmetry = 0.5;
-            lfo.retrigger = true;
-            lfo.offset = 0.0;
-            true
-        }
-        _ => false,
-    }
+    lfo.waveform = p.params.waveform;
+    lfo.rate = p.params.rate;
+    lfo.depth = p.params.depth;
+    lfo.symmetry = p.params.symmetry;
+    lfo.retrigger = p.params.retrigger;
+    lfo.offset = p.params.offset;
+    true
 }
 
 fn apply_mod_env_preset(params: &mut SynthParams, preset: &str) -> bool {
-    match preset {
-        "pluck" => {
-            params.mod_env.attack = 0.005;
-            params.mod_env.decay = 0.16;
-            params.mod_env.sustain = 0.08;
-            params.mod_env.release = 0.14;
-            true
-        }
-        "pad" => {
-            params.mod_env.attack = 0.7;
-            params.mod_env.decay = 1.2;
-            params.mod_env.sustain = 0.75;
-            params.mod_env.release = 1.5;
-            true
-        }
-        "reverseSwell" => {
-            params.mod_env.attack = 1.8;
-            params.mod_env.decay = 0.28;
-            params.mod_env.sustain = 0.66;
-            params.mod_env.release = 0.95;
-            true
-        }
-        _ => false,
-    }
+    let Some(p) = MOD_ENV_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
+    params.mod_env = p.params.clone();
+    true
 }

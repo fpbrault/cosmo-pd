@@ -10,45 +10,11 @@ fn set_phase_mod(params: &mut SynthParams, p: PhaseModParams) {
 }
 
 pub fn apply_phase_mod_preset(params: &mut SynthParams, preset: &str) -> bool {
-    match preset {
-        "glassBell" => {
-            set_phase_mod(
-                params,
-                PhaseModParams {
-                    enabled: true,
-                    amount: 0.06,
-                    ratio: 2.0,
-                    pm_pre: true,
-                },
-            );
-            true
-        }
-        "metalFold" => {
-            set_phase_mod(
-                params,
-                PhaseModParams {
-                    enabled: true,
-                    amount: 0.11,
-                    ratio: 2.7,
-                    pm_pre: true,
-                },
-            );
-            true
-        }
-        "aggressiveSync" => {
-            set_phase_mod(
-                params,
-                PhaseModParams {
-                    enabled: true,
-                    amount: 0.18,
-                    ratio: 3.4,
-                    pm_pre: false,
-                },
-            );
-            true
-        }
-        _ => false,
-    }
+    let Some(p) = PHASE_MOD_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
+    set_phase_mod(params, p.params.clone());
+    true
 }
 
 // ---------------------------------------------------------------------------
@@ -117,3 +83,42 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     controls: &CONTROLS,
     presets: &PRESET_OPTIONS,
 };
+
+crate::fx_preset_entry!(pub PhaseModPresetV1, PhaseModParams);
+
+pub const PHASE_MOD_PRESET_DATA: [PhaseModPresetV1; 3] = [
+    PhaseModPresetV1 {
+        id: "glassBell",
+        label: "Glass Bell",
+        params: PhaseModParams {
+            enabled: true,
+            amount: 0.06,
+            ratio: 2.0,
+            pm_pre: true,
+        },
+    },
+    PhaseModPresetV1 {
+        id: "metalFold",
+        label: "Metal Fold",
+        params: PhaseModParams {
+            enabled: true,
+            amount: 0.11,
+            ratio: 2.7,
+            pm_pre: true,
+        },
+    },
+    PhaseModPresetV1 {
+        id: "aggressiveSync",
+        label: "Aggressive Sync",
+        params: PhaseModParams {
+            enabled: true,
+            amount: 0.18,
+            ratio: 3.4,
+            pm_pre: false,
+        },
+    },
+];
+
+pub fn phase_mod_preset_data() -> &'static [PhaseModPresetV1] {
+    &PHASE_MOD_PRESET_DATA
+}

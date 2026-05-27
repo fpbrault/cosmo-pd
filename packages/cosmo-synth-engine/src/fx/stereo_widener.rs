@@ -1,4 +1,4 @@
-use crate::params::ModDestination;
+use crate::params::{ModDestination, StereoWidenerParams};
 use libm::{cosf, sinf};
 
 use super::delay_line::DelayLine;
@@ -150,43 +150,63 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     presets: &PRESET_OPTIONS,
 };
 
+crate::fx_preset_entry!(pub StereoWidenerPresetV1, StereoWidenerParams);
+
+pub const STEREO_WIDENER_PRESET_DATA: [StereoWidenerPresetV1; 3] = [
+    StereoWidenerPresetV1 {
+        id: "subtleSpread",
+        label: "Subtle Spread",
+        params: StereoWidenerParams {
+            enabled: true,
+            width: 0.35,
+            delay_ms: 9.0,
+            tone: 0.45,
+            mix: 0.45,
+        },
+    },
+    StereoWidenerPresetV1 {
+        id: "widePad",
+        label: "Wide Pad",
+        params: StereoWidenerParams {
+            enabled: true,
+            width: 0.72,
+            delay_ms: 14.0,
+            tone: 0.62,
+            mix: 0.62,
+        },
+    },
+    StereoWidenerPresetV1 {
+        id: "haasPush",
+        label: "Haas Push",
+        params: StereoWidenerParams {
+            enabled: true,
+            width: 0.9,
+            delay_ms: 22.0,
+            tone: 0.72,
+            mix: 0.7,
+        },
+    },
+];
+
+pub fn stereo_widener_preset_data() -> &'static [StereoWidenerPresetV1] {
+    &STEREO_WIDENER_PRESET_DATA
+}
+
 pub fn apply_stereo_widener_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let Some(p) = STEREO_WIDENER_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
     let slot = params.fx_slots.iter_mut().find_map(|s| {
-        if let FxSlotConfig::StereoWidener(widener) = s {
-            Some(widener)
+        if let FxSlotConfig::StereoWidener(sw) = s {
+            Some(sw)
         } else {
             None
         }
     });
-    let Some(widener) = slot else {
-        return false;
-    };
-
-    match preset {
-        "subtleSpread" => {
-            widener.enabled = true;
-            widener.width = 0.35;
-            widener.delay_ms = 9.0;
-            widener.tone = 0.45;
-            widener.mix = 0.45;
-            true
-        }
-        "widePad" => {
-            widener.enabled = true;
-            widener.width = 0.72;
-            widener.delay_ms = 14.0;
-            widener.tone = 0.62;
-            widener.mix = 0.62;
-            true
-        }
-        "haasPush" => {
-            widener.enabled = true;
-            widener.width = 0.9;
-            widener.delay_ms = 22.0;
-            widener.tone = 0.72;
-            widener.mix = 0.7;
-            true
-        }
-        _ => false,
+    if let Some(sw) = slot {
+        *sw = p.params.clone();
+        true
+    } else {
+        false
     }
 }

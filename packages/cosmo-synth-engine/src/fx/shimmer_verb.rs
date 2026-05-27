@@ -166,7 +166,49 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     presets: &PRESET_OPTIONS,
 };
 
+crate::fx_preset_entry!(pub ShimmerVerbPresetV1, ShimmerVerbParams);
+
+pub const SHIMMER_VERB_PRESET_DATA: [ShimmerVerbPresetV1; 3] = [
+    ShimmerVerbPresetV1 {
+        id: "crystalHall",
+        label: "Crystal Hall",
+        params: ShimmerVerbParams {
+            enabled: true,
+            shimmer: 0.6,
+            space: 0.8,
+            mix: 0.4,
+        },
+    },
+    ShimmerVerbPresetV1 {
+        id: "ethereal",
+        label: "Ethereal",
+        params: ShimmerVerbParams {
+            enabled: true,
+            shimmer: 0.85,
+            space: 0.95,
+            mix: 0.55,
+        },
+    },
+    ShimmerVerbPresetV1 {
+        id: "subtleShimmer",
+        label: "Subtle Shimmer",
+        params: ShimmerVerbParams {
+            enabled: true,
+            shimmer: 0.25,
+            space: 0.6,
+            mix: 0.3,
+        },
+    },
+];
+
+pub fn shimmer_verb_preset_data() -> &'static [ShimmerVerbPresetV1] {
+    &SHIMMER_VERB_PRESET_DATA
+}
+
 pub fn apply_shimmer_verb_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let Some(p) = SHIMMER_VERB_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
     let slot = params.fx_slots.iter_mut().find_map(|s| {
         if let FxSlotConfig::ShimmerVerb(sv) = s {
             Some(sv)
@@ -174,32 +216,11 @@ pub fn apply_shimmer_verb_preset(params: &mut SynthParams, preset: &str) -> bool
             None
         }
     });
-    let Some(sv) = slot else {
-        return false;
-    };
-    match preset {
-        "crystalHall" => {
-            sv.enabled = true;
-            sv.shimmer = 0.6;
-            sv.space = 0.8;
-            sv.mix = 0.4;
-            true
-        }
-        "ethereal" => {
-            sv.enabled = true;
-            sv.shimmer = 0.85;
-            sv.space = 0.95;
-            sv.mix = 0.55;
-            true
-        }
-        "subtleShimmer" => {
-            sv.enabled = true;
-            sv.shimmer = 0.25;
-            sv.space = 0.6;
-            sv.mix = 0.3;
-            true
-        }
-        _ => false,
+    if let Some(sv) = slot {
+        *sv = p.params.clone();
+        true
+    } else {
+        false
     }
 }
 

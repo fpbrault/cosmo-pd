@@ -355,7 +355,64 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     presets: &PRESET_OPTIONS,
 };
 
+crate::fx_preset_entry!(pub EqPresetV1, EqParams);
+
+pub const EQ_PRESET_DATA: [EqPresetV1; 3] = [
+    EqPresetV1 {
+        id: "bassBoost",
+        label: "Bass Boost",
+        params: EqParams {
+            enabled: true,
+            gain_band1: 6.0,
+            gain_band2: 4.0,
+            gain_band3: 2.0,
+            gain_band4: 0.0,
+            gain_band5: 0.0,
+            gain_band6: -1.0,
+            gain_band7: -2.0,
+            gain_band8: -2.0,
+        },
+    },
+    EqPresetV1 {
+        id: "presence",
+        label: "Presence",
+        params: EqParams {
+            enabled: true,
+            gain_band1: 0.0,
+            gain_band2: -2.0,
+            gain_band3: -1.0,
+            gain_band4: 0.0,
+            gain_band5: 2.0,
+            gain_band6: 5.0,
+            gain_band7: 4.0,
+            gain_band8: 3.0,
+        },
+    },
+    EqPresetV1 {
+        id: "warmth",
+        label: "Warmth",
+        params: EqParams {
+            enabled: true,
+            gain_band1: 3.0,
+            gain_band2: 4.0,
+            gain_band3: 3.0,
+            gain_band4: 1.0,
+            gain_band5: 0.0,
+            gain_band6: -2.0,
+            gain_band7: -4.0,
+            gain_band8: -5.0,
+        },
+    },
+];
+
+pub fn eq_preset_data() -> &'static [EqPresetV1] {
+    &EQ_PRESET_DATA
+}
+
 pub fn apply_eq_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let Some(p) = EQ_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
     let slot = params.fx_slots.iter_mut().find_map(|s| {
         if let FxSlotConfig::Eq8Band(eq) = s {
             Some(eq)
@@ -363,46 +420,10 @@ pub fn apply_eq_preset(params: &mut SynthParams, preset: &str) -> bool {
             None
         }
     });
-    let Some(eq) = slot else {
-        return false;
-    };
-    match preset {
-        "bassBoost" => {
-            eq.enabled = true;
-            eq.gain_band1 = 6.0;
-            eq.gain_band2 = 4.0;
-            eq.gain_band3 = 2.0;
-            eq.gain_band4 = 0.0;
-            eq.gain_band5 = 0.0;
-            eq.gain_band6 = -1.0;
-            eq.gain_band7 = -2.0;
-            eq.gain_band8 = -2.0;
-            true
-        }
-        "presence" => {
-            eq.enabled = true;
-            eq.gain_band1 = 0.0;
-            eq.gain_band2 = -2.0;
-            eq.gain_band3 = -1.0;
-            eq.gain_band4 = 0.0;
-            eq.gain_band5 = 2.0;
-            eq.gain_band6 = 5.0;
-            eq.gain_band7 = 4.0;
-            eq.gain_band8 = 3.0;
-            true
-        }
-        "warmth" => {
-            eq.enabled = true;
-            eq.gain_band1 = 3.0;
-            eq.gain_band2 = 4.0;
-            eq.gain_band3 = 3.0;
-            eq.gain_band4 = 1.0;
-            eq.gain_band5 = 0.0;
-            eq.gain_band6 = -2.0;
-            eq.gain_band7 = -4.0;
-            eq.gain_band8 = -5.0;
-            true
-        }
-        _ => false,
+    if let Some(eq) = slot {
+        *eq = p.params.clone();
+        true
+    } else {
+        false
     }
 }

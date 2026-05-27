@@ -75,10 +75,7 @@ export function useFxModuleController(
 				return;
 			}
 
-			const patchParams = resolvePresetPatchParams(
-				config,
-				builtinPreset.patch as Record<string, unknown>,
-			);
+			const patchParams = builtinPreset.params;
 			if (!patchParams) {
 				return;
 			}
@@ -87,7 +84,7 @@ export function useFxModuleController(
 			requestApplyModulePreset({
 				module: getPresetModuleKey(config.moduleKey),
 				preset: builtinPreset.id,
-				patch: builtinPreset.patch,
+				patch: patchParams,
 			});
 		},
 		[config, slot, userPresets, setFxSlotParams],

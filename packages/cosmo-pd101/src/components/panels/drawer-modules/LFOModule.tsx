@@ -8,8 +8,8 @@ import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEv
 import { useHostTransport } from "@/features/synth/hooks/useHostTransport";
 import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { LFO_PRESET_DATA } from "@/lib/synth/bindings/synth";
 import { resolveTargetFromMetadata } from "@/lib/synth/modTargets";
-import { getLfoModulePatch, LFO_PRESETS } from "@/lib/synth/modulePresets";
 import { PARAM_META } from "@/lib/synth/paramMeta";
 
 interface LfoModuleProps {
@@ -135,21 +135,21 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
-		const preset = LFO_PRESETS.find((entry) => entry.id === presetId);
+		const preset = LFO_PRESET_DATA.find((entry) => entry.id === presetId);
 		if (!preset) {
 			return;
 		}
 
-		setLfoWaveform(preset.patch.waveform);
-		setLfoRate(preset.patch.rate);
-		setLfoDepth(preset.patch.depth);
-		setLfoSymmetry(preset.patch.symmetry);
-		setLfoRetrigger(preset.patch.retrigger);
-		setLfoOffset(preset.patch.offset);
+		setLfoWaveform(preset.params.waveform);
+		setLfoRate(preset.params.rate as number);
+		setLfoDepth(preset.params.depth as number);
+		setLfoSymmetry(preset.params.symmetry as number);
+		setLfoRetrigger(preset.params.retrigger);
+		setLfoOffset(preset.params.offset as number);
 		requestApplyModulePreset({
 			module: id === 1 ? "lfo1" : "lfo2",
 			preset: preset.id,
-			patch: getLfoModulePatch(id, preset.patch),
+			patch: preset.params as Record<string, unknown>,
 		});
 	};
 
@@ -160,7 +160,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 			enabled
 			hideToggle={true}
 			presetValue={selectedPreset}
-			presetOptions={LFO_PRESETS}
+			presetOptions={LFO_PRESET_DATA}
 			onPresetChange={handlePresetChange}
 		>
 			<LfoDisplay

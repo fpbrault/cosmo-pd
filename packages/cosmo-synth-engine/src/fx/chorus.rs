@@ -140,7 +140,49 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     presets: &PRESET_OPTIONS,
 };
 
+crate::fx_preset_entry!(pub ChorusPresetV1, ChorusParams);
+
+pub const CHORUS_PRESET_DATA: [ChorusPresetV1; 3] = [
+    ChorusPresetV1 {
+        id: "classicWide",
+        label: "Classic Wide",
+        params: ChorusParams {
+            enabled: true,
+            rate: 0.9,
+            depth: 1.2,
+            mix: 0.38,
+        },
+    },
+    ChorusPresetV1 {
+        id: "slowShimmer",
+        label: "Slow Shimmer",
+        params: ChorusParams {
+            enabled: true,
+            rate: 0.35,
+            depth: 2.1,
+            mix: 0.44,
+        },
+    },
+    ChorusPresetV1 {
+        id: "ensembleThick",
+        label: "Ensemble Thick",
+        params: ChorusParams {
+            enabled: true,
+            rate: 1.8,
+            depth: 2.6,
+            mix: 0.56,
+        },
+    },
+];
+
+pub fn chorus_preset_data() -> &'static [ChorusPresetV1] {
+    &CHORUS_PRESET_DATA
+}
+
 pub fn apply_chorus_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let Some(p) = CHORUS_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
     let slot = params.fx_slots.iter_mut().find_map(|s| {
         if let FxSlotConfig::Chorus(c) = s {
             Some(c)
@@ -148,32 +190,10 @@ pub fn apply_chorus_preset(params: &mut SynthParams, preset: &str) -> bool {
             None
         }
     });
-    let Some(c) = slot else {
-        return false;
-    };
-
-    match preset {
-        "classicWide" => {
-            c.enabled = true;
-            c.rate = 0.9;
-            c.depth = 1.2;
-            c.mix = 0.38;
-            true
-        }
-        "slowShimmer" => {
-            c.enabled = true;
-            c.rate = 0.35;
-            c.depth = 2.1;
-            c.mix = 0.44;
-            true
-        }
-        "ensembleThick" => {
-            c.enabled = true;
-            c.rate = 1.8;
-            c.depth = 2.6;
-            c.mix = 0.56;
-            true
-        }
-        _ => false,
+    if let Some(c) = slot {
+        *c = p.params.clone();
+        true
+    } else {
+        false
     }
 }

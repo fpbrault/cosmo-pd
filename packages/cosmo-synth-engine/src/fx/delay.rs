@@ -243,7 +243,63 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     presets: &PRESET_OPTIONS,
 };
 
+crate::fx_preset_entry!(pub DelayPresetV1, DelayParams);
+
+use crate::params::{LfoRateMode, LfoSyncDivision};
+
+pub const DELAY_PRESET_DATA: [DelayPresetV1; 3] = [
+    DelayPresetV1 {
+        id: "digitalSlap",
+        label: "Digital Slap",
+        params: DelayParams {
+            enabled: true,
+            time: 0.11,
+            feedback: 0.22,
+            mix: 0.27,
+            tape_mode: false,
+            warmth: 0.2,
+            time_mode: LfoRateMode::Hz,
+            sync_division: LfoSyncDivision::Quarter,
+        },
+    },
+    DelayPresetV1 {
+        id: "tapeEcho",
+        label: "Tape Echo",
+        params: DelayParams {
+            enabled: true,
+            time: 0.34,
+            feedback: 0.46,
+            mix: 0.35,
+            tape_mode: true,
+            warmth: 0.72,
+            time_mode: LfoRateMode::Hz,
+            sync_division: LfoSyncDivision::Quarter,
+        },
+    },
+    DelayPresetV1 {
+        id: "dubFeedback",
+        label: "Dub Feedback",
+        params: DelayParams {
+            enabled: true,
+            time: 0.52,
+            feedback: 0.68,
+            mix: 0.4,
+            tape_mode: true,
+            warmth: 0.55,
+            time_mode: LfoRateMode::Hz,
+            sync_division: LfoSyncDivision::Quarter,
+        },
+    },
+];
+
+pub fn delay_preset_data() -> &'static [DelayPresetV1] {
+    &DELAY_PRESET_DATA
+}
+
 pub fn apply_delay_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let Some(p) = DELAY_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
     let slot = params.fx_slots.iter_mut().find_map(|s| {
         if let FxSlotConfig::Delay(d) = s {
             Some(d)
@@ -251,45 +307,11 @@ pub fn apply_delay_preset(params: &mut SynthParams, preset: &str) -> bool {
             None
         }
     });
-    let Some(d) = slot else {
-        return false;
-    };
-
-    match preset {
-        "digitalSlap" => {
-            d.enabled = true;
-            d.time = 0.11;
-            d.feedback = 0.22;
-            d.mix = 0.27;
-            d.tape_mode = false;
-            d.warmth = 0.2;
-            d.time_mode = crate::params::LfoRateMode::Hz;
-            d.sync_division = crate::params::LfoSyncDivision::Quarter;
-            true
-        }
-        "tapeEcho" => {
-            d.enabled = true;
-            d.time = 0.34;
-            d.feedback = 0.46;
-            d.mix = 0.35;
-            d.tape_mode = true;
-            d.warmth = 0.72;
-            d.time_mode = crate::params::LfoRateMode::Hz;
-            d.sync_division = crate::params::LfoSyncDivision::Quarter;
-            true
-        }
-        "dubFeedback" => {
-            d.enabled = true;
-            d.time = 0.52;
-            d.feedback = 0.68;
-            d.mix = 0.4;
-            d.tape_mode = true;
-            d.warmth = 0.55;
-            d.time_mode = crate::params::LfoRateMode::Hz;
-            d.sync_division = crate::params::LfoSyncDivision::Quarter;
-            true
-        }
-        _ => false,
+    if let Some(d) = slot {
+        *d = p.params.clone();
+        true
+    } else {
+        false
     }
 }
 

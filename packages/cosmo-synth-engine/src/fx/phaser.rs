@@ -191,7 +191,52 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     presets: &PRESET_OPTIONS,
 };
 
+crate::fx_preset_entry!(pub PhaserPresetV1, PhaserParams);
+
+pub const PHASER_PRESET_DATA: [PhaserPresetV1; 3] = [
+    PhaserPresetV1 {
+        id: "gentleSweep",
+        label: "Gentle Sweep",
+        params: PhaserParams {
+            enabled: true,
+            rate: 0.35,
+            depth: 0.45,
+            feedback: 0.2,
+            mix: 0.25,
+        },
+    },
+    PhaserPresetV1 {
+        id: "jetWash",
+        label: "Jet Wash",
+        params: PhaserParams {
+            enabled: true,
+            rate: 0.9,
+            depth: 0.78,
+            feedback: 0.55,
+            mix: 0.43,
+        },
+    },
+    PhaserPresetV1 {
+        id: "wideNotch",
+        label: "Wide Notch",
+        params: PhaserParams {
+            enabled: true,
+            rate: 0.18,
+            depth: 1.0,
+            feedback: 0.72,
+            mix: 0.52,
+        },
+    },
+];
+
+pub fn phaser_preset_data() -> &'static [PhaserPresetV1] {
+    &PHASER_PRESET_DATA
+}
+
 pub fn apply_phaser_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let Some(entry) = PHASER_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
     let slot = params.fx_slots.iter_mut().find_map(|s| {
         if let FxSlotConfig::Phaser(p) = s {
             Some(p)
@@ -199,35 +244,10 @@ pub fn apply_phaser_preset(params: &mut SynthParams, preset: &str) -> bool {
             None
         }
     });
-    let Some(p) = slot else {
-        return false;
-    };
-
-    match preset {
-        "gentleSweep" => {
-            p.enabled = true;
-            p.rate = 0.35;
-            p.depth = 0.45;
-            p.feedback = 0.2;
-            p.mix = 0.25;
-            true
-        }
-        "jetWash" => {
-            p.enabled = true;
-            p.rate = 0.9;
-            p.depth = 0.78;
-            p.feedback = 0.55;
-            p.mix = 0.43;
-            true
-        }
-        "wideNotch" => {
-            p.enabled = true;
-            p.rate = 0.18;
-            p.depth = 1.0;
-            p.feedback = 0.72;
-            p.mix = 0.52;
-            true
-        }
-        _ => false,
+    if let Some(p) = slot {
+        *p = entry.params.clone();
+        true
+    } else {
+        false
     }
 }

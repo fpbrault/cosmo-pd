@@ -210,7 +210,52 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     presets: &PRESET_OPTIONS,
 };
 
+crate::fx_preset_entry!(pub DistortionPresetV1, DistortionParams);
+
+pub const DISTORTION_PRESET_DATA: [DistortionPresetV1; 3] = [
+    DistortionPresetV1 {
+        id: "warmOverdrive",
+        label: "Warm Overdrive",
+        params: DistortionParams {
+            enabled: true,
+            mode: 0,
+            drive: 0.48,
+            tone: 0.34,
+            mix: 0.9,
+        },
+    },
+    DistortionPresetV1 {
+        id: "grittyFuzz",
+        label: "Gritty Fuzz",
+        params: DistortionParams {
+            enabled: true,
+            mode: 2,
+            drive: 0.72,
+            tone: 0.48,
+            mix: 1.0,
+        },
+    },
+    DistortionPresetV1 {
+        id: "bitingClip",
+        label: "Biting Clip",
+        params: DistortionParams {
+            enabled: true,
+            mode: 1,
+            drive: 0.88,
+            tone: 0.78,
+            mix: 1.0,
+        },
+    },
+];
+
+pub fn distortion_preset_data() -> &'static [DistortionPresetV1] {
+    &DISTORTION_PRESET_DATA
+}
+
 pub fn apply_distortion_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let Some(p) = DISTORTION_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
     let slot = params.fx_slots.iter_mut().find_map(|s| {
         if let FxSlotConfig::Distortion(d) = s {
             Some(d)
@@ -218,35 +263,11 @@ pub fn apply_distortion_preset(params: &mut SynthParams, preset: &str) -> bool {
             None
         }
     });
-    let Some(dist) = slot else {
-        return false;
-    };
-    match preset {
-        "warmOverdrive" => {
-            dist.enabled = true;
-            dist.mode = 0;
-            dist.drive = 0.48;
-            dist.tone = 0.34;
-            dist.mix = 0.9;
-            true
-        }
-        "grittyFuzz" => {
-            dist.enabled = true;
-            dist.mode = 2;
-            dist.drive = 0.72;
-            dist.tone = 0.48;
-            dist.mix = 1.0;
-            true
-        }
-        "bitingClip" => {
-            dist.enabled = true;
-            dist.mode = 1;
-            dist.drive = 0.88;
-            dist.tone = 0.78;
-            dist.mix = 1.0;
-            true
-        }
-        _ => false,
+    if let Some(d) = slot {
+        *d = p.params.clone();
+        true
+    } else {
+        false
     }
 }
 

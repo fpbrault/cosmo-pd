@@ -1,4 +1,4 @@
-use crate::params::ModDestination;
+use crate::params::{ModDestination, RotarySpeakerParams};
 use libm::{cosf, sinf};
 
 // ---------------------------------------------------------------------------
@@ -192,43 +192,63 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     presets: &PRESET_OPTIONS,
 };
 
+crate::fx_preset_entry!(pub RotarySpeakerPresetV1, RotarySpeakerParams);
+
+pub const ROTARY_SPEAKER_PRESET_DATA: [RotarySpeakerPresetV1; 3] = [
+    RotarySpeakerPresetV1 {
+        id: "classicSpin",
+        label: "Classic Spin",
+        params: RotarySpeakerParams {
+            enabled: true,
+            speed: 0.9,
+            depth: 0.62,
+            drive: 0.08,
+            mix: 0.58,
+        },
+    },
+    RotarySpeakerPresetV1 {
+        id: "fastHorn",
+        label: "Fast Horn",
+        params: RotarySpeakerParams {
+            enabled: true,
+            speed: 4.2,
+            depth: 0.84,
+            drive: 0.12,
+            mix: 0.66,
+        },
+    },
+    RotarySpeakerPresetV1 {
+        id: "dirtyCab",
+        label: "Dirty Cab",
+        params: RotarySpeakerParams {
+            enabled: true,
+            speed: 1.8,
+            depth: 0.72,
+            drive: 0.48,
+            mix: 0.74,
+        },
+    },
+];
+
+pub fn rotary_speaker_preset_data() -> &'static [RotarySpeakerPresetV1] {
+    &ROTARY_SPEAKER_PRESET_DATA
+}
+
 pub fn apply_rotary_speaker_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let Some(p) = ROTARY_SPEAKER_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
     let slot = params.fx_slots.iter_mut().find_map(|s| {
-        if let FxSlotConfig::RotarySpeaker(rotary) = s {
-            Some(rotary)
+        if let FxSlotConfig::RotarySpeaker(rs) = s {
+            Some(rs)
         } else {
             None
         }
     });
-    let Some(rotary) = slot else {
-        return false;
-    };
-
-    match preset {
-        "classicSpin" => {
-            rotary.enabled = true;
-            rotary.speed = 0.9;
-            rotary.depth = 0.62;
-            rotary.drive = 0.08;
-            rotary.mix = 0.58;
-            true
-        }
-        "fastHorn" => {
-            rotary.enabled = true;
-            rotary.speed = 4.2;
-            rotary.depth = 0.84;
-            rotary.drive = 0.12;
-            rotary.mix = 0.66;
-            true
-        }
-        "dirtyCab" => {
-            rotary.enabled = true;
-            rotary.speed = 1.8;
-            rotary.depth = 0.72;
-            rotary.drive = 0.48;
-            rotary.mix = 0.74;
-            true
-        }
-        _ => false,
+    if let Some(rs) = slot {
+        *rs = p.params.clone();
+        true
+    } else {
+        false
     }
 }

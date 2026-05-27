@@ -4,7 +4,7 @@ import ModEnvDisplay from "@/components/panels/drawer-modules/ModEnvDisplay";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthParam } from "@/features/synth/SynthParamController";
-import { MOD_ENV_PRESETS } from "@/lib/synth/modulePresets";
+import { MOD_ENV_PRESET_DATA } from "@/lib/synth/bindings/synth";
 import {
 	buildAdsrGeometry,
 	envSecondsToNorm,
@@ -85,19 +85,19 @@ export default function ModEnveloppeModule() {
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
-		const preset = MOD_ENV_PRESETS.find((entry) => entry.id === presetId);
+		const preset = MOD_ENV_PRESET_DATA.find((entry) => entry.id === presetId);
 		if (!preset) {
 			return;
 		}
 
-		setModEnvAttack(preset.patch.modEnv.attack as number);
-		setModEnvDecay(preset.patch.modEnv.decay as number);
-		setModEnvSustain(preset.patch.modEnv.sustain as number);
-		setModEnvRelease(preset.patch.modEnv.release as number);
+		setModEnvAttack(preset.params.attack as number);
+		setModEnvDecay(preset.params.decay as number);
+		setModEnvSustain(preset.params.sustain as number);
+		setModEnvRelease(preset.params.release as number);
 		requestApplyModulePreset({
 			module: "modEnv",
 			preset: preset.id,
-			patch: preset.patch,
+			patch: preset.params as Record<string, unknown>,
 		});
 	};
 
@@ -108,7 +108,7 @@ export default function ModEnveloppeModule() {
 			enabled
 			hideToggle
 			presetValue={selectedPreset}
-			presetOptions={MOD_ENV_PRESETS}
+			presetOptions={MOD_ENV_PRESET_DATA}
 			onPresetChange={handlePresetChange}
 		>
 			<ModEnvDisplay

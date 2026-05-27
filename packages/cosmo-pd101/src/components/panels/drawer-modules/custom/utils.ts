@@ -10,7 +10,6 @@ import {
 	type FxSlotType,
 	type ModDestination,
 } from "@/lib/synth/bindings/synth";
-import type { ModulePresetModule } from "@/lib/synth/modulePresets";
 import { PARAM_META } from "@/lib/synth/paramMeta";
 
 function humanizeIdentifier(value: string): string {
@@ -142,7 +141,7 @@ export function resolvePresetPatchParams(
 
 export function getPresetModuleKey(
 	moduleKey: FxSlotModuleConfig["moduleKey"],
-): ModulePresetModule {
+): FxSlotType | "eq" | "lfo1" | "lfo2" | "modEnv" | "random" {
 	return moduleKey === "eq8Band" ? "eq" : moduleKey;
 }
 

@@ -216,7 +216,60 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     presets: &PRESET_OPTIONS,
 };
 
+crate::fx_preset_entry!(pub TremoloPresetV1, TremoloParams);
+
+use crate::params::{LfoRateMode, LfoSyncDivision};
+
+pub const TREMOLO_PRESET_DATA: [TremoloPresetV1; 3] = [
+    TremoloPresetV1 {
+        id: "slowWave",
+        label: "Slow Wave",
+        params: TremoloParams {
+            enabled: true,
+            rate: 2.0,
+            depth: 0.5,
+            waveform: 0,
+            mix: 1.0,
+            rate_mode: LfoRateMode::Hz,
+            sync_division: LfoSyncDivision::Quarter,
+        },
+    },
+    TremoloPresetV1 {
+        id: "fastChop",
+        label: "Fast Chop",
+        params: TremoloParams {
+            enabled: true,
+            rate: 8.0,
+            depth: 0.75,
+            waveform: 2,
+            mix: 1.0,
+            rate_mode: LfoRateMode::Hz,
+            sync_division: LfoSyncDivision::Quarter,
+        },
+    },
+    TremoloPresetV1 {
+        id: "triPulse",
+        label: "Tri Pulse",
+        params: TremoloParams {
+            enabled: true,
+            rate: 5.0,
+            depth: 0.6,
+            waveform: 1,
+            mix: 1.0,
+            rate_mode: LfoRateMode::Hz,
+            sync_division: LfoSyncDivision::Quarter,
+        },
+    },
+];
+
+pub fn tremolo_preset_data() -> &'static [TremoloPresetV1] {
+    &TREMOLO_PRESET_DATA
+}
+
 pub fn apply_tremolo_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let Some(p) = TREMOLO_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
     let slot = params.fx_slots.iter_mut().find_map(|s| {
         if let FxSlotConfig::Tremolo(tr) = s {
             Some(tr)
@@ -224,40 +277,10 @@ pub fn apply_tremolo_preset(params: &mut SynthParams, preset: &str) -> bool {
             None
         }
     });
-    let Some(tr) = slot else {
-        return false;
-    };
-    match preset {
-        "slowWave" => {
-            tr.enabled = true;
-            tr.rate = 2.0;
-            tr.depth = 0.5;
-            tr.waveform = 0;
-            tr.mix = 1.0;
-            tr.rate_mode = crate::params::LfoRateMode::Hz;
-            tr.sync_division = crate::params::LfoSyncDivision::Quarter;
-            true
-        }
-        "fastChop" => {
-            tr.enabled = true;
-            tr.rate = 8.0;
-            tr.depth = 0.75;
-            tr.waveform = 2;
-            tr.mix = 1.0;
-            tr.rate_mode = crate::params::LfoRateMode::Hz;
-            tr.sync_division = crate::params::LfoSyncDivision::Quarter;
-            true
-        }
-        "triPulse" => {
-            tr.enabled = true;
-            tr.rate = 5.0;
-            tr.depth = 0.6;
-            tr.waveform = 1;
-            tr.mix = 1.0;
-            tr.rate_mode = crate::params::LfoRateMode::Hz;
-            tr.sync_division = crate::params::LfoSyncDivision::Quarter;
-            true
-        }
-        _ => false,
+    if let Some(tr) = slot {
+        *tr = p.params.clone();
+        true
+    } else {
+        false
     }
 }

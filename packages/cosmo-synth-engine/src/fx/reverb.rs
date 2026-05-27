@@ -250,7 +250,55 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     presets: &PRESET_OPTIONS,
 };
 
+crate::fx_preset_entry!(pub ReverbPresetV1, ReverbParams);
+
+pub const REVERB_PRESET_DATA: [ReverbPresetV1; 3] = [
+    ReverbPresetV1 {
+        id: "smallRoom",
+        label: "Small Room",
+        params: ReverbParams {
+            enabled: true,
+            mix: 0.22,
+            space: 0.32,
+            predelay: 0.006,
+            distance: 0.28,
+            character: 0.45,
+        },
+    },
+    ReverbPresetV1 {
+        id: "plateAir",
+        label: "Plate Air",
+        params: ReverbParams {
+            enabled: true,
+            mix: 0.31,
+            space: 0.58,
+            predelay: 0.012,
+            distance: 0.4,
+            character: 0.74,
+        },
+    },
+    ReverbPresetV1 {
+        id: "cathedral",
+        label: "Cathedral",
+        params: ReverbParams {
+            enabled: true,
+            mix: 0.47,
+            space: 0.9,
+            predelay: 0.03,
+            distance: 0.68,
+            character: 0.66,
+        },
+    },
+];
+
+pub fn reverb_preset_data() -> &'static [ReverbPresetV1] {
+    &REVERB_PRESET_DATA
+}
+
 pub fn apply_reverb_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let Some(p) = REVERB_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
     let slot = params.fx_slots.iter_mut().find_map(|s| {
         if let FxSlotConfig::Reverb(r) = s {
             Some(r)
@@ -258,38 +306,10 @@ pub fn apply_reverb_preset(params: &mut SynthParams, preset: &str) -> bool {
             None
         }
     });
-    let Some(r) = slot else {
-        return false;
-    };
-
-    match preset {
-        "smallRoom" => {
-            r.enabled = true;
-            r.mix = 0.22;
-            r.space = 0.32;
-            r.predelay = 0.006;
-            r.distance = 0.28;
-            r.character = 0.45;
-            true
-        }
-        "plateAir" => {
-            r.enabled = true;
-            r.mix = 0.31;
-            r.space = 0.58;
-            r.predelay = 0.012;
-            r.distance = 0.4;
-            r.character = 0.74;
-            true
-        }
-        "cathedral" => {
-            r.enabled = true;
-            r.mix = 0.47;
-            r.space = 0.9;
-            r.predelay = 0.03;
-            r.distance = 0.68;
-            r.character = 0.66;
-            true
-        }
-        _ => false,
+    if let Some(r) = slot {
+        *r = p.params.clone();
+        true
+    } else {
+        false
     }
 }

@@ -1,31 +1,42 @@
-import { FX_DEFINITIONS_V1, type FxSlotType } from "@/lib/synth/bindings/synth";
 import {
-	AUTO_WAH_PRESETS,
-	BITCRUSHER_PRESETS,
-	CHORUS_PRESETS,
-	COMPRESSOR_PRESETS,
-	DELAY_PRESETS,
-	DISTORTION_PRESETS,
-	EQ_PRESETS,
-	FLANGER_PRESETS,
-	GRAIN_DELAY_PRESETS,
-	JUNO_CHORUS_PRESETS,
-	LOFI_PRESETS,
-	type ModulePresetDefinition,
-	type ModulePresetPatch,
-	MULTIMODE_FILTER_PRESETS,
-	PHASE_MOD_PRESETS,
-	PHASER_PRESETS,
-	REVERB_PRESETS,
-	RING_MOD_PRESETS,
-	ROTARY_SPEAKER_PRESETS,
-	SHIMMER_VERB_PRESETS,
-	STEREO_WIDENER_PRESETS,
-	type ModulePresetModule as SynthModuleType,
-	TREMOLO_PRESETS,
-	VIBRATO_PRESETS,
-	WAVEFOLDER_PRESETS,
-} from "@/lib/synth/modulePresets";
+	AUTO_WAH_PRESET_DATA,
+	BITCRUSHER_PRESET_DATA,
+	CHORUS_PRESET_DATA,
+	COMPRESSOR_PRESET_DATA,
+	DELAY_PRESET_DATA,
+	DISTORTION_PRESET_DATA,
+	EQ_PRESET_DATA,
+	FLANGER_PRESET_DATA,
+	FX_DEFINITIONS_V1,
+	type FxSlotType,
+	GRAIN_DELAY_PRESET_DATA,
+	JUNO_CHORUS_PRESET_DATA,
+	LOFI_PRESET_DATA,
+	MULTIMODE_FILTER_PRESET_DATA,
+	PHASE_MOD_PRESET_DATA,
+	PHASER_PRESET_DATA,
+	REVERB_PRESET_DATA,
+	RING_MOD_PRESET_DATA,
+	ROTARY_SPEAKER_PRESET_DATA,
+	SHIMMER_VERB_PRESET_DATA,
+	STEREO_WIDENER_PRESET_DATA,
+	TREMOLO_PRESET_DATA,
+	VIBRATO_PRESET_DATA,
+	WAVEFOLDER_PRESET_DATA,
+} from "@/lib/synth/bindings/synth";
+
+type BuiltinPresetEntry = {
+	id: string;
+	label: string;
+	params: Record<string, unknown>;
+};
+type SynthModuleType =
+	| FxSlotType
+	| "eq"
+	| "lfo1"
+	| "lfo2"
+	| "modEnv"
+	| "random";
 export type KnobControlDef = {
 	kind: "knob";
 	param: string;
@@ -86,7 +97,7 @@ export type FxSlotModuleConfig = {
 		otherwiseColumns?: number;
 	};
 	customRenderer?: FxCustomRendererKey;
-	presets: ModulePresetDefinition<ModulePresetPatch>[];
+	presets: BuiltinPresetEntry[];
 	formatters?: Partial<Record<string, FormatterFn>>;
 	controlLayout?: Partial<Record<string, ControlLayoutRule>>;
 	controls: ControlDef[];
@@ -123,7 +134,7 @@ export const FX_UI_META = {
 		shortTitle: "Chrs",
 		color: "#818cf8",
 		columns: 3,
-		presets: CHORUS_PRESETS,
+		presets: CHORUS_PRESET_DATA,
 		formatters: {
 			rate: (v) => `${v.toFixed(1)}Hz`,
 			depth: (v) => `${Math.round(v / 5)}%`,
@@ -137,7 +148,7 @@ export const FX_UI_META = {
 		color: "#fbbf24",
 		columns: 4,
 		customRenderer: "delayModuleRenderer",
-		presets: DELAY_PRESETS,
+		presets: DELAY_PRESET_DATA,
 		formatters: {
 			time: (v) => `${Math.round(v * 1000)}ms`,
 			feedback: pct,
@@ -153,7 +164,7 @@ export const FX_UI_META = {
 		color: "#f43f5e",
 		columns: 3,
 		customRenderer: "phaseModModuleRenderer",
-		presets: PHASE_MOD_PRESETS,
+		presets: PHASE_MOD_PRESET_DATA,
 		formatters: {
 			amount: pct,
 			ratio: (v) => `${v.toFixed(2)}x`,
@@ -167,7 +178,7 @@ export const FX_UI_META = {
 		color: "#f472b6",
 		columns: 2,
 		customRenderer: "vibratoModuleRenderer",
-		presets: VIBRATO_PRESETS,
+		presets: VIBRATO_PRESET_DATA,
 		formatters: {
 			rate: (v) => `${v.toFixed(1)}Hz`,
 			depth: (v) => `${Math.round(v)}%`,
@@ -197,7 +208,7 @@ export const FX_UI_META = {
 		title: "Phaser",
 		shortTitle: "Phsr",
 		color: "#a78bfa",
-		presets: PHASER_PRESETS,
+		presets: PHASER_PRESET_DATA,
 		formatters: {
 			rate: (v) => `${v.toFixed(1)}Hz`,
 			depth: pct,
@@ -212,7 +223,7 @@ export const FX_UI_META = {
 		shortTitle: "Rvb",
 		color: "#f97316",
 		columns: 3,
-		presets: REVERB_PRESETS,
+		presets: REVERB_PRESET_DATA,
 		formatters: {
 			mix: pct,
 			space: pct,
@@ -227,7 +238,7 @@ export const FX_UI_META = {
 		shortTitle: "Comp",
 		color: "#fb923c",
 		columns: 3,
-		presets: COMPRESSOR_PRESETS,
+		presets: COMPRESSOR_PRESET_DATA,
 		formatters: {
 			thresholdDb: (v) => `${v.toFixed(0)}dB`,
 			ratio: (v) => `${v.toFixed(1)}:1`,
@@ -244,7 +255,7 @@ export const FX_UI_META = {
 		color: "#34d399",
 		columns: 8,
 		customRenderer: "eq8BandModuleRenderer",
-		presets: EQ_PRESETS,
+		presets: EQ_PRESET_DATA,
 		formatters: {
 			gainBand1: (v) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`,
 			gainBand2: (v) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`,
@@ -263,7 +274,7 @@ export const FX_UI_META = {
 		color: "#a78bfa",
 		columns: 4,
 		customRenderer: "grainDelayModuleRenderer",
-		presets: GRAIN_DELAY_PRESETS,
+		presets: GRAIN_DELAY_PRESET_DATA,
 		formatters: {
 			time: (v) => `${(v * 1000).toFixed(0)}ms`,
 			feedback: pct,
@@ -278,7 +289,7 @@ export const FX_UI_META = {
 		shortTitle: "Bit",
 		color: "#f87171",
 		columns: 3,
-		presets: BITCRUSHER_PRESETS,
+		presets: BITCRUSHER_PRESET_DATA,
 		formatters: {
 			bits: (v) => v.toFixed(1),
 			rateReduction: (v) => `÷${v.toFixed(1)}`,
@@ -291,7 +302,7 @@ export const FX_UI_META = {
 		shortTitle: "Shim",
 		color: "#60a5fa",
 		columns: 3,
-		presets: SHIMMER_VERB_PRESETS,
+		presets: SHIMMER_VERB_PRESET_DATA,
 		formatters: {
 			shimmer: pct,
 			space: pct,
@@ -304,7 +315,7 @@ export const FX_UI_META = {
 		shortTitle: "Dist",
 		color: "#f59e0b",
 		columns: 4,
-		presets: DISTORTION_PRESETS,
+		presets: DISTORTION_PRESET_DATA,
 		formatters: {
 			drive: pct,
 			tone: pct,
@@ -317,7 +328,7 @@ export const FX_UI_META = {
 		shortTitle: "LoFi",
 		color: "#38bdf8",
 		columns: 4,
-		presets: LOFI_PRESETS,
+		presets: LOFI_PRESET_DATA,
 		formatters: {
 			degrade: pct,
 			wowDepth: pct,
@@ -340,7 +351,7 @@ export const FX_UI_META = {
 		shortTitle: "Ring",
 		color: "#e879f9",
 		columns: 2,
-		presets: RING_MOD_PRESETS,
+		presets: RING_MOD_PRESET_DATA,
 		formatters: {
 			carrierHz: (v) => `${v.toFixed(0)} Hz`,
 			mix: pct,
@@ -352,7 +363,7 @@ export const FX_UI_META = {
 		shortTitle: "Wave",
 		color: "#c084fc",
 		columns: 3,
-		presets: WAVEFOLDER_PRESETS,
+		presets: WAVEFOLDER_PRESET_DATA,
 		formatters: {
 			drive: pct,
 			folds: pct,
@@ -365,7 +376,7 @@ export const FX_UI_META = {
 		shortTitle: "Juno",
 		color: "#22d3ee",
 		columns: 1,
-		presets: JUNO_CHORUS_PRESETS,
+		presets: JUNO_CHORUS_PRESET_DATA,
 		formatters: {
 			mix: pct,
 		},
@@ -377,7 +388,7 @@ export const FX_UI_META = {
 		color: "#4ade80",
 		columns: 3,
 		customRenderer: "tremoloModuleRenderer",
-		presets: TREMOLO_PRESETS,
+		presets: TREMOLO_PRESET_DATA,
 		formatters: {
 			rate: (v) => `${v.toFixed(1)}Hz`,
 			depth: pct,
@@ -390,7 +401,7 @@ export const FX_UI_META = {
 		shortTitle: "MMF",
 		color: "#fca5a5",
 		columns: 3,
-		presets: MULTIMODE_FILTER_PRESETS,
+		presets: MULTIMODE_FILTER_PRESET_DATA,
 		formatters: {
 			cutoffHz: (v) => `${Math.round(v)}Hz`,
 			resonance: pct,
@@ -404,7 +415,7 @@ export const FX_UI_META = {
 		shortTitle: "Flng",
 		color: "#67e8f9",
 		columns: 3,
-		presets: FLANGER_PRESETS,
+		presets: FLANGER_PRESET_DATA,
 		formatters: {
 			rate: (v) => `${v.toFixed(2)}Hz`,
 			depth: pct,
@@ -419,7 +430,7 @@ export const FX_UI_META = {
 		shortTitle: "Rot",
 		color: "#fde68a",
 		columns: 2,
-		presets: ROTARY_SPEAKER_PRESETS,
+		presets: ROTARY_SPEAKER_PRESET_DATA,
 		formatters: {
 			speed: (v) => `${v.toFixed(1)}Hz`,
 			depth: pct,
@@ -433,7 +444,7 @@ export const FX_UI_META = {
 		shortTitle: "AWah",
 		color: "#86efac",
 		columns: 3,
-		presets: AUTO_WAH_PRESETS,
+		presets: AUTO_WAH_PRESET_DATA,
 		formatters: {
 			sensitivity: pct,
 			cutoffHz: (v) => `${Math.round(v)}Hz`,
@@ -449,7 +460,7 @@ export const FX_UI_META = {
 		shortTitle: "SWid",
 		color: "#93c5fd",
 		columns: 2,
-		presets: STEREO_WIDENER_PRESETS,
+		presets: STEREO_WIDENER_PRESET_DATA,
 		formatters: {
 			width: pct,
 			delayMs: (v) => `${v.toFixed(1)}ms`,
