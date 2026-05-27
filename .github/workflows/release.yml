@@ -349,7 +349,7 @@ jobs:
   upload-to-gumroad:
     name: Upload to Gumroad
     if: github.event_name != 'push' || github.actor != 'github-actions[bot]'
-    needs: [build-and-package]
+    needs: [build-and-package, validate-plugins]
     runs-on: ubuntu-latest
     steps:
       - name: Download plugin artifacts
@@ -506,28 +506,35 @@ jobs:
             printf '%s\n' "$file_url"
           }
 
-          attach_files() {
-            local -a urls=("$@")
-            local -a attach_args=()
-            local attach_response
-            for url in "${urls[@]}"; do
-              attach_args+=(-d "files[][url]=${url}")
-            done
+          # -------------------------------------------------------
+          # Step 1: Fetch current product and strip old file embeds from rich_content
+          # -------------------------------------------------------
+          echo "Fetching current product ..." >&2
+          product_response=$(curl -sS \
+            "${GUMROAD_API_ROOT}/products/${GUMROAD_PRODUCT_ID}?access_token=${GUMROAD_ACCESS_TOKEN}")
+          if [[ "$(jq -r '.success // "false"' <<<"$product_response")" != "true" ]]; then
+            echo "Failed to fetch product: $product_response" >&2
+            exit 1
+          fi
 
-            echo "Attaching ${#urls[@]} file(s) to product ${GUMROAD_PRODUCT_ID} ..." >&2
-            attach_response=$(curl --fail-with-body -sS \
-              -X PUT "${GUMROAD_API_ROOT}/products/${GUMROAD_PRODUCT_ID}" \
-              -d "access_token=${GUMROAD_ACCESS_TOKEN}" \
-              "${attach_args[@]}")
-
-            if [[ "$(jq -r '.success // "false"' <<<"$attach_response")" != "true" ]]; then
-              echo "Gumroad attach failed: $attach_response" >&2
-              exit 1
+          rich_content=$(jq -c '.product.rich_content // empty' <<<"$product_response")
+          has_file_embeds=false
+          if [[ -n "$rich_content" ]]; then
+            file_embed_count=$(jq '[.[].description.content[] | select(.type == "fileEmbedGroup")] | length' <<<"$rich_content")
+            if [[ "$file_embed_count" -gt 0 ]]; then
+              has_file_embeds=true
+              rich_content_stripped=$(jq -c '
+                map(
+                  .description.content |= map(select(.type != "fileEmbedGroup"))
+                )
+              ' <<<"$rich_content")
+              echo "Stripped $file_embed_count file embed group(s) from rich content" >&2
             fi
+          fi
 
-            echo "Attach succeeded for product $(jq -r '.product.permalink // "unknown"' <<<"$attach_response")" >&2
-          }
-
+          # -------------------------------------------------------
+          # Step 2: Upload new files
+          # -------------------------------------------------------
           files=(plugin-assets/**/*.pkg plugin-assets/**/*.exe)
           if [[ ${#files[@]} -eq 0 ]]; then
             echo "No plugin assets found to upload" >&2
@@ -539,7 +546,92 @@ jobs:
             uploaded_urls+=("$(upload_file "$f")")
           done
 
-          attach_files "${uploaded_urls[@]}"
+          # -------------------------------------------------------
+          # Step 3: Attach new files (+ stripped rich_content atomically if needed)
+          # -------------------------------------------------------
+          attach_args=()
+          for url in "${uploaded_urls[@]}"; do
+            attach_args+=(-d "files[][url]=${url}")
+          done
+
+          if $has_file_embeds; then
+            echo "Attaching ${#uploaded_urls[@]} file(s) and stripping old rich content embeds ..." >&2
+            attach_response=$(curl --fail-with-body -sS \
+              -X PUT "${GUMROAD_API_ROOT}/products/${GUMROAD_PRODUCT_ID}" \
+              -d "access_token=${GUMROAD_ACCESS_TOKEN}" \
+              --data-urlencode "rich_content=${rich_content_stripped}" \
+              "${attach_args[@]}")
+          else
+            echo "Attaching ${#uploaded_urls[@]} file(s) to product ${GUMROAD_PRODUCT_ID} ..." >&2
+            attach_response=$(curl --fail-with-body -sS \
+              -X PUT "${GUMROAD_API_ROOT}/products/${GUMROAD_PRODUCT_ID}" \
+              -d "access_token=${GUMROAD_ACCESS_TOKEN}" \
+              "${attach_args[@]}")
+          fi
+
+          if [[ "$(jq -r '.success // "false"' <<<"$attach_response")" != "true" ]]; then
+            echo "Gumroad attach failed: $attach_response" >&2
+            exit 1
+          fi
+
+          echo "Attach succeeded for product $(jq -r '.product.permalink // "unknown"' <<<"$attach_response")" >&2
+
+          # -------------------------------------------------------
+          # Step 4: Restore file embeds in rich_content with new file IDs
+          # -------------------------------------------------------
+          if $has_file_embeds; then
+            new_files_json=$(jq -c '.product.files' <<<"$attach_response")
+
+            group_uid=$(uuidgen)
+            file_count=$(jq length <<<"$new_files_json")
+            embed_uids=()
+            for ((i=0; i<file_count; i++)); do
+              embed_uids+=("$(uuidgen)")
+            done
+            embed_uids_json=$(printf '%s\n' "${embed_uids[@]}" | jq -R -s -c 'split("\n") | map(select(. != ""))')
+
+            new_rich_content=$(jq -c \
+              --arg group_uid "$group_uid" \
+              --argjson embed_uids "$embed_uids_json" \
+              --argjson new_files "$new_files_json" \
+              '
+                map(
+                  .description.content |= (
+                    map(select(.type != "fileEmbedGroup")) +
+                    [{
+                      "type": "fileEmbedGroup",
+                      "attrs": {
+                        "uid": $group_uid,
+                        "name": "Installers"
+                      },
+                      "content": [
+                        $new_files | to_entries[] | {
+                          "type": "fileEmbed",
+                          "attrs": {
+                            "id": .value.id,
+                            "uid": ($embed_uids[.key] // .value.id),
+                            "collapsed": false
+                          }
+                        }
+                      ]
+                    }]
+                  )
+                )
+              ' <<<"$rich_content")
+
+            echo "Restoring file embeds in rich content ..." >&2
+            restore_response=$(curl --fail-with-body -sS \
+              -X PUT "${GUMROAD_API_ROOT}/products/${GUMROAD_PRODUCT_ID}" \
+              -d "access_token=${GUMROAD_ACCESS_TOKEN}" \
+              --data-urlencode "rich_content=${new_rich_content}")
+
+            if [[ "$(jq -r '.success // "false"' <<<"$restore_response")" != "true" ]]; then
+              echo "Gumroad rich content restore failed: $restore_response" >&2
+              exit 1
+            fi
+
+            echo "Rich content restored with new file embeds" >&2
+          fi
 
   create-release:
     name: Create GitHub release
