@@ -12,10 +12,14 @@ export default function DelayModuleRenderer() {
 		config,
 		slot,
 		selectedPreset,
+		presetOptions,
 		setFxSlotParams,
 		params,
 		enabled,
 		handlePresetChange,
+		builtinPresetIds,
+		handleSavePreset,
+		handleDeletePreset,
 	} = useFxSlotModule();
 	const tapeMode = asNumber(params.tapeMode, 0) === 1;
 	const columns = tapeMode ? 4 : 3;
@@ -27,8 +31,11 @@ export default function DelayModuleRenderer() {
 			enabled={enabled}
 			onToggleEnabled={() => setFxSlotParams(slot, { enabled: !enabled })}
 			presetValue={selectedPreset}
-			presetOptions={config.presets}
+			presetOptions={presetOptions}
 			onPresetChange={handlePresetChange}
+			builtinPresetIds={builtinPresetIds}
+			onSavePreset={handleSavePreset}
+			onDeletePreset={handleDeletePreset}
 		>
 			<BadgeToggle
 				active={tapeMode}
