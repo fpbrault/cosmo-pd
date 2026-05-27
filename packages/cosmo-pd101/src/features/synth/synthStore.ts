@@ -9,6 +9,7 @@ import type {
 	AlgoControlValueV1,
 	AlgoDefinitionV1,
 	BaseWaveform,
+	FxChainMode,
 	FxSlotConfig,
 	FxSlotType,
 	LfoRateMode,
@@ -191,6 +192,8 @@ type SynthState = {
 	modMatrix: ModMatrix;
 	/** Unified per-slot FX configuration — all 6 slots. */
 	fxSlots: FxSlotTuple;
+	/** Series (single chain) or Parallel (two independent lines 0-2 / 3-5). */
+	fxChainMode: FxChainMode;
 
 	macro1: number;
 	macro2: number;
@@ -294,6 +297,7 @@ type SynthActions = {
 		patch: Partial<Record<string, unknown>>,
 	) => void;
 	reorderFxSlots: (fromSlot: number, toSlot: number) => void;
+	setFxChainMode: (mode: FxChainMode) => void;
 
 	setMacro1: (v: number) => void;
 	setMacro2: (v: number) => void;
@@ -394,6 +398,7 @@ const DEFAULT_STATE: SynthState = {
 	octave: 0,
 	modMatrix: { routes: [] },
 	fxSlots: DEFAULT_FX_SLOTS,
+	fxChainMode: "series",
 
 	macro1: 0,
 	macro2: 0,
@@ -558,6 +563,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			slots.splice(toSlot, 0, moved);
 			return { fxSlots: slots as FxSlotTuple };
 		}),
+	setFxChainMode: (mode) => set({ fxChainMode: mode }),
 
 	setMacro1: (v) => set({ macro1: v }),
 	setMacro2: (v) => set({ macro2: v }),
@@ -681,6 +687,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 			pitchBendRange: s.pitchBendRange,
 			modMatrix: s.modMatrix,
 			fxSlots: sanitizeFxSlots(s.fxSlots),
+			fxChainMode: s.fxChainMode,
 			macro1: s.macro1,
 			macro2: s.macro2,
 			macro3: s.macro3,
@@ -879,6 +886,7 @@ export const useSynthStore = create<SynthStore>((set, get) => ({
 				Array.isArray(p.fxSlots) && p.fxSlots.length === 6
 					? (sanitizeFxSlots(p.fxSlots as FxSlotTuple) as FxSlotTuple)
 					: DEFAULT_FX_SLOTS,
+			fxChainMode: (p.fxChainMode as FxChainMode) ?? "series",
 			macro1: safe((p as Record<string, unknown>).macro1 as number, 0),
 			macro2: safe((p as Record<string, unknown>).macro2 as number, 0),
 			macro3: safe((p as Record<string, unknown>).macro3 as number, 0),

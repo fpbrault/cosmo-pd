@@ -18,6 +18,7 @@ use super::shimmer_verb::ShimmerVerbFx;
 use super::stereo_widener::StereoWidenerFx;
 use super::tremolo::TremoloFx;
 use super::wavefolder::WavefolderFx;
+use crate::params::FxChainMode;
 use crate::params::FxSlotConfig;
 use crate::params::FxSlotType;
 use crate::params::ModMatrixCache;
@@ -282,6 +283,8 @@ pub struct FxChain {
     pub slot_types: [FxSlotType; 6],
     active_slots: [usize; 6],
     pub(crate) active_slot_count: usize,
+    /// Series (all 6 slots in one chain) or Parallel (slots 0-2 / 3-5 as two independent lines).
+    chain_mode: FxChainMode,
 }
 
 impl FxChain {
@@ -291,11 +294,13 @@ impl FxChain {
             slot_types: [FxSlotType::Empty; 6],
             active_slots: [0, 1, 2, 3, 4, 5],
             active_slot_count: 0,
+            chain_mode: FxChainMode::default(),
         }
     }
 
     pub fn sync_from_params(&mut self, params: &SynthParams) {
         self.active_slot_count = 0;
+        self.chain_mode = params.fx_chain_mode;
         for (i, config) in params.fx_slots.iter().enumerate() {
             self.slots[i].sync_from_config(config);
             let slot_type = config.slot_type();
@@ -380,14 +385,31 @@ impl FxChain {
         }
     }
 
-    /// Process one sample through all 6 FX slots in series.
+    /// Process one sample through all 6 FX slots in series or two parallel lines.
     pub fn process(&mut self, sample: f32) -> f32 {
-        let mut out = sample;
-        for active_idx in 0..self.active_slot_count {
-            let slot = self.active_slots[active_idx];
-            out = self.process_slot(slot, out);
+        match self.chain_mode {
+            FxChainMode::Series => {
+                let mut out = sample;
+                for active_idx in 0..self.active_slot_count {
+                    let slot = self.active_slots[active_idx];
+                    out = self.process_slot(slot, out);
+                }
+                out
+            }
+            FxChainMode::Parallel => {
+                let mut line_a = sample;
+                let mut line_b = sample;
+                for active_idx in 0..self.active_slot_count {
+                    let slot = self.active_slots[active_idx];
+                    if slot < 3 {
+                        line_a = self.process_slot(slot, line_a);
+                    } else {
+                        line_b = self.process_slot(slot, line_b);
+                    }
+                }
+                (line_a + line_b) * 0.5
+            }
         }
-        out
     }
 
     fn process_slot(&mut self, slot: usize, sample: f32) -> f32 {

@@ -181,6 +181,9 @@ export type FlangerParams = {
 	mix?: number | null,
 };
 
+/**  FX chain routing mode */
+export type FxChainMode = "series" | "parallel";
+
 /**  Visual/semantic kind for an FX control. */
 export type FxControlKindV1 = "knob" | "buttonGroup" | "toggle";
 
@@ -464,6 +467,7 @@ export type SynthParams = {
 	random?: RandomParams,
 	modEnv?: ModEnvParams,
 	fxSlots?: [FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig, FxSlotConfig],
+	fxChainMode?: FxChainMode,
 	macro1?: number | null,
 	macro2?: number | null,
 	macro3?: number | null,

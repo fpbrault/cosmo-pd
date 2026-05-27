@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
 
-use super::fx_params::{FxSlotConfig, PhaseModParams, VibratoParams, default_fx_slot_configs};
+use super::fx_params::{
+    FxChainMode, FxSlotConfig, PhaseModParams, VibratoParams, default_fx_slot_configs,
+};
 use super::lfo::LfoParams;
 use super::line::{LineParams, LineSelect, ModMode, PolyMode};
 use super::modulation::ModMatrix;
@@ -98,6 +100,8 @@ pub struct SynthParams {
     #[serde(default = "default_fx_slot_configs")]
     pub fx_slots: [FxSlotConfig; 6],
     #[serde(default)]
+    pub fx_chain_mode: FxChainMode,
+    #[serde(default)]
     pub macro1: f32,
     #[serde(default)]
     pub macro2: f32,
@@ -153,6 +157,7 @@ impl Default for SynthParams {
             random: RandomParams::default(),
             mod_env: ModEnvParams::default(),
             fx_slots: default_fx_slot_configs(),
+            fx_chain_mode: FxChainMode::default(),
             macro1: 0.0,
             macro2: 0.0,
             macro3: 0.0,

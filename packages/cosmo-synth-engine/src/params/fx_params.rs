@@ -709,6 +709,16 @@ impl Default for AutoWahParams {
     }
 }
 
+/// FX chain routing mode
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub enum FxChainMode {
+    #[default]
+    Series,
+    Parallel,
+}
+
 /// Stereo widener parameters
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
