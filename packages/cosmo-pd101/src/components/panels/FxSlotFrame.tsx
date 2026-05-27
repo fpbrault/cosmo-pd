@@ -1,146 +1,18 @@
 import { defaultAnimateLayoutChanges, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { memo, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { memo, useRef, useState } from "react";
 import { MdArrowDropDown } from "react-icons/md";
 import Button from "@/components/controls/Button";
 import { useSynthStore } from "@/features/synth/synthStore";
 import type { FxSlotType } from "@/lib/synth/bindings/synth";
 import FxSlotModuleRenderer from "./drawer-modules/FxSlotModuleRenderer";
-import {
-	FX_SLOT_MODULE_CONFIGS,
-	FX_UI_META,
-} from "./drawer-modules/fxSlotModuleConfig";
+import { FX_SLOT_MODULE_CONFIGS } from "./drawer-modules/fxSlotModuleConfig";
 import { FxSlotContext } from "./FxSlotContext";
-
-// ---------------------------------------------------------------------------
-// FX type option lists
-// ---------------------------------------------------------------------------
-
-const FX_EFFECT_OPTIONS: { value: FxSlotType; label: string }[] = Object.values(
-	FX_UI_META,
-).map((fx) => ({ value: fx.moduleKey satisfies FxSlotType, label: fx.title }));
-
-/** For active slots: includes a "Remove" option at the top. */
-const FX_CHANGE_OPTIONS: { value: FxSlotType; label: string }[] = [
-	{ value: "empty", label: "Remove" },
-	...FX_EFFECT_OPTIONS,
-];
-
-function getFxTypeLabel(type: FxSlotType): string {
-	return (
-		FX_EFFECT_OPTIONS.find((option) => option.value === type)?.label ?? "Effect"
-	);
-}
-
-// ---------------------------------------------------------------------------
-// TypeSelectorPopover — portal-based so overflow:hidden parents don't clip it
-// ---------------------------------------------------------------------------
-
-const TYPE_SELECTOR_WIDTH = 176;
-const TYPE_SELECTOR_MARGIN = 12;
-
-type PopoverPos = { top: number; left: number; maxHeight: number };
-
-function getTypeSelectorPosition(rect: DOMRect, align: "right" | "center") {
-	const maxHeight = Math.min(
-		360,
-		window.innerHeight - TYPE_SELECTOR_MARGIN * 2,
-	);
-	const preferredTop = rect.bottom + 6;
-	const availableBelow =
-		window.innerHeight - preferredTop - TYPE_SELECTOR_MARGIN;
-	const top =
-		availableBelow < 180
-			? Math.max(TYPE_SELECTOR_MARGIN, rect.top - maxHeight - 6)
-			: Math.min(
-					preferredTop,
-					window.innerHeight - maxHeight - TYPE_SELECTOR_MARGIN,
-				);
-	const preferredLeft =
-		align === "center"
-			? rect.left + rect.width / 2 - TYPE_SELECTOR_WIDTH / 2
-			: rect.right - TYPE_SELECTOR_WIDTH;
-	const left = Math.min(
-		Math.max(TYPE_SELECTOR_MARGIN, preferredLeft),
-		window.innerWidth - TYPE_SELECTOR_WIDTH - TYPE_SELECTOR_MARGIN,
-	);
-
-	return { top, left, maxHeight };
-}
-
-function TypeSelectorPopover({
-	pos,
-	currentType,
-	options,
-	onSelect,
-	onClose,
-}: {
-	pos: PopoverPos;
-	currentType: FxSlotType;
-	options: { value: FxSlotType; label: string }[];
-	onSelect: (t: FxSlotType) => void;
-	onClose: () => void;
-}) {
-	const ref = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		const handlePointerDown = (e: MouseEvent | TouchEvent) => {
-			if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-		};
-		const handleEsc = (e: KeyboardEvent) => {
-			if (e.key === "Escape") onClose();
-		};
-		document.addEventListener("mousedown", handlePointerDown);
-		document.addEventListener("touchstart", handlePointerDown);
-		document.addEventListener("keydown", handleEsc);
-		return () => {
-			document.removeEventListener("mousedown", handlePointerDown);
-			document.removeEventListener("touchstart", handlePointerDown);
-			document.removeEventListener("keydown", handleEsc);
-		};
-	}, [onClose]);
-
-	return createPortal(
-		<div
-			ref={ref}
-			style={{
-				position: "fixed",
-				top: pos.top,
-				left: pos.left,
-				maxHeight: pos.maxHeight,
-				zIndex: 9999,
-			}}
-			className="flex w-44 flex-col overflow-hidden rounded-xl border border-cz-gold/30 bg-cz-panel shadow-2xl"
-			role="dialog"
-			aria-label="Select effect type"
-		>
-			<div className="border-cz-border/60 border-b bg-cz-surface/80 px-3 py-2 font-bold font-mono text-[0.58rem] text-cz-cream uppercase tracking-[0.22em]">
-				Effect Type
-			</div>
-			<div className="min-h-0 flex-1 overflow-y-auto p-1.5">
-				{options.map((o) => (
-					<Button
-						key={o.value}
-						type="button"
-						onClick={() => onSelect(o.value)}
-						className={[
-							"btn btn-ghost btn-sm h-8 min-h-0 w-full justify-start rounded-md px-2.5 py-1 font-mono text-[0.58rem] uppercase tracking-[0.12em] hover:bg-white/10",
-							o.value === "empty"
-								? "text-red-400/80 hover:text-red-300"
-								: currentType === o.value
-									? "bg-cz-gold/10 text-white"
-									: "text-cz-cream-dim",
-						].join(" ")}
-					>
-						{o.label}
-					</Button>
-				))}
-			</div>
-		</div>,
-		document.body,
-	);
-}
+import type { PopoverPos } from "./FxTypeSelectorPopover";
+import FxTypeSelectorPopover, {
+	getTypeSelectorPosition,
+} from "./FxTypeSelectorPopover";
+import { getFxTypeLabel } from "./fxTypeCategories";
 
 // ---------------------------------------------------------------------------
 // TypeSelectorTrigger — triangle button + popover; rendered via context
@@ -183,10 +55,10 @@ function TypeSelectorTrigger({
 				<MdArrowDropDown className="h-6 w-6 shrink-0" />
 			</Button>
 			{popoverPos && (
-				<TypeSelectorPopover
+				<FxTypeSelectorPopover
 					pos={popoverPos}
 					currentType={currentType}
-					options={FX_CHANGE_OPTIONS}
+					showRemove
 					onSelect={handleSelect}
 					onClose={() => setPopoverPos(null)}
 				/>
@@ -228,10 +100,10 @@ function EmptySlot({ slot }: { slot: number }) {
 				+
 			</Button>
 			{popoverPos && (
-				<TypeSelectorPopover
+				<FxTypeSelectorPopover
 					pos={popoverPos}
 					currentType="empty"
-					options={FX_EFFECT_OPTIONS}
+					showRemove={false}
 					onSelect={handleSelect}
 					onClose={() => setPopoverPos(null)}
 				/>
