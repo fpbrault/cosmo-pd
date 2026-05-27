@@ -52,25 +52,6 @@ export function useFxModuleController(
 		listFxModulePresets(config.type).then(setUserPresets);
 	}, [config.type]);
 
-	useEffect(() => {
-		if (config.presets.length > 0) {
-			const first = config.presets[0];
-			setSelectedPreset(first.id);
-			const patchParams = resolvePresetPatchParams(
-				config,
-				first.patch as Record<string, unknown>,
-			);
-			if (patchParams) {
-				setFxSlotParams(slot, patchParams);
-			}
-			requestApplyModulePreset({
-				module: getPresetModuleKey(config.moduleKey),
-				preset: first.id,
-				patch: first.patch,
-			});
-		}
-	}, [config, slot, setFxSlotParams]);
-
 	const handlePresetChange = useCallback(
 		(presetId: string) => {
 			setSelectedPreset(presetId);
