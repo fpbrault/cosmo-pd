@@ -323,3 +323,201 @@ fn apply_mod_env_preset(params: &mut SynthParams, preset: &str) -> bool {
     params.mod_env = p.params.clone();
     true
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::params::FxSlotConfig;
+
+    fn make_params_with_fx(variant: FxSlotConfig) -> SynthParams {
+        let mut p = SynthParams::default();
+        p.fx_slots[0] = variant;
+        p
+    }
+
+    // --- LFO preset tests ---
+
+    #[test]
+    fn apply_lfo_preset_found() {
+        let mut p = SynthParams::default();
+        assert!(apply_lfo_preset(&mut p, "slowSine", false));
+        assert_eq!(p.lfo.waveform, LfoWaveform::Sine);
+        assert_eq!(p.lfo.rate, 0.6);
+        assert_eq!(p.lfo.depth, 1.0);
+        assert_eq!(p.lfo.symmetry, 0.5);
+        assert!(!p.lfo.retrigger);
+        assert_eq!(p.lfo.offset, 0.0);
+    }
+
+    #[test]
+    fn apply_lfo_preset_tempo_tri() {
+        let mut p = SynthParams::default();
+        assert!(apply_lfo_preset(&mut p, "tempoTri", false));
+        assert_eq!(p.lfo.waveform, LfoWaveform::Triangle);
+        assert_eq!(p.lfo.rate, 2.25);
+        assert!(p.lfo.retrigger);
+    }
+
+    #[test]
+    fn apply_lfo_preset_random_drift() {
+        let mut p = SynthParams::default();
+        assert!(apply_lfo_preset(&mut p, "randomDrift", false));
+        assert_eq!(p.lfo.waveform, LfoWaveform::Square);
+        assert_eq!(p.lfo.rate, 4.0);
+        assert_eq!(p.lfo.depth, 0.35);
+        assert!(!p.lfo.retrigger);
+    }
+
+    #[test]
+    fn apply_lfo_preset_unknown_returns_false() {
+        let mut p = SynthParams::default();
+        assert!(!apply_lfo_preset(&mut p, "nonExistent", false));
+    }
+
+    #[test]
+    fn apply_lfo_preset_secondary_targets_lfo2() {
+        let mut p = SynthParams::default();
+        assert!(apply_lfo_preset(&mut p, "slowSine", true));
+        assert_eq!(p.lfo2.waveform, LfoWaveform::Sine);
+        assert_eq!(p.lfo2.rate, 0.6);
+        assert_eq!(p.lfo2.depth, 1.0);
+    }
+
+    // --- Mod Env preset tests ---
+
+    #[test]
+    fn apply_mod_env_preset_found() {
+        let mut p = SynthParams::default();
+        assert!(apply_mod_env_preset(&mut p, "pluck"));
+        assert_eq!(p.mod_env.attack, 0.005);
+        assert_eq!(p.mod_env.decay, 0.16);
+        assert_eq!(p.mod_env.sustain, 0.08);
+        assert_eq!(p.mod_env.release, 0.14);
+    }
+
+    #[test]
+    fn apply_mod_env_preset_pad() {
+        let mut p = SynthParams::default();
+        assert!(apply_mod_env_preset(&mut p, "pad"));
+        assert_eq!(p.mod_env.attack, 0.7);
+        assert_eq!(p.mod_env.release, 1.5);
+    }
+
+    #[test]
+    fn apply_mod_env_preset_reverse_swell() {
+        let mut p = SynthParams::default();
+        assert!(apply_mod_env_preset(&mut p, "reverseSwell"));
+        assert_eq!(p.mod_env.attack, 1.8);
+        assert_eq!(p.mod_env.decay, 0.28);
+    }
+
+    #[test]
+    fn apply_mod_env_preset_unknown_returns_false() {
+        let mut p = SynthParams::default();
+        assert!(!apply_mod_env_preset(&mut p, "nonExistent"));
+    }
+
+    // --- Dispatch tests ---
+
+    #[test]
+    fn apply_module_preset_unknown_module_returns_false() {
+        let mut p = SynthParams::default();
+        assert!(!apply_module_preset(&mut p, "imaginaryModule", "whatever"));
+    }
+
+    #[test]
+    fn apply_module_preset_lfo1_dispatches() {
+        let mut p = SynthParams::default();
+        assert!(apply_module_preset(&mut p, "lfo1", "slowSine"));
+        assert_eq!(p.lfo.waveform, LfoWaveform::Sine);
+    }
+
+    #[test]
+    fn apply_module_preset_lfo2_dispatches() {
+        let mut p = SynthParams::default();
+        assert!(apply_module_preset(&mut p, "lfo2", "tempoTri"));
+        assert_eq!(p.lfo2.waveform, LfoWaveform::Triangle);
+    }
+
+    #[test]
+    fn apply_module_preset_mod_env_dispatches() {
+        let mut p = SynthParams::default();
+        assert!(apply_module_preset(&mut p, "modEnv", "pad"));
+        assert_eq!(p.mod_env.attack, 0.7);
+    }
+
+    // --- FX dispatch tests ---
+
+    #[test]
+    fn apply_module_preset_chorus() {
+        let mut p = make_params_with_fx(FxSlotConfig::Chorus(Default::default()));
+        assert!(apply_module_preset(&mut p, "chorus", "classicWide"));
+        if let FxSlotConfig::Chorus(c) = &p.fx_slots[0] {
+            assert!(c.enabled);
+            assert!((c.rate - 0.9).abs() < 1e-6);
+        } else {
+            panic!("expected Chorus variant");
+        }
+    }
+
+    #[test]
+    fn apply_module_preset_delay() {
+        let mut p = make_params_with_fx(FxSlotConfig::Delay(Default::default()));
+        assert!(apply_module_preset(&mut p, "delay", "digitalSlap"));
+        if let FxSlotConfig::Delay(d) = &p.fx_slots[0] {
+            assert!(d.enabled);
+            assert!((d.time - 0.11).abs() < 1e-6);
+        } else {
+            panic!("expected Delay variant");
+        }
+    }
+
+    #[test]
+    fn apply_module_preset_reverb() {
+        let mut p = make_params_with_fx(FxSlotConfig::Reverb(Default::default()));
+        assert!(apply_module_preset(&mut p, "reverb", "smallRoom"));
+        if let FxSlotConfig::Reverb(r) = &p.fx_slots[0] {
+            assert!(r.enabled);
+            assert!((r.mix - 0.22).abs() < 1e-6);
+        } else {
+            panic!("expected Reverb variant");
+        }
+    }
+
+    #[test]
+    fn apply_module_preset_compressor() {
+        let mut p = make_params_with_fx(FxSlotConfig::Compressor(Default::default()));
+        assert!(apply_module_preset(&mut p, "compressor", "punchy"));
+        if let FxSlotConfig::Compressor(c) = &p.fx_slots[0] {
+            assert!(c.enabled);
+            assert!((c.ratio - 4.0).abs() < 1e-6);
+        } else {
+            panic!("expected Compressor variant");
+        }
+    }
+
+    #[test]
+    fn apply_module_preset_flanger() {
+        let mut p = make_params_with_fx(FxSlotConfig::Flanger(Default::default()));
+        assert!(apply_module_preset(&mut p, "flanger", "jetPlane"));
+        if let FxSlotConfig::Flanger(f) = &p.fx_slots[0] {
+            assert!(f.enabled);
+            assert!((f.depth - 0.78).abs() < 1e-6);
+        } else {
+            panic!("expected Flanger variant");
+        }
+    }
+
+    #[test]
+    fn apply_module_preset_fx_for_module_without_slot_returns_false() {
+        // Chorus preset but no Chorus slot
+        let mut p = SynthParams::default(); // all slots Empty
+        assert!(!apply_module_preset(&mut p, "chorus", "warmEnsemble"));
+    }
+
+    #[test]
+    fn apply_module_preset_fx_unknown_preset_returns_false() {
+        let mut p = make_params_with_fx(FxSlotConfig::Delay(Default::default()));
+        assert!(!apply_module_preset(&mut p, "delay", "nonExistentPreset"));
+    }
+}
