@@ -7,9 +7,13 @@ export default function GrainDelayModuleRenderer() {
 		config,
 		slot,
 		selectedPreset,
+		presetOptions,
 		setFxSlotParams,
 		enabled,
 		handlePresetChange,
+		builtinPresetIds,
+		handleSavePreset,
+		handleDeletePreset,
 	} = useFxSlotModule();
 
 	return (
@@ -20,8 +24,11 @@ export default function GrainDelayModuleRenderer() {
 			enabled={enabled}
 			onToggleEnabled={() => setFxSlotParams(slot, { enabled: !enabled })}
 			presetValue={selectedPreset}
-			presetOptions={config.presets}
+			presetOptions={presetOptions}
 			onPresetChange={handlePresetChange}
+			builtinPresetIds={builtinPresetIds}
+			onSavePreset={handleSavePreset}
+			onDeletePreset={handleDeletePreset}
 		>
 			<FxSlotKnob param="time" metaParamKey="grainDelayTime" sync />
 			<FxSlotKnob param="feedback" metaParamKey="grainDelayFeedback" />

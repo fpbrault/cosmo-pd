@@ -23,10 +23,14 @@ export default function Eq8BandModuleRenderer() {
 		config,
 		slot,
 		selectedPreset,
+		presetOptions,
 		enabled,
 		handlePresetChange,
 		params,
 		setFxSlotParams,
+		builtinPresetIds,
+		handleSavePreset,
+		handleDeletePreset,
 	} = useFxSlotModule();
 	const modDestinationByParam = getModDestinationByParam(config.type);
 
@@ -38,8 +42,11 @@ export default function Eq8BandModuleRenderer() {
 			enabled={enabled}
 			onToggleEnabled={() => setFxSlotParams(slot, { enabled: !enabled })}
 			presetValue={selectedPreset}
-			presetOptions={config.presets}
+			presetOptions={presetOptions}
 			onPresetChange={handlePresetChange}
+			builtinPresetIds={builtinPresetIds}
+			onSavePreset={handleSavePreset}
+			onDeletePreset={handleDeletePreset}
 		>
 			<div className="col-span-full rounded-md bg-cz-inset/25 px-2 pt-2 pb-1.5">
 				<FxVerticalSliderGroup

@@ -13,10 +13,14 @@ export default function TremoloModuleRenderer() {
 		config,
 		slot,
 		selectedPreset,
+		presetOptions,
 		setFxSlotParams,
 		params,
 		enabled,
 		handlePresetChange,
+		builtinPresetIds,
+		handleSavePreset,
+		handleDeletePreset,
 	} = useFxSlotModule();
 	const waveformControl = getButtonGroupControl(config, "waveform");
 	const waveformValue = asNumber(params.waveform, 0);
@@ -29,8 +33,11 @@ export default function TremoloModuleRenderer() {
 			enabled={enabled}
 			onToggleEnabled={() => setFxSlotParams(slot, { enabled: !enabled })}
 			presetValue={selectedPreset}
-			presetOptions={config.presets}
+			presetOptions={presetOptions}
 			onPresetChange={handlePresetChange}
+			builtinPresetIds={builtinPresetIds}
+			onSavePreset={handleSavePreset}
+			onDeletePreset={handleDeletePreset}
 		>
 			<div className="join col-span-3 w-full overflow-hidden rounded-md border border-cz-border/65">
 				{waveformControl?.options.map((option) => (

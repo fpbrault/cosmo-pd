@@ -213,7 +213,7 @@ describe("presetStorage", () => {
 async function seedKv(key: string, value: unknown): Promise<void> {
 	await deleteDatabase();
 	const db = await new Promise<IDBDatabase>((resolve, reject) => {
-		const request = indexedDB.open("cosmo-pd101-preset-storage", 1);
+		const request = indexedDB.open("cosmo-pd101-preset-storage", 2);
 		request.onupgradeneeded = () => {
 			const d = request.result;
 			if (!d.objectStoreNames.contains("kv")) {

@@ -14,7 +14,7 @@ import {
 import type { FrontendPresetV1, PresetMetadata } from "@/lib/synth/presetTypes";
 
 const DB_NAME = "cosmo-pd101-preset-storage";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export type { PresetMetadata };
 export type StoredPreset = FrontendPresetV1;
@@ -37,7 +37,7 @@ type StoredPresetInput = {
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
-function getDb(): Promise<IDBDatabase> {
+export function getDb(): Promise<IDBDatabase> {
 	if (!dbPromise) {
 		dbPromise = new Promise((resolve, reject) => {
 			const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -51,6 +51,9 @@ function getDb(): Promise<IDBDatabase> {
 				}
 				if (!db.objectStoreNames.contains("favorites")) {
 					db.createObjectStore("favorites", { keyPath: "id" });
+				}
+				if (!db.objectStoreNames.contains("fxModulePresets")) {
+					db.createObjectStore("fxModulePresets", { keyPath: "id" });
 				}
 			};
 			request.onsuccess = () => resolve(request.result);
