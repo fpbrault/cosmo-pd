@@ -15,6 +15,12 @@ import {
 	SYNTH_RENDERER_MAX_ASPECT_RATIO,
 } from "../../src/components/renderer/rendererFrameLayout";
 import { SharedPhaseDistortionVisualizer } from "../../src/components/renderer/SynthRenderer";
+import { useSynthStore } from "../../src/features/synth/synthStore";
+import { DEFAULT_SYNTH_PRESETS } from "../../src/lib/synth/defaultPresets";
+import {
+	loadCurrentState,
+	saveCurrentState,
+} from "../../src/lib/synth/presetStorage";
 
 declare const __CZ_APP_VERSION__: string;
 
@@ -152,6 +158,30 @@ export default function LivePage() {
 		};
 		document.addEventListener("fullscreenchange", onChange);
 		return () => document.removeEventListener("fullscreenchange", onChange);
+	}, []);
+
+	useEffect(() => {
+		const init = async () => {
+			const saved = await loadCurrentState();
+			if (saved) {
+				useSynthStore.getState().applyPreset(saved);
+			} else {
+				const firstPreset = Object.values(DEFAULT_SYNTH_PRESETS)[0];
+				if (firstPreset) {
+					useSynthStore.getState().applyPreset(firstPreset.data);
+				}
+			}
+		};
+		init();
+	}, []);
+
+	useEffect(() => {
+		const handleBeforeUnload = () => {
+			const state = useSynthStore.getState().gatherState();
+			void saveCurrentState(state);
+		};
+		window.addEventListener("beforeunload", handleBeforeUnload);
+		return () => window.removeEventListener("beforeunload", handleBeforeUnload);
 	}, []);
 
 	return (

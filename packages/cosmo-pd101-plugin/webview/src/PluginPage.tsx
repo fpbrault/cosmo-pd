@@ -201,8 +201,6 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		};
 	}, [isIosHost, isLikelyIosDevice, keyboardHeight, setKeyboardHeight]);
 
-	const shouldLoadCurrentState = useCallback(() => !window.ipc, []);
-
 	const {
 		activePresetId,
 		activePresetNameBase,
@@ -214,7 +212,6 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		gatherPresetState: gatherState,
 		applyPreset,
 		libraryPresets: FACTORY_CZ_PRESETS,
-		shouldLoadCurrentState,
 	});
 
 	useEffect(() => {

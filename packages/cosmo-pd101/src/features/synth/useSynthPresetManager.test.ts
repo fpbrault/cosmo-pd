@@ -64,7 +64,6 @@ describe("useSynthPresetManager", () => {
 				builtinPresets: mockBuiltinPresets,
 				gatherPresetState: mockGatherPresetState,
 				applyPreset: mockApplyPreset,
-				shouldLoadCurrentState: () => false,
 			}),
 		);
 
@@ -114,7 +113,6 @@ describe("useSynthPresetManager", () => {
 				builtinPresets: mockBuiltinPresets,
 				gatherPresetState: mockGatherPresetState,
 				applyPreset: mockApplyPreset,
-				shouldLoadCurrentState: () => false,
 			}),
 		);
 
@@ -239,7 +237,6 @@ describe("useSynthPresetManager", () => {
 				builtinPresets: {},
 				gatherPresetState: mockGatherPresetState,
 				applyPreset: mockApplyPreset,
-				shouldLoadCurrentState: () => false,
 			}),
 		);
 
@@ -274,7 +271,6 @@ describe("useSynthPresetManager", () => {
 				builtinPresets: {},
 				gatherPresetState: mockGatherPresetState,
 				applyPreset: mockApplyPreset,
-				shouldLoadCurrentState: () => false,
 			}),
 		);
 
@@ -293,7 +289,6 @@ describe("useSynthPresetManager", () => {
 				builtinPresets: mockBuiltinPresets,
 				gatherPresetState: mockGatherPresetState,
 				applyPreset: mockApplyPreset,
-				shouldLoadCurrentState: () => false,
 			}),
 		);
 
@@ -343,7 +338,6 @@ describe("useSynthPresetManager", () => {
 				builtinPresets: {},
 				gatherPresetState: mockGatherPresetState,
 				applyPreset: mockApplyPreset,
-				shouldLoadCurrentState: () => false,
 			}),
 		);
 

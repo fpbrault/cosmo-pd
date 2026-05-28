@@ -35,7 +35,6 @@ type UseSynthPresetManagerOptions = {
 	onBeforeApplyPreset?: () => void;
 	libraryPresets?: LibraryPreset[];
 	onLoadLibraryPreset?: (preset: LibraryPreset) => void;
-	shouldLoadCurrentState?: () => boolean;
 	presetStateKey?: string;
 };
 
@@ -86,17 +85,12 @@ export function useSynthPresetManager({
 	onBeforeApplyPreset,
 	libraryPresets = [],
 	onLoadLibraryPreset,
-	shouldLoadCurrentState,
 	presetStateKey,
 }: UseSynthPresetManagerOptions): UseSynthPresetManagerResult {
 	const [localPresetEntries, setLocalPresetEntries] = useState<StoredPreset[]>(
 		[],
 	);
 	const [favoritePresetIds, setFavoritePresetIds] = useState<string[]>([]);
-	const shouldHydratePersistedState = useMemo(
-		() => (shouldLoadCurrentState ? shouldLoadCurrentState() : true),
-		[shouldLoadCurrentState],
-	);
 	const [activePresetId, setActivePresetId] = useState<string | null>(null);
 	const [activePresetNameBase, setActivePresetNameBase] =
 		useState("Current State");
@@ -532,19 +526,8 @@ export function useSynthPresetManager({
 	);
 
 	usePresetManagerPersistence({
-		applyPreset,
-		builtinPresets,
-		loadBuiltinPreset,
 		refreshFavoritePresetIds,
 		refreshLocalPresetEntries,
-		shouldHydratePersistedState,
-		gatherState: gatherPresetState,
-		activePresetId,
-		activePresetNameBase,
-		loadedPresetFingerprint,
-		setActivePresetId,
-		setActivePresetNameBase,
-		setLoadedPresetFingerprint,
 	});
 
 	return {
