@@ -1391,9 +1391,17 @@ impl PluginLogic for CzPlugin {
             .map_err(|_| StateLoadError::Malformed("invalid synth params JSON"))?;
         sync_all_daw_params_from_synth(&self.params, &params);
         let rt_params = build_rt_synth_params(&params);
+        let rt_params_arc = Arc::new(rt_params);
         self.synth_params.store(Arc::new(params));
-        self.rt_synth_params.store(Arc::new(rt_params));
+        self.rt_synth_params.store(Arc::clone(&rt_params_arc));
+        self.cached_rt_synth_params = rt_params_arc.clone();
         self.synth_params_version.fetch_add(1, Ordering::Release);
+        self.cached_synth_params_version = self.synth_params_version.load(Ordering::Acquire);
+        self.daw_params_dirty = false;
+        if let Some(ref mut proc) = self.processor {
+            proc.set_shared_params(rt_params_arc);
+            self.performance_counters.record_param_apply();
+        }
         Ok(())
     }
 

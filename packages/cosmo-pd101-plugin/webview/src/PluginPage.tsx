@@ -142,8 +142,6 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		[],
 	);
 
-	usePluginParamBridge();
-
 	useEffect(() => {
 		const element = frameRef.current;
 		if (!element) {
