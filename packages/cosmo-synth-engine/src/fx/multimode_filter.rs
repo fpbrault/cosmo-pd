@@ -1,4 +1,4 @@
-use crate::params::ModDestination;
+use crate::params::{ModDestination, MultimodeFilterParams};
 use libm::{cosf, sinf};
 
 // ---------------------------------------------------------------------------
@@ -293,49 +293,69 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     presets: &PRESET_OPTIONS,
 };
 
+crate::fx_preset_entry!(pub MultimodeFilterPresetV1, MultimodeFilterParams);
+
+pub const MULTIMODE_FILTER_PRESET_DATA: [MultimodeFilterPresetV1; 3] = [
+    MultimodeFilterPresetV1 {
+        id: "warmLowPass",
+        label: "Warm LP",
+        params: MultimodeFilterParams {
+            enabled: true,
+            mode: 0,
+            four_pole: true,
+            cutoff_hz: 1400.0,
+            resonance: 0.28,
+            drive: 0.22,
+            mix: 1.0,
+        },
+    },
+    MultimodeFilterPresetV1 {
+        id: "tightHighPass",
+        label: "Tight HP",
+        params: MultimodeFilterParams {
+            enabled: true,
+            mode: 1,
+            four_pole: false,
+            cutoff_hz: 380.0,
+            resonance: 0.18,
+            drive: 0.08,
+            mix: 0.9,
+        },
+    },
+    MultimodeFilterPresetV1 {
+        id: "vocalBandPass",
+        label: "Vocal BP",
+        params: MultimodeFilterParams {
+            enabled: true,
+            mode: 2,
+            four_pole: true,
+            cutoff_hz: 1150.0,
+            resonance: 0.62,
+            drive: 0.18,
+            mix: 0.95,
+        },
+    },
+];
+
+pub fn multimode_filter_preset_data() -> &'static [MultimodeFilterPresetV1] {
+    &MULTIMODE_FILTER_PRESET_DATA
+}
+
 pub fn apply_multimode_filter_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let Some(p) = MULTIMODE_FILTER_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
     let slot = params.fx_slots.iter_mut().find_map(|s| {
-        if let FxSlotConfig::MultimodeFilter(filter) = s {
-            Some(filter)
+        if let FxSlotConfig::MultimodeFilter(f) = s {
+            Some(f)
         } else {
             None
         }
     });
-    let Some(filter) = slot else {
-        return false;
-    };
-
-    match preset {
-        "warmLowPass" => {
-            filter.enabled = true;
-            filter.mode = 0;
-            filter.four_pole = true;
-            filter.cutoff_hz = 1400.0;
-            filter.resonance = 0.28;
-            filter.drive = 0.22;
-            filter.mix = 1.0;
-            true
-        }
-        "tightHighPass" => {
-            filter.enabled = true;
-            filter.mode = 1;
-            filter.four_pole = false;
-            filter.cutoff_hz = 380.0;
-            filter.resonance = 0.18;
-            filter.drive = 0.08;
-            filter.mix = 0.9;
-            true
-        }
-        "vocalBandPass" => {
-            filter.enabled = true;
-            filter.mode = 2;
-            filter.four_pole = true;
-            filter.cutoff_hz = 1150.0;
-            filter.resonance = 0.62;
-            filter.drive = 0.18;
-            filter.mix = 0.95;
-            true
-        }
-        _ => false,
+    if let Some(f) = slot {
+        *f = p.params.clone();
+        true
+    } else {
+        false
     }
 }

@@ -1,4 +1,4 @@
-use crate::params::ModDestination;
+use crate::params::{AutoWahParams, ModDestination};
 use libm::{cosf, fabsf, sinf};
 
 // ---------------------------------------------------------------------------
@@ -289,52 +289,72 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     presets: &PRESET_OPTIONS,
 };
 
+crate::fx_preset_entry!(pub AutoWahPresetV1, AutoWahParams);
+
+pub const AUTO_WAH_PRESET_DATA: [AutoWahPresetV1; 3] = [
+    AutoWahPresetV1 {
+        id: "vowelQuack",
+        label: "Vowel Quack",
+        params: AutoWahParams {
+            enabled: true,
+            mode: 2,
+            sensitivity: 0.75,
+            cutoff_hz: 520.0,
+            resonance: 0.78,
+            attack_ms: 6.0,
+            release_ms: 95.0,
+            mix: 0.84,
+        },
+    },
+    AutoWahPresetV1 {
+        id: "funkSweep",
+        label: "Funk Sweep",
+        params: AutoWahParams {
+            enabled: true,
+            mode: 1,
+            sensitivity: 0.62,
+            cutoff_hz: 280.0,
+            resonance: 0.58,
+            attack_ms: 12.0,
+            release_ms: 170.0,
+            mix: 0.76,
+        },
+    },
+    AutoWahPresetV1 {
+        id: "softTouch",
+        label: "Soft Touch",
+        params: AutoWahParams {
+            enabled: true,
+            mode: 0,
+            sensitivity: 0.34,
+            cutoff_hz: 700.0,
+            resonance: 0.32,
+            attack_ms: 24.0,
+            release_ms: 240.0,
+            mix: 0.66,
+        },
+    },
+];
+
+pub fn auto_wah_preset_data() -> &'static [AutoWahPresetV1] {
+    &AUTO_WAH_PRESET_DATA
+}
+
 pub fn apply_auto_wah_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let Some(p) = AUTO_WAH_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
     let slot = params.fx_slots.iter_mut().find_map(|s| {
-        if let FxSlotConfig::AutoWah(wah) = s {
-            Some(wah)
+        if let FxSlotConfig::AutoWah(w) = s {
+            Some(w)
         } else {
             None
         }
     });
-    let Some(wah) = slot else {
-        return false;
-    };
-
-    match preset {
-        "vowelQuack" => {
-            wah.enabled = true;
-            wah.mode = 2;
-            wah.sensitivity = 0.75;
-            wah.cutoff_hz = 520.0;
-            wah.resonance = 0.78;
-            wah.attack_ms = 6.0;
-            wah.release_ms = 95.0;
-            wah.mix = 0.84;
-            true
-        }
-        "funkSweep" => {
-            wah.enabled = true;
-            wah.mode = 1;
-            wah.sensitivity = 0.62;
-            wah.cutoff_hz = 280.0;
-            wah.resonance = 0.58;
-            wah.attack_ms = 12.0;
-            wah.release_ms = 170.0;
-            wah.mix = 0.76;
-            true
-        }
-        "softTouch" => {
-            wah.enabled = true;
-            wah.mode = 0;
-            wah.sensitivity = 0.34;
-            wah.cutoff_hz = 700.0;
-            wah.resonance = 0.32;
-            wah.attack_ms = 24.0;
-            wah.release_ms = 240.0;
-            wah.mix = 0.66;
-            true
-        }
-        _ => false,
+    if let Some(w) = slot {
+        *w = p.params.clone();
+        true
+    } else {
+        false
     }
 }

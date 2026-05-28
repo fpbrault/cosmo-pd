@@ -249,7 +249,61 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     presets: &PRESET_OPTIONS,
 };
 
+crate::fx_preset_entry!(pub LoFiPresetV1, LoFiParams);
+
+pub const LOFI_PRESET_DATA: [LoFiPresetV1; 3] = [
+    LoFiPresetV1 {
+        id: "warpedCassette",
+        label: "Warped Cassette",
+        params: LoFiParams {
+            enabled: true,
+            degrade: 0.32,
+            wow_depth: 0.13,
+            wow_rate: 0.32,
+            flutter_depth: 0.056,
+            flutter_rate: 7.4,
+            tone: 0.38,
+            mix: 1.0,
+        },
+    },
+    LoFiPresetV1 {
+        id: "dustyKeys",
+        label: "Dusty Keys",
+        params: LoFiParams {
+            enabled: true,
+            degrade: 0.22,
+            wow_depth: 0.056,
+            wow_rate: 0.5,
+            flutter_depth: 0.032,
+            flutter_rate: 5.9,
+            tone: 0.42,
+            mix: 1.0,
+        },
+    },
+    LoFiPresetV1 {
+        id: "cheapSpeaker",
+        label: "Cheap Speaker",
+        params: LoFiParams {
+            enabled: true,
+            degrade: 0.55,
+            wow_depth: 0.036,
+            wow_rate: 0.78,
+            flutter_depth: 0.044,
+            flutter_rate: 9.2,
+            tone: 0.12,
+            mix: 1.0,
+        },
+    },
+];
+
+pub fn lofi_preset_data() -> &'static [LoFiPresetV1] {
+    &LOFI_PRESET_DATA
+}
+
 pub fn apply_lofi_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let Some(p) = LOFI_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
     let slot = params.fx_slots.iter_mut().find_map(|s| {
         if let FxSlotConfig::LoFi(lofi) = s {
             Some(lofi)
@@ -257,44 +311,11 @@ pub fn apply_lofi_preset(params: &mut SynthParams, preset: &str) -> bool {
             None
         }
     });
-    let Some(lofi) = slot else {
-        return false;
-    };
-    match preset {
-        "warpedCassette" => {
-            lofi.enabled = true;
-            lofi.degrade = 0.32;
-            lofi.wow_depth = 0.13;
-            lofi.wow_rate = 0.32;
-            lofi.flutter_depth = 0.056;
-            lofi.flutter_rate = 7.4;
-            lofi.tone = 0.38;
-            lofi.mix = 1.0;
-            true
-        }
-        "dustyKeys" => {
-            lofi.enabled = true;
-            lofi.degrade = 0.22;
-            lofi.wow_depth = 0.056;
-            lofi.wow_rate = 0.5;
-            lofi.flutter_depth = 0.032;
-            lofi.flutter_rate = 5.9;
-            lofi.tone = 0.42;
-            lofi.mix = 1.0;
-            true
-        }
-        "cheapSpeaker" => {
-            lofi.enabled = true;
-            lofi.degrade = 0.55;
-            lofi.wow_depth = 0.036;
-            lofi.wow_rate = 0.78;
-            lofi.flutter_depth = 0.044;
-            lofi.flutter_rate = 9.2;
-            lofi.tone = 0.12;
-            lofi.mix = 1.0;
-            true
-        }
-        _ => false,
+    if let Some(lofi) = slot {
+        *lofi = p.params.clone();
+        true
+    } else {
+        false
     }
 }
 

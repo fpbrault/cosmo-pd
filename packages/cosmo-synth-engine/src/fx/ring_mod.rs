@@ -107,7 +107,46 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     presets: &PRESET_OPTIONS,
 };
 
+crate::fx_preset_entry!(pub RingModPresetV1, RingModParams);
+
+pub const RING_MOD_PRESET_DATA: [RingModPresetV1; 3] = [
+    RingModPresetV1 {
+        id: "metallic",
+        label: "Metallic",
+        params: RingModParams {
+            enabled: true,
+            carrier_hz: 220.0,
+            mix: 0.7,
+        },
+    },
+    RingModPresetV1 {
+        id: "bell",
+        label: "Bell",
+        params: RingModParams {
+            enabled: true,
+            carrier_hz: 523.0,
+            mix: 0.5,
+        },
+    },
+    RingModPresetV1 {
+        id: "alien",
+        label: "Alien",
+        params: RingModParams {
+            enabled: true,
+            carrier_hz: 1337.0,
+            mix: 0.85,
+        },
+    },
+];
+
+pub fn ring_mod_preset_data() -> &'static [RingModPresetV1] {
+    &RING_MOD_PRESET_DATA
+}
+
 pub fn apply_ring_mod_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let Some(p) = RING_MOD_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
     let slot = params.fx_slots.iter_mut().find_map(|s| {
         if let FxSlotConfig::RingMod(rm) = s {
             Some(rm)
@@ -115,28 +154,10 @@ pub fn apply_ring_mod_preset(params: &mut SynthParams, preset: &str) -> bool {
             None
         }
     });
-    let Some(rm) = slot else {
-        return false;
-    };
-    match preset {
-        "metallic" => {
-            rm.enabled = true;
-            rm.carrier_hz = 220.0;
-            rm.mix = 0.7;
-            true
-        }
-        "bell" => {
-            rm.enabled = true;
-            rm.carrier_hz = 523.0;
-            rm.mix = 0.5;
-            true
-        }
-        "alien" => {
-            rm.enabled = true;
-            rm.carrier_hz = 1337.0;
-            rm.mix = 0.85;
-            true
-        }
-        _ => false,
+    if let Some(rm) = slot {
+        *rm = p.params.clone();
+        true
+    } else {
+        false
     }
 }

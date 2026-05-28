@@ -1,7 +1,7 @@
 use libm::{cosf, sinf};
 
 use super::delay_line::DelayLine;
-use crate::params::ModDestination;
+use crate::params::{FlangerParams, ModDestination};
 
 // ---------------------------------------------------------------------------
 // FlangerFx — short modulated delay with feedback and through-zero option
@@ -199,49 +199,69 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     presets: &PRESET_OPTIONS,
 };
 
+crate::fx_preset_entry!(pub FlangerPresetV1, FlangerParams);
+
+pub const FLANGER_PRESET_DATA: [FlangerPresetV1; 3] = [
+    FlangerPresetV1 {
+        id: "softSweep",
+        label: "Soft Sweep",
+        params: FlangerParams {
+            enabled: true,
+            rate: 0.2,
+            depth: 0.35,
+            delay_ms: 2.8,
+            feedback: 0.18,
+            through_zero: false,
+            mix: 0.42,
+        },
+    },
+    FlangerPresetV1 {
+        id: "jetPlane",
+        label: "Jet Plane",
+        params: FlangerParams {
+            enabled: true,
+            rate: 0.45,
+            depth: 0.78,
+            delay_ms: 1.2,
+            feedback: 0.62,
+            through_zero: false,
+            mix: 0.55,
+        },
+    },
+    FlangerPresetV1 {
+        id: "throughZero",
+        label: "Through-Zero",
+        params: FlangerParams {
+            enabled: true,
+            rate: 0.33,
+            depth: 0.7,
+            delay_ms: 0.8,
+            feedback: 0.36,
+            through_zero: true,
+            mix: 0.58,
+        },
+    },
+];
+
+pub fn flanger_preset_data() -> &'static [FlangerPresetV1] {
+    &FLANGER_PRESET_DATA
+}
+
 pub fn apply_flanger_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let Some(p) = FLANGER_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
     let slot = params.fx_slots.iter_mut().find_map(|s| {
-        if let FxSlotConfig::Flanger(flanger) = s {
-            Some(flanger)
+        if let FxSlotConfig::Flanger(f) = s {
+            Some(f)
         } else {
             None
         }
     });
-    let Some(flanger) = slot else {
-        return false;
-    };
-
-    match preset {
-        "softSweep" => {
-            flanger.enabled = true;
-            flanger.rate = 0.2;
-            flanger.depth = 0.35;
-            flanger.delay_ms = 2.8;
-            flanger.feedback = 0.18;
-            flanger.through_zero = false;
-            flanger.mix = 0.42;
-            true
-        }
-        "jetPlane" => {
-            flanger.enabled = true;
-            flanger.rate = 0.45;
-            flanger.depth = 0.78;
-            flanger.delay_ms = 1.2;
-            flanger.feedback = 0.62;
-            flanger.through_zero = false;
-            flanger.mix = 0.55;
-            true
-        }
-        "throughZero" => {
-            flanger.enabled = true;
-            flanger.rate = 0.33;
-            flanger.depth = 0.7;
-            flanger.delay_ms = 0.8;
-            flanger.feedback = 0.36;
-            flanger.through_zero = true;
-            flanger.mix = 0.58;
-            true
-        }
-        _ => false,
+    if let Some(f) = slot {
+        *f = p.params.clone();
+        true
+    } else {
+        false
     }
 }

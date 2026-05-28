@@ -10,54 +10,11 @@ fn set_vibrato(params: &mut SynthParams, p: VibratoParams) {
 }
 
 pub fn apply_vibrato_preset(params: &mut SynthParams, preset: &str) -> bool {
-    match preset {
-        "subtle" => {
-            set_vibrato(
-                params,
-                VibratoParams {
-                    enabled: true,
-                    waveform: 1,
-                    rate: 20.0,
-                    depth: 6.0,
-                    delay: 160.0,
-                    rate_mode: crate::params::LfoRateMode::Hz,
-                    sync_division: crate::params::LfoSyncDivision::Quarter,
-                },
-            );
-            true
-        }
-        "chorused" => {
-            set_vibrato(
-                params,
-                VibratoParams {
-                    enabled: true,
-                    waveform: 2,
-                    rate: 38.0,
-                    depth: 14.0,
-                    delay: 80.0,
-                    rate_mode: crate::params::LfoRateMode::Hz,
-                    sync_division: crate::params::LfoSyncDivision::Quarter,
-                },
-            );
-            true
-        }
-        "warble" => {
-            set_vibrato(
-                params,
-                VibratoParams {
-                    enabled: true,
-                    waveform: 4,
-                    rate: 62.0,
-                    depth: 26.0,
-                    delay: 20.0,
-                    rate_mode: crate::params::LfoRateMode::Hz,
-                    sync_division: crate::params::LfoSyncDivision::Quarter,
-                },
-            );
-            true
-        }
-        _ => false,
-    }
+    let Some(p) = VIBRATO_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
+    set_vibrato(params, p.params.clone());
+    true
 }
 
 // ---------------------------------------------------------------------------
@@ -183,3 +140,53 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     controls: &CONTROLS,
     presets: &PRESET_OPTIONS,
 };
+
+crate::fx_preset_entry!(pub VibratoPresetV1, VibratoParams);
+
+use crate::params::{LfoRateMode, LfoSyncDivision};
+
+pub const VIBRATO_PRESET_DATA: [VibratoPresetV1; 3] = [
+    VibratoPresetV1 {
+        id: "subtle",
+        label: "Subtle",
+        params: VibratoParams {
+            enabled: true,
+            waveform: 1,
+            rate: 20.0,
+            depth: 6.0,
+            delay: 160.0,
+            rate_mode: LfoRateMode::Hz,
+            sync_division: LfoSyncDivision::Quarter,
+        },
+    },
+    VibratoPresetV1 {
+        id: "chorused",
+        label: "Chorused",
+        params: VibratoParams {
+            enabled: true,
+            waveform: 2,
+            rate: 38.0,
+            depth: 14.0,
+            delay: 80.0,
+            rate_mode: LfoRateMode::Hz,
+            sync_division: LfoSyncDivision::Quarter,
+        },
+    },
+    VibratoPresetV1 {
+        id: "warble",
+        label: "Warble",
+        params: VibratoParams {
+            enabled: true,
+            waveform: 4,
+            rate: 62.0,
+            depth: 26.0,
+            delay: 20.0,
+            rate_mode: LfoRateMode::Hz,
+            sync_division: LfoSyncDivision::Quarter,
+        },
+    },
+];
+
+pub fn vibrato_preset_data() -> &'static [VibratoPresetV1] {
+    &VIBRATO_PRESET_DATA
+}
