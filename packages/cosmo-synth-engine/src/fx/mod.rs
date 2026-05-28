@@ -100,6 +100,24 @@ pub struct FxDefinitionV1 {
 pub const NO_FX_CONTROL_OPTIONS: [FxControlOptionV1; 0] = [];
 
 // ---------------------------------------------------------------------------
+// Preset data — typed per-module preset definitions with full parameter values
+// ---------------------------------------------------------------------------
+
+#[macro_export]
+macro_rules! fx_preset_entry {
+	($vis:vis $name:ident, $params:ty) => {
+		#[derive(Debug, Clone, serde::Serialize)]
+		#[cfg_attr(feature = "specta-bindings", derive(specta::Type))]
+		#[serde(rename_all = "camelCase")]
+		$vis struct $name {
+			pub id: &'static str,
+			pub label: &'static str,
+			pub params: $params,
+		}
+	};
+}
+
+// ---------------------------------------------------------------------------
 // Catalog — one entry per FX slot type (excluding Empty)
 // ---------------------------------------------------------------------------
 

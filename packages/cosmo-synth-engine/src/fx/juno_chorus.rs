@@ -168,7 +168,46 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     presets: &PRESET_OPTIONS,
 };
 
+crate::fx_preset_entry!(pub JunoChorusPresetV1, JunoChorusParams);
+
+pub const JUNO_CHORUS_PRESET_DATA: [JunoChorusPresetV1; 3] = [
+    JunoChorusPresetV1 {
+        id: "junoI",
+        label: "Juno I",
+        params: JunoChorusParams {
+            enabled: true,
+            mode: 0,
+            mix: 0.5,
+        },
+    },
+    JunoChorusPresetV1 {
+        id: "junoII",
+        label: "Juno II",
+        params: JunoChorusParams {
+            enabled: true,
+            mode: 1,
+            mix: 0.55,
+        },
+    },
+    JunoChorusPresetV1 {
+        id: "junoFull",
+        label: "Juno Full",
+        params: JunoChorusParams {
+            enabled: true,
+            mode: 2,
+            mix: 0.6,
+        },
+    },
+];
+
+pub fn juno_chorus_preset_data() -> &'static [JunoChorusPresetV1] {
+    &JUNO_CHORUS_PRESET_DATA
+}
+
 pub fn apply_juno_chorus_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let Some(p) = JUNO_CHORUS_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
     let slot = params.fx_slots.iter_mut().find_map(|s| {
         if let FxSlotConfig::JunoChorus(jc) = s {
             Some(jc)
@@ -176,28 +215,10 @@ pub fn apply_juno_chorus_preset(params: &mut SynthParams, preset: &str) -> bool 
             None
         }
     });
-    let Some(jc) = slot else {
-        return false;
-    };
-    match preset {
-        "junoI" => {
-            jc.enabled = true;
-            jc.mode = 0;
-            jc.mix = 0.5;
-            true
-        }
-        "junoII" => {
-            jc.enabled = true;
-            jc.mode = 1;
-            jc.mix = 0.55;
-            true
-        }
-        "junoFull" => {
-            jc.enabled = true;
-            jc.mode = 2;
-            jc.mix = 0.6;
-            true
-        }
-        _ => false,
+    if let Some(jc) = slot {
+        *jc = p.params.clone();
+        true
+    } else {
+        false
     }
 }

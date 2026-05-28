@@ -156,7 +156,49 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     presets: &PRESET_OPTIONS,
 };
 
+crate::fx_preset_entry!(pub WavefolderPresetV1, WavefolderParams);
+
+pub const WAVEFOLDER_PRESET_DATA: [WavefolderPresetV1; 3] = [
+    WavefolderPresetV1 {
+        id: "gentle",
+        label: "Gentle",
+        params: WavefolderParams {
+            enabled: true,
+            drive: 0.3,
+            folds: 0.3,
+            mix: 0.8,
+        },
+    },
+    WavefolderPresetV1 {
+        id: "aggressive",
+        label: "Aggressive",
+        params: WavefolderParams {
+            enabled: true,
+            drive: 0.75,
+            folds: 0.7,
+            mix: 1.0,
+        },
+    },
+    WavefolderPresetV1 {
+        id: "harmonic",
+        label: "Harmonic",
+        params: WavefolderParams {
+            enabled: true,
+            drive: 0.5,
+            folds: 0.5,
+            mix: 0.9,
+        },
+    },
+];
+
+pub fn wavefolder_preset_data() -> &'static [WavefolderPresetV1] {
+    &WAVEFOLDER_PRESET_DATA
+}
+
 pub fn apply_wavefolder_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let Some(p) = WAVEFOLDER_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
     let slot = params.fx_slots.iter_mut().find_map(|s| {
         if let FxSlotConfig::Wavefolder(wf) = s {
             Some(wf)
@@ -164,31 +206,10 @@ pub fn apply_wavefolder_preset(params: &mut SynthParams, preset: &str) -> bool {
             None
         }
     });
-    let Some(wf) = slot else {
-        return false;
-    };
-    match preset {
-        "gentle" => {
-            wf.enabled = true;
-            wf.drive = 0.3;
-            wf.folds = 0.3;
-            wf.mix = 0.8;
-            true
-        }
-        "aggressive" => {
-            wf.enabled = true;
-            wf.drive = 0.75;
-            wf.folds = 0.7;
-            wf.mix = 1.0;
-            true
-        }
-        "harmonic" => {
-            wf.enabled = true;
-            wf.drive = 0.5;
-            wf.folds = 0.5;
-            wf.mix = 0.9;
-            true
-        }
-        _ => false,
+    if let Some(wf) = slot {
+        *wf = p.params.clone();
+        true
+    } else {
+        false
     }
 }

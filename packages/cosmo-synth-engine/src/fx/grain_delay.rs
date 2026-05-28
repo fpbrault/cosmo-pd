@@ -287,7 +287,66 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     presets: &PRESET_OPTIONS,
 };
 
+crate::fx_preset_entry!(pub GrainDelayPresetV1, GrainDelayParams);
+
+use crate::params::{LfoRateMode, LfoSyncDivision};
+
+pub const GRAIN_DELAY_PRESET_DATA: [GrainDelayPresetV1; 3] = [
+    GrainDelayPresetV1 {
+        id: "cloudEcho",
+        label: "Cloud Echo",
+        params: GrainDelayParams {
+            enabled: true,
+            time: 0.35,
+            feedback: 0.22,
+            scatter: 0.32,
+            density: 0.58,
+            mix: 0.4,
+            time_mode: LfoRateMode::Hz,
+            sync_division: LfoSyncDivision::Quarter,
+            pitch_semitones: 0.0,
+        },
+    },
+    GrainDelayPresetV1 {
+        id: "glitchDelay",
+        label: "Glitch Delay",
+        params: GrainDelayParams {
+            enabled: true,
+            time: 0.12,
+            feedback: 0.18,
+            scatter: 0.42,
+            density: 0.7,
+            mix: 0.5,
+            time_mode: LfoRateMode::Hz,
+            sync_division: LfoSyncDivision::Quarter,
+            pitch_semitones: 0.0,
+        },
+    },
+    GrainDelayPresetV1 {
+        id: "shimmerEcho",
+        label: "Shimmer Echo",
+        params: GrainDelayParams {
+            enabled: true,
+            time: 0.5,
+            feedback: 0.36,
+            scatter: 0.24,
+            density: 0.5,
+            mix: 0.35,
+            time_mode: LfoRateMode::Hz,
+            sync_division: LfoSyncDivision::Quarter,
+            pitch_semitones: 0.0,
+        },
+    },
+];
+
+pub fn grain_delay_preset_data() -> &'static [GrainDelayPresetV1] {
+    &GRAIN_DELAY_PRESET_DATA
+}
+
 pub fn apply_grain_delay_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let Some(p) = GRAIN_DELAY_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
     let slot = params.fx_slots.iter_mut().find_map(|s| {
         if let FxSlotConfig::GrainDelay(gd) = s {
             Some(gd)
@@ -295,47 +354,11 @@ pub fn apply_grain_delay_preset(params: &mut SynthParams, preset: &str) -> bool 
             None
         }
     });
-    let Some(gd) = slot else {
-        return false;
-    };
-    match preset {
-        "cloudEcho" => {
-            gd.enabled = true;
-            gd.time = 0.35;
-            gd.feedback = 0.22;
-            gd.scatter = 0.32;
-            gd.density = 0.58;
-            gd.mix = 0.4;
-            gd.time_mode = crate::params::LfoRateMode::Hz;
-            gd.sync_division = crate::params::LfoSyncDivision::Quarter;
-            gd.pitch_semitones = 0.0;
-            true
-        }
-        "glitchDelay" => {
-            gd.enabled = true;
-            gd.time = 0.12;
-            gd.feedback = 0.18;
-            gd.scatter = 0.42;
-            gd.density = 0.7;
-            gd.mix = 0.5;
-            gd.time_mode = crate::params::LfoRateMode::Hz;
-            gd.sync_division = crate::params::LfoSyncDivision::Quarter;
-            gd.pitch_semitones = 0.0;
-            true
-        }
-        "shimmerEcho" => {
-            gd.enabled = true;
-            gd.time = 0.5;
-            gd.feedback = 0.36;
-            gd.scatter = 0.24;
-            gd.density = 0.5;
-            gd.mix = 0.35;
-            gd.time_mode = crate::params::LfoRateMode::Hz;
-            gd.sync_division = crate::params::LfoSyncDivision::Quarter;
-            gd.pitch_semitones = 0.0;
-            true
-        }
-        _ => false,
+    if let Some(gd) = slot {
+        *gd = p.params.clone();
+        true
+    } else {
+        false
     }
 }
 

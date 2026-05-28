@@ -1,7 +1,14 @@
-import type {
-	ModulePresetModule,
-	ModulePresetPatch,
-} from "@/lib/synth/modulePresets";
+import type { FxSlotType } from "@/lib/synth/bindings/synth";
+
+type ModulePresetModule =
+	| FxSlotType
+	| "eq"
+	| "lfo1"
+	| "lfo2"
+	| "modEnv"
+	| "random";
+
+type ModulePresetPatch = Record<string, unknown>;
 
 const APPLY_MODULE_PRESET_EVENT = "cz-apply-module-preset";
 

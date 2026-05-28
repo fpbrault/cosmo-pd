@@ -193,7 +193,58 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     presets: &PRESET_OPTIONS,
 };
 
+crate::fx_preset_entry!(pub CompressorPresetV1, CompressorParams);
+
+pub const COMPRESSOR_PRESET_DATA: [CompressorPresetV1; 3] = [
+    CompressorPresetV1 {
+        id: "gentle",
+        label: "Gentle",
+        params: CompressorParams {
+            enabled: true,
+            threshold_db: -18.0,
+            ratio: 2.0,
+            attack_ms: 10.0,
+            release_ms: 150.0,
+            makeup_db: 3.0,
+            mix: 1.0,
+        },
+    },
+    CompressorPresetV1 {
+        id: "punchy",
+        label: "Punchy",
+        params: CompressorParams {
+            enabled: true,
+            threshold_db: -12.0,
+            ratio: 4.0,
+            attack_ms: 5.0,
+            release_ms: 80.0,
+            makeup_db: 6.0,
+            mix: 1.0,
+        },
+    },
+    CompressorPresetV1 {
+        id: "limiter",
+        label: "Limiter",
+        params: CompressorParams {
+            enabled: true,
+            threshold_db: -6.0,
+            ratio: 20.0,
+            attack_ms: 1.0,
+            release_ms: 200.0,
+            makeup_db: 2.0,
+            mix: 1.0,
+        },
+    },
+];
+
+pub fn compressor_preset_data() -> &'static [CompressorPresetV1] {
+    &COMPRESSOR_PRESET_DATA
+}
+
 pub fn apply_compressor_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let Some(p) = COMPRESSOR_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
     let slot = params.fx_slots.iter_mut().find_map(|s| {
         if let FxSlotConfig::Compressor(c) = s {
             Some(c)
@@ -201,40 +252,10 @@ pub fn apply_compressor_preset(params: &mut SynthParams, preset: &str) -> bool {
             None
         }
     });
-    let Some(c) = slot else {
-        return false;
-    };
-    match preset {
-        "gentle" => {
-            c.enabled = true;
-            c.threshold_db = -18.0;
-            c.ratio = 2.0;
-            c.attack_ms = 10.0;
-            c.release_ms = 150.0;
-            c.makeup_db = 3.0;
-            c.mix = 1.0;
-            true
-        }
-        "punchy" => {
-            c.enabled = true;
-            c.threshold_db = -12.0;
-            c.ratio = 4.0;
-            c.attack_ms = 5.0;
-            c.release_ms = 80.0;
-            c.makeup_db = 6.0;
-            c.mix = 1.0;
-            true
-        }
-        "limiter" => {
-            c.enabled = true;
-            c.threshold_db = -6.0;
-            c.ratio = 20.0;
-            c.attack_ms = 1.0;
-            c.release_ms = 200.0;
-            c.makeup_db = 2.0;
-            c.mix = 1.0;
-            true
-        }
-        _ => false,
+    if let Some(c) = slot {
+        *c = p.params.clone();
+        true
+    } else {
+        false
     }
 }

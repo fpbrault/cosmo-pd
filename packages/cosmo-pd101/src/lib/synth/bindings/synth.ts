@@ -74,6 +74,12 @@ export type AutoWahParams = {
 	mix?: number | null,
 };
 
+export type AutoWahPresetV1 = {
+	id: string,
+	label: string,
+	params: AutoWahParams,
+};
+
 /**  Base waveform used as the final carrier for warp algorithms. */
 export type BaseWaveform = "cosine" | "sine" | "triangle" | "saw" | "square";
 
@@ -85,12 +91,24 @@ export type BitcrusherParams = {
 	mix?: number | null,
 };
 
+export type BitcrusherPresetV1 = {
+	id: string,
+	label: string,
+	params: BitcrusherParams,
+};
+
 /**  Chorus parameters */
 export type ChorusParams = {
 	enabled?: boolean,
 	rate: number | null,
 	depth: number | null,
 	mix: number | null,
+};
+
+export type ChorusPresetV1 = {
+	id: string,
+	label: string,
+	params: ChorusParams,
 };
 
 /**  Compressor parameters */
@@ -102,6 +120,12 @@ export type CompressorParams = {
 	releaseMs?: number | null,
 	makeupDb?: number | null,
 	mix?: number | null,
+};
+
+export type CompressorPresetV1 = {
+	id: string,
+	label: string,
+	params: CompressorParams,
 };
 
 /**  Front-panel CZ algorithm shortcuts. */
@@ -131,6 +155,12 @@ export type DelayParams = {
 	syncDivision?: LfoSyncDivision,
 };
 
+export type DelayPresetV1 = {
+	id: string,
+	label: string,
+	params: DelayParams,
+};
+
 /**  Distortion parameters */
 export type DistortionParams = {
 	enabled?: boolean,
@@ -138,6 +168,12 @@ export type DistortionParams = {
 	drive?: number | null,
 	tone?: number | null,
 	mix?: number | null,
+};
+
+export type DistortionPresetV1 = {
+	id: string,
+	label: string,
+	params: DistortionParams,
 };
 
 /**  Readout label for one string enum value. */
@@ -170,6 +206,12 @@ export type EqParams = {
 	gainBand8?: number | null,
 };
 
+export type EqPresetV1 = {
+	id: string,
+	label: string,
+	params: EqParams,
+};
+
 /**  Flanger parameters */
 export type FlangerParams = {
 	enabled?: boolean,
@@ -179,6 +221,12 @@ export type FlangerParams = {
 	feedback?: number | null,
 	throughZero?: boolean,
 	mix?: number | null,
+};
+
+export type FlangerPresetV1 = {
+	id: string,
+	label: string,
+	params: FlangerParams,
 };
 
 /**  Visual/semantic kind for an FX control. */
@@ -239,11 +287,23 @@ export type GrainDelayParams = {
 	pitchSemitones?: number | null,
 };
 
+export type GrainDelayPresetV1 = {
+	id: string,
+	label: string,
+	params: GrainDelayParams,
+};
+
 /**  Juno-style chorus parameters */
 export type JunoChorusParams = {
 	enabled?: boolean,
 	mode?: number,
 	mix?: number | null,
+};
+
+export type JunoChorusPresetV1 = {
+	id: string,
+	label: string,
+	params: JunoChorusParams,
 };
 
 /**  LFO parameters */
@@ -256,6 +316,12 @@ export type LfoParams = {
 	symmetry: number | null,
 	retrigger: boolean,
 	offset?: number | null,
+};
+
+export type LfoPresetV1 = {
+	id: string,
+	label: string,
+	params: LfoParams,
 };
 
 /**  LFO rate interpretation mode. */
@@ -305,6 +371,12 @@ export type LoFiParams = {
 	mix?: number | null,
 };
 
+export type LoFiPresetV1 = {
+	id: string,
+	label: string,
+	params: LoFiParams,
+};
+
 /**  Modulation destination selector for modulation matrix routes. */
 export type ModDestination = "volume" | "pitch" | "line1DcwBase" | "line1DcaBase" | "line1AlgoBlend" | "line2DetuneNote" | "line1Octave" | "line1AlgoParam1" | "line1AlgoParam2" | "line1AlgoParam3" | "line1AlgoParam4" | "line1AlgoParam5" | "line1AlgoParam6" | "line1AlgoParam7" | "line1AlgoParam8" | "line2DcwBase" | "line2DcaBase" | "line2AlgoBlend" | "line2DetuneFine" | "line2DetuneOctave" | "line2AlgoParam1" | "line2AlgoParam2" | "line2AlgoParam3" | "line2AlgoParam4" | "line2AlgoParam5" | "line2AlgoParam6" | "line2AlgoParam7" | "line2AlgoParam8" | "filterCutoff" | "filterResonance" | "filterEnvAmount" | "chorusMix" | "delayMix" | "reverbMix" | "vibratoDepth" | "vibratoRate" | "intPmRatio" | "line1DcoEnvStep1Level" | "line1DcoEnvStep1Rate" | "line1DcoEnvStep2Level" | "line1DcoEnvStep2Rate" | "line1DcoEnvStep3Level" | "line1DcoEnvStep3Rate" | "line1DcoEnvStep4Level" | "line1DcoEnvStep4Rate" | "line1DcoEnvStep5Level" | "line1DcoEnvStep5Rate" | "line1DcoEnvStep6Level" | "line1DcoEnvStep6Rate" | "line1DcoEnvStep7Level" | "line1DcoEnvStep7Rate" | "line1DcoEnvStep8Level" | "line1DcoEnvStep8Rate" | "line1DcwEnvStep1Level" | "line1DcwEnvStep1Rate" | "line1DcwEnvStep2Level" | "line1DcwEnvStep2Rate" | "line1DcwEnvStep3Level" | "line1DcwEnvStep3Rate" | "line1DcwEnvStep4Level" | "line1DcwEnvStep4Rate" | "line1DcwEnvStep5Level" | "line1DcwEnvStep5Rate" | "line1DcwEnvStep6Level" | "line1DcwEnvStep6Rate" | "line1DcwEnvStep7Level" | "line1DcwEnvStep7Rate" | "line1DcwEnvStep8Level" | "line1DcwEnvStep8Rate" | "line1DcaEnvStep1Level" | "line1DcaEnvStep1Rate" | "line1DcaEnvStep2Level" | "line1DcaEnvStep2Rate" | "line1DcaEnvStep3Level" | "line1DcaEnvStep3Rate" | "line1DcaEnvStep4Level" | "line1DcaEnvStep4Rate" | "line1DcaEnvStep5Level" | "line1DcaEnvStep5Rate" | "line1DcaEnvStep6Level" | "line1DcaEnvStep6Rate" | "line1DcaEnvStep7Level" | "line1DcaEnvStep7Rate" | "line1DcaEnvStep8Level" | "line1DcaEnvStep8Rate" | "line2DcoEnvStep1Level" | "line2DcoEnvStep1Rate" | "line2DcoEnvStep2Level" | "line2DcoEnvStep2Rate" | "line2DcoEnvStep3Level" | "line2DcoEnvStep3Rate" | "line2DcoEnvStep4Level" | "line2DcoEnvStep4Rate" | "line2DcoEnvStep5Level" | "line2DcoEnvStep5Rate" | "line2DcoEnvStep6Level" | "line2DcoEnvStep6Rate" | "line2DcoEnvStep7Level" | "line2DcoEnvStep7Rate" | "line2DcoEnvStep8Level" | "line2DcoEnvStep8Rate" | "line2DcwEnvStep1Level" | "line2DcwEnvStep1Rate" | "line2DcwEnvStep2Level" | "line2DcwEnvStep2Rate" | "line2DcwEnvStep3Level" | "line2DcwEnvStep3Rate" | "line2DcwEnvStep4Level" | "line2DcwEnvStep4Rate" | "line2DcwEnvStep5Level" | "line2DcwEnvStep5Rate" | "line2DcwEnvStep6Level" | "line2DcwEnvStep6Rate" | "line2DcwEnvStep7Level" | "line2DcwEnvStep7Rate" | "line2DcwEnvStep8Level" | "line2DcwEnvStep8Rate" | "line2DcaEnvStep1Level" | "line2DcaEnvStep1Rate" | "line2DcaEnvStep2Level" | "line2DcaEnvStep2Rate" | "line2DcaEnvStep3Level" | "line2DcaEnvStep3Rate" | "line2DcaEnvStep4Level" | "line2DcaEnvStep4Rate" | "line2DcaEnvStep5Level" | "line2DcaEnvStep5Rate" | "line2DcaEnvStep6Level" | "line2DcaEnvStep6Rate" | "line2DcaEnvStep7Level" | "line2DcaEnvStep7Rate" | "line2DcaEnvStep8Level" | "line2DcaEnvStep8Rate" | "chorusRate" | "chorusDepth" | "delayTime" | "delayFeedback" | "delayWarmth" | "reverbSpace" | "reverbPredelay" | "reverbDistance" | "reverbCharacter" | "phaserRate" | "phaserDepth" | "phaserFeedback" | "phaserMix" | "lfo1Rate" | "lfo1Depth" | "lfo1Symmetry" | "lfo1Offset" | "lfo2Rate" | "lfo2Depth" | "lfo2Symmetry" | "lfo2Offset" | "randomRate" | "vibratoDelay" | "compressorThreshold" | "compressorRatio" | "compressorMakeup" | "compressorMix" | "grainDelayTime" | "grainDelayFeedback" | "grainDelayScatter" | "grainDelayDensity" | "grainDelayMix" | "bitcrusherBits" | "bitcrusherRateReduction" | "bitcrusherMix" | "shimmerVerbShimmer" | "shimmerVerbSpace" | "shimmerVerbMix" | "distortionDrive" | "distortionTone" | "distortionMix" | "junoChorusMix" | "ringModCarrierHz" | "ringModMix" | "tremoloRate" | "tremoloDepth" | "tremoloMix" | "wavefolderDrive" | "wavefolderFolds" | "wavefolderMix" | "loFiDegrade" | "loFiWowDepth" | "loFiWowRate" | "loFiFlutterDepth" | "loFiFlutterRate" | "loFiTone" | "loFiMix" | "multimodeFilterCutoffHz" | "multimodeFilterResonance" | "multimodeFilterDrive" | "multimodeFilterMix" | "flangerRate" | "flangerDepth" | "flangerDelayMs" | "flangerFeedback" | "flangerMix" | "rotarySpeakerSpeed" | "rotarySpeakerDepth" | "rotarySpeakerDrive" | "rotarySpeakerMix" | "autoWahSensitivity" | "autoWahCutoffHz" | "autoWahResonance" | "autoWahAttackMs" | "autoWahReleaseMs" | "autoWahMix" | "stereoWidenerWidth" | "stereoWidenerDelayMs" | "stereoWidenerTone" | "stereoWidenerMix" | "eqGainBand1" | "eqGainBand2" | "eqGainBand3" | "eqGainBand4" | "eqGainBand5" | "eqGainBand6" | "eqGainBand7" | "eqGainBand8";
 
@@ -314,6 +386,12 @@ export type ModEnvParams = {
 	decay: number | null,
 	sustain: number | null,
 	release: number | null,
+};
+
+export type ModEnvPresetV1 = {
+	id: string,
+	label: string,
+	params: ModEnvParams,
 };
 
 /**  Collection of modulation routes. */
@@ -351,12 +429,24 @@ export type MultimodeFilterParams = {
 	mix?: number | null,
 };
 
+export type MultimodeFilterPresetV1 = {
+	id: string,
+	label: string,
+	params: MultimodeFilterParams,
+};
+
 /**  Phase modulation parameters */
 export type PhaseModParams = {
 	enabled: boolean,
 	amount: number | null,
 	ratio: number | null,
 	pmPre: boolean,
+};
+
+export type PhaseModPresetV1 = {
+	id: string,
+	label: string,
+	params: PhaseModParams,
 };
 
 /**  Phaser parameters */
@@ -366,6 +456,12 @@ export type PhaserParams = {
 	depth: number | null,
 	mix: number | null,
 	feedback: number | null,
+};
+
+export type PhaserPresetV1 = {
+	id: string,
+	label: string,
+	params: PhaserParams,
 };
 
 /**  Polyphony mode */
@@ -397,11 +493,23 @@ export type ReverbParams = {
 	character?: number | null,
 };
 
+export type ReverbPresetV1 = {
+	id: string,
+	label: string,
+	params: ReverbParams,
+};
+
 /**  Ring modulator parameters */
 export type RingModParams = {
 	enabled?: boolean,
 	carrierHz?: number | null,
 	mix?: number | null,
+};
+
+export type RingModPresetV1 = {
+	id: string,
+	label: string,
+	params: RingModParams,
 };
 
 /**  Rotary speaker parameters */
@@ -413,12 +521,24 @@ export type RotarySpeakerParams = {
 	mix?: number | null,
 };
 
+export type RotarySpeakerPresetV1 = {
+	id: string,
+	label: string,
+	params: RotarySpeakerParams,
+};
+
 /**  Shimmer verb parameters */
 export type ShimmerVerbParams = {
 	enabled?: boolean,
 	shimmer?: number | null,
 	space?: number | null,
 	mix?: number | null,
+};
+
+export type ShimmerVerbPresetV1 = {
+	id: string,
+	label: string,
+	params: ShimmerVerbParams,
 };
 
 /**  Step envelope data (CZ-style) */
@@ -439,6 +559,12 @@ export type StereoWidenerParams = {
 	delayMs?: number | null,
 	tone?: number | null,
 	mix?: number | null,
+};
+
+export type StereoWidenerPresetV1 = {
+	id: string,
+	label: string,
+	params: StereoWidenerParams,
 };
 
 /**  Top-level synth parameters */
@@ -487,6 +613,12 @@ export type TremoloParams = {
 	syncDivision?: LfoSyncDivision,
 };
 
+export type TremoloPresetV1 = {
+	id: string,
+	label: string,
+	params: TremoloParams,
+};
+
 /**  Vibrato parameters */
 export type VibratoParams = {
 	enabled: boolean,
@@ -498,12 +630,24 @@ export type VibratoParams = {
 	sync_division?: LfoSyncDivision,
 };
 
+export type VibratoPresetV1 = {
+	id: string,
+	label: string,
+	params: VibratoParams,
+};
+
 /**  Wavefolder parameters */
 export type WavefolderParams = {
 	enabled?: boolean,
 	drive?: number | null,
 	folds?: number | null,
 	mix?: number | null,
+};
+
+export type WavefolderPresetV1 = {
+	id: string,
+	label: string,
+	params: WavefolderParams,
 };
 
 /**  Window type applied to oscillator output */
@@ -4114,6 +4258,957 @@ export const MODULE_PRESET_CATALOG_V1: ModulePresetGroupV1[] = [
         "label": "Haas Push"
       }
     ]
+  }
+];
+
+/** Rust-owned CHORUS_PRESET_DATA with typed parameter values. */
+export const CHORUS_PRESET_DATA: ChorusPresetV1[] = [
+  {
+    "id": "classicWide",
+    "label": "Classic Wide",
+    "params": {
+      "enabled": true,
+      "rate": 0.9,
+      "depth": 1.2,
+      "mix": 0.38
+    }
+  },
+  {
+    "id": "slowShimmer",
+    "label": "Slow Shimmer",
+    "params": {
+      "enabled": true,
+      "rate": 0.35,
+      "depth": 2.1,
+      "mix": 0.44
+    }
+  },
+  {
+    "id": "ensembleThick",
+    "label": "Ensemble Thick",
+    "params": {
+      "enabled": true,
+      "rate": 1.8,
+      "depth": 2.6,
+      "mix": 0.56
+    }
+  }
+];
+
+/** Rust-owned DELAY_PRESET_DATA with typed parameter values. */
+export const DELAY_PRESET_DATA: DelayPresetV1[] = [
+  {
+    "id": "digitalSlap",
+    "label": "Digital Slap",
+    "params": {
+      "enabled": true,
+      "time": 0.11,
+      "feedback": 0.22,
+      "mix": 0.27,
+      "tapeMode": false,
+      "warmth": 0.2,
+      "timeMode": "hz",
+      "syncDivision": "quarter"
+    }
+  },
+  {
+    "id": "tapeEcho",
+    "label": "Tape Echo",
+    "params": {
+      "enabled": true,
+      "time": 0.34,
+      "feedback": 0.46,
+      "mix": 0.35,
+      "tapeMode": true,
+      "warmth": 0.72,
+      "timeMode": "hz",
+      "syncDivision": "quarter"
+    }
+  },
+  {
+    "id": "dubFeedback",
+    "label": "Dub Feedback",
+    "params": {
+      "enabled": true,
+      "time": 0.52,
+      "feedback": 0.68,
+      "mix": 0.4,
+      "tapeMode": true,
+      "warmth": 0.55,
+      "timeMode": "hz",
+      "syncDivision": "quarter"
+    }
+  }
+];
+
+/** Rust-owned REVERB_PRESET_DATA with typed parameter values. */
+export const REVERB_PRESET_DATA: ReverbPresetV1[] = [
+  {
+    "id": "smallRoom",
+    "label": "Small Room",
+    "params": {
+      "enabled": true,
+      "mix": 0.22,
+      "space": 0.32,
+      "predelay": 0.006,
+      "distance": 0.28,
+      "character": 0.45
+    }
+  },
+  {
+    "id": "plateAir",
+    "label": "Plate Air",
+    "params": {
+      "enabled": true,
+      "mix": 0.31,
+      "space": 0.58,
+      "predelay": 0.012,
+      "distance": 0.4,
+      "character": 0.74
+    }
+  },
+  {
+    "id": "cathedral",
+    "label": "Cathedral",
+    "params": {
+      "enabled": true,
+      "mix": 0.47,
+      "space": 0.9,
+      "predelay": 0.03,
+      "distance": 0.68,
+      "character": 0.66
+    }
+  }
+];
+
+/** Rust-owned PHASER_PRESET_DATA with typed parameter values. */
+export const PHASER_PRESET_DATA: PhaserPresetV1[] = [
+  {
+    "id": "gentleSweep",
+    "label": "Gentle Sweep",
+    "params": {
+      "enabled": true,
+      "rate": 0.35,
+      "depth": 0.45,
+      "mix": 0.25,
+      "feedback": 0.2
+    }
+  },
+  {
+    "id": "jetWash",
+    "label": "Jet Wash",
+    "params": {
+      "enabled": true,
+      "rate": 0.9,
+      "depth": 0.78,
+      "mix": 0.43,
+      "feedback": 0.55
+    }
+  },
+  {
+    "id": "wideNotch",
+    "label": "Wide Notch",
+    "params": {
+      "enabled": true,
+      "rate": 0.18,
+      "depth": 1.0,
+      "mix": 0.52,
+      "feedback": 0.72
+    }
+  }
+];
+
+/** Rust-owned VIBRATO_PRESET_DATA with typed parameter values. */
+export const VIBRATO_PRESET_DATA: VibratoPresetV1[] = [
+  {
+    "id": "subtle",
+    "label": "Subtle",
+    "params": {
+      "enabled": true,
+      "waveform": 1,
+      "rate": 20.0,
+      "depth": 6.0,
+      "delay": 160.0,
+      "rate_mode": "hz",
+      "sync_division": "quarter"
+    }
+  },
+  {
+    "id": "chorused",
+    "label": "Chorused",
+    "params": {
+      "enabled": true,
+      "waveform": 2,
+      "rate": 38.0,
+      "depth": 14.0,
+      "delay": 80.0,
+      "rate_mode": "hz",
+      "sync_division": "quarter"
+    }
+  },
+  {
+    "id": "warble",
+    "label": "Warble",
+    "params": {
+      "enabled": true,
+      "waveform": 4,
+      "rate": 62.0,
+      "depth": 26.0,
+      "delay": 20.0,
+      "rate_mode": "hz",
+      "sync_division": "quarter"
+    }
+  }
+];
+
+/** Rust-owned PHASE_MOD_PRESET_DATA with typed parameter values. */
+export const PHASE_MOD_PRESET_DATA: PhaseModPresetV1[] = [
+  {
+    "id": "glassBell",
+    "label": "Glass Bell",
+    "params": {
+      "enabled": true,
+      "amount": 0.06,
+      "ratio": 2.0,
+      "pmPre": true
+    }
+  },
+  {
+    "id": "metalFold",
+    "label": "Metal Fold",
+    "params": {
+      "enabled": true,
+      "amount": 0.11,
+      "ratio": 2.7,
+      "pmPre": true
+    }
+  },
+  {
+    "id": "aggressiveSync",
+    "label": "Aggressive Sync",
+    "params": {
+      "enabled": true,
+      "amount": 0.18,
+      "ratio": 3.4,
+      "pmPre": false
+    }
+  }
+];
+
+/** Rust-owned COMPRESSOR_PRESET_DATA with typed parameter values. */
+export const COMPRESSOR_PRESET_DATA: CompressorPresetV1[] = [
+  {
+    "id": "gentle",
+    "label": "Gentle",
+    "params": {
+      "enabled": true,
+      "thresholdDb": -18.0,
+      "ratio": 2.0,
+      "attackMs": 10.0,
+      "releaseMs": 150.0,
+      "makeupDb": 3.0,
+      "mix": 1.0
+    }
+  },
+  {
+    "id": "punchy",
+    "label": "Punchy",
+    "params": {
+      "enabled": true,
+      "thresholdDb": -12.0,
+      "ratio": 4.0,
+      "attackMs": 5.0,
+      "releaseMs": 80.0,
+      "makeupDb": 6.0,
+      "mix": 1.0
+    }
+  },
+  {
+    "id": "limiter",
+    "label": "Limiter",
+    "params": {
+      "enabled": true,
+      "thresholdDb": -6.0,
+      "ratio": 20.0,
+      "attackMs": 1.0,
+      "releaseMs": 200.0,
+      "makeupDb": 2.0,
+      "mix": 1.0
+    }
+  }
+];
+
+/** Rust-owned EQ_PRESET_DATA with typed parameter values. */
+export const EQ_PRESET_DATA: EqPresetV1[] = [
+  {
+    "id": "bassBoost",
+    "label": "Bass Boost",
+    "params": {
+      "enabled": true,
+      "gainBand1": 6.0,
+      "gainBand2": 4.0,
+      "gainBand3": 2.0,
+      "gainBand4": 0.0,
+      "gainBand5": 0.0,
+      "gainBand6": -1.0,
+      "gainBand7": -2.0,
+      "gainBand8": -2.0
+    }
+  },
+  {
+    "id": "presence",
+    "label": "Presence",
+    "params": {
+      "enabled": true,
+      "gainBand1": 0.0,
+      "gainBand2": -2.0,
+      "gainBand3": -1.0,
+      "gainBand4": 0.0,
+      "gainBand5": 2.0,
+      "gainBand6": 5.0,
+      "gainBand7": 4.0,
+      "gainBand8": 3.0
+    }
+  },
+  {
+    "id": "warmth",
+    "label": "Warmth",
+    "params": {
+      "enabled": true,
+      "gainBand1": 3.0,
+      "gainBand2": 4.0,
+      "gainBand3": 3.0,
+      "gainBand4": 1.0,
+      "gainBand5": 0.0,
+      "gainBand6": -2.0,
+      "gainBand7": -4.0,
+      "gainBand8": -5.0
+    }
+  }
+];
+
+/** Rust-owned GRAIN_DELAY_PRESET_DATA with typed parameter values. */
+export const GRAIN_DELAY_PRESET_DATA: GrainDelayPresetV1[] = [
+  {
+    "id": "cloudEcho",
+    "label": "Cloud Echo",
+    "params": {
+      "enabled": true,
+      "time": 0.35,
+      "feedback": 0.22,
+      "scatter": 0.32,
+      "density": 0.58,
+      "mix": 0.4,
+      "timeMode": "hz",
+      "syncDivision": "quarter",
+      "pitchSemitones": 0.0
+    }
+  },
+  {
+    "id": "glitchDelay",
+    "label": "Glitch Delay",
+    "params": {
+      "enabled": true,
+      "time": 0.12,
+      "feedback": 0.18,
+      "scatter": 0.42,
+      "density": 0.7,
+      "mix": 0.5,
+      "timeMode": "hz",
+      "syncDivision": "quarter",
+      "pitchSemitones": 0.0
+    }
+  },
+  {
+    "id": "shimmerEcho",
+    "label": "Shimmer Echo",
+    "params": {
+      "enabled": true,
+      "time": 0.5,
+      "feedback": 0.36,
+      "scatter": 0.24,
+      "density": 0.5,
+      "mix": 0.35,
+      "timeMode": "hz",
+      "syncDivision": "quarter",
+      "pitchSemitones": 0.0
+    }
+  }
+];
+
+/** Rust-owned BITCRUSHER_PRESET_DATA with typed parameter values. */
+export const BITCRUSHER_PRESET_DATA: BitcrusherPresetV1[] = [
+  {
+    "id": "retroGame",
+    "label": "Retro Game",
+    "params": {
+      "enabled": true,
+      "bits": 8.0,
+      "rateReduction": 4.0,
+      "mix": 1.0
+    }
+  },
+  {
+    "id": "grunge",
+    "label": "Grunge",
+    "params": {
+      "enabled": true,
+      "bits": 4.0,
+      "rateReduction": 2.0,
+      "mix": 0.8
+    }
+  },
+  {
+    "id": "subtle",
+    "label": "Subtle",
+    "params": {
+      "enabled": true,
+      "bits": 12.0,
+      "rateReduction": 1.5,
+      "mix": 0.6
+    }
+  }
+];
+
+/** Rust-owned SHIMMER_VERB_PRESET_DATA with typed parameter values. */
+export const SHIMMER_VERB_PRESET_DATA: ShimmerVerbPresetV1[] = [
+  {
+    "id": "crystalHall",
+    "label": "Crystal Hall",
+    "params": {
+      "enabled": true,
+      "shimmer": 0.6,
+      "space": 0.8,
+      "mix": 0.4
+    }
+  },
+  {
+    "id": "ethereal",
+    "label": "Ethereal",
+    "params": {
+      "enabled": true,
+      "shimmer": 0.85,
+      "space": 0.95,
+      "mix": 0.55
+    }
+  },
+  {
+    "id": "subtleShimmer",
+    "label": "Subtle Shimmer",
+    "params": {
+      "enabled": true,
+      "shimmer": 0.25,
+      "space": 0.6,
+      "mix": 0.3
+    }
+  }
+];
+
+/** Rust-owned DISTORTION_PRESET_DATA with typed parameter values. */
+export const DISTORTION_PRESET_DATA: DistortionPresetV1[] = [
+  {
+    "id": "warmOverdrive",
+    "label": "Warm Overdrive",
+    "params": {
+      "enabled": true,
+      "mode": 0,
+      "drive": 0.48,
+      "tone": 0.34,
+      "mix": 0.9
+    }
+  },
+  {
+    "id": "grittyFuzz",
+    "label": "Gritty Fuzz",
+    "params": {
+      "enabled": true,
+      "mode": 2,
+      "drive": 0.72,
+      "tone": 0.48,
+      "mix": 1.0
+    }
+  },
+  {
+    "id": "bitingClip",
+    "label": "Biting Clip",
+    "params": {
+      "enabled": true,
+      "mode": 1,
+      "drive": 0.88,
+      "tone": 0.78,
+      "mix": 1.0
+    }
+  }
+];
+
+/** Rust-owned JUNO_CHORUS_PRESET_DATA with typed parameter values. */
+export const JUNO_CHORUS_PRESET_DATA: JunoChorusPresetV1[] = [
+  {
+    "id": "junoI",
+    "label": "Juno I",
+    "params": {
+      "enabled": true,
+      "mode": 0,
+      "mix": 0.5
+    }
+  },
+  {
+    "id": "junoII",
+    "label": "Juno II",
+    "params": {
+      "enabled": true,
+      "mode": 1,
+      "mix": 0.55
+    }
+  },
+  {
+    "id": "junoFull",
+    "label": "Juno Full",
+    "params": {
+      "enabled": true,
+      "mode": 2,
+      "mix": 0.6
+    }
+  }
+];
+
+/** Rust-owned RING_MOD_PRESET_DATA with typed parameter values. */
+export const RING_MOD_PRESET_DATA: RingModPresetV1[] = [
+  {
+    "id": "metallic",
+    "label": "Metallic",
+    "params": {
+      "enabled": true,
+      "carrierHz": 220.0,
+      "mix": 0.7
+    }
+  },
+  {
+    "id": "bell",
+    "label": "Bell",
+    "params": {
+      "enabled": true,
+      "carrierHz": 523.0,
+      "mix": 0.5
+    }
+  },
+  {
+    "id": "alien",
+    "label": "Alien",
+    "params": {
+      "enabled": true,
+      "carrierHz": 1337.0,
+      "mix": 0.85
+    }
+  }
+];
+
+/** Rust-owned TREMOLO_PRESET_DATA with typed parameter values. */
+export const TREMOLO_PRESET_DATA: TremoloPresetV1[] = [
+  {
+    "id": "slowWave",
+    "label": "Slow Wave",
+    "params": {
+      "enabled": true,
+      "rate": 2.0,
+      "depth": 0.5,
+      "waveform": 0,
+      "mix": 1.0,
+      "rateMode": "hz",
+      "syncDivision": "quarter"
+    }
+  },
+  {
+    "id": "fastChop",
+    "label": "Fast Chop",
+    "params": {
+      "enabled": true,
+      "rate": 8.0,
+      "depth": 0.75,
+      "waveform": 2,
+      "mix": 1.0,
+      "rateMode": "hz",
+      "syncDivision": "quarter"
+    }
+  },
+  {
+    "id": "triPulse",
+    "label": "Tri Pulse",
+    "params": {
+      "enabled": true,
+      "rate": 5.0,
+      "depth": 0.6,
+      "waveform": 1,
+      "mix": 1.0,
+      "rateMode": "hz",
+      "syncDivision": "quarter"
+    }
+  }
+];
+
+/** Rust-owned WAVEFOLDER_PRESET_DATA with typed parameter values. */
+export const WAVEFOLDER_PRESET_DATA: WavefolderPresetV1[] = [
+  {
+    "id": "gentle",
+    "label": "Gentle",
+    "params": {
+      "enabled": true,
+      "drive": 0.3,
+      "folds": 0.3,
+      "mix": 0.8
+    }
+  },
+  {
+    "id": "aggressive",
+    "label": "Aggressive",
+    "params": {
+      "enabled": true,
+      "drive": 0.75,
+      "folds": 0.7,
+      "mix": 1.0
+    }
+  },
+  {
+    "id": "harmonic",
+    "label": "Harmonic",
+    "params": {
+      "enabled": true,
+      "drive": 0.5,
+      "folds": 0.5,
+      "mix": 0.9
+    }
+  }
+];
+
+/** Rust-owned LOFI_PRESET_DATA with typed parameter values. */
+export const LOFI_PRESET_DATA: LoFiPresetV1[] = [
+  {
+    "id": "warpedCassette",
+    "label": "Warped Cassette",
+    "params": {
+      "enabled": true,
+      "degrade": 0.32,
+      "wowDepth": 0.13,
+      "wowRate": 0.32,
+      "flutterDepth": 0.056,
+      "flutterRate": 7.4,
+      "tone": 0.38,
+      "mix": 1.0
+    }
+  },
+  {
+    "id": "dustyKeys",
+    "label": "Dusty Keys",
+    "params": {
+      "enabled": true,
+      "degrade": 0.22,
+      "wowDepth": 0.056,
+      "wowRate": 0.5,
+      "flutterDepth": 0.032,
+      "flutterRate": 5.9,
+      "tone": 0.42,
+      "mix": 1.0
+    }
+  },
+  {
+    "id": "cheapSpeaker",
+    "label": "Cheap Speaker",
+    "params": {
+      "enabled": true,
+      "degrade": 0.55,
+      "wowDepth": 0.036,
+      "wowRate": 0.78,
+      "flutterDepth": 0.044,
+      "flutterRate": 9.2,
+      "tone": 0.12,
+      "mix": 1.0
+    }
+  }
+];
+
+/** Rust-owned MULTIMODE_FILTER_PRESET_DATA with typed parameter values. */
+export const MULTIMODE_FILTER_PRESET_DATA: MultimodeFilterPresetV1[] = [
+  {
+    "id": "warmLowPass",
+    "label": "Warm LP",
+    "params": {
+      "enabled": true,
+      "mode": 0,
+      "fourPole": true,
+      "cutoffHz": 1400.0,
+      "resonance": 0.28,
+      "drive": 0.22,
+      "mix": 1.0
+    }
+  },
+  {
+    "id": "tightHighPass",
+    "label": "Tight HP",
+    "params": {
+      "enabled": true,
+      "mode": 1,
+      "fourPole": false,
+      "cutoffHz": 380.0,
+      "resonance": 0.18,
+      "drive": 0.08,
+      "mix": 0.9
+    }
+  },
+  {
+    "id": "vocalBandPass",
+    "label": "Vocal BP",
+    "params": {
+      "enabled": true,
+      "mode": 2,
+      "fourPole": true,
+      "cutoffHz": 1150.0,
+      "resonance": 0.62,
+      "drive": 0.18,
+      "mix": 0.95
+    }
+  }
+];
+
+/** Rust-owned FLANGER_PRESET_DATA with typed parameter values. */
+export const FLANGER_PRESET_DATA: FlangerPresetV1[] = [
+  {
+    "id": "softSweep",
+    "label": "Soft Sweep",
+    "params": {
+      "enabled": true,
+      "rate": 0.2,
+      "depth": 0.35,
+      "delayMs": 2.8,
+      "feedback": 0.18,
+      "throughZero": false,
+      "mix": 0.42
+    }
+  },
+  {
+    "id": "jetPlane",
+    "label": "Jet Plane",
+    "params": {
+      "enabled": true,
+      "rate": 0.45,
+      "depth": 0.78,
+      "delayMs": 1.2,
+      "feedback": 0.62,
+      "throughZero": false,
+      "mix": 0.55
+    }
+  },
+  {
+    "id": "throughZero",
+    "label": "Through-Zero",
+    "params": {
+      "enabled": true,
+      "rate": 0.33,
+      "depth": 0.7,
+      "delayMs": 0.8,
+      "feedback": 0.36,
+      "throughZero": true,
+      "mix": 0.58
+    }
+  }
+];
+
+/** Rust-owned ROTARY_SPEAKER_PRESET_DATA with typed parameter values. */
+export const ROTARY_SPEAKER_PRESET_DATA: RotarySpeakerPresetV1[] = [
+  {
+    "id": "classicSpin",
+    "label": "Classic Spin",
+    "params": {
+      "enabled": true,
+      "speed": 0.9,
+      "depth": 0.62,
+      "drive": 0.08,
+      "mix": 0.58
+    }
+  },
+  {
+    "id": "fastHorn",
+    "label": "Fast Horn",
+    "params": {
+      "enabled": true,
+      "speed": 4.2,
+      "depth": 0.84,
+      "drive": 0.12,
+      "mix": 0.66
+    }
+  },
+  {
+    "id": "dirtyCab",
+    "label": "Dirty Cab",
+    "params": {
+      "enabled": true,
+      "speed": 1.8,
+      "depth": 0.72,
+      "drive": 0.48,
+      "mix": 0.74
+    }
+  }
+];
+
+/** Rust-owned AUTO_WAH_PRESET_DATA with typed parameter values. */
+export const AUTO_WAH_PRESET_DATA: AutoWahPresetV1[] = [
+  {
+    "id": "vowelQuack",
+    "label": "Vowel Quack",
+    "params": {
+      "enabled": true,
+      "mode": 2,
+      "sensitivity": 0.75,
+      "cutoffHz": 520.0,
+      "resonance": 0.78,
+      "attackMs": 6.0,
+      "releaseMs": 95.0,
+      "mix": 0.84
+    }
+  },
+  {
+    "id": "funkSweep",
+    "label": "Funk Sweep",
+    "params": {
+      "enabled": true,
+      "mode": 1,
+      "sensitivity": 0.62,
+      "cutoffHz": 280.0,
+      "resonance": 0.58,
+      "attackMs": 12.0,
+      "releaseMs": 170.0,
+      "mix": 0.76
+    }
+  },
+  {
+    "id": "softTouch",
+    "label": "Soft Touch",
+    "params": {
+      "enabled": true,
+      "mode": 0,
+      "sensitivity": 0.34,
+      "cutoffHz": 700.0,
+      "resonance": 0.32,
+      "attackMs": 24.0,
+      "releaseMs": 240.0,
+      "mix": 0.66
+    }
+  }
+];
+
+/** Rust-owned STEREO_WIDENER_PRESET_DATA with typed parameter values. */
+export const STEREO_WIDENER_PRESET_DATA: StereoWidenerPresetV1[] = [
+  {
+    "id": "subtleSpread",
+    "label": "Subtle Spread",
+    "params": {
+      "enabled": true,
+      "width": 0.35,
+      "delayMs": 9.0,
+      "tone": 0.45,
+      "mix": 0.45
+    }
+  },
+  {
+    "id": "widePad",
+    "label": "Wide Pad",
+    "params": {
+      "enabled": true,
+      "width": 0.72,
+      "delayMs": 14.0,
+      "tone": 0.62,
+      "mix": 0.62
+    }
+  },
+  {
+    "id": "haasPush",
+    "label": "Haas Push",
+    "params": {
+      "enabled": true,
+      "width": 0.9,
+      "delayMs": 22.0,
+      "tone": 0.72,
+      "mix": 0.7
+    }
+  }
+];
+
+/** Rust-owned LFO_PRESET_DATA with typed parameter values. */
+export const LFO_PRESET_DATA: LfoPresetV1[] = [
+  {
+    "id": "slowSine",
+    "label": "Slow Sine",
+    "params": {
+      "waveform": "sine",
+      "rate": 0.6,
+      "rateMode": "hz",
+      "syncDivision": "quarter",
+      "depth": 1.0,
+      "symmetry": 0.5,
+      "retrigger": false,
+      "offset": 0.0
+    }
+  },
+  {
+    "id": "tempoTri",
+    "label": "Tempo Tri",
+    "params": {
+      "waveform": "triangle",
+      "rate": 2.25,
+      "rateMode": "hz",
+      "syncDivision": "quarter",
+      "depth": 1.0,
+      "symmetry": 0.5,
+      "retrigger": true,
+      "offset": 0.0
+    }
+  },
+  {
+    "id": "randomDrift",
+    "label": "Random Drift",
+    "params": {
+      "waveform": "square",
+      "rate": 4.0,
+      "rateMode": "hz",
+      "syncDivision": "quarter",
+      "depth": 0.35,
+      "symmetry": 0.5,
+      "retrigger": false,
+      "offset": 0.0
+    }
+  }
+];
+
+/** Rust-owned MOD_ENV_PRESET_DATA with typed parameter values. */
+export const MOD_ENV_PRESET_DATA: ModEnvPresetV1[] = [
+  {
+    "id": "pluck",
+    "label": "Pluck",
+    "params": {
+      "attack": 0.005,
+      "decay": 0.16,
+      "sustain": 0.08,
+      "release": 0.14
+    }
+  },
+  {
+    "id": "pad",
+    "label": "Pad",
+    "params": {
+      "attack": 0.7,
+      "decay": 1.2,
+      "sustain": 0.75,
+      "release": 1.5
+    }
+  },
+  {
+    "id": "reverseSwell",
+    "label": "Reverse Swell",
+    "params": {
+      "attack": 1.8,
+      "decay": 0.28,
+      "sustain": 0.66,
+      "release": 0.95
+    }
   }
 ];
 

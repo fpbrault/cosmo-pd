@@ -135,7 +135,49 @@ pub const DEFINITION: FxDefinitionV1 = FxDefinitionV1 {
     presets: &PRESET_OPTIONS,
 };
 
+crate::fx_preset_entry!(pub BitcrusherPresetV1, BitcrusherParams);
+
+pub const BITCRUSHER_PRESET_DATA: [BitcrusherPresetV1; 3] = [
+    BitcrusherPresetV1 {
+        id: "retroGame",
+        label: "Retro Game",
+        params: BitcrusherParams {
+            enabled: true,
+            bits: 8.0,
+            rate_reduction: 4.0,
+            mix: 1.0,
+        },
+    },
+    BitcrusherPresetV1 {
+        id: "grunge",
+        label: "Grunge",
+        params: BitcrusherParams {
+            enabled: true,
+            bits: 4.0,
+            rate_reduction: 2.0,
+            mix: 0.8,
+        },
+    },
+    BitcrusherPresetV1 {
+        id: "subtle",
+        label: "Subtle",
+        params: BitcrusherParams {
+            enabled: true,
+            bits: 12.0,
+            rate_reduction: 1.5,
+            mix: 0.6,
+        },
+    },
+];
+
+pub fn bitcrusher_preset_data() -> &'static [BitcrusherPresetV1] {
+    &BITCRUSHER_PRESET_DATA
+}
+
 pub fn apply_bitcrusher_preset(params: &mut SynthParams, preset: &str) -> bool {
+    let Some(p) = BITCRUSHER_PRESET_DATA.iter().find(|p| p.id == preset) else {
+        return false;
+    };
     let slot = params.fx_slots.iter_mut().find_map(|s| {
         if let FxSlotConfig::Bitcrusher(bc) = s {
             Some(bc)
@@ -143,31 +185,10 @@ pub fn apply_bitcrusher_preset(params: &mut SynthParams, preset: &str) -> bool {
             None
         }
     });
-    let Some(bc) = slot else {
-        return false;
-    };
-    match preset {
-        "retroGame" => {
-            bc.enabled = true;
-            bc.bits = 8.0;
-            bc.rate_reduction = 4.0;
-            bc.mix = 1.0;
-            true
-        }
-        "grunge" => {
-            bc.enabled = true;
-            bc.bits = 4.0;
-            bc.rate_reduction = 2.0;
-            bc.mix = 0.8;
-            true
-        }
-        "subtle" => {
-            bc.enabled = true;
-            bc.bits = 12.0;
-            bc.rate_reduction = 1.5;
-            bc.mix = 0.6;
-            true
-        }
-        _ => false,
+    if let Some(bc) = slot {
+        *bc = p.params.clone();
+        true
+    } else {
+        false
     }
 }
