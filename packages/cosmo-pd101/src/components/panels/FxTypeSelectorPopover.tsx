@@ -12,14 +12,14 @@ import {
 // Position helpers
 // ---------------------------------------------------------------------------
 
-const TYPE_SELECTOR_WIDTH = 480;
+const TYPE_SELECTOR_WIDTH = 520;
 const TYPE_SELECTOR_MARGIN = 12;
 
 type PopoverPos = { top: number; left: number; maxHeight: number };
 
 function getTypeSelectorPosition(rect: DOMRect, align: "right" | "center") {
 	const maxHeight = Math.min(
-		440,
+		520,
 		window.innerHeight - TYPE_SELECTOR_MARGIN * 2,
 	);
 	const preferredTop = rect.bottom + 6;
@@ -45,6 +45,16 @@ function getTypeSelectorPosition(rect: DOMRect, align: "right" | "center") {
 }
 
 // ---------------------------------------------------------------------------
+// Column layout — which categories appear in which column
+// ---------------------------------------------------------------------------
+
+const COLUMN_LAYOUT: { key: string; categoryIndices: number[] }[] = [
+	{ key: "delay-dist", categoryIndices: [0, 4] },
+	{ key: "mod", categoryIndices: [1] },
+	{ key: "filt-dyn-spat", categoryIndices: [2, 3, 5] },
+];
+
+// ---------------------------------------------------------------------------
 // Effect tile
 // ---------------------------------------------------------------------------
 
@@ -60,7 +70,6 @@ function FxTypeTile({
 	const isActive = type === currentType;
 	const color = FX_UI_META[type]?.color ?? "#666";
 	const label = getFxTypeLabel(type);
-	const shortTitle = FX_UI_META[type]?.shortTitle ?? label;
 	const iconPath = FX_TYPE_ICONS[type];
 
 	return (
@@ -69,7 +78,7 @@ function FxTypeTile({
 			onClick={onClick}
 			aria-label={label}
 			className={[
-				"group flex items-center gap-1.5 rounded-md border px-2 py-1.5 transition-all duration-100",
+				"group flex w-full items-center gap-2 rounded-md border px-2 py-1.5 transition-all duration-100",
 				isActive
 					? "border-white/15 bg-white/10"
 					: "border-transparent hover:border-white/10 hover:bg-white/[0.04]",
@@ -84,8 +93,8 @@ function FxTypeTile({
 			{iconPath && (
 				<svg
 					viewBox="0 0 24 24"
-					width={18}
-					height={18}
+					width={16}
+					height={16}
 					stroke="currentColor"
 					strokeWidth="1.5"
 					fill="none"
@@ -97,9 +106,9 @@ function FxTypeTile({
 					<path d={iconPath} />
 				</svg>
 			)}
-			{/* Short title */}
-			<span className="truncate font-bold font-mono text-[0.55rem] text-cz-cream-dim/70 uppercase tracking-[0.08em] group-hover:text-cz-cream">
-				{shortTitle}
+			{/* Full label */}
+			<span className="truncate font-bold font-mono text-[0.55rem] text-cz-cream-dim/80 uppercase tracking-[0.08em] group-hover:text-cz-cream">
+				{label}
 			</span>
 			{/* Active indicator */}
 			{isActive && (
@@ -113,7 +122,7 @@ function FxTypeTile({
 }
 
 // ---------------------------------------------------------------------------
-// Category section
+// Category section inside a column
 // ---------------------------------------------------------------------------
 
 function FxCategorySection({
@@ -129,14 +138,13 @@ function FxCategorySection({
 }) {
 	return (
 		<section>
-			<div className="mb-1.5 flex items-center gap-2 px-1">
-				<span className="h-px flex-1 bg-cz-border/40" />
+			<div className="mb-1 flex items-center gap-1.5">
 				<span className="font-bold font-mono text-[0.5rem] text-cz-cream-dim/50 uppercase tracking-[0.2em]">
 					{label}
 				</span>
-				<span className="h-px flex-1 bg-cz-border/40" />
+				<span className="h-px flex-1 bg-cz-border/30" />
 			</div>
-			<div className="grid grid-cols-3 gap-1">
+			<div className="flex flex-col gap-0.5">
 				{effects.map((type) => (
 					<FxTypeTile
 						key={type}
@@ -198,7 +206,7 @@ export default function FxTypeSelectorPopover({
 			}}
 			role="dialog"
 			aria-label="Select effect type"
-			className="flex w-[480px] flex-col overflow-hidden rounded-xl border border-cz-gold/30 bg-cz-panel shadow-2xl"
+			className="flex w-[520px] flex-col overflow-hidden rounded-xl border border-cz-gold/30 bg-cz-panel shadow-2xl"
 		>
 			{/* Header */}
 			<div className="flex items-center gap-2 border-cz-border/60 border-b bg-cz-surface/80 px-3 py-2">
@@ -222,16 +230,23 @@ export default function FxTypeSelectorPopover({
 					</button>
 				)}
 
-				{/* Category sections */}
-				<div className="space-y-3">
-					{FX_CATEGORIES.map((category) => (
-						<FxCategorySection
-							key={category.id}
-							label={category.label}
-							effects={category.effects}
-							currentType={currentType}
-							onSelect={onSelect}
-						/>
+				{/* 3-column layout */}
+				<div className="flex gap-3">
+					{COLUMN_LAYOUT.map((col) => (
+						<div key={col.key} className="flex min-w-0 flex-1 flex-col gap-3">
+							{col.categoryIndices.map((catIdx) => {
+								const cat = FX_CATEGORIES[catIdx];
+								return (
+									<FxCategorySection
+										key={cat.id}
+										label={cat.label}
+										effects={cat.effects}
+										currentType={currentType}
+										onSelect={onSelect}
+									/>
+								);
+							})}
+						</div>
 					))}
 				</div>
 			</div>
