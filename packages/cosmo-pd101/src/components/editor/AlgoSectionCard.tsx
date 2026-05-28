@@ -46,7 +46,7 @@ function AlgoSectionCard({
 	return (
 		<Card
 			variant="subtle"
-			className={`flex min-h-0 flex-col py-10 ${disabled ? "opacity-45" : ""}`}
+			className={`flex min-h-0 flex-col py-6 ${disabled ? "opacity-45" : ""}`}
 		>
 			<div className="flex justify-center">
 				<AlgoIconGrid

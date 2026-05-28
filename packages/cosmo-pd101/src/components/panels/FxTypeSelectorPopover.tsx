@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
+import type { Placement } from "@floating-ui/react";
+import Popover from "@/components/primitives/Popover";
 import type { FxSlotType } from "@/lib/synth/bindings/synth";
 import { FX_UI_META } from "./drawer-modules/fxSlotModuleConfig";
 import {
@@ -7,42 +7,6 @@ import {
 	FX_TYPE_ICONS,
 	getFxTypeLabel,
 } from "./fxTypeCategories";
-
-// ---------------------------------------------------------------------------
-// Position helpers
-// ---------------------------------------------------------------------------
-
-const TYPE_SELECTOR_WIDTH = 520;
-const TYPE_SELECTOR_MARGIN = 12;
-
-type PopoverPos = { top: number; left: number; maxHeight: number };
-
-function getTypeSelectorPosition(rect: DOMRect, align: "right" | "center") {
-	const maxHeight = Math.min(
-		520,
-		window.innerHeight - TYPE_SELECTOR_MARGIN * 2,
-	);
-	const preferredTop = rect.bottom + 6;
-	const availableBelow =
-		window.innerHeight - preferredTop - TYPE_SELECTOR_MARGIN;
-	const top =
-		availableBelow < 250
-			? Math.max(TYPE_SELECTOR_MARGIN, rect.top - maxHeight - 6)
-			: Math.min(
-					preferredTop,
-					window.innerHeight - maxHeight - TYPE_SELECTOR_MARGIN,
-				);
-	const preferredLeft =
-		align === "center"
-			? rect.left + rect.width / 2 - TYPE_SELECTOR_WIDTH / 2
-			: rect.right - TYPE_SELECTOR_WIDTH;
-	const left = Math.min(
-		Math.max(TYPE_SELECTOR_MARGIN, preferredLeft),
-		window.innerWidth - TYPE_SELECTOR_WIDTH - TYPE_SELECTOR_MARGIN,
-	);
-
-	return { top, left, maxHeight };
-}
 
 // ---------------------------------------------------------------------------
 // Column layout — which categories appear in which column
@@ -84,12 +48,10 @@ function FxTypeTile({
 					: "border-transparent hover:border-white/10 hover:bg-white/[0.04]",
 			].join(" ")}
 		>
-			{/* Color accent dot */}
 			<span
 				className="h-2 w-2 shrink-0 rounded-full transition-transform group-hover:scale-125"
 				style={{ backgroundColor: color }}
 			/>
-			{/* SVG Icon */}
 			{iconPath && (
 				<svg
 					viewBox="0 0 24 24"
@@ -106,11 +68,9 @@ function FxTypeTile({
 					<path d={iconPath} />
 				</svg>
 			)}
-			{/* Full label */}
 			<span className="truncate font-bold font-mono text-[0.55rem] text-cz-cream-dim/80 uppercase tracking-[0.08em] group-hover:text-cz-cream">
 				{label}
 			</span>
-			{/* Active indicator */}
 			{isActive && (
 				<span
 					className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full"
@@ -162,51 +122,33 @@ function FxCategorySection({
 // Main popover component
 // ---------------------------------------------------------------------------
 
-export default function FxTypeSelectorPopover({
-	pos,
-	currentType,
-	showRemove,
-	onSelect,
-	onClose,
-}: {
-	pos: PopoverPos;
+export interface FxTypeSelectorPopoverProps {
+	open: boolean;
+	triggerRef: React.RefObject<Element | null>;
+	placement?: Placement;
 	currentType: FxSlotType;
 	showRemove: boolean;
 	onSelect: (t: FxSlotType) => void;
 	onClose: () => void;
-}) {
-	const ref = useRef<HTMLDivElement>(null);
+}
 
-	useEffect(() => {
-		const handlePointerDown = (e: MouseEvent | TouchEvent) => {
-			if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-		};
-		const handleEsc = (e: KeyboardEvent) => {
-			if (e.key === "Escape") onClose();
-		};
-		document.addEventListener("mousedown", handlePointerDown);
-		document.addEventListener("touchstart", handlePointerDown);
-		document.addEventListener("keydown", handleEsc);
-		return () => {
-			document.removeEventListener("mousedown", handlePointerDown);
-			document.removeEventListener("touchstart", handlePointerDown);
-			document.removeEventListener("keydown", handleEsc);
-		};
-	}, [onClose]);
-
-	return createPortal(
-		<div
-			ref={ref}
-			style={{
-				position: "fixed",
-				top: pos.top,
-				left: pos.left,
-				maxHeight: pos.maxHeight,
-				zIndex: 9999,
-			}}
+export default function FxTypeSelectorPopover({
+	open,
+	triggerRef,
+	placement = "bottom",
+	currentType,
+	showRemove,
+	onSelect,
+	onClose,
+}: FxTypeSelectorPopoverProps) {
+	return (
+		<Popover
+			open={open}
+			onClose={onClose}
+			triggerRef={triggerRef}
 			role="dialog"
-			aria-label="Select effect type"
-			className="flex w-[520px] flex-col overflow-hidden rounded-xl border border-cz-gold/30 bg-cz-panel shadow-2xl"
+			ariaLabel="Select effect type"
+			placement={placement}
 		>
 			{/* Header */}
 			<div className="flex items-center gap-2 border-cz-border/60 border-b bg-cz-surface/80 px-3 py-2">
@@ -217,7 +159,6 @@ export default function FxTypeSelectorPopover({
 
 			{/* Body */}
 			<div className="min-h-0 flex-1 overflow-y-auto p-3">
-				{/* Remove button for active slots */}
 				{showRemove && (
 					<button
 						type="button"
@@ -230,7 +171,6 @@ export default function FxTypeSelectorPopover({
 					</button>
 				)}
 
-				{/* 3-column layout */}
 				<div className="flex gap-3">
 					{COLUMN_LAYOUT.map((col) => (
 						<div key={col.key} className="flex min-w-0 flex-1 flex-col gap-3">
@@ -250,10 +190,6 @@ export default function FxTypeSelectorPopover({
 					))}
 				</div>
 			</div>
-		</div>,
-		document.body,
+		</Popover>
 	);
 }
-
-export type { PopoverPos };
-export { getTypeSelectorPosition };

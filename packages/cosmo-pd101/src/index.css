@@ -3,12 +3,13 @@
 @plugin "daisyui";
 @plugin "daisyui/theme" {
 	name: "cosmo";
+	default: true; /* set as default */
 	color-scheme: dark;
 
 	/* Base — dark hardware panel */
-	--color-base-100: oklch(20% 0.003 270); /* cz-surface */
-	--color-base-200: oklch(14% 0.002 100); /* between surface and body */
-	--color-base-300: oklch(10.5% 0.004 55); /* cz-body */
+	--color-base-100: #424241; /* cz-surface */
+	--color-base-200: #2c2c2e; /* between surface and body */
+	--color-base-300: #171615; /* cz-body */
 	--color-base-content: oklch(90% 0.02 75); /* cz-cream */
 
 	/* Primary — gold */

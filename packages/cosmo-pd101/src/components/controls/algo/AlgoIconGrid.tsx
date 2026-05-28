@@ -29,7 +29,7 @@ function CzMonogramIcon({ size }: { size: number }) {
 export default function AlgoIconGrid({
 	value,
 	onChange,
-	size = 68,
+	size = 80,
 	disabled = false,
 	color,
 }: {
@@ -50,7 +50,6 @@ export default function AlgoIconGrid({
 
 	const currentIndex = PD_ALGOS.findIndex((a) => a.value === value);
 	const currentAlgo = PD_ALGOS[Math.max(0, currentIndex)];
-	const iconSize = size - 12;
 	const isCz101 = currentAlgo.value === "cz101";
 
 	const navigate = (dir: 1 | -1) => {
@@ -77,7 +76,7 @@ export default function AlgoIconGrid({
 		<div
 			ref={rootRef}
 			className={[
-				"relative w-fit",
+				"relative w-fit bg-base-100",
 				disabled ? "pointer-events-none opacity-30" : "",
 			].join(" ")}
 		>
@@ -97,17 +96,17 @@ export default function AlgoIconGrid({
 								"flex items-center justify-center text-cz-gold transition-colors focus:outline-none",
 								popoverOpen ? "bg-cz-inset" : "hover:bg-cz-inset",
 							].join(" ")}
-							style={{ width: size + 8, height: size }}
+							style={{ width: size, height: size - 8 }}
 						>
 							{isCz101 ? (
-								<CzMonogramIcon size={iconSize} />
+								<CzMonogramIcon size={size} />
 							) : (
 								<svg
 									viewBox="0 0 24 24"
-									width={iconSize}
-									height={iconSize}
+									width={size}
+									height={size}
 									stroke="currentColor"
-									strokeWidth="1.5"
+									strokeWidth=".75"
 									fill="none"
 									strokeLinecap="round"
 									strokeLinejoin="round"
