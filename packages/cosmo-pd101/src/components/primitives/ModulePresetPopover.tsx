@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Button from "@/components/controls/Button";
+import Popover from "@/components/primitives/Popover";
 
 export type ModulePresetOption = {
 	id: string;
@@ -121,36 +122,71 @@ export default function ModulePresetPopover({
 	onSavePreset,
 	onDeletePreset,
 }: ModulePresetPopoverProps) {
-	const detailsRef = useRef<HTMLDetailsElement | null>(null);
+	const triggerRef = useRef<HTMLButtonElement | null>(null);
 	const borderColor = colorAlpha(accentColor ?? "", 0.65);
 	const activeBgColor = colorAlpha(accentColor ?? "", 0.34);
+	const [popoverOpen, setPopoverOpen] = useState(false);
 	const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+	const [focusedIndex, setFocusedIndex] = useState(-1);
 
 	const hasManageActions = onSavePreset || (onDeletePreset && builtinPresetIds);
 
-	useEffect(() => {
-		const handleClickOutside = (e: MouseEvent) => {
-			if (
-				detailsRef.current &&
-				!detailsRef.current.contains(e.target as Node)
-			) {
-				detailsRef.current.open = false;
-			}
-		};
-
-		const handleEscape = (e: KeyboardEvent) => {
-			if (e.key === "Escape" && detailsRef.current?.open) {
-				detailsRef.current.open = false;
-			}
-		};
-
-		document.addEventListener("click", handleClickOutside, true);
-		document.addEventListener("keydown", handleEscape);
-		return () => {
-			document.removeEventListener("click", handleClickOutside, true);
-			document.removeEventListener("keydown", handleEscape);
-		};
+	const handleTriggerClick = useCallback(() => {
+		setPopoverOpen((prev) => !prev);
 	}, []);
+
+	const handleClose = useCallback(() => {
+		setPopoverOpen(false);
+	}, []);
+
+	useEffect(() => {
+		if (!popoverOpen) {
+			setFocusedIndex(-1);
+			return;
+		}
+
+		const currentIdx = options.findIndex((o) => o.id === value);
+		setFocusedIndex(currentIdx >= 0 ? currentIdx : 0);
+	}, [popoverOpen, options, value]);
+
+	const selectOption = useCallback(
+		(optionId: string) => {
+			onChange(optionId);
+			handleClose();
+		},
+		[onChange, handleClose],
+	);
+
+	const handleListboxKeyDown = useCallback(
+		(e: React.KeyboardEvent) => {
+			switch (e.key) {
+				case "ArrowDown":
+					e.preventDefault();
+					setFocusedIndex((prev) => Math.min(prev + 1, options.length - 1));
+					break;
+				case "ArrowUp":
+					e.preventDefault();
+					setFocusedIndex((prev) => Math.max(prev - 1, 0));
+					break;
+				case "Home":
+					e.preventDefault();
+					setFocusedIndex(0);
+					break;
+				case "End":
+					e.preventDefault();
+					setFocusedIndex(options.length - 1);
+					break;
+				case "Enter":
+				case " ":
+					e.preventDefault();
+					if (focusedIndex >= 0 && focusedIndex < options.length) {
+						selectOption(options[focusedIndex].id);
+					}
+					break;
+			}
+		},
+		[options, focusedIndex, selectOption],
+	);
 
 	if (disabled) {
 		return (
@@ -169,93 +205,114 @@ export default function ModulePresetPopover({
 
 	return (
 		<>
-			<details
-				ref={detailsRef}
-				className="dropdown dropdown-top dropdown-end [&_summary::-webkit-details-marker]:hidden"
+			<button
+				ref={triggerRef}
+				type="button"
+				onClick={handleTriggerClick}
+				aria-label={`${title} presets`}
+				aria-haspopup="listbox"
+				aria-expanded={popoverOpen}
+				className="btn btn-xs flex h-5 min-h-0 min-w-20 flex-nowrap items-center gap-1.5 rounded-sm border px-2 font-bold font-mono text-[0.54rem] text-cz-cream-light uppercase tracking-[0.14em] shadow-[0_1px_0_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.08)] hover:brightness-125"
 			>
-				<summary
-					className="btn btn-xs flex h-5 min-h-0 min-w-20 flex-nowrap items-center gap-1.5 rounded-sm border px-2 font-bold font-mono text-[0.54rem] text-cz-cream-light uppercase tracking-[0.14em] shadow-[0_1px_0_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.08)] hover:brightness-125"
-					aria-label={`${title} presets`}
-				>
-					<span
-						className="inline-block h-1 w-1 shrink-0 rounded-full"
-						style={{ backgroundColor: borderColor }}
-					/>
-					<span>presets</span>
-					<span className="text-cz-cream-dim">▾</span>
-				</summary>
-				<ul
-					className="menu dropdown-content z-9999 mb-1.5 max-h-64 w-44 overflow-y-auto rounded-md border border-cz-border bg-cz-panel p-1 shadow-[0_10px_24px_rgba(0,0,0,0.5)]"
-					style={{ borderColor: borderColor }}
-				>
-					{options.map((option) => {
-						const active = option.id === value;
-						return (
-							<li key={option.id}>
-								<Button
-									type="button"
-									className={`btn btn-ghost btn-sm min-h-0 w-full justify-start px-2 py-1 text-xs ${
-										active
-											? "text-cz-cream-light"
-											: "text-cz-cream hover:bg-cz-surface"
-									}`}
-									style={
-										active ? { backgroundColor: activeBgColor } : undefined
-									}
-									onClick={() => {
-										onChange(option.id);
-										if (detailsRef.current) {
-											detailsRef.current.open = false;
+				<span
+					className="inline-block h-1 w-1 shrink-0 rounded-full"
+					style={{ backgroundColor: borderColor }}
+				/>
+				<span>presets</span>
+				<span className="text-cz-cream-dim">▾</span>
+			</button>
+
+			<Popover
+				open={popoverOpen}
+				onClose={handleClose}
+				triggerRef={triggerRef}
+				role="dialog"
+				ariaLabel={`${title} presets`}
+				placement="bottom-end"
+			>
+				<div className="w-44" role="presentation">
+					{options.length > 0 ? (
+						<div
+							role="listbox"
+							aria-label={`${title} presets`}
+							aria-activedescendant={
+								focusedIndex >= 0 ? `preset-opt-${focusedIndex}` : undefined
+							}
+							tabIndex={0}
+							onKeyDown={handleListboxKeyDown}
+							className="max-h-64 overflow-y-auto p-1"
+						>
+							{options.map((option, idx) => {
+								const active = option.id === value;
+								return (
+									<div
+										key={option.id}
+										role="option"
+										id={`preset-opt-${idx}`}
+										tabIndex={-1}
+										aria-selected={active}
+										onClick={() => selectOption(option.id)}
+										onKeyDown={(e) => {
+											if (e.key === "Enter" || e.key === " ") {
+												e.preventDefault();
+												selectOption(option.id);
+											}
+										}}
+										onPointerEnter={() => setFocusedIndex(idx)}
+										className={`cursor-pointer select-none rounded-sm px-2 py-1 text-xs ${
+											active
+												? "text-cz-cream-light"
+												: "text-cz-cream hover:bg-cz-surface"
+										} ${focusedIndex === idx ? "ring-1 ring-cz-light-blue/40" : ""}`}
+										style={
+											active ? { backgroundColor: activeBgColor } : undefined
 										}
-									}}
-								>
-									{option.label ?? option.id}
-								</Button>
-							</li>
-						);
-					})}
+									>
+										{option.label ?? option.id}
+									</div>
+								);
+							})}
+						</div>
+					) : null}
 					{hasManageActions ? (
 						<>
-							<li className="divider my-1 h-px bg-cz-border/50" />
-							{onSavePreset ? (
-								<li>
-									<Button
+							{options.length > 0 ? (
+								<hr className="mx-2 border-cz-border/50 border-t" />
+							) : null}
+							<div className="p-1" role="presentation">
+								{onSavePreset ? (
+									<button
 										type="button"
-										className="btn btn-ghost btn-sm min-h-0 w-full justify-start px-2 py-1 text-cz-cream-dim text-xs hover:text-cz-cream-light"
 										onClick={() => {
+											handleClose();
 											setSaveDialogOpen(true);
-											if (detailsRef.current) {
-												detailsRef.current.open = false;
-											}
 										}}
+										className="btn btn-ghost btn-sm min-h-0 w-full justify-start px-2 py-1 text-cz-cream-dim text-xs hover:text-cz-cream-light"
 									>
 										+ Save
-									</Button>
-								</li>
-							) : null}
-							{onDeletePreset &&
-							builtinPresetIds &&
-							value &&
-							!builtinPresetIds.has(value) ? (
-								<li>
-									<Button
+									</button>
+								) : null}
+								{onDeletePreset &&
+								builtinPresetIds &&
+								value &&
+								!builtinPresetIds.has(value) ? (
+									<button
 										type="button"
-										className="btn btn-ghost btn-sm min-h-0 w-full justify-start px-2 py-1 text-red-400 text-xs hover:text-red-300"
 										onClick={() => {
 											onDeletePreset(value);
-											if (detailsRef.current) {
-												detailsRef.current.open = false;
-											}
+											handleClose();
 										}}
+										className="btn btn-ghost btn-sm min-h-0 w-full justify-start px-2 py-1 text-red-400 text-xs hover:text-red-300"
 									>
 										Delete
-									</Button>
-								</li>
-							) : null}
+									</button>
+								) : null}
+							</div>
 						</>
 					) : null}
-				</ul>
-			</details>
+				</div>
+			</Popover>
+
 			<SaveAsDialog
 				open={saveDialogOpen}
 				onClose={() => setSaveDialogOpen(false)}

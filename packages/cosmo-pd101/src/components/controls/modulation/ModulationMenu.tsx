@@ -29,17 +29,11 @@ export default function ModulationMenu({
 	);
 
 	return (
-		<motion.div
-			className="flex max-h-[calc(100vh-1rem)] w-[35rem] max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-[1.2rem] border border-cz-light-blue/25 bg-cz-panel shadow-2xl"
-			role="dialog"
+		<section
+			className="max-h-[calc(100vh-1rem)] w-[35rem] max-w-[calc(100vw-1rem)]"
 			aria-label={`Modulation for ${title}`}
-			initial={{ opacity: 0, scale: 0.92, y: -6 }}
-			animate={{ opacity: 1, scale: 1, y: 0 }}
-			exit={{ opacity: 0, scale: 0.92, y: -6 }}
-			transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
-			style={{ transformOrigin: "top center" }}
 		>
-			<div className="flex items-center justify-between border-cz-border/60 border-b bg-cz-surface/80 px-3.5 py-2.5">
+			<div className="flex items-center justify-between bg-cz-surface px-3.5 py-2.5">
 				<div className="flex items-center gap-3">
 					<span className="h-2 w-2 rounded-full bg-cz-light-blue shadow-[0_0_10px_rgba(127,157,228,0.75)]" />
 					<div>
@@ -193,6 +187,6 @@ export default function ModulationMenu({
 					)}
 				</div>
 			</div>
-		</motion.div>
+		</section>
 	);
 }
