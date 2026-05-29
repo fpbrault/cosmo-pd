@@ -1,3 +1,5 @@
+const TRIGGER_HYSTERESIS = 0.02;
+
 export function sampleAt(
 	samples: Uint8Array | Float32Array,
 	index: number,
@@ -15,6 +17,7 @@ export function resolveScopeWindow(
 	sampleRate: number,
 	cycles: number,
 	triggerLevel: number,
+	triggerEdge: "rise" | "fall" = "rise",
 ) {
 	const samplesPerCycle = Math.max(8, Math.round(sampleRate / Math.max(1, hz)));
 	const requested = Math.max(16, Math.round(samplesPerCycle * cycles));
@@ -27,7 +30,14 @@ export function resolveScopeWindow(
 	for (let i = 1; i < samples.length - windowSamples - 1; i++) {
 		const prev = sampleAt(samples, i - 1);
 		const curr = sampleAt(samples, i);
-		if (prev < trigger && curr >= trigger) {
+		if (
+			(triggerEdge === "rise" &&
+				prev <= trigger - TRIGGER_HYSTERESIS &&
+				curr >= trigger) ||
+			(triggerEdge === "fall" &&
+				prev >= trigger + TRIGGER_HYSTERESIS &&
+				curr <= trigger)
+		) {
 			start = i;
 			break;
 		}

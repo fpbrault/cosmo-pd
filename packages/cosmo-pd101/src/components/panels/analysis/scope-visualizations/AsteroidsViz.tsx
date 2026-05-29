@@ -274,6 +274,7 @@ export function drawAsteroidsScope(
 	sampleRate: number,
 	cycles: number,
 	triggerLevel: number,
+	triggerEdge: "rise" | "fall",
 	zoom: number,
 	palette: ScopeThemePalette,
 	pressedKeys: ReadonlySet<string>,
@@ -290,6 +291,7 @@ export function drawAsteroidsScope(
 		sampleRate,
 		cycles,
 		triggerLevel,
+		triggerEdge,
 	);
 	const normalized = normalizeWindowedSamples(
 		samples,

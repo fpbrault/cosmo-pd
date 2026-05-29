@@ -1,3 +1,7 @@
+const TRIGGER_HYSTERESIS_U8 = 4;
+const TRIGGER_HYSTERESIS_F32 = 0.02;
+const TRIGGER_SEARCH_MARGIN = 4;
+
 export type OscilloscopeConfig = {
 	cycles: number;
 	verticalZoom: number;
@@ -5,6 +9,8 @@ export type OscilloscopeConfig = {
 	triggerMode?: "off" | "rise" | "fall";
 	fixedWindowSamples?: number;
 	startIndex?: number;
+	lastTriggerIndex?: number;
+	triggerOffsetRef?: { current: number | undefined };
 	color?: string;
 	gridColor?: string;
 };
@@ -87,11 +93,20 @@ export function drawOscilloscope(
 			: Math.max(1, Math.floor((samples.length - viewSamples) / 2));
 	if (triggerMode !== "off") {
 		const endLimit = samples.length - viewSamples - 1;
-		for (let i = 1; i < endLimit; i++) {
+		const hyst = isUint8 ? TRIGGER_HYSTERESIS_U8 : TRIGGER_HYSTERESIS_F32;
+		const searchStart =
+			typeof config.lastTriggerIndex === "number"
+				? Math.max(1, config.lastTriggerIndex - TRIGGER_SEARCH_MARGIN)
+				: 1;
+		const searchEnd =
+			typeof config.lastTriggerIndex === "number"
+				? Math.min(endLimit, config.lastTriggerIndex + TRIGGER_SEARCH_MARGIN)
+				: endLimit;
+		for (let i = searchStart; i < searchEnd; i++) {
 			const prev = samples[i - 1];
 			const curr = samples[i];
-			const riseHit = prev < triggerFloat && curr >= triggerFloat;
-			const fallHit = prev > triggerFloat && curr <= triggerFloat;
+			const riseHit = prev <= triggerFloat - hyst && curr >= triggerFloat;
+			const fallHit = prev >= triggerFloat + hyst && curr <= triggerFloat;
 			if (
 				(triggerMode === "rise" && riseHit) ||
 				(triggerMode === "fall" && fallHit)
@@ -100,6 +115,11 @@ export function drawOscilloscope(
 				break;
 			}
 		}
+		if (config.triggerOffsetRef) {
+			config.triggerOffsetRef.current = start;
+		}
+	} else if (config.triggerOffsetRef) {
+		config.triggerOffsetRef.current = start;
 	}
 
 	// Calculate mean for centering

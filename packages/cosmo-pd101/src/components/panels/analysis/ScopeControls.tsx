@@ -1,3 +1,4 @@
+import Button from "@/components/controls/Button";
 import ControlKnob from "@/components/controls/ControlKnob";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 
@@ -5,12 +6,16 @@ export function ScopeControls() {
 	const scopeCycles = useSynthUiStore((s) => s.scopeCycles);
 	const scopeVerticalZoom = useSynthUiStore((s) => s.scopeVerticalZoom);
 	const scopeTriggerLevel = useSynthUiStore((s) => s.scopeTriggerLevel);
+	const scopeFrozen = useSynthUiStore((s) => s.scopeFrozen);
+	const scopeTriggerEdge = useSynthUiStore((s) => s.scopeTriggerEdge);
 	const setScopeCycles = useSynthUiStore((s) => s.setScopeCycles);
 	const setScopeVerticalZoom = useSynthUiStore((s) => s.setScopeVerticalZoom);
 	const setScopeTriggerLevel = useSynthUiStore((s) => s.setScopeTriggerLevel);
+	const setScopeFrozen = useSynthUiStore((s) => s.setScopeFrozen);
+	const setScopeTriggerEdge = useSynthUiStore((s) => s.setScopeTriggerEdge);
 
 	return (
-		<div className="mt-2 flex shrink-0 justify-center gap-2">
+		<div className="mt-2 flex shrink-0 items-center justify-center gap-2">
 			<ControlKnob
 				value={scopeCycles}
 				onChange={setScopeCycles}
@@ -47,6 +52,29 @@ export function ScopeControls() {
 				tooltip="Sets trigger threshold used to stabilize waveform display."
 				valueFormatter={(value) => `${Math.round(value)}`}
 			/>
+			<Button
+				active={scopeFrozen}
+				onClick={() => setScopeFrozen(!scopeFrozen)}
+				className="btn btn-xs rounded px-2 font-mono tracking-wide"
+				style={
+					scopeFrozen ? { color: "#f97316", borderColor: "#f97316" } : undefined
+				}
+			>
+				{scopeFrozen ? "▌Freeze" : "Freeze"}
+			</Button>
+			<Button
+				onClick={() =>
+					setScopeTriggerEdge(scopeTriggerEdge === "rise" ? "fall" : "rise")
+				}
+				className="btn btn-xs rounded px-2 font-mono tracking-wide"
+				style={
+					scopeTriggerEdge === "fall"
+						? { color: "#7f9de4", borderColor: "#7f9de4" }
+						: undefined
+				}
+			>
+				{scopeTriggerEdge === "rise" ? "↗ Rise" : "↘ Fall"}
+			</Button>
 		</div>
 	);
 }

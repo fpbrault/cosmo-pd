@@ -1,6 +1,14 @@
 import { drawScopeGrid, setupScopeCanvas } from "./canvas";
-import { normalizeWindowedSamples, resolveScopeWindow } from "./processing";
+import {
+	normalizeWindowedSamples,
+	resolveScopeWindow,
+	sampleAt,
+} from "./processing";
 import type { ScopeThemePalette } from "./types";
+
+const TRIGGER_HYSTERESIS = 0.02;
+const TRIGGER_SEARCH_MARGIN = 4;
+const ORBITAL_LAST_TRIGGER = new WeakMap<HTMLCanvasElement, number>();
 
 export function drawOrbitalScope(
 	canvas: HTMLCanvasElement,
@@ -9,8 +17,10 @@ export function drawOrbitalScope(
 	sampleRate: number,
 	cycles: number,
 	triggerLevel: number,
+	triggerEdge: "rise" | "fall",
 	zoom: number,
 	palette: ScopeThemePalette,
+	triggerOffsetRef?: { current: number | undefined },
 ) {
 	const setup = setupScopeCanvas(canvas);
 	if (!setup) return;
@@ -23,11 +33,41 @@ export function drawOrbitalScope(
 		sampleRate,
 		cycles,
 		triggerLevel,
+		triggerEdge,
 	);
+	let startIndex = window.start;
+	const lastIndex = ORBITAL_LAST_TRIGGER.get(canvas);
+	if (lastIndex !== undefined) {
+		const trigger = (triggerLevel - 128) / 128;
+		const searchStart = Math.max(1, lastIndex - TRIGGER_SEARCH_MARGIN);
+		const searchEnd = Math.min(
+			samples.length - 1,
+			lastIndex + TRIGGER_SEARCH_MARGIN,
+		);
+		for (let i = searchStart; i < searchEnd; i++) {
+			const prev = sampleAt(samples, i - 1);
+			const curr = sampleAt(samples, i);
+			if (
+				(triggerEdge === "rise" &&
+					prev <= trigger - TRIGGER_HYSTERESIS &&
+					curr >= trigger) ||
+				(triggerEdge === "fall" &&
+					prev >= trigger + TRIGGER_HYSTERESIS &&
+					curr <= trigger)
+			) {
+				startIndex = i;
+				break;
+			}
+		}
+	}
+	ORBITAL_LAST_TRIGGER.set(canvas, startIndex);
+	if (triggerOffsetRef) {
+		triggerOffsetRef.current = startIndex;
+	}
 	if (window.count < 8 || !window.samplesPerCycle) return;
 	const normalized = normalizeWindowedSamples(
 		samples,
-		window.start,
+		startIndex,
 		window.count,
 	);
 

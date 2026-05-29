@@ -8,8 +8,10 @@ export function drawWaveformScope(
 	sampleRate: number,
 	cycles: number,
 	triggerLevel: number,
+	triggerEdge: "rise" | "fall",
 	zoom: number,
 	palette: ScopeThemePalette,
+	triggerOffsetRef?: { current: number | undefined },
 ) {
 	drawOscilloscope(
 		canvas,
@@ -18,7 +20,9 @@ export function drawWaveformScope(
 			cycles,
 			verticalZoom: zoom,
 			triggerLevel,
-			triggerMode: "rise",
+			triggerMode: triggerEdge,
+			lastTriggerIndex: triggerOffsetRef?.current,
+			triggerOffsetRef,
 			color: palette.accent,
 			gridColor: palette.grid,
 		},

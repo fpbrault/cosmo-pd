@@ -8,6 +8,7 @@ export const SYNTH_UI_STATE_STORAGE_KEY = "cosmo-pd101-ui-state";
 
 export type MainPanelMode = "phase" | "fx" | "mod" | "display";
 export type ScopeColorTheme = "vintage" | "amber" | "plasma";
+export type ScopeTriggerEdge = "rise" | "fall";
 export type PhaseLinePanelTab =
 	| "line1-algos"
 	| "line2-algos"
@@ -31,6 +32,8 @@ type SynthUiState = {
 	scopeTriggerLevel: number;
 	scopeVisualizationMode: ScopeVisualizationMode;
 	scopeColorTheme: ScopeColorTheme;
+	scopeFrozen: boolean;
+	scopeTriggerEdge: ScopeTriggerEdge;
 	brandInfoOpen: boolean;
 	globalPanelOpen: boolean;
 	midiLearnOpen: boolean;
@@ -53,6 +56,8 @@ type SynthUiActions = {
 	setScopeTriggerLevel: (level: number) => void;
 	setScopeVisualizationMode: (mode: ScopeVisualizationMode) => void;
 	setScopeColorTheme: (theme: ScopeColorTheme) => void;
+	setScopeFrozen: (frozen: boolean) => void;
+	setScopeTriggerEdge: (edge: ScopeTriggerEdge) => void;
 	setBrandInfoOpen: (open: boolean) => void;
 	setGlobalPanelOpen: (open: boolean) => void;
 	setMidiLearnOpen: (open: boolean) => void;
@@ -80,6 +85,7 @@ const SCOPE_COLOR_THEMES = new Set<ScopeColorTheme>([
 	"amber",
 	"plasma",
 ]);
+const SCOPE_TRIGGER_EDGES = new Set<ScopeTriggerEdge>(["rise", "fall"]);
 
 const KEYBOARD_INPUT_MODES = new Set<KeyboardInputMode>([
 	"velocity",
@@ -101,6 +107,8 @@ const DEFAULT_UI_STATE: SynthUiState = {
 	scopeTriggerLevel: 128,
 	scopeVisualizationMode: "waveform",
 	scopeColorTheme: "vintage",
+	scopeFrozen: false,
+	scopeTriggerEdge: "rise",
 	brandInfoOpen: false,
 	globalPanelOpen: false,
 	midiLearnOpen: false,
@@ -126,6 +134,7 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 	const rawScopeColorTheme = getStringValue(candidate.scopeColorTheme);
 	const scopeColorTheme =
 		rawScopeColorTheme === "classic" ? "vintage" : rawScopeColorTheme;
+	const rawScopeTriggerEdge = getStringValue(candidate.scopeTriggerEdge);
 	const rawKeyboardInputMode = getStringValue(candidate.keyboardInputMode);
 
 	return {
@@ -203,6 +212,15 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 			SCOPE_COLOR_THEMES.has(scopeColorTheme as ScopeColorTheme)
 				? (scopeColorTheme as ScopeColorTheme)
 				: DEFAULT_UI_STATE.scopeColorTheme,
+		scopeFrozen:
+			typeof candidate.scopeFrozen === "boolean"
+				? candidate.scopeFrozen
+				: DEFAULT_UI_STATE.scopeFrozen,
+		scopeTriggerEdge:
+			rawScopeTriggerEdge &&
+			SCOPE_TRIGGER_EDGES.has(rawScopeTriggerEdge as ScopeTriggerEdge)
+				? (rawScopeTriggerEdge as ScopeTriggerEdge)
+				: DEFAULT_UI_STATE.scopeTriggerEdge,
 		brandInfoOpen:
 			typeof candidate.brandInfoOpen === "boolean"
 				? candidate.brandInfoOpen
@@ -245,6 +263,8 @@ export const useSynthUiStore = create<SynthUiStore>()(
 			setScopeVisualizationMode: (mode) =>
 				set({ scopeVisualizationMode: mode }),
 			setScopeColorTheme: (theme) => set({ scopeColorTheme: theme }),
+			setScopeFrozen: (frozen) => set({ scopeFrozen: frozen }),
+			setScopeTriggerEdge: (edge) => set({ scopeTriggerEdge: edge }),
 			setBrandInfoOpen: (open) => set({ brandInfoOpen: open }),
 			setGlobalPanelOpen: (open) => set({ globalPanelOpen: open }),
 			setMidiLearnOpen: (open) => set({ midiLearnOpen: open }),
@@ -269,6 +289,8 @@ export const useSynthUiStore = create<SynthUiStore>()(
 				scopeTriggerLevel: state.scopeTriggerLevel,
 				scopeVisualizationMode: state.scopeVisualizationMode,
 				scopeColorTheme: state.scopeColorTheme,
+				scopeFrozen: state.scopeFrozen,
+				scopeTriggerEdge: state.scopeTriggerEdge,
 			}),
 			merge: (persistedState, currentState) => ({
 				...currentState,

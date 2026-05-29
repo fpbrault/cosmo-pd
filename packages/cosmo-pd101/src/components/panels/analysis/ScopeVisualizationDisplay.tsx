@@ -44,6 +44,8 @@ export function ScopeVisualizationDisplay({
 		(s) => s.scopeVisualizationMode,
 	);
 	const scopeColorTheme = useSynthUiStore((s) => s.scopeColorTheme);
+	const scopeFrozen = useSynthUiStore((s) => s.scopeFrozen);
+	const scopeTriggerEdge = useSynthUiStore((s) => s.scopeTriggerEdge);
 	const setScopeVisualizationMode = useSynthUiStore(
 		(s) => s.setScopeVisualizationMode,
 	);
@@ -58,6 +60,9 @@ export function ScopeVisualizationDisplay({
 		height: 0,
 		history: null,
 	});
+	const triggerOffsetRef = useRef<{ current: number | undefined }>({
+		current: undefined,
+	});
 
 	// Keep refs to the latest values so RAF/subscription closures always read
 	// current state without needing to restart effects on every settings change.
@@ -67,6 +72,8 @@ export function ScopeVisualizationDisplay({
 		scopeTriggerLevel,
 		scopeVisualizationMode,
 		scopeColorTheme,
+		scopeFrozen,
+		scopeTriggerEdge,
 	});
 	settingsRef.current = {
 		scopeCycles,
@@ -74,6 +81,8 @@ export function ScopeVisualizationDisplay({
 		scopeTriggerLevel,
 		scopeVisualizationMode,
 		scopeColorTheme,
+		scopeFrozen,
+		scopeTriggerEdge,
 	};
 
 	const propsRef = useRef({ effectivePitchHz, analyserNodeRef, audioCtxRef });
@@ -135,6 +144,8 @@ export function ScopeVisualizationDisplay({
 		sampleRate: number,
 		frequencyBins?: Uint8Array<ArrayBufferLike>,
 	) => {
+		if (settingsRef.current.scopeFrozen) return;
+
 		const mean = calculateFrameMean(samples);
 		if (smoothedTriggerRef.current == null) {
 			smoothedTriggerRef.current = mean;
@@ -156,6 +167,7 @@ export function ScopeVisualizationDisplay({
 			frequencyBins,
 			cycles: settingsRef.current.scopeCycles,
 			triggerLevel,
+			triggerEdge: settingsRef.current.scopeTriggerEdge,
 			zoom: settingsRef.current.scopeVerticalZoom,
 			palette: getScopeThemePalette(settingsRef.current.scopeColorTheme),
 			spectrogramStateRef,
@@ -163,6 +175,7 @@ export function ScopeVisualizationDisplay({
 			intensityMultiplier: variant === "drawer" ? 1.55 : 1,
 			waterfallPreview,
 			waterfallActiveLine,
+			triggerOffsetRef,
 		});
 	};
 
@@ -193,6 +206,7 @@ export function ScopeVisualizationDisplay({
 			rafIdRef.current = window.requestAnimationFrame(draw);
 			const canvas = canvasRef.current;
 			if (!canvas) return;
+			if (settingsRef.current.scopeFrozen) return;
 			// External stream takes priority.
 			if (unsubscribeRef.current) return;
 			const {

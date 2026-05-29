@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ScopeProvider } from "@/context/ScopeContext";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
@@ -62,6 +62,8 @@ describe("ScopeMiniDisplay", () => {
 		useSynthUiStore.setState({
 			scopeVisualizationMode: "waveform",
 			scopeColorTheme: "vintage",
+			scopeFrozen: false,
+			scopeTriggerEdge: "rise",
 		});
 		vi.restoreAllMocks();
 	});
@@ -149,6 +151,45 @@ describe("ScopeMiniDisplay", () => {
 		expect(
 			screen.getByText("Wave drawer is showing the full scope view"),
 		).toBeInTheDocument();
+	});
+
+	it("toggles freeze state on freeze button click", () => {
+		renderWithScope(<ScopeMiniDisplay />);
+
+		const freezeButton = screen.getByText("Freeze");
+		expect(freezeButton).toBeInTheDocument();
+
+		act(() => {
+			fireEvent.click(freezeButton);
+		});
+		expect(screen.getByText("▌Freeze")).toBeInTheDocument();
+		expect(useSynthUiStore.getState().scopeFrozen).toBe(true);
+
+		act(() => {
+			fireEvent.click(screen.getByText("▌Freeze"));
+		});
+		expect(screen.getByText("Freeze")).toBeInTheDocument();
+		expect(useSynthUiStore.getState().scopeFrozen).toBe(false);
+	});
+
+	it("toggles trigger edge between rise and fall", () => {
+		renderWithScope(<ScopeMiniDisplay />);
+
+		const edgeButton = screen.getByText("↗ Rise");
+		expect(edgeButton).toBeInTheDocument();
+		expect(useSynthUiStore.getState().scopeTriggerEdge).toBe("rise");
+
+		act(() => {
+			fireEvent.click(edgeButton);
+		});
+		expect(screen.getByText("↘ Fall")).toBeInTheDocument();
+		expect(useSynthUiStore.getState().scopeTriggerEdge).toBe("fall");
+
+		act(() => {
+			fireEvent.click(screen.getByText("↘ Fall"));
+		});
+		expect(screen.getByText("↗ Rise")).toBeInTheDocument();
+		expect(useSynthUiStore.getState().scopeTriggerEdge).toBe("rise");
 	});
 
 	it("renders the 3D waterfall visualization when mode is set to waterfall3d", () => {

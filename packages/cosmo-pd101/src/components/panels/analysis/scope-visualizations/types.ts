@@ -1,7 +1,10 @@
-import type { ScopeColorTheme } from "@/features/synth/synthUiStore";
+import type {
+	ScopeColorTheme,
+	ScopeTriggerEdge,
+} from "@/features/synth/synthUiStore";
 import type { ScopeVisualizationMode } from "./renderScopeVisualization";
 
-export type { ScopeColorTheme };
+export type { ScopeColorTheme, ScopeTriggerEdge };
 
 export type ScopeThemePalette = {
 	theme: ScopeColorTheme;
@@ -63,6 +66,8 @@ export type ScopeRendererParams = {
 	sampleRate: number;
 	cycles: number;
 	triggerLevel: number;
+	triggerEdge: ScopeTriggerEdge;
+	triggerOffsetRef?: { current: number | undefined };
 	zoom: number;
 	palette: ScopeThemePalette;
 	frequencyBins?: Uint8Array<ArrayBufferLike>;

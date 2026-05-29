@@ -9,6 +9,7 @@ export function drawTransferCurvesScope(
 	sampleRate: number,
 	cycles: number,
 	triggerLevel: number,
+	triggerEdge: "rise" | "fall",
 	zoom: number,
 	palette: ScopeThemePalette,
 ) {
@@ -23,6 +24,7 @@ export function drawTransferCurvesScope(
 		sampleRate,
 		cycles,
 		triggerLevel,
+		triggerEdge,
 	);
 	if (window.count < 16) return;
 	const normalized = normalizeWindowedSamples(

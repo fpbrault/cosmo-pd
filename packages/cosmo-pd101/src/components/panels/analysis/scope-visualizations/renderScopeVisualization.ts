@@ -33,6 +33,8 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 		sampleRate,
 		cycles,
 		triggerLevel,
+		triggerEdge,
+		triggerOffsetRef,
 		zoom,
 		palette,
 		frequencyBins,
@@ -63,8 +65,10 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 				sampleRate,
 				cycles,
 				triggerLevel,
+				triggerEdge,
 				zoom,
 				palette,
+				triggerOffsetRef,
 			);
 			return;
 
@@ -85,6 +89,7 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 				sampleRate,
 				cycles,
 				triggerLevel,
+				triggerEdge,
 				zoom,
 				palette,
 			);
@@ -97,6 +102,7 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 				sampleRate,
 				cycles,
 				triggerLevel,
+				triggerEdge,
 				zoom,
 				palette,
 				pressedKeys,
@@ -112,8 +118,10 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 				sampleRate,
 				cycles,
 				triggerLevel,
+				triggerEdge,
 				zoom,
 				palette,
+				triggerOffsetRef,
 			);
 	}
 }
