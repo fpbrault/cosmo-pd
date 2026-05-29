@@ -1,9 +1,9 @@
-import { memo, useCallback } from "react";
+import { memo, useCallback, useRef, useState } from "react";
 import { MdSettings } from "react-icons/md";
 import ControlKnob from "@/components/controls/ControlKnob";
+import { MacroLabelEditorPopover } from "@/components/modals/MacroLabelEditorPopover";
 import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 import { useSynthStore } from "@/features/synth/synthStore";
-import { useSynthUiStore } from "@/features/synth/synthUiStore";
 
 function useMacroValue(index: number): number {
 	return useSynthStore((s) => {
@@ -28,9 +28,9 @@ function useMacroLabel(index: number): string {
 }
 
 export default memo(function MacroKnobsPanel() {
-	const setMacroLabelEditorOpen = useSynthUiStore(
-		(s) => s.setMacroLabelEditorOpen,
-	);
+	const [labelEditorOpen, setLabelEditorOpen] = useState(false);
+	const settingsBtnRef = useRef<HTMLButtonElement | null>(null);
+
 	return (
 		<div className="h-full min-h-0 w-full">
 			<div className="h-full overflow-hidden rounded-lg border border-cz-border/70 bg-cz-surface/95 shadow-lg backdrop-blur-sm">
@@ -42,13 +42,19 @@ export default memo(function MacroKnobsPanel() {
 					</div>
 					<div className="flex items-center gap-0.5">
 						<button
+							ref={settingsBtnRef}
 							type="button"
 							className="btn btn-ghost btn-xs h-6 min-h-0 w-6 p-0 text-cz-cream/90"
-							onClick={() => setMacroLabelEditorOpen(true)}
+							onClick={() => setLabelEditorOpen((prev) => !prev)}
 							aria-label="Edit macro labels"
 						>
 							<MdSettings className="h-3.5 w-3.5" />
 						</button>
+						<MacroLabelEditorPopover
+							open={labelEditorOpen}
+							triggerRef={settingsBtnRef}
+							onClose={() => setLabelEditorOpen(false)}
+						/>
 					</div>
 				</div>
 				<div className="grid grid-cols-2 gap-1.5 px-2 py-1.5">

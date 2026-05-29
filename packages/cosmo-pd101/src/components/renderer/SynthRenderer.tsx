@@ -434,9 +434,6 @@ const SynthRenderer = memo(function SynthRenderer({
 									onPolyAftertouch={sendPolyAftertouch}
 									bottomBarExtra={bottomBarExtra}
 									onKeyboardToggle={() => setKeyboardVisible(!keyboardVisible)}
-									onKeyboardSettingsClick={() =>
-										useSynthUiStore.getState().setKeyboardSettingsOpen(true)
-									}
 								/>
 							</div>
 						</PresetManagerProvider>

@@ -38,6 +38,12 @@ const mockSynthUiStoreState = {
 	setMacroLabelEditorOpen: vi.fn(),
 	keyboardSettingsOpen: false,
 	setKeyboardSettingsOpen: vi.fn(),
+	keyboardOctaves: 3,
+	setKeyboardOctaves: vi.fn(),
+	keyboardRange: 0,
+	setKeyboardRange: vi.fn(),
+	keyboardInputMode: "velocity",
+	setKeyboardInputMode: vi.fn(),
 };
 
 vi.mock("@/components/preset/SynthHeader", () => ({
@@ -56,8 +62,8 @@ vi.mock("@/components/layout/SynthSidebar", () => ({
 vi.mock("@/components/modals", () => ({
 	GlobalVoiceModal: ({ open }: { open: boolean }) =>
 		open ? <div data-testid="global-voice-panel" /> : null,
-	KeyboardSettingsModal: () => null,
-	MacroLabelEditorModal: () => null,
+	KeyboardSettingsPopover: () => null,
+	MacroLabelEditorPopover: () => null,
 	PendingModifiedPresetModal: ({
 		pendingPresetChange,
 	}: {

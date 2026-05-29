@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { KeyboardSettingsModal } from "./KeyboardSettingsModal";
+import { KeyboardSettingsPopover } from "./KeyboardSettingsPopover";
 
 const state = {
 	keyboardOctaves: 2,
@@ -17,9 +17,10 @@ vi.mock("@/features/synth/synthUiStore", () => ({
 	),
 }));
 
-describe("KeyboardSettingsModal", () => {
+describe("KeyboardSettingsPopover", () => {
 	it("updates range/octaves/input mode", () => {
-		render(<KeyboardSettingsModal open onClose={vi.fn()} />);
+		const ref = { current: document.createElement("button") };
+		render(<KeyboardSettingsPopover open triggerRef={ref} onClose={vi.fn()} />);
 		fireEvent.click(screen.getByRole("button", { name: "+2" }));
 		fireEvent.click(screen.getByRole("button", { name: "5" }));
 		fireEvent.click(screen.getByRole("button", { name: "Aftertouch" }));
