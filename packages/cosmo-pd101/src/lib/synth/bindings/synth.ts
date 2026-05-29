@@ -362,12 +362,13 @@ export type LineSelect = "L1" | "L2" | "L1+L1'" | "L1+L2'";
 /**  LoFi effect parameters */
 export type LoFiParams = {
 	enabled?: boolean,
+	wow?: number | null,
+	flutter?: number | null,
 	degrade?: number | null,
-	wowDepth?: number | null,
-	wowRate?: number | null,
-	flutterDepth?: number | null,
-	flutterRate?: number | null,
-	tone?: number | null,
+	filter?: number | null,
+	crackle?: number | null,
+	noise?: number | null,
+	saturation?: number | null,
 	mix?: number | null,
 };
 
@@ -378,7 +379,7 @@ export type LoFiPresetV1 = {
 };
 
 /**  Modulation destination selector for modulation matrix routes. */
-export type ModDestination = "volume" | "pitch" | "line1DcwBase" | "line1DcaBase" | "line1AlgoBlend" | "line2DetuneNote" | "line1Octave" | "line1AlgoParam1" | "line1AlgoParam2" | "line1AlgoParam3" | "line1AlgoParam4" | "line1AlgoParam5" | "line1AlgoParam6" | "line1AlgoParam7" | "line1AlgoParam8" | "line2DcwBase" | "line2DcaBase" | "line2AlgoBlend" | "line2DetuneFine" | "line2DetuneOctave" | "line2AlgoParam1" | "line2AlgoParam2" | "line2AlgoParam3" | "line2AlgoParam4" | "line2AlgoParam5" | "line2AlgoParam6" | "line2AlgoParam7" | "line2AlgoParam8" | "filterCutoff" | "filterResonance" | "filterEnvAmount" | "chorusMix" | "delayMix" | "reverbMix" | "vibratoDepth" | "vibratoRate" | "intPmRatio" | "line1DcoEnvStep1Level" | "line1DcoEnvStep1Rate" | "line1DcoEnvStep2Level" | "line1DcoEnvStep2Rate" | "line1DcoEnvStep3Level" | "line1DcoEnvStep3Rate" | "line1DcoEnvStep4Level" | "line1DcoEnvStep4Rate" | "line1DcoEnvStep5Level" | "line1DcoEnvStep5Rate" | "line1DcoEnvStep6Level" | "line1DcoEnvStep6Rate" | "line1DcoEnvStep7Level" | "line1DcoEnvStep7Rate" | "line1DcoEnvStep8Level" | "line1DcoEnvStep8Rate" | "line1DcwEnvStep1Level" | "line1DcwEnvStep1Rate" | "line1DcwEnvStep2Level" | "line1DcwEnvStep2Rate" | "line1DcwEnvStep3Level" | "line1DcwEnvStep3Rate" | "line1DcwEnvStep4Level" | "line1DcwEnvStep4Rate" | "line1DcwEnvStep5Level" | "line1DcwEnvStep5Rate" | "line1DcwEnvStep6Level" | "line1DcwEnvStep6Rate" | "line1DcwEnvStep7Level" | "line1DcwEnvStep7Rate" | "line1DcwEnvStep8Level" | "line1DcwEnvStep8Rate" | "line1DcaEnvStep1Level" | "line1DcaEnvStep1Rate" | "line1DcaEnvStep2Level" | "line1DcaEnvStep2Rate" | "line1DcaEnvStep3Level" | "line1DcaEnvStep3Rate" | "line1DcaEnvStep4Level" | "line1DcaEnvStep4Rate" | "line1DcaEnvStep5Level" | "line1DcaEnvStep5Rate" | "line1DcaEnvStep6Level" | "line1DcaEnvStep6Rate" | "line1DcaEnvStep7Level" | "line1DcaEnvStep7Rate" | "line1DcaEnvStep8Level" | "line1DcaEnvStep8Rate" | "line2DcoEnvStep1Level" | "line2DcoEnvStep1Rate" | "line2DcoEnvStep2Level" | "line2DcoEnvStep2Rate" | "line2DcoEnvStep3Level" | "line2DcoEnvStep3Rate" | "line2DcoEnvStep4Level" | "line2DcoEnvStep4Rate" | "line2DcoEnvStep5Level" | "line2DcoEnvStep5Rate" | "line2DcoEnvStep6Level" | "line2DcoEnvStep6Rate" | "line2DcoEnvStep7Level" | "line2DcoEnvStep7Rate" | "line2DcoEnvStep8Level" | "line2DcoEnvStep8Rate" | "line2DcwEnvStep1Level" | "line2DcwEnvStep1Rate" | "line2DcwEnvStep2Level" | "line2DcwEnvStep2Rate" | "line2DcwEnvStep3Level" | "line2DcwEnvStep3Rate" | "line2DcwEnvStep4Level" | "line2DcwEnvStep4Rate" | "line2DcwEnvStep5Level" | "line2DcwEnvStep5Rate" | "line2DcwEnvStep6Level" | "line2DcwEnvStep6Rate" | "line2DcwEnvStep7Level" | "line2DcwEnvStep7Rate" | "line2DcwEnvStep8Level" | "line2DcwEnvStep8Rate" | "line2DcaEnvStep1Level" | "line2DcaEnvStep1Rate" | "line2DcaEnvStep2Level" | "line2DcaEnvStep2Rate" | "line2DcaEnvStep3Level" | "line2DcaEnvStep3Rate" | "line2DcaEnvStep4Level" | "line2DcaEnvStep4Rate" | "line2DcaEnvStep5Level" | "line2DcaEnvStep5Rate" | "line2DcaEnvStep6Level" | "line2DcaEnvStep6Rate" | "line2DcaEnvStep7Level" | "line2DcaEnvStep7Rate" | "line2DcaEnvStep8Level" | "line2DcaEnvStep8Rate" | "chorusRate" | "chorusDepth" | "delayTime" | "delayFeedback" | "delayWarmth" | "reverbSpace" | "reverbPredelay" | "reverbDistance" | "reverbCharacter" | "phaserRate" | "phaserDepth" | "phaserFeedback" | "phaserMix" | "lfo1Rate" | "lfo1Depth" | "lfo1Symmetry" | "lfo1Offset" | "lfo2Rate" | "lfo2Depth" | "lfo2Symmetry" | "lfo2Offset" | "randomRate" | "vibratoDelay" | "compressorThreshold" | "compressorRatio" | "compressorMakeup" | "compressorMix" | "grainDelayTime" | "grainDelayFeedback" | "grainDelayScatter" | "grainDelayDensity" | "grainDelayMix" | "bitcrusherBits" | "bitcrusherRateReduction" | "bitcrusherMix" | "shimmerVerbShimmer" | "shimmerVerbSpace" | "shimmerVerbMix" | "distortionDrive" | "distortionTone" | "distortionMix" | "junoChorusMix" | "ringModCarrierHz" | "ringModMix" | "tremoloRate" | "tremoloDepth" | "tremoloMix" | "wavefolderDrive" | "wavefolderFolds" | "wavefolderMix" | "loFiDegrade" | "loFiWowDepth" | "loFiWowRate" | "loFiFlutterDepth" | "loFiFlutterRate" | "loFiTone" | "loFiMix" | "multimodeFilterCutoffHz" | "multimodeFilterResonance" | "multimodeFilterDrive" | "multimodeFilterMix" | "flangerRate" | "flangerDepth" | "flangerDelayMs" | "flangerFeedback" | "flangerMix" | "rotarySpeakerSpeed" | "rotarySpeakerDepth" | "rotarySpeakerDrive" | "rotarySpeakerMix" | "autoWahSensitivity" | "autoWahCutoffHz" | "autoWahResonance" | "autoWahAttackMs" | "autoWahReleaseMs" | "autoWahMix" | "stereoWidenerWidth" | "stereoWidenerDelayMs" | "stereoWidenerTone" | "stereoWidenerMix" | "eqGainBand1" | "eqGainBand2" | "eqGainBand3" | "eqGainBand4" | "eqGainBand5" | "eqGainBand6" | "eqGainBand7" | "eqGainBand8";
+export type ModDestination = "volume" | "pitch" | "line1DcwBase" | "line1DcaBase" | "line1AlgoBlend" | "line2DetuneNote" | "line1Octave" | "line1AlgoParam1" | "line1AlgoParam2" | "line1AlgoParam3" | "line1AlgoParam4" | "line1AlgoParam5" | "line1AlgoParam6" | "line1AlgoParam7" | "line1AlgoParam8" | "line2DcwBase" | "line2DcaBase" | "line2AlgoBlend" | "line2DetuneFine" | "line2DetuneOctave" | "line2AlgoParam1" | "line2AlgoParam2" | "line2AlgoParam3" | "line2AlgoParam4" | "line2AlgoParam5" | "line2AlgoParam6" | "line2AlgoParam7" | "line2AlgoParam8" | "filterCutoff" | "filterResonance" | "filterEnvAmount" | "chorusMix" | "delayMix" | "reverbMix" | "vibratoDepth" | "vibratoRate" | "intPmRatio" | "line1DcoEnvStep1Level" | "line1DcoEnvStep1Rate" | "line1DcoEnvStep2Level" | "line1DcoEnvStep2Rate" | "line1DcoEnvStep3Level" | "line1DcoEnvStep3Rate" | "line1DcoEnvStep4Level" | "line1DcoEnvStep4Rate" | "line1DcoEnvStep5Level" | "line1DcoEnvStep5Rate" | "line1DcoEnvStep6Level" | "line1DcoEnvStep6Rate" | "line1DcoEnvStep7Level" | "line1DcoEnvStep7Rate" | "line1DcoEnvStep8Level" | "line1DcoEnvStep8Rate" | "line1DcwEnvStep1Level" | "line1DcwEnvStep1Rate" | "line1DcwEnvStep2Level" | "line1DcwEnvStep2Rate" | "line1DcwEnvStep3Level" | "line1DcwEnvStep3Rate" | "line1DcwEnvStep4Level" | "line1DcwEnvStep4Rate" | "line1DcwEnvStep5Level" | "line1DcwEnvStep5Rate" | "line1DcwEnvStep6Level" | "line1DcwEnvStep6Rate" | "line1DcwEnvStep7Level" | "line1DcwEnvStep7Rate" | "line1DcwEnvStep8Level" | "line1DcwEnvStep8Rate" | "line1DcaEnvStep1Level" | "line1DcaEnvStep1Rate" | "line1DcaEnvStep2Level" | "line1DcaEnvStep2Rate" | "line1DcaEnvStep3Level" | "line1DcaEnvStep3Rate" | "line1DcaEnvStep4Level" | "line1DcaEnvStep4Rate" | "line1DcaEnvStep5Level" | "line1DcaEnvStep5Rate" | "line1DcaEnvStep6Level" | "line1DcaEnvStep6Rate" | "line1DcaEnvStep7Level" | "line1DcaEnvStep7Rate" | "line1DcaEnvStep8Level" | "line1DcaEnvStep8Rate" | "line2DcoEnvStep1Level" | "line2DcoEnvStep1Rate" | "line2DcoEnvStep2Level" | "line2DcoEnvStep2Rate" | "line2DcoEnvStep3Level" | "line2DcoEnvStep3Rate" | "line2DcoEnvStep4Level" | "line2DcoEnvStep4Rate" | "line2DcoEnvStep5Level" | "line2DcoEnvStep5Rate" | "line2DcoEnvStep6Level" | "line2DcoEnvStep6Rate" | "line2DcoEnvStep7Level" | "line2DcoEnvStep7Rate" | "line2DcoEnvStep8Level" | "line2DcoEnvStep8Rate" | "line2DcwEnvStep1Level" | "line2DcwEnvStep1Rate" | "line2DcwEnvStep2Level" | "line2DcwEnvStep2Rate" | "line2DcwEnvStep3Level" | "line2DcwEnvStep3Rate" | "line2DcwEnvStep4Level" | "line2DcwEnvStep4Rate" | "line2DcwEnvStep5Level" | "line2DcwEnvStep5Rate" | "line2DcwEnvStep6Level" | "line2DcwEnvStep6Rate" | "line2DcwEnvStep7Level" | "line2DcwEnvStep7Rate" | "line2DcwEnvStep8Level" | "line2DcwEnvStep8Rate" | "line2DcaEnvStep1Level" | "line2DcaEnvStep1Rate" | "line2DcaEnvStep2Level" | "line2DcaEnvStep2Rate" | "line2DcaEnvStep3Level" | "line2DcaEnvStep3Rate" | "line2DcaEnvStep4Level" | "line2DcaEnvStep4Rate" | "line2DcaEnvStep5Level" | "line2DcaEnvStep5Rate" | "line2DcaEnvStep6Level" | "line2DcaEnvStep6Rate" | "line2DcaEnvStep7Level" | "line2DcaEnvStep7Rate" | "line2DcaEnvStep8Level" | "line2DcaEnvStep8Rate" | "chorusRate" | "chorusDepth" | "delayTime" | "delayFeedback" | "delayWarmth" | "reverbSpace" | "reverbPredelay" | "reverbDistance" | "reverbCharacter" | "phaserRate" | "phaserDepth" | "phaserFeedback" | "phaserMix" | "lfo1Rate" | "lfo1Depth" | "lfo1Symmetry" | "lfo1Offset" | "lfo2Rate" | "lfo2Depth" | "lfo2Symmetry" | "lfo2Offset" | "randomRate" | "vibratoDelay" | "compressorThreshold" | "compressorRatio" | "compressorMakeup" | "compressorMix" | "grainDelayTime" | "grainDelayFeedback" | "grainDelayScatter" | "grainDelayDensity" | "grainDelayMix" | "bitcrusherBits" | "bitcrusherRateReduction" | "bitcrusherMix" | "shimmerVerbShimmer" | "shimmerVerbSpace" | "shimmerVerbMix" | "distortionDrive" | "distortionTone" | "distortionMix" | "junoChorusMix" | "ringModCarrierHz" | "ringModMix" | "tremoloRate" | "tremoloDepth" | "tremoloMix" | "wavefolderDrive" | "wavefolderFolds" | "wavefolderMix" | "loFiWow" | "loFiFlutter" | "loFiDegrade" | "loFiFilter" | "loFiCrackle" | "loFiNoise" | "loFiMix" | "loFiSaturation" | "multimodeFilterCutoffHz" | "multimodeFilterResonance" | "multimodeFilterDrive" | "multimodeFilterMix" | "flangerRate" | "flangerDepth" | "flangerDelayMs" | "flangerFeedback" | "flangerMix" | "rotarySpeakerSpeed" | "rotarySpeakerDepth" | "rotarySpeakerDrive" | "rotarySpeakerMix" | "autoWahSensitivity" | "autoWahCutoffHz" | "autoWahResonance" | "autoWahAttackMs" | "autoWahReleaseMs" | "autoWahMix" | "stereoWidenerWidth" | "stereoWidenerDelayMs" | "stereoWidenerTone" | "stereoWidenerMix" | "eqGainBand1" | "eqGainBand2" | "eqGainBand3" | "eqGainBand4" | "eqGainBand5" | "eqGainBand6" | "eqGainBand7" | "eqGainBand8";
 
 /**  ADSR mod envelope parameters. */
 export type ModEnvParams = {
@@ -3287,70 +3288,81 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
     "name": "LoFi",
     "controls": [
       {
+        "id": "wow",
+        "label": "Wow",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.3,
+        "options": [],
+        "modDestinationKey": "loFiWow"
+      },
+      {
+        "id": "flutter",
+        "label": "Flutter",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.3,
+        "options": [],
+        "modDestinationKey": "loFiFlutter"
+      },
+      {
         "id": "degrade",
         "label": "Degrade",
         "kind": "knob",
         "bipolar": false,
         "min": 0.0,
         "max": 1.0,
-        "defaultF32": 0.25,
+        "defaultF32": 0.2,
         "options": [],
         "modDestinationKey": "loFiDegrade"
       },
       {
-        "id": "wowDepth",
-        "label": "Wow Depth",
+        "id": "filter",
+        "label": "Filter",
         "kind": "knob",
-        "bipolar": false,
-        "min": 0.0,
-        "max": 0.2,
-        "defaultF32": 0.07,
+        "bipolar": true,
+        "min": -1.0,
+        "max": 1.0,
+        "defaultF32": 0.0,
         "options": [],
-        "modDestinationKey": "loFiWowDepth"
+        "modDestinationKey": "loFiFilter"
       },
       {
-        "id": "wowRate",
-        "label": "Wow Rate",
-        "kind": "knob",
-        "bipolar": false,
-        "min": 0.03,
-        "max": 2.5,
-        "defaultF32": 0.42,
-        "options": [],
-        "modDestinationKey": "loFiWowRate"
-      },
-      {
-        "id": "flutterDepth",
-        "label": "Flutter Depth",
-        "kind": "knob",
-        "bipolar": false,
-        "min": 0.0,
-        "max": 0.2,
-        "defaultF32": 0.036,
-        "options": [],
-        "modDestinationKey": "loFiFlutterDepth"
-      },
-      {
-        "id": "flutterRate",
-        "label": "Flutter Rate",
-        "kind": "knob",
-        "bipolar": false,
-        "min": 0.5,
-        "max": 18.0,
-        "defaultF32": 6.7,
-        "options": [],
-        "modDestinationKey": "loFiFlutterRate"
-      },
-      {
-        "id": "tone",
-        "label": "Tone",
+        "id": "crackle",
+        "label": "Crackle",
         "kind": "knob",
         "bipolar": false,
         "min": 0.0,
         "max": 1.0,
-        "defaultF32": 0.45,
+        "defaultF32": 0.0,
         "options": [],
-        "modDestinationKey": "loFiTone"
+        "modDestinationKey": "loFiCrackle"
+      },
+      {
+        "id": "noise",
+        "label": "Noise",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.0,
+        "options": [],
+        "modDestinationKey": "loFiNoise"
+      },
+      {
+        "id": "saturation",
+        "label": "Saturation",
+        "kind": "knob",
+        "bipolar": false,
+        "min": 0.0,
+        "max": 1.0,
+        "defaultF32": 0.0,
+        "options": [],
+        "modDestinationKey": "loFiSaturation"
       },
       {
         "id": "mix",
@@ -4887,12 +4899,13 @@ export const LOFI_PRESET_DATA: LoFiPresetV1[] = [
     "label": "Warped Cassette",
     "params": {
       "enabled": true,
-      "degrade": 0.32,
-      "wowDepth": 0.13,
-      "wowRate": 0.32,
-      "flutterDepth": 0.056,
-      "flutterRate": 7.4,
-      "tone": 0.38,
+      "wow": 0.22,
+      "flutter": 0.06,
+      "degrade": 0.07,
+      "filter": -0.55,
+      "crackle": 0.1,
+      "noise": 0.25,
+      "saturation": 0.4,
       "mix": 1.0
     }
   },
@@ -4901,12 +4914,13 @@ export const LOFI_PRESET_DATA: LoFiPresetV1[] = [
     "label": "Dusty Keys",
     "params": {
       "enabled": true,
-      "degrade": 0.22,
-      "wowDepth": 0.056,
-      "wowRate": 0.5,
-      "flutterDepth": 0.032,
-      "flutterRate": 5.9,
-      "tone": 0.42,
+      "wow": 0.2,
+      "flutter": 0.03,
+      "degrade": 0.4,
+      "filter": -0.5,
+      "crackle": 0.1,
+      "noise": 0.0,
+      "saturation": 0.0,
       "mix": 1.0
     }
   },
@@ -4915,12 +4929,13 @@ export const LOFI_PRESET_DATA: LoFiPresetV1[] = [
     "label": "Cheap Speaker",
     "params": {
       "enabled": true,
-      "degrade": 0.55,
-      "wowDepth": 0.036,
-      "wowRate": 0.78,
-      "flutterDepth": 0.044,
-      "flutterRate": 9.2,
-      "tone": 0.12,
+      "wow": 0.0,
+      "flutter": 0.0,
+      "degrade": 0.11,
+      "filter": 0.31,
+      "crackle": 0.0,
+      "noise": 0.08,
+      "saturation": 0.6,
       "mix": 1.0
     }
   }

@@ -186,12 +186,13 @@ impl FxSlotProcessors {
             }
             FxSlotConfig::LoFi(lofi) => {
                 self.lofi.enabled = lofi.enabled;
+                self.lofi.wow = lofi.wow;
+                self.lofi.flutter = lofi.flutter;
                 self.lofi.degrade = lofi.degrade;
-                self.lofi.wow_depth = lofi.wow_depth;
-                self.lofi.wow_rate = lofi.wow_rate;
-                self.lofi.flutter_depth = lofi.flutter_depth;
-                self.lofi.flutter_rate = lofi.flutter_rate;
-                self.lofi.tone = lofi.tone;
+                self.lofi.filter = lofi.filter;
+                self.lofi.crackle = lofi.crackle;
+                self.lofi.noise = lofi.noise;
+                self.lofi.saturation = lofi.saturation;
                 self.lofi.mix = lofi.mix;
             }
             FxSlotConfig::MultimodeFilter(filter) => {
