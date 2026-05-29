@@ -626,6 +626,8 @@ fn sync_all_daw_params_from_synth(params: &CzPluginParams, synth: &SynthParams) 
         .set_value(synth.mod_env.release as f64);
 }
 
+pub(crate) type SharedPresetName = Arc<Mutex<String>>;
+
 // =============================================================================
 // IPC dispatch
 // =============================================================================
@@ -643,6 +645,7 @@ fn handle_ipc_invoke(
     ui_input_queue: &UiInputQueue,
     performance_counters: &PerformanceCountersHandle,
     params: &CzPluginParams,
+    preset_name: &SharedPresetName,
 ) -> Result<serde_json::Value, String> {
     if method != "getScopeData"
         && method != "clientLog"
@@ -874,6 +877,20 @@ fn handle_ipc_invoke(
             append_log(&format!("[webview:{level}] {message}"));
             Ok(serde_json::Value::Null)
         }
+        "setPresetName" => {
+            let name = args
+                .first()
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "setPresetName expects a string argument".to_string())?;
+            if let Ok(mut stored) = preset_name.lock() {
+                *stored = name.to_string();
+            }
+            Ok(serde_json::Value::Null)
+        }
+        "getPresetName" => {
+            let name = preset_name.lock().map(|n| n.clone()).unwrap_or_default();
+            Ok(serde_json::Value::String(name))
+        }
         _ => Err(format!("unknown method: {method}")),
     }
 }
@@ -902,6 +919,8 @@ pub struct CzPlugin {
     last_scope_hz: f32,
     /// Tracks transport playing state across process() calls to detect stop.
     last_playing: bool,
+    /// Preset name shared with the webview, persisted via save_state/load_state.
+    preset_name: SharedPresetName,
 }
 
 impl CzPlugin {
@@ -929,6 +948,7 @@ impl CzPlugin {
             daw_params_dirty: true,
             last_scope_hz: 220.0,
             last_playing: false,
+            preset_name: Arc::new(Mutex::new(String::new())),
         }
     }
 
@@ -1383,12 +1403,56 @@ impl PluginLogic for CzPlugin {
 
     fn save_state(&self) -> Vec<u8> {
         let sp = self.synth_params.load();
-        serde_json::to_vec(sp.as_ref()).unwrap_or_default()
+        let name = self
+            .preset_name
+            .lock()
+            .map(|n| n.clone())
+            .unwrap_or_default();
+        let state = serde_json::json!({
+            "synth_params": sp.as_ref(),
+            "preset_name": name,
+        });
+        serde_json::to_vec(&state).unwrap_or_default()
     }
 
-    fn load_state(&mut self, data: &[u8]) -> Result<(), StateLoadError> {
-        let params: SynthParams = serde_json::from_slice(data)
-            .map_err(|_| StateLoadError::Malformed("invalid synth params JSON"))?;
+	fn load_state(&mut self, data: &[u8]) -> Result<(), StateLoadError> {
+		// Try new format: { "synth_params": ..., "preset_name": "..." }
+		let (params, loaded_name) =
+			if let Ok(obj) = serde_json::from_slice::<serde_json::Value>(data) {
+				if obj.is_object() && obj.get("synth_params").is_some() {
+					// New wrapper format
+					let synth = obj
+						.get("synth_params")
+						.and_then(|v| serde_json::from_value::<SynthParams>(v.clone()).ok())
+						.ok_or(StateLoadError::Malformed("invalid synth params"))?;
+					let name = obj
+						.get("preset_name")
+						.and_then(|v| v.as_str())
+						.map(|s| s.to_string())
+						.unwrap_or_default();
+					(synth, name)
+				} else {
+					// Old format: flat SynthParams — don't touch preset name
+					let synth: SynthParams = serde_json::from_slice(data)
+						.map_err(|_| StateLoadError::Malformed("invalid synth params JSON"))?;
+					sync_all_daw_params_from_synth(&self.params, &synth);
+					let rt_params = build_rt_synth_params(&synth);
+					let rt_params_arc = Arc::new(rt_params);
+					self.synth_params.store(Arc::new(synth));
+					self.rt_synth_params.store(Arc::clone(&rt_params_arc));
+					self.cached_rt_synth_params = rt_params_arc.clone();
+					self.synth_params_version.fetch_add(1, Ordering::Release);
+					return Ok(());
+				}
+			} else {
+				return Err(StateLoadError::Malformed("invalid JSON"));
+			};
+
+        // Restore preset name (new format only)
+        if let Ok(mut stored) = self.preset_name.lock() {
+            *stored = loaded_name;
+        }
+
         sync_all_daw_params_from_synth(&self.params, &params);
         let rt_params = build_rt_synth_params(&params);
         let rt_params_arc = Arc::new(rt_params);
@@ -1417,6 +1481,7 @@ impl PluginLogic for CzPlugin {
             self.midi_cc_queue.clone(),
             self.performance_counters.clone(),
             self.params.clone(),
+            self.preset_name.clone(),
         ))
     }
 }
@@ -1444,6 +1509,7 @@ mod tests {
         UiInputQueue,
         PerformanceCountersHandle,
         Arc<CzPluginParams>,
+        SharedPresetName,
     ) {
         let sp = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
         let rsp = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
@@ -1455,7 +1521,8 @@ mod tests {
         let q: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
         let pc = Arc::new(PerformanceCounters::default());
         let params = Arc::new(CzPluginParams::new());
-        (sp, rsp, rms, ts, ver, sc, q, pc, params)
+        let pn: SharedPresetName = Arc::new(Mutex::new(String::new()));
+        (sp, rsp, rms, ts, ver, sc, q, pc, params, pn)
     }
 
     #[test]
@@ -1475,7 +1542,7 @@ mod tests {
 
     #[test]
     fn set_params_rpc_updates_synth_params() {
-        let (sp, rsp, rms, ts, ver, sc, q, pc, params) = make_handler_state();
+        let (sp, rsp, rms, ts, ver, sc, q, pc, params, pn) = make_handler_state();
 
         let new_params = SynthParams {
             volume: 0.42,
@@ -1495,6 +1562,7 @@ mod tests {
             &q,
             &pc,
             &params,
+            &pn,
         );
         assert!(result.is_ok());
         let current = sp.load();
@@ -1518,6 +1586,7 @@ mod tests {
         let q: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
         let pc = Arc::new(PerformanceCounters::default());
         let params = Arc::new(CzPluginParams::new());
+        let pn: SharedPresetName = Arc::new(Mutex::new(String::new()));
 
         let result = handle_ipc_invoke(
             "getParams",
@@ -1531,6 +1600,7 @@ mod tests {
             &q,
             &pc,
             &params,
+            &pn,
         );
         assert!(result.is_ok());
         let val = result.unwrap();
@@ -1540,7 +1610,7 @@ mod tests {
 
     #[test]
     fn note_on_rpc_enqueues_ui_input_event() {
-        let (sp, rsp, rms, ts, ver, sc, q, pc, params) = make_handler_state();
+        let (sp, rsp, rms, ts, ver, sc, q, pc, params, pn) = make_handler_state();
 
         let result = handle_ipc_invoke(
             "noteOn",
@@ -1554,6 +1624,7 @@ mod tests {
             &q,
             &pc,
             &params,
+            &pn,
         );
 
         assert!(result.is_ok());
@@ -1569,7 +1640,7 @@ mod tests {
     #[allow(clippy::field_reassign_with_default)]
     #[test]
     fn set_params_rpc_syncs_daw_float_params() {
-        let (sp, rsp, rms, ts, ver, sc, q, pc, params) = make_handler_state();
+        let (sp, rsp, rms, ts, ver, sc, q, pc, params, pn) = make_handler_state();
         assert_eq!(params.volume.value(), 0.8); // default
 
         let mut new_params = SynthParams::default();
@@ -1589,6 +1660,7 @@ mod tests {
             &q,
             &pc,
             &params,
+            &pn,
         );
         assert!(result.is_ok());
         assert!((params.volume.value() - 0.33).abs() < 0.000_001);
@@ -1632,7 +1704,7 @@ mod tests {
 
     #[test]
     fn get_transport_info_rpc_returns_current_snapshot() {
-        let (sp, rsp, rms, ts, ver, sc, q, pc, params) = make_handler_state();
+        let (sp, rsp, rms, ts, ver, sc, q, pc, params, pn) = make_handler_state();
         ts.store(&TransportInfo {
             playing: true,
             recording: true,
@@ -1660,6 +1732,7 @@ mod tests {
             &q,
             &pc,
             &params,
+            &pn,
         )
         .unwrap();
 
@@ -1806,5 +1879,114 @@ mod tests {
 
         let volume_before = plugin.cached_rt_synth_params.volume;
         assert!((volume_before - 0.2).abs() < 0.000_001);
+    }
+
+    #[test]
+    fn set_preset_name_rpc_stores_name() {
+        let (sp, rsp, rms, ts, ver, sc, q, pc, params, pn) = make_handler_state();
+
+        let result = handle_ipc_invoke(
+            "setPresetName",
+            &[serde_json::Value::String("Warm Pad".to_string())],
+            &sp,
+            &rsp,
+            &rms,
+            &ts,
+            &ver,
+            &sc,
+            &q,
+            &pc,
+            &params,
+            &pn,
+        );
+        assert!(result.is_ok());
+        let stored = pn.lock().unwrap();
+        assert_eq!(*stored, "Warm Pad");
+    }
+
+    #[test]
+    fn get_preset_name_rpc_returns_current_name() {
+        let (sp, rsp, rms, ts, ver, sc, q, pc, params, pn) = make_handler_state();
+        {
+            let mut stored = pn.lock().unwrap();
+            *stored = "Factory Brass".to_string();
+        }
+
+        let result = handle_ipc_invoke(
+            "getPresetName",
+            &[],
+            &sp,
+            &rsp,
+            &rms,
+            &ts,
+            &ver,
+            &sc,
+            &q,
+            &pc,
+            &params,
+            &pn,
+        );
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            serde_json::Value::String("Factory Brass".to_string())
+        );
+    }
+
+    #[test]
+    fn save_state_includes_preset_name() {
+        let params = Arc::new(CzPluginParams::new());
+        let mut plugin = CzPlugin::new(Arc::clone(&params));
+        plugin.reset(48_000.0, 64);
+
+        *plugin.preset_name.lock().unwrap() = "Resonant Pad".to_string();
+
+        let state = plugin.save_state();
+        assert!(!state.is_empty());
+
+        let parsed: serde_json::Value =
+            serde_json::from_slice(&state).expect("state should be valid JSON");
+        assert_eq!(parsed["preset_name"], "Resonant Pad");
+        assert!(parsed.get("synth_params").is_some());
+    }
+
+    #[test]
+    fn load_state_restores_preset_name() {
+        let params = Arc::new(CzPluginParams::new());
+        let mut plugin = CzPlugin::new(Arc::clone(&params));
+        plugin.reset(48_000.0, 64);
+
+        // Save state with a preset name
+        *plugin.preset_name.lock().unwrap() = "Bright Piano".to_string();
+        let state = plugin.save_state();
+
+        // Create new plugin and load state
+        let params2 = Arc::new(CzPluginParams::new());
+        let mut plugin2 = CzPlugin::new(Arc::clone(&params2));
+        plugin2.reset(48_000.0, 64);
+        assert!(plugin2.preset_name.lock().unwrap().is_empty());
+
+        let result = plugin2.load_state(&state);
+        assert!(result.is_ok());
+        assert_eq!(*plugin2.preset_name.lock().unwrap(), "Bright Piano");
+    }
+
+    #[test]
+    fn load_state_falls_back_to_old_format() {
+        // Old format: flat SynthParams JSON (no wrapper)
+        let synth = SynthParams::default();
+        let data = serde_json::to_vec(&synth).unwrap();
+
+        let params = Arc::new(CzPluginParams::new());
+        let mut plugin = CzPlugin::new(Arc::clone(&params));
+        plugin.reset(48_000.0, 64);
+
+        // Set a name to verify it's not overwritten
+        *plugin.preset_name.lock().unwrap() = "Existing Name".to_string();
+
+        let result = plugin.load_state(&data);
+        assert!(result.is_ok());
+        // Old format should not touch preset_name
+        assert_eq!(*plugin.preset_name.lock().unwrap(), "Existing Name");
     }
 }

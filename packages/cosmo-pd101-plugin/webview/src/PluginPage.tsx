@@ -201,18 +201,27 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		};
 	}, [isIosHost, isLikelyIosDevice, keyboardHeight, setKeyboardHeight]);
 
-	const {
-		activePresetId,
-		activePresetNameBase,
-		loadedPresetFingerprint,
-		handleSyncBuiltinSelection,
-		handleLoadBuiltin,
-	} = useSynthPresetManager({
-		builtinPresets: DEFAULT_SYNTH_PRESETS,
-		gatherPresetState: gatherState,
-		applyPreset,
-		libraryPresets: FACTORY_CZ_PRESETS,
-	});
+	const syncInstanceBRef = useRef<(name: string) => void>();
+
+	const handlePluginPresetSessionChange = useCallback(
+		(session: { activePresetNameBase: string }) => {
+			if (
+				session.activePresetNameBase &&
+				session.activePresetNameBase !== "Current State"
+			) {
+				window.__czSetPresetName?.(session.activePresetNameBase);
+			}
+		},
+		[],
+	);
+
+	const { handleSyncBuiltinSelection, handleLoadBuiltin } =
+		useSynthPresetManager({
+			builtinPresets: DEFAULT_SYNTH_PRESETS,
+			gatherPresetState: gatherState,
+			applyPreset,
+			libraryPresets: FACTORY_CZ_PRESETS,
+		});
 
 	useEffect(() => {
 		return installBenchmarkApi({
@@ -245,6 +254,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	useEffect(() => {
 		window.__czOnHostPresetSelected = (name: string) => {
 			handleSyncBuiltinSelection(name);
+			syncInstanceBRef.current?.(name);
 		};
 		return () => {
 			window.__czOnHostPresetSelected = undefined;
@@ -252,19 +262,14 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	}, [handleSyncBuiltinSelection]);
 
 	useEffect(() => {
-		if (!window.ipc || loadedPresetFingerprint == null) {
-			return;
-		}
-		window.ipc.postMessage(
-			JSON.stringify({
-				preset_session: {
-					activePresetId,
-					activePresetNameBase,
-					loadedPresetFingerprint,
-				},
-			}),
-		);
-	}, [activePresetId, activePresetNameBase, loadedPresetFingerprint]);
+		const restore = async () => {
+			const name = (await window.__czGetPresetName?.()) as string | undefined;
+			if (name && name !== "Current State") {
+				syncInstanceBRef.current?.(name);
+			}
+		};
+		restore();
+	}, []);
 
 	const combinedScale = rendererFrame?.frameScale ?? 1;
 	const frameWidth =
@@ -311,6 +316,10 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 							onNoteOff: sendNoteOff,
 							onPolyAftertouch: sendPolyAftertouch,
 						}}
+						onInitPresetSession={(fn) => {
+							syncInstanceBRef.current = fn;
+						}}
+						onPresetSessionChange={handlePluginPresetSessionChange}
 					/>
 				</div>
 			</div>

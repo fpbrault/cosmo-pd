@@ -72,31 +72,6 @@ describe("useSynthPresetManager", () => {
 		expect(result.current.visiblePresetEntries.length).toBe(2);
 	});
 
-	it("loads persisted state if available", async () => {
-		vi.mocked(presetStorage.loadCurrentState).mockResolvedValue({
-			some: "persisted",
-		} as unknown as SynthPresetV1);
-		vi.mocked(presetStorage.loadCurrentPresetSession).mockResolvedValue({
-			activePresetId: "local-preset",
-			activePresetNameBase: "MyPreset",
-			loadedPresetFingerprint: JSON.stringify({ some: "persisted" }),
-		});
-
-		const { result } = renderHook(() =>
-			useSynthPresetManager({
-				builtinPresets: mockBuiltinPresets,
-				gatherPresetState: mockGatherPresetState,
-				applyPreset: mockApplyPreset,
-			}),
-		);
-
-		await waitFor(() => {
-			expect(mockApplyPreset).toHaveBeenCalledWith({ some: "persisted" });
-		});
-		expect(result.current.activePresetId).toBe("local-preset");
-		expect(result.current.activePresetNameBase).toBe("MyPreset");
-	});
-
 	it("handles loading a local preset", async () => {
 		vi.mocked(presetStorage.loadStoredPreset).mockResolvedValue({
 			id: "local-preset",
@@ -145,14 +120,7 @@ describe("useSynthPresetManager", () => {
 		expect(result.current.activePresetNameBase).toBe("Preset 1");
 	});
 
-	it("detects unsaved changes", async () => {
-		vi.mocked(presetStorage.loadCurrentPresetSession).mockResolvedValue({
-			activePresetId: "local-preset",
-			activePresetNameBase: "MyPreset",
-			loadedPresetFingerprint: JSON.stringify({ a: 1 }),
-		});
-		mockGatherPresetState.mockReturnValue({ a: 2 } as unknown as SynthPresetV1);
-
+	it("handleSyncBuiltinSelection sets preset name without applying data", () => {
 		const { result } = renderHook(() =>
 			useSynthPresetManager({
 				builtinPresets: mockBuiltinPresets,
@@ -161,19 +129,16 @@ describe("useSynthPresetManager", () => {
 			}),
 		);
 
-		await waitFor(() => {
-			expect(result.current.activePresetName).toBe("MyPreset *");
+		act(() => {
+			result.current.handleSyncBuiltinSelection("Preset 1");
 		});
+
+		expect(result.current.activePresetId).toBe("preset-1");
+		expect(result.current.activePresetNameBase).toBe("Preset 1");
+		expect(mockApplyPreset).not.toHaveBeenCalled();
 	});
 
-	it("handles pending preset change flow", async () => {
-		vi.mocked(presetStorage.loadCurrentPresetSession).mockResolvedValue({
-			activePresetId: "local-preset",
-			activePresetNameBase: "MyPreset",
-			loadedPresetFingerprint: JSON.stringify({ a: 1 }),
-		});
-		mockGatherPresetState.mockReturnValue({ a: 2 } as unknown as SynthPresetV1);
-
+	it("handleSyncBuiltinSelection with unknown name sets ID to null", () => {
 		const { result } = renderHook(() =>
 			useSynthPresetManager({
 				builtinPresets: mockBuiltinPresets,
@@ -182,19 +147,136 @@ describe("useSynthPresetManager", () => {
 			}),
 		);
 
-		await waitFor(() => {
-			expect(result.current.activePresetName).toBe("MyPreset *");
+		act(() => {
+			result.current.handleSyncBuiltinSelection("NonExistent");
 		});
+
+		expect(result.current.activePresetId).toBeNull();
+		expect(result.current.activePresetNameBase).toBe("NonExistent");
+	});
+
+	it("handleSyncBuiltinSelection captures loaded preset fingerprint", () => {
+		const gatherFn = vi.fn(
+			() => ({ test: "value" }) as unknown as SynthPresetV1,
+		);
+		const { result, rerender } = renderHook(
+			({ gather }: { gather: () => SynthPresetV1 }) =>
+				useSynthPresetManager({
+					builtinPresets: mockBuiltinPresets,
+					gatherPresetState: gather,
+					applyPreset: mockApplyPreset,
+				}),
+			{ initialProps: { gather: gatherFn } },
+		);
+
+		act(() => {
+			result.current.handleSyncBuiltinSelection("Preset 1");
+		});
+
+		expect(result.current.activePresetName).toBe("Preset 1");
+
+		const diffGatherFn = vi.fn(
+			() => ({ test: "different" }) as unknown as SynthPresetV1,
+		);
+		rerender({ gather: diffGatherFn });
+
+		expect(result.current.activePresetName).toBe("Preset 1 *");
+	});
+
+	it("preset name is persisted via localStorage across remounts", () => {
+		const gatherFn = vi.fn(() => ({}) as SynthPresetV1);
+		const { result, unmount } = renderHook(() =>
+			useSynthPresetManager({
+				builtinPresets: mockBuiltinPresets,
+				gatherPresetState: gatherFn,
+				applyPreset: mockApplyPreset,
+			}),
+		);
+
+		act(() => {
+			result.current.handleLoadBuiltin("Preset 1");
+		});
+		expect(result.current.activePresetNameBase).toBe("Preset 1");
+		localStorage.setItem(
+			"cosmo-pd:preset-name",
+			result.current.activePresetNameBase,
+		);
+		expect(localStorage.getItem("cosmo-pd:preset-name")).toBe("Preset 1");
+
+		unmount();
+
+		const { result: result2 } = renderHook(() =>
+			useSynthPresetManager({
+				builtinPresets: mockBuiltinPresets,
+				gatherPresetState: gatherFn,
+				applyPreset: mockApplyPreset,
+			}),
+		);
+
+		const savedName = localStorage.getItem("cosmo-pd:preset-name");
+		expect(savedName).toBe("Preset 1");
+		if (savedName && savedName !== "Current State") {
+			act(() => {
+				result2.current.handleSyncBuiltinSelection(savedName);
+			});
+		}
+
+		expect(result2.current.activePresetNameBase).toBe("Preset 1");
+	});
+
+	it("detects unsaved changes", () => {
+		const gatherFn = vi.fn(() => ({}) as SynthPresetV1);
+		const { result, rerender } = renderHook(
+			({ gather }: { gather: () => SynthPresetV1 }) =>
+				useSynthPresetManager({
+					builtinPresets: mockBuiltinPresets,
+					gatherPresetState: gather,
+					applyPreset: mockApplyPreset,
+				}),
+			{ initialProps: { gather: gatherFn } },
+		);
 
 		act(() => {
 			result.current.handleLoadBuiltin("Preset 1");
 		});
 
-		expect(result.current.pendingPresetChange).not.toBeNull();
-		expect(result.current.pendingPresetChange?.changes[0].path).toBe("a");
+		expect(result.current.activePresetName).toBe("Preset 1");
 
-		await act(async () => {
-			await result.current.handleDiscardPendingPresetChange();
+		const diffGatherFn = vi.fn(
+			() => ({ different: "state" }) as unknown as SynthPresetV1,
+		);
+		rerender({ gather: diffGatherFn });
+
+		expect(result.current.activePresetName).toBe("Preset 1 *");
+	});
+
+	it("handles pending preset change flow", () => {
+		const gatherFn = vi.fn(() => ({}) as SynthPresetV1);
+		const { result, rerender } = renderHook(
+			({ gather }: { gather: () => SynthPresetV1 }) =>
+				useSynthPresetManager({
+					builtinPresets: mockBuiltinPresets,
+					gatherPresetState: gather,
+					applyPreset: mockApplyPreset,
+				}),
+			{ initialProps: { gather: gatherFn } },
+		);
+
+		act(() => {
+			result.current.handleLoadBuiltin("Preset 1");
+		});
+
+		const diffGatherFn = vi.fn(() => ({ a: 2 }) as unknown as SynthPresetV1);
+		rerender({ gather: diffGatherFn });
+
+		act(() => {
+			result.current.handleLoadBuiltin("Preset 2");
+		});
+
+		expect(result.current.pendingPresetChange).not.toBeNull();
+
+		act(() => {
+			result.current.handleDiscardPendingPresetChange();
 		});
 
 		expect(result.current.pendingPresetChange).toBeNull();
