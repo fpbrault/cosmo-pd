@@ -454,51 +454,44 @@ impl Default for DistortionParams {
 pub struct LoFiParams {
     #[serde(default)]
     pub enabled: bool,
+    #[serde(default = "default_lofi_wow")]
+    pub wow: f32,
+    #[serde(default = "default_lofi_flutter")]
+    pub flutter: f32,
     #[serde(default = "default_lofi_degrade")]
     pub degrade: f32,
-    #[serde(default = "default_lofi_wow_depth")]
-    pub wow_depth: f32,
-    #[serde(default = "default_lofi_wow_rate")]
-    pub wow_rate: f32,
-    #[serde(default = "default_lofi_flutter_depth")]
-    pub flutter_depth: f32,
-    #[serde(default = "default_lofi_flutter_rate")]
-    pub flutter_rate: f32,
-    #[serde(default = "default_lofi_tone")]
-    pub tone: f32,
+    #[serde(default)]
+    pub filter: f32,
+    #[serde(default)]
+    pub crackle: f32,
+    #[serde(default)]
+    pub noise: f32,
+    #[serde(default)]
+    pub saturation: f32,
     #[serde(default = "default_one")]
     pub mix: f32,
 }
 
+fn default_lofi_wow() -> f32 {
+    0.3
+}
+fn default_lofi_flutter() -> f32 {
+    0.3
+}
 fn default_lofi_degrade() -> f32 {
-    0.25
+    0.2
 }
-fn default_lofi_wow_depth() -> f32 {
-    0.07
-}
-fn default_lofi_wow_rate() -> f32 {
-    0.42
-}
-fn default_lofi_flutter_depth() -> f32 {
-    0.036
-}
-fn default_lofi_flutter_rate() -> f32 {
-    6.7
-}
-fn default_lofi_tone() -> f32 {
-    0.45
-}
-
 impl Default for LoFiParams {
     fn default() -> Self {
         Self {
             enabled: false,
-            degrade: 0.25,
-            wow_depth: 0.07,
-            wow_rate: 0.42,
-            flutter_depth: 0.036,
-            flutter_rate: 6.7,
-            tone: 0.45,
+            wow: 0.3,
+            flutter: 0.3,
+            degrade: 0.2,
+            filter: 0.0,
+            crackle: 0.0,
+            noise: 0.0,
+            saturation: 0.0,
             mix: 1.0,
         }
     }
