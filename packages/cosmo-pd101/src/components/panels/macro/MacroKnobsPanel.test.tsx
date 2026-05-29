@@ -20,6 +20,7 @@ vi.mock("@/features/synth/synthStore", () => ({
 				setMacro3: typeof setMacro3;
 				setMacro4: typeof setMacro4;
 				macroLabels: [string, string, string, string];
+				setMacroLabel: (index: number, label: string) => void;
 			}) => unknown,
 		) =>
 			selector({
@@ -31,21 +32,20 @@ vi.mock("@/features/synth/synthStore", () => ({
 				setMacro2,
 				setMacro3,
 				setMacro4,
-				macroLabels: ["M1", "M2", "M3", "M4"],
+				macroLabels: ["M1", "M2", "M3", "M4"] as [string, string, string, string],
+				setMacroLabel: vi.fn(),
 			}),
 	),
 }));
 
-const setMacroLabelEditorOpen = vi.fn();
-
-vi.mock("@/features/synth/synthUiStore", () => ({
-	useSynthUiStore: vi.fn(
-		(
-			selector: (state: {
-				setMacroLabelEditorOpen: typeof setMacroLabelEditorOpen;
-			}) => unknown,
-		) => selector({ setMacroLabelEditorOpen }),
-	),
+vi.mock("@/components/primitives/Popover", () => ({
+	default: ({
+		open,
+		children,
+	}: {
+		open: boolean;
+		children: React.ReactNode;
+	}) => (open ? <div data-testid="macro-label-popover">{children}</div> : null),
 }));
 
 vi.mock("@/features/synth/hooks/useMidiLearnTarget", () => ({
@@ -79,8 +79,9 @@ describe("MacroKnobsPanel", () => {
 	it("renders macro knobs and settings button", () => {
 		render(<MacroKnobsPanel />);
 		expect(screen.getByTestId("macro-knob-M1")).toBeInTheDocument();
+		expect(screen.queryByTestId("macro-label-popover")).not.toBeInTheDocument();
 		fireEvent.click(screen.getByLabelText("Edit macro labels"));
-		expect(setMacroLabelEditorOpen).toHaveBeenCalledWith(true);
+		expect(screen.getByTestId("macro-label-popover")).toBeInTheDocument();
 		fireEvent.click(screen.getByTestId("macro-knob-M1"));
 		expect(setMacro1).toHaveBeenCalledWith(0.75);
 	});

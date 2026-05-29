@@ -4,8 +4,6 @@ import MiniKeyboardOverlay from "@/components/layout/MiniKeyboardOverlay";
 import SynthInfoBar from "@/components/layout/SynthInfoBar";
 import {
 	GlobalVoiceModal,
-	KeyboardSettingsModal,
-	MacroLabelEditorModal,
 	PendingModifiedPresetModal,
 	SynthBrandInfoModal,
 } from "@/components/modals";
@@ -28,7 +26,6 @@ type SynthRendererOverlaysProps = {
 	infoText: string;
 	bottomBarExtra?: ReactNode;
 	onKeyboardToggle: () => void;
-	onKeyboardSettingsClick: () => void;
 };
 
 export default memo(function SynthRendererOverlays({
@@ -42,20 +39,11 @@ export default memo(function SynthRendererOverlays({
 	infoText,
 	bottomBarExtra,
 	onKeyboardToggle,
-	onKeyboardSettingsClick,
 }: SynthRendererOverlaysProps) {
 	const brandInfoOpen = useSynthUiStore((s) => s.brandInfoOpen);
 	const setBrandInfoOpen = useSynthUiStore((s) => s.setBrandInfoOpen);
 	const globalPanelOpen = useSynthUiStore((s) => s.globalPanelOpen);
 	const setGlobalPanelOpen = useSynthUiStore((s) => s.setGlobalPanelOpen);
-	const macroLabelEditorOpen = useSynthUiStore((s) => s.macroLabelEditorOpen);
-	const setMacroLabelEditorOpen = useSynthUiStore(
-		(s) => s.setMacroLabelEditorOpen,
-	);
-	const keyboardSettingsOpen = useSynthUiStore((s) => s.keyboardSettingsOpen);
-	const setKeyboardSettingsOpen = useSynthUiStore(
-		(s) => s.setKeyboardSettingsOpen,
-	);
 	const {
 		pendingPresetChange,
 		handleSavePendingPresetChange,
@@ -74,14 +62,6 @@ export default memo(function SynthRendererOverlays({
 			<GlobalVoiceModal
 				open={globalPanelOpen}
 				onClose={() => setGlobalPanelOpen(false)}
-			/>
-			<MacroLabelEditorModal
-				open={macroLabelEditorOpen}
-				onClose={() => setMacroLabelEditorOpen(false)}
-			/>
-			<KeyboardSettingsModal
-				open={keyboardSettingsOpen}
-				onClose={() => setKeyboardSettingsOpen(false)}
 			/>
 			<PendingModifiedPresetModal
 				pendingPresetChange={pendingPresetChange}
@@ -104,7 +84,6 @@ export default memo(function SynthRendererOverlays({
 				showKeyboardToggle={showKeyboard}
 				keyboardVisible={keyboardVisible}
 				onKeyboardToggle={onKeyboardToggle}
-				onKeyboardSettingsClick={onKeyboardSettingsClick}
 			/>
 		</>
 	);

@@ -1,5 +1,5 @@
 export { GlobalVoiceModal } from "./GlobalVoiceModal";
-export { KeyboardSettingsModal } from "./KeyboardSettingsModal";
-export { MacroLabelEditorModal } from "./MacroLabelEditorModal";
+export { KeyboardSettingsPopover } from "./KeyboardSettingsPopover";
+export { MacroLabelEditorPopover } from "./MacroLabelEditorPopover";
 export { PendingModifiedPresetModal } from "./PendingModifiedPresetModal";
 export { SynthBrandInfoModal } from "./SynthBrandInfoModal";

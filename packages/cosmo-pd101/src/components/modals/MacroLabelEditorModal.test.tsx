@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { MacroLabelEditorModal } from "./MacroLabelEditorModal";
+import { MacroLabelEditorPopover } from "./MacroLabelEditorPopover";
 
 const setMacroLabel = vi.fn();
 const state = {
@@ -14,9 +14,10 @@ vi.mock("@/features/synth/synthStore", () => ({
 	),
 }));
 
-describe("MacroLabelEditorModal", () => {
+describe("MacroLabelEditorPopover", () => {
 	it("renders 4 macro inputs and updates label", () => {
-		render(<MacroLabelEditorModal open onClose={vi.fn()} />);
+		const ref = { current: document.createElement("button") };
+		render(<MacroLabelEditorPopover open triggerRef={ref} onClose={vi.fn()} />);
 		const input = screen.getByDisplayValue("A");
 		fireEvent.change(input, { target: { value: "Alpha" } });
 		expect(setMacroLabel).toHaveBeenCalledWith(0, "Alpha");

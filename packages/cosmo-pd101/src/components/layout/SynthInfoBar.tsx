@@ -1,6 +1,7 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useCallback, useRef, useState } from "react";
 import { MdPiano, MdSettings } from "react-icons/md";
 import Button from "@/components/controls/Button";
+import { KeyboardSettingsPopover } from "@/components/modals/KeyboardSettingsPopover";
 
 type SynthInfoBarProps = {
 	infoText: string;
@@ -8,7 +9,6 @@ type SynthInfoBarProps = {
 	showKeyboardToggle: boolean;
 	keyboardVisible: boolean;
 	onKeyboardToggle: () => void;
-	onKeyboardSettingsClick?: () => void;
 };
 
 export default function SynthInfoBar({
@@ -17,8 +17,14 @@ export default function SynthInfoBar({
 	showKeyboardToggle,
 	keyboardVisible,
 	onKeyboardToggle,
-	onKeyboardSettingsClick,
 }: SynthInfoBarProps) {
+	const [settingsOpen, setSettingsOpen] = useState(false);
+	const settingsBtnRef = useRef<HTMLButtonElement | null>(null);
+
+	const handleSettingsClick = useCallback(() => {
+		setSettingsOpen((prev) => !prev);
+	}, []);
+
 	return (
 		<div className="relative z-20 mt-1 flex min-h-8 flex-nowrap items-center gap-x-3 gap-y-1 rounded-t-sm border border-cz-border/80 bg-cz-body px-3 py-1 font-mono text-[0.62rem] text-cz-cream/80 uppercase tracking-[0.22em] shadow-inner">
 			<span className="text-cz-light-blue/80">Info</span>
@@ -44,15 +50,19 @@ export default function SynthInfoBar({
 					>
 						<MdPiano className="h-3.5 w-3.5" />
 					</Button>
-					{onKeyboardSettingsClick ? (
-						<Button
-							type="button"
-							onClick={onKeyboardSettingsClick}
-							className="btn btn-sm border-cz-border bg-transparent px-2 py-1 text-cz-cream/70 hover:text-cz-cream"
-						>
-							<MdSettings className="h-3 w-3" />
-						</Button>
-					) : null}
+					<Button
+						ref={settingsBtnRef}
+						type="button"
+						onClick={handleSettingsClick}
+						className="btn btn-sm border-cz-border bg-transparent px-2 py-1 text-cz-cream/70 hover:text-cz-cream"
+					>
+						<MdSettings className="h-3 w-3" />
+					</Button>
+					<KeyboardSettingsPopover
+						open={settingsOpen}
+						triggerRef={settingsBtnRef}
+						onClose={() => setSettingsOpen(false)}
+					/>
 				</div>
 			) : null}
 		</div>
