@@ -50,6 +50,7 @@ pub struct LoFiFx {
     flutter_phase2: f32,
     flutter_phase3: f32,
     sample_rate: f32,
+    wow_smooth: f32,
 }
 
 impl LoFiFx {
@@ -88,6 +89,7 @@ impl LoFiFx {
             wow_noise_timer: 0.0,
             flutter_phase2: 0.47,
             flutter_phase3: 0.89,
+            wow_smooth: 1.0 - (-4.0 / sr).exp(),
             sample_rate: sr,
         }
     }
@@ -108,8 +110,7 @@ impl LoFiFx {
             self.wow_noise_timer = interval;
             self.wow_noise_target = (lcg_rand(&mut self.rng) * 2.0 - 1.0) * wow_val;
         }
-        let wow_smooth = 1.0 - (-4.0 * inv_sr).exp();
-        self.wow_noise += (self.wow_noise_target - self.wow_noise) * wow_smooth;
+        self.wow_noise += (self.wow_noise_target - self.wow_noise) * self.wow_smooth;
 
         let wow_mod = self.wow_noise * MAX_WOW_MOD_S;
 
