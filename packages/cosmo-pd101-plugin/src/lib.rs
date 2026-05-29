@@ -1415,38 +1415,38 @@ impl PluginLogic for CzPlugin {
         serde_json::to_vec(&state).unwrap_or_default()
     }
 
-	fn load_state(&mut self, data: &[u8]) -> Result<(), StateLoadError> {
-		// Try new format: { "synth_params": ..., "preset_name": "..." }
-		let (params, loaded_name) =
-			if let Ok(obj) = serde_json::from_slice::<serde_json::Value>(data) {
-				if obj.is_object() && obj.get("synth_params").is_some() {
-					// New wrapper format
-					let synth = obj
-						.get("synth_params")
-						.and_then(|v| serde_json::from_value::<SynthParams>(v.clone()).ok())
-						.ok_or(StateLoadError::Malformed("invalid synth params"))?;
-					let name = obj
-						.get("preset_name")
-						.and_then(|v| v.as_str())
-						.map(|s| s.to_string())
-						.unwrap_or_default();
-					(synth, name)
-				} else {
-					// Old format: flat SynthParams — don't touch preset name
-					let synth: SynthParams = serde_json::from_slice(data)
-						.map_err(|_| StateLoadError::Malformed("invalid synth params JSON"))?;
-					sync_all_daw_params_from_synth(&self.params, &synth);
-					let rt_params = build_rt_synth_params(&synth);
-					let rt_params_arc = Arc::new(rt_params);
-					self.synth_params.store(Arc::new(synth));
-					self.rt_synth_params.store(Arc::clone(&rt_params_arc));
-					self.cached_rt_synth_params = rt_params_arc.clone();
-					self.synth_params_version.fetch_add(1, Ordering::Release);
-					return Ok(());
-				}
-			} else {
-				return Err(StateLoadError::Malformed("invalid JSON"));
-			};
+    fn load_state(&mut self, data: &[u8]) -> Result<(), StateLoadError> {
+        // Try new format: { "synth_params": ..., "preset_name": "..." }
+        let (params, loaded_name) =
+            if let Ok(obj) = serde_json::from_slice::<serde_json::Value>(data) {
+                if obj.is_object() && obj.get("synth_params").is_some() {
+                    // New wrapper format
+                    let synth = obj
+                        .get("synth_params")
+                        .and_then(|v| serde_json::from_value::<SynthParams>(v.clone()).ok())
+                        .ok_or(StateLoadError::Malformed("invalid synth params"))?;
+                    let name = obj
+                        .get("preset_name")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string())
+                        .unwrap_or_default();
+                    (synth, name)
+                } else {
+                    // Old format: flat SynthParams — don't touch preset name
+                    let synth: SynthParams = serde_json::from_slice(data)
+                        .map_err(|_| StateLoadError::Malformed("invalid synth params JSON"))?;
+                    sync_all_daw_params_from_synth(&self.params, &synth);
+                    let rt_params = build_rt_synth_params(&synth);
+                    let rt_params_arc = Arc::new(rt_params);
+                    self.synth_params.store(Arc::new(synth));
+                    self.rt_synth_params.store(Arc::clone(&rt_params_arc));
+                    self.cached_rt_synth_params = rt_params_arc.clone();
+                    self.synth_params_version.fetch_add(1, Ordering::Release);
+                    return Ok(());
+                }
+            } else {
+                return Err(StateLoadError::Malformed("invalid JSON"));
+            };
 
         // Restore preset name (new format only)
         if let Ok(mut stored) = self.preset_name.lock() {
