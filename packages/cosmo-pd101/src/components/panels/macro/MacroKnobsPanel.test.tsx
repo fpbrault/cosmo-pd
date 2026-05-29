@@ -32,7 +32,12 @@ vi.mock("@/features/synth/synthStore", () => ({
 				setMacro2,
 				setMacro3,
 				setMacro4,
-				macroLabels: ["M1", "M2", "M3", "M4"] as [string, string, string, string],
+				macroLabels: ["M1", "M2", "M3", "M4"] as [
+					string,
+					string,
+					string,
+					string,
+				],
 				setMacroLabel: vi.fn(),
 			}),
 	),
