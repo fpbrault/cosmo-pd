@@ -28,9 +28,6 @@ function normalizeTestParamKey(type: FxSlotType, controlId: string) {
 function makeControlPatch(type: FxSlotType, control: FxControlV1) {
 	const key = normalizeTestParamKey(type, control.id);
 
-	if (key === "tapeMode") {
-		return { [key]: 1 };
-	}
 	if (key === "timeMode" || key === "rateMode") {
 		return { [key]: "sync" };
 	}
@@ -87,7 +84,7 @@ function expectTypedControlValue(
 		]).toContain(value);
 		return;
 	}
-	if (key === "tapeMode" || key === "pmPre" || control.kind === "toggle") {
+	if (key === "pmPre" || control.kind === "toggle") {
 		expect(typeof value).toBe("boolean");
 		return;
 	}
@@ -144,9 +141,5 @@ describe("fxSlotSanitizer", () => {
 		}
 
 		expectTypedControlValue(slot, control);
-
-		if (slotType === "delay" && control.id === "tapeMode") {
-			expect((slot.params as Record<string, unknown>).tapeMode).toBe(true);
-		}
 	});
 });

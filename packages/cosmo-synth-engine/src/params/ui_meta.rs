@@ -315,8 +315,8 @@ const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 58] = [
         readout_format: EngineParamReadoutFormatV1::Decimal,
     },
     EngineParamUiMetaV1 {
-        key: "delayTapeMode",
-        readout_format: EngineParamReadoutFormatV1::OnOff,
+        key: "delayMode",
+        readout_format: EngineParamReadoutFormatV1::Decimal,
     },
     EngineParamUiMetaV1 {
         key: "reverbSpace",
@@ -436,9 +436,9 @@ pub fn engine_param_default_v1(key: &str) -> Option<f32> {
         "chorusMix" => Some(chorus.mix),
         "delayTime" => Some(delay.time),
         "delayFeedback" => Some(delay.feedback),
-        "delayWarmth" => Some(delay.warmth),
+        "delayWarmth" => Some(delay.extra),
         "delayMix" => Some(delay.mix),
-        "delayTapeMode" => Some(if delay.tape_mode { 1.0 } else { 0.0 }),
+        "delayMode" => Some(delay.mode as f32),
         "reverbSpace" => Some(reverb.space),
         "reverbPredelay" => Some(reverb.predelay),
         "reverbDistance" => Some(reverb.distance),

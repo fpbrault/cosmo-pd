@@ -149,8 +149,8 @@ export type DelayParams = {
 	time: number | null,
 	feedback: number | null,
 	mix: number | null,
-	tapeMode?: boolean,
-	warmth?: number | null,
+	mode?: number,
+	extra?: number | null,
 	timeMode?: LfoRateMode,
 	syncDivision?: LfoSyncDivision,
 };
@@ -2193,7 +2193,7 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "modDestinationKey": null
       },
       {
-        "id": "tapeMode",
+        "id": "mode",
         "label": "Mode",
         "kind": "buttonGroup",
         "bipolar": false,
@@ -2210,13 +2210,23 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
             "value": 1,
             "label": "Tape",
             "iconName": null
+          },
+          {
+            "value": 2,
+            "label": "BBD",
+            "iconName": null
+          },
+          {
+            "value": 3,
+            "label": "Stereo",
+            "iconName": null
           }
         ],
         "modDestinationKey": null
       },
       {
-        "id": "warmth",
-        "label": "Warmth",
+        "id": "extra",
+        "label": "Extra",
         "kind": "knob",
         "bipolar": false,
         "min": 0.0,
@@ -2238,6 +2248,14 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
       {
         "id": "dubFeedback",
         "label": "Dub Feedback"
+      },
+      {
+        "id": "analogBbd",
+        "label": "Analog BBD"
+      },
+      {
+        "id": "pingPong",
+        "label": "Ping Pong"
       }
     ]
   },
@@ -3877,6 +3895,14 @@ export const MODULE_PRESET_CATALOG_V1: ModulePresetGroupV1[] = [
       {
         "id": "dubFeedback",
         "label": "Dub Feedback"
+      },
+      {
+        "id": "analogBbd",
+        "label": "Analog BBD"
+      },
+      {
+        "id": "pingPong",
+        "label": "Ping Pong"
       }
     ]
   },
@@ -4317,8 +4343,8 @@ export const DELAY_PRESET_DATA: DelayPresetV1[] = [
       "time": 0.11,
       "feedback": 0.22,
       "mix": 0.27,
-      "tapeMode": false,
-      "warmth": 0.2,
+      "mode": 0,
+      "extra": 0.2,
       "timeMode": "hz",
       "syncDivision": "quarter"
     }
@@ -4331,8 +4357,8 @@ export const DELAY_PRESET_DATA: DelayPresetV1[] = [
       "time": 0.34,
       "feedback": 0.46,
       "mix": 0.35,
-      "tapeMode": true,
-      "warmth": 0.72,
+      "mode": 1,
+      "extra": 0.72,
       "timeMode": "hz",
       "syncDivision": "quarter"
     }
@@ -4345,8 +4371,36 @@ export const DELAY_PRESET_DATA: DelayPresetV1[] = [
       "time": 0.52,
       "feedback": 0.68,
       "mix": 0.4,
-      "tapeMode": true,
-      "warmth": 0.55,
+      "mode": 1,
+      "extra": 0.55,
+      "timeMode": "hz",
+      "syncDivision": "quarter"
+    }
+  },
+  {
+    "id": "analogBbd",
+    "label": "Analog BBD",
+    "params": {
+      "enabled": true,
+      "time": 0.28,
+      "feedback": 0.4,
+      "mix": 0.32,
+      "mode": 2,
+      "extra": 0.55,
+      "timeMode": "hz",
+      "syncDivision": "quarter"
+    }
+  },
+  {
+    "id": "pingPong",
+    "label": "Ping Pong",
+    "params": {
+      "enabled": true,
+      "time": 0.35,
+      "feedback": 0.45,
+      "mix": 0.38,
+      "mode": 3,
+      "extra": 0.4,
       "timeMode": "hz",
       "syncDivision": "quarter"
     }
@@ -5668,10 +5722,10 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     }
   },
   {
-    "key": "delayTapeMode",
+    "key": "delayMode",
     "paramDefault": 0.0,
     "readoutFormat": {
-      "kind": "onOff"
+      "kind": "decimal"
     }
   },
   {

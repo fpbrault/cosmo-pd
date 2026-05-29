@@ -67,16 +67,16 @@ pub struct DelayParams {
     pub feedback: f32,
     pub mix: f32,
     #[serde(default)]
-    pub tape_mode: bool,
-    #[serde(default = "default_delay_warmth")]
-    pub warmth: f32,
+    pub mode: u8,
+    #[serde(default = "default_delay_extra")]
+    pub extra: f32,
     #[serde(default)]
     pub time_mode: LfoRateMode,
     #[serde(default)]
     pub sync_division: LfoSyncDivision,
 }
 
-fn default_delay_warmth() -> f32 {
+fn default_delay_extra() -> f32 {
     0.5
 }
 
@@ -87,8 +87,8 @@ impl Default for DelayParams {
             time: 0.3,
             feedback: 0.35,
             mix: 0.0,
-            tape_mode: false,
-            warmth: 0.5,
+            mode: 0,
+            extra: 0.5,
             time_mode: LfoRateMode::Hz,
             sync_division: LfoSyncDivision::Quarter,
         }

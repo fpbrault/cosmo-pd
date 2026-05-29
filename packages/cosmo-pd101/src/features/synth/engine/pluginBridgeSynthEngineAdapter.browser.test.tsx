@@ -24,9 +24,6 @@ function normalizeTestParamKey(slotType: string, controlId: string) {
 function makeControlPatch(slotType: string, control: FxControlV1) {
 	const key = normalizeTestParamKey(slotType, control.id);
 
-	if (key === "tapeMode") {
-		return { [key]: 1 };
-	}
 	if (key === "timeMode" || key === "rateMode") {
 		return { [key]: "sync" };
 	}
@@ -101,11 +98,6 @@ describe("usePluginBridgeSynthEngine (browser FX smoke)", () => {
 				};
 				const slot = payload.fxSlots?.[0];
 				expect(slot?.type).toBe(definition.slotType);
-
-				if (definition.slotType === "delay" && control.id === "tapeMode") {
-					expect(slot?.params.tapeMode).toBe(true);
-					expect(typeof slot?.params.tapeMode).toBe("boolean");
-				}
 			}
 		}
 

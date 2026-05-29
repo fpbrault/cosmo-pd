@@ -191,13 +191,10 @@
 			"tooltip": "Feeds delayed signal back for additional repeats."
 		},
 		"delayWarmth": {
-			"tooltip": "Adds tape-style saturation and high-frequency rolloff."
+			"tooltip": "Modulates delay character — warmth, modulation, or stereo width depending on mode."
 		},
 		"delayMix": {
 			"tooltip": "Blends dry signal with delayed signal."
-		},
-		"delayTapeMode": {
-			"tooltip": "Toggle tape echo coloration for delay repeats."
 		},
 		"reverbSpace": {
 			"tooltip": "Sets the virtual room size for reverb reflections."
@@ -798,11 +795,13 @@
 		},
 		"controls": {
 			"delay": {
-				"tapeMode": {
+				"mode": {
 					"label": "Mode",
 					"options": {
 						"0": "Digital",
-						"1": "Tape"
+						"1": "Tape",
+						"2": "BBD",
+						"3": "Stereo"
 					}
 				}
 			},

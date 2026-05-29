@@ -203,7 +203,7 @@ describe("usePluginBridgeSynthEngine", () => {
 			const store = useSynthStore.getState();
 			store.setFxSlotType(0, "delay");
 			store.setFxSlotParams(0, {
-				tapeMode: 1,
+				mode: 1,
 				timeMode: "sync",
 				syncDivision: "eighthTriplet",
 			});
@@ -218,8 +218,8 @@ describe("usePluginBridgeSynthEngine", () => {
 		};
 		const delaySlot = lastOutbound.fxSlots?.[0];
 		expect(delaySlot?.type).toBe("delay");
-		expect(delaySlot?.params.tapeMode).toBe(true);
-		expect(typeof delaySlot?.params.tapeMode).toBe("boolean");
+		expect(delaySlot?.params.mode).toBe(1);
+		expect(typeof delaySlot?.params.mode).toBe("number");
 		expect(delaySlot?.params.timeMode).toBe("sync");
 		expect(delaySlot?.params.syncDivision).toBe("eighthTriplet");
 	});

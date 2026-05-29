@@ -153,8 +153,7 @@ export const FX_UI_META = {
 			time: (v) => `${Math.round(v * 1000)}ms`,
 			feedback: pct,
 			mix: pct,
-			tapeMode: (v) => (v ? "Tape" : "Digital"),
-			warmth: pct,
+			extra: pct,
 		},
 	},
 	phaseMod: {

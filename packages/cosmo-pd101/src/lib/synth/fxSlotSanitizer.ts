@@ -83,7 +83,7 @@ function buildDefaultControlValue(
 	if (key === "syncDivision") {
 		return "quarter";
 	}
-	if (key === "tapeMode" || key === "pmPre" || control.kind === "toggle") {
+	if (key === "pmPre" || control.kind === "toggle") {
 		return coerceBoolean(control.defaultF32, false);
 	}
 	if (control.options.length > 0) {
@@ -110,7 +110,7 @@ function sanitizeControlValue(
 			? (value as LfoSyncDivision)
 			: ((fallback as LfoSyncDivision | undefined) ?? "quarter");
 	}
-	if (key === "tapeMode" || key === "pmPre" || control.kind === "toggle") {
+	if (key === "pmPre" || control.kind === "toggle") {
 		return coerceBoolean(value, Boolean(fallback));
 	}
 	if (control.options.length > 0) {
@@ -145,6 +145,25 @@ export function createDefaultFxSlotConfig(type: FxSlotType): FxSlotConfig {
 	return { type, params } as FxSlotConfig;
 }
 
+function migrateDelayParams(
+	type: string,
+	params: FxParamsRecord,
+): FxParamsRecord {
+	if (type !== "delay") {
+		return params;
+	}
+	const result: FxParamsRecord = { ...params };
+	if ("tapeMode" in result && !("mode" in result)) {
+		result.mode = result.tapeMode ? 1 : 0;
+	}
+	delete result.tapeMode;
+	if ("warmth" in result && !("extra" in result)) {
+		result.extra = result.warmth;
+	}
+	delete result.warmth;
+	return result;
+}
+
 export function sanitizeFxSlotConfig(slot: FxSlotConfig): FxSlotConfig {
 	if (slot.type === "empty") {
 		return slot;
@@ -156,7 +175,10 @@ export function sanitizeFxSlotConfig(slot: FxSlotConfig): FxSlotConfig {
 		return defaults;
 	}
 
-	const rawParams = slot.params as FxParamsRecord;
+	const rawParams = migrateDelayParams(
+		slot.type,
+		slot.params as FxParamsRecord,
+	);
 	const defaultParams = defaults.params as FxParamsRecord;
 	const sanitizedParams = definition.controls.reduce<FxParamsRecord>(
 		(accumulator, control) => {

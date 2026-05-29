@@ -96,8 +96,8 @@ impl FxSlotProcessors {
                 self.delay.time = d.time;
                 self.delay.feedback = d.feedback;
                 self.delay.mix = d.mix;
-                self.delay.tape_mode = d.tape_mode;
-                self.delay.warmth = d.warmth;
+                self.delay.mode = d.mode;
+                self.delay.extra = d.extra;
                 self.delay.time_mode = d.time_mode;
                 self.delay.sync_division = d.sync_division;
             }
