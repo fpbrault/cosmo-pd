@@ -169,11 +169,6 @@ export function usePluginBridgeSynthEngine(
 	// Hydration: getParams from Rust once on mount
 	useEffect(() => {
 		if (!enabled) return;
-		if (!window.__czGetParams) {
-			// Running in WASM/standalone mode — outbound sync can start immediately.
-			outboundEnabledRef.current = true;
-			return;
-		}
 		let cancelled = false;
 		let retryCount = 0;
 		const MAX_RETRIES = 10;
@@ -202,7 +197,20 @@ export function usePluginBridgeSynthEngine(
 		const tryGetParams = () => {
 			if (cancelled) return;
 			const getParams = window.__czGetParams;
-			if (!getParams) return;
+			if (!getParams) {
+				// Bridge not ready yet — retry.
+				retryCount++;
+				// Open the gate so controls work immediately while we wait.
+				if (!outboundEnabledRef.current) {
+					outboundEnabledRef.current = true;
+				}
+				if (retryCount <= MAX_RETRIES) {
+					retryId = window.setTimeout(tryGetParams, RETRY_DELAY_MS);
+				} else {
+					window.clearTimeout(fallbackId);
+				}
+				return;
+			}
 			void getParams()
 				.then((result) => {
 					window.clearTimeout(fallbackId);
@@ -220,7 +228,6 @@ export function usePluginBridgeSynthEngine(
 						// Open the gate so controls work immediately while we retry.
 						if (!outboundEnabledRef.current) {
 							outboundEnabledRef.current = true;
-							syncRef.current?.();
 						}
 						retryId = window.setTimeout(tryGetParams, RETRY_DELAY_MS);
 					} else {
@@ -231,7 +238,6 @@ export function usePluginBridgeSynthEngine(
 						);
 						if (!outboundEnabledRef.current) {
 							outboundEnabledRef.current = true;
-							syncRef.current?.();
 						}
 					}
 				});

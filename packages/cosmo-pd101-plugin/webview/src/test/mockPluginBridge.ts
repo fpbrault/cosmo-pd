@@ -177,6 +177,11 @@ export interface MockBridgeHandle {
 	/** Simulate a failed invoke for the next pending unresolved invoke. */
 	rejectNextInvoke(error: string): void;
 
+	/** Get the current preset name from the mock's virtual state. */
+	getPresetName(): string;
+	/** Set the preset name in the mock's virtual state. */
+	setPresetName(name: string): void;
+
 	/** Reset recorded messages and pending listeners. Does NOT reinstall the runtime. */
 	reset(): void;
 }
@@ -189,6 +194,7 @@ declare global {
 			result?: unknown;
 			error?: string;
 		}) => void;
+		__CZ_MOCK_PRESET_NAME?: string;
 	}
 }
 
@@ -342,6 +348,12 @@ export function installMockPluginBridge(): void {
 	let pendingInvokeResolve: ((result: unknown) => void) | null = null;
 	let pendingInvokeReject: ((error: string) => void) | null = null;
 	let virtualModMatrix: { routes: unknown[] } = { routes: [] };
+	let virtualPresetName =
+		(typeof window !== "undefined"
+			? ((window as Record<string, unknown>).__CZ_MOCK_PRESET_NAME as
+					| string
+					| undefined)
+			: undefined) ?? "";
 
 	// Full params blob received from the last setParams IPC call.
 	// Used by pushParamUpdate/pushPluginParamUpdate to build valid full-param updates.
@@ -582,6 +594,15 @@ export function installMockPluginBridge(): void {
 				respondIpc(id, { result: { routes: [...virtualModMatrix.routes] } });
 				return;
 			}
+			if (method === "getPresetName") {
+				respondIpc(id, { result: virtualPresetName });
+				return;
+			}
+			if (method === "setPresetName") {
+				virtualPresetName = typeof args[0] === "string" ? args[0] : "";
+				respondIpc(id, { result: null });
+				return;
+			}
 			if (method === "getScopeData") {
 				respondIpc(id, {
 					result: { samples: [], sampleRate: 44100, hz: 220 },
@@ -662,6 +683,11 @@ export function installMockPluginBridge(): void {
 		},
 
 		getState: () => ({ ...virtualParamState }),
+
+		getPresetName: () => virtualPresetName,
+		setPresetName: (name: string) => {
+			virtualPresetName = name;
+		},
 
 		onMessage(cb: (msg: MockBridgeMessage) => void): () => void {
 			messageListeners.push(cb);

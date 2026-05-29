@@ -67,6 +67,8 @@ export type SynthRendererProps = {
 		}) => void,
 	) => () => void;
 	miniKeyboard?: MiniKeyboardProps;
+	onInitPresetSession?: (syncBuiltinSelection: (name: string) => void) => void;
+	onPresetSessionChange?: (session: { activePresetNameBase: string }) => void;
 };
 
 const FRAME_CLASS =
@@ -98,6 +100,8 @@ const SynthRenderer = memo(function SynthRenderer({
 	sidebarMinWidthRem = 18,
 	subscribeScopeFrames,
 	miniKeyboard,
+	onInitPresetSession,
+	onPresetSessionChange,
 }: SynthRendererProps = {}) {
 	const velocityCurve = useSynthStore((s) => s.velocityCurve);
 	const gatherState = useSynthStore((s) => s.gatherState);
@@ -186,6 +190,7 @@ const SynthRenderer = memo(function SynthRenderer({
 		visiblePresetEntries,
 		activePresetId,
 		activePresetName,
+		activePresetNameBase,
 		pendingPresetChange,
 		handleLoadLocal,
 		handleLoadBuiltin,
@@ -203,6 +208,7 @@ const SynthRenderer = memo(function SynthRenderer({
 		handleSavePendingPresetChange,
 		handleDiscardPendingPresetChange,
 		handleCancelPendingPresetChange,
+		handleSyncBuiltinSelection,
 	} = useSynthPresetManager({
 		builtinPresets: DEFAULT_SYNTH_PRESETS,
 		gatherPresetState,
@@ -284,6 +290,14 @@ const SynthRenderer = memo(function SynthRenderer({
 	useEffect(() => {
 		setLibraryVisibleEntries(visiblePresetEntries);
 	}, [visiblePresetEntries]);
+
+	useEffect(() => {
+		onInitPresetSession?.(handleSyncBuiltinSelection);
+	}, [handleSyncBuiltinSelection, onInitPresetSession]);
+
+	useEffect(() => {
+		onPresetSessionChange?.({ activePresetNameBase });
+	}, [activePresetNameBase, onPresetSessionChange]);
 
 	const handleStepPresetInVisibleOrder = useCallback(
 		(direction: -1 | 1) => {

@@ -29,7 +29,7 @@ use crate::CzPluginParams;
 #[cfg(target_os = "macos")]
 use crate::handle_ipc_invoke;
 use crate::{
-    MidiCcQueue, PerformanceCountersHandle, ScopeBuffer, SharedRuntimeModSources,
+    MidiCcQueue, PerformanceCountersHandle, ScopeBuffer, SharedPresetName, SharedRuntimeModSources,
     SharedTransportSnapshot, UiInputQueue, append_log,
 };
 use cosmo_synth_engine::params::SynthParams;
@@ -111,6 +111,7 @@ pub struct CzEditor {
     webview_state: Arc<Mutex<WebViewContainer>>,
     pending_parent_ns_view: Option<usize>,
     params: Arc<CzPluginParams>,
+    preset_name: SharedPresetName,
     #[cfg(target_os = "macos")]
     standalone_window: Option<StandaloneWindow>,
 }
@@ -152,6 +153,7 @@ impl CzEditor {
         midi_cc_queue: MidiCcQueue,
         performance_counters: PerformanceCountersHandle,
         params: Arc<CzPluginParams>,
+        preset_name: SharedPresetName,
     ) -> Self {
         Self {
             synth_params,
@@ -167,6 +169,7 @@ impl CzEditor {
             webview_state: Arc::new(Mutex::new(WebViewContainer { webview: None })),
             pending_parent_ns_view: None,
             params,
+            preset_name,
             #[cfg(target_os = "macos")]
             standalone_window: None,
         }
@@ -199,6 +202,7 @@ impl CzEditor {
         let ui_input_queue = self.ui_input_queue.clone();
         let performance_counters = self.performance_counters.clone();
         let params = self.params.clone();
+        let preset_name = self.preset_name.clone();
         let webview_state_for_ipc = self.webview_state.clone();
 
         let (webview, standalone_window) = unsafe {
@@ -214,6 +218,7 @@ impl CzEditor {
                 ui_input_queue,
                 performance_counters,
                 params,
+                preset_name,
                 webview_state_for_ipc,
             )
         };
@@ -754,6 +759,7 @@ unsafe fn build_webview_from_ns_view(
     ui_input_queue: UiInputQueue,
     performance_counters: PerformanceCountersHandle,
     params: Arc<CzPluginParams>,
+    preset_name: SharedPresetName,
     webview_state: Arc<Mutex<WebViewContainer>>,
 ) -> (Option<wry::WebView>, Option<StandaloneWindow>) {
     unsafe {
@@ -781,6 +787,7 @@ unsafe fn build_webview_from_ns_view(
         unsafe impl Send for NsViewWrapper {}
         unsafe impl Sync for NsViewWrapper {}
 
+        let preset_name_for_ipc = preset_name.clone();
         let webview_state_for_response = webview_state.clone();
         let params_repush_done = Arc::new(AtomicBool::new(false));
 
@@ -820,6 +827,7 @@ unsafe fn build_webview_from_ns_view(
                     &ui_input_queue,
                     &performance_counters,
                     &params,
+                    &preset_name_for_ipc,
                 );
 
                 let response = match result {

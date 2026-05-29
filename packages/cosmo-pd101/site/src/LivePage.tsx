@@ -15,6 +15,14 @@ import {
 	SYNTH_RENDERER_MAX_ASPECT_RATIO,
 } from "../../src/components/renderer/rendererFrameLayout";
 import { SharedPhaseDistortionVisualizer } from "../../src/components/renderer/SynthRenderer";
+import { useSynthStore } from "../../src/features/synth/synthStore";
+import { DEFAULT_SYNTH_PRESETS } from "../../src/lib/synth/defaultPresets";
+import {
+	loadCurrentPresetSession,
+	loadCurrentState,
+	saveCurrentPresetSession,
+	saveCurrentState,
+} from "../../src/lib/synth/presetStorage";
 
 declare const __CZ_APP_VERSION__: string;
 
@@ -132,6 +140,20 @@ export default function LivePage() {
 		? {}
 		: { width: scaledWidth, height: scaledHeight };
 
+	const syncBuiltinSelectionRef = useRef<(name: string) => void>();
+
+	const handlePresetSessionChange = useCallback(
+		(session: { activePresetNameBase: string }) => {
+			if (session.activePresetNameBase === "Current State") return;
+			void saveCurrentPresetSession({
+				activePresetId: null,
+				activePresetNameBase: session.activePresetNameBase,
+				loadedPresetFingerprint: null,
+			});
+		},
+		[],
+	);
+
 	const toggleFullscreen = useCallback(async () => {
 		if (!document.fullscreenElement) {
 			try {
@@ -152,6 +174,38 @@ export default function LivePage() {
 		};
 		document.addEventListener("fullscreenchange", onChange);
 		return () => document.removeEventListener("fullscreenchange", onChange);
+	}, []);
+
+	useEffect(() => {
+		const init = async () => {
+			const saved = await loadCurrentState();
+			const session = await loadCurrentPresetSession();
+			if (saved) {
+				useSynthStore.getState().applyPreset(saved);
+			}
+			if (
+				session?.activePresetNameBase &&
+				session.activePresetNameBase !== "Current State"
+			) {
+				syncBuiltinSelectionRef.current?.(session.activePresetNameBase);
+			} else {
+				const firstPreset = Object.values(DEFAULT_SYNTH_PRESETS)[0];
+				if (firstPreset) {
+					useSynthStore.getState().applyPreset(firstPreset.data);
+					syncBuiltinSelectionRef.current?.(firstPreset.name);
+				}
+			}
+		};
+		init();
+	}, []);
+
+	useEffect(() => {
+		const handleBeforeUnload = () => {
+			const state = useSynthStore.getState().gatherState();
+			void saveCurrentState(state);
+		};
+		window.addEventListener("beforeunload", handleBeforeUnload);
+		return () => window.removeEventListener("beforeunload", handleBeforeUnload);
 	}, []);
 
 	return (
@@ -196,6 +250,10 @@ export default function LivePage() {
 						bottomBarExtra={
 							<UpdateNotification currentVersion={__CZ_APP_VERSION__} />
 						}
+						onInitPresetSession={(fn) => {
+							syncBuiltinSelectionRef.current = fn;
+						}}
+						onPresetSessionChange={handlePresetSessionChange}
 					/>
 				</div>
 			</div>

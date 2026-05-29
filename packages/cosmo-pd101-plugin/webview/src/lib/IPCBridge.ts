@@ -42,6 +42,8 @@ declare global {
 		__czOnScope?: (samples: number[], sampleRate: number, hz: number) => void;
 		__czIpcResponse?: (response: IpcRpcResponse) => void;
 		__czOnMidiCc?: (channel: number, cc: number, value: number) => void;
+		__czSetPresetName?: (name: string) => void;
+		__czGetPresetName?: () => Promise<unknown>;
 	}
 }
 
@@ -175,6 +177,13 @@ function installIpcRouter() {
 
 	window.__czGetPerformanceMetrics = () => invokeRust("getPerformanceMetrics");
 	window.__czGetTransportInfo = () => invokeRust("getTransportInfo");
+
+	window.__czGetPresetName = () => invokeRust("getPresetName");
+	window.__czSetPresetName = (name: string) => {
+		void invokeRust("setPresetName", name).catch((error) => {
+			console.error("[IPCBridge] setPresetName error", error);
+		});
+	};
 }
 
 // ─── Native IPC passthrough ───────────────────────────────────────────────────
