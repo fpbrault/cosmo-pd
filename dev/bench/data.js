@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780000605583,
+  "lastUpdate": 1780024594926,
   "repoUrl": "https://github.com/fpbrault/cosmo-pd",
   "entries": {
     "cosmo-synth-engine": [
@@ -26639,6 +26639,228 @@ window.BENCHMARK_DATA = {
             "name": "opt_all_combined_8_voices",
             "value": 11918553,
             "range": "± 53883",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "fpbrault@gmail.com",
+            "name": "Felix Perron-Brault",
+            "username": "fpbrault"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "21e17e2a77ae0d8589af736ea074371b239e278d",
+          "message": "fix(plugin): restore preset state on GUI reopen (#252)\n\n* fix(plugin): restore preset state on GUI reopen\n\nHydration no longer bails out when IPC bridge isn't ready yet\n- retries with up to 500ms x 10 polling, mirroring existing getParams retry logic\n- opens outbound gate immediately for responsive controls while waiting\n\nRemove duplicate usePluginParamBridge() call in PluginPage.tsx\n\nFix load_state() not updating cached params version, causing stale DAW\nFloatParam values to overwrite restored state on next process() call\n\n* refactor: simplify state management in synth preset manager and related components\n\n* feat(preset): implement preset name persistence and IPC communication\n\n- Added functionality to set and get preset names via IPC.\n- Updated state management to include preset name in save/load operations.\n- Created tests to ensure preset name is correctly stored and retrieved.\n- Enhanced PluginPage and LivePage to handle preset session changes.\n\n* lint",
+          "timestamp": "2026-05-28T23:10:12-04:00",
+          "tree_id": "490e89dc68ba4564c4eceaf7f3c3d062f2297c43",
+          "url": "https://github.com/fpbrault/cosmo-pd/commit/21e17e2a77ae0d8589af736ea074371b239e278d"
+        },
+        "date": 1780024592329,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "default_3_voices",
+            "value": 3253126,
+            "range": "± 61098",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_6_voices",
+            "value": 5067082,
+            "range": "± 19895",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_8_voices",
+            "value": 6296641,
+            "range": "± 33428",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_3_voices",
+            "value": 2325552,
+            "range": "± 10866",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_6_voices",
+            "value": 2331973,
+            "range": "± 14533",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_8_voices",
+            "value": 2331319,
+            "range": "± 17503",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_3_voices",
+            "value": 8479090,
+            "range": "± 259053",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_6_voices",
+            "value": 11567747,
+            "range": "± 52126",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_8_voices",
+            "value": 13585953,
+            "range": "± 78904",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_3_voices",
+            "value": 10264038,
+            "range": "± 57472",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_6_voices",
+            "value": 15215673,
+            "range": "± 57816",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_8_voices",
+            "value": 17968831,
+            "range": "± 99491",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_3_voices",
+            "value": 6514296,
+            "range": "± 95644",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_6_voices",
+            "value": 8922333,
+            "range": "± 46042",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_8_voices",
+            "value": 10306674,
+            "range": "± 61503",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_3_voices",
+            "value": 4294843,
+            "range": "± 20770",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_6_voices",
+            "value": 6050814,
+            "range": "± 35864",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_8_voices",
+            "value": 7238582,
+            "range": "± 15034",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_3_voices",
+            "value": 9043244,
+            "range": "± 85142",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_6_voices",
+            "value": 12595008,
+            "range": "± 43660",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_8_voices",
+            "value": 13925701,
+            "range": "± 47323",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_3_voices",
+            "value": 6505053,
+            "range": "± 48576",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_6_voices",
+            "value": 9254163,
+            "range": "± 33816",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_8_voices",
+            "value": 11059031,
+            "range": "± 56978",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_3_voices",
+            "value": 4105745,
+            "range": "± 12339",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_6_voices",
+            "value": 6569524,
+            "range": "± 23954",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_8_voices",
+            "value": 8199783,
+            "range": "± 24966",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_3_voices",
+            "value": 3667106,
+            "range": "± 25417",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_6_voices",
+            "value": 5733468,
+            "range": "± 21225",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_8_voices",
+            "value": 7100527,
+            "range": "± 32409",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_3_voices",
+            "value": 7157936,
+            "range": "± 57289",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_6_voices",
+            "value": 10059189,
+            "range": "± 115900",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_8_voices",
+            "value": 11736315,
+            "range": "± 91056",
             "unit": "ns/iter"
           }
         ]
