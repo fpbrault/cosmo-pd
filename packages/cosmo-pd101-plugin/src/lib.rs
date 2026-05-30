@@ -21,6 +21,11 @@ use truce_core::midi::{norm_7bit, norm_pitch_bend};
 
 pub mod ffi;
 pub mod gui;
+pub mod preset_library;
+pub mod preset_library_path;
+pub mod session_state;
+
+use crate::preset_library::PresetLibrary;
 
 const PLUGIN_LOG_PATH: &str = "/tmp/cosmo-plugin.log";
 const MAX_UI_INPUT_EVENTS_PER_BLOCK: usize = 64;
@@ -628,6 +633,8 @@ fn sync_all_daw_params_from_synth(params: &CzPluginParams, synth: &SynthParams) 
 }
 
 pub(crate) type SharedPresetName = Arc<Mutex<String>>;
+pub(crate) type SharedEditorState = Arc<Mutex<Option<crate::session_state::EditorState>>>;
+pub(crate) type SharedMidiMappings = Arc<Mutex<Option<Vec<crate::session_state::MidiMapping>>>>;
 
 // =============================================================================
 // IPC dispatch
@@ -648,6 +655,10 @@ fn handle_ipc_invoke(
     performance_counters: &PerformanceCountersHandle,
     params: &CzPluginParams,
     preset_name: &SharedPresetName,
+    preset_library: &Arc<Mutex<PresetLibrary>>,
+    loaded_preset_id: &Arc<Mutex<Option<String>>>,
+    editor_state: &SharedEditorState,
+    midi_mappings: &SharedMidiMappings,
 ) -> Result<serde_json::Value, String> {
     if method != "getScopeData"
         && method != "clientLog"
@@ -897,6 +908,210 @@ fn handle_ipc_invoke(
             let name = preset_name.lock().map(|n| n.clone()).unwrap_or_default();
             Ok(serde_json::Value::String(name))
         }
+        "getPresetLibrary" => {
+            let source_filter = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .and_then(|o| o.get("source"))
+                .and_then(serde_json::Value::as_str);
+            let lib = preset_library.lock().map_err(|e| e.to_string())?;
+            let entries: Vec<serde_json::Value> = lib
+                .list_entries(source_filter)
+                .iter()
+                .map(|e| {
+                    serde_json::json!({
+                        "id": e.id,
+                        "name": e.name,
+                        "source": e.source,
+                        "author": e.author,
+                        "starred": e.starred,
+                        "tags": e.tags,
+                    })
+                })
+                .collect();
+            Ok(serde_json::json!({ "entries": entries }))
+        }
+        "loadPresetData" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "loadPresetData expects an object payload as first argument".to_string()
+                })?;
+            let id = payload
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "loadPresetData payload missing id".to_string())?;
+
+            let (entry_data, preset_name_val) = {
+                let lib = preset_library.lock().map_err(|e| e.to_string())?;
+                let data = lib
+                    .get_entry_data(id)
+                    .cloned()
+                    .ok_or_else(|| "Preset not found".to_string())?;
+                let name = lib
+                    .get_entry(id)
+                    .map(|e| e.name.clone())
+                    .unwrap_or_default();
+                (data, name)
+            };
+
+            let new_sp: SynthParams = if let Some(params_value) = entry_data.get("params") {
+                serde_json::from_value(params_value.clone())
+                    .map_err(|e| format!("Failed to deserialize preset: {e}"))?
+            } else {
+                serde_json::from_value(entry_data)
+                    .map_err(|e| format!("Failed to deserialize preset: {e}"))?
+            };
+
+            sync_all_daw_params_from_synth(params, &new_sp);
+            let rt_params = build_rt_synth_params(&new_sp);
+            synth_params.store(Arc::new(new_sp));
+            rt_synth_params.store(Arc::new(rt_params));
+            synth_params_version.fetch_add(1, Ordering::Release);
+
+            if let Ok(mut stored) = preset_name.lock() {
+                *stored = preset_name_val.clone();
+            }
+            if let Ok(mut stored) = loaded_preset_id.lock() {
+                *stored = Some(id.to_string());
+            }
+
+            Ok(serde_json::json!({ "preset_name": preset_name_val }))
+        }
+        "addPreset" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "addPreset expects an object payload as first argument".to_string()
+                })?;
+            let name = payload
+                .get("name")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "addPreset payload missing name".to_string())?
+                .to_string();
+            let tags: Vec<String> = payload
+                .get("tags")
+                .and_then(|v| v.as_array())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|v| v.as_str().map(String::from))
+                        .collect()
+                })
+                .unwrap_or_default();
+
+            let params_val = synth_params.load();
+            let data = serde_json::to_value(&**params_val).map_err(|e| e.to_string())?;
+
+            let id = {
+                let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+                let entry = lib.add_entry(name, tags, data);
+                lib.save_to_file().map_err(|e| e.to_string())?;
+                entry.id.clone()
+            };
+
+            Ok(serde_json::json!({ "id": id }))
+        }
+        "deletePreset" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "deletePreset expects an object payload as first argument".to_string()
+                })?;
+            let id = payload
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "deletePreset payload missing id".to_string())?;
+
+            {
+                let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+                lib.delete_entry(id);
+                lib.save_to_file().map_err(|e| e.to_string())?;
+            }
+
+            Ok(serde_json::Value::Null)
+        }
+        "renamePreset" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "renamePreset expects an object payload as first argument".to_string()
+                })?;
+            let id = payload
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "renamePreset payload missing id".to_string())?;
+            let new_name = payload
+                .get("newName")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "renamePreset payload missing newName".to_string())?;
+
+            {
+                let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+                lib.rename_entry(id, new_name);
+                lib.save_to_file().map_err(|e| e.to_string())?;
+            }
+
+            Ok(serde_json::Value::Null)
+        }
+        "toggleStarred" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "toggleStarred expects an object payload as first argument".to_string()
+                })?;
+            let id = payload
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "toggleStarred payload missing id".to_string())?;
+            let starred = payload
+                .get("starred")
+                .and_then(serde_json::Value::as_bool)
+                .ok_or_else(|| "toggleStarred payload missing starred".to_string())?;
+
+            {
+                let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+                lib.set_starred(id, starred);
+                lib.save_to_file().map_err(|e| e.to_string())?;
+            }
+
+            Ok(serde_json::Value::Null)
+        }
+        "setEditorState" => {
+            let payload = args
+                .first()
+                .ok_or_else(|| "setEditorState expects an object payload".to_string())?;
+            let state: crate::session_state::EditorState = serde_json::from_value(payload.clone())
+                .map_err(|e| format!("invalid EditorState: {e}"))?;
+            if let Ok(mut stored) = editor_state.lock() {
+                *stored = Some(state);
+            }
+            Ok(serde_json::Value::Null)
+        }
+        "getEditorState" => {
+            let state = editor_state.lock().map(|s| s.clone()).unwrap_or(None);
+            serde_json::to_value(state).map_err(|e| e.to_string())
+        }
+        "setMidiMappings" => {
+            let payload = args
+                .first()
+                .ok_or_else(|| "setMidiMappings expects an array payload".to_string())?;
+            let mappings: Vec<crate::session_state::MidiMapping> =
+                serde_json::from_value(payload.clone())
+                    .map_err(|e| format!("invalid MidiMappings: {e}"))?;
+            if let Ok(mut stored) = midi_mappings.lock() {
+                *stored = Some(mappings);
+            }
+            Ok(serde_json::Value::Null)
+        }
+        "getMidiMappings" => {
+            let mappings = midi_mappings.lock().map(|s| s.clone()).unwrap_or(None);
+            serde_json::to_value(mappings).map_err(|e| e.to_string())
+        }
         _ => Err(format!("unknown method: {method}")),
     }
 }
@@ -929,6 +1144,14 @@ pub struct CzPlugin {
     preset_name: SharedPresetName,
     /// Latest voice debug state snapshot, populated each process block.
     runtime_voice_states: SharedRuntimeVoiceStates,
+    /// The preset library (factory + user). Lock when reading or writing.
+    preset_library: Arc<Mutex<PresetLibrary>>,
+    /// Tracks the currently loaded preset ID, if any.
+    loaded_preset_id: Arc<Mutex<Option<String>>>,
+    /// UI editor state persisted across DAW sessions.
+    editor_state: SharedEditorState,
+    /// MIDI learn bindings persisted across DAW sessions.
+    midi_learn_bindings: SharedMidiMappings,
 }
 
 impl CzPlugin {
@@ -938,6 +1161,13 @@ impl CzPlugin {
         init_panic_hook();
         let default_params = SynthParams::default();
         let default_rt_params = build_rt_synth_params(&default_params);
+        let factory_json = include_str!(concat!(env!("OUT_DIR"), "/minified_presets.json"));
+        let preset_library = Arc::new(Mutex::new(
+            PresetLibrary::load_or_init(factory_json).unwrap_or_else(|e| {
+                eprintln!("Failed to load preset library: {}, using factory only", e);
+                PresetLibrary::from_embedded_factory(factory_json)
+            }),
+        ));
         Self {
             params,
             processor: None,
@@ -958,6 +1188,10 @@ impl CzPlugin {
             last_playing: false,
             preset_name: Arc::new(Mutex::new(String::new())),
             runtime_voice_states: Arc::new(ArcSwap::from_pointee(Vec::new())),
+            preset_library,
+            loaded_preset_id: Arc::new(Mutex::new(None)),
+            editor_state: Arc::new(Mutex::new(None)),
+            midi_learn_bindings: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -1419,49 +1653,47 @@ impl PluginLogic for CzPlugin {
             .lock()
             .map(|n| n.clone())
             .unwrap_or_default();
-        let state = serde_json::json!({
-            "synth_params": sp.as_ref(),
-            "preset_name": name,
-        });
+        let loaded_id = self
+            .loaded_preset_id
+            .lock()
+            .map(|id| id.clone())
+            .unwrap_or(None);
+        let editor = self.editor_state.lock().map(|s| s.clone()).unwrap_or(None);
+        let midi = self
+            .midi_learn_bindings
+            .lock()
+            .map(|s| s.clone())
+            .unwrap_or(None);
+        let state = crate::session_state::PluginSessionState {
+            synth_params: sp.as_ref().clone(),
+            preset_name: name,
+            loaded_preset_id: loaded_id,
+            editor_state: editor,
+            midi_mappings: midi,
+        };
         serde_json::to_vec(&state).unwrap_or_default()
     }
 
     fn load_state(&mut self, data: &[u8]) -> Result<(), StateLoadError> {
-        // Try new format: { "synth_params": ..., "preset_name": "..." }
-        let (params, loaded_name) =
-            if let Ok(obj) = serde_json::from_slice::<serde_json::Value>(data) {
-                if obj.is_object() && obj.get("synth_params").is_some() {
-                    // New wrapper format
-                    let synth = obj
-                        .get("synth_params")
-                        .and_then(|v| serde_json::from_value::<SynthParams>(v.clone()).ok())
-                        .ok_or(StateLoadError::Malformed("invalid synth params"))?;
-                    let name = obj
-                        .get("preset_name")
-                        .and_then(|v| v.as_str())
-                        .map(|s| s.to_string())
-                        .unwrap_or_default();
-                    (synth, name)
-                } else {
-                    // Old format: flat SynthParams — don't touch preset name
-                    let synth: SynthParams = serde_json::from_slice(data)
-                        .map_err(|_| StateLoadError::Malformed("invalid synth params JSON"))?;
-                    sync_all_daw_params_from_synth(&self.params, &synth);
-                    let rt_params = build_rt_synth_params(&synth);
-                    let rt_params_arc = Arc::new(rt_params);
-                    self.synth_params.store(Arc::new(synth));
-                    self.rt_synth_params.store(Arc::clone(&rt_params_arc));
-                    self.cached_rt_synth_params = rt_params_arc.clone();
-                    self.synth_params_version.fetch_add(1, Ordering::Release);
-                    return Ok(());
-                }
-            } else {
-                return Err(StateLoadError::Malformed("invalid JSON"));
-            };
+        let session = crate::session_state::deserialize_state(data)
+            .map_err(|_| StateLoadError::Malformed("unknown state format"))?;
 
-        // Restore preset name (new format only)
-        if let Ok(mut stored) = self.preset_name.lock() {
-            *stored = loaded_name;
+        let params = session.synth_params;
+
+        if let Ok(mut stored) = self.preset_name.lock()
+            && (!session.preset_name.is_empty() || session.loaded_preset_id.is_some())
+        {
+            *stored = session.preset_name;
+        }
+        if let Ok(mut stored) = self.loaded_preset_id.lock() {
+            *stored = session.loaded_preset_id;
+        }
+
+        if let Ok(mut stored) = self.editor_state.lock() {
+            *stored = session.editor_state;
+        }
+        if let Ok(mut stored) = self.midi_learn_bindings.lock() {
+            *stored = session.midi_mappings;
         }
 
         sync_all_daw_params_from_synth(&self.params, &params);
@@ -1494,6 +1726,10 @@ impl PluginLogic for CzPlugin {
             self.params.clone(),
             self.preset_name.clone(),
             self.runtime_voice_states.clone(),
+            self.preset_library.clone(),
+            self.loaded_preset_id.clone(),
+            self.editor_state.clone(),
+            self.midi_learn_bindings.clone(),
         ))
     }
 }
@@ -1511,6 +1747,7 @@ truce::plugin! {
 mod tests {
     use super::*;
 
+    #[allow(clippy::type_complexity)]
     fn make_handler_state() -> (
         SharedSynthParams,
         SharedRtSynthParams,
@@ -1523,6 +1760,10 @@ mod tests {
         PerformanceCountersHandle,
         Arc<CzPluginParams>,
         SharedPresetName,
+        Arc<Mutex<PresetLibrary>>,
+        Arc<Mutex<Option<String>>>,
+        SharedEditorState,
+        SharedMidiMappings,
     ) {
         let sp = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
         let rsp = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
@@ -1536,7 +1777,16 @@ mod tests {
         let pc = Arc::new(PerformanceCounters::default());
         let params = Arc::new(CzPluginParams::new());
         let pn: SharedPresetName = Arc::new(Mutex::new(String::new()));
-        (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn)
+        let factory_json = include_str!(concat!(env!("OUT_DIR"), "/minified_presets.json"));
+        let pl: Arc<Mutex<PresetLibrary>> = Arc::new(Mutex::new(
+            PresetLibrary::from_embedded_factory(factory_json),
+        ));
+        let lpi: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+        let es: SharedEditorState = Arc::new(Mutex::new(None));
+        let mm: SharedMidiMappings = Arc::new(Mutex::new(None));
+        (
+            sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn, pl, lpi, es, mm,
+        )
     }
 
     #[test]
@@ -1556,7 +1806,8 @@ mod tests {
 
     #[test]
     fn set_params_rpc_updates_synth_params() {
-        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn, pl, lpi, es, mm) =
+            make_handler_state();
 
         let new_params = SynthParams {
             volume: 0.42,
@@ -1578,6 +1829,10 @@ mod tests {
             &pc,
             &params,
             &pn,
+            &pl,
+            &lpi,
+            &es,
+            &mm,
         );
         assert!(result.is_ok());
         let current = sp.load();
@@ -1603,6 +1858,13 @@ mod tests {
         let pc = Arc::new(PerformanceCounters::default());
         let params = Arc::new(CzPluginParams::new());
         let pn: SharedPresetName = Arc::new(Mutex::new(String::new()));
+        let factory_json = include_str!(concat!(env!("OUT_DIR"), "/minified_presets.json"));
+        let pl: Arc<Mutex<PresetLibrary>> = Arc::new(Mutex::new(
+            PresetLibrary::from_embedded_factory(factory_json),
+        ));
+        let lpi: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+        let es: SharedEditorState = Arc::new(Mutex::new(None));
+        let mm: SharedMidiMappings = Arc::new(Mutex::new(None));
 
         let result = handle_ipc_invoke(
             "getParams",
@@ -1618,6 +1880,10 @@ mod tests {
             &pc,
             &params,
             &pn,
+            &pl,
+            &lpi,
+            &es,
+            &mm,
         );
         assert!(result.is_ok());
         let val = result.unwrap();
@@ -1627,7 +1893,8 @@ mod tests {
 
     #[test]
     fn note_on_rpc_enqueues_ui_input_event() {
-        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn, pl, lpi, es, mm) =
+            make_handler_state();
 
         let result = handle_ipc_invoke(
             "noteOn",
@@ -1643,6 +1910,10 @@ mod tests {
             &pc,
             &params,
             &pn,
+            &pl,
+            &lpi,
+            &es,
+            &mm,
         );
 
         assert!(result.is_ok());
@@ -1658,7 +1929,8 @@ mod tests {
     #[allow(clippy::field_reassign_with_default)]
     #[test]
     fn set_params_rpc_syncs_daw_float_params() {
-        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn, pl, lpi, es, mm) =
+            make_handler_state();
         assert_eq!(params.volume.value(), 0.8); // default
 
         let mut new_params = SynthParams::default();
@@ -1680,6 +1952,10 @@ mod tests {
             &pc,
             &params,
             &pn,
+            &pl,
+            &lpi,
+            &es,
+            &mm,
         );
         assert!(result.is_ok());
         assert!((params.volume.value() - 0.33).abs() < 0.000_001);
@@ -1723,7 +1999,8 @@ mod tests {
 
     #[test]
     fn get_transport_info_rpc_returns_current_snapshot() {
-        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn, pl, lpi, es, mm) =
+            make_handler_state();
         ts.store(&TransportInfo {
             playing: true,
             recording: true,
@@ -1753,6 +2030,10 @@ mod tests {
             &pc,
             &params,
             &pn,
+            &pl,
+            &lpi,
+            &es,
+            &mm,
         )
         .unwrap();
 
@@ -1847,7 +2128,7 @@ mod tests {
         let synth_params = plugin.synth_params.load();
         assert_eq!(
             synth_params.line_select,
-            cosmo_synth_engine::params::LineSelect::L1
+            cosmo_synth_engine::params::LineSelect::L1PlusL1Prime
         );
         assert!((synth_params.portamento.time - 0.1).abs() < 0.000_001);
     }
@@ -1903,7 +2184,8 @@ mod tests {
 
     #[test]
     fn set_preset_name_rpc_stores_name() {
-        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn, pl, lpi, es, mm) =
+            make_handler_state();
 
         let result = handle_ipc_invoke(
             "setPresetName",
@@ -1919,6 +2201,10 @@ mod tests {
             &pc,
             &params,
             &pn,
+            &pl,
+            &lpi,
+            &es,
+            &mm,
         );
         assert!(result.is_ok());
         let stored = pn.lock().unwrap();
@@ -1927,7 +2213,8 @@ mod tests {
 
     #[test]
     fn get_preset_name_rpc_returns_current_name() {
-        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn, pl, lpi, es, mm) =
+            make_handler_state();
         {
             let mut stored = pn.lock().unwrap();
             *stored = "Factory Brass".to_string();
@@ -1947,6 +2234,10 @@ mod tests {
             &pc,
             &params,
             &pn,
+            &pl,
+            &lpi,
+            &es,
+            &mm,
         );
         assert!(result.is_ok());
         assert_eq!(

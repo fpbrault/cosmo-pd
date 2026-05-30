@@ -117,6 +117,12 @@ public final class CosmoPd101AudioUnit: AUAudioUnit {
     }
 
     public override init(componentDescription: AudioComponentDescription, options: AudioComponentInstantiationOptions = []) throws {
+        if let containerURL = FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: "group.com.purraudio.cosmo-pd101"
+        ) {
+            setenv("COSMO_PD101_DATA_DIR", containerURL.path, 1)
+        }
+
         let sampleRate: Double
         #if os(iOS)
         sampleRate = AVAudioSession.sharedInstance().sampleRate

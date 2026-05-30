@@ -59,6 +59,11 @@ export type {
 } from "./lib/performance/benchmarkHarness";
 export { installBenchmarkApi } from "./lib/performance/benchmarkHarness";
 export type {
+	SessionEditorState,
+	SessionMidiMapping,
+	SessionState,
+} from "./lib/sessionState";
+export type {
 	AlgoControlValueV1,
 	FxSlotConfig,
 	FxSlotType,

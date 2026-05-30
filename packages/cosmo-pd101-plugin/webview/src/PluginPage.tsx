@@ -1,7 +1,5 @@
 import {
 	computeRendererFrameLayout,
-	DEFAULT_SYNTH_PRESETS,
-	FACTORY_CZ_PRESETS,
 	installBenchmarkApi,
 	SYNTH_RENDERER_DESIGN_HEIGHT,
 	SYNTH_RENDERER_MIN_ASPECT_RATIO,
@@ -115,7 +113,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 			velocityCurve,
 		});
 
-	usePluginParamBridge();
+	const { loadPresetData } = usePluginParamBridge();
 	const [scopeActiveHz, setScopeActiveHz] = useState(220);
 	const analyserNodeRef = useRef<AnalyserNode | null>(null);
 	const audioCtxRef = useRef<AudioContext | null>(null);
@@ -218,21 +216,27 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		[],
 	);
 
-	const { handleSyncBuiltinSelection, handleLoadBuiltin } =
-		useSynthPresetManager({
-			builtinPresets: DEFAULT_SYNTH_PRESETS,
-			gatherPresetState: gatherState,
-			applyPreset,
-			libraryPresets: FACTORY_CZ_PRESETS,
-		});
+	const onLoadPresetData = useCallback(
+		async (id: string) => {
+			const name = await loadPresetData(id);
+			return name;
+		},
+		[loadPresetData],
+	);
+
+	const { handleSyncBuiltinSelection } = useSynthPresetManager({
+		builtinPresets: {},
+		gatherPresetState: gatherState,
+		applyPreset,
+		libraryPresets: [],
+		onLoadPresetData,
+	});
 
 	useEffect(() => {
 		return installBenchmarkApi({
 			mode: "plugin",
-			listBuiltinPresets: () => Object.keys(DEFAULT_SYNTH_PRESETS),
-			loadBuiltinPreset: (name: string) => {
-				handleLoadBuiltin(name);
-			},
+			listBuiltinPresets: () => [],
+			loadBuiltinPreset: () => {},
 			setPerformanceMonitorEnabled: async (enabled: boolean) => {
 				await window.__czSetPerformanceMonitorEnabled?.(enabled);
 			},
@@ -252,7 +256,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 				}
 			},
 		});
-	}, [handleLoadBuiltin, panic, sendNoteOff, sendNoteOn]);
+	}, [panic, sendNoteOff, sendNoteOn]);
 
 	useEffect(() => {
 		window.__czOnHostPresetSelected = (name: string) => {
@@ -272,6 +276,22 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 			}
 		};
 		restore();
+	}, []);
+
+	useEffect(() => {
+		const fetchLibrary = async () => {
+			const result = await window.__czGetPresetLibrary?.();
+			if (
+				result &&
+				typeof result === "object" &&
+				"entries" in (result as Record<string, unknown>)
+			) {
+				console.log("[PluginPage] fetched preset library", result);
+			}
+		};
+		fetchLibrary().catch(() => {
+			// Plugin bridge may not be ready yet.
+		});
 	}, []);
 
 	const combinedScale = rendererFrame?.frameScale ?? 1;

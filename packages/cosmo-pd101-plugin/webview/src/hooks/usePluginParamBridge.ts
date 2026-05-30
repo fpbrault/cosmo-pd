@@ -1,8 +1,11 @@
 import { usePluginBridgeSynthEngine } from "@cosmo/cosmo-pd101";
 import { useEffect, useRef } from "react";
 import { ensurePluginBridge } from "@/lib/pluginBridge";
+import { useSessionStateSync } from "./useSessionStateSync";
 
-export function usePluginParamBridge(): void {
+export function usePluginParamBridge(): {
+	loadPresetData: (id: string) => Promise<string>;
+} {
 	const bridgeReadyRef = useRef(false);
 
 	useEffect(() => {
@@ -27,5 +30,8 @@ export function usePluginParamBridge(): void {
 		};
 	}, []);
 
-	usePluginBridgeSynthEngine();
+	const { loadPresetData } = usePluginBridgeSynthEngine();
+	useSessionStateSync();
+
+	return { loadPresetData };
 }

@@ -40,6 +40,16 @@ declare global {
 		) => void;
 		__czIpcResponse?: (response: IpcRpcResponse) => void;
 		__czOnMidiCc?: (channel: number, cc: number, value: number) => void;
+		__czGetPresetLibrary?: (source?: string) => Promise<unknown>;
+		__czLoadPresetData?: (id: string) => Promise<unknown>;
+		__czAddPreset?: (name: string, tags: string[]) => Promise<unknown>;
+		__czDeletePreset?: (id: string) => Promise<unknown>;
+		__czRenamePreset?: (id: string, newName: string) => Promise<unknown>;
+		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
+		__czSetEditorState?: (state: string) => void;
+		__czGetEditorState?: () => Promise<unknown>;
+		__czSetMidiMappings?: (mappings: string) => void;
+		__czGetMidiMappings?: () => Promise<unknown>;
 	}
 }
 
@@ -151,6 +161,39 @@ function installIpcRouter() {
 		});
 	};
 	window.__czGetTransportInfo = () => invokeAuv3("getTransportInfo", []);
+
+	window.__czGetPresetLibrary = (source?: string) =>
+		source
+			? invokeAuv3("getPresetLibrary", [{ source }])
+			: invokeAuv3("getPresetLibrary", []);
+	window.__czLoadPresetData = (id: string) =>
+		invokeAuv3("loadPresetData", [{ id }]);
+	window.__czAddPreset = (name: string, tags: string[]) =>
+		invokeAuv3("addPreset", [{ name, tags }]);
+	window.__czDeletePreset = (id: string) =>
+		invokeAuv3("deletePreset", [{ id }]);
+	window.__czRenamePreset = (id: string, newName: string) =>
+		invokeAuv3("renamePreset", [{ id, newName }]);
+	window.__czToggleStarred = (id: string, starred: boolean) =>
+		invokeAuv3("toggleStarred", [{ id, starred }]);
+
+	window.__czSetEditorState = (state: string) => {
+		void invokeAuv3("setEditorState", [JSON.parse(state)]).catch((error) => {
+			console.error("[auv3Bridge] setEditorState error", error);
+		});
+	};
+
+	window.__czGetEditorState = () => invokeAuv3("getEditorState", []);
+
+	window.__czSetMidiMappings = (mappings: string) => {
+		void invokeAuv3("setMidiMappings", [JSON.parse(mappings)]).catch(
+			(error) => {
+				console.error("[auv3Bridge] setMidiMappings error", error);
+			},
+		);
+	};
+
+	window.__czGetMidiMappings = () => invokeAuv3("getMidiMappings", []);
 }
 
 function installScopeProperty(onActiveChange: (active: boolean) => void) {

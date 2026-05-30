@@ -67,6 +67,9 @@ describe("PluginPage", () => {
 		mockInstallBenchmarkApi.mockClear();
 		mockSetKeyboardHeight.mockClear();
 		mockUsePluginParamBridge.mockReset();
+		mockUsePluginParamBridge.mockReturnValue({
+			loadPresetData: vi.fn().mockResolvedValue("Mock Preset"),
+		});
 		mockUseSynthPresetManager.mockReset();
 		mockUseSynthPresetManager.mockReturnValue({
 			allPresetEntries: [],

@@ -15,7 +15,8 @@
 			"!!vendor",
 			"!!**/public/cosmo-synth-engine-wasm",
 			"!!**/bindings/*.ts",
-			"!!**/gen/schemas/*.json"
+			"!!**/gen/schemas/*.json",
+			"!!**/factory_presets.json"
 		],
 		"maxSize": 20000000
 	},

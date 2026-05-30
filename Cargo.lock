@@ -1064,10 +1064,12 @@ version = "0.1.0"
 dependencies = [
  "arc-swap",
  "block2 0.6.2",
+ "cfg-if",
  "clap-sys",
  "cocoa",
  "cosmo-synth-engine",
  "crossbeam-queue",
+ "dirs 5.0.1",
  "dispatch2",
  "include_dir",
  "libc",
@@ -1078,6 +1080,7 @@ dependencies = [
  "objc2-foundation 0.3.2",
  "objc2-web-kit",
  "raw-window-handle 0.6.2",
+ "serde",
  "serde_json",
  "truce",
  "truce-aax",
@@ -1090,6 +1093,7 @@ dependencies = [
  "truce-test",
  "truce-vst2",
  "truce-vst3",
+ "uuid",
  "wry",
 ]
 

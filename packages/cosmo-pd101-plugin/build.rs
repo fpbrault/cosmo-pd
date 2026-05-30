@@ -46,5 +46,18 @@ fn main() -> io::Result<()> {
         )?;
     }
 
+    // Minify factory_presets.json from the shared location into OUT_DIR.
+    // The shared JSON is produced by the Phase-1A conversion script.
+    let json_path = "../../packages/cosmo-pd101/src/lib/synth/factory_presets.json";
+    let shared_json = manifest_dir.join(json_path);
+    if shared_json.is_file() {
+        let pretty = std::fs::read_to_string(&shared_json)?;
+        let value: serde_json::Value = serde_json::from_str(&pretty)?;
+        let minified = serde_json::to_string(&value)?;
+        let out_path = Path::new(&out_dir).join("minified_presets.json");
+        std::fs::write(&out_path, &minified)?;
+        println!("cargo::rerun-if-changed=../../cosmo-pd101/src/lib/synth/factory_presets.json");
+    }
+
     Ok(())
 }

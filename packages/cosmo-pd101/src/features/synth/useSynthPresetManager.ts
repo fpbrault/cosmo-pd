@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LibraryPreset } from "@/features/synth/types/libraryPreset";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
@@ -29,13 +29,14 @@ import {
 import { usePresetManagerPersistence } from "./usePresetManagerPersistence";
 
 type UseSynthPresetManagerOptions = {
-	builtinPresets: Record<string, FrontendPresetV1>;
+	builtinPresets?: Record<string, FrontendPresetV1>;
 	gatherPresetState: () => SynthPresetV1;
 	applyPreset: (data: SynthPresetV1) => void;
 	onBeforeApplyPreset?: () => void;
 	libraryPresets?: LibraryPreset[];
 	onLoadLibraryPreset?: (preset: LibraryPreset) => void;
 	presetStateKey?: string;
+	onLoadPresetData?: (id: string) => Promise<string>;
 };
 
 type UseSynthPresetManagerResult = {
@@ -79,13 +80,14 @@ type PendingPresetChange = {
 };
 
 export function useSynthPresetManager({
-	builtinPresets,
+	builtinPresets = {},
 	gatherPresetState,
 	applyPreset,
 	onBeforeApplyPreset,
 	libraryPresets = [],
 	onLoadLibraryPreset,
 	presetStateKey,
+	onLoadPresetData,
 }: UseSynthPresetManagerOptions): UseSynthPresetManagerResult {
 	const [localPresetEntries, setLocalPresetEntries] = useState<StoredPreset[]>(
 		[],
@@ -141,7 +143,21 @@ export function useSynthPresetManager({
 		pendingNavigation,
 	]);
 
+	const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	useEffect(() => {
+		return () => {
+			if (syncTimeoutRef.current) {
+				clearTimeout(syncTimeoutRef.current);
+			}
+		};
+	}, []);
+
 	const captureLoadedPresetFingerprint = useCallback(() => {
+		if (syncTimeoutRef.current) {
+			clearTimeout(syncTimeoutRef.current);
+			syncTimeoutRef.current = null;
+		}
 		setLoadedPresetFingerprint(getPresetFingerprint(gatherPresetState()));
 	}, [gatherPresetState]);
 
@@ -167,6 +183,14 @@ export function useSynthPresetManager({
 
 	const loadLocalPreset = useCallback(
 		async (id: string) => {
+			if (onLoadPresetData) {
+				onBeforeApplyPreset?.();
+				const name = await onLoadPresetData(id);
+				setActivePresetId(id);
+				setActivePresetNameBase(name);
+				captureLoadedPresetFingerprint();
+				return;
+			}
 			const preset = await loadStoredPreset(id);
 			if (!preset) return;
 			onBeforeApplyPreset?.();
@@ -175,11 +199,17 @@ export function useSynthPresetManager({
 			setActivePresetNameBase(preset.name);
 			captureLoadedPresetFingerprint();
 		},
-		[applyPreset, captureLoadedPresetFingerprint, onBeforeApplyPreset],
+		[
+			applyPreset,
+			captureLoadedPresetFingerprint,
+			onBeforeApplyPreset,
+			onLoadPresetData,
+		],
 	);
 
 	const loadBuiltinPreset = useCallback(
 		(name: string) => {
+			if (onLoadPresetData) return;
 			const preset = builtinPresets[name];
 			if (!preset) return;
 			onBeforeApplyPreset?.();
@@ -193,11 +223,21 @@ export function useSynthPresetManager({
 			builtinPresets,
 			captureLoadedPresetFingerprint,
 			onBeforeApplyPreset,
+			onLoadPresetData,
 		],
 	);
 
 	const loadLibraryPreset = useCallback(
 		(preset: LibraryPreset) => {
+			if (onLoadPresetData) {
+				onBeforeApplyPreset?.();
+				void onLoadPresetData(preset.id).then((name) => {
+					setActivePresetId(preset.id);
+					setActivePresetNameBase(name);
+					captureLoadedPresetFingerprint();
+				});
+				return;
+			}
 			if (!onLoadLibraryPreset) return;
 			onBeforeApplyPreset?.();
 			onLoadLibraryPreset(preset);
@@ -205,7 +245,12 @@ export function useSynthPresetManager({
 			setActivePresetNameBase(preset.name);
 			captureLoadedPresetFingerprint();
 		},
-		[captureLoadedPresetFingerprint, onBeforeApplyPreset, onLoadLibraryPreset],
+		[
+			captureLoadedPresetFingerprint,
+			onBeforeApplyPreset,
+			onLoadLibraryPreset,
+			onLoadPresetData,
+		],
 	);
 
 	const handleLoadLocal = useCallback(
@@ -244,6 +289,15 @@ export function useSynthPresetManager({
 			setActivePresetId(preset?.id ?? null);
 			setActivePresetNameBase(name);
 			captureLoadedPresetFingerprint();
+			// Delayed re-capture ensures fingerprint is captured after
+			// async bridge hydration completes (plugin mode race condition)
+			if (syncTimeoutRef.current) {
+				clearTimeout(syncTimeoutRef.current);
+			}
+			syncTimeoutRef.current = setTimeout(() => {
+				captureLoadedPresetFingerprint();
+				syncTimeoutRef.current = null;
+			}, 500);
 		},
 		[builtinPresets, captureLoadedPresetFingerprint],
 	);

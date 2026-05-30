@@ -10,6 +10,8 @@ declare global {
 		__czOnParams?: (json: string) => void;
 		__czGetParams?: () => Promise<unknown>;
 		__czSetParams?: (json: string) => void;
+		__czLoadPresetData?: (id: string) => Promise<unknown>;
+		__czSetPresetName?: (name: string) => void;
 	}
 }
 
@@ -115,7 +117,7 @@ function normalizeHostParamsIfRaw(
 
 export function usePluginBridgeSynthEngine(
 	options: UsePluginBridgeSynthEngineOptions = {},
-): void {
+): { loadPresetData: (id: string) => Promise<string> } {
 	const gatherState = useSynthStore((s) => s.gatherState);
 	const applyPreset = useSynthStore((s) => s.applyPreset);
 	const enabled = options.enabled ?? true;
@@ -262,4 +264,15 @@ export function usePluginBridgeSynthEngine(
 			window.clearTimeout(fallbackId);
 		};
 	}, [enabled, applyPreset]);
+
+	const loadPresetData = useCallback(async (id: string): Promise<string> => {
+		const result = await window.__czLoadPresetData?.(id);
+		const name = (result as { preset_name?: string })?.preset_name ?? "";
+		if (name) {
+			window.__czSetPresetName?.(name);
+		}
+		return name;
+	}, []);
+
+	return { loadPresetData };
 }

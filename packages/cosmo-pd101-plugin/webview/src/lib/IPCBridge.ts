@@ -48,6 +48,16 @@ declare global {
 		__czOnMidiCc?: (channel: number, cc: number, value: number) => void;
 		__czSetPresetName?: (name: string) => void;
 		__czGetPresetName?: () => Promise<unknown>;
+		__czGetPresetLibrary?: (source?: string) => Promise<unknown>;
+		__czLoadPresetData?: (id: string) => Promise<unknown>;
+		__czAddPreset?: (name: string, tags: string[]) => Promise<unknown>;
+		__czDeletePreset?: (id: string) => Promise<unknown>;
+		__czRenamePreset?: (id: string, newName: string) => Promise<unknown>;
+		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
+		__czSetEditorState?: (state: string) => void;
+		__czGetEditorState?: () => Promise<unknown>;
+		__czSetMidiMappings?: (mappings: string) => void;
+		__czGetMidiMappings?: () => Promise<unknown>;
 	}
 }
 
@@ -188,6 +198,36 @@ function installIpcRouter() {
 			console.error("[IPCBridge] setPresetName error", error);
 		});
 	};
+
+	window.__czGetPresetLibrary = (source?: string) =>
+		source
+			? invokeRust("getPresetLibrary", { source })
+			: invokeRust("getPresetLibrary");
+	window.__czLoadPresetData = (id: string) =>
+		invokeRust("loadPresetData", { id });
+	window.__czAddPreset = (name: string, tags: string[]) =>
+		invokeRust("addPreset", { name, tags });
+	window.__czDeletePreset = (id: string) => invokeRust("deletePreset", { id });
+	window.__czRenamePreset = (id: string, newName: string) =>
+		invokeRust("renamePreset", { id, newName });
+	window.__czToggleStarred = (id: string, starred: boolean) =>
+		invokeRust("toggleStarred", { id, starred });
+
+	window.__czSetEditorState = (state: string) => {
+		void invokeRust("setEditorState", JSON.parse(state)).catch((error) => {
+			console.error("[IPCBridge] setEditorState error", error);
+		});
+	};
+
+	window.__czGetEditorState = () => invokeRust("getEditorState");
+
+	window.__czSetMidiMappings = (mappings: string) => {
+		void invokeRust("setMidiMappings", JSON.parse(mappings)).catch((error) => {
+			console.error("[IPCBridge] setMidiMappings error", error);
+		});
+	};
+
+	window.__czGetMidiMappings = () => invokeRust("getMidiMappings");
 }
 
 // ─── Native IPC passthrough ───────────────────────────────────────────────────

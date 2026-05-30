@@ -114,6 +114,12 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 	}
 
 	public override init(componentDescription: AudioComponentDescription, options: AudioComponentInstantiationOptions = []) throws {
+		if let containerURL = FileManager.default.containerURL(
+			forSecurityApplicationGroupIdentifier: "group.com.purraudio.cosmo-pd101"
+		) {
+			setenv("COSMO_PD101_DATA_DIR", containerURL.path, 1)
+		}
+
 		let defaultSampleRate: Double = 48_000
 		let format = AVAudioFormat(standardFormatWithSampleRate: defaultSampleRate, channels: 2)!
 		outputBus = try AUAudioUnitBus(format: format)

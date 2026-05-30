@@ -9,11 +9,13 @@ use cosmo_synth_engine::params::{
 };
 use cosmo_synth_engine::processor::{CosmoProcessor, midi_note_to_freq};
 
+use crate::preset_library::PresetLibraryEntry;
+
 const SCOPE_CAPACITY: usize = 4096;
 const PARAM_KEY_CAPACITY: usize = 64;
 const PARAM_LABEL_CAPACITY: usize = 64;
 const PARAM_FLAG_AUTOMATABLE: u32 = 1 << 0;
-const FACTORY_PRESETS_JSON: &str = include_str!("factory_presets.json");
+const FACTORY_PRESETS_JSON: &str = include_str!(concat!(env!("OUT_DIR"), "/minified_presets.json"));
 
 struct FactoryPresetEntry {
     name: String,
@@ -32,22 +34,18 @@ pub(crate) fn factory_preset_count() -> usize {
 }
 
 fn load_factory_presets() -> Vec<FactoryPresetEntry> {
-    let Ok(presets_value) = serde_json::from_str::<serde_json::Value>(FACTORY_PRESETS_JSON) else {
-        return Vec::new();
-    };
-    let Some(presets) = presets_value.as_array() else {
+    let Ok(entries) = serde_json::from_str::<Vec<PresetLibraryEntry>>(FACTORY_PRESETS_JSON) else {
         return Vec::new();
     };
 
-    presets
+    entries
         .iter()
-        .filter_map(|preset| {
-            let name = preset.get("name")?.as_str()?.to_owned();
-            let params = preset.get("data")?.get("params")?;
-            let parsed_params = serde_json::from_value::<SynthParams>(params.clone()).ok()?;
+        .filter_map(|entry| {
+            let params_value = entry.data.get("params")?;
+            let parsed_params = serde_json::from_value::<SynthParams>(params_value.clone()).ok()?;
             Some(FactoryPresetEntry {
-                name,
-                params_json: params.to_string(),
+                name: entry.name.clone(),
+                params_json: params_value.to_string(),
                 params: parsed_params,
             })
         })

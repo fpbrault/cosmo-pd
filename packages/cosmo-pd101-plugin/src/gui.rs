@@ -28,9 +28,11 @@ use wry::WebViewBuilderExtDarwin;
 use crate::CzPluginParams;
 #[cfg(target_os = "macos")]
 use crate::handle_ipc_invoke;
+use crate::preset_library::PresetLibrary;
 use crate::{
-    MidiCcQueue, PerformanceCountersHandle, ScopeBuffer, SharedPresetName, SharedRuntimeModSources,
-    SharedRuntimeVoiceStates, SharedTransportSnapshot, UiInputQueue, append_log,
+    MidiCcQueue, PerformanceCountersHandle, ScopeBuffer, SharedEditorState, SharedMidiMappings,
+    SharedPresetName, SharedRuntimeModSources, SharedRuntimeVoiceStates, SharedTransportSnapshot,
+    UiInputQueue, append_log,
 };
 use cosmo_synth_engine::params::SynthParams;
 
@@ -113,6 +115,10 @@ pub struct CzEditor {
     params: Arc<CzPluginParams>,
     preset_name: SharedPresetName,
     runtime_voice_states: SharedRuntimeVoiceStates,
+    preset_library: Arc<Mutex<PresetLibrary>>,
+    loaded_preset_id: Arc<Mutex<Option<String>>>,
+    editor_state: SharedEditorState,
+    midi_learn_bindings: SharedMidiMappings,
     #[cfg(target_os = "macos")]
     standalone_window: Option<StandaloneWindow>,
 }
@@ -156,6 +162,10 @@ impl CzEditor {
         params: Arc<CzPluginParams>,
         preset_name: SharedPresetName,
         runtime_voice_states: SharedRuntimeVoiceStates,
+        preset_library: Arc<Mutex<PresetLibrary>>,
+        loaded_preset_id: Arc<Mutex<Option<String>>>,
+        editor_state: SharedEditorState,
+        midi_learn_bindings: SharedMidiMappings,
     ) -> Self {
         Self {
             synth_params,
@@ -173,6 +183,10 @@ impl CzEditor {
             params,
             preset_name,
             runtime_voice_states,
+            preset_library,
+            loaded_preset_id,
+            editor_state,
+            midi_learn_bindings,
             #[cfg(target_os = "macos")]
             standalone_window: None,
         }
@@ -207,6 +221,10 @@ impl CzEditor {
         let params = self.params.clone();
         let preset_name = self.preset_name.clone();
         let runtime_voice_states = self.runtime_voice_states.clone();
+        let preset_library = self.preset_library.clone();
+        let loaded_preset_id = self.loaded_preset_id.clone();
+        let editor_state = self.editor_state.clone();
+        let midi_learn_bindings = self.midi_learn_bindings.clone();
         let webview_state_for_ipc = self.webview_state.clone();
 
         let (webview, standalone_window) = unsafe {
@@ -224,6 +242,10 @@ impl CzEditor {
                 performance_counters,
                 params,
                 preset_name,
+                preset_library,
+                loaded_preset_id,
+                editor_state,
+                midi_learn_bindings,
                 webview_state_for_ipc,
             )
         };
@@ -766,6 +788,10 @@ unsafe fn build_webview_from_ns_view(
     performance_counters: PerformanceCountersHandle,
     params: Arc<CzPluginParams>,
     preset_name: SharedPresetName,
+    preset_library: Arc<Mutex<PresetLibrary>>,
+    loaded_preset_id: Arc<Mutex<Option<String>>>,
+    editor_state: SharedEditorState,
+    midi_learn_bindings: SharedMidiMappings,
     webview_state: Arc<Mutex<WebViewContainer>>,
 ) -> (Option<wry::WebView>, Option<StandaloneWindow>) {
     unsafe {
@@ -794,6 +820,10 @@ unsafe fn build_webview_from_ns_view(
         unsafe impl Sync for NsViewWrapper {}
 
         let preset_name_for_ipc = preset_name.clone();
+        let preset_library_for_ipc = preset_library.clone();
+        let loaded_preset_id_for_ipc = loaded_preset_id.clone();
+        let editor_state_for_ipc = editor_state.clone();
+        let midi_mappings_for_ipc = midi_learn_bindings.clone();
         let webview_state_for_response = webview_state.clone();
         let params_repush_done = Arc::new(AtomicBool::new(false));
 
@@ -841,6 +871,10 @@ unsafe fn build_webview_from_ns_view(
                     &performance_counters,
                     &params,
                     &preset_name_for_ipc,
+                    &preset_library_for_ipc,
+                    &loaded_preset_id_for_ipc,
+                    &editor_state_for_ipc,
+                    &midi_mappings_for_ipc,
                 );
 
                 let response = match result {
