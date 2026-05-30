@@ -51,6 +51,7 @@ pub struct LoFiFx {
     flutter_phase3: f32,
     sample_rate: f32,
     wow_smooth: f32,
+    wow_phase: f32,
 }
 
 impl LoFiFx {
@@ -90,6 +91,7 @@ impl LoFiFx {
             flutter_phase2: 0.47,
             flutter_phase3: 0.89,
             wow_smooth: 1.0 - (-4.0 / sr).exp(),
+            wow_phase: 0.0,
             sample_rate: sr,
         }
     }
@@ -100,23 +102,51 @@ impl LoFiFx {
         }
 
         let inv_sr = 1.0 / self.sample_rate;
+        let wow_intensity = self.wow.clamp(0.0, 1.0);
+        let flutter_intensity = self.flutter.clamp(0.0, 1.0);
+        let crackle_intensity = self.crackle.clamp(0.0, 1.0);
+        let noise_intensity = self.noise.clamp(0.0, 1.0);
+        let degrade_intensity = self.degrade.clamp(0.0, 1.0);
+        let sat_intensity = self.saturation.clamp(0.0, 1.0);
+        let filter_bipolar = self.filter.clamp(-1.0, 1.0);
 
-        // ─── Wow: slow pitch drift via smoothed random walk ───
-        let wow_val = self.wow.clamp(0.0, 1.0);
-        let wow_rate = 0.1 + wow_val * 1.9;
+        let wow_mod = self.process_wow(wow_intensity, inv_sr);
+        let flutter_mod = self.process_flutter(flutter_intensity, inv_sr);
+        let crackle_snag = self.process_crackle_pre(crackle_intensity, inv_sr);
+
+        let warbled = self.process_delay_mod(sample, wow_mod, flutter_mod, crackle_snag);
+
+        let mut degraded = self.process_degrade(warbled, degrade_intensity);
+
+        self.process_envelope(degraded, crackle_intensity, noise_intensity);
+        self.process_crackle_post(&mut degraded, crackle_intensity, inv_sr);
+        self.process_noise(&mut degraded, noise_intensity);
+        self.process_saturation(&mut degraded, sat_intensity);
+
+        let wet = self.process_filter(degraded, filter_bipolar, inv_sr);
+        Self::process_mix(sample, wet, self.mix)
+    }
+
+    fn process_wow(&mut self, intensity: f32, inv_sr: f32) -> f32 {
         self.wow_noise_timer -= inv_sr;
         if self.wow_noise_timer <= 0.0 {
-            let interval = 1.0 / (wow_rate * (0.5 + lcg_rand(&mut self.rng) * 0.5));
+            let interval = 0.6 + lcg_rand(&mut self.rng) * 1.2;
             self.wow_noise_timer = interval;
-            self.wow_noise_target = (lcg_rand(&mut self.rng) * 2.0 - 1.0) * wow_val;
+            self.wow_noise_target = lcg_rand(&mut self.rng) * 2.0 - 1.0;
         }
         self.wow_noise += (self.wow_noise_target - self.wow_noise) * self.wow_smooth;
 
-        let wow_mod = self.wow_noise * MAX_WOW_MOD_S;
+        let base_rate = 0.5 + intensity * 2.5;
+        let current_wow_rate = (base_rate + self.wow_noise * 0.4 * base_rate).max(0.1);
 
-        // ─── Flutter: multi-oscillator + noise + amplitude mod ───
-        let flutter_val = self.flutter.clamp(0.0, 1.0);
-        let flutter_rate = 3.0 + flutter_val * 9.0;
+        self.wow_phase += current_wow_rate * inv_sr;
+        self.wow_phase -= self.wow_phase.floor();
+
+        (self.wow_phase * TWO_PI).sin() * intensity * MAX_WOW_MOD_S
+    }
+
+    fn process_flutter(&mut self, intensity: f32, inv_sr: f32) -> f32 {
+        let flutter_rate = 3.0 + intensity * 9.0;
 
         self.flutter_phase += flutter_rate * inv_sr;
         self.flutter_phase2 += flutter_rate * 1.73 * inv_sr;
@@ -131,134 +161,146 @@ impl LoFiFx {
         let f3 = (self.flutter_phase3 * TWO_PI + 2.8).sin();
         let flutter_lfo = f1 * 0.5 + f2 * 0.3 + f3 * 0.2;
 
-        let flutter_jitter = (lcg_rand(&mut self.rng) * 2.0 - 1.0) * 0.1 * flutter_val;
+        flutter_lfo * intensity * MAX_FLUTTER_MOD_S
+    }
 
-        let flutter_gain = 1.0 + f2 * flutter_val * 0.15;
+    fn process_crackle_pre(&mut self, intensity: f32, inv_sr: f32) -> f32 {
+        if intensity <= 0.0 {
+            return 0.0;
+        }
 
-        let flutter_mod = (flutter_lfo + flutter_jitter) * flutter_val * MAX_FLUTTER_MOD_S;
+        self.crackle_timer += inv_sr;
+        if self.crackle_timer >= self.crackle_block_period {
+            let mean_period = 0.02 + intensity * 0.06;
+            self.crackle_block_period = mean_period * (0.5 + lcg_rand(&mut self.rng) * 1.0);
+            self.crackle_timer -= self.crackle_block_period;
 
-        // ─── Crackle pre: block timer + snag envelope ───
-        let crackle_val = self.crackle.clamp(0.0, 1.0);
-        let noise_val = self.noise.clamp(0.0, 1.0);
-        let mut crackle_snag = 0.0;
-        if crackle_val > 0.0 {
-            self.crackle_timer += inv_sr;
-            if self.crackle_timer >= self.crackle_block_period {
-                let mean_period = 0.02 + crackle_val * 0.06;
-                self.crackle_block_period = mean_period * (0.5 + lcg_rand(&mut self.rng) * 1.0);
-                self.crackle_timer -= self.crackle_block_period;
+            let drop = lcg_rand(&mut self.rng) * intensity * 0.8;
+            self.crackle_drop_target = 1.0 - drop;
 
-                let drop = lcg_rand(&mut self.rng) * crackle_val * 0.8;
-                self.crackle_drop_target = 1.0 - drop;
-
-                if lcg_rand(&mut self.rng) < 0.15 * crackle_val {
-                    self.crackle_event_amp = 0.2 + lcg_rand(&mut self.rng) * 0.8;
-                    self.crackle_event_phase = 1.0;
-                } else {
-                    self.crackle_event_phase = 0.0;
-                }
-
-                if lcg_rand(&mut self.rng) < 0.02 * crackle_val {
-                    self.crackle_pop_phase = 1.0;
-                }
+            if lcg_rand(&mut self.rng) < 0.15 * intensity {
+                self.crackle_event_amp = 0.2 + lcg_rand(&mut self.rng) * 0.8;
+                self.crackle_event_phase = 1.0;
+            } else {
+                self.crackle_event_phase = 0.0;
             }
 
-            if self.crackle_event_phase > 0.0 {
-                self.crackle_event_phase -= inv_sr * 20.0;
-                let p = (1.0 - self.crackle_event_phase * 2.0).clamp(0.0, 1.0);
-                crackle_snag = self.crackle_event_amp * p * crackle_val * 0.003;
+            if lcg_rand(&mut self.rng) < 0.02 * intensity {
+                self.crackle_pop_phase = 1.0;
             }
         }
 
-        // ─── Delay modulation ───
+        if self.crackle_event_phase > 0.0 {
+            self.crackle_event_phase -= inv_sr * 20.0;
+            let p = (1.0 - self.crackle_event_phase * 2.0).clamp(0.0, 1.0);
+            self.crackle_event_amp * p * intensity * 0.003
+        } else {
+            0.0
+        }
+    }
+
+    fn process_delay_mod(
+        &mut self,
+        input: f32,
+        wow_mod: f32,
+        flutter_mod: f32,
+        crackle_snag: f32,
+    ) -> f32 {
         let mod_seconds = CENTER_DELAY_S + wow_mod + flutter_mod + crackle_snag;
         let delay_samples = (mod_seconds * self.sample_rate).max(1.0);
-
         let warbled = self.delay.read_at_fractional(delay_samples);
-        self.delay.write(sample);
+        self.delay.write(input);
+        warbled
+    }
 
-        // ─── Degrade: SR reduction + bit crush ───
-        let degrade = self.degrade.clamp(0.0, 1.0);
-        let sr_reduction = 1.0 + degrade * degrade * 63.0;
+    fn process_degrade(&mut self, input: f32, intensity: f32) -> f32 {
+        let sr_reduction = 1.0 + intensity * intensity * 63.0;
         self.sr_reduction_counter += 1.0;
         if self.sr_reduction_counter >= sr_reduction {
             self.sr_reduction_counter -= sr_reduction;
-            self.sr_hold = warbled;
+            self.sr_hold = input;
         }
         let mut degraded = self.sr_hold;
-        let bits = 4.0 + (1.0 - degrade) * 12.0;
+        let bits = 4.0 + (1.0 - intensity) * 12.0;
         let quantize = 2.0_f32.powi(-(bits as i32));
         degraded = (degraded / quantize).round() * quantize;
+        degraded
+    }
 
-        // Flutter amplitude modulation
-        degraded *= flutter_gain;
-
-        // ─── Envelope follower (for noise gating) ───
-        if crackle_val > 0.0 || noise_val > 0.0 {
-            let env_in = degraded.abs();
+    fn process_envelope(&mut self, input: f32, crackle_intensity: f32, noise_intensity: f32) {
+        if crackle_intensity > 0.0 || noise_intensity > 0.0 {
+            let env_in = input.abs();
             if env_in > self.crackle_env {
                 self.crackle_env += 0.008 * (env_in - self.crackle_env);
             } else {
                 self.crackle_env += 0.0005 * (env_in - self.crackle_env);
             }
         }
+    }
 
-        // ─── Crackle post: dropout, pop ───
-        if crackle_val > 0.0 {
-            self.crackle_drop_gain += (self.crackle_drop_target - self.crackle_drop_gain) * 0.005;
-            degraded *= self.crackle_drop_gain;
-
-            if self.crackle_pop_phase > 0.0 {
-                self.crackle_pop_phase -= inv_sr * 400.0;
-                let p = (1.0 - self.crackle_pop_phase * 5.0).clamp(0.0, 1.0);
-                let pop_amp = self.crackle_event_amp * crackle_val * 0.5;
-                degraded += pop_amp * p * (0.5 + lcg_rand(&mut self.rng) * 0.5);
-            }
+    fn process_crackle_post(&mut self, signal: &mut f32, intensity: f32, inv_sr: f32) {
+        if intensity <= 0.0 {
+            return;
         }
 
-        // ─── Noise ───
-        if noise_val > 0.0 {
-            let raw = (lcg_rand(&mut self.rng) * 2.0 - 1.0) * noise_val * 0.04;
-            self.noise_hp += (raw - self.noise_hp) * 0.25;
-            let noise = raw - self.noise_hp;
-            let noise_gate = (1.0 - (self.crackle_env * 3.0).min(1.0)).max(0.0);
-            degraded += noise * (0.2 + noise_gate * 0.8);
+        self.crackle_drop_gain += (self.crackle_drop_target - self.crackle_drop_gain) * 0.005;
+        *signal *= self.crackle_drop_gain;
+
+        if self.crackle_pop_phase > 0.0 {
+            self.crackle_pop_phase -= inv_sr * 400.0;
+            let p = (1.0 - self.crackle_pop_phase * 5.0).clamp(0.0, 1.0);
+            let pop_amp = self.crackle_event_amp * intensity * 0.5;
+            *signal += pop_amp * p * (0.5 + lcg_rand(&mut self.rng) * 0.5);
+        }
+    }
+
+    fn process_noise(&mut self, signal: &mut f32, intensity: f32) {
+        if intensity <= 0.0 {
+            return;
         }
 
-        // ─── Saturation: magnetic hysteresis ───
-        let sat = self.saturation.clamp(0.0, 1.0);
-        if sat > 0.0 {
-            self.sat_memory += (degraded * 0.3 - self.sat_memory) * (0.1 + sat * 0.4);
-            let biased = degraded + self.sat_memory * sat * 2.0;
-            let drive = 1.0 + sat * 3.0;
-            let sat_out = (biased * drive).tanh();
-            let comp = 1.0 / (1.0 + sat * 1.2);
-            degraded = (degraded * (1.0 - sat) + sat_out * sat) * comp;
+        let raw = (lcg_rand(&mut self.rng) * 2.0 - 1.0) * intensity * 0.04;
+        self.noise_hp += (raw - self.noise_hp) * 0.25;
+        let noise = raw - self.noise_hp;
+        let noise_gate = (1.0 - (self.crackle_env * 3.0).min(1.0)).max(0.0);
+        *signal += noise * (0.2 + noise_gate * 0.8);
+    }
+
+    fn process_saturation(&mut self, signal: &mut f32, intensity: f32) {
+        if intensity <= 0.0 {
+            return;
         }
 
-        // ─── Filter: bipolar LPF/HPF ───
-        let filter = self.filter.clamp(-1.0, 1.0);
-        let wet = if filter < 0.0 {
-            let t = -filter;
+        self.sat_memory += (*signal * 0.3 - self.sat_memory) * (0.1 + intensity * 0.4);
+        let biased = *signal + self.sat_memory * intensity * 2.0;
+        let drive = 1.0 + intensity * 3.0;
+        let sat_out = (biased * drive).tanh();
+        let comp = 1.0 / (1.0 + intensity * 1.2);
+        *signal = (*signal * (1.0 - intensity) + sat_out * intensity) * comp;
+    }
+
+    fn process_filter(&mut self, input: f32, bipolar: f32, inv_sr: f32) -> f32 {
+        if bipolar < 0.0 {
+            let t = -bipolar;
             let fc = 300.0 + (1.0 - t * t) * 12000.0;
             let g = (-TWO_PI * fc * inv_sr).exp();
-            self.lp_state = g * self.lp_state + (1.0 - g) * degraded;
+            self.lp_state = g * self.lp_state + (1.0 - g) * input;
             self.lp_state
-        } else if filter > 0.0 {
-            let t = filter;
+        } else if bipolar > 0.0 {
+            let t = bipolar;
             let fc = 20.0 + t * t * 10000.0;
             let g = (-TWO_PI * fc * inv_sr).exp();
-            let input = degraded;
             self.hp_state = g * (self.hp_state + input - self.hp_prev);
             self.hp_prev = input;
             self.hp_state
         } else {
-            degraded
-        };
+            input
+        }
+    }
 
-        // ─── Mix ───
-        let mix_angle = self.mix.clamp(0.0, 1.0) * core::f32::consts::PI * 0.5;
-        sample * (mix_angle).cos() + wet * (mix_angle).sin()
+    fn process_mix(dry: f32, wet: f32, mix: f32) -> f32 {
+        let mix_angle = mix.clamp(0.0, 1.0) * core::f32::consts::PI * 0.5;
+        dry * (mix_angle).cos() + wet * (mix_angle).sin()
     }
 }
 
