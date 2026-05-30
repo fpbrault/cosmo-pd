@@ -30,7 +30,7 @@ use crate::CzPluginParams;
 use crate::handle_ipc_invoke;
 use crate::{
     MidiCcQueue, PerformanceCountersHandle, ScopeBuffer, SharedPresetName, SharedRuntimeModSources,
-    SharedTransportSnapshot, UiInputQueue, append_log,
+    SharedRuntimeVoiceStates, SharedTransportSnapshot, UiInputQueue, append_log,
 };
 use cosmo_synth_engine::params::SynthParams;
 
@@ -112,6 +112,7 @@ pub struct CzEditor {
     pending_parent_ns_view: Option<usize>,
     params: Arc<CzPluginParams>,
     preset_name: SharedPresetName,
+    runtime_voice_states: SharedRuntimeVoiceStates,
     #[cfg(target_os = "macos")]
     standalone_window: Option<StandaloneWindow>,
 }
@@ -154,6 +155,7 @@ impl CzEditor {
         performance_counters: PerformanceCountersHandle,
         params: Arc<CzPluginParams>,
         preset_name: SharedPresetName,
+        runtime_voice_states: SharedRuntimeVoiceStates,
     ) -> Self {
         Self {
             synth_params,
@@ -170,6 +172,7 @@ impl CzEditor {
             pending_parent_ns_view: None,
             params,
             preset_name,
+            runtime_voice_states,
             #[cfg(target_os = "macos")]
             standalone_window: None,
         }
@@ -203,6 +206,7 @@ impl CzEditor {
         let performance_counters = self.performance_counters.clone();
         let params = self.params.clone();
         let preset_name = self.preset_name.clone();
+        let runtime_voice_states = self.runtime_voice_states.clone();
         let webview_state_for_ipc = self.webview_state.clone();
 
         let (webview, standalone_window) = unsafe {
@@ -212,6 +216,7 @@ impl CzEditor {
                 synth_params,
                 rt_synth_params,
                 runtime_mod_sources,
+                runtime_voice_states,
                 transport_snapshot,
                 synth_params_version,
                 scope_buffer,
@@ -753,6 +758,7 @@ unsafe fn build_webview_from_ns_view(
     synth_params: Arc<ArcSwap<SynthParams>>,
     rt_synth_params: Arc<ArcSwap<SynthParams>>,
     runtime_mod_sources: SharedRuntimeModSources,
+    runtime_voice_states: SharedRuntimeVoiceStates,
     transport_snapshot: SharedTransportSnapshot,
     synth_params_version: Arc<AtomicU64>,
     scope_buffer: ScopeBuffer,
@@ -793,6 +799,8 @@ unsafe fn build_webview_from_ns_view(
 
         let scheme = get_instance_scheme();
         append_log(&format!("webview scheme: {scheme}"));
+
+        let scope_for_protocol = scope_buffer.clone();
         let builder = WebViewBuilder::new()
         .with_bounds(wry::Rect {
             position: dpi::LogicalPosition::new(0, 0).into(),
@@ -800,6 +808,10 @@ unsafe fn build_webview_from_ns_view(
         })
         .with_data_store_identifier(webview_data_store_identifier(&scheme))
         .with_custom_protocol(scheme.clone(), move |_id, request| {
+            let path = request.uri().path();
+            if path == "/__scope__" {
+                return serve_scope_buffer(&scope_for_protocol);
+            }
             serve_file(&asset_source, request)
         })
         .with_ipc_handler(move |request| {
@@ -821,6 +833,7 @@ unsafe fn build_webview_from_ns_view(
                     &synth_params,
                     &rt_synth_params,
                     &runtime_mod_sources,
+                    &runtime_voice_states,
                     &transport_snapshot,
                     &synth_params_version,
                     &scope_buffer,
@@ -927,6 +940,44 @@ unsafe fn build_webview_from_ns_view(
 struct WebAssetResponse {
     mime: &'static str,
     bytes: Vec<u8>,
+}
+
+fn serve_scope_buffer(
+    scope_buffer: &ScopeBuffer,
+) -> wry::http::Response<std::borrow::Cow<'static, [u8]>> {
+    use wry::http::Response;
+
+    let frame = match scope_buffer.try_lock() {
+        Ok(frame) => frame,
+        Err(_) => {
+            return Response::builder()
+                .status(200)
+                .header("Content-Type", "application/octet-stream")
+                .header("Content-Length", "8")
+                .header("Access-Control-Allow-Origin", "*")
+                .body(std::borrow::Cow::Owned(vec![0u8; 8]))
+                .unwrap();
+        }
+    };
+
+    let linear = frame.to_linear();
+    let sample_rate = frame.sample_rate;
+    let hz = frame.hz;
+
+    let mut buf = Vec::with_capacity(8 + linear.len() * 4);
+    buf.extend_from_slice(&sample_rate.to_le_bytes());
+    buf.extend_from_slice(&hz.to_le_bytes());
+    for &s in &linear {
+        buf.extend_from_slice(&s.to_le_bytes());
+    }
+
+    Response::builder()
+        .status(200)
+        .header("Content-Type", "application/octet-stream")
+        .header("Content-Length", buf.len().to_string())
+        .header("Access-Control-Allow-Origin", "*")
+        .body(std::borrow::Cow::Owned(buf))
+        .unwrap()
 }
 
 fn serve_file(

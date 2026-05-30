@@ -130,7 +130,10 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 			window.__czOnScope = (samples, sampleRate, hz) => {
 				setScopeActiveHz(Number.isFinite(hz) && hz > 0 ? hz : 220);
 				onFrame({
-					samples: Float32Array.from(samples),
+					samples:
+						samples instanceof Float32Array
+							? samples
+							: Float32Array.from(samples),
 					sampleRate,
 					hz,
 				});

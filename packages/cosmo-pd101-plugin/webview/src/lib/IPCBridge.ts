@@ -39,7 +39,11 @@ declare global {
 		__czSetPerformanceMonitorEnabled?: (enabled: boolean) => Promise<unknown>;
 		__czGetPerformanceMetrics?: () => Promise<unknown>;
 		__czGetTransportInfo?: () => Promise<unknown>;
-		__czOnScope?: (samples: number[], sampleRate: number, hz: number) => void;
+		__czOnScope?: (
+			samples: Float32Array | number[],
+			sampleRate: number,
+			hz: number,
+		) => void;
 		__czIpcResponse?: (response: IpcRpcResponse) => void;
 		__czOnMidiCc?: (channel: number, cc: number, value: number) => void;
 		__czSetPresetName?: (name: string) => void;
@@ -58,7 +62,7 @@ const pendingRpc = new Map<
 
 let currentParamHandler: ((json: string) => void) | undefined;
 let currentScopeHandler:
-	| ((samples: number[], sampleRate: number, hz: number) => void)
+	| ((samples: Float32Array | number[], sampleRate: number, hz: number) => void)
 	| undefined;
 let nativeIpcObject: Window["ipc"] | undefined;
 
@@ -254,6 +258,7 @@ function installScopePolling() {
 	let lastScheduled = 0;
 	let pollInFlight = false;
 	let destroyed = false;
+	let binaryScopeSupported = true;
 
 	const scheduleNextFrame = () => {
 		if (destroyed || rafId !== 0 || !currentScopeHandler) {
@@ -283,12 +288,37 @@ function installScopePolling() {
 		pollInFlight = true;
 
 		try {
-			const raw = (await invokeRust("getScopeData")) as ScopeDataResponse;
-			if (raw?.samples.length > 0 && currentScopeHandler) {
-				currentScopeHandler(raw.samples, raw.sampleRate, raw.hz);
+			if (binaryScopeSupported) {
+				const response = await fetch(`${window.location.origin}/__scope__`);
+				if (!response.ok) {
+					throw new Error(`scope fetch: ${response.status}`);
+				}
+				const buffer = await response.arrayBuffer();
+				if (buffer.byteLength < 8 || !currentScopeHandler) {
+					return;
+				}
+				const view = new DataView(buffer);
+				const sampleRate = view.getFloat32(0, true);
+				const hz = view.getFloat32(4, true);
+				const sampleCount = (buffer.byteLength - 8) / 4;
+				if (sampleCount > 0 && hz > 0) {
+					const samples = new Float32Array(buffer, 8, sampleCount);
+					currentScopeHandler(samples, sampleRate, hz);
+				}
+			} else {
+				throw new Error("binary scope disabled");
 			}
 		} catch {
-			// Ignore — plugin may not be producing audio yet.
+			// Fallback: use RPC invoke (for dev harness / AUv3 / fallback)
+			binaryScopeSupported = false;
+			try {
+				const raw = (await invokeRust("getScopeData")) as ScopeDataResponse;
+				if (raw?.samples.length > 0 && currentScopeHandler) {
+					currentScopeHandler(raw.samples, raw.sampleRate, raw.hz);
+				}
+			} catch {
+				// Plugin may not be producing audio yet.
+			}
 		} finally {
 			pollInFlight = false;
 			scheduleNextFrame();
@@ -357,6 +387,70 @@ function installRuntimeModSourcesPolling() {
 			}
 		} catch {
 			// Plugin not yet producing audio — skip this frame.
+		} finally {
+			pollInFlight = false;
+			scheduleNextFrame();
+		}
+	};
+
+	scheduleNextFrame();
+	window.addEventListener("pagehide", () => {
+		destroyed = true;
+		if (rafId !== 0) {
+			cancelAnimationFrame(rafId);
+			rafId = 0;
+		}
+	});
+}
+
+function installRuntimeVoiceStatesPolling() {
+	const RUNTIME_VOICE_STATES_POLL_INTERVAL_MS = 16;
+	let rafId = 0;
+	let lastScheduled = 0;
+	let pollInFlight = false;
+	let destroyed = false;
+	let runtimeVoiceStatesAvailable = true;
+
+	const dispatchRuntimeVoiceStates = (result: unknown) => {
+		const states =
+			typeof result === "string" ? (JSON.parse(result) as unknown) : result;
+		if (!Array.isArray(states)) {
+			return;
+		}
+		window.dispatchEvent(
+			new CustomEvent("cz-runtime-voice-states", { detail: states }),
+		);
+	};
+
+	const scheduleNextFrame = () => {
+		if (destroyed || rafId !== 0 || !runtimeVoiceStatesAvailable) {
+			return;
+		}
+		rafId = requestAnimationFrame(tick);
+	};
+
+	const tick = async (now: number) => {
+		rafId = 0;
+		if (destroyed || !runtimeVoiceStatesAvailable) {
+			return;
+		}
+		if (
+			now - lastScheduled < RUNTIME_VOICE_STATES_POLL_INTERVAL_MS ||
+			pollInFlight
+		) {
+			scheduleNextFrame();
+			return;
+		}
+
+		lastScheduled = now;
+		pollInFlight = true;
+		try {
+			const result = await invokeRust("getRuntimeVoiceStates");
+			if (result) {
+				dispatchRuntimeVoiceStates(result);
+			}
+		} catch {
+			runtimeVoiceStatesAvailable = false;
 		} finally {
 			pollInFlight = false;
 			scheduleNextFrame();
@@ -466,6 +560,7 @@ export function ensureIPCBridge(): boolean {
 	installIpcRouter();
 	installScopePolling();
 	installRuntimeModSourcesPolling();
+	installRuntimeVoiceStatesPolling();
 	installTransportPolling();
 
 	// Fallback: if host prevented method patching, route via a getter/setter

@@ -12,7 +12,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use arc_swap::ArcSwap;
 use cosmo_synth_engine::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use cosmo_synth_engine::params::SynthParams;
-use cosmo_synth_engine::processor::state::RuntimeModSources;
+use cosmo_synth_engine::processor::state::{RuntimeModSources, RuntimeVoiceDebugState};
 use cosmo_synth_engine::processor::{CosmoProcessor, midi_note_to_freq};
 use crossbeam_queue::ArrayQueue;
 use truce::prelude::*;
@@ -133,6 +133,7 @@ type UiInputQueue = Arc<ArrayQueue<UiInputEvent>>;
 type SharedSynthParams = Arc<ArcSwap<SynthParams>>;
 type SharedRtSynthParams = Arc<ArcSwap<SynthParams>>;
 type SharedRuntimeModSources = Arc<ArcSwap<RuntimeModSources>>;
+type SharedRuntimeVoiceStates = Arc<ArcSwap<Vec<RuntimeVoiceDebugState>>>;
 type SharedTransportSnapshot = Arc<TransportSnapshot>;
 type SynthParamsVersion = Arc<AtomicU64>;
 type PerformanceCountersHandle = Arc<PerformanceCounters>;
@@ -639,6 +640,7 @@ fn handle_ipc_invoke(
     synth_params: &SharedSynthParams,
     rt_synth_params: &SharedRtSynthParams,
     runtime_mod_sources: &SharedRuntimeModSources,
+    runtime_voice_states: &SharedRuntimeVoiceStates,
     transport_snapshot: &SharedTransportSnapshot,
     synth_params_version: &SynthParamsVersion,
     scope_buffer: &ScopeBuffer,
@@ -841,6 +843,10 @@ fn handle_ipc_invoke(
             let sources = runtime_mod_sources.load();
             serde_json::to_value(sources.as_ref()).map_err(|e| e.to_string())
         }
+        "getRuntimeVoiceStates" => {
+            let states = runtime_voice_states.load();
+            serde_json::to_value(states.as_ref()).map_err(|e| e.to_string())
+        }
         "getTransportInfo" => Ok(transport_snapshot.snapshot_json()),
         "getScopeData" => {
             let scope = scope_buffer
@@ -921,6 +927,8 @@ pub struct CzPlugin {
     last_playing: bool,
     /// Preset name shared with the webview, persisted via save_state/load_state.
     preset_name: SharedPresetName,
+    /// Latest voice debug state snapshot, populated each process block.
+    runtime_voice_states: SharedRuntimeVoiceStates,
 }
 
 impl CzPlugin {
@@ -949,6 +957,7 @@ impl CzPlugin {
             last_scope_hz: 220.0,
             last_playing: false,
             preset_name: Arc::new(Mutex::new(String::new())),
+            runtime_voice_states: Arc::new(ArcSwap::from_pointee(Vec::new())),
         }
     }
 
@@ -1368,6 +1377,8 @@ impl PluginLogic for CzPlugin {
 
             self.runtime_mod_sources
                 .store(Arc::new(proc.runtime_mod_sources()));
+            self.runtime_voice_states
+                .store(Arc::new(proc.runtime_voice_debug_state()));
 
             let peak = mono_output[..num_samples]
                 .iter()
@@ -1482,6 +1493,7 @@ impl PluginLogic for CzPlugin {
             self.performance_counters.clone(),
             self.params.clone(),
             self.preset_name.clone(),
+            self.runtime_voice_states.clone(),
         ))
     }
 }
@@ -1503,6 +1515,7 @@ mod tests {
         SharedSynthParams,
         SharedRtSynthParams,
         SharedRuntimeModSources,
+        SharedRuntimeVoiceStates,
         SharedTransportSnapshot,
         SynthParamsVersion,
         ScopeBuffer,
@@ -1515,6 +1528,7 @@ mod tests {
         let rsp = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
         let rms: SharedRuntimeModSources =
             Arc::new(ArcSwap::from_pointee(RuntimeModSources::default()));
+        let rvs: SharedRuntimeVoiceStates = Arc::new(ArcSwap::from_pointee(Vec::new()));
         let ts = Arc::new(TransportSnapshot::default());
         let ver = Arc::new(AtomicU64::new(0));
         let sc: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
@@ -1522,7 +1536,7 @@ mod tests {
         let pc = Arc::new(PerformanceCounters::default());
         let params = Arc::new(CzPluginParams::new());
         let pn: SharedPresetName = Arc::new(Mutex::new(String::new()));
-        (sp, rsp, rms, ts, ver, sc, q, pc, params, pn)
+        (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn)
     }
 
     #[test]
@@ -1542,7 +1556,7 @@ mod tests {
 
     #[test]
     fn set_params_rpc_updates_synth_params() {
-        let (sp, rsp, rms, ts, ver, sc, q, pc, params, pn) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn) = make_handler_state();
 
         let new_params = SynthParams {
             volume: 0.42,
@@ -1556,6 +1570,7 @@ mod tests {
             &sp,
             &rsp,
             &rms,
+            &rvs,
             &ts,
             &ver,
             &sc,
@@ -1580,6 +1595,7 @@ mod tests {
         let rsp = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
         let rms: SharedRuntimeModSources =
             Arc::new(ArcSwap::from_pointee(RuntimeModSources::default()));
+        let rvs: SharedRuntimeVoiceStates = Arc::new(ArcSwap::from_pointee(Vec::new()));
         let ts = Arc::new(TransportSnapshot::default());
         let ver = Arc::new(AtomicU64::new(0));
         let sc: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
@@ -1594,6 +1610,7 @@ mod tests {
             &sp,
             &rsp,
             &rms,
+            &rvs,
             &ts,
             &ver,
             &sc,
@@ -1610,7 +1627,7 @@ mod tests {
 
     #[test]
     fn note_on_rpc_enqueues_ui_input_event() {
-        let (sp, rsp, rms, ts, ver, sc, q, pc, params, pn) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn) = make_handler_state();
 
         let result = handle_ipc_invoke(
             "noteOn",
@@ -1618,6 +1635,7 @@ mod tests {
             &sp,
             &rsp,
             &rms,
+            &rvs,
             &ts,
             &ver,
             &sc,
@@ -1640,7 +1658,7 @@ mod tests {
     #[allow(clippy::field_reassign_with_default)]
     #[test]
     fn set_params_rpc_syncs_daw_float_params() {
-        let (sp, rsp, rms, ts, ver, sc, q, pc, params, pn) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn) = make_handler_state();
         assert_eq!(params.volume.value(), 0.8); // default
 
         let mut new_params = SynthParams::default();
@@ -1654,6 +1672,7 @@ mod tests {
             &sp,
             &rsp,
             &rms,
+            &rvs,
             &ts,
             &ver,
             &sc,
@@ -1704,7 +1723,7 @@ mod tests {
 
     #[test]
     fn get_transport_info_rpc_returns_current_snapshot() {
-        let (sp, rsp, rms, ts, ver, sc, q, pc, params, pn) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn) = make_handler_state();
         ts.store(&TransportInfo {
             playing: true,
             recording: true,
@@ -1726,6 +1745,7 @@ mod tests {
             &sp,
             &rsp,
             &rms,
+            &rvs,
             &ts,
             &ver,
             &sc,
@@ -1883,7 +1903,7 @@ mod tests {
 
     #[test]
     fn set_preset_name_rpc_stores_name() {
-        let (sp, rsp, rms, ts, ver, sc, q, pc, params, pn) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn) = make_handler_state();
 
         let result = handle_ipc_invoke(
             "setPresetName",
@@ -1891,6 +1911,7 @@ mod tests {
             &sp,
             &rsp,
             &rms,
+            &rvs,
             &ts,
             &ver,
             &sc,
@@ -1906,7 +1927,7 @@ mod tests {
 
     #[test]
     fn get_preset_name_rpc_returns_current_name() {
-        let (sp, rsp, rms, ts, ver, sc, q, pc, params, pn) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn) = make_handler_state();
         {
             let mut stored = pn.lock().unwrap();
             *stored = "Factory Brass".to_string();
@@ -1918,6 +1939,7 @@ mod tests {
             &sp,
             &rsp,
             &rms,
+            &rvs,
             &ts,
             &ver,
             &sc,

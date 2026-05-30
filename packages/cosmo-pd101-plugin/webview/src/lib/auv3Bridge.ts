@@ -33,7 +33,11 @@ declare global {
 		__czGetParams?: () => Promise<unknown>;
 		__czSetParams?: (json: string) => void;
 		__czGetTransportInfo?: () => Promise<unknown>;
-		__czOnScope?: (samples: number[], sampleRate: number, hz: number) => void;
+		__czOnScope?: (
+			samples: Float32Array | number[],
+			sampleRate: number,
+			hz: number,
+		) => void;
 		__czIpcResponse?: (response: IpcRpcResponse) => void;
 		__czOnMidiCc?: (channel: number, cc: number, value: number) => void;
 	}
