@@ -1,17 +1,14 @@
-use std::collections::HashSet;
 use std::path::PathBuf;
 
+use rusqlite::{Connection, OptionalExtension, params};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::preset_library_path;
 
-// ---------------------------------------------------------------------------
-// Public types
-// ---------------------------------------------------------------------------
+const LIBRARY_SCHEMA_VERSION: u32 = 1;
 
-/// A single entry in the preset library (file or embedded factory).
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct PresetLibraryEntry {
     pub id: String,
@@ -25,108 +22,49 @@ pub struct PresetLibraryEntry {
     pub data: serde_json::Value,
 }
 
-/// On‑disk / in‑memory preset library.
-#[derive(Serialize, Deserialize)]
-pub struct PresetLibrary {
-    pub version: u32,
-    pub entries: Vec<PresetLibraryEntry>,
+#[derive(Serialize, Deserialize, Clone)]
+struct LegacyPresetLibrary {
+    version: u32,
+    entries: Vec<PresetLibraryEntry>,
 }
 
-// ---------------------------------------------------------------------------
-// Construction & factory merge
-// ---------------------------------------------------------------------------
+#[derive(Clone, Debug)]
+enum StorageLocation {
+    Path(PathBuf),
+    Memory,
+}
+
+#[derive(Clone, Debug)]
+pub struct PresetLibrary {
+    storage: StorageLocation,
+    factory_entries: Vec<PresetLibraryEntry>,
+}
 
 impl PresetLibrary {
-    /// Build an in‑memory library from the embedded factory preset JSON.
-    ///
-    /// The JSON must decode into `Vec<PresetLibraryEntry>` (the factory output
-    /// from `build.rs` minification).
     pub fn from_embedded_factory(factory_json: &str) -> Self {
-        let entries: Vec<PresetLibraryEntry> =
-            serde_json::from_str(factory_json).unwrap_or_default();
         Self {
-            version: 1,
-            entries,
+            storage: StorageLocation::Memory,
+            factory_entries: parse_factory_entries(factory_json).unwrap_or_default(),
         }
     }
 
-    /// Load the on‑disk library, merging factory presets from the embedded JSON.
-    ///
-    /// * If no file exists → creates a library from embedded factory presets (and
-    ///   persists it).
-    /// * If a file exists → loads it, merges/upgrades factory entries, prunes
-    ///   stale factory entries, preserves user entries, and persists.
     pub fn load_or_init(factory_json: &str) -> Result<Self, String> {
-        let embedded: Vec<PresetLibraryEntry> = serde_json::from_str(factory_json)
-            .map_err(|e| format!("failed to parse embedded factory presets: {e}"))?;
-
-        let library = if let Some(file_lib) = Self::load_from_file() {
-            Self::merge_factory(file_lib, &embedded)
-        } else {
-            Self {
-                version: 1,
-                entries: embedded,
-            }
+        let factory_entries = parse_factory_entries(factory_json)?;
+        let storage = StorageLocation::Path(Self::library_path());
+        let library = Self {
+            storage,
+            factory_entries,
         };
-
-        library.save_to_file()?;
+        library.initialize()?;
         Ok(library)
     }
 
-    /// Merge or overwrite factory entries from an embedded list.
-    ///
-    /// Rules:
-    /// * Entry‑by‑entry merge keyed on `id`.
-    /// * If `factory_version` in file < `factory_version` in embedded → overwrite
-    ///   with embedded copy.
-    /// * Prune: any factory entry whose `id` no longer exists in embedded is removed.
-    /// * All `source == "user"` entries are preserved as‑is.
-    fn merge_factory(mut library: Self, embedded: &[PresetLibraryEntry]) -> Self {
-        let embedded_ids: HashSet<&str> = embedded.iter().map(|e| e.id.as_str()).collect();
-
-        let max_embedded_version = embedded
-            .iter()
-            .map(|e| e.factory_version)
-            .max()
-            .unwrap_or(0);
-
-        // Prune stale factory entries.
-        library.entries.retain(|entry| {
-            if entry.source == "user" {
-                return true;
-            }
-            embedded_ids.contains(entry.id.as_str())
-        });
-
-        // Merge / overwrite factory entries.
-        for emb in embedded {
-            let existing = library
-                .entries
-                .iter_mut()
-                .find(|e| e.id == emb.id && e.source != "user");
-            match existing {
-                Some(existing) if existing.factory_version < max_embedded_version => {
-                    *existing = emb.clone();
-                }
-                Some(_) => { /* keep existing copy */ }
-                None => library.entries.push(emb.clone()),
-            }
-        }
-
-        library
-    }
-
-    // -----------------------------------------------------------------------
-    // CRUD
-    // -----------------------------------------------------------------------
-
-    /// Add a new user preset.  Returns the created entry.
     pub fn add_entry(
         &mut self,
         name: String,
         tags: Vec<String>,
         data: serde_json::Value,
-    ) -> PresetLibraryEntry {
+    ) -> Result<PresetLibraryEntry, String> {
         let entry = PresetLibraryEntry {
             id: Uuid::new_v4().to_string(),
             name,
@@ -134,110 +72,114 @@ impl PresetLibrary {
             author: String::new(),
             starred: false,
             tags,
-            macro_labels: [
-                "Brightness".to_string(),
-                "Timbre".to_string(),
-                "Time".to_string(),
-                "Movement".to_string(),
-            ],
+            macro_labels: default_macro_labels(),
             factory_version: 0,
             data,
         };
-        let clone = entry.clone();
-        self.entries.push(entry);
-        clone
+        self.with_connection_mut(|conn| upsert_entry(conn, &entry))?;
+        Ok(entry)
     }
 
-    /// Remove an entry by `id`.  Returns `true` if an entry was removed.
-    pub fn delete_entry(&mut self, id: &str) -> bool {
-        let len = self.entries.len();
-        self.entries.retain(|e| e.id != id);
-        self.entries.len() != len
+    pub fn delete_entry(&mut self, id: &str) -> Result<bool, String> {
+        self.with_connection_mut(|conn| {
+            conn.execute("DELETE FROM presets WHERE id = ?1", [id])
+                .map(|changed| changed > 0)
+                .map_err(db_err)
+        })
     }
 
-    /// Look up an entry by `id`.
-    pub fn get_entry(&self, id: &str) -> Option<&PresetLibraryEntry> {
-        self.entries.iter().find(|e| e.id == id)
+    pub fn get_entry(&self, id: &str) -> Result<Option<PresetLibraryEntry>, String> {
+        self.with_connection(|conn| load_entry(conn, id))
     }
 
-    /// Return only the `data` field of an entry (the opaque SynthPresetV1 blob).
-    pub fn get_entry_data(&self, id: &str) -> Option<&serde_json::Value> {
-        self.entries.iter().find(|e| e.id == id).map(|e| &e.data)
+    pub fn get_entry_data(&self, id: &str) -> Result<Option<serde_json::Value>, String> {
+        self.get_entry(id).map(|entry| entry.map(|e| e.data))
     }
 
-    /// List entries, optionally filtered by `source`.
-    pub fn list_entries(&self, source_filter: Option<&str>) -> Vec<&PresetLibraryEntry> {
-        match source_filter {
-            Some(filter) => self.entries.iter().filter(|e| e.source == filter).collect(),
-            None => self.entries.iter().collect(),
-        }
+    pub fn list_entries(
+        &self,
+        source_filter: Option<&str>,
+    ) -> Result<Vec<PresetLibraryEntry>, String> {
+        self.with_connection(|conn| list_entries(conn, source_filter))
     }
 
-    /// Rename an entry.  Returns `true` if the entry was found.
-    pub fn rename_entry(&mut self, id: &str, new_name: &str) -> bool {
-        if let Some(entry) = self.entries.iter_mut().find(|e| e.id == id) {
-            entry.name = new_name.to_string();
-            true
-        } else {
-            false
-        }
+    pub fn rename_entry(&mut self, id: &str, new_name: &str) -> Result<bool, String> {
+        self.with_connection_mut(|conn| {
+            conn.execute(
+                "UPDATE presets SET name = ?2 WHERE id = ?1",
+                params![id, new_name],
+            )
+            .map(|changed| changed > 0)
+            .map_err(db_err)
+        })
     }
 
-    /// Set the `starred` flag.  Returns `true` if the entry was found.
-    pub fn set_starred(&mut self, id: &str, starred: bool) -> bool {
-        if let Some(entry) = self.entries.iter_mut().find(|e| e.id == id) {
-            entry.starred = starred;
-            true
-        } else {
-            false
-        }
+    pub fn set_starred(&mut self, id: &str, starred: bool) -> Result<bool, String> {
+        self.with_connection_mut(|conn| {
+            conn.execute(
+                "UPDATE presets SET starred = ?2 WHERE id = ?1",
+                params![id, if starred { 1_i64 } else { 0_i64 }],
+            )
+            .map(|changed| changed > 0)
+            .map_err(db_err)
+        })
     }
 
-    // -----------------------------------------------------------------------
-    // File I/O (atomic writes)
-    // -----------------------------------------------------------------------
+    fn initialize(&self) -> Result<(), String> {
+        self.with_connection_mut(|conn| {
+            migrate_schema(conn)?;
+            migrate_legacy_json_if_needed(conn, &self.storage)?;
+            merge_factory_entries(conn, &self.factory_entries)?;
+            Ok(())
+        })
+    }
 
     fn library_path() -> PathBuf {
         preset_library_path::get_preset_library_path()
     }
 
-    /// Atomically write the library to disk (temp file + rename).
-    pub fn save_to_file(&self) -> Result<(), String> {
-        let path = Self::library_path();
-        if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)
-                .map_err(|e| format!("failed to create preset library directory: {e}"))?;
-        }
+    fn open_connection(&self) -> Result<Connection, String> {
+        let conn = match &self.storage {
+            StorageLocation::Path(path) => {
+                if let Some(parent) = path.parent() {
+                    std::fs::create_dir_all(parent).map_err(|error| {
+                        format!("failed to create preset library directory: {error}")
+                    })?;
+                }
+                Connection::open(path).map_err(db_err)?
+            }
+            StorageLocation::Memory => Connection::open_in_memory().map_err(db_err)?,
+        };
 
-        let temp_path = path.with_extension("json.tmp");
-        let json = serde_json::to_string_pretty(self)
-            .map_err(|e| format!("failed to serialize preset library: {e}"))?;
-        std::fs::write(&temp_path, &json)
-            .map_err(|e| format!("failed to write temp preset library: {e}"))?;
-        std::fs::rename(&temp_path, &path)
-            .map_err(|e| format!("failed to rename temp preset library: {e}"))?;
-        Ok(())
+        conn.pragma_update(None, "journal_mode", "WAL")
+            .map_err(db_err)?;
+        conn.pragma_update(None, "synchronous", "FULL")
+            .map_err(db_err)?;
+        conn.busy_timeout(std::time::Duration::from_secs(5))
+            .map_err(db_err)?;
+        Ok(conn)
     }
 
-    /// Read the library from the on‑disk JSON file.
-    /// Returns `None` if the file does not exist or is corrupt.
-    fn load_from_file() -> Option<PresetLibrary> {
-        let path = Self::library_path();
-        if !path.exists() {
-            return None;
-        }
-        let json = std::fs::read_to_string(&path).ok()?;
-        serde_json::from_str(&json).ok()
+    fn with_connection<T>(
+        &self,
+        f: impl FnOnce(&Connection) -> Result<T, String>,
+    ) -> Result<T, String> {
+        let conn = self.open_connection()?;
+        f(&conn)
+    }
+
+    fn with_connection_mut<T>(
+        &self,
+        f: impl FnOnce(&Connection) -> Result<T, String>,
+    ) -> Result<T, String> {
+        let mut conn = self.open_connection()?;
+        let tx = conn.transaction().map_err(db_err)?;
+        let result = f(&tx)?;
+        tx.commit().map_err(db_err)?;
+        Ok(result)
     }
 }
 
-// ---------------------------------------------------------------------------
-// Multi‑instance‑safe helpers
-// ---------------------------------------------------------------------------
-
-/// Read‑only access to the on‑disk library.
-///
-/// Re‑reads the file each time so multiple instances see the latest state.
 pub fn read_library_then<R>(
     factory_json: &str,
     f: impl FnOnce(&PresetLibrary) -> R,
@@ -246,23 +188,244 @@ pub fn read_library_then<R>(
     Ok(f(&library))
 }
 
-/// Read‑modify‑write access to the on‑disk library.
-///
-/// Re‑reads the file, applies the mutation, then atomically writes back.
-/// This ensures that concurrent instances do not clobber each other's changes.
 pub fn mutate_library_then(
     factory_json: &str,
     f: impl FnOnce(&mut PresetLibrary),
 ) -> Result<(), String> {
     let mut library = PresetLibrary::load_or_init(factory_json)?;
     f(&mut library);
-    library.save_to_file()?;
     Ok(())
 }
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
+fn parse_factory_entries(factory_json: &str) -> Result<Vec<PresetLibraryEntry>, String> {
+    serde_json::from_str(factory_json)
+        .map_err(|error| format!("failed to parse embedded factory presets: {error}"))
+}
+
+fn default_macro_labels() -> [String; 4] {
+    [
+        "Brightness".to_string(),
+        "Timbre".to_string(),
+        "Time".to_string(),
+        "Movement".to_string(),
+    ]
+}
+
+fn db_err(error: rusqlite::Error) -> String {
+    format!("preset library database error: {error}")
+}
+
+fn migrate_schema(conn: &Connection) -> Result<(), String> {
+    conn.execute_batch(
+        "
+        CREATE TABLE IF NOT EXISTS meta (
+            key TEXT PRIMARY KEY NOT NULL,
+            value TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS presets (
+            id TEXT PRIMARY KEY NOT NULL,
+            name TEXT NOT NULL,
+            source TEXT NOT NULL,
+            author TEXT NOT NULL,
+            starred INTEGER NOT NULL DEFAULT 0,
+            tags_json TEXT NOT NULL,
+            macro_labels_json TEXT NOT NULL,
+            factory_version INTEGER NOT NULL DEFAULT 0,
+            data_json TEXT NOT NULL,
+            revision INTEGER NOT NULL DEFAULT 0,
+            updated_at_unix_ms INTEGER NOT NULL DEFAULT 0
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_presets_source ON presets(source);
+        ",
+    )
+    .map_err(db_err)?;
+
+    conn.execute(
+        "INSERT INTO meta(key, value) VALUES('schema_version', ?1)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        [LIBRARY_SCHEMA_VERSION.to_string()],
+    )
+    .map_err(db_err)?;
+    Ok(())
+}
+
+fn migrate_legacy_json_if_needed(
+    conn: &Connection,
+    storage: &StorageLocation,
+) -> Result<(), String> {
+    let existing_count: i64 = conn
+        .query_row("SELECT COUNT(*) FROM presets", [], |row| row.get(0))
+        .map_err(db_err)?;
+    if existing_count > 0 {
+        return Ok(());
+    }
+
+    let StorageLocation::Path(_) = storage else {
+        return Ok(());
+    };
+
+    let legacy_path = match storage {
+        StorageLocation::Path(path) => path.with_file_name("preset_library.json"),
+        StorageLocation::Memory => return Ok(()),
+    };
+    if !legacy_path.exists() {
+        return Ok(());
+    }
+
+    let json = std::fs::read_to_string(&legacy_path)
+        .map_err(|error| format!("failed to read legacy preset library: {error}"))?;
+    let legacy: LegacyPresetLibrary = serde_json::from_str(&json)
+        .map_err(|error| format!("failed to parse legacy preset library: {error}"))?;
+
+    for entry in &legacy.entries {
+        upsert_entry(conn, entry)?;
+    }
+
+    let migrated_path = legacy_path.with_extension("json.migrated");
+    std::fs::rename(&legacy_path, &migrated_path).map_err(|error| {
+        format!("failed to archive legacy preset library after migration: {error}")
+    })?;
+    Ok(())
+}
+
+fn merge_factory_entries(
+    conn: &Connection,
+    factory_entries: &[PresetLibraryEntry],
+) -> Result<(), String> {
+    conn.execute("DELETE FROM presets WHERE source != 'user'", [])
+        .map_err(db_err)?;
+
+    for entry in factory_entries {
+        upsert_entry(conn, entry)?;
+    }
+
+    Ok(())
+}
+
+fn load_entry(conn: &Connection, id: &str) -> Result<Option<PresetLibraryEntry>, String> {
+    conn.query_row(
+        "SELECT id, name, source, author, starred, tags_json, macro_labels_json, factory_version, data_json
+         FROM presets
+         WHERE id = ?1",
+        [id],
+        map_entry_row,
+    )
+    .optional()
+    .map_err(db_err)
+}
+
+fn list_entries(
+    conn: &Connection,
+    source_filter: Option<&str>,
+) -> Result<Vec<PresetLibraryEntry>, String> {
+    let sql = if source_filter.is_some() {
+        "SELECT id, name, source, author, starred, tags_json, macro_labels_json, factory_version, data_json
+         FROM presets
+         WHERE source = ?1
+         ORDER BY
+            CASE WHEN source = 'user' THEN 1 ELSE 0 END,
+            name COLLATE NOCASE,
+            id"
+    } else {
+        "SELECT id, name, source, author, starred, tags_json, macro_labels_json, factory_version, data_json
+         FROM presets
+         ORDER BY
+            CASE WHEN source = 'user' THEN 1 ELSE 0 END,
+            name COLLATE NOCASE,
+            id"
+    };
+
+    let mut statement = conn.prepare(sql).map_err(db_err)?;
+    let rows = if let Some(source) = source_filter {
+        statement
+            .query_map([source], map_entry_row)
+            .map_err(db_err)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(db_err)?
+    } else {
+        statement
+            .query_map([], map_entry_row)
+            .map_err(db_err)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(db_err)?
+    };
+    Ok(rows)
+}
+
+fn upsert_entry(conn: &Connection, entry: &PresetLibraryEntry) -> Result<(), String> {
+    let tags_json = serde_json::to_string(&entry.tags)
+        .map_err(|error| format!("failed to serialize preset tags: {error}"))?;
+    let macro_labels_json = serde_json::to_string(&entry.macro_labels)
+        .map_err(|error| format!("failed to serialize preset macro labels: {error}"))?;
+    let data_json = serde_json::to_string(&entry.data)
+        .map_err(|error| format!("failed to serialize preset payload: {error}"))?;
+    let updated_at_unix_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_millis() as i64)
+        .unwrap_or_default();
+
+    conn.execute(
+        "INSERT INTO presets (
+            id, name, source, author, starred, tags_json, macro_labels_json,
+            factory_version, data_json, revision, updated_at_unix_ms
+         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 0, ?10)
+         ON CONFLICT(id) DO UPDATE SET
+            name = excluded.name,
+            source = excluded.source,
+            author = excluded.author,
+            starred = excluded.starred,
+            tags_json = excluded.tags_json,
+            macro_labels_json = excluded.macro_labels_json,
+            factory_version = excluded.factory_version,
+            data_json = excluded.data_json,
+            revision = presets.revision + 1,
+            updated_at_unix_ms = excluded.updated_at_unix_ms",
+        params![
+            entry.id,
+            entry.name,
+            entry.source,
+            entry.author,
+            if entry.starred { 1_i64 } else { 0_i64 },
+            tags_json,
+            macro_labels_json,
+            i64::from(entry.factory_version),
+            data_json,
+            updated_at_unix_ms,
+        ],
+    )
+    .map_err(db_err)?;
+    Ok(())
+}
+
+fn map_entry_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<PresetLibraryEntry> {
+    let tags_json: String = row.get(5)?;
+    let macro_labels_json: String = row.get(6)?;
+    let data_json: String = row.get(8)?;
+
+    let tags = serde_json::from_str(&tags_json).map_err(|error| {
+        rusqlite::Error::FromSqlConversionFailure(5, rusqlite::types::Type::Text, Box::new(error))
+    })?;
+    let macro_labels = serde_json::from_str(&macro_labels_json).map_err(|error| {
+        rusqlite::Error::FromSqlConversionFailure(6, rusqlite::types::Type::Text, Box::new(error))
+    })?;
+    let data = serde_json::from_str(&data_json).map_err(|error| {
+        rusqlite::Error::FromSqlConversionFailure(8, rusqlite::types::Type::Text, Box::new(error))
+    })?;
+
+    Ok(PresetLibraryEntry {
+        id: row.get(0)?,
+        name: row.get(1)?,
+        source: row.get(2)?,
+        author: row.get(3)?,
+        starred: row.get::<_, i64>(4)? != 0,
+        tags,
+        macro_labels,
+        factory_version: row.get::<_, i64>(7)? as u32,
+        data,
+    })
+}
 
 #[cfg(test)]
 mod tests {
@@ -271,190 +434,147 @@ mod tests {
     fn sample_entry(id: &str) -> PresetLibraryEntry {
         PresetLibraryEntry {
             id: id.to_string(),
-            name: format!("Preset {}", id),
+            name: format!("Preset {id}"),
             source: "cosmo-factory".to_string(),
             author: "Factory".to_string(),
             starred: false,
             tags: vec![],
-            macro_labels: Default::default(),
+            macro_labels: default_macro_labels(),
             factory_version: 1,
-            data: serde_json::json!({ "schemaVersion": 1, "params": {} }),
+            data: serde_json::json!({ "schemaVersion": 1, "params": { "volume": 0.5 } }),
         }
     }
 
     fn user_entry(id: &str) -> PresetLibraryEntry {
         PresetLibraryEntry {
             id: id.to_string(),
-            name: format!("My {}", id),
+            name: format!("My {id}"),
             source: "user".to_string(),
             author: "You".to_string(),
             starred: false,
             tags: vec!["bass".to_string()],
-            macro_labels: Default::default(),
+            macro_labels: default_macro_labels(),
             factory_version: 0,
-            data: serde_json::json!({ "schemaVersion": 1, "params": {} }),
+            data: serde_json::json!({ "schemaVersion": 1, "params": { "volume": 0.8 } }),
         }
+    }
+
+    fn temp_db_path(label: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("cosmo-pd101-{label}-{}", Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir.join("preset_library.sqlite3")
+    }
+
+    fn open_temp_library(entries: Vec<PresetLibraryEntry>) -> PresetLibrary {
+        let library = PresetLibrary {
+            storage: StorageLocation::Path(temp_db_path("tests")),
+            factory_entries: entries,
+        };
+        library.initialize().unwrap();
+        library
     }
 
     #[test]
     fn from_embedded_factory_with_valid_json() {
         let json = serde_json::to_string(&vec![sample_entry("a"), sample_entry("b")]).unwrap();
         let lib = PresetLibrary::from_embedded_factory(&json);
-        assert_eq!(lib.entries.len(), 2);
-        assert_eq!(lib.version, 1);
+        assert_eq!(lib.factory_entries.len(), 2);
     }
 
     #[test]
     fn from_embedded_factory_with_invalid_json_returns_empty() {
         let lib = PresetLibrary::from_embedded_factory("not json");
-        assert!(lib.entries.is_empty());
+        assert!(lib.factory_entries.is_empty());
     }
 
     #[test]
     fn merge_factory_preserves_user_entries() {
-        let mut lib = PresetLibrary {
-            version: 1,
-            entries: vec![user_entry("u1"), sample_entry("f1")],
-        };
+        let library = open_temp_library(vec![sample_entry("f1"), sample_entry("f2")]);
+        let mut conn = library.open_connection().unwrap();
+        let tx = conn.transaction().unwrap();
+        upsert_entry(&tx, &user_entry("u1")).unwrap();
+        upsert_entry(&tx, &sample_entry("stale")).unwrap();
+        tx.commit().unwrap();
 
-        let embedded = vec![sample_entry("f1"), sample_entry("f2")];
-        lib = PresetLibrary::merge_factory(lib, &embedded);
-
-        assert!(lib.entries.iter().any(|e| e.id == "u1"), "user lost");
-        assert!(lib.entries.iter().any(|e| e.id == "f1"), "factory f1 lost");
-        assert!(
-            lib.entries.iter().any(|e| e.id == "f2"),
-            "factory f2 missing"
-        );
+        merge_factory_entries(&conn, &[sample_entry("f1"), sample_entry("f3")]).unwrap();
+        let ids: Vec<String> = list_entries(&conn, None)
+            .unwrap()
+            .into_iter()
+            .map(|entry| entry.id)
+            .collect();
+        assert!(ids.iter().any(|id| id == "u1"));
+        assert!(ids.iter().any(|id| id == "f1"));
+        assert!(ids.iter().any(|id| id == "f3"));
+        assert!(!ids.iter().any(|id| id == "stale"));
     }
 
     #[test]
-    fn merge_factory_prunes_stale_factory_ids() {
-        let mut lib = PresetLibrary {
-            version: 1,
-            entries: vec![sample_entry("f_old"), user_entry("u_keep")],
-        };
-
-        let embedded = vec![sample_entry("f_new")];
-        lib = PresetLibrary::merge_factory(lib, &embedded);
-
-        assert!(lib.entries.iter().any(|e| e.id == "u_keep"), "user pruned");
-        assert!(
-            lib.entries.iter().any(|e| e.id == "f_new"),
-            "new factory missing"
-        );
-        assert!(
-            !lib.entries.iter().any(|e| e.id == "f_old"),
-            "stale factory not pruned"
-        );
-    }
-
-    #[test]
-    fn merge_factory_upgrades_stale_version() {
-        let mut lib = PresetLibrary {
-            version: 1,
-            entries: vec![PresetLibraryEntry {
-                factory_version: 0,
-                name: "old name".to_string(),
-                ..sample_entry("f1")
-            }],
-        };
-
-        let mut upgraded = sample_entry("f1");
-        upgraded.factory_version = 2;
-        upgraded.name = "new name".to_string();
-
-        lib = PresetLibrary::merge_factory(lib, &[upgraded]);
-        let entry = lib.get_entry("f1").unwrap();
-        assert_eq!(entry.name, "new name");
-        assert_eq!(entry.factory_version, 2);
-    }
-
-    #[test]
-    fn crud_add_delete_get() {
-        let mut lib = PresetLibrary {
-            version: 1,
-            entries: vec![],
-        };
-
-        let entry = lib.add_entry(
-            "Test".to_string(),
-            vec!["pad".to_string()],
-            serde_json::json!({}),
-        );
-        assert_eq!(entry.name, "Test");
+    fn crud_round_trip_uses_sqlite() {
+        let mut lib = open_temp_library(vec![]);
+        let entry = lib
+            .add_entry(
+                "Test".to_string(),
+                vec!["pad".to_string()],
+                serde_json::json!({ "schemaVersion": 1 }),
+            )
+            .unwrap();
         assert_eq!(entry.source, "user");
-        assert_eq!(entry.tags, vec!["pad"]);
-        assert!(!entry.id.is_empty());
 
-        let fetched = lib.get_entry(&entry.id).unwrap();
+        let fetched = lib.get_entry(&entry.id).unwrap().unwrap();
         assert_eq!(fetched.name, "Test");
 
-        assert!(lib.get_entry("nonexistent").is_none());
+        assert!(lib.rename_entry(&entry.id, "Renamed").unwrap());
+        assert!(lib.set_starred(&entry.id, true).unwrap());
+        let fetched = lib.get_entry(&entry.id).unwrap().unwrap();
+        assert_eq!(fetched.name, "Renamed");
+        assert!(fetched.starred);
 
-        let deleted = lib.delete_entry(&entry.id);
-        assert!(deleted);
-        assert!(lib.get_entry(&entry.id).is_none());
-
-        assert!(!lib.delete_entry("nonexistent"));
+        assert!(lib.delete_entry(&entry.id).unwrap());
+        assert!(lib.get_entry(&entry.id).unwrap().is_none());
     }
 
     #[test]
-    fn list_entries_with_filter() {
-        let mut lib = PresetLibrary {
-            version: 1,
-            entries: vec![],
-        };
-
-        let mut cf = sample_entry("cf1");
-        cf.source = "cosmo-factory".to_string();
-        lib.entries.push(cf);
-
-        let mut cz = sample_entry("cz1");
-        cz.source = "cz-factory".to_string();
-        lib.entries.push(cz);
-
-        lib.entries.push(user_entry("u1"));
-
-        let all = lib.list_entries(None);
-        assert_eq!(all.len(), 3);
-
-        let user = lib.list_entries(Some("user"));
-        assert_eq!(user.len(), 1);
-
-        let cf = lib.list_entries(Some("cosmo-factory"));
-        assert_eq!(cf.len(), 1);
+    fn list_entries_filters_by_source() {
+        let mut lib = open_temp_library(vec![sample_entry("cf1")]);
+        let _ = lib
+            .add_entry("User".to_string(), vec![], serde_json::json!({}))
+            .unwrap();
+        assert_eq!(lib.list_entries(Some("cosmo-factory")).unwrap().len(), 1);
+        assert_eq!(lib.list_entries(Some("user")).unwrap().len(), 1);
     }
 
     #[test]
-    fn rename_and_star() {
-        let mut lib = PresetLibrary {
+    fn migrates_legacy_json_library_into_sqlite() {
+        let sqlite_path = temp_db_path("legacy-migration");
+        let legacy_path = sqlite_path.with_file_name("preset_library.json");
+        let legacy = LegacyPresetLibrary {
             version: 1,
-            entries: vec![user_entry("u1")],
+            entries: vec![user_entry("legacy-user")],
         };
+        std::fs::create_dir_all(sqlite_path.parent().unwrap()).unwrap();
+        std::fs::write(&legacy_path, serde_json::to_string(&legacy).unwrap()).unwrap();
 
-        assert!(lib.rename_entry("u1", "Renamed"));
-        assert_eq!(lib.get_entry("u1").unwrap().name, "Renamed");
+        let library = PresetLibrary {
+            storage: StorageLocation::Path(sqlite_path.clone()),
+            factory_entries: vec![sample_entry("factory-1")],
+        };
+        library.initialize().unwrap();
 
-        assert!(!lib.rename_entry("nonexistent", "x"));
-
-        assert!(lib.set_starred("u1", true));
-        assert!(lib.get_entry("u1").unwrap().starred);
-
-        assert!(!lib.set_starred("nonexistent", true));
+        let ids: Vec<String> = library
+            .list_entries(None)
+            .unwrap()
+            .into_iter()
+            .map(|entry| entry.id)
+            .collect();
+        assert!(ids.iter().any(|id| id == "legacy-user"));
+        assert!(ids.iter().any(|id| id == "factory-1"));
+        assert!(!legacy_path.exists());
+        assert!(sqlite_path.exists());
     }
 
     #[test]
-    fn get_entry_data_returns_data_only() {
-        let entry = user_entry("u1");
-        let lib = PresetLibrary {
-            version: 1,
-            entries: vec![entry],
-        };
-
-        let data = lib.get_entry_data("u1");
-        assert!(data.is_some());
-
-        assert!(lib.get_entry_data("nonexistent").is_none());
+    fn list_entries_returns_error_free_result() {
+        let lib = open_temp_library(vec![sample_entry("f1")]);
+        assert_eq!(lib.list_entries(None).unwrap().len(), 1);
     }
 }

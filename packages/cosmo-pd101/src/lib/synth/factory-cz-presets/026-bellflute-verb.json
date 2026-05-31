@@ -1,0 +1,383 @@
+{
+	"name": "BELLFLUTE/VERB",
+	"tags": ["bell", "wind"],
+	"data": {
+		"schemaVersion": 1,
+		"params": {
+			"lineSelect": "L1+L2'",
+			"modMode": "normal",
+			"octave": 0,
+			"line1": {
+				"algo": "cz101",
+				"algo2": null,
+				"algoBlend": 0,
+				"baseWaveformA": "cosine",
+				"baseWaveformB": "cosine",
+				"window": "off",
+				"dcaBase": 1,
+				"dcwBase": 1,
+				"modulation": 0,
+				"detuneNote": 0,
+				"detuneFine": 0,
+				"octave": 1,
+				"dcoEnv": {
+					"steps": [
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						}
+					],
+					"sustainStep": 0,
+					"stepCount": 1,
+					"loop": false
+				},
+				"dcwEnv": {
+					"steps": [
+						{
+							"level": 0,
+							"rate": 99
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						}
+					],
+					"sustainStep": 0,
+					"stepCount": 1,
+					"loop": false
+				},
+				"dcaEnv": {
+					"steps": [
+						{
+							"level": 70,
+							"rate": 99
+						},
+						{
+							"level": 95,
+							"rate": 99
+						},
+						{
+							"level": 48,
+							"rate": 73
+						},
+						{
+							"level": 82,
+							"rate": 49
+						},
+						{
+							"level": 16,
+							"rate": 49
+						},
+						{
+							"level": 77,
+							"rate": 49
+						},
+						{
+							"level": 0,
+							"rate": 39
+						},
+						{
+							"level": 0,
+							"rate": 50
+						}
+					],
+					"sustainStep": 1,
+					"stepCount": 7,
+					"loop": false
+				},
+				"dcwKeyFollow": 0,
+				"dcaKeyFollow": 0,
+				"algoControlsA": [
+					{
+						"id": "preset",
+						"value": 0
+					},
+					{
+						"id": "waveform1",
+						"value": 0
+					},
+					{
+						"id": "waveform2",
+						"value": 0
+					},
+					{
+						"id": "windowFunction",
+						"value": 0
+					}
+				],
+				"algoControlsB": []
+			},
+			"line2": {
+				"algo": "cz101",
+				"algo2": null,
+				"algoBlend": 0,
+				"baseWaveformA": "cosine",
+				"baseWaveformB": "cosine",
+				"window": "off",
+				"dcaBase": 1,
+				"dcwBase": 1,
+				"modulation": 0,
+				"detuneNote": 11,
+				"detuneFine": 0,
+				"octave": 3,
+				"dcoEnv": {
+					"steps": [
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						}
+					],
+					"sustainStep": 0,
+					"stepCount": 1,
+					"loop": false
+				},
+				"dcwEnv": {
+					"steps": [
+						{
+							"level": 27,
+							"rate": 99
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						}
+					],
+					"sustainStep": 1,
+					"stepCount": 2,
+					"loop": false
+				},
+				"dcaEnv": {
+					"steps": [
+						{
+							"level": 99,
+							"rate": 99
+						},
+						{
+							"level": 0,
+							"rate": 45
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						}
+					],
+					"sustainStep": 1,
+					"stepCount": 2,
+					"loop": false
+				},
+				"dcwKeyFollow": 0,
+				"dcaKeyFollow": 0,
+				"algoControlsA": [
+					{
+						"id": "preset",
+						"value": 0
+					},
+					{
+						"id": "waveform1",
+						"value": 0
+					},
+					{
+						"id": "waveform2",
+						"value": 0
+					},
+					{
+						"id": "windowFunction",
+						"value": 0
+					}
+				],
+				"algoControlsB": []
+			},
+			"frequency": 440,
+			"volume": 0.8,
+			"polyMode": "poly8",
+			"legato": false,
+			"velocityCurve": 0,
+			"portamento": {
+				"enabled": false,
+				"mode": "rate",
+				"rate": 0,
+				"time": 0.5
+			},
+			"lfo": {
+				"waveform": "sine",
+				"rate": 5,
+				"depth": 1,
+				"symmetry": 0.5,
+				"retrigger": false,
+				"offset": 0
+			},
+			"lfo2": {
+				"waveform": "sine",
+				"rate": 5,
+				"depth": 0,
+				"symmetry": 0.5,
+				"retrigger": false,
+				"offset": 0
+			},
+			"random": {
+				"rate": 2
+			},
+			"modEnv": {
+				"attack": 0.009999999776482582,
+				"decay": 0.10000000149011612,
+				"sustain": 0.5,
+				"release": 0.20000000298023224
+			},
+			"pitchBendRange": 2,
+			"modMatrix": {
+				"routes": []
+			},
+			"fxSlots": [
+				{
+					"type": "empty"
+				},
+				{
+					"type": "empty"
+				},
+				{
+					"type": "empty"
+				},
+				{
+					"type": "vibrato",
+					"params": {
+						"enabled": false,
+						"waveform": 1,
+						"rate": 0,
+						"depth": 0,
+						"delay": 0
+					}
+				},
+				{
+					"type": "empty"
+				},
+				{
+					"type": "empty"
+				}
+			]
+		}
+	}
+}

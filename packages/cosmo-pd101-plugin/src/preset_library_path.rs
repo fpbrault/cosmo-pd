@@ -1,6 +1,9 @@
 use std::path::PathBuf;
 
-/// Resolve the platform-appropriate path for `preset_library.json`.
+const SQLITE_FILE_NAME: &str = "preset_library.sqlite3";
+const LEGACY_JSON_FILE_NAME: &str = "preset_library.json";
+
+/// Resolve the platform-appropriate path for `preset_library.sqlite3`.
 ///
 /// Resolution order:
 /// 1. `COSMO_PD101_DATA_DIR` env var (set by AUv3 host for sandbox‑aware path)
@@ -9,12 +12,12 @@ use std::path::PathBuf;
 /// | Platform | Fallback path |
 /// |----------|---------------|
 /// | macOS (VST3/CLAP) | `~/Library/Application Support/com.cosmo-pd101/` |
-/// | macOS (AUv3) | `$COSMO_PD101_DATA_DIR/preset_library.json` (env var) |
+/// | macOS (AUv3) | `$COSMO_PD101_DATA_DIR/preset_library.sqlite3` (env var) |
 /// | Linux | `$XDG_DATA_HOME/cosmo-pd101/` → `~/.local/share/cosmo-pd101/` |
 /// | Windows | `{FOLDERID_RoamingAppData}\Cosmo PD101\` |
 pub fn get_preset_library_path() -> PathBuf {
     if let Ok(path) = std::env::var("COSMO_PD101_DATA_DIR") {
-        return PathBuf::from(path).join("preset_library.json");
+        return PathBuf::from(path).join(SQLITE_FILE_NAME);
     }
 
     cfg_if::cfg_if! {
@@ -30,9 +33,14 @@ pub fn get_preset_library_path() -> PathBuf {
     }
 }
 
+pub fn get_legacy_preset_library_path() -> PathBuf {
+    let sqlite_path = get_preset_library_path();
+    sqlite_path.with_file_name(LEGACY_JSON_FILE_NAME)
+}
+
 // --- Platform-specific fallbacks ---
 
-/// macOS: `~/Library/Application Support/com.cosmo-pd101/preset_library.json`
+/// macOS: `~/Library/Application Support/com.cosmo-pd101/preset_library.sqlite3`
 ///
 /// Does NOT use `dirs` (it is not a dep on macOS).  Relies on `$HOME`
 /// which is correct for VST3/CLAP outside the AUv3 sandbox.
@@ -40,31 +48,35 @@ pub fn get_preset_library_path() -> PathBuf {
 #[cfg(target_os = "macos")]
 fn macos_fallback_path() -> PathBuf {
     let home = std::env::var("HOME").unwrap_or_default();
-    PathBuf::from(home).join("Library/Application Support/com.cosmo-pd101/preset_library.json")
+    PathBuf::from(home).join(format!(
+        "Library/Application Support/com.cosmo-pd101/{SQLITE_FILE_NAME}"
+    ))
 }
 
-/// Linux: `$XDG_DATA_HOME/cosmo-pd101/preset_library.json`
-/// Falls back to `~/.local/share/cosmo-pd101/preset_library.json`.
+/// Linux: `$XDG_DATA_HOME/cosmo-pd101/preset_library.sqlite3`
+/// Falls back to `~/.local/share/cosmo-pd101/preset_library.sqlite3`.
 #[cfg(target_os = "linux")]
 fn linux_fallback_path() -> PathBuf {
     if let Ok(xdg) = std::env::var("XDG_DATA_HOME") {
         PathBuf::from(xdg)
             .join("cosmo-pd101")
-            .join("preset_library.json")
+            .join(SQLITE_FILE_NAME)
     } else if let Some(data_dir) = dirs::data_dir() {
-        data_dir.join("cosmo-pd101").join("preset_library.json")
+        data_dir.join("cosmo-pd101").join(SQLITE_FILE_NAME)
     } else {
         let home = std::env::var("HOME").unwrap_or_default();
-        PathBuf::from(home).join(".local/share/cosmo-pd101/preset_library.json")
+        PathBuf::from(home)
+            .join(".local/share/cosmo-pd101")
+            .join(SQLITE_FILE_NAME)
     }
 }
 
-/// Windows: `{FOLDERID_RoamingAppData}\Cosmo PD101\preset_library.json`
+/// Windows: `{FOLDERID_RoamingAppData}\Cosmo PD101\preset_library.sqlite3`
 #[cfg(target_os = "windows")]
 fn windows_fallback_path() -> PathBuf {
     if let Some(data_dir) = dirs::data_dir() {
-        data_dir.join("Cosmo PD101").join("preset_library.json")
+        data_dir.join("Cosmo PD101").join(SQLITE_FILE_NAME)
     } else {
-        PathBuf::from("preset_library.json")
+        PathBuf::from(SQLITE_FILE_NAME)
     }
 }

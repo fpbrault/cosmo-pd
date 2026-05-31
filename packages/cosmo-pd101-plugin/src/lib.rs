@@ -917,6 +917,7 @@ fn handle_ipc_invoke(
             let lib = preset_library.lock().map_err(|e| e.to_string())?;
             let entries: Vec<serde_json::Value> = lib
                 .list_entries(source_filter)
+                .map_err(|e| e.to_string())?
                 .iter()
                 .map(|e| {
                     serde_json::json!({
@@ -943,15 +944,16 @@ fn handle_ipc_invoke(
                 .and_then(serde_json::Value::as_str)
                 .ok_or_else(|| "loadPresetData payload missing id".to_string())?;
 
-            let (entry_data, preset_name_val) = {
+            let (entry_data, preset_name_val): (serde_json::Value, String) = {
                 let lib = preset_library.lock().map_err(|e| e.to_string())?;
                 let data = lib
                     .get_entry_data(id)
-                    .cloned()
+                    .map_err(|e| e.to_string())?
                     .ok_or_else(|| "Preset not found".to_string())?;
                 let name = lib
                     .get_entry(id)
-                    .map(|e| e.name.clone())
+                    .map_err(|e| e.to_string())?
+                    .map(|e| e.name)
                     .unwrap_or_default();
                 (data, name)
             };
@@ -1006,8 +1008,7 @@ fn handle_ipc_invoke(
 
             let id = {
                 let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
-                let entry = lib.add_entry(name, tags, data);
-                lib.save_to_file().map_err(|e| e.to_string())?;
+                let entry = lib.add_entry(name, tags, data).map_err(|e| e.to_string())?;
                 entry.id.clone()
             };
 
@@ -1027,8 +1028,7 @@ fn handle_ipc_invoke(
 
             {
                 let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
-                lib.delete_entry(id);
-                lib.save_to_file().map_err(|e| e.to_string())?;
+                let _ = lib.delete_entry(id).map_err(|e| e.to_string())?;
             }
 
             Ok(serde_json::Value::Null)
@@ -1051,8 +1051,7 @@ fn handle_ipc_invoke(
 
             {
                 let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
-                lib.rename_entry(id, new_name);
-                lib.save_to_file().map_err(|e| e.to_string())?;
+                let _ = lib.rename_entry(id, new_name).map_err(|e| e.to_string())?;
             }
 
             Ok(serde_json::Value::Null)
@@ -1075,8 +1074,7 @@ fn handle_ipc_invoke(
 
             {
                 let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
-                lib.set_starred(id, starred);
-                lib.save_to_file().map_err(|e| e.to_string())?;
+                let _ = lib.set_starred(id, starred).map_err(|e| e.to_string())?;
             }
 
             Ok(serde_json::Value::Null)

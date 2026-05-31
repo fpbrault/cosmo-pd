@@ -46,6 +46,7 @@ wry = { workspace = true }
 raw-window-handle = { workspace = true }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1.0"
+rusqlite = { version = "0.32", features = ["bundled"] }
 uuid = { version = "1", features = ["v4"] }
 cfg-if = "1"
 libm = "0.2"
@@ -66,6 +67,10 @@ dispatch2 = "0.3"
 
 [build-dependencies]
 serde_json = "1.0"
+
+[[bin]]
+name = "generate-factory-presets"
+path = "src/bin/generate_factory_presets.rs"
 
 [dev-dependencies]
 truce-test = { workspace = true }
