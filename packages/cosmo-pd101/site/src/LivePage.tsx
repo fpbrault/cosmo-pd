@@ -23,6 +23,7 @@ import {
 	saveCurrentPresetSession,
 	saveCurrentState,
 } from "../../src/lib/synth/presetStorage";
+import { useWebSynthRuntime } from "./runtime/useWebSynthRuntime";
 
 declare const __CZ_APP_VERSION__: string;
 
@@ -30,6 +31,7 @@ const FRAME_PADDING = 30;
 const WEB_MAX_SCALE = 0.85;
 
 export default function LivePage() {
+	const runtime = useWebSynthRuntime();
 	const frameRef = useRef<HTMLDivElement | null>(null);
 	const [frameLayout, setFrameLayout] = useState(() =>
 		computeRendererFrameLayout({
@@ -246,6 +248,7 @@ export default function LivePage() {
 					}}
 				>
 					<SharedPhaseDistortionVisualizer
+						runtime={runtime}
 						sidebarMinWidthRem={sidebarMinWidthRem}
 						bottomBarExtra={
 							<UpdateNotification currentVersion={__CZ_APP_VERSION__} />

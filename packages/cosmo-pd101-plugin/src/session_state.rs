@@ -5,6 +5,7 @@ use cosmo_synth_engine::params::SynthParams;
 /// UI editor state persisted across DAW sessions.
 /// All fields are optional so partial updates work from the webview.
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct EditorState {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub main_panel_mode: Option<String>,
@@ -38,6 +39,7 @@ pub struct EditorState {
 
 /// MIDI learn binding persisted across DAW sessions.
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct MidiMapping {
     pub param_key: String,
     pub channel: i32,
@@ -47,6 +49,7 @@ pub struct MidiMapping {
 /// DAW-serializable session state.
 /// Written by `save_state()` and read by `load_state()`.
 #[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PluginSessionState {
     pub synth_params: SynthParams,
     pub preset_name: String,

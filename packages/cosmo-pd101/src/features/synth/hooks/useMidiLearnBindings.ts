@@ -8,7 +8,13 @@ import { SYNTH_PARAM_SETTERS } from "@/features/synth/SynthParamController";
 import { useSynthStore } from "@/features/synth/synthStore";
 import { ENGINE_PARAM_UI_META_BY_KEY } from "@/lib/synth/paramMeta";
 
-export function useMidiLearnBindings() {
+type UseMidiLearnBindingsOptions = {
+	applyBindings?: boolean;
+};
+
+export function useMidiLearnBindings({
+	applyBindings = true,
+}: UseMidiLearnBindingsOptions = {}) {
 	const edgeTriggeredStates = useRef<Record<string, boolean>>({});
 	const applyBinding = useCallback(
 		(channel: number, cc: number, rawValue: number) => {
@@ -76,9 +82,11 @@ export function useMidiLearnBindings() {
 			if (store.learnMode) {
 				store.captureMidiCc(channel, cc, rawValue);
 			}
-			applyBinding(channel, cc, rawValue);
+			if (applyBindings) {
+				applyBinding(channel, cc, rawValue);
+			}
 		},
-		[applyBinding],
+		[applyBinding, applyBindings],
 	);
 
 	useEffect(() => {

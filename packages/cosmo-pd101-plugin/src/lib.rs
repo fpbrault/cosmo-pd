@@ -1102,7 +1102,11 @@ fn handle_ipc_invoke(
             let mappings: Vec<crate::session_state::MidiMapping> =
                 serde_json::from_value(payload.clone())
                     .map_err(|e| format!("invalid MidiMappings: {e}"))?;
-            append_log(&format!("setMidiMappings count={} mappings={:?}", mappings.len(), mappings));
+            append_log(&format!(
+                "setMidiMappings count={} mappings={:?}",
+                mappings.len(),
+                mappings
+            ));
             if let Ok(mut stored) = midi_mappings.lock() {
                 *stored = Some(mappings);
             }
@@ -2417,8 +2421,8 @@ mod tests {
 
         let parsed: serde_json::Value =
             serde_json::from_slice(&state).expect("state should be valid JSON");
-        assert_eq!(parsed["preset_name"], "Resonant Pad");
-        assert!(parsed.get("synth_params").is_some());
+        assert_eq!(parsed["presetName"], "Resonant Pad");
+        assert!(parsed.get("synthParams").is_some());
     }
 
     #[test]

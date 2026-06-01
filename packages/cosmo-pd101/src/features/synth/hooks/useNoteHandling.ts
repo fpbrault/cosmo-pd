@@ -15,6 +15,8 @@ type UseNoteHandlingParams = {
 	 * host can still receive them (used in plugin mode).
 	 */
 	keyboardPassthrough?: boolean;
+	keyboardInputEnabled?: boolean;
+	midiInputEnabled?: boolean;
 };
 
 export type NoteHandlingApi = {
@@ -35,6 +37,8 @@ export function useNoteHandling({
 	eventSink,
 	velocityCurve: _velocityCurve,
 	keyboardPassthrough = false,
+	keyboardInputEnabled = true,
+	midiInputEnabled = true,
 }: UseNoteHandlingParams): NoteHandlingApi {
 	const dispatchEngineEvent = useCallback(
 		(type: string, payload: Record<string, unknown>) => {
@@ -174,6 +178,10 @@ export function useNoteHandling({
 
 	// Keyboard input
 	useEffect(() => {
+		if (!keyboardInputEnabled) {
+			return;
+		}
+
 		const pluginBridgeRuntime = (
 			window as Window & {
 				__czSetParams?: (json: string) => void;
@@ -259,10 +267,17 @@ export function useNoteHandling({
 			window.removeEventListener("keydown", keyDown);
 			window.removeEventListener("keyup", keyUp);
 		};
-	}, [keyboardPassthrough, sendNoteOn, sendNoteOff, setSustain]);
+	}, [
+		keyboardInputEnabled,
+		keyboardPassthrough,
+		sendNoteOn,
+		sendNoteOff,
+		setSustain,
+	]);
 
 	// MIDI input
 	useEffect(() => {
+		if (!midiInputEnabled) return;
 		if (!("requestMIDIAccess" in navigator) || !navigator.requestMIDIAccess)
 			return;
 
@@ -356,6 +371,7 @@ export function useNoteHandling({
 			}
 		};
 	}, [
+		midiInputEnabled,
 		sendModWheel,
 		sendPitchBend,
 		sendAftertouch,

@@ -6,6 +6,8 @@
 #![cfg_attr(target_os = "macos", allow(deprecated, unexpected_cfgs))]
 
 #[cfg(target_os = "macos")]
+use dispatch2::run_on_main;
+#[cfg(target_os = "macos")]
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
@@ -272,19 +274,7 @@ impl CzEditor {
             return;
         }
 
-        let sp = self.synth_params.load();
-        let Ok(json_str) = serde_json::to_string(sp.as_ref()) else {
-            return;
-        };
-        let escaped = json_str.replace('\\', "\\\\").replace('"', "\\\"");
-        let script = format!(
-            "if(typeof window.__czOnParams === 'function') {{ window.__czOnParams(\"{escaped}\"); }}"
-        );
-        if let Ok(container) = self.webview_state.lock()
-            && let Some(wv) = &container.webview
-        {
-            let _ = wv.evaluate_script(&script);
-        }
+        push_params_to_webview(&self.webview_state, &self.synth_params);
     }
 
     fn apply_scale_normalization(&self) {
@@ -368,6 +358,15 @@ impl Editor for CzEditor {
     fn idle(&mut self) {
         #[cfg(target_os = "macos")]
         if !is_main_thread() {
+            let webview_state = self.webview_state.clone();
+            let synth_params = self.synth_params.clone();
+            #[cfg(not(any(target_os = "ios", target_os = "android")))]
+            let midi_cc_queue = self.midi_cc_queue.clone();
+            run_on_main(move |_mtm| {
+                push_params_to_webview(&webview_state, &synth_params);
+                #[cfg(not(any(target_os = "ios", target_os = "android")))]
+                flush_midi_cc_queue_to_webview(&webview_state, &midi_cc_queue);
+            });
             return;
         }
 
@@ -385,27 +384,7 @@ impl Editor for CzEditor {
         self.push_params();
 
         #[cfg(not(any(target_os = "ios", target_os = "android")))]
-        {
-            let events: Vec<(u8, u8, u8)> = {
-                let mut v = Vec::new();
-                while let Some(event) = self.midi_cc_queue.pop() {
-                    v.push(event);
-                }
-                v
-            };
-
-            if !events.is_empty()
-                && let Ok(container) = self.webview_state.lock()
-                && let Some(wv) = &container.webview
-            {
-                for (channel, cc, value) in &events {
-                    let script = format!(
-                        "if(typeof window.__czOnMidiCc === 'function') {{ window.__czOnMidiCc({channel},{cc},{value}); }}"
-                    );
-                    let _ = wv.evaluate_script(&script);
-                }
-            }
-        }
+        flush_midi_cc_queue_to_webview(&self.webview_state, &self.midi_cc_queue);
     }
 
     fn set_scale_factor(&mut self, factor: f64) {
@@ -415,11 +394,58 @@ impl Editor for CzEditor {
     }
 }
 
+fn push_params_to_webview(
+    webview_state: &Arc<Mutex<WebViewContainer>>,
+    synth_params: &Arc<ArcSwap<SynthParams>>,
+) {
+    let sp = synth_params.load();
+    let Ok(json_str) = serde_json::to_string(sp.as_ref()) else {
+        return;
+    };
+    let escaped = json_str.replace('\\', "\\\\").replace('"', "\\\"");
+    let script = format!(
+        "if(typeof window.__czOnParams === 'function') {{ window.__czOnParams(\"{escaped}\"); }}"
+    );
+    if let Ok(container) = webview_state.lock()
+        && let Some(wv) = &container.webview
+    {
+        let _ = wv.evaluate_script(&script);
+    }
+}
+
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
+fn flush_midi_cc_queue_to_webview(
+    webview_state: &Arc<Mutex<WebViewContainer>>,
+    midi_cc_queue: &MidiCcQueue,
+) {
+    let events: Vec<(u8, u8, u8)> = {
+        let mut v = Vec::new();
+        while let Some(event) = midi_cc_queue.pop() {
+            v.push(event);
+        }
+        v
+    };
+
+    if events.is_empty() {
+        return;
+    }
+
+    if let Ok(container) = webview_state.lock()
+        && let Some(wv) = &container.webview
+    {
+        for (channel, cc, value) in &events {
+            let script = format!(
+                "if(typeof window.__czOnMidiCc === 'function') {{ window.__czOnMidiCc({channel},{cc},{value}); }}"
+            );
+            let _ = wv.evaluate_script(&script);
+        }
+    }
+}
+
 // ─── Screenshot (macOS) ──────────────────────────────────────────────────────
 
 #[cfg(target_os = "macos")]
 fn screenshot_webview() -> Option<(Vec<u8>, u32, u32)> {
-    use dispatch2::run_on_main;
     run_on_main(|_mtm| screenshot_webview_impl())
 }
 

@@ -26,6 +26,11 @@ export { useNoteHandling } from "./features/synth/hooks/useNoteHandling";
 export { useSynthParamsToWorklet } from "./features/synth/hooks/useSynthParamsToWorklet";
 export type { MidiBinding } from "./features/synth/midiLearnStore";
 export { useMidiLearnStore } from "./features/synth/midiLearnStore";
+export type {
+	SynthBenchmarkRuntime,
+	SynthRuntime,
+	SynthScopeFrameSubscription,
+} from "./features/synth/runtime/synthRuntime";
 export type { SynthParamKey } from "./features/synth/SynthParamController";
 export { SYNTH_PARAM_SETTERS } from "./features/synth/SynthParamController";
 export { useSynthStore } from "./features/synth/synthStore";

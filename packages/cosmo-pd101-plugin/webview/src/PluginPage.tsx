@@ -1,10 +1,8 @@
 import {
 	computeRendererFrameLayout,
-	installBenchmarkApi,
 	SYNTH_RENDERER_DESIGN_HEIGHT,
 	SYNTH_RENDERER_MIN_ASPECT_RATIO,
 	SynthRenderer,
-	useNoteHandling,
 	useSynthPresetManager,
 	useSynthStore,
 	useSynthUiStore,
@@ -18,35 +16,7 @@ import {
 	useState,
 } from "react";
 import { usePluginParamBridge } from "./hooks/usePluginParamBridge";
-
-function normalizeBenchmarkMetrics(value: unknown) {
-	if (!value || typeof value !== "object") {
-		return null;
-	}
-
-	const candidate = value as Record<string, unknown>;
-	const readNumber = (key: string) => {
-		const next = candidate[key];
-		return typeof next === "number" && Number.isFinite(next) ? next : 0;
-	};
-
-	return {
-		enabled: candidate.enabled === true,
-		blockCount: readNumber("blockCount"),
-		lastMs: readNumber("lastMs"),
-		avgMs: readNumber("avgMs"),
-		maxMs: readNumber("maxMs"),
-		blockBudgetMs: readNumber("blockBudgetMs"),
-		lastRtPercent: readNumber("lastRtPercent"),
-		avgRtPercent: readNumber("avgRtPercent"),
-		maxRtPercent: readNumber("maxRtPercent"),
-		blockSamples: readNumber("blockSamples"),
-		sampleRate: readNumber("sampleRate"),
-		activeVoices: readNumber("activeVoices"),
-		uiQueueDepth: readNumber("uiQueueDepth"),
-		paramsApplyCount: readNumber("paramsApplyCount"),
-	};
-}
+import { usePluginSynthRuntime } from "./hooks/usePluginSynthRuntime";
 
 type PluginPageProps = {
 	utilityExtra?: ReactNode;
@@ -86,7 +56,6 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 			window.navigator.maxTouchPoints > 1);
 	const gatherState = useSynthStore((s) => s.gatherState);
 	const applyPreset = useSynthStore((s) => s.applyPreset);
-	const velocityCurve = useSynthStore((s) => s.velocityCurve);
 	const keyboardHeight = useSynthUiStore((s) => s.keyboardHeight);
 	const setKeyboardHeight = useSynthUiStore((s) => s.setKeyboardHeight);
 
@@ -107,41 +76,9 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		},
 		[],
 	);
-	const { activeNotes, sendNoteOn, sendNoteOff, panic, sendPolyAftertouch } =
-		useNoteHandling({
-			eventSink: sendNativeEngineEvent,
-			velocityCurve,
-		});
+	const runtime = usePluginSynthRuntime({ eventSink: sendNativeEngineEvent });
 
 	const { loadPresetData } = usePluginParamBridge();
-	const [scopeActiveHz, setScopeActiveHz] = useState(220);
-	const analyserNodeRef = useRef<AnalyserNode | null>(null);
-	const audioCtxRef = useRef<AudioContext | null>(null);
-	const subscribeScopeFrames = useCallback(
-		(
-			onFrame: (frame: {
-				samples: Float32Array;
-				sampleRate: number;
-				hz: number;
-			}) => void,
-		) => {
-			window.__czOnScope = (samples, sampleRate, hz) => {
-				setScopeActiveHz(Number.isFinite(hz) && hz > 0 ? hz : 220);
-				onFrame({
-					samples:
-						samples instanceof Float32Array
-							? samples
-							: Float32Array.from(samples),
-					sampleRate,
-					hz,
-				});
-			};
-			return () => {
-				window.__czOnScope = undefined;
-			};
-		},
-		[],
-	);
 
 	useEffect(() => {
 		const element = frameRef.current;
@@ -233,32 +170,6 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	});
 
 	useEffect(() => {
-		return installBenchmarkApi({
-			mode: "plugin",
-			listBuiltinPresets: () => [],
-			loadBuiltinPreset: () => {},
-			setPerformanceMonitorEnabled: async (enabled: boolean) => {
-				await window.__czSetPerformanceMonitorEnabled?.(enabled);
-			},
-			getPerformanceMetrics: async () => {
-				const value = await window.__czGetPerformanceMetrics?.();
-				return normalizeBenchmarkMetrics(value);
-			},
-			noteOn: (note: number, velocity?: number) => sendNoteOn(note, velocity),
-			noteOff: (note: number) => sendNoteOff(note),
-			panic,
-			ensureReady: async () => {
-				if (
-					!window.__czGetPerformanceMetrics ||
-					!window.__czSetPerformanceMonitorEnabled
-				) {
-					throw new Error("Plugin benchmark bridge is unavailable");
-				}
-			},
-		});
-	}, [panic, sendNoteOff, sendNoteOn]);
-
-	useEffect(() => {
 		window.__czOnHostPresetSelected = (name: string) => {
 			handleSyncBuiltinSelection(name);
 			syncInstanceBRef.current?.(name);
@@ -325,19 +236,15 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 			>
 				<div className="absolute top-0 left-0" style={zoomStyle}>
 					<SynthRenderer
+						runtime={runtime}
 						bottomBarExtra={utilityExtra}
 						disableAudioGate
-						engineEventSink={sendNativeEngineEvent}
-						effectivePitchHz={scopeActiveHz}
-						analyserNodeRef={analyserNodeRef}
-						audioCtxRef={audioCtxRef}
 						sidebarMinWidthRem={sidebarMinWidthRem}
-						subscribeScopeFrames={subscribeScopeFrames}
 						miniKeyboard={{
-							activeNotes,
-							onNoteOn: sendNoteOn,
-							onNoteOff: sendNoteOff,
-							onPolyAftertouch: sendPolyAftertouch,
+							activeNotes: runtime.activeNotes,
+							onNoteOn: runtime.sendNoteOn,
+							onNoteOff: runtime.sendNoteOff,
+							onPolyAftertouch: runtime.sendPolyAftertouch,
 						}}
 						onInitPresetSession={(fn) => {
 							syncInstanceBRef.current = fn;

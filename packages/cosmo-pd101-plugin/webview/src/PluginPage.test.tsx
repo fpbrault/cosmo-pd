@@ -4,11 +4,16 @@ import PluginPage, { clampPluginKeyboardHeight } from "./PluginPage";
 
 const mockUseSynthPresetManager = vi.hoisted(() => vi.fn());
 const mockUsePluginParamBridge = vi.hoisted(() => vi.fn());
+const mockUsePluginSynthRuntime = vi.hoisted(() => vi.fn());
 const mockInstallBenchmarkApi = vi.hoisted(() => vi.fn(() => vi.fn()));
 const mockSetKeyboardHeight = vi.hoisted(() => vi.fn());
 
 vi.mock("./hooks/usePluginParamBridge", () => ({
 	usePluginParamBridge: mockUsePluginParamBridge,
+}));
+
+vi.mock("./hooks/usePluginSynthRuntime", () => ({
+	usePluginSynthRuntime: mockUsePluginSynthRuntime,
 }));
 
 vi.mock("@cosmo/cosmo-pd101", () => {
@@ -47,13 +52,6 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 		SYNTH_RENDERER_MIN_ASPECT_RATIO: 4 / 3,
 		SynthRenderer: () => <div data-testid="synth-renderer" />,
 		installBenchmarkApi: mockInstallBenchmarkApi,
-		useNoteHandling: () => ({
-			activeNotes: [],
-			sendNoteOn: vi.fn(),
-			sendNoteOff: vi.fn(),
-			sendPolyAftertouch: vi.fn(),
-			panic: vi.fn(),
-		}),
 		useSynthPresetManager: mockUseSynthPresetManager,
 		useSynthStore: (selector: (state: typeof synthStoreState) => unknown) =>
 			selector(synthStoreState),
@@ -67,8 +65,27 @@ describe("PluginPage", () => {
 		mockInstallBenchmarkApi.mockClear();
 		mockSetKeyboardHeight.mockClear();
 		mockUsePluginParamBridge.mockReset();
+		mockUsePluginSynthRuntime.mockReset();
 		mockUsePluginParamBridge.mockReturnValue({
 			loadPresetData: vi.fn().mockResolvedValue("Mock Preset"),
+		});
+		mockUsePluginSynthRuntime.mockReturnValue({
+			activeNotes: [],
+			sendNoteOn: vi.fn(),
+			sendNoteOff: vi.fn(),
+			sendPolyAftertouch: vi.fn(),
+			panic: vi.fn(),
+			audioContextState: "running",
+			resumeAudio: vi.fn(),
+			effectivePitchHz: 220,
+			analyserNodeRef: { current: null },
+			audioCtxRef: { current: null },
+			benchmark: {
+				mode: "plugin",
+				setPerformanceMonitorEnabled: vi.fn(),
+				getPerformanceMetrics: vi.fn(),
+				ensureReady: vi.fn(),
+			},
 		});
 		mockUseSynthPresetManager.mockReset();
 		mockUseSynthPresetManager.mockReturnValue({

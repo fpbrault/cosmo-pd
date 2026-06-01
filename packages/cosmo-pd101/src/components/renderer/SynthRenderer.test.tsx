@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PresetManagerPendingChange } from "@/context/PresetManagerContext";
+import type { SynthRuntime } from "@/features/synth/runtime/synthRuntime";
 import type { MainPanelMode } from "@/features/synth/synthUiStore";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import SynthRenderer from "./SynthRenderer";
@@ -148,31 +149,6 @@ vi.mock("@/context/ModMatrixContext", () => ({
 	),
 }));
 
-vi.mock("@/features/synth/hooks/useAudioEngine", () => ({
-	useAudioEngine: vi.fn(() => ({
-		audioCtxRef: { current: null },
-		analyserNodeRef: { current: null },
-		workletNodeRef: { current: null },
-		paramsRef: { current: null },
-		audioContextState: "running",
-		resumeAudio: vi.fn(),
-	})),
-}));
-
-vi.mock("@/features/synth/hooks/useNoteHandling", () => ({
-	useNoteHandling: vi.fn(() => ({
-		activeNotes: [],
-		sendNoteOn: vi.fn(),
-		sendNoteOff: vi.fn(),
-		sendPolyAftertouch: vi.fn(),
-		panic: vi.fn(),
-	})),
-}));
-
-vi.mock("@/features/synth/hooks/useSynthParamsToWorklet", () => ({
-	useSynthParamsToWorklet: vi.fn(),
-}));
-
 const mockPresetManager = {
 	visiblePresetEntries: [] as PresetEntry[],
 	activePresetId: "1",
@@ -214,13 +190,28 @@ vi.mock("./hooks/useAudioLevelMonitor", () => ({
 	useAudioLevelMonitor: vi.fn(),
 }));
 
-vi.mock("@/features/synth/hooks/useMidiLearnBindings", () => ({
-	useMidiLearnBindings: vi.fn(),
-}));
-
 vi.mock("@/lib/performance/benchmarkHarness", () => ({
 	installBenchmarkApi: vi.fn(() => vi.fn()),
 }));
+
+const mockRuntime: SynthRuntime = {
+	activeNotes: [],
+	sendNoteOn: vi.fn(),
+	sendNoteOff: vi.fn(),
+	sendPolyAftertouch: vi.fn(),
+	panic: vi.fn(),
+	audioContextState: "running",
+	resumeAudio: vi.fn(),
+	effectivePitchHz: 220,
+	analyserNodeRef: { current: null },
+	audioCtxRef: { current: null },
+	benchmark: {
+		mode: "web",
+		setPerformanceMonitorEnabled: vi.fn(),
+		getPerformanceMetrics: vi.fn(() => null),
+		ensureReady: vi.fn(),
+	},
+};
 
 describe("SynthRenderer Smoke Test", () => {
 	beforeEach(() => {
@@ -241,18 +232,20 @@ describe("SynthRenderer Smoke Test", () => {
 	});
 
 	it("renders without crashing", () => {
-		render(<SynthRenderer />);
+		render(<SynthRenderer runtime={mockRuntime} />);
 		expect(screen.getByTestId("synth-header")).toBeInTheDocument();
 	});
 
 	it("renders global modal when store flag is set", () => {
 		mockSynthUiStoreState.globalPanelOpen = true;
-		render(<SynthRenderer />);
+		render(<SynthRenderer runtime={mockRuntime} />);
 		expect(screen.getByTestId("global-voice-panel")).toBeInTheDocument();
 	});
 
 	it("passes a custom sidebar width through to the sidebar", () => {
-		render(<SynthRenderer sidebarMinWidthRem={20.3125} />);
+		render(
+			<SynthRenderer runtime={mockRuntime} sidebarMinWidthRem={20.3125} />,
+		);
 		expect(screen.getByTestId("synth-sidebar")).toHaveAttribute(
 			"data-sidebar-min-width",
 			"20.3125",
@@ -262,7 +255,7 @@ describe("SynthRenderer Smoke Test", () => {
 	it("closes the library overlay through the extracted library component", () => {
 		mockSynthUiStoreState.libraryModeOpen = true;
 
-		render(<SynthRenderer />);
+		render(<SynthRenderer runtime={mockRuntime} />);
 		fireEvent.click(screen.getByTestId("preset-library-close"));
 
 		expect(mockSynthUiStoreState.setLibraryModeOpen).toHaveBeenCalledWith(
@@ -272,7 +265,7 @@ describe("SynthRenderer Smoke Test", () => {
 
 	it("renders modulation drawer content in mod mode", () => {
 		mockSynthUiStoreState.mainPanelMode = "mod";
-		render(<SynthRenderer />);
+		render(<SynthRenderer runtime={mockRuntime} />);
 		expect(screen.getByTestId("mod-console-drawer")).toBeInTheDocument();
 	});
 
@@ -284,7 +277,7 @@ describe("SynthRenderer Smoke Test", () => {
 			changes: [{ path: "volume", previous: "0.1", next: "0.2" }],
 		};
 
-		render(<SynthRenderer />);
+		render(<SynthRenderer runtime={mockRuntime} />);
 		expect(screen.getByTestId("pending-preset-modal")).toBeInTheDocument();
 	});
 });

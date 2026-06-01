@@ -1,9 +1,5 @@
-import type {
-	MidiBinding,
-	SessionEditorState,
-	SessionMidiMapping,
-} from "@cosmo/cosmo-pd101";
-import { useMidiLearnStore, useSynthUiStore } from "@cosmo/cosmo-pd101";
+import type { SessionEditorState } from "@cosmo/cosmo-pd101";
+import { useSynthUiStore } from "@cosmo/cosmo-pd101";
 import { useEffect, useRef } from "react";
 
 function hasBridgeApi(name: string): boolean {
@@ -13,12 +9,7 @@ function hasBridgeApi(name: string): boolean {
 }
 
 function isBridgeAvailable(): boolean {
-	return (
-		hasBridgeApi("GetEditorState") ||
-		hasBridgeApi("SetEditorState") ||
-		hasBridgeApi("GetMidiMappings") ||
-		hasBridgeApi("SetMidiMappings")
-	);
+	return hasBridgeApi("GetEditorState") || hasBridgeApi("SetEditorState");
 }
 
 function loadInitialEditorState(): void {
@@ -51,26 +42,6 @@ function loadInitialEditorState(): void {
 					}
 				}
 				useSynthUiStore.setState(editorState);
-			}
-		});
-}
-
-function loadInitialMidiMappings(): void {
-	if (!hasBridgeApi("GetMidiMappings")) return;
-	void (window as { __czGetMidiMappings: () => Promise<unknown> })
-		.__czGetMidiMappings()
-		.then((result: unknown) => {
-			if (Array.isArray(result) && result.length > 0) {
-				const mappings = result as SessionMidiMapping[];
-				const bindings: Partial<Record<string, MidiBinding>> = {};
-				for (const m of mappings) {
-					bindings[m.paramKey] = {
-						paramKey: m.paramKey,
-						channel: m.channel,
-						cc: m.cc,
-					};
-				}
-				useMidiLearnStore.setState({ bindings });
 			}
 		});
 }
@@ -120,26 +91,6 @@ function subscribeEditorState(): () => void {
 	});
 }
 
-function subscribeMidiMappings(): () => void {
-	const setMidi = (window as { __czSetMidiMappings: (s: string) => void })
-		.__czSetMidiMappings;
-	const pushMappings = (bindings: Partial<Record<string, MidiBinding>>) => {
-		const mappings: SessionMidiMapping[] = [];
-		for (const b of Object.values(bindings)) {
-			if (b) {
-				mappings.push({ paramKey: b.paramKey, channel: b.channel, cc: b.cc });
-			}
-		}
-		setMidi(JSON.stringify(mappings));
-	};
-
-	pushMappings(useMidiLearnStore.getState().bindings);
-
-	return useMidiLearnStore.subscribe((state) => {
-		pushMappings(state.bindings);
-	});
-}
-
 export function useSessionStateSync(): void {
 	const initializedRef = useRef(false);
 
@@ -151,13 +102,9 @@ export function useSessionStateSync(): void {
 			const unsubscribes: (() => void)[] = [];
 
 			loadInitialEditorState();
-			loadInitialMidiMappings();
 
 			if (hasBridgeApi("SetEditorState")) {
 				unsubscribes.push(subscribeEditorState());
-			}
-			if (hasBridgeApi("SetMidiMappings")) {
-				unsubscribes.push(subscribeMidiMappings());
 			}
 
 			return () => {
