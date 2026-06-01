@@ -664,6 +664,7 @@ fn handle_ipc_invoke(
         && method != "clientLog"
         && method != "getRuntimeModSources"
         && method != "getTransportInfo"
+        && method != "getRuntimeVoiceStates"
     {
         append_log(&format!("ipc invoke method={method} args={}", args.len()));
     }
@@ -1101,6 +1102,7 @@ fn handle_ipc_invoke(
             let mappings: Vec<crate::session_state::MidiMapping> =
                 serde_json::from_value(payload.clone())
                     .map_err(|e| format!("invalid MidiMappings: {e}"))?;
+            append_log(&format!("setMidiMappings count={} mappings={:?}", mappings.len(), mappings));
             if let Ok(mut stored) = midi_mappings.lock() {
                 *stored = Some(mappings);
             }
@@ -1236,6 +1238,72 @@ impl CzPlugin {
         }
     }
 
+    fn mapped_param_key_for_cc(&self, channel: u8, cc: u8) -> Option<String> {
+        let mappings = self.midi_learn_bindings.lock().ok()?;
+        let mappings = mappings.as_ref()?;
+        mappings
+            .iter()
+            .find(|mapping| mapping.channel == i32::from(channel) && mapping.cc == i32::from(cc))
+            .map(|mapping| mapping.param_key.clone())
+    }
+
+    fn apply_midi_mapping(&mut self, channel: u8, cc: u8, value: u8) -> bool {
+        let Some(param_key) = self.mapped_param_key_for_cc(channel, cc) else {
+            let snapshot = self
+                .midi_learn_bindings
+                .lock()
+                .ok()
+                .and_then(|guard| (*guard).clone());
+            append_log(&format!(
+                "apply_midi_mapping miss ch={} cc={} value={} stored_mappings={:?}",
+                channel, cc, value, snapshot
+            ));
+            return false;
+        };
+        append_log(&format!(
+            "apply_midi_mapping hit ch={} cc={} value={} param_key={}",
+            channel, cc, value, param_key
+        ));
+
+        let Some((min, max)) = crate::ffi::midi_mapping_range_for_key(&param_key) else {
+            append_log(&format!(
+                "apply_midi_mapping unsupported_range param_key={}",
+                param_key
+            ));
+            return false;
+        };
+
+        let normalized = f32::from(value) / 127.0;
+        let mapped_value = min + normalized * (max - min);
+        let mut synth_params = (*self.synth_params.load_full()).clone();
+        if !crate::ffi::set_parameter_value(&mut synth_params, &param_key, mapped_value) {
+            append_log(&format!(
+                "apply_midi_mapping unsupported_param param_key={} mapped_value={}",
+                param_key, mapped_value
+            ));
+            return false;
+        }
+        append_log(&format!(
+            "apply_midi_mapping applied param_key={} mapped_value={}",
+            param_key, mapped_value
+        ));
+
+        let rt_params = Arc::new(build_rt_synth_params(&synth_params));
+        self.synth_params.store(Arc::new(synth_params));
+        self.rt_synth_params.store(Arc::clone(&rt_params));
+        self.cached_rt_synth_params = Arc::clone(&rt_params);
+        self.cached_synth_params_version =
+            self.synth_params_version.fetch_add(1, Ordering::Release) + 1;
+        self.daw_params_dirty = false;
+
+        if let Some(proc) = self.processor.as_mut() {
+            proc.set_shared_params(rt_params);
+            self.performance_counters.record_param_apply();
+        }
+
+        true
+    }
+
     fn tracked_param_changes(events: &EventList) -> [bool; Self::TRACKED_PARAM_ID_CAPACITY] {
         let mut changed = [false; Self::TRACKED_PARAM_ID_CAPACITY];
         for event in events.iter() {
@@ -1310,41 +1378,84 @@ impl CzPlugin {
                     proc.set_aftertouch(*pressure as f32 / u32::MAX as f32);
                 }
             }
-            EventBody::ControlChange { cc, value, .. } => match cc {
+            EventBody::ControlChange {
+                channel, cc, value, ..
+            } => match cc {
                 1 => {
+                    append_log(&format!(
+                        "handle_host_event ControlChange ch={} cc={} value={}",
+                        channel, cc, value
+                    ));
                     if let Some(proc) = self.processor.as_mut() {
                         proc.set_mod_wheel(norm_7bit(*value));
                     }
                 }
                 64 => {
+                    append_log(&format!(
+                        "handle_host_event ControlChange ch={} cc={} value={}",
+                        channel, cc, value
+                    ));
                     if let Some(proc) = self.processor.as_mut() {
                         proc.set_sustain(*value >= 64);
                     }
                 }
                 120 | 123 => {
+                    append_log(&format!(
+                        "handle_host_event ControlChange ch={} cc={} value={}",
+                        channel, cc, value
+                    ));
                     if let Some(proc) = self.processor.as_mut() {
                         Self::all_notes_off(proc);
                     }
                 }
-                _ => {}
+                _ => {
+                    append_log(&format!(
+                        "handle_host_event ControlChange ch={} cc={} value={}",
+                        channel, cc, value
+                    ));
+                    let _ = self.apply_midi_mapping(*channel, *cc, *value);
+                    let _ = self.midi_cc_queue.push((*channel, *cc, *value));
+                }
             },
-            EventBody::ControlChange2 { cc, value, .. } => match cc {
+            EventBody::ControlChange2 {
+                channel, cc, value, ..
+            } => match cc {
                 1 => {
+                    append_log(&format!(
+                        "handle_host_event ControlChange2 ch={} cc={} value={}",
+                        channel, cc, value
+                    ));
                     if let Some(proc) = self.processor.as_mut() {
                         proc.set_mod_wheel(*value as f32 / u32::MAX as f32);
                     }
                 }
                 64 => {
+                    append_log(&format!(
+                        "handle_host_event ControlChange2 ch={} cc={} value={}",
+                        channel, cc, value
+                    ));
                     if let Some(proc) = self.processor.as_mut() {
                         proc.set_sustain(*value >= (u32::MAX / 2));
                     }
                 }
                 120 | 123 => {
+                    append_log(&format!(
+                        "handle_host_event ControlChange2 ch={} cc={} value={}",
+                        channel, cc, value
+                    ));
                     if let Some(proc) = self.processor.as_mut() {
                         Self::all_notes_off(proc);
                     }
                 }
-                _ => {}
+                _ => {
+                    let raw_value = (*value / 128) as u8;
+                    append_log(&format!(
+                        "handle_host_event ControlChange2 ch={} cc={} value={} raw={}",
+                        channel, cc, value, raw_value
+                    ));
+                    let _ = self.apply_midi_mapping(*channel, *cc, raw_value);
+                    let _ = self.midi_cc_queue.push((*channel, *cc, raw_value));
+                }
             },
             EventBody::PitchBend { value, .. } => {
                 if let Some(proc) = self.processor.as_mut() {
@@ -1400,6 +1511,10 @@ impl CzPlugin {
                 if simultaneous_offset != event_offset {
                     break;
                 }
+                append_log(&format!(
+                    "process_host_events event_offset={} body={:?}",
+                    simultaneous_offset, simultaneous.body
+                ));
                 self.handle_host_event(&simultaneous.body);
                 next_event += 1;
             }
@@ -2129,6 +2244,51 @@ mod tests {
             cosmo_synth_engine::params::LineSelect::L1PlusL1Prime
         );
         assert!((synth_params.portamento.time - 0.1).abs() < 0.000_001);
+    }
+
+    #[test]
+    fn midi_mapping_applies_in_plugin_core_without_editor() {
+        let params = Arc::new(CzPluginParams::new());
+        let mut plugin = CzPlugin::new(Arc::clone(&params));
+        plugin.reset(48_000.0, 64);
+        *plugin.midi_learn_bindings.lock().unwrap() =
+            Some(vec![crate::session_state::MidiMapping {
+                param_key: "macro1".to_string(),
+                channel: 0,
+                cc: 74,
+            }]);
+
+        plugin.handle_host_event(&EventBody::ControlChange {
+            group: 0,
+            channel: 0,
+            cc: 74,
+            value: 127,
+        });
+
+        assert!((plugin.synth_params.load().macro1 - 1.0).abs() < 0.000_001);
+        assert!((plugin.cached_rt_synth_params.macro1 - 1.0).abs() < 0.000_001);
+    }
+
+    #[test]
+    fn midi_mapping_matches_exact_channel() {
+        let params = Arc::new(CzPluginParams::new());
+        let mut plugin = CzPlugin::new(Arc::clone(&params));
+        plugin.reset(48_000.0, 64);
+        *plugin.midi_learn_bindings.lock().unwrap() =
+            Some(vec![crate::session_state::MidiMapping {
+                param_key: "macro1".to_string(),
+                channel: 2,
+                cc: 74,
+            }]);
+
+        plugin.handle_host_event(&EventBody::ControlChange {
+            group: 0,
+            channel: 1,
+            cc: 74,
+            value: 127,
+        });
+
+        assert!((plugin.synth_params.load().macro1 - 0.0).abs() < 0.000_001);
     }
 
     #[test]

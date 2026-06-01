@@ -78,6 +78,27 @@ function loadInitialMidiMappings(): void {
 function subscribeEditorState(): () => void {
 	const setEditor = (window as { __czSetEditorState: (s: string) => void })
 		.__czSetEditorState;
+	const pushState = (state: SessionEditorState) => {
+		setEditor(JSON.stringify(state));
+	};
+
+	pushState({
+		mainPanelMode: useSynthUiStore.getState().mainPanelMode,
+		phaseLinePanelTab: useSynthUiStore.getState().phaseLinePanelTab,
+		activeEnvTab: useSynthUiStore.getState().activeEnvTab,
+		keyboardVisible: useSynthUiStore.getState().keyboardVisible,
+		keyboardOctaves: useSynthUiStore.getState().keyboardOctaves,
+		keyboardRange: useSynthUiStore.getState().keyboardRange,
+		keyboardHeight: useSynthUiStore.getState().keyboardHeight,
+		keyboardInputMode: useSynthUiStore.getState().keyboardInputMode,
+		libraryModeOpen: useSynthUiStore.getState().libraryModeOpen,
+		scopeCycles: useSynthUiStore.getState().scopeCycles,
+		scopeVerticalZoom: useSynthUiStore.getState().scopeVerticalZoom,
+		scopeTriggerLevel: useSynthUiStore.getState().scopeTriggerLevel,
+		scopeVisualizationMode: useSynthUiStore.getState().scopeVisualizationMode,
+		scopeColorTheme: useSynthUiStore.getState().scopeColorTheme,
+	});
+
 	return useSynthUiStore.subscribe((state) => {
 		const editorState: SessionEditorState = {
 			mainPanelMode: state.mainPanelMode,
@@ -95,21 +116,27 @@ function subscribeEditorState(): () => void {
 			scopeVisualizationMode: state.scopeVisualizationMode,
 			scopeColorTheme: state.scopeColorTheme,
 		};
-		setEditor(JSON.stringify(editorState));
+		pushState(editorState);
 	});
 }
 
 function subscribeMidiMappings(): () => void {
 	const setMidi = (window as { __czSetMidiMappings: (s: string) => void })
 		.__czSetMidiMappings;
-	return useMidiLearnStore.subscribe((state) => {
+	const pushMappings = (bindings: Partial<Record<string, MidiBinding>>) => {
 		const mappings: SessionMidiMapping[] = [];
-		for (const b of Object.values(state.bindings)) {
+		for (const b of Object.values(bindings)) {
 			if (b) {
 				mappings.push({ paramKey: b.paramKey, channel: b.channel, cc: b.cc });
 			}
 		}
 		setMidi(JSON.stringify(mappings));
+	};
+
+	pushMappings(useMidiLearnStore.getState().bindings);
+
+	return useMidiLearnStore.subscribe((state) => {
+		pushMappings(state.bindings);
 	});
 }
 
@@ -119,13 +146,32 @@ export function useSessionStateSync(): void {
 	useEffect(() => {
 		if (initializedRef.current) return;
 
+		const setupBridgeSync = () => {
+			initializedRef.current = true;
+			const unsubscribes: (() => void)[] = [];
+
+			loadInitialEditorState();
+			loadInitialMidiMappings();
+
+			if (hasBridgeApi("SetEditorState")) {
+				unsubscribes.push(subscribeEditorState());
+			}
+			if (hasBridgeApi("SetMidiMappings")) {
+				unsubscribes.push(subscribeMidiMappings());
+			}
+
+			return () => {
+				for (const fn of unsubscribes) {
+					fn();
+				}
+			};
+		};
+
 		if (!isBridgeAvailable()) {
 			const intervalId = window.setInterval(() => {
 				if (isBridgeAvailable()) {
 					window.clearInterval(intervalId);
-					initializedRef.current = true;
-					loadInitialEditorState();
-					loadInitialMidiMappings();
+					setupBridgeSync();
 				}
 			}, 100);
 			return () => {
@@ -133,23 +179,6 @@ export function useSessionStateSync(): void {
 			};
 		}
 
-		initializedRef.current = true;
-		const unsubscribes: (() => void)[] = [];
-
-		loadInitialEditorState();
-		loadInitialMidiMappings();
-
-		if (hasBridgeApi("SetEditorState")) {
-			unsubscribes.push(subscribeEditorState());
-		}
-		if (hasBridgeApi("SetMidiMappings")) {
-			unsubscribes.push(subscribeMidiMappings());
-		}
-
-		return () => {
-			for (const fn of unsubscribes) {
-				fn();
-			}
-		};
+		return setupBridgeSync();
 	}, []);
 }

@@ -385,14 +385,25 @@ impl Editor for CzEditor {
         self.push_params();
 
         #[cfg(not(any(target_os = "ios", target_os = "android")))]
-        if let Ok(container) = self.webview_state.lock()
-            && let Some(wv) = &container.webview
         {
-            while let Some((channel, cc, value)) = self.midi_cc_queue.pop() {
-                let script = format!(
-                    "if(typeof window.__czOnMidiCc === 'function') {{ window.__czOnMidiCc({channel},{cc},{value}); }}"
-                );
-                let _ = wv.evaluate_script(&script);
+            let events: Vec<(u8, u8, u8)> = {
+                let mut v = Vec::new();
+                while let Some(event) = self.midi_cc_queue.pop() {
+                    v.push(event);
+                }
+                v
+            };
+
+            if !events.is_empty()
+                && let Ok(container) = self.webview_state.lock()
+                && let Some(wv) = &container.webview
+            {
+                for (channel, cc, value) in &events {
+                    let script = format!(
+                        "if(typeof window.__czOnMidiCc === 'function') {{ window.__czOnMidiCc({channel},{cc},{value}); }}"
+                    );
+                    let _ = wv.evaluate_script(&script);
+                }
             }
         }
     }

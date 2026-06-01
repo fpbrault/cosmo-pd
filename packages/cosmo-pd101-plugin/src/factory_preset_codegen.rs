@@ -61,8 +61,6 @@ struct CzPresetSource {
 }
 
 pub fn generate_factory_presets(plugin_manifest_dir: &Path) -> Result<(), String> {
-    emit_rerun_if_changed(plugin_manifest_dir)?;
-
     let cosmo_pd101_dir = plugin_manifest_dir.join("../cosmo-pd101");
     let synth_dir = cosmo_pd101_dir.join("src/lib/synth");
     let authored_dir = synth_dir.join("factory-cz-presets");
@@ -78,38 +76,7 @@ pub fn generate_factory_presets(plugin_manifest_dir: &Path) -> Result<(), String
 
     write_atomic(&synth_dir.join("factoryCzPresets.ts"), &generated_ts)?;
     write_atomic(&synth_dir.join("factory_presets.json"), &generated_json)?;
-    format_generated_outputs(&cosmo_pd101_dir)?;
 
-    Ok(())
-}
-
-fn emit_rerun_if_changed(plugin_manifest_dir: &Path) -> Result<(), String> {
-    let cosmo_pd101_dir = plugin_manifest_dir.join("../cosmo-pd101");
-    let authored_dir = cosmo_pd101_dir.join("src/lib/synth/factory-cz-presets");
-    println!(
-        "cargo:rerun-if-changed={}",
-        plugin_manifest_dir
-            .join("src/factory_preset_codegen.rs")
-            .display()
-    );
-    println!("cargo:rerun-if-changed={}", authored_dir.display());
-    if authored_dir.is_dir() {
-        for path in sorted_json_files(&authored_dir)? {
-            println!("cargo:rerun-if-changed={}", path.display());
-        }
-    }
-    println!(
-        "cargo:rerun-if-changed={}",
-        cosmo_pd101_dir
-            .join("src/lib/synth/defaultPresets.ts")
-            .display()
-    );
-    println!(
-        "cargo:rerun-if-changed={}",
-        cosmo_pd101_dir
-            .join("scripts/emit-cosmo-factory-presets.ts")
-            .display()
-    );
     Ok(())
 }
 
@@ -772,26 +739,6 @@ fn load_cosmo_factory_entries(cosmo_pd101_dir: &Path) -> Result<Vec<FactoryPrese
     }
     serde_json::from_slice::<Vec<FactoryPresetEntry>>(&output.stdout)
         .map_err(|error| format!("failed to parse Bun-generated cosmo factory entries: {error}"))
-}
-
-fn format_generated_outputs(cosmo_pd101_dir: &Path) -> Result<(), String> {
-    let synth_dir = cosmo_pd101_dir.join("src/lib/synth");
-    let output = Command::new("bunx")
-        .current_dir(cosmo_pd101_dir)
-        .arg("biome")
-        .arg("format")
-        .arg("--write")
-        .arg(synth_dir.join("factoryCzPresets.ts"))
-        .arg(synth_dir.join("factory_presets.json"))
-        .output()
-        .map_err(|error| format!("failed to run biome on generated factory presets: {error}"))?;
-    if !output.status.success() {
-        return Err(format!(
-            "biome format failed for generated factory presets: {}",
-            String::from_utf8_lossy(&output.stderr).trim()
-        ));
-    }
-    Ok(())
 }
 
 fn render_factory_cz_presets_ts(presets: &[CzPresetSource]) -> Result<String, String> {
