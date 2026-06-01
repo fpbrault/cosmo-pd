@@ -57,6 +57,31 @@ pub struct MidiLearnState {
     pub version: u64,
 }
 
+pub fn default_midi_bindings() -> Vec<MidiLearnBinding> {
+    vec![
+        MidiLearnBinding {
+            param_key: "macro1".into(),
+            channel: 0,
+            cc: 8,
+        },
+        MidiLearnBinding {
+            param_key: "macro2".into(),
+            channel: 0,
+            cc: 41,
+        },
+        MidiLearnBinding {
+            param_key: "macro3".into(),
+            channel: 0,
+            cc: 42,
+        },
+        MidiLearnBinding {
+            param_key: "macro4".into(),
+            channel: 0,
+            cc: 43,
+        },
+    ]
+}
+
 /// DAW-serializable session state.
 /// Written by `save_state()` and read by `load_state()`.
 #[derive(Serialize, Deserialize)]

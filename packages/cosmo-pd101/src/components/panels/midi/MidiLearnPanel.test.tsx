@@ -15,6 +15,7 @@ vi.mock("@/features/synth/midiLearnStore", () => ({
 	useMidiLearnStore: vi.fn((selector: (s: typeof state) => unknown) =>
 		selector(state),
 	),
+	subscribeMidiLearnState: vi.fn(() => vi.fn()),
 }));
 
 vi.mock("@/features/synth/midiLearnRegistry", () => ({
