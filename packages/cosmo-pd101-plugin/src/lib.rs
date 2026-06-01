@@ -1472,7 +1472,10 @@ impl CzPlugin {
                     proc.set_pitch_bend(normalized.clamp(-1.0, 1.0));
                 }
             }
-            EventBody::ParamChange { id, value } => self.apply_rt_param_change(*id, *value),
+            EventBody::ParamChange { id, value } => {
+                self.daw_params_dirty = true;
+                self.apply_rt_param_change(*id, *value);
+            }
             EventBody::ProgramChange { program, .. }
             | EventBody::ProgramChange2 { program, .. } => {
                 if usize::from(*program) < crate::ffi::factory_preset_count() {
@@ -1672,6 +1675,10 @@ impl PluginLogic for CzPlugin {
             }
             self.cached_synth_params_version = params_version;
             self.daw_params_dirty = false;
+
+            // Push merged params to ArcSwaps so idle loop pushes to webview
+            self.synth_params.store(self.cached_rt_synth_params.clone());
+            self.rt_synth_params.store(self.cached_rt_synth_params.clone());
         }
 
         let tail_info = if self.processor.is_some() {

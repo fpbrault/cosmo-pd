@@ -121,6 +121,7 @@ pub struct CzEditor {
     loaded_preset_id: Arc<Mutex<Option<String>>>,
     editor_state: SharedEditorState,
     midi_learn_bindings: SharedMidiMappings,
+    last_sent_params_json: Arc<Mutex<String>>,
     #[cfg(target_os = "macos")]
     standalone_window: Option<StandaloneWindow>,
 }
@@ -189,6 +190,7 @@ impl CzEditor {
             loaded_preset_id,
             editor_state,
             midi_learn_bindings,
+            last_sent_params_json: Arc::new(Mutex::new(String::new())),
             #[cfg(target_os = "macos")]
             standalone_window: None,
         }
@@ -274,7 +276,11 @@ impl CzEditor {
             return;
         }
 
-        push_params_to_webview(&self.webview_state, &self.synth_params);
+        push_params_to_webview(
+            &self.webview_state,
+            &self.synth_params,
+            &self.last_sent_params_json,
+        );
     }
 
     fn apply_scale_normalization(&self) {
@@ -360,10 +366,15 @@ impl Editor for CzEditor {
         if !is_main_thread() {
             let webview_state = self.webview_state.clone();
             let synth_params = self.synth_params.clone();
+            let last_sent_params_json = self.last_sent_params_json.clone();
             #[cfg(not(any(target_os = "ios", target_os = "android")))]
             let midi_cc_queue = self.midi_cc_queue.clone();
             run_on_main(move |_mtm| {
-                push_params_to_webview(&webview_state, &synth_params);
+                push_params_to_webview(
+                    &webview_state,
+                    &synth_params,
+                    &last_sent_params_json,
+                );
                 #[cfg(not(any(target_os = "ios", target_os = "android")))]
                 flush_midi_cc_queue_to_webview(&webview_state, &midi_cc_queue);
             });
@@ -397,11 +408,21 @@ impl Editor for CzEditor {
 fn push_params_to_webview(
     webview_state: &Arc<Mutex<WebViewContainer>>,
     synth_params: &Arc<ArcSwap<SynthParams>>,
+    last_sent_params_json: &Mutex<String>,
 ) {
     let sp = synth_params.load();
     let Ok(json_str) = serde_json::to_string(sp.as_ref()) else {
         return;
     };
+
+    {
+        let mut cache = last_sent_params_json.lock().unwrap();
+        if *cache == json_str {
+            return;
+        }
+        *cache = json_str.clone();
+    }
+
     let escaped = json_str.replace('\\', "\\\\").replace('"', "\\\"");
     let script = format!(
         "if(typeof window.__czOnParams === 'function') {{ window.__czOnParams(\"{escaped}\"); }}"
