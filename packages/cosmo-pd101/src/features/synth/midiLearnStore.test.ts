@@ -3,79 +3,77 @@ import { useMidiLearnStore } from "./midiLearnStore";
 
 describe("midiLearnStore", () => {
 	beforeEach(() => {
-		localStorage.clear();
 		useMidiLearnStore.setState({
 			learnMode: false,
-			lastCapturedCc: null,
+			bindings: [],
 			pendingLearnParam: null,
-			bindings: {
-				macro1: { paramKey: "macro1", channel: 0, cc: 8 },
-				macro2: { paramKey: "macro2", channel: 0, cc: 41 },
-				macro3: { paramKey: "macro3", channel: 0, cc: 42 },
-				macro4: { paramKey: "macro4", channel: 0, cc: 43 },
-			},
 		});
 	});
 
-	it("starts with 4 default macro bindings", () => {
-		expect(Object.keys(useMidiLearnStore.getState().bindings)).toHaveLength(4);
+	it("starts with empty bindings", () => {
+		expect(useMidiLearnStore.getState().bindings).toHaveLength(0);
 	});
 
-	it("setLearnMode clears captured cc and resets pending on false", () => {
+	it("setLearnMode resets pending on false", () => {
 		useMidiLearnStore.setState({
 			learnMode: true,
-			lastCapturedCc: { channel: 1, cc: 2, rawValue: 64 },
 			pendingLearnParam: "macro1",
 		});
 		useMidiLearnStore.getState().setLearnMode(false);
-		expect(useMidiLearnStore.getState().lastCapturedCc).toBeNull();
 		expect(useMidiLearnStore.getState().pendingLearnParam).toBeNull();
 	});
 
-	it("captureMidiCc is no-op when learn mode is off", () => {
-		useMidiLearnStore.getState().captureMidiCc(0, 12, 80);
-		expect(useMidiLearnStore.getState().lastCapturedCc).toBeNull();
-	});
+	it("initFromEngineState syncs state from Rust", () => {
+		useMidiLearnStore.getState().initFromEngineState({
+			learnMode: true,
+			pendingParamKey: "macro2",
+			bindings: [{ paramKey: "macro2", channel: 3, cc: 19 }],
+			version: 1,
+		});
 
-	it("captureMidiCc with pending param creates binding", () => {
-		useMidiLearnStore.getState().setLearnMode(true);
-		useMidiLearnStore.getState().setPendingLearnParam("macro2");
-		useMidiLearnStore.getState().captureMidiCc(3, 19, 101);
-
-		expect(useMidiLearnStore.getState().bindings.macro2).toEqual({
+		expect(useMidiLearnStore.getState().learnMode).toBe(true);
+		expect(useMidiLearnStore.getState().pendingLearnParam).toBe("macro2");
+		expect(useMidiLearnStore.getState().bindings).toHaveLength(1);
+		expect(useMidiLearnStore.getState().bindings[0]).toEqual({
 			paramKey: "macro2",
 			channel: 3,
 			cc: 19,
 		});
-		expect(useMidiLearnStore.getState().lastCapturedCc).toEqual({
-			channel: 3,
-			cc: 19,
-			rawValue: 101,
-		});
 	});
 
-	it("captureMidiCc with no pending only updates last captured", () => {
-		useMidiLearnStore.getState().setLearnMode(true);
-		useMidiLearnStore.getState().captureMidiCc(2, 4, 17);
-		expect(useMidiLearnStore.getState().lastCapturedCc).toEqual({
-			channel: 2,
-			cc: 4,
-			rawValue: 17,
+	it("supports get/remove helper APIs", () => {
+		useMidiLearnStore.setState({
+			bindings: [
+				{ paramKey: "macro1", channel: 5, cc: 99 },
+				{ paramKey: "macro2", channel: 5, cc: 77 },
+			],
 		});
-	});
-
-	it("supports update/remove/get helper APIs", () => {
 		const store = useMidiLearnStore.getState();
-		store.addOrReplaceBinding(5, 99, "macro1");
-		store.updateBinding("macro1", { cc: 77 });
+
 		expect(store.getBindingForParam("macro1")).toEqual({
 			paramKey: "macro1",
 			channel: 5,
-			cc: 77,
+			cc: 99,
 		});
 		expect(store.getBindingsForMidi(5, 77)).toHaveLength(1);
 		expect(store.getBindingsForParam("macro1")).toHaveLength(1);
-		store.removeBindingsForParam("macro1");
+		expect(store.getBindingForParam("nonexistent")).toBeUndefined();
+		expect(store.getBindingsForParam("nonexistent")).toHaveLength(0);
+
+		store.removeBinding("macro1");
 		expect(store.getBindingForParam("macro1")).toBeUndefined();
+	});
+
+	it("clearBindings removes all bindings and resets pending", () => {
+		useMidiLearnStore.setState({
+			bindings: [
+				{ paramKey: "macro1", channel: 0, cc: 8 },
+				{ paramKey: "macro2", channel: 0, cc: 41 },
+			],
+			pendingLearnParam: "macro1",
+		});
+		useMidiLearnStore.getState().clearBindings();
+		expect(useMidiLearnStore.getState().bindings).toHaveLength(0);
+		expect(useMidiLearnStore.getState().pendingLearnParam).toBeNull();
 	});
 });

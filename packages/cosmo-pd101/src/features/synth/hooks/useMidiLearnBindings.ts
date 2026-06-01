@@ -77,11 +77,6 @@ export function useMidiLearnBindings({
 			if (!detail) return;
 
 			const { channel, cc, rawValue } = detail;
-			const store = useMidiLearnStore.getState();
-
-			if (store.learnMode) {
-				store.captureMidiCc(channel, cc, rawValue);
-			}
 			if (applyBindings) {
 				applyBinding(channel, cc, rawValue);
 			}

@@ -50,7 +50,7 @@ export function useMidiLearnTarget({
 			const store = useMidiLearnStore.getState();
 			const bindings = store.getBindingsForParam(targetKey);
 			if (bindings.length > 0) {
-				store.removeBindingsForParam(targetKey);
+				store.removeBinding(targetKey);
 			}
 		},
 		[targetKey],

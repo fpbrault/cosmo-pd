@@ -9,8 +9,7 @@ describe("useMidiLearnBindings", () => {
 	beforeEach(() => {
 		useMidiLearnStore.setState({
 			learnMode: false,
-			bindings: {},
-			lastCapturedCc: null,
+			bindings: [],
 			pendingLearnParam: null,
 		});
 	});
@@ -28,24 +27,26 @@ describe("useMidiLearnBindings", () => {
 		expect(removeSpy).toHaveBeenCalledWith("cz-midi-cc", expect.any(Function));
 	});
 
-	it("captures midi cc when learn mode is enabled", () => {
+	it("applies bindings when learn mode is enabled (routing delegated to Rust)", () => {
 		useMidiLearnStore.getState().setLearnMode(true);
+		useMidiLearnStore.setState({
+			bindings: [{ paramKey: "volume", channel: 1, cc: 12 }],
+		});
+		const setVolume = vi.spyOn(useSynthStore.getState(), "setVolume");
 		renderHook(() => useMidiLearnBindings());
 		window.dispatchEvent(
 			new CustomEvent("cz-midi-cc", {
 				detail: { channel: 1, cc: 12, rawValue: 99 },
 			}),
 		);
-		expect(useMidiLearnStore.getState().lastCapturedCc).toEqual({
-			channel: 1,
-			cc: 12,
-			rawValue: 99,
-		});
+		expect(setVolume).toHaveBeenCalled();
 	});
 
 	it("applies synth param bindings via store setter", () => {
 		const setVolume = vi.spyOn(useSynthStore.getState(), "setVolume");
-		useMidiLearnStore.getState().addOrReplaceBinding(0, 7, "volume");
+		useMidiLearnStore.setState({
+			bindings: [{ paramKey: "volume", channel: 0, cc: 7 }],
+		});
 		renderHook(() => useMidiLearnBindings());
 		window.dispatchEvent(
 			new CustomEvent("cz-midi-cc", {
@@ -62,7 +63,9 @@ describe("useMidiLearnBindings", () => {
 			mode: "edge-trigger",
 			threshold: 64,
 		});
-		useMidiLearnStore.getState().addOrReplaceBinding(0, 21, "edge-k");
+		useMidiLearnStore.setState({
+			bindings: [{ paramKey: "edge-k", channel: 0, cc: 21 }],
+		});
 		renderHook(() => useMidiLearnBindings());
 		window.dispatchEvent(
 			new CustomEvent("cz-midi-cc", {

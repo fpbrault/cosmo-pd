@@ -1,70 +1,10 @@
 import type { SynthRuntime } from "@cosmo/cosmo-pd101";
-import {
-	type MidiBinding,
-	useMidiLearnBindings,
-	useMidiLearnStore,
-	useNoteHandling,
-	useSynthStore,
-} from "@cosmo/cosmo-pd101";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNoteHandling, useSynthStore } from "@cosmo/cosmo-pd101";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 type UsePluginSynthRuntimeParams = {
 	eventSink: (type: string, payload: Record<string, unknown>) => void;
 };
-
-function hasBridgeApi(name: string): boolean {
-	return (
-		typeof (window as Record<string, unknown>)[`__cz${name}`] === "function"
-	);
-}
-
-function loadInitialMidiMappings(): void {
-	if (!hasBridgeApi("GetMidiMappings")) return;
-	void (window as { __czGetMidiMappings: () => Promise<unknown> })
-		.__czGetMidiMappings()
-		.then((result: unknown) => {
-			if (!Array.isArray(result) || result.length === 0) {
-				return;
-			}
-
-			const bindings: Partial<Record<string, MidiBinding>> = {};
-			for (const mapping of result as Array<{
-				paramKey: string;
-				channel: number;
-				cc: number;
-			}>) {
-				bindings[mapping.paramKey] = {
-					paramKey: mapping.paramKey,
-					channel: mapping.channel,
-					cc: mapping.cc,
-				};
-			}
-
-			useMidiLearnStore.setState({ bindings });
-		});
-}
-
-function subscribeMidiMappings(): () => void {
-	const setMidi = (
-		window as { __czSetMidiMappings: (mappings: string) => void }
-	).__czSetMidiMappings;
-	const pushMappings = (bindings: Partial<Record<string, MidiBinding>>) => {
-		const mappings = Object.values(bindings)
-			.filter((binding): binding is MidiBinding => Boolean(binding))
-			.map((binding) => ({
-				paramKey: binding.paramKey,
-				channel: binding.channel,
-				cc: binding.cc,
-			}));
-		setMidi(JSON.stringify(mappings));
-	};
-
-	pushMappings(useMidiLearnStore.getState().bindings);
-
-	return useMidiLearnStore.subscribe((state) => {
-		pushMappings(state.bindings);
-	});
-}
 
 function normalizeBenchmarkMetrics(value: unknown) {
 	if (!value || typeof value !== "object") {
@@ -108,40 +48,6 @@ export function usePluginSynthRuntime({
 		velocityCurve,
 		midiInputEnabled: false,
 	});
-
-	useMidiLearnBindings({ applyBindings: false });
-
-	useEffect(() => {
-		let cleanup: (() => void) | undefined;
-
-		const setup = () => {
-			loadInitialMidiMappings();
-			if (hasBridgeApi("SetMidiMappings")) {
-				cleanup = subscribeMidiMappings();
-			}
-		};
-
-		if (!hasBridgeApi("GetMidiMappings") && !hasBridgeApi("SetMidiMappings")) {
-			const intervalId = window.setInterval(() => {
-				if (
-					hasBridgeApi("GetMidiMappings") ||
-					hasBridgeApi("SetMidiMappings")
-				) {
-					window.clearInterval(intervalId);
-					setup();
-				}
-			}, 100);
-			return () => {
-				window.clearInterval(intervalId);
-				cleanup?.();
-			};
-		}
-
-		setup();
-		return () => {
-			cleanup?.();
-		};
-	}, []);
 
 	const subscribeScopeFrames = useCallback<
 		SynthRuntime["subscribeScopeFrames"]
