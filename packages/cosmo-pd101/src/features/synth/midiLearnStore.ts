@@ -6,6 +6,22 @@ export type MidiBinding = {
 	cc: number;
 };
 
+export type MidiBindingIdentity = Pick<
+	MidiBinding,
+	"paramKey" | "channel" | "cc"
+>;
+
+function bindingMatches(
+	binding: MidiBinding,
+	identity: MidiBindingIdentity,
+): boolean {
+	return (
+		binding.paramKey === identity.paramKey &&
+		binding.channel === identity.channel &&
+		binding.cc === identity.cc
+	);
+}
+
 type MidiLearnStateData = {
 	learnMode: boolean;
 	bindings: MidiBinding[];
@@ -16,7 +32,7 @@ type MidiLearnActions = {
 	setLearnMode: (on: boolean) => void;
 	setPendingLearnParam: (paramKey: string | null) => void;
 	addBinding: (paramKey: string, channel: number, cc: number) => void;
-	removeBinding: (paramKey: string) => void;
+	removeBinding: (binding: MidiBindingIdentity) => void;
 	clearBindings: () => void;
 	getBindingsForMidi: (channel: number, cc: number) => MidiBinding[];
 	getBindingForParam: (paramKey: string) => MidiBinding | undefined;
@@ -56,16 +72,20 @@ export const useMidiLearnStore = create<MidiLearnStore>()((set, get) => ({
 			.__czSetPendingMidiLearnParam as
 			| ((key: string | null) => void)
 			| undefined;
-		fn?.(paramKey ?? "");
+		fn?.(paramKey);
 		set({ pendingLearnParam: paramKey });
 	},
 
-	removeBinding: (paramKey) => {
+	removeBinding: (binding) => {
 		const fn = (window as unknown as Record<string, unknown>)
-			.__czRemoveMidiBinding as ((key: string) => void) | undefined;
-		fn?.(paramKey);
+			.__czRemoveMidiBinding as
+			| ((binding: MidiBindingIdentity) => void)
+			| undefined;
+		fn?.(binding);
 		set((state) => ({
-			bindings: state.bindings.filter((b) => b.paramKey !== paramKey),
+			bindings: state.bindings.filter(
+				(existing) => !bindingMatches(existing, binding),
+			),
 		}));
 	},
 
@@ -84,7 +104,7 @@ export const useMidiLearnStore = create<MidiLearnStore>()((set, get) => ({
 		fn?.(paramKey, channel, cc);
 		set((state) => ({
 			bindings: [
-				...state.bindings.filter((b) => b.paramKey !== paramKey),
+				...state.bindings.filter((binding) => binding.paramKey !== paramKey),
 				{ paramKey, channel, cc },
 			],
 		}));
@@ -113,14 +133,43 @@ export const useMidiLearnStore = create<MidiLearnStore>()((set, get) => ({
 	},
 
 	getBindingsForParam: (paramKey) => {
-		const b = get().bindings.find((b) => b.paramKey === paramKey);
-		return b ? [b] : [];
+		const binding = get().bindings.find((entry) => entry.paramKey === paramKey);
+		return binding ? [binding] : [];
 	},
 
 	resetPendingLearnParam: () => {
+		const fn = (window as unknown as Record<string, unknown>)
+			.__czSetPendingMidiLearnParam as
+			| ((key: string | null) => void)
+			| undefined;
+		fn?.(null);
 		set({ pendingLearnParam: null });
 	},
 }));
+
+export async function refreshMidiLearnState(): Promise<void> {
+	const fn = (window as unknown as Record<string, unknown>)
+		.__czGetMidiLearnState as (() => Promise<unknown>) | undefined;
+	if (!fn) {
+		return;
+	}
+
+	try {
+		const detail = await fn();
+		if (detail && typeof detail === "object") {
+			useMidiLearnStore.getState().initFromEngineState(
+				detail as {
+					learnMode: boolean;
+					pendingParamKey: string | null;
+					bindings: Array<{ paramKey: string; channel: number; cc: number }>;
+					version: number;
+				},
+			);
+		}
+	} catch (error) {
+		console.error("[MidiLearn] Failed to refresh state from engine", error);
+	}
+}
 
 export function subscribeMidiLearnState(): () => void {
 	const handler = (event: Event) => {
@@ -128,5 +177,6 @@ export function subscribeMidiLearnState(): () => void {
 		useMidiLearnStore.getState().initFromEngineState(detail);
 	};
 	window.addEventListener("cz-midi-learn-state", handler);
+	void refreshMidiLearnState();
 	return () => window.removeEventListener("cz-midi-learn-state", handler);
 }

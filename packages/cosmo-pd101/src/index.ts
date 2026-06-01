@@ -25,7 +25,11 @@ export { useMidiLearnBindings } from "./features/synth/hooks/useMidiLearnBinding
 export { useNoteHandling } from "./features/synth/hooks/useNoteHandling";
 export { useSynthParamsToWorklet } from "./features/synth/hooks/useSynthParamsToWorklet";
 export type { MidiBinding } from "./features/synth/midiLearnStore";
-export { useMidiLearnStore } from "./features/synth/midiLearnStore";
+export {
+	refreshMidiLearnState,
+	subscribeMidiLearnState,
+	useMidiLearnStore,
+} from "./features/synth/midiLearnStore";
 export type {
 	SynthBenchmarkRuntime,
 	SynthRuntime,

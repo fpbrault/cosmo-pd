@@ -16,6 +16,29 @@ export function useMidiLearnBindings({
 	applyBindings = true,
 }: UseMidiLearnBindingsOptions = {}) {
 	const edgeTriggeredStates = useRef<Record<string, boolean>>({});
+	const learnBindingFromWebMidi = useCallback((channel: number, cc: number) => {
+		const bridgeAddBinding = (
+			window as Window & {
+				__czAddMidiBinding?: (
+					key: string,
+					ch: number,
+					controller: number,
+				) => void;
+			}
+		).__czAddMidiBinding;
+		if (typeof bridgeAddBinding === "function") {
+			return false;
+		}
+
+		const store = useMidiLearnStore.getState();
+		if (!store.learnMode || !store.pendingLearnParam) {
+			return false;
+		}
+
+		store.addBinding(store.pendingLearnParam, channel, cc);
+		return true;
+	}, []);
+
 	const applyBinding = useCallback(
 		(channel: number, cc: number, rawValue: number) => {
 			const bindings = useMidiLearnStore
@@ -77,11 +100,14 @@ export function useMidiLearnBindings({
 			if (!detail) return;
 
 			const { channel, cc, rawValue } = detail;
+			if (learnBindingFromWebMidi(channel, cc)) {
+				return;
+			}
 			if (applyBindings) {
 				applyBinding(channel, cc, rawValue);
 			}
 		},
-		[applyBinding, applyBindings],
+		[applyBinding, applyBindings, learnBindingFromWebMidi],
 	);
 
 	useEffect(() => {

@@ -192,7 +192,7 @@ impl CzEditor {
             loaded_preset_id,
             editor_state,
             midi_learn_state,
-            last_midi_learn_version: 0,
+            last_midi_learn_version: u64::MAX,
             last_sent_params_json: Arc::new(Mutex::new(String::new())),
             #[cfg(target_os = "macos")]
             standalone_window: None,

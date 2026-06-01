@@ -1107,12 +1107,12 @@ fn handle_ipc_invoke(
             Ok(serde_json::Value::Null)
         }
         "setPendingMidiLearnParam" => {
-            let param_key = args
-                .first()
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| "setPendingMidiLearnParam expects a string".to_string())?;
+            let param_key = args.first().cloned().unwrap_or(serde_json::Value::Null);
             if let Ok(mut state) = midi_learn_state.lock() {
-                state.pending_param_key = Some(param_key.to_string());
+                state.pending_param_key = param_key
+                    .as_str()
+                    .filter(|value| !value.is_empty())
+                    .map(|value| value.to_string());
                 state.version += 1;
             }
             Ok(serde_json::Value::Null)
@@ -1132,6 +1132,7 @@ fn handle_ipc_invoke(
                     .and_then(|v| v.as_i64())
                     .ok_or_else(|| "addMidiBinding expects cc".to_string())? as i32;
             if let Ok(mut state) = midi_learn_state.lock() {
+                state.bindings.retain(|binding| binding.param_key != param_key);
                 state.bindings.push(crate::session_state::MidiLearnBinding {
                     param_key: param_key.to_string(),
                     channel,
@@ -1142,15 +1143,15 @@ fn handle_ipc_invoke(
             Ok(serde_json::Value::Null)
         }
         "removeMidiBinding" => {
-            let index = args
+            let binding = args
                 .first()
-                .and_then(|v| v.as_u64())
-                .ok_or_else(|| "removeMidiBinding expects a u64 index".to_string())?
-                as usize;
-            if let Ok(mut state) = midi_learn_state.lock()
-                && index < state.bindings.len()
-            {
-                state.bindings.remove(index);
+                .cloned()
+                .ok_or_else(|| "removeMidiBinding expects a binding object".to_string())?;
+            let binding: crate::session_state::MidiLearnBinding =
+                serde_json::from_value(binding)
+                    .map_err(|e| format!("invalid MidiLearnBinding: {e}"))?;
+            if let Ok(mut state) = midi_learn_state.lock() {
+                state.bindings.retain(|existing| existing != &binding);
                 state.version += 1;
             }
             Ok(serde_json::Value::Null)
@@ -1248,7 +1249,10 @@ impl CzPlugin {
             preset_library,
             loaded_preset_id: Arc::new(Mutex::new(None)),
             editor_state: Arc::new(Mutex::new(None)),
-            midi_learn_state: Arc::new(Mutex::new(crate::session_state::MidiLearnState::default())),
+            midi_learn_state: Arc::new(Mutex::new(crate::session_state::MidiLearnState {
+                bindings: crate::session_state::default_midi_bindings(),
+                ..Default::default()
+            })),
         }
     }
 
@@ -1295,51 +1299,66 @@ impl CzPlugin {
         }
     }
 
-    fn mapped_param_key_for_cc(&self, channel: u8, cc: u8) -> Option<String> {
-        let state = self.midi_learn_state.lock().ok()?;
+    fn mapped_param_keys_for_cc(&self, channel: u8, cc: u8) -> Vec<String> {
+        let Ok(state) = self.midi_learn_state.lock() else {
+            return Vec::new();
+        };
         state
             .bindings
             .iter()
-            .find(|b| b.channel == i32::from(channel) && b.cc == i32::from(cc))
-            .map(|b| b.param_key.clone())
+            .filter(|binding| {
+                (binding.channel == -1 || binding.channel == i32::from(channel))
+                    && binding.cc == i32::from(cc)
+            })
+            .map(|binding| binding.param_key.clone())
+            .collect()
     }
 
     fn apply_midi_mapping(&mut self, channel: u8, cc: u8, value: u8) -> bool {
-        let Some(param_key) = self.mapped_param_key_for_cc(channel, cc) else {
+        let param_keys = self.mapped_param_keys_for_cc(channel, cc);
+        if param_keys.is_empty() {
             let snapshot = self.midi_learn_state.lock().ok().map(|guard| guard.clone());
             append_log(&format!(
                 "apply_midi_mapping miss ch={} cc={} value={} stored_mappings={:?}",
                 channel, cc, value, snapshot
             ));
             return false;
-        };
-        append_log(&format!(
-            "apply_midi_mapping hit ch={} cc={} value={} param_key={}",
-            channel, cc, value, param_key
-        ));
-
-        let Some((min, max)) = crate::ffi::midi_mapping_range_for_key(&param_key) else {
-            append_log(&format!(
-                "apply_midi_mapping unsupported_range param_key={}",
-                param_key
-            ));
-            return false;
-        };
-
-        let normalized = f32::from(value) / 127.0;
-        let mapped_value = min + normalized * (max - min);
+        }
         let mut synth_params = (*self.synth_params.load_full()).clone();
-        if !crate::ffi::set_parameter_value(&mut synth_params, &param_key, mapped_value) {
+        let normalized = f32::from(value) / 127.0;
+        let mut applied = false;
+        for param_key in param_keys {
             append_log(&format!(
-                "apply_midi_mapping unsupported_param param_key={} mapped_value={}",
+                "apply_midi_mapping hit ch={} cc={} value={} param_key={}",
+                channel, cc, value, param_key
+            ));
+
+            let Some((min, max)) = crate::ffi::midi_mapping_range_for_key(&param_key) else {
+                append_log(&format!(
+                    "apply_midi_mapping unsupported_range param_key={}",
+                    param_key
+                ));
+                continue;
+            };
+
+            let mapped_value = min + normalized * (max - min);
+            if !crate::ffi::set_parameter_value(&mut synth_params, &param_key, mapped_value) {
+                append_log(&format!(
+                    "apply_midi_mapping unsupported_param param_key={} mapped_value={}",
+                    param_key, mapped_value
+                ));
+                continue;
+            }
+            append_log(&format!(
+                "apply_midi_mapping applied param_key={} mapped_value={}",
                 param_key, mapped_value
             ));
+            applied = true;
+        }
+
+        if !applied {
             return false;
         }
-        append_log(&format!(
-            "apply_midi_mapping applied param_key={} mapped_value={}",
-            param_key, mapped_value
-        ));
 
         let rt_params = Arc::new(build_rt_synth_params(&synth_params));
         self.synth_params.store(Arc::new(synth_params));
@@ -1467,20 +1486,13 @@ impl CzPlugin {
                         if state.learn_mode
                             && let Some(ref pending) = state.pending_param_key.clone()
                         {
-                            if !state.bindings.iter().any(|b| {
-                                b.param_key == *pending
-                                    && b.channel == i32::from(*channel)
-                                    && b.cc == i32::from(*cc)
-                            }) {
-                                state.bindings.push(crate::session_state::MidiLearnBinding {
-                                    param_key: pending.clone(),
-                                    channel: i32::from(*channel),
-                                    cc: i32::from(*cc),
-                                });
-                                state.version += 1;
-                            }
-                            state.learn_mode = false;
-                            state.pending_param_key = None;
+                            state.bindings.retain(|binding| binding.param_key != *pending);
+                            state.bindings.push(crate::session_state::MidiLearnBinding {
+                                param_key: pending.clone(),
+                                channel: i32::from(*channel),
+                                cc: i32::from(*cc),
+                            });
+                            state.version += 1;
                         }
                     }
                     append_log(&format!(
@@ -1528,20 +1540,13 @@ impl CzPlugin {
                         if state.learn_mode
                             && let Some(ref pending) = state.pending_param_key.clone()
                         {
-                            if !state.bindings.iter().any(|b| {
-                                b.param_key == *pending
-                                    && b.channel == i32::from(*channel)
-                                    && b.cc == i32::from(*cc)
-                            }) {
-                                state.bindings.push(crate::session_state::MidiLearnBinding {
-                                    param_key: pending.clone(),
-                                    channel: i32::from(*channel),
-                                    cc: i32::from(*cc),
-                                });
-                                state.version += 1;
-                            }
-                            state.learn_mode = false;
-                            state.pending_param_key = None;
+                            state.bindings.retain(|binding| binding.param_key != *pending);
+                            state.bindings.push(crate::session_state::MidiLearnBinding {
+                                param_key: pending.clone(),
+                                channel: i32::from(*channel),
+                                cc: i32::from(*cc),
+                            });
+                            state.version += 1;
                         }
                     }
                     append_log(&format!(
@@ -2396,6 +2401,65 @@ mod tests {
         });
 
         assert!((plugin.synth_params.load().macro1 - 0.0).abs() < 0.000_001);
+    }
+
+    #[test]
+    fn midi_mapping_applies_to_all_bindings_for_same_cc() {
+        let params = Arc::new(CzPluginParams::new());
+        let mut plugin = CzPlugin::new(Arc::clone(&params));
+        plugin.reset(48_000.0, 64);
+        *plugin.midi_learn_state.lock().unwrap() = crate::session_state::MidiLearnState {
+            bindings: vec![
+                crate::session_state::MidiLearnBinding {
+                    param_key: "macro1".to_string(),
+                    channel: 0,
+                    cc: 74,
+                },
+                crate::session_state::MidiLearnBinding {
+                    param_key: "macro2".to_string(),
+                    channel: 0,
+                    cc: 74,
+                },
+            ],
+            ..Default::default()
+        };
+
+        plugin.handle_host_event(&EventBody::ControlChange {
+            group: 0,
+            channel: 0,
+            cc: 74,
+            value: 127,
+        });
+
+        let synth_params = plugin.synth_params.load();
+        assert!((synth_params.macro1 - 1.0).abs() < 0.000_001);
+        assert!((synth_params.macro2 - 1.0).abs() < 0.000_001);
+    }
+
+    #[test]
+    fn host_side_midi_learn_keeps_mode_and_pending_target_enabled() {
+        let params = Arc::new(CzPluginParams::new());
+        let mut plugin = CzPlugin::new(Arc::clone(&params));
+        plugin.reset(48_000.0, 64);
+        *plugin.midi_learn_state.lock().unwrap() = crate::session_state::MidiLearnState {
+            learn_mode: true,
+            pending_param_key: Some("macro1".to_string()),
+            ..Default::default()
+        };
+
+        plugin.handle_host_event(&EventBody::ControlChange {
+            group: 0,
+            channel: 0,
+            cc: 74,
+            value: 64,
+        });
+
+        let state = plugin.midi_learn_state.lock().unwrap().clone();
+        assert!(state.learn_mode);
+        assert_eq!(state.pending_param_key.as_deref(), Some("macro1"));
+        assert!(state.bindings.iter().any(|binding| {
+            binding.param_key == "macro1" && binding.channel == 0 && binding.cc == 74
+        }));
     }
 
     #[test]

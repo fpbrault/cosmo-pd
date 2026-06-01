@@ -1,5 +1,9 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import { useMidiLearnStore } from "./midiLearnStore";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	refreshMidiLearnState,
+	subscribeMidiLearnState,
+	useMidiLearnStore,
+} from "./midiLearnStore";
 
 describe("midiLearnStore", () => {
 	beforeEach(() => {
@@ -60,8 +64,20 @@ describe("midiLearnStore", () => {
 		expect(store.getBindingForParam("nonexistent")).toBeUndefined();
 		expect(store.getBindingsForParam("nonexistent")).toHaveLength(0);
 
-		store.removeBinding("macro1");
+		store.removeBinding({ paramKey: "macro1", channel: 5, cc: 99 });
 		expect(store.getBindingForParam("macro1")).toBeUndefined();
+	});
+
+	it("addBinding replaces the existing binding for the same param key", () => {
+		useMidiLearnStore.setState({
+			bindings: [{ paramKey: "macro1", channel: 5, cc: 99 }],
+		});
+
+		useMidiLearnStore.getState().addBinding("macro1", 6, 12);
+
+		expect(useMidiLearnStore.getState().bindings).toEqual([
+			{ paramKey: "macro1", channel: 6, cc: 12 },
+		]);
 	});
 
 	it("clearBindings removes all bindings and resets pending", () => {
@@ -75,5 +91,48 @@ describe("midiLearnStore", () => {
 		useMidiLearnStore.getState().clearBindings();
 		expect(useMidiLearnStore.getState().bindings).toHaveLength(0);
 		expect(useMidiLearnStore.getState().pendingLearnParam).toBeNull();
+	});
+
+	it("refreshMidiLearnState hydrates bindings from the engine bridge", async () => {
+		(
+			window as Window & {
+				__czGetMidiLearnState?: () => Promise<unknown>;
+			}
+		).__czGetMidiLearnState = vi.fn().mockResolvedValue({
+			learnMode: true,
+			pendingParamKey: "macro3",
+			bindings: [{ paramKey: "macro3", channel: 2, cc: 42 }],
+			version: 7,
+		});
+
+		await refreshMidiLearnState();
+
+		expect(useMidiLearnStore.getState()).toMatchObject({
+			learnMode: true,
+			pendingLearnParam: "macro3",
+			bindings: [{ paramKey: "macro3", channel: 2, cc: 42 }],
+		});
+	});
+
+	it("subscribeMidiLearnState requests the latest engine state immediately", async () => {
+		(
+			window as Window & {
+				__czGetMidiLearnState?: () => Promise<unknown>;
+			}
+		).__czGetMidiLearnState = vi.fn().mockResolvedValue({
+			learnMode: false,
+			pendingParamKey: null,
+			bindings: [{ paramKey: "macro4", channel: 0, cc: 43 }],
+			version: 9,
+		});
+
+		const unsubscribe = subscribeMidiLearnState();
+		await Promise.resolve();
+
+		expect(useMidiLearnStore.getState().bindings).toEqual([
+			{ paramKey: "macro4", channel: 0, cc: 43 },
+		]);
+
+		unsubscribe();
 	});
 });

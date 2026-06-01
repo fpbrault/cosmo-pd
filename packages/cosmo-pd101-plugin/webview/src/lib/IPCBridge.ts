@@ -29,6 +29,11 @@ type ScopeDataResponse = {
 };
 
 type TransportInfoResponse = string | Record<string, number | boolean>;
+type MidiBindingIdentity = {
+	paramKey: string;
+	channel: number;
+	cc: number;
+};
 
 declare global {
 	interface Window {
@@ -58,6 +63,11 @@ declare global {
 		__czGetEditorState?: () => Promise<unknown>;
 		__czOnMidiLearnState?: (json: string) => void;
 		__czGetMidiLearnState?: () => Promise<unknown>;
+		__czSetMidiLearnMode?: (on: boolean) => void;
+		__czSetPendingMidiLearnParam?: (key: string | null) => void;
+		__czAddMidiBinding?: (key: string, ch: number, cc: number) => void;
+		__czRemoveMidiBinding?: (binding: MidiBindingIdentity) => void;
+		__czClearMidiLearnBindings?: () => void;
 	}
 }
 
@@ -222,6 +232,32 @@ function installIpcRouter() {
 	window.__czGetEditorState = () => invokeRust("getEditorState");
 
 	window.__czGetMidiLearnState = () => invokeRust("getMidiLearnState");
+
+	window.__czSetMidiLearnMode = (on: boolean) => {
+		void invokeRust("setMidiLearnMode", on).catch((error) => {
+			console.error("[IPCBridge] setMidiLearnMode error", error);
+		});
+	};
+	window.__czSetPendingMidiLearnParam = (key: string | null) => {
+		void invokeRust("setPendingMidiLearnParam", key).catch((error) => {
+			console.error("[IPCBridge] setPendingMidiLearnParam error", error);
+		});
+	};
+	window.__czAddMidiBinding = (key: string, ch: number, cc: number) => {
+		void invokeRust("addMidiBinding", key, ch, cc).catch((error) => {
+			console.error("[IPCBridge] addMidiBinding error", error);
+		});
+	};
+	window.__czRemoveMidiBinding = (binding: MidiBindingIdentity) => {
+		void invokeRust("removeMidiBinding", binding).catch((error) => {
+			console.error("[IPCBridge] removeMidiBinding error", error);
+		});
+	};
+	window.__czClearMidiLearnBindings = () => {
+		void invokeRust("clearMidiLearnBindings").catch((error) => {
+			console.error("[IPCBridge] clearMidiLearnBindings error", error);
+		});
+	};
 }
 
 // ─── Native IPC passthrough ───────────────────────────────────────────────────

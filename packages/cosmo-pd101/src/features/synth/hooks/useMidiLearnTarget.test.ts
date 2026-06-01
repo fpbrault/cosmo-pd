@@ -35,9 +35,9 @@ describe("useMidiLearnTarget", () => {
 				bindings: [{ paramKey: "macro1", channel: 0, cc: 18 }],
 			});
 		});
-		expect(result.current.midiLearnState).toBe("targeted");
+		expect(result.current.midiLearnState).toBe("mapped");
 		act(() => {
-			useMidiLearnStore.getState().setPendingLearnParam(null);
+			useMidiLearnStore.setState({ pendingLearnParam: "macro2" });
 		});
 		expect(result.current.midiLearnState).toBe("mapped");
 	});

@@ -13,6 +13,11 @@ type ScopeDataResponse = {
 type RuntimeVoiceStatesResponse = string | unknown[];
 
 type RuntimeModSourcesResponse = string | Record<string, number>;
+type MidiBindingIdentity = {
+	paramKey: string;
+	channel: number;
+	cc: number;
+};
 
 const SCOPE_POLL_INTERVAL_MS = 33;
 const RUNTIME_VOICE_STATES_POLL_INTERVAL_MS = 16;
@@ -50,6 +55,11 @@ declare global {
 		__czGetEditorState?: () => Promise<unknown>;
 		__czOnMidiLearnState?: (json: string) => void;
 		__czGetMidiLearnState?: () => Promise<unknown>;
+		__czSetMidiLearnMode?: (on: boolean) => void;
+		__czSetPendingMidiLearnParam?: (key: string | null) => void;
+		__czAddMidiBinding?: (key: string, ch: number, cc: number) => void;
+		__czRemoveMidiBinding?: (binding: MidiBindingIdentity) => void;
+		__czClearMidiLearnBindings?: () => void;
 	}
 }
 
@@ -186,6 +196,32 @@ function installIpcRouter() {
 	window.__czGetEditorState = () => invokeAuv3("getEditorState", []);
 
 	window.__czGetMidiLearnState = () => invokeAuv3("getMidiLearnState", []);
+
+	window.__czSetMidiLearnMode = (on: boolean) => {
+		void invokeAuv3("setMidiLearnMode", [on]).catch((error) => {
+			console.error("[auv3Bridge] setMidiLearnMode error", error);
+		});
+	};
+	window.__czSetPendingMidiLearnParam = (key: string | null) => {
+		void invokeAuv3("setPendingMidiLearnParam", [key]).catch((error) => {
+			console.error("[auv3Bridge] setPendingMidiLearnParam error", error);
+		});
+	};
+	window.__czAddMidiBinding = (key: string, ch: number, cc: number) => {
+		void invokeAuv3("addMidiBinding", [key, ch, cc]).catch((error) => {
+			console.error("[auv3Bridge] addMidiBinding error", error);
+		});
+	};
+	window.__czRemoveMidiBinding = (binding: MidiBindingIdentity) => {
+		void invokeAuv3("removeMidiBinding", [binding]).catch((error) => {
+			console.error("[auv3Bridge] removeMidiBinding error", error);
+		});
+	};
+	window.__czClearMidiLearnBindings = () => {
+		void invokeAuv3("clearMidiLearnBindings").catch((error) => {
+			console.error("[auv3Bridge] clearMidiLearnBindings error", error);
+		});
+	};
 }
 
 function installScopeProperty(onActiveChange: (active: boolean) => void) {

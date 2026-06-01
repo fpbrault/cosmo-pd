@@ -26,8 +26,10 @@ export function useMidiLearnTarget({
 	const pendingLearnParam = useMidiLearnStore((state) =>
 		targetKey ? state.pendingLearnParam : null,
 	);
-	const midiBinding = useMidiLearnStore((state) =>
-		targetKey ? state.getBindingForParam(targetKey) : undefined,
+	const hasMidiBinding = useMidiLearnStore((state) =>
+		targetKey
+			? state.bindings.some((binding) => binding.paramKey === targetKey)
+			: false,
 	);
 
 	useEffect(() => {
@@ -49,8 +51,8 @@ export function useMidiLearnTarget({
 			e.preventDefault();
 			const store = useMidiLearnStore.getState();
 			const bindings = store.getBindingsForParam(targetKey);
-			if (bindings.length > 0) {
-				store.removeBinding(targetKey);
+			for (const binding of bindings) {
+				store.removeBinding(binding);
 			}
 		},
 		[targetKey],
@@ -66,10 +68,10 @@ export function useMidiLearnTarget({
 	const midiLearnState: MidiLearnVisualState =
 		!learnMode || !targetKey
 			? null
-			: pendingLearnParam === targetKey
-				? "targeted"
-				: midiBinding
-					? "mapped"
+			: hasMidiBinding
+				? "mapped"
+				: pendingLearnParam === targetKey
+					? "targeted"
 					: "available";
 
 	return {
