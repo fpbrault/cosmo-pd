@@ -48,8 +48,8 @@ declare global {
 		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
 		__czSetEditorState?: (state: string) => void;
 		__czGetEditorState?: () => Promise<unknown>;
-		__czSetMidiMappings?: (mappings: string) => void;
-		__czGetMidiMappings?: () => Promise<unknown>;
+		__czOnMidiLearnState?: (json: string) => void;
+		__czGetMidiLearnState?: () => Promise<unknown>;
 	}
 }
 
@@ -185,15 +185,7 @@ function installIpcRouter() {
 
 	window.__czGetEditorState = () => invokeAuv3("getEditorState", []);
 
-	window.__czSetMidiMappings = (mappings: string) => {
-		void invokeAuv3("setMidiMappings", [JSON.parse(mappings)]).catch(
-			(error) => {
-				console.error("[auv3Bridge] setMidiMappings error", error);
-			},
-		);
-	};
-
-	window.__czGetMidiMappings = () => invokeAuv3("getMidiMappings", []);
+	window.__czGetMidiLearnState = () => invokeAuv3("getMidiLearnState", []);
 }
 
 function installScopeProperty(onActiveChange: (active: boolean) => void) {
@@ -423,6 +415,29 @@ function installMidiCcHandler() {
 	}
 }
 
+// ─── MIDI learn state handler ──────────────────────────────────────────────────
+
+function installMidiLearnStateHandler() {
+	try {
+		Object.defineProperty(window, "__czOnMidiLearnState", {
+			configurable: true,
+			writable: true,
+			value: (json: string) => {
+				try {
+					const state = JSON.parse(json);
+					window.dispatchEvent(
+						new CustomEvent("cz-midi-learn-state", { detail: state }),
+					);
+				} catch {
+					console.error("[auv3Bridge] Invalid MidiLearnState JSON");
+				}
+			},
+		});
+	} catch {
+		// Host may prevent definition; will fall back gracefully.
+	}
+}
+
 export function ensureAuv3Bridge(): boolean {
 	if (installed) {
 		return true;
@@ -435,6 +450,7 @@ export function ensureAuv3Bridge(): boolean {
 	installParamProperty();
 	installIpcResponseHandler();
 	installMidiCcHandler();
+	installMidiLearnStateHandler();
 	installIpcRouter();
 	installScopePolling();
 	installRuntimeVoiceStatesPolling();

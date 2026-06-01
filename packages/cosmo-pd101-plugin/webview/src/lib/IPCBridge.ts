@@ -56,8 +56,8 @@ declare global {
 		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
 		__czSetEditorState?: (state: string) => void;
 		__czGetEditorState?: () => Promise<unknown>;
-		__czSetMidiMappings?: (mappings: string) => void;
-		__czGetMidiMappings?: () => Promise<unknown>;
+		__czOnMidiLearnState?: (json: string) => void;
+		__czGetMidiLearnState?: () => Promise<unknown>;
 	}
 }
 
@@ -221,13 +221,7 @@ function installIpcRouter() {
 
 	window.__czGetEditorState = () => invokeRust("getEditorState");
 
-	window.__czSetMidiMappings = (mappings: string) => {
-		void invokeRust("setMidiMappings", JSON.parse(mappings)).catch((error) => {
-			console.error("[IPCBridge] setMidiMappings error", error);
-		});
-	};
-
-	window.__czGetMidiMappings = () => invokeRust("getMidiMappings");
+	window.__czGetMidiLearnState = () => invokeRust("getMidiLearnState");
 }
 
 // ─── Native IPC passthrough ───────────────────────────────────────────────────
@@ -255,6 +249,29 @@ function installMidiCcHandler() {
 		});
 	} catch {
 		// Host may prevent definition; MIDI Learn will fall back to Web MIDI API.
+	}
+}
+
+// ─── MIDI learn state handler ──────────────────────────────────────────────────
+
+function installMidiLearnStateHandler() {
+	try {
+		Object.defineProperty(window, "__czOnMidiLearnState", {
+			configurable: true,
+			writable: true,
+			value: (json: string) => {
+				try {
+					const state = JSON.parse(json);
+					window.dispatchEvent(
+						new CustomEvent("cz-midi-learn-state", { detail: state }),
+					);
+				} catch {
+					console.error("[IPCBridge] Invalid MidiLearnState JSON");
+				}
+			},
+		});
+	} catch {
+		// Host may prevent definition; will fall back gracefully.
 	}
 }
 
@@ -597,6 +614,7 @@ export function ensureIPCBridge(): boolean {
 	installParamProperty();
 	installIpcResponseHandler();
 	installMidiCcHandler();
+	installMidiLearnStateHandler();
 	installIpcRouter();
 	installScopePolling();
 	installRuntimeModSourcesPolling();
