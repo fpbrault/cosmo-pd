@@ -4,13 +4,10 @@ import MidiLearnPanel from "./MidiLearnPanel";
 
 const state = {
 	learnMode: false,
-	bindings: {
-		macro1: { paramKey: "macro1", channel: 0, cc: 7 },
-	},
+	bindings: [{ paramKey: "macro1", channel: 0, cc: 7 }],
 	setLearnMode: vi.fn(),
-	clearLastCapturedCc: vi.fn(),
 	removeBinding: vi.fn(),
-	updateBinding: vi.fn(),
+	addBinding: vi.fn(),
 	resetPendingLearnParam: vi.fn(),
 };
 

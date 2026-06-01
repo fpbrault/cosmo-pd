@@ -32,9 +32,8 @@ const MidiLearnPanel = Object.assign(
 		const learnMode = useMidiLearnStore((s) => s.learnMode);
 		const setLearnMode = useMidiLearnStore((s) => s.setLearnMode);
 		const bindings = useMidiLearnStore((s) => s.bindings);
-		const clearLastCapturedCc = useMidiLearnStore((s) => s.clearLastCapturedCc);
 		const removeBinding = useMidiLearnStore((s) => s.removeBinding);
-		const updateBinding = useMidiLearnStore((s) => s.updateBinding);
+		const addBinding = useMidiLearnStore((s) => s.addBinding);
 		const resetPendingLearnParam = useMidiLearnStore(
 			(s) => s.resetPendingLearnParam,
 		);
@@ -42,23 +41,18 @@ const MidiLearnPanel = Object.assign(
 		const handleToggle = useCallback(() => {
 			if (learnMode) {
 				setLearnMode(false);
-				clearLastCapturedCc();
 				resetPendingLearnParam();
 			} else {
 				setLearnMode(true);
 			}
-		}, [learnMode, setLearnMode, clearLastCapturedCc, resetPendingLearnParam]);
+		}, [learnMode, setLearnMode, resetPendingLearnParam]);
 
-		const bindingList = Object.values(bindings)
-			.filter((binding): binding is NonNullable<typeof binding> =>
-				Boolean(binding),
-			)
-			.sort(
-				(a, b) =>
-					a.channel - b.channel ||
-					a.cc - b.cc ||
-					a.paramKey.localeCompare(b.paramKey),
-			);
+		const bindingList = [...bindings].sort(
+			(a, b) =>
+				a.channel - b.channel ||
+				a.cc - b.cc ||
+				a.paramKey.localeCompare(b.paramKey),
+		);
 		const bindingCount = bindingList.length;
 		const [editingCell, setEditingCell] = useState<{
 			paramKey: string;
@@ -123,24 +117,30 @@ const MidiLearnPanel = Object.assign(
 																max={16}
 																defaultValue={binding.channel + 1}
 																onBlur={(event) => {
-																	updateBinding(binding.paramKey, {
-																		channel:
-																			clampChannelDisplay(
-																				Number(event.currentTarget.value || 1),
-																			) - 1,
-																	});
+																	const newChannel =
+																		clampChannelDisplay(
+																			Number(event.currentTarget.value || 1),
+																		) - 1;
+																	removeBinding(binding.paramKey);
+																	addBinding(
+																		binding.paramKey,
+																		newChannel,
+																		binding.cc,
+																	);
 																	setEditingCell(null);
 																}}
 																onKeyDown={(event) => {
 																	if (event.key === "Enter") {
-																		updateBinding(binding.paramKey, {
-																			channel:
-																				clampChannelDisplay(
-																					Number(
-																						event.currentTarget.value || 1,
-																					),
-																				) - 1,
-																		});
+																		const newChannel =
+																			clampChannelDisplay(
+																				Number(event.currentTarget.value || 1),
+																			) - 1;
+																		removeBinding(binding.paramKey);
+																		addBinding(
+																			binding.paramKey,
+																			newChannel,
+																			binding.cc,
+																		);
 																		setEditingCell(null);
 																	}
 																	if (event.key === "Escape") {
@@ -174,20 +174,28 @@ const MidiLearnPanel = Object.assign(
 																max={127}
 																defaultValue={binding.cc}
 																onBlur={(event) => {
-																	updateBinding(binding.paramKey, {
-																		cc: clampCc(
-																			Number(event.currentTarget.value || 0),
-																		),
-																	});
+																	const newCc = clampCc(
+																		Number(event.currentTarget.value || 0),
+																	);
+																	removeBinding(binding.paramKey);
+																	addBinding(
+																		binding.paramKey,
+																		binding.channel,
+																		newCc,
+																	);
 																	setEditingCell(null);
 																}}
 																onKeyDown={(event) => {
 																	if (event.key === "Enter") {
-																		updateBinding(binding.paramKey, {
-																			cc: clampCc(
-																				Number(event.currentTarget.value || 0),
-																			),
-																		});
+																		const newCc = clampCc(
+																			Number(event.currentTarget.value || 0),
+																		);
+																		removeBinding(binding.paramKey);
+																		addBinding(
+																			binding.paramKey,
+																			binding.channel,
+																			newCc,
+																		);
 																		setEditingCell(null);
 																	}
 																	if (event.key === "Escape") {

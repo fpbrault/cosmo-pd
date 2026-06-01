@@ -15,6 +15,7 @@ type MidiLearnStateData = {
 type MidiLearnActions = {
 	setLearnMode: (on: boolean) => void;
 	setPendingLearnParam: (paramKey: string | null) => void;
+	addBinding: (paramKey: string, channel: number, cc: number) => void;
 	removeBinding: (paramKey: string) => void;
 	clearBindings: () => void;
 	getBindingsForMidi: (channel: number, cc: number) => MidiBinding[];
@@ -41,9 +42,8 @@ export const useMidiLearnStore = create<MidiLearnStore>()((set, get) => ({
 	...DEFAULT_STATE,
 
 	setLearnMode: (on) => {
-		const fn = (window as Record<string, unknown>).__czSetMidiLearnMode as
-			| ((on: boolean) => void)
-			| undefined;
+		const fn = (window as unknown as Record<string, unknown>)
+			.__czSetMidiLearnMode as ((on: boolean) => void) | undefined;
 		fn?.(on);
 		set({
 			learnMode: on,
@@ -52,7 +52,7 @@ export const useMidiLearnStore = create<MidiLearnStore>()((set, get) => ({
 	},
 
 	setPendingLearnParam: (paramKey) => {
-		const fn = (window as Record<string, unknown>)
+		const fn = (window as unknown as Record<string, unknown>)
 			.__czSetPendingMidiLearnParam as
 			| ((key: string | null) => void)
 			| undefined;
@@ -61,9 +61,8 @@ export const useMidiLearnStore = create<MidiLearnStore>()((set, get) => ({
 	},
 
 	removeBinding: (paramKey) => {
-		const fn = (window as Record<string, unknown>).__czRemoveMidiBinding as
-			| ((key: string) => void)
-			| undefined;
+		const fn = (window as unknown as Record<string, unknown>)
+			.__czRemoveMidiBinding as ((key: string) => void) | undefined;
 		fn?.(paramKey);
 		set((state) => ({
 			bindings: state.bindings.filter((b) => b.paramKey !== paramKey),
@@ -71,11 +70,24 @@ export const useMidiLearnStore = create<MidiLearnStore>()((set, get) => ({
 	},
 
 	clearBindings: () => {
-		const fn = (window as Record<string, unknown>).__czClearMidiLearnBindings as
-			| (() => void)
-			| undefined;
+		const fn = (window as unknown as Record<string, unknown>)
+			.__czClearMidiLearnBindings as (() => void) | undefined;
 		fn?.();
 		set({ bindings: [], pendingLearnParam: null });
+	},
+
+	addBinding: (paramKey, channel, cc) => {
+		const fn = (window as unknown as Record<string, unknown>)
+			.__czAddMidiBinding as
+			| ((key: string, ch: number, c: number) => void)
+			| undefined;
+		fn?.(paramKey, channel, cc);
+		set((state) => ({
+			bindings: [
+				...state.bindings.filter((b) => b.paramKey !== paramKey),
+				{ paramKey, channel, cc },
+			],
+		}));
 	},
 
 	initFromEngineState: (engineState) => {
