@@ -49,22 +49,12 @@ pub struct MidiLearnBinding {
 /// MIDI learn state owned by the engine, pushed to webview on change.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
+#[derive(Default)]
 pub struct MidiLearnState {
     pub learn_mode: bool,
     pub pending_param_key: Option<String>,
     pub bindings: Vec<MidiLearnBinding>,
     pub version: u64,
-}
-
-impl Default for MidiLearnState {
-    fn default() -> Self {
-        Self {
-            learn_mode: false,
-            pending_param_key: None,
-            bindings: Vec::new(),
-            version: 0,
-        }
-    }
 }
 
 /// DAW-serializable session state.

@@ -31,10 +31,11 @@ use crate::CzPluginParams;
 #[cfg(target_os = "macos")]
 use crate::handle_ipc_invoke;
 use crate::preset_library::PresetLibrary;
+use crate::session_state::MidiLearnState;
 use crate::{
-    MidiCcQueue, PerformanceCountersHandle, ScopeBuffer, SharedEditorState, SharedMidiMappings,
-    SharedPresetName, SharedRuntimeModSources, SharedRuntimeVoiceStates, SharedTransportSnapshot,
-    UiInputQueue, append_log,
+    MidiCcQueue, PerformanceCountersHandle, ScopeBuffer, SharedEditorState, SharedPresetName,
+    SharedRuntimeModSources, SharedRuntimeVoiceStates, SharedTransportSnapshot, UiInputQueue,
+    append_log,
 };
 use cosmo_synth_engine::params::SynthParams;
 
@@ -120,7 +121,8 @@ pub struct CzEditor {
     preset_library: Arc<Mutex<PresetLibrary>>,
     loaded_preset_id: Arc<Mutex<Option<String>>>,
     editor_state: SharedEditorState,
-    midi_learn_bindings: SharedMidiMappings,
+    midi_learn_state: Arc<Mutex<MidiLearnState>>,
+    last_midi_learn_version: u64,
     last_sent_params_json: Arc<Mutex<String>>,
     #[cfg(target_os = "macos")]
     standalone_window: Option<StandaloneWindow>,
@@ -168,7 +170,7 @@ impl CzEditor {
         preset_library: Arc<Mutex<PresetLibrary>>,
         loaded_preset_id: Arc<Mutex<Option<String>>>,
         editor_state: SharedEditorState,
-        midi_learn_bindings: SharedMidiMappings,
+        midi_learn_state: Arc<Mutex<MidiLearnState>>,
     ) -> Self {
         Self {
             synth_params,
@@ -189,7 +191,8 @@ impl CzEditor {
             preset_library,
             loaded_preset_id,
             editor_state,
-            midi_learn_bindings,
+            midi_learn_state,
+            last_midi_learn_version: 0,
             last_sent_params_json: Arc::new(Mutex::new(String::new())),
             #[cfg(target_os = "macos")]
             standalone_window: None,
@@ -228,7 +231,7 @@ impl CzEditor {
         let preset_library = self.preset_library.clone();
         let loaded_preset_id = self.loaded_preset_id.clone();
         let editor_state = self.editor_state.clone();
-        let midi_learn_bindings = self.midi_learn_bindings.clone();
+        let midi_learn_state = self.midi_learn_state.clone();
         let webview_state_for_ipc = self.webview_state.clone();
 
         let (webview, standalone_window) = unsafe {
@@ -249,7 +252,7 @@ impl CzEditor {
                 preset_library,
                 loaded_preset_id,
                 editor_state,
-                midi_learn_bindings,
+                midi_learn_state,
                 webview_state_for_ipc,
             )
         };
@@ -369,12 +372,23 @@ impl Editor for CzEditor {
             let last_sent_params_json = self.last_sent_params_json.clone();
             #[cfg(not(any(target_os = "ios", target_os = "android")))]
             let midi_cc_queue = self.midi_cc_queue.clone();
+            let midi_learn_state = self.midi_learn_state.clone();
             run_on_main(move |_mtm| {
-                push_params_to_webview(
-                    &webview_state,
-                    &synth_params,
-                    &last_sent_params_json,
-                );
+                push_params_to_webview(&webview_state, &synth_params, &last_sent_params_json);
+                // Push MIDI learn state (unconditional, no version check)
+                if let Ok(state) = midi_learn_state.lock()
+                    && let Ok(json) = serde_json::to_string(&*state)
+                {
+                    let escaped = json.replace('\\', "\\\\").replace('"', "\\\"");
+                    let script = format!(
+                        "if(typeof window.__czOnMidiLearnState === 'function') {{ window.__czOnMidiLearnState(\"{escaped}\"); }}"
+                    );
+                    if let Ok(container) = webview_state.lock()
+                        && let Some(wv) = &container.webview
+                    {
+                        let _ = wv.evaluate_script(&script);
+                    }
+                }
                 #[cfg(not(any(target_os = "ios", target_os = "android")))]
                 flush_midi_cc_queue_to_webview(&webview_state, &midi_cc_queue);
             });
@@ -393,6 +407,24 @@ impl Editor for CzEditor {
         }
 
         self.push_params();
+
+        // Push MIDI learn state if version changed
+        if let Ok(state) = self.midi_learn_state.lock()
+            && state.version != self.last_midi_learn_version
+        {
+            self.last_midi_learn_version = state.version;
+            if let Ok(json) = serde_json::to_string(&*state) {
+                let escaped = json.replace('\\', "\\\\").replace('"', "\\\"");
+                let script = format!(
+                    "if(typeof window.__czOnMidiLearnState === 'function') {{ window.__czOnMidiLearnState(\"{escaped}\"); }}"
+                );
+                if let Ok(container) = self.webview_state.lock()
+                    && let Some(wv) = &container.webview
+                {
+                    let _ = wv.evaluate_script(&script);
+                }
+            }
+        }
 
         #[cfg(not(any(target_os = "ios", target_os = "android")))]
         flush_midi_cc_queue_to_webview(&self.webview_state, &self.midi_cc_queue);
@@ -849,7 +881,7 @@ unsafe fn build_webview_from_ns_view(
     preset_library: Arc<Mutex<PresetLibrary>>,
     loaded_preset_id: Arc<Mutex<Option<String>>>,
     editor_state: SharedEditorState,
-    midi_learn_bindings: SharedMidiMappings,
+    midi_learn_state: Arc<Mutex<MidiLearnState>>,
     webview_state: Arc<Mutex<WebViewContainer>>,
 ) -> (Option<wry::WebView>, Option<StandaloneWindow>) {
     unsafe {
@@ -881,7 +913,7 @@ unsafe fn build_webview_from_ns_view(
         let preset_library_for_ipc = preset_library.clone();
         let loaded_preset_id_for_ipc = loaded_preset_id.clone();
         let editor_state_for_ipc = editor_state.clone();
-        let midi_mappings_for_ipc = midi_learn_bindings.clone();
+        let midi_learn_state_for_ipc = midi_learn_state.clone();
         let webview_state_for_response = webview_state.clone();
         let params_repush_done = Arc::new(AtomicBool::new(false));
 
@@ -932,7 +964,7 @@ unsafe fn build_webview_from_ns_view(
                     &preset_library_for_ipc,
                     &loaded_preset_id_for_ipc,
                     &editor_state_for_ipc,
-                    &midi_mappings_for_ipc,
+                    &midi_learn_state_for_ipc,
                 );
 
                 let response = match result {

@@ -634,7 +634,7 @@ fn sync_all_daw_params_from_synth(params: &CzPluginParams, synth: &SynthParams) 
 
 pub(crate) type SharedPresetName = Arc<Mutex<String>>;
 pub(crate) type SharedEditorState = Arc<Mutex<Option<crate::session_state::EditorState>>>;
-pub(crate) type SharedMidiMappings = Arc<Mutex<Option<crate::session_state::MidiLearnState>>>;
+pub(crate) type SharedMidiMappings = Arc<Mutex<crate::session_state::MidiLearnState>>;
 
 // =============================================================================
 // IPC dispatch
@@ -658,7 +658,7 @@ fn handle_ipc_invoke(
     preset_library: &Arc<Mutex<PresetLibrary>>,
     loaded_preset_id: &Arc<Mutex<Option<String>>>,
     editor_state: &SharedEditorState,
-    midi_mappings: &SharedMidiMappings,
+    midi_learn_state: &SharedMidiMappings,
 ) -> Result<serde_json::Value, String> {
     if method != "getScopeData"
         && method != "clientLog"
@@ -1095,25 +1095,78 @@ fn handle_ipc_invoke(
             let state = editor_state.lock().map(|s| s.clone()).unwrap_or(None);
             serde_json::to_value(state).map_err(|e| e.to_string())
         }
-        "setMidiMappings" => {
-            let payload = args
+        "setMidiLearnMode" => {
+            let mode = args
                 .first()
-                .ok_or_else(|| "setMidiMappings expects a payload".to_string())?;
-            let state: crate::session_state::MidiLearnState =
-                serde_json::from_value(payload.clone())
-                    .map_err(|e| format!("invalid MidiLearnState: {e}"))?;
-            append_log(&format!(
-                "setMidiMappings version={} bindings={}",
-                state.version,
-                state.bindings.len(),
-            ));
-            if let Ok(mut stored) = midi_mappings.lock() {
-                *stored = Some(state);
+                .and_then(|v| v.as_bool())
+                .ok_or_else(|| "setMidiLearnMode expects a boolean".to_string())?;
+            if let Ok(mut state) = midi_learn_state.lock() {
+                state.learn_mode = mode;
+                state.version += 1;
             }
             Ok(serde_json::Value::Null)
         }
-        "getMidiMappings" => {
-            let state = midi_mappings.lock().map(|s| s.clone()).unwrap_or(None);
+        "setPendingMidiLearnParam" => {
+            let param_key = args
+                .first()
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| "setPendingMidiLearnParam expects a string".to_string())?;
+            if let Ok(mut state) = midi_learn_state.lock() {
+                state.pending_param_key = Some(param_key.to_string());
+                state.version += 1;
+            }
+            Ok(serde_json::Value::Null)
+        }
+        "addMidiBinding" => {
+            let param_key = args
+                .first()
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| "addMidiBinding expects param_key".to_string())?;
+            let channel = args
+                .get(1)
+                .and_then(|v| v.as_i64())
+                .ok_or_else(|| "addMidiBinding expects channel".to_string())?
+                as i32;
+            let cc =
+                args.get(2)
+                    .and_then(|v| v.as_i64())
+                    .ok_or_else(|| "addMidiBinding expects cc".to_string())? as i32;
+            if let Ok(mut state) = midi_learn_state.lock() {
+                state.bindings.push(crate::session_state::MidiLearnBinding {
+                    param_key: param_key.to_string(),
+                    channel,
+                    cc,
+                });
+                state.version += 1;
+            }
+            Ok(serde_json::Value::Null)
+        }
+        "removeMidiBinding" => {
+            let index = args
+                .first()
+                .and_then(|v| v.as_u64())
+                .ok_or_else(|| "removeMidiBinding expects a u64 index".to_string())?
+                as usize;
+            if let Ok(mut state) = midi_learn_state.lock()
+                && index < state.bindings.len()
+            {
+                state.bindings.remove(index);
+                state.version += 1;
+            }
+            Ok(serde_json::Value::Null)
+        }
+        "clearMidiLearnBindings" => {
+            if let Ok(mut state) = midi_learn_state.lock() {
+                state.bindings.clear();
+                state.version += 1;
+            }
+            Ok(serde_json::Value::Null)
+        }
+        "getMidiLearnState" => {
+            let state = midi_learn_state
+                .lock()
+                .map(|s| s.clone())
+                .unwrap_or_default();
             serde_json::to_value(state).map_err(|e| e.to_string())
         }
         _ => Err(format!("unknown method: {method}")),
@@ -1154,8 +1207,8 @@ pub struct CzPlugin {
     loaded_preset_id: Arc<Mutex<Option<String>>>,
     /// UI editor state persisted across DAW sessions.
     editor_state: SharedEditorState,
-    /// MIDI learn bindings persisted across DAW sessions.
-    midi_learn_bindings: SharedMidiMappings,
+    /// MIDI learn state owned by the engine.
+    midi_learn_state: SharedMidiMappings,
 }
 
 impl CzPlugin {
@@ -1195,7 +1248,7 @@ impl CzPlugin {
             preset_library,
             loaded_preset_id: Arc::new(Mutex::new(None)),
             editor_state: Arc::new(Mutex::new(None)),
-            midi_learn_bindings: Arc::new(Mutex::new(None)),
+            midi_learn_state: Arc::new(Mutex::new(crate::session_state::MidiLearnState::default())),
         }
     }
 
@@ -1243,8 +1296,7 @@ impl CzPlugin {
     }
 
     fn mapped_param_key_for_cc(&self, channel: u8, cc: u8) -> Option<String> {
-        let state = self.midi_learn_bindings.lock().ok()?;
-        let state = state.as_ref()?;
+        let state = self.midi_learn_state.lock().ok()?;
         state
             .bindings
             .iter()
@@ -1254,11 +1306,7 @@ impl CzPlugin {
 
     fn apply_midi_mapping(&mut self, channel: u8, cc: u8, value: u8) -> bool {
         let Some(param_key) = self.mapped_param_key_for_cc(channel, cc) else {
-            let snapshot = self
-                .midi_learn_bindings
-                .lock()
-                .ok()
-                .and_then(|guard| (*guard).clone());
+            let snapshot = self.midi_learn_state.lock().ok().map(|guard| guard.clone());
             append_log(&format!(
                 "apply_midi_mapping miss ch={} cc={} value={} stored_mappings={:?}",
                 channel, cc, value, snapshot
@@ -1414,6 +1462,27 @@ impl CzPlugin {
                     }
                 }
                 _ => {
+                    {
+                        let mut state = self.midi_learn_state.lock().unwrap();
+                        if state.learn_mode
+                            && let Some(ref pending) = state.pending_param_key.clone()
+                        {
+                            if !state.bindings.iter().any(|b| {
+                                b.param_key == *pending
+                                    && b.channel == i32::from(*channel)
+                                    && b.cc == i32::from(*cc)
+                            }) {
+                                state.bindings.push(crate::session_state::MidiLearnBinding {
+                                    param_key: pending.clone(),
+                                    channel: i32::from(*channel),
+                                    cc: i32::from(*cc),
+                                });
+                                state.version += 1;
+                            }
+                            state.learn_mode = false;
+                            state.pending_param_key = None;
+                        }
+                    }
                     append_log(&format!(
                         "handle_host_event ControlChange ch={} cc={} value={}",
                         channel, cc, value
@@ -1454,6 +1523,27 @@ impl CzPlugin {
                 }
                 _ => {
                     let raw_value = (*value / 128) as u8;
+                    {
+                        let mut state = self.midi_learn_state.lock().unwrap();
+                        if state.learn_mode
+                            && let Some(ref pending) = state.pending_param_key.clone()
+                        {
+                            if !state.bindings.iter().any(|b| {
+                                b.param_key == *pending
+                                    && b.channel == i32::from(*channel)
+                                    && b.cc == i32::from(*cc)
+                            }) {
+                                state.bindings.push(crate::session_state::MidiLearnBinding {
+                                    param_key: pending.clone(),
+                                    channel: i32::from(*channel),
+                                    cc: i32::from(*cc),
+                                });
+                                state.version += 1;
+                            }
+                            state.learn_mode = false;
+                            state.pending_param_key = None;
+                        }
+                    }
                     append_log(&format!(
                         "handle_host_event ControlChange2 ch={} cc={} value={} raw={}",
                         channel, cc, value, raw_value
@@ -1679,7 +1769,8 @@ impl PluginLogic for CzPlugin {
 
             // Push merged params to ArcSwaps so idle loop pushes to webview
             self.synth_params.store(self.cached_rt_synth_params.clone());
-            self.rt_synth_params.store(self.cached_rt_synth_params.clone());
+            self.rt_synth_params
+                .store(self.cached_rt_synth_params.clone());
         }
 
         let tail_info = if self.processor.is_some() {
@@ -1784,11 +1875,7 @@ impl PluginLogic for CzPlugin {
             .map(|id| id.clone())
             .unwrap_or(None);
         let editor = self.editor_state.lock().map(|s| s.clone()).unwrap_or(None);
-        let midi = self
-            .midi_learn_bindings
-            .lock()
-            .map(|s| s.clone())
-            .unwrap_or(None);
+        let midi = self.midi_learn_state.lock().map(|s| s.clone()).ok();
         let state = crate::session_state::PluginSessionState {
             synth_params: sp.as_ref().clone(),
             preset_name: name,
@@ -1817,8 +1904,10 @@ impl PluginLogic for CzPlugin {
         if let Ok(mut stored) = self.editor_state.lock() {
             *stored = session.editor_state;
         }
-        if let Ok(mut stored) = self.midi_learn_bindings.lock() {
-            *stored = session.midi_learn_state;
+        if let Ok(mut stored) = self.midi_learn_state.lock()
+            && let Some(state) = session.midi_learn_state
+        {
+            *stored = state;
         }
 
         sync_all_daw_params_from_synth(&self.params, &params);
@@ -1854,7 +1943,7 @@ impl PluginLogic for CzPlugin {
             self.preset_library.clone(),
             self.loaded_preset_id.clone(),
             self.editor_state.clone(),
-            self.midi_learn_bindings.clone(),
+            self.midi_learn_state.clone(),
         ))
     }
 }
@@ -1908,7 +1997,8 @@ mod tests {
         ));
         let lpi: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
         let es: SharedEditorState = Arc::new(Mutex::new(None));
-        let mm: SharedMidiMappings = Arc::new(Mutex::new(None));
+        let mm: SharedMidiMappings =
+            Arc::new(Mutex::new(crate::session_state::MidiLearnState::default()));
         (
             sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn, pl, lpi, es, mm,
         )
@@ -1989,7 +2079,8 @@ mod tests {
         ));
         let lpi: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
         let es: SharedEditorState = Arc::new(Mutex::new(None));
-        let mm: SharedMidiMappings = Arc::new(Mutex::new(None));
+        let mm: SharedMidiMappings =
+            Arc::new(Mutex::new(crate::session_state::MidiLearnState::default()));
 
         let result = handle_ipc_invoke(
             "getParams",
@@ -2263,15 +2354,14 @@ mod tests {
         let params = Arc::new(CzPluginParams::new());
         let mut plugin = CzPlugin::new(Arc::clone(&params));
         plugin.reset(48_000.0, 64);
-        *plugin.midi_learn_bindings.lock().unwrap() =
-            Some(crate::session_state::MidiLearnState {
-                bindings: vec![crate::session_state::MidiLearnBinding {
-                    param_key: "macro1".to_string(),
-                    channel: 0,
-                    cc: 74,
-                }],
-                ..Default::default()
-            });
+        *plugin.midi_learn_state.lock().unwrap() = crate::session_state::MidiLearnState {
+            bindings: vec![crate::session_state::MidiLearnBinding {
+                param_key: "macro1".to_string(),
+                channel: 0,
+                cc: 74,
+            }],
+            ..Default::default()
+        };
 
         plugin.handle_host_event(&EventBody::ControlChange {
             group: 0,
@@ -2289,15 +2379,14 @@ mod tests {
         let params = Arc::new(CzPluginParams::new());
         let mut plugin = CzPlugin::new(Arc::clone(&params));
         plugin.reset(48_000.0, 64);
-        *plugin.midi_learn_bindings.lock().unwrap() =
-            Some(crate::session_state::MidiLearnState {
-                bindings: vec![crate::session_state::MidiLearnBinding {
-                    param_key: "macro1".to_string(),
-                    channel: 2,
-                    cc: 74,
-                }],
-                ..Default::default()
-            });
+        *plugin.midi_learn_state.lock().unwrap() = crate::session_state::MidiLearnState {
+            bindings: vec![crate::session_state::MidiLearnBinding {
+                param_key: "macro1".to_string(),
+                channel: 2,
+                cc: 74,
+            }],
+            ..Default::default()
+        };
 
         plugin.handle_host_event(&EventBody::ControlChange {
             group: 0,
