@@ -37,13 +37,34 @@ pub struct EditorState {
     pub scope_color_theme: Option<String>,
 }
 
-/// MIDI learn binding persisted across DAW sessions.
-#[derive(Serialize, Deserialize, Clone, Debug)]
+/// A single MIDI learn binding stored in the engine.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct MidiMapping {
+pub struct MidiLearnBinding {
     pub param_key: String,
     pub channel: i32,
     pub cc: i32,
+}
+
+/// MIDI learn state owned by the engine, pushed to webview on change.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MidiLearnState {
+    pub learn_mode: bool,
+    pub pending_param_key: Option<String>,
+    pub bindings: Vec<MidiLearnBinding>,
+    pub version: u64,
+}
+
+impl Default for MidiLearnState {
+    fn default() -> Self {
+        Self {
+            learn_mode: false,
+            pending_param_key: None,
+            bindings: Vec::new(),
+            version: 0,
+        }
+    }
 }
 
 /// DAW-serializable session state.
@@ -57,9 +78,9 @@ pub struct PluginSessionState {
     /// UI editor state (tab selections, scope settings, keyboard prefs, etc.)
     #[serde(default)]
     pub editor_state: Option<EditorState>,
-    /// MIDI learn bindings
+    /// MIDI learn state
     #[serde(default)]
-    pub midi_mappings: Option<Vec<MidiMapping>>,
+    pub midi_learn_state: Option<MidiLearnState>,
 }
 
 /// 3-tier fallback deserialization for backward-compatible `load_state`.
@@ -94,7 +115,7 @@ pub fn deserialize_state(data: &[u8]) -> Result<PluginSessionState, String> {
             preset_name,
             loaded_preset_id: None,
             editor_state: None,
-            midi_mappings: None,
+            midi_learn_state: None,
         });
     }
 
@@ -105,7 +126,7 @@ pub fn deserialize_state(data: &[u8]) -> Result<PluginSessionState, String> {
             preset_name: String::new(),
             loaded_preset_id: None,
             editor_state: None,
-            midi_mappings: None,
+            midi_learn_state: None,
         });
     }
 
@@ -130,7 +151,7 @@ mod tests {
             preset_name: "Test".to_string(),
             loaded_preset_id: Some("abc-123".to_string()),
             editor_state: None,
-            midi_mappings: None,
+            midi_learn_state: None,
         };
         let data = serde_json::to_vec(&state).unwrap();
         let result = deserialize_state(&data).unwrap();
@@ -171,6 +192,23 @@ mod tests {
         assert_eq!(result.synth_params.line1.dcw_base, 0.5);
         assert_eq!(result.preset_name, "");
         assert!(result.loaded_preset_id.is_none());
+    }
+
+    #[test]
+    fn midi_learn_state_roundtrip() {
+        let state = MidiLearnState {
+            learn_mode: true,
+            pending_param_key: Some("volume".to_string()),
+            bindings: vec![MidiLearnBinding {
+                param_key: "volume".to_string(),
+                channel: 0,
+                cc: 7,
+            }],
+            version: 1,
+        };
+        let json = serde_json::to_string(&state).unwrap();
+        let back: MidiLearnState = serde_json::from_str(&json).unwrap();
+        assert_eq!(state, back);
     }
 
     #[test]

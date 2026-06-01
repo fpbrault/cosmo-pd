@@ -634,7 +634,7 @@ fn sync_all_daw_params_from_synth(params: &CzPluginParams, synth: &SynthParams) 
 
 pub(crate) type SharedPresetName = Arc<Mutex<String>>;
 pub(crate) type SharedEditorState = Arc<Mutex<Option<crate::session_state::EditorState>>>;
-pub(crate) type SharedMidiMappings = Arc<Mutex<Option<Vec<crate::session_state::MidiMapping>>>>;
+pub(crate) type SharedMidiMappings = Arc<Mutex<Option<crate::session_state::MidiLearnState>>>;
 
 // =============================================================================
 // IPC dispatch
@@ -1098,23 +1098,23 @@ fn handle_ipc_invoke(
         "setMidiMappings" => {
             let payload = args
                 .first()
-                .ok_or_else(|| "setMidiMappings expects an array payload".to_string())?;
-            let mappings: Vec<crate::session_state::MidiMapping> =
+                .ok_or_else(|| "setMidiMappings expects a payload".to_string())?;
+            let state: crate::session_state::MidiLearnState =
                 serde_json::from_value(payload.clone())
-                    .map_err(|e| format!("invalid MidiMappings: {e}"))?;
+                    .map_err(|e| format!("invalid MidiLearnState: {e}"))?;
             append_log(&format!(
-                "setMidiMappings count={} mappings={:?}",
-                mappings.len(),
-                mappings
+                "setMidiMappings version={} bindings={}",
+                state.version,
+                state.bindings.len(),
             ));
             if let Ok(mut stored) = midi_mappings.lock() {
-                *stored = Some(mappings);
+                *stored = Some(state);
             }
             Ok(serde_json::Value::Null)
         }
         "getMidiMappings" => {
-            let mappings = midi_mappings.lock().map(|s| s.clone()).unwrap_or(None);
-            serde_json::to_value(mappings).map_err(|e| e.to_string())
+            let state = midi_mappings.lock().map(|s| s.clone()).unwrap_or(None);
+            serde_json::to_value(state).map_err(|e| e.to_string())
         }
         _ => Err(format!("unknown method: {method}")),
     }
@@ -1243,12 +1243,13 @@ impl CzPlugin {
     }
 
     fn mapped_param_key_for_cc(&self, channel: u8, cc: u8) -> Option<String> {
-        let mappings = self.midi_learn_bindings.lock().ok()?;
-        let mappings = mappings.as_ref()?;
-        mappings
+        let state = self.midi_learn_bindings.lock().ok()?;
+        let state = state.as_ref()?;
+        state
+            .bindings
             .iter()
-            .find(|mapping| mapping.channel == i32::from(channel) && mapping.cc == i32::from(cc))
-            .map(|mapping| mapping.param_key.clone())
+            .find(|b| b.channel == i32::from(channel) && b.cc == i32::from(cc))
+            .map(|b| b.param_key.clone())
     }
 
     fn apply_midi_mapping(&mut self, channel: u8, cc: u8, value: u8) -> bool {
@@ -1793,7 +1794,7 @@ impl PluginLogic for CzPlugin {
             preset_name: name,
             loaded_preset_id: loaded_id,
             editor_state: editor,
-            midi_mappings: midi,
+            midi_learn_state: midi,
         };
         serde_json::to_vec(&state).unwrap_or_default()
     }
@@ -1817,7 +1818,7 @@ impl PluginLogic for CzPlugin {
             *stored = session.editor_state;
         }
         if let Ok(mut stored) = self.midi_learn_bindings.lock() {
-            *stored = session.midi_mappings;
+            *stored = session.midi_learn_state;
         }
 
         sync_all_daw_params_from_synth(&self.params, &params);
@@ -2263,11 +2264,14 @@ mod tests {
         let mut plugin = CzPlugin::new(Arc::clone(&params));
         plugin.reset(48_000.0, 64);
         *plugin.midi_learn_bindings.lock().unwrap() =
-            Some(vec![crate::session_state::MidiMapping {
-                param_key: "macro1".to_string(),
-                channel: 0,
-                cc: 74,
-            }]);
+            Some(crate::session_state::MidiLearnState {
+                bindings: vec![crate::session_state::MidiLearnBinding {
+                    param_key: "macro1".to_string(),
+                    channel: 0,
+                    cc: 74,
+                }],
+                ..Default::default()
+            });
 
         plugin.handle_host_event(&EventBody::ControlChange {
             group: 0,
@@ -2286,11 +2290,14 @@ mod tests {
         let mut plugin = CzPlugin::new(Arc::clone(&params));
         plugin.reset(48_000.0, 64);
         *plugin.midi_learn_bindings.lock().unwrap() =
-            Some(vec![crate::session_state::MidiMapping {
-                param_key: "macro1".to_string(),
-                channel: 2,
-                cc: 74,
-            }]);
+            Some(crate::session_state::MidiLearnState {
+                bindings: vec![crate::session_state::MidiLearnBinding {
+                    param_key: "macro1".to_string(),
+                    channel: 2,
+                    cc: 74,
+                }],
+                ..Default::default()
+            });
 
         plugin.handle_host_event(&EventBody::ControlChange {
             group: 0,
