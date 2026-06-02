@@ -45,8 +45,17 @@ export type SynthRendererProps = {
 	onAudioLevelChange?: (level: number) => void;
 	disableAudioGate?: boolean;
 	miniKeyboard?: MiniKeyboardProps;
-	onInitPresetSession?: (syncBuiltinSelection: (name: string) => void) => void;
-	onPresetSessionChange?: (session: { activePresetNameBase: string }) => void;
+	onInitPresetSession?: (
+		syncBuiltinSelection: (
+			name: string,
+			options?: { isDirty?: boolean },
+		) => void,
+	) => void;
+	onPresetSessionChange?: (session: {
+		activePresetId: string | null;
+		activePresetNameBase: string;
+		isDirty: boolean;
+	}) => void;
 };
 
 const FRAME_CLASS =
@@ -79,9 +88,6 @@ const SynthRenderer = memo(function SynthRenderer({
 }: SynthRendererProps) {
 	const gatherPresetState = useSynthStore((s) => s.gatherPresetState);
 	const applyPreset = useSynthStore((s) => s.applyPreset);
-	const presetStateKey = useSynthStore((s) =>
-		JSON.stringify(s.gatherPresetState()),
-	);
 	const modMatrix = useSynthStore((s) => s.modMatrix);
 	const setModMatrix = useSynthStore((s) => s.setModMatrix);
 
@@ -126,7 +132,6 @@ const SynthRenderer = memo(function SynthRenderer({
 		activePresetId,
 		activePresetName,
 		activePresetNameBase,
-		pendingPresetChange,
 		handleLoadLocal,
 		handleLoadPresetByName,
 		handleLoadLibrary,
@@ -140,17 +145,14 @@ const SynthRenderer = memo(function SynthRenderer({
 		handleExportPreset,
 		handleImportPreset,
 		handleExportCurrentState,
-		handleSavePendingPresetChange,
-		handleDiscardPendingPresetChange,
-		handleCancelPendingPresetChange,
 		handleSyncPresetSelection,
+		isPresetDirty,
 	} = useSynthPresetManager({
 		gatherPresetState,
 		applyPreset,
 		onBeforeApplyPreset: panic,
 		libraryPresets,
 		onLoadLibraryPreset: handleLoadLibraryPreset,
-		presetStateKey,
 	});
 
 	useEffect(() => {
@@ -211,8 +213,17 @@ const SynthRenderer = memo(function SynthRenderer({
 	}, [handleSyncPresetSelection, onInitPresetSession]);
 
 	useEffect(() => {
-		onPresetSessionChange?.({ activePresetNameBase });
-	}, [activePresetNameBase, onPresetSessionChange]);
+		onPresetSessionChange?.({
+			activePresetId,
+			activePresetNameBase,
+			isDirty: isPresetDirty,
+		});
+	}, [
+		activePresetId,
+		activePresetNameBase,
+		isPresetDirty,
+		onPresetSessionChange,
+	]);
 
 	const handleStepPresetInVisibleOrder = useCallback(
 		(direction: -1 | 1) => {
@@ -278,7 +289,6 @@ const SynthRenderer = memo(function SynthRenderer({
 								visiblePresetEntries,
 								activePresetId,
 								activePresetName,
-								pendingPresetChange,
 								handleLoadPresetByName,
 								handleLoadLocal,
 								handleLoadLibrary,
@@ -292,9 +302,6 @@ const SynthRenderer = memo(function SynthRenderer({
 								handleExportPreset,
 								handleImportPreset,
 								handleExportCurrentState,
-								handleSavePendingPresetChange,
-								handleDiscardPendingPresetChange,
-								handleCancelPendingPresetChange,
 							}}
 						>
 							<div

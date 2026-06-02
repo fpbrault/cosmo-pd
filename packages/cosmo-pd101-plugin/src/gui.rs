@@ -33,7 +33,7 @@ use crate::handle_ipc_invoke;
 use crate::preset_library::PresetLibrary;
 use crate::session_state::MidiLearnState;
 use crate::{
-    MidiCcQueue, PerformanceCountersHandle, ScopeBuffer, SharedEditorState, SharedPresetName,
+    MidiCcQueue, PerformanceCountersHandle, ScopeBuffer, SharedEditorState, SharedPresetSession,
     SharedRuntimeModSources, SharedRuntimeVoiceStates, SharedTransportSnapshot, UiInputQueue,
     append_log,
 };
@@ -116,10 +116,9 @@ pub struct CzEditor {
     webview_state: Arc<Mutex<WebViewContainer>>,
     pending_parent_ns_view: Option<usize>,
     params: Arc<CzPluginParams>,
-    preset_name: SharedPresetName,
+    preset_session: SharedPresetSession,
     runtime_voice_states: SharedRuntimeVoiceStates,
     preset_library: Arc<Mutex<PresetLibrary>>,
-    loaded_preset_id: Arc<Mutex<Option<String>>>,
     editor_state: SharedEditorState,
     midi_learn_state: Arc<Mutex<MidiLearnState>>,
     last_midi_learn_version: u64,
@@ -165,10 +164,9 @@ impl CzEditor {
         midi_cc_queue: MidiCcQueue,
         performance_counters: PerformanceCountersHandle,
         params: Arc<CzPluginParams>,
-        preset_name: SharedPresetName,
+        preset_session: SharedPresetSession,
         runtime_voice_states: SharedRuntimeVoiceStates,
         preset_library: Arc<Mutex<PresetLibrary>>,
-        loaded_preset_id: Arc<Mutex<Option<String>>>,
         editor_state: SharedEditorState,
         midi_learn_state: Arc<Mutex<MidiLearnState>>,
     ) -> Self {
@@ -186,10 +184,9 @@ impl CzEditor {
             webview_state: Arc::new(Mutex::new(WebViewContainer { webview: None })),
             pending_parent_ns_view: None,
             params,
-            preset_name,
+            preset_session,
             runtime_voice_states,
             preset_library,
-            loaded_preset_id,
             editor_state,
             midi_learn_state,
             last_midi_learn_version: u64::MAX,
@@ -226,10 +223,9 @@ impl CzEditor {
         let ui_input_queue = self.ui_input_queue.clone();
         let performance_counters = self.performance_counters.clone();
         let params = self.params.clone();
-        let preset_name = self.preset_name.clone();
+        let preset_session = self.preset_session.clone();
         let runtime_voice_states = self.runtime_voice_states.clone();
         let preset_library = self.preset_library.clone();
-        let loaded_preset_id = self.loaded_preset_id.clone();
         let editor_state = self.editor_state.clone();
         let midi_learn_state = self.midi_learn_state.clone();
         let webview_state_for_ipc = self.webview_state.clone();
@@ -248,9 +244,8 @@ impl CzEditor {
                 ui_input_queue,
                 performance_counters,
                 params,
-                preset_name,
+                preset_session,
                 preset_library,
-                loaded_preset_id,
                 editor_state,
                 midi_learn_state,
                 webview_state_for_ipc,
@@ -895,9 +890,8 @@ unsafe fn build_webview_from_ns_view(
     ui_input_queue: UiInputQueue,
     performance_counters: PerformanceCountersHandle,
     params: Arc<CzPluginParams>,
-    preset_name: SharedPresetName,
+    preset_session: SharedPresetSession,
     preset_library: Arc<Mutex<PresetLibrary>>,
-    loaded_preset_id: Arc<Mutex<Option<String>>>,
     editor_state: SharedEditorState,
     midi_learn_state: Arc<Mutex<MidiLearnState>>,
     webview_state: Arc<Mutex<WebViewContainer>>,
@@ -927,9 +921,8 @@ unsafe fn build_webview_from_ns_view(
         unsafe impl Send for NsViewWrapper {}
         unsafe impl Sync for NsViewWrapper {}
 
-        let preset_name_for_ipc = preset_name.clone();
+        let preset_session_for_ipc = preset_session.clone();
         let preset_library_for_ipc = preset_library.clone();
-        let loaded_preset_id_for_ipc = loaded_preset_id.clone();
         let editor_state_for_ipc = editor_state.clone();
         let midi_learn_state_for_ipc = midi_learn_state.clone();
         let webview_state_for_response = webview_state.clone();
@@ -978,9 +971,8 @@ unsafe fn build_webview_from_ns_view(
                     &ui_input_queue,
                     &performance_counters,
                     &params,
-                    &preset_name_for_ipc,
+                    &preset_session_for_ipc,
                     &preset_library_for_ipc,
-                    &loaded_preset_id_for_ipc,
                     &editor_state_for_ipc,
                     &midi_learn_state_for_ipc,
                 );

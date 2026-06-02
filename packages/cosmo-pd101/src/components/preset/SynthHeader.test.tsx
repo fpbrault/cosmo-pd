@@ -38,7 +38,6 @@ function renderWithProvider(element: React.ReactElement) {
 				],
 				activePresetId: "1",
 				activePresetName: "Init",
-				pendingPresetChange: null,
 				handleLoadPresetByName: vi.fn(),
 				handleLoadLocal: vi.fn(),
 				handleLoadLibrary: vi.fn(),
@@ -52,9 +51,6 @@ function renderWithProvider(element: React.ReactElement) {
 				handleExportPreset: vi.fn(),
 				handleImportPreset: vi.fn(),
 				handleExportCurrentState: vi.fn(),
-				handleSavePendingPresetChange: vi.fn(),
-				handleDiscardPendingPresetChange: vi.fn(),
-				handleCancelPendingPresetChange: vi.fn(),
 			}}
 		>
 			{element}

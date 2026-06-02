@@ -1,6 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { PresetManagerPendingChange } from "@/context/PresetManagerContext";
 import type { SynthRuntime } from "@/features/synth/runtime/synthRuntime";
 import type { MainPanelMode } from "@/features/synth/synthUiStore";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
@@ -65,12 +64,6 @@ vi.mock("@/components/modals", () => ({
 		open ? <div data-testid="global-voice-panel" /> : null,
 	KeyboardSettingsPopover: () => null,
 	MacroLabelEditorPopover: () => null,
-	PendingModifiedPresetModal: ({
-		pendingPresetChange,
-	}: {
-		pendingPresetChange: unknown;
-	}) =>
-		pendingPresetChange ? <div data-testid="pending-preset-modal" /> : null,
 	SynthBrandInfoModal: () => null,
 }));
 vi.mock("@/components/panels/drawers/FxConsoleDrawer", () => ({
@@ -153,7 +146,8 @@ const mockPresetManager = {
 	visiblePresetEntries: [] as PresetEntry[],
 	activePresetId: "1",
 	activePresetName: "Test Preset",
-	pendingPresetChange: null as PresetManagerPendingChange | null,
+	activePresetNameBase: "Test Preset",
+	isPresetDirty: false,
 	handleLoadPresetByName: vi.fn(),
 	handleLoadLocal: vi.fn(),
 	handleLoadLibrary: vi.fn(),
@@ -168,9 +162,7 @@ const mockPresetManager = {
 	handleExportPreset: vi.fn(),
 	handleImportPreset: vi.fn(),
 	handleExportCurrentState: vi.fn(),
-	handleSavePendingPresetChange: vi.fn(),
-	handleDiscardPendingPresetChange: vi.fn(),
-	handleCancelPendingPresetChange: vi.fn(),
+	handleSyncPresetSelection: vi.fn(),
 };
 
 vi.mock("@/features/synth/useSynthPresetManager", () => ({
@@ -228,7 +220,7 @@ describe("SynthRenderer Smoke Test", () => {
 		mockSynthUiStoreState.setKeyboardVisible.mockReset();
 		mockSynthUiStoreState.setLibraryModeOpen.mockReset();
 		mockPresetManager.visiblePresetEntries = [];
-		mockPresetManager.pendingPresetChange = null;
+		mockPresetManager.isPresetDirty = false;
 	});
 
 	it("renders without crashing", () => {
@@ -267,17 +259,5 @@ describe("SynthRenderer Smoke Test", () => {
 		mockSynthUiStoreState.mainPanelMode = "mod";
 		render(<SynthRenderer runtime={mockRuntime} />);
 		expect(screen.getByTestId("mod-console-drawer")).toBeInTheDocument();
-	});
-
-	it("renders pending preset modal when pending changes exist", () => {
-		mockPresetManager.pendingPresetChange = {
-			activePresetName: "Init",
-			activeLocalName: null,
-			suggestedName: "Init 2",
-			changes: [{ path: "volume", previous: "0.1", next: "0.2" }],
-		};
-
-		render(<SynthRenderer runtime={mockRuntime} />);
-		expect(screen.getByTestId("pending-preset-modal")).toBeInTheDocument();
 	});
 });

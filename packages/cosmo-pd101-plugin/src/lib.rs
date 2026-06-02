@@ -703,7 +703,7 @@ fn sync_all_daw_params_from_synth(params: &CzPluginParams, synth: &SynthParams) 
         .set_value(synth.mod_env.release as f64);
 }
 
-pub(crate) type SharedPresetName = Arc<Mutex<String>>;
+pub(crate) type SharedPresetSession = Arc<Mutex<crate::session_state::PresetSession>>;
 pub(crate) type SharedEditorState = Arc<Mutex<Option<crate::session_state::EditorState>>>;
 pub(crate) type SharedMidiMappings = Arc<Mutex<crate::session_state::MidiLearnState>>;
 
@@ -739,9 +739,8 @@ fn handle_ipc_invoke(
     ui_input_queue: &UiInputQueue,
     performance_counters: &PerformanceCountersHandle,
     params: &CzPluginParams,
-    preset_name: &SharedPresetName,
+    preset_session: &SharedPresetSession,
     preset_library: &Arc<Mutex<PresetLibrary>>,
-    loaded_preset_id: &Arc<Mutex<Option<String>>>,
     editor_state: &SharedEditorState,
     midi_learn_state: &SharedMidiMappings,
 ) -> Result<serde_json::Value, String> {
@@ -996,14 +995,36 @@ fn handle_ipc_invoke(
                 .first()
                 .and_then(serde_json::Value::as_str)
                 .ok_or_else(|| "setPresetName expects a string argument".to_string())?;
-            if let Ok(mut stored) = preset_name.lock() {
-                *stored = name.to_string();
+            if let Ok(mut stored) = preset_session.lock() {
+                stored.active_preset_name_base = name.to_string();
             }
             Ok(serde_json::Value::Null)
         }
         "getPresetName" => {
-            let name = preset_name.lock().map(|n| n.clone()).unwrap_or_default();
+            let name = preset_session
+                .lock()
+                .map(|session| session.active_preset_name_base.clone())
+                .unwrap_or_default();
             Ok(serde_json::Value::String(name))
+        }
+        "getPresetSession" => {
+            let session = preset_session
+                .lock()
+                .map(|session| session.clone())
+                .map_err(|e| e.to_string())?;
+            serde_json::to_value(session).map_err(|e| e.to_string())
+        }
+        "setPresetSession" => {
+            let payload = args
+                .first()
+                .ok_or_else(|| "setPresetSession expects an object payload".to_string())?;
+            let session: crate::session_state::PresetSession =
+                serde_json::from_value(payload.clone())
+                    .map_err(|e| format!("invalid PresetSession: {e}"))?;
+            if let Ok(mut stored) = preset_session.lock() {
+                *stored = session;
+            }
+            Ok(serde_json::Value::Null)
         }
         "getPresetLibrary" => {
             let source_filter = args
@@ -1070,11 +1091,10 @@ fn handle_ipc_invoke(
             rt_synth_params.store(Arc::new(rt_params));
             synth_params_version.fetch_add(1, Ordering::Release);
 
-            if let Ok(mut stored) = preset_name.lock() {
-                *stored = preset_name_val.clone();
-            }
-            if let Ok(mut stored) = loaded_preset_id.lock() {
-                *stored = Some(id.to_string());
+            if let Ok(mut stored) = preset_session.lock() {
+                stored.active_preset_name_base = preset_name_val.clone();
+                stored.loaded_preset_id = Some(id.to_string());
+                stored.is_dirty = false;
             }
 
             Ok(serde_json::json!({ "preset_name": preset_name_val }))
@@ -1301,14 +1321,12 @@ pub struct CzPlugin {
     /// Tracks whether DAW param values changed since last process() call.
     daw_params_dirty: bool,
     last_scope_hz: f32,
-    /// Preset name shared with the webview, persisted via save_state/load_state.
-    preset_name: SharedPresetName,
+    /// Shared preset session persisted across plugin state save/load and GUI reopen.
+    preset_session: SharedPresetSession,
     /// Latest voice debug state snapshot, populated each process block.
     runtime_voice_states: SharedRuntimeVoiceStates,
     /// The preset library (factory + user). Lock when reading or writing.
     preset_library: Arc<Mutex<PresetLibrary>>,
-    /// Tracks the currently loaded preset ID, if any.
-    loaded_preset_id: Arc<Mutex<Option<String>>>,
     /// UI editor state persisted across DAW sessions.
     editor_state: SharedEditorState,
     /// MIDI learn state owned by the engine.
@@ -1356,10 +1374,9 @@ impl CzPlugin {
             performance_counters: Arc::new(PerformanceCounters::default()),
             daw_params_dirty: true,
             last_scope_hz: 220.0,
-            preset_name: Arc::new(Mutex::new(String::new())),
+            preset_session: Arc::new(Mutex::new(crate::session_state::PresetSession::default())),
             runtime_voice_states: Arc::new(ArcSwap::from_pointee(Vec::new())),
             preset_library,
-            loaded_preset_id: Arc::new(Mutex::new(None)),
             editor_state: Arc::new(Mutex::new(None)),
             midi_learn_state: Arc::new(Mutex::new(crate::session_state::MidiLearnState {
                 bindings: midi_learn_bindings,
@@ -1382,6 +1399,9 @@ impl CzPlugin {
         self.synth_params_version.fetch_add(1, Ordering::Release);
         self.cached_synth_params_version = self.synth_params_version.load(Ordering::Acquire);
         self.daw_params_dirty = false;
+        if let Ok(mut session) = self.preset_session.lock() {
+            session.is_dirty = false;
+        }
 
         if let Some(proc) = self.processor.as_mut() {
             proc.set_shared_params(rt_params);
@@ -1402,6 +1422,9 @@ impl CzPlugin {
         self.cached_synth_params_version =
             self.synth_params_version.fetch_add(1, Ordering::Release) + 1;
         self.daw_params_dirty = false;
+        if let Ok(mut session) = self.preset_session.lock() {
+            session.is_dirty = true;
+        }
 
         if update_processor && let Some(proc) = self.processor.as_mut() {
             proc.set_shared_params(rt_params);
@@ -1866,21 +1889,15 @@ impl PluginLogic for CzPlugin {
 
     fn save_state(&self) -> Vec<u8> {
         let sp = self.synth_params.load();
-        let name = self
-            .preset_name
+        let preset_session = self
+            .preset_session
             .lock()
-            .map(|n| n.clone())
+            .map(|session| session.clone())
             .unwrap_or_default();
-        let loaded_id = self
-            .loaded_preset_id
-            .lock()
-            .map(|id| id.clone())
-            .unwrap_or(None);
         let editor = self.editor_state.lock().map(|s| s.clone()).unwrap_or(None);
         let state = crate::session_state::PluginSessionState {
             synth_params: sp.as_ref().clone(),
-            preset_name: name,
-            loaded_preset_id: loaded_id,
+            preset_session,
             editor_state: editor,
         };
         serde_json::to_vec(&state).unwrap_or_default()
@@ -1892,13 +1909,11 @@ impl PluginLogic for CzPlugin {
 
         let params = session.synth_params;
 
-        if let Ok(mut stored) = self.preset_name.lock()
-            && (!session.preset_name.is_empty() || session.loaded_preset_id.is_some())
+        if let Ok(mut stored) = self.preset_session.lock()
+            && (!session.preset_session.active_preset_name_base.is_empty()
+                || session.preset_session.loaded_preset_id.is_some())
         {
-            *stored = session.preset_name;
-        }
-        if let Ok(mut stored) = self.loaded_preset_id.lock() {
-            *stored = session.loaded_preset_id;
+            *stored = session.preset_session.clone();
         }
 
         if let Ok(mut stored) = self.editor_state.lock() {
@@ -1914,6 +1929,9 @@ impl PluginLogic for CzPlugin {
         self.synth_params_version.fetch_add(1, Ordering::Release);
         self.cached_synth_params_version = self.synth_params_version.load(Ordering::Acquire);
         self.daw_params_dirty = false;
+        if let Ok(mut session_state) = self.preset_session.lock() {
+            session_state.is_dirty = false;
+        }
         if let Some(ref mut proc) = self.processor {
             proc.set_shared_params(rt_params_arc);
             self.performance_counters.record_param_apply();
@@ -1940,10 +1958,9 @@ impl PluginLogic for CzPlugin {
             self.midi_cc_queue.clone(),
             self.performance_counters.clone(),
             self.params.clone(),
-            self.preset_name.clone(),
+            self.preset_session.clone(),
             self.runtime_voice_states.clone(),
             self.preset_library.clone(),
-            self.loaded_preset_id.clone(),
             self.editor_state.clone(),
             self.midi_learn_state.clone(),
         ))
@@ -2006,9 +2023,8 @@ mod tests {
         UiInputQueue,
         PerformanceCountersHandle,
         Arc<CzPluginParams>,
-        SharedPresetName,
+        SharedPresetSession,
         Arc<Mutex<PresetLibrary>>,
-        Arc<Mutex<Option<String>>>,
         SharedEditorState,
         SharedMidiMappings,
     ) {
@@ -2023,17 +2039,17 @@ mod tests {
         let q: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
         let pc = Arc::new(PerformanceCounters::default());
         let params = Arc::new(CzPluginParams::new());
-        let pn: SharedPresetName = Arc::new(Mutex::new(String::new()));
+        let ps: SharedPresetSession =
+            Arc::new(Mutex::new(crate::session_state::PresetSession::default()));
         let factory_json = include_str!(concat!(env!("OUT_DIR"), "/minified_presets.json"));
         let pl: Arc<Mutex<PresetLibrary>> = Arc::new(Mutex::new(
             PresetLibrary::from_embedded_factory(factory_json),
         ));
-        let lpi: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
         let es: SharedEditorState = Arc::new(Mutex::new(None));
         let mm: SharedMidiMappings =
             Arc::new(Mutex::new(crate::session_state::MidiLearnState::default()));
         (
-            sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn, pl, lpi, es, mm,
+            sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm,
         )
     }
 
@@ -2054,8 +2070,7 @@ mod tests {
 
     #[test]
     fn set_params_rpc_updates_synth_params() {
-        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn, pl, lpi, es, mm) =
-            make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm) = make_handler_state();
 
         let new_params = SynthParams {
             volume: 0.42,
@@ -2076,9 +2091,8 @@ mod tests {
             &q,
             &pc,
             &params,
-            &pn,
+            &ps,
             &pl,
-            &lpi,
             &es,
             &mm,
         );
@@ -2105,12 +2119,12 @@ mod tests {
         let q: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
         let pc = Arc::new(PerformanceCounters::default());
         let params = Arc::new(CzPluginParams::new());
-        let pn: SharedPresetName = Arc::new(Mutex::new(String::new()));
+        let ps: SharedPresetSession =
+            Arc::new(Mutex::new(crate::session_state::PresetSession::default()));
         let factory_json = include_str!(concat!(env!("OUT_DIR"), "/minified_presets.json"));
         let pl: Arc<Mutex<PresetLibrary>> = Arc::new(Mutex::new(
             PresetLibrary::from_embedded_factory(factory_json),
         ));
-        let lpi: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
         let es: SharedEditorState = Arc::new(Mutex::new(None));
         let mm: SharedMidiMappings =
             Arc::new(Mutex::new(crate::session_state::MidiLearnState::default()));
@@ -2128,9 +2142,8 @@ mod tests {
             &q,
             &pc,
             &params,
-            &pn,
+            &ps,
             &pl,
-            &lpi,
             &es,
             &mm,
         );
@@ -2142,8 +2155,7 @@ mod tests {
 
     #[test]
     fn note_on_rpc_enqueues_ui_input_event() {
-        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn, pl, lpi, es, mm) =
-            make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm) = make_handler_state();
 
         let result = handle_ipc_invoke(
             "noteOn",
@@ -2158,9 +2170,8 @@ mod tests {
             &q,
             &pc,
             &params,
-            &pn,
+            &ps,
             &pl,
-            &lpi,
             &es,
             &mm,
         );
@@ -2178,8 +2189,7 @@ mod tests {
     #[allow(clippy::field_reassign_with_default)]
     #[test]
     fn set_params_rpc_syncs_daw_float_params() {
-        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn, pl, lpi, es, mm) =
-            make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm) = make_handler_state();
         assert_eq!(params.volume.value(), 0.8); // default
 
         let mut new_params = SynthParams::default();
@@ -2200,9 +2210,8 @@ mod tests {
             &q,
             &pc,
             &params,
-            &pn,
+            &ps,
             &pl,
-            &lpi,
             &es,
             &mm,
         );
@@ -2248,8 +2257,7 @@ mod tests {
 
     #[test]
     fn get_transport_info_rpc_returns_current_snapshot() {
-        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn, pl, lpi, es, mm) =
-            make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm) = make_handler_state();
         ts.store(&TransportInfo {
             playing: true,
             recording: true,
@@ -2278,9 +2286,8 @@ mod tests {
             &q,
             &pc,
             &params,
-            &pn,
+            &ps,
             &pl,
-            &lpi,
             &es,
             &mm,
         )
@@ -2589,8 +2596,7 @@ mod tests {
 
     #[test]
     fn set_preset_name_rpc_stores_name() {
-        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn, pl, lpi, es, mm) =
-            make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm) = make_handler_state();
 
         let result = handle_ipc_invoke(
             "setPresetName",
@@ -2605,24 +2611,22 @@ mod tests {
             &q,
             &pc,
             &params,
-            &pn,
+            &ps,
             &pl,
-            &lpi,
             &es,
             &mm,
         );
         assert!(result.is_ok());
-        let stored = pn.lock().unwrap();
-        assert_eq!(*stored, "Warm Pad");
+        let stored = ps.lock().unwrap();
+        assert_eq!(stored.active_preset_name_base, "Warm Pad");
     }
 
     #[test]
     fn get_preset_name_rpc_returns_current_name() {
-        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn, pl, lpi, es, mm) =
-            make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm) = make_handler_state();
         {
-            let mut stored = pn.lock().unwrap();
-            *stored = "Factory Brass".to_string();
+            let mut stored = ps.lock().unwrap();
+            stored.active_preset_name_base = "Factory Brass".to_string();
         }
 
         let result = handle_ipc_invoke(
@@ -2638,9 +2642,8 @@ mod tests {
             &q,
             &pc,
             &params,
-            &pn,
+            &ps,
             &pl,
-            &lpi,
             &es,
             &mm,
         );
@@ -2658,14 +2661,23 @@ mod tests {
         let mut plugin = CzPlugin::new(Arc::clone(&params));
         plugin.reset(48_000.0, 64);
 
-        *plugin.preset_name.lock().unwrap() = "Resonant Pad".to_string();
+        plugin
+            .preset_session
+            .lock()
+            .unwrap()
+            .active_preset_name_base = "Resonant Pad".to_string();
+        plugin.preset_session.lock().unwrap().is_dirty = true;
 
         let state = plugin.save_state();
         assert!(!state.is_empty());
 
         let parsed: serde_json::Value =
             serde_json::from_slice(&state).expect("state should be valid JSON");
-        assert_eq!(parsed["presetName"], "Resonant Pad");
+        assert_eq!(
+            parsed["presetSession"]["activePresetNameBase"],
+            "Resonant Pad"
+        );
+        assert_eq!(parsed["presetSession"]["isDirty"], true);
         assert!(parsed.get("synthParams").is_some());
         assert!(parsed.get("midiLearnState").is_none());
     }
@@ -2678,18 +2690,32 @@ mod tests {
         plugin.reset(48_000.0, 64);
 
         // Save state with a preset name
-        *plugin.preset_name.lock().unwrap() = "Bright Piano".to_string();
+        plugin
+            .preset_session
+            .lock()
+            .unwrap()
+            .active_preset_name_base = "Bright Piano".to_string();
+        plugin.preset_session.lock().unwrap().is_dirty = true;
         let state = plugin.save_state();
 
         // Create new plugin and load state
         let params2 = Arc::new(CzPluginParams::new());
         let mut plugin2 = CzPlugin::new(Arc::clone(&params2));
         plugin2.reset(48_000.0, 64);
-        assert!(plugin2.preset_name.lock().unwrap().is_empty());
+        assert!(
+            plugin2
+                .preset_session
+                .lock()
+                .unwrap()
+                .active_preset_name_base
+                .is_empty()
+        );
 
         let result = plugin2.load_state(&state);
         assert!(result.is_ok());
-        assert_eq!(*plugin2.preset_name.lock().unwrap(), "Bright Piano");
+        let restored = plugin2.preset_session.lock().unwrap().clone();
+        assert_eq!(restored.active_preset_name_base, "Bright Piano");
+        assert!(!restored.is_dirty);
     }
 
     #[test]
@@ -2704,12 +2730,23 @@ mod tests {
         plugin.reset(48_000.0, 64);
 
         // Set a name to verify it's not overwritten
-        *plugin.preset_name.lock().unwrap() = "Existing Name".to_string();
+        plugin
+            .preset_session
+            .lock()
+            .unwrap()
+            .active_preset_name_base = "Existing Name".to_string();
 
         let result = plugin.load_state(&data);
         assert!(result.is_ok());
         // Old format should not touch preset_name
-        assert_eq!(*plugin.preset_name.lock().unwrap(), "Existing Name");
+        assert_eq!(
+            plugin
+                .preset_session
+                .lock()
+                .unwrap()
+                .active_preset_name_base,
+            "Existing Name"
+        );
     }
 
     #[test]
@@ -2742,7 +2779,7 @@ mod tests {
             let mut plugin = CzPlugin::new(Arc::clone(&params));
             plugin.reset(48_000.0, 64);
 
-            let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, pn, pl, lpi, es, mm) =
+            let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm) =
                 make_handler_state();
             {
                 let mut state = mm.lock().unwrap();
@@ -2766,9 +2803,8 @@ mod tests {
                 &q,
                 &pc,
                 &params,
-                &pn,
+                &ps,
                 &pl,
-                &lpi,
                 &es,
                 &mm,
             );
@@ -2799,9 +2835,8 @@ mod tests {
                 &q,
                 &pc,
                 &params,
-                &pn,
+                &ps,
                 &pl,
-                &lpi,
                 &es,
                 &mm,
             );
@@ -2827,9 +2862,8 @@ mod tests {
                 &q,
                 &pc,
                 &params,
-                &pn,
+                &ps,
                 &pl,
-                &lpi,
                 &es,
                 &mm,
             );

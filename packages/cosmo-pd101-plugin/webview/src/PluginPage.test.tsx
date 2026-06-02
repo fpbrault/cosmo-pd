@@ -68,6 +68,8 @@ describe("PluginPage", () => {
 		mockUsePluginSynthRuntime.mockReset();
 		mockUsePluginParamBridge.mockReturnValue({
 			loadPresetData: vi.fn().mockResolvedValue("Mock Preset"),
+			getPresetSession: vi.fn().mockResolvedValue(null),
+			setPresetSession: vi.fn().mockResolvedValue(undefined),
 		});
 		mockUsePluginSynthRuntime.mockReturnValue({
 			activeNotes: [],
@@ -93,8 +95,7 @@ describe("PluginPage", () => {
 			activePresetId: null,
 			activePresetNameBase: "Current State",
 			activePresetName: "Current State",
-			loadedPresetFingerprint: null,
-			pendingPresetChange: null,
+			isPresetDirty: false,
 			handleSyncPresetSelection: vi.fn(),
 			handleLoadPresetByName: vi.fn(),
 			handleLoadLocal: vi.fn(),
@@ -108,9 +109,8 @@ describe("PluginPage", () => {
 			handleExportPreset: vi.fn(),
 			handleImportPreset: vi.fn(),
 			handleExportCurrentState: vi.fn(),
-			handleSavePendingPresetChange: vi.fn(),
-			handleDiscardPendingPresetChange: vi.fn(),
-			handleCancelPendingPresetChange: vi.fn(),
+			markPresetDirty: vi.fn(),
+			setPresetDirtyState: vi.fn(),
 		});
 		delete (window as Window & { ipc?: unknown }).ipc;
 	});
@@ -123,14 +123,22 @@ describe("PluginPage", () => {
 		expect(options).not.toHaveProperty("shouldLoadCurrentState");
 	});
 
-	it("calls __czGetPresetName on mount to restore preset name", async () => {
-		const getPresetName = vi.fn().mockResolvedValue("Warm Pad");
-		window.__czGetPresetName = getPresetName;
+	it("calls preset session restore on mount", async () => {
+		const getPresetSession = vi.fn().mockResolvedValue({
+			activePresetId: "preset-1",
+			activePresetNameBase: "Warm Pad",
+			isDirty: true,
+		});
+		mockUsePluginParamBridge.mockReturnValue({
+			loadPresetData: vi.fn().mockResolvedValue("Mock Preset"),
+			getPresetSession,
+			setPresetSession: vi.fn().mockResolvedValue(undefined),
+		});
 
 		render(<PluginPage />);
 
 		await vi.waitFor(() => {
-			expect(getPresetName).toHaveBeenCalled();
+			expect(getPresetSession).toHaveBeenCalled();
 		});
 	});
 

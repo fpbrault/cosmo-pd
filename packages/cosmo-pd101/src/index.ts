@@ -19,7 +19,10 @@ export {
 	type SynthRendererProps,
 	type SynthRendererProps as SharedPhaseDistortionVisualizerProps,
 } from "./components/renderer/SynthRenderer";
-export { usePluginBridgeSynthEngine } from "./features/synth/engine/pluginBridgeSynthEngineAdapter";
+export {
+	type PluginPresetSession,
+	usePluginBridgeSynthEngine,
+} from "./features/synth/engine/pluginBridgeSynthEngineAdapter";
 export { useAudioEngine } from "./features/synth/hooks/useAudioEngine";
 export { useMidiLearnBindings } from "./features/synth/hooks/useMidiLearnBindings";
 export { useNoteHandling } from "./features/synth/hooks/useNoteHandling";

@@ -3,22 +3,10 @@ import type { LibraryPreset } from "@/features/synth/types/libraryPreset";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import type { PresetTagOptions } from "@/lib/synth/presetTags";
 
-export type PresetManagerPendingChange = {
-	activePresetName: string;
-	activeLocalName: string | null;
-	suggestedName: string;
-	changes: Array<{
-		path: string;
-		previous: string;
-		next: string;
-	}>;
-};
-
 interface PresetManagerContextValue {
 	visiblePresetEntries: PresetEntry[];
 	activePresetId: string | null;
 	activePresetName: string;
-	pendingPresetChange: PresetManagerPendingChange | null;
 	handleLoadPresetByName: (name: string) => void;
 	handleLoadLocal: (id: string) => void;
 	handleLoadLibrary: (preset: LibraryPreset) => void;
@@ -32,9 +20,6 @@ interface PresetManagerContextValue {
 	handleExportPreset: (id: string) => void;
 	handleImportPreset: (json: string, filename: string) => void;
 	handleExportCurrentState: (name: string) => void;
-	handleSavePendingPresetChange: (name?: string) => void;
-	handleDiscardPendingPresetChange: () => void;
-	handleCancelPendingPresetChange: () => void;
 }
 
 const PresetManagerContext = createContext<

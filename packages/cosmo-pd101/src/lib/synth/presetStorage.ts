@@ -22,7 +22,7 @@ export type StoredPreset = FrontendPresetV1;
 export type CurrentPresetSession = {
 	activePresetId: string | null;
 	activePresetNameBase: string;
-	loadedPresetFingerprint: string | null;
+	isDirty: boolean;
 };
 
 type StoredPresetInput = {
@@ -527,8 +527,7 @@ function isCurrentPresetSession(value: unknown): value is CurrentPresetSession {
 		(typeof candidate.activePresetId === "string" ||
 			candidate.activePresetId === null) &&
 		typeof candidate.activePresetNameBase === "string" &&
-		(typeof candidate.loadedPresetFingerprint === "string" ||
-			candidate.loadedPresetFingerprint === null)
+		typeof candidate.isDirty === "boolean"
 	);
 }
 

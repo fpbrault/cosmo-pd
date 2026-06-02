@@ -78,7 +78,38 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	);
 	const runtime = usePluginSynthRuntime({ eventSink: sendNativeEngineEvent });
 
-	const { loadPresetData } = usePluginParamBridge();
+	const syncInstanceBRef =
+		useRef<(name: string, options?: { isDirty?: boolean }) => void>();
+	const [presetSession, setPresetSession] = useState<{
+		activePresetId: string | null;
+		activePresetNameBase: string;
+		isDirty: boolean;
+	}>({
+		activePresetId: null,
+		activePresetNameBase: "Current State",
+		isDirty: false,
+	});
+	const presetSessionRef = useRef(presetSession);
+	useEffect(() => {
+		presetSessionRef.current = presetSession;
+	}, [presetSession]);
+	const {
+		loadPresetData,
+		getPresetSession,
+		setPresetSession: persistPresetSession,
+	} = usePluginParamBridge({
+		onExternalParamChange: () => {
+			setPresetSession((current) =>
+				current.isDirty ? current : { ...current, isDirty: true },
+			);
+			syncInstanceBRef.current?.(
+				presetSessionRef.current.activePresetNameBase,
+				{
+					isDirty: true,
+				},
+			);
+		},
+	});
 
 	useEffect(() => {
 		const element = frameRef.current;
@@ -139,18 +170,16 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		};
 	}, [isIosHost, isLikelyIosDevice, keyboardHeight, setKeyboardHeight]);
 
-	const syncInstanceBRef = useRef<(name: string) => void>();
-
 	const handlePluginPresetSessionChange = useCallback(
-		(session: { activePresetNameBase: string }) => {
-			if (
-				session.activePresetNameBase &&
-				session.activePresetNameBase !== "Current State"
-			) {
-				window.__czSetPresetName?.(session.activePresetNameBase);
-			}
+		(session: {
+			activePresetId: string | null;
+			activePresetNameBase: string;
+			isDirty: boolean;
+		}) => {
+			setPresetSession(session);
+			void persistPresetSession(session);
 		},
-		[],
+		[persistPresetSession],
 	);
 
 	const onLoadPresetData = useCallback(
@@ -166,12 +195,13 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		applyPreset,
 		libraryPresets: [],
 		onLoadPresetData,
+		initialIsPresetDirty: presetSession.isDirty,
 	});
 
 	useEffect(() => {
 		window.__czOnHostPresetSelected = (name: string) => {
-			handleSyncPresetSelection(name);
-			syncInstanceBRef.current?.(name);
+			handleSyncPresetSelection(name, { isDirty: false });
+			syncInstanceBRef.current?.(name, { isDirty: false });
 		};
 		return () => {
 			window.__czOnHostPresetSelected = undefined;
@@ -180,13 +210,19 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 
 	useEffect(() => {
 		const restore = async () => {
-			const name = (await window.__czGetPresetName?.()) as string | undefined;
-			if (name && name !== "Current State") {
-				syncInstanceBRef.current?.(name);
+			const session = await getPresetSession();
+			if (
+				session?.activePresetNameBase &&
+				session.activePresetNameBase !== "Current State"
+			) {
+				setPresetSession(session);
+				syncInstanceBRef.current?.(session.activePresetNameBase, {
+					isDirty: session.isDirty,
+				});
 			}
 		};
-		restore();
-	}, []);
+		void restore();
+	}, [getPresetSession]);
 
 	useEffect(() => {
 		const fetchLibrary = async () => {

@@ -143,14 +143,19 @@ export default function LivePage() {
 		: { width: scaledWidth, height: scaledHeight };
 
 	const syncPresetSelectionRef = useRef<(name: string) => void>();
+	const syncPresetSessionRef =
+		useRef<(name: string, options?: { isDirty?: boolean }) => void>();
 
 	const handlePresetSessionChange = useCallback(
-		(session: { activePresetNameBase: string }) => {
-			if (session.activePresetNameBase === "Current State") return;
+		(session: {
+			activePresetId: string | null;
+			activePresetNameBase: string;
+			isDirty: boolean;
+		}) => {
 			void saveCurrentPresetSession({
-				activePresetId: null,
+				activePresetId: session.activePresetId,
 				activePresetNameBase: session.activePresetNameBase,
-				loadedPresetFingerprint: null,
+				isDirty: session.isDirty,
 			});
 		},
 		[],
@@ -189,12 +194,14 @@ export default function LivePage() {
 				session?.activePresetNameBase &&
 				session.activePresetNameBase !== "Current State"
 			) {
-				syncPresetSelectionRef.current?.(session.activePresetNameBase);
+				syncPresetSessionRef.current?.(session.activePresetNameBase, {
+					isDirty: session.isDirty,
+				});
 			} else {
 				const firstPreset = FACTORY_CZ_PRESETS[0];
 				if (firstPreset) {
 					useSynthStore.getState().applyPreset(firstPreset.data);
-					syncPresetSelectionRef.current?.(firstPreset.name);
+					syncPresetSessionRef.current?.(firstPreset.name);
 				}
 			}
 		};
@@ -255,6 +262,7 @@ export default function LivePage() {
 						}
 						onInitPresetSession={(fn) => {
 							syncPresetSelectionRef.current = fn;
+							syncPresetSessionRef.current = fn;
 						}}
 						onPresetSessionChange={handlePresetSessionChange}
 					/>

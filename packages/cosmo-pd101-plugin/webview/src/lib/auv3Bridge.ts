@@ -19,6 +19,12 @@ type MidiBindingIdentity = {
 	cc: number;
 };
 
+type PresetSession = {
+	activePresetId: string | null;
+	activePresetNameBase: string;
+	isDirty: boolean;
+};
+
 const SCOPE_POLL_INTERVAL_MS = 33;
 const RUNTIME_VOICE_STATES_POLL_INTERVAL_MS = 16;
 const RUNTIME_MOD_SOURCES_POLL_INTERVAL_MS = 16;
@@ -46,6 +52,8 @@ declare global {
 		) => void;
 		__czIpcResponse?: (response: IpcRpcResponse) => void;
 		__czOnMidiCc?: (channel: number, cc: number, value: number) => void;
+		__czGetPresetSession?: () => Promise<unknown>;
+		__czSetPresetSession?: (session: PresetSession) => Promise<unknown>;
 		__czGetPresetLibrary?: (source?: string) => Promise<unknown>;
 		__czLoadPresetData?: (id: string) => Promise<unknown>;
 		__czAddPreset?: (name: string, tags: string[]) => Promise<unknown>;
@@ -173,6 +181,9 @@ function installIpcRouter() {
 		});
 	};
 	window.__czGetTransportInfo = () => invokeAuv3("getTransportInfo", []);
+	window.__czGetPresetSession = () => invokeAuv3("getPresetSession", []);
+	window.__czSetPresetSession = (session: PresetSession) =>
+		invokeAuv3("setPresetSession", [session]);
 
 	window.__czGetPresetLibrary = (source?: string) =>
 		source

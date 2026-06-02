@@ -35,6 +35,12 @@ type MidiBindingIdentity = {
 	cc: number;
 };
 
+type PresetSession = {
+	activePresetId: string | null;
+	activePresetNameBase: string;
+	isDirty: boolean;
+};
+
 declare global {
 	interface Window {
 		ipc?: { postMessage: (msg: string) => void };
@@ -54,6 +60,8 @@ declare global {
 		__czOnMidiCc?: (channel: number, cc: number, value: number) => void;
 		__czSetPresetName?: (name: string) => void;
 		__czGetPresetName?: () => Promise<unknown>;
+		__czGetPresetSession?: () => Promise<unknown>;
+		__czSetPresetSession?: (session: PresetSession) => Promise<unknown>;
 		__czGetPresetLibrary?: (source?: string) => Promise<unknown>;
 		__czLoadPresetData?: (id: string) => Promise<unknown>;
 		__czAddPreset?: (name: string, tags: string[]) => Promise<unknown>;
@@ -210,6 +218,9 @@ function installIpcRouter() {
 			console.error("[IPCBridge] setPresetName error", error);
 		});
 	};
+	window.__czGetPresetSession = () => invokeRust("getPresetSession");
+	window.__czSetPresetSession = (session: PresetSession) =>
+		invokeRust("setPresetSession", session);
 
 	window.__czGetPresetLibrary = (source?: string) =>
 		source

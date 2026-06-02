@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useSynthStore } from "@/features/synth/synthStore";
 import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
 import * as presetStorage from "@/lib/synth/presetStorage";
 import type { FrontendPresetV1 } from "@/lib/synth/presetTypes";
@@ -56,6 +57,7 @@ describe("useSynthPresetManager", () => {
 		mockGatherPresetState.mockReturnValue({} as SynthPresetV1);
 		vi.mocked(presetStorage.listStoredPresets).mockResolvedValue([]);
 		vi.mocked(presetStorage.listPresetFavorites).mockResolvedValue([]);
+		useSynthStore.setState({ presetEditVersion: 0 });
 	});
 
 	it("initializes with default state", () => {
@@ -155,18 +157,13 @@ describe("useSynthPresetManager", () => {
 		expect(result.current.activePresetNameBase).toBe("NonExistent");
 	});
 
-	it("handleSyncBuiltinSelection captures loaded preset fingerprint", () => {
-		const gatherFn = vi.fn(
-			() => ({ test: "value" }) as unknown as SynthPresetV1,
-		);
-		const { result, rerender } = renderHook(
-			({ gather }: { gather: () => SynthPresetV1 }) =>
-				useSynthPresetManager({
-					builtinPresets: mockBuiltinPresets,
-					gatherPresetState: gather,
-					applyPreset: mockApplyPreset,
-				}),
-			{ initialProps: { gather: gatherFn } },
+	it("marks the preset dirty after a synth edit", () => {
+		const { result } = renderHook(() =>
+			useSynthPresetManager({
+				builtinPresets: mockBuiltinPresets,
+				gatherPresetState: mockGatherPresetState,
+				applyPreset: mockApplyPreset,
+			}),
 		);
 
 		act(() => {
@@ -175,10 +172,9 @@ describe("useSynthPresetManager", () => {
 
 		expect(result.current.activePresetName).toBe("Preset 1");
 
-		const diffGatherFn = vi.fn(
-			() => ({ test: "different" }) as unknown as SynthPresetV1,
-		);
-		rerender({ gather: diffGatherFn });
+		act(() => {
+			useSynthStore.getState().setVolume(0.25);
+		});
 
 		expect(result.current.activePresetName).toBe("Preset 1 *");
 	});
@@ -224,62 +220,31 @@ describe("useSynthPresetManager", () => {
 		expect(result2.current.activePresetNameBase).toBe("Preset 1");
 	});
 
-	it("detects unsaved changes", () => {
-		const gatherFn = vi.fn(() => ({}) as SynthPresetV1);
-		const { result, rerender } = renderHook(
-			({ gather }: { gather: () => SynthPresetV1 }) =>
-				useSynthPresetManager({
-					builtinPresets: mockBuiltinPresets,
-					gatherPresetState: gather,
-					applyPreset: mockApplyPreset,
-				}),
-			{ initialProps: { gather: gatherFn } },
+	it("keeps the preset dirty until an explicit clean point", () => {
+		const { result } = renderHook(() =>
+			useSynthPresetManager({
+				builtinPresets: mockBuiltinPresets,
+				gatherPresetState: mockGatherPresetState,
+				applyPreset: mockApplyPreset,
+			}),
 		);
 
 		act(() => {
 			result.current.handleLoadBuiltin("Preset 1");
 		});
 
-		expect(result.current.activePresetName).toBe("Preset 1");
-
-		const diffGatherFn = vi.fn(
-			() => ({ different: "state" }) as unknown as SynthPresetV1,
-		);
-		rerender({ gather: diffGatherFn });
+		act(() => {
+			useSynthStore.getState().setVolume(0.4);
+			useSynthStore.getState().setVolume(0.8);
+		});
 
 		expect(result.current.activePresetName).toBe("Preset 1 *");
-	});
-
-	it("handles pending preset change flow", () => {
-		const gatherFn = vi.fn(() => ({}) as SynthPresetV1);
-		const { result, rerender } = renderHook(
-			({ gather }: { gather: () => SynthPresetV1 }) =>
-				useSynthPresetManager({
-					builtinPresets: mockBuiltinPresets,
-					gatherPresetState: gather,
-					applyPreset: mockApplyPreset,
-				}),
-			{ initialProps: { gather: gatherFn } },
-		);
-
-		act(() => {
-			result.current.handleLoadBuiltin("Preset 1");
-		});
-
-		const diffGatherFn = vi.fn(() => ({ a: 2 }) as unknown as SynthPresetV1);
-		rerender({ gather: diffGatherFn });
 
 		act(() => {
 			result.current.handleLoadBuiltin("Preset 2");
 		});
 
-		expect(result.current.pendingPresetChange).not.toBeNull();
-
-		act(() => {
-			result.current.handleDiscardPendingPresetChange();
-		});
-
-		expect(result.current.pendingPresetChange).toBeNull();
+		expect(result.current.activePresetName).toBe("Preset 2");
 	});
 
 	it("saves a preset", async () => {

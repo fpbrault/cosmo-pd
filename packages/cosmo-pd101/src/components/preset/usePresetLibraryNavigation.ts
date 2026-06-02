@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import {
 	getVirtualRowHeight,
@@ -34,18 +34,23 @@ export function usePresetLibraryNavigation({
 	handleLoad,
 	onClose,
 }: UsePresetLibraryNavigationOptions) {
+	const virtualRowsRef = useRef(virtualRows);
+	virtualRowsRef.current = virtualRows;
+	const virtualOffsetsRef = useRef(virtualOffsets);
+	virtualOffsetsRef.current = virtualOffsets;
+
 	useEffect(() => {
 		if (!isOpen) return;
 		if (!focusedEntryId) return;
 		if (document.activeElement?.tagName === "INPUT") return;
 
-		const rowIndex = virtualRows.findIndex(
+		const rowIndex = virtualRowsRef.current.findIndex(
 			(row) => row.kind === "entry" && row.entry.id === focusedEntryId,
 		);
 		const scrollContainer = scrollContainerRef.current;
 		if (rowIndex < 0 || !scrollContainer) return;
 
-		const top = virtualOffsets[rowIndex] + TABLE_HEADER_HEIGHT;
+		const top = virtualOffsetsRef.current[rowIndex] + TABLE_HEADER_HEIGHT;
 		const bottom = top + getVirtualRowHeight();
 		if (top < scrollContainer.scrollTop) {
 			scrollContainer.scrollTop = top;
@@ -53,7 +58,7 @@ export function usePresetLibraryNavigation({
 		if (bottom > scrollContainer.scrollTop + scrollContainer.clientHeight) {
 			scrollContainer.scrollTop = bottom - scrollContainer.clientHeight;
 		}
-	}, [focusedEntryId, isOpen, scrollContainerRef, virtualOffsets, virtualRows]);
+	}, [focusedEntryId, isOpen, scrollContainerRef]);
 
 	const handleKeyboardNavigation = useCallback(
 		(event: { key: string; preventDefault: () => void }) => {

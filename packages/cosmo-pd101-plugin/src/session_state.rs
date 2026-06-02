@@ -84,12 +84,22 @@ pub fn default_midi_bindings() -> Vec<MidiLearnBinding> {
 
 /// DAW-serializable session state.
 /// Written by `save_state()` and read by `load_state()`.
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct PresetSession {
+    pub active_preset_name_base: String,
+    pub loaded_preset_id: Option<String>,
+    #[serde(default)]
+    pub is_dirty: bool,
+}
+
+/// DAW-serializable session state.
+/// Written by `save_state()` and read by `load_state()`.
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PluginSessionState {
     pub synth_params: SynthParams,
-    pub preset_name: String,
-    pub loaded_preset_id: Option<String>,
+    pub preset_session: PresetSession,
     /// UI editor state (tab selections, scope settings, keyboard prefs, etc.)
     #[serde(default)]
     pub editor_state: Option<EditorState>,
@@ -100,7 +110,7 @@ pub struct PluginSessionState {
 /// | Tier | Format | Source |
 /// |------|--------|--------|
 /// | 1 | `PluginSessionState` (new) | Forward‑looking write format |
-/// | 2 | `{ synth_params, preset_name }` (current wrapper) | Pre‑ownership‑overhaul |
+/// | 2 | `{ synth_params, preset_name }` (current wrapper) | Pre‑dirty-session |
 /// | 3 | Flat `SynthParams` (legacy) | Very first releases |
 pub fn deserialize_state(data: &[u8]) -> Result<PluginSessionState, String> {
     // Tier 1: PluginSessionState (new format)
@@ -124,8 +134,11 @@ pub fn deserialize_state(data: &[u8]) -> Result<PluginSessionState, String> {
             .to_string();
         return Ok(PluginSessionState {
             synth_params,
-            preset_name,
-            loaded_preset_id: None,
+            preset_session: PresetSession {
+                active_preset_name_base: preset_name,
+                loaded_preset_id: None,
+                is_dirty: false,
+            },
             editor_state: None,
         });
     }
@@ -134,8 +147,7 @@ pub fn deserialize_state(data: &[u8]) -> Result<PluginSessionState, String> {
     if let Ok(synth_params) = serde_json::from_slice::<SynthParams>(data) {
         return Ok(PluginSessionState {
             synth_params,
-            preset_name: String::new(),
-            loaded_preset_id: None,
+            preset_session: PresetSession::default(),
             editor_state: None,
         });
     }
@@ -158,15 +170,22 @@ mod tests {
                 volume: 0.42,
                 ..Default::default()
             },
-            preset_name: "Test".to_string(),
-            loaded_preset_id: Some("abc-123".to_string()),
+            preset_session: PresetSession {
+                active_preset_name_base: "Test".to_string(),
+                loaded_preset_id: Some("abc-123".to_string()),
+                is_dirty: true,
+            },
             editor_state: None,
         };
         let data = serde_json::to_vec(&state).unwrap();
         let result = deserialize_state(&data).unwrap();
         assert_eq!(result.synth_params.volume, 0.42);
-        assert_eq!(result.preset_name, "Test");
-        assert_eq!(result.loaded_preset_id.as_deref(), Some("abc-123"));
+        assert_eq!(result.preset_session.active_preset_name_base, "Test");
+        assert_eq!(
+            result.preset_session.loaded_preset_id.as_deref(),
+            Some("abc-123")
+        );
+        assert!(result.preset_session.is_dirty);
     }
 
     #[test]
@@ -181,8 +200,9 @@ mod tests {
         let bytes = serde_json::to_vec(&data).unwrap();
         let result = deserialize_state(&bytes).unwrap();
         assert_eq!(result.synth_params.volume, 0.33);
-        assert_eq!(result.preset_name, "Warm Pad");
-        assert!(result.loaded_preset_id.is_none());
+        assert_eq!(result.preset_session.active_preset_name_base, "Warm Pad");
+        assert!(result.preset_session.loaded_preset_id.is_none());
+        assert!(!result.preset_session.is_dirty);
     }
 
     #[test]
@@ -199,8 +219,9 @@ mod tests {
         let result = deserialize_state(&bytes).unwrap();
         assert_eq!(result.synth_params.volume, 0.77);
         assert_eq!(result.synth_params.line1.dcw_base, 0.5);
-        assert_eq!(result.preset_name, "");
-        assert!(result.loaded_preset_id.is_none());
+        assert_eq!(result.preset_session.active_preset_name_base, "");
+        assert!(result.preset_session.loaded_preset_id.is_none());
+        assert!(!result.preset_session.is_dirty);
     }
 
     #[test]

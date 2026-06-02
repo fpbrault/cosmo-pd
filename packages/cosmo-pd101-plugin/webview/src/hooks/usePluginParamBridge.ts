@@ -1,4 +1,5 @@
 import {
+	type PluginPresetSession,
 	refreshMidiLearnState,
 	subscribeMidiLearnState,
 	useMidiLearnBindings,
@@ -8,8 +9,12 @@ import { useEffect, useRef } from "react";
 import { ensurePluginBridge } from "@/lib/pluginBridge";
 import { useSessionStateSync } from "./useSessionStateSync";
 
-export function usePluginParamBridge(): {
+export function usePluginParamBridge(
+	options: { onExternalParamChange?: () => void } = {},
+): {
 	loadPresetData: (id: string) => Promise<string>;
+	getPresetSession: () => Promise<PluginPresetSession | null>;
+	setPresetSession: (session: PluginPresetSession) => Promise<void>;
 } {
 	const bridgeReadyRef = useRef(false);
 	useMidiLearnBindings({ applyBindings: true });
@@ -38,7 +43,8 @@ export function usePluginParamBridge(): {
 		};
 	}, []);
 
-	const { loadPresetData } = usePluginBridgeSynthEngine();
+	const { loadPresetData, getPresetSession, setPresetSession } =
+		usePluginBridgeSynthEngine(options);
 	useSessionStateSync();
 
 	useEffect(() => {
@@ -46,5 +52,5 @@ export function usePluginParamBridge(): {
 		return unsubscribe;
 	}, []);
 
-	return { loadPresetData };
+	return { loadPresetData, getPresetSession, setPresetSession };
 }
