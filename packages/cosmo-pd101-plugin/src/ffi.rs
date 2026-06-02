@@ -5,8 +5,8 @@ use std::slice;
 use std::sync::OnceLock;
 
 use cosmo_synth_engine::params::{
-    EngineParamReadoutFormatV1, SynthParams, engine_param_default_v1, engine_param_ranges_v1,
-    engine_param_ui_meta_v1,
+    EngineParamReadoutFormatV1, SynthParams, engine_param_default_v1, engine_param_ui_meta_v1,
+    set_parameter_value_by_key,
 };
 use cosmo_synth_engine::processor::{CosmoProcessor, midi_note_to_freq};
 
@@ -475,65 +475,7 @@ fn parameter_value(params: &SynthParams, key: &str) -> Option<f32> {
 }
 
 pub(crate) fn set_parameter_value(params: &mut SynthParams, key: &str, value: f32) -> bool {
-    match key {
-        "volume" => params.volume = value,
-        "warpAAmount" => params.line1.dcw_base = value,
-        "warpBAmount" => params.line2.dcw_base = value,
-        "algoBlendA" => params.line1.algo_blend = value,
-        "algoBlendB" => params.line2.algo_blend = value,
-        "line1Level" => params.line1.dca_base = value,
-        "line2Level" => params.line2.dca_base = value,
-        "line1Octave" => params.line1.octave = value,
-        "line2Octave" => params.line2.octave = value,
-        "line2DetuneNote" => params.line2.detune_note = value,
-        "line2DetuneFine" => params.line2.detune_fine = value,
-        "velocityCurve" => params.velocity_curve = value,
-        "pitchBendRange" => params.pitch_bend_range = value,
-        "portamentoRate" => params.portamento.rate = value,
-        "portamentoTime" => params.portamento.time = value,
-        "lfoRate" => params.lfo.rate = value,
-        "lfoDepth" => params.lfo.depth = value,
-        "lfoSymmetry" => params.lfo.symmetry = value,
-        "lfoOffset" => params.lfo.offset = value,
-        "lfo2Rate" => params.lfo2.rate = value,
-        "lfo2Depth" => params.lfo2.depth = value,
-        "lfo2Symmetry" => params.lfo2.symmetry = value,
-        "lfo2Offset" => params.lfo2.offset = value,
-        "randomRate" => params.random.rate = value,
-        "modEnvAttack" => params.mod_env.attack = value,
-        "modEnvDecay" => params.mod_env.decay = value,
-        "modEnvSustain" => params.mod_env.sustain = value,
-        "modEnvRelease" => params.mod_env.release = value,
-        "tempoBpm" => params.tempo_bpm = value,
-        "lineOctave" => params.octave = value,
-        "macro1" => params.macro1 = value,
-        "macro2" => params.macro2 = value,
-        "macro3" => params.macro3 = value,
-        "macro4" => params.macro4 = value,
-        _ => return false,
-    }
-    true
-}
-
-pub(crate) fn midi_mapping_range_for_key(key: &str) -> Option<(f32, f32)> {
-    if let Some(spec) = AUTOMATABLE_PARAMS.iter().find(|spec| spec.key == key) {
-        return Some((spec.min, spec.max));
-    }
-
-    if let Some(range) = engine_param_ranges_v1()
-        .iter()
-        .find(|range| range.key == key)
-    {
-        return Some((range.min, range.max));
-    }
-
-    match key {
-        "lfoSymmetry" | "lfo2Symmetry" | "macro1" | "macro2" | "macro3" | "macro4" => {
-            Some((0.0, 1.0))
-        }
-        "lineOctave" => Some((-2.0, 2.0)),
-        _ => None,
-    }
+    set_parameter_value_by_key(params, key, value)
 }
 
 fn engine_mut<'a>(

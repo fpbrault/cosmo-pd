@@ -309,6 +309,23 @@ impl CzEditor {
             let _ = wv.evaluate_script(&script);
         }
     }
+
+    fn push_midi_learn_state(&mut self) {
+        if let Ok(state) = self.midi_learn_state.lock() {
+            self.last_midi_learn_version = state.version;
+            if let Ok(json) = serde_json::to_string(&*state) {
+                let escaped = json.replace('\\', "\\\\").replace('"', "\\\"");
+                let script = format!(
+                    "if(typeof window.__czOnMidiLearnState === 'function') {{ window.__czOnMidiLearnState(\"{escaped}\"); }}"
+                );
+                if let Ok(container) = self.webview_state.lock()
+                    && let Some(wv) = &container.webview
+                {
+                    let _ = wv.evaluate_script(&script);
+                }
+            }
+        }
+    }
 }
 
 impl Editor for CzEditor {
@@ -409,21 +426,13 @@ impl Editor for CzEditor {
         self.push_params();
 
         // Push MIDI learn state if version changed
-        if let Ok(state) = self.midi_learn_state.lock()
-            && state.version != self.last_midi_learn_version
-        {
-            self.last_midi_learn_version = state.version;
-            if let Ok(json) = serde_json::to_string(&*state) {
-                let escaped = json.replace('\\', "\\\\").replace('"', "\\\"");
-                let script = format!(
-                    "if(typeof window.__czOnMidiLearnState === 'function') {{ window.__czOnMidiLearnState(\"{escaped}\"); }}"
-                );
-                if let Ok(container) = self.webview_state.lock()
-                    && let Some(wv) = &container.webview
-                {
-                    let _ = wv.evaluate_script(&script);
-                }
-            }
+        let midi_learn_state_changed = self
+            .midi_learn_state
+            .lock()
+            .map(|state| state.version != self.last_midi_learn_version)
+            .unwrap_or(false);
+        if midi_learn_state_changed {
+            self.push_midi_learn_state();
         }
 
         #[cfg(not(any(target_os = "ios", target_os = "android")))]
@@ -434,6 +443,15 @@ impl Editor for CzEditor {
         if let Ok(mut f) = self.host_scale_factor.lock() {
             *f = factor as f32;
         }
+    }
+
+    fn state_changed(&mut self) {
+        if let Ok(mut cache) = self.last_sent_params_json.lock() {
+            cache.clear();
+        }
+        self.last_midi_learn_version = u64::MAX;
+        self.push_params();
+        self.push_midi_learn_state();
     }
 }
 

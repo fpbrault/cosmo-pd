@@ -11,9 +11,13 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use arc_swap::ArcSwap;
 use cosmo_synth_engine::envelope::normalize_synth_params_envelopes_to_raw_if_human;
-use cosmo_synth_engine::params::SynthParams;
+use cosmo_synth_engine::params::{
+    MidiMappingBinding, SynthParams, apply_midi_mapping as apply_engine_midi_mapping,
+};
 use cosmo_synth_engine::processor::state::{RuntimeModSources, RuntimeVoiceDebugState};
-use cosmo_synth_engine::processor::{CosmoProcessor, midi_note_to_freq};
+use cosmo_synth_engine::processor::{
+    CosmoInputEvent, CosmoProcessor, CosmoTimedInputEvent, CosmoTransportState,
+};
 use crossbeam_queue::ArrayQueue;
 use truce::prelude::*;
 use truce_core::events::TransportInfo;
@@ -135,7 +139,7 @@ impl ScopeFrame {
 }
 
 type ScopeBuffer = Arc<Mutex<ScopeFrame>>;
-type UiInputQueue = Arc<ArrayQueue<UiInputEvent>>;
+type UiInputQueue = Arc<ArrayQueue<CosmoInputEvent>>;
 type SharedSynthParams = Arc<ArcSwap<SynthParams>>;
 type SharedRtSynthParams = Arc<ArcSwap<SynthParams>>;
 type SharedRuntimeModSources = Arc<ArcSwap<RuntimeModSources>>;
@@ -146,6 +150,10 @@ type PerformanceCountersHandle = Arc<PerformanceCounters>;
 
 const MIDI_CC_QUEUE_CAPACITY: usize = 128;
 type MidiCcQueue = Arc<ArrayQueue<(u8, u8, u8)>>;
+
+fn denorm_midi_7bit(value: f32) -> u8 {
+    (value.clamp(0.0, 1.0) * 127.0).round() as u8
+}
 
 fn build_rt_synth_params(params: &SynthParams) -> SynthParams {
     let mut rt_params = params.clone();
@@ -392,20 +400,6 @@ impl PerformanceCounters {
             "paramsApplyCount": self.params_apply_count.load(Ordering::Relaxed),
         })
     }
-}
-
-#[allow(dead_code)]
-#[derive(Debug, Clone, Copy)]
-enum UiInputEvent {
-    NoteOn { note: u8, velocity: f32 },
-    NoteOff { note: u8 },
-    Sustain { on: bool },
-    PitchBend { value: f32 },
-    ModWheel { value: f32 },
-    Aftertouch { value: f32 },
-    PolyAftertouch { note: u8, value: f32 },
-    Macro { index: usize, value: f32 },
-    Panic,
 }
 
 // =============================================================================
@@ -701,7 +695,7 @@ fn handle_ipc_invoke(
             let note = u8::try_from(note).map_err(|_| "noteOn note out of range".to_string())?;
 
             ui_input_queue
-                .push(UiInputEvent::NoteOn { note, velocity })
+                .push(CosmoInputEvent::NoteOn { note, velocity })
                 .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
@@ -717,7 +711,7 @@ fn handle_ipc_invoke(
             let note = u8::try_from(note).map_err(|_| "noteOff note out of range".to_string())?;
 
             ui_input_queue
-                .push(UiInputEvent::NoteOff { note })
+                .push(CosmoInputEvent::NoteOff { note })
                 .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
@@ -732,7 +726,11 @@ fn handle_ipc_invoke(
                 .ok_or_else(|| "sustain payload missing on".to_string())?;
 
             ui_input_queue
-                .push(UiInputEvent::Sustain { on })
+                .push(CosmoInputEvent::ControlChange {
+                    channel: 0,
+                    cc: 64,
+                    value: if on { 127 } else { 0 },
+                })
                 .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
@@ -750,7 +748,7 @@ fn handle_ipc_invoke(
                 as f32;
 
             ui_input_queue
-                .push(UiInputEvent::PitchBend { value })
+                .push(CosmoInputEvent::PitchBend { value })
                 .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
@@ -768,7 +766,11 @@ fn handle_ipc_invoke(
                 as f32;
 
             ui_input_queue
-                .push(UiInputEvent::ModWheel { value })
+                .push(CosmoInputEvent::ControlChange {
+                    channel: 0,
+                    cc: 1,
+                    value: denorm_midi_7bit(value),
+                })
                 .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
@@ -786,7 +788,7 @@ fn handle_ipc_invoke(
                 as f32;
 
             ui_input_queue
-                .push(UiInputEvent::Aftertouch { value })
+                .push(CosmoInputEvent::Aftertouch { value })
                 .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
@@ -810,7 +812,7 @@ fn handle_ipc_invoke(
                 as f32;
 
             ui_input_queue
-                .push(UiInputEvent::PolyAftertouch { note, value })
+                .push(CosmoInputEvent::PolyAftertouch { note, value })
                 .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
@@ -833,13 +835,13 @@ fn handle_ipc_invoke(
                 as f32;
 
             ui_input_queue
-                .push(UiInputEvent::Macro { index, value })
+                .push(CosmoInputEvent::Macro { index, value })
                 .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
         "panic" => {
             ui_input_queue
-                .push(UiInputEvent::Panic)
+                .push(CosmoInputEvent::Panic)
                 .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
@@ -1209,13 +1211,12 @@ pub struct CzPlugin {
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
     midi_cc_queue: MidiCcQueue,
+    block_input_events: Vec<CosmoTimedInputEvent>,
     mono_output: Vec<f32>,
     performance_counters: PerformanceCountersHandle,
     /// Tracks whether DAW param values changed since last process() call.
     daw_params_dirty: bool,
     last_scope_hz: f32,
-    /// Tracks transport playing state across process() calls to detect stop.
-    last_playing: bool,
     /// Preset name shared with the webview, persisted via save_state/load_state.
     preset_name: SharedPresetName,
     /// Latest voice debug state snapshot, populated each process block.
@@ -1266,11 +1267,11 @@ impl CzPlugin {
             scope_buffer: Arc::new(Mutex::new(ScopeFrame::default())),
             ui_input_queue: Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY)),
             midi_cc_queue: Arc::new(ArrayQueue::new(MIDI_CC_QUEUE_CAPACITY)),
+            block_input_events: Vec::with_capacity(MAX_UI_INPUT_EVENTS_PER_BLOCK),
             mono_output: Vec::new(),
             performance_counters: Arc::new(PerformanceCounters::default()),
             daw_params_dirty: true,
             last_scope_hz: 220.0,
-            last_playing: false,
             preset_name: Arc::new(Mutex::new(String::new())),
             runtime_voice_states: Arc::new(ArcSwap::from_pointee(Vec::new())),
             preset_library,
@@ -1280,14 +1281,6 @@ impl CzPlugin {
                 bindings: midi_learn_bindings,
                 ..Default::default()
             })),
-        }
-    }
-
-    fn all_notes_off(proc: &mut CosmoProcessor) {
-        append_log("all_notes_off: calling set_sustain(false) + note_off 0..127");
-        proc.set_sustain(false);
-        for note in 0u8..=127u8 {
-            proc.note_off(note);
         }
     }
 
@@ -1326,62 +1319,30 @@ impl CzPlugin {
         }
     }
 
-    fn mapped_param_keys_for_cc(&self, channel: u8, cc: u8) -> Vec<String> {
-        let Ok(state) = self.midi_learn_state.lock() else {
-            return Vec::new();
+    fn apply_midi_mapping(&mut self, channel: u8, cc: u8, value: u8) -> bool {
+        let state_snapshot = self.midi_learn_state.lock().ok().map(|guard| guard.clone());
+        let Some(state_snapshot) = state_snapshot else {
+            return false;
         };
-        state
+        let bindings = state_snapshot
             .bindings
             .iter()
-            .filter(|binding| {
-                (binding.channel == -1 || binding.channel == i32::from(channel))
-                    && binding.cc == i32::from(cc)
+            .map(|binding| MidiMappingBinding {
+                param_key: binding.param_key.as_str(),
+                channel: binding.channel,
+                cc: binding.cc,
             })
-            .map(|binding| binding.param_key.clone())
-            .collect()
-    }
+            .collect::<Vec<_>>();
 
-    fn apply_midi_mapping(&mut self, channel: u8, cc: u8, value: u8) -> bool {
-        let param_keys = self.mapped_param_keys_for_cc(channel, cc);
-        if param_keys.is_empty() {
-            let snapshot = self.midi_learn_state.lock().ok().map(|guard| guard.clone());
+        if bindings.is_empty() {
             append_log(&format!(
                 "apply_midi_mapping miss ch={} cc={} value={} stored_mappings={:?}",
-                channel, cc, value, snapshot
+                channel, cc, value, state_snapshot
             ));
             return false;
         }
         let mut synth_params = (*self.synth_params.load_full()).clone();
-        let normalized = f32::from(value) / 127.0;
-        let mut applied = false;
-        for param_key in param_keys {
-            append_log(&format!(
-                "apply_midi_mapping hit ch={} cc={} value={} param_key={}",
-                channel, cc, value, param_key
-            ));
-
-            let Some((min, max)) = crate::ffi::midi_mapping_range_for_key(&param_key) else {
-                append_log(&format!(
-                    "apply_midi_mapping unsupported_range param_key={}",
-                    param_key
-                ));
-                continue;
-            };
-
-            let mapped_value = min + normalized * (max - min);
-            if !crate::ffi::set_parameter_value(&mut synth_params, &param_key, mapped_value) {
-                append_log(&format!(
-                    "apply_midi_mapping unsupported_param param_key={} mapped_value={}",
-                    param_key, mapped_value
-                ));
-                continue;
-            }
-            append_log(&format!(
-                "apply_midi_mapping applied param_key={} mapped_value={}",
-                param_key, mapped_value
-            ));
-            applied = true;
-        }
+        let applied = apply_engine_midi_mapping(&mut synth_params, &bindings, channel, cc, value);
 
         if !applied {
             return false;
@@ -1404,6 +1365,28 @@ impl CzPlugin {
         true
     }
 
+    fn capture_pending_midi_learn_binding(&mut self, channel: u8, cc: u8) {
+        let mut bindings_changed = false;
+        {
+            let mut state = self.midi_learn_state.lock().unwrap();
+            if state.learn_mode
+                && let Some(ref pending) = state.pending_param_key.clone()
+            {
+                state.bindings.retain(|binding| binding.param_key != *pending);
+                state.bindings.push(crate::session_state::MidiLearnBinding {
+                    param_key: pending.clone(),
+                    channel: i32::from(channel),
+                    cc: i32::from(cc),
+                });
+                state.version += 1;
+                bindings_changed = true;
+            }
+        }
+        if bindings_changed {
+            persist_midi_learn_bindings(&self.midi_learn_state);
+        }
+    }
+
     fn tracked_param_changes(events: &EventList) -> [bool; Self::TRACKED_PARAM_ID_CAPACITY] {
         let mut changed = [false; Self::TRACKED_PARAM_ID_CAPACITY];
         for event in events.iter() {
@@ -1419,192 +1402,97 @@ impl CzPlugin {
         changed
     }
 
-    fn handle_host_event(&mut self, body: &EventBody) {
+    fn current_transport_state(transport: &TransportInfo) -> CosmoTransportState {
+        CosmoTransportState {
+            tempo_bpm: (transport.tempo.is_finite() && transport.tempo > 0.0)
+                .then_some(transport.tempo as f32),
+            playing: transport.playing,
+            position_beats: transport.position_beats,
+        }
+    }
+
+    fn sync_runtime_params_from_host(&mut self, events: &EventList) {
+        let tracked_param_changes = Self::tracked_param_changes(events);
+        let has_param_change_events = tracked_param_changes.iter().any(|changed| *changed);
+        let params_version = self.synth_params_version.load(Ordering::Acquire);
+        let params_changed =
+            params_version != self.cached_synth_params_version || self.daw_params_dirty;
+
+        if !params_changed {
+            return;
+        }
+
+        // Start from the latest JS JSON params (or cached RT params).
+        // Both rt_synth_params and cached_rt_synth_params have already been
+        // normalized (envelope level/rate -> raw 0-127), and apply_daw_params
+        // only touches top-level float fields (no envelope steps), so we
+        // must NOT call build_rt_synth_params again - that would double-convert
+        // envelope values, corrupting levels and rates.
+        let previous_rt = (*self.cached_rt_synth_params).clone();
+        let merged = if params_version != self.cached_synth_params_version {
+            let mut params = (*self.rt_synth_params.load_full()).clone();
+            apply_daw_params(&mut params, &self.params);
+            params
+        } else {
+            let mut params = (*self.cached_rt_synth_params).clone();
+            apply_daw_params(&mut params, &self.params);
+            params
+        };
+
+        let mut merged = merged;
+        if has_param_change_events {
+            for (id, changed) in tracked_param_changes.iter().enumerate() {
+                if !*changed {
+                    continue;
+                }
+                let Some(prev_value) = read_daw_param_by_id(&previous_rt, id as u32) else {
+                    continue;
+                };
+                let _ = write_daw_param_by_id(&mut merged, id as u32, f64::from(prev_value));
+            }
+        }
+
+        let rt_merged = Arc::new(merged);
+        self.cached_rt_synth_params = rt_merged.clone();
+        if let Some(ref mut proc) = self.processor {
+            proc.set_shared_params(rt_merged);
+            self.performance_counters.record_param_apply();
+        }
+        self.cached_synth_params_version = params_version;
+        self.daw_params_dirty = false;
+
+        // Push merged params to ArcSwaps so idle loop pushes to webview.
+        self.synth_params.store(self.cached_rt_synth_params.clone());
+        self.rt_synth_params
+            .store(self.cached_rt_synth_params.clone());
+    }
+
+    fn handle_cc_side_effects(&mut self, channel: u8, cc: u8, value: u8) {
+        self.capture_pending_midi_learn_binding(channel, cc);
+        let _ = self.apply_midi_mapping(channel, cc, value);
+        let _ = self.midi_cc_queue.push((channel, cc, value));
+    }
+
+    fn handle_host_event_side_effects(&mut self, body: &EventBody) {
         match body {
-            EventBody::NoteOff { note, .. } => {
-                append_log(&format!("handle_host_event NoteOff note={}", note));
-                if let Some(proc) = self.processor.as_mut() {
-                    proc.note_off(*note);
-                }
-            }
-            EventBody::NoteOn { note, velocity, .. } => {
-                let vel = norm_7bit(*velocity);
-                append_log(&format!(
-                    "handle_host_event NoteOn note={} vel_raw={} vel_norm={}",
-                    note, velocity, vel
-                ));
-                if vel <= 0.0 {
-                    if let Some(proc) = self.processor.as_mut() {
-                        proc.note_off(*note);
-                    }
-                } else {
-                    let frequency = midi_note_to_freq(*note);
-                    if let Some(proc) = self.processor.as_mut() {
-                        proc.note_on(*note, frequency, vel);
-                    }
-                }
-            }
-            EventBody::NoteOff2 { note, .. } => {
-                append_log(&format!("handle_host_event NoteOff2 note={}", note));
-                if let Some(proc) = self.processor.as_mut() {
-                    proc.note_off(*note);
-                }
-            }
-            EventBody::NoteOn2 { note, velocity, .. } => {
-                let vel = *velocity as f32 / u16::MAX as f32;
-                append_log(&format!(
-                    "handle_host_event NoteOn2 note={} vel_raw={} vel_norm={}",
-                    note, velocity, vel
-                ));
-                if vel <= 0.0 {
-                    if let Some(proc) = self.processor.as_mut() {
-                        proc.note_off(*note);
-                    }
-                } else {
-                    let frequency = midi_note_to_freq(*note);
-                    if let Some(proc) = self.processor.as_mut() {
-                        proc.note_on(*note, frequency, vel);
-                    }
-                }
-            }
-            EventBody::Aftertouch { pressure, .. }
-            | EventBody::ChannelPressure { pressure, .. } => {
-                if let Some(proc) = self.processor.as_mut() {
-                    proc.set_aftertouch(norm_7bit(*pressure));
-                }
-            }
-            EventBody::ChannelPressure2 { pressure, .. } => {
-                if let Some(proc) = self.processor.as_mut() {
-                    proc.set_aftertouch(*pressure as f32 / u32::MAX as f32);
-                }
-            }
             EventBody::ControlChange {
                 channel, cc, value, ..
-            } => match cc {
-                1 => {
-                    append_log(&format!(
-                        "handle_host_event ControlChange ch={} cc={} value={}",
-                        channel, cc, value
-                    ));
-                    if let Some(proc) = self.processor.as_mut() {
-                        proc.set_mod_wheel(norm_7bit(*value));
-                    }
-                }
-                64 => {
-                    append_log(&format!(
-                        "handle_host_event ControlChange ch={} cc={} value={}",
-                        channel, cc, value
-                    ));
-                    if let Some(proc) = self.processor.as_mut() {
-                        proc.set_sustain(*value >= 64);
-                    }
-                }
-                120 | 123 => {
-                    append_log(&format!(
-                        "handle_host_event ControlChange ch={} cc={} value={}",
-                        channel, cc, value
-                    ));
-                    if let Some(proc) = self.processor.as_mut() {
-                        Self::all_notes_off(proc);
-                    }
-                }
-                _ => {
-                    let mut bindings_changed = false;
-                    {
-                        let mut state = self.midi_learn_state.lock().unwrap();
-                        if state.learn_mode
-                            && let Some(ref pending) = state.pending_param_key.clone()
-                        {
-                            state.bindings.retain(|binding| binding.param_key != *pending);
-                            state.bindings.push(crate::session_state::MidiLearnBinding {
-                                param_key: pending.clone(),
-                                channel: i32::from(*channel),
-                                cc: i32::from(*cc),
-                            });
-                            state.version += 1;
-                            bindings_changed = true;
-                        }
-                    }
-                    if bindings_changed {
-                        persist_midi_learn_bindings(&self.midi_learn_state);
-                    }
-                    append_log(&format!(
-                        "handle_host_event ControlChange ch={} cc={} value={}",
-                        channel, cc, value
-                    ));
-                    let _ = self.apply_midi_mapping(*channel, *cc, *value);
-                    let _ = self.midi_cc_queue.push((*channel, *cc, *value));
-                }
-            },
+            } => {
+                append_log(&format!(
+                    "host_cc ch={} cc={} value={}",
+                    channel, cc, value
+                ));
+                self.handle_cc_side_effects(*channel, *cc, *value);
+            }
             EventBody::ControlChange2 {
                 channel, cc, value, ..
-            } => match cc {
-                1 => {
-                    append_log(&format!(
-                        "handle_host_event ControlChange2 ch={} cc={} value={}",
-                        channel, cc, value
-                    ));
-                    if let Some(proc) = self.processor.as_mut() {
-                        proc.set_mod_wheel(*value as f32 / u32::MAX as f32);
-                    }
-                }
-                64 => {
-                    append_log(&format!(
-                        "handle_host_event ControlChange2 ch={} cc={} value={}",
-                        channel, cc, value
-                    ));
-                    if let Some(proc) = self.processor.as_mut() {
-                        proc.set_sustain(*value >= (u32::MAX / 2));
-                    }
-                }
-                120 | 123 => {
-                    append_log(&format!(
-                        "handle_host_event ControlChange2 ch={} cc={} value={}",
-                        channel, cc, value
-                    ));
-                    if let Some(proc) = self.processor.as_mut() {
-                        Self::all_notes_off(proc);
-                    }
-                }
-                _ => {
-                    let raw_value = (*value / 128) as u8;
-                    let mut bindings_changed = false;
-                    {
-                        let mut state = self.midi_learn_state.lock().unwrap();
-                        if state.learn_mode
-                            && let Some(ref pending) = state.pending_param_key.clone()
-                        {
-                            state.bindings.retain(|binding| binding.param_key != *pending);
-                            state.bindings.push(crate::session_state::MidiLearnBinding {
-                                param_key: pending.clone(),
-                                channel: i32::from(*channel),
-                                cc: i32::from(*cc),
-                            });
-                            state.version += 1;
-                            bindings_changed = true;
-                        }
-                    }
-                    if bindings_changed {
-                        persist_midi_learn_bindings(&self.midi_learn_state);
-                    }
-                    append_log(&format!(
-                        "handle_host_event ControlChange2 ch={} cc={} value={} raw={}",
-                        channel, cc, value, raw_value
-                    ));
-                    let _ = self.apply_midi_mapping(*channel, *cc, raw_value);
-                    let _ = self.midi_cc_queue.push((*channel, *cc, raw_value));
-                }
-            },
-            EventBody::PitchBend { value, .. } => {
-                if let Some(proc) = self.processor.as_mut() {
-                    proc.set_pitch_bend(norm_pitch_bend(*value));
-                }
-            }
-            EventBody::PitchBend2 { value, .. } => {
-                if let Some(proc) = self.processor.as_mut() {
-                    let normalized = (*value as f32 - 2_147_483_648.0) / 2_147_483_648.0;
-                    proc.set_pitch_bend(normalized.clamp(-1.0, 1.0));
-                }
+            } => {
+                let raw_value = (*value / 128) as u8;
+                append_log(&format!(
+                    "host_cc2 ch={} cc={} value={} raw={}",
+                    channel, cc, value, raw_value
+                ));
+                self.handle_cc_side_effects(*channel, *cc, raw_value);
             }
             EventBody::ParamChange { id, value } => {
                 self.daw_params_dirty = true;
@@ -1620,81 +1508,198 @@ impl CzPlugin {
         }
     }
 
-    fn process_host_events_into_buffer(&mut self, events: &EventList, num_samples: usize) {
-        let mut next_event = 0usize;
-        let mut rendered = 0usize;
-
-        if !events.is_empty() {
-            append_log(&format!(
-                "process_events: num_events={} num_samples={}",
-                events.len(),
-                num_samples
-            ));
-        }
-
-        while let Some(event) = events.get(next_event) {
-            let event_offset = (event.sample_offset as usize).min(num_samples);
-            if event_offset > rendered {
-                append_log(&format!(
-                    "  render [{}.0..{}.0] ({} samples)",
-                    rendered,
-                    event_offset,
-                    event_offset - rendered
-                ));
-                if let Some(proc) = self.processor.as_mut() {
-                    proc.process(&mut self.mono_output[rendered..event_offset]);
-                }
-                rendered = event_offset;
+    fn host_event_to_engine_event(body: &EventBody) -> Option<CosmoInputEvent> {
+        match body {
+            EventBody::NoteOff { note, .. } | EventBody::NoteOff2 { note, .. } => {
+                Some(CosmoInputEvent::NoteOff { note: *note })
             }
-
-            while let Some(simultaneous) = events.get(next_event) {
-                let simultaneous_offset = (simultaneous.sample_offset as usize).min(num_samples);
-                if simultaneous_offset != event_offset {
-                    break;
-                }
-                append_log(&format!(
-                    "process_host_events event_offset={} body={:?}",
-                    simultaneous_offset, simultaneous.body
-                ));
-                self.handle_host_event(&simultaneous.body);
-                next_event += 1;
-            }
-        }
-
-        if rendered < num_samples
-            && let Some(proc) = self.processor.as_mut()
-        {
-            proc.process(&mut self.mono_output[rendered..num_samples]);
+            EventBody::NoteOn { note, velocity, .. } => Some(CosmoInputEvent::NoteOn {
+                note: *note,
+                velocity: norm_7bit(*velocity),
+            }),
+            EventBody::NoteOn2 { note, velocity, .. } => Some(CosmoInputEvent::NoteOn {
+                note: *note,
+                velocity: *velocity as f32 / u16::MAX as f32,
+            }),
+            EventBody::Aftertouch { pressure, .. }
+            | EventBody::ChannelPressure { pressure, .. } => Some(CosmoInputEvent::Aftertouch {
+                value: norm_7bit(*pressure),
+            }),
+            EventBody::ChannelPressure2 { pressure, .. } => Some(CosmoInputEvent::Aftertouch {
+                value: *pressure as f32 / u32::MAX as f32,
+            }),
+            EventBody::ControlChange {
+                channel, cc, value, ..
+            } => Some(CosmoInputEvent::ControlChange {
+                channel: *channel,
+                cc: *cc,
+                value: *value,
+            }),
+            EventBody::ControlChange2 {
+                channel, cc, value, ..
+            } => Some(CosmoInputEvent::ControlChange {
+                channel: *channel,
+                cc: *cc,
+                value: (*value / 128) as u8,
+            }),
+            EventBody::PitchBend { value, .. } => Some(CosmoInputEvent::PitchBend {
+                value: norm_pitch_bend(*value),
+            }),
+            EventBody::PitchBend2 { value, .. } => Some(CosmoInputEvent::PitchBend {
+                value: ((*value as f32 - 2_147_483_648.0) / 2_147_483_648.0).clamp(-1.0, 1.0),
+            }),
+            _ => None,
         }
     }
 
-    fn drain_ui_input_events(&mut self) {
+    fn collect_block_input_events(&mut self, events: &EventList, num_samples: usize) {
+        self.block_input_events.clear();
+
         if self.performance_counters.enabled.load(Ordering::Acquire) {
             self.performance_counters
                 .ui_queue_depth
                 .store(self.ui_input_queue.len() as u32, Ordering::Relaxed);
         }
+
         for _ in 0..MAX_UI_INPUT_EVENTS_PER_BLOCK {
             let Some(event) = self.ui_input_queue.pop() else {
                 break;
             };
-            if let Some(proc) = &mut self.processor {
-                match event {
-                    UiInputEvent::NoteOn { note, velocity } => {
-                        proc.note_on(note, midi_note_to_freq(note), velocity)
-                    }
-                    UiInputEvent::NoteOff { note } => proc.note_off(note),
-                    UiInputEvent::Sustain { on } => proc.set_sustain(on),
-                    UiInputEvent::PitchBend { value } => proc.set_pitch_bend(value),
-                    UiInputEvent::ModWheel { value } => proc.set_mod_wheel(value),
-                    UiInputEvent::Aftertouch { value } => proc.set_aftertouch(value),
-                    UiInputEvent::PolyAftertouch { note, value } => {
-                        proc.set_poly_aftertouch(note, value)
-                    }
-                    UiInputEvent::Macro { index, value } => proc.set_macro(index, value),
-                    UiInputEvent::Panic => Self::all_notes_off(proc),
-                }
+            self.block_input_events.push(CosmoTimedInputEvent {
+                sample_offset: 0,
+                event,
+            });
+        }
+
+        for event in events.iter() {
+            let sample_offset = (event.sample_offset as usize).min(num_samples);
+            self.handle_host_event_side_effects(&event.body);
+            if let Some(engine_event) = Self::host_event_to_engine_event(&event.body) {
+                self.block_input_events.push(CosmoTimedInputEvent {
+                    sample_offset,
+                    event: engine_event,
+                });
             }
+        }
+    }
+
+    #[cfg(test)]
+    fn process_host_events_into_buffer(&mut self, events: &EventList, num_samples: usize) {
+        self.collect_block_input_events(events, num_samples);
+        if let Some(proc) = self.processor.as_mut() {
+            proc.process_block(
+                &mut self.mono_output[..num_samples],
+                &self.block_input_events,
+                CosmoTransportState::default(),
+            );
+        }
+    }
+
+    #[cfg(test)]
+    fn handle_host_event(&mut self, body: &EventBody) {
+        self.handle_host_event_side_effects(body);
+        if let Some(engine_event) = Self::host_event_to_engine_event(body)
+            && let Some(proc) = self.processor.as_mut()
+        {
+            proc.process_block(&mut [], &[CosmoTimedInputEvent {
+                sample_offset: 0,
+                event: engine_event,
+            }], CosmoTransportState::default());
+        }
+    }
+
+    fn render_audio_block(
+        &mut self,
+        buffer: &mut AudioBuffer,
+        events: &EventList,
+        context: &mut ProcessContext,
+        monitor_enabled: bool,
+    ) -> ProcessStatus {
+        let Some(_) = self.processor else {
+            return ProcessStatus::Normal;
+        };
+
+        let num_samples = buffer.num_samples();
+        if num_samples > self.mono_output.len() {
+            for ch in 0..buffer.num_output_channels() {
+                buffer.output(ch).fill(0.0);
+            }
+            return ProcessStatus::Normal;
+        }
+
+        let process_start = monitor_enabled.then(Instant::now);
+        self.collect_block_input_events(events, num_samples);
+        if let Some(proc) = self.processor.as_mut() {
+            proc.process_block(
+                &mut self.mono_output[..num_samples],
+                &self.block_input_events,
+                Self::current_transport_state(context.transport),
+            );
+        }
+
+        let mono_output = &mut self.mono_output[..num_samples];
+        let elapsed_ns = process_start
+            .map(|start| start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64)
+            .unwrap_or(0);
+
+        let Some(proc) = self.processor.as_ref() else {
+            return ProcessStatus::Normal;
+        };
+
+        let raw_hz = proc
+            .voices
+            .iter()
+            .filter(|voice| !voice.is_silent && voice.note.is_some())
+            .map(|voice| voice.current_freq)
+            .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+            .unwrap_or(0.0);
+        let hz = if raw_hz > 0.0 {
+            self.last_scope_hz = raw_hz;
+            raw_hz
+        } else {
+            self.last_scope_hz
+        };
+        let active_voice_count = if monitor_enabled {
+            proc.voices.iter().filter(|voice| !voice.is_silent).count()
+        } else {
+            0
+        };
+        let ui_queue_depth = if monitor_enabled {
+            self.ui_input_queue.len()
+        } else {
+            0
+        };
+        self.performance_counters.record_process_block(
+            elapsed_ns,
+            num_samples,
+            proc.sample_rate,
+            active_voice_count,
+            ui_queue_depth,
+        );
+        if let Ok(mut scope) = self.scope_buffer.try_lock() {
+            scope.push_block(mono_output, proc.sample_rate, hz);
+        }
+
+        self.runtime_mod_sources
+            .store(Arc::new(proc.runtime_mod_sources()));
+        self.runtime_voice_states
+            .store(Arc::new(proc.runtime_voice_debug_state()));
+
+        let peak = mono_output[..num_samples]
+            .iter()
+            .fold(0.0f32, |acc, &sample| acc.max(sample.abs()));
+        context.set_meter(CzPluginParamsParamId::MeterL as u32, peak);
+        context.set_meter(CzPluginParamsParamId::MeterR as u32, peak);
+
+        for ch in 0..buffer.num_output_channels() {
+            buffer.output(ch)[..num_samples].copy_from_slice(mono_output);
+        }
+
+        let has_tail = proc.voices.iter().any(|voice| !voice.is_silent);
+        if has_tail {
+            ProcessStatus::Tail((proc.sample_rate * 10.0) as u32)
+        } else {
+            ProcessStatus::Normal
         }
     }
 }
@@ -1732,173 +1737,9 @@ impl PluginLogic for CzPlugin {
         context: &mut ProcessContext,
     ) -> ProcessStatus {
         self.transport_snapshot.store(context.transport);
-        if context.transport.playing != self.last_playing {
-            append_log(&format!(
-                "transport change: playing={} last_playing={} num_events={}",
-                context.transport.playing,
-                self.last_playing,
-                events.len()
-            ));
-            if !context.transport.playing && self.last_playing {
-                append_log("transport stop -> all_notes_off");
-                if let Some(proc) = self.processor.as_mut() {
-                    Self::all_notes_off(proc);
-                }
-            }
-        }
-        self.last_playing = context.transport.playing;
-        if let Some(proc) = self.processor.as_mut() {
-            if context.transport.tempo.is_finite() && context.transport.tempo > 0.0 {
-                proc.set_host_transport(
-                    context.transport.tempo as f32,
-                    context.transport.playing,
-                    context.transport.position_beats,
-                );
-            } else {
-                proc.clear_host_transport();
-            }
-        }
-        self.drain_ui_input_events();
-
         let monitor_enabled = self.performance_counters.enabled.load(Ordering::Acquire);
-        let tracked_param_changes = Self::tracked_param_changes(events);
-        let has_param_change_events = tracked_param_changes.iter().any(|changed| *changed);
-
-        // Sync DAW params to the engine (DAW automation / host param changes)
-        // Always reset dirty flag and apply since FloatParams are cheap to read.
-        let params_version = self.synth_params_version.load(Ordering::Acquire);
-        let params_changed =
-            params_version != self.cached_synth_params_version || self.daw_params_dirty;
-
-        if params_changed {
-            // Start from the latest JS JSON params (or cached RT params).
-            // Both rt_synth_params and cached_rt_synth_params have already been
-            // normalized (envelope level/rate → raw 0-127), and apply_daw_params
-            // only touches top-level float fields (no envelope steps), so we
-            // must NOT call build_rt_synth_params again — that would double-convert
-            // envelope values, corrupting levels and rates.
-            let previous_rt = (*self.cached_rt_synth_params).clone();
-            let merged = if params_version != self.cached_synth_params_version {
-                let mut p = (*self.rt_synth_params.load_full()).clone();
-                apply_daw_params(&mut p, &self.params);
-                p
-            } else {
-                let mut p = (*self.cached_rt_synth_params).clone();
-                apply_daw_params(&mut p, &self.params);
-                p
-            };
-
-            let mut merged = merged;
-            if has_param_change_events {
-                for (id, changed) in tracked_param_changes.iter().enumerate() {
-                    if !*changed {
-                        continue;
-                    }
-                    let Some(prev_value) = read_daw_param_by_id(&previous_rt, id as u32) else {
-                        continue;
-                    };
-                    let _ = write_daw_param_by_id(&mut merged, id as u32, f64::from(prev_value));
-                }
-            }
-
-            let rt_merged = Arc::new(merged);
-            self.cached_rt_synth_params = rt_merged.clone();
-            if let Some(ref mut proc) = self.processor {
-                proc.set_shared_params(rt_merged);
-                self.performance_counters.record_param_apply();
-            }
-            self.cached_synth_params_version = params_version;
-            self.daw_params_dirty = false;
-
-            // Push merged params to ArcSwaps so idle loop pushes to webview
-            self.synth_params.store(self.cached_rt_synth_params.clone());
-            self.rt_synth_params
-                .store(self.cached_rt_synth_params.clone());
-        }
-
-        let tail_info = if self.processor.is_some() {
-            let num_samples = buffer.num_samples();
-            if num_samples > self.mono_output.len() {
-                for ch in 0..buffer.num_output_channels() {
-                    buffer.output(ch).fill(0.0);
-                }
-                return ProcessStatus::Normal;
-            }
-            let process_start = monitor_enabled.then(Instant::now);
-            self.process_host_events_into_buffer(events, num_samples);
-            let mono_output = &mut self.mono_output[..num_samples];
-            let elapsed_ns = process_start
-                .map(|start| start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64)
-                .unwrap_or(0);
-
-            let Some(proc) = self.processor.as_ref() else {
-                return ProcessStatus::Normal;
-            };
-            let raw_hz = proc
-                .voices
-                .iter()
-                .filter(|v| !v.is_silent && v.note.is_some())
-                .map(|v| v.current_freq)
-                .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
-                .unwrap_or(0.0);
-            let hz = if raw_hz > 0.0 {
-                self.last_scope_hz = raw_hz;
-                raw_hz
-            } else {
-                self.last_scope_hz
-            };
-            let active_voice_count = if monitor_enabled {
-                proc.voices.iter().filter(|voice| !voice.is_silent).count()
-            } else {
-                0
-            };
-            let ui_queue_depth = if monitor_enabled {
-                self.ui_input_queue.len()
-            } else {
-                0
-            };
-            self.performance_counters.record_process_block(
-                elapsed_ns,
-                num_samples,
-                proc.sample_rate,
-                active_voice_count,
-                ui_queue_depth,
-            );
-            if let Ok(mut scope) = self.scope_buffer.try_lock() {
-                scope.push_block(mono_output, proc.sample_rate, hz);
-            }
-
-            self.runtime_mod_sources
-                .store(Arc::new(proc.runtime_mod_sources()));
-            self.runtime_voice_states
-                .store(Arc::new(proc.runtime_voice_debug_state()));
-
-            let peak = mono_output[..num_samples]
-                .iter()
-                .fold(0.0f32, |a, &s| a.max(s.abs()));
-            context.set_meter(CzPluginParamsParamId::MeterL as u32, peak);
-            context.set_meter(CzPluginParamsParamId::MeterR as u32, peak);
-
-            for ch in 0..buffer.num_output_channels() {
-                buffer.output(ch)[..num_samples].copy_from_slice(mono_output);
-            }
-
-            let has_tail = proc.voices.iter().any(|v| !v.is_silent);
-            let tail = if has_tail {
-                (proc.sample_rate * 10.0) as u32
-            } else {
-                0
-            };
-            (has_tail, tail)
-        } else {
-            (false, 0)
-        };
-
-        if tail_info.0 {
-            ProcessStatus::Tail(tail_info.1)
-        } else {
-            ProcessStatus::Normal
-        }
+        self.sync_runtime_params_from_host(events);
+        self.render_audio_block(buffer, events, context, monitor_enabled)
     }
 
     fn bus_layouts() -> Vec<BusLayout> {
@@ -1960,6 +1801,13 @@ impl PluginLogic for CzPlugin {
             self.performance_counters.record_param_apply();
         }
         Ok(())
+    }
+
+    fn state_changed(&mut self) {
+        if let Some(ref mut proc) = self.processor {
+            proc.set_shared_params(self.cached_rt_synth_params.clone());
+            self.performance_counters.record_param_apply();
+        }
     }
 
     fn editor(&self) -> Box<dyn Editor> {
@@ -2201,7 +2049,7 @@ mod tests {
 
         assert!(result.is_ok());
         match q.pop() {
-            Some(UiInputEvent::NoteOn { note, velocity }) => {
+            Some(CosmoInputEvent::NoteOn { note, velocity }) => {
                 assert_eq!(note, 60);
                 assert!((velocity - 0.75).abs() < f32::EPSILON);
             }
