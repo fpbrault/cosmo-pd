@@ -556,6 +556,38 @@ fn write_daw_param_by_id(synth: &mut SynthParams, id: u32, value: f64) -> bool {
     true
 }
 
+fn daw_param_key_by_id(id: u32) -> Option<&'static str> {
+    match id {
+        x if x == CzPluginParamsParamId::Volume as u32 => Some("volume"),
+        x if x == CzPluginParamsParamId::WarpAAmount as u32 => Some("warpAAmount"),
+        x if x == CzPluginParamsParamId::WarpBAmount as u32 => Some("warpBAmount"),
+        x if x == CzPluginParamsParamId::AlgoBlendA as u32 => Some("algoBlendA"),
+        x if x == CzPluginParamsParamId::AlgoBlendB as u32 => Some("algoBlendB"),
+        x if x == CzPluginParamsParamId::Line1Level as u32 => Some("line1Level"),
+        x if x == CzPluginParamsParamId::Line2Level as u32 => Some("line2Level"),
+        x if x == CzPluginParamsParamId::Line1Octave as u32 => Some("line1Octave"),
+        x if x == CzPluginParamsParamId::Line2Octave as u32 => Some("line2Octave"),
+        x if x == CzPluginParamsParamId::DetuneNote as u32 => Some("line2DetuneNote"),
+        x if x == CzPluginParamsParamId::DetuneFine as u32 => Some("line2DetuneFine"),
+        x if x == CzPluginParamsParamId::VelocityCurve as u32 => Some("velocityCurve"),
+        x if x == CzPluginParamsParamId::PitchBendRange as u32 => Some("pitchBendRange"),
+        x if x == CzPluginParamsParamId::PortamentoRate as u32 => Some("portamentoRate"),
+        x if x == CzPluginParamsParamId::PortamentoTime as u32 => Some("portamentoTime"),
+        x if x == CzPluginParamsParamId::LfoRate as u32 => Some("lfoRate"),
+        x if x == CzPluginParamsParamId::LfoDepth as u32 => Some("lfoDepth"),
+        x if x == CzPluginParamsParamId::LfoOffset as u32 => Some("lfoOffset"),
+        x if x == CzPluginParamsParamId::Lfo2Rate as u32 => Some("lfo2Rate"),
+        x if x == CzPluginParamsParamId::Lfo2Depth as u32 => Some("lfo2Depth"),
+        x if x == CzPluginParamsParamId::Lfo2Offset as u32 => Some("lfo2Offset"),
+        x if x == CzPluginParamsParamId::RandomRate as u32 => Some("randomRate"),
+        x if x == CzPluginParamsParamId::ModEnvAttack as u32 => Some("modEnvAttack"),
+        x if x == CzPluginParamsParamId::ModEnvDecay as u32 => Some("modEnvDecay"),
+        x if x == CzPluginParamsParamId::ModEnvSustain as u32 => Some("modEnvSustain"),
+        x if x == CzPluginParamsParamId::ModEnvRelease as u32 => Some("modEnvRelease"),
+        _ => None,
+    }
+}
+
 fn read_daw_param_by_id(synth: &SynthParams, id: u32) -> Option<f32> {
     match id {
         x if x == CzPluginParamsParamId::Volume as u32 => Some(synth.volume),
@@ -584,6 +616,50 @@ fn read_daw_param_by_id(synth: &SynthParams, id: u32) -> Option<f32> {
         x if x == CzPluginParamsParamId::ModEnvDecay as u32 => Some(synth.mod_env.decay),
         x if x == CzPluginParamsParamId::ModEnvSustain as u32 => Some(synth.mod_env.sustain),
         x if x == CzPluginParamsParamId::ModEnvRelease as u32 => Some(synth.mod_env.release),
+        _ => None,
+    }
+}
+
+fn read_current_daw_param_by_id(params: &CzPluginParams, id: u32) -> Option<f32> {
+    match id {
+        x if x == CzPluginParamsParamId::Volume as u32 => Some(params.volume.value()),
+        x if x == CzPluginParamsParamId::WarpAAmount as u32 => Some(params.warp_a_amount.value()),
+        x if x == CzPluginParamsParamId::WarpBAmount as u32 => Some(params.warp_b_amount.value()),
+        x if x == CzPluginParamsParamId::AlgoBlendA as u32 => Some(params.algo_blend_a.value()),
+        x if x == CzPluginParamsParamId::AlgoBlendB as u32 => Some(params.algo_blend_b.value()),
+        x if x == CzPluginParamsParamId::Line1Level as u32 => Some(params.line1_level.value()),
+        x if x == CzPluginParamsParamId::Line2Level as u32 => Some(params.line2_level.value()),
+        x if x == CzPluginParamsParamId::Line1Octave as u32 => Some(params.line1_octave.value()),
+        x if x == CzPluginParamsParamId::Line2Octave as u32 => Some(params.line2_octave.value()),
+        x if x == CzPluginParamsParamId::DetuneNote as u32 => Some(params.detune_note.value()),
+        x if x == CzPluginParamsParamId::DetuneFine as u32 => Some(params.detune_fine.value()),
+        x if x == CzPluginParamsParamId::VelocityCurve as u32 => {
+            Some(params.velocity_curve.value())
+        }
+        x if x == CzPluginParamsParamId::PitchBendRange as u32 => {
+            Some(params.pitch_bend_range.value())
+        }
+        x if x == CzPluginParamsParamId::PortamentoRate as u32 => {
+            Some(params.portamento_rate.value())
+        }
+        x if x == CzPluginParamsParamId::PortamentoTime as u32 => {
+            Some(params.portamento_time.value())
+        }
+        x if x == CzPluginParamsParamId::LfoRate as u32 => Some(params.lfo_rate.value()),
+        x if x == CzPluginParamsParamId::LfoDepth as u32 => Some(params.lfo_depth.value()),
+        x if x == CzPluginParamsParamId::LfoOffset as u32 => Some(params.lfo_offset.value()),
+        x if x == CzPluginParamsParamId::Lfo2Rate as u32 => Some(params.lfo2_rate.value()),
+        x if x == CzPluginParamsParamId::Lfo2Depth as u32 => Some(params.lfo2_depth.value()),
+        x if x == CzPluginParamsParamId::Lfo2Offset as u32 => Some(params.lfo2_offset.value()),
+        x if x == CzPluginParamsParamId::RandomRate as u32 => Some(params.random_rate.value()),
+        x if x == CzPluginParamsParamId::ModEnvAttack as u32 => Some(params.mod_env_attack.value()),
+        x if x == CzPluginParamsParamId::ModEnvDecay as u32 => Some(params.mod_env_decay.value()),
+        x if x == CzPluginParamsParamId::ModEnvSustain as u32 => {
+            Some(params.mod_env_sustain.value())
+        }
+        x if x == CzPluginParamsParamId::ModEnvRelease as u32 => {
+            Some(params.mod_env_release.value())
+        }
         _ => None,
     }
 }
@@ -868,6 +944,9 @@ fn handle_ipc_invoke(
             let sp = synth_params.load();
             serde_json::to_value(sp.as_ref()).map_err(|e| e.to_string())
         }
+        "getParamsVersion" => Ok(serde_json::Value::from(
+            synth_params_version.load(Ordering::Acquire),
+        )),
         "getRuntimeModSources" => {
             let sources = runtime_mod_sources.load();
             serde_json::to_value(sources.as_ref()).map_err(|e| e.to_string())
@@ -1149,7 +1228,9 @@ fn handle_ipc_invoke(
                     .and_then(|v| v.as_i64())
                     .ok_or_else(|| "addMidiBinding expects cc".to_string())? as i32;
             if let Ok(mut state) = midi_learn_state.lock() {
-                state.bindings.retain(|binding| binding.param_key != param_key);
+                state
+                    .bindings
+                    .retain(|binding| binding.param_key != param_key);
                 state.bindings.push(crate::session_state::MidiLearnBinding {
                     param_key: param_key.to_string(),
                     channel,
@@ -1305,16 +1386,22 @@ impl CzPlugin {
         }
     }
 
-    fn apply_rt_param_change(&mut self, id: u32, value: f64) {
-        let mut next_params = (*self.cached_rt_synth_params).clone();
+    fn apply_rt_param_change(&mut self, id: u32, value: f64, update_processor: bool) {
+        let mut next_params = (*self.synth_params.load_full()).clone();
         if !write_daw_param_by_id(&mut next_params, id, value) {
             return;
         }
 
-        let next_params = Arc::new(next_params);
-        self.cached_rt_synth_params = Arc::clone(&next_params);
-        if let Some(proc) = self.processor.as_mut() {
-            proc.set_shared_params(next_params);
+        let rt_params = Arc::new(build_rt_synth_params(&next_params));
+        self.synth_params.store(Arc::new(next_params));
+        self.rt_synth_params.store(Arc::clone(&rt_params));
+        self.cached_rt_synth_params = Arc::clone(&rt_params);
+        self.cached_synth_params_version =
+            self.synth_params_version.fetch_add(1, Ordering::Release) + 1;
+        self.daw_params_dirty = false;
+
+        if update_processor && let Some(proc) = self.processor.as_mut() {
+            proc.set_shared_params(rt_params);
             self.performance_counters.record_param_apply();
         }
     }
@@ -1372,7 +1459,9 @@ impl CzPlugin {
             if state.learn_mode
                 && let Some(ref pending) = state.pending_param_key.clone()
             {
-                state.bindings.retain(|binding| binding.param_key != *pending);
+                state
+                    .bindings
+                    .retain(|binding| binding.param_key != *pending);
                 state.bindings.push(crate::session_state::MidiLearnBinding {
                     param_key: pending.clone(),
                     channel: i32::from(channel),
@@ -1414,9 +1503,23 @@ impl CzPlugin {
     fn sync_runtime_params_from_host(&mut self, events: &EventList) {
         let tracked_param_changes = Self::tracked_param_changes(events);
         let has_param_change_events = tracked_param_changes.iter().any(|changed| *changed);
+        let host_params_changed = (0..Self::TRACKED_PARAM_ID_CAPACITY).any(|id| {
+            if tracked_param_changes[id] {
+                return false;
+            }
+            let id = id as u32;
+            let Some(current) = read_current_daw_param_by_id(&self.params, id) else {
+                return false;
+            };
+            let Some(cached) = read_daw_param_by_id(&self.cached_rt_synth_params, id) else {
+                return false;
+            };
+            (current - cached).abs() > 0.000_001
+        });
         let params_version = self.synth_params_version.load(Ordering::Acquire);
-        let params_changed =
-            params_version != self.cached_synth_params_version || self.daw_params_dirty;
+        let params_changed = params_version != self.cached_synth_params_version
+            || self.daw_params_dirty
+            || host_params_changed;
 
         if !params_changed {
             return;
@@ -1452,13 +1555,18 @@ impl CzPlugin {
             }
         }
 
+        let published_params_version = if host_params_changed {
+            self.synth_params_version.fetch_add(1, Ordering::Release) + 1
+        } else {
+            params_version
+        };
         let rt_merged = Arc::new(merged);
         self.cached_rt_synth_params = rt_merged.clone();
         if let Some(ref mut proc) = self.processor {
             proc.set_shared_params(rt_merged);
             self.performance_counters.record_param_apply();
         }
-        self.cached_synth_params_version = params_version;
+        self.cached_synth_params_version = published_params_version;
         self.daw_params_dirty = false;
 
         // Push merged params to ArcSwaps so idle loop pushes to webview.
@@ -1478,10 +1586,7 @@ impl CzPlugin {
             EventBody::ControlChange {
                 channel, cc, value, ..
             } => {
-                append_log(&format!(
-                    "host_cc ch={} cc={} value={}",
-                    channel, cc, value
-                ));
+                append_log(&format!("host_cc ch={} cc={} value={}", channel, cc, value));
                 self.handle_cc_side_effects(*channel, *cc, *value);
             }
             EventBody::ControlChange2 {
@@ -1496,7 +1601,7 @@ impl CzPlugin {
             }
             EventBody::ParamChange { id, value } => {
                 self.daw_params_dirty = true;
-                self.apply_rt_param_change(*id, *value);
+                self.apply_rt_param_change(*id, *value, false);
             }
             EventBody::ProgramChange { program, .. }
             | EventBody::ProgramChange2 { program, .. } => {
@@ -1548,6 +1653,12 @@ impl CzPlugin {
             EventBody::PitchBend2 { value, .. } => Some(CosmoInputEvent::PitchBend {
                 value: ((*value as f32 - 2_147_483_648.0) / 2_147_483_648.0).clamp(-1.0, 1.0),
             }),
+            EventBody::ParamChange { id, value } => {
+                daw_param_key_by_id(*id).map(|param_key| CosmoInputEvent::ParameterChange {
+                    param_key,
+                    value: *value as f32,
+                })
+            }
             _ => None,
         }
     }
@@ -1601,10 +1712,14 @@ impl CzPlugin {
         if let Some(engine_event) = Self::host_event_to_engine_event(body)
             && let Some(proc) = self.processor.as_mut()
         {
-            proc.process_block(&mut [], &[CosmoTimedInputEvent {
-                sample_offset: 0,
-                event: engine_event,
-            }], CosmoTransportState::default());
+            proc.process_block(
+                &mut [],
+                &[CosmoTimedInputEvent {
+                    sample_offset: 0,
+                    event: engine_event,
+                }],
+                CosmoTransportState::default(),
+            );
         }
     }
 
@@ -2375,6 +2490,26 @@ mod tests {
     }
 
     #[test]
+    fn host_param_value_drift_updates_runtime_snapshot_and_version() {
+        let params = Arc::new(CzPluginParams::new());
+        let mut plugin = CzPlugin::new(Arc::clone(&params));
+        plugin.reset(48_000.0, 64);
+
+        let initial_version = plugin.synth_params_version.load(Ordering::Acquire);
+        params.line1_level.set_value(0.37);
+
+        plugin.sync_runtime_params_from_host(&EventList::default());
+
+        assert!((plugin.synth_params.load().line1.dca_base - 0.37).abs() < 0.000_001);
+        assert!((plugin.cached_rt_synth_params.line1.dca_base - 0.37).abs() < 0.000_001);
+        assert!(plugin.synth_params_version.load(Ordering::Acquire) > initial_version);
+        assert_eq!(
+            plugin.cached_synth_params_version,
+            plugin.synth_params_version.load(Ordering::Acquire)
+        );
+    }
+
+    #[test]
     fn host_side_midi_learn_keeps_mode_and_pending_target_enabled() {
         clear_test_global_settings();
         let params = Arc::new(CzPluginParams::new());
@@ -2586,7 +2721,10 @@ mod tests {
             let state = plugin.midi_learn_state.lock().unwrap().clone();
             let saved = crate::global_settings::load_or_init_global_settings().unwrap();
 
-            assert_eq!(state.bindings, crate::session_state::default_midi_bindings());
+            assert_eq!(
+                state.bindings,
+                crate::session_state::default_midi_bindings()
+            );
             assert_eq!(
                 saved.midi_learn_bindings,
                 crate::session_state::default_midi_bindings()

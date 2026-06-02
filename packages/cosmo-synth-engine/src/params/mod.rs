@@ -4,8 +4,8 @@ mod cache;
 mod envelopes;
 mod fx_params;
 mod lfo;
-mod mapping;
 mod line;
+mod mapping;
 mod modulation;
 mod portamento;
 mod synth_params;
@@ -23,12 +23,12 @@ pub use fx_params::{
     WavefolderParams,
 };
 pub use lfo::{LfoParams, LfoRateMode, LfoSyncDivision, LfoWaveform};
-pub use mapping::{
-    MidiMappingBinding, apply_midi_mapping, parameter_range_for_key, set_parameter_value_by_key,
-};
 pub use line::{
     AlgoControlId, AlgoControlSlots, AlgoControlValueV1, LineParams, LineSelect, MAX_ALGO_CONTROLS,
     ModMode, PolyMode,
+};
+pub use mapping::{
+    MidiMappingBinding, apply_midi_mapping, parameter_range_for_key, set_parameter_value_by_key,
 };
 pub use modulation::{
     ENV_STEP_DEST_FIRST, ENV_STEP_DEST_LAST, ModDestination, ModMatrix, ModRoute, ModSource,

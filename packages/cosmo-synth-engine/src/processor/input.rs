@@ -1,4 +1,6 @@
 use super::{CosmoProcessor, midi_note_to_freq};
+use crate::params::set_parameter_value_by_key;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct CosmoTransportState {
@@ -12,6 +14,7 @@ pub enum CosmoInputEvent {
     NoteOn { note: u8, velocity: f32 },
     NoteOff { note: u8 },
     ControlChange { channel: u8, cc: u8, value: u8 },
+    ParameterChange { param_key: &'static str, value: f32 },
     PitchBend { value: f32 },
     Aftertouch { value: f32 },
     PolyAftertouch { note: u8, value: f32 },
@@ -41,6 +44,12 @@ pub fn apply_input_event(processor: &mut CosmoProcessor, event: CosmoInputEvent)
             120 | 123 => processor.all_notes_off(),
             _ => {}
         },
+        CosmoInputEvent::ParameterChange { param_key, value } => {
+            let mut params = (*processor.params).clone();
+            if set_parameter_value_by_key(&mut params, param_key, value) {
+                processor.set_shared_params(Arc::new(params));
+            }
+        }
         CosmoInputEvent::PitchBend { value } => processor.set_pitch_bend(value),
         CosmoInputEvent::Aftertouch { value } => processor.set_aftertouch(value),
         CosmoInputEvent::PolyAftertouch { note, value } => {
@@ -56,7 +65,9 @@ pub fn apply_transport_state(processor: &mut CosmoProcessor, transport: CosmoTra
         processor.all_notes_off();
     }
 
-    if let Some(tempo_bpm) = transport.tempo_bpm.filter(|tempo| *tempo > 0.0 && tempo.is_finite())
+    if let Some(tempo_bpm) = transport
+        .tempo_bpm
+        .filter(|tempo| *tempo > 0.0 && tempo.is_finite())
     {
         processor.set_host_transport(tempo_bpm, transport.playing, transport.position_beats);
     } else {

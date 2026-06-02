@@ -193,7 +193,10 @@ pub fn parameter_range_for_key(key: &str) -> Option<(f32, f32)> {
         return Some((spec.min, spec.max));
     }
 
-    if let Some(range) = engine_param_ranges_v1().iter().find(|range| range.key == key) {
+    if let Some(range) = engine_param_ranges_v1()
+        .iter()
+        .find(|range| range.key == key)
+    {
         return Some((range.min, range.max));
     }
 

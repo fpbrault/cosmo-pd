@@ -40,6 +40,7 @@ declare global {
 		ipc?: { postMessage: (msg: string) => void };
 		__czOnParams?: (json: string) => void;
 		__czGetParams?: () => Promise<unknown>;
+		__czGetParamsVersion?: () => Promise<unknown>;
 		__czSetParams?: (json: string) => void;
 		__czSetPerformanceMonitorEnabled?: (enabled: boolean) => Promise<unknown>;
 		__czGetPerformanceMetrics?: () => Promise<unknown>;
@@ -189,6 +190,7 @@ function installIpcRouter() {
 	_routerPostMessage = routeOutgoingMessage;
 
 	window.__czGetParams = async () => invokeRust("getParams");
+	window.__czGetParamsVersion = async () => invokeRust("getParamsVersion");
 
 	window.__czSetParams = (json: string) => {
 		void invokeRust("setParams", json).catch((error) => {

@@ -36,6 +36,7 @@ declare global {
 		__czOnParams?: (json: string) => void;
 		__czOnHostPresetSelected?: (name: string) => void;
 		__czGetParams?: () => Promise<unknown>;
+		__czGetParamsVersion?: () => Promise<unknown>;
 		__czSetParams?: (json: string) => void;
 		__czGetTransportInfo?: () => Promise<unknown>;
 		__czOnScope?: (
@@ -165,6 +166,7 @@ function installIpcRouter() {
 			return null;
 		}
 	};
+	window.__czGetParamsVersion = () => invokeAuv3("getParamsVersion", [], 3000);
 	window.__czSetParams = (json: string) => {
 		void invokeAuv3("setParams", [json]).catch((error) => {
 			console.error("[auv3Bridge] setParams error", error);
