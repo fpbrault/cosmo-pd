@@ -1,12 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	DEFAULT_MIDI_BINDINGS,
+	MIDI_LEARN_STORAGE_KEY,
 	refreshMidiLearnState,
+	resetMidiLearnPersistenceForTests,
 	subscribeMidiLearnState,
 	useMidiLearnStore,
 } from "./midiLearnStore";
 
 describe("midiLearnStore", () => {
 	beforeEach(() => {
+		localStorage.clear();
+		resetMidiLearnPersistenceForTests();
+		(
+			window as Window & {
+				__czGetMidiLearnState?: () => Promise<unknown>;
+			}
+		).__czGetMidiLearnState = undefined;
 		useMidiLearnStore.setState({
 			learnMode: false,
 			bindings: [],
@@ -134,5 +144,70 @@ describe("midiLearnStore", () => {
 		]);
 
 		unsubscribe();
+	});
+
+	it("seeds default bindings for web mode when no persisted state exists", async () => {
+		const unsubscribe = subscribeMidiLearnState();
+		await Promise.resolve();
+
+		expect(useMidiLearnStore.getState().bindings).toEqual(
+			DEFAULT_MIDI_BINDINGS,
+		);
+		expect(localStorage.getItem(MIDI_LEARN_STORAGE_KEY)).toBe(
+			JSON.stringify({ bindings: DEFAULT_MIDI_BINDINGS }),
+		);
+
+		unsubscribe();
+	});
+
+	it("hydrates persisted bindings for web mode", async () => {
+		localStorage.setItem(
+			MIDI_LEARN_STORAGE_KEY,
+			JSON.stringify({
+				bindings: [{ paramKey: "macro1", channel: 9, cc: 17 }],
+			}),
+		);
+
+		const unsubscribe = subscribeMidiLearnState();
+		await Promise.resolve();
+
+		expect(useMidiLearnStore.getState().bindings).toEqual([
+			{ paramKey: "macro1", channel: 9, cc: 17 },
+		]);
+
+		unsubscribe();
+	});
+
+	it("persists binding mutations in web mode", () => {
+		subscribeMidiLearnState()();
+
+		const store = useMidiLearnStore.getState();
+		store.addBinding("macro1", 3, 88);
+		expect(localStorage.getItem(MIDI_LEARN_STORAGE_KEY)).toBe(
+			JSON.stringify({
+				bindings: [
+					{ paramKey: "macro2", channel: 0, cc: 41 },
+					{ paramKey: "macro3", channel: 0, cc: 42 },
+					{ paramKey: "macro4", channel: 0, cc: 43 },
+					{ paramKey: "macro1", channel: 3, cc: 88 },
+				],
+			}),
+		);
+
+		store.removeBinding({ paramKey: "macro1", channel: 3, cc: 88 });
+		expect(localStorage.getItem(MIDI_LEARN_STORAGE_KEY)).toBe(
+			JSON.stringify({
+				bindings: [
+					{ paramKey: "macro2", channel: 0, cc: 41 },
+					{ paramKey: "macro3", channel: 0, cc: 42 },
+					{ paramKey: "macro4", channel: 0, cc: 43 },
+				],
+			}),
+		);
+
+		store.clearBindings();
+		expect(localStorage.getItem(MIDI_LEARN_STORAGE_KEY)).toBe(
+			JSON.stringify({ bindings: [] }),
+		);
 	});
 });

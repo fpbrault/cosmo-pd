@@ -6,10 +6,23 @@ export type MidiBinding = {
 	cc: number;
 };
 
+type PersistedMidiLearnBindings = {
+	bindings: MidiBinding[];
+};
+
 export type MidiBindingIdentity = Pick<
 	MidiBinding,
 	"paramKey" | "channel" | "cc"
 >;
+
+export const DEFAULT_MIDI_BINDINGS: MidiBinding[] = [
+	{ paramKey: "macro1", channel: 0, cc: 8 },
+	{ paramKey: "macro2", channel: 0, cc: 41 },
+	{ paramKey: "macro3", channel: 0, cc: 42 },
+	{ paramKey: "macro4", channel: 0, cc: 43 },
+];
+
+export const MIDI_LEARN_STORAGE_KEY = "cosmo-pd101-midi-bindings";
 
 function bindingMatches(
 	binding: MidiBinding,
@@ -54,6 +67,119 @@ const DEFAULT_STATE: MidiLearnStateData = {
 	pendingLearnParam: null,
 };
 
+let webMidiLearnHydrated = false;
+
+function canUseLocalStorage(): boolean {
+	return typeof window !== "undefined" && "localStorage" in window;
+}
+
+function isPluginBackedMidiLearnEnvironment(): boolean {
+	if (typeof window === "undefined") {
+		return false;
+	}
+
+	const webkitWindow = window as Window & {
+		webkit?: {
+			messageHandlers?: {
+				cosmoPd101?: unknown;
+			};
+		};
+	};
+
+	return Boolean(
+		window.ipc ||
+			webkitWindow.webkit?.messageHandlers?.cosmoPd101 ||
+			(window.location.search &&
+				new URLSearchParams(window.location.search).get("standalone") === "1"),
+	);
+}
+
+function normalizeBindings(value: unknown): MidiBinding[] | null {
+	if (!Array.isArray(value)) {
+		return null;
+	}
+
+	const bindings = value
+		.map((entry) => {
+			if (!entry || typeof entry !== "object") {
+				return null;
+			}
+
+			const candidate = entry as Partial<MidiBinding>;
+			if (
+				typeof candidate.paramKey !== "string" ||
+				typeof candidate.channel !== "number" ||
+				typeof candidate.cc !== "number"
+			) {
+				return null;
+			}
+
+			return {
+				paramKey: candidate.paramKey,
+				channel: candidate.channel,
+				cc: candidate.cc,
+			};
+		})
+		.filter((binding): binding is MidiBinding => binding !== null);
+
+	return bindings;
+}
+
+function persistWebMidiBindings(bindings: MidiBinding[]): void {
+	if (!canUseLocalStorage() || isPluginBackedMidiLearnEnvironment()) {
+		return;
+	}
+
+	window.localStorage.setItem(
+		MIDI_LEARN_STORAGE_KEY,
+		JSON.stringify({
+			bindings,
+		} satisfies PersistedMidiLearnBindings),
+	);
+}
+
+function hydrateWebMidiBindings(): MidiBinding[] {
+	if (!canUseLocalStorage()) {
+		return DEFAULT_MIDI_BINDINGS;
+	}
+
+	const raw = window.localStorage.getItem(MIDI_LEARN_STORAGE_KEY);
+	if (!raw) {
+		persistWebMidiBindings(DEFAULT_MIDI_BINDINGS);
+		return DEFAULT_MIDI_BINDINGS;
+	}
+
+	try {
+		const parsed = JSON.parse(raw) as Partial<PersistedMidiLearnBindings>;
+		const bindings = normalizeBindings(parsed.bindings);
+		if (bindings) {
+			return bindings;
+		}
+	} catch (error) {
+		console.error("[MidiLearn] Failed to parse persisted bindings", error);
+	}
+
+	persistWebMidiBindings(DEFAULT_MIDI_BINDINGS);
+	return DEFAULT_MIDI_BINDINGS;
+}
+
+export function ensureMidiLearnStateHydrated(): void {
+	if (webMidiLearnHydrated || isPluginBackedMidiLearnEnvironment()) {
+		return;
+	}
+
+	webMidiLearnHydrated = true;
+	useMidiLearnStore.setState({
+		learnMode: false,
+		pendingLearnParam: null,
+		bindings: hydrateWebMidiBindings(),
+	});
+}
+
+export function resetMidiLearnPersistenceForTests(): void {
+	webMidiLearnHydrated = false;
+}
+
 export const useMidiLearnStore = create<MidiLearnStore>()((set, get) => ({
 	...DEFAULT_STATE,
 
@@ -82,17 +208,20 @@ export const useMidiLearnStore = create<MidiLearnStore>()((set, get) => ({
 			| ((binding: MidiBindingIdentity) => void)
 			| undefined;
 		fn?.(binding);
-		set((state) => ({
-			bindings: state.bindings.filter(
+		set((state) => {
+			const bindings = state.bindings.filter(
 				(existing) => !bindingMatches(existing, binding),
-			),
-		}));
+			);
+			persistWebMidiBindings(bindings);
+			return { bindings };
+		});
 	},
 
 	clearBindings: () => {
 		const fn = (window as unknown as Record<string, unknown>)
 			.__czClearMidiLearnBindings as (() => void) | undefined;
 		fn?.();
+		persistWebMidiBindings([]);
 		set({ bindings: [], pendingLearnParam: null });
 	},
 
@@ -102,12 +231,14 @@ export const useMidiLearnStore = create<MidiLearnStore>()((set, get) => ({
 			| ((key: string, ch: number, c: number) => void)
 			| undefined;
 		fn?.(paramKey, channel, cc);
-		set((state) => ({
-			bindings: [
+		set((state) => {
+			const bindings = [
 				...state.bindings.filter((binding) => binding.paramKey !== paramKey),
 				{ paramKey, channel, cc },
-			],
-		}));
+			];
+			persistWebMidiBindings(bindings);
+			return { bindings };
+		});
 	},
 
 	initFromEngineState: (engineState) => {
@@ -148,6 +279,7 @@ export const useMidiLearnStore = create<MidiLearnStore>()((set, get) => ({
 }));
 
 export async function refreshMidiLearnState(): Promise<void> {
+	ensureMidiLearnStateHydrated();
 	const fn = (window as unknown as Record<string, unknown>)
 		.__czGetMidiLearnState as (() => Promise<unknown>) | undefined;
 	if (!fn) {
@@ -172,6 +304,7 @@ export async function refreshMidiLearnState(): Promise<void> {
 }
 
 export function subscribeMidiLearnState(): () => void {
+	ensureMidiLearnStateHydrated();
 	const handler = (event: Event) => {
 		const detail = (event as CustomEvent).detail;
 		useMidiLearnStore.getState().initFromEngineState(detail);

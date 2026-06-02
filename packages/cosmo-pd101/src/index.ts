@@ -69,7 +69,6 @@ export type {
 export { installBenchmarkApi } from "./lib/performance/benchmarkHarness";
 export type {
 	SessionEditorState,
-	SessionMidiMapping,
 	SessionState,
 } from "./lib/sessionState";
 export type {

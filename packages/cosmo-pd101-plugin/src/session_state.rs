@@ -93,9 +93,6 @@ pub struct PluginSessionState {
     /// UI editor state (tab selections, scope settings, keyboard prefs, etc.)
     #[serde(default)]
     pub editor_state: Option<EditorState>,
-    /// MIDI learn state
-    #[serde(default)]
-    pub midi_learn_state: Option<MidiLearnState>,
 }
 
 /// 3-tier fallback deserialization for backward-compatible `load_state`.
@@ -130,7 +127,6 @@ pub fn deserialize_state(data: &[u8]) -> Result<PluginSessionState, String> {
             preset_name,
             loaded_preset_id: None,
             editor_state: None,
-            midi_learn_state: None,
         });
     }
 
@@ -141,7 +137,6 @@ pub fn deserialize_state(data: &[u8]) -> Result<PluginSessionState, String> {
             preset_name: String::new(),
             loaded_preset_id: None,
             editor_state: None,
-            midi_learn_state: None,
         });
     }
 
@@ -166,7 +161,6 @@ mod tests {
             preset_name: "Test".to_string(),
             loaded_preset_id: Some("abc-123".to_string()),
             editor_state: None,
-            midi_learn_state: None,
         };
         let data = serde_json::to_vec(&state).unwrap();
         let result = deserialize_state(&data).unwrap();

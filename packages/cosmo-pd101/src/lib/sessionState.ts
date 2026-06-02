@@ -15,13 +15,6 @@ export type SessionEditorState = {
 	scopeColorTheme?: string;
 };
 
-export type SessionMidiMapping = {
-	paramKey: string;
-	channel: number;
-	cc: number;
-};
-
 export type SessionState = {
 	editorState?: SessionEditorState;
-	midiMappings?: SessionMidiMapping[];
 };

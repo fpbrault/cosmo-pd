@@ -3,7 +3,10 @@ import {
 	applyRegisteredMidiLearnTarget,
 	getMidiLearnTargetRegistration,
 } from "@/features/synth/midiLearnRegistry";
-import { useMidiLearnStore } from "@/features/synth/midiLearnStore";
+import {
+	ensureMidiLearnStateHydrated,
+	useMidiLearnStore,
+} from "@/features/synth/midiLearnStore";
 import { SYNTH_PARAM_SETTERS } from "@/features/synth/SynthParamController";
 import { useSynthStore } from "@/features/synth/synthStore";
 import { ENGINE_PARAM_UI_META_BY_KEY } from "@/lib/synth/paramMeta";
@@ -111,6 +114,7 @@ export function useMidiLearnBindings({
 	);
 
 	useEffect(() => {
+		ensureMidiLearnStateHydrated();
 		window.addEventListener("cz-midi-cc", onMidiCc);
 		return () => window.removeEventListener("cz-midi-cc", onMidiCc);
 	}, [onMidiCc]);
