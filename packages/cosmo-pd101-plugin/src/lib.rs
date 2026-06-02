@@ -1013,17 +1013,18 @@ fn handle_ipc_invoke(
                 .and_then(serde_json::Value::as_str);
             let lib = preset_library.lock().map_err(|e| e.to_string())?;
             let entries: Vec<serde_json::Value> = lib
-                .list_entries(source_filter)
+                .list_records(source_filter)
                 .map_err(|e| e.to_string())?
                 .iter()
                 .map(|e| {
                     serde_json::json!({
-                        "id": e.id,
-                        "name": e.name,
-                        "source": e.source,
-                        "author": e.author,
-                        "starred": e.starred,
-                        "tags": e.tags,
+                        "id": e.entry.id,
+                        "name": e.entry.name,
+                        "source": e.entry.source,
+                        "author": e.entry.author,
+                        "starred": e.entry.starred,
+                        "favorite": e.favorite,
+                        "tags": e.entry.tags,
                     })
                 })
                 .collect();
@@ -1171,6 +1172,8 @@ fn handle_ipc_invoke(
 
             {
                 let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+                // Keep the legacy RPC name, but persist user favorites separately
+                // from authored factory star metadata.
                 let _ = lib.set_starred(id, starred).map_err(|e| e.to_string())?;
             }
 

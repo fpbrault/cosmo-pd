@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 use crate::preset_library_path;
 
-const LIBRARY_SCHEMA_VERSION: u32 = 1;
+const LIBRARY_SCHEMA_VERSION: u32 = 2;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -20,6 +20,12 @@ pub struct PresetLibraryEntry {
     pub macro_labels: [String; 4],
     pub factory_version: u32,
     pub data: serde_json::Value,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct PresetLibraryRecord {
+    pub entry: PresetLibraryEntry,
+    pub favorite: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -82,9 +88,12 @@ impl PresetLibrary {
 
     pub fn delete_entry(&mut self, id: &str) -> Result<bool, String> {
         self.with_connection_mut(|conn| {
-            conn.execute("DELETE FROM presets WHERE id = ?1", [id])
-                .map(|changed| changed > 0)
-                .map_err(db_err)
+            let deleted = conn
+                .execute("DELETE FROM presets WHERE id = ?1", [id])
+                .map_err(db_err)?;
+            conn.execute("DELETE FROM preset_favorites WHERE preset_id = ?1", [id])
+                .map_err(db_err)?;
+            Ok(deleted > 0)
         })
     }
 
@@ -103,6 +112,13 @@ impl PresetLibrary {
         self.with_connection(|conn| list_entries(conn, source_filter))
     }
 
+    pub fn list_records(
+        &self,
+        source_filter: Option<&str>,
+    ) -> Result<Vec<PresetLibraryRecord>, String> {
+        self.with_connection(|conn| list_records(conn, source_filter))
+    }
+
     pub fn rename_entry(&mut self, id: &str, new_name: &str) -> Result<bool, String> {
         self.with_connection_mut(|conn| {
             conn.execute(
@@ -116,19 +132,28 @@ impl PresetLibrary {
 
     pub fn set_starred(&mut self, id: &str, starred: bool) -> Result<bool, String> {
         self.with_connection_mut(|conn| {
-            conn.execute(
-                "UPDATE presets SET starred = ?2 WHERE id = ?1",
-                params![id, if starred { 1_i64 } else { 0_i64 }],
-            )
-            .map(|changed| changed > 0)
-            .map_err(db_err)
+            let changed = if starred {
+                conn.execute(
+                    "INSERT INTO preset_favorites (preset_id) VALUES (?1)
+                     ON CONFLICT(preset_id) DO NOTHING",
+                    [id],
+                )
+            } else {
+                conn.execute("DELETE FROM preset_favorites WHERE preset_id = ?1", [id])
+            }
+            .map_err(db_err)?;
+            Ok(changed > 0)
         })
     }
 
     fn initialize(&self) -> Result<(), String> {
         self.with_connection_mut(|conn| {
+            let previous_schema_version = read_schema_version(conn)?;
             migrate_schema(conn)?;
             migrate_legacy_json_if_needed(conn, &self.storage)?;
+            if previous_schema_version < 2 {
+                migrate_starred_state_to_favorites(conn)?;
+            }
             merge_factory_entries(conn, &self.factory_entries)?;
             Ok(())
         })
@@ -237,6 +262,10 @@ fn migrate_schema(conn: &Connection) -> Result<(), String> {
             updated_at_unix_ms INTEGER NOT NULL DEFAULT 0
         );
 
+        CREATE TABLE IF NOT EXISTS preset_favorites (
+            preset_id TEXT PRIMARY KEY NOT NULL
+        );
+
         CREATE INDEX IF NOT EXISTS idx_presets_source ON presets(source);
         ",
     )
@@ -290,6 +319,62 @@ fn migrate_legacy_json_if_needed(
     Ok(())
 }
 
+fn read_schema_version(conn: &Connection) -> Result<u32, String> {
+    let has_meta_table = conn
+        .query_row(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'meta'",
+            [],
+            |_| Ok(()),
+        )
+        .optional()
+        .map_err(db_err)?
+        .is_some();
+
+    if !has_meta_table {
+        return Ok(0);
+    }
+
+    let version = conn
+        .query_row(
+            "SELECT value FROM meta WHERE key = 'schema_version'",
+            [],
+            |row| row.get::<_, String>(0),
+        )
+        .optional()
+        .map_err(db_err)?
+        .and_then(|value| value.parse::<u32>().ok())
+        .unwrap_or(0);
+    Ok(version)
+}
+
+fn migrate_starred_state_to_favorites(conn: &Connection) -> Result<(), String> {
+    let mut statement = conn
+        .prepare("SELECT id, source, starred FROM presets")
+        .map_err(db_err)?;
+    let rows = statement
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, i64>(2)? != 0,
+            ))
+        })
+        .map_err(db_err)?;
+
+    for row in rows {
+        let (id, source, starred) = row.map_err(db_err)?;
+        if starred {
+            upsert_favorite(conn, &id)?;
+        }
+        if source == "user" {
+            conn.execute("UPDATE presets SET starred = 0 WHERE id = ?1", [id])
+                .map_err(db_err)?;
+        }
+    }
+
+    Ok(())
+}
+
 fn merge_factory_entries(
     conn: &Connection,
     factory_entries: &[PresetLibraryEntry],
@@ -300,6 +385,13 @@ fn merge_factory_entries(
     for entry in factory_entries {
         upsert_entry(conn, entry)?;
     }
+
+    conn.execute(
+        "DELETE FROM preset_favorites
+         WHERE preset_id NOT IN (SELECT id FROM presets)",
+        [],
+    )
+    .map_err(db_err)?;
 
     Ok(())
 }
@@ -352,6 +444,24 @@ fn list_entries(
             .map_err(db_err)?
     };
     Ok(rows)
+}
+
+fn list_records(
+    conn: &Connection,
+    source_filter: Option<&str>,
+) -> Result<Vec<PresetLibraryRecord>, String> {
+    let favorites = list_favorite_ids(conn)?;
+    let favorite_ids = favorites
+        .into_iter()
+        .collect::<std::collections::HashSet<_>>();
+    let entries = list_entries(conn, source_filter)?;
+    Ok(entries
+        .into_iter()
+        .map(|entry| PresetLibraryRecord {
+            favorite: favorite_ids.contains(&entry.id),
+            entry,
+        })
+        .collect())
 }
 
 fn upsert_entry(conn: &Connection, entry: &PresetLibraryEntry) -> Result<(), String> {
@@ -425,6 +535,26 @@ fn map_entry_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<PresetLibraryEntry
         factory_version: row.get::<_, i64>(7)? as u32,
         data,
     })
+}
+
+fn list_favorite_ids(conn: &Connection) -> Result<Vec<String>, String> {
+    let mut statement = conn
+        .prepare("SELECT preset_id FROM preset_favorites ORDER BY preset_id")
+        .map_err(db_err)?;
+    let rows = statement
+        .query_map([], |row| row.get::<_, String>(0))
+        .map_err(db_err)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(db_err)
+}
+
+fn upsert_favorite(conn: &Connection, id: &str) -> Result<(), String> {
+    conn.execute(
+        "INSERT INTO preset_favorites (preset_id) VALUES (?1)
+         ON CONFLICT(preset_id) DO NOTHING",
+        [id],
+    )
+    .map_err(db_err)?;
+    Ok(())
 }
 
 #[cfg(test)]
@@ -527,7 +657,13 @@ mod tests {
         assert!(lib.set_starred(&entry.id, true).unwrap());
         let fetched = lib.get_entry(&entry.id).unwrap().unwrap();
         assert_eq!(fetched.name, "Renamed");
-        assert!(fetched.starred);
+        assert!(!fetched.starred);
+        assert!(
+            lib.list_records(None)
+                .unwrap()
+                .into_iter()
+                .any(|record| record.entry.id == entry.id && record.favorite)
+        );
 
         assert!(lib.delete_entry(&entry.id).unwrap());
         assert!(lib.get_entry(&entry.id).unwrap().is_none());
@@ -576,5 +712,29 @@ mod tests {
     fn list_entries_returns_error_free_result() {
         let lib = open_temp_library(vec![sample_entry("f1")]);
         assert_eq!(lib.list_entries(None).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn merge_factory_preserves_favorites_across_refresh() {
+        let library = open_temp_library(vec![sample_entry("f1"), sample_entry("f2")]);
+        let mut conn = library.open_connection().unwrap();
+        {
+            let tx = conn.transaction().unwrap();
+            upsert_favorite(&tx, "f1").unwrap();
+            tx.commit().unwrap();
+        }
+
+        merge_factory_entries(&conn, &[sample_entry("f1"), sample_entry("f3")]).unwrap();
+        let records = list_records(&conn, None).unwrap();
+        assert!(
+            records
+                .iter()
+                .any(|record| record.entry.id == "f1" && record.favorite)
+        );
+        assert!(
+            records
+                .iter()
+                .any(|record| record.entry.id == "f3" && !record.favorite)
+        );
     }
 }
