@@ -27,7 +27,7 @@ function renderWithProvider(element: React.ReactElement) {
 					{
 						id: "1",
 						label: "Init",
-						type: "builtin" as const,
+						type: "library" as const,
 						source: "cosmo-factory",
 						sourceLabel: "Cosmo Library",
 						author: "Purr Audio",
@@ -39,8 +39,8 @@ function renderWithProvider(element: React.ReactElement) {
 				activePresetId: "1",
 				activePresetName: "Init",
 				pendingPresetChange: null,
+				handleLoadPresetByName: vi.fn(),
 				handleLoadLocal: vi.fn(),
-				handleLoadBuiltin: vi.fn(),
 				handleLoadLibrary: vi.fn(),
 				handleSavePreset: vi.fn(),
 				handleDeletePreset: vi.fn(),

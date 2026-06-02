@@ -3,7 +3,7 @@ import type { LibraryPreset } from "./libraryPreset";
 export type PresetEntry = {
 	id: string;
 	label: string;
-	type: "local" | "library" | "builtin";
+	type: "local" | "library";
 	source: LibraryPreset["source"];
 	sourceLabel: string;
 	author: string;

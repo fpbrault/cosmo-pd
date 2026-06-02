@@ -20,7 +20,7 @@
 		"build:lib:watch": "bunx tsdown --watch",
 		"gen:bindings": "bun ./scripts/gen-bindings.mjs",
 		"gen:bindings:release": "COSMO_BINDINGS_RELEASE=1 bun ./scripts/gen-bindings.mjs",
-		"gen:factory-presets": "cargo run -p cosmo-pd101-plugin --bin generate-factory-presets --quiet",
+		"gen:factory-presets": "cargo run -p cosmo-pd101-plugin --bin generate-factory-presets --quiet && bunx biome check --write src/lib/synth/factoryCzPresets.ts",
 		"test": "bunx vitest --project unit --run",
 		"test:unit": "bunx vitest --project unit --run",
 		"test:unit:watch": "bunx vitest --project unit",

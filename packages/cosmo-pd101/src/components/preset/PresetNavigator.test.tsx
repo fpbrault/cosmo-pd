@@ -7,7 +7,7 @@ const entries: PresetEntry[] = [
 	{
 		id: "builtin-factory-bass",
 		label: "Factory Bass",
-		type: "builtin",
+		type: "library",
 		source: "cosmo-factory",
 		sourceLabel: "Cosmo Library",
 		author: "Purr Audio",

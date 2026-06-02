@@ -47,6 +47,8 @@ type UseSynthPresetManagerResult = {
 	activePresetName: string;
 	loadedPresetFingerprint: string | null;
 	pendingPresetChange: PendingPresetChange | null;
+	handleSyncPresetSelection: (name: string) => void;
+	handleLoadPresetByName: (name: string) => void;
 	handleSyncBuiltinSelection: (name: string) => void;
 	handleLoadLocal: (id: string) => void;
 	handleLoadBuiltin: (name: string) => void;
@@ -69,7 +71,6 @@ type UseSynthPresetManagerResult = {
 
 type PendingNavigation =
 	| { type: "local"; entryId: string; id: string }
-	| { type: "builtin"; entryId: string; name: string }
 	| { type: "library"; entryId: string; preset: LibraryPreset };
 
 type PendingPresetChange = {
@@ -101,6 +102,23 @@ export function useSynthPresetManager({
 	>(null);
 	const [pendingNavigation, setPendingNavigation] =
 		useState<PendingNavigation | null>(null);
+	const mergedLibraryPresets = useMemo(() => {
+		const builtinLibraryPresets: LibraryPreset[] = Object.values(
+			builtinPresets,
+		).map((preset) => ({
+			id: preset.id,
+			name: preset.name,
+			source: preset.source,
+			author: preset.author,
+			starred: preset.starred,
+			data: preset.data,
+			tags: preset.tags,
+		}));
+		return [...builtinLibraryPresets, ...libraryPresets];
+	}, [builtinPresets, libraryPresets]);
+	const libraryPresetByName = useMemo(() => {
+		return new Map(mergedLibraryPresets.map((preset) => [preset.name, preset]));
+	}, [mergedLibraryPresets]);
 	const currentPresetFingerprint =
 		presetStateKey ?? getPresetFingerprint(gatherPresetState());
 	const hasUnsavedChanges =
@@ -207,26 +225,6 @@ export function useSynthPresetManager({
 		],
 	);
 
-	const loadBuiltinPreset = useCallback(
-		(name: string) => {
-			if (onLoadPresetData) return;
-			const preset = builtinPresets[name];
-			if (!preset) return;
-			onBeforeApplyPreset?.();
-			applyPreset(preset.data);
-			setActivePresetId(preset.id);
-			setActivePresetNameBase(preset.name);
-			captureLoadedPresetFingerprint();
-		},
-		[
-			applyPreset,
-			builtinPresets,
-			captureLoadedPresetFingerprint,
-			onBeforeApplyPreset,
-			onLoadPresetData,
-		],
-	);
-
 	const loadLibraryPreset = useCallback(
 		(preset: LibraryPreset) => {
 			if (onLoadPresetData) {
@@ -238,6 +236,14 @@ export function useSynthPresetManager({
 				});
 				return;
 			}
+			if (preset.data) {
+				onBeforeApplyPreset?.();
+				applyPreset(preset.data);
+				setActivePresetId(preset.id);
+				setActivePresetNameBase(preset.name);
+				captureLoadedPresetFingerprint();
+				return;
+			}
 			if (!onLoadLibraryPreset) return;
 			onBeforeApplyPreset?.();
 			onLoadLibraryPreset(preset);
@@ -246,6 +252,7 @@ export function useSynthPresetManager({
 			captureLoadedPresetFingerprint();
 		},
 		[
+			applyPreset,
 			captureLoadedPresetFingerprint,
 			onBeforeApplyPreset,
 			onLoadLibraryPreset,
@@ -263,29 +270,25 @@ export function useSynthPresetManager({
 		[loadLocalPreset, requestPresetChange],
 	);
 
-	const handleLoadBuiltin = useCallback(
+	const handleLoadPresetByName = useCallback(
 		(name: string) => {
-			const preset = builtinPresets[name];
+			const preset = libraryPresetByName.get(name);
 			if (!preset) {
 				return;
 			}
 			if (
-				!requestPresetChange({
-					type: "builtin",
-					entryId: preset.id,
-					name,
-				})
+				!requestPresetChange({ type: "library", entryId: preset.id, preset })
 			) {
 				return;
 			}
-			loadBuiltinPreset(name);
+			loadLibraryPreset(preset);
 		},
-		[builtinPresets, loadBuiltinPreset, requestPresetChange],
+		[libraryPresetByName, loadLibraryPreset, requestPresetChange],
 	);
 
-	const handleSyncBuiltinSelection = useCallback(
+	const handleSyncPresetSelection = useCallback(
 		(name: string) => {
-			const preset = builtinPresets[name];
+			const preset = libraryPresetByName.get(name);
 			setActivePresetId(preset?.id ?? null);
 			setActivePresetNameBase(name);
 			captureLoadedPresetFingerprint();
@@ -299,7 +302,7 @@ export function useSynthPresetManager({
 				syncTimeoutRef.current = null;
 			}, 500);
 		},
-		[builtinPresets, captureLoadedPresetFingerprint],
+		[captureLoadedPresetFingerprint, libraryPresetByName],
 	);
 
 	const handleLoadLibrary = useCallback(
@@ -320,12 +323,11 @@ export function useSynthPresetManager({
 
 	const allPresetEntries = useMemo(() => {
 		return buildAllPresetEntries({
-			builtinPresets,
 			localPresetEntries,
-			libraryPresets,
+			libraryPresets: mergedLibraryPresets,
 			favoritePresetIds,
 		});
-	}, [builtinPresets, favoritePresetIds, libraryPresets, localPresetEntries]);
+	}, [favoritePresetIds, localPresetEntries, mergedLibraryPresets]);
 
 	const activePresetIndex = useMemo(
 		() => allPresetEntries.findIndex((entry) => entry.id === activePresetId),
@@ -349,21 +351,11 @@ export function useSynthPresetManager({
 				handleLoadLocal(entry.id);
 				return;
 			}
-			if (entry.type === "builtin") {
-				handleLoadBuiltin(entry.label);
-				return;
-			}
 			if (entry.preset) {
 				handleLoadLibrary(entry.preset);
 			}
 		},
-		[
-			activePresetIndex,
-			allPresetEntries,
-			handleLoadBuiltin,
-			handleLoadLibrary,
-			handleLoadLocal,
-		],
+		[activePresetIndex, allPresetEntries, handleLoadLibrary, handleLoadLocal],
 	);
 
 	const completePendingNavigation = useCallback(
@@ -374,13 +366,9 @@ export function useSynthPresetManager({
 				await loadLocalPreset(navigation.id);
 				return;
 			}
-			if (navigation.type === "builtin") {
-				loadBuiltinPreset(navigation.name);
-				return;
-			}
 			loadLibraryPreset(navigation.preset);
 		},
-		[loadBuiltinPreset, loadLibraryPreset, loadLocalPreset],
+		[loadLibraryPreset, loadLocalPreset],
 	);
 
 	const saveLocalPreset = useCallback(
@@ -592,9 +580,11 @@ export function useSynthPresetManager({
 		activePresetName,
 		loadedPresetFingerprint,
 		pendingPresetChange,
-		handleSyncBuiltinSelection,
+		handleSyncPresetSelection,
+		handleLoadPresetByName,
+		handleSyncBuiltinSelection: handleSyncPresetSelection,
 		handleLoadLocal,
-		handleLoadBuiltin,
+		handleLoadBuiltin: handleLoadPresetByName,
 		handleLoadLibrary,
 		handleStepPreset,
 		handleSavePreset,

@@ -2,7 +2,6 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 use cosmo_synth_engine::fx::{FX_DEFINITIONS_V1, FxControlKindV1};
 use cosmo_synth_engine::generators::{ALGO_DEFINITIONS_V1, AlgoControlKindV1};
@@ -24,6 +23,12 @@ struct AuthoredCzPresetFile {
     name: String,
     #[serde(default)]
     tags: Vec<String>,
+    #[serde(default)]
+    starred: bool,
+    #[serde(default)]
+    source: Option<String>,
+    #[serde(default)]
+    author: Option<String>,
     data: Value,
 }
 
@@ -54,33 +59,37 @@ struct FactoryPresetEntry {
 }
 
 #[derive(Debug, Clone)]
-struct CzPresetSource {
+struct FactoryPresetSource {
     name: String,
     tags: Vec<String>,
+    starred: bool,
+    source: String,
+    author: String,
     data: SynthPresetV1,
 }
 
 pub fn generate_factory_presets(plugin_manifest_dir: &Path) -> Result<(), String> {
     let cosmo_pd101_dir = plugin_manifest_dir.join("../cosmo-pd101");
     let synth_dir = cosmo_pd101_dir.join("src/lib/synth");
-    let authored_dir = synth_dir.join("factory-cz-presets");
-    let cz_presets = load_cz_presets_from_dir(&authored_dir)?;
-    let cosmo_entries = load_cosmo_factory_entries(&cosmo_pd101_dir)?;
+    let plugin_legacy_json = plugin_manifest_dir.join("src/factory_presets.json");
+    let factory_dir = plugin_manifest_dir.join("../../factory-presets");
+    let presets = load_presets_from_dir(&factory_dir)?;
 
-    let generated_ts = render_factory_cz_presets_ts(&cz_presets)?;
-    let mut aggregate_entries = cosmo_entries;
-    aggregate_entries.extend(cz_presets.iter().map(build_factory_entry));
+    let generated_ts = render_factory_presets_ts(&presets)?;
+    let aggregate_entries: Vec<FactoryPresetEntry> =
+        presets.iter().map(build_factory_entry).collect();
     let generated_json = to_pretty_json_string(&aggregate_entries)
         .map(|json| format!("{json}\n"))
         .map_err(|error| format!("failed to serialize aggregate factory preset JSON: {error}"))?;
 
     write_atomic(&synth_dir.join("factoryCzPresets.ts"), &generated_ts)?;
     write_atomic(&synth_dir.join("factory_presets.json"), &generated_json)?;
+    write_atomic(&plugin_legacy_json, &generated_json)?;
 
     Ok(())
 }
 
-fn load_cz_presets_from_dir(dir: &Path) -> Result<Vec<CzPresetSource>, String> {
+fn load_presets_from_dir(dir: &Path) -> Result<Vec<FactoryPresetSource>, String> {
     let mut presets = Vec::new();
     for path in sorted_json_files(dir)? {
         let file_name = path
@@ -110,9 +119,12 @@ fn load_cz_presets_from_dir(dir: &Path) -> Result<Vec<CzPresetSource>, String> {
             )
         })?;
         assert_no_unknown_fields(&authored.data, &canonical, "data", &file_name)?;
-        presets.push(CzPresetSource {
+        presets.push(FactoryPresetSource {
             name: authored.name,
             tags: authored.tags,
+            starred: authored.starred,
+            source: authored.source.unwrap_or_default(),
+            author: authored.author.unwrap_or_default(),
             data,
         });
     }
@@ -291,7 +303,7 @@ fn validate_step_envs(data: &Value, file_name: &str) -> Result<(), String> {
             validate_integer_in_range(
                 sustain_step,
                 0.0,
-                step_count - 1.0,
+                8.0,
                 &format!("{}.sustainStep", dot_path(&path)),
                 file_name,
             )?;
@@ -301,10 +313,19 @@ fn validate_step_envs(data: &Value, file_name: &str) -> Result<(), String> {
 }
 
 fn validate_step_value(value: Option<&Value>, path: &str, file_name: &str) -> Result<(), String> {
-    let Some(parsed) = value.and_then(as_f64) else {
+    let Some(raw_value) = value else {
         return Err(format!("{file_name}: {path} must be a number"));
     };
-    validate_integer_in_range(parsed, 0.0, 127.0, path, file_name)
+    let Some(parsed) = parse_json_integer(raw_value) else {
+        return Err(format!("{file_name}: {path} must be an integer"));
+    };
+    validate_integer_in_range(parsed as f64, 0.0, 127.0, path, file_name)
+}
+
+fn parse_json_integer(value: &Value) -> Option<i64> {
+    value
+        .as_i64()
+        .or_else(|| value.as_u64().and_then(|raw| i64::try_from(raw).ok()))
 }
 
 fn validate_line_octaves(data: &Value, file_name: &str) -> Result<(), String> {
@@ -548,12 +569,15 @@ fn validate_fx_slots(data: &Value, file_name: &str) -> Result<(), String> {
                     )?;
                 }
                 FxControlKindV1::ButtonGroup => {
-                    let numeric = raw_value.as_f64().ok_or_else(|| {
-                        format!(
-                            "{file_name}: {path_label}.params.{} must be numeric",
-                            control.id
-                        )
-                    })?;
+                    let numeric = raw_value
+                        .as_f64()
+                        .or_else(|| raw_value.as_bool().map(|b| if b { 1.0 } else { 0.0 }))
+                        .ok_or_else(|| {
+                            format!(
+                                "{file_name}: {path_label}.params.{} must be numeric or boolean",
+                                control.id
+                            )
+                        })?;
                     let valid_values = control
                         .options
                         .iter()
@@ -717,31 +741,7 @@ fn assert_no_unknown_fields(
     Ok(())
 }
 
-fn load_cosmo_factory_entries(cosmo_pd101_dir: &Path) -> Result<Vec<FactoryPresetEntry>, String> {
-    let script_path = cosmo_pd101_dir.join("scripts/emit-cosmo-factory-presets.ts");
-    let output = Command::new("bun")
-        .arg(&script_path)
-        .current_dir(cosmo_pd101_dir)
-        .output()
-        .map_err(|error| {
-            format!(
-                "failed to execute {} with bun: {error}",
-                script_path.display()
-            )
-        })?;
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!(
-            "failed to generate cosmo factory entries from {}: {}",
-            script_path.display(),
-            stderr.trim()
-        ));
-    }
-    serde_json::from_slice::<Vec<FactoryPresetEntry>>(&output.stdout)
-        .map_err(|error| format!("failed to parse Bun-generated cosmo factory entries: {error}"))
-}
-
-fn render_factory_cz_presets_ts(presets: &[CzPresetSource]) -> Result<String, String> {
+fn render_factory_presets_ts(presets: &[FactoryPresetSource]) -> Result<String, String> {
     let entries = presets.iter().map(build_library_preset).collect::<Vec<_>>();
     let json = to_pretty_json_string(&entries)
         .map(|value| json_to_ts_object_literal(&value))
@@ -754,41 +754,41 @@ fn render_factory_cz_presets_ts(presets: &[CzPresetSource]) -> Result<String, St
     ))
 }
 
-fn build_library_preset(preset: &CzPresetSource) -> LibraryPresetOutput {
+fn build_library_preset(preset: &FactoryPresetSource) -> LibraryPresetOutput {
     LibraryPresetOutput {
         id: create_preset_id(
             &preset.name,
-            "cz-factory",
-            "Temple of CZ",
+            &preset.source,
+            &preset.author,
             false,
             &preset.tags,
             &preset.data,
         )
         .expect("preset id generation should not fail for validated data"),
         name: preset.name.clone(),
-        source: "cz-factory".to_string(),
-        author: "Temple of CZ".to_string(),
-        starred: false,
+        source: preset.source.clone(),
+        author: preset.author.clone(),
+        starred: preset.starred,
         data: preset.data.clone(),
         tags: preset.tags.clone(),
     }
 }
 
-fn build_factory_entry(preset: &CzPresetSource) -> FactoryPresetEntry {
+fn build_factory_entry(preset: &FactoryPresetSource) -> FactoryPresetEntry {
     FactoryPresetEntry {
         id: create_preset_id(
             &preset.name,
-            "cz-factory",
-            "Temple of CZ",
+            &preset.source,
+            &preset.author,
             false,
             &preset.tags,
             &preset.data,
         )
         .expect("preset id generation should not fail for validated data"),
         name: preset.name.clone(),
-        source: "cz-factory".to_string(),
-        author: "Temple of CZ".to_string(),
-        starred: false,
+        source: preset.source.clone(),
+        author: preset.author.clone(),
+        starred: preset.starred,
         tags: preset.tags.clone(),
         macro_labels: DEFAULT_MACRO_LABELS
             .iter()
@@ -952,7 +952,7 @@ mod tests {
 
     fn default_preset_value() -> Value {
         let fixture: Value = serde_json::from_str(include_str!(
-            "../../cosmo-pd101/src/lib/synth/factory-cz-presets/001-2l-pluck-brss.json"
+            "../../../factory-presets/001-2l-pluck-brss.json"
         ))
         .expect("fixture preset should parse");
         fixture
@@ -965,6 +965,8 @@ mod tests {
         let wrapper = serde_json::json!({
             "name": "Test Preset",
             "tags": ["pad"],
+            "source": "cz-factory",
+            "author": "Temple of CZ",
             "data": data,
         });
         fs::write(
@@ -978,10 +980,10 @@ mod tests {
     fn loads_valid_single_preset_and_renders_outputs() {
         let dir = temp_dir("valid");
         write_preset(&dir, "001-test.json", default_preset_value());
-        let presets = load_cz_presets_from_dir(&dir).expect("valid preset should load");
+        let presets = load_presets_from_dir(&dir).expect("valid preset should load");
         assert_eq!(presets.len(), 1);
         assert_eq!(presets[0].name, "Test Preset");
-        let ts = render_factory_cz_presets_ts(&presets).expect("ts should render");
+        let ts = render_factory_presets_ts(&presets).expect("ts should render");
         assert!(ts.contains("FACTORY_CZ_PRESETS"));
         let aggregate = to_pretty_json_string(&vec![build_factory_entry(&presets[0])]).unwrap();
         assert!(aggregate.contains("Temple of CZ"));
@@ -993,8 +995,30 @@ mod tests {
         let mut data = default_preset_value();
         data["params"]["line1"]["dcoEnv"]["steps"][0]["level"] = Value::from(222);
         write_preset(&dir, "001-test.json", data);
-        let error = load_cz_presets_from_dir(&dir).unwrap_err();
+        let error = load_presets_from_dir(&dir).unwrap_err();
         assert!(error.contains("level"));
+    }
+
+    #[test]
+    fn rejects_non_integer_envelope_step_values() {
+        let dir = temp_dir("bad-env-integer");
+        let mut data = default_preset_value();
+        data["params"]["line1"]["dcoEnv"]["steps"][0]["level"] = serde_json::json!(73.5);
+        write_preset(&dir, "001-test.json", data);
+        let error = load_presets_from_dir(&dir).unwrap_err();
+        assert!(error.contains("level"));
+        assert!(error.contains("integer"));
+    }
+
+    #[test]
+    fn rejects_non_integer_envelope_step_rate_values() {
+        let dir = temp_dir("bad-env-rate-integer");
+        let mut data = default_preset_value();
+        data["params"]["line1"]["dcoEnv"]["steps"][0]["rate"] = serde_json::json!(12.2);
+        write_preset(&dir, "001-test.json", data);
+        let error = load_presets_from_dir(&dir).unwrap_err();
+        assert!(error.contains("rate"));
+        assert!(error.contains("integer"));
     }
 
     #[test]
@@ -1004,7 +1028,7 @@ mod tests {
         data["params"]["line1"]["dcoEnv"]["stepCount"] = Value::from(9);
         data["params"]["line1"]["dcoEnv"]["sustainStep"] = Value::from(9);
         write_preset(&dir, "001-test.json", data);
-        let error = load_cz_presets_from_dir(&dir).unwrap_err();
+        let error = load_presets_from_dir(&dir).unwrap_err();
         assert!(error.contains("stepCount") || error.contains("sustainStep"));
     }
 
@@ -1014,7 +1038,7 @@ mod tests {
         let mut data = default_preset_value();
         data["params"]["lineSelect"] = Value::from("nope");
         write_preset(&dir, "001-test.json", data);
-        let error = load_cz_presets_from_dir(&dir).unwrap_err();
+        let error = load_presets_from_dir(&dir).unwrap_err();
         assert!(error.contains("unknown variant") || error.contains("expected"));
     }
 
@@ -1026,7 +1050,7 @@ mod tests {
             { "id": "waveform1", "value": 99 }
         ]);
         write_preset(&dir, "001-test.json", data);
-        let error = load_cz_presets_from_dir(&dir).unwrap_err();
+        let error = load_presets_from_dir(&dir).unwrap_err();
         assert!(error.contains("algoControlsA"));
     }
 
@@ -1045,7 +1069,7 @@ mod tests {
             }
         });
         write_preset(&dir, "001-test.json", data);
-        let error = load_cz_presets_from_dir(&dir).unwrap_err();
+        let error = load_presets_from_dir(&dir).unwrap_err();
         assert!(error.contains("fxSlots[3]"));
     }
 
@@ -1055,7 +1079,7 @@ mod tests {
         let mut data = default_preset_value();
         data["params"]["line1"]["mystery"] = Value::from(1);
         write_preset(&dir, "001-test.json", data);
-        let error = load_cz_presets_from_dir(&dir).unwrap_err();
+        let error = load_presets_from_dir(&dir).unwrap_err();
         assert!(error.contains("unknown field"));
     }
 }

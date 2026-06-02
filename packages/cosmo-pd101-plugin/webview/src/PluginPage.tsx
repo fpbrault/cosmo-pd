@@ -161,8 +161,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		[loadPresetData],
 	);
 
-	const { handleSyncBuiltinSelection } = useSynthPresetManager({
-		builtinPresets: {},
+	const { handleSyncPresetSelection } = useSynthPresetManager({
 		gatherPresetState: gatherState,
 		applyPreset,
 		libraryPresets: [],
@@ -171,13 +170,13 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 
 	useEffect(() => {
 		window.__czOnHostPresetSelected = (name: string) => {
-			handleSyncBuiltinSelection(name);
+			handleSyncPresetSelection(name);
 			syncInstanceBRef.current?.(name);
 		};
 		return () => {
 			window.__czOnHostPresetSelected = undefined;
 		};
-	}, [handleSyncBuiltinSelection]);
+	}, [handleSyncPresetSelection]);
 
 	useEffect(() => {
 		const restore = async () => {

@@ -2361,6 +2361,7 @@ mod tests {
         let params = Arc::new(CzPluginParams::new());
         let mut plugin = CzPlugin::new(Arc::clone(&params));
         plugin.reset(48_000.0, 64);
+        let expected = crate::ffi::factory_preset_params(0).unwrap().clone();
 
         assert!((params.volume.value() - 0.8).abs() < 0.000_001);
 
@@ -2370,13 +2371,10 @@ mod tests {
             program: 0,
         });
 
-        assert!((params.volume.value() - 1.0).abs() < 0.000_001);
+        assert!((params.volume.value() - expected.volume).abs() < 0.000_001);
         let synth_params = plugin.synth_params.load();
-        assert_eq!(
-            synth_params.line_select,
-            cosmo_synth_engine::params::LineSelect::L1PlusL1Prime
-        );
-        assert!((synth_params.portamento.time - 0.1).abs() < 0.000_001);
+        assert_eq!(synth_params.line_select, expected.line_select);
+        assert!((synth_params.portamento.time - expected.portamento.time).abs() < 0.000_001);
     }
 
     #[test]

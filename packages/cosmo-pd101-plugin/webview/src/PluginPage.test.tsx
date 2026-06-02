@@ -95,6 +95,8 @@ describe("PluginPage", () => {
 			activePresetName: "Current State",
 			loadedPresetFingerprint: null,
 			pendingPresetChange: null,
+			handleSyncPresetSelection: vi.fn(),
+			handleLoadPresetByName: vi.fn(),
 			handleLoadLocal: vi.fn(),
 			handleLoadBuiltin: vi.fn(),
 			handleLoadLibrary: vi.fn(),

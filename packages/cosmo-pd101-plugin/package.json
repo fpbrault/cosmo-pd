@@ -6,7 +6,7 @@
 	"type": "module",
 	"scripts": {
 		"build": "bun run build:release",
-		"gen:factory-presets": "cargo run -p cosmo-pd101-plugin --bin generate-factory-presets --quiet",
+		"gen:factory-presets": "cargo run -p cosmo-pd101-plugin --bin generate-factory-presets --quiet && bunx biome check --write ../cosmo-pd101/src/lib/synth/factoryCzPresets.ts",
 		"build:release": "bun run build:web && bun run gen:factory-presets && cargo truce build",
 		"build:debug": "bun run build:web && bun run gen:factory-presets && cargo truce build --debug",
 		"build:web": "bun --filter @cosmo/cosmo-pd101-plugin-webview build",

@@ -21,7 +21,6 @@ import { useSynthPresetManager } from "@/features/synth/useSynthPresetManager";
 import { decodeCzPatch } from "@/lib/midi/czSysexDecoder";
 import { installBenchmarkApi } from "@/lib/performance/benchmarkHarness";
 import { convertDecodedPatchToSynthPreset } from "@/lib/synth/czPresetConverter";
-import { DEFAULT_SYNTH_PRESETS } from "@/lib/synth/defaultPresets";
 import { FACTORY_CZ_PRESETS } from "@/lib/synth/factoryCzPresets";
 import { HoverInfoProvider, useHoverInfo } from "../layout/HoverInfo";
 import { useAudioLevelMonitor } from "./hooks/useAudioLevelMonitor";
@@ -101,6 +100,7 @@ const SynthRenderer = memo(function SynthRenderer({
 	const sendPolyAftertouch =
 		miniKeyboard?.onPolyAftertouch ?? runtime.sendPolyAftertouch;
 	const panic = runtime.panic;
+	const _hasActiveNotes = activeNotes.length > 0;
 
 	useAudioLevelMonitor(runtime.analyserNodeRef, onAudioLevelChange);
 
@@ -128,7 +128,7 @@ const SynthRenderer = memo(function SynthRenderer({
 		activePresetNameBase,
 		pendingPresetChange,
 		handleLoadLocal,
-		handleLoadBuiltin,
+		handleLoadPresetByName,
 		handleLoadLibrary,
 		handleSavePreset,
 		handleDeletePreset,
@@ -143,9 +143,8 @@ const SynthRenderer = memo(function SynthRenderer({
 		handleSavePendingPresetChange,
 		handleDiscardPendingPresetChange,
 		handleCancelPendingPresetChange,
-		handleSyncBuiltinSelection,
+		handleSyncPresetSelection,
 	} = useSynthPresetManager({
-		builtinPresets: DEFAULT_SYNTH_PRESETS,
 		gatherPresetState,
 		applyPreset,
 		onBeforeApplyPreset: panic,
@@ -155,11 +154,12 @@ const SynthRenderer = memo(function SynthRenderer({
 	});
 
 	useEffect(() => {
+		const presetNames = libraryPresets.map((preset) => preset.name);
 		return installBenchmarkApi({
 			mode: runtime.benchmark.mode,
-			listBuiltinPresets: () => Object.keys(DEFAULT_SYNTH_PRESETS),
+			listBuiltinPresets: () => presetNames,
 			loadBuiltinPreset: (name: string) => {
-				handleLoadBuiltin(name);
+				handleLoadPresetByName(name);
 			},
 			setPerformanceMonitorEnabled:
 				runtime.benchmark.setPerformanceMonitorEnabled,
@@ -170,14 +170,15 @@ const SynthRenderer = memo(function SynthRenderer({
 			ensureReady: runtime.benchmark.ensureReady,
 		});
 	}, [
-		handleLoadBuiltin,
+		handleLoadPresetByName,
+		libraryPresets,
 		panic,
 		runtime.benchmark.ensureReady,
 		runtime.benchmark.getPerformanceMetrics,
-		runtime.benchmark.mode,
 		runtime.benchmark.setPerformanceMonitorEnabled,
 		sendNoteOff,
 		sendNoteOn,
+		runtime.benchmark.mode,
 	]);
 
 	const [libraryVisibleEntries, setLibraryVisibleEntries] =
@@ -206,8 +207,8 @@ const SynthRenderer = memo(function SynthRenderer({
 	}, [visiblePresetEntries]);
 
 	useEffect(() => {
-		onInitPresetSession?.(handleSyncBuiltinSelection);
-	}, [handleSyncBuiltinSelection, onInitPresetSession]);
+		onInitPresetSession?.(handleSyncPresetSelection);
+	}, [handleSyncPresetSelection, onInitPresetSession]);
 
 	useEffect(() => {
 		onPresetSessionChange?.({ activePresetNameBase });
@@ -241,21 +242,19 @@ const SynthRenderer = memo(function SynthRenderer({
 				handleLoadLocal(entry.id);
 				return;
 			}
-			if (entry.type === "builtin") {
-				handleLoadBuiltin(entry.label);
-				return;
-			}
 			if (entry.preset) {
 				handleLoadLibrary(entry.preset);
+				return;
 			}
+			handleLoadPresetByName(entry.label);
 		},
 		[
 			libraryVisibleEntries,
 			visiblePresetEntries,
 			activePresetId,
 			handleLoadLocal,
-			handleLoadBuiltin,
 			handleLoadLibrary,
+			handleLoadPresetByName,
 		],
 	);
 
@@ -280,8 +279,8 @@ const SynthRenderer = memo(function SynthRenderer({
 								activePresetId,
 								activePresetName,
 								pendingPresetChange,
+								handleLoadPresetByName,
 								handleLoadLocal,
-								handleLoadBuiltin,
 								handleLoadLibrary,
 								handleSavePreset,
 								handleDeletePreset,

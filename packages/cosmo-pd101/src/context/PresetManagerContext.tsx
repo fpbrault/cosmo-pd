@@ -19,8 +19,8 @@ interface PresetManagerContextValue {
 	activePresetId: string | null;
 	activePresetName: string;
 	pendingPresetChange: PresetManagerPendingChange | null;
+	handleLoadPresetByName: (name: string) => void;
 	handleLoadLocal: (id: string) => void;
-	handleLoadBuiltin: (name: string) => void;
 	handleLoadLibrary: (preset: LibraryPreset) => void;
 	handleSavePreset: (name: string) => void;
 	handleDeletePreset: (id: string) => void;

@@ -3,7 +3,7 @@ import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import { getPresetSourceLabel } from "@/lib/synth/presetSources";
 import type { StoredPreset } from "@/lib/synth/presetStorage";
 import { inferPresetTags, normalizePresetTags } from "@/lib/synth/presetTags";
-import type { EnginePresetV1, FrontendPresetV1 } from "@/lib/synth/presetTypes";
+import type { EnginePresetV1 } from "@/lib/synth/presetTypes";
 
 export type PendingPresetDiffEntry = {
 	path: string;
@@ -32,12 +32,10 @@ function sortPresetEntries(entries: PresetEntry[]): PresetEntry[] {
 }
 
 export function buildAllPresetEntries({
-	builtinPresets,
 	localPresetEntries,
 	libraryPresets,
 	favoritePresetIds,
 }: {
-	builtinPresets: Record<string, FrontendPresetV1>;
 	localPresetEntries: StoredPreset[];
 	libraryPresets: LibraryPreset[];
 	favoritePresetIds: string[];
@@ -45,26 +43,6 @@ export function buildAllPresetEntries({
 	const favoriteIds = new Set(favoritePresetIds);
 
 	return [
-		...sortPresetEntries(
-			Object.values(builtinPresets).map((preset) => {
-				const inferredTags = inferPresetTags(preset.name);
-				const builtinTags = normalizePresetTags(
-					preset.tags.length > 0 ? preset.tags : inferredTags,
-				);
-
-				return {
-					id: preset.id,
-					label: preset.name,
-					type: "builtin" as const,
-					source: preset.source,
-					sourceLabel: getPresetSourceLabel(preset.source),
-					author: preset.author,
-					starred: preset.starred,
-					favorite: favoriteIds.has(preset.id),
-					tags: builtinTags,
-				};
-			}),
-		),
 		...sortPresetEntries(
 			localPresetEntries.map((entry) => ({
 				id: entry.id,

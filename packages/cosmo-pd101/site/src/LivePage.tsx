@@ -16,7 +16,7 @@ import {
 } from "../../src/components/renderer/rendererFrameLayout";
 import { SharedPhaseDistortionVisualizer } from "../../src/components/renderer/SynthRenderer";
 import { useSynthStore } from "../../src/features/synth/synthStore";
-import { DEFAULT_SYNTH_PRESETS } from "../../src/lib/synth/defaultPresets";
+import { FACTORY_CZ_PRESETS } from "../../src/lib/synth/factoryCzPresets";
 import {
 	loadCurrentPresetSession,
 	loadCurrentState,
@@ -142,7 +142,7 @@ export default function LivePage() {
 		? {}
 		: { width: scaledWidth, height: scaledHeight };
 
-	const syncBuiltinSelectionRef = useRef<(name: string) => void>();
+	const syncPresetSelectionRef = useRef<(name: string) => void>();
 
 	const handlePresetSessionChange = useCallback(
 		(session: { activePresetNameBase: string }) => {
@@ -189,12 +189,12 @@ export default function LivePage() {
 				session?.activePresetNameBase &&
 				session.activePresetNameBase !== "Current State"
 			) {
-				syncBuiltinSelectionRef.current?.(session.activePresetNameBase);
+				syncPresetSelectionRef.current?.(session.activePresetNameBase);
 			} else {
-				const firstPreset = Object.values(DEFAULT_SYNTH_PRESETS)[0];
+				const firstPreset = FACTORY_CZ_PRESETS[0];
 				if (firstPreset) {
 					useSynthStore.getState().applyPreset(firstPreset.data);
-					syncBuiltinSelectionRef.current?.(firstPreset.name);
+					syncPresetSelectionRef.current?.(firstPreset.name);
 				}
 			}
 		};
@@ -254,7 +254,7 @@ export default function LivePage() {
 							<UpdateNotification currentVersion={__CZ_APP_VERSION__} />
 						}
 						onInitPresetSession={(fn) => {
-							syncBuiltinSelectionRef.current = fn;
+							syncPresetSelectionRef.current = fn;
 						}}
 						onPresetSessionChange={handlePresetSessionChange}
 					/>

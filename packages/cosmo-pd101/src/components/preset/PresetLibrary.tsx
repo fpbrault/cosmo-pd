@@ -17,9 +17,9 @@ type PresetLibraryProps = {
 	allEntries: PresetEntry[];
 	activeEntryId: string | null;
 	activePresetName: string;
+	onLoadPresetByName: (name: string) => void;
 	onLoadLocal: (id: string) => void;
 	onLoadLibrary: (preset: LibraryPreset) => void;
-	onLoadBuiltin: (name: string) => void;
 	onSavePreset: (name: string) => void;
 	onDeletePreset: (id: string) => void;
 	onRenamePreset: (id: string, newName: string) => void;
@@ -39,9 +39,9 @@ export default function PresetLibrary({
 	allEntries,
 	activeEntryId,
 	activePresetName,
+	onLoadPresetByName,
 	onLoadLocal,
 	onLoadLibrary,
-	onLoadBuiltin,
 	onSavePreset,
 	onDeletePreset,
 	onRenamePreset,
@@ -122,15 +122,13 @@ export default function PresetLibrary({
 				onLoadLocal(entry.id);
 				return;
 			}
-			if (entry.type === "builtin") {
-				onLoadBuiltin(entry.label);
+			if (!entry.preset) {
+				onLoadPresetByName(entry.label);
 				return;
 			}
-			if (entry.preset) {
-				onLoadLibrary(entry.preset);
-			}
+			onLoadLibrary(entry.preset);
 		},
-		[onLoadBuiltin, onLoadLibrary, onLoadLocal],
+		[onLoadLibrary, onLoadLocal, onLoadPresetByName],
 	);
 
 	const { handleListKeyDownCapture, handleListKeyDown } =
