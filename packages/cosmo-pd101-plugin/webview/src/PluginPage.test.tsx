@@ -42,7 +42,7 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 			}),
 		),
 		DEFAULT_SYNTH_PRESETS: {},
-		FACTORY_CZ_PRESETS: [],
+		FACTORY_PRESETS: [],
 		SYNTH_RENDERER_DESIGN_HEIGHT: 912,
 		SYNTH_RENDERER_MIN_ASPECT_RATIO: 4 / 3,
 		SynthRenderer: () => <div data-testid="synth-renderer" />,
