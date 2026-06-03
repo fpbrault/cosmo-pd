@@ -1,0 +1,522 @@
+{
+	"name": "Bliss",
+	"tags": ["brass"],
+	"starred": true,
+	"source": "cosmo-factory",
+	"author": "Purr Audio",
+	"data": {
+		"schemaVersion": 1,
+		"params": {
+			"lineSelect": "L1+L1'",
+			"modMode": "normal",
+			"octave": 0,
+			"line1": {
+				"algo": "cz101",
+				"algo2": "cz101",
+				"algoBlend": 0,
+				"baseWaveformA": "cosine",
+				"baseWaveformB": "cosine",
+				"window": "off",
+				"dcaBase": 1,
+				"dcwBase": 0.81119873046875,
+				"modulation": 0,
+				"detuneNote": 0,
+				"detuneFine": 0,
+				"octave": 0,
+				"dcoEnv": {
+					"steps": [
+						{
+							"level": 0,
+							"rate": 99
+						},
+						{
+							"level": 0,
+							"rate": 99
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						}
+					],
+					"sustainStep": 0,
+					"stepCount": 2,
+					"loop": false
+				},
+				"dcwEnv": {
+					"steps": [
+						{
+							"level": 99,
+							"rate": 99
+						},
+						{
+							"level": 0,
+							"rate": 35
+						},
+						{
+							"level": 60,
+							"rate": 36
+						},
+						{
+							"level": 36,
+							"rate": 54
+						},
+						{
+							"level": 74,
+							"rate": 40
+						},
+						{
+							"level": 0,
+							"rate": 25
+						},
+						{
+							"level": 99,
+							"rate": 99
+						},
+						{
+							"level": 0,
+							"rate": 60
+						}
+					],
+					"sustainStep": 0,
+					"stepCount": 2,
+					"loop": false
+				},
+				"dcaEnv": {
+					"steps": [
+						{
+							"level": 99,
+							"rate": 74
+						},
+						{
+							"level": 0,
+							"rate": 58
+						},
+						{
+							"level": 0,
+							"rate": 1
+						},
+						{
+							"level": 0,
+							"rate": 1
+						},
+						{
+							"level": 99,
+							"rate": 99
+						},
+						{
+							"level": 99,
+							"rate": 99
+						},
+						{
+							"level": 99,
+							"rate": 99
+						},
+						{
+							"level": 0,
+							"rate": 60
+						}
+					],
+					"sustainStep": 0,
+					"stepCount": 2,
+					"loop": false
+				},
+				"dcwKeyFollow": 0,
+				"dcaKeyFollow": 0,
+				"algoControlsA": [
+					{
+						"id": "preset",
+						"value": 0
+					},
+					{
+						"id": "waveform1",
+						"value": 0
+					},
+					{
+						"id": "waveform2",
+						"value": 0
+					},
+					{
+						"id": "windowFunction",
+						"value": 0
+					}
+				],
+				"algoControlsB": [
+					{
+						"id": "preset",
+						"value": 0
+					},
+					{
+						"id": "waveform1",
+						"value": 6
+					},
+					{
+						"id": "waveform2",
+						"value": 6
+					},
+					{
+						"id": "windowFunction",
+						"value": 1
+					}
+				]
+			},
+			"line2": {
+				"algo": "pinch",
+				"algo2": "cz101",
+				"algoBlend": 0,
+				"baseWaveformA": "sine",
+				"baseWaveformB": "cosine",
+				"window": "off",
+				"dcaBase": 1,
+				"dcwBase": 0.7401758030482701,
+				"modulation": 0,
+				"detuneNote": 0,
+				"detuneFine": 0,
+				"octave": -1,
+				"dcoEnv": {
+					"steps": [
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						}
+					],
+					"sustainStep": 0,
+					"stepCount": 8,
+					"loop": false
+				},
+				"dcwEnv": {
+					"steps": [
+						{
+							"level": 99,
+							"rate": 80
+						},
+						{
+							"level": 0,
+							"rate": 99
+						},
+						{
+							"level": 0,
+							"rate": 99
+						},
+						{
+							"level": 99,
+							"rate": 99
+						},
+						{
+							"level": 99,
+							"rate": 99
+						},
+						{
+							"level": 99,
+							"rate": 99
+						},
+						{
+							"level": 99,
+							"rate": 99
+						},
+						{
+							"level": 0,
+							"rate": 60
+						}
+					],
+					"sustainStep": 0,
+					"stepCount": 2,
+					"loop": false
+				},
+				"dcaEnv": {
+					"steps": [
+						{
+							"level": 99,
+							"rate": 92
+						},
+						{
+							"level": 0,
+							"rate": 99
+						},
+						{
+							"level": 99,
+							"rate": 99
+						},
+						{
+							"level": 99,
+							"rate": 99
+						},
+						{
+							"level": 99,
+							"rate": 99
+						},
+						{
+							"level": 99,
+							"rate": 99
+						},
+						{
+							"level": 99,
+							"rate": 99
+						},
+						{
+							"level": 0,
+							"rate": 60
+						}
+					],
+					"sustainStep": 0,
+					"stepCount": 2,
+					"loop": false
+				},
+				"dcwKeyFollow": 0,
+				"dcaKeyFollow": 0,
+				"algoControlsA": [
+					{
+						"id": "pinchFocus",
+						"value": 0.5
+					},
+					{
+						"id": "pinchAsym",
+						"value": 0
+					},
+					{
+						"id": "pinchCurve",
+						"value": 0.5
+					},
+					{
+						"id": "pinchDrive",
+						"value": 0.5
+					}
+				],
+				"algoControlsB": [
+					{
+						"id": "preset",
+						"value": 0
+					},
+					{
+						"id": "waveform1",
+						"value": 0
+					},
+					{
+						"id": "waveform2",
+						"value": 0
+					},
+					{
+						"id": "windowFunction",
+						"value": 0
+					}
+				]
+			},
+			"frequency": 440,
+			"volume": 1,
+			"tempoBpm": 120,
+			"polyMode": "poly8",
+			"legato": false,
+			"velocityCurve": 0,
+			"portamento": {
+				"enabled": false,
+				"mode": "time",
+				"rate": 85,
+				"time": 0.1
+			},
+			"lfo": {
+				"waveform": "sine",
+				"rate": 2.000000000000001,
+				"rateMode": "hz",
+				"syncDivision": "quarter",
+				"depth": 1,
+				"symmetry": 0.5,
+				"retrigger": false,
+				"offset": 0
+			},
+			"lfo2": {
+				"waveform": "sine",
+				"rate": 5,
+				"rateMode": "hz",
+				"syncDivision": "quarter",
+				"depth": 0,
+				"symmetry": 0.5,
+				"retrigger": false,
+				"offset": 0
+			},
+			"random": {
+				"rate": 2
+			},
+			"modEnv": {
+				"attack": 0.01,
+				"decay": 0.1,
+				"sustain": 0.5,
+				"release": 0.2
+			},
+			"pitchBendRange": 2,
+			"modMatrix": {
+				"routes": [
+					{
+						"source": "aftertouch",
+						"destination": "line2DcwBase",
+						"amount": 0.16921875,
+						"enabled": true
+					},
+					{
+						"source": "modWheel",
+						"destination": "line2DcwBase",
+						"amount": 0.25101562499999996,
+						"enabled": true
+					},
+					{
+						"source": "aftertouch",
+						"destination": "line1AlgoParam1",
+						"amount": 0.5,
+						"enabled": true
+					},
+					{
+						"source": "modWheel",
+						"destination": "line1AlgoParam1",
+						"amount": 0.5,
+						"enabled": true
+					},
+					{
+						"source": "macro1",
+						"destination": "line1AlgoParam1",
+						"amount": 0.5,
+						"enabled": true
+					},
+					{
+						"source": "macro1",
+						"destination": "line1DcwBase",
+						"amount": 0.28,
+						"enabled": true
+					},
+					{
+						"source": "macro3",
+						"destination": "line1DcaEnvStep2Rate",
+						"amount": -0.21,
+						"enabled": true
+					},
+					{
+						"source": "macro3",
+						"destination": "line1DcwEnvStep1Rate",
+						"amount": -0.23,
+						"enabled": true
+					},
+					{
+						"source": "modWheel",
+						"destination": "vibratoDepth",
+						"amount": 0.5,
+						"enabled": true
+					},
+					{
+						"source": "macro2",
+						"destination": "line2DetuneFine",
+						"amount": 0.19,
+						"enabled": true
+					},
+					{
+						"source": "macro4",
+						"destination": "delayMix",
+						"amount": 0.5,
+						"enabled": true
+					},
+					{
+						"source": "macro4",
+						"destination": "shimmerVerbMix",
+						"amount": 0.5,
+						"enabled": true
+					}
+				]
+			},
+			"fxSlots": [
+				{
+					"type": "vibrato",
+					"params": {
+						"enabled": true,
+						"waveform": 1,
+						"rate": 63.58072225161961,
+						"depth": 0,
+						"delay": 0
+					}
+				},
+				{
+					"type": "chorus",
+					"params": {
+						"enabled": true,
+						"rate": 1.4,
+						"depth": 1,
+						"mix": 0.56
+					}
+				},
+				{
+					"type": "delay",
+					"params": {
+						"enabled": true,
+						"time": 0.34,
+						"feedback": 0.46,
+						"mix": 0,
+						"tapeMode": true,
+						"warmth": 0.72
+					}
+				},
+				{
+					"type": "shimmerVerb",
+					"params": {
+						"enabled": true,
+						"shimmer": 0.638798828125,
+						"space": 0.6546679530824934,
+						"mix": 0
+					}
+				},
+				{
+					"type": "empty"
+				},
+				{
+					"type": "empty"
+				}
+			],
+			"macro1": 0.6000276436392716,
+			"macro2": 0,
+			"macro3": 0,
+			"macro4": 0
+		}
+	}
+}

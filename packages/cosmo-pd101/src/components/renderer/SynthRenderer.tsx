@@ -31,7 +31,7 @@ import {
 } from "@/lib/synth/cosmoWorkletUrl";
 import { convertDecodedPatchToSynthPreset } from "@/lib/synth/czPresetConverter";
 import { DEFAULT_SYNTH_PRESETS } from "@/lib/synth/defaultPresets";
-import { FACTORY_CZ_PRESETS } from "@/lib/synth/factoryCzPresets";
+import { FACTORY_PRESETS } from "@/lib/synth/factoryCzPresets";
 import { noteToFreq } from "@/lib/synth/pdAlgorithms";
 import { HoverInfoProvider, useHoverInfo } from "../layout/HoverInfo";
 import { useAudioLevelMonitor } from "./hooks/useAudioLevelMonitor";
@@ -90,7 +90,7 @@ const SynthRenderer = memo(function SynthRenderer({
 	frameStyle,
 	headerExtra,
 	bottomBarExtra,
-	libraryPresets = FACTORY_CZ_PRESETS,
+	libraryPresets = FACTORY_PRESETS,
 	onAudioLevelChange,
 	disableAudioGate = false,
 	engineEventSink,

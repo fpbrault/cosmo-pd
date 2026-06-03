@@ -7,6 +7,7 @@ export type LibraryPreset = {
 	source: PresetSource;
 	author: string;
 	starred: boolean;
+	sortIndex?: number;
 	data?: SynthPresetV1;
 	sysexData?: Uint8Array;
 	tags?: string[];

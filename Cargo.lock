@@ -1078,6 +1078,7 @@ dependencies = [
  "objc2-foundation 0.3.2",
  "objc2-web-kit",
  "raw-window-handle 0.6.2",
+ "serde",
  "serde_json",
  "truce",
  "truce-aax",

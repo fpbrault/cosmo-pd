@@ -1,7 +1,7 @@
 import {
 	computeRendererFrameLayout,
 	DEFAULT_SYNTH_PRESETS,
-	FACTORY_CZ_PRESETS,
+	FACTORY_PRESETS,
 	installBenchmarkApi,
 	SYNTH_RENDERER_DESIGN_HEIGHT,
 	SYNTH_RENDERER_MIN_ASPECT_RATIO,
@@ -220,7 +220,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 			builtinPresets: DEFAULT_SYNTH_PRESETS,
 			gatherPresetState: gatherState,
 			applyPreset,
-			libraryPresets: FACTORY_CZ_PRESETS,
+			libraryPresets: FACTORY_PRESETS,
 		});
 
 	useEffect(() => {
