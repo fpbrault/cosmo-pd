@@ -75,7 +75,7 @@ pub fn generate_factory_presets(workspace_root: &Path) -> Result<(), String> {
     let synth_dir = cosmo_pd101_dir.join("src/lib/synth");
     let plugin_legacy_json =
         workspace_root.join("packages/cosmo-pd101-plugin/src/factory_presets.json");
-	let factory_dir = workspace_root.join("packages/cosmo-pd101-presets/factory-presets");
+    let factory_dir = workspace_root.join("packages/cosmo-pd101-presets/factory-presets");
     let presets = order_presets_for_display(load_presets_from_dir(&factory_dir)?);
 
     let generated_ts = render_factory_presets_ts(&presets)?;
@@ -911,10 +911,9 @@ mod tests {
     }
 
     fn default_preset_value() -> Value {
-        let fixture: Value = serde_json::from_str(include_str!(
-            "../factory-presets/001-2l-pluck-brss.json"
-        ))
-        .expect("fixture preset should parse");
+        let fixture: Value =
+            serde_json::from_str(include_str!("../factory-presets/001-2l-pluck-brss.json"))
+                .expect("fixture preset should parse");
         fixture
             .get("data")
             .cloned()
