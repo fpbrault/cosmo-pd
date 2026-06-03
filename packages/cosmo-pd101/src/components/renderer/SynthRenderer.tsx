@@ -21,7 +21,7 @@ import { useSynthPresetManager } from "@/features/synth/useSynthPresetManager";
 import { decodeCzPatch } from "@/lib/midi/czSysexDecoder";
 import { installBenchmarkApi } from "@/lib/performance/benchmarkHarness";
 import { convertDecodedPatchToSynthPreset } from "@/lib/synth/czPresetConverter";
-import { FACTORY_CZ_PRESETS } from "@/lib/synth/factoryCzPresets";
+import { FACTORY_PRESETS } from "@/lib/synth/factoryCzPresets";
 import { HoverInfoProvider, useHoverInfo } from "../layout/HoverInfo";
 import { useAudioLevelMonitor } from "./hooks/useAudioLevelMonitor";
 import SynthRendererLibraryOverlay from "./SynthRendererLibraryOverlay";
@@ -78,7 +78,7 @@ const SynthRenderer = memo(function SynthRenderer({
 	headerExtra,
 	bottomBarExtra,
 	runtime,
-	libraryPresets = FACTORY_CZ_PRESETS,
+	libraryPresets = FACTORY_PRESETS,
 	onAudioLevelChange,
 	disableAudioGate = false,
 	sidebarMinWidthRem = 18,
@@ -128,6 +128,7 @@ const SynthRenderer = memo(function SynthRenderer({
 	);
 
 	const {
+		allPresetEntries,
 		visiblePresetEntries,
 		activePresetId,
 		activePresetName,
@@ -205,10 +206,6 @@ const SynthRenderer = memo(function SynthRenderer({
 	}, [setLibraryModeOpen]);
 
 	useEffect(() => {
-		setLibraryVisibleEntries(visiblePresetEntries);
-	}, [visiblePresetEntries]);
-
-	useEffect(() => {
 		onInitPresetSession?.(handleSyncPresetSelection);
 	}, [handleSyncPresetSelection, onInitPresetSession]);
 
@@ -227,10 +224,7 @@ const SynthRenderer = memo(function SynthRenderer({
 
 	const handleStepPresetInVisibleOrder = useCallback(
 		(direction: -1 | 1) => {
-			const entries =
-				libraryVisibleEntries.length > 0
-					? libraryVisibleEntries
-					: visiblePresetEntries;
+			const entries = libraryVisibleEntries;
 			if (entries.length === 0) {
 				return;
 			}
@@ -261,7 +255,6 @@ const SynthRenderer = memo(function SynthRenderer({
 		},
 		[
 			libraryVisibleEntries,
-			visiblePresetEntries,
 			activePresetId,
 			handleLoadLocal,
 			handleLoadLibrary,
@@ -286,7 +279,8 @@ const SynthRenderer = memo(function SynthRenderer({
 					>
 						<PresetManagerProvider
 							value={{
-								visiblePresetEntries,
+								allPresetEntries,
+								visiblePresetEntries: libraryVisibleEntries,
 								activePresetId,
 								activePresetName,
 								handleLoadPresetByName,

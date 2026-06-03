@@ -595,6 +595,7 @@ export type SynthParams = {
 	macro2?: number | null,
 	macro3?: number | null,
 	macro4?: number | null,
+	macroLabels?: [string, string, string, string],
 };
 
 /**  Canonical, versioned synth preset wire contract. */

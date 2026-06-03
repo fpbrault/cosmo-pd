@@ -6,7 +6,8 @@ use uuid::Uuid;
 
 use crate::preset_library_path;
 
-const LIBRARY_SCHEMA_VERSION: u32 = 2;
+const DEFAULT_SORT_INDEX: u32 = u32::MAX;
+const LIBRARY_SCHEMA_VERSION: u32 = 3;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -16,6 +17,7 @@ pub struct PresetLibraryEntry {
     pub source: String,
     pub author: String,
     pub starred: bool,
+    pub sort_index: u32,
     pub tags: Vec<String>,
     pub macro_labels: [String; 4],
     pub factory_version: u32,
@@ -69,6 +71,7 @@ impl PresetLibrary {
         &mut self,
         name: String,
         tags: Vec<String>,
+        macro_labels: [String; 4],
         data: serde_json::Value,
     ) -> Result<PresetLibraryEntry, String> {
         let entry = PresetLibraryEntry {
@@ -77,8 +80,9 @@ impl PresetLibrary {
             source: "user".to_string(),
             author: String::new(),
             starred: false,
+            sort_index: DEFAULT_SORT_INDEX,
             tags,
-            macro_labels: default_macro_labels(),
+            macro_labels,
             factory_version: 0,
             data,
         };
@@ -119,6 +123,10 @@ impl PresetLibrary {
         self.with_connection(|conn| list_records(conn, source_filter))
     }
 
+    pub fn find_startup_preset(&self) -> Result<Option<PresetLibraryEntry>, String> {
+        self.with_connection(find_startup_starred_entry)
+    }
+
     pub fn rename_entry(&mut self, id: &str, new_name: &str) -> Result<bool, String> {
         self.with_connection_mut(|conn| {
             conn.execute(
@@ -153,6 +161,9 @@ impl PresetLibrary {
             migrate_legacy_json_if_needed(conn, &self.storage)?;
             if previous_schema_version < 2 {
                 migrate_starred_state_to_favorites(conn)?;
+            }
+            if previous_schema_version < 3 {
+                migrate_sort_index_column(conn)?;
             }
             merge_factory_entries(conn, &self.factory_entries)?;
             Ok(())
@@ -227,15 +238,6 @@ fn parse_factory_entries(factory_json: &str) -> Result<Vec<PresetLibraryEntry>, 
         .map_err(|error| format!("failed to parse embedded factory presets: {error}"))
 }
 
-fn default_macro_labels() -> [String; 4] {
-    [
-        "Brightness".to_string(),
-        "Timbre".to_string(),
-        "Time".to_string(),
-        "Movement".to_string(),
-    ]
-}
-
 fn db_err(error: rusqlite::Error) -> String {
     format!("preset library database error: {error}")
 }
@@ -254,6 +256,7 @@ fn migrate_schema(conn: &Connection) -> Result<(), String> {
             source TEXT NOT NULL,
             author TEXT NOT NULL,
             starred INTEGER NOT NULL DEFAULT 0,
+            sort_index INTEGER NOT NULL DEFAULT 4294967295,
             tags_json TEXT NOT NULL,
             macro_labels_json TEXT NOT NULL,
             factory_version INTEGER NOT NULL DEFAULT 0,
@@ -375,6 +378,28 @@ fn migrate_starred_state_to_favorites(conn: &Connection) -> Result<(), String> {
     Ok(())
 }
 
+fn migrate_sort_index_column(conn: &Connection) -> Result<(), String> {
+    let has_sort_index = conn
+        .prepare("PRAGMA table_info(presets)")
+        .map_err(db_err)?
+        .query_map([], |row| row.get::<_, String>(1))
+        .map_err(db_err)?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(db_err)?
+        .into_iter()
+        .any(|column| column == "sort_index");
+
+    if !has_sort_index {
+        conn.execute(
+            "ALTER TABLE presets ADD COLUMN sort_index INTEGER NOT NULL DEFAULT 4294967295",
+            [],
+        )
+        .map_err(db_err)?;
+    }
+
+    Ok(())
+}
+
 fn merge_factory_entries(
     conn: &Connection,
     factory_entries: &[PresetLibraryEntry],
@@ -398,7 +423,7 @@ fn merge_factory_entries(
 
 fn load_entry(conn: &Connection, id: &str) -> Result<Option<PresetLibraryEntry>, String> {
     conn.query_row(
-        "SELECT id, name, source, author, starred, tags_json, macro_labels_json, factory_version, data_json
+        "SELECT id, name, source, author, starred, sort_index, tags_json, macro_labels_json, factory_version, data_json
          FROM presets
          WHERE id = ?1",
         [id],
@@ -413,18 +438,22 @@ fn list_entries(
     source_filter: Option<&str>,
 ) -> Result<Vec<PresetLibraryEntry>, String> {
     let sql = if source_filter.is_some() {
-        "SELECT id, name, source, author, starred, tags_json, macro_labels_json, factory_version, data_json
+        "SELECT id, name, source, author, starred, sort_index, tags_json, macro_labels_json, factory_version, data_json
          FROM presets
          WHERE source = ?1
          ORDER BY
             CASE WHEN source = 'user' THEN 1 ELSE 0 END,
+            CASE WHEN starred THEN 0 ELSE 1 END,
+            CASE WHEN starred THEN sort_index ELSE 4294967295 END,
             name COLLATE NOCASE,
             id"
     } else {
-        "SELECT id, name, source, author, starred, tags_json, macro_labels_json, factory_version, data_json
+        "SELECT id, name, source, author, starred, sort_index, tags_json, macro_labels_json, factory_version, data_json
          FROM presets
          ORDER BY
             CASE WHEN source = 'user' THEN 1 ELSE 0 END,
+            CASE WHEN starred THEN 0 ELSE 1 END,
+            CASE WHEN starred THEN sort_index ELSE 4294967295 END,
             name COLLATE NOCASE,
             id"
     };
@@ -464,6 +493,24 @@ fn list_records(
         .collect())
 }
 
+fn find_startup_starred_entry(conn: &Connection) -> Result<Option<PresetLibraryEntry>, String> {
+    conn.query_row(
+        "SELECT p.id, p.name, p.source, p.author, p.starred, p.sort_index, p.tags_json,
+                p.macro_labels_json, p.factory_version, p.data_json
+         FROM presets p
+         WHERE p.starred = 1
+         ORDER BY
+            p.sort_index,
+            p.name COLLATE NOCASE,
+            p.id
+         LIMIT 1",
+        [],
+        map_entry_row,
+    )
+    .optional()
+    .map_err(db_err)
+}
+
 fn upsert_entry(conn: &Connection, entry: &PresetLibraryEntry) -> Result<(), String> {
     let tags_json = serde_json::to_string(&entry.tags)
         .map_err(|error| format!("failed to serialize preset tags: {error}"))?;
@@ -478,14 +525,16 @@ fn upsert_entry(conn: &Connection, entry: &PresetLibraryEntry) -> Result<(), Str
 
     conn.execute(
         "INSERT INTO presets (
-            id, name, source, author, starred, tags_json, macro_labels_json,
-            factory_version, data_json, revision, updated_at_unix_ms
-         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 0, ?10)
+            id, name, source, author, starred, sort_index, tags_json,
+            macro_labels_json, factory_version, data_json, revision,
+            updated_at_unix_ms
+         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 0, ?11)
          ON CONFLICT(id) DO UPDATE SET
             name = excluded.name,
             source = excluded.source,
             author = excluded.author,
             starred = excluded.starred,
+            sort_index = excluded.sort_index,
             tags_json = excluded.tags_json,
             macro_labels_json = excluded.macro_labels_json,
             factory_version = excluded.factory_version,
@@ -498,6 +547,7 @@ fn upsert_entry(conn: &Connection, entry: &PresetLibraryEntry) -> Result<(), Str
             entry.source,
             entry.author,
             if entry.starred { 1_i64 } else { 0_i64 },
+            i64::from(entry.sort_index),
             tags_json,
             macro_labels_json,
             i64::from(entry.factory_version),
@@ -510,18 +560,18 @@ fn upsert_entry(conn: &Connection, entry: &PresetLibraryEntry) -> Result<(), Str
 }
 
 fn map_entry_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<PresetLibraryEntry> {
-    let tags_json: String = row.get(5)?;
-    let macro_labels_json: String = row.get(6)?;
-    let data_json: String = row.get(8)?;
+    let tags_json: String = row.get(6)?;
+    let macro_labels_json: String = row.get(7)?;
+    let data_json: String = row.get(9)?;
 
     let tags = serde_json::from_str(&tags_json).map_err(|error| {
-        rusqlite::Error::FromSqlConversionFailure(5, rusqlite::types::Type::Text, Box::new(error))
-    })?;
-    let macro_labels = serde_json::from_str(&macro_labels_json).map_err(|error| {
         rusqlite::Error::FromSqlConversionFailure(6, rusqlite::types::Type::Text, Box::new(error))
     })?;
+    let macro_labels = serde_json::from_str(&macro_labels_json).map_err(|error| {
+        rusqlite::Error::FromSqlConversionFailure(7, rusqlite::types::Type::Text, Box::new(error))
+    })?;
     let data = serde_json::from_str(&data_json).map_err(|error| {
-        rusqlite::Error::FromSqlConversionFailure(8, rusqlite::types::Type::Text, Box::new(error))
+        rusqlite::Error::FromSqlConversionFailure(9, rusqlite::types::Type::Text, Box::new(error))
     })?;
 
     Ok(PresetLibraryEntry {
@@ -530,9 +580,10 @@ fn map_entry_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<PresetLibraryEntry
         source: row.get(2)?,
         author: row.get(3)?,
         starred: row.get::<_, i64>(4)? != 0,
+        sort_index: row.get::<_, i64>(5)? as u32,
         tags,
         macro_labels,
-        factory_version: row.get::<_, i64>(7)? as u32,
+        factory_version: row.get::<_, i64>(8)? as u32,
         data,
     })
 }
@@ -568,8 +619,14 @@ mod tests {
             source: "cosmo-factory".to_string(),
             author: "Factory".to_string(),
             starred: false,
+            sort_index: DEFAULT_SORT_INDEX,
             tags: vec![],
-            macro_labels: default_macro_labels(),
+            macro_labels: [
+                "Brightness".to_string(),
+                "Timbre".to_string(),
+                "Time".to_string(),
+                "Movement".to_string(),
+            ],
             factory_version: 1,
             data: serde_json::json!({ "schemaVersion": 1, "params": { "volume": 0.5 } }),
         }
@@ -582,8 +639,14 @@ mod tests {
             source: "user".to_string(),
             author: "You".to_string(),
             starred: false,
+            sort_index: DEFAULT_SORT_INDEX,
             tags: vec!["bass".to_string()],
-            macro_labels: default_macro_labels(),
+            macro_labels: [
+                "Brightness".to_string(),
+                "Timbre".to_string(),
+                "Time".to_string(),
+                "Movement".to_string(),
+            ],
             factory_version: 0,
             data: serde_json::json!({ "schemaVersion": 1, "params": { "volume": 0.8 } }),
         }
@@ -645,6 +708,12 @@ mod tests {
             .add_entry(
                 "Test".to_string(),
                 vec!["pad".to_string()],
+                [
+                    "Brightness".to_string(),
+                    "Timbre".to_string(),
+                    "Time".to_string(),
+                    "Movement".to_string(),
+                ],
                 serde_json::json!({ "schemaVersion": 1 }),
             )
             .unwrap();
@@ -673,7 +742,17 @@ mod tests {
     fn list_entries_filters_by_source() {
         let mut lib = open_temp_library(vec![sample_entry("cf1")]);
         let _ = lib
-            .add_entry("User".to_string(), vec![], serde_json::json!({}))
+            .add_entry(
+                "User".to_string(),
+                vec![],
+                [
+                    "Brightness".to_string(),
+                    "Timbre".to_string(),
+                    "Time".to_string(),
+                    "Movement".to_string(),
+                ],
+                serde_json::json!({}),
+            )
             .unwrap();
         assert_eq!(lib.list_entries(Some("cosmo-factory")).unwrap().len(), 1);
         assert_eq!(lib.list_entries(Some("user")).unwrap().len(), 1);
@@ -736,5 +815,85 @@ mod tests {
                 .iter()
                 .any(|record| record.entry.id == "f3" && !record.favorite)
         );
+    }
+
+    #[test]
+    fn startup_preset_uses_starred_sort_index_order() {
+        let library = open_temp_library(vec![
+            PresetLibraryEntry {
+                id: "factory-b".to_string(),
+                name: "Bliss".to_string(),
+                starred: true,
+                sort_index: 1,
+                ..sample_entry("factory-b")
+            },
+            PresetLibraryEntry {
+                id: "factory-a".to_string(),
+                name: "Zebra".to_string(),
+                starred: true,
+                sort_index: 0,
+                ..sample_entry("factory-a")
+            },
+        ]);
+        let user = PresetLibraryEntry {
+            id: "user-a".to_string(),
+            name: "Aether".to_string(),
+            starred: true,
+            ..user_entry("user-a")
+        };
+        let mut conn = library.open_connection().unwrap();
+        let tx = conn.transaction().unwrap();
+        upsert_entry(&tx, &user).unwrap();
+        tx.commit().unwrap();
+
+        let startup = library.find_startup_preset().unwrap().unwrap();
+        assert_eq!(startup.id, "factory-a");
+        assert!(startup.starred);
+
+        conn.execute("UPDATE presets SET starred = 0 WHERE id = 'factory-a'", [])
+            .unwrap();
+        let startup = library.find_startup_preset().unwrap().unwrap();
+        assert_eq!(startup.id, "factory-b");
+    }
+
+    #[test]
+    fn list_entries_uses_display_order_for_starred_factory_presets() {
+        let library = open_temp_library(vec![
+            PresetLibraryEntry {
+                id: "factory-b".to_string(),
+                name: "Bliss".to_string(),
+                starred: true,
+                sort_index: 1,
+                ..sample_entry("factory-b")
+            },
+            PresetLibraryEntry {
+                id: "factory-a".to_string(),
+                name: "Zebra".to_string(),
+                starred: true,
+                sort_index: 0,
+                ..sample_entry("factory-a")
+            },
+            PresetLibraryEntry {
+                id: "factory-c".to_string(),
+                name: "Aether".to_string(),
+                starred: false,
+                ..sample_entry("factory-c")
+            },
+        ]);
+
+        let ids = library
+            .list_entries(None)
+            .unwrap()
+            .into_iter()
+            .map(|entry| entry.id)
+            .collect::<Vec<_>>();
+
+        assert_eq!(ids, vec!["factory-a", "factory-b", "factory-c"]);
+    }
+
+    #[test]
+    fn startup_preset_returns_none_when_no_starred_presets_exist() {
+        let library = open_temp_library(vec![sample_entry("f1")]);
+        assert!(library.find_startup_preset().unwrap().is_none());
     }
 }

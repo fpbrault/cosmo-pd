@@ -86,7 +86,7 @@ This is an accepted platform constraint. The important thing is the plugin path 
 | `packages/cosmo-pd101/src/lib/synth/presetStorage.ts` | Web mode: keep `saveCurrentState`+`saveCurrentPresetSession` (no unified session state in target architecture). Web mode keeps IndexedDB for user presets. Plugin mode does NOT use this module. |
 | `packages/cosmo-pd101/src/lib/synth/presetTypes.ts` | Update `FrontendPresetV1` to reflect that plugin mode never holds `data` on the JS side. Remove `SynthSessionState` type (no `getSessionState` in target architecture). |
 | `packages/cosmo-pd101/src/features/synth/useSynthPresetManager.ts` | Plugin mode: accept `onLoadPresetData(id)` callback instead of `builtinPresets`/`libraryPresets`. Web mode: keep existing data-loading paths. |
-| `packages/cosmo-pd101/src/index.ts` | Update exports (remove `DEFAULT_SYNTH_PRESETS`, `FACTORY_CZ_PRESETS`) |
+| `packages/cosmo-pd101/src/index.ts` | Update exports (remove `DEFAULT_SYNTH_PRESETS`, `FACTORY_PRESETS`) |
 | `packages/cosmo-pd101-plugin-auv3/CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/...entitlements` | Add `com.apple.security.application-groups` |
 | `packages/cosmo-pd101-plugin-auv3/Sources/CosmoPd101AUv3/Resources/appex.entitlements` | Add `com.apple.security.application-groups` |
 
@@ -592,7 +592,7 @@ Bundler handles minification in production builds. Web mode uses this for factor
 
 17. **Remove old TS preset files** — `defaultPresets.ts`, `factoryCzPresetDefinitions.ts`, `factoryCzPresets.ts`, plugin's own `factory_presets.json`
 
-18. **Update `index.ts` exports** — remove `DEFAULT_SYNTH_PRESETS`, `FACTORY_CZ_PRESETS`
+18. **Update `index.ts` exports** — remove `DEFAULT_SYNTH_PRESETS`, `FACTORY_PRESETS`
 
 19. **Lint + Test + Build**
 

@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { PresetManagerProvider } from "@/context/PresetManagerContext";
+import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import SynthHeader from "./SynthHeader";
 
 vi.mock("./PresetNavigator", () => ({
@@ -20,22 +21,25 @@ vi.mock("./PresetNavigator", () => ({
 }));
 
 function renderWithProvider(element: React.ReactElement) {
+	const entries: PresetEntry[] = [
+		{
+			id: "1",
+			label: "Init",
+			type: "library",
+			source: "cosmo-factory",
+			sourceLabel: "Cosmo Library",
+			author: "Purr Audio",
+			starred: false,
+			favorite: false,
+			tags: [],
+		},
+	];
+
 	return render(
 		<PresetManagerProvider
 			value={{
-				visiblePresetEntries: [
-					{
-						id: "1",
-						label: "Init",
-						type: "library" as const,
-						source: "cosmo-factory",
-						sourceLabel: "Cosmo Library",
-						author: "Purr Audio",
-						starred: false,
-						favorite: false,
-						tags: [],
-					},
-				],
+				allPresetEntries: entries,
+				visiblePresetEntries: entries,
 				activePresetId: "1",
 				activePresetName: "Init",
 				handleLoadPresetByName: vi.fn(),

@@ -79,7 +79,12 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	const runtime = usePluginSynthRuntime({ eventSink: sendNativeEngineEvent });
 
 	const syncInstanceBRef =
-		useRef<(name: string, options?: { isDirty?: boolean }) => void>();
+		useRef<
+			(
+				name: string,
+				options?: { isDirty?: boolean; presetId?: string | null },
+			) => void
+		>();
 	const [presetSession, setPresetSession] = useState<{
 		activePresetId: string | null;
 		activePresetNameBase: string;
@@ -106,6 +111,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 				presetSessionRef.current.activePresetNameBase,
 				{
 					isDirty: true,
+					presetId: presetSessionRef.current.activePresetId,
 				},
 			);
 		},
@@ -211,13 +217,11 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	useEffect(() => {
 		const restore = async () => {
 			const session = await getPresetSession();
-			if (
-				session?.activePresetNameBase &&
-				session.activePresetNameBase !== "Current State"
-			) {
+			if (session?.activePresetNameBase) {
 				setPresetSession(session);
 				syncInstanceBRef.current?.(session.activePresetNameBase, {
 					isDirty: session.isDirty,
+					presetId: session.activePresetId,
 				});
 			}
 		};

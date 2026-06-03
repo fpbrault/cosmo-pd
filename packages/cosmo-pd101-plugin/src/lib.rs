@@ -1154,6 +1154,7 @@ fn handle_ipc_invoke(
                         "source": e.entry.source,
                         "author": e.entry.author,
                         "starred": e.entry.starred,
+                        "sortIndex": e.entry.sort_index,
                         "favorite": e.favorite,
                         "tags": e.entry.tags,
                     })
@@ -1173,27 +1174,35 @@ fn handle_ipc_invoke(
                 .and_then(serde_json::Value::as_str)
                 .ok_or_else(|| "loadPresetData payload missing id".to_string())?;
 
-            let (entry_data, preset_name_val): (serde_json::Value, String) = {
+            let (entry_data, preset_name_val, entry_macro_labels): (
+                serde_json::Value,
+                String,
+                Option<[String; 4]>,
+            ) = {
                 let lib = preset_library.lock().map_err(|e| e.to_string())?;
-                let data = lib
-                    .get_entry_data(id)
-                    .map_err(|e| e.to_string())?
-                    .ok_or_else(|| "Preset not found".to_string())?;
-                let name = lib
+                let entry = lib
                     .get_entry(id)
                     .map_err(|e| e.to_string())?
-                    .map(|e| e.name)
-                    .unwrap_or_default();
-                (data, name)
+                    .ok_or_else(|| "Preset not found".to_string())?;
+                let data = entry.data.clone();
+                let name = entry.name;
+                let labels = Some(entry.macro_labels);
+                (data, name, labels)
             };
 
-            let new_sp: SynthParams = if let Some(params_value) = entry_data.get("params") {
+            let mut new_sp: SynthParams = if let Some(params_value) = entry_data.get("params") {
                 serde_json::from_value(params_value.clone())
                     .map_err(|e| format!("Failed to deserialize preset: {e}"))?
             } else {
                 serde_json::from_value(entry_data)
                     .map_err(|e| format!("Failed to deserialize preset: {e}"))?
             };
+
+            // Override macro_labels with the entry's stored labels (handles
+            // presets saved before macro_labels was added to SynthParams).
+            if let Some(labels) = entry_macro_labels {
+                new_sp.macro_labels = labels;
+            }
 
             sync_all_daw_params_from_synth(params, &new_sp);
             let rt_params = build_rt_synth_params(&new_sp);
@@ -1230,13 +1239,19 @@ fn handle_ipc_invoke(
                         .collect()
                 })
                 .unwrap_or_default();
+            let macro_labels: [String; 4] = payload
+                .get("macroLabels")
+                .and_then(|v| serde_json::from_value(v.clone()).ok())
+                .unwrap_or_else(|| SynthParams::default().macro_labels);
 
             let params_val = synth_params.load();
             let data = serde_json::to_value(&**params_val).map_err(|e| e.to_string())?;
 
             let id = {
                 let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
-                let entry = lib.add_entry(name, tags, data).map_err(|e| e.to_string())?;
+                let entry = lib
+                    .add_entry(name, tags, macro_labels, data)
+                    .map_err(|e| e.to_string())?;
                 entry.id.clone()
             };
 
@@ -1460,6 +1475,8 @@ pub struct CzPlugin {
     editor_state: SharedEditorState,
     /// MIDI learn state owned by the engine.
     midi_learn_state: SharedMidiMappings,
+    /// Prevents cold-start favorite selection from re-running on later resets.
+    startup_preset_resolved: bool,
 }
 
 impl CzPlugin {
@@ -1511,14 +1528,16 @@ impl CzPlugin {
                 bindings: midi_learn_bindings,
                 ..Default::default()
             })),
+            startup_preset_resolved: false,
         }
     }
 
-    fn apply_factory_preset(&mut self, index: usize) {
-        let Some(params) = crate::ffi::factory_preset_params(index).cloned() else {
-            return;
-        };
-
+    fn apply_preset_state(
+        &mut self,
+        preset_id: Option<String>,
+        preset_name: Option<String>,
+        params: SynthParams,
+    ) {
         sync_all_daw_params_from_synth(&self.params, &params);
 
         let rt_params = Arc::new(build_rt_synth_params(&params));
@@ -1528,7 +1547,14 @@ impl CzPlugin {
         self.synth_params_version.fetch_add(1, Ordering::Release);
         self.cached_synth_params_version = self.synth_params_version.load(Ordering::Acquire);
         self.daw_params_dirty = false;
+
         if let Ok(mut session) = self.preset_session.lock() {
+            if preset_name.is_some() || preset_id.is_some() {
+                if let Some(name) = preset_name {
+                    session.active_preset_name_base = name;
+                }
+                session.loaded_preset_id = preset_id;
+            }
             session.is_dirty = false;
         }
 
@@ -1536,6 +1562,53 @@ impl CzPlugin {
             proc.set_shared_params(rt_params);
             self.performance_counters.record_param_apply();
         }
+    }
+
+    fn apply_startup_preset_if_needed(&mut self) {
+        if self.startup_preset_resolved {
+            return;
+        }
+        self.startup_preset_resolved = true;
+
+        let startup_preset = self
+            .preset_library
+            .lock()
+            .ok()
+            .and_then(|library| library.find_startup_preset().ok().flatten());
+
+        let Some(entry) = startup_preset else {
+            return;
+        };
+
+        let entry_data = entry.data.clone();
+        let params = if let Some(params_value) = entry_data.get("params") {
+            serde_json::from_value(params_value.clone())
+        } else {
+            serde_json::from_value(entry_data)
+        };
+
+        let Ok(params) = params else {
+            append_log(&format!(
+                "failed to deserialize startup preset id={}",
+                entry.id
+            ));
+            return;
+        };
+
+        self.apply_preset_state(Some(entry.id), Some(entry.name), params);
+    }
+
+    fn apply_factory_preset(&mut self, index: usize) {
+        let Some(params) = crate::ffi::factory_preset_params(index).cloned() else {
+            return;
+        };
+        let identity = crate::ffi::factory_preset_identity(index)
+            .map(|(id, name)| (id.to_string(), name.to_string()));
+        self.apply_preset_state(
+            identity.as_ref().map(|(id, _)| id.clone()),
+            identity.as_ref().map(|(_, name)| name.clone()),
+            params,
+        );
     }
 
     fn apply_rt_param_change(&mut self, id: u32, value: f64, update_processor: bool) {
@@ -2085,6 +2158,11 @@ impl PluginLogic for CzPlugin {
         let mut processor = CosmoProcessor::new(sr);
         let mut current_params = (*self.synth_params.load_full()).clone();
         apply_daw_params(&mut current_params, &self.params);
+        if !self.startup_preset_resolved {
+            self.synth_params.store(Arc::new(current_params));
+            self.apply_startup_preset_if_needed();
+            current_params = (*self.synth_params.load_full()).clone();
+        }
         let rt_params = Arc::new(build_rt_synth_params(&current_params));
         processor.set_shared_params(Arc::clone(&rt_params));
         self.synth_params.store(Arc::new(current_params));
@@ -2135,6 +2213,7 @@ impl PluginLogic for CzPlugin {
     fn load_state(&mut self, data: &[u8]) -> Result<(), StateLoadError> {
         let session = crate::session_state::deserialize_state(data)
             .map_err(|_| StateLoadError::Malformed("unknown state format"))?;
+        self.startup_preset_resolved = true;
 
         let params = session.synth_params;
 
@@ -2149,22 +2228,7 @@ impl PluginLogic for CzPlugin {
             *stored = session.editor_state;
         }
 
-        sync_all_daw_params_from_synth(&self.params, &params);
-        let rt_params = build_rt_synth_params(&params);
-        let rt_params_arc = Arc::new(rt_params);
-        self.synth_params.store(Arc::new(params));
-        self.rt_synth_params.store(Arc::clone(&rt_params_arc));
-        self.cached_rt_synth_params = rt_params_arc.clone();
-        self.synth_params_version.fetch_add(1, Ordering::Release);
-        self.cached_synth_params_version = self.synth_params_version.load(Ordering::Acquire);
-        self.daw_params_dirty = false;
-        if let Ok(mut session_state) = self.preset_session.lock() {
-            session_state.is_dirty = false;
-        }
-        if let Some(ref mut proc) = self.processor {
-            proc.set_shared_params(rt_params_arc);
-            self.performance_counters.record_param_apply();
-        }
+        self.apply_preset_state(None, None, params);
         Ok(())
     }
 
@@ -2249,6 +2313,10 @@ mod tests {
         }
         let _ = fs::remove_dir_all(path);
         result
+    }
+
+    fn synth_params_json(params: &SynthParams) -> serde_json::Value {
+        serde_json::to_value(params).unwrap()
     }
 
     #[allow(clippy::type_complexity)]
@@ -2612,6 +2680,7 @@ mod tests {
         let mut plugin = CzPlugin::new(Arc::clone(&params));
         plugin.reset(48_000.0, 64);
         let expected = crate::ffi::factory_preset_params(0).unwrap().clone();
+        let (expected_id, expected_name) = crate::ffi::factory_preset_identity(0).unwrap();
 
         assert!((params.volume.value() - 0.8).abs() < 0.000_001);
 
@@ -2625,6 +2694,9 @@ mod tests {
         let synth_params = plugin.synth_params.load();
         assert_eq!(synth_params.line_select, expected.line_select);
         assert!((synth_params.portamento.time - expected.portamento.time).abs() < 0.000_001);
+        let session = plugin.preset_session.lock().unwrap().clone();
+        assert_eq!(session.loaded_preset_id.as_deref(), Some(expected_id));
+        assert_eq!(session.active_preset_name_base, expected_name);
     }
 
     #[test]
@@ -2999,6 +3071,123 @@ mod tests {
                 .active_preset_name_base,
             "Existing Name"
         );
+    }
+
+    #[test]
+    fn cold_start_loads_plugin_startup_preset() {
+        with_test_data_dir(|_| {
+            clear_test_global_settings();
+
+            let params = Arc::new(CzPluginParams::new());
+            let mut plugin = CzPlugin::new(Arc::clone(&params));
+
+            let expected = {
+                let mut library = plugin.preset_library.lock().unwrap();
+                let records = library.list_records(None).unwrap();
+                assert!(!records.is_empty());
+                for record in records.iter().take(3) {
+                    library.set_starred(&record.entry.id, true).unwrap();
+                }
+                library.find_startup_preset().unwrap().unwrap()
+            };
+            let expected_params: SynthParams = if let Some(value) = expected.data.get("params") {
+                serde_json::from_value(value.clone()).unwrap()
+            } else {
+                serde_json::from_value(expected.data.clone()).unwrap()
+            };
+
+            plugin.reset(48_000.0, 64);
+
+            let stored = plugin.preset_session.lock().unwrap().clone();
+            assert_eq!(stored.loaded_preset_id, Some(expected.id.clone()));
+            assert_eq!(stored.active_preset_name_base, expected.name);
+            assert!(!stored.is_dirty);
+            assert_eq!(
+                synth_params_json(plugin.synth_params.load().as_ref()),
+                synth_params_json(&expected_params)
+            );
+        });
+    }
+
+    #[test]
+    fn cold_start_without_favorites_keeps_default_params() {
+        with_test_data_dir(|_| {
+            clear_test_global_settings();
+
+            let params = Arc::new(CzPluginParams::new());
+            let mut plugin = CzPlugin::new(Arc::clone(&params));
+
+            plugin.reset(48_000.0, 64);
+
+            let stored = plugin.preset_session.lock().unwrap().clone();
+            let mut expected = SynthParams::default();
+            apply_daw_params(&mut expected, &params);
+            assert!(stored.active_preset_name_base.is_empty());
+            assert!(stored.loaded_preset_id.is_none());
+            assert!(!stored.is_dirty);
+            assert_eq!(
+                synth_params_json(plugin.synth_params.load().as_ref()),
+                synth_params_json(&expected)
+            );
+        });
+    }
+
+    #[test]
+    fn restored_state_survives_later_resets_without_reapplying_startup_preset() {
+        with_test_data_dir(|_| {
+            clear_test_global_settings();
+
+            let params = Arc::new(CzPluginParams::new());
+            let mut plugin = CzPlugin::new(Arc::clone(&params));
+            {
+                let mut library = plugin.preset_library.lock().unwrap();
+                let record = library
+                    .list_records(None)
+                    .unwrap()
+                    .into_iter()
+                    .next()
+                    .unwrap();
+                library.set_starred(&record.entry.id, true).unwrap();
+            }
+            plugin.reset(48_000.0, 64);
+            assert!(
+                plugin
+                    .preset_session
+                    .lock()
+                    .unwrap()
+                    .loaded_preset_id
+                    .is_some()
+            );
+
+            let restored_params = SynthParams {
+                volume: 0.11,
+                ..SynthParams::default()
+            };
+            let restored_state = crate::session_state::PluginSessionState {
+                synth_params: restored_params.clone(),
+                preset_session: crate::session_state::PresetSession {
+                    active_preset_name_base: "Saved Preset".to_string(),
+                    loaded_preset_id: Some("saved-id".to_string()),
+                    is_dirty: false,
+                },
+                editor_state: None,
+            };
+            let bytes = serde_json::to_vec(&restored_state).unwrap();
+
+            plugin.load_state(&bytes).unwrap();
+            plugin.reset(48_000.0, 64);
+
+            let restored_session = plugin.preset_session.lock().unwrap().clone();
+            assert_eq!(restored_session.active_preset_name_base, "Saved Preset");
+            assert_eq!(
+                restored_session.loaded_preset_id.as_deref(),
+                Some("saved-id")
+            );
+            assert_eq!(
+                synth_params_json(plugin.synth_params.load().as_ref()),
+                synth_params_json(&restored_params)
+            );
+        });
     }
 
     #[test]

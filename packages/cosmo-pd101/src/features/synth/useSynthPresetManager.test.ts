@@ -349,6 +349,76 @@ describe("useSynthPresetManager", () => {
 		expect(presetStorage.listPresetFavorites).toHaveBeenCalled();
 	});
 
+	it("steps presets in the same default order as the library", async () => {
+		vi.mocked(presetStorage.listStoredPresets).mockResolvedValue([
+			{
+				id: "local-1",
+				name: "Local 1",
+				source: "user",
+				author: "",
+				starred: false,
+				data: { local: true } as unknown as SynthPresetV1,
+				tags: [],
+			},
+		]);
+		vi.mocked(presetStorage.loadStoredPreset).mockResolvedValue({
+			id: "local-1",
+			name: "Local 1",
+			source: "user",
+			author: "",
+			starred: false,
+			data: { local: true } as unknown as SynthPresetV1,
+			tags: [],
+		});
+
+		const builtinPresets: Record<string, FrontendPresetV1> = {
+			Alpha: {
+				id: "alpha",
+				name: "Alpha",
+				source: "cosmo-factory",
+				author: "Purr Audio",
+				starred: false,
+				data: { alpha: true } as unknown as SynthPresetV1,
+				tags: [],
+			},
+			Factory: {
+				id: "factory",
+				name: "Factory",
+				source: "cosmo-factory",
+				author: "Purr Audio",
+				starred: true,
+				data: { factory: true } as unknown as SynthPresetV1,
+				tags: [],
+			},
+		};
+
+		const { result } = renderHook(() =>
+			useSynthPresetManager({
+				builtinPresets,
+				gatherPresetState: mockGatherPresetState,
+				applyPreset: mockApplyPreset,
+			}),
+		);
+
+		await waitFor(() => {
+			expect(
+				result.current.visiblePresetEntries.map((entry) => entry.label),
+			).toEqual(["Factory", "Alpha", "Local 1"]);
+		});
+
+		act(() => {
+			result.current.handleSyncBuiltinSelection("Alpha");
+		});
+
+		act(() => {
+			result.current.handleStepPreset(1);
+		});
+
+		await waitFor(() => {
+			expect(result.current.activePresetNameBase).toBe("Local 1");
+		});
+	});
+
 	it("imports a preset and disambiguates duplicate names", async () => {
 		vi.mocked(presetStorage.listStoredPresets).mockResolvedValue([
 			{

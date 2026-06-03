@@ -87,7 +87,7 @@ export {
 	synthWasmUrl,
 } from "./lib/synth/cosmoWorkletUrl";
 export { convertDecodedPatchToSynthPreset } from "./lib/synth/czPresetConverter";
-export { FACTORY_CZ_PRESETS } from "./lib/synth/factoryCzPresets";
+export { FACTORY_PRESETS } from "./lib/synth/factoryCzPresets";
 export { noteToFreq } from "./lib/synth/pdAlgorithms";
 export type {
 	EnginePresetV1,

@@ -47,7 +47,21 @@ const mockSynthUiStoreState = {
 };
 
 vi.mock("@/components/preset/SynthHeader", () => ({
-	default: () => <div data-testid="synth-header" />,
+	default: ({
+		onStepPreset,
+	}: {
+		onStepPreset: (direction: -1 | 1) => void;
+	}) => (
+		<div data-testid="synth-header">
+			<button
+				type="button"
+				data-testid="step-next"
+				onClick={() => onStepPreset(1)}
+			>
+				next
+			</button>
+		</div>
+	),
 }));
 vi.mock("@/components/layout/SynthSidebar", () => ({
 	default: ({ sidebarMinWidthRem }: { sidebarMinWidthRem?: number }) => (
@@ -88,7 +102,17 @@ vi.mock("@/components/editor/PhaseLinesSection", () => ({
 	default: () => <div data-testid="phase-lines-section" />,
 }));
 vi.mock("@/components/preset/PresetLibrary", () => ({
-	default: ({ isOpen, onClose }: { isOpen?: boolean; onClose: () => void }) => (
+	default: ({
+		isOpen,
+		onClose,
+		allEntries,
+		onVisibleEntriesChange,
+	}: {
+		isOpen?: boolean;
+		onClose: () => void;
+		allEntries: PresetEntry[];
+		onVisibleEntriesChange?: (entries: PresetEntry[]) => void;
+	}) => (
 		<div data-testid="preset-library" data-open={isOpen ? "true" : "false"}>
 			<button
 				type="button"
@@ -96,6 +120,17 @@ vi.mock("@/components/preset/PresetLibrary", () => ({
 				onClick={onClose}
 			>
 				close
+			</button>
+			<button
+				type="button"
+				data-testid="preset-library-filter-gamma"
+				onClick={() =>
+					onVisibleEntriesChange?.(
+						allEntries.filter((entry) => entry.id === "gamma"),
+					)
+				}
+			>
+				filter
 			</button>
 		</div>
 	),
@@ -143,6 +178,7 @@ vi.mock("@/context/ModMatrixContext", () => ({
 }));
 
 const mockPresetManager = {
+	allPresetEntries: [] as PresetEntry[],
 	visiblePresetEntries: [] as PresetEntry[],
 	activePresetId: "1",
 	activePresetName: "Test Preset",
@@ -219,6 +255,7 @@ describe("SynthRenderer Smoke Test", () => {
 		mockSynthUiStoreState.setMainPanelMode.mockReset();
 		mockSynthUiStoreState.setKeyboardVisible.mockReset();
 		mockSynthUiStoreState.setLibraryModeOpen.mockReset();
+		mockPresetManager.allPresetEntries = [];
 		mockPresetManager.visiblePresetEntries = [];
 		mockPresetManager.isPresetDirty = false;
 	});
@@ -252,6 +289,77 @@ describe("SynthRenderer Smoke Test", () => {
 
 		expect(mockSynthUiStoreState.setLibraryModeOpen).toHaveBeenCalledWith(
 			false,
+		);
+	});
+
+	it("steps presets using the library's filtered visible entries", () => {
+		mockPresetManager.allPresetEntries = [
+			{
+				id: "alpha",
+				label: "Alpha",
+				type: "library",
+				source: "cosmo-factory",
+				sourceLabel: "Cosmo Library",
+				author: "Purr Audio",
+				starred: false,
+				favorite: false,
+				tags: [],
+				preset: {
+					id: "alpha",
+					name: "Alpha",
+					source: "cosmo-factory",
+					author: "Purr Audio",
+					starred: false,
+				},
+			},
+			{
+				id: "beta",
+				label: "Beta",
+				type: "library",
+				source: "cosmo-factory",
+				sourceLabel: "Cosmo Library",
+				author: "Purr Audio",
+				starred: false,
+				favorite: false,
+				tags: [],
+				preset: {
+					id: "beta",
+					name: "Beta",
+					source: "cosmo-factory",
+					author: "Purr Audio",
+					starred: false,
+				},
+			},
+			{
+				id: "gamma",
+				label: "Gamma",
+				type: "library",
+				source: "cosmo-factory",
+				sourceLabel: "Cosmo Library",
+				author: "Purr Audio",
+				starred: false,
+				favorite: false,
+				tags: [],
+				preset: {
+					id: "gamma",
+					name: "Gamma",
+					source: "cosmo-factory",
+					author: "Purr Audio",
+					starred: false,
+				},
+			},
+		];
+		mockPresetManager.visiblePresetEntries = mockPresetManager.allPresetEntries;
+		mockPresetManager.activePresetId = "alpha";
+		mockSynthUiStoreState.libraryModeOpen = true;
+
+		render(<SynthRenderer runtime={mockRuntime} />);
+
+		fireEvent.click(screen.getByTestId("preset-library-filter-gamma"));
+		fireEvent.click(screen.getByTestId("step-next"));
+
+		expect(mockPresetManager.handleLoadLibrary).toHaveBeenCalledWith(
+			expect.objectContaining({ id: "gamma", name: "Gamma" }),
 		);
 	});
 

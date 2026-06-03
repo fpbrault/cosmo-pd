@@ -16,7 +16,7 @@ import {
 } from "../../src/components/renderer/rendererFrameLayout";
 import { SharedPhaseDistortionVisualizer } from "../../src/components/renderer/SynthRenderer";
 import { useSynthStore } from "../../src/features/synth/synthStore";
-import { FACTORY_CZ_PRESETS } from "../../src/lib/synth/factoryCzPresets";
+import { FACTORY_PRESETS } from "../../src/lib/synth/factoryCzPresets";
 import {
 	loadCurrentPresetSession,
 	loadCurrentState,
@@ -198,7 +198,7 @@ export default function LivePage() {
 					isDirty: session.isDirty,
 				});
 			} else {
-				const firstPreset = FACTORY_CZ_PRESETS[0];
+				const firstPreset = FACTORY_PRESETS[0];
 				if (firstPreset) {
 					useSynthStore.getState().applyPreset(firstPreset.data);
 					syncPresetSessionRef.current?.(firstPreset.name);

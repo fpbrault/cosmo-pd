@@ -4,6 +4,7 @@ import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import type { PresetTagOptions } from "@/lib/synth/presetTags";
 
 interface PresetManagerContextValue {
+	allPresetEntries: PresetEntry[];
 	visiblePresetEntries: PresetEntry[];
 	activePresetId: string | null;
 	activePresetName: string;

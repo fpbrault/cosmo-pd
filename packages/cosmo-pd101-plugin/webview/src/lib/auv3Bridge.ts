@@ -21,6 +21,7 @@ type MidiBindingIdentity = {
 
 type PresetSession = {
 	activePresetId: string | null;
+	loadedPresetId?: string | null;
 	activePresetNameBase: string;
 	isDirty: boolean;
 };
@@ -56,7 +57,11 @@ declare global {
 		__czSetPresetSession?: (session: PresetSession) => Promise<unknown>;
 		__czGetPresetLibrary?: (source?: string) => Promise<unknown>;
 		__czLoadPresetData?: (id: string) => Promise<unknown>;
-		__czAddPreset?: (name: string, tags: string[]) => Promise<unknown>;
+		__czAddPreset?: (
+			name: string,
+			tags: string[],
+			macroLabels?: string[],
+		) => Promise<unknown>;
 		__czDeletePreset?: (id: string) => Promise<unknown>;
 		__czRenamePreset?: (id: string, newName: string) => Promise<unknown>;
 		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
@@ -191,8 +196,11 @@ function installIpcRouter() {
 			: invokeAuv3("getPresetLibrary", []);
 	window.__czLoadPresetData = (id: string) =>
 		invokeAuv3("loadPresetData", [{ id }]);
-	window.__czAddPreset = (name: string, tags: string[]) =>
-		invokeAuv3("addPreset", [{ name, tags }]);
+	window.__czAddPreset = (
+		name: string,
+		tags: string[],
+		macroLabels?: string[],
+	) => invokeAuv3("addPreset", [{ name, tags, macroLabels }]);
 	window.__czDeletePreset = (id: string) =>
 		invokeAuv3("deletePreset", [{ id }]);
 	window.__czRenamePreset = (id: string, newName: string) =>

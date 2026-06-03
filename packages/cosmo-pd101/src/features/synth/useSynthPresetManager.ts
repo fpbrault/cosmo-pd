@@ -69,6 +69,30 @@ type UseSynthPresetManagerResult = {
 	setPresetDirtyState: (dirty: boolean) => void;
 };
 
+const presetNameCollator = new Intl.Collator(undefined, {
+	numeric: true,
+	sensitivity: "base",
+});
+
+function sortPresetEntriesByDefaultLibraryOrder(
+	entries: PresetEntry[],
+): PresetEntry[] {
+	return [...entries].sort((left, right) => {
+		const leftStarred = left.starred ? 1 : 0;
+		const rightStarred = right.starred ? 1 : 0;
+		if (leftStarred !== rightStarred) {
+			return rightStarred - leftStarred;
+		}
+
+		const labelCompare = presetNameCollator.compare(left.label, right.label);
+		if (labelCompare !== 0) {
+			return labelCompare;
+		}
+
+		return presetNameCollator.compare(left.id, right.id);
+	});
+}
+
 function normalizeBuiltinPresets(
 	builtinPresets: Record<string, FrontendPresetV1>,
 ): LibraryPreset[] {
@@ -275,24 +299,29 @@ export function useSynthPresetManager({
 			}),
 		[favoritePresetIds, localPresetEntries, mergedLibraryPresets],
 	);
+	const visiblePresetEntries = useMemo(
+		() => sortPresetEntriesByDefaultLibraryOrder(allPresetEntries),
+		[allPresetEntries],
+	);
 
 	const activePresetIndex = useMemo(
-		() => allPresetEntries.findIndex((entry) => entry.id === activePresetId),
-		[allPresetEntries, activePresetId],
+		() =>
+			visiblePresetEntries.findIndex((entry) => entry.id === activePresetId),
+		[visiblePresetEntries, activePresetId],
 	);
 
 	const handleStepPreset = useCallback(
 		(direction: -1 | 1) => {
-			if (allPresetEntries.length === 0) return;
+			if (visiblePresetEntries.length === 0) return;
 			let next = 0;
 			if (activePresetIndex < 0) {
-				next = direction === 1 ? 0 : allPresetEntries.length - 1;
+				next = direction === 1 ? 0 : visiblePresetEntries.length - 1;
 			} else {
 				next =
-					(activePresetIndex + direction + allPresetEntries.length) %
-					allPresetEntries.length;
+					(activePresetIndex + direction + visiblePresetEntries.length) %
+					visiblePresetEntries.length;
 			}
-			const entry = allPresetEntries[next];
+			const entry = visiblePresetEntries[next];
 			if (!entry) return;
 			if (entry.type === "local") {
 				void handleLoadLocal(entry.id);
@@ -302,7 +331,12 @@ export function useSynthPresetManager({
 				handleLoadLibrary(entry.preset);
 			}
 		},
-		[activePresetIndex, allPresetEntries, handleLoadLibrary, handleLoadLocal],
+		[
+			activePresetIndex,
+			visiblePresetEntries,
+			handleLoadLibrary,
+			handleLoadLocal,
+		],
 	);
 
 	const saveLocalPreset = useCallback(
@@ -474,7 +508,7 @@ export function useSynthPresetManager({
 
 	return {
 		allPresetEntries,
-		visiblePresetEntries: allPresetEntries,
+		visiblePresetEntries,
 		activePresetId,
 		activePresetNameBase,
 		activePresetName,

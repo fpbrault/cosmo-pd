@@ -148,7 +148,7 @@ The solution: **scope data is pulled via binary fetch** through wry's custom pro
 │  │                    JS Code                             │  │
 │  │                                                         │  │
 │  │  • DEFAULT_SYNTH_PRESETS (Record<string, FrontendV1>)  │  │
-│  │  • FACTORY_CZ_PRESETS (LibraryPreset[])                 │  │
+│  │  • FACTORY_PRESETS (LibraryPreset[])                 │  │
 │  │  • IndexedDB (user presets)                             │  │
 │  │  • useSynthPresetManager orchestrates all three         │  │
 │  │  • Creates SynthParams JSON, posts to AudioWorklet      │  │

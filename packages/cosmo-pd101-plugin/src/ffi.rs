@@ -19,6 +19,7 @@ const PARAM_FLAG_AUTOMATABLE: u32 = 1 << 0;
 const FACTORY_PRESETS_JSON: &str = include_str!(concat!(env!("OUT_DIR"), "/minified_presets.json"));
 
 struct FactoryPresetEntry {
+    id: String,
     name: String,
     params_json: String,
     params: SynthParams,
@@ -45,12 +46,19 @@ fn load_factory_presets() -> Vec<FactoryPresetEntry> {
             let params_value = entry.data.get("params")?;
             let parsed_params = serde_json::from_value::<SynthParams>(params_value.clone()).ok()?;
             Some(FactoryPresetEntry {
+                id: entry.id.clone(),
                 name: entry.name.clone(),
                 params_json: params_value.to_string(),
                 params: parsed_params,
             })
         })
         .collect()
+}
+
+pub(crate) fn factory_preset_identity(index: usize) -> Option<(&'static str, &'static str)> {
+    factory_presets()
+        .get(index)
+        .map(|preset| (preset.id.as_str(), preset.name.as_str()))
 }
 
 pub(crate) fn factory_preset_params(index: usize) -> Option<&'static SynthParams> {
