@@ -530,9 +530,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"brass",
-		],
+		tags: ["brass"],
 	},
 	{
 		id: "factory-preset-1",
@@ -1012,9 +1010,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"brass",
-		],
+		tags: ["brass"],
 	},
 	{
 		id: "factory-preset-2",
@@ -1465,9 +1461,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"pad",
-		],
+		tags: ["pad"],
 	},
 	{
 		id: "factory-preset-3",
@@ -1874,10 +1868,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"piano",
-			"keys",
-		],
+		tags: ["piano", "keys"],
 	},
 	{
 		id: "factory-preset-4",
@@ -2325,9 +2316,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"wind",
-		],
+		tags: ["wind"],
 	},
 	{
 		id: "factory-preset-5",
@@ -2742,9 +2731,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"organ",
-		],
+		tags: ["organ"],
 	},
 	{
 		id: "factory-preset-6",
@@ -3189,10 +3176,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"keys",
-			"pluck",
-		],
+		tags: ["keys", "pluck"],
 	},
 	{
 		id: "factory-preset-7",
@@ -3640,9 +3624,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"keys",
-		],
+		tags: ["keys"],
 	},
 	{
 		id: "factory-preset-8",
@@ -4060,9 +4042,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-		],
+		tags: ["synth"],
 	},
 	{
 		id: "factory-preset-9",
@@ -4474,10 +4454,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"lead",
-			"synth",
-		],
+		tags: ["lead", "synth"],
 	},
 	{
 		id: "factory-preset-10",
@@ -4912,9 +4889,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"guitar",
-		],
+		tags: ["guitar"],
 	},
 	{
 		id: "factory-preset-11",
@@ -5349,9 +5324,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"brass",
-		],
+		tags: ["brass"],
 	},
 	{
 		id: "factory-preset-12",
@@ -5769,10 +5742,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-			"lead",
-		],
+		tags: ["synth", "lead"],
 	},
 	{
 		id: "factory-preset-13",
@@ -6190,10 +6160,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-			"keys",
-		],
+		tags: ["synth", "keys"],
 	},
 	{
 		id: "factory-preset-14",
@@ -6611,9 +6578,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"piano",
-		],
+		tags: ["piano"],
 	},
 	{
 		id: "factory-preset-15",
@@ -7048,10 +7013,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-			"lead",
-		],
+		tags: ["synth", "lead"],
 	},
 	{
 		id: "factory-preset-16",
@@ -7452,9 +7414,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"piano",
-		],
+		tags: ["piano"],
 	},
 	{
 		id: "factory-preset-17",
@@ -7889,9 +7849,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"wind",
-		],
+		tags: ["wind"],
 	},
 	{
 		id: "factory-preset-18",
@@ -8309,9 +8267,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"bass",
-		],
+		tags: ["bass"],
 	},
 	{
 		id: "factory-preset-19",
@@ -8712,9 +8668,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"drum",
-		],
+		tags: ["drum"],
 	},
 	{
 		id: "factory-preset-20",
@@ -9132,9 +9086,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"drum",
-		],
+		tags: ["drum"],
 	},
 	{
 		id: "factory-preset-21",
@@ -9535,9 +9487,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"effect",
-		],
+		tags: ["effect"],
 	},
 	{
 		id: "factory-preset-22",
@@ -9955,9 +9905,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"organ",
-		],
+		tags: ["organ"],
 	},
 	{
 		id: "factory-preset-23",
@@ -10392,9 +10340,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"bass",
-		],
+		tags: ["bass"],
 	},
 	{
 		id: "factory-preset-24",
@@ -10829,10 +10775,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-			"lead",
-		],
+		tags: ["synth", "lead"],
 	},
 	{
 		id: "factory-preset-25",
@@ -11267,10 +11210,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-			"lead",
-		],
+		tags: ["synth", "lead"],
 	},
 	{
 		id: "factory-preset-26",
@@ -11705,10 +11645,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-			"lead",
-		],
+		tags: ["synth", "lead"],
 	},
 	{
 		id: "factory-preset-27",
@@ -12126,10 +12063,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-			"lead",
-		],
+		tags: ["synth", "lead"],
 	},
 	{
 		id: "factory-preset-28",
@@ -12547,11 +12481,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"pluck",
-			"synth",
-			"lead",
-		],
+		tags: ["pluck", "synth", "lead"],
 	},
 	{
 		id: "factory-preset-29",
@@ -12952,11 +12882,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"string",
-			"synth",
-			"lead",
-		],
+		tags: ["string", "synth", "lead"],
 	},
 	{
 		id: "factory-preset-30",
@@ -13374,10 +13300,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-			"lead",
-		],
+		tags: ["synth", "lead"],
 	},
 	{
 		id: "factory-preset-31",
@@ -13812,9 +13735,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"bell",
-		],
+		tags: ["bell"],
 	},
 	{
 		id: "factory-preset-32",
@@ -14232,9 +14153,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"guitar",
-		],
+		tags: ["guitar"],
 	},
 	{
 		id: "factory-preset-33",
@@ -14652,9 +14571,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"bass",
-		],
+		tags: ["bass"],
 	},
 	{
 		id: "factory-preset-34",
@@ -15089,10 +15006,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"bell",
-			"piano",
-		],
+		tags: ["bell", "piano"],
 	},
 	{
 		id: "factory-preset-35",
@@ -15493,10 +15407,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"bell",
-			"wind",
-		],
+		tags: ["bell", "wind"],
 	},
 	{
 		id: "factory-preset-36",
@@ -15931,9 +15842,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"bell",
-		],
+		tags: ["bell"],
 	},
 	{
 		id: "factory-preset-37",
@@ -16351,9 +16260,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"piano",
-		],
+		tags: ["piano"],
 	},
 	{
 		id: "factory-preset-38",
@@ -16771,9 +16678,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"brass",
-		],
+		tags: ["brass"],
 	},
 	{
 		id: "factory-preset-39",
@@ -17191,9 +17096,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"bass",
-		],
+		tags: ["bass"],
 	},
 	{
 		id: "factory-preset-40",
@@ -17611,9 +17514,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"effect",
-		],
+		tags: ["effect"],
 	},
 	{
 		id: "factory-preset-41",
@@ -18014,9 +17915,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"brass",
-		],
+		tags: ["brass"],
 	},
 	{
 		id: "factory-preset-42",
@@ -18451,9 +18350,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"piano",
-		],
+		tags: ["piano"],
 	},
 	{
 		id: "factory-preset-43",
@@ -18854,9 +18751,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"brass",
-		],
+		tags: ["brass"],
 	},
 	{
 		id: "factory-preset-44",
@@ -19291,9 +19186,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"wind",
-		],
+		tags: ["wind"],
 	},
 	{
 		id: "factory-preset-45",
@@ -19810,9 +19703,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"pad",
-		],
+		tags: ["pad"],
 	},
 	{
 		id: "factory-preset-46",
@@ -20230,9 +20121,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"string",
-		],
+		tags: ["string"],
 	},
 	{
 		id: "factory-preset-47",
@@ -20633,9 +20522,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"wind",
-		],
+		tags: ["wind"],
 	},
 	{
 		id: "factory-preset-48",
@@ -21036,10 +20923,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"bell",
-			"effect",
-		],
+		tags: ["bell", "effect"],
 	},
 	{
 		id: "factory-preset-49",
@@ -21457,9 +21341,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"pluck",
-		],
+		tags: ["pluck"],
 	},
 	{
 		id: "factory-preset-50",
@@ -21860,9 +21742,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"wind",
-		],
+		tags: ["wind"],
 	},
 	{
 		id: "factory-preset-51",
@@ -22263,9 +22143,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"pluck",
-		],
+		tags: ["pluck"],
 	},
 	{
 		id: "factory-preset-52",
@@ -22666,10 +22544,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"pluck",
-			"keys",
-		],
+		tags: ["pluck", "keys"],
 	},
 	{
 		id: "factory-preset-53",
@@ -23087,10 +22962,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"pluck",
-			"bass",
-		],
+		tags: ["pluck", "bass"],
 	},
 	{
 		id: "factory-preset-54",
@@ -23491,9 +23363,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"organ",
-		],
+		tags: ["organ"],
 	},
 	{
 		id: "factory-preset-55",
@@ -23928,9 +23798,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"guitar",
-		],
+		tags: ["guitar"],
 	},
 	{
 		id: "factory-preset-56",
@@ -24348,9 +24216,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"guitar",
-		],
+		tags: ["guitar"],
 	},
 	{
 		id: "factory-preset-57",
@@ -24751,9 +24617,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"pad",
-		],
+		tags: ["pad"],
 	},
 	{
 		id: "factory-preset-58",
@@ -25188,9 +25052,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"organ",
-		],
+		tags: ["organ"],
 	},
 	{
 		id: "factory-preset-59",
@@ -25608,9 +25470,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"lead",
-		],
+		tags: ["lead"],
 	},
 	{
 		id: "factory-preset-60",
@@ -26011,9 +25871,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"lead",
-		],
+		tags: ["lead"],
 	},
 	{
 		id: "factory-preset-61",
@@ -26431,9 +26289,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"brass",
-		],
+		tags: ["brass"],
 	},
 	{
 		id: "factory-preset-62",
@@ -26868,9 +26724,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"bass",
-		],
+		tags: ["bass"],
 	},
 	{
 		id: "factory-preset-63",
@@ -27288,9 +27142,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"bass",
-		],
+		tags: ["bass"],
 	},
 	{
 		id: "factory-preset-64",
@@ -27708,9 +27560,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"bass",
-		],
+		tags: ["bass"],
 	},
 	{
 		id: "factory-preset-65",
@@ -28128,9 +27978,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"bass",
-		],
+		tags: ["bass"],
 	},
 	{
 		id: "factory-preset-66",
@@ -28548,9 +28396,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"drum",
-		],
+		tags: ["drum"],
 	},
 	{
 		id: "factory-preset-67",
@@ -28985,9 +28831,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"effect",
-		],
+		tags: ["effect"],
 	},
 	{
 		id: "factory-preset-68",
@@ -29405,9 +29249,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"effect",
-		],
+		tags: ["effect"],
 	},
 	{
 		id: "factory-preset-69",
@@ -29842,9 +29684,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"effect",
-		],
+		tags: ["effect"],
 	},
 	{
 		id: "factory-preset-70",
@@ -30279,9 +30119,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"effect",
-		],
+		tags: ["effect"],
 	},
 	{
 		id: "factory-preset-71",
@@ -30699,9 +30537,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"brass",
-		],
+		tags: ["brass"],
 	},
 	{
 		id: "factory-preset-72",
@@ -31102,10 +30938,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"pluck",
-			"piano",
-		],
+		tags: ["pluck", "piano"],
 	},
 	{
 		id: "factory-preset-73",
@@ -31506,9 +31339,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"organ",
-		],
+		tags: ["organ"],
 	},
 	{
 		id: "factory-preset-74",
@@ -31909,9 +31740,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"brass",
-		],
+		tags: ["brass"],
 	},
 	{
 		id: "factory-preset-75",
@@ -32312,9 +32141,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"keys",
-		],
+		tags: ["keys"],
 	},
 	{
 		id: "factory-preset-76",
@@ -32715,9 +32542,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"brass",
-		],
+		tags: ["brass"],
 	},
 	{
 		id: "factory-preset-77",
@@ -33152,10 +32977,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-			"pad",
-		],
+		tags: ["synth", "pad"],
 	},
 	{
 		id: "factory-preset-78",
@@ -33573,10 +33395,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-			"pad",
-		],
+		tags: ["synth", "pad"],
 	},
 	{
 		id: "factory-preset-79",
@@ -33994,10 +33813,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-			"pad",
-		],
+		tags: ["synth", "pad"],
 	},
 	{
 		id: "factory-preset-80",
@@ -34398,9 +34214,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"guitar",
-		],
+		tags: ["guitar"],
 	},
 	{
 		id: "factory-preset-81",
@@ -34818,9 +34632,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"wind",
-		],
+		tags: ["wind"],
 	},
 	{
 		id: "factory-preset-82",
@@ -35255,9 +35067,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"keys",
-		],
+		tags: ["keys"],
 	},
 	{
 		id: "factory-preset-83",
@@ -35674,9 +35484,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"bass",
-		],
+		tags: ["bass"],
 	},
 	{
 		id: "factory-preset-84",
@@ -36094,10 +35902,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-			"lead",
-		],
+		tags: ["synth", "lead"],
 	},
 	{
 		id: "factory-preset-85",
@@ -36498,10 +36303,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"voice",
-			"pad",
-		],
+		tags: ["voice", "pad"],
 	},
 	{
 		id: "factory-preset-86",
@@ -36902,9 +36704,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"guitar",
-		],
+		tags: ["guitar"],
 	},
 	{
 		id: "factory-preset-87",
@@ -37322,9 +37122,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"brass",
-		],
+		tags: ["brass"],
 	},
 	{
 		id: "factory-preset-88",
@@ -37759,10 +37557,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"piano",
-			"keys",
-		],
+		tags: ["piano", "keys"],
 	},
 	{
 		id: "factory-preset-89",
@@ -38163,9 +37958,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"lead",
-		],
+		tags: ["lead"],
 	},
 	{
 		id: "factory-preset-90",
@@ -38600,9 +38393,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-		],
+		tags: ["synth"],
 	},
 	{
 		id: "factory-preset-91",
@@ -39003,9 +38794,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-		],
+		tags: ["synth"],
 	},
 	{
 		id: "factory-preset-92",
@@ -39440,9 +39229,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-		],
+		tags: ["synth"],
 	},
 	{
 		id: "factory-preset-93",
@@ -39877,9 +39664,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-		],
+		tags: ["synth"],
 	},
 	{
 		id: "factory-preset-94",
@@ -40314,9 +40099,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-		],
+		tags: ["synth"],
 	},
 	{
 		id: "factory-preset-95",
@@ -40751,9 +40534,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-		],
+		tags: ["synth"],
 	},
 	{
 		id: "factory-preset-96",
@@ -41171,9 +40952,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-		],
+		tags: ["synth"],
 	},
 	{
 		id: "factory-preset-97",
@@ -41608,9 +41387,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-		],
+		tags: ["synth"],
 	},
 	{
 		id: "factory-preset-98",
@@ -42045,9 +41822,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-		],
+		tags: ["synth"],
 	},
 	{
 		id: "factory-preset-99",
@@ -42465,9 +42240,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-		],
+		tags: ["synth"],
 	},
 	{
 		id: "factory-preset-100",
@@ -42902,9 +42675,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-		],
+		tags: ["synth"],
 	},
 	{
 		id: "factory-preset-101",
@@ -43322,9 +43093,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-		],
+		tags: ["synth"],
 	},
 	{
 		id: "factory-preset-102",
@@ -43742,9 +43511,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-		],
+		tags: ["synth"],
 	},
 	{
 		id: "factory-preset-103",
@@ -44179,9 +43946,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-		],
+		tags: ["synth"],
 	},
 	{
 		id: "factory-preset-104",
@@ -44616,9 +44381,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-		],
+		tags: ["synth"],
 	},
 	{
 		id: "factory-preset-105",
@@ -45019,9 +44782,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-		],
+		tags: ["synth"],
 	},
 	{
 		id: "factory-preset-106",
@@ -45453,9 +45214,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"pad",
-		],
+		tags: ["pad"],
 	},
 	{
 		id: "factory-preset-107",
@@ -45856,10 +45615,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-			"brass",
-		],
+		tags: ["synth", "brass"],
 	},
 	{
 		id: "factory-preset-108",
@@ -46277,9 +46033,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"pluck",
-		],
+		tags: ["pluck"],
 	},
 	{
 		id: "factory-preset-109",
@@ -46680,10 +46434,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-			"bass",
-		],
+		tags: ["synth", "bass"],
 	},
 	{
 		id: "factory-preset-110",
@@ -47161,9 +46912,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"pad",
-		],
+		tags: ["pad"],
 	},
 	{
 		id: "factory-preset-111",
@@ -47581,11 +47330,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-			"effect",
-			"pluck",
-		],
+		tags: ["synth", "effect", "pluck"],
 	},
 	{
 		id: "factory-preset-112",
@@ -48003,10 +47748,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-			"pad",
-		],
+		tags: ["synth", "pad"],
 	},
 	{
 		id: "factory-preset-113",
@@ -48407,10 +48149,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-			"effect",
-		],
+		tags: ["synth", "effect"],
 	},
 	{
 		id: "factory-preset-114",
@@ -48811,9 +48550,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"piano",
-		],
+		tags: ["piano"],
 	},
 	{
 		id: "factory-preset-115",
@@ -49231,9 +48968,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"piano",
-		],
+		tags: ["piano"],
 	},
 	{
 		id: "factory-preset-116",
@@ -49651,9 +49386,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"pad",
-		],
+		tags: ["pad"],
 	},
 	{
 		id: "factory-preset-117",
@@ -50102,9 +49835,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"brass",
-		],
+		tags: ["brass"],
 	},
 	{
 		id: "factory-preset-118",
@@ -50552,10 +50283,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-			"lead",
-		],
+		tags: ["synth", "lead"],
 	},
 	{
 		id: "factory-preset-119",
@@ -51003,10 +50731,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"synth",
-			"lead",
-		],
+		tags: ["synth", "lead"],
 	},
 	{
 		id: "factory-preset-120",
@@ -51467,9 +51192,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"bass",
-		],
+		tags: ["bass"],
 	},
 	{
 		id: "factory-preset-121",
@@ -51904,9 +51627,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"bass",
-		],
+		tags: ["bass"],
 	},
 	{
 		id: "factory-preset-122",
@@ -52329,8 +52050,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				macro4: 0.0,
 			},
 		},
-		tags: [
-			"pad",
-		],
+		tags: ["pad"],
 	},
 ];
