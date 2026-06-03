@@ -13,6 +13,7 @@ use arc_swap::ArcSwap;
 use cosmo_synth_engine::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use cosmo_synth_engine::params::{
     MidiMappingBinding, SynthParams, apply_midi_mapping as apply_engine_midi_mapping,
+    parameter_range_for_key,
 };
 use cosmo_synth_engine::processor::state::{RuntimeModSources, RuntimeVoiceDebugState};
 use cosmo_synth_engine::processor::{
@@ -61,6 +62,10 @@ pub fn append_log(message: &str) {
 
 pub fn plugin_log_path() -> &'static str {
     PLUGIN_LOG_PATH
+}
+
+fn midi_debug_enabled() -> bool {
+    true
 }
 
 static PANIC_HOOK_INIT: Once = Once::new();
@@ -486,6 +491,18 @@ pub struct CzPluginParams {
     #[param(name = "Mod Env Release", range = "linear(0.0, 10.0)", default = 2.0)]
     pub mod_env_release: FloatParam,
 
+    #[param(name = "Macro 1", range = "linear(0.0, 1.0)", default = 0.0)]
+    pub macro1: FloatParam,
+
+    #[param(name = "Macro 2", range = "linear(0.0, 1.0)", default = 0.0)]
+    pub macro2: FloatParam,
+
+    #[param(name = "Macro 3", range = "linear(0.0, 1.0)", default = 0.0)]
+    pub macro3: FloatParam,
+
+    #[param(name = "Macro 4", range = "linear(0.0, 1.0)", default = 0.0)]
+    pub macro4: FloatParam,
+
     #[meter]
     pub meter_l: MeterSlot,
     #[meter]
@@ -520,6 +537,10 @@ fn apply_daw_params(synth: &mut SynthParams, params: &CzPluginParams) {
     synth.mod_env.decay = params.mod_env_decay.value();
     synth.mod_env.sustain = params.mod_env_sustain.value();
     synth.mod_env.release = params.mod_env_release.value();
+    synth.macro1 = params.macro1.value();
+    synth.macro2 = params.macro2.value();
+    synth.macro3 = params.macro3.value();
+    synth.macro4 = params.macro4.value();
 }
 
 fn write_daw_param_by_id(synth: &mut SynthParams, id: u32, value: f64) -> bool {
@@ -551,6 +572,10 @@ fn write_daw_param_by_id(synth: &mut SynthParams, id: u32, value: f64) -> bool {
         x if x == CzPluginParamsParamId::ModEnvDecay as u32 => synth.mod_env.decay = value,
         x if x == CzPluginParamsParamId::ModEnvSustain as u32 => synth.mod_env.sustain = value,
         x if x == CzPluginParamsParamId::ModEnvRelease as u32 => synth.mod_env.release = value,
+        x if x == CzPluginParamsParamId::Macro1 as u32 => synth.macro1 = value,
+        x if x == CzPluginParamsParamId::Macro2 as u32 => synth.macro2 = value,
+        x if x == CzPluginParamsParamId::Macro3 as u32 => synth.macro3 = value,
+        x if x == CzPluginParamsParamId::Macro4 as u32 => synth.macro4 = value,
         _ => return false,
     }
     true
@@ -584,8 +609,81 @@ fn daw_param_key_by_id(id: u32) -> Option<&'static str> {
         x if x == CzPluginParamsParamId::ModEnvDecay as u32 => Some("modEnvDecay"),
         x if x == CzPluginParamsParamId::ModEnvSustain as u32 => Some("modEnvSustain"),
         x if x == CzPluginParamsParamId::ModEnvRelease as u32 => Some("modEnvRelease"),
+        x if x == CzPluginParamsParamId::Macro1 as u32 => Some("macro1"),
+        x if x == CzPluginParamsParamId::Macro2 as u32 => Some("macro2"),
+        x if x == CzPluginParamsParamId::Macro3 as u32 => Some("macro3"),
+        x if x == CzPluginParamsParamId::Macro4 as u32 => Some("macro4"),
         _ => None,
     }
+}
+
+#[cfg(any(feature = "vst3", test))]
+fn daw_param_id_by_key(key: &str) -> Option<u32> {
+    match key {
+        "volume" => Some(CzPluginParamsParamId::Volume as u32),
+        "warpAAmount" => Some(CzPluginParamsParamId::WarpAAmount as u32),
+        "warpBAmount" => Some(CzPluginParamsParamId::WarpBAmount as u32),
+        "algoBlendA" => Some(CzPluginParamsParamId::AlgoBlendA as u32),
+        "algoBlendB" => Some(CzPluginParamsParamId::AlgoBlendB as u32),
+        "line1Level" => Some(CzPluginParamsParamId::Line1Level as u32),
+        "line2Level" => Some(CzPluginParamsParamId::Line2Level as u32),
+        "line1Octave" => Some(CzPluginParamsParamId::Line1Octave as u32),
+        "line2Octave" => Some(CzPluginParamsParamId::Line2Octave as u32),
+        "line2DetuneNote" => Some(CzPluginParamsParamId::DetuneNote as u32),
+        "line2DetuneFine" => Some(CzPluginParamsParamId::DetuneFine as u32),
+        "velocityCurve" => Some(CzPluginParamsParamId::VelocityCurve as u32),
+        "pitchBendRange" => Some(CzPluginParamsParamId::PitchBendRange as u32),
+        "portamentoRate" => Some(CzPluginParamsParamId::PortamentoRate as u32),
+        "portamentoTime" => Some(CzPluginParamsParamId::PortamentoTime as u32),
+        "lfoRate" => Some(CzPluginParamsParamId::LfoRate as u32),
+        "lfoDepth" => Some(CzPluginParamsParamId::LfoDepth as u32),
+        "lfoOffset" => Some(CzPluginParamsParamId::LfoOffset as u32),
+        "lfo2Rate" => Some(CzPluginParamsParamId::Lfo2Rate as u32),
+        "lfo2Depth" => Some(CzPluginParamsParamId::Lfo2Depth as u32),
+        "lfo2Offset" => Some(CzPluginParamsParamId::Lfo2Offset as u32),
+        "randomRate" => Some(CzPluginParamsParamId::RandomRate as u32),
+        "modEnvAttack" => Some(CzPluginParamsParamId::ModEnvAttack as u32),
+        "modEnvDecay" => Some(CzPluginParamsParamId::ModEnvDecay as u32),
+        "modEnvSustain" => Some(CzPluginParamsParamId::ModEnvSustain as u32),
+        "modEnvRelease" => Some(CzPluginParamsParamId::ModEnvRelease as u32),
+        "macro1" => Some(CzPluginParamsParamId::Macro1 as u32),
+        "macro2" => Some(CzPluginParamsParamId::Macro2 as u32),
+        "macro3" => Some(CzPluginParamsParamId::Macro3 as u32),
+        "macro4" => Some(CzPluginParamsParamId::Macro4 as u32),
+        _ => None,
+    }
+}
+
+#[cfg(any(feature = "vst3", test))]
+fn resolve_vst3_midi_mapping_param_id(
+    bindings: &[crate::session_state::MidiLearnBinding],
+    bus_index: i32,
+    channel: i16,
+    cc: i16,
+) -> Option<u32> {
+    if bus_index != 0 || !(0..=15).contains(&channel) || !(0..=127).contains(&cc) {
+        return None;
+    }
+
+    let mut omni_match = None;
+
+    for binding in bindings {
+        if binding.cc != i32::from(cc) {
+            continue;
+        }
+        let Some(param_id) = daw_param_id_by_key(&binding.param_key) else {
+            continue;
+        };
+
+        if binding.channel == i32::from(channel) {
+            return Some(param_id);
+        }
+        if binding.channel == -1 && omni_match.is_none() {
+            omni_match = Some(param_id);
+        }
+    }
+
+    omni_match
 }
 
 fn read_daw_param_by_id(synth: &SynthParams, id: u32) -> Option<f32> {
@@ -616,6 +714,10 @@ fn read_daw_param_by_id(synth: &SynthParams, id: u32) -> Option<f32> {
         x if x == CzPluginParamsParamId::ModEnvDecay as u32 => Some(synth.mod_env.decay),
         x if x == CzPluginParamsParamId::ModEnvSustain as u32 => Some(synth.mod_env.sustain),
         x if x == CzPluginParamsParamId::ModEnvRelease as u32 => Some(synth.mod_env.release),
+        x if x == CzPluginParamsParamId::Macro1 as u32 => Some(synth.macro1),
+        x if x == CzPluginParamsParamId::Macro2 as u32 => Some(synth.macro2),
+        x if x == CzPluginParamsParamId::Macro3 as u32 => Some(synth.macro3),
+        x if x == CzPluginParamsParamId::Macro4 as u32 => Some(synth.macro4),
         _ => None,
     }
 }
@@ -660,6 +762,10 @@ fn read_current_daw_param_by_id(params: &CzPluginParams, id: u32) -> Option<f32>
         x if x == CzPluginParamsParamId::ModEnvRelease as u32 => {
             Some(params.mod_env_release.value())
         }
+        x if x == CzPluginParamsParamId::Macro1 as u32 => Some(params.macro1.value()),
+        x if x == CzPluginParamsParamId::Macro2 as u32 => Some(params.macro2.value()),
+        x if x == CzPluginParamsParamId::Macro3 as u32 => Some(params.macro3.value()),
+        x if x == CzPluginParamsParamId::Macro4 as u32 => Some(params.macro4.value()),
         _ => None,
     }
 }
@@ -701,6 +807,10 @@ fn sync_all_daw_params_from_synth(params: &CzPluginParams, synth: &SynthParams) 
     params
         .mod_env_release
         .set_value(synth.mod_env.release as f64);
+    params.macro1.set_value(synth.macro1 as f64);
+    params.macro2.set_value(synth.macro2 as f64);
+    params.macro3.set_value(synth.macro3 as f64);
+    params.macro4.set_value(synth.macro4 as f64);
 }
 
 pub(crate) type SharedPresetSession = Arc<Mutex<crate::session_state::PresetSession>>;
@@ -1219,9 +1329,15 @@ fn handle_ipc_invoke(
                 .first()
                 .and_then(|v| v.as_bool())
                 .ok_or_else(|| "setMidiLearnMode expects a boolean".to_string())?;
+            // TODO: remove this diagnostic once cross-format MIDI learn mode behavior is verified.
+            append_log(&format!("ipc_set_midi_learn_mode mode={}", mode));
             if let Ok(mut state) = midi_learn_state.lock() {
                 state.learn_mode = mode;
                 state.version += 1;
+                append_log(&format!(
+                    "ipc_set_midi_learn_mode_applied mode={} version={} pending={:?}",
+                    state.learn_mode, state.version, state.pending_param_key
+                ));
             }
             Ok(serde_json::Value::Null)
         }
@@ -1250,6 +1366,11 @@ fn handle_ipc_invoke(
                 args.get(2)
                     .and_then(|v| v.as_i64())
                     .ok_or_else(|| "addMidiBinding expects cc".to_string())? as i32;
+            // TODO: remove this diagnostic once cross-format MIDI binding RPC flow is verified.
+            append_log(&format!(
+                "ipc_add_midi_binding param_key={} channel={} cc={}",
+                param_key, channel, cc
+            ));
             if let Ok(mut state) = midi_learn_state.lock() {
                 state
                     .bindings
@@ -1260,6 +1381,14 @@ fn handle_ipc_invoke(
                     cc,
                 });
                 state.version += 1;
+                append_log(&format!(
+                    "ipc_add_midi_binding_applied version={} bindings_count={} latest={{param_key:{},channel:{},cc:{}}}",
+                    state.version,
+                    state.bindings.len(),
+                    param_key,
+                    channel,
+                    cc
+                ));
             }
             persist_midi_learn_bindings(midi_learn_state);
             Ok(serde_json::Value::Null)
@@ -1458,6 +1587,67 @@ impl CzPlugin {
         let applied = apply_engine_midi_mapping(&mut synth_params, &bindings, channel, cc, value);
 
         if !applied {
+            let incoming_channel = i32::from(channel);
+            let incoming_cc = i32::from(cc);
+            let mut cc_match_count = 0usize;
+            let mut channel_match_count = 0usize;
+            let mut omni_channel_count = 0usize;
+            let mut full_match_count = 0usize;
+            let mut invalid_param_keys: Vec<&str> = Vec::new();
+            let mut binding_sample: Vec<String> = Vec::new();
+
+            for binding in &state_snapshot.bindings {
+                let cc_match = binding.cc == incoming_cc;
+                let channel_match = binding.channel == -1 || binding.channel == incoming_channel;
+
+                if cc_match {
+                    cc_match_count += 1;
+                }
+                if channel_match {
+                    channel_match_count += 1;
+                    if binding.channel == -1 {
+                        omni_channel_count += 1;
+                    }
+                }
+                if cc_match && channel_match {
+                    full_match_count += 1;
+                    if parameter_range_for_key(&binding.param_key).is_none() {
+                        invalid_param_keys.push(binding.param_key.as_str());
+                    }
+                }
+
+                if binding_sample.len() < 8 {
+                    binding_sample.push(format!(
+                        "{}(ch={},cc={})",
+                        binding.param_key, binding.channel, binding.cc
+                    ));
+                }
+            }
+
+            let reject_reason = if cc_match_count == 0 {
+                "no_cc_match"
+            } else if full_match_count == 0 {
+                "channel_mismatch"
+            } else if !invalid_param_keys.is_empty() {
+                "invalid_param_key"
+            } else {
+                "set_parameter_rejected"
+            };
+
+            append_log(&format!(
+                "apply_midi_mapping miss ch={} cc={} value={} reason={} bindings={} cc_matches={} channel_matches={} omni_matches={} full_matches={} invalid_param_keys={:?} binding_sample={:?}",
+                channel,
+                cc,
+                value,
+                reject_reason,
+                state_snapshot.bindings.len(),
+                cc_match_count,
+                channel_match_count,
+                omni_channel_count,
+                full_match_count,
+                invalid_param_keys,
+                binding_sample
+            ));
             return false;
         }
 
@@ -1495,11 +1685,26 @@ impl CzPlugin {
                 });
                 state.version += 1;
                 bindings_changed = true;
+                // TODO: remove this diagnostic once host-side learn capture behavior is verified across plugin formats.
+                append_log(&format!(
+                    "host_capture_pending_midi_binding pending={} channel={} cc={} version={} bindings_count={}",
+                    pending,
+                    channel,
+                    cc,
+                    state.version,
+                    state.bindings.len()
+                ));
             }
         }
         if bindings_changed {
             persist_midi_learn_bindings(&self.midi_learn_state);
         }
+    }
+
+    #[cfg(test)]
+    fn vst3_midi_mapping_param_id(&self, bus_index: i32, channel: i16, cc: i16) -> Option<u32> {
+        let state = self.midi_learn_state.lock().ok()?;
+        resolve_vst3_midi_mapping_param_id(&state.bindings, bus_index, channel, cc)
     }
 
     fn tracked_param_changes(events: &EventList) -> [bool; Self::TRACKED_PARAM_ID_CAPACITY] {
@@ -1691,6 +1896,30 @@ impl CzPlugin {
 
     fn collect_block_input_events(&mut self, events: &EventList, num_samples: usize) {
         self.block_input_events.clear();
+
+        // TODO: remove this diagnostic once we confirm which plugin formats forward CC events.
+        if midi_debug_enabled() {
+            let mut note_on_count = 0;
+            let mut note_off_count = 0;
+            let mut cc_count = 0;
+            let mut cc2_count = 0;
+            let mut other_count = 0;
+
+            for event in events.iter() {
+                match event.body {
+                    EventBody::NoteOn { .. } => note_on_count += 1,
+                    EventBody::NoteOff { .. } => note_off_count += 1,
+                    EventBody::ControlChange { .. } => cc_count += 1,
+                    EventBody::ControlChange2 { .. } => cc2_count += 1,
+                    _ => other_count += 1,
+                }
+            }
+
+            append_log(&format!(
+                "host_events block_samples={} note_on={} note_off={} cc={} cc2={} other={}",
+                num_samples, note_on_count, note_off_count, cc_count, cc2_count, other_count,
+            ));
+        }
 
         if self.performance_counters.enabled.load(Ordering::Acquire) {
             self.performance_counters
@@ -1970,6 +2199,17 @@ impl PluginLogic for CzPlugin {
 truce::plugin! {
     logic: CzPlugin,
     params: CzPluginParams,
+}
+
+#[cfg(feature = "vst3")]
+impl truce_vst3::Vst3PluginExt for Plugin {
+    fn midi_mapping_get_param_id(&self, bus_index: i32, channel: i16, cc: i16) -> Option<u32> {
+        let _ = self;
+        let bindings = crate::global_settings::load_or_init_global_settings()
+            .map(|settings| settings.midi_learn_bindings)
+            .unwrap_or_else(|_| crate::session_state::default_midi_bindings());
+        resolve_vst3_midi_mapping_param_id(&bindings, bus_index, channel, cc)
+    }
 }
 
 // =============================================================================
@@ -2495,6 +2735,18 @@ mod tests {
 
         assert!((plugin.synth_params.load().line1.dcw_base - 64.0 / 127.0).abs() < 0.000_001);
         assert!((params.warp_a_amount.value() - 64.0 / 127.0).abs() < 0.000_001);
+    }
+
+    #[test]
+    fn vst3_midi_mapping_resolves_default_macro_binding() {
+        clear_test_global_settings();
+        let params = Arc::new(CzPluginParams::new());
+        let plugin = CzPlugin::new(Arc::clone(&params));
+
+        assert_eq!(
+            plugin.vst3_midi_mapping_param_id(0, 0, 8),
+            Some(CzPluginParamsParamId::Macro1 as u32)
+        );
     }
 
     #[test]

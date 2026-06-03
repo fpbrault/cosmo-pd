@@ -496,6 +496,9 @@ fn flush_midi_cc_queue_to_webview(
         return;
     }
 
+    // TODO: remove this diagnostic once cross-format MIDI CC webview forwarding is verified.
+    append_log(&format!("flush_midi_cc_queue count={}", events.len()));
+
     if let Ok(container) = webview_state.lock()
         && let Some(wv) = &container.webview
     {

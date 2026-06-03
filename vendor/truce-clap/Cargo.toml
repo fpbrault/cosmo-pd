@@ -1,0 +1,21 @@
+[package]
+name = "truce-clap"
+version = "0.49.22"
+repository = "https://github.com/truce-audio/truce"
+homepage = "https://github.com/truce-audio/truce"
+edition = "2024"
+license-file = "../../LICENSE"
+rust-version = "1.90"
+description = "CLAP format wrapper for truce"
+
+[dependencies]
+truce-core = { workspace = true }
+truce-params = { workspace = true }
+clap-sys = "0.5"
+# Wait-free bounded MPMC queue. Used for the GUI → audio param change
+# handoff and the host/editor → audio state-load handoff so the audio
+# thread is the only one that ever holds `&mut Plugin`.
+crossbeam-queue = "0.3"
+
+[lints]
+workspace = true

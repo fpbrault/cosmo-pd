@@ -248,6 +248,30 @@ const AUTOMATABLE_PARAMS: &[AutomatableParamSpec] = &[
         min: 0.0,
         max: 10.0,
     },
+    AutomatableParamSpec {
+        id: 27,
+        key: "macro1",
+        min: 0.0,
+        max: 1.0,
+    },
+    AutomatableParamSpec {
+        id: 28,
+        key: "macro2",
+        min: 0.0,
+        max: 1.0,
+    },
+    AutomatableParamSpec {
+        id: 29,
+        key: "macro3",
+        min: 0.0,
+        max: 1.0,
+    },
+    AutomatableParamSpec {
+        id: 30,
+        key: "macro4",
+        min: 0.0,
+        max: 1.0,
+    },
 ];
 
 #[repr(C)]
@@ -470,6 +494,10 @@ fn parameter_value(params: &SynthParams, key: &str) -> Option<f32> {
         "modEnvDecay" => Some(params.mod_env.decay),
         "modEnvSustain" => Some(params.mod_env.sustain),
         "modEnvRelease" => Some(params.mod_env.release),
+        "macro1" => Some(params.macro1),
+        "macro2" => Some(params.macro2),
+        "macro3" => Some(params.macro3),
+        "macro4" => Some(params.macro4),
         _ => None,
     }
 }
