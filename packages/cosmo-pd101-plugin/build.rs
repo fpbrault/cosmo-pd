@@ -56,7 +56,7 @@ fn main() -> io::Result<()> {
         let out_path = Path::new(&out_dir).join("minified_presets.json");
         std::fs::write(&out_path, &minified)?;
         println!("cargo::rerun-if-changed=../cosmo-pd101/src/lib/synth/factory_presets.json");
-        println!("cargo::rerun-if-changed=../../factory-presets");
+        println!("cargo::rerun-if-changed=../cosmo-pd101-presets/factory-presets");
     }
 
     Ok(())

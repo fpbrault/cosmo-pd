@@ -1,0 +1,11 @@
+[package]
+name = "cosmo-pd101-presets"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Factory preset code generation tool for cosmo-pd101"
+
+[dependencies]
+cosmo-synth-engine = { path = "../cosmo-synth-engine" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1.0"

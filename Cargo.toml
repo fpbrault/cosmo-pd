@@ -3,6 +3,7 @@ members = [
     "packages/cosmo-synth-engine",
     "packages/cosmo-synth-debug",
     "packages/cosmo-pd101-plugin",
+    "packages/cosmo-pd101-presets",
     "packages/xtask",
 ]
 resolver = "2"

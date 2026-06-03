@@ -1096,6 +1096,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "cosmo-pd101-presets"
+version = "0.1.0"
+dependencies = [
+ "cosmo-synth-engine",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "cosmo-synth-debug"
 version = "0.1.0"
 dependencies = [
