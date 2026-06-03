@@ -30,10 +30,7 @@ truce-core = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22
 truce-params = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22" }
 truce-clap = { path = "vendor/truce-clap" }
 truce-vst3 = { path = "vendor/truce-vst3" }
-truce-vst2 = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22" }
-truce-lv2 = { path = "vendor/truce-lv2" }
 truce-au = { path = "vendor/truce-au" }
-truce-aax = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22" }
 truce-standalone = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22" }
 truce-gui = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22" }
 truce-build = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22" }
