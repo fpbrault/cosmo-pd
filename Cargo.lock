@@ -5179,7 +5179,7 @@ dependencies = [
 [[package]]
 name = "truce-au"
 version = "0.49.22"
-source = "git+https://github.com/fpbrault/truce.git?rev=e51e047237c4faa30d99c57f19eb100d892e261b#e51e047237c4faa30d99c57f19eb100d892e261b"
+source = "git+https://github.com/fpbrault/truce.git?rev=6aadfc778bf72ed84793eb344e04f0c11ad8709b#6aadfc778bf72ed84793eb344e04f0c11ad8709b"
 dependencies = [
  "cc",
  "crossbeam-queue",
@@ -5210,7 +5210,7 @@ dependencies = [
 [[package]]
 name = "truce-core"
 version = "0.49.22"
-source = "git+https://github.com/fpbrault/truce.git?rev=e51e047237c4faa30d99c57f19eb100d892e261b#e51e047237c4faa30d99c57f19eb100d892e261b"
+source = "git+https://github.com/fpbrault/truce.git?rev=6aadfc778bf72ed84793eb344e04f0c11ad8709b#6aadfc778bf72ed84793eb344e04f0c11ad8709b"
 dependencies = [
  "png",
  "truce-params",
@@ -5306,7 +5306,7 @@ dependencies = [
 [[package]]
 name = "truce-params"
 version = "0.49.22"
-source = "git+https://github.com/fpbrault/truce.git?rev=e51e047237c4faa30d99c57f19eb100d892e261b#e51e047237c4faa30d99c57f19eb100d892e261b"
+source = "git+https://github.com/fpbrault/truce.git?rev=6aadfc778bf72ed84793eb344e04f0c11ad8709b#6aadfc778bf72ed84793eb344e04f0c11ad8709b"
 dependencies = [
  "bitflags 2.11.1",
 ]
@@ -5324,7 +5324,7 @@ dependencies = [
 [[package]]
 name = "truce-shim-types"
 version = "0.49.22"
-source = "git+https://github.com/fpbrault/truce.git?rev=e51e047237c4faa30d99c57f19eb100d892e261b#e51e047237c4faa30d99c57f19eb100d892e261b"
+source = "git+https://github.com/fpbrault/truce.git?rev=6aadfc778bf72ed84793eb344e04f0c11ad8709b#6aadfc778bf72ed84793eb344e04f0c11ad8709b"
 
 [[package]]
 name = "truce-standalone"

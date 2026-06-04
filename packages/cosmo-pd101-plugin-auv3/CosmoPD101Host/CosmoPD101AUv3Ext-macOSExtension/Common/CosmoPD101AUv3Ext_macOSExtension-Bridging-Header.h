@@ -5,6 +5,4 @@
 //  Created by Felix Perron-Brault on 2026-05-06.
 //
 
-#import "CosmoPD101AUv3Ext_macOSExtensionParameterAddresses.h"
-#import "CosmoPD101AUv3Ext_macOSExtensionAUProcessHelper.hpp"
 #import "../../../Artifacts/au_shim_types.h"

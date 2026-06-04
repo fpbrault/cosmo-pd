@@ -343,23 +343,37 @@ impl Editor for CzEditor {
                     .cloned()
                     .unwrap_or_default();
 
-                match handle_ipc_invoke(
-                    method,
-                    &args,
-                    &self.synth_params,
-                    &self.rt_synth_params,
-                    &self.runtime_mod_sources,
-                    &self.runtime_voice_states,
-                    &self.transport_snapshot,
-                    &self.synth_params_version,
-                    &self.scope_buffer,
-                    &self.ui_input_queue,
-                    &self.params,
-                    &self.preset_session,
-                    &self.preset_library,
-                    &self.editor_state,
-                    &self.midi_learn_state,
-                ) {
+                let result = if method == "drainMidiCcEvents" {
+                    let mut events = Vec::new();
+                    while let Some((channel, cc, value)) = self.midi_cc_queue.pop() {
+                        events.push(serde_json::json!({
+                            "channel": channel,
+                            "cc": cc,
+                            "value": value,
+                        }));
+                    }
+                    Ok(serde_json::Value::Array(events))
+                } else {
+                    handle_ipc_invoke(
+                        method,
+                        &args,
+                        &self.synth_params,
+                        &self.rt_synth_params,
+                        &self.runtime_mod_sources,
+                        &self.runtime_voice_states,
+                        &self.transport_snapshot,
+                        &self.synth_params_version,
+                        &self.scope_buffer,
+                        &self.ui_input_queue,
+                        &self.params,
+                        &self.preset_session,
+                        &self.preset_library,
+                        &self.editor_state,
+                        &self.midi_learn_state,
+                    )
+                };
+
+                match result {
                     Ok(result) => serde_json::json!({ "id": id, "result": result }),
                     Err(error) => serde_json::json!({ "id": id, "error": error }),
                 }

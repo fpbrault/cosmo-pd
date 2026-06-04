@@ -70,7 +70,7 @@ lto = false
 inherits = "release"
 
 [patch."https://github.com/truce-audio/truce.git"]
-truce-au = { git = "https://github.com/fpbrault/truce.git", rev = "e51e047237c4faa30d99c57f19eb100d892e261b" }
-truce-core = { git = "https://github.com/fpbrault/truce.git", rev = "e51e047237c4faa30d99c57f19eb100d892e261b" }
-truce-params = { git = "https://github.com/fpbrault/truce.git", rev = "e51e047237c4faa30d99c57f19eb100d892e261b" }
-truce-shim-types = { git = "https://github.com/fpbrault/truce.git", rev = "e51e047237c4faa30d99c57f19eb100d892e261b" }
+truce-au = { git = "https://github.com/fpbrault/truce.git", rev = "6aadfc778bf72ed84793eb344e04f0c11ad8709b" }
+truce-core = { git = "https://github.com/fpbrault/truce.git", rev = "6aadfc778bf72ed84793eb344e04f0c11ad8709b" }
+truce-params = { git = "https://github.com/fpbrault/truce.git", rev = "6aadfc778bf72ed84793eb344e04f0c11ad8709b" }
+truce-shim-types = { git = "https://github.com/fpbrault/truce.git", rev = "6aadfc778bf72ed84793eb344e04f0c11ad8709b" }

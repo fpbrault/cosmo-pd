@@ -2464,8 +2464,13 @@ mod tests {
     }
 
     fn make_test_editor() -> crate::gui::CzEditor {
+        make_test_editor_with_midi_queue().0
+    }
+
+    fn make_test_editor_with_midi_queue() -> (crate::gui::CzEditor, MidiCcQueue) {
         let (sp, rsp, rms, rvs, ts, ver, sc, q, params, ps, pl, es, mm) = make_handler_state();
-        crate::gui::CzEditor::new(
+        let midi_cc_queue = Arc::new(ArrayQueue::new(MIDI_CC_QUEUE_CAPACITY));
+        let editor = crate::gui::CzEditor::new(
             sp,
             rsp,
             rms,
@@ -2473,14 +2478,15 @@ mod tests {
             ver,
             sc,
             q,
-            Arc::new(ArrayQueue::new(MIDI_CC_QUEUE_CAPACITY)),
+            midi_cc_queue.clone(),
             params,
             ps,
             rvs,
             pl,
             es,
             mm,
-        )
+        );
+        (editor, midi_cc_queue)
     }
 
     #[test]
@@ -2609,6 +2615,23 @@ mod tests {
                 .as_str()
                 .is_some_and(|error| error.starts_with("invalid editor request:"))
         );
+    }
+
+    #[test]
+    fn editor_custom_request_drains_midi_cc_events_for_external_webviews() {
+        let (mut editor, midi_cc_queue) = make_test_editor_with_midi_queue();
+        midi_cc_queue.push((2, 74, 96)).unwrap();
+
+        let response = editor
+            .custom_request(br#"{"id":7,"method":"drainMidiCcEvents","args":[]}"#)
+            .expect("custom editor request should return queued MIDI CC events");
+        let response: serde_json::Value = serde_json::from_slice(&response).unwrap();
+
+        assert_eq!(
+            response["result"],
+            serde_json::json!([{ "channel": 2, "cc": 74, "value": 96 }])
+        );
+        assert!(midi_cc_queue.is_empty());
     }
 
     #[test]

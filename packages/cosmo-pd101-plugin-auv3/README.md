@@ -54,9 +54,9 @@ bun run build:plugin:auv3:ios
 This stages:
 
 - `CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/UI` — bundled React plugin UI consumed by the extension target.
-- `Artifacts/libcosmo_pd101_plugin.a` and `Artifacts/cosmo_pd101_ffi.h` for the macOS containing app flow.
+- `Artifacts/libcosmo_pd101_plugin.a` and `Artifacts/au_shim_types.h` for the macOS containing app flow.
 - `Artifacts/CosmoPd101Plugin.xcframework` — Rust DSP FFI library for `aarch64-apple-ios` and `aarch64-apple-ios-sim`.
-- `Artifacts/cosmo_pd101_ffi.h` — C ABI header for bridge-header workflows.
+- `Artifacts/au_shim_types.h` — Truce AU callback ABI header used by the Swift runtime.
 
 To run on iPad or iPad Simulator from Xcode, open `CosmoPD101Host.xcodeproj`, ensure the extension target links `Artifacts/CosmoPd101Plugin.xcframework`, then build/run the containing app and extension schemes.
 
@@ -66,5 +66,5 @@ The extension target should:
 
 - Use the Xcode target plist and source tree under `CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension`.
 - Link `Artifacts/libcosmo_pd101_plugin.a` for macOS or `Artifacts/CosmoPd101Plugin.xcframework` for iOS/iPadOS.
-- Add `Artifacts/` to header search paths for `cosmo_pd101_ffi.h` if a C bridge is preferred.
+- Add `Artifacts/` to header search paths for `au_shim_types.h`.
 - Copy `CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/UI` into the extension bundle resources.

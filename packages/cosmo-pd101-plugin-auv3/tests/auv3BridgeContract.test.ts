@@ -3,89 +3,51 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 const packageRoot = path.resolve(import.meta.dir, "..");
-const repoRoot = path.resolve(packageRoot, "..", "..");
-
-const auv3BridgePath = path.join(
-	repoRoot,
-	"packages/cosmo-pd101-plugin/webview/src/lib/auv3Bridge.ts",
-);
-const swiftPackageControllerPath = path.join(
-	packageRoot,
-	"Sources/CosmoPd101AUv3/CosmoPd101ViewController.swift",
-);
-const xcodeControllerPath = path.join(
+const controllerPath = path.join(
 	packageRoot,
 	"CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/UI/AudioUnitViewController.swift",
 );
-
-const nativeEngineEventMethods = new Set([
-	"noteOn",
-	"noteOff",
-	"sustain",
-	"pitchBend",
-	"modWheel",
-	"aftertouch",
-	"polyAftertouch",
-	"panic",
-	"clientLog",
-]);
+const audioUnitPath = path.join(
+	packageRoot,
+	"CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/Audio Unit/CosmoPD101AUv3Ext_macOSExtensionAudioUnit.swift",
+);
+const infoPlistPath = path.join(
+	packageRoot,
+	"CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Info.plist",
+);
 
 function readText(filePath: string): string {
 	return readFileSync(filePath, "utf8");
 }
 
-function extractBridgeMethods(source: string): Set<string> {
-	const matches = source.matchAll(/invokeAuv3\("([A-Za-z0-9]+)"/g);
-	return new Set([...matches].map((match) => match[1]));
-}
-
-function extractSwiftSwitchMethods(source: string): Set<string> {
-	const switchBlockMatch = source.match(/switch method \{([\s\S]*?)default:/m);
-	if (!switchBlockMatch) {
-		throw new Error("Could not find AUv3 method switch block");
-	}
-
-	const caseClauses = switchBlockMatch[1].matchAll(/^\s*case\s+(.+?):/gm);
-	const methods = new Set<string>();
-	for (const [, clause] of caseClauses) {
-		for (const match of clause.matchAll(/"([A-Za-z0-9]+)"/g)) {
-			methods.add(match[1]);
-		}
-	}
-	return methods;
-}
-
 describe("AUv3 bridge contract", () => {
-	it("keeps startup-critical bridge methods implemented in both Swift controllers", () => {
-		const bridgeMethods = extractBridgeMethods(readText(auv3BridgePath));
-		const requiredBridgeMethods = new Set(bridgeMethods);
-		for (const method of nativeEngineEventMethods) {
-			requiredBridgeMethods.add(method);
-		}
+	it("keeps the custom webview controller as the extension entry point", () => {
+		const infoPlist = readText(infoPlistPath);
+		expect(infoPlist).toContain(
+			"<string>$(PRODUCT_MODULE_NAME).AudioUnitViewController</string>",
+		);
+		expect(infoPlist).not.toContain("<string>AudioUnitFactory</string>");
+	});
 
-		const swiftPackageMethods = extractSwiftSwitchMethods(
-			readText(swiftPackageControllerPath),
+	it("forwards ordinary webview RPC to the Rust editor contract", () => {
+		const controller = readText(controllerPath);
+		expect(controller).toContain("callbacks.pointee.custom_editor_request(");
+		expect(controller).toContain(
+			"callbacks.pointee.custom_editor_response_free(",
 		);
-		const xcodeControllerMethods = extractSwiftSwitchMethods(
-			readText(xcodeControllerPath),
-		);
+		expect(controller).not.toContain('case "getPresetLibrary"');
+		expect(controller).not.toContain('case "getMidiLearnState"');
+	});
 
-		expect([...requiredBridgeMethods].sort()).toEqual(
-			[...new Set([...requiredBridgeMethods])].sort(),
-		);
-
-		expect(
-			[...requiredBridgeMethods].filter(
-				(method) => !swiftPackageMethods.has(method),
-			),
-		).toEqual([]);
-		expect(
-			[...requiredBridgeMethods].filter(
-				(method) => !xcodeControllerMethods.has(method),
-			),
-		).toEqual([]);
-		expect([...swiftPackageMethods].sort()).toEqual(
-			[...xcodeControllerMethods].sort(),
-		);
+	it("uses Truce callbacks for audio, state, parameters, and MIDI CC delivery", () => {
+		const audioUnit = readText(audioUnitPath);
+		const controller = readText(controllerPath);
+		expect(audioUnit).toContain("cb.pointee.process(");
+		expect(audioUnit).toContain("cb.pointee.state_save(");
+		expect(audioUnit).toContain("cb.pointee.state_load(");
+		expect(audioUnit).toContain("cb.pointee.param_set_value(");
+		expect(audioUnit).not.toContain("cosmo_pd101_ffi_");
+		expect(controller).toContain('rustResult(method: "drainMidiCcEvents")');
+		expect(controller).toContain("window.__czOnMidiCc?.(");
 	});
 });

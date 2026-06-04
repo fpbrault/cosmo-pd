@@ -166,13 +166,10 @@ async function stageMacArtifacts(options) {
 	);
 
 	await mkdir(artifactsDir, { recursive: true });
+	await rm(join(artifactsDir, "cosmo_pd101_ffi.h"), { force: true });
 	await cp(
 		join(repoRoot, "target", profile, "libcosmo_pd101_plugin.a"),
 		join(artifactsDir, "libcosmo_pd101_plugin.a"),
-	);
-	await cp(
-		join(pluginDir, "include", "cosmo_pd101_ffi.h"),
-		join(artifactsDir, "cosmo_pd101_ffi.h"),
 	);
 	await cp(truceAuHeader, join(artifactsDir, "au_shim_types.h"));
 }
@@ -285,11 +282,8 @@ async function createIosXcframework(options) {
 	);
 
 	await mkdir(artifactsDir, { recursive: true });
+	await rm(join(artifactsDir, "cosmo_pd101_ffi.h"), { force: true });
 	await resetDirectoryContents(artifactsHeadersDir);
-	await cp(
-		join(pluginDir, "include", "cosmo_pd101_ffi.h"),
-		join(artifactsHeadersDir, "cosmo_pd101_ffi.h"),
-	);
 	await cp(truceAuHeader, join(artifactsHeadersDir, "au_shim_types.h"));
 	await rm(outputPath, { recursive: true, force: true });
 	await run("xcodebuild", [
@@ -311,10 +305,6 @@ async function createIosXcframework(options) {
 		"-output",
 		outputPath,
 	]);
-	await cp(
-		join(pluginDir, "include", "cosmo_pd101_ffi.h"),
-		join(artifactsDir, "cosmo_pd101_ffi.h"),
-	);
 	await cp(truceAuHeader, join(artifactsDir, "au_shim_types.h"));
 	console.log(`iOS AUv3 XCFramework created at ${outputPath}`);
 }
