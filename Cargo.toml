@@ -31,12 +31,12 @@ truce-core = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22
 truce-params = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22" }
 truce-clap = { path = "vendor/truce-clap" }
 truce-vst3 = { path = "vendor/truce-vst3" }
-truce-au = { path = "vendor/truce-au" }
+truce-au = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22" }
 truce-standalone = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22" }
 truce-gui = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22" }
 truce-build = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22" }
 truce-test = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22" }
-truce-shim-types = { path = "vendor/truce-shim-types" }
+truce-shim-types = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22" }
 wry = "0.55.0"
 raw-window-handle = "0.6"
 
@@ -68,3 +68,9 @@ lto = false
 
 [profile.shell]
 inherits = "release"
+
+[patch."https://github.com/truce-audio/truce.git"]
+truce-au = { git = "https://github.com/fpbrault/truce.git", rev = "e51e047237c4faa30d99c57f19eb100d892e261b" }
+truce-core = { git = "https://github.com/fpbrault/truce.git", rev = "e51e047237c4faa30d99c57f19eb100d892e261b" }
+truce-params = { git = "https://github.com/fpbrault/truce.git", rev = "e51e047237c4faa30d99c57f19eb100d892e261b" }
+truce-shim-types = { git = "https://github.com/fpbrault/truce.git", rev = "e51e047237c4faa30d99c57f19eb100d892e261b" }

@@ -7,3 +7,4 @@
 
 #import "CosmoPD101AUv3Ext_macOSExtensionParameterAddresses.h"
 #import "CosmoPD101AUv3Ext_macOSExtensionAUProcessHelper.hpp"
+#import "../../../Artifacts/au_shim_types.h"
