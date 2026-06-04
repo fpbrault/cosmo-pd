@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780512823380,
+  "lastUpdate": 1780535438937,
   "repoUrl": "https://github.com/fpbrault/cosmo-pd",
   "entries": {
     "cosmo-synth-engine": [
@@ -28193,6 +28193,228 @@ window.BENCHMARK_DATA = {
             "name": "opt_all_combined_8_voices",
             "value": 10858168,
             "range": "± 389843",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "fpbrault@gmail.com",
+            "name": "Felix Perron-Brault",
+            "username": "fpbrault"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e7dc646fa9583b42e002c37c4716befb7f9bd67a",
+          "message": "feat: move presets to engine (#259)\n\n* feat: integrate runtime voice states into IPC and GUI components\n\n* Refactor code structure and remove redundant sections for improved readability and maintainability\n\n* Refactor code structure for improved readability and maintainability\n\n* Enhance session state synchronization and improve preset tag formatting\n\n- Refactored `subscribeEditorState` and `subscribeMidiMappings` functions in `useSessionStateSync.ts` to improve state management and reduce redundancy.\n- Added initial state push for editor and MIDI mappings upon subscription.\n- Reformatted tags in `factoryCzPresets.ts` to use array syntax for consistency and readability.\n\n* feat: enhance MIDI and note handling with new options and runtime types\n\n- Added `applyBindings` option to `useMidiLearnBindings` for conditional binding application.\n- Introduced `keyboardInputEnabled` and `midiInputEnabled` options in `useNoteHandling` to control input handling.\n- Created `synthRuntime.ts` to define types for synth runtime, including performance metrics and note handling.\n- Updated `index.ts` to export new runtime types.\n- Cleaned up factory presets by consolidating tag arrays for better readability.\n\n* fix(plugin): sync DAW automation params to webview GUI\n\n* refactor(plugin): replace MidiMapping with MidiLearnState types in session state\n\n* feat(plugin): move MIDI learn authority from JS to Rust engine\n\n- Replace MidiMapping with MidiLearnBinding/MidiLearnState types\n- Remove setMidiMappings/getMidiMappings IPC handlers\n- Add setMidiLearnMode, setPendingMidiLearnParam, addMidiBinding,\n  removeMidiBinding, clearMidiLearnBindings, getMidiLearnState\n- Rewrite handle_host_event catch-all for learn capture + apply\n- Add version-tracked idle push of MidiLearnState via __czOnMidiLearnState\n\n* refactor(plugin): update MIDI learn bridge methods in IPC and AUv3\n\n* refactor(plugin,ui): move MIDI learn authority to Rust engine and update JS store\n\n* fix(ui): update MidiLearnPanel for engine-based MIDI learn store\n\n* fix(plugin): restore default MIDI learn bindings\n\n* Enhance MIDI Learning Functionality and Update Preset Tags\n\n- Introduced a new type `MidiBindingIdentity` for better binding management.\n- Updated `removeBinding` method to accept `MidiBindingIdentity` instead of just `paramKey`.\n- Implemented `bindingMatches` function to streamline binding comparisons.\n- Added `refreshMidiLearnState` function to fetch and initialize MIDI learn state from the engine.\n- Enhanced `subscribeMidiLearnState` to call `refreshMidiLearnState` on subscription.\n- Reformatted preset tags in `FACTORY_CZ_PRESETS` for consistency and readability.\n\n* feat(global-settings): implement global MIDI learn bindings management\n\n* Add MIDI mapping and input event handling to the synth engine\n\n- Introduced `mapping.rs` to manage MIDI parameter bindings and automation.\n- Implemented functions for setting parameter values, retrieving parameter ranges, and applying MIDI mappings.\n- Created `input.rs` to handle various input events including note on/off, control changes, and transport state.\n- Updated `CosmoProcessor` to integrate input event processing and transport state management.\n- Added tests for MIDI mapping functionality to ensure correct parameter application.\n\n* Refactor factory CZ presets to simplify tag formatting\n\n- Consolidated tag arrays into single-line format for better readability in `factoryCzPresets.ts`.\n- Updated parameter range retrieval logic in `mapping.rs` for improved clarity.\n- Reorganized module imports in `mod.rs` for consistency.\n- Enhanced input event handling in `input.rs` to support parameter changes.\n- Fixed missing newline at the end of `build.rs` for proper formatting.\n\n* Refactor code structure for improved readability and maintainability\n\n* feat(preset-library): enhance favorite management and schema versioning\n\n* Refactor synth preset manager and related tests\n\n- Updated `useSynthPresetManager` to manage preset dirty states more effectively using a new state variable `isPresetDirty`.\n- Removed unused code and tests related to pending preset changes.\n- Simplified preset selection handling by introducing a `commitPresetSelection` function.\n- Adjusted the handling of preset sessions to store a boolean `isDirty` instead of a fingerprint.\n- Updated tests for `useSynthPresetManager` to reflect changes in state management and preset handling.\n- Removed deprecated test file `useSynthPresetManager.test.tsx`.\n- Modified `presetStorage` to accommodate the new `isDirty` state in the current preset session.\n\n* Refactor code structure for improved readability and maintainability\n\n* fix sorting order\n\n* refactor: remove legacy plans and documentation for MIDI learn and preset management\n\n- Deleted PLAN.md, PREDESIGN.md, and SYNTH_RUNTIME_REFACTOR_PLAN.md as they are no longer relevant to the current architecture and implementation strategy.\n- These documents contained outdated information regarding MIDI learn refactor, DAW to webview synchronization, and preset ownership which have been superseded by new designs and implementations.\n\n* removed lv2/vst2/aax for now\n\n* feat: add factory preset code generation functionality\n\n- Implemented `factory_preset_codegen.rs` to handle loading, validating, and generating factory presets.\n- Introduced a new main entry point in `main.rs` to execute the preset generation process.\n- Updated `package.json` to change the command for generating factory presets to use the new module.\n\n* linting\n\n* feat: enhance preset session handling and improve mock bridge tests",
+          "timestamp": "2026-06-04T01:04:08Z",
+          "tree_id": "f20b027d9ba7e9321b1cf53c0294282649b8eada",
+          "url": "https://github.com/fpbrault/cosmo-pd/commit/e7dc646fa9583b42e002c37c4716befb7f9bd67a"
+        },
+        "date": 1780535435987,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "default_3_voices",
+            "value": 3314317,
+            "range": "± 149635",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_6_voices",
+            "value": 5108714,
+            "range": "± 21672",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_8_voices",
+            "value": 6333214,
+            "range": "± 45896",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_3_voices",
+            "value": 2344360,
+            "range": "± 16633",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_6_voices",
+            "value": 2329485,
+            "range": "± 36150",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_8_voices",
+            "value": 2337818,
+            "range": "± 15025",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_3_voices",
+            "value": 8520837,
+            "range": "± 356216",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_6_voices",
+            "value": 11660700,
+            "range": "± 52316",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_8_voices",
+            "value": 13634477,
+            "range": "± 442026",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_3_voices",
+            "value": 10178931,
+            "range": "± 37110",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_6_voices",
+            "value": 15018922,
+            "range": "± 32146",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_8_voices",
+            "value": 18368150,
+            "range": "± 375571",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_3_voices",
+            "value": 6532419,
+            "range": "± 136268",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_6_voices",
+            "value": 8919895,
+            "range": "± 57298",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_8_voices",
+            "value": 10369301,
+            "range": "± 267996",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_3_voices",
+            "value": 4301444,
+            "range": "± 20669",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_6_voices",
+            "value": 6048542,
+            "range": "± 25502",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_8_voices",
+            "value": 7265957,
+            "range": "± 188146",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_3_voices",
+            "value": 9027407,
+            "range": "± 78068",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_6_voices",
+            "value": 12599140,
+            "range": "± 123339",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_8_voices",
+            "value": 13902350,
+            "range": "± 69435",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_3_voices",
+            "value": 6528330,
+            "range": "± 45356",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_6_voices",
+            "value": 9284477,
+            "range": "± 74595",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_8_voices",
+            "value": 11134858,
+            "range": "± 267403",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_3_voices",
+            "value": 4173733,
+            "range": "± 38943",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_6_voices",
+            "value": 6586937,
+            "range": "± 134228",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_8_voices",
+            "value": 8198038,
+            "range": "± 47564",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_3_voices",
+            "value": 3699238,
+            "range": "± 30674",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_6_voices",
+            "value": 5778125,
+            "range": "± 43558",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_8_voices",
+            "value": 7147842,
+            "range": "± 239632",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_3_voices",
+            "value": 7189197,
+            "range": "± 66691",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_6_voices",
+            "value": 10024749,
+            "range": "± 90483",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_8_voices",
+            "value": 11667493,
+            "range": "± 115747",
             "unit": "ns/iter"
           }
         ]
