@@ -1,10 +1,4 @@
-import {
-	type CSSProperties,
-	memo,
-	type ReactNode,
-	useCallback,
-	useEffect,
-} from "react";
+import { type CSSProperties, memo, type ReactNode, useCallback } from "react";
 import SynthSidebar from "@/components/layout/SynthSidebar";
 import SynthHeader from "@/components/preset/SynthHeader";
 import { ModMatrixProvider } from "@/context/ModMatrixContext";
@@ -14,7 +8,6 @@ import type { SynthRuntime } from "@/features/synth/runtime/synthRuntime";
 import { SynthParamControllerProvider } from "@/features/synth/SynthParamController";
 import { useSynthStore } from "@/features/synth/synthStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
-import { installBenchmarkApi } from "@/lib/performance/benchmarkHarness";
 import { HoverInfoProvider, useHoverInfo } from "../layout/HoverInfo";
 import { useAudioLevelMonitor } from "./hooks/useAudioLevelMonitor";
 import SynthRendererLibraryOverlay from "./SynthRendererLibraryOverlay";
@@ -81,47 +74,9 @@ const SynthRenderer = memo(function SynthRenderer({
 	const sendNoteOff = miniKeyboard?.onNoteOff ?? runtime.sendNoteOff;
 	const sendPolyAftertouch =
 		miniKeyboard?.onPolyAftertouch ?? runtime.sendPolyAftertouch;
-	const panic = runtime.panic;
-	const {
-		allPresetEntries,
-		activatePreset,
-		stepPreset,
-		setNavigationEntryIds,
-	} = usePresetManager();
+	const { stepPreset, setNavigationEntryIds } = usePresetManager();
 
 	useAudioLevelMonitor(runtime.analyserNodeRef, onAudioLevelChange);
-
-	useEffect(() => {
-		const presetNames = allPresetEntries.map((preset) => preset.label);
-		return installBenchmarkApi({
-			mode: runtime.benchmark.mode,
-			listBuiltinPresets: () => presetNames,
-			loadBuiltinPreset: (name: string) => {
-				const entry = allPresetEntries.find((preset) => preset.label === name);
-				if (!entry) {
-					return;
-				}
-				void activatePreset({ entryId: entry.id });
-			},
-			setPerformanceMonitorEnabled:
-				runtime.benchmark.setPerformanceMonitorEnabled,
-			getPerformanceMetrics: runtime.benchmark.getPerformanceMetrics,
-			noteOn: (note: number, velocity?: number) => sendNoteOn(note, velocity),
-			noteOff: (note: number) => sendNoteOff(note),
-			panic,
-			ensureReady: runtime.benchmark.ensureReady,
-		});
-	}, [
-		allPresetEntries,
-		activatePreset,
-		panic,
-		runtime.benchmark.ensureReady,
-		runtime.benchmark.getPerformanceMetrics,
-		runtime.benchmark.setPerformanceMonitorEnabled,
-		sendNoteOff,
-		sendNoteOn,
-		runtime.benchmark.mode,
-	]);
 
 	const keyboardInsetPx = keyboardHeight + 16;
 	const mainPanelBottomInset =

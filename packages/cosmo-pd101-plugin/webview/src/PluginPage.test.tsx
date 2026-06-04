@@ -89,12 +89,6 @@ describe("PluginPage", () => {
 			analyserNodeRef: { current: null },
 			audioCtxRef: { current: null },
 			subscribeScopeFrames: vi.fn(() => () => {}),
-			benchmark: {
-				mode: "plugin",
-				setPerformanceMonitorEnabled: vi.fn(),
-				getPerformanceMetrics: vi.fn(),
-				ensureReady: vi.fn(),
-			},
 		});
 		mockCreatePluginPresetManagerRepository.mockReturnValue({
 			listEntries: vi.fn(),

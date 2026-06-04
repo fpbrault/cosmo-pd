@@ -33,9 +33,9 @@ use crate::handle_ipc_invoke;
 use crate::preset_library::PresetLibrary;
 use crate::session_state::MidiLearnState;
 use crate::{
-    MidiCcQueue, PerformanceCountersHandle, ScopeBuffer, SharedEditorState, SharedPresetSession,
-    SharedRuntimeModSources, SharedRuntimeVoiceStates, SharedTransportSnapshot, UiInputQueue,
-    append_log, append_log_debug, append_log_error, append_log_warn,
+    MidiCcQueue, ScopeBuffer, SharedEditorState, SharedPresetSession, SharedRuntimeModSources,
+    SharedRuntimeVoiceStates, SharedTransportSnapshot, UiInputQueue, append_log, append_log_debug,
+    append_log_error, append_log_warn,
 };
 use cosmo_synth_engine::params::SynthParams;
 
@@ -111,7 +111,6 @@ pub struct CzEditor {
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
     midi_cc_queue: MidiCcQueue,
-    performance_counters: PerformanceCountersHandle,
     host_scale_factor: Arc<Mutex<f32>>,
     webview_state: Arc<Mutex<WebViewContainer>>,
     pending_parent_ns_view: Option<usize>,
@@ -166,7 +165,6 @@ impl CzEditor {
         scope_buffer: ScopeBuffer,
         ui_input_queue: UiInputQueue,
         midi_cc_queue: MidiCcQueue,
-        performance_counters: PerformanceCountersHandle,
         params: Arc<CzPluginParams>,
         preset_session: SharedPresetSession,
         runtime_voice_states: SharedRuntimeVoiceStates,
@@ -183,7 +181,6 @@ impl CzEditor {
             scope_buffer,
             ui_input_queue,
             midi_cc_queue,
-            performance_counters,
             host_scale_factor: Arc::new(Mutex::new(1.0)),
             webview_state: Arc::new(Mutex::new(WebViewContainer { webview: None })),
             pending_parent_ns_view: None,
@@ -225,7 +222,6 @@ impl CzEditor {
         let synth_params_version = self.synth_params_version.clone();
         let scope_buffer = self.scope_buffer.clone();
         let ui_input_queue = self.ui_input_queue.clone();
-        let performance_counters = self.performance_counters.clone();
         let params = self.params.clone();
         let preset_session = self.preset_session.clone();
         let runtime_voice_states = self.runtime_voice_states.clone();
@@ -246,7 +242,6 @@ impl CzEditor {
                 synth_params_version,
                 scope_buffer,
                 ui_input_queue,
-                performance_counters,
                 params,
                 preset_session,
                 preset_library,
@@ -904,7 +899,6 @@ unsafe fn build_webview_from_ns_view(
     synth_params_version: Arc<AtomicU64>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
-    performance_counters: PerformanceCountersHandle,
     params: Arc<CzPluginParams>,
     preset_session: SharedPresetSession,
     preset_library: Arc<Mutex<PresetLibrary>>,
@@ -985,7 +979,6 @@ unsafe fn build_webview_from_ns_view(
                     &synth_params_version,
                     &scope_buffer,
                     &ui_input_queue,
-                    &performance_counters,
                     &params,
                     &preset_session_for_ipc,
                     &preset_library_for_ipc,

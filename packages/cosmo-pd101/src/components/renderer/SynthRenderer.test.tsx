@@ -112,9 +112,6 @@ vi.mock("@/context/ModMatrixContext", () => ({
 vi.mock("./hooks/useAudioLevelMonitor", () => ({
 	useAudioLevelMonitor: vi.fn(),
 }));
-vi.mock("@/lib/performance/benchmarkHarness", () => ({
-	installBenchmarkApi: vi.fn(() => vi.fn()),
-}));
 vi.mock("./SynthRendererMainPanel", () => ({
 	default: () => <div data-testid="synth-main-panel" />,
 }));
@@ -134,12 +131,6 @@ const mockRuntime: SynthRuntime = {
 	analyserNodeRef: { current: null },
 	audioCtxRef: { current: null },
 	subscribeScopeFrames: vi.fn(() => () => {}),
-	benchmark: {
-		mode: "web",
-		setPerformanceMonitorEnabled: vi.fn(),
-		getPerformanceMetrics: vi.fn(() => null),
-		ensureReady: vi.fn(),
-	},
 };
 
 const baseEntries: PresetEntry[] = [

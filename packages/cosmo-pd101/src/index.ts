@@ -1,10 +1,6 @@
 export { default as UpdateNotification } from "./components/layout/UpdateNotification";
 export { default as MidiLearnPanel } from "./components/panels/midi/MidiLearnPanel";
 export {
-	type PerformanceMetrics,
-	PerformanceMonitor,
-} from "./components/performance/PerformanceMonitor";
-export {
 	computeRendererFrameLayout,
 	computeSidebarMinWidthRem,
 	type RendererFrameLayout,
@@ -47,7 +43,6 @@ export type {
 	SavePresetRequest,
 } from "./features/synth/presetManagerRepository";
 export type {
-	SynthBenchmarkRuntime,
 	SynthRuntime,
 	SynthScopeFrameSubscription,
 } from "./features/synth/runtime/synthRuntime";
@@ -81,14 +76,6 @@ export type {
 	WaveformId,
 } from "./lib/midi/czSysexDecoder";
 export { decodeCzPatch, WF_NAMES } from "./lib/midi/czSysexDecoder";
-export type {
-	BenchmarkApi,
-	BenchmarkCaseResult,
-	BenchmarkMode,
-	BenchmarkReport,
-	BenchmarkScenarioDefinition,
-} from "./lib/performance/benchmarkHarness";
-export { installBenchmarkApi } from "./lib/performance/benchmarkHarness";
 export type {
 	SessionEditorState,
 	SessionState,

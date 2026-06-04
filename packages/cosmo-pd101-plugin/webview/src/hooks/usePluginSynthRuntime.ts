@@ -6,35 +6,6 @@ type UsePluginSynthRuntimeParams = {
 	eventSink: (type: string, payload: Record<string, unknown>) => void;
 };
 
-function normalizeBenchmarkMetrics(value: unknown) {
-	if (!value || typeof value !== "object") {
-		return null;
-	}
-
-	const candidate = value as Record<string, unknown>;
-	const readNumber = (key: string) => {
-		const next = candidate[key];
-		return typeof next === "number" && Number.isFinite(next) ? next : 0;
-	};
-
-	return {
-		enabled: candidate.enabled === true,
-		blockCount: readNumber("blockCount"),
-		lastMs: readNumber("lastMs"),
-		avgMs: readNumber("avgMs"),
-		maxMs: readNumber("maxMs"),
-		blockBudgetMs: readNumber("blockBudgetMs"),
-		lastRtPercent: readNumber("lastRtPercent"),
-		avgRtPercent: readNumber("avgRtPercent"),
-		maxRtPercent: readNumber("maxRtPercent"),
-		blockSamples: readNumber("blockSamples"),
-		sampleRate: readNumber("sampleRate"),
-		activeVoices: readNumber("activeVoices"),
-		uiQueueDepth: readNumber("uiQueueDepth"),
-		paramsApplyCount: readNumber("paramsApplyCount"),
-	};
-}
-
 export function usePluginSynthRuntime({
 	eventSink,
 }: UsePluginSynthRuntimeParams): SynthRuntime {
@@ -81,24 +52,6 @@ export function usePluginSynthRuntime({
 			analyserNodeRef,
 			audioCtxRef,
 			subscribeScopeFrames,
-			benchmark: {
-				mode: "plugin",
-				setPerformanceMonitorEnabled: async (enabled: boolean) => {
-					await window.__czSetPerformanceMonitorEnabled?.(enabled);
-				},
-				getPerformanceMetrics: async () => {
-					const value = await window.__czGetPerformanceMetrics?.();
-					return normalizeBenchmarkMetrics(value);
-				},
-				ensureReady: async () => {
-					if (
-						!window.__czGetPerformanceMetrics ||
-						!window.__czSetPerformanceMonitorEnabled
-					) {
-						throw new Error("Plugin benchmark bridge is unavailable");
-					}
-				},
-			},
 		}),
 		[
 			noteHandling.activeNotes,
