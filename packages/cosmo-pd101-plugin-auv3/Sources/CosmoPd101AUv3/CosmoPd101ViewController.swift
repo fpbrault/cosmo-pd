@@ -121,14 +121,12 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
     }
 
     public func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        NSLog("[CzVC] userContentController: name=%@ auNil=%@", message.name, audioUnit == nil ? "YES" : "NO")
         guard message.name == "cosmoPd101" else { return }
         guard let payload = message.body as? [String: Any] else { return }
 
         let id = payload["id"] as? Int ?? 0
         let method = payload["method"] as? String ?? ""
         let args = payload["args"] as? [Any] ?? []
-        NSLog("[CzVC] IPC method=%@ id=%d auNil=%@", method, id, audioUnit == nil ? "YES" : "NO")
 
         guard let audioUnit else {
             // Audio unit not yet assigned — respond with an error so JS promises

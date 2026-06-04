@@ -19,16 +19,16 @@ type MidiBindingIdentity = {
 	cc: number;
 };
 
-type PresetSession = {
-	activePresetId: string | null;
-	loadedPresetId?: string | null;
+type NativePluginPresetSession = {
+	loadedPresetId: string | null;
 	activePresetNameBase: string;
 	isDirty: boolean;
 };
 
-const SCOPE_POLL_INTERVAL_MS = 33;
-const RUNTIME_VOICE_STATES_POLL_INTERVAL_MS = 16;
-const RUNTIME_MOD_SOURCES_POLL_INTERVAL_MS = 16;
+const SCOPE_POLL_INTERVAL_MS = 50;
+const RUNTIME_VOICE_STATES_POLL_INTERVAL_MS = 100;
+const RUNTIME_MOD_SOURCES_POLL_INTERVAL_MS = 100;
+const TRANSPORT_POLL_INTERVAL_MS = 250;
 const IPC_TIMEOUT_MS = 250;
 
 declare global {
@@ -54,7 +54,9 @@ declare global {
 		__czIpcResponse?: (response: IpcRpcResponse) => void;
 		__czOnMidiCc?: (channel: number, cc: number, value: number) => void;
 		__czGetPresetSession?: () => Promise<unknown>;
-		__czSetPresetSession?: (session: PresetSession) => Promise<unknown>;
+		__czSetPresetSession?: (
+			session: NativePluginPresetSession,
+		) => Promise<unknown>;
 		__czGetPresetLibrary?: (source?: string) => Promise<unknown>;
 		__czLoadPresetData?: (id: string) => Promise<unknown>;
 		__czAddPreset?: (
@@ -62,13 +64,6 @@ declare global {
 			tags: string[],
 			macroLabels?: string[],
 		) => Promise<unknown>;
-		__czSavePreset?: (payload: {
-			id?: string | null;
-			name: string;
-			author?: string;
-			tags?: string[];
-			data?: unknown;
-		}) => Promise<unknown>;
 		__czDeletePreset?: (id: string) => Promise<unknown>;
 		__czRenamePreset?: (id: string, newName: string) => Promise<unknown>;
 		__czSetPresetAuthor?: (id: string, author: string) => Promise<unknown>;
@@ -205,7 +200,7 @@ function installIpcRouter() {
 	};
 	window.__czGetTransportInfo = () => invokeAuv3("getTransportInfo", []);
 	window.__czGetPresetSession = () => invokeAuv3("getPresetSession", []);
-	window.__czSetPresetSession = (session: PresetSession) =>
+	window.__czSetPresetSession = (session: NativePluginPresetSession) =>
 		invokeAuv3("setPresetSession", [session]);
 
 	window.__czGetPresetLibrary = (source?: string) =>
@@ -529,7 +524,6 @@ function installMidiLearnStateHandler() {
 }
 
 function installTransportPolling() {
-	const INTERVAL_MS = 100;
 	let rafId = 0;
 	let lastScheduled = 0;
 	let pollInFlight = false;
@@ -560,7 +554,7 @@ function installTransportPolling() {
 		if (destroyed) {
 			return;
 		}
-		if (now - lastScheduled < INTERVAL_MS || pollInFlight) {
+		if (now - lastScheduled < TRANSPORT_POLL_INTERVAL_MS || pollInFlight) {
 			scheduleNextFrame();
 			return;
 		}

@@ -42,6 +42,8 @@ type EnvelopeKind = "dco" | "dcw" | "dca";
 
 type StepEnv = SynthPresetV1["params"]["line1"]["dcoEnv"];
 
+const PARAMS_VERSION_POLL_INTERVAL_MS = 200;
+
 function clampRounded(value: number, min: number, max: number): number {
 	return Math.max(min, Math.min(max, Math.round(value)));
 }
@@ -275,7 +277,7 @@ export function usePluginBridgeSynthEngine(
 
 		intervalId = window.setInterval(() => {
 			void refreshIfChanged();
-		}, 50);
+		}, PARAMS_VERSION_POLL_INTERVAL_MS);
 		void refreshIfChanged();
 
 		return () => {
