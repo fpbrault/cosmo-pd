@@ -2559,6 +2559,26 @@ mod tests {
         (sp, rsp, rms, rvs, ts, ver, sc, q, params, ps, pl, es, mm)
     }
 
+    fn make_test_editor() -> crate::gui::CzEditor {
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, params, ps, pl, es, mm) = make_handler_state();
+        crate::gui::CzEditor::new(
+            sp,
+            rsp,
+            rms,
+            ts,
+            ver,
+            sc,
+            q,
+            Arc::new(ArrayQueue::new(MIDI_CC_QUEUE_CAPACITY)),
+            params,
+            ps,
+            rvs,
+            pl,
+            es,
+            mm,
+        )
+    }
+
     #[test]
     fn scope_frame_keeps_samples_in_chronological_order_after_wrap() {
         let mut frame = ScopeFrame::default();
@@ -2654,6 +2674,37 @@ mod tests {
         let val = result.unwrap();
         let volume = val["volume"].as_f64().unwrap();
         assert!((volume - 0.77).abs() < 1.0e-6);
+    }
+
+    #[test]
+    fn editor_custom_request_routes_existing_rpc_contract() {
+        let mut editor = make_test_editor();
+
+        let response = editor
+            .custom_request(br#"{"id":42,"method":"getParams","args":[]}"#)
+            .expect("custom editor request should return a response");
+        let response: serde_json::Value = serde_json::from_slice(&response).unwrap();
+
+        assert_eq!(response["id"], 42);
+        assert!(response.get("result").is_some());
+        assert!(response.get("error").is_none());
+    }
+
+    #[test]
+    fn editor_custom_request_returns_rpc_error_for_malformed_json() {
+        let mut editor = make_test_editor();
+
+        let response = editor
+            .custom_request(b"{")
+            .expect("malformed request should return an error response");
+        let response: serde_json::Value = serde_json::from_slice(&response).unwrap();
+
+        assert!(response["id"].is_null());
+        assert!(
+            response["error"]
+                .as_str()
+                .is_some_and(|error| error.starts_with("invalid editor request:"))
+        );
     }
 
     #[test]

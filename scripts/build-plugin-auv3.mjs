@@ -6,7 +6,9 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const pluginDir = join(repoRoot, "packages", "cosmo-pd101-plugin");
 const auv3Dir = join(repoRoot, "packages", "cosmo-pd101-plugin-auv3");
 const artifactsDir = join(auv3Dir, "Artifacts");
+const artifactsHeadersDir = join(artifactsDir, "Headers");
 const buildDir = join(auv3Dir, "Build");
+const clangModuleCacheDir = join(buildDir, "ClangModuleCache");
 const xcodeDerivedDataDir = join(buildDir, "XcodeDerivedData");
 const xcodeProductsDir = join(buildDir, "XcodeProducts");
 const stagedAppPath = join(buildDir, "Cosmo PD-101.app");
@@ -62,6 +64,27 @@ async function run(command, args, cwd = repoRoot, env = {}) {
 	}
 }
 
+async function resolveTruceAuHeader() {
+	const proc = Bun.spawn(["cargo", "metadata", "--format-version", "1"], {
+		cwd: repoRoot,
+		env: process.env,
+		stdout: "pipe",
+		stderr: "inherit",
+	});
+	const metadata = await new Response(proc.stdout).json();
+	const exitCode = await proc.exited;
+	if (exitCode !== 0) {
+		throw new Error(`cargo metadata exited with ${exitCode}`);
+	}
+	const shimPackage = metadata.packages.find(
+		(pkg) => pkg.name === "truce-shim-types",
+	);
+	if (!shimPackage) {
+		throw new Error("cargo metadata did not resolve truce-shim-types");
+	}
+	return join(dirname(shimPackage.manifest_path), "include", "au_shim_types.h");
+}
+
 async function loadCargoConfigEnv() {
 	try {
 		const contents = await readFile(cargoConfigPath, "utf8");
@@ -95,14 +118,14 @@ function resolveMacSigning(configEnv) {
 		null;
 	const identity =
 		rawIdentity && /(?:Apple|Mac) Development:/.test(rawIdentity)
-			? rawIdentity
+			? "Apple Development"
 			: null;
 	const teamId =
-		extractTeamId(rawIdentity) ??
 		process.env.TRUCE_IOS_TEAM_ID ??
 		configEnv.TRUCE_IOS_TEAM_ID ??
 		process.env.TEAM_ID ??
 		configEnv.TEAM_ID ??
+		extractTeamId(rawIdentity) ??
 		null;
 	return { identity, teamId };
 }
@@ -126,15 +149,21 @@ async function copyWebview() {
 
 async function stageMacArtifacts(options) {
 	const profile = options.release ? "auv3" : "debug";
-	await run("cargo", [
-		"build",
-		"-p",
-		"cosmo-pd101-plugin",
-		...(options.release ? ["--profile", "auv3"] : []),
-		"--no-default-features",
-		"--features",
-		"au",
-	]);
+	const truceAuHeader = await resolveTruceAuHeader();
+	await run(
+		"cargo",
+		[
+			"build",
+			"-p",
+			"cosmo-pd101-plugin",
+			...(options.release ? ["--profile", "auv3"] : []),
+			"--no-default-features",
+			"--features",
+			"au",
+		],
+		repoRoot,
+		{ CLANG_MODULE_CACHE_PATH: clangModuleCacheDir },
+	);
 
 	await mkdir(artifactsDir, { recursive: true });
 	await cp(
@@ -145,6 +174,7 @@ async function stageMacArtifacts(options) {
 		join(pluginDir, "include", "cosmo_pd101_ffi.h"),
 		join(artifactsDir, "cosmo_pd101_ffi.h"),
 	);
+	await cp(truceAuHeader, join(artifactsDir, "au_shim_types.h"));
 }
 
 async function buildMacHostApp(options) {
@@ -182,7 +212,7 @@ async function buildMacHostApp(options) {
 
 	await run("xcodebuild", xcodeArgs);
 
-	const builtAppPath = join(xcodeProductsDir, "CosmoPD101Host.app");
+	const builtAppPath = join(xcodeProductsDir, "CosmoPD101AUv3Ext-macOS.app");
 	await cp(builtAppPath, stagedAppPath, { recursive: true });
 	console.log(`AUv3 macOS app staged at ${stagedAppPath}`);
 	return stagedAppPath;
@@ -212,6 +242,7 @@ async function installMacHostApp(appPath) {
 
 async function createIosXcframework(options) {
 	const profile = options.release ? "auv3" : "debug";
+	const truceAuHeader = await resolveTruceAuHeader();
 	const deviceTarget = "aarch64-apple-ios";
 	const simulatorTarget = "aarch64-apple-ios-sim";
 	const outputPath = join(artifactsDir, "CosmoPd101Plugin.xcframework");
@@ -230,7 +261,10 @@ async function createIosXcframework(options) {
 			deviceTarget,
 		],
 		repoRoot,
-		{ IPHONEOS_DEPLOYMENT_TARGET: iosDeploymentTarget },
+		{
+			CLANG_MODULE_CACHE_PATH: clangModuleCacheDir,
+			IPHONEOS_DEPLOYMENT_TARGET: iosDeploymentTarget,
+		},
 	);
 	await run(
 		"cargo",
@@ -244,17 +278,26 @@ async function createIosXcframework(options) {
 			simulatorTarget,
 		],
 		repoRoot,
-		{ IPHONEOS_DEPLOYMENT_TARGET: iosDeploymentTarget },
+		{
+			CLANG_MODULE_CACHE_PATH: clangModuleCacheDir,
+			IPHONEOS_DEPLOYMENT_TARGET: iosDeploymentTarget,
+		},
 	);
 
 	await mkdir(artifactsDir, { recursive: true });
+	await resetDirectoryContents(artifactsHeadersDir);
+	await cp(
+		join(pluginDir, "include", "cosmo_pd101_ffi.h"),
+		join(artifactsHeadersDir, "cosmo_pd101_ffi.h"),
+	);
+	await cp(truceAuHeader, join(artifactsHeadersDir, "au_shim_types.h"));
 	await rm(outputPath, { recursive: true, force: true });
 	await run("xcodebuild", [
 		"-create-xcframework",
 		"-library",
 		join(repoRoot, "target", deviceTarget, profile, "libcosmo_pd101_plugin.a"),
 		"-headers",
-		join(pluginDir, "include"),
+		artifactsHeadersDir,
 		"-library",
 		join(
 			repoRoot,
@@ -264,7 +307,7 @@ async function createIosXcframework(options) {
 			"libcosmo_pd101_plugin.a",
 		),
 		"-headers",
-		join(pluginDir, "include"),
+		artifactsHeadersDir,
 		"-output",
 		outputPath,
 	]);
@@ -272,6 +315,7 @@ async function createIosXcframework(options) {
 		join(pluginDir, "include", "cosmo_pd101_ffi.h"),
 		join(artifactsDir, "cosmo_pd101_ffi.h"),
 	);
+	await cp(truceAuHeader, join(artifactsDir, "au_shim_types.h"));
 	console.log(`iOS AUv3 XCFramework created at ${outputPath}`);
 }
 
