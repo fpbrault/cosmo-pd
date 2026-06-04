@@ -5,9 +5,10 @@
 	"license": "GPL-3.0-only",
 	"type": "module",
 	"scripts": {
-		"build": "bun run ../../scripts/build-plugin-auv3.mjs",
+		"build": "bun run ../../scripts/build-plugin-auv3.mjs --debug",
 		"stage:webview": "bun run ../../scripts/build-plugin-auv3.mjs --webview-only",
 		"build:ios": "bun run ../../scripts/build-plugin-auv3.mjs --ios-xcframework",
+		"test": "bun test ./tests/*.test.ts",
 		"bundle": "bun run ../../scripts/build-plugin-auv3.mjs --bundle",
 		"plugin:install": "bun run ../../scripts/build-plugin-auv3.mjs --install",
 		"generate:icons": "bun ../../scripts/generate-plugin-icons.mjs"

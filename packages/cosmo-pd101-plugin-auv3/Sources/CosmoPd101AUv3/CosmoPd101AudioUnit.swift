@@ -117,10 +117,18 @@ public final class CosmoPd101AudioUnit: AUAudioUnit {
     }
 
     public override init(componentDescription: AudioComponentDescription, options: AudioComponentInstantiationOptions = []) throws {
+        let groupId = "group.ca.purraudio.CosmoPD101Host"
+        let containerLookupStart = CFAbsoluteTimeGetCurrent()
+        NSLog("[CzAU] resolving app group container: %@", groupId)
         if let containerURL = FileManager.default.containerURL(
-            forSecurityApplicationGroupIdentifier: "group.com.purraudio.cosmo-pd101"
+            forSecurityApplicationGroupIdentifier: groupId
         ) {
+            let elapsedMs = (CFAbsoluteTimeGetCurrent() - containerLookupStart) * 1000
+            NSLog("[CzAU] app group container resolved in %.1f ms: %@", elapsedMs, containerURL.path)
             setenv("COSMO_PD101_DATA_DIR", containerURL.path, 1)
+        } else {
+            let elapsedMs = (CFAbsoluteTimeGetCurrent() - containerLookupStart) * 1000
+            NSLog("[CzAU] app group container unavailable after %.1f ms: %@", elapsedMs, groupId)
         }
 
         let sampleRate: Double
