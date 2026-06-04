@@ -1,5 +1,4 @@
 import type { RefObject } from "react";
-import type { PerformanceMetrics } from "@/components/performance/PerformanceMonitor";
 
 export type SynthScopeFrameSubscription = (
 	onFrame: (frame: {
@@ -8,16 +7,6 @@ export type SynthScopeFrameSubscription = (
 		hz: number;
 	}) => void,
 ) => () => void;
-
-export type SynthBenchmarkRuntime = {
-	mode: "web" | "plugin";
-	setPerformanceMonitorEnabled: (enabled: boolean) => void | Promise<void>;
-	getPerformanceMetrics: () =>
-		| PerformanceMetrics
-		| null
-		| Promise<PerformanceMetrics | null>;
-	ensureReady?: () => Promise<void>;
-};
 
 export type SynthRuntime = {
 	activeNotes: number[];
@@ -31,5 +20,4 @@ export type SynthRuntime = {
 	analyserNodeRef: RefObject<AnalyserNode | null>;
 	audioCtxRef: RefObject<AudioContext | null>;
 	subscribeScopeFrames?: SynthScopeFrameSubscription;
-	benchmark: SynthBenchmarkRuntime;
 };

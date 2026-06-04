@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { usePerformanceMetrics } from "../../../src/components/renderer/hooks/usePerformanceMetrics";
 import { useAudioEngine } from "../../../src/features/synth/hooks/useAudioEngine";
 import { useMidiLearnBindings } from "../../../src/features/synth/hooks/useMidiLearnBindings";
 import { useNoteHandling } from "../../../src/features/synth/hooks/useNoteHandling";
@@ -29,9 +28,6 @@ export function useWebSynthRuntime(): SynthRuntime {
 		synthBindingsUrl,
 		cosmoWorkletUrl,
 	});
-
-	const { setEnabled: setPerformanceMonitorEnabled, metricsRef } =
-		usePerformanceMetrics(workletNodeRef);
 
 	const noteHandling = useNoteHandling({
 		workletNodeRef,
@@ -66,32 +62,6 @@ export function useWebSynthRuntime(): SynthRuntime {
 			effectivePitchHz,
 			analyserNodeRef,
 			audioCtxRef,
-			benchmark: {
-				mode: "web",
-				setPerformanceMonitorEnabled: (enabled: boolean) => {
-					setPerformanceMonitorEnabled(enabled);
-					if (enabled) {
-						workletNodeRef.current?.port.postMessage({
-							type: "setPerformanceMonitorEnabled",
-							enabled: true,
-						});
-					}
-				},
-				getPerformanceMetrics: () => metricsRef.current,
-				ensureReady: async () => {
-					resumeAudio();
-					const deadline = performance.now() + 5000;
-					while (
-						performance.now() < deadline &&
-						audioCtxRef.current?.state !== "running"
-					) {
-						await new Promise((resolve) => window.setTimeout(resolve, 50));
-					}
-					if (audioCtxRef.current?.state !== "running") {
-						throw new Error("Audio context failed to enter running state");
-					}
-				},
-			},
 		}),
 		[
 			noteHandling.activeNotes,
@@ -104,9 +74,6 @@ export function useWebSynthRuntime(): SynthRuntime {
 			effectivePitchHz,
 			analyserNodeRef,
 			audioCtxRef,
-			setPerformanceMonitorEnabled,
-			metricsRef,
-			workletNodeRef,
 		],
 	);
 }

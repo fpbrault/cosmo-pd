@@ -50,8 +50,6 @@ declare global {
 		__czGetParams?: () => Promise<unknown>;
 		__czGetParamsVersion?: () => Promise<unknown>;
 		__czSetParams?: (json: string) => void;
-		__czSetPerformanceMonitorEnabled?: (enabled: boolean) => Promise<unknown>;
-		__czGetPerformanceMetrics?: () => Promise<unknown>;
 		__czGetTransportInfo?: () => Promise<unknown>;
 		__czOnScope?: (
 			samples: Float32Array | number[],
@@ -228,10 +226,6 @@ function installIpcRouter() {
 		});
 	};
 
-	window.__czSetPerformanceMonitorEnabled = (enabled: boolean) =>
-		invokeRust("setPerformanceMonitorEnabled", enabled);
-
-	window.__czGetPerformanceMetrics = () => invokeRust("getPerformanceMetrics");
 	window.__czGetTransportInfo = () => invokeRust("getTransportInfo");
 
 	window.__czGetPresetName = () => invokeRust("getPresetName");

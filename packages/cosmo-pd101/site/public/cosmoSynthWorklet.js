@@ -176,14 +176,6 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 		this._params = JSON.parse(JSON.stringify(DEFAULT_PARAMS));
 		this._queue = []; // messages received before WASM is ready
 		this._supportedModDestinations = null;
-		this._performanceMonitorEnabled = false;
-		this._performanceMetrics = {
-			blockCount: 0,
-			totalMs: 0,
-			lastMs: 0,
-			maxMs: 0,
-			activeVoices: 0,
-		};
 
 		this.port.onmessage = (e) => this._handleMessage(e.data);
 	}
@@ -298,19 +290,9 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 					synth.resetAudioState();
 				}
 				break;
-			case "setPerformanceMonitorEnabled":
-				this._performanceMonitorEnabled = d.enabled === true;
-				if (!this._performanceMonitorEnabled) {
-					this._resetPerformanceMetrics();
-				}
-				break;
-			case "getPerformanceMetrics":
-				this._emitPerformanceMetrics();
-				break;
 			case "requestRuntimeTelemetry":
 				this._emitRuntimeModSources();
 				this._emitRuntimeVoiceStates();
-				this._emitPerformanceMetrics();
 				break;
 		}
 	}
@@ -512,70 +494,6 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 		}
 	}
 
-	_nowMs() {
-		return globalThis.performance?.now?.() ?? Date.now();
-	}
-
-	_resetPerformanceMetrics() {
-		this._performanceMetrics.blockCount = 0;
-		this._performanceMetrics.totalMs = 0;
-		this._performanceMetrics.lastMs = 0;
-		this._performanceMetrics.maxMs = 0;
-		this._performanceMetrics.activeVoices = 0;
-	}
-
-	_recordPerformanceBlock(elapsedMs, blockSamples) {
-		if (!this._performanceMonitorEnabled) return;
-
-		const metrics = this._performanceMetrics;
-		metrics.blockCount += 1;
-		metrics.totalMs += elapsedMs;
-		metrics.lastMs = elapsedMs;
-		metrics.maxMs = Math.max(metrics.maxMs, elapsedMs);
-		metrics.blockSamples = blockSamples;
-		metrics.sampleRate = sampleRate;
-	}
-
-	_emitPerformanceMetrics() {
-		const metrics = this._performanceMetrics;
-		if (
-			this._synth &&
-			typeof this._synth.getRuntimeVoiceStates === "function"
-		) {
-			try {
-				const voices = JSON.parse(this._synth.getRuntimeVoiceStates());
-				metrics.activeVoices = Array.isArray(voices)
-					? voices.filter((voice) => voice?.active === true).length
-					: 0;
-			} catch {
-				metrics.activeVoices = 0;
-			}
-		}
-		const blockBudgetMs =
-			metrics.blockSamples > 0 ? (metrics.blockSamples / sampleRate) * 1000 : 0;
-		const avgMs =
-			metrics.blockCount > 0 ? metrics.totalMs / metrics.blockCount : 0;
-		this.port.postMessage({
-			type: "performanceMetrics",
-			metrics: {
-				enabled: this._performanceMonitorEnabled,
-				blockCount: metrics.blockCount,
-				lastMs: metrics.lastMs,
-				avgMs,
-				maxMs: metrics.maxMs,
-				blockBudgetMs,
-				lastRtPercent:
-					blockBudgetMs > 0 ? (metrics.lastMs / blockBudgetMs) * 100 : 0,
-				avgRtPercent: blockBudgetMs > 0 ? (avgMs / blockBudgetMs) * 100 : 0,
-				maxRtPercent:
-					blockBudgetMs > 0 ? (metrics.maxMs / blockBudgetMs) * 100 : 0,
-				blockSamples: metrics.blockSamples ?? 0,
-				sampleRate,
-				activeVoices: metrics.activeVoices,
-			},
-		});
-	}
-
 	// ── Audio render loop ─────────────────────────────────────────────────
 
 	process(_inputs, outputs, _params) {
@@ -589,13 +507,8 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 			return true;
 		}
 
-		const processStart = this._performanceMonitorEnabled ? this._nowMs() : 0;
-
 		// Fill the left channel buffer directly
 		this._synth.process(ch0);
-		if (this._performanceMonitorEnabled) {
-			this._recordPerformanceBlock(this._nowMs() - processStart, ch0.length);
-		}
 
 		// Copy to right channel if present
 		if (outputs[0].length > 1) {

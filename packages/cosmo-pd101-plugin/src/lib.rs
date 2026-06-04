@@ -12,7 +12,6 @@ use std::path::PathBuf;
 use std::sync::OnceLock;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, Once};
-use std::time::Instant;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use arc_swap::ArcSwap;
@@ -262,8 +261,6 @@ type SharedRuntimeModSources = Arc<ArcSwap<RuntimeModSources>>;
 type SharedRuntimeVoiceStates = Arc<ArcSwap<Vec<RuntimeVoiceDebugState>>>;
 type SharedTransportSnapshot = Arc<TransportSnapshot>;
 type SynthParamsVersion = Arc<AtomicU64>;
-type PerformanceCountersHandle = Arc<PerformanceCounters>;
-
 const MIDI_CC_QUEUE_CAPACITY: usize = 128;
 type MidiCcQueue = Arc<ArrayQueue<(u8, u8, u8)>>;
 
@@ -275,19 +272,6 @@ fn build_rt_synth_params(params: &SynthParams) -> SynthParams {
     let mut rt_params = params.clone();
     normalize_synth_params_envelopes_to_raw_if_human(&mut rt_params);
     rt_params
-}
-
-struct PerformanceCounters {
-    enabled: AtomicBool,
-    block_count: AtomicU64,
-    total_process_ns: AtomicU64,
-    last_process_ns: AtomicU64,
-    max_process_ns: AtomicU64,
-    last_block_samples: AtomicU32,
-    sample_rate_bits: AtomicU32,
-    active_voices: AtomicU32,
-    ui_queue_depth: AtomicU32,
-    params_apply_count: AtomicU64,
 }
 
 struct TransportSnapshot {
@@ -393,127 +377,6 @@ impl TransportSnapshot {
             "loopActive": transport.loop_active,
             "loopStartBeats": transport.loop_start_beats,
             "loopEndBeats": transport.loop_end_beats,
-        })
-    }
-}
-
-impl Default for PerformanceCounters {
-    fn default() -> Self {
-        Self {
-            enabled: AtomicBool::new(false),
-            block_count: AtomicU64::new(0),
-            total_process_ns: AtomicU64::new(0),
-            last_process_ns: AtomicU64::new(0),
-            max_process_ns: AtomicU64::new(0),
-            last_block_samples: AtomicU32::new(0),
-            sample_rate_bits: AtomicU32::new(44_100.0_f32.to_bits()),
-            active_voices: AtomicU32::new(0),
-            ui_queue_depth: AtomicU32::new(0),
-            params_apply_count: AtomicU64::new(0),
-        }
-    }
-}
-
-impl PerformanceCounters {
-    fn set_enabled(&self, enabled: bool) {
-        self.enabled.store(enabled, Ordering::Release);
-        if !enabled {
-            self.reset();
-        }
-    }
-
-    fn reset(&self) {
-        self.block_count.store(0, Ordering::Release);
-        self.total_process_ns.store(0, Ordering::Release);
-        self.last_process_ns.store(0, Ordering::Release);
-        self.max_process_ns.store(0, Ordering::Release);
-        self.last_block_samples.store(0, Ordering::Release);
-        self.active_voices.store(0, Ordering::Release);
-        self.ui_queue_depth.store(0, Ordering::Release);
-        self.params_apply_count.store(0, Ordering::Release);
-    }
-
-    fn record_param_apply(&self) {
-        if self.enabled.load(Ordering::Acquire) {
-            self.params_apply_count.fetch_add(1, Ordering::Relaxed);
-        }
-    }
-
-    fn record_process_block(
-        &self,
-        elapsed_ns: u64,
-        block_samples: usize,
-        sample_rate: f32,
-        active_voices: usize,
-        ui_queue_depth: usize,
-    ) {
-        if !self.enabled.load(Ordering::Acquire) {
-            return;
-        }
-
-        self.block_count.fetch_add(1, Ordering::Relaxed);
-        self.total_process_ns
-            .fetch_add(elapsed_ns, Ordering::Relaxed);
-        self.last_process_ns.store(elapsed_ns, Ordering::Relaxed);
-        self.last_block_samples
-            .store(block_samples as u32, Ordering::Relaxed);
-        self.sample_rate_bits
-            .store(sample_rate.to_bits(), Ordering::Relaxed);
-        self.active_voices
-            .store(active_voices as u32, Ordering::Relaxed);
-        self.ui_queue_depth
-            .store(ui_queue_depth as u32, Ordering::Relaxed);
-
-        let mut current_max = self.max_process_ns.load(Ordering::Relaxed);
-        while elapsed_ns > current_max {
-            match self.max_process_ns.compare_exchange_weak(
-                current_max,
-                elapsed_ns,
-                Ordering::Relaxed,
-                Ordering::Relaxed,
-            ) {
-                Ok(_) => break,
-                Err(next) => current_max = next,
-            }
-        }
-    }
-
-    fn snapshot_json(&self) -> serde_json::Value {
-        let enabled = self.enabled.load(Ordering::Acquire);
-        let block_count = self.block_count.load(Ordering::Relaxed);
-        let total_ns = self.total_process_ns.load(Ordering::Relaxed);
-        let last_ns = self.last_process_ns.load(Ordering::Relaxed);
-        let max_ns = self.max_process_ns.load(Ordering::Relaxed);
-        let block_samples = self.last_block_samples.load(Ordering::Relaxed);
-        let sample_rate = f32::from_bits(self.sample_rate_bits.load(Ordering::Relaxed)).max(1.0);
-        let block_budget_ms = if block_samples == 0 {
-            0.0
-        } else {
-            (block_samples as f64 / sample_rate as f64) * 1000.0
-        };
-        let last_ms = last_ns as f64 / 1_000_000.0;
-        let max_ms = max_ns as f64 / 1_000_000.0;
-        let avg_ms = if block_count == 0 {
-            0.0
-        } else {
-            (total_ns as f64 / block_count as f64) / 1_000_000.0
-        };
-
-        serde_json::json!({
-            "enabled": enabled,
-            "blockCount": block_count,
-            "lastMs": last_ms,
-            "avgMs": avg_ms,
-            "maxMs": max_ms,
-            "blockBudgetMs": block_budget_ms,
-            "lastRtPercent": if block_budget_ms > 0.0 { last_ms / block_budget_ms * 100.0 } else { 0.0 },
-            "avgRtPercent": if block_budget_ms > 0.0 { avg_ms / block_budget_ms * 100.0 } else { 0.0 },
-            "maxRtPercent": if block_budget_ms > 0.0 { max_ms / block_budget_ms * 100.0 } else { 0.0 },
-            "blockSamples": block_samples,
-            "sampleRate": sample_rate,
-            "activeVoices": self.active_voices.load(Ordering::Relaxed),
-            "uiQueueDepth": self.ui_queue_depth.load(Ordering::Relaxed),
-            "paramsApplyCount": self.params_apply_count.load(Ordering::Relaxed),
         })
     }
 }
@@ -958,7 +821,6 @@ fn handle_ipc_invoke(
     synth_params_version: &SynthParamsVersion,
     scope_buffer: &ScopeBuffer,
     ui_input_queue: &UiInputQueue,
-    performance_counters: &PerformanceCountersHandle,
     params: &CzPluginParams,
     preset_session: &SharedPresetSession,
     preset_library: &Arc<Mutex<PresetLibrary>>,
@@ -1190,15 +1052,6 @@ fn handle_ipc_invoke(
                 serde_json::json!({ "samples": linear, "sampleRate": scope.sample_rate, "hz": scope.hz }),
             )
         }
-        "setPerformanceMonitorEnabled" => {
-            let enabled = args
-                .first()
-                .and_then(serde_json::Value::as_bool)
-                .ok_or_else(|| "setPerformanceMonitorEnabled expects a boolean".to_string())?;
-            performance_counters.set_enabled(enabled);
-            Ok(serde_json::Value::Null)
-        }
-        "getPerformanceMetrics" => Ok(performance_counters.snapshot_json()),
         "clientLog" => {
             let level = args
                 .first()
@@ -1758,7 +1611,6 @@ pub struct CzPlugin {
     midi_cc_queue: MidiCcQueue,
     block_input_events: Vec<CosmoTimedInputEvent>,
     mono_output: Vec<f32>,
-    performance_counters: PerformanceCountersHandle,
     /// Tracks whether DAW param values changed since last process() call.
     daw_params_dirty: bool,
     last_scope_hz: f32,
@@ -1814,7 +1666,6 @@ impl CzPlugin {
             midi_cc_queue: Arc::new(ArrayQueue::new(MIDI_CC_QUEUE_CAPACITY)),
             block_input_events: Vec::with_capacity(MAX_UI_INPUT_EVENTS_PER_BLOCK),
             mono_output: Vec::new(),
-            performance_counters: Arc::new(PerformanceCounters::default()),
             daw_params_dirty: true,
             last_scope_hz: 220.0,
             preset_session: Arc::new(Mutex::new(crate::session_state::PresetSession::default())),
@@ -1857,7 +1708,6 @@ impl CzPlugin {
 
         if let Some(proc) = self.processor.as_mut() {
             proc.set_shared_params(rt_params);
-            self.performance_counters.record_param_apply();
         }
     }
 
@@ -1927,7 +1777,6 @@ impl CzPlugin {
 
         if update_processor && let Some(proc) = self.processor.as_mut() {
             proc.set_shared_params(rt_params);
-            self.performance_counters.record_param_apply();
         }
     }
 
@@ -2032,7 +1881,6 @@ impl CzPlugin {
 
         if let Some(proc) = self.processor.as_mut() {
             proc.set_shared_params(rt_params);
-            self.performance_counters.record_param_apply();
         }
 
         true
@@ -2165,7 +2013,6 @@ impl CzPlugin {
         self.cached_rt_synth_params = rt_merged.clone();
         if let Some(ref mut proc) = self.processor {
             proc.set_shared_params(rt_merged);
-            self.performance_counters.record_param_apply();
         }
         self.cached_synth_params_version = published_params_version;
         self.daw_params_dirty = false;
@@ -2267,12 +2114,6 @@ impl CzPlugin {
     fn collect_block_input_events(&mut self, events: &EventList, num_samples: usize) {
         self.block_input_events.clear();
 
-        if self.performance_counters.enabled.load(Ordering::Acquire) {
-            self.performance_counters
-                .ui_queue_depth
-                .store(self.ui_input_queue.len() as u32, Ordering::Relaxed);
-        }
-
         for _ in 0..MAX_UI_INPUT_EVENTS_PER_BLOCK {
             let Some(event) = self.ui_input_queue.pop() else {
                 break;
@@ -2329,7 +2170,6 @@ impl CzPlugin {
         buffer: &mut AudioBuffer,
         events: &EventList,
         context: &mut ProcessContext,
-        monitor_enabled: bool,
     ) -> ProcessStatus {
         let Some(_) = self.processor else {
             return ProcessStatus::Normal;
@@ -2343,7 +2183,6 @@ impl CzPlugin {
             return ProcessStatus::Normal;
         }
 
-        let process_start = monitor_enabled.then(Instant::now);
         self.collect_block_input_events(events, num_samples);
         if let Some(proc) = self.processor.as_mut() {
             proc.process_block(
@@ -2354,9 +2193,6 @@ impl CzPlugin {
         }
 
         let mono_output = &mut self.mono_output[..num_samples];
-        let elapsed_ns = process_start
-            .map(|start| start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64)
-            .unwrap_or(0);
 
         let Some(proc) = self.processor.as_ref() else {
             return ProcessStatus::Normal;
@@ -2375,23 +2211,6 @@ impl CzPlugin {
         } else {
             self.last_scope_hz
         };
-        let active_voice_count = if monitor_enabled {
-            proc.voices.iter().filter(|voice| !voice.is_silent).count()
-        } else {
-            0
-        };
-        let ui_queue_depth = if monitor_enabled {
-            self.ui_input_queue.len()
-        } else {
-            0
-        };
-        self.performance_counters.record_process_block(
-            elapsed_ns,
-            num_samples,
-            proc.sample_rate,
-            active_voice_count,
-            ui_queue_depth,
-        );
         if let Ok(mut scope) = self.scope_buffer.try_lock() {
             scope.push_block(mono_output, proc.sample_rate, hz);
         }
@@ -2444,9 +2263,6 @@ impl PluginLogic for CzPlugin {
         self.cached_synth_params_version = self.synth_params_version.load(Ordering::Acquire);
         self.processor = Some(processor);
         self.mono_output.resize(max_block_size, 0.0);
-        self.performance_counters
-            .sample_rate_bits
-            .store(sr.to_bits(), Ordering::Release);
         self.daw_params_dirty = false;
         self.transport_snapshot.store(&TransportInfo::default());
     }
@@ -2458,9 +2274,8 @@ impl PluginLogic for CzPlugin {
         context: &mut ProcessContext,
     ) -> ProcessStatus {
         self.transport_snapshot.store(context.transport);
-        let monitor_enabled = self.performance_counters.enabled.load(Ordering::Acquire);
         self.sync_runtime_params_from_host(events);
-        self.render_audio_block(buffer, events, context, monitor_enabled)
+        self.render_audio_block(buffer, events, context)
     }
 
     fn bus_layouts() -> Vec<BusLayout> {
@@ -2508,7 +2323,6 @@ impl PluginLogic for CzPlugin {
     fn state_changed(&mut self) {
         if let Some(ref mut proc) = self.processor {
             proc.set_shared_params(self.cached_rt_synth_params.clone());
-            self.performance_counters.record_param_apply();
         }
     }
 
@@ -2522,7 +2336,6 @@ impl PluginLogic for CzPlugin {
             self.scope_buffer.clone(),
             self.ui_input_queue.clone(),
             self.midi_cc_queue.clone(),
-            self.performance_counters.clone(),
             self.params.clone(),
             self.preset_session.clone(),
             self.runtime_voice_states.clone(),
@@ -2622,7 +2435,6 @@ mod tests {
         SynthParamsVersion,
         ScopeBuffer,
         UiInputQueue,
-        PerformanceCountersHandle,
         Arc<CzPluginParams>,
         SharedPresetSession,
         Arc<Mutex<PresetLibrary>>,
@@ -2638,7 +2450,6 @@ mod tests {
         let ver = Arc::new(AtomicU64::new(0));
         let sc: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
         let q: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
-        let pc = Arc::new(PerformanceCounters::default());
         let params = Arc::new(CzPluginParams::new());
         let ps: SharedPresetSession =
             Arc::new(Mutex::new(crate::session_state::PresetSession::default()));
@@ -2649,9 +2460,7 @@ mod tests {
         let es: SharedEditorState = Arc::new(Mutex::new(None));
         let mm: SharedMidiMappings =
             Arc::new(Mutex::new(crate::session_state::MidiLearnState::default()));
-        (
-            sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm,
-        )
+        (sp, rsp, rms, rvs, ts, ver, sc, q, params, ps, pl, es, mm)
     }
 
     #[test]
@@ -2671,7 +2480,7 @@ mod tests {
 
     #[test]
     fn set_params_rpc_updates_synth_params() {
-        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, params, ps, pl, es, mm) = make_handler_state();
 
         let new_params = SynthParams {
             volume: 0.42,
@@ -2690,7 +2499,6 @@ mod tests {
             &ver,
             &sc,
             &q,
-            &pc,
             &params,
             &ps,
             &pl,
@@ -2718,7 +2526,6 @@ mod tests {
         let ver = Arc::new(AtomicU64::new(0));
         let sc: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
         let q: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
-        let pc = Arc::new(PerformanceCounters::default());
         let params = Arc::new(CzPluginParams::new());
         let ps: SharedPresetSession =
             Arc::new(Mutex::new(crate::session_state::PresetSession::default()));
@@ -2741,7 +2548,6 @@ mod tests {
             &ver,
             &sc,
             &q,
-            &pc,
             &params,
             &ps,
             &pl,
@@ -2756,7 +2562,7 @@ mod tests {
 
     #[test]
     fn note_on_rpc_enqueues_ui_input_event() {
-        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, params, ps, pl, es, mm) = make_handler_state();
 
         let result = handle_ipc_invoke(
             "noteOn",
@@ -2769,7 +2575,6 @@ mod tests {
             &ver,
             &sc,
             &q,
-            &pc,
             &params,
             &ps,
             &pl,
@@ -2790,7 +2595,7 @@ mod tests {
     #[allow(clippy::field_reassign_with_default)]
     #[test]
     fn set_params_rpc_syncs_daw_float_params() {
-        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, params, ps, pl, es, mm) = make_handler_state();
         assert_eq!(params.volume.value(), 0.8); // default
 
         let mut new_params = SynthParams::default();
@@ -2809,7 +2614,6 @@ mod tests {
             &ver,
             &sc,
             &q,
-            &pc,
             &params,
             &ps,
             &pl,
@@ -2858,7 +2662,7 @@ mod tests {
 
     #[test]
     fn get_transport_info_rpc_returns_current_snapshot() {
-        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, params, ps, pl, es, mm) = make_handler_state();
         ts.store(&TransportInfo {
             playing: true,
             recording: true,
@@ -2885,7 +2689,6 @@ mod tests {
             &ver,
             &sc,
             &q,
-            &pc,
             &params,
             &ps,
             &pl,
@@ -3223,7 +3026,7 @@ mod tests {
 
     #[test]
     fn set_preset_name_rpc_stores_name() {
-        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, params, ps, pl, es, mm) = make_handler_state();
 
         let result = handle_ipc_invoke(
             "setPresetName",
@@ -3236,7 +3039,6 @@ mod tests {
             &ver,
             &sc,
             &q,
-            &pc,
             &params,
             &ps,
             &pl,
@@ -3250,7 +3052,7 @@ mod tests {
 
     #[test]
     fn get_preset_name_rpc_returns_current_name() {
-        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, params, ps, pl, es, mm) = make_handler_state();
         {
             let mut stored = ps.lock().unwrap();
             stored.active_preset_name_base = "Factory Brass".to_string();
@@ -3267,7 +3069,6 @@ mod tests {
             &ver,
             &sc,
             &q,
-            &pc,
             &params,
             &ps,
             &pl,
@@ -3547,8 +3348,7 @@ mod tests {
             let mut plugin = CzPlugin::new(Arc::clone(&params));
             plugin.reset(48_000.0, 64);
 
-            let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm) =
-                make_handler_state();
+            let (sp, rsp, rms, rvs, ts, ver, sc, q, params, ps, pl, es, mm) = make_handler_state();
             {
                 let mut state = mm.lock().unwrap();
                 state.bindings = plugin.midi_learn_state.lock().unwrap().bindings.clone();
@@ -3569,7 +3369,6 @@ mod tests {
                 &ver,
                 &sc,
                 &q,
-                &pc,
                 &params,
                 &ps,
                 &pl,
@@ -3601,7 +3400,6 @@ mod tests {
                 &ver,
                 &sc,
                 &q,
-                &pc,
                 &params,
                 &ps,
                 &pl,
@@ -3628,7 +3426,6 @@ mod tests {
                 &ver,
                 &sc,
                 &q,
-                &pc,
                 &params,
                 &ps,
                 &pl,
