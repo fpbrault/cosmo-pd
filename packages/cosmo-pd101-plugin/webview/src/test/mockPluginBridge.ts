@@ -339,6 +339,74 @@ const DEFAULT_PARAMS: PluginParamInfo[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// Minimal default params blob — satisfies hasRawEnvelopeValues/applyPreset.
+// ---------------------------------------------------------------------------
+
+const DEFAULT_FULL_PARAMS: FullParamsBlob = {
+	lineSelect: "L1+L2'",
+	modMode: "normal",
+	octave: 0,
+	volume: 0.8,
+	frequency: 440,
+	polyMode: "poly8",
+	legato: false,
+	czDacEnabled: false,
+	tempoBpm: 120,
+	velocityCurve: 64,
+	pitchBendRange: 2,
+	line1: {
+		algo: "cz101",
+		algo2: null,
+		algoBlend: 0,
+		window: "off",
+		dcaBase: 1,
+		dcwBase: 0.5,
+		modulation: 0,
+		detuneNote: 0,
+		detuneFine: 0,
+		octave: 0,
+		dcoEnv: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
+		dcwEnv: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
+		dcaEnv: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
+		dcwKeyFollow: 0,
+		dcaKeyFollow: 0,
+		algoControlsA: [],
+		algoControlsB: [],
+	},
+	line2: {
+		algo: "cz101",
+		algo2: null,
+		algoBlend: 0,
+		window: "off",
+		dcaBase: 1,
+		dcwBase: 0.5,
+		modulation: 0,
+		detuneNote: 0,
+		detuneFine: 0,
+		octave: 0,
+		dcoEnv: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
+		dcwEnv: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
+		dcaEnv: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
+		dcwKeyFollow: 0,
+		dcaKeyFollow: 0,
+		algoControlsA: [],
+		algoControlsB: [],
+	},
+	portamento: { enabled: false, mode: "time", rate: 0, time: 0 },
+	lfo: {
+		waveform: "sine",
+		rate: 0,
+		rateMode: "hz",
+		syncDivision: "quarter",
+		depth: 0,
+		symmetry: 0.5,
+		retrigger: false,
+		offset: 0,
+	},
+	modMatrix: { routes: [] },
+};
+
+// ---------------------------------------------------------------------------
 // installMockPluginBridge
 // ---------------------------------------------------------------------------
 
@@ -355,9 +423,9 @@ export function installMockPluginBridge(): void {
 					| undefined)
 			: undefined) ?? "";
 
-	// Full params blob received from the last setParams IPC call.
-	// Used by pushParamUpdate/pushPluginParamUpdate to build valid full-param updates.
-	let virtualFullParams: FullParamsBlob | null = null;
+	// Full params blob pre-seeded with defaults so pushParamUpdate always
+	// sends a complete blob that satisfies applyPreset (requires line1/line2).
+	let virtualFullParams: FullParamsBlob = { ...DEFAULT_FULL_PARAMS };
 	// Scalar param snapshot from last setParams — used for change detection.
 	let prevExtractedScalars: Record<string, number> = {};
 
@@ -447,9 +515,7 @@ export function installMockPluginBridge(): void {
 				return;
 			}
 			if (method === "getParams") {
-				// Resolve with null so the adapter enables outbound sync and calls syncRef,
-				// which triggers the initial setParams call that seeds virtualFullParams.
-				respondIpc(id, { result: null });
+				respondIpc(id, { result: { ...DEFAULT_FULL_PARAMS } });
 				return;
 			}
 			if (method === "getTransportInfo") {
@@ -600,6 +666,27 @@ export function installMockPluginBridge(): void {
 			}
 			if (method === "setPresetName") {
 				virtualPresetName = typeof args[0] === "string" ? args[0] : "";
+				respondIpc(id, { result: null });
+				return;
+			}
+			if (method === "getPresetSession") {
+				respondIpc(id, {
+					result: {
+						activePresetId: null,
+						activePresetNameBase: virtualPresetName,
+						isDirty: false,
+					},
+				});
+				return;
+			}
+			if (method === "setPresetSession") {
+				const session =
+					typeof args[0] === "object" && args[0] !== null
+						? (args[0] as Record<string, unknown>)
+						: null;
+				if (session?.activePresetNameBase) {
+					virtualPresetName = session.activePresetNameBase as string;
+				}
 				respondIpc(id, { result: null });
 				return;
 			}

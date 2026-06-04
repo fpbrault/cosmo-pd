@@ -98,6 +98,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	useEffect(() => {
 		presetSessionRef.current = presetSession;
 	}, [presetSession]);
+	const restoreDoneRef = useRef(false);
 	const {
 		loadPresetData,
 		getPresetSession,
@@ -206,6 +207,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 
 	useEffect(() => {
 		window.__czOnHostPresetSelected = (name: string) => {
+			window.__czSetPresetName(name);
 			handleSyncPresetSelection(name, { isDirty: false });
 			syncInstanceBRef.current?.(name, { isDirty: false });
 		};
@@ -217,16 +219,19 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	useEffect(() => {
 		const restore = async () => {
 			const session = await getPresetSession();
+			if (restoreDoneRef.current) return;
 			if (session?.activePresetNameBase) {
+				restoreDoneRef.current = true;
 				setPresetSession(session);
 				syncInstanceBRef.current?.(session.activePresetNameBase, {
 					isDirty: session.isDirty,
 					presetId: session.activePresetId,
 				});
+				void persistPresetSession(session);
 			}
 		};
 		void restore();
-	}, [getPresetSession]);
+	}, [getPresetSession, persistPresetSession]);
 
 	useEffect(() => {
 		const fetchLibrary = async () => {

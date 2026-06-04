@@ -81,13 +81,20 @@ function mapEnvelope(env: StepEnv, kind: EnvelopeKind): StepEnv {
 }
 
 function hasRawEnvelopeValues(params: SynthPresetV1["params"]): boolean {
+	const line1 = params.line1;
+	const line2 = params.line2;
+
+	if (!line1 || !line2) {
+		return false;
+	}
+
 	const envelopes = [
-		params.line1.dcoEnv,
-		params.line1.dcwEnv,
-		params.line1.dcaEnv,
-		params.line2.dcoEnv,
-		params.line2.dcwEnv,
-		params.line2.dcaEnv,
+		line1.dcoEnv,
+		line1.dcwEnv,
+		line1.dcaEnv,
+		line2.dcoEnv,
+		line2.dcwEnv,
+		line2.dcaEnv,
 	];
 
 	for (const envelope of envelopes) {

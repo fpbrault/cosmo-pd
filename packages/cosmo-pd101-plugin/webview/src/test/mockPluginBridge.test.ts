@@ -163,7 +163,11 @@ describe("pushParamUpdate", () => {
 
 		window.__MOCK_BRIDGE__?.pushParamUpdate("volume", 0.6);
 
-		expect(handler).toHaveBeenCalledWith(JSON.stringify({ volume: 0.6 }));
+		expect(handler).toHaveBeenCalledTimes(1);
+		const sent = JSON.parse(handler.mock.calls[0][0]);
+		expect(sent.volume).toBe(0.6);
+		expect(sent.line1).toBeDefined();
+		expect(sent.line2).toBeDefined();
 	});
 
 	it("does not throw when __czOnParams is not set", () => {
@@ -184,7 +188,11 @@ describe("setParameter alias", () => {
 
 		window.__MOCK_BRIDGE__?.setParameter("volume", 0.4);
 
-		expect(handler).toHaveBeenCalledWith(JSON.stringify({ volume: 0.4 }));
+		expect(handler).toHaveBeenCalledTimes(1);
+		const sent = JSON.parse(handler.mock.calls[0][0]);
+		expect(sent.volume).toBe(0.4);
+		expect(sent.line1).toBeDefined();
+		expect(sent.line2).toBeDefined();
 	});
 
 	it("routes through window.ipc.postMessage when installed", () => {
