@@ -512,6 +512,68 @@ function installMidiLearnStateHandler() {
 	}
 }
 
+function installTransportPolling() {
+	const INTERVAL_MS = 100;
+	let rafId = 0;
+	let lastScheduled = 0;
+	let pollInFlight = false;
+	let destroyed = false;
+
+	const dispatchTransport = (result: unknown) => {
+		const transport =
+			typeof result === "string"
+				? (JSON.parse(result) as Record<string, number | boolean>)
+				: result;
+		if (typeof transport !== "object" || transport === null) {
+			return;
+		}
+		window.dispatchEvent(
+			new CustomEvent("cz-host-transport", { detail: transport }),
+		);
+	};
+
+	const scheduleNextFrame = () => {
+		if (destroyed || rafId !== 0) {
+			return;
+		}
+		rafId = requestAnimationFrame(tick);
+	};
+
+	const tick = async (now: number) => {
+		rafId = 0;
+		if (destroyed) {
+			return;
+		}
+		if (now - lastScheduled < INTERVAL_MS || pollInFlight) {
+			scheduleNextFrame();
+			return;
+		}
+
+		lastScheduled = now;
+		pollInFlight = true;
+		try {
+			const result = await invokeAuv3("getTransportInfo");
+			if (result) {
+				dispatchTransport(result);
+			}
+		} catch {
+			// Transport is opportunistic; some hosts may not implement it.
+		} finally {
+			pollInFlight = false;
+			scheduleNextFrame();
+		}
+	};
+
+	scheduleNextFrame();
+	window.addEventListener("pagehide", () => {
+		destroyed = true;
+		if (rafId !== 0) {
+			cancelAnimationFrame(rafId);
+			rafId = 0;
+		}
+	});
+}
+
 export function ensureAuv3Bridge(): boolean {
 	if (installed) {
 		return true;

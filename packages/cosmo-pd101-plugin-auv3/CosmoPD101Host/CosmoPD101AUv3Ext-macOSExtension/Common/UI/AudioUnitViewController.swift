@@ -11,6 +11,10 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	private static let preferredHeight: CGFloat = 912
 	private static let minimumWidth: CGFloat = 1024
 	private static let minimumHeight: CGFloat = 768
+	private var presetSessionState = PresetSessionState()
+	private var editorState = [String: Any]()
+	private var midiLearnState = MidiLearnState()
+	private var paramsVersion = 0
 
 	nonisolated(unsafe) var audioUnit: AUAudioUnit?
 	private var webView: WKWebView?
@@ -102,13 +106,18 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		switch method {
 		case "getParams":
 			sendResponse(id: id, result: audioUnit.paramsJson() ?? "{}")
+		case "getParamsVersion":
+			sendResponse(id: id, result: paramsVersion)
 		case "setParams":
 			if let json = args.first as? String, audioUnit.setParamsJson(json) {
+				paramsVersion += 1
 				sendResponse(id: id, result: NSNull())
 			} else {
 				NSLog("[CzVC] setParams FAILED: jsonOk=%@", (args.first as? String) != nil ? "yes" : "no")
 				sendError(id: id, message: "invalid setParams payload")
 			}
+		case "getTransportInfo":
+			sendResponse(id: id, result: transportInfoResult())
 		case "getScopeData":
 			let scope = audioUnit.scopeData()
 			sendResponse(id: id, result: [
@@ -120,6 +129,71 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			sendResponse(id: id, result: audioUnit.runtimeVoiceStatesJson() ?? "[]")
 		case "getRuntimeModSources":
 			sendResponse(id: id, result: audioUnit.runtimeModSourcesJson() ?? "{}")
+		case "getPresetSession":
+			sendResponse(id: id, result: currentPresetSession(for: audioUnit))
+		case "setPresetSession":
+			presetSessionState = PresetSessionState(payload: args.first as? [String: Any])
+			sendResponse(id: id, result: NSNull())
+		case "getPresetLibrary":
+			sendResponse(id: id, result: ["entries": presetLibraryEntries(for: audioUnit)])
+		case "loadPresetData":
+			guard
+				let payload = args.first as? [String: Any],
+				let presetId = payload["id"] as? String,
+				let preset = preset(for: audioUnit, id: presetId)
+			else {
+				sendError(id: id, message: "invalid loadPresetData payload")
+				return
+			}
+			audioUnit.currentPreset = preset
+			paramsVersion += 1
+			presetSessionState.activePresetId = presetId
+			presetSessionState.loadedPresetId = presetId
+			presetSessionState.activePresetNameBase = preset.name
+			presetSessionState.isDirty = false
+			sendResponse(id: id, result: ["preset_name": preset.name])
+		case "setEditorState":
+			editorState = args.first as? [String: Any] ?? [:]
+			sendResponse(id: id, result: NSNull())
+		case "getEditorState":
+			sendResponse(id: id, result: editorState)
+		case "getMidiLearnState":
+			sendResponse(id: id, result: midiLearnState.payload)
+		case "setMidiLearnMode":
+			midiLearnState.learnMode = args.first as? Bool ?? false
+			midiLearnState.version += 1
+			sendResponse(id: id, result: NSNull())
+		case "setPendingMidiLearnParam":
+			midiLearnState.pendingParamKey = args.first as? String
+			midiLearnState.version += 1
+			sendResponse(id: id, result: NSNull())
+		case "addMidiBinding":
+			guard
+				let paramKey = args.first as? String,
+				let channel = args.dropFirst().first as? Int,
+				let cc = args.dropFirst(2).first as? Int
+			else {
+				sendError(id: id, message: "invalid addMidiBinding payload")
+				return
+			}
+			midiLearnState.bindings.removeAll { $0.paramKey == paramKey }
+			midiLearnState.bindings.append(MidiLearnBinding(paramKey: paramKey, channel: channel, cc: cc))
+			midiLearnState.version += 1
+			sendResponse(id: id, result: NSNull())
+		case "removeMidiBinding":
+			guard let payload = args.first as? [String: Any], let binding = MidiLearnBinding(payload: payload) else {
+				sendError(id: id, message: "invalid removeMidiBinding payload")
+				return
+			}
+			midiLearnState.bindings.removeAll { $0 == binding }
+			midiLearnState.version += 1
+			sendResponse(id: id, result: NSNull())
+		case "clearMidiLearnBindings":
+			midiLearnState.bindings.removeAll()
+			midiLearnState.version += 1
+			sendResponse(id: id, result: NSNull())
+		case "addPreset", "savePreset", "deletePreset", "renamePreset", "toggleStarred", "setPresetAuthor", "setPresetTags", "exportPreset":
+			sendError(id: id, message: "AUv3 preset library editing is not supported yet")
 		case "clientLog":
 			let logLevel = args.first as? String ?? "info"
 			let logMessage = args.count > 1 ? (args[1] as? String ?? "") : ""
@@ -136,7 +210,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	private func installWebView() {
 		NSLog("[CzVC] installWebView")
 
-		// Resolve the bundle URL up-front so we can register the macOS scheme
+		// Resolve the bundle URL up-front so we can register the cosmo-ext scheme
 		// handler on the WKWebViewConfiguration before the WKWebView is created
 		// (the API requires this ordering).
 		let bundle = Bundle(for: AudioUnitViewController.self)
@@ -196,11 +270,9 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		)
 		configuration.userContentController.add(self, name: "cosmoPd101")
 
-		#if os(macOS)
 		if let baseUrl = indexUrl?.deletingLastPathComponent() {
 			configuration.setURLSchemeHandler(BundleSchemeHandler(baseURL: baseUrl), forURLScheme: "cosmo-ext")
 		}
-		#endif
 
 		let webView = WKWebView(frame: view.bounds, configuration: configuration)
 		webView.navigationDelegate = self
@@ -226,22 +298,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		}
 		NSLog("[CzVC] indexUrl=%@", indexUrl.path)
 
-		#if os(macOS)
 		webView.load(URLRequest(url: URL(string: "cosmo-ext://bundle/index.html")!))
-		#else
-		let baseUrl = indexUrl.deletingLastPathComponent()
-		let assetsDirectory = baseUrl.appendingPathComponent("assets", isDirectory: true)
-		let hasAssetsDirectory = FileManager.default.fileExists(atPath: assetsDirectory.path)
-		if !hasAssetsDirectory,
-		   let htmlData = try? Data(contentsOf: indexUrl),
-		   var html = String(data: htmlData, encoding: .utf8) {
-			html = html.replacingOccurrences(of: "./assets/", with: "./")
-			webView.loadHTMLString(html, baseURL: baseUrl)
-			return
-		}
-
-		webView.loadFileURL(indexUrl, allowingReadAccessTo: baseUrl)
-		#endif
 	}
 
 	private func layoutWebView() {
@@ -334,9 +391,123 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		}
 		webView?.evaluateJavaScript("window.__czIpcResponse?.(\(json));", completionHandler: nil)
 	}
+
+	private func currentPresetSession(for audioUnit: AUAudioUnit) -> [String: Any] {
+		let preset = audioUnit.currentPreset
+		let presetId = presetId(for: preset)
+		return [
+			"activePresetId": presetSessionState.activePresetId ?? presetId as Any,
+			"loadedPresetId": presetSessionState.loadedPresetId ?? presetId as Any,
+			"activePresetNameBase": presetSessionState.activePresetNameBase ?? preset?.name ?? "Current State",
+			"isDirty": presetSessionState.isDirty,
+		]
+	}
+
+	private func presetLibraryEntries(for audioUnit: AUAudioUnit) -> [[String: Any]] {
+		(audioUnit.factoryPresets ?? []).enumerated().map { index, preset in
+			[
+				"id": presetId(for: preset) ?? String(index),
+				"name": preset.name,
+				"source": "cosmo-factory",
+				"author": "",
+				"starred": false,
+				"sortIndex": index,
+				"favorite": false,
+				"tags": [],
+			]
+		}
+	}
+
+	private func preset(for audioUnit: AUAudioUnit, id: String) -> AUAudioUnitPreset? {
+		(audioUnit.factoryPresets ?? []).first { presetId(for: $0) == id }
+	}
+
+	private func presetId(for preset: AUAudioUnitPreset?) -> String? {
+		guard let preset else { return nil }
+		return String(Int(preset.number))
+	}
+
+	private func transportInfoResult() -> [String: Any] {
+		[
+			"playing": false,
+			"recording": false,
+			"tempo": 120,
+			"timeSigNum": 4,
+			"timeSigDen": 4,
+			"positionSamples": 0,
+			"positionSeconds": 0,
+			"positionBeats": 0,
+			"barStartBeats": 0,
+			"loopActive": false,
+			"loopStartBeats": 0,
+			"loopEndBeats": 0,
+		]
+	}
 }
 
-#if os(macOS)
+	private struct PresetSessionState {
+		var activePresetId: String?
+		var loadedPresetId: String?
+		var activePresetNameBase: String?
+		var isDirty = false
+
+		init() {}
+
+		init(payload: [String: Any]?) {
+			activePresetId = payload?["activePresetId"] as? String
+			loadedPresetId = payload?["loadedPresetId"] as? String
+			activePresetNameBase = payload?["activePresetNameBase"] as? String
+			isDirty = payload?["isDirty"] as? Bool ?? false
+		}
+	}
+
+	private struct MidiLearnBinding: Equatable {
+		let paramKey: String
+		let channel: Int
+		let cc: Int
+
+		init(paramKey: String, channel: Int, cc: Int) {
+			self.paramKey = paramKey
+			self.channel = channel
+			self.cc = cc
+		}
+
+		init?(payload: [String: Any]) {
+			guard
+				let paramKey = payload["paramKey"] as? String,
+				let channel = payload["channel"] as? Int,
+				let cc = payload["cc"] as? Int
+			else {
+				return nil
+			}
+			self.init(paramKey: paramKey, channel: channel, cc: cc)
+		}
+
+		var payload: [String: Any] {
+			[
+				"paramKey": paramKey,
+				"channel": channel,
+				"cc": cc,
+			]
+		}
+	}
+
+	private struct MidiLearnState {
+		var learnMode = false
+		var pendingParamKey: String?
+		var bindings: [MidiLearnBinding] = []
+		var version = 0
+
+		var payload: [String: Any] {
+			[
+				"learnMode": learnMode,
+				"pendingParamKey": pendingParamKey ?? NSNull(),
+				"bindings": bindings.map(\ .payload),
+				"version": version,
+			]
+		}
+	}
+
 private final class BundleSchemeHandler: NSObject, WKURLSchemeHandler {
 	private let baseURL: URL
 
@@ -361,11 +532,18 @@ private final class BundleSchemeHandler: NSObject, WKURLSchemeHandler {
 		do {
 			let data = try Data(contentsOf: fileURL)
 			let mimeType = Self.mimeType(for: fileURL.pathExtension)
-			let response = URLResponse(
+			let response = HTTPURLResponse(
+				url: requestURL,
+				statusCode: 200,
+				httpVersion: "HTTP/1.1",
+				headerFields: Self.corsHeaders.merging(
+					["Content-Type": mimeType.hasPrefix("text/") || mimeType == "application/javascript" ? "\(mimeType); charset=utf-8" : mimeType]
+				) { $1 }
+			) ?? URLResponse(
 				url: requestURL,
 				mimeType: mimeType,
 				expectedContentLength: data.count,
-				textEncodingName: mimeType.hasPrefix("text/") || mimeType == "application/javascript" ? "utf-8" : nil
+				textEncodingName: nil
 			)
 			urlSchemeTask.didReceive(response)
 			urlSchemeTask.didReceive(data)
@@ -377,6 +555,12 @@ private final class BundleSchemeHandler: NSObject, WKURLSchemeHandler {
 	}
 
 	func webView(_ webView: WKWebView, stop urlSchemeTask: any WKURLSchemeTask) {}
+
+	private static let corsHeaders = [
+		"Access-Control-Allow-Origin": "*",
+		"Access-Control-Allow-Methods": "GET",
+		"Access-Control-Allow-Headers": "Content-Type",
+	]
 
 	private static func existingFileURL(for requestedFileURL: URL, relativePath: String, baseURL: URL) -> URL {
 		if FileManager.default.fileExists(atPath: requestedFileURL.path) {
@@ -411,4 +595,3 @@ private final class BundleSchemeHandler: NSObject, WKURLSchemeHandler {
 		}
 	}
 }
-#endif

@@ -12,9 +12,14 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
     private static let minimumWidth: CGFloat = 640
     private static let minimumHeight: CGFloat = 427
     private static let preferredAspectRatio = designWidth / designHeight
+    private var presetSessionState = PresetSessionState()
+    private var editorState = [String: Any]()
+    private var midiLearnState = MidiLearnState()
+    private var paramsVersion = 0
 
     private var webView: WKWebView?
     private var audioUnit: CosmoPd101AudioUnit?
+    private var webContentTerminationCount = 0
 
     #if os(iOS)
     public override var prefersStatusBarHidden: Bool { true }
@@ -135,13 +140,18 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
         switch method {
         case "getParams":
             sendResponse(id: id, result: audioUnit.paramsJson() ?? "{}")
+        case "getParamsVersion":
+            sendResponse(id: id, result: paramsVersion)
         case "setParams":
             if let json = args.first as? String, audioUnit.setParamsJson(json) {
+                paramsVersion += 1
                 sendResponse(id: id, result: NSNull())
             } else {
                 NSLog("[CzVC] setParams FAILED: jsonOk=%@", (args.first as? String) != nil ? "yes" : "no")
                 sendError(id: id, message: "invalid setParams payload")
             }
+        case "getTransportInfo":
+            sendResponse(id: id, result: transportInfoResult())
         case "getScopeData":
             let scope = audioUnit.scopeData()
             sendResponse(id: id, result: [
@@ -153,6 +163,71 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
             sendResponse(id: id, result: audioUnit.runtimeVoiceStatesJson() ?? "[]")
         case "getRuntimeModSources":
             sendResponse(id: id, result: audioUnit.runtimeModSourcesJson() ?? "{}")
+        case "getPresetSession":
+            sendResponse(id: id, result: currentPresetSession(for: audioUnit))
+        case "setPresetSession":
+            presetSessionState = PresetSessionState(payload: args.first as? [String: Any])
+            sendResponse(id: id, result: NSNull())
+        case "getPresetLibrary":
+            sendResponse(id: id, result: ["entries": presetLibraryEntries(for: audioUnit)])
+        case "loadPresetData":
+            guard
+                let payload = args.first as? [String: Any],
+                let presetId = payload["id"] as? String,
+                let preset = preset(for: audioUnit, id: presetId)
+            else {
+                sendError(id: id, message: "invalid loadPresetData payload")
+                return
+            }
+            audioUnit.currentPreset = preset
+            paramsVersion += 1
+            presetSessionState.activePresetId = presetId
+            presetSessionState.loadedPresetId = presetId
+            presetSessionState.activePresetNameBase = preset.name
+            presetSessionState.isDirty = false
+            sendResponse(id: id, result: ["preset_name": preset.name])
+        case "setEditorState":
+            editorState = args.first as? [String: Any] ?? [:]
+            sendResponse(id: id, result: NSNull())
+        case "getEditorState":
+            sendResponse(id: id, result: editorState)
+        case "getMidiLearnState":
+            sendResponse(id: id, result: midiLearnState.payload)
+        case "setMidiLearnMode":
+            midiLearnState.learnMode = args.first as? Bool ?? false
+            midiLearnState.version += 1
+            sendResponse(id: id, result: NSNull())
+        case "setPendingMidiLearnParam":
+            midiLearnState.pendingParamKey = args.first as? String
+            midiLearnState.version += 1
+            sendResponse(id: id, result: NSNull())
+        case "addMidiBinding":
+            guard
+                let paramKey = args.first as? String,
+                let channel = args.dropFirst().first as? Int,
+                let cc = args.dropFirst(2).first as? Int
+            else {
+                sendError(id: id, message: "invalid addMidiBinding payload")
+                return
+            }
+            midiLearnState.bindings.removeAll { $0.paramKey == paramKey }
+            midiLearnState.bindings.append(MidiLearnBinding(paramKey: paramKey, channel: channel, cc: cc))
+            midiLearnState.version += 1
+            sendResponse(id: id, result: NSNull())
+        case "removeMidiBinding":
+            guard let payload = args.first as? [String: Any], let binding = MidiLearnBinding(payload: payload) else {
+                sendError(id: id, message: "invalid removeMidiBinding payload")
+                return
+            }
+            midiLearnState.bindings.removeAll { $0 == binding }
+            midiLearnState.version += 1
+            sendResponse(id: id, result: NSNull())
+        case "clearMidiLearnBindings":
+            midiLearnState.bindings.removeAll()
+            midiLearnState.version += 1
+            sendResponse(id: id, result: NSNull())
+        case "addPreset", "savePreset", "deletePreset", "renamePreset", "toggleStarred", "setPresetAuthor", "setPresetTags", "exportPreset":
+            sendError(id: id, message: "AUv3 preset library editing is not supported yet")
         case "clientLog":
             let logLevel = args.first as? String ?? "info"
             let logMessage = args.count > 1 ? (args[1] as? String ?? "") : ""
@@ -167,6 +242,9 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
     }
 
     private func installWebView() {
+        let indexUrl = resourceBundle.url(forResource: "index", withExtension: "html", subdirectory: "ui")
+            ?? resourceBundle.url(forResource: "index", withExtension: "html")
+
         let configuration = WKWebViewConfiguration()
         configuration.allowsAirPlayForMediaPlayback = false
         configuration.mediaTypesRequiringUserActionForPlayback = .all
@@ -220,6 +298,10 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
                 )
         configuration.userContentController.add(self, name: "cosmoPd101")
 
+            if let baseUrl = indexUrl?.deletingLastPathComponent() {
+                configuration.setURLSchemeHandler(BundleSchemeHandler(baseURL: baseUrl), forURLScheme: "cosmo-ext")
+            }
+
         let webView = WKWebView(frame: view.bounds, configuration: configuration)
         webView.autoresizingMask = []
         webView.navigationDelegate = self
@@ -237,11 +319,12 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
         self.webView = webView
         layoutWebView()
 
-        guard let indexUrl = resourceBundle.url(forResource: "index", withExtension: "html", subdirectory: "ui") else {
+        guard let indexUrl else {
             webView.loadHTMLString(diagnosticHtml(title: "UI Bundle Missing", message: "Could not find index.html in the AU bundle."), baseURL: nil)
             return
         }
-        webView.loadFileURL(indexUrl, allowingReadAccessTo: indexUrl.deletingLastPathComponent())
+        NSLog("[CzVC] indexUrl=%@", indexUrl.path)
+        webView.load(URLRequest(url: URL(string: "cosmo-ext://bundle/index.html")!))
     }
 
     private func layoutWebView() {
@@ -269,11 +352,36 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
     }
 
     public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+		NSLog("[CzVC] didFail navigation: %@", error.localizedDescription)
         webView.loadHTMLString(diagnosticHtml(title: "Navigation Failed", message: error.localizedDescription), baseURL: nil)
     }
 
     public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+		NSLog("[CzVC] didFailProvisionalNavigation: %@", error.localizedDescription)
         webView.loadHTMLString(diagnosticHtml(title: "Provisional Navigation Failed", message: error.localizedDescription), baseURL: nil)
+    }
+
+    public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        NSLog("[CzVC] didFinish navigation")
+    }
+
+    public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        NSLog("[CzVC] didStartProvisionalNavigation")
+    }
+
+    public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        webContentTerminationCount += 1
+        NSLog("[CzVC] web content process terminated (count=%d)", webContentTerminationCount)
+
+        if webContentTerminationCount == 1 {
+            webView.reload()
+            return
+        }
+
+        webView.loadHTMLString(
+            diagnosticHtml(title: "Web Content Process Terminated", message: "WebKit crashed while loading the bundled UI."),
+            baseURL: nil
+        )
     }
 
     private func diagnosticHtml(title: String, message: String) -> String {
@@ -330,5 +438,208 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
             return
         }
         webView?.evaluateJavaScript("window.__czIpcResponse?.(\(json));", completionHandler: nil)
+    }
+
+    private func currentPresetSession(for audioUnit: CosmoPd101AudioUnit) -> [String: Any] {
+        let preset = audioUnit.currentPreset
+        let presetId = presetId(for: preset)
+        return [
+            "activePresetId": presetSessionState.activePresetId ?? presetId as Any,
+            "loadedPresetId": presetSessionState.loadedPresetId ?? presetId as Any,
+            "activePresetNameBase": presetSessionState.activePresetNameBase ?? preset?.name ?? "Current State",
+            "isDirty": presetSessionState.isDirty,
+        ]
+    }
+
+    private func presetLibraryEntries(for audioUnit: CosmoPd101AudioUnit) -> [[String: Any]] {
+        (audioUnit.factoryPresets ?? []).enumerated().map { index, preset in
+            [
+                "id": presetId(for: preset) ?? String(index),
+                "name": preset.name,
+                "source": "cosmo-factory",
+                "author": "",
+                "starred": false,
+                "sortIndex": index,
+                "favorite": false,
+                "tags": [],
+            ]
+        }
+    }
+
+    private func preset(for audioUnit: CosmoPd101AudioUnit, id: String) -> AUAudioUnitPreset? {
+        (audioUnit.factoryPresets ?? []).first { presetId(for: $0) == id }
+    }
+
+    private func presetId(for preset: AUAudioUnitPreset?) -> String? {
+        guard let preset else { return nil }
+        return String(Int(preset.number))
+    }
+
+    private func transportInfoResult() -> [String: Any] {
+        [
+            "playing": false,
+            "recording": false,
+            "tempo": 120,
+            "timeSigNum": 4,
+            "timeSigDen": 4,
+            "positionSamples": 0,
+            "positionSeconds": 0,
+            "positionBeats": 0,
+            "barStartBeats": 0,
+            "loopActive": false,
+            "loopStartBeats": 0,
+            "loopEndBeats": 0,
+        ]
+    }
+}
+
+private struct PresetSessionState {
+    var activePresetId: String?
+    var loadedPresetId: String?
+    var activePresetNameBase: String?
+    var isDirty = false
+
+    init() {}
+
+    init(payload: [String: Any]?) {
+        activePresetId = payload?["activePresetId"] as? String
+        loadedPresetId = payload?["loadedPresetId"] as? String
+        activePresetNameBase = payload?["activePresetNameBase"] as? String
+        isDirty = payload?["isDirty"] as? Bool ?? false
+    }
+}
+
+private struct MidiLearnBinding: Equatable {
+    let paramKey: String
+    let channel: Int
+    let cc: Int
+
+    init(paramKey: String, channel: Int, cc: Int) {
+        self.paramKey = paramKey
+        self.channel = channel
+        self.cc = cc
+    }
+
+    init?(payload: [String: Any]) {
+        guard
+            let paramKey = payload["paramKey"] as? String,
+            let channel = payload["channel"] as? Int,
+            let cc = payload["cc"] as? Int
+        else {
+            return nil
+        }
+        self.init(paramKey: paramKey, channel: channel, cc: cc)
+    }
+
+    var payload: [String: Any] {
+        [
+            "paramKey": paramKey,
+            "channel": channel,
+            "cc": cc,
+        ]
+    }
+}
+
+private struct MidiLearnState {
+    var learnMode = false
+    var pendingParamKey: String?
+    var bindings: [MidiLearnBinding] = []
+    var version = 0
+
+    var payload: [String: Any] {
+        [
+            "learnMode": learnMode,
+            "pendingParamKey": pendingParamKey ?? NSNull(),
+            "bindings": bindings.map(\ .payload),
+            "version": version,
+        ]
+    }
+}
+
+private final class BundleSchemeHandler: NSObject, WKURLSchemeHandler {
+    private let baseURL: URL
+
+    init(baseURL: URL) {
+        self.baseURL = baseURL
+    }
+
+    func webView(_ webView: WKWebView, start urlSchemeTask: any WKURLSchemeTask) {
+        guard let requestURL = urlSchemeTask.request.url else {
+            urlSchemeTask.didFailWithError(URLError(.badURL))
+            return
+        }
+
+        let relativePath = requestURL.path.hasPrefix("/")
+            ? String(requestURL.path.dropFirst())
+            : requestURL.path
+        let requestedFileURL = relativePath.isEmpty
+            ? baseURL.appendingPathComponent("index.html")
+            : baseURL.appendingPathComponent(relativePath)
+        let fileURL = Self.existingFileURL(for: requestedFileURL, relativePath: relativePath, baseURL: baseURL)
+
+        do {
+            let data = try Data(contentsOf: fileURL)
+            let mimeType = Self.mimeType(for: fileURL.pathExtension)
+            let response = HTTPURLResponse(
+                url: requestURL,
+                statusCode: 200,
+                httpVersion: "HTTP/1.1",
+                headerFields: Self.corsHeaders.merging(
+                    ["Content-Type": mimeType.hasPrefix("text/") || mimeType == "application/javascript" ? "\(mimeType); charset=utf-8" : mimeType]
+                ) { $1 }
+            ) ?? URLResponse(
+                url: requestURL,
+                mimeType: mimeType,
+                expectedContentLength: data.count,
+                textEncodingName: nil
+            )
+            urlSchemeTask.didReceive(response)
+            urlSchemeTask.didReceive(data)
+            urlSchemeTask.didFinish()
+        } catch {
+            NSLog("[CzVC] BundleSchemeHandler failed for %@: %@", fileURL.path, error.localizedDescription)
+            urlSchemeTask.didFailWithError(error)
+        }
+    }
+
+    func webView(_ webView: WKWebView, stop urlSchemeTask: any WKURLSchemeTask) {}
+
+    private static let corsHeaders = [
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET",
+        "Access-Control-Allow-Headers": "Content-Type",
+    ]
+
+    private static func existingFileURL(for requestedFileURL: URL, relativePath: String, baseURL: URL) -> URL {
+        if FileManager.default.fileExists(atPath: requestedFileURL.path) {
+            return requestedFileURL
+        }
+
+        if relativePath.hasPrefix("assets/") {
+            let flattenedURL = baseURL.appendingPathComponent((relativePath as NSString).lastPathComponent)
+            if FileManager.default.fileExists(atPath: flattenedURL.path) {
+                return flattenedURL
+            }
+        }
+
+        return requestedFileURL
+    }
+
+    private static func mimeType(for ext: String) -> String {
+        switch ext.lowercased() {
+        case "html": return "text/html"
+        case "js", "mjs": return "application/javascript"
+        case "css": return "text/css"
+        case "wasm": return "application/wasm"
+        case "json", "map": return "application/json"
+        case "png": return "image/png"
+        case "jpg", "jpeg": return "image/jpeg"
+        case "gif": return "image/gif"
+        case "svg": return "image/svg+xml"
+        case "woff2": return "font/woff2"
+        case "woff": return "font/woff"
+        case "ttf": return "font/ttf"
+        default: return "application/octet-stream"
+        }
     }
 }
