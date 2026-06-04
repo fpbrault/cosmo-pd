@@ -58,6 +58,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		/iPad|iPhone|iPod/.test(window.navigator.userAgent) ||
 		(window.navigator.platform === "MacIntel" &&
 			window.navigator.maxTouchPoints > 1);
+	const applyPreset = useSynthStore((s) => s.applyPreset);
 	const gatherPresetState = useSynthStore((s) => s.gatherPresetState);
 	const keyboardHeight = useSynthUiStore((s) => s.keyboardHeight);
 	const setKeyboardHeight = useSynthUiStore((s) => s.setKeyboardHeight);
@@ -93,9 +94,11 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 	const presetRepository = useMemo(
 		() =>
 			createPluginPresetManagerRepository({
+				applyPreset,
 				gatherPresetState,
+				onBeforeApplyPreset: runtime.panic,
 			}),
-		[gatherPresetState],
+		[applyPreset, gatherPresetState, runtime.panic],
 	);
 	const presetManager = useSynthPresetManager({
 		repository: presetRepository,
