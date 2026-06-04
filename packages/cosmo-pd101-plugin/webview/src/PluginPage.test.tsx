@@ -20,6 +20,7 @@ vi.mock("./hooks/createPluginPresetManagerRepository", () => ({
 
 vi.mock("@cosmo/cosmo-pd101", () => {
 	const synthStoreState = {
+		applyPreset: vi.fn(),
 		gatherPresetState: () => ({ schemaVersion: 1, params: { volume: 1 } }),
 	};
 	const synthUiStoreState = {

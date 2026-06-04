@@ -1,12 +1,15 @@
-import type {
-	PresetActivationResult,
-	PresetEntry,
-	PresetManagerRepository,
-	PresetManagerSession,
-	PresetSource,
-	PresetTagOptions,
-	SavePresetRequest,
-	SynthPresetV1,
+import {
+	createWebPresetManagerRepository,
+	FACTORY_PRESETS,
+	type LibraryPreset,
+	type PresetActivationResult,
+	type PresetEntry,
+	type PresetManagerRepository,
+	type PresetManagerSession,
+	type PresetSource,
+	type PresetTagOptions,
+	type SavePresetRequest,
+	type SynthPresetV1,
 } from "@cosmo/cosmo-pd101";
 
 type NativePresetLibraryEntry = {
@@ -79,7 +82,22 @@ declare global {
 		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
 		__czExportPreset?: (id: string) => Promise<unknown>;
 		__czImportPresetBank?: (payload: ImportedPresetBank) => Promise<unknown>;
+		__czHostPlatform?: "macos" | "ios";
 	}
+}
+
+function isAuv3Host() {
+	return (
+		window.__czHostPlatform === "ios" || window.__czHostPlatform === "macos"
+	);
+}
+
+function buildAuv3LibraryPresets(): LibraryPreset[] {
+	return FACTORY_PRESETS.map((preset, index) => ({
+		...preset,
+		id: String(index),
+		sortIndex: index,
+	}));
 }
 
 function createSelection(
@@ -246,10 +264,23 @@ function mapNativeEntryToPresetEntry(
 }
 
 export function createPluginPresetManagerRepository({
+	applyPreset,
 	gatherPresetState,
+	onBeforeApplyPreset,
 }: {
+	applyPreset: (data: SynthPresetV1) => void;
 	gatherPresetState: () => SynthPresetV1;
+	onBeforeApplyPreset?: () => void;
 }): PresetManagerRepository {
+	if (isAuv3Host()) {
+		return createWebPresetManagerRepository({
+			applyPreset,
+			gatherPresetState,
+			libraryPresets: buildAuv3LibraryPresets(),
+			onBeforeApplyPreset,
+		});
+	}
+
 	return {
 		listEntries: async () => {
 			const result = (await window.__czGetPresetLibrary?.()) as

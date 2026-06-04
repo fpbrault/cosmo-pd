@@ -35,6 +35,7 @@ export default function PluginPage({
 		/iPad|iPhone|iPod/.test(window.navigator.userAgent) ||
 		(window.navigator.platform === "MacIntel" &&
 			window.navigator.maxTouchPoints > 1);
+	const applyPreset = useSynthStore((s) => s.applyPreset);
 	const gatherPresetState = useSynthStore((s) => s.gatherPresetState);
 
 	const frameRef = useRef<HTMLDivElement | null>(null);
@@ -68,9 +69,11 @@ export default function PluginPage({
 	const presetRepository = useMemo(
 		() =>
 			createPluginPresetManagerRepository({
+				applyPreset,
 				gatherPresetState,
+				onBeforeApplyPreset: runtime.panic,
 			}),
-		[gatherPresetState],
+		[applyPreset, gatherPresetState, runtime.panic],
 	);
 	const presetManager = useSynthPresetManager({
 		repository: presetRepository,

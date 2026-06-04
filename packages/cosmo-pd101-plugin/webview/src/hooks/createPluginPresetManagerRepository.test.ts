@@ -1,125 +1,80 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const mockCreateWebPresetManagerRepository = vi.hoisted(() => vi.fn());
+
+vi.mock("@cosmo/cosmo-pd101", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@cosmo/cosmo-pd101")>();
+	return {
+		...actual,
+		createWebPresetManagerRepository: mockCreateWebPresetManagerRepository,
+	};
+});
+
 import { createPluginPresetManagerRepository } from "./createPluginPresetManagerRepository";
 
 describe("createPluginPresetManagerRepository", () => {
-	it("maps bank metadata from the native library response", async () => {
-		window.__czGetPresetLibrary = vi.fn().mockResolvedValue({
-			entries: [
-				{
-					id: "addon-1",
-					name: "Addon Pad",
-					source: "addon",
-					author: "Addon Author",
-					starred: false,
-					bankId: "addon-bank",
-					bankName: "Addon Bank",
-					tags: ["pad"],
-				},
-			],
-		});
-
-		const repository = createPluginPresetManagerRepository({
-			gatherPresetState: () =>
-				({ schemaVersion: 1, params: { volume: 0.5 } }) as never,
-		});
-
-		const entries = await repository.listEntries();
-
-		expect(entries).toEqual([
-			expect.objectContaining({
-				id: "addon-1",
-				source: "addon",
-				sourceLabel: "Add-On Bank",
-				bankId: "addon-bank",
-				bankName: "Addon Bank",
-			}),
-		]);
+	beforeEach(() => {
+		mockCreateWebPresetManagerRepository.mockReset();
+		delete window.__czHostPlatform;
+		delete window.__czSavePreset;
 	});
 
-	it("defaults new saved user presets to the User author", async () => {
-		const savePreset = vi.fn().mockResolvedValue({
-			id: "user-1",
-			name: "New Preset",
-		});
+	it("uses shared AUv3 fallback presets with authored metadata", async () => {
+		const fallbackRepository = {
+			listEntries: vi.fn().mockResolvedValue([]),
+			loadEntry: vi.fn(),
+			savePreset: vi.fn().mockResolvedValue({
+				session: {
+					activePresetId: "user-1",
+					activePresetNameBase: "My Pad",
+					isDirty: false,
+				},
+				stateSync: "immediate",
+			}),
+			deletePreset: vi.fn(),
+			renamePreset: vi.fn(),
+			setPresetAuthor: vi.fn(),
+			setPresetFavorite: vi.fn(),
+			setPresetTags: vi.fn(),
+			initPreset: vi.fn(),
+			exportPreset: vi.fn(),
+			importPreset: vi.fn(),
+			exportCurrentState: vi.fn(),
+		};
+		mockCreateWebPresetManagerRepository.mockReturnValue(fallbackRepository);
+		window.__czHostPlatform = "ios";
+		window.__czSavePreset = vi.fn();
 
-		window.__czSavePreset = savePreset;
-
+		const applyPreset = vi.fn();
+		const onBeforeApplyPreset = vi.fn();
 		const repository = createPluginPresetManagerRepository({
-			gatherPresetState: () =>
-				({ schemaVersion: 1, params: { volume: 0.5 } }) as never,
+			applyPreset,
+			gatherPresetState: () => ({ schemaVersion: 1, params: { volume: 1 } }),
+			onBeforeApplyPreset,
 		});
 
-		await repository.savePreset({ existingEntry: null, name: "New Preset" });
-
-		expect(savePreset).toHaveBeenCalledWith(
+		expect(mockCreateWebPresetManagerRepository).toHaveBeenCalledTimes(1);
+		expect(mockCreateWebPresetManagerRepository).toHaveBeenCalledWith(
 			expect.objectContaining({
-				name: "New Preset",
-				author: "User",
+				applyPreset,
+				onBeforeApplyPreset,
+				libraryPresets: expect.arrayContaining([
+					expect.objectContaining({
+						id: "0",
+						name: "Bliss",
+						author: "Purr Audio",
+						starred: true,
+					}),
+				]),
 			}),
 		);
-	});
 
-	it("routes preset bank imports through the native plugin bridge", async () => {
-		const importPresetBank = vi.fn().mockResolvedValue(undefined);
-		window.__czImportPresetBank = importPresetBank;
+		await repository.savePreset({ existingEntry: null, name: "My Pad" });
 
-		const repository = createPluginPresetManagerRepository({
-			gatherPresetState: () =>
-				({ schemaVersion: 1, params: { volume: 0.5 } }) as never,
+		expect(fallbackRepository.savePreset).toHaveBeenCalledWith({
+			existingEntry: null,
+			name: "My Pad",
 		});
-
-		await repository.importPreset(
-			JSON.stringify({
-				type: "preset-bank",
-				schemaVersion: 1,
-				bank: {
-					id: "addon-bank",
-					name: "Addon Bank",
-					source: "addon",
-				},
-				presets: [
-					{
-						id: "addon-1",
-						name: "Addon Pad",
-						author: "Addon Author",
-						tags: ["pad"],
-						data: {
-							schemaVersion: 1,
-							params: {
-								volume: 0.5,
-								macroLabels: ["A", "B", "C", "D"],
-							},
-						},
-					},
-				],
-			}),
-			"addon-bank",
-		);
-
-		expect(importPresetBank).toHaveBeenCalledWith({
-			type: "preset-bank",
-			schemaVersion: 1,
-			bank: {
-				id: "addon-bank",
-				name: "Addon Bank",
-				source: "addon",
-			},
-			presets: [
-				{
-					id: "addon-1",
-					name: "Addon Pad",
-					author: "Addon Author",
-					starred: false,
-					tags: ["pad"],
-					data: {
-						schemaVersion: 1,
-						params: {
-							volume: 0.5,
-							macroLabels: ["A", "B", "C", "D"],
-						},
-					},
-				},
-			],
-		});
+		expect(window.__czSavePreset).not.toHaveBeenCalled();
 	});
 });
