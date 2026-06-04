@@ -2,7 +2,6 @@ import {
 	type CSSProperties,
 	memo,
 	type ReactNode,
-	type RefObject,
 	useCallback,
 	useEffect,
 	useState,
@@ -12,10 +11,7 @@ import SynthHeader from "@/components/preset/SynthHeader";
 import { ModMatrixProvider } from "@/context/ModMatrixContext";
 import { PresetManagerProvider } from "@/context/PresetManagerContext";
 import { ScopeProvider } from "@/context/ScopeContext";
-import { useAudioEngine } from "@/features/synth/hooks/useAudioEngine";
-import { useMidiLearnBindings } from "@/features/synth/hooks/useMidiLearnBindings";
-import { useNoteHandling } from "@/features/synth/hooks/useNoteHandling";
-import { useSynthParamsToWorklet } from "@/features/synth/hooks/useSynthParamsToWorklet";
+import type { SynthRuntime } from "@/features/synth/runtime/synthRuntime";
 import { SynthParamControllerProvider } from "@/features/synth/SynthParamController";
 import { useSynthStore } from "@/features/synth/synthStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
@@ -24,18 +20,10 @@ import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import { useSynthPresetManager } from "@/features/synth/useSynthPresetManager";
 import { decodeCzPatch } from "@/lib/midi/czSysexDecoder";
 import { installBenchmarkApi } from "@/lib/performance/benchmarkHarness";
-import {
-	cosmoWorkletUrl,
-	synthBindingsUrl,
-	synthWasmUrl,
-} from "@/lib/synth/cosmoWorkletUrl";
 import { convertDecodedPatchToSynthPreset } from "@/lib/synth/czPresetConverter";
-import { DEFAULT_SYNTH_PRESETS } from "@/lib/synth/defaultPresets";
 import { FACTORY_PRESETS } from "@/lib/synth/factoryCzPresets";
-import { noteToFreq } from "@/lib/synth/pdAlgorithms";
 import { HoverInfoProvider, useHoverInfo } from "../layout/HoverInfo";
 import { useAudioLevelMonitor } from "./hooks/useAudioLevelMonitor";
-import { usePerformanceMetrics } from "./hooks/usePerformanceMetrics";
 import SynthRendererLibraryOverlay from "./SynthRendererLibraryOverlay";
 import SynthRendererMainPanel from "./SynthRendererMainPanel";
 import SynthRendererOverlays from "./SynthRendererOverlays";
@@ -52,23 +40,22 @@ export type SynthRendererProps = {
 	headerExtra?: ReactNode;
 	bottomBarExtra?: ReactNode;
 	sidebarMinWidthRem?: number;
+	runtime: SynthRuntime;
 	libraryPresets?: LibraryPreset[];
 	onAudioLevelChange?: (level: number) => void;
 	disableAudioGate?: boolean;
-	engineEventSink?: (type: string, payload: Record<string, unknown>) => void;
-	effectivePitchHz?: number;
-	analyserNodeRef?: RefObject<AnalyserNode | null>;
-	audioCtxRef?: RefObject<AudioContext | null>;
-	subscribeScopeFrames?: (
-		onFrame: (frame: {
-			samples: Float32Array;
-			sampleRate: number;
-			hz: number;
-		}) => void,
-	) => () => void;
 	miniKeyboard?: MiniKeyboardProps;
-	onInitPresetSession?: (syncBuiltinSelection: (name: string) => void) => void;
-	onPresetSessionChange?: (session: { activePresetNameBase: string }) => void;
+	onInitPresetSession?: (
+		syncBuiltinSelection: (
+			name: string,
+			options?: { isDirty?: boolean },
+		) => void,
+	) => void;
+	onPresetSessionChange?: (session: {
+		activePresetId: string | null;
+		activePresetNameBase: string;
+		isDirty: boolean;
+	}) => void;
 };
 
 const FRAME_CLASS =
@@ -90,26 +77,17 @@ const SynthRenderer = memo(function SynthRenderer({
 	frameStyle,
 	headerExtra,
 	bottomBarExtra,
+	runtime,
 	libraryPresets = FACTORY_PRESETS,
 	onAudioLevelChange,
 	disableAudioGate = false,
-	engineEventSink,
-	effectivePitchHz: effectivePitchHzOverride,
-	analyserNodeRef: analyserNodeRefOverride,
-	audioCtxRef: audioCtxRefOverride,
 	sidebarMinWidthRem = 18,
-	subscribeScopeFrames,
 	miniKeyboard,
 	onInitPresetSession,
 	onPresetSessionChange,
-}: SynthRendererProps = {}) {
-	const velocityCurve = useSynthStore((s) => s.velocityCurve);
-	const gatherState = useSynthStore((s) => s.gatherState);
+}: SynthRendererProps) {
 	const gatherPresetState = useSynthStore((s) => s.gatherPresetState);
 	const applyPreset = useSynthStore((s) => s.applyPreset);
-	const presetStateKey = useSynthStore((s) =>
-		JSON.stringify(s.gatherPresetState()),
-	);
 	const modMatrix = useSynthStore((s) => s.modMatrix);
 	const setModMatrix = useSynthStore((s) => s.setModMatrix);
 
@@ -122,52 +100,15 @@ const SynthRenderer = memo(function SynthRenderer({
 	const setLibraryModeOpen = useSynthUiStore((s) => s.setLibraryModeOpen);
 	const setBrandInfoOpen = useSynthUiStore((s) => s.setBrandInfoOpen);
 
-	const {
-		audioCtxRef,
-		analyserNodeRef,
-		workletNodeRef,
-		paramsRef,
-		audioContextState,
-		resumeAudio,
-	} = useAudioEngine({
-		synthWasmUrl,
-		synthBindingsUrl,
-		cosmoWorkletUrl,
-	});
-
-	const { setEnabled: setPerfEnabled, metricsRef } =
-		usePerformanceMetrics(workletNodeRef);
-
-	const internalNoteHandling = useNoteHandling({
-		workletNodeRef,
-		eventSink: engineEventSink,
-		velocityCurve,
-	});
-	const activeNotes =
-		miniKeyboard?.activeNotes ?? internalNoteHandling.activeNotes;
-	const sendNoteOn = miniKeyboard?.onNoteOn ?? internalNoteHandling.sendNoteOn;
-	const sendNoteOff =
-		miniKeyboard?.onNoteOff ?? internalNoteHandling.sendNoteOff;
+	const activeNotes = miniKeyboard?.activeNotes ?? runtime.activeNotes;
+	const sendNoteOn = miniKeyboard?.onNoteOn ?? runtime.sendNoteOn;
+	const sendNoteOff = miniKeyboard?.onNoteOff ?? runtime.sendNoteOff;
 	const sendPolyAftertouch =
-		miniKeyboard?.onPolyAftertouch ?? internalNoteHandling.sendPolyAftertouch;
-	const panic = internalNoteHandling.panic;
-	const hasActiveNotes = activeNotes.length > 0;
+		miniKeyboard?.onPolyAftertouch ?? runtime.sendPolyAftertouch;
+	const panic = runtime.panic;
+	const _hasActiveNotes = activeNotes.length > 0;
 
-	useAudioLevelMonitor(analyserNodeRef, onAudioLevelChange);
-
-	const heldNote = hasActiveNotes ? activeNotes[activeNotes.length - 1] : null;
-	const currentFreq = heldNote != null ? noteToFreq(heldNote) : 220;
-	const effectivePitchHz =
-		effectivePitchHzOverride != null ? effectivePitchHzOverride : currentFreq;
-	const resolvedAnalyserNodeRef = analyserNodeRefOverride ?? analyserNodeRef;
-	const resolvedAudioCtxRef = audioCtxRefOverride ?? audioCtxRef;
-
-	useSynthParamsToWorklet({
-		workletNodeRef,
-		paramsRef,
-		effectivePitchHz,
-		gatherState,
-	});
+	useAudioLevelMonitor(runtime.analyserNodeRef, onAudioLevelChange);
 
 	const handleLoadLibraryPreset = useCallback(
 		(preset: LibraryPreset) => {
@@ -187,13 +128,13 @@ const SynthRenderer = memo(function SynthRenderer({
 	);
 
 	const {
+		allPresetEntries,
 		visiblePresetEntries,
 		activePresetId,
 		activePresetName,
 		activePresetNameBase,
-		pendingPresetChange,
 		handleLoadLocal,
-		handleLoadBuiltin,
+		handleLoadPresetByName,
 		handleLoadLibrary,
 		handleSavePreset,
 		handleDeletePreset,
@@ -205,67 +146,44 @@ const SynthRenderer = memo(function SynthRenderer({
 		handleExportPreset,
 		handleImportPreset,
 		handleExportCurrentState,
-		handleSavePendingPresetChange,
-		handleDiscardPendingPresetChange,
-		handleCancelPendingPresetChange,
-		handleSyncBuiltinSelection,
+		handleSyncPresetSelection,
+		isPresetDirty,
 	} = useSynthPresetManager({
-		builtinPresets: DEFAULT_SYNTH_PRESETS,
 		gatherPresetState,
 		applyPreset,
 		onBeforeApplyPreset: panic,
 		libraryPresets,
 		onLoadLibraryPreset: handleLoadLibraryPreset,
-		presetStateKey,
 	});
 
 	useEffect(() => {
+		const presetNames = libraryPresets.map((preset) => preset.name);
 		return installBenchmarkApi({
-			mode: "web",
-			listBuiltinPresets: () => Object.keys(DEFAULT_SYNTH_PRESETS),
+			mode: runtime.benchmark.mode,
+			listBuiltinPresets: () => presetNames,
 			loadBuiltinPreset: (name: string) => {
-				handleLoadBuiltin(name);
+				handleLoadPresetByName(name);
 			},
-			setPerformanceMonitorEnabled: (enabled: boolean) => {
-				setPerfEnabled(enabled);
-				if (enabled) {
-					workletNodeRef.current?.port.postMessage({
-						type: "setPerformanceMonitorEnabled",
-						enabled: true,
-					});
-				}
-			},
-			getPerformanceMetrics: () => metricsRef.current,
+			setPerformanceMonitorEnabled:
+				runtime.benchmark.setPerformanceMonitorEnabled,
+			getPerformanceMetrics: runtime.benchmark.getPerformanceMetrics,
 			noteOn: (note: number, velocity?: number) => sendNoteOn(note, velocity),
 			noteOff: (note: number) => sendNoteOff(note),
 			panic,
-			ensureReady: async () => {
-				resumeAudio();
-				const deadline = performance.now() + 5000;
-				while (
-					performance.now() < deadline &&
-					audioCtxRef.current?.state !== "running"
-				) {
-					await new Promise((resolve) => window.setTimeout(resolve, 50));
-				}
-				if (audioCtxRef.current?.state !== "running") {
-					throw new Error("Audio context failed to enter running state");
-				}
-			},
+			ensureReady: runtime.benchmark.ensureReady,
 		});
 	}, [
-		audioCtxRef,
-		handleLoadBuiltin,
+		handleLoadPresetByName,
+		libraryPresets,
 		panic,
-		resumeAudio,
+		runtime.benchmark.ensureReady,
+		runtime.benchmark.getPerformanceMetrics,
+		runtime.benchmark.setPerformanceMonitorEnabled,
 		sendNoteOff,
 		sendNoteOn,
-		workletNodeRef,
-		setPerfEnabled,
-		metricsRef,
+		runtime.benchmark.mode,
 	]);
 
-	useMidiLearnBindings();
 	const [libraryVisibleEntries, setLibraryVisibleEntries] =
 		useState<PresetEntry[]>(visiblePresetEntries);
 
@@ -288,23 +206,25 @@ const SynthRenderer = memo(function SynthRenderer({
 	}, [setLibraryModeOpen]);
 
 	useEffect(() => {
-		setLibraryVisibleEntries(visiblePresetEntries);
-	}, [visiblePresetEntries]);
+		onInitPresetSession?.(handleSyncPresetSelection);
+	}, [handleSyncPresetSelection, onInitPresetSession]);
 
 	useEffect(() => {
-		onInitPresetSession?.(handleSyncBuiltinSelection);
-	}, [handleSyncBuiltinSelection, onInitPresetSession]);
-
-	useEffect(() => {
-		onPresetSessionChange?.({ activePresetNameBase });
-	}, [activePresetNameBase, onPresetSessionChange]);
+		onPresetSessionChange?.({
+			activePresetId,
+			activePresetNameBase,
+			isDirty: isPresetDirty,
+		});
+	}, [
+		activePresetId,
+		activePresetNameBase,
+		isPresetDirty,
+		onPresetSessionChange,
+	]);
 
 	const handleStepPresetInVisibleOrder = useCallback(
 		(direction: -1 | 1) => {
-			const entries =
-				libraryVisibleEntries.length > 0
-					? libraryVisibleEntries
-					: visiblePresetEntries;
+			const entries = libraryVisibleEntries;
 			if (entries.length === 0) {
 				return;
 			}
@@ -327,27 +247,24 @@ const SynthRenderer = memo(function SynthRenderer({
 				handleLoadLocal(entry.id);
 				return;
 			}
-			if (entry.type === "builtin") {
-				handleLoadBuiltin(entry.label);
-				return;
-			}
 			if (entry.preset) {
 				handleLoadLibrary(entry.preset);
+				return;
 			}
+			handleLoadPresetByName(entry.label);
 		},
 		[
 			libraryVisibleEntries,
-			visiblePresetEntries,
 			activePresetId,
 			handleLoadLocal,
-			handleLoadBuiltin,
 			handleLoadLibrary,
+			handleLoadPresetByName,
 		],
 	);
 
 	const audioGate = {
-		ready: disableAudioGate || audioContextState === "running",
-		onResume: resumeAudio,
+		ready: disableAudioGate || runtime.audioContextState === "running",
+		onResume: runtime.resumeAudio,
 	};
 
 	return (
@@ -355,19 +272,19 @@ const SynthRenderer = memo(function SynthRenderer({
 			<ModMatrixProvider modMatrix={modMatrix} setModMatrix={setModMatrix}>
 				<SynthParamControllerProvider>
 					<ScopeProvider
-						analyserNodeRef={resolvedAnalyserNodeRef}
-						audioCtxRef={resolvedAudioCtxRef}
-						effectivePitchHz={effectivePitchHz}
-						subscribeScopeFrames={subscribeScopeFrames}
+						analyserNodeRef={runtime.analyserNodeRef}
+						audioCtxRef={runtime.audioCtxRef}
+						effectivePitchHz={runtime.effectivePitchHz}
+						subscribeScopeFrames={runtime.subscribeScopeFrames}
 					>
 						<PresetManagerProvider
 							value={{
-								visiblePresetEntries,
+								allPresetEntries,
+								visiblePresetEntries: libraryVisibleEntries,
 								activePresetId,
 								activePresetName,
-								pendingPresetChange,
+								handleLoadPresetByName,
 								handleLoadLocal,
-								handleLoadBuiltin,
 								handleLoadLibrary,
 								handleSavePreset,
 								handleDeletePreset,
@@ -379,9 +296,6 @@ const SynthRenderer = memo(function SynthRenderer({
 								handleExportPreset,
 								handleImportPreset,
 								handleExportCurrentState,
-								handleSavePendingPresetChange,
-								handleDiscardPendingPresetChange,
-								handleCancelPendingPresetChange,
 							}}
 						>
 							<div

@@ -16,13 +16,20 @@ const entries: PresetEntry[] = [
 	{
 		id: "builtin-factory-bass",
 		label: "Factory Bass",
-		type: "builtin",
+		type: "library",
 		source: "cosmo-factory",
 		sourceLabel: "Cosmo Library",
 		author: "Purr Audio",
 		starred: true,
 		favorite: false,
 		tags: [],
+		preset: {
+			id: "builtin-factory-bass",
+			name: "Factory Bass",
+			source: "cosmo-factory",
+			author: "Purr Audio",
+			starred: true,
+		},
 	},
 	{
 		id: "local-keys",
@@ -54,7 +61,7 @@ function createProps() {
 		allEntries: entries,
 		activeEntryId: "local-keys",
 		activePresetName: "Local Keys",
-		onLoadBuiltin: vi.fn(),
+		onLoadPresetByName: vi.fn(),
 		onLoadLocal: vi.fn(),
 		onLoadLibrary: vi.fn(),
 		onSavePreset: vi.fn(),
@@ -87,7 +94,9 @@ describe("PresetLibrary", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Local Keys" }));
 		fireEvent.click(screen.getByRole("button", { name: "Archive Pad" }));
 
-		expect(props.onLoadBuiltin).toHaveBeenCalledWith("Factory Bass");
+		expect(props.onLoadLibrary).toHaveBeenCalledWith(
+			expect.objectContaining({ name: "Factory Bass" }),
+		);
 		expect(props.onLoadLocal).toHaveBeenCalledWith("local-keys");
 		expect(props.onLoadLibrary).toHaveBeenCalledWith(libraryPreset);
 	});
@@ -186,8 +195,11 @@ describe("PresetLibrary", () => {
 
 		fireEvent.keyDown(window, { key: "ArrowDown" });
 
-		expect(props.onLoadBuiltin).toHaveBeenCalledTimes(1);
-		expect(props.onLoadBuiltin).toHaveBeenNthCalledWith(1, "Factory Bass");
+		expect(props.onLoadLibrary).toHaveBeenCalledTimes(1);
+		expect(props.onLoadLibrary).toHaveBeenNthCalledWith(
+			1,
+			expect.objectContaining({ name: "Factory Bass" }),
+		);
 	});
 
 	it("does not navigate when typing in a text input", () => {
@@ -199,7 +211,7 @@ describe("PresetLibrary", () => {
 		fireEvent.keyDown(searchInput, { key: "ArrowDown" });
 
 		expect(props.onLoadLibrary).not.toHaveBeenCalled();
-		expect(props.onLoadBuiltin).not.toHaveBeenCalled();
+		expect(props.onLoadPresetByName).not.toHaveBeenCalled();
 		expect(props.onLoadLocal).not.toHaveBeenCalled();
 	});
 

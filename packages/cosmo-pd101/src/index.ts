@@ -19,13 +19,25 @@ export {
 	type SynthRendererProps,
 	type SynthRendererProps as SharedPhaseDistortionVisualizerProps,
 } from "./components/renderer/SynthRenderer";
-export { usePluginBridgeSynthEngine } from "./features/synth/engine/pluginBridgeSynthEngineAdapter";
+export {
+	type PluginPresetSession,
+	usePluginBridgeSynthEngine,
+} from "./features/synth/engine/pluginBridgeSynthEngineAdapter";
 export { useAudioEngine } from "./features/synth/hooks/useAudioEngine";
 export { useMidiLearnBindings } from "./features/synth/hooks/useMidiLearnBindings";
 export { useNoteHandling } from "./features/synth/hooks/useNoteHandling";
 export { useSynthParamsToWorklet } from "./features/synth/hooks/useSynthParamsToWorklet";
 export type { MidiBinding } from "./features/synth/midiLearnStore";
-export { useMidiLearnStore } from "./features/synth/midiLearnStore";
+export {
+	refreshMidiLearnState,
+	subscribeMidiLearnState,
+	useMidiLearnStore,
+} from "./features/synth/midiLearnStore";
+export type {
+	SynthBenchmarkRuntime,
+	SynthRuntime,
+	SynthScopeFrameSubscription,
+} from "./features/synth/runtime/synthRuntime";
 export type { SynthParamKey } from "./features/synth/SynthParamController";
 export { SYNTH_PARAM_SETTERS } from "./features/synth/SynthParamController";
 export { useSynthStore } from "./features/synth/synthStore";
@@ -59,6 +71,10 @@ export type {
 } from "./lib/performance/benchmarkHarness";
 export { installBenchmarkApi } from "./lib/performance/benchmarkHarness";
 export type {
+	SessionEditorState,
+	SessionState,
+} from "./lib/sessionState";
+export type {
 	AlgoControlValueV1,
 	FxSlotConfig,
 	FxSlotType,
@@ -71,7 +87,6 @@ export {
 	synthWasmUrl,
 } from "./lib/synth/cosmoWorkletUrl";
 export { convertDecodedPatchToSynthPreset } from "./lib/synth/czPresetConverter";
-export { DEFAULT_SYNTH_PRESETS } from "./lib/synth/defaultPresets";
 export { FACTORY_PRESETS } from "./lib/synth/factoryCzPresets";
 export { noteToFreq } from "./lib/synth/pdAlgorithms";
 export type {

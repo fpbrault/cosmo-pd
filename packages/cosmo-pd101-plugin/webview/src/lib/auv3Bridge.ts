@@ -13,6 +13,18 @@ type ScopeDataResponse = {
 type RuntimeVoiceStatesResponse = string | unknown[];
 
 type RuntimeModSourcesResponse = string | Record<string, number>;
+type MidiBindingIdentity = {
+	paramKey: string;
+	channel: number;
+	cc: number;
+};
+
+type PresetSession = {
+	activePresetId: string | null;
+	loadedPresetId?: string | null;
+	activePresetNameBase: string;
+	isDirty: boolean;
+};
 
 const SCOPE_POLL_INTERVAL_MS = 33;
 const RUNTIME_VOICE_STATES_POLL_INTERVAL_MS = 16;
@@ -31,11 +43,37 @@ declare global {
 		__czOnParams?: (json: string) => void;
 		__czOnHostPresetSelected?: (name: string) => void;
 		__czGetParams?: () => Promise<unknown>;
+		__czGetParamsVersion?: () => Promise<unknown>;
 		__czSetParams?: (json: string) => void;
 		__czGetTransportInfo?: () => Promise<unknown>;
-		__czOnScope?: (samples: number[], sampleRate: number, hz: number) => void;
+		__czOnScope?: (
+			samples: Float32Array | number[],
+			sampleRate: number,
+			hz: number,
+		) => void;
 		__czIpcResponse?: (response: IpcRpcResponse) => void;
 		__czOnMidiCc?: (channel: number, cc: number, value: number) => void;
+		__czGetPresetSession?: () => Promise<unknown>;
+		__czSetPresetSession?: (session: PresetSession) => Promise<unknown>;
+		__czGetPresetLibrary?: (source?: string) => Promise<unknown>;
+		__czLoadPresetData?: (id: string) => Promise<unknown>;
+		__czAddPreset?: (
+			name: string,
+			tags: string[],
+			macroLabels?: string[],
+		) => Promise<unknown>;
+		__czDeletePreset?: (id: string) => Promise<unknown>;
+		__czRenamePreset?: (id: string, newName: string) => Promise<unknown>;
+		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
+		__czSetEditorState?: (state: string) => void;
+		__czGetEditorState?: () => Promise<unknown>;
+		__czOnMidiLearnState?: (json: string) => void;
+		__czGetMidiLearnState?: () => Promise<unknown>;
+		__czSetMidiLearnMode?: (on: boolean) => void;
+		__czSetPendingMidiLearnParam?: (key: string | null) => void;
+		__czAddMidiBinding?: (key: string, ch: number, cc: number) => void;
+		__czRemoveMidiBinding?: (binding: MidiBindingIdentity) => void;
+		__czClearMidiLearnBindings?: () => void;
 	}
 }
 
@@ -141,12 +179,70 @@ function installIpcRouter() {
 			return null;
 		}
 	};
+	window.__czGetParamsVersion = () => invokeAuv3("getParamsVersion", [], 3000);
 	window.__czSetParams = (json: string) => {
 		void invokeAuv3("setParams", [json]).catch((error) => {
 			console.error("[auv3Bridge] setParams error", error);
 		});
 	};
 	window.__czGetTransportInfo = () => invokeAuv3("getTransportInfo", []);
+	window.__czGetPresetSession = () => invokeAuv3("getPresetSession", []);
+	window.__czSetPresetSession = (session: PresetSession) =>
+		invokeAuv3("setPresetSession", [session]);
+
+	window.__czGetPresetLibrary = (source?: string) =>
+		source
+			? invokeAuv3("getPresetLibrary", [{ source }])
+			: invokeAuv3("getPresetLibrary", []);
+	window.__czLoadPresetData = (id: string) =>
+		invokeAuv3("loadPresetData", [{ id }]);
+	window.__czAddPreset = (
+		name: string,
+		tags: string[],
+		macroLabels?: string[],
+	) => invokeAuv3("addPreset", [{ name, tags, macroLabels }]);
+	window.__czDeletePreset = (id: string) =>
+		invokeAuv3("deletePreset", [{ id }]);
+	window.__czRenamePreset = (id: string, newName: string) =>
+		invokeAuv3("renamePreset", [{ id, newName }]);
+	window.__czToggleStarred = (id: string, starred: boolean) =>
+		invokeAuv3("toggleStarred", [{ id, starred }]);
+
+	window.__czSetEditorState = (state: string) => {
+		void invokeAuv3("setEditorState", [JSON.parse(state)]).catch((error) => {
+			console.error("[auv3Bridge] setEditorState error", error);
+		});
+	};
+
+	window.__czGetEditorState = () => invokeAuv3("getEditorState", []);
+
+	window.__czGetMidiLearnState = () => invokeAuv3("getMidiLearnState", []);
+
+	window.__czSetMidiLearnMode = (on: boolean) => {
+		void invokeAuv3("setMidiLearnMode", [on]).catch((error) => {
+			console.error("[auv3Bridge] setMidiLearnMode error", error);
+		});
+	};
+	window.__czSetPendingMidiLearnParam = (key: string | null) => {
+		void invokeAuv3("setPendingMidiLearnParam", [key]).catch((error) => {
+			console.error("[auv3Bridge] setPendingMidiLearnParam error", error);
+		});
+	};
+	window.__czAddMidiBinding = (key: string, ch: number, cc: number) => {
+		void invokeAuv3("addMidiBinding", [key, ch, cc]).catch((error) => {
+			console.error("[auv3Bridge] addMidiBinding error", error);
+		});
+	};
+	window.__czRemoveMidiBinding = (binding: MidiBindingIdentity) => {
+		void invokeAuv3("removeMidiBinding", [binding]).catch((error) => {
+			console.error("[auv3Bridge] removeMidiBinding error", error);
+		});
+	};
+	window.__czClearMidiLearnBindings = () => {
+		void invokeAuv3("clearMidiLearnBindings").catch((error) => {
+			console.error("[auv3Bridge] clearMidiLearnBindings error", error);
+		});
+	};
 }
 
 function installScopeProperty(onActiveChange: (active: boolean) => void) {
@@ -376,6 +472,29 @@ function installMidiCcHandler() {
 	}
 }
 
+// ─── MIDI learn state handler ──────────────────────────────────────────────────
+
+function installMidiLearnStateHandler() {
+	try {
+		Object.defineProperty(window, "__czOnMidiLearnState", {
+			configurable: true,
+			writable: true,
+			value: (json: string) => {
+				try {
+					const state = JSON.parse(json);
+					window.dispatchEvent(
+						new CustomEvent("cz-midi-learn-state", { detail: state }),
+					);
+				} catch {
+					console.error("[auv3Bridge] Invalid MidiLearnState JSON");
+				}
+			},
+		});
+	} catch {
+		// Host may prevent definition; will fall back gracefully.
+	}
+}
+
 export function ensureAuv3Bridge(): boolean {
 	if (installed) {
 		return true;
@@ -388,6 +507,7 @@ export function ensureAuv3Bridge(): boolean {
 	installParamProperty();
 	installIpcResponseHandler();
 	installMidiCcHandler();
+	installMidiLearnStateHandler();
 	installIpcRouter();
 	installScopePolling();
 	installRuntimeVoiceStatesPolling();

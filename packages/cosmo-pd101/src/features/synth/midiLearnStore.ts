@@ -1,220 +1,315 @@
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
-import type { MidiLearnTargetKey } from "./midiLearnRegistry";
 
 export type MidiBinding = {
-	paramKey: MidiLearnTargetKey;
+	paramKey: string;
 	channel: number;
 	cc: number;
 };
 
-const MIDI_LEARN_STORAGE_KEY = "cosmo-pd101-midi-learn-v2";
-const DEFAULT_BINDINGS: Partial<Record<MidiLearnTargetKey, MidiBinding>> = {
-	macro1: { paramKey: "macro1", channel: 0, cc: 8 },
-	macro2: { paramKey: "macro2", channel: 0, cc: 41 },
-	macro3: { paramKey: "macro3", channel: 0, cc: 42 },
-	macro4: { paramKey: "macro4", channel: 0, cc: 43 },
+type PersistedMidiLearnBindings = {
+	bindings: MidiBinding[];
 };
 
-type MidiLearnState = {
+export type MidiBindingIdentity = Pick<
+	MidiBinding,
+	"paramKey" | "channel" | "cc"
+>;
+
+export const DEFAULT_MIDI_BINDINGS: MidiBinding[] = [
+	{ paramKey: "macro1", channel: 0, cc: 8 },
+	{ paramKey: "macro2", channel: 0, cc: 41 },
+	{ paramKey: "macro3", channel: 0, cc: 42 },
+	{ paramKey: "macro4", channel: 0, cc: 43 },
+];
+
+export const MIDI_LEARN_STORAGE_KEY = "cosmo-pd101-midi-bindings";
+
+function bindingMatches(
+	binding: MidiBinding,
+	identity: MidiBindingIdentity,
+): boolean {
+	return (
+		binding.paramKey === identity.paramKey &&
+		binding.channel === identity.channel &&
+		binding.cc === identity.cc
+	);
+}
+
+type MidiLearnStateData = {
 	learnMode: boolean;
-	bindings: Partial<Record<MidiLearnTargetKey, MidiBinding>>;
-	lastCapturedCc: { channel: number; cc: number; rawValue: number } | null;
-	pendingLearnParam: MidiLearnTargetKey | null;
+	bindings: MidiBinding[];
+	pendingLearnParam: string | null;
 };
 
 type MidiLearnActions = {
 	setLearnMode: (on: boolean) => void;
-	setPendingLearnParam: (paramKey: MidiLearnTargetKey | null) => void;
-	captureMidiCc: (channel: number, cc: number, rawValue: number) => void;
-	addOrReplaceBinding: (
-		channel: number,
-		cc: number,
-		paramKey: MidiLearnTargetKey,
-	) => void;
-	updateBinding: (
-		paramKey: MidiLearnTargetKey,
-		updates: Partial<Pick<MidiBinding, "channel" | "cc">>,
-	) => void;
-	removeBinding: (paramKey: MidiLearnTargetKey) => void;
-	removeBindingsForParam: (paramKey: MidiLearnTargetKey) => void;
+	setPendingLearnParam: (paramKey: string | null) => void;
+	addBinding: (paramKey: string, channel: number, cc: number) => void;
+	removeBinding: (binding: MidiBindingIdentity) => void;
+	clearBindings: () => void;
 	getBindingsForMidi: (channel: number, cc: number) => MidiBinding[];
-	getBindingForParam: (paramKey: MidiLearnTargetKey) => MidiBinding | undefined;
-	getBindingsForParam: (paramKey: MidiLearnTargetKey) => MidiBinding[];
-	clearLastCapturedCc: () => void;
+	getBindingForParam: (paramKey: string) => MidiBinding | undefined;
+	getBindingsForParam: (paramKey: string) => MidiBinding[];
 	resetPendingLearnParam: () => void;
+	initFromEngineState: (state: {
+		learnMode: boolean;
+		pendingParamKey: string | null;
+		bindings: Array<{ paramKey: string; channel: number; cc: number }>;
+		version: number;
+	}) => void;
 };
 
-export type MidiLearnStore = MidiLearnState & MidiLearnActions;
+export type MidiLearnStore = MidiLearnStateData & MidiLearnActions;
 
-const DEFAULT_STATE: MidiLearnState = {
+const DEFAULT_STATE: MidiLearnStateData = {
 	learnMode: false,
-	bindings: DEFAULT_BINDINGS,
-	lastCapturedCc: null,
+	bindings: [],
 	pendingLearnParam: null,
 };
 
-function normalizePersistedBindings(
-	persisted: unknown,
-): Partial<Record<MidiLearnTargetKey, MidiBinding>> {
-	if (!persisted || typeof persisted !== "object") {
-		return {};
-	}
+let webMidiLearnHydrated = false;
 
-	const normalized: Partial<Record<MidiLearnTargetKey, MidiBinding>> = {};
-	for (const candidate of Object.values(persisted)) {
-		if (!candidate || typeof candidate !== "object") {
-			continue;
-		}
-		const maybeBinding = candidate as {
-			paramKey?: unknown;
-			channel?: unknown;
-			cc?: unknown;
-		};
-		if (typeof maybeBinding.paramKey !== "string") {
-			continue;
-		}
-		if (typeof maybeBinding.channel !== "number") {
-			continue;
-		}
-		if (typeof maybeBinding.cc !== "number") {
-			continue;
-		}
-		normalized[maybeBinding.paramKey as MidiLearnTargetKey] = {
-			paramKey: maybeBinding.paramKey as MidiLearnTargetKey,
-			channel: maybeBinding.channel,
-			cc: maybeBinding.cc,
-		};
-	}
-	return normalized;
+function canUseLocalStorage(): boolean {
+	return typeof window !== "undefined" && "localStorage" in window;
 }
 
-export const useMidiLearnStore = create<MidiLearnStore>()(
-	persist(
-		(set, get) => ({
-			...DEFAULT_STATE,
+function isPluginBackedMidiLearnEnvironment(): boolean {
+	if (typeof window === "undefined") {
+		return false;
+	}
 
-			setLearnMode: (on) => {
-				set({
-					learnMode: on,
-					lastCapturedCc: null,
-					pendingLearnParam: on ? get().pendingLearnParam : null,
-				});
-			},
+	const webkitWindow = window as Window & {
+		webkit?: {
+			messageHandlers?: {
+				cosmoPd101?: unknown;
+			};
+		};
+	};
 
-			setPendingLearnParam: (paramKey) => {
-				set({ pendingLearnParam: paramKey });
-			},
+	return Boolean(
+		window.ipc ||
+			webkitWindow.webkit?.messageHandlers?.cosmoPd101 ||
+			(window.location.search &&
+				new URLSearchParams(window.location.search).get("standalone") === "1"),
+	);
+}
 
-			captureMidiCc: (channel, cc, rawValue) => {
-				const state = get();
-				if (!state.learnMode) return;
+function normalizeBindings(value: unknown): MidiBinding[] | null {
+	if (!Array.isArray(value)) {
+		return null;
+	}
 
-				const pendingKey = state.pendingLearnParam;
-				if (pendingKey) {
-					set((s) => ({
-						bindings: {
-							...s.bindings,
-							[pendingKey]: {
-								paramKey: pendingKey,
-								channel,
-								cc,
-							},
-						},
-						lastCapturedCc: { channel, cc, rawValue },
-					}));
-				} else {
-					set({ lastCapturedCc: { channel, cc, rawValue } });
-				}
-			},
+	const bindings = value
+		.map((entry) => {
+			if (!entry || typeof entry !== "object") {
+				return null;
+			}
 
-			addOrReplaceBinding: (channel, cc, paramKey) => {
-				set((state) => ({
-					bindings: {
-						...state.bindings,
-						[paramKey]: { paramKey, channel, cc },
-					},
-				}));
-			},
+			const candidate = entry as Partial<MidiBinding>;
+			if (
+				typeof candidate.paramKey !== "string" ||
+				typeof candidate.channel !== "number" ||
+				typeof candidate.cc !== "number"
+			) {
+				return null;
+			}
 
-			updateBinding: (paramKey, updates) => {
-				set((state) => {
-					const current = state.bindings[paramKey];
-					if (!current) {
-						return state;
-					}
-					return {
-						bindings: {
-							...state.bindings,
-							[paramKey]: {
-								...current,
-								...updates,
-							},
-						},
-					};
-				});
-			},
+			return {
+				paramKey: candidate.paramKey,
+				channel: candidate.channel,
+				cc: candidate.cc,
+			};
+		})
+		.filter((binding): binding is MidiBinding => binding !== null);
 
-			removeBinding: (paramKey) => {
-				set((state) => {
-					const { [paramKey]: _, ...rest } = state.bindings;
-					return { bindings: rest };
-				});
-			},
+	return bindings;
+}
 
-			removeBindingsForParam: (paramKey) => {
-				get().removeBinding(paramKey);
-			},
+function persistWebMidiBindings(bindings: MidiBinding[]): void {
+	if (!canUseLocalStorage() || isPluginBackedMidiLearnEnvironment()) {
+		return;
+	}
 
-			getBindingsForMidi: (channel, cc) => {
-				const bindings = get().bindings;
-				return Object.values(bindings).filter(
-					(binding): binding is MidiBinding => {
-						if (!binding) {
-							return false;
-						}
+	window.localStorage.setItem(
+		MIDI_LEARN_STORAGE_KEY,
+		JSON.stringify({
+			bindings,
+		} satisfies PersistedMidiLearnBindings),
+	);
+}
 
-						return binding.channel === channel && binding.cc === cc;
-					},
-				);
-			},
+function hydrateWebMidiBindings(): MidiBinding[] {
+	if (!canUseLocalStorage()) {
+		return DEFAULT_MIDI_BINDINGS;
+	}
 
-			getBindingForParam: (paramKey) => {
-				return get().bindings[paramKey];
-			},
+	const raw = window.localStorage.getItem(MIDI_LEARN_STORAGE_KEY);
+	if (!raw) {
+		persistWebMidiBindings(DEFAULT_MIDI_BINDINGS);
+		return DEFAULT_MIDI_BINDINGS;
+	}
 
-			getBindingsForParam: (paramKey) => {
-				const binding = get().bindings[paramKey];
-				return binding ? [binding] : [];
-			},
+	try {
+		const parsed = JSON.parse(raw) as Partial<PersistedMidiLearnBindings>;
+		const bindings = normalizeBindings(parsed.bindings);
+		if (bindings) {
+			return bindings;
+		}
+	} catch (error) {
+		console.error("[MidiLearn] Failed to parse persisted bindings", error);
+	}
 
-			clearLastCapturedCc: () => {
-				set({ lastCapturedCc: null });
-			},
+	persistWebMidiBindings(DEFAULT_MIDI_BINDINGS);
+	return DEFAULT_MIDI_BINDINGS;
+}
 
-			resetPendingLearnParam: () => {
-				set({ pendingLearnParam: null });
-			},
-		}),
-		{
-			name: MIDI_LEARN_STORAGE_KEY,
-			storage: createJSONStorage(() => localStorage),
-			partialize: (state) => ({
-				bindings: state.bindings,
-			}),
-			merge: (persisted, current) => ({
-				...current,
-				...DEFAULT_STATE,
-				...(typeof persisted === "object" &&
-				persisted !== null &&
-				"bindings" in persisted
-					? {
-							bindings: normalizePersistedBindings(
-								(persisted as { bindings: unknown }).bindings,
-							),
-						}
-					: {}),
-			}),
-		},
-	),
-);
+export function ensureMidiLearnStateHydrated(): void {
+	if (webMidiLearnHydrated || isPluginBackedMidiLearnEnvironment()) {
+		return;
+	}
+
+	webMidiLearnHydrated = true;
+	useMidiLearnStore.setState({
+		learnMode: false,
+		pendingLearnParam: null,
+		bindings: hydrateWebMidiBindings(),
+	});
+}
+
+export function resetMidiLearnPersistenceForTests(): void {
+	webMidiLearnHydrated = false;
+}
+
+export const useMidiLearnStore = create<MidiLearnStore>()((set, get) => ({
+	...DEFAULT_STATE,
+
+	setLearnMode: (on) => {
+		const fn = (window as unknown as Record<string, unknown>)
+			.__czSetMidiLearnMode as ((on: boolean) => void) | undefined;
+		fn?.(on);
+		set({
+			learnMode: on,
+			pendingLearnParam: on ? get().pendingLearnParam : null,
+		});
+	},
+
+	setPendingLearnParam: (paramKey) => {
+		const fn = (window as unknown as Record<string, unknown>)
+			.__czSetPendingMidiLearnParam as
+			| ((key: string | null) => void)
+			| undefined;
+		fn?.(paramKey);
+		set({ pendingLearnParam: paramKey });
+	},
+
+	removeBinding: (binding) => {
+		const fn = (window as unknown as Record<string, unknown>)
+			.__czRemoveMidiBinding as
+			| ((binding: MidiBindingIdentity) => void)
+			| undefined;
+		fn?.(binding);
+		set((state) => {
+			const bindings = state.bindings.filter(
+				(existing) => !bindingMatches(existing, binding),
+			);
+			persistWebMidiBindings(bindings);
+			return { bindings };
+		});
+	},
+
+	clearBindings: () => {
+		const fn = (window as unknown as Record<string, unknown>)
+			.__czClearMidiLearnBindings as (() => void) | undefined;
+		fn?.();
+		persistWebMidiBindings([]);
+		set({ bindings: [], pendingLearnParam: null });
+	},
+
+	addBinding: (paramKey, channel, cc) => {
+		const fn = (window as unknown as Record<string, unknown>)
+			.__czAddMidiBinding as
+			| ((key: string, ch: number, c: number) => void)
+			| undefined;
+		fn?.(paramKey, channel, cc);
+		set((state) => {
+			const bindings = [
+				...state.bindings.filter((binding) => binding.paramKey !== paramKey),
+				{ paramKey, channel, cc },
+			];
+			persistWebMidiBindings(bindings);
+			return { bindings };
+		});
+	},
+
+	initFromEngineState: (engineState) => {
+		set({
+			learnMode: engineState.learnMode,
+			pendingLearnParam: engineState.pendingParamKey ?? null,
+			bindings: engineState.bindings.map((b) => ({
+				paramKey: b.paramKey,
+				channel: b.channel,
+				cc: b.cc,
+			})),
+		});
+	},
+
+	getBindingsForMidi: (channel, cc) => {
+		return get().bindings.filter(
+			(binding) => binding.channel === channel && binding.cc === cc,
+		);
+	},
+
+	getBindingForParam: (paramKey) => {
+		return get().bindings.find((b) => b.paramKey === paramKey);
+	},
+
+	getBindingsForParam: (paramKey) => {
+		const binding = get().bindings.find((entry) => entry.paramKey === paramKey);
+		return binding ? [binding] : [];
+	},
+
+	resetPendingLearnParam: () => {
+		const fn = (window as unknown as Record<string, unknown>)
+			.__czSetPendingMidiLearnParam as
+			| ((key: string | null) => void)
+			| undefined;
+		fn?.(null);
+		set({ pendingLearnParam: null });
+	},
+}));
+
+export async function refreshMidiLearnState(): Promise<void> {
+	ensureMidiLearnStateHydrated();
+	const fn = (window as unknown as Record<string, unknown>)
+		.__czGetMidiLearnState as (() => Promise<unknown>) | undefined;
+	if (!fn) {
+		return;
+	}
+
+	try {
+		const detail = await fn();
+		if (detail && typeof detail === "object") {
+			useMidiLearnStore.getState().initFromEngineState(
+				detail as {
+					learnMode: boolean;
+					pendingParamKey: string | null;
+					bindings: Array<{ paramKey: string; channel: number; cc: number }>;
+					version: number;
+				},
+			);
+		}
+	} catch (error) {
+		console.error("[MidiLearn] Failed to refresh state from engine", error);
+	}
+}
+
+export function subscribeMidiLearnState(): () => void {
+	ensureMidiLearnStateHydrated();
+	const handler = (event: Event) => {
+		const detail = (event as CustomEvent).detail;
+		useMidiLearnStore.getState().initFromEngineState(detail);
+	};
+	window.addEventListener("cz-midi-learn-state", handler);
+	void refreshMidiLearnState();
+	return () => window.removeEventListener("cz-midi-learn-state", handler);
+}

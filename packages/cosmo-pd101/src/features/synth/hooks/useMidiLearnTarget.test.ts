@@ -6,11 +6,9 @@ import { useMidiLearnTarget } from "./useMidiLearnTarget";
 
 describe("useMidiLearnTarget", () => {
 	beforeEach(() => {
-		localStorage.clear();
 		useMidiLearnStore.setState({
 			learnMode: false,
-			bindings: {},
-			lastCapturedCc: null,
+			bindings: [],
 			pendingLearnParam: null,
 		});
 	});
@@ -33,11 +31,13 @@ describe("useMidiLearnTarget", () => {
 		expect(result.current.midiLearnState).toBe("targeted");
 
 		act(() => {
-			useMidiLearnStore.getState().addOrReplaceBinding(0, 18, "macro1");
+			useMidiLearnStore.setState({
+				bindings: [{ paramKey: "macro1", channel: 0, cc: 18 }],
+			});
 		});
-		expect(result.current.midiLearnState).toBe("targeted");
+		expect(result.current.midiLearnState).toBe("mapped");
 		act(() => {
-			useMidiLearnStore.getState().setPendingLearnParam(null);
+			useMidiLearnStore.setState({ pendingLearnParam: "macro2" });
 		});
 		expect(result.current.midiLearnState).toBe("mapped");
 	});

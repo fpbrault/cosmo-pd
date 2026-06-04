@@ -19,12 +19,12 @@ export default memo(function SynthRendererLibraryOverlay({
 	onClose,
 }: SynthRendererLibraryOverlayProps) {
 	const {
-		visiblePresetEntries,
+		allPresetEntries,
 		activePresetId,
 		activePresetName,
+		handleLoadPresetByName,
 		handleLoadLocal,
 		handleLoadLibrary,
-		handleLoadBuiltin,
 		handleSavePreset,
 		handleDeletePreset,
 		handleRenamePreset,
@@ -49,12 +49,12 @@ export default memo(function SynthRendererLibraryOverlay({
 			}`}
 		>
 			<MemoPresetLibrary
-				allEntries={visiblePresetEntries}
+				allEntries={allPresetEntries}
 				activeEntryId={activePresetId}
 				activePresetName={activePresetName}
+				onLoadPresetByName={handleLoadPresetByName}
 				onLoadLocal={handleLoadLocal}
 				onLoadLibrary={handleLoadLibrary}
-				onLoadBuiltin={handleLoadBuiltin}
 				onSavePreset={handleSavePreset}
 				onDeletePreset={handleDeletePreset}
 				onRenamePreset={handleRenamePreset}

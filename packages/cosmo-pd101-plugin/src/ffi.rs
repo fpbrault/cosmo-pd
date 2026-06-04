@@ -6,16 +6,20 @@ use std::sync::OnceLock;
 
 use cosmo_synth_engine::params::{
     EngineParamReadoutFormatV1, SynthParams, engine_param_default_v1, engine_param_ui_meta_v1,
+    set_parameter_value_by_key,
 };
 use cosmo_synth_engine::processor::{CosmoProcessor, midi_note_to_freq};
+
+use crate::preset_library::PresetLibraryEntry;
 
 const SCOPE_CAPACITY: usize = 4096;
 const PARAM_KEY_CAPACITY: usize = 64;
 const PARAM_LABEL_CAPACITY: usize = 64;
 const PARAM_FLAG_AUTOMATABLE: u32 = 1 << 0;
-const FACTORY_PRESETS_JSON: &str = include_str!("factory_presets.json");
+const FACTORY_PRESETS_JSON: &str = include_str!(concat!(env!("OUT_DIR"), "/minified_presets.json"));
 
 struct FactoryPresetEntry {
+    id: String,
     name: String,
     params_json: String,
     params: SynthParams,
@@ -32,26 +36,29 @@ pub(crate) fn factory_preset_count() -> usize {
 }
 
 fn load_factory_presets() -> Vec<FactoryPresetEntry> {
-    let Ok(presets_value) = serde_json::from_str::<serde_json::Value>(FACTORY_PRESETS_JSON) else {
-        return Vec::new();
-    };
-    let Some(presets) = presets_value.as_array() else {
+    let Ok(entries) = serde_json::from_str::<Vec<PresetLibraryEntry>>(FACTORY_PRESETS_JSON) else {
         return Vec::new();
     };
 
-    presets
+    entries
         .iter()
-        .filter_map(|preset| {
-            let name = preset.get("name")?.as_str()?.to_owned();
-            let params = preset.get("data")?.get("params")?;
-            let parsed_params = serde_json::from_value::<SynthParams>(params.clone()).ok()?;
+        .filter_map(|entry| {
+            let params_value = entry.data.get("params")?;
+            let parsed_params = serde_json::from_value::<SynthParams>(params_value.clone()).ok()?;
             Some(FactoryPresetEntry {
-                name,
-                params_json: params.to_string(),
+                id: entry.id.clone(),
+                name: entry.name.clone(),
+                params_json: params_value.to_string(),
                 params: parsed_params,
             })
         })
         .collect()
+}
+
+pub(crate) fn factory_preset_identity(index: usize) -> Option<(&'static str, &'static str)> {
+    factory_presets()
+        .get(index)
+        .map(|preset| (preset.id.as_str(), preset.name.as_str()))
 }
 
 pub(crate) fn factory_preset_params(index: usize) -> Option<&'static SynthParams> {
@@ -248,6 +255,30 @@ const AUTOMATABLE_PARAMS: &[AutomatableParamSpec] = &[
         key: "modEnvRelease",
         min: 0.0,
         max: 10.0,
+    },
+    AutomatableParamSpec {
+        id: 27,
+        key: "macro1",
+        min: 0.0,
+        max: 1.0,
+    },
+    AutomatableParamSpec {
+        id: 28,
+        key: "macro2",
+        min: 0.0,
+        max: 1.0,
+    },
+    AutomatableParamSpec {
+        id: 29,
+        key: "macro3",
+        min: 0.0,
+        max: 1.0,
+    },
+    AutomatableParamSpec {
+        id: 30,
+        key: "macro4",
+        min: 0.0,
+        max: 1.0,
     },
 ];
 
@@ -471,41 +502,16 @@ fn parameter_value(params: &SynthParams, key: &str) -> Option<f32> {
         "modEnvDecay" => Some(params.mod_env.decay),
         "modEnvSustain" => Some(params.mod_env.sustain),
         "modEnvRelease" => Some(params.mod_env.release),
+        "macro1" => Some(params.macro1),
+        "macro2" => Some(params.macro2),
+        "macro3" => Some(params.macro3),
+        "macro4" => Some(params.macro4),
         _ => None,
     }
 }
 
-fn set_parameter_value(params: &mut SynthParams, key: &str, value: f32) -> bool {
-    match key {
-        "volume" => params.volume = value,
-        "warpAAmount" => params.line1.dcw_base = value,
-        "warpBAmount" => params.line2.dcw_base = value,
-        "algoBlendA" => params.line1.algo_blend = value,
-        "algoBlendB" => params.line2.algo_blend = value,
-        "line1Level" => params.line1.dca_base = value,
-        "line2Level" => params.line2.dca_base = value,
-        "line1Octave" => params.line1.octave = value,
-        "line2Octave" => params.line2.octave = value,
-        "line2DetuneNote" => params.line2.detune_note = value,
-        "line2DetuneFine" => params.line2.detune_fine = value,
-        "velocityCurve" => params.velocity_curve = value,
-        "pitchBendRange" => params.pitch_bend_range = value,
-        "portamentoRate" => params.portamento.rate = value,
-        "portamentoTime" => params.portamento.time = value,
-        "lfoRate" => params.lfo.rate = value,
-        "lfoDepth" => params.lfo.depth = value,
-        "lfoOffset" => params.lfo.offset = value,
-        "lfo2Rate" => params.lfo2.rate = value,
-        "lfo2Depth" => params.lfo2.depth = value,
-        "lfo2Offset" => params.lfo2.offset = value,
-        "randomRate" => params.random.rate = value,
-        "modEnvAttack" => params.mod_env.attack = value,
-        "modEnvDecay" => params.mod_env.decay = value,
-        "modEnvSustain" => params.mod_env.sustain = value,
-        "modEnvRelease" => params.mod_env.release = value,
-        _ => return false,
-    }
-    true
+pub(crate) fn set_parameter_value(params: &mut SynthParams, key: &str, value: f32) -> bool {
+    set_parameter_value_by_key(params, key, value)
 }
 
 fn engine_mut<'a>(

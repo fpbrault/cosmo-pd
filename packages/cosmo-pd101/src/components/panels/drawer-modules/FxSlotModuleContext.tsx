@@ -44,5 +44,3 @@ export function useFxSlotModule() {
 	}
 	return context;
 }
-
-export type { PresetOption } from "@/components/panels/drawer-modules/custom/useFxModuleController";

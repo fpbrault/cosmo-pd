@@ -6,6 +6,8 @@
 #![cfg_attr(target_os = "macos", allow(deprecated, unexpected_cfgs))]
 
 #[cfg(target_os = "macos")]
+use dispatch2::run_on_main;
+#[cfg(target_os = "macos")]
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
@@ -28,9 +30,12 @@ use wry::WebViewBuilderExtDarwin;
 use crate::CzPluginParams;
 #[cfg(target_os = "macos")]
 use crate::handle_ipc_invoke;
+use crate::preset_library::PresetLibrary;
+use crate::session_state::MidiLearnState;
 use crate::{
-    MidiCcQueue, PerformanceCountersHandle, ScopeBuffer, SharedPresetName, SharedRuntimeModSources,
-    SharedTransportSnapshot, UiInputQueue, append_log,
+    MidiCcQueue, PerformanceCountersHandle, ScopeBuffer, SharedEditorState, SharedPresetSession,
+    SharedRuntimeModSources, SharedRuntimeVoiceStates, SharedTransportSnapshot, UiInputQueue,
+    append_log,
 };
 use cosmo_synth_engine::params::SynthParams;
 
@@ -111,7 +116,13 @@ pub struct CzEditor {
     webview_state: Arc<Mutex<WebViewContainer>>,
     pending_parent_ns_view: Option<usize>,
     params: Arc<CzPluginParams>,
-    preset_name: SharedPresetName,
+    preset_session: SharedPresetSession,
+    runtime_voice_states: SharedRuntimeVoiceStates,
+    preset_library: Arc<Mutex<PresetLibrary>>,
+    editor_state: SharedEditorState,
+    midi_learn_state: Arc<Mutex<MidiLearnState>>,
+    last_midi_learn_version: u64,
+    last_sent_params_json: Arc<Mutex<String>>,
     #[cfg(target_os = "macos")]
     standalone_window: Option<StandaloneWindow>,
 }
@@ -153,7 +164,11 @@ impl CzEditor {
         midi_cc_queue: MidiCcQueue,
         performance_counters: PerformanceCountersHandle,
         params: Arc<CzPluginParams>,
-        preset_name: SharedPresetName,
+        preset_session: SharedPresetSession,
+        runtime_voice_states: SharedRuntimeVoiceStates,
+        preset_library: Arc<Mutex<PresetLibrary>>,
+        editor_state: SharedEditorState,
+        midi_learn_state: Arc<Mutex<MidiLearnState>>,
     ) -> Self {
         Self {
             synth_params,
@@ -169,7 +184,13 @@ impl CzEditor {
             webview_state: Arc::new(Mutex::new(WebViewContainer { webview: None })),
             pending_parent_ns_view: None,
             params,
-            preset_name,
+            preset_session,
+            runtime_voice_states,
+            preset_library,
+            editor_state,
+            midi_learn_state,
+            last_midi_learn_version: u64::MAX,
+            last_sent_params_json: Arc::new(Mutex::new(String::new())),
             #[cfg(target_os = "macos")]
             standalone_window: None,
         }
@@ -202,7 +223,11 @@ impl CzEditor {
         let ui_input_queue = self.ui_input_queue.clone();
         let performance_counters = self.performance_counters.clone();
         let params = self.params.clone();
-        let preset_name = self.preset_name.clone();
+        let preset_session = self.preset_session.clone();
+        let runtime_voice_states = self.runtime_voice_states.clone();
+        let preset_library = self.preset_library.clone();
+        let editor_state = self.editor_state.clone();
+        let midi_learn_state = self.midi_learn_state.clone();
         let webview_state_for_ipc = self.webview_state.clone();
 
         let (webview, standalone_window) = unsafe {
@@ -212,13 +237,17 @@ impl CzEditor {
                 synth_params,
                 rt_synth_params,
                 runtime_mod_sources,
+                runtime_voice_states,
                 transport_snapshot,
                 synth_params_version,
                 scope_buffer,
                 ui_input_queue,
                 performance_counters,
                 params,
-                preset_name,
+                preset_session,
+                preset_library,
+                editor_state,
+                midi_learn_state,
                 webview_state_for_ipc,
             )
         };
@@ -245,19 +274,11 @@ impl CzEditor {
             return;
         }
 
-        let sp = self.synth_params.load();
-        let Ok(json_str) = serde_json::to_string(sp.as_ref()) else {
-            return;
-        };
-        let escaped = json_str.replace('\\', "\\\\").replace('"', "\\\"");
-        let script = format!(
-            "if(typeof window.__czOnParams === 'function') {{ window.__czOnParams(\"{escaped}\"); }}"
+        push_params_to_webview(
+            &self.webview_state,
+            &self.synth_params,
+            &self.last_sent_params_json,
         );
-        if let Ok(container) = self.webview_state.lock()
-            && let Some(wv) = &container.webview
-        {
-            let _ = wv.evaluate_script(&script);
-        }
     }
 
     fn apply_scale_normalization(&self) {
@@ -281,6 +302,23 @@ impl CzEditor {
             && let Some(wv) = &container.webview
         {
             let _ = wv.evaluate_script(&script);
+        }
+    }
+
+    fn push_midi_learn_state(&mut self) {
+        if let Ok(state) = self.midi_learn_state.lock() {
+            self.last_midi_learn_version = state.version;
+            if let Ok(json) = serde_json::to_string(&*state) {
+                let escaped = json.replace('\\', "\\\\").replace('"', "\\\"");
+                let script = format!(
+                    "if(typeof window.__czOnMidiLearnState === 'function') {{ window.__czOnMidiLearnState(\"{escaped}\"); }}"
+                );
+                if let Ok(container) = self.webview_state.lock()
+                    && let Some(wv) = &container.webview
+                {
+                    let _ = wv.evaluate_script(&script);
+                }
+            }
         }
     }
 }
@@ -341,6 +379,31 @@ impl Editor for CzEditor {
     fn idle(&mut self) {
         #[cfg(target_os = "macos")]
         if !is_main_thread() {
+            let webview_state = self.webview_state.clone();
+            let synth_params = self.synth_params.clone();
+            let last_sent_params_json = self.last_sent_params_json.clone();
+            #[cfg(not(any(target_os = "ios", target_os = "android")))]
+            let midi_cc_queue = self.midi_cc_queue.clone();
+            let midi_learn_state = self.midi_learn_state.clone();
+            run_on_main(move |_mtm| {
+                push_params_to_webview(&webview_state, &synth_params, &last_sent_params_json);
+                // Push MIDI learn state (unconditional, no version check)
+                if let Ok(state) = midi_learn_state.lock()
+                    && let Ok(json) = serde_json::to_string(&*state)
+                {
+                    let escaped = json.replace('\\', "\\\\").replace('"', "\\\"");
+                    let script = format!(
+                        "if(typeof window.__czOnMidiLearnState === 'function') {{ window.__czOnMidiLearnState(\"{escaped}\"); }}"
+                    );
+                    if let Ok(container) = webview_state.lock()
+                        && let Some(wv) = &container.webview
+                    {
+                        let _ = wv.evaluate_script(&script);
+                    }
+                }
+                #[cfg(not(any(target_os = "ios", target_os = "android")))]
+                flush_midi_cc_queue_to_webview(&webview_state, &midi_cc_queue);
+            });
             return;
         }
 
@@ -357,22 +420,93 @@ impl Editor for CzEditor {
 
         self.push_params();
 
-        #[cfg(not(any(target_os = "ios", target_os = "android")))]
-        if let Ok(container) = self.webview_state.lock()
-            && let Some(wv) = &container.webview
-        {
-            while let Some((channel, cc, value)) = self.midi_cc_queue.pop() {
-                let script = format!(
-                    "if(typeof window.__czOnMidiCc === 'function') {{ window.__czOnMidiCc({channel},{cc},{value}); }}"
-                );
-                let _ = wv.evaluate_script(&script);
-            }
+        // Push MIDI learn state if version changed
+        let midi_learn_state_changed = self
+            .midi_learn_state
+            .lock()
+            .map(|state| state.version != self.last_midi_learn_version)
+            .unwrap_or(false);
+        if midi_learn_state_changed {
+            self.push_midi_learn_state();
         }
+
+        #[cfg(not(any(target_os = "ios", target_os = "android")))]
+        flush_midi_cc_queue_to_webview(&self.webview_state, &self.midi_cc_queue);
     }
 
     fn set_scale_factor(&mut self, factor: f64) {
         if let Ok(mut f) = self.host_scale_factor.lock() {
             *f = factor as f32;
+        }
+    }
+
+    fn state_changed(&mut self) {
+        if let Ok(mut cache) = self.last_sent_params_json.lock() {
+            cache.clear();
+        }
+        self.last_midi_learn_version = u64::MAX;
+        self.push_params();
+        self.push_midi_learn_state();
+    }
+}
+
+fn push_params_to_webview(
+    webview_state: &Arc<Mutex<WebViewContainer>>,
+    synth_params: &Arc<ArcSwap<SynthParams>>,
+    last_sent_params_json: &Mutex<String>,
+) {
+    let sp = synth_params.load();
+    let Ok(json_str) = serde_json::to_string(sp.as_ref()) else {
+        return;
+    };
+
+    {
+        let mut cache = last_sent_params_json.lock().unwrap();
+        if *cache == json_str {
+            return;
+        }
+        *cache = json_str.clone();
+    }
+
+    let escaped = json_str.replace('\\', "\\\\").replace('"', "\\\"");
+    let script = format!(
+        "if(typeof window.__czOnParams === 'function') {{ window.__czOnParams(\"{escaped}\"); }}"
+    );
+    if let Ok(container) = webview_state.lock()
+        && let Some(wv) = &container.webview
+    {
+        let _ = wv.evaluate_script(&script);
+    }
+}
+
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
+fn flush_midi_cc_queue_to_webview(
+    webview_state: &Arc<Mutex<WebViewContainer>>,
+    midi_cc_queue: &MidiCcQueue,
+) {
+    let events: Vec<(u8, u8, u8)> = {
+        let mut v = Vec::new();
+        while let Some(event) = midi_cc_queue.pop() {
+            v.push(event);
+        }
+        v
+    };
+
+    if events.is_empty() {
+        return;
+    }
+
+    // TODO: remove this diagnostic once cross-format MIDI CC webview forwarding is verified.
+    append_log(&format!("flush_midi_cc_queue count={}", events.len()));
+
+    if let Ok(container) = webview_state.lock()
+        && let Some(wv) = &container.webview
+    {
+        for (channel, cc, value) in &events {
+            let script = format!(
+                "if(typeof window.__czOnMidiCc === 'function') {{ window.__czOnMidiCc({channel},{cc},{value}); }}"
+            );
+            let _ = wv.evaluate_script(&script);
         }
     }
 }
@@ -381,7 +515,6 @@ impl Editor for CzEditor {
 
 #[cfg(target_os = "macos")]
 fn screenshot_webview() -> Option<(Vec<u8>, u32, u32)> {
-    use dispatch2::run_on_main;
     run_on_main(|_mtm| screenshot_webview_impl())
 }
 
@@ -753,13 +886,17 @@ unsafe fn build_webview_from_ns_view(
     synth_params: Arc<ArcSwap<SynthParams>>,
     rt_synth_params: Arc<ArcSwap<SynthParams>>,
     runtime_mod_sources: SharedRuntimeModSources,
+    runtime_voice_states: SharedRuntimeVoiceStates,
     transport_snapshot: SharedTransportSnapshot,
     synth_params_version: Arc<AtomicU64>,
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
     performance_counters: PerformanceCountersHandle,
     params: Arc<CzPluginParams>,
-    preset_name: SharedPresetName,
+    preset_session: SharedPresetSession,
+    preset_library: Arc<Mutex<PresetLibrary>>,
+    editor_state: SharedEditorState,
+    midi_learn_state: Arc<Mutex<MidiLearnState>>,
     webview_state: Arc<Mutex<WebViewContainer>>,
 ) -> (Option<wry::WebView>, Option<StandaloneWindow>) {
     unsafe {
@@ -787,12 +924,17 @@ unsafe fn build_webview_from_ns_view(
         unsafe impl Send for NsViewWrapper {}
         unsafe impl Sync for NsViewWrapper {}
 
-        let preset_name_for_ipc = preset_name.clone();
+        let preset_session_for_ipc = preset_session.clone();
+        let preset_library_for_ipc = preset_library.clone();
+        let editor_state_for_ipc = editor_state.clone();
+        let midi_learn_state_for_ipc = midi_learn_state.clone();
         let webview_state_for_response = webview_state.clone();
         let params_repush_done = Arc::new(AtomicBool::new(false));
 
         let scheme = get_instance_scheme();
         append_log(&format!("webview scheme: {scheme}"));
+
+        let scope_for_protocol = scope_buffer.clone();
         let builder = WebViewBuilder::new()
         .with_bounds(wry::Rect {
             position: dpi::LogicalPosition::new(0, 0).into(),
@@ -800,6 +942,10 @@ unsafe fn build_webview_from_ns_view(
         })
         .with_data_store_identifier(webview_data_store_identifier(&scheme))
         .with_custom_protocol(scheme.clone(), move |_id, request| {
+            let path = request.uri().path();
+            if path == "/__scope__" {
+                return serve_scope_buffer(&scope_for_protocol);
+            }
             serve_file(&asset_source, request)
         })
         .with_ipc_handler(move |request| {
@@ -821,13 +967,17 @@ unsafe fn build_webview_from_ns_view(
                     &synth_params,
                     &rt_synth_params,
                     &runtime_mod_sources,
+                    &runtime_voice_states,
                     &transport_snapshot,
                     &synth_params_version,
                     &scope_buffer,
                     &ui_input_queue,
                     &performance_counters,
                     &params,
-                    &preset_name_for_ipc,
+                    &preset_session_for_ipc,
+                    &preset_library_for_ipc,
+                    &editor_state_for_ipc,
+                    &midi_learn_state_for_ipc,
                 );
 
                 let response = match result {
@@ -927,6 +1077,44 @@ unsafe fn build_webview_from_ns_view(
 struct WebAssetResponse {
     mime: &'static str,
     bytes: Vec<u8>,
+}
+
+fn serve_scope_buffer(
+    scope_buffer: &ScopeBuffer,
+) -> wry::http::Response<std::borrow::Cow<'static, [u8]>> {
+    use wry::http::Response;
+
+    let frame = match scope_buffer.try_lock() {
+        Ok(frame) => frame,
+        Err(_) => {
+            return Response::builder()
+                .status(200)
+                .header("Content-Type", "application/octet-stream")
+                .header("Content-Length", "8")
+                .header("Access-Control-Allow-Origin", "*")
+                .body(std::borrow::Cow::Owned(vec![0u8; 8]))
+                .unwrap();
+        }
+    };
+
+    let linear = frame.to_linear();
+    let sample_rate = frame.sample_rate;
+    let hz = frame.hz;
+
+    let mut buf = Vec::with_capacity(8 + linear.len() * 4);
+    buf.extend_from_slice(&sample_rate.to_le_bytes());
+    buf.extend_from_slice(&hz.to_le_bytes());
+    for &s in &linear {
+        buf.extend_from_slice(&s.to_le_bytes());
+    }
+
+    Response::builder()
+        .status(200)
+        .header("Content-Type", "application/octet-stream")
+        .header("Content-Length", buf.len().to_string())
+        .header("Access-Control-Allow-Origin", "*")
+        .body(std::borrow::Cow::Owned(buf))
+        .unwrap()
 }
 
 fn serve_file(

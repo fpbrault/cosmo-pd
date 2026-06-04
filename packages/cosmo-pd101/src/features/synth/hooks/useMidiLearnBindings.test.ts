@@ -9,10 +9,14 @@ describe("useMidiLearnBindings", () => {
 	beforeEach(() => {
 		useMidiLearnStore.setState({
 			learnMode: false,
-			bindings: {},
-			lastCapturedCc: null,
+			bindings: [],
 			pendingLearnParam: null,
 		});
+		(
+			window as Window & {
+				__czAddMidiBinding?: (key: string, channel: number, cc: number) => void;
+			}
+		).__czAddMidiBinding = undefined;
 	});
 
 	afterEach(() => {
@@ -28,24 +32,26 @@ describe("useMidiLearnBindings", () => {
 		expect(removeSpy).toHaveBeenCalledWith("cz-midi-cc", expect.any(Function));
 	});
 
-	it("captures midi cc when learn mode is enabled", () => {
+	it("applies bindings when learn mode is enabled (routing delegated to Rust)", () => {
 		useMidiLearnStore.getState().setLearnMode(true);
+		useMidiLearnStore.setState({
+			bindings: [{ paramKey: "volume", channel: 1, cc: 12 }],
+		});
+		const setVolume = vi.spyOn(useSynthStore.getState(), "setVolume");
 		renderHook(() => useMidiLearnBindings());
 		window.dispatchEvent(
 			new CustomEvent("cz-midi-cc", {
 				detail: { channel: 1, cc: 12, rawValue: 99 },
 			}),
 		);
-		expect(useMidiLearnStore.getState().lastCapturedCc).toEqual({
-			channel: 1,
-			cc: 12,
-			rawValue: 99,
-		});
+		expect(setVolume).toHaveBeenCalled();
 	});
 
 	it("applies synth param bindings via store setter", () => {
 		const setVolume = vi.spyOn(useSynthStore.getState(), "setVolume");
-		useMidiLearnStore.getState().addOrReplaceBinding(0, 7, "volume");
+		useMidiLearnStore.setState({
+			bindings: [{ paramKey: "volume", channel: 0, cc: 7 }],
+		});
 		renderHook(() => useMidiLearnBindings());
 		window.dispatchEvent(
 			new CustomEvent("cz-midi-cc", {
@@ -62,7 +68,9 @@ describe("useMidiLearnBindings", () => {
 			mode: "edge-trigger",
 			threshold: 64,
 		});
-		useMidiLearnStore.getState().addOrReplaceBinding(0, 21, "edge-k");
+		useMidiLearnStore.setState({
+			bindings: [{ paramKey: "edge-k", channel: 0, cc: 21 }],
+		});
 		renderHook(() => useMidiLearnBindings());
 		window.dispatchEvent(
 			new CustomEvent("cz-midi-cc", {
@@ -81,5 +89,46 @@ describe("useMidiLearnBindings", () => {
 		);
 		expect(apply).toHaveBeenCalledTimes(1);
 		cleanup();
+	});
+
+	it("learns new bindings directly in web mode when no plugin bridge is present", () => {
+		useMidiLearnStore.setState({
+			learnMode: true,
+			pendingLearnParam: "volume",
+		});
+
+		renderHook(() => useMidiLearnBindings());
+		window.dispatchEvent(
+			new CustomEvent("cz-midi-cc", {
+				detail: { channel: 4, cc: 91, rawValue: 64 },
+			}),
+		);
+
+		expect(useMidiLearnStore.getState()).toMatchObject({
+			learnMode: true,
+			pendingLearnParam: "volume",
+			bindings: [{ paramKey: "volume", channel: 4, cc: 91 }],
+		});
+	});
+
+	it("does not use the web fallback learner when the plugin bridge is present", () => {
+		(
+			window as Window & {
+				__czAddMidiBinding?: (key: string, channel: number, cc: number) => void;
+			}
+		).__czAddMidiBinding = vi.fn();
+		useMidiLearnStore.setState({
+			learnMode: true,
+			pendingLearnParam: "line1AlgoAControlsyncRatio",
+		});
+
+		renderHook(() => useMidiLearnBindings());
+		window.dispatchEvent(
+			new CustomEvent("cz-midi-cc", {
+				detail: { channel: 2, cc: 14, rawValue: 100 },
+			}),
+		);
+
+		expect(useMidiLearnStore.getState().bindings).toEqual([]);
 	});
 });

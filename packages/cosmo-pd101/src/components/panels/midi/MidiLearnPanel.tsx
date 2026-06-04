@@ -2,7 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Button from "@/components/controls/Button";
 import SynthPanelContainer from "@/components/layout/SynthPanelContainer";
 import { getMidiLearnTargetLabel } from "@/features/synth/midiLearnRegistry";
-import { useMidiLearnStore } from "@/features/synth/midiLearnStore";
+import {
+	type MidiBinding,
+	subscribeMidiLearnState,
+	useMidiLearnStore,
+} from "@/features/synth/midiLearnStore";
 
 function clampChannelDisplay(value: number): number {
 	return Math.min(16, Math.max(1, value));
@@ -27,14 +31,17 @@ function formatControlLabel(paramKey: string): string {
 		.replace(/^./, (value) => value.toUpperCase());
 }
 
+function bindingKey(binding: MidiBinding): string {
+	return `${binding.paramKey}:${binding.channel}:${binding.cc}`;
+}
+
 const MidiLearnPanel = Object.assign(
 	function MidiLearnPanel() {
 		const learnMode = useMidiLearnStore((s) => s.learnMode);
 		const setLearnMode = useMidiLearnStore((s) => s.setLearnMode);
 		const bindings = useMidiLearnStore((s) => s.bindings);
-		const clearLastCapturedCc = useMidiLearnStore((s) => s.clearLastCapturedCc);
 		const removeBinding = useMidiLearnStore((s) => s.removeBinding);
-		const updateBinding = useMidiLearnStore((s) => s.updateBinding);
+		const addBinding = useMidiLearnStore((s) => s.addBinding);
 		const resetPendingLearnParam = useMidiLearnStore(
 			(s) => s.resetPendingLearnParam,
 		);
@@ -42,23 +49,23 @@ const MidiLearnPanel = Object.assign(
 		const handleToggle = useCallback(() => {
 			if (learnMode) {
 				setLearnMode(false);
-				clearLastCapturedCc();
 				resetPendingLearnParam();
 			} else {
 				setLearnMode(true);
 			}
-		}, [learnMode, setLearnMode, clearLastCapturedCc, resetPendingLearnParam]);
+		}, [learnMode, setLearnMode, resetPendingLearnParam]);
 
-		const bindingList = Object.values(bindings)
-			.filter((binding): binding is NonNullable<typeof binding> =>
-				Boolean(binding),
-			)
-			.sort(
-				(a, b) =>
-					a.channel - b.channel ||
-					a.cc - b.cc ||
-					a.paramKey.localeCompare(b.paramKey),
-			);
+		useEffect(() => {
+			const unsubscribe = subscribeMidiLearnState();
+			return unsubscribe;
+		}, []);
+
+		const bindingList = [...bindings].sort(
+			(a, b) =>
+				a.channel - b.channel ||
+				a.cc - b.cc ||
+				a.paramKey.localeCompare(b.paramKey),
+		);
 		const bindingCount = bindingList.length;
 		const [editingCell, setEditingCell] = useState<{
 			paramKey: string;
@@ -104,14 +111,14 @@ const MidiLearnPanel = Object.assign(
 										{bindingList.map((binding) => {
 											const controlLabel = formatControlLabel(binding.paramKey);
 											const isEditingChannel =
-												editingCell?.paramKey === binding.paramKey &&
+												editingCell?.paramKey === bindingKey(binding) &&
 												editingCell.field === "channel";
 											const isEditingCc =
-												editingCell?.paramKey === binding.paramKey &&
+												editingCell?.paramKey === bindingKey(binding) &&
 												editingCell.field === "cc";
 											return (
 												<tr
-													key={binding.paramKey}
+													key={bindingKey(binding)}
 													className="hover:bg-cz-surface/20"
 												>
 													<td>
@@ -123,24 +130,30 @@ const MidiLearnPanel = Object.assign(
 																max={16}
 																defaultValue={binding.channel + 1}
 																onBlur={(event) => {
-																	updateBinding(binding.paramKey, {
-																		channel:
-																			clampChannelDisplay(
-																				Number(event.currentTarget.value || 1),
-																			) - 1,
-																	});
+																	const newChannel =
+																		clampChannelDisplay(
+																			Number(event.currentTarget.value || 1),
+																		) - 1;
+																	removeBinding(binding);
+																	addBinding(
+																		binding.paramKey,
+																		newChannel,
+																		binding.cc,
+																	);
 																	setEditingCell(null);
 																}}
 																onKeyDown={(event) => {
 																	if (event.key === "Enter") {
-																		updateBinding(binding.paramKey, {
-																			channel:
-																				clampChannelDisplay(
-																					Number(
-																						event.currentTarget.value || 1,
-																					),
-																				) - 1,
-																		});
+																		const newChannel =
+																			clampChannelDisplay(
+																				Number(event.currentTarget.value || 1),
+																			) - 1;
+																		removeBinding(binding);
+																		addBinding(
+																			binding.paramKey,
+																			newChannel,
+																			binding.cc,
+																		);
 																		setEditingCell(null);
 																	}
 																	if (event.key === "Escape") {
@@ -156,7 +169,7 @@ const MidiLearnPanel = Object.assign(
 																className="w-8 text-center text-cz-cream hover:text-cz-light-blue"
 																onClick={() =>
 																	setEditingCell({
-																		paramKey: binding.paramKey,
+																		paramKey: bindingKey(binding),
 																		field: "channel",
 																	})
 																}
@@ -174,20 +187,28 @@ const MidiLearnPanel = Object.assign(
 																max={127}
 																defaultValue={binding.cc}
 																onBlur={(event) => {
-																	updateBinding(binding.paramKey, {
-																		cc: clampCc(
-																			Number(event.currentTarget.value || 0),
-																		),
-																	});
+																	const newCc = clampCc(
+																		Number(event.currentTarget.value || 0),
+																	);
+																	removeBinding(binding);
+																	addBinding(
+																		binding.paramKey,
+																		binding.channel,
+																		newCc,
+																	);
 																	setEditingCell(null);
 																}}
 																onKeyDown={(event) => {
 																	if (event.key === "Enter") {
-																		updateBinding(binding.paramKey, {
-																			cc: clampCc(
-																				Number(event.currentTarget.value || 0),
-																			),
-																		});
+																		const newCc = clampCc(
+																			Number(event.currentTarget.value || 0),
+																		);
+																		removeBinding(binding);
+																		addBinding(
+																			binding.paramKey,
+																			binding.channel,
+																			newCc,
+																		);
 																		setEditingCell(null);
 																	}
 																	if (event.key === "Escape") {
@@ -203,7 +224,7 @@ const MidiLearnPanel = Object.assign(
 																className="w-10 text-center text-cz-cream hover:text-cz-light-blue"
 																onClick={() =>
 																	setEditingCell({
-																		paramKey: binding.paramKey,
+																		paramKey: bindingKey(binding),
 																		field: "cc",
 																	})
 																}
@@ -226,7 +247,7 @@ const MidiLearnPanel = Object.assign(
 														<Button
 															type="button"
 															className="btn btn-xs btn-square btn-error h-5"
-															onClick={() => removeBinding(binding.paramKey)}
+															onClick={() => removeBinding(binding)}
 															aria-label={`Remove MIDI binding for ${binding.paramKey}`}
 														>
 															X

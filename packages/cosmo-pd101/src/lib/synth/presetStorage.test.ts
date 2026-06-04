@@ -198,7 +198,7 @@ describe("presetStorage", () => {
 		const session = {
 			activePresetId: "preset-123",
 			activePresetNameBase: "My Preset",
-			loadedPresetFingerprint: "fingerprint123",
+			isDirty: true,
 		};
 		await saveCurrentPresetSession(session);
 		expect(await loadCurrentPresetSession()).toEqual(session);

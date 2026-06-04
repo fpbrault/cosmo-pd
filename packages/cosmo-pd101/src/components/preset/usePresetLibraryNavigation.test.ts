@@ -6,7 +6,7 @@ const entries = [
 	{
 		id: "a",
 		label: "A",
-		type: "builtin" as const,
+		type: "library" as const,
 		source: "cosmo-factory" as const,
 		sourceLabel: "Cosmo Library",
 		author: "",
@@ -17,7 +17,7 @@ const entries = [
 	{
 		id: "b",
 		label: "B",
-		type: "builtin" as const,
+		type: "library" as const,
 		source: "cosmo-factory" as const,
 		sourceLabel: "Cosmo Library",
 		author: "",

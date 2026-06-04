@@ -70,11 +70,12 @@ struct FactoryPresetSource {
     data: SynthPresetV1,
 }
 
-pub fn generate_factory_presets(plugin_manifest_dir: &Path) -> Result<(), String> {
-    let cosmo_pd101_dir = plugin_manifest_dir.join("../cosmo-pd101");
+pub fn generate_factory_presets(workspace_root: &Path) -> Result<(), String> {
+    let cosmo_pd101_dir = workspace_root.join("packages/cosmo-pd101");
     let synth_dir = cosmo_pd101_dir.join("src/lib/synth");
-    let plugin_legacy_json = plugin_manifest_dir.join("src/factory_presets.json");
-    let factory_dir = plugin_manifest_dir.join("../../factory-presets");
+    let plugin_legacy_json =
+        workspace_root.join("packages/cosmo-pd101-plugin/src/factory_presets.json");
+    let factory_dir = workspace_root.join("packages/cosmo-pd101-presets/factory-presets");
     let presets = order_presets_for_display(load_presets_from_dir(&factory_dir)?);
 
     let generated_ts = render_factory_presets_ts(&presets)?;
@@ -464,10 +465,10 @@ fn validate_algo_control_entries(
             .and_then(Value::as_str)
             .ok_or_else(|| format!("{file_name}: {path_label}[{index}].id must be a string"))?;
         let metadata = definition
-            .controls
-            .iter()
-            .find(|entry| entry.id == control_id)
-            .ok_or_else(|| format!("{file_name}: {path_label}[{index}] references unknown control '{control_id}' for algo '{algo_id}'"))?;
+			.controls
+			.iter()
+			.find(|entry| entry.id == control_id)
+			.ok_or_else(|| format!("{file_name}: {path_label}[{index}] references unknown control '{control_id}' for algo '{algo_id}'"))?;
         let Some(value) = object.get("value") else {
             return Err(format!(
                 "{file_name}: {path_label}[{index}].value is required"
@@ -910,10 +911,9 @@ mod tests {
     }
 
     fn default_preset_value() -> Value {
-        let fixture: Value = serde_json::from_str(include_str!(
-            "../../../factory-presets/001-2l-pluck-brss.json"
-        ))
-        .expect("fixture preset should parse");
+        let fixture: Value =
+            serde_json::from_str(include_str!("../factory-presets/001-2l-pluck-brss.json"))
+                .expect("fixture preset should parse");
         fixture
             .get("data")
             .cloned()

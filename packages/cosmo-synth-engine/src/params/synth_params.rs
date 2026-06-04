@@ -61,6 +61,15 @@ pub(crate) fn default_tempo_bpm() -> f32 {
     120.0
 }
 
+pub(crate) fn default_macro_labels() -> [String; 4] {
+    [
+        "Brightness".to_string(),
+        "Timbre".to_string(),
+        "Time".to_string(),
+        "Movement".to_string(),
+    ]
+}
+
 /// Top-level synth parameters
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
@@ -105,6 +114,8 @@ pub struct SynthParams {
     pub macro3: f32,
     #[serde(default)]
     pub macro4: f32,
+    #[serde(default = "default_macro_labels")]
+    pub macro_labels: [String; 4],
 }
 
 impl SynthParams {
@@ -157,6 +168,7 @@ impl Default for SynthParams {
             macro2: 0.0,
             macro3: 0.0,
             macro4: 0.0,
+            macro_labels: default_macro_labels(),
         }
     }
 }

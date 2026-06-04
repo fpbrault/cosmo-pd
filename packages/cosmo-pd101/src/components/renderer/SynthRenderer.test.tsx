@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { PresetManagerPendingChange } from "@/context/PresetManagerContext";
+import type { SynthRuntime } from "@/features/synth/runtime/synthRuntime";
 import type { MainPanelMode } from "@/features/synth/synthUiStore";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import SynthRenderer from "./SynthRenderer";
@@ -47,7 +47,21 @@ const mockSynthUiStoreState = {
 };
 
 vi.mock("@/components/preset/SynthHeader", () => ({
-	default: () => <div data-testid="synth-header" />,
+	default: ({
+		onStepPreset,
+	}: {
+		onStepPreset: (direction: -1 | 1) => void;
+	}) => (
+		<div data-testid="synth-header">
+			<button
+				type="button"
+				data-testid="step-next"
+				onClick={() => onStepPreset(1)}
+			>
+				next
+			</button>
+		</div>
+	),
 }));
 vi.mock("@/components/layout/SynthSidebar", () => ({
 	default: ({ sidebarMinWidthRem }: { sidebarMinWidthRem?: number }) => (
@@ -64,12 +78,6 @@ vi.mock("@/components/modals", () => ({
 		open ? <div data-testid="global-voice-panel" /> : null,
 	KeyboardSettingsPopover: () => null,
 	MacroLabelEditorPopover: () => null,
-	PendingModifiedPresetModal: ({
-		pendingPresetChange,
-	}: {
-		pendingPresetChange: unknown;
-	}) =>
-		pendingPresetChange ? <div data-testid="pending-preset-modal" /> : null,
 	SynthBrandInfoModal: () => null,
 }));
 vi.mock("@/components/panels/drawers/FxConsoleDrawer", () => ({
@@ -94,7 +102,17 @@ vi.mock("@/components/editor/PhaseLinesSection", () => ({
 	default: () => <div data-testid="phase-lines-section" />,
 }));
 vi.mock("@/components/preset/PresetLibrary", () => ({
-	default: ({ isOpen, onClose }: { isOpen?: boolean; onClose: () => void }) => (
+	default: ({
+		isOpen,
+		onClose,
+		allEntries,
+		onVisibleEntriesChange,
+	}: {
+		isOpen?: boolean;
+		onClose: () => void;
+		allEntries: PresetEntry[];
+		onVisibleEntriesChange?: (entries: PresetEntry[]) => void;
+	}) => (
 		<div data-testid="preset-library" data-open={isOpen ? "true" : "false"}>
 			<button
 				type="button"
@@ -102,6 +120,17 @@ vi.mock("@/components/preset/PresetLibrary", () => ({
 				onClick={onClose}
 			>
 				close
+			</button>
+			<button
+				type="button"
+				data-testid="preset-library-filter-gamma"
+				onClick={() =>
+					onVisibleEntriesChange?.(
+						allEntries.filter((entry) => entry.id === "gamma"),
+					)
+				}
+			>
+				filter
 			</button>
 		</div>
 	),
@@ -148,38 +177,15 @@ vi.mock("@/context/ModMatrixContext", () => ({
 	),
 }));
 
-vi.mock("@/features/synth/hooks/useAudioEngine", () => ({
-	useAudioEngine: vi.fn(() => ({
-		audioCtxRef: { current: null },
-		analyserNodeRef: { current: null },
-		workletNodeRef: { current: null },
-		paramsRef: { current: null },
-		audioContextState: "running",
-		resumeAudio: vi.fn(),
-	})),
-}));
-
-vi.mock("@/features/synth/hooks/useNoteHandling", () => ({
-	useNoteHandling: vi.fn(() => ({
-		activeNotes: [],
-		sendNoteOn: vi.fn(),
-		sendNoteOff: vi.fn(),
-		sendPolyAftertouch: vi.fn(),
-		panic: vi.fn(),
-	})),
-}));
-
-vi.mock("@/features/synth/hooks/useSynthParamsToWorklet", () => ({
-	useSynthParamsToWorklet: vi.fn(),
-}));
-
 const mockPresetManager = {
+	allPresetEntries: [] as PresetEntry[],
 	visiblePresetEntries: [] as PresetEntry[],
 	activePresetId: "1",
 	activePresetName: "Test Preset",
-	pendingPresetChange: null as PresetManagerPendingChange | null,
+	activePresetNameBase: "Test Preset",
+	isPresetDirty: false,
+	handleLoadPresetByName: vi.fn(),
 	handleLoadLocal: vi.fn(),
-	handleLoadBuiltin: vi.fn(),
 	handleLoadLibrary: vi.fn(),
 	handleStepPreset: vi.fn(),
 	handleSavePreset: vi.fn(),
@@ -192,9 +198,7 @@ const mockPresetManager = {
 	handleExportPreset: vi.fn(),
 	handleImportPreset: vi.fn(),
 	handleExportCurrentState: vi.fn(),
-	handleSavePendingPresetChange: vi.fn(),
-	handleDiscardPendingPresetChange: vi.fn(),
-	handleCancelPendingPresetChange: vi.fn(),
+	handleSyncPresetSelection: vi.fn(),
 };
 
 vi.mock("@/features/synth/useSynthPresetManager", () => ({
@@ -214,13 +218,28 @@ vi.mock("./hooks/useAudioLevelMonitor", () => ({
 	useAudioLevelMonitor: vi.fn(),
 }));
 
-vi.mock("@/features/synth/hooks/useMidiLearnBindings", () => ({
-	useMidiLearnBindings: vi.fn(),
-}));
-
 vi.mock("@/lib/performance/benchmarkHarness", () => ({
 	installBenchmarkApi: vi.fn(() => vi.fn()),
 }));
+
+const mockRuntime: SynthRuntime = {
+	activeNotes: [],
+	sendNoteOn: vi.fn(),
+	sendNoteOff: vi.fn(),
+	sendPolyAftertouch: vi.fn(),
+	panic: vi.fn(),
+	audioContextState: "running",
+	resumeAudio: vi.fn(),
+	effectivePitchHz: 220,
+	analyserNodeRef: { current: null },
+	audioCtxRef: { current: null },
+	benchmark: {
+		mode: "web",
+		setPerformanceMonitorEnabled: vi.fn(),
+		getPerformanceMetrics: vi.fn(() => null),
+		ensureReady: vi.fn(),
+	},
+};
 
 describe("SynthRenderer Smoke Test", () => {
 	beforeEach(() => {
@@ -236,23 +255,26 @@ describe("SynthRenderer Smoke Test", () => {
 		mockSynthUiStoreState.setMainPanelMode.mockReset();
 		mockSynthUiStoreState.setKeyboardVisible.mockReset();
 		mockSynthUiStoreState.setLibraryModeOpen.mockReset();
+		mockPresetManager.allPresetEntries = [];
 		mockPresetManager.visiblePresetEntries = [];
-		mockPresetManager.pendingPresetChange = null;
+		mockPresetManager.isPresetDirty = false;
 	});
 
 	it("renders without crashing", () => {
-		render(<SynthRenderer />);
+		render(<SynthRenderer runtime={mockRuntime} />);
 		expect(screen.getByTestId("synth-header")).toBeInTheDocument();
 	});
 
 	it("renders global modal when store flag is set", () => {
 		mockSynthUiStoreState.globalPanelOpen = true;
-		render(<SynthRenderer />);
+		render(<SynthRenderer runtime={mockRuntime} />);
 		expect(screen.getByTestId("global-voice-panel")).toBeInTheDocument();
 	});
 
 	it("passes a custom sidebar width through to the sidebar", () => {
-		render(<SynthRenderer sidebarMinWidthRem={20.3125} />);
+		render(
+			<SynthRenderer runtime={mockRuntime} sidebarMinWidthRem={20.3125} />,
+		);
 		expect(screen.getByTestId("synth-sidebar")).toHaveAttribute(
 			"data-sidebar-min-width",
 			"20.3125",
@@ -262,7 +284,7 @@ describe("SynthRenderer Smoke Test", () => {
 	it("closes the library overlay through the extracted library component", () => {
 		mockSynthUiStoreState.libraryModeOpen = true;
 
-		render(<SynthRenderer />);
+		render(<SynthRenderer runtime={mockRuntime} />);
 		fireEvent.click(screen.getByTestId("preset-library-close"));
 
 		expect(mockSynthUiStoreState.setLibraryModeOpen).toHaveBeenCalledWith(
@@ -270,21 +292,80 @@ describe("SynthRenderer Smoke Test", () => {
 		);
 	});
 
-	it("renders modulation drawer content in mod mode", () => {
-		mockSynthUiStoreState.mainPanelMode = "mod";
-		render(<SynthRenderer />);
-		expect(screen.getByTestId("mod-console-drawer")).toBeInTheDocument();
+	it("steps presets using the library's filtered visible entries", () => {
+		mockPresetManager.allPresetEntries = [
+			{
+				id: "alpha",
+				label: "Alpha",
+				type: "library",
+				source: "cosmo-factory",
+				sourceLabel: "Cosmo Library",
+				author: "Purr Audio",
+				starred: false,
+				favorite: false,
+				tags: [],
+				preset: {
+					id: "alpha",
+					name: "Alpha",
+					source: "cosmo-factory",
+					author: "Purr Audio",
+					starred: false,
+				},
+			},
+			{
+				id: "beta",
+				label: "Beta",
+				type: "library",
+				source: "cosmo-factory",
+				sourceLabel: "Cosmo Library",
+				author: "Purr Audio",
+				starred: false,
+				favorite: false,
+				tags: [],
+				preset: {
+					id: "beta",
+					name: "Beta",
+					source: "cosmo-factory",
+					author: "Purr Audio",
+					starred: false,
+				},
+			},
+			{
+				id: "gamma",
+				label: "Gamma",
+				type: "library",
+				source: "cosmo-factory",
+				sourceLabel: "Cosmo Library",
+				author: "Purr Audio",
+				starred: false,
+				favorite: false,
+				tags: [],
+				preset: {
+					id: "gamma",
+					name: "Gamma",
+					source: "cosmo-factory",
+					author: "Purr Audio",
+					starred: false,
+				},
+			},
+		];
+		mockPresetManager.visiblePresetEntries = mockPresetManager.allPresetEntries;
+		mockPresetManager.activePresetId = "alpha";
+		mockSynthUiStoreState.libraryModeOpen = true;
+
+		render(<SynthRenderer runtime={mockRuntime} />);
+
+		fireEvent.click(screen.getByTestId("preset-library-filter-gamma"));
+		fireEvent.click(screen.getByTestId("step-next"));
+
+		expect(mockPresetManager.handleLoadLibrary).toHaveBeenCalledWith(
+			expect.objectContaining({ id: "gamma", name: "Gamma" }),
+		);
 	});
 
-	it("renders pending preset modal when pending changes exist", () => {
-		mockPresetManager.pendingPresetChange = {
-			activePresetName: "Init",
-			activeLocalName: null,
-			suggestedName: "Init 2",
-			changes: [{ path: "volume", previous: "0.1", next: "0.2" }],
-		};
-
-		render(<SynthRenderer />);
-		expect(screen.getByTestId("pending-preset-modal")).toBeInTheDocument();
+	it("renders modulation drawer content in mod mode", () => {
+		mockSynthUiStoreState.mainPanelMode = "mod";
+		render(<SynthRenderer runtime={mockRuntime} />);
+		expect(screen.getByTestId("mod-console-drawer")).toBeInTheDocument();
 	});
 });

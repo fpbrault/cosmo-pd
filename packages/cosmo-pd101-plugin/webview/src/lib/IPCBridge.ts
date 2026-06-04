@@ -29,21 +29,59 @@ type ScopeDataResponse = {
 };
 
 type TransportInfoResponse = string | Record<string, number | boolean>;
+type MidiBindingIdentity = {
+	paramKey: string;
+	channel: number;
+	cc: number;
+};
+
+type PresetSession = {
+	activePresetId: string | null;
+	loadedPresetId?: string | null;
+	activePresetNameBase: string;
+	isDirty: boolean;
+};
 
 declare global {
 	interface Window {
 		ipc?: { postMessage: (msg: string) => void };
 		__czOnParams?: (json: string) => void;
 		__czGetParams?: () => Promise<unknown>;
+		__czGetParamsVersion?: () => Promise<unknown>;
 		__czSetParams?: (json: string) => void;
 		__czSetPerformanceMonitorEnabled?: (enabled: boolean) => Promise<unknown>;
 		__czGetPerformanceMetrics?: () => Promise<unknown>;
 		__czGetTransportInfo?: () => Promise<unknown>;
-		__czOnScope?: (samples: number[], sampleRate: number, hz: number) => void;
+		__czOnScope?: (
+			samples: Float32Array | number[],
+			sampleRate: number,
+			hz: number,
+		) => void;
 		__czIpcResponse?: (response: IpcRpcResponse) => void;
 		__czOnMidiCc?: (channel: number, cc: number, value: number) => void;
 		__czSetPresetName?: (name: string) => void;
 		__czGetPresetName?: () => Promise<unknown>;
+		__czGetPresetSession?: () => Promise<unknown>;
+		__czSetPresetSession?: (session: PresetSession) => Promise<unknown>;
+		__czGetPresetLibrary?: (source?: string) => Promise<unknown>;
+		__czLoadPresetData?: (id: string) => Promise<unknown>;
+		__czAddPreset?: (
+			name: string,
+			tags: string[],
+			macroLabels?: string[],
+		) => Promise<unknown>;
+		__czDeletePreset?: (id: string) => Promise<unknown>;
+		__czRenamePreset?: (id: string, newName: string) => Promise<unknown>;
+		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
+		__czSetEditorState?: (state: string) => void;
+		__czGetEditorState?: () => Promise<unknown>;
+		__czOnMidiLearnState?: (json: string) => void;
+		__czGetMidiLearnState?: () => Promise<unknown>;
+		__czSetMidiLearnMode?: (on: boolean) => void;
+		__czSetPendingMidiLearnParam?: (key: string | null) => void;
+		__czAddMidiBinding?: (key: string, ch: number, cc: number) => void;
+		__czRemoveMidiBinding?: (binding: MidiBindingIdentity) => void;
+		__czClearMidiLearnBindings?: () => void;
 	}
 }
 
@@ -58,7 +96,7 @@ const pendingRpc = new Map<
 
 let currentParamHandler: ((json: string) => void) | undefined;
 let currentScopeHandler:
-	| ((samples: number[], sampleRate: number, hz: number) => void)
+	| ((samples: Float32Array | number[], sampleRate: number, hz: number) => void)
 	| undefined;
 let nativeIpcObject: Window["ipc"] | undefined;
 
@@ -165,6 +203,7 @@ function installIpcRouter() {
 	_routerPostMessage = routeOutgoingMessage;
 
 	window.__czGetParams = async () => invokeRust("getParams");
+	window.__czGetParamsVersion = async () => invokeRust("getParamsVersion");
 
 	window.__czSetParams = (json: string) => {
 		void invokeRust("setParams", json).catch((error) => {
@@ -182,6 +221,62 @@ function installIpcRouter() {
 	window.__czSetPresetName = (name: string) => {
 		void invokeRust("setPresetName", name).catch((error) => {
 			console.error("[IPCBridge] setPresetName error", error);
+		});
+	};
+	window.__czGetPresetSession = () => invokeRust("getPresetSession");
+	window.__czSetPresetSession = (session: PresetSession) =>
+		invokeRust("setPresetSession", session);
+
+	window.__czGetPresetLibrary = (source?: string) =>
+		source
+			? invokeRust("getPresetLibrary", { source })
+			: invokeRust("getPresetLibrary");
+	window.__czLoadPresetData = (id: string) =>
+		invokeRust("loadPresetData", { id });
+	window.__czAddPreset = (
+		name: string,
+		tags: string[],
+		macroLabels?: string[],
+	) => invokeRust("addPreset", { name, tags, macroLabels });
+	window.__czDeletePreset = (id: string) => invokeRust("deletePreset", { id });
+	window.__czRenamePreset = (id: string, newName: string) =>
+		invokeRust("renamePreset", { id, newName });
+	window.__czToggleStarred = (id: string, starred: boolean) =>
+		invokeRust("toggleStarred", { id, starred });
+
+	window.__czSetEditorState = (state: string) => {
+		void invokeRust("setEditorState", JSON.parse(state)).catch((error) => {
+			console.error("[IPCBridge] setEditorState error", error);
+		});
+	};
+
+	window.__czGetEditorState = () => invokeRust("getEditorState");
+
+	window.__czGetMidiLearnState = () => invokeRust("getMidiLearnState");
+
+	window.__czSetMidiLearnMode = (on: boolean) => {
+		void invokeRust("setMidiLearnMode", on).catch((error) => {
+			console.error("[IPCBridge] setMidiLearnMode error", error);
+		});
+	};
+	window.__czSetPendingMidiLearnParam = (key: string | null) => {
+		void invokeRust("setPendingMidiLearnParam", key).catch((error) => {
+			console.error("[IPCBridge] setPendingMidiLearnParam error", error);
+		});
+	};
+	window.__czAddMidiBinding = (key: string, ch: number, cc: number) => {
+		void invokeRust("addMidiBinding", key, ch, cc).catch((error) => {
+			console.error("[IPCBridge] addMidiBinding error", error);
+		});
+	};
+	window.__czRemoveMidiBinding = (binding: MidiBindingIdentity) => {
+		void invokeRust("removeMidiBinding", binding).catch((error) => {
+			console.error("[IPCBridge] removeMidiBinding error", error);
+		});
+	};
+	window.__czClearMidiLearnBindings = () => {
+		void invokeRust("clearMidiLearnBindings").catch((error) => {
+			console.error("[IPCBridge] clearMidiLearnBindings error", error);
 		});
 	};
 }
@@ -211,6 +306,29 @@ function installMidiCcHandler() {
 		});
 	} catch {
 		// Host may prevent definition; MIDI Learn will fall back to Web MIDI API.
+	}
+}
+
+// ─── MIDI learn state handler ──────────────────────────────────────────────────
+
+function installMidiLearnStateHandler() {
+	try {
+		Object.defineProperty(window, "__czOnMidiLearnState", {
+			configurable: true,
+			writable: true,
+			value: (json: string) => {
+				try {
+					const state = JSON.parse(json);
+					window.dispatchEvent(
+						new CustomEvent("cz-midi-learn-state", { detail: state }),
+					);
+				} catch {
+					console.error("[IPCBridge] Invalid MidiLearnState JSON");
+				}
+			},
+		});
+	} catch {
+		// Host may prevent definition; will fall back gracefully.
 	}
 }
 
@@ -254,6 +372,7 @@ function installScopePolling() {
 	let lastScheduled = 0;
 	let pollInFlight = false;
 	let destroyed = false;
+	let binaryScopeSupported = true;
 
 	const scheduleNextFrame = () => {
 		if (destroyed || rafId !== 0 || !currentScopeHandler) {
@@ -283,12 +402,37 @@ function installScopePolling() {
 		pollInFlight = true;
 
 		try {
-			const raw = (await invokeRust("getScopeData")) as ScopeDataResponse;
-			if (raw?.samples.length > 0 && currentScopeHandler) {
-				currentScopeHandler(raw.samples, raw.sampleRate, raw.hz);
+			if (binaryScopeSupported) {
+				const response = await fetch(`${window.location.origin}/__scope__`);
+				if (!response.ok) {
+					throw new Error(`scope fetch: ${response.status}`);
+				}
+				const buffer = await response.arrayBuffer();
+				if (buffer.byteLength < 8 || !currentScopeHandler) {
+					return;
+				}
+				const view = new DataView(buffer);
+				const sampleRate = view.getFloat32(0, true);
+				const hz = view.getFloat32(4, true);
+				const sampleCount = (buffer.byteLength - 8) / 4;
+				if (sampleCount > 0 && hz > 0) {
+					const samples = new Float32Array(buffer, 8, sampleCount);
+					currentScopeHandler(samples, sampleRate, hz);
+				}
+			} else {
+				throw new Error("binary scope disabled");
 			}
 		} catch {
-			// Ignore — plugin may not be producing audio yet.
+			// Fallback: use RPC invoke (for dev harness / AUv3 / fallback)
+			binaryScopeSupported = false;
+			try {
+				const raw = (await invokeRust("getScopeData")) as ScopeDataResponse;
+				if (raw?.samples.length > 0 && currentScopeHandler) {
+					currentScopeHandler(raw.samples, raw.sampleRate, raw.hz);
+				}
+			} catch {
+				// Plugin may not be producing audio yet.
+			}
 		} finally {
 			pollInFlight = false;
 			scheduleNextFrame();
@@ -357,6 +501,70 @@ function installRuntimeModSourcesPolling() {
 			}
 		} catch {
 			// Plugin not yet producing audio — skip this frame.
+		} finally {
+			pollInFlight = false;
+			scheduleNextFrame();
+		}
+	};
+
+	scheduleNextFrame();
+	window.addEventListener("pagehide", () => {
+		destroyed = true;
+		if (rafId !== 0) {
+			cancelAnimationFrame(rafId);
+			rafId = 0;
+		}
+	});
+}
+
+function installRuntimeVoiceStatesPolling() {
+	const RUNTIME_VOICE_STATES_POLL_INTERVAL_MS = 16;
+	let rafId = 0;
+	let lastScheduled = 0;
+	let pollInFlight = false;
+	let destroyed = false;
+	let runtimeVoiceStatesAvailable = true;
+
+	const dispatchRuntimeVoiceStates = (result: unknown) => {
+		const states =
+			typeof result === "string" ? (JSON.parse(result) as unknown) : result;
+		if (!Array.isArray(states)) {
+			return;
+		}
+		window.dispatchEvent(
+			new CustomEvent("cz-runtime-voice-states", { detail: states }),
+		);
+	};
+
+	const scheduleNextFrame = () => {
+		if (destroyed || rafId !== 0 || !runtimeVoiceStatesAvailable) {
+			return;
+		}
+		rafId = requestAnimationFrame(tick);
+	};
+
+	const tick = async (now: number) => {
+		rafId = 0;
+		if (destroyed || !runtimeVoiceStatesAvailable) {
+			return;
+		}
+		if (
+			now - lastScheduled < RUNTIME_VOICE_STATES_POLL_INTERVAL_MS ||
+			pollInFlight
+		) {
+			scheduleNextFrame();
+			return;
+		}
+
+		lastScheduled = now;
+		pollInFlight = true;
+		try {
+			const result = await invokeRust("getRuntimeVoiceStates");
+			if (result) {
+				dispatchRuntimeVoiceStates(result);
+			}
+		} catch {
+			runtimeVoiceStatesAvailable = false;
 		} finally {
 			pollInFlight = false;
 			scheduleNextFrame();
@@ -463,9 +671,11 @@ export function ensureIPCBridge(): boolean {
 	installParamProperty();
 	installIpcResponseHandler();
 	installMidiCcHandler();
+	installMidiLearnStateHandler();
 	installIpcRouter();
 	installScopePolling();
 	installRuntimeModSourcesPolling();
+	installRuntimeVoiceStatesPolling();
 	installTransportPolling();
 
 	// Fallback: if host prevented method patching, route via a getter/setter

@@ -9,12 +9,24 @@ declare global {
 		ipc?: { postMessage: (message: string) => void };
 		__czOnParams?: (json: string) => void;
 		__czGetParams?: () => Promise<unknown>;
+		__czGetParamsVersion?: () => Promise<unknown>;
 		__czSetParams?: (json: string) => void;
+		__czLoadPresetData?: (id: string) => Promise<unknown>;
+		__czSetPresetName?: (name: string) => void;
+		__czGetPresetSession?: () => Promise<unknown>;
+		__czSetPresetSession?: (session: PluginPresetSession) => Promise<unknown>;
 	}
 }
 
 type UsePluginBridgeSynthEngineOptions = {
 	enabled?: boolean;
+	onExternalParamChange?: () => void;
+};
+
+export type PluginPresetSession = {
+	activePresetId: string | null;
+	activePresetNameBase: string;
+	isDirty: boolean;
 };
 
 type EnvelopeKind = "dco" | "dcw" | "dca";
@@ -69,13 +81,20 @@ function mapEnvelope(env: StepEnv, kind: EnvelopeKind): StepEnv {
 }
 
 function hasRawEnvelopeValues(params: SynthPresetV1["params"]): boolean {
+	const line1 = params.line1;
+	const line2 = params.line2;
+
+	if (!line1 || !line2) {
+		return false;
+	}
+
 	const envelopes = [
-		params.line1.dcoEnv,
-		params.line1.dcwEnv,
-		params.line1.dcaEnv,
-		params.line2.dcoEnv,
-		params.line2.dcwEnv,
-		params.line2.dcaEnv,
+		line1.dcoEnv,
+		line1.dcwEnv,
+		line1.dcaEnv,
+		line2.dcoEnv,
+		line2.dcwEnv,
+		line2.dcaEnv,
 	];
 
 	for (const envelope of envelopes) {
@@ -113,15 +132,37 @@ function normalizeHostParamsIfRaw(
 	};
 }
 
+function normalizeHostParams(params: SynthPresetV1["params"]): {
+	params: SynthPresetV1["params"];
+	convertedRawEnvelopeValues: boolean;
+} {
+	if (!hasRawEnvelopeValues(params)) {
+		return { params, convertedRawEnvelopeValues: false };
+	}
+
+	return {
+		params: normalizeHostParamsIfRaw(params),
+		convertedRawEnvelopeValues: true,
+	};
+}
+
 export function usePluginBridgeSynthEngine(
 	options: UsePluginBridgeSynthEngineOptions = {},
-): void {
+): {
+	loadPresetData: (id: string) => Promise<string>;
+	getPresetSession: () => Promise<PluginPresetSession | null>;
+	setPresetSession: (session: PluginPresetSession) => Promise<void>;
+} {
 	const gatherState = useSynthStore((s) => s.gatherState);
 	const applyPreset = useSynthStore((s) => s.applyPreset);
 	const enabled = options.enabled ?? true;
+	const onExternalParamChange = options.onExternalParamChange;
 	const outboundEnabledRef = useRef(false);
 	const sentParamsRef = useRef("");
 	const syncRef = useRef<(() => void) | null>(null);
+	const applyingHostParamsRef = useRef(false);
+	const lastSeenParamsVersionRef = useRef<number | null>(null);
+	const initialHydrationCompleteRef = useRef(false);
 
 	const send = useCallback((params: SynthPresetV1["params"]) => {
 		const json = JSON.stringify(
@@ -132,29 +173,49 @@ export function usePluginBridgeSynthEngine(
 		window.__czSetParams?.(json);
 	}, []);
 
+	const applyHostParams = useCallback(
+		(params: SynthPresetV1["params"]) => {
+			const { params: uiParams, convertedRawEnvelopeValues } =
+				normalizeHostParams(params);
+			const sanitizedJson = JSON.stringify(
+				sanitizeSynthParamsForEngine(uiParams),
+			);
+			sentParamsRef.current = sanitizedJson;
+			applyingHostParamsRef.current = true;
+			try {
+				applyPreset({ schemaVersion: 1, params: uiParams });
+			} finally {
+				applyingHostParamsRef.current = false;
+			}
+			outboundEnabledRef.current = true;
+			if (convertedRawEnvelopeValues) {
+				window.__czSetParams?.(sanitizedJson);
+			}
+		},
+		[applyPreset],
+	);
+
 	// Inbound: Rust → React state
 	useEffect(() => {
 		if (!enabled) return;
 		window.__czOnParams = (json: string) => {
 			try {
 				const params = JSON.parse(json) as SynthPresetV1["params"];
-				const uiParams = normalizeHostParamsIfRaw(params);
-				applyPreset({ schemaVersion: 1, params: uiParams });
+				applyHostParams(params);
 			} catch (e) {
 				console.error("[PluginBridge] Failed to parse params from Rust:", e);
 			}
-			outboundEnabledRef.current = true;
-			syncRef.current?.();
 		};
 		return () => {
 			window.__czOnParams = undefined;
 		};
-	}, [enabled, applyPreset]);
+	}, [enabled, applyHostParams]);
 
 	// Outbound: React state → Rust
 	useEffect(() => {
 		if (!enabled) return;
 		const sync = () => {
+			if (applyingHostParamsRef.current) return;
 			if (!outboundEnabledRef.current) return;
 			send(gatherState().params);
 		};
@@ -165,6 +226,54 @@ export function usePluginBridgeSynthEngine(
 			unsubscribe();
 		};
 	}, [enabled, gatherState, send]);
+
+	// Host automation and MIDI mappings can change plugin params without going
+	// through React. Poll the cheap native version and hydrate only on changes.
+	useEffect(() => {
+		if (!enabled) return;
+		let cancelled = false;
+		let intervalId = 0;
+
+		const parseVersion = (value: unknown) => {
+			if (typeof value === "number" && Number.isFinite(value)) return value;
+			if (typeof value === "string") {
+				const parsed = Number(value);
+				return Number.isFinite(parsed) ? parsed : null;
+			}
+			return null;
+		};
+
+		const refreshIfChanged = async () => {
+			const getVersion = window.__czGetParamsVersion;
+			const getParams = window.__czGetParams;
+			if (!getVersion || !getParams) return;
+			try {
+				const version = parseVersion(await getVersion());
+				if (version === null || version === lastSeenParamsVersionRef.current) {
+					return;
+				}
+				lastSeenParamsVersionRef.current = version;
+				const result = await getParams();
+				if (cancelled || !result || typeof result !== "object") return;
+				applyHostParams(result as SynthPresetV1["params"]);
+				if (initialHydrationCompleteRef.current) {
+					onExternalParamChange?.();
+				}
+			} catch {
+				// The native bridge may not be ready during editor startup.
+			}
+		};
+
+		intervalId = window.setInterval(() => {
+			void refreshIfChanged();
+		}, 50);
+		void refreshIfChanged();
+
+		return () => {
+			cancelled = true;
+			window.clearInterval(intervalId);
+		};
+	}, [enabled, applyHostParams, onExternalParamChange]);
 
 	// Hydration: getParams from Rust once on mount
 	useEffect(() => {
@@ -179,19 +288,11 @@ export function usePluginBridgeSynthEngine(
 		const applyResult = (result: unknown) => {
 			if (result && typeof result === "object") {
 				try {
-					const uiParams = normalizeHostParamsIfRaw(
-						result as SynthPresetV1["params"],
-					);
-					applyPreset({
-						schemaVersion: 1,
-						params: uiParams,
-					});
+					applyHostParams(result as SynthPresetV1["params"]);
 				} catch {
 					// Partial/empty params — ignore, keep current UI state.
 				}
 			}
-			outboundEnabledRef.current = true;
-			syncRef.current?.();
 		};
 
 		const tryGetParams = () => {
@@ -216,6 +317,7 @@ export function usePluginBridgeSynthEngine(
 					window.clearTimeout(fallbackId);
 					if (cancelled) return;
 					applyResult(result);
+					initialHydrationCompleteRef.current = true;
 				})
 				.catch((error) => {
 					if (cancelled) return;
@@ -261,5 +363,46 @@ export function usePluginBridgeSynthEngine(
 			window.clearTimeout(retryId);
 			window.clearTimeout(fallbackId);
 		};
-	}, [enabled, applyPreset]);
+	}, [enabled, applyHostParams]);
+
+	const loadPresetData = useCallback(async (id: string): Promise<string> => {
+		const result = await window.__czLoadPresetData?.(id);
+		const name = (result as { preset_name?: string })?.preset_name ?? "";
+		if (name) {
+			window.__czSetPresetName?.(name);
+		}
+		return name;
+	}, []);
+
+	const getPresetSession =
+		useCallback(async (): Promise<PluginPresetSession | null> => {
+			const result = await window.__czGetPresetSession?.();
+			if (!result || typeof result !== "object") {
+				return null;
+			}
+			const session = result as Partial<PluginPresetSession>;
+			if (
+				typeof session.activePresetNameBase !== "string" ||
+				typeof session.isDirty !== "boolean"
+			) {
+				return null;
+			}
+			return {
+				activePresetId:
+					typeof session.activePresetId === "string"
+						? session.activePresetId
+						: null,
+				activePresetNameBase: session.activePresetNameBase,
+				isDirty: session.isDirty,
+			};
+		}, []);
+
+	const setPresetSession = useCallback(
+		async (session: PluginPresetSession): Promise<void> => {
+			await window.__czSetPresetSession?.(session);
+		},
+		[],
+	);
+
+	return { loadPresetData, getPresetSession, setPresetSession };
 }

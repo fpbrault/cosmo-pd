@@ -2,12 +2,7 @@ import { memo, type ReactNode } from "react";
 import AudioStartOverlay from "@/components/layout/AudioStartOverlay";
 import MiniKeyboardOverlay from "@/components/layout/MiniKeyboardOverlay";
 import SynthInfoBar from "@/components/layout/SynthInfoBar";
-import {
-	GlobalVoiceModal,
-	PendingModifiedPresetModal,
-	SynthBrandInfoModal,
-} from "@/components/modals";
-import { usePresetManager } from "@/context/PresetManagerContext";
+import { GlobalVoiceModal, SynthBrandInfoModal } from "@/components/modals";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 
 type AudioGate = {
@@ -44,12 +39,6 @@ export default memo(function SynthRendererOverlays({
 	const setBrandInfoOpen = useSynthUiStore((s) => s.setBrandInfoOpen);
 	const globalPanelOpen = useSynthUiStore((s) => s.globalPanelOpen);
 	const setGlobalPanelOpen = useSynthUiStore((s) => s.setGlobalPanelOpen);
-	const {
-		pendingPresetChange,
-		handleSavePendingPresetChange,
-		handleDiscardPendingPresetChange,
-		handleCancelPendingPresetChange,
-	} = usePresetManager();
 	const showKeyboard = !libraryModeOpen;
 
 	return (
@@ -62,12 +51,6 @@ export default memo(function SynthRendererOverlays({
 			<GlobalVoiceModal
 				open={globalPanelOpen}
 				onClose={() => setGlobalPanelOpen(false)}
-			/>
-			<PendingModifiedPresetModal
-				pendingPresetChange={pendingPresetChange}
-				onSave={handleSavePendingPresetChange}
-				onDiscard={handleDiscardPendingPresetChange}
-				onCancel={handleCancelPendingPresetChange}
 			/>
 			{showKeyboard ? (
 				<MiniKeyboardOverlay

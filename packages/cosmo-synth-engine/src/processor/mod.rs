@@ -3,11 +3,13 @@
 extern crate alloc;
 
 mod cz_dac;
+mod input;
 mod notes;
 mod process;
 pub mod state;
 pub mod utils;
 
+pub use self::input::{CosmoInputEvent, CosmoTimedInputEvent, CosmoTransportState};
 pub use utils::midi_note_to_freq;
 
 use alloc::sync::Arc;
@@ -361,6 +363,30 @@ impl CosmoProcessor {
             3 => self.macro4 = clamped,
             _ => {}
         }
+    }
+
+    pub fn all_notes_off(&mut self) {
+        self.set_sustain(false);
+        for note in 0u8..=127u8 {
+            self.note_off(note);
+        }
+    }
+
+    pub fn apply_input_event(&mut self, event: CosmoInputEvent) {
+        input::apply_input_event(self, event);
+    }
+
+    pub fn apply_transport_state(&mut self, transport: CosmoTransportState) {
+        input::apply_transport_state(self, transport);
+    }
+
+    pub fn process_block(
+        &mut self,
+        output: &mut [f32],
+        events: &[CosmoTimedInputEvent],
+        transport: CosmoTransportState,
+    ) {
+        input::process_block(self, output, events, transport);
     }
 }
 

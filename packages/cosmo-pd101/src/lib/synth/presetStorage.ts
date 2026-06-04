@@ -22,7 +22,7 @@ export type StoredPreset = FrontendPresetV1;
 export type CurrentPresetSession = {
 	activePresetId: string | null;
 	activePresetNameBase: string;
-	loadedPresetFingerprint: string | null;
+	isDirty: boolean;
 };
 
 type StoredPresetInput = {
@@ -33,6 +33,15 @@ type StoredPresetInput = {
 	author?: string;
 	starred?: boolean;
 	tags?: PresetTagOptions[];
+};
+
+type NativePresetLibraryEntry = {
+	id: string;
+	favorite?: boolean;
+};
+
+type NativePresetLibraryResponse = {
+	entries?: NativePresetLibraryEntry[];
 };
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -112,6 +121,50 @@ function deleteFromStore(storeName: string, id: string): Promise<void> {
 				tx.onerror = () => reject(tx.error);
 			}),
 	);
+}
+
+function getNativePresetLibraryBridge() {
+	return window as Window & {
+		__czGetPresetLibrary?: (source?: string) => Promise<unknown>;
+		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
+	};
+}
+
+async function readNativeFavoriteIds(): Promise<string[] | null> {
+	const bridge = getNativePresetLibraryBridge();
+	if (!bridge.__czGetPresetLibrary) {
+		return null;
+	}
+
+	const response = (await bridge.__czGetPresetLibrary()) as
+		| NativePresetLibraryResponse
+		| null
+		| undefined;
+	if (!response || !Array.isArray(response.entries)) {
+		return null;
+	}
+
+	return response.entries
+		.filter((entry) => entry.favorite === true)
+		.map((entry) => entry.id);
+}
+
+async function readNativeFavorite(id: string): Promise<boolean | null> {
+	const bridge = getNativePresetLibraryBridge();
+	if (!bridge.__czGetPresetLibrary) {
+		return null;
+	}
+
+	const response = (await bridge.__czGetPresetLibrary()) as
+		| NativePresetLibraryResponse
+		| null
+		| undefined;
+	if (!response || !Array.isArray(response.entries)) {
+		return null;
+	}
+
+	const entry = response.entries.find((candidate) => candidate.id === id);
+	return entry ? entry.favorite === true : null;
 }
 
 function isSynthPresetV1(value: unknown): value is SynthPresetV1 {
@@ -401,6 +454,11 @@ export async function importPreset(json: string): Promise<StoredPreset | null> {
 }
 
 export async function loadPresetFavorite(id: string): Promise<boolean> {
+	const nativeFavorite = await readNativeFavorite(id);
+	if (nativeFavorite !== null) {
+		return nativeFavorite;
+	}
+
 	const entry = await getFromStore<{ id: string }>("favorites", id);
 	return entry !== null;
 }
@@ -409,6 +467,18 @@ export async function setPresetFavorite(
 	id: string,
 	favorite: boolean,
 ): Promise<void> {
+	const bridge = getNativePresetLibraryBridge();
+	if (bridge.__czToggleStarred) {
+		try {
+			const result = await bridge.__czToggleStarred(id, favorite);
+			if (result !== false) {
+				return;
+			}
+		} catch {
+			// Fall back to IndexedDB when the native bridge does not own this id.
+		}
+	}
+
 	if (favorite) {
 		await putInStore("favorites", { id });
 	} else {
@@ -417,6 +487,16 @@ export async function setPresetFavorite(
 }
 
 export async function listPresetFavorites(): Promise<string[]> {
+	const nativeFavorites = await readNativeFavoriteIds();
+	if (nativeFavorites) {
+		const localFavorites = await getAllFromStore<{ id: string }>("favorites");
+		const ids = new Set([
+			...nativeFavorites,
+			...localFavorites.map((entry) => entry.id),
+		]);
+		return Array.from(ids).sort();
+	}
+
 	const entries = await getAllFromStore<{ id: string }>("favorites");
 	return entries.map((entry) => entry.id).sort();
 }
@@ -447,8 +527,7 @@ function isCurrentPresetSession(value: unknown): value is CurrentPresetSession {
 		(typeof candidate.activePresetId === "string" ||
 			candidate.activePresetId === null) &&
 		typeof candidate.activePresetNameBase === "string" &&
-		(typeof candidate.loadedPresetFingerprint === "string" ||
-			candidate.loadedPresetFingerprint === null)
+		typeof candidate.isDirty === "boolean"
 	);
 }
 

@@ -11,16 +11,27 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use arc_swap::ArcSwap;
 use cosmo_synth_engine::envelope::normalize_synth_params_envelopes_to_raw_if_human;
-use cosmo_synth_engine::params::SynthParams;
-use cosmo_synth_engine::processor::state::RuntimeModSources;
-use cosmo_synth_engine::processor::{CosmoProcessor, midi_note_to_freq};
+use cosmo_synth_engine::params::{
+    MidiMappingBinding, SynthParams, apply_midi_mapping as apply_engine_midi_mapping,
+    parameter_range_for_key,
+};
+use cosmo_synth_engine::processor::state::{RuntimeModSources, RuntimeVoiceDebugState};
+use cosmo_synth_engine::processor::{
+    CosmoInputEvent, CosmoProcessor, CosmoTimedInputEvent, CosmoTransportState,
+};
 use crossbeam_queue::ArrayQueue;
 use truce::prelude::*;
 use truce_core::events::TransportInfo;
 use truce_core::midi::{norm_7bit, norm_pitch_bend};
 
 pub mod ffi;
+pub mod global_settings;
 pub mod gui;
+pub mod preset_library;
+pub mod preset_library_path;
+pub mod session_state;
+
+use crate::preset_library::PresetLibrary;
 
 const PLUGIN_LOG_PATH: &str = "/tmp/cosmo-plugin.log";
 const MAX_UI_INPUT_EVENTS_PER_BLOCK: usize = 64;
@@ -51,6 +62,10 @@ pub fn append_log(message: &str) {
 
 pub fn plugin_log_path() -> &'static str {
     PLUGIN_LOG_PATH
+}
+
+fn midi_debug_enabled() -> bool {
+    true
 }
 
 static PANIC_HOOK_INIT: Once = Once::new();
@@ -129,16 +144,21 @@ impl ScopeFrame {
 }
 
 type ScopeBuffer = Arc<Mutex<ScopeFrame>>;
-type UiInputQueue = Arc<ArrayQueue<UiInputEvent>>;
+type UiInputQueue = Arc<ArrayQueue<CosmoInputEvent>>;
 type SharedSynthParams = Arc<ArcSwap<SynthParams>>;
 type SharedRtSynthParams = Arc<ArcSwap<SynthParams>>;
 type SharedRuntimeModSources = Arc<ArcSwap<RuntimeModSources>>;
+type SharedRuntimeVoiceStates = Arc<ArcSwap<Vec<RuntimeVoiceDebugState>>>;
 type SharedTransportSnapshot = Arc<TransportSnapshot>;
 type SynthParamsVersion = Arc<AtomicU64>;
 type PerformanceCountersHandle = Arc<PerformanceCounters>;
 
 const MIDI_CC_QUEUE_CAPACITY: usize = 128;
 type MidiCcQueue = Arc<ArrayQueue<(u8, u8, u8)>>;
+
+fn denorm_midi_7bit(value: f32) -> u8 {
+    (value.clamp(0.0, 1.0) * 127.0).round() as u8
+}
 
 fn build_rt_synth_params(params: &SynthParams) -> SynthParams {
     let mut rt_params = params.clone();
@@ -387,20 +407,6 @@ impl PerformanceCounters {
     }
 }
 
-#[allow(dead_code)]
-#[derive(Debug, Clone, Copy)]
-enum UiInputEvent {
-    NoteOn { note: u8, velocity: f32 },
-    NoteOff { note: u8 },
-    Sustain { on: bool },
-    PitchBend { value: f32 },
-    ModWheel { value: f32 },
-    Aftertouch { value: f32 },
-    PolyAftertouch { note: u8, value: f32 },
-    Macro { index: usize, value: f32 },
-    Panic,
-}
-
 // =============================================================================
 // DAW-automatable parameters (truce FloatParams)
 // =============================================================================
@@ -485,6 +491,18 @@ pub struct CzPluginParams {
     #[param(name = "Mod Env Release", range = "linear(0.0, 10.0)", default = 2.0)]
     pub mod_env_release: FloatParam,
 
+    #[param(name = "Macro 1", range = "linear(0.0, 1.0)", default = 0.0)]
+    pub macro1: FloatParam,
+
+    #[param(name = "Macro 2", range = "linear(0.0, 1.0)", default = 0.0)]
+    pub macro2: FloatParam,
+
+    #[param(name = "Macro 3", range = "linear(0.0, 1.0)", default = 0.0)]
+    pub macro3: FloatParam,
+
+    #[param(name = "Macro 4", range = "linear(0.0, 1.0)", default = 0.0)]
+    pub macro4: FloatParam,
+
     #[meter]
     pub meter_l: MeterSlot,
     #[meter]
@@ -519,6 +537,10 @@ fn apply_daw_params(synth: &mut SynthParams, params: &CzPluginParams) {
     synth.mod_env.decay = params.mod_env_decay.value();
     synth.mod_env.sustain = params.mod_env_sustain.value();
     synth.mod_env.release = params.mod_env_release.value();
+    synth.macro1 = params.macro1.value();
+    synth.macro2 = params.macro2.value();
+    synth.macro3 = params.macro3.value();
+    synth.macro4 = params.macro4.value();
 }
 
 fn write_daw_param_by_id(synth: &mut SynthParams, id: u32, value: f64) -> bool {
@@ -550,9 +572,118 @@ fn write_daw_param_by_id(synth: &mut SynthParams, id: u32, value: f64) -> bool {
         x if x == CzPluginParamsParamId::ModEnvDecay as u32 => synth.mod_env.decay = value,
         x if x == CzPluginParamsParamId::ModEnvSustain as u32 => synth.mod_env.sustain = value,
         x if x == CzPluginParamsParamId::ModEnvRelease as u32 => synth.mod_env.release = value,
+        x if x == CzPluginParamsParamId::Macro1 as u32 => synth.macro1 = value,
+        x if x == CzPluginParamsParamId::Macro2 as u32 => synth.macro2 = value,
+        x if x == CzPluginParamsParamId::Macro3 as u32 => synth.macro3 = value,
+        x if x == CzPluginParamsParamId::Macro4 as u32 => synth.macro4 = value,
         _ => return false,
     }
     true
+}
+
+fn daw_param_key_by_id(id: u32) -> Option<&'static str> {
+    match id {
+        x if x == CzPluginParamsParamId::Volume as u32 => Some("volume"),
+        x if x == CzPluginParamsParamId::WarpAAmount as u32 => Some("warpAAmount"),
+        x if x == CzPluginParamsParamId::WarpBAmount as u32 => Some("warpBAmount"),
+        x if x == CzPluginParamsParamId::AlgoBlendA as u32 => Some("algoBlendA"),
+        x if x == CzPluginParamsParamId::AlgoBlendB as u32 => Some("algoBlendB"),
+        x if x == CzPluginParamsParamId::Line1Level as u32 => Some("line1Level"),
+        x if x == CzPluginParamsParamId::Line2Level as u32 => Some("line2Level"),
+        x if x == CzPluginParamsParamId::Line1Octave as u32 => Some("line1Octave"),
+        x if x == CzPluginParamsParamId::Line2Octave as u32 => Some("line2Octave"),
+        x if x == CzPluginParamsParamId::DetuneNote as u32 => Some("line2DetuneNote"),
+        x if x == CzPluginParamsParamId::DetuneFine as u32 => Some("line2DetuneFine"),
+        x if x == CzPluginParamsParamId::VelocityCurve as u32 => Some("velocityCurve"),
+        x if x == CzPluginParamsParamId::PitchBendRange as u32 => Some("pitchBendRange"),
+        x if x == CzPluginParamsParamId::PortamentoRate as u32 => Some("portamentoRate"),
+        x if x == CzPluginParamsParamId::PortamentoTime as u32 => Some("portamentoTime"),
+        x if x == CzPluginParamsParamId::LfoRate as u32 => Some("lfoRate"),
+        x if x == CzPluginParamsParamId::LfoDepth as u32 => Some("lfoDepth"),
+        x if x == CzPluginParamsParamId::LfoOffset as u32 => Some("lfoOffset"),
+        x if x == CzPluginParamsParamId::Lfo2Rate as u32 => Some("lfo2Rate"),
+        x if x == CzPluginParamsParamId::Lfo2Depth as u32 => Some("lfo2Depth"),
+        x if x == CzPluginParamsParamId::Lfo2Offset as u32 => Some("lfo2Offset"),
+        x if x == CzPluginParamsParamId::RandomRate as u32 => Some("randomRate"),
+        x if x == CzPluginParamsParamId::ModEnvAttack as u32 => Some("modEnvAttack"),
+        x if x == CzPluginParamsParamId::ModEnvDecay as u32 => Some("modEnvDecay"),
+        x if x == CzPluginParamsParamId::ModEnvSustain as u32 => Some("modEnvSustain"),
+        x if x == CzPluginParamsParamId::ModEnvRelease as u32 => Some("modEnvRelease"),
+        x if x == CzPluginParamsParamId::Macro1 as u32 => Some("macro1"),
+        x if x == CzPluginParamsParamId::Macro2 as u32 => Some("macro2"),
+        x if x == CzPluginParamsParamId::Macro3 as u32 => Some("macro3"),
+        x if x == CzPluginParamsParamId::Macro4 as u32 => Some("macro4"),
+        _ => None,
+    }
+}
+
+#[cfg(any(feature = "vst3", test))]
+fn daw_param_id_by_key(key: &str) -> Option<u32> {
+    match key {
+        "volume" => Some(CzPluginParamsParamId::Volume as u32),
+        "warpAAmount" => Some(CzPluginParamsParamId::WarpAAmount as u32),
+        "warpBAmount" => Some(CzPluginParamsParamId::WarpBAmount as u32),
+        "algoBlendA" => Some(CzPluginParamsParamId::AlgoBlendA as u32),
+        "algoBlendB" => Some(CzPluginParamsParamId::AlgoBlendB as u32),
+        "line1Level" => Some(CzPluginParamsParamId::Line1Level as u32),
+        "line2Level" => Some(CzPluginParamsParamId::Line2Level as u32),
+        "line1Octave" => Some(CzPluginParamsParamId::Line1Octave as u32),
+        "line2Octave" => Some(CzPluginParamsParamId::Line2Octave as u32),
+        "line2DetuneNote" => Some(CzPluginParamsParamId::DetuneNote as u32),
+        "line2DetuneFine" => Some(CzPluginParamsParamId::DetuneFine as u32),
+        "velocityCurve" => Some(CzPluginParamsParamId::VelocityCurve as u32),
+        "pitchBendRange" => Some(CzPluginParamsParamId::PitchBendRange as u32),
+        "portamentoRate" => Some(CzPluginParamsParamId::PortamentoRate as u32),
+        "portamentoTime" => Some(CzPluginParamsParamId::PortamentoTime as u32),
+        "lfoRate" => Some(CzPluginParamsParamId::LfoRate as u32),
+        "lfoDepth" => Some(CzPluginParamsParamId::LfoDepth as u32),
+        "lfoOffset" => Some(CzPluginParamsParamId::LfoOffset as u32),
+        "lfo2Rate" => Some(CzPluginParamsParamId::Lfo2Rate as u32),
+        "lfo2Depth" => Some(CzPluginParamsParamId::Lfo2Depth as u32),
+        "lfo2Offset" => Some(CzPluginParamsParamId::Lfo2Offset as u32),
+        "randomRate" => Some(CzPluginParamsParamId::RandomRate as u32),
+        "modEnvAttack" => Some(CzPluginParamsParamId::ModEnvAttack as u32),
+        "modEnvDecay" => Some(CzPluginParamsParamId::ModEnvDecay as u32),
+        "modEnvSustain" => Some(CzPluginParamsParamId::ModEnvSustain as u32),
+        "modEnvRelease" => Some(CzPluginParamsParamId::ModEnvRelease as u32),
+        "macro1" => Some(CzPluginParamsParamId::Macro1 as u32),
+        "macro2" => Some(CzPluginParamsParamId::Macro2 as u32),
+        "macro3" => Some(CzPluginParamsParamId::Macro3 as u32),
+        "macro4" => Some(CzPluginParamsParamId::Macro4 as u32),
+        _ => None,
+    }
+}
+
+#[cfg(any(feature = "vst3", test))]
+fn resolve_vst3_midi_mapping_param_id(
+    bindings: &[crate::session_state::MidiLearnBinding],
+    bus_index: i32,
+    channel: i16,
+    cc: i16,
+) -> Option<u32> {
+    if bus_index != 0 || !(0..=15).contains(&channel) || !(0..=127).contains(&cc) {
+        return None;
+    }
+
+    let mut omni_match = None;
+
+    for binding in bindings {
+        if binding.cc != i32::from(cc) {
+            continue;
+        }
+        let Some(param_id) = daw_param_id_by_key(&binding.param_key) else {
+            continue;
+        };
+
+        if binding.channel == i32::from(channel) {
+            return Some(param_id);
+        }
+        if binding.channel == -1 && omni_match.is_none() {
+            omni_match = Some(param_id);
+        }
+    }
+
+    omni_match
 }
 
 fn read_daw_param_by_id(synth: &SynthParams, id: u32) -> Option<f32> {
@@ -583,6 +714,58 @@ fn read_daw_param_by_id(synth: &SynthParams, id: u32) -> Option<f32> {
         x if x == CzPluginParamsParamId::ModEnvDecay as u32 => Some(synth.mod_env.decay),
         x if x == CzPluginParamsParamId::ModEnvSustain as u32 => Some(synth.mod_env.sustain),
         x if x == CzPluginParamsParamId::ModEnvRelease as u32 => Some(synth.mod_env.release),
+        x if x == CzPluginParamsParamId::Macro1 as u32 => Some(synth.macro1),
+        x if x == CzPluginParamsParamId::Macro2 as u32 => Some(synth.macro2),
+        x if x == CzPluginParamsParamId::Macro3 as u32 => Some(synth.macro3),
+        x if x == CzPluginParamsParamId::Macro4 as u32 => Some(synth.macro4),
+        _ => None,
+    }
+}
+
+fn read_current_daw_param_by_id(params: &CzPluginParams, id: u32) -> Option<f32> {
+    match id {
+        x if x == CzPluginParamsParamId::Volume as u32 => Some(params.volume.value()),
+        x if x == CzPluginParamsParamId::WarpAAmount as u32 => Some(params.warp_a_amount.value()),
+        x if x == CzPluginParamsParamId::WarpBAmount as u32 => Some(params.warp_b_amount.value()),
+        x if x == CzPluginParamsParamId::AlgoBlendA as u32 => Some(params.algo_blend_a.value()),
+        x if x == CzPluginParamsParamId::AlgoBlendB as u32 => Some(params.algo_blend_b.value()),
+        x if x == CzPluginParamsParamId::Line1Level as u32 => Some(params.line1_level.value()),
+        x if x == CzPluginParamsParamId::Line2Level as u32 => Some(params.line2_level.value()),
+        x if x == CzPluginParamsParamId::Line1Octave as u32 => Some(params.line1_octave.value()),
+        x if x == CzPluginParamsParamId::Line2Octave as u32 => Some(params.line2_octave.value()),
+        x if x == CzPluginParamsParamId::DetuneNote as u32 => Some(params.detune_note.value()),
+        x if x == CzPluginParamsParamId::DetuneFine as u32 => Some(params.detune_fine.value()),
+        x if x == CzPluginParamsParamId::VelocityCurve as u32 => {
+            Some(params.velocity_curve.value())
+        }
+        x if x == CzPluginParamsParamId::PitchBendRange as u32 => {
+            Some(params.pitch_bend_range.value())
+        }
+        x if x == CzPluginParamsParamId::PortamentoRate as u32 => {
+            Some(params.portamento_rate.value())
+        }
+        x if x == CzPluginParamsParamId::PortamentoTime as u32 => {
+            Some(params.portamento_time.value())
+        }
+        x if x == CzPluginParamsParamId::LfoRate as u32 => Some(params.lfo_rate.value()),
+        x if x == CzPluginParamsParamId::LfoDepth as u32 => Some(params.lfo_depth.value()),
+        x if x == CzPluginParamsParamId::LfoOffset as u32 => Some(params.lfo_offset.value()),
+        x if x == CzPluginParamsParamId::Lfo2Rate as u32 => Some(params.lfo2_rate.value()),
+        x if x == CzPluginParamsParamId::Lfo2Depth as u32 => Some(params.lfo2_depth.value()),
+        x if x == CzPluginParamsParamId::Lfo2Offset as u32 => Some(params.lfo2_offset.value()),
+        x if x == CzPluginParamsParamId::RandomRate as u32 => Some(params.random_rate.value()),
+        x if x == CzPluginParamsParamId::ModEnvAttack as u32 => Some(params.mod_env_attack.value()),
+        x if x == CzPluginParamsParamId::ModEnvDecay as u32 => Some(params.mod_env_decay.value()),
+        x if x == CzPluginParamsParamId::ModEnvSustain as u32 => {
+            Some(params.mod_env_sustain.value())
+        }
+        x if x == CzPluginParamsParamId::ModEnvRelease as u32 => {
+            Some(params.mod_env_release.value())
+        }
+        x if x == CzPluginParamsParamId::Macro1 as u32 => Some(params.macro1.value()),
+        x if x == CzPluginParamsParamId::Macro2 as u32 => Some(params.macro2.value()),
+        x if x == CzPluginParamsParamId::Macro3 as u32 => Some(params.macro3.value()),
+        x if x == CzPluginParamsParamId::Macro4 as u32 => Some(params.macro4.value()),
         _ => None,
     }
 }
@@ -624,9 +807,29 @@ fn sync_all_daw_params_from_synth(params: &CzPluginParams, synth: &SynthParams) 
     params
         .mod_env_release
         .set_value(synth.mod_env.release as f64);
+    params.macro1.set_value(synth.macro1 as f64);
+    params.macro2.set_value(synth.macro2 as f64);
+    params.macro3.set_value(synth.macro3 as f64);
+    params.macro4.set_value(synth.macro4 as f64);
 }
 
-pub(crate) type SharedPresetName = Arc<Mutex<String>>;
+pub(crate) type SharedPresetSession = Arc<Mutex<crate::session_state::PresetSession>>;
+pub(crate) type SharedEditorState = Arc<Mutex<Option<crate::session_state::EditorState>>>;
+pub(crate) type SharedMidiMappings = Arc<Mutex<crate::session_state::MidiLearnState>>;
+
+fn persist_midi_learn_bindings(midi_learn_state: &SharedMidiMappings) {
+    let bindings = midi_learn_state
+        .lock()
+        .map(|state| state.bindings.clone())
+        .unwrap_or_else(|_| crate::session_state::default_midi_bindings());
+
+    if let Err(error) = crate::global_settings::save_midi_learn_bindings(bindings) {
+        append_log(&format!(
+            "failed to persist global midi learn bindings: {}",
+            error
+        ));
+    }
+}
 
 // =============================================================================
 // IPC dispatch
@@ -639,18 +842,23 @@ fn handle_ipc_invoke(
     synth_params: &SharedSynthParams,
     rt_synth_params: &SharedRtSynthParams,
     runtime_mod_sources: &SharedRuntimeModSources,
+    runtime_voice_states: &SharedRuntimeVoiceStates,
     transport_snapshot: &SharedTransportSnapshot,
     synth_params_version: &SynthParamsVersion,
     scope_buffer: &ScopeBuffer,
     ui_input_queue: &UiInputQueue,
     performance_counters: &PerformanceCountersHandle,
     params: &CzPluginParams,
-    preset_name: &SharedPresetName,
+    preset_session: &SharedPresetSession,
+    preset_library: &Arc<Mutex<PresetLibrary>>,
+    editor_state: &SharedEditorState,
+    midi_learn_state: &SharedMidiMappings,
 ) -> Result<serde_json::Value, String> {
     if method != "getScopeData"
         && method != "clientLog"
         && method != "getRuntimeModSources"
         && method != "getTransportInfo"
+        && method != "getRuntimeVoiceStates"
     {
         append_log(&format!("ipc invoke method={method} args={}", args.len()));
     }
@@ -672,7 +880,7 @@ fn handle_ipc_invoke(
             let note = u8::try_from(note).map_err(|_| "noteOn note out of range".to_string())?;
 
             ui_input_queue
-                .push(UiInputEvent::NoteOn { note, velocity })
+                .push(CosmoInputEvent::NoteOn { note, velocity })
                 .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
@@ -688,7 +896,7 @@ fn handle_ipc_invoke(
             let note = u8::try_from(note).map_err(|_| "noteOff note out of range".to_string())?;
 
             ui_input_queue
-                .push(UiInputEvent::NoteOff { note })
+                .push(CosmoInputEvent::NoteOff { note })
                 .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
@@ -703,7 +911,11 @@ fn handle_ipc_invoke(
                 .ok_or_else(|| "sustain payload missing on".to_string())?;
 
             ui_input_queue
-                .push(UiInputEvent::Sustain { on })
+                .push(CosmoInputEvent::ControlChange {
+                    channel: 0,
+                    cc: 64,
+                    value: if on { 127 } else { 0 },
+                })
                 .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
@@ -721,7 +933,7 @@ fn handle_ipc_invoke(
                 as f32;
 
             ui_input_queue
-                .push(UiInputEvent::PitchBend { value })
+                .push(CosmoInputEvent::PitchBend { value })
                 .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
@@ -739,7 +951,11 @@ fn handle_ipc_invoke(
                 as f32;
 
             ui_input_queue
-                .push(UiInputEvent::ModWheel { value })
+                .push(CosmoInputEvent::ControlChange {
+                    channel: 0,
+                    cc: 1,
+                    value: denorm_midi_7bit(value),
+                })
                 .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
@@ -757,7 +973,7 @@ fn handle_ipc_invoke(
                 as f32;
 
             ui_input_queue
-                .push(UiInputEvent::Aftertouch { value })
+                .push(CosmoInputEvent::Aftertouch { value })
                 .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
@@ -781,7 +997,7 @@ fn handle_ipc_invoke(
                 as f32;
 
             ui_input_queue
-                .push(UiInputEvent::PolyAftertouch { note, value })
+                .push(CosmoInputEvent::PolyAftertouch { note, value })
                 .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
@@ -804,13 +1020,13 @@ fn handle_ipc_invoke(
                 as f32;
 
             ui_input_queue
-                .push(UiInputEvent::Macro { index, value })
+                .push(CosmoInputEvent::Macro { index, value })
                 .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
         "panic" => {
             ui_input_queue
-                .push(UiInputEvent::Panic)
+                .push(CosmoInputEvent::Panic)
                 .map_err(|_| "ui input queue is full".to_string())?;
             Ok(serde_json::Value::Null)
         }
@@ -837,9 +1053,16 @@ fn handle_ipc_invoke(
             let sp = synth_params.load();
             serde_json::to_value(sp.as_ref()).map_err(|e| e.to_string())
         }
+        "getParamsVersion" => Ok(serde_json::Value::from(
+            synth_params_version.load(Ordering::Acquire),
+        )),
         "getRuntimeModSources" => {
             let sources = runtime_mod_sources.load();
             serde_json::to_value(sources.as_ref()).map_err(|e| e.to_string())
+        }
+        "getRuntimeVoiceStates" => {
+            let states = runtime_voice_states.load();
+            serde_json::to_value(states.as_ref()).map_err(|e| e.to_string())
         }
         "getTransportInfo" => Ok(transport_snapshot.snapshot_json()),
         "getScopeData" => {
@@ -882,14 +1105,338 @@ fn handle_ipc_invoke(
                 .first()
                 .and_then(serde_json::Value::as_str)
                 .ok_or_else(|| "setPresetName expects a string argument".to_string())?;
-            if let Ok(mut stored) = preset_name.lock() {
-                *stored = name.to_string();
+            if let Ok(mut stored) = preset_session.lock() {
+                stored.active_preset_name_base = name.to_string();
             }
             Ok(serde_json::Value::Null)
         }
         "getPresetName" => {
-            let name = preset_name.lock().map(|n| n.clone()).unwrap_or_default();
+            let name = preset_session
+                .lock()
+                .map(|session| session.active_preset_name_base.clone())
+                .unwrap_or_default();
             Ok(serde_json::Value::String(name))
+        }
+        "getPresetSession" => {
+            let session = preset_session
+                .lock()
+                .map(|session| session.clone())
+                .map_err(|e| e.to_string())?;
+            serde_json::to_value(session).map_err(|e| e.to_string())
+        }
+        "setPresetSession" => {
+            let payload = args
+                .first()
+                .ok_or_else(|| "setPresetSession expects an object payload".to_string())?;
+            let session: crate::session_state::PresetSession =
+                serde_json::from_value(payload.clone())
+                    .map_err(|e| format!("invalid PresetSession: {e}"))?;
+            if let Ok(mut stored) = preset_session.lock() {
+                *stored = session;
+            }
+            Ok(serde_json::Value::Null)
+        }
+        "getPresetLibrary" => {
+            let source_filter = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .and_then(|o| o.get("source"))
+                .and_then(serde_json::Value::as_str);
+            let lib = preset_library.lock().map_err(|e| e.to_string())?;
+            let entries: Vec<serde_json::Value> = lib
+                .list_records(source_filter)
+                .map_err(|e| e.to_string())?
+                .iter()
+                .map(|e| {
+                    serde_json::json!({
+                        "id": e.entry.id,
+                        "name": e.entry.name,
+                        "source": e.entry.source,
+                        "author": e.entry.author,
+                        "starred": e.entry.starred,
+                        "sortIndex": e.entry.sort_index,
+                        "favorite": e.favorite,
+                        "tags": e.entry.tags,
+                    })
+                })
+                .collect();
+            Ok(serde_json::json!({ "entries": entries }))
+        }
+        "loadPresetData" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "loadPresetData expects an object payload as first argument".to_string()
+                })?;
+            let id = payload
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "loadPresetData payload missing id".to_string())?;
+
+            let (entry_data, preset_name_val, entry_macro_labels): (
+                serde_json::Value,
+                String,
+                Option<[String; 4]>,
+            ) = {
+                let lib = preset_library.lock().map_err(|e| e.to_string())?;
+                let entry = lib
+                    .get_entry(id)
+                    .map_err(|e| e.to_string())?
+                    .ok_or_else(|| "Preset not found".to_string())?;
+                let data = entry.data.clone();
+                let name = entry.name;
+                let labels = Some(entry.macro_labels);
+                (data, name, labels)
+            };
+
+            let mut new_sp: SynthParams = if let Some(params_value) = entry_data.get("params") {
+                serde_json::from_value(params_value.clone())
+                    .map_err(|e| format!("Failed to deserialize preset: {e}"))?
+            } else {
+                serde_json::from_value(entry_data)
+                    .map_err(|e| format!("Failed to deserialize preset: {e}"))?
+            };
+
+            // Override macro_labels with the entry's stored labels (handles
+            // presets saved before macro_labels was added to SynthParams).
+            if let Some(labels) = entry_macro_labels {
+                new_sp.macro_labels = labels;
+            }
+
+            sync_all_daw_params_from_synth(params, &new_sp);
+            let rt_params = build_rt_synth_params(&new_sp);
+            synth_params.store(Arc::new(new_sp));
+            rt_synth_params.store(Arc::new(rt_params));
+            synth_params_version.fetch_add(1, Ordering::Release);
+
+            if let Ok(mut stored) = preset_session.lock() {
+                stored.active_preset_name_base = preset_name_val.clone();
+                stored.loaded_preset_id = Some(id.to_string());
+                stored.is_dirty = false;
+            }
+
+            Ok(serde_json::json!({ "preset_name": preset_name_val }))
+        }
+        "addPreset" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "addPreset expects an object payload as first argument".to_string()
+                })?;
+            let name = payload
+                .get("name")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "addPreset payload missing name".to_string())?
+                .to_string();
+            let tags: Vec<String> = payload
+                .get("tags")
+                .and_then(|v| v.as_array())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|v| v.as_str().map(String::from))
+                        .collect()
+                })
+                .unwrap_or_default();
+            let macro_labels: [String; 4] = payload
+                .get("macroLabels")
+                .and_then(|v| serde_json::from_value(v.clone()).ok())
+                .unwrap_or_else(|| SynthParams::default().macro_labels);
+
+            let params_val = synth_params.load();
+            let data = serde_json::to_value(&**params_val).map_err(|e| e.to_string())?;
+
+            let id = {
+                let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+                let entry = lib
+                    .add_entry(name, tags, macro_labels, data)
+                    .map_err(|e| e.to_string())?;
+                entry.id.clone()
+            };
+
+            Ok(serde_json::json!({ "id": id }))
+        }
+        "deletePreset" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "deletePreset expects an object payload as first argument".to_string()
+                })?;
+            let id = payload
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "deletePreset payload missing id".to_string())?;
+
+            {
+                let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+                let _ = lib.delete_entry(id).map_err(|e| e.to_string())?;
+            }
+
+            Ok(serde_json::Value::Null)
+        }
+        "renamePreset" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "renamePreset expects an object payload as first argument".to_string()
+                })?;
+            let id = payload
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "renamePreset payload missing id".to_string())?;
+            let new_name = payload
+                .get("newName")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "renamePreset payload missing newName".to_string())?;
+
+            {
+                let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+                let _ = lib.rename_entry(id, new_name).map_err(|e| e.to_string())?;
+            }
+
+            Ok(serde_json::Value::Null)
+        }
+        "toggleStarred" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "toggleStarred expects an object payload as first argument".to_string()
+                })?;
+            let id = payload
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "toggleStarred payload missing id".to_string())?;
+            let starred = payload
+                .get("starred")
+                .and_then(serde_json::Value::as_bool)
+                .ok_or_else(|| "toggleStarred payload missing starred".to_string())?;
+
+            {
+                let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+                // Keep the legacy RPC name, but persist user favorites separately
+                // from authored factory star metadata.
+                let _ = lib.set_starred(id, starred).map_err(|e| e.to_string())?;
+            }
+
+            Ok(serde_json::Value::Null)
+        }
+        "setEditorState" => {
+            let payload = args
+                .first()
+                .ok_or_else(|| "setEditorState expects an object payload".to_string())?;
+            let state: crate::session_state::EditorState = serde_json::from_value(payload.clone())
+                .map_err(|e| format!("invalid EditorState: {e}"))?;
+            if let Ok(mut stored) = editor_state.lock() {
+                *stored = Some(state);
+            }
+            Ok(serde_json::Value::Null)
+        }
+        "getEditorState" => {
+            let state = editor_state.lock().map(|s| s.clone()).unwrap_or(None);
+            serde_json::to_value(state).map_err(|e| e.to_string())
+        }
+        "setMidiLearnMode" => {
+            let mode = args
+                .first()
+                .and_then(|v| v.as_bool())
+                .ok_or_else(|| "setMidiLearnMode expects a boolean".to_string())?;
+            // TODO: remove this diagnostic once cross-format MIDI learn mode behavior is verified.
+            append_log(&format!("ipc_set_midi_learn_mode mode={}", mode));
+            if let Ok(mut state) = midi_learn_state.lock() {
+                state.learn_mode = mode;
+                state.version += 1;
+                append_log(&format!(
+                    "ipc_set_midi_learn_mode_applied mode={} version={} pending={:?}",
+                    state.learn_mode, state.version, state.pending_param_key
+                ));
+            }
+            Ok(serde_json::Value::Null)
+        }
+        "setPendingMidiLearnParam" => {
+            let param_key = args.first().cloned().unwrap_or(serde_json::Value::Null);
+            if let Ok(mut state) = midi_learn_state.lock() {
+                state.pending_param_key = param_key
+                    .as_str()
+                    .filter(|value| !value.is_empty())
+                    .map(|value| value.to_string());
+                state.version += 1;
+            }
+            Ok(serde_json::Value::Null)
+        }
+        "addMidiBinding" => {
+            let param_key = args
+                .first()
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| "addMidiBinding expects param_key".to_string())?;
+            let channel = args
+                .get(1)
+                .and_then(|v| v.as_i64())
+                .ok_or_else(|| "addMidiBinding expects channel".to_string())?
+                as i32;
+            let cc =
+                args.get(2)
+                    .and_then(|v| v.as_i64())
+                    .ok_or_else(|| "addMidiBinding expects cc".to_string())? as i32;
+            // TODO: remove this diagnostic once cross-format MIDI binding RPC flow is verified.
+            append_log(&format!(
+                "ipc_add_midi_binding param_key={} channel={} cc={}",
+                param_key, channel, cc
+            ));
+            if let Ok(mut state) = midi_learn_state.lock() {
+                state
+                    .bindings
+                    .retain(|binding| binding.param_key != param_key);
+                state.bindings.push(crate::session_state::MidiLearnBinding {
+                    param_key: param_key.to_string(),
+                    channel,
+                    cc,
+                });
+                state.version += 1;
+                append_log(&format!(
+                    "ipc_add_midi_binding_applied version={} bindings_count={} latest={{param_key:{},channel:{},cc:{}}}",
+                    state.version,
+                    state.bindings.len(),
+                    param_key,
+                    channel,
+                    cc
+                ));
+            }
+            persist_midi_learn_bindings(midi_learn_state);
+            Ok(serde_json::Value::Null)
+        }
+        "removeMidiBinding" => {
+            let binding = args
+                .first()
+                .cloned()
+                .ok_or_else(|| "removeMidiBinding expects a binding object".to_string())?;
+            let binding: crate::session_state::MidiLearnBinding =
+                serde_json::from_value(binding)
+                    .map_err(|e| format!("invalid MidiLearnBinding: {e}"))?;
+            if let Ok(mut state) = midi_learn_state.lock() {
+                state.bindings.retain(|existing| existing != &binding);
+                state.version += 1;
+            }
+            persist_midi_learn_bindings(midi_learn_state);
+            Ok(serde_json::Value::Null)
+        }
+        "clearMidiLearnBindings" => {
+            if let Ok(mut state) = midi_learn_state.lock() {
+                state.bindings.clear();
+                state.version += 1;
+            }
+            persist_midi_learn_bindings(midi_learn_state);
+            Ok(serde_json::Value::Null)
+        }
+        "getMidiLearnState" => {
+            let state = midi_learn_state
+                .lock()
+                .map(|s| s.clone())
+                .unwrap_or_default();
+            serde_json::to_value(state).map_err(|e| e.to_string())
         }
         _ => Err(format!("unknown method: {method}")),
     }
@@ -912,15 +1459,24 @@ pub struct CzPlugin {
     scope_buffer: ScopeBuffer,
     ui_input_queue: UiInputQueue,
     midi_cc_queue: MidiCcQueue,
+    block_input_events: Vec<CosmoTimedInputEvent>,
     mono_output: Vec<f32>,
     performance_counters: PerformanceCountersHandle,
     /// Tracks whether DAW param values changed since last process() call.
     daw_params_dirty: bool,
     last_scope_hz: f32,
-    /// Tracks transport playing state across process() calls to detect stop.
-    last_playing: bool,
-    /// Preset name shared with the webview, persisted via save_state/load_state.
-    preset_name: SharedPresetName,
+    /// Shared preset session persisted across plugin state save/load and GUI reopen.
+    preset_session: SharedPresetSession,
+    /// Latest voice debug state snapshot, populated each process block.
+    runtime_voice_states: SharedRuntimeVoiceStates,
+    /// The preset library (factory + user). Lock when reading or writing.
+    preset_library: Arc<Mutex<PresetLibrary>>,
+    /// UI editor state persisted across DAW sessions.
+    editor_state: SharedEditorState,
+    /// MIDI learn state owned by the engine.
+    midi_learn_state: SharedMidiMappings,
+    /// Prevents cold-start favorite selection from re-running on later resets.
+    startup_preset_resolved: bool,
 }
 
 impl CzPlugin {
@@ -930,6 +1486,22 @@ impl CzPlugin {
         init_panic_hook();
         let default_params = SynthParams::default();
         let default_rt_params = build_rt_synth_params(&default_params);
+        let factory_json = include_str!(concat!(env!("OUT_DIR"), "/minified_presets.json"));
+        let preset_library = Arc::new(Mutex::new(
+            PresetLibrary::load_or_init(factory_json).unwrap_or_else(|e| {
+                eprintln!("Failed to load preset library: {}, using factory only", e);
+                PresetLibrary::from_embedded_factory(factory_json)
+            }),
+        ));
+        let midi_learn_bindings = crate::global_settings::load_or_init_global_settings()
+            .map(|settings| settings.midi_learn_bindings)
+            .unwrap_or_else(|error| {
+                append_log(&format!(
+                    "failed to load global midi settings, using defaults: {}",
+                    error
+                ));
+                crate::session_state::default_midi_bindings()
+            });
         Self {
             params,
             processor: None,
@@ -943,28 +1515,29 @@ impl CzPlugin {
             scope_buffer: Arc::new(Mutex::new(ScopeFrame::default())),
             ui_input_queue: Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY)),
             midi_cc_queue: Arc::new(ArrayQueue::new(MIDI_CC_QUEUE_CAPACITY)),
+            block_input_events: Vec::with_capacity(MAX_UI_INPUT_EVENTS_PER_BLOCK),
             mono_output: Vec::new(),
             performance_counters: Arc::new(PerformanceCounters::default()),
             daw_params_dirty: true,
             last_scope_hz: 220.0,
-            last_playing: false,
-            preset_name: Arc::new(Mutex::new(String::new())),
+            preset_session: Arc::new(Mutex::new(crate::session_state::PresetSession::default())),
+            runtime_voice_states: Arc::new(ArcSwap::from_pointee(Vec::new())),
+            preset_library,
+            editor_state: Arc::new(Mutex::new(None)),
+            midi_learn_state: Arc::new(Mutex::new(crate::session_state::MidiLearnState {
+                bindings: midi_learn_bindings,
+                ..Default::default()
+            })),
+            startup_preset_resolved: false,
         }
     }
 
-    fn all_notes_off(proc: &mut CosmoProcessor) {
-        append_log("all_notes_off: calling set_sustain(false) + note_off 0..127");
-        proc.set_sustain(false);
-        for note in 0u8..=127u8 {
-            proc.note_off(note);
-        }
-    }
-
-    fn apply_factory_preset(&mut self, index: usize) {
-        let Some(params) = crate::ffi::factory_preset_params(index).cloned() else {
-            return;
-        };
-
+    fn apply_preset_state(
+        &mut self,
+        preset_id: Option<String>,
+        preset_name: Option<String>,
+        params: SynthParams,
+    ) {
         sync_all_daw_params_from_synth(&self.params, &params);
 
         let rt_params = Arc::new(build_rt_synth_params(&params));
@@ -975,24 +1548,236 @@ impl CzPlugin {
         self.cached_synth_params_version = self.synth_params_version.load(Ordering::Acquire);
         self.daw_params_dirty = false;
 
+        if let Ok(mut session) = self.preset_session.lock() {
+            if preset_name.is_some() || preset_id.is_some() {
+                if let Some(name) = preset_name {
+                    session.active_preset_name_base = name;
+                }
+                session.loaded_preset_id = preset_id;
+            }
+            session.is_dirty = false;
+        }
+
         if let Some(proc) = self.processor.as_mut() {
             proc.set_shared_params(rt_params);
             self.performance_counters.record_param_apply();
         }
     }
 
-    fn apply_rt_param_change(&mut self, id: u32, value: f64) {
-        let mut next_params = (*self.cached_rt_synth_params).clone();
+    fn apply_startup_preset_if_needed(&mut self) {
+        if self.startup_preset_resolved {
+            return;
+        }
+        self.startup_preset_resolved = true;
+
+        let startup_preset = self
+            .preset_library
+            .lock()
+            .ok()
+            .and_then(|library| library.find_startup_preset().ok().flatten());
+
+        let Some(entry) = startup_preset else {
+            return;
+        };
+
+        let entry_data = entry.data.clone();
+        let params = if let Some(params_value) = entry_data.get("params") {
+            serde_json::from_value(params_value.clone())
+        } else {
+            serde_json::from_value(entry_data)
+        };
+
+        let Ok(params) = params else {
+            append_log(&format!(
+                "failed to deserialize startup preset id={}",
+                entry.id
+            ));
+            return;
+        };
+
+        self.apply_preset_state(Some(entry.id), Some(entry.name), params);
+    }
+
+    fn apply_factory_preset(&mut self, index: usize) {
+        let Some(params) = crate::ffi::factory_preset_params(index).cloned() else {
+            return;
+        };
+        let identity = crate::ffi::factory_preset_identity(index)
+            .map(|(id, name)| (id.to_string(), name.to_string()));
+        self.apply_preset_state(
+            identity.as_ref().map(|(id, _)| id.clone()),
+            identity.as_ref().map(|(_, name)| name.clone()),
+            params,
+        );
+    }
+
+    fn apply_rt_param_change(&mut self, id: u32, value: f64, update_processor: bool) {
+        let mut next_params = (*self.synth_params.load_full()).clone();
         if !write_daw_param_by_id(&mut next_params, id, value) {
             return;
         }
 
-        let next_params = Arc::new(next_params);
-        self.cached_rt_synth_params = Arc::clone(&next_params);
-        if let Some(proc) = self.processor.as_mut() {
-            proc.set_shared_params(next_params);
+        let rt_params = Arc::new(build_rt_synth_params(&next_params));
+        self.synth_params.store(Arc::new(next_params));
+        self.rt_synth_params.store(Arc::clone(&rt_params));
+        self.cached_rt_synth_params = Arc::clone(&rt_params);
+        self.cached_synth_params_version =
+            self.synth_params_version.fetch_add(1, Ordering::Release) + 1;
+        self.daw_params_dirty = false;
+        if let Ok(mut session) = self.preset_session.lock() {
+            session.is_dirty = true;
+        }
+
+        if update_processor && let Some(proc) = self.processor.as_mut() {
+            proc.set_shared_params(rt_params);
             self.performance_counters.record_param_apply();
         }
+    }
+
+    fn apply_midi_mapping(&mut self, channel: u8, cc: u8, value: u8) -> bool {
+        let state_snapshot = self.midi_learn_state.lock().ok().map(|guard| guard.clone());
+        let Some(state_snapshot) = state_snapshot else {
+            return false;
+        };
+        let bindings = state_snapshot
+            .bindings
+            .iter()
+            .map(|binding| MidiMappingBinding {
+                param_key: binding.param_key.as_str(),
+                channel: binding.channel,
+                cc: binding.cc,
+            })
+            .collect::<Vec<_>>();
+
+        if bindings.is_empty() {
+            append_log(&format!(
+                "apply_midi_mapping miss ch={} cc={} value={} stored_mappings={:?}",
+                channel, cc, value, state_snapshot
+            ));
+            return false;
+        }
+        let mut synth_params = (*self.synth_params.load_full()).clone();
+        let applied = apply_engine_midi_mapping(&mut synth_params, &bindings, channel, cc, value);
+
+        if !applied {
+            let incoming_channel = i32::from(channel);
+            let incoming_cc = i32::from(cc);
+            let mut cc_match_count = 0usize;
+            let mut channel_match_count = 0usize;
+            let mut omni_channel_count = 0usize;
+            let mut full_match_count = 0usize;
+            let mut invalid_param_keys: Vec<&str> = Vec::new();
+            let mut binding_sample: Vec<String> = Vec::new();
+
+            for binding in &state_snapshot.bindings {
+                let cc_match = binding.cc == incoming_cc;
+                let channel_match = binding.channel == -1 || binding.channel == incoming_channel;
+
+                if cc_match {
+                    cc_match_count += 1;
+                }
+                if channel_match {
+                    channel_match_count += 1;
+                    if binding.channel == -1 {
+                        omni_channel_count += 1;
+                    }
+                }
+                if cc_match && channel_match {
+                    full_match_count += 1;
+                    if parameter_range_for_key(&binding.param_key).is_none() {
+                        invalid_param_keys.push(binding.param_key.as_str());
+                    }
+                }
+
+                if binding_sample.len() < 8 {
+                    binding_sample.push(format!(
+                        "{}(ch={},cc={})",
+                        binding.param_key, binding.channel, binding.cc
+                    ));
+                }
+            }
+
+            let reject_reason = if cc_match_count == 0 {
+                "no_cc_match"
+            } else if full_match_count == 0 {
+                "channel_mismatch"
+            } else if !invalid_param_keys.is_empty() {
+                "invalid_param_key"
+            } else {
+                "set_parameter_rejected"
+            };
+
+            append_log(&format!(
+                "apply_midi_mapping miss ch={} cc={} value={} reason={} bindings={} cc_matches={} channel_matches={} omni_matches={} full_matches={} invalid_param_keys={:?} binding_sample={:?}",
+                channel,
+                cc,
+                value,
+                reject_reason,
+                state_snapshot.bindings.len(),
+                cc_match_count,
+                channel_match_count,
+                omni_channel_count,
+                full_match_count,
+                invalid_param_keys,
+                binding_sample
+            ));
+            return false;
+        }
+
+        let rt_params = Arc::new(build_rt_synth_params(&synth_params));
+        sync_all_daw_params_from_synth(&self.params, &synth_params);
+        self.synth_params.store(Arc::new(synth_params));
+        self.rt_synth_params.store(Arc::clone(&rt_params));
+        self.cached_rt_synth_params = Arc::clone(&rt_params);
+        self.cached_synth_params_version =
+            self.synth_params_version.fetch_add(1, Ordering::Release) + 1;
+        self.daw_params_dirty = false;
+
+        if let Some(proc) = self.processor.as_mut() {
+            proc.set_shared_params(rt_params);
+            self.performance_counters.record_param_apply();
+        }
+
+        true
+    }
+
+    fn capture_pending_midi_learn_binding(&mut self, channel: u8, cc: u8) {
+        let mut bindings_changed = false;
+        {
+            let mut state = self.midi_learn_state.lock().unwrap();
+            if state.learn_mode
+                && let Some(ref pending) = state.pending_param_key.clone()
+            {
+                state
+                    .bindings
+                    .retain(|binding| binding.param_key != *pending);
+                state.bindings.push(crate::session_state::MidiLearnBinding {
+                    param_key: pending.clone(),
+                    channel: i32::from(channel),
+                    cc: i32::from(cc),
+                });
+                state.version += 1;
+                bindings_changed = true;
+                // TODO: remove this diagnostic once host-side learn capture behavior is verified across plugin formats.
+                append_log(&format!(
+                    "host_capture_pending_midi_binding pending={} channel={} cc={} version={} bindings_count={}",
+                    pending,
+                    channel,
+                    cc,
+                    state.version,
+                    state.bindings.len()
+                ));
+            }
+        }
+        if bindings_changed {
+            persist_midi_learn_bindings(&self.midi_learn_state);
+        }
+    }
+
+    #[cfg(test)]
+    fn vst3_midi_mapping_param_id(&self, bus_index: i32, channel: i16, cc: i16) -> Option<u32> {
+        let state = self.midi_learn_state.lock().ok()?;
+        resolve_vst3_midi_mapping_param_id(&state.bindings, bus_index, channel, cc)
     }
 
     fn tracked_param_changes(events: &EventList) -> [bool; Self::TRACKED_PARAM_ID_CAPACITY] {
@@ -1010,113 +1795,118 @@ impl CzPlugin {
         changed
     }
 
-    fn handle_host_event(&mut self, body: &EventBody) {
+    fn current_transport_state(transport: &TransportInfo) -> CosmoTransportState {
+        CosmoTransportState {
+            tempo_bpm: (transport.tempo.is_finite() && transport.tempo > 0.0)
+                .then_some(transport.tempo as f32),
+            playing: transport.playing,
+            position_beats: transport.position_beats,
+        }
+    }
+
+    fn sync_runtime_params_from_host(&mut self, events: &EventList) {
+        let tracked_param_changes = Self::tracked_param_changes(events);
+        let has_param_change_events = tracked_param_changes.iter().any(|changed| *changed);
+        let host_params_changed = (0..Self::TRACKED_PARAM_ID_CAPACITY).any(|id| {
+            if tracked_param_changes[id] {
+                return false;
+            }
+            let id = id as u32;
+            let Some(current) = read_current_daw_param_by_id(&self.params, id) else {
+                return false;
+            };
+            let Some(cached) = read_daw_param_by_id(&self.cached_rt_synth_params, id) else {
+                return false;
+            };
+            (current - cached).abs() > 0.000_001
+        });
+        let params_version = self.synth_params_version.load(Ordering::Acquire);
+        let params_changed = params_version != self.cached_synth_params_version
+            || self.daw_params_dirty
+            || host_params_changed;
+
+        if !params_changed {
+            return;
+        }
+
+        // Start from the latest JS JSON params (or cached RT params).
+        // Both rt_synth_params and cached_rt_synth_params have already been
+        // normalized (envelope level/rate -> raw 0-127), and apply_daw_params
+        // only touches top-level float fields (no envelope steps), so we
+        // must NOT call build_rt_synth_params again - that would double-convert
+        // envelope values, corrupting levels and rates.
+        let previous_rt = (*self.cached_rt_synth_params).clone();
+        let merged = if params_version != self.cached_synth_params_version {
+            let mut params = (*self.rt_synth_params.load_full()).clone();
+            apply_daw_params(&mut params, &self.params);
+            params
+        } else {
+            let mut params = (*self.cached_rt_synth_params).clone();
+            apply_daw_params(&mut params, &self.params);
+            params
+        };
+
+        let mut merged = merged;
+        if has_param_change_events {
+            for (id, changed) in tracked_param_changes.iter().enumerate() {
+                if !*changed {
+                    continue;
+                }
+                let Some(prev_value) = read_daw_param_by_id(&previous_rt, id as u32) else {
+                    continue;
+                };
+                let _ = write_daw_param_by_id(&mut merged, id as u32, f64::from(prev_value));
+            }
+        }
+
+        let published_params_version = if host_params_changed {
+            self.synth_params_version.fetch_add(1, Ordering::Release) + 1
+        } else {
+            params_version
+        };
+        let rt_merged = Arc::new(merged);
+        self.cached_rt_synth_params = rt_merged.clone();
+        if let Some(ref mut proc) = self.processor {
+            proc.set_shared_params(rt_merged);
+            self.performance_counters.record_param_apply();
+        }
+        self.cached_synth_params_version = published_params_version;
+        self.daw_params_dirty = false;
+
+        // Push merged params to ArcSwaps so idle loop pushes to webview.
+        self.synth_params.store(self.cached_rt_synth_params.clone());
+        self.rt_synth_params
+            .store(self.cached_rt_synth_params.clone());
+    }
+
+    fn handle_cc_side_effects(&mut self, channel: u8, cc: u8, value: u8) {
+        self.capture_pending_midi_learn_binding(channel, cc);
+        let _ = self.apply_midi_mapping(channel, cc, value);
+        let _ = self.midi_cc_queue.push((channel, cc, value));
+    }
+
+    fn handle_host_event_side_effects(&mut self, body: &EventBody) {
         match body {
-            EventBody::NoteOff { note, .. } => {
-                append_log(&format!("handle_host_event NoteOff note={}", note));
-                if let Some(proc) = self.processor.as_mut() {
-                    proc.note_off(*note);
-                }
+            EventBody::ControlChange {
+                channel, cc, value, ..
+            } => {
+                append_log(&format!("host_cc ch={} cc={} value={}", channel, cc, value));
+                self.handle_cc_side_effects(*channel, *cc, *value);
             }
-            EventBody::NoteOn { note, velocity, .. } => {
-                let vel = norm_7bit(*velocity);
+            EventBody::ControlChange2 {
+                channel, cc, value, ..
+            } => {
+                let raw_value = (*value / 128) as u8;
                 append_log(&format!(
-                    "handle_host_event NoteOn note={} vel_raw={} vel_norm={}",
-                    note, velocity, vel
+                    "host_cc2 ch={} cc={} value={} raw={}",
+                    channel, cc, value, raw_value
                 ));
-                if vel <= 0.0 {
-                    if let Some(proc) = self.processor.as_mut() {
-                        proc.note_off(*note);
-                    }
-                } else {
-                    let frequency = midi_note_to_freq(*note);
-                    if let Some(proc) = self.processor.as_mut() {
-                        proc.note_on(*note, frequency, vel);
-                    }
-                }
+                self.handle_cc_side_effects(*channel, *cc, raw_value);
             }
-            EventBody::NoteOff2 { note, .. } => {
-                append_log(&format!("handle_host_event NoteOff2 note={}", note));
-                if let Some(proc) = self.processor.as_mut() {
-                    proc.note_off(*note);
-                }
+            EventBody::ParamChange { id, value } => {
+                self.daw_params_dirty = true;
+                self.apply_rt_param_change(*id, *value, false);
             }
-            EventBody::NoteOn2 { note, velocity, .. } => {
-                let vel = *velocity as f32 / u16::MAX as f32;
-                append_log(&format!(
-                    "handle_host_event NoteOn2 note={} vel_raw={} vel_norm={}",
-                    note, velocity, vel
-                ));
-                if vel <= 0.0 {
-                    if let Some(proc) = self.processor.as_mut() {
-                        proc.note_off(*note);
-                    }
-                } else {
-                    let frequency = midi_note_to_freq(*note);
-                    if let Some(proc) = self.processor.as_mut() {
-                        proc.note_on(*note, frequency, vel);
-                    }
-                }
-            }
-            EventBody::Aftertouch { pressure, .. }
-            | EventBody::ChannelPressure { pressure, .. } => {
-                if let Some(proc) = self.processor.as_mut() {
-                    proc.set_aftertouch(norm_7bit(*pressure));
-                }
-            }
-            EventBody::ChannelPressure2 { pressure, .. } => {
-                if let Some(proc) = self.processor.as_mut() {
-                    proc.set_aftertouch(*pressure as f32 / u32::MAX as f32);
-                }
-            }
-            EventBody::ControlChange { cc, value, .. } => match cc {
-                1 => {
-                    if let Some(proc) = self.processor.as_mut() {
-                        proc.set_mod_wheel(norm_7bit(*value));
-                    }
-                }
-                64 => {
-                    if let Some(proc) = self.processor.as_mut() {
-                        proc.set_sustain(*value >= 64);
-                    }
-                }
-                120 | 123 => {
-                    if let Some(proc) = self.processor.as_mut() {
-                        Self::all_notes_off(proc);
-                    }
-                }
-                _ => {}
-            },
-            EventBody::ControlChange2 { cc, value, .. } => match cc {
-                1 => {
-                    if let Some(proc) = self.processor.as_mut() {
-                        proc.set_mod_wheel(*value as f32 / u32::MAX as f32);
-                    }
-                }
-                64 => {
-                    if let Some(proc) = self.processor.as_mut() {
-                        proc.set_sustain(*value >= (u32::MAX / 2));
-                    }
-                }
-                120 | 123 => {
-                    if let Some(proc) = self.processor.as_mut() {
-                        Self::all_notes_off(proc);
-                    }
-                }
-                _ => {}
-            },
-            EventBody::PitchBend { value, .. } => {
-                if let Some(proc) = self.processor.as_mut() {
-                    proc.set_pitch_bend(norm_pitch_bend(*value));
-                }
-            }
-            EventBody::PitchBend2 { value, .. } => {
-                if let Some(proc) = self.processor.as_mut() {
-                    let normalized = (*value as f32 - 2_147_483_648.0) / 2_147_483_648.0;
-                    proc.set_pitch_bend(normalized.clamp(-1.0, 1.0));
-                }
-            }
-            EventBody::ParamChange { id, value } => self.apply_rt_param_change(*id, *value),
             EventBody::ProgramChange { program, .. }
             | EventBody::ProgramChange2 { program, .. } => {
                 if usize::from(*program) < crate::ffi::factory_preset_count() {
@@ -1127,77 +1917,232 @@ impl CzPlugin {
         }
     }
 
-    fn process_host_events_into_buffer(&mut self, events: &EventList, num_samples: usize) {
-        let mut next_event = 0usize;
-        let mut rendered = 0usize;
-
-        if !events.is_empty() {
-            append_log(&format!(
-                "process_events: num_events={} num_samples={}",
-                events.len(),
-                num_samples
-            ));
-        }
-
-        while let Some(event) = events.get(next_event) {
-            let event_offset = (event.sample_offset as usize).min(num_samples);
-            if event_offset > rendered {
-                append_log(&format!(
-                    "  render [{}.0..{}.0] ({} samples)",
-                    rendered,
-                    event_offset,
-                    event_offset - rendered
-                ));
-                if let Some(proc) = self.processor.as_mut() {
-                    proc.process(&mut self.mono_output[rendered..event_offset]);
-                }
-                rendered = event_offset;
+    fn host_event_to_engine_event(body: &EventBody) -> Option<CosmoInputEvent> {
+        match body {
+            EventBody::NoteOff { note, .. } | EventBody::NoteOff2 { note, .. } => {
+                Some(CosmoInputEvent::NoteOff { note: *note })
             }
-
-            while let Some(simultaneous) = events.get(next_event) {
-                let simultaneous_offset = (simultaneous.sample_offset as usize).min(num_samples);
-                if simultaneous_offset != event_offset {
-                    break;
-                }
-                self.handle_host_event(&simultaneous.body);
-                next_event += 1;
+            EventBody::NoteOn { note, velocity, .. } => Some(CosmoInputEvent::NoteOn {
+                note: *note,
+                velocity: norm_7bit(*velocity),
+            }),
+            EventBody::NoteOn2 { note, velocity, .. } => Some(CosmoInputEvent::NoteOn {
+                note: *note,
+                velocity: *velocity as f32 / u16::MAX as f32,
+            }),
+            EventBody::Aftertouch { pressure, .. }
+            | EventBody::ChannelPressure { pressure, .. } => Some(CosmoInputEvent::Aftertouch {
+                value: norm_7bit(*pressure),
+            }),
+            EventBody::ChannelPressure2 { pressure, .. } => Some(CosmoInputEvent::Aftertouch {
+                value: *pressure as f32 / u32::MAX as f32,
+            }),
+            EventBody::ControlChange {
+                channel, cc, value, ..
+            } => Some(CosmoInputEvent::ControlChange {
+                channel: *channel,
+                cc: *cc,
+                value: *value,
+            }),
+            EventBody::ControlChange2 {
+                channel, cc, value, ..
+            } => Some(CosmoInputEvent::ControlChange {
+                channel: *channel,
+                cc: *cc,
+                value: (*value / 128) as u8,
+            }),
+            EventBody::PitchBend { value, .. } => Some(CosmoInputEvent::PitchBend {
+                value: norm_pitch_bend(*value),
+            }),
+            EventBody::PitchBend2 { value, .. } => Some(CosmoInputEvent::PitchBend {
+                value: ((*value as f32 - 2_147_483_648.0) / 2_147_483_648.0).clamp(-1.0, 1.0),
+            }),
+            EventBody::ParamChange { id, value } => {
+                daw_param_key_by_id(*id).map(|param_key| CosmoInputEvent::ParameterChange {
+                    param_key,
+                    value: *value as f32,
+                })
             }
-        }
-
-        if rendered < num_samples
-            && let Some(proc) = self.processor.as_mut()
-        {
-            proc.process(&mut self.mono_output[rendered..num_samples]);
+            _ => None,
         }
     }
 
-    fn drain_ui_input_events(&mut self) {
+    fn collect_block_input_events(&mut self, events: &EventList, num_samples: usize) {
+        self.block_input_events.clear();
+
+        // TODO: remove this diagnostic once we confirm which plugin formats forward CC events.
+        if midi_debug_enabled() {
+            let mut note_on_count = 0;
+            let mut note_off_count = 0;
+            let mut cc_count = 0;
+            let mut cc2_count = 0;
+            let mut other_count = 0;
+
+            for event in events.iter() {
+                match event.body {
+                    EventBody::NoteOn { .. } => note_on_count += 1,
+                    EventBody::NoteOff { .. } => note_off_count += 1,
+                    EventBody::ControlChange { .. } => cc_count += 1,
+                    EventBody::ControlChange2 { .. } => cc2_count += 1,
+                    _ => other_count += 1,
+                }
+            }
+
+            append_log(&format!(
+                "host_events block_samples={} note_on={} note_off={} cc={} cc2={} other={}",
+                num_samples, note_on_count, note_off_count, cc_count, cc2_count, other_count,
+            ));
+        }
+
         if self.performance_counters.enabled.load(Ordering::Acquire) {
             self.performance_counters
                 .ui_queue_depth
                 .store(self.ui_input_queue.len() as u32, Ordering::Relaxed);
         }
+
         for _ in 0..MAX_UI_INPUT_EVENTS_PER_BLOCK {
             let Some(event) = self.ui_input_queue.pop() else {
                 break;
             };
-            if let Some(proc) = &mut self.processor {
-                match event {
-                    UiInputEvent::NoteOn { note, velocity } => {
-                        proc.note_on(note, midi_note_to_freq(note), velocity)
-                    }
-                    UiInputEvent::NoteOff { note } => proc.note_off(note),
-                    UiInputEvent::Sustain { on } => proc.set_sustain(on),
-                    UiInputEvent::PitchBend { value } => proc.set_pitch_bend(value),
-                    UiInputEvent::ModWheel { value } => proc.set_mod_wheel(value),
-                    UiInputEvent::Aftertouch { value } => proc.set_aftertouch(value),
-                    UiInputEvent::PolyAftertouch { note, value } => {
-                        proc.set_poly_aftertouch(note, value)
-                    }
-                    UiInputEvent::Macro { index, value } => proc.set_macro(index, value),
-                    UiInputEvent::Panic => Self::all_notes_off(proc),
-                }
+            self.block_input_events.push(CosmoTimedInputEvent {
+                sample_offset: 0,
+                event,
+            });
+        }
+
+        for event in events.iter() {
+            let sample_offset = (event.sample_offset as usize).min(num_samples);
+            self.handle_host_event_side_effects(&event.body);
+            if let Some(engine_event) = Self::host_event_to_engine_event(&event.body) {
+                self.block_input_events.push(CosmoTimedInputEvent {
+                    sample_offset,
+                    event: engine_event,
+                });
             }
+        }
+    }
+
+    #[cfg(test)]
+    fn process_host_events_into_buffer(&mut self, events: &EventList, num_samples: usize) {
+        self.collect_block_input_events(events, num_samples);
+        if let Some(proc) = self.processor.as_mut() {
+            proc.process_block(
+                &mut self.mono_output[..num_samples],
+                &self.block_input_events,
+                CosmoTransportState::default(),
+            );
+        }
+    }
+
+    #[cfg(test)]
+    fn handle_host_event(&mut self, body: &EventBody) {
+        self.handle_host_event_side_effects(body);
+        if let Some(engine_event) = Self::host_event_to_engine_event(body)
+            && let Some(proc) = self.processor.as_mut()
+        {
+            proc.process_block(
+                &mut [],
+                &[CosmoTimedInputEvent {
+                    sample_offset: 0,
+                    event: engine_event,
+                }],
+                CosmoTransportState::default(),
+            );
+        }
+    }
+
+    fn render_audio_block(
+        &mut self,
+        buffer: &mut AudioBuffer,
+        events: &EventList,
+        context: &mut ProcessContext,
+        monitor_enabled: bool,
+    ) -> ProcessStatus {
+        let Some(_) = self.processor else {
+            return ProcessStatus::Normal;
+        };
+
+        let num_samples = buffer.num_samples();
+        if num_samples > self.mono_output.len() {
+            for ch in 0..buffer.num_output_channels() {
+                buffer.output(ch).fill(0.0);
+            }
+            return ProcessStatus::Normal;
+        }
+
+        let process_start = monitor_enabled.then(Instant::now);
+        self.collect_block_input_events(events, num_samples);
+        if let Some(proc) = self.processor.as_mut() {
+            proc.process_block(
+                &mut self.mono_output[..num_samples],
+                &self.block_input_events,
+                Self::current_transport_state(context.transport),
+            );
+        }
+
+        let mono_output = &mut self.mono_output[..num_samples];
+        let elapsed_ns = process_start
+            .map(|start| start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64)
+            .unwrap_or(0);
+
+        let Some(proc) = self.processor.as_ref() else {
+            return ProcessStatus::Normal;
+        };
+
+        let raw_hz = proc
+            .voices
+            .iter()
+            .filter(|voice| !voice.is_silent && voice.note.is_some())
+            .map(|voice| voice.current_freq)
+            .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+            .unwrap_or(0.0);
+        let hz = if raw_hz > 0.0 {
+            self.last_scope_hz = raw_hz;
+            raw_hz
+        } else {
+            self.last_scope_hz
+        };
+        let active_voice_count = if monitor_enabled {
+            proc.voices.iter().filter(|voice| !voice.is_silent).count()
+        } else {
+            0
+        };
+        let ui_queue_depth = if monitor_enabled {
+            self.ui_input_queue.len()
+        } else {
+            0
+        };
+        self.performance_counters.record_process_block(
+            elapsed_ns,
+            num_samples,
+            proc.sample_rate,
+            active_voice_count,
+            ui_queue_depth,
+        );
+        if let Ok(mut scope) = self.scope_buffer.try_lock() {
+            scope.push_block(mono_output, proc.sample_rate, hz);
+        }
+
+        self.runtime_mod_sources
+            .store(Arc::new(proc.runtime_mod_sources()));
+        self.runtime_voice_states
+            .store(Arc::new(proc.runtime_voice_debug_state()));
+
+        let peak = mono_output[..num_samples]
+            .iter()
+            .fold(0.0f32, |acc, &sample| acc.max(sample.abs()));
+        context.set_meter(CzPluginParamsParamId::MeterL as u32, peak);
+        context.set_meter(CzPluginParamsParamId::MeterR as u32, peak);
+
+        for ch in 0..buffer.num_output_channels() {
+            buffer.output(ch)[..num_samples].copy_from_slice(mono_output);
+        }
+
+        let has_tail = proc.voices.iter().any(|voice| !voice.is_silent);
+        if has_tail {
+            ProcessStatus::Tail((proc.sample_rate * 10.0) as u32)
+        } else {
+            ProcessStatus::Normal
         }
     }
 }
@@ -1213,6 +2158,11 @@ impl PluginLogic for CzPlugin {
         let mut processor = CosmoProcessor::new(sr);
         let mut current_params = (*self.synth_params.load_full()).clone();
         apply_daw_params(&mut current_params, &self.params);
+        if !self.startup_preset_resolved {
+            self.synth_params.store(Arc::new(current_params));
+            self.apply_startup_preset_if_needed();
+            current_params = (*self.synth_params.load_full()).clone();
+        }
         let rt_params = Arc::new(build_rt_synth_params(&current_params));
         processor.set_shared_params(Arc::clone(&rt_params));
         self.synth_params.store(Arc::new(current_params));
@@ -1235,166 +2185,9 @@ impl PluginLogic for CzPlugin {
         context: &mut ProcessContext,
     ) -> ProcessStatus {
         self.transport_snapshot.store(context.transport);
-        if context.transport.playing != self.last_playing {
-            append_log(&format!(
-                "transport change: playing={} last_playing={} num_events={}",
-                context.transport.playing,
-                self.last_playing,
-                events.len()
-            ));
-            if !context.transport.playing && self.last_playing {
-                append_log("transport stop -> all_notes_off");
-                if let Some(proc) = self.processor.as_mut() {
-                    Self::all_notes_off(proc);
-                }
-            }
-        }
-        self.last_playing = context.transport.playing;
-        if let Some(proc) = self.processor.as_mut() {
-            if context.transport.tempo.is_finite() && context.transport.tempo > 0.0 {
-                proc.set_host_transport(
-                    context.transport.tempo as f32,
-                    context.transport.playing,
-                    context.transport.position_beats,
-                );
-            } else {
-                proc.clear_host_transport();
-            }
-        }
-        self.drain_ui_input_events();
-
         let monitor_enabled = self.performance_counters.enabled.load(Ordering::Acquire);
-        let tracked_param_changes = Self::tracked_param_changes(events);
-        let has_param_change_events = tracked_param_changes.iter().any(|changed| *changed);
-
-        // Sync DAW params to the engine (DAW automation / host param changes)
-        // Always reset dirty flag and apply since FloatParams are cheap to read.
-        let params_version = self.synth_params_version.load(Ordering::Acquire);
-        let params_changed =
-            params_version != self.cached_synth_params_version || self.daw_params_dirty;
-
-        if params_changed {
-            // Start from the latest JS JSON params (or cached RT params).
-            // Both rt_synth_params and cached_rt_synth_params have already been
-            // normalized (envelope level/rate → raw 0-127), and apply_daw_params
-            // only touches top-level float fields (no envelope steps), so we
-            // must NOT call build_rt_synth_params again — that would double-convert
-            // envelope values, corrupting levels and rates.
-            let previous_rt = (*self.cached_rt_synth_params).clone();
-            let merged = if params_version != self.cached_synth_params_version {
-                let mut p = (*self.rt_synth_params.load_full()).clone();
-                apply_daw_params(&mut p, &self.params);
-                p
-            } else {
-                let mut p = (*self.cached_rt_synth_params).clone();
-                apply_daw_params(&mut p, &self.params);
-                p
-            };
-
-            let mut merged = merged;
-            if has_param_change_events {
-                for (id, changed) in tracked_param_changes.iter().enumerate() {
-                    if !*changed {
-                        continue;
-                    }
-                    let Some(prev_value) = read_daw_param_by_id(&previous_rt, id as u32) else {
-                        continue;
-                    };
-                    let _ = write_daw_param_by_id(&mut merged, id as u32, f64::from(prev_value));
-                }
-            }
-
-            let rt_merged = Arc::new(merged);
-            self.cached_rt_synth_params = rt_merged.clone();
-            if let Some(ref mut proc) = self.processor {
-                proc.set_shared_params(rt_merged);
-                self.performance_counters.record_param_apply();
-            }
-            self.cached_synth_params_version = params_version;
-            self.daw_params_dirty = false;
-        }
-
-        let tail_info = if self.processor.is_some() {
-            let num_samples = buffer.num_samples();
-            if num_samples > self.mono_output.len() {
-                for ch in 0..buffer.num_output_channels() {
-                    buffer.output(ch).fill(0.0);
-                }
-                return ProcessStatus::Normal;
-            }
-            let process_start = monitor_enabled.then(Instant::now);
-            self.process_host_events_into_buffer(events, num_samples);
-            let mono_output = &mut self.mono_output[..num_samples];
-            let elapsed_ns = process_start
-                .map(|start| start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64)
-                .unwrap_or(0);
-
-            let Some(proc) = self.processor.as_ref() else {
-                return ProcessStatus::Normal;
-            };
-            let raw_hz = proc
-                .voices
-                .iter()
-                .filter(|v| !v.is_silent && v.note.is_some())
-                .map(|v| v.current_freq)
-                .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
-                .unwrap_or(0.0);
-            let hz = if raw_hz > 0.0 {
-                self.last_scope_hz = raw_hz;
-                raw_hz
-            } else {
-                self.last_scope_hz
-            };
-            let active_voice_count = if monitor_enabled {
-                proc.voices.iter().filter(|voice| !voice.is_silent).count()
-            } else {
-                0
-            };
-            let ui_queue_depth = if monitor_enabled {
-                self.ui_input_queue.len()
-            } else {
-                0
-            };
-            self.performance_counters.record_process_block(
-                elapsed_ns,
-                num_samples,
-                proc.sample_rate,
-                active_voice_count,
-                ui_queue_depth,
-            );
-            if let Ok(mut scope) = self.scope_buffer.try_lock() {
-                scope.push_block(mono_output, proc.sample_rate, hz);
-            }
-
-            self.runtime_mod_sources
-                .store(Arc::new(proc.runtime_mod_sources()));
-
-            let peak = mono_output[..num_samples]
-                .iter()
-                .fold(0.0f32, |a, &s| a.max(s.abs()));
-            context.set_meter(CzPluginParamsParamId::MeterL as u32, peak);
-            context.set_meter(CzPluginParamsParamId::MeterR as u32, peak);
-
-            for ch in 0..buffer.num_output_channels() {
-                buffer.output(ch)[..num_samples].copy_from_slice(mono_output);
-            }
-
-            let has_tail = proc.voices.iter().any(|v| !v.is_silent);
-            let tail = if has_tail {
-                (proc.sample_rate * 10.0) as u32
-            } else {
-                0
-            };
-            (has_tail, tail)
-        } else {
-            (false, 0)
-        };
-
-        if tail_info.0 {
-            ProcessStatus::Tail(tail_info.1)
-        } else {
-            ProcessStatus::Normal
-        }
+        self.sync_runtime_params_from_host(events);
+        self.render_audio_block(buffer, events, context, monitor_enabled)
     }
 
     fn bus_layouts() -> Vec<BusLayout> {
@@ -1403,70 +2196,47 @@ impl PluginLogic for CzPlugin {
 
     fn save_state(&self) -> Vec<u8> {
         let sp = self.synth_params.load();
-        let name = self
-            .preset_name
+        let preset_session = self
+            .preset_session
             .lock()
-            .map(|n| n.clone())
+            .map(|session| session.clone())
             .unwrap_or_default();
-        let state = serde_json::json!({
-            "synth_params": sp.as_ref(),
-            "preset_name": name,
-        });
+        let editor = self.editor_state.lock().map(|s| s.clone()).unwrap_or(None);
+        let state = crate::session_state::PluginSessionState {
+            synth_params: sp.as_ref().clone(),
+            preset_session,
+            editor_state: editor,
+        };
         serde_json::to_vec(&state).unwrap_or_default()
     }
 
     fn load_state(&mut self, data: &[u8]) -> Result<(), StateLoadError> {
-        // Try new format: { "synth_params": ..., "preset_name": "..." }
-        let (params, loaded_name) =
-            if let Ok(obj) = serde_json::from_slice::<serde_json::Value>(data) {
-                if obj.is_object() && obj.get("synth_params").is_some() {
-                    // New wrapper format
-                    let synth = obj
-                        .get("synth_params")
-                        .and_then(|v| serde_json::from_value::<SynthParams>(v.clone()).ok())
-                        .ok_or(StateLoadError::Malformed("invalid synth params"))?;
-                    let name = obj
-                        .get("preset_name")
-                        .and_then(|v| v.as_str())
-                        .map(|s| s.to_string())
-                        .unwrap_or_default();
-                    (synth, name)
-                } else {
-                    // Old format: flat SynthParams — don't touch preset name
-                    let synth: SynthParams = serde_json::from_slice(data)
-                        .map_err(|_| StateLoadError::Malformed("invalid synth params JSON"))?;
-                    sync_all_daw_params_from_synth(&self.params, &synth);
-                    let rt_params = build_rt_synth_params(&synth);
-                    let rt_params_arc = Arc::new(rt_params);
-                    self.synth_params.store(Arc::new(synth));
-                    self.rt_synth_params.store(Arc::clone(&rt_params_arc));
-                    self.cached_rt_synth_params = rt_params_arc.clone();
-                    self.synth_params_version.fetch_add(1, Ordering::Release);
-                    return Ok(());
-                }
-            } else {
-                return Err(StateLoadError::Malformed("invalid JSON"));
-            };
+        let session = crate::session_state::deserialize_state(data)
+            .map_err(|_| StateLoadError::Malformed("unknown state format"))?;
+        self.startup_preset_resolved = true;
 
-        // Restore preset name (new format only)
-        if let Ok(mut stored) = self.preset_name.lock() {
-            *stored = loaded_name;
+        let params = session.synth_params;
+
+        if let Ok(mut stored) = self.preset_session.lock()
+            && (!session.preset_session.active_preset_name_base.is_empty()
+                || session.preset_session.loaded_preset_id.is_some())
+        {
+            *stored = session.preset_session.clone();
         }
 
-        sync_all_daw_params_from_synth(&self.params, &params);
-        let rt_params = build_rt_synth_params(&params);
-        let rt_params_arc = Arc::new(rt_params);
-        self.synth_params.store(Arc::new(params));
-        self.rt_synth_params.store(Arc::clone(&rt_params_arc));
-        self.cached_rt_synth_params = rt_params_arc.clone();
-        self.synth_params_version.fetch_add(1, Ordering::Release);
-        self.cached_synth_params_version = self.synth_params_version.load(Ordering::Acquire);
-        self.daw_params_dirty = false;
+        if let Ok(mut stored) = self.editor_state.lock() {
+            *stored = session.editor_state;
+        }
+
+        self.apply_preset_state(None, None, params);
+        Ok(())
+    }
+
+    fn state_changed(&mut self) {
         if let Some(ref mut proc) = self.processor {
-            proc.set_shared_params(rt_params_arc);
+            proc.set_shared_params(self.cached_rt_synth_params.clone());
             self.performance_counters.record_param_apply();
         }
-        Ok(())
     }
 
     fn editor(&self) -> Box<dyn Editor> {
@@ -1481,7 +2251,11 @@ impl PluginLogic for CzPlugin {
             self.midi_cc_queue.clone(),
             self.performance_counters.clone(),
             self.params.clone(),
-            self.preset_name.clone(),
+            self.preset_session.clone(),
+            self.runtime_voice_states.clone(),
+            self.preset_library.clone(),
+            self.editor_state.clone(),
+            self.midi_learn_state.clone(),
         ))
     }
 }
@@ -1491,38 +2265,100 @@ truce::plugin! {
     params: CzPluginParams,
 }
 
+#[cfg(feature = "vst3")]
+impl truce_vst3::Vst3PluginExt for Plugin {
+    fn midi_mapping_get_param_id(&self, bus_index: i32, channel: i16, cc: i16) -> Option<u32> {
+        let _ = self;
+        let bindings = crate::global_settings::load_or_init_global_settings()
+            .map(|settings| settings.midi_learn_bindings)
+            .unwrap_or_else(|_| crate::session_state::default_midi_bindings());
+        resolve_vst3_midi_mapping_param_id(&bindings, bus_index, channel, cc)
+    }
+}
+
 // =============================================================================
 // Tests
 // =============================================================================
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+    use std::path::PathBuf;
+    use std::sync::Mutex;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
     use super::*;
 
+    static TEST_DATA_DIR_LOCK: Mutex<()> = Mutex::new(());
+
+    fn clear_test_global_settings() {
+        let path = crate::global_settings::get_global_settings_path();
+        let _ = fs::remove_file(path);
+    }
+
+    fn with_test_data_dir<T>(test_fn: impl FnOnce(PathBuf) -> T) -> T {
+        let _guard = TEST_DATA_DIR_LOCK.lock().unwrap();
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|duration| duration.as_nanos())
+            .unwrap_or_default();
+        let path = std::env::temp_dir().join(format!("cosmo-pd101-test-{}", unique));
+        fs::create_dir_all(&path).unwrap();
+        unsafe {
+            std::env::set_var("COSMO_PD101_DATA_DIR", &path);
+        }
+        let result = test_fn(path.clone());
+        unsafe {
+            std::env::remove_var("COSMO_PD101_DATA_DIR");
+        }
+        let _ = fs::remove_dir_all(path);
+        result
+    }
+
+    fn synth_params_json(params: &SynthParams) -> serde_json::Value {
+        serde_json::to_value(params).unwrap()
+    }
+
+    #[allow(clippy::type_complexity)]
     fn make_handler_state() -> (
         SharedSynthParams,
         SharedRtSynthParams,
         SharedRuntimeModSources,
+        SharedRuntimeVoiceStates,
         SharedTransportSnapshot,
         SynthParamsVersion,
         ScopeBuffer,
         UiInputQueue,
         PerformanceCountersHandle,
         Arc<CzPluginParams>,
-        SharedPresetName,
+        SharedPresetSession,
+        Arc<Mutex<PresetLibrary>>,
+        SharedEditorState,
+        SharedMidiMappings,
     ) {
         let sp = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
         let rsp = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
         let rms: SharedRuntimeModSources =
             Arc::new(ArcSwap::from_pointee(RuntimeModSources::default()));
+        let rvs: SharedRuntimeVoiceStates = Arc::new(ArcSwap::from_pointee(Vec::new()));
         let ts = Arc::new(TransportSnapshot::default());
         let ver = Arc::new(AtomicU64::new(0));
         let sc: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
         let q: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
         let pc = Arc::new(PerformanceCounters::default());
         let params = Arc::new(CzPluginParams::new());
-        let pn: SharedPresetName = Arc::new(Mutex::new(String::new()));
-        (sp, rsp, rms, ts, ver, sc, q, pc, params, pn)
+        let ps: SharedPresetSession =
+            Arc::new(Mutex::new(crate::session_state::PresetSession::default()));
+        let factory_json = include_str!(concat!(env!("OUT_DIR"), "/minified_presets.json"));
+        let pl: Arc<Mutex<PresetLibrary>> = Arc::new(Mutex::new(
+            PresetLibrary::from_embedded_factory(factory_json),
+        ));
+        let es: SharedEditorState = Arc::new(Mutex::new(None));
+        let mm: SharedMidiMappings =
+            Arc::new(Mutex::new(crate::session_state::MidiLearnState::default()));
+        (
+            sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm,
+        )
     }
 
     #[test]
@@ -1542,7 +2378,7 @@ mod tests {
 
     #[test]
     fn set_params_rpc_updates_synth_params() {
-        let (sp, rsp, rms, ts, ver, sc, q, pc, params, pn) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm) = make_handler_state();
 
         let new_params = SynthParams {
             volume: 0.42,
@@ -1556,13 +2392,17 @@ mod tests {
             &sp,
             &rsp,
             &rms,
+            &rvs,
             &ts,
             &ver,
             &sc,
             &q,
             &pc,
             &params,
-            &pn,
+            &ps,
+            &pl,
+            &es,
+            &mm,
         );
         assert!(result.is_ok());
         let current = sp.load();
@@ -1580,13 +2420,22 @@ mod tests {
         let rsp = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
         let rms: SharedRuntimeModSources =
             Arc::new(ArcSwap::from_pointee(RuntimeModSources::default()));
+        let rvs: SharedRuntimeVoiceStates = Arc::new(ArcSwap::from_pointee(Vec::new()));
         let ts = Arc::new(TransportSnapshot::default());
         let ver = Arc::new(AtomicU64::new(0));
         let sc: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
         let q: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
         let pc = Arc::new(PerformanceCounters::default());
         let params = Arc::new(CzPluginParams::new());
-        let pn: SharedPresetName = Arc::new(Mutex::new(String::new()));
+        let ps: SharedPresetSession =
+            Arc::new(Mutex::new(crate::session_state::PresetSession::default()));
+        let factory_json = include_str!(concat!(env!("OUT_DIR"), "/minified_presets.json"));
+        let pl: Arc<Mutex<PresetLibrary>> = Arc::new(Mutex::new(
+            PresetLibrary::from_embedded_factory(factory_json),
+        ));
+        let es: SharedEditorState = Arc::new(Mutex::new(None));
+        let mm: SharedMidiMappings =
+            Arc::new(Mutex::new(crate::session_state::MidiLearnState::default()));
 
         let result = handle_ipc_invoke(
             "getParams",
@@ -1594,13 +2443,17 @@ mod tests {
             &sp,
             &rsp,
             &rms,
+            &rvs,
             &ts,
             &ver,
             &sc,
             &q,
             &pc,
             &params,
-            &pn,
+            &ps,
+            &pl,
+            &es,
+            &mm,
         );
         assert!(result.is_ok());
         let val = result.unwrap();
@@ -1610,7 +2463,7 @@ mod tests {
 
     #[test]
     fn note_on_rpc_enqueues_ui_input_event() {
-        let (sp, rsp, rms, ts, ver, sc, q, pc, params, pn) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm) = make_handler_state();
 
         let result = handle_ipc_invoke(
             "noteOn",
@@ -1618,18 +2471,22 @@ mod tests {
             &sp,
             &rsp,
             &rms,
+            &rvs,
             &ts,
             &ver,
             &sc,
             &q,
             &pc,
             &params,
-            &pn,
+            &ps,
+            &pl,
+            &es,
+            &mm,
         );
 
         assert!(result.is_ok());
         match q.pop() {
-            Some(UiInputEvent::NoteOn { note, velocity }) => {
+            Some(CosmoInputEvent::NoteOn { note, velocity }) => {
                 assert_eq!(note, 60);
                 assert!((velocity - 0.75).abs() < f32::EPSILON);
             }
@@ -1640,7 +2497,7 @@ mod tests {
     #[allow(clippy::field_reassign_with_default)]
     #[test]
     fn set_params_rpc_syncs_daw_float_params() {
-        let (sp, rsp, rms, ts, ver, sc, q, pc, params, pn) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm) = make_handler_state();
         assert_eq!(params.volume.value(), 0.8); // default
 
         let mut new_params = SynthParams::default();
@@ -1654,13 +2511,17 @@ mod tests {
             &sp,
             &rsp,
             &rms,
+            &rvs,
             &ts,
             &ver,
             &sc,
             &q,
             &pc,
             &params,
-            &pn,
+            &ps,
+            &pl,
+            &es,
+            &mm,
         );
         assert!(result.is_ok());
         assert!((params.volume.value() - 0.33).abs() < 0.000_001);
@@ -1704,7 +2565,7 @@ mod tests {
 
     #[test]
     fn get_transport_info_rpc_returns_current_snapshot() {
-        let (sp, rsp, rms, ts, ver, sc, q, pc, params, pn) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm) = make_handler_state();
         ts.store(&TransportInfo {
             playing: true,
             recording: true,
@@ -1726,13 +2587,17 @@ mod tests {
             &sp,
             &rsp,
             &rms,
+            &rvs,
             &ts,
             &ver,
             &sc,
             &q,
             &pc,
             &params,
-            &pn,
+            &ps,
+            &pl,
+            &es,
+            &mm,
         )
         .unwrap();
 
@@ -1814,6 +2679,8 @@ mod tests {
         let params = Arc::new(CzPluginParams::new());
         let mut plugin = CzPlugin::new(Arc::clone(&params));
         plugin.reset(48_000.0, 64);
+        let expected = crate::ffi::factory_preset_params(0).unwrap().clone();
+        let (expected_id, expected_name) = crate::ffi::factory_preset_identity(0).unwrap();
 
         assert!((params.volume.value() - 0.8).abs() < 0.000_001);
 
@@ -1823,17 +2690,187 @@ mod tests {
             program: 0,
         });
 
-        assert!((params.volume.value() - 1.0).abs() < 0.000_001);
+        assert!((params.volume.value() - expected.volume).abs() < 0.000_001);
         let synth_params = plugin.synth_params.load();
+        assert_eq!(synth_params.line_select, expected.line_select);
+        assert!((synth_params.portamento.time - expected.portamento.time).abs() < 0.000_001);
+        let session = plugin.preset_session.lock().unwrap().clone();
+        assert_eq!(session.loaded_preset_id.as_deref(), Some(expected_id));
+        assert_eq!(session.active_preset_name_base, expected_name);
+    }
+
+    #[test]
+    fn midi_mapping_applies_in_plugin_core_without_editor() {
+        clear_test_global_settings();
+        let params = Arc::new(CzPluginParams::new());
+        let mut plugin = CzPlugin::new(Arc::clone(&params));
+        plugin.reset(48_000.0, 64);
+        *plugin.midi_learn_state.lock().unwrap() = crate::session_state::MidiLearnState {
+            bindings: vec![crate::session_state::MidiLearnBinding {
+                param_key: "macro1".to_string(),
+                channel: 0,
+                cc: 74,
+            }],
+            ..Default::default()
+        };
+
+        plugin.handle_host_event(&EventBody::ControlChange {
+            group: 0,
+            channel: 0,
+            cc: 74,
+            value: 127,
+        });
+
+        assert!((plugin.synth_params.load().macro1 - 1.0).abs() < 0.000_001);
+        assert!((plugin.cached_rt_synth_params.macro1 - 1.0).abs() < 0.000_001);
+    }
+
+    #[test]
+    fn midi_mapping_matches_exact_channel() {
+        clear_test_global_settings();
+        let params = Arc::new(CzPluginParams::new());
+        let mut plugin = CzPlugin::new(Arc::clone(&params));
+        plugin.reset(48_000.0, 64);
+        *plugin.midi_learn_state.lock().unwrap() = crate::session_state::MidiLearnState {
+            bindings: vec![crate::session_state::MidiLearnBinding {
+                param_key: "macro1".to_string(),
+                channel: 2,
+                cc: 74,
+            }],
+            ..Default::default()
+        };
+
+        plugin.handle_host_event(&EventBody::ControlChange {
+            group: 0,
+            channel: 1,
+            cc: 74,
+            value: 127,
+        });
+
+        assert!((plugin.synth_params.load().macro1 - 0.0).abs() < 0.000_001);
+    }
+
+    #[test]
+    fn midi_mapping_applies_to_all_bindings_for_same_cc() {
+        clear_test_global_settings();
+        let params = Arc::new(CzPluginParams::new());
+        let mut plugin = CzPlugin::new(Arc::clone(&params));
+        plugin.reset(48_000.0, 64);
+        *plugin.midi_learn_state.lock().unwrap() = crate::session_state::MidiLearnState {
+            bindings: vec![
+                crate::session_state::MidiLearnBinding {
+                    param_key: "macro1".to_string(),
+                    channel: 0,
+                    cc: 74,
+                },
+                crate::session_state::MidiLearnBinding {
+                    param_key: "macro2".to_string(),
+                    channel: 0,
+                    cc: 74,
+                },
+            ],
+            ..Default::default()
+        };
+
+        plugin.handle_host_event(&EventBody::ControlChange {
+            group: 0,
+            channel: 0,
+            cc: 74,
+            value: 127,
+        });
+
+        let synth_params = plugin.synth_params.load();
+        assert!((synth_params.macro1 - 1.0).abs() < 0.000_001);
+        assert!((synth_params.macro2 - 1.0).abs() < 0.000_001);
+    }
+
+    #[test]
+    fn midi_mapping_syncs_daw_backed_plugin_params() {
+        let params = Arc::new(CzPluginParams::new());
+        let mut plugin = CzPlugin::new(Arc::clone(&params));
+        plugin.reset(48_000.0, 64);
+        *plugin.midi_learn_state.lock().unwrap() = crate::session_state::MidiLearnState {
+            bindings: vec![crate::session_state::MidiLearnBinding {
+                param_key: "warpAAmount".to_string(),
+                channel: 0,
+                cc: 55,
+            }],
+            ..Default::default()
+        };
+
+        plugin.handle_host_event(&EventBody::ControlChange {
+            group: 0,
+            channel: 0,
+            cc: 55,
+            value: 64,
+        });
+
+        assert!((plugin.synth_params.load().line1.dcw_base - 64.0 / 127.0).abs() < 0.000_001);
+        assert!((params.warp_a_amount.value() - 64.0 / 127.0).abs() < 0.000_001);
+    }
+
+    #[test]
+    fn vst3_midi_mapping_resolves_default_macro_binding() {
+        clear_test_global_settings();
+        let params = Arc::new(CzPluginParams::new());
+        let plugin = CzPlugin::new(Arc::clone(&params));
+
         assert_eq!(
-            synth_params.line_select,
-            cosmo_synth_engine::params::LineSelect::L1
+            plugin.vst3_midi_mapping_param_id(0, 0, 8),
+            Some(CzPluginParamsParamId::Macro1 as u32)
         );
-        assert!((synth_params.portamento.time - 0.1).abs() < 0.000_001);
+    }
+
+    #[test]
+    fn host_param_value_drift_updates_runtime_snapshot_and_version() {
+        let params = Arc::new(CzPluginParams::new());
+        let mut plugin = CzPlugin::new(Arc::clone(&params));
+        plugin.reset(48_000.0, 64);
+
+        let initial_version = plugin.synth_params_version.load(Ordering::Acquire);
+        params.line1_level.set_value(0.37);
+
+        plugin.sync_runtime_params_from_host(&EventList::default());
+
+        assert!((plugin.synth_params.load().line1.dca_base - 0.37).abs() < 0.000_001);
+        assert!((plugin.cached_rt_synth_params.line1.dca_base - 0.37).abs() < 0.000_001);
+        assert!(plugin.synth_params_version.load(Ordering::Acquire) > initial_version);
+        assert_eq!(
+            plugin.cached_synth_params_version,
+            plugin.synth_params_version.load(Ordering::Acquire)
+        );
+    }
+
+    #[test]
+    fn host_side_midi_learn_keeps_mode_and_pending_target_enabled() {
+        clear_test_global_settings();
+        let params = Arc::new(CzPluginParams::new());
+        let mut plugin = CzPlugin::new(Arc::clone(&params));
+        plugin.reset(48_000.0, 64);
+        *plugin.midi_learn_state.lock().unwrap() = crate::session_state::MidiLearnState {
+            learn_mode: true,
+            pending_param_key: Some("macro1".to_string()),
+            ..Default::default()
+        };
+
+        plugin.handle_host_event(&EventBody::ControlChange {
+            group: 0,
+            channel: 0,
+            cc: 74,
+            value: 64,
+        });
+
+        let state = plugin.midi_learn_state.lock().unwrap().clone();
+        assert!(state.learn_mode);
+        assert_eq!(state.pending_param_key.as_deref(), Some("macro1"));
+        assert!(state.bindings.iter().any(|binding| {
+            binding.param_key == "macro1" && binding.channel == 0 && binding.cc == 74
+        }));
     }
 
     #[test]
     fn param_change_applies_at_event_offset() {
+        clear_test_global_settings();
         let params = Arc::new(CzPluginParams::new());
         let mut plugin = CzPlugin::new(Arc::clone(&params));
         plugin.reset(48_000.0, 64);
@@ -1883,7 +2920,7 @@ mod tests {
 
     #[test]
     fn set_preset_name_rpc_stores_name() {
-        let (sp, rsp, rms, ts, ver, sc, q, pc, params, pn) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm) = make_handler_state();
 
         let result = handle_ipc_invoke(
             "setPresetName",
@@ -1891,25 +2928,29 @@ mod tests {
             &sp,
             &rsp,
             &rms,
+            &rvs,
             &ts,
             &ver,
             &sc,
             &q,
             &pc,
             &params,
-            &pn,
+            &ps,
+            &pl,
+            &es,
+            &mm,
         );
         assert!(result.is_ok());
-        let stored = pn.lock().unwrap();
-        assert_eq!(*stored, "Warm Pad");
+        let stored = ps.lock().unwrap();
+        assert_eq!(stored.active_preset_name_base, "Warm Pad");
     }
 
     #[test]
     fn get_preset_name_rpc_returns_current_name() {
-        let (sp, rsp, rms, ts, ver, sc, q, pc, params, pn) = make_handler_state();
+        let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm) = make_handler_state();
         {
-            let mut stored = pn.lock().unwrap();
-            *stored = "Factory Brass".to_string();
+            let mut stored = ps.lock().unwrap();
+            stored.active_preset_name_base = "Factory Brass".to_string();
         }
 
         let result = handle_ipc_invoke(
@@ -1918,13 +2959,17 @@ mod tests {
             &sp,
             &rsp,
             &rms,
+            &rvs,
             &ts,
             &ver,
             &sc,
             &q,
             &pc,
             &params,
-            &pn,
+            &ps,
+            &pl,
+            &es,
+            &mm,
         );
         assert!(result.is_ok());
         assert_eq!(
@@ -1935,44 +2980,71 @@ mod tests {
 
     #[test]
     fn save_state_includes_preset_name() {
+        clear_test_global_settings();
         let params = Arc::new(CzPluginParams::new());
         let mut plugin = CzPlugin::new(Arc::clone(&params));
         plugin.reset(48_000.0, 64);
 
-        *plugin.preset_name.lock().unwrap() = "Resonant Pad".to_string();
+        plugin
+            .preset_session
+            .lock()
+            .unwrap()
+            .active_preset_name_base = "Resonant Pad".to_string();
+        plugin.preset_session.lock().unwrap().is_dirty = true;
 
         let state = plugin.save_state();
         assert!(!state.is_empty());
 
         let parsed: serde_json::Value =
             serde_json::from_slice(&state).expect("state should be valid JSON");
-        assert_eq!(parsed["preset_name"], "Resonant Pad");
-        assert!(parsed.get("synth_params").is_some());
+        assert_eq!(
+            parsed["presetSession"]["activePresetNameBase"],
+            "Resonant Pad"
+        );
+        assert_eq!(parsed["presetSession"]["isDirty"], true);
+        assert!(parsed.get("synthParams").is_some());
+        assert!(parsed.get("midiLearnState").is_none());
     }
 
     #[test]
     fn load_state_restores_preset_name() {
+        clear_test_global_settings();
         let params = Arc::new(CzPluginParams::new());
         let mut plugin = CzPlugin::new(Arc::clone(&params));
         plugin.reset(48_000.0, 64);
 
         // Save state with a preset name
-        *plugin.preset_name.lock().unwrap() = "Bright Piano".to_string();
+        plugin
+            .preset_session
+            .lock()
+            .unwrap()
+            .active_preset_name_base = "Bright Piano".to_string();
+        plugin.preset_session.lock().unwrap().is_dirty = true;
         let state = plugin.save_state();
 
         // Create new plugin and load state
         let params2 = Arc::new(CzPluginParams::new());
         let mut plugin2 = CzPlugin::new(Arc::clone(&params2));
         plugin2.reset(48_000.0, 64);
-        assert!(plugin2.preset_name.lock().unwrap().is_empty());
+        assert!(
+            plugin2
+                .preset_session
+                .lock()
+                .unwrap()
+                .active_preset_name_base
+                .is_empty()
+        );
 
         let result = plugin2.load_state(&state);
         assert!(result.is_ok());
-        assert_eq!(*plugin2.preset_name.lock().unwrap(), "Bright Piano");
+        let restored = plugin2.preset_session.lock().unwrap().clone();
+        assert_eq!(restored.active_preset_name_base, "Bright Piano");
+        assert!(!restored.is_dirty);
     }
 
     #[test]
     fn load_state_falls_back_to_old_format() {
+        clear_test_global_settings();
         // Old format: flat SynthParams JSON (no wrapper)
         let synth = SynthParams::default();
         let data = serde_json::to_vec(&synth).unwrap();
@@ -1982,11 +3054,265 @@ mod tests {
         plugin.reset(48_000.0, 64);
 
         // Set a name to verify it's not overwritten
-        *plugin.preset_name.lock().unwrap() = "Existing Name".to_string();
+        plugin
+            .preset_session
+            .lock()
+            .unwrap()
+            .active_preset_name_base = "Existing Name".to_string();
 
         let result = plugin.load_state(&data);
         assert!(result.is_ok());
         // Old format should not touch preset_name
-        assert_eq!(*plugin.preset_name.lock().unwrap(), "Existing Name");
+        assert_eq!(
+            plugin
+                .preset_session
+                .lock()
+                .unwrap()
+                .active_preset_name_base,
+            "Existing Name"
+        );
+    }
+
+    #[test]
+    fn cold_start_loads_plugin_startup_preset() {
+        with_test_data_dir(|_| {
+            clear_test_global_settings();
+
+            let params = Arc::new(CzPluginParams::new());
+            let mut plugin = CzPlugin::new(Arc::clone(&params));
+
+            let expected = {
+                let mut library = plugin.preset_library.lock().unwrap();
+                let records = library.list_records(None).unwrap();
+                assert!(!records.is_empty());
+                for record in records.iter().take(3) {
+                    library.set_starred(&record.entry.id, true).unwrap();
+                }
+                library.find_startup_preset().unwrap().unwrap()
+            };
+            let expected_params: SynthParams = if let Some(value) = expected.data.get("params") {
+                serde_json::from_value(value.clone()).unwrap()
+            } else {
+                serde_json::from_value(expected.data.clone()).unwrap()
+            };
+
+            plugin.reset(48_000.0, 64);
+
+            let stored = plugin.preset_session.lock().unwrap().clone();
+            assert_eq!(stored.loaded_preset_id, Some(expected.id.clone()));
+            assert_eq!(stored.active_preset_name_base, expected.name);
+            assert!(!stored.is_dirty);
+            assert_eq!(
+                synth_params_json(plugin.synth_params.load().as_ref()),
+                synth_params_json(&expected_params)
+            );
+        });
+    }
+
+    #[test]
+    fn cold_start_without_favorites_keeps_default_params() {
+        with_test_data_dir(|_| {
+            clear_test_global_settings();
+
+            let params = Arc::new(CzPluginParams::new());
+            let mut plugin = CzPlugin::new(Arc::clone(&params));
+
+            plugin.reset(48_000.0, 64);
+
+            let stored = plugin.preset_session.lock().unwrap().clone();
+            let mut expected = SynthParams::default();
+            apply_daw_params(&mut expected, &params);
+            assert!(stored.active_preset_name_base.is_empty());
+            assert!(stored.loaded_preset_id.is_none());
+            assert!(!stored.is_dirty);
+            assert_eq!(
+                synth_params_json(plugin.synth_params.load().as_ref()),
+                synth_params_json(&expected)
+            );
+        });
+    }
+
+    #[test]
+    fn restored_state_survives_later_resets_without_reapplying_startup_preset() {
+        with_test_data_dir(|_| {
+            clear_test_global_settings();
+
+            let params = Arc::new(CzPluginParams::new());
+            let mut plugin = CzPlugin::new(Arc::clone(&params));
+            {
+                let mut library = plugin.preset_library.lock().unwrap();
+                let record = library
+                    .list_records(None)
+                    .unwrap()
+                    .into_iter()
+                    .next()
+                    .unwrap();
+                library.set_starred(&record.entry.id, true).unwrap();
+            }
+            plugin.reset(48_000.0, 64);
+            assert!(
+                plugin
+                    .preset_session
+                    .lock()
+                    .unwrap()
+                    .loaded_preset_id
+                    .is_some()
+            );
+
+            let restored_params = SynthParams {
+                volume: 0.11,
+                ..SynthParams::default()
+            };
+            let restored_state = crate::session_state::PluginSessionState {
+                synth_params: restored_params.clone(),
+                preset_session: crate::session_state::PresetSession {
+                    active_preset_name_base: "Saved Preset".to_string(),
+                    loaded_preset_id: Some("saved-id".to_string()),
+                    is_dirty: false,
+                },
+                editor_state: None,
+            };
+            let bytes = serde_json::to_vec(&restored_state).unwrap();
+
+            plugin.load_state(&bytes).unwrap();
+            plugin.reset(48_000.0, 64);
+
+            let restored_session = plugin.preset_session.lock().unwrap().clone();
+            assert_eq!(restored_session.active_preset_name_base, "Saved Preset");
+            assert_eq!(
+                restored_session.loaded_preset_id.as_deref(),
+                Some("saved-id")
+            );
+            assert_eq!(
+                synth_params_json(plugin.synth_params.load().as_ref()),
+                synth_params_json(&restored_params)
+            );
+        });
+    }
+
+    #[test]
+    fn plugin_startup_seeds_default_global_midi_settings() {
+        with_test_data_dir(|_| {
+            clear_test_global_settings();
+
+            let params = Arc::new(CzPluginParams::new());
+            let plugin = CzPlugin::new(Arc::clone(&params));
+            let state = plugin.midi_learn_state.lock().unwrap().clone();
+            let saved = crate::global_settings::load_or_init_global_settings().unwrap();
+
+            assert_eq!(
+                state.bindings,
+                crate::session_state::default_midi_bindings()
+            );
+            assert_eq!(
+                saved.midi_learn_bindings,
+                crate::session_state::default_midi_bindings()
+            );
+        });
+    }
+
+    #[test]
+    fn plugin_global_midi_settings_persist_across_instances() {
+        with_test_data_dir(|_| {
+            clear_test_global_settings();
+
+            let params = Arc::new(CzPluginParams::new());
+            let mut plugin = CzPlugin::new(Arc::clone(&params));
+            plugin.reset(48_000.0, 64);
+
+            let (sp, rsp, rms, rvs, ts, ver, sc, q, pc, params, ps, pl, es, mm) =
+                make_handler_state();
+            {
+                let mut state = mm.lock().unwrap();
+                state.bindings = plugin.midi_learn_state.lock().unwrap().bindings.clone();
+            }
+
+            let result = handle_ipc_invoke(
+                "addMidiBinding",
+                &[
+                    serde_json::Value::String("macro1".to_string()),
+                    serde_json::Value::from(2),
+                    serde_json::Value::from(74),
+                ],
+                &sp,
+                &rsp,
+                &rms,
+                &rvs,
+                &ts,
+                &ver,
+                &sc,
+                &q,
+                &pc,
+                &params,
+                &ps,
+                &pl,
+                &es,
+                &mm,
+            );
+            assert!(result.is_ok());
+            *plugin.midi_learn_state.lock().unwrap() = mm.lock().unwrap().clone();
+
+            let params2 = Arc::new(CzPluginParams::new());
+            let plugin2 = CzPlugin::new(Arc::clone(&params2));
+            let bindings = plugin2.midi_learn_state.lock().unwrap().bindings.clone();
+            assert!(bindings.iter().any(|binding| {
+                binding.param_key == "macro1" && binding.channel == 2 && binding.cc == 74
+            }));
+
+            let remove_result = handle_ipc_invoke(
+                "removeMidiBinding",
+                &[serde_json::json!({
+                    "paramKey": "macro1",
+                    "channel": 2,
+                    "cc": 74
+                })],
+                &sp,
+                &rsp,
+                &rms,
+                &rvs,
+                &ts,
+                &ver,
+                &sc,
+                &q,
+                &pc,
+                &params,
+                &ps,
+                &pl,
+                &es,
+                &mm,
+            );
+            assert!(remove_result.is_ok());
+
+            let params3 = Arc::new(CzPluginParams::new());
+            let plugin3 = CzPlugin::new(Arc::clone(&params3));
+            let bindings = plugin3.midi_learn_state.lock().unwrap().bindings.clone();
+            assert!(!bindings.iter().any(|binding| {
+                binding.param_key == "macro1" && binding.channel == 2 && binding.cc == 74
+            }));
+
+            let clear_result = handle_ipc_invoke(
+                "clearMidiLearnBindings",
+                &[],
+                &sp,
+                &rsp,
+                &rms,
+                &rvs,
+                &ts,
+                &ver,
+                &sc,
+                &q,
+                &pc,
+                &params,
+                &ps,
+                &pl,
+                &es,
+                &mm,
+            );
+            assert!(clear_result.is_ok());
+
+            let params4 = Arc::new(CzPluginParams::new());
+            let plugin4 = CzPlugin::new(Arc::clone(&params4));
+            assert!(plugin4.midi_learn_state.lock().unwrap().bindings.is_empty());
+        });
     }
 }
