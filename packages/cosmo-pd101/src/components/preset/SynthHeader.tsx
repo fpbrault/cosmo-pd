@@ -17,9 +17,13 @@ export default function SynthHeader({
 	onLibraryModeChange,
 	trailingContent,
 }: SynthHeaderProps) {
-	const { visiblePresetEntries, activePresetId, activePresetName } =
-		usePresetManager();
-	const activeEntry = visiblePresetEntries.find(
+	const {
+		allPresetEntries,
+		navigationEntryIds,
+		activePresetId,
+		activePresetName,
+	} = usePresetManager();
+	const activeEntry = allPresetEntries.find(
 		(entry) => entry.id === activePresetId,
 	);
 	const activePresetSource =
@@ -47,7 +51,7 @@ export default function SynthHeader({
 			</div>
 
 			<PresetNavigator
-				allEntries={visiblePresetEntries}
+				presetCount={navigationEntryIds.length}
 				activePresetName={activePresetName}
 				activePresetSource={activePresetSource}
 				onStepPreset={onStepPreset}

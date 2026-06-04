@@ -1,5 +1,7 @@
 import {
 	computeRendererFrameLayout,
+	type PresetManagerController,
+	PresetManagerProvider,
 	SYNTH_RENDERER_DESIGN_HEIGHT,
 	SYNTH_RENDERER_MIN_ASPECT_RATIO,
 	SynthRenderer,
@@ -12,9 +14,11 @@ import {
 	type ReactNode,
 	useCallback,
 	useEffect,
+	useMemo,
 	useRef,
 	useState,
 } from "react";
+import { createPluginPresetManagerRepository } from "./hooks/createPluginPresetManagerRepository";
 import { usePluginParamBridge } from "./hooks/usePluginParamBridge";
 import { usePluginSynthRuntime } from "./hooks/usePluginSynthRuntime";
 
@@ -54,8 +58,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		/iPad|iPhone|iPod/.test(window.navigator.userAgent) ||
 		(window.navigator.platform === "MacIntel" &&
 			window.navigator.maxTouchPoints > 1);
-	const gatherState = useSynthStore((s) => s.gatherState);
-	const applyPreset = useSynthStore((s) => s.applyPreset);
+	const gatherPresetState = useSynthStore((s) => s.gatherPresetState);
 	const keyboardHeight = useSynthUiStore((s) => s.keyboardHeight);
 	const setKeyboardHeight = useSynthUiStore((s) => s.setKeyboardHeight);
 
@@ -77,46 +80,31 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		[],
 	);
 	const runtime = usePluginSynthRuntime({ eventSink: sendNativeEngineEvent });
-
-	const syncInstanceBRef =
-		useRef<
-			(
-				name: string,
-				options?: { isDirty?: boolean; presetId?: string | null },
-			) => void
-		>();
-	const [presetSession, setPresetSession] = useState<{
-		activePresetId: string | null;
-		activePresetNameBase: string;
-		isDirty: boolean;
-	}>({
-		activePresetId: null,
-		activePresetNameBase: "Current State",
-		isDirty: false,
-	});
-	const presetSessionRef = useRef(presetSession);
-	useEffect(() => {
-		presetSessionRef.current = presetSession;
-	}, [presetSession]);
-	const restoreDoneRef = useRef(false);
+	const presetManagerRef = useRef<PresetManagerController | null>(null);
 	const {
-		loadPresetData,
+		bridgeReady,
 		getPresetSession,
 		setPresetSession: persistPresetSession,
 	} = usePluginParamBridge({
 		onExternalParamChange: () => {
-			setPresetSession((current) =>
-				current.isDirty ? current : { ...current, isDirty: true },
-			);
-			syncInstanceBRef.current?.(
-				presetSessionRef.current.activePresetNameBase,
-				{
-					isDirty: true,
-					presetId: presetSessionRef.current.activePresetId,
-				},
-			);
+			presetManagerRef.current?.recomputeDirtyState();
 		},
 	});
+	const presetRepository = useMemo(
+		() =>
+			createPluginPresetManagerRepository({
+				gatherPresetState,
+			}),
+		[gatherPresetState],
+	);
+	const presetManager = useSynthPresetManager({
+		repository: presetRepository,
+	});
+	const restoreDoneRef = useRef(false);
+
+	useEffect(() => {
+		presetManagerRef.current = presetManager;
+	}, [presetManager]);
 
 	useEffect(() => {
 		const element = frameRef.current;
@@ -177,77 +165,75 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		};
 	}, [isIosHost, isLikelyIosDevice, keyboardHeight, setKeyboardHeight]);
 
-	const handlePluginPresetSessionChange = useCallback(
-		(session: {
-			activePresetId: string | null;
-			activePresetNameBase: string;
-			isDirty: boolean;
-		}) => {
-			setPresetSession(session);
-			void persistPresetSession(session);
-		},
-		[persistPresetSession],
-	);
-
-	const onLoadPresetData = useCallback(
-		async (id: string) => {
-			const name = await loadPresetData(id);
-			return name;
-		},
-		[loadPresetData],
-	);
-
-	const { handleSyncPresetSelection } = useSynthPresetManager({
-		gatherPresetState: gatherState,
-		applyPreset,
-		libraryPresets: [],
-		onLoadPresetData,
-		initialIsPresetDirty: presetSession.isDirty,
-	});
+	useEffect(() => {
+		if (!bridgeReady) {
+			return;
+		}
+		void presetManager.reloadLibrary();
+	}, [bridgeReady, presetManager.reloadLibrary]);
 
 	useEffect(() => {
 		window.__czOnHostPresetSelected = (name: string) => {
-			window.__czSetPresetName(name);
-			handleSyncPresetSelection(name, { isDirty: false });
-			syncInstanceBRef.current?.(name, { isDirty: false });
+			window.__czSetPresetName?.(name);
+			const matchingEntry =
+				presetManager.allPresetEntries.find((entry) => entry.label === name) ??
+				null;
+			presetManager.syncExternalSelection(
+				{
+					activePresetId: matchingEntry?.id ?? null,
+					activePresetNameBase: name,
+					isDirty: false,
+				},
+				{ stateSync: "deferred" },
+			);
 		};
 		return () => {
 			window.__czOnHostPresetSelected = undefined;
 		};
-	}, [handleSyncPresetSelection]);
+	}, [presetManager.allPresetEntries, presetManager.syncExternalSelection]);
 
 	useEffect(() => {
 		const restore = async () => {
 			const session = await getPresetSession();
-			if (restoreDoneRef.current) return;
-			if (session?.activePresetNameBase) {
-				restoreDoneRef.current = true;
-				setPresetSession(session);
-				syncInstanceBRef.current?.(session.activePresetNameBase, {
-					isDirty: session.isDirty,
-					presetId: session.activePresetId,
-				});
-				void persistPresetSession(session);
+			if (restoreDoneRef.current) {
+				return;
 			}
+			if (!session?.activePresetNameBase) {
+				return;
+			}
+
+			restoreDoneRef.current = true;
+			presetManager.syncExternalSelection(
+				{
+					activePresetId: session.activePresetId,
+					activePresetNameBase: session.activePresetNameBase,
+					isDirty: session.isDirty,
+				},
+				{
+					stateSync: session.isDirty ? "immediate" : "deferred",
+				},
+			);
+			await persistPresetSession(session);
 		};
 		void restore();
-	}, [getPresetSession, persistPresetSession]);
+	}, [
+		getPresetSession,
+		persistPresetSession,
+		presetManager.syncExternalSelection,
+	]);
 
 	useEffect(() => {
-		const fetchLibrary = async () => {
-			const result = await window.__czGetPresetLibrary?.();
-			if (
-				result &&
-				typeof result === "object" &&
-				"entries" in (result as Record<string, unknown>)
-			) {
-				console.log("[PluginPage] fetched preset library", result);
-			}
-		};
-		fetchLibrary().catch(() => {
-			// Plugin bridge may not be ready yet.
+		void persistPresetSession({
+			activePresetId: presetManager.activePresetId,
+			activePresetNameBase: presetManager.activePresetNameBase,
+			isDirty: presetManager.isPresetDirty,
 		});
-	}, []);
+	}, [
+		persistPresetSession,
+		presetManager.activePresetId,
+		presetManager.activePresetNameBase,
+		presetManager.isPresetDirty,
+	]);
 
 	const combinedScale = rendererFrame?.frameScale ?? 1;
 	const frameWidth =
@@ -279,22 +265,20 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 				}}
 			>
 				<div className="absolute top-0 left-0" style={zoomStyle}>
-					<SynthRenderer
-						runtime={runtime}
-						bottomBarExtra={utilityExtra}
-						disableAudioGate
-						sidebarMinWidthRem={sidebarMinWidthRem}
-						miniKeyboard={{
-							activeNotes: runtime.activeNotes,
-							onNoteOn: runtime.sendNoteOn,
-							onNoteOff: runtime.sendNoteOff,
-							onPolyAftertouch: runtime.sendPolyAftertouch,
-						}}
-						onInitPresetSession={(fn) => {
-							syncInstanceBRef.current = fn;
-						}}
-						onPresetSessionChange={handlePluginPresetSessionChange}
-					/>
+					<PresetManagerProvider value={presetManager}>
+						<SynthRenderer
+							runtime={runtime}
+							bottomBarExtra={utilityExtra}
+							disableAudioGate
+							sidebarMinWidthRem={sidebarMinWidthRem}
+							miniKeyboard={{
+								activeNotes: runtime.activeNotes,
+								onNoteOn: runtime.sendNoteOn,
+								onNoteOff: runtime.sendNoteOff,
+								onPolyAftertouch: runtime.sendPolyAftertouch,
+							}}
+						/>
+					</PresetManagerProvider>
 				</div>
 			</div>
 		</div>

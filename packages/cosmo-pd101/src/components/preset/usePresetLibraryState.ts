@@ -16,7 +16,7 @@ type UsePresetLibraryStateOptions = {
 	activeEntryId: string | null;
 	activePresetName: string;
 	isOpen: boolean;
-	onVisibleEntriesChange?: (entries: PresetEntry[]) => void;
+	onNavigationEntriesChange?: (entryIds: string[]) => void;
 };
 
 export function usePresetLibraryState({
@@ -24,7 +24,7 @@ export function usePresetLibraryState({
 	activeEntryId,
 	activePresetName,
 	isOpen,
-	onVisibleEntriesChange,
+	onNavigationEntriesChange,
 }: UsePresetLibraryStateOptions) {
 	const [search, setSearch] = useState("");
 	const [saveName, setSaveName] = useState("");
@@ -47,6 +47,7 @@ export function usePresetLibraryState({
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const [virtualScrollTop, setVirtualScrollTop] = useState(0);
 	const [virtualViewportHeight, setVirtualViewportHeight] = useState(0);
+	const lastNavigationEntryIdsRef = useRef<string[]>([]);
 
 	const availableTags = PRESET_TAG_OPTIONS;
 	const availableAuthors = useMemo(
@@ -260,8 +261,22 @@ export function usePresetLibraryState({
 	}, [activeEntryId, sortedEntries, focusedEntryId, isOpen]);
 
 	useEffect(() => {
-		onVisibleEntriesChange?.(sortedEntries);
-	}, [onVisibleEntriesChange, sortedEntries]);
+		if (!onNavigationEntriesChange) {
+			return;
+		}
+		const nextEntryIds = sortedEntries.map((entry) => entry.id);
+		const previousEntryIds = lastNavigationEntryIdsRef.current;
+		const unchanged =
+			nextEntryIds.length === previousEntryIds.length &&
+			nextEntryIds.every(
+				(entryId, index) => entryId === previousEntryIds[index],
+			);
+		if (unchanged) {
+			return;
+		}
+		lastNavigationEntryIdsRef.current = nextEntryIds;
+		onNavigationEntriesChange(nextEntryIds);
+	}, [onNavigationEntriesChange, sortedEntries]);
 
 	useEffect(() => {
 		const scrollContainer = scrollContainerRef.current;

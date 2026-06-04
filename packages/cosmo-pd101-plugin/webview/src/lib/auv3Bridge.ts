@@ -62,9 +62,19 @@ declare global {
 			tags: string[],
 			macroLabels?: string[],
 		) => Promise<unknown>;
+		__czSavePreset?: (payload: {
+			id?: string | null;
+			name: string;
+			author?: string;
+			tags?: string[];
+			data?: unknown;
+		}) => Promise<unknown>;
 		__czDeletePreset?: (id: string) => Promise<unknown>;
 		__czRenamePreset?: (id: string, newName: string) => Promise<unknown>;
+		__czSetPresetAuthor?: (id: string, author: string) => Promise<unknown>;
+		__czSetPresetTags?: (id: string, tags: string[]) => Promise<unknown>;
 		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
+		__czExportPreset?: (id: string) => Promise<unknown>;
 		__czSetEditorState?: (state: string) => void;
 		__czGetEditorState?: () => Promise<unknown>;
 		__czOnMidiLearnState?: (json: string) => void;
@@ -201,12 +211,19 @@ function installIpcRouter() {
 		tags: string[],
 		macroLabels?: string[],
 	) => invokeAuv3("addPreset", [{ name, tags, macroLabels }]);
+	window.__czSavePreset = (payload) => invokeAuv3("savePreset", [payload]);
 	window.__czDeletePreset = (id: string) =>
 		invokeAuv3("deletePreset", [{ id }]);
 	window.__czRenamePreset = (id: string, newName: string) =>
 		invokeAuv3("renamePreset", [{ id, newName }]);
+	window.__czSetPresetAuthor = (id: string, author: string) =>
+		invokeAuv3("setPresetAuthor", [{ id, author }]);
+	window.__czSetPresetTags = (id: string, tags: string[]) =>
+		invokeAuv3("setPresetTags", [{ id, tags }]);
 	window.__czToggleStarred = (id: string, starred: boolean) =>
 		invokeAuv3("toggleStarred", [{ id, starred }]);
+	window.__czExportPreset = (id: string) =>
+		invokeAuv3("exportPreset", [{ id }]);
 
 	window.__czSetEditorState = (state: string) => {
 		void invokeAuv3("setEditorState", [JSON.parse(state)]).catch((error) => {

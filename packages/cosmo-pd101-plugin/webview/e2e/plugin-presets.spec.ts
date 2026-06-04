@@ -23,6 +23,18 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe("Preset management", () => {
+	test("loading a preset does not mark it dirty", async ({ page }) => {
+		const presetButton = page.getByRole("button", { name: /^preset /i });
+		await presetButton.click();
+
+		await page
+			.getByRole("button", { name: "Factory Brass", exact: true })
+			.click();
+
+		await expect(presetButton).toContainText("Factory Brass");
+		await expect(presetButton).not.toContainText("*");
+	});
+
 	test.skip("saves, renames, and deletes a local preset", async ({ page }) => {
 		await page.getByRole("button", { name: /^preset /i }).click();
 

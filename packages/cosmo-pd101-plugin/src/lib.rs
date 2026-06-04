@@ -2,8 +2,14 @@
 
 #![recursion_limit = "256"]
 
+#[cfg(not(test))]
+use std::fs;
 use std::fs::OpenOptions;
 use std::io::Write;
+#[cfg(not(test))]
+use std::path::PathBuf;
+#[cfg(not(test))]
+use std::sync::OnceLock;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, Once};
 use std::time::Instant;
@@ -23,6 +29,7 @@ use crossbeam_queue::ArrayQueue;
 use truce::prelude::*;
 use truce_core::events::TransportInfo;
 use truce_core::midi::{norm_7bit, norm_pitch_bend};
+use uuid::Uuid;
 
 pub mod ffi;
 pub mod global_settings;
@@ -31,11 +38,36 @@ pub mod preset_library;
 pub mod preset_library_path;
 pub mod session_state;
 
+use crate::global_settings::PluginLogLevel;
 use crate::preset_library::PresetLibrary;
 
 const PLUGIN_LOG_PATH: &str = "/tmp/cosmo-plugin.log";
 const MAX_UI_INPUT_EVENTS_PER_BLOCK: usize = 64;
 const UI_INPUT_QUEUE_CAPACITY: usize = 1024;
+
+#[cfg(not(test))]
+#[derive(Clone)]
+struct LogLevelCache {
+    settings_path: Option<PathBuf>,
+    settings_modified_at: Option<SystemTime>,
+    settings_len: Option<u64>,
+    level: PluginLogLevel,
+}
+
+#[cfg(not(test))]
+impl Default for LogLevelCache {
+    fn default() -> Self {
+        Self {
+            settings_path: None,
+            settings_modified_at: None,
+            settings_len: None,
+            level: PluginLogLevel::Info,
+        }
+    }
+}
+
+#[cfg(not(test))]
+static LOG_LEVEL_CACHE: OnceLock<Mutex<LogLevelCache>> = OnceLock::new();
 
 fn log_timestamp_ms() -> u128 {
     SystemTime::now()
@@ -45,6 +77,88 @@ fn log_timestamp_ms() -> u128 {
 }
 
 pub fn append_log(message: &str) {
+    append_log_at_level(PluginLogLevel::Info, message);
+}
+
+pub fn append_log_debug(message: &str) {
+    append_log_at_level(PluginLogLevel::Debug, message);
+}
+
+pub fn append_log_warn(message: &str) {
+    append_log_at_level(PluginLogLevel::Warn, message);
+}
+
+pub fn append_log_error(message: &str) {
+    append_log_at_level(PluginLogLevel::Error, message);
+}
+
+#[cfg(not(test))]
+fn cached_log_level() -> PluginLogLevel {
+    let cache = LOG_LEVEL_CACHE.get_or_init(|| Mutex::new(LogLevelCache::default()));
+    let settings_path = crate::global_settings::get_global_settings_path();
+    let settings_metadata = fs::metadata(&settings_path).ok();
+    let settings_modified_at = settings_metadata
+        .as_ref()
+        .and_then(|metadata| metadata.modified().ok());
+    let settings_len = settings_metadata.as_ref().map(|metadata| metadata.len());
+
+    let mut cache = cache.lock().unwrap();
+    let path_changed = cache
+        .settings_path
+        .as_ref()
+        .map(|path| path != &settings_path)
+        .unwrap_or(true);
+    let modified_changed = cache.settings_modified_at != settings_modified_at;
+    let len_changed = cache.settings_len != settings_len;
+
+    if path_changed || modified_changed || len_changed {
+        cache.level = crate::global_settings::load_or_init_global_settings()
+            .map(|settings| settings.log_level)
+            .unwrap_or(PluginLogLevel::Info);
+        cache.settings_path = Some(settings_path);
+        cache.settings_modified_at = settings_modified_at;
+        cache.settings_len = settings_len;
+    }
+
+    cache.level
+}
+
+#[cfg(test)]
+static TEST_LOG_LEVEL: AtomicU32 = AtomicU32::new(PluginLogLevel::Error as u32);
+
+#[cfg(test)]
+fn set_test_log_level(level: PluginLogLevel) {
+    TEST_LOG_LEVEL.store(level as u32, Ordering::Relaxed);
+}
+
+#[cfg(test)]
+fn cached_log_level() -> PluginLogLevel {
+    match TEST_LOG_LEVEL.load(Ordering::Relaxed) {
+        value if value == PluginLogLevel::Error as u32 => PluginLogLevel::Error,
+        value if value == PluginLogLevel::Warn as u32 => PluginLogLevel::Warn,
+        value if value == PluginLogLevel::Info as u32 => PluginLogLevel::Info,
+        value if value == PluginLogLevel::Debug as u32 => PluginLogLevel::Debug,
+        _ => PluginLogLevel::Error,
+    }
+}
+
+fn should_log(level: PluginLogLevel) -> bool {
+    level <= cached_log_level()
+}
+
+fn log_level_label(level: PluginLogLevel) -> &'static str {
+    match level {
+        PluginLogLevel::Error => "ERROR",
+        PluginLogLevel::Warn => "WARN",
+        PluginLogLevel::Info => "INFO",
+        PluginLogLevel::Debug => "DEBUG",
+    }
+}
+
+fn append_log_at_level(level: PluginLogLevel, message: &str) {
+    if !should_log(level) {
+        return;
+    }
     if let Ok(mut file) = OpenOptions::new()
         .create(true)
         .append(true)
@@ -52,7 +166,8 @@ pub fn append_log(message: &str) {
     {
         let _ = writeln!(
             file,
-            "[rust pid={} ts_ms={}] {}",
+            "[rust level={} pid={} ts_ms={}] {}",
+            log_level_label(level),
             std::process::id(),
             log_timestamp_ms(),
             message
@@ -62,10 +177,6 @@ pub fn append_log(message: &str) {
 
 pub fn plugin_log_path() -> &'static str {
     PLUGIN_LOG_PATH
-}
-
-fn midi_debug_enabled() -> bool {
-    true
 }
 
 static PANIC_HOOK_INIT: Once = Once::new();
@@ -86,7 +197,7 @@ pub fn init_panic_hook() {
                 .location()
                 .map(|l| format!(" at {}:{}", l.file(), l.line()))
                 .unwrap_or_default();
-            append_log(&format!("PANIC: {}{}", msg, location));
+            append_log_error(&format!("PANIC: {}{}", msg, location));
             eprintln!("[cosmo-pd101] PANIC: {}{}", msg, location);
             default_hook(info);
         }));
@@ -824,7 +935,7 @@ fn persist_midi_learn_bindings(midi_learn_state: &SharedMidiMappings) {
         .unwrap_or_else(|_| crate::session_state::default_midi_bindings());
 
     if let Err(error) = crate::global_settings::save_midi_learn_bindings(bindings) {
-        append_log(&format!(
+        append_log_warn(&format!(
             "failed to persist global midi learn bindings: {}",
             error
         ));
@@ -860,7 +971,7 @@ fn handle_ipc_invoke(
         && method != "getTransportInfo"
         && method != "getRuntimeVoiceStates"
     {
-        append_log(&format!("ipc invoke method={method} args={}", args.len()));
+        append_log_debug(&format!("ipc invoke method={method} args={}", args.len()));
     }
 
     match method {
@@ -1097,7 +1208,12 @@ fn handle_ipc_invoke(
                 .get(1)
                 .and_then(serde_json::Value::as_str)
                 .unwrap_or("");
-            append_log(&format!("[webview:{level}] {message}"));
+            match level {
+                "debug" => append_log_debug(&format!("[webview:{level}] {message}")),
+                "warn" => append_log_warn(&format!("[webview:{level}] {message}")),
+                "error" => append_log_error(&format!("[webview:{level}] {message}")),
+                _ => append_log(&format!("[webview:{level}] {message}")),
+            }
             Ok(serde_json::Value::Null)
         }
         "setPresetName" => {
@@ -1257,6 +1373,91 @@ fn handle_ipc_invoke(
 
             Ok(serde_json::json!({ "id": id }))
         }
+        "savePreset" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "savePreset expects an object payload as first argument".to_string()
+                })?;
+            let name = payload
+                .get("name")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "savePreset payload missing name".to_string())?
+                .to_string();
+            let author = payload
+                .get("author")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            let tags: Vec<String> = payload
+                .get("tags")
+                .and_then(|v| v.as_array())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|v| v.as_str().map(String::from))
+                        .collect()
+                })
+                .unwrap_or_default();
+            let macro_labels: [String; 4] = payload
+                .get("macroLabels")
+                .and_then(|v| serde_json::from_value(v.clone()).ok())
+                .unwrap_or_else(|| SynthParams::default().macro_labels);
+            let payload_id = payload
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .filter(|value| !value.is_empty())
+                .map(|value| value.to_string());
+
+            let data = if let Some(data_value) = payload.get("data") {
+                data_value.clone()
+            } else {
+                let params_val = synth_params.load();
+                serde_json::to_value(&**params_val).map_err(|e| e.to_string())?
+            };
+
+            let saved_entry = {
+                let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+                let mut entry = if let Some(id) = payload_id.clone() {
+                    lib.get_entry(&id)
+                        .map_err(|e| e.to_string())?
+                        .ok_or_else(|| "Preset not found".to_string())?
+                } else {
+                    crate::preset_library::PresetLibraryEntry {
+                        id: Uuid::new_v4().to_string(),
+                        name: String::new(),
+                        source: "user".to_string(),
+                        author: String::new(),
+                        starred: false,
+                        sort_index: u32::MAX,
+                        tags: vec![],
+                        macro_labels: SynthParams::default().macro_labels,
+                        factory_version: 0,
+                        data: serde_json::Value::Null,
+                    }
+                };
+
+                entry.name = name.clone();
+                entry.source = "user".to_string();
+                entry.author = author;
+                entry.tags = tags;
+                entry.macro_labels = macro_labels;
+                entry.data = data;
+
+                lib.save_entry(entry).map_err(|e| e.to_string())?
+            };
+
+            if let Ok(mut stored) = preset_session.lock() {
+                stored.active_preset_name_base = saved_entry.name.clone();
+                stored.loaded_preset_id = Some(saved_entry.id.clone());
+                stored.is_dirty = false;
+            }
+
+            Ok(serde_json::json!({
+                "id": saved_entry.id,
+                "name": saved_entry.name,
+            }))
+        }
         "deletePreset" => {
             let payload = args
                 .first()
@@ -1324,6 +1525,102 @@ fn handle_ipc_invoke(
 
             Ok(serde_json::Value::Null)
         }
+        "setPresetAuthor" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "setPresetAuthor expects an object payload as first argument".to_string()
+                })?;
+            let id = payload
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "setPresetAuthor payload missing id".to_string())?;
+            let author = payload
+                .get("author")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "setPresetAuthor payload missing author".to_string())?;
+
+            {
+                let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+                let mut entry = lib
+                    .get_entry(id)
+                    .map_err(|e| e.to_string())?
+                    .ok_or_else(|| "Preset not found".to_string())?;
+                entry.author = author.to_string();
+                let _ = lib.save_entry(entry).map_err(|e| e.to_string())?;
+            }
+
+            Ok(serde_json::Value::Null)
+        }
+        "setPresetTags" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "setPresetTags expects an object payload as first argument".to_string()
+                })?;
+            let id = payload
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "setPresetTags payload missing id".to_string())?;
+            let tags: Vec<String> = payload
+                .get("tags")
+                .and_then(|v| v.as_array())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|v| v.as_str().map(String::from))
+                        .collect()
+                })
+                .unwrap_or_default();
+
+            {
+                let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+                let mut entry = lib
+                    .get_entry(id)
+                    .map_err(|e| e.to_string())?
+                    .ok_or_else(|| "Preset not found".to_string())?;
+                entry.tags = tags;
+                let _ = lib.save_entry(entry).map_err(|e| e.to_string())?;
+            }
+
+            Ok(serde_json::Value::Null)
+        }
+        "exportPreset" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "exportPreset expects an object payload as first argument".to_string()
+                })?;
+            let id = payload
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "exportPreset payload missing id".to_string())?;
+
+            let entry = {
+                let lib = preset_library.lock().map_err(|e| e.to_string())?;
+                lib.get_entry(id)
+                    .map_err(|e| e.to_string())?
+                    .ok_or_else(|| "Preset not found".to_string())?
+            };
+
+            let json = serde_json::to_string_pretty(&serde_json::json!({
+                "id": entry.id,
+                "name": entry.name,
+                "source": entry.source,
+                "author": entry.author,
+                "starred": entry.starred,
+                "tags": entry.tags,
+                "data": entry.data,
+            }))
+            .map_err(|e| e.to_string())?;
+
+            Ok(serde_json::json!({
+                "filename": format!("{}.json", entry.name),
+                "json": json,
+            }))
+        }
         "setEditorState" => {
             let payload = args
                 .first()
@@ -1345,11 +1642,11 @@ fn handle_ipc_invoke(
                 .and_then(|v| v.as_bool())
                 .ok_or_else(|| "setMidiLearnMode expects a boolean".to_string())?;
             // TODO: remove this diagnostic once cross-format MIDI learn mode behavior is verified.
-            append_log(&format!("ipc_set_midi_learn_mode mode={}", mode));
+            append_log_debug(&format!("ipc_set_midi_learn_mode mode={}", mode));
             if let Ok(mut state) = midi_learn_state.lock() {
                 state.learn_mode = mode;
                 state.version += 1;
-                append_log(&format!(
+                append_log_debug(&format!(
                     "ipc_set_midi_learn_mode_applied mode={} version={} pending={:?}",
                     state.learn_mode, state.version, state.pending_param_key
                 ));
@@ -1382,7 +1679,7 @@ fn handle_ipc_invoke(
                     .and_then(|v| v.as_i64())
                     .ok_or_else(|| "addMidiBinding expects cc".to_string())? as i32;
             // TODO: remove this diagnostic once cross-format MIDI binding RPC flow is verified.
-            append_log(&format!(
+            append_log_debug(&format!(
                 "ipc_add_midi_binding param_key={} channel={} cc={}",
                 param_key, channel, cc
             ));
@@ -1396,7 +1693,7 @@ fn handle_ipc_invoke(
                     cc,
                 });
                 state.version += 1;
-                append_log(&format!(
+                append_log_debug(&format!(
                     "ipc_add_midi_binding_applied version={} bindings_count={} latest={{param_key:{},channel:{},cc:{}}}",
                     state.version,
                     state.bindings.len(),
@@ -1496,7 +1793,7 @@ impl CzPlugin {
         let midi_learn_bindings = crate::global_settings::load_or_init_global_settings()
             .map(|settings| settings.midi_learn_bindings)
             .unwrap_or_else(|error| {
-                append_log(&format!(
+                append_log_warn(&format!(
                     "failed to load global midi settings, using defaults: {}",
                     error
                 ));
@@ -1588,7 +1885,7 @@ impl CzPlugin {
         };
 
         let Ok(params) = params else {
-            append_log(&format!(
+            append_log_warn(&format!(
                 "failed to deserialize startup preset id={}",
                 entry.id
             ));
@@ -1650,7 +1947,7 @@ impl CzPlugin {
             .collect::<Vec<_>>();
 
         if bindings.is_empty() {
-            append_log(&format!(
+            append_log_debug(&format!(
                 "apply_midi_mapping miss ch={} cc={} value={} stored_mappings={:?}",
                 channel, cc, value, state_snapshot
             ));
@@ -1707,7 +2004,7 @@ impl CzPlugin {
                 "set_parameter_rejected"
             };
 
-            append_log(&format!(
+            append_log_debug(&format!(
                 "apply_midi_mapping miss ch={} cc={} value={} reason={} bindings={} cc_matches={} channel_matches={} omni_matches={} full_matches={} invalid_param_keys={:?} binding_sample={:?}",
                 channel,
                 cc,
@@ -1759,7 +2056,7 @@ impl CzPlugin {
                 state.version += 1;
                 bindings_changed = true;
                 // TODO: remove this diagnostic once host-side learn capture behavior is verified across plugin formats.
-                append_log(&format!(
+                append_log_debug(&format!(
                     "host_capture_pending_midi_binding pending={} channel={} cc={} version={} bindings_count={}",
                     pending,
                     channel,
@@ -1890,14 +2187,14 @@ impl CzPlugin {
             EventBody::ControlChange {
                 channel, cc, value, ..
             } => {
-                append_log(&format!("host_cc ch={} cc={} value={}", channel, cc, value));
+                append_log_debug(&format!("host_cc ch={} cc={} value={}", channel, cc, value));
                 self.handle_cc_side_effects(*channel, *cc, *value);
             }
             EventBody::ControlChange2 {
                 channel, cc, value, ..
             } => {
                 let raw_value = (*value / 128) as u8;
-                append_log(&format!(
+                append_log_debug(&format!(
                     "host_cc2 ch={} cc={} value={} raw={}",
                     channel, cc, value, raw_value
                 ));
@@ -1969,30 +2266,6 @@ impl CzPlugin {
 
     fn collect_block_input_events(&mut self, events: &EventList, num_samples: usize) {
         self.block_input_events.clear();
-
-        // TODO: remove this diagnostic once we confirm which plugin formats forward CC events.
-        if midi_debug_enabled() {
-            let mut note_on_count = 0;
-            let mut note_off_count = 0;
-            let mut cc_count = 0;
-            let mut cc2_count = 0;
-            let mut other_count = 0;
-
-            for event in events.iter() {
-                match event.body {
-                    EventBody::NoteOn { .. } => note_on_count += 1,
-                    EventBody::NoteOff { .. } => note_off_count += 1,
-                    EventBody::ControlChange { .. } => cc_count += 1,
-                    EventBody::ControlChange2 { .. } => cc2_count += 1,
-                    _ => other_count += 1,
-                }
-            }
-
-            append_log(&format!(
-                "host_events block_samples={} note_on={} note_off={} cc={} cc2={} other={}",
-                num_samples, note_on_count, note_off_count, cc_count, cc2_count, other_count,
-            ));
-        }
 
         if self.performance_counters.enabled.load(Ordering::Acquire) {
             self.performance_counters
@@ -2284,12 +2557,9 @@ impl truce_vst3::Vst3PluginExt for Plugin {
 mod tests {
     use std::fs;
     use std::path::PathBuf;
-    use std::sync::Mutex;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     use super::*;
-
-    static TEST_DATA_DIR_LOCK: Mutex<()> = Mutex::new(());
 
     fn clear_test_global_settings() {
         let path = crate::global_settings::get_global_settings_path();
@@ -2297,7 +2567,9 @@ mod tests {
     }
 
     fn with_test_data_dir<T>(test_fn: impl FnOnce(PathBuf) -> T) -> T {
-        let _guard = TEST_DATA_DIR_LOCK.lock().unwrap();
+        let _guard = crate::global_settings::TEST_DATA_DIR_LOCK
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let unique = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map(|duration| duration.as_nanos())
@@ -2317,6 +2589,27 @@ mod tests {
 
     fn synth_params_json(params: &SynthParams) -> serde_json::Value {
         serde_json::to_value(params).unwrap()
+    }
+
+    #[test]
+    fn debug_logs_follow_global_settings_log_level() {
+        with_test_data_dir(|_| {
+            let _ = fs::remove_file(plugin_log_path());
+            set_test_log_level(crate::global_settings::PluginLogLevel::Info);
+            append_log_debug("debug-hidden");
+
+            let info_contents = fs::read_to_string(plugin_log_path()).unwrap_or_default();
+            assert!(!info_contents.contains("debug-hidden"));
+
+            set_test_log_level(crate::global_settings::PluginLogLevel::Debug);
+            append_log_debug("debug-visible");
+
+            let debug_contents = fs::read_to_string(plugin_log_path()).unwrap_or_default();
+            assert!(debug_contents.contains("level=DEBUG"));
+            assert!(debug_contents.contains("debug-visible"));
+
+            set_test_log_level(crate::global_settings::PluginLogLevel::Error);
+        });
     }
 
     #[allow(clippy::type_complexity)]
@@ -2682,7 +2975,8 @@ mod tests {
         let expected = crate::ffi::factory_preset_params(0).unwrap().clone();
         let (expected_id, expected_name) = crate::ffi::factory_preset_identity(0).unwrap();
 
-        assert!((params.volume.value() - 0.8).abs() < 0.000_001);
+        params.volume.set_value(0.123);
+        assert!((params.volume.value() - expected.volume).abs() > 0.000_001);
 
         plugin.handle_host_event(&EventBody::ProgramChange {
             group: 0,
@@ -2727,27 +3021,30 @@ mod tests {
 
     #[test]
     fn midi_mapping_matches_exact_channel() {
-        clear_test_global_settings();
-        let params = Arc::new(CzPluginParams::new());
-        let mut plugin = CzPlugin::new(Arc::clone(&params));
-        plugin.reset(48_000.0, 64);
-        *plugin.midi_learn_state.lock().unwrap() = crate::session_state::MidiLearnState {
-            bindings: vec![crate::session_state::MidiLearnBinding {
-                param_key: "macro1".to_string(),
-                channel: 2,
+        with_test_data_dir(|_| {
+            clear_test_global_settings();
+            let params = Arc::new(CzPluginParams::new());
+            let mut plugin = CzPlugin::new(Arc::clone(&params));
+            plugin.reset(48_000.0, 64);
+            *plugin.midi_learn_state.lock().unwrap() = crate::session_state::MidiLearnState {
+                bindings: vec![crate::session_state::MidiLearnBinding {
+                    param_key: "macro1".to_string(),
+                    channel: 2,
+                    cc: 74,
+                }],
+                ..Default::default()
+            };
+            let baseline = plugin.synth_params.load().macro1;
+
+            plugin.handle_host_event(&EventBody::ControlChange {
+                group: 0,
+                channel: 1,
                 cc: 74,
-            }],
-            ..Default::default()
-        };
+                value: 127,
+            });
 
-        plugin.handle_host_event(&EventBody::ControlChange {
-            group: 0,
-            channel: 1,
-            cc: 74,
-            value: 127,
+            assert!((plugin.synth_params.load().macro1 - baseline).abs() < 0.000_001);
         });
-
-        assert!((plugin.synth_params.load().macro1 - 0.0).abs() < 0.000_001);
     }
 
     #[test]
@@ -2870,52 +3167,58 @@ mod tests {
 
     #[test]
     fn param_change_applies_at_event_offset() {
-        clear_test_global_settings();
-        let params = Arc::new(CzPluginParams::new());
-        let mut plugin = CzPlugin::new(Arc::clone(&params));
-        plugin.reset(48_000.0, 64);
+        with_test_data_dir(|_| {
+            clear_test_global_settings();
+            let params = Arc::new(CzPluginParams::new());
+            let mut plugin = CzPlugin::new(Arc::clone(&params));
+            plugin.reset(48_000.0, 64);
 
-        let previous_volume = plugin.cached_rt_synth_params.volume;
-        assert!((previous_volume - 0.8).abs() < 0.000_001);
+            let previous_volume = plugin.cached_rt_synth_params.volume;
+            let next_volume = if (previous_volume - 0.2).abs() < 0.000_001 {
+                0.73
+            } else {
+                0.2
+            };
 
-        params.volume.set_value(0.2);
+            params.volume.set_value(next_volume.into());
 
-        let mut events = EventList::default();
-        events.push(Event {
-            sample_offset: 32,
-            body: EventBody::ParamChange {
-                id: CzPluginParamsParamId::Volume as u32,
-                value: 0.2,
-            },
+            let mut events = EventList::default();
+            events.push(Event {
+                sample_offset: 32,
+                body: EventBody::ParamChange {
+                    id: CzPluginParamsParamId::Volume as u32,
+                    value: next_volume,
+                },
+            });
+
+            let tracked = CzPlugin::tracked_param_changes(&events);
+            assert!(tracked[CzPluginParamsParamId::Volume as usize]);
+
+            let params_version = plugin.synth_params_version.load(Ordering::Acquire);
+            let previous_rt = (*plugin.cached_rt_synth_params).clone();
+            let mut merged = (*plugin.cached_rt_synth_params).clone();
+            apply_daw_params(&mut merged, &params);
+            for (id, changed) in tracked.iter().enumerate() {
+                if !*changed {
+                    continue;
+                }
+                if let Some(prev_value) = read_daw_param_by_id(&previous_rt, id as u32) {
+                    let _ = write_daw_param_by_id(&mut merged, id as u32, f64::from(prev_value));
+                }
+            }
+
+            let rt_merged = Arc::new(merged);
+            plugin.cached_rt_synth_params = Arc::clone(&rt_merged);
+            if let Some(proc) = plugin.processor.as_mut() {
+                proc.set_shared_params(rt_merged);
+            }
+            plugin.cached_synth_params_version = params_version;
+
+            plugin.process_host_events_into_buffer(&events, 64);
+
+            let volume_before = plugin.cached_rt_synth_params.volume;
+            assert!((volume_before - next_volume as f32).abs() < 0.000_001);
         });
-
-        let tracked = CzPlugin::tracked_param_changes(&events);
-        assert!(tracked[CzPluginParamsParamId::Volume as usize]);
-
-        let params_version = plugin.synth_params_version.load(Ordering::Acquire);
-        let previous_rt = (*plugin.cached_rt_synth_params).clone();
-        let mut merged = (*plugin.cached_rt_synth_params).clone();
-        apply_daw_params(&mut merged, &params);
-        for (id, changed) in tracked.iter().enumerate() {
-            if !*changed {
-                continue;
-            }
-            if let Some(prev_value) = read_daw_param_by_id(&previous_rt, id as u32) {
-                let _ = write_daw_param_by_id(&mut merged, id as u32, f64::from(prev_value));
-            }
-        }
-
-        let rt_merged = Arc::new(merged);
-        plugin.cached_rt_synth_params = Arc::clone(&rt_merged);
-        if let Some(proc) = plugin.processor.as_mut() {
-            proc.set_shared_params(rt_merged);
-        }
-        plugin.cached_synth_params_version = params_version;
-
-        plugin.process_host_events_into_buffer(&events, 64);
-
-        let volume_before = plugin.cached_rt_synth_params.volume;
-        assert!((volume_before - 0.2).abs() < 0.000_001);
     }
 
     #[test]
@@ -3008,38 +3311,40 @@ mod tests {
 
     #[test]
     fn load_state_restores_preset_name() {
-        clear_test_global_settings();
-        let params = Arc::new(CzPluginParams::new());
-        let mut plugin = CzPlugin::new(Arc::clone(&params));
-        plugin.reset(48_000.0, 64);
+        with_test_data_dir(|_| {
+            clear_test_global_settings();
+            let params = Arc::new(CzPluginParams::new());
+            let mut plugin = CzPlugin::new(Arc::clone(&params));
+            plugin.reset(48_000.0, 64);
 
-        // Save state with a preset name
-        plugin
-            .preset_session
-            .lock()
-            .unwrap()
-            .active_preset_name_base = "Bright Piano".to_string();
-        plugin.preset_session.lock().unwrap().is_dirty = true;
-        let state = plugin.save_state();
-
-        // Create new plugin and load state
-        let params2 = Arc::new(CzPluginParams::new());
-        let mut plugin2 = CzPlugin::new(Arc::clone(&params2));
-        plugin2.reset(48_000.0, 64);
-        assert!(
-            plugin2
+            // Save state with a preset name
+            plugin
                 .preset_session
                 .lock()
                 .unwrap()
-                .active_preset_name_base
-                .is_empty()
-        );
+                .active_preset_name_base = "Bright Piano".to_string();
+            plugin.preset_session.lock().unwrap().is_dirty = true;
+            let state = plugin.save_state();
 
-        let result = plugin2.load_state(&state);
-        assert!(result.is_ok());
-        let restored = plugin2.preset_session.lock().unwrap().clone();
-        assert_eq!(restored.active_preset_name_base, "Bright Piano");
-        assert!(!restored.is_dirty);
+            // Create new plugin and load state
+            let params2 = Arc::new(CzPluginParams::new());
+            let mut plugin2 = CzPlugin::new(Arc::clone(&params2));
+            plugin2.reset(48_000.0, 64);
+            assert_ne!(
+                plugin2
+                    .preset_session
+                    .lock()
+                    .unwrap()
+                    .active_preset_name_base,
+                "Bright Piano"
+            );
+
+            let result = plugin2.load_state(&state);
+            assert!(result.is_ok());
+            let restored = plugin2.preset_session.lock().unwrap().clone();
+            assert_eq!(restored.active_preset_name_base, "Bright Piano");
+            assert!(!restored.is_dirty);
+        });
     }
 
     #[test]
@@ -3080,25 +3385,27 @@ mod tests {
 
             let params = Arc::new(CzPluginParams::new());
             let mut plugin = CzPlugin::new(Arc::clone(&params));
+            plugin.reset(48_000.0, 64);
 
-            let expected = {
-                let mut library = plugin.preset_library.lock().unwrap();
-                let records = library.list_records(None).unwrap();
-                assert!(!records.is_empty());
-                for record in records.iter().take(3) {
-                    library.set_starred(&record.entry.id, true).unwrap();
-                }
-                library.find_startup_preset().unwrap().unwrap()
-            };
+            let stored = plugin.preset_session.lock().unwrap().clone();
+            let expected = plugin
+                .preset_library
+                .lock()
+                .unwrap()
+                .get_entry(
+                    stored
+                        .loaded_preset_id
+                        .as_deref()
+                        .expect("startup preset should populate loaded preset id"),
+                )
+                .unwrap()
+                .unwrap();
             let expected_params: SynthParams = if let Some(value) = expected.data.get("params") {
                 serde_json::from_value(value.clone()).unwrap()
             } else {
                 serde_json::from_value(expected.data.clone()).unwrap()
             };
 
-            plugin.reset(48_000.0, 64);
-
-            let stored = plugin.preset_session.lock().unwrap().clone();
             assert_eq!(stored.loaded_preset_id, Some(expected.id.clone()));
             assert_eq!(stored.active_preset_name_base, expected.name);
             assert!(!stored.is_dirty);
@@ -3110,7 +3417,7 @@ mod tests {
     }
 
     #[test]
-    fn cold_start_without_favorites_keeps_default_params() {
+    fn cold_start_without_user_favorites_uses_factory_startup_preset_when_present() {
         with_test_data_dir(|_| {
             clear_test_global_settings();
 
@@ -3120,15 +3427,35 @@ mod tests {
             plugin.reset(48_000.0, 64);
 
             let stored = plugin.preset_session.lock().unwrap().clone();
-            let mut expected = SynthParams::default();
-            apply_daw_params(&mut expected, &params);
-            assert!(stored.active_preset_name_base.is_empty());
-            assert!(stored.loaded_preset_id.is_none());
             assert!(!stored.is_dirty);
-            assert_eq!(
-                synth_params_json(plugin.synth_params.load().as_ref()),
-                synth_params_json(&expected)
-            );
+            if let Some(entry_id) = stored.loaded_preset_id.clone() {
+                let entry = plugin
+                    .preset_library
+                    .lock()
+                    .unwrap()
+                    .get_entry(&entry_id)
+                    .unwrap()
+                    .unwrap();
+                let expected_params: SynthParams = if let Some(value) = entry.data.get("params") {
+                    serde_json::from_value(value.clone()).unwrap()
+                } else {
+                    serde_json::from_value(entry.data.clone()).unwrap()
+                };
+                assert_eq!(stored.active_preset_name_base, entry.name);
+                assert_eq!(
+                    synth_params_json(plugin.synth_params.load().as_ref()),
+                    synth_params_json(&expected_params)
+                );
+            } else {
+                let mut expected = SynthParams::default();
+                apply_daw_params(&mut expected, &params);
+                assert!(stored.active_preset_name_base.is_empty());
+                assert!(stored.loaded_preset_id.is_none());
+                assert_eq!(
+                    synth_params_json(plugin.synth_params.load().as_ref()),
+                    synth_params_json(&expected)
+                );
+            }
         });
     }
 

@@ -1,536 +1,430 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSynthStore } from "@/features/synth/synthStore";
-import type { LibraryPreset } from "@/features/synth/types/libraryPreset";
-import type { PresetEntry } from "@/features/synth/types/presetEntry";
-import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
-import {
-	DEFAULT_PRESET,
-	deletePreset,
-	exportPreset,
-	importPreset,
-	listPresetFavorites,
-	listStoredPresets,
-	loadStoredPreset,
-	type PresetMetadata,
-	renamePreset,
-	type StoredPreset,
-	saveStoredPreset,
-	setPresetFavorite,
-	updatePresetMetadata,
-	updateStoredPreset,
-} from "@/lib/synth/presetStorage";
 import type { PresetTagOptions } from "@/lib/synth/presetTags";
-import type { FrontendPresetV1 } from "@/lib/synth/presetTypes";
-import { buildAllPresetEntries } from "./synthPresetManagerHelpers";
-import { usePresetManagerPersistence } from "./usePresetManagerPersistence";
+import type {
+	ExportedPresetFile,
+	PresetManagerRepository,
+	PresetManagerSession,
+	PresetStateSync,
+} from "./presetManagerRepository";
+import type { PresetEntry } from "./types/presetEntry";
 
 type UseSynthPresetManagerOptions = {
-	builtinPresets?: Record<string, FrontendPresetV1>;
-	gatherPresetState: () => SynthPresetV1;
-	applyPreset: (data: SynthPresetV1) => void;
-	onBeforeApplyPreset?: () => void;
-	libraryPresets?: LibraryPreset[];
-	onLoadLibraryPreset?: (preset: LibraryPreset) => void;
-	onLoadPresetData?: (id: string) => Promise<string>;
-	initialIsPresetDirty?: boolean;
+	repository: PresetManagerRepository;
 };
 
-type UseSynthPresetManagerResult = {
+export type PresetEntryId = string;
+
+export type PresetRef = {
+	entryId: PresetEntryId;
+};
+
+export interface PresetManagerController {
 	allPresetEntries: PresetEntry[];
-	visiblePresetEntries: PresetEntry[];
+	navigationEntryIds: PresetEntryId[];
 	activePresetId: string | null;
 	activePresetNameBase: string;
 	activePresetName: string;
 	isPresetDirty: boolean;
-	handleSyncPresetSelection: (
-		name: string,
-		options?: { isDirty?: boolean },
+	syncExternalSelection: (
+		session: PresetManagerSession,
+		options?: { stateSync?: PresetStateSync },
 	) => void;
-	handleLoadPresetByName: (name: string) => void;
-	handleSyncBuiltinSelection: (
-		name: string,
-		options?: { isDirty?: boolean },
-	) => void;
-	handleLoadLocal: (id: string) => Promise<void>;
-	handleLoadBuiltin: (name: string) => void;
-	handleLoadLibrary: (preset: LibraryPreset) => void;
-	handleStepPreset: (direction: -1 | 1) => void;
-	handleSavePreset: (name: string) => Promise<void>;
-	handleDeletePreset: (id: string) => Promise<void>;
-	handleRenamePreset: (id: string, newName: string) => Promise<void>;
-	handleSetPresetAuthor: (id: string, author: string) => Promise<void>;
-	handleSetPresetFavorite: (id: string, favorite: boolean) => Promise<void>;
-	handleSetPresetTags: (id: string, tags: PresetTagOptions[]) => Promise<void>;
-	handleInitPreset: () => void;
-	handleExportPreset: (id: string) => Promise<void>;
-	handleImportPreset: (json: string, filename: string) => Promise<void>;
-	handleExportCurrentState: (name: string) => void;
-	markPresetDirty: () => void;
-	setPresetDirtyState: (dirty: boolean) => void;
-};
-
-const presetNameCollator = new Intl.Collator(undefined, {
-	numeric: true,
-	sensitivity: "base",
-});
-
-function sortPresetEntriesByDefaultLibraryOrder(
-	entries: PresetEntry[],
-): PresetEntry[] {
-	return [...entries].sort((left, right) => {
-		const leftStarred = left.starred ? 1 : 0;
-		const rightStarred = right.starred ? 1 : 0;
-		if (leftStarred !== rightStarred) {
-			return rightStarred - leftStarred;
-		}
-
-		const labelCompare = presetNameCollator.compare(left.label, right.label);
-		if (labelCompare !== 0) {
-			return labelCompare;
-		}
-
-		return presetNameCollator.compare(left.id, right.id);
-	});
+	activatePreset: (ref: PresetRef) => Promise<void>;
+	setNavigationEntryIds: (entryIds: PresetEntryId[]) => void;
+	stepPreset: (direction: -1 | 1) => Promise<void>;
+	savePreset: (name: string) => Promise<void>;
+	deletePreset: (id: string) => Promise<void>;
+	renamePreset: (id: string, newName: string) => Promise<void>;
+	setPresetAuthor: (id: string, author: string) => Promise<void>;
+	setPresetFavorite: (id: string, favorite: boolean) => Promise<void>;
+	setPresetTags: (id: string, tags: PresetTagOptions[]) => Promise<void>;
+	initPreset: () => Promise<void>;
+	exportPreset: (id: string) => Promise<ExportedPresetFile | null>;
+	importPreset: (json: string, filename: string) => Promise<void>;
+	exportCurrentState: (name: string) => Promise<ExportedPresetFile>;
+	recomputeDirtyState: () => void;
+	reloadLibrary: () => Promise<void>;
 }
 
-function normalizeBuiltinPresets(
-	builtinPresets: Record<string, FrontendPresetV1>,
-): LibraryPreset[] {
-	return Object.values(builtinPresets).map((preset) => ({
-		id: preset.id,
-		name: preset.name,
-		source: preset.source,
-		author: preset.author,
-		starred: preset.starred,
-		data: preset.data,
-		tags: preset.tags,
-	}));
+function normalizeNavigationEntryIds(
+	entryIds: PresetEntryId[],
+	allPresetEntries: PresetEntry[],
+): PresetEntryId[] {
+	const validEntryIds = new Set(allPresetEntries.map((entry) => entry.id));
+	const dedupedEntryIds: PresetEntryId[] = [];
+	for (const entryId of entryIds) {
+		if (!validEntryIds.has(entryId) || dedupedEntryIds.includes(entryId)) {
+			continue;
+		}
+		dedupedEntryIds.push(entryId);
+	}
+	return dedupedEntryIds;
+}
+
+function areEntryIdListsEqual(
+	left: PresetEntryId[],
+	right: PresetEntryId[],
+): boolean {
+	return (
+		left.length === right.length &&
+		left.every((entryId, index) => entryId === right[index])
+	);
 }
 
 export function useSynthPresetManager({
-	builtinPresets = {},
-	gatherPresetState,
-	applyPreset,
-	onBeforeApplyPreset,
-	libraryPresets = [],
-	onLoadLibraryPreset,
-	onLoadPresetData,
-	initialIsPresetDirty = false,
-}: UseSynthPresetManagerOptions): UseSynthPresetManagerResult {
-	const [localPresetEntries, setLocalPresetEntries] = useState<StoredPreset[]>(
-		[],
-	);
-	const [favoritePresetIds, setFavoritePresetIds] = useState<string[]>([]);
+	repository,
+}: UseSynthPresetManagerOptions): PresetManagerController {
+	const [allPresetEntries, setAllPresetEntries] = useState<PresetEntry[]>([]);
+	const [navigationEntryIds, setNavigationEntryIdsState] = useState<
+		PresetEntryId[]
+	>([]);
 	const [activePresetId, setActivePresetId] = useState<string | null>(null);
 	const [activePresetNameBase, setActivePresetNameBase] =
 		useState("Current State");
-	const [isPresetDirty, setIsPresetDirty] = useState(initialIsPresetDirty);
-	const mergedLibraryPresets = useMemo(
-		() => [...normalizeBuiltinPresets(builtinPresets), ...libraryPresets],
-		[builtinPresets, libraryPresets],
-	);
-	const libraryPresetByName = useMemo(
-		() => new Map(mergedLibraryPresets.map((preset) => [preset.name, preset])),
-		[mergedLibraryPresets],
-	);
+	const [isPresetDirty, setIsPresetDirty] = useState(false);
+	const presetEditVersion = useSynthStore((state) => state.presetEditVersion);
+	const gatherPresetState = useSynthStore((state) => state.gatherPresetState);
+	const cleanBaselineFingerprintRef = useRef<string | null>(null);
+	const pendingBaselineSyncRef = useRef(false);
+	const restoredDirtyWithoutBaselineRef = useRef(false);
+
 	const activePresetName = isPresetDirty
 		? `${activePresetNameBase} *`
 		: activePresetNameBase;
 	const activeLocalPreset = useMemo(
 		() =>
 			activePresetId
-				? (localPresetEntries.find((entry) => entry.id === activePresetId) ??
-					null)
+				? (allPresetEntries.find(
+						(entry) => entry.id === activePresetId && entry.type === "local",
+					) ?? null)
 				: null,
-		[activePresetId, localPresetEntries],
+		[activePresetId, allPresetEntries],
 	);
-	const presetEditVersion = useSynthStore((state) => state.presetEditVersion);
-	const lastCleanEditVersionRef = useRef(presetEditVersion);
-	const dirtyEditVersionRef = useRef(presetEditVersion);
 
-	const setPresetDirtyState = useCallback((dirty: boolean) => {
-		if (dirty) {
-			dirtyEditVersionRef.current = useSynthStore.getState().presetEditVersion;
+	const getCurrentPresetFingerprint = useCallback(
+		() => JSON.stringify(gatherPresetState()),
+		[gatherPresetState],
+	);
+
+	const commitDirtyTracking = useCallback(
+		({
+			isDirty,
+			stateSync,
+		}: {
+			isDirty: boolean;
+			stateSync: PresetStateSync;
+		}) => {
+			if (isDirty) {
+				cleanBaselineFingerprintRef.current = null;
+				pendingBaselineSyncRef.current = false;
+				restoredDirtyWithoutBaselineRef.current = true;
+				setIsPresetDirty(true);
+				return;
+			}
+
+			restoredDirtyWithoutBaselineRef.current = false;
+			if (stateSync === "deferred") {
+				cleanBaselineFingerprintRef.current = null;
+				pendingBaselineSyncRef.current = true;
+				setIsPresetDirty(false);
+				return;
+			}
+
+			cleanBaselineFingerprintRef.current = getCurrentPresetFingerprint();
+			pendingBaselineSyncRef.current = false;
+			setIsPresetDirty(false);
+		},
+		[getCurrentPresetFingerprint],
+	);
+
+	const recomputeDirtyState = useCallback(() => {
+		const currentFingerprint = getCurrentPresetFingerprint();
+		if (pendingBaselineSyncRef.current) {
+			cleanBaselineFingerprintRef.current = currentFingerprint;
+			pendingBaselineSyncRef.current = false;
+			restoredDirtyWithoutBaselineRef.current = false;
+			setIsPresetDirty(false);
+			return;
+		}
+
+		if (restoredDirtyWithoutBaselineRef.current) {
 			setIsPresetDirty(true);
 			return;
 		}
 
-		const currentVersion = useSynthStore.getState().presetEditVersion;
-		lastCleanEditVersionRef.current = currentVersion;
-		dirtyEditVersionRef.current = currentVersion;
-		setIsPresetDirty(false);
-	}, []);
-
-	const markPresetDirty = useCallback(() => {
-		if (isPresetDirty) {
+		if (cleanBaselineFingerprintRef.current === null) {
+			cleanBaselineFingerprintRef.current = currentFingerprint;
+			setIsPresetDirty(false);
 			return;
 		}
-		dirtyEditVersionRef.current = useSynthStore.getState().presetEditVersion;
-		setIsPresetDirty(true);
-	}, [isPresetDirty]);
 
-	useEffect(() => {
-		if (presetEditVersion === lastCleanEditVersionRef.current) {
-			return;
-		}
-		if (presetEditVersion <= dirtyEditVersionRef.current) {
-			return;
-		}
-		setIsPresetDirty(true);
-	}, [presetEditVersion]);
-
-	useEffect(() => {
-		if (initialIsPresetDirty) {
-			dirtyEditVersionRef.current = useSynthStore.getState().presetEditVersion;
-		} else {
-			lastCleanEditVersionRef.current =
-				useSynthStore.getState().presetEditVersion;
-			dirtyEditVersionRef.current = lastCleanEditVersionRef.current;
-		}
-		setIsPresetDirty(initialIsPresetDirty);
-	}, [initialIsPresetDirty]);
-
-	const refreshLocalPresetEntries = useCallback(async () => {
-		setLocalPresetEntries(await listStoredPresets());
-	}, []);
-
-	const refreshFavoritePresetIds = useCallback(async () => {
-		setFavoritePresetIds(await listPresetFavorites());
-	}, []);
+		setIsPresetDirty(
+			currentFingerprint !== cleanBaselineFingerprintRef.current,
+		);
+	}, [getCurrentPresetFingerprint]);
 
 	const commitPresetSelection = useCallback(
-		(id: string | null, name: string, dirty = false) => {
-			setActivePresetId(id);
-			setActivePresetNameBase(name);
-			setPresetDirtyState(dirty);
+		(
+			session: PresetManagerSession,
+			options: { stateSync?: PresetStateSync } = {},
+		) => {
+			setActivePresetId(session.activePresetId);
+			setActivePresetNameBase(session.activePresetNameBase);
+			commitDirtyTracking({
+				isDirty: session.isDirty,
+				stateSync: options.stateSync ?? "immediate",
+			});
 		},
-		[setPresetDirtyState],
+		[commitDirtyTracking],
 	);
 
-	const loadLocalPreset = useCallback(
-		async (id: string) => {
-			if (onLoadPresetData) {
-				onBeforeApplyPreset?.();
-				const name = await onLoadPresetData(id);
-				commitPresetSelection(id, name, false);
-				return;
-			}
-			const preset = await loadStoredPreset(id);
-			if (!preset) return;
-			onBeforeApplyPreset?.();
-			applyPreset(preset.data);
-			commitPresetSelection(preset.id, preset.name, false);
-		},
-		[applyPreset, commitPresetSelection, onBeforeApplyPreset, onLoadPresetData],
-	);
-
-	const loadLibraryPreset = useCallback(
-		(preset: LibraryPreset) => {
-			if (onLoadPresetData) {
-				onBeforeApplyPreset?.();
-				void onLoadPresetData(preset.id).then((name) => {
-					commitPresetSelection(preset.id, name, false);
-				});
-				return;
-			}
-			if (preset.data) {
-				onBeforeApplyPreset?.();
-				applyPreset(preset.data);
-				commitPresetSelection(preset.id, preset.name, false);
-				return;
-			}
-			if (!onLoadLibraryPreset) return;
-			onBeforeApplyPreset?.();
-			onLoadLibraryPreset(preset);
-			commitPresetSelection(preset.id, preset.name, false);
-		},
-		[
-			applyPreset,
-			commitPresetSelection,
-			onBeforeApplyPreset,
-			onLoadLibraryPreset,
-			onLoadPresetData,
-		],
-	);
-
-	const handleLoadLocal = useCallback(
-		async (id: string) => {
-			await loadLocalPreset(id);
-		},
-		[loadLocalPreset],
-	);
-
-	const handleLoadPresetByName = useCallback(
-		(name: string) => {
-			const preset = libraryPresetByName.get(name);
-			if (!preset) {
-				return;
-			}
-			loadLibraryPreset(preset);
-		},
-		[libraryPresetByName, loadLibraryPreset],
-	);
-
-	const handleSyncPresetSelection = useCallback(
-		(name: string, options?: { isDirty?: boolean }) => {
-			const preset = libraryPresetByName.get(name);
-			commitPresetSelection(
-				preset?.id ?? null,
-				name,
-				options?.isDirty ?? false,
+	const reloadLibrary = useCallback(async () => {
+		const nextEntries = await repository.listEntries();
+		setAllPresetEntries(nextEntries);
+		setNavigationEntryIdsState((current) => {
+			const normalizedCurrent = normalizeNavigationEntryIds(
+				current,
+				nextEntries,
 			);
+			if (normalizedCurrent.length > 0) {
+				return areEntryIdListsEqual(current, normalizedCurrent)
+					? current
+					: normalizedCurrent;
+			}
+			const defaultEntryIds = nextEntries.map((entry) => entry.id);
+			return areEntryIdListsEqual(current, defaultEntryIds)
+				? current
+				: defaultEntryIds;
+		});
+	}, [repository]);
+
+	useEffect(() => {
+		if (presetEditVersion < 0) {
+			return;
+		}
+		recomputeDirtyState();
+	}, [presetEditVersion, recomputeDirtyState]);
+
+	useEffect(() => {
+		void reloadLibrary();
+	}, [reloadLibrary]);
+
+	const syncExternalSelection = useCallback(
+		(
+			session: PresetManagerSession,
+			options: { stateSync?: PresetStateSync } = {},
+		) => {
+			commitPresetSelection(session, options);
 		},
-		[commitPresetSelection, libraryPresetByName],
+		[commitPresetSelection],
 	);
 
-	const handleLoadLibrary = useCallback(
-		(preset: LibraryPreset) => {
-			loadLibraryPreset(preset);
+	const activatePreset = useCallback(
+		async ({ entryId }: PresetRef) => {
+			const entry = allPresetEntries.find(
+				(candidate) => candidate.id === entryId,
+			);
+			if (!entry) {
+				return;
+			}
+			const activation = await repository.loadEntry(entry);
+			if (!activation) {
+				return;
+			}
+			commitPresetSelection(activation.session, {
+				stateSync: activation.stateSync,
+			});
 		},
-		[loadLibraryPreset],
+		[allPresetEntries, commitPresetSelection, repository],
 	);
 
-	const allPresetEntries = useMemo(
-		() =>
-			buildAllPresetEntries({
-				localPresetEntries,
-				libraryPresets: mergedLibraryPresets,
-				favoritePresetIds,
-			}),
-		[favoritePresetIds, localPresetEntries, mergedLibraryPresets],
-	);
-	const visiblePresetEntries = useMemo(
-		() => sortPresetEntriesByDefaultLibraryOrder(allPresetEntries),
+	const setNavigationEntryIds = useCallback(
+		(entryIds: PresetEntryId[]) => {
+			setNavigationEntryIdsState((current) => {
+				const normalizedEntryIds = normalizeNavigationEntryIds(
+					entryIds,
+					allPresetEntries,
+				);
+				return areEntryIdListsEqual(current, normalizedEntryIds)
+					? current
+					: normalizedEntryIds;
+			});
+		},
 		[allPresetEntries],
 	);
 
-	const activePresetIndex = useMemo(
-		() =>
-			visiblePresetEntries.findIndex((entry) => entry.id === activePresetId),
-		[visiblePresetEntries, activePresetId],
-	);
-
-	const handleStepPreset = useCallback(
-		(direction: -1 | 1) => {
-			if (visiblePresetEntries.length === 0) return;
-			let next = 0;
-			if (activePresetIndex < 0) {
-				next = direction === 1 ? 0 : visiblePresetEntries.length - 1;
-			} else {
-				next =
-					(activePresetIndex + direction + visiblePresetEntries.length) %
-					visiblePresetEntries.length;
-			}
-			const entry = visiblePresetEntries[next];
-			if (!entry) return;
-			if (entry.type === "local") {
-				void handleLoadLocal(entry.id);
+	const stepPreset = useCallback(
+		async (direction: -1 | 1) => {
+			if (navigationEntryIds.length === 0) {
 				return;
 			}
-			if (entry.preset) {
-				handleLoadLibrary(entry.preset);
+
+			const currentIndex = activePresetId
+				? navigationEntryIds.indexOf(activePresetId)
+				: -1;
+			const nextIndex =
+				currentIndex < 0
+					? direction === 1
+						? 0
+						: navigationEntryIds.length - 1
+					: (currentIndex + direction + navigationEntryIds.length) %
+						navigationEntryIds.length;
+			const nextEntryId = navigationEntryIds[nextIndex];
+			if (!nextEntryId) {
+				return;
 			}
+
+			await activatePreset({ entryId: nextEntryId });
 		},
-		[
-			activePresetIndex,
-			visiblePresetEntries,
-			handleLoadLibrary,
-			handleLoadLocal,
-		],
+		[activatePreset, activePresetId, navigationEntryIds],
 	);
 
-	const saveLocalPreset = useCallback(
+	const savePreset = useCallback(
 		async (name: string) => {
-			const metadata: PresetMetadata = {
-				tags: activeLocalPreset?.tags ?? [],
-			};
-			const stored = await saveStoredPreset({
-				id: activeLocalPreset?.id,
+			const session = await repository.savePreset({
+				existingEntry: activeLocalPreset,
 				name,
-				data: gatherPresetState(),
-				source: "user",
-				author: activeLocalPreset?.author ?? "",
-				starred: activeLocalPreset?.starred ?? false,
-				tags: metadata.tags,
 			});
-			await refreshLocalPresetEntries();
-			return stored;
+			await reloadLibrary();
+			commitPresetSelection(session.session, { stateSync: session.stateSync });
 		},
-		[activeLocalPreset, gatherPresetState, refreshLocalPresetEntries],
+		[activeLocalPreset, commitPresetSelection, reloadLibrary, repository],
 	);
 
-	const handleSavePreset = useCallback(
-		async (name: string) => {
-			const stored = await saveLocalPreset(name);
-			commitPresetSelection(stored.id, stored.name, false);
-		},
-		[commitPresetSelection, saveLocalPreset],
-	);
-
-	const handleDeletePreset = useCallback(
+	const deletePreset = useCallback(
 		async (id: string) => {
-			await deletePreset(id);
-			await Promise.all([
-				refreshLocalPresetEntries(),
-				refreshFavoritePresetIds(),
-			]);
+			await repository.deletePreset(id);
+			await reloadLibrary();
 			if (activePresetId === id) {
-				commitPresetSelection(null, "Current State", false);
+				commitPresetSelection({
+					activePresetId: null,
+					activePresetNameBase: "Current State",
+					isDirty: false,
+				});
 			}
 		},
-		[
-			activePresetId,
-			commitPresetSelection,
-			refreshFavoritePresetIds,
-			refreshLocalPresetEntries,
-		],
+		[activePresetId, commitPresetSelection, reloadLibrary, repository],
 	);
 
-	const handleRenamePreset = useCallback(
+	const renamePreset = useCallback(
 		async (id: string, newName: string) => {
 			const trimmed = newName.trim();
-			if (!trimmed) return;
-			const renamed = await loadStoredPreset(id);
-			if (renamed?.name === trimmed) {
+			if (!trimmed) {
 				return;
 			}
-			await renamePreset(id, trimmed);
-			await refreshLocalPresetEntries();
+			await repository.renamePreset(id, trimmed);
+			await reloadLibrary();
 			setActivePresetNameBase((previous) =>
 				activePresetId === id ? trimmed : previous,
 			);
 		},
-		[activePresetId, refreshLocalPresetEntries],
+		[activePresetId, reloadLibrary, repository],
 	);
 
-	const handleSetPresetFavorite = useCallback(
+	const setPresetFavorite = useCallback(
 		async (id: string, favorite: boolean) => {
-			await setPresetFavorite(id, favorite);
-			await refreshFavoritePresetIds();
+			await repository.setPresetFavorite(id, favorite);
+			await reloadLibrary();
 		},
-		[refreshFavoritePresetIds],
+		[reloadLibrary, repository],
 	);
 
-	const handleSetPresetAuthor = useCallback(
+	const setPresetAuthor = useCallback(
 		async (id: string, author: string) => {
-			if (!(await updateStoredPreset(id, { author: author.trim() }))) {
-				return;
-			}
-			await refreshLocalPresetEntries();
+			await repository.setPresetAuthor(id, author.trim());
+			await reloadLibrary();
 		},
-		[refreshLocalPresetEntries],
+		[reloadLibrary, repository],
 	);
 
-	const handleSetPresetTags = useCallback(
+	const setPresetTags = useCallback(
 		async (id: string, tags: PresetTagOptions[]) => {
-			if (!(await updatePresetMetadata(id, { tags }))) {
-				return;
-			}
-			await refreshLocalPresetEntries();
+			await repository.setPresetTags(id, tags);
+			await reloadLibrary();
 		},
-		[refreshLocalPresetEntries],
+		[reloadLibrary, repository],
 	);
 
-	const handleInitPreset = useCallback(() => {
-		onBeforeApplyPreset?.();
-		applyPreset(DEFAULT_PRESET);
-		commitPresetSelection(null, "Current State", false);
-	}, [applyPreset, commitPresetSelection, onBeforeApplyPreset]);
+	const initPreset = useCallback(async () => {
+		const activation = await repository.initPreset();
+		commitPresetSelection(activation.session, {
+			stateSync: activation.stateSync,
+		});
+	}, [commitPresetSelection, repository]);
 
-	const handleExportPreset = useCallback(async (id: string) => {
-		const json = await exportPreset(id);
-		if (!json) return;
-		const preset = await loadStoredPreset(id);
-		const filename = preset?.name ?? "preset";
-		const blob = new Blob([json], { type: "application/json" });
-		const url = URL.createObjectURL(blob);
-		const anchor = document.createElement("a");
-		anchor.href = url;
-		anchor.download = `${filename}.json`;
-		anchor.click();
-		URL.revokeObjectURL(url);
-	}, []);
+	const exportPreset = useCallback(
+		async (id: string) => repository.exportPreset(id),
+		[repository],
+	);
 
-	const handleImportPreset = useCallback(
+	const importPreset = useCallback(
 		async (json: string, filename: string) => {
-			const importedPreset = await importPreset(json);
-			if (!importedPreset) return;
-			const name = filename.trim() || importedPreset.name || "imported";
-			const existingNames = new Set(
-				localPresetEntries.map((entry) => entry.name),
-			);
-			let candidate = name;
-			let suffix = 2;
-			while (existingNames.has(candidate)) {
-				candidate = `${name} ${suffix++}`;
+			const activation = await repository.importPreset(json, filename);
+			if (!activation) {
+				return;
 			}
-			const stored = await saveStoredPreset({
-				name: candidate,
-				data: importedPreset.data,
-				source: "user",
-				author: importedPreset.author,
-				starred: importedPreset.starred,
-				tags: importedPreset.tags,
+			await reloadLibrary();
+			commitPresetSelection(activation.session, {
+				stateSync: activation.stateSync,
 			});
-			await refreshLocalPresetEntries();
-			onBeforeApplyPreset?.();
-			applyPreset(stored.data);
-			commitPresetSelection(stored.id, stored.name, false);
 		},
+		[commitPresetSelection, reloadLibrary, repository],
+	);
+
+	const exportCurrentState = useCallback(
+		async (name: string) => repository.exportCurrentState(name),
+		[repository],
+	);
+
+	return useMemo(
+		() => ({
+			allPresetEntries,
+			navigationEntryIds,
+			activePresetId,
+			activePresetNameBase,
+			activePresetName,
+			isPresetDirty,
+			syncExternalSelection,
+			activatePreset,
+			setNavigationEntryIds,
+			stepPreset,
+			savePreset,
+			deletePreset,
+			renamePreset,
+			setPresetAuthor,
+			setPresetFavorite,
+			setPresetTags,
+			initPreset,
+			exportPreset,
+			importPreset,
+			exportCurrentState,
+			recomputeDirtyState,
+			reloadLibrary,
+		}),
 		[
-			applyPreset,
-			commitPresetSelection,
-			localPresetEntries,
-			onBeforeApplyPreset,
-			refreshLocalPresetEntries,
+			activePresetId,
+			activePresetName,
+			activePresetNameBase,
+			activatePreset,
+			allPresetEntries,
+			deletePreset,
+			exportCurrentState,
+			exportPreset,
+			importPreset,
+			initPreset,
+			isPresetDirty,
+			navigationEntryIds,
+			reloadLibrary,
+			renamePreset,
+			savePreset,
+			setNavigationEntryIds,
+			setPresetAuthor,
+			setPresetFavorite,
+			setPresetTags,
+			stepPreset,
+			syncExternalSelection,
+			recomputeDirtyState,
 		],
 	);
-
-	const handleExportCurrentState = useCallback(
-		(name: string) => {
-			const presetState = gatherPresetState();
-			const json = JSON.stringify({ _name: name, ...presetState }, null, 2);
-			const blob = new Blob([json], { type: "application/json" });
-			const url = URL.createObjectURL(blob);
-			const anchor = document.createElement("a");
-			anchor.href = url;
-			anchor.download = `${name}.json`;
-			anchor.click();
-			URL.revokeObjectURL(url);
-		},
-		[gatherPresetState],
-	);
-
-	usePresetManagerPersistence({
-		refreshFavoritePresetIds,
-		refreshLocalPresetEntries,
-	});
-
-	return {
-		allPresetEntries,
-		visiblePresetEntries,
-		activePresetId,
-		activePresetNameBase,
-		activePresetName,
-		isPresetDirty,
-		handleSyncPresetSelection,
-		handleLoadPresetByName,
-		handleSyncBuiltinSelection: handleSyncPresetSelection,
-		handleLoadLocal,
-		handleLoadBuiltin: handleLoadPresetByName,
-		handleLoadLibrary,
-		handleStepPreset,
-		handleSavePreset,
-		handleDeletePreset,
-		handleRenamePreset,
-		handleSetPresetAuthor,
-		handleSetPresetFavorite,
-		handleSetPresetTags,
-		handleInitPreset,
-		handleExportPreset,
-		handleImportPreset,
-		handleExportCurrentState,
-		markPresetDirty,
-		setPresetDirtyState,
-	};
 }

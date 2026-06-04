@@ -4,24 +4,17 @@ import {
 	type ReactNode,
 	useCallback,
 	useEffect,
-	useState,
 } from "react";
 import SynthSidebar from "@/components/layout/SynthSidebar";
 import SynthHeader from "@/components/preset/SynthHeader";
 import { ModMatrixProvider } from "@/context/ModMatrixContext";
-import { PresetManagerProvider } from "@/context/PresetManagerContext";
+import { usePresetManager } from "@/context/PresetManagerContext";
 import { ScopeProvider } from "@/context/ScopeContext";
 import type { SynthRuntime } from "@/features/synth/runtime/synthRuntime";
 import { SynthParamControllerProvider } from "@/features/synth/SynthParamController";
 import { useSynthStore } from "@/features/synth/synthStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
-import type { LibraryPreset } from "@/features/synth/types/libraryPreset";
-import type { PresetEntry } from "@/features/synth/types/presetEntry";
-import { useSynthPresetManager } from "@/features/synth/useSynthPresetManager";
-import { decodeCzPatch } from "@/lib/midi/czSysexDecoder";
 import { installBenchmarkApi } from "@/lib/performance/benchmarkHarness";
-import { convertDecodedPatchToSynthPreset } from "@/lib/synth/czPresetConverter";
-import { FACTORY_PRESETS } from "@/lib/synth/factoryCzPresets";
 import { HoverInfoProvider, useHoverInfo } from "../layout/HoverInfo";
 import { useAudioLevelMonitor } from "./hooks/useAudioLevelMonitor";
 import SynthRendererLibraryOverlay from "./SynthRendererLibraryOverlay";
@@ -41,21 +34,9 @@ export type SynthRendererProps = {
 	bottomBarExtra?: ReactNode;
 	sidebarMinWidthRem?: number;
 	runtime: SynthRuntime;
-	libraryPresets?: LibraryPreset[];
 	onAudioLevelChange?: (level: number) => void;
 	disableAudioGate?: boolean;
 	miniKeyboard?: MiniKeyboardProps;
-	onInitPresetSession?: (
-		syncBuiltinSelection: (
-			name: string,
-			options?: { isDirty?: boolean },
-		) => void,
-	) => void;
-	onPresetSessionChange?: (session: {
-		activePresetId: string | null;
-		activePresetNameBase: string;
-		isDirty: boolean;
-	}) => void;
 };
 
 const FRAME_CLASS =
@@ -78,16 +59,11 @@ const SynthRenderer = memo(function SynthRenderer({
 	headerExtra,
 	bottomBarExtra,
 	runtime,
-	libraryPresets = FACTORY_PRESETS,
 	onAudioLevelChange,
 	disableAudioGate = false,
 	sidebarMinWidthRem = 18,
 	miniKeyboard,
-	onInitPresetSession,
-	onPresetSessionChange,
 }: SynthRendererProps) {
-	const gatherPresetState = useSynthStore((s) => s.gatherPresetState);
-	const applyPreset = useSynthStore((s) => s.applyPreset);
 	const modMatrix = useSynthStore((s) => s.modMatrix);
 	const setModMatrix = useSynthStore((s) => s.setModMatrix);
 
@@ -106,63 +82,26 @@ const SynthRenderer = memo(function SynthRenderer({
 	const sendPolyAftertouch =
 		miniKeyboard?.onPolyAftertouch ?? runtime.sendPolyAftertouch;
 	const panic = runtime.panic;
-	const _hasActiveNotes = activeNotes.length > 0;
+	const {
+		allPresetEntries,
+		activatePreset,
+		stepPreset,
+		setNavigationEntryIds,
+	} = usePresetManager();
 
 	useAudioLevelMonitor(runtime.analyserNodeRef, onAudioLevelChange);
 
-	const handleLoadLibraryPreset = useCallback(
-		(preset: LibraryPreset) => {
-			if (preset.data) {
-				applyPreset(preset.data);
-				return;
-			}
-			if (preset.sysexData) {
-				const decoded = decodeCzPatch(preset.sysexData);
-				if (decoded) {
-					const synthPreset = convertDecodedPatchToSynthPreset(decoded);
-					applyPreset(synthPreset);
-				}
-			}
-		},
-		[applyPreset],
-	);
-
-	const {
-		allPresetEntries,
-		visiblePresetEntries,
-		activePresetId,
-		activePresetName,
-		activePresetNameBase,
-		handleLoadLocal,
-		handleLoadPresetByName,
-		handleLoadLibrary,
-		handleSavePreset,
-		handleDeletePreset,
-		handleRenamePreset,
-		handleSetPresetAuthor,
-		handleSetPresetFavorite,
-		handleSetPresetTags,
-		handleInitPreset,
-		handleExportPreset,
-		handleImportPreset,
-		handleExportCurrentState,
-		handleSyncPresetSelection,
-		isPresetDirty,
-	} = useSynthPresetManager({
-		gatherPresetState,
-		applyPreset,
-		onBeforeApplyPreset: panic,
-		libraryPresets,
-		onLoadLibraryPreset: handleLoadLibraryPreset,
-	});
-
 	useEffect(() => {
-		const presetNames = libraryPresets.map((preset) => preset.name);
+		const presetNames = allPresetEntries.map((preset) => preset.label);
 		return installBenchmarkApi({
 			mode: runtime.benchmark.mode,
 			listBuiltinPresets: () => presetNames,
 			loadBuiltinPreset: (name: string) => {
-				handleLoadPresetByName(name);
+				const entry = allPresetEntries.find((preset) => preset.label === name);
+				if (!entry) {
+					return;
+				}
+				void activatePreset({ entryId: entry.id });
 			},
 			setPerformanceMonitorEnabled:
 				runtime.benchmark.setPerformanceMonitorEnabled,
@@ -173,8 +112,8 @@ const SynthRenderer = memo(function SynthRenderer({
 			ensureReady: runtime.benchmark.ensureReady,
 		});
 	}, [
-		handleLoadPresetByName,
-		libraryPresets,
+		allPresetEntries,
+		activatePreset,
 		panic,
 		runtime.benchmark.ensureReady,
 		runtime.benchmark.getPerformanceMetrics,
@@ -183,9 +122,6 @@ const SynthRenderer = memo(function SynthRenderer({
 		sendNoteOn,
 		runtime.benchmark.mode,
 	]);
-
-	const [libraryVisibleEntries, setLibraryVisibleEntries] =
-		useState<PresetEntry[]>(visiblePresetEntries);
 
 	const keyboardInsetPx = keyboardHeight + 16;
 	const mainPanelBottomInset =
@@ -205,63 +141,6 @@ const SynthRenderer = memo(function SynthRenderer({
 		setLibraryModeOpen(false);
 	}, [setLibraryModeOpen]);
 
-	useEffect(() => {
-		onInitPresetSession?.(handleSyncPresetSelection);
-	}, [handleSyncPresetSelection, onInitPresetSession]);
-
-	useEffect(() => {
-		onPresetSessionChange?.({
-			activePresetId,
-			activePresetNameBase,
-			isDirty: isPresetDirty,
-		});
-	}, [
-		activePresetId,
-		activePresetNameBase,
-		isPresetDirty,
-		onPresetSessionChange,
-	]);
-
-	const handleStepPresetInVisibleOrder = useCallback(
-		(direction: -1 | 1) => {
-			const entries = libraryVisibleEntries;
-			if (entries.length === 0) {
-				return;
-			}
-
-			const currentIndex = entries.findIndex(
-				(entry) => entry.id === activePresetId,
-			);
-			const nextIndex =
-				currentIndex < 0
-					? direction === 1
-						? 0
-						: entries.length - 1
-					: (currentIndex + direction + entries.length) % entries.length;
-			const entry = entries[nextIndex];
-			if (!entry) {
-				return;
-			}
-
-			if (entry.type === "local") {
-				handleLoadLocal(entry.id);
-				return;
-			}
-			if (entry.preset) {
-				handleLoadLibrary(entry.preset);
-				return;
-			}
-			handleLoadPresetByName(entry.label);
-		},
-		[
-			libraryVisibleEntries,
-			activePresetId,
-			handleLoadLocal,
-			handleLoadLibrary,
-			handleLoadPresetByName,
-		],
-	);
-
 	const audioGate = {
 		ready: disableAudioGate || runtime.audioContextState === "running",
 		onResume: runtime.resumeAudio,
@@ -277,80 +156,60 @@ const SynthRenderer = memo(function SynthRenderer({
 						effectivePitchHz={runtime.effectivePitchHz}
 						subscribeScopeFrames={runtime.subscribeScopeFrames}
 					>
-						<PresetManagerProvider
-							value={{
-								allPresetEntries,
-								visiblePresetEntries: libraryVisibleEntries,
-								activePresetId,
-								activePresetName,
-								handleLoadPresetByName,
-								handleLoadLocal,
-								handleLoadLibrary,
-								handleSavePreset,
-								handleDeletePreset,
-								handleRenamePreset,
-								handleSetPresetAuthor,
-								handleSetPresetFavorite,
-								handleSetPresetTags,
-								handleInitPreset,
-								handleExportPreset,
-								handleImportPreset,
-								handleExportCurrentState,
-							}}
+						<div
+							data-theme="cosmo"
+							className={`${FRAME_CLASS} relative select-none`}
+							style={frameStyleWithPanelInset}
 						>
-							<div
-								data-theme="cosmo"
-								className={`${FRAME_CLASS} relative select-none`}
-								style={frameStyleWithPanelInset}
-							>
-								<div className="relative z-30">
-									<SynthHeader
-										onStepPreset={handleStepPresetInVisibleOrder}
-										onBrandInfoClick={() => setBrandInfoOpen(true)}
-										isLibraryModeOpen={libraryModeOpen}
-										onLibraryModeChange={setLibraryModeOpen}
-									/>
-									{headerExtra}
-								</div>
-								<div className="relative z-10 flex min-h-0 w-full min-w-0 flex-1 gap-2 overflow-hidden bg-cz-surface px-1">
-									<div
-										className="flex min-h-0 items-stretch overflow-hidden"
-										style={{ height: sidebarAvailableHeight }}
-									>
-										<SynthSidebar
-											sidebarMinWidthRem={sidebarMinWidthRem}
-											fillAvailableHeight
-											libraryModeOpen={libraryModeOpen}
-										/>
-									</div>
-									<div
-										className="flex min-h-0 flex-1 items-stretch justify-center overflow-hidden"
-										style={{ paddingBottom: mainPanelPaddingBottom }}
-									>
-										<SynthRendererMainPanel
-											mainPanelMode={mainPanelMode}
-											setMainPanelMode={setMainPanelMode}
-										/>
-									</div>
-								</div>
-								<SynthRendererLibraryOverlay
-									isOpen={libraryModeOpen}
-									onVisibleEntriesChange={setLibraryVisibleEntries}
-									onClose={handleCloseLibrary}
+							<div className="relative z-30">
+								<SynthHeader
+									onStepPreset={(direction) => {
+										void stepPreset(direction);
+									}}
+									onBrandInfoClick={() => setBrandInfoOpen(true)}
+									isLibraryModeOpen={libraryModeOpen}
+									onLibraryModeChange={setLibraryModeOpen}
 								/>
-								<HoverAwareSynthRendererOverlays
-									audioGate={audioGate}
-									activeNotes={activeNotes}
-									libraryModeOpen={libraryModeOpen}
-									keyboardVisible={keyboardVisible}
-									onNoteOn={sendNoteOn}
-									onNoteOff={sendNoteOff}
-									onPolyAftertouch={sendPolyAftertouch}
-									bottomBarExtra={bottomBarExtra}
-									onKeyboardToggle={() => setKeyboardVisible(!keyboardVisible)}
-								/>
+								{headerExtra}
 							</div>
-						</PresetManagerProvider>
+							<div className="relative z-10 flex min-h-0 w-full min-w-0 flex-1 gap-2 overflow-hidden bg-cz-surface px-1">
+								<div
+									className="flex min-h-0 items-stretch overflow-hidden"
+									style={{ height: sidebarAvailableHeight }}
+								>
+									<SynthSidebar
+										sidebarMinWidthRem={sidebarMinWidthRem}
+										fillAvailableHeight
+										libraryModeOpen={libraryModeOpen}
+									/>
+								</div>
+								<div
+									className="flex min-h-0 flex-1 items-stretch justify-center overflow-hidden"
+									style={{ paddingBottom: mainPanelPaddingBottom }}
+								>
+									<SynthRendererMainPanel
+										mainPanelMode={mainPanelMode}
+										setMainPanelMode={setMainPanelMode}
+									/>
+								</div>
+							</div>
+							<SynthRendererLibraryOverlay
+								isOpen={libraryModeOpen}
+								onNavigationEntriesChange={setNavigationEntryIds}
+								onClose={handleCloseLibrary}
+							/>
+							<HoverAwareSynthRendererOverlays
+								audioGate={audioGate}
+								activeNotes={activeNotes}
+								libraryModeOpen={libraryModeOpen}
+								keyboardVisible={keyboardVisible}
+								onNoteOn={sendNoteOn}
+								onNoteOff={sendNoteOff}
+								onPolyAftertouch={sendPolyAftertouch}
+								bottomBarExtra={bottomBarExtra}
+								onKeyboardToggle={() => setKeyboardVisible(!keyboardVisible)}
+							/>
+						</div>
 					</ScopeProvider>
 				</SynthParamControllerProvider>
 			</ModMatrixProvider>

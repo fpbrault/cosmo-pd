@@ -14,7 +14,9 @@ declare global {
 		__czLoadPresetData?: (id: string) => Promise<unknown>;
 		__czSetPresetName?: (name: string) => void;
 		__czGetPresetSession?: () => Promise<unknown>;
-		__czSetPresetSession?: (session: PluginPresetSession) => Promise<unknown>;
+		__czSetPresetSession?: (
+			session: NativePluginPresetSession,
+		) => Promise<unknown>;
 	}
 }
 
@@ -25,6 +27,13 @@ type UsePluginBridgeSynthEngineOptions = {
 
 export type PluginPresetSession = {
 	activePresetId: string | null;
+	loadedPresetId?: string | null;
+	activePresetNameBase: string;
+	isDirty: boolean;
+};
+
+type NativePluginPresetSession = {
+	loadedPresetId: string | null;
 	activePresetNameBase: string;
 	isDirty: boolean;
 };
@@ -387,11 +396,17 @@ export function usePluginBridgeSynthEngine(
 			) {
 				return null;
 			}
+			const loadedPresetId =
+				typeof session.loadedPresetId === "string"
+					? session.loadedPresetId
+					: null;
+			const activePresetId =
+				typeof session.activePresetId === "string"
+					? session.activePresetId
+					: loadedPresetId;
 			return {
-				activePresetId:
-					typeof session.activePresetId === "string"
-						? session.activePresetId
-						: null,
+				activePresetId,
+				loadedPresetId,
 				activePresetNameBase: session.activePresetNameBase,
 				isDirty: session.isDirty,
 			};
@@ -399,7 +414,11 @@ export function usePluginBridgeSynthEngine(
 
 	const setPresetSession = useCallback(
 		async (session: PluginPresetSession): Promise<void> => {
-			await window.__czSetPresetSession?.(session);
+			await window.__czSetPresetSession?.({
+				loadedPresetId: session.activePresetId,
+				activePresetNameBase: session.activePresetNameBase,
+				isDirty: session.isDirty,
+			});
 		},
 		[],
 	);

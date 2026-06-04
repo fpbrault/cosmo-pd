@@ -35,7 +35,7 @@ use crate::session_state::MidiLearnState;
 use crate::{
     MidiCcQueue, PerformanceCountersHandle, ScopeBuffer, SharedEditorState, SharedPresetSession,
     SharedRuntimeModSources, SharedRuntimeVoiceStates, SharedTransportSnapshot, UiInputQueue,
-    append_log,
+    append_log, append_log_debug, append_log_error, append_log_warn,
 };
 use cosmo_synth_engine::params::SynthParams;
 
@@ -129,17 +129,21 @@ pub struct CzEditor {
 
 impl Drop for CzEditor {
     fn drop(&mut self) {
-        append_log("CzEditor::drop");
+        append_log_debug("CzEditor::drop");
         self.destroy_webview();
     }
 }
 
 impl CzEditor {
     fn destroy_webview(&mut self) {
-        append_log("CzEditor::destroy_webview");
+        append_log_debug("CzEditor::destroy_webview");
         if let Ok(mut container) = self.webview_state.lock() {
             container.webview = None;
         }
+        if let Ok(mut cache) = self.last_sent_params_json.lock() {
+            cache.clear();
+        }
+        self.last_midi_learn_version = u64::MAX;
         self.pending_parent_ns_view = None;
         self.clear_standalone_window();
     }
@@ -207,12 +211,12 @@ impl CzEditor {
     #[cfg(target_os = "macos")]
     fn try_create_webview(&mut self, ns_view: *mut std::ffi::c_void) -> bool {
         let Some(asset_source) = plugin_asset_source() else {
-            append_log(
+            append_log_warn(
                 "CzEditor::try_create_webview: web assets unavailable; skipping WebView creation",
             );
             return false;
         };
-        append_log(&format!("web assets: {}", asset_source.describe()));
+        append_log_debug(&format!("web assets: {}", asset_source.describe()));
 
         let synth_params = self.synth_params.clone();
         let rt_synth_params = self.rt_synth_params.clone();
@@ -348,21 +352,21 @@ impl Editor for CzEditor {
         #[cfg(not(target_os = "macos"))]
         {
             let _ = &parent;
-            append_log("CzEditor::open: non-macOS build; no-op");
+            append_log_debug("CzEditor::open: non-macOS build; no-op");
             return;
         }
 
         #[cfg(target_os = "macos")]
         {
             if !is_main_thread() {
-                append_log("CzEditor::open called off main thread; skipping WebView creation");
+                append_log_warn("CzEditor::open called off main thread; skipping WebView creation");
                 return;
             }
 
             let ns_view = match parent {
                 RawWindowHandle::AppKit(ptr) => ptr,
                 _ => {
-                    append_log("CzEditor::open: unsupported window handle");
+                    append_log_warn("CzEditor::open: unsupported window handle");
                     return;
                 }
             };
@@ -379,6 +383,15 @@ impl Editor for CzEditor {
     fn idle(&mut self) {
         #[cfg(target_os = "macos")]
         if !is_main_thread() {
+            let should_schedule_main_thread_sync = self
+                .webview_state
+                .lock()
+                .map(|container| container.webview.is_some())
+                .unwrap_or(false);
+            if !should_schedule_main_thread_sync {
+                return;
+            }
+
             let webview_state = self.webview_state.clone();
             let synth_params = self.synth_params.clone();
             let last_sent_params_json = self.last_sent_params_json.clone();
@@ -413,7 +426,7 @@ impl Editor for CzEditor {
         {
             let ns_view = ns_view as *mut std::ffi::c_void;
             if unsafe { parent_has_window(ns_view) } {
-                append_log("idle: retrying deferred WebView creation");
+                append_log_debug("idle: retrying deferred WebView creation");
                 let _ = self.try_create_webview(ns_view);
             }
         }
@@ -497,7 +510,7 @@ fn flush_midi_cc_queue_to_webview(
     }
 
     // TODO: remove this diagnostic once cross-format MIDI CC webview forwarding is verified.
-    append_log(&format!("flush_midi_cc_queue count={}", events.len()));
+    append_log_debug(&format!("flush_midi_cc_queue count={}", events.len()));
 
     if let Ok(container) = webview_state.lock()
         && let Some(wv) = &container.webview
@@ -535,7 +548,7 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
     use objc2_web_kit::{WKWebView, WKWebViewConfiguration};
 
     let asset_source = plugin_asset_source()?;
-    append_log(&format!("screenshot: loading {}", asset_source.describe()));
+    append_log_debug(&format!("screenshot: loading {}", asset_source.describe()));
 
     let frame = NSRect::new(NSPoint::new(0.0, 0.0), NSSize::new(1152.0, 864.0));
 
@@ -627,7 +640,7 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
             break;
         }
         if start.elapsed() > max_wait {
-            append_log("screenshot: timeout waiting for page load");
+            append_log_warn("screenshot: timeout waiting for page load");
             return None;
         }
         let d = NSDate::dateWithTimeIntervalSinceNow(0.05);
@@ -692,7 +705,7 @@ fn screenshot_webview_impl() -> Option<(Vec<u8>, u32, u32)> {
     let start = std::time::Instant::now();
     while !done.load(Ordering::SeqCst) {
         if start.elapsed() > max_wait {
-            append_log("screenshot: timeout waiting for snapshot");
+            append_log_warn("screenshot: timeout waiting for snapshot");
             return None;
         }
         let d = NSDate::dateWithTimeIntervalSinceNow(0.05);
@@ -932,7 +945,7 @@ unsafe fn build_webview_from_ns_view(
         let params_repush_done = Arc::new(AtomicBool::new(false));
 
         let scheme = get_instance_scheme();
-        append_log(&format!("webview scheme: {scheme}"));
+        append_log_debug(&format!("webview scheme: {scheme}"));
 
         let scope_for_protocol = scope_buffer.clone();
         let builder = WebViewBuilder::new()
@@ -980,6 +993,10 @@ unsafe fn build_webview_from_ns_view(
                     &midi_learn_state_for_ipc,
                 );
 
+                if let Err(error) = &result {
+                    append_log_warn(&format!("ipc error method={method}: {error}"));
+                }
+
                 let response = match result {
                     Ok(val) => serde_json::json!({ "id": id, "result": val }),
                     Err(e) => serde_json::json!({ "id": id, "error": e }),
@@ -1018,7 +1035,7 @@ unsafe fn build_webview_from_ns_view(
         if parent_has_window(ns_view) {
             // BRANCH A: ns_view already has an associated NSWindow (DAW mode).
             // Embed webview as child of the existing window.
-            append_log("parent NSView has a real window — embedding as child");
+            append_log_debug("parent NSView has a real window — embedding as child");
             let parent = NsViewWrapper(ns_view);
             let webview = builder
                 .with_url(format!("{}://localhost/", scheme))
@@ -1029,14 +1046,14 @@ unsafe fn build_webview_from_ns_view(
                     (Some(webview), None)
                 }
                 Err(e) => {
-                    append_log(&format!("failed to create plugin WebView: {e}"));
+                    append_log_error(&format!("failed to create plugin WebView: {e}"));
                     (None, None)
                 }
             }
         } else if is_standalone_mode() {
             // BRANCH B: standalone binary — create our own window (hides baseview
             // window from truce-standalone) and embed the WebView inside it.
-            append_log("standalone mode — creating standalone NSWindow");
+            append_log_debug("standalone mode — creating standalone NSWindow");
             let standalone_window = StandaloneWindow::new();
             let content_view = standalone_window.content_view();
 
@@ -1057,14 +1074,14 @@ unsafe fn build_webview_from_ns_view(
                     (Some(webview), Some(standalone_window))
                 }
                 Err(e) => {
-                    append_log(&format!("standalone: failed to create plugin WebView: {e}"));
+                    append_log_error(&format!("standalone: failed to create plugin WebView: {e}"));
                     (None, None)
                 }
             }
         } else {
             // BRANCH C: no window association AND not standalone — defer.
             // idle() will retry when the host window finishes setting up.
-            append_log(
+            append_log_debug(
                 "parent NSView has no window — deferring WebView creation (idle() will retry)",
             );
             (None, None)
@@ -1124,7 +1141,7 @@ fn serve_file(
     use wry::http::Response;
 
     let path = request.uri().path();
-    append_log(&format!("serve_file: {}", path));
+    append_log_debug(&format!("serve_file: {}", path));
 
     if let Some(asset) = read_web_asset(asset_source, path) {
         return Response::builder()
@@ -1134,7 +1151,7 @@ fn serve_file(
             .unwrap();
     }
 
-    append_log(&format!("serve_file 404: {path}"));
+    append_log_warn(&format!("serve_file 404: {path}"));
     Response::builder()
         .status(404)
         .body(std::borrow::Cow::Owned(
@@ -1204,7 +1221,7 @@ fn plugin_asset_source() -> Option<WebAssetSource> {
     {
         let dir = webview_dist_path();
         if let Some(ref d) = dir {
-            append_log(&format!("[debug_gui] resource_dir: {}", d.display()));
+            append_log_debug(&format!("[debug_gui] resource_dir: {}", d.display()));
         }
         return dir.map(WebAssetSource::Filesystem);
     }
@@ -1218,7 +1235,7 @@ fn plugin_asset_source() -> Option<WebAssetSource> {
                 .and_then(|p| p.parent())
                 .map(|p| p.join("Resources").join("ui"));
             if let Some(ref d) = bundle_resources {
-                append_log(&format!("[release] trying bundle path: {}", d.display()));
+                append_log_debug(&format!("[release] trying bundle path: {}", d.display()));
                 if d.exists() {
                     return Some(WebAssetSource::Filesystem(d.clone()));
                 }
@@ -1237,7 +1254,7 @@ fn plugin_asset_source() -> Option<WebAssetSource> {
                         .join("dist")
                 });
                 if let Some(ref w) = webview_path {
-                    append_log(&format!(
+                    append_log_debug(&format!(
                         "[release] trying standalone path: {}",
                         w.display()
                     ));
@@ -1251,18 +1268,18 @@ fn plugin_asset_source() -> Option<WebAssetSource> {
         // 3. Last resort: hardcoded dev path
         let dev_path = webview_dist_path();
         if let Some(ref d) = dev_path {
-            append_log(&format!("[release] trying hardcoded path: {}", d.display()));
+            append_log_debug(&format!("[release] trying hardcoded path: {}", d.display()));
             if d.exists() {
                 return Some(WebAssetSource::Filesystem(d.clone()));
             }
         }
 
         if has_embedded_web_assets() {
-            append_log("[release] using embedded web assets");
+            append_log("using embedded web assets");
             return Some(WebAssetSource::Embedded);
         }
 
-        append_log("[release] WARNING: could not determine web assets");
+        append_log_warn("could not determine web assets");
         None
     }
 }

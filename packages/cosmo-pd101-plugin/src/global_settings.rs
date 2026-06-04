@@ -1,5 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+#[cfg(test)]
+use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
 
@@ -7,20 +9,36 @@ use crate::session_state::{MidiLearnBinding, default_midi_bindings};
 
 const GLOBAL_SETTINGS_FILE_NAME: &str = "global_settings.json";
 
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum PluginLogLevel {
+    #[default]
+    Error,
+    Warn,
+    Info,
+    Debug,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct PluginGlobalSettings {
     #[serde(default = "default_midi_bindings")]
     pub midi_learn_bindings: Vec<MidiLearnBinding>,
+    #[serde(default)]
+    pub log_level: PluginLogLevel,
 }
 
 impl Default for PluginGlobalSettings {
     fn default() -> Self {
         Self {
             midi_learn_bindings: default_midi_bindings(),
+            log_level: PluginLogLevel::Error,
         }
     }
 }
+
+#[cfg(test)]
+pub(crate) static TEST_DATA_DIR_LOCK: Mutex<()> = Mutex::new(());
 
 pub fn get_global_settings_path() -> PathBuf {
     if let Ok(path) = std::env::var("COSMO_PD101_DATA_DIR") {
@@ -107,7 +125,71 @@ pub fn load_or_init_global_settings() -> Result<PluginGlobalSettings, String> {
 }
 
 pub fn save_midi_learn_bindings(bindings: Vec<MidiLearnBinding>) -> Result<(), String> {
-    save_global_settings(&PluginGlobalSettings {
-        midi_learn_bindings: bindings,
-    })
+    let mut settings = load_or_init_global_settings()?;
+    settings.midi_learn_bindings = bindings;
+    save_global_settings(&settings)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use std::path::PathBuf;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    use super::*;
+    use crate::session_state::default_midi_bindings;
+
+    fn with_test_data_dir<T>(test_fn: impl FnOnce(PathBuf) -> T) -> T {
+        let _guard = TEST_DATA_DIR_LOCK
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|duration| duration.as_nanos())
+            .unwrap_or_default();
+        let path = std::env::temp_dir().join(format!("cosmo-pd101-global-settings-{}", unique));
+        fs::create_dir_all(&path).unwrap();
+        unsafe {
+            std::env::set_var("COSMO_PD101_DATA_DIR", &path);
+        }
+        let result = test_fn(path.clone());
+        unsafe {
+            std::env::remove_var("COSMO_PD101_DATA_DIR");
+        }
+        let _ = fs::remove_dir_all(path);
+        result
+    }
+
+    #[test]
+    fn default_global_settings_use_error_log_level() {
+        let settings = PluginGlobalSettings::default();
+        assert_eq!(settings.log_level, PluginLogLevel::Error);
+    }
+
+    #[test]
+    fn deserializing_without_log_level_uses_default() {
+        let settings: PluginGlobalSettings = serde_json::from_str(
+            r#"{"midiLearnBindings":[{"paramKey":"macro1","channel":-1,"cc":1}]}"#,
+        )
+        .unwrap();
+
+        assert_eq!(settings.log_level, PluginLogLevel::Error);
+    }
+
+    #[test]
+    fn save_midi_learn_bindings_preserves_existing_log_level() {
+        with_test_data_dir(|_| {
+            save_global_settings(&PluginGlobalSettings {
+                midi_learn_bindings: default_midi_bindings(),
+                log_level: PluginLogLevel::Debug,
+            })
+            .unwrap();
+
+            save_midi_learn_bindings(vec![]).unwrap();
+
+            let settings = load_or_init_global_settings().unwrap();
+            assert_eq!(settings.log_level, PluginLogLevel::Debug);
+            assert!(settings.midi_learn_bindings.is_empty());
+        });
+    }
 }

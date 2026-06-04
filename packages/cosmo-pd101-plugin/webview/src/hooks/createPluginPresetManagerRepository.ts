@@ -1,0 +1,274 @@
+import type {
+	PresetActivationResult,
+	PresetEntry,
+	PresetManagerRepository,
+	PresetManagerSession,
+	PresetSource,
+	PresetTagOptions,
+	SavePresetRequest,
+	SynthPresetV1,
+} from "@cosmo/cosmo-pd101";
+
+type NativePresetLibraryEntry = {
+	id: string;
+	name: string;
+	source: PresetSource;
+	author: string;
+	starred: boolean;
+	sortIndex?: number;
+	favorite?: boolean;
+	tags?: string[];
+};
+
+type NativePresetLibraryResponse = {
+	entries?: NativePresetLibraryEntry[];
+};
+
+type SavePluginPresetPayload = {
+	id?: string | null;
+	name: string;
+	author?: string;
+	tags?: string[];
+	data?: SynthPresetV1;
+};
+
+function getSourceLabel(source: PresetSource): string {
+	if (source === "cosmo-factory") {
+		return "Cosmo Library";
+	}
+	if (source === "cz-factory") {
+		return "Temple Of CZ";
+	}
+	return "User";
+}
+
+declare global {
+	interface Window {
+		__czGetPresetLibrary?: (source?: string) => Promise<unknown>;
+		__czLoadPresetData?: (id: string) => Promise<unknown>;
+		__czSavePreset?: (payload: SavePluginPresetPayload) => Promise<unknown>;
+		__czDeletePreset?: (id: string) => Promise<unknown>;
+		__czRenamePreset?: (id: string, newName: string) => Promise<unknown>;
+		__czSetPresetAuthor?: (id: string, author: string) => Promise<unknown>;
+		__czSetPresetTags?: (id: string, tags: string[]) => Promise<unknown>;
+		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
+		__czExportPreset?: (id: string) => Promise<unknown>;
+	}
+}
+
+function createSelection(
+	activePresetId: string | null,
+	activePresetNameBase: string,
+	isDirty = false,
+): PresetManagerSession {
+	return { activePresetId, activePresetNameBase, isDirty };
+}
+
+function createActivationResult(
+	session: PresetManagerSession,
+	stateSync: PresetActivationResult["stateSync"],
+): PresetActivationResult {
+	return { session, stateSync };
+}
+
+function isSynthPresetV1(value: unknown): value is SynthPresetV1 {
+	if (typeof value !== "object" || value === null) {
+		return false;
+	}
+	const candidate = value as Partial<SynthPresetV1> & {
+		schemaVersion?: unknown;
+		params?: unknown;
+	};
+	return candidate.schemaVersion === 1 && !!candidate.params;
+}
+
+function parseImportedPreset(
+	json: string,
+	filename: string,
+): {
+	name: string;
+	data: SynthPresetV1;
+	author: string;
+	tags: string[];
+} | null {
+	try {
+		const parsed = JSON.parse(json) as Record<string, unknown>;
+		if (
+			typeof parsed.name === "string" &&
+			typeof parsed.author === "string" &&
+			Array.isArray(parsed.tags) &&
+			isSynthPresetV1(parsed.data)
+		) {
+			return {
+				name: parsed.name,
+				data: parsed.data,
+				author: parsed.author,
+				tags: parsed.tags.filter(
+					(tag): tag is string => typeof tag === "string",
+				),
+			};
+		}
+
+		if (isSynthPresetV1(parsed)) {
+			return {
+				name: filename.trim() || "Imported",
+				data: parsed,
+				author: "",
+				tags: [],
+			};
+		}
+
+		if (
+			typeof parsed._name === "string" &&
+			isSynthPresetV1({
+				schemaVersion: parsed.schemaVersion,
+				params: parsed.params,
+			})
+		) {
+			return {
+				name: parsed._name,
+				data: {
+					schemaVersion: parsed.schemaVersion as number,
+					params: parsed.params as SynthPresetV1["params"],
+				},
+				author: "",
+				tags: [],
+			};
+		}
+	} catch {
+		return null;
+	}
+
+	return null;
+}
+
+function mapNativeEntryToPresetEntry(
+	entry: NativePresetLibraryEntry,
+): PresetEntry {
+	return {
+		id: entry.id,
+		label: entry.name,
+		type: entry.source === "user" ? "local" : "library",
+		source: entry.source,
+		sourceLabel: getSourceLabel(entry.source),
+		author: entry.author,
+		starred: entry.starred,
+		favorite: entry.favorite === true,
+		tags: entry.tags ?? [],
+		preset:
+			entry.source === "user"
+				? undefined
+				: {
+						id: entry.id,
+						name: entry.name,
+						source: entry.source,
+						author: entry.author,
+						starred: entry.starred,
+						sortIndex: entry.sortIndex,
+						tags: entry.tags,
+					},
+	};
+}
+
+export function createPluginPresetManagerRepository({
+	gatherPresetState,
+}: {
+	gatherPresetState: () => SynthPresetV1;
+}): PresetManagerRepository {
+	return {
+		listEntries: async () => {
+			const result = (await window.__czGetPresetLibrary?.()) as
+				| NativePresetLibraryResponse
+				| undefined;
+			if (!result?.entries) {
+				return [];
+			}
+			return result.entries.map(mapNativeEntryToPresetEntry);
+		},
+		loadEntry: async (entry) => {
+			const result = (await window.__czLoadPresetData?.(entry.id)) as
+				| { preset_name?: string }
+				| undefined;
+			return createActivationResult(
+				createSelection(entry.id, result?.preset_name ?? entry.label),
+				"deferred",
+			);
+		},
+		savePreset: async ({ existingEntry, name }: SavePresetRequest) => {
+			const result = (await window.__czSavePreset?.({
+				id: existingEntry?.id ?? null,
+				name,
+				author: existingEntry?.author ?? "",
+				tags: existingEntry?.tags ?? [],
+			})) as { id?: string; name?: string } | undefined;
+			return createActivationResult(
+				createSelection(
+					result?.id ?? existingEntry?.id ?? null,
+					result?.name ?? name,
+				),
+				"immediate",
+			);
+		},
+		deletePreset: async (id) => {
+			await window.__czDeletePreset?.(id);
+		},
+		renamePreset: async (id, newName) => {
+			await window.__czRenamePreset?.(id, newName);
+		},
+		setPresetAuthor: async (id, author) => {
+			await window.__czSetPresetAuthor?.(id, author);
+		},
+		setPresetFavorite: async (id, favorite) => {
+			await window.__czToggleStarred?.(id, favorite);
+		},
+		setPresetTags: async (id, tags) => {
+			await window.__czSetPresetTags?.(id, tags as PresetTagOptions[]);
+		},
+		initPreset: async () =>
+			createActivationResult(
+				createSelection(null, "Current State"),
+				"immediate",
+			),
+		exportPreset: async (id) => {
+			const result = (await window.__czExportPreset?.(id)) as
+				| { filename?: string; json?: string }
+				| undefined;
+			if (!result?.filename || !result.json) {
+				return null;
+			}
+			return {
+				filename: result.filename,
+				json: result.json,
+			};
+		},
+		importPreset: async (json, filename) => {
+			const imported = parseImportedPreset(json, filename);
+			if (!imported) {
+				return null;
+			}
+			const result = (await window.__czSavePreset?.({
+				name: imported.name,
+				author: imported.author,
+				tags: imported.tags,
+				data: imported.data,
+			})) as { id?: string; name?: string } | undefined;
+			if (!result?.id) {
+				return null;
+			}
+			const activated = (await window.__czLoadPresetData?.(result.id)) as
+				| { preset_name?: string }
+				| undefined;
+			return createActivationResult(
+				createSelection(
+					result.id,
+					activated?.preset_name ?? result.name ?? imported.name,
+				),
+				"deferred",
+			);
+		},
+		exportCurrentState: async (name) => ({
+			filename: `${name}.json`,
+			json: JSON.stringify({ _name: name, ...gatherPresetState() }, null, 2),
+		}),
+	};
+}

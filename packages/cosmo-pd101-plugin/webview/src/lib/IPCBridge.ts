@@ -15,6 +15,7 @@
  */
 
 // ─── Types ───────────────────────────────────────────────────────────────────
+import { postHostLog } from "./hostLogger";
 
 type IpcRpcResponse = {
 	id: number;
@@ -70,9 +71,19 @@ declare global {
 			tags: string[],
 			macroLabels?: string[],
 		) => Promise<unknown>;
+		__czSavePreset?: (payload: {
+			id?: string | null;
+			name: string;
+			author?: string;
+			tags?: string[];
+			data?: unknown;
+		}) => Promise<unknown>;
 		__czDeletePreset?: (id: string) => Promise<unknown>;
 		__czRenamePreset?: (id: string, newName: string) => Promise<unknown>;
+		__czSetPresetAuthor?: (id: string, author: string) => Promise<unknown>;
+		__czSetPresetTags?: (id: string, tags: string[]) => Promise<unknown>;
 		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
+		__czExportPreset?: (id: string) => Promise<unknown>;
 		__czSetEditorState?: (state: string) => void;
 		__czGetEditorState?: () => Promise<unknown>;
 		__czOnMidiLearnState?: (json: string) => void;
@@ -108,7 +119,9 @@ let _routerPostMessage: IpcPostMessage | null = null;
 function invokeRust(method: string, ...args: unknown[]): Promise<unknown> {
 	return new Promise((resolve, reject) => {
 		if (!_nativePostMessage) {
-			reject(new Error("[IPCBridge] native IPC not available"));
+			const error = new Error("[IPCBridge] native IPC not available");
+			postHostLog("warn", `${method}: ${error.message}`);
+			reject(error);
 			return;
 		}
 		const id = nextRpcId++;
@@ -153,6 +166,10 @@ function installIpcResponseHandler() {
 		}
 		pendingRpc.delete(response.id);
 		if (response.error !== undefined) {
+			postHostLog(
+				"error",
+				`IPCBridge response error id=${response.id}: ${response.error}`,
+			);
 			pending.reject(new Error(response.error));
 		} else {
 			pending.resolve(response.result);
@@ -238,11 +255,17 @@ function installIpcRouter() {
 		tags: string[],
 		macroLabels?: string[],
 	) => invokeRust("addPreset", { name, tags, macroLabels });
+	window.__czSavePreset = (payload) => invokeRust("savePreset", payload);
 	window.__czDeletePreset = (id: string) => invokeRust("deletePreset", { id });
 	window.__czRenamePreset = (id: string, newName: string) =>
 		invokeRust("renamePreset", { id, newName });
+	window.__czSetPresetAuthor = (id: string, author: string) =>
+		invokeRust("setPresetAuthor", { id, author });
+	window.__czSetPresetTags = (id: string, tags: string[]) =>
+		invokeRust("setPresetTags", { id, tags });
 	window.__czToggleStarred = (id: string, starred: boolean) =>
 		invokeRust("toggleStarred", { id, starred });
+	window.__czExportPreset = (id: string) => invokeRust("exportPreset", { id });
 
 	window.__czSetEditorState = (state: string) => {
 		void invokeRust("setEditorState", JSON.parse(state)).catch((error) => {
