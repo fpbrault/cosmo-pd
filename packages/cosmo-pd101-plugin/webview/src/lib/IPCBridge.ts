@@ -384,7 +384,7 @@ function installScopeProperty(onActiveChange: (active: boolean) => void) {
 }
 
 function installScopePolling() {
-	const INTERVAL_MS = 33; // ~30 fps
+	const INTERVAL_MS = 50; // ~20 fps
 	let rafId = 0;
 	let lastScheduled = 0;
 	let pollInFlight = false;
@@ -471,7 +471,7 @@ function installScopePolling() {
 }
 
 function installRuntimeModSourcesPolling() {
-	const INTERVAL_MS = 16; // ~60 fps
+	const INTERVAL_MS = 100; // ~10 fps
 	let rafId = 0;
 	let lastScheduled = 0;
 	let pollInFlight = false;
@@ -535,7 +535,7 @@ function installRuntimeModSourcesPolling() {
 }
 
 function installRuntimeVoiceStatesPolling() {
-	const RUNTIME_VOICE_STATES_POLL_INTERVAL_MS = 16;
+	const RUNTIME_VOICE_STATES_POLL_INTERVAL_MS = 100;
 	let rafId = 0;
 	let lastScheduled = 0;
 	let pollInFlight = false;
@@ -599,7 +599,7 @@ function installRuntimeVoiceStatesPolling() {
 }
 
 function installTransportPolling() {
-	const INTERVAL_MS = 100;
+	const INTERVAL_MS = 250;
 	let rafId = 0;
 	let lastScheduled = 0;
 	let pollInFlight = false;
