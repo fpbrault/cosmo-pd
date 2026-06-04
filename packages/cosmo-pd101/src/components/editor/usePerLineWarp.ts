@@ -151,6 +151,13 @@ export function usePerLineWarp(
 		[label, dcoEnv, setDcoEnv, dcwEnv, setDcwEnv, dcaEnv, setDcaEnv],
 	);
 
+	useEffect(() => {
+		if (activeSection !== "envelopes") {
+			return;
+		}
+		return synthController?.registerLiveVoiceStatesConsumer();
+	}, [activeSection, synthController]);
+
 	// biome-ignore lint/correctness/useExhaustiveDependencies: <For updates>
 	const activeVoiceMarkers = useMemo<StepEnvelopeVoiceMarker[]>(() => {
 		if (activeSection !== "envelopes") {

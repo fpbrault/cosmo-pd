@@ -9,10 +9,6 @@ type ScopeDataResponse = {
 	sampleRate: number;
 	hz: number;
 };
-
-type RuntimeVoiceStatesResponse = string | unknown[];
-
-type RuntimeModSourcesResponse = string | Record<string, number>;
 type MidiBindingIdentity = {
 	paramKey: string;
 	channel: number;
@@ -26,9 +22,6 @@ type NativePluginPresetSession = {
 };
 
 const SCOPE_POLL_INTERVAL_MS = 50;
-const RUNTIME_VOICE_STATES_POLL_INTERVAL_MS = 100;
-const RUNTIME_MOD_SOURCES_POLL_INTERVAL_MS = 100;
-const TRANSPORT_POLL_INTERVAL_MS = 250;
 const IPC_TIMEOUT_MS = 250;
 
 declare global {
@@ -46,6 +39,9 @@ declare global {
 		__czGetParamsVersion?: () => Promise<unknown>;
 		__czSetParams?: (json: string) => void;
 		__czGetTransportInfo?: () => Promise<unknown>;
+		__czOnRuntimeVoiceStates?: (json: string) => void;
+		__czOnRuntimeModSources?: (json: string) => void;
+		__czOnTransport?: (json: string) => void;
 		__czOnScope?: (
 			samples: Float32Array | number[],
 			sampleRate: number,
@@ -90,6 +86,81 @@ const pendingRpc = new Map<
 >();
 let currentParamHandler: Window["__czOnParams"];
 let currentScopeHandler: Window["__czOnScope"];
+const listenerCounts = new Map<string, number>();
+const listenerCountWatchers = new Map<string, Set<() => void>>();
+let demandTrackingInstalled = false;
+
+function notifyListenerCountWatchers(eventName: string) {
+	listenerCountWatchers.get(eventName)?.forEach((watcher) => {
+		watcher();
+	});
+}
+
+function installDemandTracking() {
+	if (demandTrackingInstalled) {
+		return;
+	}
+	demandTrackingInstalled = true;
+
+	const nativeAddEventListener = window.addEventListener.bind(window);
+	const nativeRemoveEventListener = window.removeEventListener.bind(window);
+
+	window.addEventListener = ((
+		type: string,
+		listener: EventListenerOrEventListenerObject | null,
+		options?: boolean | AddEventListenerOptions,
+	) => {
+		if (!listener) {
+			return;
+		}
+		nativeAddEventListener(type, listener, options);
+		if (!listenerCountWatchers.has(type)) {
+			return;
+		}
+		listenerCounts.set(type, (listenerCounts.get(type) ?? 0) + 1);
+		notifyListenerCountWatchers(type);
+	}) as typeof window.addEventListener;
+
+	window.removeEventListener = ((
+		type: string,
+		listener: EventListenerOrEventListenerObject | null,
+		options?: boolean | EventListenerOptions,
+	) => {
+		if (!listener) {
+			return;
+		}
+		nativeRemoveEventListener(type, listener, options);
+		if (!listenerCountWatchers.has(type)) {
+			return;
+		}
+		const nextCount = Math.max(0, (listenerCounts.get(type) ?? 0) - 1);
+		listenerCounts.set(type, nextCount);
+		notifyListenerCountWatchers(type);
+	}) as typeof window.removeEventListener;
+}
+
+function hasDemand(eventName: string) {
+	return (listenerCounts.get(eventName) ?? 0) > 0;
+}
+
+function watchDemand(eventName: string, watcher: () => void) {
+	installDemandTracking();
+	const watchers =
+		listenerCountWatchers.get(eventName) ?? new Set<() => void>();
+	watchers.add(watcher);
+	listenerCountWatchers.set(eventName, watchers);
+	return () => {
+		const currentWatchers = listenerCountWatchers.get(eventName);
+		if (!currentWatchers) {
+			return;
+		}
+		currentWatchers.delete(watcher);
+		if (currentWatchers.size === 0) {
+			listenerCountWatchers.delete(eventName);
+			listenerCounts.delete(eventName);
+		}
+	};
+}
 
 function nativeHandler() {
 	return window.webkit?.messageHandlers?.cosmoPd101;
@@ -336,133 +407,135 @@ function installScopePolling() {
 	});
 }
 
-function installRuntimeVoiceStatesPolling() {
-	let rafId = 0;
-	let lastScheduled = 0;
-	let pollInFlight = false;
+type Auv3SubscriptionState =
+	| "unsubscribed"
+	| "subscribing"
+	| "subscribed"
+	| "unsubscribing";
+
+type Auv3DemandSubscriptionOptions<TDetail> = {
+	eventName: string;
+	handlerName:
+		| "__czOnRuntimeVoiceStates"
+		| "__czOnRuntimeModSources"
+		| "__czOnTransport";
+	subscribeMethod: string;
+	unsubscribeMethod: string;
+	parse: (json: string) => TDetail | null;
+};
+
+function installAuv3DemandSubscription<TDetail>(
+	options: Auv3DemandSubscriptionOptions<TDetail>,
+) {
+	const { eventName, handlerName, subscribeMethod, unsubscribeMethod, parse } =
+		options;
 	let destroyed = false;
-	let runtimeVoiceStatesAvailable = true;
+	let subscriptionState: Auv3SubscriptionState = "unsubscribed";
 
-	const dispatchRuntimeVoiceStates = (result: RuntimeVoiceStatesResponse) => {
-		const states =
-			typeof result === "string" ? (JSON.parse(result) as unknown) : result;
-		if (!Array.isArray(states)) {
-			return;
-		}
-		window.dispatchEvent(
-			new CustomEvent("cz-runtime-voice-states", { detail: states }),
-		);
-	};
+	try {
+		Object.defineProperty(window, handlerName, {
+			configurable: true,
+			writable: true,
+			value: (json: string) => {
+				const detail = parse(json);
+				if (detail === null) {
+					return;
+				}
+				window.dispatchEvent(new CustomEvent(eventName, { detail }));
+			},
+		});
+	} catch {
+		return;
+	}
 
-	const scheduleNextFrame = () => {
-		if (destroyed || rafId !== 0 || !runtimeVoiceStatesAvailable) {
-			return;
-		}
-		rafId = requestAnimationFrame(tick);
-	};
-
-	const tick = async (now: number) => {
-		rafId = 0;
-		if (destroyed || !runtimeVoiceStatesAvailable) {
-			return;
-		}
-		if (
-			now - lastScheduled < RUNTIME_VOICE_STATES_POLL_INTERVAL_MS ||
-			pollInFlight
-		) {
-			scheduleNextFrame();
+	const syncDemand = () => {
+		if (destroyed) {
 			return;
 		}
 
-		lastScheduled = now;
-		pollInFlight = true;
-		try {
-			await invokeAuv3("getRuntimeVoiceStates", [], IPC_TIMEOUT_MS)
-				.then((result) => {
-					dispatchRuntimeVoiceStates(result as RuntimeVoiceStatesResponse);
+		if (hasDemand(eventName)) {
+			if (subscriptionState !== "unsubscribed") {
+				return;
+			}
+			subscriptionState = "subscribing";
+			void invokeAuv3(subscribeMethod, [], IPC_TIMEOUT_MS)
+				.then(() => {
+					if (destroyed) {
+						subscriptionState = "unsubscribed";
+						return;
+					}
+					subscriptionState = "subscribed";
+					syncDemand();
 				})
 				.catch(() => {
-					runtimeVoiceStatesAvailable = false;
+					subscriptionState = "unsubscribed";
 				});
-		} finally {
-			pollInFlight = false;
-			scheduleNextFrame();
+			return;
 		}
+
+		if (subscriptionState !== "subscribed") {
+			return;
+		}
+		subscriptionState = "unsubscribing";
+		void invokeAuv3(unsubscribeMethod, [], IPC_TIMEOUT_MS)
+			.catch(() => {
+				// The host may have torn down while the page is unloading.
+			})
+			.finally(() => {
+				subscriptionState = "unsubscribed";
+				if (!destroyed) {
+					syncDemand();
+				}
+			});
 	};
 
-	scheduleNextFrame();
+	const unwatchDemand = watchDemand(eventName, syncDemand);
+	syncDemand();
 	window.addEventListener("pagehide", () => {
 		destroyed = true;
-		if (rafId !== 0) {
-			cancelAnimationFrame(rafId);
-			rafId = 0;
+		unwatchDemand();
+		if (subscriptionState === "subscribed") {
+			void invokeAuv3(unsubscribeMethod, [], IPC_TIMEOUT_MS).catch(() => {
+				// Host teardown races are safe to ignore here.
+			});
 		}
+		subscriptionState = "unsubscribed";
 	});
 }
 
-function installRuntimeModSourcesPolling() {
-	let rafId = 0;
-	let lastScheduled = 0;
-	let pollInFlight = false;
-	let destroyed = false;
-	let runtimeModSourcesAvailable = true;
+function installRuntimeVoiceStatesSubscription() {
+	installAuv3DemandSubscription({
+		eventName: "cz-runtime-voice-states",
+		handlerName: "__czOnRuntimeVoiceStates",
+		subscribeMethod: "subscribeRuntimeVoiceStates",
+		unsubscribeMethod: "unsubscribeRuntimeVoiceStates",
+		parse: (json) => {
+			try {
+				const states = JSON.parse(json) as unknown;
+				return Array.isArray(states) ? states : null;
+			} catch {
+				return null;
+			}
+		},
+	});
+}
 
-	const dispatchRuntimeModSources = (result: RuntimeModSourcesResponse) => {
-		const sources =
-			typeof result === "string"
-				? (JSON.parse(result) as Record<string, number>)
-				: result;
-		if (typeof sources !== "object" || sources === null) {
-			return;
-		}
-		window.dispatchEvent(
-			new CustomEvent("cz-runtime-mod-sources", { detail: sources }),
-		);
-	};
-
-	const scheduleNextFrame = () => {
-		if (destroyed || rafId !== 0 || !runtimeModSourcesAvailable) {
-			return;
-		}
-		rafId = requestAnimationFrame(tick);
-	};
-
-	const tick = async (now: number) => {
-		rafId = 0;
-		if (destroyed || !runtimeModSourcesAvailable) {
-			return;
-		}
-		if (
-			now - lastScheduled < RUNTIME_MOD_SOURCES_POLL_INTERVAL_MS ||
-			pollInFlight
-		) {
-			scheduleNextFrame();
-			return;
-		}
-
-		lastScheduled = now;
-		pollInFlight = true;
-		try {
-			await invokeAuv3("getRuntimeModSources", [], IPC_TIMEOUT_MS)
-				.then((result) => {
-					dispatchRuntimeModSources(result as RuntimeModSourcesResponse);
-				})
-				.catch(() => {
-					runtimeModSourcesAvailable = false;
-				});
-		} finally {
-			pollInFlight = false;
-			scheduleNextFrame();
-		}
-	};
-
-	scheduleNextFrame();
-	window.addEventListener("pagehide", () => {
-		destroyed = true;
-		if (rafId !== 0) {
-			cancelAnimationFrame(rafId);
-			rafId = 0;
-		}
+function installRuntimeModSourcesSubscription() {
+	installAuv3DemandSubscription({
+		eventName: "cz-runtime-mod-sources",
+		handlerName: "__czOnRuntimeModSources",
+		subscribeMethod: "subscribeRuntimeModSources",
+		unsubscribeMethod: "unsubscribeRuntimeModSources",
+		parse: (json) => {
+			try {
+				const sources = JSON.parse(json) as unknown;
+				return typeof sources === "object" && sources !== null
+					? (sources as Record<string, number>)
+					: null;
+			} catch {
+				return null;
+			}
+		},
 	});
 }
 
@@ -507,64 +580,22 @@ function installMidiLearnStateHandler() {
 	}
 }
 
-function installTransportPolling() {
-	let rafId = 0;
-	let lastScheduled = 0;
-	let pollInFlight = false;
-	let destroyed = false;
-
-	const dispatchTransport = (result: unknown) => {
-		const transport =
-			typeof result === "string"
-				? (JSON.parse(result) as Record<string, number | boolean>)
-				: result;
-		if (typeof transport !== "object" || transport === null) {
-			return;
-		}
-		window.dispatchEvent(
-			new CustomEvent("cz-host-transport", { detail: transport }),
-		);
-	};
-
-	const scheduleNextFrame = () => {
-		if (destroyed || rafId !== 0) {
-			return;
-		}
-		rafId = requestAnimationFrame(tick);
-	};
-
-	const tick = async (now: number) => {
-		rafId = 0;
-		if (destroyed) {
-			return;
-		}
-		if (now - lastScheduled < TRANSPORT_POLL_INTERVAL_MS || pollInFlight) {
-			scheduleNextFrame();
-			return;
-		}
-
-		lastScheduled = now;
-		pollInFlight = true;
-		try {
-			const result = await invokeAuv3("getTransportInfo");
-			if (result) {
-				dispatchTransport(result);
+function installTransportSubscription() {
+	installAuv3DemandSubscription({
+		eventName: "cz-host-transport",
+		handlerName: "__czOnTransport",
+		subscribeMethod: "subscribeTransport",
+		unsubscribeMethod: "unsubscribeTransport",
+		parse: (json) => {
+			try {
+				const transport = JSON.parse(json) as unknown;
+				return typeof transport === "object" && transport !== null
+					? (transport as Record<string, number | boolean>)
+					: null;
+			} catch {
+				return null;
 			}
-		} catch {
-			// Transport is opportunistic; some hosts may not implement it.
-		} finally {
-			pollInFlight = false;
-			scheduleNextFrame();
-		}
-	};
-
-	scheduleNextFrame();
-	window.addEventListener("pagehide", () => {
-		destroyed = true;
-		if (rafId !== 0) {
-			cancelAnimationFrame(rafId);
-			rafId = 0;
-		}
+		},
 	});
 }
 
@@ -583,8 +614,8 @@ export function ensureAuv3Bridge(): boolean {
 	installMidiLearnStateHandler();
 	installIpcRouter();
 	installScopePolling();
-	installRuntimeVoiceStatesPolling();
-	installRuntimeModSourcesPolling();
-	installTransportPolling();
+	installRuntimeVoiceStatesSubscription();
+	installRuntimeModSourcesSubscription();
+	installTransportSubscription();
 	return true;
 }

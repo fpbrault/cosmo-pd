@@ -73,6 +73,9 @@ export function useWavetableWaterfallPreview(
 			return;
 		}
 
+		const unregisterLiveVoiceStates =
+			synthController?.registerLiveVoiceStatesConsumer();
+
 		const onVoiceStates = (event: Event) => {
 			const detail = (event as CustomEvent<RuntimeVoiceDebugState[]>).detail;
 			setLiveVoiceStates(
@@ -82,9 +85,10 @@ export function useWavetableWaterfallPreview(
 
 		window.addEventListener("cz-runtime-voice-states", onVoiceStates);
 		return () => {
+			unregisterLiveVoiceStates?.();
 			window.removeEventListener("cz-runtime-voice-states", onVoiceStates);
 		};
-	}, [enabled]);
+	}, [enabled, synthController]);
 
 	const histories = useMemo(() => {
 		if (!enabled || !waterfallState) {

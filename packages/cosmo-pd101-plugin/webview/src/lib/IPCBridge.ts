@@ -108,9 +108,84 @@ let currentScopeHandler:
 	| ((samples: Float32Array | number[], sampleRate: number, hz: number) => void)
 	| undefined;
 let nativeIpcObject: Window["ipc"] | undefined;
+const listenerCounts = new Map<string, number>();
+const listenerCountWatchers = new Map<string, Set<() => void>>();
+let demandTrackingInstalled = false;
 
 type IpcPostMessage = (msg: string) => void;
 let _routerPostMessage: IpcPostMessage | null = null;
+
+function notifyListenerCountWatchers(eventName: string) {
+	listenerCountWatchers.get(eventName)?.forEach((watcher) => {
+		watcher();
+	});
+}
+
+function installDemandTracking() {
+	if (demandTrackingInstalled) {
+		return;
+	}
+	demandTrackingInstalled = true;
+
+	const nativeAddEventListener = window.addEventListener.bind(window);
+	const nativeRemoveEventListener = window.removeEventListener.bind(window);
+
+	window.addEventListener = ((
+		type: string,
+		listener: EventListenerOrEventListenerObject | null,
+		options?: boolean | AddEventListenerOptions,
+	) => {
+		if (!listener) {
+			return;
+		}
+		nativeAddEventListener(type, listener, options);
+		if (!listenerCountWatchers.has(type)) {
+			return;
+		}
+		listenerCounts.set(type, (listenerCounts.get(type) ?? 0) + 1);
+		notifyListenerCountWatchers(type);
+	}) as typeof window.addEventListener;
+
+	window.removeEventListener = ((
+		type: string,
+		listener: EventListenerOrEventListenerObject | null,
+		options?: boolean | EventListenerOptions,
+	) => {
+		if (!listener) {
+			return;
+		}
+		nativeRemoveEventListener(type, listener, options);
+		if (!listenerCountWatchers.has(type)) {
+			return;
+		}
+		const nextCount = Math.max(0, (listenerCounts.get(type) ?? 0) - 1);
+		listenerCounts.set(type, nextCount);
+		notifyListenerCountWatchers(type);
+	}) as typeof window.removeEventListener;
+}
+
+function hasDemand(eventName: string) {
+	return (listenerCounts.get(eventName) ?? 0) > 0;
+}
+
+function watchDemand(eventName: string, watcher: () => void) {
+	installDemandTracking();
+	const watchers =
+		listenerCountWatchers.get(eventName) ?? new Set<() => void>();
+	watchers.add(watcher);
+	listenerCountWatchers.set(eventName, watchers);
+	return () => {
+		const currentWatchers = listenerCountWatchers.get(eventName);
+		if (!currentWatchers) {
+			return;
+		}
+		currentWatchers.delete(watcher);
+		if (currentWatchers.size === 0) {
+			listenerCountWatchers.delete(eventName);
+			listenerCounts.delete(eventName);
+		}
+	};
+}
 
 // ─── RPC helper ──────────────────────────────────────────────────────────────
 
@@ -471,6 +546,7 @@ function installScopePolling() {
 }
 
 function installRuntimeModSourcesPolling() {
+	const eventName = "cz-runtime-mod-sources";
 	const INTERVAL_MS = 100; // ~10 fps
 	let rafId = 0;
 	let lastScheduled = 0;
@@ -493,15 +569,26 @@ function installRuntimeModSourcesPolling() {
 	};
 
 	const scheduleNextFrame = () => {
-		if (destroyed || rafId !== 0) {
+		if (destroyed || rafId !== 0 || !hasDemand(eventName)) {
 			return;
 		}
 		rafId = requestAnimationFrame(tick);
 	};
 
+	const stopPolling = () => {
+		if (rafId !== 0) {
+			cancelAnimationFrame(rafId);
+			rafId = 0;
+		}
+	};
+
 	const tick = async (now: number) => {
 		rafId = 0;
 		if (destroyed) {
+			return;
+		}
+		if (!hasDemand(eventName)) {
+			stopPolling();
 			return;
 		}
 		if (now - lastScheduled < INTERVAL_MS || pollInFlight) {
@@ -524,17 +611,22 @@ function installRuntimeModSourcesPolling() {
 		}
 	};
 
-	scheduleNextFrame();
+	const unwatchDemand = watchDemand(eventName, () => {
+		if (hasDemand(eventName)) {
+			scheduleNextFrame();
+		} else {
+			stopPolling();
+		}
+	});
 	window.addEventListener("pagehide", () => {
 		destroyed = true;
-		if (rafId !== 0) {
-			cancelAnimationFrame(rafId);
-			rafId = 0;
-		}
+		stopPolling();
+		unwatchDemand();
 	});
 }
 
 function installRuntimeVoiceStatesPolling() {
+	const eventName = "cz-runtime-voice-states";
 	const RUNTIME_VOICE_STATES_POLL_INTERVAL_MS = 100;
 	let rafId = 0;
 	let lastScheduled = 0;
@@ -554,15 +646,31 @@ function installRuntimeVoiceStatesPolling() {
 	};
 
 	const scheduleNextFrame = () => {
-		if (destroyed || rafId !== 0 || !runtimeVoiceStatesAvailable) {
+		if (
+			destroyed ||
+			rafId !== 0 ||
+			!runtimeVoiceStatesAvailable ||
+			!hasDemand(eventName)
+		) {
 			return;
 		}
 		rafId = requestAnimationFrame(tick);
 	};
 
+	const stopPolling = () => {
+		if (rafId !== 0) {
+			cancelAnimationFrame(rafId);
+			rafId = 0;
+		}
+	};
+
 	const tick = async (now: number) => {
 		rafId = 0;
 		if (destroyed || !runtimeVoiceStatesAvailable) {
+			return;
+		}
+		if (!hasDemand(eventName)) {
+			stopPolling();
 			return;
 		}
 		if (
@@ -588,17 +696,22 @@ function installRuntimeVoiceStatesPolling() {
 		}
 	};
 
-	scheduleNextFrame();
+	const unwatchDemand = watchDemand(eventName, () => {
+		if (hasDemand(eventName)) {
+			scheduleNextFrame();
+		} else {
+			stopPolling();
+		}
+	});
 	window.addEventListener("pagehide", () => {
 		destroyed = true;
-		if (rafId !== 0) {
-			cancelAnimationFrame(rafId);
-			rafId = 0;
-		}
+		stopPolling();
+		unwatchDemand();
 	});
 }
 
 function installTransportPolling() {
+	const eventName = "cz-host-transport";
 	const INTERVAL_MS = 250;
 	let rafId = 0;
 	let lastScheduled = 0;
@@ -619,15 +732,26 @@ function installTransportPolling() {
 	};
 
 	const scheduleNextFrame = () => {
-		if (destroyed || rafId !== 0) {
+		if (destroyed || rafId !== 0 || !hasDemand(eventName)) {
 			return;
 		}
 		rafId = requestAnimationFrame(tick);
 	};
 
+	const stopPolling = () => {
+		if (rafId !== 0) {
+			cancelAnimationFrame(rafId);
+			rafId = 0;
+		}
+	};
+
 	const tick = async (now: number) => {
 		rafId = 0;
 		if (destroyed) {
+			return;
+		}
+		if (!hasDemand(eventName)) {
+			stopPolling();
 			return;
 		}
 		if (now - lastScheduled < INTERVAL_MS || pollInFlight) {
@@ -650,13 +774,17 @@ function installTransportPolling() {
 		}
 	};
 
-	scheduleNextFrame();
+	const unwatchDemand = watchDemand(eventName, () => {
+		if (hasDemand(eventName)) {
+			scheduleNextFrame();
+		} else {
+			stopPolling();
+		}
+	});
 	window.addEventListener("pagehide", () => {
 		destroyed = true;
-		if (rafId !== 0) {
-			cancelAnimationFrame(rafId);
-			rafId = 0;
-		}
+		stopPolling();
+		unwatchDemand();
 	});
 }
 
