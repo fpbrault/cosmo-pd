@@ -15,6 +15,7 @@
  */
 
 // ─── Types ───────────────────────────────────────────────────────────────────
+import { postHostLog } from "./hostLogger";
 
 type IpcRpcResponse = {
 	id: number;
@@ -118,7 +119,9 @@ let _routerPostMessage: IpcPostMessage | null = null;
 function invokeRust(method: string, ...args: unknown[]): Promise<unknown> {
 	return new Promise((resolve, reject) => {
 		if (!_nativePostMessage) {
-			reject(new Error("[IPCBridge] native IPC not available"));
+			const error = new Error("[IPCBridge] native IPC not available");
+			postHostLog("warn", `${method}: ${error.message}`);
+			reject(error);
 			return;
 		}
 		const id = nextRpcId++;
@@ -163,6 +166,10 @@ function installIpcResponseHandler() {
 		}
 		pendingRpc.delete(response.id);
 		if (response.error !== undefined) {
+			postHostLog(
+				"error",
+				`IPCBridge response error id=${response.id}: ${response.error}`,
+			);
 			pending.reject(new Error(response.error));
 		} else {
 			pending.resolve(response.result);

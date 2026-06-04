@@ -41,14 +41,20 @@ function createRepository(): PresetManagerRepository {
 	return {
 		listEntries: vi.fn().mockResolvedValue(entries),
 		loadEntry: vi.fn(async (entry) => ({
-			activePresetId: entry.id,
-			activePresetNameBase: entry.label,
-			isDirty: false,
+			session: {
+				activePresetId: entry.id,
+				activePresetNameBase: entry.label,
+				isDirty: false,
+			},
+			stateSync: "immediate" as const,
 		})),
 		savePreset: vi.fn(async () => ({
-			activePresetId: "local-1",
-			activePresetNameBase: "Local 1",
-			isDirty: false,
+			session: {
+				activePresetId: "local-1",
+				activePresetNameBase: "Local 1",
+				isDirty: false,
+			},
+			stateSync: "immediate" as const,
 		})),
 		deletePreset: vi.fn().mockResolvedValue(undefined),
 		renamePreset: vi.fn().mockResolvedValue(undefined),
@@ -56,9 +62,12 @@ function createRepository(): PresetManagerRepository {
 		setPresetFavorite: vi.fn().mockResolvedValue(undefined),
 		setPresetTags: vi.fn().mockResolvedValue(undefined),
 		initPreset: vi.fn().mockResolvedValue({
-			activePresetId: null,
-			activePresetNameBase: "Current State",
-			isDirty: false,
+			session: {
+				activePresetId: null,
+				activePresetNameBase: "Current State",
+				isDirty: false,
+			},
+			stateSync: "immediate" as const,
 		}),
 		exportPreset: vi.fn().mockResolvedValue(null),
 		importPreset: vi.fn().mockResolvedValue(null),
@@ -135,6 +144,57 @@ describe("useSynthPresetManager", () => {
 		});
 
 		expect(result.current.activePresetName).toBe("Preset 1 *");
+	});
+
+	it("keeps deferred preset activation clean until the next edit", async () => {
+		const deferredRepository = createRepository();
+		deferredRepository.loadEntry = vi.fn(async (entry) => ({
+			session: {
+				activePresetId: entry.id,
+				activePresetNameBase: entry.label,
+				isDirty: false,
+			},
+			stateSync: "deferred" as const,
+		}));
+
+		const { result } = renderHook(() =>
+			useSynthPresetManager({ repository: deferredRepository }),
+		);
+
+		await vi.waitFor(() => {
+			expect(result.current.allPresetEntries).toHaveLength(2);
+		});
+
+		act(() => {
+			useSynthStore.getState().setVolume(0.8);
+		});
+
+		await act(async () => {
+			await result.current.activatePreset({ entryId: "preset-1" });
+		});
+
+		expect(result.current.isPresetDirty).toBe(false);
+
+		act(() => {
+			useSynthStore.getState().applyPreset({
+				schemaVersion: 1,
+				params: {
+					...useSynthStore.getState().gatherPresetState().params,
+					volume: 0.25,
+				},
+			});
+			result.current.recomputeDirtyState();
+		});
+
+		expect(result.current.isPresetDirty).toBe(false);
+
+		act(() => {
+			useSynthStore.getState().setVolume(0.5);
+		});
+
+		await vi.waitFor(() => {
+			expect(result.current.isPresetDirty).toBe(true);
+		});
 	});
 
 	it("refreshes entries after metadata updates", async () => {

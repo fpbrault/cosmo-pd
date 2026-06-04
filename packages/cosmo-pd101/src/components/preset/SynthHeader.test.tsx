@@ -58,8 +58,7 @@ function renderWithProvider(element: React.ReactElement) {
 				exportPreset: vi.fn(),
 				importPreset: vi.fn(),
 				exportCurrentState: vi.fn(),
-				markDirtyFromEdit: vi.fn(),
-				syncDirtyState: vi.fn(),
+				recomputeDirtyState: vi.fn(),
 				reloadLibrary: vi.fn(),
 			}}
 		>

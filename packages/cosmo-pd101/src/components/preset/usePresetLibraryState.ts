@@ -47,6 +47,7 @@ export function usePresetLibraryState({
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const [virtualScrollTop, setVirtualScrollTop] = useState(0);
 	const [virtualViewportHeight, setVirtualViewportHeight] = useState(0);
+	const lastNavigationEntryIdsRef = useRef<string[]>([]);
 
 	const availableTags = PRESET_TAG_OPTIONS;
 	const availableAuthors = useMemo(
@@ -260,7 +261,21 @@ export function usePresetLibraryState({
 	}, [activeEntryId, sortedEntries, focusedEntryId, isOpen]);
 
 	useEffect(() => {
-		onNavigationEntriesChange?.(sortedEntries.map((entry) => entry.id));
+		if (!onNavigationEntriesChange) {
+			return;
+		}
+		const nextEntryIds = sortedEntries.map((entry) => entry.id);
+		const previousEntryIds = lastNavigationEntryIdsRef.current;
+		const unchanged =
+			nextEntryIds.length === previousEntryIds.length &&
+			nextEntryIds.every(
+				(entryId, index) => entryId === previousEntryIds[index],
+			);
+		if (unchanged) {
+			return;
+		}
+		lastNavigationEntryIdsRef.current = nextEntryIds;
+		onNavigationEntriesChange(nextEntryIds);
 	}, [onNavigationEntriesChange, sortedEntries]);
 
 	useEffect(() => {

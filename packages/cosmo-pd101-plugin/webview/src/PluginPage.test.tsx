@@ -65,6 +65,7 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 describe("PluginPage", () => {
 	let syncExternalSelection: ReturnType<typeof vi.fn>;
 	let reloadLibrary: ReturnType<typeof vi.fn>;
+	let recomputeDirtyState: ReturnType<typeof vi.fn>;
 
 	beforeEach(() => {
 		mockSetKeyboardHeight.mockClear();
@@ -101,6 +102,7 @@ describe("PluginPage", () => {
 		mockUseSynthPresetManager.mockReset();
 		syncExternalSelection = vi.fn();
 		reloadLibrary = vi.fn().mockResolvedValue(undefined);
+		recomputeDirtyState = vi.fn();
 		mockUseSynthPresetManager.mockReturnValue({
 			allPresetEntries: [],
 			navigationEntryIds: [],
@@ -122,8 +124,7 @@ describe("PluginPage", () => {
 			exportPreset: vi.fn(),
 			importPreset: vi.fn(),
 			exportCurrentState: vi.fn(),
-			markDirtyFromEdit: vi.fn(),
-			syncDirtyState: vi.fn(),
+			recomputeDirtyState,
 			reloadLibrary,
 		});
 		delete (window as Window & { ipc?: unknown }).ipc;
@@ -140,6 +141,7 @@ describe("PluginPage", () => {
 	it("restores preset session into the shared preset manager", async () => {
 		const getPresetSession = vi.fn().mockResolvedValue({
 			activePresetId: "preset-1",
+			loadedPresetId: "preset-1",
 			activePresetNameBase: "Warm Pad",
 			isDirty: true,
 		});
@@ -154,11 +156,25 @@ describe("PluginPage", () => {
 		await vi.waitFor(() => {
 			expect(getPresetSession).toHaveBeenCalled();
 		});
-		expect(syncExternalSelection).toHaveBeenCalledWith({
-			activePresetId: "preset-1",
-			activePresetNameBase: "Warm Pad",
-			isDirty: true,
-		});
+		expect(syncExternalSelection).toHaveBeenCalledWith(
+			{
+				activePresetId: "preset-1",
+				activePresetNameBase: "Warm Pad",
+				isDirty: true,
+			},
+			{ stateSync: "immediate" },
+		);
+	});
+
+	it("recomputes dirty state from external host param updates", async () => {
+		render(<PluginPage />);
+
+		const bridgeOptions = mockUsePluginParamBridge.mock.calls[0]?.[0] as
+			| { onExternalParamChange?: () => void }
+			| undefined;
+		bridgeOptions?.onExternalParamChange?.();
+
+		expect(recomputeDirtyState).toHaveBeenCalled();
 	});
 
 	it("clamps persisted keyboard height for plugin viewports", () => {

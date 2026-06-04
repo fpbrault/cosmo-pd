@@ -279,4 +279,34 @@ describe("usePluginBridgeSynthEngine", () => {
 		expect(window.__czGetParams).not.toHaveBeenCalled();
 		expect(called).toHaveLength(0);
 	});
+
+	it("maps native loadedPresetId into activePresetId and writes it back on persist", async () => {
+		window.__czGetPresetSession = vi.fn().mockResolvedValue({
+			loadedPresetId: "preset-42",
+			activePresetNameBase: "Bliss",
+			isDirty: false,
+		});
+		window.__czSetPresetSession = vi.fn().mockResolvedValue(undefined);
+
+		const { result } = renderHook(() => usePluginBridgeSynthEngine());
+
+		await expect(result.current.getPresetSession()).resolves.toEqual({
+			activePresetId: "preset-42",
+			loadedPresetId: "preset-42",
+			activePresetNameBase: "Bliss",
+			isDirty: false,
+		});
+
+		await result.current.setPresetSession({
+			activePresetId: "preset-99",
+			activePresetNameBase: "Restored",
+			isDirty: true,
+		});
+
+		expect(window.__czSetPresetSession).toHaveBeenCalledWith({
+			loadedPresetId: "preset-99",
+			activePresetNameBase: "Restored",
+			isDirty: true,
+		});
+	});
 });

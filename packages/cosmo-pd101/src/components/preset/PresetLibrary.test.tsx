@@ -103,6 +103,25 @@ describe("PresetLibrary", () => {
 		});
 	});
 
+	it("does not republish unchanged navigation entry ids on rerender", () => {
+		const props = {
+			...createProps(),
+			onNavigationEntriesChange: vi.fn(),
+		};
+		const { rerender } = render(<PresetLibrary {...props} />);
+
+		expect(props.onNavigationEntriesChange).toHaveBeenCalledTimes(1);
+		expect(props.onNavigationEntriesChange).toHaveBeenLastCalledWith([
+			"builtin-factory-bass",
+			"library-1",
+			"local-keys",
+		]);
+
+		rerender(<PresetLibrary {...props} />);
+
+		expect(props.onNavigationEntriesChange).toHaveBeenCalledTimes(1);
+	});
+
 	it("saves, exports, imports, initializes, renames, edits tags, and deletes from library controls", async () => {
 		const props = createProps();
 		class MockFileReader {

@@ -2,8 +2,14 @@
 
 #![recursion_limit = "256"]
 
+#[cfg(not(test))]
+use std::fs;
 use std::fs::OpenOptions;
 use std::io::Write;
+#[cfg(not(test))]
+use std::path::PathBuf;
+#[cfg(not(test))]
+use std::sync::OnceLock;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, Once};
 use std::time::Instant;
@@ -32,11 +38,36 @@ pub mod preset_library;
 pub mod preset_library_path;
 pub mod session_state;
 
+use crate::global_settings::PluginLogLevel;
 use crate::preset_library::PresetLibrary;
 
 const PLUGIN_LOG_PATH: &str = "/tmp/cosmo-plugin.log";
 const MAX_UI_INPUT_EVENTS_PER_BLOCK: usize = 64;
 const UI_INPUT_QUEUE_CAPACITY: usize = 1024;
+
+#[cfg(not(test))]
+#[derive(Clone)]
+struct LogLevelCache {
+    settings_path: Option<PathBuf>,
+    settings_modified_at: Option<SystemTime>,
+    settings_len: Option<u64>,
+    level: PluginLogLevel,
+}
+
+#[cfg(not(test))]
+impl Default for LogLevelCache {
+    fn default() -> Self {
+        Self {
+            settings_path: None,
+            settings_modified_at: None,
+            settings_len: None,
+            level: PluginLogLevel::Info,
+        }
+    }
+}
+
+#[cfg(not(test))]
+static LOG_LEVEL_CACHE: OnceLock<Mutex<LogLevelCache>> = OnceLock::new();
 
 fn log_timestamp_ms() -> u128 {
     SystemTime::now()
@@ -46,6 +77,74 @@ fn log_timestamp_ms() -> u128 {
 }
 
 pub fn append_log(message: &str) {
+    append_log_at_level(PluginLogLevel::Info, message);
+}
+
+pub fn append_log_debug(message: &str) {
+    append_log_at_level(PluginLogLevel::Debug, message);
+}
+
+pub fn append_log_warn(message: &str) {
+    append_log_at_level(PluginLogLevel::Warn, message);
+}
+
+pub fn append_log_error(message: &str) {
+    append_log_at_level(PluginLogLevel::Error, message);
+}
+
+#[cfg(not(test))]
+fn cached_log_level() -> PluginLogLevel {
+    let cache = LOG_LEVEL_CACHE.get_or_init(|| Mutex::new(LogLevelCache::default()));
+    let settings_path = crate::global_settings::get_global_settings_path();
+    let settings_metadata = fs::metadata(&settings_path).ok();
+    let settings_modified_at = settings_metadata
+        .as_ref()
+        .and_then(|metadata| metadata.modified().ok());
+    let settings_len = settings_metadata.as_ref().map(|metadata| metadata.len());
+
+    let mut cache = cache.lock().unwrap();
+    let path_changed = cache
+        .settings_path
+        .as_ref()
+        .map(|path| path != &settings_path)
+        .unwrap_or(true);
+    let modified_changed = cache.settings_modified_at != settings_modified_at;
+    let len_changed = cache.settings_len != settings_len;
+
+    if path_changed || modified_changed || len_changed {
+        cache.level = crate::global_settings::load_or_init_global_settings()
+            .map(|settings| settings.log_level)
+            .unwrap_or(PluginLogLevel::Info);
+        cache.settings_path = Some(settings_path);
+        cache.settings_modified_at = settings_modified_at;
+        cache.settings_len = settings_len;
+    }
+
+    cache.level
+}
+
+#[cfg(test)]
+fn cached_log_level() -> PluginLogLevel {
+    PluginLogLevel::Info
+}
+
+fn should_log(level: PluginLogLevel) -> bool {
+    level <= cached_log_level()
+}
+
+fn log_level_label(level: PluginLogLevel) -> &'static str {
+    match level {
+        PluginLogLevel::Error => "ERROR",
+        PluginLogLevel::Warn => "WARN",
+        PluginLogLevel::Info => "INFO",
+        PluginLogLevel::Debug => "DEBUG",
+    }
+}
+
+fn append_log_at_level(level: PluginLogLevel, message: &str) {
+    if !should_log(level) {
+        return;
+    }
     if let Ok(mut file) = OpenOptions::new()
         .create(true)
         .append(true)
@@ -53,7 +152,8 @@ pub fn append_log(message: &str) {
     {
         let _ = writeln!(
             file,
-            "[rust pid={} ts_ms={}] {}",
+            "[rust level={} pid={} ts_ms={}] {}",
+            log_level_label(level),
             std::process::id(),
             log_timestamp_ms(),
             message
@@ -63,10 +163,6 @@ pub fn append_log(message: &str) {
 
 pub fn plugin_log_path() -> &'static str {
     PLUGIN_LOG_PATH
-}
-
-fn midi_debug_enabled() -> bool {
-    true
 }
 
 static PANIC_HOOK_INIT: Once = Once::new();
@@ -87,7 +183,7 @@ pub fn init_panic_hook() {
                 .location()
                 .map(|l| format!(" at {}:{}", l.file(), l.line()))
                 .unwrap_or_default();
-            append_log(&format!("PANIC: {}{}", msg, location));
+            append_log_error(&format!("PANIC: {}{}", msg, location));
             eprintln!("[cosmo-pd101] PANIC: {}{}", msg, location);
             default_hook(info);
         }));
@@ -825,7 +921,7 @@ fn persist_midi_learn_bindings(midi_learn_state: &SharedMidiMappings) {
         .unwrap_or_else(|_| crate::session_state::default_midi_bindings());
 
     if let Err(error) = crate::global_settings::save_midi_learn_bindings(bindings) {
-        append_log(&format!(
+        append_log_warn(&format!(
             "failed to persist global midi learn bindings: {}",
             error
         ));
@@ -861,7 +957,7 @@ fn handle_ipc_invoke(
         && method != "getTransportInfo"
         && method != "getRuntimeVoiceStates"
     {
-        append_log(&format!("ipc invoke method={method} args={}", args.len()));
+        append_log_debug(&format!("ipc invoke method={method} args={}", args.len()));
     }
 
     match method {
@@ -1098,7 +1194,12 @@ fn handle_ipc_invoke(
                 .get(1)
                 .and_then(serde_json::Value::as_str)
                 .unwrap_or("");
-            append_log(&format!("[webview:{level}] {message}"));
+            match level {
+                "debug" => append_log_debug(&format!("[webview:{level}] {message}")),
+                "warn" => append_log_warn(&format!("[webview:{level}] {message}")),
+                "error" => append_log_error(&format!("[webview:{level}] {message}")),
+                _ => append_log(&format!("[webview:{level}] {message}")),
+            }
             Ok(serde_json::Value::Null)
         }
         "setPresetName" => {
@@ -1527,11 +1628,11 @@ fn handle_ipc_invoke(
                 .and_then(|v| v.as_bool())
                 .ok_or_else(|| "setMidiLearnMode expects a boolean".to_string())?;
             // TODO: remove this diagnostic once cross-format MIDI learn mode behavior is verified.
-            append_log(&format!("ipc_set_midi_learn_mode mode={}", mode));
+            append_log_debug(&format!("ipc_set_midi_learn_mode mode={}", mode));
             if let Ok(mut state) = midi_learn_state.lock() {
                 state.learn_mode = mode;
                 state.version += 1;
-                append_log(&format!(
+                append_log_debug(&format!(
                     "ipc_set_midi_learn_mode_applied mode={} version={} pending={:?}",
                     state.learn_mode, state.version, state.pending_param_key
                 ));
@@ -1564,7 +1665,7 @@ fn handle_ipc_invoke(
                     .and_then(|v| v.as_i64())
                     .ok_or_else(|| "addMidiBinding expects cc".to_string())? as i32;
             // TODO: remove this diagnostic once cross-format MIDI binding RPC flow is verified.
-            append_log(&format!(
+            append_log_debug(&format!(
                 "ipc_add_midi_binding param_key={} channel={} cc={}",
                 param_key, channel, cc
             ));
@@ -1578,7 +1679,7 @@ fn handle_ipc_invoke(
                     cc,
                 });
                 state.version += 1;
-                append_log(&format!(
+                append_log_debug(&format!(
                     "ipc_add_midi_binding_applied version={} bindings_count={} latest={{param_key:{},channel:{},cc:{}}}",
                     state.version,
                     state.bindings.len(),
@@ -1678,7 +1779,7 @@ impl CzPlugin {
         let midi_learn_bindings = crate::global_settings::load_or_init_global_settings()
             .map(|settings| settings.midi_learn_bindings)
             .unwrap_or_else(|error| {
-                append_log(&format!(
+                append_log_warn(&format!(
                     "failed to load global midi settings, using defaults: {}",
                     error
                 ));
@@ -1770,7 +1871,7 @@ impl CzPlugin {
         };
 
         let Ok(params) = params else {
-            append_log(&format!(
+            append_log_warn(&format!(
                 "failed to deserialize startup preset id={}",
                 entry.id
             ));
@@ -1832,7 +1933,7 @@ impl CzPlugin {
             .collect::<Vec<_>>();
 
         if bindings.is_empty() {
-            append_log(&format!(
+            append_log_debug(&format!(
                 "apply_midi_mapping miss ch={} cc={} value={} stored_mappings={:?}",
                 channel, cc, value, state_snapshot
             ));
@@ -1889,7 +1990,7 @@ impl CzPlugin {
                 "set_parameter_rejected"
             };
 
-            append_log(&format!(
+            append_log_debug(&format!(
                 "apply_midi_mapping miss ch={} cc={} value={} reason={} bindings={} cc_matches={} channel_matches={} omni_matches={} full_matches={} invalid_param_keys={:?} binding_sample={:?}",
                 channel,
                 cc,
@@ -1941,7 +2042,7 @@ impl CzPlugin {
                 state.version += 1;
                 bindings_changed = true;
                 // TODO: remove this diagnostic once host-side learn capture behavior is verified across plugin formats.
-                append_log(&format!(
+                append_log_debug(&format!(
                     "host_capture_pending_midi_binding pending={} channel={} cc={} version={} bindings_count={}",
                     pending,
                     channel,
@@ -2072,14 +2173,14 @@ impl CzPlugin {
             EventBody::ControlChange {
                 channel, cc, value, ..
             } => {
-                append_log(&format!("host_cc ch={} cc={} value={}", channel, cc, value));
+                append_log_debug(&format!("host_cc ch={} cc={} value={}", channel, cc, value));
                 self.handle_cc_side_effects(*channel, *cc, *value);
             }
             EventBody::ControlChange2 {
                 channel, cc, value, ..
             } => {
                 let raw_value = (*value / 128) as u8;
-                append_log(&format!(
+                append_log_debug(&format!(
                     "host_cc2 ch={} cc={} value={} raw={}",
                     channel, cc, value, raw_value
                 ));
@@ -2151,30 +2252,6 @@ impl CzPlugin {
 
     fn collect_block_input_events(&mut self, events: &EventList, num_samples: usize) {
         self.block_input_events.clear();
-
-        // TODO: remove this diagnostic once we confirm which plugin formats forward CC events.
-        if midi_debug_enabled() {
-            let mut note_on_count = 0;
-            let mut note_off_count = 0;
-            let mut cc_count = 0;
-            let mut cc2_count = 0;
-            let mut other_count = 0;
-
-            for event in events.iter() {
-                match event.body {
-                    EventBody::NoteOn { .. } => note_on_count += 1,
-                    EventBody::NoteOff { .. } => note_off_count += 1,
-                    EventBody::ControlChange { .. } => cc_count += 1,
-                    EventBody::ControlChange2 { .. } => cc2_count += 1,
-                    _ => other_count += 1,
-                }
-            }
-
-            append_log(&format!(
-                "host_events block_samples={} note_on={} note_off={} cc={} cc2={} other={}",
-                num_samples, note_on_count, note_off_count, cc_count, cc2_count, other_count,
-            ));
-        }
 
         if self.performance_counters.enabled.load(Ordering::Acquire) {
             self.performance_counters
@@ -2499,6 +2576,38 @@ mod tests {
 
     fn synth_params_json(params: &SynthParams) -> serde_json::Value {
         serde_json::to_value(params).unwrap()
+    }
+
+    #[test]
+    fn debug_logs_follow_global_settings_log_level() {
+        with_test_data_dir(|_| {
+            let _ = fs::remove_file(plugin_log_path());
+
+            crate::global_settings::save_global_settings(
+                &crate::global_settings::PluginGlobalSettings {
+                    midi_learn_bindings: crate::session_state::default_midi_bindings(),
+                    log_level: crate::global_settings::PluginLogLevel::Info,
+                },
+            )
+            .unwrap();
+            append_log_debug("debug-hidden");
+
+            let info_contents = fs::read_to_string(plugin_log_path()).unwrap_or_default();
+            assert!(!info_contents.contains("debug-hidden"));
+
+            crate::global_settings::save_global_settings(
+                &crate::global_settings::PluginGlobalSettings {
+                    midi_learn_bindings: crate::session_state::default_midi_bindings(),
+                    log_level: crate::global_settings::PluginLogLevel::Debug,
+                },
+            )
+            .unwrap();
+            append_log_debug("debug-visible");
+
+            let debug_contents = fs::read_to_string(plugin_log_path()).unwrap_or_default();
+            assert!(debug_contents.contains("level=DEBUG"));
+            assert!(debug_contents.contains("debug-visible"));
+        });
     }
 
     #[allow(clippy::type_complexity)]

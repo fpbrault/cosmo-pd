@@ -1,4 +1,5 @@
 import type {
+	PresetActivationResult,
 	PresetEntry,
 	PresetManagerRepository,
 	PresetManagerSession,
@@ -61,6 +62,13 @@ function createSelection(
 	isDirty = false,
 ): PresetManagerSession {
 	return { activePresetId, activePresetNameBase, isDirty };
+}
+
+function createActivationResult(
+	session: PresetManagerSession,
+	stateSync: PresetActivationResult["stateSync"],
+): PresetActivationResult {
+	return { session, stateSync };
 }
 
 function isSynthPresetV1(value: unknown): value is SynthPresetV1 {
@@ -181,7 +189,10 @@ export function createPluginPresetManagerRepository({
 			const result = (await window.__czLoadPresetData?.(entry.id)) as
 				| { preset_name?: string }
 				| undefined;
-			return createSelection(entry.id, result?.preset_name ?? entry.label);
+			return createActivationResult(
+				createSelection(entry.id, result?.preset_name ?? entry.label),
+				"deferred",
+			);
 		},
 		savePreset: async ({ existingEntry, name }: SavePresetRequest) => {
 			const result = (await window.__czSavePreset?.({
@@ -190,9 +201,12 @@ export function createPluginPresetManagerRepository({
 				author: existingEntry?.author ?? "",
 				tags: existingEntry?.tags ?? [],
 			})) as { id?: string; name?: string } | undefined;
-			return createSelection(
-				result?.id ?? existingEntry?.id ?? null,
-				result?.name ?? name,
+			return createActivationResult(
+				createSelection(
+					result?.id ?? existingEntry?.id ?? null,
+					result?.name ?? name,
+				),
+				"immediate",
 			);
 		},
 		deletePreset: async (id) => {
@@ -210,7 +224,11 @@ export function createPluginPresetManagerRepository({
 		setPresetTags: async (id, tags) => {
 			await window.__czSetPresetTags?.(id, tags as PresetTagOptions[]);
 		},
-		initPreset: async () => createSelection(null, "Current State"),
+		initPreset: async () =>
+			createActivationResult(
+				createSelection(null, "Current State"),
+				"immediate",
+			),
 		exportPreset: async (id) => {
 			const result = (await window.__czExportPreset?.(id)) as
 				| { filename?: string; json?: string }
@@ -240,9 +258,12 @@ export function createPluginPresetManagerRepository({
 			const activated = (await window.__czLoadPresetData?.(result.id)) as
 				| { preset_name?: string }
 				| undefined;
-			return createSelection(
-				result.id,
-				activated?.preset_name ?? result.name ?? imported.name,
+			return createActivationResult(
+				createSelection(
+					result.id,
+					activated?.preset_name ?? result.name ?? imported.name,
+				),
+				"deferred",
 			);
 		},
 		exportCurrentState: async (name) => ({

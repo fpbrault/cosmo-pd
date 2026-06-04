@@ -87,7 +87,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 		setPresetSession: persistPresetSession,
 	} = usePluginParamBridge({
 		onExternalParamChange: () => {
-			presetManagerRef.current?.markDirtyFromEdit();
+			presetManagerRef.current?.recomputeDirtyState();
 		},
 	});
 	const presetRepository = useMemo(
@@ -178,11 +178,14 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 			const matchingEntry =
 				presetManager.allPresetEntries.find((entry) => entry.label === name) ??
 				null;
-			presetManager.syncExternalSelection({
-				activePresetId: matchingEntry?.id ?? null,
-				activePresetNameBase: name,
-				isDirty: false,
-			});
+			presetManager.syncExternalSelection(
+				{
+					activePresetId: matchingEntry?.id ?? null,
+					activePresetNameBase: name,
+					isDirty: false,
+				},
+				{ stateSync: "deferred" },
+			);
 		};
 		return () => {
 			window.__czOnHostPresetSelected = undefined;
@@ -200,11 +203,16 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 			}
 
 			restoreDoneRef.current = true;
-			presetManager.syncExternalSelection({
-				activePresetId: session.activePresetId,
-				activePresetNameBase: session.activePresetNameBase,
-				isDirty: session.isDirty,
-			});
+			presetManager.syncExternalSelection(
+				{
+					activePresetId: session.activePresetId,
+					activePresetNameBase: session.activePresetNameBase,
+					isDirty: session.isDirty,
+				},
+				{
+					stateSync: session.isDirty ? "immediate" : "deferred",
+				},
+			);
 			await persistPresetSession(session);
 		};
 		void restore();

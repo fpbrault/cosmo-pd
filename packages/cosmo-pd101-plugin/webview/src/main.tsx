@@ -3,37 +3,10 @@ import { Component, type ReactNode, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App";
+import { installGlobalHostErrorHandlers, postHostLog } from "./lib/hostLogger";
 import { ensurePluginBridge } from "./lib/pluginBridge";
 
-function postHostLog(level: "info" | "error", message: string) {
-	try {
-		window.ipc?.postMessage(
-			JSON.stringify({
-				id: 0,
-				method: "clientLog",
-				args: [level, message],
-			}),
-		);
-	} catch {
-		// Ignore logging failures in browser/test harness mode.
-	}
-}
-
-window.addEventListener("error", (event) => {
-	const message =
-		event.error instanceof Error
-			? `${event.error.name}: ${event.error.message}\n${event.error.stack ?? ""}`
-			: `${String(event.message)} @ ${event.filename}:${event.lineno}:${event.colno}`;
-	postHostLog("error", `window.onerror: ${message}`);
-});
-
-window.addEventListener("unhandledrejection", (event) => {
-	const reason =
-		event.reason instanceof Error
-			? (event.reason.stack ?? event.reason.message)
-			: String(event.reason);
-	postHostLog("error", `unhandledrejection: ${reason}`);
-});
+installGlobalHostErrorHandlers();
 
 // TODO: TEST HARNESS BLOCK — Vite statically eliminates this branch when
 // VITE_TEST_HARNESS is not set, so mock modules are excluded from production builds.
@@ -130,4 +103,10 @@ async function init() {
 	postHostLog("info", "main.tsx: React render dispatched");
 }
 
-void init();
+void init().catch((error) => {
+	const message =
+		error instanceof Error
+			? `${error.name}: ${error.message}\n${error.stack ?? ""}`
+			: String(error);
+	postHostLog("error", `main.tsx: init failed: ${message}`);
+});

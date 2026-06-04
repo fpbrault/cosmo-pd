@@ -40,8 +40,10 @@ export {
 } from "./features/synth/midiLearnStore";
 export type {
 	ExportedPresetFile,
+	PresetActivationResult,
 	PresetManagerRepository,
 	PresetManagerSession,
+	PresetStateSync,
 	SavePresetRequest,
 } from "./features/synth/presetManagerRepository";
 export type {

@@ -1,5 +1,6 @@
 import type {
 	ExportedPresetFile,
+	PresetActivationResult,
 	PresetManagerRepository,
 	PresetManagerSession,
 	SavePresetRequest,
@@ -38,6 +39,12 @@ function createSelection(
 	isDirty = false,
 ): PresetManagerSession {
 	return { activePresetId, activePresetNameBase, isDirty };
+}
+
+function createActivationResult(
+	session: PresetManagerSession,
+): PresetActivationResult {
+	return { session, stateSync: "immediate" };
 }
 
 function buildCurrentStateExport(
@@ -79,12 +86,12 @@ export function createWebPresetManagerRepository({
 					return null;
 				}
 				applyPreset(preset.data);
-				return createSelection(preset.id, preset.name);
+				return createActivationResult(createSelection(preset.id, preset.name));
 			}
 
 			if (entry.preset?.data) {
 				applyPreset(entry.preset.data);
-				return createSelection(entry.id, entry.label);
+				return createActivationResult(createSelection(entry.id, entry.label));
 			}
 
 			if (entry.preset?.sysexData) {
@@ -93,7 +100,7 @@ export function createWebPresetManagerRepository({
 					return null;
 				}
 				applyPreset(convertDecodedPatchToSynthPreset(decoded));
-				return createSelection(entry.id, entry.label);
+				return createActivationResult(createSelection(entry.id, entry.label));
 			}
 
 			return null;
@@ -113,7 +120,7 @@ export function createWebPresetManagerRepository({
 				tags: currentStoredPreset?.tags ?? [],
 			});
 
-			return createSelection(stored.id, stored.name);
+			return createActivationResult(createSelection(stored.id, stored.name));
 		},
 		deletePreset,
 		renamePreset: async (id, newName) => {
@@ -129,7 +136,7 @@ export function createWebPresetManagerRepository({
 		initPreset: async () => {
 			onBeforeApplyPreset?.();
 			applyPreset(DEFAULT_PRESET);
-			return createSelection(null, "Current State");
+			return createActivationResult(createSelection(null, "Current State"));
 		},
 		exportPreset: async (id) => {
 			const json = await exportPreset(id);
@@ -168,7 +175,7 @@ export function createWebPresetManagerRepository({
 			});
 			onBeforeApplyPreset?.();
 			applyPreset(stored.data);
-			return createSelection(stored.id, stored.name);
+			return createActivationResult(createSelection(stored.id, stored.name));
 		},
 		exportCurrentState: async (name) =>
 			buildCurrentStateExport(name, gatherPresetState),

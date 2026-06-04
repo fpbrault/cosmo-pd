@@ -447,6 +447,7 @@ export function installMockPluginBridge(): void {
 	// Full params blob pre-seeded with defaults so pushParamUpdate always
 	// sends a complete blob that satisfies applyPreset (requires line1/line2).
 	let virtualFullParams: FullParamsBlob = { ...DEFAULT_FULL_PARAMS };
+	let virtualParamsVersion = 0;
 	// Scalar param snapshot from last setParams — used for change detection.
 	let prevExtractedScalars: Record<string, number> = {};
 
@@ -536,7 +537,11 @@ export function installMockPluginBridge(): void {
 				return;
 			}
 			if (method === "getParams") {
-				respondIpc(id, { result: { ...DEFAULT_FULL_PARAMS } });
+				respondIpc(id, { result: { ...virtualFullParams } });
+				return;
+			}
+			if (method === "getParamsVersion") {
+				respondIpc(id, { result: virtualParamsVersion });
 				return;
 			}
 			if (method === "getTransportInfo") {
@@ -741,6 +746,7 @@ export function installMockPluginBridge(): void {
 				if (entry) {
 					virtualPresetName = entry.name;
 					virtualFullParams = { ...entry.data };
+					virtualParamsVersion += 1;
 				}
 				respondIpc(id, {
 					result: { preset_name: entry?.name ?? virtualPresetName },
@@ -791,6 +797,7 @@ export function installMockPluginBridge(): void {
 				}
 				virtualPresetName = name;
 				virtualFullParams = { ...data };
+				virtualParamsVersion += 1;
 				respondIpc(id, { result: { id: presetId, name } });
 				return;
 			}
@@ -936,6 +943,7 @@ export function installMockPluginBridge(): void {
 			if (virtualFullParams !== null) {
 				const updated = applyParamToBlob(virtualFullParams, stringId, value);
 				virtualFullParams = updated;
+				virtualParamsVersion += 1;
 				window.__czOnParams(JSON.stringify(updated));
 			} else {
 				// Fallback before first setParams — sends partial JSON (may log an error)
@@ -957,6 +965,7 @@ export function installMockPluginBridge(): void {
 				params = applyParamToBlob(params, stringId, plain);
 			}
 			virtualFullParams = params;
+			virtualParamsVersion += 1;
 			window.__czOnParams(JSON.stringify(params));
 		},
 
