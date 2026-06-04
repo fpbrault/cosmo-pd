@@ -5,9 +5,8 @@ import PluginPage, { clampPluginKeyboardHeight } from "./PluginPage";
 const mockUseSynthPresetManager = vi.hoisted(() => vi.fn());
 const mockUsePluginParamBridge = vi.hoisted(() => vi.fn());
 const mockUsePluginSynthRuntime = vi.hoisted(() => vi.fn());
-const mockInstallBenchmarkApi = vi.hoisted(() => vi.fn(() => vi.fn()));
+const mockCreatePluginPresetManagerRepository = vi.hoisted(() => vi.fn());
 const mockSetKeyboardHeight = vi.hoisted(() => vi.fn());
-const mockRendererSyncPresetSelection = vi.hoisted(() => vi.fn());
 
 vi.mock("./hooks/usePluginParamBridge", () => ({
 	usePluginParamBridge: mockUsePluginParamBridge,
@@ -17,11 +16,13 @@ vi.mock("./hooks/usePluginSynthRuntime", () => ({
 	usePluginSynthRuntime: mockUsePluginSynthRuntime,
 }));
 
+vi.mock("./hooks/createPluginPresetManagerRepository", () => ({
+	createPluginPresetManagerRepository: mockCreatePluginPresetManagerRepository,
+}));
+
 vi.mock("@cosmo/cosmo-pd101", () => {
 	const synthStoreState = {
-		gatherState: () => ({ params: { volume: 1 } }),
-		applyPreset: vi.fn(),
-		velocityCurve: "linear",
+		gatherPresetState: () => ({ schemaVersion: 1, params: { volume: 1 } }),
 	};
 	const synthUiStoreState = {
 		keyboardHeight: 160,
@@ -47,22 +48,12 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 				sidebarMinWidthRem: 18,
 			}),
 		),
-		DEFAULT_SYNTH_PRESETS: {},
-		FACTORY_PRESETS: [],
+		PresetManagerProvider: ({ children }: { children: React.ReactNode }) => (
+			<div>{children}</div>
+		),
 		SYNTH_RENDERER_DESIGN_HEIGHT: 912,
 		SYNTH_RENDERER_MIN_ASPECT_RATIO: 4 / 3,
-		SynthRenderer: (props: {
-			onInitPresetSession?: (
-				syncBuiltinSelection: (
-					name: string,
-					options?: { isDirty?: boolean; presetId?: string | null },
-				) => void,
-			) => void;
-		}) => {
-			props.onInitPresetSession?.(mockRendererSyncPresetSelection);
-			return <div data-testid="synth-renderer" />;
-		},
-		installBenchmarkApi: mockInstallBenchmarkApi,
+		SynthRenderer: () => <div data-testid="synth-renderer" />,
 		useSynthPresetManager: mockUseSynthPresetManager,
 		useSynthStore: (selector: (state: typeof synthStoreState) => unknown) =>
 			selector(synthStoreState),
@@ -72,16 +63,16 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 });
 
 describe("PluginPage", () => {
-	let handleSyncPresetSelection: ReturnType<typeof vi.fn>;
+	let syncExternalSelection: ReturnType<typeof vi.fn>;
+	let reloadLibrary: ReturnType<typeof vi.fn>;
 
 	beforeEach(() => {
-		mockInstallBenchmarkApi.mockClear();
 		mockSetKeyboardHeight.mockClear();
 		mockUsePluginParamBridge.mockReset();
 		mockUsePluginSynthRuntime.mockReset();
-		mockRendererSyncPresetSelection.mockReset();
+		mockCreatePluginPresetManagerRepository.mockReset();
 		mockUsePluginParamBridge.mockReturnValue({
-			loadPresetData: vi.fn().mockResolvedValue("Mock Preset"),
+			bridgeReady: true,
 			getPresetSession: vi.fn().mockResolvedValue(null),
 			setPresetSession: vi.fn().mockResolvedValue(undefined),
 		});
@@ -96,6 +87,7 @@ describe("PluginPage", () => {
 			effectivePitchHz: 220,
 			analyserNodeRef: { current: null },
 			audioCtxRef: { current: null },
+			subscribeScopeFrames: vi.fn(() => () => {}),
 			benchmark: {
 				mode: "plugin",
 				setPerformanceMonitorEnabled: vi.fn(),
@@ -103,57 +95,56 @@ describe("PluginPage", () => {
 				ensureReady: vi.fn(),
 			},
 		});
+		mockCreatePluginPresetManagerRepository.mockReturnValue({
+			listEntries: vi.fn(),
+		});
 		mockUseSynthPresetManager.mockReset();
-		handleSyncPresetSelection = vi.fn();
+		syncExternalSelection = vi.fn();
+		reloadLibrary = vi.fn().mockResolvedValue(undefined);
 		mockUseSynthPresetManager.mockReturnValue({
 			allPresetEntries: [],
+			navigationEntryIds: [],
 			activePresetId: null,
 			activePresetNameBase: "Current State",
 			activePresetName: "Current State",
 			isPresetDirty: false,
-			handleSyncPresetSelection,
-			handleLoadPresetByName: vi.fn(),
-			handleLoadLocal: vi.fn(),
-			handleLoadBuiltin: vi.fn(),
-			handleLoadLibrary: vi.fn(),
-			handleStepPreset: vi.fn(),
-			handleSavePreset: vi.fn(),
-			handleDeletePreset: vi.fn(),
-			handleRenamePreset: vi.fn(),
-			handleInitPreset: vi.fn(),
-			handleExportPreset: vi.fn(),
-			handleImportPreset: vi.fn(),
-			handleExportCurrentState: vi.fn(),
-			markPresetDirty: vi.fn(),
-			setPresetDirtyState: vi.fn(),
+			syncExternalSelection,
+			activatePreset: vi.fn(),
+			setNavigationEntryIds: vi.fn(),
+			stepPreset: vi.fn(),
+			savePreset: vi.fn(),
+			deletePreset: vi.fn(),
+			renamePreset: vi.fn(),
+			setPresetAuthor: vi.fn(),
+			setPresetFavorite: vi.fn(),
+			setPresetTags: vi.fn(),
+			initPreset: vi.fn(),
+			exportPreset: vi.fn(),
+			importPreset: vi.fn(),
+			exportCurrentState: vi.fn(),
+			markDirtyFromEdit: vi.fn(),
+			syncDirtyState: vi.fn(),
+			reloadLibrary,
 		});
 		delete (window as Window & { ipc?: unknown }).ipc;
 	});
 
-	it("renders and initializes the preset manager", () => {
-		const loadPresetData = vi.fn().mockResolvedValue("Mock Preset");
-		mockUsePluginParamBridge.mockReturnValue({
-			loadPresetData,
-			getPresetSession: vi.fn().mockResolvedValue(null),
-			setPresetSession: vi.fn().mockResolvedValue(undefined),
-		});
-
+	it("renders and creates a plugin repository-backed preset manager", () => {
 		render(<PluginPage />);
 
+		expect(mockCreatePluginPresetManagerRepository).toHaveBeenCalledTimes(1);
 		expect(mockUseSynthPresetManager).toHaveBeenCalledTimes(1);
-		const options = mockUseSynthPresetManager.mock.calls[0]?.[0];
-		expect(options).not.toHaveProperty("shouldLoadCurrentState");
-		expect(loadPresetData).not.toHaveBeenCalled();
+		expect(reloadLibrary).toHaveBeenCalled();
 	});
 
-	it("calls preset session restore on mount", async () => {
+	it("restores preset session into the shared preset manager", async () => {
 		const getPresetSession = vi.fn().mockResolvedValue({
 			activePresetId: "preset-1",
 			activePresetNameBase: "Warm Pad",
 			isDirty: true,
 		});
 		mockUsePluginParamBridge.mockReturnValue({
-			loadPresetData: vi.fn().mockResolvedValue("Mock Preset"),
+			bridgeReady: true,
 			getPresetSession,
 			setPresetSession: vi.fn().mockResolvedValue(undefined),
 		});
@@ -163,34 +154,10 @@ describe("PluginPage", () => {
 		await vi.waitFor(() => {
 			expect(getPresetSession).toHaveBeenCalled();
 		});
-		expect(mockRendererSyncPresetSelection).toHaveBeenCalledWith("Warm Pad", {
+		expect(syncExternalSelection).toHaveBeenCalledWith({
+			activePresetId: "preset-1",
+			activePresetNameBase: "Warm Pad",
 			isDirty: true,
-			presetId: "preset-1",
-		});
-	});
-
-	it("restores current state label when provided by the host session", async () => {
-		const getPresetSession = vi.fn().mockResolvedValue({
-			activePresetId: null,
-			activePresetNameBase: "Current State",
-			isDirty: false,
-		});
-		mockUsePluginParamBridge.mockReturnValue({
-			loadPresetData: vi.fn().mockResolvedValue("Mock Preset"),
-			getPresetSession,
-			setPresetSession: vi.fn().mockResolvedValue(undefined),
-		});
-
-		render(<PluginPage />);
-
-		await vi.waitFor(() => {
-			expect(mockRendererSyncPresetSelection).toHaveBeenCalledWith(
-				"Current State",
-				{
-					isDirty: false,
-					presetId: null,
-				},
-			);
 		});
 	});
 

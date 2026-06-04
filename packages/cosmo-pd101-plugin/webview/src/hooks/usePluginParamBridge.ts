@@ -5,18 +5,20 @@ import {
 	useMidiLearnBindings,
 	usePluginBridgeSynthEngine,
 } from "@cosmo/cosmo-pd101";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ensurePluginBridge } from "@/lib/pluginBridge";
 import { useSessionStateSync } from "./useSessionStateSync";
 
 export function usePluginParamBridge(
 	options: { onExternalParamChange?: () => void } = {},
 ): {
+	bridgeReady: boolean;
 	loadPresetData: (id: string) => Promise<string>;
 	getPresetSession: () => Promise<PluginPresetSession | null>;
 	setPresetSession: (session: PluginPresetSession) => Promise<void>;
 } {
 	const bridgeReadyRef = useRef(false);
+	const [bridgeReady, setBridgeReady] = useState(false);
 	useMidiLearnBindings({ applyBindings: true });
 
 	useEffect(() => {
@@ -26,6 +28,7 @@ export function usePluginParamBridge(
 
 		if (ensurePluginBridge()) {
 			bridgeReadyRef.current = true;
+			setBridgeReady(true);
 			void refreshMidiLearnState();
 			return;
 		}
@@ -33,6 +36,7 @@ export function usePluginParamBridge(
 		const intervalId = window.setInterval(() => {
 			if (ensurePluginBridge()) {
 				bridgeReadyRef.current = true;
+				setBridgeReady(true);
 				void refreshMidiLearnState();
 				window.clearInterval(intervalId);
 			}
@@ -52,5 +56,5 @@ export function usePluginParamBridge(
 		return unsubscribe;
 	}, []);
 
-	return { loadPresetData, getPresetSession, setPresetSession };
+	return { bridgeReady, loadPresetData, getPresetSession, setPresetSession };
 }

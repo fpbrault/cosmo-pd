@@ -1,9 +1,8 @@
 import Button from "@/components/controls/Button";
 import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
-import type { PresetEntry } from "@/features/synth/types/presetEntry";
 
 type PresetNavigatorProps = {
-	allEntries: PresetEntry[];
+	presetCount: number;
 	activePresetName: string;
 	activePresetSource: string;
 	onStepPreset: (direction: -1 | 1) => void;
@@ -12,7 +11,7 @@ type PresetNavigatorProps = {
 };
 
 export default function PresetNavigator({
-	allEntries,
+	presetCount,
 	activePresetName,
 	activePresetSource,
 	onStepPreset,
@@ -45,7 +44,7 @@ export default function PresetNavigator({
 						onStepPreset(-1);
 					}}
 					onContextMenu={previousMidiLearn.onContextMenu}
-					disabled={allEntries.length === 0}
+					disabled={presetCount === 0}
 					aria-label="Previous preset"
 				>
 					<svg
@@ -107,7 +106,7 @@ export default function PresetNavigator({
 						onStepPreset(1);
 					}}
 					onContextMenu={nextMidiLearn.onContextMenu}
-					disabled={allEntries.length === 0}
+					disabled={presetCount === 0}
 					aria-label="Next preset"
 				>
 					<svg

@@ -6,7 +6,7 @@ import {
 	useSpring,
 	useTransform,
 } from "motion/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import UpdateNotification from "../../src/components/layout/UpdateNotification";
 import {
 	computeRendererFrameLayout,
@@ -15,7 +15,10 @@ import {
 	SYNTH_RENDERER_MAX_ASPECT_RATIO,
 } from "../../src/components/renderer/rendererFrameLayout";
 import { SharedPhaseDistortionVisualizer } from "../../src/components/renderer/SynthRenderer";
+import { PresetManagerProvider } from "../../src/context/PresetManagerContext";
+import { createWebPresetManagerRepository } from "../../src/features/synth/createWebPresetManagerRepository";
 import { useSynthStore } from "../../src/features/synth/synthStore";
+import { useSynthPresetManager } from "../../src/features/synth/useSynthPresetManager";
 import { FACTORY_PRESETS } from "../../src/lib/synth/factoryCzPresets";
 import {
 	loadCurrentPresetSession,
@@ -32,6 +35,8 @@ const WEB_MAX_SCALE = 0.85;
 
 export default function LivePage() {
 	const runtime = useWebSynthRuntime();
+	const gatherPresetState = useSynthStore((s) => s.gatherPresetState);
+	const applyPreset = useSynthStore((s) => s.applyPreset);
 	const frameRef = useRef<HTMLDivElement | null>(null);
 	const [frameLayout, setFrameLayout] = useState(() =>
 		computeRendererFrameLayout({
@@ -142,24 +147,32 @@ export default function LivePage() {
 		? {}
 		: { width: scaledWidth, height: scaledHeight };
 
-	const syncPresetSelectionRef = useRef<(name: string) => void>();
-	const syncPresetSessionRef =
-		useRef<(name: string, options?: { isDirty?: boolean }) => void>();
-
-	const handlePresetSessionChange = useCallback(
-		(session: {
-			activePresetId: string | null;
-			activePresetNameBase: string;
-			isDirty: boolean;
-		}) => {
-			void saveCurrentPresetSession({
-				activePresetId: session.activePresetId,
-				activePresetNameBase: session.activePresetNameBase,
-				isDirty: session.isDirty,
-			});
-		},
-		[],
+	const presetRepository = useMemo(
+		() =>
+			createWebPresetManagerRepository({
+				applyPreset,
+				gatherPresetState,
+				libraryPresets: FACTORY_PRESETS,
+				onBeforeApplyPreset: runtime.panic,
+			}),
+		[applyPreset, gatherPresetState, runtime.panic],
 	);
+	const presetManager = useSynthPresetManager({
+		repository: presetRepository,
+	});
+	const presetBootstrapDoneRef = useRef(false);
+
+	useEffect(() => {
+		void saveCurrentPresetSession({
+			activePresetId: presetManager.activePresetId,
+			activePresetNameBase: presetManager.activePresetNameBase,
+			isDirty: presetManager.isPresetDirty,
+		});
+	}, [
+		presetManager.activePresetId,
+		presetManager.activePresetNameBase,
+		presetManager.isPresetDirty,
+	]);
 
 	const toggleFullscreen = useCallback(async () => {
 		if (!document.fullscreenElement) {
@@ -185,6 +198,9 @@ export default function LivePage() {
 
 	useEffect(() => {
 		const init = async () => {
+			if (presetBootstrapDoneRef.current) {
+				return;
+			}
 			const saved = await loadCurrentState();
 			const session = await loadCurrentPresetSession();
 			if (saved) {
@@ -194,19 +210,36 @@ export default function LivePage() {
 				session?.activePresetNameBase &&
 				session.activePresetNameBase !== "Current State"
 			) {
-				syncPresetSessionRef.current?.(session.activePresetNameBase, {
+				presetBootstrapDoneRef.current = true;
+				presetManager.syncExternalSelection({
+					activePresetId: session.activePresetId,
+					activePresetNameBase: session.activePresetNameBase,
 					isDirty: session.isDirty,
 				});
-			} else {
-				const firstPreset = FACTORY_PRESETS[0];
-				if (firstPreset) {
-					useSynthStore.getState().applyPreset(firstPreset.data);
-					syncPresetSessionRef.current?.(firstPreset.name);
-				}
+				return;
 			}
+
+			const firstPreset = FACTORY_PRESETS[0];
+			if (!firstPreset) {
+				presetBootstrapDoneRef.current = true;
+				return;
+			}
+			if (
+				!presetManager.allPresetEntries.some(
+					(entry) => entry.id === firstPreset.id,
+				)
+			) {
+				return;
+			}
+			presetBootstrapDoneRef.current = true;
+			await presetManager.activatePreset({ entryId: firstPreset.id });
 		};
-		init();
-	}, []);
+		void init();
+	}, [
+		presetManager.activatePreset,
+		presetManager.allPresetEntries,
+		presetManager.syncExternalSelection,
+	]);
 
 	useEffect(() => {
 		const handleBeforeUnload = () => {
@@ -254,18 +287,15 @@ export default function LivePage() {
 						transformOrigin: isSynthFullscreen ? "center" : "top left",
 					}}
 				>
-					<SharedPhaseDistortionVisualizer
-						runtime={runtime}
-						sidebarMinWidthRem={sidebarMinWidthRem}
-						bottomBarExtra={
-							<UpdateNotification currentVersion={__CZ_APP_VERSION__} />
-						}
-						onInitPresetSession={(fn) => {
-							syncPresetSelectionRef.current = fn;
-							syncPresetSessionRef.current = fn;
-						}}
-						onPresetSessionChange={handlePresetSessionChange}
-					/>
+					<PresetManagerProvider value={presetManager}>
+						<SharedPhaseDistortionVisualizer
+							runtime={runtime}
+							sidebarMinWidthRem={sidebarMinWidthRem}
+							bottomBarExtra={
+								<UpdateNotification currentVersion={__CZ_APP_VERSION__} />
+							}
+						/>
+					</PresetManagerProvider>
 				</div>
 			</div>
 			<button

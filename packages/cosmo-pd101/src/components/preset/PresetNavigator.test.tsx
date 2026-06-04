@@ -23,7 +23,7 @@ describe("PresetNavigator", () => {
 
 		const { rerender } = render(
 			<PresetNavigator
-				allEntries={entries}
+				presetCount={entries.length}
 				activePresetName="Current State"
 				activePresetSource="Current State"
 				onStepPreset={vi.fn()}
@@ -42,7 +42,7 @@ describe("PresetNavigator", () => {
 
 		rerender(
 			<PresetNavigator
-				allEntries={entries}
+				presetCount={entries.length}
 				activePresetName="Current State"
 				activePresetSource="Current State"
 				onStepPreset={vi.fn()}
@@ -64,7 +64,7 @@ describe("PresetNavigator", () => {
 
 		render(
 			<PresetNavigator
-				allEntries={entries}
+				presetCount={entries.length}
 				activePresetName="Current State"
 				activePresetSource="Current State"
 				onStepPreset={onStepPreset}

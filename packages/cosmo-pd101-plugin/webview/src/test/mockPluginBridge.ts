@@ -422,6 +422,27 @@ export function installMockPluginBridge(): void {
 					| string
 					| undefined)
 			: undefined) ?? "";
+	let virtualPresetEntries: Array<{
+		id: string;
+		name: string;
+		source: string;
+		author: string;
+		starred: boolean;
+		favorite: boolean;
+		tags: string[];
+		data: FullParamsBlob;
+	}> = [
+		{
+			id: "factory-brass",
+			name: "Factory Brass",
+			source: "cosmo-factory",
+			author: "Factory",
+			starred: true,
+			favorite: false,
+			tags: ["brass"],
+			data: { ...DEFAULT_FULL_PARAMS },
+		},
+	];
 
 	// Full params blob pre-seeded with defaults so pushParamUpdate always
 	// sends a complete blob that satisfies applyPreset (requires line1/line2).
@@ -688,6 +709,191 @@ export function installMockPluginBridge(): void {
 					virtualPresetName = session.activePresetNameBase as string;
 				}
 				respondIpc(id, { result: null });
+				return;
+			}
+			if (method === "getPresetLibrary") {
+				respondIpc(id, {
+					result: {
+						entries: virtualPresetEntries.map((entry, index) => ({
+							id: entry.id,
+							name: entry.name,
+							source: entry.source,
+							author: entry.author,
+							starred: entry.starred,
+							sortIndex: index,
+							favorite: entry.favorite,
+							tags: entry.tags,
+						})),
+					},
+				});
+				return;
+			}
+			if (method === "loadPresetData") {
+				const payload =
+					typeof args[0] === "object" && args[0] !== null
+						? (args[0] as Record<string, unknown>)
+						: null;
+				const idValue =
+					typeof payload?.id === "string" ? payload.id : undefined;
+				const entry = virtualPresetEntries.find(
+					(candidate) => candidate.id === idValue,
+				);
+				if (entry) {
+					virtualPresetName = entry.name;
+					virtualFullParams = { ...entry.data };
+				}
+				respondIpc(id, {
+					result: { preset_name: entry?.name ?? virtualPresetName },
+				});
+				return;
+			}
+			if (method === "savePreset") {
+				const payload =
+					typeof args[0] === "object" && args[0] !== null
+						? (args[0] as Record<string, unknown>)
+						: null;
+				const name =
+					typeof payload?.name === "string" ? payload.name : "Saved Preset";
+				const author =
+					typeof payload?.author === "string" ? payload.author : "";
+				const tags = Array.isArray(payload?.tags)
+					? payload.tags.filter((tag): tag is string => typeof tag === "string")
+					: [];
+				const data =
+					typeof payload?.data === "object" && payload.data !== null
+						? ((payload.data as { params?: FullParamsBlob }).params ??
+							DEFAULT_FULL_PARAMS)
+						: virtualFullParams;
+				const presetId =
+					typeof payload?.id === "string" && payload.id.length > 0
+						? payload.id
+						: `preset-${virtualPresetEntries.length + 1}`;
+				const existingIndex = virtualPresetEntries.findIndex(
+					(entry) => entry.id === presetId,
+				);
+				const nextEntry = {
+					id: presetId,
+					name,
+					source: "user",
+					author,
+					starred: false,
+					favorite:
+						existingIndex >= 0
+							? (virtualPresetEntries[existingIndex]?.favorite ?? false)
+							: false,
+					tags,
+					data: { ...data },
+				};
+				if (existingIndex >= 0) {
+					virtualPresetEntries[existingIndex] = nextEntry;
+				} else {
+					virtualPresetEntries.push(nextEntry);
+				}
+				virtualPresetName = name;
+				virtualFullParams = { ...data };
+				respondIpc(id, { result: { id: presetId, name } });
+				return;
+			}
+			if (method === "setPresetAuthor") {
+				const payload =
+					typeof args[0] === "object" && args[0] !== null
+						? (args[0] as Record<string, unknown>)
+						: null;
+				const presetId = typeof payload?.id === "string" ? payload.id : "";
+				const author =
+					typeof payload?.author === "string" ? payload.author : "";
+				virtualPresetEntries = virtualPresetEntries.map((entry) =>
+					entry.id === presetId ? { ...entry, author } : entry,
+				);
+				respondIpc(id, { result: null });
+				return;
+			}
+			if (method === "setPresetTags") {
+				const payload =
+					typeof args[0] === "object" && args[0] !== null
+						? (args[0] as Record<string, unknown>)
+						: null;
+				const presetId = typeof payload?.id === "string" ? payload.id : "";
+				const tags = Array.isArray(payload?.tags)
+					? payload.tags.filter((tag): tag is string => typeof tag === "string")
+					: [];
+				virtualPresetEntries = virtualPresetEntries.map((entry) =>
+					entry.id === presetId ? { ...entry, tags } : entry,
+				);
+				respondIpc(id, { result: null });
+				return;
+			}
+			if (method === "renamePreset") {
+				const payload =
+					typeof args[0] === "object" && args[0] !== null
+						? (args[0] as Record<string, unknown>)
+						: null;
+				const presetId = typeof payload?.id === "string" ? payload.id : "";
+				const newName =
+					typeof payload?.newName === "string" ? payload.newName : "";
+				virtualPresetEntries = virtualPresetEntries.map((entry) =>
+					entry.id === presetId ? { ...entry, name: newName } : entry,
+				);
+				if (virtualPresetName === presetId || virtualPresetName === newName) {
+					virtualPresetName = newName;
+				}
+				respondIpc(id, { result: null });
+				return;
+			}
+			if (method === "deletePreset") {
+				const payload =
+					typeof args[0] === "object" && args[0] !== null
+						? (args[0] as Record<string, unknown>)
+						: null;
+				const presetId = typeof payload?.id === "string" ? payload.id : "";
+				virtualPresetEntries = virtualPresetEntries.filter(
+					(entry) => entry.id !== presetId,
+				);
+				respondIpc(id, { result: null });
+				return;
+			}
+			if (method === "toggleStarred") {
+				const payload =
+					typeof args[0] === "object" && args[0] !== null
+						? (args[0] as Record<string, unknown>)
+						: null;
+				const presetId = typeof payload?.id === "string" ? payload.id : "";
+				const starred = payload?.starred === true;
+				virtualPresetEntries = virtualPresetEntries.map((entry) =>
+					entry.id === presetId ? { ...entry, favorite: starred } : entry,
+				);
+				respondIpc(id, { result: null });
+				return;
+			}
+			if (method === "exportPreset") {
+				const payload =
+					typeof args[0] === "object" && args[0] !== null
+						? (args[0] as Record<string, unknown>)
+						: null;
+				const presetId = typeof payload?.id === "string" ? payload.id : "";
+				const entry = virtualPresetEntries.find(
+					(candidate) => candidate.id === presetId,
+				);
+				respondIpc(id, {
+					result: entry
+						? {
+								filename: `${entry.name}.json`,
+								json: JSON.stringify(
+									{
+										id: entry.id,
+										name: entry.name,
+										source: entry.source,
+										author: entry.author,
+										starred: entry.starred,
+										tags: entry.tags,
+										data: { schemaVersion: 1, params: entry.data },
+									},
+									null,
+									2,
+								),
+							}
+						: null,
+				});
 				return;
 			}
 			if (method === "getScopeData") {

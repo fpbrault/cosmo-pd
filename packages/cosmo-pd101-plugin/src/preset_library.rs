@@ -90,6 +90,11 @@ impl PresetLibrary {
         Ok(entry)
     }
 
+    pub fn save_entry(&mut self, entry: PresetLibraryEntry) -> Result<PresetLibraryEntry, String> {
+        self.with_connection_mut(|conn| upsert_entry(conn, &entry))?;
+        Ok(entry)
+    }
+
     pub fn delete_entry(&mut self, id: &str) -> Result<bool, String> {
         self.with_connection_mut(|conn| {
             let deleted = conn

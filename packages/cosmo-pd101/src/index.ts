@@ -20,6 +20,11 @@ export {
 	type SynthRendererProps as SharedPhaseDistortionVisualizerProps,
 } from "./components/renderer/SynthRenderer";
 export {
+	PresetManagerProvider,
+	usePresetManager,
+} from "./context/PresetManagerContext";
+export { createWebPresetManagerRepository } from "./features/synth/createWebPresetManagerRepository";
+export {
 	type PluginPresetSession,
 	usePluginBridgeSynthEngine,
 } from "./features/synth/engine/pluginBridgeSynthEngineAdapter";
@@ -33,6 +38,12 @@ export {
 	subscribeMidiLearnState,
 	useMidiLearnStore,
 } from "./features/synth/midiLearnStore";
+export type {
+	ExportedPresetFile,
+	PresetManagerRepository,
+	PresetManagerSession,
+	SavePresetRequest,
+} from "./features/synth/presetManagerRepository";
 export type {
 	SynthBenchmarkRuntime,
 	SynthRuntime,
@@ -52,6 +63,12 @@ export {
 	useSynthUiStore,
 } from "./features/synth/synthUiStore";
 export type { LibraryPreset } from "./features/synth/types/libraryPreset";
+export type { PresetEntry } from "./features/synth/types/presetEntry";
+export type {
+	PresetEntryId,
+	PresetManagerController,
+	PresetRef,
+} from "./features/synth/useSynthPresetManager";
 export { useSynthPresetManager } from "./features/synth/useSynthPresetManager";
 export { i18n, initI18n } from "./i18n";
 export type {
@@ -80,6 +97,7 @@ export type {
 	FxSlotType,
 	ModMatrix,
 	StepEnvData,
+	SynthPresetV1,
 } from "./lib/synth/bindings/synth";
 export {
 	cosmoWorkletUrl,
@@ -89,6 +107,8 @@ export {
 export { convertDecodedPatchToSynthPreset } from "./lib/synth/czPresetConverter";
 export { FACTORY_PRESETS } from "./lib/synth/factoryCzPresets";
 export { noteToFreq } from "./lib/synth/pdAlgorithms";
+export type { PresetSource } from "./lib/synth/presetSources";
+export type { PresetTagOptions } from "./lib/synth/presetTags";
 export type {
 	EnginePresetV1,
 	FrontendPresetV1,

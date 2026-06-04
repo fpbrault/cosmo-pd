@@ -1,6 +1,6 @@
 import { useCallback } from "react";
-import type { LibraryPreset } from "@/features/synth/types/libraryPreset";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
+import type { PresetRef } from "@/features/synth/useSynthPresetManager";
 import {
 	PRESET_TAG_OPTIONS,
 	type PresetTagOptions,
@@ -17,9 +17,7 @@ type PresetLibraryProps = {
 	allEntries: PresetEntry[];
 	activeEntryId: string | null;
 	activePresetName: string;
-	onLoadPresetByName: (name: string) => void;
-	onLoadLocal: (id: string) => void;
-	onLoadLibrary: (preset: LibraryPreset) => void;
+	onActivatePreset: (ref: PresetRef) => void;
 	onSavePreset: (name: string) => void;
 	onDeletePreset: (id: string) => void;
 	onRenamePreset: (id: string, newName: string) => void;
@@ -31,7 +29,7 @@ type PresetLibraryProps = {
 	onImportPreset: (json: string, filename: string) => void;
 	onInitPreset: () => void;
 	onClose: () => void;
-	onVisibleEntriesChange?: (entries: PresetEntry[]) => void;
+	onNavigationEntriesChange?: (entryIds: string[]) => void;
 	isOpen?: boolean;
 };
 
@@ -39,9 +37,7 @@ export default function PresetLibrary({
 	allEntries,
 	activeEntryId,
 	activePresetName,
-	onLoadPresetByName,
-	onLoadLocal,
-	onLoadLibrary,
+	onActivatePreset,
 	onSavePreset,
 	onDeletePreset,
 	onRenamePreset,
@@ -53,7 +49,7 @@ export default function PresetLibrary({
 	onImportPreset,
 	onInitPreset,
 	onClose,
-	onVisibleEntriesChange,
+	onNavigationEntriesChange,
 	isOpen = true,
 }: PresetLibraryProps) {
 	const isPluginRuntime =
@@ -107,7 +103,7 @@ export default function PresetLibrary({
 		activeEntryId,
 		activePresetName,
 		isOpen,
-		onVisibleEntriesChange,
+		onNavigationEntriesChange,
 	});
 
 	const { importFileRef, handleImportFile, handleImportClick } =
@@ -118,17 +114,9 @@ export default function PresetLibrary({
 
 	const handleLoad = useCallback(
 		(entry: PresetEntry) => {
-			if (entry.type === "local") {
-				onLoadLocal(entry.id);
-				return;
-			}
-			if (!entry.preset) {
-				onLoadPresetByName(entry.label);
-				return;
-			}
-			onLoadLibrary(entry.preset);
+			onActivatePreset({ entryId: entry.id });
 		},
-		[onLoadLibrary, onLoadLocal, onLoadPresetByName],
+		[onActivatePreset],
 	);
 
 	const { handleListKeyDownCapture, handleListKeyDown } =

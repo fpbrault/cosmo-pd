@@ -61,9 +61,7 @@ function createProps() {
 		allEntries: entries,
 		activeEntryId: "local-keys",
 		activePresetName: "Local Keys",
-		onLoadPresetByName: vi.fn(),
-		onLoadLocal: vi.fn(),
-		onLoadLibrary: vi.fn(),
+		onActivatePreset: vi.fn(),
 		onSavePreset: vi.fn(),
 		onDeletePreset: vi.fn(),
 		onRenamePreset: vi.fn(),
@@ -86,7 +84,7 @@ describe("PresetLibrary", () => {
 		vi.unstubAllGlobals();
 	});
 
-	it("routes preset selection to the matching callbacks", () => {
+	it("routes preset selection through one activation callback", () => {
 		const props = createProps();
 		render(<PresetLibrary {...props} />);
 
@@ -94,11 +92,15 @@ describe("PresetLibrary", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Local Keys" }));
 		fireEvent.click(screen.getByRole("button", { name: "Archive Pad" }));
 
-		expect(props.onLoadLibrary).toHaveBeenCalledWith(
-			expect.objectContaining({ name: "Factory Bass" }),
-		);
-		expect(props.onLoadLocal).toHaveBeenCalledWith("local-keys");
-		expect(props.onLoadLibrary).toHaveBeenCalledWith(libraryPreset);
+		expect(props.onActivatePreset).toHaveBeenNthCalledWith(1, {
+			entryId: "builtin-factory-bass",
+		});
+		expect(props.onActivatePreset).toHaveBeenNthCalledWith(2, {
+			entryId: "local-keys",
+		});
+		expect(props.onActivatePreset).toHaveBeenNthCalledWith(3, {
+			entryId: "library-1",
+		});
 	});
 
 	it("saves, exports, imports, initializes, renames, edits tags, and deletes from library controls", async () => {
@@ -185,8 +187,10 @@ describe("PresetLibrary", () => {
 		fireEvent.keyDown(list, { key: "End" });
 		fireEvent.keyDown(list, { key: "Enter" });
 
-		expect(props.onLoadLocal.mock.calls.length).toBeGreaterThan(0);
-		expect(props.onLoadLocal).toHaveBeenLastCalledWith("local-keys");
+		expect(props.onActivatePreset.mock.calls.length).toBeGreaterThan(0);
+		expect(props.onActivatePreset).toHaveBeenLastCalledWith({
+			entryId: "local-keys",
+		});
 	});
 
 	it("handles Arrow navigation from window-level keydown", () => {
@@ -195,11 +199,10 @@ describe("PresetLibrary", () => {
 
 		fireEvent.keyDown(window, { key: "ArrowDown" });
 
-		expect(props.onLoadLibrary).toHaveBeenCalledTimes(1);
-		expect(props.onLoadLibrary).toHaveBeenNthCalledWith(
-			1,
-			expect.objectContaining({ name: "Factory Bass" }),
-		);
+		expect(props.onActivatePreset).toHaveBeenCalledTimes(1);
+		expect(props.onActivatePreset).toHaveBeenNthCalledWith(1, {
+			entryId: "builtin-factory-bass",
+		});
 	});
 
 	it("does not navigate when typing in a text input", () => {
@@ -210,9 +213,7 @@ describe("PresetLibrary", () => {
 		searchInput.focus();
 		fireEvent.keyDown(searchInput, { key: "ArrowDown" });
 
-		expect(props.onLoadLibrary).not.toHaveBeenCalled();
-		expect(props.onLoadPresetByName).not.toHaveBeenCalled();
-		expect(props.onLoadLocal).not.toHaveBeenCalled();
+		expect(props.onActivatePreset).not.toHaveBeenCalled();
 	});
 
 	it("does not trigger focused row action on space in plugin mode", () => {
@@ -230,7 +231,7 @@ describe("PresetLibrary", () => {
 		fireEvent.keyDown(activeRow, { key: " " });
 		fireEvent.keyUp(activeRow, { key: " " });
 
-		expect(props.onLoadLocal).not.toHaveBeenCalled();
+		expect(props.onActivatePreset).not.toHaveBeenCalled();
 
 		(
 			window as Window & { __czSetParams?: (json: string) => void }

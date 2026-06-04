@@ -2,39 +2,47 @@ import { motion } from "motion/react";
 import { memo } from "react";
 import PresetLibrary from "@/components/preset/PresetLibrary";
 import { usePresetManager } from "@/context/PresetManagerContext";
-import type { PresetEntry } from "@/features/synth/types/presetEntry";
+import type { ExportedPresetFile } from "@/features/synth/presetManagerRepository";
 import { LIBRARY_SLIDE_TRANSITION } from "./drawerHelpers";
 
 const MemoPresetLibrary = memo(PresetLibrary);
 
+function downloadPresetFile(file: ExportedPresetFile) {
+	const blob = new Blob([file.json], { type: "application/json" });
+	const url = URL.createObjectURL(blob);
+	const anchor = document.createElement("a");
+	anchor.href = url;
+	anchor.download = file.filename;
+	anchor.click();
+	URL.revokeObjectURL(url);
+}
+
 type SynthRendererLibraryOverlayProps = {
 	isOpen: boolean;
-	onVisibleEntriesChange: (entries: PresetEntry[]) => void;
+	onNavigationEntriesChange: (entryIds: string[]) => void;
 	onClose: () => void;
 };
 
 export default memo(function SynthRendererLibraryOverlay({
 	isOpen,
-	onVisibleEntriesChange,
+	onNavigationEntriesChange,
 	onClose,
 }: SynthRendererLibraryOverlayProps) {
 	const {
 		allPresetEntries,
 		activePresetId,
 		activePresetName,
-		handleLoadPresetByName,
-		handleLoadLocal,
-		handleLoadLibrary,
-		handleSavePreset,
-		handleDeletePreset,
-		handleRenamePreset,
-		handleSetPresetAuthor,
-		handleSetPresetFavorite,
-		handleSetPresetTags,
-		handleExportPreset,
-		handleExportCurrentState,
-		handleImportPreset,
-		handleInitPreset,
+		activatePreset,
+		savePreset,
+		deletePreset,
+		renamePreset,
+		setPresetAuthor,
+		setPresetFavorite,
+		setPresetTags,
+		exportPreset,
+		exportCurrentState,
+		importPreset,
+		initPreset,
 	} = usePresetManager();
 
 	return (
@@ -52,20 +60,44 @@ export default memo(function SynthRendererLibraryOverlay({
 				allEntries={allPresetEntries}
 				activeEntryId={activePresetId}
 				activePresetName={activePresetName}
-				onLoadPresetByName={handleLoadPresetByName}
-				onLoadLocal={handleLoadLocal}
-				onLoadLibrary={handleLoadLibrary}
-				onSavePreset={handleSavePreset}
-				onDeletePreset={handleDeletePreset}
-				onRenamePreset={handleRenamePreset}
-				onSetPresetAuthor={handleSetPresetAuthor}
-				onSetPresetFavorite={handleSetPresetFavorite}
-				onSetPresetTags={handleSetPresetTags}
-				onExportPreset={handleExportPreset}
-				onExportCurrentState={handleExportCurrentState}
-				onImportPreset={handleImportPreset}
-				onInitPreset={handleInitPreset}
-				onVisibleEntriesChange={onVisibleEntriesChange}
+				onActivatePreset={(ref) => {
+					void activatePreset(ref);
+				}}
+				onSavePreset={(name) => {
+					void savePreset(name);
+				}}
+				onDeletePreset={(id) => {
+					void deletePreset(id);
+				}}
+				onRenamePreset={(id, newName) => {
+					void renamePreset(id, newName);
+				}}
+				onSetPresetAuthor={(id, author) => {
+					void setPresetAuthor(id, author);
+				}}
+				onSetPresetFavorite={(id, favorite) => {
+					void setPresetFavorite(id, favorite);
+				}}
+				onSetPresetTags={(id, tags) => {
+					void setPresetTags(id, tags);
+				}}
+				onExportPreset={(id) => {
+					void exportPreset(id).then((file) => {
+						if (file) {
+							downloadPresetFile(file);
+						}
+					});
+				}}
+				onExportCurrentState={(name) => {
+					void exportCurrentState(name).then(downloadPresetFile);
+				}}
+				onImportPreset={(json, filename) => {
+					void importPreset(json, filename);
+				}}
+				onInitPreset={() => {
+					void initPreset();
+				}}
+				onNavigationEntriesChange={onNavigationEntriesChange}
 				onClose={onClose}
 				isOpen={isOpen}
 			/>

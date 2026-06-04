@@ -23,6 +23,7 @@ use crossbeam_queue::ArrayQueue;
 use truce::prelude::*;
 use truce_core::events::TransportInfo;
 use truce_core::midi::{norm_7bit, norm_pitch_bend};
+use uuid::Uuid;
 
 pub mod ffi;
 pub mod global_settings;
@@ -1257,6 +1258,91 @@ fn handle_ipc_invoke(
 
             Ok(serde_json::json!({ "id": id }))
         }
+        "savePreset" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "savePreset expects an object payload as first argument".to_string()
+                })?;
+            let name = payload
+                .get("name")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "savePreset payload missing name".to_string())?
+                .to_string();
+            let author = payload
+                .get("author")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            let tags: Vec<String> = payload
+                .get("tags")
+                .and_then(|v| v.as_array())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|v| v.as_str().map(String::from))
+                        .collect()
+                })
+                .unwrap_or_default();
+            let macro_labels: [String; 4] = payload
+                .get("macroLabels")
+                .and_then(|v| serde_json::from_value(v.clone()).ok())
+                .unwrap_or_else(|| SynthParams::default().macro_labels);
+            let payload_id = payload
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .filter(|value| !value.is_empty())
+                .map(|value| value.to_string());
+
+            let data = if let Some(data_value) = payload.get("data") {
+                data_value.clone()
+            } else {
+                let params_val = synth_params.load();
+                serde_json::to_value(&**params_val).map_err(|e| e.to_string())?
+            };
+
+            let saved_entry = {
+                let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+                let mut entry = if let Some(id) = payload_id.clone() {
+                    lib.get_entry(&id)
+                        .map_err(|e| e.to_string())?
+                        .ok_or_else(|| "Preset not found".to_string())?
+                } else {
+                    crate::preset_library::PresetLibraryEntry {
+                        id: Uuid::new_v4().to_string(),
+                        name: String::new(),
+                        source: "user".to_string(),
+                        author: String::new(),
+                        starred: false,
+                        sort_index: u32::MAX,
+                        tags: vec![],
+                        macro_labels: SynthParams::default().macro_labels,
+                        factory_version: 0,
+                        data: serde_json::Value::Null,
+                    }
+                };
+
+                entry.name = name.clone();
+                entry.source = "user".to_string();
+                entry.author = author;
+                entry.tags = tags;
+                entry.macro_labels = macro_labels;
+                entry.data = data;
+
+                lib.save_entry(entry).map_err(|e| e.to_string())?
+            };
+
+            if let Ok(mut stored) = preset_session.lock() {
+                stored.active_preset_name_base = saved_entry.name.clone();
+                stored.loaded_preset_id = Some(saved_entry.id.clone());
+                stored.is_dirty = false;
+            }
+
+            Ok(serde_json::json!({
+                "id": saved_entry.id,
+                "name": saved_entry.name,
+            }))
+        }
         "deletePreset" => {
             let payload = args
                 .first()
@@ -1323,6 +1409,102 @@ fn handle_ipc_invoke(
             }
 
             Ok(serde_json::Value::Null)
+        }
+        "setPresetAuthor" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "setPresetAuthor expects an object payload as first argument".to_string()
+                })?;
+            let id = payload
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "setPresetAuthor payload missing id".to_string())?;
+            let author = payload
+                .get("author")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "setPresetAuthor payload missing author".to_string())?;
+
+            {
+                let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+                let mut entry = lib
+                    .get_entry(id)
+                    .map_err(|e| e.to_string())?
+                    .ok_or_else(|| "Preset not found".to_string())?;
+                entry.author = author.to_string();
+                let _ = lib.save_entry(entry).map_err(|e| e.to_string())?;
+            }
+
+            Ok(serde_json::Value::Null)
+        }
+        "setPresetTags" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "setPresetTags expects an object payload as first argument".to_string()
+                })?;
+            let id = payload
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "setPresetTags payload missing id".to_string())?;
+            let tags: Vec<String> = payload
+                .get("tags")
+                .and_then(|v| v.as_array())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|v| v.as_str().map(String::from))
+                        .collect()
+                })
+                .unwrap_or_default();
+
+            {
+                let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+                let mut entry = lib
+                    .get_entry(id)
+                    .map_err(|e| e.to_string())?
+                    .ok_or_else(|| "Preset not found".to_string())?;
+                entry.tags = tags;
+                let _ = lib.save_entry(entry).map_err(|e| e.to_string())?;
+            }
+
+            Ok(serde_json::Value::Null)
+        }
+        "exportPreset" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "exportPreset expects an object payload as first argument".to_string()
+                })?;
+            let id = payload
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "exportPreset payload missing id".to_string())?;
+
+            let entry = {
+                let lib = preset_library.lock().map_err(|e| e.to_string())?;
+                lib.get_entry(id)
+                    .map_err(|e| e.to_string())?
+                    .ok_or_else(|| "Preset not found".to_string())?
+            };
+
+            let json = serde_json::to_string_pretty(&serde_json::json!({
+                "id": entry.id,
+                "name": entry.name,
+                "source": entry.source,
+                "author": entry.author,
+                "starred": entry.starred,
+                "tags": entry.tags,
+                "data": entry.data,
+            }))
+            .map_err(|e| e.to_string())?;
+
+            Ok(serde_json::json!({
+                "filename": format!("{}.json", entry.name),
+                "json": json,
+            }))
         }
         "setEditorState" => {
             let payload = args

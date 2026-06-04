@@ -16,7 +16,7 @@ type UsePresetLibraryStateOptions = {
 	activeEntryId: string | null;
 	activePresetName: string;
 	isOpen: boolean;
-	onVisibleEntriesChange?: (entries: PresetEntry[]) => void;
+	onNavigationEntriesChange?: (entryIds: string[]) => void;
 };
 
 export function usePresetLibraryState({
@@ -24,7 +24,7 @@ export function usePresetLibraryState({
 	activeEntryId,
 	activePresetName,
 	isOpen,
-	onVisibleEntriesChange,
+	onNavigationEntriesChange,
 }: UsePresetLibraryStateOptions) {
 	const [search, setSearch] = useState("");
 	const [saveName, setSaveName] = useState("");
@@ -260,8 +260,8 @@ export function usePresetLibraryState({
 	}, [activeEntryId, sortedEntries, focusedEntryId, isOpen]);
 
 	useEffect(() => {
-		onVisibleEntriesChange?.(sortedEntries);
-	}, [onVisibleEntriesChange, sortedEntries]);
+		onNavigationEntriesChange?.(sortedEntries.map((entry) => entry.id));
+	}, [onNavigationEntriesChange, sortedEntries]);
 
 	useEffect(() => {
 		const scrollContainer = scrollContainerRef.current;
