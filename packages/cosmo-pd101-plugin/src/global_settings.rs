@@ -1,5 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+#[cfg(test)]
+use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
 
@@ -10,9 +12,9 @@ const GLOBAL_SETTINGS_FILE_NAME: &str = "global_settings.json";
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum PluginLogLevel {
+    #[default]
     Error,
     Warn,
-    #[default]
     Info,
     Debug,
 }
@@ -34,6 +36,9 @@ impl Default for PluginGlobalSettings {
         }
     }
 }
+
+#[cfg(test)]
+pub(crate) static TEST_DATA_DIR_LOCK: Mutex<()> = Mutex::new(());
 
 pub fn get_global_settings_path() -> PathBuf {
     if let Ok(path) = std::env::var("COSMO_PD101_DATA_DIR") {
@@ -135,6 +140,9 @@ mod tests {
     use crate::session_state::default_midi_bindings;
 
     fn with_test_data_dir<T>(test_fn: impl FnOnce(PathBuf) -> T) -> T {
+        let _guard = TEST_DATA_DIR_LOCK
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let unique = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map(|duration| duration.as_nanos())
@@ -153,9 +161,9 @@ mod tests {
     }
 
     #[test]
-    fn default_global_settings_use_info_log_level() {
+    fn default_global_settings_use_error_log_level() {
         let settings = PluginGlobalSettings::default();
-        assert_eq!(settings.log_level, PluginLogLevel::Info);
+        assert_eq!(settings.log_level, PluginLogLevel::Error);
     }
 
     #[test]
@@ -165,7 +173,7 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(settings.log_level, PluginLogLevel::Info);
+        assert_eq!(settings.log_level, PluginLogLevel::Error);
     }
 
     #[test]
