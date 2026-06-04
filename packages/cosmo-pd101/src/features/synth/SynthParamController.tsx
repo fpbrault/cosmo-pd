@@ -126,6 +126,8 @@ type SynthParamController = {
 		key: ModTargetKey,
 		context?: ModTargetContext,
 	) => boolean;
+	registerLiveModSourcesConsumer: () => () => void;
+	registerLiveVoiceStatesConsumer: () => () => void;
 	getLiveSources: () => LiveModSources;
 	getLiveVoiceStates: () => LiveVoiceStates;
 	getModulatedValue: (params: {
@@ -164,6 +166,10 @@ export function SynthParamControllerProvider({
 }: SynthParamControllerProviderProps) {
 	const maybeModMatrix = useOptionalModMatrix();
 	const modRoutes = maybeModMatrix?.modMatrix.routes ?? [];
+	const [liveModSourcesConsumerCount, setLiveModSourcesConsumerCount] =
+		useState(0);
+	const [liveVoiceStatesConsumerCount, setLiveVoiceStatesConsumerCount] =
+		useState(0);
 	const [liveSources, setLiveSources] = useState<LiveModSources>(
 		EMPTY_RUNTIME_MOD_SOURCES,
 	);
@@ -217,6 +223,11 @@ export function SynthParamControllerProvider({
 	);
 
 	useEffect(() => {
+		if (liveModSourcesConsumerCount < 1) {
+			setLiveSources(EMPTY_RUNTIME_MOD_SOURCES);
+			return;
+		}
+
 		const onRuntimeModSources = (event: Event) => {
 			const detail = (event as CustomEvent<RuntimeModSources | undefined>)
 				.detail;
@@ -243,9 +254,14 @@ export function SynthParamControllerProvider({
 		return () => {
 			window.removeEventListener("cz-runtime-mod-sources", onRuntimeModSources);
 		};
-	}, []);
+	}, [liveModSourcesConsumerCount]);
 
 	useEffect(() => {
+		if (liveVoiceStatesConsumerCount < 1) {
+			setLiveVoiceStates(EMPTY_RUNTIME_VOICE_STATES);
+			return;
+		}
+
 		const onRuntimeVoiceStates = (event: Event) => {
 			const detail = (
 				event as CustomEvent<RuntimeVoiceDebugState[] | undefined>
@@ -264,7 +280,7 @@ export function SynthParamControllerProvider({
 				onRuntimeVoiceStates,
 			);
 		};
-	}, []);
+	}, [liveVoiceStatesConsumerCount]);
 
 	const resolveDestination = useCallback(
 		(target: ModTarget | undefined, options?: { lineIndex?: 1 | 2 }) =>
@@ -348,6 +364,30 @@ export function SynthParamControllerProvider({
 	const getLiveSources = useCallback(() => liveSourcesRef.current, []);
 	const getLiveVoiceStates = useCallback(() => liveVoiceStatesRef.current, []);
 
+	const registerLiveModSourcesConsumer = useCallback(() => {
+		let released = false;
+		setLiveModSourcesConsumerCount((count) => count + 1);
+		return () => {
+			if (released) {
+				return;
+			}
+			released = true;
+			setLiveModSourcesConsumerCount((count) => Math.max(0, count - 1));
+		};
+	}, []);
+
+	const registerLiveVoiceStatesConsumer = useCallback(() => {
+		let released = false;
+		setLiveVoiceStatesConsumerCount((count) => count + 1);
+		return () => {
+			if (released) {
+				return;
+			}
+			released = true;
+			setLiveVoiceStatesConsumerCount((count) => Math.max(0, count - 1));
+		};
+	}, []);
+
 	const controller = useMemo(
 		() => ({
 			getParam,
@@ -357,6 +397,8 @@ export function SynthParamControllerProvider({
 			getRouteCount,
 			hasActiveRoutes,
 			hasActiveRoutesForKey,
+			registerLiveModSourcesConsumer,
+			registerLiveVoiceStatesConsumer,
 			getLiveSources,
 			getLiveVoiceStates,
 			getModulatedValue,
@@ -369,6 +411,8 @@ export function SynthParamControllerProvider({
 			getRouteCount,
 			hasActiveRoutes,
 			hasActiveRoutesForKey,
+			registerLiveModSourcesConsumer,
+			registerLiveVoiceStatesConsumer,
 			getLiveSources,
 			getLiveVoiceStates,
 			getModulatedValue,

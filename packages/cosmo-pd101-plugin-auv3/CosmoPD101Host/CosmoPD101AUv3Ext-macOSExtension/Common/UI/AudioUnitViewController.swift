@@ -11,10 +11,16 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	private static let preferredHeight: CGFloat = 912
 	private static let minimumWidth: CGFloat = 1024
 	private static let minimumHeight: CGFloat = 768
+	private static let telemetryPushInterval: TimeInterval = 0.1
 	private var presetSessionState = PresetSessionState()
 	private var editorState = [String: Any]()
 	private var midiLearnState = MidiLearnState()
 	private var paramsVersion = 0
+	private var activeTelemetryChannels = Set<TelemetryChannel>()
+	private var telemetryTimer: Timer?
+	private var lastRuntimeVoiceStatesJson: String?
+	private var lastRuntimeModSourcesJson: String?
+	private var lastTransportJson: String?
 
 	nonisolated(unsafe) var audioUnit: AUAudioUnit?
 	private var webView: WKWebView?
@@ -127,6 +133,24 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			sendResponse(id: id, result: audioUnit.runtimeVoiceStatesJson() ?? "[]")
 		case "getRuntimeModSources":
 			sendResponse(id: id, result: audioUnit.runtimeModSourcesJson() ?? "{}")
+		case "subscribeRuntimeVoiceStates":
+			setTelemetrySubscription(.runtimeVoiceStates, active: true, audioUnit: audioUnit)
+			sendResponse(id: id, result: NSNull())
+		case "unsubscribeRuntimeVoiceStates":
+			setTelemetrySubscription(.runtimeVoiceStates, active: false, audioUnit: audioUnit)
+			sendResponse(id: id, result: NSNull())
+		case "subscribeRuntimeModSources":
+			setTelemetrySubscription(.runtimeModSources, active: true, audioUnit: audioUnit)
+			sendResponse(id: id, result: NSNull())
+		case "unsubscribeRuntimeModSources":
+			setTelemetrySubscription(.runtimeModSources, active: false, audioUnit: audioUnit)
+			sendResponse(id: id, result: NSNull())
+		case "subscribeTransport":
+			setTelemetrySubscription(.transport, active: true, audioUnit: audioUnit)
+			sendResponse(id: id, result: NSNull())
+		case "unsubscribeTransport":
+			setTelemetrySubscription(.transport, active: false, audioUnit: audioUnit)
+			sendResponse(id: id, result: NSNull())
 		case "getPresetSession":
 			sendResponse(id: id, result: currentPresetSession(for: audioUnit))
 		case "setPresetSession":
@@ -370,12 +394,12 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		let container: [String: String] = ["p": paramsJson]
 		guard let data = try? JSONSerialization.data(withJSONObject: container),
 			  let containerStr = String(data: data, encoding: .utf8) else { return }
-		var script = "window.__czOnParams?.(JSON.parse(\(containerStr)).p);"
+		var script = "window.__czOnParams?.(\(containerStr).p);"
 		if let selectedPresetName {
 			let presetContainer: [String: String] = ["n": selectedPresetName]
 			if let presetData = try? JSONSerialization.data(withJSONObject: presetContainer),
 			   let presetContainerStr = String(data: presetData, encoding: .utf8) {
-				script += "window.__czOnHostPresetSelected?.(JSON.parse(\(presetContainerStr)).n);"
+				script += "window.__czOnHostPresetSelected?.(\(presetContainerStr).n);"
 			}
 		}
 		webView?.evaluateJavaScript(script, completionHandler: nil)
@@ -388,6 +412,116 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			return
 		}
 		webView?.evaluateJavaScript("window.__czIpcResponse?.(\(json));", completionHandler: nil)
+	}
+
+	private func setTelemetrySubscription(_ channel: TelemetryChannel, active: Bool, audioUnit: CosmoPD101AUv3Ext_macOSExtensionAudioUnit) {
+		if active {
+			let inserted = activeTelemetryChannels.insert(channel).inserted
+			if inserted {
+				resetTelemetryCache(for: channel)
+				updateTelemetryTimer(audioUnit: audioUnit)
+				pushTelemetryUpdates(audioUnit: audioUnit, forceChannels: [channel])
+			}
+			return
+		}
+
+		guard activeTelemetryChannels.remove(channel) != nil else {
+			return
+		}
+		resetTelemetryCache(for: channel)
+		updateTelemetryTimer(audioUnit: audioUnit)
+	}
+
+	private func updateTelemetryTimer(audioUnit: CosmoPD101AUv3Ext_macOSExtensionAudioUnit) {
+		if activeTelemetryChannels.isEmpty {
+			telemetryTimer?.invalidate()
+			telemetryTimer = nil
+			return
+		}
+
+		guard telemetryTimer == nil else {
+			return
+		}
+
+		let timer = Timer.scheduledTimer(timeInterval: Self.telemetryPushInterval, target: self, selector: #selector(handleTelemetryTimer), userInfo: nil, repeats: true)
+		telemetryTimer = timer
+		RunLoop.main.add(timer, forMode: .common)
+	}
+
+	@objc private func handleTelemetryTimer() {
+		guard let audioUnit = audioUnit as? CosmoPD101AUv3Ext_macOSExtensionAudioUnit else {
+			telemetryTimer?.invalidate()
+			telemetryTimer = nil
+			return
+		}
+		pushTelemetryUpdates(audioUnit: audioUnit)
+	}
+
+	private func pushTelemetryUpdates(
+		audioUnit: CosmoPD101AUv3Ext_macOSExtensionAudioUnit,
+		forceChannels: Set<TelemetryChannel> = []
+	) {
+		guard !activeTelemetryChannels.isEmpty else {
+			return
+		}
+
+		var script = ""
+
+		if activeTelemetryChannels.contains(.runtimeVoiceStates) {
+			let next = audioUnit.runtimeVoiceStatesJson() ?? "[]"
+			if forceChannels.contains(.runtimeVoiceStates) || next != lastRuntimeVoiceStatesJson {
+				appendJavascriptJsonCallback(&script, functionName: "__czOnRuntimeVoiceStates", json: next)
+				lastRuntimeVoiceStatesJson = next
+			}
+		}
+
+		if activeTelemetryChannels.contains(.runtimeModSources) {
+			let next = audioUnit.runtimeModSourcesJson() ?? "{}"
+			if forceChannels.contains(.runtimeModSources) || next != lastRuntimeModSourcesJson {
+				appendJavascriptJsonCallback(&script, functionName: "__czOnRuntimeModSources", json: next)
+				lastRuntimeModSourcesJson = next
+			}
+		}
+
+		if activeTelemetryChannels.contains(.transport), let next = transportInfoJson() {
+			if forceChannels.contains(.transport) || next != lastTransportJson {
+				appendJavascriptJsonCallback(&script, functionName: "__czOnTransport", json: next)
+				lastTransportJson = next
+			}
+		}
+
+		guard !script.isEmpty else {
+			return
+		}
+		webView?.evaluateJavaScript(script, completionHandler: nil)
+	}
+
+	private func appendJavascriptJsonCallback(_ script: inout String, functionName: String, json: String) {
+		let container = ["payload": json]
+		guard let data = try? JSONSerialization.data(withJSONObject: container, options: [.sortedKeys]),
+			let encoded = String(data: data, encoding: .utf8) else {
+			return
+		}
+		script += "window.\(functionName)?.(\(encoded).payload);"
+	}
+
+	private func transportInfoJson() -> String? {
+		guard let data = try? JSONSerialization.data(withJSONObject: transportInfoResult(), options: [.sortedKeys]),
+			let json = String(data: data, encoding: .utf8) else {
+			return nil
+		}
+		return json
+	}
+
+	private func resetTelemetryCache(for channel: TelemetryChannel) {
+		switch channel {
+		case .runtimeVoiceStates:
+			lastRuntimeVoiceStatesJson = nil
+		case .runtimeModSources:
+			lastRuntimeModSourcesJson = nil
+		case .transport:
+			lastTransportJson = nil
+		}
 	}
 
 	private func currentPresetSession(for audioUnit: AUAudioUnit) -> [String: Any] {
@@ -441,6 +575,12 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			"loopEndBeats": 0,
 		]
 	}
+}
+
+private enum TelemetryChannel: Hashable {
+	case runtimeVoiceStates
+	case runtimeModSources
+	case transport
 }
 
 	private struct PresetSessionState {

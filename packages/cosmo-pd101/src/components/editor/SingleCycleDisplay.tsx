@@ -171,15 +171,19 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay({
 			return;
 		}
 
+		const unregisterLiveSources =
+			synthController?.registerLiveModSourcesConsumer();
+
 		const onRuntimeModSources = () => {
 			setModulationTick((tick) => (tick + 1) % 1_000_000);
 		};
 
 		window.addEventListener("cz-runtime-mod-sources", onRuntimeModSources);
 		return () => {
+			unregisterLiveSources?.();
 			window.removeEventListener("cz-runtime-mod-sources", onRuntimeModSources);
 		};
-	}, [hasLivePreviewRoutes]);
+	}, [hasLivePreviewRoutes, synthController]);
 
 	const waveform = useMemo(() => {
 		const getLiveValue = (
