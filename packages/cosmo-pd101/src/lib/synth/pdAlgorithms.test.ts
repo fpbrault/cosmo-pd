@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Algo, WindowType } from "@/lib/synth/bindings/synth";
 import {
-	computeWaveform,
 	pdBend,
 	pdCheby,
 	pdClip,
@@ -16,6 +15,7 @@ import {
 	pdTerrain,
 	pdTwist,
 } from "./pdAlgorithms";
+import { computeWaveform } from "./waveformPreview";
 
 describe("pdAlgorithms", () => {
 	describe("pdBend", () => {

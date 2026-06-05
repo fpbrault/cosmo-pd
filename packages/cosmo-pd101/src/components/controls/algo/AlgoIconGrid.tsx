@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { useAlgoUiText } from "@/lib/synth/i18nAlgo";
 import {
 	getPdAlgoBehaviorDescription,
 	PD_ALGOS,
-	type PdAlgo,
-} from "@/lib/synth/pdAlgorithms";
+} from "@/lib/synth/algoUiCatalog";
+import { useAlgoUiText } from "@/lib/synth/i18nAlgo";
+import type { PdAlgo } from "@/lib/synth/pdAlgorithms";
 import { HoverInfoTrigger } from "../../layout/HoverInfo";
 
 function CzMonogramIcon({ size }: { size: number }) {

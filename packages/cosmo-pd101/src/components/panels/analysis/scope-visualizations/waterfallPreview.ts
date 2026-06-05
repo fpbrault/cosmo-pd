@@ -9,7 +9,7 @@ import type {
 	StepEnvData,
 	WindowType,
 } from "@/lib/synth/bindings/synth";
-import { computeWaveform } from "@/lib/synth/pdAlgorithms";
+import { computeWaveform } from "@/lib/synth/waveformPreview";
 import type {
 	WaterfallPreviewData,
 	WaterfallPreviewIndicator,

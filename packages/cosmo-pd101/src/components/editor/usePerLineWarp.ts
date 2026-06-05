@@ -9,6 +9,7 @@ import { useOptionalSynthController } from "@/features/synth/SynthParamControlle
 import type { EnvTab } from "@/features/synth/synthUiStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import { buildDefaultAlgoControls } from "@/lib/synth/algoRef";
+import { algoUsesBaseWaveform, PD_ALGOS } from "@/lib/synth/algoUiCatalog";
 import type {
 	AlgoControlValueV1,
 	AlgoDefinitionV1,
@@ -17,7 +18,6 @@ import type {
 } from "@/lib/synth/bindings/synth";
 import { ALGO_DEFINITIONS_V1 } from "@/lib/synth/bindings/synth";
 import type { PdAlgo } from "@/lib/synth/pdAlgorithms";
-import { algoUsesBaseWaveform, PD_ALGOS } from "@/lib/synth/pdAlgorithms";
 import type { EnvMapEntry } from "./EnvelopesSection";
 import { getEnvelopeVoiceProgress } from "./perLineWarpUtils";
 import type { StepEnvelopeVoiceMarker } from "./StepEnvelopeEditor";

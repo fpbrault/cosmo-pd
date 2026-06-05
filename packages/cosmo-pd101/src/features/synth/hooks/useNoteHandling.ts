@@ -4,7 +4,7 @@ import {
 	PC_KEY_TO_NOTE,
 	PC_KEYBOARD_DEFAULT_BASE,
 } from "@/lib/synth/pcKeyboardMapping";
-import { noteToFreq } from "@/lib/synth/pdAlgorithms";
+import { noteToFreq } from "@/lib/synth/waveformPreview";
 
 type UseNoteHandlingParams = {
 	workletNodeRef?: React.MutableRefObject<AudioWorkletNode | null> | null;

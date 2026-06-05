@@ -27,7 +27,7 @@ vi.mock("@/lib/synth/algoRef", () => ({
 	isAlgoRefEqual: (a: { id: number }, b: { id: number }) => a.id === b.id,
 }));
 
-vi.mock("@/lib/synth/pdAlgorithms", () => ({
+vi.mock("@/lib/synth/algoUiCatalog", () => ({
 	PD_ALGOS: [
 		{ key: "algo-1", label: "Algo 1", value: { id: 1 }, icon: "M1 1L10 10" },
 		{ key: "algo-2", label: "Algo 2", value: { id: 2 }, icon: "M2 2L11 11" },

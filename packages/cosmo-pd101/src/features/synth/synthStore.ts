@@ -25,16 +25,16 @@ import type {
 } from "@/lib/synth/bindings/synth";
 import { ALGO_DEFINITIONS_V1 } from "@/lib/synth/bindings/synth";
 import {
+	DEFAULT_DCA_ENV,
+	DEFAULT_DCO_ENV,
+	DEFAULT_DCW_ENV,
+} from "@/lib/synth/defaultEnvelopes";
+import {
 	createDefaultFxSlotConfig,
 	sanitizeFxSlotConfig,
 	sanitizeFxSlots,
 } from "@/lib/synth/fxSlotSanitizer";
 import { requireEngineParamDefault } from "@/lib/synth/paramMeta";
-import {
-	DEFAULT_DCA_ENV,
-	DEFAULT_DCO_ENV,
-	DEFAULT_DCW_ENV,
-} from "@/lib/synth/pdAlgorithms";
 
 // ---------------------------------------------------------------------------
 // Helpers (identical to the ones that were in useSynthState)
