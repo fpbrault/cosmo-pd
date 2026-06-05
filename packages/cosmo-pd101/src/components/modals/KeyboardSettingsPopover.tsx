@@ -15,9 +15,15 @@ export function KeyboardSettingsPopover({
 	const keyboardOctaves = useSynthUiStore((s) => s.keyboardOctaves);
 	const keyboardRange = useSynthUiStore((s) => s.keyboardRange);
 	const keyboardInputMode = useSynthUiStore((s) => s.keyboardInputMode);
+	const pcKeyboardOverlayVisible = useSynthUiStore(
+		(s) => s.pcKeyboardOverlayVisible,
+	);
 	const setKeyboardOctaves = useSynthUiStore((s) => s.setKeyboardOctaves);
 	const setKeyboardRange = useSynthUiStore((s) => s.setKeyboardRange);
 	const setKeyboardInputMode = useSynthUiStore((s) => s.setKeyboardInputMode);
+	const setPcKeyboardOverlayVisible = useSynthUiStore(
+		(s) => s.setPcKeyboardOverlayVisible,
+	);
 
 	return (
 		<Popover
@@ -109,6 +115,38 @@ export function KeyboardSettingsPopover({
 							{keyboardInputMode === "velocity"
 								? "Press position on key sets velocity. Top = 127, bottom = 1."
 								: "Note-on uses default velocity. Drag up after pressing for aftertouch."}
+						</p>
+					</div>
+					<div className="space-y-1.5">
+						<p className="font-mono text-3xs text-cz-cream-dim uppercase tracking-[0.18em]">
+							PC Key Labels
+						</p>
+						<div className="flex gap-1">
+							<Button
+								type="button"
+								onClick={() => setPcKeyboardOverlayVisible(true)}
+								className={`btn btn-sm flex-1 border text-xs ${
+									pcKeyboardOverlayVisible
+										? "border-cz-gold bg-cz-gold/10 text-cz-gold"
+										: "border-cz-border bg-cz-inset text-cz-cream/70 hover:text-cz-cream"
+								}`}
+							>
+								Show
+							</Button>
+							<Button
+								type="button"
+								onClick={() => setPcKeyboardOverlayVisible(false)}
+								className={`btn btn-sm flex-1 border text-xs ${
+									!pcKeyboardOverlayVisible
+										? "border-cz-gold bg-cz-gold/10 text-cz-gold"
+										: "border-cz-border bg-cz-inset text-cz-cream/70 hover:text-cz-cream"
+								}`}
+							>
+								Hide
+							</Button>
+						</div>
+						<p className="pt-1 font-mono text-4xs text-cz-cream-dim/60">
+							Shows PC keyboard key labels on the on-screen mini keyboard.
 						</p>
 					</div>
 				</div>

@@ -121,13 +121,7 @@ describe("useNoteHandling", () => {
 		expect(mockEventSink).toHaveBeenCalledWith("aftertouch", { value: 0.3 });
 	});
 
-	it("handles keyboard input", () => {
-		// Mock PC_KEY_TO_NOTE for 'a'
-		const _aNote = 60;
-		// Since we can't easily change the imported constant,
-		// we rely on the actual PC_KEY_TO_NOTE mapping if we know it.
-		// In this project, 'a' is usually 60.
-
+	it("handles keyboard input — maps z to base note (C3, MIDI 48)", () => {
 		const { result } = renderHook(() =>
 			useNoteHandling({
 				workletNodeRef:
@@ -137,21 +131,56 @@ describe("useNoteHandling", () => {
 		);
 
 		act(() => {
-			window.dispatchEvent(new KeyboardEvent("keydown", { key: "a" }));
+			window.dispatchEvent(new KeyboardEvent("keydown", { key: "z" }));
 		});
 
-		expect(result.current.activeNotes).toContain(60);
+		expect(result.current.activeNotes).toContain(48);
 		expect(mockEventSink).toHaveBeenCalledWith(
 			"noteOn",
-			expect.objectContaining({ note: 60 }),
+			expect.objectContaining({ note: 48 }),
 		);
 
 		act(() => {
-			window.dispatchEvent(new KeyboardEvent("keyup", { key: "a" }));
+			window.dispatchEvent(new KeyboardEvent("keyup", { key: "z" }));
 		});
 
-		expect(result.current.activeNotes).not.toContain(60);
-		expect(mockEventSink).toHaveBeenCalledWith("noteOff", { note: 60 });
+		expect(result.current.activeNotes).not.toContain(48);
+		expect(mockEventSink).toHaveBeenCalledWith("noteOff", { note: 48 });
+	});
+
+	it("supports chromatic PC keyboard sequence (z=48, s=49, x=50)", () => {
+		const { result } = renderHook(() =>
+			useNoteHandling({
+				workletNodeRef:
+					mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
+				eventSink: mockEventSink,
+			}),
+		);
+
+		act(() => {
+			window.dispatchEvent(new KeyboardEvent("keydown", { key: "z" }));
+			window.dispatchEvent(new KeyboardEvent("keydown", { key: "s" }));
+			window.dispatchEvent(new KeyboardEvent("keydown", { key: "x" }));
+		});
+
+		expect(result.current.activeNotes).toEqual([48, 49, 50]);
+	});
+
+	it("respects pcKeyboardBaseNote offset", () => {
+		const { result } = renderHook(() =>
+			useNoteHandling({
+				workletNodeRef:
+					mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
+				eventSink: mockEventSink,
+				pcKeyboardBaseNote: 60,
+			}),
+		);
+
+		act(() => {
+			window.dispatchEvent(new KeyboardEvent("keydown", { key: "z" }));
+		});
+
+		expect(result.current.activeNotes).toContain(60);
 	});
 
 	it("prevents default on keyboard input when not in passthrough", () => {
@@ -165,7 +194,7 @@ describe("useNoteHandling", () => {
 			}),
 		);
 
-		const event = new KeyboardEvent("keydown", { key: "a", cancelable: true });
+		const event = new KeyboardEvent("keydown", { key: "z", cancelable: true });
 		Object.defineProperty(event, "preventDefault", {
 			value: preventDefaultSpy,
 		});
@@ -188,7 +217,7 @@ describe("useNoteHandling", () => {
 			}),
 		);
 
-		const event = new KeyboardEvent("keydown", { key: "a", cancelable: true });
+		const event = new KeyboardEvent("keydown", { key: "z", cancelable: true });
 		Object.defineProperty(event, "preventDefault", {
 			value: preventDefaultSpy,
 		});

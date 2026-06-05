@@ -1,5 +1,9 @@
 import type { SynthRuntime } from "@cosmo/cosmo-pd101";
-import { useNoteHandling, useSynthStore } from "@cosmo/cosmo-pd101";
+import {
+	useNoteHandling,
+	useSynthStore,
+	useSynthUiStore,
+} from "@cosmo/cosmo-pd101";
 import { useCallback, useMemo, useRef, useState } from "react";
 
 type UsePluginSynthRuntimeParams = {
@@ -10,6 +14,7 @@ export function usePluginSynthRuntime({
 	eventSink,
 }: UsePluginSynthRuntimeParams): SynthRuntime {
 	const velocityCurve = useSynthStore((s) => s.velocityCurve);
+	const keyboardRange = useSynthUiStore((s) => s.keyboardRange);
 	const [scopeActiveHz, setScopeActiveHz] = useState(220);
 	const analyserNodeRef = useRef<AnalyserNode | null>(null);
 	const audioCtxRef = useRef<AudioContext | null>(null);
@@ -17,6 +22,7 @@ export function usePluginSynthRuntime({
 	const noteHandling = useNoteHandling({
 		eventSink,
 		velocityCurve,
+		pcKeyboardBaseNote: 36 + keyboardRange * 12,
 		midiInputEnabled: false,
 	});
 
