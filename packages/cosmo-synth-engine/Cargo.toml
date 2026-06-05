@@ -1,6 +1,6 @@
 [package]
 name = "cosmo-synth-engine"
-version = "0.1.0"
+version.workspace = true
 edition = "2024"
 license.workspace = true
 description = "Cosmo PD-101 Phase Distortion synthesizer DSP core"
