@@ -1,5 +1,6 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use std::hint::black_box;
+use std::time::Duration;
 
 #[allow(dead_code)]
 #[path = "../src/bin/render-bench.rs"]
@@ -44,5 +45,15 @@ fn bench_all(c: &mut Criterion) {
     }
 }
 
-criterion_group!(benches, bench_all);
+fn benchmark_config() -> Criterion {
+    Criterion::default()
+        .sample_size(60)
+        .measurement_time(Duration::from_secs(8))
+}
+
+criterion_group! {
+    name = benches;
+    config = benchmark_config();
+    targets = bench_all
+}
 criterion_main!(benches);
