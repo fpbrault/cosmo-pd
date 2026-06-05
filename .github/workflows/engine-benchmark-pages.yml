@@ -34,6 +34,7 @@ jobs:
           auto-push: true
           summary-always: true
           alert-threshold: 130%
+          max-items-in-chart: 20
           fail-on-alert: true
 
       - name: Regenerate grouped line charts page
