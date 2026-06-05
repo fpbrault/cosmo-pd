@@ -197,17 +197,6 @@ export const DEFAULT_DCO_ENV: StepEnvData = {
 	loop: false,
 };
 
-export const PC_KEY_TO_NOTE: Record<string, number> = {
-	a: 60,
-	s: 62,
-	d: 64,
-	f: 65,
-	g: 67,
-	h: 69,
-	j: 71,
-	k: 72,
-};
-
 function wrap01(value: number): number {
 	const wrapped = value % 1;
 	return wrapped < 0 ? wrapped + 1 : wrapped;

@@ -5,6 +5,7 @@ import { useNoteHandling } from "../../../src/features/synth/hooks/useNoteHandli
 import { useSynthParamsToWorklet } from "../../../src/features/synth/hooks/useSynthParamsToWorklet";
 import type { SynthRuntime } from "../../../src/features/synth/runtime/synthRuntime";
 import { useSynthStore } from "../../../src/features/synth/synthStore";
+import { useSynthUiStore } from "../../../src/features/synth/synthUiStore";
 import {
 	cosmoWorkletUrl,
 	synthBindingsUrl,
@@ -15,6 +16,7 @@ import { noteToFreq } from "../../../src/lib/synth/pdAlgorithms";
 export function useWebSynthRuntime(): SynthRuntime {
 	const gatherState = useSynthStore((s) => s.gatherState);
 	const velocityCurve = useSynthStore((s) => s.velocityCurve);
+	const keyboardRange = useSynthUiStore((s) => s.keyboardRange);
 
 	const {
 		audioCtxRef,
@@ -32,6 +34,7 @@ export function useWebSynthRuntime(): SynthRuntime {
 	const noteHandling = useNoteHandling({
 		workletNodeRef,
 		velocityCurve,
+		pcKeyboardBaseNote: 36 + keyboardRange * 12,
 		midiInputEnabled: true,
 	});
 

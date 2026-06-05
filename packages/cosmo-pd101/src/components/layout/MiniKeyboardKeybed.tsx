@@ -15,6 +15,7 @@ function PianoKey({
 	left,
 	widthPercent,
 	onPointerDown,
+	pcKeyLabel,
 }: {
 	note: number;
 	label: string;
@@ -26,6 +27,7 @@ function PianoKey({
 		event: ReactPointerEvent<HTMLButtonElement>,
 		note: number,
 	) => void;
+	pcKeyLabel?: string;
 }) {
 	const keyClassName = black ? BLACK_KEY_CLASS_NAME : WHITE_KEY_CLASS_NAME;
 	const activeClassName = black
@@ -34,6 +36,11 @@ function PianoKey({
 
 	const octave = Math.floor(note / 12) - 1;
 	const noteName = `${label}${octave}`;
+	const showOctaveLabel = !black && label === "C";
+	const whitePcLabelClassName =
+		"pointer-events-none absolute bottom-1.5 left-1/2 -translate-x-1/2 text-center font-bold font-mono text-[0.68rem] text-cz-cream-dim leading-none";
+	const blackPcLabelClassName =
+		"pointer-events-none absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-center font-bold font-mono text-[0.7rem] text-cz-cream-dim leading-none";
 
 	return (
 		<Button
@@ -48,8 +55,19 @@ function PianoKey({
 			}
 			onPointerDown={(event) => onPointerDown(event, note)}
 		>
-			{!black && label === "C" ? (
-				<span className="mb-1 text-center font-semibold text-[0.55rem] text-gray-400 leading-none">
+			{pcKeyLabel ? (
+				<span
+					className={black ? blackPcLabelClassName : whitePcLabelClassName}
+					data-mini-pc-label={note}
+				>
+					{pcKeyLabel}
+				</span>
+			) : null}
+			{showOctaveLabel ? (
+				<span
+					className="pointer-events-none absolute bottom-5 left-1/2 -translate-x-1/2 text-center font-mono font-semibold text-[0.72rem] text-gray-500 leading-none"
+					data-mini-note-label={note}
+				>
 					{noteName}
 				</span>
 			) : null}
@@ -67,6 +85,7 @@ type MiniKeyboardKeybedProps = {
 		event: ReactPointerEvent<HTMLButtonElement>,
 		note: number,
 	) => void;
+	pcKeyLabels?: Record<number, string>;
 };
 
 export default function MiniKeyboardKeybed({
@@ -76,6 +95,7 @@ export default function MiniKeyboardKeybed({
 	blackKeyWidth,
 	activeNotes,
 	onKeyPointerDown,
+	pcKeyLabels,
 }: MiniKeyboardKeybedProps) {
 	return (
 		<div className="relative overflow-hidden rounded-none border border-cz-border/70 border-x-0 border-b-0 bg-cz-inset px-2">
@@ -90,6 +110,7 @@ export default function MiniKeyboardKeybed({
 						label={key.label}
 						active={activeNotes.has(key.note)}
 						onPointerDown={onKeyPointerDown}
+						pcKeyLabel={pcKeyLabels?.[key.note]}
 					/>
 				))}
 				{blackKeys.map((key) => (
@@ -102,6 +123,7 @@ export default function MiniKeyboardKeybed({
 						widthPercent={blackKeyWidth}
 						active={activeNotes.has(key.note)}
 						onPointerDown={onKeyPointerDown}
+						pcKeyLabel={pcKeyLabels?.[key.note]}
 					/>
 				))}
 			</div>

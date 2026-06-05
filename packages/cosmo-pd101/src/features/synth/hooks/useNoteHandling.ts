@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ModSource } from "@/lib/synth/bindings/synth";
-import { noteToFreq, PC_KEY_TO_NOTE } from "@/lib/synth/pdAlgorithms";
+import {
+	PC_KEY_TO_NOTE,
+	PC_KEYBOARD_DEFAULT_BASE,
+} from "@/lib/synth/pcKeyboardMapping";
+import { noteToFreq } from "@/lib/synth/pdAlgorithms";
 
 type UseNoteHandlingParams = {
 	workletNodeRef?: React.MutableRefObject<AudioWorkletNode | null> | null;
@@ -16,6 +20,7 @@ type UseNoteHandlingParams = {
 	 */
 	keyboardPassthrough?: boolean;
 	keyboardInputEnabled?: boolean;
+	pcKeyboardBaseNote?: number;
 	midiInputEnabled?: boolean;
 };
 
@@ -38,6 +43,7 @@ export function useNoteHandling({
 	velocityCurve: _velocityCurve,
 	keyboardPassthrough = false,
 	keyboardInputEnabled = true,
+	pcKeyboardBaseNote = PC_KEYBOARD_DEFAULT_BASE,
 	midiInputEnabled = true,
 }: UseNoteHandlingParams): NoteHandlingApi {
 	const dispatchEngineEvent = useCallback(
@@ -190,8 +196,8 @@ export function useNoteHandling({
 		const isPluginRuntime = typeof pluginBridgeRuntime === "function";
 
 		// Standalone mode uses the same truce.audio bridge, but we still want
-		// PC keyboard note entry (A/S/D... + space sustain) since there's
-		// no host DAW to handle keys.
+		// PC keyboard note entry (REAPER-style Z/S/X/D/C/... + space sustain)
+		// since there's no host DAW to handle keys.
 		const isStandalone =
 			typeof window !== "undefined" &&
 			new URLSearchParams(window.location.search).get("standalone") === "1";
@@ -239,11 +245,12 @@ export function useNoteHandling({
 				return;
 			}
 			const key = event.key.toLowerCase();
-			const note = PC_KEY_TO_NOTE[key];
-			if (note == null) return;
+			const offset = PC_KEY_TO_NOTE[key];
+			if (offset == null) return;
 			if (!keyboardPassthrough) {
 				event.preventDefault();
 			}
+			const note = pcKeyboardBaseNote + offset;
 			if (activeNotesRef.current.has(note)) return;
 			sendNoteOn(note);
 		};
@@ -256,9 +263,9 @@ export function useNoteHandling({
 				return;
 			}
 			const key = event.key.toLowerCase();
-			const note = PC_KEY_TO_NOTE[key];
-			if (note == null) return;
-			sendNoteOff(note);
+			const offset = PC_KEY_TO_NOTE[key];
+			if (offset == null) return;
+			sendNoteOff(pcKeyboardBaseNote + offset);
 		};
 
 		window.addEventListener("keydown", keyDown);
@@ -270,6 +277,7 @@ export function useNoteHandling({
 	}, [
 		keyboardInputEnabled,
 		keyboardPassthrough,
+		pcKeyboardBaseNote,
 		sendNoteOn,
 		sendNoteOff,
 		setSustain,

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useSynthStore } from "@/features/synth/synthStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
+import { NOTE_TO_PC_KEY } from "@/lib/synth/pcKeyboardMapping";
 import MiniKeyboardKeybed from "./MiniKeyboardKeybed";
 import MiniKeyboardResizeHandle from "./MiniKeyboardResizeHandle";
 import MiniKeyboardShell from "./MiniKeyboardShell";
@@ -31,6 +32,9 @@ export default function MiniKeyboardOverlay({
 	const keyboardHeight = useSynthUiStore((s) => s.keyboardHeight);
 	const keyboardInputMode = useSynthUiStore((s) => s.keyboardInputMode);
 	const setKeyboardHeight = useSynthUiStore((s) => s.setKeyboardHeight);
+	const pcKeyboardOverlayVisible = useSynthUiStore(
+		(s) => s.pcKeyboardOverlayVisible,
+	);
 	const polyMode = useSynthStore((s) => s.polyMode);
 
 	const startNote = 36 + keyboardRange * 12;
@@ -40,6 +44,29 @@ export default function MiniKeyboardOverlay({
 		() => buildKeyboardLayout(startNote, keyboardOctaves),
 		[startNote, keyboardOctaves],
 	);
+	const pcKeyLabels = useMemo(() => {
+		if (!pcKeyboardOverlayVisible) return undefined;
+		const labels: Record<number, string> = {};
+		for (const key of whiteKeys) {
+			const offset = key.note - startNote;
+			const pcKey = NOTE_TO_PC_KEY[offset];
+			if (pcKey)
+				labels[key.note] =
+					pcKey.length === 1 && /^[a-z]$/.test(pcKey)
+						? pcKey.toUpperCase()
+						: pcKey;
+		}
+		for (const key of blackKeys) {
+			const offset = key.note - startNote;
+			const pcKey = NOTE_TO_PC_KEY[offset];
+			if (pcKey)
+				labels[key.note] =
+					pcKey.length === 1 && /^[a-z]$/.test(pcKey)
+						? pcKey.toUpperCase()
+						: pcKey;
+		}
+		return labels;
+	}, [pcKeyboardOverlayVisible, whiteKeys, blackKeys, startNote]);
 
 	const { resizeRef, handleResizePointerDown } = useMiniKeyboardResize({
 		keyboardHeight,
@@ -65,6 +92,7 @@ export default function MiniKeyboardOverlay({
 				blackKeyWidth={blackKeyWidth}
 				activeNotes={activeSet}
 				onKeyPointerDown={handleKeyPointerDown}
+				pcKeyLabels={pcKeyLabels}
 			/>
 		</MiniKeyboardShell>
 	);

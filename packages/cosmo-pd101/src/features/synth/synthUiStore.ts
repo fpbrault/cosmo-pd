@@ -25,6 +25,7 @@ type SynthUiState = {
 	keyboardRange: number;
 	keyboardHeight: number;
 	keyboardInputMode: KeyboardInputMode;
+	pcKeyboardOverlayVisible: boolean;
 	libraryModeOpen: boolean;
 	scopeCycles: number;
 	scopeVerticalZoom: number;
@@ -47,6 +48,7 @@ type SynthUiActions = {
 	setKeyboardRange: (range: number) => void;
 	setKeyboardHeight: (height: number) => void;
 	setKeyboardInputMode: (mode: KeyboardInputMode) => void;
+	setPcKeyboardOverlayVisible: (visible: boolean) => void;
 	setLibraryModeOpen: (open: boolean) => void;
 	setScopeCycles: (cycles: number) => void;
 	setScopeVerticalZoom: (zoom: number) => void;
@@ -95,6 +97,7 @@ const DEFAULT_UI_STATE: SynthUiState = {
 	keyboardRange: 0,
 	keyboardHeight: 160,
 	keyboardInputMode: "velocity",
+	pcKeyboardOverlayVisible: true,
 	libraryModeOpen: false,
 	scopeCycles: 2,
 	scopeVerticalZoom: 1,
@@ -169,6 +172,10 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 			KEYBOARD_INPUT_MODES.has(rawKeyboardInputMode as KeyboardInputMode)
 				? (rawKeyboardInputMode as KeyboardInputMode)
 				: DEFAULT_UI_STATE.keyboardInputMode,
+		pcKeyboardOverlayVisible:
+			typeof candidate.pcKeyboardOverlayVisible === "boolean"
+				? candidate.pcKeyboardOverlayVisible
+				: DEFAULT_UI_STATE.pcKeyboardOverlayVisible,
 		libraryModeOpen:
 			typeof candidate.libraryModeOpen === "boolean"
 				? candidate.libraryModeOpen
@@ -238,6 +245,8 @@ export const useSynthUiStore = create<SynthUiStore>()(
 			setKeyboardRange: (range) => set({ keyboardRange: range }),
 			setKeyboardHeight: (height) => set({ keyboardHeight: height }),
 			setKeyboardInputMode: (mode) => set({ keyboardInputMode: mode }),
+			setPcKeyboardOverlayVisible: (visible) =>
+				set({ pcKeyboardOverlayVisible: visible }),
 			setLibraryModeOpen: (open) => set({ libraryModeOpen: open }),
 			setScopeCycles: (cycles) => set({ scopeCycles: cycles }),
 			setScopeVerticalZoom: (zoom) => set({ scopeVerticalZoom: zoom }),
@@ -263,6 +272,7 @@ export const useSynthUiStore = create<SynthUiStore>()(
 				keyboardRange: state.keyboardRange,
 				keyboardHeight: state.keyboardHeight,
 				keyboardInputMode: state.keyboardInputMode,
+				pcKeyboardOverlayVisible: state.pcKeyboardOverlayVisible,
 				libraryModeOpen: state.libraryModeOpen,
 				scopeCycles: state.scopeCycles,
 				scopeVerticalZoom: state.scopeVerticalZoom,

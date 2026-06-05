@@ -8,6 +8,7 @@ const uiState = {
 	keyboardRange: 0,
 	keyboardHeight: 128,
 	keyboardInputMode: "velocity" as const,
+	pcKeyboardOverlayVisible: true,
 	setKeyboardHeight: mockSetKeyboardHeight,
 };
 
@@ -183,5 +184,24 @@ describe("MiniKeyboardOverlay", () => {
 		expect(onNoteOff).toHaveBeenCalledTimes(2);
 		expect(onNoteOff).toHaveBeenCalledWith(36);
 		expect(onNoteOff).toHaveBeenCalledWith(38);
+	});
+
+	it("renders octave markers separately from PC key labels", () => {
+		const { container } = renderOverlay();
+		const c3Key = getKey(container, 36);
+		const c4Key = getKey(container, 48);
+
+		expect(
+			c3Key.querySelector('[data-mini-note-label="36"]')?.textContent,
+		).toBe("C2");
+		expect(c3Key.querySelector('[data-mini-pc-label="36"]')?.textContent).toBe(
+			"Z",
+		);
+		expect(
+			c4Key.querySelector('[data-mini-note-label="48"]')?.textContent,
+		).toBe("C3");
+		expect(c4Key.querySelector('[data-mini-pc-label="48"]')?.textContent).toBe(
+			",",
+		);
 	});
 });
