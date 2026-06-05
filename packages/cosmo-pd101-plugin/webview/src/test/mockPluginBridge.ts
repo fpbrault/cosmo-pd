@@ -444,6 +444,14 @@ export function installMockPluginBridge(): void {
 		},
 	];
 
+	let virtualFxModulePresets: Array<{
+		id: string;
+		name: string;
+		moduleType: string;
+		patch: Record<string, unknown>;
+		createdAt: number;
+	}> = [];
+
 	// Full params blob pre-seeded with defaults so pushParamUpdate always
 	// sends a complete blob that satisfies applyPreset (requires line1/line2).
 	let virtualFullParams: FullParamsBlob = { ...DEFAULT_FULL_PARAMS };
@@ -901,6 +909,56 @@ export function installMockPluginBridge(): void {
 							}
 						: null,
 				});
+				return;
+			}
+			if (method === "saveFxModulePreset") {
+				const payload =
+					typeof args[0] === "object" && args[0] !== null
+						? (args[0] as Record<string, unknown>)
+						: null;
+				const name =
+					typeof payload?.name === "string" ? payload.name : "FX Preset";
+				const moduleType =
+					typeof payload?.moduleType === "string" ? payload.moduleType : "";
+				const patch =
+					typeof payload?.patch === "object" && payload.patch !== null
+						? (payload.patch as Record<string, unknown>)
+						: {};
+				const id = `fxmod-mock-${virtualFxModulePresets.length + 1}`;
+				const entry = {
+					id,
+					name,
+					moduleType,
+					patch,
+					createdAt: Date.now(),
+				};
+				virtualFxModulePresets.push(entry);
+				respondIpc(id, { result: entry });
+				return;
+			}
+			if (method === "listFxModulePresets") {
+				const payload =
+					typeof args[0] === "object" && args[0] !== null
+						? (args[0] as Record<string, unknown>)
+						: null;
+				const moduleType =
+					typeof payload?.moduleType === "string" ? payload.moduleType : "";
+				const entries = virtualFxModulePresets
+					.filter((p) => p.moduleType === moduleType)
+					.sort((a, b) => a.createdAt - b.createdAt);
+				respondIpc(id, { result: { entries } });
+				return;
+			}
+			if (method === "deleteFxModulePreset") {
+				const payload =
+					typeof args[0] === "object" && args[0] !== null
+						? (args[0] as Record<string, unknown>)
+						: null;
+				const presetId = typeof payload?.id === "string" ? payload.id : "";
+				virtualFxModulePresets = virtualFxModulePresets.filter(
+					(p) => p.id !== presetId,
+				);
+				respondIpc(id, { result: null });
 				return;
 			}
 			if (method === "getScopeData") {

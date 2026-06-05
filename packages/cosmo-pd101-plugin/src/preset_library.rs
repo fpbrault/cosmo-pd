@@ -7,7 +7,7 @@ use uuid::Uuid;
 use crate::preset_library_path;
 
 const DEFAULT_SORT_INDEX: u32 = u32::MAX;
-const LIBRARY_SCHEMA_VERSION: u32 = 3;
+const LIBRARY_SCHEMA_VERSION: u32 = 4;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -28,6 +28,16 @@ pub struct PresetLibraryEntry {
 pub struct PresetLibraryRecord {
     pub entry: PresetLibraryEntry,
     pub favorite: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct FxModulePresetEntry {
+    pub id: String,
+    pub name: String,
+    pub module_type: String,
+    pub patch: serde_json::Value,
+    pub created_at_unix_ms: i64,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -159,6 +169,42 @@ impl PresetLibrary {
         })
     }
 
+    pub fn save_fx_module_preset(
+        &mut self,
+        name: String,
+        module_type: String,
+        patch: serde_json::Value,
+    ) -> Result<FxModulePresetEntry, String> {
+        let entry = FxModulePresetEntry {
+            id: Uuid::new_v4().to_string(),
+            name,
+            module_type,
+            patch,
+            created_at_unix_ms: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_millis() as i64)
+                .unwrap_or_default(),
+        };
+        self.with_connection_mut(|conn| upsert_fx_module_preset(conn, &entry))?;
+        Ok(entry)
+    }
+
+    pub fn list_fx_module_presets(
+        &self,
+        module_type: &str,
+    ) -> Result<Vec<FxModulePresetEntry>, String> {
+        self.with_connection(|conn| list_fx_module_presets(conn, module_type))
+    }
+
+    pub fn delete_fx_module_preset(&mut self, id: &str) -> Result<bool, String> {
+        self.with_connection_mut(|conn| {
+            let deleted = conn
+                .execute("DELETE FROM fx_module_presets WHERE id = ?1", [id])
+                .map_err(db_err)?;
+            Ok(deleted > 0)
+        })
+    }
+
     fn initialize(&self) -> Result<(), String> {
         self.with_connection_mut(|conn| {
             let previous_schema_version = read_schema_version(conn)?;
@@ -169,6 +215,9 @@ impl PresetLibrary {
             }
             if previous_schema_version < 3 {
                 migrate_sort_index_column(conn)?;
+            }
+            if previous_schema_version < 4 {
+                migrate_fx_module_presets_table(conn)?;
             }
             merge_factory_entries(conn, &self.factory_entries)?;
             Ok(())
@@ -405,6 +454,37 @@ fn migrate_sort_index_column(conn: &Connection) -> Result<(), String> {
     Ok(())
 }
 
+fn migrate_fx_module_presets_table(conn: &Connection) -> Result<(), String> {
+    let has_table = conn
+        .query_row(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'fx_module_presets'",
+            [],
+            |_| Ok(()),
+        )
+        .optional()
+        .map_err(db_err)?
+        .is_some();
+
+    if !has_table {
+        conn.execute_batch(
+            "
+            CREATE TABLE fx_module_presets (
+                id TEXT PRIMARY KEY NOT NULL,
+                name TEXT NOT NULL,
+                module_type TEXT NOT NULL,
+                patch_json TEXT NOT NULL,
+                created_at_unix_ms INTEGER NOT NULL DEFAULT 0
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_fx_module_presets_type ON fx_module_presets(module_type);
+            ",
+        )
+        .map_err(db_err)?;
+    }
+
+    Ok(())
+}
+
 fn merge_factory_entries(
     conn: &Connection,
     factory_entries: &[PresetLibraryEntry],
@@ -562,6 +642,66 @@ fn upsert_entry(conn: &Connection, entry: &PresetLibraryEntry) -> Result<(), Str
     )
     .map_err(db_err)?;
     Ok(())
+}
+
+fn upsert_fx_module_preset(conn: &Connection, entry: &FxModulePresetEntry) -> Result<(), String> {
+    let patch_json = serde_json::to_string(&entry.patch)
+        .map_err(|error| format!("failed to serialize fx module preset patch: {error}"))?;
+
+    conn.execute(
+        "INSERT INTO fx_module_presets (id, name, module_type, patch_json, created_at_unix_ms)
+         VALUES (?1, ?2, ?3, ?4, ?5)
+         ON CONFLICT(id) DO UPDATE SET
+            name = excluded.name,
+            module_type = excluded.module_type,
+            patch_json = excluded.patch_json,
+            created_at_unix_ms = excluded.created_at_unix_ms",
+        params![
+            entry.id,
+            entry.name,
+            entry.module_type,
+            patch_json,
+            entry.created_at_unix_ms
+        ],
+    )
+    .map_err(db_err)?;
+    Ok(())
+}
+
+fn list_fx_module_presets(
+    conn: &Connection,
+    module_type: &str,
+) -> Result<Vec<FxModulePresetEntry>, String> {
+    let mut statement = conn
+        .prepare(
+            "SELECT id, name, module_type, patch_json, created_at_unix_ms
+             FROM fx_module_presets
+             WHERE module_type = ?1
+             ORDER BY created_at_unix_ms ASC",
+        )
+        .map_err(db_err)?;
+
+    let rows = statement
+        .query_map(params![module_type], map_fx_module_row)
+        .map_err(db_err)?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(db_err)?;
+    Ok(rows)
+}
+
+fn map_fx_module_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<FxModulePresetEntry> {
+    let patch_json: String = row.get(3)?;
+    let patch = serde_json::from_str(&patch_json).map_err(|error| {
+        rusqlite::Error::FromSqlConversionFailure(3, rusqlite::types::Type::Text, Box::new(error))
+    })?;
+
+    Ok(FxModulePresetEntry {
+        id: row.get(0)?,
+        name: row.get(1)?,
+        module_type: row.get(2)?,
+        patch,
+        created_at_unix_ms: row.get(4)?,
+    })
 }
 
 fn map_entry_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<PresetLibraryEntry> {
@@ -900,5 +1040,74 @@ mod tests {
     fn startup_preset_returns_none_when_no_starred_presets_exist() {
         let library = open_temp_library(vec![sample_entry("f1")]);
         assert!(library.find_startup_preset().unwrap().is_none());
+    }
+
+    #[test]
+    fn fx_module_preset_crud_round_trip() {
+        let mut lib = open_temp_library(vec![]);
+        let patch = serde_json::json!({ "mix": 0.5, "rate": 0.3 });
+        let saved = lib
+            .save_fx_module_preset("My Chorus".to_string(), "chorus".to_string(), patch.clone())
+            .unwrap();
+        assert_eq!(saved.name, "My Chorus");
+        assert_eq!(saved.module_type, "chorus");
+        assert_eq!(saved.patch, patch);
+        assert!(saved.created_at_unix_ms > 0);
+
+        let all = lib.list_fx_module_presets("chorus").unwrap();
+        assert_eq!(all.len(), 1);
+        assert_eq!(all[0].id, saved.id);
+        assert_eq!(all[0].name, "My Chorus");
+
+        let none = lib.list_fx_module_presets("reverb").unwrap();
+        assert!(none.is_empty());
+
+        assert!(lib.delete_fx_module_preset(&saved.id).unwrap());
+        let after = lib.list_fx_module_presets("chorus").unwrap();
+        assert!(after.is_empty());
+    }
+
+    #[test]
+    fn fx_module_preset_list_ordered_by_created_at() {
+        let mut lib = open_temp_library(vec![]);
+        let a = lib
+            .save_fx_module_preset(
+                "First".to_string(),
+                "delay".to_string(),
+                serde_json::json!({}),
+            )
+            .unwrap();
+        let b = lib
+            .save_fx_module_preset(
+                "Second".to_string(),
+                "delay".to_string(),
+                serde_json::json!({}),
+            )
+            .unwrap();
+
+        let all = lib.list_fx_module_presets("delay").unwrap();
+        assert_eq!(all.len(), 2);
+        assert_eq!(all[0].id, a.id);
+        assert_eq!(all[1].id, b.id);
+    }
+
+    #[test]
+    fn fx_module_preset_delete_unknown_id_returns_false() {
+        let mut lib = open_temp_library(vec![]);
+        assert!(!lib.delete_fx_module_preset("nonexistent").unwrap());
+    }
+
+    #[test]
+    fn fx_module_preset_migration_creates_table() {
+        let lib = open_temp_library(vec![]);
+        let conn = lib.open_connection().unwrap();
+        let has_table: bool = conn
+            .query_row(
+                "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'fx_module_presets'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap_or(false);
+        assert!(has_table, "fx_module_presets table should exist");
     }
 }

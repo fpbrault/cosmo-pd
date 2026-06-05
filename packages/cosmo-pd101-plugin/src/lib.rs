@@ -1330,6 +1330,94 @@ fn handle_ipc_invoke(
 
             Ok(serde_json::Value::Null)
         }
+        "saveFxModulePreset" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "saveFxModulePreset expects an object payload as first argument".to_string()
+                })?;
+            let name = payload
+                .get("name")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "saveFxModulePreset payload missing name".to_string())?
+                .to_string();
+            let module_type = payload
+                .get("moduleType")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "saveFxModulePreset payload missing moduleType".to_string())?
+                .to_string();
+            let patch = payload
+                .get("patch")
+                .cloned()
+                .unwrap_or(serde_json::Value::Null);
+
+            let entry = {
+                let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+                lib.save_fx_module_preset(name, module_type, patch)
+                    .map_err(|e| e.to_string())?
+            };
+
+            Ok(serde_json::json!({
+                "id": entry.id,
+                "name": entry.name,
+                "moduleType": entry.module_type,
+                "patch": entry.patch,
+                "createdAt": entry.created_at_unix_ms,
+            }))
+        }
+        "listFxModulePresets" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "listFxModulePresets expects an object payload as first argument".to_string()
+                })?;
+            let module_type = payload
+                .get("moduleType")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "listFxModulePresets payload missing moduleType".to_string())?;
+
+            let entries = {
+                let lib = preset_library.lock().map_err(|e| e.to_string())?;
+                lib.list_fx_module_presets(module_type)
+                    .map_err(|e| e.to_string())?
+            };
+
+            let result: Vec<serde_json::Value> = entries
+                .iter()
+                .map(|e| {
+                    serde_json::json!({
+                        "id": e.id,
+                        "name": e.name,
+                        "moduleType": e.module_type,
+                        "patch": e.patch,
+                        "createdAt": e.created_at_unix_ms,
+                    })
+                })
+                .collect();
+
+            Ok(serde_json::json!({ "entries": result }))
+        }
+        "deleteFxModulePreset" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "deleteFxModulePreset expects an object payload as first argument".to_string()
+                })?;
+            let id = payload
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "deleteFxModulePreset payload missing id".to_string())?;
+
+            {
+                let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+                let _ = lib.delete_fx_module_preset(id).map_err(|e| e.to_string())?;
+            }
+
+            Ok(serde_json::Value::Null)
+        }
         "renamePreset" => {
             let payload = args
                 .first()

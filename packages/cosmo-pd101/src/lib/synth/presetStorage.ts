@@ -1,3 +1,4 @@
+import { db } from "@/lib/db/db";
 import { buildDefaultAlgoControls } from "@/lib/synth/algoRef";
 import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
 import {
@@ -14,7 +15,6 @@ import {
 import type { FrontendPresetV1, PresetMetadata } from "@/lib/synth/presetTypes";
 
 const DB_NAME = "cosmo-pd101-preset-storage";
-const DB_VERSION = 2;
 
 export type { PresetMetadata };
 export type StoredPreset = FrontendPresetV1;
@@ -44,83 +44,8 @@ type NativePresetLibraryResponse = {
 	entries?: NativePresetLibraryEntry[];
 };
 
-let dbPromise: Promise<IDBDatabase> | null = null;
-
 export function getDb(): Promise<IDBDatabase> {
-	if (!dbPromise) {
-		dbPromise = new Promise((resolve, reject) => {
-			const request = indexedDB.open(DB_NAME, DB_VERSION);
-			request.onupgradeneeded = () => {
-				const db = request.result;
-				if (!db.objectStoreNames.contains("presets")) {
-					db.createObjectStore("presets", { keyPath: "id" });
-				}
-				if (!db.objectStoreNames.contains("kv")) {
-					db.createObjectStore("kv", { keyPath: "key" });
-				}
-				if (!db.objectStoreNames.contains("favorites")) {
-					db.createObjectStore("favorites", { keyPath: "id" });
-				}
-				if (!db.objectStoreNames.contains("fxModulePresets")) {
-					db.createObjectStore("fxModulePresets", { keyPath: "id" });
-				}
-			};
-			request.onsuccess = () => resolve(request.result);
-			request.onerror = () => {
-				dbPromise = null;
-				reject(request.error);
-			};
-		});
-	}
-	return dbPromise;
-}
-
-function getFromStore<T>(storeName: string, id: string): Promise<T | null> {
-	return getDb().then(
-		(db) =>
-			new Promise((resolve, reject) => {
-				const tx = db.transaction(storeName, "readonly");
-				const request = tx.objectStore(storeName).get(id);
-				request.onsuccess = () => resolve((request.result as T) ?? null);
-				request.onerror = () => reject(request.error);
-			}),
-	);
-}
-
-function getAllFromStore<T>(storeName: string): Promise<T[]> {
-	return getDb().then(
-		(db) =>
-			new Promise((resolve, reject) => {
-				const tx = db.transaction(storeName, "readonly");
-				const request = tx.objectStore(storeName).getAll();
-				request.onsuccess = () => resolve(request.result as T[]);
-				request.onerror = () => reject(request.error);
-			}),
-	);
-}
-
-function putInStore(storeName: string, value: unknown): Promise<void> {
-	return getDb().then(
-		(db) =>
-			new Promise((resolve, reject) => {
-				const tx = db.transaction(storeName, "readwrite");
-				tx.objectStore(storeName).put(value);
-				tx.oncomplete = () => resolve();
-				tx.onerror = () => reject(tx.error);
-			}),
-	);
-}
-
-function deleteFromStore(storeName: string, id: string): Promise<void> {
-	return getDb().then(
-		(db) =>
-			new Promise((resolve, reject) => {
-				const tx = db.transaction(storeName, "readwrite");
-				tx.objectStore(storeName).delete(id);
-				tx.oncomplete = () => resolve();
-				tx.onerror = () => reject(tx.error);
-			}),
-	);
+	return db.getDb();
 }
 
 function getNativePresetLibraryBridge() {
@@ -334,12 +259,12 @@ export async function saveStoredPreset(
 	input: StoredPresetInput,
 ): Promise<StoredPreset> {
 	const stored = createStoredPreset(input);
-	await putInStore("presets", stored);
+	await db.put("presets", stored);
 	return stored;
 }
 
 export async function listStoredPresets(): Promise<StoredPreset[]> {
-	const presets = await getAllFromStore<StoredPreset>("presets");
+	const presets = await db.getAll<StoredPreset>("presets");
 	return presets.sort((left, right) =>
 		left.name.localeCompare(right.name, undefined, {
 			numeric: true,
@@ -351,11 +276,11 @@ export async function listStoredPresets(): Promise<StoredPreset[]> {
 export async function loadStoredPreset(
 	id: string,
 ): Promise<StoredPreset | null> {
-	return getFromStore<StoredPreset>("presets", id);
+	return db.get<StoredPreset>("presets", id);
 }
 
 export async function loadPreset(id: string): Promise<SynthPresetV1 | null> {
-	const stored = await getFromStore<StoredPreset>("presets", id);
+	const stored = await db.get<StoredPreset>("presets", id);
 	return stored?.data ?? null;
 }
 
@@ -363,7 +288,7 @@ export async function updateStoredPreset(
 	id: string,
 	updates: Partial<Omit<StoredPreset, "id">>,
 ): Promise<StoredPreset | null> {
-	const current = await getFromStore<StoredPreset>("presets", id);
+	const current = await db.get<StoredPreset>("presets", id);
 	if (!current) {
 		return null;
 	}
@@ -377,7 +302,7 @@ export async function updateStoredPreset(
 		data: updates.data ?? current.data,
 		tags: updates.tags ?? current.tags,
 	});
-	await putInStore("presets", next);
+	await db.put("presets", next);
 	return next;
 }
 
@@ -409,7 +334,7 @@ export async function deletePreset(id: string): Promise<void> {
 }
 
 export async function exportPreset(id: string): Promise<string | null> {
-	const preset = await getFromStore<StoredPreset>("presets", id);
+	const preset = await db.get<StoredPreset>("presets", id);
 	if (!preset) {
 		return null;
 	}
@@ -459,7 +384,7 @@ export async function loadPresetFavorite(id: string): Promise<boolean> {
 		return nativeFavorite;
 	}
 
-	const entry = await getFromStore<{ id: string }>("favorites", id);
+	const entry = await db.get<{ id: string }>("favorites", id);
 	return entry !== null;
 }
 
@@ -480,16 +405,16 @@ export async function setPresetFavorite(
 	}
 
 	if (favorite) {
-		await putInStore("favorites", { id });
+		await db.put("favorites", { id });
 	} else {
-		await deleteFromStore("favorites", id);
+		await db.delete("favorites", id);
 	}
 }
 
 export async function listPresetFavorites(): Promise<string[]> {
 	const nativeFavorites = await readNativeFavoriteIds();
 	if (nativeFavorites) {
-		const localFavorites = await getAllFromStore<{ id: string }>("favorites");
+		const localFavorites = await db.getAll<{ id: string }>("favorites");
 		const ids = new Set([
 			...nativeFavorites,
 			...localFavorites.map((entry) => entry.id),
@@ -497,16 +422,16 @@ export async function listPresetFavorites(): Promise<string[]> {
 		return Array.from(ids).sort();
 	}
 
-	const entries = await getAllFromStore<{ id: string }>("favorites");
+	const entries = await db.getAll<{ id: string }>("favorites");
 	return entries.map((entry) => entry.id).sort();
 }
 
 export async function saveCurrentState(data: SynthPresetV1): Promise<void> {
-	await putInStore("kv", { key: "currentState", value: data });
+	await db.put("kv", { key: "currentState", value: data });
 }
 
 export async function loadCurrentState(): Promise<SynthPresetV1 | null> {
-	const entry = await getFromStore<{ key: string; value: SynthPresetV1 }>(
+	const entry = await db.get<{ key: string; value: SynthPresetV1 }>(
 		"kv",
 		"currentState",
 	);
@@ -516,7 +441,7 @@ export async function loadCurrentState(): Promise<SynthPresetV1 | null> {
 		return entry.value;
 	}
 
-	await deleteFromStore("kv", "currentState");
+	await db.delete("kv", "currentState");
 	return null;
 }
 
@@ -534,11 +459,11 @@ function isCurrentPresetSession(value: unknown): value is CurrentPresetSession {
 export async function saveCurrentPresetSession(
 	session: CurrentPresetSession,
 ): Promise<void> {
-	await putInStore("kv", { key: "currentSession", value: session });
+	await db.put("kv", { key: "currentSession", value: session });
 }
 
 export async function loadCurrentPresetSession(): Promise<CurrentPresetSession | null> {
-	const entry = await getFromStore<{ key: string; value: unknown }>(
+	const entry = await db.get<{ key: string; value: unknown }>(
 		"kv",
 		"currentSession",
 	);
@@ -548,16 +473,12 @@ export async function loadCurrentPresetSession(): Promise<CurrentPresetSession |
 		return entry.value;
 	}
 
-	await deleteFromStore("kv", "currentSession");
+	await db.delete("kv", "currentSession");
 	return null;
 }
 
 export async function deleteDatabase(): Promise<void> {
-	if (dbPromise) {
-		const db = await dbPromise;
-		db.close();
-		dbPromise = null;
-	}
+	db.close();
 	await new Promise<void>((resolve, reject) => {
 		const request = indexedDB.deleteDatabase(DB_NAME);
 		request.onsuccess = () => resolve();
