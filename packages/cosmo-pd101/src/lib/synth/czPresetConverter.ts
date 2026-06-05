@@ -10,7 +10,7 @@ import {
 	DEFAULT_DCA_ENV,
 	DEFAULT_DCO_ENV,
 	DEFAULT_DCW_ENV,
-} from "@/lib/synth/pdAlgorithms";
+} from "@/lib/synth/defaultEnvelopes";
 import { DEFAULT_PRESET } from "@/lib/synth/presetStorage";
 
 function convertEnvelope(env: {

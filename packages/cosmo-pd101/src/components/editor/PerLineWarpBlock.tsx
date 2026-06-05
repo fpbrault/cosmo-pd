@@ -4,13 +4,13 @@ import SynthParamSlider from "@/components/controls/SynthParamSlider";
 import AlgoSectionCard from "@/components/editor/AlgoSectionCard";
 import { SynthSingleCycleDisplay } from "@/components/editor/SingleCycleDisplay";
 import Card from "@/components/primitives/Card";
+import { PD_ALGOS } from "@/lib/synth/algoUiCatalog";
 import type {
 	AlgoControlValueV1,
 	BaseWaveform,
 	StepEnvData,
 } from "@/lib/synth/bindings/synth";
 import type { PdAlgo } from "@/lib/synth/pdAlgorithms";
-import { PD_ALGOS } from "@/lib/synth/pdAlgorithms";
 import { BaseWaveSelector } from "./BaseWaveSelector";
 import { EnvelopesSection } from "./EnvelopesSection";
 import PerLineParametersCard from "./PerLineParametersCard";

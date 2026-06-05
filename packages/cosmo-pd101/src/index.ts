@@ -95,7 +95,6 @@ export {
 } from "./lib/synth/cosmoWorkletUrl";
 export { convertDecodedPatchToSynthPreset } from "./lib/synth/czPresetConverter";
 export { FACTORY_PRESETS } from "./lib/synth/factoryCzPresets";
-export { noteToFreq } from "./lib/synth/pdAlgorithms";
 export type { PresetSource } from "./lib/synth/presetSources";
 export type { PresetTagOptions } from "./lib/synth/presetTags";
 export type {
@@ -103,5 +102,6 @@ export type {
 	FrontendPresetV1,
 	PresetMetadata,
 } from "./lib/synth/presetTypes";
+export { noteToFreq } from "./lib/synth/waveformPreview";
 export type { ReleaseInfo } from "./lib/update/checkRelease";
 export { checkLatestRelease } from "./lib/update/checkRelease";

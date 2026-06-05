@@ -12,7 +12,7 @@ import type {
 	ModDestination,
 	WindowType,
 } from "@/lib/synth/bindings/synth";
-import { computeWaveform } from "@/lib/synth/pdAlgorithms";
+import { computeWaveform } from "@/lib/synth/waveformPreview";
 
 interface SingleCycleDisplayProps {
 	data: Float32Array | number[];

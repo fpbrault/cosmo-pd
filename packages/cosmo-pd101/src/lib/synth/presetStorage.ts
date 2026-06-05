@@ -4,7 +4,7 @@ import {
 	DEFAULT_DCA_ENV,
 	DEFAULT_DCO_ENV,
 	DEFAULT_DCW_ENV,
-} from "@/lib/synth/pdAlgorithms";
+} from "@/lib/synth/defaultEnvelopes";
 import { createPresetId } from "@/lib/synth/presetIdentity";
 import type { PresetSource } from "@/lib/synth/presetSources";
 import {
