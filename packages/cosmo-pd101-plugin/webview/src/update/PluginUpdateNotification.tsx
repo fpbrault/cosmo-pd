@@ -2,6 +2,7 @@ import { memo, useEffect, useState } from "react";
 import {
 	checkForPluginUpdate,
 	type PluginUpdateInfo,
+	recordPluginUpdateNotification,
 } from "./checkPluginUpdate";
 
 export default memo(function PluginUpdateNotification() {
@@ -13,7 +14,7 @@ export default memo(function PluginUpdateNotification() {
 
 		setIsLoading(true);
 
-		checkForPluginUpdate().then((info) => {
+		checkForPluginUpdate({ recordNotification: false }).then((info) => {
 			if (!cancelled) {
 				setUpdateInfo(info);
 				setIsLoading(false);
@@ -24,6 +25,12 @@ export default memo(function PluginUpdateNotification() {
 			cancelled = true;
 		};
 	}, []);
+
+	useEffect(() => {
+		if (updateInfo && !updateInfo.forcedByEnv) {
+			recordPluginUpdateNotification(updateInfo.latestVersion);
+		}
+	}, [updateInfo]);
 
 	if (isLoading || !updateInfo) return null;
 

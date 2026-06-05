@@ -12,6 +12,12 @@ interface GitHubLatestReleaseResponse {
 	draft?: boolean;
 }
 
+declare global {
+	interface Window {
+		__CZ_TEST_LATEST_RELEASE__?: GitHubLatestReleaseResponse | null;
+	}
+}
+
 export interface PluginUpdateInfo {
 	currentVersion: string;
 	latestVersion: string;
@@ -21,6 +27,7 @@ export interface PluginUpdateInfo {
 
 interface CheckOptions {
 	manual?: boolean;
+	recordNotification?: boolean;
 }
 
 function normalizeVersion(raw: string): string {
@@ -49,6 +56,31 @@ function compareVersions(leftRaw: string, rightRaw: string): number {
 	return 0;
 }
 
+export function recordPluginUpdateNotification(latestVersionRaw: string): void {
+	sessionStorage.setItem(SESSION_KEY, normalizeVersion(latestVersionRaw));
+}
+
+async function getLatestRelease(): Promise<GitHubLatestReleaseResponse | null> {
+	if (
+		import.meta.env.VITE_TEST_HARNESS === "1" &&
+		typeof window !== "undefined" &&
+		"__CZ_TEST_LATEST_RELEASE__" in window
+	) {
+		return window.__CZ_TEST_LATEST_RELEASE__ ?? null;
+	}
+
+	const response = await fetch(LATEST_RELEASE_URL, {
+		headers: { Accept: "application/vnd.github+json" },
+		cache: "no-store",
+	});
+
+	if (!response.ok) {
+		return null;
+	}
+
+	return (await response.json()) as GitHubLatestReleaseResponse;
+}
+
 export async function checkForPluginUpdate(
 	options: CheckOptions = {},
 ): Promise<PluginUpdateInfo | null> {
@@ -57,12 +89,8 @@ export async function checkForPluginUpdate(
 		import.meta.env.VITE_FORCE_UPDATE_NOTIFIER === "1";
 
 	try {
-		const response = await fetch(LATEST_RELEASE_URL, {
-			headers: { Accept: "application/vnd.github+json" },
-			cache: "no-store",
-		});
-
-		if (!response.ok) {
+		const latest = await getLatestRelease();
+		if (!latest) {
 			if (forceUpdateNotifier) {
 				return {
 					currentVersion: normalizeVersion(__CZ_APP_VERSION__),
@@ -74,7 +102,6 @@ export async function checkForPluginUpdate(
 			return null;
 		}
 
-		const latest = (await response.json()) as GitHubLatestReleaseResponse;
 		if (
 			latest.draft ||
 			latest.prerelease ||
@@ -107,8 +134,8 @@ export async function checkForPluginUpdate(
 			return null;
 		}
 
-		if (!manual) {
-			sessionStorage.setItem(SESSION_KEY, latestVersion);
+		if (!manual && options.recordNotification !== false) {
+			recordPluginUpdateNotification(latestVersion);
 		}
 
 		return {
