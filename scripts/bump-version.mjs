@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -75,6 +75,10 @@ function updatePackageJson(filePath, newVersion) {
 
 function updateXcodeMarketingVersion(filePath, newVersion) {
 	const fullPath = resolve(rootDir, filePath);
+	if (!existsSync(fullPath)) {
+		return false;
+	}
+
 	const content = readFileSync(fullPath, "utf8");
 	const updated = content.replaceAll(
 		/MARKETING_VERSION = [^;]+;/g,
@@ -84,6 +88,7 @@ function updateXcodeMarketingVersion(filePath, newVersion) {
 		throw new Error(`Could not find MARKETING_VERSION in ${filePath}`);
 	}
 	writeFileSync(fullPath, updated);
+	return true;
 }
 
 function main() {
@@ -118,7 +123,12 @@ function main() {
 			console.log(`  ${pkgPath}: ${pkg.version} → ${newVersion}`);
 		}
 		for (const xcodePath of XCODE_PROJECT_PATHS) {
-			console.log(`  ${xcodePath}: MARKETING_VERSION → ${newVersion}`);
+			const fullPath = resolve(rootDir, xcodePath);
+			if (existsSync(fullPath)) {
+				console.log(`  ${xcodePath}: MARKETING_VERSION → ${newVersion}`);
+			} else {
+				console.log(`  ${xcodePath}: skipped (file not present)`);
+			}
 		}
 		return;
 	}
@@ -132,8 +142,11 @@ function main() {
 	}
 
 	for (const xcodePath of XCODE_PROJECT_PATHS) {
-		updateXcodeMarketingVersion(xcodePath, newVersion);
-		console.log(`  ${xcodePath}: MARKETING_VERSION → ${newVersion}`);
+		if (updateXcodeMarketingVersion(xcodePath, newVersion)) {
+			console.log(`  ${xcodePath}: MARKETING_VERSION → ${newVersion}`);
+		} else {
+			console.log(`  ${xcodePath}: skipped (file not present)`);
+		}
 	}
 }
 
