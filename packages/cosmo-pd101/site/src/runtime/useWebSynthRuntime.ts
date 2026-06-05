@@ -11,7 +11,7 @@ import {
 	synthBindingsUrl,
 	synthWasmUrl,
 } from "../../../src/lib/synth/cosmoWorkletUrl";
-import { noteToFreq } from "../../../src/lib/synth/pdAlgorithms";
+import { noteToFreq } from "../../../src/lib/synth/waveformPreview";
 
 export function useWebSynthRuntime(): SynthRuntime {
 	const gatherState = useSynthStore((s) => s.gatherState);
