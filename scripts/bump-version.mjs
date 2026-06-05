@@ -15,6 +15,9 @@ const PACKAGE_JSON_PATHS = [
 	"packages/cosmo-pd101-docs/package.json",
 	"packages/cosmo-synth-engine/package.json",
 ];
+const XCODE_PROJECT_PATHS = [
+	"packages/cosmo-pd101-plugin-auv3/CosmoPD101Host/CosmoPD101Host.xcodeproj/project.pbxproj",
+];
 
 function readCurrentVersion() {
 	const cargoToml = readFileSync(resolve(rootDir, "Cargo.toml"), "utf8");
@@ -70,6 +73,19 @@ function updatePackageJson(filePath, newVersion) {
 	return oldVersion;
 }
 
+function updateXcodeMarketingVersion(filePath, newVersion) {
+	const fullPath = resolve(rootDir, filePath);
+	const content = readFileSync(fullPath, "utf8");
+	const updated = content.replaceAll(
+		/MARKETING_VERSION = [^;]+;/g,
+		`MARKETING_VERSION = ${newVersion};`,
+	);
+	if (updated === content) {
+		throw new Error(`Could not find MARKETING_VERSION in ${filePath}`);
+	}
+	writeFileSync(fullPath, updated);
+}
+
 function main() {
 	const args = process.argv.slice(2);
 	const printVersionOnly = args.includes("--print-version");
@@ -101,6 +117,9 @@ function main() {
 			const pkg = JSON.parse(readFileSync(fullPath, "utf8"));
 			console.log(`  ${pkgPath}: ${pkg.version} → ${newVersion}`);
 		}
+		for (const xcodePath of XCODE_PROJECT_PATHS) {
+			console.log(`  ${xcodePath}: MARKETING_VERSION → ${newVersion}`);
+		}
 		return;
 	}
 
@@ -110,6 +129,11 @@ function main() {
 	for (const pkgPath of PACKAGE_JSON_PATHS) {
 		const old = updatePackageJson(pkgPath, newVersion);
 		console.log(`  ${pkgPath}: ${old} → ${newVersion}`);
+	}
+
+	for (const xcodePath of XCODE_PROJECT_PATHS) {
+		updateXcodeMarketingVersion(xcodePath, newVersion);
+		console.log(`  ${xcodePath}: MARKETING_VERSION → ${newVersion}`);
 	}
 }
 

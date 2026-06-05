@@ -12,7 +12,7 @@
 	"scripts": {
 		"postinstall": "bun run ./scripts/install-wasm-pack.mjs",
 		"dev": "bun --filter @cosmo/cosmo-pd101-site dev",
-		"build:engine": "bun --filter @cosmo/cosmo-synth-engine build:wasm",
+		"build:engine": "bun --filter @cosmo/cosmo-synth-engine build:wasm && bun run ./scripts/sync-engine-wasm-assets.mjs",
 		"build:plugin": "bun --filter @cosmo/cosmo-pd101-plugin build",
 		"build:plugin:release": "bun --filter @cosmo/cosmo-pd101-plugin build",
 		"build:plugin:auv3": "bun --filter @cosmo/cosmo-pd101-plugin-auv3 build",

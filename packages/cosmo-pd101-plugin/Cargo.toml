@@ -1,6 +1,6 @@
 [package]
 name = "cosmo-pd101-plugin"
-version = "0.1.0"
+version.workspace = true
 edition = "2024"
 license.workspace = true
 description = "Cosmo PD-101 synthesizer CLAP/VST3/AU plugin"

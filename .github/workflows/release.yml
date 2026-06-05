@@ -574,13 +574,32 @@ jobs:
             exit 1
           fi
 
-          echo "Attach succeeded for product $(jq -r '.product.permalink // "unknown"' <<<"$attach_response")" >&2
+          attach_permalink=$(jq -r '
+            .product.permalink //
+            .product.product_permalink //
+            .permalink //
+            empty
+          ' <<<"$attach_response")
+          if [[ -n "$attach_permalink" ]]; then
+            echo "Attach succeeded for product ${attach_permalink}" >&2
+          else
+            echo "Attach succeeded for product ${GUMROAD_PRODUCT_ID}" >&2
+          fi
 
           # -------------------------------------------------------
           # Step 4: Restore file embeds in rich_content with new file IDs
           # -------------------------------------------------------
           if $has_file_embeds; then
-            new_files_json=$(jq -c '.product.files' <<<"$attach_response")
+            new_files_json=$(jq -c '
+              .product.files //
+              .product.product_files //
+              .files //
+              []
+            ' <<<"$attach_response")
+            if [[ "$(jq length <<<"$new_files_json")" -eq 0 ]]; then
+              echo "Gumroad attach response did not include uploaded files for rich content restore: $attach_response" >&2
+              exit 1
+            fi
 
             group_uid=$(uuidgen)
             file_count=$(jq length <<<"$new_files_json")
