@@ -125,7 +125,7 @@ describe("PluginPage", () => {
 	});
 
 	it("renders and creates a plugin repository-backed preset manager", () => {
-		render(<PluginPage />);
+		render(<PluginPage appVersion="0.2.0" />);
 
 		expect(mockCreatePluginPresetManagerRepository).toHaveBeenCalledTimes(1);
 		expect(mockUseSynthPresetManager).toHaveBeenCalledTimes(1);
@@ -145,7 +145,7 @@ describe("PluginPage", () => {
 			setPresetSession: vi.fn().mockResolvedValue(undefined),
 		});
 
-		render(<PluginPage />);
+		render(<PluginPage appVersion="0.2.0" />);
 
 		await vi.waitFor(() => {
 			expect(getPresetSession).toHaveBeenCalled();
@@ -161,7 +161,7 @@ describe("PluginPage", () => {
 	});
 
 	it("recomputes dirty state from external host param updates", async () => {
-		render(<PluginPage />);
+		render(<PluginPage appVersion="0.2.0" />);
 
 		const bridgeOptions = mockUsePluginParamBridge.mock.calls[0]?.[0] as
 			| { onExternalParamChange?: () => void }

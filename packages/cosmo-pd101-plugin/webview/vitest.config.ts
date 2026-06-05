@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, URL } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
@@ -17,6 +18,11 @@ const cosmoPd101Src = path.join(webviewDir, "src");
 const cosmoPd101LibEntry = fileURLToPath(
 	new URL("../../cosmo-pd101/lib-dist/index.mjs", import.meta.url),
 );
+const repoRoot = path.resolve(webviewDir, "../../..");
+const rootPackageJson = JSON.parse(
+	fs.readFileSync(path.join(repoRoot, "package.json"), "utf8"),
+) as { version?: string };
+const appVersion = rootPackageJson.version ?? "0.0.0";
 
 export default defineConfig({
 	plugins: [react(), tailwindcss()],
@@ -29,7 +35,7 @@ export default defineConfig({
 	define: {
 		// Vite defines needed by App.tsx / main.tsx when running under Vitest.
 		__CZ_BUILD_LABEL__: JSON.stringify("test"),
-		__CZ_APP_VERSION__: JSON.stringify("0.0.0"),
+		__CZ_APP_VERSION__: JSON.stringify(appVersion),
 		__RUST_BUILD_PROFILE__: JSON.stringify("debug"),
 	},
 	test: {

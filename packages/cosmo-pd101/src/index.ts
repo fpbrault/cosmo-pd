@@ -1,4 +1,3 @@
-export { default as UpdateNotification } from "./components/layout/UpdateNotification";
 export { default as MidiLearnPanel } from "./components/panels/midi/MidiLearnPanel";
 export {
 	computeRendererFrameLayout,
@@ -103,5 +102,3 @@ export type {
 	PresetMetadata,
 } from "./lib/synth/presetTypes";
 export { noteToFreq } from "./lib/synth/waveformPreview";
-export type { ReleaseInfo } from "./lib/update/checkRelease";
-export { checkLatestRelease } from "./lib/update/checkRelease";

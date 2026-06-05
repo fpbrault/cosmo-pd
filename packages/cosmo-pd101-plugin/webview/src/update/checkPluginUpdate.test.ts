@@ -29,7 +29,7 @@ describe("checkForPluginUpdate", () => {
 		});
 
 		await expect(checkForPluginUpdate()).resolves.toEqual({
-			currentVersion: "0.0.0",
+			currentVersion: "0.2.0",
 			latestVersion: "1.2.3",
 			releaseUrl: "https://example.com/releases/v1.2.3",
 			forcedByEnv: false,
@@ -59,11 +59,44 @@ describe("checkForPluginUpdate", () => {
 		});
 
 		await expect(checkForPluginUpdate({ manual: true })).resolves.toEqual({
-			currentVersion: "0.0.0",
+			currentVersion: "0.2.0",
 			latestVersion: "1.2.3",
 			releaseUrl: "https://example.com/releases/v1.2.3",
 			forcedByEnv: false,
 		});
+	});
+
+	it("can check without recording the release as notified", async () => {
+		mockLatestRelease({
+			tag_name: "v1.2.3",
+			html_url: "https://example.com/releases/v1.2.3",
+		});
+
+		await expect(
+			checkForPluginUpdate({ recordNotification: false }),
+		).resolves.toEqual({
+			currentVersion: "0.2.0",
+			latestVersion: "1.2.3",
+			releaseUrl: "https://example.com/releases/v1.2.3",
+			forcedByEnv: false,
+		});
+		expect(sessionStorage.getItem(SESSION_KEY)).toBeNull();
+	});
+
+	it("ignores releases that are not newer than the baked version", async () => {
+		mockLatestRelease({
+			tag_name: "v0.2.0",
+			html_url: "https://example.com/releases/v0.2.0",
+		});
+
+		await expect(checkForPluginUpdate()).resolves.toBeNull();
+
+		mockLatestRelease({
+			tag_name: "v0.1.9",
+			html_url: "https://example.com/releases/v0.1.9",
+		});
+
+		await expect(checkForPluginUpdate()).resolves.toBeNull();
 	});
 
 	it("ignores prerelease payloads", async () => {
@@ -74,5 +107,33 @@ describe("checkForPluginUpdate", () => {
 		});
 
 		await expect(checkForPluginUpdate()).resolves.toBeNull();
+	});
+
+	it("ignores draft payloads", async () => {
+		mockLatestRelease({
+			tag_name: "v9.9.9",
+			html_url: "https://example.com/releases/v9.9.9",
+			draft: true,
+		});
+
+		await expect(checkForPluginUpdate()).resolves.toBeNull();
+	});
+
+	it("uses the test harness override instead of fetching when present", async () => {
+		vi.stubEnv("VITE_TEST_HARNESS", "1");
+		window.__CZ_TEST_LATEST_RELEASE__ = {
+			tag_name: "v1.2.3",
+			html_url: "https://example.com/releases/v1.2.3",
+			prerelease: false,
+			draft: false,
+		};
+
+		await expect(checkForPluginUpdate()).resolves.toEqual({
+			currentVersion: "0.2.0",
+			latestVersion: "1.2.3",
+			releaseUrl: "https://example.com/releases/v1.2.3",
+			forcedByEnv: false,
+		});
+		expect(fetchMock).not.toHaveBeenCalled();
 	});
 });

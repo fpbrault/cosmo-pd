@@ -5,9 +5,11 @@ import Button from "@/components/controls/Button";
 export function SynthBrandInfoModal({
 	open,
 	onClose,
+	appVersion,
 }: {
 	open: boolean;
 	onClose: () => void;
+	appVersion: string;
 }) {
 	useEffect(() => {
 		if (!open) return;
@@ -66,7 +68,7 @@ export function SynthBrandInfoModal({
 				<div className="space-y-2 rounded-md border border-cz-border bg-cz-inset/60 p-4">
 					<p className="font-mono text-cz-cream text-xs">Felix Perron-Brault</p>
 					<p className="font-mono text-2xs text-cz-cream-dim uppercase tracking-[0.14em]">
-						Version: 0.1.0
+						Version: {appVersion}
 					</p>
 					<p className="font-mono text-2xs text-cz-cream-dim uppercase tracking-[0.14em]">
 						Year: 2026

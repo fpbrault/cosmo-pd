@@ -23,6 +23,7 @@ export async function setupPluginPage(
 				JSON.stringify({ state: { keyboardVisible }, version: 0 }),
 			);
 			localStorage.setItem("cz-plugin-ui-scale", "100");
+			sessionStorage.removeItem("cosmo-pd101.update.latestNotified");
 
 			// Clear persisted preset/session state that can asynchronously re-apply
 			// params after mount and race test interactions.

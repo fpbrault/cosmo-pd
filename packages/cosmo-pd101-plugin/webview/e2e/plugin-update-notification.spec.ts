@@ -1,26 +1,25 @@
 import { expect, type Page, test } from "@playwright/test";
 import { setupPluginPage } from "./helpers/pluginBridge";
 
-const GITHUB_API = "**/api.github.com/repos/fpbrault/cosmo-pd/releases/latest";
-
 async function mockRelease(
 	page: Page,
 	tag: string,
 	overrides?: { prerelease?: boolean; draft?: boolean },
 ) {
-	await page.route(GITHUB_API, async (route) => {
-		await route.fulfill({
-			status: 200,
-			contentType: "application/json",
-			body: JSON.stringify({
+	await page.addInitScript(
+		({ release }) => {
+			window.__CZ_TEST_LATEST_RELEASE__ = release;
+		},
+		{
+			release: {
 				tag_name: tag,
 				html_url: `https://github.com/fpbrault/cosmo-pd/releases/tag/${tag}`,
 				prerelease: false,
 				draft: false,
 				...overrides,
-			}),
-		});
-	});
+			},
+		},
+	);
 }
 
 test.describe("UpdateNotification plugin integration (E2E)", () => {
@@ -41,7 +40,7 @@ test.describe("UpdateNotification plugin integration (E2E)", () => {
 	});
 
 	test("hides badge when version matches latest release", async ({ page }) => {
-		await mockRelease(page, "v0.1.0");
+		await mockRelease(page, "v0.2.0");
 		await setupPluginPage(page);
 
 		const badge = page.getByText(BADGE_TEXT);

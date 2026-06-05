@@ -7,7 +7,6 @@ import {
 	useTransform,
 } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import UpdateNotification from "../../src/components/layout/UpdateNotification";
 import {
 	computeRendererFrameLayout,
 	SYNTH_RENDERER_DESIGN_HEIGHT,
@@ -27,6 +26,7 @@ import {
 	saveCurrentState,
 } from "../../src/lib/synth/presetStorage";
 import { useWebSynthRuntime } from "./runtime/useWebSynthRuntime";
+import WebPluginStoreNotice from "./WebPluginStoreNotice";
 
 declare const __CZ_APP_VERSION__: string;
 
@@ -290,10 +290,9 @@ export default function LivePage() {
 					<PresetManagerProvider value={presetManager}>
 						<SharedPhaseDistortionVisualizer
 							runtime={runtime}
+							appVersion={__CZ_APP_VERSION__}
 							sidebarMinWidthRem={sidebarMinWidthRem}
-							bottomBarExtra={
-								<UpdateNotification currentVersion={__CZ_APP_VERSION__} />
-							}
+							bottomBarExtra={<WebPluginStoreNotice />}
 						/>
 					</PresetManagerProvider>
 				</div>

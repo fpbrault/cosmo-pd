@@ -23,6 +23,7 @@ import { usePluginParamBridge } from "./hooks/usePluginParamBridge";
 import { usePluginSynthRuntime } from "./hooks/usePluginSynthRuntime";
 
 type PluginPageProps = {
+	appVersion: string;
 	utilityExtra?: ReactNode;
 };
 
@@ -52,7 +53,10 @@ export function clampPluginKeyboardHeight({
 	);
 }
 
-export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
+export default function PluginPage({
+	appVersion,
+	utilityExtra,
+}: PluginPageProps) {
 	const isIosHost = window.__czHostPlatform === "ios";
 	const isLikelyIosDevice =
 		/iPad|iPhone|iPod/.test(window.navigator.userAgent) ||
@@ -268,6 +272,7 @@ export default function PluginPage({ utilityExtra }: PluginPageProps = {}) {
 					<PresetManagerProvider value={presetManager}>
 						<SynthRenderer
 							runtime={runtime}
+							appVersion={appVersion}
 							bottomBarExtra={utilityExtra}
 							disableAudioGate
 							sidebarMinWidthRem={sidebarMinWidthRem}
