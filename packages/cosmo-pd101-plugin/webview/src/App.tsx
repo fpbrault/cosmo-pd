@@ -1,7 +1,7 @@
-import { UpdateNotification } from "@cosmo/cosmo-pd101";
 import { useEffect } from "react";
 import PluginPage from "./PluginPage";
 import "@/index.css";
+import PluginUpdateNotification from "./update/PluginUpdateNotification";
 
 declare const __CZ_APP_VERSION__: string;
 
@@ -67,7 +67,8 @@ export default function App() {
 
 	return (
 		<PluginPage
-			utilityExtra={<UpdateNotification currentVersion={__CZ_APP_VERSION__} />}
+			appVersion={__CZ_APP_VERSION__}
+			utilityExtra={<PluginUpdateNotification />}
 		/>
 	);
 }

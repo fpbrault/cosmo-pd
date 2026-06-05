@@ -200,7 +200,7 @@ const mockPresetManager = {
 function renderWithProvider() {
 	return render(
 		<PresetManagerProvider value={mockPresetManager}>
-			<SynthRenderer runtime={mockRuntime} />
+			<SynthRenderer runtime={mockRuntime} appVersion="0.2.0" />
 		</PresetManagerProvider>,
 	);
 }
@@ -226,7 +226,11 @@ describe("SynthRenderer", () => {
 	it("passes a custom sidebar width through to the sidebar", () => {
 		render(
 			<PresetManagerProvider value={mockPresetManager}>
-				<SynthRenderer runtime={mockRuntime} sidebarMinWidthRem={20.3125} />
+				<SynthRenderer
+					runtime={mockRuntime}
+					appVersion="0.2.0"
+					sidebarMinWidthRem={20.3125}
+				/>
 			</PresetManagerProvider>,
 		);
 		expect(screen.getByTestId("synth-sidebar")).toHaveAttribute(

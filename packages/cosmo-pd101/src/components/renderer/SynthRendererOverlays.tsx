@@ -11,6 +11,7 @@ type AudioGate = {
 };
 
 type SynthRendererOverlaysProps = {
+	appVersion: string;
 	audioGate: AudioGate;
 	activeNotes: number[];
 	libraryModeOpen: boolean;
@@ -24,6 +25,7 @@ type SynthRendererOverlaysProps = {
 };
 
 export default memo(function SynthRendererOverlays({
+	appVersion,
 	audioGate,
 	activeNotes,
 	libraryModeOpen,
@@ -47,6 +49,7 @@ export default memo(function SynthRendererOverlays({
 			<SynthBrandInfoModal
 				open={brandInfoOpen}
 				onClose={() => setBrandInfoOpen(false)}
+				appVersion={appVersion}
 			/>
 			<GlobalVoiceModal
 				open={globalPanelOpen}

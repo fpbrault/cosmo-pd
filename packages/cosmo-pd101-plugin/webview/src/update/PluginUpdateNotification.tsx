@@ -1,17 +1,11 @@
 import { memo, useEffect, useState } from "react";
 import {
-	checkLatestRelease,
-	type ReleaseInfo,
-} from "@/lib/update/checkRelease";
+	checkForPluginUpdate,
+	type PluginUpdateInfo,
+} from "./checkPluginUpdate";
 
-type UpdateNotificationProps = {
-	currentVersion: string;
-};
-
-export default memo(function UpdateNotification({
-	currentVersion,
-}: UpdateNotificationProps) {
-	const [releaseInfo, setReleaseInfo] = useState<ReleaseInfo | null>(null);
+export default memo(function PluginUpdateNotification() {
+	const [updateInfo, setUpdateInfo] = useState<PluginUpdateInfo | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 
 	useEffect(() => {
@@ -19,9 +13,9 @@ export default memo(function UpdateNotification({
 
 		setIsLoading(true);
 
-		checkLatestRelease(currentVersion).then((info) => {
+		checkForPluginUpdate().then((info) => {
 			if (!cancelled) {
-				setReleaseInfo(info);
+				setUpdateInfo(info);
 				setIsLoading(false);
 			}
 		});
@@ -29,13 +23,13 @@ export default memo(function UpdateNotification({
 		return () => {
 			cancelled = true;
 		};
-	}, [currentVersion]);
+	}, []);
 
-	if (isLoading || !releaseInfo) return null;
+	if (isLoading || !updateInfo) return null;
 
 	return (
 		<a
-			href={releaseInfo.releaseUrl}
+			href={updateInfo.releaseUrl}
 			target="_blank"
 			rel="noopener noreferrer"
 			className="btn btn-sm border-cz-gold/50 bg-cz-gold/5 px-2 py-1 text-cz-gold/80 no-underline hover:border-cz-gold hover:bg-cz-gold/10 hover:text-cz-gold"

@@ -22,6 +22,7 @@ type MiniKeyboardProps = {
 };
 
 export type SynthRendererProps = {
+	appVersion: string;
 	frameStyle?: CSSProperties;
 	headerExtra?: ReactNode;
 	bottomBarExtra?: ReactNode;
@@ -48,6 +49,7 @@ function HoverAwareSynthRendererOverlays(
 }
 
 const SynthRenderer = memo(function SynthRenderer({
+	appVersion,
 	frameStyle,
 	headerExtra,
 	bottomBarExtra,
@@ -154,6 +156,7 @@ const SynthRenderer = memo(function SynthRenderer({
 								onClose={handleCloseLibrary}
 							/>
 							<HoverAwareSynthRendererOverlays
+								appVersion={appVersion}
 								audioGate={audioGate}
 								activeNotes={activeNotes}
 								libraryModeOpen={libraryModeOpen}

@@ -41,7 +41,7 @@ test.describe("UpdateNotification plugin integration (E2E)", () => {
 	});
 
 	test("hides badge when version matches latest release", async ({ page }) => {
-		await mockRelease(page, "v0.1.0");
+		await mockRelease(page, "v0.2.0");
 		await setupPluginPage(page);
 
 		const badge = page.getByText(BADGE_TEXT);
