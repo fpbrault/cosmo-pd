@@ -36,7 +36,6 @@ use specta::Types;
 use specta_typescript::Typescript;
 
 // Per-module preset entry types (fx_preset_entry! macro generates these)
-use cosmo_synth_engine::fx::auto_wah::{AutoWahPresetV1, auto_wah_preset_data};
 use cosmo_synth_engine::fx::bitcrusher::{BitcrusherPresetV1, bitcrusher_preset_data};
 use cosmo_synth_engine::fx::chorus::{ChorusPresetV1, chorus_preset_data};
 use cosmo_synth_engine::fx::compressor::{CompressorPresetV1, compressor_preset_data};
@@ -54,9 +53,7 @@ use cosmo_synth_engine::fx::phase_mod::{PhaseModPresetV1, phase_mod_preset_data}
 use cosmo_synth_engine::fx::phaser::{PhaserPresetV1, phaser_preset_data};
 use cosmo_synth_engine::fx::reverb::{ReverbPresetV1, reverb_preset_data};
 use cosmo_synth_engine::fx::ring_mod::{RingModPresetV1, ring_mod_preset_data};
-use cosmo_synth_engine::fx::rotary_speaker::{RotarySpeakerPresetV1, rotary_speaker_preset_data};
 use cosmo_synth_engine::fx::shimmer_verb::{ShimmerVerbPresetV1, shimmer_verb_preset_data};
-use cosmo_synth_engine::fx::stereo_widener::{StereoWidenerPresetV1, stereo_widener_preset_data};
 use cosmo_synth_engine::fx::tremolo::{TremoloPresetV1, tremolo_preset_data};
 use cosmo_synth_engine::fx::vibrato::{VibratoPresetV1, vibrato_preset_data};
 use cosmo_synth_engine::fx::wavefolder::{WavefolderPresetV1, wavefolder_preset_data};
@@ -154,9 +151,6 @@ fn main() {
     types.register_mut::<LoFiPresetV1>();
     types.register_mut::<MultimodeFilterPresetV1>();
     types.register_mut::<FlangerPresetV1>();
-    types.register_mut::<RotarySpeakerPresetV1>();
-    types.register_mut::<AutoWahPresetV1>();
-    types.register_mut::<StereoWidenerPresetV1>();
     types.register_mut::<LfoPresetV1>();
     types.register_mut::<ModEnvPresetV1>();
 
@@ -327,24 +321,6 @@ fn main() {
         "FLANGER_PRESET_DATA",
         FlangerPresetV1,
         flanger_preset_data()
-    );
-    export_preset_const!(
-        out,
-        "ROTARY_SPEAKER_PRESET_DATA",
-        RotarySpeakerPresetV1,
-        rotary_speaker_preset_data()
-    );
-    export_preset_const!(
-        out,
-        "AUTO_WAH_PRESET_DATA",
-        AutoWahPresetV1,
-        auto_wah_preset_data()
-    );
-    export_preset_const!(
-        out,
-        "STEREO_WIDENER_PRESET_DATA",
-        StereoWidenerPresetV1,
-        stereo_widener_preset_data()
     );
     export_preset_const!(out, "LFO_PRESET_DATA", LfoPresetV1, lfo_preset_data());
     export_preset_const!(

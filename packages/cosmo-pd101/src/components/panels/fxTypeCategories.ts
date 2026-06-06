@@ -35,17 +35,12 @@ export const FX_CATEGORIES: FxCategory[] = [
 	{
 		id: "filter-eq",
 		label: "Filter / EQ",
-		effects: ["multimodeFilter", "autoWah", "eq8Band"],
+		effects: ["multimodeFilter", "eq8Band"],
 	},
 	{
 		id: "distortion",
 		label: "Distortion",
 		effects: ["distortion", "bitcrusher", "wavefolder", "loFi"],
-	},
-	{
-		id: "spatial",
-		label: "Spatial",
-		effects: ["stereoWidener", "rotarySpeaker"],
 	},
 ];
 
@@ -72,12 +67,9 @@ export const FX_TYPE_ICONS: Record<FxSlotType, string> = {
 	compressor: "M6 6v12 M18 6v12 M8 10h8 M8 14h8 M12 8v8",
 	eq8Band: "M4 6v12 M7 4v16 M10 8v8 M13 10v4 M16 2v18 M19 6v12",
 	multimodeFilter: "M4 20h4l4-8 4 4h8 M4 20h4l4-12 4 8h8",
-	autoWah: "M4 20l3-8 3 6 4-10 3 6 3-4h4",
+
 	distortion: "M4 12q2-6 4 4t4 0t4 0t4-6 M6 16h12",
 	bitcrusher: "M4 14h4v-4h4v6h4v-4h4v6",
 	wavefolder: "M4 16l4-8 4 8 4-8 4 8",
 	loFi: "M4 14q2-5 4 2t4-3t4 3t4-5 M8 8h1 M16 14h1 M12 18h1",
-	stereoWidener:
-		"M12 12l-5-4 M12 12l-5 4 M12 12l5-4 M12 12l5 4 M4 10v4 M20 10v4",
-	rotarySpeaker: "M4 12a8 8 0 1 0 16 0a8 8 0 1 0-16 0 M12 12l4-4 M8 12h4",
 };

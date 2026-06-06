@@ -1,4 +1,3 @@
-use super::auto_wah::AutoWahFx;
 use super::bitcrusher::BitcrusherFx;
 use super::chorus::ChorusFx;
 use super::compressor::CompressorFx;
@@ -13,9 +12,7 @@ use super::multimode_filter::MultimodeFilterFx;
 use super::phaser::PhaserFx;
 use super::reverb::FdnReverb;
 use super::ring_mod::RingModFx;
-use super::rotary_speaker::RotarySpeakerFx;
 use super::shimmer_verb::ShimmerVerbFx;
-use super::stereo_widener::StereoWidenerFx;
 use super::tremolo::TremoloFx;
 use super::wavefolder::WavefolderFx;
 use crate::params::FxSlotConfig;
@@ -45,9 +42,6 @@ struct FxSlotProcessors {
     lofi: LoFiFx,
     multimode_filter: MultimodeFilterFx,
     flanger: FlangerFx,
-    rotary_speaker: RotarySpeakerFx,
-    auto_wah: AutoWahFx,
-    stereo_widener: StereoWidenerFx,
 }
 
 impl FxSlotProcessors {
@@ -70,9 +64,6 @@ impl FxSlotProcessors {
             lofi: LoFiFx::new(sr),
             multimode_filter: MultimodeFilterFx::new(sr),
             flanger: FlangerFx::new(sr),
-            rotary_speaker: RotarySpeakerFx::new(sr),
-            auto_wah: AutoWahFx::new(sr),
-            stereo_widener: StereoWidenerFx::new(sr),
         }
     }
 
@@ -213,30 +204,6 @@ impl FxSlotProcessors {
                 self.flanger.through_zero = flanger.through_zero;
                 self.flanger.mix = flanger.mix;
             }
-            FxSlotConfig::RotarySpeaker(rotary) => {
-                self.rotary_speaker.enabled = rotary.enabled;
-                self.rotary_speaker.speed = rotary.speed;
-                self.rotary_speaker.depth = rotary.depth;
-                self.rotary_speaker.drive = rotary.drive;
-                self.rotary_speaker.mix = rotary.mix;
-            }
-            FxSlotConfig::AutoWah(wah) => {
-                self.auto_wah.enabled = wah.enabled;
-                self.auto_wah.mode = wah.mode;
-                self.auto_wah.sensitivity = wah.sensitivity;
-                self.auto_wah.cutoff_hz = wah.cutoff_hz;
-                self.auto_wah.resonance = wah.resonance;
-                self.auto_wah.attack_ms = wah.attack_ms;
-                self.auto_wah.release_ms = wah.release_ms;
-                self.auto_wah.mix = wah.mix;
-            }
-            FxSlotConfig::StereoWidener(widener) => {
-                self.stereo_widener.enabled = widener.enabled;
-                self.stereo_widener.width = widener.width;
-                self.stereo_widener.delay_ms = widener.delay_ms;
-                self.stereo_widener.tone = widener.tone;
-                self.stereo_widener.mix = widener.mix;
-            }
             // Empty, Vibrato, PhaseMod are handled at voice level or pass through.
             FxSlotConfig::Empty | FxSlotConfig::Vibrato(_) | FxSlotConfig::PhaseMod(_) => {}
         }
@@ -267,9 +234,6 @@ impl FxSlotProcessors {
             FxSlotType::LoFi => self.lofi.process(sample),
             FxSlotType::MultimodeFilter => self.multimode_filter.process(sample),
             FxSlotType::Flanger => self.flanger.process(sample),
-            FxSlotType::RotarySpeaker => self.rotary_speaker.process(sample),
-            FxSlotType::AutoWah => self.auto_wah.process(sample),
-            FxSlotType::StereoWidener => self.stereo_widener.process(sample),
             // Voice-level effects and empty slots pass through.
             FxSlotType::Vibrato | FxSlotType::PhaseMod | FxSlotType::Empty => sample,
         }
@@ -367,15 +331,6 @@ impl FxChain {
                         .apply_modulation(mm, &mod_cache.values);
                 }
                 FxSlotConfig::Flanger(fl) => slot.flanger.apply_modulation(fl, &mod_cache.values),
-                FxSlotConfig::RotarySpeaker(rs) => {
-                    slot.rotary_speaker.apply_modulation(rs, &mod_cache.values);
-                }
-                FxSlotConfig::AutoWah(aw) => {
-                    slot.auto_wah.apply_modulation(aw, &mod_cache.values);
-                }
-                FxSlotConfig::StereoWidener(sw) => {
-                    slot.stereo_widener.apply_modulation(sw, &mod_cache.values);
-                }
                 FxSlotConfig::Empty | FxSlotConfig::Vibrato(_) | FxSlotConfig::PhaseMod(_) => {}
             }
         }
