@@ -1,7 +1,7 @@
 {
   "name": "cosmo-synth-engine",
   "description": "Cosmo PD-101 Phase Distortion synthesizer DSP core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "license": "GPL-3.0-only",
   "files": [
     "cosmo_synth_engine_bg.wasm",

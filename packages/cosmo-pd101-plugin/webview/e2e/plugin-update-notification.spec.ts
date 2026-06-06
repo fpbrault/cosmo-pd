@@ -1,5 +1,15 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { expect, type Page, test } from "@playwright/test";
 import { setupPluginPage } from "./helpers/pluginBridge";
+
+const e2eDir = fileURLToPath(new URL(".", import.meta.url));
+const repoRoot = path.resolve(e2eDir, "../../../..");
+const rootPackageJson = JSON.parse(
+	fs.readFileSync(path.join(repoRoot, "package.json"), "utf8"),
+) as { version?: string };
+const CURRENT_VERSION = rootPackageJson.version ?? "0.0.0";
 
 async function mockRelease(
 	page: Page,
@@ -40,7 +50,7 @@ test.describe("UpdateNotification plugin integration (E2E)", () => {
 	});
 
 	test("hides badge when version matches latest release", async ({ page }) => {
-		await mockRelease(page, "v0.2.0");
+		await mockRelease(page, `v${CURRENT_VERSION}`);
 		await setupPluginPage(page);
 
 		const badge = page.getByText(BADGE_TEXT);
