@@ -16,7 +16,7 @@ pub struct FlangerFx {
     pub depth: f32,
     pub delay_ms: f32,
     pub feedback: f32,
-    pub through_zero: bool,
+    pub through_zero: u8,
     pub mix: f32,
     sample_rate: f32,
 }
@@ -33,7 +33,7 @@ impl FlangerFx {
             depth: 0.45,
             delay_ms: 2.0,
             feedback: 0.2,
-            through_zero: false,
+            through_zero: 0,
             mix: 0.5,
             sample_rate: sr,
         }
@@ -53,7 +53,7 @@ impl FlangerFx {
         let base_delay = (self.delay_ms.clamp(0.1, 10.0) * 0.001) * self.sample_rate;
         let depth_samples = (self.depth.clamp(0.0, 1.0) * 0.005) * self.sample_rate;
 
-        let delay_samples = if self.through_zero {
+        let delay_samples = if self.through_zero != 0 {
             (base_delay + lfo * depth_samples).abs().max(1.0)
         } else {
             (base_delay + (lfo * 0.5 + 0.5) * depth_samples).max(1.0)
@@ -211,7 +211,7 @@ pub const FLANGER_PRESET_DATA: [FlangerPresetV1; 3] = [
             depth: 0.35,
             delay_ms: 2.8,
             feedback: 0.18,
-            through_zero: false,
+            through_zero: 0,
             mix: 0.42,
         },
     },
@@ -224,7 +224,7 @@ pub const FLANGER_PRESET_DATA: [FlangerPresetV1; 3] = [
             depth: 0.78,
             delay_ms: 1.2,
             feedback: 0.62,
-            through_zero: false,
+            through_zero: 0,
             mix: 0.55,
         },
     },
@@ -237,7 +237,7 @@ pub const FLANGER_PRESET_DATA: [FlangerPresetV1; 3] = [
             depth: 0.7,
             delay_ms: 0.8,
             feedback: 0.36,
-            through_zero: true,
+            through_zero: 1,
             mix: 0.58,
         },
     },

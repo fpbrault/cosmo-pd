@@ -1,4 +1,3 @@
-pub mod auto_wah;
 pub mod bitcrusher;
 pub mod chain;
 pub mod chorus;
@@ -16,9 +15,7 @@ pub mod phase_mod;
 pub mod phaser;
 pub mod reverb;
 pub mod ring_mod;
-pub mod rotary_speaker;
 pub mod shimmer_verb;
-pub mod stereo_widener;
 pub mod tremolo;
 pub mod vibrato;
 pub mod wavefolder;
@@ -121,7 +118,7 @@ macro_rules! fx_preset_entry {
 // Catalog — one entry per FX slot type (excluding Empty)
 // ---------------------------------------------------------------------------
 
-pub const FX_DEFINITIONS_V1: [FxDefinitionV1; 22] = [
+pub const FX_DEFINITIONS_V1: [FxDefinitionV1; 19] = [
     chorus::DEFINITION,
     delay::DEFINITION,
     reverb::DEFINITION,
@@ -141,9 +138,6 @@ pub const FX_DEFINITIONS_V1: [FxDefinitionV1; 22] = [
     lofi::DEFINITION,
     multimode_filter::DEFINITION,
     flanger::DEFINITION,
-    rotary_speaker::DEFINITION,
-    auto_wah::DEFINITION,
-    stereo_widener::DEFINITION,
 ];
 
 pub fn fx_definitions_v1() -> &'static [FxDefinitionV1] {

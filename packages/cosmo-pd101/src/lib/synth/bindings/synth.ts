@@ -62,24 +62,6 @@ export type AlgoUiEntryV1 = {
 	visible: boolean,
 };
 
-/**  Auto-wah parameters */
-export type AutoWahParams = {
-	enabled?: boolean,
-	mode?: number,
-	sensitivity?: number | null,
-	cutoffHz?: number | null,
-	resonance?: number | null,
-	attackMs?: number | null,
-	releaseMs?: number | null,
-	mix?: number | null,
-};
-
-export type AutoWahPresetV1 = {
-	id: string,
-	label: string,
-	params: AutoWahParams,
-};
-
 /**  Base waveform used as the final carrier for warp algorithms. */
 export type BaseWaveform = "cosine" | "sine" | "triangle" | "saw" | "square";
 
@@ -219,7 +201,7 @@ export type FlangerParams = {
 	depth?: number | null,
 	delayMs?: number | null,
 	feedback?: number | null,
-	throughZero?: boolean,
+	throughZero?: number,
 	mix?: number | null,
 };
 
@@ -269,10 +251,10 @@ export type FxPresetOptionV1 = {
 };
 
 /**  Per-slot FX configuration */
-export type FxSlotConfig = { type: "empty" } | { type: "chorus"; params: ChorusParams } | { type: "phaser"; params: PhaserParams } | { type: "delay"; params: DelayParams } | { type: "reverb"; params: ReverbParams } | { type: "vibrato"; params: VibratoParams } | { type: "phaseMod"; params: PhaseModParams } | { type: "compressor"; params: CompressorParams } | { type: "eq8Band"; params: EqParams } | { type: "grainDelay"; params: GrainDelayParams } | { type: "bitcrusher"; params: BitcrusherParams } | { type: "shimmerVerb"; params: ShimmerVerbParams } | { type: "distortion"; params: DistortionParams } | { type: "junoChorus"; params: JunoChorusParams } | { type: "ringMod"; params: RingModParams } | { type: "tremolo"; params: TremoloParams } | { type: "wavefolder"; params: WavefolderParams } | { type: "loFi"; params: LoFiParams } | { type: "multimodeFilter"; params: MultimodeFilterParams } | { type: "flanger"; params: FlangerParams } | { type: "rotarySpeaker"; params: RotarySpeakerParams } | { type: "autoWah"; params: AutoWahParams } | { type: "stereoWidener"; params: StereoWidenerParams };
+export type FxSlotConfig = { type: "empty" } | { type: "chorus"; params: ChorusParams } | { type: "phaser"; params: PhaserParams } | { type: "delay"; params: DelayParams } | { type: "reverb"; params: ReverbParams } | { type: "vibrato"; params: VibratoParams } | { type: "phaseMod"; params: PhaseModParams } | { type: "compressor"; params: CompressorParams } | { type: "eq8Band"; params: EqParams } | { type: "grainDelay"; params: GrainDelayParams } | { type: "bitcrusher"; params: BitcrusherParams } | { type: "shimmerVerb"; params: ShimmerVerbParams } | { type: "distortion"; params: DistortionParams } | { type: "junoChorus"; params: JunoChorusParams } | { type: "ringMod"; params: RingModParams } | { type: "tremolo"; params: TremoloParams } | { type: "wavefolder"; params: WavefolderParams } | { type: "loFi"; params: LoFiParams } | { type: "multimodeFilter"; params: MultimodeFilterParams } | { type: "flanger"; params: FlangerParams };
 
 /**  FX slot type selector */
-export type FxSlotType = "empty" | "chorus" | "phaser" | "delay" | "reverb" | "vibrato" | "phaseMod" | "compressor" | "eq8Band" | "grainDelay" | "bitcrusher" | "shimmerVerb" | "distortion" | "junoChorus" | "ringMod" | "tremolo" | "wavefolder" | "loFi" | "multimodeFilter" | "flanger" | "rotarySpeaker" | "autoWah" | "stereoWidener";
+export type FxSlotType = "empty" | "chorus" | "phaser" | "delay" | "reverb" | "vibrato" | "phaseMod" | "compressor" | "eq8Band" | "grainDelay" | "bitcrusher" | "shimmerVerb" | "distortion" | "junoChorus" | "ringMod" | "tremolo" | "wavefolder" | "loFi" | "multimodeFilter" | "flanger";
 
 /**  Grain delay parameters */
 export type GrainDelayParams = {
@@ -379,7 +361,7 @@ export type LoFiPresetV1 = {
 };
 
 /**  Modulation destination selector for modulation matrix routes. */
-export type ModDestination = "volume" | "pitch" | "line1DcwBase" | "line1DcaBase" | "line1AlgoBlend" | "line2DetuneNote" | "line1Octave" | "line1AlgoParam1" | "line1AlgoParam2" | "line1AlgoParam3" | "line1AlgoParam4" | "line1AlgoParam5" | "line1AlgoParam6" | "line1AlgoParam7" | "line1AlgoParam8" | "line2DcwBase" | "line2DcaBase" | "line2AlgoBlend" | "line2DetuneFine" | "line2DetuneOctave" | "line2AlgoParam1" | "line2AlgoParam2" | "line2AlgoParam3" | "line2AlgoParam4" | "line2AlgoParam5" | "line2AlgoParam6" | "line2AlgoParam7" | "line2AlgoParam8" | "filterCutoff" | "filterResonance" | "filterEnvAmount" | "chorusMix" | "delayMix" | "reverbMix" | "vibratoDepth" | "vibratoRate" | "intPmRatio" | "line1DcoEnvStep1Level" | "line1DcoEnvStep1Rate" | "line1DcoEnvStep2Level" | "line1DcoEnvStep2Rate" | "line1DcoEnvStep3Level" | "line1DcoEnvStep3Rate" | "line1DcoEnvStep4Level" | "line1DcoEnvStep4Rate" | "line1DcoEnvStep5Level" | "line1DcoEnvStep5Rate" | "line1DcoEnvStep6Level" | "line1DcoEnvStep6Rate" | "line1DcoEnvStep7Level" | "line1DcoEnvStep7Rate" | "line1DcoEnvStep8Level" | "line1DcoEnvStep8Rate" | "line1DcwEnvStep1Level" | "line1DcwEnvStep1Rate" | "line1DcwEnvStep2Level" | "line1DcwEnvStep2Rate" | "line1DcwEnvStep3Level" | "line1DcwEnvStep3Rate" | "line1DcwEnvStep4Level" | "line1DcwEnvStep4Rate" | "line1DcwEnvStep5Level" | "line1DcwEnvStep5Rate" | "line1DcwEnvStep6Level" | "line1DcwEnvStep6Rate" | "line1DcwEnvStep7Level" | "line1DcwEnvStep7Rate" | "line1DcwEnvStep8Level" | "line1DcwEnvStep8Rate" | "line1DcaEnvStep1Level" | "line1DcaEnvStep1Rate" | "line1DcaEnvStep2Level" | "line1DcaEnvStep2Rate" | "line1DcaEnvStep3Level" | "line1DcaEnvStep3Rate" | "line1DcaEnvStep4Level" | "line1DcaEnvStep4Rate" | "line1DcaEnvStep5Level" | "line1DcaEnvStep5Rate" | "line1DcaEnvStep6Level" | "line1DcaEnvStep6Rate" | "line1DcaEnvStep7Level" | "line1DcaEnvStep7Rate" | "line1DcaEnvStep8Level" | "line1DcaEnvStep8Rate" | "line2DcoEnvStep1Level" | "line2DcoEnvStep1Rate" | "line2DcoEnvStep2Level" | "line2DcoEnvStep2Rate" | "line2DcoEnvStep3Level" | "line2DcoEnvStep3Rate" | "line2DcoEnvStep4Level" | "line2DcoEnvStep4Rate" | "line2DcoEnvStep5Level" | "line2DcoEnvStep5Rate" | "line2DcoEnvStep6Level" | "line2DcoEnvStep6Rate" | "line2DcoEnvStep7Level" | "line2DcoEnvStep7Rate" | "line2DcoEnvStep8Level" | "line2DcoEnvStep8Rate" | "line2DcwEnvStep1Level" | "line2DcwEnvStep1Rate" | "line2DcwEnvStep2Level" | "line2DcwEnvStep2Rate" | "line2DcwEnvStep3Level" | "line2DcwEnvStep3Rate" | "line2DcwEnvStep4Level" | "line2DcwEnvStep4Rate" | "line2DcwEnvStep5Level" | "line2DcwEnvStep5Rate" | "line2DcwEnvStep6Level" | "line2DcwEnvStep6Rate" | "line2DcwEnvStep7Level" | "line2DcwEnvStep7Rate" | "line2DcwEnvStep8Level" | "line2DcwEnvStep8Rate" | "line2DcaEnvStep1Level" | "line2DcaEnvStep1Rate" | "line2DcaEnvStep2Level" | "line2DcaEnvStep2Rate" | "line2DcaEnvStep3Level" | "line2DcaEnvStep3Rate" | "line2DcaEnvStep4Level" | "line2DcaEnvStep4Rate" | "line2DcaEnvStep5Level" | "line2DcaEnvStep5Rate" | "line2DcaEnvStep6Level" | "line2DcaEnvStep6Rate" | "line2DcaEnvStep7Level" | "line2DcaEnvStep7Rate" | "line2DcaEnvStep8Level" | "line2DcaEnvStep8Rate" | "chorusRate" | "chorusDepth" | "delayTime" | "delayFeedback" | "delayWarmth" | "reverbSpace" | "reverbPredelay" | "reverbDistance" | "reverbCharacter" | "phaserRate" | "phaserDepth" | "phaserFeedback" | "phaserMix" | "lfo1Rate" | "lfo1Depth" | "lfo1Symmetry" | "lfo1Offset" | "lfo2Rate" | "lfo2Depth" | "lfo2Symmetry" | "lfo2Offset" | "randomRate" | "vibratoDelay" | "compressorThreshold" | "compressorRatio" | "compressorMakeup" | "compressorMix" | "grainDelayTime" | "grainDelayFeedback" | "grainDelayScatter" | "grainDelayDensity" | "grainDelayMix" | "bitcrusherBits" | "bitcrusherRateReduction" | "bitcrusherMix" | "shimmerVerbShimmer" | "shimmerVerbSpace" | "shimmerVerbMix" | "distortionDrive" | "distortionTone" | "distortionMix" | "junoChorusMix" | "ringModCarrierHz" | "ringModMix" | "tremoloRate" | "tremoloDepth" | "tremoloMix" | "wavefolderDrive" | "wavefolderFolds" | "wavefolderMix" | "loFiWow" | "loFiFlutter" | "loFiDegrade" | "loFiFilter" | "loFiCrackle" | "loFiNoise" | "loFiMix" | "loFiSaturation" | "multimodeFilterCutoffHz" | "multimodeFilterResonance" | "multimodeFilterDrive" | "multimodeFilterMix" | "flangerRate" | "flangerDepth" | "flangerDelayMs" | "flangerFeedback" | "flangerMix" | "rotarySpeakerSpeed" | "rotarySpeakerDepth" | "rotarySpeakerDrive" | "rotarySpeakerMix" | "autoWahSensitivity" | "autoWahCutoffHz" | "autoWahResonance" | "autoWahAttackMs" | "autoWahReleaseMs" | "autoWahMix" | "stereoWidenerWidth" | "stereoWidenerDelayMs" | "stereoWidenerTone" | "stereoWidenerMix" | "eqGainBand1" | "eqGainBand2" | "eqGainBand3" | "eqGainBand4" | "eqGainBand5" | "eqGainBand6" | "eqGainBand7" | "eqGainBand8";
+export type ModDestination = "volume" | "pitch" | "line1DcwBase" | "line1DcaBase" | "line1AlgoBlend" | "line2DetuneNote" | "line1Octave" | "line1AlgoParam1" | "line1AlgoParam2" | "line1AlgoParam3" | "line1AlgoParam4" | "line1AlgoParam5" | "line1AlgoParam6" | "line1AlgoParam7" | "line1AlgoParam8" | "line2DcwBase" | "line2DcaBase" | "line2AlgoBlend" | "line2DetuneFine" | "line2DetuneOctave" | "line2AlgoParam1" | "line2AlgoParam2" | "line2AlgoParam3" | "line2AlgoParam4" | "line2AlgoParam5" | "line2AlgoParam6" | "line2AlgoParam7" | "line2AlgoParam8" | "filterCutoff" | "filterResonance" | "filterEnvAmount" | "chorusMix" | "delayMix" | "reverbMix" | "vibratoDepth" | "vibratoRate" | "intPmRatio" | "line1DcoEnvStep1Level" | "line1DcoEnvStep1Rate" | "line1DcoEnvStep2Level" | "line1DcoEnvStep2Rate" | "line1DcoEnvStep3Level" | "line1DcoEnvStep3Rate" | "line1DcoEnvStep4Level" | "line1DcoEnvStep4Rate" | "line1DcoEnvStep5Level" | "line1DcoEnvStep5Rate" | "line1DcoEnvStep6Level" | "line1DcoEnvStep6Rate" | "line1DcoEnvStep7Level" | "line1DcoEnvStep7Rate" | "line1DcoEnvStep8Level" | "line1DcoEnvStep8Rate" | "line1DcwEnvStep1Level" | "line1DcwEnvStep1Rate" | "line1DcwEnvStep2Level" | "line1DcwEnvStep2Rate" | "line1DcwEnvStep3Level" | "line1DcwEnvStep3Rate" | "line1DcwEnvStep4Level" | "line1DcwEnvStep4Rate" | "line1DcwEnvStep5Level" | "line1DcwEnvStep5Rate" | "line1DcwEnvStep6Level" | "line1DcwEnvStep6Rate" | "line1DcwEnvStep7Level" | "line1DcwEnvStep7Rate" | "line1DcwEnvStep8Level" | "line1DcwEnvStep8Rate" | "line1DcaEnvStep1Level" | "line1DcaEnvStep1Rate" | "line1DcaEnvStep2Level" | "line1DcaEnvStep2Rate" | "line1DcaEnvStep3Level" | "line1DcaEnvStep3Rate" | "line1DcaEnvStep4Level" | "line1DcaEnvStep4Rate" | "line1DcaEnvStep5Level" | "line1DcaEnvStep5Rate" | "line1DcaEnvStep6Level" | "line1DcaEnvStep6Rate" | "line1DcaEnvStep7Level" | "line1DcaEnvStep7Rate" | "line1DcaEnvStep8Level" | "line1DcaEnvStep8Rate" | "line2DcoEnvStep1Level" | "line2DcoEnvStep1Rate" | "line2DcoEnvStep2Level" | "line2DcoEnvStep2Rate" | "line2DcoEnvStep3Level" | "line2DcoEnvStep3Rate" | "line2DcoEnvStep4Level" | "line2DcoEnvStep4Rate" | "line2DcoEnvStep5Level" | "line2DcoEnvStep5Rate" | "line2DcoEnvStep6Level" | "line2DcoEnvStep6Rate" | "line2DcoEnvStep7Level" | "line2DcoEnvStep7Rate" | "line2DcoEnvStep8Level" | "line2DcoEnvStep8Rate" | "line2DcwEnvStep1Level" | "line2DcwEnvStep1Rate" | "line2DcwEnvStep2Level" | "line2DcwEnvStep2Rate" | "line2DcwEnvStep3Level" | "line2DcwEnvStep3Rate" | "line2DcwEnvStep4Level" | "line2DcwEnvStep4Rate" | "line2DcwEnvStep5Level" | "line2DcwEnvStep5Rate" | "line2DcwEnvStep6Level" | "line2DcwEnvStep6Rate" | "line2DcwEnvStep7Level" | "line2DcwEnvStep7Rate" | "line2DcwEnvStep8Level" | "line2DcwEnvStep8Rate" | "line2DcaEnvStep1Level" | "line2DcaEnvStep1Rate" | "line2DcaEnvStep2Level" | "line2DcaEnvStep2Rate" | "line2DcaEnvStep3Level" | "line2DcaEnvStep3Rate" | "line2DcaEnvStep4Level" | "line2DcaEnvStep4Rate" | "line2DcaEnvStep5Level" | "line2DcaEnvStep5Rate" | "line2DcaEnvStep6Level" | "line2DcaEnvStep6Rate" | "line2DcaEnvStep7Level" | "line2DcaEnvStep7Rate" | "line2DcaEnvStep8Level" | "line2DcaEnvStep8Rate" | "chorusRate" | "chorusDepth" | "delayTime" | "delayFeedback" | "delayWarmth" | "reverbSpace" | "reverbPredelay" | "reverbDistance" | "reverbCharacter" | "phaserRate" | "phaserDepth" | "phaserFeedback" | "phaserMix" | "lfo1Rate" | "lfo1Depth" | "lfo1Symmetry" | "lfo1Offset" | "lfo2Rate" | "lfo2Depth" | "lfo2Symmetry" | "lfo2Offset" | "randomRate" | "vibratoDelay" | "compressorThreshold" | "compressorRatio" | "compressorMakeup" | "compressorMix" | "grainDelayTime" | "grainDelayFeedback" | "grainDelayScatter" | "grainDelayDensity" | "grainDelayMix" | "bitcrusherBits" | "bitcrusherRateReduction" | "bitcrusherMix" | "shimmerVerbShimmer" | "shimmerVerbSpace" | "shimmerVerbMix" | "distortionDrive" | "distortionTone" | "distortionMix" | "junoChorusMix" | "ringModCarrierHz" | "ringModMix" | "tremoloRate" | "tremoloDepth" | "tremoloMix" | "wavefolderDrive" | "wavefolderFolds" | "wavefolderMix" | "loFiWow" | "loFiFlutter" | "loFiDegrade" | "loFiFilter" | "loFiCrackle" | "loFiNoise" | "loFiMix" | "loFiSaturation" | "multimodeFilterCutoffHz" | "multimodeFilterResonance" | "multimodeFilterDrive" | "multimodeFilterMix" | "flangerRate" | "flangerDepth" | "flangerDelayMs" | "flangerFeedback" | "flangerMix" | "eqGainBand1" | "eqGainBand2" | "eqGainBand3" | "eqGainBand4" | "eqGainBand5" | "eqGainBand6" | "eqGainBand7" | "eqGainBand8";
 
 /**  ADSR mod envelope parameters. */
 export type ModEnvParams = {
@@ -513,21 +495,6 @@ export type RingModPresetV1 = {
 	params: RingModParams,
 };
 
-/**  Rotary speaker parameters */
-export type RotarySpeakerParams = {
-	enabled?: boolean,
-	speed?: number | null,
-	depth?: number | null,
-	drive?: number | null,
-	mix?: number | null,
-};
-
-export type RotarySpeakerPresetV1 = {
-	id: string,
-	label: string,
-	params: RotarySpeakerParams,
-};
-
 /**  Shimmer verb parameters */
 export type ShimmerVerbParams = {
 	enabled?: boolean,
@@ -551,21 +518,6 @@ export type StepEnvData = {
 	stepCount: number,
 	/**  Whether envelope loops after end */
 	loop: boolean,
-};
-
-/**  Stereo widener parameters */
-export type StereoWidenerParams = {
-	enabled?: boolean,
-	width?: number | null,
-	delayMs?: number | null,
-	tone?: number | null,
-	mix?: number | null,
-};
-
-export type StereoWidenerPresetV1 = {
-	id: string,
-	label: string,
-	params: StereoWidenerParams,
 };
 
 /**  Top-level synth parameters */
@@ -3601,247 +3553,6 @@ export const FX_DEFINITIONS_V1: FxDefinitionV1[] = [
         "label": "Through-Zero"
       }
     ]
-  },
-  {
-    "slotType": "rotarySpeaker",
-    "name": "Rotary Speaker",
-    "controls": [
-      {
-        "id": "speed",
-        "label": "Speed",
-        "kind": "knob",
-        "bipolar": false,
-        "min": 0.1,
-        "max": 12.0,
-        "defaultF32": 0.9,
-        "options": [],
-        "modDestinationKey": "rotarySpeakerSpeed"
-      },
-      {
-        "id": "depth",
-        "label": "Depth",
-        "kind": "knob",
-        "bipolar": false,
-        "min": 0.0,
-        "max": 1.0,
-        "defaultF32": 0.6,
-        "options": [],
-        "modDestinationKey": "rotarySpeakerDepth"
-      },
-      {
-        "id": "drive",
-        "label": "Drive",
-        "kind": "knob",
-        "bipolar": false,
-        "min": 0.0,
-        "max": 1.0,
-        "defaultF32": 0.1,
-        "options": [],
-        "modDestinationKey": "rotarySpeakerDrive"
-      },
-      {
-        "id": "mix",
-        "label": "Mix",
-        "kind": "knob",
-        "bipolar": false,
-        "min": 0.0,
-        "max": 1.0,
-        "defaultF32": 0.6,
-        "options": [],
-        "modDestinationKey": "rotarySpeakerMix"
-      }
-    ],
-    "presets": [
-      {
-        "id": "classicSpin",
-        "label": "Classic Spin"
-      },
-      {
-        "id": "fastHorn",
-        "label": "Fast Horn"
-      },
-      {
-        "id": "dirtyCab",
-        "label": "Dirty Cab"
-      }
-    ]
-  },
-  {
-    "slotType": "autoWah",
-    "name": "Auto-Wah",
-    "controls": [
-      {
-        "id": "mode",
-        "label": "Mode",
-        "kind": "buttonGroup",
-        "bipolar": false,
-        "min": null,
-        "max": null,
-        "defaultF32": 2.0,
-        "options": [
-          {
-            "value": 0,
-            "label": "LP",
-            "iconName": null
-          },
-          {
-            "value": 1,
-            "label": "HP",
-            "iconName": null
-          },
-          {
-            "value": 2,
-            "label": "BP",
-            "iconName": null
-          }
-        ],
-        "modDestinationKey": null
-      },
-      {
-        "id": "sensitivity",
-        "label": "Sense",
-        "kind": "knob",
-        "bipolar": false,
-        "min": 0.0,
-        "max": 1.0,
-        "defaultF32": 0.55,
-        "options": [],
-        "modDestinationKey": "autoWahSensitivity"
-      },
-      {
-        "id": "cutoffHz",
-        "label": "Cutoff",
-        "kind": "knob",
-        "bipolar": false,
-        "min": 40.0,
-        "max": 2500.0,
-        "defaultF32": 450.0,
-        "options": [],
-        "modDestinationKey": "autoWahCutoffHz"
-      },
-      {
-        "id": "resonance",
-        "label": "Reso",
-        "kind": "knob",
-        "bipolar": false,
-        "min": 0.0,
-        "max": 1.0,
-        "defaultF32": 0.6,
-        "options": [],
-        "modDestinationKey": "autoWahResonance"
-      },
-      {
-        "id": "attackMs",
-        "label": "Attack",
-        "kind": "knob",
-        "bipolar": false,
-        "min": 0.5,
-        "max": 200.0,
-        "defaultF32": 8.0,
-        "options": [],
-        "modDestinationKey": "autoWahAttackMs"
-      },
-      {
-        "id": "releaseMs",
-        "label": "Release",
-        "kind": "knob",
-        "bipolar": false,
-        "min": 1.0,
-        "max": 1200.0,
-        "defaultF32": 110.0,
-        "options": [],
-        "modDestinationKey": "autoWahReleaseMs"
-      },
-      {
-        "id": "mix",
-        "label": "Mix",
-        "kind": "knob",
-        "bipolar": false,
-        "min": 0.0,
-        "max": 1.0,
-        "defaultF32": 0.8,
-        "options": [],
-        "modDestinationKey": "autoWahMix"
-      }
-    ],
-    "presets": [
-      {
-        "id": "vowelQuack",
-        "label": "Vowel Quack"
-      },
-      {
-        "id": "funkSweep",
-        "label": "Funk Sweep"
-      },
-      {
-        "id": "softTouch",
-        "label": "Soft Touch"
-      }
-    ]
-  },
-  {
-    "slotType": "stereoWidener",
-    "name": "Stereo Widener",
-    "controls": [
-      {
-        "id": "width",
-        "label": "Width",
-        "kind": "knob",
-        "bipolar": false,
-        "min": 0.0,
-        "max": 1.0,
-        "defaultF32": 0.55,
-        "options": [],
-        "modDestinationKey": "stereoWidenerWidth"
-      },
-      {
-        "id": "delayMs",
-        "label": "Delay",
-        "kind": "knob",
-        "bipolar": false,
-        "min": 1.0,
-        "max": 30.0,
-        "defaultF32": 12.0,
-        "options": [],
-        "modDestinationKey": "stereoWidenerDelayMs"
-      },
-      {
-        "id": "tone",
-        "label": "Tone",
-        "kind": "knob",
-        "bipolar": false,
-        "min": 0.0,
-        "max": 1.0,
-        "defaultF32": 0.5,
-        "options": [],
-        "modDestinationKey": "stereoWidenerTone"
-      },
-      {
-        "id": "mix",
-        "label": "Mix",
-        "kind": "knob",
-        "bipolar": false,
-        "min": 0.0,
-        "max": 1.0,
-        "defaultF32": 0.5,
-        "options": [],
-        "modDestinationKey": "stereoWidenerMix"
-      }
-    ],
-    "presets": [
-      {
-        "id": "subtleSpread",
-        "label": "Subtle Spread"
-      },
-      {
-        "id": "widePad",
-        "label": "Wide Pad"
-      },
-      {
-        "id": "haasPush",
-        "label": "Haas Push"
-      }
-    ]
   }
 ];
 
@@ -4218,57 +3929,6 @@ export const MODULE_PRESET_CATALOG_V1: ModulePresetGroupV1[] = [
       {
         "id": "throughZero",
         "label": "Through-Zero"
-      }
-    ]
-  },
-  {
-    "module": "rotarySpeaker",
-    "presets": [
-      {
-        "id": "classicSpin",
-        "label": "Classic Spin"
-      },
-      {
-        "id": "fastHorn",
-        "label": "Fast Horn"
-      },
-      {
-        "id": "dirtyCab",
-        "label": "Dirty Cab"
-      }
-    ]
-  },
-  {
-    "module": "autoWah",
-    "presets": [
-      {
-        "id": "vowelQuack",
-        "label": "Vowel Quack"
-      },
-      {
-        "id": "funkSweep",
-        "label": "Funk Sweep"
-      },
-      {
-        "id": "softTouch",
-        "label": "Soft Touch"
-      }
-    ]
-  },
-  {
-    "module": "stereoWidener",
-    "presets": [
-      {
-        "id": "subtleSpread",
-        "label": "Subtle Spread"
-      },
-      {
-        "id": "widePad",
-        "label": "Wide Pad"
-      },
-      {
-        "id": "haasPush",
-        "label": "Haas Push"
       }
     ]
   }
@@ -4996,7 +4656,7 @@ export const FLANGER_PRESET_DATA: FlangerPresetV1[] = [
       "depth": 0.35,
       "delayMs": 2.8,
       "feedback": 0.18,
-      "throughZero": false,
+      "throughZero": 0,
       "mix": 0.42
     }
   },
@@ -5009,7 +4669,7 @@ export const FLANGER_PRESET_DATA: FlangerPresetV1[] = [
       "depth": 0.78,
       "delayMs": 1.2,
       "feedback": 0.62,
-      "throughZero": false,
+      "throughZero": 0,
       "mix": 0.55
     }
   },
@@ -5022,128 +4682,8 @@ export const FLANGER_PRESET_DATA: FlangerPresetV1[] = [
       "depth": 0.7,
       "delayMs": 0.8,
       "feedback": 0.36,
-      "throughZero": true,
+      "throughZero": 1,
       "mix": 0.58
-    }
-  }
-];
-
-/** Rust-owned ROTARY_SPEAKER_PRESET_DATA with typed parameter values. */
-export const ROTARY_SPEAKER_PRESET_DATA: RotarySpeakerPresetV1[] = [
-  {
-    "id": "classicSpin",
-    "label": "Classic Spin",
-    "params": {
-      "enabled": true,
-      "speed": 0.9,
-      "depth": 0.62,
-      "drive": 0.08,
-      "mix": 0.58
-    }
-  },
-  {
-    "id": "fastHorn",
-    "label": "Fast Horn",
-    "params": {
-      "enabled": true,
-      "speed": 4.2,
-      "depth": 0.84,
-      "drive": 0.12,
-      "mix": 0.66
-    }
-  },
-  {
-    "id": "dirtyCab",
-    "label": "Dirty Cab",
-    "params": {
-      "enabled": true,
-      "speed": 1.8,
-      "depth": 0.72,
-      "drive": 0.48,
-      "mix": 0.74
-    }
-  }
-];
-
-/** Rust-owned AUTO_WAH_PRESET_DATA with typed parameter values. */
-export const AUTO_WAH_PRESET_DATA: AutoWahPresetV1[] = [
-  {
-    "id": "vowelQuack",
-    "label": "Vowel Quack",
-    "params": {
-      "enabled": true,
-      "mode": 2,
-      "sensitivity": 0.75,
-      "cutoffHz": 520.0,
-      "resonance": 0.78,
-      "attackMs": 6.0,
-      "releaseMs": 95.0,
-      "mix": 0.84
-    }
-  },
-  {
-    "id": "funkSweep",
-    "label": "Funk Sweep",
-    "params": {
-      "enabled": true,
-      "mode": 1,
-      "sensitivity": 0.62,
-      "cutoffHz": 280.0,
-      "resonance": 0.58,
-      "attackMs": 12.0,
-      "releaseMs": 170.0,
-      "mix": 0.76
-    }
-  },
-  {
-    "id": "softTouch",
-    "label": "Soft Touch",
-    "params": {
-      "enabled": true,
-      "mode": 0,
-      "sensitivity": 0.34,
-      "cutoffHz": 700.0,
-      "resonance": 0.32,
-      "attackMs": 24.0,
-      "releaseMs": 240.0,
-      "mix": 0.66
-    }
-  }
-];
-
-/** Rust-owned STEREO_WIDENER_PRESET_DATA with typed parameter values. */
-export const STEREO_WIDENER_PRESET_DATA: StereoWidenerPresetV1[] = [
-  {
-    "id": "subtleSpread",
-    "label": "Subtle Spread",
-    "params": {
-      "enabled": true,
-      "width": 0.35,
-      "delayMs": 9.0,
-      "tone": 0.45,
-      "mix": 0.45
-    }
-  },
-  {
-    "id": "widePad",
-    "label": "Wide Pad",
-    "params": {
-      "enabled": true,
-      "width": 0.72,
-      "delayMs": 14.0,
-      "tone": 0.62,
-      "mix": 0.62
-    }
-  },
-  {
-    "id": "haasPush",
-    "label": "Haas Push",
-    "params": {
-      "enabled": true,
-      "width": 0.9,
-      "delayMs": 22.0,
-      "tone": 0.72,
-      "mix": 0.7
     }
   }
 ];

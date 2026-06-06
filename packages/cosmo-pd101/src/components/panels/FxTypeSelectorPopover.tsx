@@ -15,7 +15,7 @@ import {
 const COLUMN_LAYOUT: { key: string; categoryIndices: number[] }[] = [
 	{ key: "delay-dist", categoryIndices: [0, 4] },
 	{ key: "mod", categoryIndices: [1] },
-	{ key: "filt-dyn-spat", categoryIndices: [2, 3, 5] },
+	{ key: "filt-dyn", categoryIndices: [2, 3] },
 ];
 
 // ---------------------------------------------------------------------------
