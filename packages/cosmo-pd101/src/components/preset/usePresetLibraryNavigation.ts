@@ -3,7 +3,6 @@ import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import {
 	getVirtualRowHeight,
 	isEditableTarget,
-	TABLE_HEADER_HEIGHT,
 	type VirtualPresetRow,
 } from "./presetLibraryShared";
 
@@ -50,7 +49,7 @@ export function usePresetLibraryNavigation({
 		const scrollContainer = scrollContainerRef.current;
 		if (rowIndex < 0 || !scrollContainer) return;
 
-		const top = virtualOffsetsRef.current[rowIndex] + TABLE_HEADER_HEIGHT;
+		const top = virtualOffsetsRef.current[rowIndex];
 		const bottom = top + getVirtualRowHeight();
 		if (top < scrollContainer.scrollTop) {
 			scrollContainer.scrollTop = top;
@@ -148,7 +147,10 @@ export function usePresetLibraryNavigation({
 			if (!isPluginRuntime) return;
 			if (event.key !== " ") return;
 			if (isEditableTarget(event.target)) return;
-			if (event.target instanceof HTMLElement) event.target.blur();
+			if (event.target instanceof HTMLElement) {
+				event.target.blur();
+			}
+			event.currentTarget.focus({ preventScroll: true });
 		},
 		[isPluginRuntime],
 	);

@@ -246,11 +246,13 @@ describe("PresetLibrary", () => {
 
 		render(<PresetLibrary {...props} />);
 		const activeRow = screen.getByRole("button", { name: "Local Keys" });
+		const list = screen.getByRole("listbox", { name: "Preset library" });
 		activeRow.focus();
 		fireEvent.keyDown(activeRow, { key: " " });
 		fireEvent.keyUp(activeRow, { key: " " });
 
 		expect(props.onActivatePreset).not.toHaveBeenCalled();
+		expect(list).toHaveFocus();
 
 		(
 			window as Window & { __czSetParams?: (json: string) => void }

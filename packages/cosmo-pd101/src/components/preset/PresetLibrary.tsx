@@ -275,7 +275,7 @@ export default function PresetLibrary({
 						role="listbox"
 						aria-label="Preset library"
 						data-preset-library="true"
-						tabIndex={-1}
+						tabIndex={isPluginRuntime ? 0 : -1}
 						onScroll={(event) => {
 							setVirtualScrollTop(event.currentTarget.scrollTop);
 						}}

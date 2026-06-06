@@ -6,7 +6,6 @@ import {
 	getVirtualRowHeight,
 	type SortDirection,
 	type SortKey,
-	TABLE_HEADER_HEIGHT,
 	VIRTUAL_OVERSCAN_PX,
 	type VirtualPresetRow,
 } from "./presetLibraryShared";
@@ -191,7 +190,7 @@ export function usePresetLibraryState({
 	}, [virtualRows]);
 
 	const visibleVirtualRows = useMemo(() => {
-		const listScrollTop = Math.max(0, virtualScrollTop - TABLE_HEADER_HEIGHT);
+		const listScrollTop = Math.max(0, virtualScrollTop);
 		const startBoundary = Math.max(0, listScrollTop - VIRTUAL_OVERSCAN_PX);
 		const endBoundary =
 			listScrollTop + virtualViewportHeight + VIRTUAL_OVERSCAN_PX;
