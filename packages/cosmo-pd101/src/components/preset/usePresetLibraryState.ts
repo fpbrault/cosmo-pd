@@ -32,7 +32,6 @@ export function usePresetLibraryState({
 	const [importError, setImportError] = useState<string | null>(null);
 	const [renameValue, setRenameValue] = useState("");
 	const [authorValue, setAuthorValue] = useState("");
-	const [tagDraft, setTagDraft] = useState("");
 	const [showOnlyUserPresets, setShowOnlyUserPresets] = useState(false);
 	const [selectedAuthorFilters, setSelectedAuthorFilters] = useState<string[]>(
 		[],
@@ -233,21 +232,6 @@ export function usePresetLibraryState({
 	const selectedLocalEntry =
 		focusedEntry?.type === "local" ? focusedEntry : activeLocalEntry;
 
-	const tagSuggestions = useMemo(() => {
-		const normalizedDraft = tagDraft.trim().toLowerCase();
-		if (!normalizedDraft) {
-			return PRESET_TAG_OPTIONS.filter(
-				(tag) => !selectedLocalEntry?.tags.includes(tag),
-			);
-		}
-
-		return PRESET_TAG_OPTIONS.filter(
-			(tag) =>
-				tag.includes(normalizedDraft) &&
-				!selectedLocalEntry?.tags.includes(tag),
-		);
-	}, [selectedLocalEntry?.tags, tagDraft]);
-
 	useEffect(() => {
 		if (!isOpen) return;
 		if (sortedEntries.length === 0) {
@@ -320,7 +304,6 @@ export function usePresetLibraryState({
 	useEffect(() => {
 		setRenameValue(selectedLocalEntry?.label ?? "");
 		setAuthorValue(selectedLocalEntry?.author ?? "");
-		setTagDraft("");
 	}, [selectedLocalEntry]);
 
 	useEffect(() => {
@@ -343,8 +326,6 @@ export function usePresetLibraryState({
 		setRenameValue,
 		authorValue,
 		setAuthorValue,
-		tagDraft,
-		setTagDraft,
 		showOnlyUserPresets,
 		setShowOnlyUserPresets,
 		selectedAuthorFilters,
@@ -365,7 +346,6 @@ export function usePresetLibraryState({
 		focusedEntry,
 		activeLocalEntry,
 		selectedLocalEntry,
-		tagSuggestions,
 		toggleSort,
 		sortIndicator,
 	};

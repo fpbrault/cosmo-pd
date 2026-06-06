@@ -40,7 +40,7 @@ const entries: PresetEntry[] = [
 		author: "",
 		starred: false,
 		favorite: false,
-		tags: ["warm"],
+		tags: ["pad"],
 	},
 	{
 		id: "library-1",
@@ -147,7 +147,7 @@ describe("PresetLibrary", () => {
 		expect(props.onSavePreset).toHaveBeenCalledWith("New Patch");
 
 		fireEvent.click(
-			screen.getByRole("button", { name: "Create Default Preset" }),
+			screen.getByRole("button", { name: "Init Preset" }),
 		);
 		expect(props.onInitPreset).toHaveBeenCalled();
 
@@ -184,12 +184,12 @@ describe("PresetLibrary", () => {
 			"Jane Doe",
 		);
 
-		fireEvent.change(screen.getByPlaceholderText("Add tag"), {
-			target: { value: "bass" },
+		fireEvent.keyDown(screen.getByLabelText("Preset tags"), {
+			key: "ArrowDown",
 		});
-		fireEvent.click(screen.getByRole("button", { name: "Add" }));
+		fireEvent.click(screen.getByRole("option", { name: "bass" }));
 		expect(props.onSetPresetTags).toHaveBeenCalledWith("local-keys", [
-			"warm",
+			"pad",
 			"bass",
 		]);
 
@@ -292,6 +292,48 @@ describe("PresetLibrary", () => {
 		).toBeInTheDocument();
 	});
 
+	it("toggles and clears author filters with badges", () => {
+		const props = createProps();
+		render(<PresetLibrary {...props} />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Purr Audio" }));
+
+		expect(
+			screen.getByRole("button", { name: "Factory Bass" }),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Local Keys" }),
+		).not.toBeInTheDocument();
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Clear author filters" }),
+		);
+
+		expect(
+			screen.getByRole("button", { name: "Local Keys" }),
+		).toBeInTheDocument();
+	});
+
+	it("toggles and clears tag filters with badges", () => {
+		const props = createProps();
+		render(<PresetLibrary {...props} />);
+
+		fireEvent.click(screen.getAllByRole("button", { name: "pad" })[0]);
+
+		expect(
+			screen.queryByRole("button", { name: "Factory Bass" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Local Keys" }),
+		).toBeInTheDocument();
+
+		fireEvent.click(screen.getByRole("button", { name: "Clear tag filters" }));
+
+		expect(
+			screen.getByRole("button", { name: "Factory Bass" }),
+		).toBeInTheDocument();
+	});
+
 	it("closes back to the synth view", () => {
 		const props = createProps();
 		render(<PresetLibrary {...props} />);
@@ -333,6 +375,25 @@ describe("PresetLibrary", () => {
 		expect(
 			screen.queryByRole("button", { name: "Factory Bass" }),
 		).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Local Keys" }),
+		).toBeInTheDocument();
+	});
+
+	it("clears the preset search input", () => {
+		const props = createProps();
+		render(<PresetLibrary {...props} />);
+
+		fireEvent.change(screen.getByPlaceholderText("Search presets"), {
+			target: { value: "keys" },
+		});
+		fireEvent.click(
+			screen.getByRole("button", { name: "Clear preset search" }),
+		);
+
+		expect(
+			screen.getByRole("button", { name: "Factory Bass" }),
+		).toBeInTheDocument();
 		expect(
 			screen.getByRole("button", { name: "Local Keys" }),
 		).toBeInTheDocument();
