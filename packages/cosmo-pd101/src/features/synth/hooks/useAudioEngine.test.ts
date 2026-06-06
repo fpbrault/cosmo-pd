@@ -137,6 +137,18 @@ describe("useAudioEngine", () => {
 		});
 	}
 
+	async function startAudio(
+		result: ReturnType<typeof renderUseAudioEngine>["result"],
+	) {
+		act(() => {
+			result.current.resumeAudio();
+		});
+
+		await waitFor(() => {
+			expect(mocks.AudioContextMock).toHaveBeenCalled();
+		});
+	}
+
 	async function waitForWorkletInit() {
 		await waitFor(
 			() => {
@@ -162,13 +174,10 @@ describe("useAudioEngine", () => {
 		it("initializes refs appropriately", async () => {
 			const { result } = renderUseAudioEngine();
 
+			expect(result.current.audioCtxRef.current).toBeNull();
 			expect(result.current.gainNodeRef.current).toBeNull();
 			expect(result.current.analyserNodeRef.current).toBeNull();
 			expect(result.current.workletNodeRef.current).toBeNull();
-
-			await waitFor(() => {
-				expect(result.current.audioCtxRef.current).not.toBeNull();
-			});
 		});
 
 		it("initializes paramsRef with default synth params", () => {
@@ -193,16 +202,25 @@ describe("useAudioEngine", () => {
 	});
 
 	describe("audio initialization", () => {
-		it("creates AudioContext on mount", async () => {
+		it("does not create AudioContext on mount", () => {
 			renderUseAudioEngine();
 
-			await waitFor(() => {
-				expect(mocks.AudioContextMock).toHaveBeenCalledTimes(1);
-			});
+			expect(mocks.AudioContextMock).not.toHaveBeenCalled();
+		});
+
+		it("creates and resumes AudioContext from resumeAudio", async () => {
+			const { result } = renderUseAudioEngine();
+
+			await startAudio(result);
+
+			expect(mocks.AudioContextMock).toHaveBeenCalledTimes(1);
+			expect(mocks.mockCtx.resume).toHaveBeenCalledTimes(1);
 		});
 
 		it("fetches WASM and bindings", async () => {
-			renderUseAudioEngine();
+			const { result } = renderUseAudioEngine();
+
+			await startAudio(result);
 
 			await waitFor(() => {
 				expect(mocks.fetchMock).toHaveBeenCalledWith(defaultProps.synthWasmUrl);
@@ -257,7 +275,9 @@ describe("useAudioEngine", () => {
 		});
 
 		it("adds statechange listener on AudioContext", async () => {
-			renderUseAudioEngine();
+			const { result } = renderUseAudioEngine();
+
+			await startAudio(result);
 
 			await waitFor(() => {
 				expect(mocks.mockCtx.addEventListener).toHaveBeenCalledWith(
@@ -268,11 +288,9 @@ describe("useAudioEngine", () => {
 		});
 
 		it("only initializes once even with re-renders", async () => {
-			const { rerender } = renderUseAudioEngine();
+			const { result, rerender } = renderUseAudioEngine();
 
-			await waitFor(() => {
-				expect(mocks.AudioContextMock).toHaveBeenCalledTimes(1);
-			});
+			await startAudio(result);
 
 			rerender(defaultProps);
 
@@ -493,11 +511,9 @@ describe("useAudioEngine", () => {
 
 	describe("cleanup on unmount", () => {
 		it("closes AudioContext and disconnects nodes", async () => {
-			const { unmount } = renderUseAudioEngine();
+			const { result, unmount } = renderUseAudioEngine();
 
-			await waitFor(() => {
-				expect(mocks.AudioContextMock).toHaveBeenCalled();
-			});
+			await startAudio(result);
 
 			unmount();
 
@@ -507,11 +523,9 @@ describe("useAudioEngine", () => {
 		});
 
 		it("stops telemetry polling on unmount", async () => {
-			const { unmount } = renderUseAudioEngine();
+			const { result, unmount } = renderUseAudioEngine();
 
-			await waitFor(() => {
-				expect(mocks.AudioContextMock).toHaveBeenCalled();
-			});
+			await startAudio(result);
 
 			act(() => {
 				mocks.mockWorkletNode.port.onmessage?.({
@@ -525,29 +539,34 @@ describe("useAudioEngine", () => {
 		});
 
 		it("resets audioInitRef on unmount", async () => {
-			const { unmount } = renderUseAudioEngine();
+			const { result, unmount } = renderUseAudioEngine();
 
-			await waitFor(() => {
-				expect(mocks.AudioContextMock).toHaveBeenCalled();
-			});
+			await startAudio(result);
 
 			unmount();
 
-			renderUseAudioEngine();
+			const { result: nextResult } = renderUseAudioEngine();
+			await startAudio(nextResult);
 
-			await waitFor(() => {
-				expect(mocks.AudioContextMock).toHaveBeenCalledTimes(2);
-			});
+			expect(mocks.AudioContextMock).toHaveBeenCalledTimes(2);
 		});
 	});
 
 	describe("resumeAudio", () => {
-		it("calls ctx.resume when context is suspended", async () => {
+		it("starts initialization when context has not been created", async () => {
 			const { result } = renderUseAudioEngine();
 
-			await waitFor(() => {
-				expect(result.current.audioCtxRef.current).not.toBeNull();
-			});
+			await startAudio(result);
+
+			expect(result.current.audioCtxRef.current).toBe(mocks.mockCtx);
+			expect(mocks.mockCtx.resume).toHaveBeenCalledTimes(1);
+		});
+
+		it("calls ctx.resume when existing context is suspended", async () => {
+			const { result } = renderUseAudioEngine();
+
+			await startAudio(result);
+			mocks.mockCtx.resume.mockClear();
 
 			act(() => {
 				result.current.resumeAudio();
@@ -559,9 +578,8 @@ describe("useAudioEngine", () => {
 		it("syncs React state when context is already running", async () => {
 			const { result } = renderUseAudioEngine();
 
-			await waitFor(() => {
-				expect(result.current.audioCtxRef.current).not.toBeNull();
-			});
+			await startAudio(result);
+			mocks.mockCtx.resume.mockClear();
 
 			mocks.mockCtx.state = "running";
 
@@ -576,20 +594,19 @@ describe("useAudioEngine", () => {
 			});
 		});
 
-		it("does nothing when audioCtxRef is null", () => {
+		it("starts initialization when audioCtxRef is null", async () => {
 			const { result } = renderUseAudioEngine();
 
-			result.current.audioCtxRef.current = null;
+			await startAudio(result);
 
-			act(() => {
-				result.current.resumeAudio();
-			});
-
-			expect(mocks.mockCtx.resume).not.toHaveBeenCalled();
+			expect(mocks.mockCtx.resume).toHaveBeenCalledTimes(1);
 		});
 
-		it("does nothing when context is closed", () => {
+		it("does nothing when existing context is closed", async () => {
 			const { result } = renderUseAudioEngine();
+
+			await startAudio(result);
+			mocks.mockCtx.resume.mockClear();
 			mocks.mockCtx.state = "closed";
 
 			act(() => {
@@ -604,9 +621,7 @@ describe("useAudioEngine", () => {
 		it("updates audioContextState on statechange event", async () => {
 			const { result } = renderUseAudioEngine();
 
-			await waitFor(() => {
-				expect(result.current.audioCtxRef.current).not.toBeNull();
-			});
+			await startAudio(result);
 
 			mocks.mockCtx.state = "running";
 			act(() => {
@@ -621,9 +636,7 @@ describe("useAudioEngine", () => {
 		it("updates audioContextState to suspended on statechange", async () => {
 			const { result } = renderUseAudioEngine();
 
-			await waitFor(() => {
-				expect(result.current.audioCtxRef.current).not.toBeNull();
-			});
+			await startAudio(result);
 
 			mocks.mockCtx.state = "suspended";
 			act(() => {
@@ -748,8 +761,9 @@ describe("useAudioEngine", () => {
 				configurable: true,
 			});
 
-			const { unmount } = renderUseAudioEngine();
+			const { result, unmount } = renderUseAudioEngine();
 
+			await startAudio(result);
 			unmount();
 
 			if (!resolveFetch) {
@@ -777,7 +791,9 @@ describe("useAudioEngine", () => {
 				.fn()
 				.mockReturnValue(modulePromise);
 
-			const { unmount } = renderUseAudioEngine();
+			const { result, unmount } = renderUseAudioEngine();
+
+			await startAudio(result);
 
 			await waitFor(() => {
 				expect(mocks.fetchMock).toHaveBeenCalled();

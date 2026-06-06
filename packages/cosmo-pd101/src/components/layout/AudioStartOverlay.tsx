@@ -39,8 +39,7 @@ export default function AudioStartOverlay({
 						<path d="M15.932 7.757a.75.75 0 0 1 1.061 0 6 6 0 0 1 0 8.486.75.75 0 0 1-1.06-1.061 4.5 4.5 0 0 0 0-6.364.75.75 0 0 1 0-1.061Z" />
 					</svg>
 					<p className="font-mono text-cz-cream-dim text-sm">
-						Audio requires a user interaction to start. If unable to start, try
-						refreshing the page first.
+						Audio requires a user interaction to start.
 					</p>
 					<Button
 						type="button"
