@@ -78,6 +78,8 @@ export default function PresetLibrary({
 		setShowOnlyUserPresets,
 		selectedAuthorFilters,
 		setSelectedAuthorFilters,
+		selectedBankFilters,
+		setSelectedBankFilters,
 		selectedTagFilters,
 		setSelectedTagFilters,
 		focusedEntryId,
@@ -86,6 +88,7 @@ export default function PresetLibrary({
 		setVirtualScrollTop,
 		availableTags,
 		availableAuthors,
+		availableBanks,
 		sortedEntries,
 		virtualRows,
 		virtualLayout,
@@ -145,6 +148,28 @@ export default function PresetLibrary({
 			);
 		},
 		[setSelectedTagFilters],
+	);
+
+	const toggleAuthorFilter = useCallback(
+		(author: string) => {
+			setSelectedAuthorFilters((prev) =>
+				prev.includes(author)
+					? prev.filter((value) => value !== author)
+					: [...prev, author],
+			);
+		},
+		[setSelectedAuthorFilters],
+	);
+
+	const toggleBankFilter = useCallback(
+		(bank: string) => {
+			setSelectedBankFilters((prev) =>
+				prev.includes(bank)
+					? prev.filter((value) => value !== bank)
+					: [...prev, bank],
+			);
+		},
+		[setSelectedBankFilters],
 	);
 
 	const openSaveAsModal = useCallback(() => {
@@ -218,15 +243,13 @@ export default function PresetLibrary({
 					onSearchChange={setSearch}
 					onClearSearch={() => setSearch("")}
 					onClose={onClose}
+					availableBanks={availableBanks}
+					selectedBankFilters={selectedBankFilters}
+					onToggleBankFilter={toggleBankFilter}
+					onClearBankFilters={() => setSelectedBankFilters([])}
 					availableAuthors={availableAuthors}
 					selectedAuthorFilters={selectedAuthorFilters}
-					onToggleAuthorFilter={(author) => {
-						setSelectedAuthorFilters((prev) =>
-							prev.includes(author)
-								? prev.filter((value) => value !== author)
-								: [...prev, author],
-						);
-					}}
+					onToggleAuthorFilter={toggleAuthorFilter}
 					onClearAuthorFilters={() => setSelectedAuthorFilters([])}
 					availableTags={availableTags}
 					selectedTagFilters={selectedTagFilters}

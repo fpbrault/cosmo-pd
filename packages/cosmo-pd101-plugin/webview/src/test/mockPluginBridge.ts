@@ -429,6 +429,8 @@ export function installMockPluginBridge(): void {
 		author: string;
 		starred: boolean;
 		favorite: boolean;
+		bankId?: string | null;
+		bankName?: string | null;
 		tags: string[];
 		data: FullParamsBlob;
 	}> = [
@@ -439,10 +441,19 @@ export function installMockPluginBridge(): void {
 			author: "Factory",
 			starred: true,
 			favorite: false,
+			bankId: "cosmo-factory",
+			bankName: "Cosmo Library",
 			tags: ["brass"],
 			data: { ...DEFAULT_FULL_PARAMS },
 		},
 	];
+	let virtualFxModulePresets: Array<{
+		id: string;
+		name: string;
+		moduleType: string;
+		patch: Record<string, unknown>;
+		updatedAtUnixMs: number;
+	}> = [];
 
 	// Full params blob pre-seeded with defaults so pushParamUpdate always
 	// sends a complete blob that satisfies applyPreset (requires line1/line2).
@@ -726,6 +737,8 @@ export function installMockPluginBridge(): void {
 							author: entry.author,
 							starred: entry.starred,
 							sortIndex: index,
+							bankId: entry.bankId,
+							bankName: entry.bankName,
 							favorite: entry.favorite,
 							tags: entry.tags,
 						})),
@@ -869,6 +882,75 @@ export function installMockPluginBridge(): void {
 				virtualPresetEntries = virtualPresetEntries.map((entry) =>
 					entry.id === presetId ? { ...entry, favorite: starred } : entry,
 				);
+				respondIpc(id, { result: null });
+				return;
+			}
+			if (method === "importPresetBank") {
+				const payload =
+					typeof args[0] === "object" && args[0] !== null
+						? (args[0] as {
+								bank?: { id?: string; name?: string; source?: string };
+								presets?: Array<Record<string, unknown>>;
+							})
+						: null;
+				const bankId = payload?.bank?.id ?? "";
+				const bankName = payload?.bank?.name ?? "";
+				const bankSource = payload?.bank?.source ?? "addon";
+				const importedPresets = Array.isArray(payload?.presets)
+					? payload.presets
+					: [];
+				const importedIds = new Set(
+					importedPresets
+						.map((preset) => (typeof preset.id === "string" ? preset.id : null))
+						.filter((presetId): presetId is string => Boolean(presetId)),
+				);
+				virtualPresetEntries = virtualPresetEntries.filter(
+					(entry) =>
+						!(
+							entry.source === bankSource &&
+							entry.bankId === bankId &&
+							!importedIds.has(entry.id)
+						),
+				);
+				for (const preset of importedPresets) {
+					if (
+						typeof preset.id !== "string" ||
+						typeof preset.name !== "string" ||
+						typeof preset.data !== "object" ||
+						preset.data === null
+					) {
+						continue;
+					}
+					const params =
+						(preset.data as { params?: FullParamsBlob }).params ??
+						DEFAULT_FULL_PARAMS;
+					const nextEntry = {
+						id: preset.id,
+						name: preset.name,
+						source: bankSource,
+						author: typeof preset.author === "string" ? preset.author : "",
+						starred: preset.starred === true,
+						favorite:
+							virtualPresetEntries.find((entry) => entry.id === preset.id)
+								?.favorite ?? false,
+						bankId,
+						bankName,
+						tags: Array.isArray(preset.tags)
+							? preset.tags.filter(
+									(tag): tag is string => typeof tag === "string",
+								)
+							: [],
+						data: { ...params },
+					};
+					const existingIndex = virtualPresetEntries.findIndex(
+						(entry) => entry.id === preset.id,
+					);
+					if (existingIndex >= 0) {
+						virtualPresetEntries[existingIndex] = nextEntry;
+					} else {
+						virtualPresetEntries.push(nextEntry);
+					}
+				}
 				respondIpc(id, { result: null });
 				return;
 			}

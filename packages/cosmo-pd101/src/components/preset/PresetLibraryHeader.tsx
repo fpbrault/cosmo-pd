@@ -11,6 +11,10 @@ type PresetLibraryHeaderProps = {
 	onSearchChange: (value: string) => void;
 	onClearSearch: () => void;
 	onClose: () => void;
+	availableBanks: readonly string[];
+	selectedBankFilters: string[];
+	onToggleBankFilter: (bank: string) => void;
+	onClearBankFilters: () => void;
 	availableAuthors: readonly string[];
 	selectedAuthorFilters: string[];
 	onToggleAuthorFilter: (author: string) => void;
@@ -32,6 +36,10 @@ export default memo(function PresetLibraryHeader({
 	onSearchChange,
 	onClearSearch,
 	onClose,
+	availableBanks,
+	selectedBankFilters,
+	onToggleBankFilter,
+	onClearBankFilters,
 	availableAuthors,
 	selectedAuthorFilters,
 	onToggleAuthorFilter,
@@ -93,6 +101,44 @@ export default memo(function PresetLibraryHeader({
 				</Button>
 			</div>
 			<div className="col-span-2 flex flex-wrap items-start gap-3">
+				<div className="min-w-100">
+					<div className="mb-1 flex items-center justify-between gap-2">
+						<p className="font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
+							Filter bank
+						</p>
+						<button
+							type="button"
+							className="btn btn-ghost btn-xs h-6 min-h-0 rounded-sm border border-cz-border/70 px-1.5 text-cz-cream-dim hover:border-cz-light-blue/60 hover:bg-cz-inset hover:text-cz-cream disabled:border-cz-border/30 disabled:text-cz-cream-dim/40"
+							aria-label="Clear bank filters"
+							disabled={selectedBankFilters.length === 0}
+							onClick={onClearBankFilters}
+						>
+							x
+						</button>
+					</div>
+					<div className="flex flex-wrap gap-2">
+						<button
+							type="button"
+							className={`badge badge-md capitalize ${selectedBankFilters.length === 0 ? "badge-primary" : "badge-neutral"}`}
+							onClick={onClearBankFilters}
+						>
+							all
+						</button>
+						{availableBanks.map((bank) => {
+							const active = selectedBankFilters.includes(bank);
+							return (
+								<button
+									key={bank}
+									type="button"
+									className={`badge badge-md ${active ? "badge-primary" : "badge-neutral"}`}
+									onClick={() => onToggleBankFilter(bank)}
+								>
+									{bank}
+								</button>
+							);
+						})}
+					</div>
+				</div>
 				<div className="min-w-100">
 					<div className="mb-1 flex items-center justify-between gap-2">
 						<p className="font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">

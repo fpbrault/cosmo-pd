@@ -8,6 +8,8 @@ export type LibraryPreset = {
 	author: string;
 	starred: boolean;
 	sortIndex?: number;
+	bankId?: string | null;
+	bankName?: string | null;
 	data?: SynthPresetV1;
 	sysexData?: Uint8Array;
 	tags?: string[];

@@ -10,6 +10,8 @@ const libraryPreset: LibraryPreset = {
 	source: "cz-factory",
 	author: "Casio",
 	starred: false,
+	bankId: "cz-factory",
+	bankName: "Temple Of CZ",
 };
 
 const entries: PresetEntry[] = [
@@ -19,6 +21,8 @@ const entries: PresetEntry[] = [
 		type: "library",
 		source: "cosmo-factory",
 		sourceLabel: "Cosmo Library",
+		bankId: "cosmo-factory",
+		bankName: "Cosmo Library",
 		author: "Purr Audio",
 		starred: true,
 		favorite: false,
@@ -29,6 +33,8 @@ const entries: PresetEntry[] = [
 			source: "cosmo-factory",
 			author: "Purr Audio",
 			starred: true,
+			bankId: "cosmo-factory",
+			bankName: "Cosmo Library",
 		},
 	},
 	{
@@ -37,6 +43,8 @@ const entries: PresetEntry[] = [
 		type: "local",
 		source: "user",
 		sourceLabel: "User",
+		bankId: null,
+		bankName: null,
 		author: "",
 		starred: false,
 		favorite: false,
@@ -48,6 +56,8 @@ const entries: PresetEntry[] = [
 		type: "library",
 		source: "cz-factory",
 		sourceLabel: "Temple Of CZ",
+		bankId: "cz-factory",
+		bankName: "Temple Of CZ",
 		author: "Casio",
 		starred: false,
 		favorite: false,
@@ -309,6 +319,26 @@ describe("PresetLibrary", () => {
 
 		expect(
 			screen.getByRole("button", { name: "Local Keys" }),
+		).toBeInTheDocument();
+	});
+
+	it("toggles and clears bank filters with badges", () => {
+		const props = createProps();
+		render(<PresetLibrary {...props} />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Temple Of CZ" }));
+
+		expect(
+			screen.queryByRole("button", { name: "Factory Bass" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Archive Pad" }),
+		).toBeInTheDocument();
+
+		fireEvent.click(screen.getByRole("button", { name: "Clear bank filters" }));
+
+		expect(
+			screen.getByRole("button", { name: "Factory Bass" }),
 		).toBeInTheDocument();
 	});
 

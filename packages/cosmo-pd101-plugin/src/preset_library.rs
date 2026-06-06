@@ -4,10 +4,11 @@ use rusqlite::{Connection, OptionalExtension, params};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::SynthParams;
 use crate::preset_library_path;
 
 const DEFAULT_SORT_INDEX: u32 = u32::MAX;
-const LIBRARY_SCHEMA_VERSION: u32 = 3;
+const LIBRARY_SCHEMA_VERSION: u32 = 4;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -18,6 +19,8 @@ pub struct PresetLibraryEntry {
     pub author: String,
     pub starred: bool,
     pub sort_index: u32,
+    pub bank_id: Option<String>,
+    pub bank_name: Option<String>,
     pub tags: Vec<String>,
     pub macro_labels: [String; 4],
     pub factory_version: u32,
@@ -32,6 +35,37 @@ pub struct FxModulePresetEntry {
     pub module_type: String,
     pub patch: serde_json::Value,
     pub updated_at_unix_ms: i64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct PresetBankBundle {
+    pub r#type: String,
+    pub schema_version: u32,
+    pub bank: PresetBankMetadata,
+    pub presets: Vec<PresetBankEntry>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct PresetBankMetadata {
+    pub id: String,
+    pub name: String,
+    pub source: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct PresetBankEntry {
+    pub id: String,
+    pub name: String,
+    #[serde(default)]
+    pub author: String,
+    #[serde(default)]
+    pub starred: bool,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    pub data: serde_json::Value,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -91,6 +125,8 @@ impl PresetLibrary {
             author: String::new(),
             starred: false,
             sort_index: DEFAULT_SORT_INDEX,
+            bank_id: None,
+            bank_name: None,
             tags,
             macro_labels,
             factory_version: 0,
@@ -103,6 +139,10 @@ impl PresetLibrary {
     pub fn save_entry(&mut self, entry: PresetLibraryEntry) -> Result<PresetLibraryEntry, String> {
         self.with_connection_mut(|conn| upsert_entry(conn, &entry))?;
         Ok(entry)
+    }
+
+    pub fn import_bank(&mut self, bundle: PresetBankBundle) -> Result<(), String> {
+        self.with_connection_mut(|conn| import_bank_entries(conn, bundle))
     }
 
     pub fn delete_entry(&mut self, id: &str) -> Result<bool, String> {
@@ -204,6 +244,9 @@ impl PresetLibrary {
             if previous_schema_version < 3 {
                 migrate_sort_index_column(conn)?;
             }
+            if previous_schema_version < 4 {
+                migrate_bank_columns(conn)?;
+            }
             merge_factory_entries(conn, &self.factory_entries)?;
             Ok(())
         })
@@ -273,8 +316,12 @@ pub fn mutate_library_then(
 }
 
 fn parse_factory_entries(factory_json: &str) -> Result<Vec<PresetLibraryEntry>, String> {
-    serde_json::from_str(factory_json)
-        .map_err(|error| format!("failed to parse embedded factory presets: {error}"))
+    let entries: Vec<PresetLibraryEntry> = serde_json::from_str(factory_json)
+        .map_err(|error| format!("failed to parse embedded factory presets: {error}"))?;
+    Ok(entries
+        .into_iter()
+        .map(with_default_bank_metadata)
+        .collect())
 }
 
 fn db_err(error: rusqlite::Error) -> String {
@@ -296,6 +343,8 @@ fn migrate_schema(conn: &Connection) -> Result<(), String> {
             author TEXT NOT NULL,
             starred INTEGER NOT NULL DEFAULT 0,
             sort_index INTEGER NOT NULL DEFAULT 4294967295,
+            bank_id TEXT,
+            bank_name TEXT,
             tags_json TEXT NOT NULL,
             macro_labels_json TEXT NOT NULL,
             factory_version INTEGER NOT NULL DEFAULT 0,
@@ -317,6 +366,7 @@ fn migrate_schema(conn: &Connection) -> Result<(), String> {
         );
 
         CREATE INDEX IF NOT EXISTS idx_presets_source ON presets(source);
+        CREATE INDEX IF NOT EXISTS idx_presets_bank_id ON presets(bank_id);
         CREATE INDEX IF NOT EXISTS idx_fx_module_presets_module_type ON fx_module_presets(module_type);
         ",
     )
@@ -427,15 +477,7 @@ fn migrate_starred_state_to_favorites(conn: &Connection) -> Result<(), String> {
 }
 
 fn migrate_sort_index_column(conn: &Connection) -> Result<(), String> {
-    let has_sort_index = conn
-        .prepare("PRAGMA table_info(presets)")
-        .map_err(db_err)?
-        .query_map([], |row| row.get::<_, String>(1))
-        .map_err(db_err)?
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(db_err)?
-        .into_iter()
-        .any(|column| column == "sort_index");
+    let has_sort_index = has_preset_column(conn, "sort_index")?;
 
     if !has_sort_index {
         conn.execute(
@@ -448,12 +490,41 @@ fn migrate_sort_index_column(conn: &Connection) -> Result<(), String> {
     Ok(())
 }
 
+fn migrate_bank_columns(conn: &Connection) -> Result<(), String> {
+    if !has_preset_column(conn, "bank_id")? {
+        conn.execute("ALTER TABLE presets ADD COLUMN bank_id TEXT", [])
+            .map_err(db_err)?;
+    }
+
+    if !has_preset_column(conn, "bank_name")? {
+        conn.execute("ALTER TABLE presets ADD COLUMN bank_name TEXT", [])
+            .map_err(db_err)?;
+    }
+
+    Ok(())
+}
+
+fn has_preset_column(conn: &Connection, column_name: &str) -> Result<bool, String> {
+    Ok(conn
+        .prepare("PRAGMA table_info(presets)")
+        .map_err(db_err)?
+        .query_map([], |row| row.get::<_, String>(1))
+        .map_err(db_err)?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(db_err)?
+        .into_iter()
+        .any(|column| column == column_name))
+}
+
 fn merge_factory_entries(
     conn: &Connection,
     factory_entries: &[PresetLibraryEntry],
 ) -> Result<(), String> {
-    conn.execute("DELETE FROM presets WHERE source != 'user'", [])
-        .map_err(db_err)?;
+    conn.execute(
+        "DELETE FROM presets WHERE source IN ('cosmo-factory', 'cz-factory')",
+        [],
+    )
+    .map_err(db_err)?;
 
     for entry in factory_entries {
         upsert_entry(conn, entry)?;
@@ -469,9 +540,34 @@ fn merge_factory_entries(
     Ok(())
 }
 
+fn with_default_bank_metadata(mut entry: PresetLibraryEntry) -> PresetLibraryEntry {
+    if entry.bank_id.is_none() || entry.bank_name.is_none() {
+        match entry.source.as_str() {
+            "cosmo-factory" => {
+                entry
+                    .bank_id
+                    .get_or_insert_with(|| "cosmo-factory".to_string());
+                entry
+                    .bank_name
+                    .get_or_insert_with(|| "Cosmo Library".to_string());
+            }
+            "cz-factory" => {
+                entry
+                    .bank_id
+                    .get_or_insert_with(|| "cz-factory".to_string());
+                entry
+                    .bank_name
+                    .get_or_insert_with(|| "Temple Of CZ".to_string());
+            }
+            _ => {}
+        }
+    }
+    entry
+}
+
 fn load_entry(conn: &Connection, id: &str) -> Result<Option<PresetLibraryEntry>, String> {
     conn.query_row(
-        "SELECT id, name, source, author, starred, sort_index, tags_json, macro_labels_json, factory_version, data_json
+        "SELECT id, name, source, author, starred, sort_index, bank_id, bank_name, tags_json, macro_labels_json, factory_version, data_json
          FROM presets
          WHERE id = ?1",
         [id],
@@ -486,7 +582,7 @@ fn list_entries(
     source_filter: Option<&str>,
 ) -> Result<Vec<PresetLibraryEntry>, String> {
     let sql = if source_filter.is_some() {
-        "SELECT id, name, source, author, starred, sort_index, tags_json, macro_labels_json, factory_version, data_json
+        "SELECT id, name, source, author, starred, sort_index, bank_id, bank_name, tags_json, macro_labels_json, factory_version, data_json
          FROM presets
          WHERE source = ?1
          ORDER BY
@@ -496,7 +592,7 @@ fn list_entries(
             name COLLATE NOCASE,
             id"
     } else {
-        "SELECT id, name, source, author, starred, sort_index, tags_json, macro_labels_json, factory_version, data_json
+        "SELECT id, name, source, author, starred, sort_index, bank_id, bank_name, tags_json, macro_labels_json, factory_version, data_json
          FROM presets
          ORDER BY
             CASE WHEN source = 'user' THEN 1 ELSE 0 END,
@@ -543,7 +639,7 @@ fn list_records(
 
 fn find_startup_starred_entry(conn: &Connection) -> Result<Option<PresetLibraryEntry>, String> {
     conn.query_row(
-        "SELECT p.id, p.name, p.source, p.author, p.starred, p.sort_index, p.tags_json,
+        "SELECT p.id, p.name, p.source, p.author, p.starred, p.sort_index, p.bank_id, p.bank_name, p.tags_json,
                 p.macro_labels_json, p.factory_version, p.data_json
          FROM presets p
          WHERE p.starred = 1
@@ -573,16 +669,18 @@ fn upsert_entry(conn: &Connection, entry: &PresetLibraryEntry) -> Result<(), Str
 
     conn.execute(
         "INSERT INTO presets (
-            id, name, source, author, starred, sort_index, tags_json,
+            id, name, source, author, starred, sort_index, bank_id, bank_name, tags_json,
             macro_labels_json, factory_version, data_json, revision,
             updated_at_unix_ms
-         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 0, ?11)
+         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, 0, ?13)
          ON CONFLICT(id) DO UPDATE SET
             name = excluded.name,
             source = excluded.source,
             author = excluded.author,
             starred = excluded.starred,
             sort_index = excluded.sort_index,
+            bank_id = excluded.bank_id,
+            bank_name = excluded.bank_name,
             tags_json = excluded.tags_json,
             macro_labels_json = excluded.macro_labels_json,
             factory_version = excluded.factory_version,
@@ -596,6 +694,8 @@ fn upsert_entry(conn: &Connection, entry: &PresetLibraryEntry) -> Result<(), Str
             entry.author,
             if entry.starred { 1_i64 } else { 0_i64 },
             i64::from(entry.sort_index),
+            entry.bank_id,
+            entry.bank_name,
             tags_json,
             macro_labels_json,
             i64::from(entry.factory_version),
@@ -608,18 +708,18 @@ fn upsert_entry(conn: &Connection, entry: &PresetLibraryEntry) -> Result<(), Str
 }
 
 fn map_entry_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<PresetLibraryEntry> {
-    let tags_json: String = row.get(6)?;
-    let macro_labels_json: String = row.get(7)?;
-    let data_json: String = row.get(9)?;
+    let tags_json: String = row.get(8)?;
+    let macro_labels_json: String = row.get(9)?;
+    let data_json: String = row.get(11)?;
 
     let tags = serde_json::from_str(&tags_json).map_err(|error| {
-        rusqlite::Error::FromSqlConversionFailure(6, rusqlite::types::Type::Text, Box::new(error))
+        rusqlite::Error::FromSqlConversionFailure(8, rusqlite::types::Type::Text, Box::new(error))
     })?;
     let macro_labels = serde_json::from_str(&macro_labels_json).map_err(|error| {
-        rusqlite::Error::FromSqlConversionFailure(7, rusqlite::types::Type::Text, Box::new(error))
+        rusqlite::Error::FromSqlConversionFailure(9, rusqlite::types::Type::Text, Box::new(error))
     })?;
     let data = serde_json::from_str(&data_json).map_err(|error| {
-        rusqlite::Error::FromSqlConversionFailure(9, rusqlite::types::Type::Text, Box::new(error))
+        rusqlite::Error::FromSqlConversionFailure(11, rusqlite::types::Type::Text, Box::new(error))
     })?;
 
     Ok(PresetLibraryEntry {
@@ -629,9 +729,11 @@ fn map_entry_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<PresetLibraryEntry
         author: row.get(3)?,
         starred: row.get::<_, i64>(4)? != 0,
         sort_index: row.get::<_, i64>(5)? as u32,
+        bank_id: row.get(6)?,
+        bank_name: row.get(7)?,
         tags,
         macro_labels,
-        factory_version: row.get::<_, i64>(8)? as u32,
+        factory_version: row.get::<_, i64>(10)? as u32,
         data,
     })
 }
@@ -654,6 +756,97 @@ fn upsert_favorite(conn: &Connection, id: &str) -> Result<(), String> {
     )
     .map_err(db_err)?;
     Ok(())
+}
+
+fn import_bank_entries(conn: &Connection, bundle: PresetBankBundle) -> Result<(), String> {
+    if bundle.r#type != "preset-bank" {
+        return Err("unsupported preset bank bundle type".to_string());
+    }
+    if bundle.schema_version != 1 {
+        return Err("unsupported preset bank bundle schema version".to_string());
+    }
+
+    let imported_ids = bundle
+        .presets
+        .iter()
+        .map(|preset| preset.id.clone())
+        .collect::<Vec<_>>();
+
+    for preset in bundle.presets {
+        let macro_labels = extract_macro_labels(&preset.data);
+        upsert_entry(
+            conn,
+            &PresetLibraryEntry {
+                id: preset.id,
+                name: preset.name,
+                source: bundle.bank.source.clone(),
+                author: preset.author,
+                starred: preset.starred,
+                sort_index: DEFAULT_SORT_INDEX,
+                bank_id: Some(bundle.bank.id.clone()),
+                bank_name: Some(bundle.bank.name.clone()),
+                tags: preset.tags,
+                macro_labels,
+                factory_version: 0,
+                data: preset.data,
+            },
+        )?;
+    }
+
+    let mut statement = conn
+        .prepare("SELECT id FROM presets WHERE source = ?1 AND bank_id = ?2")
+        .map_err(db_err)?;
+    let existing_ids = statement
+        .query_map(params![bundle.bank.source, bundle.bank.id], |row| {
+            row.get::<_, String>(0)
+        })
+        .map_err(db_err)?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(db_err)?;
+
+    for existing_id in existing_ids {
+        if imported_ids.contains(&existing_id) {
+            continue;
+        }
+        conn.execute("DELETE FROM presets WHERE id = ?1", [existing_id.as_str()])
+            .map_err(db_err)?;
+    }
+
+    conn.execute(
+        "DELETE FROM preset_favorites
+         WHERE preset_id NOT IN (SELECT id FROM presets)",
+        [],
+    )
+    .map_err(db_err)?;
+
+    Ok(())
+}
+
+fn extract_macro_labels(data: &serde_json::Value) -> [String; 4] {
+    let fallback = SynthParams::default().macro_labels;
+    let Some(params) = data.get("params").and_then(serde_json::Value::as_object) else {
+        return fallback;
+    };
+    let Some(labels) = params
+        .get("macroLabels")
+        .and_then(serde_json::Value::as_array)
+    else {
+        return fallback;
+    };
+    let parsed = labels
+        .iter()
+        .take(4)
+        .map(|label| label.as_str().map(str::to_string))
+        .collect::<Option<Vec<_>>>();
+    match parsed {
+        Some(values) if values.len() == 4 => [
+            values[0].clone(),
+            values[1].clone(),
+            values[2].clone(),
+            values[3].clone(),
+        ],
+        _ => fallback,
+    }
 }
 
 fn list_fx_module_presets(
@@ -736,6 +929,8 @@ mod tests {
             author: "Factory".to_string(),
             starred: false,
             sort_index: DEFAULT_SORT_INDEX,
+            bank_id: Some("cosmo-factory".to_string()),
+            bank_name: Some("Cosmo Library".to_string()),
             tags: vec![],
             macro_labels: [
                 "Brightness".to_string(),
@@ -756,6 +951,8 @@ mod tests {
             author: "You".to_string(),
             starred: false,
             sort_index: DEFAULT_SORT_INDEX,
+            bank_id: None,
+            bank_name: None,
             tags: vec!["bass".to_string()],
             macro_labels: [
                 "Brightness".to_string(),
@@ -1011,6 +1208,95 @@ mod tests {
     fn startup_preset_returns_none_when_no_starred_presets_exist() {
         let library = open_temp_library(vec![sample_entry("f1")]);
         assert!(library.find_startup_preset().unwrap().is_none());
+    }
+
+    #[test]
+    fn list_entries_exposes_bank_metadata() {
+        let library = open_temp_library(vec![sample_entry("f1")]);
+        let entry = library.list_entries(None).unwrap().pop().unwrap();
+        assert_eq!(entry.bank_id.as_deref(), Some("cosmo-factory"));
+        assert_eq!(entry.bank_name.as_deref(), Some("Cosmo Library"));
+    }
+
+    #[test]
+    fn import_bank_replaces_stale_entries_within_same_bank() {
+        let mut library = open_temp_library(vec![sample_entry("f1")]);
+        library
+            .import_bank(PresetBankBundle {
+                r#type: "preset-bank".to_string(),
+                schema_version: 1,
+                bank: PresetBankMetadata {
+                    id: "addon-bank".to_string(),
+                    name: "Addon Bank".to_string(),
+                    source: "addon".to_string(),
+                },
+                presets: vec![PresetBankEntry {
+                    id: "addon-a".to_string(),
+                    name: "Addon A".to_string(),
+                    author: "Addon".to_string(),
+                    starred: false,
+                    tags: vec!["pad".to_string()],
+                    data: serde_json::json!({ "schemaVersion": 1, "params": { "volume": 0.5 } }),
+                }],
+            })
+            .unwrap();
+        library.set_starred("addon-a", true).unwrap();
+        library
+            .import_bank(PresetBankBundle {
+                r#type: "preset-bank".to_string(),
+                schema_version: 1,
+                bank: PresetBankMetadata {
+                    id: "addon-bank".to_string(),
+                    name: "Addon Bank".to_string(),
+                    source: "addon".to_string(),
+                },
+                presets: vec![PresetBankEntry {
+                    id: "addon-b".to_string(),
+                    name: "Addon B".to_string(),
+                    author: "Addon".to_string(),
+                    starred: false,
+                    tags: vec!["bass".to_string()],
+                    data: serde_json::json!({ "schemaVersion": 1, "params": { "volume": 0.6 } }),
+                }],
+            })
+            .unwrap();
+
+        let records = library.list_records(None).unwrap();
+        assert!(records.iter().any(|record| record.entry.id == "addon-b"));
+        assert!(!records.iter().any(|record| record.entry.id == "addon-a"));
+    }
+
+    #[test]
+    fn import_bank_preserves_macro_labels_from_preset_payload() {
+        let mut library = open_temp_library(vec![sample_entry("f1")]);
+        library
+            .import_bank(PresetBankBundle {
+                r#type: "preset-bank".to_string(),
+                schema_version: 1,
+                bank: PresetBankMetadata {
+                    id: "addon-bank".to_string(),
+                    name: "Addon Bank".to_string(),
+                    source: "addon".to_string(),
+                },
+                presets: vec![PresetBankEntry {
+                    id: "addon-macro".to_string(),
+                    name: "Addon Macro".to_string(),
+                    author: "Addon".to_string(),
+                    starred: false,
+                    tags: vec![],
+                    data: serde_json::json!({
+                        "schemaVersion": 1,
+                        "params": {
+                            "volume": 0.5,
+                            "macroLabels": ["A", "B", "C", "D"]
+                        }
+                    }),
+                }],
+            })
+            .unwrap();
+
+        let imported = library.get_entry("addon-macro").unwrap().unwrap();
+        assert_eq!(imported.macro_labels, ["A", "B", "C", "D"]);
     }
 
     #[test]

@@ -5,6 +5,7 @@ describe("presetSources", () => {
 	it("returns labels for all preset sources", () => {
 		expect(getPresetSourceLabel("cosmo-factory")).toBe("Cosmo Library");
 		expect(getPresetSourceLabel("cz-factory")).toBe("Temple Of CZ");
+		expect(getPresetSourceLabel("addon")).toBe("Add-On Bank");
 		expect(getPresetSourceLabel("user")).toBe("User");
 	});
 });

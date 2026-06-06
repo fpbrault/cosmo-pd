@@ -36,6 +36,7 @@ export function usePresetLibraryState({
 	const [selectedAuthorFilters, setSelectedAuthorFilters] = useState<string[]>(
 		[],
 	);
+	const [selectedBankFilters, setSelectedBankFilters] = useState<string[]>([]);
 	const [selectedTagFilters, setSelectedTagFilters] = useState<string[]>([]);
 	const [sortState, setSortState] = useState<{
 		key: SortKey;
@@ -59,6 +60,17 @@ export function usePresetLibraryState({
 			).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" })),
 		[allEntries],
 	);
+	const availableBanks = useMemo(
+		() =>
+			Array.from(
+				new Set(
+					allEntries
+						.map((entry) => entry.bankName?.trim())
+						.filter((bankName): bankName is string => Boolean(bankName)),
+				),
+			).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" })),
+		[allEntries],
+	);
 
 	const filteredEntries = useMemo(() => {
 		const normalizedSearch = search.trim().toLowerCase();
@@ -75,12 +87,21 @@ export function usePresetLibraryState({
 					)
 				: bySearch;
 
-		const byTags =
-			selectedTagFilters.length > 0
+		const byBank =
+			selectedBankFilters.length > 0
 				? byAuthor.filter((entry) =>
-						selectedTagFilters.every((tag) => entry.tags.includes(tag)),
+						entry.bankName
+							? selectedBankFilters.includes(entry.bankName)
+							: false,
 					)
 				: byAuthor;
+
+		const byTags =
+			selectedTagFilters.length > 0
+				? byBank.filter((entry) =>
+						selectedTagFilters.every((tag) => entry.tags.includes(tag)),
+					)
+				: byBank;
 
 		const byType = showOnlyUserPresets
 			? byTags.filter((entry) => entry.source === "user")
@@ -96,6 +117,7 @@ export function usePresetLibraryState({
 		allEntries,
 		search,
 		selectedAuthorFilters,
+		selectedBankFilters,
 		selectedTagFilters,
 		showOnlyUserPresets,
 	]);
@@ -330,6 +352,8 @@ export function usePresetLibraryState({
 		setShowOnlyUserPresets,
 		selectedAuthorFilters,
 		setSelectedAuthorFilters,
+		selectedBankFilters,
+		setSelectedBankFilters,
 		selectedTagFilters,
 		setSelectedTagFilters,
 		focusedEntryId,
@@ -339,6 +363,7 @@ export function usePresetLibraryState({
 		setVirtualScrollTop,
 		availableTags,
 		availableAuthors,
+		availableBanks,
 		sortedEntries,
 		virtualRows,
 		virtualLayout,
