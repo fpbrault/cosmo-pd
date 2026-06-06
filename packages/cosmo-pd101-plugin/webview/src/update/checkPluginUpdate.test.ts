@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { checkForPluginUpdate } from "./checkPluginUpdate";
 
+declare const __CZ_APP_VERSION__: string;
+
 const SESSION_KEY = "cosmo-pd101.update.latestNotified";
+const CURRENT_VERSION = __CZ_APP_VERSION__;
 const fetchMock = vi.fn<typeof fetch>();
 
 function mockLatestRelease(payload: Record<string, unknown>, ok = true) {
@@ -29,7 +32,7 @@ describe("checkForPluginUpdate", () => {
 		});
 
 		await expect(checkForPluginUpdate()).resolves.toEqual({
-			currentVersion: "0.2.0",
+			currentVersion: CURRENT_VERSION,
 			latestVersion: "1.2.3",
 			releaseUrl: "https://example.com/releases/v1.2.3",
 			forcedByEnv: false,
@@ -59,7 +62,7 @@ describe("checkForPluginUpdate", () => {
 		});
 
 		await expect(checkForPluginUpdate({ manual: true })).resolves.toEqual({
-			currentVersion: "0.2.0",
+			currentVersion: CURRENT_VERSION,
 			latestVersion: "1.2.3",
 			releaseUrl: "https://example.com/releases/v1.2.3",
 			forcedByEnv: false,
@@ -75,7 +78,7 @@ describe("checkForPluginUpdate", () => {
 		await expect(
 			checkForPluginUpdate({ recordNotification: false }),
 		).resolves.toEqual({
-			currentVersion: "0.2.0",
+			currentVersion: CURRENT_VERSION,
 			latestVersion: "1.2.3",
 			releaseUrl: "https://example.com/releases/v1.2.3",
 			forcedByEnv: false,
@@ -85,8 +88,8 @@ describe("checkForPluginUpdate", () => {
 
 	it("ignores releases that are not newer than the baked version", async () => {
 		mockLatestRelease({
-			tag_name: "v0.2.0",
-			html_url: "https://example.com/releases/v0.2.0",
+			tag_name: `v${CURRENT_VERSION}`,
+			html_url: `https://example.com/releases/v${CURRENT_VERSION}`,
 		});
 
 		await expect(checkForPluginUpdate()).resolves.toBeNull();
@@ -129,7 +132,7 @@ describe("checkForPluginUpdate", () => {
 		};
 
 		await expect(checkForPluginUpdate()).resolves.toEqual({
-			currentVersion: "0.2.0",
+			currentVersion: CURRENT_VERSION,
 			latestVersion: "1.2.3",
 			releaseUrl: "https://example.com/releases/v1.2.3",
 			forcedByEnv: false,
