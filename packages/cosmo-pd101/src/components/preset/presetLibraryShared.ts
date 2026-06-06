@@ -9,7 +9,6 @@ export type VirtualPresetRow = {
 	entry: PresetEntry;
 };
 
-export const TABLE_HEADER_HEIGHT = 32;
 const ENTRY_ROW_HEIGHT = 52;
 export const VIRTUAL_OVERSCAN_PX = ENTRY_ROW_HEIGHT * 8;
 

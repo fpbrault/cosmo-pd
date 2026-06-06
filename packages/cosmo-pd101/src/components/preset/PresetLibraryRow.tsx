@@ -1,6 +1,7 @@
 import { memo } from "react";
 import Button from "@/components/controls/Button";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
+import { getPresetTagBadgeClassName } from "./presetTagTone";
 
 const ENTRY_ROW_HEIGHT = 52;
 
@@ -13,6 +14,7 @@ type PresetLibraryRowProps = {
 	onSetFocus: (id: string) => void;
 	onSetFavorite: (id: string, favorite: boolean) => void;
 	onToggleTagFilter: (tag: string) => void;
+	selectedTagFilters: readonly string[];
 };
 
 export default memo(function PresetLibraryRow({
@@ -24,6 +26,7 @@ export default memo(function PresetLibraryRow({
 	onSetFocus,
 	onSetFavorite,
 	onToggleTagFilter,
+	selectedTagFilters,
 }: PresetLibraryRowProps) {
 	return (
 		<div
@@ -104,7 +107,10 @@ export default memo(function PresetLibraryRow({
 						<button
 							key={`${entry.id}-${tag}`}
 							type="button"
-							className="badge badge-primary capitalize"
+							className={getPresetTagBadgeClassName(
+								tag,
+								selectedTagFilters.includes(tag),
+							)}
 							onClick={() => onToggleTagFilter(tag)}
 						>
 							{tag.toLowerCase()}

@@ -43,6 +43,7 @@ use crate::preset_library::PresetLibrary;
 const PLUGIN_LOG_PATH: &str = "/tmp/cosmo-plugin.log";
 const MAX_UI_INPUT_EVENTS_PER_BLOCK: usize = 64;
 const UI_INPUT_QUEUE_CAPACITY: usize = 1024;
+const DEFAULT_USER_PRESET_AUTHOR: &str = "User";
 
 #[cfg(not(test))]
 #[derive(Clone)]
@@ -1292,7 +1293,11 @@ fn handle_ipc_invoke(
 
                 entry.name = name.clone();
                 entry.source = "user".to_string();
-                entry.author = author;
+                entry.author = if author.trim().is_empty() {
+                    DEFAULT_USER_PRESET_AUTHOR.to_string()
+                } else {
+                    author
+                };
                 entry.tags = tags;
                 entry.macro_labels = macro_labels;
                 entry.data = data;
@@ -2966,6 +2971,44 @@ mod tests {
         assert!(state.bindings.iter().any(|binding| {
             binding.param_key == "macro1" && binding.channel == 0 && binding.cc == 74
         }));
+    }
+
+    #[test]
+    fn save_preset_defaults_new_user_author_to_user() {
+        with_test_data_dir(|_| {
+            let (sp, rsp, rms, rvs, ts, ver, sc, q, params, ps, _pl, es, mm) = make_handler_state();
+            let factory_json = include_str!(concat!(env!("OUT_DIR"), "/minified_presets.json"));
+            let pl = Arc::new(Mutex::new(
+                PresetLibrary::load_or_init(factory_json).unwrap(),
+            ));
+
+            let result = handle_ipc_invoke(
+                "savePreset",
+                &[serde_json::json!({
+                    "name": "New Preset",
+                    "author": "",
+                    "tags": [],
+                })],
+                &sp,
+                &rsp,
+                &rms,
+                &rvs,
+                &ts,
+                &ver,
+                &sc,
+                &q,
+                &params,
+                &ps,
+                &pl,
+                &es,
+                &mm,
+            )
+            .unwrap();
+
+            let id = result["id"].as_str().unwrap();
+            let saved = pl.lock().unwrap().get_entry(id).unwrap().unwrap();
+            assert_eq!(saved.author, DEFAULT_USER_PRESET_AUTHOR);
+        });
     }
 
     #[test]

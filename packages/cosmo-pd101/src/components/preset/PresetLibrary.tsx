@@ -74,8 +74,6 @@ export default function PresetLibrary({
 		setRenameValue,
 		authorValue,
 		setAuthorValue,
-		tagDraft,
-		setTagDraft,
 		showOnlyUserPresets,
 		setShowOnlyUserPresets,
 		selectedAuthorFilters,
@@ -95,7 +93,6 @@ export default function PresetLibrary({
 		focusedEntry,
 		activeLocalEntry,
 		selectedLocalEntry,
-		tagSuggestions,
 		toggleSort,
 		sortIndicator,
 	} = usePresetLibraryState({
@@ -150,17 +147,6 @@ export default function PresetLibrary({
 		[setSelectedTagFilters],
 	);
 
-	const toggleAuthorFilter = useCallback(
-		(author: string) => {
-			setSelectedAuthorFilters((prev) =>
-				prev.includes(author)
-					? prev.filter((value) => value !== author)
-					: [...prev, author],
-			);
-		},
-		[setSelectedAuthorFilters],
-	);
-
 	const openSaveAsModal = useCallback(() => {
 		setSaveAsName(
 			activeLocalEntry?.label ?? activePresetName.replace(/\s+\*$/, ""),
@@ -190,26 +176,18 @@ export default function PresetLibrary({
 		}
 	}, [onRenamePreset, renameValue, selectedLocalEntry]);
 
-	const addTag = useCallback(() => {
-		if (!selectedLocalEntry) return;
-		const nextTag = tagDraft.trim().toLowerCase();
-		if (
-			!PRESET_TAG_OPTIONS.includes(
-				nextTag as (typeof PRESET_TAG_OPTIONS)[number],
-			)
-		) {
-			return;
-		}
-		if (selectedLocalEntry.tags.includes(nextTag)) {
-			setTagDraft("");
-			return;
-		}
-		onSetPresetTags(selectedLocalEntry.id, [
-			...(selectedLocalEntry.tags as PresetTagOptions[]),
-			nextTag as PresetTagOptions,
-		]);
-		setTagDraft("");
-	}, [onSetPresetTags, selectedLocalEntry, setTagDraft, tagDraft]);
+	const updateSelectedTags = useCallback(
+		(nextTags: string[]) => {
+			if (!selectedLocalEntry) return;
+			onSetPresetTags(
+				selectedLocalEntry.id,
+				nextTags.filter((tag): tag is PresetTagOptions =>
+					PRESET_TAG_OPTIONS.includes(tag as PresetTagOptions),
+				),
+			);
+		},
+		[onSetPresetTags, selectedLocalEntry],
+	);
 
 	const commitAuthor = useCallback(() => {
 		if (!selectedLocalEntry) return;
@@ -219,19 +197,6 @@ export default function PresetLibrary({
 		}
 		onSetPresetAuthor(selectedLocalEntry.id, nextAuthor);
 	}, [authorValue, onSetPresetAuthor, selectedLocalEntry]);
-
-	const removeTag = useCallback(
-		(tag: string) => {
-			if (!selectedLocalEntry) return;
-			onSetPresetTags(
-				selectedLocalEntry.id,
-				selectedLocalEntry.tags.filter(
-					(value) => value !== tag,
-				) as PresetTagOptions[],
-			);
-		},
-		[onSetPresetTags, selectedLocalEntry],
-	);
 
 	const deleteSelectedPreset = useCallback(() => {
 		if (!selectedLocalEntry) return;
@@ -251,10 +216,17 @@ export default function PresetLibrary({
 					totalCount={sortedEntries.length}
 					search={search}
 					onSearchChange={setSearch}
+					onClearSearch={() => setSearch("")}
 					onClose={onClose}
 					availableAuthors={availableAuthors}
 					selectedAuthorFilters={selectedAuthorFilters}
-					onToggleAuthorFilter={toggleAuthorFilter}
+					onToggleAuthorFilter={(author) => {
+						setSelectedAuthorFilters((prev) =>
+							prev.includes(author)
+								? prev.filter((value) => value !== author)
+								: [...prev, author],
+						);
+					}}
 					onClearAuthorFilters={() => setSelectedAuthorFilters([])}
 					availableTags={availableTags}
 					selectedTagFilters={selectedTagFilters}
@@ -275,7 +247,7 @@ export default function PresetLibrary({
 						role="listbox"
 						aria-label="Preset library"
 						data-preset-library="true"
-						tabIndex={-1}
+						tabIndex={isPluginRuntime ? 0 : -1}
 						onScroll={(event) => {
 							setVirtualScrollTop(event.currentTarget.scrollTop);
 						}}
@@ -304,6 +276,7 @@ export default function PresetLibrary({
 											onSetFocus={setFocusedEntryId}
 											onSetFavorite={onSetPresetFavorite}
 											onToggleTagFilter={toggleTagFilter}
+											selectedTagFilters={selectedTagFilters}
 										/>
 									);
 								})}
@@ -322,11 +295,7 @@ export default function PresetLibrary({
 						onAuthorValueChange={setAuthorValue}
 						onCommitAuthor={commitAuthor}
 						selectedLocalTags={selectedLocalEntry?.tags ?? []}
-						tagDraft={tagDraft}
-						tagSuggestions={tagSuggestions}
-						onTagDraftChange={setTagDraft}
-						onAddTag={addTag}
-						onRemoveTag={removeTag}
+						onSelectedTagsChange={updateSelectedTags}
 						onExportSelectedPreset={exportSelectedPreset}
 						onDeleteSelectedPreset={deleteSelectedPreset}
 						saveName={saveName}

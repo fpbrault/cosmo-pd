@@ -6,7 +6,6 @@ import {
 	getVirtualRowHeight,
 	type SortDirection,
 	type SortKey,
-	TABLE_HEADER_HEIGHT,
 	VIRTUAL_OVERSCAN_PX,
 	type VirtualPresetRow,
 } from "./presetLibraryShared";
@@ -33,7 +32,6 @@ export function usePresetLibraryState({
 	const [importError, setImportError] = useState<string | null>(null);
 	const [renameValue, setRenameValue] = useState("");
 	const [authorValue, setAuthorValue] = useState("");
-	const [tagDraft, setTagDraft] = useState("");
 	const [showOnlyUserPresets, setShowOnlyUserPresets] = useState(false);
 	const [selectedAuthorFilters, setSelectedAuthorFilters] = useState<string[]>(
 		[],
@@ -191,7 +189,7 @@ export function usePresetLibraryState({
 	}, [virtualRows]);
 
 	const visibleVirtualRows = useMemo(() => {
-		const listScrollTop = Math.max(0, virtualScrollTop - TABLE_HEADER_HEIGHT);
+		const listScrollTop = Math.max(0, virtualScrollTop);
 		const startBoundary = Math.max(0, listScrollTop - VIRTUAL_OVERSCAN_PX);
 		const endBoundary =
 			listScrollTop + virtualViewportHeight + VIRTUAL_OVERSCAN_PX;
@@ -233,21 +231,6 @@ export function usePresetLibraryState({
 				);
 	const selectedLocalEntry =
 		focusedEntry?.type === "local" ? focusedEntry : activeLocalEntry;
-
-	const tagSuggestions = useMemo(() => {
-		const normalizedDraft = tagDraft.trim().toLowerCase();
-		if (!normalizedDraft) {
-			return PRESET_TAG_OPTIONS.filter(
-				(tag) => !selectedLocalEntry?.tags.includes(tag),
-			);
-		}
-
-		return PRESET_TAG_OPTIONS.filter(
-			(tag) =>
-				tag.includes(normalizedDraft) &&
-				!selectedLocalEntry?.tags.includes(tag),
-		);
-	}, [selectedLocalEntry?.tags, tagDraft]);
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -321,7 +304,6 @@ export function usePresetLibraryState({
 	useEffect(() => {
 		setRenameValue(selectedLocalEntry?.label ?? "");
 		setAuthorValue(selectedLocalEntry?.author ?? "");
-		setTagDraft("");
 	}, [selectedLocalEntry]);
 
 	useEffect(() => {
@@ -344,8 +326,6 @@ export function usePresetLibraryState({
 		setRenameValue,
 		authorValue,
 		setAuthorValue,
-		tagDraft,
-		setTagDraft,
 		showOnlyUserPresets,
 		setShowOnlyUserPresets,
 		selectedAuthorFilters,
@@ -366,7 +346,6 @@ export function usePresetLibraryState({
 		focusedEntry,
 		activeLocalEntry,
 		selectedLocalEntry,
-		tagSuggestions,
 		toggleSort,
 		sortIndicator,
 	};

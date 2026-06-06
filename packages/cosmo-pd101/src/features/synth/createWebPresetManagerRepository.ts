@@ -33,6 +33,8 @@ type CreateWebPresetManagerRepositoryOptions = {
 	onBeforeApplyPreset?: () => void;
 };
 
+const DEFAULT_USER_PRESET_AUTHOR = "User";
+
 function createSelection(
 	activePresetId: string | null,
 	activePresetNameBase: string,
@@ -115,7 +117,9 @@ export function createWebPresetManagerRepository({
 				name,
 				data: gatherPresetState(),
 				source: "user",
-				author: currentStoredPreset?.author ?? "",
+				author: currentStoredPreset?.author?.trim()
+					? currentStoredPreset.author
+					: DEFAULT_USER_PRESET_AUTHOR,
 				starred: currentStoredPreset?.starred ?? false,
 				tags: currentStoredPreset?.tags ?? [],
 			});

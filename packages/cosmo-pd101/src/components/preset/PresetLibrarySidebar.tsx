@@ -1,6 +1,8 @@
 import { memo } from "react";
 import Button from "@/components/controls/Button";
 import { PRESET_TAG_OPTIONS } from "@/lib/synth/presetTags";
+import PresetMultiSelect from "./PresetMultiSelect";
+import { getPresetTagBadgeClassName } from "./presetTagTone";
 
 type PresetLibrarySidebarProps = {
 	activeLocalEntryLabel: string | null;
@@ -13,11 +15,7 @@ type PresetLibrarySidebarProps = {
 	onAuthorValueChange: (author: string) => void;
 	onCommitAuthor: () => void;
 	selectedLocalTags: string[];
-	tagDraft: string;
-	tagSuggestions: readonly string[];
-	onTagDraftChange: (value: string) => void;
-	onAddTag: () => void;
-	onRemoveTag: (tag: string) => void;
+	onSelectedTagsChange: (tags: string[]) => void;
 	onExportSelectedPreset: () => void;
 	onDeleteSelectedPreset: () => void;
 	saveName: string;
@@ -41,11 +39,7 @@ export default memo(function PresetLibrarySidebar({
 	onAuthorValueChange,
 	onCommitAuthor,
 	selectedLocalTags,
-	tagDraft,
-	tagSuggestions,
-	onTagDraftChange,
-	onAddTag,
-	onRemoveTag,
+	onSelectedTagsChange,
 	onExportSelectedPreset,
 	onDeleteSelectedPreset,
 	onSave,
@@ -58,6 +52,47 @@ export default memo(function PresetLibrarySidebar({
 		<aside className="border-cz-border border-t-0 border-l bg-cz-surface p-4">
 			<div className="space-y-5">
 				<section>
+					<h3 className="mb-2 font-mono text-4xs text-cz-gold uppercase tracking-[0.28em]">
+						Current State
+					</h3>
+					<div className="mt-2 grid grid-cols-2 gap-2">
+						<Button
+							type="button"
+							className="btn btn-sm btn-warning"
+							disabled={!activeLocalEntryLabel}
+							onClick={onSave}
+						>
+							Save
+						</Button>
+						<Button
+							type="button"
+							className="btn btn-sm btn-success"
+							onClick={onOpenSaveAs}
+						>
+							Save As
+						</Button>
+						<Button
+							type="button"
+							className="btn btn-sm btn-secondary"
+							onClick={onImportClick}
+						>
+							Import
+						</Button>
+						<Button
+							type="button"
+							className="btn btn-sm btn-error"
+							onClick={onInitPreset}
+						>
+							Init Preset
+						</Button>
+						{importError ? (
+							<p className="mt-2 text-red-400 text-xs">{importError}</p>
+						) : null}
+					</div>
+					<div className="grid grid-cols-2 gap-2"></div>
+				</section>
+
+				<section className="border-cz-border/70 border-t pt-5">
 					<h3 className="mb-2 font-mono text-4xs text-cz-gold uppercase tracking-[0.28em]">
 						Selected Preset
 					</h3>
@@ -107,15 +142,12 @@ export default memo(function PresetLibrarySidebar({
 								<div className="mb-2 flex flex-wrap gap-2">
 									{selectedLocalTags.length > 0 ? (
 										selectedLocalTags.map((tag) => (
-											<button
+											<span
 												key={tag}
-												type="button"
-												className="badge badge-primary gap-1 capitalize"
-												onClick={() => onRemoveTag(tag)}
+												className={getPresetTagBadgeClassName(tag)}
 											>
 												{tag}
-												<span aria-hidden="true">×</span>
-											</button>
+											</span>
 										))
 									) : (
 										<span className="font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.16em]">
@@ -123,35 +155,20 @@ export default memo(function PresetLibrarySidebar({
 										</span>
 									)}
 								</div>
-								<div className="flex gap-2">
-									<input
-										type="text"
-										list="preset-tag-options"
-										className="input input-sm w-full border-cz-border bg-cz-inset text-cz-cream"
-										placeholder="Add tag"
-										value={tagDraft}
-										onChange={(event) => onTagDraftChange(event.target.value)}
-										onKeyDown={(event) => {
-											if (event.key === "Enter") {
-												event.preventDefault();
-												onAddTag();
-											}
-										}}
-									/>
-									<Button
-										type="button"
-										className="btn btn-sm btn-secondary"
-										disabled={!tagDraft.trim() || tagSuggestions.length === 0}
-										onClick={onAddTag}
-									>
-										Add
-									</Button>
-								</div>
-								<datalist id="preset-tag-options">
-									{PRESET_TAG_OPTIONS.map((tag) => (
-										<option key={tag} value={tag} />
-									))}
-								</datalist>
+								<PresetMultiSelect
+									label="Preset tags"
+									inputId="preset-tag-editor"
+									options={PRESET_TAG_OPTIONS.map((tag) => ({
+										value: tag,
+										label: tag,
+									}))}
+									selectedValues={selectedLocalTags}
+									onChange={onSelectedTagsChange}
+									placeholder="Select tags"
+									clearButtonLabel="Clear preset tags"
+									noOptionsMessage="No tags"
+									tagTone
+								/>
 							</div>
 							<div className="grid grid-cols-2 gap-2">
 								<Button
@@ -176,59 +193,6 @@ export default memo(function PresetLibrarySidebar({
 							delete it.
 						</p>
 					)}
-				</section>
-
-				<section>
-					<h3 className="mb-2 font-mono text-4xs text-cz-gold uppercase tracking-[0.28em]">
-						Current State
-					</h3>
-					<div className="mt-2 grid grid-cols-2 gap-2">
-						<Button
-							type="button"
-							className="btn btn-sm btn-warning"
-							disabled={!activeLocalEntryLabel}
-							onClick={onSave}
-						>
-							Save
-						</Button>
-						<Button
-							type="button"
-							className="btn btn-sm btn-success"
-							onClick={onOpenSaveAs}
-						>
-							Save As
-						</Button>
-					</div>
-				</section>
-
-				<section>
-					<h3 className="mb-2 font-mono text-4xs text-cz-gold uppercase tracking-[0.28em]">
-						File
-					</h3>
-					<div className="grid grid-cols-2 gap-2">
-						<Button
-							type="button"
-							className="btn btn-sm border-cz-border bg-cz-inset text-cz-cream"
-							onClick={onImportClick}
-						>
-							Import
-						</Button>
-					</div>
-					{importError ? (
-						<p className="mt-2 text-red-400 text-xs">{importError}</p>
-					) : null}
-				</section>
-				<section>
-					<h3 className="mb-2 font-mono text-4xs text-cz-gold uppercase tracking-[0.28em]">
-						Reset
-					</h3>
-					<Button
-						type="button"
-						className="btn btn-sm border-cz-border bg-cz-inset text-red-400"
-						onClick={onInitPreset}
-					>
-						Create Default Preset
-					</Button>
 				</section>
 			</div>
 		</aside>

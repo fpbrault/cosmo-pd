@@ -32,6 +32,8 @@ type SavePluginPresetPayload = {
 	data?: SynthPresetV1;
 };
 
+const DEFAULT_USER_PRESET_AUTHOR = "User";
+
 function getSourceLabel(source: PresetSource): string {
 	if (source === "cosmo-factory") {
 		return "Cosmo Library";
@@ -198,7 +200,9 @@ export function createPluginPresetManagerRepository({
 			const result = (await window.__czSavePreset?.({
 				id: existingEntry?.id ?? null,
 				name,
-				author: existingEntry?.author ?? "",
+				author: existingEntry?.author?.trim()
+					? existingEntry.author
+					: DEFAULT_USER_PRESET_AUTHOR,
 				tags: existingEntry?.tags ?? [],
 			})) as { id?: string; name?: string } | undefined;
 			return createActivationResult(
