@@ -146,9 +146,7 @@ describe("PresetLibrary", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Confirm save as" }));
 		expect(props.onSavePreset).toHaveBeenCalledWith("New Patch");
 
-		fireEvent.click(
-			screen.getByRole("button", { name: "Init Preset" }),
-		);
+		fireEvent.click(screen.getByRole("button", { name: "Init Preset" }));
 		expect(props.onInitPreset).toHaveBeenCalled();
 
 		const fileInput = container.querySelector('input[type="file"]');
