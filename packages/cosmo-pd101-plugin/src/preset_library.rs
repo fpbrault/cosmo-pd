@@ -24,6 +24,16 @@ pub struct PresetLibraryEntry {
     pub data: serde_json::Value,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct FxModulePresetEntry {
+    pub id: String,
+    pub name: String,
+    pub module_type: String,
+    pub patch: serde_json::Value,
+    pub updated_at_unix_ms: i64,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct PresetLibraryRecord {
     pub entry: PresetLibraryEntry,
@@ -159,6 +169,30 @@ impl PresetLibrary {
         })
     }
 
+    pub fn list_fx_module_presets(
+        &self,
+        module_type: &str,
+    ) -> Result<Vec<FxModulePresetEntry>, String> {
+        self.with_connection(|conn| list_fx_module_presets(conn, module_type))
+    }
+
+    pub fn save_fx_module_preset(
+        &mut self,
+        name: String,
+        module_type: String,
+        patch: serde_json::Value,
+    ) -> Result<FxModulePresetEntry, String> {
+        self.with_connection_mut(|conn| save_fx_module_preset(conn, name, module_type, patch))
+    }
+
+    pub fn delete_fx_module_preset(&mut self, id: &str) -> Result<bool, String> {
+        self.with_connection_mut(|conn| {
+            conn.execute("DELETE FROM fx_module_presets WHERE id = ?1", [id])
+                .map(|changed| changed > 0)
+                .map_err(db_err)
+        })
+    }
+
     fn initialize(&self) -> Result<(), String> {
         self.with_connection_mut(|conn| {
             let previous_schema_version = read_schema_version(conn)?;
@@ -274,7 +308,16 @@ fn migrate_schema(conn: &Connection) -> Result<(), String> {
             preset_id TEXT PRIMARY KEY NOT NULL
         );
 
+        CREATE TABLE IF NOT EXISTS fx_module_presets (
+            id TEXT PRIMARY KEY NOT NULL,
+            name TEXT NOT NULL,
+            module_type TEXT NOT NULL,
+            patch_json TEXT NOT NULL,
+            updated_at_unix_ms INTEGER NOT NULL
+        );
+
         CREATE INDEX IF NOT EXISTS idx_presets_source ON presets(source);
+        CREATE INDEX IF NOT EXISTS idx_fx_module_presets_module_type ON fx_module_presets(module_type);
         ",
     )
     .map_err(db_err)?;
@@ -613,6 +656,74 @@ fn upsert_favorite(conn: &Connection, id: &str) -> Result<(), String> {
     Ok(())
 }
 
+fn list_fx_module_presets(
+    conn: &Connection,
+    module_type: &str,
+) -> Result<Vec<FxModulePresetEntry>, String> {
+    let mut statement = conn
+        .prepare(
+            "SELECT id, name, module_type, patch_json, updated_at_unix_ms
+             FROM fx_module_presets
+             WHERE module_type = ?1
+             ORDER BY updated_at_unix_ms, id",
+        )
+        .map_err(db_err)?;
+    statement
+        .query_map([module_type], |row| {
+            let patch_json: String = row.get(3)?;
+            let patch = serde_json::from_str(&patch_json).map_err(|error| {
+                rusqlite::Error::FromSqlConversionFailure(
+                    3,
+                    rusqlite::types::Type::Text,
+                    Box::new(error),
+                )
+            })?;
+            Ok(FxModulePresetEntry {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                module_type: row.get(2)?,
+                patch,
+                updated_at_unix_ms: row.get(4)?,
+            })
+        })
+        .map_err(db_err)?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(db_err)
+}
+
+fn save_fx_module_preset(
+    conn: &Connection,
+    name: String,
+    module_type: String,
+    patch: serde_json::Value,
+) -> Result<FxModulePresetEntry, String> {
+    let entry = FxModulePresetEntry {
+        id: Uuid::new_v4().to_string(),
+        name,
+        module_type,
+        patch,
+        updated_at_unix_ms: std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|duration| duration.as_millis() as i64)
+            .unwrap_or_default(),
+    };
+    let patch_json = serde_json::to_string(&entry.patch)
+        .map_err(|error| format!("failed to serialize fx module preset payload: {error}"))?;
+    conn.execute(
+        "INSERT INTO fx_module_presets (id, name, module_type, patch_json, updated_at_unix_ms)
+         VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![
+            entry.id,
+            entry.name,
+            entry.module_type,
+            patch_json,
+            entry.updated_at_unix_ms
+        ],
+    )
+    .map_err(db_err)?;
+    Ok(entry)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -900,5 +1011,25 @@ mod tests {
     fn startup_preset_returns_none_when_no_starred_presets_exist() {
         let library = open_temp_library(vec![sample_entry("f1")]);
         assert!(library.find_startup_preset().unwrap().is_none());
+    }
+
+    #[test]
+    fn fx_module_presets_round_trip_in_sqlite() {
+        let mut library = open_temp_library(vec![sample_entry("f1")]);
+        let saved = library
+            .save_fx_module_preset(
+                "Wide Delay".to_string(),
+                "delay".to_string(),
+                serde_json::json!({ "delay": { "enabled": true, "mix": 0.4 } }),
+            )
+            .unwrap();
+
+        let listed = library.list_fx_module_presets("delay").unwrap();
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].id, saved.id);
+        assert_eq!(listed[0].module_type, "delay");
+
+        assert!(library.delete_fx_module_preset(&saved.id).unwrap());
+        assert!(library.list_fx_module_presets("delay").unwrap().is_empty());
     }
 }
