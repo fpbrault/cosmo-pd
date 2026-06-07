@@ -95,9 +95,20 @@ export default function LivePage() {
 
 	const synthPanelRef = useRef<HTMLDivElement | null>(null);
 	const [isSynthFullscreen, setIsSynthFullscreen] = useState(false);
+	const [isPwaStandalone, setIsPwaStandalone] = useState(false);
 
 	useEffect(() => {
-		const element = isSynthFullscreen
+		const mq = window.matchMedia("(display-mode: standalone)");
+		setIsPwaStandalone(mq.matches);
+		const handler = (e: MediaQueryListEvent) => setIsPwaStandalone(e.matches);
+		mq.addEventListener("change", handler);
+		return () => mq.removeEventListener("change", handler);
+	}, []);
+
+	const isEffectivelyFullscreen = isSynthFullscreen || isPwaStandalone;
+
+	useEffect(() => {
+		const element = isEffectivelyFullscreen
 			? synthPanelRef.current
 			: frameRef.current;
 		if (!element) return;
@@ -108,12 +119,13 @@ export default function LivePage() {
 			const nextLayout = computeRendererFrameLayout({
 				availableWidth: bounds.width,
 				availableHeight: bounds.height,
-				targetAspectRatio: isMobileViewport
-					? undefined
-					: SYNTH_RENDERER_MAX_ASPECT_RATIO,
-				outerPadding: isSynthFullscreen || isMobileViewport ? 0 : FRAME_PADDING,
+				targetAspectRatio: SYNTH_RENDERER_MAX_ASPECT_RATIO,
+				outerPadding:
+					isEffectivelyFullscreen || isMobileViewport ? 0 : FRAME_PADDING,
 				maxScale:
-					isSynthFullscreen || isMobileViewport ? undefined : WEB_MAX_SCALE,
+					isEffectivelyFullscreen || isMobileViewport
+						? undefined
+						: WEB_MAX_SCALE,
 			});
 
 			if (!nextLayout) {
@@ -137,7 +149,7 @@ export default function LivePage() {
 		const resizeObserver = new ResizeObserver(updateFrameSize);
 		resizeObserver.observe(element);
 		return () => resizeObserver.disconnect();
-	}, [isSynthFullscreen, isMobileViewport]);
+	}, [isEffectivelyFullscreen, isMobileViewport]);
 
 	const frameScale = frameLayout?.frameScale ?? 1;
 	const frameWidth = frameLayout?.frameWidth ?? SYNTH_RENDERER_DESIGN_WIDTH;
@@ -146,7 +158,7 @@ export default function LivePage() {
 	const scaledWidth = frameWidth * frameScale;
 	const scaledHeight = frameHeight * frameScale;
 
-	const synthPanelInlineSize = isSynthFullscreen
+	const synthPanelInlineSize = isEffectivelyFullscreen
 		? {}
 		: { width: scaledWidth, height: scaledHeight };
 
@@ -262,7 +274,7 @@ export default function LivePage() {
 			onPointerMove={isMobileViewport ? undefined : handlePointerMove}
 			onPointerLeave={isMobileViewport ? undefined : handlePointerLeave}
 		>
-			{!isMobileViewport && (
+			{!isMobileViewport && !isPwaStandalone && (
 				<>
 					<motion.div
 						aria-hidden="true"
@@ -278,16 +290,18 @@ export default function LivePage() {
 			<div
 				ref={synthPanelRef}
 				id="synth-fullscreen-target"
-				className={`relative shrink-0 ${isSynthFullscreen ? "flex items-center justify-center" : "overflow-visible"}`}
+				className={`relative shrink-0 ${isEffectivelyFullscreen ? "flex items-center justify-center" : "overflow-visible"}`}
 				style={synthPanelInlineSize}
 			>
 				<div
-					className={isSynthFullscreen ? "absolute" : "absolute top-0 left-0"}
+					className={
+						isEffectivelyFullscreen ? "absolute" : "absolute top-0 left-0"
+					}
 					style={{
 						width: frameWidth,
 						height: frameHeight,
 						transform: `scale(${frameScale})`,
-						transformOrigin: isSynthFullscreen ? "center" : "top left",
+						transformOrigin: isEffectivelyFullscreen ? "center" : "top left",
 					}}
 				>
 					<PresetManagerProvider value={presetManager}>
@@ -300,7 +314,7 @@ export default function LivePage() {
 					</PresetManagerProvider>
 				</div>
 			</div>
-			{!isMobileViewport && (
+			{!isMobileViewport && !isPwaStandalone && (
 				<button
 					type="button"
 					onClick={toggleFullscreen}
