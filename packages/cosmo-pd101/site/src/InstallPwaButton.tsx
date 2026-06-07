@@ -1,17 +1,26 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type BeforeInstallPromptEvent = Event & {
 	prompt: () => Promise<void>;
 	userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
-export default function InstallPwaButton() {
+type InstallPwaButtonProps = {
+	isPwaStandalone: boolean;
+};
+
+export default function InstallPwaButton({
+	isPwaStandalone,
+}: InstallPwaButtonProps) {
 	const [deferredPrompt, setDeferredPrompt] =
 		useState<BeforeInstallPromptEvent | null>(null);
+	const [installed, setInstalled] = useState(false);
+	const promptFired = useRef(false);
 
 	useEffect(() => {
 		const handler = (e: Event) => {
 			e.preventDefault();
+			promptFired.current = true;
 			setDeferredPrompt(e as BeforeInstallPromptEvent);
 		};
 		window.addEventListener("beforeinstallprompt", handler);
@@ -19,7 +28,10 @@ export default function InstallPwaButton() {
 	}, []);
 
 	useEffect(() => {
-		const handler = () => setDeferredPrompt(null);
+		const handler = () => {
+			setDeferredPrompt(null);
+			setInstalled(true);
+		};
 		window.addEventListener("appinstalled", handler);
 		return () => window.removeEventListener("appinstalled", handler);
 	}, []);
@@ -30,18 +42,23 @@ export default function InstallPwaButton() {
 		const result = await deferredPrompt.userChoice;
 		if (result.outcome === "accepted") {
 			setDeferredPrompt(null);
+			setInstalled(true);
 		}
 	}, [deferredPrompt]);
 
-	if (!deferredPrompt) return null;
+	if (isPwaStandalone || installed) return null;
 
 	return (
 		<button
 			type="button"
 			onClick={handleInstall}
-			className="btn btn-sm border-cz-light-blue/50 bg-cz-light-blue/5 px-2 py-1 text-cz-light-blue/80 no-underline hover:border-cz-light-blue hover:bg-cz-light-blue/10 hover:text-cz-light-blue"
+			className={`btn btn-sm px-2 py-1 no-underline ${
+				deferredPrompt
+					? "border-cz-light-blue/50 bg-cz-light-blue/5 text-cz-light-blue/80 hover:border-cz-light-blue hover:bg-cz-light-blue/10 hover:text-cz-light-blue"
+					: "border-cz-border/30 bg-transparent text-cz-cream/30"
+			}`}
 		>
-			Install App
+			{deferredPrompt ? "Install App" : "Install App ..."}
 		</button>
 	);
 }

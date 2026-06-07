@@ -312,7 +312,7 @@ export default function LivePage() {
 							sidebarMinWidthRem={sidebarMinWidthRem}
 							bottomBarExtra={
 								<>
-									<InstallPwaButton />
+									<InstallPwaButton isPwaStandalone={isPwaStandalone} />
 									<WebPluginStoreNotice />
 								</>
 							}
