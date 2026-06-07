@@ -4826,7 +4826,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -5262,7 +5262,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -5681,7 +5681,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -6100,7 +6100,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -6519,7 +6519,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -6955,7 +6955,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -7357,7 +7357,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -7793,7 +7793,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -8212,7 +8212,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -8614,7 +8614,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -9033,7 +9033,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -9435,7 +9435,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -9854,7 +9854,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -10290,7 +10290,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -10726,7 +10726,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -11162,7 +11162,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -11598,7 +11598,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -12017,7 +12017,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -12436,7 +12436,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -12838,7 +12838,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -13257,7 +13257,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -13693,7 +13693,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -14112,7 +14112,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -14531,7 +14531,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -14967,7 +14967,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -15369,7 +15369,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -15805,7 +15805,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -16224,7 +16224,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -16643,7 +16643,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -17062,7 +17062,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -17481,7 +17481,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -17883,7 +17883,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -18319,7 +18319,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -18721,7 +18721,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -19157,7 +19157,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -20094,7 +20094,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -20496,7 +20496,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -20898,7 +20898,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -21317,7 +21317,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -21719,7 +21719,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -22121,7 +22121,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -22523,7 +22523,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -22942,7 +22942,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -23344,7 +23344,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -23780,7 +23780,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -24199,7 +24199,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -24601,7 +24601,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -25037,7 +25037,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -25456,7 +25456,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -25858,7 +25858,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -26277,7 +26277,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -26713,7 +26713,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -27132,7 +27132,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -27551,7 +27551,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -27970,7 +27970,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -28389,7 +28389,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -28825,7 +28825,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -29244,7 +29244,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -29680,7 +29680,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -30116,7 +30116,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -30535,7 +30535,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -30937,7 +30937,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -31339,7 +31339,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -31741,7 +31741,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -32143,7 +32143,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -32545,7 +32545,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -32981,7 +32981,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -33400,7 +33400,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -33819,7 +33819,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -34221,7 +34221,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -34640,7 +34640,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -35076,7 +35076,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -36315,7 +36315,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -36717,7 +36717,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -37136,7 +37136,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -37572,7 +37572,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -38410,7 +38410,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -38812,7 +38812,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -39248,7 +39248,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -39684,7 +39684,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -40120,7 +40120,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -40556,7 +40556,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -40975,7 +40975,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -41411,7 +41411,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -41847,7 +41847,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -42266,7 +42266,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -42702,7 +42702,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -43121,7 +43121,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -43540,7 +43540,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -43976,7 +43976,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -44412,7 +44412,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -44814,7 +44814,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -45649,7 +45649,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -46068,7 +46068,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -46470,7 +46470,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -47368,7 +47368,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -47787,7 +47787,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -48189,7 +48189,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -48591,7 +48591,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},
@@ -49010,7 +49010,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
 					time: 0.5,
 				},

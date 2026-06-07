@@ -335,7 +335,7 @@
 			"velocityCurve": 0,
 			"portamento": {
 				"enabled": false,
-				"mode": "rate",
+				"mode": "time",
 				"rate": 0,
 				"time": 0.5
 			},
