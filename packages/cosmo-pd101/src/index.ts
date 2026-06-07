@@ -1,3 +1,4 @@
+export { IosFullscreenHint } from "./components/ios/IosFullscreenHint";
 export { default as MidiLearnPanel } from "./components/panels/midi/MidiLearnPanel";
 export {
 	computeRendererFrameLayout,
@@ -26,6 +27,7 @@ export {
 export { useAudioEngine } from "./features/synth/hooks/useAudioEngine";
 export { useMidiLearnBindings } from "./features/synth/hooks/useMidiLearnBindings";
 export { useNoteHandling } from "./features/synth/hooks/useNoteHandling";
+export { useSafariFullscreenWorkaround } from "./features/synth/hooks/useSafariFullscreenWorkaround";
 export { useSynthParamsToWorklet } from "./features/synth/hooks/useSynthParamsToWorklet";
 export type { MidiBinding } from "./features/synth/midiLearnStore";
 export {

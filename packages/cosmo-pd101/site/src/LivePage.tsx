@@ -7,6 +7,7 @@ import {
 	useTransform,
 } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { IosFullscreenHint } from "../../src/components/ios/IosFullscreenHint";
 import {
 	computeRendererFrameLayout,
 	SYNTH_RENDERER_DESIGN_HEIGHT,
@@ -16,6 +17,7 @@ import {
 import { SharedPhaseDistortionVisualizer } from "../../src/components/renderer/SynthRenderer";
 import { PresetManagerProvider } from "../../src/context/PresetManagerContext";
 import { createWebPresetManagerRepository } from "../../src/features/synth/createWebPresetManagerRepository";
+import { useSafariFullscreenWorkaround } from "../../src/features/synth/hooks/useSafariFullscreenWorkaround";
 import { useSynthStore } from "../../src/features/synth/synthStore";
 import { useSynthPresetManager } from "../../src/features/synth/useSynthPresetManager";
 import { FACTORY_PRESETS } from "../../src/lib/synth/factoryCzPresets";
@@ -47,6 +49,7 @@ export default function LivePage() {
 		}),
 	);
 	const isMobileViewport = typeof window !== "undefined" ? isMobile() : false;
+	const { overlayVisible: iosOverlayVisible } = useSafariFullscreenWorkaround();
 
 	const cursorTargetX = useMotionValue(50);
 	const cursorTargetY = useMotionValue(50);
@@ -297,6 +300,7 @@ export default function LivePage() {
 					</PresetManagerProvider>
 				</div>
 			</div>
+			<IosFullscreenHint visible={iosOverlayVisible} />
 			<button
 				type="button"
 				onClick={toggleFullscreen}
