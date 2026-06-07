@@ -2359,7 +2359,7 @@
 						"type": "delay",
 						"params": {
 							"enabled": true,
-							"time": 0.1151404,
+							"time": 0.5151404,
 							"feedback": 0.46,
 							"mix": 0.34496948,
 							"tapeMode": true,
@@ -3701,7 +3701,7 @@
 						"type": "grainDelay",
 						"params": {
 							"enabled": true,
-							"time": 0.1011327,
+							"time": 0.5011327,
 							"feedback": 0.53774124,
 							"scatter": 0.3089954,
 							"density": 0.5996484,
