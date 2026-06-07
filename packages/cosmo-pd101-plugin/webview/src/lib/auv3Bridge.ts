@@ -75,6 +75,13 @@ declare global {
 		__czSetPresetTags?: (id: string, tags: string[]) => Promise<unknown>;
 		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
 		__czExportPreset?: (id: string) => Promise<unknown>;
+		__czListFxModulePresets?: (moduleType: string) => Promise<unknown>;
+		__czSaveFxModulePreset?: (payload: {
+			name: string;
+			moduleType: string;
+			patch: Record<string, unknown>;
+		}) => Promise<unknown>;
+		__czDeleteFxModulePreset?: (id: string) => Promise<unknown>;
 		__czSetEditorState?: (state: string) => void;
 		__czGetEditorState?: () => Promise<unknown>;
 		__czOnMidiLearnState?: (json: string) => void;
@@ -224,6 +231,12 @@ function installIpcRouter() {
 		invokeAuv3("toggleStarred", [{ id, starred }]);
 	window.__czExportPreset = (id: string) =>
 		invokeAuv3("exportPreset", [{ id }]);
+	window.__czListFxModulePresets = (moduleType: string) =>
+		invokeAuv3("listFxModulePresets", [{ moduleType }]);
+	window.__czSaveFxModulePreset = (payload) =>
+		invokeAuv3("saveFxModulePreset", [payload]);
+	window.__czDeleteFxModulePreset = (id: string) =>
+		invokeAuv3("deleteFxModulePreset", [{ id }]);
 
 	window.__czSetEditorState = (state: string) => {
 		void invokeAuv3("setEditorState", [JSON.parse(state)]).catch((error) => {

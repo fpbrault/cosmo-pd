@@ -34,6 +34,26 @@ function putInStore(storeName: string, value: unknown): Promise<void> {
 
 const STORE = "fxModulePresets";
 
+type NativeFxModulePreset = {
+	id: string;
+	name: string;
+	moduleType: string;
+	patch: Record<string, unknown>;
+	updatedAtUnixMs?: number;
+};
+
+function getNativeFxModulePresetBridge() {
+	return window as Window & {
+		__czListFxModulePresets?: (moduleType: string) => Promise<unknown>;
+		__czSaveFxModulePreset?: (payload: {
+			name: string;
+			moduleType: string;
+			patch: Record<string, unknown>;
+		}) => Promise<unknown>;
+		__czDeleteFxModulePreset?: (id: string) => Promise<unknown>;
+	};
+}
+
 let idCounter = 0;
 
 function createFxModulePresetId(): string {
@@ -46,6 +66,24 @@ export async function saveFxModulePreset(input: {
 	moduleType: string;
 	patch: Record<string, unknown>;
 }): Promise<StoredFxModulePreset> {
+	const nativeBridge = getNativeFxModulePresetBridge();
+	if (nativeBridge.__czSaveFxModulePreset) {
+		const saved = (await nativeBridge.__czSaveFxModulePreset({
+			name: input.name.trim(),
+			moduleType: input.moduleType,
+			patch: input.patch,
+		})) as NativeFxModulePreset | undefined;
+		if (saved) {
+			return {
+				id: saved.id,
+				name: saved.name,
+				moduleType: saved.moduleType,
+				patch: saved.patch,
+				createdAt: saved.updatedAtUnixMs ?? Date.now(),
+			};
+		}
+	}
+
 	const stored: StoredFxModulePreset = {
 		id: createFxModulePresetId(),
 		name: input.name.trim(),
@@ -60,6 +98,24 @@ export async function saveFxModulePreset(input: {
 export async function listFxModulePresets(
 	moduleType: string,
 ): Promise<StoredFxModulePreset[]> {
+	const nativeBridge = getNativeFxModulePresetBridge();
+	if (nativeBridge.__czListFxModulePresets) {
+		const nativePresets = (await nativeBridge.__czListFxModulePresets(
+			moduleType,
+		)) as NativeFxModulePreset[] | undefined;
+		if (Array.isArray(nativePresets)) {
+			return nativePresets
+				.map((preset) => ({
+					id: preset.id,
+					name: preset.name,
+					moduleType: preset.moduleType,
+					patch: preset.patch,
+					createdAt: preset.updatedAtUnixMs ?? 0,
+				}))
+				.sort((a, b) => a.createdAt - b.createdAt);
+		}
+	}
+
 	const all = await getAllFromStore<StoredFxModulePreset>(STORE);
 	return all
 		.filter((preset) => preset.moduleType === moduleType)
@@ -67,6 +123,12 @@ export async function listFxModulePresets(
 }
 
 export async function deleteFxModulePreset(id: string): Promise<void> {
+	const nativeBridge = getNativeFxModulePresetBridge();
+	if (nativeBridge.__czDeleteFxModulePreset) {
+		await nativeBridge.__czDeleteFxModulePreset(id);
+		return;
+	}
+
 	return getDb().then(
 		(db) =>
 			new Promise((resolve, reject) => {

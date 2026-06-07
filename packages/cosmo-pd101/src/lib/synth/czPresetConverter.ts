@@ -226,7 +226,7 @@ export function convertDecodedPatchToSynthPreset(
 	p.line1.dcaBase = 1;
 	p.line2.dcaBase = 1;
 	p.portamento.enabled = false;
-	p.portamento.mode = "rate";
+	p.portamento.mode = "time";
 	p.portamento.rate = 0;
 	p.portamento.time = 0.5;
 	p.lfo.waveform = "sine";

@@ -46,7 +46,8 @@ export default function LivePage() {
 			maxScale: WEB_MAX_SCALE,
 		}),
 	);
-	const isMobileViewport = typeof window !== "undefined" ? isMobile() : false;
+	const isMobileViewport =
+		typeof window !== "undefined" ? isMobile({ tablet: true }) : false;
 
 	const cursorTargetX = useMotionValue(50);
 	const cursorTargetY = useMotionValue(50);
@@ -107,7 +108,9 @@ export default function LivePage() {
 			const nextLayout = computeRendererFrameLayout({
 				availableWidth: bounds.width,
 				availableHeight: bounds.height,
-				targetAspectRatio: SYNTH_RENDERER_MAX_ASPECT_RATIO,
+				targetAspectRatio: isMobileViewport
+					? undefined
+					: SYNTH_RENDERER_MAX_ASPECT_RATIO,
 				outerPadding: isSynthFullscreen || isMobileViewport ? 0 : FRAME_PADDING,
 				maxScale:
 					isSynthFullscreen || isMobileViewport ? undefined : WEB_MAX_SCALE,
@@ -297,23 +300,25 @@ export default function LivePage() {
 					</PresetManagerProvider>
 				</div>
 			</div>
-			<button
-				type="button"
-				onClick={toggleFullscreen}
-				className="absolute right-4 bottom-4 z-50 flex h-9 w-9 items-center justify-center rounded-md bg-cz-panel/80 text-cz-cream-dim transition-colors hover:bg-cz-panel hover:text-cz-cream"
-				aria-label="Toggle fullscreen"
-			>
-				<svg
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2"
-					className="h-4 w-4"
+			{!isMobileViewport && (
+				<button
+					type="button"
+					onClick={toggleFullscreen}
+					className="absolute right-4 bottom-4 z-50 flex h-9 w-9 items-center justify-center rounded-md bg-cz-panel/80 text-cz-cream-dim transition-colors hover:bg-cz-panel hover:text-cz-cream"
+					aria-label="Toggle fullscreen"
 				>
-					<title>Toggle fullscreen</title>
-					<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-				</svg>
-			</button>
+					<svg
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+						className="h-4 w-4"
+					>
+						<title>Toggle fullscreen</title>
+						<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+					</svg>
+				</button>
+			)}
 		</div>
 	);
 }
