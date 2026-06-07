@@ -872,6 +872,54 @@ export function installMockPluginBridge(): void {
 				respondIpc(id, { result: null });
 				return;
 			}
+			if (method === "listFxModulePresets") {
+				const payload =
+					typeof args[0] === "object" && args[0] !== null
+						? (args[0] as Record<string, unknown>)
+						: null;
+				const moduleType =
+					typeof payload?.moduleType === "string" ? payload.moduleType : "";
+				respondIpc(id, {
+					result: virtualFxModulePresets.filter(
+						(preset) => preset.moduleType === moduleType,
+					),
+				});
+				return;
+			}
+			if (method === "saveFxModulePreset") {
+				const payload =
+					typeof args[0] === "object" && args[0] !== null
+						? (args[0] as Record<string, unknown>)
+						: null;
+				const entry = {
+					id: `fxmod-${virtualFxModulePresets.length + 1}`,
+					name: typeof payload?.name === "string" ? payload.name : "Preset",
+					moduleType:
+						typeof payload?.moduleType === "string"
+							? payload.moduleType
+							: "unknown",
+					patch:
+						typeof payload?.patch === "object" && payload.patch !== null
+							? (payload.patch as Record<string, unknown>)
+							: {},
+					updatedAtUnixMs: Date.now(),
+				};
+				virtualFxModulePresets.push(entry);
+				respondIpc(id, { result: entry });
+				return;
+			}
+			if (method === "deleteFxModulePreset") {
+				const payload =
+					typeof args[0] === "object" && args[0] !== null
+						? (args[0] as Record<string, unknown>)
+						: null;
+				const presetId = typeof payload?.id === "string" ? payload.id : "";
+				virtualFxModulePresets = virtualFxModulePresets.filter(
+					(entry) => entry.id !== presetId,
+				);
+				respondIpc(id, { result: null });
+				return;
+			}
 			if (method === "exportPreset") {
 				const payload =
 					typeof args[0] === "object" && args[0] !== null
