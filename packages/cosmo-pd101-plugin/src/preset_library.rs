@@ -7,7 +7,7 @@ use uuid::Uuid;
 use crate::preset_library_path;
 
 const DEFAULT_SORT_INDEX: u32 = u32::MAX;
-const LIBRARY_SCHEMA_VERSION: u32 = 3;
+const LIBRARY_SCHEMA_VERSION: u32 = 4;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -203,6 +203,9 @@ impl PresetLibrary {
             }
             if previous_schema_version < 3 {
                 migrate_sort_index_column(conn)?;
+            }
+            if previous_schema_version < 4 {
+                migrate_fx_module_presets_timestamp_column(conn)?;
             }
             merge_factory_entries(conn, &self.factory_entries)?;
             Ok(())
@@ -441,6 +444,25 @@ fn migrate_sort_index_column(conn: &Connection) -> Result<(), String> {
         conn.execute(
             "ALTER TABLE presets ADD COLUMN sort_index INTEGER NOT NULL DEFAULT 4294967295",
             [],
+        )
+        .map_err(db_err)?;
+    }
+
+    Ok(())
+}
+
+fn migrate_fx_module_presets_timestamp_column(conn: &Connection) -> Result<(), String> {
+    let has_old_column: bool = conn
+        .query_row(
+            "SELECT COUNT(*) > 0 FROM pragma_table_info('fx_module_presets') WHERE name = 'created_at_unix_ms'",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(db_err)?;
+
+    if has_old_column {
+        conn.execute_batch(
+            "ALTER TABLE fx_module_presets RENAME COLUMN created_at_unix_ms TO updated_at_unix_ms;",
         )
         .map_err(db_err)?;
     }
