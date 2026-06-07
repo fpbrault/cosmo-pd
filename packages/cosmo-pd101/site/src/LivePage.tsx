@@ -25,6 +25,7 @@ import {
 	saveCurrentPresetSession,
 	saveCurrentState,
 } from "../../src/lib/synth/presetStorage";
+import InstallPwaButton from "./InstallPwaButton";
 import { useWebSynthRuntime } from "./runtime/useWebSynthRuntime";
 import WebPluginStoreNotice from "./WebPluginStoreNotice";
 
@@ -108,7 +109,7 @@ export default function LivePage() {
 	const isEffectivelyFullscreen = isSynthFullscreen || isPwaStandalone;
 
 	useEffect(() => {
-		const element = isEffectivelyFullscreen
+		const element = isSynthFullscreen
 			? synthPanelRef.current
 			: frameRef.current;
 		if (!element) return;
@@ -149,7 +150,7 @@ export default function LivePage() {
 		const resizeObserver = new ResizeObserver(updateFrameSize);
 		resizeObserver.observe(element);
 		return () => resizeObserver.disconnect();
-	}, [isEffectivelyFullscreen, isMobileViewport]);
+	}, [isEffectivelyFullscreen, isMobileViewport, isSynthFullscreen]);
 
 	const frameScale = frameLayout?.frameScale ?? 1;
 	const frameWidth = frameLayout?.frameWidth ?? SYNTH_RENDERER_DESIGN_WIDTH;
@@ -309,7 +310,12 @@ export default function LivePage() {
 							runtime={runtime}
 							appVersion={__CZ_APP_VERSION__}
 							sidebarMinWidthRem={sidebarMinWidthRem}
-							bottomBarExtra={<WebPluginStoreNotice />}
+							bottomBarExtra={
+								<>
+									<InstallPwaButton />
+									<WebPluginStoreNotice />
+								</>
+							}
 						/>
 					</PresetManagerProvider>
 				</div>
