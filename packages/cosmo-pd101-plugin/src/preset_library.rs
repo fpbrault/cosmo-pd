@@ -502,7 +502,7 @@ fn migrate_bank_columns(conn: &Connection) -> Result<(), String> {
     if !has_preset_column(conn, "bank_name")? {
         conn.execute("ALTER TABLE presets ADD COLUMN bank_name TEXT", [])
             .map_err(db_err)?;
- }
+    }
 
     Ok(())
 }
