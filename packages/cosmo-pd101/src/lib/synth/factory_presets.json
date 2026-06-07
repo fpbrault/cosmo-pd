@@ -4976,7 +4976,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -5426,7 +5426,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -5860,7 +5860,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -6294,7 +6294,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -6727,7 +6727,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -7178,7 +7178,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -7594,7 +7594,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -8044,7 +8044,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -8477,7 +8477,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -8893,7 +8893,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -9326,7 +9326,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -9742,7 +9742,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -10175,7 +10175,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -10625,7 +10625,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -11076,7 +11076,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -11527,7 +11527,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -11978,7 +11978,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -12412,7 +12412,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -12847,7 +12847,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -13265,7 +13265,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -13699,7 +13699,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -14149,7 +14149,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -14582,7 +14582,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -15015,7 +15015,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -15466,7 +15466,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -15883,7 +15883,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -16333,7 +16333,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -16766,7 +16766,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -17199,7 +17199,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -17632,7 +17632,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -18065,7 +18065,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -18481,7 +18481,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -18931,7 +18931,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -19347,7 +19347,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -19797,7 +19797,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -20762,7 +20762,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -21178,7 +21178,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -21595,7 +21595,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -22028,7 +22028,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -22444,7 +22444,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -22860,7 +22860,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -23277,7 +23277,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -23711,7 +23711,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -24127,7 +24127,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -24577,7 +24577,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -25010,7 +25010,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -25426,7 +25426,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -25876,7 +25876,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -26309,7 +26309,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -26725,7 +26725,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -27158,7 +27158,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -27608,7 +27608,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -28041,7 +28041,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -28474,7 +28474,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -28907,7 +28907,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -29340,7 +29340,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -29790,7 +29790,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -30223,7 +30223,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -30673,7 +30673,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -31123,7 +31123,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -31556,7 +31556,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -31973,7 +31973,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -32389,7 +32389,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -32805,7 +32805,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -33221,7 +33221,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -33637,7 +33637,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -34088,7 +34088,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -34522,7 +34522,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -34956,7 +34956,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -35372,7 +35372,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -35805,7 +35805,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -36255,7 +36255,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -37538,7 +37538,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -37954,7 +37954,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -38387,7 +38387,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -38838,7 +38838,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -39704,7 +39704,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -40120,7 +40120,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -40570,7 +40570,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -41020,7 +41020,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -41470,7 +41470,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -41920,7 +41920,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -42353,7 +42353,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -42803,7 +42803,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -43253,7 +43253,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -43686,7 +43686,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -44136,7 +44136,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -44569,7 +44569,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -45002,7 +45002,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -45452,7 +45452,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -45902,7 +45902,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -46318,7 +46318,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -47182,7 +47182,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -47615,7 +47615,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -48032,7 +48032,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -48960,7 +48960,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -49394,7 +49394,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -49811,7 +49811,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -50227,7 +50227,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
@@ -50660,7 +50660,7 @@
 				"legato": false,
 				"portamento": {
 					"enabled": false,
-					"mode": "rate",
+					"mode": "time",
 					"rate": 0.0,
 					"time": 0.1
 				},
