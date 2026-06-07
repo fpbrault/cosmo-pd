@@ -4297,7 +4297,7 @@ export const GRAIN_DELAY_PRESET_DATA: GrainDelayPresetV1[] = [
     "label": "Shimmer Echo",
     "params": {
       "enabled": true,
-      "time": 0.5,
+      "time": 0.1,
       "feedback": 0.36,
       "scatter": 0.24,
       "density": 0.5,

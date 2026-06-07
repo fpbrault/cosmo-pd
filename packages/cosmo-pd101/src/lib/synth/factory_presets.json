@@ -4978,7 +4978,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -5428,7 +5428,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -5862,7 +5862,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -6296,7 +6296,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -6729,7 +6729,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -7180,7 +7180,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -7596,7 +7596,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -8046,7 +8046,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -8479,7 +8479,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -8895,7 +8895,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -9328,7 +9328,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -9744,7 +9744,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -10177,7 +10177,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -10627,7 +10627,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -11078,7 +11078,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -11529,7 +11529,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -11980,7 +11980,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -12414,7 +12414,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -12849,7 +12849,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -13267,7 +13267,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -13701,7 +13701,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -14151,7 +14151,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -14584,7 +14584,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -15017,7 +15017,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -15468,7 +15468,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -15885,7 +15885,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -16335,7 +16335,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -16768,7 +16768,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -17201,7 +17201,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -17634,7 +17634,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -18067,7 +18067,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -18483,7 +18483,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -18933,7 +18933,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -19349,7 +19349,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -19799,7 +19799,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -20764,7 +20764,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -21180,7 +21180,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -21597,7 +21597,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -22030,7 +22030,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -22446,7 +22446,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -22862,7 +22862,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -23279,7 +23279,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -23713,7 +23713,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -24129,7 +24129,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -24579,7 +24579,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -25012,7 +25012,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -25428,7 +25428,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -25878,7 +25878,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -26311,7 +26311,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -26727,7 +26727,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -27160,7 +27160,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -27610,7 +27610,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -28043,7 +28043,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -28476,7 +28476,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -28909,7 +28909,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -29342,7 +29342,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -29792,7 +29792,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -30225,7 +30225,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -30675,7 +30675,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -31125,7 +31125,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -31558,7 +31558,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -31975,7 +31975,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -32391,7 +32391,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -32807,7 +32807,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -33223,7 +33223,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -33639,7 +33639,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -34090,7 +34090,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -34524,7 +34524,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -34958,7 +34958,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -35374,7 +35374,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -35807,7 +35807,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -36257,7 +36257,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -37540,7 +37540,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -37956,7 +37956,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -38389,7 +38389,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -38840,7 +38840,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -39706,7 +39706,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -40122,7 +40122,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -40572,7 +40572,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -41022,7 +41022,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -41472,7 +41472,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -41922,7 +41922,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -42355,7 +42355,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -42805,7 +42805,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -43255,7 +43255,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -43688,7 +43688,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -44138,7 +44138,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -44571,7 +44571,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -45004,7 +45004,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -45454,7 +45454,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -45904,7 +45904,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -46320,7 +46320,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -47184,7 +47184,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -47617,7 +47617,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -48034,7 +48034,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -48578,7 +48578,7 @@
 						"type": "grainDelay",
 						"params": {
 							"enabled": true,
-							"time": 0.5,
+							"time": 0.1,
 							"feedback": 0.36,
 							"scatter": 0.24,
 							"density": 0.5,
@@ -48962,7 +48962,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -49396,7 +49396,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -49813,7 +49813,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -50229,7 +50229,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",
@@ -50662,7 +50662,7 @@
 					"enabled": false,
 					"mode": "rate",
 					"rate": 0.0,
-					"time": 0.5
+					"time": 0.1
 				},
 				"lfo": {
 					"waveform": "sine",

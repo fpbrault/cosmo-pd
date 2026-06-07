@@ -320,7 +320,7 @@
 				"enabled": false,
 				"mode": "time",
 				"rate": 0,
-				"time": 0.5
+				"time": 0.1
 			},
 			"lfo": {
 				"waveform": "sine",
