@@ -76,19 +76,19 @@ export default function PresetLibrary({
 		setAuthorValue,
 		showOnlyUserPresets,
 		setShowOnlyUserPresets,
-		selectedAuthorFilters,
-		setSelectedAuthorFilters,
-		selectedBankFilters,
-		setSelectedBankFilters,
+		selectedAuthorFilter,
+		setSelectedAuthorFilter,
+		selectedBankFilter,
+		setSelectedBankFilter,
 		selectedTagFilters,
 		setSelectedTagFilters,
+		bankOptions,
+		authorOptions,
+		tagOptions,
 		focusedEntryId,
 		setFocusedEntryId,
 		scrollContainerRef,
 		setVirtualScrollTop,
-		availableTags,
-		availableAuthors,
-		availableBanks,
 		sortedEntries,
 		virtualRows,
 		virtualLayout,
@@ -150,26 +150,18 @@ export default function PresetLibrary({
 		[setSelectedTagFilters],
 	);
 
-	const toggleAuthorFilter = useCallback(
+	const selectAuthorFilter = useCallback(
 		(author: string) => {
-			setSelectedAuthorFilters((prev) =>
-				prev.includes(author)
-					? prev.filter((value) => value !== author)
-					: [...prev, author],
-			);
+			setSelectedAuthorFilter(author === selectedAuthorFilter ? null : author);
 		},
-		[setSelectedAuthorFilters],
+		[selectedAuthorFilter, setSelectedAuthorFilter],
 	);
 
-	const toggleBankFilter = useCallback(
+	const selectBankFilter = useCallback(
 		(bank: string) => {
-			setSelectedBankFilters((prev) =>
-				prev.includes(bank)
-					? prev.filter((value) => value !== bank)
-					: [...prev, bank],
-			);
+			setSelectedBankFilter(bank === selectedBankFilter ? null : bank);
 		},
-		[setSelectedBankFilters],
+		[selectedBankFilter, setSelectedBankFilter],
 	);
 
 	const openSaveAsModal = useCallback(() => {
@@ -243,15 +235,15 @@ export default function PresetLibrary({
 					onSearchChange={setSearch}
 					onClearSearch={() => setSearch("")}
 					onClose={onClose}
-					availableBanks={availableBanks}
-					selectedBankFilters={selectedBankFilters}
-					onToggleBankFilter={toggleBankFilter}
-					onClearBankFilters={() => setSelectedBankFilters([])}
-					availableAuthors={availableAuthors}
-					selectedAuthorFilters={selectedAuthorFilters}
-					onToggleAuthorFilter={toggleAuthorFilter}
-					onClearAuthorFilters={() => setSelectedAuthorFilters([])}
-					availableTags={availableTags}
+					bankOptions={bankOptions}
+					selectedBankFilter={selectedBankFilter}
+					onSelectBankFilter={selectBankFilter}
+					onClearBankFilter={() => setSelectedBankFilter(null)}
+					authorOptions={authorOptions}
+					selectedAuthorFilter={selectedAuthorFilter}
+					onSelectAuthorFilter={selectAuthorFilter}
+					onClearAuthorFilter={() => setSelectedAuthorFilter(null)}
+					tagOptions={tagOptions}
 					selectedTagFilters={selectedTagFilters}
 					onToggleTagFilter={toggleTagFilter}
 					onClearTagFilters={() => setSelectedTagFilters([])}

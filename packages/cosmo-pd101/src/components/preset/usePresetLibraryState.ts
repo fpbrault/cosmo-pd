@@ -10,6 +10,44 @@ import {
 	type VirtualPresetRow,
 } from "./presetLibraryShared";
 
+export type FilterOptions = Array<{ value: string; disabled: boolean }>;
+
+type ActiveFilters = {
+	search: string;
+	authorFilter: string | null;
+	bankFilter: string | null;
+	tagFilters: string[];
+	showOnlyUser: boolean;
+};
+
+function applyFilters(
+	entries: PresetEntry[],
+	filters: ActiveFilters,
+): PresetEntry[] {
+	let result = entries;
+	const normalizedSearch = filters.search.trim().toLowerCase();
+	if (normalizedSearch) {
+		result = result.filter((entry) =>
+			getEntrySearchText(entry).includes(normalizedSearch),
+		);
+	}
+	if (filters.authorFilter) {
+		result = result.filter((entry) => entry.author === filters.authorFilter);
+	}
+	if (filters.bankFilter) {
+		result = result.filter((entry) => entry.bankName === filters.bankFilter);
+	}
+	if (filters.tagFilters.length > 0) {
+		result = result.filter((entry) =>
+			filters.tagFilters.every((tag) => entry.tags.includes(tag)),
+		);
+	}
+	if (filters.showOnlyUser) {
+		result = result.filter((entry) => entry.source === "user");
+	}
+	return result;
+}
+
 type UsePresetLibraryStateOptions = {
 	allEntries: PresetEntry[];
 	activeEntryId: string | null;
@@ -33,10 +71,12 @@ export function usePresetLibraryState({
 	const [renameValue, setRenameValue] = useState("");
 	const [authorValue, setAuthorValue] = useState("");
 	const [showOnlyUserPresets, setShowOnlyUserPresets] = useState(false);
-	const [selectedAuthorFilters, setSelectedAuthorFilters] = useState<string[]>(
-		[],
+	const [selectedAuthorFilter, setSelectedAuthorFilter] = useState<
+		string | null
+	>(null);
+	const [selectedBankFilter, setSelectedBankFilter] = useState<string | null>(
+		null,
 	);
-	const [selectedBankFilters, setSelectedBankFilters] = useState<string[]>([]);
 	const [selectedTagFilters, setSelectedTagFilters] = useState<string[]>([]);
 	const [sortState, setSortState] = useState<{
 		key: SortKey;
@@ -72,42 +112,82 @@ export function usePresetLibraryState({
 		[allEntries],
 	);
 
+	const bankOptions = useMemo<FilterOptions>(() => {
+		return availableBanks.map((bank) => {
+			if (bank === selectedBankFilter) return { value: bank, disabled: false };
+			const count = applyFilters(allEntries, {
+				search,
+				authorFilter: selectedAuthorFilter,
+				bankFilter: bank,
+				tagFilters: selectedTagFilters,
+				showOnlyUser: showOnlyUserPresets,
+			}).length;
+			return { value: bank, disabled: count === 0 };
+		});
+	}, [
+		availableBanks,
+		selectedBankFilter,
+		allEntries,
+		search,
+		selectedAuthorFilter,
+		selectedTagFilters,
+		showOnlyUserPresets,
+	]);
+
+	const authorOptions = useMemo<FilterOptions>(() => {
+		return availableAuthors.map((author) => {
+			if (author === selectedAuthorFilter)
+				return { value: author, disabled: false };
+			const count = applyFilters(allEntries, {
+				search,
+				authorFilter: author,
+				bankFilter: selectedBankFilter,
+				tagFilters: selectedTagFilters,
+				showOnlyUser: showOnlyUserPresets,
+			}).length;
+			return { value: author, disabled: count === 0 };
+		});
+	}, [
+		availableAuthors,
+		selectedAuthorFilter,
+		allEntries,
+		search,
+		selectedBankFilter,
+		selectedTagFilters,
+		showOnlyUserPresets,
+	]);
+
+	const tagOptions = useMemo<FilterOptions>(() => {
+		return availableTags.map((tag) => {
+			const isSelected = selectedTagFilters.includes(tag);
+			if (isSelected) return { value: tag, disabled: false };
+			const count = applyFilters(allEntries, {
+				search,
+				authorFilter: selectedAuthorFilter,
+				bankFilter: selectedBankFilter,
+				tagFilters: [...selectedTagFilters, tag],
+				showOnlyUser: showOnlyUserPresets,
+			}).length;
+			return { value: tag, disabled: count === 0 };
+		});
+	}, [
+		selectedTagFilters,
+		allEntries,
+		search,
+		selectedAuthorFilter,
+		selectedBankFilter,
+		showOnlyUserPresets,
+	]);
+
 	const filteredEntries = useMemo(() => {
-		const normalizedSearch = search.trim().toLowerCase();
-		const bySearch = normalizedSearch
-			? allEntries.filter((entry) =>
-					getEntrySearchText(entry).includes(normalizedSearch),
-				)
-			: allEntries;
-
-		const byAuthor =
-			selectedAuthorFilters.length > 0
-				? bySearch.filter((entry) =>
-						selectedAuthorFilters.includes(entry.author),
-					)
-				: bySearch;
-
-		const byBank =
-			selectedBankFilters.length > 0
-				? byAuthor.filter((entry) =>
-						entry.bankName
-							? selectedBankFilters.includes(entry.bankName)
-							: false,
-					)
-				: byAuthor;
-
-		const byTags =
-			selectedTagFilters.length > 0
-				? byBank.filter((entry) =>
-						selectedTagFilters.every((tag) => entry.tags.includes(tag)),
-					)
-				: byBank;
-
-		const byType = showOnlyUserPresets
-			? byTags.filter((entry) => entry.source === "user")
-			: byTags;
-
-		return [...byType].sort((a, b) => {
+		const filters: ActiveFilters = {
+			search,
+			authorFilter: selectedAuthorFilter,
+			bankFilter: selectedBankFilter,
+			tagFilters: selectedTagFilters,
+			showOnlyUser: showOnlyUserPresets,
+		};
+		return applyFilters(allEntries, filters).sort((a, b) => {
 			return a.label.localeCompare(b.label, undefined, {
 				numeric: true,
 				sensitivity: "base",
@@ -116,8 +196,8 @@ export function usePresetLibraryState({
 	}, [
 		allEntries,
 		search,
-		selectedAuthorFilters,
-		selectedBankFilters,
+		selectedAuthorFilter,
+		selectedBankFilter,
 		selectedTagFilters,
 		showOnlyUserPresets,
 	]);
@@ -350,20 +430,22 @@ export function usePresetLibraryState({
 		setAuthorValue,
 		showOnlyUserPresets,
 		setShowOnlyUserPresets,
-		selectedAuthorFilters,
-		setSelectedAuthorFilters,
-		selectedBankFilters,
-		setSelectedBankFilters,
+		selectedAuthorFilter,
+		setSelectedAuthorFilter,
+		selectedBankFilter,
+		setSelectedBankFilter,
 		selectedTagFilters,
 		setSelectedTagFilters,
+		bankOptions,
+		authorOptions,
+		tagOptions,
 		focusedEntryId,
 		setFocusedEntryId,
 		scrollContainerRef,
 		virtualScrollTop,
 		setVirtualScrollTop,
-		availableTags,
-		availableAuthors,
 		availableBanks,
+		availableAuthors,
 		sortedEntries,
 		virtualRows,
 		virtualLayout,

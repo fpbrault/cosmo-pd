@@ -300,11 +300,13 @@ describe("PresetLibrary", () => {
 		).toBeInTheDocument();
 	});
 
-	it("toggles and clears author filters with badges", () => {
+	it("toggles and clears author filters with radio", () => {
 		const props = createProps();
 		render(<PresetLibrary {...props} />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Purr Audio" }));
+		fireEvent.click(
+			screen.getByRole("radio", { name: "Purr Audio", hidden: true }),
+		);
 
 		expect(
 			screen.getByRole("button", { name: "Factory Bass" }),
@@ -322,11 +324,13 @@ describe("PresetLibrary", () => {
 		).toBeInTheDocument();
 	});
 
-	it("toggles and clears bank filters with badges", () => {
+	it("toggles and clears bank filters with radio", () => {
 		const props = createProps();
 		render(<PresetLibrary {...props} />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Temple Of CZ" }));
+		fireEvent.click(
+			screen.getByRole("radio", { name: "Temple Of CZ", hidden: true }),
+		);
 
 		expect(
 			screen.queryByRole("button", { name: "Factory Bass" }),
@@ -342,11 +346,13 @@ describe("PresetLibrary", () => {
 		).toBeInTheDocument();
 	});
 
-	it("toggles and clears tag filters with badges", () => {
+	it("toggles and clears tag filters with checkboxes", () => {
 		const props = createProps();
 		render(<PresetLibrary {...props} />);
 
-		fireEvent.click(screen.getAllByRole("button", { name: "pad" })[0]);
+		fireEvent.click(
+			screen.getAllByRole("checkbox", { name: "pad", hidden: true })[0],
+		);
 
 		expect(
 			screen.queryByRole("button", { name: "Factory Bass" }),
@@ -360,6 +366,21 @@ describe("PresetLibrary", () => {
 		expect(
 			screen.getByRole("button", { name: "Factory Bass" }),
 		).toBeInTheDocument();
+	});
+
+	it("disables bank options that would yield zero results with active filters", () => {
+		const props = createProps();
+		render(<PresetLibrary {...props} />);
+
+		fireEvent.click(
+			screen.getByRole("radio", { name: "Purr Audio", hidden: true }),
+		);
+
+		const disabledBank = screen.getByRole("radio", {
+			name: "Temple Of CZ",
+			hidden: true,
+		});
+		expect(disabledBank).toBeDisabled();
 	});
 
 	it("closes back to the synth view", () => {
