@@ -7,8 +7,8 @@ use specta::Type;
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
 #[serde(rename_all = "camelCase")]
 pub enum PortamentoMode {
-    #[default]
     Rate,
+    #[default]
     Time,
 }
 
