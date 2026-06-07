@@ -4826,9 +4826,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -5262,9 +5262,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -5681,9 +5681,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -6100,9 +6100,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -6519,9 +6519,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -6955,9 +6955,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -7357,9 +7357,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -7793,9 +7793,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -8212,9 +8212,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -8614,9 +8614,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -9033,9 +9033,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -9435,9 +9435,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -9854,9 +9854,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -10290,9 +10290,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -10726,9 +10726,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -11162,9 +11162,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -11598,9 +11598,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -12017,9 +12017,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -12436,9 +12436,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -12838,9 +12838,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -13257,9 +13257,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -13693,9 +13693,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -14112,9 +14112,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -14531,9 +14531,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -14967,9 +14967,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -15369,9 +15369,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -15805,9 +15805,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -16224,9 +16224,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -16643,9 +16643,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -17062,9 +17062,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -17481,9 +17481,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -17883,9 +17883,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -18319,9 +18319,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -18721,9 +18721,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -19157,9 +19157,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -20094,9 +20094,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -20496,9 +20496,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -20898,9 +20898,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -21317,9 +21317,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -21719,9 +21719,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -22121,9 +22121,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -22523,9 +22523,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -22942,9 +22942,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -23344,9 +23344,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -23780,9 +23780,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -24199,9 +24199,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -24601,9 +24601,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -25037,9 +25037,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -25456,9 +25456,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -25858,9 +25858,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -26277,9 +26277,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -26713,9 +26713,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -27132,9 +27132,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -27551,9 +27551,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -27970,9 +27970,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -28389,9 +28389,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -28825,9 +28825,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -29244,9 +29244,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -29680,9 +29680,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -30116,9 +30116,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -30535,9 +30535,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -30937,9 +30937,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -31339,9 +31339,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -31741,9 +31741,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -32143,9 +32143,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -32545,9 +32545,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -32981,9 +32981,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -33400,9 +33400,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -33819,9 +33819,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -34221,9 +34221,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -34640,9 +34640,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -35076,9 +35076,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -36315,9 +36315,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -36717,9 +36717,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -37136,9 +37136,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -37572,9 +37572,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -38410,9 +38410,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -38812,9 +38812,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -39248,9 +39248,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -39684,9 +39684,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -40120,9 +40120,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -40556,9 +40556,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -40975,9 +40975,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -41411,9 +41411,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -41847,9 +41847,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -42266,9 +42266,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -42702,9 +42702,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -43121,9 +43121,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -43540,9 +43540,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -43976,9 +43976,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -44412,9 +44412,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -44814,9 +44814,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -45649,9 +45649,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -46068,9 +46068,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -46470,9 +46470,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -47002,7 +47002,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						type: "grainDelay",
 						params: {
 							enabled: true,
-							time: 0.5,
+							time: 0.1,
 							feedback: 0.36,
 							scatter: 0.24,
 							density: 0.5,
@@ -47368,9 +47368,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -47787,9 +47787,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -48189,9 +48189,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -48591,9 +48591,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
@@ -49010,9 +49010,9 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				legato: false,
 				portamento: {
 					enabled: false,
-					mode: "rate",
+					mode: "time",
 					rate: 0.0,
-					time: 0.5,
+					time: 0.1,
 				},
 				lfo: {
 					waveform: "sine",
