@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type BeforeInstallPromptEvent = Event & {
 	prompt: () => Promise<void>;
@@ -15,12 +15,14 @@ export default function InstallPwaButton({
 	const [deferredPrompt, setDeferredPrompt] =
 		useState<BeforeInstallPromptEvent | null>(null);
 	const [installed, setInstalled] = useState(false);
-	const promptFired = useRef(false);
 
 	useEffect(() => {
+		if (window.__deferredPwaPrompt) {
+			setDeferredPrompt(window.__deferredPwaPrompt as BeforeInstallPromptEvent);
+			return;
+		}
 		const handler = (e: Event) => {
 			e.preventDefault();
-			promptFired.current = true;
 			setDeferredPrompt(e as BeforeInstallPromptEvent);
 		};
 		window.addEventListener("beforeinstallprompt", handler);

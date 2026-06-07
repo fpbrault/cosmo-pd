@@ -11,6 +11,13 @@
 		<link rel="apple-touch-icon" href="/icon-512.png" />
 		<link rel="manifest" href="/manifest.webmanifest" />
 		<title>Cosmo PD Synth</title>
+		<script>
+			window.__deferredPwaPrompt = null;
+			window.addEventListener("beforeinstallprompt", (e) => {
+				e.preventDefault();
+				window.__deferredPwaPrompt = e;
+			});
+		</script>
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link
