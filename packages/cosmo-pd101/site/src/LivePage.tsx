@@ -25,7 +25,6 @@ import {
 	saveCurrentPresetSession,
 	saveCurrentState,
 } from "../../src/lib/synth/presetStorage";
-import InstallPwaButton from "./InstallPwaButton";
 import { useWebSynthRuntime } from "./runtime/useWebSynthRuntime";
 import WebPluginStoreNotice from "./WebPluginStoreNotice";
 
@@ -310,12 +309,7 @@ export default function LivePage() {
 							runtime={runtime}
 							appVersion={__CZ_APP_VERSION__}
 							sidebarMinWidthRem={sidebarMinWidthRem}
-							bottomBarExtra={
-								<>
-									<InstallPwaButton isPwaStandalone={isPwaStandalone} />
-									<WebPluginStoreNotice />
-								</>
-							}
+							bottomBarExtra={<WebPluginStoreNotice />}
 						/>
 					</PresetManagerProvider>
 				</div>
