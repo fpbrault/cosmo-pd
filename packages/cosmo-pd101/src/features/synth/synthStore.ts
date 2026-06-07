@@ -843,7 +843,7 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 				line2DcwKeyFollow: safe(p.line2?.dcwKeyFollow, 0),
 				line2DcaKeyFollow: safe(p.line2?.dcaKeyFollow, 0),
 				portamentoEnabled: p.portamento?.enabled ?? false,
-				portamentoMode: (p.portamento?.mode as PortamentoMode) ?? "rate",
+				portamentoMode: (p.portamento?.mode as PortamentoMode) ?? "time",
 				portamentoRate: safe(
 					p.portamento?.rate,
 					requireEngineParamDefault("portamentoRate"),

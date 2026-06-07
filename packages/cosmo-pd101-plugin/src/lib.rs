@@ -427,10 +427,10 @@ pub struct CzPluginParams {
     #[param(name = "Pitch Bend Range", range = "linear(1.0, 24.0)", default = 2.0)]
     pub pitch_bend_range: FloatParam,
 
-    #[param(name = "Portamento Rate", range = "linear(0.0, 127.0)", default = 30.0)]
+    #[param(name = "Portamento Rate", range = "linear(0.0, 127.0)", default = 85.0)]
     pub portamento_rate: FloatParam,
 
-    #[param(name = "Portamento Time", range = "linear(0.0, 5.0)", default = 0.0)]
+    #[param(name = "Portamento Time", range = "linear(0.0, 5.0)", default = 0.1)]
     pub portamento_time: FloatParam,
 
     #[param(name = "LFO Rate", range = "linear(0.01, 30.0)", default = 5.0)]
