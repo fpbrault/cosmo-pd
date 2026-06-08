@@ -25,16 +25,16 @@ syn = { version = "2", features = [
 ] }
 quote = "1"
 proc-macro2 = "1"
-truce = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22", default-features = false }
-truce-core = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22" }
-truce-params = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22" }
+truce = { git = "https://github.com/truce-audio/truce.git", tag = "v0.57.1", default-features = false }
+truce-core = { git = "https://github.com/truce-audio/truce.git", tag = "v0.57.1" }
+truce-params = { git = "https://github.com/truce-audio/truce.git", tag = "v0.57.1" }
 truce-clap = { path = "vendor/truce-clap" }
 truce-vst3 = { path = "vendor/truce-vst3" }
 truce-au = { path = "vendor/truce-au" }
-truce-standalone = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22" }
-truce-gui = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22" }
-truce-build = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22" }
-truce-test = { git = "https://github.com/truce-audio/truce.git", tag = "v0.49.22" }
+truce-standalone = { git = "https://github.com/truce-audio/truce.git", tag = "v0.57.1" }
+truce-gui = { git = "https://github.com/truce-audio/truce.git", tag = "v0.57.1" }
+truce-build = { git = "https://github.com/truce-audio/truce.git", tag = "v0.57.1" }
+truce-test = { git = "https://github.com/truce-audio/truce.git", tag = "v0.57.1" }
 truce-shim-types = { path = "vendor/truce-shim-types" }
 wry = "0.55.0"
 raw-window-handle = "0.6"

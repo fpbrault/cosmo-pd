@@ -40,7 +40,7 @@ wry = { workspace = true }
 raw-window-handle = { workspace = true }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1.0"
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
 uuid = { version = "1", features = ["v4"] }
 cfg-if = "1"
 libm = "0.2"
