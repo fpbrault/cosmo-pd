@@ -1069,7 +1069,7 @@ dependencies = [
  "cocoa",
  "cosmo-synth-engine",
  "crossbeam-queue",
- "dirs 5.0.1",
+ "dirs 6.0.0",
  "dispatch2",
  "include_dir",
  "libc",
