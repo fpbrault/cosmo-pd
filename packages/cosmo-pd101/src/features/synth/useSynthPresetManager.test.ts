@@ -11,7 +11,7 @@ const entries: PresetEntry[] = [
 		label: "Preset 1",
 		type: "library",
 		source: "cosmo-factory",
-		sourceLabel: "Cosmo Library",
+		sourceLabel: "Cosmo Factory Library",
 		author: "Purr Audio",
 		starred: false,
 		favorite: false,

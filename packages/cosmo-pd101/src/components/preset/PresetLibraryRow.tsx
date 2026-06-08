@@ -95,8 +95,13 @@ export default memo(function PresetLibraryRow({
 					{entry.label}
 				</button>
 				<p className="truncate font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.16em]">
-					{entry.sourceLabel}
+					{entry.bankName ?? entry.sourceLabel}
 				</p>
+				{entry.bankName && entry.bankName !== entry.sourceLabel ? (
+					<p className="truncate font-mono text-4xs text-cz-cream-dim/70 uppercase tracking-[0.12em]">
+						{entry.sourceLabel}
+					</p>
+				) : null}
 			</div>
 			<span className="truncate font-mono text-3xs text-cz-cream-dim">
 				{entry.author || "-"}

@@ -9,6 +9,27 @@ const presetNameCollator = new Intl.Collator(undefined, {
 	sensitivity: "base",
 });
 
+function getDefaultBankMetadata(source: LibraryPreset["source"]) {
+	if (source === "cosmo-factory") {
+		return {
+			bankId: "cosmo-factory",
+			bankName: "Cosmo Factory Library",
+		};
+	}
+
+	if (source === "cz-factory") {
+		return {
+			bankId: "cz-factory",
+			bankName: "Temple Of CZ",
+		};
+	}
+
+	return {
+		bankId: null,
+		bankName: null,
+	};
+}
+
 function sortPresetEntries(entries: PresetEntry[]): PresetEntry[] {
 	return [...entries].sort((a, b) => {
 		const labelCompare = presetNameCollator.compare(a.label, b.label);
@@ -37,6 +58,8 @@ export function buildAllPresetEntries({
 				type: "local" as const,
 				source: entry.source,
 				sourceLabel: getPresetSourceLabel(entry.source),
+				bankId: null,
+				bankName: null,
 				author: entry.author,
 				starred: entry.starred,
 				favorite: favoriteIds.has(entry.id),
@@ -45,6 +68,7 @@ export function buildAllPresetEntries({
 		),
 		...sortPresetEntries(
 			libraryPresets.map((preset) => {
+				const defaultBank = getDefaultBankMetadata(preset.source);
 				const presetTags = normalizePresetTags(
 					preset.tags && preset.tags.length > 0
 						? preset.tags
@@ -57,6 +81,8 @@ export function buildAllPresetEntries({
 					type: "library" as const,
 					source: preset.source,
 					sourceLabel: getPresetSourceLabel(preset.source),
+					bankId: preset.bankId ?? defaultBank.bankId,
+					bankName: preset.bankName ?? defaultBank.bankName,
 					author: preset.author,
 					starred: preset.starred,
 					favorite: favoriteIds.has(preset.id),

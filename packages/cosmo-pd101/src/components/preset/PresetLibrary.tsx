@@ -76,16 +76,19 @@ export default function PresetLibrary({
 		setAuthorValue,
 		showOnlyUserPresets,
 		setShowOnlyUserPresets,
-		selectedAuthorFilters,
-		setSelectedAuthorFilters,
+		selectedAuthorFilter,
+		setSelectedAuthorFilter,
+		selectedBankFilter,
+		setSelectedBankFilter,
 		selectedTagFilters,
 		setSelectedTagFilters,
+		bankOptions,
+		authorOptions,
+		tagOptions,
 		focusedEntryId,
 		setFocusedEntryId,
 		scrollContainerRef,
 		setVirtualScrollTop,
-		availableTags,
-		availableAuthors,
 		sortedEntries,
 		virtualRows,
 		virtualLayout,
@@ -145,6 +148,20 @@ export default function PresetLibrary({
 			);
 		},
 		[setSelectedTagFilters],
+	);
+
+	const selectAuthorFilter = useCallback(
+		(author: string) => {
+			setSelectedAuthorFilter(author === selectedAuthorFilter ? null : author);
+		},
+		[selectedAuthorFilter, setSelectedAuthorFilter],
+	);
+
+	const selectBankFilter = useCallback(
+		(bank: string) => {
+			setSelectedBankFilter(bank === selectedBankFilter ? null : bank);
+		},
+		[selectedBankFilter, setSelectedBankFilter],
 	);
 
 	const openSaveAsModal = useCallback(() => {
@@ -218,17 +235,15 @@ export default function PresetLibrary({
 					onSearchChange={setSearch}
 					onClearSearch={() => setSearch("")}
 					onClose={onClose}
-					availableAuthors={availableAuthors}
-					selectedAuthorFilters={selectedAuthorFilters}
-					onToggleAuthorFilter={(author) => {
-						setSelectedAuthorFilters((prev) =>
-							prev.includes(author)
-								? prev.filter((value) => value !== author)
-								: [...prev, author],
-						);
-					}}
-					onClearAuthorFilters={() => setSelectedAuthorFilters([])}
-					availableTags={availableTags}
+					bankOptions={bankOptions}
+					selectedBankFilter={selectedBankFilter}
+					onSelectBankFilter={selectBankFilter}
+					onClearBankFilter={() => setSelectedBankFilter(null)}
+					authorOptions={authorOptions}
+					selectedAuthorFilter={selectedAuthorFilter}
+					onSelectAuthorFilter={selectAuthorFilter}
+					onClearAuthorFilter={() => setSelectedAuthorFilter(null)}
+					tagOptions={tagOptions}
 					selectedTagFilters={selectedTagFilters}
 					onToggleTagFilter={toggleTagFilter}
 					onClearTagFilters={() => setSelectedTagFilters([])}

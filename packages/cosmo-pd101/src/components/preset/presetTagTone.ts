@@ -198,3 +198,13 @@ export function getPresetTagBadgeClassName(
 ): string {
 	return `badge badge-md capitalize ${active ? getPresetTagTone(tag).badgeActive : getPresetTagTone(tag).badge}`;
 }
+
+export function getPresetTagCheckboxClassName(
+	tag: string,
+	checked: boolean,
+	disabled: boolean,
+): string {
+	const tone = getPresetTagTone(tag);
+	const colorClasses = checked ? tone.badgeActive : tone.badge;
+	return `btn btn-sm capitalize ${colorClasses}${disabled ? " opacity-30" : ""}`;
+}

@@ -10,6 +10,8 @@ const libraryPreset: LibraryPreset = {
 	source: "cz-factory",
 	author: "Casio",
 	starred: false,
+	bankId: "cz-factory",
+	bankName: "Temple Of CZ",
 };
 
 const entries: PresetEntry[] = [
@@ -18,7 +20,9 @@ const entries: PresetEntry[] = [
 		label: "Factory Bass",
 		type: "library",
 		source: "cosmo-factory",
-		sourceLabel: "Cosmo Library",
+		sourceLabel: "Cosmo Factory Library",
+		bankId: "cosmo-factory",
+		bankName: "Cosmo Factory Library",
 		author: "Purr Audio",
 		starred: true,
 		favorite: false,
@@ -29,6 +33,8 @@ const entries: PresetEntry[] = [
 			source: "cosmo-factory",
 			author: "Purr Audio",
 			starred: true,
+			bankId: "cosmo-factory",
+			bankName: "Cosmo Factory Library",
 		},
 	},
 	{
@@ -37,6 +43,8 @@ const entries: PresetEntry[] = [
 		type: "local",
 		source: "user",
 		sourceLabel: "User",
+		bankId: null,
+		bankName: null,
 		author: "",
 		starred: false,
 		favorite: false,
@@ -48,6 +56,8 @@ const entries: PresetEntry[] = [
 		type: "library",
 		source: "cz-factory",
 		sourceLabel: "Temple Of CZ",
+		bankId: "cz-factory",
+		bankName: "Temple Of CZ",
 		author: "Casio",
 		starred: false,
 		favorite: false,
@@ -290,11 +300,13 @@ describe("PresetLibrary", () => {
 		).toBeInTheDocument();
 	});
 
-	it("toggles and clears author filters with badges", () => {
+	it("toggles and clears author filters with radio", () => {
 		const props = createProps();
 		render(<PresetLibrary {...props} />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Purr Audio" }));
+		fireEvent.click(
+			screen.getByRole("radio", { name: "Purr Audio", hidden: true }),
+		);
 
 		expect(
 			screen.getByRole("button", { name: "Factory Bass" }),
@@ -312,11 +324,35 @@ describe("PresetLibrary", () => {
 		).toBeInTheDocument();
 	});
 
-	it("toggles and clears tag filters with badges", () => {
+	it("toggles and clears bank filters with radio", () => {
 		const props = createProps();
 		render(<PresetLibrary {...props} />);
 
-		fireEvent.click(screen.getAllByRole("button", { name: "pad" })[0]);
+		fireEvent.click(
+			screen.getByRole("radio", { name: "Temple Of CZ", hidden: true }),
+		);
+
+		expect(
+			screen.queryByRole("button", { name: "Factory Bass" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Archive Pad" }),
+		).toBeInTheDocument();
+
+		fireEvent.click(screen.getByRole("button", { name: "Clear bank filters" }));
+
+		expect(
+			screen.getByRole("button", { name: "Factory Bass" }),
+		).toBeInTheDocument();
+	});
+
+	it("toggles and clears tag filters with checkboxes", () => {
+		const props = createProps();
+		render(<PresetLibrary {...props} />);
+
+		fireEvent.click(
+			screen.getAllByRole("checkbox", { name: "pad", hidden: true })[0],
+		);
 
 		expect(
 			screen.queryByRole("button", { name: "Factory Bass" }),
@@ -330,6 +366,21 @@ describe("PresetLibrary", () => {
 		expect(
 			screen.getByRole("button", { name: "Factory Bass" }),
 		).toBeInTheDocument();
+	});
+
+	it("disables bank options that would yield zero results with active filters", () => {
+		const props = createProps();
+		render(<PresetLibrary {...props} />);
+
+		fireEvent.click(
+			screen.getByRole("radio", { name: "Purr Audio", hidden: true }),
+		);
+
+		const disabledBank = screen.getByRole("radio", {
+			name: "Temple Of CZ",
+			hidden: true,
+		});
+		expect(disabledBank).toBeDisabled();
 	});
 
 	it("closes back to the synth view", () => {

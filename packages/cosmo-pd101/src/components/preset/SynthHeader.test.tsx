@@ -27,7 +27,7 @@ function renderWithProvider(element: React.ReactElement) {
 			label: "Init",
 			type: "library",
 			source: "cosmo-factory",
-			sourceLabel: "Cosmo Library",
+			sourceLabel: "Cosmo Factory Library",
 			author: "Purr Audio",
 			starred: false,
 			favorite: false,
