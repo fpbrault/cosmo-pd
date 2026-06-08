@@ -13,7 +13,7 @@ function getDefaultBankMetadata(source: LibraryPreset["source"]) {
 	if (source === "cosmo-factory") {
 		return {
 			bankId: "cosmo-factory",
-			bankName: "Cosmo Library",
+			bankName: "Cosmo Factory Library",
 		};
 	}
 

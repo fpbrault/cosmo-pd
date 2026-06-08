@@ -571,7 +571,7 @@ fn with_default_bank_metadata(mut entry: PresetLibraryEntry) -> PresetLibraryEnt
                     .get_or_insert_with(|| "cosmo-factory".to_string());
                 entry
                     .bank_name
-                    .get_or_insert_with(|| "Cosmo Library".to_string());
+                    .get_or_insert_with(|| "Cosmo Factory Library".to_string());
             }
             "cz-factory" => {
                 entry
@@ -952,7 +952,7 @@ mod tests {
             starred: false,
             sort_index: DEFAULT_SORT_INDEX,
             bank_id: Some("cosmo-factory".to_string()),
-            bank_name: Some("Cosmo Library".to_string()),
+            bank_name: Some("Cosmo Factory Library".to_string()),
             tags: vec![],
             macro_labels: [
                 "Brightness".to_string(),
@@ -1237,7 +1237,7 @@ mod tests {
         let library = open_temp_library(vec![sample_entry("f1")]);
         let entry = library.list_entries(None).unwrap().pop().unwrap();
         assert_eq!(entry.bank_id.as_deref(), Some("cosmo-factory"));
-        assert_eq!(entry.bank_name.as_deref(), Some("Cosmo Library"));
+        assert_eq!(entry.bank_name.as_deref(), Some("Cosmo Factory Library"));
     }
 
     #[test]

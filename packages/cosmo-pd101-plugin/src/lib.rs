@@ -2148,10 +2148,10 @@ impl CzPlugin {
                 self.apply_rt_param_change(*id, *value, false);
             }
             EventBody::ProgramChange { program, .. }
-            | EventBody::ProgramChange2 { program, .. } => {
-                if usize::from(*program) < crate::ffi::factory_preset_count() {
-                    self.apply_factory_preset(usize::from(*program));
-                }
+            | EventBody::ProgramChange2 { program, .. }
+                if usize::from(*program) < crate::ffi::factory_preset_count() =>
+            {
+                self.apply_factory_preset(usize::from(*program));
             }
             _ => {}
         }

@@ -56,7 +56,7 @@ const DEFAULT_USER_PRESET_AUTHOR = "User";
 
 function getSourceLabel(source: PresetSource): string {
 	if (source === "cosmo-factory") {
-		return "Cosmo Library";
+		return "Cosmo Factory Library";
 	}
 	if (source === "cz-factory") {
 		return "Temple Of CZ";

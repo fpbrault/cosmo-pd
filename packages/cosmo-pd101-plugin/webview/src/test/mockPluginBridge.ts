@@ -442,7 +442,7 @@ export function installMockPluginBridge(): void {
 			starred: true,
 			favorite: false,
 			bankId: "cosmo-factory",
-			bankName: "Cosmo Library",
+			bankName: "Cosmo Factory Library",
 			tags: ["brass"],
 			data: { ...DEFAULT_FULL_PARAMS },
 		},

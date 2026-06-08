@@ -55,7 +55,7 @@ export default memo(function PresetLibraryHeader({
 	sortIndicator: getSortIndicator,
 }: PresetLibraryHeaderProps) {
 	return (
-		<div className="grid grid-cols-[1fr_auto] items-center gap-3 border-cz-border border-b bg-cz-body px-5 py-4">
+		<div className="grid grid-cols-[1fr_auto] items-start gap-3 border-cz-border border-b bg-cz-body px-5 py-4">
 			<div>
 				<p className="font-mono text-3xs text-cz-gold uppercase tracking-[0.32em]">
 					Preset Library
@@ -101,56 +101,11 @@ export default memo(function PresetLibraryHeader({
 					Return
 				</Button>
 			</div>
-			<div className="col-span-1">
-				<div className="min-w-100">
-					<div className="mb-1 flex items-center justify-between gap-2">
-						<p className="font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
-							Filter bank
-						</p>
-					</div>
-					<form
-						className="filter"
-						onSubmit={(event) => event.preventDefault()}
-						onReset={(event) => {
-							event.preventDefault();
-							onClearBankFilter();
-						}}
-					>
-						<div className="flex flex-wrap gap-2">
-							{bankOptions.map((option) => {
-								const active = option.value === selectedBankFilter;
-								return (
-									<input
-										key={option.value}
-										type="radio"
-										name="bank-filter"
-										className="btn btn-sm btn-primary"
-										checked={active}
-										aria-label={option.value}
-										disabled={option.disabled}
-										onClick={() => {
-											onSelectBankFilter(option.value);
-										}}
-									/>
-								);
-							})}
-							<button
-								type="reset"
-								className="btn btn-square btn-sm"
-								aria-label="Clear bank filters"
-								disabled={selectedBankFilter === null}
-							>
-								x
-							</button>
-						</div>
-					</form>
-				</div>
-				<div className="col-span-1 min-w-80">
-					<div className="mb-1 flex items-center justify-between gap-2">
-						<p className="font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
-							Filter author
-						</p>
-					</div>
+			<div className="flex gap-1">
+				<fieldset className="fieldset">
+					<legend className="fieldset-legend font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
+						Filter author
+					</legend>
 					<form
 						className="filter"
 						onSubmit={(event) => event.preventDefault()}
@@ -159,7 +114,7 @@ export default memo(function PresetLibraryHeader({
 							onClearAuthorFilter();
 						}}
 					>
-						<div className="flex flex-wrap gap-2">
+						<div className="flex h-22 min-w-64 flex-wrap gap-2 overflow-scroll">
 							{authorOptions.map((option) => {
 								const active = option.value === selectedAuthorFilter;
 								return (
@@ -167,7 +122,7 @@ export default memo(function PresetLibraryHeader({
 										key={option.value}
 										type="radio"
 										name="author-filter"
-										className="btn btn-sm btn-primary"
+										className="btn btn-sm btn-primary btn-soft max-w-32 text-left after:truncate"
 										checked={active}
 										aria-label={option.value}
 										disabled={option.disabled}
@@ -177,24 +132,61 @@ export default memo(function PresetLibraryHeader({
 									/>
 								);
 							})}
-							<button
+							<input
 								type="reset"
+								value="x"
 								className="btn btn-square btn-sm"
 								aria-label="Clear author filters"
 								disabled={selectedAuthorFilter === null}
-							>
-								x
-							</button>
+							/>
 						</div>
 					</form>
-				</div>
+				</fieldset>
+				<fieldset className="fieldset">
+					<legend className="fieldset-legend font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
+						Filter bank
+					</legend>
+					<form
+						className="filter"
+						onSubmit={(event) => event.preventDefault()}
+						onReset={(event) => {
+							event.preventDefault();
+							onClearBankFilter();
+						}}
+					>
+						<div className="flex h-22 min-w-64 flex-wrap gap-2 overflow-scroll">
+							{bankOptions.map((option) => {
+								const active = option.value === selectedBankFilter;
+								return (
+									<input
+										key={option.value}
+										type="radio"
+										name="bank-filter"
+										className="btn btn-sm btn-secondary btn-soft"
+										checked={active}
+										aria-label={option.value}
+										disabled={option.disabled}
+										onClick={() => {
+											onSelectBankFilter(option.value);
+										}}
+									/>
+								);
+							})}
+							<input
+								type="reset"
+								value="x"
+								className="btn btn-square btn-sm"
+								aria-label="Clear bank filters"
+								disabled={selectedBankFilter === null}
+							/>
+						</div>
+					</form>
+				</fieldset>
 			</div>
-			<div className="min-w-0 flex-1">
-				<div className="mb-1 flex items-center justify-between gap-2">
-					<p className="font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
-						Filter tags
-					</p>
-				</div>
+			<fieldset className="fieldset max-w-164">
+				<legend className="fieldset-legend font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
+					Filter tags
+				</legend>
 				<form
 					onSubmit={(event) => event.preventDefault()}
 					onReset={(event) => {
@@ -228,17 +220,16 @@ export default memo(function PresetLibraryHeader({
 								</label>
 							);
 						})}
-						<button
+						<input
 							type="reset"
+							value="x"
 							className="btn btn-square btn-sm"
 							aria-label="Clear tag filters"
 							disabled={selectedTagFilters.length === 0}
-						>
-							x
-						</button>
+						/>
 					</div>
 				</form>
-			</div>
+			</fieldset>
 			<div className="col-span-2 mr-68 grid grid-cols-[2.5rem_2.5rem_minmax(14rem,1fr)_9rem_minmax(10rem,1fr)] border-cz-border border-b bg-cz-body px-4 py-2 font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.22em]">
 				<button
 					type="button"

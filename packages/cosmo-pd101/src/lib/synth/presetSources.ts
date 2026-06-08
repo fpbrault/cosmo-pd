@@ -2,7 +2,7 @@ export type PresetSource = "cosmo-factory" | "user" | "cz-factory" | "addon";
 
 export function getPresetSourceLabel(source: PresetSource): string {
 	if (source === "cosmo-factory") {
-		return "Cosmo Library";
+		return "Cosmo Factory Library";
 	}
 
 	if (source === "cz-factory") {
