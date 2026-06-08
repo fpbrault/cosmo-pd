@@ -47,7 +47,7 @@ libm = "0.2"
 libc = "0.2"
 
 [target.'cfg(not(target_os = "macos"))'.dependencies]
-dirs = "5"
+dirs = "6"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 cocoa = "0.26"

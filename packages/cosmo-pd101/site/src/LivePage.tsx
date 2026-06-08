@@ -46,7 +46,8 @@ export default function LivePage() {
 			maxScale: WEB_MAX_SCALE,
 		}),
 	);
-	const isMobileViewport = typeof window !== "undefined" ? isMobile() : false;
+	const isMobileViewport =
+		typeof window !== "undefined" ? isMobile({ tablet: true }) : false;
 
 	const cursorTargetX = useMotionValue(50);
 	const cursorTargetY = useMotionValue(50);
@@ -94,6 +95,17 @@ export default function LivePage() {
 
 	const synthPanelRef = useRef<HTMLDivElement | null>(null);
 	const [isSynthFullscreen, setIsSynthFullscreen] = useState(false);
+	const [isPwaStandalone, setIsPwaStandalone] = useState(false);
+
+	useEffect(() => {
+		const mq = window.matchMedia("(display-mode: standalone)");
+		setIsPwaStandalone(mq.matches);
+		const handler = (e: MediaQueryListEvent) => setIsPwaStandalone(e.matches);
+		mq.addEventListener("change", handler);
+		return () => mq.removeEventListener("change", handler);
+	}, []);
+
+	const isEffectivelyFullscreen = isSynthFullscreen || isPwaStandalone;
 
 	useEffect(() => {
 		const element = isSynthFullscreen
@@ -108,9 +120,12 @@ export default function LivePage() {
 				availableWidth: bounds.width,
 				availableHeight: bounds.height,
 				targetAspectRatio: SYNTH_RENDERER_MAX_ASPECT_RATIO,
-				outerPadding: isSynthFullscreen || isMobileViewport ? 0 : FRAME_PADDING,
+				outerPadding:
+					isEffectivelyFullscreen || isMobileViewport ? 0 : FRAME_PADDING,
 				maxScale:
-					isSynthFullscreen || isMobileViewport ? undefined : WEB_MAX_SCALE,
+					isEffectivelyFullscreen || isMobileViewport
+						? undefined
+						: WEB_MAX_SCALE,
 			});
 
 			if (!nextLayout) {
@@ -134,7 +149,7 @@ export default function LivePage() {
 		const resizeObserver = new ResizeObserver(updateFrameSize);
 		resizeObserver.observe(element);
 		return () => resizeObserver.disconnect();
-	}, [isSynthFullscreen, isMobileViewport]);
+	}, [isEffectivelyFullscreen, isMobileViewport, isSynthFullscreen]);
 
 	const frameScale = frameLayout?.frameScale ?? 1;
 	const frameWidth = frameLayout?.frameWidth ?? SYNTH_RENDERER_DESIGN_WIDTH;
@@ -143,7 +158,7 @@ export default function LivePage() {
 	const scaledWidth = frameWidth * frameScale;
 	const scaledHeight = frameHeight * frameScale;
 
-	const synthPanelInlineSize = isSynthFullscreen
+	const synthPanelInlineSize = isEffectivelyFullscreen
 		? {}
 		: { width: scaledWidth, height: scaledHeight };
 
@@ -259,7 +274,7 @@ export default function LivePage() {
 			onPointerMove={isMobileViewport ? undefined : handlePointerMove}
 			onPointerLeave={isMobileViewport ? undefined : handlePointerLeave}
 		>
-			{!isMobileViewport && (
+			{!isMobileViewport && !isPwaStandalone && (
 				<>
 					<motion.div
 						aria-hidden="true"
@@ -275,16 +290,18 @@ export default function LivePage() {
 			<div
 				ref={synthPanelRef}
 				id="synth-fullscreen-target"
-				className={`relative shrink-0 ${isSynthFullscreen ? "flex items-center justify-center" : "overflow-visible"}`}
+				className={`relative shrink-0 ${isEffectivelyFullscreen ? "flex items-center justify-center" : "overflow-visible"}`}
 				style={synthPanelInlineSize}
 			>
 				<div
-					className={isSynthFullscreen ? "absolute" : "absolute top-0 left-0"}
+					className={
+						isEffectivelyFullscreen ? "absolute" : "absolute top-0 left-0"
+					}
 					style={{
 						width: frameWidth,
 						height: frameHeight,
 						transform: `scale(${frameScale})`,
-						transformOrigin: isSynthFullscreen ? "center" : "top left",
+						transformOrigin: isEffectivelyFullscreen ? "center" : "top left",
 					}}
 				>
 					<PresetManagerProvider value={presetManager}>
@@ -297,23 +314,25 @@ export default function LivePage() {
 					</PresetManagerProvider>
 				</div>
 			</div>
-			<button
-				type="button"
-				onClick={toggleFullscreen}
-				className="absolute right-4 bottom-4 z-50 flex h-9 w-9 items-center justify-center rounded-md bg-cz-panel/80 text-cz-cream-dim transition-colors hover:bg-cz-panel hover:text-cz-cream"
-				aria-label="Toggle fullscreen"
-			>
-				<svg
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2"
-					className="h-4 w-4"
+			{!isMobileViewport && !isPwaStandalone && (
+				<button
+					type="button"
+					onClick={toggleFullscreen}
+					className="absolute right-4 bottom-4 z-50 flex h-9 w-9 items-center justify-center rounded-md bg-cz-panel/80 text-cz-cream-dim transition-colors hover:bg-cz-panel hover:text-cz-cream"
+					aria-label="Toggle fullscreen"
 				>
-					<title>Toggle fullscreen</title>
-					<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-				</svg>
-			</button>
+					<svg
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+						className="h-4 w-4"
+					>
+						<title>Toggle fullscreen</title>
+						<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+					</svg>
+				</button>
+			)}
 		</div>
 	);
 }
