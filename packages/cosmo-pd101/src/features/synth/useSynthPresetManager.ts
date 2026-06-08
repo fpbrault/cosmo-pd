@@ -361,10 +361,10 @@ export function useSynthPresetManager({
 	const importPreset = useCallback(
 		async (json: string, filename: string) => {
 			const activation = await repository.importPreset(json, filename);
+			await reloadLibrary();
 			if (!activation) {
 				return;
 			}
-			await reloadLibrary();
 			commitPresetSelection(activation.session, {
 				stateSync: activation.stateSync,
 			});

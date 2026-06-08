@@ -1,6 +1,7 @@
 import { memo } from "react";
 import Button from "@/components/controls/Button";
-import { getPresetTagBadgeClassName } from "./presetTagTone";
+import { getPresetTagCheckboxClassName } from "./presetTagTone";
+import type { FilterOptions } from "./usePresetLibraryState";
 
 type SortKey = "star" | "favorite" | "name" | "author" | "tags";
 
@@ -11,11 +12,15 @@ type PresetLibraryHeaderProps = {
 	onSearchChange: (value: string) => void;
 	onClearSearch: () => void;
 	onClose: () => void;
-	availableAuthors: readonly string[];
-	selectedAuthorFilters: string[];
-	onToggleAuthorFilter: (author: string) => void;
-	onClearAuthorFilters: () => void;
-	availableTags: readonly string[];
+	bankOptions: FilterOptions;
+	selectedBankFilter: string | null;
+	onSelectBankFilter: (bank: string) => void;
+	onClearBankFilter: () => void;
+	authorOptions: FilterOptions;
+	selectedAuthorFilter: string | null;
+	onSelectAuthorFilter: (author: string) => void;
+	onClearAuthorFilter: () => void;
+	tagOptions: FilterOptions;
 	selectedTagFilters: string[];
 	onToggleTagFilter: (tag: string) => void;
 	onClearTagFilters: () => void;
@@ -32,11 +37,15 @@ export default memo(function PresetLibraryHeader({
 	onSearchChange,
 	onClearSearch,
 	onClose,
-	availableAuthors,
-	selectedAuthorFilters,
-	onToggleAuthorFilter,
-	onClearAuthorFilters,
-	availableTags,
+	bankOptions,
+	selectedBankFilter,
+	onSelectBankFilter,
+	onClearBankFilter,
+	authorOptions,
+	selectedAuthorFilter,
+	onSelectAuthorFilter,
+	onClearAuthorFilter,
+	tagOptions,
 	selectedTagFilters,
 	onToggleTagFilter,
 	onClearTagFilters,
@@ -46,7 +55,7 @@ export default memo(function PresetLibraryHeader({
 	sortIndicator: getSortIndicator,
 }: PresetLibraryHeaderProps) {
 	return (
-		<div className="grid grid-cols-[1fr_auto] items-center gap-3 border-cz-border border-b bg-cz-body px-5 py-4">
+		<div className="grid grid-cols-[1fr_auto] items-start gap-3 border-cz-border border-b bg-cz-body px-5 py-4">
 			<div>
 				<p className="font-mono text-3xs text-cz-gold uppercase tracking-[0.32em]">
 					Preset Library
@@ -55,7 +64,7 @@ export default memo(function PresetLibraryHeader({
 					{activePresetName}
 				</h2>
 			</div>
-			<div className="flex flex-wrap items-center gap-2">
+			<div className="flex flex-wrap place-content-end items-center gap-2">
 				<p className="font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.2em]">
 					{totalCount} {totalCount === 1 ? "Preset" : "Presets"} found
 				</p>
@@ -92,84 +101,135 @@ export default memo(function PresetLibraryHeader({
 					Return
 				</Button>
 			</div>
-			<div className="col-span-2 flex flex-wrap items-start gap-3">
-				<div className="min-w-100">
-					<div className="mb-1 flex items-center justify-between gap-2">
-						<p className="font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
-							Filter author
-						</p>
-						<button
-							type="button"
-							className="btn btn-ghost btn-xs h-6 min-h-0 rounded-sm border border-cz-border/70 px-1.5 text-cz-cream-dim hover:border-cz-light-blue/60 hover:bg-cz-inset hover:text-cz-cream disabled:border-cz-border/30 disabled:text-cz-cream-dim/40"
-							aria-label="Clear author filters"
-							disabled={selectedAuthorFilters.length === 0}
-							onClick={onClearAuthorFilters}
-						>
-							x
-						</button>
-					</div>
+			<div className="flex gap-1">
+				<fieldset className="fieldset">
+					<legend className="fieldset-legend font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
+						Filter author
+					</legend>
+					<form
+						className="filter"
+						onSubmit={(event) => event.preventDefault()}
+						onReset={(event) => {
+							event.preventDefault();
+							onClearAuthorFilter();
+						}}
+					>
+						<div className="flex h-22 min-w-64 flex-wrap gap-2 overflow-scroll">
+							{authorOptions.map((option) => {
+								const active = option.value === selectedAuthorFilter;
+								return (
+									<input
+										key={option.value}
+										type="radio"
+										name="author-filter"
+										className="btn btn-sm btn-primary btn-soft max-w-32 text-left after:truncate"
+										checked={active}
+										aria-label={option.value}
+										disabled={option.disabled}
+										onClick={() => {
+											onSelectAuthorFilter(option.value);
+										}}
+									/>
+								);
+							})}
+							<input
+								type="reset"
+								value="x"
+								className="btn btn-square btn-sm"
+								aria-label="Clear author filters"
+								disabled={selectedAuthorFilter === null}
+							/>
+						</div>
+					</form>
+				</fieldset>
+				<fieldset className="fieldset">
+					<legend className="fieldset-legend font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
+						Filter bank
+					</legend>
+					<form
+						className="filter"
+						onSubmit={(event) => event.preventDefault()}
+						onReset={(event) => {
+							event.preventDefault();
+							onClearBankFilter();
+						}}
+					>
+						<div className="flex h-22 min-w-64 flex-wrap gap-2 overflow-scroll">
+							{bankOptions.map((option) => {
+								const active = option.value === selectedBankFilter;
+								return (
+									<input
+										key={option.value}
+										type="radio"
+										name="bank-filter"
+										className="btn btn-sm btn-secondary btn-soft"
+										checked={active}
+										aria-label={option.value}
+										disabled={option.disabled}
+										onClick={() => {
+											onSelectBankFilter(option.value);
+										}}
+									/>
+								);
+							})}
+							<input
+								type="reset"
+								value="x"
+								className="btn btn-square btn-sm"
+								aria-label="Clear bank filters"
+								disabled={selectedBankFilter === null}
+							/>
+						</div>
+					</form>
+				</fieldset>
+			</div>
+			<fieldset className="fieldset max-w-164">
+				<legend className="fieldset-legend font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
+					Filter tags
+				</legend>
+				<form
+					onSubmit={(event) => event.preventDefault()}
+					onReset={(event) => {
+						event.preventDefault();
+						onClearTagFilters();
+					}}
+				>
 					<div className="flex flex-wrap gap-2">
-						<button
-							type="button"
-							className={`badge badge-md capitalize ${selectedAuthorFilters.length === 0 ? "badge-primary" : "badge-neutral"}`}
-							onClick={onClearAuthorFilters}
-						>
-							all
-						</button>
-						{availableAuthors.map((author) => {
-							const active = selectedAuthorFilters.includes(author);
+						{tagOptions.map((option) => {
+							const checked = selectedTagFilters.includes(option.value);
 							return (
-								<button
-									key={author}
-									type="button"
-									className={`badge badge-md ${active ? "badge-primary" : "badge-neutral"}`}
-									onClick={() => onToggleAuthorFilter(author)}
+								<label
+									key={option.value}
+									className={getPresetTagCheckboxClassName(
+										option.value,
+										checked,
+										option.disabled,
+									)}
 								>
-									{author}
-								</button>
+									<input
+										type="checkbox"
+										name="tag-filter"
+										className="peer sr-only"
+										checked={checked}
+										disabled={option.disabled}
+										onChange={() => {
+											onToggleTagFilter(option.value);
+										}}
+									/>
+									{option.value.toLowerCase()}
+								</label>
 							);
 						})}
-					</div>
-				</div>
-				<div className="min-w-0 flex-1">
-					<div className="mb-1 flex items-center justify-between gap-2">
-						<p className="font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
-							Filter tags
-						</p>
-						<button
-							type="button"
-							className="btn btn-ghost btn-xs h-6 min-h-0 rounded-sm border border-cz-border/70 px-1.5 text-cz-cream-dim hover:border-cz-light-blue/60 hover:bg-cz-inset hover:text-cz-cream disabled:border-cz-border/30 disabled:text-cz-cream-dim/40"
+						<input
+							type="reset"
+							value="x"
+							className="btn btn-square btn-sm"
 							aria-label="Clear tag filters"
 							disabled={selectedTagFilters.length === 0}
-							onClick={onClearTagFilters}
-						>
-							x
-						</button>
+						/>
 					</div>
-					<div className="flex flex-wrap gap-2">
-						<button
-							type="button"
-							className={`badge badge-md capitalize ${selectedTagFilters.length === 0 ? "badge-primary" : "badge-neutral"}`}
-							onClick={onClearTagFilters}
-						>
-							all
-						</button>
-						{availableTags.map((tag) => (
-							<button
-								key={tag}
-								type="button"
-								className={getPresetTagBadgeClassName(
-									tag,
-									selectedTagFilters.includes(tag),
-								)}
-								onClick={() => onToggleTagFilter(tag)}
-							>
-								{tag.toLowerCase()}
-							</button>
-						))}
-					</div>
-				</div>
-			</div>
+				</form>
+			</fieldset>
 			<div className="col-span-2 mr-68 grid grid-cols-[2.5rem_2.5rem_minmax(14rem,1fr)_9rem_minmax(10rem,1fr)] border-cz-border border-b bg-cz-body px-4 py-2 font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.22em]">
 				<button
 					type="button"

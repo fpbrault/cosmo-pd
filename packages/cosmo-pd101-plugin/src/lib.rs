@@ -1125,6 +1125,8 @@ fn handle_ipc_invoke(
                         "author": e.entry.author,
                         "starred": e.entry.starred,
                         "sortIndex": e.entry.sort_index,
+                        "bankId": e.entry.bank_id,
+                        "bankName": e.entry.bank_name,
                         "favorite": e.favorite,
                         "tags": e.entry.tags,
                     })
@@ -1284,6 +1286,8 @@ fn handle_ipc_invoke(
                         author: String::new(),
                         starred: false,
                         sort_index: u32::MAX,
+                        bank_id: None,
+                        bank_name: None,
                         tags: vec![],
                         macro_labels: SynthParams::default().macro_labels,
                         factory_version: 0,
@@ -1293,6 +1297,8 @@ fn handle_ipc_invoke(
 
                 entry.name = name.clone();
                 entry.source = "user".to_string();
+                entry.bank_id = None;
+                entry.bank_name = None;
                 entry.author = if author.trim().is_empty() {
                     DEFAULT_USER_PRESET_AUTHOR.to_string()
                 } else {
@@ -1444,6 +1450,21 @@ fn handle_ipc_invoke(
 
             Ok(serde_json::Value::Null)
         }
+        "importPresetBank" => {
+            let payload = args
+                .first()
+                .ok_or_else(|| "importPresetBank expects an object payload".to_string())?;
+            let bundle: crate::preset_library::PresetBankBundle =
+                serde_json::from_value(payload.clone())
+                    .map_err(|e| format!("invalid preset bank bundle: {e}"))?;
+
+            {
+                let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+                lib.import_bank(bundle).map_err(|e| e.to_string())?;
+            }
+
+            Ok(serde_json::Value::Null)
+        }
         "listFxModulePresets" => {
             let payload = args
                 .first()
@@ -1535,6 +1556,8 @@ fn handle_ipc_invoke(
                 "id": entry.id,
                 "name": entry.name,
                 "source": entry.source,
+                "bankId": entry.bank_id,
+                "bankName": entry.bank_name,
                 "author": entry.author,
                 "starred": entry.starred,
                 "tags": entry.tags,
@@ -2125,10 +2148,10 @@ impl CzPlugin {
                 self.apply_rt_param_change(*id, *value, false);
             }
             EventBody::ProgramChange { program, .. }
-            | EventBody::ProgramChange2 { program, .. } => {
-                if usize::from(*program) < crate::ffi::factory_preset_count() {
-                    self.apply_factory_preset(usize::from(*program));
-                }
+            | EventBody::ProgramChange2 { program, .. }
+                if usize::from(*program) < crate::ffi::factory_preset_count() =>
+            {
+                self.apply_factory_preset(usize::from(*program));
             }
             _ => {}
         }

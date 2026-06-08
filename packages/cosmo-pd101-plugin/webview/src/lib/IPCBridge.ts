@@ -82,6 +82,7 @@ declare global {
 		__czSetPresetTags?: (id: string, tags: string[]) => Promise<unknown>;
 		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
 		__czExportPreset?: (id: string) => Promise<unknown>;
+		__czImportPresetBank?: (payload: unknown) => Promise<unknown>;
 		__czListFxModulePresets?: (moduleType: string) => Promise<unknown>;
 		__czSaveFxModulePreset?: (payload: {
 			name: string;
@@ -267,6 +268,8 @@ function installIpcRouter() {
 	window.__czToggleStarred = (id: string, starred: boolean) =>
 		invokeRust("toggleStarred", { id, starred });
 	window.__czExportPreset = (id: string) => invokeRust("exportPreset", { id });
+	window.__czImportPresetBank = (payload) =>
+		invokeRust("importPresetBank", payload);
 	window.__czListFxModulePresets = (moduleType: string) =>
 		invokeRust("listFxModulePresets", { moduleType });
 	window.__czSaveFxModulePreset = (payload) =>

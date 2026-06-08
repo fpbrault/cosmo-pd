@@ -17,6 +17,8 @@ type NativePresetLibraryEntry = {
 	starred: boolean;
 	sortIndex?: number;
 	favorite?: boolean;
+	bankId?: string | null;
+	bankName?: string | null;
 	tags?: string[];
 };
 
@@ -32,14 +34,35 @@ type SavePluginPresetPayload = {
 	data?: SynthPresetV1;
 };
 
+type ImportedPresetBank = {
+	type: "preset-bank";
+	schemaVersion: number;
+	bank: {
+		id: string;
+		name: string;
+		source: PresetSource;
+	};
+	presets: Array<{
+		id: string;
+		name: string;
+		author?: string;
+		starred?: boolean;
+		tags?: string[];
+		data: SynthPresetV1;
+	}>;
+};
+
 const DEFAULT_USER_PRESET_AUTHOR = "User";
 
 function getSourceLabel(source: PresetSource): string {
 	if (source === "cosmo-factory") {
-		return "Cosmo Library";
+		return "Cosmo Factory Library";
 	}
 	if (source === "cz-factory") {
 		return "Temple Of CZ";
+	}
+	if (source === "addon") {
+		return "Add-On Bank";
 	}
 	return "User";
 }
@@ -55,6 +78,7 @@ declare global {
 		__czSetPresetTags?: (id: string, tags: string[]) => Promise<unknown>;
 		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
 		__czExportPreset?: (id: string) => Promise<unknown>;
+		__czImportPresetBank?: (payload: ImportedPresetBank) => Promise<unknown>;
 	}
 }
 
@@ -144,6 +168,51 @@ function parseImportedPreset(
 	return null;
 }
 
+function parseImportedPresetBank(json: string): ImportedPresetBank | null {
+	try {
+		const parsed = JSON.parse(json) as ImportedPresetBank;
+		if (
+			parsed.type !== "preset-bank" ||
+			parsed.schemaVersion !== 1 ||
+			typeof parsed.bank?.id !== "string" ||
+			typeof parsed.bank?.name !== "string" ||
+			!["cosmo-factory", "cz-factory", "addon"].includes(parsed.bank?.source) ||
+			!Array.isArray(parsed.presets)
+		) {
+			return null;
+		}
+
+		const presets = parsed.presets.filter(
+			(preset) =>
+				typeof preset?.id === "string" &&
+				typeof preset?.name === "string" &&
+				isSynthPresetV1(preset?.data),
+		);
+
+		if (presets.length !== parsed.presets.length) {
+			return null;
+		}
+
+		return {
+			type: "preset-bank",
+			schemaVersion: 1,
+			bank: parsed.bank,
+			presets: presets.map((preset) => ({
+				id: preset.id,
+				name: preset.name,
+				author: typeof preset.author === "string" ? preset.author : "",
+				starred: preset.starred === true,
+				tags: Array.isArray(preset.tags)
+					? preset.tags.filter((tag): tag is string => typeof tag === "string")
+					: [],
+				data: preset.data,
+			})),
+		};
+	} catch {
+		return null;
+	}
+}
+
 function mapNativeEntryToPresetEntry(
 	entry: NativePresetLibraryEntry,
 ): PresetEntry {
@@ -153,6 +222,8 @@ function mapNativeEntryToPresetEntry(
 		type: entry.source === "user" ? "local" : "library",
 		source: entry.source,
 		sourceLabel: getSourceLabel(entry.source),
+		bankId: entry.bankId ?? null,
+		bankName: entry.bankName ?? null,
 		author: entry.author,
 		starred: entry.starred,
 		favorite: entry.favorite === true,
@@ -167,6 +238,8 @@ function mapNativeEntryToPresetEntry(
 						author: entry.author,
 						starred: entry.starred,
 						sortIndex: entry.sortIndex,
+						bankId: entry.bankId ?? null,
+						bankName: entry.bankName ?? null,
 						tags: entry.tags,
 					},
 	};
@@ -246,6 +319,12 @@ export function createPluginPresetManagerRepository({
 			};
 		},
 		importPreset: async (json, filename) => {
+			const importedBank = parseImportedPresetBank(json);
+			if (importedBank) {
+				await window.__czImportPresetBank?.(importedBank);
+				return null;
+			}
+
 			const imported = parseImportedPreset(json, filename);
 			if (!imported) {
 				return null;

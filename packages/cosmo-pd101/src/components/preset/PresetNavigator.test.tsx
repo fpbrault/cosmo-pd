@@ -9,7 +9,7 @@ const entries: PresetEntry[] = [
 		label: "Factory Bass",
 		type: "library",
 		source: "cosmo-factory",
-		sourceLabel: "Cosmo Library",
+		sourceLabel: "Cosmo Factory Library",
 		author: "Purr Audio",
 		starred: true,
 		favorite: false,

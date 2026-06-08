@@ -6,6 +6,8 @@ export type PresetEntry = {
 	type: "local" | "library";
 	source: LibraryPreset["source"];
 	sourceLabel: string;
+	bankId?: string | null;
+	bankName?: string | null;
 	author: string;
 	starred: boolean;
 	favorite: boolean;
