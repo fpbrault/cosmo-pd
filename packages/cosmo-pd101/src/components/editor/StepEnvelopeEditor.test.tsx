@@ -70,7 +70,7 @@ describe("StepEnvelopeEditor", () => {
 		});
 		Object.defineProperty(HTMLCanvasElement.prototype, "clientHeight", {
 			configurable: true,
-			value: 200,
+			value: 250,
 		});
 	});
 
@@ -209,7 +209,7 @@ describe("StepEnvelopeEditor", () => {
 
 		expect(envelopeIndex).toBeGreaterThanOrEqual(0);
 		expect(envelopeLineSegments).toHaveLength(4);
-		expect(envelopeLineSegments.at(-1)?.args[1]).toBe(192);
+		expect(envelopeLineSegments.at(-1)?.args[1]).toBe(194.72727272727275);
 		expect(
 			envelopeLineSegments.every((command) =>
 				command.args.every(Number.isFinite),
@@ -235,7 +235,7 @@ describe("StepEnvelopeEditor", () => {
 		});
 		Object.defineProperty(canvas, "clientHeight", {
 			configurable: true,
-			value: 200,
+			value: 250,
 		});
 		vi.spyOn(canvas, "getBoundingClientRect").mockReturnValue({
 			x: 10,
