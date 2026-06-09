@@ -5315,7 +5315,7 @@ export const DEFAULT_SYNTH_PARAMS_V1: SynthParams = {
   "ringGain": 4.0,
   "octave": 0.0,
   "line1": {
-    "algo": "cz101",
+    "algo": "saw",
     "algo2": null,
     "algoBlend": 0.0,
     "baseWaveformA": "cosine",
@@ -5450,7 +5450,7 @@ export const DEFAULT_SYNTH_PARAMS_V1: SynthParams = {
     "algoControlsB": []
   },
   "line2": {
-    "algo": "cz101",
+    "algo": "saw",
     "algo2": null,
     "algoBlend": 0.0,
     "baseWaveformA": "cosine",

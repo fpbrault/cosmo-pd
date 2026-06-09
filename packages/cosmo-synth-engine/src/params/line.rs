@@ -383,7 +383,7 @@ pub struct LineParams {
 impl Default for LineParams {
     fn default() -> Self {
         Self {
-            algo: Algo::Cz101,
+            algo: Algo::Saw,
             algo2: None,
             algo_blend: 0.0,
             base_waveform_a: BaseWaveform::default(),
