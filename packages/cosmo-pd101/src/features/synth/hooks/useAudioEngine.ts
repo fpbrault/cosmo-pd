@@ -98,11 +98,7 @@ export type AudioEngineRefs = {
 };
 
 function createInitialSynthParams(): SynthParams {
-	return {
-		...(JSON.parse(JSON.stringify(DEFAULT_PRESET.params)) as SynthParams),
-		frequency: 220,
-		volume: 0.4,
-	};
+	return JSON.parse(JSON.stringify(DEFAULT_PRESET.params)) as SynthParams;
 }
 
 export function useAudioEngine({

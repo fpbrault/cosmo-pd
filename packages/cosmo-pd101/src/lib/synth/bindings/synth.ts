@@ -4774,21 +4774,21 @@ export type EngineParamRangeV1 = { key: string; min: number; max: number };
 export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
   {
     "key": "volume",
-    "paramDefault": 0.4000000059604645,
+    "paramDefault": 1.0,
     "readoutFormat": {
       "kind": "percent"
     }
   },
   {
     "key": "warpAAmount",
-    "paramDefault": 0.0,
+    "paramDefault": 1.0,
     "readoutFormat": {
       "kind": "decimal"
     }
   },
   {
     "key": "warpBAmount",
-    "paramDefault": 0.0,
+    "paramDefault": 1.0,
     "readoutFormat": {
       "kind": "decimal"
     }
@@ -5307,4 +5307,373 @@ export const ENGINE_PARAM_RANGES_V1: EngineParamRangeV1[] = [
     "max": 200.0
   }
 ];
+
+/** Rust-owned default synth parameters. */
+export const DEFAULT_SYNTH_PARAMS_V1: SynthParams = {
+  "lineSelect": "L1+L2'",
+  "modMode": "normal",
+  "ringGain": 4.0,
+  "octave": 0.0,
+  "line1": {
+    "algo": "cz101",
+    "algo2": null,
+    "algoBlend": 0.0,
+    "baseWaveformA": "cosine",
+    "baseWaveformB": "cosine",
+    "window": "off",
+    "dcaBase": 1.0,
+    "dcwBase": 1.0,
+    "modulation": 0.0,
+    "detuneNote": 0.0,
+    "detuneFine": 0.0,
+    "octave": 0.0,
+    "dcoEnv": {
+      "steps": [
+        {
+          "level": 0,
+          "rate": 0
+        },
+        {
+          "level": 0,
+          "rate": 0
+        },
+        {
+          "level": 0,
+          "rate": 0
+        },
+        {
+          "level": 0,
+          "rate": 0
+        },
+        {
+          "level": 0,
+          "rate": 0
+        },
+        {
+          "level": 0,
+          "rate": 0
+        },
+        {
+          "level": 0,
+          "rate": 0
+        },
+        {
+          "level": 0,
+          "rate": 0
+        }
+      ],
+      "sustainStep": 1,
+      "stepCount": 2,
+      "loop": false
+    },
+    "dcwEnv": {
+      "steps": [
+        {
+          "level": 127,
+          "rate": 98
+        },
+        {
+          "level": 127,
+          "rate": 104
+        },
+        {
+          "level": 127,
+          "rate": 98
+        },
+        {
+          "level": 0,
+          "rate": 56
+        },
+        {
+          "level": 0,
+          "rate": 68
+        },
+        {
+          "level": 0,
+          "rate": 68
+        },
+        {
+          "level": 0,
+          "rate": 68
+        },
+        {
+          "level": 0,
+          "rate": 68
+        }
+      ],
+      "sustainStep": 2,
+      "stepCount": 4,
+      "loop": false
+    },
+    "dcaEnv": {
+      "steps": [
+        {
+          "level": 127,
+          "rate": 90
+        },
+        {
+          "level": 107,
+          "rate": 96
+        },
+        {
+          "level": 107,
+          "rate": 90
+        },
+        {
+          "level": 0,
+          "rate": 48
+        },
+        {
+          "level": 0,
+          "rate": 60
+        },
+        {
+          "level": 0,
+          "rate": 60
+        },
+        {
+          "level": 0,
+          "rate": 60
+        },
+        {
+          "level": 0,
+          "rate": 60
+        }
+      ],
+      "sustainStep": 2,
+      "stepCount": 4,
+      "loop": false
+    },
+    "dcwKeyFollow": 0.0,
+    "dcaKeyFollow": 0.0,
+    "algoControlsA": [],
+    "algoControlsB": []
+  },
+  "line2": {
+    "algo": "cz101",
+    "algo2": null,
+    "algoBlend": 0.0,
+    "baseWaveformA": "cosine",
+    "baseWaveformB": "cosine",
+    "window": "off",
+    "dcaBase": 1.0,
+    "dcwBase": 1.0,
+    "modulation": 0.0,
+    "detuneNote": 0.0,
+    "detuneFine": 0.0,
+    "octave": 0.0,
+    "dcoEnv": {
+      "steps": [
+        {
+          "level": 0,
+          "rate": 0
+        },
+        {
+          "level": 0,
+          "rate": 0
+        },
+        {
+          "level": 0,
+          "rate": 0
+        },
+        {
+          "level": 0,
+          "rate": 0
+        },
+        {
+          "level": 0,
+          "rate": 0
+        },
+        {
+          "level": 0,
+          "rate": 0
+        },
+        {
+          "level": 0,
+          "rate": 0
+        },
+        {
+          "level": 0,
+          "rate": 0
+        }
+      ],
+      "sustainStep": 1,
+      "stepCount": 2,
+      "loop": false
+    },
+    "dcwEnv": {
+      "steps": [
+        {
+          "level": 127,
+          "rate": 98
+        },
+        {
+          "level": 127,
+          "rate": 104
+        },
+        {
+          "level": 127,
+          "rate": 98
+        },
+        {
+          "level": 0,
+          "rate": 56
+        },
+        {
+          "level": 0,
+          "rate": 68
+        },
+        {
+          "level": 0,
+          "rate": 68
+        },
+        {
+          "level": 0,
+          "rate": 68
+        },
+        {
+          "level": 0,
+          "rate": 68
+        }
+      ],
+      "sustainStep": 2,
+      "stepCount": 4,
+      "loop": false
+    },
+    "dcaEnv": {
+      "steps": [
+        {
+          "level": 127,
+          "rate": 90
+        },
+        {
+          "level": 107,
+          "rate": 96
+        },
+        {
+          "level": 107,
+          "rate": 90
+        },
+        {
+          "level": 0,
+          "rate": 48
+        },
+        {
+          "level": 0,
+          "rate": 60
+        },
+        {
+          "level": 0,
+          "rate": 60
+        },
+        {
+          "level": 0,
+          "rate": 60
+        },
+        {
+          "level": 0,
+          "rate": 60
+        }
+      ],
+      "sustainStep": 2,
+      "stepCount": 4,
+      "loop": false
+    },
+    "dcwKeyFollow": 0.0,
+    "dcaKeyFollow": 0.0,
+    "algoControlsA": [],
+    "algoControlsB": []
+  },
+  "frequency": 220.0,
+  "tempoBpm": 120.0,
+  "volume": 1.0,
+  "czDacEnabled": false,
+  "polyMode": "poly8",
+  "legato": false,
+  "portamento": {
+    "enabled": false,
+    "mode": "time",
+    "rate": 85.0,
+    "time": 0.1
+  },
+  "lfo": {
+    "waveform": "sine",
+    "rate": 2.0,
+    "rateMode": "hz",
+    "syncDivision": "quarter",
+    "depth": 1.0,
+    "symmetry": 0.5,
+    "retrigger": false,
+    "offset": 0.0
+  },
+  "lfo2": {
+    "waveform": "sine",
+    "rate": 2.0,
+    "rateMode": "hz",
+    "syncDivision": "quarter",
+    "depth": 1.0,
+    "symmetry": 0.5,
+    "retrigger": false,
+    "offset": 0.0
+  },
+  "velocityCurve": 0.0,
+  "pitchBendRange": 2.0,
+  "modMatrix": {
+    "routes": []
+  },
+  "random": {
+    "rate": 2.0
+  },
+  "modEnv": {
+    "attack": 0.01,
+    "decay": 0.1,
+    "sustain": 0.5,
+    "release": 0.2
+  },
+  "fxSlots": [
+    {
+      "type": "empty"
+    },
+    {
+      "type": "empty"
+    },
+    {
+      "type": "empty"
+    },
+    {
+      "type": "vibrato",
+      "params": {
+        "enabled": false,
+        "waveform": 1,
+        "rate": 55.0,
+        "depth": 8.0,
+        "delay": 120.0,
+        "rate_mode": "hz",
+        "sync_division": "quarter"
+      }
+    },
+    {
+      "type": "phaseMod",
+      "params": {
+        "enabled": false,
+        "amount": 0.0,
+        "ratio": 1.0,
+        "pmPre": true
+      }
+    },
+    {
+      "type": "empty"
+    }
+  ],
+  "macro1": 0.0,
+  "macro2": 0.0,
+  "macro3": 0.0,
+  "macro4": 0.0,
+  "macroLabels": [
+    "Brightness",
+    "Timbre",
+    "Time",
+    "Movement"
+  ]
+};
 

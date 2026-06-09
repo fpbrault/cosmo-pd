@@ -326,10 +326,10 @@ const DEFAULT_STATE: SynthState = {
 	algoBlendB: 0,
 
 	windowType: "off",
-	volume: 1,
+	volume: requireEngineParamDefault("volume"),
 	czDacEnabled: false,
 
-	line1Level: 1,
+	line1Level: requireEngineParamDefault("line1Level"),
 	lineOctave: 0,
 	line2DetuneOctave: 0,
 	line2DetuneNote: 0,
@@ -344,7 +344,7 @@ const DEFAULT_STATE: SynthState = {
 	line1BaseWaveformA: "cosine",
 	line1BaseWaveformB: "cosine",
 
-	line2Level: 1,
+	line2Level: requireEngineParamDefault("line2Level"),
 	line2DcwKeyFollow: 0,
 	line2DcaKeyFollow: 0,
 	line2DcoEnv: DEFAULT_DCO_ENV,
@@ -373,7 +373,7 @@ const DEFAULT_STATE: SynthState = {
 	lfoRateMode: "hz",
 	lfoSyncDivision: "quarter",
 	lfoDepth: requireEngineParamDefault("lfoDepth"),
-	lfoSymmetry: 0.5,
+	lfoSymmetry: requireEngineParamDefault("lfoSymmetry"),
 	lfoRetrigger: false,
 	lfoOffset: requireEngineParamDefault("lfoOffset"),
 	lfo2Waveform: "sine",
@@ -381,7 +381,7 @@ const DEFAULT_STATE: SynthState = {
 	lfo2RateMode: "hz",
 	lfo2SyncDivision: "quarter",
 	lfo2Depth: requireEngineParamDefault("lfo2Depth"),
-	lfo2Symmetry: 0.5,
+	lfo2Symmetry: requireEngineParamDefault("lfo2Symmetry"),
 	lfo2Retrigger: false,
 	lfo2Offset: requireEngineParamDefault("lfo2Offset"),
 
@@ -655,7 +655,7 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 					algoControlsA: line2NormalizedAlgoControlsA,
 					algoControlsB: line2NormalizedAlgoControlsB,
 				},
-				frequency: 440,
+				frequency: 220,
 				volume: s.volume,
 				czDacEnabled: s.czDacEnabled,
 				tempoBpm: s.tempoBpm,
@@ -772,7 +772,7 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 				algoBlendA: safe(p.line1?.algoBlend, 0),
 				algoBlendB: safe(p.line2?.algoBlend, 0),
 				windowType: (p.line1?.window as WindowType) ?? "off",
-				volume: safe(p.volume, 1),
+				volume: safe(p.volume, requireEngineParamDefault("volume")),
 				czDacEnabled: currentCzDacEnabled,
 				line1Level: safe(p.line1?.dcaBase, 1),
 				line2Level: safe(p.line2?.dcaBase, 1),
@@ -858,7 +858,10 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 				lfoRateMode: (p.lfo?.rateMode as LfoRateMode) ?? "hz",
 				lfoSyncDivision: (p.lfo?.syncDivision as LfoSyncDivision) ?? "quarter",
 				lfoDepth: safe(p.lfo?.depth, requireEngineParamDefault("lfoDepth")),
-				lfoSymmetry: safe(p.lfo?.symmetry, 0.5),
+				lfoSymmetry: safe(
+					p.lfo?.symmetry,
+					requireEngineParamDefault("lfoSymmetry"),
+				),
 				lfoRetrigger: p.lfo?.retrigger ?? false,
 				lfoOffset: safe(p.lfo?.offset, requireEngineParamDefault("lfoOffset")),
 				lfo2Waveform: (p.lfo2?.waveform as LfoWaveform) ?? "sine",
@@ -867,7 +870,10 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 				lfo2SyncDivision:
 					(p.lfo2?.syncDivision as LfoSyncDivision) ?? "quarter",
 				lfo2Depth: safe(p.lfo2?.depth, requireEngineParamDefault("lfo2Depth")),
-				lfo2Symmetry: safe(p.lfo2?.symmetry, 0.5),
+				lfo2Symmetry: safe(
+					p.lfo2?.symmetry,
+					requireEngineParamDefault("lfo2Symmetry"),
+				),
 				lfo2Retrigger: p.lfo2?.retrigger ?? false,
 				lfo2Offset: safe(
 					p.lfo2?.offset,

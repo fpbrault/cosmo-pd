@@ -26,8 +26,8 @@ use cosmo_synth_engine::params::{
     LineParams, LineSelect, LoFiParams, ModDestination, ModEnvParams, ModMatrix, ModMode, ModRoute,
     ModSource, PhaseModParams, PhaserParams, PolyMode, PortamentoMode, PortamentoParams,
     RandomParams, ReverbParams, RingModParams, ShimmerVerbParams, StepEnvData, SynthParams,
-    TremoloParams, VibratoParams, WavefolderParams, WindowType, engine_param_ranges_v1,
-    engine_param_ui_meta_v1,
+    TremoloParams, VibratoParams, WavefolderParams, WindowType, default_synth_params_v1,
+    engine_param_ranges_v1, engine_param_ui_meta_v1,
 };
 use cosmo_synth_engine::preset_wire::{
     SynthPresetV1, algo_definitions_v1, algo_ui_catalog_v1, cz_presets,
@@ -365,6 +365,12 @@ fn main() {
     out.push_str("/** Rust-owned numeric range metadata for engine parameters. */\n");
     out.push_str("export const ENGINE_PARAM_RANGES_V1: EngineParamRangeV1[] = ");
     out.push_str(&engine_param_ranges_json);
+    out.push_str(";\n\n");
+    let default_synth_params_json = serde_json::to_string_pretty(&default_synth_params_v1())
+        .expect("Failed to serialize DEFAULT_SYNTH_PARAMS_V1");
+    out.push_str("/** Rust-owned default synth parameters. */\n");
+    out.push_str("export const DEFAULT_SYNTH_PARAMS_V1: SynthParams = ");
+    out.push_str(&default_synth_params_json);
     out.push_str(";\n\n");
     std::fs::write(&ts_path, out)
         .unwrap_or_else(|e| panic!("Failed to write TypeScript bindings to '{ts_path}': {e}"));

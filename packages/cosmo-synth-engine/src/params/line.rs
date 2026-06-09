@@ -383,14 +383,14 @@ pub struct LineParams {
 impl Default for LineParams {
     fn default() -> Self {
         Self {
-            algo: Algo::Saw,
+            algo: Algo::Cz101,
             algo2: None,
             algo_blend: 0.0,
             base_waveform_a: BaseWaveform::default(),
             base_waveform_b: BaseWaveform::default(),
             window: WindowType::Off,
             dca_base: 1.0,
-            dcw_base: 0.0,
+            dcw_base: 1.0,
             modulation: 0.0,
             detune_note: 0.0,
             detune_fine: 0.0,

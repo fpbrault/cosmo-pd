@@ -34,7 +34,9 @@ pub use modulation::{
     NUM_MOD_DESTINATIONS,
 };
 pub use portamento::{PortamentoMode, PortamentoParams};
-pub use synth_params::{ModEnvParams, NUM_OPERATORS, NUM_VOICES, RandomParams, SynthParams};
+pub use synth_params::{
+    ModEnvParams, NUM_OPERATORS, NUM_VOICES, RandomParams, SynthParams, default_synth_params_v1,
+};
 pub use ui_meta::{
     EngineEnumValueLabelV1, EngineParamRangeV1, EngineParamReadoutFormatV1, EngineParamUiMetaV1,
     engine_param_default_v1, engine_param_ranges_v1, engine_param_ui_meta_v1,

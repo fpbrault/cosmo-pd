@@ -1,10 +1,5 @@
-import { buildDefaultAlgoControls } from "@/lib/synth/algoRef";
 import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
-import {
-	DEFAULT_DCA_ENV,
-	DEFAULT_DCO_ENV,
-	DEFAULT_DCW_ENV,
-} from "@/lib/synth/defaultEnvelopes";
+import { DEFAULT_SYNTH_PARAMS_V1 } from "@/lib/synth/bindings/synth";
 import { createPresetId } from "@/lib/synth/presetIdentity";
 import type { PresetSource } from "@/lib/synth/presetSources";
 import {
@@ -249,85 +244,7 @@ function createStoredPreset(input: StoredPresetInput): StoredPreset {
 
 export const DEFAULT_PRESET: SynthPresetV1 = {
 	schemaVersion: 1,
-	params: {
-		lineSelect: "L1+L2'",
-		modMode: "normal",
-		octave: 0,
-		line1: {
-			algo: "cz101",
-			algo2: null,
-			algoControlsA: buildDefaultAlgoControls("cz101"),
-			algoControlsB: buildDefaultAlgoControls("cz101"),
-			algoBlend: 0,
-			window: "off",
-			dcaBase: 1,
-			dcwBase: 1,
-			modulation: 0,
-			detuneNote: 0,
-			detuneFine: 0,
-			octave: 0,
-			dcoEnv: DEFAULT_DCO_ENV,
-			dcwEnv: DEFAULT_DCW_ENV,
-			dcaEnv: DEFAULT_DCA_ENV,
-			dcwKeyFollow: 0,
-			dcaKeyFollow: 0,
-		},
-		line2: {
-			algo: "cz101",
-			algo2: null,
-			algoControlsA: buildDefaultAlgoControls("cz101"),
-			algoControlsB: buildDefaultAlgoControls("cz101"),
-			algoBlend: 0,
-			window: "off",
-			dcaBase: 1,
-			dcwBase: 1,
-			modulation: 0,
-			detuneNote: 0,
-			detuneFine: 0,
-			octave: 0,
-			dcoEnv: DEFAULT_DCO_ENV,
-			dcwEnv: DEFAULT_DCW_ENV,
-			dcaEnv: DEFAULT_DCA_ENV,
-			dcwKeyFollow: 0,
-			dcaKeyFollow: 0,
-		},
-		frequency: 440,
-		volume: 1,
-		polyMode: "poly8",
-		legato: false,
-		portamento: {
-			enabled: false,
-			mode: "time",
-			rate: 50,
-			time: 0.1,
-		},
-		lfo: {
-			waveform: "sine",
-			rate: 5,
-			depth: 0,
-			symmetry: 0.5,
-			retrigger: false,
-			offset: 0,
-		},
-		lfo2: {
-			waveform: "sine",
-			rate: 5,
-			depth: 0,
-			symmetry: 0.5,
-			retrigger: false,
-			offset: 0,
-		},
-		pitchBendRange: 2,
-		modMatrix: { routes: [] },
-		fxSlots: [
-			{ type: "empty" },
-			{ type: "empty" },
-			{ type: "empty" },
-			{ type: "empty" },
-			{ type: "empty" },
-			{ type: "empty" },
-		],
-	},
+	params: DEFAULT_SYNTH_PARAMS_V1,
 };
 
 export async function saveStoredPreset(
