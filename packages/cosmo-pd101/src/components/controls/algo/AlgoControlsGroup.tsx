@@ -1,5 +1,6 @@
 import { memo } from "react";
 import Card from "@/components/primitives/Card";
+import type { Algo } from "@/lib/synth/bindings/synth";
 import { useAlgoUiText } from "@/lib/synth/i18nAlgo";
 import AlgoControlItem from "./AlgoControlItem";
 import type {
@@ -9,11 +10,16 @@ import type {
 	LineIndex,
 } from "./algoControlTypes";
 
-interface AlgoControlsGroupProps {
-	sectionId?: "a" | "b";
+const CZ_STRUCTURED_CONTROL_IDS = new Set([
+	"preset",
+	"waveform1",
+	"waveform2",
+	"windowFunction",
+]);
+
+type AlgoControlsGroupSlot = {
+	algo: Algo;
 	controls: AlgoControlRuntime[];
-	disabled?: boolean;
-	embedded?: boolean;
 	controlBindings: Record<string, AlgoControlBinding>;
 	lineIndex: LineIndex;
 	algoParamSlotIndex: Record<string, number>;
@@ -23,48 +29,64 @@ interface AlgoControlsGroupProps {
 		control: AlgoControlRuntime,
 	) => AlgoControlOptionRuntime | null;
 	applyOptionAssignments: (option: AlgoControlOptionRuntime) => void;
+};
+
+interface AlgoControlsGroupProps {
+	sectionId?: "a" | "b";
+	disabled?: boolean;
+	slot: AlgoControlsGroupSlot;
 	color?: string;
 }
 
+type CzStructuredControls = {
+	preset: AlgoControlRuntime | null;
+	waveform1: AlgoControlRuntime | null;
+	waveform2: AlgoControlRuntime | null;
+	windowFunction: AlgoControlRuntime | null;
+	remainingControls: AlgoControlRuntime[];
+};
+
+function buildCzStructuredControls(
+	controls: AlgoControlRuntime[],
+): CzStructuredControls {
+	const controlsById = new Map(
+		controls.map((control) => [control.id, control]),
+	);
+
+	return {
+		preset: controlsById.get("preset") ?? null,
+		waveform1: controlsById.get("waveform1") ?? null,
+		waveform2: controlsById.get("waveform2") ?? null,
+		windowFunction: controlsById.get("windowFunction") ?? null,
+		remainingControls: controls.filter(
+			(control) => !CZ_STRUCTURED_CONTROL_IDS.has(control.id),
+		),
+	};
+}
+
 function AlgoControlsGroupInner({
-	controls,
+	slot,
 	disabled = false,
-	embedded = false,
 	sectionId = "a",
-	controlBindings,
-	lineIndex,
-	algoParamSlotIndex,
-	getAlgoControlValue,
-	setAlgoControlValue,
-	getActiveSelectOption,
-	applyOptionAssignments,
 	color,
 }: AlgoControlsGroupProps) {
+	const {
+		algo,
+		controls,
+		controlBindings,
+		lineIndex,
+		algoParamSlotIndex,
+		getAlgoControlValue,
+		setAlgoControlValue,
+		getActiveSelectOption,
+		applyOptionAssignments,
+	} = slot;
+
 	const noControlsLabel = useAlgoUiText("noControlsForThisAlgo");
-	const presetControl = controls.find((control) => control.id === "preset");
-	const waveform1Control = controls.find(
-		(control) => control.id === "waveform1",
-	);
-	const waveform2Control = controls.find(
-		(control) => control.id === "waveform2",
-	);
-	const windowFunctionControl = controls.find(
-		(control) => control.id === "windowFunction",
-	);
-	const czStructuredControlIds = new Set([
-		"preset",
-		"waveform1",
-		"waveform2",
-		"windowFunction",
-	]);
-	const hasCzStructuredLayout =
-		controls.some((control) => czStructuredControlIds.has(control.id)) &&
-		(presetControl != null ||
-			(waveform1Control != null && waveform2Control != null) ||
-			windowFunctionControl != null);
-	const remainingControls = hasCzStructuredLayout
-		? controls.filter((control) => !czStructuredControlIds.has(control.id))
-		: controls;
+	const isCzAlgo = algo === "cz101";
+	const czStructuredControls = isCzAlgo
+		? buildCzStructuredControls(controls)
+		: null;
 
 	const renderControl = (control: AlgoControlRuntime) => (
 		<AlgoControlItem
@@ -83,40 +105,62 @@ function AlgoControlsGroupInner({
 		/>
 	);
 
-	const content = (
-		<>
+	return (
+		<Card
+			variant="subtle"
+			className={`mt-2 flex min-h-0 grow flex-col border-cz-border/70 border-t p-3 pt-4 ${disabled ? "opacity-45" : ""}`}
+		>
 			{controls.length > 0 ? (
 				<div
-					className={`min-h-0 flex-1 overflow-visible ${disabled ? "pointer-events-none" : ""}`}
+					className={`min-h-0 flex-1 justify-between overflow-visible ${disabled ? "pointer-events-none" : ""}`}
 				>
-					{hasCzStructuredLayout ? (
-						<div className="space-y-3">
-							{presetControl ? <div>{renderControl(presetControl)}</div> : null}
-							{waveform1Control || waveform2Control ? (
-								<div className="grid grid-cols-2 items-start gap-6">
-									{waveform1Control ? (
-										<div>{renderControl(waveform1Control)}</div>
+					{isCzAlgo ? (
+						<div
+							className="@container-size space-y-3"
+							data-testid="algo-controls-cz-layout"
+						>
+							{czStructuredControls?.preset ? (
+								<div>{renderControl(czStructuredControls.preset)}</div>
+							) : null}
+							{czStructuredControls &&
+							(czStructuredControls.waveform1 ||
+								czStructuredControls.waveform2) ? (
+								<div
+									className="grid @min-[200px]:grid-cols-1 grid-cols-2 items-start gap-6"
+									data-testid="algo-controls-cz-waveforms"
+								>
+									{czStructuredControls.waveform1 ? (
+										<div>{renderControl(czStructuredControls.waveform1)}</div>
 									) : (
 										<div />
 									)}
-									{waveform2Control ? (
-										<div>{renderControl(waveform2Control)}</div>
+									{czStructuredControls.waveform2 ? (
+										<div>{renderControl(czStructuredControls.waveform2)}</div>
 									) : (
 										<div />
 									)}
 								</div>
 							) : null}
-							{windowFunctionControl ? (
-								<div>{renderControl(windowFunctionControl)}</div>
+							{czStructuredControls?.windowFunction ? (
+								<div>{renderControl(czStructuredControls.windowFunction)}</div>
 							) : null}
-							{remainingControls.length > 0 ? (
-								<div className="grid grid-cols-2 justify-center gap-2">
-									{remainingControls.map((control) => renderControl(control))}
+							{czStructuredControls &&
+							czStructuredControls.remainingControls.length > 0 ? (
+								<div
+									className="grid grid-cols-2 justify-center gap-2"
+									data-testid="algo-controls-cz-remaining"
+								>
+									{czStructuredControls.remainingControls.map((control) =>
+										renderControl(control),
+									)}
 								</div>
 							) : null}
 						</div>
 					) : (
-						<div className="grid grid-cols-2 justify-center gap-2">
+						<div
+							className="grid grid-cols-2 justify-center gap-2"
+							data-testid="algo-controls-default-grid"
+						>
 							{controls.map((control) => renderControl(control))}
 						</div>
 					)}
@@ -126,23 +170,6 @@ function AlgoControlsGroupInner({
 					{noControlsLabel}
 				</div>
 			)}
-		</>
-	);
-
-	if (embedded) {
-		return (
-			<div className={`flex min-h-0 flex-col ${disabled ? "opacity-45" : ""}`}>
-				{content}
-			</div>
-		);
-	}
-
-	return (
-		<Card
-			variant="subtle"
-			className={`flex min-h-0 flex-col p-3 ${disabled ? "opacity-45" : ""}`}
-		>
-			{content}
 		</Card>
 	);
 }

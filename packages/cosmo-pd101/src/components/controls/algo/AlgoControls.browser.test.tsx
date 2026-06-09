@@ -195,7 +195,9 @@ describe("algo controls (browser)", () => {
 	});
 
 	it("renders AlgoControlsGroup empty and populated states", () => {
-		const sharedProps = {
+		const sharedSlot = {
+			algo: "saw" as const,
+			controls: [],
 			controlBindings: {},
 			lineIndex: 1 as const,
 			algoParamSlotIndex: {},
@@ -204,15 +206,15 @@ describe("algo controls (browser)", () => {
 			getActiveSelectOption: () => null,
 			applyOptionAssignments: () => {},
 		};
-		const { rerender } = render(
-			<AlgoControlsGroup {...sharedProps} controls={[]} />,
-		);
+		const { rerender } = render(<AlgoControlsGroup slot={sharedSlot} />);
 		expect(screen.getByText("noControlsForThisAlgo")).toBeInTheDocument();
 
 		rerender(
 			<AlgoControlsGroup
-				{...sharedProps}
-				controls={[{ id: "depth", label: "Depth", algo: "cz101" }]}
+				slot={{
+					...sharedSlot,
+					controls: [{ id: "depth", label: "Depth", algo: "saw" }],
+				}}
 			/>,
 		);
 		expect(screen.getByTestId("mock-knob")).toBeInTheDocument();

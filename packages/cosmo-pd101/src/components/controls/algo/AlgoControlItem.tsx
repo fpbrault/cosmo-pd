@@ -9,6 +9,7 @@ import type {
 	AlgoControlRuntime,
 	LineIndex,
 } from "./algoControlTypes";
+import CzControlSelect from "./CzControlSelect";
 
 interface AlgoControlItemProps {
 	control: AlgoControlRuntime;
@@ -40,8 +41,25 @@ function AlgoControlItemInner({
 	color,
 }: AlgoControlItemProps) {
 	const controlKind = control.kind ?? "number";
+	const isCzVisualSelect =
+		control.id === "preset" ||
+		control.id === "waveform1" ||
+		control.id === "waveform2" ||
+		control.id === "windowFunction";
 
 	if (controlKind === "select") {
+		if (isCzVisualSelect) {
+			return (
+				<CzControlSelect
+					control={control}
+					disabled={disabled}
+					binding={binding}
+					getActiveSelectOption={getActiveSelectOption}
+					applyOptionAssignments={applyOptionAssignments}
+				/>
+			);
+		}
+
 		if (control.controlType === "dropdown") {
 			return (
 				<AlgoControlDropdown
