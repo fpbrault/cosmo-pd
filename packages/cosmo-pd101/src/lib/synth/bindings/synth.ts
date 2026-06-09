@@ -614,7 +614,7 @@ export type WindowType = "off" | "saw" | "triangle" | "trapezoid" | "pulse" | "d
 export const ALGO_UI_CATALOG_V1: AlgoUiEntryV1[] = [
   {
     "id": "cz101",
-    "label": "CZ101",
+    "label": "Classic",
     "iconPath": "M4,12 L20,12",
     "visible": true
   },
@@ -708,7 +708,7 @@ export const ALGO_UI_CATALOG_V1: AlgoUiEntryV1[] = [
 export const ALGO_DEFINITIONS_V1 = [
   {
     "id": "cz101",
-    "name": "CZ101",
+    "name": "Classic",
     "iconPath": "M4,12 L20,12",
     "visible": true,
     "defaultBaseWaveform": "cosine",

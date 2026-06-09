@@ -296,7 +296,7 @@ const CZ_CONTROLS: [AlgoControlV1; 4] = [
 
 pub const DEFINITION: AlgoDefinitionV1 = AlgoDefinitionV1 {
     id: Algo::Cz101,
-    name: "CZ101",
+    name: "Classic",
     icon_path: "M4,12 L20,12",
     visible: true,
     default_base_waveform: crate::params::BaseWaveform::Cosine,

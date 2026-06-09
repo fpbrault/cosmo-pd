@@ -268,7 +268,7 @@
 	},
 	"algos": {
 		"cz101": {
-			"name": "CZ101",
+			"name": "Classic",
 			"behavior": "Classic CZ phase-distortion core. Use DCW and the CZ preset controls to shape the harmonic contour.",
 			"controls": {
 				"preset": {
