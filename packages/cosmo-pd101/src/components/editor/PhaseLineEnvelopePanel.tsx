@@ -34,7 +34,7 @@ export function PhaseLineEnvelopePanel({
 	return (
 		<Card
 			variant="ghost"
-			className="h-fit min-h-0 min-w-0 flex-1 px-2 pt-3"
+			className="flex h-full min-h-0 min-w-0 flex-1 flex-col px-2 pt-3"
 			padding="none"
 		>
 			<div className="mb-3 grid w-full grid-cols-3 gap-2">

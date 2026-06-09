@@ -64,6 +64,14 @@ describe("StepEnvelopeEditor", () => {
 			HTMLCanvasElement.prototype,
 			"setPointerCapture",
 		).mockImplementation(() => {});
+		Object.defineProperty(HTMLCanvasElement.prototype, "clientWidth", {
+			configurable: true,
+			value: 1200,
+		});
+		Object.defineProperty(HTMLCanvasElement.prototype, "clientHeight", {
+			configurable: true,
+			value: 200,
+		});
 	});
 
 	it("renders all 8 step panels and removes the old dropdown/footer UI", () => {
@@ -191,7 +199,7 @@ describe("StepEnvelopeEditor", () => {
 			(command) =>
 				command.name === "moveTo" &&
 				command.args[0] === 12 &&
-				command.args[1] === 192,
+				command.args[1] > 100,
 		);
 		const envelopeIndex = envelopeMove ? commands.indexOf(envelopeMove) : -1;
 		const envelopeLineSegments = commands

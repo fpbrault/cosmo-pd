@@ -83,7 +83,7 @@ describe("EnvelopeKeyFollowControl", () => {
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Key Follow" }));
-		expect(envelopes.setDcaKeyFollow).toHaveBeenCalledWith(5);
+		expect(envelopes.setDcaKeyFollow).toHaveBeenCalledWith(4);
 	});
 
 	it("renders no control for DCO", () => {

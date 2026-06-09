@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
 import type { EnvKind } from "@/lib/synth/modTargets";
 import StepEnvelopeStepCard from "./StepEnvelopeStepCard";
@@ -54,11 +54,29 @@ const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 		onCommitEnvelope: commitEnvelope,
 	});
 
+	const [resizeTick, setResizeTick] = useState(0);
 	const steps = normalizedEnv.steps;
 	const activeStepCount = normalizedEnv.stepCount;
 	const sustainStep = normalizedEnv.sustainStep;
 
 	useEffect(() => {
+		const canvas = canvasRef.current;
+		if (!canvas || typeof ResizeObserver === "undefined") {
+			return;
+		}
+
+		const observer = new ResizeObserver(() => {
+			setResizeTick((tick) => tick + 1);
+		});
+
+		observer.observe(canvas);
+		return () => {
+			observer.disconnect();
+		};
+	}, []);
+
+	useEffect(() => {
+		void resizeTick;
 		if (canvasRef.current) {
 			drawEnvPreview(
 				canvasRef.current,
@@ -68,7 +86,7 @@ const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 				voiceMarkers,
 			);
 		}
-	}, [normalizedEnv, color, hoverStep, dragState, voiceMarkers]);
+	}, [normalizedEnv, color, hoverStep, dragState, voiceMarkers, resizeTick]);
 
 	const updateStep = useCallback(
 		(index: number, field: "level" | "rate", value: number) => {
@@ -105,7 +123,7 @@ const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 	);
 
 	return (
-		<div className="flex h-full flex-col space-y-3">
+		<div className="flex h-full min-h-0 flex-col space-y-3">
 			<div className="flex items-center justify-between">
 				<span className="font-semibold text-2xs text-base-content/70 uppercase tracking-[0.24em]">
 					{title}
@@ -128,18 +146,18 @@ const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 				</div>
 			</div>
 
-			<canvas
-				ref={canvasRef}
-				width={1200}
-				height={200}
-				className="max-w-full cursor-crosshair touch-none rounded-xl border border-base-300/60 bg-base-300/30"
-				style={{ imageRendering: "auto" }}
-				onPointerDown={handleCanvasPointerDown}
-				onPointerMove={handleCanvasPointerMove}
-				onPointerUp={handleCanvasPointerUp}
-				onPointerCancel={handleCanvasPointerUp}
-				onPointerLeave={handleCanvasPointerLeave}
-			/>
+			<div className="relative min-h-0 flex-1 overflow-hidden rounded-xl border border-base-300/60 bg-base-300/30">
+				<canvas
+					ref={canvasRef}
+					className="absolute inset-0 h-full w-full cursor-crosshair touch-none"
+					style={{ imageRendering: "auto" }}
+					onPointerDown={handleCanvasPointerDown}
+					onPointerMove={handleCanvasPointerMove}
+					onPointerUp={handleCanvasPointerUp}
+					onPointerCancel={handleCanvasPointerUp}
+					onPointerLeave={handleCanvasPointerLeave}
+				/>
+			</div>
 
 			<div className="grid grid-cols-8 gap-2">
 				{steps.map((step, index) => (

@@ -1,5 +1,4 @@
 import type { LineIndex } from "@/components/controls/algo/algoControlTypes";
-import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import SynthParamSlider from "@/components/controls/SynthParamSlider";
 import type { EnvTab } from "@/features/synth/synthUiStore";
 import type { PhaseLineEnvelopeModel } from "./phaseLineTypes";
@@ -35,15 +34,18 @@ export function EnvelopeKeyFollowControl({
 
 	if (envKind === "dca") {
 		return (
-			<SynthParamKnob
+			<SynthParamSlider
 				paramKey={lineIndex === 1 ? "line1DcaKeyFollow" : "line2DcaKeyFollow"}
 				label="Key Follow"
 				value={envelopes.dcaKeyFollow}
-				size={44}
 				min={0}
+				showTicks={false}
+				centerDetent={false}
 				max={9}
+				className="w-64"
 				step={1}
 				onChange={(value) => envelopes.setDcaKeyFollow(Math.round(value))}
+				orientation="horizontal"
 			/>
 		);
 	}

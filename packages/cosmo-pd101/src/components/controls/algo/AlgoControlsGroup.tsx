@@ -108,7 +108,7 @@ function AlgoControlsGroupInner({
 	return (
 		<Card
 			variant="ghost"
-			className={`mt-2 flex min-h-0 grow flex-col p-3 pt-4 ${controls.length > 0 ? "justify-center overflow-visible" : ""} ${disabled ? "opacity-45" : ""} ${controls.length > 0 && disabled ? "pointer-events-none" : ""}`}
+			className={`mt-2 flex min-h-0 flex-col p-3 pt-4 ${controls.length > 0 ? "justify-center overflow-visible" : ""} ${disabled ? "opacity-45" : ""} ${controls.length > 0 && disabled ? "pointer-events-none" : ""}`}
 		>
 			{controls.length > 0 ? (
 				isCzAlgo ? (
