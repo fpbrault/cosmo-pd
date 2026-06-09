@@ -312,7 +312,7 @@
 				"algoControlsB": []
 			},
 			"frequency": 440,
-			"volume": 0.8,
+			"volume": 1.0,
 			"polyMode": "poly8",
 			"legato": false,
 			"velocityCurve": 0,

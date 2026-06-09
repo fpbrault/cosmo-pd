@@ -388,7 +388,7 @@ impl TransportSnapshot {
 
 #[derive(Params)]
 pub struct CzPluginParams {
-    #[param(name = "Volume", range = "linear(0.0, 1.0)", default = 0.8, unit = "%")]
+    #[param(name = "Volume", range = "linear(0.0, 1.0)", default = 1.0, unit = "%")]
     pub volume: FloatParam,
 
     #[param(name = "Warp A Amount", range = "linear(0.0, 1.0)", default = 0.0)]
