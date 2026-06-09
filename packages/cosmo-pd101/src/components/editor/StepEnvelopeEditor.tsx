@@ -1,8 +1,6 @@
-import { memo, useCallback, useEffect, useRef } from "react";
-import SynthParamKnob from "@/components/controls/SynthParamKnob";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
 import type { EnvKind } from "@/lib/synth/modTargets";
-import SynthParamSlider from "../controls/SynthParamSlider";
 import StepEnvelopeStepCard from "./StepEnvelopeStepCard";
 import type { StepEnvelopeVoiceMarker } from "./stepEnvelopeGeometry";
 import { drawEnvPreview, normalizeEnvelope } from "./stepEnvelopeGeometry";
@@ -19,10 +17,6 @@ interface StepEnvelopeEditorProps {
 	lineIndex?: 1 | 2;
 	envKind?: EnvKind;
 	voiceMarkers?: StepEnvelopeVoiceMarker[];
-	dcwKeyFollow?: number;
-	onDcwKeyFollowChange?: (value: number) => void;
-	dcaKeyFollow?: number;
-	onDcaKeyFollowChange?: (value: number) => void;
 }
 
 export type { StepEnvelopeVoiceMarker };
@@ -36,10 +30,6 @@ const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 	lineIndex = 1,
 	envKind = "dco",
 	voiceMarkers = [],
-	dcwKeyFollow = 0,
-	onDcwKeyFollowChange,
-	dcaKeyFollow = 0,
-	onDcaKeyFollowChange,
 }: StepEnvelopeEditorProps) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const commitEnvelope = useCallback(
@@ -64,11 +54,29 @@ const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 		onCommitEnvelope: commitEnvelope,
 	});
 
+	const [resizeTick, setResizeTick] = useState(0);
 	const steps = normalizedEnv.steps;
 	const activeStepCount = normalizedEnv.stepCount;
 	const sustainStep = normalizedEnv.sustainStep;
 
 	useEffect(() => {
+		const canvas = canvasRef.current;
+		if (!canvas || typeof ResizeObserver === "undefined") {
+			return;
+		}
+
+		const observer = new ResizeObserver(() => {
+			setResizeTick((tick) => tick + 1);
+		});
+
+		observer.observe(canvas);
+		return () => {
+			observer.disconnect();
+		};
+	}, []);
+
+	useEffect(() => {
+		void resizeTick;
 		if (canvasRef.current) {
 			drawEnvPreview(
 				canvasRef.current,
@@ -78,7 +86,7 @@ const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 				voiceMarkers,
 			);
 		}
-	}, [normalizedEnv, color, hoverStep, dragState, voiceMarkers]);
+	}, [normalizedEnv, color, hoverStep, dragState, voiceMarkers, resizeTick]);
 
 	const updateStep = useCallback(
 		(index: number, field: "level" | "rate", value: number) => {
@@ -114,42 +122,13 @@ const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 		[commitEnvelope, normalizedEnv],
 	);
 
-	const keyFollowControl =
-		envKind === "dcw" && onDcwKeyFollowChange ? (
-			<SynthParamSlider
-				paramKey={lineIndex === 1 ? "line1DcwKeyFollow" : "line2DcwKeyFollow"}
-				label="Key Follow"
-				value={dcwKeyFollow}
-				min={0}
-				showTicks={false}
-				centerDetent={false}
-				max={9}
-				className="w-64"
-				step={1}
-				onChange={(value) => onDcwKeyFollowChange(Math.round(value))}
-				orientation={"horizontal"}
-			/>
-		) : envKind === "dca" && onDcaKeyFollowChange ? (
-			<SynthParamKnob
-				paramKey={lineIndex === 1 ? "line1DcaKeyFollow" : "line2DcaKeyFollow"}
-				label="Key Follow"
-				value={dcaKeyFollow}
-				size={44}
-				min={0}
-				max={9}
-				step={1}
-				onChange={(value) => onDcaKeyFollowChange(Math.round(value))}
-			/>
-		) : null;
-
 	return (
-		<div className="flex h-full flex-col space-y-3">
+		<div className="flex h-full min-h-0 flex-col space-y-3">
 			<div className="flex items-center justify-between">
 				<span className="font-semibold text-2xs text-base-content/70 uppercase tracking-[0.24em]">
 					{title}
 				</span>
 				<div className="flex items-center gap-2">
-					{keyFollowControl}
 					<label className="flex items-center gap-1 text-xs">
 						<input
 							type="checkbox"
@@ -167,18 +146,18 @@ const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 				</div>
 			</div>
 
-			<canvas
-				ref={canvasRef}
-				width={1200}
-				height={200}
-				className="max-w-full cursor-crosshair touch-none rounded-xl border border-base-300/60 bg-base-300/30"
-				style={{ imageRendering: "auto" }}
-				onPointerDown={handleCanvasPointerDown}
-				onPointerMove={handleCanvasPointerMove}
-				onPointerUp={handleCanvasPointerUp}
-				onPointerCancel={handleCanvasPointerUp}
-				onPointerLeave={handleCanvasPointerLeave}
-			/>
+			<div className="relative min-h-0 flex-1 overflow-hidden rounded-xl border border-base-300/60 bg-base-300/30">
+				<canvas
+					ref={canvasRef}
+					className="absolute inset-0 h-full w-full cursor-crosshair touch-none"
+					style={{ imageRendering: "auto" }}
+					onPointerDown={handleCanvasPointerDown}
+					onPointerMove={handleCanvasPointerMove}
+					onPointerUp={handleCanvasPointerUp}
+					onPointerCancel={handleCanvasPointerUp}
+					onPointerLeave={handleCanvasPointerLeave}
+				/>
+			</div>
 
 			<div className="grid grid-cols-8 gap-2">
 				{steps.map((step, index) => (

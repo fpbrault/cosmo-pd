@@ -273,15 +273,33 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay({
 	]);
 
 	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const [resizeTick, setResizeTick] = useState(0);
 
 	useEffect(() => {
+		const canvas = canvasRef.current;
+		if (!canvas || typeof ResizeObserver === "undefined") {
+			return;
+		}
+
+		const observer = new ResizeObserver(() => {
+			setResizeTick((tick) => tick + 1);
+		});
+
+		observer.observe(canvas);
+		return () => {
+			observer.disconnect();
+		};
+	}, []);
+
+	useEffect(() => {
+		void resizeTick;
 		const canvas = canvasRef.current;
 		if (!canvas) return;
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
 		const dpr = window.devicePixelRatio || 1;
 		const w = canvas.clientWidth || width;
-		const h = height;
+		const h = canvas.clientHeight || height;
 		canvas.width = Math.round(w * dpr);
 		canvas.height = Math.round(h * dpr);
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -309,13 +327,11 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay({
 		};
 
 		drawLine(lineIndex === 1 ? waveform.out1 : waveform.out2, color);
-	}, [waveform, width, height, lineIndex, color]);
+	}, [waveform, width, height, lineIndex, color, resizeTick]);
 
 	return (
-		<canvas
-			ref={canvasRef}
-			className="w-full bg-base-300/30"
-			style={{ height: `${height}px` }}
-		/>
+		<div className="relative aspect-5/2 w-full overflow-hidden bg-base-300/30">
+			<canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+		</div>
 	);
 });

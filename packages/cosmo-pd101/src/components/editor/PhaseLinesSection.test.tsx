@@ -25,9 +25,17 @@ vi.mock("@/features/synth/SynthParamController", () => ({
 	}),
 }));
 
-vi.mock("./PerLineWarpBlock", () => ({
-	default: ({ label }: { label: string }) => (
-		<div data-testid="per-line-warp-block">{label}</div>
+vi.mock("./ActivePhaseLinePanel", () => ({
+	ActivePhaseLinePanel: ({
+		lineIndex,
+		section,
+	}: {
+		lineIndex: 1 | 2;
+		section: "algos" | "envelopes";
+	}) => (
+		<div data-testid="active-phase-line-panel">
+			Line {lineIndex} {section}
+		</div>
 	),
 }));
 

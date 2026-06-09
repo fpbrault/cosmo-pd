@@ -4,12 +4,7 @@ import CzTabButton from "@/components/primitives/CzTabButton";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import type { PhaseLinePanelTab } from "@/features/synth/synthUiStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
-import type {
-	Algo,
-	AlgoControlValueV1,
-	BaseWaveform,
-} from "@/lib/synth/bindings/synth";
-import PerLineWarpBlock from "./PerLineWarpBlock";
+import { ActivePhaseLinePanel } from "./ActivePhaseLinePanel";
 
 export type PhaseLinesSectionProps = {
 	onActiveTabChange?: (v: "line1" | "line2") => void;
@@ -20,146 +15,6 @@ export default function PhaseLinesSection({
 	onActiveTabChange,
 	className,
 }: PhaseLinesSectionProps) {
-	const { value: warpAAmount, setValue: setWarpAAmount } =
-		useSynthParam("warpAAmount");
-	const { value: warpBAmount, setValue: setWarpBAmount } =
-		useSynthParam("warpBAmount");
-	const { value: warpAAlgo, setValue: setWarpAAlgo } =
-		useSynthParam("warpAAlgo");
-	const { value: warpBAlgo, setValue: setWarpBAlgo } =
-		useSynthParam("warpBAlgo");
-	const { value: algo2A, setValue: setAlgo2A } = useSynthParam("algo2A");
-	const { value: algo2B, setValue: setAlgo2B } = useSynthParam("algo2B");
-	const { value: algoBlendA, setValue: setAlgoBlendA } =
-		useSynthParam("algoBlendA");
-	const { value: algoBlendB, setValue: setAlgoBlendB } =
-		useSynthParam("algoBlendB");
-	const { value: line1Level, setValue: setLine1Level } =
-		useSynthParam("line1Level");
-	const { value: line2Level, setValue: setLine2Level } =
-		useSynthParam("line2Level");
-	const { value: lineOctave, setValue: setLineOctave } =
-		useSynthParam("lineOctave");
-	const { value: line2DetuneOctave, setValue: setLine2DetuneOctave } =
-		useSynthParam("line2DetuneOctave");
-	const { value: line2DetuneNote, setValue: setLine2DetuneNote } =
-		useSynthParam("line2DetuneNote");
-	const { value: line2DetuneFine, setValue: setLine2DetuneFine } =
-		useSynthParam("line2DetuneFine");
-	const { value: line1DcoEnv, setValue: setLine1DcoEnv } =
-		useSynthParam("line1DcoEnv");
-	const { value: line1DcwKeyFollow, setValue: setLine1DcwKeyFollow } =
-		useSynthParam("line1DcwKeyFollow");
-	const { value: line1DcaKeyFollow, setValue: setLine1DcaKeyFollow } =
-		useSynthParam("line1DcaKeyFollow");
-	const { value: line1DcwEnv, setValue: setLine1DcwEnv } =
-		useSynthParam("line1DcwEnv");
-	const { value: line1DcaEnv, setValue: setLine1DcaEnv } =
-		useSynthParam("line1DcaEnv");
-	const { value: line1AlgoControlsA, setValue: setLine1AlgoControlsA } =
-		useSynthParam("line1AlgoControlsA");
-	const { value: line1AlgoControlsB, setValue: setLine1AlgoControlsB } =
-		useSynthParam("line1AlgoControlsB");
-	const { value: line1BaseWaveformA, setValue: setLine1BaseWaveformA } =
-		useSynthParam("line1BaseWaveformA");
-	const { value: line1BaseWaveformB, setValue: setLine1BaseWaveformB } =
-		useSynthParam("line1BaseWaveformB");
-	const { value: line2DcoEnv, setValue: setLine2DcoEnv } =
-		useSynthParam("line2DcoEnv");
-	const { value: line2DcwKeyFollow, setValue: setLine2DcwKeyFollow } =
-		useSynthParam("line2DcwKeyFollow");
-	const { value: line2DcaKeyFollow, setValue: setLine2DcaKeyFollow } =
-		useSynthParam("line2DcaKeyFollow");
-	const { value: line2DcwEnv, setValue: setLine2DcwEnv } =
-		useSynthParam("line2DcwEnv");
-	const { value: line2DcaEnv, setValue: setLine2DcaEnv } =
-		useSynthParam("line2DcaEnv");
-	const { value: line2AlgoControlsA, setValue: setLine2AlgoControlsA } =
-		useSynthParam("line2AlgoControlsA");
-	const { value: line2AlgoControlsB, setValue: setLine2AlgoControlsB } =
-		useSynthParam("line2AlgoControlsB");
-	const { value: line2BaseWaveformA, setValue: setLine2BaseWaveformA } =
-		useSynthParam("line2BaseWaveformA");
-	const { value: line2BaseWaveformB, setValue: setLine2BaseWaveformB } =
-		useSynthParam("line2BaseWaveformB");
-	const line1 = {
-		warpAmount: warpAAmount as number,
-		setWarpAmount: setWarpAAmount,
-		algo: warpAAlgo as Algo,
-		setAlgo: setWarpAAlgo as (value: Algo) => void,
-		algo2: algo2A as Algo | null,
-		setAlgo2: setAlgo2A as (value: Algo | null) => void,
-		algoBlend: algoBlendA as number,
-		setAlgoBlend: setAlgoBlendA,
-		level: line1Level as number,
-		setLevel: setLine1Level,
-		octave: lineOctave as number,
-		setOctave: setLineOctave,
-		detuneOctave: line2DetuneOctave as number,
-		setDetuneOctave: setLine2DetuneOctave,
-		detuneNote: line2DetuneNote as number,
-		setDetuneNote: setLine2DetuneNote,
-		fineDetune: line2DetuneFine as number,
-		setFineDetune: setLine2DetuneFine,
-		dcoEnv: line1DcoEnv,
-		setDcoEnv: setLine1DcoEnv,
-		dcwEnv: line1DcwEnv,
-		setDcwEnv: setLine1DcwEnv,
-		dcaEnv: line1DcaEnv,
-		setDcaEnv: setLine1DcaEnv,
-		dcwKeyFollow: line1DcwKeyFollow as number,
-		setDcwKeyFollow: setLine1DcwKeyFollow,
-		dcaKeyFollow: line1DcaKeyFollow as number,
-		setDcaKeyFollow: setLine1DcaKeyFollow,
-		algoControlsA: line1AlgoControlsA as AlgoControlValueV1[],
-		setAlgoControlsA: setLine1AlgoControlsA,
-		algoControlsB: line1AlgoControlsB as AlgoControlValueV1[],
-		setAlgoControlsB: setLine1AlgoControlsB,
-		baseWaveformA: line1BaseWaveformA as BaseWaveform,
-		setBaseWaveformA: setLine1BaseWaveformA,
-		baseWaveformB: line1BaseWaveformB as BaseWaveform,
-		setBaseWaveformB: setLine1BaseWaveformB,
-	};
-
-	const line2 = {
-		warpAmount: warpBAmount as number,
-		setWarpAmount: setWarpBAmount,
-		algo: warpBAlgo as Algo,
-		setAlgo: setWarpBAlgo as (value: Algo) => void,
-		algo2: algo2B as Algo | null,
-		setAlgo2: setAlgo2B as (value: Algo | null) => void,
-		algoBlend: algoBlendB as number,
-		setAlgoBlend: setAlgoBlendB,
-		level: line2Level as number,
-		setLevel: setLine2Level,
-		octave: lineOctave as number,
-		setOctave: setLineOctave,
-		detuneOctave: line2DetuneOctave as number,
-		setDetuneOctave: setLine2DetuneOctave,
-		detuneNote: line2DetuneNote as number,
-		setDetuneNote: setLine2DetuneNote,
-		fineDetune: line2DetuneFine as number,
-		setFineDetune: setLine2DetuneFine,
-		dcoEnv: line2DcoEnv,
-		setDcoEnv: setLine2DcoEnv,
-		dcwEnv: line2DcwEnv,
-		setDcwEnv: setLine2DcwEnv,
-		dcaEnv: line2DcaEnv,
-		setDcaEnv: setLine2DcaEnv,
-		dcwKeyFollow: line2DcwKeyFollow as number,
-		setDcwKeyFollow: setLine2DcwKeyFollow,
-		dcaKeyFollow: line2DcaKeyFollow as number,
-		setDcaKeyFollow: setLine2DcaKeyFollow,
-		algoControlsA: line2AlgoControlsA as AlgoControlValueV1[],
-		setAlgoControlsA: setLine2AlgoControlsA,
-		algoControlsB: line2AlgoControlsB as AlgoControlValueV1[],
-		setAlgoControlsB: setLine2AlgoControlsB,
-		baseWaveformA: line2BaseWaveformA as BaseWaveform,
-		setBaseWaveformA: setLine2BaseWaveformA,
-		baseWaveformB: line2BaseWaveformB as BaseWaveform,
-		setBaseWaveformB: setLine2BaseWaveformB,
-	};
-
 	const activeTab = useSynthUiStore((s) => s.phaseLinePanelTab);
 	const setActiveTab = useSynthUiStore((s) => s.setPhaseLinePanelTab);
 	const { value: lineSelect } = useSynthParam("lineSelect");
@@ -170,7 +25,7 @@ export default function PhaseLinesSection({
 	const activeSection: "algos" | "envelopes" = activeTab.endsWith("algos")
 		? "algos"
 		: "envelopes";
-	const activeLineConfig = activeLine === "line1" ? line1 : line2;
+	const activeLineIndex = activeLine === "line1" ? 1 : 2;
 	const activeLineLabel = activeLine === "line1" ? "Line 1" : "Line 2";
 
 	const isLineAudible = (line: "line1" | "line2"): boolean => {
@@ -219,7 +74,7 @@ export default function PhaseLinesSection({
 				Phase Lines
 			</div>
 			<div className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-cz-panel p-2">
-				<div className="flex max-h-127 min-h-0 min-w-0 flex-1 items-stretch gap-2">
+				<div className="flex min-h-0 min-w-0 flex-1 items-stretch gap-2">
 					<div className="flex w-16 shrink-0 flex-col justify-evenly gap-5 self-stretch">
 						{leftTabGroups.map((group) => {
 							return (
@@ -255,48 +110,10 @@ export default function PhaseLinesSection({
 								</div>
 							</div>
 						)}
-						<PerLineWarpBlock
+						<ActivePhaseLinePanel
 							key={activeLineLabel}
-							label={activeLineLabel}
-							color={activeLine === "line1" ? "#7f9de4" : "#c45c5c"}
-							lineIndex={activeLine === "line1" ? 1 : 2}
-							algo={activeLineConfig.algo}
-							setAlgo={activeLineConfig.setAlgo}
-							algo2={activeLineConfig.algo2}
-							setAlgo2={activeLineConfig.setAlgo2}
-							algoBlend={activeLineConfig.algoBlend}
-							setAlgoBlend={activeLineConfig.setAlgoBlend}
-							warpAmount={activeLineConfig.warpAmount}
-							setWarpAmount={activeLineConfig.setWarpAmount}
-							level={activeLineConfig.level}
-							setLevel={activeLineConfig.setLevel}
-							octave={activeLineConfig.octave}
-							setOctave={activeLineConfig.setOctave}
-							detuneOctave={activeLineConfig.detuneOctave}
-							setDetuneOctave={activeLineConfig.setDetuneOctave}
-							detuneNote={activeLineConfig.detuneNote}
-							setDetuneNote={activeLineConfig.setDetuneNote}
-							fineDetune={activeLineConfig.fineDetune}
-							setFineDetune={activeLineConfig.setFineDetune}
-							dcoEnv={activeLineConfig.dcoEnv}
-							setDcoEnv={activeLineConfig.setDcoEnv}
-							dcwEnv={activeLineConfig.dcwEnv}
-							setDcwEnv={activeLineConfig.setDcwEnv}
-							dcaEnv={activeLineConfig.dcaEnv}
-							setDcaEnv={activeLineConfig.setDcaEnv}
-							dcwKeyFollow={activeLineConfig.dcwKeyFollow}
-							setDcwKeyFollow={activeLineConfig.setDcwKeyFollow}
-							dcaKeyFollow={activeLineConfig.dcaKeyFollow}
-							setDcaKeyFollow={activeLineConfig.setDcaKeyFollow}
-							baseWaveformA={activeLineConfig.baseWaveformA}
-							setBaseWaveformA={activeLineConfig.setBaseWaveformA}
-							baseWaveformB={activeLineConfig.baseWaveformB}
-							setBaseWaveformB={activeLineConfig.setBaseWaveformB}
-							algoControlsA={activeLineConfig.algoControlsA}
-							setAlgoControlsA={activeLineConfig.setAlgoControlsA}
-							algoControlsB={activeLineConfig.algoControlsB}
-							setAlgoControlsB={activeLineConfig.setAlgoControlsB}
-							activeSection={activeSection}
+							lineIndex={activeLineIndex}
+							section={activeSection}
 						/>
 					</div>
 				</div>

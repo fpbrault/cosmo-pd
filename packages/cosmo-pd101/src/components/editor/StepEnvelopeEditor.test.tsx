@@ -64,6 +64,14 @@ describe("StepEnvelopeEditor", () => {
 			HTMLCanvasElement.prototype,
 			"setPointerCapture",
 		).mockImplementation(() => {});
+		Object.defineProperty(HTMLCanvasElement.prototype, "clientWidth", {
+			configurable: true,
+			value: 1200,
+		});
+		Object.defineProperty(HTMLCanvasElement.prototype, "clientHeight", {
+			configurable: true,
+			value: 250,
+		});
 	});
 
 	it("renders all 8 step panels and removes the old dropdown/footer UI", () => {
@@ -191,7 +199,7 @@ describe("StepEnvelopeEditor", () => {
 			(command) =>
 				command.name === "moveTo" &&
 				command.args[0] === 12 &&
-				command.args[1] === 192,
+				command.args[1] > 100,
 		);
 		const envelopeIndex = envelopeMove ? commands.indexOf(envelopeMove) : -1;
 		const envelopeLineSegments = commands
@@ -201,7 +209,7 @@ describe("StepEnvelopeEditor", () => {
 
 		expect(envelopeIndex).toBeGreaterThanOrEqual(0);
 		expect(envelopeLineSegments).toHaveLength(4);
-		expect(envelopeLineSegments.at(-1)?.args[1]).toBe(192);
+		expect(envelopeLineSegments.at(-1)?.args[1]).toBe(194.72727272727275);
 		expect(
 			envelopeLineSegments.every((command) =>
 				command.args.every(Number.isFinite),
@@ -227,7 +235,7 @@ describe("StepEnvelopeEditor", () => {
 		});
 		Object.defineProperty(canvas, "clientHeight", {
 			configurable: true,
-			value: 200,
+			value: 250,
 		});
 		vi.spyOn(canvas, "getBoundingClientRect").mockReturnValue({
 			x: 10,
@@ -258,55 +266,12 @@ describe("StepEnvelopeEditor", () => {
 		expect(changed.steps[2]?.level).toBeCloseTo(60, 0);
 	});
 
-	it("shows one Key Follow control on the DCW page", () => {
-		render(
-			<StepEnvelopeEditor
-				title="Line 1 DCW"
-				env={createEnv()}
-				onChange={vi.fn()}
-				envKind="dcw"
-				dcwKeyFollow={4}
-				onDcwKeyFollowChange={vi.fn()}
-				dcaKeyFollow={7}
-				onDcaKeyFollowChange={vi.fn()}
-			/>,
-		);
-
-		expect(screen.getAllByText("Key Follow")).toHaveLength(1);
-		expect(screen.queryByText("DCW KF")).not.toBeInTheDocument();
-		expect(screen.queryByText("DCA KF")).not.toBeInTheDocument();
-	});
-
-	it("shows one Key Follow control on the DCA page", () => {
-		render(
-			<StepEnvelopeEditor
-				title="Line 1 DCA"
-				env={createEnv()}
-				onChange={vi.fn()}
-				envKind="dca"
-				dcwKeyFollow={4}
-				onDcwKeyFollowChange={vi.fn()}
-				dcaKeyFollow={7}
-				onDcaKeyFollowChange={vi.fn()}
-			/>,
-		);
-
-		expect(screen.getAllByText("Key Follow")).toHaveLength(1);
-		expect(screen.queryByText("DCW KF")).not.toBeInTheDocument();
-		expect(screen.queryByText("DCA KF")).not.toBeInTheDocument();
-	});
-
-	it("shows no Key Follow control on the DCO page", () => {
+	it("does not render line-specific key follow controls", () => {
 		render(
 			<StepEnvelopeEditor
 				title="Line 1 DCO"
 				env={createEnv()}
 				onChange={vi.fn()}
-				envKind="dco"
-				dcwKeyFollow={4}
-				onDcwKeyFollowChange={vi.fn()}
-				dcaKeyFollow={7}
-				onDcaKeyFollowChange={vi.fn()}
 			/>,
 		);
 

@@ -7,12 +7,19 @@ import { useAlgoUiText } from "@/lib/synth/i18nAlgo";
 import type { PdAlgo } from "@/lib/synth/pdAlgorithms";
 import { HoverInfoTrigger } from "../../layout/HoverInfo";
 
-function CzMonogramIcon({ size }: { size: number }) {
+function CzMonogramIcon({
+	size,
+	className,
+}: {
+	size?: number;
+	className?: string;
+}) {
 	return (
 		<svg
 			viewBox="0 0 24 24"
 			width={size}
 			height={size}
+			className={className}
 			stroke="currentColor"
 			strokeWidth="1.5"
 			fill="none"
@@ -71,17 +78,20 @@ export default function AlgoIconGrid({
 	const tooltipText = behaviorPrefix
 		.replace("{{index}}", `${currentIndex + 1}`)
 		.replace("{{behavior}}", getPdAlgoBehaviorDescription(value));
+	const arrowColumnWidth = 28;
+	const maxWidgetWidth = size + arrowColumnWidth;
 
 	return (
 		<div
 			ref={rootRef}
 			className={[
-				"relative w-fit bg-base-100",
+				"relative mx-14 max-w-full grow items-start place-self-start bg-base-100",
 				disabled ? "pointer-events-none opacity-30" : "",
 			].join(" ")}
+			style={{ width: `min(100%, ${maxWidgetWidth}px)` }}
 		>
 			{/* Main widget: icon + arrows */}
-			<div className="flex items-stretch border border-cz-border bg-cz-surface">
+			<div className="flex w-full items-stretch border border-cz-border bg-cz-surface">
 				{/* Clickable icon — opens popover */}
 				<HoverInfoTrigger message={tooltipText}>
 					{(hoverHandlers) => (
@@ -93,18 +103,16 @@ export default function AlgoIconGrid({
 								.replace("{{index}}", `${currentIndex + 1}`)
 								.replace("{{label}}", currentAlgo.label)}
 							className={[
-								"flex items-center justify-center text-cz-gold transition-colors focus:outline-none",
+								"flex aspect-square min-w-0 flex-1 items-center justify-center text-cz-gold transition-colors focus:outline-none",
 								popoverOpen ? "bg-cz-inset" : "hover:bg-cz-inset",
 							].join(" ")}
-							style={{ width: size, height: size - 8 }}
 						>
 							{isCz101 ? (
-								<CzMonogramIcon size={size} />
+								<CzMonogramIcon className="h-[72%] w-[72%]" />
 							) : (
 								<svg
 									viewBox="0 0 24 24"
-									width={size}
-									height={size}
+									className="h-[72%] w-[72%]"
 									stroke="currentColor"
 									strokeWidth=".75"
 									fill="none"
@@ -120,7 +128,10 @@ export default function AlgoIconGrid({
 					)}
 				</HoverInfoTrigger>
 				{/* Up / down arrows */}
-				<div className="flex flex-col border-cz-border border-l">
+				<div
+					className="flex shrink-0 flex-col border-cz-border border-l"
+					style={{ width: arrowColumnWidth }}
+				>
 					<button
 						type="button"
 						onClick={() => navigate(-1)}

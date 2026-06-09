@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
 import { drawEnvPreview, normalizeEnvelope } from "./stepEnvelopeGeometry";
 
@@ -18,13 +18,31 @@ export const StepEnvelopePreview = memo(function StepEnvelopePreview({
 	onClick,
 }: StepEnvelopePreviewProps) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const [resizeTick, setResizeTick] = useState(0);
 	const normalizedEnv = normalizeEnvelope(env);
 
 	useEffect(() => {
+		const canvas = canvasRef.current;
+		if (!canvas || typeof ResizeObserver === "undefined") {
+			return;
+		}
+
+		const observer = new ResizeObserver(() => {
+			setResizeTick((tick) => tick + 1);
+		});
+
+		observer.observe(canvas);
+		return () => {
+			observer.disconnect();
+		};
+	}, []);
+
+	useEffect(() => {
+		void resizeTick;
 		if (canvasRef.current) {
 			drawEnvPreview(canvasRef.current, normalizedEnv, color, null, [], true);
 		}
-	}, [normalizedEnv, color]);
+	}, [normalizedEnv, color, resizeTick]);
 
 	return (
 		<button
@@ -38,12 +56,9 @@ export const StepEnvelopePreview = memo(function StepEnvelopePreview({
 					: "border-cz-border/70 hover:border-cz-cream/50"
 			}`}
 		>
-			<canvas
-				ref={canvasRef}
-				width={220}
-				height={50}
-				className="block h-10 w-full rounded bg-black/25"
-			/>
+			<div className="relative aspect-4/1 w-full overflow-hidden rounded bg-black/25">
+				<canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+			</div>
 			<div className="mt-1 flex items-center justify-between gap-2 px-0.5">
 				<span className="truncate font-semibold text-[0.55rem] text-cz-cream-dim uppercase tracking-[0.18em] group-hover:text-cz-cream">
 					{title}

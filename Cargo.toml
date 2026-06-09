@@ -25,17 +25,17 @@ syn = { version = "2", features = [
 ] }
 quote = "1"
 proc-macro2 = "1"
-truce = { git = "https://github.com/fpbrault/truce.git", subdir = "crates/truce", default-features = false }
-truce-core = { git = "https://github.com/fpbrault/truce.git", subdir = "crates/truce-core" }
-truce-params = { git = "https://github.com/fpbrault/truce.git", subdir = "crates/truce-params" }
-truce-clap = { git = "https://github.com/fpbrault/truce.git", subdir = "crates/truce-clap" }
-truce-vst3 = { git = "https://github.com/fpbrault/truce.git", subdir = "crates/truce-vst3" }
-truce-au = { git = "https://github.com/fpbrault/truce.git", subdir = "crates/truce-au" }
-truce-standalone = { git = "https://github.com/fpbrault/truce.git", subdir = "crates/truce-standalone" }
-truce-gui = { git = "https://github.com/fpbrault/truce.git", subdir = "crates/truce-gui" }
-truce-build = { git = "https://github.com/fpbrault/truce.git", subdir = "crates/truce-build" }
-truce-test = { git = "https://github.com/fpbrault/truce.git", subdir = "crates/truce-test" }
-truce-shim-types = { git = "https://github.com/fpbrault/truce.git", subdir = "crates/truce-shim-types" }
+truce = { git = "https://github.com/fpbrault/truce.git", default-features = false }
+truce-core = { git = "https://github.com/fpbrault/truce.git" }
+truce-params = { git = "https://github.com/fpbrault/truce.git" }
+truce-clap = { git = "https://github.com/fpbrault/truce.git"}
+truce-vst3 = { git = "https://github.com/fpbrault/truce.git"}
+truce-au = { git = "https://github.com/fpbrault/truce.git"}
+truce-standalone = { git = "https://github.com/fpbrault/truce.git"}
+truce-gui = { git = "https://github.com/fpbrault/truce.git"}
+truce-build = { git = "https://github.com/fpbrault/truce.git"}
+truce-test = { git = "https://github.com/fpbrault/truce.git"}
+truce-shim-types = { git = "https://github.com/fpbrault/truce.git"}
 wry = "0.55.0"
 raw-window-handle = "0.6"
 

@@ -2,52 +2,34 @@ import type { LineIndex } from "@/components/controls/algo/algoControlTypes";
 import Card from "@/components/primitives/Card";
 import type { EnvTab } from "@/features/synth/synthUiStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
-import type { StepEnvData } from "@/lib/synth/bindings/synth";
 import { EnvelopeKeyFollowControl } from "./EnvelopeKeyFollowControl";
 import type { PhaseLineEnvelopeModel } from "./phaseLineTypes";
-import StepEnvelopeEditor, {
-	type StepEnvelopeVoiceMarker,
-} from "./StepEnvelopeEditor";
+import StepEnvelopeEditor from "./StepEnvelopeEditor";
 import { StepEnvelopePreview } from "./StepEnvelopePreview";
+import { usePhaseLineEnvelopeMarkers } from "./usePhaseLineEnvelopeMarkers";
 
-export type EnvMapEntry = {
-	title: string;
-	env: StepEnvData;
-	setEnv: (env: StepEnvData) => void;
-	envColor: string;
-};
-
-interface EnvelopesSectionProps {
-	envMap: Record<EnvTab, EnvMapEntry>;
-	voiceMarkers: StepEnvelopeVoiceMarker[];
+type PhaseLineEnvelopePanelProps = {
+	envelopes: PhaseLineEnvelopeModel;
 	lineIndex: LineIndex;
 	lineColor: string;
-	dcwKeyFollow: number;
-	onDcwKeyFollowChange: (value: number) => void;
-	dcaKeyFollow: number;
-	onDcaKeyFollowChange: (value: number) => void;
-}
+};
 
-export function EnvelopesSection({
-	envMap,
-	voiceMarkers,
+const ENV_TABS: EnvTab[] = ["dco", "dcw", "dca"];
+
+export function PhaseLineEnvelopePanel({
+	envelopes,
 	lineIndex,
 	lineColor,
-	dcwKeyFollow,
-	onDcwKeyFollowChange,
-	dcaKeyFollow,
-	onDcaKeyFollowChange,
-}: EnvelopesSectionProps) {
+}: PhaseLineEnvelopePanelProps) {
 	const activeEnvTab = useSynthUiStore((s) => s.activeEnvTab);
 	const setActiveEnvTab = useSynthUiStore((s) => s.setActiveEnvTab);
-	const activeEnv = envMap[activeEnvTab];
-	const envelopes: PhaseLineEnvelopeModel = {
-		envs: envMap,
-		dcwKeyFollow,
-		setDcwKeyFollow: onDcwKeyFollowChange,
-		dcaKeyFollow,
-		setDcaKeyFollow: onDcaKeyFollowChange,
-	};
+	const activeEnv = envelopes.envs[activeEnvTab];
+	const voiceMarkers = usePhaseLineEnvelopeMarkers({
+		lineIndex,
+		section: "envelopes",
+		activeEnvTab,
+		activeEnv,
+	});
 
 	return (
 		<Card
@@ -56,12 +38,12 @@ export function EnvelopesSection({
 			padding="none"
 		>
 			<div className="mb-3 grid w-full grid-cols-3 gap-2">
-				{(["dco", "dcw", "dca"] as EnvTab[]).map((tab) => (
+				{ENV_TABS.map((tab) => (
 					<StepEnvelopePreview
 						key={tab}
 						title={tab.toUpperCase()}
-						env={envMap[tab].env}
-						color={envMap[tab].envColor}
+						env={envelopes.envs[tab].env}
+						color={envelopes.envs[tab].envColor}
 						active={activeEnvTab === tab}
 						onClick={() => setActiveEnvTab(tab)}
 					/>

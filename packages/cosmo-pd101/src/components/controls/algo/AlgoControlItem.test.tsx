@@ -10,6 +10,10 @@ vi.mock("./AlgoControlDropdown", () => ({
 	default: () => <div data-testid="dropdown-control" />,
 }));
 
+vi.mock("./CzControlSelect", () => ({
+	default: () => <div data-testid="cz-select-control" />,
+}));
+
 vi.mock("./AlgoControlNumber", () => ({
 	default: () => <div data-testid="number-control" />,
 }));
@@ -39,16 +43,32 @@ describe("AlgoControlItem", () => {
 		expect(screen.getByTestId("select-control")).toBeInTheDocument();
 	});
 
-	it("renders dropdown control for dropdown presentation", () => {
+	it("renders CZ select control for CZ visual selector ids", () => {
 		render(
 			<AlgoControlItem
 				{...baseProps}
 				control={{
-					id: "x",
+					id: "waveform1",
 					label: "X",
 					kind: "select",
 					controlType: "dropdown",
 					algo: "cz101",
+				}}
+			/>,
+		);
+		expect(screen.getByTestId("cz-select-control")).toBeInTheDocument();
+	});
+
+	it("renders generic dropdown control for non-CZ dropdown selects", () => {
+		render(
+			<AlgoControlItem
+				{...baseProps}
+				control={{
+					id: "mode",
+					label: "Mode",
+					kind: "select",
+					controlType: "dropdown",
+					algo: "saw",
 				}}
 			/>,
 		);

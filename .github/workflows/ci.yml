@@ -160,11 +160,16 @@ jobs:
         shell: bash
 
       - name: Restore cosmo-pd101 lib-dist
+        id: cosmo-pd101-lib-cache
         uses: actions/cache/restore@v5
         with:
           path: packages/cosmo-pd101/lib-dist
           key: cosmo-pd101-lib-dist-${{ runner.os }}-${{ hashFiles('bun.lock', 'packages/cosmo-pd101/package.json', 'packages/cosmo-pd101/tsconfig.json', 'packages/cosmo-pd101/src/**') }}
-          fail-on-cache-miss: true
+
+      - name: Build cosmo-pd101 lib-dist
+        if: steps.cosmo-pd101-lib-cache.outputs.cache-hit != 'true'
+        run: bun --filter @cosmo/cosmo-pd101 build:lib
+        shell: bash
 
       - name: Run plugin webview unit tests
         run: bun --filter @cosmo/cosmo-pd101-plugin test:unit
@@ -191,11 +196,16 @@ jobs:
         shell: bash
 
       - name: Restore cosmo-pd101 lib-dist
+        id: cosmo-pd101-lib-cache
         uses: actions/cache/restore@v5
         with:
           path: packages/cosmo-pd101/lib-dist
           key: cosmo-pd101-lib-dist-${{ runner.os }}-${{ hashFiles('bun.lock', 'packages/cosmo-pd101/package.json', 'packages/cosmo-pd101/tsconfig.json', 'packages/cosmo-pd101/src/**') }}
-          fail-on-cache-miss: true
+
+      - name: Build cosmo-pd101 lib-dist
+        if: steps.cosmo-pd101-lib-cache.outputs.cache-hit != 'true'
+        run: bun --filter @cosmo/cosmo-pd101 build:lib
+        shell: bash
 
       - name: Install Playwright Chromium
         run: bunx playwright install chromium chromium-headless-shell --with-deps
@@ -226,11 +236,16 @@ jobs:
         shell: bash
 
       - name: Restore cosmo-pd101 lib-dist
+        id: cosmo-pd101-lib-cache
         uses: actions/cache/restore@v5
         with:
           path: packages/cosmo-pd101/lib-dist
           key: cosmo-pd101-lib-dist-${{ runner.os }}-${{ hashFiles('bun.lock', 'packages/cosmo-pd101/package.json', 'packages/cosmo-pd101/tsconfig.json', 'packages/cosmo-pd101/src/**') }}
-          fail-on-cache-miss: true
+
+      - name: Build cosmo-pd101 lib-dist
+        if: steps.cosmo-pd101-lib-cache.outputs.cache-hit != 'true'
+        run: bun --filter @cosmo/cosmo-pd101 build:lib
+        shell: bash
 
       - name: Install Playwright Chromium
         run: bunx playwright install chromium chromium-headless-shell --with-deps

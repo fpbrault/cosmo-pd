@@ -31,6 +31,9 @@ vi.mock("./StepEnvelopeEditor", () => ({
 		<div data-testid="step-env-editor">{title}</div>
 	),
 }));
+vi.mock("./EnvelopeKeyFollowControl", () => ({
+	EnvelopeKeyFollowControl: () => <div data-testid="key-follow-control" />,
+}));
 
 const env = { steps: [], sustainStep: 0, stepCount: 0, loop: false };
 
