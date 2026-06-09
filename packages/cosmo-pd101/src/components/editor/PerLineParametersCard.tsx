@@ -13,11 +13,14 @@ function PerLineParametersCardInner({
 	lineIndex,
 }: PerLineParametersCardProps) {
 	return (
-		<Card variant="subtle" className="col-span-1 flex min-h-0 flex-col p-3">
+		<Card
+			variant="subtle"
+			className="col-span-1 flex min-h-0 grow flex-col p-3"
+		>
 			<div className="mb-3 text-3xs text-cz-cream uppercase tracking-[0.24em]">
 				Parameters
 			</div>
-			<div className="grid min-h-0 flex-1 grid-cols-3 place-items-center content-start gap-3">
+			<div className="grid min-h-0 flex-1 grid-cols-3 place-items-center content-center gap-3">
 				<SynthParamKnob
 					paramKey={lineIndex === 1 ? "warpAAmount" : "warpBAmount"}
 					label="DCW Amt"

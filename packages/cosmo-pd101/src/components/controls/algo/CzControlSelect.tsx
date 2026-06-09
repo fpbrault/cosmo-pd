@@ -154,7 +154,7 @@ function CzControlSelectInner({
 	const optionsClassName = useSingleLineLayout
 		? `flex w-full min-w-0 gap-0 ${isPresetControl ? "h-10" : "h-6"}`
 		: isWaveformControl
-			? "grid grid-cols-2 gap-0 @min-[200px]:grid-cols-4"
+			? "grid grid-cols-2 gap-0 @min-[220px]:grid-cols-4"
 			: "grid grid-cols-2 gap-0";
 
 	return (

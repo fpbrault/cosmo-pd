@@ -53,6 +53,6 @@ describe("CzControlSelect", () => {
 		);
 
 		const options = screen.getByTestId("cz-control-options-waveform1");
-		expect(options.className).toContain("@min-[200px]:grid-cols-4");
+		expect(options.className).toContain("@min-[220px]:grid-cols-4");
 	});
 });

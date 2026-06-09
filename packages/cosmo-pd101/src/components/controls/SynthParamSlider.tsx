@@ -147,7 +147,9 @@ function SynthParamSliderInner({
 	const length = trackLength ?? (orientation === "vertical" ? 126 : 300);
 	const thickness = trackThickness ?? (orientation === "vertical" ? 22 : 18);
 	const capSize =
-		orientation === "vertical" ? { w: 20, h: 14 } : { w: 18, h: 14 };
+		orientation === "vertical"
+			? { w: 20, h: thickness }
+			: { w: 18, h: thickness };
 	const range = state.controlMax - state.controlMin;
 	const safeRange = Math.max(range, 1e-6);
 	const normalized = clamp(

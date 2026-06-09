@@ -107,64 +107,60 @@ function AlgoControlsGroupInner({
 
 	return (
 		<Card
-			variant="subtle"
-			className={`mt-2 flex min-h-0 grow flex-col border-cz-border/70 border-t p-3 pt-4 ${disabled ? "opacity-45" : ""}`}
+			variant="ghost"
+			className={`mt-2 flex min-h-0 grow flex-col p-3 pt-4 ${controls.length > 0 ? "justify-center overflow-visible" : ""} ${disabled ? "opacity-45" : ""} ${controls.length > 0 && disabled ? "pointer-events-none" : ""}`}
 		>
 			{controls.length > 0 ? (
-				<div
-					className={`min-h-0 flex-1 justify-between overflow-visible ${disabled ? "pointer-events-none" : ""}`}
-				>
-					{isCzAlgo ? (
-						<div
-							className="@container-size space-y-3"
-							data-testid="algo-controls-cz-layout"
-						>
-							{czStructuredControls?.preset ? (
-								<div>{renderControl(czStructuredControls.preset)}</div>
-							) : null}
-							{czStructuredControls &&
-							(czStructuredControls.waveform1 ||
-								czStructuredControls.waveform2) ? (
-								<div
-									className="grid @min-[200px]:grid-cols-1 grid-cols-2 items-start gap-6"
-									data-testid="algo-controls-cz-waveforms"
-								>
-									{czStructuredControls.waveform1 ? (
-										<div>{renderControl(czStructuredControls.waveform1)}</div>
-									) : (
-										<div />
-									)}
-									{czStructuredControls.waveform2 ? (
-										<div>{renderControl(czStructuredControls.waveform2)}</div>
-									) : (
-										<div />
-									)}
-								</div>
-							) : null}
-							{czStructuredControls?.windowFunction ? (
-								<div>{renderControl(czStructuredControls.windowFunction)}</div>
-							) : null}
-							{czStructuredControls &&
-							czStructuredControls.remainingControls.length > 0 ? (
-								<div
-									className="grid grid-cols-2 justify-center gap-2"
-									data-testid="algo-controls-cz-remaining"
-								>
-									{czStructuredControls.remainingControls.map((control) =>
-										renderControl(control),
-									)}
-								</div>
-							) : null}
-						</div>
-					) : (
-						<div
-							className="grid grid-cols-2 justify-center gap-2"
-							data-testid="algo-controls-default-grid"
-						>
-							{controls.map((control) => renderControl(control))}
-						</div>
-					)}
-				</div>
+				isCzAlgo ? (
+					<div
+						className="@container space-y-3"
+						data-testid="algo-controls-cz-layout"
+					>
+						{czStructuredControls?.preset ? (
+							<div>{renderControl(czStructuredControls.preset)}</div>
+						) : null}
+						{czStructuredControls &&
+						(czStructuredControls.waveform1 ||
+							czStructuredControls.waveform2) ? (
+							<div
+								className="grid @min-[220px]:grid-cols-1 grid-cols-2 items-start gap-6"
+								data-testid="algo-controls-cz-waveforms"
+							>
+								{czStructuredControls.waveform1 ? (
+									<div>{renderControl(czStructuredControls.waveform1)}</div>
+								) : (
+									<div />
+								)}
+								{czStructuredControls.waveform2 ? (
+									<div>{renderControl(czStructuredControls.waveform2)}</div>
+								) : (
+									<div />
+								)}
+							</div>
+						) : null}
+						{czStructuredControls?.windowFunction ? (
+							<div>{renderControl(czStructuredControls.windowFunction)}</div>
+						) : null}
+						{czStructuredControls &&
+						czStructuredControls.remainingControls.length > 0 ? (
+							<div
+								className="grid grid-cols-2 justify-center gap-2"
+								data-testid="algo-controls-cz-remaining"
+							>
+								{czStructuredControls.remainingControls.map((control) =>
+									renderControl(control),
+								)}
+							</div>
+						) : null}
+					</div>
+				) : (
+					<div
+						className="grid grid-cols-2 justify-center gap-2"
+						data-testid="algo-controls-default-grid"
+					>
+						{controls.map((control) => renderControl(control))}
+					</div>
+				)
 			) : (
 				<div className="text-3xs text-cz-cream/70 uppercase tracking-[0.2em]">
 					{noControlsLabel}
