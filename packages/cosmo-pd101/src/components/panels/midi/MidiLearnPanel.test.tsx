@@ -29,9 +29,8 @@ vi.mock("@/components/layout/SynthPanelContainer", () => ({
 }));
 
 describe("MidiLearnPanel", () => {
-	it("toggles learn mode and supports binding deletion", () => {
+	it("auto-enables learn mode on mount and supports binding deletion", () => {
 		render(<MidiLearnPanel />);
-		fireEvent.click(screen.getByRole("button", { name: "Midi Learn: OFF" }));
 		expect(state.setLearnMode).toHaveBeenCalledWith(true);
 
 		fireEvent.click(screen.getByLabelText("Remove MIDI binding for macro1"));

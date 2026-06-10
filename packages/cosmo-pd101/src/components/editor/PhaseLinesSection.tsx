@@ -80,7 +80,7 @@ export default function PhaseLinesSection({
 							return (
 								<div
 									key={group.label}
-									className="flex h-full flex-col justify-center gap-4 rounded-lg bg-cz-inset/80 p-1.5 py-3 pb-10"
+									className="flex h-full flex-col justify-center gap-4 rounded-lg bg-cz-inset/80 p-1.5 py-3 @min-[780px]:pb-10"
 								>
 									<div className="text-center font-bold text-[0.6rem] text-cz-cream tracking-[0.12em]">
 										{group.label}

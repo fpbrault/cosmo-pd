@@ -700,7 +700,7 @@ export default function ControlKnob({
 
 	const labelEl = label ? (
 		<div
-			className={`flex items-center justify-center gap-1 text-4xs text-base-content/55 uppercase tracking-[0.24em] ${labelClassName ?? ""}`}
+			className={`max-w-24 gap-1 truncate text-4xs text-base-content/55 uppercase tracking-[0.24em] ${labelClassName ?? ""}`}
 		>
 			<span>{label}</span>
 			{labelAccessory}

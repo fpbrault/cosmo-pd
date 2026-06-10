@@ -100,6 +100,10 @@ describe("visualModulationScale", () => {
 			wrapper,
 		});
 
+		act(() => {
+			result.current?.registerLiveModSourcesConsumer();
+		});
+
 		expect(result.current?.getRouteCount("volume")).toBe(1);
 		expect(result.current?.hasActiveRoutes("volume")).toBe(true);
 		expect(

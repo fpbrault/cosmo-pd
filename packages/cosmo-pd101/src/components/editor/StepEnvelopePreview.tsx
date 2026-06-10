@@ -42,7 +42,7 @@ export const StepEnvelopePreview = memo(function StepEnvelopePreview({
 				ref={canvasRef}
 				width={220}
 				height={50}
-				className="block h-10 w-full rounded bg-black/25"
+				className="block @max-[780px]:hidden h-10 w-full rounded bg-black/25"
 			/>
 			<div className="mt-1 flex items-center justify-between gap-2 px-0.5">
 				<span className="truncate font-semibold text-[0.55rem] text-cz-cream-dim uppercase tracking-[0.18em] group-hover:text-cz-cream">
