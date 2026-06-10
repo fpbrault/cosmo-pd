@@ -4,6 +4,7 @@ import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import { NOTE_TO_PC_KEY } from "@/lib/synth/pcKeyboardMapping";
 import MiniKeyboardKeybed from "./MiniKeyboardKeybed";
 import MiniKeyboardShell from "./MiniKeyboardShell";
+import MiniKeyboardWheels from "./MiniKeyboardWheels";
 import {
 	buildKeyboardLayout,
 	getBlackKeyWidthPercent,
@@ -15,6 +16,8 @@ type MiniKeyboardOverlayProps = {
 	onNoteOn: (note: number, velocity?: number) => void;
 	onNoteOff: (note: number) => void;
 	onPolyAftertouch?: (note: number, value: number) => void;
+	onPitchBend?: (value: number) => void;
+	onModWheel?: (value: number) => void;
 };
 
 export default function MiniKeyboardOverlay({
@@ -22,6 +25,8 @@ export default function MiniKeyboardOverlay({
 	onNoteOn,
 	onNoteOff,
 	onPolyAftertouch,
+	onPitchBend,
+	onModWheel,
 }: MiniKeyboardOverlayProps) {
 	const keyboardOctaves = useSynthUiStore((s) => s.keyboardOctaves);
 	const keyboardRange = useSynthUiStore((s) => s.keyboardRange);
@@ -74,14 +79,20 @@ export default function MiniKeyboardOverlay({
 
 	return (
 		<MiniKeyboardShell>
-			<MiniKeyboardKeybed
-				whiteKeys={whiteKeys}
-				blackKeys={blackKeys}
-				blackKeyWidth={blackKeyWidth}
-				activeNotes={activeSet}
-				onKeyPointerDown={handleKeyPointerDown}
-				pcKeyLabels={pcKeyLabels}
-			/>
+			<div className="flex h-full flex-row">
+				<MiniKeyboardWheels
+					onPitchBendChange={onPitchBend}
+					onModWheelChange={onModWheel}
+				/>
+				<MiniKeyboardKeybed
+					whiteKeys={whiteKeys}
+					blackKeys={blackKeys}
+					blackKeyWidth={blackKeyWidth}
+					activeNotes={activeSet}
+					onKeyPointerDown={handleKeyPointerDown}
+					pcKeyLabels={pcKeyLabels}
+				/>
+			</div>
 		</MiniKeyboardShell>
 	);
 }

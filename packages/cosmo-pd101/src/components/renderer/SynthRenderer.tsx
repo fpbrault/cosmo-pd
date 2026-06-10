@@ -30,6 +30,8 @@ type MiniKeyboardProps = {
 	onNoteOn: (note: number, velocity?: number) => void;
 	onNoteOff: (note: number) => void;
 	onPolyAftertouch: (note: number, pressure: number) => void;
+	onPitchBend?: (value: number) => void;
+	onModWheel?: (value: number) => void;
 };
 
 export type SynthRendererProps = {
@@ -74,6 +76,8 @@ const SynthRenderer = memo(function SynthRenderer({
 	const sendNoteOff = miniKeyboard?.onNoteOff ?? runtime.sendNoteOff;
 	const sendPolyAftertouch =
 		miniKeyboard?.onPolyAftertouch ?? runtime.sendPolyAftertouch;
+	const onPitchBend = miniKeyboard?.onPitchBend ?? runtime.sendPitchBend;
+	const onModWheel = miniKeyboard?.onModWheel ?? runtime.sendModWheel;
 	const { stepPreset, setNavigationEntryIds } = usePresetManager();
 
 	useAudioLevelMonitor(runtime.analyserNodeRef, onAudioLevelChange);
@@ -201,6 +205,8 @@ const SynthRenderer = memo(function SynthRenderer({
 													onNoteOn={sendNoteOn}
 													onNoteOff={sendNoteOff}
 													onPolyAftertouch={sendPolyAftertouch}
+													onPitchBend={onPitchBend}
+													onModWheel={onModWheel}
 												/>
 											) : null}
 										</Panel>

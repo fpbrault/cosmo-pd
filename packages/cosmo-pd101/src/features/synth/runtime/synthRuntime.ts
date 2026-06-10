@@ -13,6 +13,8 @@ export type SynthRuntime = {
 	sendNoteOn: (note: number, velocity?: number) => void;
 	sendNoteOff: (note: number) => void;
 	sendPolyAftertouch: (note: number, pressure: number) => void;
+	sendPitchBend?: (value: number) => void;
+	sendModWheel?: (value: number) => void;
 	panic: () => void;
 	audioContextState: "suspended" | "running" | "closed" | null;
 	resumeAudio: () => void;

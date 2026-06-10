@@ -244,6 +244,8 @@ export default function PluginPage({
 								onNoteOn: runtime.sendNoteOn,
 								onNoteOff: runtime.sendNoteOff,
 								onPolyAftertouch: runtime.sendPolyAftertouch,
+								onPitchBend: runtime.sendPitchBend,
+								onModWheel: runtime.sendModWheel,
 							}}
 						/>
 					</PresetManagerProvider>
