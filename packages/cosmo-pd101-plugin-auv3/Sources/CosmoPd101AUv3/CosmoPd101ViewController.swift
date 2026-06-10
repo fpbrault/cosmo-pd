@@ -248,7 +248,7 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
             midiLearnState.bindings.removeAll()
             midiLearnState.version += 1
             sendResponse(id: id, result: NSNull())
-        case "addPreset", "savePreset", "deletePreset", "renamePreset", "toggleStarred", "setPresetAuthor", "setPresetTags", "exportPreset":
+        case "addPreset", "savePreset", "deletePreset", "renamePreset", "toggleStarred", "setPresetAuthor", "setPresetTags", "exportPreset", "importPresetBank", "listFxModulePresets", "saveFxModulePreset", "deleteFxModulePreset":
             sendError(id: id, message: "AUv3 preset library editing is not supported yet")
         case "clientLog":
             let logLevel = args.first as? String ?? "info"

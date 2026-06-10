@@ -110,6 +110,10 @@ describe("visualModulationScale", () => {
 		).toBe(1);
 
 		act(() => {
+			result.current?.registerLiveModSourcesConsumer();
+		});
+
+		act(() => {
 			window.dispatchEvent(
 				new CustomEvent("cz-runtime-mod-sources", {
 					detail: {
@@ -138,6 +142,9 @@ describe("visualModulationScale", () => {
 	it("updates and clears runtime voice states via event lifecycle", () => {
 		const { result, unmount } = renderHook(() => useOptionalSynthController(), {
 			wrapper: withController(),
+		});
+		act(() => {
+			result.current?.registerLiveVoiceStatesConsumer();
 		});
 		act(() => {
 			window.dispatchEvent(
