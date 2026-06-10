@@ -91,7 +91,8 @@ function extractSwiftMethods(source: string): {
 	if (!switchMatch) return { implemented, stubbed };
 	const switchIndent = switchMatch[1];
 
-	const afterSwitch = source.slice(switchMatch.index! + switchMatch[0].length);
+	if (switchMatch.index === undefined) return { implemented, stubbed };
+	const afterSwitch = source.slice(switchMatch.index + switchMatch[0].length);
 	const lines = afterSwitch.split("\n");
 
 	let currentNames: string[] | null = null;
