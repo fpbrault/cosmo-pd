@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
 import type { StepEnvelopeVoiceMarker } from "./stepEnvelopeGeometry";
 import {
@@ -35,6 +35,24 @@ export function useStepEnvelopeCanvasInteraction({
 		startRate: number;
 	} | null>(null);
 
+	const dragStateRef = useRef(dragState);
+	dragStateRef.current = dragState;
+
+	const cleanupDragRef = useRef<(() => void) | null>(null);
+	useEffect(() => {
+		return () => {
+			cleanupDragRef.current?.();
+		};
+	}, []);
+
+	const endDrag = useCallback((pointerId: number) => {
+		if (dragStateRef.current?.pointerId !== pointerId) return;
+		setDragState(null);
+		dragStateRef.current = null;
+		cleanupDragRef.current?.();
+		cleanupDragRef.current = null;
+	}, []);
+
 	const normalizedEnv = normalizeEnvelope(env);
 	const steps = normalizedEnv.steps;
 	const activeStepCount = normalizedEnv.stepCount;
@@ -60,6 +78,7 @@ export function useStepEnvelopeCanvasInteraction({
 				stepIndex,
 				visibleStepCount,
 				canvasWidth,
+				steps,
 			);
 			const clampedPointerX = clamp(pointerX, allowed.minX, allowed.maxX);
 
@@ -144,33 +163,54 @@ export function useStepEnvelopeCanvasInteraction({
 
 			canvas.setPointerCapture(e.pointerId);
 			setHoverStep(closest.stepIndex);
-			setDragState({
+
+			const newDragState = {
 				pointerId: e.pointerId,
 				stepIndex: closest.stepIndex,
 				startClientX: e.clientX,
 				startClientY: e.clientY,
 				startLevel: step.level ?? 0,
 				startRate: step.rate ?? 0,
-			});
+			};
+			setDragState(newDragState);
+			dragStateRef.current = newDragState;
+
+			cleanupDragRef.current?.();
+
+			const onWindowPointerEnd = (nativeEvent: PointerEvent) => {
+				endDrag(nativeEvent.pointerId);
+				window.removeEventListener("pointerup", onWindowPointerEnd);
+				window.removeEventListener("pointercancel", onWindowPointerEnd);
+				cleanupDragRef.current = null;
+			};
+
+			window.addEventListener("pointerup", onWindowPointerEnd);
+			window.addEventListener("pointercancel", onWindowPointerEnd);
+			cleanupDragRef.current = () => {
+				window.removeEventListener("pointerup", onWindowPointerEnd);
+				window.removeEventListener("pointercancel", onWindowPointerEnd);
+			};
 		},
-		[canvasRef, getClosestStepAtPointer, steps],
+		[canvasRef, endDrag, getClosestStepAtPointer, steps],
 	);
 
 	const handleCanvasPointerMove = useCallback(
 		(e: React.PointerEvent<HTMLCanvasElement>) => {
-			if (dragState && dragState.pointerId === e.pointerId) {
+			const currentDrag = dragStateRef.current;
+			if (currentDrag && currentDrag.pointerId === e.pointerId) {
 				const pos = getRelativePointerPosition(e.clientX, e.clientY);
 				if (!pos) return;
 
 				const levelDelta =
-					(dragState.startClientY - e.clientY) / pos.rect.height;
-				const level = clamp(dragState.startLevel + levelDelta * 99, 0, 99);
-				const isLastActiveStep = dragState.stepIndex === activeStepCount - 1;
+					(currentDrag.startClientY - e.clientY) / pos.rect.height;
+				const level = clamp(currentDrag.startLevel + levelDelta * 99, 0, 99);
+				const isLastActiveStep = currentDrag.stepIndex === activeStepCount - 1;
 				const canvasW = canvasRef.current?.clientWidth ?? 1200;
 				const allowed = getStepAllowedXRange(
-					dragState.stepIndex,
+					currentDrag.stepIndex,
 					activeStepCount,
 					canvasW,
+					steps,
 				);
 				const clampedX = clamp(pos.x, allowed.minX, allowed.maxX);
 				const rate = isLastActiveStep
@@ -183,9 +223,9 @@ export function useStepEnvelopeCanvasInteraction({
 							0,
 							99,
 						)
-					: getRateForPointerX(dragState.stepIndex, clampedX, canvasW);
-				updateStepValues(dragState.stepIndex, level, rate);
-				setHoverStep(dragState.stepIndex);
+					: getRateForPointerX(currentDrag.stepIndex, clampedX, canvasW);
+				updateStepValues(currentDrag.stepIndex, level, rate);
+				setHoverStep(currentDrag.stepIndex);
 				return;
 			}
 
@@ -204,25 +244,24 @@ export function useStepEnvelopeCanvasInteraction({
 		[
 			activeStepCount,
 			canvasRef,
-			dragState,
 			getClosestStepAtPointer,
 			getRateForPointerX,
 			getRelativePointerPosition,
+			steps,
 			updateStepValues,
 		],
 	);
 
 	const handleCanvasPointerUp = useCallback(
 		(e: React.PointerEvent<HTMLCanvasElement>) => {
-			if (dragState?.pointerId !== e.pointerId) return;
-			setDragState(null);
+			endDrag(e.pointerId);
 		},
-		[dragState],
+		[endDrag],
 	);
 
 	const handleCanvasPointerLeave = useCallback(() => {
-		if (!dragState) setHoverStep(null);
-	}, [dragState]);
+		if (!dragStateRef.current) setHoverStep(null);
+	}, []);
 
 	return {
 		hoverStep,

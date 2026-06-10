@@ -154,7 +154,6 @@ export default function LivePage() {
 	const frameScale = frameLayout?.frameScale ?? 1;
 	const frameWidth = frameLayout?.frameWidth ?? SYNTH_RENDERER_DESIGN_WIDTH;
 	const frameHeight = frameLayout?.frameHeight ?? SYNTH_RENDERER_DESIGN_HEIGHT;
-	const sidebarMinWidthRem = frameLayout?.sidebarMinWidthRem ?? 21;
 	const scaledWidth = frameWidth * frameScale;
 	const scaledHeight = frameHeight * frameScale;
 
@@ -308,7 +307,6 @@ export default function LivePage() {
 						<SharedPhaseDistortionVisualizer
 							runtime={runtime}
 							appVersion={__CZ_APP_VERSION__}
-							sidebarMinWidthRem={sidebarMinWidthRem}
 							bottomBarExtra={<WebPluginStoreNotice />}
 						/>
 					</PresetManagerProvider>

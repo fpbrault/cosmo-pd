@@ -28,7 +28,7 @@ export function PhaseLineAlgoPanel({
 		usePhaseLineAlgorithms(algo);
 
 	return (
-		<div className="grid h-full min-h-0 flex-1 grid-cols-3 gap-4">
+		<div className="flex h-full min-h-0 gap-4">
 			<PhaseLineAlgoSideSection
 				section="A"
 				algo={algo}
@@ -38,7 +38,7 @@ export function PhaseLineAlgoPanel({
 				color={color}
 			/>
 
-			<div className="flex min-h-0 flex-col gap-4">
+			<div className="flex min-h-0 flex-1 flex-col gap-4">
 				<Card
 					variant="subtle"
 					padding="none"

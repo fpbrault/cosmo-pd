@@ -76,7 +76,6 @@ function PianoKey({
 }
 
 type MiniKeyboardKeybedProps = {
-	keyboardHeight: number;
 	whiteKeys: KeyConfig[];
 	blackKeys: KeyConfig[];
 	blackKeyWidth: number;
@@ -89,7 +88,6 @@ type MiniKeyboardKeybedProps = {
 };
 
 export default function MiniKeyboardKeybed({
-	keyboardHeight,
 	whiteKeys,
 	blackKeys,
 	blackKeyWidth,
@@ -98,11 +96,8 @@ export default function MiniKeyboardKeybed({
 	pcKeyLabels,
 }: MiniKeyboardKeybedProps) {
 	return (
-		<div className="relative overflow-hidden rounded-none border border-cz-border/70 border-x-0 border-b-0 bg-cz-inset px-2">
-			<div
-				className="relative flex gap-0.5 overflow-hidden rounded-md border border-cz-border/65 bg-cz-surface p-1"
-				style={{ height: keyboardHeight }}
-			>
+		<div className="relative h-full overflow-hidden rounded-none border border-cz-border/70 border-x-0 border-b-0 bg-cz-inset px-2">
+			<div className="relative flex h-full gap-0.5 overflow-hidden rounded-md border border-cz-border/65 bg-cz-surface p-1">
 				{whiteKeys.map((key) => (
 					<PianoKey
 						key={key.note}

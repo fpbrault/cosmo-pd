@@ -52,19 +52,42 @@ export function normalizeEnvelope(env: StepEnvData): StepEnvData {
 
 export function editorStepDuration(rate: number): number {
 	const clampedRate = clamp(Math.round(rate), 0, 99);
-	return 1 / (clampedRate + 1);
+	return 2 ** (-clampedRate / 10);
 }
 
 export function getStepAllowedXRange(
 	stepIndex: number,
 	activeStepCount: number,
 	canvasWidth: number,
+	steps: { rate?: number | null; level?: number | null }[],
 ) {
 	const drawWidth = canvasWidth - CHART_PADDING_X * 2;
-	const safeStepCount = Math.max(1, activeStepCount);
-	const cellWidth = drawWidth / safeStepCount;
-	const minX = CHART_PADDING_X + stepIndex * cellWidth;
-	const maxX = CHART_PADDING_X + (stepIndex + 1) * cellWidth;
+	const activeSteps = steps.slice(0, activeStepCount);
+	if (activeSteps.length === 0) {
+		return { minX: CHART_PADDING_X, maxX: canvasWidth - CHART_PADDING_X };
+	}
+
+	let totalTime = 0;
+	for (const step of activeSteps)
+		totalTime += editorStepDuration(step.rate ?? 0);
+	if (totalTime <= 0) totalTime = 1;
+
+	let prevX = CHART_PADDING_X;
+	const pointXs: number[] = [];
+	for (let i = 0; i < activeSteps.length; i++) {
+		const duration = editorStepDuration(activeSteps[i].rate ?? 0);
+		const dx = (duration / totalTime) * drawWidth;
+		const x = prevX + dx;
+		pointXs.push(x);
+		prevX = x;
+	}
+
+	const minX = stepIndex === 0 ? CHART_PADDING_X : pointXs[stepIndex - 1];
+	const maxX =
+		stepIndex >= pointXs.length - 1
+			? canvasWidth - CHART_PADDING_X
+			: pointXs[stepIndex + 1];
+
 	return { minX, maxX };
 }
 

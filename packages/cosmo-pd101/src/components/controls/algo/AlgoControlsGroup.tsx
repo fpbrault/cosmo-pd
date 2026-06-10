@@ -107,15 +107,12 @@ function AlgoControlsGroupInner({
 
 	return (
 		<Card
-			variant="ghost"
-			className={`mt-2 flex min-h-0 flex-col p-3 pt-4 ${controls.length > 0 ? "justify-center overflow-visible" : ""} ${disabled ? "opacity-45" : ""} ${controls.length > 0 && disabled ? "pointer-events-none" : ""}`}
+			variant="panel"
+			className={`mt-2 flex h-full min-h-0 flex-col bg-cz-surface p-3 pt-4 ${controls.length > 0 ? "justify-center overflow-visible" : ""} ${disabled ? "opacity-45" : ""} ${controls.length > 0 && disabled ? "pointer-events-none" : ""}`}
 		>
 			{controls.length > 0 ? (
 				isCzAlgo ? (
-					<div
-						className="@container space-y-3"
-						data-testid="algo-controls-cz-layout"
-					>
+					<div className="space-y-3" data-testid="algo-controls-cz-layout">
 						{czStructuredControls?.preset ? (
 							<div>{renderControl(czStructuredControls.preset)}</div>
 						) : null}
@@ -123,7 +120,7 @@ function AlgoControlsGroupInner({
 						(czStructuredControls.waveform1 ||
 							czStructuredControls.waveform2) ? (
 							<div
-								className="grid @min-[220px]:grid-cols-1 grid-cols-2 items-start gap-6"
+								className="grid @max-[900px]:grid-cols-2 grid-cols-1 items-start gap-6"
 								data-testid="algo-controls-cz-waveforms"
 							>
 								{czStructuredControls.waveform1 ? (

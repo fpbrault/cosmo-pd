@@ -33,24 +33,4 @@ describe("SynthSidebar", () => {
 		expect(screen.getByTestId("sidebar-buttons")).toBeInTheDocument();
 		expect(screen.getByTestId("macro-panel")).toBeInTheDocument();
 	});
-
-	it("applies a custom min width", () => {
-		const { container } = render(
-			<SynthSidebar sidebarMinWidthRem={19.625} libraryModeOpen={false} />,
-		);
-
-		expect(
-			(container.firstElementChild as HTMLElement | null)?.style.minWidth,
-		).toBe("19.625rem");
-	});
-
-	it("shrinks to content height when not filling the available height", () => {
-		render(
-			<SynthSidebar fillAvailableHeight={false} libraryModeOpen={false} />,
-		);
-
-		expect(screen.getByTestId("macro-panel").parentElement).toHaveClass(
-			"flex-none",
-		);
-	});
 });

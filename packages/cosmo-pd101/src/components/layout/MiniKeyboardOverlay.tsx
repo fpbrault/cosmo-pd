@@ -3,18 +3,15 @@ import { useSynthStore } from "@/features/synth/synthStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import { NOTE_TO_PC_KEY } from "@/lib/synth/pcKeyboardMapping";
 import MiniKeyboardKeybed from "./MiniKeyboardKeybed";
-import MiniKeyboardResizeHandle from "./MiniKeyboardResizeHandle";
 import MiniKeyboardShell from "./MiniKeyboardShell";
 import {
 	buildKeyboardLayout,
 	getBlackKeyWidthPercent,
 } from "./miniKeyboardLayout";
 import { useMiniKeyboardInteraction } from "./useMiniKeyboardInteraction";
-import { useMiniKeyboardResize } from "./useMiniKeyboardResize";
 
 type MiniKeyboardOverlayProps = {
 	activeNotes: number[];
-	visible: boolean;
 	onNoteOn: (note: number, velocity?: number) => void;
 	onNoteOff: (note: number) => void;
 	onPolyAftertouch?: (note: number, value: number) => void;
@@ -22,16 +19,13 @@ type MiniKeyboardOverlayProps = {
 
 export default function MiniKeyboardOverlay({
 	activeNotes,
-	visible,
 	onNoteOn,
 	onNoteOff,
 	onPolyAftertouch,
 }: MiniKeyboardOverlayProps) {
 	const keyboardOctaves = useSynthUiStore((s) => s.keyboardOctaves);
 	const keyboardRange = useSynthUiStore((s) => s.keyboardRange);
-	const keyboardHeight = useSynthUiStore((s) => s.keyboardHeight);
 	const keyboardInputMode = useSynthUiStore((s) => s.keyboardInputMode);
-	const setKeyboardHeight = useSynthUiStore((s) => s.setKeyboardHeight);
 	const pcKeyboardOverlayVisible = useSynthUiStore(
 		(s) => s.pcKeyboardOverlayVisible,
 	);
@@ -68,25 +62,19 @@ export default function MiniKeyboardOverlay({
 		return labels;
 	}, [pcKeyboardOverlayVisible, whiteKeys, blackKeys, startNote]);
 
-	const { resizeRef, handleResizePointerDown } = useMiniKeyboardResize({
-		keyboardHeight,
-		setKeyboardHeight,
-	});
 	const { handleKeyPointerDown } = useMiniKeyboardInteraction({
-		visible,
+		visible: true,
 		keyboardInputMode,
 		polyMode,
 		onNoteOn,
 		onNoteOff,
 		onPolyAftertouch,
-		resizeActiveRef: resizeRef,
+		resizeActiveRef: null,
 	});
 
 	return (
-		<MiniKeyboardShell visible={visible}>
-			<MiniKeyboardResizeHandle onPointerDown={handleResizePointerDown} />
+		<MiniKeyboardShell>
 			<MiniKeyboardKeybed
-				keyboardHeight={keyboardHeight}
 				whiteKeys={whiteKeys}
 				blackKeys={blackKeys}
 				blackKeyWidth={blackKeyWidth}

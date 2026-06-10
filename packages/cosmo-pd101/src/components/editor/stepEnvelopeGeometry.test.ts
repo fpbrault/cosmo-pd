@@ -46,12 +46,12 @@ describe("editorStepDuration", () => {
 		expect(editorStepDuration(0)).toBe(1);
 	});
 
-	it("returns 0.01 for rate 99", () => {
-		expect(editorStepDuration(99)).toBe(0.01);
+	it("returns ~0.001 for rate 99 (exponential decay)", () => {
+		expect(editorStepDuration(99)).toBeCloseTo(0.001, 3);
 	});
 
-	it("returns 0.5 for rate 1", () => {
-		expect(editorStepDuration(1)).toBe(0.5);
+	it("returns ~0.933 for rate 1", () => {
+		expect(editorStepDuration(1)).toBeCloseTo(0.933, 3);
 	});
 
 	it("clamps negative rate", () => {
@@ -59,12 +59,14 @@ describe("editorStepDuration", () => {
 	});
 
 	it("clamps rate above 99", () => {
-		expect(editorStepDuration(150)).toBe(0.01);
+		expect(editorStepDuration(150)).toBeCloseTo(0.001, 3);
 	});
 
 	it("handles fractional rate by rounding", () => {
-		const result = editorStepDuration(50.7);
-		expect(result).toBe(1 / 52);
+		expect(editorStepDuration(Math.round(50.7))).toBeCloseTo(
+			editorStepDuration(50.7),
+			5,
+		);
 	});
 });
 
@@ -136,34 +138,57 @@ describe("normalizeEnvelope", () => {
 });
 
 describe("getStepAllowedXRange", () => {
-	it("returns correct range for first step", () => {
-		const range = getStepAllowedXRange(0, 4, 400);
+	const fourEqualSteps = [
+		{ level: 50, rate: 50 },
+		{ level: 50, rate: 50 },
+		{ level: 50, rate: 50 },
+		{ level: 50, rate: 50 },
+	];
+
+	it("returns range bounded by neighbors for first step", () => {
+		const range = getStepAllowedXRange(0, 4, 400, fourEqualSteps);
 		expect(range.minX).toBe(CHART_PADDING_X);
-		expect(range.maxX).toBe(CHART_PADDING_X + 94);
+		expect(range.maxX).toBe(CHART_PADDING_X + 188);
 	});
 
-	it("returns correct range for middle step", () => {
-		const range = getStepAllowedXRange(2, 4, 400);
+	it("returns range bounded by neighbors for middle step", () => {
+		const range = getStepAllowedXRange(2, 4, 400, fourEqualSteps);
 		expect(range.minX).toBe(CHART_PADDING_X + 2 * 94);
-		expect(range.maxX).toBe(CHART_PADDING_X + 3 * 94);
+		expect(range.maxX).toBe(CHART_PADDING_X + 4 * 94);
 	});
 
 	it("handles single step", () => {
-		const range = getStepAllowedXRange(0, 1, 200);
+		const range = getStepAllowedXRange(0, 1, 200, [{ level: 0, rate: 50 }]);
 		expect(range.minX).toBe(CHART_PADDING_X);
 		expect(range.maxX).toBe(188);
 	});
 
+	it("uses neighbor positions for non-uniform rates", () => {
+		const threeSteps = [
+			{ level: 50, rate: 0 },
+			{ level: 50, rate: 50 },
+			{ level: 0, rate: 99 },
+		];
+		const range = getStepAllowedXRange(1, 3, 400, threeSteps);
+		expect(range.minX).toBeGreaterThan(CHART_PADDING_X);
+		expect(range.maxX).toBeGreaterThan(range.minX);
+	});
+
 	it("handles minimum width canvas (equal to padding)", () => {
-		const range = getStepAllowedXRange(0, 4, CHART_PADDING_X * 2);
+		const range = getStepAllowedXRange(
+			0,
+			4,
+			CHART_PADDING_X * 2,
+			fourEqualSteps,
+		);
 		expect(range.minX).toBe(CHART_PADDING_X);
 		expect(range.maxX).toBe(CHART_PADDING_X);
 	});
 
 	it("handles zero activeStepCount", () => {
-		const range = getStepAllowedXRange(0, 0, 400);
+		const range = getStepAllowedXRange(0, 0, 400, []);
 		expect(range.minX).toBe(CHART_PADDING_X);
-		expect(range.maxX).toBe(CHART_PADDING_X + 376);
+		expect(range.maxX).toBe(388);
 	});
 });
 

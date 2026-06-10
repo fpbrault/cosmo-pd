@@ -78,90 +78,123 @@ export default function AlgoIconGrid({
 	const tooltipText = behaviorPrefix
 		.replace("{{index}}", `${currentIndex + 1}`)
 		.replace("{{behavior}}", getPdAlgoBehaviorDescription(value));
-	const arrowColumnWidth = 28;
-	const maxWidgetWidth = size + arrowColumnWidth;
+
+	const algoButtonLabel = changeAlgorithmLabel
+		.replace("{{index}}", `${currentIndex + 1}`)
+		.replace("{{label}}", currentAlgo.label);
 
 	return (
 		<div
 			ref={rootRef}
 			className={[
-				"relative mx-14 max-w-full grow items-start place-self-start bg-base-100",
+				"relative w-30 bg-base-100",
 				disabled ? "pointer-events-none opacity-30" : "",
 			].join(" ")}
-			style={{ width: `min(100%, ${maxWidgetWidth}px)` }}
 		>
-			{/* Main widget: icon + arrows */}
-			<div className="flex w-full items-stretch border border-cz-border bg-cz-surface">
-				{/* Clickable icon — opens popover */}
+			<div
+				className={[
+					"grid items-stretch border border-cz-border bg-cz-surface",
+					"@max-[780px]:grid-cols-[auto_1fr_auto] @max-[780px]:grid-rows-[auto] @max-[780px]:[grid-template-areas:'prev_label_next']",
+					"grid-cols-[auto_auto] grid-rows-[1fr_1fr_auto] [grid-template-areas:'icon_up''icon_down''label_label']",
+				].join(" ")}
+			>
+				<div className="flex @max-[780px]:hidden items-center justify-center [grid-area:icon]">
+					<HoverInfoTrigger message={tooltipText}>
+						{(hoverHandlers) => (
+							<button
+								type="button"
+								{...hoverHandlers}
+								onClick={() => setPopoverOpen((o) => !o)}
+								aria-label={algoButtonLabel}
+								className={[
+									"flex items-center justify-center text-cz-gold transition-colors focus:outline-none",
+									popoverOpen ? "bg-cz-inset" : "hover:bg-cz-inset",
+								].join(" ")}
+								style={{ width: size, height: size - 8 }}
+							>
+								{isCz101 ? (
+									<CzMonogramIcon size={size} />
+								) : (
+									<svg
+										viewBox="0 0 24 24"
+										width={size}
+										height={size}
+										stroke="currentColor"
+										strokeWidth=".75"
+										fill="none"
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										aria-hidden="true"
+									>
+										<title>{currentAlgo.label}</title>
+										<path d={currentAlgo.icon} />
+									</svg>
+								)}
+							</button>
+						)}
+					</HoverInfoTrigger>
+				</div>
+
+				<button
+					type="button"
+					onClick={() => navigate(-1)}
+					aria-label={previousLabel}
+					className={[
+						"@max-[780px]:border-r @max-[780px]:px-1.5 @max-[780px]:[grid-area:prev]",
+						"border-cz-border border-b [grid-area:up]",
+						"flex items-center justify-center text-xs transition-colors hover:bg-cz-inset focus:outline-none",
+					].join(" ")}
+					style={color ? { color } : undefined}
+				>
+					<span className="@max-[780px]:hidden">▲</span>
+					<span
+						className="@max-[780px]:inline hidden"
+						style={{ transform: "rotate(180deg)" }}
+					>
+						▼
+					</span>
+				</button>
+
+				<button
+					type="button"
+					onClick={() => navigate(1)}
+					aria-label={nextLabel}
+					className={[
+						"@max-[780px]:px-1.5 @max-[780px]:[grid-area:next]",
+						"[grid-area:down]",
+						"flex items-center justify-center text-xs transition-colors hover:bg-cz-inset focus:outline-none",
+					].join(" ")}
+					style={color ? { color } : undefined}
+				>
+					<span className="@max-[780px]:hidden">▼</span>
+					<span
+						className="@max-[780px]:inline hidden"
+						style={{ transform: "rotate(180deg)" }}
+					>
+						▲
+					</span>
+				</button>
+
 				<HoverInfoTrigger message={tooltipText}>
 					{(hoverHandlers) => (
 						<button
 							type="button"
 							{...hoverHandlers}
 							onClick={() => setPopoverOpen((o) => !o)}
-							aria-label={changeAlgorithmLabel
-								.replace("{{index}}", `${currentIndex + 1}`)
-								.replace("{{label}}", currentAlgo.label)}
+							aria-label={algoButtonLabel}
 							className={[
-								"flex aspect-square min-w-0 flex-1 items-center justify-center text-cz-gold transition-colors focus:outline-none",
+								"[grid-area:label]",
+								"flex items-center justify-center bg-base-100 px-1 py-1 font-mono text-xs uppercase tracking-widest transition-colors focus:outline-none",
 								popoverOpen ? "bg-cz-inset" : "hover:bg-cz-inset",
 							].join(" ")}
+							style={color ? { color } : undefined}
 						>
-							{isCz101 ? (
-								<CzMonogramIcon className="h-[72%] w-[72%]" />
-							) : (
-								<svg
-									viewBox="0 0 24 24"
-									className="h-[72%] w-[72%]"
-									stroke="currentColor"
-									strokeWidth=".75"
-									fill="none"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									aria-hidden="true"
-								>
-									<title>{currentAlgo.label}</title>
-									<path d={currentAlgo.icon} />
-								</svg>
-							)}
+							{currentAlgo.label}
 						</button>
 					)}
 				</HoverInfoTrigger>
-				{/* Up / down arrows */}
-				<div
-					className="flex shrink-0 flex-col border-cz-border border-l"
-					style={{ width: arrowColumnWidth }}
-				>
-					<button
-						type="button"
-						onClick={() => navigate(-1)}
-						aria-label={previousLabel}
-						className="flex flex-1 items-center justify-center border-cz-border border-b px-1.5 text-xs transition-colors hover:bg-cz-inset focus:outline-none"
-						style={color ? { color } : undefined}
-					>
-						▲
-					</button>
-					<button
-						type="button"
-						onClick={() => navigate(1)}
-						aria-label={nextLabel}
-						className="flex flex-1 items-center justify-center px-1.5 text-xs transition-colors hover:bg-cz-inset focus:outline-none"
-						style={color ? { color } : undefined}
-					>
-						▼
-					</button>
-				</div>
 			</div>
 
-			{/* Label */}
-			<div
-				className="mt-1 text-center font-mono text-xs uppercase tracking-widest"
-				style={color ? { color } : undefined}
-			>
-				{currentAlgo.label}
-			</div>
-
-			{/* Popover grid */}
 			<div
 				className={[
 					"absolute top-full left-1/2 z-20 mt-1 origin-top -translate-x-1/2 border border-cz-border bg-cz-surface p-1 transition-all duration-150 ease-out",

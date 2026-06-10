@@ -1,32 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
 	computeRendererFrameLayout,
-	computeSidebarMinWidthRem,
 	SYNTH_RENDERER_DESIGN_HEIGHT,
 	SYNTH_RENDERER_MAX_ASPECT_RATIO,
-	SYNTH_RENDERER_MIN_ASPECT_RATIO,
 } from "./rendererFrameLayout";
-
-describe("computeSidebarMinWidthRem", () => {
-	it("returns the narrow width at 4:3", () => {
-		expect(computeSidebarMinWidthRem(SYNTH_RENDERER_MIN_ASPECT_RATIO)).toBe(18);
-	});
-
-	it("returns the wide width at 3:2", () => {
-		expect(computeSidebarMinWidthRem(SYNTH_RENDERER_MAX_ASPECT_RATIO)).toBe(21);
-	});
-
-	it("interpolates the midpoint", () => {
-		const midpoint =
-			(SYNTH_RENDERER_MIN_ASPECT_RATIO + SYNTH_RENDERER_MAX_ASPECT_RATIO) / 2;
-		expect(computeSidebarMinWidthRem(midpoint)).toBeCloseTo(19.5, 5);
-	});
-
-	it("clamps outside the supported aspect range", () => {
-		expect(computeSidebarMinWidthRem(1)).toBe(18);
-		expect(computeSidebarMinWidthRem(2)).toBe(21);
-	});
-});
 
 describe("computeRendererFrameLayout", () => {
 	it("uses the fixed target aspect ratio when provided", () => {
@@ -50,7 +27,6 @@ describe("computeRendererFrameLayout", () => {
 		});
 
 		expect(layout?.effectiveAspectRatio).toBe(SYNTH_RENDERER_MAX_ASPECT_RATIO);
-		expect(layout?.sidebarMinWidthRem).toBe(21);
 	});
 
 	it("applies outer padding before fitting", () => {

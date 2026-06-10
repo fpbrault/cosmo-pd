@@ -222,14 +222,7 @@ describe("algo controls (browser)", () => {
 
 	it("renders AlgoIconGrid and dispatches selection", () => {
 		const onChange = vi.fn();
-		render(
-			<AlgoIconGrid
-				value="cz101"
-				size={1}
-				disabled={false}
-				onChange={onChange}
-			/>,
-		);
+		render(<AlgoIconGrid value="cz101" disabled={false} onChange={onChange} />);
 
 		fireEvent.click(screen.getByRole("button", { name: "Algo 2" }));
 		expect(onChange).toHaveBeenCalledWith({ id: 2 });

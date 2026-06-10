@@ -2,14 +2,12 @@ import { fireEvent, render } from "@testing-library/react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import MiniKeyboardOverlay from "./MiniKeyboardOverlay";
 
-const mockSetKeyboardHeight = vi.fn();
 const uiState = {
 	keyboardOctaves: 3,
 	keyboardRange: 0,
 	keyboardHeight: 128,
 	keyboardInputMode: "velocity" as const,
 	pcKeyboardOverlayVisible: true,
-	setKeyboardHeight: mockSetKeyboardHeight,
 };
 
 let polyModeValue: "poly8" | "mono" = "poly8";
@@ -39,7 +37,6 @@ describe("MiniKeyboardOverlay", () => {
 
 	beforeEach(() => {
 		polyModeValue = "poly8";
-		mockSetKeyboardHeight.mockReset();
 		vi.restoreAllMocks();
 	});
 
@@ -51,7 +48,6 @@ describe("MiniKeyboardOverlay", () => {
 		const result = render(
 			<MiniKeyboardOverlay
 				activeNotes={[]}
-				visible={true}
 				onNoteOn={onNoteOn}
 				onNoteOff={onNoteOff}
 				onPolyAftertouch={onPolyAftertouch}
@@ -143,42 +139,6 @@ describe("MiniKeyboardOverlay", () => {
 		startPointer(firstKey);
 		movePointerTo(secondKey);
 		releasePointer();
-
-		expect(onPolyAftertouch).toHaveBeenCalledWith(38, 0);
-		expect(onNoteOff).toHaveBeenCalledTimes(2);
-		expect(onNoteOff).toHaveBeenCalledWith(36);
-		expect(onNoteOff).toHaveBeenCalledWith(38);
-	});
-
-	it("releases the current note and clears aftertouch when hidden in mono mode", () => {
-		polyModeValue = "mono";
-		const onNoteOn = vi.fn();
-		const onNoteOff = vi.fn();
-		const onPolyAftertouch = vi.fn();
-		const { container, rerender } = render(
-			<MiniKeyboardOverlay
-				activeNotes={[]}
-				visible={true}
-				onNoteOn={onNoteOn}
-				onNoteOff={onNoteOff}
-				onPolyAftertouch={onPolyAftertouch}
-			/>,
-		);
-		const firstKey = getKey(container, 36);
-		const secondKey = getKey(container, 38);
-
-		startPointer(firstKey);
-		movePointerTo(secondKey);
-
-		rerender(
-			<MiniKeyboardOverlay
-				activeNotes={[]}
-				visible={false}
-				onNoteOn={onNoteOn}
-				onNoteOff={onNoteOff}
-				onPolyAftertouch={onPolyAftertouch}
-			/>,
-		);
 
 		expect(onPolyAftertouch).toHaveBeenCalledWith(38, 0);
 		expect(onNoteOff).toHaveBeenCalledTimes(2);

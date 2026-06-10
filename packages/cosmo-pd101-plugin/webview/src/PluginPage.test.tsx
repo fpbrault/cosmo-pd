@@ -1,13 +1,11 @@
 import { render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import PluginPage, { clampPluginKeyboardHeight } from "./PluginPage";
+import PluginPage from "./PluginPage";
 
 const mockUseSynthPresetManager = vi.hoisted(() => vi.fn());
 const mockUsePluginParamBridge = vi.hoisted(() => vi.fn());
 const mockUsePluginSynthRuntime = vi.hoisted(() => vi.fn());
 const mockCreatePluginPresetManagerRepository = vi.hoisted(() => vi.fn());
-const mockSetKeyboardHeight = vi.hoisted(() => vi.fn());
-
 vi.mock("./hooks/usePluginParamBridge", () => ({
 	usePluginParamBridge: mockUsePluginParamBridge,
 }));
@@ -26,7 +24,6 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 	};
 	const synthUiStoreState = {
 		keyboardHeight: 160,
-		setKeyboardHeight: mockSetKeyboardHeight,
 	};
 
 	return {
@@ -45,7 +42,6 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 				frameScale: 1,
 				effectiveAspectRatio:
 					targetAspectRatio ?? availableWidth / availableHeight,
-				sidebarMinWidthRem: 18,
 			}),
 		),
 		PresetManagerProvider: ({ children }: { children: React.ReactNode }) => (
@@ -68,7 +64,6 @@ describe("PluginPage", () => {
 	let recomputeDirtyState: ReturnType<typeof vi.fn>;
 
 	beforeEach(() => {
-		mockSetKeyboardHeight.mockClear();
 		mockUsePluginParamBridge.mockReset();
 		mockUsePluginSynthRuntime.mockReset();
 		mockCreatePluginPresetManagerRepository.mockReset();
@@ -169,22 +164,5 @@ describe("PluginPage", () => {
 		bridgeOptions?.onExternalParamChange?.();
 
 		expect(recomputeDirtyState).toHaveBeenCalled();
-	});
-
-	it("clamps persisted keyboard height for plugin viewports", () => {
-		expect(
-			clampPluginKeyboardHeight({
-				keyboardHeight: 256,
-				viewportHeight: 834,
-				frameScale: 0.91,
-			}),
-		).toBe(160);
-		expect(
-			clampPluginKeyboardHeight({
-				keyboardHeight: 120,
-				viewportHeight: 834,
-				frameScale: 0.91,
-			}),
-		).toBe(120);
 	});
 });

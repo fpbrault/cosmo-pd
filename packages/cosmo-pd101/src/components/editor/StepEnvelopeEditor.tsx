@@ -155,6 +155,7 @@ const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 					onPointerMove={handleCanvasPointerMove}
 					onPointerUp={handleCanvasPointerUp}
 					onPointerCancel={handleCanvasPointerUp}
+					onLostPointerCapture={handleCanvasPointerUp}
 					onPointerLeave={handleCanvasPointerLeave}
 				/>
 			</div>
