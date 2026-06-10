@@ -1,22 +1,24 @@
 {
-	"name": "Organ",
-	"tags": ["organ"],
+	"name": "Stuttering Echoes",
+	"tags": ["pad"],
+	"starred": true,
+	"sort_index": 2,
 	"source": "cosmo-factory",
 	"author": "Purr Audio",
 	"data": {
 		"schemaVersion": 1,
 		"params": {
-			"lineSelect": "L1+L2'",
+			"lineSelect": "L1",
 			"modMode": "normal",
 			"octave": 0,
 			"line1": {
-				"algo": "fold",
-				"algo2": null,
+				"algo": "pinch",
+				"algo2": "clip",
 				"algoBlend": 0,
-				"baseWaveformA": "cosine",
+				"baseWaveformA": "sine",
 				"window": "off",
 				"dcaBase": 1,
-				"dcwBase": 0.75,
+				"dcwBase": 0.72,
 				"modulation": 0,
 				"detuneNote": 0,
 				"detuneFine": 0,
@@ -25,140 +27,157 @@
 					"steps": [
 						{
 							"level": 0,
-							"rate": 50
+							"rate": 0
 						},
 						{
 							"level": 0,
-							"rate": 50
+							"rate": 0
 						},
 						{
 							"level": 0,
-							"rate": 50
+							"rate": 0
 						},
 						{
 							"level": 0,
-							"rate": 50
+							"rate": 0
 						},
 						{
 							"level": 0,
-							"rate": 50
+							"rate": 0
 						},
 						{
 							"level": 0,
-							"rate": 50
+							"rate": 0
 						},
 						{
 							"level": 0,
-							"rate": 50
+							"rate": 0
 						},
 						{
 							"level": 0,
-							"rate": 50
+							"rate": 0
 						}
 					],
 					"sustainStep": 1,
-					"stepCount": 4,
+					"stepCount": 2,
 					"loop": false
 				},
 				"dcwEnv": {
 					"steps": [
 						{
 							"level": 99,
-							"rate": 99
+							"rate": 70
+						},
+						{
+							"level": 0,
+							"rate": 93
 						},
 						{
 							"level": 99,
-							"rate": 99
+							"rate": 75
 						},
 						{
-							"level": 99,
-							"rate": 99
+							"level": 0,
+							"rate": 44
 						},
 						{
-							"level": 99,
-							"rate": 99
+							"level": 0,
+							"rate": 50
 						},
 						{
-							"level": 99,
-							"rate": 99
+							"level": 0,
+							"rate": 50
 						},
 						{
-							"level": 99,
-							"rate": 99
+							"level": 0,
+							"rate": 50
 						},
 						{
-							"level": 99,
-							"rate": 99
-						},
-						{
-							"level": 22,
-							"rate": 60
+							"level": 0,
+							"rate": 50
 						}
 					],
-					"sustainStep": 1,
-					"stepCount": 3,
-					"loop": false
+					"sustainStep": 2,
+					"stepCount": 4,
+					"loop": true
 				},
 				"dcaEnv": {
 					"steps": [
 						{
 							"level": 99,
-							"rate": 90
+							"rate": 75
 						},
 						{
-							"level": 99,
-							"rate": 99
+							"level": 79,
+							"rate": 80
 						},
 						{
-							"level": 99,
-							"rate": 79
-						},
-						{
-							"level": 99,
-							"rate": 99
-						},
-						{
-							"level": 99,
-							"rate": 99
-						},
-						{
-							"level": 99,
-							"rate": 99
-						},
-						{
-							"level": 99,
-							"rate": 99
+							"level": 96,
+							"rate": 75
 						},
 						{
 							"level": 0,
-							"rate": 71
+							"rate": 40
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
 						}
 					],
-					"sustainStep": 1,
-					"stepCount": 3,
+					"sustainStep": 2,
+					"stepCount": 4,
 					"loop": false
 				},
 				"dcwKeyFollow": 0,
 				"dcaKeyFollow": 0,
 				"algoControlsA": [
 					{
-						"id": "foldStages",
-						"value": 0.10796875
+						"id": "pinchFocus",
+						"value": 0.1
 					},
 					{
-						"id": "foldTilt",
-						"value": -0.0414453125
-					},
-					{
-						"id": "foldSymmetry",
+						"id": "pinchAsym",
 						"value": 0
 					},
 					{
-						"id": "foldSoftness",
-						"value": 0
+						"id": "pinchCurve",
+						"value": 0.5
+					},
+					{
+						"id": "pinchDrive",
+						"value": 0.5
 					}
 				],
-				"algoControlsB": []
+				"algoControlsB": [
+					{
+						"id": "clipDrive",
+						"value": 0.5
+					},
+					{
+						"id": "clipShape",
+						"value": 0.5
+					},
+					{
+						"id": "clipBias",
+						"value": 0
+					},
+					{
+						"id": "clipSoft",
+						"value": 0
+					}
+				]
 			},
 			"line2": {
 				"algo": "cz101",
@@ -175,117 +194,117 @@
 					"steps": [
 						{
 							"level": 0,
-							"rate": 50
+							"rate": 0
 						},
 						{
 							"level": 0,
-							"rate": 50
+							"rate": 0
 						},
 						{
 							"level": 0,
-							"rate": 50
+							"rate": 0
 						},
 						{
 							"level": 0,
-							"rate": 50
+							"rate": 0
 						},
 						{
 							"level": 0,
-							"rate": 50
+							"rate": 0
 						},
 						{
 							"level": 0,
-							"rate": 50
+							"rate": 0
 						},
 						{
 							"level": 0,
-							"rate": 50
+							"rate": 0
 						},
 						{
 							"level": 0,
-							"rate": 50
+							"rate": 0
 						}
 					],
 					"sustainStep": 1,
-					"stepCount": 4,
+					"stepCount": 2,
 					"loop": false
 				},
 				"dcwEnv": {
 					"steps": [
 						{
 							"level": 99,
-							"rate": 99
+							"rate": 75
 						},
 						{
 							"level": 99,
-							"rate": 99
+							"rate": 80
 						},
 						{
 							"level": 99,
-							"rate": 99
+							"rate": 75
 						},
 						{
-							"level": 99,
-							"rate": 99
+							"level": 0,
+							"rate": 40
 						},
 						{
-							"level": 99,
-							"rate": 99
+							"level": 0,
+							"rate": 50
 						},
 						{
-							"level": 99,
-							"rate": 99
+							"level": 0,
+							"rate": 50
 						},
 						{
-							"level": 99,
-							"rate": 99
+							"level": 0,
+							"rate": 50
 						},
 						{
-							"level": 22,
-							"rate": 60
+							"level": 0,
+							"rate": 50
 						}
 					],
-					"sustainStep": 1,
-					"stepCount": 3,
+					"sustainStep": 2,
+					"stepCount": 4,
 					"loop": false
 				},
 				"dcaEnv": {
 					"steps": [
 						{
 							"level": 99,
-							"rate": 90
+							"rate": 75
 						},
 						{
-							"level": 99,
-							"rate": 99
+							"level": 79,
+							"rate": 80
 						},
 						{
-							"level": 99,
-							"rate": 79
-						},
-						{
-							"level": 99,
-							"rate": 99
-						},
-						{
-							"level": 99,
-							"rate": 99
-						},
-						{
-							"level": 99,
-							"rate": 99
-						},
-						{
-							"level": 99,
-							"rate": 99
+							"level": 79,
+							"rate": 75
 						},
 						{
 							"level": 0,
-							"rate": 71
+							"rate": 40
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
 						}
 					],
-					"sustainStep": 1,
-					"stepCount": 3,
+					"sustainStep": 2,
+					"stepCount": 4,
 					"loop": false
 				},
 				"dcwKeyFollow": 0,
@@ -305,11 +324,11 @@
 			},
 			"lfo": {
 				"waveform": "sine",
-				"rate": 0,
-				"depth": 0.6303515570504326,
-				"symmetry": 0,
-				"retrigger": false,
-				"offset": 0
+				"rate": 0.0842864172799247,
+				"depth": 0.6907139641898019,
+				"symmetry": 0.5,
+				"retrigger": true,
+				"offset": 0.059453230265841456
 			},
 			"lfo2": {
 				"waveform": "sine",
@@ -323,18 +342,30 @@
 				"rate": 2
 			},
 			"modEnv": {
-				"attack": 0.01,
-				"decay": 0.1,
-				"sustain": 0.5,
-				"release": 0.2
+				"attack": 1.1107421193804057,
+				"decay": 2.215937523841858,
+				"sustain": 0.903105457850865,
+				"release": 2.761523483480726
 			},
 			"pitchBendRange": 2,
 			"modMatrix": {
 				"routes": [
 					{
+						"source": "velocity",
+						"destination": "line1DcwBase",
+						"amount": 0.4791015625000001,
+						"enabled": true
+					},
+					{
 						"source": "lfo1",
-						"destination": "line1AlgoParam2",
-						"amount": 0.5,
+						"destination": "line1DcwEnvStep4Rate",
+						"amount": 0.23492187500000003,
+						"enabled": true
+					},
+					{
+						"source": "macro1",
+						"destination": "line1AlgoParam1",
+						"amount": 1,
 						"enabled": true
 					}
 				]
@@ -343,50 +374,58 @@
 				{
 					"type": "chorus",
 					"params": {
-						"rate": 0.35,
-						"depth": 2.1,
-						"mix": 0.44,
-						"enabled": false
+						"enabled": true,
+						"rate": 1.8,
+						"depth": 2.6,
+						"mix": 0.25855467932564874
 					}
 				},
 				{
-					"type": "loFi",
+					"type": "phaser",
 					"params": {
 						"enabled": true,
-						"degrade": 0.114,
-						"wow": 0.09,
-						"flutter": 0.038,
-						"filter": -0.31,
-						"crackle": 0.2,
-						"saturation": 0,
-						"mix": 1
+						"rate": 0.35,
+						"depth": 0.45,
+						"mix": 0.25,
+						"feedback": 0.2
 					}
+				},
+				{
+					"type": "empty"
 				},
 				{
 					"type": "delay",
 					"params": {
+						"enabled": true,
 						"time": 0.34,
 						"feedback": 0.46,
-						"mix": 0.07347656726837153,
-						"enabled": true,
+						"mix": 0.35,
 						"tapeMode": true,
 						"warmth": 0.72
 					}
 				},
 				{
-					"type": "empty"
-				},
-				{
-					"type": "shimmerVerb",
+					"type": "reverb",
 					"params": {
 						"enabled": true,
-						"shimmer": 0.9263281277247838,
-						"space": 0.8459179741995675,
-						"mix": 0.18874998092651363
+						"mix": 0.47,
+						"space": 0.8229687554495675,
+						"predelay": 0.03,
+						"distance": 0.68,
+						"character": 0.2902343913487026
 					}
 				},
 				{
-					"type": "empty"
+					"type": "compressor",
+					"params": {
+						"enabled": false,
+						"thresholdDb": -12,
+						"ratio": 4,
+						"attackMs": 5,
+						"releaseMs": 100,
+						"makeupDb": 6,
+						"mix": 1
+					}
 				}
 			]
 		}

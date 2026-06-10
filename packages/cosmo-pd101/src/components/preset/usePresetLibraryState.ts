@@ -205,17 +205,19 @@ export function usePresetLibraryState({
 	const sortedEntries = useMemo(() => {
 		return [...filteredEntries].sort((a, b) => {
 			if (sortState.key === "star") {
-				const aValue = a.starred ? 1 : 0;
-				const bValue = b.starred ? 1 : 0;
-				if (aValue === bValue) {
-					return a.label.localeCompare(b.label, undefined, {
-						numeric: true,
-						sensitivity: "base",
-					});
+				if (a.starred && b.starred) {
+					const aSort = a.preset?.sortIndex ?? Infinity;
+					const bSort = b.preset?.sortIndex ?? Infinity;
+					if (aSort !== bSort) return aSort - bSort;
+				} else if (a.starred !== b.starred) {
+					return sortState.direction === "asc"
+						? (a.starred ? 1 : 0) - (b.starred ? 1 : 0)
+						: (b.starred ? 1 : 0) - (a.starred ? 1 : 0);
 				}
-				return sortState.direction === "asc"
-					? aValue - bValue
-					: bValue - aValue;
+				return a.label.localeCompare(b.label, undefined, {
+					numeric: true,
+					sensitivity: "base",
+				});
 			}
 
 			if (sortState.key === "favorite") {

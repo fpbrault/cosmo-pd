@@ -1,23 +1,25 @@
 {
-	"name": "Chops",
-	"tags": ["pad"],
+	"name": "Heavenly Flute",
+	"tags": ["wind"],
 	"starred": true,
+	"sort_index": 3,
 	"source": "cosmo-factory",
 	"author": "Purr Audio",
 	"data": {
 		"schemaVersion": 1,
 		"params": {
-			"lineSelect": "L1",
+			"lineSelect": "L2",
 			"modMode": "normal",
 			"octave": 0,
 			"line1": {
-				"algo": "pinch",
-				"algo2": "clip",
+				"algo": "cz101",
+				"algo2": null,
 				"algoBlend": 0,
-				"baseWaveformA": "sine",
+				"baseWaveformA": "cosine",
+				"baseWaveformB": "cosine",
 				"window": "off",
 				"dcaBase": 1,
-				"dcwBase": 0.72,
+				"dcwBase": 1,
 				"modulation": 0,
 				"detuneNote": 0,
 				"detuneFine": 0,
@@ -26,7 +28,7 @@
 					"steps": [
 						{
 							"level": 0,
-							"rate": 0
+							"rate": 50
 						},
 						{
 							"level": 0,
@@ -65,11 +67,11 @@
 					"steps": [
 						{
 							"level": 99,
-							"rate": 70
+							"rate": 75
 						},
 						{
-							"level": 0,
-							"rate": 93
+							"level": 99,
+							"rate": 80
 						},
 						{
 							"level": 99,
@@ -77,7 +79,7 @@
 						},
 						{
 							"level": 0,
-							"rate": 44
+							"rate": 40
 						},
 						{
 							"level": 0,
@@ -98,7 +100,7 @@
 					],
 					"sustainStep": 2,
 					"stepCount": 4,
-					"loop": true
+					"loop": false
 				},
 				"dcaEnv": {
 					"steps": [
@@ -111,7 +113,7 @@
 							"rate": 80
 						},
 						{
-							"level": 96,
+							"level": 79,
 							"rate": 75
 						},
 						{
@@ -143,45 +145,30 @@
 				"dcaKeyFollow": 0,
 				"algoControlsA": [
 					{
-						"id": "pinchFocus",
-						"value": 0.1
+						"id": "preset",
+						"value": 4
 					},
 					{
-						"id": "pinchAsym",
+						"id": "waveform1",
+						"value": 5
+					},
+					{
+						"id": "waveform2",
+						"value": 5
+					},
+					{
+						"id": "windowFunction",
 						"value": 0
-					},
-					{
-						"id": "pinchCurve",
-						"value": 0.5
-					},
-					{
-						"id": "pinchDrive",
-						"value": 0.5
 					}
 				],
-				"algoControlsB": [
-					{
-						"id": "clipDrive",
-						"value": 0.5
-					},
-					{
-						"id": "clipShape",
-						"value": 0.5
-					},
-					{
-						"id": "clipBias",
-						"value": 0
-					},
-					{
-						"id": "clipSoft",
-						"value": 0
-					}
-				]
+				"algoControlsB": []
 			},
 			"line2": {
 				"algo": "cz101",
-				"algo2": null,
+				"algo2": "cz101",
 				"algoBlend": 0,
+				"baseWaveformA": "cosine",
+				"baseWaveformB": "cosine",
 				"window": "off",
 				"dcaBase": 1,
 				"dcwBase": 1,
@@ -197,93 +184,93 @@
 						},
 						{
 							"level": 0,
-							"rate": 0
+							"rate": 50
 						},
 						{
 							"level": 0,
-							"rate": 0
+							"rate": 50
 						},
 						{
 							"level": 0,
-							"rate": 0
+							"rate": 50
 						},
 						{
 							"level": 0,
-							"rate": 0
+							"rate": 50
 						},
 						{
 							"level": 0,
-							"rate": 0
+							"rate": 50
 						},
 						{
 							"level": 0,
-							"rate": 0
+							"rate": 50
 						},
 						{
 							"level": 0,
-							"rate": 0
+							"rate": 50
 						}
 					],
-					"sustainStep": 1,
-					"stepCount": 2,
+					"sustainStep": 0,
+					"stepCount": 1,
 					"loop": false
 				},
 				"dcwEnv": {
 					"steps": [
 						{
-							"level": 99,
-							"rate": 75
-						},
-						{
-							"level": 99,
-							"rate": 80
-						},
-						{
-							"level": 99,
-							"rate": 75
+							"level": 49,
+							"rate": 30
 						},
 						{
 							"level": 0,
+							"rate": 25
+						},
+						{
+							"level": 70,
+							"rate": 25
+						},
+						{
+							"level": 0,
+							"rate": 25
+						},
+						{
+							"level": 60,
 							"rate": 40
 						},
 						{
 							"level": 0,
-							"rate": 50
+							"rate": 20
+						},
+						{
+							"level": 80,
+							"rate": 40
 						},
 						{
 							"level": 0,
-							"rate": 50
-						},
-						{
-							"level": 0,
-							"rate": 50
-						},
-						{
-							"level": 0,
-							"rate": 50
+							"rate": 25
 						}
 					],
-					"sustainStep": 2,
-					"stepCount": 4,
+					"sustainStep": 0,
+					"stepCount": 8,
 					"loop": false
 				},
 				"dcaEnv": {
 					"steps": [
 						{
 							"level": 99,
-							"rate": 75
+							"rate": 60
 						},
 						{
-							"level": 79,
-							"rate": 80
-						},
-						{
-							"level": 79,
-							"rate": 75
+							"level": 46,
+							"rate": 30
 						},
 						{
 							"level": 0,
-							"rate": 40
+							"rate": 50
+						},
+						{
+							"level": 0,
+							"rate": 50
 						},
 						{
 							"level": 0,
@@ -302,37 +289,72 @@
 							"rate": 50
 						}
 					],
-					"sustainStep": 2,
-					"stepCount": 4,
+					"sustainStep": 0,
+					"stepCount": 2,
 					"loop": false
 				},
-				"dcwKeyFollow": 0,
-				"dcaKeyFollow": 0,
-				"algoControlsA": [],
-				"algoControlsB": []
+				"dcwKeyFollow": 2,
+				"dcaKeyFollow": 2,
+				"algoControlsA": [
+					{
+						"id": "preset",
+						"value": 2
+					},
+					{
+						"id": "waveform1",
+						"value": 2
+					},
+					{
+						"id": "waveform2",
+						"value": 2
+					},
+					{
+						"id": "windowFunction",
+						"value": 0
+					}
+				],
+				"algoControlsB": [
+					{
+						"id": "preset",
+						"value": 0
+					},
+					{
+						"id": "waveform1",
+						"value": 0
+					},
+					{
+						"id": "waveform2",
+						"value": 0
+					},
+					{
+						"id": "windowFunction",
+						"value": 0
+					}
+				]
 			},
 			"frequency": 440,
 			"volume": 1,
 			"polyMode": "poly8",
 			"legato": false,
+			"velocityCurve": 0,
 			"portamento": {
-				"enabled": false,
+				"enabled": true,
 				"mode": "time",
 				"rate": 85,
 				"time": 0.1
 			},
 			"lfo": {
 				"waveform": "sine",
-				"rate": 0.0842864172799247,
-				"depth": 0.6907139641898019,
+				"rate": 2.000000000000001,
+				"depth": 1,
 				"symmetry": 0.5,
-				"retrigger": true,
-				"offset": 0.059453230265841456
+				"retrigger": false,
+				"offset": 0
 			},
 			"lfo2": {
 				"waveform": "sine",
-				"rate": 5,
-				"depth": 0,
+				"rate": 2.000000000000001,
+				"depth": 1,
 				"symmetry": 0.5,
 				"retrigger": false,
 				"offset": 0
@@ -341,53 +363,45 @@
 				"rate": 2
 			},
 			"modEnv": {
-				"attack": 1.1107421193804057,
-				"decay": 2.215937523841858,
-				"sustain": 0.903105457850865,
-				"release": 2.761523483480726
+				"attack": 0.010000000000000007,
+				"decay": 0.10000000149011612,
+				"sustain": 0.5,
+				"release": 0.20000000298023224
 			},
 			"pitchBendRange": 2,
 			"modMatrix": {
 				"routes": [
 					{
-						"source": "velocity",
-						"destination": "line1DcwBase",
-						"amount": 0.4791015625000001,
-						"enabled": true
-					},
-					{
-						"source": "lfo1",
-						"destination": "line1DcwEnvStep4Rate",
-						"amount": 0.23492187500000003,
-						"enabled": true
-					},
-					{
-						"source": "macro1",
-						"destination": "line1AlgoParam1",
-						"amount": 1,
+						"source": "aftertouch",
+						"destination": "line2DcwEnvStep1Level",
+						"amount": 0.41596539837973445,
 						"enabled": true
 					}
 				]
 			},
 			"fxSlots": [
 				{
-					"type": "chorus",
+					"type": "vibrato",
 					"params": {
 						"enabled": true,
-						"rate": 1.8,
-						"depth": 2.6,
-						"mix": 0.25855467932564874
+						"waveform": 1,
+						"rate": 40,
+						"depth": 5.89589878490993,
+						"delay": 600
 					}
 				},
 				{
 					"type": "phaser",
 					"params": {
-						"enabled": true,
+						"enabled": false,
 						"rate": 0.35,
 						"depth": 0.45,
-						"mix": 0.25,
-						"feedback": 0.2
+						"feedback": 0.2,
+						"mix": 0.25
 					}
+				},
+				{
+					"type": "empty"
 				},
 				{
 					"type": "empty"
@@ -396,34 +410,20 @@
 					"type": "delay",
 					"params": {
 						"enabled": true,
-						"time": 0.34,
+						"time": 0.5151404052734375,
 						"feedback": 0.46,
-						"mix": 0.35,
+						"mix": 0.344969482421875,
 						"tapeMode": true,
 						"warmth": 0.72
 					}
 				},
 				{
-					"type": "reverb",
+					"type": "shimmerVerb",
 					"params": {
 						"enabled": true,
-						"mix": 0.47,
-						"space": 0.8229687554495675,
-						"predelay": 0.03,
-						"distance": 0.68,
-						"character": 0.2902343913487026
-					}
-				},
-				{
-					"type": "compressor",
-					"params": {
-						"enabled": false,
-						"thresholdDb": -12,
-						"ratio": 4,
-						"attackMs": 5,
-						"releaseMs": 100,
-						"makeupDb": 6,
-						"mix": 1
+						"shimmer": 0.85,
+						"space": 0.95,
+						"mix": 0.11443969726562503
 					}
 				}
 			]

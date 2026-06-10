@@ -29,6 +29,8 @@ struct AuthoredCzPresetFile {
     source: Option<String>,
     #[serde(default)]
     author: Option<String>,
+    #[serde(default)]
+    sort_index: Option<usize>,
     data: Value,
 }
 
@@ -67,6 +69,7 @@ struct FactoryPresetSource {
     starred: bool,
     source: String,
     author: String,
+    sort_index: Option<usize>,
     data: SynthPresetV1,
 }
 
@@ -77,12 +80,13 @@ pub fn generate_factory_presets(workspace_root: &Path) -> Result<(), String> {
         workspace_root.join("packages/cosmo-pd101-plugin/src/factory_presets.json");
     let factory_dir = workspace_root.join("packages/cosmo-pd101-presets/factory-presets");
     let presets = order_presets_for_display(load_presets_from_dir(&factory_dir)?);
+    let sort_indices = assign_sort_indices(&presets);
 
     let generated_ts = render_factory_presets_ts(&presets)?;
     let aggregate_entries: Vec<FactoryPresetEntry> = presets
         .iter()
         .enumerate()
-        .map(|(index, preset)| build_factory_entry(index, preset))
+        .map(|(index, preset)| build_factory_entry(index, preset, sort_indices[index]))
         .collect();
     let generated_json = to_pretty_json_string(&aggregate_entries)
         .map(|json| format!("{json}\n"))
@@ -131,6 +135,7 @@ fn load_presets_from_dir(dir: &Path) -> Result<Vec<FactoryPresetSource>, String>
             starred: authored.starred,
             source: authored.source.unwrap_or_default(),
             author: authored.author.unwrap_or_default(),
+            sort_index: authored.sort_index,
             data,
         });
     }
@@ -151,26 +156,19 @@ fn sorted_json_files(dir: &Path) -> Result<Vec<PathBuf>, String> {
 }
 
 fn order_presets_for_display(mut presets: Vec<FactoryPresetSource>) -> Vec<FactoryPresetSource> {
-    let mut starred = Vec::new();
-    let mut rest = Vec::new();
-
-    for preset in presets.drain(..) {
-        if preset.starred {
-            starred.push(preset);
-        } else {
-            rest.push(preset);
-        }
-    }
-
-    rest.sort_by(|left, right| {
-        left.name
-            .cmp(&right.name)
-            .then_with(|| left.source.cmp(&right.source))
-            .then_with(|| left.author.cmp(&right.author))
+    presets.sort_by(|left, right| {
+        left.sort_index
+            .unwrap_or(usize::MAX)
+            .cmp(&right.sort_index.unwrap_or(usize::MAX))
+            .then_with(|| right.starred.cmp(&left.starred))
+            .then_with(|| {
+                left.name
+                    .cmp(&right.name)
+                    .then_with(|| left.source.cmp(&right.source))
+                    .then_with(|| left.author.cmp(&right.author))
+            })
     });
-
-    starred.extend(rest);
-    starred
+    presets
 }
 
 fn validate_tags(tags: &[String], file_name: &str) -> Result<(), String> {
@@ -770,11 +768,30 @@ fn assert_no_unknown_fields(
     Ok(())
 }
 
+fn assign_sort_indices(presets: &[FactoryPresetSource]) -> Vec<usize> {
+    let taken: BTreeSet<usize> = presets.iter().filter_map(|p| p.sort_index).collect();
+    let mut next_auto = 0;
+    presets
+        .iter()
+        .map(|p| {
+            p.sort_index.unwrap_or_else(|| {
+                while taken.contains(&next_auto) {
+                    next_auto += 1;
+                }
+                let result = next_auto;
+                next_auto += 1;
+                result
+            })
+        })
+        .collect()
+}
+
 fn render_factory_presets_ts(presets: &[FactoryPresetSource]) -> Result<String, String> {
+    let sort_indices = assign_sort_indices(presets);
     let entries = presets
         .iter()
         .enumerate()
-        .map(|(index, preset)| build_factory_preset(index, preset))
+        .map(|(index, preset)| build_factory_preset(index, preset, sort_indices[index]))
         .collect::<Vec<_>>();
     let json = to_pretty_json_string(&entries)
         .map(|value| json_to_ts_object_literal(&value))
@@ -787,27 +804,35 @@ fn render_factory_presets_ts(presets: &[FactoryPresetSource]) -> Result<String, 
     ))
 }
 
-fn build_factory_preset(index: usize, preset: &FactoryPresetSource) -> FactoryPresetOutput {
+fn build_factory_preset(
+    index: usize,
+    preset: &FactoryPresetSource,
+    sort_index: usize,
+) -> FactoryPresetOutput {
     FactoryPresetOutput {
         id: format!("factory-preset-{index}"),
         name: preset.name.clone(),
         source: preset.source.clone(),
         author: preset.author.clone(),
         starred: preset.starred,
-        sort_index: index,
+        sort_index,
         data: preset.data.clone(),
         tags: preset.tags.clone(),
     }
 }
 
-fn build_factory_entry(index: usize, preset: &FactoryPresetSource) -> FactoryPresetEntry {
+fn build_factory_entry(
+    index: usize,
+    preset: &FactoryPresetSource,
+    sort_index: usize,
+) -> FactoryPresetEntry {
     FactoryPresetEntry {
         id: format!("factory-preset-{index}"),
         name: preset.name.clone(),
         source: preset.source.clone(),
         author: preset.author.clone(),
         starred: preset.starred,
-        sort_index: index,
+        sort_index,
         tags: preset.tags.clone(),
         macro_labels: DEFAULT_MACRO_LABELS
             .iter()
@@ -944,7 +969,8 @@ mod tests {
         assert_eq!(presets[0].name, "Test Preset");
         let ts = render_factory_presets_ts(&presets).expect("ts should render");
         assert!(ts.contains("FACTORY_PRESETS"));
-        let aggregate = to_pretty_json_string(&vec![build_factory_entry(0, &presets[0])]).unwrap();
+        let aggregate =
+            to_pretty_json_string(&vec![build_factory_entry(0, &presets[0], 0)]).unwrap();
         assert!(aggregate.contains("Temple of CZ"));
     }
 
