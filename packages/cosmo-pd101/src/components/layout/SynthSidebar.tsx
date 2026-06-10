@@ -32,17 +32,16 @@ export default memo(function SynthSidebar() {
 				{midiLearnOpen ? (
 					<motion.div
 						key="midi-learn-panel"
-						initial={{ height: 0, opacity: 0 }}
-						animate={{ height: "auto", opacity: 1 }}
-						exit={{ height: 0, opacity: 0 }}
+						initial={{ opacity: 0, y: -8 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: -8 }}
 						transition={MIDI_LEARN_PANEL_TRANSITION}
-						className="min-h-full overflow-hidden"
+						className="flex min-h-0 flex-1 flex-col overflow-hidden"
 					>
 						<MidiLearnPanel />
 					</motion.div>
 				) : null}
 			</AnimatePresence>
-			<div className="min-h-0 flex-1" />
 		</aside>
 	);
 });

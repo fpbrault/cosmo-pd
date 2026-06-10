@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import {
+	type RefObject,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
+import { createPortal } from "react-dom";
 import Button from "@/components/controls/Button";
 import SynthPanelContainer from "@/components/layout/SynthPanelContainer";
 import { getMidiLearnTargetLabel } from "@/features/synth/midiLearnRegistry";
@@ -33,6 +40,185 @@ function formatControlLabel(paramKey: string): string {
 
 function bindingKey(binding: MidiBinding): string {
 	return `${binding.paramKey}:${binding.channel}:${binding.cc}`;
+}
+
+type InlineNumberEditorProps = {
+	min: number;
+	max: number;
+	defaultValue: number;
+	widthClass: string;
+	ariaLabel: string;
+	editorRef: RefObject<HTMLInputElement | null>;
+	onCommit: (value: number) => void;
+	onCancel: () => void;
+};
+
+function InlineNumberEditor({
+	min,
+	max,
+	defaultValue,
+	widthClass,
+	ariaLabel,
+	editorRef,
+	onCommit,
+	onCancel,
+}: InlineNumberEditorProps) {
+	return (
+		<input
+			ref={editorRef}
+			type="number"
+			min={min}
+			max={max}
+			defaultValue={defaultValue}
+			onBlur={(event) => {
+				onCommit(Number(event.currentTarget.value || min));
+			}}
+			onKeyDown={(event) => {
+				if (event.key === "Enter") {
+					onCommit(Number(event.currentTarget.value || min));
+				}
+				if (event.key === "Escape") {
+					onCancel();
+				}
+			}}
+			className={`h-5 ${widthClass} rounded-sm border border-cz-border bg-cz-inset px-1 text-center font-mono text-3xs text-cz-cream leading-none outline-none focus:border-cz-light-blue`}
+			aria-label={ariaLabel}
+		/>
+	);
+}
+
+type ControlTooltipProps = {
+	label: string;
+};
+
+function ControlTooltip({ label }: ControlTooltipProps) {
+	const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+
+	const handleMouseEnter = useCallback(
+		(e: React.MouseEvent<HTMLSpanElement>) => {
+			setPos({ x: e.clientX, y: e.clientY });
+		},
+		[],
+	);
+
+	const handleMouseMove = useCallback(
+		(e: React.MouseEvent<HTMLSpanElement>) => {
+			setPos({ x: e.clientX, y: e.clientY });
+		},
+		[],
+	);
+
+	return (
+		// biome-ignore lint/a11y/noStaticElementInteractions: <tooltip>
+		<span
+			className="block truncate"
+			onMouseEnter={handleMouseEnter}
+			onMouseMove={handleMouseMove}
+			onMouseLeave={() => setPos(null)}
+		>
+			{label}
+			{pos &&
+				createPortal(
+					<div
+						className="pointer-events-none fixed z-[9999] max-w-xs whitespace-nowrap rounded border border-cz-border bg-cz-panel px-2 py-1 font-mono text-[0.58rem] text-cz-cream tracking-[0.06em] shadow-lg"
+						style={{ left: pos.x + 12, top: pos.y - 8 }}
+					>
+						{label}
+					</div>,
+					document.body,
+				)}
+		</span>
+	);
+}
+
+type MidiBindingRowProps = {
+	binding: MidiBinding;
+	isEditingChannel: boolean;
+	isEditingCc: boolean;
+	editorRef: RefObject<HTMLInputElement | null>;
+	onStartEditChannel: () => void;
+	onStartEditCc: () => void;
+	onCommitChannel: (value: number) => void;
+	onCommitCc: (value: number) => void;
+	onCancelEdit: () => void;
+	onRemove: () => void;
+};
+
+function MidiBindingRow({
+	binding,
+	isEditingChannel,
+	isEditingCc,
+	editorRef,
+	onStartEditChannel,
+	onStartEditCc,
+	onCommitChannel,
+	onCommitCc,
+	onCancelEdit,
+	onRemove,
+}: MidiBindingRowProps) {
+	const controlLabel = formatControlLabel(binding.paramKey);
+
+	return (
+		<tr className="hover:bg-cz-surface/20">
+			<td>
+				{isEditingChannel ? (
+					<InlineNumberEditor
+						min={1}
+						max={16}
+						defaultValue={binding.channel + 1}
+						widthClass="w-8"
+						ariaLabel={`MIDI channel for ${binding.paramKey}`}
+						editorRef={editorRef}
+						onCommit={(v) => onCommitChannel(clampChannelDisplay(v) - 1)}
+						onCancel={onCancelEdit}
+					/>
+				) : (
+					<button
+						type="button"
+						className="w-8 text-center text-cz-cream hover:text-cz-light-blue"
+						onClick={onStartEditChannel}
+					>
+						{binding.channel + 1}
+					</button>
+				)}
+			</td>
+			<td>
+				{isEditingCc ? (
+					<InlineNumberEditor
+						min={0}
+						max={127}
+						defaultValue={binding.cc}
+						widthClass="w-10"
+						ariaLabel={`MIDI CC for ${binding.paramKey}`}
+						editorRef={editorRef}
+						onCommit={(v) => onCommitCc(clampCc(v))}
+						onCancel={onCancelEdit}
+					/>
+				) : (
+					<button
+						type="button"
+						className="w-10 text-center text-cz-cream hover:text-cz-light-blue"
+						onClick={onStartEditCc}
+					>
+						{binding.cc}
+					</button>
+				)}
+			</td>
+			<td className="min-w-0 text-cz-cream">
+				<ControlTooltip label={controlLabel} />
+			</td>
+			<td>
+				<Button
+					type="button"
+					className="btn btn-xs btn-square btn-error h-5"
+					onClick={onRemove}
+					aria-label={`Remove MIDI binding for ${binding.paramKey}`}
+				>
+					X
+				</Button>
+			</td>
+		</tr>
+	);
 }
 
 const MidiLearnPanel = Object.assign(
@@ -82,178 +268,61 @@ const MidiLearnPanel = Object.assign(
 
 		return (
 			<SynthPanelContainer>
-				<div className="flex h-full flex-col">
-					<div className="min-h-0 w-full flex-1 overflow-visible rounded border border-cz-border/60 bg-cz-panel">
-						{bindingCount > 0 ? (
-							<div className="h-full overflow-visible overflow-y-auto pr-6">
-								<table className="table-pin-rows table-pin-cols table-xs table w-full table-fixed">
-									<thead>
-										<tr className="font-mono text-[0.62rem] text-cz-cream-dim uppercase tracking-[0.14em]">
-											<th className="w-6">Ch</th>
-											<th className="w-10">CC</th>
-											<th className="w-12">Control</th>
-											<th className="w-6 px-1 py-1" />
-										</tr>
-									</thead>
-									<tbody className="font-mono text-3xs text-cz-cream-dim">
-										{bindingList.map((binding) => {
-											const controlLabel = formatControlLabel(binding.paramKey);
-											const isEditingChannel =
-												editingCell?.paramKey === bindingKey(binding) &&
-												editingCell.field === "channel";
-											const isEditingCc =
-												editingCell?.paramKey === bindingKey(binding) &&
-												editingCell.field === "cc";
-											return (
-												<tr
-													key={bindingKey(binding)}
-													className="hover:bg-cz-surface/20"
-												>
-													<td>
-														{isEditingChannel ? (
-															<input
-																ref={activeEditorRef}
-																type="number"
-																min={1}
-																max={16}
-																defaultValue={binding.channel + 1}
-																onBlur={(event) => {
-																	const newChannel =
-																		clampChannelDisplay(
-																			Number(event.currentTarget.value || 1),
-																		) - 1;
-																	removeBinding(binding);
-																	addBinding(
-																		binding.paramKey,
-																		newChannel,
-																		binding.cc,
-																	);
-																	setEditingCell(null);
-																}}
-																onKeyDown={(event) => {
-																	if (event.key === "Enter") {
-																		const newChannel =
-																			clampChannelDisplay(
-																				Number(event.currentTarget.value || 1),
-																			) - 1;
-																		removeBinding(binding);
-																		addBinding(
-																			binding.paramKey,
-																			newChannel,
-																			binding.cc,
-																		);
-																		setEditingCell(null);
-																	}
-																	if (event.key === "Escape") {
-																		setEditingCell(null);
-																	}
-																}}
-																className="h-5 w-8 rounded-sm border border-cz-border bg-cz-inset px-1 text-center font-mono text-3xs text-cz-cream leading-none outline-none focus:border-cz-light-blue"
-																aria-label={`MIDI channel for ${binding.paramKey}`}
-															/>
-														) : (
-															<button
-																type="button"
-																className="w-8 text-center text-cz-cream hover:text-cz-light-blue"
-																onClick={() =>
-																	setEditingCell({
-																		paramKey: bindingKey(binding),
-																		field: "channel",
-																	})
-																}
-															>
-																{binding.channel + 1}
-															</button>
-														)}
-													</td>
-													<td>
-														{isEditingCc ? (
-															<input
-																ref={activeEditorRef}
-																type="number"
-																min={0}
-																max={127}
-																defaultValue={binding.cc}
-																onBlur={(event) => {
-																	const newCc = clampCc(
-																		Number(event.currentTarget.value || 0),
-																	);
-																	removeBinding(binding);
-																	addBinding(
-																		binding.paramKey,
-																		binding.channel,
-																		newCc,
-																	);
-																	setEditingCell(null);
-																}}
-																onKeyDown={(event) => {
-																	if (event.key === "Enter") {
-																		const newCc = clampCc(
-																			Number(event.currentTarget.value || 0),
-																		);
-																		removeBinding(binding);
-																		addBinding(
-																			binding.paramKey,
-																			binding.channel,
-																			newCc,
-																		);
-																		setEditingCell(null);
-																	}
-																	if (event.key === "Escape") {
-																		setEditingCell(null);
-																	}
-																}}
-																className="h-5 w-10 rounded-sm border border-cz-border bg-cz-inset px-1 text-center font-mono text-3xs text-cz-cream leading-none outline-none focus:border-cz-light-blue"
-																aria-label={`MIDI CC for ${binding.paramKey}`}
-															/>
-														) : (
-															<button
-																type="button"
-																className="w-10 text-center text-cz-cream hover:text-cz-light-blue"
-																onClick={() =>
-																	setEditingCell({
-																		paramKey: bindingKey(binding),
-																		field: "cc",
-																	})
-																}
-															>
-																{binding.cc}
-															</button>
-														)}
-													</td>
-													<td className="overflow-visible text-cz-cream">
-														<div
-															className="tooltip tooltip-right relative z-20 block max-w-full overflow-visible before:z-9999 before:max-w-none before:whitespace-nowrap before:font-mono before:text-[0.58rem] before:normal-case before:tracking-[0.06em]"
-															data-tip={controlLabel}
-														>
-															<span className="block truncate">
-																{controlLabel}
-															</span>
-														</div>
-													</td>
-													<td>
-														<Button
-															type="button"
-															className="btn btn-xs btn-square btn-error h-5"
-															onClick={() => removeBinding(binding)}
-															aria-label={`Remove MIDI binding for ${binding.paramKey}`}
-														>
-															X
-														</Button>
-													</td>
-												</tr>
-											);
-										})}
-									</tbody>
-								</table>
-							</div>
-						) : (
-							<div className="flex h-full items-center justify-center text-center font-mono text-3xs text-base-content/30 uppercase tracking-[0.14em]">
-								No MIDI bindings yet
-							</div>
-						)}
+				{bindingCount > 0 ? (
+					<div className="scrollbar-thin h-full overflow-y-auto overflow-x-hidden rounded border border-cz-border/60 bg-cz-panel pr-3">
+						<table className="table-pin-rows table-pin-cols table-xs table w-full table-fixed">
+							<thead>
+								<tr className="z-100 bg-cz-panel font-mono text-[0.62rem] text-cz-cream-dim uppercase tracking-[0.14em]">
+									<th className="w-6">Ch</th>
+									<th className="w-10">CC</th>
+									<th className="min-w-0">Control</th>
+									<th className="w-6 px-1 py-1" />
+								</tr>
+							</thead>
+							<tbody className="font-mono text-3xs text-cz-cream-dim">
+								{bindingList.map((binding) => {
+									const key = bindingKey(binding);
+									const isEditingChannel =
+										editingCell?.paramKey === key &&
+										editingCell.field === "channel";
+									const isEditingCc =
+										editingCell?.paramKey === key && editingCell.field === "cc";
+									return (
+										<MidiBindingRow
+											key={key}
+											binding={binding}
+											isEditingChannel={isEditingChannel}
+											isEditingCc={isEditingCc}
+											editorRef={activeEditorRef}
+											onStartEditChannel={() =>
+												setEditingCell({ paramKey: key, field: "channel" })
+											}
+											onStartEditCc={() =>
+												setEditingCell({ paramKey: key, field: "cc" })
+											}
+											onCommitChannel={(newChannel) => {
+												removeBinding(binding);
+												addBinding(binding.paramKey, newChannel, binding.cc);
+												setEditingCell(null);
+											}}
+											onCommitCc={(newCc) => {
+												removeBinding(binding);
+												addBinding(binding.paramKey, binding.channel, newCc);
+												setEditingCell(null);
+											}}
+											onCancelEdit={() => setEditingCell(null)}
+											onRemove={() => removeBinding(binding)}
+										/>
+									);
+								})}
+							</tbody>
+						</table>
 					</div>
-				</div>
+				) : (
+					<div className="flex h-full items-center justify-center rounded border border-cz-border/60 bg-cz-panel text-center font-mono text-3xs text-base-content/30 uppercase tracking-[0.14em]">
+						No MIDI bindings yet
+					</div>
+				)}
 			</SynthPanelContainer>
 		);
 	},
