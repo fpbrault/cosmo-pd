@@ -1,10 +1,4 @@
-import {
-	type RefObject,
-	useCallback,
-	useEffect,
-	useRef,
-	useState,
-} from "react";
+import { type Ref, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Button from "@/components/controls/Button";
 import SynthPanelContainer from "@/components/layout/SynthPanelContainer";
@@ -48,7 +42,7 @@ type InlineNumberEditorProps = {
 	defaultValue: number;
 	widthClass: string;
 	ariaLabel: string;
-	editorRef: RefObject<HTMLInputElement | null>;
+	editorRef: Ref<HTMLInputElement>;
 	onCommit: (value: number) => void;
 	onCancel: () => void;
 };
@@ -135,7 +129,7 @@ type MidiBindingRowProps = {
 	binding: MidiBinding;
 	isEditingChannel: boolean;
 	isEditingCc: boolean;
-	editorRef: RefObject<HTMLInputElement | null>;
+	editorRef: Ref<HTMLInputElement>;
 	onStartEditChannel: () => void;
 	onStartEditCc: () => void;
 	onCommitChannel: (value: number) => void;
