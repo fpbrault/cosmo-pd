@@ -185,7 +185,7 @@ describe("useAudioEngine", () => {
 
 			expect(result.current.paramsRef.current).toBeDefined();
 			expect(result.current.paramsRef.current.frequency).toBe(220);
-			expect(result.current.paramsRef.current.volume).toBe(0.4);
+			expect(result.current.paramsRef.current.volume).toBe(1);
 		});
 
 		it("sets audioContextState to null initially", () => {

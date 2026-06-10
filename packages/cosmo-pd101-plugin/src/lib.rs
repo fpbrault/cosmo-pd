@@ -2692,7 +2692,7 @@ mod tests {
     #[test]
     fn set_params_rpc_syncs_daw_float_params() {
         let (sp, rsp, rms, rvs, ts, ver, sc, q, params, ps, pl, es, mm) = make_handler_state();
-        assert_eq!(params.volume.value(), 0.8); // default
+        assert_eq!(params.volume.value(), 1.0); // default
 
         let mut new_params = SynthParams::default();
         new_params.volume = 0.33;

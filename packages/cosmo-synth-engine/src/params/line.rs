@@ -390,7 +390,7 @@ impl Default for LineParams {
             base_waveform_b: BaseWaveform::default(),
             window: WindowType::Off,
             dca_base: 1.0,
-            dcw_base: 0.0,
+            dcw_base: 1.0,
             modulation: 0.0,
             detune_note: 0.0,
             detune_fine: 0.0,

@@ -49,6 +49,10 @@ pub(crate) fn default_pitch_bend_range() -> f32 {
     2.0
 }
 
+pub fn default_synth_params_v1() -> SynthParams {
+    SynthParams::default()
+}
+
 pub(crate) fn default_ring_gain() -> f32 {
     4.0
 }
@@ -151,7 +155,7 @@ impl Default for SynthParams {
             line2: LineParams::default(),
             frequency: 220.0,
             tempo_bpm: default_tempo_bpm(),
-            volume: 0.4,
+            volume: 1.0,
             cz_dac_enabled: default_cz_dac_enabled(),
             poly_mode: PolyMode::default(),
             legato: false,
