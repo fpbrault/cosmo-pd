@@ -1,4 +1,4 @@
-import { memo, useCallback, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { MdSettings } from "react-icons/md";
 import ControlKnob from "@/components/controls/ControlKnob";
 import { MacroLabelEditorPopover } from "@/components/modals/MacroLabelEditorPopover";
@@ -30,10 +30,30 @@ function useMacroLabel(index: number): string {
 export default memo(function MacroKnobsPanel() {
 	const [labelEditorOpen, setLabelEditorOpen] = useState(false);
 	const settingsBtnRef = useRef<HTMLButtonElement | null>(null);
+	const containerRef = useRef<HTMLDivElement>(null);
+	const [knobSize, setKnobSize] = useState(80);
+	const [isTall, setIsTall] = useState(true);
+
+	useEffect(() => {
+		const el = containerRef.current;
+		if (!el) return;
+
+		const update = () => {
+			const h = el.clientHeight;
+			const heightOk = h >= 150;
+			setIsTall(heightOk);
+			setKnobSize(heightOk ? 80 : 60);
+		};
+
+		update();
+		const ro = new ResizeObserver(update);
+		ro.observe(el);
+		return () => ro.disconnect();
+	}, []);
 
 	return (
-		<div className="h-full min-h-0 w-full">
-			<div className="h-full overflow-hidden rounded-lg border border-cz-border/70 bg-cz-surface/95 shadow-lg backdrop-blur-sm">
+		<div className="h-full min-h-0 w-full rounded-xl border border-transparent bg-cz-surface">
+			<div className="flex h-full flex-col overflow-hidden">
 				<div className="flex items-center justify-between border-cz-border/60 border-b px-2 py-1">
 					<div className="flex items-center gap-1.5">
 						<span className="font-mono text-2xs text-cz-cream-dim uppercase tracking-[0.16em]">
@@ -57,9 +77,12 @@ export default memo(function MacroKnobsPanel() {
 						/>
 					</div>
 				</div>
-				<div className="grid grid-cols-2 gap-1.5 px-2 py-1.5">
+				<div
+					ref={containerRef}
+					className={`grid min-h-0 flex-1 ${isTall ? "grid-cols-2" : "grid-cols-4"} justify-items-center px-2 py-1.5`}
+				>
 					{[0, 1, 2, 3].map((idx) => (
-						<MacroKnob key={idx} macroIndex={idx} />
+						<MacroKnob key={idx} macroIndex={idx} size={knobSize} />
 					))}
 				</div>
 			</div>
@@ -69,9 +92,13 @@ export default memo(function MacroKnobsPanel() {
 
 type MacroKnobProps = {
 	macroIndex: number;
+	size: number;
 };
 
-const MacroKnob = memo(function MacroKnob({ macroIndex }: MacroKnobProps) {
+const MacroKnob = memo(function MacroKnob({
+	macroIndex,
+	size,
+}: MacroKnobProps) {
 	const value = useMacroValue(macroIndex);
 	const setter = useMacroSetter(macroIndex);
 	const label = useMacroLabel(macroIndex);
@@ -92,7 +119,7 @@ const MacroKnob = memo(function MacroKnob({ macroIndex }: MacroKnobProps) {
 	);
 
 	return (
-		<div className="relative flex flex-col items-center gap-0.5">
+		<div className="relative flex flex-col items-center gap-0.5 self-center">
 			<ControlKnob
 				value={value}
 				onChange={handleChange}
@@ -109,7 +136,7 @@ const MacroKnob = memo(function MacroKnob({ macroIndex }: MacroKnobProps) {
 								? "var(--color-cz-tab-blue)"
 								: "var(--color-cz-tab-blue)"
 				}
-				size={60}
+				size={size}
 				valueFormatter={(v) => (v * 100).toFixed(0)}
 				valueVisibility="hover"
 				onClick={midiLearn.onClick}

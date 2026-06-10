@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Button from "@/components/controls/Button";
 import SynthPanelContainer from "@/components/layout/SynthPanelContainer";
 import { getMidiLearnTargetLabel } from "@/features/synth/midiLearnRegistry";
@@ -37,7 +37,6 @@ function bindingKey(binding: MidiBinding): string {
 
 const MidiLearnPanel = Object.assign(
 	function MidiLearnPanel() {
-		const learnMode = useMidiLearnStore((s) => s.learnMode);
 		const setLearnMode = useMidiLearnStore((s) => s.setLearnMode);
 		const bindings = useMidiLearnStore((s) => s.bindings);
 		const removeBinding = useMidiLearnStore((s) => s.removeBinding);
@@ -46,14 +45,13 @@ const MidiLearnPanel = Object.assign(
 			(s) => s.resetPendingLearnParam,
 		);
 
-		const handleToggle = useCallback(() => {
-			if (learnMode) {
+		useEffect(() => {
+			setLearnMode(true);
+			return () => {
 				setLearnMode(false);
 				resetPendingLearnParam();
-			} else {
-				setLearnMode(true);
-			}
-		}, [learnMode, setLearnMode, resetPendingLearnParam]);
+			};
+		}, [setLearnMode, resetPendingLearnParam]);
 
 		useEffect(() => {
 			const unsubscribe = subscribeMidiLearnState();
@@ -84,17 +82,7 @@ const MidiLearnPanel = Object.assign(
 
 		return (
 			<SynthPanelContainer>
-				<div className="flex h-full flex-col gap-3">
-					<button
-						type="button"
-						onClick={handleToggle}
-						className={`btn btn-xs ${
-							learnMode ? "btn-error animate-pulse!" : "btn-primary"
-						}`}
-					>
-						{learnMode ? "Midi Learn: ON" : "Midi Learn: OFF"}
-					</button>
-
+				<div className="flex h-full flex-col">
 					<div className="min-h-0 w-full flex-1 overflow-visible rounded border border-cz-border/60 bg-cz-panel">
 						{bindingCount > 0 ? (
 							<div className="h-full overflow-visible overflow-y-auto pr-6">

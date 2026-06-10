@@ -326,53 +326,6 @@ impl Editor for CzEditor {
         (DEFAULT_WIDTH, DEFAULT_HEIGHT)
     }
 
-    fn custom_request(&mut self, request: &[u8]) -> Option<Vec<u8>> {
-        let response = match serde_json::from_slice::<serde_json::Value>(request) {
-            Ok(message) => {
-                let id = message
-                    .get("id")
-                    .cloned()
-                    .unwrap_or(serde_json::Value::Null);
-                let method = message
-                    .get("method")
-                    .and_then(serde_json::Value::as_str)
-                    .unwrap_or("");
-                let args = message
-                    .get("args")
-                    .and_then(serde_json::Value::as_array)
-                    .cloned()
-                    .unwrap_or_default();
-
-                match handle_ipc_invoke(
-                    method,
-                    &args,
-                    &self.synth_params,
-                    &self.rt_synth_params,
-                    &self.runtime_mod_sources,
-                    &self.runtime_voice_states,
-                    &self.transport_snapshot,
-                    &self.synth_params_version,
-                    &self.scope_buffer,
-                    &self.ui_input_queue,
-                    &self.params,
-                    &self.preset_session,
-                    &self.preset_library,
-                    &self.editor_state,
-                    &self.midi_learn_state,
-                ) {
-                    Ok(result) => serde_json::json!({ "id": id, "result": result }),
-                    Err(error) => serde_json::json!({ "id": id, "error": error }),
-                }
-            }
-            Err(error) => serde_json::json!({
-                "id": serde_json::Value::Null,
-                "error": format!("invalid editor request: {error}"),
-            }),
-        };
-
-        serde_json::to_vec(&response).ok()
-    }
-
     fn screenshot(
         &mut self,
         _params: Arc<dyn truce_params::Params>,
