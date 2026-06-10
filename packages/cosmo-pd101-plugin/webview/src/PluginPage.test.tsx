@@ -25,6 +25,7 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 	};
 	const synthUiStoreState = {
 		keyboardHeight: 160,
+		pcKeyboardOverlayVisible: false,
 	};
 
 	return {
@@ -50,12 +51,21 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 		),
 		SYNTH_RENDERER_DESIGN_HEIGHT: 912,
 		SYNTH_RENDERER_MIN_ASPECT_RATIO: 4 / 3,
+		SYNTH_UI_STATE_STORAGE_KEY: "cosmo-pd101-ui-state",
 		SynthRenderer: () => <div data-testid="synth-renderer" />,
 		useSynthPresetManager: mockUseSynthPresetManager,
 		useSynthStore: (selector: (state: typeof synthStoreState) => unknown) =>
 			selector(synthStoreState),
-		useSynthUiStore: (selector: (state: typeof synthUiStoreState) => unknown) =>
-			selector(synthUiStoreState),
+		useSynthUiStore: Object.assign(
+			(selector: (state: typeof synthUiStoreState) => unknown) =>
+				selector(synthUiStoreState),
+			{
+				getState: () => ({
+					...synthUiStoreState,
+					setPcKeyboardOverlayVisible: vi.fn(),
+				}),
+			},
+		),
 	};
 });
 

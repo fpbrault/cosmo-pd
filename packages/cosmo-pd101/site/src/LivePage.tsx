@@ -17,6 +17,10 @@ import { SharedPhaseDistortionVisualizer } from "../../src/components/renderer/S
 import { PresetManagerProvider } from "../../src/context/PresetManagerContext";
 import { createWebPresetManagerRepository } from "../../src/features/synth/createWebPresetManagerRepository";
 import { useSynthStore } from "../../src/features/synth/synthStore";
+import {
+	SYNTH_UI_STATE_STORAGE_KEY,
+	useSynthUiStore,
+} from "../../src/features/synth/synthUiStore";
 import { useSynthPresetManager } from "../../src/features/synth/useSynthPresetManager";
 import { FACTORY_PRESETS } from "../../src/lib/synth/factoryCzPresets";
 import {
@@ -104,6 +108,13 @@ export default function LivePage() {
 		mq.addEventListener("change", handler);
 		return () => mq.removeEventListener("change", handler);
 	}, []);
+
+	useEffect(() => {
+		if (isMobileViewport) return;
+		const savedState = localStorage.getItem(SYNTH_UI_STATE_STORAGE_KEY);
+		if (savedState) return;
+		useSynthUiStore.getState().setPcKeyboardOverlayVisible(true);
+	}, [isMobileViewport]);
 
 	const isEffectivelyFullscreen = isSynthFullscreen || isPwaStandalone;
 

@@ -4,9 +4,11 @@ import {
 	PresetManagerProvider,
 	SYNTH_RENDERER_DESIGN_HEIGHT,
 	SYNTH_RENDERER_MIN_ASPECT_RATIO,
+	SYNTH_UI_STATE_STORAGE_KEY,
 	SynthRenderer,
 	useSynthPresetManager,
 	useSynthStore,
+	useSynthUiStore,
 } from "@cosmo/cosmo-pd101";
 import {
 	type CSSProperties,
@@ -140,6 +142,13 @@ export default function PluginPage({
 		}
 		void presetManager.reloadLibrary();
 	}, [bridgeReady, presetManager.reloadLibrary]);
+
+	useEffect(() => {
+		if (isIosHost || isLikelyIosDevice) return;
+		const savedState = localStorage.getItem(SYNTH_UI_STATE_STORAGE_KEY);
+		if (savedState) return;
+		useSynthUiStore.getState().setPcKeyboardOverlayVisible(true);
+	}, [isIosHost, isLikelyIosDevice]);
 
 	useEffect(() => {
 		window.__czOnHostPresetSelected = (name: string) => {
