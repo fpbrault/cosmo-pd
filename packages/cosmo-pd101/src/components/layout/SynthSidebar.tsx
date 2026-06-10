@@ -19,32 +19,29 @@ export default memo(function SynthSidebar() {
 	const waveDrawerOpen = mainPanelMode === "display";
 
 	return (
-		<aside className="flex h-full min-h-0 flex-col overflow-hidden rounded-[1.15rem] border border-cz-border/80 bg-cz-inset px-0 pb-2 shadow-lg">
+		<aside className="flex h-full min-h-0 flex-col overflow-hidden">
 			<div className="min-w-full">
 				<div className="relative h-60 overflow-hidden">
 					<div className="absolute inset-0 p-3">
 						<ScopeMiniDisplay expanded={waveDrawerOpen} />
 					</div>
-					<AnimatePresence initial={false}>
-						{midiLearnOpen ? (
-							<motion.div
-								key="midi-learn-overlay"
-								initial={{ y: "-108%" }}
-								animate={{ y: 0 }}
-								exit={{ y: "-108%" }}
-								transition={MIDI_LEARN_PANEL_TRANSITION}
-								className="absolute inset-0 z-10 h-full border-cz-light-blue/20 bg-cz-panel/96 shadow-xl backdrop-blur-sm"
-							>
-								<div className="h-full">
-									<MidiLearnPanel />
-								</div>
-							</motion.div>
-						) : null}
-					</AnimatePresence>
 				</div>
 			</div>
 			<SynthSidebarButtons />
-			<div className="min-h-0 flex-1" />
+			<AnimatePresence initial={false}>
+				{midiLearnOpen ? (
+					<motion.div
+						key="midi-learn-panel"
+						initial={{ opacity: 0, y: -8 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: -8 }}
+						transition={MIDI_LEARN_PANEL_TRANSITION}
+						className="flex min-h-0 flex-1 flex-col overflow-hidden"
+					>
+						<MidiLearnPanel />
+					</motion.div>
+				) : null}
+			</AnimatePresence>
 		</aside>
 	);
 });

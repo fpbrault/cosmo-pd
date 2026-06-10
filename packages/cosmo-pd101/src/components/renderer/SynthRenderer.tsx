@@ -137,64 +137,74 @@ const SynthRenderer = memo(function SynthRenderer({
 							</div>
 
 							<Group
-								orientation="vertical"
+								orientation="horizontal"
 								className="z-10 min-h-0 flex-1 gap-0 overflow-hidden bg-cz-surface px-1"
 							>
-								<Panel minSize="30%">
+								<Panel defaultSize="23%" minSize="23%" maxSize="30%">
+									<div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[1.15rem] border border-cz-border/80 bg-cz-inset p-2 shadow-lg">
+										<Group
+											orientation="vertical"
+											className="h-full min-h-0 flex-1 gap-0"
+										>
+											<Panel minSize="40%">
+												<SynthSidebar />
+											</Panel>
+											<Separator className={RESIZE_HANDLE_VERTICAL}>
+												<div className="h-1 w-12 rounded-full bg-cz-light-blue/20 transition-colors group-hover:bg-cz-light-blue/60" />
+											</Separator>
+											<Panel defaultSize="25%" minSize="15%" maxSize="30%">
+												<MacroKnobsPanel />
+											</Panel>
+										</Group>
+									</div>
+								</Panel>
+								<Separator className={RESIZE_HANDLE_HORIZONTAL}>
+									<div className="h-12 w-1 rounded-full bg-cz-light-blue/20 transition-colors group-hover:bg-cz-light-blue/60" />
+								</Separator>
+								<Panel minSize="50%">
 									<Group
-										orientation="horizontal"
+										orientation="vertical"
 										className="h-full min-h-0 gap-0"
 									>
-										<Panel defaultSize="23%" minSize="20%" maxSize="25%">
-											<SynthSidebar />
-										</Panel>
-										<Separator className={RESIZE_HANDLE_HORIZONTAL}>
-											<div className="h-12 w-1 rounded-full bg-cz-light-blue/20 transition-colors group-hover:bg-cz-light-blue/60" />
-										</Separator>
-										<Panel minSize="50%">
+										<Panel minSize="30%">
 											<SynthRendererMainPanel
 												mainPanelMode={mainPanelMode}
 												setMainPanelMode={setMainPanelMode}
 											/>
 										</Panel>
-									</Group>
-								</Panel>
-								<Separator className={RESIZE_HANDLE_VERTICAL}>
-									<div className="h-1 w-12 rounded-full bg-cz-light-blue/20 transition-colors group-hover:bg-cz-light-blue/60" />
-								</Separator>
-								<Panel
-									collapsible
-									collapsedSize="0%"
-									defaultSize="23%"
-									minSize="22%"
-									maxSize="30%"
-									panelRef={keyboardPanelRef}
-									onResize={(_size, _id, prevSize) => {
-										if (prevSize === undefined) return;
-										const size = _size.asPercentage;
-										const prev = prevSize.asPercentage;
-										if (size === 0 && prev > 0) {
-											if (keyboardVisibleRef.current) setKeyboardVisible(false);
-										} else if (size > 0 && prev === 0) {
-											if (!keyboardVisibleRef.current) setKeyboardVisible(true);
-										}
-									}}
-								>
-									{keyboardVisible && !libraryModeOpen ? (
-										<div className="flex h-full w-full">
-											<div className="w-60 shrink-0 border-cz-border/40 border-r">
-												<MacroKnobsPanel />
-											</div>
-											<div className="min-w-0 flex-1">
+										<Separator className={RESIZE_HANDLE_VERTICAL}>
+											<div className="h-1 w-12 rounded-full bg-cz-light-blue/20 transition-colors group-hover:bg-cz-light-blue/60" />
+										</Separator>
+										<Panel
+											collapsible
+											collapsedSize="0%"
+											defaultSize="23%"
+											minSize="22%"
+											maxSize="30%"
+											panelRef={keyboardPanelRef}
+											onResize={(_size, _id, prevSize) => {
+												if (prevSize === undefined) return;
+												const size = _size.asPercentage;
+												const prev = prevSize.asPercentage;
+												if (size === 0 && prev > 0) {
+													if (keyboardVisibleRef.current)
+														setKeyboardVisible(false);
+												} else if (size > 0 && prev === 0) {
+													if (!keyboardVisibleRef.current)
+														setKeyboardVisible(true);
+												}
+											}}
+										>
+											{keyboardVisible && !libraryModeOpen ? (
 												<MiniKeyboardOverlay
 													activeNotes={activeNotes}
 													onNoteOn={sendNoteOn}
 													onNoteOff={sendNoteOff}
 													onPolyAftertouch={sendPolyAftertouch}
 												/>
-											</div>
-										</div>
-									) : null}
+											) : null}
+										</Panel>
+									</Group>
 								</Panel>
 							</Group>
 

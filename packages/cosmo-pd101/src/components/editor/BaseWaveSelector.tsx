@@ -27,7 +27,10 @@ export function BaseWaveSelector({
 	color,
 }: BaseWaveSelectorProps) {
 	return (
-		<Card variant="subtle" className="flex flex-col pb-2">
+		<Card
+			variant="subtle"
+			className="flex @min-[900px]:min-h-48 flex-col justify-center pb-2"
+		>
 			<div
 				className="text-center text-3xs uppercase tracking-[0.24em]"
 				style={color ? { color } : undefined}

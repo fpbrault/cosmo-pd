@@ -9,6 +9,8 @@ import SynthRenderer from "./SynthRenderer";
 const mockSynthStoreState = {
 	modMatrix: {},
 	setModMatrix: vi.fn(),
+	macroLabels: ["", "", "", ""] as [string, string, string, string],
+	setMacroLabel: vi.fn(),
 };
 
 const mockSynthUiStoreState = {
@@ -96,6 +98,7 @@ vi.mock("@/features/synth/SynthParamController", () => ({
 	}: {
 		children: React.ReactNode;
 	}) => <div>{children}</div>,
+	useOptionalSynthController: vi.fn(() => undefined),
 }));
 vi.mock("@/context/ModMatrixContext", () => ({
 	ModMatrixProvider: ({ children }: { children: React.ReactNode }) => (
