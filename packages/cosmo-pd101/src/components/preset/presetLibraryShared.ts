@@ -1,6 +1,6 @@
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
 
-export type SortKey = "star" | "favorite" | "name" | "author" | "tags";
+export type SortKey = "star" | "favorite" | "name" | "bank" | "author" | "tags";
 export type SortDirection = "asc" | "desc";
 
 export type VirtualPresetRow = {

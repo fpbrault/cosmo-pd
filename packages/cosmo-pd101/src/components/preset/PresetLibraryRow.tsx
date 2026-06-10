@@ -30,7 +30,7 @@ export default memo(function PresetLibraryRow({
 }: PresetLibraryRowProps) {
 	return (
 		<div
-			className={`absolute inset-x-0 grid grid-cols-[2.5rem_2.5rem_minmax(14rem,1fr)_9rem_minmax(10rem,1fr)] items-center border-cz-border border-b px-4 py-1 text-sm transition ${
+			className={`absolute inset-x-0 grid grid-cols-[2.5rem_2.5rem_minmax(14rem,1fr)_minmax(8rem,1fr)_9rem_minmax(10rem,1fr)] items-center border-cz-border border-b px-4 py-1 text-sm transition ${
 				active
 					? "bg-cz-surface/20"
 					: focused
@@ -88,21 +88,16 @@ export default memo(function PresetLibraryRow({
 			<div className="min-w-0">
 				<button
 					type="button"
-					className="h-auto min-h-0 w-full min-w-0 truncate bg-transparent px-0 py-0.5 text-left font-medium text-cz-cream text-xs outline-none hover:bg-transparent focus:bg-transparent active:bg-transparent"
+					className="h-auto min-h-0 w-full min-w-0 truncate bg-transparent px-0 py-0.5 text-left font-medium text-cz-cream text-lg outline-none hover:bg-transparent focus:bg-transparent active:bg-transparent"
 					onFocus={() => onSetFocus(entry.id)}
 					onClick={() => onSelect(entry)}
 				>
 					{entry.label}
 				</button>
-				<p className="truncate font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.16em]">
-					{entry.bankName ?? entry.sourceLabel}
-				</p>
-				{entry.bankName && entry.bankName !== entry.sourceLabel ? (
-					<p className="truncate font-mono text-4xs text-cz-cream-dim/70 uppercase tracking-[0.12em]">
-						{entry.sourceLabel}
-					</p>
-				) : null}
 			</div>
+			<span className="truncate font-mono text-3xs text-cz-cream-dim uppercase tracking-[0.16em]">
+				{entry.bankName ?? entry.sourceLabel}
+			</span>
 			<span className="truncate font-mono text-3xs text-cz-cream-dim">
 				{entry.author || "-"}
 			</span>

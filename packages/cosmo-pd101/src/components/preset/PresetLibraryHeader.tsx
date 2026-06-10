@@ -3,7 +3,7 @@ import Button from "@/components/controls/Button";
 import { getPresetTagCheckboxClassName } from "./presetTagTone";
 import type { FilterOptions } from "./usePresetLibraryState";
 
-type SortKey = "star" | "favorite" | "name" | "author" | "tags";
+type SortKey = "star" | "favorite" | "name" | "bank" | "author" | "tags";
 
 type PresetLibraryHeaderProps = {
 	activePresetName: string;
@@ -230,7 +230,7 @@ export default memo(function PresetLibraryHeader({
 					</div>
 				</form>
 			</fieldset>
-			<div className="col-span-2 mr-68 grid grid-cols-[2.5rem_2.5rem_minmax(14rem,1fr)_9rem_minmax(10rem,1fr)] border-cz-border border-b bg-cz-body px-4 py-2 font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.22em]">
+			<div className="col-span-2 mr-68 grid grid-cols-[2.5rem_2.5rem_minmax(14rem,1fr)_minmax(8rem,1fr)_9rem_minmax(10rem,1fr)] border-cz-border border-b bg-cz-body px-4 py-2 font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.22em]">
 				<button
 					type="button"
 					className="text-left hover:text-cz-cream"
@@ -251,6 +251,13 @@ export default memo(function PresetLibraryHeader({
 					onClick={() => onToggleSort("name")}
 				>
 					Name{getSortIndicator("name")}
+				</button>
+				<button
+					type="button"
+					className="text-left hover:text-cz-cream"
+					onClick={() => onToggleSort("bank")}
+				>
+					Bank{getSortIndicator("bank")}
 				</button>
 				<button
 					type="button"

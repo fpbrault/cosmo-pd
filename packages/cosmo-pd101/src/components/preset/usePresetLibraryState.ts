@@ -248,6 +248,22 @@ export function usePresetLibraryState({
 				return sortState.direction === "asc" ? nameCompare : -nameCompare;
 			}
 
+			if (sortState.key === "bank") {
+				const aBank = a.bankName ?? a.sourceLabel;
+				const bBank = b.bankName ?? b.sourceLabel;
+				const bankCompare = aBank.localeCompare(bBank, undefined, {
+					sensitivity: "base",
+				});
+				if (bankCompare !== 0) {
+					return sortState.direction === "asc" ? bankCompare : -bankCompare;
+				}
+				const nameCompare = a.label.localeCompare(b.label, undefined, {
+					numeric: true,
+					sensitivity: "base",
+				});
+				return sortState.direction === "asc" ? nameCompare : -nameCompare;
+			}
+
 			if (sortState.key === "tags") {
 				const aTagLabel = a.tags.join(", ");
 				const bTagLabel = b.tags.join(", ");
