@@ -32,7 +32,7 @@ const AUV3_BRIDGE_TS = resolve(webviewDir, "src/lib/auv3Bridge.ts");
 const IPC_BRIDGE_TS = resolve(webviewDir, "src/lib/IPCBridge.ts");
 const SWIFT_VIEW_CONTROLLER = resolve(
 	pluginDir,
-	"../cosmo-pd101-plugin-auv3/Sources/CosmoPd101AUv3/CosmoPd101ViewController.swift",
+	"../cosmo-pd101-plugin-auv3/CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/UI/AudioUnitViewController.swift",
 );
 const RUST_LIB = resolve(pluginDir, "src/lib.rs");
 
