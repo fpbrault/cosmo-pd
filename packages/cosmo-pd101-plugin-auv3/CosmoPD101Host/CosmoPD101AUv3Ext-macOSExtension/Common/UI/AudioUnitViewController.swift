@@ -1,6 +1,10 @@
 import CoreAudioKit
 import Foundation
+import os
 import WebKit
+
+private let czVCLog = OSLog(subsystem: "com.cosmo.pd101.auv3", category: "CzVC")
+private let czWebViewLog = OSLog(subsystem: "com.cosmo.pd101.auv3", category: "CzWebView")
 
 #if os(iOS)
 import UIKit
@@ -37,7 +41,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	deinit {}
 
 	public override func loadView() {
-		NSLog("[CzVC] loadView")
+		os_log("loadView", log: czVCLog, type: .default)
 		#if os(iOS)
 		view = UIView(frame: CGRect(x: 0, y: 0, width: Self.preferredWidth, height: Self.preferredHeight))
 		view.backgroundColor = .black
@@ -61,7 +65,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	#else
 	public override func viewDidAppear() {
 		super.viewDidAppear()
-		NSLog("[CzVC] viewDidAppear")
+		os_log("viewDidAppear", log: czVCLog, type: .default)
 		guard let window = view.window else { return }
 		window.contentMinSize = NSSize(width: Self.minimumWidth, height: Self.minimumHeight)
 		window.contentAspectRatio = NSSize(width: Self.preferredWidth, height: Self.preferredHeight)
@@ -88,7 +92,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 				self?.pushStateToWebView(json, selectedPresetName: presetName)
 			}
 		}
-		NSLog("[CzVC] createAudioUnit: unit created")
+		os_log("createAudioUnit: unit created", log: czVCLog, type: .default)
 		return unit
 	}
 
@@ -117,7 +121,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 				paramsVersion += 1
 				sendResponse(id: id, result: NSNull())
 			} else {
-				NSLog("[CzVC] setParams FAILED: jsonOk=%@", (args.first as? String) != nil ? "yes" : "no")
+				os_log("setParams FAILED: jsonOk=%{public}@", log: czVCLog, type: .error, (args.first as? String) != nil ? "yes" : "no")
 				sendError(id: id, message: "invalid setParams payload")
 			}
 		case "getTransportInfo":
@@ -219,7 +223,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		case "clientLog":
 			let logLevel = args.first as? String ?? "info"
 			let logMessage = args.count > 1 ? (args[1] as? String ?? "") : ""
-			NSLog("[CzWebView][%@] %@", logLevel, logMessage)
+			os_log("%{public}@: %{public}@", log: czWebViewLog, type: .default, logLevel, logMessage)
 			sendResponse(id: id, result: NSNull())
 		case "noteOn", "noteOff", "sustain", "pitchBend", "modWheel", "aftertouch", "polyAftertouch", "panic":
 			audioUnit.handleEngineEvent(type: method, payload: args.first as? [String: Any] ?? [:])
@@ -230,7 +234,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	}
 
 	private func installWebView() {
-		NSLog("[CzVC] installWebView")
+		os_log("installWebView", log: czVCLog, type: .default)
 
 		// Resolve the bundle URL up-front so we can register the cosmo-ext scheme
 		// handler on the WKWebViewConfiguration before the WKWebView is created
@@ -256,33 +260,125 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		  if (window.__czDiagInstalled) return;
 		  window.__czDiagInstalled = true;
 
-		  function show(msg) {
+		  var _showCount = 0;
+		  var _dismissTimer = null;
+
+		  function timestampIso() {
+		    var d = new Date();
+		    return d.toISOString().replace('T', ' ').replace('Z', '');
+		  }
+
+		  function safeStringify(obj, depth) {
+		    if (depth === undefined) depth = 0;
+		    if (depth > 3) return '[maxDepth]';
+		    if (obj === null) return 'null';
+		    if (obj === undefined) return 'undefined';
+		    if (typeof obj === 'string') return obj.length > 500 ? obj.slice(0, 500) + '...' : obj;
+		    if (typeof obj === 'number' || typeof obj === 'boolean') return String(obj);
+		    if (obj instanceof Error) return obj.stack || obj.message || String(obj);
+		    if (Array.isArray(obj)) return '[' + obj.map(function (v) { return safeStringify(v, depth + 1); }).join(', ') + ']';
+		    if (typeof obj === 'object') {
+		      try {
+		        var keys = Object.keys(obj);
+		        if (keys.length > 20) keys = keys.slice(0, 20).concat(['... (' + (keys.length - 20) + ' more)']);
+		        return '{' + keys.map(function (k) { return (k.length > 50 ? k.slice(0, 50) + '...' : k) + ': ' + safeStringify(obj[k], depth + 1); }).join(', ') + '}';
+		      } catch (_) { return String(obj); }
+		    }
+		    try { return String(obj); } catch (_) { return '[unstringifiable]'; }
+		  }
+
+		  function reportError(kind, msg, obj, stack) {
+		    var lines = [
+		      '[' + timestampIso() + '] ' + kind,
+		      'message: ' + (msg || '(empty)'),
+		    ];
+		    if (stack) lines.push('stack:\\n' + stack);
+		    if (obj) lines.push('source: ' + safeStringify(obj));
+		    var full = lines.join('\\n');
+
 		    try {
 		      var pre = document.getElementById('__czFatal');
 		      if (!pre) {
 		        pre = document.createElement('pre');
 		        pre.id = '__czFatal';
-		        pre.style.cssText = 'position:fixed;inset:0;z-index:2147483647;padding:16px;margin:0;overflow:auto;background:#111;color:#ff8080;font:12px/1.45 -apple-system,monospace;white-space:pre-wrap;';
+		        pre.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:2147483647;padding:8px 12px;margin:0;max-height:40vh;overflow:auto;background:rgba(17,17,17,0.95);color:#ff8080;font:11px/1.4 -apple-system,monospace;white-space:pre-wrap;border-top:1px solid #ff4040;';
+		        var dismissBtn = document.createElement('button');
+		        dismissBtn.textContent = 'Dismiss';
+		        dismissBtn.style.cssText = 'position:absolute;top:4px;right:4px;background:#444;color:#fff;border:none;border-radius:3px;padding:2px 8px;font:11px -apple-system;cursor:pointer;';
+		        dismissBtn.onclick = function () { pre.remove(); };
+		        pre.appendChild(dismissBtn);
 		        document.body.appendChild(pre);
 		      }
-		      pre.textContent = 'Cosmo PD-101 UI runtime error\\n\\n' + msg;
+		      var content = pre.childNodes[0];
+		      if (!content || content.nodeType !== 3) {
+		        content = document.createTextNode('');
+		        pre.insertBefore(content, pre.firstChild);
+		      }
+		      content.nodeValue = 'Cosmo PD-101 UI runtime error [' + _showCount + ']\\n\\n' + full + '\\n';
+		      pre.style.display = 'block';
+
+		      _showCount++;
+		      if (_dismissTimer) clearTimeout(_dismissTimer);
+		      _dismissTimer = setTimeout(function () {
+		        var el = document.getElementById('__czFatal');
+		        if (el) el.remove();
+		      }, 8000);
 		    } catch (_) {}
 		  }
 
+		  window.__czDismissOverlay = function () {
+		    var el = document.getElementById('__czFatal');
+		    if (el) el.remove();
+		  };
+		  window.__czClearOverlay = window.__czDismissOverlay;
+
+		  document.addEventListener('DOMContentLoaded', function () {
+		    var stale = document.getElementById('__czFatal');
+		    if (stale) stale.remove();
+		    window.__czDiagClear = true;
+		  });
+
 		  window.addEventListener('error', function (e) {
 		    var msg = (e && e.message) ? (e.message + ' @ ' + e.filename + ':' + e.lineno) : 'Unknown window error';
-		    show(msg);
+		    reportError('window.error', msg, e, e && e.error && e.error.stack ? e.error.stack : null);
 		    try {
-		      window.webkit.messageHandlers.cosmoPd101.postMessage({ id: 0, method: 'clientLog', args: ['error', 'window.error: ' + msg] });
+		      window.webkit.messageHandlers.cosmoPd101.postMessage({ id: 0, method: 'clientLog', args: ['error', 'window.error: ' + msg + '\\n' + (e && e.error && e.error.stack ? e.error.stack : '')] });
 		    } catch (_) {}
 		  });
 
 		  window.addEventListener('unhandledrejection', function (e) {
 		    var reason = e && e.reason;
 		    var msg = reason && (reason.stack || reason.message) ? (reason.stack || reason.message) : String(reason || 'Unhandled promise rejection');
-		    show(msg);
+		    reportError('unhandledrejection', msg, reason, reason && reason.stack ? reason.stack : null);
 		    try {
 		      window.webkit.messageHandlers.cosmoPd101.postMessage({ id: 0, method: 'clientLog', args: ['error', 'unhandledrejection: ' + msg] });
+		    } catch (_) {}
+		  });
+
+		  window.addEventListener('rejectionhandled', function (e) {
+		    var reason = e && e.reason;
+		    var msg = reason && (reason.stack || reason.message) ? (reason.stack || reason.message) : String(reason || 'Promise rejection handled late');
+		    try {
+		      window.webkit.messageHandlers.cosmoPd101.postMessage({ id: 0, method: 'clientLog', args: ['warn', 'rejectionhandled: ' + msg] });
+		    } catch (_) {}
+		  });
+
+		  var _origFetch = window.fetch;
+		  if (_origFetch) {
+		    window.fetch = function (input, init) {
+		      return _origFetch.call(window, input, init).catch(function (err) {
+		        try {
+		          var url = typeof input === 'string' ? input : (input && input.url ? input.url : String(input));
+		          window.webkit.messageHandlers.cosmoPd101.postMessage({ id: 0, method: 'clientLog', args: ['warn', 'fetch failed: ' + url + '\\n' + String(err)] });
+		        } catch (_) {}
+		        throw err;
+		      });
+		    };
+		  }
+
+		  window.addEventListener('unload', function () {
+		    try {
+		      window.webkit.messageHandlers.cosmoPd101.postMessage({ id: 0, method: 'clientLog', args: ['log', 'page unload at ' + timestampIso()] });
 		    } catch (_) {}
 		  });
 		})();
@@ -314,11 +410,11 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		layoutWebView()
 
 		guard let indexUrl else {
-			NSLog("[CzVC] index.html missing from bundle")
+			os_log("index.html missing from bundle", log: czVCLog, type: .error)
 			webView.loadHTMLString(diagnosticHtml(title: "UI Bundle Missing", message: "Could not find index.html in the AU bundle."), baseURL: nil)
 			return
 		}
-		NSLog("[CzVC] indexUrl=%@", indexUrl.path)
+		os_log("indexUrl=%{public}@", log: czVCLog, type: .default, indexUrl.path)
 
 		webView.load(URLRequest(url: URL(string: "cosmo-ext://bundle/index.html")!))
 	}
@@ -333,26 +429,26 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	}
 
 	public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-		NSLog("[CzVC] didFail navigation: %@", error.localizedDescription)
+		os_log("didFail navigation: %{public}@", log: czVCLog, type: .error, error.localizedDescription)
 		webView.loadHTMLString(diagnosticHtml(title: "Navigation Failed", message: error.localizedDescription), baseURL: nil)
 	}
 
 	public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-		NSLog("[CzVC] didFailProvisionalNavigation: %@", error.localizedDescription)
+		os_log("didFailProvisionalNavigation: %{public}@", log: czVCLog, type: .error, error.localizedDescription)
 		webView.loadHTMLString(diagnosticHtml(title: "Provisional Navigation Failed", message: error.localizedDescription), baseURL: nil)
 	}
 
 	public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-		NSLog("[CzVC] didFinish navigation")
+		os_log("didFinish navigation", log: czVCLog, type: .default)
 	}
 
 	public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-		NSLog("[CzVC] didStartProvisionalNavigation")
+		os_log("didStartProvisionalNavigation", log: czVCLog, type: .default)
 	}
 
 	public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
 		webContentTerminationCount += 1
-		NSLog("[CzVC] web content process terminated (count=%d)", webContentTerminationCount)
+		os_log("web content process terminated (count=%d)", log: czVCLog, type: .error, webContentTerminationCount)
 
 		if webContentTerminationCount == 1 {
 			// Retry once in case the first content process launch was transiently killed.
@@ -687,7 +783,7 @@ private final class BundleSchemeHandler: NSObject, WKURLSchemeHandler {
 			urlSchemeTask.didReceive(data)
 			urlSchemeTask.didFinish()
 		} catch {
-			NSLog("[CzVC] BundleSchemeHandler failed for %@: %@", fileURL.path, error.localizedDescription)
+			os_log("BundleSchemeHandler failed for %{public}@: %{public}@", log: czVCLog, type: .error, fileURL.path, error.localizedDescription)
 			urlSchemeTask.didFailWithError(error)
 		}
 	}

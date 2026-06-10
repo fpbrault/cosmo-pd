@@ -1,6 +1,10 @@
 import CoreAudioKit
 import Foundation
+import os.log
 import WebKit
+
+private let czVCLog = OSLog(subsystem: "com.cosmo.pd101.auv3", category: "CzVC")
+private let czWebViewLog = OSLog(subsystem: "com.cosmo.pd101.auv3", category: "CzWebView")
 
 #if os(iOS)
 import UIKit
@@ -151,7 +155,7 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
                 paramsVersion += 1
                 sendResponse(id: id, result: NSNull())
             } else {
-                NSLog("[CzVC] setParams FAILED: jsonOk=%@", (args.first as? String) != nil ? "yes" : "no")
+                os_log("setParams FAILED: jsonOk=%{public}@", log: czVCLog, type: .error, (args.first as? String) != nil ? "yes" : "no")
                 sendError(id: id, message: "invalid setParams payload")
             }
         case "getTransportInfo":
@@ -253,7 +257,7 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
         case "clientLog":
             let logLevel = args.first as? String ?? "info"
             let logMessage = args.count > 1 ? (args[1] as? String ?? "") : ""
-            NSLog("[CzWebView][%@] %@", logLevel, logMessage)
+            os_log("%{public}@ %{public}@", log: czWebViewLog, type: logLevel == "error" ? .error : .default, logLevel, logMessage)
             sendResponse(id: id, result: NSNull())
         case "noteOn", "noteOff", "sustain", "pitchBend", "modWheel", "aftertouch", "polyAftertouch", "panic":
             audioUnit.handleEngineEvent(type: method, payload: args.first as? [String: Any] ?? [:])
@@ -284,33 +288,206 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
                     if (window.__czDiagInstalled) return;
                     window.__czDiagInstalled = true;
 
-                    function show(msg) {
+                    function dismissOverlay() {
                         try {
                             var pre = document.getElementById('__czFatal');
-                            if (!pre) {
-                                pre = document.createElement('pre');
-                                pre.id = '__czFatal';
-                                pre.style.cssText = 'position:fixed;inset:0;z-index:2147483647;padding:16px;margin:0;overflow:auto;background:#111;color:#ff8080;font:12px/1.45 -apple-system,monospace;white-space:pre-wrap;';
-                                document.body.appendChild(pre);
+                            if (pre && pre.parentNode) pre.parentNode.removeChild(pre);
+                            if (window.__czFatalDismissTimer) {
+                                clearTimeout(window.__czFatalDismissTimer);
+                                window.__czFatalDismissTimer = null;
                             }
-                            pre.textContent = 'Cosmo PD-101 UI runtime error\\n\\n' + msg;
+                        } catch (_) {}
+                    }
+                    window.__czDismissOverlay = dismissOverlay;
+
+                    if (document.readyState === 'loading') {
+                        document.addEventListener('DOMContentLoaded', dismissOverlay, { once: true });
+                    } else {
+                        dismissOverlay();
+                    }
+
+                    function show(msg) {
+                        try {
+                            dismissOverlay();
+                            var pre = document.createElement('pre');
+                            pre.id = '__czFatal';
+                            pre.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;max-height:40vh;z-index:2147483647;padding:12px;margin:0;overflow:auto;background:rgba(17,17,17,0.94);color:#ff8080;border:1px solid #ff5050;border-radius:6px;font:11px/1.45 -apple-system,monospace;white-space:pre-wrap;box-shadow:0 4px 16px rgba(0,0,0,0.5);';
+                            var close = document.createElement('button');
+                            close.textContent = '×';
+                            close.style.cssText = 'position:absolute;top:4px;right:8px;background:transparent;border:0;color:#ff8080;font:18px/1 -apple-system,monospace;cursor:pointer;padding:0 4px;';
+                            close.onclick = dismissOverlay;
+                            pre.appendChild(close);
+                            var body = document.createElement('span');
+                            body.textContent = 'Cosmo PD-101 UI runtime error\\n\\n' + msg;
+                            pre.appendChild(body);
+                            document.body.appendChild(pre);
+                            window.__czFatalDismissTimer = setTimeout(dismissOverlay, 8000);
+                        } catch (_) {}
+                    }
+
+                    function safeStringify(value, depth) {
+                        depth = depth || 0;
+                        if (depth > 3) return '[depth>3]';
+                        if (value === null) return 'null';
+                        if (value === undefined) return 'undefined';
+                        var t = typeof value;
+                        if (t === 'string') return JSON.stringify(value);
+                        if (t === 'number' || t === 'boolean') return String(value);
+                        if (t === 'function') return '[Function ' + (value.name || 'anonymous') + ']';
+                        if (t === 'symbol') return value.toString();
+                        if (t !== 'object') return String(value);
+                        if (value instanceof Error) {
+                            var parts = [];
+                            parts.push(value.name + ': ' + (value.message || ''));
+                            if (value.stack) parts.push('  stack: ' + value.stack);
+                            var own = Object.getOwnPropertyNames(value);
+                            for (var i = 0; i < own.length; i++) {
+                                var k = own[i];
+                                if (k === 'message' || k === 'stack' || k === 'name') continue;
+                                try {
+                                    parts.push('  ' + k + ': ' + safeStringify(value[k], depth + 1));
+                                } catch (_) { parts.push('  ' + k + ': [unreadable]'); }
+                            }
+                            return parts.join('\\n');
+                        }
+                        if (value instanceof Date) return value.toISOString();
+                        if (value instanceof RegExp) return value.toString();
+                        if (Array.isArray(value)) {
+                            var items = [];
+                            for (var j = 0; j < value.length && j < 50; j++) {
+                                items.push('  [' + j + '] ' + safeStringify(value[j], depth + 1));
+                            }
+                            if (value.length > 50) items.push('  ... +' + (value.length - 50) + ' more');
+                            return 'Array(' + value.length + ')\\n' + items.join('\\n');
+                        }
+                        try {
+                            var keys = Object.keys(value);
+                            var lines = ['Object{'];
+                            for (var m = 0; m < keys.length && m < 50; m++) {
+                                try {
+                                    lines.push('  ' + keys[m] + ': ' + safeStringify(value[keys[m]], depth + 1));
+                                } catch (_) { lines.push('  ' + keys[m] + ': [unreadable]'); }
+                            }
+                            if (keys.length > 50) lines.push('  ... +' + (keys.length - 50) + ' more keys');
+                            lines.push('}');
+                            return lines.join('\\n');
+                        } catch (_) {
+                            return '[unserializable object]';
+                        }
+                    }
+
+                    function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+                    function timestampIso() {
+                        try {
+                            var d = new Date();
+                            return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) +
+                                'T' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds()) +
+                                '.' + String(d.getMilliseconds()).padStart(3, '0');
+                        } catch (_) { return '(time unavailable)'; }
+                    }
+
+                    function reportError(kind, summary, detail) {
+                        try {
+                            show(detail);
+                            var payload = kind + ' @ ' + timestampIso() + '\\n' + detail;
+                            try {
+                                window.webkit.messageHandlers.cosmoPd101.postMessage({ id: 0, method: 'clientLog', args: ['error', payload] });
+                            } catch (_) {}
+                            try {
+                                console.error('[Cosmo][CzWebView]', kind, summary, '\\n' + detail);
+                            } catch (_) {}
                         } catch (_) {}
                     }
 
                     window.addEventListener('error', function (e) {
-                        var msg = (e && e.message) ? (e.message + ' @ ' + e.filename + ':' + e.lineno) : 'Unknown window error';
-                        show(msg);
-                        try {
-                            window.webkit.messageHandlers.cosmoPd101.postMessage({ id: 0, method: 'clientLog', args: ['error', 'window.error: ' + msg] });
-                        } catch (_) {}
+                        var file = (e && e.filename) || '<inline>';
+                        var line = (e && e.lineno) || 0;
+                        var col = (e && e.colno) || 0;
+                        var msg = (e && e.message) ? e.message : 'Unknown window error';
+                        var src = e && e.error ? ' (source error: ' + (e.error.name || 'Error') + ')' : '';
+                        var summary = msg + ' @ ' + file + ':' + line + ':' + col + src;
+                        var lines = [
+                            'kind:     window.error',
+                            'time:     ' + timestampIso(),
+                            'message:  ' + msg,
+                            'location: ' + file + ':' + line + ':' + col,
+                            'source:   ' + ((e && e.error) ? safeStringify(e.error) : '(none)'),
+                        ];
+                        if (e && e.error && e.error.stack) {
+                            lines.push('stack:');
+                            lines.push(e.error.stack);
+                        }
+                        reportError('window.error', summary, lines.join('\\n'));
                     });
 
                     window.addEventListener('unhandledrejection', function (e) {
                         var reason = e && e.reason;
-                        var msg = reason && (reason.stack || reason.message) ? (reason.stack || reason.message) : String(reason || 'Unhandled promise rejection');
-                        show(msg);
+                        var typeName = (reason && reason.name) || (reason && reason.constructor && reason.constructor.name) || typeof reason;
+                        var reasonMsg = (reason && reason.message) || (reason === undefined ? 'undefined' : (reason === null ? 'null' : (typeof reason === 'object' ? '(non-Error object)' : String(reason))));
+                        var summary = 'Unhandled Promise rejection: ' + typeName + ': ' + reasonMsg;
+                        var lines = [
+                            'kind:     unhandledrejection',
+                            'time:     ' + timestampIso(),
+                            'type:     ' + typeName,
+                            'message:  ' + reasonMsg,
+                            'reason:   ' + safeStringify(reason),
+                        ];
+                        if (reason && reason.stack) {
+                            lines.push('stack:');
+                            lines.push(reason.stack);
+                        }
+                        if (e && e.promise) {
+                            try {
+                                lines.push('promise:  Promise<' + (typeof reason) + '> (chain length unknown)');
+                            } catch (_) {}
+                        }
+                        reportError('unhandledrejection', summary, lines.join('\\n'));
+                    });
+
+                    window.addEventListener('rejectionhandled', function (e) {
                         try {
-                            window.webkit.messageHandlers.cosmoPd101.postMessage({ id: 0, method: 'clientLog', args: ['error', 'unhandledrejection: ' + msg] });
+                            var reason = e && e.reason;
+                            var typeName = (reason && reason.name) || (reason && reason.constructor && reason.constructor.name) || typeof reason;
+                            var msg = (reason && reason.message) || String(reason);
+                            var lines = [
+                                'kind:     rejectionhandled (recovered)',
+                                'time:     ' + timestampIso(),
+                                'type:     ' + typeName,
+                                'message:  ' + msg,
+                            ];
+                            if (reason && reason.stack) lines.push('stack:\\n' + reason.stack);
+                            window.webkit.messageHandlers.cosmoPd101.postMessage({ id: 0, method: 'clientLog', args: ['warn', lines.join('\\n')] });
+                        } catch (_) {}
+                    });
+
+                    (function () {
+                        var origFetch = window.fetch;
+                        if (typeof origFetch === 'function') {
+                            window.fetch = function () {
+                                var url = arguments[0];
+                                var promise = origFetch.apply(this, arguments);
+                                if (promise && typeof promise.catch === 'function') {
+                                    promise.catch(function (err) {
+                                        try {
+                                            var lines = [
+                                                'kind:     fetch.failure',
+                                                'time:     ' + timestampIso(),
+                                                'url:      ' + String(url),
+                                                'error:    ' + (err && err.message ? err.message : String(err)),
+                                            ];
+                                            if (err && err.stack) lines.push('stack:\\n' + err.stack);
+                                            window.webkit.messageHandlers.cosmoPd101.postMessage({ id: 0, method: 'clientLog', args: ['error', lines.join('\\n')] });
+                                        } catch (_) {}
+                                    });
+                                }
+                                return promise;
+                            };
+                        }
+                    })();
+
+                    window.addEventListener('unload', function () {
+                        try {
+                            window.webkit.messageHandlers.cosmoPd101.postMessage({ id: 0, method: 'clientLog', args: ['info', 'page unload @ ' + timestampIso()] });
                         } catch (_) {}
                     });
                 })();
@@ -345,7 +522,7 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
             webView.loadHTMLString(diagnosticHtml(title: "UI Bundle Missing", message: "Could not find index.html in the AU bundle."), baseURL: nil)
             return
         }
-        NSLog("[CzVC] indexUrl=%@", indexUrl.path)
+        os_log("indexUrl=%{public}@", log: czVCLog, type: .info, indexUrl.path)
         webView.load(URLRequest(url: URL(string: "cosmo-ext://bundle/index.html")!))
     }
 
@@ -374,26 +551,26 @@ public final class CosmoPd101ViewController: AUViewController, @preconcurrency A
     }
 
     public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-		NSLog("[CzVC] didFail navigation: %@", error.localizedDescription)
+		os_log("didFail navigation: %{public}@", log: czVCLog, type: .error, error.localizedDescription)
         webView.loadHTMLString(diagnosticHtml(title: "Navigation Failed", message: error.localizedDescription), baseURL: nil)
     }
 
     public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-		NSLog("[CzVC] didFailProvisionalNavigation: %@", error.localizedDescription)
+		os_log("didFailProvisionalNavigation: %{public}@", log: czVCLog, type: .error, error.localizedDescription)
         webView.loadHTMLString(diagnosticHtml(title: "Provisional Navigation Failed", message: error.localizedDescription), baseURL: nil)
     }
 
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        NSLog("[CzVC] didFinish navigation")
+        os_log("didFinish navigation", log: czVCLog, type: .info)
     }
 
     public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-        NSLog("[CzVC] didStartProvisionalNavigation")
+        os_log("didStartProvisionalNavigation", log: czVCLog, type: .info)
     }
 
     public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
         webContentTerminationCount += 1
-        NSLog("[CzVC] web content process terminated (count=%d)", webContentTerminationCount)
+		os_log("web content process terminated (count=%d)", log: czVCLog, type: .error, webContentTerminationCount)
 
         if webContentTerminationCount == 1 {
             webView.reload()
@@ -735,7 +912,7 @@ private final class BundleSchemeHandler: NSObject, WKURLSchemeHandler {
             urlSchemeTask.didReceive(data)
             urlSchemeTask.didFinish()
         } catch {
-            NSLog("[CzVC] BundleSchemeHandler failed for %@: %@", fileURL.path, error.localizedDescription)
+            os_log("BundleSchemeHandler failed for %{public}@: %{public}@", log: czVCLog, type: .error, fileURL.path, error.localizedDescription)
             urlSchemeTask.didFailWithError(error)
         }
     }

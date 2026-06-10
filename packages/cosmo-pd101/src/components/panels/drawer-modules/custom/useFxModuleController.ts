@@ -49,7 +49,9 @@ export function useFxModuleController(
 	}, [config.presets, userPresets]);
 
 	useEffect(() => {
-		listFxModulePresets(config.type).then(setUserPresets);
+		listFxModulePresets(config.type)
+			.then(setUserPresets)
+			.catch(() => {});
 	}, [config.type]);
 
 	const handlePresetChange = useCallback(
