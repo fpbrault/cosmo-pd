@@ -43,6 +43,9 @@ function loadInitialEditorState(): void {
 				}
 				useSynthUiStore.setState(editorState);
 			}
+		})
+		.catch((error: unknown) => {
+			console.error("[auv3Bridge] getEditorState error", error);
 		});
 }
 
@@ -97,6 +100,8 @@ export function useSessionStateSync(): void {
 	useEffect(() => {
 		if (initializedRef.current) return;
 
+		let cleanup: (() => void) | undefined;
+
 		const setupBridgeSync = () => {
 			initializedRef.current = true;
 			const unsubscribes: (() => void)[] = [];
@@ -107,7 +112,7 @@ export function useSessionStateSync(): void {
 				unsubscribes.push(subscribeEditorState());
 			}
 
-			return () => {
+			cleanup = () => {
 				for (const fn of unsubscribes) {
 					fn();
 				}
@@ -123,9 +128,13 @@ export function useSessionStateSync(): void {
 			}, 100);
 			return () => {
 				window.clearInterval(intervalId);
+				cleanup?.();
 			};
 		}
 
-		return setupBridgeSync();
+		setupBridgeSync();
+		return () => {
+			cleanup?.();
+		};
 	}, []);
 }

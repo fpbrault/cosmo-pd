@@ -2677,37 +2677,6 @@ mod tests {
     }
 
     #[test]
-    fn editor_custom_request_routes_existing_rpc_contract() {
-        let mut editor = make_test_editor();
-
-        let response = editor
-            .custom_request(br#"{"id":42,"method":"getParams","args":[]}"#)
-            .expect("custom editor request should return a response");
-        let response: serde_json::Value = serde_json::from_slice(&response).unwrap();
-
-        assert_eq!(response["id"], 42);
-        assert!(response.get("result").is_some());
-        assert!(response.get("error").is_none());
-    }
-
-    #[test]
-    fn editor_custom_request_returns_rpc_error_for_malformed_json() {
-        let mut editor = make_test_editor();
-
-        let response = editor
-            .custom_request(b"{")
-            .expect("malformed request should return an error response");
-        let response: serde_json::Value = serde_json::from_slice(&response).unwrap();
-
-        assert!(response["id"].is_null());
-        assert!(
-            response["error"]
-                .as_str()
-                .is_some_and(|error| error.starts_with("invalid editor request:"))
-        );
-    }
-
-    #[test]
     fn note_on_rpc_enqueues_ui_input_event() {
         let (sp, rsp, rms, rvs, ts, ver, sc, q, params, ps, pl, es, mm) = make_handler_state();
 

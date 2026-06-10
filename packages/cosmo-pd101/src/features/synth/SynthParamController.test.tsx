@@ -114,6 +114,10 @@ describe("visualModulationScale", () => {
 		).toBe(1);
 
 		act(() => {
+			result.current?.registerLiveModSourcesConsumer();
+		});
+
+		act(() => {
 			window.dispatchEvent(
 				new CustomEvent("cz-runtime-mod-sources", {
 					detail: {

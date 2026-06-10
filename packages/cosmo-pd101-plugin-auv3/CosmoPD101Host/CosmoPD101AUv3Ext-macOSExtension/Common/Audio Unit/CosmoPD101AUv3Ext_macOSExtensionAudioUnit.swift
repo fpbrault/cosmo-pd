@@ -2,6 +2,9 @@ import AudioToolbox
 import AVFoundation
 import CoreAudioKit
 import Foundation
+import os
+
+private let czAULog = OSLog(subsystem: "com.cosmo.pd101.auv3", category: "CzAU")
 
 public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unchecked Sendable {
 	private let outputBus: AUAudioUnitBus
@@ -34,17 +37,12 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 
 	public override func supportedViewConfigurations(_ availableViewConfigurations: [AUAudioUnitViewConfiguration]) -> IndexSet {
 		if availableViewConfigurations.isEmpty {
-			NSLog("[CzAU] supportedViewConfigurations: no host configurations provided")
+			os_log(.error, log: czAULog, "[CzAU] supportedViewConfigurations: no host configurations provided")
 			return IndexSet()
 		}
 
 		for config in availableViewConfigurations {
-			NSLog(
-				"[CzAU] host view config: %.0fx%.0f hostHasController=%@",
-				config.width,
-				config.height,
-				config.hostHasController ? "yes" : "no"
-			)
+		os_log(.default, log: czAULog, "[CzAU] host view config: %.0fx%.0f hostHasController=%@", config.width, config.height, config.hostHasController ? "yes" : "no")
 		}
 
 		// Accept all host-proposed configurations; the view controller handles responsive layout.
@@ -53,12 +51,7 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 
 	public override func select(_ viewConfiguration: AUAudioUnitViewConfiguration) {
 		super.select(viewConfiguration)
-		NSLog(
-			"[CzAU] selected view config: %.0fx%.0f hostHasController=%@",
-			viewConfiguration.width,
-			viewConfiguration.height,
-			viewConfiguration.hostHasController ? "yes" : "no"
-		)
+		os_log(.default, log: czAULog, "[CzAU] selected view config: %.0fx%.0f hostHasController=%@", viewConfiguration.width, viewConfiguration.height, viewConfiguration.hostHasController ? "yes" : "no")
 	}
 
 	public override var currentPreset: AUAudioUnitPreset? {
@@ -77,11 +70,11 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 				super.currentPreset = normalized
 				if engine != nil {
 					if !applyFactoryPreset(index: index) {
-						NSLog("[CzAU] currentPreset set failed: index=%d", index)
+						os_log(.error, log: czAULog, "[CzAU] currentPreset set failed: index=%d", index)
 					}
 				} else {
 					pendingFactoryPresetIndex = index
-					NSLog("[CzAU] currentPreset deferred: engine nil index=%d", index)
+					os_log(.default, log: czAULog, "[CzAU] currentPreset deferred: engine nil index=%d", index)
 				}
 				return
 			}
@@ -103,10 +96,10 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 			super.fullStateForDocument = newValue
 			if let json = newValue?["CzParamsJson"] as? String {
 				if engine != nil {
-					NSLog("[CzAU] fullStateForDocument set: applying json len=%d", json.count)
+					os_log(.default, log: czAULog, "[CzAU] fullStateForDocument set: applying json len=%d", json.count)
 					_ = setParamsJson(json, notifyWebView: true)
 				} else {
-					NSLog("[CzAU] fullStateForDocument set: engine nil, buffering len=%d", json.count)
+					os_log(.default, log: czAULog, "[CzAU] fullStateForDocument set: engine nil, buffering len=%d", json.count)
 					pendingParamsJson = json
 				}
 			}
@@ -116,16 +109,16 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 	public override init(componentDescription: AudioComponentDescription, options: AudioComponentInstantiationOptions = []) throws {
 		let groupId = "group.ca.purraudio.CosmoPD101Host"
 		let containerLookupStart = CFAbsoluteTimeGetCurrent()
-		NSLog("[CzAU] resolving app group container: %@", groupId)
+		os_log(.default, log: czAULog, "[CzAU] resolving app group container: %@", groupId)
 		if let containerURL = FileManager.default.containerURL(
 			forSecurityApplicationGroupIdentifier: groupId
 		) {
 			let elapsedMs = (CFAbsoluteTimeGetCurrent() - containerLookupStart) * 1000
-			NSLog("[CzAU] app group container resolved in %.1f ms: %@", elapsedMs, containerURL.path)
+			os_log(.default, log: czAULog, "[CzAU] app group container resolved in %.1f ms: %@", elapsedMs, containerURL.path)
 			setenv("COSMO_PD101_DATA_DIR", containerURL.path, 1)
 		} else {
 			let elapsedMs = (CFAbsoluteTimeGetCurrent() - containerLookupStart) * 1000
-			NSLog("[CzAU] app group container unavailable after %.1f ms: %@", elapsedMs, groupId)
+			os_log(.error, log: czAULog, "[CzAU] app group container unavailable after %.1f ms: %@", elapsedMs, groupId)
 		}
 
 		let defaultSampleRate: Double = 48_000
@@ -156,7 +149,7 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 		guard engine != nil else {
 			throw NSError(domain: NSOSStatusErrorDomain, code: Int(kAudioUnitErr_FailedInitialization))
 		}
-		NSLog("[CzAU] allocateRenderResources: engine created sr=%.0f frames=%d pending=%@", sampleRate, maxFrames, pendingParamsJson != nil ? "yes" : "no")
+		os_log(.default, log: czAULog, "[CzAU] allocateRenderResources: engine created sr=%.0f frames=%d pending=%@", sampleRate, maxFrames, pendingParamsJson != nil ? "yes" : "no")
 		if let pending = pendingParamsJson {
 			pendingParamsJson = nil
 			_ = setParamsJson(pending, notifyWebView: true)
@@ -202,11 +195,11 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 	}
 
 	public func setParamsJson(_ json: String, notifyWebView: Bool = false, selectedPresetName: String? = nil) -> Bool {
-		NSLog("[CzAU] setParamsJson: engine=%@ len=%d notify=%@", engine != nil ? "ok" : "NIL", json.count, notifyWebView ? "yes" : "no")
+		os_log(.default, log: czAULog, "[CzAU] setParamsJson: engine=%@ len=%d notify=%@", engine != nil ? "ok" : "NIL", json.count, notifyWebView ? "yes" : "no")
 		let didSet = json.withCString { pointer in
 			cosmo_pd101_ffi_set_params_json(engine, pointer) == CosmoPd101FfiStatus.ok.rawValue
 		}
-		NSLog("[CzAU] setParamsJson: didSet=%@", didSet ? "true" : "false")
+		os_log(.default, log: czAULog, "[CzAU] setParamsJson: didSet=%@", didSet ? "true" : "false")
 		guard didSet else { return false }
 		syncParameterTreeFromEngine()
 		if notifyWebView {
@@ -340,7 +333,7 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 
 	private func applyFactoryPreset(index: Int) -> Bool {
 		guard let json = factoryPresetParamsJson(index: index) else {
-			NSLog("[CzAU] applyFactoryPreset missing JSON: index=%d", index)
+			os_log(.error, log: czAULog, "[CzAU] applyFactoryPreset missing JSON: index=%d", index)
 			return false
 		}
 		NSLog("[CzAU] applyFactoryPreset index=%d", index)
