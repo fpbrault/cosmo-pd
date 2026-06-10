@@ -126,7 +126,7 @@ export default memo(function PresetLibraryHeader({
 										checked={active}
 										aria-label={option.value}
 										disabled={option.disabled}
-										onClick={() => {
+										onChange={() => {
 											onSelectAuthorFilter(option.value);
 										}}
 									/>
@@ -166,7 +166,7 @@ export default memo(function PresetLibraryHeader({
 										checked={active}
 										aria-label={option.value}
 										disabled={option.disabled}
-										onClick={() => {
+										onChange={() => {
 											onSelectBankFilter(option.value);
 										}}
 									/>

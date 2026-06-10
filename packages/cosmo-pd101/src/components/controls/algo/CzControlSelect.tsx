@@ -154,12 +154,12 @@ function CzControlSelectInner({
 	const optionsClassName = useSingleLineLayout
 		? `flex w-full min-w-0 gap-0 ${isPresetControl ? "h-10" : "h-6"}`
 		: isWaveformControl
-			? "grid grid-cols-2 gap-0 @min-[220px]:grid-cols-4"
+			? "grid grid-cols-2 gap-0 @min-[900px]:grid-cols-4"
 			: "grid grid-cols-2 gap-0";
 
 	return (
 		<div className="space-y-1.5">
-			<div className="flex items-end text-3xs text-cz-cream/85 uppercase leading-tight tracking-[0.2em]">
+			<div className="flex items-end text-5xs text-cz-cream/85 uppercase leading-tight tracking-[0.2em]">
 				{label}
 			</div>
 			<div

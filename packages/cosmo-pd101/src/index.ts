@@ -1,7 +1,6 @@
 export { default as MidiLearnPanel } from "./components/panels/midi/MidiLearnPanel";
 export {
 	computeRendererFrameLayout,
-	computeSidebarMinWidthRem,
 	type RendererFrameLayout,
 	SYNTH_RENDERER_DESIGN_HEIGHT,
 	SYNTH_RENDERER_DESIGN_WIDTH,

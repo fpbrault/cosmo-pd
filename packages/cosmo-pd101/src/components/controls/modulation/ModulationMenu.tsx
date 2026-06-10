@@ -30,7 +30,7 @@ export default function ModulationMenu({
 
 	return (
 		<section
-			className="max-h-[calc(100vh-1rem)] w-[35rem] max-w-[calc(100vw-1rem)]"
+			className="max-h-[calc(100vh-1rem)] w-140 max-w-[calc(100vw-1rem)]"
 			aria-label={`Modulation for ${title}`}
 		>
 			<div className="flex items-center justify-between bg-cz-surface px-3.5 py-2.5">
@@ -40,7 +40,7 @@ export default function ModulationMenu({
 						<div className="font-bold font-mono text-[0.7rem] text-cz-cream uppercase tracking-[0.24em]">
 							Modulate
 						</div>
-						<div className="font-mono text-[0.5rem] text-cz-cream-dim/60 uppercase tracking-[0.18em]">
+						<div className="font-mono text-5xs text-cz-cream-dim/60 uppercase tracking-[0.18em]">
 							{title}
 						</div>
 					</div>
@@ -100,7 +100,7 @@ export default function ModulationMenu({
 						Current routes
 					</div>
 					{routes.length > 0 ? (
-						<div className="max-h-[18.5rem] min-h-[18.5rem] space-y-2 overflow-y-auto pr-1">
+						<div className="max-h-74 min-h-[min-h-74y-2 overflow-y-auto pr-1">
 							<AnimatePresence initial={false}>
 								{routes.map((route, idx) => {
 									const meta = MOD_SOURCE_META[route.source];
@@ -130,7 +130,7 @@ export default function ModulationMenu({
 													>
 														{meta.label}
 													</span>
-													<label className="flex items-center gap-2 font-mono text-[0.5rem] text-cz-cream-dim/75 uppercase tracking-[0.14em]">
+													<label className="flex items-center gap-2 font-mono text-5xs text-cz-cream-dim/75 uppercase tracking-[0.14em]">
 														<input
 															type="checkbox"
 															className="toggle toggle-secondary toggle-sm"
@@ -147,7 +147,7 @@ export default function ModulationMenu({
 													type="button"
 													onClick={() => onRemoveRoute(idx)}
 													aria-label={`Remove ${meta.label} route`}
-													className="btn btn-ghost btn-sm h-8 min-h-0 rounded-lg border border-cz-border/40 px-2.5 font-mono text-[0.5rem] text-cz-cream-dim/70 uppercase tracking-[0.16em] hover:border-red-400/50 hover:bg-red-400/10 hover:text-red-200"
+													className="btn btn-ghost btn-sm h-8 min-h-0 rounded-lg border border-cz-border/40 px-2.5 font-mono text-5xs text-cz-cream-dim/70 uppercase tracking-[0.16em] hover:border-red-400/50 hover:bg-red-400/10 hover:text-red-200"
 												>
 													Remove
 												</Button>
@@ -181,7 +181,7 @@ export default function ModulationMenu({
 							</AnimatePresence>
 						</div>
 					) : (
-						<div className="flex min-h-[18.5rem] items-center justify-center rounded-xl border border-cz-border/40 border-dashed bg-black/10 px-3 py-5 text-center font-mono text-[0.56rem] text-cz-cream-dim/55 uppercase tracking-[0.2em]">
+						<div className="flex min-h-74 items-center justify-center rounded-xl border border-cz-border/40 border-dashed bg-black/10 px-3 py-5 text-center font-mono text-[0.56rem] text-cz-cream-dim/55 uppercase tracking-[0.2em]">
 							Tap a source card to create the first route
 						</div>
 					)}

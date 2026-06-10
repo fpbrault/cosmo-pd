@@ -3117,7 +3117,7 @@ mod tests {
                 0.2
             };
 
-            params.volume.set_value(next_volume.into());
+            params.volume.set_value(next_volume);
 
             let mut events = EventList::default();
             events.push(Event {

@@ -14,7 +14,7 @@ type UseMiniKeyboardInteractionOptions = {
 	resizeActiveRef: React.RefObject<{
 		startY: number;
 		startHeight: number;
-	} | null>;
+	} | null> | null;
 };
 
 export function useMiniKeyboardInteraction({
@@ -137,7 +137,7 @@ export function useMiniKeyboardInteraction({
 
 	useEffect(() => {
 		const onWindowPointerMove = (event: PointerEvent) => {
-			if (resizeActiveRef.current) {
+			if (resizeActiveRef?.current) {
 				return;
 			}
 
@@ -190,7 +190,7 @@ export function useMiniKeyboardInteraction({
 		};
 
 		const onWindowPointerUp = (event: PointerEvent) => {
-			if (resizeActiveRef.current) {
+			if (resizeActiveRef?.current) {
 				return;
 			}
 

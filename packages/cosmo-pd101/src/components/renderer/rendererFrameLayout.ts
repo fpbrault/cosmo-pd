@@ -3,10 +3,6 @@ export const SYNTH_RENDERER_DESIGN_WIDTH = 1368;
 export const SYNTH_RENDERER_MIN_ASPECT_RATIO = 4 / 3;
 export const SYNTH_RENDERER_MAX_ASPECT_RATIO = 3 / 2;
 
-const TAILWIND_SPACING_REM = 0.25;
-const SIDEBAR_MIN_WIDTH_AT_MIN_ASPECT = 72;
-const SIDEBAR_MIN_WIDTH_AT_MAX_ASPECT = 84;
-
 type ComputeRendererFrameLayoutOptions = {
 	availableWidth: number;
 	availableHeight: number;
@@ -20,30 +16,10 @@ export type RendererFrameLayout = {
 	frameHeight: number;
 	frameScale: number;
 	effectiveAspectRatio: number;
-	sidebarMinWidthRem: number;
 };
 
 function clamp(value: number, min: number, max: number) {
 	return Math.min(max, Math.max(min, value));
-}
-
-function lerp(start: number, end: number, t: number) {
-	return start + (end - start) * t;
-}
-
-export function computeSidebarMinWidthRem(aspectRatio: number) {
-	const clampedAspectRatio = clamp(
-		aspectRatio,
-		SYNTH_RENDERER_MIN_ASPECT_RATIO,
-		SYNTH_RENDERER_MAX_ASPECT_RATIO,
-	);
-	const t =
-		(clampedAspectRatio - SYNTH_RENDERER_MIN_ASPECT_RATIO) /
-		(SYNTH_RENDERER_MAX_ASPECT_RATIO - SYNTH_RENDERER_MIN_ASPECT_RATIO);
-	return (
-		lerp(SIDEBAR_MIN_WIDTH_AT_MIN_ASPECT, SIDEBAR_MIN_WIDTH_AT_MAX_ASPECT, t) *
-		TAILWIND_SPACING_REM
-	);
 }
 
 export function computeRendererFrameLayout({
@@ -82,6 +58,5 @@ export function computeRendererFrameLayout({
 		frameHeight,
 		frameScale,
 		effectiveAspectRatio,
-		sidebarMinWidthRem: computeSidebarMinWidthRem(effectiveAspectRatio),
 	};
 }

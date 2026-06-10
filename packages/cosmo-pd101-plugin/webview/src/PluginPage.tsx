@@ -7,7 +7,6 @@ import {
 	SynthRenderer,
 	useSynthPresetManager,
 	useSynthStore,
-	useSynthUiStore,
 } from "@cosmo/cosmo-pd101";
 import {
 	type CSSProperties,
@@ -27,32 +26,6 @@ type PluginPageProps = {
 	utilityExtra?: ReactNode;
 };
 
-const MIN_PLUGIN_KEYBOARD_HEIGHT = 64;
-const MAX_PLUGIN_KEYBOARD_HEIGHT = 160;
-const MAX_KEYBOARD_VIEWPORT_RATIO = 0.28;
-
-export function clampPluginKeyboardHeight({
-	keyboardHeight,
-	viewportHeight,
-	frameScale,
-}: {
-	keyboardHeight: number;
-	viewportHeight: number;
-	frameScale: number;
-}) {
-	const scaledViewportMax =
-		frameScale > 0
-			? Math.floor((viewportHeight * MAX_KEYBOARD_VIEWPORT_RATIO) / frameScale)
-			: MAX_PLUGIN_KEYBOARD_HEIGHT;
-	const maxHeight = Math.max(
-		MIN_PLUGIN_KEYBOARD_HEIGHT,
-		Math.min(MAX_PLUGIN_KEYBOARD_HEIGHT, scaledViewportMax),
-	);
-	return Math.round(
-		Math.max(MIN_PLUGIN_KEYBOARD_HEIGHT, Math.min(maxHeight, keyboardHeight)),
-	);
-}
-
 export default function PluginPage({
 	appVersion,
 	utilityExtra,
@@ -63,8 +36,6 @@ export default function PluginPage({
 		(window.navigator.platform === "MacIntel" &&
 			window.navigator.maxTouchPoints > 1);
 	const gatherPresetState = useSynthStore((s) => s.gatherPresetState);
-	const keyboardHeight = useSynthUiStore((s) => s.keyboardHeight);
-	const setKeyboardHeight = useSynthUiStore((s) => s.setKeyboardHeight);
 
 	const frameRef = useRef<HTMLDivElement | null>(null);
 	const [rendererFrame, setRendererFrame] = useState(() =>
@@ -135,15 +106,6 @@ export default function PluginPage({
 				return;
 			}
 
-			const clampedKeyboardHeight = clampPluginKeyboardHeight({
-				keyboardHeight,
-				viewportHeight: bounds.height,
-				frameScale: nextLayout.frameScale,
-			});
-			if (clampedKeyboardHeight !== keyboardHeight) {
-				setKeyboardHeight(clampedKeyboardHeight);
-			}
-
 			setRendererFrame((current) => {
 				if (
 					current &&
@@ -167,7 +129,7 @@ export default function PluginPage({
 			resizeObserver.disconnect();
 			window.removeEventListener("resize", updateFrameSize);
 		};
-	}, [isIosHost, isLikelyIosDevice, keyboardHeight, setKeyboardHeight]);
+	}, [isIosHost, isLikelyIosDevice]);
 
 	useEffect(() => {
 		if (!bridgeReady) {
@@ -245,7 +207,6 @@ export default function PluginPage({
 		SYNTH_RENDERER_DESIGN_HEIGHT * SYNTH_RENDERER_MIN_ASPECT_RATIO;
 	const frameHeight =
 		rendererFrame?.frameHeight ?? SYNTH_RENDERER_DESIGN_HEIGHT;
-	const sidebarMinWidthRem = rendererFrame?.sidebarMinWidthRem ?? 18;
 	const scaledWidth = frameWidth * combinedScale;
 	const scaledHeight = frameHeight * combinedScale;
 
@@ -275,7 +236,6 @@ export default function PluginPage({
 							appVersion={appVersion}
 							bottomBarExtra={utilityExtra}
 							disableAudioGate
-							sidebarMinWidthRem={sidebarMinWidthRem}
 							miniKeyboard={{
 								activeNotes: runtime.activeNotes,
 								onNoteOn: runtime.sendNoteOn,

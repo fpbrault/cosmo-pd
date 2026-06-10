@@ -1,4 +1,14 @@
-import { type CSSProperties, memo, type ReactNode, useCallback } from "react";
+import {
+	type CSSProperties,
+	memo,
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useRef,
+} from "react";
+import { Group, Panel, Separator, usePanelRef } from "react-resizable-panels";
+import MiniKeyboardOverlay from "@/components/layout/MiniKeyboardOverlay";
+import SynthInfoBar from "@/components/layout/SynthInfoBar";
 import SynthSidebar from "@/components/layout/SynthSidebar";
 import SynthHeader from "@/components/preset/SynthHeader";
 import { ModMatrixProvider } from "@/context/ModMatrixContext";
@@ -26,27 +36,16 @@ export type SynthRendererProps = {
 	frameStyle?: CSSProperties;
 	headerExtra?: ReactNode;
 	bottomBarExtra?: ReactNode;
-	sidebarMinWidthRem?: number;
 	runtime: SynthRuntime;
 	onAudioLevelChange?: (level: number) => void;
 	disableAudioGate?: boolean;
 	miniKeyboard?: MiniKeyboardProps;
 };
 
-const FRAME_CLASS =
-	"h-full min-h-0 min-w-0 bg-cz-panel flex flex-col overflow-hidden w-full";
-
-type HoverAwareSynthRendererOverlaysProps = Omit<
-	React.ComponentProps<typeof SynthRendererOverlays>,
-	"infoText"
->;
-
-function HoverAwareSynthRendererOverlays(
-	props: HoverAwareSynthRendererOverlaysProps,
-) {
-	const { infoText } = useHoverInfo();
-	return <SynthRendererOverlays {...props} infoText={infoText} />;
-}
+const RESIZE_HANDLE_HORIZONTAL =
+	"group relative flex w-3 shrink-0 items-center justify-center transition-colors hover:bg-cz-light-blue/30";
+const RESIZE_HANDLE_VERTICAL =
+	"group relative flex h-4 shrink-0 items-center justify-center transition-colors hover:bg-cz-light-blue/30";
 
 const SynthRenderer = memo(function SynthRenderer({
 	appVersion,
@@ -56,7 +55,6 @@ const SynthRenderer = memo(function SynthRenderer({
 	runtime,
 	onAudioLevelChange,
 	disableAudioGate = false,
-	sidebarMinWidthRem = 18,
 	miniKeyboard,
 }: SynthRendererProps) {
 	const modMatrix = useSynthStore((s) => s.modMatrix);
@@ -66,7 +64,6 @@ const SynthRenderer = memo(function SynthRenderer({
 	const setMainPanelMode = useSynthUiStore((s) => s.setMainPanelMode);
 	const keyboardVisible = useSynthUiStore((s) => s.keyboardVisible);
 	const setKeyboardVisible = useSynthUiStore((s) => s.setKeyboardVisible);
-	const keyboardHeight = useSynthUiStore((s) => s.keyboardHeight);
 	const libraryModeOpen = useSynthUiStore((s) => s.libraryModeOpen);
 	const setLibraryModeOpen = useSynthUiStore((s) => s.setLibraryModeOpen);
 	const setBrandInfoOpen = useSynthUiStore((s) => s.setBrandInfoOpen);
@@ -80,19 +77,27 @@ const SynthRenderer = memo(function SynthRenderer({
 
 	useAudioLevelMonitor(runtime.analyserNodeRef, onAudioLevelChange);
 
-	const keyboardInsetPx = keyboardHeight + 16;
-	const mainPanelBottomInset =
-		keyboardVisible && !libraryModeOpen ? `${keyboardInsetPx / 16}rem` : "0rem";
-	const mainPanelPaddingBottom =
-		keyboardVisible && !libraryModeOpen ? `${keyboardInsetPx}px` : "0px";
-	const sidebarAvailableHeight =
-		keyboardVisible && !libraryModeOpen
-			? `calc(100% - ${mainPanelPaddingBottom})`
-			: "100%";
-	const frameStyleWithPanelInset = {
-		...frameStyle,
-		"--main-panel-bottom-inset": mainPanelBottomInset,
-	} as CSSProperties;
+	const keyboardVisibleRef = useRef(keyboardVisible);
+	keyboardVisibleRef.current = keyboardVisible;
+	const keyboardPanelRef = usePanelRef();
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: mount-only sync
+	useEffect(() => {
+		if (!keyboardVisibleRef.current) {
+			keyboardPanelRef.current?.collapse();
+		}
+	}, []);
+
+	const handleKeyboardToggle = useCallback(() => {
+		const panel = keyboardPanelRef.current;
+		if (!panel) return;
+		if (keyboardVisible) {
+			panel.collapse();
+		} else {
+			panel.expand();
+			panel.resize("23%");
+		}
+	}, [keyboardVisible, keyboardPanelRef]);
 
 	const handleCloseLibrary = useCallback(() => {
 		setLibraryModeOpen(false);
@@ -115,8 +120,8 @@ const SynthRenderer = memo(function SynthRenderer({
 					>
 						<div
 							data-theme="cosmo"
-							className={`${FRAME_CLASS} relative select-none`}
-							style={frameStyleWithPanelInset}
+							className="relative flex h-full min-h-0 w-full min-w-0 select-none flex-col overflow-hidden bg-cz-panel"
+							style={frameStyle}
 						>
 							<div className="relative z-30">
 								<SynthHeader
@@ -129,43 +134,74 @@ const SynthRenderer = memo(function SynthRenderer({
 								/>
 								{headerExtra}
 							</div>
-							<div className="relative z-10 flex min-h-0 w-full min-w-0 flex-1 gap-2 overflow-hidden bg-cz-surface px-1">
-								<div
-									className="flex min-h-0 items-stretch overflow-hidden"
-									style={{ height: sidebarAvailableHeight }}
+
+							<Group
+								orientation="vertical"
+								className="z-10 min-h-0 flex-1 gap-0 overflow-hidden bg-cz-surface px-1"
+							>
+								<Panel minSize="30%">
+									<Group
+										orientation="horizontal"
+										className="h-full min-h-0 gap-0"
+									>
+										<Panel defaultSize="23%" minSize="20%" maxSize="25%">
+											<SynthSidebar libraryModeOpen={libraryModeOpen} />
+										</Panel>
+										<Separator className={RESIZE_HANDLE_HORIZONTAL}>
+											<div className="h-12 w-1 rounded-full bg-cz-border/80 transition-colors group-hover:bg-cz-light-blue/60" />
+										</Separator>
+										<Panel minSize="50%">
+											<SynthRendererMainPanel
+												mainPanelMode={mainPanelMode}
+												setMainPanelMode={setMainPanelMode}
+											/>
+										</Panel>
+									</Group>
+								</Panel>
+								<Separator className={RESIZE_HANDLE_VERTICAL}>
+									<div className="h-0.5 w-12 rounded-full bg-cz-border/40 transition-colors group-hover:bg-cz-light-blue/60" />
+								</Separator>
+								<Panel
+									collapsible
+									collapsedSize="0%"
+									defaultSize="23%"
+									minSize="8%"
+									maxSize="30%"
+									panelRef={keyboardPanelRef}
+									onResize={(_size, _id, prevSize) => {
+										if (prevSize === undefined) return;
+										const size = _size.asPercentage;
+										const prev = prevSize.asPercentage;
+										if (size === 0 && prev > 0) {
+											if (keyboardVisibleRef.current) setKeyboardVisible(false);
+										} else if (size > 0 && prev === 0) {
+											if (!keyboardVisibleRef.current) setKeyboardVisible(true);
+										}
+									}}
 								>
-									<SynthSidebar
-										sidebarMinWidthRem={sidebarMinWidthRem}
-										fillAvailableHeight
-										libraryModeOpen={libraryModeOpen}
-									/>
-								</div>
-								<div
-									className="flex min-h-0 flex-1 items-stretch justify-center overflow-hidden"
-									style={{ paddingBottom: mainPanelPaddingBottom }}
-								>
-									<SynthRendererMainPanel
-										mainPanelMode={mainPanelMode}
-										setMainPanelMode={setMainPanelMode}
-									/>
-								</div>
-							</div>
+									{keyboardVisible && !libraryModeOpen ? (
+										<MiniKeyboardOverlay
+											activeNotes={activeNotes}
+											onNoteOn={sendNoteOn}
+											onNoteOff={sendNoteOff}
+											onPolyAftertouch={sendPolyAftertouch}
+										/>
+									) : null}
+								</Panel>
+							</Group>
+
 							<SynthRendererLibraryOverlay
 								isOpen={libraryModeOpen}
 								onNavigationEntriesChange={setNavigationEntryIds}
 								onClose={handleCloseLibrary}
 							/>
-							<HoverAwareSynthRendererOverlays
+
+							<SynthBottomSection
 								appVersion={appVersion}
 								audioGate={audioGate}
-								activeNotes={activeNotes}
-								libraryModeOpen={libraryModeOpen}
-								keyboardVisible={keyboardVisible}
-								onNoteOn={sendNoteOn}
-								onNoteOff={sendNoteOff}
-								onPolyAftertouch={sendPolyAftertouch}
 								bottomBarExtra={bottomBarExtra}
-								onKeyboardToggle={() => setKeyboardVisible(!keyboardVisible)}
+								keyboardVisible={keyboardVisible}
+								onKeyboardToggle={handleKeyboardToggle}
 							/>
 						</div>
 					</ScopeProvider>
@@ -174,6 +210,37 @@ const SynthRenderer = memo(function SynthRenderer({
 		</HoverInfoProvider>
 	);
 });
+
+type SynthBottomSectionProps = {
+	appVersion: string;
+	audioGate: { ready: boolean; onResume: () => void };
+	bottomBarExtra?: ReactNode;
+	keyboardVisible: boolean;
+	onKeyboardToggle: () => void;
+};
+
+function SynthBottomSection({
+	appVersion,
+	audioGate,
+	bottomBarExtra,
+	keyboardVisible,
+	onKeyboardToggle,
+}: SynthBottomSectionProps) {
+	const { infoText } = useHoverInfo();
+
+	return (
+		<>
+			<SynthInfoBar
+				infoText={infoText}
+				bottomBarExtra={bottomBarExtra}
+				showKeyboardToggle
+				keyboardVisible={keyboardVisible}
+				onKeyboardToggle={onKeyboardToggle}
+			/>
+			<SynthRendererOverlays appVersion={appVersion} audioGate={audioGate} />
+		</>
+	);
+}
 
 export default SynthRenderer;
 export const SharedPhaseDistortionVisualizer = SynthRenderer;

@@ -14,20 +14,13 @@ export default memo(function SynthRendererMainPanel({
 	setMainPanelMode,
 }: SynthRendererMainPanelProps) {
 	return (
-		<main
-			className="mx-auto flex min-h-0 flex-none flex-col overflow-hidden rounded-md"
-			style={{
-				aspectRatio: "4/3",
-				maxWidth: "100%",
-				width: "auto",
-			}}
-		>
+		<main className="@container mx-auto flex aspect-4/3 h-full min-h-0 w-auto min-w-0 max-w-[99%] flex-col overflow-hidden rounded-2xl">
 			<SynthRendererTopBar
 				mainPanelMode={mainPanelMode}
 				setMainPanelMode={setMainPanelMode}
 			/>
 			<div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
-				<PhaseLinesSection className="main-panel-fill min-h-0" />
+				<PhaseLinesSection className="main-panel-fill absolute inset-0" />
 				<SynthRendererDrawer />
 			</div>
 		</main>

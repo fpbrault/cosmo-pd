@@ -60,7 +60,6 @@ describe("Layout Components Smoke Tests", () => {
 			render(
 				<MiniKeyboardOverlay
 					activeNotes={[]}
-					visible={true}
 					onNoteOn={vi.fn()}
 					onNoteOff={vi.fn()}
 				/>,

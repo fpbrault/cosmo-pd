@@ -93,7 +93,7 @@ const DEFAULT_UI_STATE: SynthUiState = {
 	phaseLinePanelTab: "line1-algos",
 	activeEnvTab: "dcw",
 	keyboardVisible: true,
-	keyboardOctaves: 3,
+	keyboardOctaves: 2,
 	keyboardRange: 0,
 	keyboardHeight: 160,
 	keyboardInputMode: "velocity",

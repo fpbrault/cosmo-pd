@@ -3,7 +3,6 @@ import { memo } from "react";
 import { ScopeMiniDisplay } from "@/components/panels/analysis/ScopeDisplay";
 import MacroKnobsPanel from "@/components/panels/macro/MacroKnobsPanel";
 import MidiLearnPanel from "@/components/panels/midi/MidiLearnPanel";
-import { joinClasses } from "@/components/primitives/Card";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import SynthSidebarButtons from "./SynthSidebarButtons";
 
@@ -15,33 +14,18 @@ const MIDI_LEARN_PANEL_TRANSITION = {
 } as const;
 
 type SynthSidebarProps = {
-	sidebarMinWidthRem?: number;
-	fillAvailableHeight?: boolean;
 	libraryModeOpen: boolean;
 };
 
 export default memo(function SynthSidebar({
-	sidebarMinWidthRem = 18,
-	fillAvailableHeight = true,
 	libraryModeOpen,
 }: SynthSidebarProps) {
 	const midiLearnOpen = useSynthUiStore((s) => s.midiLearnOpen);
 	const mainPanelMode = useSynthUiStore((s) => s.mainPanelMode);
 	const waveDrawerOpen = mainPanelMode === "display";
-	const containerClassName = joinClasses(
-		"flex min-h-0 flex-col overflow-hidden rounded-[1.15rem] border border-cz-border/80 bg-cz-inset px-0 pb-2 shadow-lg",
-		fillAvailableHeight ? "self-stretch" : "self-start",
-	);
-	const macroPanelClassName = joinClasses(
-		"mt-2 min-h-0 px-2 pb-1",
-		fillAvailableHeight ? "flex-1" : "flex-none",
-	);
 
 	return (
-		<aside
-			className={containerClassName}
-			style={{ minWidth: `${sidebarMinWidthRem}rem` }}
-		>
+		<aside className="flex h-full min-h-0 flex-col overflow-hidden rounded-[1.15rem] border border-cz-border/80 bg-cz-inset px-0 pb-2 shadow-lg">
 			<div className="min-w-full">
 				<div className="relative h-60 overflow-hidden">
 					<div className="absolute inset-0 p-3">
@@ -67,7 +51,7 @@ export default memo(function SynthSidebar({
 			</div>
 			<SynthSidebarButtons />
 			{!libraryModeOpen ? (
-				<div className={macroPanelClassName}>
+				<div className="mt-2 min-h-0 flex-1 px-2 pb-1">
 					<MacroKnobsPanel />
 				</div>
 			) : (

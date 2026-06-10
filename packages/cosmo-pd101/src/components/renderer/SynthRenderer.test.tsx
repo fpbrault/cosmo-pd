@@ -40,14 +40,7 @@ vi.mock("@/components/preset/SynthHeader", () => ({
 	),
 }));
 vi.mock("@/components/layout/SynthSidebar", () => ({
-	default: ({ sidebarMinWidthRem }: { sidebarMinWidthRem?: number }) => (
-		<div
-			data-testid="synth-sidebar"
-			data-sidebar-min-width={sidebarMinWidthRem}
-		>
-			sidebar
-		</div>
-	),
+	default: () => <div data-testid="synth-sidebar">sidebar</div>,
 }));
 vi.mock("@/components/preset/PresetLibrary", () => ({
 	default: ({
@@ -117,6 +110,12 @@ vi.mock("./SynthRendererMainPanel", () => ({
 }));
 vi.mock("./SynthRendererOverlays", () => ({
 	default: () => <div data-testid="synth-overlays" />,
+}));
+vi.mock("@/components/layout/MiniKeyboardOverlay", () => ({
+	default: () => <div data-testid="mini-keyboard-overlay" />,
+}));
+vi.mock("@/components/layout/SynthInfoBar", () => ({
+	default: () => <div data-testid="synth-info-bar" />,
 }));
 
 const mockRuntime: SynthRuntime = {
@@ -221,22 +220,6 @@ describe("SynthRenderer", () => {
 	it("renders without crashing", () => {
 		renderWithProvider();
 		expect(screen.getByTestId("synth-header")).toBeInTheDocument();
-	});
-
-	it("passes a custom sidebar width through to the sidebar", () => {
-		render(
-			<PresetManagerProvider value={mockPresetManager}>
-				<SynthRenderer
-					runtime={mockRuntime}
-					appVersion="0.2.0"
-					sidebarMinWidthRem={20.3125}
-				/>
-			</PresetManagerProvider>,
-		);
-		expect(screen.getByTestId("synth-sidebar")).toHaveAttribute(
-			"data-sidebar-min-width",
-			"20.3125",
-		);
 	});
 
 	it("closes the library overlay through the extracted library component", () => {
