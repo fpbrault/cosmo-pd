@@ -10,6 +10,7 @@ import { Group, Panel, Separator, usePanelRef } from "react-resizable-panels";
 import MiniKeyboardOverlay from "@/components/layout/MiniKeyboardOverlay";
 import SynthInfoBar from "@/components/layout/SynthInfoBar";
 import SynthSidebar from "@/components/layout/SynthSidebar";
+import MacroKnobsPanel from "@/components/panels/macro/MacroKnobsPanel";
 import SynthHeader from "@/components/preset/SynthHeader";
 import { ModMatrixProvider } from "@/context/ModMatrixContext";
 import { usePresetManager } from "@/context/PresetManagerContext";
@@ -45,7 +46,7 @@ export type SynthRendererProps = {
 const RESIZE_HANDLE_HORIZONTAL =
 	"group relative flex w-3 shrink-0 items-center justify-center transition-colors hover:bg-cz-light-blue/30";
 const RESIZE_HANDLE_VERTICAL =
-	"group relative flex h-4 shrink-0 items-center justify-center transition-colors hover:bg-cz-light-blue/30";
+	"group relative flex h-2 shrink-0 items-center justify-center transition-colors hover:bg-cz-light-blue/30";
 
 const SynthRenderer = memo(function SynthRenderer({
 	appVersion,
@@ -145,10 +146,10 @@ const SynthRenderer = memo(function SynthRenderer({
 										className="h-full min-h-0 gap-0"
 									>
 										<Panel defaultSize="23%" minSize="20%" maxSize="25%">
-											<SynthSidebar libraryModeOpen={libraryModeOpen} />
+											<SynthSidebar />
 										</Panel>
 										<Separator className={RESIZE_HANDLE_HORIZONTAL}>
-											<div className="h-12 w-1 rounded-full bg-cz-border/80 transition-colors group-hover:bg-cz-light-blue/60" />
+											<div className="h-12 w-1 rounded-full bg-cz-light-blue/20 transition-colors group-hover:bg-cz-light-blue/60" />
 										</Separator>
 										<Panel minSize="50%">
 											<SynthRendererMainPanel
@@ -159,13 +160,13 @@ const SynthRenderer = memo(function SynthRenderer({
 									</Group>
 								</Panel>
 								<Separator className={RESIZE_HANDLE_VERTICAL}>
-									<div className="h-0.5 w-12 rounded-full bg-cz-border/40 transition-colors group-hover:bg-cz-light-blue/60" />
+									<div className="h-1 w-12 rounded-full bg-cz-light-blue/20 transition-colors group-hover:bg-cz-light-blue/60" />
 								</Separator>
 								<Panel
 									collapsible
 									collapsedSize="0%"
 									defaultSize="23%"
-									minSize="8%"
+									minSize="22%"
 									maxSize="30%"
 									panelRef={keyboardPanelRef}
 									onResize={(_size, _id, prevSize) => {
@@ -180,12 +181,19 @@ const SynthRenderer = memo(function SynthRenderer({
 									}}
 								>
 									{keyboardVisible && !libraryModeOpen ? (
-										<MiniKeyboardOverlay
-											activeNotes={activeNotes}
-											onNoteOn={sendNoteOn}
-											onNoteOff={sendNoteOff}
-											onPolyAftertouch={sendPolyAftertouch}
-										/>
+										<div className="flex h-full w-full">
+											<div className="w-60 shrink-0 border-cz-border/40 border-r">
+												<MacroKnobsPanel />
+											</div>
+											<div className="min-w-0 flex-1">
+												<MiniKeyboardOverlay
+													activeNotes={activeNotes}
+													onNoteOn={sendNoteOn}
+													onNoteOff={sendNoteOff}
+													onPolyAftertouch={sendPolyAftertouch}
+												/>
+											</div>
+										</div>
 									) : null}
 								</Panel>
 							</Group>

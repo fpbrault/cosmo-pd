@@ -109,7 +109,7 @@ const MacroKnob = memo(function MacroKnob({ macroIndex }: MacroKnobProps) {
 								? "var(--color-cz-tab-blue)"
 								: "var(--color-cz-tab-blue)"
 				}
-				size={80}
+				size={60}
 				valueFormatter={(v) => (v * 100).toFixed(0)}
 				valueVisibility="hover"
 				onClick={midiLearn.onClick}

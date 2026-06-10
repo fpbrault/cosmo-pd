@@ -8,9 +8,6 @@ vi.mock("@/components/panels/analysis/ScopeDisplay", () => ({
 vi.mock("@/components/panels/midi/MidiLearnPanel", () => ({
 	default: () => <div data-testid="midi-learn-panel" />,
 }));
-vi.mock("@/components/panels/macro/MacroKnobsPanel", () => ({
-	default: () => <div data-testid="macro-panel">macro</div>,
-}));
 vi.mock("./SynthSidebarButtons", () => ({
 	default: () => <div data-testid="sidebar-buttons" />,
 }));
@@ -27,10 +24,9 @@ vi.mock("@/features/synth/synthUiStore", () => {
 
 describe("SynthSidebar", () => {
 	it("renders core panels and triggers callbacks", () => {
-		render(<SynthSidebar libraryModeOpen={false} />);
+		render(<SynthSidebar />);
 		expect(screen.getByTestId("scope-mini-display")).toBeInTheDocument();
 		expect(screen.getByTestId("midi-learn-panel")).toBeInTheDocument();
 		expect(screen.getByTestId("sidebar-buttons")).toBeInTheDocument();
-		expect(screen.getByTestId("macro-panel")).toBeInTheDocument();
 	});
 });
