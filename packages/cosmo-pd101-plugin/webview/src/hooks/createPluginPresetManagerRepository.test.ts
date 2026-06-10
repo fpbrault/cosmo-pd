@@ -61,7 +61,7 @@ describe("createPluginPresetManagerRepository", () => {
 				libraryPresets: expect.arrayContaining([
 					expect.objectContaining({
 						id: "0",
-						name: "Bliss",
+						name: "Blissful Brass",
 						author: "Purr Audio",
 						starred: true,
 					}),
