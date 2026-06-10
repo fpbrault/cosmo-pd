@@ -100,6 +100,10 @@ describe("visualModulationScale", () => {
 			wrapper,
 		});
 
+		act(() => {
+			result.current?.registerLiveModSourcesConsumer();
+		});
+
 		expect(result.current?.getRouteCount("volume")).toBe(1);
 		expect(result.current?.hasActiveRoutes("volume")).toBe(true);
 		expect(
@@ -138,6 +142,9 @@ describe("visualModulationScale", () => {
 	it("updates and clears runtime voice states via event lifecycle", () => {
 		const { result, unmount } = renderHook(() => useOptionalSynthController(), {
 			wrapper: withController(),
+		});
+		act(() => {
+			result.current?.registerLiveVoiceStatesConsumer();
 		});
 		act(() => {
 			window.dispatchEvent(
