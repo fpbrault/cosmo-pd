@@ -48,8 +48,12 @@ describe("MiniKeyboardOverlay", () => {
 		const result = render(
 			<MiniKeyboardOverlay
 				activeNotes={[]}
+				pitchBend={0}
+				modWheel={0}
 				onNoteOn={onNoteOn}
 				onNoteOff={onNoteOff}
+				onPitchBend={vi.fn()}
+				onModWheel={vi.fn()}
 				onPolyAftertouch={onPolyAftertouch}
 			/>,
 		);

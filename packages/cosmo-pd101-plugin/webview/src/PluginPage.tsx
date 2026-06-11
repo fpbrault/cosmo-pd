@@ -241,8 +241,12 @@ export default function PluginPage({
 							disableAudioGate
 							miniKeyboard={{
 								activeNotes: runtime.activeNotes,
+								pitchBend: runtime.pitchBend,
+								modWheel: runtime.modWheel,
 								onNoteOn: runtime.sendNoteOn,
 								onNoteOff: runtime.sendNoteOff,
+								onPitchBend: runtime.sendPitchBend,
+								onModWheel: runtime.sendModWheel,
 								onPolyAftertouch: runtime.sendPolyAftertouch,
 							}}
 						/>

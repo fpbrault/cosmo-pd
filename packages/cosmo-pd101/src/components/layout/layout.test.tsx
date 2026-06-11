@@ -60,8 +60,12 @@ describe("Layout Components Smoke Tests", () => {
 			render(
 				<MiniKeyboardOverlay
 					activeNotes={[]}
+					pitchBend={0}
+					modWheel={0}
 					onNoteOn={vi.fn()}
 					onNoteOff={vi.fn()}
+					onPitchBend={vi.fn()}
+					onModWheel={vi.fn()}
 				/>,
 			);
 		});
