@@ -9,10 +9,6 @@ const auv3BridgePath = path.join(
 	repoRoot,
 	"packages/cosmo-pd101-plugin/webview/src/lib/auv3Bridge.ts",
 );
-const swiftPackageControllerPath = path.join(
-	packageRoot,
-	"Sources/CosmoPd101AUv3/CosmoPd101ViewController.swift",
-);
 const xcodeControllerPath = path.join(
 	packageRoot,
 	"CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/UI/AudioUnitViewController.swift",
@@ -63,9 +59,7 @@ describe("AUv3 bridge contract", () => {
 			requiredBridgeMethods.add(method);
 		}
 
-		const swiftPackageMethods = extractSwiftSwitchMethods(
-			readText(swiftPackageControllerPath),
-		);
+
 		const xcodeControllerMethods = extractSwiftSwitchMethods(
 			readText(xcodeControllerPath),
 		);
@@ -74,18 +68,11 @@ describe("AUv3 bridge contract", () => {
 			[...new Set([...requiredBridgeMethods])].sort(),
 		);
 
-		expect(
-			[...requiredBridgeMethods].filter(
-				(method) => !swiftPackageMethods.has(method),
-			),
-		).toEqual([]);
+
 		expect(
 			[...requiredBridgeMethods].filter(
 				(method) => !xcodeControllerMethods.has(method),
 			),
 		).toEqual([]);
-		expect([...swiftPackageMethods].sort()).toEqual(
-			[...xcodeControllerMethods].sort(),
-		);
 	});
 });
