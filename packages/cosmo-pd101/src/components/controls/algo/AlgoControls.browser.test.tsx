@@ -58,7 +58,7 @@ describe("algo controls (browser)", () => {
 			<AlgoControlTooltip description="Helpful info" />,
 		);
 		expect(
-			screen.getByRole("button", { name: "showControlDescription" }),
+			screen.getByRole("button", { name: "Show control description" }),
 		).toHaveAttribute("data-hover-info", "Helpful info");
 
 		rerender(<AlgoControlTooltip description={undefined} />);
@@ -207,7 +207,7 @@ describe("algo controls (browser)", () => {
 			applyOptionAssignments: () => {},
 		};
 		const { rerender } = render(<AlgoControlsGroup slot={sharedSlot} />);
-		expect(screen.getByText("noControlsForThisAlgo")).toBeInTheDocument();
+		expect(screen.getByText("No controls for this algo")).toBeInTheDocument();
 
 		rerender(
 			<AlgoControlsGroup
