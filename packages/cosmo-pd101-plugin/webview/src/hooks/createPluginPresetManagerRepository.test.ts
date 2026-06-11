@@ -17,6 +17,8 @@ describe("createPluginPresetManagerRepository", () => {
 		mockCreateWebPresetManagerRepository.mockReset();
 		delete window.__czHostPlatform;
 		delete window.__czSavePreset;
+		delete window.__czGetPresetLibrary;
+		delete window.__czSetPresetDescription;
 	});
 
 	it("uses shared AUv3 fallback presets with authored metadata", async () => {
@@ -34,6 +36,7 @@ describe("createPluginPresetManagerRepository", () => {
 			deletePreset: vi.fn(),
 			renamePreset: vi.fn(),
 			setPresetAuthor: vi.fn(),
+			setPresetDescription: vi.fn(),
 			setPresetFavorite: vi.fn(),
 			setPresetTags: vi.fn(),
 			initPreset: vi.fn(),
@@ -76,5 +79,40 @@ describe("createPluginPresetManagerRepository", () => {
 			name: "My Pad",
 		});
 		expect(window.__czSavePreset).not.toHaveBeenCalled();
+	});
+
+	it("maps and updates native preset descriptions", async () => {
+		window.__czGetPresetLibrary = vi.fn().mockResolvedValue({
+			entries: [
+				{
+					id: "factory-1",
+					name: "Factory Pad",
+					source: "cosmo-factory",
+					author: "Purr Audio",
+					description: "Slow and spacious.",
+					starred: false,
+					tags: ["pad"],
+				},
+			],
+		});
+		window.__czSetPresetDescription = vi.fn().mockResolvedValue(null);
+
+		const repository = createPluginPresetManagerRepository({
+			applyPreset: vi.fn(),
+			gatherPresetState: () =>
+				({ schemaVersion: 1, params: { volume: 1 } }) as never,
+		});
+
+		await expect(repository.listEntries()).resolves.toEqual([
+			expect.objectContaining({
+				id: "factory-1",
+				description: "Slow and spacious.",
+			}),
+		]);
+		await repository.setPresetDescription("factory-1", "Updated");
+		expect(window.__czSetPresetDescription).toHaveBeenCalledWith(
+			"factory-1",
+			"Updated",
+		);
 	});
 });

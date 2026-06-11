@@ -14,6 +14,7 @@ export type PresetIdentityFields = {
 	name: string;
 	source: PresetSource;
 	author: string;
+	description: string;
 	starred: boolean;
 	tags: string[];
 	data: SynthPresetV1;
@@ -68,6 +69,7 @@ function getPresetIdentityInput(preset: PresetIdentityFields): CanonicalJson {
 		name: preset.name,
 		source: preset.source,
 		author: preset.author,
+		description: preset.description,
 		starred: preset.starred,
 		tags: preset.tags,
 		data: preset.data,

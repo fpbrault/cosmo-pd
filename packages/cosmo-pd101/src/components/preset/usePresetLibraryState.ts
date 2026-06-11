@@ -70,6 +70,7 @@ export function usePresetLibraryState({
 	const [importError, setImportError] = useState<string | null>(null);
 	const [renameValue, setRenameValue] = useState("");
 	const [authorValue, setAuthorValue] = useState("");
+	const [descriptionValue, setDescriptionValue] = useState("");
 	const [showOnlyUserPresets, setShowOnlyUserPresets] = useState(false);
 	const [selectedAuthorFilter, setSelectedAuthorFilter] = useState<
 		string | null
@@ -349,8 +350,13 @@ export function usePresetLibraryState({
 			: allEntries.find(
 					(entry) => entry.id === activeEntryId && entry.type === "local",
 				);
+	const activeEntry =
+		activeEntryId === null
+			? null
+			: allEntries.find((entry) => entry.id === activeEntryId);
+	const selectedEntry = focusedEntry ?? activeEntry;
 	const selectedLocalEntry =
-		focusedEntry?.type === "local" ? focusedEntry : activeLocalEntry;
+		selectedEntry?.type === "local" ? selectedEntry : null;
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -424,6 +430,7 @@ export function usePresetLibraryState({
 	useEffect(() => {
 		setRenameValue(selectedLocalEntry?.label ?? "");
 		setAuthorValue(selectedLocalEntry?.author ?? "");
+		setDescriptionValue(selectedLocalEntry?.description ?? "");
 	}, [selectedLocalEntry]);
 
 	useEffect(() => {
@@ -446,6 +453,8 @@ export function usePresetLibraryState({
 		setRenameValue,
 		authorValue,
 		setAuthorValue,
+		descriptionValue,
+		setDescriptionValue,
 		showOnlyUserPresets,
 		setShowOnlyUserPresets,
 		selectedAuthorFilter,
@@ -470,6 +479,7 @@ export function usePresetLibraryState({
 		visibleVirtualRows,
 		focusedEntry,
 		activeLocalEntry,
+		selectedEntry,
 		selectedLocalEntry,
 		toggleSort,
 		sortIndicator,

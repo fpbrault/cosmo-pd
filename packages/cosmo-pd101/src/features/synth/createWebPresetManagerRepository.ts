@@ -120,6 +120,7 @@ export function createWebPresetManagerRepository({
 				author: currentStoredPreset?.author?.trim()
 					? currentStoredPreset.author
 					: DEFAULT_USER_PRESET_AUTHOR,
+				description: currentStoredPreset?.description ?? "",
 				starred: currentStoredPreset?.starred ?? false,
 				tags: currentStoredPreset?.tags ?? [],
 			});
@@ -132,6 +133,9 @@ export function createWebPresetManagerRepository({
 		},
 		setPresetAuthor: async (id, author) => {
 			await updateStoredPreset(id, { author });
+		},
+		setPresetDescription: async (id, description) => {
+			await updateStoredPreset(id, { description });
 		},
 		setPresetFavorite,
 		setPresetTags: async (id, tags) => {
@@ -174,6 +178,7 @@ export function createWebPresetManagerRepository({
 				data: importedPreset.data,
 				source: "user",
 				author: importedPreset.author,
+				description: importedPreset.description,
 				starred: importedPreset.starred,
 				tags: importedPreset.tags,
 			});

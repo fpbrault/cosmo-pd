@@ -73,12 +73,17 @@ declare global {
 			id?: string | null;
 			name: string;
 			author?: string;
+			description?: string;
 			tags?: string[];
 			data?: unknown;
 		}) => Promise<unknown>;
 		__czDeletePreset?: (id: string) => Promise<unknown>;
 		__czRenamePreset?: (id: string, newName: string) => Promise<unknown>;
 		__czSetPresetAuthor?: (id: string, author: string) => Promise<unknown>;
+		__czSetPresetDescription?: (
+			id: string,
+			description: string,
+		) => Promise<unknown>;
 		__czSetPresetTags?: (id: string, tags: string[]) => Promise<unknown>;
 		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
 		__czExportPreset?: (id: string) => Promise<unknown>;
@@ -338,6 +343,8 @@ function installIpcRouter() {
 		invokeRust("renamePreset", { id, newName });
 	window.__czSetPresetAuthor = (id: string, author: string) =>
 		invokeRust("setPresetAuthor", { id, author });
+	window.__czSetPresetDescription = (id: string, description: string) =>
+		invokeRust("setPresetDescription", { id, description });
 	window.__czSetPresetTags = (id: string, tags: string[]) =>
 		invokeRust("setPresetTags", { id, tags });
 	window.__czToggleStarred = (id: string, starred: boolean) =>

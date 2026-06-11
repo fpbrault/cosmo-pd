@@ -4,6 +4,7 @@ import {
 	deleteDatabase,
 	deletePreset,
 	exportPreset,
+	getDb,
 	importPreset,
 	listPresetFavorites,
 	listStoredPresets,
@@ -36,6 +37,7 @@ describe("presetStorage", () => {
 			},
 			source: "user",
 			author: "",
+			description: "A test preset.",
 			starred: false,
 			tags: ["wind", "synth"],
 		});
@@ -70,12 +72,14 @@ describe("presetStorage", () => {
 
 		expect(
 			await updatePresetMetadata(stored.id, {
+				description: "Wide and atmospheric.",
 				tags: ["pad"],
 			}),
 		).toBe(true);
 		expect(await loadStoredPreset(stored.id)).toEqual(
 			expect.objectContaining({
 				id: stored.id,
+				description: "Wide and atmospheric.",
 				tags: ["pad"],
 			}),
 		);
@@ -135,6 +139,7 @@ describe("presetStorage", () => {
 			data: DEFAULT_PRESET,
 			source: "user",
 			author: "Me",
+			description: "Exported with metadata.",
 			starred: true,
 			tags: ["synth", "lead"],
 		});
@@ -142,6 +147,47 @@ describe("presetStorage", () => {
 		const json = await exportPreset(stored.id);
 		expect(json).not.toBeNull();
 		expect(await importPreset(json as string)).toEqual(stored);
+	});
+
+	it("normalizes missing legacy descriptions to an empty string", async () => {
+		const json = JSON.stringify({
+			id: "legacy",
+			name: "Legacy",
+			source: "user",
+			author: "Me",
+			starred: false,
+			tags: [],
+			data: DEFAULT_PRESET,
+		});
+
+		expect(await importPreset(json)).toEqual(
+			expect.objectContaining({ description: "" }),
+		);
+	});
+
+	it("normalizes legacy IndexedDB rows when reading them", async () => {
+		const db = await getDb();
+		await new Promise<void>((resolve, reject) => {
+			const tx = db.transaction("presets", "readwrite");
+			tx.objectStore("presets").put({
+				id: "legacy-row",
+				name: "Legacy Row",
+				source: "user",
+				author: "Me",
+				starred: false,
+				tags: [],
+				data: DEFAULT_PRESET,
+			});
+			tx.oncomplete = () => resolve();
+			tx.onerror = () => reject(tx.error);
+		});
+
+		expect(await loadStoredPreset("legacy-row")).toEqual(
+			expect.objectContaining({ description: "" }),
+		);
+		expect(await listStoredPresets()).toEqual([
+			expect.objectContaining({ id: "legacy-row", description: "" }),
+		]);
 	});
 
 	it("imports raw synth preset payloads", async () => {

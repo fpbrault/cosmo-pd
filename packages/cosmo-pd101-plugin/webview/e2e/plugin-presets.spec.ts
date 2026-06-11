@@ -35,6 +35,40 @@ test.describe("Preset management", () => {
 		await expect(presetButton).not.toContainText("*");
 	});
 
+	test("persists a user preset description and finds it in search", async ({
+		page,
+	}) => {
+		await page.getByRole("button", { name: /^preset /i }).click();
+
+		const currentStateSection = page
+			.locator("section")
+			.filter({ has: page.getByRole("heading", { name: "Current State" }) });
+		await currentStateSection.getByRole("button", { name: "Save As" }).click();
+
+		const saveAsDialog = page
+			.locator("dialog[open]")
+			.filter({ has: page.getByRole("heading", { name: "Save preset as" }) });
+		await saveAsDialog
+			.getByPlaceholder("New preset name")
+			.fill("E2E Description Patch");
+		await saveAsDialog.getByRole("button", { name: "Confirm save as" }).click();
+
+		const presetRow = page.getByRole("button", {
+			name: "E2E Description Patch",
+			exact: true,
+		});
+		await expect(presetRow).toBeVisible();
+		await presetRow.click();
+
+		const description = page.getByPlaceholder("Describe this preset");
+		await description.fill("Glassy motion with a slow evolving tail");
+		await description.blur();
+
+		const search = page.getByPlaceholder("Search presets");
+		await search.fill("slow evolving tail");
+		await expect(presetRow).toBeVisible();
+	});
+
 	test.skip("saves, renames, and deletes a local preset", async ({ page }) => {
 		await page.getByRole("button", { name: /^preset /i }).click();
 
