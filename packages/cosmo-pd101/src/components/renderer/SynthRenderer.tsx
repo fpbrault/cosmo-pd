@@ -44,9 +44,9 @@ export type SynthRendererProps = {
 };
 
 const RESIZE_HANDLE_HORIZONTAL =
-	"group relative flex w-3 shrink-0 items-center justify-center transition-colors hover:bg-cz-light-blue/30";
+	"group relative flex w-3 shrink-0 items-center justify-center transition-colors hover:bg-cz-light-blue/30 rounded-2xl bg-cz-border my-1 mx-0.5";
 const RESIZE_HANDLE_VERTICAL =
-	"group relative flex h-2 shrink-0 items-center justify-center transition-colors hover:bg-cz-light-blue/30";
+	"group relative flex h-2 shrink-0 items-center justify-center transition-colors hover:bg-cz-light-blue/30 rounded-2xl bg-cz-border mx-1 my-0.5";
 
 const SynthRenderer = memo(function SynthRenderer({
 	appVersion,
@@ -140,7 +140,12 @@ const SynthRenderer = memo(function SynthRenderer({
 								orientation="horizontal"
 								className="z-10 min-h-0 flex-1 gap-0 overflow-hidden bg-cz-surface px-1"
 							>
-								<Panel defaultSize="23%" minSize="23%" maxSize="30%">
+								<Panel
+									defaultSize="23%"
+									minSize="23%"
+									maxSize="30%"
+									collapsible
+								>
 									<div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[1.15rem] border border-cz-border/80 bg-cz-inset p-2 shadow-lg">
 										<Group
 											orientation="vertical"
