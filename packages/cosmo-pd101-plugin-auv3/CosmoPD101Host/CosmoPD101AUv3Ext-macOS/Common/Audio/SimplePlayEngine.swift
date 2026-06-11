@@ -9,6 +9,9 @@ import Foundation
 import CoreAudioKit
 import AVFoundation
 @preconcurrency import AVFAudio
+import os
+
+private let speLog = OSLog(subsystem: "com.cosmo.pd101.auv3", category: "SPE")
 
 #if os(iOS) || os(visionOS)
 import UIKit
@@ -171,7 +174,8 @@ public class SimplePlayEngine {
         engine.attach(player)
         
         guard let fileURL = Bundle.main.url(forResource: "Synth", withExtension: "aif") else {
-            fatalError("\"Synth.aif\" file not found.")
+            os_log(.error, log: speLog, "\"Synth.aif\" file not found; running without playback file")
+            return
         }
         setPlayerFile(fileURL)
         
@@ -379,7 +383,7 @@ public class SimplePlayEngine {
             self.file = file
             engine.connect(player, to: engine.mainMixerNode, format: file.processingFormat)
         } catch {
-            fatalError("Could not create AVAudioFile instance. error: \(error).")
+            os_log(.error, log: speLog, "Could not create AVAudioFile instance: %@", error.localizedDescription)
         }
     }
     
@@ -390,7 +394,7 @@ public class SimplePlayEngine {
             try session.setCategory(.playback, mode: .default)
             try session.setActive(active)
         } catch {
-            fatalError("Could not set Audio Session active \(active). error: \(error).")
+            os_log(.error, log: speLog, "Could not set Audio Session active: %@", error.localizedDescription)
         }
 #endif
     }
@@ -439,7 +443,7 @@ public class SimplePlayEngine {
             try engine.start()
         } catch {
             isPlaying = false
-            fatalError("Could not start engine. error: \(error).")
+            os_log(.error, log: speLog, "Could not start engine: %@", error.localizedDescription)
         }
         
         if avAudioUnit.wantsAudioInput {
@@ -465,7 +469,8 @@ public class SimplePlayEngine {
     
     private func scheduleEffectLoop() {
         guard let file = file else {
-            fatalError("`file` must not be nil in \(#function).")
+            os_log(.error, log: speLog, "`file` must not be nil in scheduleEffectLoop")
+            return
         }
         
         Task {
@@ -483,7 +488,10 @@ public class SimplePlayEngine {
         
         if avAudioUnit.wantsAudioInput {
             // Connect player -> mixer.
-            guard let format = file?.processingFormat else { fatalError("No AVAudioFile defined (processing format unavailable).") }
+            guard let format = file?.processingFormat else {
+                os_log(.error, log: speLog, "No AVAudioFile defined (processing format unavailable)")
+                return
+            }
             engine.connect(player, to: engine.mainMixerNode, format: format)
         }
     }
