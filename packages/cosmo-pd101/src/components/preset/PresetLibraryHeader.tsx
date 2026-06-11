@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 import { getPresetTagCheckboxClassName } from "./presetTagTone";
 import type { FilterOptions } from "./usePresetLibraryState";
@@ -54,11 +55,12 @@ export default memo(function PresetLibraryHeader({
 	onToggleSort,
 	sortIndicator: getSortIndicator,
 }: PresetLibraryHeaderProps) {
+	const { t } = useTranslation("synth");
 	return (
 		<div className="grid grid-cols-[1fr_auto] items-start gap-3 border-cz-border border-b bg-cz-body px-5 py-4">
 			<div>
 				<p className="font-mono text-3xs text-cz-gold uppercase tracking-[0.32em]">
-					Preset Library
+					{t("presetLibrary.title")}
 				</p>
 				<h2 className="mt-1 truncate font-bold font-mono text-cz-cream text-xl">
 					{activePresetName}
@@ -66,20 +68,23 @@ export default memo(function PresetLibraryHeader({
 			</div>
 			<div className="flex flex-wrap place-content-end items-center gap-2">
 				<p className="font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.2em]">
-					{totalCount} {totalCount === 1 ? "Preset" : "Presets"} found
+					{totalCount}{" "}
+					{totalCount === 1
+						? t("presetLibrary.foundSingular")
+						: t("presetLibrary.foundPlural")}
 				</p>
 				<div className="flex min-w-64 items-center overflow-hidden rounded-md border border-cz-border bg-cz-inset">
 					<input
 						type="text"
 						className="h-10 min-w-0 flex-1 bg-transparent px-3 text-cz-cream text-sm placeholder-cz-cream-dim/70 outline-none"
-						placeholder="Search presets"
+						placeholder={t("presetLibrary.searchPlaceholder")}
 						value={search}
 						onChange={(event) => onSearchChange(event.target.value)}
 					/>
 					<button
 						type="button"
 						className="btn btn-ghost btn-xs mr-2 h-6 min-h-0 rounded-sm border border-cz-border/70 px-1.5 text-cz-cream-dim hover:border-cz-light-blue/60 hover:bg-cz-body hover:text-cz-cream disabled:border-cz-border/30 disabled:text-cz-cream-dim/40"
-						aria-label="Clear preset search"
+						aria-label={t("presetLibrary.clearSearchAria")}
 						disabled={search.length === 0}
 						onClick={onClearSearch}
 					>
@@ -91,20 +96,20 @@ export default memo(function PresetLibraryHeader({
 					className={`btn btn-sm ${showOnlyUserPresets ? "btn-secondary" : "border-cz-border bg-cz-inset text-cz-cream hover:bg-cz-body"}`}
 					onClick={onToggleShowOnlyUserPresets}
 				>
-					User Only
+					{t("presetLibrary.userOnly")}
 				</Button>
 				<Button
 					type="button"
 					className="btn btn-sm border-cz-border bg-cz-inset text-cz-cream hover:bg-cz-body"
 					onClick={onClose}
 				>
-					Return
+					{t("presetLibrary.return")}
 				</Button>
 			</div>
 			<div className="flex gap-1">
 				<fieldset className="fieldset">
 					<legend className="fieldset-legend font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
-						Filter author
+						{t("presetLibrary.filterAuthor")}
 					</legend>
 					<form
 						className="filter"
@@ -136,7 +141,7 @@ export default memo(function PresetLibraryHeader({
 								type="reset"
 								value="x"
 								className="btn btn-square btn-sm"
-								aria-label="Clear author filters"
+								aria-label={t("presetLibrary.clearAuthorFilters")}
 								disabled={selectedAuthorFilter === null}
 							/>
 						</div>
@@ -144,7 +149,7 @@ export default memo(function PresetLibraryHeader({
 				</fieldset>
 				<fieldset className="fieldset">
 					<legend className="fieldset-legend font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
-						Filter bank
+						{t("presetLibrary.filterBank")}
 					</legend>
 					<form
 						className="filter"
@@ -176,7 +181,7 @@ export default memo(function PresetLibraryHeader({
 								type="reset"
 								value="x"
 								className="btn btn-square btn-sm"
-								aria-label="Clear bank filters"
+								aria-label={t("presetLibrary.clearBankFilters")}
 								disabled={selectedBankFilter === null}
 							/>
 						</div>
@@ -185,7 +190,7 @@ export default memo(function PresetLibraryHeader({
 			</div>
 			<fieldset className="fieldset max-w-164">
 				<legend className="fieldset-legend font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
-					Filter tags
+					{t("presetLibrary.filterTags")}
 				</legend>
 				<form
 					onSubmit={(event) => event.preventDefault()}
@@ -224,7 +229,7 @@ export default memo(function PresetLibraryHeader({
 							type="reset"
 							value="x"
 							className="btn btn-square btn-sm"
-							aria-label="Clear tag filters"
+							aria-label={t("presetLibrary.clearTagFilters")}
 							disabled={selectedTagFilters.length === 0}
 						/>
 					</div>
@@ -250,28 +255,32 @@ export default memo(function PresetLibraryHeader({
 					className="text-left hover:text-cz-cream"
 					onClick={() => onToggleSort("name")}
 				>
-					Name{getSortIndicator("name")}
+					{t("presetLibrary.sortName")}
+					{getSortIndicator("name")}
 				</button>
 				<button
 					type="button"
 					className="text-left hover:text-cz-cream"
 					onClick={() => onToggleSort("bank")}
 				>
-					Bank{getSortIndicator("bank")}
+					{t("presetLibrary.sortBank")}
+					{getSortIndicator("bank")}
 				</button>
 				<button
 					type="button"
 					className="text-left hover:text-cz-cream"
 					onClick={() => onToggleSort("author")}
 				>
-					Author{getSortIndicator("author")}
+					{t("presetLibrary.sortAuthor")}
+					{getSortIndicator("author")}
 				</button>
 				<button
 					type="button"
 					className="text-left hover:text-cz-cream"
 					onClick={() => onToggleSort("tags")}
 				>
-					Tags{getSortIndicator("tags")}
+					{t("presetLibrary.sortTags")}
+					{getSortIndicator("tags")}
 				</button>
 			</div>
 		</div>

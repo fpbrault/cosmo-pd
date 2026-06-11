@@ -1,10 +1,12 @@
+import { useTranslation } from "react-i18next";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 
 export default function RandomModule() {
+	const { t } = useTranslation("synth");
 	return (
 		<ModuleFrame
-			title="Random"
+			title={t("randomModule.title")}
 			color="#c2571a"
 			enabled
 			hideToggle
@@ -14,7 +16,11 @@ export default function RandomModule() {
 			onPresetChange={() => {}}
 			presetDisabled
 		>
-			<SynthParamKnob paramKey="randomRate" color="#c2571a" label="Rate" />
+			<SynthParamKnob
+				paramKey="randomRate"
+				color="#c2571a"
+				label={t("randomModule.rate")}
+			/>
 		</ModuleFrame>
 	);
 }

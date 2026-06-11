@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import ModEnvDisplay from "@/components/panels/drawer-modules/ModEnvDisplay";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
@@ -15,6 +16,7 @@ import {
 import { useModEnvelopePreviewDrag } from "./useModEnvelopePreviewDrag";
 
 export default function ModEnveloppeModule() {
+	const { t } = useTranslation("synth");
 	const [selectedPreset, setSelectedPreset] = useState<string>("");
 	const [liveEnvValue, setLiveEnvValue] = useState(0);
 	const previewSvgRef = useRef<SVGSVGElement | null>(null);
@@ -103,7 +105,7 @@ export default function ModEnveloppeModule() {
 
 	return (
 		<ModuleFrame
-			title="Mod Env"
+			title={t("modEnv.title")}
 			color="#c24587"
 			enabled
 			hideToggle
@@ -124,9 +126,9 @@ export default function ModEnveloppeModule() {
 			<SynthParamKnob
 				paramKey="modEnvAttack"
 				color="#c24587"
-				label="Atk"
+				label={t("modEnv.attack")}
 				midiTargetKey="modEnvAttackKnob"
-				midiLabel="Mod Env Attack"
+				midiLabel={t("modEnv.attackMidi")}
 				uiTransform={{
 					toControlValue: envSecondsToNorm,
 					fromControlValue: normToEnvSeconds,
@@ -140,9 +142,9 @@ export default function ModEnveloppeModule() {
 			<SynthParamKnob
 				paramKey="modEnvDecay"
 				color="#c24587"
-				label="Dec"
+				label={t("modEnv.decay")}
 				midiTargetKey="modEnvDecayKnob"
-				midiLabel="Mod Env Decay"
+				midiLabel={t("modEnv.decayMidi")}
 				uiTransform={{
 					toControlValue: envSecondsToNorm,
 					fromControlValue: normToEnvSeconds,
@@ -156,15 +158,15 @@ export default function ModEnveloppeModule() {
 			<SynthParamKnob
 				paramKey="modEnvSustain"
 				color="#c24587"
-				label="Sus"
+				label={t("modEnv.sustain")}
 				valueFormatter={(value) => `${Math.round((value as number) * 100)}%`}
 			/>
 			<SynthParamKnob
 				paramKey="modEnvRelease"
 				color="#c24587"
-				label="Rel"
+				label={t("modEnv.release")}
 				midiTargetKey="modEnvReleaseKnob"
-				midiLabel="Mod Env Release"
+				midiLabel={t("modEnv.releaseMidi")}
 				uiTransform={{
 					toControlValue: envSecondsToNorm,
 					fromControlValue: normToEnvSeconds,

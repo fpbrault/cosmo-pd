@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import LineSelectControl from "@/components/controls/LineSelectControl";
 import MasterVolumeControl from "@/components/controls/MasterVolumeControl";
 import ModModeControl from "@/components/controls/ModModeControl";
@@ -22,6 +23,7 @@ export default memo(function SynthRendererTopBar({
 	mainPanelMode,
 	setMainPanelMode,
 }: SynthRendererTopBarProps) {
+	const { t } = useTranslation("synth");
 	return (
 		<div className="relative flex shrink-0 overflow-hidden rounded-md border border-cz-border bg-cz-body px-3 shadow-inner">
 			<div className="flex shrink-0 items-end">
@@ -33,44 +35,44 @@ export default memo(function SynthRendererTopBar({
 						onClick={() => {
 							setMainPanelMode("phase");
 						}}
-						topLabel="Main"
+						topLabel={t("topBar.main")}
 						bottomLabel=""
 						color="red"
 						width={48}
-						tooltip="Show phase editor controls."
+						tooltip={t("topBar.mainTooltip")}
 					/>
 					<CzTabButton
 						active={mainPanelMode === "fx"}
 						onClick={() => {
 							setMainPanelMode(getNextDrawerMode(mainPanelMode, "fx"));
 						}}
-						topLabel="FX"
+						topLabel={t("topBar.fx")}
 						bottomLabel=""
 						width={48}
 						color="blue"
-						tooltip="Toggle FX console drawer."
+						tooltip={t("topBar.fxTooltip")}
 					/>
 					<CzTabButton
 						active={mainPanelMode === "mod"}
 						onClick={() => {
 							setMainPanelMode(getNextDrawerMode(mainPanelMode, "mod"));
 						}}
-						topLabel="MOD"
+						topLabel={t("topBar.mod")}
 						bottomLabel=""
 						width={48}
 						color="cyan"
-						tooltip="Toggle modulation console drawer."
+						tooltip={t("topBar.modTooltip")}
 					/>
 					<CzTabButton
 						active={mainPanelMode === "display"}
 						onClick={() => {
 							setMainPanelMode(getNextDrawerMode(mainPanelMode, "display"));
 						}}
-						topLabel="DISPLAY"
+						topLabel={t("topBar.display")}
 						bottomLabel=""
 						width={48}
 						color="grey"
-						tooltip="Toggle full-size scope drawer."
+						tooltip={t("topBar.displayTooltip")}
 					/>
 				</div>
 			</div>

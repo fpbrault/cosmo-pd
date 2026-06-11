@@ -91,6 +91,8 @@ function lfoPlayheadPoint({
 	return { x, y };
 }
 
+import { useTranslation } from "react-i18next";
+
 export default function LfoDisplay({
 	id,
 	color,
@@ -102,6 +104,7 @@ export default function LfoDisplay({
 	transportStatus,
 	showLoop,
 }: LfoDisplayProps) {
+	const { t } = useTranslation("synth");
 	const point = lfoPlayheadPoint({ waveform, symmetry, offset, depth, phase });
 
 	return (
@@ -132,7 +135,7 @@ export default function LfoDisplay({
 			</svg>
 			<div className="mt-0.5 flex items-center justify-between font-mono text-5xs text-cz-cream/55 uppercase tracking-[0.18em]">
 				<span>{transportStatus}</span>
-				{showLoop ? <span>Loop</span> : null}
+				{showLoop ? <span>{t("lfo.loop")}</span> : null}
 			</div>
 		</div>
 	);

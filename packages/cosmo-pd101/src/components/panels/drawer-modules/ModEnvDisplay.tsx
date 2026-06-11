@@ -1,4 +1,5 @@
 import type { Ref } from "react";
+import { useTranslation } from "react-i18next";
 import {
 	adsrPreviewPath,
 	type buildAdsrGeometry,
@@ -26,10 +27,11 @@ export default function ModEnvDisplay({
 	release,
 	onDragHandle,
 }: ModEnvDisplayProps) {
+	const { t } = useTranslation("synth");
 	return (
 		<div className="col-span-4 rounded-md border border-cz-border/55 bg-cz-bg/35 px-2 py-1.5">
 			<svg ref={previewSvgRef} viewBox="0 0 220 64" className="h-16 w-full">
-				<title>Modulation envelope preview</title>
+				<title>{t("modEnv.displayTitle")}</title>
 				<defs>
 					<linearGradient id="mod-env-preview" x1="0" y1="0" x2="1" y2="0">
 						<stop offset="0%" stopColor="#c24587" stopOpacity="0.55" />

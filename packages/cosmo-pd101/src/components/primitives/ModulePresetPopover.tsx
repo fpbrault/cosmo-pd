@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 import Popover from "@/components/primitives/Popover";
 
@@ -50,6 +51,7 @@ function SaveAsDialog({
 	onClose: () => void;
 	onSave: (name: string) => void;
 }) {
+	const { t } = useTranslation("synth");
 	const [name, setName] = useState("");
 	const inputRef = useRef<HTMLInputElement>(null);
 
@@ -71,13 +73,13 @@ function SaveAsDialog({
 		>
 			<div className="modal-box rounded-md border border-cz-border bg-cz-panel">
 				<h3 className="mb-4 font-bold text-cz-cream-light text-lg">
-					Save FX Preset As
+					{t("modulePreset.saveDialogTitle")}
 				</h3>
 				<input
 					ref={inputRef}
 					type="text"
 					className="input input-bordered w-full rounded-md border-cz-border bg-cz-surface text-cz-cream-light"
-					placeholder="Preset name"
+					placeholder={t("modulePreset.presetNamePlaceholder")}
 					value={name}
 					onChange={(e) => setName(e.target.value)}
 					onKeyDown={(e) => {
@@ -95,7 +97,7 @@ function SaveAsDialog({
 						onClick={onClose}
 						className="btn btn-ghost btn-sm text-cz-cream/70"
 					>
-						Cancel
+						{t("modulePreset.cancel")}
 					</Button>
 					<Button
 						type="button"
@@ -103,7 +105,7 @@ function SaveAsDialog({
 						disabled={!name.trim()}
 						className="btn btn-primary btn-sm"
 					>
-						Save
+						{t("modulePreset.save")}
 					</Button>
 				</div>
 			</div>
@@ -122,6 +124,7 @@ export default function ModulePresetPopover({
 	onSavePreset,
 	onDeletePreset,
 }: ModulePresetPopoverProps) {
+	const { t } = useTranslation("synth");
 	const triggerRef = useRef<HTMLButtonElement | null>(null);
 	const borderColor = colorAlpha(accentColor ?? "", 0.65);
 	const activeBgColor = colorAlpha(accentColor ?? "", 0.34);
@@ -194,10 +197,10 @@ export default function ModulePresetPopover({
 				type="button"
 				disabled
 				className="btn btn-xs flex h-5 min-h-0 min-w-20 cursor-not-allowed flex-nowrap items-center gap-1.5 rounded-sm border border-cz-border/65 px-2 font-bold font-mono text-[0.54rem] text-cz-cream/40 uppercase tracking-[0.14em] opacity-70"
-				aria-label={`${title} presets unavailable`}
+				aria-label={t("modulePreset.unavailableAria", { title })}
 			>
 				<span className="inline-block h-1 w-1 shrink-0 rounded-full bg-cz-cream/25" />
-				<span>presets</span>
+				<span>{t("modulePreset.presets")}</span>
 				<span className="text-cz-cream/30">▾</span>
 			</Button>
 		);
@@ -209,7 +212,7 @@ export default function ModulePresetPopover({
 				ref={triggerRef}
 				type="button"
 				onClick={handleTriggerClick}
-				aria-label={`${title} presets`}
+				aria-label={t("modulePreset.presetsAria", { title })}
 				aria-haspopup="listbox"
 				aria-expanded={popoverOpen}
 				className="btn btn-xs flex h-5 min-h-0 min-w-20 flex-nowrap items-center gap-1.5 rounded-sm border px-2 font-bold font-mono text-[0.54rem] text-cz-cream-light uppercase tracking-[0.14em] shadow-[0_1px_0_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.08)] hover:brightness-125"
@@ -218,7 +221,7 @@ export default function ModulePresetPopover({
 					className="inline-block h-1 w-1 shrink-0 rounded-full"
 					style={{ backgroundColor: borderColor }}
 				/>
-				<span>presets</span>
+				<span>{t("modulePreset.presets")}</span>
 				<span className="text-cz-cream-dim">▾</span>
 			</button>
 
@@ -227,14 +230,14 @@ export default function ModulePresetPopover({
 				onClose={handleClose}
 				triggerRef={triggerRef}
 				role="dialog"
-				ariaLabel={`${title} presets`}
+				ariaLabel={t("modulePreset.presetsAria", { title })}
 				placement="bottom-end"
 			>
 				<div className="w-44" role="presentation">
 					{options.length > 0 ? (
 						<div
 							role="listbox"
-							aria-label={`${title} presets`}
+							aria-label={t("modulePreset.presetsAria", { title })}
 							aria-activedescendant={
 								focusedIndex >= 0 ? `preset-opt-${focusedIndex}` : undefined
 							}
@@ -289,7 +292,7 @@ export default function ModulePresetPopover({
 										}}
 										className="btn btn-ghost btn-sm min-h-0 w-full justify-start px-2 py-1 text-cz-cream-dim text-xs hover:text-cz-cream-light"
 									>
-										+ Save
+										{t("modulePreset.savePlus")}
 									</button>
 								) : null}
 								{onDeletePreset &&
@@ -304,7 +307,7 @@ export default function ModulePresetPopover({
 										}}
 										className="btn btn-ghost btn-sm min-h-0 w-full justify-start px-2 py-1 text-red-400 text-xs hover:text-red-300"
 									>
-										Delete
+										{t("modulePreset.delete")}
 									</button>
 								) : null}
 							</div>

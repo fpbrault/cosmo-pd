@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { MdSettings } from "react-icons/md";
 import ControlKnob from "@/components/controls/ControlKnob";
 import { MacroLabelEditorPopover } from "@/components/modals/MacroLabelEditorPopover";
@@ -28,6 +29,7 @@ function useMacroLabel(index: number): string {
 }
 
 export default memo(function MacroKnobsPanel() {
+	const { t } = useTranslation("synth");
 	const [labelEditorOpen, setLabelEditorOpen] = useState(false);
 	const settingsBtnRef = useRef<HTMLButtonElement | null>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -57,7 +59,7 @@ export default memo(function MacroKnobsPanel() {
 				<div className="flex items-center justify-between border-cz-border/60 border-b px-2 py-1">
 					<div className="flex items-center gap-1.5">
 						<span className="font-mono text-2xs text-cz-cream-dim uppercase tracking-[0.16em]">
-							Macro Controls
+							{t("macro.title")}
 						</span>
 					</div>
 					<div className="flex items-center gap-0.5">
@@ -66,7 +68,7 @@ export default memo(function MacroKnobsPanel() {
 							type="button"
 							className="btn btn-ghost btn-xs h-6 min-h-0 w-6 p-0 text-cz-cream/90"
 							onClick={() => setLabelEditorOpen((prev) => !prev)}
-							aria-label="Edit macro labels"
+							aria-label={t("macro.editAria")}
 						>
 							<MdSettings className="h-3.5 w-3.5" />
 						</button>

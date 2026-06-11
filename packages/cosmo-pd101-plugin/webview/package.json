@@ -45,6 +45,8 @@
 		"react-dom": "^18.3.1"
 	},
 	"dependencies": {
-		"@cosmo/cosmo-pd101": "workspace:*"
+		"@cosmo/cosmo-pd101": "workspace:*",
+		"i18next": "^26.0.6",
+		"react-i18next": "^17.0.4"
 	}
 }

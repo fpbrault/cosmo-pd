@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 
@@ -18,15 +19,16 @@ export default function PresetNavigator({
 	isLibraryModeOpen = false,
 	onLibraryModeChange,
 }: PresetNavigatorProps) {
+	const { t } = useTranslation("synth");
 	const toggleLibrary = () => onLibraryModeChange?.(!isLibraryModeOpen);
 	const previousMidiLearn = useMidiLearnTarget({
 		targetKey: "presetPrevious",
-		label: "Previous Preset",
+		label: t("presetNavigator.previousPresetMidi"),
 		apply: () => onStepPreset(-1),
 	});
 	const nextMidiLearn = useMidiLearnTarget({
 		targetKey: "presetNext",
-		label: "Next Preset",
+		label: t("presetNavigator.nextPresetMidi"),
 		apply: () => onStepPreset(1),
 	});
 
@@ -45,7 +47,7 @@ export default function PresetNavigator({
 					}}
 					onContextMenu={previousMidiLearn.onContextMenu}
 					disabled={presetCount === 0}
-					aria-label="Previous preset"
+					aria-label={t("presetNavigator.previousPreset")}
 				>
 					<svg
 						viewBox="0 -960 960 960"
@@ -67,7 +69,9 @@ export default function PresetNavigator({
 						}`}
 						onClick={toggleLibrary}
 						aria-expanded={isLibraryModeOpen}
-						aria-label={`Preset ${activePresetName}. ${isLibraryModeOpen ? "Close library" : "Open library"}`}
+						aria-label={`${t("presetNavigator.presetStatus", {
+							name: activePresetName,
+						})}. ${isLibraryModeOpen ? t("presetNavigator.closeLibrary") : t("presetNavigator.openLibrary")}`}
 					>
 						<div
 							aria-hidden="true"
@@ -107,7 +111,7 @@ export default function PresetNavigator({
 					}}
 					onContextMenu={nextMidiLearn.onContextMenu}
 					disabled={presetCount === 0}
-					aria-label="Next preset"
+					aria-label={t("presetNavigator.nextPreset")}
 				>
 					<svg
 						viewBox="0 -960 960 960"

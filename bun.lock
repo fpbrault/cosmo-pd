@@ -16,7 +16,7 @@
     },
     "packages/cosmo-pd101": {
       "name": "@cosmo/cosmo-pd101",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -61,23 +61,25 @@
     },
     "packages/cosmo-pd101-docs": {
       "name": "@cosmo/cosmo-pd101-docs",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "dependencies": {
         "rspress": "^1.47.0",
       },
     },
     "packages/cosmo-pd101-plugin": {
       "name": "@cosmo/cosmo-pd101-plugin",
-      "version": "0.3.0",
+      "version": "0.4.0",
     },
     "packages/cosmo-pd101-plugin-auv3": {
       "name": "@cosmo/cosmo-pd101-plugin-auv3",
-      "version": "0.3.0",
+      "version": "0.4.0",
     },
     "packages/cosmo-pd101-plugin/webview": {
       "name": "@cosmo/cosmo-pd101-plugin-webview",
       "dependencies": {
         "@cosmo/cosmo-pd101": "workspace:*",
+        "i18next": "^26.0.6",
+        "react-i18next": "^17.0.4",
       },
       "devDependencies": {
         "@playwright/test": "^1.60.0",
@@ -128,7 +130,7 @@
     },
     "packages/cosmo-synth-engine": {
       "name": "@cosmo/cosmo-synth-engine",
-      "version": "0.3.0",
+      "version": "0.4.0",
     },
   },
   "packages": {

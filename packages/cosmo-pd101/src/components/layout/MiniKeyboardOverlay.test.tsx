@@ -97,16 +97,16 @@ describe("MiniKeyboardOverlay", () => {
 
 	it("slides in poly mode with noteOff before the next noteOn", () => {
 		const { container, onNoteOn, onNoteOff } = renderOverlay();
-		const firstKey = getKey(container, 36);
-		const secondKey = getKey(container, 38);
+		const firstKey = getKey(container, 48);
+		const secondKey = getKey(container, 50);
 
 		startPointer(firstKey);
 		movePointerTo(secondKey);
 
-		expect(onNoteOn).toHaveBeenNthCalledWith(1, 36, expect.any(Number));
+		expect(onNoteOn).toHaveBeenNthCalledWith(1, 48, expect.any(Number));
 		expect(onNoteOff).toHaveBeenCalledTimes(1);
-		expect(onNoteOff).toHaveBeenCalledWith(36);
-		expect(onNoteOn).toHaveBeenNthCalledWith(2, 38, 100);
+		expect(onNoteOff).toHaveBeenCalledWith(48);
+		expect(onNoteOn).toHaveBeenNthCalledWith(2, 50, 100);
 		expect(onNoteOff.mock.invocationCallOrder[0]).toBeLessThan(
 			onNoteOn.mock.invocationCallOrder[1],
 		);
@@ -115,16 +115,16 @@ describe("MiniKeyboardOverlay", () => {
 	it("slides in mono mode with noteOn before noteOff for a seamless handoff", () => {
 		polyModeValue = "mono";
 		const { container, onNoteOn, onNoteOff } = renderOverlay();
-		const firstKey = getKey(container, 36);
-		const secondKey = getKey(container, 38);
+		const firstKey = getKey(container, 48);
+		const secondKey = getKey(container, 50);
 
 		startPointer(firstKey);
 		movePointerTo(secondKey);
 
-		expect(onNoteOn).toHaveBeenNthCalledWith(1, 36, expect.any(Number));
-		expect(onNoteOn).toHaveBeenNthCalledWith(2, 38, 100);
+		expect(onNoteOn).toHaveBeenNthCalledWith(1, 48, expect.any(Number));
+		expect(onNoteOn).toHaveBeenNthCalledWith(2, 50, 100);
 		expect(onNoteOff).toHaveBeenCalledTimes(1);
-		expect(onNoteOff).toHaveBeenCalledWith(36);
+		expect(onNoteOff).toHaveBeenCalledWith(48);
 		expect(onNoteOn.mock.invocationCallOrder[1]).toBeLessThan(
 			onNoteOff.mock.invocationCallOrder[0],
 		);
@@ -133,34 +133,34 @@ describe("MiniKeyboardOverlay", () => {
 	it("releases only the current note after a mono slide", () => {
 		polyModeValue = "mono";
 		const { container, onNoteOff, onPolyAftertouch } = renderOverlay();
-		const firstKey = getKey(container, 36);
-		const secondKey = getKey(container, 38);
+		const firstKey = getKey(container, 48);
+		const secondKey = getKey(container, 50);
 
 		startPointer(firstKey);
 		movePointerTo(secondKey);
 		releasePointer();
 
-		expect(onPolyAftertouch).toHaveBeenCalledWith(38, 0);
+		expect(onPolyAftertouch).toHaveBeenCalledWith(50, 0);
 		expect(onNoteOff).toHaveBeenCalledTimes(2);
-		expect(onNoteOff).toHaveBeenCalledWith(36);
-		expect(onNoteOff).toHaveBeenCalledWith(38);
+		expect(onNoteOff).toHaveBeenCalledWith(48);
+		expect(onNoteOff).toHaveBeenCalledWith(50);
 	});
 
 	it("renders octave markers separately from PC key labels", () => {
 		const { container } = renderOverlay();
-		const c3Key = getKey(container, 36);
-		const c4Key = getKey(container, 48);
+		const c3Key = getKey(container, 48);
+		const c4Key = getKey(container, 60);
 
 		expect(
-			c3Key.querySelector('[data-mini-note-label="36"]')?.textContent,
-		).toBe("C2");
-		expect(c3Key.querySelector('[data-mini-pc-label="36"]')?.textContent).toBe(
+			c3Key.querySelector('[data-mini-note-label="48"]')?.textContent,
+		).toBe("C3");
+		expect(c3Key.querySelector('[data-mini-pc-label="48"]')?.textContent).toBe(
 			"Z",
 		);
 		expect(
-			c4Key.querySelector('[data-mini-note-label="48"]')?.textContent,
-		).toBe("C3");
-		expect(c4Key.querySelector('[data-mini-pc-label="48"]')?.textContent).toBe(
+			c4Key.querySelector('[data-mini-note-label="60"]')?.textContent,
+		).toBe("C4");
+		expect(c4Key.querySelector('[data-mini-pc-label="60"]')?.textContent).toBe(
 			",",
 		);
 	});

@@ -1,7 +1,9 @@
+import { useTranslation } from "react-i18next";
 import ControlKnob from "@/components/controls/ControlKnob";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 
 export function ScopeControls() {
+	const { t } = useTranslation("synth");
 	const scopeCycles = useSynthUiStore((s) => s.scopeCycles);
 	const scopeVerticalZoom = useSynthUiStore((s) => s.scopeVerticalZoom);
 	const scopeTriggerLevel = useSynthUiStore((s) => s.scopeTriggerLevel);
@@ -19,8 +21,8 @@ export function ScopeControls() {
 				size={40}
 				defaultValue={2}
 				color="#3dff3d"
-				label="Cycles"
-				tooltip="Sets how many waveform cycles are shown in scope view."
+				label={t("scope.cycles")}
+				tooltip={t("scope.cyclesTooltip")}
 				valueFormatter={(value) => value.toFixed(1)}
 			/>
 			<ControlKnob
@@ -31,8 +33,8 @@ export function ScopeControls() {
 				size={40}
 				defaultValue={1}
 				color="#9cb937"
-				label="Zoom"
-				tooltip="Sets vertical waveform magnification."
+				label={t("scope.zoom")}
+				tooltip={t("scope.zoomTooltip")}
 				valueFormatter={(value) => `${value.toFixed(1)}x`}
 			/>
 			<ControlKnob
@@ -43,8 +45,8 @@ export function ScopeControls() {
 				size={40}
 				defaultValue={128}
 				color="#7f9de4"
-				label="Trig"
-				tooltip="Sets trigger threshold used to stabilize waveform display."
+				label={t("scope.trig")}
+				tooltip={t("scope.trigTooltip")}
 				valueFormatter={(value) => `${Math.round(value)}`}
 			/>
 		</div>
