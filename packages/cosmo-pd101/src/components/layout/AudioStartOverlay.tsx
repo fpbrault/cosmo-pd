@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from "motion/react";
+import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 
 export type AudioGate = {
@@ -11,6 +12,7 @@ export default function AudioStartOverlay({
 }: {
 	audioGate?: AudioGate;
 }) {
+	const { t } = useTranslation("synth");
 	if (!audioGate || audioGate.ready) return null;
 	return (
 		<AnimatePresence>
@@ -23,7 +25,7 @@ export default function AudioStartOverlay({
 				className="absolute inset-0 z-50 flex items-center justify-center"
 				role="dialog"
 				aria-modal="true"
-				aria-label="Start audio"
+				aria-label={t("audioStart.buttonAria")}
 			>
 				<div className="absolute inset-0 bg-cz-body/80 backdrop-blur-sm" />
 				<div className="relative flex flex-col items-center gap-4 rounded-md border border-cz-border bg-cz-surface px-8 py-6 text-cz-cream shadow-2xl">
@@ -39,7 +41,7 @@ export default function AudioStartOverlay({
 						<path d="M15.932 7.757a.75.75 0 0 1 1.061 0 6 6 0 0 1 0 8.486.75.75 0 0 1-1.06-1.061 4.5 4.5 0 0 0 0-6.364.75.75 0 0 1 0-1.061Z" />
 					</svg>
 					<p className="font-mono text-cz-cream-dim text-sm">
-						Audio requires a user interaction to start.
+						{t("audioStart.explanation")}
 					</p>
 					<Button
 						type="button"
@@ -47,7 +49,7 @@ export default function AudioStartOverlay({
 						className="btn btn-primary"
 						onClick={audioGate.onResume}
 					>
-						Start Audio
+						{t("audioStart.button")}
 					</Button>
 				</div>
 			</motion.div>

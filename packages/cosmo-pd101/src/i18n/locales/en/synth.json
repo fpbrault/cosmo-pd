@@ -856,5 +856,249 @@
 		"nextAlgorithm": "Next algorithm",
 		"changeAlgorithm": "Algorithm {{index}}: {{label}}. Click to change.",
 		"behaviorTooltip": "Algorithm {{index}}: {{behavior}}"
+	},
+	"brandInfo": {
+		"title": "Phase Distortion",
+		"subtitle": "Synthesizer Lab",
+		"close": "Close",
+		"version": "Year: {{year}}",
+		"author": "Felix Perron-Brault",
+		"catsDedication": "For my cats, Basil, Lola, and Latte",
+		"logoAlt": "Cosmo PD101 logo",
+		"ariaLabel": "Synthesizer lab information",
+		"closeAriaLabel": "Close synthesizer information"
+	},
+	"editor": {
+		"algoA": "Algo A",
+		"algoB": "Algo B",
+		"baseWaveA": "Base Wave A",
+		"baseWaveB": "Base Wave B",
+		"singleCycle": "Single Cycle",
+		"a": "A",
+		"b": "B",
+		"blend": "Blend"
+	},
+	"midiLearn": {
+		"tableHeaderCh": "Ch",
+		"tableHeaderCc": "CC",
+		"tableHeaderControl": "Control",
+		"toggleOn": "Midi Learn: ON",
+		"toggleOff": "Midi Learn: OFF",
+		"emptyState": "No MIDI bindings yet",
+		"removeBinding": "Remove MIDI binding for {{param}}",
+		"channelAria": "MIDI channel for {{param}}",
+		"ccAria": "MIDI CC for {{param}}",
+		"removeButton": "✕",
+		"tabTopLabel": "MIDI",
+		"tabBottomLabel": "Learn"
+	},
+	"modulation": {
+		"panelTitle": "Modulate",
+		"sectionRoutes": "Current routes",
+		"sectionAddSource": "Add source",
+		"emptyState": "Tap a source card to create the first route",
+		"depthLabel": "Depth",
+		"editButton": "Edit",
+		"addButton": "Add",
+		"removeButton": "Remove",
+		"routeSingular": "Route",
+		"routePlural": "Routes",
+		"enabled": "Enabled",
+		"muted": "Muted",
+		"sourceHeading": "Source",
+		"destinationHeading": "Destination",
+		"closeAria": "Close modulation panel",
+		"closeRouteEditorAria": "Close route editor",
+		"disableRouteAria": "Disable route",
+		"enableRouteAria": "Enable route",
+		"editRouteAria": "Edit route source and destination",
+		"removeRouteAria": "Remove {{label}} route",
+		"routeTooltip": "Sets modulation depth and direction from source to destination.",
+		"modDepthAria": "{{label}} depth"
+	},
+	"scope": {
+		"modeWaveform": "Waveform",
+		"modeOrbital": "Orbital",
+		"modeSpectrogram": "Spectrogram",
+		"modeWaterfall3d": "Waterfall 3D",
+		"modeTransferCurves": "Transfer Curves",
+		"modeAsteroids": "Asteroids",
+		"themeVintage": "Vintage",
+		"themeAmber": "Amber",
+		"themePlasma": "Plasma",
+		"toggleThemeAria": "Toggle scope color theme",
+		"waveDrawerFull": "Wave drawer is showing the full scope view",
+		"cycles": "Cycles",
+		"cyclesTooltip": "Sets how many waveform cycles are shown in scope view.",
+		"zoom": "Zoom",
+		"zoomTooltip": "Sets vertical waveform magnification.",
+		"trig": "Trig",
+		"trigTooltip": "Sets trigger threshold used to stabilize waveform display."
+	},
+	"presetLibrary": {
+		"title": "Preset Library",
+		"foundSingular": "Preset found",
+		"foundPlural": "Presets found",
+		"searchPlaceholder": "Search presets",
+		"clearSearchAria": "Clear preset search",
+		"userOnly": "User Only",
+		"return": "Return",
+		"filterBank": "Filter bank",
+		"clearBankFilters": "Clear bank filters",
+		"filterAuthor": "Filter author",
+		"clearAuthorFilters": "Clear author filters",
+		"filterTags": "Filter tags",
+		"clearTagFilters": "Clear tag filters",
+		"sortName": "Name",
+		"sortBank": "Bank",
+		"sortAuthor": "Author",
+		"sortTags": "Tags",
+		"emptyState": "No presets available.",
+		"ariaLabel": "Preset library",
+		"currentState": "Current State",
+		"save": "Save",
+		"saveAs": "Save As",
+		"import": "Import",
+		"initPreset": "Init Preset",
+		"selectedPreset": "Selected Preset",
+		"nameLabel": "Name",
+		"authorLabel": "Author",
+		"noAuthor": "No author set.",
+		"tagsLabel": "Tags",
+		"noTags": "No tags",
+		"presetTagsLabel": "Preset tags",
+		"selectTagsPlaceholder": "Select tags",
+		"clearTagsAria": "Clear preset tags",
+		"noTagsOption": "No tags found",
+		"export": "Export",
+		"delete": "Delete",
+		"sidebarEmptyState": "Select a user preset to rename it, manage its tags, export it, or delete it."
+	},
+	"presetDialogs": {
+		"saveAsTitle": "Save preset as",
+		"saveAsPlaceholder": "New preset name",
+		"cancel": "Cancel",
+		"confirmSaveAria": "Confirm save as",
+		"saveAsConfirm": "Save As"
+	},
+	"globalVoice": {
+		"modalTitle": "Global Settings",
+		"modalAria": "Global settings",
+		"transportSection": "Transport",
+		"tempo": "Tempo",
+		"bpm": "BPM",
+		"portamentoSection": "Portamento",
+		"portamento": "Portamento",
+		"expressionSection": "Expression",
+		"pitchBend": "Pitch Bend",
+		"velCurve": "Vel Curve",
+		"velCurveAria": "Velocity curve preview. Curve value: {{value}}",
+		"rateMode": "Rate Mode",
+		"timeMode": "Time Mode"
+	},
+	"modMatrix": {
+		"title": "Mod Matrix",
+		"addRoute": "Add Route",
+		"editRoute": "Edit Route",
+		"noRoutes": "No routes",
+		"addRouteButton": "Add route",
+		"confirmAdd": "Add {{source}} → {{destination}}",
+		"confirmEdit": "Save {{source}} → {{destination}}"
+	},
+	"synthHeader": {
+		"brandCosmo": "COSMO",
+		"brandPd": "PD-101",
+		"phaseDistortion": "Phase Distortion",
+		"synthesizerLab": "Synthesizer Lab",
+		"unknownAuthor": "Unknown Author",
+		"currentState": "Current State",
+		"openInfoAria": "Open synthesizer lab information"
+	},
+	"presetNavigator": {
+		"previousPreset": "Previous preset",
+		"nextPreset": "Next preset",
+		"previousPresetMidi": "Previous Preset",
+		"nextPresetMidi": "Next Preset",
+		"presetStatus": "Preset {{name}}",
+		"openLibrary": "Open library",
+		"closeLibrary": "Close library"
+	},
+	"voiceMode": {
+		"label": "Voice",
+		"tooltip": "Toggle between Poly8 and Mono voice modes.",
+		"poly8": "Poly8",
+		"mono": "Mono",
+		"portamentoTooltip": "Toggle portamento glide between notes.",
+		"portamento": "Porta"
+	},
+	"modMode": {
+		"label": "Modulation",
+		"normal": "Normal",
+		"ring": "Ring",
+		"noise": "Noise"
+	},
+	"lineSelect": {
+		"label": "Line Select"
+	},
+	"fxSlot": {
+		"addEffectAria": "Add effect to slot",
+		"addButton": "+",
+		"changeTypeAria": "Change effect type ({{label}})"
+	},
+	"modulePreset": {
+		"saveDialogTitle": "Save FX Preset As",
+		"presetNamePlaceholder": "Preset name",
+		"cancel": "Cancel",
+		"save": "Save",
+		"presets": "presets",
+		"unavailableAria": "{{title}} presets unavailable",
+		"presetsAria": "{{title}} presets",
+		"savePlus": "+ Save",
+		"delete": "Delete"
+	},
+	"infoBar": {
+		"info": "Info",
+		"hideKeys": "Hide Keys",
+		"showKeys": "Show Keys"
+	},
+	"audioStart": {
+		"explanation": "Audio requires a user interaction to start.",
+		"button": "Start Audio",
+		"buttonAria": "Start audio"
+	},
+	"topBar": {
+		"main": "Main",
+		"mainTooltip": "Show phase editor controls.",
+		"fx": "FX",
+		"fxTooltip": "Toggle FX console drawer.",
+		"mod": "MOD",
+		"modTooltip": "Toggle modulation console drawer.",
+		"display": "DISPLAY",
+		"displayTooltip": "Toggle full-size scope drawer."
+	},
+	"update": {
+		"newVersion": "New Version Available!"
+	},
+	"randomModule": {
+		"title": "Random",
+		"rate": "Rate"
+	},
+	"modEnv": {
+		"title": "Mod Env",
+		"displayTitle": "Modulation envelope preview",
+		"attack": "Atk",
+		"attackMidi": "Mod Env Attack",
+		"decay": "Dec",
+		"decayMidi": "Mod Env Decay",
+		"sustain": "Sus",
+		"release": "Rel",
+		"releaseMidi": "Mod Env Release"
+	},
+	"macro": {
+		"title": "Macro Controls",
+		"editAria": "Edit macro labels"
+	},
+	"lfo": {
+		"loop": "Loop"
 	}
 }

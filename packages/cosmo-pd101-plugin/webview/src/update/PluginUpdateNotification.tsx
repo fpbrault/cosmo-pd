@@ -1,4 +1,5 @@
 import { memo, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
 	checkForPluginUpdate,
 	type PluginUpdateInfo,
@@ -6,6 +7,7 @@ import {
 } from "./checkPluginUpdate";
 
 export default memo(function PluginUpdateNotification() {
+	const { t } = useTranslation("synth");
 	const [updateInfo, setUpdateInfo] = useState<PluginUpdateInfo | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 
@@ -41,7 +43,7 @@ export default memo(function PluginUpdateNotification() {
 			rel="noopener noreferrer"
 			className="btn btn-sm border-cz-gold/50 bg-cz-gold/5 px-2 py-1 text-cz-gold/80 no-underline hover:border-cz-gold hover:bg-cz-gold/10 hover:text-cz-gold"
 		>
-			New Version Available!
+			{t("update.newVersion")}
 		</a>
 	);
 });

@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 
 type PresetLibraryDialogsProps = {
@@ -16,6 +17,7 @@ export default memo(function PresetLibraryDialogs({
 	onCommitSaveAs,
 	onCancelSaveAs,
 }: PresetLibraryDialogsProps) {
+	const { t } = useTranslation("synth");
 	return (
 		<dialog
 			className="modal"
@@ -26,11 +28,13 @@ export default memo(function PresetLibraryDialogs({
 			}}
 		>
 			<div className="modal-box rounded-md border border-cz-border bg-cz-surface text-cz-cream">
-				<h3 className="font-bold font-mono text-lg">Save preset as</h3>
+				<h3 className="font-bold font-mono text-lg">
+					{t("presetDialogs.saveAsTitle")}
+				</h3>
 				<input
 					type="text"
 					className="input mt-4 w-full border-cz-border bg-cz-inset text-cz-cream"
-					placeholder="New preset name"
+					placeholder={t("presetDialogs.saveAsPlaceholder")}
 					value={saveAsName}
 					onChange={(event) => onSaveAsNameChange(event.target.value)}
 					onKeyDown={(event) => {
@@ -44,16 +48,16 @@ export default memo(function PresetLibraryDialogs({
 						className="btn border-cz-border bg-cz-inset text-cz-cream"
 						onClick={onCancelSaveAs}
 					>
-						Cancel
+						{t("presetDialogs.cancel")}
 					</Button>
 					<Button
 						type="button"
 						className="btn bg-cz-gold text-white"
-						aria-label="Confirm save as"
+						aria-label={t("presetDialogs.confirmSaveAria")}
 						disabled={!saveAsName.trim()}
 						onClick={onCommitSaveAs}
 					>
-						Save As
+						{t("presetDialogs.saveAsConfirm")}
 					</Button>
 				</div>
 			</div>

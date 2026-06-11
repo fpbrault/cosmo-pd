@@ -1,6 +1,7 @@
 import { defaultAnimateLayoutChanges, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { memo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { MdArrowDropDown } from "react-icons/md";
 import Button from "@/components/controls/Button";
 import { useSynthStore } from "@/features/synth/synthStore";
@@ -22,6 +23,7 @@ function TypeSelectorTrigger({
 	slot: number;
 	currentType: FxSlotType;
 }) {
+	const { t } = useTranslation("synth");
 	const [popoverOpen, setPopoverOpen] = useState(false);
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const setFxSlotType = useSynthStore((s) => s.setFxSlotType);
@@ -39,7 +41,7 @@ function TypeSelectorTrigger({
 				ref={triggerRef}
 				type="button"
 				onClick={() => setPopoverOpen(true)}
-				aria-label={`Change effect type (${currentLabel})`}
+				aria-label={t("fxSlot.changeTypeAria", { label: currentLabel })}
 				className="btn btn-xs btn-ghost btn-neutral btn-square"
 			>
 				<MdArrowDropDown className="h-6 w-6 shrink-0" />
@@ -62,6 +64,7 @@ function TypeSelectorTrigger({
 // ---------------------------------------------------------------------------
 
 function EmptySlot({ slot }: { slot: number }) {
+	const { t } = useTranslation("synth");
 	const [popoverOpen, setPopoverOpen] = useState(false);
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const setFxSlotType = useSynthStore((s) => s.setFxSlotType);
@@ -77,10 +80,10 @@ function EmptySlot({ slot }: { slot: number }) {
 				ref={triggerRef}
 				type="button"
 				onClick={() => setPopoverOpen(true)}
-				aria-label="Add effect to slot"
+				aria-label={t("fxSlot.addEffectAria")}
 				className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 text-white/40 text-xl transition-all hover:border-white/50 hover:text-white/80"
 			>
-				+
+				{t("fxSlot.addButton")}
 			</Button>
 			<FxTypeSelectorPopover
 				open={popoverOpen}

@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 import type { ModRoute } from "@/lib/synth/bindings/synth";
 import ControlKnob from "../ControlKnob";
@@ -25,6 +26,7 @@ const ModRouteRow = memo(function ModRouteRow({
 	onAmountChange,
 	onEditRoute,
 }: ModRouteRowProps) {
+	const { t } = useTranslation("synth");
 	const meta = MOD_SOURCE_META[route.source];
 
 	return (
@@ -43,7 +45,11 @@ const ModRouteRow = memo(function ModRouteRow({
 							className="toggle toggle-secondary toggle-xs ml-3"
 							checked={route.enabled}
 							onChange={onToggleEnabled}
-							aria-label={route.enabled ? "Disable route" : "Enable route"}
+							aria-label={
+								route.enabled
+									? t("modulation.disableRouteAria")
+									: t("modulation.enableRouteAria")
+							}
 						/>
 					</div>
 					<span
@@ -72,7 +78,7 @@ const ModRouteRow = memo(function ModRouteRow({
 						bipolar
 						color="#7f9de4"
 						size={48}
-						tooltip="Sets modulation depth and direction from source to destination."
+						tooltip={t("modulation.routeTooltip")}
 						valueFormatter={(v) => v.toFixed(2)}
 						valueVisibility="hover"
 					/>
@@ -82,11 +88,10 @@ const ModRouteRow = memo(function ModRouteRow({
 							<Button
 								type="button"
 								onClick={onEditRoute}
-								aria-label="Edit route source and destination"
+								aria-label={t("modulation.editRouteAria")}
 								className="btn btn-accent btn-xs"
 							>
-								{" "}
-								Edit
+								{t("modulation.editButton")}
 							</Button>
 						) : null}{" "}
 						<Button

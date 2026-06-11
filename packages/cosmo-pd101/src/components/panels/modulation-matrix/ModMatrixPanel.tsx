@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 import ModRouteEditorPanel from "@/components/controls/modulation/ModRouteEditorPanel";
 import ModRouteRow from "@/components/controls/modulation/ModRouteRow";
@@ -25,6 +26,7 @@ function destinationLabel(dest: ModDestination): string {
 // ---------------------------------------------------------------------------
 
 export default function ModMatrixPanel() {
+	const { t } = useTranslation("synth");
 	const { modMatrix, setModMatrix } = useModMatrix();
 	const routes = modMatrix.routes ?? [];
 	const nextRouteKeyRef = useRef(0);
@@ -124,7 +126,7 @@ export default function ModMatrixPanel() {
 			{/* Header */}
 			<div className="mb-2 flex items-center gap-2">
 				<span className="font-bold font-mono text-cz-light-blue text-sm uppercase tracking-[0.3em]">
-					Mod Matrix
+					{t("modMatrix.title")}
 				</span>
 				{routes.length > 0 && (
 					<span className="rounded-full border border-cz-light-blue/40 bg-cz-light-blue/15 px-1.5 font-bold font-mono text-5xs text-cz-light-blue">
@@ -137,7 +139,7 @@ export default function ModMatrixPanel() {
 			<div className="min-h-0 flex-1 overflow-hidden">
 				{isAddPopoverOpen ? (
 					<ModRouteEditorPanel
-						title="Add Route"
+						title={t("modMatrix.addRoute")}
 						source={newSource}
 						destination={newDest}
 						destinationGroups={DESTINATION_GROUPS}
@@ -145,11 +147,14 @@ export default function ModMatrixPanel() {
 						onDestinationChange={setNewDest}
 						onConfirm={handleAddFromSelection}
 						onCancel={() => setIsAddPopoverOpen(false)}
-						confirmLabel={`Add ${MOD_SOURCE_META[newSource].label} → ${destinationLabel(newDest)}`}
+						confirmLabel={t("modMatrix.confirmAdd", {
+							source: MOD_SOURCE_META[newSource].label,
+							destination: destinationLabel(newDest),
+						})}
 					/>
 				) : editingRouteIndex !== null ? (
 					<ModRouteEditorPanel
-						title="Edit Route"
+						title={t("modMatrix.editRoute")}
 						source={newSource}
 						destination={newDest}
 						destinationGroups={DESTINATION_GROUPS}
@@ -157,7 +162,10 @@ export default function ModMatrixPanel() {
 						onDestinationChange={setNewDest}
 						onConfirm={handleSaveEditedRoute}
 						onCancel={() => setEditingRouteIndex(null)}
-						confirmLabel={`Save ${MOD_SOURCE_META[newSource].label} → ${destinationLabel(newDest)}`}
+						confirmLabel={t("modMatrix.confirmEdit", {
+							source: MOD_SOURCE_META[newSource].label,
+							destination: destinationLabel(newDest),
+						})}
 					/>
 				) : (
 					<div className="scrollbar-thin h-full min-h-0 space-y-1.5 overflow-y-auto pr-0.5">
@@ -170,7 +178,7 @@ export default function ModMatrixPanel() {
 									exit={{ opacity: 0 }}
 									className="flex h-16 items-center justify-center rounded-lg border border-cz-border/50 border-dashed font-mono text-[0.55rem] text-cz-cream-dim/50 uppercase tracking-[0.18em]"
 								>
-									No routes
+									{t("modMatrix.noRoutes")}
 								</motion.div>
 							)}
 							{routes.map((route, idx) => (
@@ -205,7 +213,7 @@ export default function ModMatrixPanel() {
 			{!isEditingRoute && (
 				<div className="mt-2 space-y-1.5 border-cz-border/40 border-t pt-2">
 					<div className="font-mono text-5xs text-cz-cream-dim/60 uppercase tracking-[0.2em]">
-						Add route
+						{t("modMatrix.addRouteButton")}
 					</div>
 					<Button
 						type="button"
@@ -217,7 +225,7 @@ export default function ModMatrixPanel() {
 						}}
 						className="btn btn-sm w-full border-cz-border bg-cz-inset px-2 py-1.5 font-bold font-mono text-[0.55rem] text-cz-light-blue uppercase tracking-[0.15em] hover:border-cz-light-blue/60"
 					>
-						Add Route
+						{t("modMatrix.addRoute")}
 					</Button>
 				</div>
 			)}

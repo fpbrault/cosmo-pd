@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 import type { ModDestination, ModSource } from "@/lib/synth/bindings/synth";
 import { MOD_SOURCE_META, MOD_SOURCE_OPTIONS } from "./modRouteMeta";
@@ -48,6 +49,7 @@ export default function ModRouteEditorPanel({
 	confirmLabel,
 	title,
 }: ModRouteEditorPanelProps) {
+	const { t } = useTranslation("synth");
 	return (
 		<div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-cz-border/70 bg-cz-panel p-2 shadow-2xl">
 			<div className="mb-2 flex items-center justify-between gap-2 border-cz-border/40 border-b pb-2">
@@ -58,13 +60,13 @@ export default function ModRouteEditorPanel({
 					type="button"
 					onClick={onCancel}
 					className="btn btn-ghost btn-square btn-xs h-6 w-6 text-cz-cream-dim/70 hover:bg-cz-border/40 hover:text-cz-cream"
-					aria-label="Close route editor"
+					aria-label={t("modulation.closeRouteEditorAria")}
 				>
 					✕
 				</Button>
 			</div>
 			<div className="mb-1 font-mono text-5xs text-cz-cream-dim/60 uppercase tracking-[0.18em]">
-				Source
+				{t("modulation.sourceHeading")}
 			</div>
 			<div className="mb-3 grid grid-cols-2 gap-1">
 				{MOD_SOURCE_OPTIONS.map((option) => (
@@ -79,7 +81,7 @@ export default function ModRouteEditorPanel({
 				))}
 			</div>
 			<div className="mb-1 font-mono text-5xs text-cz-cream-dim/60 uppercase tracking-[0.18em]">
-				Destination
+				{t("modulation.destinationHeading")}
 			</div>
 			<div className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-0.5">
 				{destinationGroups.map((group) => (

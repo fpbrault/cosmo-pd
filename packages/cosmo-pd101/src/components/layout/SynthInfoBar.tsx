@@ -1,4 +1,5 @@
 import { type ReactNode, useCallback, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { MdPiano, MdSettings } from "react-icons/md";
 import Button from "@/components/controls/Button";
 import { KeyboardSettingsPopover } from "@/components/modals/KeyboardSettingsPopover";
@@ -18,6 +19,7 @@ export default function SynthInfoBar({
 	keyboardVisible,
 	onKeyboardToggle,
 }: SynthInfoBarProps) {
+	const { t } = useTranslation("synth");
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const settingsBtnRef = useRef<HTMLButtonElement | null>(null);
 
@@ -27,7 +29,7 @@ export default function SynthInfoBar({
 
 	return (
 		<div className="relative z-20 mt-1 flex min-h-8 flex-nowrap items-center gap-x-3 gap-y-1 rounded-t-sm border border-cz-border/80 bg-cz-body px-3 py-1 font-mono text-[0.62rem] text-cz-cream/80 uppercase tracking-[0.22em] shadow-inner">
-			<span className="text-cz-light-blue/80">Info</span>
+			<span className="text-cz-light-blue/80">{t("infoBar.info")}</span>
 			<span className="min-w-0 flex-1 truncate whitespace-nowrap">
 				{infoText}
 			</span>
@@ -41,7 +43,9 @@ export default function SynthInfoBar({
 					<Button
 						type="button"
 						onClick={onKeyboardToggle}
-						aria-label={keyboardVisible ? "Hide Keys" : "Show Keys"}
+						aria-label={
+							keyboardVisible ? t("infoBar.hideKeys") : t("infoBar.showKeys")
+						}
 						className={`btn btn-sm px-2 py-1 ${
 							keyboardVisible
 								? "border-cz-gold bg-cz-gold/10 text-cz-gold"

@@ -1,5 +1,6 @@
 import { type Ref, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 import SynthPanelContainer from "@/components/layout/SynthPanelContainer";
 import { getMidiLearnTargetLabel } from "@/features/synth/midiLearnRegistry";
@@ -150,6 +151,7 @@ function MidiBindingRow({
 	onCancelEdit,
 	onRemove,
 }: MidiBindingRowProps) {
+	const { t } = useTranslation("synth");
 	const controlLabel = formatControlLabel(binding.paramKey);
 
 	return (
@@ -161,7 +163,7 @@ function MidiBindingRow({
 						max={16}
 						defaultValue={binding.channel + 1}
 						widthClass="w-8"
-						ariaLabel={`MIDI channel for ${binding.paramKey}`}
+						ariaLabel={t("midiLearn.channelAria", { param: binding.paramKey })}
 						editorRef={editorRef}
 						onCommit={(v) => onCommitChannel(clampChannelDisplay(v) - 1)}
 						onCancel={onCancelEdit}
@@ -183,7 +185,7 @@ function MidiBindingRow({
 						max={127}
 						defaultValue={binding.cc}
 						widthClass="w-10"
-						ariaLabel={`MIDI CC for ${binding.paramKey}`}
+						ariaLabel={t("midiLearn.ccAria", { param: binding.paramKey })}
 						editorRef={editorRef}
 						onCommit={(v) => onCommitCc(clampCc(v))}
 						onCancel={onCancelEdit}
@@ -206,9 +208,9 @@ function MidiBindingRow({
 					type="button"
 					className="btn btn-xs btn-square btn-error h-5"
 					onClick={onRemove}
-					aria-label={`Remove MIDI binding for ${binding.paramKey}`}
+					aria-label={t("midiLearn.removeBinding", { param: binding.paramKey })}
 				>
-					X
+					{t("midiLearn.removeButton")}
 				</Button>
 			</td>
 		</tr>
@@ -217,6 +219,7 @@ function MidiBindingRow({
 
 const MidiLearnPanel = Object.assign(
 	function MidiLearnPanel() {
+		const { t } = useTranslation("synth");
 		const setLearnMode = useMidiLearnStore((s) => s.setLearnMode);
 		const bindings = useMidiLearnStore((s) => s.bindings);
 		const removeBinding = useMidiLearnStore((s) => s.removeBinding);
@@ -267,9 +270,11 @@ const MidiLearnPanel = Object.assign(
 						<table className="table-pin-rows table-pin-cols table-xs table w-full table-fixed">
 							<thead>
 								<tr className="z-100 bg-cz-panel font-mono text-[0.62rem] text-cz-cream-dim uppercase tracking-[0.14em]">
-									<th className="w-6">Ch</th>
-									<th className="w-10">CC</th>
-									<th className="min-w-0">Control</th>
+									<th className="w-6">{t("midiLearn.tableHeaderCh")}</th>
+									<th className="w-10">{t("midiLearn.tableHeaderCc")}</th>
+									<th className="min-w-0">
+										{t("midiLearn.tableHeaderControl")}
+									</th>
 									<th className="w-6 px-1 py-1" />
 								</tr>
 							</thead>
@@ -314,7 +319,7 @@ const MidiLearnPanel = Object.assign(
 					</div>
 				) : (
 					<div className="flex h-full items-center justify-center rounded border border-cz-border/60 bg-cz-panel text-center font-mono text-3xs text-base-content/30 uppercase tracking-[0.14em]">
-						No MIDI bindings yet
+						{t("midiLearn.emptyState")}
 					</div>
 				)}
 			</SynthPanelContainer>

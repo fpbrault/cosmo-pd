@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 import { PRESET_TAG_OPTIONS } from "@/lib/synth/presetTags";
 import PresetMultiSelect from "./PresetMultiSelect";
@@ -48,12 +49,13 @@ export default memo(function PresetLibrarySidebar({
 	onInitPreset,
 	importError,
 }: PresetLibrarySidebarProps) {
+	const { t } = useTranslation("synth");
 	return (
 		<aside className="border-cz-border border-t-0 border-l bg-cz-surface p-4">
 			<div className="space-y-5">
 				<section>
 					<h3 className="mb-2 font-mono text-4xs text-cz-gold uppercase tracking-[0.28em]">
-						Current State
+						{t("presetLibrary.currentState")}
 					</h3>
 					<div className="mt-2 grid grid-cols-2 gap-2">
 						<Button
@@ -62,28 +64,28 @@ export default memo(function PresetLibrarySidebar({
 							disabled={!activeLocalEntryLabel}
 							onClick={onSave}
 						>
-							Save
+							{t("presetLibrary.save")}
 						</Button>
 						<Button
 							type="button"
 							className="btn btn-sm btn-success"
 							onClick={onOpenSaveAs}
 						>
-							Save As
+							{t("presetLibrary.saveAs")}
 						</Button>
 						<Button
 							type="button"
 							className="btn btn-sm btn-secondary"
 							onClick={onImportClick}
 						>
-							Import
+							{t("presetLibrary.import")}
 						</Button>
 						<Button
 							type="button"
 							className="btn btn-sm btn-error"
 							onClick={onInitPreset}
 						>
-							Init Preset
+							{t("presetLibrary.initPreset")}
 						</Button>
 						{importError ? (
 							<p className="mt-2 text-red-400 text-xs">{importError}</p>
@@ -94,13 +96,13 @@ export default memo(function PresetLibrarySidebar({
 
 				<section className="border-cz-border/70 border-t pt-5">
 					<h3 className="mb-2 font-mono text-4xs text-cz-gold uppercase tracking-[0.28em]">
-						Selected Preset
+						{t("presetLibrary.selectedPreset")}
 					</h3>
 					{selectedLocalEntryLabel ? (
 						<div className="space-y-3">
 							<div>
 								<p className="mb-1 font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.2em]">
-									Name
+									{t("presetLibrary.nameLabel")}
 								</p>
 								<input
 									type="text"
@@ -116,7 +118,7 @@ export default memo(function PresetLibrarySidebar({
 							</div>
 							<div>
 								<p className="mb-1 font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.2em]">
-									Author
+									{t("presetLibrary.authorLabel")}
 								</p>
 								<input
 									type="text"
@@ -131,13 +133,13 @@ export default memo(function PresetLibrarySidebar({
 								/>
 								{selectedLocalEntryAuthor ? null : (
 									<p className="mt-1 text-cz-cream-dim text-xs">
-										No author set.
+										{t("presetLibrary.noAuthor")}
 									</p>
 								)}
 							</div>
 							<div>
 								<p className="mb-1 font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.2em]">
-									Tags
+									{t("presetLibrary.tagsLabel")}
 								</p>
 								<div className="mb-2 flex flex-wrap gap-2">
 									{selectedLocalTags.length > 0 ? (
@@ -151,12 +153,12 @@ export default memo(function PresetLibrarySidebar({
 										))
 									) : (
 										<span className="font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.16em]">
-											No tags
+											{t("presetLibrary.noTags")}
 										</span>
 									)}
 								</div>
 								<PresetMultiSelect
-									label="Preset tags"
+									label={t("presetLibrary.presetTagsLabel")}
 									inputId="preset-tag-editor"
 									options={PRESET_TAG_OPTIONS.map((tag) => ({
 										value: tag,
@@ -176,21 +178,20 @@ export default memo(function PresetLibrarySidebar({
 									className="btn btn-sm border-cz-border bg-cz-inset text-cz-light-blue"
 									onClick={onExportSelectedPreset}
 								>
-									Export
+									{t("presetLibrary.export")}
 								</Button>
 								<Button
 									type="button"
 									className="btn btn-sm border-cz-border bg-cz-inset text-red-400"
 									onClick={onDeleteSelectedPreset}
 								>
-									Delete
+									{t("presetLibrary.delete")}
 								</Button>
 							</div>
 						</div>
 					) : (
 						<p className="text-cz-cream-dim text-xs">
-							Select a user preset to rename it, manage its tags, export it, or
-							delete it.
+							{t("presetLibrary.sidebarEmptyState")}
 						</p>
 					)}
 				</section>

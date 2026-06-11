@@ -4,3 +4,6 @@
  * Ensures globals expected by the mock bridge tests are available in happy-dom.
  */
 import "@testing-library/jest-dom";
+import { initI18n } from "@cosmo/cosmo-pd101";
+
+initI18n();

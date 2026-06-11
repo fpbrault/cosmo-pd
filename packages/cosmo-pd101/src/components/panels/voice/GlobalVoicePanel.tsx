@@ -1,4 +1,5 @@
 import { memo, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import { useHostTransport } from "@/features/synth/hooks/useHostTransport";
@@ -26,9 +27,10 @@ const VelocityCurvePreview = memo(function VelocityCurvePreview({
 }: {
 	curve: number;
 }) {
+	const { t } = useTranslation("synth");
 	return (
 		<svg
-			aria-label={`Velocity curve preview. Curve value: ${curve.toFixed(2)}`}
+			aria-label={t("globalVoice.velCurveAria", { value: curve.toFixed(2) })}
 			width={W}
 			height={H}
 			viewBox={`0 0 ${W} ${H}`}
@@ -93,6 +95,7 @@ function GlobalSection({
 }
 
 export default function GlobalVoicePanel() {
+	const { t } = useTranslation("synth");
 	const transport = useHostTransport();
 	const { value: velocityCurve, setValue: setVelocityCurve } =
 		useSynthParam("velocityCurve");
@@ -109,10 +112,10 @@ export default function GlobalVoicePanel() {
 		typeof tempoBpm === "number" && Number.isFinite(tempoBpm) ? tempoBpm : 120;
 	return (
 		<div className="grid grid-cols-2 gap-4">
-			<GlobalSection title="Transport">
+			<GlobalSection title={t("globalVoice.transportSection")}>
 				<label className="input bg-neutral">
 					<span className="label pr-2 font-mono text-4xs text-cz-cream/55 uppercase tracking-[0.24em]">
-						Tempo
+						{t("globalVoice.tempo")}
 					</span>
 					<input
 						type="number"
@@ -130,12 +133,12 @@ export default function GlobalVoicePanel() {
 						}}
 					/>
 					<span className="label font-mono text-4xs text-cz-cream/45 uppercase tracking-[0.18em]">
-						BPM
+						{t("globalVoice.bpm")}
 					</span>
 				</label>
 			</GlobalSection>
 
-			<GlobalSection title="Portamento">
+			<GlobalSection title={t("globalVoice.portamentoSection")}>
 				<div className="flex flex-col items-center justify-center">
 					<Button
 						type="button"
@@ -155,7 +158,9 @@ export default function GlobalVoicePanel() {
 								: "btn-neutral"
 						}`}
 					>
-						{(portamentoMode as string) === "rate" ? "Rate Mode" : "Time Mode"}
+						{(portamentoMode as string) === "rate"
+							? t("globalVoice.rateMode")
+							: t("globalVoice.timeMode")}
 					</Button>
 					{(portamentoMode as string) === "rate" ? (
 						<SynthParamKnob
@@ -166,7 +171,7 @@ export default function GlobalVoicePanel() {
 							step={0.01}
 							onChange={setPortamentoRate}
 							color="#7f9de4"
-							label="Portamento"
+							label={t("globalVoice.portamento")}
 						/>
 					) : (
 						<SynthParamKnob
@@ -174,13 +179,13 @@ export default function GlobalVoicePanel() {
 							value={portamentoTime as number}
 							onChange={setPortamentoTime}
 							color="#7f9de4"
-							label="Portamento"
+							label={t("globalVoice.portamento")}
 						/>
 					)}
 				</div>
 			</GlobalSection>
 
-			<GlobalSection title="Expression">
+			<GlobalSection title={t("globalVoice.expressionSection")}>
 				<SynthParamKnob
 					paramKey="pitchBendRange"
 					value={pitchBendRange as number}
@@ -189,10 +194,10 @@ export default function GlobalVoicePanel() {
 					step={1}
 					onChange={setPitchBendRange}
 					color="#5bc8d4"
-					label="Pitch Bend"
+					label={t("globalVoice.pitchBend")}
 				/>
 			</GlobalSection>
-			<GlobalSection title="Expression">
+			<GlobalSection title={t("globalVoice.expressionSection")}>
 				<div className="flex flex-col items-center justify-center">
 					<VelocityCurvePreview curve={velocityCurve as number} />
 					<div className="flex justify-center">
@@ -202,7 +207,7 @@ export default function GlobalVoicePanel() {
 							onChange={setVelocityCurve}
 							min={-1}
 							color="#c46eb4"
-							label="Vel Curve"
+							label={t("globalVoice.velCurve")}
 						/>
 					</div>
 				</div>

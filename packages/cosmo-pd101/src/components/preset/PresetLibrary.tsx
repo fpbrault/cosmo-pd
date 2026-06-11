@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import type { PresetRef } from "@/features/synth/useSynthPresetManager";
 import {
@@ -52,6 +53,7 @@ export default function PresetLibrary({
 	onNavigationEntriesChange,
 	isOpen = true,
 }: PresetLibraryProps) {
+	const { t } = useTranslation("synth");
 	const isPluginRuntime =
 		typeof (
 			window as Window & {
@@ -260,7 +262,7 @@ export default function PresetLibrary({
 						ref={scrollContainerRef}
 						className="min-h-0 overflow-y-auto [scrollbar-gutter:stable]"
 						role="listbox"
-						aria-label="Preset library"
+						aria-label={t("presetLibrary.ariaLabel")}
 						data-preset-library="true"
 						tabIndex={isPluginRuntime ? 0 : -1}
 						onScroll={(event) => {
@@ -271,7 +273,7 @@ export default function PresetLibrary({
 					>
 						{sortedEntries.length === 0 ? (
 							<div className="px-5 py-10 text-cz-cream text-sm">
-								No presets available.
+								{t("presetLibrary.emptyState")}
 							</div>
 						) : (
 							<div

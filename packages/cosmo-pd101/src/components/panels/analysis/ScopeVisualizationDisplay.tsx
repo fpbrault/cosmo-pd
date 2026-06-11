@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useScopeContext } from "@/context/ScopeContext";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import { drawScopeBackdrop } from "./scope-visualizations/canvas";
@@ -24,6 +25,7 @@ type ScopeVisualizationDisplayProps = {
 export function ScopeVisualizationDisplay({
 	variant,
 }: ScopeVisualizationDisplayProps) {
+	const { t } = useTranslation("synth");
 	const {
 		analyserNodeRef,
 		audioCtxRef,
@@ -263,16 +265,16 @@ export function ScopeVisualizationDisplay({
 					}
 				>
 					{scopeVisualizationMode === "waveform"
-						? "Waveform"
+						? t("scope.modeWaveform")
 						: scopeVisualizationMode === "orbital"
-							? "Orbital"
+							? t("scope.modeOrbital")
 							: scopeVisualizationMode === "spectrogram"
-								? "Spectrogram"
+								? t("scope.modeSpectrogram")
 								: scopeVisualizationMode === "waterfall3d"
-									? "Waterfall 3D"
+									? t("scope.modeWaterfall3d")
 									: scopeVisualizationMode === "transferCurves"
-										? "Transfer Curves"
-										: "Asteroids"}
+										? t("scope.modeTransferCurves")
+										: t("scope.modeAsteroids")}
 				</button>
 			</div>
 			{/* Color theme button - positioned at outer level to avoid overflow-hidden clipping */}
@@ -295,13 +297,13 @@ export function ScopeVisualizationDisplay({
 							)[scopeColorTheme] as ScopeColorTheme,
 						)
 					}
-					aria-label="Toggle scope color theme"
+					aria-label={t("scope.toggleThemeAria")}
 				>
 					{scopeColorTheme === "vintage"
-						? "Vintage"
+						? t("scope.themeVintage")
 						: scopeColorTheme === "amber"
-							? "Amber"
-							: "Plasma"}
+							? t("scope.themeAmber")
+							: t("scope.themePlasma")}
 				</button>
 			</div>
 			<div
