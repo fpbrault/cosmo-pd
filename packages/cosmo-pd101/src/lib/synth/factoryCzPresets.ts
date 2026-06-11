@@ -883,7 +883,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				frequency: 440.0,
 				tempoBpm: 120.0,
-				volume: 0.8,
+				volume: 1.0,
 				czDacEnabled: false,
 				polyMode: "poly8",
 				legato: false,
