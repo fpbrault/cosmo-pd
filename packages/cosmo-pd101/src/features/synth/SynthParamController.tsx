@@ -148,7 +148,7 @@ export function visualModulationScale(params: {
 		return max - min;
 	}
 	if (destination.includes("EnvStep")) {
-		return 127;
+		return 99;
 	}
 	return 1;
 }

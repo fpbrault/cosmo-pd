@@ -52,12 +52,12 @@ describe("visualModulationScale", () => {
 		).toBe(4);
 	});
 
-	it("keeps env-step scaling at raw envelope units when no range is provided", () => {
+	it("uses the human envelope range for env-step modulation", () => {
 		expect(
 			visualModulationScale({ destination: "line1DcaEnvStep1Level" }),
-		).toBe(127);
+		).toBe(99);
 		expect(visualModulationScale({ destination: "line2DcoEnvStep8Rate" })).toBe(
-			127,
+			99,
 		);
 	});
 

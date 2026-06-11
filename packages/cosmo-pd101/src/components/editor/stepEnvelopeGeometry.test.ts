@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
 import {
 	buildEnvelopePoints,
@@ -421,6 +421,23 @@ describe("drawEnvPreview", () => {
 		} as unknown as HTMLCanvasElement;
 		const env = createEnv();
 		expect(() => drawEnvPreview(canvas, env, "#ff0000", null)).not.toThrow();
+	});
+
+	it("does not resize or draw a CSS-hidden canvas", () => {
+		const getContext = vi.fn();
+		const canvas = {
+			width: WIDTH,
+			height: HEIGHT,
+			clientWidth: 0,
+			clientHeight: 0,
+			getContext,
+		} as unknown as HTMLCanvasElement;
+
+		drawEnvPreview(canvas, createEnv(), "#ff0000", null, [], true);
+
+		expect(getContext).not.toHaveBeenCalled();
+		expect(canvas.width).toBe(WIDTH);
+		expect(canvas.height).toBe(HEIGHT);
 	});
 
 	it("handles empty env", () => {
