@@ -505,6 +505,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		guard JSONSerialization.isValidJSONObject(payload),
 			let data = try? JSONSerialization.data(withJSONObject: payload),
 			let json = String(data: data, encoding: .utf8) else {
+			os_log(.error, log: czVCLog, "sendScriptPayload: failed to serialize payload id=%{public}d", payload["id"] as? Int ?? -1)
 			return
 		}
 		webView?.evaluateJavaScript("window.__czIpcResponse?.(\(json));", completionHandler: nil)
