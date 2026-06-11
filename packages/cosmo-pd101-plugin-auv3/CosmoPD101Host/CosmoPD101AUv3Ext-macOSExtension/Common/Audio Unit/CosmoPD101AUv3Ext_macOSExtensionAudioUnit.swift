@@ -208,37 +208,27 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 		return true
 	}
 
-	public func paramsJson() -> String? {
-		let required = cosmo_pd101_ffi_get_params_json(engine, nil, 0)
+	private func ffiString(call: (UnsafeMutablePointer<UInt8>?, Int) -> Int) -> String? {
+		let required = call(nil, 0)
 		guard required > 0 else { return nil }
 		var bytes = [UInt8](repeating: 0, count: required)
 		let written = bytes.withUnsafeMutableBufferPointer { buffer in
-			cosmo_pd101_ffi_get_params_json(engine, buffer.baseAddress, buffer.count)
+			call(buffer.baseAddress, buffer.count)
 		}
 		guard written == required else { return nil }
 		return String(bytes: bytes, encoding: .utf8)
+	}
+
+	public func paramsJson() -> String? {
+		ffiString(call: { cosmo_pd101_ffi_get_params_json(engine, $0, $1) })
 	}
 
 	public func runtimeVoiceStatesJson() -> String? {
-		let required = cosmo_pd101_ffi_get_runtime_voice_states_json(engine, nil, 0)
-		guard required > 0 else { return nil }
-		var bytes = [UInt8](repeating: 0, count: required)
-		let written = bytes.withUnsafeMutableBufferPointer { buffer in
-			cosmo_pd101_ffi_get_runtime_voice_states_json(engine, buffer.baseAddress, buffer.count)
-		}
-		guard written == required else { return nil }
-		return String(bytes: bytes, encoding: .utf8)
+		ffiString(call: { cosmo_pd101_ffi_get_runtime_voice_states_json(engine, $0, $1) })
 	}
 
 	public func runtimeModSourcesJson() -> String? {
-		let required = cosmo_pd101_ffi_get_runtime_mod_sources_json(engine, nil, 0)
-		guard required > 0 else { return nil }
-		var bytes = [UInt8](repeating: 0, count: required)
-		let written = bytes.withUnsafeMutableBufferPointer { buffer in
-			cosmo_pd101_ffi_get_runtime_mod_sources_json(engine, buffer.baseAddress, buffer.count)
-		}
-		guard written == required else { return nil }
-		return String(bytes: bytes, encoding: .utf8)
+		ffiString(call: { cosmo_pd101_ffi_get_runtime_mod_sources_json(engine, $0, $1) })
 	}
 
 	public func scopeData() -> (samples: [Float], sampleRate: Float, hz: Float) {
@@ -310,25 +300,11 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 	}
 
 	private func factoryPresetName(index: Int) -> String? {
-		let required = cosmo_pd101_ffi_get_factory_preset_name(index, nil, 0)
-		guard required > 0 else { return nil }
-		var bytes = [UInt8](repeating: 0, count: required)
-		let written = bytes.withUnsafeMutableBufferPointer { buffer in
-			cosmo_pd101_ffi_get_factory_preset_name(index, buffer.baseAddress, buffer.count)
-		}
-		guard written == required else { return nil }
-		return String(bytes: bytes, encoding: .utf8)
+		ffiString(call: { cosmo_pd101_ffi_get_factory_preset_name(index, $0, $1) })
 	}
 
 	private func factoryPresetParamsJson(index: Int) -> String? {
-		let required = cosmo_pd101_ffi_get_factory_preset_params_json(index, nil, 0)
-		guard required > 0 else { return nil }
-		var bytes = [UInt8](repeating: 0, count: required)
-		let written = bytes.withUnsafeMutableBufferPointer { buffer in
-			cosmo_pd101_ffi_get_factory_preset_params_json(index, buffer.baseAddress, buffer.count)
-		}
-		guard written == required else { return nil }
-		return String(bytes: bytes, encoding: .utf8)
+		ffiString(call: { cosmo_pd101_ffi_get_factory_preset_params_json(index, $0, $1) })
 	}
 
 	private func applyFactoryPreset(index: Int) -> Bool {
@@ -378,24 +354,17 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 	}
 
 	private func renderEventType(_ event: UnsafePointer<AURenderEvent>) -> UInt8 {
-		let eventTypeOffset = MemoryLayout<AURenderEventHeader>.offset(of: \AURenderEventHeader.eventType) ?? 16
-		return UnsafeRawPointer(event).advanced(by: eventTypeOffset).load(as: UInt8.self)
+		event.pointee.head.eventType.rawValue
 	}
 
 	private func consumeLegacyMidiEvent(_ event: UnsafePointer<AURenderEvent>) {
-		let lengthOffset = MemoryLayout<AUMIDIEvent>.offset(of: \AUMIDIEvent.length) ?? 18
-		let dataOffset = MemoryLayout<AUMIDIEvent>.offset(of: \AUMIDIEvent.data) ?? 21
-		let eventPointer = UnsafeRawPointer(event)
-		let length = min(Int(eventPointer.advanced(by: lengthOffset).load(as: UInt16.self)), 3)
-		guard length >= 1 else {
-			return
-		}
-
-		let data = eventPointer.advanced(by: dataOffset).assumingMemoryBound(to: UInt8.self)
+		let midiEvent = event.pointee.MIDI
+		let length = min(Int(midiEvent.length), 3)
+		guard length >= 1 else { return }
 		handleMidi(
-			status: data[0],
-			data1: length >= 2 ? data[1] : 0,
-			data2: length >= 3 ? data[2] : 0
+			status: midiEvent.data.0,
+			data1: length >= 2 ? midiEvent.data.1 : 0,
+			data2: length >= 3 ? midiEvent.data.2 : 0
 		)
 	}
 
