@@ -206,6 +206,7 @@ impl CosmoProcessor {
                 })
                 .unwrap_or((0.0, 0.0));
             self.last_runtime_mod_sources = RuntimeModSources {
+                pitch_bend: self.pitch_bend,
                 lfo1: lfos.lfo1,
                 lfo2: lfos.lfo2,
                 random: lfos.random,

@@ -75,8 +75,12 @@ describe("PluginPage", () => {
 		});
 		mockUsePluginSynthRuntime.mockReturnValue({
 			activeNotes: [],
+			pitchBend: 0,
+			modWheel: 0,
 			sendNoteOn: vi.fn(),
 			sendNoteOff: vi.fn(),
+			sendPitchBend: vi.fn(),
+			sendModWheel: vi.fn(),
 			sendPolyAftertouch: vi.fn(),
 			panic: vi.fn(),
 			audioContextState: "running",

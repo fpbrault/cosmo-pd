@@ -96,7 +96,7 @@ export default function MiniKeyboardKeybed({
 	pcKeyLabels,
 }: MiniKeyboardKeybedProps) {
 	return (
-		<div className="relative h-full overflow-hidden rounded-none border border-cz-border/70 border-x-0 border-b-0 bg-cz-inset px-2">
+		<div className="relative h-full min-w-0 flex-1 overflow-hidden rounded-none border border-cz-border/70 border-x-0 border-b-0 bg-cz-inset px-2">
 			<div className="relative flex h-full gap-0.5 overflow-hidden rounded-md border border-cz-border/65 bg-cz-surface p-1">
 				{whiteKeys.map((key) => (
 					<PianoKey

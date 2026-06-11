@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ModSource, SynthParams } from "@/lib/synth/bindings/synth";
 import { DEFAULT_PRESET } from "@/lib/synth/presetStorage";
 
-export type RuntimeModSources = Record<ModSource, number>;
+export type RuntimeModSources = Record<ModSource, number> & {
+	pitchBend: number;
+};
 
 export type RuntimeVoiceEnvState = {
 	value: number;
@@ -65,11 +67,14 @@ const ALL_RUNTIME_MOD_SOURCE_KEYS = Object.keys(
 
 function buildRuntimeModSources(
 	readValue: (key: ModSource) => number,
+	pitchBend = 0,
 ): RuntimeModSources {
-	return ALL_RUNTIME_MOD_SOURCE_KEYS.reduce((acc, key) => {
+	const sources = ALL_RUNTIME_MOD_SOURCE_KEYS.reduce((acc, key) => {
 		acc[key] = readValue(key);
 		return acc;
 	}, {} as RuntimeModSources);
+	sources.pitchBend = pitchBend;
+	return sources;
 }
 
 export const EMPTY_RUNTIME_MOD_SOURCES: RuntimeModSources =
@@ -130,7 +135,13 @@ export function useAudioEngine({
 				return typeof next === "number" && Number.isFinite(next) ? next : 0;
 			};
 
-			return buildRuntimeModSources(read);
+			const pitchBend = detail.pitchBend;
+			return buildRuntimeModSources(
+				read,
+				typeof pitchBend === "number" && Number.isFinite(pitchBend)
+					? Math.max(-1, Math.min(1, pitchBend))
+					: 0,
+			);
 		},
 		[],
 	);

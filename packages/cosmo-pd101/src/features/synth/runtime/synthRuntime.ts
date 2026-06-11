@@ -10,8 +10,12 @@ export type SynthScopeFrameSubscription = (
 
 export type SynthRuntime = {
 	activeNotes: number[];
+	pitchBend: number;
+	modWheel: number;
 	sendNoteOn: (note: number, velocity?: number) => void;
 	sendNoteOff: (note: number) => void;
+	sendPitchBend: (value: number) => void;
+	sendModWheel: (value: number) => void;
 	sendPolyAftertouch: (note: number, pressure: number) => void;
 	panic: () => void;
 	audioContextState: "suspended" | "running" | "closed" | null;

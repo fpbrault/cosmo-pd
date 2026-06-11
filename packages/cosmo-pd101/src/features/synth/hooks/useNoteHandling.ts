@@ -26,6 +26,8 @@ type UseNoteHandlingParams = {
 
 export type NoteHandlingApi = {
 	activeNotes: number[];
+	pitchBend: number;
+	modWheel: number;
 	sendNoteOn: (note: number, velocity?: number) => void;
 	sendNoteOff: (note: number) => void;
 	panic: () => void;
@@ -72,6 +74,8 @@ export function useNoteHandling({
 	const sustainedButReleasedRef = useRef<Set<number>>(new Set());
 	const sustainRef = useRef(false);
 	const [activeNotes, setActiveNotes] = useState<number[]>([]);
+	const [pitchBend, setPitchBend] = useState(0);
+	const [modWheel, setModWheel] = useState(0);
 
 	const sendNoteOn = useCallback(
 		(note: number, velocity = 100) => {
@@ -120,15 +124,19 @@ export function useNoteHandling({
 
 	const sendPitchBend = useCallback(
 		(value: number) => {
-			dispatchEngineEvent("pitchBend", { value });
+			const clamped = Math.max(-1, Math.min(1, value));
+			setPitchBend(clamped);
+			dispatchEngineEvent("pitchBend", { value: clamped });
 		},
 		[dispatchEngineEvent],
 	);
 
 	const sendModWheel = useCallback(
 		(value: number) => {
-			dispatchEngineEvent("modWheel", { value });
-			emitModSourceValue("modWheel", value);
+			const clamped = Math.max(0, Math.min(1, value));
+			setModWheel(clamped);
+			dispatchEngineEvent("modWheel", { value: clamped });
+			emitModSourceValue("modWheel", clamped);
 		},
 		[dispatchEngineEvent, emitModSourceValue],
 	);
@@ -163,8 +171,26 @@ export function useNoteHandling({
 		sustainedButReleasedRef.current.clear();
 		sustainRef.current = false;
 		setActiveNotes([]);
+		setPitchBend(0);
 		dispatchEngineEvent("panic", {});
 	}, [dispatchEngineEvent]);
+
+	useEffect(() => {
+		const onRuntimeModSources = (event: Event) => {
+			const detail = (
+				event as CustomEvent<{ pitchBend?: number; modWheel?: number }>
+			).detail;
+			if (typeof detail?.pitchBend === "number") {
+				setPitchBend(Math.max(-1, Math.min(1, detail.pitchBend)));
+			}
+			if (typeof detail?.modWheel === "number") {
+				setModWheel(Math.max(0, Math.min(1, detail.modWheel)));
+			}
+		};
+		window.addEventListener("cz-runtime-mod-sources", onRuntimeModSources);
+		return () =>
+			window.removeEventListener("cz-runtime-mod-sources", onRuntimeModSources);
+	}, []);
 
 	// Listen for macro value changes from MacroKnobsPanel
 	useEffect(() => {
@@ -391,6 +417,8 @@ export function useNoteHandling({
 
 	return {
 		activeNotes,
+		pitchBend,
+		modWheel,
 		sendNoteOn,
 		sendNoteOff,
 		panic,

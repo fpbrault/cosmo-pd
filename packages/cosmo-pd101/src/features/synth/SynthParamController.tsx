@@ -236,6 +236,7 @@ export function SynthParamControllerProvider({
 			}
 
 			setLiveSources({
+				pitchBend: Number.isFinite(detail.pitchBend) ? detail.pitchBend : 0,
 				lfo1: Number.isFinite(detail.lfo1) ? detail.lfo1 : 0,
 				lfo2: Number.isFinite(detail.lfo2) ? detail.lfo2 : 0,
 				random: Number.isFinite(detail.random) ? detail.random : 0,

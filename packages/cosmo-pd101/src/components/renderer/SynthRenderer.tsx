@@ -27,8 +27,12 @@ import SynthRendererOverlays from "./SynthRendererOverlays";
 
 type MiniKeyboardProps = {
 	activeNotes: number[];
+	pitchBend: number;
+	modWheel: number;
 	onNoteOn: (note: number, velocity?: number) => void;
 	onNoteOff: (note: number) => void;
+	onPitchBend: (value: number) => void;
+	onModWheel: (value: number) => void;
 	onPolyAftertouch: (note: number, pressure: number) => void;
 };
 
@@ -70,8 +74,12 @@ const SynthRenderer = memo(function SynthRenderer({
 	const setBrandInfoOpen = useSynthUiStore((s) => s.setBrandInfoOpen);
 
 	const activeNotes = miniKeyboard?.activeNotes ?? runtime.activeNotes;
+	const pitchBend = miniKeyboard?.pitchBend ?? runtime.pitchBend;
+	const modWheel = miniKeyboard?.modWheel ?? runtime.modWheel;
 	const sendNoteOn = miniKeyboard?.onNoteOn ?? runtime.sendNoteOn;
 	const sendNoteOff = miniKeyboard?.onNoteOff ?? runtime.sendNoteOff;
+	const sendPitchBend = miniKeyboard?.onPitchBend ?? runtime.sendPitchBend;
+	const sendModWheel = miniKeyboard?.onModWheel ?? runtime.sendModWheel;
 	const sendPolyAftertouch =
 		miniKeyboard?.onPolyAftertouch ?? runtime.sendPolyAftertouch;
 	const { stepPreset, setNavigationEntryIds } = usePresetManager();
@@ -203,8 +211,12 @@ const SynthRenderer = memo(function SynthRenderer({
 											{keyboardVisible && !libraryModeOpen ? (
 												<MiniKeyboardOverlay
 													activeNotes={activeNotes}
+													pitchBend={pitchBend}
+													modWheel={modWheel}
 													onNoteOn={sendNoteOn}
 													onNoteOff={sendNoteOff}
+													onPitchBend={sendPitchBend}
+													onModWheel={sendModWheel}
 													onPolyAftertouch={sendPolyAftertouch}
 												/>
 											) : null}

@@ -94,11 +94,15 @@ describe("useNoteHandling", () => {
 
 		act(() => {
 			result.current.sendNoteOn(60);
+			result.current.sendPitchBend(0.8);
+			result.current.sendModWheel(0.6);
 			result.current.panic();
 		});
 
 		expect(mockEventSink).toHaveBeenCalledWith("panic", {});
 		expect(result.current.activeNotes).toEqual([]);
+		expect(result.current.pitchBend).toBe(0);
+		expect(result.current.modWheel).toBe(0.6);
 	});
 
 	it("sends pitch bend, mod wheel, and aftertouch", () => {
@@ -119,6 +123,35 @@ describe("useNoteHandling", () => {
 		expect(mockEventSink).toHaveBeenCalledWith("pitchBend", { value: 0.5 });
 		expect(mockEventSink).toHaveBeenCalledWith("modWheel", { value: 0.7 });
 		expect(mockEventSink).toHaveBeenCalledWith("aftertouch", { value: 0.3 });
+		expect(result.current.pitchBend).toBe(0.5);
+		expect(result.current.modWheel).toBe(0.7);
+	});
+
+	it("clamps performance controls and reflects external MIDI telemetry", () => {
+		const { result } = renderHook(() =>
+			useNoteHandling({
+				workletNodeRef:
+					mockWorkletNodeRef as unknown as React.RefObject<AudioWorkletNode>,
+				eventSink: mockEventSink,
+			}),
+		);
+
+		act(() => {
+			result.current.sendPitchBend(2);
+			result.current.sendModWheel(-1);
+		});
+		expect(mockEventSink).toHaveBeenCalledWith("pitchBend", { value: 1 });
+		expect(mockEventSink).toHaveBeenCalledWith("modWheel", { value: 0 });
+
+		act(() => {
+			window.dispatchEvent(
+				new CustomEvent("cz-runtime-mod-sources", {
+					detail: { pitchBend: -0.4, modWheel: 0.9 },
+				}),
+			);
+		});
+		expect(result.current.pitchBend).toBe(-0.4);
+		expect(result.current.modWheel).toBe(0.9);
 	});
 
 	it("handles keyboard input — maps z to base note (C3, MIDI 48)", () => {
