@@ -539,7 +539,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Anomalous Transmission",
 		source: "cosmo-factory",
 		author: "Purr Audio",
-		description: "",
+		description:
+			"An atmospheric pad combined with an otherworldly gritty texture. Use the mod wheel to add more brightness and more grit.",
 		starred: true,
 		sortIndex: 1,
 		data: {
