@@ -7,6 +7,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Blissful Brass",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: true,
 		sortIndex: 0,
 		data: {
@@ -538,6 +539,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Anomalous Transmission",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description:
+			"An atmospheric pad combined with an otherworldly gritty texture. Use the mod wheel to add more brightness and more grit.",
 		starred: true,
 		sortIndex: 1,
 		data: {
@@ -1035,6 +1038,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Stuttering Echoes",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: true,
 		sortIndex: 2,
 		data: {
@@ -1487,6 +1491,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Heavenly Flute",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: true,
 		sortIndex: 3,
 		data: {
@@ -1936,6 +1941,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Clav",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: true,
 		sortIndex: 4,
 		data: {
@@ -2344,6 +2350,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Fun Bass",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: true,
 		sortIndex: 5,
 		data: {
@@ -2762,6 +2769,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Fuzz Lead",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: true,
 		sortIndex: 6,
 		data: {
@@ -3181,6 +3189,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Lucifer's Piano",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: true,
 		sortIndex: 7,
 		data: {
@@ -3648,6 +3657,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Red Velvet",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: true,
 		sortIndex: 8,
 		data: {
@@ -4067,6 +4077,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Tweed",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: true,
 		sortIndex: 9,
 		data: {
@@ -4486,6 +4497,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Wow",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: true,
 		sortIndex: 10,
 		data: {
@@ -4899,6 +4911,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "12 STRING 1",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 11,
 		data: {
@@ -5335,6 +5348,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "2L PLUCK+BRSS",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 12,
 		data: {
@@ -5771,6 +5785,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "2LINE W/REVERB",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 13,
 		data: {
@@ -6190,6 +6205,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "2X ATTACK 8V",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 14,
 		data: {
@@ -6609,6 +6625,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "8-NOTE PIANO",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 15,
 		data: {
@@ -7028,6 +7045,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ABRACADABRA",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 16,
 		data: {
@@ -7464,6 +7482,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ACC PIANO",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 17,
 		data: {
@@ -7866,6 +7885,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ACCORDIAN",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 18,
 		data: {
@@ -8302,6 +8322,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ACCOUSTICBASS",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 19,
 		data: {
@@ -8721,6 +8742,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "AFRICAN DRUM",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 20,
 		data: {
@@ -9123,6 +9145,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "AFRO-PERC. 2",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 21,
 		data: {
@@ -9542,6 +9565,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ALIEN 1",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 22,
 		data: {
@@ -9944,6 +9968,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ALL TOO MUCH",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 23,
 		data: {
@@ -10363,6 +10388,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ANALG SUBBASS",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 24,
 		data: {
@@ -10799,6 +10825,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ANALOG 2",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 25,
 		data: {
@@ -11235,6 +11262,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ANALOG 3",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 26,
 		data: {
@@ -11671,6 +11699,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ANALOG 5",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 27,
 		data: {
@@ -12107,6 +12136,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ANALOG 6",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 28,
 		data: {
@@ -12526,6 +12556,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ANALOG PLUCK",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 29,
 		data: {
@@ -12945,6 +12976,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ANALOG STRNGS",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 30,
 		data: {
@@ -13347,6 +13379,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ANALOG SYNTH 1",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 31,
 		data: {
@@ -13766,6 +13799,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "BALINESE BELL",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 32,
 		data: {
@@ -14202,6 +14236,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "BANJO TREMOLO",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 33,
 		data: {
@@ -14621,6 +14656,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "BASS3",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 34,
 		data: {
@@ -15040,6 +15076,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "BELL-PIANO",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 35,
 		data: {
@@ -15476,6 +15513,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "BELLFLUTE/VERB",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 36,
 		data: {
@@ -15878,6 +15916,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "BELLS",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 37,
 		data: {
@@ -16314,6 +16353,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "BESTCLAVICHORD",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 38,
 		data: {
@@ -16733,6 +16773,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "BIG BRASS",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 39,
 		data: {
@@ -17152,6 +17193,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "BIGBASS",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 40,
 		data: {
@@ -17571,6 +17613,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "BRAIN DAMAGE1",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 41,
 		data: {
@@ -17990,6 +18033,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "BRASS 5THS",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 42,
 		data: {
@@ -18392,6 +18436,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "BRIAN'S PIANO",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 43,
 		data: {
@@ -18828,6 +18873,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "BRSS W/TRAILS",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 44,
 		data: {
@@ -19230,6 +19276,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "BRTH FLTE 1",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 45,
 		data: {
@@ -19666,6 +19713,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Bright Changes",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: false,
 		sortIndex: 46,
 		data: {
@@ -20184,6 +20232,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "CELLO 1",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 47,
 		data: {
@@ -20603,6 +20652,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "CHERYLWHINESTN",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 48,
 		data: {
@@ -21005,6 +21055,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "CHIMEW/FOOTSTP",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 49,
 		data: {
@@ -21407,6 +21458,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "CHIRP",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 50,
 		data: {
@@ -21826,6 +21878,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "CLARINET",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 51,
 		data: {
@@ -22228,6 +22281,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "COOL VIBES",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 52,
 		data: {
@@ -22630,6 +22684,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "CRYSTAL 3",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 53,
 		data: {
@@ -23032,6 +23087,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Chants",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: false,
 		sortIndex: 54,
 		data: {
@@ -23513,6 +23569,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "DARK SQ-SEQ",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 55,
 		data: {
@@ -23932,6 +23989,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "DBL REED",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 56,
 		data: {
@@ -24334,6 +24392,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "DEMIBANJO",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 57,
 		data: {
@@ -24770,6 +24829,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "DISTORTEDGUITR",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 58,
 		data: {
@@ -25189,6 +25249,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "DIVA HARMONIC",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 59,
 		data: {
@@ -25591,6 +25652,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "DOUBLE REED",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 60,
 		data: {
@@ -26027,6 +26089,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "DUKEY",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 61,
 		data: {
@@ -26446,6 +26509,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "DXLEAD1SYNPRO",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 62,
 		data: {
@@ -26848,6 +26912,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ECHO FANTASY",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 63,
 		data: {
@@ -27267,6 +27332,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ELEC. BASS A",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 64,
 		data: {
@@ -27703,6 +27769,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ELEC. BASS C",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 65,
 		data: {
@@ -28122,6 +28189,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ELEC.BASS 2",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 66,
 		data: {
@@ -28541,6 +28609,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ELEC.BASS 3",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 67,
 		data: {
@@ -28960,6 +29029,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ELEC.DRUM",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 68,
 		data: {
@@ -29379,6 +29449,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ELECTRONIC-12",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 69,
 		data: {
@@ -29815,6 +29886,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ELECTRONIC-4",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 70,
 		data: {
@@ -30234,6 +30306,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ELECTRONIC-5",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 71,
 		data: {
@@ -30670,6 +30743,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ELECTRONIC-8",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 72,
 		data: {
@@ -31106,6 +31180,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ELEPHANTBRASS",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 73,
 		data: {
@@ -31525,6 +31600,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ELP FULL SYNTH",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 74,
 		data: {
@@ -31927,6 +32003,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "ENVFLTRFATORGN",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 75,
 		data: {
@@ -32329,6 +32406,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "FADE BRASS",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 76,
 		data: {
@@ -32731,6 +32809,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "FASST CHORDS",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 77,
 		data: {
@@ -33133,6 +33212,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "FAT2",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 78,
 		data: {
@@ -33535,6 +33615,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "FILSWEEP5T",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 79,
 		data: {
@@ -33971,6 +34052,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "FILT SWEEP",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 80,
 		data: {
@@ -34390,6 +34472,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "FLTR-SWP/REED",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 81,
 		data: {
@@ -34809,6 +34892,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "FOLKGUITARSYN",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 82,
 		data: {
@@ -35211,6 +35295,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "FRCH HORN",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 83,
 		data: {
@@ -35630,6 +35715,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "FROGGY",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 84,
 		data: {
@@ -36066,6 +36152,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "GOOD HUMAN",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 85,
 		data: {
@@ -36468,6 +36555,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "GUITAR",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 86,
 		data: {
@@ -36870,6 +36958,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "HA HA HA",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 87,
 		data: {
@@ -37289,6 +37378,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "HARPSICHORDTH",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 88,
 		data: {
@@ -37725,6 +37815,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Hot Lead",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: false,
 		sortIndex: 89,
 		data: {
@@ -38127,6 +38218,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "INTERNAL_1",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 90,
 		data: {
@@ -38563,6 +38655,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "INTERNAL_10",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 91,
 		data: {
@@ -38965,6 +39058,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "INTERNAL_11",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 92,
 		data: {
@@ -39401,6 +39495,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "INTERNAL_12",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 93,
 		data: {
@@ -39837,6 +39932,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "INTERNAL_13",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 94,
 		data: {
@@ -40273,6 +40369,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "INTERNAL_14",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 95,
 		data: {
@@ -40709,6 +40806,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "INTERNAL_15",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 96,
 		data: {
@@ -41128,6 +41226,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "INTERNAL_16",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 97,
 		data: {
@@ -41564,6 +41663,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "INTERNAL_2",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 98,
 		data: {
@@ -42000,6 +42100,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "INTERNAL_3",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 99,
 		data: {
@@ -42419,6 +42520,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "INTERNAL_4",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 100,
 		data: {
@@ -42855,6 +42957,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "INTERNAL_5",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 101,
 		data: {
@@ -43274,6 +43377,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "INTERNAL_6",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 102,
 		data: {
@@ -43693,6 +43797,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "INTERNAL_7",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 103,
 		data: {
@@ -44129,6 +44234,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "INTERNAL_8",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 104,
 		data: {
@@ -44565,6 +44671,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "INTERNAL_9",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 105,
 		data: {
@@ -44967,6 +45074,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Infinite Wobble",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: false,
 		sortIndex: 106,
 		data: {
@@ -45400,6 +45508,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "JUMP I",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 107,
 		data: {
@@ -45802,6 +45911,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "METALKEY1",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 108,
 		data: {
@@ -46221,6 +46331,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "MOOGIII",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 109,
 		data: {
@@ -46623,6 +46734,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Majestic Pad",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: false,
 		sortIndex: 110,
 		data: {
@@ -47102,6 +47214,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "NEW AGE PLUCK",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 111,
 		data: {
@@ -47521,6 +47634,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "OBERHEIM MOAN",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 112,
 		data: {
@@ -47940,6 +48054,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Organ",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: false,
 		sortIndex: 113,
 		data: {
@@ -48356,6 +48471,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "PB8_9",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 114,
 		data: {
@@ -48758,6 +48874,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "PIANO III",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 115,
 		data: {
@@ -49160,6 +49277,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "PIANO PHASE",
 		source: "cz-factory",
 		author: "Temple of CZ",
+		description: "",
 		starred: false,
 		sortIndex: 116,
 		data: {
@@ -49579,6 +49697,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Plucking",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: false,
 		sortIndex: 117,
 		data: {
@@ -50025,6 +50144,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Soft Brass",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: false,
 		sortIndex: 118,
 		data: {
@@ -50475,6 +50595,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Solo Lead",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: false,
 		sortIndex: 119,
 		data: {
@@ -50924,6 +51045,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Starship 1",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: false,
 		sortIndex: 120,
 		data: {
@@ -51373,6 +51495,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Synth Bass",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: false,
 		sortIndex: 121,
 		data: {
@@ -51835,6 +51958,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Thick Bass",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: false,
 		sortIndex: 122,
 		data: {
@@ -52271,6 +52395,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 		name: "Waxy Pad",
 		source: "cosmo-factory",
 		author: "Purr Audio",
+		description: "",
 		starred: false,
 		sortIndex: 123,
 		data: {

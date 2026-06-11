@@ -17,6 +17,7 @@ type NativePresetLibraryEntry = {
 	name: string;
 	source: PresetSource;
 	author: string;
+	description?: string;
 	starred: boolean;
 	sortIndex?: number;
 	favorite?: boolean;
@@ -33,6 +34,7 @@ type SavePluginPresetPayload = {
 	id?: string | null;
 	name: string;
 	author?: string;
+	description?: string;
 	tags?: string[];
 	data?: SynthPresetV1;
 };
@@ -49,6 +51,7 @@ type ImportedPresetBank = {
 		id: string;
 		name: string;
 		author?: string;
+		description?: string;
 		starred?: boolean;
 		tags?: string[];
 		data: SynthPresetV1;
@@ -78,6 +81,10 @@ declare global {
 		__czDeletePreset?: (id: string) => Promise<unknown>;
 		__czRenamePreset?: (id: string, newName: string) => Promise<unknown>;
 		__czSetPresetAuthor?: (id: string, author: string) => Promise<unknown>;
+		__czSetPresetDescription?: (
+			id: string,
+			description: string,
+		) => Promise<unknown>;
 		__czSetPresetTags?: (id: string, tags: string[]) => Promise<unknown>;
 		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
 		__czExportPreset?: (id: string) => Promise<unknown>;
@@ -133,6 +140,7 @@ function parseImportedPreset(
 	name: string;
 	data: SynthPresetV1;
 	author: string;
+	description: string;
 	tags: string[];
 } | null {
 	try {
@@ -147,6 +155,8 @@ function parseImportedPreset(
 				name: parsed.name,
 				data: parsed.data,
 				author: parsed.author,
+				description:
+					typeof parsed.description === "string" ? parsed.description : "",
 				tags: parsed.tags.filter(
 					(tag): tag is string => typeof tag === "string",
 				),
@@ -158,6 +168,7 @@ function parseImportedPreset(
 				name: filename.trim() || "Imported",
 				data: parsed,
 				author: "",
+				description: "",
 				tags: [],
 			};
 		}
@@ -176,6 +187,7 @@ function parseImportedPreset(
 					params: parsed.params as SynthPresetV1["params"],
 				},
 				author: "",
+				description: "",
 				tags: [],
 			};
 		}
@@ -219,6 +231,8 @@ function parseImportedPresetBank(json: string): ImportedPresetBank | null {
 				id: preset.id,
 				name: preset.name,
 				author: typeof preset.author === "string" ? preset.author : "",
+				description:
+					typeof preset.description === "string" ? preset.description : "",
 				starred: preset.starred === true,
 				tags: Array.isArray(preset.tags)
 					? preset.tags.filter((tag): tag is string => typeof tag === "string")
@@ -243,6 +257,7 @@ function mapNativeEntryToPresetEntry(
 		bankId: entry.bankId ?? null,
 		bankName: entry.bankName ?? null,
 		author: entry.author,
+		description: entry.description ?? "",
 		starred: entry.starred,
 		favorite: entry.favorite === true,
 		tags: entry.tags ?? [],
@@ -254,6 +269,7 @@ function mapNativeEntryToPresetEntry(
 						name: entry.name,
 						source: entry.source,
 						author: entry.author,
+						description: entry.description ?? "",
 						starred: entry.starred,
 						sortIndex: entry.sortIndex,
 						bankId: entry.bankId ?? null,
@@ -307,6 +323,7 @@ export function createPluginPresetManagerRepository({
 				author: existingEntry?.author?.trim()
 					? existingEntry.author
 					: DEFAULT_USER_PRESET_AUTHOR,
+				description: existingEntry?.description ?? "",
 				tags: existingEntry?.tags ?? [],
 			})) as { id?: string; name?: string } | undefined;
 			return createActivationResult(
@@ -325,6 +342,9 @@ export function createPluginPresetManagerRepository({
 		},
 		setPresetAuthor: async (id, author) => {
 			await window.__czSetPresetAuthor?.(id, author);
+		},
+		setPresetDescription: async (id, description) => {
+			await window.__czSetPresetDescription?.(id, description);
 		},
 		setPresetFavorite: async (id, favorite) => {
 			await window.__czToggleStarred?.(id, favorite);
@@ -363,6 +383,7 @@ export function createPluginPresetManagerRepository({
 			const result = (await window.__czSavePreset?.({
 				name: imported.name,
 				author: imported.author,
+				description: imported.description,
 				tags: imported.tags,
 				data: imported.data,
 			})) as { id?: string; name?: string } | undefined;

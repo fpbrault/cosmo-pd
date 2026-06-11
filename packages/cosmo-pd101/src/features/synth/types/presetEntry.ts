@@ -9,6 +9,7 @@ export type PresetEntry = {
 	bankId?: string | null;
 	bankName?: string | null;
 	author: string;
+	description: string;
 	starred: boolean;
 	favorite: boolean;
 	tags: string[];

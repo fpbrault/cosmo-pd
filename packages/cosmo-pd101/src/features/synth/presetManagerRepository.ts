@@ -31,6 +31,7 @@ export interface PresetManagerRepository {
 	deletePreset: (id: string) => Promise<void>;
 	renamePreset: (id: string, newName: string) => Promise<void>;
 	setPresetAuthor: (id: string, author: string) => Promise<void>;
+	setPresetDescription: (id: string, description: string) => Promise<void>;
 	setPresetFavorite: (id: string, favorite: boolean) => Promise<void>;
 	setPresetTags: (id: string, tags: PresetTagOptions[]) => Promise<void>;
 	initPreset: () => Promise<PresetActivationResult>;

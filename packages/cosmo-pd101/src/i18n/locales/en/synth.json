@@ -964,6 +964,9 @@
 		"nameLabel": "Name",
 		"authorLabel": "Author",
 		"noAuthor": "No author set.",
+		"descriptionLabel": "Description",
+		"descriptionPlaceholder": "Describe this preset",
+		"noDescription": "No description provided.",
 		"tagsLabel": "Tags",
 		"noTags": "No tags",
 		"presetTagsLabel": "Preset tags",
@@ -972,7 +975,7 @@
 		"noTagsOption": "No tags found",
 		"export": "Export",
 		"delete": "Delete",
-		"sidebarEmptyState": "Select a user preset to rename it, manage its tags, export it, or delete it."
+		"sidebarEmptyState": "Select a preset to view its details."
 	},
 	"presetDialogs": {
 		"saveAsTitle": "Save preset as",

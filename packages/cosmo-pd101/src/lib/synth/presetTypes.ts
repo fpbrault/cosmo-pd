@@ -5,6 +5,7 @@ import type { PresetTagOptions } from "./presetTags";
 export type EnginePresetV1 = SynthPresetV1;
 
 export type PresetMetadata = {
+	description: string;
 	tags: PresetTagOptions[];
 };
 

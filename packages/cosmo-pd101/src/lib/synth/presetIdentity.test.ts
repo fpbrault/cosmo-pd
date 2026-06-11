@@ -7,6 +7,7 @@ function baseIdentity() {
 		name: "Init",
 		source: "user" as const,
 		author: "Test",
+		description: "",
 		starred: false,
 		tags: ["synth"],
 		data: DEFAULT_PRESET,

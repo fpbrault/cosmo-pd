@@ -1211,6 +1211,12 @@ fn handle_ipc_invoke(
                         .collect()
                 })
                 .unwrap_or_default();
+            let description = payload
+                .get("description")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default()
+                .trim()
+                .to_string();
             let macro_labels: [String; 4] = payload
                 .get("macroLabels")
                 .and_then(|v| serde_json::from_value(v.clone()).ok())
@@ -1222,7 +1228,7 @@ fn handle_ipc_invoke(
             let id = {
                 let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
                 let entry = lib
-                    .add_entry(name, tags, macro_labels, data)
+                    .add_entry(name, description, tags, macro_labels, data)
                     .map_err(|e| e.to_string())?;
                 entry.id.clone()
             };
@@ -1246,6 +1252,10 @@ fn handle_ipc_invoke(
                 .and_then(serde_json::Value::as_str)
                 .unwrap_or_default()
                 .to_string();
+            let description = payload
+                .get("description")
+                .and_then(serde_json::Value::as_str)
+                .map(|value| value.trim().to_string());
             let tags: Vec<String> = payload
                 .get("tags")
                 .and_then(|v| v.as_array())
@@ -1284,6 +1294,7 @@ fn handle_ipc_invoke(
                         name: String::new(),
                         source: "user".to_string(),
                         author: String::new(),
+                        description: String::new(),
                         starred: false,
                         sort_index: u32::MAX,
                         bank_id: None,
@@ -1304,6 +1315,9 @@ fn handle_ipc_invoke(
                 } else {
                     author
                 };
+                if let Some(description) = description {
+                    entry.description = description;
+                }
                 entry.tags = tags;
                 entry.macro_labels = macro_labels;
                 entry.data = data;
@@ -1412,6 +1426,34 @@ fn handle_ipc_invoke(
                     .map_err(|e| e.to_string())?
                     .ok_or_else(|| "Preset not found".to_string())?;
                 entry.author = author.to_string();
+                let _ = lib.save_entry(entry).map_err(|e| e.to_string())?;
+            }
+
+            Ok(serde_json::Value::Null)
+        }
+        "setPresetDescription" => {
+            let payload = args
+                .first()
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    "setPresetDescription expects an object payload as first argument".to_string()
+                })?;
+            let id = payload
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "setPresetDescription payload missing id".to_string())?;
+            let description = payload
+                .get("description")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "setPresetDescription payload missing description".to_string())?;
+
+            {
+                let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+                let mut entry = lib
+                    .get_entry(id)
+                    .map_err(|e| e.to_string())?
+                    .ok_or_else(|| "Preset not found".to_string())?;
+                entry.description = description.trim().to_string();
                 let _ = lib.save_entry(entry).map_err(|e| e.to_string())?;
             }
 
@@ -1559,6 +1601,7 @@ fn handle_ipc_invoke(
                 "bankId": entry.bank_id,
                 "bankName": entry.bank_name,
                 "author": entry.author,
+                "description": entry.description,
                 "starred": entry.starred,
                 "tags": entry.tags,
                 "data": entry.data,

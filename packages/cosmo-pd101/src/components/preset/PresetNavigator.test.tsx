@@ -11,6 +11,7 @@ const entries: PresetEntry[] = [
 		source: "cosmo-factory",
 		sourceLabel: "Cosmo Factory Library",
 		author: "Purr Audio",
+		description: "",
 		starred: true,
 		favorite: false,
 		tags: [],

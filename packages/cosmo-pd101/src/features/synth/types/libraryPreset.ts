@@ -6,6 +6,7 @@ export type LibraryPreset = {
 	name: string;
 	source: PresetSource;
 	author: string;
+	description: string;
 	starred: boolean;
 	sortIndex?: number;
 	bankId?: string | null;

@@ -13,6 +13,7 @@ const entries: PresetEntry[] = [
 		source: "cosmo-factory",
 		sourceLabel: "Cosmo Factory Library",
 		author: "Purr Audio",
+		description: "",
 		starred: false,
 		favorite: false,
 		tags: [],
@@ -21,6 +22,7 @@ const entries: PresetEntry[] = [
 			name: "Preset 1",
 			source: "cosmo-factory",
 			author: "Purr Audio",
+			description: "",
 			starred: false,
 		},
 	},
@@ -31,6 +33,7 @@ const entries: PresetEntry[] = [
 		source: "user",
 		sourceLabel: "User",
 		author: "",
+		description: "",
 		starred: false,
 		favorite: false,
 		tags: [],
@@ -59,6 +62,7 @@ function createRepository(): PresetManagerRepository {
 		deletePreset: vi.fn().mockResolvedValue(undefined),
 		renamePreset: vi.fn().mockResolvedValue(undefined),
 		setPresetAuthor: vi.fn().mockResolvedValue(undefined),
+		setPresetDescription: vi.fn().mockResolvedValue(undefined),
 		setPresetFavorite: vi.fn().mockResolvedValue(undefined),
 		setPresetTags: vi.fn().mockResolvedValue(undefined),
 		initPreset: vi.fn().mockResolvedValue({
@@ -210,5 +214,15 @@ describe("useSynthPresetManager", () => {
 
 		expect(repository.setPresetFavorite).toHaveBeenCalledWith("local-1", true);
 		expect(repository.listEntries).toHaveBeenCalledTimes(2);
+
+		await act(async () => {
+			await result.current.setPresetDescription("local-1", "  Warm and wide  ");
+		});
+
+		expect(repository.setPresetDescription).toHaveBeenCalledWith(
+			"local-1",
+			"Warm and wide",
+		);
+		expect(repository.listEntries).toHaveBeenCalledTimes(3);
 	});
 });

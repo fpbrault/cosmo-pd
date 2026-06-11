@@ -17,7 +17,7 @@ export function getVirtualRowHeight() {
 }
 
 export function getEntrySearchText(entry: PresetEntry) {
-	return `${entry.label} ${entry.bankName ?? ""} ${entry.sourceLabel} ${entry.author} ${entry.tags.join(" ")}`.toLowerCase();
+	return `${entry.label} ${entry.bankName ?? ""} ${entry.sourceLabel} ${entry.author} ${entry.description} ${entry.tags.join(" ")}`.toLowerCase();
 }
 
 export function isEditableTarget(target: EventTarget | null): boolean {

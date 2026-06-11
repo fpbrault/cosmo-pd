@@ -9,6 +9,7 @@ const libraryPreset: LibraryPreset = {
 	name: "Archive Pad",
 	source: "cz-factory",
 	author: "Casio",
+	description: "A soft archival pad.",
 	starred: false,
 	bankId: "cz-factory",
 	bankName: "Temple Of CZ",
@@ -24,6 +25,7 @@ const entries: PresetEntry[] = [
 		bankId: "cosmo-factory",
 		bankName: "Cosmo Factory Library",
 		author: "Purr Audio",
+		description: "A bold factory bass.",
 		starred: true,
 		favorite: false,
 		tags: [],
@@ -32,6 +34,7 @@ const entries: PresetEntry[] = [
 			name: "Factory Bass",
 			source: "cosmo-factory",
 			author: "Purr Audio",
+			description: "A bold factory bass.",
 			starred: true,
 			bankId: "cosmo-factory",
 			bankName: "Cosmo Factory Library",
@@ -46,6 +49,7 @@ const entries: PresetEntry[] = [
 		bankId: null,
 		bankName: null,
 		author: "",
+		description: "My custom keys.",
 		starred: false,
 		favorite: false,
 		tags: ["pad"],
@@ -59,6 +63,7 @@ const entries: PresetEntry[] = [
 		bankId: "cz-factory",
 		bankName: "Temple Of CZ",
 		author: "Casio",
+		description: "A soft archival pad.",
 		starred: false,
 		favorite: false,
 		tags: [],
@@ -76,6 +81,7 @@ function createProps() {
 		onDeletePreset: vi.fn(),
 		onRenamePreset: vi.fn(),
 		onSetPresetAuthor: vi.fn(),
+		onSetPresetDescription: vi.fn(),
 		onSetPresetFavorite: vi.fn(),
 		onSetPresetTags: vi.fn(),
 		onExportPreset: vi.fn(),
@@ -130,6 +136,21 @@ describe("PresetLibrary", () => {
 		rerender(<PresetLibrary {...props} />);
 
 		expect(props.onNavigationEntriesChange).toHaveBeenCalledTimes(1);
+	});
+
+	it("matches preset descriptions in search", () => {
+		render(<PresetLibrary {...createProps()} />);
+
+		fireEvent.change(screen.getByPlaceholderText("Search presets"), {
+			target: { value: "bold factory" },
+		});
+
+		expect(
+			screen.getByRole("button", { name: "Factory Bass" }),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Archive Pad" }),
+		).not.toBeInTheDocument();
 	});
 
 	it("saves, exports, imports, initializes, renames, edits tags, and deletes from library controls", async () => {
@@ -190,6 +211,17 @@ describe("PresetLibrary", () => {
 		expect(props.onSetPresetAuthor).toHaveBeenCalledWith(
 			"local-keys",
 			"Jane Doe",
+		);
+		const descriptionInput = screen.getByPlaceholderText(
+			"Describe this preset",
+		);
+		fireEvent.change(descriptionInput, {
+			target: { value: "  Warm layered keys  " },
+		});
+		fireEvent.blur(descriptionInput);
+		expect(props.onSetPresetDescription).toHaveBeenCalledWith(
+			"local-keys",
+			"Warm layered keys",
 		);
 
 		fireEvent.keyDown(screen.getByLabelText("Preset tags"), {

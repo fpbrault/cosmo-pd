@@ -26,6 +26,7 @@ type StoredPresetInput = {
 	data: SynthPresetV1;
 	source?: PresetSource;
 	author?: string;
+	description?: string;
 	starred?: boolean;
 	tags?: PresetTagOptions[];
 };
@@ -201,6 +202,10 @@ function isSynthPresetV1(value: unknown): value is SynthPresetV1 {
 
 function normalizeMetadata(metadata?: Partial<PresetMetadata>): PresetMetadata {
 	return {
+		description:
+			typeof metadata?.description === "string"
+				? metadata.description.trim()
+				: "",
 		tags: normalizePresetTags(metadata?.tags ?? []),
 	};
 }
@@ -216,6 +221,8 @@ function isStoredPreset(value: unknown): value is StoredPreset {
 			candidate.source === "user" ||
 			candidate.source === "cz-factory") &&
 		typeof candidate.author === "string" &&
+		(typeof candidate.description === "string" ||
+			candidate.description === undefined) &&
 		typeof candidate.starred === "boolean" &&
 		isSynthPresetV1(candidate.data) &&
 		Array.isArray(candidate.tags) &&
@@ -225,12 +232,14 @@ function isStoredPreset(value: unknown): value is StoredPreset {
 
 function createStoredPreset(input: StoredPresetInput): StoredPreset {
 	const metadata = normalizeMetadata({
+		description: input.description,
 		tags: input.tags,
 	});
 	const basePreset = {
 		name: input.name.trim(),
 		source: input.source ?? "user",
 		author: input.author?.trim() ?? "",
+		description: metadata.description,
 		starred: input.starred ?? false,
 		data: input.data,
 		tags: metadata.tags,
@@ -240,6 +249,19 @@ function createStoredPreset(input: StoredPresetInput): StoredPreset {
 		id: input.id ?? createPresetId(basePreset),
 		...basePreset,
 	};
+}
+
+function normalizeStoredPreset(preset: StoredPreset): StoredPreset {
+	return createStoredPreset({
+		id: preset.id,
+		name: preset.name,
+		data: preset.data,
+		source: preset.source,
+		author: preset.author,
+		description: preset.description,
+		starred: preset.starred,
+		tags: preset.tags,
+	});
 }
 
 export const DEFAULT_PRESET: SynthPresetV1 = {
@@ -257,7 +279,7 @@ export async function saveStoredPreset(
 
 export async function listStoredPresets(): Promise<StoredPreset[]> {
 	const presets = await getAllFromStore<StoredPreset>("presets");
-	return presets.sort((left, right) =>
+	return presets.map(normalizeStoredPreset).sort((left, right) =>
 		left.name.localeCompare(right.name, undefined, {
 			numeric: true,
 			sensitivity: "base",
@@ -268,7 +290,8 @@ export async function listStoredPresets(): Promise<StoredPreset[]> {
 export async function loadStoredPreset(
 	id: string,
 ): Promise<StoredPreset | null> {
-	return getFromStore<StoredPreset>("presets", id);
+	const preset = await getFromStore<StoredPreset>("presets", id);
+	return preset ? normalizeStoredPreset(preset) : null;
 }
 
 export async function loadPreset(id: string): Promise<SynthPresetV1 | null> {
@@ -290,6 +313,7 @@ export async function updateStoredPreset(
 		name: updates.name ?? current.name,
 		source: updates.source ?? current.source,
 		author: updates.author ?? current.author,
+		description: updates.description ?? current.description,
 		starred: updates.starred ?? current.starred,
 		data: updates.data ?? current.data,
 		tags: updates.tags ?? current.tags,
@@ -331,7 +355,7 @@ export async function exportPreset(id: string): Promise<string | null> {
 		return null;
 	}
 
-	return JSON.stringify(preset, null, 2);
+	return JSON.stringify(normalizeStoredPreset(preset), null, 2);
 }
 
 export async function importPreset(json: string): Promise<StoredPreset | null> {
