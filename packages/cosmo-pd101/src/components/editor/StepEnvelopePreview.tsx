@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
 import { drawEnvPreview, normalizeEnvelope } from "./stepEnvelopeGeometry";
 
@@ -18,13 +18,24 @@ export const StepEnvelopePreview = memo(function StepEnvelopePreview({
 	onClick,
 }: StepEnvelopePreviewProps) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
-	const normalizedEnv = normalizeEnvelope(env);
-
-	useEffect(() => {
+	const normalizedEnv = useMemo(() => normalizeEnvelope(env), [env]);
+	const drawPreview = useCallback(() => {
 		if (canvasRef.current) {
 			drawEnvPreview(canvasRef.current, normalizedEnv, color, null, [], true);
 		}
-	}, [normalizedEnv, color]);
+	}, [color, normalizedEnv]);
+
+	useEffect(() => {
+		drawPreview();
+		const canvas = canvasRef.current;
+		if (!canvas || typeof ResizeObserver === "undefined") {
+			return;
+		}
+
+		const observer = new ResizeObserver(drawPreview);
+		observer.observe(canvas);
+		return () => observer.disconnect();
+	}, [drawPreview]);
 
 	return (
 		<button

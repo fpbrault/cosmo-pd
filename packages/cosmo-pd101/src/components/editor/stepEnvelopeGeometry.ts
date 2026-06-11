@@ -174,11 +174,13 @@ export function drawEnvPreview(
 	voiceMarkers: StepEnvelopeVoiceMarker[] = [],
 	preview = false,
 ) {
+	const dpr = window.devicePixelRatio || 1;
+	const w = canvas.clientWidth;
+	const h = canvas.clientHeight;
+	if (w <= 0 || h <= 0) return;
+
 	const ctx = canvas.getContext("2d");
 	if (!ctx) return;
-	const dpr = window.devicePixelRatio || 1;
-	const w = canvas.clientWidth || canvas.width;
-	const h = canvas.clientHeight || canvas.height;
 	const targetW = Math.round(w * dpr);
 	const targetH = Math.round(h * dpr);
 	if (canvas.width !== targetW || canvas.height !== targetH) {

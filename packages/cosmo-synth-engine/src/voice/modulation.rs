@@ -1,3 +1,6 @@
+use crate::envelope_map::{
+    EnvelopeKind, human_level_to_raw, human_rate_to_raw, raw_level_to_human, raw_rate_to_human,
+};
 use crate::params::{
     ENV_STEP_DEST_FIRST, ENV_STEP_DEST_LAST, EnvStep, LineParams, ModDestination, ModMatrixCache,
     NUM_ENV_STEPS, StepEnvData,
@@ -135,6 +138,11 @@ fn apply_env_step_modulation(
     mod_values: &[f32],
 ) -> StepEnvData {
     let mut modded = *env;
+    let envelope_kind = match env_kind {
+        EnvKindKey::Dco => EnvelopeKind::Dco,
+        EnvKindKey::Dcw => EnvelopeKind::Dcw,
+        EnvKindKey::Dca => EnvelopeKind::Dca,
+    };
 
     for step_index in 0..NUM_ENV_STEPS {
         let level_dest = env_step_level_destination(line_index, env_kind, step_index);
@@ -143,14 +151,15 @@ fn apply_env_step_modulation(
         let rate_mod = mod_values[rate_dest as usize];
 
         let step: &mut EnvStep = &mut modded.steps[step_index];
-        let next_level = (step.level as f32 + level_mod * 127.0)
+        let next_level = (raw_level_to_human(envelope_kind, step.level) as f32 + level_mod * 99.0)
             .round()
-            .clamp(0.0, 127.0) as u8;
-        let next_rate = (step.rate as f32 + rate_mod * 127.0)
+            .clamp(0.0, 99.0) as u8;
+        let next_rate = (raw_rate_to_human(envelope_kind, step.rate) as f32 + rate_mod * 99.0)
             .round()
-            .clamp(0.0, 127.0) as u8;
-        step.level = next_level;
-        step.rate = next_rate;
+            .clamp(0.0, 99.0) as u8;
+        step.level = human_level_to_raw(envelope_kind, next_level);
+        step.level_norm = next_level as f32 * (1.0 / 99.0);
+        step.rate = human_rate_to_raw(envelope_kind, next_rate);
     }
 
     modded
@@ -206,3 +215,38 @@ impl LineParams {
 // ---------------------------------------------------------------------------
 // LineEnvs — per-line group of three envelope generators
 // ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::default_envelopes::default_dca_env;
+
+    #[test]
+    fn envelope_step_level_modulation_updates_dsp_level() {
+        let base = default_dca_env();
+        let mut mod_values = vec![0.0; crate::params::NUM_MOD_DESTINATIONS];
+        mod_values[ModDestination::Line1DcaEnvStep2Level as usize] = -0.5;
+
+        let modded = apply_env_step_modulation(&base, 1, EnvKindKey::Dca, &mod_values);
+
+        assert_eq!(
+            raw_level_to_human(EnvelopeKind::Dca, modded.steps[1].level),
+            30
+        );
+        assert!((modded.steps[1].level_norm - 30.0 / 99.0).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn envelope_step_rate_modulation_uses_human_rate_range() {
+        let base = default_dca_env();
+        let mut mod_values = vec![0.0; crate::params::NUM_MOD_DESTINATIONS];
+        mod_values[ModDestination::Line1DcaEnvStep2Rate as usize] = -0.5;
+
+        let modded = apply_env_step_modulation(&base, 1, EnvKindKey::Dca, &mod_values);
+
+        assert_eq!(
+            raw_rate_to_human(EnvelopeKind::Dca, modded.steps[1].rate),
+            31
+        );
+    }
+}
