@@ -52,7 +52,7 @@ function extractSwiftSwitchMethods(source: string): Set<string> {
 }
 
 describe("AUv3 bridge contract", () => {
-	it("keeps startup-critical bridge methods implemented in both Swift controllers", () => {
+	it("keeps startup-critical bridge methods implemented in the Swift controller", () => {
 		const bridgeMethods = extractBridgeMethods(readText(auv3BridgePath));
 		const requiredBridgeMethods = new Set(bridgeMethods);
 		for (const method of nativeEngineEventMethods) {
