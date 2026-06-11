@@ -5,6 +5,7 @@ use serde::Serialize;
 #[derive(Debug, Clone, Copy, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RuntimeModSources {
+    pub pitch_bend: f32,
     pub lfo1: f32,
     pub lfo2: f32,
     pub random: f32,

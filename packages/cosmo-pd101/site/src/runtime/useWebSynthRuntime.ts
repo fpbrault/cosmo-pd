@@ -56,8 +56,12 @@ export function useWebSynthRuntime(): SynthRuntime {
 	return useMemo(
 		() => ({
 			activeNotes: noteHandling.activeNotes,
+			pitchBend: noteHandling.pitchBend,
+			modWheel: noteHandling.modWheel,
 			sendNoteOn: noteHandling.sendNoteOn,
 			sendNoteOff: noteHandling.sendNoteOff,
+			sendPitchBend: noteHandling.sendPitchBend,
+			sendModWheel: noteHandling.sendModWheel,
 			sendPolyAftertouch: noteHandling.sendPolyAftertouch,
 			panic: noteHandling.panic,
 			audioContextState,
@@ -68,8 +72,12 @@ export function useWebSynthRuntime(): SynthRuntime {
 		}),
 		[
 			noteHandling.activeNotes,
+			noteHandling.pitchBend,
+			noteHandling.modWheel,
 			noteHandling.sendNoteOn,
 			noteHandling.sendNoteOff,
+			noteHandling.sendPitchBend,
+			noteHandling.sendModWheel,
 			noteHandling.sendPolyAftertouch,
 			noteHandling.panic,
 			audioContextState,
