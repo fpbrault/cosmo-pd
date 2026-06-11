@@ -59,7 +59,6 @@ describe("AUv3 bridge contract", () => {
 			requiredBridgeMethods.add(method);
 		}
 
-
 		const xcodeControllerMethods = extractSwiftSwitchMethods(
 			readText(xcodeControllerPath),
 		);
@@ -67,7 +66,6 @@ describe("AUv3 bridge contract", () => {
 		expect([...requiredBridgeMethods].sort()).toEqual(
 			[...new Set([...requiredBridgeMethods])].sort(),
 		);
-
 
 		expect(
 			[...requiredBridgeMethods].filter(
