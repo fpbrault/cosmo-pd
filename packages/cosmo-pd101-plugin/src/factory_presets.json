@@ -4,6 +4,7 @@
 		"name": "Blissful Brass",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": true,
 		"sortIndex": 0,
 		"tags": [
@@ -549,6 +550,7 @@
 		"name": "Anomalous Transmission",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": true,
 		"sortIndex": 1,
 		"tags": [
@@ -1060,6 +1062,7 @@
 		"name": "Stuttering Echoes",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": true,
 		"sortIndex": 2,
 		"tags": [
@@ -1526,6 +1529,7 @@
 		"name": "Heavenly Flute",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": true,
 		"sortIndex": 3,
 		"tags": [
@@ -1989,6 +1993,7 @@
 		"name": "Clav",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": true,
 		"sortIndex": 4,
 		"tags": [
@@ -2412,6 +2417,7 @@
 		"name": "Fun Bass",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": true,
 		"sortIndex": 5,
 		"tags": [
@@ -2844,6 +2850,7 @@
 		"name": "Fuzz Lead",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": true,
 		"sortIndex": 6,
 		"tags": [
@@ -3278,6 +3285,7 @@
 		"name": "Lucifer's Piano",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": true,
 		"sortIndex": 7,
 		"tags": [
@@ -3759,6 +3767,7 @@
 		"name": "Red Velvet",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": true,
 		"sortIndex": 8,
 		"tags": [
@@ -4192,6 +4201,7 @@
 		"name": "Tweed",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": true,
 		"sortIndex": 9,
 		"tags": [
@@ -4625,6 +4635,7 @@
 		"name": "Wow",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": true,
 		"sortIndex": 10,
 		"tags": [
@@ -5053,6 +5064,7 @@
 		"name": "12 STRING 1",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 11,
 		"tags": [
@@ -5503,6 +5515,7 @@
 		"name": "2L PLUCK+BRSS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 12,
 		"tags": [
@@ -5953,6 +5966,7 @@
 		"name": "2LINE W/REVERB",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 13,
 		"tags": [
@@ -6387,6 +6401,7 @@
 		"name": "2X ATTACK 8V",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 14,
 		"tags": [
@@ -6821,6 +6836,7 @@
 		"name": "8-NOTE PIANO",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 15,
 		"tags": [
@@ -7254,6 +7270,7 @@
 		"name": "ABRACADABRA",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 16,
 		"tags": [
@@ -7705,6 +7722,7 @@
 		"name": "ACC PIANO",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 17,
 		"tags": [
@@ -8121,6 +8139,7 @@
 		"name": "ACCORDIAN",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 18,
 		"tags": [
@@ -8571,6 +8590,7 @@
 		"name": "ACCOUSTICBASS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 19,
 		"tags": [
@@ -9004,6 +9024,7 @@
 		"name": "AFRICAN DRUM",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 20,
 		"tags": [
@@ -9420,6 +9441,7 @@
 		"name": "AFRO-PERC. 2",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 21,
 		"tags": [
@@ -9853,6 +9875,7 @@
 		"name": "ALIEN 1",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 22,
 		"tags": [
@@ -10269,6 +10292,7 @@
 		"name": "ALL TOO MUCH",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 23,
 		"tags": [
@@ -10702,6 +10726,7 @@
 		"name": "ANALG SUBBASS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 24,
 		"tags": [
@@ -11152,6 +11177,7 @@
 		"name": "ANALOG 2",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 25,
 		"tags": [
@@ -11603,6 +11629,7 @@
 		"name": "ANALOG 3",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 26,
 		"tags": [
@@ -12054,6 +12081,7 @@
 		"name": "ANALOG 5",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 27,
 		"tags": [
@@ -12505,6 +12533,7 @@
 		"name": "ANALOG 6",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 28,
 		"tags": [
@@ -12939,6 +12968,7 @@
 		"name": "ANALOG PLUCK",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 29,
 		"tags": [
@@ -13374,6 +13404,7 @@
 		"name": "ANALOG STRNGS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 30,
 		"tags": [
@@ -13792,6 +13823,7 @@
 		"name": "ANALOG SYNTH 1",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 31,
 		"tags": [
@@ -14226,6 +14258,7 @@
 		"name": "BALINESE BELL",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 32,
 		"tags": [
@@ -14676,6 +14709,7 @@
 		"name": "BANJO TREMOLO",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 33,
 		"tags": [
@@ -15109,6 +15143,7 @@
 		"name": "BASS3",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 34,
 		"tags": [
@@ -15542,6 +15577,7 @@
 		"name": "BELL-PIANO",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 35,
 		"tags": [
@@ -15993,6 +16029,7 @@
 		"name": "BELLFLUTE/VERB",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 36,
 		"tags": [
@@ -16410,6 +16447,7 @@
 		"name": "BELLS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 37,
 		"tags": [
@@ -16860,6 +16898,7 @@
 		"name": "BESTCLAVICHORD",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 38,
 		"tags": [
@@ -17293,6 +17332,7 @@
 		"name": "BIG BRASS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 39,
 		"tags": [
@@ -17726,6 +17766,7 @@
 		"name": "BIGBASS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 40,
 		"tags": [
@@ -18159,6 +18200,7 @@
 		"name": "BRAIN DAMAGE1",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 41,
 		"tags": [
@@ -18592,6 +18634,7 @@
 		"name": "BRASS 5THS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 42,
 		"tags": [
@@ -19008,6 +19051,7 @@
 		"name": "BRIAN'S PIANO",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 43,
 		"tags": [
@@ -19458,6 +19502,7 @@
 		"name": "BRSS W/TRAILS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 44,
 		"tags": [
@@ -19874,6 +19919,7 @@
 		"name": "BRTH FLTE 1",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 45,
 		"tags": [
@@ -20324,6 +20370,7 @@
 		"name": "Bright Changes",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": false,
 		"sortIndex": 46,
 		"tags": [
@@ -20856,6 +20903,7 @@
 		"name": "CELLO 1",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 47,
 		"tags": [
@@ -21289,6 +21337,7 @@
 		"name": "CHERYLWHINESTN",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 48,
 		"tags": [
@@ -21705,6 +21754,7 @@
 		"name": "CHIMEW/FOOTSTP",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 49,
 		"tags": [
@@ -22122,6 +22172,7 @@
 		"name": "CHIRP",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 50,
 		"tags": [
@@ -22555,6 +22606,7 @@
 		"name": "CLARINET",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 51,
 		"tags": [
@@ -22971,6 +23023,7 @@
 		"name": "COOL VIBES",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 52,
 		"tags": [
@@ -23387,6 +23440,7 @@
 		"name": "CRYSTAL 3",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 53,
 		"tags": [
@@ -23804,6 +23858,7 @@
 		"name": "Chants",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": false,
 		"sortIndex": 54,
 		"tags": [
@@ -24299,6 +24354,7 @@
 		"name": "DARK SQ-SEQ",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 55,
 		"tags": [
@@ -24733,6 +24789,7 @@
 		"name": "DBL REED",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 56,
 		"tags": [
@@ -25149,6 +25206,7 @@
 		"name": "DEMIBANJO",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 57,
 		"tags": [
@@ -25599,6 +25657,7 @@
 		"name": "DISTORTEDGUITR",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 58,
 		"tags": [
@@ -26032,6 +26091,7 @@
 		"name": "DIVA HARMONIC",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 59,
 		"tags": [
@@ -26448,6 +26508,7 @@
 		"name": "DOUBLE REED",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 60,
 		"tags": [
@@ -26898,6 +26959,7 @@
 		"name": "DUKEY",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 61,
 		"tags": [
@@ -27331,6 +27393,7 @@
 		"name": "DXLEAD1SYNPRO",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 62,
 		"tags": [
@@ -27747,6 +27810,7 @@
 		"name": "ECHO FANTASY",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 63,
 		"tags": [
@@ -28180,6 +28244,7 @@
 		"name": "ELEC. BASS A",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 64,
 		"tags": [
@@ -28630,6 +28695,7 @@
 		"name": "ELEC. BASS C",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 65,
 		"tags": [
@@ -29063,6 +29129,7 @@
 		"name": "ELEC.BASS 2",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 66,
 		"tags": [
@@ -29496,6 +29563,7 @@
 		"name": "ELEC.BASS 3",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 67,
 		"tags": [
@@ -29929,6 +29997,7 @@
 		"name": "ELEC.DRUM",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 68,
 		"tags": [
@@ -30362,6 +30431,7 @@
 		"name": "ELECTRONIC-12",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 69,
 		"tags": [
@@ -30812,6 +30882,7 @@
 		"name": "ELECTRONIC-4",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 70,
 		"tags": [
@@ -31245,6 +31316,7 @@
 		"name": "ELECTRONIC-5",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 71,
 		"tags": [
@@ -31695,6 +31767,7 @@
 		"name": "ELECTRONIC-8",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 72,
 		"tags": [
@@ -32145,6 +32218,7 @@
 		"name": "ELEPHANTBRASS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 73,
 		"tags": [
@@ -32578,6 +32652,7 @@
 		"name": "ELP FULL SYNTH",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 74,
 		"tags": [
@@ -32995,6 +33070,7 @@
 		"name": "ENVFLTRFATORGN",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 75,
 		"tags": [
@@ -33411,6 +33487,7 @@
 		"name": "FADE BRASS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 76,
 		"tags": [
@@ -33827,6 +33904,7 @@
 		"name": "FASST CHORDS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 77,
 		"tags": [
@@ -34243,6 +34321,7 @@
 		"name": "FAT2",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 78,
 		"tags": [
@@ -34659,6 +34738,7 @@
 		"name": "FILSWEEP5T",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 79,
 		"tags": [
@@ -35110,6 +35190,7 @@
 		"name": "FILT SWEEP",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 80,
 		"tags": [
@@ -35544,6 +35625,7 @@
 		"name": "FLTR-SWP/REED",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 81,
 		"tags": [
@@ -35978,6 +36060,7 @@
 		"name": "FOLKGUITARSYN",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 82,
 		"tags": [
@@ -36394,6 +36477,7 @@
 		"name": "FRCH HORN",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 83,
 		"tags": [
@@ -36827,6 +36911,7 @@
 		"name": "FROGGY",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 84,
 		"tags": [
@@ -37277,6 +37362,7 @@
 		"name": "GOOD HUMAN",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 85,
 		"tags": [
@@ -37694,6 +37780,7 @@
 		"name": "GUITAR",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 86,
 		"tags": [
@@ -38110,6 +38197,7 @@
 		"name": "HA HA HA",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 87,
 		"tags": [
@@ -38543,6 +38631,7 @@
 		"name": "HARPSICHORDTH",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 88,
 		"tags": [
@@ -38994,6 +39083,7 @@
 		"name": "Hot Lead",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": false,
 		"sortIndex": 89,
 		"tags": [
@@ -39410,6 +39500,7 @@
 		"name": "INTERNAL_1",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 90,
 		"tags": [
@@ -39860,6 +39951,7 @@
 		"name": "INTERNAL_10",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 91,
 		"tags": [
@@ -40276,6 +40368,7 @@
 		"name": "INTERNAL_11",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 92,
 		"tags": [
@@ -40726,6 +40819,7 @@
 		"name": "INTERNAL_12",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 93,
 		"tags": [
@@ -41176,6 +41270,7 @@
 		"name": "INTERNAL_13",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 94,
 		"tags": [
@@ -41626,6 +41721,7 @@
 		"name": "INTERNAL_14",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 95,
 		"tags": [
@@ -42076,6 +42172,7 @@
 		"name": "INTERNAL_15",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 96,
 		"tags": [
@@ -42509,6 +42606,7 @@
 		"name": "INTERNAL_16",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 97,
 		"tags": [
@@ -42959,6 +43057,7 @@
 		"name": "INTERNAL_2",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 98,
 		"tags": [
@@ -43409,6 +43508,7 @@
 		"name": "INTERNAL_3",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 99,
 		"tags": [
@@ -43842,6 +43942,7 @@
 		"name": "INTERNAL_4",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 100,
 		"tags": [
@@ -44292,6 +44393,7 @@
 		"name": "INTERNAL_5",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 101,
 		"tags": [
@@ -44725,6 +44827,7 @@
 		"name": "INTERNAL_6",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 102,
 		"tags": [
@@ -45158,6 +45261,7 @@
 		"name": "INTERNAL_7",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 103,
 		"tags": [
@@ -45608,6 +45712,7 @@
 		"name": "INTERNAL_8",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 104,
 		"tags": [
@@ -46058,6 +46163,7 @@
 		"name": "INTERNAL_9",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 105,
 		"tags": [
@@ -46474,6 +46580,7 @@
 		"name": "Infinite Wobble",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": false,
 		"sortIndex": 106,
 		"tags": [
@@ -46921,6 +47028,7 @@
 		"name": "JUMP I",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 107,
 		"tags": [
@@ -47338,6 +47446,7 @@
 		"name": "METALKEY1",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 108,
 		"tags": [
@@ -47771,6 +47880,7 @@
 		"name": "MOOGIII",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 109,
 		"tags": [
@@ -48188,6 +48298,7 @@
 		"name": "Majestic Pad",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": false,
 		"sortIndex": 110,
 		"tags": [
@@ -48681,6 +48792,7 @@
 		"name": "NEW AGE PLUCK",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 111,
 		"tags": [
@@ -49116,6 +49228,7 @@
 		"name": "OBERHEIM MOAN",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 112,
 		"tags": [
@@ -49550,6 +49663,7 @@
 		"name": "Organ",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": false,
 		"sortIndex": 113,
 		"tags": [
@@ -49980,6 +50094,7 @@
 		"name": "PB8_9",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 114,
 		"tags": [
@@ -50397,6 +50512,7 @@
 		"name": "PIANO III",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 115,
 		"tags": [
@@ -50813,6 +50929,7 @@
 		"name": "PIANO PHASE",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
+		"description": "",
 		"starred": false,
 		"sortIndex": 116,
 		"tags": [
@@ -51246,6 +51363,7 @@
 		"name": "Plucking",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": false,
 		"sortIndex": 117,
 		"tags": [
@@ -51707,6 +51825,7 @@
 		"name": "Soft Brass",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": false,
 		"sortIndex": 118,
 		"tags": [
@@ -52171,6 +52290,7 @@
 		"name": "Solo Lead",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": false,
 		"sortIndex": 119,
 		"tags": [
@@ -52635,6 +52755,7 @@
 		"name": "Starship 1",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": false,
 		"sortIndex": 120,
 		"tags": [
@@ -53099,6 +53220,7 @@
 		"name": "Synth Bass",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": false,
 		"sortIndex": 121,
 		"tags": [
@@ -53575,6 +53697,7 @@
 		"name": "Thick Bass",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": false,
 		"sortIndex": 122,
 		"tags": [
@@ -54025,6 +54148,7 @@
 		"name": "Waxy Pad",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
+		"description": "",
 		"starred": false,
 		"sortIndex": 123,
 		"tags": [

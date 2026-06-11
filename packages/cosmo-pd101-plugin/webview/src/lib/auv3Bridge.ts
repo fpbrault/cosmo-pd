@@ -63,6 +63,10 @@ declare global {
 		__czDeletePreset?: (id: string) => Promise<unknown>;
 		__czRenamePreset?: (id: string, newName: string) => Promise<unknown>;
 		__czSetPresetAuthor?: (id: string, author: string) => Promise<unknown>;
+		__czSetPresetDescription?: (
+			id: string,
+			description: string,
+		) => Promise<unknown>;
 		__czSetPresetTags?: (id: string, tags: string[]) => Promise<unknown>;
 		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
 		__czExportPreset?: (id: string) => Promise<unknown>;
@@ -292,6 +296,8 @@ function installIpcRouter() {
 		invokeAuv3("renamePreset", [{ id, newName }]);
 	window.__czSetPresetAuthor = (id: string, author: string) =>
 		invokeAuv3("setPresetAuthor", [{ id, author }]);
+	window.__czSetPresetDescription = (id: string, description: string) =>
+		invokeAuv3("setPresetDescription", [{ id, description }]);
 	window.__czSetPresetTags = (id: string, tags: string[]) =>
 		invokeAuv3("setPresetTags", [{ id, tags }]);
 	window.__czToggleStarred = (id: string, starred: boolean) =>

@@ -427,6 +427,7 @@ export function installMockPluginBridge(): void {
 		name: string;
 		source: string;
 		author: string;
+		description: string;
 		starred: boolean;
 		favorite: boolean;
 		bankId?: string | null;
@@ -439,6 +440,7 @@ export function installMockPluginBridge(): void {
 			name: "Factory Brass",
 			source: "cosmo-factory",
 			author: "Factory",
+			description: "A bright factory brass preset.",
 			starred: true,
 			favorite: false,
 			bankId: "cosmo-factory",
@@ -735,6 +737,7 @@ export function installMockPluginBridge(): void {
 							name: entry.name,
 							source: entry.source,
 							author: entry.author,
+							description: entry.description,
 							starred: entry.starred,
 							sortIndex: index,
 							bankId: entry.bankId,
@@ -775,6 +778,8 @@ export function installMockPluginBridge(): void {
 					typeof payload?.name === "string" ? payload.name : "Saved Preset";
 				const author =
 					typeof payload?.author === "string" ? payload.author : "";
+				const description =
+					typeof payload?.description === "string" ? payload.description : "";
 				const tags = Array.isArray(payload?.tags)
 					? payload.tags.filter((tag): tag is string => typeof tag === "string")
 					: [];
@@ -795,6 +800,7 @@ export function installMockPluginBridge(): void {
 					name,
 					source: "user",
 					author,
+					description,
 					starred: false,
 					favorite:
 						existingIndex >= 0
@@ -824,6 +830,20 @@ export function installMockPluginBridge(): void {
 					typeof payload?.author === "string" ? payload.author : "";
 				virtualPresetEntries = virtualPresetEntries.map((entry) =>
 					entry.id === presetId ? { ...entry, author } : entry,
+				);
+				respondIpc(id, { result: null });
+				return;
+			}
+			if (method === "setPresetDescription") {
+				const payload =
+					typeof args[0] === "object" && args[0] !== null
+						? (args[0] as Record<string, unknown>)
+						: null;
+				const presetId = typeof payload?.id === "string" ? payload.id : "";
+				const description =
+					typeof payload?.description === "string" ? payload.description : "";
+				virtualPresetEntries = virtualPresetEntries.map((entry) =>
+					entry.id === presetId ? { ...entry, description } : entry,
 				);
 				respondIpc(id, { result: null });
 				return;
@@ -929,6 +949,8 @@ export function installMockPluginBridge(): void {
 						name: preset.name,
 						source: bankSource,
 						author: typeof preset.author === "string" ? preset.author : "",
+						description:
+							typeof preset.description === "string" ? preset.description : "",
 						starred: preset.starred === true,
 						favorite:
 							virtualPresetEntries.find((entry) => entry.id === preset.id)
@@ -1021,6 +1043,7 @@ export function installMockPluginBridge(): void {
 										name: entry.name,
 										source: entry.source,
 										author: entry.author,
+										description: entry.description,
 										starred: entry.starred,
 										tags: entry.tags,
 										data: { schemaVersion: 1, params: entry.data },

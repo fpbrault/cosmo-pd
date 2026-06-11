@@ -1,21 +1,24 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
+import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import { PRESET_TAG_OPTIONS } from "@/lib/synth/presetTags";
 import PresetMultiSelect from "./PresetMultiSelect";
 import { getPresetTagBadgeClassName } from "./presetTagTone";
 
 type PresetLibrarySidebarProps = {
 	activeLocalEntryLabel: string | null;
-	selectedLocalEntryLabel: string | null;
-	selectedLocalEntryAuthor: string | null;
+	selectedEntry: PresetEntry | null;
 	renameValue: string;
 	onRenameValueChange: (name: string) => void;
 	onCommitRename: () => void;
 	authorValue: string;
 	onAuthorValueChange: (author: string) => void;
 	onCommitAuthor: () => void;
-	selectedLocalTags: string[];
+	descriptionValue: string;
+	onDescriptionValueChange: (description: string) => void;
+	onCommitDescription: () => void;
+	selectedTags: string[];
 	onSelectedTagsChange: (tags: string[]) => void;
 	onExportSelectedPreset: () => void;
 	onDeleteSelectedPreset: () => void;
@@ -31,15 +34,17 @@ type PresetLibrarySidebarProps = {
 
 export default memo(function PresetLibrarySidebar({
 	activeLocalEntryLabel,
-	selectedLocalEntryLabel,
-	selectedLocalEntryAuthor,
+	selectedEntry,
 	renameValue,
 	onRenameValueChange,
 	onCommitRename,
 	authorValue,
 	onAuthorValueChange,
 	onCommitAuthor,
-	selectedLocalTags,
+	descriptionValue,
+	onDescriptionValueChange,
+	onCommitDescription,
+	selectedTags,
 	onSelectedTagsChange,
 	onExportSelectedPreset,
 	onDeleteSelectedPreset,
@@ -98,42 +103,85 @@ export default memo(function PresetLibrarySidebar({
 					<h3 className="mb-2 font-mono text-4xs text-cz-gold uppercase tracking-[0.28em]">
 						{t("presetLibrary.selectedPreset")}
 					</h3>
-					{selectedLocalEntryLabel ? (
+					{selectedEntry ? (
 						<div className="space-y-3">
 							<div>
 								<p className="mb-1 font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.2em]">
 									{t("presetLibrary.nameLabel")}
 								</p>
-								<input
-									type="text"
-									className="input input-sm w-full border-cz-border bg-cz-inset text-cz-cream"
-									placeholder="Preset name"
-									value={renameValue}
-									onChange={(event) => onRenameValueChange(event.target.value)}
-									onBlur={onCommitRename}
-									onKeyDown={(event) => {
-										if (event.key === "Enter") onCommitRename();
-									}}
-								/>
+								{selectedEntry.type === "local" ? (
+									<input
+										type="text"
+										className="input input-sm w-full border-cz-border bg-cz-inset text-cz-cream"
+										placeholder="Preset name"
+										value={renameValue}
+										onChange={(event) =>
+											onRenameValueChange(event.target.value)
+										}
+										onBlur={onCommitRename}
+										onKeyDown={(event) => {
+											if (event.key === "Enter") onCommitRename();
+										}}
+									/>
+								) : (
+									<p className="text-cz-cream text-sm">{selectedEntry.label}</p>
+								)}
 							</div>
 							<div>
 								<p className="mb-1 font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.2em]">
 									{t("presetLibrary.authorLabel")}
 								</p>
-								<input
-									type="text"
-									className="input input-sm w-full border-cz-border bg-cz-inset text-cz-cream"
-									placeholder="Preset author"
-									value={authorValue}
-									onChange={(event) => onAuthorValueChange(event.target.value)}
-									onBlur={onCommitAuthor}
-									onKeyDown={(event) => {
-										if (event.key === "Enter") onCommitAuthor();
-									}}
-								/>
-								{selectedLocalEntryAuthor ? null : (
+								{selectedEntry.type === "local" ? (
+									<input
+										type="text"
+										className="input input-sm w-full border-cz-border bg-cz-inset text-cz-cream"
+										placeholder="Preset author"
+										value={authorValue}
+										onChange={(event) =>
+											onAuthorValueChange(event.target.value)
+										}
+										onBlur={onCommitAuthor}
+										onKeyDown={(event) => {
+											if (event.key === "Enter") onCommitAuthor();
+										}}
+									/>
+								) : (
+									<p className="text-cz-cream text-sm">
+										{selectedEntry.author || t("presetLibrary.noAuthor")}
+									</p>
+								)}
+								{selectedEntry.type === "local" && !selectedEntry.author ? (
 									<p className="mt-1 text-cz-cream-dim text-xs">
 										{t("presetLibrary.noAuthor")}
+									</p>
+								) : null}
+							</div>
+							<div>
+								<p className="mb-1 font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.2em]">
+									{t("presetLibrary.descriptionLabel")}
+								</p>
+								{selectedEntry.type === "local" ? (
+									<textarea
+										className="textarea textarea-sm min-h-24 w-full resize-y border-cz-border bg-cz-inset text-cz-cream"
+										placeholder={t("presetLibrary.descriptionPlaceholder")}
+										value={descriptionValue}
+										onChange={(event) =>
+											onDescriptionValueChange(event.target.value)
+										}
+										onBlur={onCommitDescription}
+										onKeyDown={(event) => {
+											if (
+												event.key === "Enter" &&
+												(event.metaKey || event.ctrlKey)
+											) {
+												onCommitDescription();
+											}
+										}}
+									/>
+								) : (
+									<p className="whitespace-pre-wrap text-cz-cream text-sm">
+										{selectedEntry.description ||
+											t("presetLibrary.noDescription")}
 									</p>
 								)}
 							</div>
@@ -142,8 +190,8 @@ export default memo(function PresetLibrarySidebar({
 									{t("presetLibrary.tagsLabel")}
 								</p>
 								<div className="mb-2 flex flex-wrap gap-2">
-									{selectedLocalTags.length > 0 ? (
-										selectedLocalTags.map((tag) => (
+									{selectedTags.length > 0 ? (
+										selectedTags.map((tag) => (
 											<span
 												key={tag}
 												className={getPresetTagBadgeClassName(tag)}
@@ -157,37 +205,41 @@ export default memo(function PresetLibrarySidebar({
 										</span>
 									)}
 								</div>
-								<PresetMultiSelect
-									label={t("presetLibrary.presetTagsLabel")}
-									inputId="preset-tag-editor"
-									options={PRESET_TAG_OPTIONS.map((tag) => ({
-										value: tag,
-										label: tag,
-									}))}
-									selectedValues={selectedLocalTags}
-									onChange={onSelectedTagsChange}
-									placeholder="Select tags"
-									clearButtonLabel="Clear preset tags"
-									noOptionsMessage="No tags"
-									tagTone
-								/>
+								{selectedEntry.type === "local" ? (
+									<PresetMultiSelect
+										label={t("presetLibrary.presetTagsLabel")}
+										inputId="preset-tag-editor"
+										options={PRESET_TAG_OPTIONS.map((tag) => ({
+											value: tag,
+											label: tag,
+										}))}
+										selectedValues={selectedTags}
+										onChange={onSelectedTagsChange}
+										placeholder="Select tags"
+										clearButtonLabel="Clear preset tags"
+										noOptionsMessage="No tags"
+										tagTone
+									/>
+								) : null}
 							</div>
-							<div className="grid grid-cols-2 gap-2">
-								<Button
-									type="button"
-									className="btn btn-sm border-cz-border bg-cz-inset text-cz-light-blue"
-									onClick={onExportSelectedPreset}
-								>
-									{t("presetLibrary.export")}
-								</Button>
-								<Button
-									type="button"
-									className="btn btn-sm border-cz-border bg-cz-inset text-red-400"
-									onClick={onDeleteSelectedPreset}
-								>
-									{t("presetLibrary.delete")}
-								</Button>
-							</div>
+							{selectedEntry.type === "local" ? (
+								<div className="grid grid-cols-2 gap-2">
+									<Button
+										type="button"
+										className="btn btn-sm border-cz-border bg-cz-inset text-cz-light-blue"
+										onClick={onExportSelectedPreset}
+									>
+										{t("presetLibrary.export")}
+									</Button>
+									<Button
+										type="button"
+										className="btn btn-sm border-cz-border bg-cz-inset text-red-400"
+										onClick={onDeleteSelectedPreset}
+									>
+										{t("presetLibrary.delete")}
+									</Button>
+								</div>
+							) : null}
 						</div>
 					) : (
 						<p className="text-cz-cream-dim text-xs">

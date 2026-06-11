@@ -37,6 +37,7 @@ export default memo(function SynthRendererLibraryOverlay({
 		deletePreset,
 		renamePreset,
 		setPresetAuthor,
+		setPresetDescription,
 		setPresetFavorite,
 		setPresetTags,
 		exportPreset,
@@ -74,6 +75,9 @@ export default memo(function SynthRendererLibraryOverlay({
 				}}
 				onSetPresetAuthor={(id, author) => {
 					void setPresetAuthor(id, author);
+				}}
+				onSetPresetDescription={(id, description) => {
+					void setPresetDescription(id, description);
 				}}
 				onSetPresetFavorite={(id, favorite) => {
 					void setPresetFavorite(id, favorite);

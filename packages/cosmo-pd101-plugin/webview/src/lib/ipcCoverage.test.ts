@@ -51,6 +51,7 @@ const AUV3_KNOWN_STUBS = new Set([
 	"deletePreset",
 	"renamePreset",
 	"setPresetAuthor",
+	"setPresetDescription",
 	"setPresetTags",
 	"toggleStarred",
 	"exportPreset",

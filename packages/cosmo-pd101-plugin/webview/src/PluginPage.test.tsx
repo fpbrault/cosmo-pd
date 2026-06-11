@@ -108,6 +108,7 @@ describe("PluginPage", () => {
 			deletePreset: vi.fn(),
 			renamePreset: vi.fn(),
 			setPresetAuthor: vi.fn(),
+			setPresetDescription: vi.fn(),
 			setPresetFavorite: vi.fn(),
 			setPresetTags: vi.fn(),
 			initPreset: vi.fn(),

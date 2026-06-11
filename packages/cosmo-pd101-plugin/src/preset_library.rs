@@ -8,7 +8,7 @@ use crate::SynthParams;
 use crate::preset_library_path;
 
 const DEFAULT_SORT_INDEX: u32 = u32::MAX;
-const LIBRARY_SCHEMA_VERSION: u32 = 5;
+const LIBRARY_SCHEMA_VERSION: u32 = 6;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -17,6 +17,8 @@ pub struct PresetLibraryEntry {
     pub name: String,
     pub source: String,
     pub author: String,
+    #[serde(default)]
+    pub description: String,
     pub starred: bool,
     pub sort_index: u32,
     pub bank_id: Option<String>,
@@ -61,6 +63,8 @@ pub struct PresetBankEntry {
     pub name: String,
     #[serde(default)]
     pub author: String,
+    #[serde(default)]
+    pub description: String,
     #[serde(default)]
     pub starred: bool,
     #[serde(default)]
@@ -114,6 +118,7 @@ impl PresetLibrary {
     pub fn add_entry(
         &mut self,
         name: String,
+        description: String,
         tags: Vec<String>,
         macro_labels: [String; 4],
         data: serde_json::Value,
@@ -123,6 +128,7 @@ impl PresetLibrary {
             name,
             source: "user".to_string(),
             author: String::new(),
+            description,
             starred: false,
             sort_index: DEFAULT_SORT_INDEX,
             bank_id: None,
@@ -250,6 +256,9 @@ impl PresetLibrary {
             if previous_schema_version < 5 {
                 migrate_bank_columns(conn)?;
             }
+            if previous_schema_version < 6 {
+                migrate_description_column(conn)?;
+            }
             merge_factory_entries(conn, &self.factory_entries)?;
             Ok(())
         })
@@ -344,6 +353,7 @@ fn migrate_schema(conn: &Connection) -> Result<(), String> {
             name TEXT NOT NULL,
             source TEXT NOT NULL,
             author TEXT NOT NULL,
+            description TEXT NOT NULL DEFAULT '',
             starred INTEGER NOT NULL DEFAULT 0,
             sort_index INTEGER NOT NULL DEFAULT 4294967295,
             bank_id TEXT,
@@ -507,6 +517,17 @@ fn migrate_bank_columns(conn: &Connection) -> Result<(), String> {
     Ok(())
 }
 
+fn migrate_description_column(conn: &Connection) -> Result<(), String> {
+    if !has_preset_column(conn, "description")? {
+        conn.execute(
+            "ALTER TABLE presets ADD COLUMN description TEXT NOT NULL DEFAULT ''",
+            [],
+        )
+        .map_err(db_err)?;
+    }
+    Ok(())
+}
+
 fn migrate_fx_module_presets_timestamp_column(conn: &Connection) -> Result<(), String> {
     let has_old_column: bool = conn
         .query_row(
@@ -589,7 +610,7 @@ fn with_default_bank_metadata(mut entry: PresetLibraryEntry) -> PresetLibraryEnt
 
 fn load_entry(conn: &Connection, id: &str) -> Result<Option<PresetLibraryEntry>, String> {
     conn.query_row(
-        "SELECT id, name, source, author, starred, sort_index, bank_id, bank_name, tags_json, macro_labels_json, factory_version, data_json
+        "SELECT id, name, source, author, description, starred, sort_index, bank_id, bank_name, tags_json, macro_labels_json, factory_version, data_json
          FROM presets
          WHERE id = ?1",
         [id],
@@ -604,7 +625,7 @@ fn list_entries(
     source_filter: Option<&str>,
 ) -> Result<Vec<PresetLibraryEntry>, String> {
     let sql = if source_filter.is_some() {
-        "SELECT id, name, source, author, starred, sort_index, bank_id, bank_name, tags_json, macro_labels_json, factory_version, data_json
+        "SELECT id, name, source, author, description, starred, sort_index, bank_id, bank_name, tags_json, macro_labels_json, factory_version, data_json
          FROM presets
          WHERE source = ?1
          ORDER BY
@@ -614,7 +635,7 @@ fn list_entries(
             name COLLATE NOCASE,
             id"
     } else {
-        "SELECT id, name, source, author, starred, sort_index, bank_id, bank_name, tags_json, macro_labels_json, factory_version, data_json
+        "SELECT id, name, source, author, description, starred, sort_index, bank_id, bank_name, tags_json, macro_labels_json, factory_version, data_json
          FROM presets
          ORDER BY
             CASE WHEN source = 'user' THEN 1 ELSE 0 END,
@@ -661,7 +682,7 @@ fn list_records(
 
 fn find_startup_starred_entry(conn: &Connection) -> Result<Option<PresetLibraryEntry>, String> {
     conn.query_row(
-        "SELECT p.id, p.name, p.source, p.author, p.starred, p.sort_index, p.bank_id, p.bank_name, p.tags_json,
+        "SELECT p.id, p.name, p.source, p.author, p.description, p.starred, p.sort_index, p.bank_id, p.bank_name, p.tags_json,
                 p.macro_labels_json, p.factory_version, p.data_json
          FROM presets p
          WHERE p.starred = 1
@@ -691,14 +712,15 @@ fn upsert_entry(conn: &Connection, entry: &PresetLibraryEntry) -> Result<(), Str
 
     conn.execute(
         "INSERT INTO presets (
-            id, name, source, author, starred, sort_index, bank_id, bank_name, tags_json,
+            id, name, source, author, description, starred, sort_index, bank_id, bank_name, tags_json,
             macro_labels_json, factory_version, data_json, revision,
             updated_at_unix_ms
-         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, 0, ?13)
+         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, 0, ?14)
          ON CONFLICT(id) DO UPDATE SET
             name = excluded.name,
             source = excluded.source,
             author = excluded.author,
+            description = excluded.description,
             starred = excluded.starred,
             sort_index = excluded.sort_index,
             bank_id = excluded.bank_id,
@@ -714,6 +736,7 @@ fn upsert_entry(conn: &Connection, entry: &PresetLibraryEntry) -> Result<(), Str
             entry.name,
             entry.source,
             entry.author,
+            entry.description,
             if entry.starred { 1_i64 } else { 0_i64 },
             i64::from(entry.sort_index),
             entry.bank_id,
@@ -730,18 +753,18 @@ fn upsert_entry(conn: &Connection, entry: &PresetLibraryEntry) -> Result<(), Str
 }
 
 fn map_entry_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<PresetLibraryEntry> {
-    let tags_json: String = row.get(8)?;
-    let macro_labels_json: String = row.get(9)?;
-    let data_json: String = row.get(11)?;
+    let tags_json: String = row.get(9)?;
+    let macro_labels_json: String = row.get(10)?;
+    let data_json: String = row.get(12)?;
 
     let tags = serde_json::from_str(&tags_json).map_err(|error| {
-        rusqlite::Error::FromSqlConversionFailure(8, rusqlite::types::Type::Text, Box::new(error))
-    })?;
-    let macro_labels = serde_json::from_str(&macro_labels_json).map_err(|error| {
         rusqlite::Error::FromSqlConversionFailure(9, rusqlite::types::Type::Text, Box::new(error))
     })?;
+    let macro_labels = serde_json::from_str(&macro_labels_json).map_err(|error| {
+        rusqlite::Error::FromSqlConversionFailure(10, rusqlite::types::Type::Text, Box::new(error))
+    })?;
     let data = serde_json::from_str(&data_json).map_err(|error| {
-        rusqlite::Error::FromSqlConversionFailure(11, rusqlite::types::Type::Text, Box::new(error))
+        rusqlite::Error::FromSqlConversionFailure(12, rusqlite::types::Type::Text, Box::new(error))
     })?;
 
     Ok(PresetLibraryEntry {
@@ -749,13 +772,14 @@ fn map_entry_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<PresetLibraryEntry
         name: row.get(1)?,
         source: row.get(2)?,
         author: row.get(3)?,
-        starred: row.get::<_, i64>(4)? != 0,
-        sort_index: row.get::<_, i64>(5)? as u32,
-        bank_id: row.get(6)?,
-        bank_name: row.get(7)?,
+        description: row.get(4)?,
+        starred: row.get::<_, i64>(5)? != 0,
+        sort_index: row.get::<_, i64>(6)? as u32,
+        bank_id: row.get(7)?,
+        bank_name: row.get(8)?,
         tags,
         macro_labels,
-        factory_version: row.get::<_, i64>(10)? as u32,
+        factory_version: row.get::<_, i64>(11)? as u32,
         data,
     })
 }
@@ -803,6 +827,7 @@ fn import_bank_entries(conn: &Connection, bundle: PresetBankBundle) -> Result<()
                 name: preset.name,
                 source: bundle.bank.source.clone(),
                 author: preset.author,
+                description: preset.description,
                 starred: preset.starred,
                 sort_index: DEFAULT_SORT_INDEX,
                 bank_id: Some(bundle.bank.id.clone()),
@@ -949,6 +974,7 @@ mod tests {
             name: format!("Preset {id}"),
             source: "cosmo-factory".to_string(),
             author: "Factory".to_string(),
+            description: "Factory description".to_string(),
             starred: false,
             sort_index: DEFAULT_SORT_INDEX,
             bank_id: Some("cosmo-factory".to_string()),
@@ -971,6 +997,7 @@ mod tests {
             name: format!("My {id}"),
             source: "user".to_string(),
             author: "You".to_string(),
+            description: "User description".to_string(),
             starred: false,
             sort_index: DEFAULT_SORT_INDEX,
             bank_id: None,
@@ -1042,6 +1069,7 @@ mod tests {
         let entry = lib
             .add_entry(
                 "Test".to_string(),
+                "Test description".to_string(),
                 vec!["pad".to_string()],
                 [
                     "Brightness".to_string(),
@@ -1056,6 +1084,7 @@ mod tests {
 
         let fetched = lib.get_entry(&entry.id).unwrap().unwrap();
         assert_eq!(fetched.name, "Test");
+        assert_eq!(fetched.description, "Test description");
 
         assert!(lib.rename_entry(&entry.id, "Renamed").unwrap());
         assert!(lib.set_starred(&entry.id, true).unwrap());
@@ -1074,11 +1103,36 @@ mod tests {
     }
 
     #[test]
+    fn description_migration_defaults_existing_rows() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE presets (
+                id TEXT PRIMARY KEY NOT NULL,
+                name TEXT NOT NULL
+            );
+            INSERT INTO presets (id, name) VALUES ('legacy', 'Legacy');",
+        )
+        .unwrap();
+
+        migrate_description_column(&conn).unwrap();
+
+        let description: String = conn
+            .query_row(
+                "SELECT description FROM presets WHERE id = 'legacy'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(description, "");
+    }
+
+    #[test]
     fn list_entries_filters_by_source() {
         let mut lib = open_temp_library(vec![sample_entry("cf1")]);
         let _ = lib
             .add_entry(
                 "User".to_string(),
+                String::new(),
                 vec![],
                 [
                     "Brightness".to_string(),
@@ -1256,6 +1310,7 @@ mod tests {
                     id: "addon-a".to_string(),
                     name: "Addon A".to_string(),
                     author: "Addon".to_string(),
+                    description: "Addon A description".to_string(),
                     starred: false,
                     tags: vec!["pad".to_string()],
                     data: serde_json::json!({ "schemaVersion": 1, "params": { "volume": 0.5 } }),
@@ -1276,6 +1331,7 @@ mod tests {
                     id: "addon-b".to_string(),
                     name: "Addon B".to_string(),
                     author: "Addon".to_string(),
+                    description: String::new(),
                     starred: false,
                     tags: vec!["bass".to_string()],
                     data: serde_json::json!({ "schemaVersion": 1, "params": { "volume": 0.6 } }),
@@ -1304,6 +1360,7 @@ mod tests {
                     id: "addon-macro".to_string(),
                     name: "Addon Macro".to_string(),
                     author: "Addon".to_string(),
+                    description: String::new(),
                     starred: false,
                     tags: vec![],
                     data: serde_json::json!({

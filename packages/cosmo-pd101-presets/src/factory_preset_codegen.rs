@@ -22,6 +22,8 @@ const PRESET_TAG_OPTIONS: [&str; 16] = [
 struct AuthoredCzPresetFile {
     name: String,
     #[serde(default)]
+    description: String,
+    #[serde(default)]
     tags: Vec<String>,
     #[serde(default)]
     starred: bool,
@@ -41,6 +43,7 @@ struct FactoryPresetOutput {
     name: String,
     source: String,
     author: String,
+    description: String,
     starred: bool,
     sort_index: usize,
     data: SynthPresetV1,
@@ -54,6 +57,7 @@ struct FactoryPresetEntry {
     name: String,
     source: String,
     author: String,
+    description: String,
     starred: bool,
     sort_index: usize,
     tags: Vec<String>,
@@ -65,6 +69,7 @@ struct FactoryPresetEntry {
 #[derive(Debug, Clone)]
 struct FactoryPresetSource {
     name: String,
+    description: String,
     tags: Vec<String>,
     starred: bool,
     source: String,
@@ -131,6 +136,7 @@ fn load_presets_from_dir(dir: &Path) -> Result<Vec<FactoryPresetSource>, String>
         assert_no_unknown_fields(&authored.data, &canonical, "data", &file_name)?;
         presets.push(FactoryPresetSource {
             name: authored.name,
+            description: authored.description.trim().to_string(),
             tags: authored.tags,
             starred: authored.starred,
             source: authored.source.unwrap_or_default(),
@@ -814,6 +820,7 @@ fn build_factory_preset(
         name: preset.name.clone(),
         source: preset.source.clone(),
         author: preset.author.clone(),
+        description: preset.description.clone(),
         starred: preset.starred,
         sort_index,
         data: preset.data.clone(),
@@ -831,6 +838,7 @@ fn build_factory_entry(
         name: preset.name.clone(),
         source: preset.source.clone(),
         author: preset.author.clone(),
+        description: preset.description.clone(),
         starred: preset.starred,
         sort_index,
         tags: preset.tags.clone(),

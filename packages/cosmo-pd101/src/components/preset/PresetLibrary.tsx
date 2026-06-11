@@ -23,6 +23,7 @@ type PresetLibraryProps = {
 	onDeletePreset: (id: string) => void;
 	onRenamePreset: (id: string, newName: string) => void;
 	onSetPresetAuthor: (id: string, author: string) => void;
+	onSetPresetDescription: (id: string, description: string) => void;
 	onSetPresetFavorite: (id: string, favorite: boolean) => void;
 	onSetPresetTags: (id: string, tags: PresetTagOptions[]) => void;
 	onExportPreset: (id: string) => void;
@@ -43,6 +44,7 @@ export default function PresetLibrary({
 	onDeletePreset,
 	onRenamePreset,
 	onSetPresetAuthor,
+	onSetPresetDescription,
 	onSetPresetFavorite,
 	onSetPresetTags,
 	onExportPreset,
@@ -76,6 +78,8 @@ export default function PresetLibrary({
 		setRenameValue,
 		authorValue,
 		setAuthorValue,
+		descriptionValue,
+		setDescriptionValue,
 		showOnlyUserPresets,
 		setShowOnlyUserPresets,
 		selectedAuthorFilter,
@@ -97,6 +101,7 @@ export default function PresetLibrary({
 		visibleVirtualRows,
 		focusedEntry,
 		activeLocalEntry,
+		selectedEntry,
 		selectedLocalEntry,
 		toggleSort,
 		sortIndicator,
@@ -217,6 +222,15 @@ export default function PresetLibrary({
 		onSetPresetAuthor(selectedLocalEntry.id, nextAuthor);
 	}, [authorValue, onSetPresetAuthor, selectedLocalEntry]);
 
+	const commitDescription = useCallback(() => {
+		if (!selectedLocalEntry) return;
+		const nextDescription = descriptionValue.trim();
+		if (nextDescription === selectedLocalEntry.description) {
+			return;
+		}
+		onSetPresetDescription(selectedLocalEntry.id, nextDescription);
+	}, [descriptionValue, onSetPresetDescription, selectedLocalEntry]);
+
 	const deleteSelectedPreset = useCallback(() => {
 		if (!selectedLocalEntry) return;
 		onDeletePreset(selectedLocalEntry.id);
@@ -303,15 +317,17 @@ export default function PresetLibrary({
 
 					<PresetLibrarySidebar
 						activeLocalEntryLabel={activeLocalEntry?.label ?? null}
-						selectedLocalEntryLabel={selectedLocalEntry?.label ?? null}
-						selectedLocalEntryAuthor={selectedLocalEntry?.author ?? null}
+						selectedEntry={selectedEntry ?? null}
 						renameValue={renameValue}
 						onRenameValueChange={setRenameValue}
 						onCommitRename={commitRename}
 						authorValue={authorValue}
 						onAuthorValueChange={setAuthorValue}
 						onCommitAuthor={commitAuthor}
-						selectedLocalTags={selectedLocalEntry?.tags ?? []}
+						descriptionValue={descriptionValue}
+						onDescriptionValueChange={setDescriptionValue}
+						onCommitDescription={commitDescription}
+						selectedTags={selectedEntry?.tags ?? []}
 						onSelectedTagsChange={updateSelectedTags}
 						onExportSelectedPreset={exportSelectedPreset}
 						onDeleteSelectedPreset={deleteSelectedPreset}

@@ -8,6 +8,7 @@ describe("PresetLibrarySidebar", () => {
 		const onRenameValueChange = vi.fn();
 		const onCommitRename = vi.fn();
 		const onCommitAuthor = vi.fn();
+		const onCommitDescription = vi.fn();
 		const onSelectedTagsChange = vi.fn();
 		const onSave = vi.fn();
 		const onOpenSaveAs = vi.fn();
@@ -17,15 +18,28 @@ describe("PresetLibrarySidebar", () => {
 		render(
 			<PresetLibrarySidebar
 				activeLocalEntryLabel="Mine"
-				selectedLocalEntryLabel="Mine"
-				selectedLocalEntryAuthor=""
+				selectedEntry={{
+					id: "mine",
+					label: "Mine",
+					type: "local",
+					source: "user",
+					sourceLabel: "User",
+					author: "",
+					description: "My preset",
+					starred: false,
+					favorite: false,
+					tags: ["bass"],
+				}}
 				renameValue="Mine"
 				onRenameValueChange={onRenameValueChange}
 				onCommitRename={onCommitRename}
 				authorValue=""
 				onAuthorValueChange={vi.fn()}
 				onCommitAuthor={onCommitAuthor}
-				selectedLocalTags={["bass"]}
+				descriptionValue="My preset"
+				onDescriptionValueChange={vi.fn()}
+				onCommitDescription={onCommitDescription}
+				selectedTags={["bass"]}
 				onSelectedTagsChange={onSelectedTagsChange}
 				onExportSelectedPreset={vi.fn()}
 				onDeleteSelectedPreset={vi.fn()}
@@ -50,6 +64,11 @@ describe("PresetLibrarySidebar", () => {
 			key: "Enter",
 		});
 		expect(onCommitAuthor).toHaveBeenCalled();
+		fireEvent.keyDown(screen.getByPlaceholderText("Describe this preset"), {
+			key: "Enter",
+			ctrlKey: true,
+		});
+		expect(onCommitDescription).toHaveBeenCalled();
 
 		const tagSelect = screen.getByLabelText("Preset tags");
 		fireEvent.keyDown(tagSelect, { key: "ArrowDown" });
@@ -66,19 +85,81 @@ describe("PresetLibrarySidebar", () => {
 		expect(onInitPreset).toHaveBeenCalled();
 	});
 
+	it("renders library preset metadata as read-only", () => {
+		render(
+			<PresetLibrarySidebar
+				activeLocalEntryLabel={null}
+				selectedEntry={{
+					id: "factory",
+					label: "Factory Pad",
+					type: "library",
+					source: "cosmo-factory",
+					sourceLabel: "Cosmo Factory Library",
+					author: "Purr Audio",
+					description: "Slow, spacious, and warm.",
+					starred: false,
+					favorite: false,
+					tags: ["pad"],
+				}}
+				renameValue=""
+				onRenameValueChange={vi.fn()}
+				onCommitRename={vi.fn()}
+				authorValue=""
+				onAuthorValueChange={vi.fn()}
+				onCommitAuthor={vi.fn()}
+				descriptionValue=""
+				onDescriptionValueChange={vi.fn()}
+				onCommitDescription={vi.fn()}
+				selectedTags={["pad"]}
+				onSelectedTagsChange={vi.fn()}
+				onExportSelectedPreset={vi.fn()}
+				onDeleteSelectedPreset={vi.fn()}
+				saveName=""
+				onSaveNameChange={vi.fn()}
+				onSave={vi.fn()}
+				onOpenSaveAs={vi.fn()}
+				onExportCurrentState={vi.fn()}
+				onImportClick={vi.fn()}
+				onInitPreset={vi.fn()}
+				importError={null}
+			/>,
+		);
+
+		expect(screen.getByText("Slow, spacious, and warm.")).toBeInTheDocument();
+		expect(
+			screen.queryByPlaceholderText("Describe this preset"),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Delete" }),
+		).not.toBeInTheDocument();
+	});
+
 	it("renders current state actions before selected preset details", () => {
 		render(
 			<PresetLibrarySidebar
 				activeLocalEntryLabel="Mine"
-				selectedLocalEntryLabel="Mine"
-				selectedLocalEntryAuthor=""
+				selectedEntry={{
+					id: "mine",
+					label: "Mine",
+					type: "local",
+					source: "user",
+					sourceLabel: "User",
+					author: "",
+					description: "",
+					starred: false,
+					favorite: false,
+					tags: ["bass"],
+				}}
 				renameValue="Mine"
 				onRenameValueChange={vi.fn()}
 				onCommitRename={vi.fn()}
 				authorValue=""
 				onAuthorValueChange={vi.fn()}
 				onCommitAuthor={vi.fn()}
-				selectedLocalTags={["bass"]}
+				descriptionValue=""
+				onDescriptionValueChange={vi.fn()}
+				onCommitDescription={vi.fn()}
+				selectedTags={["bass"]}
 				onSelectedTagsChange={vi.fn()}
 				onExportSelectedPreset={vi.fn()}
 				onDeleteSelectedPreset={vi.fn()}

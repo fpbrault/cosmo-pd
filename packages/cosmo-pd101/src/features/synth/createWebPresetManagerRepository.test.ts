@@ -53,4 +53,48 @@ describe("createWebPresetManagerRepository", () => {
 			}),
 		);
 	});
+
+	it("preserves descriptions when overwriting a user preset", async () => {
+		mockLoadStoredPreset.mockResolvedValue({
+			id: "user-1",
+			name: "Existing",
+			source: "user",
+			author: "User",
+			description: "Warm and wide.",
+			starred: false,
+			tags: [],
+			data: { schemaVersion: 1, params: { volume: 0.5 } },
+		});
+		mockSaveStoredPreset.mockResolvedValue({
+			id: "user-1",
+			name: "Existing",
+		});
+
+		const repository = createWebPresetManagerRepository({
+			applyPreset: vi.fn(),
+			gatherPresetState: () =>
+				({ schemaVersion: 1, params: { volume: 0.5 } }) as never,
+			libraryPresets: [],
+		});
+
+		await repository.savePreset({
+			existingEntry: {
+				id: "user-1",
+				label: "Existing",
+				type: "local",
+				source: "user",
+				sourceLabel: "User",
+				author: "User",
+				description: "Warm and wide.",
+				starred: false,
+				favorite: false,
+				tags: [],
+			},
+			name: "Existing",
+		});
+
+		expect(mockSaveStoredPreset).toHaveBeenCalledWith(
+			expect.objectContaining({ description: "Warm and wide." }),
+		);
+	});
 });

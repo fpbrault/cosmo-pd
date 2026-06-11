@@ -37,6 +37,7 @@ export interface PresetManagerController {
 	deletePreset: (id: string) => Promise<void>;
 	renamePreset: (id: string, newName: string) => Promise<void>;
 	setPresetAuthor: (id: string, author: string) => Promise<void>;
+	setPresetDescription: (id: string, description: string) => Promise<void>;
 	setPresetFavorite: (id: string, favorite: boolean) => Promise<void>;
 	setPresetTags: (id: string, tags: PresetTagOptions[]) => Promise<void>;
 	initPreset: () => Promise<void>;
@@ -338,6 +339,14 @@ export function useSynthPresetManager({
 		[reloadLibrary, repository],
 	);
 
+	const setPresetDescription = useCallback(
+		async (id: string, description: string) => {
+			await repository.setPresetDescription(id, description.trim());
+			await reloadLibrary();
+		},
+		[reloadLibrary, repository],
+	);
+
 	const setPresetTags = useCallback(
 		async (id: string, tags: PresetTagOptions[]) => {
 			await repository.setPresetTags(id, tags);
@@ -393,6 +402,7 @@ export function useSynthPresetManager({
 			deletePreset,
 			renamePreset,
 			setPresetAuthor,
+			setPresetDescription,
 			setPresetFavorite,
 			setPresetTags,
 			initPreset,
@@ -420,6 +430,7 @@ export function useSynthPresetManager({
 			savePreset,
 			setNavigationEntryIds,
 			setPresetAuthor,
+			setPresetDescription,
 			setPresetFavorite,
 			setPresetTags,
 			stepPreset,
