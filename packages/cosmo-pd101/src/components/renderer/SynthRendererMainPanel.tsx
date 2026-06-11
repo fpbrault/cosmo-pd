@@ -14,7 +14,7 @@ export default memo(function SynthRendererMainPanel({
 	setMainPanelMode,
 }: SynthRendererMainPanelProps) {
 	return (
-		<main className="@container mx-auto flex aspect-4/3 h-full min-h-0 w-auto min-w-0 max-w-[99%] flex-col overflow-hidden rounded-2xl">
+		<main className="@container/phase flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-2xl [container-type:size]">
 			<SynthRendererTopBar
 				mainPanelMode={mainPanelMode}
 				setMainPanelMode={setMainPanelMode}

@@ -26,14 +26,14 @@ export function PhaseLineAlgoSideSection({
 		section === "A" ? algo.setBaseWaveformA : algo.setBaseWaveformB;
 
 	return (
-		<div className="flex min-h-0 flex-1 flex-col gap-0">
+		<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-0">
 			<div
 				className="mb-1 bg-cz-inset px-1.5 py-0.5 font-semibold text-3xs uppercase tracking-[0.24em]"
 				style={{ color }}
 			>
 				Algo {section}
 			</div>
-			<div className="flex min-h-0 flex-1 flex-col gap-2">
+			<div className="flex min-h-0 flex-1 flex-col gap-2 [@container_phase_(max-height:620px)]:gap-1">
 				<AlgoSectionCard slot={slot} lineIndex={lineIndex} color={color} />
 				<BaseWaveSelector
 					title={`Base Wave ${section}`}
