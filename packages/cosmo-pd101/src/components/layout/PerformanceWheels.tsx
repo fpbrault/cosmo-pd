@@ -113,7 +113,7 @@ function PerformanceWheel({
 				aria-valuemax={max}
 				aria-valuemin={min}
 				aria-valuenow={value}
-				className="relative min-h-0 w-full flex-1 touch-none overflow-hidden rounded-md border border-black/70 bg-black/80 shadow-inner outline-none ring-cz-light-blue focus-visible:ring-2"
+				className="relative min-h-0 w-full flex-1 touch-none rounded-md border border-black/70 bg-black/80 shadow-inner outline-none ring-cz-light-blue focus-visible:ring-2"
 				data-performance-wheel={label.toLowerCase()}
 				onKeyDown={handleKeyDown}
 				onKeyUp={(event) => {
