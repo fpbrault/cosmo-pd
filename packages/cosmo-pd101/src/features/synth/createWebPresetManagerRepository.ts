@@ -6,7 +6,6 @@ import type {
 	SavePresetRequest,
 } from "@/features/synth/presetManagerRepository";
 import type { LibraryPreset } from "@/features/synth/types/libraryPreset";
-import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import { decodeCzPatch } from "@/lib/midi/czSysexDecoder";
 import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
 import { convertDecodedPatchToSynthPreset } from "@/lib/synth/czPresetConverter";
@@ -65,17 +64,20 @@ export function createWebPresetManagerRepository({
 	libraryPresets,
 	onBeforeApplyPreset,
 }: CreateWebPresetManagerRepositoryOptions): PresetManagerRepository {
-	const refreshEntries = async (): Promise<PresetEntry[]> => {
+	const refreshEntries = async () => {
 		const [localPresetEntries, favoritePresetIds] = await Promise.all([
 			listStoredPresets(),
 			listPresetFavorites(),
 		]);
 
-		return buildAllPresetEntries({
-			localPresetEntries,
-			libraryPresets,
-			favoritePresetIds,
-		});
+		return {
+			entries: buildAllPresetEntries({
+				localPresetEntries,
+				libraryPresets,
+				favoritePresetIds,
+			}),
+			status: { state: "ready" as const },
+		};
 	};
 
 	return {

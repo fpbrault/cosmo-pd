@@ -4,6 +4,7 @@ import {
 	type LibraryPreset,
 	type PresetActivationResult,
 	type PresetEntry,
+	type PresetLibraryStatus,
 	type PresetManagerRepository,
 	type PresetManagerSession,
 	type PresetSource,
@@ -28,6 +29,7 @@ type NativePresetLibraryEntry = {
 
 type NativePresetLibraryResponse = {
 	entries?: NativePresetLibraryEntry[];
+	status?: Exclude<PresetLibraryStatus, { state: "loading" }>;
 };
 
 type SavePluginPresetPayload = {
@@ -60,6 +62,16 @@ type ImportedPresetBank = {
 
 const DEFAULT_USER_PRESET_AUTHOR = "User";
 
+function requireHostMethod(
+	name: string,
+	method: (() => Promise<unknown>) | undefined,
+): () => Promise<unknown> {
+	if (!method) {
+		throw new Error(`Plugin host does not provide ${name}`);
+	}
+	return method;
+}
+
 function getSourceLabel(source: PresetSource): string {
 	if (source === "cosmo-factory") {
 		return "Cosmo Factory Library";
@@ -76,6 +88,9 @@ function getSourceLabel(source: PresetSource): string {
 declare global {
 	interface Window {
 		__czGetPresetLibrary?: (source?: string) => Promise<unknown>;
+		__czRetryPresetLibrary?: () => Promise<unknown>;
+		__czRepairPresetLibrary?: () => Promise<unknown>;
+		__czRebuildPresetLibrary?: () => Promise<unknown>;
 		__czLoadPresetData?: (id: string) => Promise<unknown>;
 		__czSavePreset?: (payload: SavePluginPresetPayload) => Promise<unknown>;
 		__czDeletePreset?: (id: string) => Promise<unknown>;
@@ -303,9 +318,15 @@ export function createPluginPresetManagerRepository({
 				| NativePresetLibraryResponse
 				| undefined;
 			if (!result?.entries) {
-				return [];
+				return {
+					entries: [],
+					status: result?.status ?? { state: "ready" },
+				};
 			}
-			return result.entries.map(mapNativeEntryToPresetEntry);
+			return {
+				entries: result.entries.map(mapNativeEntryToPresetEntry),
+				status: result.status ?? { state: "ready" },
+			};
 		},
 		loadEntry: async (entry) => {
 			const result = (await window.__czLoadPresetData?.(entry.id)) as
@@ -405,5 +426,23 @@ export function createPluginPresetManagerRepository({
 			filename: `${name}.json`,
 			json: JSON.stringify({ _name: name, ...gatherPresetState() }, null, 2),
 		}),
+		retryLibrary: async () => {
+			await requireHostMethod(
+				"preset library retry",
+				window.__czRetryPresetLibrary,
+			)();
+		},
+		repairLibrary: async () => {
+			await requireHostMethod(
+				"preset library repair",
+				window.__czRepairPresetLibrary,
+			)();
+		},
+		rebuildLibrary: async () => {
+			await requireHostMethod(
+				"preset library rebuild",
+				window.__czRebuildPresetLibrary,
+			)();
+		},
 	};
 }

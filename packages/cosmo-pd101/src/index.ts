@@ -35,6 +35,8 @@ export {
 export type {
 	ExportedPresetFile,
 	PresetActivationResult,
+	PresetLibrarySnapshot,
+	PresetLibraryStatus,
 	PresetManagerRepository,
 	PresetManagerSession,
 	PresetStateSync,

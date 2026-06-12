@@ -184,6 +184,7 @@ const baseEntries: PresetEntry[] = [
 
 const mockPresetManager = {
 	allPresetEntries: baseEntries,
+	libraryStatus: { state: "ready" as const },
 	navigationEntryIds: baseEntries.map((entry) => entry.id),
 	activePresetId: "alpha",
 	activePresetNameBase: "Alpha",
@@ -206,6 +207,9 @@ const mockPresetManager = {
 	exportCurrentState: vi.fn(),
 	recomputeDirtyState: vi.fn(),
 	reloadLibrary: vi.fn(),
+	retryLibrary: vi.fn(),
+	repairLibrary: vi.fn(),
+	rebuildLibrary: vi.fn(),
 };
 
 function renderWithProvider() {

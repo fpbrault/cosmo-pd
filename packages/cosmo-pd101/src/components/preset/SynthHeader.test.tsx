@@ -40,6 +40,7 @@ function renderWithProvider(element: React.ReactElement) {
 		<PresetManagerProvider
 			value={{
 				allPresetEntries: entries,
+				libraryStatus: { state: "ready" },
 				navigationEntryIds: entries.map((entry) => entry.id),
 				activePresetId: "1",
 				activePresetNameBase: "Init",
@@ -62,6 +63,9 @@ function renderWithProvider(element: React.ReactElement) {
 				exportCurrentState: vi.fn(),
 				recomputeDirtyState: vi.fn(),
 				reloadLibrary: vi.fn(),
+				retryLibrary: vi.fn(),
+				repairLibrary: vi.fn(),
+				rebuildLibrary: vi.fn(),
 			}}
 		>
 			{element}
