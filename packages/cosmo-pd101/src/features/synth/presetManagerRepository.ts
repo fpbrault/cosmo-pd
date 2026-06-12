@@ -37,6 +37,16 @@ export type PresetLibrarySnapshot = {
 	status: Exclude<PresetLibraryStatus, { state: "loading" }>;
 };
 
+export type PresetLibraryStatus =
+	| { state: "loading" }
+	| { state: "ready" }
+	| { state: "degraded"; message: string };
+
+export type PresetLibrarySnapshot = {
+	entries: PresetEntry[];
+	status: Exclude<PresetLibraryStatus, { state: "loading" }>;
+};
+
 export interface PresetManagerRepository {
 	listEntries: () => Promise<PresetLibrarySnapshot>;
 	loadEntry: (entry: PresetEntry) => Promise<PresetActivationResult | null>;
