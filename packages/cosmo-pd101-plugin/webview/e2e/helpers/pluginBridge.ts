@@ -18,10 +18,12 @@ export async function setupPluginPage(
 	await page.addInitScript(
 		({ keyboardVisible }) => {
 			// Keep test state deterministic across retries/workers.
-			localStorage.setItem(
-				"cosmo-pd101-ui-state",
-				JSON.stringify({ state: { keyboardVisible }, version: 0 }),
-			);
+			if (localStorage.getItem("cosmo-pd101-ui-state") === null) {
+				localStorage.setItem(
+					"cosmo-pd101-ui-state",
+					JSON.stringify({ state: { keyboardVisible }, version: 0 }),
+				);
+			}
 			localStorage.setItem("cz-plugin-ui-scale", "100");
 			sessionStorage.removeItem("cosmo-pd101.update.latestNotified");
 

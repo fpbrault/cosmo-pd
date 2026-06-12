@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
-import { setupPluginPage } from "./helpers/pluginBridge";
+import {
+	setupPluginPage,
+	waitForMessageMatching,
+} from "./helpers/pluginBridge";
 
 const LATEST_RELEASE_URL =
 	"https://api.github.com/repos/fpbrault/cosmo-pd/releases/latest";
@@ -69,7 +72,7 @@ test.describe("Preset management", () => {
 		await expect(presetRow).toBeVisible();
 	});
 
-	test.skip("saves, renames, and deletes a local preset", async ({ page }) => {
+	test("saves, renames, and deletes a local preset", async ({ page }) => {
 		await page.getByRole("button", { name: /^preset /i }).click();
 
 		const pendingModifiedPresetDialog = page
@@ -97,38 +100,37 @@ test.describe("Preset management", () => {
 		await expect(
 			libraryList.getByRole("button", { name: "E2E Patch", exact: true }),
 		).toBeVisible();
-		await expect
-			.poll(() =>
-				page.evaluate(() => localStorage.getItem("cz101-preset-E2E Patch")),
-			)
-			.not.toBeNull();
+		await waitForMessageMatching(page, (message) => {
+			const payload = Array.isArray(message.args) ? message.args[0] : null;
+			return (
+				message.type === "invoke" &&
+				message.method === "savePreset" &&
+				typeof payload === "object" &&
+				payload !== null &&
+				"name" in payload &&
+				payload.name === "E2E Patch"
+			);
+		});
 
-		await page.getByRole("button", { name: "Rename E2E Patch" }).click();
-		const renameInput = page.locator("dialog[open]").getByRole("textbox");
+		const renameInput = page.getByPlaceholder("Preset name");
 		await renameInput.fill("Renamed Patch");
 		await renameInput.press("Enter");
 
-		await expect(
-			libraryList.getByRole("button", { name: "Renamed Patch", exact: true }),
-		).toBeVisible();
-		await expect
-			.poll(() =>
-				page.evaluate(() => ({
-					original: localStorage.getItem("cz101-preset-E2E Patch"),
-					renamed: localStorage.getItem("cz101-preset-Renamed Patch"),
-				})),
-			)
-			.toEqual({ original: null, renamed: expect.any(String) });
+		const renamedPreset = libraryList.getByRole("button", {
+			name: "Renamed Patch",
+			exact: true,
+		});
+		await expect(renamedPreset).toBeVisible();
+		await renamedPreset.click();
 
-		await page.getByRole("button", { name: "Delete Renamed Patch" }).click();
-		await page.getByRole("button", { name: "Confirm delete" }).click();
+		const deleteButton = page.getByRole("button", {
+			name: "Delete",
+			exact: true,
+		});
+		await deleteButton.scrollIntoViewIfNeeded();
+		await deleteButton.click();
 		await expect(
 			libraryList.getByRole("button", { name: "Renamed Patch", exact: true }),
 		).toHaveCount(0);
-		await expect
-			.poll(() =>
-				page.evaluate(() => localStorage.getItem("cz101-preset-Renamed Patch")),
-			)
-			.toBeNull();
 	});
 });

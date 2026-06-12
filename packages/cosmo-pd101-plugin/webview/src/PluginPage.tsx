@@ -57,14 +57,15 @@ export default function PluginPage({
 	);
 	const runtime = usePluginSynthRuntime({ eventSink: sendNativeEngineEvent });
 	const presetManagerRef = useRef<PresetManagerController | null>(null);
+	const handleExternalParamChange = useCallback(() => {
+		presetManagerRef.current?.recomputeDirtyState();
+	}, []);
 	const {
 		bridgeReady,
 		getPresetSession,
 		setPresetSession: persistPresetSession,
 	} = usePluginParamBridge({
-		onExternalParamChange: () => {
-			presetManagerRef.current?.recomputeDirtyState();
-		},
+		onExternalParamChange: handleExternalParamChange,
 	});
 	const presetRepository = useMemo(
 		() =>

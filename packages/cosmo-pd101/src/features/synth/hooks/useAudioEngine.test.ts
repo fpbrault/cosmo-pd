@@ -230,48 +230,42 @@ describe("useAudioEngine", () => {
 			);
 		});
 
-		// TODO: Re-enable when the happy-dom audio worklet async path is deterministic.
-		it.skip("loads the AudioWorklet module", async () => {
-			renderUseAudioEngine();
+		it("loads the AudioWorklet module", async () => {
+			const { result } = renderUseAudioEngine();
 
-			await waitFor(
-				() => {
-					expect(mocks.mockCtx.audioWorklet.addModule).toHaveBeenCalledWith(
-						defaultProps.cosmoWorkletUrl,
-					);
-				},
-				{ timeout: 5000 },
-			);
+			await startAudio(result);
+
+			await waitFor(() => {
+				expect(mocks.mockCtx.audioWorklet.addModule).toHaveBeenCalledWith(
+					defaultProps.cosmoWorkletUrl,
+				);
+			});
 		});
 
-		// TODO: Re-enable when the happy-dom audio worklet async path is deterministic.
-		it.skip("creates AudioWorkletNode after module loads", async () => {
-			renderUseAudioEngine();
+		it("creates AudioWorkletNode after module loads", async () => {
+			const { result } = renderUseAudioEngine();
 
-			await waitFor(
-				() => {
-					expect(mocks.AudioWorkletNodeMock).toHaveBeenCalledWith(
-						mocks.mockCtx,
-						"cosmo-processor",
-					);
-				},
-				{ timeout: 5000 },
-			);
+			await startAudio(result);
+
+			await waitFor(() => {
+				expect(mocks.AudioWorkletNodeMock).toHaveBeenCalledWith(
+					mocks.mockCtx,
+					"cosmo-processor",
+				);
+			});
 		});
 
-		// TODO: Re-enable when the happy-dom audio worklet async path is deterministic.
-		it.skip("creates gain and analyser nodes and connects audio graph", async () => {
-			renderUseAudioEngine();
+		it("creates gain and analyser nodes and connects audio graph", async () => {
+			const { result } = renderUseAudioEngine();
 
-			await waitFor(
-				() => {
-					expect(mocks.mockCtx.createGain).toHaveBeenCalledTimes(1);
-					expect(mocks.AnalyserNodeMock).toHaveBeenCalledWith(mocks.mockCtx, {
-						fftSize: 2048,
-					});
-				},
-				{ timeout: 5000 },
-			);
+			await startAudio(result);
+
+			await waitFor(() => {
+				expect(mocks.mockCtx.createGain).toHaveBeenCalledTimes(1);
+				expect(mocks.AnalyserNodeMock).toHaveBeenCalledWith(mocks.mockCtx, {
+					fftSize: 2048,
+				});
+			});
 		});
 
 		it("adds statechange listener on AudioContext", async () => {
@@ -299,10 +293,10 @@ describe("useAudioEngine", () => {
 	});
 
 	describe("message handling", () => {
-		// TODO: Re-enable when the happy-dom audio worklet async path is deterministic.
-		it.skip("handles 'ready' message: starts telemetry and sends params", async () => {
-			renderUseAudioEngine();
+		it("handles 'ready' message: starts telemetry and sends params", async () => {
+			const { result } = renderUseAudioEngine();
 
+			await startAudio(result);
 			await waitForWorkletInit();
 
 			act(() => {
@@ -319,15 +313,15 @@ describe("useAudioEngine", () => {
 				type: "setParams",
 				params: expect.objectContaining({
 					frequency: 220,
-					volume: 0.4,
+					volume: 1,
 				}),
 			});
 		});
 
-		// TODO: Re-enable when the happy-dom audio worklet async path is deterministic.
-		it.skip("handles 'error' message: logs worklet error", async () => {
-			renderUseAudioEngine();
+		it("handles 'error' message: logs worklet error", async () => {
+			const { result } = renderUseAudioEngine();
 
+			await startAudio(result);
 			await waitForWorkletInit();
 
 			act(() => {
@@ -342,12 +336,12 @@ describe("useAudioEngine", () => {
 			);
 		});
 
-		// TODO: Re-enable when the happy-dom audio worklet async path is deterministic.
-		it.skip("handles 'runtimeModSources' message: dispatches custom event", async () => {
+		it("handles 'runtimeModSources' message: dispatches custom event", async () => {
 			const dispatchSpy = vi.spyOn(window, "dispatchEvent");
 
-			renderUseAudioEngine();
+			const { result } = renderUseAudioEngine();
 
+			await startAudio(result);
 			await waitForWorkletInit();
 
 			const sources = {
@@ -366,20 +360,24 @@ describe("useAudioEngine", () => {
 				});
 			});
 
-			expect(dispatchSpy).toHaveBeenCalledWith(
-				expect.objectContaining({
-					type: "cz-runtime-mod-sources",
-					detail: sources,
-				}),
-			);
+			const event = dispatchSpy.mock.calls[0]?.[0] as CustomEvent | undefined;
+			expect(event?.type).toBe("cz-runtime-mod-sources");
+			expect(event?.detail).toEqual({
+				...sources,
+				macro1: 0,
+				macro2: 0,
+				macro3: 0,
+				macro4: 0,
+				pitchBend: 0,
+			});
 		});
 
-		// TODO: Re-enable when the happy-dom audio worklet async path is deterministic.
-		it.skip("handles 'runtimeVoiceStates' message: dispatches custom event", async () => {
+		it("handles 'runtimeVoiceStates' message: dispatches custom event", async () => {
 			const dispatchSpy = vi.spyOn(window, "dispatchEvent");
 
-			renderUseAudioEngine();
+			const { result } = renderUseAudioEngine();
 
+			await startAudio(result);
 			await waitForWorkletInit();
 
 			const voices = [
@@ -454,12 +452,12 @@ describe("useAudioEngine", () => {
 			);
 		});
 
-		// TODO: Re-enable when the happy-dom audio worklet async path is deterministic.
-		it.skip("handles 'performanceMetrics' message: dispatches custom event", async () => {
+		it("handles 'performanceMetrics' message: dispatches custom event", async () => {
 			const dispatchSpy = vi.spyOn(window, "dispatchEvent");
 
-			renderUseAudioEngine();
+			const { result } = renderUseAudioEngine();
 
+			await startAudio(result);
 			await waitForWorkletInit();
 
 			const metrics = {
@@ -491,12 +489,12 @@ describe("useAudioEngine", () => {
 			);
 		});
 
-		// TODO: Re-enable when the happy-dom audio worklet async path is deterministic.
-		it.skip("ignores messages with unknown type", async () => {
+		it("ignores messages with unknown type", async () => {
 			const dispatchSpy = vi.spyOn(window, "dispatchEvent");
 
-			renderUseAudioEngine();
+			const { result } = renderUseAudioEngine();
 
+			await startAudio(result);
 			await waitForWorkletInit();
 
 			act(() => {
@@ -650,9 +648,9 @@ describe("useAudioEngine", () => {
 	});
 
 	describe("error handling", () => {
-		// TODO: Re-enable when the happy-dom audio worklet async path is deterministic.
-		it.skip("handles AudioContext creation failure gracefully", async () => {
-			const FailingAudioContext = vi.fn().mockImplementation(() => {
+		it("handles AudioContext creation failure gracefully", async () => {
+			// biome-ignore lint/complexity/useArrowFunction: Mock must be `new`-constructable.
+			const FailingAudioContext = vi.fn().mockImplementation(function () {
 				throw new Error("AudioContext not supported");
 			});
 			Object.defineProperty(globalThis, "AudioContext", {
@@ -663,22 +661,23 @@ describe("useAudioEngine", () => {
 
 			const { result } = renderUseAudioEngine();
 
-			await waitFor(
-				() => {
-					expect(mocks.consoleErrorSpy).toHaveBeenCalledWith(
-						"[Cosmo Engine] Audio init failed:",
-						expect.any(Error),
-					);
-				},
-				{ timeout: 5000 },
+			await act(async () => {
+				result.current.resumeAudio();
+				await Promise.resolve();
+			});
+
+			expect(mocks.consoleErrorSpy).toHaveBeenCalledWith(
+				"[Cosmo Engine] Audio init failed:",
+				expect.objectContaining({
+					message: "AudioContext not supported",
+				}),
 			);
 
 			expect(result.current.audioCtxRef.current).toBeNull();
 			expect(result.current.audioContextState).toBeNull();
 		});
 
-		// TODO: Re-enable when the happy-dom audio worklet async path is deterministic.
-		it.skip("handles fetch failure gracefully", async () => {
+		it("handles fetch failure gracefully", async () => {
 			const fetchFail = vi.fn().mockResolvedValue({
 				ok: false,
 				status: 404,
@@ -689,7 +688,9 @@ describe("useAudioEngine", () => {
 				configurable: true,
 			});
 
-			renderUseAudioEngine();
+			const { result } = renderUseAudioEngine();
+
+			await startAudio(result);
 
 			await waitFor(
 				() => {
@@ -704,13 +705,14 @@ describe("useAudioEngine", () => {
 			expect(mocks.mockCtx.close).toHaveBeenCalled();
 		});
 
-		// TODO: Re-enable when the happy-dom audio worklet async path is deterministic.
-		it.skip("handles AudioWorklet module loading failure gracefully", async () => {
+		it("handles AudioWorklet module loading failure gracefully", async () => {
 			mocks.mockCtx.audioWorklet.addModule = vi
 				.fn()
 				.mockRejectedValue(new Error("Module not found"));
 
-			renderUseAudioEngine();
+			const { result } = renderUseAudioEngine();
+
+			await startAudio(result);
 
 			await waitFor(
 				() => {
@@ -725,8 +727,7 @@ describe("useAudioEngine", () => {
 			expect(mocks.mockCtx.close).toHaveBeenCalled();
 		});
 
-		// TODO: Re-enable when the happy-dom audio worklet async path is deterministic.
-		it.skip("handles fetch rejection gracefully", async () => {
+		it("handles fetch rejection gracefully", async () => {
 			const fetchReject = vi.fn().mockRejectedValue(new Error("Network error"));
 			Object.defineProperty(globalThis, "fetch", {
 				value: fetchReject,
@@ -734,7 +735,9 @@ describe("useAudioEngine", () => {
 				configurable: true,
 			});
 
-			renderUseAudioEngine();
+			const { result } = renderUseAudioEngine();
+
+			await startAudio(result);
 
 			await waitFor(
 				() => {

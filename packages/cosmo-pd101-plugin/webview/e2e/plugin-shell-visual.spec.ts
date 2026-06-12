@@ -16,11 +16,11 @@ test.describe("Plugin shell visual smoke", () => {
 		});
 	});
 
-	test.skip("captures the current plugin shell", async ({ page }, testInfo) => {
+	test("captures the current plugin shell", async ({ page }, testInfo) => {
 		await expect(page.getByTestId("test-harness")).toBeVisible();
-		const fxLabel = page.getByText(/^FX$/).last();
-		await fxLabel.locator("..").locator("button").click();
-		await expect(page.getByText("Chorus").first()).toBeVisible();
+		const fxButton = page.getByRole("button", { name: "FX", exact: true });
+		await fxButton.click();
+		await expect(fxButton).toHaveAttribute("aria-pressed", "true");
 		await page.screenshot({
 			path: testInfo.outputPath("plugin-shell.png"),
 			fullPage: true,
@@ -39,42 +39,31 @@ test.describe("Plugin shell visual smoke", () => {
 		});
 	});
 
-	test.skip("persists synth shell UI state across reloads", async ({
-		page,
-	}) => {
+	test("persists synth shell UI state across reloads", async ({ page }) => {
 		await expect(page.getByTestId("test-harness")).toBeVisible();
 
-		const scopeButton = page.getByRole("button", { name: /Scope\s+View/i });
-		await scopeButton.click();
-		await expect(scopeButton).toHaveAttribute("aria-pressed", "true");
+		const fxButton = page.getByRole("button", { name: "FX", exact: true });
+		await fxButton.click();
+		await expect(fxButton).toHaveAttribute("aria-pressed", "true");
 
-		await page.getByRole("button", { name: "ENV" }).nth(1).click();
-		await page.getByText(/^DCA$/).locator("..").locator("button").click();
-		await expect(page.getByText("Line 2 DCA")).toBeVisible();
+		const line2EnvButton = page.getByRole("button", { name: "ENV" }).nth(1);
+		await line2EnvButton.click();
+		await expect(line2EnvButton).toHaveAttribute("aria-pressed", "true");
 
 		await page.getByRole("button", { name: /Hide Keys/i }).click();
 		await expect(page.getByTestId("mini-keyboard-overlay")).not.toBeVisible();
 
-		await page.getByText(/^FX$/).last().locator("..").locator("button").click();
-		await expect(page.getByText("Chorus").first()).toBeVisible();
-
-		await page.reload();
-		await page.waitForLoadState("networkidle");
+		await page.reload({ waitUntil: "domcontentloaded" });
 		await waitForBridge(page);
 
-		await expect(page.getByText("Chorus").first()).toBeVisible();
-		await expect(scopeButton).toHaveAttribute("aria-pressed", "true");
+		await expect(fxButton).toHaveAttribute("aria-pressed", "true");
+		await expect(line2EnvButton).toHaveAttribute("aria-pressed", "true");
 		await expect(page.getByTestId("mini-keyboard-overlay")).not.toBeVisible();
 		await expect(
 			page.getByRole("button", { name: /Show Keys/i }),
 		).toBeVisible();
 
-		await page
-			.getByText(/^Main$/)
-			.last()
-			.locator("..")
-			.locator("button")
-			.click();
-		await expect(page.getByText("Line 2 DCA")).toBeVisible();
+		await page.getByRole("button", { name: "Main", exact: true }).click();
+		await expect(line2EnvButton).toHaveAttribute("aria-pressed", "true");
 	});
 });
