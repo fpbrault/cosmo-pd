@@ -15,14 +15,11 @@ pub(super) fn handle(
     let scope_buffer = &context.shared_state.telemetry.scope_buffer;
     let params = context.params.as_ref();
     match req {
-        PluginIpcRequest::SetParams(params_value) => {
-            let new_params: SynthParams = serde_json::from_value(params_value.clone())
-                .map_err(|e| format!("invalid SynthParams payload: {e}"))?;
+        PluginIpcRequest::SetParams(new_params) => {
+            sync_all_daw_params_from_synth(params, new_params);
 
-            sync_all_daw_params_from_synth(params, &new_params);
-
-            let rt_params = build_rt_synth_params(&new_params);
-            synth_params.store(Arc::new(new_params));
+            let rt_params = build_rt_synth_params(new_params);
+            synth_params.store(Arc::new(new_params.clone()));
             rt_synth_params.store(Arc::new(rt_params));
             synth_params_version.fetch_add(1, Ordering::Release);
             Ok(serde_json::Value::Null)

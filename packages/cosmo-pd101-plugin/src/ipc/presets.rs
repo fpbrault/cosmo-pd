@@ -135,29 +135,13 @@ pub(super) fn handle(
             Ok(serde_json::json!({ "preset_name": preset_name_val }))
         }
         PluginIpcRequest::AddPreset(payload) => {
-            let name = payload
-                .get("name")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| "addPreset payload missing name".to_string())?
-                .to_string();
-            let tags: Vec<String> = payload
-                .get("tags")
-                .and_then(|v| v.as_array())
-                .map(|a| {
-                    a.iter()
-                        .filter_map(|v| v.as_str().map(String::from))
-                        .collect()
-                })
-                .unwrap_or_default();
-            let description = payload
-                .get("description")
-                .and_then(|v| v.as_str())
-                .unwrap_or_default()
-                .trim()
-                .to_string();
+            let name = payload.name.clone();
+            let tags = payload.tags.clone();
+            let description = payload.description.trim().to_string();
             let macro_labels: [String; 4] = payload
-                .get("macroLabels")
-                .and_then(|v| serde_json::from_value(v.clone()).ok())
+                .macro_labels
+                .as_ref()
+                .and_then(|v| serde_json::from_value(serde_json::to_value(v).ok()?).ok())
                 .unwrap_or_else(|| SynthParams::default().macro_labels);
 
             let params_val = synth_params.load();
@@ -174,40 +158,26 @@ pub(super) fn handle(
             Ok(serde_json::json!({ "id": id }))
         }
         PluginIpcRequest::SavePreset(payload) => {
-            let name = payload
-                .get("name")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| "savePreset payload missing name".to_string())?
-                .to_string();
-            let author = payload
-                .get("author")
-                .and_then(|v| v.as_str())
-                .unwrap_or_default()
-                .to_string();
-            let description = payload
-                .get("description")
-                .and_then(|v| v.as_str())
-                .map(|value| value.trim().to_string());
-            let tags: Vec<String> = payload
-                .get("tags")
-                .and_then(|v| v.as_array())
-                .map(|a| {
-                    a.iter()
-                        .filter_map(|v| v.as_str().map(String::from))
-                        .collect()
-                })
-                .unwrap_or_default();
+            let name = payload.name.clone();
+            let author = payload.author.clone();
+            let description = if payload.description.is_empty() {
+                None
+            } else {
+                Some(payload.description.trim().to_string())
+            };
+            let tags = payload.tags.clone();
             let macro_labels: [String; 4] = payload
-                .get("macroLabels")
-                .and_then(|v| serde_json::from_value(v.clone()).ok())
+                .macro_labels
+                .as_ref()
+                .and_then(|v| serde_json::from_value(serde_json::to_value(v).ok()?).ok())
                 .unwrap_or_else(|| SynthParams::default().macro_labels);
             let payload_id = payload
-                .get("id")
-                .and_then(|v| v.as_str())
+                .id
+                .as_deref()
                 .filter(|value| !value.is_empty())
                 .map(|value| value.to_string());
 
-            let data = if let Some(data_value) = payload.get("data") {
+            let data = if let Some(data_value) = &payload.data {
                 data_value.clone()
             } else {
                 let params_val = synth_params.load();
@@ -325,13 +295,10 @@ pub(super) fn handle(
             }
             Ok(serde_json::Value::Null)
         }
-        PluginIpcRequest::ImportPresetBank(payload) => {
-            let bundle: crate::preset_library::PresetBankBundle =
-                serde_json::from_value(payload.clone())
-                    .map_err(|e| format!("invalid preset bank bundle: {e}"))?;
+        PluginIpcRequest::ImportPresetBank(bundle) => {
             {
                 let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
-                lib.import_bank(bundle).map_err(|e| e.to_string())?;
+                lib.import_bank(bundle.clone()).map_err(|e| e.to_string())?;
             }
             Ok(serde_json::Value::Null)
         }
@@ -371,20 +338,9 @@ pub(super) fn handle(
             .map_err(|e| e.to_string())
         }
         PluginIpcRequest::SaveFxModulePreset(payload) => {
-            let name = payload
-                .get("name")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| "saveFxModulePreset payload missing name".to_string())?
-                .to_string();
-            let module_type = payload
-                .get("moduleType")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| "saveFxModulePreset payload missing moduleType".to_string())?
-                .to_string();
-            let patch = payload
-                .get("patch")
-                .cloned()
-                .ok_or_else(|| "saveFxModulePreset payload missing patch".to_string())?;
+            let name = payload.name.clone();
+            let module_type = payload.module_type.clone();
+            let patch = payload.patch.clone();
 
             let saved = {
                 let mut lib = preset_library.lock().map_err(|e| e.to_string())?;

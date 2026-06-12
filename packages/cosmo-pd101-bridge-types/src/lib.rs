@@ -10,7 +10,10 @@ mod session;
 
 pub use cosmo_synth_engine::params::SynthParams;
 pub use editor::EditorState;
-pub use ipc::{LoadPresetPayload, PluginIpcEnvelope, PluginIpcRequest};
+pub use ipc::{
+    AddPresetPayload, LoadPresetPayload, PluginIpcEnvelope, PluginIpcRequest,
+    SaveFxModulePresetPayload, SavePresetPayload,
+};
 pub use midi::{MidiLearnBinding, MidiLearnState};
 pub use preset::{
     FxModulePresetEntry, PresetBankBundle, PresetBankEntry, PresetBankMetadata, PresetLibraryEntry,

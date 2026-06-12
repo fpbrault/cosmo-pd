@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::editor::EditorState;
 use crate::midi::MidiLearnBinding;
+use crate::preset::PresetBankBundle;
 use crate::session::PresetSession;
+use cosmo_synth_engine::params::SynthParams;
 
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
@@ -43,7 +45,7 @@ pub enum PluginIpcRequest {
     #[serde(rename = "getParams")]
     GetParams,
     #[serde(rename = "setParams")]
-    SetParams(serde_json::Value),
+    SetParams(SynthParams),
     #[serde(rename = "getParamsVersion")]
     GetParamsVersion,
     #[serde(rename = "getRuntimeModSources")]
@@ -79,9 +81,9 @@ pub enum PluginIpcRequest {
     #[serde(rename = "rebuildPresetLibrary")]
     RebuildPresetLibrary,
     #[serde(rename = "addPreset")]
-    AddPreset(serde_json::Value),
+    AddPreset(AddPresetPayload),
     #[serde(rename = "savePreset")]
-    SavePreset(serde_json::Value),
+    SavePreset(SavePresetPayload),
     #[serde(rename = "deletePreset")]
     DeletePreset { id: String },
     #[serde(rename = "renamePreset")]
@@ -95,13 +97,13 @@ pub enum PluginIpcRequest {
     #[serde(rename = "setPresetTags")]
     SetPresetTags { id: String, tags: Vec<String> },
     #[serde(rename = "importPresetBank")]
-    ImportPresetBank(serde_json::Value),
+    ImportPresetBank(PresetBankBundle),
     #[serde(rename = "exportPreset")]
     ExportPreset { id: String },
     #[serde(rename = "listFxModulePresets")]
     ListFxModulePresets { module_type: String },
     #[serde(rename = "saveFxModulePreset")]
-    SaveFxModulePreset(serde_json::Value),
+    SaveFxModulePreset(SaveFxModulePresetPayload),
     #[serde(rename = "deleteFxModulePreset")]
     DeleteFxModulePreset { id: String },
 
@@ -128,6 +130,50 @@ pub enum PluginIpcRequest {
     RemoveMidiBinding(MidiLearnBinding),
     #[serde(rename = "clearMidiLearnBindings")]
     ClearMidiLearnBindings,
+}
+
+/// Payload for `addPreset` IPC method.
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct AddPresetPayload {
+    pub name: String,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    #[serde(default)]
+    pub description: String,
+    #[serde(default)]
+    pub macro_labels: Option<Vec<String>>,
+}
+
+/// Payload for `savePreset` IPC method.
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct SavePresetPayload {
+    #[serde(default)]
+    pub id: Option<String>,
+    pub name: String,
+    #[serde(default)]
+    pub author: String,
+    #[serde(default)]
+    pub description: String,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    #[serde(default)]
+    pub macro_labels: Option<Vec<String>>,
+    #[serde(default)]
+    pub data: Option<serde_json::Value>,
+}
+
+/// Payload for `saveFxModulePreset` IPC method.
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct SaveFxModulePresetPayload {
+    pub name: String,
+    pub module_type: String,
+    pub patch: serde_json::Value,
 }
 
 /// Decode a legacy `{ method, args }` RPC call into a typed `PluginIpcRequest`.
@@ -195,9 +241,18 @@ impl PluginIpcRequest {
             // ── Synth ──
             "getParams" => Self::GetParams,
             "setParams" => Self::SetParams(
-                serde_json::from_str(args.first().and_then(|v| v.as_str()).ok_or_else(|| {
-                    "setParams expects a JSON string as first argument".to_string()
-                })?)
+                serde_json::from_value(
+                    args.first()
+                        .ok_or_else(|| "setParams expects a payload".to_string())?
+                        .clone(),
+                )
+                .or_else(|_| {
+                    // Fallback: TS sends a JSON string inside args[0]
+                    let s = args.first().and_then(|v| v.as_str()).ok_or_else(|| {
+                        "setParams expects a SynthParams object or JSON string".to_string()
+                    })?;
+                    serde_json::from_str(s).map_err(|e| format!("invalid SynthParams: {e}"))
+                })
                 .map_err(|e| format!("invalid SynthParams: {e}"))?,
             ),
             "getParamsVersion" => Self::GetParamsVersion,
@@ -238,9 +293,9 @@ impl PluginIpcRequest {
 
             // ── Preset Library ──
             "loadPresetData" | "loadPreset" => {
-                let first = args.first().ok_or_else(|| {
-                    format!("{method} expects a payload argument")
-                })?;
+                let first = args
+                    .first()
+                    .ok_or_else(|| format!("{method} expects a payload argument"))?;
                 Self::LoadPreset(match serde_json::from_value(first.clone()) {
                     Ok(payload) => payload,
                     Err(_) => {
@@ -263,14 +318,20 @@ impl PluginIpcRequest {
             "repairPresetLibrary" => Self::RepairPresetLibrary,
             "rebuildPresetLibrary" => Self::RebuildPresetLibrary,
             "addPreset" => Self::AddPreset(
-                args.first()
-                    .ok_or_else(|| "addPreset expects a payload".to_string())?
-                    .clone(),
+                serde_json::from_value(
+                    args.first()
+                        .ok_or_else(|| "addPreset expects a payload".to_string())?
+                        .clone(),
+                )
+                .map_err(|e| format!("invalid AddPresetPayload: {e}"))?,
             ),
             "savePreset" => Self::SavePreset(
-                args.first()
-                    .ok_or_else(|| "savePreset expects a payload".to_string())?
-                    .clone(),
+                serde_json::from_value(
+                    args.first()
+                        .ok_or_else(|| "savePreset expects a payload".to_string())?
+                        .clone(),
+                )
+                .map_err(|e| format!("invalid SavePresetPayload: {e}"))?,
             ),
             "deletePreset" => {
                 let obj = first_object(method, args)?;
@@ -314,9 +375,12 @@ impl PluginIpcRequest {
                 }
             }
             "importPresetBank" => Self::ImportPresetBank(
-                args.first()
-                    .ok_or_else(|| "importPresetBank expects a payload".to_string())?
-                    .clone(),
+                serde_json::from_value(
+                    args.first()
+                        .ok_or_else(|| "importPresetBank expects a payload".to_string())?
+                        .clone(),
+                )
+                .map_err(|e| format!("invalid PresetBankBundle: {e}"))?,
             ),
             "exportPreset" => {
                 let obj = first_object(method, args)?;
@@ -331,9 +395,12 @@ impl PluginIpcRequest {
                 }
             }
             "saveFxModulePreset" => Self::SaveFxModulePreset(
-                args.first()
-                    .ok_or_else(|| "saveFxModulePreset expects a payload".to_string())?
-                    .clone(),
+                serde_json::from_value(
+                    args.first()
+                        .ok_or_else(|| "saveFxModulePreset expects a payload".to_string())?
+                        .clone(),
+                )
+                .map_err(|e| format!("invalid SaveFxModulePresetPayload: {e}"))?,
             ),
             "deleteFxModulePreset" => {
                 let obj = first_object(method, args)?;

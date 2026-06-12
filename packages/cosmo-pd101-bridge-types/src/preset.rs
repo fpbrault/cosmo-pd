@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
 #[serde(rename_all = "camelCase")]
 pub struct PresetLibraryEntry {
     pub id: String,
@@ -23,6 +24,7 @@ pub struct PresetLibraryEntry {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
 #[serde(rename_all = "camelCase")]
 pub struct FxModulePresetEntry {
     pub id: String,
@@ -33,6 +35,7 @@ pub struct FxModulePresetEntry {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
 #[serde(rename_all = "camelCase")]
 pub struct PresetBankBundle {
     pub r#type: String,
@@ -51,6 +54,7 @@ pub struct PresetBankMetadata {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
 #[serde(rename_all = "camelCase")]
 pub struct PresetBankEntry {
     pub id: String,

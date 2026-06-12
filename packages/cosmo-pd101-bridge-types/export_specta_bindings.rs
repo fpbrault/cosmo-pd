@@ -7,8 +7,8 @@
 //! - SPECTA_TS_EXPORT_PATH: absolute/relative path to generated TypeScript file
 
 use cosmo_pd101_bridge_types::{
-    EditorState, LoadPresetPayload, MidiLearnBinding, MidiLearnState, PresetSession,
-    ScopeDataResponse, TransportInfoResponse,
+    AddPresetPayload, EditorState, LoadPresetPayload, MidiLearnBinding, MidiLearnState,
+    PresetBankMetadata, PresetSession, ScopeDataResponse, TransportInfoResponse,
 };
 use cosmo_synth_engine::params::SynthParams;
 use specta::Types;
@@ -36,8 +36,11 @@ fn main() {
     // Runtime
     types.register_mut::<ScopeDataResponse>();
     types.register_mut::<TransportInfoResponse>();
-    // IPC payload struct
+    // IPC payload structs (only those without serde_json::Value fields)
     types.register_mut::<LoadPresetPayload>();
+    types.register_mut::<AddPresetPayload>();
+    // Preset bank metadata (nested in PresetBankBundle — clean type)
+    types.register_mut::<PresetBankMetadata>();
     // Engine re-exports
     types.register_mut::<SynthParams>();
 
@@ -98,15 +101,18 @@ fn main() {
     );
     out.push_str("  macroValue: { request: { index: number; value: number }; response: null };\n");
     out.push_str("  panic: { request: null; response: null };\n");
-    // Preset library
-    out.push_str("  getPresetLibrary: { request: { source?: string } | null; response: { entries: unknown[]; status: { state: string; message?: string } } };\n");
+    // Preset library — types containing serde_json::Value are hand-authored
+    // because Specta forbids BigInt (i64/u64) inside serde_json::Value.
+    out.push_str("  getPresetLibrary: { request: { source?: string } | null; response: { entries: PresetLibraryEntry[]; status: { state: string; message?: string } } };\n");
     out.push_str(
         "  retryPresetLibrary: { request: null; response: { status: { state: string } } };\n",
     );
     out.push_str("  repairPresetLibrary: { request: null; response: { status: { state: string }; backupPath?: string } };\n");
     out.push_str("  rebuildPresetLibrary: { request: null; response: { status: { state: string }; backupPath?: string } };\n");
-    out.push_str("  addPreset: { request: { name: string; tags?: string[]; description?: string; macroLabels?: string[] }; response: { id: string } };\n");
-    out.push_str("  savePreset: { request: { id?: string; name: string; author?: string; description?: string; tags?: string[]; macroLabels?: string[]; data?: unknown }; response: { id: string; name: string } };\n");
+    out.push_str("  addPreset: { request: AddPresetPayload; response: { id: string } };\n");
+    out.push_str(
+        "  savePreset: { request: SavePresetPayload; response: { id: string; name: string } };\n",
+    );
     out.push_str("  deletePreset: { request: { id: string }; response: null };\n");
     out.push_str("  renamePreset: { request: { id: string; newName: string }; response: null };\n");
     out.push_str(
@@ -117,13 +123,80 @@ fn main() {
     );
     out.push_str("  setPresetDescription: { request: { id: string; description: string }; response: null };\n");
     out.push_str("  setPresetTags: { request: { id: string; tags: string[] }; response: null };\n");
-    out.push_str("  importPresetBank: { request: unknown; response: null };\n");
+    out.push_str("  importPresetBank: { request: PresetBankBundle; response: null };\n");
     out.push_str("  exportPreset: { request: { id: string }; response: { filename: string; json: string } };\n");
     out.push_str(
-        "  listFxModulePresets: { request: { moduleType: string }; response: unknown[] };\n",
-    );
-    out.push_str("  saveFxModulePreset: { request: { name: string; moduleType: string; patch: Record<string, unknown> }; response: unknown };\n");
+      "  listFxModulePresets: { request: { moduleType: string }; response: FxModulePresetEntry[] };\n",
+  );
+    out.push_str("  saveFxModulePreset: { request: SaveFxModulePresetPayload; response: FxModulePresetEntry };\n");
     out.push_str("  deleteFxModulePreset: { request: { id: string }; response: null };\n");
+    out.push_str("};\n");
+
+    // Hand-authored TS types that Specta cannot export (contain serde_json::Value).
+    // These mirror the Rust structs in cosmo_pd101_bridge_types::preset and ::ipc.
+    out.push_str("\n\n/** Preset library entry — mirrors Rust PresetLibraryEntry. */\n");
+    out.push_str("export type PresetLibraryEntry = {\n");
+    out.push_str("  id: string;\n");
+    out.push_str("  name: string;\n");
+    out.push_str("  source: string;\n");
+    out.push_str("  author: string;\n");
+    out.push_str("  description: string;\n");
+    out.push_str("  starred: boolean;\n");
+    out.push_str("  sortIndex: number;\n");
+    out.push_str("  bankId: string | null;\n");
+    out.push_str("  bankName: string | null;\n");
+    out.push_str("  tags: string[];\n");
+    out.push_str("  macroLabels: [string, string, string, string];\n");
+    out.push_str("  factoryVersion: number;\n");
+    out.push_str("  data: unknown;\n");
+    out.push_str("};\n\n");
+
+    out.push_str("/** FX module preset entry — mirrors Rust FxModulePresetEntry. */\n");
+    out.push_str("export type FxModulePresetEntry = {\n");
+    out.push_str("  id: string;\n");
+    out.push_str("  name: string;\n");
+    out.push_str("  moduleType: string;\n");
+    out.push_str("  patch: Record<string, unknown>;\n");
+    out.push_str("  updatedAtUnixMs: number;\n");
+    out.push_str("};\n\n");
+
+    out.push_str("/** Preset bank bundle — mirrors Rust PresetBankBundle. */\n");
+    out.push_str("export type PresetBankBundle = {\n");
+    out.push_str("  type: string;\n");
+    out.push_str("  schemaVersion: number;\n");
+    out.push_str("  bank: PresetBankMetadata;\n");
+    out.push_str("  presets: PresetBankEntry[];\n");
+    out.push_str("};\n\n");
+
+    out.push_str("/** Preset bank entry — mirrors Rust PresetBankEntry. */\n");
+    out.push_str("export type PresetBankEntry = {\n");
+    out.push_str("  id: string;\n");
+    out.push_str("  name: string;\n");
+    out.push_str("  author: string;\n");
+    out.push_str("  description: string;\n");
+    out.push_str("  starred: boolean;\n");
+    out.push_str("  tags: string[];\n");
+    out.push_str("  data: unknown;\n");
+    out.push_str("};\n\n");
+
+    out.push_str("/** Save preset payload — mirrors Rust SavePresetPayload. */\n");
+    out.push_str("export type SavePresetPayload = {\n");
+    out.push_str("  id?: string;\n");
+    out.push_str("  name: string;\n");
+    out.push_str("  author: string;\n");
+    out.push_str("  description: string;\n");
+    out.push_str("  tags: string[];\n");
+    out.push_str("  macroLabels?: string[];\n");
+    out.push_str("  data?: unknown;\n");
+    out.push_str("};\n\n");
+
+    out.push_str(
+        "/** Save FX module preset payload — mirrors Rust SaveFxModulePresetPayload. */\n",
+    );
+    out.push_str("export type SaveFxModulePresetPayload = {\n");
+    out.push_str("  name: string;\n");
+    out.push_str("  moduleType: string;\n");
+    out.push_str("  patch: Record<string, unknown>;\n");
     out.push_str("};\n");
 
     std::fs::write(&ts_path, out)
