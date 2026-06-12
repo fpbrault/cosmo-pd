@@ -274,15 +274,6 @@ export type PhaserParams = {
 	feedback: number | null,
 };
 
-/**
- *  Tagged IPC request envelope deserialized from `{ method, payload }`.
- * 
- *  Wire format (adjacently tagged by serde):
- *  - Unit variant: `{ "method": "getParams" }`
- *  - Payload variant: `{ "method": "setPresetSession", "payload": { ... } }`
- */
-export type PluginIpcRequest = { method: "getParams" } | { method: "getPresetSession" } | { method: "setPresetSession"; payload: PresetSession } | { method: "loadPreset"; payload: LoadPresetPayload } | { method: "getEditorState" } | { method: "setEditorState"; payload: EditorState } | { method: "getMidiLearnState" } | { method: "getScopeData" } | { method: "getTransportInfo" };
-
 /**  Polyphony mode */
 export type PolyMode = "poly8" | "mono";
 
@@ -434,13 +425,51 @@ export type WindowType = "off" | "saw" | "triangle" | "trapezoid" | "pulse" | "d
 
 /** IPC method contract — maps method names to typed request/response pairs. */
 export type PluginIpcMethods = {
-  getParams: { request: null; response: SynthParams };
   getPresetSession: { request: null; response: PresetSession };
   setPresetSession: { request: PresetSession; response: null };
-  loadPreset: { request: LoadPresetPayload; response: PresetSession };
+  getPresetName: { request: null; response: string };
+  setPresetName: { request: string; response: null };
+  loadPreset: { request: LoadPresetPayload; response: { preset_name: string } };
   getEditorState: { request: null; response: EditorState | null };
   setEditorState: { request: EditorState; response: null };
   getMidiLearnState: { request: null; response: MidiLearnState };
-  getScopeData: { request: null; response: ScopeDataResponse };
+  setMidiLearnMode: { request: boolean; response: null };
+  setPendingMidiLearnParam: { request: string | null; response: null };
+  addMidiBinding: { request: { paramKey: string; channel: number; cc: number }; response: null };
+  removeMidiBinding: { request: MidiLearnBinding; response: null };
+  clearMidiLearnBindings: { request: null; response: null };
+  getParams: { request: null; response: SynthParams };
+  setParams: { request: SynthParams; response: null };
+  getParamsVersion: { request: null; response: number };
+  getRuntimeModSources: { request: null; response: Record<string, number> };
+  getRuntimeVoiceStates: { request: null; response: unknown };
   getTransportInfo: { request: null; response: TransportInfoResponse };
+  getScopeData: { request: null; response: ScopeDataResponse };
+  clientLog: { request: { level: string; message: string }; response: null };
+  noteOn: { request: { note: number; velocity?: number }; response: null };
+  noteOff: { request: { note: number }; response: null };
+  sustain: { request: { on: boolean }; response: null };
+  pitchBend: { request: { value: number }; response: null };
+  modWheel: { request: { value: number }; response: null };
+  aftertouch: { request: { value: number }; response: null };
+  polyAftertouch: { request: { note: number; value: number }; response: null };
+  macroValue: { request: { index: number; value: number }; response: null };
+  panic: { request: null; response: null };
+  getPresetLibrary: { request: { source?: string } | null; response: { entries: unknown[]; status: { state: string; message?: string } } };
+  retryPresetLibrary: { request: null; response: { status: { state: string } } };
+  repairPresetLibrary: { request: null; response: { status: { state: string }; backupPath?: string } };
+  rebuildPresetLibrary: { request: null; response: { status: { state: string }; backupPath?: string } };
+  addPreset: { request: { name: string; tags?: string[]; description?: string; macroLabels?: string[] }; response: { id: string } };
+  savePreset: { request: { id?: string; name: string; author?: string; description?: string; tags?: string[]; macroLabels?: string[]; data?: unknown }; response: { id: string; name: string } };
+  deletePreset: { request: { id: string }; response: null };
+  renamePreset: { request: { id: string; newName: string }; response: null };
+  toggleStarred: { request: { id: string; starred: boolean }; response: null };
+  setPresetAuthor: { request: { id: string; author: string }; response: null };
+  setPresetDescription: { request: { id: string; description: string }; response: null };
+  setPresetTags: { request: { id: string; tags: string[] }; response: null };
+  importPresetBank: { request: unknown; response: null };
+  exportPreset: { request: { id: string }; response: { filename: string; json: string } };
+  listFxModulePresets: { request: { moduleType: string }; response: unknown[] };
+  saveFxModulePreset: { request: { name: string; moduleType: string; patch: Record<string, unknown> }; response: unknown };
+  deleteFxModulePreset: { request: { id: string }; response: null };
 };

@@ -7,8 +7,8 @@
 //! - SPECTA_TS_EXPORT_PATH: absolute/relative path to generated TypeScript file
 
 use cosmo_pd101_bridge_types::{
-    EditorState, LoadPresetPayload, MidiLearnBinding, MidiLearnState, PluginIpcRequest,
-    PresetSession, ScopeDataResponse, TransportInfoResponse,
+    EditorState, LoadPresetPayload, MidiLearnBinding, MidiLearnState, PresetSession,
+    ScopeDataResponse, TransportInfoResponse,
 };
 use cosmo_synth_engine::params::SynthParams;
 use specta::Types;
@@ -36,9 +36,8 @@ fn main() {
     // Runtime
     types.register_mut::<ScopeDataResponse>();
     types.register_mut::<TransportInfoResponse>();
-    // IPC contract
+    // IPC payload struct
     types.register_mut::<LoadPresetPayload>();
-    types.register_mut::<PluginIpcRequest>();
     // Engine re-exports
     types.register_mut::<SynthParams>();
 
@@ -51,22 +50,77 @@ fn main() {
             .expect("Failed to export types"),
     );
 
-    // Generated IPC method map — maps each method name to its request/response types.
-    // Response types are hand-curated here to match the Rust dispatch return types.
-    // Keep this in sync with PluginIpcRequest variants.
+    // Generated IPC method map — maps each method name to typed request/response.
+    // Response types are hand-curated to match Rust dispatch return types.
     out.push_str(
         "\n\n/** IPC method contract — maps method names to typed request/response pairs. */\n",
     );
     out.push_str("export type PluginIpcMethods = {\n");
-    out.push_str("  getParams: { request: null; response: SynthParams };\n");
+    // Session
     out.push_str("  getPresetSession: { request: null; response: PresetSession };\n");
     out.push_str("  setPresetSession: { request: PresetSession; response: null };\n");
-    out.push_str("  loadPreset: { request: LoadPresetPayload; response: PresetSession };\n");
+    out.push_str("  getPresetName: { request: null; response: string };\n");
+    out.push_str("  setPresetName: { request: string; response: null };\n");
+    out.push_str(
+        "  loadPreset: { request: LoadPresetPayload; response: { preset_name: string } };\n",
+    );
+    // Editor
     out.push_str("  getEditorState: { request: null; response: EditorState | null };\n");
     out.push_str("  setEditorState: { request: EditorState; response: null };\n");
+    // MIDI learn
     out.push_str("  getMidiLearnState: { request: null; response: MidiLearnState };\n");
-    out.push_str("  getScopeData: { request: null; response: ScopeDataResponse };\n");
+    out.push_str("  setMidiLearnMode: { request: boolean; response: null };\n");
+    out.push_str("  setPendingMidiLearnParam: { request: string | null; response: null };\n");
+    out.push_str("  addMidiBinding: { request: { paramKey: string; channel: number; cc: number }; response: null };\n");
+    out.push_str("  removeMidiBinding: { request: MidiLearnBinding; response: null };\n");
+    out.push_str("  clearMidiLearnBindings: { request: null; response: null };\n");
+    // Synth
+    out.push_str("  getParams: { request: null; response: SynthParams };\n");
+    out.push_str("  setParams: { request: SynthParams; response: null };\n");
+    out.push_str("  getParamsVersion: { request: null; response: number };\n");
+    out.push_str("  getRuntimeModSources: { request: null; response: Record<string, number> };\n");
+    out.push_str("  getRuntimeVoiceStates: { request: null; response: unknown };\n");
     out.push_str("  getTransportInfo: { request: null; response: TransportInfoResponse };\n");
+    out.push_str("  getScopeData: { request: null; response: ScopeDataResponse };\n");
+    out.push_str("  clientLog: { request: { level: string; message: string }; response: null };\n");
+    // Performance
+    out.push_str("  noteOn: { request: { note: number; velocity?: number }; response: null };\n");
+    out.push_str("  noteOff: { request: { note: number }; response: null };\n");
+    out.push_str("  sustain: { request: { on: boolean }; response: null };\n");
+    out.push_str("  pitchBend: { request: { value: number }; response: null };\n");
+    out.push_str("  modWheel: { request: { value: number }; response: null };\n");
+    out.push_str("  aftertouch: { request: { value: number }; response: null };\n");
+    out.push_str(
+        "  polyAftertouch: { request: { note: number; value: number }; response: null };\n",
+    );
+    out.push_str("  macroValue: { request: { index: number; value: number }; response: null };\n");
+    out.push_str("  panic: { request: null; response: null };\n");
+    // Preset library
+    out.push_str("  getPresetLibrary: { request: { source?: string } | null; response: { entries: unknown[]; status: { state: string; message?: string } } };\n");
+    out.push_str(
+        "  retryPresetLibrary: { request: null; response: { status: { state: string } } };\n",
+    );
+    out.push_str("  repairPresetLibrary: { request: null; response: { status: { state: string }; backupPath?: string } };\n");
+    out.push_str("  rebuildPresetLibrary: { request: null; response: { status: { state: string }; backupPath?: string } };\n");
+    out.push_str("  addPreset: { request: { name: string; tags?: string[]; description?: string; macroLabels?: string[] }; response: { id: string } };\n");
+    out.push_str("  savePreset: { request: { id?: string; name: string; author?: string; description?: string; tags?: string[]; macroLabels?: string[]; data?: unknown }; response: { id: string; name: string } };\n");
+    out.push_str("  deletePreset: { request: { id: string }; response: null };\n");
+    out.push_str("  renamePreset: { request: { id: string; newName: string }; response: null };\n");
+    out.push_str(
+        "  toggleStarred: { request: { id: string; starred: boolean }; response: null };\n",
+    );
+    out.push_str(
+        "  setPresetAuthor: { request: { id: string; author: string }; response: null };\n",
+    );
+    out.push_str("  setPresetDescription: { request: { id: string; description: string }; response: null };\n");
+    out.push_str("  setPresetTags: { request: { id: string; tags: string[] }; response: null };\n");
+    out.push_str("  importPresetBank: { request: unknown; response: null };\n");
+    out.push_str("  exportPreset: { request: { id: string }; response: { filename: string; json: string } };\n");
+    out.push_str(
+        "  listFxModulePresets: { request: { moduleType: string }; response: unknown[] };\n",
+    );
+    out.push_str("  saveFxModulePreset: { request: { name: string; moduleType: string; patch: Record<string, unknown> }; response: unknown };\n");
+    out.push_str("  deleteFxModulePreset: { request: { id: string }; response: null };\n");
     out.push_str("};\n");
 
     std::fs::write(&ts_path, out)

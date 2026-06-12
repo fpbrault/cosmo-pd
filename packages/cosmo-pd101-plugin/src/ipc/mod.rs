@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 
+use cosmo_pd101_bridge_types::PluginIpcRequest;
 use cosmo_synth_engine::params::SynthParams;
 use cosmo_synth_engine::processor::CosmoInputEvent;
 use uuid::Uuid;
@@ -41,63 +42,91 @@ impl IpcContext {
         }
     }
 
+    /// Dispatch a legacy `(method, args)` pair to the typed handler.
+    ///
+    /// Keeps backward compat with the current `{ id, method, args }` wire
+    /// format.  Phase 6 can switch to deserializing `PluginIpcEnvelope`
+    /// directly.
     pub fn invoke(
         &self,
         method: &str,
         args: &[serde_json::Value],
     ) -> Result<serde_json::Value, String> {
+        let request = PluginIpcRequest::from_legacy(method, args)?;
+
         if !matches!(
-            method,
-            "getScopeData"
-                | "clientLog"
-                | "getRuntimeModSources"
-                | "getTransportInfo"
-                | "getRuntimeVoiceStates"
+            request,
+            PluginIpcRequest::GetScopeData
+                | PluginIpcRequest::ClientLog { .. }
+                | PluginIpcRequest::GetRuntimeModSources
+                | PluginIpcRequest::GetTransportInfo
+                | PluginIpcRequest::GetRuntimeVoiceStates
         ) {
             append_log_debug(&format!("ipc invoke method={method} args={}", args.len()));
         }
 
-        match method {
-            "noteOn" | "noteOff" | "sustain" | "pitchBend" | "modWheel" | "aftertouch"
-            | "polyAftertouch" | "macroValue" | "panic" => performance::handle(self, method, args),
-            "setParams"
-            | "getParams"
-            | "getParamsVersion"
-            | "getRuntimeModSources"
-            | "getRuntimeVoiceStates"
-            | "getTransportInfo"
-            | "getScopeData"
-            | "clientLog" => synth::handle(self, method, args),
-            "setPresetName"
-            | "getPresetName"
-            | "getPresetSession"
-            | "setPresetSession"
-            | "getPresetLibrary"
-            | "retryPresetLibrary"
-            | "repairPresetLibrary"
-            | "rebuildPresetLibrary"
-            | "loadPresetData"
-            | "addPreset"
-            | "savePreset"
-            | "deletePreset"
-            | "renamePreset"
-            | "toggleStarred"
-            | "setPresetAuthor"
-            | "setPresetDescription"
-            | "setPresetTags"
-            | "importPresetBank"
-            | "listFxModulePresets"
-            | "saveFxModulePreset"
-            | "deleteFxModulePreset"
-            | "exportPreset" => presets::handle(self, method, args),
-            "setEditorState" | "getEditorState" => editor::handle(self, method, args),
-            "setMidiLearnMode"
-            | "setPendingMidiLearnParam"
-            | "addMidiBinding"
-            | "removeMidiBinding"
-            | "clearMidiLearnBindings"
-            | "getMidiLearnState" => midi::handle(self, method, args),
-            _ => Err(format!("unknown method: {method}")),
+        self.invoke_typed(&request)
+    }
+
+    fn invoke_typed(&self, req: &PluginIpcRequest) -> Result<serde_json::Value, String> {
+        match req {
+            // Performance
+            PluginIpcRequest::NoteOn { .. }
+            | PluginIpcRequest::NoteOff { .. }
+            | PluginIpcRequest::Sustain { .. }
+            | PluginIpcRequest::PitchBend { .. }
+            | PluginIpcRequest::ModWheel { .. }
+            | PluginIpcRequest::Aftertouch { .. }
+            | PluginIpcRequest::PolyAftertouch { .. }
+            | PluginIpcRequest::MacroValue { .. }
+            | PluginIpcRequest::Panic => performance::handle(self, req),
+
+            // Synth
+            PluginIpcRequest::GetParams
+            | PluginIpcRequest::SetParams(..)
+            | PluginIpcRequest::GetParamsVersion
+            | PluginIpcRequest::GetRuntimeModSources
+            | PluginIpcRequest::GetRuntimeVoiceStates
+            | PluginIpcRequest::GetTransportInfo
+            | PluginIpcRequest::GetScopeData
+            | PluginIpcRequest::ClientLog { .. } => synth::handle(self, req),
+
+            // Presets
+            PluginIpcRequest::GetPresetSession
+            | PluginIpcRequest::SetPresetSession(..)
+            | PluginIpcRequest::GetPresetName
+            | PluginIpcRequest::SetPresetName(..)
+            | PluginIpcRequest::LoadPreset(..)
+            | PluginIpcRequest::GetPresetLibrary { .. }
+            | PluginIpcRequest::RetryPresetLibrary
+            | PluginIpcRequest::RepairPresetLibrary
+            | PluginIpcRequest::RebuildPresetLibrary
+            | PluginIpcRequest::AddPreset(..)
+            | PluginIpcRequest::SavePreset(..)
+            | PluginIpcRequest::DeletePreset { .. }
+            | PluginIpcRequest::RenamePreset { .. }
+            | PluginIpcRequest::ToggleStarred { .. }
+            | PluginIpcRequest::SetPresetAuthor { .. }
+            | PluginIpcRequest::SetPresetDescription { .. }
+            | PluginIpcRequest::SetPresetTags { .. }
+            | PluginIpcRequest::ImportPresetBank(..)
+            | PluginIpcRequest::ExportPreset { .. }
+            | PluginIpcRequest::ListFxModulePresets { .. }
+            | PluginIpcRequest::SaveFxModulePreset(..)
+            | PluginIpcRequest::DeleteFxModulePreset { .. } => presets::handle(self, req),
+
+            // Editor
+            PluginIpcRequest::GetEditorState | PluginIpcRequest::SetEditorState(..) => {
+                editor::handle(self, req)
+            }
+
+            // MIDI learn
+            PluginIpcRequest::SetMidiLearnMode(..)
+            | PluginIpcRequest::SetPendingMidiLearnParam(..)
+            | PluginIpcRequest::AddMidiBinding { .. }
+            | PluginIpcRequest::RemoveMidiBinding(..)
+            | PluginIpcRequest::ClearMidiLearnBindings
+            | PluginIpcRequest::GetMidiLearnState => midi::handle(self, req),
         }
     }
 }

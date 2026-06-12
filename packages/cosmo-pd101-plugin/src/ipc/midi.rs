@@ -2,20 +2,15 @@ use super::*;
 
 pub(super) fn handle(
     context: &IpcContext,
-    method: &str,
-    args: &[serde_json::Value],
+    req: &PluginIpcRequest,
 ) -> Result<serde_json::Value, String> {
     let midi_learn_state = &context.shared_state.midi_learn.state;
-    match method {
-        "setMidiLearnMode" => {
-            let mode = args
-                .first()
-                .and_then(|v| v.as_bool())
-                .ok_or_else(|| "setMidiLearnMode expects a boolean".to_string())?;
+    match req {
+        PluginIpcRequest::SetMidiLearnMode(mode) => {
             // TODO: remove this diagnostic once cross-format MIDI learn mode behavior is verified.
             append_log_debug(&format!("ipc_set_midi_learn_mode mode={}", mode));
             if let Ok(mut state) = midi_learn_state.lock() {
-                state.learn_mode = mode;
+                state.learn_mode = *mode;
                 state.version += 1;
                 append_log_debug(&format!(
                     "ipc_set_midi_learn_mode_applied mode={} version={} pending={:?}",
@@ -24,31 +19,18 @@ pub(super) fn handle(
             }
             Ok(serde_json::Value::Null)
         }
-        "setPendingMidiLearnParam" => {
-            let param_key = args.first().cloned().unwrap_or(serde_json::Value::Null);
+        PluginIpcRequest::SetPendingMidiLearnParam(param_key) => {
             if let Ok(mut state) = midi_learn_state.lock() {
-                state.pending_param_key = param_key
-                    .as_str()
-                    .filter(|value| !value.is_empty())
-                    .map(|value| value.to_string());
+                state.pending_param_key = param_key.clone();
                 state.version += 1;
             }
             Ok(serde_json::Value::Null)
         }
-        "addMidiBinding" => {
-            let param_key = args
-                .first()
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| "addMidiBinding expects param_key".to_string())?;
-            let channel = args
-                .get(1)
-                .and_then(|v| v.as_i64())
-                .ok_or_else(|| "addMidiBinding expects channel".to_string())?
-                as i32;
-            let cc =
-                args.get(2)
-                    .and_then(|v| v.as_i64())
-                    .ok_or_else(|| "addMidiBinding expects cc".to_string())? as i32;
+        PluginIpcRequest::AddMidiBinding {
+            param_key,
+            channel,
+            cc,
+        } => {
             // TODO: remove this diagnostic once cross-format MIDI binding RPC flow is verified.
             append_log_debug(&format!(
                 "ipc_add_midi_binding param_key={} channel={} cc={}",
@@ -57,11 +39,11 @@ pub(super) fn handle(
             if let Ok(mut state) = midi_learn_state.lock() {
                 state
                     .bindings
-                    .retain(|binding| binding.param_key != param_key);
+                    .retain(|binding| binding.param_key != *param_key);
                 state.bindings.push(crate::session_state::MidiLearnBinding {
-                    param_key: param_key.to_string(),
-                    channel,
-                    cc,
+                    param_key: param_key.clone(),
+                    channel: *channel,
+                    cc: *cc,
                 });
                 state.version += 1;
                 append_log_debug(&format!(
@@ -76,22 +58,15 @@ pub(super) fn handle(
             persist_midi_learn_bindings(midi_learn_state);
             Ok(serde_json::Value::Null)
         }
-        "removeMidiBinding" => {
-            let binding = args
-                .first()
-                .cloned()
-                .ok_or_else(|| "removeMidiBinding expects a binding object".to_string())?;
-            let binding: crate::session_state::MidiLearnBinding =
-                serde_json::from_value(binding)
-                    .map_err(|e| format!("invalid MidiLearnBinding: {e}"))?;
+        PluginIpcRequest::RemoveMidiBinding(binding) => {
             if let Ok(mut state) = midi_learn_state.lock() {
-                state.bindings.retain(|existing| existing != &binding);
+                state.bindings.retain(|existing| existing != binding);
                 state.version += 1;
             }
             persist_midi_learn_bindings(midi_learn_state);
             Ok(serde_json::Value::Null)
         }
-        "clearMidiLearnBindings" => {
+        PluginIpcRequest::ClearMidiLearnBindings => {
             if let Ok(mut state) = midi_learn_state.lock() {
                 state.bindings.clear();
                 state.version += 1;
@@ -99,7 +74,7 @@ pub(super) fn handle(
             persist_midi_learn_bindings(midi_learn_state);
             Ok(serde_json::Value::Null)
         }
-        "getMidiLearnState" => {
+        PluginIpcRequest::GetMidiLearnState => {
             let state = midi_learn_state
                 .lock()
                 .map(|s| s.clone())

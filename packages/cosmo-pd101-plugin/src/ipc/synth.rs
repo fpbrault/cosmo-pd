@@ -4,8 +4,7 @@ use super::*;
 
 pub(super) fn handle(
     context: &IpcContext,
-    method: &str,
-    args: &[serde_json::Value],
+    req: &PluginIpcRequest,
 ) -> Result<serde_json::Value, String> {
     let synth_params = &context.shared_state.synth.synth_params;
     let rt_synth_params = &context.shared_state.synth.rt_synth_params;
@@ -15,18 +14,11 @@ pub(super) fn handle(
     let synth_params_version = &context.shared_state.synth.synth_params_version;
     let scope_buffer = &context.shared_state.telemetry.scope_buffer;
     let params = context.params.as_ref();
-    match method {
-        "setParams" => {
-            let json_str = args
-                .first()
-                .and_then(serde_json::Value::as_str)
-                .ok_or_else(|| "setParams expects a JSON string as first argument".to_string())?;
-            let new_params: SynthParams = serde_json::from_str(json_str)
+    match req {
+        PluginIpcRequest::SetParams(params_value) => {
+            let new_params: SynthParams = serde_json::from_value(params_value.clone())
                 .map_err(|e| format!("invalid SynthParams payload: {e}"))?;
 
-            // Keep truce FloatParams aligned with the nested SynthParams payload so
-            // the next process() block does not overwrite preset state with stale
-            // default automation values.
             sync_all_daw_params_from_synth(params, &new_params);
 
             let rt_params = build_rt_synth_params(&new_params);
@@ -35,26 +27,26 @@ pub(super) fn handle(
             synth_params_version.fetch_add(1, Ordering::Release);
             Ok(serde_json::Value::Null)
         }
-        "getParams" => {
+        PluginIpcRequest::GetParams => {
             let sp = synth_params.load();
             serde_json::to_value(sp.as_ref()).map_err(|e| e.to_string())
         }
-        "getParamsVersion" => Ok(serde_json::Value::from(
+        PluginIpcRequest::GetParamsVersion => Ok(serde_json::Value::from(
             synth_params_version.load(Ordering::Acquire),
         )),
-        "getRuntimeModSources" => {
+        PluginIpcRequest::GetRuntimeModSources => {
             let sources = runtime_mod_sources.load();
             serde_json::to_value(sources.as_ref()).map_err(|e| e.to_string())
         }
-        "getRuntimeVoiceStates" => {
+        PluginIpcRequest::GetRuntimeVoiceStates => {
             let states = runtime_voice_states.load();
             serde_json::to_value(states.as_ref()).map_err(|e| e.to_string())
         }
-        "getTransportInfo" => {
+        PluginIpcRequest::GetTransportInfo => {
             let response = transport_snapshot.to_response();
             serde_json::to_value(response).map_err(|e| e.to_string())
         }
-        "getScopeData" => {
+        PluginIpcRequest::GetScopeData => {
             let scope = scope_buffer
                 .lock()
                 .map_err(|_| "scope buffer is poisoned".to_string())?;
@@ -73,16 +65,8 @@ pub(super) fn handle(
             };
             serde_json::to_value(response).map_err(|e| e.to_string())
         }
-        "clientLog" => {
-            let level = args
-                .first()
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or("info");
-            let message = args
-                .get(1)
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or("");
-            match level {
+        PluginIpcRequest::ClientLog { level, message } => {
+            match level.as_str() {
                 "debug" => append_log_debug(&format!("[webview:{level}] {message}")),
                 "warn" => append_log_warn(&format!("[webview:{level}] {message}")),
                 "error" => append_log_error(&format!("[webview:{level}] {message}")),

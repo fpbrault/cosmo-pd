@@ -35,6 +35,10 @@ const SWIFT_VIEW_CONTROLLER = resolve(
 	"../cosmo-pd101-plugin-auv3/CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/UI/AudioUnitViewController.swift",
 );
 const RUST_IPC_DIR = resolve(pluginDir, "src/ipc");
+const BRIDGE_TYPES_IPC = resolve(
+	repoRoot,
+	"packages/cosmo-pd101-bridge-types/src/ipc.rs",
+);
 
 // ─── Known-intentional AUv3 stubs ─────────────────────────────────────────────
 //
@@ -147,9 +151,14 @@ function extractSwiftMethods(source: string): {
 
 function extractRustHandledMethods(source: string): Set<string> {
 	const out = new Set<string>();
-	const re = /^\s*"([A-Za-z][A-Za-z0-9_]*)"\s*=>/gm;
-	for (const match of source.matchAll(re)) {
-		out.add(match[1]);
+	// Match: "methodName" => or "method1" | "method2" => patterns
+	const re = /"([A-Za-z][A-Za-z0-9_]*)"/g;
+	const lineRe =
+		/^\s*"(?:[A-Za-z][A-Za-z0-9_]*"(?:\s*\|\s*"[A-Za-z][A-Za-z0-9_]*")*)\s*=>/gm;
+	for (const match of source.matchAll(lineRe)) {
+		for (const nameMatch of match[0].matchAll(re)) {
+			out.add(nameMatch[1]);
+		}
 	}
 	return out;
 }
@@ -179,10 +188,11 @@ describe("IPC contract coverage", () => {
 	const auv3BridgeSource = readFileSync(AUV3_BRIDGE_TS, "utf8");
 	const ipcBridgeSource = readFileSync(IPC_BRIDGE_TS, "utf8");
 	const swiftSource = readFileSync(SWIFT_VIEW_CONTROLLER, "utf8");
-	const rustSource = readdirSync(RUST_IPC_DIR)
+	const handlerFiles = readdirSync(RUST_IPC_DIR)
 		.filter((name) => name.endsWith(".rs"))
-		.map((name) => readFileSync(resolve(RUST_IPC_DIR, name), "utf8"))
-		.join("\n");
+		.map((name) => readFileSync(resolve(RUST_IPC_DIR, name), "utf8"));
+	const bridgeTypesSource = readFileSync(BRIDGE_TYPES_IPC, "utf8");
+	const rustSource = [...handlerFiles, bridgeTypesSource].join("\n");
 
 	const auv3Called = extractInvokeAuv3Methods(auv3BridgeSource);
 	const rustCalled = extractInvokeRustMethods(ipcBridgeSource);
