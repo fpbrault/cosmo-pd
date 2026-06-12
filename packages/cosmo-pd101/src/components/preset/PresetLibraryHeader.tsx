@@ -119,7 +119,7 @@ export default memo(function PresetLibraryHeader({
 							onClearAuthorFilter();
 						}}
 					>
-						<div className="flex h-22 min-w-64 flex-wrap gap-2 overflow-scroll">
+						<div className="flex h-22 min-w-64 flex-wrap gap-2 overflow-auto">
 							{authorOptions.map((option) => {
 								const active = option.value === selectedAuthorFilter;
 								return (
@@ -159,7 +159,7 @@ export default memo(function PresetLibraryHeader({
 							onClearBankFilter();
 						}}
 					>
-						<div className="flex h-22 min-w-64 flex-wrap gap-2 overflow-scroll">
+						<div className="flex h-22 min-w-64 flex-wrap gap-2 overflow-auto">
 							{bankOptions.map((option) => {
 								const active = option.value === selectedBankFilter;
 								return (
