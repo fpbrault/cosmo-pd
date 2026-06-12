@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use crate::editor::EditorState;
 use crate::session::PresetSession;
 
 #[cfg(feature = "specta-bindings")]
@@ -14,12 +15,28 @@ use specta::Type;
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
 #[serde(tag = "method", content = "payload")]
 pub enum PluginIpcRequest {
+    // ── Session ──
     #[serde(rename = "getParams")]
     GetParams,
+    #[serde(rename = "getPresetSession")]
+    GetPresetSession,
     #[serde(rename = "setPresetSession")]
     SetPresetSession(PresetSession),
     #[serde(rename = "loadPreset")]
     LoadPreset(LoadPresetPayload),
+    // ── Editor ──
+    #[serde(rename = "getEditorState")]
+    GetEditorState,
+    #[serde(rename = "setEditorState")]
+    SetEditorState(EditorState),
+    // ── MIDI learn ──
+    #[serde(rename = "getMidiLearnState")]
+    GetMidiLearnState,
+    // ── Runtime ──
+    #[serde(rename = "getScopeData")]
+    GetScopeData,
+    #[serde(rename = "getTransportInfo")]
+    GetTransportInfo,
 }
 
 /// Outer envelope wrapping `id` + the tagged IPC request.
@@ -138,18 +155,48 @@ mod tests {
                     preset_id: "b".into(),
                 }),
             },
+            PluginIpcEnvelope {
+                id: 4,
+                request: PluginIpcRequest::GetPresetSession,
+            },
+            PluginIpcEnvelope {
+                id: 5,
+                request: PluginIpcRequest::GetEditorState,
+            },
+            PluginIpcEnvelope {
+                id: 6,
+                request: PluginIpcRequest::SetEditorState(EditorState::default()),
+            },
+            PluginIpcEnvelope {
+                id: 7,
+                request: PluginIpcRequest::GetMidiLearnState,
+            },
+            PluginIpcEnvelope {
+                id: 8,
+                request: PluginIpcRequest::GetScopeData,
+            },
+            PluginIpcEnvelope {
+                id: 9,
+                request: PluginIpcRequest::GetTransportInfo,
+            },
         ];
         for env in cases {
             let json = serde_json::to_string(&env).unwrap();
             let back: PluginIpcEnvelope = serde_json::from_str(&json).unwrap();
             match (&env.request, &back.request) {
                 (PluginIpcRequest::GetParams, PluginIpcRequest::GetParams) => {}
+                (PluginIpcRequest::GetPresetSession, PluginIpcRequest::GetPresetSession) => {}
                 (PluginIpcRequest::SetPresetSession(a), PluginIpcRequest::SetPresetSession(b)) => {
                     assert_eq!(a.active_preset_name_base, b.active_preset_name_base);
                 }
                 (PluginIpcRequest::LoadPreset(a), PluginIpcRequest::LoadPreset(b)) => {
                     assert_eq!(a.preset_id, b.preset_id);
                 }
+                (PluginIpcRequest::GetEditorState, PluginIpcRequest::GetEditorState) => {}
+                (PluginIpcRequest::SetEditorState(_), PluginIpcRequest::SetEditorState(_)) => {}
+                (PluginIpcRequest::GetMidiLearnState, PluginIpcRequest::GetMidiLearnState) => {}
+                (PluginIpcRequest::GetScopeData, PluginIpcRequest::GetScopeData) => {}
+                (PluginIpcRequest::GetTransportInfo, PluginIpcRequest::GetTransportInfo) => {}
                 _ => panic!("Variant mismatch after roundtrip"),
             }
         }

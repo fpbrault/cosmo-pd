@@ -59,8 +59,14 @@ fn main() {
     );
     out.push_str("export type PluginIpcMethods = {\n");
     out.push_str("  getParams: { request: null; response: SynthParams };\n");
+    out.push_str("  getPresetSession: { request: null; response: PresetSession };\n");
     out.push_str("  setPresetSession: { request: PresetSession; response: null };\n");
     out.push_str("  loadPreset: { request: LoadPresetPayload; response: PresetSession };\n");
+    out.push_str("  getEditorState: { request: null; response: EditorState | null };\n");
+    out.push_str("  setEditorState: { request: EditorState; response: null };\n");
+    out.push_str("  getMidiLearnState: { request: null; response: MidiLearnState };\n");
+    out.push_str("  getScopeData: { request: null; response: ScopeDataResponse };\n");
+    out.push_str("  getTransportInfo: { request: null; response: TransportInfoResponse };\n");
     out.push_str("};\n");
 
     std::fs::write(&ts_path, out)

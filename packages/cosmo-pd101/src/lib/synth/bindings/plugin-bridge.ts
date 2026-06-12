@@ -281,7 +281,7 @@ export type PhaserParams = {
  *  - Unit variant: `{ "method": "getParams" }`
  *  - Payload variant: `{ "method": "setPresetSession", "payload": { ... } }`
  */
-export type PluginIpcRequest = { method: "getParams" } | { method: "setPresetSession"; payload: PresetSession } | { method: "loadPreset"; payload: LoadPresetPayload };
+export type PluginIpcRequest = { method: "getParams" } | { method: "getPresetSession" } | { method: "setPresetSession"; payload: PresetSession } | { method: "loadPreset"; payload: LoadPresetPayload } | { method: "getEditorState" } | { method: "setEditorState"; payload: EditorState } | { method: "getMidiLearnState" } | { method: "getScopeData" } | { method: "getTransportInfo" };
 
 /**  Polyphony mode */
 export type PolyMode = "poly8" | "mono";
@@ -435,6 +435,12 @@ export type WindowType = "off" | "saw" | "triangle" | "trapezoid" | "pulse" | "d
 /** IPC method contract — maps method names to typed request/response pairs. */
 export type PluginIpcMethods = {
   getParams: { request: null; response: SynthParams };
+  getPresetSession: { request: null; response: PresetSession };
   setPresetSession: { request: PresetSession; response: null };
   loadPreset: { request: LoadPresetPayload; response: PresetSession };
+  getEditorState: { request: null; response: EditorState | null };
+  setEditorState: { request: EditorState; response: null };
+  getMidiLearnState: { request: null; response: MidiLearnState };
+  getScopeData: { request: null; response: ScopeDataResponse };
+  getTransportInfo: { request: null; response: TransportInfoResponse };
 };
