@@ -8,15 +8,15 @@
  * - AUv3 bridge calls → Swift `userContentController` switch in
  *   `CosmoPd101ViewController.swift`. Every case arm is checked for
  *   `sendResponse` (fully implemented) vs `sendError`-only (stub).
- * - Rust bridge calls → Rust `handle_ipc_invoke` match arms in
- *   `packages/cosmo-pd101-plugin/src/lib.rs`.
+ * - Rust bridge calls → Rust IPC router match arms in
+ *   `packages/cosmo-pd101-plugin/src/ipc/`.
  *
  * Methods in `AUV3_KNOWN_STUBS` are allow-listed — the Swift controller
  * returns an error for them intentionally (AUv3 limitations). Any NEW method
  * added to the JS bridge without a matching native handler will fail the
  * test.
  */
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -34,7 +34,7 @@ const SWIFT_VIEW_CONTROLLER = resolve(
 	pluginDir,
 	"../cosmo-pd101-plugin-auv3/CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/UI/AudioUnitViewController.swift",
 );
-const RUST_LIB = resolve(pluginDir, "src/lib.rs");
+const RUST_IPC_DIR = resolve(pluginDir, "src/ipc");
 
 // ─── Known-intentional AUv3 stubs ─────────────────────────────────────────────
 //
@@ -179,7 +179,10 @@ describe("IPC contract coverage", () => {
 	const auv3BridgeSource = readFileSync(AUV3_BRIDGE_TS, "utf8");
 	const ipcBridgeSource = readFileSync(IPC_BRIDGE_TS, "utf8");
 	const swiftSource = readFileSync(SWIFT_VIEW_CONTROLLER, "utf8");
-	const rustSource = readFileSync(RUST_LIB, "utf8");
+	const rustSource = readdirSync(RUST_IPC_DIR)
+		.filter((name) => name.endsWith(".rs"))
+		.map((name) => readFileSync(resolve(RUST_IPC_DIR, name), "utf8"))
+		.join("\n");
 
 	const auv3Called = extractInvokeAuv3Methods(auv3BridgeSource);
 	const rustCalled = extractInvokeRustMethods(ipcBridgeSource);
@@ -225,14 +228,14 @@ describe("IPC contract coverage", () => {
 		});
 	});
 
-	describe("Rust IPCBridge (JS) ↔ Rust handle_ipc_invoke", () => {
+	describe("Rust IPCBridge (JS) ↔ Rust IPC router", () => {
 		it("every invokeRust method has a matching Rust match arm", () => {
 			const missing = [...rustCalled].filter((m) => !rustHandled.has(m));
 			if (missing.length > 0) {
 				throw new Error(
 					failMessage(
 						"Missing Rust match arms",
-						'handler does not handle. Add a `"<name>" => { ... }` arm to handle_ipc_invoke in src/lib.rs',
+						'router does not handle. Add a `"<name>" => { ... }` arm under src/ipc/',
 						missing,
 					),
 				);

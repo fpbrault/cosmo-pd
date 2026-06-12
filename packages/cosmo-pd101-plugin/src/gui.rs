@@ -28,14 +28,9 @@ use wry::WebViewBuilder;
 use wry::WebViewBuilderExtDarwin;
 
 use crate::CzPluginParams;
-use crate::handle_ipc_invoke;
-use crate::preset_library::PresetLibrary;
-use crate::session_state::MidiLearnState;
-use crate::{
-    MidiCcQueue, ScopeBuffer, SharedEditorState, SharedPresetSession, SharedRuntimeModSources,
-    SharedRuntimeVoiceStates, SharedTransportSnapshot, UiInputQueue, append_log, append_log_debug,
-    append_log_error, append_log_warn,
-};
+use crate::ipc::IpcContext;
+use crate::runtime_state::{MidiCcQueue, PluginSharedState, ScopeBuffer};
+use crate::{append_log, append_log_debug, append_log_error, append_log_warn};
 use cosmo_synth_engine::params::SynthParams;
 
 // ─── Size constants ──────────────────────────────────────────────────────────
@@ -102,23 +97,11 @@ impl WebAssetSource {
 // ─── CzEditor ────────────────────────────────────────────────────────────────
 
 pub struct CzEditor {
-    synth_params: Arc<ArcSwap<SynthParams>>,
-    rt_synth_params: Arc<ArcSwap<SynthParams>>,
-    runtime_mod_sources: SharedRuntimeModSources,
-    transport_snapshot: SharedTransportSnapshot,
-    synth_params_version: Arc<AtomicU64>,
-    scope_buffer: ScopeBuffer,
-    ui_input_queue: UiInputQueue,
-    midi_cc_queue: MidiCcQueue,
+    shared_state: Arc<PluginSharedState>,
     host_scale_factor: Arc<Mutex<f32>>,
     webview_state: Arc<Mutex<WebViewContainer>>,
     pending_parent_ns_view: Option<usize>,
     params: Arc<CzPluginParams>,
-    preset_session: SharedPresetSession,
-    runtime_voice_states: SharedRuntimeVoiceStates,
-    preset_library: Arc<Mutex<PresetLibrary>>,
-    editor_state: SharedEditorState,
-    midi_learn_state: Arc<Mutex<MidiLearnState>>,
     last_midi_learn_version: u64,
     last_sent_params_json: Arc<Mutex<String>>,
     #[cfg(target_os = "macos")]
@@ -154,41 +137,13 @@ impl CzEditor {
     #[cfg(not(target_os = "macos"))]
     fn clear_standalone_window(&mut self) {}
 
-    #[allow(clippy::too_many_arguments)]
-    pub(crate) fn new(
-        synth_params: Arc<ArcSwap<SynthParams>>,
-        rt_synth_params: Arc<ArcSwap<SynthParams>>,
-        runtime_mod_sources: SharedRuntimeModSources,
-        transport_snapshot: SharedTransportSnapshot,
-        synth_params_version: Arc<AtomicU64>,
-        scope_buffer: ScopeBuffer,
-        ui_input_queue: UiInputQueue,
-        midi_cc_queue: MidiCcQueue,
-        params: Arc<CzPluginParams>,
-        preset_session: SharedPresetSession,
-        runtime_voice_states: SharedRuntimeVoiceStates,
-        preset_library: Arc<Mutex<PresetLibrary>>,
-        editor_state: SharedEditorState,
-        midi_learn_state: Arc<Mutex<MidiLearnState>>,
-    ) -> Self {
+    pub(crate) fn new(shared_state: Arc<PluginSharedState>, params: Arc<CzPluginParams>) -> Self {
         Self {
-            synth_params,
-            rt_synth_params,
-            runtime_mod_sources,
-            transport_snapshot,
-            synth_params_version,
-            scope_buffer,
-            ui_input_queue,
-            midi_cc_queue,
+            shared_state,
             host_scale_factor: Arc::new(Mutex::new(1.0)),
             webview_state: Arc::new(Mutex::new(WebViewContainer { webview: None })),
             pending_parent_ns_view: None,
             params,
-            preset_session,
-            runtime_voice_states,
-            preset_library,
-            editor_state,
-            midi_learn_state,
             last_midi_learn_version: u64::MAX,
             last_sent_params_json: Arc::new(Mutex::new(String::new())),
             #[cfg(target_os = "macos")]
@@ -214,38 +169,16 @@ impl CzEditor {
         };
         append_log_debug(&format!("web assets: {}", asset_source.describe()));
 
-        let synth_params = self.synth_params.clone();
-        let rt_synth_params = self.rt_synth_params.clone();
-        let runtime_mod_sources = self.runtime_mod_sources.clone();
-        let transport_snapshot = self.transport_snapshot.clone();
-        let synth_params_version = self.synth_params_version.clone();
-        let scope_buffer = self.scope_buffer.clone();
-        let ui_input_queue = self.ui_input_queue.clone();
+        let shared_state = self.shared_state.clone();
         let params = self.params.clone();
-        let preset_session = self.preset_session.clone();
-        let runtime_voice_states = self.runtime_voice_states.clone();
-        let preset_library = self.preset_library.clone();
-        let editor_state = self.editor_state.clone();
-        let midi_learn_state = self.midi_learn_state.clone();
         let webview_state_for_ipc = self.webview_state.clone();
 
         let (webview, standalone_window) = unsafe {
             build_webview_from_ns_view(
                 ns_view,
                 asset_source,
-                synth_params,
-                rt_synth_params,
-                runtime_mod_sources,
-                runtime_voice_states,
-                transport_snapshot,
-                synth_params_version,
-                scope_buffer,
-                ui_input_queue,
+                shared_state,
                 params,
-                preset_session,
-                preset_library,
-                editor_state,
-                midi_learn_state,
                 webview_state_for_ipc,
             )
         };
@@ -274,7 +207,7 @@ impl CzEditor {
 
         push_params_to_webview(
             &self.webview_state,
-            &self.synth_params,
+            &self.shared_state.synth.synth_params,
             &self.last_sent_params_json,
         );
     }
@@ -304,7 +237,7 @@ impl CzEditor {
     }
 
     fn push_midi_learn_state(&mut self) {
-        if let Ok(state) = self.midi_learn_state.lock() {
+        if let Ok(state) = self.shared_state.midi_learn.state.lock() {
             self.last_midi_learn_version = state.version;
             if let Ok(json) = serde_json::to_string(&*state) {
                 let escaped = json.replace('\\', "\\\\").replace('"', "\\\"");
@@ -387,11 +320,11 @@ impl Editor for CzEditor {
             }
 
             let webview_state = self.webview_state.clone();
-            let synth_params = self.synth_params.clone();
+            let synth_params = self.shared_state.synth.synth_params.clone();
             let last_sent_params_json = self.last_sent_params_json.clone();
             #[cfg(not(any(target_os = "ios", target_os = "android")))]
-            let midi_cc_queue = self.midi_cc_queue.clone();
-            let midi_learn_state = self.midi_learn_state.clone();
+            let midi_cc_queue = self.shared_state.ui.midi_cc_queue.clone();
+            let midi_learn_state = self.shared_state.midi_learn.state.clone();
             run_on_main(move |_mtm| {
                 push_params_to_webview(&webview_state, &synth_params, &last_sent_params_json);
                 // Push MIDI learn state (unconditional, no version check)
@@ -429,7 +362,9 @@ impl Editor for CzEditor {
 
         // Push MIDI learn state if version changed
         let midi_learn_state_changed = self
-            .midi_learn_state
+            .shared_state
+            .midi_learn
+            .state
             .lock()
             .map(|state| state.version != self.last_midi_learn_version)
             .unwrap_or(false);
@@ -438,7 +373,7 @@ impl Editor for CzEditor {
         }
 
         #[cfg(not(any(target_os = "ios", target_os = "android")))]
-        flush_midi_cc_queue_to_webview(&self.webview_state, &self.midi_cc_queue);
+        flush_midi_cc_queue_to_webview(&self.webview_state, &self.shared_state.ui.midi_cc_queue);
     }
 
     fn set_scale_factor(&mut self, factor: f64) {
@@ -886,23 +821,11 @@ fn is_standalone_mode() -> bool {
 // ─── WebView builder ─────────────────────────────────────────────────────────
 
 #[cfg(target_os = "macos")]
-#[allow(clippy::too_many_arguments)]
 unsafe fn build_webview_from_ns_view(
     ns_view: *mut std::ffi::c_void,
     asset_source: WebAssetSource,
-    synth_params: Arc<ArcSwap<SynthParams>>,
-    rt_synth_params: Arc<ArcSwap<SynthParams>>,
-    runtime_mod_sources: SharedRuntimeModSources,
-    runtime_voice_states: SharedRuntimeVoiceStates,
-    transport_snapshot: SharedTransportSnapshot,
-    synth_params_version: Arc<AtomicU64>,
-    scope_buffer: ScopeBuffer,
-    ui_input_queue: UiInputQueue,
+    shared_state: Arc<PluginSharedState>,
     params: Arc<CzPluginParams>,
-    preset_session: SharedPresetSession,
-    preset_library: Arc<Mutex<PresetLibrary>>,
-    editor_state: SharedEditorState,
-    midi_learn_state: Arc<Mutex<MidiLearnState>>,
     webview_state: Arc<Mutex<WebViewContainer>>,
 ) -> (Option<wry::WebView>, Option<StandaloneWindow>) {
     unsafe {
@@ -930,17 +853,14 @@ unsafe fn build_webview_from_ns_view(
         unsafe impl Send for NsViewWrapper {}
         unsafe impl Sync for NsViewWrapper {}
 
-        let preset_session_for_ipc = preset_session.clone();
-        let preset_library_for_ipc = preset_library.clone();
-        let editor_state_for_ipc = editor_state.clone();
-        let midi_learn_state_for_ipc = midi_learn_state.clone();
         let webview_state_for_response = webview_state.clone();
         let params_repush_done = Arc::new(AtomicBool::new(false));
+        let ipc_context = IpcContext::new(shared_state.clone(), params);
 
         let scheme = get_instance_scheme();
         append_log_debug(&format!("webview scheme: {scheme}"));
 
-        let scope_for_protocol = scope_buffer.clone();
+        let scope_for_protocol = shared_state.telemetry.scope_buffer.clone();
         let builder = WebViewBuilder::new()
         .with_bounds(wry::Rect {
             position: dpi::LogicalPosition::new(0, 0).into(),
@@ -967,23 +887,7 @@ unsafe fn build_webview_from_ns_view(
                     .cloned()
                     .unwrap_or_default();
 
-                let result = handle_ipc_invoke(
-                    method,
-                    &args,
-                    &synth_params,
-                    &rt_synth_params,
-                    &runtime_mod_sources,
-                    &runtime_voice_states,
-                    &transport_snapshot,
-                    &synth_params_version,
-                    &scope_buffer,
-                    &ui_input_queue,
-                    &params,
-                    &preset_session_for_ipc,
-                    &preset_library_for_ipc,
-                    &editor_state_for_ipc,
-                    &midi_learn_state_for_ipc,
-                );
+                let result = ipc_context.invoke(method, &args);
 
                 if let Err(error) = &result {
                     append_log_warn(&format!("ipc error method={method}: {error}"));
@@ -1007,7 +911,7 @@ unsafe fn build_webview_from_ns_view(
                         .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
                         .is_ok()
                     {
-                        let sp = synth_params.load();
+                        let sp = shared_state.synth.synth_params.load();
                         if let Ok(json_str) = serde_json::to_string(sp.as_ref()) {
                             let escaped = json_str
                                 .replace('\\', "\\\\")
@@ -1107,8 +1011,8 @@ fn serve_scope_buffer(
     };
 
     let linear = frame.to_linear();
-    let sample_rate = frame.sample_rate;
-    let hz = frame.hz;
+    let sample_rate = frame.sample_rate();
+    let hz = frame.hz();
 
     let mut buf = Vec::with_capacity(8 + linear.len() * 4);
     buf.extend_from_slice(&sample_rate.to_le_bytes());
