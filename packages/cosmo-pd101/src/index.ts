@@ -86,7 +86,6 @@ export type {
 	MidiLearnBinding,
 	MidiLearnState,
 	PluginIpcMethods,
-	PluginIpcRequest,
 	PresetSession,
 	ScopeDataResponse,
 	SynthParams,

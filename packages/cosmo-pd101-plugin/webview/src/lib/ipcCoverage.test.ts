@@ -1,22 +1,17 @@
 /**
  * ipcCoverage.test.ts — Auto-extending IPC contract test.
  *
- * Every method the JS bridges call must have a corresponding native handler
- * that returns a real result (not just an error stub). The test parses each
- * source file, extracts method names, and validates full coverage.
+ * Every method the AUv3 JS bridge calls must have a corresponding native Swift
+ * handler. The test parses the AUv3 bridge source and the Swift
+ * `userContentController` switch and ensures every called method either has
+ * a real `sendResponse` implementation or is in the `AUV3_KNOWN_STUBS`
+ * allow-list.
  *
- * - AUv3 bridge calls → Swift `userContentController` switch in
- *   `CosmoPd101ViewController.swift`. Every case arm is checked for
- *   `sendResponse` (fully implemented) vs `sendError`-only (stub).
- * - Rust bridge calls → Rust IPC router match arms in
- *   `packages/cosmo-pd101-plugin/src/ipc/`.
- *
- * Methods in `AUV3_KNOWN_STUBS` are allow-listed — the Swift controller
- * returns an error for them intentionally (AUv3 limitations). Any NEW method
- * added to the JS bridge without a matching native handler will fail the
- * test.
+ * The Rust side is NOT tested here — the typed `invoke()` wrapper constrains
+ * method names to `PluginIpcMethods` keys, and the Rust compiler enforces
+ * match exhaustiveness on the `PluginIpcRequest` enum.
  */
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -24,20 +19,13 @@ import { describe, expect, it } from "vitest";
 const here = dirname(fileURLToPath(import.meta.url));
 const webviewDir = resolve(here, "..", "..");
 const pluginDir = resolve(webviewDir, "..");
-const repoRoot = resolve(pluginDir, "..", "..");
 
 // ─── File paths ──────────────────────────────────────────────────────────────
 
 const AUV3_BRIDGE_TS = resolve(webviewDir, "src/lib/auv3Bridge.ts");
-const IPC_BRIDGE_TS = resolve(webviewDir, "src/lib/IPCBridge.ts");
 const SWIFT_VIEW_CONTROLLER = resolve(
 	pluginDir,
 	"../cosmo-pd101-plugin-auv3/CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/UI/AudioUnitViewController.swift",
-);
-const RUST_IPC_DIR = resolve(pluginDir, "src/ipc");
-const BRIDGE_TYPES_IPC = resolve(
-	repoRoot,
-	"packages/cosmo-pd101-bridge-types/src/ipc.rs",
 );
 
 // ─── Known-intentional AUv3 stubs ─────────────────────────────────────────────
@@ -67,18 +55,10 @@ const AUV3_KNOWN_STUBS = new Set([
 
 // ─── Parsers ─────────────────────────────────────────────────────────────────
 
-function extractInvokeAuv3Methods(source: string): Set<string> {
+function extractInvokeMethods(source: string): Set<string> {
 	const out = new Set<string>();
-	const re = /invokeAuv3\(\s*(["'`])([A-Za-z][A-Za-z0-9_]*)\1/g;
-	for (const match of source.matchAll(re)) {
-		out.add(match[2]);
-	}
-	return out;
-}
-
-function extractInvokeRustMethods(source: string): Set<string> {
-	const out = new Set<string>();
-	const re = /invokeRust\(\s*(["'`])([A-Za-z][A-Za-z0-9_]*)\1/g;
+	// Match both invokeAuv3("name") and invoke("name") calls
+	const re = /(?:invokeAuv3|invoke)\(\s*(["'`])([A-Za-z][A-Za-z0-9_]*)\1/g;
 	for (const match of source.matchAll(re)) {
 		out.add(match[2]);
 	}
@@ -149,20 +129,6 @@ function extractSwiftMethods(source: string): {
 	return { implemented, stubbed };
 }
 
-function extractRustHandledMethods(source: string): Set<string> {
-	const out = new Set<string>();
-	// Match: "methodName" => or "method1" | "method2" => patterns
-	const re = /"([A-Za-z][A-Za-z0-9_]*)"/g;
-	const lineRe =
-		/^\s*"(?:[A-Za-z][A-Za-z0-9_]*"(?:\s*\|\s*"[A-Za-z][A-Za-z0-9_]*")*)\s*=>/gm;
-	for (const match of source.matchAll(lineRe)) {
-		for (const nameMatch of match[0].matchAll(re)) {
-			out.add(nameMatch[1]);
-		}
-	}
-	return out;
-}
-
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function diffList(items: readonly string[]): string {
@@ -186,22 +152,14 @@ function failMessage(
 
 describe("IPC contract coverage", () => {
 	const auv3BridgeSource = readFileSync(AUV3_BRIDGE_TS, "utf8");
-	const ipcBridgeSource = readFileSync(IPC_BRIDGE_TS, "utf8");
 	const swiftSource = readFileSync(SWIFT_VIEW_CONTROLLER, "utf8");
-	const handlerFiles = readdirSync(RUST_IPC_DIR)
-		.filter((name) => name.endsWith(".rs"))
-		.map((name) => readFileSync(resolve(RUST_IPC_DIR, name), "utf8"));
-	const bridgeTypesSource = readFileSync(BRIDGE_TYPES_IPC, "utf8");
-	const rustSource = [...handlerFiles, bridgeTypesSource].join("\n");
 
-	const auv3Called = extractInvokeAuv3Methods(auv3BridgeSource);
-	const rustCalled = extractInvokeRustMethods(ipcBridgeSource);
+	const auv3Called = extractInvokeMethods(auv3BridgeSource);
 	const { implemented: swiftImplemented, stubbed: swiftStubbed } =
 		extractSwiftMethods(swiftSource);
-	const rustHandled = extractRustHandledMethods(rustSource);
 
 	describe("AUv3 bridge (JS) ↔ Swift userContentController", () => {
-		it("every invokeAuv3 method has a matching Swift case arm", () => {
+		it("every AUv3 bridge method has a matching Swift case arm", () => {
 			const allSwift = new Set([...swiftImplemented, ...swiftStubbed]);
 			const missing = [...auv3Called].filter((m) => !allSwift.has(m));
 			if (missing.length > 0) {
@@ -216,7 +174,7 @@ describe("IPC contract coverage", () => {
 			expect(missing).toEqual([]);
 		});
 
-		it("every invokeAuv3 method is fully implemented (not just a stub)", () => {
+		it("every AUv3 bridge method is fully implemented (not just a stub)", () => {
 			const unrecognizedStubs = [...auv3Called].filter(
 				(m) => !swiftImplemented.has(m) && !AUV3_KNOWN_STUBS.has(m),
 			);
@@ -238,28 +196,6 @@ describe("IPC contract coverage", () => {
 		});
 	});
 
-	describe("Rust IPCBridge (JS) ↔ Rust IPC router", () => {
-		it("every invokeRust method has a matching Rust match arm", () => {
-			const missing = [...rustCalled].filter((m) => !rustHandled.has(m));
-			if (missing.length > 0) {
-				throw new Error(
-					failMessage(
-						"Missing Rust match arms",
-						'router does not handle. Add a `"<name>" => { ... }` arm under src/ipc/',
-						missing,
-					),
-				);
-			}
-			expect(missing).toEqual([]);
-		});
-
-		it("extracts at least the well-known Rust methods from the bridge", () => {
-			expect(rustCalled.has("getParams")).toBe(true);
-			expect(rustCalled.has("setParams")).toBe(true);
-			expect(rustCalled.has("getScopeData")).toBe(true);
-		});
-	});
-
 	describe("diagnostic report", () => {
 		it("prints the full coverage matrix", () => {
 			const report = {
@@ -272,15 +208,8 @@ describe("IPC contract coverage", () => {
 						.filter((m) => !swiftImplemented.has(m) && !swiftStubbed.has(m))
 						.sort(),
 				},
-				rust: {
-					calledByJs: [...rustCalled].sort(),
-					handledByRust: [...rustHandled].sort(),
-					missing: [...rustCalled].filter((m) => !rustHandled.has(m)).sort(),
-				},
 			};
 			expect(report).toBeDefined();
 		});
 	});
 });
-
-void repoRoot;

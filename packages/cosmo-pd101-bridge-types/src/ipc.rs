@@ -238,9 +238,14 @@ impl PluginIpcRequest {
 
             // ── Preset Library ──
             "loadPresetData" | "loadPreset" => {
-                let obj = first_object(method, args)?;
-                Self::LoadPreset(LoadPresetPayload {
-                    preset_id: get_string(obj, "id")?,
+                Self::LoadPreset(match serde_json::from_value(args[0].clone()) {
+                    Ok(payload) => payload,
+                    Err(_) => {
+                        let obj = first_object(method, args)?;
+                        LoadPresetPayload {
+                            preset_id: get_string(obj, "id")?,
+                        }
+                    }
                 })
             }
             "getPresetLibrary" => Self::GetPresetLibrary {

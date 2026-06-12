@@ -64,6 +64,9 @@ fn main() {
     out.push_str(
         "  loadPreset: { request: LoadPresetPayload; response: { preset_name: string } };\n",
     );
+    out.push_str(
+        "  loadPresetData: { request: { id: string }; response: { preset_name: string } };\n",
+    );
     // Editor
     out.push_str("  getEditorState: { request: null; response: EditorState | null };\n");
     out.push_str("  setEditorState: { request: EditorState; response: null };\n");

@@ -16,99 +16,12 @@
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 import type {
-	ScopeDataResponse as BridgeScopeDataResponse,
-	TransportInfoResponse as BridgeTransportInfoResponse,
-	EditorState,
-	MidiLearnBinding,
+	ScopeDataResponse,
+	TransportInfoResponse,
 } from "@cosmo/cosmo-pd101";
 import { postHostLog } from "./hostLogger";
-
-type IpcRpcResponse = {
-	id: number;
-	result?: unknown;
-	error?: string;
-};
-
-type ScopeDataResponse = BridgeScopeDataResponse;
-type TransportInfoResponse = BridgeTransportInfoResponse;
-
-/**
- * Webview-internal preset session — superset of the bridge type.
- * `activePresetId` is managed locally in the webview, not persisted on the Rust side.
- */
-type PresetSession = {
-	activePresetId: string | null;
-	loadedPresetId?: string | null;
-	activePresetNameBase: string;
-	isDirty: boolean;
-};
-
-declare global {
-	interface Window {
-		ipc?: { postMessage: (msg: string) => void };
-		__czOnParams?: (json: string) => void;
-		__czGetParams?: () => Promise<unknown>;
-		__czGetParamsVersion?: () => Promise<unknown>;
-		__czSetParams?: (json: string) => void;
-		__czGetTransportInfo?: () => Promise<TransportInfoResponse>;
-		__czOnScope?: (
-			samples: Float32Array | number[],
-			sampleRate: number,
-			hz: number,
-		) => void;
-		__czIpcResponse?: (response: IpcRpcResponse) => void;
-		__czOnMidiCc?: (channel: number, cc: number, value: number) => void;
-		__czSetPresetName?: (name: string) => void;
-		__czGetPresetName?: () => Promise<unknown>;
-		__czGetPresetSession?: () => Promise<unknown>;
-		__czSetPresetSession?: (session: PresetSession) => Promise<unknown>;
-		__czGetPresetLibrary?: (source?: string) => Promise<unknown>;
-		__czRetryPresetLibrary?: () => Promise<unknown>;
-		__czRepairPresetLibrary?: () => Promise<unknown>;
-		__czRebuildPresetLibrary?: () => Promise<unknown>;
-		__czLoadPresetData?: (id: string) => Promise<unknown>;
-		__czAddPreset?: (
-			name: string,
-			tags: string[],
-			macroLabels?: string[],
-		) => Promise<unknown>;
-		__czSavePreset?: (payload: {
-			id?: string | null;
-			name: string;
-			author?: string;
-			description?: string;
-			tags?: string[];
-			data?: unknown;
-		}) => Promise<unknown>;
-		__czDeletePreset?: (id: string) => Promise<unknown>;
-		__czRenamePreset?: (id: string, newName: string) => Promise<unknown>;
-		__czSetPresetAuthor?: (id: string, author: string) => Promise<unknown>;
-		__czSetPresetDescription?: (
-			id: string,
-			description: string,
-		) => Promise<unknown>;
-		__czSetPresetTags?: (id: string, tags: string[]) => Promise<unknown>;
-		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
-		__czExportPreset?: (id: string) => Promise<unknown>;
-		__czImportPresetBank?: (payload: unknown) => Promise<unknown>;
-		__czListFxModulePresets?: (moduleType: string) => Promise<unknown>;
-		__czSaveFxModulePreset?: (payload: {
-			name: string;
-			moduleType: string;
-			patch: Record<string, unknown>;
-		}) => Promise<unknown>;
-		__czDeleteFxModulePreset?: (id: string) => Promise<unknown>;
-		__czSetEditorState?: (state: EditorState) => void;
-		__czGetEditorState?: () => Promise<EditorState | null>;
-		__czOnMidiLearnState?: (json: string) => void;
-		__czGetMidiLearnState?: () => Promise<unknown>;
-		__czSetMidiLearnMode?: (on: boolean) => void;
-		__czSetPendingMidiLearnParam?: (key: string | null) => void;
-		__czAddMidiBinding?: (key: string, ch: number, cc: number) => void;
-		__czRemoveMidiBinding?: (binding: MidiLearnBinding) => void;
-		__czClearMidiLearnBindings?: () => void;
-	}
-}
+import type { IpcRpcResponse, PresetSession } from "./ipcTypes";
+import { createTypedInvoke } from "./ipcTypes";
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
@@ -219,6 +132,8 @@ function invokeRust(method: string, ...args: unknown[]): Promise<unknown> {
 	});
 }
 
+const invoke = createTypedInvoke(invokeRust);
+
 // ─── Param property ──────────────────────────────────────────────────────────
 
 function installParamProperty() {
@@ -308,96 +223,95 @@ function routeOutgoingMessage(message: string) {
 function installIpcRouter() {
 	_routerPostMessage = routeOutgoingMessage;
 
-	window.__czGetParams = async () => invokeRust("getParams");
-	window.__czGetParamsVersion = async () => invokeRust("getParamsVersion");
+	window.__czGetParams = async () => invoke("getParams");
+	window.__czGetParamsVersion = async () => invoke("getParamsVersion");
 
 	window.__czSetParams = (json: string) => {
-		void invokeRust("setParams", json).catch((error) => {
+		void invoke("setParams", json).catch((error) => {
 			console.error("[IPCBridge] setParams error", error);
 		});
 	};
 
-	window.__czGetTransportInfo = () => invokeRust("getTransportInfo");
+	window.__czGetTransportInfo = () => invoke("getTransportInfo");
 
-	window.__czGetPresetName = () => invokeRust("getPresetName");
+	window.__czGetPresetName = () => invoke("getPresetName");
 	window.__czSetPresetName = (name: string) => {
-		void invokeRust("setPresetName", name).catch((error) => {
+		void invoke("setPresetName", name).catch((error) => {
 			console.error("[IPCBridge] setPresetName error", error);
 		});
 	};
-	window.__czGetPresetSession = () => invokeRust("getPresetSession");
+	window.__czGetPresetSession = () => invoke("getPresetSession");
 	window.__czSetPresetSession = (session: PresetSession) =>
-		invokeRust("setPresetSession", session);
+		invoke("setPresetSession", session);
 
 	window.__czGetPresetLibrary = (source?: string) =>
 		source
-			? invokeRust("getPresetLibrary", { source })
-			: invokeRust("getPresetLibrary");
-	window.__czRetryPresetLibrary = () => invokeRust("retryPresetLibrary");
-	window.__czRepairPresetLibrary = () => invokeRust("repairPresetLibrary");
-	window.__czRebuildPresetLibrary = () => invokeRust("rebuildPresetLibrary");
-	window.__czLoadPresetData = (id: string) =>
-		invokeRust("loadPresetData", { id });
+			? invoke("getPresetLibrary", { source })
+			: invoke("getPresetLibrary");
+	window.__czRetryPresetLibrary = () => invoke("retryPresetLibrary");
+	window.__czRepairPresetLibrary = () => invoke("repairPresetLibrary");
+	window.__czRebuildPresetLibrary = () => invoke("rebuildPresetLibrary");
+	window.__czLoadPresetData = (id: string) => invoke("loadPresetData", { id });
 	window.__czAddPreset = (
 		name: string,
 		tags: string[],
 		macroLabels?: string[],
-	) => invokeRust("addPreset", { name, tags, macroLabels });
-	window.__czSavePreset = (payload) => invokeRust("savePreset", payload);
-	window.__czDeletePreset = (id: string) => invokeRust("deletePreset", { id });
+	) => invoke("addPreset", { name, tags, macroLabels });
+	window.__czSavePreset = (payload) => invoke("savePreset", payload);
+	window.__czDeletePreset = (id: string) => invoke("deletePreset", { id });
 	window.__czRenamePreset = (id: string, newName: string) =>
-		invokeRust("renamePreset", { id, newName });
+		invoke("renamePreset", { id, newName });
 	window.__czSetPresetAuthor = (id: string, author: string) =>
-		invokeRust("setPresetAuthor", { id, author });
+		invoke("setPresetAuthor", { id, author });
 	window.__czSetPresetDescription = (id: string, description: string) =>
-		invokeRust("setPresetDescription", { id, description });
+		invoke("setPresetDescription", { id, description });
 	window.__czSetPresetTags = (id: string, tags: string[]) =>
-		invokeRust("setPresetTags", { id, tags });
+		invoke("setPresetTags", { id, tags });
 	window.__czToggleStarred = (id: string, starred: boolean) =>
-		invokeRust("toggleStarred", { id, starred });
-	window.__czExportPreset = (id: string) => invokeRust("exportPreset", { id });
+		invoke("toggleStarred", { id, starred });
+	window.__czExportPreset = (id: string) => invoke("exportPreset", { id });
 	window.__czImportPresetBank = (payload) =>
-		invokeRust("importPresetBank", payload);
+		invoke("importPresetBank", payload);
 	window.__czListFxModulePresets = (moduleType: string) =>
-		invokeRust("listFxModulePresets", { moduleType });
+		invoke("listFxModulePresets", { moduleType });
 	window.__czSaveFxModulePreset = (payload) =>
-		invokeRust("saveFxModulePreset", payload);
+		invoke("saveFxModulePreset", payload);
 	window.__czDeleteFxModulePreset = (id: string) =>
-		invokeRust("deleteFxModulePreset", { id });
+		invoke("deleteFxModulePreset", { id });
 
 	window.__czSetEditorState = (state: EditorState) => {
-		void invokeRust("setEditorState", state).catch((error) => {
+		void invoke("setEditorState", state).catch((error) => {
 			console.error("[IPCBridge] setEditorState error", error);
 		});
 	};
 
 	window.__czGetEditorState = async () =>
-		(await invokeRust("getEditorState")) as EditorState | null;
+		(await invoke("getEditorState")) as EditorState | null;
 
-	window.__czGetMidiLearnState = () => invokeRust("getMidiLearnState");
+	window.__czGetMidiLearnState = () => invoke("getMidiLearnState");
 
 	window.__czSetMidiLearnMode = (on: boolean) => {
-		void invokeRust("setMidiLearnMode", on).catch((error) => {
+		void invoke("setMidiLearnMode", on).catch((error) => {
 			console.error("[IPCBridge] setMidiLearnMode error", error);
 		});
 	};
 	window.__czSetPendingMidiLearnParam = (key: string | null) => {
-		void invokeRust("setPendingMidiLearnParam", key).catch((error) => {
+		void invoke("setPendingMidiLearnParam", key).catch((error) => {
 			console.error("[IPCBridge] setPendingMidiLearnParam error", error);
 		});
 	};
 	window.__czAddMidiBinding = (key: string, ch: number, cc: number) => {
-		void invokeRust("addMidiBinding", key, ch, cc).catch((error) => {
+		void invoke("addMidiBinding", key, ch, cc).catch((error) => {
 			console.error("[IPCBridge] addMidiBinding error", error);
 		});
 	};
 	window.__czRemoveMidiBinding = (binding: MidiLearnBinding) => {
-		void invokeRust("removeMidiBinding", binding).catch((error) => {
+		void invoke("removeMidiBinding", binding).catch((error) => {
 			console.error("[IPCBridge] removeMidiBinding error", error);
 		});
 	};
 	window.__czClearMidiLearnBindings = () => {
-		void invokeRust("clearMidiLearnBindings").catch((error) => {
+		void invoke("clearMidiLearnBindings").catch((error) => {
 			console.error("[IPCBridge] clearMidiLearnBindings error", error);
 		});
 	};
@@ -548,7 +462,7 @@ function installScopePolling() {
 			// Fallback: use RPC invoke (for dev harness / AUv3 / fallback)
 			binaryScopeSupported = false;
 			try {
-				const raw = (await invokeRust("getScopeData")) as ScopeDataResponse;
+				const raw = (await invoke("getScopeData")) as ScopeDataResponse;
 				if (raw?.samples.length > 0 && currentScopeHandler) {
 					currentScopeHandler(raw.samples, raw.sampleRate, raw.hz);
 				}
@@ -629,7 +543,7 @@ function installRuntimeModSourcesPolling() {
 		lastScheduled = now;
 		pollInFlight = true;
 		try {
-			const result = await invokeRust("getRuntimeModSources");
+			const result = await invoke("getRuntimeModSources");
 			if (result) {
 				dispatchRuntimeModSources(result as string | Record<string, number>);
 			}
@@ -714,7 +628,7 @@ function installRuntimeVoiceStatesPolling() {
 		lastScheduled = now;
 		pollInFlight = true;
 		try {
-			const result = await invokeRust("getRuntimeVoiceStates");
+			const result = await invoke("getRuntimeVoiceStates");
 			if (result) {
 				dispatchRuntimeVoiceStates(result);
 			}
@@ -792,7 +706,7 @@ function installTransportPolling() {
 		lastScheduled = now;
 		pollInFlight = true;
 		try {
-			const result = await invokeRust("getTransportInfo");
+			const result = await invoke("getTransportInfo");
 			if (result) {
 				dispatchTransport(result as TransportInfoResponse);
 			}
