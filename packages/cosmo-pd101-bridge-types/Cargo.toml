@@ -29,7 +29,7 @@ cosmo-synth-engine = { path = "../cosmo-synth-engine", default-features = false,
 [dependencies.specta]
 version = "=2.0.0-rc.25"
 optional = true
-features = ["derive"]
+features = ["derive", "serde_json"]
 
 [dependencies.specta-serde]
 version = "=0.0.12"

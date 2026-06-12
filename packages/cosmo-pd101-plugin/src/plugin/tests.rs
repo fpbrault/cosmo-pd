@@ -334,7 +334,7 @@ fn get_transport_info_rpc_returns_current_snapshot() {
     assert_eq!(result["tempo"].as_f64(), Some(120.25));
     assert_eq!(result["timeSigNum"].as_u64(), Some(3));
     assert_eq!(result["timeSigDen"].as_u64(), Some(4));
-    assert_eq!(result["positionSamples"].as_i64(), Some(4096));
+    assert_eq!(result["positionSamples"].as_f64(), Some(4096.0));
     assert_eq!(result["positionBeats"].as_f64(), Some(5.0));
     assert_eq!(result["loopActive"], serde_json::Value::Bool(true));
     assert_eq!(result["loopEndBeats"].as_f64(), Some(8.0));

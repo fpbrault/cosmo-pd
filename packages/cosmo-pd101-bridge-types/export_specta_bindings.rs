@@ -7,7 +7,8 @@
 //! - SPECTA_TS_EXPORT_PATH: absolute/relative path to generated TypeScript file
 
 use cosmo_pd101_bridge_types::{
-    PluginIpcRequest, PresetSession, LoadPresetPayload,
+    EditorState, LoadPresetPayload, MidiLearnBinding, MidiLearnState, PluginIpcRequest,
+    PresetSession, ScopeDataResponse, TransportInfoResponse,
 };
 use cosmo_synth_engine::params::SynthParams;
 use specta::Types;
@@ -17,9 +18,7 @@ fn main() {
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
 
     let ts_path = std::env::var("SPECTA_TS_EXPORT_PATH").unwrap_or_else(|_| {
-        format!(
-            "{manifest_dir}/../cosmo-pd101/src/lib/synth/bindings/plugin-bridge.ts"
-        )
+        format!("{manifest_dir}/../cosmo-pd101/src/lib/synth/bindings/plugin-bridge.ts")
     });
 
     if let Some(ts_parent) = std::path::Path::new(&ts_path).parent() {
@@ -28,10 +27,19 @@ fn main() {
     }
 
     let mut types = Types::default();
+    // Session & editor
     types.register_mut::<PresetSession>();
+    types.register_mut::<EditorState>();
+    // MIDI learn
+    types.register_mut::<MidiLearnBinding>();
+    types.register_mut::<MidiLearnState>();
+    // Runtime
+    types.register_mut::<ScopeDataResponse>();
+    types.register_mut::<TransportInfoResponse>();
+    // IPC contract
     types.register_mut::<LoadPresetPayload>();
     types.register_mut::<PluginIpcRequest>();
-    // Re-export engine types that appear in IPC responses
+    // Engine re-exports
     types.register_mut::<SynthParams>();
 
     let config = Typescript::default();
@@ -46,7 +54,9 @@ fn main() {
     // Generated IPC method map — maps each method name to its request/response types.
     // Response types are hand-curated here to match the Rust dispatch return types.
     // Keep this in sync with PluginIpcRequest variants.
-    out.push_str("\n\n/** IPC method contract — maps method names to typed request/response pairs. */\n");
+    out.push_str(
+        "\n\n/** IPC method contract — maps method names to typed request/response pairs. */\n",
+    );
     out.push_str("export type PluginIpcMethods = {\n");
     out.push_str("  getParams: { request: null; response: SynthParams };\n");
     out.push_str("  setPresetSession: { request: PresetSession; response: null };\n");

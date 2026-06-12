@@ -1,3 +1,5 @@
+use cosmo_pd101_bridge_types::ScopeDataResponse;
+
 use super::*;
 
 pub(super) fn handle(
@@ -48,20 +50,28 @@ pub(super) fn handle(
             let states = runtime_voice_states.load();
             serde_json::to_value(states.as_ref()).map_err(|e| e.to_string())
         }
-        "getTransportInfo" => Ok(transport_snapshot.snapshot_json()),
+        "getTransportInfo" => {
+            let response = transport_snapshot.to_response();
+            serde_json::to_value(response).map_err(|e| e.to_string())
+        }
         "getScopeData" => {
             let scope = scope_buffer
                 .lock()
                 .map_err(|_| "scope buffer is poisoned".to_string())?;
-            if scope.samples().is_empty() {
-                return Ok(
-                    serde_json::json!({ "samples": [], "sampleRate": scope.sample_rate(), "hz": 0.0_f64 }),
-                );
-            }
-            let linear = scope.to_linear();
-            Ok(
-                serde_json::json!({ "samples": linear, "sampleRate": scope.sample_rate(), "hz": scope.hz() }),
-            )
+            let response = if scope.samples().is_empty() {
+                ScopeDataResponse {
+                    samples: vec![],
+                    sample_rate: scope.sample_rate(),
+                    hz: 0.0,
+                }
+            } else {
+                ScopeDataResponse {
+                    samples: scope.to_linear(),
+                    sample_rate: scope.sample_rate(),
+                    hz: scope.hz() as f64,
+                }
+            };
+            serde_json::to_value(response).map_err(|e| e.to_string())
         }
         "clientLog" => {
             let level = args

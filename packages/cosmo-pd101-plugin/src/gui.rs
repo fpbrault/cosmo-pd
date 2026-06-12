@@ -102,7 +102,7 @@ pub struct CzEditor {
     webview_state: Arc<Mutex<WebViewContainer>>,
     pending_parent_ns_view: Option<usize>,
     params: Arc<CzPluginParams>,
-    last_midi_learn_version: u64,
+    last_midi_learn_version: u32,
     last_sent_params_json: Arc<Mutex<String>>,
     #[cfg(target_os = "macos")]
     standalone_window: Option<StandaloneWindow>,
@@ -124,7 +124,7 @@ impl CzEditor {
         if let Ok(mut cache) = self.last_sent_params_json.lock() {
             cache.clear();
         }
-        self.last_midi_learn_version = u64::MAX;
+        self.last_midi_learn_version = u32::MAX;
         self.pending_parent_ns_view = None;
         self.clear_standalone_window();
     }
@@ -144,7 +144,7 @@ impl CzEditor {
             webview_state: Arc::new(Mutex::new(WebViewContainer { webview: None })),
             pending_parent_ns_view: None,
             params,
-            last_midi_learn_version: u64::MAX,
+            last_midi_learn_version: u32::MAX,
             last_sent_params_json: Arc::new(Mutex::new(String::new())),
             #[cfg(target_os = "macos")]
             standalone_window: None,
@@ -386,7 +386,7 @@ impl Editor for CzEditor {
         if let Ok(mut cache) = self.last_sent_params_json.lock() {
             cache.clear();
         }
-        self.last_midi_learn_version = u64::MAX;
+        self.last_midi_learn_version = u32::MAX;
         self.push_params();
         self.push_midi_learn_state();
     }

@@ -61,6 +61,27 @@ export type DistortionParams = {
 	mix?: number | null,
 };
 
+/**
+ *  UI editor state persisted across DAW sessions.
+ *  All fields are optional so partial updates work from the webview.
+ */
+export type EditorState = {
+	mainPanelMode: string | null,
+	phaseLinePanelTab: string | null,
+	activeEnvTab: string | null,
+	keyboardVisible: boolean | null,
+	keyboardOctaves: number | null,
+	keyboardRange: number | null,
+	keyboardHeight: number | null,
+	keyboardInputMode: string | null,
+	libraryModeOpen: boolean | null,
+	scopeCycles: number | null,
+	scopeVerticalZoom: number | null,
+	scopeTriggerLevel: number | null,
+	scopeVisualizationMode: string | null,
+	scopeColorTheme: string | null,
+};
+
 /**  A single step in a step envelope */
 export type EnvStep = {
 	/**  Internal machine level [0, 127]. */
@@ -180,6 +201,21 @@ export type LoadPresetPayload = {
 	presetId: string,
 };
 
+/**  A single MIDI learn binding stored in the engine. */
+export type MidiLearnBinding = {
+	paramKey: string,
+	channel: number,
+	cc: number,
+};
+
+/**  MIDI learn state owned by the engine, pushed to webview on change. */
+export type MidiLearnState = {
+	learnMode: boolean,
+	pendingParamKey: string | null,
+	bindings: MidiLearnBinding[],
+	version: number,
+};
+
 /**  Modulation destination selector for modulation matrix routes. */
 export type ModDestination = "volume" | "pitch" | "line1DcwBase" | "line1DcaBase" | "line1AlgoBlend" | "line2DetuneNote" | "line1Octave" | "line1AlgoParam1" | "line1AlgoParam2" | "line1AlgoParam3" | "line1AlgoParam4" | "line1AlgoParam5" | "line1AlgoParam6" | "line1AlgoParam7" | "line1AlgoParam8" | "line2DcwBase" | "line2DcaBase" | "line2AlgoBlend" | "line2DetuneFine" | "line2DetuneOctave" | "line2AlgoParam1" | "line2AlgoParam2" | "line2AlgoParam3" | "line2AlgoParam4" | "line2AlgoParam5" | "line2AlgoParam6" | "line2AlgoParam7" | "line2AlgoParam8" | "filterCutoff" | "filterResonance" | "filterEnvAmount" | "chorusMix" | "delayMix" | "reverbMix" | "vibratoDepth" | "vibratoRate" | "intPmRatio" | "line1DcoEnvStep1Level" | "line1DcoEnvStep1Rate" | "line1DcoEnvStep2Level" | "line1DcoEnvStep2Rate" | "line1DcoEnvStep3Level" | "line1DcoEnvStep3Rate" | "line1DcoEnvStep4Level" | "line1DcoEnvStep4Rate" | "line1DcoEnvStep5Level" | "line1DcoEnvStep5Rate" | "line1DcoEnvStep6Level" | "line1DcoEnvStep6Rate" | "line1DcoEnvStep7Level" | "line1DcoEnvStep7Rate" | "line1DcoEnvStep8Level" | "line1DcoEnvStep8Rate" | "line1DcwEnvStep1Level" | "line1DcwEnvStep1Rate" | "line1DcwEnvStep2Level" | "line1DcwEnvStep2Rate" | "line1DcwEnvStep3Level" | "line1DcwEnvStep3Rate" | "line1DcwEnvStep4Level" | "line1DcwEnvStep4Rate" | "line1DcwEnvStep5Level" | "line1DcwEnvStep5Rate" | "line1DcwEnvStep6Level" | "line1DcwEnvStep6Rate" | "line1DcwEnvStep7Level" | "line1DcwEnvStep7Rate" | "line1DcwEnvStep8Level" | "line1DcwEnvStep8Rate" | "line1DcaEnvStep1Level" | "line1DcaEnvStep1Rate" | "line1DcaEnvStep2Level" | "line1DcaEnvStep2Rate" | "line1DcaEnvStep3Level" | "line1DcaEnvStep3Rate" | "line1DcaEnvStep4Level" | "line1DcaEnvStep4Rate" | "line1DcaEnvStep5Level" | "line1DcaEnvStep5Rate" | "line1DcaEnvStep6Level" | "line1DcaEnvStep6Rate" | "line1DcaEnvStep7Level" | "line1DcaEnvStep7Rate" | "line1DcaEnvStep8Level" | "line1DcaEnvStep8Rate" | "line2DcoEnvStep1Level" | "line2DcoEnvStep1Rate" | "line2DcoEnvStep2Level" | "line2DcoEnvStep2Rate" | "line2DcoEnvStep3Level" | "line2DcoEnvStep3Rate" | "line2DcoEnvStep4Level" | "line2DcoEnvStep4Rate" | "line2DcoEnvStep5Level" | "line2DcoEnvStep5Rate" | "line2DcoEnvStep6Level" | "line2DcoEnvStep6Rate" | "line2DcoEnvStep7Level" | "line2DcoEnvStep7Rate" | "line2DcoEnvStep8Level" | "line2DcoEnvStep8Rate" | "line2DcwEnvStep1Level" | "line2DcwEnvStep1Rate" | "line2DcwEnvStep2Level" | "line2DcwEnvStep2Rate" | "line2DcwEnvStep3Level" | "line2DcwEnvStep3Rate" | "line2DcwEnvStep4Level" | "line2DcwEnvStep4Rate" | "line2DcwEnvStep5Level" | "line2DcwEnvStep5Rate" | "line2DcwEnvStep6Level" | "line2DcwEnvStep6Rate" | "line2DcwEnvStep7Level" | "line2DcwEnvStep7Rate" | "line2DcwEnvStep8Level" | "line2DcwEnvStep8Rate" | "line2DcaEnvStep1Level" | "line2DcaEnvStep1Rate" | "line2DcaEnvStep2Level" | "line2DcaEnvStep2Rate" | "line2DcaEnvStep3Level" | "line2DcaEnvStep3Rate" | "line2DcaEnvStep4Level" | "line2DcaEnvStep4Rate" | "line2DcaEnvStep5Level" | "line2DcaEnvStep5Rate" | "line2DcaEnvStep6Level" | "line2DcaEnvStep6Rate" | "line2DcaEnvStep7Level" | "line2DcaEnvStep7Rate" | "line2DcaEnvStep8Level" | "line2DcaEnvStep8Rate" | "chorusRate" | "chorusDepth" | "delayTime" | "delayFeedback" | "delayWarmth" | "reverbSpace" | "reverbPredelay" | "reverbDistance" | "reverbCharacter" | "phaserRate" | "phaserDepth" | "phaserFeedback" | "phaserMix" | "lfo1Rate" | "lfo1Depth" | "lfo1Symmetry" | "lfo1Offset" | "lfo2Rate" | "lfo2Depth" | "lfo2Symmetry" | "lfo2Offset" | "randomRate" | "vibratoDelay" | "compressorThreshold" | "compressorRatio" | "compressorMakeup" | "compressorMix" | "grainDelayTime" | "grainDelayFeedback" | "grainDelayScatter" | "grainDelayDensity" | "grainDelayMix" | "bitcrusherBits" | "bitcrusherRateReduction" | "bitcrusherMix" | "shimmerVerbShimmer" | "shimmerVerbSpace" | "shimmerVerbMix" | "distortionDrive" | "distortionTone" | "distortionMix" | "junoChorusMix" | "ringModCarrierHz" | "ringModMix" | "tremoloRate" | "tremoloDepth" | "tremoloMix" | "wavefolderDrive" | "wavefolderFolds" | "wavefolderMix" | "loFiWow" | "loFiFlutter" | "loFiDegrade" | "loFiFilter" | "loFiCrackle" | "loFiNoise" | "loFiMix" | "loFiSaturation" | "multimodeFilterCutoffHz" | "multimodeFilterResonance" | "multimodeFilterDrive" | "multimodeFilterMix" | "flangerRate" | "flangerDepth" | "flangerDelayMs" | "flangerFeedback" | "flangerMix" | "eqGainBand1" | "eqGainBand2" | "eqGainBand3" | "eqGainBand4" | "eqGainBand5" | "eqGainBand6" | "eqGainBand7" | "eqGainBand8";
 
@@ -290,6 +326,13 @@ export type RingModParams = {
 	mix?: number | null,
 };
 
+/**  Scope data response sent from Rust to the webview. */
+export type ScopeDataResponse = {
+	samples: (number | null)[],
+	sampleRate: number | null,
+	hz: number | null,
+};
+
 /**  Shimmer verb parameters */
 export type ShimmerVerbParams = {
 	enabled?: boolean,
@@ -337,6 +380,22 @@ export type SynthParams = {
 	macro3?: number | null,
 	macro4?: number | null,
 	macroLabels?: [string, string, string, string],
+};
+
+/**  Transport info snapshot sent from Rust to the webview. */
+export type TransportInfoResponse = {
+	playing: boolean,
+	recording: boolean,
+	tempo: number | null,
+	timeSigNum: number,
+	timeSigDen: number,
+	positionSamples: number | null,
+	positionSeconds: number | null,
+	positionBeats: number | null,
+	barStartBeats: number | null,
+	loopActive: boolean,
+	loopStartBeats: number | null,
+	loopEndBeats: number | null,
 };
 
 /**  Tremolo parameters */

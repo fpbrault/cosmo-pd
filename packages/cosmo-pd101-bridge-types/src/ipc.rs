@@ -49,8 +49,14 @@ mod tests {
             request: PluginIpcRequest::GetParams,
         };
         let json = serde_json::to_string(&env).unwrap();
-        assert!(!json.contains("payload"), "Unit variant should not have payload key: {json}");
-        assert!(json.contains("\"method\":\"getParams\""), "Should contain method tag: {json}");
+        assert!(
+            !json.contains("payload"),
+            "Unit variant should not have payload key: {json}"
+        );
+        assert!(
+            json.contains("\"method\":\"getParams\""),
+            "Should contain method tag: {json}"
+        );
     }
 
     #[test]
@@ -65,8 +71,14 @@ mod tests {
             request: PluginIpcRequest::SetPresetSession(session),
         };
         let json = serde_json::to_string(&env).unwrap();
-        assert!(json.contains("\"payload\""), "Payload variant should have payload key: {json}");
-        assert!(json.contains("activePresetNameBase"), "Should contain session fields: {json}");
+        assert!(
+            json.contains("\"payload\""),
+            "Payload variant should have payload key: {json}"
+        );
+        assert!(
+            json.contains("activePresetNameBase"),
+            "Should contain session fields: {json}"
+        );
     }
 
     #[test]
@@ -108,7 +120,10 @@ mod tests {
     #[test]
     fn roundtrip_all_variants() {
         let cases: Vec<PluginIpcEnvelope> = vec![
-            PluginIpcEnvelope { id: 1, request: PluginIpcRequest::GetParams },
+            PluginIpcEnvelope {
+                id: 1,
+                request: PluginIpcRequest::GetParams,
+            },
             PluginIpcEnvelope {
                 id: 2,
                 request: PluginIpcRequest::SetPresetSession(PresetSession {
@@ -119,7 +134,9 @@ mod tests {
             },
             PluginIpcEnvelope {
                 id: 3,
-                request: PluginIpcRequest::LoadPreset(LoadPresetPayload { preset_id: "b".into() }),
+                request: PluginIpcRequest::LoadPreset(LoadPresetPayload {
+                    preset_id: "b".into(),
+                }),
             },
         ];
         for env in cases {

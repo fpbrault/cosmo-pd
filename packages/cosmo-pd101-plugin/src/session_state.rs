@@ -1,60 +1,18 @@
-use serde::{Deserialize, Serialize};
+pub use cosmo_pd101_bridge_types::{EditorState, MidiLearnBinding, MidiLearnState, PresetSession};
 
 use cosmo_synth_engine::params::SynthParams;
+use serde::{Deserialize, Serialize};
 
-/// UI editor state persisted across DAW sessions.
-/// All fields are optional so partial updates work from the webview.
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+/// DAW-serializable session state.
+/// Written by `save_state()` and read by `load_state()`.
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct EditorState {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub main_panel_mode: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub phase_line_panel_tab: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub active_env_tab: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub keyboard_visible: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub keyboard_octaves: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub keyboard_range: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub keyboard_height: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub keyboard_input_mode: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub library_mode_open: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub scope_cycles: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub scope_vertical_zoom: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub scope_trigger_level: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub scope_visualization_mode: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub scope_color_theme: Option<String>,
-}
-
-/// A single MIDI learn binding stored in the engine.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct MidiLearnBinding {
-    pub param_key: String,
-    pub channel: i32,
-    pub cc: i32,
-}
-
-/// MIDI learn state owned by the engine, pushed to webview on change.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-#[serde(rename_all = "camelCase")]
-#[derive(Default)]
-pub struct MidiLearnState {
-    pub learn_mode: bool,
-    pub pending_param_key: Option<String>,
-    pub bindings: Vec<MidiLearnBinding>,
-    pub version: u64,
+pub struct PluginSessionState {
+    pub synth_params: SynthParams,
+    pub preset_session: PresetSession,
+    /// UI editor state (tab selections, scope settings, keyboard prefs, etc.)
+    #[serde(default)]
+    pub editor_state: Option<EditorState>,
 }
 
 pub fn default_midi_bindings() -> Vec<MidiLearnBinding> {
@@ -80,29 +38,6 @@ pub fn default_midi_bindings() -> Vec<MidiLearnBinding> {
             cc: 43,
         },
     ]
-}
-
-/// DAW-serializable session state.
-/// Written by `save_state()` and read by `load_state()`.
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct PresetSession {
-    pub active_preset_name_base: String,
-    pub loaded_preset_id: Option<String>,
-    #[serde(default)]
-    pub is_dirty: bool,
-}
-
-/// DAW-serializable session state.
-/// Written by `save_state()` and read by `load_state()`.
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PluginSessionState {
-    pub synth_params: SynthParams,
-    pub preset_session: PresetSession,
-    /// UI editor state (tab selections, scope settings, keyboard prefs, etc.)
-    #[serde(default)]
-    pub editor_state: Option<EditorState>,
 }
 
 /// 3-tier fallback deserialization for backward-compatible `load_state`.

@@ -27,6 +27,7 @@ shell = ["truce/shell"]
 arc-swap = "1.7"
 clap-sys = { version = "0.5", optional = true }
 cosmo-synth-engine = { path = "../cosmo-synth-engine" }
+cosmo-pd101-bridge-types = { path = "../cosmo-pd101-bridge-types" }
 crossbeam-queue = "0.3"
 include_dir = "0.7"
 truce = { workspace = true }
