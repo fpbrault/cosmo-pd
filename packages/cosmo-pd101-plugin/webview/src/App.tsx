@@ -54,14 +54,22 @@ export default function App() {
 			}
 		};
 
+		const handleKeyDownCapture = (event: globalThis.KeyboardEvent) => {
+			if (isEditableTarget(document.activeElement)) {
+				event.stopPropagation();
+			}
+		};
+
 		document.addEventListener("selectstart", handleSelectStart);
 		document.addEventListener("dragstart", handleDragStart);
 		document.addEventListener("selectionchange", handleSelectionChange);
+		document.addEventListener("keydown", handleKeyDownCapture, true);
 
 		return () => {
 			document.removeEventListener("selectstart", handleSelectStart);
 			document.removeEventListener("dragstart", handleDragStart);
 			document.removeEventListener("selectionchange", handleSelectionChange);
+			document.removeEventListener("keydown", handleKeyDownCapture, true);
 		};
 	}, []);
 

@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
+import SynthTextInput from "@/components/controls/SynthTextInput";
 import { getPresetTagCheckboxClassName } from "./presetTagTone";
 import type { FilterOptions } from "./usePresetLibraryState";
 
@@ -74,12 +75,11 @@ export default memo(function PresetLibraryHeader({
 						: t("presetLibrary.foundPlural")}
 				</p>
 				<div className="flex min-w-64 items-center overflow-hidden rounded-md border border-cz-border bg-cz-inset">
-					<input
-						type="text"
-						className="h-10 min-w-0 flex-1 bg-transparent px-3 text-cz-cream text-sm placeholder-cz-cream-dim/70 outline-none"
-						placeholder={t("presetLibrary.searchPlaceholder")}
+					<SynthTextInput
 						value={search}
-						onChange={(event) => onSearchChange(event.target.value)}
+						onChange={onSearchChange}
+						placeholder={t("presetLibrary.searchPlaceholder")}
+						className="h-10 min-w-0 flex-1 bg-transparent px-3 text-cz-cream text-sm placeholder-cz-cream-dim/70 outline-none"
 					/>
 					<button
 						type="button"
