@@ -24,6 +24,13 @@ export function usePhaseLineEnvelopeMarkers({
 	const [voiceMarkerTick, setVoiceMarkerTick] = useState(0);
 
 	useEffect(() => {
+		if (section !== "envelopes") {
+			return;
+		}
+		return synthController?.registerLiveVoiceStatesConsumer();
+	}, [section, synthController]);
+
+	useEffect(() => {
 		if (section !== "envelopes") return;
 		const id = setInterval(() => setVoiceMarkerTick((t) => t + 1), 16);
 		return () => clearInterval(id);

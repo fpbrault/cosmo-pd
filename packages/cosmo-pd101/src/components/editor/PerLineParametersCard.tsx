@@ -15,12 +15,12 @@ function PerLineParametersCardInner({
 	return (
 		<Card
 			variant="subtle"
-			className="col-span-1 flex min-h-0 grow flex-col p-3"
+			className="col-span-1 flex min-h-0 grow flex-col p-3 [@container_phase_(max-height:620px)]:p-1.5"
 		>
-			<div className="mb-3 text-3xs text-cz-cream uppercase tracking-[0.24em]">
+			<div className="mb-3 text-3xs text-cz-cream uppercase tracking-[0.24em] [@container_phase_(max-height:620px)]:mb-1">
 				Parameters
 			</div>
-			<div className="grid min-h-0 flex-1 grid-cols-3 place-items-center content-center gap-3">
+			<div className="grid min-h-0 flex-1 grid-cols-3 place-items-center content-center gap-3 [@container_phase_(max-height:620px)]:gap-1">
 				<SynthParamKnob
 					paramKey={lineIndex === 1 ? "warpAAmount" : "warpBAmount"}
 					label="DCW Amt"

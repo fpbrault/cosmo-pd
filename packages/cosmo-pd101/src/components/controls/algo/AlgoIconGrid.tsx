@@ -95,10 +95,11 @@ export default function AlgoIconGrid({
 				className={[
 					"grid items-stretch border border-cz-border bg-cz-surface",
 					"@max-[780px]:grid-cols-[auto_1fr_auto] @max-[780px]:grid-rows-[auto] @max-[780px]:[grid-template-areas:'prev_label_next']",
+					"[@container_phase_(max-height:500px)]:grid-cols-[auto_1fr_auto] [@container_phase_(max-height:500px)]:grid-rows-[auto] [@container_phase_(max-height:500px)]:[grid-template-areas:'prev_label_next']",
 					"grid-cols-[auto_auto] grid-rows-[1fr_1fr_auto] [grid-template-areas:'icon_up''icon_down''label_label']",
 				].join(" ")}
 			>
-				<div className="flex @max-[780px]:hidden items-center justify-center [grid-area:icon]">
+				<div className="flex @max-[780px]:hidden items-center justify-center [grid-area:icon] [@container_phase_(max-height:500px)]:hidden">
 					<HoverInfoTrigger message={tooltipText}>
 						{(hoverHandlers) => (
 							<button
@@ -141,14 +142,17 @@ export default function AlgoIconGrid({
 					aria-label={previousLabel}
 					className={[
 						"@max-[780px]:border-r @max-[780px]:px-1.5 @max-[780px]:[grid-area:prev]",
+						"[@container_phase_(max-height:500px)]:border-r [@container_phase_(max-height:500px)]:px-1.5 [@container_phase_(max-height:500px)]:[grid-area:prev]",
 						"border-cz-border border-b [grid-area:up]",
 						"flex items-center justify-center text-xs transition-colors hover:bg-cz-inset focus:outline-none",
 					].join(" ")}
 					style={color ? { color } : undefined}
 				>
-					<span className="@max-[780px]:hidden">▲</span>
+					<span className="@max-[780px]:hidden [@container_phase_(max-height:500px)]:hidden">
+						▲
+					</span>
 					<span
-						className="@max-[780px]:inline hidden"
+						className="@max-[780px]:inline hidden [@container_phase_(max-height:500px)]:inline"
 						style={{ transform: "rotate(180deg)" }}
 					>
 						▼
@@ -161,14 +165,17 @@ export default function AlgoIconGrid({
 					aria-label={nextLabel}
 					className={[
 						"@max-[780px]:px-1.5 @max-[780px]:[grid-area:next]",
+						"[@container_phase_(max-height:500px)]:px-1.5 [@container_phase_(max-height:500px)]:[grid-area:next]",
 						"[grid-area:down]",
 						"flex items-center justify-center text-xs transition-colors hover:bg-cz-inset focus:outline-none",
 					].join(" ")}
 					style={color ? { color } : undefined}
 				>
-					<span className="@max-[780px]:hidden">▼</span>
+					<span className="@max-[780px]:hidden [@container_phase_(max-height:500px)]:hidden">
+						▼
+					</span>
 					<span
-						className="@max-[780px]:inline hidden"
+						className="@max-[780px]:inline hidden [@container_phase_(max-height:500px)]:inline"
 						style={{ transform: "rotate(180deg)" }}
 					>
 						▲

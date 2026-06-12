@@ -28,7 +28,10 @@ export function PhaseLineAlgoPanel({
 		usePhaseLineAlgorithms(algo);
 
 	return (
-		<div className="flex h-full min-h-0 gap-4">
+		<div
+			className="grid h-full min-h-0 @max-[780px]/phase:grid-cols-[minmax(0,1fr)_minmax(13rem,1fr)_minmax(0,1fr)] grid-cols-[minmax(0,1fr)_minmax(15rem,1fr)_minmax(0,1fr)] gap-4 [@container_phase_(max-height:620px)]:gap-2"
+			data-testid="phase-line-algo-layout"
+		>
 			<PhaseLineAlgoSideSection
 				section="A"
 				algo={algo}
@@ -38,11 +41,11 @@ export function PhaseLineAlgoPanel({
 				color={color}
 			/>
 
-			<div className="flex min-h-0 flex-1 flex-col gap-4">
+			<div className="flex min-h-0 flex-1 flex-col gap-4 [@container_phase_(max-height:620px)]:gap-2">
 				<Card
 					variant="subtle"
 					padding="none"
-					className="flex max-h-fit grow flex-col content-center overflow-hidden"
+					className="flex max-h-fit grow flex-col content-center overflow-hidden [@container_phase_(max-height:500px)]:hidden"
 				>
 					<div className="px-3 pt-2 pb-1 text-3xs text-cz-cream uppercase tracking-[0.24em]">
 						Single Cycle
@@ -51,7 +54,7 @@ export function PhaseLineAlgoPanel({
 				</Card>
 				<PerLineParametersCard parameters={parameters} lineIndex={lineIndex} />
 
-				<div className="mt-2 flex w-full grow flex-col items-center justify-center gap-1 overflow-hidden rounded-none bg-cz-surface/50 px-4 pt-4 pb-1.5">
+				<div className="mt-2 flex w-full grow flex-col items-center justify-center gap-1 overflow-hidden rounded-none bg-cz-surface/50 px-4 pt-4 pb-1.5 [@container_phase_(max-height:620px)]:mt-0 [@container_phase_(max-height:620px)]:px-2 [@container_phase_(max-height:620px)]:pt-1 [@container_phase_(max-height:620px)]:pb-0.5">
 					<div className="flex w-full max-w-60 items-center justify-between px-1 font-semibold text-cz-cream/80 text-xs uppercase tracking-[0.22em]">
 						<span>A</span>
 						<span>Blend</span>
@@ -71,7 +74,7 @@ export function PhaseLineAlgoPanel({
 						majorTickEvery={2}
 						trackThickness={40}
 						valueFormatter={formatAlgoBlendReadout}
-						className="w-full max-w-60 pb-4"
+						className="w-full max-w-60 pb-4 [@container_phase_(max-height:620px)]:pb-1"
 					/>
 				</div>
 			</div>

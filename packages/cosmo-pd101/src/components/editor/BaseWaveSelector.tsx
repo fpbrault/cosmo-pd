@@ -29,7 +29,7 @@ export function BaseWaveSelector({
 	return (
 		<Card
 			variant="subtle"
-			className="flex @min-[900px]:min-h-48 flex-col justify-center pb-2"
+			className="flex @min-[900px]:min-h-48 flex-col justify-center pb-2 [@container_phase_(max-height:620px)]:min-h-0 [@container_phase_(max-height:620px)]:pb-0.5"
 		>
 			<div
 				className="text-center text-3xs uppercase tracking-[0.24em]"
@@ -37,7 +37,7 @@ export function BaseWaveSelector({
 			>
 				{title}
 			</div>
-			<div className="flex flex-wrap justify-center gap-1">
+			<div className="flex flex-wrap justify-center gap-1 [@container_phase_(max-height:620px)]:gap-0">
 				{BASE_WAVE_OPTIONS.map((option) => (
 					<button
 						key={option.value}
@@ -47,7 +47,7 @@ export function BaseWaveSelector({
 						}}
 						disabled={disabled}
 						title={option.label}
-						className={`flex select-none flex-col items-center gap-0.5 rounded py-1.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 ${
+						className={`flex select-none flex-col items-center gap-0.5 rounded py-1.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 [@container_phase_(max-height:620px)]:py-0.5 [@container_phase_(max-height:500px)]:[&_svg]:h-4 [@container_phase_(max-height:500px)]:[&_svg]:w-7 ${
 							disabled ? "cursor-not-allowed opacity-40" : "cursor-pointer"
 						} ${
 							value === option.value
