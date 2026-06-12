@@ -238,7 +238,10 @@ impl PluginIpcRequest {
 
             // ── Preset Library ──
             "loadPresetData" | "loadPreset" => {
-                Self::LoadPreset(match serde_json::from_value(args[0].clone()) {
+                let first = args.first().ok_or_else(|| {
+                    format!("{method} expects a payload argument")
+                })?;
+                Self::LoadPreset(match serde_json::from_value(first.clone()) {
                     Ok(payload) => payload,
                     Err(_) => {
                         let obj = first_object(method, args)?;
@@ -363,23 +366,34 @@ impl PluginIpcRequest {
                     .filter(|s| !s.is_empty())
                     .map(String::from),
             ),
-            "addMidiBinding" => Self::AddMidiBinding {
-                param_key: args
-                    .first()
-                    .and_then(|v| v.as_str())
-                    .ok_or_else(|| "addMidiBinding expects param_key".to_string())?
-                    .to_string(),
-                channel: args
-                    .get(1)
-                    .and_then(|v| v.as_i64())
-                    .ok_or_else(|| "addMidiBinding expects channel".to_string())?
-                    as i32,
-                cc: args
-                    .get(2)
-                    .and_then(|v| v.as_i64())
-                    .ok_or_else(|| "addMidiBinding expects cc".to_string())?
-                    as i32,
-            },
+            "addMidiBinding" => {
+                // Accept both positional [key, channel, cc] and object {paramKey, channel, cc}
+                if let Some(obj) = args.first().and_then(|v| v.as_object()) {
+                    Self::AddMidiBinding {
+                        param_key: get_string(obj, "paramKey")?,
+                        channel: get_i32(obj, "channel")?,
+                        cc: get_i32(obj, "cc")?,
+                    }
+                } else {
+                    Self::AddMidiBinding {
+                        param_key: args
+                            .first()
+                            .and_then(|v| v.as_str())
+                            .ok_or_else(|| "addMidiBinding expects param_key".to_string())?
+                            .to_string(),
+                        channel: args
+                            .get(1)
+                            .and_then(|v| v.as_i64())
+                            .ok_or_else(|| "addMidiBinding expects channel".to_string())?
+                            as i32,
+                        cc: args
+                            .get(2)
+                            .and_then(|v| v.as_i64())
+                            .ok_or_else(|| "addMidiBinding expects cc".to_string())?
+                            as i32,
+                    }
+                }
+            }
             "removeMidiBinding" => Self::RemoveMidiBinding(
                 serde_json::from_value(
                     args.first()
@@ -438,6 +452,13 @@ fn get_f32(obj: &serde_json::Map<String, serde_json::Value>, key: &str) -> Resul
 
 fn get_f32_opt(obj: &serde_json::Map<String, serde_json::Value>, key: &str) -> Option<f32> {
     obj.get(key).and_then(|v| v.as_f64()).map(|v| v as f32)
+}
+
+fn get_i32(obj: &serde_json::Map<String, serde_json::Value>, key: &str) -> Result<i32, String> {
+    obj.get(key)
+        .and_then(|v| v.as_i64())
+        .and_then(|v| i32::try_from(v).ok())
+        .ok_or_else(|| format!("payload missing {key}"))
 }
 
 fn get_u32(obj: &serde_json::Map<String, serde_json::Value>, key: &str) -> Result<u32, String> {
@@ -598,6 +619,28 @@ mod tests {
             serde_json::json!(1),
             serde_json::json!(74),
         ];
+        let req = PluginIpcRequest::from_legacy("addMidiBinding", &args).unwrap();
+        match req {
+            PluginIpcRequest::AddMidiBinding {
+                param_key,
+                channel,
+                cc,
+            } => {
+                assert_eq!(param_key, "cutoff");
+                assert_eq!(channel, 1);
+                assert_eq!(cc, 74);
+            }
+            _ => panic!("unexpected variant"),
+        }
+    }
+
+    #[test]
+    fn from_legacy_add_midi_binding_object() {
+        let args = [serde_json::json!({
+            "paramKey": "cutoff",
+            "channel": 1,
+            "cc": 74,
+        })];
         let req = PluginIpcRequest::from_legacy("addMidiBinding", &args).unwrap();
         match req {
             PluginIpcRequest::AddMidiBinding {
