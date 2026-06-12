@@ -11,12 +11,13 @@
  *   - `window.__czIpcResponse({ id, result })` — RPC replies
  *
  * ## JS → Rust (outbound via window.ipc.postMessage):
- *   - RPC invoke:    `{ id: number, method: string, args: unknown[] }`
+ *   - RPC invoke:    `{ id: number, method: string, payload?: unknown }`
  */
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 import type {
 	ScopeDataResponse,
+	SynthParams,
 	TransportInfoResponse,
 } from "@cosmo/cosmo-pd101";
 import { postHostLog } from "./hostLogger";
@@ -118,7 +119,7 @@ function watchDemand(eventName: string, watcher: () => void) {
 
 // ─── RPC helper ──────────────────────────────────────────────────────────────
 
-function invokeRust(method: string, ...args: unknown[]): Promise<unknown> {
+function invokeRust(method: string, payload?: unknown): Promise<unknown> {
 	return new Promise((resolve, reject) => {
 		if (!_nativePostMessage) {
 			const error = new Error("[IPCBridge] native IPC not available");
@@ -128,7 +129,11 @@ function invokeRust(method: string, ...args: unknown[]): Promise<unknown> {
 		}
 		const id = nextRpcId++;
 		pendingRpc.set(id, { resolve, reject });
-		_nativePostMessage(JSON.stringify({ id, method, args }));
+		const msg: Record<string, unknown> = { id, method };
+		if (payload !== undefined) {
+			msg.payload = payload;
+		}
+		_nativePostMessage(JSON.stringify(msg));
 	});
 }
 
@@ -226,8 +231,8 @@ function installIpcRouter() {
 	window.__czGetParams = async () => invoke("getParams");
 	window.__czGetParamsVersion = async () => invoke("getParamsVersion");
 
-	window.__czSetParams = (json: string) => {
-		void invoke("setParams", json).catch((error) => {
+	window.__czSetParams = (params: SynthParams) => {
+		void invoke("setParams", params).catch((error) => {
 			console.error("[IPCBridge] setParams error", error);
 		});
 	};
@@ -301,9 +306,11 @@ function installIpcRouter() {
 		});
 	};
 	window.__czAddMidiBinding = (key: string, ch: number, cc: number) => {
-		void invoke("addMidiBinding", key, ch, cc).catch((error) => {
-			console.error("[IPCBridge] addMidiBinding error", error);
-		});
+		void invoke("addMidiBinding", { paramKey: key, channel: ch, cc }).catch(
+			(error) => {
+				console.error("[IPCBridge] addMidiBinding error", error);
+			},
+		);
 	};
 	window.__czRemoveMidiBinding = (binding: MidiLearnBinding) => {
 		void invoke("removeMidiBinding", binding).catch((error) => {

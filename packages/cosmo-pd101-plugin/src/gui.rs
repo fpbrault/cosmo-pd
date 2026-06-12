@@ -31,6 +31,7 @@ use crate::CzPluginParams;
 use crate::ipc::IpcContext;
 use crate::runtime_state::{MidiCcQueue, PluginSharedState, ScopeBuffer};
 use crate::{append_log, append_log_debug, append_log_error, append_log_warn};
+use cosmo_pd101_bridge_types::PluginIpcEnvelope;
 use cosmo_synth_engine::params::SynthParams;
 
 // ─── Size constants ──────────────────────────────────────────────────────────
@@ -880,17 +881,22 @@ unsafe fn build_webview_from_ns_view(
 
             if let Ok(msg) = serde_json::from_str::<serde_json::Value>(body) {
                 let id = msg.get("id").cloned().unwrap_or(serde_json::Value::Null);
-                let method = msg.get("method").and_then(|m| m.as_str()).unwrap_or("");
-                let args = msg
-                    .get("args")
-                    .and_then(|a| a.as_array())
-                    .cloned()
-                    .unwrap_or_default();
+                let method_name = msg.get("method").and_then(|m| m.as_str()).unwrap_or("").to_string();
 
-                let result = ipc_context.invoke(method, &args);
+                let result =
+                    if let Ok(envelope) = serde_json::from_value::<PluginIpcEnvelope>(msg.clone()) {
+                        ipc_context.invoke_envelope(&envelope)
+                    } else {
+                        let args = msg
+                            .get("args")
+                            .and_then(|a| a.as_array())
+                            .cloned()
+                            .unwrap_or_default();
+                        ipc_context.invoke(&method_name, &args)
+                    };
 
                 if let Err(error) = &result {
-                    append_log_warn(&format!("ipc error method={method}: {error}"));
+                    append_log_warn(&format!("ipc error method={method_name}: {error}"));
                 }
 
                 let response = match result {

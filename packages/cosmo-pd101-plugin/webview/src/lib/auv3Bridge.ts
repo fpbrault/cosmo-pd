@@ -1,4 +1,4 @@
-import type { ScopeDataResponse } from "@cosmo/cosmo-pd101";
+import type { ScopeDataResponse, SynthParams } from "@cosmo/cosmo-pd101";
 import type { IpcRpcResponse, PresetSession } from "./ipcTypes";
 import { createTypedInvoke } from "./ipcTypes";
 
@@ -111,7 +111,7 @@ function nativeHandler() {
 
 function invokeAuv3(
 	method: string,
-	args: unknown[] = [],
+	payload?: unknown,
 	timeoutMs = 0,
 ): Promise<unknown> {
 	return new Promise((resolve, reject) => {
@@ -141,12 +141,16 @@ function invokeAuv3(
 				reject(new Error(`[auv3Bridge] ${method} timed out`));
 			}, timeoutMs);
 		}
-		handler.postMessage({ id, method, args });
+		const msg: Record<string, unknown> = { id, method };
+		if (payload !== undefined) {
+			msg.payload = payload;
+		}
+		handler.postMessage(msg);
 	});
 }
 
-const invoke = createTypedInvoke((method: string, ...args: unknown[]) =>
-	invokeAuv3(method, args),
+const invoke = createTypedInvoke((method: string, payload?: unknown) =>
+	invokeAuv3(method, payload),
 );
 
 function installIpcResponseHandler() {
@@ -192,7 +196,7 @@ function installIpcRouter() {
 	};
 
 	window.__czGetParams = async () => {
-		const result = await invokeAuv3("getParams", [], 3000);
+		const result = await invokeAuv3("getParams", undefined, 3000);
 		if (typeof result !== "string") {
 			return result;
 		}
@@ -202,9 +206,10 @@ function installIpcRouter() {
 			return null;
 		}
 	};
-	window.__czGetParamsVersion = () => invokeAuv3("getParamsVersion", [], 3000);
-	window.__czSetParams = (json: string) => {
-		void invoke("setParams", json).catch((error) => {
+	window.__czGetParamsVersion = () =>
+		invokeAuv3("getParamsVersion", undefined, 3000);
+	window.__czSetParams = (params: SynthParams) => {
+		void invoke("setParams", params).catch((error) => {
 			console.error("[auv3Bridge] setParams error", error);
 		});
 	};
@@ -334,7 +339,7 @@ function installScopePolling() {
 		lastScheduled = now;
 		pollInFlight = true;
 		try {
-			await invokeAuv3("getScopeData", [], IPC_TIMEOUT_MS)
+			await invokeAuv3("getScopeData", undefined, IPC_TIMEOUT_MS)
 				.then((result) => {
 					const raw = result as ScopeDataResponse;
 					if (raw?.samples.length > 0 && currentScopeHandler) {
@@ -415,7 +420,7 @@ function installAuv3DemandSubscription<TDetail>(
 				return;
 			}
 			subscriptionState = "subscribing";
-			void invokeAuv3(subscribeMethod, [], IPC_TIMEOUT_MS)
+			void invokeAuv3(subscribeMethod, undefined, IPC_TIMEOUT_MS)
 				.then(() => {
 					if (destroyed) {
 						subscriptionState = "unsubscribed";
@@ -434,7 +439,7 @@ function installAuv3DemandSubscription<TDetail>(
 			return;
 		}
 		subscriptionState = "unsubscribing";
-		void invokeAuv3(unsubscribeMethod, [], IPC_TIMEOUT_MS)
+		void invokeAuv3(unsubscribeMethod, undefined, IPC_TIMEOUT_MS)
 			.catch(() => {
 				// The host may have torn down while the page is unloading.
 			})
@@ -452,9 +457,11 @@ function installAuv3DemandSubscription<TDetail>(
 		destroyed = true;
 		unwatchDemand();
 		if (subscriptionState === "subscribed") {
-			void invokeAuv3(unsubscribeMethod, [], IPC_TIMEOUT_MS).catch(() => {
-				// Host teardown races are safe to ignore here.
-			});
+			void invokeAuv3(unsubscribeMethod, undefined, IPC_TIMEOUT_MS).catch(
+				() => {
+					// Host teardown races are safe to ignore here.
+				},
+			);
 		}
 		subscriptionState = "unsubscribed";
 	});

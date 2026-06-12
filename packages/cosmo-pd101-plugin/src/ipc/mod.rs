@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 
-use cosmo_pd101_bridge_types::PluginIpcRequest;
+use cosmo_pd101_bridge_types::{PluginIpcEnvelope, PluginIpcRequest};
 use cosmo_synth_engine::params::SynthParams;
 use cosmo_synth_engine::processor::CosmoInputEvent;
 use uuid::Uuid;
@@ -66,6 +66,14 @@ impl IpcContext {
         }
 
         self.invoke_typed(&request)
+    }
+
+    /// Dispatch via a `PluginIpcEnvelope` (new `{ method, payload }` format).
+    pub fn invoke_envelope(
+        &self,
+        envelope: &PluginIpcEnvelope,
+    ) -> Result<serde_json::Value, String> {
+        self.invoke_typed(&envelope.request)
     }
 
     fn invoke_typed(&self, req: &PluginIpcRequest) -> Result<serde_json::Value, String> {
