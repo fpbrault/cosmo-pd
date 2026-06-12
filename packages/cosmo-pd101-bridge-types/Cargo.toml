@@ -1,0 +1,40 @@
+[package]
+name = "cosmo-pd101-bridge-types"
+version.workspace = true
+edition = "2024"
+license.workspace = true
+description = "Shared IPC bridge types between cosmo-pd101-plugin Rust and cosmo-pd101 TypeScript"
+
+[lib]
+crate-type = ["rlib"]
+
+[[bin]]
+name = "export-specta-bindings"
+path = "export_specta_bindings.rs"
+required-features = ["specta-bindings"]
+
+[features]
+specta-bindings = [
+	"dep:specta",
+	"dep:specta-serde",
+	"dep:specta-typescript",
+	"cosmo-synth-engine/specta-bindings",
+]
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+cosmo-synth-engine = { path = "../cosmo-synth-engine", default-features = false, features = ["std"] }
+
+[dependencies.specta]
+version = "=2.0.0-rc.25"
+optional = true
+features = ["derive"]
+
+[dependencies.specta-serde]
+version = "=0.0.12"
+optional = true
+
+[dependencies.specta-typescript]
+version = "=0.0.12"
+optional = true

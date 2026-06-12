@@ -558,6 +558,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "cosmo-pd101-bridge-types"
+version = "0.4.0"
+dependencies = [
+ "cosmo-synth-engine",
+ "serde",
+ "serde_json",
+ "specta",
+ "specta-serde",
+ "specta-typescript",
+]
+
+[[package]]
 name = "cosmo-pd101-plugin"
 version = "0.4.0"
 dependencies = [
