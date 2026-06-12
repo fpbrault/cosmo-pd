@@ -1,10 +1,15 @@
 use serde::{Deserialize, Serialize};
 
 use crate::editor::EditorState;
-use crate::midi::MidiLearnBinding;
-use crate::preset::PresetBankBundle;
+use crate::midi::{MidiLearnBinding, MidiLearnState};
+use crate::preset::{
+    AddPresetResponse, ExportPresetResponse, FxModulePresetEntry, LoadPresetResponse,
+    PresetBankBundle, PresetLibraryActionResponse, PresetLibraryResponse, SavePresetResponse,
+};
+use crate::runtime::{ScopeDataResponse, TransportInfoResponse};
 use crate::session::PresetSession;
 use cosmo_synth_engine::params::SynthParams;
+use cosmo_synth_engine::processor::state::{RuntimeModSources, RuntimeVoiceDebugState};
 
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
@@ -15,11 +20,14 @@ use specta::Type;
 /// - Unit variant: `{ "method": "getParams" }`
 /// - Payload variant: `{ "method": "setPresetSession", "payload": { ... } }`
 ///
-/// NOTE: does NOT derive `Type` for specta because several variants contain
-/// `serde_json::Value` which transitively holds BigInt (i64/u64).  The TS
-/// side uses the hand-authored `PluginIpcMethods` contract type instead.
 #[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(tag = "method", content = "payload")]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(
+    tag = "method",
+    content = "payload",
+    rename_all_fields = "camelCase",
+    deny_unknown_fields
+)]
 pub enum PluginIpcRequest {
     // ── Performance ──
     #[serde(rename = "noteOn")]
@@ -132,6 +140,118 @@ pub enum PluginIpcRequest {
     ClearMidiLearnBindings,
 }
 
+/// Typed result for each IPC request. The transport serializes only `result`.
+#[derive(Serialize, Clone, Debug)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(tag = "method", content = "result")]
+pub enum PluginIpcResponse {
+    #[serde(rename = "noteOn")]
+    NoteOn,
+    #[serde(rename = "noteOff")]
+    NoteOff,
+    #[serde(rename = "sustain")]
+    Sustain,
+    #[serde(rename = "pitchBend")]
+    PitchBend,
+    #[serde(rename = "modWheel")]
+    ModWheel,
+    #[serde(rename = "aftertouch")]
+    Aftertouch,
+    #[serde(rename = "polyAftertouch")]
+    PolyAftertouch,
+    #[serde(rename = "macroValue")]
+    MacroValue,
+    #[serde(rename = "panic")]
+    Panic,
+    #[serde(rename = "getParams")]
+    GetParams(Box<SynthParams>),
+    #[serde(rename = "setParams")]
+    SetParams,
+    #[serde(rename = "getParamsVersion")]
+    GetParamsVersion(u32),
+    #[serde(rename = "getRuntimeModSources")]
+    GetRuntimeModSources(RuntimeModSources),
+    #[serde(rename = "getRuntimeVoiceStates")]
+    GetRuntimeVoiceStates(Vec<RuntimeVoiceDebugState>),
+    #[serde(rename = "getTransportInfo")]
+    GetTransportInfo(TransportInfoResponse),
+    #[serde(rename = "getScopeData")]
+    GetScopeData(ScopeDataResponse),
+    #[serde(rename = "clientLog")]
+    ClientLog,
+    #[serde(rename = "getPresetSession")]
+    GetPresetSession(PresetSession),
+    #[serde(rename = "setPresetSession")]
+    SetPresetSession,
+    #[serde(rename = "getPresetName")]
+    GetPresetName(String),
+    #[serde(rename = "setPresetName")]
+    SetPresetName,
+    #[serde(rename = "loadPreset")]
+    LoadPreset(LoadPresetResponse),
+    #[serde(rename = "getPresetLibrary")]
+    GetPresetLibrary(PresetLibraryResponse),
+    #[serde(rename = "retryPresetLibrary")]
+    RetryPresetLibrary(PresetLibraryActionResponse),
+    #[serde(rename = "repairPresetLibrary")]
+    RepairPresetLibrary(PresetLibraryActionResponse),
+    #[serde(rename = "rebuildPresetLibrary")]
+    RebuildPresetLibrary(PresetLibraryActionResponse),
+    #[serde(rename = "addPreset")]
+    AddPreset(AddPresetResponse),
+    #[serde(rename = "savePreset")]
+    SavePreset(SavePresetResponse),
+    #[serde(rename = "deletePreset")]
+    DeletePreset,
+    #[serde(rename = "renamePreset")]
+    RenamePreset,
+    #[serde(rename = "toggleStarred")]
+    ToggleStarred,
+    #[serde(rename = "setPresetAuthor")]
+    SetPresetAuthor,
+    #[serde(rename = "setPresetDescription")]
+    SetPresetDescription,
+    #[serde(rename = "setPresetTags")]
+    SetPresetTags,
+    #[serde(rename = "importPresetBank")]
+    ImportPresetBank,
+    #[serde(rename = "exportPreset")]
+    ExportPreset(ExportPresetResponse),
+    #[serde(rename = "listFxModulePresets")]
+    ListFxModulePresets(Vec<FxModulePresetEntry>),
+    #[serde(rename = "saveFxModulePreset")]
+    SaveFxModulePreset(FxModulePresetEntry),
+    #[serde(rename = "deleteFxModulePreset")]
+    DeleteFxModulePreset,
+    #[serde(rename = "getEditorState")]
+    GetEditorState(Option<EditorState>),
+    #[serde(rename = "setEditorState")]
+    SetEditorState,
+    #[serde(rename = "getMidiLearnState")]
+    GetMidiLearnState(MidiLearnState),
+    #[serde(rename = "setMidiLearnMode")]
+    SetMidiLearnMode,
+    #[serde(rename = "setPendingMidiLearnParam")]
+    SetPendingMidiLearnParam,
+    #[serde(rename = "addMidiBinding")]
+    AddMidiBinding,
+    #[serde(rename = "removeMidiBinding")]
+    RemoveMidiBinding,
+    #[serde(rename = "clearMidiLearnBindings")]
+    ClearMidiLearnBindings,
+}
+
+impl PluginIpcResponse {
+    pub fn into_result(self) -> Result<serde_json::Value, serde_json::Error> {
+        let value = serde_json::to_value(self)?;
+        Ok(value
+            .as_object()
+            .and_then(|object| object.get("result"))
+            .cloned()
+            .unwrap_or(serde_json::Value::Null))
+    }
+}
+
 /// Payload for `addPreset` IPC method.
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
@@ -163,6 +283,10 @@ pub struct SavePresetPayload {
     #[serde(default)]
     pub macro_labels: Option<Vec<String>>,
     #[serde(default)]
+    #[cfg_attr(
+        feature = "specta-bindings",
+        specta(type = Option<crate::BridgeJsonValue>)
+    )]
     pub data: Option<serde_json::Value>,
 }
 
@@ -173,15 +297,13 @@ pub struct SavePresetPayload {
 pub struct SaveFxModulePresetPayload {
     pub name: String,
     pub module_type: String,
+    #[cfg_attr(feature = "specta-bindings", specta(type = crate::BridgeJsonValue))]
     pub patch: serde_json::Value,
 }
 
-/// Decode a legacy `{ method, args }` RPC call into a typed `PluginIpcRequest`.
-///
-/// The current webview sends `{ id, method, args }` where `args` is a positional
-/// JSON array. This bridge converts those positional calls into the typed enum
-/// variants without changing the wire format.
 impl PluginIpcRequest {
+    /// Test-only adapter for pre-migration positional fixtures.
+    #[cfg(test)]
     pub fn from_legacy(method: &str, args: &[serde_json::Value]) -> Result<Self, String> {
         Ok(match method {
             // ── Performance ──
@@ -478,6 +600,7 @@ impl PluginIpcRequest {
 
 // ─── Payload extractors ────────────────────────────────────────────────────────
 
+#[cfg(test)]
 fn first_object<'a>(
     method: &str,
     args: &'a [serde_json::Value],
@@ -487,6 +610,7 @@ fn first_object<'a>(
         .ok_or_else(|| format!("{method} expects an object payload as first argument"))
 }
 
+#[cfg(test)]
 fn get_u8(obj: &serde_json::Map<String, serde_json::Value>, key: &str) -> Result<u8, String> {
     obj.get(key)
         .and_then(|v| v.as_u64())
@@ -494,6 +618,7 @@ fn get_u8(obj: &serde_json::Map<String, serde_json::Value>, key: &str) -> Result
         .ok_or_else(|| format!("payload missing {key}"))
 }
 
+#[cfg(test)]
 fn get_string(
     obj: &serde_json::Map<String, serde_json::Value>,
     key: &str,
@@ -504,12 +629,14 @@ fn get_string(
         .ok_or_else(|| format!("payload missing {key}"))
 }
 
+#[cfg(test)]
 fn get_bool(obj: &serde_json::Map<String, serde_json::Value>, key: &str) -> Result<bool, String> {
     obj.get(key)
         .and_then(|v| v.as_bool())
         .ok_or_else(|| format!("payload missing {key}"))
 }
 
+#[cfg(test)]
 fn get_f32(obj: &serde_json::Map<String, serde_json::Value>, key: &str) -> Result<f32, String> {
     obj.get(key)
         .and_then(|v| v.as_f64())
@@ -517,10 +644,12 @@ fn get_f32(obj: &serde_json::Map<String, serde_json::Value>, key: &str) -> Resul
         .ok_or_else(|| format!("payload missing {key}"))
 }
 
+#[cfg(test)]
 fn get_f32_opt(obj: &serde_json::Map<String, serde_json::Value>, key: &str) -> Option<f32> {
     obj.get(key).and_then(|v| v.as_f64()).map(|v| v as f32)
 }
 
+#[cfg(test)]
 fn get_i32(obj: &serde_json::Map<String, serde_json::Value>, key: &str) -> Result<i32, String> {
     obj.get(key)
         .and_then(|v| v.as_i64())
@@ -528,6 +657,7 @@ fn get_i32(obj: &serde_json::Map<String, serde_json::Value>, key: &str) -> Resul
         .ok_or_else(|| format!("payload missing {key}"))
 }
 
+#[cfg(test)]
 fn get_u32(obj: &serde_json::Map<String, serde_json::Value>, key: &str) -> Result<u32, String> {
     obj.get(key)
         .and_then(|v| v.as_u64())
@@ -535,6 +665,7 @@ fn get_u32(obj: &serde_json::Map<String, serde_json::Value>, key: &str) -> Resul
         .ok_or_else(|| format!("payload missing {key}"))
 }
 
+#[cfg(test)]
 fn get_string_vec(
     obj: &serde_json::Map<String, serde_json::Value>,
     key: &str,
@@ -551,7 +682,7 @@ fn get_string_vec(
 
 /// Outer envelope wrapping `id` + the tagged IPC request.
 #[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PluginIpcEnvelope {
     pub id: u32,
     #[serde(flatten)]
@@ -908,10 +1039,18 @@ mod tests {
     }
 
     #[test]
-    fn envelope_ignores_legacy_args_key() {
+    fn envelope_rejects_legacy_args_key() {
         let input = r#"{"id":4,"method":"getParams","args":[]}"#;
-        let env: PluginIpcEnvelope = serde_json::from_str(input).unwrap();
-        assert_eq!(env.id, 4);
-        assert!(matches!(env.request, PluginIpcRequest::GetParams));
+        assert!(serde_json::from_str::<PluginIpcEnvelope>(input).is_err());
+    }
+
+    #[test]
+    fn typed_response_serializes_only_its_result() {
+        let value = PluginIpcResponse::LoadPreset(LoadPresetResponse {
+            preset_name: "Warm Pad".to_string(),
+        })
+        .into_result()
+        .unwrap();
+        assert_eq!(value, serde_json::json!({ "presetName": "Warm Pad" }));
     }
 }

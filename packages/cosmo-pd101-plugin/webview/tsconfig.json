@@ -13,10 +13,12 @@
 			"@/*": ["./src/*"]
 		},
 		"jsx": "react-jsx",
+		"types": ["vite/client"],
 		"strict": true,
 		"skipLibCheck": true,
 		"isolatedModules": true,
 		"noEmit": true
 	},
-	"include": ["src"]
+	"include": ["src"],
+	"exclude": ["src/**/*.test.*", "src/**/*.browser.test.*", "src/test/**"]
 }

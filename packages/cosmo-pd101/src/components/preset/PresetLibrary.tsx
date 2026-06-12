@@ -73,12 +73,7 @@ export default function PresetLibrary({
 		"repair" | "rebuild" | null
 	>(null);
 	const persistenceDisabled = libraryStatus.state === "degraded";
-	const isPluginRuntime =
-		typeof (
-			window as Window & {
-				__czSetParams?: (json: string) => void;
-			}
-		).__czSetParams === "function";
+	const isPluginRuntime = typeof window.__czSetParams === "function";
 
 	const {
 		search,

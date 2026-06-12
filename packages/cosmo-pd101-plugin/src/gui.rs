@@ -883,17 +883,10 @@ unsafe fn build_webview_from_ns_view(
                 let id = msg.get("id").cloned().unwrap_or(serde_json::Value::Null);
                 let method_name = msg.get("method").and_then(|m| m.as_str()).unwrap_or("").to_string();
 
-                let result =
-                    if let Ok(envelope) = serde_json::from_value::<PluginIpcEnvelope>(msg.clone()) {
-                        ipc_context.invoke_envelope(&envelope)
-                    } else {
-                        let args = msg
-                            .get("args")
-                            .and_then(|a| a.as_array())
-                            .cloned()
-                            .unwrap_or_default();
-                        ipc_context.invoke(&method_name, &args)
-                    };
+                let result = serde_json::from_value::<PluginIpcEnvelope>(msg)
+                    .map_err(|error| format!("invalid IPC envelope: {error}"))
+                    .and_then(|envelope| ipc_context.invoke_envelope(&envelope))
+                    .and_then(|response| response.into_result().map_err(|error| error.to_string()));
 
                 if let Err(error) = &result {
                     append_log_warn(&format!("ipc error method={method_name}: {error}"));

@@ -3,7 +3,7 @@ use super::*;
 pub(super) fn handle(
     context: &IpcContext,
     req: &PluginIpcRequest,
-) -> Result<serde_json::Value, String> {
+) -> Result<PluginIpcResponse, String> {
     let midi_learn_state = &context.shared_state.midi_learn.state;
     match req {
         PluginIpcRequest::SetMidiLearnMode(mode) => {
@@ -17,14 +17,14 @@ pub(super) fn handle(
                     state.learn_mode, state.version, state.pending_param_key
                 ));
             }
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::SetMidiLearnMode)
         }
         PluginIpcRequest::SetPendingMidiLearnParam(param_key) => {
             if let Ok(mut state) = midi_learn_state.lock() {
                 state.pending_param_key = param_key.clone();
                 state.version += 1;
             }
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::SetPendingMidiLearnParam)
         }
         PluginIpcRequest::AddMidiBinding {
             param_key,
@@ -56,7 +56,7 @@ pub(super) fn handle(
                 ));
             }
             persist_midi_learn_bindings(midi_learn_state);
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::AddMidiBinding)
         }
         PluginIpcRequest::RemoveMidiBinding(binding) => {
             if let Ok(mut state) = midi_learn_state.lock() {
@@ -64,7 +64,7 @@ pub(super) fn handle(
                 state.version += 1;
             }
             persist_midi_learn_bindings(midi_learn_state);
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::RemoveMidiBinding)
         }
         PluginIpcRequest::ClearMidiLearnBindings => {
             if let Ok(mut state) = midi_learn_state.lock() {
@@ -72,14 +72,14 @@ pub(super) fn handle(
                 state.version += 1;
             }
             persist_midi_learn_bindings(midi_learn_state);
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::ClearMidiLearnBindings)
         }
         PluginIpcRequest::GetMidiLearnState => {
             let state = midi_learn_state
                 .lock()
                 .map(|s| s.clone())
                 .unwrap_or_default();
-            serde_json::to_value(state).map_err(|e| e.to_string())
+            Ok(PluginIpcResponse::GetMidiLearnState(state))
         }
         _ => unreachable!("method routed to wrong IPC domain"),
     }

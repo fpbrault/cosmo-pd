@@ -3,7 +3,7 @@ use super::*;
 pub(super) fn handle(
     context: &IpcContext,
     req: &PluginIpcRequest,
-) -> Result<serde_json::Value, String> {
+) -> Result<PluginIpcResponse, String> {
     let ui_input_queue = &context.shared_state.ui.ui_input_queue;
     match req {
         PluginIpcRequest::NoteOn { note, velocity } => {
@@ -13,13 +13,13 @@ pub(super) fn handle(
                     velocity: *velocity,
                 })
                 .map_err(|_| "ui input queue is full".to_string())?;
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::NoteOn)
         }
         PluginIpcRequest::NoteOff { note } => {
             ui_input_queue
                 .push(CosmoInputEvent::NoteOff { note: *note })
                 .map_err(|_| "ui input queue is full".to_string())?;
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::NoteOff)
         }
         PluginIpcRequest::Sustain { on } => {
             ui_input_queue
@@ -29,13 +29,13 @@ pub(super) fn handle(
                     value: if *on { 127 } else { 0 },
                 })
                 .map_err(|_| "ui input queue is full".to_string())?;
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::Sustain)
         }
         PluginIpcRequest::PitchBend { value } => {
             ui_input_queue
                 .push(CosmoInputEvent::PitchBend { value: *value })
                 .map_err(|_| "ui input queue is full".to_string())?;
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::PitchBend)
         }
         PluginIpcRequest::ModWheel { value } => {
             ui_input_queue
@@ -45,13 +45,13 @@ pub(super) fn handle(
                     value: denorm_midi_7bit(*value),
                 })
                 .map_err(|_| "ui input queue is full".to_string())?;
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::ModWheel)
         }
         PluginIpcRequest::Aftertouch { value } => {
             ui_input_queue
                 .push(CosmoInputEvent::Aftertouch { value: *value })
                 .map_err(|_| "ui input queue is full".to_string())?;
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::Aftertouch)
         }
         PluginIpcRequest::PolyAftertouch { note, value } => {
             ui_input_queue
@@ -60,7 +60,7 @@ pub(super) fn handle(
                     value: *value,
                 })
                 .map_err(|_| "ui input queue is full".to_string())?;
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::PolyAftertouch)
         }
         PluginIpcRequest::MacroValue { index, value } => {
             ui_input_queue
@@ -69,13 +69,13 @@ pub(super) fn handle(
                     value: *value,
                 })
                 .map_err(|_| "ui input queue is full".to_string())?;
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::MacroValue)
         }
         PluginIpcRequest::Panic => {
             ui_input_queue
                 .push(CosmoInputEvent::Panic)
                 .map_err(|_| "ui input queue is full".to_string())?;
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::Panic)
         }
         _ => unreachable!("method routed to wrong IPC domain"),
     }

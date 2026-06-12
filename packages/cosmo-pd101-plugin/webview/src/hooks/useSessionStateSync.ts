@@ -4,7 +4,8 @@ import { useEffect, useRef } from "react";
 
 function hasBridgeApi(name: string): boolean {
 	return (
-		typeof (window as Record<string, unknown>)[`__cz${name}`] === "function"
+		typeof (window as unknown as Record<string, unknown>)[`__cz${name}`] ===
+		"function"
 	);
 }
 

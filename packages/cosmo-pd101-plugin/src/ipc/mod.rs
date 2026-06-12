@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 
-use cosmo_pd101_bridge_types::{PluginIpcEnvelope, PluginIpcRequest};
+use cosmo_pd101_bridge_types::{PluginIpcEnvelope, PluginIpcRequest, PluginIpcResponse};
 use cosmo_synth_engine::params::SynthParams;
 use cosmo_synth_engine::processor::CosmoInputEvent;
 use uuid::Uuid;
@@ -42,41 +42,15 @@ impl IpcContext {
         }
     }
 
-    /// Dispatch a legacy `(method, args)` pair to the typed handler.
-    ///
-    /// Keeps backward compat with the current `{ id, method, args }` wire
-    /// format.  Phase 6 can switch to deserializing `PluginIpcEnvelope`
-    /// directly.
-    pub fn invoke(
-        &self,
-        method: &str,
-        args: &[serde_json::Value],
-    ) -> Result<serde_json::Value, String> {
-        let request = PluginIpcRequest::from_legacy(method, args)?;
-
-        if !matches!(
-            request,
-            PluginIpcRequest::GetScopeData
-                | PluginIpcRequest::ClientLog { .. }
-                | PluginIpcRequest::GetRuntimeModSources
-                | PluginIpcRequest::GetTransportInfo
-                | PluginIpcRequest::GetRuntimeVoiceStates
-        ) {
-            append_log_debug(&format!("ipc invoke method={method} args={}", args.len()));
-        }
-
-        self.invoke_typed(&request)
-    }
-
     /// Dispatch via a `PluginIpcEnvelope` (new `{ method, payload }` format).
     pub fn invoke_envelope(
         &self,
         envelope: &PluginIpcEnvelope,
-    ) -> Result<serde_json::Value, String> {
+    ) -> Result<PluginIpcResponse, String> {
         self.invoke_typed(&envelope.request)
     }
 
-    fn invoke_typed(&self, req: &PluginIpcRequest) -> Result<serde_json::Value, String> {
+    fn invoke_typed(&self, req: &PluginIpcRequest) -> Result<PluginIpcResponse, String> {
         match req {
             // Performance
             PluginIpcRequest::NoteOn { .. }
@@ -136,32 +110,5 @@ impl IpcContext {
             | PluginIpcRequest::ClearMidiLearnBindings
             | PluginIpcRequest::GetMidiLearnState => midi::handle(self, req),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::sync::Mutex;
-
-    use super::*;
-    use crate::preset_library::PresetLibrary;
-    use crate::session_state::MidiLearnState;
-
-    #[test]
-    fn unknown_method_returns_an_error() {
-        let params = SynthParams::default();
-        let library = Arc::new(Mutex::new(PresetLibrary::from_embedded_factory("[]")));
-        let shared_state = Arc::new(PluginSharedState::new(
-            params.clone(),
-            params,
-            library,
-            MidiLearnState::default(),
-        ));
-        let context = IpcContext::new(shared_state, Arc::new(CzPluginParams::new()));
-
-        assert_eq!(
-            context.invoke("notARealMethod", &[]),
-            Err("unknown method: notARealMethod".to_string())
-        );
     }
 }

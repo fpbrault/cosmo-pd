@@ -12,11 +12,7 @@ describe("midiLearnStore", () => {
 	beforeEach(() => {
 		localStorage.clear();
 		resetMidiLearnPersistenceForTests();
-		(
-			window as Window & {
-				__czGetMidiLearnState?: () => Promise<unknown>;
-			}
-		).__czGetMidiLearnState = undefined;
+		window.__czGetMidiLearnState = undefined;
 		useMidiLearnStore.setState({
 			learnMode: false,
 			bindings: [],
@@ -104,11 +100,7 @@ describe("midiLearnStore", () => {
 	});
 
 	it("refreshMidiLearnState hydrates bindings from the engine bridge", async () => {
-		(
-			window as Window & {
-				__czGetMidiLearnState?: () => Promise<unknown>;
-			}
-		).__czGetMidiLearnState = vi.fn().mockResolvedValue({
+		window.__czGetMidiLearnState = vi.fn().mockResolvedValue({
 			learnMode: true,
 			pendingParamKey: "macro3",
 			bindings: [{ paramKey: "macro3", channel: 2, cc: 42 }],
@@ -125,11 +117,7 @@ describe("midiLearnStore", () => {
 	});
 
 	it("subscribeMidiLearnState requests the latest engine state immediately", async () => {
-		(
-			window as Window & {
-				__czGetMidiLearnState?: () => Promise<unknown>;
-			}
-		).__czGetMidiLearnState = vi.fn().mockResolvedValue({
+		window.__czGetMidiLearnState = vi.fn().mockResolvedValue({
 			learnMode: false,
 			pendingParamKey: null,
 			bindings: [{ paramKey: "macro4", channel: 0, cc: 43 }],

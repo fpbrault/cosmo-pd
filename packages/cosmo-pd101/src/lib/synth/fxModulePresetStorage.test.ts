@@ -5,18 +5,6 @@ import {
 	saveFxModulePreset,
 } from "./fxModulePresetStorage";
 
-declare global {
-	interface Window {
-		__czListFxModulePresets?: (moduleType: string) => Promise<unknown>;
-		__czSaveFxModulePreset?: (payload: {
-			name: string;
-			moduleType: string;
-			patch: Record<string, unknown>;
-		}) => Promise<unknown>;
-		__czDeleteFxModulePreset?: (id: string) => Promise<unknown>;
-	}
-}
-
 describe("fxModulePresetStorage", () => {
 	afterEach(() => {
 		delete window.__czListFxModulePresets;

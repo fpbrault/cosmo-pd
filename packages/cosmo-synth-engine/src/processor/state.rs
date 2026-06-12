@@ -1,8 +1,12 @@
 use crate::voice::Voice;
 use serde::Serialize;
 
+#[cfg(feature = "specta-bindings")]
+use specta::Type;
+
 /// Snapshot of modulation source values for UI telemetry.
 #[derive(Debug, Clone, Copy, Default, Serialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
 #[serde(rename_all = "camelCase")]
 pub struct RuntimeModSources {
     pub pitch_bend: f32,
@@ -21,8 +25,11 @@ pub struct RuntimeModSources {
 
 /// Snapshot of a single envelope generator's runtime state.
 #[derive(Debug, Clone, Copy, Default, Serialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
 pub struct RuntimeVoiceEnvState {
     pub value: f32,
+    #[cfg_attr(feature = "specta-bindings", specta(type = u32))]
     pub step: usize,
     pub releasing: bool,
     pub step_pos: u32,
@@ -31,6 +38,7 @@ pub struct RuntimeVoiceEnvState {
 
 /// Snapshot of one oscillator line's envelope generators.
 #[derive(Debug, Clone, Copy, Default, Serialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
 pub struct RuntimeVoiceLineState {
     pub dco: RuntimeVoiceEnvState,
     pub dcw: RuntimeVoiceEnvState,
@@ -39,7 +47,10 @@ pub struct RuntimeVoiceLineState {
 
 /// Full debug snapshot of one voice's runtime state.
 #[derive(Debug, Clone, Serialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
 pub struct RuntimeVoiceDebugState {
+    #[cfg_attr(feature = "specta-bindings", specta(type = u32))]
     pub index: usize,
     pub active: bool,
     pub is_releasing: bool,

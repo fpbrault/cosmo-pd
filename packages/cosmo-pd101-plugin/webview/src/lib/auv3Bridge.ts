@@ -1,5 +1,11 @@
-import type { ScopeDataResponse, SynthParams } from "@cosmo/cosmo-pd101";
-import type { IpcRpcResponse, PresetSession } from "./ipcTypes";
+import type {
+	EditorState,
+	MidiLearnBinding,
+	PresetSession,
+	ScopeDataResponse,
+	SynthParams,
+} from "@cosmo/cosmo-pd101";
+import type { IpcRpcResponse } from "./ipcTypes";
 import { createTypedInvoke } from "./ipcTypes";
 
 /** AUv3-specific Window methods (webkit bridge, host platform, subscriptions). */
@@ -109,12 +115,12 @@ function nativeHandler() {
 	return window.webkit?.messageHandlers?.cosmoPd101;
 }
 
-function invokeAuv3(
+function invokeAuv3<T = unknown>(
 	method: string,
 	payload?: unknown,
 	timeoutMs = 0,
-): Promise<unknown> {
-	return new Promise((resolve, reject) => {
+): Promise<T> {
+	return new Promise<T>((resolve, reject) => {
 		const handler = nativeHandler();
 		if (!handler) {
 			reject(new Error("[auv3Bridge] native message handler not available"));
@@ -126,7 +132,7 @@ function invokeAuv3(
 		pendingRpc.set(id, {
 			resolve(value) {
 				window.clearTimeout(timeoutId);
-				resolve(value);
+				resolve(value as T);
 			},
 			reject(reason) {
 				window.clearTimeout(timeoutId);
@@ -150,7 +156,7 @@ function invokeAuv3(
 }
 
 const invoke = createTypedInvoke((method: string, payload?: unknown) =>
-	invokeAuv3(method, payload),
+	invokeAuv3<unknown>(method, payload),
 );
 
 function installIpcResponseHandler() {
@@ -196,18 +202,18 @@ function installIpcRouter() {
 	};
 
 	window.__czGetParams = async () => {
-		const result = await invokeAuv3("getParams", undefined, 3000);
+		const result = await invokeAuv3<SynthParams | string>(
+			"getParams",
+			undefined,
+			3000,
+		);
 		if (typeof result !== "string") {
 			return result;
 		}
-		try {
-			return JSON.parse(result) as unknown;
-		} catch {
-			return null;
-		}
+		return JSON.parse(result) as SynthParams;
 	};
 	window.__czGetParamsVersion = () =>
-		invokeAuv3("getParamsVersion", undefined, 3000);
+		invokeAuv3<number>("getParamsVersion", undefined, 3000);
 	window.__czSetParams = (params: SynthParams) => {
 		void invoke("setParams", params).catch((error) => {
 			console.error("[auv3Bridge] setParams error", error);
@@ -219,15 +225,10 @@ function installIpcRouter() {
 		invoke("setPresetSession", session);
 
 	window.__czGetPresetLibrary = (source?: string) =>
-		source
-			? invoke("getPresetLibrary", { source })
-			: invoke("getPresetLibrary", null);
-	window.__czLoadPresetData = (id: string) => invoke("loadPresetData", { id });
-	window.__czAddPreset = (
-		name: string,
-		tags: string[],
-		macroLabels?: string[],
-	) => invoke("addPreset", { name, tags, macroLabels });
+		invoke("getPresetLibrary", { source: source ?? null });
+	window.__czLoadPreset = (id: string) =>
+		invoke("loadPreset", { presetId: id });
+	window.__czAddPreset = (payload) => invoke("addPreset", payload);
 	window.__czSavePreset = (payload) => invoke("savePreset", payload);
 	window.__czDeletePreset = (id: string) => invoke("deletePreset", { id });
 	window.__czRenamePreset = (id: string, newName: string) =>
@@ -343,7 +344,11 @@ function installScopePolling() {
 				.then((result) => {
 					const raw = result as ScopeDataResponse;
 					if (raw?.samples.length > 0 && currentScopeHandler) {
-						currentScopeHandler(raw.samples, raw.sampleRate, raw.hz);
+						currentScopeHandler(
+							raw.samples.filter((sample): sample is number => sample !== null),
+							raw.sampleRate ?? 0,
+							raw.hz ?? 0,
+						);
 					}
 				})
 				.catch(() => {

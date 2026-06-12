@@ -81,12 +81,28 @@ export type {
 	SessionState,
 } from "./lib/sessionState";
 export type {
+	AddPresetResponse,
+	BridgeJsonValue,
 	EditorState,
+	ExportPresetResponse,
+	FxModulePresetEntry,
 	LoadPresetPayload,
+	LoadPresetResponse,
 	MidiLearnBinding,
 	MidiLearnState,
 	PluginIpcMethods,
+	PluginIpcRequest,
+	PresetBankBundle,
+	PresetLibraryActionResponse,
+	PresetLibraryEntry,
+	PresetLibraryResponse,
+	PresetLibrarySummaryEntry,
 	PresetSession,
+	RuntimeModSources,
+	RuntimeVoiceDebugState,
+	SaveFxModulePresetPayload,
+	SavePresetPayload,
+	SavePresetResponse,
 	ScopeDataResponse,
 	SynthParams,
 	TransportInfoResponse,
@@ -106,6 +122,7 @@ export {
 } from "./lib/synth/cosmoWorkletUrl";
 export { convertDecodedPatchToSynthPreset } from "./lib/synth/czPresetConverter";
 export { FACTORY_PRESETS } from "./lib/synth/factoryCzPresets";
+export {} from "./lib/synth/pluginBridgeWindow";
 export type { PresetSource } from "./lib/synth/presetSources";
 export type { PresetTagOptions } from "./lib/synth/presetTags";
 export type {

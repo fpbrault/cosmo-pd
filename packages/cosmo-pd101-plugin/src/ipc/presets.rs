@@ -1,9 +1,13 @@
 use super::*;
+use cosmo_pd101_bridge_types::{
+    AddPresetResponse, ExportPresetResponse, LoadPresetResponse, PresetLibraryActionResponse,
+    PresetLibraryResponse, PresetLibraryStatus, PresetLibrarySummaryEntry, SavePresetResponse,
+};
 
 pub(super) fn handle(
     context: &IpcContext,
     req: &PluginIpcRequest,
-) -> Result<serde_json::Value, String> {
+) -> Result<PluginIpcResponse, String> {
     let synth_params = &context.shared_state.synth.synth_params;
     let rt_synth_params = &context.shared_state.synth.rt_synth_params;
     let synth_params_version = &context.shared_state.synth.synth_params_version;
@@ -15,81 +19,101 @@ pub(super) fn handle(
             if let Ok(mut stored) = preset_session.lock() {
                 stored.active_preset_name_base = name.clone();
             }
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::SetPresetName)
         }
         PluginIpcRequest::GetPresetName => {
             let name = preset_session
                 .lock()
                 .map(|session| session.active_preset_name_base.clone())
                 .unwrap_or_default();
-            Ok(serde_json::Value::String(name))
+            Ok(PluginIpcResponse::GetPresetName(name))
         }
         PluginIpcRequest::GetPresetSession => {
             let session = preset_session
                 .lock()
                 .map(|session| session.clone())
                 .map_err(|e| e.to_string())?;
-            serde_json::to_value(session).map_err(|e| e.to_string())
+            Ok(PluginIpcResponse::GetPresetSession(session))
         }
         PluginIpcRequest::SetPresetSession(session) => {
             if let Ok(mut stored) = preset_session.lock() {
                 *stored = session.clone();
             }
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::SetPresetSession)
         }
         PluginIpcRequest::GetPresetLibrary { source } => {
             let lib = preset_library.lock().map_err(|e| e.to_string())?;
             let status = lib
                 .initialization_error()
-                .map(|message| {
-                    serde_json::json!({
-                        "state": "degraded",
-                        "message": message,
-                    })
+                .map(|message| PresetLibraryStatus {
+                    state: "degraded".to_string(),
+                    message: Some(message.to_string()),
                 })
-                .unwrap_or_else(|| serde_json::json!({ "state": "ready" }));
-            let entries: Vec<serde_json::Value> = lib
+                .unwrap_or_else(|| PresetLibraryStatus {
+                    state: "ready".to_string(),
+                    message: None,
+                });
+            let entries: Vec<PresetLibrarySummaryEntry> = lib
                 .list_records(source.as_deref())
                 .map_err(|e| e.to_string())?
                 .iter()
-                .map(|e| {
-                    serde_json::json!({
-                        "id": e.entry.id,
-                        "name": e.entry.name,
-                        "source": e.entry.source,
-                        "author": e.entry.author,
-                        "description": e.entry.description,
-                        "starred": e.entry.starred,
-                        "sortIndex": e.entry.sort_index,
-                        "bankId": e.entry.bank_id,
-                        "bankName": e.entry.bank_name,
-                        "favorite": e.favorite,
-                        "tags": e.entry.tags,
-                    })
+                .map(|record| PresetLibrarySummaryEntry {
+                    id: record.entry.id.clone(),
+                    name: record.entry.name.clone(),
+                    source: record.entry.source.clone(),
+                    author: record.entry.author.clone(),
+                    description: record.entry.description.clone(),
+                    starred: record.entry.starred,
+                    sort_index: record.entry.sort_index,
+                    bank_id: record.entry.bank_id.clone(),
+                    bank_name: record.entry.bank_name.clone(),
+                    favorite: record.favorite,
+                    tags: record.entry.tags.clone(),
                 })
                 .collect();
-            Ok(serde_json::json!({ "entries": entries, "status": status }))
+            Ok(PluginIpcResponse::GetPresetLibrary(PresetLibraryResponse {
+                entries,
+                status,
+            }))
         }
         PluginIpcRequest::RetryPresetLibrary => {
             let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
             lib.retry()?;
-            Ok(serde_json::json!({ "status": { "state": "ready" } }))
+            Ok(PluginIpcResponse::RetryPresetLibrary(
+                PresetLibraryActionResponse {
+                    status: PresetLibraryStatus {
+                        state: "ready".to_string(),
+                        message: None,
+                    },
+                    backup_path: None,
+                },
+            ))
         }
         PluginIpcRequest::RepairPresetLibrary => {
             let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
             let backup_path = lib.repair()?;
-            Ok(serde_json::json!({
-                "status": { "state": "ready" },
-                "backupPath": backup_path,
-            }))
+            Ok(PluginIpcResponse::RepairPresetLibrary(
+                PresetLibraryActionResponse {
+                    status: PresetLibraryStatus {
+                        state: "ready".to_string(),
+                        message: None,
+                    },
+                    backup_path: Some(backup_path.display().to_string()),
+                },
+            ))
         }
         PluginIpcRequest::RebuildPresetLibrary => {
             let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
             let backup_path = lib.rebuild()?;
-            Ok(serde_json::json!({
-                "status": { "state": "ready" },
-                "backupPath": backup_path,
-            }))
+            Ok(PluginIpcResponse::RebuildPresetLibrary(
+                PresetLibraryActionResponse {
+                    status: PresetLibraryStatus {
+                        state: "ready".to_string(),
+                        message: None,
+                    },
+                    backup_path: Some(backup_path.display().to_string()),
+                },
+            ))
         }
         PluginIpcRequest::LoadPreset(payload) => {
             let (entry_data, preset_name_val, entry_macro_labels): (
@@ -132,7 +156,9 @@ pub(super) fn handle(
                 stored.is_dirty = false;
             }
 
-            Ok(serde_json::json!({ "preset_name": preset_name_val }))
+            Ok(PluginIpcResponse::LoadPreset(LoadPresetResponse {
+                preset_name: preset_name_val,
+            }))
         }
         PluginIpcRequest::AddPreset(payload) => {
             let name = payload.name.clone();
@@ -155,7 +181,7 @@ pub(super) fn handle(
                 entry.id.clone()
             };
 
-            Ok(serde_json::json!({ "id": id }))
+            Ok(PluginIpcResponse::AddPreset(AddPresetResponse { id }))
         }
         PluginIpcRequest::SavePreset(payload) => {
             let name = payload.name.clone();
@@ -233,9 +259,9 @@ pub(super) fn handle(
                 stored.is_dirty = false;
             }
 
-            Ok(serde_json::json!({
-                "id": saved_entry.id,
-                "name": saved_entry.name,
+            Ok(PluginIpcResponse::SavePreset(SavePresetResponse {
+                id: saved_entry.id,
+                name: saved_entry.name,
             }))
         }
         PluginIpcRequest::DeletePreset { id } => {
@@ -243,21 +269,21 @@ pub(super) fn handle(
                 let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
                 let _ = lib.delete_entry(id).map_err(|e| e.to_string())?;
             }
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::DeletePreset)
         }
         PluginIpcRequest::RenamePreset { id, new_name } => {
             {
                 let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
                 let _ = lib.rename_entry(id, new_name).map_err(|e| e.to_string())?;
             }
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::RenamePreset)
         }
         PluginIpcRequest::ToggleStarred { id, starred } => {
             {
                 let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
                 let _ = lib.set_starred(id, *starred).map_err(|e| e.to_string())?;
             }
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::ToggleStarred)
         }
         PluginIpcRequest::SetPresetAuthor { id, author } => {
             {
@@ -269,7 +295,7 @@ pub(super) fn handle(
                 entry.author = author.clone();
                 let _ = lib.save_entry(entry).map_err(|e| e.to_string())?;
             }
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::SetPresetAuthor)
         }
         PluginIpcRequest::SetPresetDescription { id, description } => {
             {
@@ -281,7 +307,7 @@ pub(super) fn handle(
                 entry.description = description.trim().to_string();
                 let _ = lib.save_entry(entry).map_err(|e| e.to_string())?;
             }
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::SetPresetDescription)
         }
         PluginIpcRequest::SetPresetTags { id, tags } => {
             {
@@ -293,14 +319,14 @@ pub(super) fn handle(
                 entry.tags = tags.clone();
                 let _ = lib.save_entry(entry).map_err(|e| e.to_string())?;
             }
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::SetPresetTags)
         }
         PluginIpcRequest::ImportPresetBank(bundle) => {
             {
                 let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
                 lib.import_bank(bundle.clone()).map_err(|e| e.to_string())?;
             }
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::ImportPresetBank)
         }
         PluginIpcRequest::ExportPreset { id } => {
             let entry = {
@@ -324,18 +350,17 @@ pub(super) fn handle(
             }))
             .map_err(|e| e.to_string())?;
 
-            Ok(serde_json::json!({
-                "filename": format!("{}.json", entry.name),
-                "json": json,
+            Ok(PluginIpcResponse::ExportPreset(ExportPresetResponse {
+                filename: format!("{}.json", entry.name),
+                json,
             }))
         }
         PluginIpcRequest::ListFxModulePresets { module_type } => {
             let lib = preset_library.lock().map_err(|e| e.to_string())?;
-            serde_json::to_value(
+            Ok(PluginIpcResponse::ListFxModulePresets(
                 lib.list_fx_module_presets(module_type)
                     .map_err(|e| e.to_string())?,
-            )
-            .map_err(|e| e.to_string())
+            ))
         }
         PluginIpcRequest::SaveFxModulePreset(payload) => {
             let name = payload.name.clone();
@@ -348,14 +373,14 @@ pub(super) fn handle(
                     .map_err(|e| e.to_string())?
             };
 
-            serde_json::to_value(saved).map_err(|e| e.to_string())
+            Ok(PluginIpcResponse::SaveFxModulePreset(saved))
         }
         PluginIpcRequest::DeleteFxModulePreset { id } => {
             {
                 let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
                 let _ = lib.delete_fx_module_preset(id).map_err(|e| e.to_string())?;
             }
-            Ok(serde_json::Value::Null)
+            Ok(PluginIpcResponse::DeleteFxModulePreset)
         }
         _ => unreachable!("method routed to wrong IPC domain"),
     }

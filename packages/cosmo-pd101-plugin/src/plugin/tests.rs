@@ -5,6 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use super::*;
 use crate::diagnostics::set_test_log_level;
 use crate::runtime_state::SCOPE_CAPACITY;
+use cosmo_pd101_bridge_types::{MidiLearnBinding, PluginIpcRequest, SavePresetPayload};
 
 fn clear_test_global_settings() {
     let path = crate::global_settings::get_global_settings_path();
@@ -118,11 +119,8 @@ fn set_params_rpc_updates_synth_params() {
         volume: 0.42,
         ..Default::default()
     };
-    let json_str = serde_json::to_string(&new_params).unwrap();
-
     let result = handle_ipc_invoke(
-        "setParams",
-        &[serde_json::Value::String(json_str)],
+        PluginIpcRequest::SetParams(new_params),
         &sp,
         &rsp,
         &rms,
@@ -170,8 +168,7 @@ fn get_params_rpc_returns_current_synth_params() {
         Arc::new(Mutex::new(crate::session_state::MidiLearnState::default()));
 
     let result = handle_ipc_invoke(
-        "getParams",
-        &[],
+        PluginIpcRequest::GetParams,
         &sp,
         &rsp,
         &rms,
@@ -197,8 +194,10 @@ fn note_on_rpc_enqueues_ui_input_event() {
     let (sp, rsp, rms, rvs, ts, ver, sc, q, params, ps, pl, es, mm) = make_handler_state();
 
     let result = handle_ipc_invoke(
-        "noteOn",
-        &[serde_json::json!({ "note": 60, "velocity": 0.75 })],
+        PluginIpcRequest::NoteOn {
+            note: 60,
+            velocity: 0.75,
+        },
         &sp,
         &rsp,
         &rms,
@@ -233,11 +232,8 @@ fn set_params_rpc_syncs_daw_float_params() {
     let mut new_params = SynthParams::default();
     new_params.volume = 0.33;
     new_params.line1.dcw_base = 0.61;
-    let json_str = serde_json::to_string(&new_params).unwrap();
-
     let result = handle_ipc_invoke(
-        "setParams",
-        &[serde_json::Value::String(json_str)],
+        PluginIpcRequest::SetParams(new_params),
         &sp,
         &rsp,
         &rms,
@@ -311,8 +307,7 @@ fn get_transport_info_rpc_returns_current_snapshot() {
     });
 
     let result = handle_ipc_invoke(
-        "getTransportInfo",
-        &[],
+        PluginIpcRequest::GetTransportInfo,
         &sp,
         &rsp,
         &rms,
@@ -633,12 +628,12 @@ fn save_preset_defaults_new_user_author_to_user() {
         ));
 
         let result = handle_ipc_invoke(
-            "savePreset",
-            &[serde_json::json!({
-                "name": "New Preset",
-                "author": "",
-                "tags": [],
-            })],
+            PluginIpcRequest::SavePreset(SavePresetPayload {
+                name: "New Preset".to_string(),
+                author: String::new(),
+                tags: vec![],
+                ..Default::default()
+            }),
             &sp,
             &rsp,
             &rms,
@@ -726,8 +721,7 @@ fn set_preset_name_rpc_stores_name() {
     let (sp, rsp, rms, rvs, ts, ver, sc, q, params, ps, pl, es, mm) = make_handler_state();
 
     let result = handle_ipc_invoke(
-        "setPresetName",
-        &[serde_json::Value::String("Warm Pad".to_string())],
+        PluginIpcRequest::SetPresetName("Warm Pad".to_string()),
         &sp,
         &rsp,
         &rms,
@@ -756,8 +750,7 @@ fn get_preset_name_rpc_returns_current_name() {
     }
 
     let result = handle_ipc_invoke(
-        "getPresetName",
-        &[],
+        PluginIpcRequest::GetPresetName,
         &sp,
         &rsp,
         &rms,
@@ -1075,12 +1068,11 @@ fn plugin_global_midi_settings_persist_across_instances() {
         }
 
         let result = handle_ipc_invoke(
-            "addMidiBinding",
-            &[
-                serde_json::Value::String("macro1".to_string()),
-                serde_json::Value::from(2),
-                serde_json::Value::from(74),
-            ],
+            PluginIpcRequest::AddMidiBinding {
+                param_key: "macro1".to_string(),
+                channel: 2,
+                cc: 74,
+            },
             &sp,
             &rsp,
             &rms,
@@ -1113,12 +1105,11 @@ fn plugin_global_midi_settings_persist_across_instances() {
         }));
 
         let remove_result = handle_ipc_invoke(
-            "removeMidiBinding",
-            &[serde_json::json!({
-                "paramKey": "macro1",
-                "channel": 2,
-                "cc": 74
-            })],
+            PluginIpcRequest::RemoveMidiBinding(MidiLearnBinding {
+                param_key: "macro1".to_string(),
+                channel: 2,
+                cc: 74,
+            }),
             &sp,
             &rsp,
             &rms,
@@ -1150,8 +1141,7 @@ fn plugin_global_midi_settings_persist_across_instances() {
         }));
 
         let clear_result = handle_ipc_invoke(
-            "clearMidiLearnBindings",
-            &[],
+            PluginIpcRequest::ClearMidiLearnBindings,
             &sp,
             &rsp,
             &rms,

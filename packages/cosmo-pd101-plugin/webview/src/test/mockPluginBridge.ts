@@ -45,12 +45,14 @@ const ALGO_ORDER = [
 type FullParamsBlob = {
 	volume?: number;
 	line1?: {
+		[key: string]: unknown;
 		dcwBase?: number;
 		algo?: string;
 		algoControlsA?: { id: string; value: number }[];
 		algoControlsB?: { id: string; value: number }[];
 	};
 	line2?: {
+		[key: string]: unknown;
 		dcwBase?: number;
 		algo?: string;
 		algoControlsA?: { id: string; value: number }[];
@@ -418,7 +420,7 @@ export function installMockPluginBridge(): void {
 	let virtualModMatrix: { routes: unknown[] } = { routes: [] };
 	let virtualPresetName =
 		(typeof window !== "undefined"
-			? ((window as Record<string, unknown>).__CZ_MOCK_PRESET_NAME as
+			? ((window as unknown as Record<string, unknown>).__CZ_MOCK_PRESET_NAME as
 					| string
 					| undefined)
 			: undefined) ?? "";
@@ -542,7 +544,7 @@ export function installMockPluginBridge(): void {
 
 			const method = msg.method;
 			const id = msg.id;
-			const args = Array.isArray(msg.args) ? msg.args : [];
+			const args = msg.payload === undefined ? [] : [msg.payload];
 			recordMessage({ type: "invoke", method, args });
 
 			if (method === "getEnvelopes") {
@@ -577,95 +579,81 @@ export function installMockPluginBridge(): void {
 				return;
 			}
 			if (method === "setParams") {
-				const paramsJson = typeof args[0] === "string" ? args[0] : null;
-				if (paramsJson) {
-					try {
-						const params = JSON.parse(paramsJson) as FullParamsBlob;
-						const newScalars = extractScalarParams(params);
+				const params =
+					typeof args[0] === "object" && args[0] !== null
+						? (args[0] as FullParamsBlob)
+						: null;
+				if (params) {
+					const newScalars = extractScalarParams(params);
 
-						// Emit param:begin / param:set / param:end for each changed scalar param.
-						for (const [stringId, newVal] of Object.entries(newScalars)) {
-							if (prevExtractedScalars[stringId] !== newVal) {
-								const paramInfo = paramsByStringId[stringId];
-								recordMessage({
-									type: "param:begin",
-									id: paramInfo?.id,
-									stringId,
-								});
-								recordMessage({
-									type: "param:set",
-									id: paramInfo?.id,
-									stringId,
-									value: newVal,
-								});
-								recordMessage({
-									type: "param:end",
-									id: paramInfo?.id,
-									stringId,
-								});
-								virtualParamState[stringId] = newVal;
-							}
-						}
-						prevExtractedScalars = newScalars;
-
-						// Emit setAlgoControls for each non-empty line/slot.
-						const l1 = params.line1;
-						const l2 = params.line2;
-						if (
-							Array.isArray(l1?.algoControlsA) &&
-							l1.algoControlsA.length > 0
-						) {
+					// Emit param:begin / param:set / param:end for each changed scalar param.
+					for (const [stringId, newVal] of Object.entries(newScalars)) {
+						if (prevExtractedScalars[stringId] !== newVal) {
+							const paramInfo = paramsByStringId[stringId];
 							recordMessage({
-								type: "invoke",
-								method: "setAlgoControls",
-								args: [1, "a", l1.algoControlsA],
+								type: "param:begin",
+								id: paramInfo?.id,
+								stringId,
 							});
-						}
-						if (
-							Array.isArray(l1?.algoControlsB) &&
-							l1.algoControlsB.length > 0
-						) {
 							recordMessage({
-								type: "invoke",
-								method: "setAlgoControls",
-								args: [1, "b", l1.algoControlsB],
+								type: "param:set",
+								id: paramInfo?.id,
+								stringId,
+								value: newVal,
 							});
-						}
-						if (
-							Array.isArray(l2?.algoControlsA) &&
-							l2.algoControlsA.length > 0
-						) {
 							recordMessage({
-								type: "invoke",
-								method: "setAlgoControls",
-								args: [2, "a", l2.algoControlsA],
+								type: "param:end",
+								id: paramInfo?.id,
+								stringId,
 							});
+							virtualParamState[stringId] = newVal;
 						}
-						if (
-							Array.isArray(l2?.algoControlsB) &&
-							l2.algoControlsB.length > 0
-						) {
-							recordMessage({
-								type: "invoke",
-								method: "setAlgoControls",
-								args: [2, "b", l2.algoControlsB],
-							});
-						}
-
-						// Emit setModMatrix when there are routes.
-						const mm = params.modMatrix;
-						if (Array.isArray(mm?.routes) && mm.routes.length > 0) {
-							recordMessage({
-								type: "invoke",
-								method: "setModMatrix",
-								args: [{ routes: mm.routes }],
-							});
-						}
-
-						virtualFullParams = params;
-					} catch {
-						// ignore malformed JSON
 					}
+					prevExtractedScalars = newScalars;
+
+					// Emit setAlgoControls for each non-empty line/slot.
+					const l1 = params.line1;
+					const l2 = params.line2;
+					if (Array.isArray(l1?.algoControlsA) && l1.algoControlsA.length > 0) {
+						recordMessage({
+							type: "invoke",
+							method: "setAlgoControls",
+							args: [1, "a", l1.algoControlsA],
+						});
+					}
+					if (Array.isArray(l1?.algoControlsB) && l1.algoControlsB.length > 0) {
+						recordMessage({
+							type: "invoke",
+							method: "setAlgoControls",
+							args: [1, "b", l1.algoControlsB],
+						});
+					}
+					if (Array.isArray(l2?.algoControlsA) && l2.algoControlsA.length > 0) {
+						recordMessage({
+							type: "invoke",
+							method: "setAlgoControls",
+							args: [2, "a", l2.algoControlsA],
+						});
+					}
+					if (Array.isArray(l2?.algoControlsB) && l2.algoControlsB.length > 0) {
+						recordMessage({
+							type: "invoke",
+							method: "setAlgoControls",
+							args: [2, "b", l2.algoControlsB],
+						});
+					}
+
+					// Emit setModMatrix when there are routes.
+					const mm = params.modMatrix;
+					if (Array.isArray(mm?.routes) && mm.routes.length > 0) {
+						recordMessage({
+							type: "invoke",
+							method: "setModMatrix",
+							args: [{ routes: mm.routes }],
+						});
+					}
+
+					virtualFullParams = params;
 				}
 				respondIpc(id, { result: null });
 				return;
@@ -749,13 +737,13 @@ export function installMockPluginBridge(): void {
 				});
 				return;
 			}
-			if (method === "loadPresetData") {
+			if (method === "loadPreset") {
 				const payload =
 					typeof args[0] === "object" && args[0] !== null
 						? (args[0] as Record<string, unknown>)
 						: null;
 				const idValue =
-					typeof payload?.id === "string" ? payload.id : undefined;
+					typeof payload?.presetId === "string" ? payload.presetId : undefined;
 				const entry = virtualPresetEntries.find(
 					(candidate) => candidate.id === idValue,
 				);
@@ -765,7 +753,7 @@ export function installMockPluginBridge(): void {
 					virtualParamsVersion += 1;
 				}
 				respondIpc(id, {
-					result: { preset_name: entry?.name ?? virtualPresetName },
+					result: { presetName: entry?.name ?? virtualPresetName },
 				});
 				return;
 			}

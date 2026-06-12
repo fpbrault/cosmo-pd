@@ -17,6 +17,7 @@ postHostLog("info", "main.tsx: initI18n complete");
 
 const root = document.getElementById("root");
 if (!root) throw new Error("No #root element found");
+const rootContainer = root;
 
 type PluginErrorBoundaryState = {
 	hasError: boolean;
@@ -93,7 +94,7 @@ async function init() {
 		RootComponent = TestHarness;
 	}
 
-	createRoot(root).render(
+	createRoot(rootContainer).render(
 		<StrictMode>
 			<PluginErrorBoundary>
 				<RootComponent />

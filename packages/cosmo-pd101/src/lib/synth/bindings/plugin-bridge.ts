@@ -9,6 +9,10 @@ export type AddPresetPayload = {
 	macroLabels?: string[] | null,
 };
 
+export type AddPresetResponse = {
+	id: string,
+};
+
 /**  Flat algorithm selector — unifies CZ waveforms and warp variants. */
 export type Algo = "saw" | "square" | "pulse" | "null" | "sinePulse" | "sawPulse" | "multiSine" | "pulse2" | "cz101" | "bend" | "sync" | "pinch" | "fold" | "skew" | "twist" | "clip" | "ripple" | "mirror" | "fof" | "karpunk" | "terrain" | "cheby" | "stutter";
 
@@ -28,6 +32,8 @@ export type BitcrusherParams = {
 	rateReduction?: number | null,
 	mix?: number | null,
 };
+
+export type BridgeJsonValue = "Null" | boolean | number | null | string | BridgeJsonValue[] | { [key in string]: BridgeJsonValue };
 
 /**  Chorus parameters */
 export type ChorusParams = {
@@ -111,6 +117,11 @@ export type EqParams = {
 	gainBand8?: number | null,
 };
 
+export type ExportPresetResponse = {
+	filename: string,
+	json: string,
+};
+
 /**  Flanger parameters */
 export type FlangerParams = {
 	enabled?: boolean,
@@ -120,6 +131,14 @@ export type FlangerParams = {
 	feedback?: number | null,
 	throughZero?: number,
 	mix?: number | null,
+};
+
+export type FxModulePresetEntry = {
+	id: string,
+	name: string,
+	moduleType: string,
+	patch: BridgeJsonValue,
+	updatedAtUnixMs: number | null,
 };
 
 /**  Per-slot FX configuration */
@@ -209,6 +228,10 @@ export type LoadPresetPayload = {
 	presetId: string,
 };
 
+export type LoadPresetResponse = {
+	presetName: string,
+};
+
 /**  A single MIDI learn binding stored in the engine. */
 export type MidiLearnBinding = {
 	paramKey: string,
@@ -282,6 +305,69 @@ export type PhaserParams = {
 	feedback: number | null,
 };
 
+/**
+ *  Tagged IPC request envelope deserialized from `{ method, payload }`.
+ * 
+ *  Wire format (adjacently tagged by serde):
+ *  - Unit variant: `{ "method": "getParams" }`
+ *  - Payload variant: `{ "method": "setPresetSession", "payload": { ... } }`
+ */
+export type PluginIpcRequest = { method: "noteOn"; payload: {
+	note: number,
+	velocity: number | null,
+} } | { method: "noteOff"; payload: {
+	note: number,
+} } | { method: "sustain"; payload: {
+	on: boolean,
+} } | { method: "pitchBend"; payload: {
+	value: number | null,
+} } | { method: "modWheel"; payload: {
+	value: number | null,
+} } | { method: "aftertouch"; payload: {
+	value: number | null,
+} } | { method: "polyAftertouch"; payload: {
+	note: number,
+	value: number | null,
+} } | { method: "macroValue"; payload: {
+	index: number,
+	value: number | null,
+} } | { method: "panic" } | { method: "getParams" } | { method: "setParams"; payload: SynthParams } | { method: "getParamsVersion" } | { method: "getRuntimeModSources" } | { method: "getRuntimeVoiceStates" } | { method: "getTransportInfo" } | { method: "getScopeData" } | { method: "clientLog"; payload: {
+	level: string,
+	message: string,
+} } | { method: "getPresetSession" } | { method: "setPresetSession"; payload: PresetSession } | { method: "getPresetName" } | { method: "setPresetName"; payload: string } | { method: "loadPreset"; payload: LoadPresetPayload } | { method: "getPresetLibrary"; payload: {
+	source: string | null,
+} } | { method: "retryPresetLibrary" } | { method: "repairPresetLibrary" } | { method: "rebuildPresetLibrary" } | { method: "addPreset"; payload: AddPresetPayload } | { method: "savePreset"; payload: SavePresetPayload } | { method: "deletePreset"; payload: {
+	id: string,
+} } | { method: "renamePreset"; payload: {
+	id: string,
+	newName: string,
+} } | { method: "toggleStarred"; payload: {
+	id: string,
+	starred: boolean,
+} } | { method: "setPresetAuthor"; payload: {
+	id: string,
+	author: string,
+} } | { method: "setPresetDescription"; payload: {
+	id: string,
+	description: string,
+} } | { method: "setPresetTags"; payload: {
+	id: string,
+	tags: string[],
+} } | { method: "importPresetBank"; payload: PresetBankBundle } | { method: "exportPreset"; payload: {
+	id: string,
+} } | { method: "listFxModulePresets"; payload: {
+	moduleType: string,
+} } | { method: "saveFxModulePreset"; payload: SaveFxModulePresetPayload } | { method: "deleteFxModulePreset"; payload: {
+	id: string,
+} } | { method: "getEditorState" } | { method: "setEditorState"; payload: EditorState } | { method: "getMidiLearnState" } | { method: "setMidiLearnMode"; payload: boolean } | { method: "setPendingMidiLearnParam"; payload: string | null } | { method: "addMidiBinding"; payload: {
+	paramKey: string,
+	channel: number,
+	cc: number,
+} } | { method: "removeMidiBinding"; payload: MidiLearnBinding } | { method: "clearMidiLearnBindings" };
+
+/**  Typed result for each IPC request. The transport serializes only `result`. */
+export type PluginIpcResponse = { method: "noteOn" } | { method: "noteOff" } | { method: "sustain" } | { method: "pitchBend" } | { method: "modWheel" } | { method: "aftertouch" } | { method: "polyAftertouch" } | { method: "macroValue" } | { method: "panic" } | { method: "getParams"; result: SynthParams } | { method: "setParams" } | { method: "getParamsVersion"; result: number } | { method: "getRuntimeModSources"; result: RuntimeModSources } | { method: "getRuntimeVoiceStates"; result: RuntimeVoiceDebugState[] } | { method: "getTransportInfo"; result: TransportInfoResponse } | { method: "getScopeData"; result: ScopeDataResponse } | { method: "clientLog" } | { method: "getPresetSession"; result: PresetSession } | { method: "setPresetSession" } | { method: "getPresetName"; result: string } | { method: "setPresetName" } | { method: "loadPreset"; result: LoadPresetResponse } | { method: "getPresetLibrary"; result: PresetLibraryResponse } | { method: "retryPresetLibrary"; result: PresetLibraryActionResponse } | { method: "repairPresetLibrary"; result: PresetLibraryActionResponse } | { method: "rebuildPresetLibrary"; result: PresetLibraryActionResponse } | { method: "addPreset"; result: AddPresetResponse } | { method: "savePreset"; result: SavePresetResponse } | { method: "deletePreset" } | { method: "renamePreset" } | { method: "toggleStarred" } | { method: "setPresetAuthor" } | { method: "setPresetDescription" } | { method: "setPresetTags" } | { method: "importPresetBank" } | { method: "exportPreset"; result: ExportPresetResponse } | { method: "listFxModulePresets"; result: FxModulePresetEntry[] } | { method: "saveFxModulePreset"; result: FxModulePresetEntry } | { method: "deleteFxModulePreset" } | { method: "getEditorState"; result: EditorState | null } | { method: "setEditorState" } | { method: "getMidiLearnState"; result: MidiLearnState } | { method: "setMidiLearnMode" } | { method: "setPendingMidiLearnParam" } | { method: "addMidiBinding" } | { method: "removeMidiBinding" } | { method: "clearMidiLearnBindings" };
+
 /**  Polyphony mode */
 export type PolyMode = "poly8" | "mono";
 
@@ -296,10 +382,72 @@ export type PortamentoParams = {
 	time: number | null,
 };
 
+export type PresetBankBundle = {
+	type: string,
+	schemaVersion: number,
+	bank: PresetBankMetadata,
+	presets: PresetBankEntry[],
+};
+
+export type PresetBankEntry = {
+	id: string,
+	name: string,
+	author?: string,
+	description?: string,
+	starred?: boolean,
+	tags?: string[],
+	data: BridgeJsonValue,
+};
+
 export type PresetBankMetadata = {
 	id: string,
 	name: string,
 	source: string,
+};
+
+export type PresetLibraryActionResponse = {
+	status: PresetLibraryStatus,
+	backupPath?: string | null,
+};
+
+export type PresetLibraryEntry = {
+	id: string,
+	name: string,
+	source: string,
+	author: string,
+	description?: string,
+	starred: boolean,
+	sortIndex: number,
+	bankId: string | null,
+	bankName: string | null,
+	tags: string[],
+	macroLabels: [string, string, string, string],
+	factoryVersion: number,
+	data: BridgeJsonValue,
+};
+
+export type PresetLibraryResponse = {
+	entries: PresetLibrarySummaryEntry[],
+	status: PresetLibraryStatus,
+};
+
+export type PresetLibraryStatus = {
+	state: string,
+	message?: string | null,
+};
+
+export type PresetLibrarySummaryEntry = {
+	id: string,
+	name: string,
+	source: string,
+	author: string,
+	description: string,
+	starred: boolean,
+	sortIndex: number,
+	bankId: string | null,
+	bankName: string | null,
+	favorite: boolean,
+	tags: string[],
 };
 
 /**  DAW-serializable session state for the currently loaded preset. */
@@ -329,6 +477,82 @@ export type RingModParams = {
 	enabled?: boolean,
 	carrierHz?: number | null,
 	mix?: number | null,
+};
+
+/**  Snapshot of modulation source values for UI telemetry. */
+export type RuntimeModSources = {
+	pitchBend: number | null,
+	lfo1: number | null,
+	lfo2: number | null,
+	random: number | null,
+	modEnv: number | null,
+	velocity: number | null,
+	modWheel: number | null,
+	aftertouch: number | null,
+	macro1: number | null,
+	macro2: number | null,
+	macro3: number | null,
+	macro4: number | null,
+};
+
+/**  Full debug snapshot of one voice's runtime state. */
+export type RuntimeVoiceDebugState = {
+	index: number,
+	active: boolean,
+	isReleasing: boolean,
+	sustained: boolean,
+	note: number | null,
+	envNote: number,
+	velocity: number | null,
+	frequency: number | null,
+	currentFreq: number | null,
+	targetFreq: number | null,
+	phase1: number | null,
+	phase2: number | null,
+	antiClickFade: number,
+	antiClickAttack: number,
+	releaseTailLevel: number | null,
+	line1: RuntimeVoiceLineState,
+	line2: RuntimeVoiceLineState,
+};
+
+/**  Snapshot of a single envelope generator's runtime state. */
+export type RuntimeVoiceEnvState = {
+	value: number | null,
+	step: number,
+	releasing: boolean,
+	stepPos: number,
+	prevLevel: number | null,
+};
+
+/**  Snapshot of one oscillator line's envelope generators. */
+export type RuntimeVoiceLineState = {
+	dco: RuntimeVoiceEnvState,
+	dcw: RuntimeVoiceEnvState,
+	dca: RuntimeVoiceEnvState,
+};
+
+/**  Payload for `saveFxModulePreset` IPC method. */
+export type SaveFxModulePresetPayload = {
+	name: string,
+	moduleType: string,
+	patch: BridgeJsonValue,
+};
+
+/**  Payload for `savePreset` IPC method. */
+export type SavePresetPayload = {
+	id?: string | null,
+	name: string,
+	author?: string,
+	description?: string,
+	tags?: string[],
+	macroLabels?: string[] | null,
+	data?: BridgeJsonValue | null,
+};
+
+export type SavePresetResponse = {
+	id: string,
+	name: string,
 };
 
 /**  Scope data response sent from Rust to the webview. */
@@ -437,118 +661,30 @@ export type WavefolderParams = {
 export type WindowType = "off" | "saw" | "triangle" | "trapezoid" | "pulse" | "doubleSaw";
 
 
-/** IPC method contract — maps method names to typed request/response pairs. */
+type PluginIpcMethod = PluginIpcRequest["method"];
+type PluginIpcRequestFor<M extends PluginIpcMethod> =
+  Extract<PluginIpcRequest, { method: M }>;
+type PluginIpcResponseFor<M extends PluginIpcMethod> =
+  Extract<PluginIpcResponse, { method: M }>;
+type PluginIpcPayload<M extends PluginIpcMethod> =
+  PluginIpcRequestFor<M> extends { payload: infer P } ? P : null;
+type PluginIpcResult<M extends PluginIpcMethod> =
+  PluginIpcResponseFor<M> extends { result: infer R } ? R : null;
+
+type MissingPluginIpcResponses =
+  Exclude<PluginIpcMethod, PluginIpcResponse["method"]>;
+type ExtraPluginIpcResponses =
+  Exclude<PluginIpcResponse["method"], PluginIpcMethod>;
+type AssertNever<T extends never> = T;
+type _AssertNoMissingPluginIpcResponses =
+  AssertNever<MissingPluginIpcResponses>;
+type _AssertNoExtraPluginIpcResponses =
+  AssertNever<ExtraPluginIpcResponses>;
+
+/** IPC contract generated entirely from Rust request and response enums. */
 export type PluginIpcMethods = {
-  getPresetSession: { request: null; response: PresetSession };
-  setPresetSession: { request: PresetSession; response: null };
-  getPresetName: { request: null; response: string };
-  setPresetName: { request: string; response: null };
-  loadPreset: { request: LoadPresetPayload; response: { preset_name: string } };
-  loadPresetData: { request: { id: string }; response: { preset_name: string } };
-  getEditorState: { request: null; response: EditorState | null };
-  setEditorState: { request: EditorState; response: null };
-  getMidiLearnState: { request: null; response: MidiLearnState };
-  setMidiLearnMode: { request: boolean; response: null };
-  setPendingMidiLearnParam: { request: string | null; response: null };
-  addMidiBinding: { request: { paramKey: string; channel: number; cc: number }; response: null };
-  removeMidiBinding: { request: MidiLearnBinding; response: null };
-  clearMidiLearnBindings: { request: null; response: null };
-  getParams: { request: null; response: SynthParams };
-  setParams: { request: SynthParams; response: null };
-  getParamsVersion: { request: null; response: number };
-  getRuntimeModSources: { request: null; response: Record<string, number> };
-  getRuntimeVoiceStates: { request: null; response: unknown };
-  getTransportInfo: { request: null; response: TransportInfoResponse };
-  getScopeData: { request: null; response: ScopeDataResponse };
-  clientLog: { request: { level: string; message: string }; response: null };
-  noteOn: { request: { note: number; velocity?: number }; response: null };
-  noteOff: { request: { note: number }; response: null };
-  sustain: { request: { on: boolean }; response: null };
-  pitchBend: { request: { value: number }; response: null };
-  modWheel: { request: { value: number }; response: null };
-  aftertouch: { request: { value: number }; response: null };
-  polyAftertouch: { request: { note: number; value: number }; response: null };
-  macroValue: { request: { index: number; value: number }; response: null };
-  panic: { request: null; response: null };
-  getPresetLibrary: { request: { source?: string } | null; response: { entries: PresetLibraryEntry[]; status: { state: string; message?: string } } };
-  retryPresetLibrary: { request: null; response: { status: { state: string } } };
-  repairPresetLibrary: { request: null; response: { status: { state: string }; backupPath?: string } };
-  rebuildPresetLibrary: { request: null; response: { status: { state: string }; backupPath?: string } };
-  addPreset: { request: AddPresetPayload; response: { id: string } };
-  savePreset: { request: SavePresetPayload; response: { id: string; name: string } };
-  deletePreset: { request: { id: string }; response: null };
-  renamePreset: { request: { id: string; newName: string }; response: null };
-  toggleStarred: { request: { id: string; starred: boolean }; response: null };
-  setPresetAuthor: { request: { id: string; author: string }; response: null };
-  setPresetDescription: { request: { id: string; description: string }; response: null };
-  setPresetTags: { request: { id: string; tags: string[] }; response: null };
-  importPresetBank: { request: PresetBankBundle; response: null };
-  exportPreset: { request: { id: string }; response: { filename: string; json: string } };
-  listFxModulePresets: { request: { moduleType: string }; response: FxModulePresetEntry[] };
-  saveFxModulePreset: { request: SaveFxModulePresetPayload; response: FxModulePresetEntry };
-  deleteFxModulePreset: { request: { id: string }; response: null };
-};
-
-
-/** Preset library entry — mirrors Rust PresetLibraryEntry. */
-export type PresetLibraryEntry = {
-  id: string;
-  name: string;
-  source: string;
-  author: string;
-  description: string;
-  starred: boolean;
-  sortIndex: number;
-  bankId: string | null;
-  bankName: string | null;
-  tags: string[];
-  macroLabels: [string, string, string, string];
-  factoryVersion: number;
-  data: unknown;
-};
-
-/** FX module preset entry — mirrors Rust FxModulePresetEntry. */
-export type FxModulePresetEntry = {
-  id: string;
-  name: string;
-  moduleType: string;
-  patch: Record<string, unknown>;
-  updatedAtUnixMs: number;
-};
-
-/** Preset bank bundle — mirrors Rust PresetBankBundle. */
-export type PresetBankBundle = {
-  type: string;
-  schemaVersion: number;
-  bank: PresetBankMetadata;
-  presets: PresetBankEntry[];
-};
-
-/** Preset bank entry — mirrors Rust PresetBankEntry. */
-export type PresetBankEntry = {
-  id: string;
-  name: string;
-  author: string;
-  description: string;
-  starred: boolean;
-  tags: string[];
-  data: unknown;
-};
-
-/** Save preset payload — mirrors Rust SavePresetPayload. */
-export type SavePresetPayload = {
-  id?: string;
-  name: string;
-  author: string;
-  description: string;
-  tags: string[];
-  macroLabels?: string[];
-  data?: unknown;
-};
-
-/** Save FX module preset payload — mirrors Rust SaveFxModulePresetPayload. */
-export type SaveFxModulePresetPayload = {
-  name: string;
-  moduleType: string;
-  patch: Record<string, unknown>;
+  [M in PluginIpcMethod]: {
+    request: PluginIpcPayload<M>;
+    response: PluginIpcResult<M>;
+  };
 };

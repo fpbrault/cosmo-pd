@@ -16,12 +16,15 @@
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 import type {
+	EditorState,
+	MidiLearnBinding,
+	PresetSession,
 	ScopeDataResponse,
 	SynthParams,
 	TransportInfoResponse,
 } from "@cosmo/cosmo-pd101";
 import { postHostLog } from "./hostLogger";
-import type { IpcRpcResponse, PresetSession } from "./ipcTypes";
+import type { IpcRpcResponse } from "./ipcTypes";
 import { createTypedInvoke } from "./ipcTypes";
 
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -250,18 +253,13 @@ function installIpcRouter() {
 		invoke("setPresetSession", session);
 
 	window.__czGetPresetLibrary = (source?: string) =>
-		source
-			? invoke("getPresetLibrary", { source })
-			: invoke("getPresetLibrary");
+		invoke("getPresetLibrary", { source: source ?? null });
 	window.__czRetryPresetLibrary = () => invoke("retryPresetLibrary");
 	window.__czRepairPresetLibrary = () => invoke("repairPresetLibrary");
 	window.__czRebuildPresetLibrary = () => invoke("rebuildPresetLibrary");
-	window.__czLoadPresetData = (id: string) => invoke("loadPresetData", { id });
-	window.__czAddPreset = (
-		name: string,
-		tags: string[],
-		macroLabels?: string[],
-	) => invoke("addPreset", { name, tags, macroLabels });
+	window.__czLoadPreset = (id: string) =>
+		invoke("loadPreset", { presetId: id });
+	window.__czAddPreset = (payload) => invoke("addPreset", payload);
 	window.__czSavePreset = (payload) => invoke("savePreset", payload);
 	window.__czDeletePreset = (id: string) => invoke("deletePreset", { id });
 	window.__czRenamePreset = (id: string, newName: string) =>
@@ -471,7 +469,11 @@ function installScopePolling() {
 			try {
 				const raw = (await invoke("getScopeData")) as ScopeDataResponse;
 				if (raw?.samples.length > 0 && currentScopeHandler) {
-					currentScopeHandler(raw.samples, raw.sampleRate, raw.hz);
+					currentScopeHandler(
+						raw.samples.filter((sample): sample is number => sample !== null),
+						raw.sampleRate ?? 0,
+						raw.hz ?? 0,
+					);
 				}
 			} catch {
 				// Plugin may not be producing audio yet.

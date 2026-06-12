@@ -58,7 +58,8 @@ const AUV3_KNOWN_STUBS = new Set([
 function extractInvokeMethods(source: string): Set<string> {
 	const out = new Set<string>();
 	// Match both invokeAuv3("name") and invoke("name") calls
-	const re = /(?:invokeAuv3|invoke)\(\s*(["'`])([A-Za-z][A-Za-z0-9_]*)\1/g;
+	const re =
+		/(?:invokeAuv3|invoke)(?:<[^>]+>)?\(\s*(["'`])([A-Za-z][A-Za-z0-9_]*)\1/g;
 	for (const match of source.matchAll(re)) {
 		out.add(match[2]);
 	}
@@ -193,6 +194,13 @@ describe("IPC contract coverage", () => {
 		it("extracts at least the well-known AUv3 methods from the bridge", () => {
 			expect(auv3Called.has("getParams")).toBe(true);
 			expect(auv3Called.has("getScopeData")).toBe(true);
+		});
+
+		it("uses only the canonical payload envelope", () => {
+			expect(auv3BridgeSource).not.toContain("loadPresetData");
+			expect(swiftSource).not.toContain('payload["args"]');
+			expect(swiftSource).toContain('payload["payload"]');
+			expect(swiftSource).toContain('case "loadPreset":');
 		});
 	});
 

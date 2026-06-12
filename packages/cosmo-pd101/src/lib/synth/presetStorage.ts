@@ -30,15 +30,6 @@ type StoredPresetInput = {
 	tags?: PresetTagOptions[];
 };
 
-type NativePresetLibraryEntry = {
-	id: string;
-	favorite?: boolean;
-};
-
-type NativePresetLibraryResponse = {
-	entries?: NativePresetLibraryEntry[];
-};
-
 let dbPromise: Promise<IDBDatabase> | null = null;
 
 export function getDb(): Promise<IDBDatabase> {
@@ -118,26 +109,12 @@ function deleteFromStore(storeName: string, id: string): Promise<void> {
 	);
 }
 
-function getNativePresetLibraryBridge() {
-	return window as Window & {
-		__czGetPresetLibrary?: (source?: string) => Promise<unknown>;
-		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
-	};
-}
-
 async function readNativeFavoriteIds(): Promise<string[] | null> {
-	const bridge = getNativePresetLibraryBridge();
-	if (!bridge.__czGetPresetLibrary) {
+	if (!window.__czGetPresetLibrary) {
 		return null;
 	}
 
-	const response = (await bridge.__czGetPresetLibrary()) as
-		| NativePresetLibraryResponse
-		| null
-		| undefined;
-	if (!response || !Array.isArray(response.entries)) {
-		return null;
-	}
+	const response = await window.__czGetPresetLibrary();
 
 	return response.entries
 		.filter((entry) => entry.favorite === true)
@@ -145,18 +122,11 @@ async function readNativeFavoriteIds(): Promise<string[] | null> {
 }
 
 async function readNativeFavorite(id: string): Promise<boolean | null> {
-	const bridge = getNativePresetLibraryBridge();
-	if (!bridge.__czGetPresetLibrary) {
+	if (!window.__czGetPresetLibrary) {
 		return null;
 	}
 
-	const response = (await bridge.__czGetPresetLibrary()) as
-		| NativePresetLibraryResponse
-		| null
-		| undefined;
-	if (!response || !Array.isArray(response.entries)) {
-		return null;
-	}
+	const response = await window.__czGetPresetLibrary();
 
 	const entry = response.entries.find((candidate) => candidate.id === id);
 	return entry ? entry.favorite === true : null;
@@ -415,13 +385,10 @@ export async function setPresetFavorite(
 	id: string,
 	favorite: boolean,
 ): Promise<void> {
-	const bridge = getNativePresetLibraryBridge();
-	if (bridge.__czToggleStarred) {
+	if (window.__czToggleStarred) {
 		try {
-			const result = await bridge.__czToggleStarred(id, favorite);
-			if (result !== false) {
-				return;
-			}
+			await window.__czToggleStarred(id, favorite);
+			return;
 		} catch {
 			// Fall back to IndexedDB when the native bridge does not own this id.
 		}
