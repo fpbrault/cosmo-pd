@@ -109,13 +109,13 @@ export function createWebPresetManagerRepository({
 
 			return null;
 		},
-		savePreset: async ({ existingEntry, name }: SavePresetRequest) => {
+		savePreset: async ({ existingEntry, name, mode }: SavePresetRequest) => {
 			const currentStoredPreset =
 				existingEntry?.type === "local"
 					? await loadStoredPreset(existingEntry.id)
 					: null;
 			const stored = await saveStoredPreset({
-				id: currentStoredPreset?.id,
+				id: mode === "overwrite" ? currentStoredPreset?.id : undefined,
 				name,
 				data: gatherPresetState(),
 				source: "user",

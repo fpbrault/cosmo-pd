@@ -43,7 +43,11 @@ describe("createWebPresetManagerRepository", () => {
 			libraryPresets: [],
 		});
 
-		await repository.savePreset({ existingEntry: null, name: "New Preset" });
+		await repository.savePreset({
+			existingEntry: null,
+			name: "New Preset",
+			mode: "create",
+		});
 
 		expect(mockSaveStoredPreset).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -91,10 +95,63 @@ describe("createWebPresetManagerRepository", () => {
 				tags: [],
 			},
 			name: "Existing",
+			mode: "overwrite",
 		});
 
 		expect(mockSaveStoredPreset).toHaveBeenCalledWith(
 			expect.objectContaining({ description: "Warm and wide." }),
+		);
+	});
+
+	it("creates a new preset id for save as while preserving metadata", async () => {
+		mockLoadStoredPreset.mockResolvedValue({
+			id: "user-1",
+			name: "Existing",
+			source: "user",
+			author: "User",
+			description: "Warm and wide.",
+			starred: true,
+			tags: ["pad"],
+			data: { schemaVersion: 1, params: { volume: 0.5 } },
+		});
+		mockSaveStoredPreset.mockResolvedValue({
+			id: "user-2",
+			name: "Copy",
+		});
+
+		const repository = createWebPresetManagerRepository({
+			applyPreset: vi.fn(),
+			gatherPresetState: () =>
+				({ schemaVersion: 1, params: { volume: 0.5 } }) as never,
+			libraryPresets: [],
+		});
+
+		await repository.savePreset({
+			existingEntry: {
+				id: "user-1",
+				label: "Existing",
+				type: "local",
+				source: "user",
+				sourceLabel: "User",
+				author: "User",
+				description: "Warm and wide.",
+				starred: true,
+				favorite: true,
+				tags: ["pad"],
+			},
+			name: "Copy",
+			mode: "create",
+		});
+
+		expect(mockSaveStoredPreset).toHaveBeenCalledWith(
+			expect.objectContaining({
+				id: undefined,
+				name: "Copy",
+				author: "User",
+				description: "Warm and wide.",
+				starred: true,
+				tags: ["pad"],
+			}),
 		);
 	});
 });

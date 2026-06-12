@@ -226,6 +226,24 @@ describe("presetStorage", () => {
 		);
 	});
 
+	it("creates distinct ids for identical new user presets", async () => {
+		const first = await saveStoredPreset({
+			name: "Duplicate",
+			data: DEFAULT_PRESET,
+			source: "user",
+		});
+		const second = await saveStoredPreset({
+			name: "Duplicate",
+			data: DEFAULT_PRESET,
+			source: "user",
+		});
+
+		expect(first.id).not.toBe(second.id);
+		expect((await listStoredPresets()).map((preset) => preset.id)).toEqual(
+			expect.arrayContaining([first.id, second.id]),
+		);
+	});
+
 	it("saves and loads current state", async () => {
 		const state = {
 			...DEFAULT_PRESET,

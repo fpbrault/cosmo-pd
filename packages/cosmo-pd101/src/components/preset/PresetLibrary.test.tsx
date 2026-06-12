@@ -76,8 +76,10 @@ function createProps() {
 		allEntries: entries,
 		activeEntryId: "local-keys",
 		activePresetName: "Local Keys",
+		isPresetDirty: true,
 		onActivatePreset: vi.fn(),
 		onSavePreset: vi.fn(),
+		onSavePresetAs: vi.fn(),
 		onDeletePreset: vi.fn(),
 		onRenamePreset: vi.fn(),
 		onSetPresetAuthor: vi.fn(),
@@ -175,7 +177,7 @@ describe("PresetLibrary", () => {
 		const saveAsInput = screen.getByPlaceholderText("New preset name");
 		fireEvent.change(saveAsInput, { target: { value: "  New Patch  " } });
 		fireEvent.click(screen.getByRole("button", { name: "Confirm save as" }));
-		expect(props.onSavePreset).toHaveBeenCalledWith("New Patch");
+		expect(props.onSavePresetAs).toHaveBeenCalledWith("New Patch");
 
 		fireEvent.click(screen.getByRole("button", { name: "Init Preset" }));
 		expect(props.onInitPreset).toHaveBeenCalled();
@@ -433,6 +435,14 @@ describe("PresetLibrary", () => {
 				activePresetName="Factory Bass"
 			/>,
 		);
+
+		expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+		expect(screen.getByRole("button", { name: "Save As" })).toBeEnabled();
+	});
+
+	it("disables overwrite save when there are no unsaved changes", () => {
+		const props = createProps();
+		render(<PresetLibrary {...props} isPresetDirty={false} />);
 
 		expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
 		expect(screen.getByRole("button", { name: "Save As" })).toBeEnabled();

@@ -337,9 +337,9 @@ export function createPluginPresetManagerRepository({
 				"deferred",
 			);
 		},
-		savePreset: async ({ existingEntry, name }: SavePresetRequest) => {
+		savePreset: async ({ existingEntry, name, mode }: SavePresetRequest) => {
 			const result = (await window.__czSavePreset?.({
-				id: existingEntry?.id ?? null,
+				id: mode === "overwrite" ? (existingEntry?.id ?? null) : null,
 				name,
 				author: existingEntry?.author?.trim()
 					? existingEntry.author
@@ -349,7 +349,8 @@ export function createPluginPresetManagerRepository({
 			})) as { id?: string; name?: string } | undefined;
 			return createActivationResult(
 				createSelection(
-					result?.id ?? existingEntry?.id ?? null,
+					result?.id ??
+						(mode === "overwrite" ? (existingEntry?.id ?? null) : null),
 					result?.name ?? name,
 				),
 				"immediate",

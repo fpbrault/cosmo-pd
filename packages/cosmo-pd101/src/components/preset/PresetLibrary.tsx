@@ -20,8 +20,10 @@ type PresetLibraryProps = {
 	libraryStatus?: PresetLibraryStatus;
 	activeEntryId: string | null;
 	activePresetName: string;
+	isPresetDirty: boolean;
 	onActivatePreset: (ref: PresetRef) => void;
 	onSavePreset: (name: string) => void;
+	onSavePresetAs: (name: string) => void;
 	onDeletePreset: (id: string) => void;
 	onRenamePreset: (id: string, newName: string) => void;
 	onSetPresetAuthor: (id: string, author: string) => void;
@@ -45,8 +47,10 @@ export default function PresetLibrary({
 	libraryStatus = { state: "ready" },
 	activeEntryId,
 	activePresetName,
+	isPresetDirty,
 	onActivatePreset,
 	onSavePreset,
+	onSavePresetAs,
 	onDeletePreset,
 	onRenamePreset,
 	onSetPresetAuthor,
@@ -194,10 +198,10 @@ export default function PresetLibrary({
 	const commitSaveAs = useCallback(() => {
 		const name = saveAsName.trim();
 		if (!name) return;
-		onSavePreset(name);
+		onSavePresetAs(name);
 		setSaveAsOpen(false);
 		setSaveAsName("");
-	}, [onSavePreset, saveAsName, setSaveAsName, setSaveAsOpen]);
+	}, [onSavePresetAs, saveAsName, setSaveAsName, setSaveAsOpen]);
 
 	const handleExportCurrentState = useCallback(() => {
 		const name = saveName.trim();
@@ -388,7 +392,7 @@ export default function PresetLibrary({
 						aria-disabled={persistenceDisabled}
 					>
 						<PresetLibrarySidebar
-							activeLocalEntryLabel={activeLocalEntry?.label ?? null}
+							canSave={Boolean(activeLocalEntry) && isPresetDirty}
 							selectedEntry={selectedEntry ?? null}
 							renameValue={renameValue}
 							onRenameValueChange={setRenameValue}

@@ -109,6 +109,7 @@ describe("PluginPage", () => {
 			setNavigationEntryIds: vi.fn(),
 			stepPreset: vi.fn(),
 			savePreset: vi.fn(),
+			savePresetAs: vi.fn(),
 			deletePreset: vi.fn(),
 			renamePreset: vi.fn(),
 			setPresetAuthor: vi.fn(),

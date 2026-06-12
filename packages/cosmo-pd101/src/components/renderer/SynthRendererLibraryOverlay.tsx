@@ -33,8 +33,10 @@ export default memo(function SynthRendererLibraryOverlay({
 		libraryStatus,
 		activePresetId,
 		activePresetName,
+		isPresetDirty,
 		activatePreset,
 		savePreset,
+		savePresetAs,
 		deletePreset,
 		renamePreset,
 		setPresetAuthor,
@@ -66,11 +68,15 @@ export default memo(function SynthRendererLibraryOverlay({
 				libraryStatus={libraryStatus}
 				activeEntryId={activePresetId}
 				activePresetName={activePresetName}
+				isPresetDirty={isPresetDirty}
 				onActivatePreset={(ref) => {
 					void activatePreset(ref);
 				}}
 				onSavePreset={(name) => {
 					void savePreset(name);
+				}}
+				onSavePresetAs={(name) => {
+					void savePresetAs(name);
 				}}
 				onDeletePreset={(id) => {
 					void deletePreset(id);
