@@ -885,4 +885,33 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn envelope_unknown_method_fails() {
+        let input = r#"{"id":1,"method":"doesNotExist","payload":{}}"#;
+        let err = serde_json::from_str::<PluginIpcEnvelope>(input).unwrap_err();
+        assert!(err.is_data(), "expected data error for unknown method");
+    }
+
+    #[test]
+    fn envelope_missing_payload_on_payload_variant_fails() {
+        let input = r#"{"id":2,"method":"setParams"}"#;
+        let err = serde_json::from_str::<PluginIpcEnvelope>(input).unwrap_err();
+        assert!(err.is_data(), "expected data error for missing payload");
+    }
+
+    #[test]
+    fn envelope_wrong_payload_type_fails() {
+        let input = r#"{"id":3,"method":"setParams","payload":"notAnObject"}"#;
+        let err = serde_json::from_str::<PluginIpcEnvelope>(input).unwrap_err();
+        assert!(err.is_data(), "expected data error for wrong payload type");
+    }
+
+    #[test]
+    fn envelope_ignores_legacy_args_key() {
+        let input = r#"{"id":4,"method":"getParams","args":[]}"#;
+        let env: PluginIpcEnvelope = serde_json::from_str(input).unwrap();
+        assert_eq!(env.id, 4);
+        assert!(matches!(env.request, PluginIpcRequest::GetParams));
+    }
 }
