@@ -36,6 +36,7 @@ export interface PresetManagerController {
 	setNavigationEntryIds: (entryIds: PresetEntryId[]) => void;
 	stepPreset: (direction: -1 | 1) => Promise<void>;
 	savePreset: (name: string) => Promise<void>;
+	savePresetAs: (name: string) => Promise<void>;
 	deletePreset: (id: string) => Promise<void>;
 	renamePreset: (id: string, newName: string) => Promise<void>;
 	setPresetAuthor: (id: string, author: string) => Promise<void>;
@@ -332,6 +333,20 @@ export function useSynthPresetManager({
 			const session = await repository.savePreset({
 				existingEntry: activeLocalPreset,
 				name,
+				mode: "overwrite",
+			});
+			await reloadLibrary();
+			commitPresetSelection(session.session, { stateSync: session.stateSync });
+		},
+		[activeLocalPreset, commitPresetSelection, reloadLibrary, repository],
+	);
+
+	const savePresetAs = useCallback(
+		async (name: string) => {
+			const session = await repository.savePreset({
+				existingEntry: activeLocalPreset,
+				name,
+				mode: "create",
 			});
 			await reloadLibrary();
 			commitPresetSelection(session.session, { stateSync: session.stateSync });
@@ -446,6 +461,7 @@ export function useSynthPresetManager({
 			setNavigationEntryIds,
 			stepPreset,
 			savePreset,
+			savePresetAs,
 			deletePreset,
 			renamePreset,
 			setPresetAuthor,
@@ -482,6 +498,7 @@ export function useSynthPresetManager({
 			rebuildLibrary,
 			renamePreset,
 			savePreset,
+			savePresetAs,
 			setNavigationEntryIds,
 			setPresetAuthor,
 			setPresetDescription,

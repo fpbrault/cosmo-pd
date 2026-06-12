@@ -19,9 +19,12 @@ export type ExportedPresetFile = {
 	json: string;
 };
 
+export type SavePresetMode = "overwrite" | "create";
+
 export type SavePresetRequest = {
 	existingEntry: PresetEntry | null;
 	name: string;
+	mode: SavePresetMode;
 };
 
 export type PresetLibraryStatus =

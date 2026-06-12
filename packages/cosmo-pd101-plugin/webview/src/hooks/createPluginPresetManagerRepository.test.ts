@@ -10,6 +10,7 @@ vi.mock("@cosmo/cosmo-pd101", async (importOriginal) => {
 	};
 });
 
+import type { SynthPresetV1 } from "@cosmo/cosmo-pd101";
 import { createPluginPresetManagerRepository } from "./createPluginPresetManagerRepository";
 
 describe("createPluginPresetManagerRepository", () => {
@@ -39,6 +40,7 @@ describe("createPluginPresetManagerRepository", () => {
 				},
 				stateSync: "immediate",
 			}),
+			savePresetAs: vi.fn(),
 			deletePreset: vi.fn(),
 			renamePreset: vi.fn(),
 			setPresetAuthor: vi.fn(),
@@ -58,7 +60,8 @@ describe("createPluginPresetManagerRepository", () => {
 		const onBeforeApplyPreset = vi.fn();
 		const repository = createPluginPresetManagerRepository({
 			applyPreset,
-			gatherPresetState: () => ({ schemaVersion: 1, params: { volume: 1 } }),
+			gatherPresetState: () =>
+				({ schemaVersion: 1, params: { volume: 1 } }) as SynthPresetV1,
 			onBeforeApplyPreset,
 		});
 
@@ -78,13 +81,73 @@ describe("createPluginPresetManagerRepository", () => {
 			}),
 		);
 
-		await repository.savePreset({ existingEntry: null, name: "My Pad" });
+		await repository.savePreset({
+			existingEntry: null,
+			name: "My Pad",
+			mode: "create",
+		});
 
 		expect(fallbackRepository.savePreset).toHaveBeenCalledWith({
 			existingEntry: null,
 			name: "My Pad",
+			mode: "create",
 		});
 		expect(window.__czSavePreset).not.toHaveBeenCalled();
+	});
+
+	it("sends null id for save as and the active id for overwrite", async () => {
+		window.__czSavePreset = vi.fn().mockResolvedValue({
+			id: "user-2",
+			name: "Copied Pad",
+		});
+
+		const repository = createPluginPresetManagerRepository({
+			applyPreset: vi.fn(),
+			gatherPresetState: () =>
+				({ schemaVersion: 1, params: { volume: 1 } }) as never,
+		});
+
+		await repository.savePreset({
+			existingEntry: {
+				id: "user-1",
+				label: "Source Pad",
+				type: "local",
+				source: "user",
+				sourceLabel: "User",
+				author: "User",
+				description: "Warm and wide.",
+				starred: false,
+				favorite: false,
+				tags: ["pad"],
+			},
+			name: "Copied Pad",
+			mode: "create",
+		});
+		await repository.savePreset({
+			existingEntry: {
+				id: "user-1",
+				label: "Source Pad",
+				type: "local",
+				source: "user",
+				sourceLabel: "User",
+				author: "User",
+				description: "Warm and wide.",
+				starred: false,
+				favorite: false,
+				tags: ["pad"],
+			},
+			name: "Source Pad",
+			mode: "overwrite",
+		});
+
+		expect(window.__czSavePreset).toHaveBeenNthCalledWith(
+			1,
+			expect.objectContaining({ id: null, name: "Copied Pad" }),
+		);
+		expect(window.__czSavePreset).toHaveBeenNthCalledWith(
+			2,
+			expect.objectContaining({ id: "user-1", name: "Source Pad" }),
+		);
 	});
 
 	it("maps and updates native preset descriptions", async () => {

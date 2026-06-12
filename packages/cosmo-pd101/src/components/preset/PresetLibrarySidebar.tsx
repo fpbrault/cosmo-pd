@@ -7,7 +7,7 @@ import PresetMultiSelect from "./PresetMultiSelect";
 import { getPresetTagBadgeClassName } from "./presetTagTone";
 
 type PresetLibrarySidebarProps = {
-	activeLocalEntryLabel: string | null;
+	canSave: boolean;
 	selectedEntry: PresetEntry | null;
 	renameValue: string;
 	onRenameValueChange: (name: string) => void;
@@ -33,7 +33,7 @@ type PresetLibrarySidebarProps = {
 };
 
 export default memo(function PresetLibrarySidebar({
-	activeLocalEntryLabel,
+	canSave,
 	selectedEntry,
 	renameValue,
 	onRenameValueChange,
@@ -56,9 +56,9 @@ export default memo(function PresetLibrarySidebar({
 }: PresetLibrarySidebarProps) {
 	const { t } = useTranslation("synth");
 	return (
-		<aside className="border-cz-border border-t-0 border-l bg-cz-surface p-4">
-			<div className="space-y-5">
-				<section>
+		<aside className="flex h-full min-h-0 flex-col overflow-hidden border-cz-border border-t-0 border-l bg-cz-surface p-4">
+			<div className="flex min-h-0 flex-1 flex-col gap-5">
+				<section className="shrink-0">
 					<h3 className="mb-2 font-mono text-4xs text-cz-gold uppercase tracking-[0.28em]">
 						{t("presetLibrary.currentState")}
 					</h3>
@@ -66,7 +66,7 @@ export default memo(function PresetLibrarySidebar({
 						<Button
 							type="button"
 							className="btn btn-sm btn-warning"
-							disabled={!activeLocalEntryLabel}
+							disabled={!canSave}
 							onClick={onSave}
 						>
 							{t("presetLibrary.save")}
@@ -99,7 +99,7 @@ export default memo(function PresetLibrarySidebar({
 					<div className="grid grid-cols-2 gap-2"></div>
 				</section>
 
-				<section className="border-cz-border/70 border-t pt-5">
+				<section className="min-h-0 flex-1 overflow-y-auto border-cz-border/70 border-t pt-5">
 					<h3 className="mb-2 font-mono text-4xs text-cz-gold uppercase tracking-[0.28em]">
 						{t("presetLibrary.selectedPreset")}
 					</h3>
@@ -162,7 +162,7 @@ export default memo(function PresetLibrarySidebar({
 								</p>
 								{selectedEntry.type === "local" ? (
 									<textarea
-										className="textarea textarea-sm min-h-24 w-full resize-y border-cz-border bg-cz-inset text-cz-cream"
+										className="textarea textarea-sm min-h-16 w-full resize-y border-cz-border bg-cz-inset text-cz-cream"
 										placeholder={t("presetLibrary.descriptionPlaceholder")}
 										value={descriptionValue}
 										onChange={(event) =>

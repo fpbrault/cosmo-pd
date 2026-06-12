@@ -228,4 +228,36 @@ describe("useSynthPresetManager", () => {
 		);
 		expect(repository.listEntries).toHaveBeenCalledTimes(3);
 	});
+
+	it("uses overwrite for save and create for save as", async () => {
+		const { result } = renderHook(() => useSynthPresetManager({ repository }));
+
+		await vi.waitFor(() => {
+			expect(result.current.allPresetEntries).toHaveLength(2);
+		});
+
+		act(() => {
+			result.current.syncExternalSelection({
+				activePresetId: "local-1",
+				activePresetNameBase: "Local 1",
+				isDirty: true,
+			});
+		});
+
+		await act(async () => {
+			await result.current.savePreset("Local 1");
+			await result.current.savePresetAs("Local 1 Copy");
+		});
+
+		expect(repository.savePreset).toHaveBeenNthCalledWith(1, {
+			existingEntry: expect.objectContaining({ id: "local-1" }),
+			name: "Local 1",
+			mode: "overwrite",
+		});
+		expect(repository.savePreset).toHaveBeenNthCalledWith(2, {
+			existingEntry: expect.objectContaining({ id: "local-1" }),
+			name: "Local 1 Copy",
+			mode: "create",
+		});
+	});
 });

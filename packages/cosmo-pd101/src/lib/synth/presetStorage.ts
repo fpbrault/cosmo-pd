@@ -1,6 +1,5 @@
 import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
 import { DEFAULT_SYNTH_PARAMS_V1 } from "@/lib/synth/bindings/synth";
-import { createPresetId } from "@/lib/synth/presetIdentity";
 import type { PresetSource } from "@/lib/synth/presetSources";
 import {
 	normalizePresetTags,
@@ -230,6 +229,14 @@ function isStoredPreset(value: unknown): value is StoredPreset {
 	);
 }
 
+function createUserPresetId(): string {
+	if (globalThis.crypto?.randomUUID) {
+		return globalThis.crypto.randomUUID();
+	}
+
+	return `preset_${Date.now().toString(16)}${Math.random().toString(16).slice(2, 10)}`;
+}
+
 function createStoredPreset(input: StoredPresetInput): StoredPreset {
 	const metadata = normalizeMetadata({
 		description: input.description,
@@ -246,7 +253,7 @@ function createStoredPreset(input: StoredPresetInput): StoredPreset {
 	};
 
 	return {
-		id: input.id ?? createPresetId(basePreset),
+		id: input.id ?? createUserPresetId(),
 		...basePreset,
 	};
 }

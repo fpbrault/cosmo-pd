@@ -17,7 +17,7 @@ describe("PresetLibrarySidebar", () => {
 
 		render(
 			<PresetLibrarySidebar
-				activeLocalEntryLabel="Mine"
+				canSave
 				selectedEntry={{
 					id: "mine",
 					label: "Mine",
@@ -88,7 +88,7 @@ describe("PresetLibrarySidebar", () => {
 	it("renders library preset metadata as read-only", () => {
 		render(
 			<PresetLibrarySidebar
-				activeLocalEntryLabel={null}
+				canSave={false}
 				selectedEntry={{
 					id: "factory",
 					label: "Factory Pad",
@@ -137,7 +137,7 @@ describe("PresetLibrarySidebar", () => {
 	it("renders current state actions before selected preset details", () => {
 		render(
 			<PresetLibrarySidebar
-				activeLocalEntryLabel="Mine"
+				canSave
 				selectedEntry={{
 					id: "mine",
 					label: "Mine",
@@ -177,5 +177,38 @@ describe("PresetLibrarySidebar", () => {
 		const headings = screen.getAllByRole("heading", { level: 3 });
 		expect(headings[0]).toHaveTextContent("Current State");
 		expect(headings[1]).toHaveTextContent("Selected Preset");
+	});
+
+	it("disables save when canSave is false", () => {
+		render(
+			<PresetLibrarySidebar
+				canSave={false}
+				selectedEntry={null}
+				renameValue=""
+				onRenameValueChange={vi.fn()}
+				onCommitRename={vi.fn()}
+				authorValue=""
+				onAuthorValueChange={vi.fn()}
+				onCommitAuthor={vi.fn()}
+				descriptionValue=""
+				onDescriptionValueChange={vi.fn()}
+				onCommitDescription={vi.fn()}
+				selectedTags={[]}
+				onSelectedTagsChange={vi.fn()}
+				onExportSelectedPreset={vi.fn()}
+				onDeleteSelectedPreset={vi.fn()}
+				saveName=""
+				onSaveNameChange={vi.fn()}
+				onSave={vi.fn()}
+				onOpenSaveAs={vi.fn()}
+				onExportCurrentState={vi.fn()}
+				onImportClick={vi.fn()}
+				onInitPreset={vi.fn()}
+				importError={null}
+			/>,
+		);
+
+		expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+		expect(screen.getByRole("button", { name: "Save As" })).toBeEnabled();
 	});
 });
