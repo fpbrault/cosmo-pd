@@ -81,6 +81,18 @@ export type {
 	SessionState,
 } from "./lib/sessionState";
 export type {
+	EditorState,
+	LoadPresetPayload,
+	MidiLearnBinding,
+	MidiLearnState,
+	PluginIpcMethods,
+	PluginIpcRequest,
+	PresetSession,
+	ScopeDataResponse,
+	SynthParams,
+	TransportInfoResponse,
+} from "./lib/synth/bindings/plugin-bridge";
+export type {
 	AlgoControlValueV1,
 	FxSlotConfig,
 	FxSlotType,

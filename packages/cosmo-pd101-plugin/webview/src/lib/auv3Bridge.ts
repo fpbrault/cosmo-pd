@@ -1,18 +1,14 @@
+import type {
+	EditorState,
+	MidiLearnBinding,
+	ScopeDataResponse,
+	TransportInfoResponse,
+} from "@cosmo/cosmo-pd101";
+
 type IpcRpcResponse = {
 	id: number;
 	result?: unknown;
 	error?: string;
-};
-
-type ScopeDataResponse = {
-	samples: number[];
-	sampleRate: number;
-	hz: number;
-};
-type MidiBindingIdentity = {
-	paramKey: string;
-	channel: number;
-	cc: number;
 };
 
 type NativePluginPresetSession = {
@@ -38,7 +34,7 @@ declare global {
 		__czGetParams?: () => Promise<unknown>;
 		__czGetParamsVersion?: () => Promise<unknown>;
 		__czSetParams?: (json: string) => void;
-		__czGetTransportInfo?: () => Promise<unknown>;
+		__czGetTransportInfo?: () => Promise<TransportInfoResponse>;
 		__czOnRuntimeVoiceStates?: (json: string) => void;
 		__czOnRuntimeModSources?: (json: string) => void;
 		__czOnTransport?: (json: string) => void;
@@ -78,14 +74,14 @@ declare global {
 			patch: Record<string, unknown>;
 		}) => Promise<unknown>;
 		__czDeleteFxModulePreset?: (id: string) => Promise<unknown>;
-		__czSetEditorState?: (state: string) => void;
-		__czGetEditorState?: () => Promise<unknown>;
+		__czSetEditorState?: (state: EditorState) => void;
+		__czGetEditorState?: () => Promise<EditorState | null>;
 		__czOnMidiLearnState?: (json: string) => void;
 		__czGetMidiLearnState?: () => Promise<unknown>;
 		__czSetMidiLearnMode?: (on: boolean) => void;
 		__czSetPendingMidiLearnParam?: (key: string | null) => void;
 		__czAddMidiBinding?: (key: string, ch: number, cc: number) => void;
-		__czRemoveMidiBinding?: (binding: MidiBindingIdentity) => void;
+		__czRemoveMidiBinding?: (binding: MidiLearnBinding) => void;
 		__czClearMidiLearnBindings?: () => void;
 	}
 }
@@ -313,13 +309,14 @@ function installIpcRouter() {
 	window.__czDeleteFxModulePreset = (id: string) =>
 		invokeAuv3("deleteFxModulePreset", [{ id }]);
 
-	window.__czSetEditorState = (state: string) => {
-		void invokeAuv3("setEditorState", [JSON.parse(state)]).catch((error) => {
+	window.__czSetEditorState = (state: EditorState) => {
+		void invokeAuv3("setEditorState", [state]).catch((error) => {
 			console.error("[auv3Bridge] setEditorState error", error);
 		});
 	};
 
-	window.__czGetEditorState = () => invokeAuv3("getEditorState", []);
+	window.__czGetEditorState = async () =>
+		(await invokeAuv3("getEditorState", [])) as EditorState | null;
 
 	window.__czGetMidiLearnState = () => invokeAuv3("getMidiLearnState", []);
 

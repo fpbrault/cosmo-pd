@@ -15,6 +15,12 @@
  */
 
 // ─── Types ───────────────────────────────────────────────────────────────────
+import type {
+	ScopeDataResponse as BridgeScopeDataResponse,
+	TransportInfoResponse as BridgeTransportInfoResponse,
+	EditorState,
+	MidiLearnBinding,
+} from "@cosmo/cosmo-pd101";
 import { postHostLog } from "./hostLogger";
 
 type IpcRpcResponse = {
@@ -23,19 +29,13 @@ type IpcRpcResponse = {
 	error?: string;
 };
 
-type ScopeDataResponse = {
-	samples: number[];
-	sampleRate: number;
-	hz: number;
-};
+type ScopeDataResponse = BridgeScopeDataResponse;
+type TransportInfoResponse = BridgeTransportInfoResponse;
 
-type TransportInfoResponse = string | Record<string, number | boolean>;
-type MidiBindingIdentity = {
-	paramKey: string;
-	channel: number;
-	cc: number;
-};
-
+/**
+ * Webview-internal preset session — superset of the bridge type.
+ * `activePresetId` is managed locally in the webview, not persisted on the Rust side.
+ */
 type PresetSession = {
 	activePresetId: string | null;
 	loadedPresetId?: string | null;
@@ -50,7 +50,7 @@ declare global {
 		__czGetParams?: () => Promise<unknown>;
 		__czGetParamsVersion?: () => Promise<unknown>;
 		__czSetParams?: (json: string) => void;
-		__czGetTransportInfo?: () => Promise<unknown>;
+		__czGetTransportInfo?: () => Promise<TransportInfoResponse>;
 		__czOnScope?: (
 			samples: Float32Array | number[],
 			sampleRate: number,
@@ -98,14 +98,14 @@ declare global {
 			patch: Record<string, unknown>;
 		}) => Promise<unknown>;
 		__czDeleteFxModulePreset?: (id: string) => Promise<unknown>;
-		__czSetEditorState?: (state: string) => void;
-		__czGetEditorState?: () => Promise<unknown>;
+		__czSetEditorState?: (state: EditorState) => void;
+		__czGetEditorState?: () => Promise<EditorState | null>;
 		__czOnMidiLearnState?: (json: string) => void;
 		__czGetMidiLearnState?: () => Promise<unknown>;
 		__czSetMidiLearnMode?: (on: boolean) => void;
 		__czSetPendingMidiLearnParam?: (key: string | null) => void;
 		__czAddMidiBinding?: (key: string, ch: number, cc: number) => void;
-		__czRemoveMidiBinding?: (binding: MidiBindingIdentity) => void;
+		__czRemoveMidiBinding?: (binding: MidiLearnBinding) => void;
 		__czClearMidiLearnBindings?: () => void;
 	}
 }
@@ -365,13 +365,14 @@ function installIpcRouter() {
 	window.__czDeleteFxModulePreset = (id: string) =>
 		invokeRust("deleteFxModulePreset", { id });
 
-	window.__czSetEditorState = (state: string) => {
-		void invokeRust("setEditorState", JSON.parse(state)).catch((error) => {
+	window.__czSetEditorState = (state: EditorState) => {
+		void invokeRust("setEditorState", state).catch((error) => {
 			console.error("[IPCBridge] setEditorState error", error);
 		});
 	};
 
-	window.__czGetEditorState = () => invokeRust("getEditorState");
+	window.__czGetEditorState = async () =>
+		(await invokeRust("getEditorState")) as EditorState | null;
 
 	window.__czGetMidiLearnState = () => invokeRust("getMidiLearnState");
 
@@ -390,7 +391,7 @@ function installIpcRouter() {
 			console.error("[IPCBridge] addMidiBinding error", error);
 		});
 	};
-	window.__czRemoveMidiBinding = (binding: MidiBindingIdentity) => {
+	window.__czRemoveMidiBinding = (binding: MidiLearnBinding) => {
 		void invokeRust("removeMidiBinding", binding).catch((error) => {
 			console.error("[IPCBridge] removeMidiBinding error", error);
 		});

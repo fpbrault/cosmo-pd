@@ -1,4 +1,4 @@
-import type { SessionEditorState } from "@cosmo/cosmo-pd101";
+import type { EditorState } from "@cosmo/cosmo-pd101";
 import { useSynthUiStore } from "@cosmo/cosmo-pd101";
 import { useEffect, useRef } from "react";
 
@@ -14,49 +14,43 @@ function isBridgeAvailable(): boolean {
 
 function loadInitialEditorState(): void {
 	if (!hasBridgeApi("GetEditorState")) return;
-	void (window as { __czGetEditorState: () => Promise<unknown> })
+	void (window as { __czGetEditorState: () => Promise<EditorState | null> })
 		.__czGetEditorState()
-		.then((result: unknown) => {
+		.then((result) => {
 			if (result && typeof result === "object") {
-				const state = result as Record<string, unknown>;
 				const editorState: Record<string, unknown> = {};
-				const keys: Array<keyof SessionEditorState> = [
-					"mainPanelMode",
-					"phaseLinePanelTab",
-					"activeEnvTab",
-					"keyboardVisible",
-					"keyboardOctaves",
-					"keyboardRange",
-					"keyboardHeight",
-					"keyboardInputMode",
-					"libraryModeOpen",
-					"scopeCycles",
-					"scopeVerticalZoom",
-					"scopeTriggerLevel",
-					"scopeVisualizationMode",
-					"scopeColorTheme",
-				];
-				for (const key of keys) {
-					if (key in state) {
-						editorState[key] = state[key];
+				for (const key of KEYS) {
+					if (key in result) {
+						editorState[key] = result[key as keyof EditorState];
 					}
 				}
 				useSynthUiStore.setState(editorState);
 			}
 		})
 		.catch((error: unknown) => {
-			console.error("[auv3Bridge] getEditorState error", error);
+			console.error("[sessionSync] getEditorState error", error);
 		});
 }
 
-function subscribeEditorState(): () => void {
-	const setEditor = (window as { __czSetEditorState: (s: string) => void })
-		.__czSetEditorState;
-	const pushState = (state: SessionEditorState) => {
-		setEditor(JSON.stringify(state));
-	};
+const KEYS: Array<keyof EditorState> = [
+	"mainPanelMode",
+	"phaseLinePanelTab",
+	"activeEnvTab",
+	"keyboardVisible",
+	"keyboardOctaves",
+	"keyboardRange",
+	"keyboardHeight",
+	"keyboardInputMode",
+	"libraryModeOpen",
+	"scopeCycles",
+	"scopeVerticalZoom",
+	"scopeTriggerLevel",
+	"scopeVisualizationMode",
+	"scopeColorTheme",
+];
 
-	pushState({
+function buildEditorState(): EditorState {
+	return {
 		mainPanelMode: useSynthUiStore.getState().mainPanelMode,
 		phaseLinePanelTab: useSynthUiStore.getState().phaseLinePanelTab,
 		activeEnvTab: useSynthUiStore.getState().activeEnvTab,
@@ -71,26 +65,17 @@ function subscribeEditorState(): () => void {
 		scopeTriggerLevel: useSynthUiStore.getState().scopeTriggerLevel,
 		scopeVisualizationMode: useSynthUiStore.getState().scopeVisualizationMode,
 		scopeColorTheme: useSynthUiStore.getState().scopeColorTheme,
-	});
+	};
+}
 
-	return useSynthUiStore.subscribe((state) => {
-		const editorState: SessionEditorState = {
-			mainPanelMode: state.mainPanelMode,
-			phaseLinePanelTab: state.phaseLinePanelTab,
-			activeEnvTab: state.activeEnvTab,
-			keyboardVisible: state.keyboardVisible,
-			keyboardOctaves: state.keyboardOctaves,
-			keyboardRange: state.keyboardRange,
-			keyboardHeight: state.keyboardHeight,
-			keyboardInputMode: state.keyboardInputMode,
-			libraryModeOpen: state.libraryModeOpen,
-			scopeCycles: state.scopeCycles,
-			scopeVerticalZoom: state.scopeVerticalZoom,
-			scopeTriggerLevel: state.scopeTriggerLevel,
-			scopeVisualizationMode: state.scopeVisualizationMode,
-			scopeColorTheme: state.scopeColorTheme,
-		};
-		pushState(editorState);
+function subscribeEditorState(): () => void {
+	const setEditor = (window as { __czSetEditorState: (s: EditorState) => void })
+		.__czSetEditorState;
+
+	setEditor(buildEditorState());
+
+	return useSynthUiStore.subscribe(() => {
+		setEditor(buildEditorState());
 	});
 }
 
