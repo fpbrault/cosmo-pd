@@ -24,8 +24,18 @@ export type SavePresetRequest = {
 	name: string;
 };
 
+export type PresetLibraryStatus =
+	| { state: "loading" }
+	| { state: "ready" }
+	| { state: "degraded"; message: string };
+
+export type PresetLibrarySnapshot = {
+	entries: PresetEntry[];
+	status: Exclude<PresetLibraryStatus, { state: "loading" }>;
+};
+
 export interface PresetManagerRepository {
-	listEntries: () => Promise<PresetEntry[]>;
+	listEntries: () => Promise<PresetLibrarySnapshot>;
 	loadEntry: (entry: PresetEntry) => Promise<PresetActivationResult | null>;
 	savePreset: (request: SavePresetRequest) => Promise<PresetActivationResult>;
 	deletePreset: (id: string) => Promise<void>;
@@ -41,4 +51,7 @@ export interface PresetManagerRepository {
 		filename: string,
 	) => Promise<PresetActivationResult | null>;
 	exportCurrentState: (name: string) => Promise<ExportedPresetFile>;
+	retryLibrary?: () => Promise<void>;
+	repairLibrary?: () => Promise<void>;
+	rebuildLibrary?: () => Promise<void>;
 }

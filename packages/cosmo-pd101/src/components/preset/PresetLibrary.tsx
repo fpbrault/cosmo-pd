@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import type { PresetLibraryStatus } from "@/features/synth/presetManagerRepository";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import type { PresetRef } from "@/features/synth/useSynthPresetManager";
 import {
@@ -16,6 +17,7 @@ import { usePresetLibraryState } from "./usePresetLibraryState";
 
 type PresetLibraryProps = {
 	allEntries: PresetEntry[];
+	libraryStatus?: PresetLibraryStatus;
 	activeEntryId: string | null;
 	activePresetName: string;
 	onActivatePreset: (ref: PresetRef) => void;
@@ -30,6 +32,9 @@ type PresetLibraryProps = {
 	onExportCurrentState: (name: string) => void;
 	onImportPreset: (json: string, filename: string) => void;
 	onInitPreset: () => void;
+	onRetryLibrary?: () => void;
+	onRepairLibrary?: () => void;
+	onRebuildLibrary?: () => void;
 	onClose: () => void;
 	onNavigationEntriesChange?: (entryIds: string[]) => void;
 	isOpen?: boolean;
@@ -37,6 +42,7 @@ type PresetLibraryProps = {
 
 export default function PresetLibrary({
 	allEntries,
+	libraryStatus = { state: "ready" },
 	activeEntryId,
 	activePresetName,
 	onActivatePreset,
@@ -51,11 +57,15 @@ export default function PresetLibrary({
 	onExportCurrentState,
 	onImportPreset,
 	onInitPreset,
+	onRetryLibrary,
+	onRepairLibrary,
+	onRebuildLibrary,
 	onClose,
 	onNavigationEntriesChange,
 	isOpen = true,
 }: PresetLibraryProps) {
 	const { t } = useTranslation("synth");
+	const persistenceDisabled = libraryStatus.state === "degraded";
 	const isPluginRuntime =
 		typeof (
 			window as Window & {
@@ -244,6 +254,59 @@ export default function PresetLibrary({
 	return (
 		<div className="flex min-h-0 flex-1 flex-col">
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden border border-cz-border bg-cz-panel">
+				{libraryStatus.state === "degraded" && (
+					<div
+						className="alert alert-error rounded-none border-x-0 border-t-0"
+						role="alert"
+					>
+						<div className="min-w-0 flex-1">
+							<p className="font-semibold">
+								{t("presetLibrary.databaseErrorTitle")}
+							</p>
+							<p className="text-sm">
+								{t("presetLibrary.databaseErrorDescription")}
+							</p>
+							<details className="mt-1 text-xs">
+								<summary>{t("presetLibrary.errorDetails")}</summary>
+								<p className="mt-1 break-all font-mono">
+									{libraryStatus.message}
+								</p>
+							</details>
+						</div>
+						<div className="flex shrink-0 gap-2">
+							<button
+								type="button"
+								className="btn btn-sm"
+								onClick={onRetryLibrary}
+								disabled={!onRetryLibrary}
+							>
+								{t("presetLibrary.retry")}
+							</button>
+							<button
+								type="button"
+								className="btn btn-sm btn-primary"
+								onClick={() => {
+									if (window.confirm(t("presetLibrary.repairConfirmation"))) {
+										onRepairLibrary?.();
+									}
+								}}
+							>
+								{t("presetLibrary.repair")}
+							</button>
+							<button
+								type="button"
+								className="btn btn-sm btn-outline"
+								onClick={() => {
+									if (window.confirm(t("presetLibrary.rebuildConfirmation"))) {
+										onRebuildLibrary?.();
+									}
+								}}
+							>
+								{t("presetLibrary.rebuild")}
+							</button>
+						</div>
+					</div>
+				)}
 				<PresetLibraryHeader
 					activePresetName={activePresetName}
 					totalCount={sortedEntries.length}
@@ -285,7 +348,11 @@ export default function PresetLibrary({
 						onKeyDownCapture={handleListKeyDownCapture}
 						onKeyDown={handleListKeyDown}
 					>
-						{sortedEntries.length === 0 ? (
+						{libraryStatus.state === "loading" ? (
+							<div className="px-5 py-10 text-cz-cream text-sm">
+								{t("presetLibrary.loading")}
+							</div>
+						) : sortedEntries.length === 0 ? (
 							<div className="px-5 py-10 text-cz-cream text-sm">
 								{t("presetLibrary.emptyState")}
 							</div>
@@ -305,7 +372,11 @@ export default function PresetLibrary({
 											focused={entry.id === focusedEntryId}
 											onSelect={handleLoad}
 											onSetFocus={setFocusedEntryId}
-											onSetFavorite={onSetPresetFavorite}
+											onSetFavorite={
+												persistenceDisabled
+													? () => undefined
+													: onSetPresetFavorite
+											}
 											onToggleTagFilter={toggleTagFilter}
 											selectedTagFilters={selectedTagFilters}
 										/>
@@ -315,31 +386,36 @@ export default function PresetLibrary({
 						)}
 					</div>
 
-					<PresetLibrarySidebar
-						activeLocalEntryLabel={activeLocalEntry?.label ?? null}
-						selectedEntry={selectedEntry ?? null}
-						renameValue={renameValue}
-						onRenameValueChange={setRenameValue}
-						onCommitRename={commitRename}
-						authorValue={authorValue}
-						onAuthorValueChange={setAuthorValue}
-						onCommitAuthor={commitAuthor}
-						descriptionValue={descriptionValue}
-						onDescriptionValueChange={setDescriptionValue}
-						onCommitDescription={commitDescription}
-						selectedTags={selectedEntry?.tags ?? []}
-						onSelectedTagsChange={updateSelectedTags}
-						onExportSelectedPreset={exportSelectedPreset}
-						onDeleteSelectedPreset={deleteSelectedPreset}
-						saveName={saveName}
-						onSaveNameChange={setSaveName}
-						onSave={handleSave}
-						onOpenSaveAs={openSaveAsModal}
-						onExportCurrentState={handleExportCurrentState}
-						onImportClick={handleImportClick}
-						onInitPreset={onInitPreset}
-						importError={importError}
-					/>
+					<div
+						className={`min-h-0 ${persistenceDisabled ? "pointer-events-none opacity-50" : ""}`}
+						aria-disabled={persistenceDisabled}
+					>
+						<PresetLibrarySidebar
+							activeLocalEntryLabel={activeLocalEntry?.label ?? null}
+							selectedEntry={selectedEntry ?? null}
+							renameValue={renameValue}
+							onRenameValueChange={setRenameValue}
+							onCommitRename={commitRename}
+							authorValue={authorValue}
+							onAuthorValueChange={setAuthorValue}
+							onCommitAuthor={commitAuthor}
+							descriptionValue={descriptionValue}
+							onDescriptionValueChange={setDescriptionValue}
+							onCommitDescription={commitDescription}
+							selectedTags={selectedEntry?.tags ?? []}
+							onSelectedTagsChange={updateSelectedTags}
+							onExportSelectedPreset={exportSelectedPreset}
+							onDeleteSelectedPreset={deleteSelectedPreset}
+							saveName={saveName}
+							onSaveNameChange={setSaveName}
+							onSave={handleSave}
+							onOpenSaveAs={openSaveAsModal}
+							onExportCurrentState={handleExportCurrentState}
+							onImportClick={handleImportClick}
+							onInitPreset={onInitPreset}
+							importError={importError}
+						/>
+					</div>
 				</div>
 			</div>
 

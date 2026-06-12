@@ -1,4 +1,5 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use rusqlite::{Connection, OptionalExtension, params};
 use serde::{Deserialize, Serialize};
@@ -94,14 +95,20 @@ enum StorageLocation {
 pub struct PresetLibrary {
     storage: StorageLocation,
     factory_entries: Vec<PresetLibraryEntry>,
+    initialization_error: Option<String>,
 }
 
 impl PresetLibrary {
     pub fn from_embedded_factory(factory_json: &str) -> Self {
-        Self {
+        let mut library = Self {
             storage: StorageLocation::Memory,
             factory_entries: parse_factory_entries(factory_json).unwrap_or_default(),
+            initialization_error: None,
+        };
+        if let Err(error) = library.initialize() {
+            library.initialization_error = Some(error);
         }
+        library
     }
 
     pub fn load_or_init(factory_json: &str) -> Result<Self, String> {
@@ -110,9 +117,63 @@ impl PresetLibrary {
         let library = Self {
             storage,
             factory_entries,
+            initialization_error: None,
         };
         library.initialize()?;
         Ok(library)
+    }
+
+    pub fn degraded(factory_json: &str, error: String) -> Self {
+        Self {
+            storage: StorageLocation::Path(Self::library_path()),
+            factory_entries: parse_factory_entries(factory_json).unwrap_or_default(),
+            initialization_error: Some(error),
+        }
+    }
+
+    pub fn initialization_error(&self) -> Option<&str> {
+        self.initialization_error.as_deref()
+    }
+
+    pub fn retry(&mut self) -> Result<(), String> {
+        let previous_error = self.initialization_error.take();
+        match self.initialize().and_then(|()| self.validate()) {
+            Ok(()) => Ok(()),
+            Err(error) => {
+                self.initialization_error = previous_error.or_else(|| Some(error.clone()));
+                Err(error)
+            }
+        }
+    }
+
+    pub fn repair(&mut self) -> Result<PathBuf, String> {
+        let backup_path = self.backup_path()?;
+        self.retry()?;
+        Ok(backup_path)
+    }
+
+    pub fn rebuild(&mut self) -> Result<PathBuf, String> {
+        let StorageLocation::Path(path) = &self.storage else {
+            return Err("preset library rebuild is unavailable for in-memory storage".to_string());
+        };
+        let backup_path = self.backup_path()?;
+        let rebuilt_path = path.with_extension("sqlite3.rebuilding");
+        remove_sqlite_files(&rebuilt_path)?;
+
+        let rebuilt = Self {
+            storage: StorageLocation::Path(rebuilt_path.clone()),
+            factory_entries: self.factory_entries.clone(),
+            initialization_error: None,
+        };
+        rebuilt.initialize()?;
+        salvage_recoverable_data(&backup_path, &rebuilt)?;
+        rebuilt.validate()?;
+
+        remove_sqlite_sidecars(path)?;
+        std::fs::rename(&rebuilt_path, path)
+            .map_err(|error| format!("failed to install rebuilt preset library: {error}"))?;
+        self.initialization_error = None;
+        Ok(backup_path)
     }
 
     pub fn add_entry(
@@ -163,6 +224,13 @@ impl PresetLibrary {
     }
 
     pub fn get_entry(&self, id: &str) -> Result<Option<PresetLibraryEntry>, String> {
+        if self.initialization_error.is_some() {
+            return Ok(self
+                .factory_entries
+                .iter()
+                .find(|entry| entry.id == id)
+                .cloned());
+        }
         self.with_connection(|conn| load_entry(conn, id))
     }
 
@@ -174,6 +242,14 @@ impl PresetLibrary {
         &self,
         source_filter: Option<&str>,
     ) -> Result<Vec<PresetLibraryEntry>, String> {
+        if self.initialization_error.is_some() {
+            return Ok(self
+                .factory_entries
+                .iter()
+                .filter(|entry| source_filter.is_none_or(|source| entry.source == source))
+                .cloned()
+                .collect());
+        }
         self.with_connection(|conn| list_entries(conn, source_filter))
     }
 
@@ -181,10 +257,30 @@ impl PresetLibrary {
         &self,
         source_filter: Option<&str>,
     ) -> Result<Vec<PresetLibraryRecord>, String> {
+        if self.initialization_error.is_some() {
+            return Ok(self
+                .factory_entries
+                .iter()
+                .filter(|entry| source_filter.is_none_or(|source| entry.source == source))
+                .cloned()
+                .map(|entry| PresetLibraryRecord {
+                    entry,
+                    favorite: false,
+                })
+                .collect());
+        }
         self.with_connection(|conn| list_records(conn, source_filter))
     }
 
     pub fn find_startup_preset(&self) -> Result<Option<PresetLibraryEntry>, String> {
+        if self.initialization_error.is_some() {
+            return Ok(self
+                .factory_entries
+                .iter()
+                .filter(|entry| entry.starred)
+                .min_by_key(|entry| (entry.sort_index, entry.name.clone(), entry.id.clone()))
+                .cloned());
+        }
         self.with_connection(find_startup_starred_entry)
     }
 
@@ -242,7 +338,7 @@ impl PresetLibrary {
     fn initialize(&self) -> Result<(), String> {
         self.with_connection_mut(|conn| {
             let previous_schema_version = read_schema_version(conn)?;
-            migrate_schema(conn)?;
+            create_base_schema(conn)?;
             migrate_legacy_json_if_needed(conn, &self.storage)?;
             if previous_schema_version < 2 {
                 migrate_starred_state_to_favorites(conn)?;
@@ -259,9 +355,53 @@ impl PresetLibrary {
             if previous_schema_version < 6 {
                 migrate_description_column(conn)?;
             }
+            create_schema_indexes(conn)?;
             merge_factory_entries(conn, &self.factory_entries)?;
+            write_schema_version(conn)?;
             Ok(())
         })
+    }
+
+    fn validate(&self) -> Result<(), String> {
+        self.with_connection(|conn| {
+            let integrity: String = conn
+                .query_row("PRAGMA integrity_check", [], |row| row.get(0))
+                .map_err(db_err)?;
+            if integrity != "ok" {
+                return Err(format!(
+                    "preset library database integrity check failed: {integrity}"
+                ));
+            }
+            for table in ["meta", "presets", "preset_favorites", "fx_module_presets"] {
+                if !has_table(conn, table)? {
+                    return Err(format!(
+                        "preset library database is missing required table: {table}"
+                    ));
+                }
+            }
+            if read_schema_version(conn)? != LIBRARY_SCHEMA_VERSION {
+                return Err("preset library database schema version is invalid".to_string());
+            }
+            Ok(())
+        })
+    }
+
+    fn backup_path(&self) -> Result<PathBuf, String> {
+        let StorageLocation::Path(path) = &self.storage else {
+            return Err("preset library backup is unavailable for in-memory storage".to_string());
+        };
+        if !path.exists() {
+            return Err("preset library database does not exist".to_string());
+        }
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_err(|error| format!("failed to create preset library backup timestamp: {error}"))?
+            .as_secs();
+        let backup_path = path.with_file_name(format!("preset_library.backup-{timestamp}.sqlite3"));
+        let conn = self.open_connection()?;
+        conn.execute("VACUUM INTO ?1", [backup_path.to_string_lossy().as_ref()])
+            .map_err(db_err)?;
+        Ok(backup_path)
     }
 
     fn library_path() -> PathBuf {
@@ -302,6 +442,11 @@ impl PresetLibrary {
         &self,
         f: impl FnOnce(&Connection) -> Result<T, String>,
     ) -> Result<T, String> {
+        if let Some(error) = &self.initialization_error {
+            return Err(format!(
+                "preset library is in factory-only mode; repair the database before making changes: {error}"
+            ));
+        }
         let mut conn = self.open_connection()?;
         let tx = conn.transaction().map_err(db_err)?;
         let result = f(&tx)?;
@@ -340,7 +485,7 @@ fn db_err(error: rusqlite::Error) -> String {
     format!("preset library database error: {error}")
 }
 
-fn migrate_schema(conn: &Connection) -> Result<(), String> {
+fn create_base_schema(conn: &Connection) -> Result<(), String> {
     conn.execute_batch(
         "
         CREATE TABLE IF NOT EXISTS meta (
@@ -378,13 +523,24 @@ fn migrate_schema(conn: &Connection) -> Result<(), String> {
             updated_at_unix_ms INTEGER NOT NULL
         );
 
+        ",
+    )
+    .map_err(db_err)?;
+    Ok(())
+}
+
+fn create_schema_indexes(conn: &Connection) -> Result<(), String> {
+    conn.execute_batch(
+        "
         CREATE INDEX IF NOT EXISTS idx_presets_source ON presets(source);
         CREATE INDEX IF NOT EXISTS idx_presets_bank_id ON presets(bank_id);
         CREATE INDEX IF NOT EXISTS idx_fx_module_presets_module_type ON fx_module_presets(module_type);
         ",
     )
-    .map_err(db_err)?;
+    .map_err(db_err)
+}
 
+fn write_schema_version(conn: &Connection) -> Result<(), String> {
     conn.execute(
         "INSERT INTO meta(key, value) VALUES('schema_version', ?1)
          ON CONFLICT(key) DO UPDATE SET value = excluded.value",
@@ -392,6 +548,90 @@ fn migrate_schema(conn: &Connection) -> Result<(), String> {
     )
     .map_err(db_err)?;
     Ok(())
+}
+
+fn has_table(conn: &Connection, table_name: &str) -> Result<bool, String> {
+    conn.query_row(
+        "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?1)",
+        [table_name],
+        |row| row.get(0),
+    )
+    .map_err(db_err)
+}
+
+fn remove_sqlite_sidecars(path: &Path) -> Result<(), String> {
+    for suffix in ["-wal", "-shm"] {
+        let sidecar = PathBuf::from(format!("{}{suffix}", path.display()));
+        if sidecar.exists() {
+            std::fs::remove_file(&sidecar).map_err(|error| {
+                format!(
+                    "failed to remove preset library sidecar {}: {error}",
+                    sidecar.display()
+                )
+            })?;
+        }
+    }
+    Ok(())
+}
+
+fn remove_sqlite_files(path: &Path) -> Result<(), String> {
+    remove_sqlite_sidecars(path)?;
+    if path.exists() {
+        std::fs::remove_file(path).map_err(|error| {
+            format!(
+                "failed to remove temporary preset library {}: {error}",
+                path.display()
+            )
+        })?;
+    }
+    Ok(())
+}
+
+fn salvage_recoverable_data(backup_path: &Path, rebuilt: &PresetLibrary) -> Result<(), String> {
+    let salvage_path = backup_path.with_extension("sqlite3.salvage");
+    remove_sqlite_files(&salvage_path)?;
+    std::fs::copy(backup_path, &salvage_path)
+        .map_err(|error| format!("failed to prepare preset library salvage copy: {error}"))?;
+
+    let salvage = PresetLibrary {
+        storage: StorageLocation::Path(salvage_path.clone()),
+        factory_entries: rebuilt.factory_entries.clone(),
+        initialization_error: None,
+    };
+    let result = salvage.initialize().and_then(|()| {
+        let entries = salvage.list_entries(None)?;
+        let favorites = salvage.with_connection(list_favorite_ids)?;
+        let fx_presets = salvage.with_connection(list_all_fx_module_presets)?;
+
+        rebuilt.with_connection_mut(|conn| {
+            for entry in entries
+                .into_iter()
+                .filter(|entry| !matches!(entry.source.as_str(), "cosmo-factory" | "cz-factory"))
+            {
+                upsert_entry(conn, &entry)?;
+            }
+            for preset_id in favorites {
+                upsert_favorite(conn, &preset_id)?;
+            }
+            for entry in fx_presets {
+                upsert_fx_module_preset(conn, &entry)?;
+            }
+            conn.execute(
+                "DELETE FROM preset_favorites
+                 WHERE preset_id NOT IN (SELECT id FROM presets)",
+                [],
+            )
+            .map_err(db_err)?;
+            Ok(())
+        })
+    });
+
+    let cleanup_result = remove_sqlite_files(&salvage_path);
+    match (result, cleanup_result) {
+        (Ok(()), Ok(())) => Ok(()),
+        (Err(_), Ok(())) => Ok(()),
+        (Ok(()), Err(error)) | (Err(_), Err(error)) => Err(error),
+    }
 }
 
 fn migrate_legacy_json_if_needed(
@@ -931,6 +1171,60 @@ fn list_fx_module_presets(
         .map_err(db_err)
 }
 
+fn list_all_fx_module_presets(conn: &Connection) -> Result<Vec<FxModulePresetEntry>, String> {
+    let mut statement = conn
+        .prepare(
+            "SELECT id, name, module_type, patch_json, updated_at_unix_ms
+             FROM fx_module_presets
+             ORDER BY updated_at_unix_ms, id",
+        )
+        .map_err(db_err)?;
+    statement
+        .query_map([], |row| {
+            let patch_json: String = row.get(3)?;
+            let patch = serde_json::from_str(&patch_json).map_err(|error| {
+                rusqlite::Error::FromSqlConversionFailure(
+                    3,
+                    rusqlite::types::Type::Text,
+                    Box::new(error),
+                )
+            })?;
+            Ok(FxModulePresetEntry {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                module_type: row.get(2)?,
+                patch,
+                updated_at_unix_ms: row.get(4)?,
+            })
+        })
+        .map_err(db_err)?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(db_err)
+}
+
+fn upsert_fx_module_preset(conn: &Connection, entry: &FxModulePresetEntry) -> Result<(), String> {
+    let patch_json = serde_json::to_string(&entry.patch)
+        .map_err(|error| format!("failed to serialize FX module preset payload: {error}"))?;
+    conn.execute(
+        "INSERT INTO fx_module_presets (id, name, module_type, patch_json, updated_at_unix_ms)
+         VALUES (?1, ?2, ?3, ?4, ?5)
+         ON CONFLICT(id) DO UPDATE SET
+            name = excluded.name,
+            module_type = excluded.module_type,
+            patch_json = excluded.patch_json,
+            updated_at_unix_ms = excluded.updated_at_unix_ms",
+        params![
+            entry.id,
+            entry.name,
+            entry.module_type,
+            patch_json,
+            entry.updated_at_unix_ms,
+        ],
+    )
+    .map_err(db_err)?;
+    Ok(())
+}
+
 fn save_fx_module_preset(
     conn: &Connection,
     name: String,
@@ -1024,6 +1318,7 @@ mod tests {
         let library = PresetLibrary {
             storage: StorageLocation::Path(temp_db_path("tests")),
             factory_entries: entries,
+            initialization_error: None,
         };
         library.initialize().unwrap();
         library
@@ -1161,6 +1456,7 @@ mod tests {
         let library = PresetLibrary {
             storage: StorageLocation::Path(sqlite_path.clone()),
             factory_entries: vec![sample_entry("factory-1")],
+            initialization_error: None,
         };
         library.initialize().unwrap();
 
@@ -1174,6 +1470,119 @@ mod tests {
         assert!(ids.iter().any(|id| id == "factory-1"));
         assert!(!legacy_path.exists());
         assert!(sqlite_path.exists());
+    }
+
+    #[test]
+    fn schema_v1_migrates_before_creating_bank_index() {
+        let sqlite_path = temp_db_path("schema-v1");
+        let conn = Connection::open(&sqlite_path).unwrap();
+        conn.execute_batch(
+            "CREATE TABLE meta (
+                key TEXT PRIMARY KEY NOT NULL,
+                value TEXT NOT NULL
+            );
+            INSERT INTO meta (key, value) VALUES ('schema_version', '1');
+            CREATE TABLE presets (
+                id TEXT PRIMARY KEY NOT NULL,
+                name TEXT NOT NULL,
+                source TEXT NOT NULL,
+                author TEXT NOT NULL,
+                starred INTEGER NOT NULL DEFAULT 0,
+                sort_index INTEGER NOT NULL DEFAULT 4294967295,
+                tags_json TEXT NOT NULL,
+                macro_labels_json TEXT NOT NULL,
+                factory_version INTEGER NOT NULL DEFAULT 0,
+                data_json TEXT NOT NULL,
+                revision INTEGER NOT NULL DEFAULT 0,
+                updated_at_unix_ms INTEGER NOT NULL DEFAULT 0
+            );
+            CREATE TABLE preset_favorites (preset_id TEXT PRIMARY KEY NOT NULL);",
+        )
+        .unwrap();
+        drop(conn);
+
+        let library = PresetLibrary {
+            storage: StorageLocation::Path(sqlite_path),
+            factory_entries: vec![sample_entry("factory-1")],
+            initialization_error: None,
+        };
+        library.initialize().unwrap();
+        library.validate().unwrap();
+
+        let conn = library.open_connection().unwrap();
+        assert!(has_preset_column(&conn, "bank_id").unwrap());
+        assert!(has_preset_column(&conn, "description").unwrap());
+        assert_eq!(read_schema_version(&conn).unwrap(), LIBRARY_SCHEMA_VERSION);
+    }
+
+    #[test]
+    fn repair_backs_up_and_recovers_schema_v1_database() {
+        let sqlite_path = temp_db_path("repair-schema-v1");
+        let conn = Connection::open(&sqlite_path).unwrap();
+        conn.execute_batch(
+            "CREATE TABLE meta (
+                key TEXT PRIMARY KEY NOT NULL,
+                value TEXT NOT NULL
+            );
+            INSERT INTO meta (key, value) VALUES ('schema_version', '1');
+            CREATE TABLE presets (
+                id TEXT PRIMARY KEY NOT NULL,
+                name TEXT NOT NULL,
+                source TEXT NOT NULL,
+                author TEXT NOT NULL,
+                starred INTEGER NOT NULL DEFAULT 0,
+                sort_index INTEGER NOT NULL DEFAULT 4294967295,
+                tags_json TEXT NOT NULL,
+                macro_labels_json TEXT NOT NULL,
+                factory_version INTEGER NOT NULL DEFAULT 0,
+                data_json TEXT NOT NULL,
+                revision INTEGER NOT NULL DEFAULT 0,
+                updated_at_unix_ms INTEGER NOT NULL DEFAULT 0
+            );
+            CREATE TABLE preset_favorites (preset_id TEXT PRIMARY KEY NOT NULL);",
+        )
+        .unwrap();
+        drop(conn);
+
+        let mut library = PresetLibrary {
+            storage: StorageLocation::Path(sqlite_path),
+            factory_entries: vec![sample_entry("factory-1")],
+            initialization_error: Some("legacy schema could not initialize".to_string()),
+        };
+        let backup_path = library.repair().unwrap();
+
+        assert!(backup_path.exists());
+        assert!(library.initialization_error().is_none());
+        assert_eq!(library.list_records(None).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn rebuild_salvages_readable_user_presets_and_favorites() {
+        let mut library = open_temp_library(vec![sample_entry("factory-1")]);
+        let user = library
+            .add_entry(
+                "Recovered User".to_string(),
+                "Keep me".to_string(),
+                vec!["pad".to_string()],
+                [
+                    "Brightness".to_string(),
+                    "Timbre".to_string(),
+                    "Time".to_string(),
+                    "Movement".to_string(),
+                ],
+                serde_json::json!({ "schemaVersion": 1 }),
+            )
+            .unwrap();
+        library.set_starred(&user.id, true).unwrap();
+        library.initialization_error = Some("forced degraded mode".to_string());
+
+        let backup_path = library.rebuild().unwrap();
+        let records = library.list_records(None).unwrap();
+
+        assert!(backup_path.exists());
+        assert!(records.iter().any(|record| {
+            record.entry.id == user.id && record.entry.description == "Keep me" && record.favorite
+        }));
     }
 
     #[test]

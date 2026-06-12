@@ -42,7 +42,10 @@ const entries: PresetEntry[] = [
 
 function createRepository(): PresetManagerRepository {
 	return {
-		listEntries: vi.fn().mockResolvedValue(entries),
+		listEntries: vi.fn().mockResolvedValue({
+			entries,
+			status: { state: "ready" },
+		}),
 		loadEntry: vi.fn(async (entry) => ({
 			session: {
 				activePresetId: entry.id,

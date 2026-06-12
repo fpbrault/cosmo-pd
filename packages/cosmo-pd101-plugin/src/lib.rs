@@ -1113,6 +1113,15 @@ fn handle_ipc_invoke(
                 .and_then(|o| o.get("source"))
                 .and_then(serde_json::Value::as_str);
             let lib = preset_library.lock().map_err(|e| e.to_string())?;
+            let status = lib
+                .initialization_error()
+                .map(|message| {
+                    serde_json::json!({
+                        "state": "degraded",
+                        "message": message,
+                    })
+                })
+                .unwrap_or_else(|| serde_json::json!({ "state": "ready" }));
             let entries: Vec<serde_json::Value> = lib
                 .list_records(source_filter)
                 .map_err(|e| e.to_string())?
@@ -1123,6 +1132,7 @@ fn handle_ipc_invoke(
                         "name": e.entry.name,
                         "source": e.entry.source,
                         "author": e.entry.author,
+                        "description": e.entry.description,
                         "starred": e.entry.starred,
                         "sortIndex": e.entry.sort_index,
                         "bankId": e.entry.bank_id,
@@ -1132,7 +1142,28 @@ fn handle_ipc_invoke(
                     })
                 })
                 .collect();
-            Ok(serde_json::json!({ "entries": entries }))
+            Ok(serde_json::json!({ "entries": entries, "status": status }))
+        }
+        "retryPresetLibrary" => {
+            let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+            lib.retry()?;
+            Ok(serde_json::json!({ "status": { "state": "ready" } }))
+        }
+        "repairPresetLibrary" => {
+            let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+            let backup_path = lib.repair()?;
+            Ok(serde_json::json!({
+                "status": { "state": "ready" },
+                "backupPath": backup_path,
+            }))
+        }
+        "rebuildPresetLibrary" => {
+            let mut lib = preset_library.lock().map_err(|e| e.to_string())?;
+            let backup_path = lib.rebuild()?;
+            Ok(serde_json::json!({
+                "status": { "state": "ready" },
+                "backupPath": backup_path,
+            }))
         }
         "loadPresetData" => {
             let payload = args
@@ -1777,8 +1808,10 @@ impl CzPlugin {
         let factory_json = include_str!(concat!(env!("OUT_DIR"), "/minified_presets.json"));
         let preset_library = Arc::new(Mutex::new(
             PresetLibrary::load_or_init(factory_json).unwrap_or_else(|e| {
-                eprintln!("Failed to load preset library: {}, using factory only", e);
-                PresetLibrary::from_embedded_factory(factory_json)
+                append_log_error(&format!(
+                    "failed to initialize preset library, using factory-only mode: {e}"
+                ));
+                PresetLibrary::degraded(factory_json, e)
             }),
         ));
         let midi_learn_bindings = crate::global_settings::load_or_init_global_settings()

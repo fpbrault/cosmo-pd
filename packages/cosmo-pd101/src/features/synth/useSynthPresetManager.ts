@@ -3,6 +3,7 @@ import { useSynthStore } from "@/features/synth/synthStore";
 import type { PresetTagOptions } from "@/lib/synth/presetTags";
 import type {
 	ExportedPresetFile,
+	PresetLibraryStatus,
 	PresetManagerRepository,
 	PresetManagerSession,
 	PresetStateSync,
@@ -21,6 +22,7 @@ export type PresetRef = {
 
 export interface PresetManagerController {
 	allPresetEntries: PresetEntry[];
+	libraryStatus: PresetLibraryStatus;
 	navigationEntryIds: PresetEntryId[];
 	activePresetId: string | null;
 	activePresetNameBase: string;
@@ -46,6 +48,9 @@ export interface PresetManagerController {
 	exportCurrentState: (name: string) => Promise<ExportedPresetFile>;
 	recomputeDirtyState: () => void;
 	reloadLibrary: () => Promise<void>;
+	retryLibrary: () => Promise<void>;
+	repairLibrary: () => Promise<void>;
+	rebuildLibrary: () => Promise<void>;
 }
 
 function normalizeNavigationEntryIds(
@@ -77,6 +82,9 @@ export function useSynthPresetManager({
 	repository,
 }: UseSynthPresetManagerOptions): PresetManagerController {
 	const [allPresetEntries, setAllPresetEntries] = useState<PresetEntry[]>([]);
+	const [libraryStatus, setLibraryStatus] = useState<PresetLibraryStatus>({
+		state: "loading",
+	});
 	const [navigationEntryIds, setNavigationEntryIdsState] = useState<
 		PresetEntryId[]
 	>([]);
@@ -181,8 +189,10 @@ export function useSynthPresetManager({
 	);
 
 	const reloadLibrary = useCallback(async () => {
-		const nextEntries = await repository.listEntries();
+		const snapshot = await repository.listEntries();
+		const nextEntries = snapshot.entries;
 		setAllPresetEntries(nextEntries);
+		setLibraryStatus(snapshot.status);
 		setNavigationEntryIdsState((current) => {
 			const normalizedCurrent = normalizeNavigationEntryIds(
 				current,
@@ -200,6 +210,37 @@ export function useSynthPresetManager({
 		});
 	}, [repository]);
 
+	const runLibraryRecovery = useCallback(
+		async (action: (() => Promise<void>) | undefined) => {
+			if (!action) {
+				return;
+			}
+			try {
+				await action();
+				await reloadLibrary();
+			} catch (error) {
+				setLibraryStatus({
+					state: "degraded",
+					message: error instanceof Error ? error.message : String(error),
+				});
+			}
+		},
+		[reloadLibrary],
+	);
+
+	const retryLibrary = useCallback(
+		() => runLibraryRecovery(repository.retryLibrary),
+		[repository.retryLibrary, runLibraryRecovery],
+	);
+	const repairLibrary = useCallback(
+		() => runLibraryRecovery(repository.repairLibrary),
+		[repository.repairLibrary, runLibraryRecovery],
+	);
+	const rebuildLibrary = useCallback(
+		() => runLibraryRecovery(repository.rebuildLibrary),
+		[repository.rebuildLibrary, runLibraryRecovery],
+	);
+
 	useEffect(() => {
 		if (presetEditVersion < 0) {
 			return;
@@ -208,7 +249,12 @@ export function useSynthPresetManager({
 	}, [presetEditVersion, recomputeDirtyState]);
 
 	useEffect(() => {
-		void reloadLibrary();
+		void reloadLibrary().catch((error) => {
+			setLibraryStatus({
+				state: "degraded",
+				message: error instanceof Error ? error.message : String(error),
+			});
+		});
 	}, [reloadLibrary]);
 
 	const syncExternalSelection = useCallback(
@@ -389,6 +435,7 @@ export function useSynthPresetManager({
 	return useMemo(
 		() => ({
 			allPresetEntries,
+			libraryStatus,
 			navigationEntryIds,
 			activePresetId,
 			activePresetNameBase,
@@ -411,6 +458,9 @@ export function useSynthPresetManager({
 			exportCurrentState,
 			recomputeDirtyState,
 			reloadLibrary,
+			retryLibrary,
+			repairLibrary,
+			rebuildLibrary,
 		}),
 		[
 			activePresetId,
@@ -418,6 +468,7 @@ export function useSynthPresetManager({
 			activePresetNameBase,
 			activatePreset,
 			allPresetEntries,
+			libraryStatus,
 			deletePreset,
 			exportCurrentState,
 			exportPreset,
@@ -426,6 +477,9 @@ export function useSynthPresetManager({
 			isPresetDirty,
 			navigationEntryIds,
 			reloadLibrary,
+			retryLibrary,
+			repairLibrary,
+			rebuildLibrary,
 			renamePreset,
 			savePreset,
 			setNavigationEntryIds,

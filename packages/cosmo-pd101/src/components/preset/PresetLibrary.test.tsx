@@ -498,6 +498,52 @@ describe("PresetLibrary", () => {
 		expect(screen.getByText("No presets available.")).toBeInTheDocument();
 	});
 
+	it("shows factory-only recovery controls for a degraded database", () => {
+		const props = createProps();
+		const confirm = vi.fn().mockReturnValue(true);
+		const repairLibrary = vi.fn();
+		vi.stubGlobal("confirm", confirm);
+		render(
+			<PresetLibrary
+				{...props}
+				libraryStatus={{
+					state: "degraded",
+					message: "missing bank_id column",
+				}}
+				onRetryLibrary={vi.fn()}
+				onRepairLibrary={repairLibrary}
+				onRebuildLibrary={vi.fn()}
+			/>,
+		);
+
+		expect(
+			screen.getByText("Preset library database unavailable"),
+		).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Factory Bass" })).toBeEnabled();
+
+		fireEvent.click(screen.getByRole("button", { name: "Repair Database" }));
+		expect(confirm).toHaveBeenCalled();
+		expect(repairLibrary).toHaveBeenCalled();
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Favorite Local Keys" }),
+		);
+		expect(props.onSetPresetFavorite).not.toHaveBeenCalled();
+	});
+
+	it("shows loading state separately from an empty library", () => {
+		render(
+			<PresetLibrary
+				{...createProps()}
+				allEntries={[]}
+				libraryStatus={{ state: "loading" }}
+			/>,
+		);
+
+		expect(screen.getByText("Loading presets...")).toBeInTheDocument();
+		expect(screen.queryByText("No presets available.")).not.toBeInTheDocument();
+	});
+
 	it("shows error on invalid JSON import", () => {
 		const props = createProps();
 		props.onImportPreset = vi.fn(() => {

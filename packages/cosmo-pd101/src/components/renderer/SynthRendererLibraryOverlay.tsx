@@ -30,6 +30,7 @@ export default memo(function SynthRendererLibraryOverlay({
 }: SynthRendererLibraryOverlayProps) {
 	const {
 		allPresetEntries,
+		libraryStatus,
 		activePresetId,
 		activePresetName,
 		activatePreset,
@@ -44,6 +45,9 @@ export default memo(function SynthRendererLibraryOverlay({
 		exportCurrentState,
 		importPreset,
 		initPreset,
+		retryLibrary,
+		repairLibrary,
+		rebuildLibrary,
 	} = usePresetManager();
 
 	return (
@@ -59,6 +63,7 @@ export default memo(function SynthRendererLibraryOverlay({
 		>
 			<MemoPresetLibrary
 				allEntries={allPresetEntries}
+				libraryStatus={libraryStatus}
 				activeEntryId={activePresetId}
 				activePresetName={activePresetName}
 				onActivatePreset={(ref) => {
@@ -100,6 +105,15 @@ export default memo(function SynthRendererLibraryOverlay({
 				}}
 				onInitPreset={() => {
 					void initPreset();
+				}}
+				onRetryLibrary={() => {
+					void retryLibrary();
+				}}
+				onRepairLibrary={() => {
+					void repairLibrary();
+				}}
+				onRebuildLibrary={() => {
+					void rebuildLibrary();
 				}}
 				onNavigationEntriesChange={onNavigationEntriesChange}
 				onClose={onClose}

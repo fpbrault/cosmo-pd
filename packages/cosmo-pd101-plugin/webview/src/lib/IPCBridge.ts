@@ -63,6 +63,9 @@ declare global {
 		__czGetPresetSession?: () => Promise<unknown>;
 		__czSetPresetSession?: (session: PresetSession) => Promise<unknown>;
 		__czGetPresetLibrary?: (source?: string) => Promise<unknown>;
+		__czRetryPresetLibrary?: () => Promise<unknown>;
+		__czRepairPresetLibrary?: () => Promise<unknown>;
+		__czRebuildPresetLibrary?: () => Promise<unknown>;
 		__czLoadPresetData?: (id: string) => Promise<unknown>;
 		__czAddPreset?: (
 			name: string,
@@ -330,6 +333,9 @@ function installIpcRouter() {
 		source
 			? invokeRust("getPresetLibrary", { source })
 			: invokeRust("getPresetLibrary");
+	window.__czRetryPresetLibrary = () => invokeRust("retryPresetLibrary");
+	window.__czRepairPresetLibrary = () => invokeRust("repairPresetLibrary");
+	window.__czRebuildPresetLibrary = () => invokeRust("rebuildPresetLibrary");
 	window.__czLoadPresetData = (id: string) =>
 		invokeRust("loadPresetData", { id });
 	window.__czAddPreset = (

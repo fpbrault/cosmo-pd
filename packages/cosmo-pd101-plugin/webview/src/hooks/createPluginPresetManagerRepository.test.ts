@@ -23,7 +23,10 @@ describe("createPluginPresetManagerRepository", () => {
 
 	it("uses shared AUv3 fallback presets with authored metadata", async () => {
 		const fallbackRepository = {
-			listEntries: vi.fn().mockResolvedValue([]),
+			listEntries: vi.fn().mockResolvedValue({
+				entries: [],
+				status: { state: "ready" },
+			}),
 			loadEntry: vi.fn(),
 			savePreset: vi.fn().mockResolvedValue({
 				session: {
@@ -103,12 +106,15 @@ describe("createPluginPresetManagerRepository", () => {
 				({ schemaVersion: 1, params: { volume: 1 } }) as never,
 		});
 
-		await expect(repository.listEntries()).resolves.toEqual([
-			expect.objectContaining({
-				id: "factory-1",
-				description: "Slow and spacious.",
-			}),
-		]);
+		await expect(repository.listEntries()).resolves.toEqual({
+			entries: [
+				expect.objectContaining({
+					id: "factory-1",
+					description: "Slow and spacious.",
+				}),
+			],
+			status: { state: "ready" },
+		});
 		await repository.setPresetDescription("factory-1", "Updated");
 		expect(window.__czSetPresetDescription).toHaveBeenCalledWith(
 			"factory-1",
