@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
+import SynthTextInput from "@/components/controls/SynthTextInput";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import { PRESET_TAG_OPTIONS } from "@/lib/synth/presetTags";
 import PresetMultiSelect from "./PresetMultiSelect";
@@ -104,24 +105,18 @@ export default memo(function PresetLibrarySidebar({
 						{t("presetLibrary.selectedPreset")}
 					</h3>
 					{selectedEntry ? (
-						<div className="space-y-3">
+						<div className="mr-3 space-y-3">
 							<div>
 								<p className="mb-1 font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.2em]">
 									{t("presetLibrary.nameLabel")}
 								</p>
 								{selectedEntry.type === "local" ? (
-									<input
-										type="text"
-										className="input input-sm w-full border-cz-border bg-cz-inset text-cz-cream"
-										placeholder="Preset name"
+									<SynthTextInput
 										value={renameValue}
-										onChange={(event) =>
-											onRenameValueChange(event.target.value)
-										}
+										onChange={onRenameValueChange}
 										onBlur={onCommitRename}
-										onKeyDown={(event) => {
-											if (event.key === "Enter") onCommitRename();
-										}}
+										onCommit={onCommitRename}
+										placeholder="Preset name"
 									/>
 								) : (
 									<p className="text-cz-cream text-sm">{selectedEntry.label}</p>
@@ -132,18 +127,12 @@ export default memo(function PresetLibrarySidebar({
 									{t("presetLibrary.authorLabel")}
 								</p>
 								{selectedEntry.type === "local" ? (
-									<input
-										type="text"
-										className="input input-sm w-full border-cz-border bg-cz-inset text-cz-cream"
-										placeholder="Preset author"
+									<SynthTextInput
 										value={authorValue}
-										onChange={(event) =>
-											onAuthorValueChange(event.target.value)
-										}
+										onChange={onAuthorValueChange}
 										onBlur={onCommitAuthor}
-										onKeyDown={(event) => {
-											if (event.key === "Enter") onCommitAuthor();
-										}}
+										onCommit={onCommitAuthor}
+										placeholder="Preset author"
 									/>
 								) : (
 									<p className="text-cz-cream text-sm">
@@ -161,22 +150,13 @@ export default memo(function PresetLibrarySidebar({
 									{t("presetLibrary.descriptionLabel")}
 								</p>
 								{selectedEntry.type === "local" ? (
-									<textarea
-										className="textarea textarea-sm min-h-16 w-full resize-y border-cz-border bg-cz-inset text-cz-cream"
-										placeholder={t("presetLibrary.descriptionPlaceholder")}
+									<SynthTextInput
+										multiline
 										value={descriptionValue}
-										onChange={(event) =>
-											onDescriptionValueChange(event.target.value)
-										}
+										onChange={onDescriptionValueChange}
 										onBlur={onCommitDescription}
-										onKeyDown={(event) => {
-											if (
-												event.key === "Enter" &&
-												(event.metaKey || event.ctrlKey)
-											) {
-												onCommitDescription();
-											}
-										}}
+										onCommit={onCommitDescription}
+										placeholder={t("presetLibrary.descriptionPlaceholder")}
 									/>
 								) : (
 									<p className="whitespace-pre-wrap text-cz-cream text-sm">

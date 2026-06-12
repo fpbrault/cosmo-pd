@@ -1,4 +1,5 @@
 import type { RefObject } from "react";
+import SynthTextInput from "@/components/controls/SynthTextInput";
 import Popover from "@/components/primitives/Popover";
 import { useSynthStore } from "@/features/synth/synthStore";
 
@@ -34,16 +35,15 @@ export function MacroLabelEditorPopover({
 						<label
 							key={`macro-label-editor-${idx}`}
 							className="flex flex-col gap-1 font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.12em]"
+							htmlFor={`macro-label-${idx}`}
 						>
 							Macro {idx + 1}
-							<input
-								type="text"
-								className="input input-sm w-full border-cz-border bg-cz-inset font-mono text-2xs text-cz-cream"
-								maxLength={18}
+							<SynthTextInput
+								id={`macro-label-${idx}`}
 								value={labels[idx]}
-								onChange={(event) =>
-									setMacroLabel(idx, event.currentTarget.value)
-								}
+								onChange={(value) => setMacroLabel(idx, value)}
+								maxLength={18}
+								className="font-mono text-2xs"
 							/>
 						</label>
 					))}

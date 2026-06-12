@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
+import SynthTextInput from "@/components/controls/SynthTextInput";
 
 type PresetLibraryDialogsProps = {
 	saveAsOpen: boolean;
@@ -38,16 +39,13 @@ export default memo(function PresetLibraryDialogs({
 					<h3 className="font-bold font-mono text-lg">
 						{t("presetDialogs.saveAsTitle")}
 					</h3>
-					<input
-						type="text"
-						className="input mt-4 w-full border-cz-border bg-cz-inset text-cz-cream"
-						placeholder={t("presetDialogs.saveAsPlaceholder")}
+					<SynthTextInput
 						value={saveAsName}
-						onChange={(event) => onSaveAsNameChange(event.target.value)}
-						onKeyDown={(event) => {
-							if (event.key === "Enter") onCommitSaveAs();
-							if (event.key === "Escape") onCancelSaveAs();
-						}}
+						onChange={onSaveAsNameChange}
+						onCommit={onCommitSaveAs}
+						onCancel={onCancelSaveAs}
+						placeholder={t("presetDialogs.saveAsPlaceholder")}
+						className="mt-4"
 					/>
 					<div className="modal-action">
 						<Button
