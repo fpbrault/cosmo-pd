@@ -398,9 +398,9 @@ impl PresetLibrary {
             .map_err(|error| format!("failed to create preset library backup timestamp: {error}"))?
             .as_secs();
         let backup_path = path.with_file_name(format!("preset_library.backup-{timestamp}.sqlite3"));
-        let conn = self.open_connection()?;
-        conn.execute("VACUUM INTO ?1", [backup_path.to_string_lossy().as_ref()])
-            .map_err(db_err)?;
+        remove_sqlite_files(&backup_path)?;
+        std::fs::copy(path, &backup_path)
+            .map_err(|error| format!("failed to copy preset library backup: {error}"))?;
         Ok(backup_path)
     }
 
@@ -1583,6 +1583,33 @@ mod tests {
         assert!(records.iter().any(|record| {
             record.entry.id == user.id && record.entry.description == "Keep me" && record.favorite
         }));
+    }
+
+    #[test]
+    fn rebuild_replaces_corrupt_database_with_factory_only_library() {
+        let sqlite_path = temp_db_path("rebuild-corrupt");
+        std::fs::write(&sqlite_path, b"not a sqlite database").unwrap();
+
+        let mut library = PresetLibrary {
+            storage: StorageLocation::Path(sqlite_path.clone()),
+            factory_entries: vec![sample_entry("factory-1")],
+            initialization_error: Some(
+                "preset library database error: file is not a database".to_string(),
+            ),
+        };
+
+        let backup_path = library.rebuild().unwrap();
+        let records = library.list_records(None).unwrap();
+
+        assert!(backup_path.exists());
+        assert_eq!(
+            std::fs::read(&backup_path).unwrap(),
+            b"not a sqlite database"
+        );
+        assert!(library.initialization_error().is_none());
+        assert_eq!(records.len(), 1);
+        assert_eq!(records[0].entry.id, "factory-1");
+        assert!(!records[0].favorite);
     }
 
     #[test]

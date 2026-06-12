@@ -500,9 +500,7 @@ describe("PresetLibrary", () => {
 
 	it("shows factory-only recovery controls for a degraded database", () => {
 		const props = createProps();
-		const confirm = vi.fn().mockReturnValue(true);
 		const repairLibrary = vi.fn();
-		vi.stubGlobal("confirm", confirm);
 		render(
 			<PresetLibrary
 				{...props}
@@ -522,13 +520,62 @@ describe("PresetLibrary", () => {
 		expect(screen.getByRole("button", { name: "Factory Bass" })).toBeEnabled();
 
 		fireEvent.click(screen.getByRole("button", { name: "Repair Database" }));
-		expect(confirm).toHaveBeenCalled();
+		expect(
+			screen.getByRole("heading", { name: "Repair preset database?" }),
+		).toBeInTheDocument();
+		expect(repairLibrary).not.toHaveBeenCalled();
+		fireEvent.click(
+			screen.getByRole("button", { name: "Create Backup and Repair" }),
+		);
 		expect(repairLibrary).toHaveBeenCalled();
 
 		fireEvent.click(
 			screen.getByRole("button", { name: "Favorite Local Keys" }),
 		);
 		expect(props.onSetPresetFavorite).not.toHaveBeenCalled();
+	});
+
+	it("warns clearly before rebuilding a degraded database", () => {
+		const props = createProps();
+		const rebuildLibrary = vi.fn();
+		render(
+			<PresetLibrary
+				{...props}
+				libraryStatus={{
+					state: "degraded",
+					message: "file is not a database",
+				}}
+				onRebuildLibrary={rebuildLibrary}
+			/>,
+		);
+
+		expect(
+			screen.getByText(
+				"Factory presets remain available. User presets and library changes are disabled until the database is recovered. Rebuild resets the live library to factory presets; unreadable user data survives only in the backup.",
+			),
+		).toBeInTheDocument();
+
+		fireEvent.click(
+			screen.getByRole("button", {
+				name: "Rebuild Database (Erase Unreadable User Data)",
+			}),
+		);
+		expect(
+			screen.getByRole("heading", {
+				name: "Rebuild and erase live user data?",
+			}),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText(
+				"Create a backup and rebuild the preset library database? This replaces the live library with a fresh factory-only database. All user presets, favorites, and edits that cannot be read will be removed from the live library and kept only in the backup file.",
+			),
+		).toBeInTheDocument();
+		expect(rebuildLibrary).not.toHaveBeenCalled();
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Create Backup and Rebuild" }),
+		);
+		expect(rebuildLibrary).toHaveBeenCalled();
 	});
 
 	it("shows loading state separately from an empty library", () => {

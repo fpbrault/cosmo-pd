@@ -14,6 +14,9 @@ describe("PresetLibraryDialogs", () => {
 				onSaveAsNameChange={onSaveAsNameChange}
 				onCommitSaveAs={onCommitSaveAs}
 				onCancelSaveAs={onCancelSaveAs}
+				recoveryConfirmation={null}
+				onConfirmRecovery={vi.fn()}
+				onCancelRecovery={vi.fn()}
 			/>,
 		);
 		fireEvent.change(screen.getByPlaceholderText("New preset name"), {

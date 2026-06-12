@@ -19,6 +19,9 @@ describe("createPluginPresetManagerRepository", () => {
 		delete window.__czSavePreset;
 		delete window.__czGetPresetLibrary;
 		delete window.__czSetPresetDescription;
+		delete window.__czRetryPresetLibrary;
+		delete window.__czRepairPresetLibrary;
+		delete window.__czRebuildPresetLibrary;
 	});
 
 	it("uses shared AUv3 fallback presets with authored metadata", async () => {
@@ -119,6 +122,37 @@ describe("createPluginPresetManagerRepository", () => {
 		expect(window.__czSetPresetDescription).toHaveBeenCalledWith(
 			"factory-1",
 			"Updated",
+		);
+	});
+
+	it("invokes native preset library recovery methods", async () => {
+		window.__czRetryPresetLibrary = vi.fn().mockResolvedValue(null);
+		window.__czRepairPresetLibrary = vi.fn().mockResolvedValue(null);
+		window.__czRebuildPresetLibrary = vi.fn().mockResolvedValue(null);
+		const repository = createPluginPresetManagerRepository({
+			applyPreset: vi.fn(),
+			gatherPresetState: () =>
+				({ schemaVersion: 1, params: { volume: 1 } }) as never,
+		});
+
+		await repository.retryLibrary?.();
+		await repository.repairLibrary?.();
+		await repository.rebuildLibrary?.();
+
+		expect(window.__czRetryPresetLibrary).toHaveBeenCalledOnce();
+		expect(window.__czRepairPresetLibrary).toHaveBeenCalledOnce();
+		expect(window.__czRebuildPresetLibrary).toHaveBeenCalledOnce();
+	});
+
+	it("reports a missing native preset library rebuild method", async () => {
+		const repository = createPluginPresetManagerRepository({
+			applyPreset: vi.fn(),
+			gatherPresetState: () =>
+				({ schemaVersion: 1, params: { volume: 1 } }) as never,
+		});
+
+		await expect(repository.rebuildLibrary?.()).rejects.toThrow(
+			"Plugin host does not provide preset library rebuild",
 		);
 	});
 });

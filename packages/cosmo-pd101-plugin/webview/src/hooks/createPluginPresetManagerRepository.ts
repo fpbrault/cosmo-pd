@@ -62,6 +62,16 @@ type ImportedPresetBank = {
 
 const DEFAULT_USER_PRESET_AUTHOR = "User";
 
+function requireHostMethod(
+	name: string,
+	method: (() => Promise<unknown>) | undefined,
+): () => Promise<unknown> {
+	if (!method) {
+		throw new Error(`Plugin host does not provide ${name}`);
+	}
+	return method;
+}
+
 function getSourceLabel(source: PresetSource): string {
 	if (source === "cosmo-factory") {
 		return "Cosmo Factory Library";
@@ -417,13 +427,22 @@ export function createPluginPresetManagerRepository({
 			json: JSON.stringify({ _name: name, ...gatherPresetState() }, null, 2),
 		}),
 		retryLibrary: async () => {
-			await window.__czRetryPresetLibrary?.();
+			await requireHostMethod(
+				"preset library retry",
+				window.__czRetryPresetLibrary,
+			)();
 		},
 		repairLibrary: async () => {
-			await window.__czRepairPresetLibrary?.();
+			await requireHostMethod(
+				"preset library repair",
+				window.__czRepairPresetLibrary,
+			)();
 		},
 		rebuildLibrary: async () => {
-			await window.__czRebuildPresetLibrary?.();
+			await requireHostMethod(
+				"preset library rebuild",
+				window.__czRebuildPresetLibrary,
+			)();
 		},
 	};
 }

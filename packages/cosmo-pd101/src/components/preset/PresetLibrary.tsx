@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { PresetLibraryStatus } from "@/features/synth/presetManagerRepository";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
@@ -65,6 +65,9 @@ export default function PresetLibrary({
 	isOpen = true,
 }: PresetLibraryProps) {
 	const { t } = useTranslation("synth");
+	const [recoveryConfirmation, setRecoveryConfirmation] = useState<
+		"repair" | "rebuild" | null
+	>(null);
 	const persistenceDisabled = libraryStatus.state === "degraded";
 	const isPluginRuntime =
 		typeof (
@@ -259,7 +262,7 @@ export default function PresetLibrary({
 						className="alert alert-error rounded-none border-x-0 border-t-0"
 						role="alert"
 					>
-						<div className="min-w-0 flex-1">
+						<div className="min-w-0 max-w-90 flex-1">
 							<p className="font-semibold">
 								{t("presetLibrary.databaseErrorTitle")}
 							</p>
@@ -285,22 +288,16 @@ export default function PresetLibrary({
 							<button
 								type="button"
 								className="btn btn-sm btn-primary"
-								onClick={() => {
-									if (window.confirm(t("presetLibrary.repairConfirmation"))) {
-										onRepairLibrary?.();
-									}
-								}}
+								onClick={() => setRecoveryConfirmation("repair")}
+								disabled={!onRepairLibrary}
 							>
 								{t("presetLibrary.repair")}
 							</button>
 							<button
 								type="button"
 								className="btn btn-sm btn-outline"
-								onClick={() => {
-									if (window.confirm(t("presetLibrary.rebuildConfirmation"))) {
-										onRebuildLibrary?.();
-									}
-								}}
+								onClick={() => setRecoveryConfirmation("rebuild")}
+								disabled={!onRebuildLibrary}
 							>
 								{t("presetLibrary.rebuild")}
 							</button>
@@ -433,6 +430,16 @@ export default function PresetLibrary({
 				onSaveAsNameChange={setSaveAsName}
 				onCommitSaveAs={commitSaveAs}
 				onCancelSaveAs={() => setSaveAsOpen(false)}
+				recoveryConfirmation={recoveryConfirmation}
+				onConfirmRecovery={() => {
+					if (recoveryConfirmation === "repair") {
+						onRepairLibrary?.();
+					} else if (recoveryConfirmation === "rebuild") {
+						onRebuildLibrary?.();
+					}
+					setRecoveryConfirmation(null);
+				}}
+				onCancelRecovery={() => setRecoveryConfirmation(null)}
 			/>
 		</div>
 	);
