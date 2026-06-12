@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import PresetLibraryDialogs from "./PresetLibraryDialogs";
 
@@ -27,7 +27,13 @@ describe("PresetLibraryDialogs", () => {
 			key: "Enter",
 		});
 		expect(onCommitSaveAs).toHaveBeenCalled();
-		fireEvent.click(screen.getByText("Cancel"));
+		const saveAsDialog = screen
+			.getByPlaceholderText("New preset name")
+			.closest("dialog");
+		if (!(saveAsDialog instanceof HTMLDialogElement)) {
+			throw new Error("expected save as dialog");
+		}
+		fireEvent.click(within(saveAsDialog).getByText("Cancel"));
 		expect(onCancelSaveAs).toHaveBeenCalled();
 	});
 });
