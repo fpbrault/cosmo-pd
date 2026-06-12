@@ -30,9 +30,6 @@ import WebPluginStoreNotice from "./WebPluginStoreNotice";
 
 declare const __CZ_APP_VERSION__: string;
 
-const FRAME_PADDING = 30;
-const WEB_MAX_SCALE = 0.85;
-
 export default function LivePage() {
 	const runtime = useWebSynthRuntime();
 	const gatherPresetState = useSynthStore((s) => s.gatherPresetState);
@@ -43,7 +40,6 @@ export default function LivePage() {
 			availableWidth: SYNTH_RENDERER_DESIGN_WIDTH,
 			availableHeight: SYNTH_RENDERER_DESIGN_HEIGHT,
 			targetAspectRatio: SYNTH_RENDERER_MAX_ASPECT_RATIO,
-			maxScale: WEB_MAX_SCALE,
 		}),
 	);
 	const isMobileViewport =
@@ -95,22 +91,31 @@ export default function LivePage() {
 
 	const synthPanelRef = useRef<HTMLDivElement | null>(null);
 	const [isSynthFullscreen, setIsSynthFullscreen] = useState(false);
-	const [isPwaStandalone, setIsPwaStandalone] = useState(false);
 
-	useEffect(() => {
-		const mq = window.matchMedia("(display-mode: standalone)");
-		setIsPwaStandalone(mq.matches);
-		const handler = (e: MediaQueryListEvent) => setIsPwaStandalone(e.matches);
-		mq.addEventListener("change", handler);
-		return () => mq.removeEventListener("change", handler);
+	const toggleFullscreen = useCallback(async () => {
+		if (!document.fullscreenElement) {
+			try {
+				await synthPanelRef.current?.requestFullscreen();
+			} catch {
+				// Fullscreen may be denied or unavailable
+			}
+		} else {
+			await document.exitFullscreen();
+		}
 	}, []);
 
-	const isEffectivelyFullscreen = isSynthFullscreen || isPwaStandalone;
+	useEffect(() => {
+		const onChange = () => {
+			setIsSynthFullscreen(
+				document.fullscreenElement === synthPanelRef.current,
+			);
+		};
+		document.addEventListener("fullscreenchange", onChange);
+		return () => document.removeEventListener("fullscreenchange", onChange);
+	}, []);
 
 	useEffect(() => {
-		const element = isSynthFullscreen
-			? synthPanelRef.current
-			: frameRef.current;
+		const element = frameRef.current;
 		if (!element) return;
 
 		const updateFrameSize = () => {
@@ -120,12 +125,6 @@ export default function LivePage() {
 				availableWidth: bounds.width,
 				availableHeight: bounds.height,
 				targetAspectRatio: SYNTH_RENDERER_MAX_ASPECT_RATIO,
-				outerPadding:
-					isEffectivelyFullscreen || isMobileViewport ? 0 : FRAME_PADDING,
-				maxScale:
-					isEffectivelyFullscreen || isMobileViewport
-						? undefined
-						: WEB_MAX_SCALE,
 			});
 
 			if (!nextLayout) {
@@ -149,17 +148,11 @@ export default function LivePage() {
 		const resizeObserver = new ResizeObserver(updateFrameSize);
 		resizeObserver.observe(element);
 		return () => resizeObserver.disconnect();
-	}, [isEffectivelyFullscreen, isMobileViewport, isSynthFullscreen]);
+	}, []);
 
 	const frameScale = frameLayout?.frameScale ?? 1;
 	const frameWidth = frameLayout?.frameWidth ?? SYNTH_RENDERER_DESIGN_WIDTH;
 	const frameHeight = frameLayout?.frameHeight ?? SYNTH_RENDERER_DESIGN_HEIGHT;
-	const scaledWidth = frameWidth * frameScale;
-	const scaledHeight = frameHeight * frameScale;
-
-	const synthPanelInlineSize = isEffectivelyFullscreen
-		? {}
-		: { width: scaledWidth, height: scaledHeight };
 
 	const presetRepository = useMemo(
 		() =>
@@ -187,28 +180,6 @@ export default function LivePage() {
 		presetManager.activePresetNameBase,
 		presetManager.isPresetDirty,
 	]);
-
-	const toggleFullscreen = useCallback(async () => {
-		if (!document.fullscreenElement) {
-			try {
-				await synthPanelRef.current?.requestFullscreen();
-			} catch {
-				// Fullscreen may be denied or unavailable
-			}
-		} else {
-			await document.exitFullscreen();
-		}
-	}, []);
-
-	useEffect(() => {
-		const onChange = () => {
-			setIsSynthFullscreen(
-				document.fullscreenElement === synthPanelRef.current,
-			);
-		};
-		document.addEventListener("fullscreenchange", onChange);
-		return () => document.removeEventListener("fullscreenchange", onChange);
-	}, []);
 
 	useEffect(() => {
 		const init = async () => {
@@ -269,11 +240,11 @@ export default function LivePage() {
 			ref={(node) => {
 				frameRef.current = node;
 			}}
-			className={`relative flex h-full w-full items-center justify-center overflow-hidden ${isMobileViewport ? "" : "bg-black"}`}
+			className={`relative flex h-screen w-screen items-center justify-center overflow-hidden ${isMobileViewport ? "" : "bg-black"}`}
 			onPointerMove={isMobileViewport ? undefined : handlePointerMove}
 			onPointerLeave={isMobileViewport ? undefined : handlePointerLeave}
 		>
-			{!isMobileViewport && !isPwaStandalone && (
+			{!isMobileViewport && (
 				<>
 					<motion.div
 						aria-hidden="true"
@@ -289,18 +260,15 @@ export default function LivePage() {
 			<div
 				ref={synthPanelRef}
 				id="synth-fullscreen-target"
-				className={`relative shrink-0 ${isEffectivelyFullscreen ? "flex items-center justify-center" : "overflow-visible"}`}
-				style={synthPanelInlineSize}
+				className="relative flex shrink-0 items-center justify-center"
 			>
 				<div
-					className={
-						isEffectivelyFullscreen ? "absolute" : "absolute top-0 left-0"
-					}
+					className="absolute"
 					style={{
 						width: frameWidth,
 						height: frameHeight,
 						transform: `scale(${frameScale})`,
-						transformOrigin: isEffectivelyFullscreen ? "center" : "top left",
+						transformOrigin: "center",
 					}}
 				>
 					<PresetManagerProvider value={presetManager}>
@@ -312,12 +280,14 @@ export default function LivePage() {
 					</PresetManagerProvider>
 				</div>
 			</div>
-			{!isMobileViewport && !isPwaStandalone && (
+			{!isMobileViewport && (
 				<button
 					type="button"
 					onClick={toggleFullscreen}
 					className="absolute right-4 bottom-4 z-50 flex h-9 w-9 items-center justify-center rounded-md bg-cz-panel/80 text-cz-cream-dim transition-colors hover:bg-cz-panel hover:text-cz-cream"
-					aria-label="Toggle fullscreen"
+					aria-label={
+						isSynthFullscreen ? "Exit fullscreen" : "Enter fullscreen"
+					}
 				>
 					<svg
 						viewBox="0 0 24 24"
@@ -326,7 +296,9 @@ export default function LivePage() {
 						strokeWidth="2"
 						className="h-4 w-4"
 					>
-						<title>Toggle fullscreen</title>
+						<title>
+							{isSynthFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+						</title>
 						<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
 					</svg>
 				</button>
