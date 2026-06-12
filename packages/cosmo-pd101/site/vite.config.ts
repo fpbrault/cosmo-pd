@@ -69,19 +69,35 @@ function wasmDevPlugin() {
 	};
 }
 
-const spectaTsBindingsOutFile = fileURLToPath(
+const spectaSynthOutFile = fileURLToPath(
 	new URL("../src/lib/synth/bindings/synth.ts", import.meta.url),
+);
+const spectaBridgeOutFile = fileURLToPath(
+	new URL("../src/lib/synth/bindings/plugin-bridge.ts", import.meta.url),
 );
 const cosmoSynthEngineDir = fileURLToPath(
 	new URL("../../cosmo-synth-engine", import.meta.url),
 );
+const cosmoBridgeTypesDir = fileURLToPath(
+	new URL("../../cosmo-pd101-bridge-types", import.meta.url),
+);
 
 function spectaBindingsDevPlugin() {
-	const wasmSrcDir = fileURLToPath(
+	const synthSrcDir = fileURLToPath(
 		new URL("../../cosmo-synth-engine/src", import.meta.url),
 	);
-	const exportBindings = () => {
-		console.log("[specta-bindings] Exporting TypeScript bindings...");
+	const bridgeTypesSrcDir = fileURLToPath(
+		new URL("../../cosmo-pd101-bridge-types/src", import.meta.url),
+	);
+	const bridgeTypesExportFile = fileURLToPath(
+		new URL(
+			"../../cosmo-pd101-bridge-types/export_specta_bindings.rs",
+			import.meta.url,
+		),
+	);
+
+	const exportSynthBindings = () => {
+		console.log("[specta-bindings] Exporting synth TypeScript bindings...");
 		try {
 			execSync(
 				`cargo run ${releaseCargoForDev ? "--release" : ""} --features specta-bindings --bin export-specta-bindings`,
@@ -91,13 +107,34 @@ function spectaBindingsDevPlugin() {
 					env: {
 						...process.env,
 						CARGO_TARGET_DIR: wasmCargoTargetDir,
-						SPECTA_TS_EXPORT_PATH: spectaTsBindingsOutFile,
+						SPECTA_TS_EXPORT_PATH: spectaSynthOutFile,
 					},
 				},
 			);
-			console.log("[specta-bindings] TypeScript bindings updated.");
+			console.log("[specta-bindings] Synth bindings updated.");
 		} catch {
-			console.error("[specta-bindings] TypeScript bindings export failed.");
+			console.error("[specta-bindings] Synth bindings export failed.");
+		}
+	};
+
+	const exportBridgeBindings = () => {
+		console.log("[specta-bindings] Exporting bridge TypeScript bindings...");
+		try {
+			execSync(
+				`cargo run ${releaseCargoForDev ? "--release" : ""} --features specta-bindings --bin export-specta-bindings`,
+				{
+					stdio: "inherit",
+					cwd: cosmoBridgeTypesDir,
+					env: {
+						...process.env,
+						CARGO_TARGET_DIR: wasmCargoTargetDir,
+						SPECTA_TS_EXPORT_PATH: spectaBridgeOutFile,
+					},
+				},
+			);
+			console.log("[specta-bindings] Bridge bindings updated.");
+		} catch {
+			console.error("[specta-bindings] Bridge bindings export failed.");
 		}
 	};
 
@@ -105,15 +142,32 @@ function spectaBindingsDevPlugin() {
 		name: "specta-bindings-dev",
 		apply: "serve",
 		configureServer(server) {
-			exportBindings();
-			let debounce: ReturnType<typeof setTimeout> | undefined;
-			watch(wasmSrcDir, { recursive: true }, () => {
-				clearTimeout(debounce);
-				debounce = setTimeout(() => {
-					exportBindings();
+			// Initial exports
+			exportSynthBindings();
+			exportBridgeBindings();
+
+			// Watch synth-engine sources
+			let synthDebounce: ReturnType<typeof setTimeout> | undefined;
+			watch(synthSrcDir, { recursive: true }, () => {
+				clearTimeout(synthDebounce);
+				synthDebounce = setTimeout(() => {
+					exportSynthBindings();
 					server.ws.send({ type: "full-reload" });
 				}, 500);
 			});
+
+			// Watch bridge-types sources + export script
+			let bridgeDebounce: ReturnType<typeof setTimeout> | undefined;
+			const watchPaths = [bridgeTypesSrcDir, bridgeTypesExportFile];
+			for (const p of watchPaths) {
+				watch(p, { recursive: p === bridgeTypesSrcDir }, () => {
+					clearTimeout(bridgeDebounce);
+					bridgeDebounce = setTimeout(() => {
+						exportBridgeBindings();
+						server.ws.send({ type: "full-reload" });
+					}, 500);
+				});
+			}
 		},
 	};
 }

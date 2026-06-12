@@ -430,6 +430,7 @@ export type PluginIpcMethods = {
   getPresetName: { request: null; response: string };
   setPresetName: { request: string; response: null };
   loadPreset: { request: LoadPresetPayload; response: { preset_name: string } };
+  loadPresetData: { request: { id: string }; response: { preset_name: string } };
   getEditorState: { request: null; response: EditorState | null };
   setEditorState: { request: EditorState; response: null };
   getMidiLearnState: { request: null; response: MidiLearnState };
