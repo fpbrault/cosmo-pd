@@ -131,7 +131,7 @@ export {
 } from "./lib/synth/cosmoWorkletUrl";
 export { convertDecodedPatchToSynthPreset } from "./lib/synth/czPresetConverter";
 export { FACTORY_PRESETS } from "./lib/synth/factoryCzPresets";
-export {} from "./lib/synth/pluginBridgeWindow";
+export type { PluginBridgeWindowFacade } from "./lib/synth/pluginBridgeWindow";
 export type { PresetSource } from "./lib/synth/presetSources";
 export type { PresetTagOptions } from "./lib/synth/presetTags";
 export type {

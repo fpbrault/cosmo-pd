@@ -51,9 +51,7 @@ describe("fxModulePresetStorage", () => {
 			patch: { mix: 0.6 },
 			createdAt: 456,
 		});
-		expect(window.__czListFxModulePresets).toHaveBeenCalledWith({
-			moduleType: "delay",
-		});
+		expect(window.__czListFxModulePresets).toHaveBeenCalledWith("delay");
 		expect(listed).toEqual([
 			{
 				id: "fx-1",
@@ -63,9 +61,7 @@ describe("fxModulePresetStorage", () => {
 				createdAt: 123,
 			},
 		]);
-		expect(window.__czDeleteFxModulePreset).toHaveBeenCalledWith({
-			id: "fx-2",
-		});
+		expect(window.__czDeleteFxModulePreset).toHaveBeenCalledWith("fx-2");
 	});
 
 	it("falls back to indexeddb when the native bridge is unavailable", async () => {

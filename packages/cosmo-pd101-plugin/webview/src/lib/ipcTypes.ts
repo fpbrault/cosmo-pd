@@ -18,9 +18,14 @@ type InvokeArguments<T extends keyof PluginIpcMethods> =
 		? []
 		: [payload: PluginIpcMethods[T]["request"]];
 
+export type PluginIpcInvoke = <T extends keyof PluginIpcMethods>(
+	method: T,
+	...args: InvokeArguments<T>
+) => Promise<PluginIpcMethods[T]["response"]>;
+
 export function createTypedInvoke(
 	invoke: (method: string, payload?: unknown) => Promise<unknown>,
-) {
+): PluginIpcInvoke {
 	return <T extends keyof PluginIpcMethods>(
 		method: T,
 		...args: InvokeArguments<T>
