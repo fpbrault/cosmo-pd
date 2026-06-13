@@ -110,7 +110,9 @@ describe("AUv3 bridge contract", () => {
 
 	it("falls back to Current State in currentPresetSession when no preset selected", () => {
 		const swiftSource = readText(xcodeControllerPath);
-		const containsFallback = swiftSource.includes(PRESET_SESSION_FALLBACK_UNSELECTED_NAME);
+		const containsFallback = swiftSource.includes(
+			PRESET_SESSION_FALLBACK_UNSELECTED_NAME,
+		);
 		expect(containsFallback).toBeTrue();
 	});
 });
