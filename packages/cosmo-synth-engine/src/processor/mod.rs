@@ -906,6 +906,7 @@ mod tests {
     #[test]
     fn poly_sustain_same_note_retrigger_steals_oldest_other_voice_when_full() {
         let mut proc = CosmoProcessor::new(48_000.0);
+        proc.set_voice_limit(MAX_VOICES);
         let notes: Vec<u8> = (60_u8..60_u8 + MAX_VOICES as u8).collect();
 
         for &note in &notes {

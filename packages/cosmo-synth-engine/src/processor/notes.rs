@@ -395,13 +395,16 @@ impl CosmoProcessor {
     }
 
     fn find_poly_voice_for_note_on_excluding(&self, excluded_voice_idx: Option<usize>) -> usize {
-        if let Some(voice_idx) = self.voices.iter().position(|v| v.is_silent)
+        let limit = self.active_voice_limit();
+        if let Some(voice_idx) = self.voices[..limit]
+            .iter()
+            .position(|v| v.is_silent)
             && Some(voice_idx) != excluded_voice_idx
         {
             return voice_idx;
         }
 
-        self.voices
+        self.voices[..limit]
             .iter()
             .enumerate()
             .filter(|(idx, _)| Some(*idx) != excluded_voice_idx)
