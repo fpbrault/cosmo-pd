@@ -10,6 +10,13 @@ function makeParams(volume = 1.0) {
 	return { ...params, volume } satisfies SynthPresetV1["params"];
 }
 
+function captureSetParams(outboundJsons: string[]) {
+	window.__czSetParams = async (params) => {
+		outboundJsons.push(JSON.stringify(params));
+		return null;
+	};
+}
+
 describe("usePluginBridgeSynthEngine", () => {
 	beforeEach(() => {
 		useSynthStore.setState(useSynthStore.getInitialState());
@@ -38,9 +45,7 @@ describe("usePluginBridgeSynthEngine", () => {
 		});
 
 		const outboundJsons: string[] = [];
-		window.__czSetParams = (params) => {
-			outboundJsons.push(JSON.stringify(params));
-		};
+		captureSetParams(outboundJsons);
 
 		const { unmount } = renderHook(() => usePluginBridgeSynthEngine());
 
@@ -74,9 +79,7 @@ describe("usePluginBridgeSynthEngine", () => {
 		});
 
 		const outboundJsons: string[] = [];
-		window.__czSetParams = (params) => {
-			outboundJsons.push(JSON.stringify(params));
-		};
+		captureSetParams(outboundJsons);
 
 		const { unmount } = renderHook(() => usePluginBridgeSynthEngine());
 
@@ -114,9 +117,7 @@ describe("usePluginBridgeSynthEngine", () => {
 		window.__czGetParams = vi.fn().mockResolvedValue(validParams);
 
 		const outboundJsons: string[] = [];
-		window.__czSetParams = (params) => {
-			outboundJsons.push(JSON.stringify(params));
-		};
+		captureSetParams(outboundJsons);
 
 		const { unmount } = renderHook(() => usePluginBridgeSynthEngine());
 
@@ -136,9 +137,7 @@ describe("usePluginBridgeSynthEngine", () => {
 		window.__czGetParams = vi.fn(async () => hostParams);
 
 		const outboundJsons: string[] = [];
-		window.__czSetParams = (params) => {
-			outboundJsons.push(JSON.stringify(params));
-		};
+		captureSetParams(outboundJsons);
 
 		const { unmount } = renderHook(() => usePluginBridgeSynthEngine());
 
@@ -172,9 +171,7 @@ describe("usePluginBridgeSynthEngine", () => {
 		window.__czGetParams = vi.fn().mockResolvedValue(rawParams);
 
 		const outboundJsons: string[] = [];
-		window.__czSetParams = (params) => {
-			outboundJsons.push(JSON.stringify(params));
-		};
+		captureSetParams(outboundJsons);
 
 		const { unmount } = renderHook(() => usePluginBridgeSynthEngine());
 
@@ -204,9 +201,7 @@ describe("usePluginBridgeSynthEngine", () => {
 		window.__czGetParams = undefined;
 
 		const outboundJsons: string[] = [];
-		window.__czSetParams = (params) => {
-			outboundJsons.push(JSON.stringify(params));
-		};
+		captureSetParams(outboundJsons);
 
 		renderHook(() => usePluginBridgeSynthEngine());
 
@@ -224,9 +219,7 @@ describe("usePluginBridgeSynthEngine", () => {
 		window.__czGetParams = undefined;
 
 		const outboundJsons: string[] = [];
-		window.__czSetParams = (params) => {
-			outboundJsons.push(JSON.stringify(params));
-		};
+		captureSetParams(outboundJsons);
 
 		renderHook(() => usePluginBridgeSynthEngine());
 
@@ -265,9 +258,7 @@ describe("usePluginBridgeSynthEngine", () => {
 		});
 
 		const called: string[] = [];
-		window.__czSetParams = (params) => {
-			called.push(JSON.stringify(params));
-		};
+		captureSetParams(called);
 		window.__czGetParams = vi.fn().mockResolvedValue({});
 
 		renderHook(() => usePluginBridgeSynthEngine({ enabled: false }));

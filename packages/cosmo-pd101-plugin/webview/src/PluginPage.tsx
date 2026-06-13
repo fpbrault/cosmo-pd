@@ -195,7 +195,7 @@ export default function PluginPage({
 
 	useEffect(() => {
 		window.__czOnHostPresetSelected = (name: string) => {
-			window.__czSetPresetName?.(name);
+			void window.__czSetPresetName?.(name);
 			const matchingEntry =
 				presetManager.allPresetEntries.find((entry) => entry.label === name) ??
 				null;
@@ -281,7 +281,7 @@ export default function PluginPage({
 
 	useEffect(() => {
 		if (!voiceLimitHydrated) return;
-		window.__czSetVoiceLimit?.(pluginVoiceLimit);
+		void window.__czSetVoiceLimit?.(pluginVoiceLimit);
 	}, [voiceLimitHydrated, pluginVoiceLimit]);
 
 	const combinedScale = rendererFrame?.frameScale ?? 1;

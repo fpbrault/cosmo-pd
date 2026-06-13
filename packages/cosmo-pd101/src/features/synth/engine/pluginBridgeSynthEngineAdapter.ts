@@ -158,7 +158,7 @@ export function usePluginBridgeSynthEngine(
 		const json = JSON.stringify(sanitized);
 		if (sentParamsRef.current === json) return;
 		sentParamsRef.current = json;
-		window.__czSetParams?.(sanitized);
+		void window.__czSetParams?.(sanitized);
 	}, []);
 
 	const applyHostParams = useCallback(
@@ -177,7 +177,7 @@ export function usePluginBridgeSynthEngine(
 			}
 			outboundEnabledRef.current = true;
 			if (convertedRawEnvelopeValues) {
-				window.__czSetParams?.(sanitizeSynthParamsForEngine(uiParams));
+				void window.__czSetParams?.(sanitizeSynthParamsForEngine(uiParams));
 			}
 		},
 		[applyPreset],
@@ -354,10 +354,10 @@ export function usePluginBridgeSynthEngine(
 	}, [enabled, applyHostParams]);
 
 	const loadPresetData = useCallback(async (id: string): Promise<string> => {
-		const result = await window.__czLoadPreset?.(id);
+		const result = await window.__czLoadPreset?.({ presetId: id });
 		const name = result?.presetName ?? "";
 		if (name) {
-			window.__czSetPresetName?.(name);
+			void window.__czSetPresetName?.(name);
 		}
 		return name;
 	}, []);

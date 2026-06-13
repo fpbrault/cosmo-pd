@@ -20,15 +20,7 @@ export function useMidiLearnBindings({
 }: UseMidiLearnBindingsOptions = {}) {
 	const edgeTriggeredStates = useRef<Record<string, boolean>>({});
 	const learnBindingFromWebMidi = useCallback((channel: number, cc: number) => {
-		const bridgeAddBinding = (
-			window as Window & {
-				__czAddMidiBinding?: (
-					key: string,
-					ch: number,
-					controller: number,
-				) => void;
-			}
-		).__czAddMidiBinding;
+		const bridgeAddBinding = window.__czAddMidiBinding;
 		if (typeof bridgeAddBinding === "function") {
 			return false;
 		}

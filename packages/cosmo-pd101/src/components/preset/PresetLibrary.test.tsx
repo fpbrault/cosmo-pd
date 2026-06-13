@@ -280,7 +280,7 @@ describe("PresetLibrary", () => {
 	it("does not trigger focused row action on space in plugin mode", () => {
 		const props = createProps();
 		const previousSetParams = window.__czSetParams;
-		window.__czSetParams = () => {};
+		window.__czSetParams = async () => null;
 
 		render(<PresetLibrary {...props} />);
 		const activeRow = screen.getByRole("button", { name: "Local Keys" });

@@ -28,11 +28,12 @@ export function ensureStandaloneBridge(): boolean {
 		}
 		return currentParams;
 	};
-	window.__czSetParams = (params: SynthParams) => {
+	window.__czSetParams = async (params: SynthParams) => {
 		currentParams = params;
+		return null;
 	};
 	window.__czGetVoiceLimit = async () => 8;
-	window.__czSetVoiceLimit = () => {};
+	window.__czSetVoiceLimit = async () => null;
 	window.__czGetTransportInfo = async () => ({
 		playing: false,
 		recording: false,
