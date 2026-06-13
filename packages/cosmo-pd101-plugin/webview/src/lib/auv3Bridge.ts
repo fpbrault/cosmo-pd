@@ -1,29 +1,14 @@
-type IpcRpcResponse = {
-	id: number;
-	result?: unknown;
-	error?: string;
-};
+import type {
+	EditorState,
+	MidiLearnBinding,
+	PresetSession,
+	ScopeDataResponse,
+	SynthParams,
+} from "@cosmo/cosmo-pd101";
+import type { IpcRpcResponse } from "./ipcTypes";
+import { createTypedInvoke } from "./ipcTypes";
 
-type ScopeDataResponse = {
-	samples: number[];
-	sampleRate: number;
-	hz: number;
-};
-type MidiBindingIdentity = {
-	paramKey: string;
-	channel: number;
-	cc: number;
-};
-
-type NativePluginPresetSession = {
-	loadedPresetId: string | null;
-	activePresetNameBase: string;
-	isDirty: boolean;
-};
-
-const SCOPE_POLL_INTERVAL_MS = 50;
-const IPC_TIMEOUT_MS = 250;
-
+/** AUv3-specific Window methods (webkit bridge, host platform, subscriptions). */
 declare global {
 	interface Window {
 		webkit?: {
@@ -32,63 +17,15 @@ declare global {
 			};
 		};
 		__czHostPlatform?: "macos" | "ios";
-		ipc?: { postMessage: (msg: string) => void };
-		__czOnParams?: (json: string) => void;
 		__czOnHostPresetSelected?: (name: string) => void;
-		__czGetParams?: () => Promise<unknown>;
-		__czGetParamsVersion?: () => Promise<unknown>;
-		__czSetParams?: (json: string) => void;
-		__czGetTransportInfo?: () => Promise<unknown>;
 		__czOnRuntimeVoiceStates?: (json: string) => void;
 		__czOnRuntimeModSources?: (json: string) => void;
 		__czOnTransport?: (json: string) => void;
-		__czOnScope?: (
-			samples: Float32Array | number[],
-			sampleRate: number,
-			hz: number,
-		) => void;
-		__czIpcResponse?: (response: IpcRpcResponse) => void;
-		__czOnMidiCc?: (channel: number, cc: number, value: number) => void;
-		__czGetPresetSession?: () => Promise<unknown>;
-		__czSetPresetSession?: (
-			session: NativePluginPresetSession,
-		) => Promise<unknown>;
-		__czGetPresetLibrary?: (source?: string) => Promise<unknown>;
-		__czLoadPresetData?: (id: string) => Promise<unknown>;
-		__czAddPreset?: (
-			name: string,
-			tags: string[],
-			macroLabels?: string[],
-		) => Promise<unknown>;
-		__czDeletePreset?: (id: string) => Promise<unknown>;
-		__czRenamePreset?: (id: string, newName: string) => Promise<unknown>;
-		__czSetPresetAuthor?: (id: string, author: string) => Promise<unknown>;
-		__czSetPresetDescription?: (
-			id: string,
-			description: string,
-		) => Promise<unknown>;
-		__czSetPresetTags?: (id: string, tags: string[]) => Promise<unknown>;
-		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
-		__czExportPreset?: (id: string) => Promise<unknown>;
-		__czImportPresetBank?: (payload: unknown) => Promise<unknown>;
-		__czListFxModulePresets?: (moduleType: string) => Promise<unknown>;
-		__czSaveFxModulePreset?: (payload: {
-			name: string;
-			moduleType: string;
-			patch: Record<string, unknown>;
-		}) => Promise<unknown>;
-		__czDeleteFxModulePreset?: (id: string) => Promise<unknown>;
-		__czSetEditorState?: (state: string) => void;
-		__czGetEditorState?: () => Promise<unknown>;
-		__czOnMidiLearnState?: (json: string) => void;
-		__czGetMidiLearnState?: () => Promise<unknown>;
-		__czSetMidiLearnMode?: (on: boolean) => void;
-		__czSetPendingMidiLearnParam?: (key: string | null) => void;
-		__czAddMidiBinding?: (key: string, ch: number, cc: number) => void;
-		__czRemoveMidiBinding?: (binding: MidiBindingIdentity) => void;
-		__czClearMidiLearnBindings?: () => void;
 	}
 }
+
+const SCOPE_POLL_INTERVAL_MS = 50;
+const IPC_TIMEOUT_MS = 250;
 
 let installed = false;
 let nextRpcId = 1;
@@ -178,12 +115,12 @@ function nativeHandler() {
 	return window.webkit?.messageHandlers?.cosmoPd101;
 }
 
-function invokeAuv3(
+function invokeAuv3<T = unknown>(
 	method: string,
-	args: unknown[] = [],
+	payload?: unknown,
 	timeoutMs = 0,
-): Promise<unknown> {
-	return new Promise((resolve, reject) => {
+): Promise<T> {
+	return new Promise<T>((resolve, reject) => {
 		const handler = nativeHandler();
 		if (!handler) {
 			reject(new Error("[auv3Bridge] native message handler not available"));
@@ -195,7 +132,7 @@ function invokeAuv3(
 		pendingRpc.set(id, {
 			resolve(value) {
 				window.clearTimeout(timeoutId);
-				resolve(value);
+				resolve(value as T);
 			},
 			reject(reason) {
 				window.clearTimeout(timeoutId);
@@ -210,9 +147,17 @@ function invokeAuv3(
 				reject(new Error(`[auv3Bridge] ${method} timed out`));
 			}, timeoutMs);
 		}
-		handler.postMessage({ id, method, args });
+		const msg: Record<string, unknown> = { id, method };
+		if (payload !== undefined) {
+			msg.payload = payload;
+		}
+		handler.postMessage(msg);
 	});
 }
+
+const invoke = createTypedInvoke((method: string, payload?: unknown) =>
+	invokeAuv3<unknown>(method, payload),
+);
 
 function installIpcResponseHandler() {
 	window.__czIpcResponse = (response: IpcRpcResponse) => {
@@ -257,94 +202,90 @@ function installIpcRouter() {
 	};
 
 	window.__czGetParams = async () => {
-		const result = await invokeAuv3("getParams", [], 3000);
+		const result = await invokeAuv3<SynthParams | string>(
+			"getParams",
+			undefined,
+			3000,
+		);
 		if (typeof result !== "string") {
 			return result;
 		}
-		try {
-			return JSON.parse(result) as unknown;
-		} catch {
-			return null;
-		}
+		return JSON.parse(result) as SynthParams;
 	};
-	window.__czGetParamsVersion = () => invokeAuv3("getParamsVersion", [], 3000);
-	window.__czSetParams = (json: string) => {
-		void invokeAuv3("setParams", [json]).catch((error) => {
+	window.__czGetParamsVersion = () =>
+		invokeAuv3<number>("getParamsVersion", undefined, 3000);
+	window.__czSetParams = (params: SynthParams) => {
+		void invoke("setParams", params).catch((error) => {
 			console.error("[auv3Bridge] setParams error", error);
 		});
 	};
-	window.__czGetTransportInfo = () => invokeAuv3("getTransportInfo", []);
-	window.__czGetPresetSession = () => invokeAuv3("getPresetSession", []);
-	window.__czSetPresetSession = (session: NativePluginPresetSession) =>
-		invokeAuv3("setPresetSession", [session]);
+	window.__czGetTransportInfo = () => invoke("getTransportInfo");
+	window.__czGetPresetSession = () => invoke("getPresetSession");
+	window.__czSetPresetSession = (session: PresetSession) =>
+		invoke("setPresetSession", session);
 
 	window.__czGetPresetLibrary = (source?: string) =>
-		source
-			? invokeAuv3("getPresetLibrary", [{ source }])
-			: invokeAuv3("getPresetLibrary", []);
-	window.__czLoadPresetData = (id: string) =>
-		invokeAuv3("loadPresetData", [{ id }]);
-	window.__czAddPreset = (
-		name: string,
-		tags: string[],
-		macroLabels?: string[],
-	) => invokeAuv3("addPreset", [{ name, tags, macroLabels }]);
-	window.__czSavePreset = (payload) => invokeAuv3("savePreset", [payload]);
-	window.__czDeletePreset = (id: string) =>
-		invokeAuv3("deletePreset", [{ id }]);
+		invoke("getPresetLibrary", { source: source ?? null });
+	window.__czLoadPreset = (id: string) =>
+		invoke("loadPreset", { presetId: id });
+	window.__czAddPreset = (payload) => invoke("addPreset", payload);
+	window.__czSavePreset = (payload) => invoke("savePreset", payload);
+	window.__czDeletePreset = (id: string) => invoke("deletePreset", { id });
 	window.__czRenamePreset = (id: string, newName: string) =>
-		invokeAuv3("renamePreset", [{ id, newName }]);
+		invoke("renamePreset", { id, newName });
 	window.__czSetPresetAuthor = (id: string, author: string) =>
-		invokeAuv3("setPresetAuthor", [{ id, author }]);
+		invoke("setPresetAuthor", { id, author });
 	window.__czSetPresetDescription = (id: string, description: string) =>
-		invokeAuv3("setPresetDescription", [{ id, description }]);
+		invoke("setPresetDescription", { id, description });
 	window.__czSetPresetTags = (id: string, tags: string[]) =>
-		invokeAuv3("setPresetTags", [{ id, tags }]);
+		invoke("setPresetTags", { id, tags });
 	window.__czToggleStarred = (id: string, starred: boolean) =>
-		invokeAuv3("toggleStarred", [{ id, starred }]);
-	window.__czExportPreset = (id: string) =>
-		invokeAuv3("exportPreset", [{ id }]);
+		invoke("toggleStarred", { id, starred });
+	window.__czExportPreset = (id: string) => invoke("exportPreset", { id });
 	window.__czImportPresetBank = (payload) =>
-		invokeAuv3("importPresetBank", [payload]);
+		invoke("importPresetBank", payload);
 	window.__czListFxModulePresets = (moduleType: string) =>
-		invokeAuv3("listFxModulePresets", [{ moduleType }]);
+		invoke("listFxModulePresets", { moduleType });
 	window.__czSaveFxModulePreset = (payload) =>
-		invokeAuv3("saveFxModulePreset", [payload]);
+		invoke("saveFxModulePreset", payload);
 	window.__czDeleteFxModulePreset = (id: string) =>
-		invokeAuv3("deleteFxModulePreset", [{ id }]);
+		invoke("deleteFxModulePreset", { id });
 
-	window.__czSetEditorState = (state: string) => {
-		void invokeAuv3("setEditorState", [JSON.parse(state)]).catch((error) => {
+	window.__czSetEditorState = (state: EditorState) => {
+		void invoke("setEditorState", state).catch((error) => {
 			console.error("[auv3Bridge] setEditorState error", error);
 		});
 	};
 
-	window.__czGetEditorState = () => invokeAuv3("getEditorState", []);
+	window.__czGetEditorState = async () =>
+		(await invoke("getEditorState")) as EditorState | null;
 
-	window.__czGetMidiLearnState = () => invokeAuv3("getMidiLearnState", []);
+	window.__czGetMidiLearnState = () => invoke("getMidiLearnState");
 
 	window.__czSetMidiLearnMode = (on: boolean) => {
-		void invokeAuv3("setMidiLearnMode", [on]).catch((error) => {
+		void invoke("setMidiLearnMode", on).catch((error) => {
 			console.error("[auv3Bridge] setMidiLearnMode error", error);
 		});
 	};
 	window.__czSetPendingMidiLearnParam = (key: string | null) => {
-		void invokeAuv3("setPendingMidiLearnParam", [key]).catch((error) => {
+		void invoke("setPendingMidiLearnParam", key).catch((error) => {
 			console.error("[auv3Bridge] setPendingMidiLearnParam error", error);
 		});
 	};
 	window.__czAddMidiBinding = (key: string, ch: number, cc: number) => {
-		void invokeAuv3("addMidiBinding", [key, ch, cc]).catch((error) => {
-			console.error("[auv3Bridge] addMidiBinding error", error);
-		});
+		void invoke("addMidiBinding", { paramKey: key, channel: ch, cc }).catch(
+			(error) => {
+				console.error("[auv3Bridge] addMidiBinding error", error);
+			},
+		);
 	};
-	window.__czRemoveMidiBinding = (binding: MidiBindingIdentity) => {
-		void invokeAuv3("removeMidiBinding", [binding]).catch((error) => {
+	window.__czRemoveMidiBinding = (binding: MidiLearnBinding) => {
+		void invoke("removeMidiBinding", binding).catch((error) => {
 			console.error("[auv3Bridge] removeMidiBinding error", error);
 		});
 	};
 	window.__czClearMidiLearnBindings = () => {
-		void invokeAuv3("clearMidiLearnBindings").catch((error) => {
+		void invoke("clearMidiLearnBindings").catch((error) => {
 			console.error("[auv3Bridge] clearMidiLearnBindings error", error);
 		});
 	};
@@ -399,11 +340,15 @@ function installScopePolling() {
 		lastScheduled = now;
 		pollInFlight = true;
 		try {
-			await invokeAuv3("getScopeData", [], IPC_TIMEOUT_MS)
+			await invokeAuv3("getScopeData", undefined, IPC_TIMEOUT_MS)
 				.then((result) => {
 					const raw = result as ScopeDataResponse;
 					if (raw?.samples.length > 0 && currentScopeHandler) {
-						currentScopeHandler(raw.samples, raw.sampleRate, raw.hz);
+						currentScopeHandler(
+							raw.samples.filter((sample): sample is number => sample !== null),
+							raw.sampleRate ?? 0,
+							raw.hz ?? 0,
+						);
 					}
 				})
 				.catch(() => {
@@ -480,7 +425,7 @@ function installAuv3DemandSubscription<TDetail>(
 				return;
 			}
 			subscriptionState = "subscribing";
-			void invokeAuv3(subscribeMethod, [], IPC_TIMEOUT_MS)
+			void invokeAuv3(subscribeMethod, undefined, IPC_TIMEOUT_MS)
 				.then(() => {
 					if (destroyed) {
 						subscriptionState = "unsubscribed";
@@ -499,7 +444,7 @@ function installAuv3DemandSubscription<TDetail>(
 			return;
 		}
 		subscriptionState = "unsubscribing";
-		void invokeAuv3(unsubscribeMethod, [], IPC_TIMEOUT_MS)
+		void invokeAuv3(unsubscribeMethod, undefined, IPC_TIMEOUT_MS)
 			.catch(() => {
 				// The host may have torn down while the page is unloading.
 			})
@@ -517,9 +462,11 @@ function installAuv3DemandSubscription<TDetail>(
 		destroyed = true;
 		unwatchDemand();
 		if (subscriptionState === "subscribed") {
-			void invokeAuv3(unsubscribeMethod, [], IPC_TIMEOUT_MS).catch(() => {
-				// Host teardown races are safe to ignore here.
-			});
+			void invokeAuv3(unsubscribeMethod, undefined, IPC_TIMEOUT_MS).catch(
+				() => {
+					// Host teardown races are safe to ignore here.
+				},
+			);
 		}
 		subscriptionState = "unsubscribed";
 	});

@@ -49,8 +49,7 @@ pub(crate) fn build_rt_synth_params(params: &SynthParams) -> SynthParams {
 #[cfg(test)]
 #[allow(clippy::too_many_arguments)]
 fn handle_ipc_invoke(
-    method: &str,
-    args: &[serde_json::Value],
+    request: cosmo_pd101_bridge_types::PluginIpcRequest,
     synth_params: &SharedSynthParams,
     rt_synth_params: &SharedRtSynthParams,
     runtime_mod_sources: &SharedRuntimeModSources,
@@ -92,7 +91,10 @@ fn handle_ipc_invoke(
         ),
         midi_learn: crate::midi_learn::MidiLearnService::new(midi_learn_state.clone()),
     });
-    crate::ipc::IpcContext::new(shared_state, params.clone()).invoke(method, args)
+    crate::ipc::IpcContext::new(shared_state, params.clone())
+        .invoke_envelope(&cosmo_pd101_bridge_types::PluginIpcEnvelope { id: 0, request })?
+        .into_result()
+        .map_err(|error| error.to_string())
 }
 
 // Plugin struct

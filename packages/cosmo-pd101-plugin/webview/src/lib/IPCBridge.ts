@@ -11,104 +11,21 @@
  *   - `window.__czIpcResponse({ id, result })` — RPC replies
  *
  * ## JS → Rust (outbound via window.ipc.postMessage):
- *   - RPC invoke:    `{ id: number, method: string, args: unknown[] }`
+ *   - RPC invoke:    `{ id: number, method: string, payload?: unknown }`
  */
 
 // ─── Types ───────────────────────────────────────────────────────────────────
+import type {
+	EditorState,
+	MidiLearnBinding,
+	PresetSession,
+	ScopeDataResponse,
+	SynthParams,
+	TransportInfoResponse,
+} from "@cosmo/cosmo-pd101";
 import { postHostLog } from "./hostLogger";
-
-type IpcRpcResponse = {
-	id: number;
-	result?: unknown;
-	error?: string;
-};
-
-type ScopeDataResponse = {
-	samples: number[];
-	sampleRate: number;
-	hz: number;
-};
-
-type TransportInfoResponse = string | Record<string, number | boolean>;
-type MidiBindingIdentity = {
-	paramKey: string;
-	channel: number;
-	cc: number;
-};
-
-type PresetSession = {
-	activePresetId: string | null;
-	loadedPresetId?: string | null;
-	activePresetNameBase: string;
-	isDirty: boolean;
-};
-
-declare global {
-	interface Window {
-		ipc?: { postMessage: (msg: string) => void };
-		__czOnParams?: (json: string) => void;
-		__czGetParams?: () => Promise<unknown>;
-		__czGetParamsVersion?: () => Promise<unknown>;
-		__czSetParams?: (json: string) => void;
-		__czGetTransportInfo?: () => Promise<unknown>;
-		__czOnScope?: (
-			samples: Float32Array | number[],
-			sampleRate: number,
-			hz: number,
-		) => void;
-		__czIpcResponse?: (response: IpcRpcResponse) => void;
-		__czOnMidiCc?: (channel: number, cc: number, value: number) => void;
-		__czSetPresetName?: (name: string) => void;
-		__czGetPresetName?: () => Promise<unknown>;
-		__czGetPresetSession?: () => Promise<unknown>;
-		__czSetPresetSession?: (session: PresetSession) => Promise<unknown>;
-		__czGetPresetLibrary?: (source?: string) => Promise<unknown>;
-		__czRetryPresetLibrary?: () => Promise<unknown>;
-		__czRepairPresetLibrary?: () => Promise<unknown>;
-		__czRebuildPresetLibrary?: () => Promise<unknown>;
-		__czLoadPresetData?: (id: string) => Promise<unknown>;
-		__czAddPreset?: (
-			name: string,
-			tags: string[],
-			macroLabels?: string[],
-		) => Promise<unknown>;
-		__czSavePreset?: (payload: {
-			id?: string | null;
-			name: string;
-			author?: string;
-			description?: string;
-			tags?: string[];
-			data?: unknown;
-		}) => Promise<unknown>;
-		__czDeletePreset?: (id: string) => Promise<unknown>;
-		__czRenamePreset?: (id: string, newName: string) => Promise<unknown>;
-		__czSetPresetAuthor?: (id: string, author: string) => Promise<unknown>;
-		__czSetPresetDescription?: (
-			id: string,
-			description: string,
-		) => Promise<unknown>;
-		__czSetPresetTags?: (id: string, tags: string[]) => Promise<unknown>;
-		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
-		__czExportPreset?: (id: string) => Promise<unknown>;
-		__czImportPresetBank?: (payload: unknown) => Promise<unknown>;
-		__czListFxModulePresets?: (moduleType: string) => Promise<unknown>;
-		__czSaveFxModulePreset?: (payload: {
-			name: string;
-			moduleType: string;
-			patch: Record<string, unknown>;
-		}) => Promise<unknown>;
-		__czDeleteFxModulePreset?: (id: string) => Promise<unknown>;
-		__czSetEditorState?: (state: string) => void;
-		__czGetEditorState?: () => Promise<unknown>;
-		__czOnMidiLearnState?: (json: string) => void;
-		__czGetMidiLearnState?: () => Promise<unknown>;
-		__czSetMidiLearnMode?: (on: boolean) => void;
-		__czSetPendingMidiLearnParam?: (key: string | null) => void;
-		__czAddMidiBinding?: (key: string, ch: number, cc: number) => void;
-		__czRemoveMidiBinding?: (binding: MidiBindingIdentity) => void;
-		__czClearMidiLearnBindings?: () => void;
-	}
-}
+import type { IpcRpcResponse } from "./ipcTypes";
+import { createTypedInvoke } from "./ipcTypes";
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
@@ -205,7 +122,7 @@ function watchDemand(eventName: string, watcher: () => void) {
 
 // ─── RPC helper ──────────────────────────────────────────────────────────────
 
-function invokeRust(method: string, ...args: unknown[]): Promise<unknown> {
+function invokeRust(method: string, payload?: unknown): Promise<unknown> {
 	return new Promise((resolve, reject) => {
 		if (!_nativePostMessage) {
 			const error = new Error("[IPCBridge] native IPC not available");
@@ -215,9 +132,15 @@ function invokeRust(method: string, ...args: unknown[]): Promise<unknown> {
 		}
 		const id = nextRpcId++;
 		pendingRpc.set(id, { resolve, reject });
-		_nativePostMessage(JSON.stringify({ id, method, args }));
+		const msg: Record<string, unknown> = { id, method };
+		if (payload !== undefined) {
+			msg.payload = payload;
+		}
+		_nativePostMessage(JSON.stringify(msg));
 	});
 }
+
+const invoke = createTypedInvoke(invokeRust);
 
 // ─── Param property ──────────────────────────────────────────────────────────
 
@@ -308,95 +231,92 @@ function routeOutgoingMessage(message: string) {
 function installIpcRouter() {
 	_routerPostMessage = routeOutgoingMessage;
 
-	window.__czGetParams = async () => invokeRust("getParams");
-	window.__czGetParamsVersion = async () => invokeRust("getParamsVersion");
+	window.__czGetParams = async () => invoke("getParams");
+	window.__czGetParamsVersion = async () => invoke("getParamsVersion");
 
-	window.__czSetParams = (json: string) => {
-		void invokeRust("setParams", json).catch((error) => {
+	window.__czSetParams = (params: SynthParams) => {
+		void invoke("setParams", params).catch((error) => {
 			console.error("[IPCBridge] setParams error", error);
 		});
 	};
 
-	window.__czGetTransportInfo = () => invokeRust("getTransportInfo");
+	window.__czGetTransportInfo = () => invoke("getTransportInfo");
 
-	window.__czGetPresetName = () => invokeRust("getPresetName");
+	window.__czGetPresetName = () => invoke("getPresetName");
 	window.__czSetPresetName = (name: string) => {
-		void invokeRust("setPresetName", name).catch((error) => {
+		void invoke("setPresetName", name).catch((error) => {
 			console.error("[IPCBridge] setPresetName error", error);
 		});
 	};
-	window.__czGetPresetSession = () => invokeRust("getPresetSession");
+	window.__czGetPresetSession = () => invoke("getPresetSession");
 	window.__czSetPresetSession = (session: PresetSession) =>
-		invokeRust("setPresetSession", session);
+		invoke("setPresetSession", session);
 
 	window.__czGetPresetLibrary = (source?: string) =>
-		source
-			? invokeRust("getPresetLibrary", { source })
-			: invokeRust("getPresetLibrary");
-	window.__czRetryPresetLibrary = () => invokeRust("retryPresetLibrary");
-	window.__czRepairPresetLibrary = () => invokeRust("repairPresetLibrary");
-	window.__czRebuildPresetLibrary = () => invokeRust("rebuildPresetLibrary");
-	window.__czLoadPresetData = (id: string) =>
-		invokeRust("loadPresetData", { id });
-	window.__czAddPreset = (
-		name: string,
-		tags: string[],
-		macroLabels?: string[],
-	) => invokeRust("addPreset", { name, tags, macroLabels });
-	window.__czSavePreset = (payload) => invokeRust("savePreset", payload);
-	window.__czDeletePreset = (id: string) => invokeRust("deletePreset", { id });
+		invoke("getPresetLibrary", { source: source ?? null });
+	window.__czRetryPresetLibrary = () => invoke("retryPresetLibrary");
+	window.__czRepairPresetLibrary = () => invoke("repairPresetLibrary");
+	window.__czRebuildPresetLibrary = () => invoke("rebuildPresetLibrary");
+	window.__czLoadPreset = (id: string) =>
+		invoke("loadPreset", { presetId: id });
+	window.__czAddPreset = (payload) => invoke("addPreset", payload);
+	window.__czSavePreset = (payload) => invoke("savePreset", payload);
+	window.__czDeletePreset = (id: string) => invoke("deletePreset", { id });
 	window.__czRenamePreset = (id: string, newName: string) =>
-		invokeRust("renamePreset", { id, newName });
+		invoke("renamePreset", { id, newName });
 	window.__czSetPresetAuthor = (id: string, author: string) =>
-		invokeRust("setPresetAuthor", { id, author });
+		invoke("setPresetAuthor", { id, author });
 	window.__czSetPresetDescription = (id: string, description: string) =>
-		invokeRust("setPresetDescription", { id, description });
+		invoke("setPresetDescription", { id, description });
 	window.__czSetPresetTags = (id: string, tags: string[]) =>
-		invokeRust("setPresetTags", { id, tags });
+		invoke("setPresetTags", { id, tags });
 	window.__czToggleStarred = (id: string, starred: boolean) =>
-		invokeRust("toggleStarred", { id, starred });
-	window.__czExportPreset = (id: string) => invokeRust("exportPreset", { id });
+		invoke("toggleStarred", { id, starred });
+	window.__czExportPreset = (id: string) => invoke("exportPreset", { id });
 	window.__czImportPresetBank = (payload) =>
-		invokeRust("importPresetBank", payload);
+		invoke("importPresetBank", payload);
 	window.__czListFxModulePresets = (moduleType: string) =>
-		invokeRust("listFxModulePresets", { moduleType });
+		invoke("listFxModulePresets", { moduleType });
 	window.__czSaveFxModulePreset = (payload) =>
-		invokeRust("saveFxModulePreset", payload);
+		invoke("saveFxModulePreset", payload);
 	window.__czDeleteFxModulePreset = (id: string) =>
-		invokeRust("deleteFxModulePreset", { id });
+		invoke("deleteFxModulePreset", { id });
 
-	window.__czSetEditorState = (state: string) => {
-		void invokeRust("setEditorState", JSON.parse(state)).catch((error) => {
+	window.__czSetEditorState = (state: EditorState) => {
+		void invoke("setEditorState", state).catch((error) => {
 			console.error("[IPCBridge] setEditorState error", error);
 		});
 	};
 
-	window.__czGetEditorState = () => invokeRust("getEditorState");
+	window.__czGetEditorState = async () =>
+		(await invoke("getEditorState")) as EditorState | null;
 
-	window.__czGetMidiLearnState = () => invokeRust("getMidiLearnState");
+	window.__czGetMidiLearnState = () => invoke("getMidiLearnState");
 
 	window.__czSetMidiLearnMode = (on: boolean) => {
-		void invokeRust("setMidiLearnMode", on).catch((error) => {
+		void invoke("setMidiLearnMode", on).catch((error) => {
 			console.error("[IPCBridge] setMidiLearnMode error", error);
 		});
 	};
 	window.__czSetPendingMidiLearnParam = (key: string | null) => {
-		void invokeRust("setPendingMidiLearnParam", key).catch((error) => {
+		void invoke("setPendingMidiLearnParam", key).catch((error) => {
 			console.error("[IPCBridge] setPendingMidiLearnParam error", error);
 		});
 	};
 	window.__czAddMidiBinding = (key: string, ch: number, cc: number) => {
-		void invokeRust("addMidiBinding", key, ch, cc).catch((error) => {
-			console.error("[IPCBridge] addMidiBinding error", error);
-		});
+		void invoke("addMidiBinding", { paramKey: key, channel: ch, cc }).catch(
+			(error) => {
+				console.error("[IPCBridge] addMidiBinding error", error);
+			},
+		);
 	};
-	window.__czRemoveMidiBinding = (binding: MidiBindingIdentity) => {
-		void invokeRust("removeMidiBinding", binding).catch((error) => {
+	window.__czRemoveMidiBinding = (binding: MidiLearnBinding) => {
+		void invoke("removeMidiBinding", binding).catch((error) => {
 			console.error("[IPCBridge] removeMidiBinding error", error);
 		});
 	};
 	window.__czClearMidiLearnBindings = () => {
-		void invokeRust("clearMidiLearnBindings").catch((error) => {
+		void invoke("clearMidiLearnBindings").catch((error) => {
 			console.error("[IPCBridge] clearMidiLearnBindings error", error);
 		});
 	};
@@ -547,9 +467,13 @@ function installScopePolling() {
 			// Fallback: use RPC invoke (for dev harness / AUv3 / fallback)
 			binaryScopeSupported = false;
 			try {
-				const raw = (await invokeRust("getScopeData")) as ScopeDataResponse;
+				const raw = (await invoke("getScopeData")) as ScopeDataResponse;
 				if (raw?.samples.length > 0 && currentScopeHandler) {
-					currentScopeHandler(raw.samples, raw.sampleRate, raw.hz);
+					currentScopeHandler(
+						raw.samples.filter((sample): sample is number => sample !== null),
+						raw.sampleRate ?? 0,
+						raw.hz ?? 0,
+					);
 				}
 			} catch {
 				// Plugin may not be producing audio yet.
@@ -628,7 +552,7 @@ function installRuntimeModSourcesPolling() {
 		lastScheduled = now;
 		pollInFlight = true;
 		try {
-			const result = await invokeRust("getRuntimeModSources");
+			const result = await invoke("getRuntimeModSources");
 			if (result) {
 				dispatchRuntimeModSources(result as string | Record<string, number>);
 			}
@@ -713,7 +637,7 @@ function installRuntimeVoiceStatesPolling() {
 		lastScheduled = now;
 		pollInFlight = true;
 		try {
-			const result = await invokeRust("getRuntimeVoiceStates");
+			const result = await invoke("getRuntimeVoiceStates");
 			if (result) {
 				dispatchRuntimeVoiceStates(result);
 			}
@@ -791,7 +715,7 @@ function installTransportPolling() {
 		lastScheduled = now;
 		pollInFlight = true;
 		try {
-			const result = await invokeRust("getTransportInfo");
+			const result = await invoke("getTransportInfo");
 			if (result) {
 				dispatchTransport(result as TransportInfoResponse);
 			}

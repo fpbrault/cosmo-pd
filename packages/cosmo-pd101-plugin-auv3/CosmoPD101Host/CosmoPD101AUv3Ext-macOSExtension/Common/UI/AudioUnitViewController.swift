@@ -102,7 +102,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 		let id = payload["id"] as? Int ?? 0
 		let method = payload["method"] as? String ?? ""
-		let args = payload["args"] as? [Any] ?? []
+		let methodPayload = payload["payload"]
 
 		guard let audioUnit = audioUnit as? CosmoPD101AUv3Ext_macOSExtensionAudioUnit else {
 			// Audio unit not yet assigned — respond with an error so JS promises
@@ -117,11 +117,16 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		case "getParamsVersion":
 			sendResponse(id: id, result: paramsVersion)
 		case "setParams":
-			if let json = args.first as? String, audioUnit.setParamsJson(json) {
+			if
+				let params = methodPayload as? [String: Any],
+				let data = try? JSONSerialization.data(withJSONObject: params),
+				let json = String(data: data, encoding: .utf8),
+				audioUnit.setParamsJson(json)
+			{
 				paramsVersion += 1
 				sendResponse(id: id, result: NSNull())
 			} else {
-				os_log("setParams FAILED: jsonOk=%{public}@", log: czVCLog, type: .error, (args.first as? String) != nil ? "yes" : "no")
+				os_log("setParams FAILED: invalid object payload", log: czVCLog, type: .error)
 				sendError(id: id, message: "invalid setParams payload")
 			}
 		case "getTransportInfo":
@@ -158,17 +163,20 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		case "getPresetSession":
 			sendResponse(id: id, result: currentPresetSession(for: audioUnit))
 		case "setPresetSession":
-			presetSessionState = PresetSessionState(payload: args.first as? [String: Any])
+			presetSessionState = PresetSessionState(payload: methodPayload as? [String: Any])
 			sendResponse(id: id, result: NSNull())
 		case "getPresetLibrary":
-			sendResponse(id: id, result: ["entries": presetLibraryEntries(for: audioUnit)])
-		case "loadPresetData":
+			sendResponse(id: id, result: [
+				"entries": presetLibraryEntries(for: audioUnit),
+				"status": ["state": "ready", "message": NSNull()],
+			])
+		case "loadPreset":
 			guard
-				let payload = args.first as? [String: Any],
-				let presetId = payload["id"] as? String,
+				let payload = methodPayload as? [String: Any],
+				let presetId = payload["presetId"] as? String,
 				let preset = preset(for: audioUnit, id: presetId)
 			else {
-				sendError(id: id, message: "invalid loadPresetData payload")
+				sendError(id: id, message: "invalid loadPreset payload")
 				return
 			}
 			audioUnit.currentPreset = preset
@@ -177,27 +185,28 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			presetSessionState.loadedPresetId = presetId
 			presetSessionState.activePresetNameBase = preset.name
 			presetSessionState.isDirty = false
-			sendResponse(id: id, result: ["preset_name": preset.name])
+			sendResponse(id: id, result: ["presetName": preset.name])
 		case "setEditorState":
-			editorState = args.first as? [String: Any] ?? [:]
+			editorState = methodPayload as? [String: Any] ?? [:]
 			sendResponse(id: id, result: NSNull())
 		case "getEditorState":
 			sendResponse(id: id, result: editorState)
 		case "getMidiLearnState":
 			sendResponse(id: id, result: midiLearnState.payload)
 		case "setMidiLearnMode":
-			midiLearnState.learnMode = args.first as? Bool ?? false
+			midiLearnState.learnMode = methodPayload as? Bool ?? false
 			midiLearnState.version += 1
 			sendResponse(id: id, result: NSNull())
 		case "setPendingMidiLearnParam":
-			midiLearnState.pendingParamKey = args.first as? String
+			midiLearnState.pendingParamKey = methodPayload as? String
 			midiLearnState.version += 1
 			sendResponse(id: id, result: NSNull())
 		case "addMidiBinding":
 			guard
-				let paramKey = args.first as? String,
-				let channel = args.dropFirst().first as? Int,
-				let cc = args.dropFirst(2).first as? Int
+				let payload = methodPayload as? [String: Any],
+				let paramKey = payload["paramKey"] as? String,
+				let channel = payload["channel"] as? Int,
+				let cc = payload["cc"] as? Int
 			else {
 				sendError(id: id, message: "invalid addMidiBinding payload")
 				return
@@ -207,7 +216,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			midiLearnState.version += 1
 			sendResponse(id: id, result: NSNull())
 		case "removeMidiBinding":
-			guard let payload = args.first as? [String: Any], let binding = MidiLearnBinding(payload: payload) else {
+			guard let payload = methodPayload as? [String: Any], let binding = MidiLearnBinding(payload: payload) else {
 				sendError(id: id, message: "invalid removeMidiBinding payload")
 				return
 			}
@@ -221,12 +230,13 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		case "addPreset", "savePreset", "deletePreset", "renamePreset", "toggleStarred", "setPresetAuthor", "setPresetDescription", "setPresetTags", "exportPreset", "importPresetBank", "listFxModulePresets", "saveFxModulePreset", "deleteFxModulePreset":
 			sendError(id: id, message: "AUv3 preset library editing is not supported yet")
 		case "clientLog":
-			let logLevel = args.first as? String ?? "info"
-			let logMessage = args.count > 1 ? (args[1] as? String ?? "") : ""
+			let logPayload = methodPayload as? [String: Any]
+			let logLevel = logPayload?["level"] as? String ?? "info"
+			let logMessage = logPayload?["message"] as? String ?? ""
 			os_log("%{public}@: %{public}@", log: czWebViewLog, type: .default, logLevel, logMessage)
 			sendResponse(id: id, result: NSNull())
-		case "noteOn", "noteOff", "sustain", "pitchBend", "modWheel", "aftertouch", "polyAftertouch", "panic":
-			audioUnit.handleEngineEvent(type: method, payload: args.first as? [String: Any] ?? [:])
+		case "noteOn", "noteOff", "sustain", "pitchBend", "modWheel", "aftertouch", "polyAftertouch", "macroValue", "panic":
+			audioUnit.handleEngineEvent(type: method, payload: methodPayload as? [String: Any] ?? [:])
 			sendResponse(id: id, result: NSNull())
 		default:
 			sendError(id: id, message: "unknown method: \(method)")
@@ -639,8 +649,11 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 				"name": preset.name,
 				"source": "cosmo-factory",
 				"author": "",
+				"description": "",
 				"starred": false,
 				"sortIndex": index,
+				"bankId": NSNull(),
+				"bankName": NSNull(),
 				"favorite": false,
 				"tags": [],
 			]

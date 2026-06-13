@@ -279,12 +279,8 @@ describe("PresetLibrary", () => {
 
 	it("does not trigger focused row action on space in plugin mode", () => {
 		const props = createProps();
-		const previousSetParams = (
-			window as Window & { __czSetParams?: (json: string) => void }
-		).__czSetParams;
-		(
-			window as Window & { __czSetParams?: (json: string) => void }
-		).__czSetParams = () => {};
+		const previousSetParams = window.__czSetParams;
+		window.__czSetParams = () => {};
 
 		render(<PresetLibrary {...props} />);
 		const activeRow = screen.getByRole("button", { name: "Local Keys" });
@@ -296,9 +292,7 @@ describe("PresetLibrary", () => {
 		expect(props.onActivatePreset).not.toHaveBeenCalled();
 		expect(list).toHaveFocus();
 
-		(
-			window as Window & { __czSetParams?: (json: string) => void }
-		).__czSetParams = previousSetParams;
+		window.__czSetParams = previousSetParams;
 	});
 
 	it("closes the save-as modal when it receives a native cancel event", () => {

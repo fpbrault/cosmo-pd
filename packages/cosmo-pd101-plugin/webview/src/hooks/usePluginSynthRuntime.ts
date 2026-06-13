@@ -27,7 +27,7 @@ export function usePluginSynthRuntime({
 	});
 
 	const subscribeScopeFrames = useCallback<
-		SynthRuntime["subscribeScopeFrames"]
+		NonNullable<SynthRuntime["subscribeScopeFrames"]>
 	>((onFrame) => {
 		window.__czOnScope = (samples, sampleRate, hz) => {
 			setScopeActiveHz(Number.isFinite(hz) && hz > 0 ? hz : 220);

@@ -64,7 +64,7 @@ describe("params.set", () => {
 			JSON.stringify({
 				method: "setParams",
 				id: 1,
-				args: [JSON.stringify({ volume: 0.3 })],
+				payload: { volume: 0.3 },
 			}),
 		);
 

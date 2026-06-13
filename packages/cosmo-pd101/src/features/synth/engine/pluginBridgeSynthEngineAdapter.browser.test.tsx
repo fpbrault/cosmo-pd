@@ -70,8 +70,8 @@ describe("usePluginBridgeSynthEngine (browser FX smoke)", () => {
 			.mockImplementation(() => {});
 		const outboundJsons: string[] = [];
 		window.__czGetParams = undefined;
-		window.__czSetParams = (json: string) => {
-			outboundJsons.push(json);
+		window.__czSetParams = (params) => {
+			outboundJsons.push(JSON.stringify(params));
 		};
 
 		renderHook(() => usePluginBridgeSynthEngine());

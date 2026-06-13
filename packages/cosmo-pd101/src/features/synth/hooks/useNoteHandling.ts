@@ -214,11 +214,7 @@ export function useNoteHandling({
 			return;
 		}
 
-		const pluginBridgeRuntime = (
-			window as Window & {
-				__czSetParams?: (json: string) => void;
-			}
-		).__czSetParams;
+		const pluginBridgeRuntime = window.__czSetParams;
 		const isPluginRuntime = typeof pluginBridgeRuntime === "function";
 
 		// Standalone mode uses the same truce.audio bridge, but we still want

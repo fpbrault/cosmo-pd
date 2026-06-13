@@ -1,10 +1,13 @@
 import {
+	type BridgeJsonValue,
 	createWebPresetManagerRepository,
 	FACTORY_PRESETS,
 	type LibraryPreset,
 	type PresetActivationResult,
+	type PresetBankBundle,
 	type PresetEntry,
 	type PresetLibraryStatus,
+	type PresetLibrarySummaryEntry,
 	type PresetManagerRepository,
 	type PresetManagerSession,
 	type PresetSource,
@@ -13,59 +16,12 @@ import {
 	type SynthPresetV1,
 } from "@cosmo/cosmo-pd101";
 
-type NativePresetLibraryEntry = {
-	id: string;
-	name: string;
-	source: PresetSource;
-	author: string;
-	description?: string;
-	starred: boolean;
-	sortIndex?: number;
-	favorite?: boolean;
-	bankId?: string | null;
-	bankName?: string | null;
-	tags?: string[];
-};
-
-type NativePresetLibraryResponse = {
-	entries?: NativePresetLibraryEntry[];
-	status?: Exclude<PresetLibraryStatus, { state: "loading" }>;
-};
-
-type SavePluginPresetPayload = {
-	id?: string | null;
-	name: string;
-	author?: string;
-	description?: string;
-	tags?: string[];
-	data?: SynthPresetV1;
-};
-
-type ImportedPresetBank = {
-	type: "preset-bank";
-	schemaVersion: number;
-	bank: {
-		id: string;
-		name: string;
-		source: PresetSource;
-	};
-	presets: Array<{
-		id: string;
-		name: string;
-		author?: string;
-		description?: string;
-		starred?: boolean;
-		tags?: string[];
-		data: SynthPresetV1;
-	}>;
-};
-
 const DEFAULT_USER_PRESET_AUTHOR = "User";
 
-function requireHostMethod(
+function requireHostMethod<T>(
 	name: string,
-	method: (() => Promise<unknown>) | undefined,
-): () => Promise<unknown> {
+	method: (() => Promise<T>) | undefined,
+): () => Promise<T> {
 	if (!method) {
 		throw new Error(`Plugin host does not provide ${name}`);
 	}
@@ -87,23 +43,6 @@ function getSourceLabel(source: PresetSource): string {
 
 declare global {
 	interface Window {
-		__czGetPresetLibrary?: (source?: string) => Promise<unknown>;
-		__czRetryPresetLibrary?: () => Promise<unknown>;
-		__czRepairPresetLibrary?: () => Promise<unknown>;
-		__czRebuildPresetLibrary?: () => Promise<unknown>;
-		__czLoadPresetData?: (id: string) => Promise<unknown>;
-		__czSavePreset?: (payload: SavePluginPresetPayload) => Promise<unknown>;
-		__czDeletePreset?: (id: string) => Promise<unknown>;
-		__czRenamePreset?: (id: string, newName: string) => Promise<unknown>;
-		__czSetPresetAuthor?: (id: string, author: string) => Promise<unknown>;
-		__czSetPresetDescription?: (
-			id: string,
-			description: string,
-		) => Promise<unknown>;
-		__czSetPresetTags?: (id: string, tags: string[]) => Promise<unknown>;
-		__czToggleStarred?: (id: string, starred: boolean) => Promise<unknown>;
-		__czExportPreset?: (id: string) => Promise<unknown>;
-		__czImportPresetBank?: (payload: ImportedPresetBank) => Promise<unknown>;
 		__czHostPlatform?: "macos" | "ios";
 	}
 }
@@ -213,16 +152,24 @@ function parseImportedPreset(
 	return null;
 }
 
-function parseImportedPresetBank(json: string): ImportedPresetBank | null {
+function parseImportedPresetBank(json: string): PresetBankBundle | null {
 	try {
-		const parsed = JSON.parse(json) as ImportedPresetBank;
+		const parsed = JSON.parse(json) as Record<string, unknown>;
 		if (
 			parsed.type !== "preset-bank" ||
 			parsed.schemaVersion !== 1 ||
-			typeof parsed.bank?.id !== "string" ||
-			typeof parsed.bank?.name !== "string" ||
-			!["cosmo-factory", "cz-factory", "addon"].includes(parsed.bank?.source) ||
+			typeof parsed.bank !== "object" ||
+			parsed.bank === null ||
 			!Array.isArray(parsed.presets)
+		) {
+			return null;
+		}
+		const bank = parsed.bank as Record<string, unknown>;
+		if (
+			typeof bank.id !== "string" ||
+			typeof bank.name !== "string" ||
+			typeof bank.source !== "string" ||
+			!["cosmo-factory", "cz-factory", "addon"].includes(bank.source)
 		) {
 			return null;
 		}
@@ -241,7 +188,11 @@ function parseImportedPresetBank(json: string): ImportedPresetBank | null {
 		return {
 			type: "preset-bank",
 			schemaVersion: 1,
-			bank: parsed.bank,
+			bank: {
+				id: bank.id,
+				name: bank.name,
+				source: bank.source,
+			},
 			presets: presets.map((preset) => ({
 				id: preset.id,
 				name: preset.name,
@@ -250,9 +201,11 @@ function parseImportedPresetBank(json: string): ImportedPresetBank | null {
 					typeof preset.description === "string" ? preset.description : "",
 				starred: preset.starred === true,
 				tags: Array.isArray(preset.tags)
-					? preset.tags.filter((tag): tag is string => typeof tag === "string")
+					? preset.tags.filter(
+							(tag: unknown): tag is string => typeof tag === "string",
+						)
 					: [],
-				data: preset.data,
+				data: preset.data as unknown as BridgeJsonValue,
 			})),
 		};
 	} catch {
@@ -261,14 +214,15 @@ function parseImportedPresetBank(json: string): ImportedPresetBank | null {
 }
 
 function mapNativeEntryToPresetEntry(
-	entry: NativePresetLibraryEntry,
+	entry: PresetLibrarySummaryEntry,
 ): PresetEntry {
+	const source = entry.source as PresetSource;
 	return {
 		id: entry.id,
 		label: entry.name,
-		type: entry.source === "user" ? "local" : "library",
-		source: entry.source,
-		sourceLabel: getSourceLabel(entry.source),
+		type: source === "user" ? "local" : "library",
+		source,
+		sourceLabel: getSourceLabel(source),
 		bankId: entry.bankId ?? null,
 		bankName: entry.bankName ?? null,
 		author: entry.author,
@@ -277,12 +231,12 @@ function mapNativeEntryToPresetEntry(
 		favorite: entry.favorite === true,
 		tags: entry.tags ?? [],
 		preset:
-			entry.source === "user"
+			source === "user"
 				? undefined
 				: {
 						id: entry.id,
 						name: entry.name,
-						source: entry.source,
+						source,
 						author: entry.author,
 						description: entry.description ?? "",
 						starred: entry.starred,
@@ -314,31 +268,29 @@ export function createPluginPresetManagerRepository({
 
 	return {
 		listEntries: async () => {
-			const result = (await window.__czGetPresetLibrary?.()) as
-				| NativePresetLibraryResponse
-				| undefined;
-			if (!result?.entries) {
+			const result = await window.__czGetPresetLibrary?.();
+			if (!result) {
 				return {
 					entries: [],
-					status: result?.status ?? { state: "ready" },
+					status: { state: "ready" },
 				};
 			}
 			return {
 				entries: result.entries.map(mapNativeEntryToPresetEntry),
-				status: result.status ?? { state: "ready" },
+				status: (result.status as
+					| Exclude<PresetLibraryStatus, { state: "loading" }>
+					| undefined) ?? { state: "ready" },
 			};
 		},
 		loadEntry: async (entry) => {
-			const result = (await window.__czLoadPresetData?.(entry.id)) as
-				| { preset_name?: string }
-				| undefined;
+			const result = await window.__czLoadPreset?.(entry.id);
 			return createActivationResult(
-				createSelection(entry.id, result?.preset_name ?? entry.label),
+				createSelection(entry.id, result?.presetName ?? entry.label),
 				"deferred",
 			);
 		},
 		savePreset: async ({ existingEntry, name, mode }: SavePresetRequest) => {
-			const result = (await window.__czSavePreset?.({
+			const result = await window.__czSavePreset?.({
 				id: mode === "overwrite" ? (existingEntry?.id ?? null) : null,
 				name,
 				author: existingEntry?.author?.trim()
@@ -346,7 +298,7 @@ export function createPluginPresetManagerRepository({
 					: DEFAULT_USER_PRESET_AUTHOR,
 				description: existingEntry?.description ?? "",
 				tags: existingEntry?.tags ?? [],
-			})) as { id?: string; name?: string } | undefined;
+			});
 			return createActivationResult(
 				createSelection(
 					result?.id ??
@@ -380,10 +332,8 @@ export function createPluginPresetManagerRepository({
 				"immediate",
 			),
 		exportPreset: async (id) => {
-			const result = (await window.__czExportPreset?.(id)) as
-				| { filename?: string; json?: string }
-				| undefined;
-			if (!result?.filename || !result.json) {
+			const result = await window.__czExportPreset?.(id);
+			if (!result) {
 				return null;
 			}
 			return {
@@ -402,24 +352,19 @@ export function createPluginPresetManagerRepository({
 			if (!imported) {
 				return null;
 			}
-			const result = (await window.__czSavePreset?.({
+			const result = await window.__czSavePreset?.({
 				name: imported.name,
 				author: imported.author,
 				description: imported.description,
 				tags: imported.tags,
-				data: imported.data,
-			})) as { id?: string; name?: string } | undefined;
-			if (!result?.id) {
+				data: imported.data as unknown as BridgeJsonValue,
+			});
+			if (!result) {
 				return null;
 			}
-			const activated = (await window.__czLoadPresetData?.(result.id)) as
-				| { preset_name?: string }
-				| undefined;
+			const activated = await window.__czLoadPreset?.(result.id);
 			return createActivationResult(
-				createSelection(
-					result.id,
-					activated?.preset_name ?? result.name ?? imported.name,
-				),
+				createSelection(result.id, activated?.presetName ?? result.name),
 				"deferred",
 			);
 		},

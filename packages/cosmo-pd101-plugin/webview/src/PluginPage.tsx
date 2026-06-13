@@ -20,6 +20,7 @@ import {
 import { createPluginPresetManagerRepository } from "./hooks/createPluginPresetManagerRepository";
 import { usePluginParamBridge } from "./hooks/usePluginParamBridge";
 import { usePluginSynthRuntime } from "./hooks/usePluginSynthRuntime";
+import { postPluginIpc } from "./lib/postPluginIpc";
 
 type PluginPageProps = {
 	appVersion: string;
@@ -49,9 +50,58 @@ export default function PluginPage({
 	);
 	const sendNativeEngineEvent = useCallback(
 		(type: string, payload: Record<string, unknown>) => {
-			window.ipc?.postMessage(
-				JSON.stringify({ id: 0, method: type, args: [payload] }),
-			);
+			const pm = window.ipc?.postMessage?.bind(window.ipc);
+			if (!pm) {
+				return;
+			}
+			switch (type) {
+				case "noteOn":
+					postPluginIpc(pm, "noteOn", {
+						note: payload.note as number,
+						velocity: payload.velocity as number,
+					});
+					break;
+				case "noteOff":
+					postPluginIpc(pm, "noteOff", {
+						note: payload.note as number,
+					});
+					break;
+				case "sustain":
+					postPluginIpc(pm, "sustain", {
+						on: payload.on as boolean,
+					});
+					break;
+				case "pitchBend":
+					postPluginIpc(pm, "pitchBend", {
+						value: payload.value as number,
+					});
+					break;
+				case "modWheel":
+					postPluginIpc(pm, "modWheel", {
+						value: payload.value as number,
+					});
+					break;
+				case "aftertouch":
+					postPluginIpc(pm, "aftertouch", {
+						value: payload.value as number,
+					});
+					break;
+				case "polyAftertouch":
+					postPluginIpc(pm, "polyAftertouch", {
+						note: payload.note as number,
+						value: payload.value as number,
+					});
+					break;
+				case "macroValue":
+					postPluginIpc(pm, "macroValue", {
+						index: payload.index as number,
+						value: payload.value as number,
+					});
+					break;
+				case "panic":
+					postPluginIpc(pm, "panic");
+					break;
+			}
 		},
 		[],
 	);

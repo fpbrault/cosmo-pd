@@ -11,7 +11,7 @@ use truce_core::events::TransportInfo;
 use crate::midi_learn::MidiLearnService;
 use crate::preset_library::PresetLibrary;
 use crate::preset_service::PresetService;
-use crate::session_state::{EditorState, MidiLearnState, PresetSession};
+use cosmo_pd101_bridge_types::{EditorState, MidiLearnState, PresetSession, TransportInfoResponse};
 
 pub const SCOPE_CAPACITY: usize = 4096;
 pub const UI_INPUT_QUEUE_CAPACITY: usize = 1024;
@@ -174,22 +174,22 @@ impl TransportSnapshot {
         }
     }
 
-    pub fn snapshot_json(&self) -> serde_json::Value {
+    pub fn to_response(&self) -> TransportInfoResponse {
         let transport = self.load();
-        serde_json::json!({
-            "playing": transport.playing,
-            "recording": transport.recording,
-            "tempo": transport.tempo,
-            "timeSigNum": transport.time_sig_num,
-            "timeSigDen": transport.time_sig_den,
-            "positionSamples": transport.position_samples,
-            "positionSeconds": transport.position_seconds,
-            "positionBeats": transport.position_beats,
-            "barStartBeats": transport.bar_start_beats,
-            "loopActive": transport.loop_active,
-            "loopStartBeats": transport.loop_start_beats,
-            "loopEndBeats": transport.loop_end_beats,
-        })
+        TransportInfoResponse {
+            playing: transport.playing,
+            recording: transport.recording,
+            tempo: transport.tempo,
+            time_sig_num: transport.time_sig_num,
+            time_sig_den: transport.time_sig_den,
+            position_samples: transport.position_samples as f64,
+            position_seconds: transport.position_seconds,
+            position_beats: transport.position_beats,
+            bar_start_beats: transport.bar_start_beats,
+            loop_active: transport.loop_active,
+            loop_start_beats: transport.loop_start_beats,
+            loop_end_beats: transport.loop_end_beats,
+        }
     }
 }
 

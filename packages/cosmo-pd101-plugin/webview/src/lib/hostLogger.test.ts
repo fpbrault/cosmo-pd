@@ -25,7 +25,7 @@ describe("hostLogger", () => {
 			JSON.stringify({
 				id: 0,
 				method: "clientLog",
-				args: ["error", "boom"],
+				payload: { level: "error", message: "boom" },
 			}),
 		);
 	});

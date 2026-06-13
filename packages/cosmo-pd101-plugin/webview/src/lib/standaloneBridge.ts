@@ -1,15 +1,7 @@
-declare global {
-	interface Window {
-		ipc?: { postMessage: (msg: string) => void };
-		__czGetParams?: () => Promise<unknown>;
-		__czSetParams?: (json: string) => void;
-		__czGetTransportInfo?: () => Promise<unknown>;
-		__czOnScope?: (samples: number[], sampleRate: number, hz: number) => void;
-	}
-}
+import type { SynthParams } from "@cosmo/cosmo-pd101";
 
 let installed = false;
-let currentParamsJson: string | null = null;
+let currentParams: SynthParams | null = null;
 
 function shouldInstallStandaloneBridge(): boolean {
 	const params = new URLSearchParams(window.location.search);
@@ -31,18 +23,27 @@ export function ensureStandaloneBridge(): boolean {
 		},
 	};
 	window.__czGetParams = async () => {
-		if (!currentParamsJson) {
-			return null;
+		if (!currentParams) {
+			throw new Error("[standaloneBridge] synth params not initialized");
 		}
-		try {
-			return JSON.parse(currentParamsJson) as unknown;
-		} catch {
-			return null;
-		}
+		return currentParams;
 	};
-	window.__czSetParams = (json: string) => {
-		currentParamsJson = json;
+	window.__czSetParams = (params: SynthParams) => {
+		currentParams = params;
 	};
-	window.__czGetTransportInfo = async () => null;
+	window.__czGetTransportInfo = async () => ({
+		playing: false,
+		recording: false,
+		tempo: 120,
+		timeSigNum: 4,
+		timeSigDen: 4,
+		positionSamples: 0,
+		positionSeconds: 0,
+		positionBeats: 0,
+		barStartBeats: 0,
+		loopActive: false,
+		loopStartBeats: 0,
+		loopEndBeats: 0,
+	});
 	return true;
 }

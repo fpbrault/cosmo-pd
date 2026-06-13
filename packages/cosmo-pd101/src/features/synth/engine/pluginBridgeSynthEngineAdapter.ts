@@ -4,22 +4,6 @@ import { useSynthStore } from "@/features/synth/synthStore";
 import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
 import { sanitizeSynthParamsForEngine } from "@/lib/synth/fxSlotSanitizer";
 
-declare global {
-	interface Window {
-		ipc?: { postMessage: (message: string) => void };
-		__czOnParams?: (json: string) => void;
-		__czGetParams?: () => Promise<unknown>;
-		__czGetParamsVersion?: () => Promise<unknown>;
-		__czSetParams?: (json: string) => void;
-		__czLoadPresetData?: (id: string) => Promise<unknown>;
-		__czSetPresetName?: (name: string) => void;
-		__czGetPresetSession?: () => Promise<unknown>;
-		__czSetPresetSession?: (
-			session: NativePluginPresetSession,
-		) => Promise<unknown>;
-	}
-}
-
 type UsePluginBridgeSynthEngineOptions = {
 	enabled?: boolean;
 	onExternalParamChange?: () => void;
@@ -28,12 +12,6 @@ type UsePluginBridgeSynthEngineOptions = {
 export type PluginPresetSession = {
 	activePresetId: string | null;
 	loadedPresetId?: string | null;
-	activePresetNameBase: string;
-	isDirty: boolean;
-};
-
-type NativePluginPresetSession = {
-	loadedPresetId: string | null;
 	activePresetNameBase: string;
 	isDirty: boolean;
 };
@@ -176,12 +154,11 @@ export function usePluginBridgeSynthEngine(
 	const initialHydrationCompleteRef = useRef(false);
 
 	const send = useCallback((params: SynthPresetV1["params"]) => {
-		const json = JSON.stringify(
-			sanitizeSynthParamsForEngine(params as SynthPresetV1["params"]),
-		);
+		const sanitized = sanitizeSynthParamsForEngine(params);
+		const json = JSON.stringify(sanitized);
 		if (sentParamsRef.current === json) return;
 		sentParamsRef.current = json;
-		window.__czSetParams?.(json);
+		window.__czSetParams?.(sanitized);
 	}, []);
 
 	const applyHostParams = useCallback(
@@ -200,7 +177,7 @@ export function usePluginBridgeSynthEngine(
 			}
 			outboundEnabledRef.current = true;
 			if (convertedRawEnvelopeValues) {
-				window.__czSetParams?.(sanitizedJson);
+				window.__czSetParams?.(sanitizeSynthParamsForEngine(uiParams));
 			}
 		},
 		[applyPreset],
@@ -377,8 +354,8 @@ export function usePluginBridgeSynthEngine(
 	}, [enabled, applyHostParams]);
 
 	const loadPresetData = useCallback(async (id: string): Promise<string> => {
-		const result = await window.__czLoadPresetData?.(id);
-		const name = (result as { preset_name?: string })?.preset_name ?? "";
+		const result = await window.__czLoadPreset?.(id);
+		const name = result?.presetName ?? "";
 		if (name) {
 			window.__czSetPresetName?.(name);
 		}
@@ -388,29 +365,18 @@ export function usePluginBridgeSynthEngine(
 	const getPresetSession =
 		useCallback(async (): Promise<PluginPresetSession | null> => {
 			const result = await window.__czGetPresetSession?.();
-			if (!result || typeof result !== "object") {
-				return null;
-			}
-			const session = result as Partial<PluginPresetSession>;
-			if (
-				typeof session.activePresetNameBase !== "string" ||
-				typeof session.isDirty !== "boolean"
-			) {
+			if (!result) {
 				return null;
 			}
 			const loadedPresetId =
-				typeof session.loadedPresetId === "string"
-					? session.loadedPresetId
+				typeof result.loadedPresetId === "string"
+					? result.loadedPresetId
 					: null;
-			const activePresetId =
-				typeof session.activePresetId === "string"
-					? session.activePresetId
-					: loadedPresetId;
 			return {
-				activePresetId,
+				activePresetId: loadedPresetId,
 				loadedPresetId,
-				activePresetNameBase: session.activePresetNameBase,
-				isDirty: session.isDirty,
+				activePresetNameBase: result.activePresetNameBase,
+				isDirty: result.isDirty ?? false,
 			};
 		}, []);
 

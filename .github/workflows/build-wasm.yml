@@ -8,6 +8,7 @@ on:
   pull_request:
     paths:
       - "packages/cosmo-synth-engine/**"
+      - "packages/cosmo-pd101-bridge-types/**"
       - "Cargo.lock"
       - "Cargo.toml"
       - ".github/workflows/build-wasm.yml"
@@ -53,12 +54,31 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+        shell: bash
+
       - name: Generate Specta TypeScript bindings
-        working-directory: packages/cosmo-synth-engine
-        run: cargo run --release --features specta-bindings --bin export-specta-bindings
+        working-directory: packages/cosmo-pd101
+        run: bun run gen:bindings:release
+
+      - name: Stale binding check
+        working-directory: packages/cosmo-pd101
+        run: |
+          if ! git diff --exit-code -- src/lib/synth/bindings/ > /dev/null 2>&1; then
+            echo "::error::Generated bindings are stale. Run 'bun run gen:bindings' locally and commit the updated files."
+            git diff -- src/lib/synth/bindings/
+            exit 1
+          fi
+          echo "Bindings up to date."
 
       - name: Upload bindings artifact
         uses: actions/upload-artifact@v7
         with:
           name: specta-bindings
-          path: packages/cosmo-pd101/src/lib/synth/bindings/synth.ts
+          path: packages/cosmo-pd101/src/lib/synth/bindings/

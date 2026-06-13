@@ -5,73 +5,15 @@ use rusqlite::{Connection, OptionalExtension, params};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+pub use cosmo_pd101_bridge_types::{
+    FxModulePresetEntry, PresetBankBundle, PresetBankEntry, PresetBankMetadata, PresetLibraryEntry,
+};
+
 use crate::SynthParams;
 use crate::preset_library_path;
 
 const DEFAULT_SORT_INDEX: u32 = u32::MAX;
 const LIBRARY_SCHEMA_VERSION: u32 = 6;
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct PresetLibraryEntry {
-    pub id: String,
-    pub name: String,
-    pub source: String,
-    pub author: String,
-    #[serde(default)]
-    pub description: String,
-    pub starred: bool,
-    pub sort_index: u32,
-    pub bank_id: Option<String>,
-    pub bank_name: Option<String>,
-    pub tags: Vec<String>,
-    pub macro_labels: [String; 4],
-    pub factory_version: u32,
-    pub data: serde_json::Value,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct FxModulePresetEntry {
-    pub id: String,
-    pub name: String,
-    pub module_type: String,
-    pub patch: serde_json::Value,
-    pub updated_at_unix_ms: i64,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct PresetBankBundle {
-    pub r#type: String,
-    pub schema_version: u32,
-    pub bank: PresetBankMetadata,
-    pub presets: Vec<PresetBankEntry>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct PresetBankMetadata {
-    pub id: String,
-    pub name: String,
-    pub source: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct PresetBankEntry {
-    pub id: String,
-    pub name: String,
-    #[serde(default)]
-    pub author: String,
-    #[serde(default)]
-    pub description: String,
-    #[serde(default)]
-    pub starred: bool,
-    #[serde(default)]
-    pub tags: Vec<String>,
-    pub data: serde_json::Value,
-}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PresetLibraryRecord {

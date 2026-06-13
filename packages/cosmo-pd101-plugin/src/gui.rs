@@ -31,6 +31,7 @@ use crate::CzPluginParams;
 use crate::ipc::IpcContext;
 use crate::runtime_state::{MidiCcQueue, PluginSharedState, ScopeBuffer};
 use crate::{append_log, append_log_debug, append_log_error, append_log_warn};
+use cosmo_pd101_bridge_types::PluginIpcEnvelope;
 use cosmo_synth_engine::params::SynthParams;
 
 // ─── Size constants ──────────────────────────────────────────────────────────
@@ -102,7 +103,7 @@ pub struct CzEditor {
     webview_state: Arc<Mutex<WebViewContainer>>,
     pending_parent_ns_view: Option<usize>,
     params: Arc<CzPluginParams>,
-    last_midi_learn_version: u64,
+    last_midi_learn_version: u32,
     last_sent_params_json: Arc<Mutex<String>>,
     #[cfg(target_os = "macos")]
     standalone_window: Option<StandaloneWindow>,
@@ -124,7 +125,7 @@ impl CzEditor {
         if let Ok(mut cache) = self.last_sent_params_json.lock() {
             cache.clear();
         }
-        self.last_midi_learn_version = u64::MAX;
+        self.last_midi_learn_version = u32::MAX;
         self.pending_parent_ns_view = None;
         self.clear_standalone_window();
     }
@@ -144,7 +145,7 @@ impl CzEditor {
             webview_state: Arc::new(Mutex::new(WebViewContainer { webview: None })),
             pending_parent_ns_view: None,
             params,
-            last_midi_learn_version: u64::MAX,
+            last_midi_learn_version: u32::MAX,
             last_sent_params_json: Arc::new(Mutex::new(String::new())),
             #[cfg(target_os = "macos")]
             standalone_window: None,
@@ -386,7 +387,7 @@ impl Editor for CzEditor {
         if let Ok(mut cache) = self.last_sent_params_json.lock() {
             cache.clear();
         }
-        self.last_midi_learn_version = u64::MAX;
+        self.last_midi_learn_version = u32::MAX;
         self.push_params();
         self.push_midi_learn_state();
     }
@@ -880,17 +881,15 @@ unsafe fn build_webview_from_ns_view(
 
             if let Ok(msg) = serde_json::from_str::<serde_json::Value>(body) {
                 let id = msg.get("id").cloned().unwrap_or(serde_json::Value::Null);
-                let method = msg.get("method").and_then(|m| m.as_str()).unwrap_or("");
-                let args = msg
-                    .get("args")
-                    .and_then(|a| a.as_array())
-                    .cloned()
-                    .unwrap_or_default();
+                let method_name = msg.get("method").and_then(|m| m.as_str()).unwrap_or("").to_string();
 
-                let result = ipc_context.invoke(method, &args);
+                let result = serde_json::from_value::<PluginIpcEnvelope>(msg)
+                    .map_err(|error| format!("invalid IPC envelope: {error}"))
+                    .and_then(|envelope| ipc_context.invoke_envelope(&envelope))
+                    .and_then(|response| response.into_result().map_err(|error| error.to_string()));
 
                 if let Err(error) = &result {
-                    append_log_warn(&format!("ipc error method={method}: {error}"));
+                    append_log_warn(&format!("ipc error method={method_name}: {error}"));
                 }
 
                 let response = match result {
