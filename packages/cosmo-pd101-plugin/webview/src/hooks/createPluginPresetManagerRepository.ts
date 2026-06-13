@@ -268,7 +268,7 @@ export function createPluginPresetManagerRepository({
 
 	return {
 		listEntries: async () => {
-			const result = await window.__czGetPresetLibrary?.({ source: null });
+			const result = await window.__czGetPresetLibrary?.();
 			if (!result) {
 				return {
 					entries: [],
@@ -283,7 +283,7 @@ export function createPluginPresetManagerRepository({
 			};
 		},
 		loadEntry: async (entry) => {
-			const result = await window.__czLoadPreset?.({ presetId: entry.id });
+			const result = await window.__czLoadPreset?.(entry.id);
 			return createActivationResult(
 				createSelection(entry.id, result?.presetName ?? entry.label),
 				"deferred",
@@ -309,25 +309,22 @@ export function createPluginPresetManagerRepository({
 			);
 		},
 		deletePreset: async (id) => {
-			await window.__czDeletePreset?.({ id });
+			await window.__czDeletePreset?.(id);
 		},
 		renamePreset: async (id, newName) => {
-			await window.__czRenamePreset?.({ id, newName });
+			await window.__czRenamePreset?.(id, newName);
 		},
 		setPresetAuthor: async (id, author) => {
-			await window.__czSetPresetAuthor?.({ id, author });
+			await window.__czSetPresetAuthor?.(id, author);
 		},
 		setPresetDescription: async (id, description) => {
-			await window.__czSetPresetDescription?.({ id, description });
+			await window.__czSetPresetDescription?.(id, description);
 		},
 		setPresetFavorite: async (id, favorite) => {
-			await window.__czToggleStarred?.({ id, starred: favorite });
+			await window.__czToggleStarred?.(id, favorite);
 		},
 		setPresetTags: async (id, tags) => {
-			await window.__czSetPresetTags?.({
-				id,
-				tags: tags as PresetTagOptions[],
-			});
+			await window.__czSetPresetTags?.(id, tags as PresetTagOptions[]);
 		},
 		initPreset: async () =>
 			createActivationResult(
@@ -335,7 +332,7 @@ export function createPluginPresetManagerRepository({
 				"immediate",
 			),
 		exportPreset: async (id) => {
-			const result = await window.__czExportPreset?.({ id });
+			const result = await window.__czExportPreset?.(id);
 			if (!result) {
 				return null;
 			}
@@ -365,7 +362,7 @@ export function createPluginPresetManagerRepository({
 			if (!result) {
 				return null;
 			}
-			const activated = await window.__czLoadPreset?.({ presetId: result.id });
+			const activated = await window.__czLoadPreset?.(result.id);
 			return createActivationResult(
 				createSelection(result.id, activated?.presetName ?? result.name),
 				"deferred",

@@ -354,7 +354,7 @@ export function usePluginBridgeSynthEngine(
 	}, [enabled, applyHostParams]);
 
 	const loadPresetData = useCallback(async (id: string): Promise<string> => {
-		const result = await window.__czLoadPreset?.({ presetId: id });
+		const result = await window.__czLoadPreset?.(id);
 		const name = result?.presetName ?? "";
 		if (name) {
 			void window.__czSetPresetName?.(name);

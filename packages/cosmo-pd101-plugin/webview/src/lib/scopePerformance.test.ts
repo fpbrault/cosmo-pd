@@ -5,7 +5,6 @@ import {
 } from "./scopePerformance";
 
 describe("scopePerformance", () => {
-
 	it("normalizes invalid scope frequencies", () => {
 		expect(normalizeScopeHz(Number.NaN)).toBe(220);
 		expect(normalizeScopeHz(0)).toBe(220);
