@@ -20,6 +20,7 @@ import type {
 	TransportInfoResponse,
 } from "@cosmo/cosmo-pd101";
 import { postHostLog } from "./hostLogger";
+import { installPluginIpcWindowBridge } from "./installPluginIpcWindowBridge";
 import type { IpcRpcResponse } from "./ipcTypes";
 import { createTypedInvoke } from "./ipcTypes";
 
@@ -226,95 +227,7 @@ function routeOutgoingMessage(message: string) {
  */
 function installIpcRouter() {
 	_routerPostMessage = routeOutgoingMessage;
-
-	window.__czGetParams = async () => invoke("getParams");
-	window.__czGetParamsVersion = async () => invoke("getParamsVersion");
-
-	window.__czSetParams = (params) =>
-		invoke("setParams", params).catch((error) => {
-			console.error("[IPCBridge] setParams error", error);
-			return null;
-		});
-
-	window.__czGetTransportInfo = () => invoke("getTransportInfo");
-
-	window.__czGetPresetName = () => invoke("getPresetName");
-	window.__czSetPresetName = (name) =>
-		invoke("setPresetName", name).catch((error) => {
-			console.error("[IPCBridge] setPresetName error", error);
-			return null;
-		});
-	window.__czGetPresetSession = () => invoke("getPresetSession");
-	window.__czSetPresetSession = (session) =>
-		invoke("setPresetSession", session);
-
-	window.__czGetPresetLibrary = (payload) =>
-		invoke("getPresetLibrary", payload);
-	window.__czRetryPresetLibrary = () => invoke("retryPresetLibrary");
-	window.__czRepairPresetLibrary = () => invoke("repairPresetLibrary");
-	window.__czRebuildPresetLibrary = () => invoke("rebuildPresetLibrary");
-	window.__czLoadPreset = (payload) => invoke("loadPreset", payload);
-	window.__czAddPreset = (payload) => invoke("addPreset", payload);
-	window.__czSavePreset = (payload) => invoke("savePreset", payload);
-	window.__czDeletePreset = (payload) => invoke("deletePreset", payload);
-	window.__czRenamePreset = (payload) => invoke("renamePreset", payload);
-	window.__czSetPresetAuthor = (payload) => invoke("setPresetAuthor", payload);
-	window.__czSetPresetDescription = (payload) =>
-		invoke("setPresetDescription", payload);
-	window.__czSetPresetTags = (payload) => invoke("setPresetTags", payload);
-	window.__czToggleStarred = (payload) => invoke("toggleStarred", payload);
-	window.__czExportPreset = (payload) => invoke("exportPreset", payload);
-	window.__czImportPresetBank = (payload) =>
-		invoke("importPresetBank", payload);
-	window.__czListFxModulePresets = (payload) =>
-		invoke("listFxModulePresets", payload);
-	window.__czSaveFxModulePreset = (payload) =>
-		invoke("saveFxModulePreset", payload);
-	window.__czDeleteFxModulePreset = (payload) =>
-		invoke("deleteFxModulePreset", payload);
-
-	window.__czSetEditorState = (state) =>
-		invoke("setEditorState", state).catch((error) => {
-			console.error("[IPCBridge] setEditorState error", error);
-			return null;
-		});
-
-	window.__czGetEditorState = () => invoke("getEditorState");
-
-	window.__czGetVoiceLimit = () => invoke("getVoiceLimit");
-	window.__czSetVoiceLimit = (limit) =>
-		invoke("setVoiceLimit", limit).catch((error) => {
-			console.error("[IPCBridge] setVoiceLimit error", error);
-			return null;
-		});
-
-	window.__czGetMidiLearnState = () => invoke("getMidiLearnState");
-
-	window.__czSetMidiLearnMode = (on) =>
-		invoke("setMidiLearnMode", on).catch((error) => {
-			console.error("[IPCBridge] setMidiLearnMode error", error);
-			return null;
-		});
-	window.__czSetPendingMidiLearnParam = (key) =>
-		invoke("setPendingMidiLearnParam", key).catch((error) => {
-			console.error("[IPCBridge] setPendingMidiLearnParam error", error);
-			return null;
-		});
-	window.__czAddMidiBinding = (binding) =>
-		invoke("addMidiBinding", binding).catch((error) => {
-			console.error("[IPCBridge] addMidiBinding error", error);
-			return null;
-		});
-	window.__czRemoveMidiBinding = (binding) =>
-		invoke("removeMidiBinding", binding).catch((error) => {
-			console.error("[IPCBridge] removeMidiBinding error", error);
-			return null;
-		});
-	window.__czClearMidiLearnBindings = () =>
-		invoke("clearMidiLearnBindings").catch((error) => {
-			console.error("[IPCBridge] clearMidiLearnBindings error", error);
-			return null;
-		});
+	installPluginIpcWindowBridge(invoke);
 }
 
 // ─── Native IPC passthrough ───────────────────────────────────────────────────

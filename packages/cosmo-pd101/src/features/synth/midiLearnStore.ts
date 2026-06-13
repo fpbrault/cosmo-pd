@@ -209,7 +209,7 @@ export const useMidiLearnStore = create<MidiLearnStore>()((set, get) => ({
 	},
 
 	addBinding: (paramKey, channel, cc) => {
-		void window.__czAddMidiBinding?.({ paramKey, channel, cc });
+		void window.__czAddMidiBinding?.(paramKey, channel, cc);
 		set((state) => {
 			const bindings = [
 				...state.bindings.filter((binding) => binding.paramKey !== paramKey),

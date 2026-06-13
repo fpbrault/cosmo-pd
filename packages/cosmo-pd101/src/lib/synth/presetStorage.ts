@@ -114,7 +114,7 @@ async function readNativeFavoriteIds(): Promise<string[] | null> {
 		return null;
 	}
 
-	const response = await window.__czGetPresetLibrary({ source: null });
+	const response = await window.__czGetPresetLibrary();
 
 	return response.entries
 		.filter((entry) => entry.favorite === true)
@@ -126,7 +126,7 @@ async function readNativeFavorite(id: string): Promise<boolean | null> {
 		return null;
 	}
 
-	const response = await window.__czGetPresetLibrary({ source: null });
+	const response = await window.__czGetPresetLibrary();
 
 	const entry = response.entries.find((candidate) => candidate.id === id);
 	return entry ? entry.favorite === true : null;
@@ -387,7 +387,7 @@ export async function setPresetFavorite(
 ): Promise<void> {
 	if (window.__czToggleStarred) {
 		try {
-			await window.__czToggleStarred({ id, starred: favorite });
+			await window.__czToggleStarred(id, favorite);
 			return;
 		} catch {
 			// Fall back to IndexedDB when the native bridge does not own this id.

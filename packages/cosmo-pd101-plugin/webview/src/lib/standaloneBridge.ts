@@ -1,7 +1,35 @@
-import type { SynthParams } from "@cosmo/cosmo-pd101";
+import type { PluginBridgeWindowFacade, SynthParams } from "@cosmo/cosmo-pd101";
 
 let installed = false;
 let currentParams: SynthParams | null = null;
+
+const standaloneMethods = {
+	__czGetParams: async () => {
+		if (!currentParams) {
+			throw new Error("[standaloneBridge] synth params not initialized");
+		}
+		return currentParams;
+	},
+	__czSetParams: (params) => {
+		currentParams = params;
+	},
+	__czGetVoiceLimit: async () => 8,
+	__czSetVoiceLimit: () => {},
+	__czGetTransportInfo: async () => ({
+		playing: false,
+		recording: false,
+		tempo: 120,
+		timeSigNum: 4,
+		timeSigDen: 4,
+		positionSamples: 0,
+		positionSeconds: 0,
+		positionBeats: 0,
+		barStartBeats: 0,
+		loopActive: false,
+		loopStartBeats: 0,
+		loopEndBeats: 0,
+	}),
+} satisfies Partial<PluginBridgeWindowFacade>;
 
 function shouldInstallStandaloneBridge(): boolean {
 	const params = new URLSearchParams(window.location.search);
@@ -22,31 +50,6 @@ export function ensureStandaloneBridge(): boolean {
 			// Standalone UI mode does not have a plugin host to notify.
 		},
 	};
-	window.__czGetParams = async () => {
-		if (!currentParams) {
-			throw new Error("[standaloneBridge] synth params not initialized");
-		}
-		return currentParams;
-	};
-	window.__czSetParams = async (params: SynthParams) => {
-		currentParams = params;
-		return null;
-	};
-	window.__czGetVoiceLimit = async () => 8;
-	window.__czSetVoiceLimit = async () => null;
-	window.__czGetTransportInfo = async () => ({
-		playing: false,
-		recording: false,
-		tempo: 120,
-		timeSigNum: 4,
-		timeSigDen: 4,
-		positionSamples: 0,
-		positionSeconds: 0,
-		positionBeats: 0,
-		barStartBeats: 0,
-		loopActive: false,
-		loopStartBeats: 0,
-		loopEndBeats: 0,
-	});
+	Object.assign(window, standaloneMethods);
 	return true;
 }

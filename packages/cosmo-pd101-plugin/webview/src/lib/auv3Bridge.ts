@@ -1,4 +1,5 @@
 import type { ScopeDataResponse, SynthParams } from "@cosmo/cosmo-pd101";
+import { installPluginIpcWindowBridge } from "./installPluginIpcWindowBridge";
 import type { IpcRpcResponse } from "./ipcTypes";
 import { createTypedInvoke } from "./ipcTypes";
 import {
@@ -198,93 +199,20 @@ function installIpcRouter() {
 		},
 	};
 
-	window.__czGetParams = async () => {
-		const result = await invokeAuv3<SynthParams | string>(
-			"getParams",
-			undefined,
-			3000,
-		);
-		if (typeof result !== "string") {
-			return result;
-		}
-		return JSON.parse(result) as SynthParams;
-	};
-	window.__czGetParamsVersion = () =>
-		invokeAuv3<number>("getParamsVersion", undefined, 3000);
-	window.__czSetParams = (params) =>
-		invoke("setParams", params).catch((error) => {
-			console.error("[auv3Bridge] setParams error", error);
-			return null;
-		});
-	window.__czGetTransportInfo = () => invoke("getTransportInfo");
-	window.__czGetPresetSession = () => invoke("getPresetSession");
-	window.__czSetPresetSession = (session) =>
-		invoke("setPresetSession", session);
-
-	window.__czGetPresetLibrary = (payload) =>
-		invoke("getPresetLibrary", payload);
-	window.__czLoadPreset = (payload) => invoke("loadPreset", payload);
-	window.__czAddPreset = (payload) => invoke("addPreset", payload);
-	window.__czSavePreset = (payload) => invoke("savePreset", payload);
-	window.__czDeletePreset = (payload) => invoke("deletePreset", payload);
-	window.__czRenamePreset = (payload) => invoke("renamePreset", payload);
-	window.__czSetPresetAuthor = (payload) => invoke("setPresetAuthor", payload);
-	window.__czSetPresetDescription = (payload) =>
-		invoke("setPresetDescription", payload);
-	window.__czSetPresetTags = (payload) => invoke("setPresetTags", payload);
-	window.__czToggleStarred = (payload) => invoke("toggleStarred", payload);
-	window.__czExportPreset = (payload) => invoke("exportPreset", payload);
-	window.__czImportPresetBank = (payload) =>
-		invoke("importPresetBank", payload);
-	window.__czListFxModulePresets = (payload) =>
-		invoke("listFxModulePresets", payload);
-	window.__czSaveFxModulePreset = (payload) =>
-		invoke("saveFxModulePreset", payload);
-	window.__czDeleteFxModulePreset = (payload) =>
-		invoke("deleteFxModulePreset", payload);
-
-	window.__czSetEditorState = (state) =>
-		invoke("setEditorState", state).catch((error) => {
-			console.error("[auv3Bridge] setEditorState error", error);
-			return null;
-		});
-
-	window.__czGetEditorState = () => invoke("getEditorState");
-
-	window.__czGetVoiceLimit = () => invoke("getVoiceLimit");
-	window.__czSetVoiceLimit = (limit) =>
-		invoke("setVoiceLimit", limit).catch((error) => {
-			console.error("[auv3Bridge] setVoiceLimit error", error);
-			return null;
-		});
-
-	window.__czGetMidiLearnState = () => invoke("getMidiLearnState");
-
-	window.__czSetMidiLearnMode = (on) =>
-		invoke("setMidiLearnMode", on).catch((error) => {
-			console.error("[auv3Bridge] setMidiLearnMode error", error);
-			return null;
-		});
-	window.__czSetPendingMidiLearnParam = (key) =>
-		invoke("setPendingMidiLearnParam", key).catch((error) => {
-			console.error("[auv3Bridge] setPendingMidiLearnParam error", error);
-			return null;
-		});
-	window.__czAddMidiBinding = (binding) =>
-		invoke("addMidiBinding", binding).catch((error) => {
-			console.error("[auv3Bridge] addMidiBinding error", error);
-			return null;
-		});
-	window.__czRemoveMidiBinding = (binding) =>
-		invoke("removeMidiBinding", binding).catch((error) => {
-			console.error("[auv3Bridge] removeMidiBinding error", error);
-			return null;
-		});
-	window.__czClearMidiLearnBindings = () =>
-		invoke("clearMidiLearnBindings").catch((error) => {
-			console.error("[auv3Bridge] clearMidiLearnBindings error", error);
-			return null;
-		});
+	installPluginIpcWindowBridge(invoke, {
+		__czGetParams: async () => {
+			const result = await invokeAuv3<SynthParams | string>(
+				"getParams",
+				undefined,
+				3000,
+			);
+			return typeof result === "string"
+				? (JSON.parse(result) as SynthParams)
+				: result;
+		},
+		__czGetParamsVersion: () =>
+			invokeAuv3<number>("getParamsVersion", undefined, 3000),
+	});
 }
 
 function installScopeProperty(onActiveChange: (active: boolean) => void) {
