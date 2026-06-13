@@ -1,5 +1,5 @@
-const IOS_SCOPE_POLL_INTERVAL_MS = 100;
-const DEFAULT_SCOPE_POLL_INTERVAL_MS = 50;
+const IOS_SCOPE_POLL_INTERVAL_MS = 16;
+const DEFAULT_SCOPE_POLL_INTERVAL_MS = 16;
 const SCOPE_HZ_EPSILON = 0.5;
 
 export function getAuv3ScopePollIntervalMs(
