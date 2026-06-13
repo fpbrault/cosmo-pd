@@ -559,7 +559,7 @@ dependencies = [
 
 [[package]]
 name = "cosmo-pd101-bridge-types"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "cosmo-synth-engine",
  "serde",
@@ -571,7 +571,7 @@ dependencies = [
 
 [[package]]
 name = "cosmo-pd101-plugin"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "arc-swap",
  "block2",
@@ -609,7 +609,7 @@ dependencies = [
 
 [[package]]
 name = "cosmo-pd101-presets"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "cosmo-synth-engine",
  "serde",
@@ -618,7 +618,7 @@ dependencies = [
 
 [[package]]
 name = "cosmo-synth-engine"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "arrayvec",
  "assert_no_alloc",
@@ -5046,7 +5046,7 @@ checksum = "3ae8337f8a065cfc972643663ea4279e04e7256de865aa66fe25cec5fb912d3f"
 
 [[package]]
 name = "xtask"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "serde",
  "toml 1.1.2+spec-1.1.0",

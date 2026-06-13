@@ -220,39 +220,32 @@ export default function GlobalVoicePanel() {
 				</div>
 			</GlobalSection>
 			<GlobalSection title={t("globalVoice.voiceSection")}>
-				<label className="input bg-neutral">
-					<span className="label pr-2 font-mono text-4xs text-cz-cream/55 uppercase tracking-[0.24em]">
-						{t("globalVoice.voiceLimit")}
-					</span>
-					<div className="flex items-center gap-2">
-						<button
-							type="button"
-							className="btn btn-xs btn-square btn-ghost"
-							disabled={voiceLimit <= MIN_VOICE_LIMIT}
-							onClick={() => setVoiceLimit(voiceLimit - 1)}
-							aria-label={t("globalVoice.voiceLimitDec")}
-						>
-							−
-						</button>
-						<span
-							className="min-w-[2ch] text-center font-mono text-cz-cream/80 text-sm tabular-nums"
-							role="status"
-							aria-label={t("globalVoice.voiceLimitAria", {
-								value: voiceLimit,
-							})}
-						>
-							{voiceLimit}
+				<label className="form-control w-full">
+					<div className="label">
+						<span className="label-text font-mono text-4xs text-cz-cream/55 uppercase tracking-[0.24em]">
+							{t("globalVoice.voiceLimit")}
 						</span>
-						<button
-							type="button"
-							className="btn btn-xs btn-square btn-ghost"
-							disabled={voiceLimit >= MAX_VOICE_LIMIT}
-							onClick={() => setVoiceLimit(voiceLimit + 1)}
-							aria-label={t("globalVoice.voiceLimitInc")}
-						>
-							+
-						</button>
 					</div>
+					<select
+						className="select select-sm select-bordered bg-neutral font-mono text-cz-cream/80"
+						value={voiceLimit}
+						onChange={(e) => setVoiceLimit(Number(e.target.value))}
+						aria-label={t("globalVoice.voiceLimitAria", {
+							value: voiceLimit,
+						})}
+					>
+						{Array.from(
+							{ length: MAX_VOICE_LIMIT - MIN_VOICE_LIMIT + 1 },
+							(_, i) => {
+								const v = MIN_VOICE_LIMIT + i;
+								return (
+									<option key={v} value={v}>
+										{v}
+									</option>
+								);
+							},
+						)}
+					</select>
 				</label>
 			</GlobalSection>
 		</div>
