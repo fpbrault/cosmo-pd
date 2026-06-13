@@ -8,7 +8,10 @@ use super::line::{LineParams, LineSelect, ModMode, PolyMode};
 use super::modulation::ModMatrix;
 use super::portamento::PortamentoParams;
 
-pub const NUM_VOICES: usize = 8;
+pub const MIN_VOICE_LIMIT: usize = 1;
+pub const DEFAULT_VOICE_LIMIT: usize = 8;
+pub const MAX_VOICE_LIMIT: usize = 16;
+pub const MAX_VOICES: usize = 16;
 pub const NUM_OPERATORS: usize = 4; // CZ-101 has 4 operators per line
 
 /// Parameters for the random (sample-and-hold) modulation source.

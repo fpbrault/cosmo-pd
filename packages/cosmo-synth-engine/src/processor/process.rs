@@ -6,7 +6,7 @@ use alloc::sync::Arc;
 
 use crate::dsp_utils::{lfo_output_with_symmetry, random_hold_value};
 use crate::params::{
-    LfoRateMode, LfoSyncDivision, LineParams, ModDestination, ModMatrixCache, NUM_VOICES,
+    LfoRateMode, LfoSyncDivision, LineParams, ModDestination, ModMatrixCache, MAX_VOICES,
     SynthParams,
 };
 use crate::render_cache::CompiledLinePlan;
@@ -409,7 +409,7 @@ impl CosmoProcessor {
         let mut mixed = 0.0_f32;
         let mut v = 0;
         if matches!(self.simd_backend, crate::simd::SimdBackend::Scalar) {
-            while v + 4 <= NUM_VOICES {
+            while v + 4 <= MAX_VOICES {
                 mixed += crate::voice::render_voice(&mut self.voices[v], &render_ctx);
                 mixed += crate::voice::render_voice(&mut self.voices[v + 1], &render_ctx);
                 mixed += crate::voice::render_voice(&mut self.voices[v + 2], &render_ctx);
@@ -418,7 +418,7 @@ impl CosmoProcessor {
             }
         } else {
             let mut vector_acc = [0.0_f32; 4];
-            while v + 4 <= NUM_VOICES {
+            while v + 4 <= MAX_VOICES {
                 let voice_samples = [
                     crate::voice::render_voice(&mut self.voices[v], &render_ctx),
                     crate::voice::render_voice(&mut self.voices[v + 1], &render_ctx),
@@ -431,7 +431,7 @@ impl CosmoProcessor {
             mixed += self.simd_backend.horizontal_sum4(vector_acc);
         }
 
-        while v < NUM_VOICES {
+        while v < MAX_VOICES {
             mixed += crate::voice::render_voice(&mut self.voices[v], &render_ctx);
             v += 1;
         }
@@ -453,7 +453,7 @@ impl CosmoProcessor {
         self.active_notes
             .last()
             .map(|entry| entry.voice_idx)
-            .filter(|voice_idx| *voice_idx < NUM_VOICES)
+            .filter(|voice_idx| *voice_idx < MAX_VOICES)
             .or_else(|| {
                 self.voices.iter().position(|voice| {
                     voice.note.is_some() && (!voice.is_silent || voice.mod_env.output > 0.0)
