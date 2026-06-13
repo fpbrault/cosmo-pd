@@ -21,6 +21,7 @@ pub struct RuntimeModSources {
     pub macro2: f32,
     pub macro3: f32,
     pub macro4: f32,
+    pub voice_limit: usize,
 }
 
 /// Snapshot of a single envelope generator's runtime state.

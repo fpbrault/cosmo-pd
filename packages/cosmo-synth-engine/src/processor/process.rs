@@ -218,6 +218,7 @@ impl CosmoProcessor {
                 macro2: self.macro2,
                 macro3: self.macro3,
                 macro4: self.macro4,
+                voice_limit: self.voice_limit,
             };
             prev_lfo1 = lfos.lfo1;
             prev_lfo2 = lfos.lfo2;

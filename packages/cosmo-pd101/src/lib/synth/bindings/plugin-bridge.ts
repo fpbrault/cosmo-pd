@@ -493,6 +493,7 @@ export type RuntimeModSources = {
 	macro2: number | null,
 	macro3: number | null,
 	macro4: number | null,
+	voiceLimit: number | null,
 };
 
 /**  Full debug snapshot of one voice's runtime state. */
