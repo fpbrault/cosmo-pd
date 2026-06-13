@@ -156,6 +156,8 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 		} else if let pendingIndex = pendingFactoryPresetIndex {
 			pendingFactoryPresetIndex = nil
 			_ = applyFactoryPreset(index: pendingIndex)
+		} else if applyDefaultFactoryPresetIfNeeded() {
+			// Applied fresh-start default factory preset.
 		} else {
 			syncParametersToEngine()
 		}
@@ -321,6 +323,19 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 		NSLog("[CzAU] applyFactoryPreset index=%d", index)
 		let presetName = availableFactoryPresets.first(where: { Int($0.number) == index })?.name
 		return setParamsJson(json, notifyWebView: true, selectedPresetName: presetName)
+	}
+
+	/// Selects and applies the first factory preset on fresh startup when no
+	/// document state or host-selected preset is pending. Returns `true` if a
+	/// preset was applied, `false` if none was available or already selected.
+	private func applyDefaultFactoryPresetIfNeeded() -> Bool {
+		guard selectedFactoryPreset == nil, !availableFactoryPresets.isEmpty else {
+			return false
+		}
+		let firstPreset = availableFactoryPresets[0]
+		selectedFactoryPreset = firstPreset
+		super.currentPreset = firstPreset
+		return applyFactoryPreset(index: Int(firstPreset.number))
 	}
 
 	private func syncParametersToEngine() {

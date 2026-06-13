@@ -655,6 +655,10 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		}
 	}
 
+	/// Returns the current preset session dictionary consumed by the JS bridge.
+	/// When `presetSessionState` fields are nil, falls back to `audioUnit.currentPreset`,
+	/// which is set natively by `applyDefaultFactoryPresetIfNeeded()` on fresh startup
+	/// or by the host/DAW preset selection. The final fallthrough is `"Current State"`.
 	private func currentPresetSession(for audioUnit: AUAudioUnit) -> [String: Any] {
 		let preset = audioUnit.currentPreset
 		let presetId = presetId(for: preset)
