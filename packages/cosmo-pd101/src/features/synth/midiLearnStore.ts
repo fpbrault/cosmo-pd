@@ -179,7 +179,7 @@ export const useMidiLearnStore = create<MidiLearnStore>()((set, get) => ({
 	...DEFAULT_STATE,
 
 	setLearnMode: (on) => {
-		window.__czSetMidiLearnMode?.(on);
+		void window.__czSetMidiLearnMode?.(on);
 		set({
 			learnMode: on,
 			pendingLearnParam: on ? get().pendingLearnParam : null,
@@ -187,12 +187,12 @@ export const useMidiLearnStore = create<MidiLearnStore>()((set, get) => ({
 	},
 
 	setPendingLearnParam: (paramKey) => {
-		window.__czSetPendingMidiLearnParam?.(paramKey);
+		void window.__czSetPendingMidiLearnParam?.(paramKey);
 		set({ pendingLearnParam: paramKey });
 	},
 
 	removeBinding: (binding) => {
-		window.__czRemoveMidiBinding?.(binding);
+		void window.__czRemoveMidiBinding?.(binding);
 		set((state) => {
 			const bindings = state.bindings.filter(
 				(existing) => !bindingMatches(existing, binding),
@@ -203,13 +203,13 @@ export const useMidiLearnStore = create<MidiLearnStore>()((set, get) => ({
 	},
 
 	clearBindings: () => {
-		window.__czClearMidiLearnBindings?.();
+		void window.__czClearMidiLearnBindings?.();
 		persistWebMidiBindings([]);
 		set({ bindings: [], pendingLearnParam: null });
 	},
 
 	addBinding: (paramKey, channel, cc) => {
-		window.__czAddMidiBinding?.(paramKey, channel, cc);
+		void window.__czAddMidiBinding?.({ paramKey, channel, cc });
 		set((state) => {
 			const bindings = [
 				...state.bindings.filter((binding) => binding.paramKey !== paramKey),
@@ -248,7 +248,7 @@ export const useMidiLearnStore = create<MidiLearnStore>()((set, get) => ({
 	},
 
 	resetPendingLearnParam: () => {
-		window.__czSetPendingMidiLearnParam?.(null);
+		void window.__czSetPendingMidiLearnParam?.(null);
 		set({ pendingLearnParam: null });
 	},
 }));

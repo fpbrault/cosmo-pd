@@ -2,21 +2,14 @@ import type { EditorState } from "@cosmo/cosmo-pd101";
 import { useSynthUiStore } from "@cosmo/cosmo-pd101";
 import { useEffect, useRef } from "react";
 
-function hasBridgeApi(name: string): boolean {
-	return (
-		typeof (window as unknown as Record<string, unknown>)[`__cz${name}`] ===
-		"function"
-	);
-}
-
 function isBridgeAvailable(): boolean {
-	return hasBridgeApi("GetEditorState") || hasBridgeApi("SetEditorState");
+	return Boolean(window.__czGetEditorState || window.__czSetEditorState);
 }
 
 function loadInitialEditorState(): void {
-	if (!hasBridgeApi("GetEditorState")) return;
-	void (window as { __czGetEditorState: () => Promise<EditorState | null> })
-		.__czGetEditorState()
+	const getEditorState = window.__czGetEditorState;
+	if (!getEditorState) return;
+	void getEditorState()
 		.then((result) => {
 			if (result && typeof result === "object") {
 				const editorState: Record<string, unknown> = {};
@@ -70,13 +63,15 @@ function buildEditorState(): EditorState {
 }
 
 function subscribeEditorState(): () => void {
-	const setEditor = (window as { __czSetEditorState: (s: EditorState) => void })
-		.__czSetEditorState;
+	const setEditor = window.__czSetEditorState;
+	if (!setEditor) {
+		return () => {};
+	}
 
-	setEditor(buildEditorState());
+	void setEditor(buildEditorState());
 
 	return useSynthUiStore.subscribe(() => {
-		setEditor(buildEditorState());
+		void setEditor(buildEditorState());
 	});
 }
 
@@ -94,7 +89,7 @@ export function useSessionStateSync(): void {
 
 			loadInitialEditorState();
 
-			if (hasBridgeApi("SetEditorState")) {
+			if (window.__czSetEditorState) {
 				unsubscribes.push(subscribeEditorState());
 			}
 

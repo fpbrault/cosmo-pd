@@ -16,11 +16,7 @@
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 import type {
-	EditorState,
-	MidiLearnBinding,
-	PresetSession,
 	ScopeDataResponse,
-	SynthParams,
 	TransportInfoResponse,
 } from "@cosmo/cosmo-pd101";
 import { postHostLog } from "./hostLogger";
@@ -234,99 +230,91 @@ function installIpcRouter() {
 	window.__czGetParams = async () => invoke("getParams");
 	window.__czGetParamsVersion = async () => invoke("getParamsVersion");
 
-	window.__czSetParams = (params: SynthParams) => {
-		void invoke("setParams", params).catch((error) => {
+	window.__czSetParams = (params) =>
+		invoke("setParams", params).catch((error) => {
 			console.error("[IPCBridge] setParams error", error);
+			return null;
 		});
-	};
 
 	window.__czGetTransportInfo = () => invoke("getTransportInfo");
 
 	window.__czGetPresetName = () => invoke("getPresetName");
-	window.__czSetPresetName = (name: string) => {
-		void invoke("setPresetName", name).catch((error) => {
+	window.__czSetPresetName = (name) =>
+		invoke("setPresetName", name).catch((error) => {
 			console.error("[IPCBridge] setPresetName error", error);
+			return null;
 		});
-	};
 	window.__czGetPresetSession = () => invoke("getPresetSession");
-	window.__czSetPresetSession = (session: PresetSession) =>
+	window.__czSetPresetSession = (session) =>
 		invoke("setPresetSession", session);
 
-	window.__czGetPresetLibrary = (source?: string) =>
-		invoke("getPresetLibrary", { source: source ?? null });
+	window.__czGetPresetLibrary = (payload) =>
+		invoke("getPresetLibrary", payload);
 	window.__czRetryPresetLibrary = () => invoke("retryPresetLibrary");
 	window.__czRepairPresetLibrary = () => invoke("repairPresetLibrary");
 	window.__czRebuildPresetLibrary = () => invoke("rebuildPresetLibrary");
-	window.__czLoadPreset = (id: string) =>
-		invoke("loadPreset", { presetId: id });
+	window.__czLoadPreset = (payload) => invoke("loadPreset", payload);
 	window.__czAddPreset = (payload) => invoke("addPreset", payload);
 	window.__czSavePreset = (payload) => invoke("savePreset", payload);
-	window.__czDeletePreset = (id: string) => invoke("deletePreset", { id });
-	window.__czRenamePreset = (id: string, newName: string) =>
-		invoke("renamePreset", { id, newName });
-	window.__czSetPresetAuthor = (id: string, author: string) =>
-		invoke("setPresetAuthor", { id, author });
-	window.__czSetPresetDescription = (id: string, description: string) =>
-		invoke("setPresetDescription", { id, description });
-	window.__czSetPresetTags = (id: string, tags: string[]) =>
-		invoke("setPresetTags", { id, tags });
-	window.__czToggleStarred = (id: string, starred: boolean) =>
-		invoke("toggleStarred", { id, starred });
-	window.__czExportPreset = (id: string) => invoke("exportPreset", { id });
+	window.__czDeletePreset = (payload) => invoke("deletePreset", payload);
+	window.__czRenamePreset = (payload) => invoke("renamePreset", payload);
+	window.__czSetPresetAuthor = (payload) => invoke("setPresetAuthor", payload);
+	window.__czSetPresetDescription = (payload) =>
+		invoke("setPresetDescription", payload);
+	window.__czSetPresetTags = (payload) => invoke("setPresetTags", payload);
+	window.__czToggleStarred = (payload) => invoke("toggleStarred", payload);
+	window.__czExportPreset = (payload) => invoke("exportPreset", payload);
 	window.__czImportPresetBank = (payload) =>
 		invoke("importPresetBank", payload);
-	window.__czListFxModulePresets = (moduleType: string) =>
-		invoke("listFxModulePresets", { moduleType });
+	window.__czListFxModulePresets = (payload) =>
+		invoke("listFxModulePresets", payload);
 	window.__czSaveFxModulePreset = (payload) =>
 		invoke("saveFxModulePreset", payload);
-	window.__czDeleteFxModulePreset = (id: string) =>
-		invoke("deleteFxModulePreset", { id });
+	window.__czDeleteFxModulePreset = (payload) =>
+		invoke("deleteFxModulePreset", payload);
 
-	window.__czSetEditorState = (state: EditorState) => {
-		void invoke("setEditorState", state).catch((error) => {
+	window.__czSetEditorState = (state) =>
+		invoke("setEditorState", state).catch((error) => {
 			console.error("[IPCBridge] setEditorState error", error);
+			return null;
 		});
-	};
 
-	window.__czGetEditorState = async () =>
-		(await invoke("getEditorState")) as EditorState | null;
+	window.__czGetEditorState = () => invoke("getEditorState");
 
 	window.__czGetVoiceLimit = () => invoke("getVoiceLimit");
-	window.__czSetVoiceLimit = (limit: number) => {
-		void invoke("setVoiceLimit", limit).catch((error) => {
+	window.__czSetVoiceLimit = (limit) =>
+		invoke("setVoiceLimit", limit).catch((error) => {
 			console.error("[IPCBridge] setVoiceLimit error", error);
+			return null;
 		});
-	};
 
 	window.__czGetMidiLearnState = () => invoke("getMidiLearnState");
 
-	window.__czSetMidiLearnMode = (on: boolean) => {
-		void invoke("setMidiLearnMode", on).catch((error) => {
+	window.__czSetMidiLearnMode = (on) =>
+		invoke("setMidiLearnMode", on).catch((error) => {
 			console.error("[IPCBridge] setMidiLearnMode error", error);
+			return null;
 		});
-	};
-	window.__czSetPendingMidiLearnParam = (key: string | null) => {
-		void invoke("setPendingMidiLearnParam", key).catch((error) => {
+	window.__czSetPendingMidiLearnParam = (key) =>
+		invoke("setPendingMidiLearnParam", key).catch((error) => {
 			console.error("[IPCBridge] setPendingMidiLearnParam error", error);
+			return null;
 		});
-	};
-	window.__czAddMidiBinding = (key: string, ch: number, cc: number) => {
-		void invoke("addMidiBinding", { paramKey: key, channel: ch, cc }).catch(
-			(error) => {
-				console.error("[IPCBridge] addMidiBinding error", error);
-			},
-		);
-	};
-	window.__czRemoveMidiBinding = (binding: MidiLearnBinding) => {
-		void invoke("removeMidiBinding", binding).catch((error) => {
+	window.__czAddMidiBinding = (binding) =>
+		invoke("addMidiBinding", binding).catch((error) => {
+			console.error("[IPCBridge] addMidiBinding error", error);
+			return null;
+		});
+	window.__czRemoveMidiBinding = (binding) =>
+		invoke("removeMidiBinding", binding).catch((error) => {
 			console.error("[IPCBridge] removeMidiBinding error", error);
+			return null;
 		});
-	};
-	window.__czClearMidiLearnBindings = () => {
-		void invoke("clearMidiLearnBindings").catch((error) => {
+	window.__czClearMidiLearnBindings = () =>
+		invoke("clearMidiLearnBindings").catch((error) => {
 			console.error("[IPCBridge] clearMidiLearnBindings error", error);
+			return null;
 		});
-	};
 }
 
 // ─── Native IPC passthrough ───────────────────────────────────────────────────

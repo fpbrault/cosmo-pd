@@ -80,7 +80,7 @@ export async function listFxModulePresets(
 	moduleType: string,
 ): Promise<StoredFxModulePreset[]> {
 	if (window.__czListFxModulePresets) {
-		const nativePresets = await window.__czListFxModulePresets(moduleType);
+		const nativePresets = await window.__czListFxModulePresets({ moduleType });
 		return nativePresets
 			.map((preset) => ({
 				id: preset.id,
@@ -100,7 +100,7 @@ export async function listFxModulePresets(
 
 export async function deleteFxModulePreset(id: string): Promise<void> {
 	if (window.__czDeleteFxModulePreset) {
-		await window.__czDeleteFxModulePreset(id);
+		await window.__czDeleteFxModulePreset({ id });
 		return;
 	}
 

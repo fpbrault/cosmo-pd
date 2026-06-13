@@ -182,10 +182,11 @@ describe("createPluginPresetManagerRepository", () => {
 			status: { state: "ready" },
 		});
 		await repository.setPresetDescription("factory-1", "Updated");
-		expect(window.__czSetPresetDescription).toHaveBeenCalledWith(
-			"factory-1",
-			"Updated",
-		);
+		expect(window.__czGetPresetLibrary).toHaveBeenCalledWith({ source: null });
+		expect(window.__czSetPresetDescription).toHaveBeenCalledWith({
+			id: "factory-1",
+			description: "Updated",
+		});
 	});
 
 	it("invokes native preset library recovery methods", async () => {
