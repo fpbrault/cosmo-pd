@@ -137,16 +137,12 @@ export function usePhaseLineModel(lineIndex: LineIndex): PhaseLineModel {
 				lineSelect: lineSelectLabel,
 				detuneDisabled,
 				detuneLabelPrefix,
-				...(isLine1
-					? {}
-					: {
-							detuneOctave: line2DetuneOctave as number,
-							setDetuneOctave: setLine2DetuneOctave,
-							detuneNote: line2DetuneNote as number,
-							setDetuneNote: setLine2DetuneNote,
-							fineDetune: line2DetuneFine as number,
-							setFineDetune: setLine2DetuneFine,
-						}),
+				detuneOctave: line2DetuneOctave as number,
+				setDetuneOctave: setLine2DetuneOctave,
+				detuneNote: line2DetuneNote as number,
+				setDetuneNote: setLine2DetuneNote,
+				fineDetune: line2DetuneFine as number,
+				setFineDetune: setLine2DetuneFine,
 			},
 			envelopes: {
 				envs: {
