@@ -1,5 +1,31 @@
+import Foundation
 import Testing
 @testable import CosmoPd101AUv3
+
+// MARK: - Spy timer infrastructure
+
+final class SpyTelemetryTimer: TelemetryTimer {
+	private(set) var scheduleCount = 0
+	private(set) var invalidateCount = 0
+
+	func schedule(interval: TimeInterval, repeats: Bool, block: @escaping @Sendable () -> Void) {
+		scheduleCount += 1
+	}
+
+	func invalidate() {
+		invalidateCount += 1
+	}
+}
+
+final class SpyTelemetryTimerFactory: TelemetryTimerFactory {
+	let spy = SpyTelemetryTimer()
+
+	func makeTimer() -> TelemetryTimer {
+		spy
+	}
+}
+
+// MARK: - State management tests
 
 @Test func subscribeAddsChannel() {
 	let tc = TelemetryController { }
@@ -44,6 +70,8 @@ import Testing
 	#expect(tc.unsubscribe(.runtimeVoiceStates) == true)
 	#expect(tc.unsubscribe(.runtimeVoiceStates) == false)
 }
+
+// MARK: - Cache tests
 
 @Test func shouldPushReturnsTrueForFirstValue() {
 	let tc = TelemetryController { }
@@ -97,6 +125,8 @@ import Testing
 	#expect(tc.cachedValue(for: .runtimeVoiceStates) == nil)
 	#expect(tc.cachedValue(for: .runtimeModSources) == nil)
 }
+
+// MARK: - Lifecycle tests
 
 @Test func hostDidBecomeActiveResetsCachesAndStartsTimer() {
 	let tc = TelemetryController { }
@@ -155,8 +185,95 @@ import Testing
 	#expect(tc.cachedValue(for: .transport) == nil)
 }
 
-@Test func invalidateCalledFromDeinit() {
-	var tc: TelemetryController? = TelemetryController { }
-	tc?.subscribe(.runtimeVoiceStates)
-	tc = nil
+// MARK: - Timer lifecycle via spy factory
+
+@Test func timerStartsOnSubscribe() {
+	let factory = SpyTelemetryTimerFactory()
+	let tc = TelemetryController(handler: {}, timerFactory: factory)
+	#expect(factory.spy.scheduleCount == 0)
+	#expect(factory.spy.invalidateCount == 0)
+
+	tc.subscribe(.runtimeVoiceStates)
+	#expect(factory.spy.scheduleCount == 1)
+	#expect(tc.isTimerRunning)
+}
+
+@Test func timerStopsOnUnsubscribe() {
+	let factory = SpyTelemetryTimerFactory()
+	let tc = TelemetryController(handler: {}, timerFactory: factory)
+	tc.subscribe(.runtimeVoiceStates)
+	#expect(factory.spy.scheduleCount == 1)
+
+	tc.unsubscribe(.runtimeVoiceStates)
+	#expect(factory.spy.invalidateCount == 1)
+	#expect(!tc.isTimerRunning)
+}
+
+@Test func timerRestartsOnResubscribe() {
+	let factory = SpyTelemetryTimerFactory()
+	let tc = TelemetryController(handler: {}, timerFactory: factory)
+	tc.subscribe(.runtimeVoiceStates)
+	tc.unsubscribe(.runtimeVoiceStates)
+	#expect(factory.spy.invalidateCount == 1)
+
+	tc.subscribe(.runtimeModSources)
+	#expect(factory.spy.scheduleCount == 2)
+}
+
+@Test func hostDidBecomeActiveRestartsTimer() {
+	let factory = SpyTelemetryTimerFactory()
+	let tc = TelemetryController(handler: {}, timerFactory: factory)
+	tc.subscribe(.transport)
+	#expect(factory.spy.scheduleCount == 1)
+
+	tc.hostWillResignActive()
+	#expect(factory.spy.invalidateCount == 1)
+
+	tc.hostDidBecomeActive()
+	#expect(factory.spy.scheduleCount == 2)
+}
+
+@Test func viewWillAppearRestartsTimerAfterHostInactive() {
+	let factory = SpyTelemetryTimerFactory()
+	let tc = TelemetryController(handler: {}, timerFactory: factory)
+	tc.subscribe(.transport)
+	#expect(factory.spy.scheduleCount == 1)
+
+	tc.hostWillResignActive()
+	#expect(factory.spy.invalidateCount == 1)
+
+	tc.viewWillAppear()
+	#expect(factory.spy.scheduleCount == 2)
+}
+
+@Test func repeatedHostDidBecomeActiveDoesNotDoubleSchedule() {
+	let factory = SpyTelemetryTimerFactory()
+	let tc = TelemetryController(handler: {}, timerFactory: factory)
+	tc.subscribe(.transport)
+	#expect(factory.spy.scheduleCount == 1)
+
+	tc.hostDidBecomeActive()
+	// Timer already running — should not schedule again
+	#expect(factory.spy.scheduleCount == 1)
+}
+
+@Test func repeatedViewWillAppearDoesNotDoubleSchedule() {
+	let factory = SpyTelemetryTimerFactory()
+	let tc = TelemetryController(handler: {}, timerFactory: factory)
+	tc.subscribe(.transport)
+	#expect(factory.spy.scheduleCount == 1)
+
+	tc.viewWillAppear()
+	// Timer already running — should not schedule again
+	#expect(factory.spy.scheduleCount == 1)
+}
+
+@Test func invalidateCallsTimerInvalidate() {
+	let factory = SpyTelemetryTimerFactory()
+	let tc = TelemetryController(handler: {}, timerFactory: factory)
+	tc.subscribe(.transport)
+	#expect(factory.spy.invalidateCount == 0)
+
+	tc.invalidate()
+	#expect(factory.spy.invalidateCount == 1)
 }

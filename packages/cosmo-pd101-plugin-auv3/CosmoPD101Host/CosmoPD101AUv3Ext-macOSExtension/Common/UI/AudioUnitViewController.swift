@@ -22,6 +22,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	private lazy var telemetryController = TelemetryController { [weak self] in
 		self?.handleTelemetryTimer()
 	}
+	private let instanceID = UUID().uuidString
 	private var cachedVoiceLimit: Int = 0
 	private static let voiceLimitDefault: Int = 8
 	private static let voiceLimitUserDefaultsKey = "com.cosmo.pd101.voiceLimit"
@@ -62,7 +63,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name.NSExtensionHostDidBecomeActive, object: nil)
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name.NSExtensionHostWillResignActive, object: nil)
 		#endif
-		os_log("deinit", log: czVCLog, type: .default)
+		os_log("deinit (instance=%@)", log: czVCLog, type: .default, instanceID)
 	}
 
 	public override func loadView() {
@@ -95,13 +96,13 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 	public override func viewWillAppear(_ animated: Bool) {
 		super.viewWillAppear(animated)
-		os_log("viewWillAppear", log: czVCLog, type: .default)
+		os_log("viewWillAppear (instance=%@)", log: czVCLog, type: .default, instanceID)
 		telemetryController.viewWillAppear()
 	}
 
 	public override func viewDidDisappear(_ animated: Bool) {
 		super.viewDidDisappear(animated)
-		os_log("viewDidDisappear", log: czVCLog, type: .default)
+		os_log("viewDidDisappear (instance=%@)", log: czVCLog, type: .default, instanceID)
 		telemetryController.viewDidDisappear()
 	}
 
@@ -116,13 +117,13 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 	public override func viewWillAppear() {
 		super.viewWillAppear()
-		os_log("viewWillAppear", log: czVCLog, type: .default)
+		os_log("viewWillAppear (instance=%@)", log: czVCLog, type: .default, instanceID)
 		telemetryController.viewWillAppear()
 	}
 
 	public override func viewDidDisappear() {
 		super.viewDidDisappear()
-		os_log("viewDidDisappear", log: czVCLog, type: .default)
+		os_log("viewDidDisappear (instance=%@)", log: czVCLog, type: .default, instanceID)
 		telemetryController.viewDidDisappear()
 	}
 
@@ -458,7 +459,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		configuration.userContentController.addUserScript(
 			WKUserScript(source: diagnosticsScript, injectionTime: .atDocumentStart, forMainFrameOnly: true)
 		)
-		configuration.userContentController.add(self, name: "cosmoPd101")
+		configuration.userContentController.add(WeakScriptMessageHandler(self), name: "cosmoPd101")
 
 		if let baseUrl = indexUrl?.deletingLastPathComponent() {
 			configuration.setURLSchemeHandler(BundleSchemeHandler(baseURL: baseUrl), forURLScheme: "cosmo-ext")
@@ -593,12 +594,15 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 	private func setTelemetrySubscription(_ channel: TelemetryChannel, active: Bool, audioUnit: CosmoPD101AUv3Ext_macOSExtensionAudioUnit) {
 		if active {
-			guard telemetryController.subscribe(channel) else { return }
+			let wasSubscribed = telemetryController.subscribe(channel)
+			os_log("telemetry subscribe %{public}@ (instance=%@, new=%{public}d)", log: czVCLog, type: .default, channel.rawValue, instanceID, wasSubscribed)
+			guard wasSubscribed else { return }
 			pushTelemetryUpdates(audioUnit: audioUnit, forceChannels: [channel])
 			return
 		}
 
 		telemetryController.unsubscribe(channel)
+		os_log("telemetry unsubscribe %{public}@ (instance=%@)", log: czVCLog, type: .default, channel.rawValue, instanceID)
 	}
 
 	private func handleTelemetryTimer() {

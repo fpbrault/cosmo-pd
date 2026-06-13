@@ -1,4 +1,43 @@
+// Mirror of Sources/CosmoPd101AUv3/TelemetryController.swift (primary source of truth)
+// TODO: Remove this copy when Xcode project compiles Sources/ path directly
+
 import Foundation
+
+// MARK: - Timer abstraction for testability
+
+protocol TelemetryTimer: AnyObject {
+	func schedule(interval: TimeInterval, repeats: Bool, block: @escaping @Sendable () -> Void)
+	func invalidate()
+}
+
+protocol TelemetryTimerFactory {
+	func makeTimer() -> TelemetryTimer
+}
+
+final class DefaultTelemetryTimer: TelemetryTimer {
+	private var timer: Timer?
+
+	func schedule(interval: TimeInterval, repeats: Bool, block: @escaping @Sendable () -> Void) {
+		let t = Timer(timeInterval: interval, repeats: repeats) { _ in
+			block()
+		}
+		timer = t
+		RunLoop.main.add(t, forMode: .common)
+	}
+
+	func invalidate() {
+		timer?.invalidate()
+		timer = nil
+	}
+}
+
+struct DefaultTelemetryTimerFactory: TelemetryTimerFactory {
+	func makeTimer() -> TelemetryTimer {
+		DefaultTelemetryTimer()
+	}
+}
+
+// MARK: - Telemetry model
 
 enum TelemetryChannel: String, CaseIterable, Hashable {
 	case runtimeVoiceStates
@@ -6,18 +45,26 @@ enum TelemetryChannel: String, CaseIterable, Hashable {
 	case transport
 }
 
+// MARK: - TelemetryController
+
 final class TelemetryController: @unchecked Sendable {
 	private(set) var isTimerRunning = false
 	private(set) var activeChannels: Set<TelemetryChannel> = []
 
 	private var caches: [TelemetryChannel: String] = [:]
-	private weak var timer: Timer?
+	private var timer: TelemetryTimer?
 	private let pushInterval: TimeInterval
 	private let handler: () -> Void
+	private let timerFactory: TelemetryTimerFactory
 
-	init(pushInterval: TimeInterval = 0.1, handler: @escaping () -> Void) {
+	init(
+		pushInterval: TimeInterval = 0.1,
+		handler: @escaping () -> Void,
+		timerFactory: TelemetryTimerFactory = DefaultTelemetryTimerFactory()
+	) {
 		self.pushInterval = pushInterval
 		self.handler = handler
+		self.timerFactory = timerFactory
 	}
 
 	@discardableResult
@@ -101,11 +148,11 @@ final class TelemetryController: @unchecked Sendable {
 
 	private func startTimer() {
 		isTimerRunning = true
-		let timer = Timer.scheduledTimer(withTimeInterval: pushInterval, repeats: true) { [weak self] _ in
+		let t = timerFactory.makeTimer()
+		t.schedule(interval: pushInterval, repeats: true) { [weak self] in
 			self?.handler()
 		}
-		self.timer = timer
-		RunLoop.main.add(timer, forMode: .common)
+		timer = t
 	}
 
 	private func stopTimer() {
