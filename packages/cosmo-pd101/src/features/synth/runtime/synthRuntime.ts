@@ -21,6 +21,7 @@ export type SynthRuntime = {
 	audioContextState: "suspended" | "running" | "closed" | null;
 	resumeAudio: () => void;
 	effectivePitchHz: number;
+	scopePerformanceMode?: "standard" | "constrained";
 	analyserNodeRef: RefObject<AnalyserNode | null>;
 	audioCtxRef: RefObject<AudioContext | null>;
 	subscribeScopeFrames?: SynthScopeFrameSubscription;

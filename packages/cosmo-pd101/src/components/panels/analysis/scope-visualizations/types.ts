@@ -71,4 +71,5 @@ export type ScopeRendererParams = {
 	intensityMultiplier?: number;
 	waterfallPreview?: WaterfallPreviewData | null;
 	waterfallActiveLine?: 1 | 2;
+	constrainedPerformance?: boolean;
 };

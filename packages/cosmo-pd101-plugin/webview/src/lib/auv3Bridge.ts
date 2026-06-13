@@ -1,6 +1,10 @@
 import type { ScopeDataResponse, SynthParams } from "@cosmo/cosmo-pd101";
 import type { IpcRpcResponse } from "./ipcTypes";
 import { createTypedInvoke } from "./ipcTypes";
+import {
+	getAuv3ScopePollIntervalMs,
+	recordAuv3ScopeRpc,
+} from "./scopePerformance";
 
 /** AUv3-specific Window methods (webkit bridge, host platform, subscriptions). */
 declare global {
@@ -18,7 +22,6 @@ declare global {
 	}
 }
 
-const SCOPE_POLL_INTERVAL_MS = 50;
 const IPC_TIMEOUT_MS = 250;
 
 let installed = false;
@@ -300,6 +303,7 @@ function installScopeProperty(onActiveChange: (active: boolean) => void) {
 }
 
 function installScopePolling() {
+	const pollIntervalMs = getAuv3ScopePollIntervalMs(window.__czHostPlatform);
 	let rafId = 0;
 	let lastScheduled = 0;
 	let pollInFlight = false;
@@ -325,7 +329,7 @@ function installScopePolling() {
 		if (destroyed || !currentScopeHandler) {
 			return;
 		}
-		if (now - lastScheduled < SCOPE_POLL_INTERVAL_MS || pollInFlight) {
+		if (now - lastScheduled < pollIntervalMs || pollInFlight) {
 			scheduleNextFrame();
 			return;
 		}
@@ -335,13 +339,12 @@ function installScopePolling() {
 		try {
 			await invokeAuv3("getScopeData", undefined, IPC_TIMEOUT_MS)
 				.then((result) => {
-					const raw = result as ScopeDataResponse;
+					const raw = result as Omit<ScopeDataResponse, "samples"> & {
+						samples: number[];
+					};
 					if (raw?.samples.length > 0 && currentScopeHandler) {
-						currentScopeHandler(
-							raw.samples.filter((sample): sample is number => sample !== null),
-							raw.sampleRate ?? 0,
-							raw.hz ?? 0,
-						);
+						recordAuv3ScopeRpc(raw.samples.length);
+						currentScopeHandler(raw.samples, raw.sampleRate ?? 0, raw.hz ?? 0);
 					}
 				})
 				.catch(() => {

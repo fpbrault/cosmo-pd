@@ -234,6 +234,11 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 	public func scopeData() -> (samples: [Float], sampleRate: Float, hz: Float) {
 		let required = cosmo_pd101_ffi_copy_scope_f32(engine, nil, 0, nil, nil)
 		guard required > 0 else { return ([], Float(outputBus.format.sampleRate), 0) }
+		#if os(iOS)
+		let maxScopeSamples = 512
+		#else
+		let maxScopeSamples = 1024
+		#endif
 		var samples = [Float](repeating: 0, count: required)
 		var sampleRate: Float = 0
 		var hz: Float = 0
@@ -243,11 +248,12 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 		if copied < samples.count {
 			samples.removeSubrange(copied..<samples.count)
 		}
-		if samples.count > 1024 {
-			samples = Array(samples.suffix(1024))
+		if samples.count > maxScopeSamples {
+			samples = Array(samples.suffix(maxScopeSamples))
 		}
-		samples = samples.map { sample in
-			sample.isFinite ? min(1, max(-1, sample)) : 0
+		for index in samples.indices {
+			let sample = samples[index]
+			samples[index] = sample.isFinite ? min(1, max(-1, sample)) : 0
 		}
 		return (samples, sampleRate, hz)
 	}

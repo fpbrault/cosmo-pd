@@ -62,8 +62,9 @@ export function downsampleBins(
 export function computeDftBins(
 	samples: Uint8Array | Float32Array,
 	binCount: number,
+	maxFftSize = 256,
 ): Uint8Array {
-	const fftSize = Math.min(256, samples.length);
+	const fftSize = Math.min(maxFftSize, samples.length);
 	if (fftSize <= 0) return new Uint8Array(binCount);
 	const windowed = new Float32Array(fftSize);
 	const start = Math.max(0, samples.length - fftSize);

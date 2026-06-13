@@ -5,6 +5,10 @@ import {
 	useSynthUiStore,
 } from "@cosmo/cosmo-pd101";
 import { useCallback, useMemo, useRef, useState } from "react";
+import {
+	hasMeaningfulScopeHzChange,
+	normalizeScopeHz,
+} from "../lib/scopePerformance";
 
 type UsePluginSynthRuntimeParams = {
 	eventSink: (type: string, payload: Record<string, unknown>) => void;
@@ -16,6 +20,7 @@ export function usePluginSynthRuntime({
 	const velocityCurve = useSynthStore((s) => s.velocityCurve);
 	const keyboardRange = useSynthUiStore((s) => s.keyboardRange);
 	const [scopeActiveHz, setScopeActiveHz] = useState(220);
+	const scopeActiveHzRef = useRef(220);
 	const analyserNodeRef = useRef<AnalyserNode | null>(null);
 	const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -30,14 +35,18 @@ export function usePluginSynthRuntime({
 		NonNullable<SynthRuntime["subscribeScopeFrames"]>
 	>((onFrame) => {
 		window.__czOnScope = (samples, sampleRate, hz) => {
-			setScopeActiveHz(Number.isFinite(hz) && hz > 0 ? hz : 220);
+			const nextHz = normalizeScopeHz(hz);
+			if (hasMeaningfulScopeHzChange(scopeActiveHzRef.current, nextHz)) {
+				scopeActiveHzRef.current = nextHz;
+				setScopeActiveHz(nextHz);
+			}
 			onFrame({
 				samples:
 					samples instanceof Float32Array
 						? samples
 						: Float32Array.from(samples),
 				sampleRate,
-				hz,
+				hz: nextHz,
 			});
 		};
 		return () => {
@@ -59,6 +68,8 @@ export function usePluginSynthRuntime({
 			audioContextState: "running",
 			resumeAudio: () => {},
 			effectivePitchHz: scopeActiveHz,
+			scopePerformanceMode:
+				window.__czHostPlatform === "ios" ? "constrained" : "standard",
 			analyserNodeRef,
 			audioCtxRef,
 			subscribeScopeFrames,

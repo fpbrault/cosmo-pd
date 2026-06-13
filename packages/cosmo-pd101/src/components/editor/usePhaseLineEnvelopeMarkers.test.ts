@@ -1,5 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { RuntimeVoiceDebugState } from "@/features/synth/hooks/useAudioEngine";
 import type { PhaseLineEnvelopeEntry } from "./phaseLineTypes";
 import { usePhaseLineEnvelopeMarkers } from "./usePhaseLineEnvelopeMarkers";
 
@@ -29,13 +30,11 @@ const activeEnv: PhaseLineEnvelopeEntry = {
 
 describe("usePhaseLineEnvelopeMarkers", () => {
 	afterEach(() => {
-		vi.useRealTimers();
 		vi.clearAllMocks();
 	});
 
-	it("subscribes to live voice telemetry while the envelope panel is visible", () => {
-		vi.useFakeTimers();
-		const { rerender, unmount } = renderHook(
+	it("updates from live voice telemetry while the envelope panel is visible", () => {
+		const { result, rerender, unmount } = renderHook(
 			({ section }: { section: "algos" | "envelopes" }) =>
 				usePhaseLineEnvelopeMarkers({
 					lineIndex: 1,
@@ -47,13 +46,46 @@ describe("usePhaseLineEnvelopeMarkers", () => {
 		);
 
 		expect(registerLiveVoiceStatesConsumer).toHaveBeenCalledOnce();
+		expect(getLiveVoiceStates).toHaveBeenCalledOnce();
+
+		const voiceState = {
+			index: 3,
+			active: true,
+			isReleasing: false,
+			line1: {
+				dco: { step: 0, value: 0, releasing: false },
+				dcw: { step: 0, value: 0, releasing: false },
+				dca: { step: 1, value: 0.5, releasing: false },
+			},
+			line2: {
+				dco: { step: 0, value: 0, releasing: false },
+				dcw: { step: 0, value: 0, releasing: false },
+				dca: { step: 0, value: 0, releasing: false },
+			},
+		} as RuntimeVoiceDebugState;
 		act(() => {
-			vi.advanceTimersByTime(16);
+			window.dispatchEvent(
+				new CustomEvent("cz-runtime-voice-states", {
+					detail: [voiceState],
+				}),
+			);
 		});
-		expect(getLiveVoiceStates).toHaveBeenCalled();
+		expect(result.current).toEqual([
+			expect.objectContaining({ id: 3, step: 1, releasing: false }),
+		]);
 
 		rerender({ section: "algos" });
 		expect(unregister).toHaveBeenCalledOnce();
+		expect(result.current).toEqual([]);
+
+		act(() => {
+			window.dispatchEvent(
+				new CustomEvent("cz-runtime-voice-states", {
+					detail: [voiceState],
+				}),
+			);
+		});
+		expect(result.current).toEqual([]);
 		unmount();
 	});
 });

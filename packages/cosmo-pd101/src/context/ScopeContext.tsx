@@ -15,6 +15,7 @@ interface ScopeContextType {
 	analyserNodeRef: RefObject<AnalyserNode | null>;
 	audioCtxRef: RefObject<AudioContext | null>;
 	effectivePitchHz: number;
+	scopePerformanceMode?: "standard" | "constrained";
 	subscribeScopeFrames?: (onFrame: ScopeFrameCallback) => () => void;
 }
 
@@ -25,12 +26,14 @@ export const ScopeProvider = ({
 	analyserNodeRef,
 	audioCtxRef,
 	effectivePitchHz,
+	scopePerformanceMode,
 	subscribeScopeFrames,
 }: {
 	children: ReactNode;
 	analyserNodeRef: RefObject<AnalyserNode | null>;
 	audioCtxRef: RefObject<AudioContext | null>;
 	effectivePitchHz: number;
+	scopePerformanceMode?: "standard" | "constrained";
 	subscribeScopeFrames?: (onFrame: ScopeFrameCallback) => () => void;
 }) => {
 	return (
@@ -39,6 +42,7 @@ export const ScopeProvider = ({
 				analyserNodeRef,
 				audioCtxRef,
 				effectivePitchHz,
+				scopePerformanceMode,
 				subscribeScopeFrames,
 			}}
 		>

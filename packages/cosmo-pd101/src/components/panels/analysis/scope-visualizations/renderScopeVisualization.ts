@@ -41,13 +41,18 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 		intensityMultiplier = 1,
 		waterfallPreview,
 		waterfallActiveLine = 1,
+		constrainedPerformance = false,
 	} = params as ScopeRendererParams & { mode: ScopeVisualizationMode };
 
 	if (mode === "spectrogram") {
 		const bins =
 			frequencyBins && frequencyBins.length > 0
 				? frequencyBins
-				: computeDftBins(samples, SPECTROGRAM_BINS);
+				: computeDftBins(
+						samples,
+						SPECTROGRAM_BINS,
+						constrainedPerformance ? 128 : 256,
+					);
 		drawSpectrogramFrame(canvas, bins, spectrogramStateRef, palette);
 		return;
 	}

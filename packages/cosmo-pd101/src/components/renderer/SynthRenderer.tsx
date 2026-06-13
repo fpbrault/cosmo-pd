@@ -125,6 +125,7 @@ const SynthRenderer = memo(function SynthRenderer({
 						analyserNodeRef={runtime.analyserNodeRef}
 						audioCtxRef={runtime.audioCtxRef}
 						effectivePitchHz={runtime.effectivePitchHz}
+						scopePerformanceMode={runtime.scopePerformanceMode}
 						subscribeScopeFrames={runtime.subscribeScopeFrames}
 					>
 						<div

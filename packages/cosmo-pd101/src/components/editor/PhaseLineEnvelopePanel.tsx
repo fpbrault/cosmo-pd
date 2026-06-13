@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import type { LineIndex } from "@/components/controls/algo/algoControlTypes";
 import Card from "@/components/primitives/Card";
 import type { EnvTab } from "@/features/synth/synthUiStore";
@@ -21,6 +22,25 @@ export function PhaseLineEnvelopePanel({
 	lineIndex,
 	lineColor,
 }: PhaseLineEnvelopePanelProps) {
+	const renderPerformanceRef = useRef({ count: 0, startedAt: 0 });
+	useEffect(() => {
+		if (!import.meta.env.DEV) {
+			return;
+		}
+		const now = performance.now();
+		if (renderPerformanceRef.current.startedAt === 0) {
+			renderPerformanceRef.current.startedAt = now;
+		}
+		renderPerformanceRef.current.count++;
+		const elapsedMs = now - renderPerformanceRef.current.startedAt;
+		if (elapsedMs >= 5000) {
+			console.debug("[scope-perf] PhaseLineEnvelopePanel renders", {
+				rendersPerSecond:
+					(renderPerformanceRef.current.count * 1000) / elapsedMs,
+			});
+			renderPerformanceRef.current = { count: 0, startedAt: now };
+		}
+	});
 	const activeEnvTab = useSynthUiStore((s) => s.activeEnvTab);
 	const setActiveEnvTab = useSynthUiStore((s) => s.setActiveEnvTab);
 	const activeEnv = envelopes.envs[activeEnvTab];
