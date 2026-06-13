@@ -1,4 +1,5 @@
 import CoreAudioKit
+import CosmoPd101AUv3Support
 import Foundation
 import os
 import WebKit
