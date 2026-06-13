@@ -259,17 +259,30 @@ export default function PluginPage({
 	const pluginVoiceLimit = useGlobalSynthSettings((s) => s.voiceLimit);
 	const setPluginVoiceLimit = useGlobalSynthSettings((s) => s.setVoiceLimit);
 
+	const [voiceLimitHydrated, setVoiceLimitHydrated] = useState(false);
+
 	useEffect(() => {
-		window.__czGetVoiceLimit?.().then((limit: unknown) => {
-			if (typeof limit === "number") {
-				setPluginVoiceLimit(limit);
-			}
-		});
+		let cancelled = false;
+		window
+			.__czGetVoiceLimit?.()
+			.then((limit) => {
+				if (cancelled) return;
+				if (typeof limit === "number") {
+					setPluginVoiceLimit(limit);
+				}
+			})
+			.finally(() => {
+				if (!cancelled) setVoiceLimitHydrated(true);
+			});
+		return () => {
+			cancelled = true;
+		};
 	}, [setPluginVoiceLimit]);
 
 	useEffect(() => {
+		if (!voiceLimitHydrated) return;
 		window.__czSetVoiceLimit?.(pluginVoiceLimit);
-	}, [pluginVoiceLimit]);
+	}, [voiceLimitHydrated, pluginVoiceLimit]);
 
 	const combinedScale = rendererFrame?.frameScale ?? 1;
 	const frameWidth =
