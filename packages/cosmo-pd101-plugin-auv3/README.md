@@ -5,6 +5,20 @@ AUv3 app/extension workspace for the Rust `cosmo-pd101-plugin` DSP FFI.
 The canonical AUv3 build targets are in the Xcode project at
 `CosmoPD101Host/CosmoPD101Host.xcodeproj`.
 
+## Swift Source Layout
+
+The canonical AUv3 extension source tree lives in:
+
+`CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension`
+
+Reusable Swift support code that can be unit-tested independently lives in:
+
+`Sources/CosmoPd101AUv3Support`
+
+The support module is imported by the AUv3 extension target via Swift Package
+Manager integration in the Xcode project. Do not duplicate support files between
+the Xcode source tree and the Swift package source tree.
+
 CLI commands stage shared assets and invoke Xcode so Bun and Xcode build the same app/extension outputs.
 
 ## Build Assets
