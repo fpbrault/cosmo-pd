@@ -22,6 +22,15 @@ export {
 	type PluginPresetSession,
 	usePluginBridgeSynthEngine,
 } from "./features/synth/engine/pluginBridgeSynthEngineAdapter";
+export type { GlobalSynthSettingsStore } from "./features/synth/globalSynthSettingsStore";
+export {
+	DEFAULT_VOICE_LIMIT,
+	MAX_VOICE_LIMIT,
+	MIN_VOICE_LIMIT,
+	useGlobalSynthSettings,
+	useVoiceLimit,
+	VOICE_LIMIT_STORAGE_KEY,
+} from "./features/synth/globalSynthSettingsStore";
 export { useAudioEngine } from "./features/synth/hooks/useAudioEngine";
 export { useMidiLearnBindings } from "./features/synth/hooks/useMidiLearnBindings";
 export { useNoteHandling } from "./features/synth/hooks/useNoteHandling";
