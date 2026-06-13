@@ -138,6 +138,12 @@ pub enum PluginIpcRequest {
     RemoveMidiBinding(MidiLearnBinding),
     #[serde(rename = "clearMidiLearnBindings")]
     ClearMidiLearnBindings,
+
+    // ── Settings ──
+    #[serde(rename = "getVoiceLimit")]
+    GetVoiceLimit,
+    #[serde(rename = "setVoiceLimit")]
+    SetVoiceLimit(u8),
 }
 
 /// Typed result for each IPC request. The transport serializes only `result`.
@@ -239,6 +245,10 @@ pub enum PluginIpcResponse {
     RemoveMidiBinding,
     #[serde(rename = "clearMidiLearnBindings")]
     ClearMidiLearnBindings,
+    #[serde(rename = "getVoiceLimit")]
+    GetVoiceLimit(u8),
+    #[serde(rename = "setVoiceLimit")]
+    SetVoiceLimit,
 }
 
 impl PluginIpcResponse {
@@ -592,6 +602,15 @@ impl PluginIpcRequest {
                 .map_err(|e| format!("invalid MidiLearnBinding: {e}"))?,
             ),
             "clearMidiLearnBindings" => Self::ClearMidiLearnBindings,
+
+            // ── Settings ──
+            "getVoiceLimit" => Self::GetVoiceLimit,
+            "setVoiceLimit" => Self::SetVoiceLimit(
+                args.first()
+                    .and_then(|v| v.as_u64())
+                    .and_then(|n| u8::try_from(n).ok())
+                    .ok_or_else(|| "setVoiceLimit expects a u8 (1-16)".to_string())?,
+            ),
 
             _ => return Err(format!("unknown method: {method}")),
         })

@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 use arc_swap::ArcSwap;
@@ -219,7 +219,6 @@ pub struct EditorSessionState {
     pub editor_state: SharedEditorState,
 }
 
-#[derive(Clone)]
 pub struct PluginSharedState {
     pub synth: SynthParamState,
     pub telemetry: RuntimeTelemetry,
@@ -227,6 +226,8 @@ pub struct PluginSharedState {
     pub editor: EditorSessionState,
     pub presets: PresetService,
     pub midi_learn: MidiLearnService,
+    /// Runtime voice limit (1-16). Read/written by IPC, consumed by audio thread.
+    pub voice_limit: AtomicU8,
 }
 
 impl PluginSharedState {
@@ -235,6 +236,7 @@ impl PluginSharedState {
         default_rt_params: SynthParams,
         preset_library: Arc<Mutex<PresetLibrary>>,
         midi_learn_state: MidiLearnState,
+        voice_limit: u8,
     ) -> Self {
         let preset_session = Arc::new(Mutex::new(PresetSession::default()));
         let midi_learn_state = Arc::new(Mutex::new(midi_learn_state));
@@ -259,6 +261,7 @@ impl PluginSharedState {
             },
             presets: PresetService::new(preset_library.clone(), preset_session),
             midi_learn: MidiLearnService::new(midi_learn_state),
+            voice_limit: AtomicU8::new(voice_limit),
         }
     }
 }
@@ -271,8 +274,13 @@ mod tests {
     fn shared_synth_state_publishes_params_and_versions() {
         let params = SynthParams::default();
         let library = Arc::new(Mutex::new(PresetLibrary::from_embedded_factory("[]")));
-        let state =
-            PluginSharedState::new(params.clone(), params, library, MidiLearnState::default());
+        let state = PluginSharedState::new(
+            params.clone(),
+            params,
+            library,
+            MidiLearnState::default(),
+            crate::global_settings::DEFAULT_VOICE_LIMIT,
+        );
 
         let updated = SynthParams {
             volume: 0.42,

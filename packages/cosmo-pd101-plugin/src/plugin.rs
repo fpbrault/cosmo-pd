@@ -90,6 +90,7 @@ fn handle_ipc_invoke(
             preset_session.clone(),
         ),
         midi_learn: crate::midi_learn::MidiLearnService::new(midi_learn_state.clone()),
+        voice_limit: std::sync::atomic::AtomicU8::new(crate::global_settings::DEFAULT_VOICE_LIMIT),
     });
     crate::ipc::IpcContext::new(shared_state, params.clone())
         .invoke_envelope(&cosmo_pd101_bridge_types::PluginIpcEnvelope { id: 0, request })?
@@ -124,27 +125,30 @@ impl CzPlugin {
                 PresetLibrary::degraded(factory_json, e)
             }),
         ));
-        let midi_learn_bindings = crate::global_settings::load_or_init_global_settings()
-            .map(|settings| settings.midi_learn_bindings)
+        let global_settings = crate::global_settings::load_or_init_global_settings()
             .unwrap_or_else(|error| {
                 append_log_warn(&format!(
-                    "failed to load global midi settings, using defaults: {}",
+                    "failed to load global settings, using defaults: {}",
                     error
                 ));
-                crate::session_state::default_midi_bindings()
+                crate::global_settings::PluginGlobalSettings::default()
             });
+        let voice_limit = global_settings.clamped_voice_limit() as usize;
+        let mut audio = AudioRuntime::new(default_rt_params.clone());
+        audio.voice_limit = voice_limit;
         let shared_state = Arc::new(PluginSharedState::new(
             default_params.clone(),
             default_rt_params.clone(),
             preset_library.clone(),
             crate::session_state::MidiLearnState {
-                bindings: midi_learn_bindings,
+                bindings: global_settings.midi_learn_bindings,
                 ..Default::default()
             },
+            voice_limit as u8,
         ));
         Self {
             params,
-            audio: AudioRuntime::new(default_rt_params),
+            audio,
             shared_state: shared_state.clone(),
             startup_preset_resolved: false,
         }
@@ -270,6 +274,7 @@ impl PluginLogic for CzPlugin {
             .synth
             .synth_params_version
             .load(Ordering::Acquire);
+        processor.set_voice_limit(self.audio.voice_limit);
         self.audio.processor = Some(processor);
         self.audio.mono_output.resize(max_block_size, 0.0);
         self.audio.daw_params_dirty = false;
