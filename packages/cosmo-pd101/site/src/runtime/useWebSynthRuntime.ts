@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useGlobalSynthSettings } from "../../../src/features/synth/globalSynthSettingsStore";
 import { useAudioEngine } from "../../../src/features/synth/hooks/useAudioEngine";
 import { useMidiLearnBindings } from "../../../src/features/synth/hooks/useMidiLearnBindings";
 import { useNoteHandling } from "../../../src/features/synth/hooks/useNoteHandling";
@@ -17,6 +18,7 @@ export function useWebSynthRuntime(): SynthRuntime {
 	const gatherState = useSynthStore((s) => s.gatherState);
 	const velocityCurve = useSynthStore((s) => s.velocityCurve);
 	const keyboardRange = useSynthUiStore((s) => s.keyboardRange);
+	const voiceLimit = useGlobalSynthSettings((s) => s.voiceLimit);
 
 	const {
 		audioCtxRef,
@@ -49,6 +51,7 @@ export function useWebSynthRuntime(): SynthRuntime {
 		paramsRef,
 		effectivePitchHz,
 		gatherState,
+		voiceLimit,
 	});
 
 	useMidiLearnBindings({ applyBindings: true });

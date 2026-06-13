@@ -2,6 +2,11 @@ import { memo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
+import {
+	MAX_VOICE_LIMIT,
+	MIN_VOICE_LIMIT,
+	useGlobalSynthSettings,
+} from "@/features/synth/globalSynthSettingsStore";
 import { useHostTransport } from "@/features/synth/hooks/useHostTransport";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import { PORTAMENTO_MODE_TOOLTIPS } from "@/lib/synth/paramMeta";
@@ -110,6 +115,8 @@ export default function GlobalVoicePanel() {
 		useSynthParam("portamentoTime");
 	const tempoDisplayBpm =
 		typeof tempoBpm === "number" && Number.isFinite(tempoBpm) ? tempoBpm : 120;
+	const voiceLimit = useGlobalSynthSettings((s) => s.voiceLimit);
+	const setVoiceLimit = useGlobalSynthSettings((s) => s.setVoiceLimit);
 	return (
 		<div className="grid grid-cols-2 gap-4">
 			<GlobalSection title={t("globalVoice.transportSection")}>
@@ -211,6 +218,42 @@ export default function GlobalVoicePanel() {
 						/>
 					</div>
 				</div>
+			</GlobalSection>
+			<GlobalSection title={t("globalVoice.voiceSection")}>
+				<label className="input bg-neutral">
+					<span className="label pr-2 font-mono text-4xs text-cz-cream/55 uppercase tracking-[0.24em]">
+						{t("globalVoice.voiceLimit")}
+					</span>
+					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							className="btn btn-xs btn-square btn-ghost"
+							disabled={voiceLimit <= MIN_VOICE_LIMIT}
+							onClick={() => setVoiceLimit(voiceLimit - 1)}
+							aria-label="Decrease voice limit"
+						>
+							−
+						</button>
+						<span
+							className="min-w-[2ch] text-center font-mono text-cz-cream/80 text-sm tabular-nums"
+							role="status"
+							aria-label={t("globalVoice.voiceLimitAria", {
+								value: voiceLimit,
+							})}
+						>
+							{voiceLimit}
+						</span>
+						<button
+							type="button"
+							className="btn btn-xs btn-square btn-ghost"
+							disabled={voiceLimit >= MAX_VOICE_LIMIT}
+							onClick={() => setVoiceLimit(voiceLimit + 1)}
+							aria-label="Increase voice limit"
+						>
+							+
+						</button>
+					</div>
+				</label>
 			</GlobalSection>
 		</div>
 	);
