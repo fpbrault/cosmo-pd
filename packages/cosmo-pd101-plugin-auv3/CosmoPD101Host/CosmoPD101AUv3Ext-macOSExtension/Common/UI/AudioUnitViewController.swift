@@ -45,6 +45,11 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	nonisolated(unsafe) var audioUnit: AUAudioUnit?
 	private var webView: WKWebView?
 	private var webContentTerminationCount = 0
+	private var hostInactiveAt: Date?
+	private var webAppReady = false
+	private var pendingStatePushReason: String?
+	private var pushStateCount = 0
+	private var telemetryTickCount = 0
 
 	#if os(iOS)
 	public override var prefersStatusBarHidden: Bool { true }
@@ -160,6 +165,16 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		let id = payload["id"] as? Int ?? 0
 		let method = payload["method"] as? String ?? ""
 		let methodPayload = payload["payload"]
+
+		os_log(
+			"ipc from JS method=%{public}@ id=%{public}d instance=%{public}@ webReady=%{public}d",
+			log: czVCLog,
+			type: .debug,
+			method,
+			id,
+			instanceID,
+			webAppReady
+		)
 
 		guard let audioUnit = audioUnit as? CosmoPD101AUv3Ext_macOSExtensionAudioUnit else {
 			// Audio unit not yet assigned — respond with an error so JS promises
@@ -299,6 +314,9 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			let logMessage = logPayload?["message"] as? String ?? ""
 			os_log("%{public}@: %{public}@", log: czWebViewLog, type: .default, logLevel, logMessage)
 			sendResponse(id: id, result: NSNull())
+		case "webReady":
+			handleWebReady(audioUnit: audioUnit)
+			sendResponse(id: id, result: NSNull())
 		case "noteOn", "noteOff", "sustain", "pitchBend", "modWheel", "aftertouch", "polyAftertouch", "macroValue", "panic":
 			audioUnit.handleEngineEvent(type: method, payload: methodPayload as? [String: Any] ?? [:])
 			sendResponse(id: id, result: NSNull())
@@ -308,7 +326,12 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	}
 
 	private func installWebView() {
-		os_log("installWebView", log: czVCLog, type: .default)
+		if webView != nil {
+			os_log("installWebView skipped; webView already exists instance=%{public}@", log: czVCLog, type: .fault, instanceID)
+			return
+		}
+
+		os_log("installWebView instance=%{public}@ subviews=%{public}d", log: czVCLog, type: .default, instanceID, view.subviews.count)
 
 		// Resolve the bundle URL up-front so we can register the cosmo-ext scheme
 		// handler on the WKWebViewConfiguration before the WKWebView is created
@@ -328,6 +351,13 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		#endif
 		configuration.userContentController.addUserScript(
 			WKUserScript(source: hostPlatformScript, injectionTime: .atDocumentStart, forMainFrameOnly: true)
+		)
+		configuration.userContentController.addUserScript(
+			WKUserScript(
+				source: "window.__czRuntimeMode='auv3-hosted';",
+				injectionTime: .atDocumentStart,
+				forMainFrameOnly: true
+			)
 		)
 		let diagnosticsScript = """
 		(function () {
@@ -473,9 +503,9 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		webView.autoresizingMask = [.width, .height]
 		#else
 		webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-		webView.isOpaque = false
-		webView.backgroundColor = .clear
-		webView.scrollView.backgroundColor = .clear
+		webView.isOpaque = true
+		webView.backgroundColor = .black
+		webView.scrollView.backgroundColor = .black
 		webView.scrollView.contentInsetAdjustmentBehavior = .never
 		webView.scrollView.automaticallyAdjustsScrollIndicatorInsets = false
 		#endif
@@ -513,35 +543,67 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	}
 
 	public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-		os_log("didFinish navigation", log: czVCLog, type: .default)
+		os_log("didFinish navigation instance=%{public}@", log: czVCLog, type: .default, instanceID)
 
-		if webContentTerminationCount > 0 {
-			guard let audioUnit = audioUnit as? CosmoPD101AUv3Ext_macOSExtensionAudioUnit else { return }
-			if let json = audioUnit.paramsJson() {
-				pushStateToWebView(json)
-			}
-		}
+		webAppReady = false
+		pendingStatePushReason = pendingStatePushReason ?? "didFinish"
+
+		os_log(
+			"waiting for webReady after didFinish instance=%{public}@ pendingReason=%{public}@",
+			log: czVCLog,
+			type: .default,
+			instanceID,
+			pendingStatePushReason ?? "nil"
+		)
 	}
 
 	public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-		os_log("didStartProvisionalNavigation", log: czVCLog, type: .default)
+		os_log("didStartProvisionalNavigation instance=%{public}@", log: czVCLog, type: .default, instanceID)
 	}
 
 	public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
 		webContentTerminationCount += 1
-		os_log("web content process terminated (count=%d)", log: czVCLog, type: .error, webContentTerminationCount)
+		webAppReady = false
+		pendingStatePushReason = "webContentProcessDidTerminate"
 
-		if webContentTerminationCount == 1 {
-			// Retry once in case the first content process launch was transiently killed.
-			webView.reload()
-			telemetryController.resetAllCaches()
-			return
-		}
+		telemetryController.hostWillResignActive()
+		telemetryController.resetAllCaches()
 
-		webView.loadHTMLString(
-			diagnosticHtml(title: "Web Content Process Terminated", message: "WebKit crashed while loading the bundled UI."),
-			baseURL: nil
+		os_log(
+			"web content process terminated count=%{public}d instance=%{public}@",
+			log: czVCLog,
+			type: .error,
+			webContentTerminationCount,
+			instanceID
 		)
+
+		DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self, weak webView] in
+			guard let self, let webView, webView === self.webView else { return }
+
+			if self.webContentTerminationCount == 1 {
+				os_log(
+					"reloading webView after content termination instance=%{public}@",
+					log: czVCLog,
+					type: .default,
+					self.instanceID
+				)
+				webView.reload()
+				return
+			}
+
+			os_log(
+				"showing diagnostic after repeated content termination instance=%{public}@ count=%{public}d",
+				log: czVCLog,
+				type: .error,
+				self.instanceID,
+				self.webContentTerminationCount
+			)
+
+			webView.loadHTMLString(
+				self.diagnosticHtml(title: "Web Content Process Terminated", message: "WebKit crashed while loading or resuming the bundled UI."),
+				baseURL: nil
+			)
+		}
 	}
 
 	private func diagnosticHtml(title: String, message: String) -> String {
@@ -568,6 +630,19 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	/// Pushes updated engine params and optional preset metadata to the WebView.
 	/// Called when native-side state changes (factory preset selection, state restore).
 	private func pushStateToWebView(_ paramsJson: String, selectedPresetName: String? = nil) {
+		pushStateCount += 1
+
+		os_log(
+			"pushStateToWebView #%{public}d instance=%{public}@ bytes=%{public}d preset=%{public}@ webReady=%{public}d",
+			log: czVCLog,
+			type: .default,
+			pushStateCount,
+			instanceID,
+			paramsJson.utf8.count,
+			selectedPresetName ?? "nil",
+			webAppReady
+		)
+
 		// Wrap in a JSON object so JSONSerialization handles all string escaping correctly.
 		let container: [String: String] = ["p": paramsJson]
 		guard let data = try? JSONSerialization.data(withJSONObject: container),
@@ -607,31 +682,118 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	}
 
 	private func handleTelemetryTimer() {
+		telemetryTickCount += 1
+
+		if telemetryTickCount % 50 == 0 {
+			os_log(
+				"telemetry tick #%{public}d instance=%{public}@ channels=%{public}@ webReady=%{public}d",
+				log: czVCLog,
+				type: .debug,
+				telemetryTickCount,
+				instanceID,
+				telemetryController.activeChannels.map(\.rawValue).joined(separator: ","),
+				webAppReady
+			)
+		}
+
 		guard let audioUnit = audioUnit as? CosmoPD101AUv3Ext_macOSExtensionAudioUnit else {
 			telemetryController.viewDidDisappear()
 			return
 		}
+
+		guard webAppReady else { return }
+
 		pushTelemetryUpdates(audioUnit: audioUnit)
 	}
 
 	@objc private func handleHostDidBecomeActive(_ notification: Notification) {
 		DispatchQueue.main.async { [weak self] in
 			guard let self else { return }
-			os_log("handleHostDidBecomeActive", log: czVCLog, type: .default)
-			guard let audioUnit = self.audioUnit as? CosmoPD101AUv3Ext_macOSExtensionAudioUnit else { return }
-			self.telemetryController.hostDidBecomeActive()
-			if let json = audioUnit.paramsJson() {
-				self.pushStateToWebView(json)
-			}
+
+			let inactiveSeconds = self.hostInactiveAt.map { Date().timeIntervalSince($0) } ?? -1
+
+			os_log(
+				"host did become active instance=%{public}@ inactiveSeconds=%{public}.2f webReady=%{public}d webContentTerminationCount=%{public}d",
+				log: czVCLog,
+				type: .default,
+				self.instanceID,
+				inactiveSeconds,
+				self.webAppReady,
+				self.webContentTerminationCount
+			)
+
+			self.requestStatePushWhenWebReady(reason: "hostDidBecomeActive")
 		}
 	}
 
 	@objc private func handleHostWillResignActive(_ notification: Notification) {
 		DispatchQueue.main.async { [weak self] in
 			guard let self else { return }
-			os_log("handleHostWillResignActive", log: czVCLog, type: .default)
+
+			self.hostInactiveAt = Date()
+			self.pendingStatePushReason = nil
+
+			os_log(
+				"host will resign active instance=%{public}@",
+				log: czVCLog,
+				type: .default,
+				self.instanceID
+			)
+
 			self.telemetryController.hostWillResignActive()
 		}
+	}
+
+	private func requestStatePushWhenWebReady(reason: String) {
+		pendingStatePushReason = reason
+
+		guard webAppReady else {
+			os_log(
+				"state push deferred reason=%{public}@ instance=%{public}@",
+				log: czVCLog,
+				type: .default,
+				reason,
+				instanceID
+			)
+			return
+		}
+
+		pendingStatePushReason = nil
+		pushCurrentStateToWebView(reason: reason)
+		telemetryController.hostDidBecomeActive()
+	}
+
+	private func handleWebReady(audioUnit: CosmoPD101AUv3Ext_macOSExtensionAudioUnit) {
+		webAppReady = true
+
+		let reason = pendingStatePushReason ?? "webReady"
+		pendingStatePushReason = nil
+
+		os_log(
+			"webReady received instance=%{public}@ pendingReason=%{public}@",
+			log: czVCLog,
+			type: .default,
+			instanceID,
+			reason
+		)
+
+		pushCurrentStateToWebView(reason: reason)
+		telemetryController.hostDidBecomeActive()
+	}
+
+	private func pushCurrentStateToWebView(reason: String) {
+		guard let audioUnit = audioUnit as? CosmoPD101AUv3Ext_macOSExtensionAudioUnit else { return }
+		guard let json = audioUnit.paramsJson() else { return }
+
+		os_log(
+			"pushCurrentStateToWebView reason=%{public}@ instance=%{public}@",
+			log: czVCLog,
+			type: .default,
+			reason,
+			instanceID
+		)
+
+		pushStateToWebView(json)
 	}
 
 	private func pushTelemetryUpdates(

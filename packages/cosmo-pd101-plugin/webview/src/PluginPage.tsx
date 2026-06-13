@@ -3,6 +3,7 @@ import {
 	type PresetManagerController,
 	PresetManagerProvider,
 	SYNTH_RENDERER_DESIGN_HEIGHT,
+	SYNTH_RENDERER_MAX_ASPECT_RATIO,
 	SYNTH_RENDERER_MIN_ASPECT_RATIO,
 	SynthRenderer,
 	useGlobalSynthSettings,
@@ -37,20 +38,20 @@ export default function PluginPage({
 		/iPad|iPhone|iPod/.test(window.navigator.userAgent) ||
 		(window.navigator.platform === "MacIntel" &&
 			window.navigator.maxTouchPoints > 1);
+	const isAuv3Hosted = window.__czRuntimeMode === "auv3-hosted";
 	const applyPreset = useSynthStore((s) => s.applyPreset);
 	const gatherPresetState = useSynthStore((s) => s.gatherPresetState);
 
 	const frameRef = useRef<HTMLDivElement | null>(null);
-	const [rendererFrame, setRendererFrame] = useState(() => {
-		const frameWidth =
-			SYNTH_RENDERER_DESIGN_HEIGHT * SYNTH_RENDERER_MIN_ASPECT_RATIO;
-		return {
-			frameWidth,
-			frameHeight: SYNTH_RENDERER_DESIGN_HEIGHT,
-			frameScale: 1,
-			effectiveAspectRatio: SYNTH_RENDERER_MIN_ASPECT_RATIO,
-		};
-	});
+	const [rendererFrame, setRendererFrame] = useState(() =>
+		computeRendererFrameLayout({
+			availableWidth:
+				SYNTH_RENDERER_DESIGN_HEIGHT * SYNTH_RENDERER_MIN_ASPECT_RATIO,
+			availableHeight: SYNTH_RENDERER_DESIGN_HEIGHT,
+			targetAspectRatio: SYNTH_RENDERER_MIN_ASPECT_RATIO,
+		}),
+	);
+	const [contentWidth, setContentWidth] = useState(window.innerWidth);
 	const sendNativeEngineEvent = useCallback(
 		(type: string, payload: Record<string, unknown>) => {
 			const pm = window.ipc?.postMessage?.bind(window.ipc);
@@ -150,8 +151,13 @@ export default function PluginPage({
 				return;
 			}
 
-			const targetAspectRatio =
-				isIosHost || isLikelyIosDevice
+			if (isAuv3Hosted) {
+				setContentWidth(bounds.width);
+			}
+
+			const targetAspectRatio = isAuv3Hosted
+				? SYNTH_RENDERER_MAX_ASPECT_RATIO
+				: isIosHost || isLikelyIosDevice
 					? undefined
 					: SYNTH_RENDERER_MIN_ASPECT_RATIO;
 			const nextLayout = computeRendererFrameLayout({
@@ -186,7 +192,7 @@ export default function PluginPage({
 			resizeObserver.disconnect();
 			window.removeEventListener("resize", updateFrameSize);
 		};
-	}, [isIosHost, isLikelyIosDevice]);
+	}, [isAuv3Hosted, isIosHost, isLikelyIosDevice]);
 
 	useEffect(() => {
 		if (!bridgeReady) {
@@ -292,15 +298,48 @@ export default function PluginPage({
 		SYNTH_RENDERER_DESIGN_HEIGHT * SYNTH_RENDERER_MIN_ASPECT_RATIO;
 	const frameHeight =
 		rendererFrame?.frameHeight ?? SYNTH_RENDERER_DESIGN_HEIGHT;
-	const scaledWidth = frameWidth * combinedScale;
-	const scaledHeight = frameHeight * combinedScale;
+
+	const auv3Scale =
+		isAuv3Hosted && contentWidth > 0 && frameWidth > 0
+			? Math.min(contentWidth / frameWidth, 1)
+			: undefined;
+	const displayScale = rendererFrame ? (auv3Scale ?? combinedScale) : 1;
+	const scaledWidth = frameWidth * displayScale;
+	const scaledHeight = frameHeight * displayScale;
 
 	const zoomStyle: CSSProperties = {
 		width: frameWidth,
 		height: frameHeight,
-		transform: `scale(${combinedScale})`,
+		transform: `scale(${displayScale})`,
 		transformOrigin: "top left",
 	};
+
+	if (isAuv3Hosted) {
+		return (
+			<div ref={frameRef} className="h-full w-full overflow-hidden bg-cz-panel">
+				<div className="overflow-hidden" style={zoomStyle}>
+					<PresetManagerProvider value={presetManager}>
+						<SynthRenderer
+							runtime={runtime}
+							appVersion={appVersion}
+							bottomBarExtra={utilityExtra}
+							disableAudioGate
+							miniKeyboard={{
+								activeNotes: runtime.activeNotes,
+								pitchBend: runtime.pitchBend,
+								modWheel: runtime.modWheel,
+								onNoteOn: runtime.sendNoteOn,
+								onNoteOff: runtime.sendNoteOff,
+								onPitchBend: runtime.sendPitchBend,
+								onModWheel: runtime.sendModWheel,
+								onPolyAftertouch: runtime.sendPolyAftertouch,
+							}}
+						/>
+					</PresetManagerProvider>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div

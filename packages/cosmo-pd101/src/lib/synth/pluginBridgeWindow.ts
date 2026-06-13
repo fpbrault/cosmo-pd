@@ -117,6 +117,7 @@ export type PluginBridgeWindowFacade = {
 
 declare global {
 	interface Window extends PluginBridgeWindowFacade {
+		__czRuntimeMode?: "auv3-hosted" | "plugin" | "standalone";
 		ipc?: { postMessage: (message: string) => void };
 		__czOnParams?: (json: string) => void;
 		__czOnScope?: (
