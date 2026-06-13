@@ -1,230 +1,8 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781367343957,
+  "lastUpdate": 1781370403992,
   "repoUrl": "https://github.com/fpbrault/cosmo-pd",
   "entries": {
     "cosmo-synth-engine": [
-      {
-        "commit": {
-          "author": {
-            "email": "fpbrault@gmail.com",
-            "name": "Felix Perron-Brault",
-            "username": "fpbrault"
-          },
-          "committer": {
-            "email": "fpbrault@gmail.com",
-            "name": "Felix Perron-Brault",
-            "username": "fpbrault"
-          },
-          "distinct": true,
-          "id": "f9e4357b434d58f462acdaabb24029802617ee94",
-          "message": "fix envelope issues",
-          "timestamp": "2026-06-11T17:01:28-04:00",
-          "tree_id": "2b89c84c035cacfa31e202fd53063d90d8f3ee5a",
-          "url": "https://github.com/fpbrault/cosmo-pd/commit/f9e4357b434d58f462acdaabb24029802617ee94"
-        },
-        "date": 1781212243223,
-        "tool": "cargo",
-        "benches": [
-          {
-            "name": "default_3_voices",
-            "value": 4278448,
-            "range": "± 34002",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "default_6_voices",
-            "value": 6188599,
-            "range": "± 104821",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "default_8_voices",
-            "value": 7490392,
-            "range": "± 43042",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "fun_bass_like_3_voices",
-            "value": 3348744,
-            "range": "± 33231",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "fun_bass_like_6_voices",
-            "value": 3371071,
-            "range": "± 32554",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "fun_bass_like_8_voices",
-            "value": 3387512,
-            "range": "± 30411",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "chants_like_3_voices",
-            "value": 10626766,
-            "range": "± 48333",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "chants_like_6_voices",
-            "value": 13932882,
-            "range": "± 59151",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "chants_like_8_voices",
-            "value": 16126589,
-            "range": "± 256048",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "chops_like_3_voices",
-            "value": 12684329,
-            "range": "± 74173",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "chops_like_6_voices",
-            "value": 17581213,
-            "range": "± 140484",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "chops_like_8_voices",
-            "value": 19953984,
-            "range": "± 102271",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "mod_heavy_3_voices",
-            "value": 8392305,
-            "range": "± 51182",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "mod_heavy_6_voices",
-            "value": 10934315,
-            "range": "± 103348",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "mod_heavy_8_voices",
-            "value": 12382877,
-            "range": "± 56547",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "fx_heavy_3_voices",
-            "value": 5408026,
-            "range": "± 22632",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "fx_heavy_6_voices",
-            "value": 7285702,
-            "range": "± 36467",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "fx_heavy_8_voices",
-            "value": 8551337,
-            "range": "± 54901",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "worst_poly_3_voices",
-            "value": 10870368,
-            "range": "± 83781",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "worst_poly_6_voices",
-            "value": 14454860,
-            "range": "± 188184",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "worst_poly_8_voices",
-            "value": 15782509,
-            "range": "± 55750",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_sine_lfo_heavy_3_voices",
-            "value": 8430295,
-            "range": "± 37950",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_sine_lfo_heavy_6_voices",
-            "value": 11437228,
-            "range": "± 38927",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_sine_lfo_heavy_8_voices",
-            "value": 13407823,
-            "range": "± 30464",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_param_interp_light_3_voices",
-            "value": 5277536,
-            "range": "± 19452",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_param_interp_light_6_voices",
-            "value": 7915534,
-            "range": "± 40912",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_param_interp_light_8_voices",
-            "value": 9696010,
-            "range": "± 28934",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_render_vectorization_3_voices",
-            "value": 5279715,
-            "range": "± 23118",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_render_vectorization_6_voices",
-            "value": 8046820,
-            "range": "± 40525",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_render_vectorization_8_voices",
-            "value": 9934987,
-            "range": "± 86336",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_all_combined_3_voices",
-            "value": 9166873,
-            "range": "± 76319",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_all_combined_6_voices",
-            "value": 12189284,
-            "range": "± 43324",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_all_combined_8_voices",
-            "value": 13983243,
-            "range": "± 61383",
-            "unit": "ns/iter"
-          }
-        ]
-      },
       {
         "commit": {
           "author": {
@@ -4439,6 +4217,228 @@ window.BENCHMARK_DATA = {
             "name": "opt_all_combined_8_voices",
             "value": 13367671,
             "range": "± 296244",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "fpbrault@gmail.com",
+            "name": "Felix Perron-Brault",
+            "username": "fpbrault"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "09a92f0fe31f81ea6bec2c3c5d33ed72593aa308",
+          "message": "fix: prevent flashing auv3 restore (#305)\n\n* fix flashing\n\n* fix from review\n\n* refactor(auv3): consolidate telemetry sources into CosmoPd101AUv3Support\n\n- Rename Sources/CosmoPd101AUv3 -> CosmoPd101AUv3Support (public)\n- Rename tests/CosmoPd101AUv3Tests -> CosmoPd101AUv3SupportTests\n- Replace TelemetryController symlink with canonical public impl\n- Simplify: no timer factory, Timer(timeInterval:) not scheduledTimer\n- Add idempotent guards for startTimer/stopTimer\n- Add WeakScriptMessageHandler to break WKScriptMessageHandler retain cycle\n- Remove unused MidiParser + tests (dead code)\n- Delete duplicate Common/UI TelemetryController + WeakScriptMessageHandler\n- Update AudioUnitViewController import\n- Update README with Swift Source Layout docs\n- Add 5 repeated-lifecycle idempotency tests (27 total, all pass)\n\n* linting",
+          "timestamp": "2026-06-13T16:57:28Z",
+          "tree_id": "f119a57f66a810ae73eab4c27d92c240702fdf9d",
+          "url": "https://github.com/fpbrault/cosmo-pd/commit/09a92f0fe31f81ea6bec2c3c5d33ed72593aa308"
+        },
+        "date": 1781370401574,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "default_3_voices",
+            "value": 4451402,
+            "range": "± 30683",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_6_voices",
+            "value": 6335966,
+            "range": "± 93370",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_8_voices",
+            "value": 7696932,
+            "range": "± 111483",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_3_voices",
+            "value": 3746041,
+            "range": "± 33794",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_6_voices",
+            "value": 3710265,
+            "range": "± 168923",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_8_voices",
+            "value": 3720113,
+            "range": "± 58449",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_3_voices",
+            "value": 10342436,
+            "range": "± 50633",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_6_voices",
+            "value": 12965751,
+            "range": "± 376165",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_8_voices",
+            "value": 14805174,
+            "range": "± 55538",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_3_voices",
+            "value": 12800141,
+            "range": "± 202843",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_6_voices",
+            "value": 17334496,
+            "range": "± 101158",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_8_voices",
+            "value": 19582813,
+            "range": "± 382392",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_3_voices",
+            "value": 8380149,
+            "range": "± 118803",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_6_voices",
+            "value": 10539085,
+            "range": "± 46789",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_8_voices",
+            "value": 11952813,
+            "range": "± 213112",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_3_voices",
+            "value": 5585891,
+            "range": "± 55940",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_6_voices",
+            "value": 7332932,
+            "range": "± 154109",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_8_voices",
+            "value": 8518186,
+            "range": "± 51621",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_3_voices",
+            "value": 10963481,
+            "range": "± 46998",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_6_voices",
+            "value": 14077946,
+            "range": "± 59509",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_8_voices",
+            "value": 15362058,
+            "range": "± 354759",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_3_voices",
+            "value": 8319962,
+            "range": "± 128025",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_6_voices",
+            "value": 10906550,
+            "range": "± 46180",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_8_voices",
+            "value": 12540553,
+            "range": "± 50300",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_3_voices",
+            "value": 5261468,
+            "range": "± 122244",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_6_voices",
+            "value": 7511620,
+            "range": "± 32633",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_8_voices",
+            "value": 9121928,
+            "range": "± 30460",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_3_voices",
+            "value": 5359878,
+            "range": "± 16847",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_6_voices",
+            "value": 7880024,
+            "range": "± 41161",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_8_voices",
+            "value": 9763226,
+            "range": "± 33094",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_3_voices",
+            "value": 8944079,
+            "range": "± 35961",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_6_voices",
+            "value": 11647532,
+            "range": "± 147641",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_8_voices",
+            "value": 13399800,
+            "range": "± 75134",
             "unit": "ns/iter"
           }
         ]
