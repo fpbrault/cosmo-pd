@@ -220,6 +220,14 @@ let wasm_bindgen = (function(exports) {
         setSustain(on) {
             wasm.czsynthprocessor_setSustain(this.__wbg_ptr, on);
         }
+        /**
+         * Set the global voice limit (1–16). Voices above this limit are
+         * still rendered while their release tails ring out.
+         * @param {number} limit
+         */
+        setVoiceLimit(limit) {
+            wasm.czsynthprocessor_setVoiceLimit(this.__wbg_ptr, limit);
+        }
     }
     if (Symbol.dispose) CzSynthProcessor.prototype[Symbol.dispose] = CzSynthProcessor.prototype.free;
     exports.CzSynthProcessor = CzSynthProcessor;

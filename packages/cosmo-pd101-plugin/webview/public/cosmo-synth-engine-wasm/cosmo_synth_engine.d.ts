@@ -98,6 +98,11 @@ declare namespace wasm_bindgen {
          * Set the sustain (damper) pedal state.
          */
         setSustain(on: boolean): void;
+        /**
+         * Set the global voice limit (1–16). Voices above this limit are
+         * still rendered while their release tails ring out.
+         */
+        setVoiceLimit(limit: number): void;
     }
 
     /**
@@ -129,6 +134,7 @@ declare interface InitOutput {
     readonly czsynthprocessor_setPitchBend: (a: number, b: number) => void;
     readonly czsynthprocessor_setPolyAftertouch: (a: number, b: number, c: number) => void;
     readonly czsynthprocessor_setSustain: (a: number, b: number) => void;
+    readonly czsynthprocessor_setVoiceLimit: (a: number, b: number) => void;
     readonly engineBuildProfile: (a: number) => void;
     readonly __wbindgen_export: (a: number, b: number) => number;
     readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;

@@ -20,6 +20,9 @@ pub(super) fn handle(
                 .shared_state
                 .voice_limit
                 .store(clamped, Ordering::Relaxed);
+            if let Err(error) = crate::global_settings::save_voice_limit(clamped) {
+                return Err(format!("failed to persist voice limit: {error}"));
+            }
             Ok(PluginIpcResponse::SetVoiceLimit)
         }
         _ => unreachable!("method routed to wrong IPC domain"),

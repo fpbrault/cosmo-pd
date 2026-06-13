@@ -110,6 +110,12 @@ declare global {
 		__czAddMidiBinding?: (key: string, channel: number, cc: number) => void;
 		__czRemoveMidiBinding?: (binding: MidiLearnBinding) => void;
 		__czClearMidiLearnBindings?: () => void;
+		__czGetVoiceLimit?: () => Promise<
+			PluginIpcMethods["getVoiceLimit"]["response"]
+		>;
+		__czSetVoiceLimit?: (
+			limit: PluginIpcMethods["setVoiceLimit"]["request"],
+		) => void;
 		__czGetScopeData?: () => Promise<ScopeDataResponse>;
 	}
 }

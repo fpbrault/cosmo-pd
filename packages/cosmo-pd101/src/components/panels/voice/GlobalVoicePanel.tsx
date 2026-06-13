@@ -230,7 +230,7 @@ export default function GlobalVoicePanel() {
 							className="btn btn-xs btn-square btn-ghost"
 							disabled={voiceLimit <= MIN_VOICE_LIMIT}
 							onClick={() => setVoiceLimit(voiceLimit - 1)}
-							aria-label="Decrease voice limit"
+							aria-label={t("globalVoice.voiceLimitDec")}
 						>
 							−
 						</button>
@@ -248,7 +248,7 @@ export default function GlobalVoicePanel() {
 							className="btn btn-xs btn-square btn-ghost"
 							disabled={voiceLimit >= MAX_VOICE_LIMIT}
 							onClick={() => setVoiceLimit(voiceLimit + 1)}
-							aria-label="Increase voice limit"
+							aria-label={t("globalVoice.voiceLimitInc")}
 						>
 							+
 						</button>

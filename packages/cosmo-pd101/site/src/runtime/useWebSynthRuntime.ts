@@ -31,6 +31,7 @@ export function useWebSynthRuntime(): SynthRuntime {
 		synthWasmUrl,
 		synthBindingsUrl,
 		cosmoWorkletUrl,
+		initialVoiceLimit: voiceLimit,
 	});
 
 	const noteHandling = useNoteHandling({

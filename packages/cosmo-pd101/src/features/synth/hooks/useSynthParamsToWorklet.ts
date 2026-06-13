@@ -50,13 +50,14 @@ export function useSynthParamsToWorklet({
 	const voiceLimitRef = useRef<number | undefined>();
 
 	useEffect(() => {
-		if (voiceLimit === voiceLimitRef.current) return;
-		voiceLimitRef.current = voiceLimit;
-		if (!workletNodeRef.current || voiceLimit === undefined) return;
+		if (voiceLimit === voiceLimitRef.current || voiceLimit === undefined)
+			return;
+		if (!workletNodeRef.current) return;
 		workletNodeRef.current.port.postMessage({
 			type: "setVoiceLimit",
 			limit: voiceLimit,
 		});
+		voiceLimitRef.current = voiceLimit;
 	}, [voiceLimit, workletNodeRef]);
 
 	useEffect(() => {

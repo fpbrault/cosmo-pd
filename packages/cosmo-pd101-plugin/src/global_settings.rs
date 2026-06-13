@@ -141,6 +141,12 @@ pub fn load_or_init_global_settings() -> Result<PluginGlobalSettings, String> {
     Ok(settings)
 }
 
+pub fn save_voice_limit(limit: u8) -> Result<(), String> {
+    let mut settings = load_or_init_global_settings()?;
+    settings.voice_limit = limit.clamp(MIN_VOICE_LIMIT, MAX_VOICE_LIMIT);
+    save_global_settings(&settings)
+}
+
 pub fn save_midi_learn_bindings(bindings: Vec<MidiLearnBinding>) -> Result<(), String> {
     let mut settings = load_or_init_global_settings()?;
     settings.midi_learn_bindings = bindings;
