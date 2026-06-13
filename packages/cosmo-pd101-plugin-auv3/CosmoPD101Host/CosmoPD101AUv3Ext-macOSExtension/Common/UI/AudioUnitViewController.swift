@@ -1,4 +1,5 @@
 import CoreAudioKit
+import CosmoPd101AUv3Support
 import Foundation
 import os
 import WebKit
@@ -15,16 +16,14 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	private static let preferredHeight: CGFloat = 912
 	private static let minimumWidth: CGFloat = 1024
 	private static let minimumHeight: CGFloat = 768
-	private static let telemetryPushInterval: TimeInterval = 0.1
 	private var presetSessionState = PresetSessionState()
 	private var editorState = [String: Any]()
 	private var midiLearnState = MidiLearnState()
 	private var paramsVersion = 0
-	private var activeTelemetryChannels = Set<TelemetryChannel>()
-	private var telemetryTimer: Timer?
-	private var lastRuntimeVoiceStatesJson: String?
-	private var lastRuntimeModSourcesJson: String?
-	private var lastTransportJson: String?
+	private lazy var telemetryController = TelemetryController { [weak self] in
+		self?.handleTelemetryTimer()
+	}
+	private let instanceID = UUID().uuidString
 	private var cachedVoiceLimit: Int = 0
 	private static let voiceLimitDefault: Int = 8
 	private static let voiceLimitUserDefaultsKey = "com.cosmo.pd101.voiceLimit"
@@ -55,7 +54,18 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 	nonisolated(unsafe) private var observation: NSKeyValueObservation?
 
-	deinit {}
+	deinit {
+		telemetryController.invalidate()
+		observation?.invalidate()
+		observation = nil
+		webView?.configuration.userContentController.removeScriptMessageHandler(forName: "cosmoPd101")
+		webView?.navigationDelegate = nil
+		#if os(iOS)
+        NotificationCenter.default.removeObserver(self, name: NSNotification.Name.NSExtensionHostDidBecomeActive, object: nil)
+        NotificationCenter.default.removeObserver(self, name: NSNotification.Name.NSExtensionHostWillResignActive, object: nil)
+		#endif
+		os_log("deinit (instance=%@)", log: czVCLog, type: .default, instanceID)
+	}
 
 	public override func loadView() {
 		os_log("loadView", log: czVCLog, type: .default)
@@ -71,6 +81,11 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		preferredContentSize = NSSize(width: Self.preferredWidth, height: Self.preferredHeight)
 		#endif
 		installWebView()
+
+		#if os(iOS)
+        NotificationCenter.default.addObserver(self, selector: #selector(handleHostDidBecomeActive(_:)), name: NSNotification.Name.NSExtensionHostDidBecomeActive, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(handleHostWillResignActive(_:)), name: NSNotification.Name.NSExtensionHostWillResignActive, object: nil)
+		#endif
 	}
 
 	#if os(iOS)
@@ -79,6 +94,19 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		configureWindowSceneSizing()
 		layoutWebView()
 	}
+
+	public override func viewWillAppear(_ animated: Bool) {
+		super.viewWillAppear(animated)
+		os_log("viewWillAppear (instance=%@)", log: czVCLog, type: .default, instanceID)
+		telemetryController.viewWillAppear()
+	}
+
+	public override func viewDidDisappear(_ animated: Bool) {
+		super.viewDidDisappear(animated)
+		os_log("viewDidDisappear (instance=%@)", log: czVCLog, type: .default, instanceID)
+		telemetryController.viewDidDisappear()
+	}
+
 	#else
 	public override func viewDidAppear() {
 		super.viewDidAppear()
@@ -86,6 +114,18 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		guard let window = view.window else { return }
 		window.contentMinSize = NSSize(width: Self.minimumWidth, height: Self.minimumHeight)
 		window.contentAspectRatio = NSSize(width: Self.preferredWidth, height: Self.preferredHeight)
+	}
+
+	public override func viewWillAppear() {
+		super.viewWillAppear()
+		os_log("viewWillAppear (instance=%@)", log: czVCLog, type: .default, instanceID)
+		telemetryController.viewWillAppear()
+	}
+
+	public override func viewDidDisappear() {
+		super.viewDidDisappear()
+		os_log("viewDidDisappear (instance=%@)", log: czVCLog, type: .default, instanceID)
+		telemetryController.viewDidDisappear()
 	}
 
 	public override func viewDidLayout() {
@@ -420,7 +460,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		configuration.userContentController.addUserScript(
 			WKUserScript(source: diagnosticsScript, injectionTime: .atDocumentStart, forMainFrameOnly: true)
 		)
-		configuration.userContentController.add(self, name: "cosmoPd101")
+		configuration.userContentController.add(WeakScriptMessageHandler(self), name: "cosmoPd101")
 
 		if let baseUrl = indexUrl?.deletingLastPathComponent() {
 			configuration.setURLSchemeHandler(BundleSchemeHandler(baseURL: baseUrl), forURLScheme: "cosmo-ext")
@@ -474,6 +514,13 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 	public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
 		os_log("didFinish navigation", log: czVCLog, type: .default)
+
+		if webContentTerminationCount > 0 {
+			guard let audioUnit = audioUnit as? CosmoPD101AUv3Ext_macOSExtensionAudioUnit else { return }
+			if let json = audioUnit.paramsJson() {
+				pushStateToWebView(json)
+			}
+		}
 	}
 
 	public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
@@ -487,6 +534,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		if webContentTerminationCount == 1 {
 			// Retry once in case the first content process launch was transiently killed.
 			webView.reload()
+			telemetryController.resetAllCaches()
 			return
 		}
 
@@ -547,77 +595,72 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 	private func setTelemetrySubscription(_ channel: TelemetryChannel, active: Bool, audioUnit: CosmoPD101AUv3Ext_macOSExtensionAudioUnit) {
 		if active {
-			let inserted = activeTelemetryChannels.insert(channel).inserted
-			if inserted {
-				resetTelemetryCache(for: channel)
-				updateTelemetryTimer(audioUnit: audioUnit)
-				pushTelemetryUpdates(audioUnit: audioUnit, forceChannels: [channel])
-			}
+			let wasSubscribed = telemetryController.subscribe(channel)
+			os_log("telemetry subscribe %{public}@ (instance=%@, new=%{public}d)", log: czVCLog, type: .default, channel.rawValue, instanceID, wasSubscribed)
+			guard wasSubscribed else { return }
+			pushTelemetryUpdates(audioUnit: audioUnit, forceChannels: [channel])
 			return
 		}
 
-		guard activeTelemetryChannels.remove(channel) != nil else {
-			return
-		}
-		resetTelemetryCache(for: channel)
-		updateTelemetryTimer(audioUnit: audioUnit)
+		telemetryController.unsubscribe(channel)
+		os_log("telemetry unsubscribe %{public}@ (instance=%@)", log: czVCLog, type: .default, channel.rawValue, instanceID)
 	}
 
-	private func updateTelemetryTimer(audioUnit: CosmoPD101AUv3Ext_macOSExtensionAudioUnit) {
-		if activeTelemetryChannels.isEmpty {
-			telemetryTimer?.invalidate()
-			telemetryTimer = nil
-			return
-		}
-
-		guard telemetryTimer == nil else {
-			return
-		}
-
-		let timer = Timer.scheduledTimer(timeInterval: Self.telemetryPushInterval, target: self, selector: #selector(handleTelemetryTimer), userInfo: nil, repeats: true)
-		telemetryTimer = timer
-		RunLoop.main.add(timer, forMode: .common)
-	}
-
-	@objc private func handleTelemetryTimer() {
+	private func handleTelemetryTimer() {
 		guard let audioUnit = audioUnit as? CosmoPD101AUv3Ext_macOSExtensionAudioUnit else {
-			telemetryTimer?.invalidate()
-			telemetryTimer = nil
+			telemetryController.viewDidDisappear()
 			return
 		}
 		pushTelemetryUpdates(audioUnit: audioUnit)
+	}
+
+	@objc private func handleHostDidBecomeActive(_ notification: Notification) {
+		DispatchQueue.main.async { [weak self] in
+			guard let self else { return }
+			os_log("handleHostDidBecomeActive", log: czVCLog, type: .default)
+			guard let audioUnit = self.audioUnit as? CosmoPD101AUv3Ext_macOSExtensionAudioUnit else { return }
+			self.telemetryController.hostDidBecomeActive()
+			if let json = audioUnit.paramsJson() {
+				self.pushStateToWebView(json)
+			}
+		}
+	}
+
+	@objc private func handleHostWillResignActive(_ notification: Notification) {
+		DispatchQueue.main.async { [weak self] in
+			guard let self else { return }
+			os_log("handleHostWillResignActive", log: czVCLog, type: .default)
+			self.telemetryController.hostWillResignActive()
+		}
 	}
 
 	private func pushTelemetryUpdates(
 		audioUnit: CosmoPD101AUv3Ext_macOSExtensionAudioUnit,
 		forceChannels: Set<TelemetryChannel> = []
 	) {
-		guard !activeTelemetryChannels.isEmpty else {
+		guard !telemetryController.activeChannels.isEmpty else {
 			return
 		}
 
 		var script = ""
 
-		if activeTelemetryChannels.contains(.runtimeVoiceStates) {
+		if telemetryController.hasChannel(.runtimeVoiceStates) {
 			let next = audioUnit.runtimeVoiceStatesJson() ?? "[]"
-			if forceChannels.contains(.runtimeVoiceStates) || next != lastRuntimeVoiceStatesJson {
+			if telemetryController.shouldPush(channel: .runtimeVoiceStates, value: next, force: forceChannels.contains(.runtimeVoiceStates)) {
 				appendJavascriptJsonCallback(&script, functionName: "__czOnRuntimeVoiceStates", json: next)
-				lastRuntimeVoiceStatesJson = next
 			}
 		}
 
-		if activeTelemetryChannels.contains(.runtimeModSources) {
+		if telemetryController.hasChannel(.runtimeModSources) {
 			let next = audioUnit.runtimeModSourcesJson() ?? "{}"
-			if forceChannels.contains(.runtimeModSources) || next != lastRuntimeModSourcesJson {
+			if telemetryController.shouldPush(channel: .runtimeModSources, value: next, force: forceChannels.contains(.runtimeModSources)) {
 				appendJavascriptJsonCallback(&script, functionName: "__czOnRuntimeModSources", json: next)
-				lastRuntimeModSourcesJson = next
 			}
 		}
 
-		if activeTelemetryChannels.contains(.transport), let next = transportInfoJson() {
-			if forceChannels.contains(.transport) || next != lastTransportJson {
+		if telemetryController.hasChannel(.transport), let next = transportInfoJson() {
+			if telemetryController.shouldPush(channel: .transport, value: next, force: forceChannels.contains(.transport)) {
 				appendJavascriptJsonCallback(&script, functionName: "__czOnTransport", json: next)
-				lastTransportJson = next
 			}
 		}
 
@@ -642,17 +685,6 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			return nil
 		}
 		return json
-	}
-
-	private func resetTelemetryCache(for channel: TelemetryChannel) {
-		switch channel {
-		case .runtimeVoiceStates:
-			lastRuntimeVoiceStatesJson = nil
-		case .runtimeModSources:
-			lastRuntimeModSourcesJson = nil
-		case .transport:
-			lastTransportJson = nil
-		}
 	}
 
 	private func currentPresetSession(for audioUnit: AUAudioUnit) -> [String: Any] {
@@ -709,12 +741,6 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			"loopEndBeats": 0,
 		]
 	}
-}
-
-private enum TelemetryChannel: Hashable {
-	case runtimeVoiceStates
-	case runtimeModSources
-	case transport
 }
 
 	private struct PresetSessionState {
@@ -867,3 +893,4 @@ private final class BundleSchemeHandler: NSObject, WKURLSchemeHandler {
 		}
 	}
 }
+
