@@ -11,10 +11,11 @@
  * method names to `PluginIpcMethods` keys, and the Rust compiler enforces
  * match exhaustiveness on the `PluginIpcRequest` enum.
  */
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import type { PluginIpcMethods } from "@cosmo/cosmo-pd101";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const webviewDir = resolve(here, "..", "..");
@@ -218,6 +219,110 @@ describe("IPC contract coverage", () => {
 				},
 			};
 			expect(report).toBeDefined();
+		});
+	});
+
+	describe("canonical envelope format", () => {
+		const KNOWN_LEGACY_ARGS_FILES = new Set([
+			"mockPluginBridge.ts",
+			"mockPluginBridge.test.ts",
+			"mockPluginBridge.browser.test.ts",
+		]);
+
+		const KNOWN_RAW_IPC_FILES = new Set(["IPCBridge.ts", "auv3Bridge.ts"]);
+
+		function collectProductionFiles(dir: string): string[] {
+			const files: string[] = [];
+			const entries = readdirSync(dir, { withFileTypes: true });
+			for (const entry of entries) {
+				const full = resolve(dir, entry.name);
+				if (entry.name.startsWith(".") || entry.name === "node_modules")
+					continue;
+				if (entry.isDirectory()) {
+					files.push(...collectProductionFiles(full));
+				} else if (
+					(entry.name.endsWith(".ts") || entry.name.endsWith(".tsx")) &&
+					!KNOWN_LEGACY_ARGS_FILES.has(entry.name) &&
+					!KNOWN_RAW_IPC_FILES.has(entry.name)
+				) {
+					files.push(full);
+				}
+			}
+			return files;
+		}
+
+		it("no production source file sends legacy args in IPC envelopes", () => {
+			const srcDir = resolve(here, "..");
+			const files = collectProductionFiles(srcDir);
+			const offenders: string[] = [];
+			for (const file of files) {
+				const source = readFileSync(file, "utf8");
+				const basename = file.split("/").pop() ?? file;
+				const ipcArgsRe = /(?:^|[,{]\s*)(?:"args"|args)\s*:/;
+				if (ipcArgsRe.test(source)) {
+					const lines = source.split("\n");
+					for (let i = 0; i < lines.length; i++) {
+						if (ipcArgsRe.test(lines[i])) {
+							offenders.push(`  ${basename}:${i + 1}  ${lines[i].trim()}`);
+						}
+					}
+				}
+			}
+			if (offenders.length > 0) {
+				throw new Error(
+					`Legacy "args" key found in IPC envelopes in production source:\n${offenders.join("\n")}`,
+				);
+			}
+		});
+
+		it("no production code manually constructs raw IPC JSON envelopes", () => {
+			const srcDir = resolve(here, "..");
+			const files = collectProductionFiles(srcDir);
+			const offenders: string[] = [];
+			const rawIpcRe = /window\.ipc\??\.postMessage\(\s*JSON\.stringify\(/;
+			for (const file of files) {
+				const source = readFileSync(file, "utf8");
+				const basename = file.split("/").pop() ?? file;
+				if (rawIpcRe.test(source)) {
+					const lines = source.split("\n");
+					for (let i = 0; i < lines.length; i++) {
+						if (rawIpcRe.test(lines[i])) {
+							offenders.push(`  ${basename}:${i + 1}  ${lines[i].trim()}`);
+						}
+					}
+				}
+			}
+			if (offenders.length > 0) {
+				throw new Error(
+					`Raw IPC JSON construction found in production source (use postPluginIpc instead):\n${offenders.join("\n")}`,
+				);
+			}
+		});
+
+		it("plugin page uses postPluginIpc for native events", () => {
+			const source = readFileSync(resolve(here, "../PluginPage.tsx"), "utf8");
+			expect(source).not.toContain("args: [payload]");
+			expect(source).toContain("postPluginIpc(pm");
+		});
+
+		it("noteOn sent to native IPC does not include frequency", () => {
+			const source = readFileSync(resolve(here, "../PluginPage.tsx"), "utf8");
+			expect(source).toMatch(/case "noteOn"/);
+			expect(source).not.toContain("frequency");
+		});
+
+		it("postHostLog sends payload via postPluginIpc", () => {
+			const source = readFileSync(resolve(here, "hostLogger.ts"), "utf8");
+			expect(source).toContain("postPluginIpc(");
+			expect(source).toContain('"clientLog"');
+			expect(source).not.toContain('"args"');
+		});
+
+		it("no-payload IPC methods require no second argument", () => {
+			type GetParamsArgs = PluginIpcMethods["getParams"]["request"];
+			type SetParamsArgs = PluginIpcMethods["setParams"]["request"];
+			expectTypeOf<GetParamsArgs>().toBeNull();
+			expectTypeOf<SetParamsArgs>().not.toBeNull();
 		});
 	});
 });

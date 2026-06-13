@@ -15,7 +15,7 @@ declare global {
 
 type InvokeArguments<T extends keyof PluginIpcMethods> =
 	PluginIpcMethods[T]["request"] extends null
-		? [payload?: null]
+		? []
 		: [payload: PluginIpcMethods[T]["request"]];
 
 export function createTypedInvoke(

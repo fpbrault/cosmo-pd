@@ -1,3 +1,5 @@
+import { postPluginIpc } from "./postPluginIpc";
+
 export type HostLogLevel = "debug" | "info" | "warn" | "error";
 
 let installed = false;
@@ -18,13 +20,12 @@ export function postHostLog(level: HostLogLevel, message: string) {
 	}
 	try {
 		postingToHost = true;
-		window.ipc?.postMessage(
-			JSON.stringify({
-				id: 0,
-				method: "clientLog",
-				args: [level, message],
-			}),
-		);
+		if (window.ipc?.postMessage) {
+			postPluginIpc(window.ipc.postMessage.bind(window.ipc), "clientLog", {
+				level,
+				message,
+			});
+		}
 	} catch {
 		// Ignore logging failures in browser/test harness mode.
 	} finally {
