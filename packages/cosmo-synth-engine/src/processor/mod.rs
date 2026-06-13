@@ -284,6 +284,7 @@ impl CosmoProcessor {
         self.line1_scratch = self.params.line1;
         self.line2_scratch = self.params.line2;
         self.envelope_timing = EnvelopeTimingCache::new(self.sample_rate);
+        self.render_voice_limit = self.voice_limit;
         self.rebuild_compiled_params();
     }
 
@@ -373,11 +374,34 @@ impl CosmoProcessor {
 
     /// Set a new user-visible voice limit and recompute the render limit.
     /// Values outside [MIN_VOICE_LIMIT, MAX_VOICES] are clamped.
+    /// When reducing, the render limit stays expanded until release tails
+    /// above the limit finish ringing out.
     pub fn set_voice_limit(&mut self, limit: usize) {
         use crate::params::MIN_VOICE_LIMIT;
         let new_limit = limit.clamp(MIN_VOICE_LIMIT, MAX_VOICES);
+        let old_limit = self.voice_limit;
         self.voice_limit = new_limit;
-        self.render_voice_limit = new_limit;
+        if new_limit > old_limit {
+            self.render_voice_limit = new_limit;
+        } else {
+            self.update_render_voice_limit();
+        }
+    }
+
+    /// Scan voices above the voice limit and adjust the render limit down
+    /// once release tails have finished.
+    pub(crate) fn update_render_voice_limit(&mut self) {
+        let start = self.voice_limit;
+        let highest_active = self.voices[start..MAX_VOICES]
+            .iter()
+            .enumerate()
+            .rev()
+            .find(|(_, v)| !v.is_silent)
+            .map(|(idx, _)| start + idx);
+        self.render_voice_limit = match highest_active {
+            Some(i) => i + 1,
+            None => start,
+        };
     }
 
     /// Set a macro knob value. `value` is normalised [0.0, 1.0].
