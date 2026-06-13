@@ -255,6 +255,13 @@ function installIpcRouter() {
 			return null;
 		});
 
+	window.__czGetVoiceLimit = () => invoke("getVoiceLimit");
+	window.__czSetVoiceLimit = (limit: number) => {
+		void invoke("setVoiceLimit", limit).catch((error) => {
+			console.error("[auv3Bridge] setVoiceLimit error", error);
+		});
+	};
+
 	window.__czGetMidiLearnState = () => invoke("getMidiLearnState");
 
 	window.__czSetMidiLearnMode = (on) =>
