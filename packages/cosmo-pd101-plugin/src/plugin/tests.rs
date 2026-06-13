@@ -120,7 +120,7 @@ fn set_params_rpc_updates_synth_params() {
         ..Default::default()
     };
     let result = handle_ipc_invoke(
-        PluginIpcRequest::SetParams(new_params),
+        PluginIpcRequest::SetParams(Box::new(new_params)),
         &sp,
         &rsp,
         &rms,
@@ -233,7 +233,7 @@ fn set_params_rpc_syncs_daw_float_params() {
     new_params.volume = 0.33;
     new_params.line1.dcw_base = 0.61;
     let result = handle_ipc_invoke(
-        PluginIpcRequest::SetParams(new_params),
+        PluginIpcRequest::SetParams(Box::new(new_params)),
         &sp,
         &rsp,
         &rms,

@@ -16,12 +16,15 @@ pub(super) fn handle(
     let params = context.params.as_ref();
     match req {
         PluginIpcRequest::SetParams(new_params) => {
+            let new_params = new_params.as_ref();
+
             sync_all_daw_params_from_synth(params, new_params);
 
             let rt_params = build_rt_synth_params(new_params);
             synth_params.store(Arc::new(new_params.clone()));
             rt_synth_params.store(Arc::new(rt_params));
             synth_params_version.fetch_add(1, Ordering::Release);
+
             Ok(PluginIpcResponse::SetParams)
         }
         PluginIpcRequest::GetParams => {

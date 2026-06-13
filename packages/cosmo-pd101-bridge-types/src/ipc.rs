@@ -53,7 +53,7 @@ pub enum PluginIpcRequest {
     #[serde(rename = "getParams")]
     GetParams,
     #[serde(rename = "setParams")]
-    SetParams(SynthParams),
+    SetParams(Box<SynthParams>),
     #[serde(rename = "getParamsVersion")]
     GetParamsVersion,
     #[serde(rename = "getRuntimeModSources")]
