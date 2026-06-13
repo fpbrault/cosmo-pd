@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-
 	hasMeaningfulScopeHzChange,
 	normalizeScopeHz,
 } from "./scopePerformance";
