@@ -26,6 +26,19 @@ const nativeEngineEventMethods = new Set([
 	"clientLog",
 ]);
 
+/// Keys returned by `currentPresetSession(for:)` in the Swift ViewController.
+/// Must match `PluginPresetSession` from `pluginBridgeSynthEngineAdapter.ts`.
+const PRESET_SESSION_KEYS = [
+	"activePresetId",
+	"loadedPresetId",
+	"activePresetNameBase",
+	"isDirty",
+] as const;
+
+/// The fallback chain when `presetSessionState` fields are nil:
+///   `activePresetNameBase` -> `audioUnit.currentPreset?.name` -> "Current State"
+const PRESET_SESSION_FALLBACK_UNSELECTED_NAME = "Current State";
+
 function readText(filePath: string): string {
 	return readFileSync(filePath, "utf8");
 }
@@ -72,5 +85,34 @@ describe("AUv3 bridge contract", () => {
 				(method) => !xcodeControllerMethods.has(method),
 			),
 		).toEqual([]);
+	});
+
+	it("has currentPresetSession keys matching PluginPresetSession", () => {
+		const swiftSource = readText(xcodeControllerPath);
+
+		// Extract the dictionary keys from currentPresetSession(for:)
+		const dictMatch = swiftSource.match(
+			/private func currentPresetSession[\s\S]*?return \[([\s\S]*?)\]/m,
+		);
+		expect(dictMatch).not.toBeNull();
+		const dictBody = dictMatch![1];
+
+		// Find all string keys used as dictionary literal keys
+		const swiftKeys = new Set(
+			[...dictBody.matchAll(/"([^"]+)":\s/g)].map((m) => m[1]),
+		);
+
+		for (const key of PRESET_SESSION_KEYS) {
+			expect(swiftKeys.has(key)).toBeTrue();
+		}
+		expect(swiftKeys.size).toBe(PRESET_SESSION_KEYS.length);
+	});
+
+	it("falls back to Current State in currentPresetSession when no preset selected", () => {
+		const swiftSource = readText(xcodeControllerPath);
+		const containsFallback = swiftSource.includes(
+			PRESET_SESSION_FALLBACK_UNSELECTED_NAME,
+		);
+		expect(containsFallback).toBeTrue();
 	});
 });
