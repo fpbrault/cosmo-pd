@@ -30,6 +30,7 @@ export function ScopeVisualizationDisplay({
 		analyserNodeRef,
 		audioCtxRef,
 		effectivePitchHz,
+		scopePerformanceMode,
 		subscribeScopeFrames,
 	} = useScopeContext();
 	const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -37,6 +38,12 @@ export function ScopeVisualizationDisplay({
 	const unsubscribeRef = useRef<(() => void) | null>(null);
 	const smoothedTriggerRef = useRef<number | null>(null);
 	const pressedKeysRef = useRef<Set<string>>(new Set());
+	const lastConstrainedSpectrogramDrawRef = useRef(0);
+	const drawPerformanceRef = useRef({
+		count: 0,
+		totalMs: 0,
+		startedAt: 0,
+	});
 	const [waterfallActiveLine, setWaterfallActiveLine] = useState<1 | 2>(1);
 
 	const scopeCycles = useSynthUiStore((s) => s.scopeCycles);
@@ -137,6 +144,7 @@ export function ScopeVisualizationDisplay({
 		sampleRate: number,
 		frequencyBins?: Uint8Array<ArrayBufferLike>,
 	) => {
+		const drawStartedAt = import.meta.env.DEV ? performance.now() : 0;
 		const mean = calculateFrameMean(samples);
 		if (smoothedTriggerRef.current == null) {
 			smoothedTriggerRef.current = mean;
@@ -165,7 +173,31 @@ export function ScopeVisualizationDisplay({
 			intensityMultiplier: variant === "drawer" ? 1.55 : 1,
 			waterfallPreview,
 			waterfallActiveLine,
+			constrainedPerformance: scopePerformanceMode === "constrained",
 		});
+
+		if (import.meta.env.DEV) {
+			const now = performance.now();
+			const stats = drawPerformanceRef.current;
+			if (stats.startedAt === 0) {
+				stats.startedAt = now;
+			}
+			stats.count++;
+			stats.totalMs += now - drawStartedAt;
+			const elapsedMs = now - stats.startedAt;
+			if (elapsedMs >= 5000) {
+				console.debug("[scope-perf] canvas draw", {
+					framesPerSecond: (stats.count * 1000) / elapsedMs,
+					averageDrawMs: stats.totalMs / stats.count,
+					mode: settingsRef.current.scopeVisualizationMode,
+				});
+				drawPerformanceRef.current = {
+					count: 0,
+					totalMs: 0,
+					startedAt: now,
+				};
+			}
+		}
 	};
 
 	// Subscribe to external frame push stream (plugin mode).
@@ -176,6 +208,16 @@ export function ScopeVisualizationDisplay({
 		unsubscribeRef.current = subscribeScopeFrames((frame) => {
 			const canvas = canvasRef.current;
 			if (!canvas) return;
+			if (
+				scopePerformanceMode === "constrained" &&
+				settingsRef.current.scopeVisualizationMode === "spectrogram"
+			) {
+				const now = performance.now();
+				if (now - lastConstrainedSpectrogramDrawRef.current < 200) {
+					return;
+				}
+				lastConstrainedSpectrogramDrawRef.current = now;
+			}
 			drawFrameRef.current(
 				canvas,
 				frame.samples,
@@ -187,7 +229,7 @@ export function ScopeVisualizationDisplay({
 			unsubscribeRef.current?.();
 			unsubscribeRef.current = null;
 		};
-	}, [subscribeScopeFrames]);
+	}, [scopePerformanceMode, subscribeScopeFrames]);
 
 	// RAF loop for AnalyserNode path (web-audio mode).
 	useEffect(() => {

@@ -1,6 +1,11 @@
 import { getScopeThemePalette, withAlpha } from "./palette";
 import type { ScopeThemePalette } from "./types";
 
+const canvasSetupCache = new WeakMap<
+	HTMLCanvasElement,
+	{ dpr: number; width: number; height: number }
+>();
+
 export function drawScopeBackdrop(
 	canvas: HTMLCanvasElement,
 	palette: ScopeThemePalette = getScopeThemePalette("vintage"),
@@ -22,7 +27,16 @@ export function setupScopeCanvas(canvas: HTMLCanvasElement) {
 		canvas.width = pixelWidth;
 		canvas.height = pixelHeight;
 	}
-	ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+	const cached = canvasSetupCache.get(canvas);
+	if (
+		!cached ||
+		cached.dpr !== dpr ||
+		cached.width !== width ||
+		cached.height !== height
+	) {
+		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+		canvasSetupCache.set(canvas, { dpr, width, height });
+	}
 	return { ctx, width, height };
 }
 

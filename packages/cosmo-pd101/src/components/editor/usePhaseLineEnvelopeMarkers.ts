@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { LineIndex } from "@/components/controls/algo/algoControlTypes";
+import type { RuntimeVoiceDebugState } from "@/features/synth/hooks/useAudioEngine";
 import { useOptionalSynthController } from "@/features/synth/SynthParamController";
 import type { EnvTab } from "@/features/synth/synthUiStore";
 import { getEnvelopeVoiceProgress } from "./perLineWarpUtils";
@@ -21,28 +22,43 @@ export function usePhaseLineEnvelopeMarkers({
 	activeEnv: PhaseLineEnvelopeEntry;
 }): StepEnvelopeVoiceMarker[] {
 	const synthController = useOptionalSynthController();
-	const [voiceMarkerTick, setVoiceMarkerTick] = useState(0);
+	const [liveVoiceStates, setLiveVoiceStates] = useState<
+		ReadonlyArray<RuntimeVoiceDebugState>
+	>([]);
 
 	useEffect(() => {
 		if (section !== "envelopes") {
+			setLiveVoiceStates([]);
 			return;
 		}
-		return synthController?.registerLiveVoiceStatesConsumer();
+
+		const onRuntimeVoiceStates = (event: Event) => {
+			const detail = (
+				event as CustomEvent<RuntimeVoiceDebugState[] | undefined>
+			).detail;
+			if (detail) {
+				setLiveVoiceStates(detail);
+			}
+		};
+
+		window.addEventListener("cz-runtime-voice-states", onRuntimeVoiceStates);
+		setLiveVoiceStates(synthController?.getLiveVoiceStates() ?? []);
+		const unregister = synthController?.registerLiveVoiceStatesConsumer();
+
+		return () => {
+			window.removeEventListener(
+				"cz-runtime-voice-states",
+				onRuntimeVoiceStates,
+			);
+			unregister?.();
+		};
 	}, [section, synthController]);
 
-	useEffect(() => {
-		if (section !== "envelopes") return;
-		const id = setInterval(() => setVoiceMarkerTick((t) => t + 1), 16);
-		return () => clearInterval(id);
-	}, [section]);
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: <Keeps live voice markers refreshing while envelope tab is visible>
 	return useMemo<StepEnvelopeVoiceMarker[]>(() => {
 		if (section !== "envelopes") {
 			return [];
 		}
 
-		const liveVoiceStates = synthController?.getLiveVoiceStates() ?? [];
 		return liveVoiceStates
 			.filter((voice) => voice.active)
 			.map((voice) => {
@@ -60,12 +76,5 @@ export function usePhaseLineEnvelopeMarkers({
 					color: voice.isReleasing ? "#f59e0b" : "#f8fafc",
 				};
 			});
-	}, [
-		section,
-		activeEnvTab,
-		activeEnv,
-		lineIndex,
-		synthController,
-		voiceMarkerTick,
-	]);
+	}, [section, activeEnvTab, activeEnv, lineIndex, liveVoiceStates]);
 }

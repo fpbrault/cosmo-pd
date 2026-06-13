@@ -9,6 +9,19 @@ export type OscilloscopeConfig = {
 	gridColor?: string;
 };
 
+type OscilloscopeCanvasCache = {
+	dpr: number;
+	drawWidth: number;
+	drawHeight: number;
+	gridColor: string;
+	backdrop: HTMLCanvasElement;
+};
+
+const oscilloscopeCanvasCache = new WeakMap<
+	HTMLCanvasElement,
+	OscilloscopeCanvasCache
+>();
+
 /**
  * Draw an oscilloscope waveform on a canvas.
  * Shared between plugin scope renderer and visualizer.
@@ -33,10 +46,29 @@ export function drawOscilloscope(
 		canvas.width = pixelWidth;
 		canvas.height = pixelHeight;
 	}
-	ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
 	const color = config.color ?? "#3dff3d";
 	const gridColor = config.gridColor ?? "rgba(0, 120, 0, 0.35)";
+	let canvasCache = oscilloscopeCanvasCache.get(canvas);
+	if (
+		!canvasCache ||
+		canvasCache.dpr !== dpr ||
+		canvasCache.drawWidth !== drawWidth ||
+		canvasCache.drawHeight !== drawHeight ||
+		canvasCache.gridColor !== gridColor
+	) {
+		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+		const backdrop = document.createElement("canvas");
+		backdrop.width = pixelWidth;
+		backdrop.height = pixelHeight;
+		const backdropCtx = backdrop.getContext("2d");
+		if (backdropCtx) {
+			backdropCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+			drawGrid(backdropCtx, drawWidth, drawHeight, gridColor);
+		}
+		canvasCache = { dpr, drawWidth, drawHeight, gridColor, backdrop };
+		oscilloscopeCanvasCache.set(canvas, canvasCache);
+	}
 	const triggerMode = config.triggerMode ?? "rise";
 	const isUint8 = samples instanceof Uint8Array;
 	// For Uint8Array (0-255), triggerLevel is 0-255. For Float32Array (-1 to 1), convert from 0-255 to -1 to 1.
@@ -48,14 +80,14 @@ export function drawOscilloscope(
 	if (samples.length === 0) {
 		ctx.fillStyle = "#051005";
 		ctx.fillRect(0, 0, drawWidth, drawHeight);
-		drawGrid(ctx, drawWidth, drawHeight, gridColor);
+		drawBackdrop(ctx, canvasCache, drawWidth, drawHeight);
 		return;
 	}
 
 	if (samples.length < 2) {
 		ctx.fillStyle = "#051005";
 		ctx.fillRect(0, 0, drawWidth, drawHeight);
-		drawGrid(ctx, drawWidth, drawHeight, gridColor);
+		drawBackdrop(ctx, canvasCache, drawWidth, drawHeight);
 		return;
 	}
 
@@ -73,7 +105,7 @@ export function drawOscilloscope(
 	if (viewSamples <= 1) {
 		ctx.fillStyle = "#051005";
 		ctx.fillRect(0, 0, drawWidth, drawHeight);
-		drawGrid(ctx, drawWidth, drawHeight, gridColor);
+		drawBackdrop(ctx, canvasCache, drawWidth, drawHeight);
 		return;
 	}
 
@@ -111,7 +143,7 @@ export function drawOscilloscope(
 
 	// Clear and draw grid
 	ctx.clearRect(0, 0, drawWidth, drawHeight);
-	drawGrid(ctx, drawWidth, drawHeight, gridColor);
+	drawBackdrop(ctx, canvasCache, drawWidth, drawHeight);
 
 	// Draw waveform
 	ctx.shadowColor = color;
@@ -140,6 +172,25 @@ export function drawOscilloscope(
 
 	ctx.stroke();
 	ctx.shadowBlur = 0;
+}
+
+function drawBackdrop(
+	ctx: CanvasRenderingContext2D,
+	cache: OscilloscopeCanvasCache,
+	width: number,
+	height: number,
+): void {
+	ctx.drawImage(
+		cache.backdrop,
+		0,
+		0,
+		cache.backdrop.width,
+		cache.backdrop.height,
+		0,
+		0,
+		width,
+		height,
+	);
 }
 
 function drawGrid(

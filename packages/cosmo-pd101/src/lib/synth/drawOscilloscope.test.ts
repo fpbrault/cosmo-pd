@@ -20,6 +20,7 @@ describe("drawOscilloscope", () => {
 		ctx = {
 			setTransform: vi.fn(),
 			clearRect: vi.fn(),
+			drawImage: vi.fn(),
 			fillRect: vi.fn(),
 			beginPath: vi.fn(),
 			moveTo: vi.fn(),
