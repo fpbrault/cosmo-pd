@@ -35,7 +35,7 @@ pub use modulation::{
 };
 pub use portamento::{PortamentoMode, PortamentoParams};
 pub use synth_params::{
-    ModEnvParams, MAX_VOICES, MIN_VOICE_LIMIT, DEFAULT_VOICE_LIMIT, MAX_VOICE_LIMIT, NUM_OPERATORS,
+    DEFAULT_VOICE_LIMIT, MAX_VOICE_LIMIT, MAX_VOICES, MIN_VOICE_LIMIT, ModEnvParams, NUM_OPERATORS,
     RandomParams, SynthParams, default_synth_params_v1,
 };
 pub use ui_meta::{

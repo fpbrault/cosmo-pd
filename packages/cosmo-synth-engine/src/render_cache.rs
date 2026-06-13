@@ -5,7 +5,7 @@
 
 use crate::generators::{PER_LINE_HEADROOM, cz101, pre_resolve_controls};
 use crate::params::{
-    Algo, BaseWaveform, LineParams, ModMatrixCache, DEFAULT_VOICE_LIMIT, SynthParams, WindowType,
+    Algo, BaseWaveform, DEFAULT_VOICE_LIMIT, LineParams, ModMatrixCache, SynthParams, WindowType,
 };
 
 const REFERENCE_LINE_HEADROOM: f32 = 0.75;

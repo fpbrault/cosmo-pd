@@ -21,7 +21,7 @@ use crate::envelope::{EnvelopeTimingCache, normalize_synth_params_envelopes_to_r
 use crate::fx::FxChain;
 use crate::module_presets;
 use crate::params::{
-    FxSlotConfig, FxSlotType, LineParams, MAX_VOICES, DEFAULT_VOICE_LIMIT, SynthParams,
+    DEFAULT_VOICE_LIMIT, FxSlotConfig, FxSlotType, LineParams, MAX_VOICES, SynthParams,
 };
 use crate::render_cache::CompiledSynthParams;
 use crate::simd::{SimdBackend, detect_simd_backend};

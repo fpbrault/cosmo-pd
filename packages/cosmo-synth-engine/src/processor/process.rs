@@ -6,7 +6,7 @@ use alloc::sync::Arc;
 
 use crate::dsp_utils::{lfo_output_with_symmetry, random_hold_value};
 use crate::params::{
-    LfoRateMode, LfoSyncDivision, LineParams, ModDestination, ModMatrixCache, MAX_VOICES,
+    LfoRateMode, LfoSyncDivision, LineParams, MAX_VOICES, ModDestination, ModMatrixCache,
     SynthParams,
 };
 use crate::render_cache::CompiledLinePlan;

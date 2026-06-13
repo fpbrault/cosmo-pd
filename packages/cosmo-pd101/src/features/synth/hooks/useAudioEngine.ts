@@ -86,6 +86,7 @@ export type UseAudioSynthParams = {
 	synthWasmUrl: string;
 	synthBindingsUrl: string;
 	cosmoWorkletUrl: string;
+	initialVoiceLimit?: number;
 };
 
 type AudioContextState = "suspended" | "running" | "closed";
@@ -110,6 +111,7 @@ export function useAudioEngine({
 	synthWasmUrl,
 	synthBindingsUrl,
 	cosmoWorkletUrl,
+	initialVoiceLimit,
 }: UseAudioSynthParams): AudioEngineRefs {
 	const audioCtxRef = useRef<AudioContext | null>(null);
 	const gainNodeRef = useRef<GainNode | null>(null);
@@ -316,6 +318,12 @@ export function useAudioEngine({
 						type: "setParams",
 						params: paramsRef.current,
 					});
+					if (initialVoiceLimit !== undefined) {
+						workletNode.port.postMessage({
+							type: "setVoiceLimit",
+							limit: initialVoiceLimit,
+						});
+					}
 				} else if (e.data?.type === "runtimeModSources") {
 					const sources = normalizeRuntimeModSources(e.data.sources);
 					if (sources) {
@@ -374,6 +382,7 @@ export function useAudioEngine({
 		}
 	}, [
 		cosmoWorkletUrl,
+		initialVoiceLimit,
 		normalizeRuntimeModSources,
 		normalizeRuntimeVoiceStates,
 		startTelemetryPolling,
