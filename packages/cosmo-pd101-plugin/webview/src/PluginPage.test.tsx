@@ -56,6 +56,11 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 			selector(synthStoreState),
 		useSynthUiStore: (selector: (state: typeof synthUiStoreState) => unknown) =>
 			selector(synthUiStoreState),
+		useGlobalSynthSettings: (selector: (state: unknown) => unknown) =>
+			selector({
+				voiceLimit: 8,
+				setVoiceLimit: vi.fn(),
+			}),
 	};
 });
 

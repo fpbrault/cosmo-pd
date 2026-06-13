@@ -32,6 +32,7 @@ pub struct AudioRuntime {
     pub(crate) mono_output: Vec<f32>,
     pub(crate) daw_params_dirty: bool,
     pub(crate) last_scope_hz: f32,
+    pub(crate) voice_limit: usize,
 }
 
 impl AudioRuntime {
@@ -44,6 +45,17 @@ impl AudioRuntime {
             mono_output: Vec::new(),
             daw_params_dirty: true,
             last_scope_hz: 220.0,
+            voice_limit: crate::global_settings::DEFAULT_VOICE_LIMIT as usize,
+        }
+    }
+
+    pub(crate) fn set_voice_limit(&mut self, limit: usize) {
+        self.voice_limit = limit.clamp(
+            crate::global_settings::MIN_VOICE_LIMIT as usize,
+            crate::global_settings::MAX_VOICE_LIMIT as usize,
+        );
+        if let Some(proc) = self.processor.as_mut() {
+            proc.set_voice_limit(self.voice_limit);
         }
     }
 }
@@ -526,6 +538,11 @@ impl CzPlugin {
                 buffer.output(ch).fill(0.0);
             }
             return ProcessStatus::Normal;
+        }
+
+        let shared_voice_limit = self.shared_state.voice_limit.load(Ordering::Relaxed) as usize;
+        if shared_voice_limit != self.audio.voice_limit {
+            self.audio.set_voice_limit(shared_voice_limit);
         }
 
         self.collect_block_input_events(events, num_samples);

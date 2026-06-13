@@ -2,6 +2,11 @@ import { memo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
+import {
+	MAX_VOICE_LIMIT,
+	MIN_VOICE_LIMIT,
+	useGlobalSynthSettings,
+} from "@/features/synth/globalSynthSettingsStore";
 import { useHostTransport } from "@/features/synth/hooks/useHostTransport";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import { PORTAMENTO_MODE_TOOLTIPS } from "@/lib/synth/paramMeta";
@@ -110,6 +115,8 @@ export default function GlobalVoicePanel() {
 		useSynthParam("portamentoTime");
 	const tempoDisplayBpm =
 		typeof tempoBpm === "number" && Number.isFinite(tempoBpm) ? tempoBpm : 120;
+	const voiceLimit = useGlobalSynthSettings((s) => s.voiceLimit);
+	const setVoiceLimit = useGlobalSynthSettings((s) => s.setVoiceLimit);
 	return (
 		<div className="grid grid-cols-2 gap-4">
 			<GlobalSection title={t("globalVoice.transportSection")}>
@@ -211,6 +218,35 @@ export default function GlobalVoicePanel() {
 						/>
 					</div>
 				</div>
+			</GlobalSection>
+			<GlobalSection title={t("globalVoice.voiceSection")}>
+				<label className="form-control w-full">
+					<div className="label">
+						<span className="label-text font-mono text-4xs text-cz-cream/55 uppercase tracking-[0.24em]">
+							{t("globalVoice.voiceLimit")}
+						</span>
+					</div>
+					<select
+						className="select select-sm select-bordered bg-neutral font-mono text-cz-cream/80"
+						value={voiceLimit}
+						onChange={(e) => setVoiceLimit(Number(e.target.value))}
+						aria-label={t("globalVoice.voiceLimitAria", {
+							value: voiceLimit,
+						})}
+					>
+						{Array.from(
+							{ length: MAX_VOICE_LIMIT - MIN_VOICE_LIMIT + 1 },
+							(_, i) => {
+								const v = MIN_VOICE_LIMIT + i;
+								return (
+									<option key={v} value={v}>
+										{v}
+									</option>
+								);
+							},
+						)}
+					</select>
+				</label>
 			</GlobalSection>
 		</div>
 	);

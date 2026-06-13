@@ -1010,7 +1010,12 @@
 		"velCurve": "Vel Curve",
 		"velCurveAria": "Velocity curve preview. Curve value: {{value}}",
 		"rateMode": "Rate Mode",
-		"timeMode": "Time Mode"
+		"timeMode": "Time Mode",
+		"voiceSection": "Voice Allocation",
+		"voiceLimit": "Voices",
+		"voiceLimitAria": "Voice limit: {{value}}",
+		"voiceLimitDec": "Decrease voice limit",
+		"voiceLimitInc": "Increase voice limit"
 	},
 	"modMatrix": {
 		"title": "Mod Matrix",

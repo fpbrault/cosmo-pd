@@ -20,7 +20,9 @@ use crate::dsp_utils::random_hold_value;
 use crate::envelope::{EnvelopeTimingCache, normalize_synth_params_envelopes_to_raw_if_human};
 use crate::fx::FxChain;
 use crate::module_presets;
-use crate::params::{FxSlotConfig, FxSlotType, LineParams, NUM_VOICES, SynthParams};
+use crate::params::{
+    DEFAULT_VOICE_LIMIT, FxSlotConfig, FxSlotType, LineParams, MAX_VOICES, SynthParams,
+};
 use crate::render_cache::CompiledSynthParams;
 use crate::simd::{SimdBackend, detect_simd_backend};
 use crate::voice::Voice;
@@ -44,12 +46,12 @@ struct PendingMonoRetrigger {
 /// The main synthesizer processor, managing voices, FX, modulation sources,
 /// and the sample-by-sample audio process loop.
 pub struct CosmoProcessor {
-    pub voices: [Voice; NUM_VOICES],
+    pub voices: [Voice; MAX_VOICES],
     pub fx: FxChain,
     pub(crate) cz_dac_color: CzDacColor,
-    pub active_notes: ArrayVec<NoteEntry, NUM_VOICES>,
-    pub mono_stack: ArrayVec<MonoStackEntry, NUM_VOICES>,
-    pub mono_held_notes: ArrayVec<u8, NUM_VOICES>,
+    pub active_notes: ArrayVec<NoteEntry, MAX_VOICES>,
+    pub mono_stack: ArrayVec<MonoStackEntry, MAX_VOICES>,
+    pub mono_held_notes: ArrayVec<u8, MAX_VOICES>,
     pending_mono_retrigger: Option<PendingMonoRetrigger>,
     pub sustain_on: bool,
     pub lfo_phase: f32,
@@ -77,6 +79,8 @@ pub struct CosmoProcessor {
     line1_scratch: LineParams,
     line2_scratch: LineParams,
     envelope_timing: EnvelopeTimingCache,
+    voice_limit: usize,
+    render_voice_limit: usize,
 }
 
 impl CosmoProcessor {
@@ -118,6 +122,8 @@ impl CosmoProcessor {
             line1_scratch: LineParams::default(),
             line2_scratch: LineParams::default(),
             envelope_timing: EnvelopeTimingCache::new(sample_rate),
+            voice_limit: DEFAULT_VOICE_LIMIT,
+            render_voice_limit: DEFAULT_VOICE_LIMIT,
         };
         proc.update_fx();
         proc
@@ -238,12 +244,12 @@ impl CosmoProcessor {
     }
 
     fn debug_assert_note_storage_bounds(&self) {
-        debug_assert!(self.active_notes.len() <= NUM_VOICES);
-        debug_assert!(self.mono_stack.len() <= NUM_VOICES);
-        debug_assert!(self.mono_held_notes.len() <= NUM_VOICES);
-        debug_assert_eq!(self.active_notes.capacity(), NUM_VOICES);
-        debug_assert_eq!(self.mono_stack.capacity(), NUM_VOICES);
-        debug_assert_eq!(self.mono_held_notes.capacity(), NUM_VOICES);
+        debug_assert!(self.active_notes.len() <= MAX_VOICES);
+        debug_assert!(self.mono_stack.len() <= MAX_VOICES);
+        debug_assert!(self.mono_held_notes.len() <= MAX_VOICES);
+        debug_assert_eq!(self.active_notes.capacity(), MAX_VOICES);
+        debug_assert_eq!(self.mono_stack.capacity(), MAX_VOICES);
+        debug_assert_eq!(self.mono_held_notes.capacity(), MAX_VOICES);
     }
 
     /// Hard reset runtime voice/FX state while keeping current parameters.
@@ -278,6 +284,7 @@ impl CosmoProcessor {
         self.line1_scratch = self.params.line1;
         self.line2_scratch = self.params.line2;
         self.envelope_timing = EnvelopeTimingCache::new(self.sample_rate);
+        self.render_voice_limit = self.voice_limit;
         self.rebuild_compiled_params();
     }
 
@@ -351,6 +358,50 @@ impl CosmoProcessor {
     pub fn clear_host_transport(&mut self) {
         self.host_transport_tempo_bpm = None;
         self.host_transport_playing = false;
+    }
+
+    /// Maximum number of voices available for note allocation.
+    /// Reflects the user's chosen polyphony limit, clamped to [MIN_VOICE_LIMIT, MAX_VOICES].
+    pub fn active_voice_limit(&self) -> usize {
+        self.voice_limit
+    }
+
+    /// Number of voices to actually render in the process loop.
+    /// May temporarily exceed `active_voice_limit()` while release tails ring out above the limit.
+    pub fn render_voice_limit(&self) -> usize {
+        self.render_voice_limit
+    }
+
+    /// Set a new user-visible voice limit and recompute the render limit.
+    /// Values outside [MIN_VOICE_LIMIT, MAX_VOICES] are clamped.
+    /// When reducing, the render limit stays expanded until release tails
+    /// above the limit finish ringing out.
+    pub fn set_voice_limit(&mut self, limit: usize) {
+        use crate::params::MIN_VOICE_LIMIT;
+        let new_limit = limit.clamp(MIN_VOICE_LIMIT, MAX_VOICES);
+        let old_limit = self.voice_limit;
+        self.voice_limit = new_limit;
+        if new_limit > old_limit {
+            self.render_voice_limit = new_limit;
+        } else {
+            self.update_render_voice_limit();
+        }
+    }
+
+    /// Scan voices above the voice limit and adjust the render limit down
+    /// once release tails have finished.
+    pub(crate) fn update_render_voice_limit(&mut self) {
+        let start = self.voice_limit;
+        let highest_active = self.voices[start..MAX_VOICES]
+            .iter()
+            .enumerate()
+            .rev()
+            .find(|(_, v)| !v.is_silent)
+            .map(|(idx, _)| start + idx);
+        self.render_voice_limit = match highest_active {
+            Some(i) => i + 1,
+            None => start,
+        };
     }
 
     /// Set a macro knob value. `value` is normalised [0.0, 1.0].
@@ -776,7 +827,7 @@ mod tests {
     #[test]
     fn poly_sustain_steals_oldest_sounding_voice_first() {
         let mut proc = CosmoProcessor::new(48_000.0);
-        let notes: Vec<u8> = (60_u8..60_u8 + NUM_VOICES as u8).collect();
+        let notes: Vec<u8> = (60_u8..60_u8 + MAX_VOICES as u8).collect();
 
         for &note in &notes {
             proc.note_on(note, utils::midi_note_to_freq(note), 1.0);
@@ -879,7 +930,8 @@ mod tests {
     #[test]
     fn poly_sustain_same_note_retrigger_steals_oldest_other_voice_when_full() {
         let mut proc = CosmoProcessor::new(48_000.0);
-        let notes: Vec<u8> = (60_u8..60_u8 + NUM_VOICES as u8).collect();
+        proc.set_voice_limit(MAX_VOICES);
+        let notes: Vec<u8> = (60_u8..60_u8 + MAX_VOICES as u8).collect();
 
         for &note in &notes {
             proc.note_on(note, utils::midi_note_to_freq(note), 1.0);
@@ -1192,10 +1244,10 @@ mod tests {
             }
         }
 
-        assert!(proc.active_notes.len() <= NUM_VOICES);
-        assert!(proc.mono_stack.len() <= NUM_VOICES);
-        assert!(proc.active_notes.capacity() >= NUM_VOICES);
-        assert!(proc.mono_stack.capacity() >= NUM_VOICES);
+        assert!(proc.active_notes.len() <= MAX_VOICES);
+        assert!(proc.mono_stack.len() <= MAX_VOICES);
+        assert!(proc.active_notes.capacity() >= MAX_VOICES);
+        assert!(proc.mono_stack.capacity() >= MAX_VOICES);
     }
 
     #[test]

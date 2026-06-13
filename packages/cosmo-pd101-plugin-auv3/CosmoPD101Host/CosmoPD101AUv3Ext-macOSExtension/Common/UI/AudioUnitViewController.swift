@@ -25,6 +25,23 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	private var lastRuntimeVoiceStatesJson: String?
 	private var lastRuntimeModSourcesJson: String?
 	private var lastTransportJson: String?
+	private var cachedVoiceLimit: Int = 0
+	private static let voiceLimitDefault: Int = 8
+	private static let voiceLimitUserDefaultsKey = "com.cosmo.pd101.voiceLimit"
+	private var voiceLimit: Int {
+		get {
+			if cachedVoiceLimit == 0 {
+				cachedVoiceLimit = UserDefaults.standard.integer(forKey: Self.voiceLimitUserDefaultsKey)
+				if cachedVoiceLimit == 0 { cachedVoiceLimit = Self.voiceLimitDefault }
+			}
+			return cachedVoiceLimit
+		}
+		set {
+			let clamped = max(1, min(newValue, 16))
+			cachedVoiceLimit = clamped
+			UserDefaults.standard.set(clamped, forKey: Self.voiceLimitUserDefaultsKey)
+		}
+	}
 
 	nonisolated(unsafe) var audioUnit: AUAudioUnit?
 	private var webView: WKWebView?
@@ -226,6 +243,13 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		case "clearMidiLearnBindings":
 			midiLearnState.bindings.removeAll()
 			midiLearnState.version += 1
+			sendResponse(id: id, result: NSNull())
+		case "getVoiceLimit":
+			sendResponse(id: id, result: voiceLimit)
+		case "setVoiceLimit":
+			if let limit = methodPayload as? Int {
+				voiceLimit = limit
+			}
 			sendResponse(id: id, result: NSNull())
 		case "addPreset", "savePreset", "deletePreset", "renamePreset", "toggleStarred", "setPresetAuthor", "setPresetDescription", "setPresetTags", "exportPreset", "importPresetBank", "listFxModulePresets", "saveFxModulePreset", "deleteFxModulePreset":
 			sendError(id: id, message: "AUv3 preset library editing is not supported yet")

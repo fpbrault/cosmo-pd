@@ -1,6 +1,6 @@
 extern crate alloc;
 
-use crate::params::{NUM_VOICES, PolyMode};
+use crate::params::{MAX_VOICES, PolyMode};
 
 use super::CosmoProcessor;
 use super::state::{MonoStackEntry, NoteEntry};
@@ -118,7 +118,7 @@ impl CosmoProcessor {
 
     pub(crate) fn replace_active_note_entry(&mut self, voice_idx: usize, note: u8) {
         self.active_notes.retain(|e| e.voice_idx != voice_idx);
-        debug_assert!(self.active_notes.len() < NUM_VOICES);
+        debug_assert!(self.active_notes.len() < MAX_VOICES);
         self.active_notes
             .try_push(NoteEntry { note, voice_idx })
             .expect("active_notes exceeded voice capacity");
@@ -127,7 +127,7 @@ impl CosmoProcessor {
 
     pub(crate) fn push_mono_stack_entry(&mut self, entry: MonoStackEntry) {
         self.mono_stack.retain(|e| e.note != entry.note);
-        debug_assert!(self.mono_stack.len() < NUM_VOICES);
+        debug_assert!(self.mono_stack.len() < MAX_VOICES);
         self.mono_stack
             .try_push(entry)
             .expect("mono_stack exceeded voice capacity");
@@ -142,7 +142,7 @@ impl CosmoProcessor {
 
     fn track_mono_held_note(&mut self, note: u8) {
         self.mono_held_notes.retain(|held_note| *held_note != note);
-        debug_assert!(self.mono_held_notes.len() < NUM_VOICES);
+        debug_assert!(self.mono_held_notes.len() < MAX_VOICES);
         self.mono_held_notes
             .try_push(note)
             .expect("mono_held_notes exceeded voice capacity");
@@ -182,7 +182,7 @@ impl CosmoProcessor {
         velocity: f32,
         source_voice_idx: usize,
     ) {
-        if source_voice_idx >= NUM_VOICES {
+        if source_voice_idx >= MAX_VOICES {
             self.initialize_voice_for_note(
                 self.find_poly_voice_for_note_on(),
                 note,
@@ -240,7 +240,7 @@ impl CosmoProcessor {
             .retain(|entry| entry.note != note || entry.voice_idx == keep_voice_idx);
         self.remove_mono_stack_note(note);
 
-        for idx in 0..NUM_VOICES {
+        for idx in 0..MAX_VOICES {
             if idx == keep_voice_idx {
                 continue;
             }
@@ -255,7 +255,7 @@ impl CosmoProcessor {
             .last()
             .map(|entry| entry.voice_idx)
             .filter(|idx| {
-                *idx < NUM_VOICES
+                *idx < MAX_VOICES
                     && !self.voices[*idx].is_silent
                     && !self.voices[*idx].is_releasing
                     && self.voices[*idx].note.is_some()
@@ -308,7 +308,7 @@ impl CosmoProcessor {
             return;
         };
 
-        if pending.source_voice_idx >= NUM_VOICES {
+        if pending.source_voice_idx >= MAX_VOICES {
             self.initialize_voice_for_note(
                 self.find_poly_voice_for_note_on(),
                 pending.note,
@@ -327,7 +327,7 @@ impl CosmoProcessor {
             voice.is_silent || near_zero || crossed_zero || pending.timeout_samples == 0;
 
         if should_trigger {
-            let keep_voice_idx = pending.source_voice_idx.min(NUM_VOICES - 1);
+            let keep_voice_idx = pending.source_voice_idx.min(MAX_VOICES - 1);
             self.initialize_voice_for_note(
                 keep_voice_idx,
                 pending.note,
@@ -346,7 +346,7 @@ impl CosmoProcessor {
     }
 
     fn quick_fade_other_mono_voices(&mut self, keep_voice_idx: usize) {
-        for idx in 0..NUM_VOICES {
+        for idx in 0..MAX_VOICES {
             if idx != keep_voice_idx && !self.voices[idx].is_silent {
                 self.start_quick_release(idx);
             }
@@ -395,13 +395,14 @@ impl CosmoProcessor {
     }
 
     fn find_poly_voice_for_note_on_excluding(&self, excluded_voice_idx: Option<usize>) -> usize {
-        if let Some(voice_idx) = self.voices.iter().position(|v| v.is_silent)
+        let limit = self.active_voice_limit();
+        if let Some(voice_idx) = self.voices[..limit].iter().position(|v| v.is_silent)
             && Some(voice_idx) != excluded_voice_idx
         {
             return voice_idx;
         }
 
-        self.voices
+        self.voices[..limit]
             .iter()
             .enumerate()
             .filter(|(idx, _)| Some(*idx) != excluded_voice_idx)
@@ -550,7 +551,7 @@ impl CosmoProcessor {
     pub fn set_sustain(&mut self, on: bool) {
         self.sustain_on = on;
         if !on {
-            for i in 0..NUM_VOICES {
+            for i in 0..MAX_VOICES {
                 let sustained = self.voices[i].sustained;
                 if sustained {
                     let still_held = self.active_notes.iter().any(|e| e.voice_idx == i);

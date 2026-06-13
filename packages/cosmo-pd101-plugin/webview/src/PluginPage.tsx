@@ -5,6 +5,7 @@ import {
 	SYNTH_RENDERER_DESIGN_HEIGHT,
 	SYNTH_RENDERER_MIN_ASPECT_RATIO,
 	SynthRenderer,
+	useGlobalSynthSettings,
 	useSynthPresetManager,
 	useSynthStore,
 } from "@cosmo/cosmo-pd101";
@@ -254,6 +255,34 @@ export default function PluginPage({
 		presetManager.activePresetNameBase,
 		presetManager.isPresetDirty,
 	]);
+
+	const pluginVoiceLimit = useGlobalSynthSettings((s) => s.voiceLimit);
+	const setPluginVoiceLimit = useGlobalSynthSettings((s) => s.setVoiceLimit);
+
+	const [voiceLimitHydrated, setVoiceLimitHydrated] = useState(false);
+
+	useEffect(() => {
+		let cancelled = false;
+		window
+			.__czGetVoiceLimit?.()
+			.then((limit) => {
+				if (cancelled) return;
+				if (typeof limit === "number") {
+					setPluginVoiceLimit(limit);
+				}
+			})
+			.finally(() => {
+				if (!cancelled) setVoiceLimitHydrated(true);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [setPluginVoiceLimit]);
+
+	useEffect(() => {
+		if (!voiceLimitHydrated) return;
+		window.__czSetVoiceLimit?.(pluginVoiceLimit);
+	}, [voiceLimitHydrated, pluginVoiceLimit]);
 
 	const combinedScale = rendererFrame?.frameScale ?? 1;
 	const frameWidth =

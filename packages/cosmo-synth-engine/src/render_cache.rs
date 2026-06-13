@@ -5,7 +5,7 @@
 
 use crate::generators::{PER_LINE_HEADROOM, cz101, pre_resolve_controls};
 use crate::params::{
-    Algo, BaseWaveform, LineParams, ModMatrixCache, NUM_VOICES, SynthParams, WindowType,
+    Algo, BaseWaveform, DEFAULT_VOICE_LIMIT, LineParams, ModMatrixCache, SynthParams, WindowType,
 };
 
 const REFERENCE_LINE_HEADROOM: f32 = 0.75;
@@ -133,7 +133,7 @@ fn compute_norm(params: &SynthParams) -> f32 {
     let headroom_makeup = headroom_ratio
         .powf(HEADROOM_MAKEUP_EXPONENT)
         .clamp(1.0, MAX_HEADROOM_MAKEUP);
-    params.volume * headroom_makeup / (NUM_VOICES as f32).sqrt()
+    params.volume * headroom_makeup / (DEFAULT_VOICE_LIMIT as f32).sqrt()
 }
 
 #[cfg(test)]

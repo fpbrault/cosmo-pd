@@ -9,6 +9,10 @@ use crate::session_state::{MidiLearnBinding, default_midi_bindings};
 
 const GLOBAL_SETTINGS_FILE_NAME: &str = "global_settings.json";
 
+pub const DEFAULT_VOICE_LIMIT: u8 = 8;
+pub const MIN_VOICE_LIMIT: u8 = 1;
+pub const MAX_VOICE_LIMIT: u8 = 16;
+
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum PluginLogLevel {
@@ -19,6 +23,10 @@ pub enum PluginLogLevel {
     Debug,
 }
 
+fn default_voice_limit() -> u8 {
+    DEFAULT_VOICE_LIMIT
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct PluginGlobalSettings {
@@ -26,6 +34,14 @@ pub struct PluginGlobalSettings {
     pub midi_learn_bindings: Vec<MidiLearnBinding>,
     #[serde(default)]
     pub log_level: PluginLogLevel,
+    #[serde(default = "default_voice_limit")]
+    pub voice_limit: u8,
+}
+
+impl PluginGlobalSettings {
+    pub fn clamped_voice_limit(&self) -> u8 {
+        self.voice_limit.clamp(MIN_VOICE_LIMIT, MAX_VOICE_LIMIT)
+    }
 }
 
 impl Default for PluginGlobalSettings {
@@ -33,6 +49,7 @@ impl Default for PluginGlobalSettings {
         Self {
             midi_learn_bindings: default_midi_bindings(),
             log_level: PluginLogLevel::Error,
+            voice_limit: DEFAULT_VOICE_LIMIT,
         }
     }
 }
@@ -124,6 +141,12 @@ pub fn load_or_init_global_settings() -> Result<PluginGlobalSettings, String> {
     Ok(settings)
 }
 
+pub fn save_voice_limit(limit: u8) -> Result<(), String> {
+    let mut settings = load_or_init_global_settings()?;
+    settings.voice_limit = limit.clamp(MIN_VOICE_LIMIT, MAX_VOICE_LIMIT);
+    save_global_settings(&settings)
+}
+
 pub fn save_midi_learn_bindings(bindings: Vec<MidiLearnBinding>) -> Result<(), String> {
     let mut settings = load_or_init_global_settings()?;
     settings.midi_learn_bindings = bindings;
@@ -182,6 +205,7 @@ mod tests {
             save_global_settings(&PluginGlobalSettings {
                 midi_learn_bindings: default_midi_bindings(),
                 log_level: PluginLogLevel::Debug,
+                voice_limit: DEFAULT_VOICE_LIMIT,
             })
             .unwrap();
 
@@ -190,6 +214,61 @@ mod tests {
             let settings = load_or_init_global_settings().unwrap();
             assert_eq!(settings.log_level, PluginLogLevel::Debug);
             assert!(settings.midi_learn_bindings.is_empty());
+        });
+    }
+
+    #[test]
+    fn default_voice_limit_is_eight() {
+        let settings = PluginGlobalSettings::default();
+        assert_eq!(settings.voice_limit, DEFAULT_VOICE_LIMIT);
+    }
+
+    #[test]
+    fn deserializing_without_voice_limit_defaults_to_eight() {
+        let settings: PluginGlobalSettings =
+            serde_json::from_str(r#"{"midiLearnBindings":[],"logLevel":"error"}"#).unwrap();
+        assert_eq!(settings.voice_limit, DEFAULT_VOICE_LIMIT);
+    }
+
+    #[test]
+    fn deserializing_with_voice_limit_preserves_value() {
+        let settings: PluginGlobalSettings =
+            serde_json::from_str(r#"{"midiLearnBindings":[],"logLevel":"error","voiceLimit":12}"#)
+                .unwrap();
+        assert_eq!(settings.voice_limit, 12);
+    }
+
+    #[test]
+    fn clamped_voice_limit_bounds() {
+        let low = PluginGlobalSettings {
+            voice_limit: 0,
+            ..Default::default()
+        };
+        assert_eq!(low.clamped_voice_limit(), MIN_VOICE_LIMIT);
+
+        let high = PluginGlobalSettings {
+            voice_limit: 17,
+            ..Default::default()
+        };
+        assert_eq!(high.clamped_voice_limit(), MAX_VOICE_LIMIT);
+
+        let normal = PluginGlobalSettings {
+            voice_limit: 8,
+            ..Default::default()
+        };
+        assert_eq!(normal.clamped_voice_limit(), 8);
+    }
+
+    #[test]
+    fn voice_limit_round_trips_through_save_load() {
+        with_test_data_dir(|_| {
+            let settings = PluginGlobalSettings {
+                voice_limit: 4,
+                ..Default::default()
+            };
+            save_global_settings(&settings).unwrap();
+            let loaded = load_or_init_global_settings().unwrap();
+            assert_eq!(loaded.voice_limit, 4);
         });
     }
 }

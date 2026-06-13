@@ -6,7 +6,7 @@ use alloc::sync::Arc;
 
 use crate::dsp_utils::{lfo_output_with_symmetry, random_hold_value};
 use crate::params::{
-    LfoRateMode, LfoSyncDivision, LineParams, ModDestination, ModMatrixCache, NUM_VOICES,
+    LfoRateMode, LfoSyncDivision, LineParams, MAX_VOICES, ModDestination, ModMatrixCache,
     SynthParams,
 };
 use crate::render_cache::CompiledLinePlan;
@@ -218,6 +218,7 @@ impl CosmoProcessor {
                 macro2: self.macro2,
                 macro3: self.macro3,
                 macro4: self.macro4,
+                voice_limit: self.voice_limit as u8,
             };
             prev_lfo1 = lfos.lfo1;
             prev_lfo2 = lfos.lfo2;
@@ -226,6 +227,8 @@ impl CosmoProcessor {
             mixed *= norm;
             *sample_out = self.apply_fx_and_limit(mixed, sr, p.cz_dac_enabled);
         }
+
+        self.update_render_voice_limit();
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -406,10 +409,11 @@ impl CosmoProcessor {
             line1_plan: &line1_plan,
             line2_plan: &line2_plan,
         };
+        let render_limit = self.render_voice_limit();
         let mut mixed = 0.0_f32;
         let mut v = 0;
         if matches!(self.simd_backend, crate::simd::SimdBackend::Scalar) {
-            while v + 4 <= NUM_VOICES {
+            while v + 4 <= render_limit {
                 mixed += crate::voice::render_voice(&mut self.voices[v], &render_ctx);
                 mixed += crate::voice::render_voice(&mut self.voices[v + 1], &render_ctx);
                 mixed += crate::voice::render_voice(&mut self.voices[v + 2], &render_ctx);
@@ -418,7 +422,7 @@ impl CosmoProcessor {
             }
         } else {
             let mut vector_acc = [0.0_f32; 4];
-            while v + 4 <= NUM_VOICES {
+            while v + 4 <= render_limit {
                 let voice_samples = [
                     crate::voice::render_voice(&mut self.voices[v], &render_ctx),
                     crate::voice::render_voice(&mut self.voices[v + 1], &render_ctx),
@@ -431,7 +435,7 @@ impl CosmoProcessor {
             mixed += self.simd_backend.horizontal_sum4(vector_acc);
         }
 
-        while v < NUM_VOICES {
+        while v < render_limit {
             mixed += crate::voice::render_voice(&mut self.voices[v], &render_ctx);
             v += 1;
         }
@@ -453,7 +457,7 @@ impl CosmoProcessor {
         self.active_notes
             .last()
             .map(|entry| entry.voice_idx)
-            .filter(|voice_idx| *voice_idx < NUM_VOICES)
+            .filter(|voice_idx| *voice_idx < MAX_VOICES)
             .or_else(|| {
                 self.voices.iter().position(|voice| {
                     voice.note.is_some() && (!voice.is_silent || voice.mod_env.output > 0.0)

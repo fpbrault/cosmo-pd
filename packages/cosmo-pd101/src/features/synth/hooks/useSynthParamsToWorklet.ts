@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { subscribeApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { SynthEngineController } from "@/features/synth/engine/synthEngineAdapter";
 import { createSynthEngineSnapshot } from "@/features/synth/engine/synthEngineSnapshot";
@@ -11,6 +11,7 @@ type UseSynthParamsToWorkletParams = {
 	paramsRef: React.MutableRefObject<SynthParams>;
 	effectivePitchHz: number;
 	gatherState: () => SynthPresetV1;
+	voiceLimit?: number;
 };
 
 export function useSynthParamsToWorklet({
@@ -18,6 +19,7 @@ export function useSynthParamsToWorklet({
 	paramsRef,
 	effectivePitchHz,
 	gatherState,
+	voiceLimit,
 }: UseSynthParamsToWorkletParams) {
 	const adapter = useMemo(
 		() => createWorkletSynthEngineAdapter({ workletNodeRef, paramsRef }),
@@ -44,6 +46,19 @@ export function useSynthParamsToWorklet({
 		sync();
 		return useSynthStore.subscribe(sync);
 	}, [adapter, gatherState, effectivePitchHz]);
+
+	const voiceLimitRef = useRef<number | undefined>();
+
+	useEffect(() => {
+		if (voiceLimit === voiceLimitRef.current || voiceLimit === undefined)
+			return;
+		if (!workletNodeRef.current) return;
+		workletNodeRef.current.port.postMessage({
+			type: "setVoiceLimit",
+			limit: voiceLimit,
+		});
+		voiceLimitRef.current = voiceLimit;
+	}, [voiceLimit, workletNodeRef]);
 
 	useEffect(() => {
 		return subscribeApplyModulePreset((request) => {

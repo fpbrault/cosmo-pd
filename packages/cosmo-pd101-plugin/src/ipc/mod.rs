@@ -15,6 +15,7 @@ mod editor;
 mod midi;
 mod performance;
 mod presets;
+mod settings;
 mod synth;
 
 pub(crate) const DEFAULT_USER_PRESET_AUTHOR: &str = "User";
@@ -109,6 +110,11 @@ impl IpcContext {
             | PluginIpcRequest::RemoveMidiBinding(..)
             | PluginIpcRequest::ClearMidiLearnBindings
             | PluginIpcRequest::GetMidiLearnState => midi::handle(self, req),
+
+            // Settings
+            PluginIpcRequest::GetVoiceLimit | PluginIpcRequest::SetVoiceLimit(..) => {
+                settings::handle(self, req)
+            }
         }
     }
 }

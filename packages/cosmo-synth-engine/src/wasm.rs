@@ -82,6 +82,13 @@ impl CzSynthProcessor {
         self.inner.set_sustain(on);
     }
 
+    /// Set the global voice limit (1–16). Voices above this limit are
+    /// still rendered while their release tails ring out.
+    #[wasm_bindgen(js_name = setVoiceLimit)]
+    pub fn set_voice_limit(&mut self, limit: usize) {
+        self.inner.set_voice_limit(limit);
+    }
+
     /// Hard reset runtime voice and FX state while preserving current params.
     #[wasm_bindgen(js_name = resetAudioState)]
     pub fn reset_audio_state(&mut self) {

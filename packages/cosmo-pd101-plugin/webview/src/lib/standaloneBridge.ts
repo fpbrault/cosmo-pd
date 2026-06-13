@@ -31,6 +31,8 @@ export function ensureStandaloneBridge(): boolean {
 	window.__czSetParams = (params: SynthParams) => {
 		currentParams = params;
 	};
+	window.__czGetVoiceLimit = async () => 8;
+	window.__czSetVoiceLimit = () => {};
 	window.__czGetTransportInfo = async () => ({
 		playing: false,
 		recording: false,
