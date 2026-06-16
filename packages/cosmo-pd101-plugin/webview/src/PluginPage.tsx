@@ -41,14 +41,16 @@ export default function PluginPage({
 	const gatherPresetState = useSynthStore((s) => s.gatherPresetState);
 
 	const frameRef = useRef<HTMLDivElement | null>(null);
-	const [rendererFrame, setRendererFrame] = useState(() =>
-		computeRendererFrameLayout({
-			availableWidth:
-				SYNTH_RENDERER_DESIGN_HEIGHT * SYNTH_RENDERER_MIN_ASPECT_RATIO,
-			availableHeight: SYNTH_RENDERER_DESIGN_HEIGHT,
-			targetAspectRatio: SYNTH_RENDERER_MIN_ASPECT_RATIO,
-		}),
-	);
+	const [rendererFrame, setRendererFrame] = useState(() => {
+		const frameWidth =
+			SYNTH_RENDERER_DESIGN_HEIGHT * SYNTH_RENDERER_MIN_ASPECT_RATIO;
+		return {
+			frameWidth,
+			frameHeight: SYNTH_RENDERER_DESIGN_HEIGHT,
+			frameScale: 1,
+			effectiveAspectRatio: SYNTH_RENDERER_MIN_ASPECT_RATIO,
+		};
+	});
 	const sendNativeEngineEvent = useCallback(
 		(type: string, payload: Record<string, unknown>) => {
 			const pm = window.ipc?.postMessage?.bind(window.ipc);

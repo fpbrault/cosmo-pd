@@ -38,6 +38,8 @@ use cosmo_synth_engine::params::SynthParams;
 
 pub const DEFAULT_WIDTH: u32 = 1152;
 pub const DEFAULT_HEIGHT: u32 = 864;
+pub const MIN_WIDTH: u32 = 320;
+pub const MIN_HEIGHT: u32 = 240;
 
 static EMBEDDED_WEBVIEW_DIST: Dir<'_> = include_dir!("$OUT_DIR/embedded-webview");
 
@@ -100,6 +102,7 @@ impl WebAssetSource {
 pub struct CzEditor {
     shared_state: Arc<PluginSharedState>,
     host_scale_factor: Arc<Mutex<f32>>,
+    current_size: Arc<Mutex<(u32, u32)>>,
     webview_state: Arc<Mutex<WebViewContainer>>,
     pending_parent_ns_view: Option<usize>,
     params: Arc<CzPluginParams>,
@@ -142,6 +145,7 @@ impl CzEditor {
         Self {
             shared_state,
             host_scale_factor: Arc::new(Mutex::new(1.0)),
+            current_size: Arc::new(Mutex::new((DEFAULT_WIDTH, DEFAULT_HEIGHT))),
             webview_state: Arc::new(Mutex::new(WebViewContainer { webview: None })),
             pending_parent_ns_view: None,
             params,
@@ -173,6 +177,11 @@ impl CzEditor {
         let shared_state = self.shared_state.clone();
         let params = self.params.clone();
         let webview_state_for_ipc = self.webview_state.clone();
+        let initial_size = self
+            .current_size
+            .lock()
+            .map(|size| *size)
+            .unwrap_or((DEFAULT_WIDTH, DEFAULT_HEIGHT));
 
         let (webview, standalone_window) = unsafe {
             build_webview_from_ns_view(
@@ -181,6 +190,7 @@ impl CzEditor {
                 shared_state,
                 params,
                 webview_state_for_ipc,
+                initial_size,
             )
         };
 
@@ -192,6 +202,7 @@ impl CzEditor {
 
         if self.has_live_webview() {
             self.pending_parent_ns_view = None;
+            let _ = apply_webview_size(&self.webview_state, initial_size.0, initial_size.1);
             self.push_params();
             self.apply_scale_normalization();
             true
@@ -257,7 +268,52 @@ impl CzEditor {
 
 impl Editor for CzEditor {
     fn size(&self) -> (u32, u32) {
-        (DEFAULT_WIDTH, DEFAULT_HEIGHT)
+        self.current_size
+            .lock()
+            .map(|size| *size)
+            .unwrap_or((DEFAULT_WIDTH, DEFAULT_HEIGHT))
+    }
+
+    fn can_resize(&self) -> bool {
+        true
+    }
+
+    fn can_maximize(&self) -> bool {
+        true
+    }
+
+    fn min_size(&self) -> (u32, u32) {
+        (MIN_WIDTH, MIN_HEIGHT)
+    }
+
+    fn max_size(&self) -> (u32, u32) {
+        (u32::MAX, u32::MAX)
+    }
+
+    fn aspect_ratio(&self) -> Option<(u32, u32)> {
+        None
+    }
+
+    fn set_size(&mut self, width: u32, height: u32) -> bool {
+        let width = width.max(MIN_WIDTH);
+        let height = height.max(MIN_HEIGHT);
+        if let Ok(mut current_size) = self.current_size.lock() {
+            *current_size = (width, height);
+        }
+
+        #[cfg(target_os = "macos")]
+        {
+            if is_main_thread() {
+                return apply_webview_size(&self.webview_state, width, height);
+            }
+
+            let webview_state = self.webview_state.clone();
+            run_on_main(move |_mtm| {
+                let _ = apply_webview_size(&webview_state, width, height);
+            });
+        }
+
+        true
     }
 
     fn screenshot(
@@ -420,6 +476,35 @@ fn push_params_to_webview(
     {
         let _ = wv.evaluate_script(&script);
     }
+}
+
+fn apply_webview_size(
+    webview_state: &Arc<Mutex<WebViewContainer>>,
+    width: u32,
+    height: u32,
+) -> bool {
+    let Ok(container) = webview_state.lock() else {
+        return false;
+    };
+    let Some(wv) = &container.webview else {
+        return true;
+    };
+
+    let resize_result = wv.set_bounds(wry::Rect {
+        position: wry::dpi::LogicalPosition::new(0, 0).into(),
+        size: wry::dpi::LogicalSize::new(width, height).into(),
+    });
+    if let Err(error) = &resize_result {
+        append_log_warn(&format!(
+            "failed to resize WebView to {width}x{height}: {error}"
+        ));
+    }
+
+    let _ = wv.evaluate_script(&format!(
+        "window.__czHostSize = {{ width: {width}, height: {height} }}; window.dispatchEvent(new Event('resize'));"
+    ));
+
+    resize_result.is_ok()
 }
 
 #[cfg(not(any(target_os = "ios", target_os = "android")))]
@@ -828,6 +913,7 @@ unsafe fn build_webview_from_ns_view(
     shared_state: Arc<PluginSharedState>,
     params: Arc<CzPluginParams>,
     webview_state: Arc<Mutex<WebViewContainer>>,
+    initial_size: (u32, u32),
 ) -> (Option<wry::WebView>, Option<StandaloneWindow>) {
     unsafe {
         use core::ptr::NonNull;
@@ -865,7 +951,7 @@ unsafe fn build_webview_from_ns_view(
         let builder = WebViewBuilder::new()
         .with_bounds(wry::Rect {
             position: dpi::LogicalPosition::new(0, 0).into(),
-            size: dpi::LogicalSize::new(DEFAULT_WIDTH, DEFAULT_HEIGHT).into(),
+            size: dpi::LogicalSize::new(initial_size.0, initial_size.1).into(),
         })
         .with_data_store_identifier(webview_data_store_identifier(&scheme))
         .with_custom_protocol(scheme.clone(), move |_id, request| {

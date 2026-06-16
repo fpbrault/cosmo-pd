@@ -95,7 +95,8 @@ describe("AUv3 bridge contract", () => {
 			/private func currentPresetSession[\s\S]*?return \[([\s\S]*?)\]/m,
 		);
 		expect(dictMatch).not.toBeNull();
-		const dictBody = dictMatch![1];
+		const dictBody = dictMatch?.[1];
+		expect(dictBody).toBeDefined();
 
 		// Find all string keys used as dictionary literal keys
 		const swiftKeys = new Set(

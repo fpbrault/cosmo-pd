@@ -26,16 +26,16 @@ syn = { version = "2", features = [
 ] }
 quote = "1"
 proc-macro2 = "1"
-truce = { git = "https://github.com/fpbrault/truce.git", default-features = false }
-truce-core = { git = "https://github.com/fpbrault/truce.git" }
-truce-params = { git = "https://github.com/fpbrault/truce.git" }
-truce-clap = { git = "https://github.com/fpbrault/truce.git"}
-truce-vst3 = { git = "https://github.com/fpbrault/truce.git"}
-truce-au = { git = "https://github.com/fpbrault/truce.git"}
-truce-standalone = { git = "https://github.com/fpbrault/truce.git"}
-truce-gui = { git = "https://github.com/fpbrault/truce.git"}
-truce-build = { git = "https://github.com/fpbrault/truce.git"}
-truce-test = { git = "https://github.com/fpbrault/truce.git"}
+truce = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v0.58.3-20260616", default-features = false }
+truce-core = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v0.58.3-20260616" }
+truce-params = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v0.58.3-20260616" }
+truce-clap = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v0.58.3-20260616" }
+truce-vst3 = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v0.58.3-20260616" }
+truce-au = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v0.58.3-20260616" }
+truce-standalone = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v0.58.3-20260616" }
+truce-gui = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v0.58.3-20260616" }
+truce-build = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v0.58.3-20260616" }
+truce-test = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v0.58.3-20260616" }
 wry = "0.55.0"
 raw-window-handle = "0.6"
 
