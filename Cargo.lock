@@ -2177,7 +2177,7 @@ version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "680998035259dcfcafe653688bf2aa6d3e2dc05e98be6ab46afb089dc84f1df8"
 dependencies = [
- "proc-macro-crate 3.5.0",
+ "proc-macro-crate 1.3.1",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -2751,15 +2751,6 @@ checksum = "b00f26d3400549137f92511a46ac1cd8ce37cb5598a96d382381458b992a5d24"
 dependencies = [
  "toml_datetime 0.6.3",
  "toml_edit 0.20.2",
-]
-
-[[package]]
-name = "proc-macro-crate"
-version = "3.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e67ba7e9b2b56446f1d419b1d807906278ffa1a658a8a5d8a39dcb1f5a78614f"
-dependencies = [
- "toml_edit 0.25.12+spec-1.1.0",
 ]
 
 [[package]]
@@ -3591,18 +3582,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "toml_edit"
-version = "0.25.12+spec-1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2153edc6955a6c354fad8f5efd38b6a8769bdccf9fe50f8e1329f81b0baa5d7"
-dependencies = [
- "indexmap",
- "toml_datetime 1.1.1+spec-1.1.0",
- "toml_parser",
- "winnow 1.0.3",
-]
-
-[[package]]
 name = "toml_parser"
 version = "1.1.2+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3619,8 +3598,8 @@ checksum = "756daf9b1013ebe47a8776667b466417e2d4c5679d441c26230efd9ef78692db"
 
 [[package]]
 name = "truce"
-version = "0.57.1"
-source = "git+https://github.com/fpbrault/truce.git#32a5e5d66221707de247378b809ecc5473f99e86"
+version = "0.58.3"
+source = "git+https://github.com/fpbrault/truce.git?branch=cosmo%2Ftruce-v0.58.3-20260616#96f0581fb297103fe68f74a4aa602ee7a1fb31d4"
 dependencies = [
  "truce-core",
  "truce-derive",
@@ -3632,8 +3611,8 @@ dependencies = [
 
 [[package]]
 name = "truce-au"
-version = "0.57.1"
-source = "git+https://github.com/fpbrault/truce.git#32a5e5d66221707de247378b809ecc5473f99e86"
+version = "0.58.3"
+source = "git+https://github.com/fpbrault/truce.git?branch=cosmo%2Ftruce-v0.58.3-20260616#96f0581fb297103fe68f74a4aa602ee7a1fb31d4"
 dependencies = [
  "cc",
  "crossbeam-queue",
@@ -3644,20 +3623,23 @@ dependencies = [
 
 [[package]]
 name = "truce-build"
-version = "0.57.1"
-source = "git+https://github.com/fpbrault/truce.git#32a5e5d66221707de247378b809ecc5473f99e86"
+version = "0.58.3"
+source = "git+https://github.com/fpbrault/truce.git?branch=cosmo%2Ftruce-v0.58.3-20260616#96f0581fb297103fe68f74a4aa602ee7a1fb31d4"
 dependencies = [
+ "base64",
  "serde",
  "toml 1.1.2+spec-1.1.0",
+ "truce-utils",
 ]
 
 [[package]]
 name = "truce-clap"
-version = "0.57.1"
-source = "git+https://github.com/fpbrault/truce.git#32a5e5d66221707de247378b809ecc5473f99e86"
+version = "0.58.3"
+source = "git+https://github.com/fpbrault/truce.git?branch=cosmo%2Ftruce-v0.58.3-20260616#96f0581fb297103fe68f74a4aa602ee7a1fb31d4"
 dependencies = [
  "clap-sys",
  "crossbeam-queue",
+ "log",
  "objc",
  "truce-core",
  "truce-params",
@@ -3665,8 +3647,8 @@ dependencies = [
 
 [[package]]
 name = "truce-core"
-version = "0.57.1"
-source = "git+https://github.com/fpbrault/truce.git#32a5e5d66221707de247378b809ecc5473f99e86"
+version = "0.58.3"
+source = "git+https://github.com/fpbrault/truce.git?branch=cosmo%2Ftruce-v0.58.3-20260616#96f0581fb297103fe68f74a4aa602ee7a1fb31d4"
 dependencies = [
  "png",
  "truce-params",
@@ -3675,8 +3657,8 @@ dependencies = [
 
 [[package]]
 name = "truce-cpu"
-version = "0.57.1"
-source = "git+https://github.com/fpbrault/truce.git#32a5e5d66221707de247378b809ecc5473f99e86"
+version = "0.58.3"
+source = "git+https://github.com/fpbrault/truce.git?branch=cosmo%2Ftruce-v0.58.3-20260616#96f0581fb297103fe68f74a4aa602ee7a1fb31d4"
 dependencies = [
  "fontdue",
  "tiny-skia",
@@ -3687,8 +3669,8 @@ dependencies = [
 
 [[package]]
 name = "truce-derive"
-version = "0.57.1"
-source = "git+https://github.com/fpbrault/truce.git#32a5e5d66221707de247378b809ecc5473f99e86"
+version = "0.58.3"
+source = "git+https://github.com/fpbrault/truce.git?branch=cosmo%2Ftruce-v0.58.3-20260616#96f0581fb297103fe68f74a4aa602ee7a1fb31d4"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3701,8 +3683,8 @@ dependencies = [
 
 [[package]]
 name = "truce-driver"
-version = "0.57.1"
-source = "git+https://github.com/fpbrault/truce.git#32a5e5d66221707de247378b809ecc5473f99e86"
+version = "0.58.3"
+source = "git+https://github.com/fpbrault/truce.git?branch=cosmo%2Ftruce-v0.58.3-20260616#96f0581fb297103fe68f74a4aa602ee7a1fb31d4"
 dependencies = [
  "truce-core",
  "truce-params",
@@ -3710,13 +3692,13 @@ dependencies = [
 
 [[package]]
 name = "truce-font"
-version = "0.57.1"
-source = "git+https://github.com/fpbrault/truce.git#32a5e5d66221707de247378b809ecc5473f99e86"
+version = "0.58.3"
+source = "git+https://github.com/fpbrault/truce.git?branch=cosmo%2Ftruce-v0.58.3-20260616#96f0581fb297103fe68f74a4aa602ee7a1fb31d4"
 
 [[package]]
 name = "truce-gui"
-version = "0.57.1"
-source = "git+https://github.com/fpbrault/truce.git#32a5e5d66221707de247378b809ecc5473f99e86"
+version = "0.58.3"
+source = "git+https://github.com/fpbrault/truce.git?branch=cosmo%2Ftruce-v0.58.3-20260616#96f0581fb297103fe68f74a4aa602ee7a1fb31d4"
 dependencies = [
  "baseview-truce",
  "log",
@@ -3730,6 +3712,7 @@ dependencies = [
  "truce-core",
  "truce-cpu",
  "truce-gui-types",
+ "truce-gui-utils",
  "truce-params",
  "truce-plugin",
  "wgpu",
@@ -3737,17 +3720,26 @@ dependencies = [
 
 [[package]]
 name = "truce-gui-types"
-version = "0.57.1"
-source = "git+https://github.com/fpbrault/truce.git#32a5e5d66221707de247378b809ecc5473f99e86"
+version = "0.58.3"
+source = "git+https://github.com/fpbrault/truce.git?branch=cosmo%2Ftruce-v0.58.3-20260616#96f0581fb297103fe68f74a4aa602ee7a1fb31d4"
 dependencies = [
  "objc2",
  "truce-core",
 ]
 
 [[package]]
+name = "truce-gui-utils"
+version = "0.58.3"
+source = "git+https://github.com/fpbrault/truce.git?branch=cosmo%2Ftruce-v0.58.3-20260616#96f0581fb297103fe68f74a4aa602ee7a1fb31d4"
+dependencies = [
+ "objc",
+ "raw-window-handle 0.5.2",
+]
+
+[[package]]
 name = "truce-loader"
-version = "0.57.1"
-source = "git+https://github.com/fpbrault/truce.git#32a5e5d66221707de247378b809ecc5473f99e86"
+version = "0.58.3"
+source = "git+https://github.com/fpbrault/truce.git?branch=cosmo%2Ftruce-v0.58.3-20260616#96f0581fb297103fe68f74a4aa602ee7a1fb31d4"
 dependencies = [
  "crc32fast",
  "libloading 0.9.0",
@@ -3761,16 +3753,16 @@ dependencies = [
 
 [[package]]
 name = "truce-params"
-version = "0.57.1"
-source = "git+https://github.com/fpbrault/truce.git#32a5e5d66221707de247378b809ecc5473f99e86"
+version = "0.58.3"
+source = "git+https://github.com/fpbrault/truce.git?branch=cosmo%2Ftruce-v0.58.3-20260616#96f0581fb297103fe68f74a4aa602ee7a1fb31d4"
 dependencies = [
  "bitflags 2.13.0",
 ]
 
 [[package]]
 name = "truce-plugin"
-version = "0.57.1"
-source = "git+https://github.com/fpbrault/truce.git#32a5e5d66221707de247378b809ecc5473f99e86"
+version = "0.58.3"
+source = "git+https://github.com/fpbrault/truce.git?branch=cosmo%2Ftruce-v0.58.3-20260616#96f0581fb297103fe68f74a4aa602ee7a1fb31d4"
 dependencies = [
  "truce-core",
  "truce-gui-types",
@@ -3779,13 +3771,13 @@ dependencies = [
 
 [[package]]
 name = "truce-shim-types"
-version = "0.57.1"
-source = "git+https://github.com/fpbrault/truce.git#32a5e5d66221707de247378b809ecc5473f99e86"
+version = "0.58.3"
+source = "git+https://github.com/fpbrault/truce.git?branch=cosmo%2Ftruce-v0.58.3-20260616#96f0581fb297103fe68f74a4aa602ee7a1fb31d4"
 
 [[package]]
 name = "truce-standalone"
-version = "0.57.1"
-source = "git+https://github.com/fpbrault/truce.git#32a5e5d66221707de247378b809ecc5473f99e86"
+version = "0.58.3"
+source = "git+https://github.com/fpbrault/truce.git?branch=cosmo%2Ftruce-v0.58.3-20260616#96f0581fb297103fe68f74a4aa602ee7a1fb31d4"
 dependencies = [
  "baseview-truce",
  "cpal",
@@ -3800,14 +3792,15 @@ dependencies = [
  "truce-core",
  "truce-gui",
  "truce-params",
+ "truce-utils",
  "windows-sys 0.61.2",
  "x11-dl",
 ]
 
 [[package]]
 name = "truce-test"
-version = "0.57.1"
-source = "git+https://github.com/fpbrault/truce.git#32a5e5d66221707de247378b809ecc5473f99e86"
+version = "0.58.3"
+source = "git+https://github.com/fpbrault/truce.git?branch=cosmo%2Ftruce-v0.58.3-20260616#96f0581fb297103fe68f74a4aa602ee7a1fb31d4"
 dependencies = [
  "png",
  "toml 1.1.2+spec-1.1.0",
@@ -3819,13 +3812,13 @@ dependencies = [
 
 [[package]]
 name = "truce-utils"
-version = "0.57.1"
-source = "git+https://github.com/fpbrault/truce.git#32a5e5d66221707de247378b809ecc5473f99e86"
+version = "0.58.3"
+source = "git+https://github.com/fpbrault/truce.git?branch=cosmo%2Ftruce-v0.58.3-20260616#96f0581fb297103fe68f74a4aa602ee7a1fb31d4"
 
 [[package]]
 name = "truce-vst3"
-version = "0.57.1"
-source = "git+https://github.com/fpbrault/truce.git#32a5e5d66221707de247378b809ecc5473f99e86"
+version = "0.58.3"
+source = "git+https://github.com/fpbrault/truce.git?branch=cosmo%2Ftruce-v0.58.3-20260616#96f0581fb297103fe68f74a4aa602ee7a1fb31d4"
 dependencies = [
  "cc",
  "crossbeam-queue",
@@ -4841,9 +4834,6 @@ name = "winnow"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0592e1c9d151f854e6fd382574c3a0855250e1d9b2f99d9281c6e6391af352f1"
-dependencies = [
- "memchr",
-]
 
 [[package]]
 name = "wit-bindgen"
