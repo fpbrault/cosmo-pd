@@ -14,6 +14,7 @@
 			"!!**/target",
 			"!!vendor",
 			"!!**/public/cosmo-synth-engine-wasm",
+			"!!packages/cosmo-pd101-plugin-auv3/**/UI/assets",
 			"!!**/bindings/*.ts",
 			"!!**/gen/schemas/*.json",
 			"!!**/factory_presets.json"
