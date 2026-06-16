@@ -38,6 +38,9 @@ const PRESET_SESSION_KEYS = [
 /// The fallback chain when `presetSessionState` fields are nil:
 ///   `activePresetNameBase` -> `audioUnit.currentPreset?.name` -> "Current State"
 const PRESET_SESSION_FALLBACK_UNSELECTED_NAME = "Current State";
+const MINIMUM_RENDERER_SCALE = 0.5;
+const SYNTH_RENDERER_DESIGN_WIDTH = 1368;
+const SYNTH_RENDERER_DESIGN_HEIGHT = 912;
 
 function readText(filePath: string): string {
 	return readFileSync(filePath, "utf8");
@@ -115,5 +118,32 @@ describe("AUv3 bridge contract", () => {
 			PRESET_SESSION_FALLBACK_UNSELECTED_NAME,
 		);
 		expect(containsFallback).toBeTrue();
+	});
+
+	it("advertises an AUv3 window minimum that still allows renderer scaling", () => {
+		const swiftSource = readText(xcodeControllerPath);
+		const widthMatch = swiftSource.match(
+			/private static let minimumWidth: CGFloat = ([0-9.]+)/,
+		);
+		const heightMatch = swiftSource.match(
+			/private static let minimumHeight: CGFloat = ([0-9.]+)/,
+		);
+
+		expect(widthMatch).not.toBeNull();
+		expect(heightMatch).not.toBeNull();
+		expect(Number(widthMatch?.[1])).toBe(
+			SYNTH_RENDERER_DESIGN_WIDTH * MINIMUM_RENDERER_SCALE,
+		);
+		expect(Number(heightMatch?.[1])).toBe(
+			SYNTH_RENDERER_DESIGN_HEIGHT * MINIMUM_RENDERER_SCALE,
+		);
+	});
+
+	it("publishes native AUv3 view bounds to the web renderer on layout", () => {
+		const swiftSource = readText(xcodeControllerPath);
+
+		expect(swiftSource).toContain("publishHostSizeToWebView()");
+		expect(swiftSource).toContain("window.__czHostSize = { width:");
+		expect(swiftSource).toContain("window.dispatchEvent(new Event('resize'))");
 	});
 });

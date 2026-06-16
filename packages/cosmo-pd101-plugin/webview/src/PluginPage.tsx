@@ -3,7 +3,6 @@ import {
 	type PresetManagerController,
 	PresetManagerProvider,
 	SYNTH_RENDERER_DESIGN_HEIGHT,
-	SYNTH_RENDERER_MAX_ASPECT_RATIO,
 	SYNTH_RENDERER_MIN_ASPECT_RATIO,
 	SynthRenderer,
 	useGlobalSynthSettings,
@@ -29,16 +28,30 @@ type PluginPageProps = {
 	utilityExtra?: ReactNode;
 };
 
+type HostSize = {
+	width: number;
+	height: number;
+};
+
+declare global {
+	interface Window {
+		__czHostSize?: HostSize;
+	}
+}
+
 export default function PluginPage({
 	appVersion,
 	utilityExtra,
 }: PluginPageProps) {
 	const isIosHost = window.__czHostPlatform === "ios";
+	const isAuv3Platform =
+		window.__czHostPlatform === "ios" || window.__czHostPlatform === "macos";
 	const isLikelyIosDevice =
 		/iPad|iPhone|iPod/.test(window.navigator.userAgent) ||
 		(window.navigator.platform === "MacIntel" &&
 			window.navigator.maxTouchPoints > 1);
-	const isAuv3Hosted = window.__czRuntimeMode === "auv3-hosted";
+	const isAuv3Hosted =
+		window.__czRuntimeMode === "auv3-hosted" || isAuv3Platform;
 	const applyPreset = useSynthStore((s) => s.applyPreset);
 	const gatherPresetState = useSynthStore((s) => s.gatherPresetState);
 
@@ -51,7 +64,6 @@ export default function PluginPage({
 			targetAspectRatio: SYNTH_RENDERER_MIN_ASPECT_RATIO,
 		}),
 	);
-	const [contentWidth, setContentWidth] = useState(window.innerWidth);
 	const sendNativeEngineEvent = useCallback(
 		(type: string, payload: Record<string, unknown>) => {
 			const pm = window.ipc?.postMessage?.bind(window.ipc);
@@ -147,22 +159,23 @@ export default function PluginPage({
 
 		const updateFrameSize = () => {
 			const bounds = element.getBoundingClientRect();
-			if (bounds.width <= 0 || bounds.height <= 0) {
+			const hostSize = window.__czHostSize;
+			const availableWidth =
+				isAuv3Hosted && hostSize?.width ? hostSize.width : bounds.width;
+			const availableHeight =
+				isAuv3Hosted && hostSize?.height ? hostSize.height : bounds.height;
+
+			if (availableWidth <= 0 || availableHeight <= 0) {
 				return;
 			}
 
-			if (isAuv3Hosted) {
-				setContentWidth(bounds.width);
-			}
-
-			const targetAspectRatio = isAuv3Hosted
-				? SYNTH_RENDERER_MAX_ASPECT_RATIO
-				: isIosHost || isLikelyIosDevice
+			const targetAspectRatio =
+				isAuv3Hosted || isIosHost || isLikelyIosDevice
 					? undefined
 					: SYNTH_RENDERER_MIN_ASPECT_RATIO;
 			const nextLayout = computeRendererFrameLayout({
-				availableWidth: bounds.width,
-				availableHeight: bounds.height,
+				availableWidth,
+				availableHeight,
 				targetAspectRatio,
 			});
 			if (!nextLayout) {
@@ -299,11 +312,7 @@ export default function PluginPage({
 	const frameHeight =
 		rendererFrame?.frameHeight ?? SYNTH_RENDERER_DESIGN_HEIGHT;
 
-	const auv3Scale =
-		isAuv3Hosted && contentWidth > 0 && frameWidth > 0
-			? Math.min(contentWidth / frameWidth, 1)
-			: undefined;
-	const displayScale = rendererFrame ? (auv3Scale ?? combinedScale) : 1;
+	const displayScale = rendererFrame ? combinedScale : 1;
 	const scaledWidth = frameWidth * displayScale;
 	const scaledHeight = frameHeight * displayScale;
 
@@ -316,26 +325,37 @@ export default function PluginPage({
 
 	if (isAuv3Hosted) {
 		return (
-			<div ref={frameRef} className="h-full w-full overflow-hidden bg-cz-panel">
-				<div className="overflow-hidden" style={zoomStyle}>
-					<PresetManagerProvider value={presetManager}>
-						<SynthRenderer
-							runtime={runtime}
-							appVersion={appVersion}
-							bottomBarExtra={utilityExtra}
-							disableAudioGate
-							miniKeyboard={{
-								activeNotes: runtime.activeNotes,
-								pitchBend: runtime.pitchBend,
-								modWheel: runtime.modWheel,
-								onNoteOn: runtime.sendNoteOn,
-								onNoteOff: runtime.sendNoteOff,
-								onPitchBend: runtime.sendPitchBend,
-								onModWheel: runtime.sendModWheel,
-								onPolyAftertouch: runtime.sendPolyAftertouch,
-							}}
-						/>
-					</PresetManagerProvider>
+			<div
+				ref={frameRef}
+				className="relative flex h-full w-full items-center justify-center overflow-hidden bg-cz-panel"
+			>
+				<div
+					className="relative shrink-0 overflow-hidden"
+					style={{
+						width: scaledWidth,
+						height: scaledHeight,
+					}}
+				>
+					<div className="absolute top-0 left-0" style={zoomStyle}>
+						<PresetManagerProvider value={presetManager}>
+							<SynthRenderer
+								runtime={runtime}
+								appVersion={appVersion}
+								bottomBarExtra={utilityExtra}
+								disableAudioGate
+								miniKeyboard={{
+									activeNotes: runtime.activeNotes,
+									pitchBend: runtime.pitchBend,
+									modWheel: runtime.modWheel,
+									onNoteOn: runtime.sendNoteOn,
+									onNoteOff: runtime.sendNoteOff,
+									onPitchBend: runtime.sendPitchBend,
+									onModWheel: runtime.sendModWheel,
+									onPolyAftertouch: runtime.sendPolyAftertouch,
+								}}
+							/>
+						</PresetManagerProvider>
+					</div>
 				</div>
 			</div>
 		);

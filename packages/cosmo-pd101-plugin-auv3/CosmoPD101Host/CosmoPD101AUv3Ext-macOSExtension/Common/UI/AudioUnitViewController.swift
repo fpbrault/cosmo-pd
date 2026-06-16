@@ -14,8 +14,8 @@ import UIKit
 public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNavigationDelegate, WKScriptMessageHandler {
 	private static let preferredWidth: CGFloat = 1368
 	private static let preferredHeight: CGFloat = 912
-	private static let minimumWidth: CGFloat = 1024
-	private static let minimumHeight: CGFloat = 768
+	private static let minimumWidth: CGFloat = 684
+	private static let minimumHeight: CGFloat = 456
 	private var presetSessionState = PresetSessionState()
 	private var editorState = [String: Any]()
 	private var midiLearnState = MidiLearnState()
@@ -530,6 +530,17 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		#else
 		webView.frame = view.bounds
 		#endif
+		publishHostSizeToWebView()
+	}
+
+	private func publishHostSizeToWebView() {
+		let bounds = view.bounds
+		guard bounds.width > 0, bounds.height > 0 else { return }
+		let script = """
+		window.__czHostSize = { width: \(bounds.width), height: \(bounds.height) };
+		window.dispatchEvent(new Event('resize'));
+		"""
+		webView?.evaluateJavaScript(script, completionHandler: nil)
 	}
 
 	public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
@@ -1055,4 +1066,3 @@ private final class BundleSchemeHandler: NSObject, WKURLSchemeHandler {
 		}
 	}
 }
-

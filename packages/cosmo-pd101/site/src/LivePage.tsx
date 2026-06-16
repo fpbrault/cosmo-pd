@@ -6,7 +6,14 @@ import {
 	useSpring,
 	useTransform,
 } from "motion/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	type CSSProperties,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import {
 	computeRendererFrameLayout,
 	SYNTH_RENDERER_DESIGN_HEIGHT,
@@ -91,6 +98,10 @@ export default function LivePage() {
 
 	const synthPanelRef = useRef<HTMLDivElement | null>(null);
 	const [isSynthFullscreen, setIsSynthFullscreen] = useState(false);
+	const [visualViewportSize, setVisualViewportSize] = useState<{
+		width: number;
+		height: number;
+	} | null>(null);
 
 	const toggleFullscreen = useCallback(async () => {
 		if (!document.fullscreenElement) {
@@ -150,9 +161,41 @@ export default function LivePage() {
 		return () => resizeObserver.disconnect();
 	}, []);
 
+	useEffect(() => {
+		const viewport = window.visualViewport;
+		if (!viewport) {
+			return;
+		}
+
+		const updateVisualViewportSize = () => {
+			setVisualViewportSize({
+				width: viewport.width,
+				height: viewport.height,
+			});
+		};
+
+		updateVisualViewportSize();
+		viewport.addEventListener("resize", updateVisualViewportSize);
+		viewport.addEventListener("scroll", updateVisualViewportSize);
+		window.addEventListener("orientationchange", updateVisualViewportSize);
+		return () => {
+			viewport.removeEventListener("resize", updateVisualViewportSize);
+			viewport.removeEventListener("scroll", updateVisualViewportSize);
+			window.removeEventListener("orientationchange", updateVisualViewportSize);
+		};
+	}, []);
+
 	const frameScale = frameLayout?.frameScale ?? 1;
 	const frameWidth = frameLayout?.frameWidth ?? SYNTH_RENDERER_DESIGN_WIDTH;
 	const frameHeight = frameLayout?.frameHeight ?? SYNTH_RENDERER_DESIGN_HEIGHT;
+	const scaledWidth = frameWidth * frameScale;
+	const scaledHeight = frameHeight * frameScale;
+	const viewportStyle: CSSProperties | undefined = visualViewportSize
+		? {
+				width: visualViewportSize.width,
+				height: visualViewportSize.height,
+			}
+		: undefined;
 
 	const presetRepository = useMemo(
 		() =>
@@ -240,7 +283,8 @@ export default function LivePage() {
 			ref={(node) => {
 				frameRef.current = node;
 			}}
-			className={`relative flex h-screen w-screen items-center justify-center overflow-hidden ${isMobileViewport ? "" : "bg-black"}`}
+			className={`relative flex h-dvh w-dvw items-center justify-center overflow-hidden ${isMobileViewport ? "" : "bg-black"}`}
+			style={viewportStyle}
 			onPointerMove={isMobileViewport ? undefined : handlePointerMove}
 			onPointerLeave={isMobileViewport ? undefined : handlePointerLeave}
 		>
@@ -260,15 +304,19 @@ export default function LivePage() {
 			<div
 				ref={synthPanelRef}
 				id="synth-fullscreen-target"
-				className="relative flex shrink-0 items-center justify-center"
+				className="relative shrink-0 overflow-hidden"
+				style={{
+					width: scaledWidth,
+					height: scaledHeight,
+				}}
 			>
 				<div
-					className="absolute"
+					className="absolute top-0 left-0"
 					style={{
 						width: frameWidth,
 						height: frameHeight,
 						transform: `scale(${frameScale})`,
-						transformOrigin: "center",
+						transformOrigin: "top left",
 					}}
 				>
 					<PresetManagerProvider value={presetManager}>

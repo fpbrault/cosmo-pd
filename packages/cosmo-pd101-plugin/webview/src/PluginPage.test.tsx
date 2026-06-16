@@ -6,6 +6,25 @@ const mockUseSynthPresetManager = vi.hoisted(() => vi.fn());
 const mockUsePluginParamBridge = vi.hoisted(() => vi.fn());
 const mockUsePluginSynthRuntime = vi.hoisted(() => vi.fn());
 const mockCreatePluginPresetManagerRepository = vi.hoisted(() => vi.fn());
+const mockComputeRendererFrameLayout = vi.hoisted(() =>
+	vi.fn(
+		({
+			availableWidth,
+			availableHeight,
+			targetAspectRatio,
+		}: {
+			availableWidth: number;
+			availableHeight: number;
+			targetAspectRatio?: number;
+		}) => ({
+			frameWidth: availableWidth,
+			frameHeight: availableHeight,
+			frameScale: 1,
+			effectiveAspectRatio:
+				targetAspectRatio ?? availableWidth / availableHeight,
+		}),
+	),
+);
 vi.mock("./hooks/usePluginParamBridge", () => ({
 	usePluginParamBridge: mockUsePluginParamBridge,
 }));
@@ -28,27 +47,12 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 	};
 
 	return {
-		computeRendererFrameLayout: vi.fn(
-			({
-				availableWidth,
-				availableHeight,
-				targetAspectRatio,
-			}: {
-				availableWidth: number;
-				availableHeight: number;
-				targetAspectRatio?: number;
-			}) => ({
-				frameWidth: availableWidth,
-				frameHeight: availableHeight,
-				frameScale: 1,
-				effectiveAspectRatio:
-					targetAspectRatio ?? availableWidth / availableHeight,
-			}),
-		),
+		computeRendererFrameLayout: mockComputeRendererFrameLayout,
 		PresetManagerProvider: ({ children }: { children: React.ReactNode }) => (
 			<div>{children}</div>
 		),
 		SYNTH_RENDERER_DESIGN_HEIGHT: 912,
+		SYNTH_RENDERER_MAX_ASPECT_RATIO: 3 / 2,
 		SYNTH_RENDERER_MIN_ASPECT_RATIO: 4 / 3,
 		SynthRenderer: () => <div data-testid="synth-renderer" />,
 		useSynthPresetManager: mockUseSynthPresetManager,
@@ -70,6 +74,24 @@ describe("PluginPage", () => {
 	let recomputeDirtyState: ReturnType<typeof vi.fn>;
 
 	beforeEach(() => {
+		mockComputeRendererFrameLayout.mockReset();
+		mockComputeRendererFrameLayout.mockImplementation(
+			({
+				availableWidth,
+				availableHeight,
+				targetAspectRatio,
+			}: {
+				availableWidth: number;
+				availableHeight: number;
+				targetAspectRatio?: number;
+			}) => ({
+				frameWidth: availableWidth,
+				frameHeight: availableHeight,
+				frameScale: 1,
+				effectiveAspectRatio:
+					targetAspectRatio ?? availableWidth / availableHeight,
+			}),
+		);
 		mockUsePluginParamBridge.mockReset();
 		mockUsePluginSynthRuntime.mockReset();
 		mockCreatePluginPresetManagerRepository.mockReset();
@@ -128,6 +150,30 @@ describe("PluginPage", () => {
 			recomputeDirtyState,
 			reloadLibrary,
 		});
+		delete (
+			window as Window & {
+				__czHostPlatform?: string;
+				__czHostSize?: { width: number; height: number };
+				__czRuntimeMode?: string;
+				ipc?: unknown;
+			}
+		).__czHostPlatform;
+		delete (
+			window as Window & {
+				__czHostPlatform?: string;
+				__czHostSize?: { width: number; height: number };
+				__czRuntimeMode?: string;
+				ipc?: unknown;
+			}
+		).__czHostSize;
+		delete (
+			window as Window & {
+				__czHostPlatform?: string;
+				__czHostSize?: { width: number; height: number };
+				__czRuntimeMode?: string;
+				ipc?: unknown;
+			}
+		).__czRuntimeMode;
 		delete (window as Window & { ipc?: unknown }).ipc;
 	});
 
@@ -176,5 +222,108 @@ describe("PluginPage", () => {
 		bridgeOptions?.onExternalParamChange?.();
 
 		expect(recomputeDirtyState).toHaveBeenCalled();
+	});
+
+	it("fits AUv3 hosted content using the height-aware renderer scale", () => {
+		(
+			window as Window & {
+				__czRuntimeMode?: string;
+			}
+		).__czRuntimeMode = "auv3-hosted";
+		mockComputeRendererFrameLayout.mockReturnValue({
+			frameWidth: 1368,
+			frameHeight: 912,
+			frameScale: 0.5,
+			effectiveAspectRatio: 1.5,
+		});
+
+		const { container } = render(<PluginPage appVersion="0.2.0" />);
+		const scaledFrame = container.querySelector(
+			'[style*="transform: scale(0.5)"]',
+		);
+
+		expect(scaledFrame).toBeInstanceOf(HTMLElement);
+		expect((scaledFrame as HTMLElement).style.transform).toBe("scale(0.5)");
+		expect((scaledFrame?.parentElement as HTMLElement).style.width).toBe(
+			"684px",
+		);
+		expect((scaledFrame?.parentElement as HTMLElement).style.height).toBe(
+			"456px",
+		);
+	});
+
+	it("lets AUv3 hosted content adapt its renderer aspect ratio to portrait hosts", () => {
+		(
+			window as Window & {
+				__czRuntimeMode?: string;
+			}
+		).__czRuntimeMode = "auv3-hosted";
+		const getBoundingClientRect = vi
+			.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+			.mockReturnValue({
+				x: 0,
+				y: 0,
+				top: 0,
+				left: 0,
+				right: 768,
+				bottom: 1024,
+				width: 768,
+				height: 1024,
+				toJSON: () => ({}),
+			} as DOMRect);
+
+		try {
+			render(<PluginPage appVersion="0.2.0" />);
+
+			expect(mockComputeRendererFrameLayout).toHaveBeenLastCalledWith(
+				expect.objectContaining({
+					targetAspectRatio: undefined,
+				}),
+			);
+		} finally {
+			getBoundingClientRect.mockRestore();
+		}
+	});
+
+	it("uses native AUv3 host bounds instead of the WKWebView layout viewport", () => {
+		(
+			window as Window & {
+				__czHostPlatform?: string;
+				__czHostSize?: { width: number; height: number };
+			}
+		).__czHostPlatform = "ios";
+		(
+			window as Window & {
+				__czHostPlatform?: string;
+				__czHostSize?: { width: number; height: number };
+			}
+		).__czHostSize = { width: 684, height: 456 };
+		const getBoundingClientRect = vi
+			.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+			.mockReturnValue({
+				x: 0,
+				y: 0,
+				top: 0,
+				left: 0,
+				right: 1368,
+				bottom: 912,
+				width: 1368,
+				height: 912,
+				toJSON: () => ({}),
+			} as DOMRect);
+
+		try {
+			render(<PluginPage appVersion="0.2.0" />);
+
+			expect(mockComputeRendererFrameLayout).toHaveBeenLastCalledWith(
+				expect.objectContaining({
+					availableWidth: 684,
+					availableHeight: 456,
+					targetAspectRatio: undefined,
+				}),
+			);
+		} finally {
+			getBoundingClientRect.mockRestore();
+		}
 	});
 });
