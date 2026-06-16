@@ -7,6 +7,20 @@ declare const __CZ_APP_VERSION__: string;
 
 export default function App() {
 	useEffect(() => {
+		if (window.webkit?.messageHandlers?.cosmoPd101) {
+			console.log(
+				"[cosmo-ui] root mounted, sending webReady",
+				performance.now(),
+			);
+			window.webkit.messageHandlers.cosmoPd101.postMessage({
+				id: 0,
+				method: "webReady",
+				payload: { reason: "root-mounted", time: performance.now() },
+			});
+		}
+	}, []);
+
+	useEffect(() => {
 		const isEditableTarget = (target: EventTarget | null): boolean => {
 			if (!(target instanceof Element)) {
 				return false;

@@ -16,6 +16,7 @@ declare global {
 			};
 		};
 		__czHostPlatform?: "macos" | "ios";
+		__czRuntimeMode?: "auv3-hosted" | "plugin" | "standalone";
 		__czOnHostPresetSelected?: (name: string) => void;
 		__czOnRuntimeVoiceStates?: (json: string) => void;
 		__czOnRuntimeModSources?: (json: string) => void;
