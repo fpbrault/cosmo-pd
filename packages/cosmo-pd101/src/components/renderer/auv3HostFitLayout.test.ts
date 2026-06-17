@@ -119,4 +119,68 @@ describe("computeAuv3HostFitLayout", () => {
 
 		expect(layout?.aspectRatio).toBe(AUV3_FALLBACK_ASPECT_RATIO);
 	});
+
+	it("fit-bounds fits inside width and height", () => {
+		const layout = computeAuv3HostFitLayout({
+			hostWidth: 800,
+			hostHeight: 600,
+			deviceLandscapeAspectRatio: 4 / 3,
+			fitMode: "fit-bounds",
+		});
+
+		const actual = requireLayout(layout);
+		expect(actual.scaledWidth).toBeLessThanOrEqual(800);
+		expect(actual.scaledHeight).toBeLessThanOrEqual(600);
+	});
+
+	it("fit-width scales from width only", () => {
+		const layout = computeAuv3HostFitLayout({
+			hostWidth: 800,
+			hostHeight: 300,
+			deviceLandscapeAspectRatio: 4 / 3,
+			fitMode: "fit-width",
+		});
+
+		const actual = requireLayout(layout);
+		expect(actual.scaledWidth).toBeLessThanOrEqual(800);
+	});
+
+	it("fit-width can be taller than the host", () => {
+		const layout = computeAuv3HostFitLayout({
+			hostWidth: 800,
+			hostHeight: 300,
+			deviceLandscapeAspectRatio: 4 / 3,
+			fitMode: "fit-width",
+		});
+
+		const actual = requireLayout(layout);
+		expect(actual.scaledWidth).toBeLessThanOrEqual(800);
+		expect(actual.scaledHeight).toBeGreaterThan(300);
+	});
+
+	it("fit-width uses offsetY 0", () => {
+		const layout = computeAuv3HostFitLayout({
+			hostWidth: 800,
+			hostHeight: 300,
+			deviceLandscapeAspectRatio: 4 / 3,
+			fitMode: "fit-width",
+		});
+
+		const actual = requireLayout(layout);
+		expect(actual.offsetY).toBe(0);
+	});
+
+	it("fit-bounds keeps centered offsetY", () => {
+		const layout = computeAuv3HostFitLayout({
+			hostWidth: 500,
+			hostHeight: 1200,
+			deviceLandscapeAspectRatio: 4 / 3,
+			fitMode: "fit-bounds",
+		});
+
+		const actual = requireLayout(layout);
+		const expectedOffsetY = Math.max((1200 - actual.scaledHeight) / 2, 0);
+		expect(actual.offsetY).toBeCloseTo(expectedOffsetY, 5);
+		expect(actual.offsetY).toBeGreaterThan(0);
+	});
 });

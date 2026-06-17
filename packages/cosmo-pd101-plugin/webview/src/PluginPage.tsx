@@ -1,4 +1,5 @@
 import {
+	type Auv3FitMode,
 	type Auv3HostFitLayout,
 	computeAuv3HostFitLayout,
 	computeRendererFrameLayout,
@@ -35,6 +36,7 @@ type HostSize = {
 	height: number;
 	scale?: number;
 	deviceLandscapeAspectRatio?: number;
+	fitMode?: Auv3FitMode;
 	reason?: string;
 };
 
@@ -115,6 +117,7 @@ function getAuv3HostBounds({
 			width: bounds.width,
 			height: bounds.height,
 			deviceLandscapeAspectRatio: nativeHostSize?.deviceLandscapeAspectRatio,
+			fitMode: nativeHostSize?.fitMode,
 		};
 	}
 	const viewport = window.visualViewport;
@@ -123,6 +126,7 @@ function getAuv3HostBounds({
 			width: viewport.width,
 			height: viewport.height,
 			deviceLandscapeAspectRatio: nativeHostSize?.deviceLandscapeAspectRatio,
+			fitMode: nativeHostSize?.fitMode,
 		};
 	}
 	if (isValidHostSize(nativeHostSize)) {
@@ -287,6 +291,7 @@ export default function PluginPage({
 					deviceLandscapeAspectRatio:
 						hostBounds.deviceLandscapeAspectRatio ??
 						getScreenLandscapeAspectRatio(),
+					fitMode: hostBounds.fitMode ?? "fit-bounds",
 				});
 				nextLayout = fitLayout ? toAuv3PluginRendererLayout(fitLayout) : null;
 			} else {
@@ -459,11 +464,18 @@ export default function PluginPage({
 		transformOrigin: "top left",
 	};
 
+	const auv3FitMode = window.__czHostSize?.fitMode ?? "fit-bounds";
+	const isAuv3FitWidth = auv3FitMode === "fit-width";
+
 	if (isAuv3Hosted) {
 		return (
 			<div
 				ref={frameRef}
-				className="relative h-full w-full overflow-hidden bg-black"
+				className={
+					isAuv3FitWidth
+						? "relative h-full w-full overflow-y-auto overflow-x-hidden bg-black"
+						: "relative h-full w-full overflow-hidden bg-black"
+				}
 			>
 				<div
 					className="absolute overflow-hidden"

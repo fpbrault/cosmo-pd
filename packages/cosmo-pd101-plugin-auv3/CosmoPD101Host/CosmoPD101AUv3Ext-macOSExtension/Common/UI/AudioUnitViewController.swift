@@ -11,6 +11,18 @@ private let czWebViewLog = OSLog(subsystem: "com.cosmo.pd101.auv3", category: "C
 import UIKit
 #endif
 
+public enum Auv3FitMode {
+	case fitBounds
+	case fitWidth
+
+	var javascriptValue: String {
+		switch self {
+		case .fitBounds: return "fit-bounds"
+		case .fitWidth: return "fit-width"
+		}
+	}
+}
+
 public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNavigationDelegate, WKScriptMessageHandler {
 	private static let minimumWidth: CGFloat = 640
 	private static let minimumHeight: CGFloat = 480
@@ -42,6 +54,8 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			UserDefaults.standard.set(clamped, forKey: Self.voiceLimitUserDefaultsKey)
 		}
 	}
+
+	public var fitMode: Auv3FitMode = .fitWidth
 
 	nonisolated(unsafe) var audioUnit: AUAudioUnit?
 	private var webView: WKWebView?
@@ -535,7 +549,11 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	private func layoutWebView(reason: String = "layout") {
 		guard let webView else { return }
 		webView.frame = view.bounds
+		#if os(macOS)
+		webView.needsLayout = true
+		#else
 		webView.setNeedsLayout()
+		#endif
 		publishHostSizeToWebView(reason: reason)
 	}
 
@@ -551,6 +569,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		  height: \(size.height),
 		  scale: \(deviceInfo.scale),
 		  deviceLandscapeAspectRatio: \(deviceInfo.landscapeAspectRatio),
+		  fitMode: "\(fitMode.javascriptValue)",
 		  reason: \(reasonLiteral)
 		};
 		window.dispatchEvent(new CustomEvent('cz-host-size-changed', {

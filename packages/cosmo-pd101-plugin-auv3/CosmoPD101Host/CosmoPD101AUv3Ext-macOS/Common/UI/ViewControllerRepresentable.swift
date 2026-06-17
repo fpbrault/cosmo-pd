@@ -7,6 +7,10 @@
 
 import SwiftUI
 
+#if canImport(CosmoPD101AUv3Ext_macOSExtension)
+import CosmoPD101AUv3Ext_macOSExtension
+#endif
+
 #if os(iOS) || os(visionOS)
 
 final class FullScreenAUContainerViewController: UIViewController {
@@ -25,11 +29,16 @@ final class FullScreenAUContainerViewController: UIViewController {
         nil
     }
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .black
-        view.insetsLayoutMarginsFromSafeArea = false
-        addChild(auViewController)
+	override func viewDidLoad() {
+		super.viewDidLoad()
+		view.backgroundColor = .black
+		view.insetsLayoutMarginsFromSafeArea = false
+		#if canImport(CosmoPD101AUv3Ext_macOSExtension)
+		if let cosmoVC = auViewController as? AudioUnitViewController {
+			cosmoVC.fitMode = .fitBounds
+		}
+		#endif
+		addChild(auViewController)
         auViewController.view.frame = view.bounds
         auViewController.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(auViewController.view)

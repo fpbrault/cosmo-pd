@@ -3,6 +3,8 @@ export const AUV3_RENDERER_MIN_HEIGHT = 480;
 export const AUV3_RENDERER_NATURAL_HEIGHT = 912;
 export const AUV3_FALLBACK_ASPECT_RATIO = 4 / 3;
 
+export type Auv3FitMode = "fit-bounds" | "fit-width";
+
 export type Auv3HostFitLayout = {
 	aspectRatio: number;
 	naturalWidth: number;
@@ -22,6 +24,7 @@ type ComputeAuv3HostFitLayoutOptions = {
 	minHeight?: number;
 	naturalHeight?: number;
 	maxScale?: number;
+	fitMode?: Auv3FitMode;
 };
 
 function safePositive(value: number, fallback: number) {
@@ -36,6 +39,7 @@ export function computeAuv3HostFitLayout({
 	minHeight = AUV3_RENDERER_MIN_HEIGHT,
 	naturalHeight = AUV3_RENDERER_NATURAL_HEIGHT,
 	maxScale = Number.POSITIVE_INFINITY,
+	fitMode = "fit-bounds",
 }: ComputeAuv3HostFitLayoutOptions): Auv3HostFitLayout | null {
 	const safeHostWidth = safePositive(hostWidth, 0);
 	const safeHostHeight = safePositive(hostHeight, 0);
@@ -53,11 +57,14 @@ export function computeAuv3HostFitLayout({
 	);
 	const frameWidth = Math.max(minWidth, frameHeight * aspectRatio);
 	const resolvedMaxScale = maxScale > 0 ? maxScale : 1;
-	const scale = Math.min(
-		safeHostWidth / frameWidth,
-		safeHostHeight / frameHeight,
-		resolvedMaxScale,
-	);
+	const scale =
+		fitMode === "fit-width"
+			? Math.min(safeHostWidth / frameWidth, resolvedMaxScale)
+			: Math.min(
+					safeHostWidth / frameWidth,
+					safeHostHeight / frameHeight,
+					resolvedMaxScale,
+				);
 	const scaledWidth = frameWidth * scale;
 	const scaledHeight = frameHeight * scale;
 
@@ -69,6 +76,9 @@ export function computeAuv3HostFitLayout({
 		scaledWidth,
 		scaledHeight,
 		offsetX: Math.max((safeHostWidth - scaledWidth) / 2, 0),
-		offsetY: Math.max((safeHostHeight - scaledHeight) / 2, 0),
+		offsetY:
+			fitMode === "fit-width"
+				? 0
+				: Math.max((safeHostHeight - scaledHeight) / 2, 0),
 	};
 }
