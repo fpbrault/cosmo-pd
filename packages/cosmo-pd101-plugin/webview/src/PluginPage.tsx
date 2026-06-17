@@ -1,4 +1,6 @@
 import {
+	type Auv3HostFitLayout,
+	computeAuv3HostFitLayout,
 	computeRendererFrameLayout,
 	type PresetManagerController,
 	PresetManagerProvider,
@@ -31,12 +33,118 @@ type PluginPageProps = {
 type HostSize = {
 	width: number;
 	height: number;
+	scale?: number;
+	deviceLandscapeAspectRatio?: number;
+	reason?: string;
+};
+
+type PluginRendererLayout = {
+	frameWidth: number;
+	frameHeight: number;
+	frameScale: number;
+	scaledWidth: number;
+	scaledHeight: number;
+	offsetX: number;
+	offsetY: number;
 };
 
 declare global {
 	interface Window {
 		__czHostSize?: HostSize;
 	}
+}
+
+function toPluginRendererLayout({
+	frameWidth,
+	frameHeight,
+	frameScale,
+}: {
+	frameWidth: number;
+	frameHeight: number;
+	frameScale: number;
+}): PluginRendererLayout {
+	return {
+		frameWidth,
+		frameHeight,
+		frameScale,
+		scaledWidth: frameWidth * frameScale,
+		scaledHeight: frameHeight * frameScale,
+		offsetX: 0,
+		offsetY: 0,
+	};
+}
+
+function toAuv3PluginRendererLayout(
+	layout: Auv3HostFitLayout,
+): PluginRendererLayout {
+	return {
+		frameWidth: layout.naturalWidth,
+		frameHeight: layout.naturalHeight,
+		frameScale: layout.scale,
+		scaledWidth: layout.scaledWidth,
+		scaledHeight: layout.scaledHeight,
+		offsetX: layout.offsetX,
+		offsetY: layout.offsetY,
+	};
+}
+
+function getScreenLandscapeAspectRatio() {
+	const width = Math.max(window.screen.width, window.screen.height);
+	const height = Math.min(window.screen.width, window.screen.height);
+	return height > 0 ? width / height : 4 / 3;
+}
+
+function isValidHostSize(value: HostSize | undefined): value is HostSize {
+	return Boolean(value?.width && value.height);
+}
+
+function getAuv3HostBounds({
+	bounds,
+	nativeHostSize,
+	preferNativeHostSize,
+}: {
+	bounds: DOMRect;
+	nativeHostSize?: HostSize;
+	preferNativeHostSize: boolean;
+}): HostSize {
+	if (preferNativeHostSize && isValidHostSize(nativeHostSize)) {
+		return nativeHostSize;
+	}
+	if (bounds.width > 0 && bounds.height > 0) {
+		return {
+			width: bounds.width,
+			height: bounds.height,
+			deviceLandscapeAspectRatio: nativeHostSize?.deviceLandscapeAspectRatio,
+		};
+	}
+	const viewport = window.visualViewport;
+	if (viewport?.width && viewport.height) {
+		return {
+			width: viewport.width,
+			height: viewport.height,
+			deviceLandscapeAspectRatio: nativeHostSize?.deviceLandscapeAspectRatio,
+		};
+	}
+	if (isValidHostSize(nativeHostSize)) {
+		return nativeHostSize;
+	}
+	return { width: window.innerWidth, height: window.innerHeight };
+}
+
+function layoutsMatch(
+	current: PluginRendererLayout | null,
+	next: PluginRendererLayout,
+) {
+	return (
+		current &&
+		Math.abs(current.frameWidth - next.frameWidth) < 0.5 &&
+		Math.abs(current.frameHeight - next.frameHeight) < 0.5 &&
+		Math.abs(current.frameScale - next.frameScale) < 0.001 &&
+		Math.abs(current.scaledWidth - next.scaledWidth) < 0.5 &&
+		Math.abs(current.scaledHeight - next.scaledHeight) < 0.5 &&
+		Math.abs(current.offsetX - next.offsetX) < 0.5 &&
+		Math.abs(current.offsetY - next.offsetY) < 0.5
+	);
 }
 
 export default function PluginPage({
@@ -56,14 +164,16 @@ export default function PluginPage({
 	const gatherPresetState = useSynthStore((s) => s.gatherPresetState);
 
 	const frameRef = useRef<HTMLDivElement | null>(null);
-	const [rendererFrame, setRendererFrame] = useState(() =>
-		computeRendererFrameLayout({
-			availableWidth:
-				SYNTH_RENDERER_DESIGN_HEIGHT * SYNTH_RENDERER_MIN_ASPECT_RATIO,
-			availableHeight: SYNTH_RENDERER_DESIGN_HEIGHT,
-			targetAspectRatio: SYNTH_RENDERER_MIN_ASPECT_RATIO,
-		}),
-	);
+	const [rendererFrame, setRendererFrame] =
+		useState<PluginRendererLayout | null>(() => {
+			const initialLayout = computeRendererFrameLayout({
+				availableWidth:
+					SYNTH_RENDERER_DESIGN_HEIGHT * SYNTH_RENDERER_MIN_ASPECT_RATIO,
+				availableHeight: SYNTH_RENDERER_DESIGN_HEIGHT,
+				targetAspectRatio: SYNTH_RENDERER_MIN_ASPECT_RATIO,
+			});
+			return initialLayout ? toPluginRendererLayout(initialLayout) : null;
+		});
 	const sendNativeEngineEvent = useCallback(
 		(type: string, payload: Record<string, unknown>) => {
 			const pm = window.ipc?.postMessage?.bind(window.ipc);
@@ -157,38 +267,53 @@ export default function PluginPage({
 			return;
 		}
 
-		const updateFrameSize = () => {
+		const updateFrameSize = (event?: Event) => {
 			const bounds = element.getBoundingClientRect();
-			const hostSize = window.__czHostSize;
-			const availableWidth =
-				isAuv3Hosted && hostSize?.width ? hostSize.width : bounds.width;
-			const availableHeight =
-				isAuv3Hosted && hostSize?.height ? hostSize.height : bounds.height;
+			let nextLayout: PluginRendererLayout | null = null;
 
-			if (availableWidth <= 0 || availableHeight <= 0) {
-				return;
+			if (isAuv3Hosted) {
+				const nativeHostSize =
+					event instanceof CustomEvent && isValidHostSize(event.detail)
+						? event.detail
+						: window.__czHostSize;
+				const hostBounds = getAuv3HostBounds({
+					bounds,
+					nativeHostSize,
+					preferNativeHostSize: !event || event.type === "cz-host-size-changed",
+				});
+				const fitLayout = computeAuv3HostFitLayout({
+					hostWidth: hostBounds.width,
+					hostHeight: hostBounds.height,
+					deviceLandscapeAspectRatio:
+						hostBounds.deviceLandscapeAspectRatio ??
+						getScreenLandscapeAspectRatio(),
+				});
+				nextLayout = fitLayout ? toAuv3PluginRendererLayout(fitLayout) : null;
+			} else {
+				const availableWidth = bounds.width;
+				const availableHeight = bounds.height;
+
+				if (availableWidth <= 0 || availableHeight <= 0) {
+					return;
+				}
+
+				const targetAspectRatio =
+					isIosHost || isLikelyIosDevice
+						? undefined
+						: SYNTH_RENDERER_MIN_ASPECT_RATIO;
+				const sharedLayout = computeRendererFrameLayout({
+					availableWidth,
+					availableHeight,
+					targetAspectRatio,
+				});
+				nextLayout = sharedLayout ? toPluginRendererLayout(sharedLayout) : null;
 			}
-
-			const targetAspectRatio =
-				isAuv3Hosted || isIosHost || isLikelyIosDevice
-					? undefined
-					: SYNTH_RENDERER_MIN_ASPECT_RATIO;
-			const nextLayout = computeRendererFrameLayout({
-				availableWidth,
-				availableHeight,
-				targetAspectRatio,
-			});
 			if (!nextLayout) {
 				return;
 			}
 
 			setRendererFrame((current) => {
-				if (
-					current &&
-					Math.abs(current.frameWidth - nextLayout.frameWidth) < 0.5 &&
-					Math.abs(current.frameHeight - nextLayout.frameHeight) < 0.5 &&
-					Math.abs(current.frameScale - nextLayout.frameScale) < 0.001
-				) {
+				if (layoutsMatch(current, nextLayout)) {
 					return current;
 				}
 				return nextLayout;
@@ -197,13 +322,19 @@ export default function PluginPage({
 
 		updateFrameSize();
 		window.addEventListener("resize", updateFrameSize);
+		window.addEventListener("cz-host-size-changed", updateFrameSize);
+		window.visualViewport?.addEventListener("resize", updateFrameSize);
 
-		const resizeObserver = new ResizeObserver(updateFrameSize);
+		const resizeObserver = new ResizeObserver(() => {
+			updateFrameSize(new Event("resizeobserver"));
+		});
 		resizeObserver.observe(element);
 
 		return () => {
 			resizeObserver.disconnect();
 			window.removeEventListener("resize", updateFrameSize);
+			window.removeEventListener("cz-host-size-changed", updateFrameSize);
+			window.visualViewport?.removeEventListener("resize", updateFrameSize);
 		};
 	}, [isAuv3Hosted, isIosHost, isLikelyIosDevice]);
 
@@ -313,8 +444,9 @@ export default function PluginPage({
 		rendererFrame?.frameHeight ?? SYNTH_RENDERER_DESIGN_HEIGHT;
 
 	const displayScale = rendererFrame ? combinedScale : 1;
-	const scaledWidth = frameWidth * displayScale;
-	const scaledHeight = frameHeight * displayScale;
+	const scaledWidth = rendererFrame?.scaledWidth ?? frameWidth * displayScale;
+	const scaledHeight =
+		rendererFrame?.scaledHeight ?? frameHeight * displayScale;
 
 	const zoomStyle: CSSProperties = {
 		width: frameWidth,
@@ -322,21 +454,30 @@ export default function PluginPage({
 		transform: `scale(${displayScale})`,
 		transformOrigin: "center",
 	};
+	const auv3ZoomStyle: CSSProperties = {
+		...zoomStyle,
+		transformOrigin: "top left",
+	};
 
 	if (isAuv3Hosted) {
 		return (
 			<div
 				ref={frameRef}
-				className="relative flex h-full w-full items-center justify-center overflow-hidden bg-cz-panel"
+				className="relative h-full w-full overflow-hidden bg-black"
 			>
 				<div
-					className="relative shrink-0 overflow-hidden"
+					className="absolute overflow-hidden"
 					style={{
+						left: rendererFrame?.offsetX ?? 0,
+						top: rendererFrame?.offsetY ?? 0,
 						width: scaledWidth,
 						height: scaledHeight,
 					}}
 				>
-					<div className="absolute" style={zoomStyle}>
+					<div
+						className="absolute top-0 left-0 origin-top-left"
+						style={auv3ZoomStyle}
+					>
 						<PresetManagerProvider value={presetManager}>
 							<SynthRenderer
 								runtime={runtime}

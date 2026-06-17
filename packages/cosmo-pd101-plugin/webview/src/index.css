@@ -9,5 +9,5 @@ body,
 	height: 100%;
 	margin: 0;
 	overflow: hidden;
-	background: var(--color-cz-panel);
+	background: transparent;
 }

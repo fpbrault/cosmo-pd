@@ -25,6 +25,28 @@ const mockComputeRendererFrameLayout = vi.hoisted(() =>
 		}),
 	),
 );
+const mockComputeAuv3HostFitLayout = vi.hoisted(() =>
+	vi.fn(
+		({
+			hostWidth,
+			hostHeight,
+			deviceLandscapeAspectRatio,
+		}: {
+			hostWidth: number;
+			hostHeight: number;
+			deviceLandscapeAspectRatio: number;
+		}) => ({
+			aspectRatio: deviceLandscapeAspectRatio,
+			naturalWidth: hostWidth,
+			naturalHeight: hostHeight,
+			scale: 1,
+			scaledWidth: hostWidth,
+			scaledHeight: hostHeight,
+			offsetX: 0,
+			offsetY: 0,
+		}),
+	),
+);
 vi.mock("./hooks/usePluginParamBridge", () => ({
 	usePluginParamBridge: mockUsePluginParamBridge,
 }));
@@ -47,6 +69,7 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 	};
 
 	return {
+		computeAuv3HostFitLayout: mockComputeAuv3HostFitLayout,
 		computeRendererFrameLayout: mockComputeRendererFrameLayout,
 		PresetManagerProvider: ({ children }: { children: React.ReactNode }) => (
 			<div>{children}</div>
@@ -74,6 +97,27 @@ describe("PluginPage", () => {
 	let recomputeDirtyState: ReturnType<typeof vi.fn>;
 
 	beforeEach(() => {
+		mockComputeAuv3HostFitLayout.mockReset();
+		mockComputeAuv3HostFitLayout.mockImplementation(
+			({
+				hostWidth,
+				hostHeight,
+				deviceLandscapeAspectRatio,
+			}: {
+				hostWidth: number;
+				hostHeight: number;
+				deviceLandscapeAspectRatio: number;
+			}) => ({
+				aspectRatio: deviceLandscapeAspectRatio,
+				naturalWidth: hostWidth,
+				naturalHeight: hostHeight,
+				scale: 1,
+				scaledWidth: hostWidth,
+				scaledHeight: hostHeight,
+				offsetX: 0,
+				offsetY: 0,
+			}),
+		);
 		mockComputeRendererFrameLayout.mockReset();
 		mockComputeRendererFrameLayout.mockImplementation(
 			({
@@ -230,11 +274,15 @@ describe("PluginPage", () => {
 				__czRuntimeMode?: string;
 			}
 		).__czRuntimeMode = "auv3-hosted";
-		mockComputeRendererFrameLayout.mockReturnValue({
-			frameWidth: 1368,
-			frameHeight: 912,
-			frameScale: 0.5,
-			effectiveAspectRatio: 1.5,
+		mockComputeAuv3HostFitLayout.mockReturnValue({
+			aspectRatio: 1.5,
+			naturalWidth: 1368,
+			naturalHeight: 912,
+			scale: 0.5,
+			scaledWidth: 684,
+			scaledHeight: 456,
+			offsetX: 0,
+			offsetY: 0,
 		});
 
 		const { container } = render(<PluginPage appVersion="0.2.0" />);
@@ -258,6 +306,19 @@ describe("PluginPage", () => {
 				__czRuntimeMode?: string;
 			}
 		).__czRuntimeMode = "auv3-hosted";
+		(
+			window as Window & {
+				__czHostSize?: {
+					width: number;
+					height: number;
+					deviceLandscapeAspectRatio?: number;
+				};
+			}
+		).__czHostSize = {
+			width: 768,
+			height: 1024,
+			deviceLandscapeAspectRatio: 4 / 3,
+		};
 		const getBoundingClientRect = vi
 			.spyOn(HTMLElement.prototype, "getBoundingClientRect")
 			.mockReturnValue({
@@ -275,9 +336,11 @@ describe("PluginPage", () => {
 		try {
 			render(<PluginPage appVersion="0.2.0" />);
 
-			expect(mockComputeRendererFrameLayout).toHaveBeenLastCalledWith(
+			expect(mockComputeAuv3HostFitLayout).toHaveBeenLastCalledWith(
 				expect.objectContaining({
-					targetAspectRatio: undefined,
+					hostWidth: 768,
+					hostHeight: 1024,
+					deviceLandscapeAspectRatio: 4 / 3,
 				}),
 			);
 		} finally {
@@ -289,15 +352,27 @@ describe("PluginPage", () => {
 		(
 			window as Window & {
 				__czHostPlatform?: string;
-				__czHostSize?: { width: number; height: number };
+				__czHostSize?: {
+					width: number;
+					height: number;
+					deviceLandscapeAspectRatio?: number;
+				};
 			}
 		).__czHostPlatform = "ios";
 		(
 			window as Window & {
 				__czHostPlatform?: string;
-				__czHostSize?: { width: number; height: number };
+				__czHostSize?: {
+					width: number;
+					height: number;
+					deviceLandscapeAspectRatio?: number;
+				};
 			}
-		).__czHostSize = { width: 684, height: 456 };
+		).__czHostSize = {
+			width: 684,
+			height: 456,
+			deviceLandscapeAspectRatio: 16 / 11,
+		};
 		const getBoundingClientRect = vi
 			.spyOn(HTMLElement.prototype, "getBoundingClientRect")
 			.mockReturnValue({
@@ -315,13 +390,121 @@ describe("PluginPage", () => {
 		try {
 			render(<PluginPage appVersion="0.2.0" />);
 
-			expect(mockComputeRendererFrameLayout).toHaveBeenLastCalledWith(
+			expect(mockComputeAuv3HostFitLayout).toHaveBeenLastCalledWith(
 				expect.objectContaining({
-					availableWidth: 684,
-					availableHeight: 456,
-					targetAspectRatio: undefined,
+					hostWidth: 684,
+					hostHeight: 456,
+					deviceLandscapeAspectRatio: 16 / 11,
 				}),
 			);
+		} finally {
+			getBoundingClientRect.mockRestore();
+		}
+	});
+
+	it("recomputes AUv3 layout when the native host size event fires", async () => {
+		(
+			window as Window & {
+				__czRuntimeMode?: string;
+				__czHostSize?: {
+					width: number;
+					height: number;
+					deviceLandscapeAspectRatio?: number;
+				};
+			}
+		).__czRuntimeMode = "auv3-hosted";
+		(
+			window as Window & {
+				__czHostSize?: {
+					width: number;
+					height: number;
+					deviceLandscapeAspectRatio?: number;
+				};
+			}
+		).__czHostSize = {
+			width: 640,
+			height: 480,
+			deviceLandscapeAspectRatio: 4 / 3,
+		};
+
+		render(<PluginPage appVersion="0.2.0" />);
+		(
+			window as Window & {
+				__czHostSize?: {
+					width: number;
+					height: number;
+					deviceLandscapeAspectRatio?: number;
+				};
+			}
+		).__czHostSize = {
+			width: 800,
+			height: 600,
+			deviceLandscapeAspectRatio: 16 / 11,
+		};
+		window.dispatchEvent(new CustomEvent("cz-host-size-changed"));
+
+		await vi.waitFor(() => {
+			expect(mockComputeAuv3HostFitLayout).toHaveBeenLastCalledWith(
+				expect.objectContaining({
+					hostWidth: 800,
+					hostHeight: 600,
+					deviceLandscapeAspectRatio: 16 / 11,
+				}),
+			);
+		});
+	});
+
+	it("uses current element bounds during live AUv3 resize events", async () => {
+		(
+			window as Window & {
+				__czRuntimeMode?: string;
+				__czHostSize?: {
+					width: number;
+					height: number;
+					deviceLandscapeAspectRatio?: number;
+				};
+			}
+		).__czRuntimeMode = "auv3-hosted";
+		(
+			window as Window & {
+				__czHostSize?: {
+					width: number;
+					height: number;
+					deviceLandscapeAspectRatio?: number;
+				};
+			}
+		).__czHostSize = {
+			width: 640,
+			height: 480,
+			deviceLandscapeAspectRatio: 4 / 3,
+		};
+		const getBoundingClientRect = vi
+			.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+			.mockReturnValue({
+				x: 0,
+				y: 0,
+				top: 0,
+				left: 0,
+				right: 900,
+				bottom: 700,
+				width: 900,
+				height: 700,
+				toJSON: () => ({}),
+			} as DOMRect);
+
+		try {
+			render(<PluginPage appVersion="0.2.0" />);
+			window.dispatchEvent(new Event("resize"));
+
+			await vi.waitFor(() => {
+				expect(mockComputeAuv3HostFitLayout).toHaveBeenLastCalledWith(
+					expect.objectContaining({
+						hostWidth: 900,
+						hostHeight: 700,
+						deviceLandscapeAspectRatio: 4 / 3,
+					}),
+				);
+			});
 		} finally {
 			getBoundingClientRect.mockRestore();
 		}

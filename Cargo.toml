@@ -26,16 +26,16 @@ syn = { version = "2", features = [
 ] }
 quote = "1"
 proc-macro2 = "1"
-truce = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v0.58.3-20260616", default-features = false }
-truce-core = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v0.58.3-20260616" }
-truce-params = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v0.58.3-20260616" }
-truce-clap = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v0.58.3-20260616" }
-truce-vst3 = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v0.58.3-20260616" }
-truce-au = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v0.58.3-20260616" }
-truce-standalone = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v0.58.3-20260616" }
-truce-gui = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v0.58.3-20260616" }
-truce-build = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v0.58.3-20260616" }
-truce-test = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v0.58.3-20260616" }
+truce = { git = "https://github.com/fpbrault/truce.git", rev = "96f0581fb297103fe68f74a4aa602ee7a1fb31d4", default-features = false }
+truce-core = { git = "https://github.com/fpbrault/truce.git", rev = "96f0581fb297103fe68f74a4aa602ee7a1fb31d4" }
+truce-params = { git = "https://github.com/fpbrault/truce.git", rev = "96f0581fb297103fe68f74a4aa602ee7a1fb31d4" }
+truce-clap = { git = "https://github.com/fpbrault/truce.git", rev = "96f0581fb297103fe68f74a4aa602ee7a1fb31d4" }
+truce-vst3 = { git = "https://github.com/fpbrault/truce.git", rev = "96f0581fb297103fe68f74a4aa602ee7a1fb31d4" }
+truce-au = { git = "https://github.com/fpbrault/truce.git", rev = "96f0581fb297103fe68f74a4aa602ee7a1fb31d4" }
+truce-standalone = { git = "https://github.com/fpbrault/truce.git", rev = "96f0581fb297103fe68f74a4aa602ee7a1fb31d4" }
+truce-gui = { git = "https://github.com/fpbrault/truce.git", rev = "96f0581fb297103fe68f74a4aa602ee7a1fb31d4" }
+truce-build = { git = "https://github.com/fpbrault/truce.git", rev = "96f0581fb297103fe68f74a4aa602ee7a1fb31d4" }
+truce-test = { git = "https://github.com/fpbrault/truce.git", rev = "96f0581fb297103fe68f74a4aa602ee7a1fb31d4" }
 wry = "0.55.0"
 raw-window-handle = "0.6"
 

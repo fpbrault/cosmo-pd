@@ -54,7 +54,7 @@ class PluginErrorBoundary extends Component<
 	public render(): ReactNode {
 		if (this.state.hasError) {
 			return (
-				<div className="h-dvh w-full bg-cz-panel p-4 text-cz-cream">
+				<div className="h-dvh w-full bg-transparent p-4 text-cz-cream">
 					<div className="rounded border border-cz-border bg-black/35 p-3 font-mono text-xs tracking-[0.04em]">
 						Plugin UI failed to initialize.
 						<br />

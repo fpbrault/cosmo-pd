@@ -39,6 +39,8 @@ final class FullScreenAUContainerViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         auViewController.view.frame = view.bounds
+        auViewController.view.setNeedsLayout()
+        auViewController.view.layoutIfNeeded()
     }
 }
 
@@ -89,6 +91,14 @@ final class FullScreenAUMacContainerViewController: NSViewController {
         childView.frame = view.bounds
         childView.autoresizingMask = [.width, .height]
         view.addSubview(childView)
+    }
+
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        guard let auViewController else { return }
+        auViewController.view.frame = view.bounds
+        auViewController.view.needsLayout = true
+        auViewController.view.layoutSubtreeIfNeeded()
     }
 }
 

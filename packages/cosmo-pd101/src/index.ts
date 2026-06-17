@@ -1,5 +1,9 @@
 export { default as MidiLearnPanel } from "./components/panels/midi/MidiLearnPanel";
 export {
+	type Auv3HostFitLayout,
+	computeAuv3HostFitLayout,
+} from "./components/renderer/auv3HostFitLayout";
+export {
 	computeRendererFrameLayout,
 	type RendererFrameLayout,
 	SYNTH_RENDERER_DESIGN_HEIGHT,
