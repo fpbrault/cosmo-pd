@@ -7,10 +7,6 @@
 
 import SwiftUI
 
-#if canImport(CosmoPD101AUv3Ext_macOSExtension)
-import CosmoPD101AUv3Ext_macOSExtension
-#endif
-
 #if os(iOS) || os(visionOS)
 
 final class FullScreenAUContainerViewController: UIViewController {
@@ -33,11 +29,10 @@ final class FullScreenAUContainerViewController: UIViewController {
 		super.viewDidLoad()
 		view.backgroundColor = .black
 		view.insetsLayoutMarginsFromSafeArea = false
-		#if canImport(CosmoPD101AUv3Ext_macOSExtension)
-		if let cosmoVC = auViewController as? AudioUnitViewController {
-			cosmoVC.fitMode = .fitBounds
+		let selector = NSSelectorFromString("setCosmoAuv3FitMode:")
+		if auViewController.responds(to: selector) {
+			auViewController.setValue("fit-bounds", forKey: "cosmoAuv3FitMode")
 		}
-		#endif
 		addChild(auViewController)
         auViewController.view.frame = view.bounds
         auViewController.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -94,6 +89,11 @@ final class FullScreenAUMacContainerViewController: NSViewController {
         super.viewDidLoad()
 
         guard let auViewController else { return }
+
+        let selector = NSSelectorFromString("setCosmoAuv3FitMode:")
+        if auViewController.responds(to: selector) {
+            auViewController.setValue("fit-bounds", forKey: "cosmoAuv3FitMode")
+        }
 
         addChild(auViewController)
         let childView = auViewController.view
