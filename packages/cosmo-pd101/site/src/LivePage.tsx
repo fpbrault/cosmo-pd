@@ -311,12 +311,12 @@ export default function LivePage() {
 				}}
 			>
 				<div
-					className="absolute top-0 left-0"
+					className="absolute"
 					style={{
 						width: frameWidth,
 						height: frameHeight,
 						transform: `scale(${frameScale})`,
-						transformOrigin: "top left",
+						transformOrigin: "center",
 					}}
 				>
 					<PresetManagerProvider value={presetManager}>

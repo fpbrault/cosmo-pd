@@ -320,7 +320,7 @@ export default function PluginPage({
 		width: frameWidth,
 		height: frameHeight,
 		transform: `scale(${displayScale})`,
-		transformOrigin: "top left",
+		transformOrigin: "center",
 	};
 
 	if (isAuv3Hosted) {
@@ -336,7 +336,7 @@ export default function PluginPage({
 						height: scaledHeight,
 					}}
 				>
-					<div className="absolute top-0 left-0" style={zoomStyle}>
+					<div className="absolute" style={zoomStyle}>
 						<PresetManagerProvider value={presetManager}>
 							<SynthRenderer
 								runtime={runtime}
