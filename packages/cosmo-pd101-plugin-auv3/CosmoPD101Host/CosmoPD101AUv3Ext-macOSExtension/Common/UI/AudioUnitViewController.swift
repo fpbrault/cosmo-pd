@@ -7,6 +7,20 @@ import WebKit
 private let czVCLog = OSLog(subsystem: "com.cosmo.pd101.auv3", category: "CzVC")
 private let czWebViewLog = OSLog(subsystem: "com.cosmo.pd101.auv3", category: "CzWebView")
 
+private final class WebViewJavaScriptEvaluator: JavaScriptEvaluating {
+	private weak var webView: WKWebView?
+
+	init(webView: WKWebView) {
+		self.webView = webView
+	}
+
+	func evaluateJavaScript(_ javaScriptString: String) {
+		Task { @MainActor [weak webView] in
+			_ = try? await webView?.evaluateJavaScript(javaScriptString)
+		}
+	}
+}
+
 #if os(iOS)
 import UIKit
 #endif
@@ -21,7 +35,9 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	private var midiLearnState = MidiLearnState()
 	private var paramsVersion = 0
 	private lazy var telemetryController = TelemetryController { [weak self] in
-		self?.handleTelemetryTimer()
+		Task { @MainActor [weak self] in
+			self?.handleTelemetryTimer()
+		}
 	}
 	private let instanceID = UUID().uuidString
 	private var cachedVoiceLimit: Int = 0
@@ -44,6 +60,8 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 	nonisolated(unsafe) var audioUnit: AUAudioUnit?
 	private var webView: WKWebView?
+	private var webViewJavaScriptEvaluator: WebViewJavaScriptEvaluator?
+	private lazy var scriptDispatcher = WebViewScriptDispatcher()
 	private var webContentTerminationCount = 0
 	private var hostInactiveAt: Date?
 	private var webAppReady = false
@@ -103,12 +121,14 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	public override func viewWillAppear(_ animated: Bool) {
 		super.viewWillAppear(animated)
 		os_log("viewWillAppear (instance=%@)", log: czVCLog, type: .default, instanceID)
+		scriptDispatcher.setViewVisible(true)
 		telemetryController.viewWillAppear()
 	}
 
 	public override func viewDidDisappear(_ animated: Bool) {
 		super.viewDidDisappear(animated)
 		os_log("viewDidDisappear (instance=%@)", log: czVCLog, type: .default, instanceID)
+		scriptDispatcher.setViewVisible(false)
 		telemetryController.viewDidDisappear()
 	}
 
@@ -124,12 +144,14 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	public override func viewWillAppear() {
 		super.viewWillAppear()
 		os_log("viewWillAppear (instance=%@)", log: czVCLog, type: .default, instanceID)
+		scriptDispatcher.setViewVisible(true)
 		telemetryController.viewWillAppear()
 	}
 
 	public override func viewDidDisappear() {
 		super.viewDidDisappear()
 		os_log("viewDidDisappear (instance=%@)", log: czVCLog, type: .default, instanceID)
+		scriptDispatcher.setViewVisible(false)
 		telemetryController.viewDidDisappear()
 	}
 
@@ -511,6 +533,11 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		#endif
 		view.addSubview(webView)
 		self.webView = webView
+		let evaluator = WebViewJavaScriptEvaluator(webView: webView)
+		webViewJavaScriptEvaluator = evaluator
+		scriptDispatcher.setEvaluator(evaluator)
+		scriptDispatcher.setWebContentAlive(true)
+		scriptDispatcher.setNavigationFinished(false)
 		layoutWebView()
 
 		guard let indexUrl else {
@@ -534,11 +561,13 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 	public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
 		os_log("didFail navigation: %{public}@", log: czVCLog, type: .error, error.localizedDescription)
+		scriptDispatcher.setNavigationFinished(false)
 		webView.loadHTMLString(diagnosticHtml(title: "Navigation Failed", message: error.localizedDescription), baseURL: nil)
 	}
 
 	public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
 		os_log("didFailProvisionalNavigation: %{public}@", log: czVCLog, type: .error, error.localizedDescription)
+		scriptDispatcher.setNavigationFinished(false)
 		webView.loadHTMLString(diagnosticHtml(title: "Provisional Navigation Failed", message: error.localizedDescription), baseURL: nil)
 	}
 
@@ -546,6 +575,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		os_log("didFinish navigation instance=%{public}@", log: czVCLog, type: .default, instanceID)
 
 		webAppReady = false
+		scriptDispatcher.setNavigationFinished(false)
 		pendingStatePushReason = pendingStatePushReason ?? "didFinish"
 
 		os_log(
@@ -565,6 +595,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		webContentTerminationCount += 1
 		webAppReady = false
 		pendingStatePushReason = "webContentProcessDidTerminate"
+		scriptDispatcher.setWebContentAlive(false)
 
 		telemetryController.hostWillResignActive()
 		telemetryController.resetAllCaches()
@@ -633,39 +664,28 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		pushStateCount += 1
 
 		os_log(
-			"pushStateToWebView #%{public}d instance=%{public}@ bytes=%{public}d preset=%{public}@ webReady=%{public}d",
+			"pushStateToWebView #%{public}d instance=%{public}@ bytes=%{public}d preset=%{public}@ webReady=%{public}d queued=%{public}d",
 			log: czVCLog,
 			type: .default,
 			pushStateCount,
 			instanceID,
 			paramsJson.utf8.count,
 			selectedPresetName ?? "nil",
-			webAppReady
+			webAppReady,
+			!scriptDispatcher.state.navigationFinished || scriptDispatcher.hasPendingParams
 		)
 
-		// Wrap in a JSON object so JSONSerialization handles all string escaping correctly.
-		let container: [String: String] = ["p": paramsJson]
-		guard let data = try? JSONSerialization.data(withJSONObject: container),
-			  let containerStr = String(data: data, encoding: .utf8) else { return }
-		var script = "window.__czOnParams?.(\(containerStr).p);"
-		if let selectedPresetName {
-			let presetContainer: [String: String] = ["n": selectedPresetName]
-			if let presetData = try? JSONSerialization.data(withJSONObject: presetContainer),
-			   let presetContainerStr = String(data: presetData, encoding: .utf8) {
-				script += "window.__czOnHostPresetSelected?.(\(presetContainerStr).n);"
-			}
-		}
-		webView?.evaluateJavaScript(script, completionHandler: nil)
+		_ = scriptDispatcher.enqueueParams(json: paramsJson, selectedPresetName: selectedPresetName)
 	}
 
 	private func sendScriptPayload(_ payload: [String: Any]) {
-		guard JSONSerialization.isValidJSONObject(payload),
-			let data = try? JSONSerialization.data(withJSONObject: payload),
-			let json = String(data: data, encoding: .utf8) else {
+		guard JSONSerialization.isValidJSONObject(payload) else {
 			os_log(.error, log: czVCLog, "sendScriptPayload: failed to serialize payload id=%{public}d", payload["id"] as? Int ?? -1)
 			return
 		}
-		webView?.evaluateJavaScript("window.__czIpcResponse?.(\(json));", completionHandler: nil)
+		if !scriptDispatcher.sendIpcResponse(payload: payload) {
+			os_log(.debug, log: czVCLog, "sendScriptPayload dropped by lifecycle gate id=%{public}d", payload["id"] as? Int ?? -1)
+		}
 	}
 
 	private func setTelemetrySubscription(_ channel: TelemetryChannel, active: Bool, audioUnit: CosmoPD101AUv3Ext_macOSExtensionAudioUnit) {
@@ -722,7 +742,16 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 				self.webContentTerminationCount
 			)
 
-			self.requestStatePushWhenWebReady(reason: "hostDidBecomeActive")
+			self.scriptDispatcher.setHostActive(true, resumeHold: 0.25)
+			DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+				guard let self else { return }
+				self.scriptDispatcher.clearResumeHold()
+				self.scriptDispatcher.sendLifecycleEvent(
+					name: "cz-auv3-host-active",
+					assignments: ["__czAuv3HostActive": "true"]
+				)
+				self.requestStatePushWhenWebReady(reason: "hostDidBecomeActive")
+			}
 		}
 	}
 
@@ -732,6 +761,11 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 			self.hostInactiveAt = Date()
 			self.pendingStatePushReason = nil
+			self.scriptDispatcher.sendLifecycleEvent(
+				name: "cz-auv3-host-inactive",
+				assignments: ["__czAuv3HostActive": "false"]
+			)
+			self.scriptDispatcher.setHostActive(false)
 
 			os_log(
 				"host will resign active instance=%{public}@",
@@ -765,6 +799,8 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 	private func handleWebReady(audioUnit: CosmoPD101AUv3Ext_macOSExtensionAudioUnit) {
 		webAppReady = true
+		scriptDispatcher.setWebContentAlive(true)
+		scriptDispatcher.setNavigationFinished(true)
 
 		let reason = pendingStatePushReason ?? "webReady"
 		pendingStatePushReason = nil
@@ -829,7 +865,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		guard !script.isEmpty else {
 			return
 		}
-		webView?.evaluateJavaScript(script, completionHandler: nil)
+		_ = scriptDispatcher.sendTelemetry(script: script)
 	}
 
 	private func appendJavascriptJsonCallback(_ script: inout String, functionName: String, json: String) {
@@ -1055,4 +1091,3 @@ private final class BundleSchemeHandler: NSObject, WKURLSchemeHandler {
 		}
 	}
 }
-

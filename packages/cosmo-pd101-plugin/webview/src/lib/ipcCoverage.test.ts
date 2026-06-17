@@ -161,6 +161,15 @@ describe("IPC contract coverage", () => {
 		extractSwiftMethods(swiftSource);
 
 	describe("AUv3 bridge (JS) ↔ Swift userContentController", () => {
+		it("routes native-to-web JavaScript through the dispatcher", () => {
+			const directEvaluateCalls = swiftSource.match(
+				/webView\??\.evaluateJavaScript/g,
+			);
+			expect(directEvaluateCalls).toHaveLength(1);
+			expect(swiftSource).toContain("final class WebViewJavaScriptEvaluator");
+			expect(swiftSource).toContain("scriptDispatcher");
+		});
+
 		it("every AUv3 bridge method has a matching Swift case arm", () => {
 			const allSwift = new Set([...swiftImplemented, ...swiftStubbed]);
 			const missing = [...auv3Called].filter((m) => !allSwift.has(m));

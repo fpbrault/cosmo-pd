@@ -13,9 +13,9 @@ public final class TelemetryController: @unchecked Sendable {
 	private var caches: [TelemetryChannel: String] = [:]
 	private var timer: Timer?
 	private let pushInterval: TimeInterval
-	private let handler: @Sendable () -> Void
+	private let handler: () -> Void
 
-	public init(pushInterval: TimeInterval = 0.1, handler: @escaping @Sendable () -> Void) {
+	public init(pushInterval: TimeInterval = 0.1, handler: @escaping () -> Void) {
 		self.pushInterval = pushInterval
 		self.handler = handler
 	}
