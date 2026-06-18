@@ -316,7 +316,7 @@ export default function LivePage() {
 						width: frameWidth,
 						height: frameHeight,
 						transform: `scale(${frameScale})`,
-						transformOrigin: "center",
+						transformOrigin: "top left",
 					}}
 				>
 					<PresetManagerProvider value={presetManager}>
