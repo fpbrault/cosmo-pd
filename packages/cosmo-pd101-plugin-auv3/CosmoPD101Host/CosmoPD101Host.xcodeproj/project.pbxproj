@@ -177,6 +177,7 @@
 			buildConfigurationList = 1A3DB6692FAB6671008A88D4 /* Build configuration list for PBXNativeTarget "CosmoPD101AUv3Ext-macOSExtension" */;
 			buildPhases = (
 				1A3DB63A2FAB6671008A88D4 /* Sources */,
+				1A3DB6722FAB77A2008A88D4 /* Build AUv3 XCFramework If Needed */,
 				1A3DB63B2FAB6671008A88D4 /* Frameworks */,
 				1A3DB6712FAB77A1008A88D4 /* Stage Web UI */,
 				1A3DB63C2FAB6671008A88D4 /* Resources */,
@@ -284,6 +285,25 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
 			shellScript = "set -euo pipefail\ncd \"$SRCROOT/../../..\"\nexport PATH=\"$HOME/.bun/bin:/opt/homebrew/bin:/usr/local/bin:$PATH\"\nbun --filter @cosmo/cosmo-pd101-plugin-auv3 stage:webview\n";
+		};
+		1A3DB6722FAB77A2008A88D4 /* Build AUv3 XCFramework If Needed */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build AUv3 XCFramework If Needed";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/../Build/ios-xcframework.inputs.sha256",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/zsh;
+			shellScript = "set -euo pipefail\ncd \"$SRCROOT/../../..\"\nexport PATH=\"$HOME/.bun/bin:/opt/homebrew/bin:/usr/local/bin:$PATH\"\nbun run ./scripts/xcode-build-auv3-ios-xcframework-if-needed.mjs\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
