@@ -17,6 +17,7 @@ declare global {
 		};
 		__czHostPlatform?: "macos" | "ios";
 		__czRuntimeMode?: "auv3-hosted" | "plugin" | "standalone";
+		__czAuv3HostActive?: boolean;
 		__czOnHostPresetSelected?: (name: string) => void;
 		__czOnRuntimeVoiceStates?: (json: string) => void;
 		__czOnRuntimeModSources?: (json: string) => void;
@@ -37,6 +38,19 @@ let currentScopeHandler: Window["__czOnScope"];
 const listenerCounts = new Map<string, number>();
 const listenerCountWatchers = new Map<string, Set<() => void>>();
 let demandTrackingInstalled = false;
+const inactiveSuppressedMethods = new Set([
+	"getScopeData",
+	"getParamsVersion",
+	"getRuntimeVoiceStates",
+	"getRuntimeModSources",
+	"getTransportInfo",
+	"subscribeRuntimeVoiceStates",
+	"subscribeRuntimeModSources",
+	"subscribeTransport",
+	"unsubscribeRuntimeVoiceStates",
+	"unsubscribeRuntimeModSources",
+	"unsubscribeTransport",
+]);
 
 function notifyListenerCountWatchers(eventName: string) {
 	listenerCountWatchers.get(eventName)?.forEach((watcher) => {
@@ -114,12 +128,27 @@ function nativeHandler() {
 	return window.webkit?.messageHandlers?.cosmoPd101;
 }
 
+function isAuv3HostActive() {
+	return window.__czAuv3HostActive !== false;
+}
+
+function shouldSuppressWhileHostInactive(method: string) {
+	return inactiveSuppressedMethods.has(method);
+}
+
 function invokeAuv3<T = unknown>(
 	method: string,
 	payload?: unknown,
 	timeoutMs = 0,
 ): Promise<T> {
 	return new Promise<T>((resolve, reject) => {
+		if (!isAuv3HostActive() && shouldSuppressWhileHostInactive(method)) {
+			reject(
+				new Error(`[auv3Bridge] ${method} suppressed while host inactive`),
+			);
+			return;
+		}
+
 		const handler = nativeHandler();
 		if (!handler) {
 			reject(new Error("[auv3Bridge] native message handler not available"));
@@ -239,7 +268,12 @@ function installScopePolling() {
 	let destroyed = false;
 
 	const scheduleNextFrame = () => {
-		if (destroyed || rafId !== 0 || !currentScopeHandler) {
+		if (
+			destroyed ||
+			rafId !== 0 ||
+			!currentScopeHandler ||
+			!isAuv3HostActive()
+		) {
 			return;
 		}
 		rafId = requestAnimationFrame(tick);
@@ -255,7 +289,7 @@ function installScopePolling() {
 
 	const tick = async (now: number) => {
 		rafId = 0;
-		if (destroyed || !currentScopeHandler) {
+		if (destroyed || !currentScopeHandler || !isAuv3HostActive()) {
 			return;
 		}
 		if (now - lastScheduled < pollIntervalMs || pollInFlight) {
@@ -297,6 +331,8 @@ function installScopePolling() {
 		destroyed = true;
 		stopPolling();
 	});
+	window.addEventListener("cz-auv3-host-inactive", stopPolling);
+	window.addEventListener("cz-auv3-host-active", scheduleNextFrame);
 }
 
 type Auv3SubscriptionState =
@@ -345,6 +381,10 @@ function installAuv3DemandSubscription<TDetail>(
 			return;
 		}
 
+		if (!isAuv3HostActive()) {
+			return;
+		}
+
 		if (hasDemand(eventName)) {
 			if (subscriptionState !== "unsubscribed") {
 				return;
@@ -383,16 +423,10 @@ function installAuv3DemandSubscription<TDetail>(
 
 	const unwatchDemand = watchDemand(eventName, syncDemand);
 	syncDemand();
+	window.addEventListener("cz-auv3-host-active", syncDemand);
 	window.addEventListener("pagehide", () => {
 		destroyed = true;
 		unwatchDemand();
-		if (subscriptionState === "subscribed") {
-			void invokeAuv3(unsubscribeMethod, undefined, IPC_TIMEOUT_MS).catch(
-				() => {
-					// Host teardown races are safe to ignore here.
-				},
-			);
-		}
 		subscriptionState = "unsubscribed";
 	});
 }
