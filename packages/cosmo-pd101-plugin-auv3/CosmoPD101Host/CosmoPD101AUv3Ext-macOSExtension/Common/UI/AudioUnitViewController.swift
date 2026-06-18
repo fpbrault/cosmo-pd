@@ -802,7 +802,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			return
 		}
 		if !scriptDispatcher.sendIpcResponse(payload: payload) {
-			os_log(.debug, log: czVCLog, "sendScriptPayload dropped by lifecycle gate id=%{public}d", payload["id"] as? Int ?? -1)
+			os_log(.debug, log: czVCLog, "sendScriptPayload dropped — evaluator nil or web content dead id=%{public}d", payload["id"] as? Int ?? -1)
 		}
 	}
 

@@ -114,11 +114,15 @@ async function readNativeFavoriteIds(): Promise<string[] | null> {
 		return null;
 	}
 
-	const response = await window.__czGetPresetLibrary();
+	try {
+		const response = await window.__czGetPresetLibrary();
 
-	return response.entries
-		.filter((entry) => entry.favorite === true)
-		.map((entry) => entry.id);
+		return response.entries
+			.filter((entry) => entry.favorite === true)
+			.map((entry) => entry.id);
+	} catch {
+		return null;
+	}
 }
 
 async function readNativeFavorite(id: string): Promise<boolean | null> {
@@ -126,10 +130,14 @@ async function readNativeFavorite(id: string): Promise<boolean | null> {
 		return null;
 	}
 
-	const response = await window.__czGetPresetLibrary();
+	try {
+		const response = await window.__czGetPresetLibrary();
 
-	const entry = response.entries.find((candidate) => candidate.id === id);
-	return entry ? entry.favorite === true : null;
+		const entry = response.entries.find((candidate) => candidate.id === id);
+		return entry ? entry.favorite === true : null;
+	} catch {
+		return null;
+	}
 }
 
 function isSynthPresetV1(value: unknown): value is SynthPresetV1 {
