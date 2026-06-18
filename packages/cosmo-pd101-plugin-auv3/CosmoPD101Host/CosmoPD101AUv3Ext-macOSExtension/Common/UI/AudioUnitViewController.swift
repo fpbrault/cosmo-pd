@@ -177,6 +177,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 	nonisolated public func createAudioUnit(with componentDescription: AudioComponentDescription) throws -> AUAudioUnit {
 		let unit = try CosmoPD101AUv3Ext_macOSExtensionAudioUnit(componentDescription: componentDescription, options: [])
+		_ = unit.setVoiceLimit(voiceLimit)
 		audioUnit = unit
 		observation = unit.observe(\.allParameterValues, options: [.new]) { _, _ in }
 		unit.paramsChangedHandler = { [weak self] json, presetName in
@@ -332,9 +333,19 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		case "getVoiceLimit":
 			sendResponse(id: id, result: voiceLimit)
 		case "setVoiceLimit":
+			let requested = methodPayload as? Int
 			if let limit = methodPayload as? Int {
 				voiceLimit = limit
 			}
+			let applied = audioUnit.setVoiceLimit(voiceLimit)
+			os_log(
+				.default,
+				log: czVCLog,
+				"setVoiceLimit requested=%d persisted=%d applied=%{public}@",
+				requested ?? -1,
+				voiceLimit,
+				applied ? "true" : "false"
+			)
 			sendResponse(id: id, result: NSNull())
 		case "addPreset", "savePreset", "deletePreset", "renamePreset", "toggleStarred", "setPresetAuthor", "setPresetDescription", "setPresetTags", "exportPreset", "importPresetBank", "listFxModulePresets", "saveFxModulePreset", "deleteFxModulePreset":
 			sendError(id: id, message: "AUv3 preset library editing is not supported yet")
