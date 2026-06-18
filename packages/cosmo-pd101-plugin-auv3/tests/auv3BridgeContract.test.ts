@@ -13,6 +13,14 @@ const xcodeControllerPath = path.join(
 	packageRoot,
 	"CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/UI/AudioUnitViewController.swift",
 );
+const xcodeHostAppPath = path.join(
+	packageRoot,
+	"CosmoPD101Host/CosmoPD101AUv3Ext-macOS/CosmoPD101AUv3Ext_macOSApp.swift",
+);
+const xcodeViewControllerRepresentablePath = path.join(
+	packageRoot,
+	"CosmoPD101Host/CosmoPD101AUv3Ext-macOS/Common/UI/ViewControllerRepresentable.swift",
+);
 
 const nativeEngineEventMethods = new Set([
 	"noteOn",
@@ -115,5 +123,69 @@ describe("AUv3 bridge contract", () => {
 			PRESET_SESSION_FALLBACK_UNSELECTED_NAME,
 		);
 		expect(containsFallback).toBeTrue();
+	});
+
+	it("advertises the AUv3 minimum host size", () => {
+		const swiftSource = readText(xcodeControllerPath);
+		const hostAppSource = readText(xcodeHostAppPath);
+		const widthMatch = swiftSource.match(
+			/private static let minimumWidth: CGFloat = ([0-9.]+)/,
+		);
+		const heightMatch = swiftSource.match(
+			/private static let minimumHeight: CGFloat = ([0-9.]+)/,
+		);
+
+		expect(widthMatch).not.toBeNull();
+		expect(heightMatch).not.toBeNull();
+		expect(Number(widthMatch?.[1])).toBe(640);
+		expect(Number(heightMatch?.[1])).toBe(480);
+		expect(hostAppSource).toContain("minimumWindowWidth: CGFloat = 640");
+		expect(hostAppSource).toContain("minimumWindowHeight: CGFloat = 480");
+	});
+
+	it("does not clamp AUv3 native hosts to the web renderer design size", () => {
+		const swiftSource = readText(xcodeControllerPath);
+		const hostAppSource = readText(xcodeHostAppPath);
+
+		expect(swiftSource).not.toContain("preferredWidth");
+		expect(swiftSource).not.toContain("preferredHeight");
+		expect(hostAppSource).not.toContain("fixedWindowWidth");
+		expect(hostAppSource).not.toContain("fixedWindowHeight");
+		expect(hostAppSource).not.toContain("maxWidth:");
+		expect(hostAppSource).not.toContain("maxHeight:");
+	});
+
+	it("publishes native AUv3 view bounds to the web renderer on layout", () => {
+		const swiftSource = readText(xcodeControllerPath);
+
+		expect(swiftSource).toContain("publishHostSizeToWebView(reason:");
+		expect(swiftSource).toContain("deviceLandscapeAspectRatio:");
+		expect(swiftSource).toContain("cz-host-size-changed");
+		expect(swiftSource).toContain("window.dispatchEvent(new Event('resize'))");
+	});
+
+	it("keeps hosted AUv3 runtime mode as the controller default", () => {
+		const swiftSource = readText(xcodeControllerPath);
+
+		expect(swiftSource).toContain(
+			'@objc public var cosmoAuv3FitMode: String = "fit-bounds"',
+		);
+		expect(swiftSource).toContain(
+			'@objc public var cosmoAuv3RuntimeMode: String = "auv3-hosted"',
+		);
+		expect(swiftSource).toContain(
+			"source: \"window.__czRuntimeMode='\\(cosmoAuv3RuntimeMode)';\"",
+		);
+	});
+
+	it("marks the containing standalone app as standalone before embedding the AU view", () => {
+		const hostAppSource = readText(xcodeViewControllerRepresentablePath);
+
+		expect(hostAppSource).toContain(
+			'viewController.setValue("fit-bounds", forKey: "cosmoAuv3FitMode")',
+		);
+		expect(hostAppSource).toContain(
+			'viewController.setValue("standalone", forKey: "cosmoAuv3RuntimeMode")',
+		);
 	});
 });

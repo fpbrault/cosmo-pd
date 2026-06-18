@@ -28,7 +28,6 @@ lib-dist
 *.sw?
 xcuserdata/
 
-**/*.pbxproj
 
 CZSYX/
 package-lock.json

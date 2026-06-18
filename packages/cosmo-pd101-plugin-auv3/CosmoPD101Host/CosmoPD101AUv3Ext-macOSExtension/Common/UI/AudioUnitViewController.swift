@@ -26,10 +26,9 @@ import UIKit
 #endif
 
 public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNavigationDelegate, WKScriptMessageHandler {
-	private static let preferredWidth: CGFloat = 1368
-	private static let preferredHeight: CGFloat = 912
-	private static let minimumWidth: CGFloat = 1024
-	private static let minimumHeight: CGFloat = 768
+	private static let minimumWidth: CGFloat = 640
+	private static let minimumHeight: CGFloat = 480
+	private static let isSizingDebugEnabled = true
 	private var presetSessionState = PresetSessionState()
 	private var editorState = [String: Any]()
 	private var midiLearnState = MidiLearnState()
@@ -57,6 +56,9 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			UserDefaults.standard.set(clamped, forKey: Self.voiceLimitUserDefaultsKey)
 		}
 	}
+
+	@objc public var cosmoAuv3FitMode: String = "fit-bounds"
+	@objc public var cosmoAuv3RuntimeMode: String = "auv3-hosted"
 
 	nonisolated(unsafe) var audioUnit: AUAudioUnit?
 	private var webView: WKWebView?
@@ -92,18 +94,20 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 	public override func loadView() {
 		os_log("loadView", log: czVCLog, type: .default)
+
 		#if os(iOS)
-		view = UIView(frame: CGRect(x: 0, y: 0, width: Self.preferredWidth, height: Self.preferredHeight))
+		view = UIView(frame: CGRect(x: 0, y: 0, width: Self.minimumWidth, height: Self.minimumHeight))
 		view.backgroundColor = .black
-		preferredContentSize = CGSize(width: Self.preferredWidth, height: Self.preferredHeight)
+		preferredContentSize = CGSize(width: Self.minimumWidth, height: Self.minimumHeight)
 		#else
-		view = NSView(frame: NSRect(x: 0, y: 0, width: Self.preferredWidth, height: Self.preferredHeight))
+		view = NSView(frame: NSRect(x: 0, y: 0, width: Self.minimumWidth, height: Self.minimumHeight))
 		
 		view.wantsLayer = true
 		view.layer?.backgroundColor = NSColor.black.cgColor
-		preferredContentSize = NSSize(width: Self.preferredWidth, height: Self.preferredHeight)
+		preferredContentSize = NSSize(width: Self.minimumWidth, height: Self.minimumHeight)
 		#endif
 		installWebView()
+		logSizing("loadView")
 
 		#if os(iOS)
         NotificationCenter.default.addObserver(self, selector: #selector(handleHostDidBecomeActive(_:)), name: NSNotification.Name.NSExtensionHostDidBecomeActive, object: nil)
@@ -114,8 +118,17 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	#if os(iOS)
 	public override func viewDidLayoutSubviews() {
 		super.viewDidLayoutSubviews()
-		configureWindowSceneSizing()
-		layoutWebView()
+		layoutWebView(reason: "viewDidLayoutSubviews")
+		logSizing("viewDidLayoutSubviews")
+	}
+
+	public override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+		super.viewWillTransition(to: size, with: coordinator)
+		logSizing("viewWillTransition")
+		coordinator.animate(alongsideTransition: nil) { [weak self] _ in
+			self?.layoutWebView(reason: "viewWillTransitionComplete")
+			self?.logSizing("viewWillTransitionComplete")
+		}
 	}
 
 	public override func viewWillAppear(_ animated: Bool) {
@@ -138,7 +151,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		os_log("viewDidAppear", log: czVCLog, type: .default)
 		guard let window = view.window else { return }
 		window.contentMinSize = NSSize(width: Self.minimumWidth, height: Self.minimumHeight)
-		window.contentAspectRatio = NSSize(width: Self.preferredWidth, height: Self.preferredHeight)
+		logSizing("viewDidAppear")
 	}
 
 	public override func viewWillAppear() {
@@ -157,13 +170,8 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 	public override func viewDidLayout() {
 		super.viewDidLayout()
-		layoutWebView()
-	}
-	#endif
-
-	#if os(iOS)
-	private func configureWindowSceneSizing() {
-		view.window?.windowScene?.sizeRestrictions?.minimumSize = CGSize(width: Self.minimumWidth, height: Self.minimumHeight)
+		layoutWebView(reason: "viewDidLayout")
+		logSizing("viewDidLayout")
 	}
 	#endif
 
@@ -376,7 +384,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		)
 		configuration.userContentController.addUserScript(
 			WKUserScript(
-				source: "window.__czRuntimeMode='auv3-hosted';",
+				source: "window.__czRuntimeMode='\(cosmoAuv3RuntimeMode)';",
 				injectionTime: .atDocumentStart,
 				forMainFrameOnly: true
 			)
@@ -521,6 +529,8 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		let webView = WKWebView(frame: view.bounds, configuration: configuration)
 		webView.navigationDelegate = self
 		#if os(macOS)
+		webView.wantsLayer = true
+		webView.layer?.backgroundColor = NSColor.black.cgColor
 		webView.setValue(false, forKey: "drawsBackground")
 		webView.autoresizingMask = [.width, .height]
 		#else
@@ -538,7 +548,8 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		scriptDispatcher.setEvaluator(evaluator)
 		scriptDispatcher.setWebContentAlive(true)
 		scriptDispatcher.setNavigationFinished(false)
-		layoutWebView()
+		layoutWebView(reason: "installWebView")
+		logSizing("installWebView")
 
 		guard let indexUrl else {
 			os_log("index.html missing from bundle", log: czVCLog, type: .error)
@@ -550,12 +561,117 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		webView.load(URLRequest(url: URL(string: "cosmo-ext://bundle/index.html")!))
 	}
 
-	private func layoutWebView() {
+	private func layoutWebView(reason: String = "layout") {
 		guard let webView else { return }
-		#if os(iOS)
 		webView.frame = view.bounds
+		#if os(macOS)
+		webView.needsLayout = true
 		#else
-		webView.frame = view.bounds
+		webView.setNeedsLayout()
+		#endif
+		publishHostSizeToWebView(reason: reason)
+	}
+
+	private func publishHostSizeToWebView(reason: String) {
+		guard let webView else { return }
+		let size = webView.bounds.size
+		guard size.width > 0, size.height > 0 else { return }
+		let deviceInfo = currentDeviceSizingInfo()
+		let reasonLiteral = jsonStringLiteral(reason)
+		let script = """
+		window.__czHostSize = {
+		  width: \(size.width),
+		  height: \(size.height),
+		  scale: \(deviceInfo.scale),
+		  deviceLandscapeAspectRatio: \(deviceInfo.landscapeAspectRatio),
+		  fitMode: "\(cosmoAuv3FitMode)",
+		  reason: \(reasonLiteral)
+		};
+		window.dispatchEvent(new CustomEvent('cz-host-size-changed', {
+		  detail: window.__czHostSize
+		}));
+		window.dispatchEvent(new Event('resize'));
+		"""
+		_ = scriptDispatcher.enqueueHostSizeScript(script)
+	}
+
+	private func currentDeviceSizingInfo() -> (scale: CGFloat, landscapeAspectRatio: CGFloat) {
+		#if os(iOS)
+		let screen = view.window?.windowScene?.screen ?? view.window?.screen ?? UIScreen.main
+		let bounds = screen.bounds
+		let scale = screen.scale
+		#else
+		let screen = view.window?.screen ?? NSScreen.main
+		let bounds = screen?.frame ?? .zero
+		let scale = view.window?.backingScaleFactor ?? screen?.backingScaleFactor ?? 1
+		#endif
+		let landscapeWidth = max(bounds.width, bounds.height)
+		let landscapeHeight = min(bounds.width, bounds.height)
+		let ratio = landscapeHeight > 0 ? landscapeWidth / landscapeHeight : 4.0 / 3.0
+		return (scale, ratio)
+	}
+
+	private func jsonStringLiteral(_ value: String) -> String {
+		guard let data = try? JSONSerialization.data(withJSONObject: [value]),
+			let json = String(data: data, encoding: .utf8),
+			json.count >= 2 else {
+			return "\"\""
+		}
+		return String(json.dropFirst().dropLast())
+	}
+
+	private func logSizing(_ reason: String) {
+		guard Self.isSizingDebugEnabled else { return }
+		guard isViewLoaded else { return }
+
+		#if os(iOS)
+		let webBounds = webView?.bounds ?? .zero
+		let webFrame = webView?.frame ?? .zero
+		let window = view.window
+		let scene = window?.windowScene
+		let screenBounds = scene?.screen.bounds ?? window?.screen.bounds ?? .zero
+		let minSize = scene?.sizeRestrictions?.minimumSize ?? .zero
+		let geometry: String
+		if #available(iOS 16.0, *) {
+			geometry = String(describing: scene?.effectiveGeometry)
+		} else {
+			geometry = "unavailable"
+		}
+		os_log(
+			"size[%{public}@] view.bounds=%{public}@ view.frame=%{public}@ web.bounds=%{public}@ web.frame=%{public}@ preferred=%{public}@ safeArea=%{public}@ window.bounds=%{public}@ window.frame=%{public}@ screen.bounds=%{public}@ effectiveGeometry=%{public}@ minSize=%{public}@",
+			log: czVCLog,
+			type: .default,
+			reason,
+			NSCoder.string(for: view.bounds),
+			NSCoder.string(for: view.frame),
+			NSCoder.string(for: webBounds),
+			NSCoder.string(for: webFrame),
+			NSCoder.string(for: preferredContentSize),
+			NSCoder.string(for: view.safeAreaInsets),
+			NSCoder.string(for: window?.bounds ?? .zero),
+			NSCoder.string(for: window?.frame ?? .zero),
+			NSCoder.string(for: screenBounds),
+			geometry,
+			NSCoder.string(for: minSize)
+		)
+		#else
+		let webBounds = webView?.bounds ?? .zero
+		let webFrame = webView?.frame ?? .zero
+		let window = view.window
+		let screenFrame = window?.screen?.frame ?? .zero
+		os_log(
+			"size[%{public}@] view.bounds=%{public}@ view.frame=%{public}@ web.bounds=%{public}@ web.frame=%{public}@ preferred=%{public}@ window.frame=%{public}@ screen.frame=%{public}@",
+			log: czVCLog,
+			type: .default,
+			reason,
+			NSStringFromRect(view.bounds),
+			NSStringFromRect(view.frame),
+			NSStringFromRect(webBounds),
+			NSStringFromRect(webFrame),
+			NSStringFromSize(preferredContentSize),
+			NSStringFromRect(window?.frame ?? .zero),
+			NSStringFromRect(screenFrame)
+		)
 		#endif
 	}
 
@@ -573,6 +689,8 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 	public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
 		os_log("didFinish navigation instance=%{public}@", log: czVCLog, type: .default, instanceID)
+		layoutWebView(reason: "didFinish")
+		logSizing("didFinish")
 
 		webAppReady = false
 		scriptDispatcher.setNavigationFinished(false)
@@ -742,6 +860,8 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 				self.webContentTerminationCount
 			)
 
+			self.layoutWebView(reason: "hostDidBecomeActive")
+			self.logSizing("hostDidBecomeActive")
 			self.scriptDispatcher.setHostActive(true, resumeHold: 0.25)
 			DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
 				guard let self else { return }
@@ -813,6 +933,8 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			reason
 		)
 
+		layoutWebView(reason: "webReady")
+		logSizing("webReady")
 		pushCurrentStateToWebView(reason: reason)
 		telemetryController.hostDidBecomeActive()
 	}

@@ -1,2 +1,0 @@
-import{t as e}from"./rolldown-runtime.js";import{st as t}from"./vendor.js";var n=e((e=>{var n=t();e.createRoot=n.createRoot,e.hydrateRoot=n.hydrateRoot}));export{n as t};
-//# sourceMappingURL=vendor-react.js.map

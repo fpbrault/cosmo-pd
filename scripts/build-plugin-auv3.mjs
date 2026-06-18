@@ -175,6 +175,16 @@ async function stageMacArtifacts(options) {
 		join(artifactsDir, "cosmo_pd101_ffi.h"),
 	);
 	await cp(truceAuHeader, join(artifactsDir, "au_shim_types.h"));
+
+	const xcframeworkPath = join(artifactsDir, "CosmoPd101Plugin.xcframework");
+	await rm(xcframeworkPath, { recursive: true, force: true });
+	await run("xcodebuild", [
+		"-create-xcframework",
+		"-library",
+		join(artifactsDir, "libcosmo_pd101_plugin.a"),
+		"-output",
+		xcframeworkPath,
+	]);
 }
 
 async function buildMacHostApp(options) {

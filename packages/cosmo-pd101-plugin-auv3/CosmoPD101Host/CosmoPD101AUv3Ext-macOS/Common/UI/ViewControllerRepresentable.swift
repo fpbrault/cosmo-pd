@@ -7,6 +7,18 @@
 
 import SwiftUI
 
+private func configureStandaloneAuv3ViewController(_ viewController: NSObject) {
+	let fitModeSelector = NSSelectorFromString("setCosmoAuv3FitMode:")
+	if viewController.responds(to: fitModeSelector) {
+		viewController.setValue("fit-bounds", forKey: "cosmoAuv3FitMode")
+	}
+
+	let runtimeModeSelector = NSSelectorFromString("setCosmoAuv3RuntimeMode:")
+	if viewController.responds(to: runtimeModeSelector) {
+		viewController.setValue("standalone", forKey: "cosmoAuv3RuntimeMode")
+	}
+}
+
 #if os(iOS) || os(visionOS)
 
 final class FullScreenAUContainerViewController: UIViewController {
@@ -19,17 +31,21 @@ final class FullScreenAUContainerViewController: UIViewController {
     init(auViewController: UIViewController) {
         self.auViewController = auViewController
         super.init(nibName: nil, bundle: nil)
+		configureStandaloneAuv3ViewController(auViewController)
     }
 
     required init?(coder: NSCoder) {
         nil
     }
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .black
-        view.insetsLayoutMarginsFromSafeArea = false
-        addChild(auViewController)
+	override func viewDidLoad() {
+		super.viewDidLoad()
+		view.backgroundColor = .black
+		view.insetsLayoutMarginsFromSafeArea = false
+
+		configureStandaloneAuv3ViewController(auViewController)
+
+		addChild(auViewController)
         auViewController.view.frame = view.bounds
         auViewController.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(auViewController.view)
@@ -39,6 +55,8 @@ final class FullScreenAUContainerViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         auViewController.view.frame = view.bounds
+        auViewController.view.setNeedsLayout()
+        auViewController.view.layoutIfNeeded()
     }
 }
 
@@ -67,6 +85,9 @@ final class FullScreenAUMacContainerViewController: NSViewController {
     init(auViewController: NSViewController?) {
         self.auViewController = auViewController
         super.init(nibName: nil, bundle: nil)
+		if let auViewController {
+			configureStandaloneAuv3ViewController(auViewController)
+		}
     }
 
     required init?(coder: NSCoder) {
@@ -79,16 +100,25 @@ final class FullScreenAUMacContainerViewController: NSViewController {
         view.layer?.backgroundColor = NSColor.black.cgColor
     }
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
+	override func viewDidLoad() {
+		super.viewDidLoad()
 
-        guard let auViewController else { return }
+		guard let auViewController else { return }
+		configureStandaloneAuv3ViewController(auViewController)
 
-        addChild(auViewController)
+		addChild(auViewController)
         let childView = auViewController.view
         childView.frame = view.bounds
         childView.autoresizingMask = [.width, .height]
         view.addSubview(childView)
+    }
+
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        guard let auViewController else { return }
+        auViewController.view.frame = view.bounds
+        auViewController.view.needsLayout = true
+        auViewController.view.layoutSubtreeIfNeeded()
     }
 }
 

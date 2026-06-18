@@ -3,16 +3,19 @@
 //! Implements truce's [`Editor`] trait, embedding a wry [`WebView`] as a
 //! child of the host's parent window (NSView on macOS).
 
-#![cfg_attr(target_os = "macos", allow(deprecated, unexpected_cfgs))]
+#![cfg_attr(
+    any(target_os = "macos", target_os = "ios"),
+    allow(deprecated, unexpected_cfgs)
+)]
 
 #[cfg(target_os = "macos")]
 use dispatch2::run_on_main;
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 use std::{
     collections::hash_map::DefaultHasher,
     hash::{Hash, Hasher},
@@ -22,14 +25,16 @@ use arc_swap::ArcSwap;
 use include_dir::{Dir, include_dir};
 use truce_core::PluginContext;
 use truce_core::editor::{Editor, RawWindowHandle};
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 use wry::WebViewBuilder;
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 use wry::WebViewBuilderExtDarwin;
 
 use crate::CzPluginParams;
 use crate::ipc::IpcContext;
-use crate::runtime_state::{MidiCcQueue, PluginSharedState, ScopeBuffer};
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
+use crate::runtime_state::MidiCcQueue;
+use crate::runtime_state::{PluginSharedState, ScopeBuffer};
 use crate::{append_log, append_log_debug, append_log_error, append_log_warn};
 use cosmo_pd101_bridge_types::PluginIpcEnvelope;
 use cosmo_synth_engine::params::SynthParams;
@@ -56,7 +61,7 @@ fn get_instance_scheme() -> String {
     format!("cz-{}-{}-{}", std::process::id(), id, now)
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 fn webview_data_store_identifier(seed: &str) -> [u8; 16] {
     let mut first = DefaultHasher::new();
     seed.hash(&mut first);
@@ -156,7 +161,7 @@ impl CzEditor {
         }
     }
 
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
     fn has_live_webview(&self) -> bool {
         self.webview_state
             .lock()
@@ -202,6 +207,48 @@ impl CzEditor {
 
         if self.has_live_webview() {
             self.pending_parent_ns_view = None;
+            let _ = apply_webview_size(&self.webview_state, initial_size.0, initial_size.1);
+            self.push_params();
+            self.apply_scale_normalization();
+            true
+        } else {
+            false
+        }
+    }
+
+    #[cfg(target_os = "ios")]
+    fn try_create_webview(&mut self, ui_view: *mut std::ffi::c_void) -> bool {
+        let Some(asset_source) = plugin_asset_source() else {
+            append_log_warn(
+                "CzEditor::try_create_webview: web assets unavailable; skipping UIKit WebView creation",
+            );
+            return false;
+        };
+        append_log_debug(&format!("iOS web assets: {}", asset_source.describe()));
+
+        let shared_state = self.shared_state.clone();
+        let params = self.params.clone();
+        let webview_state_for_ipc = self.webview_state.clone();
+        let initial_size = self
+            .current_size
+            .lock()
+            .map(|size| *size)
+            .unwrap_or((DEFAULT_WIDTH, DEFAULT_HEIGHT));
+
+        let webview = build_webview_from_ui_view(
+            ui_view,
+            asset_source,
+            shared_state,
+            params,
+            webview_state_for_ipc,
+            initial_size,
+        );
+
+        if let Ok(mut container) = self.webview_state.lock() {
+            container.webview = webview;
+        }
+
+        if self.has_live_webview() {
             let _ = apply_webview_size(&self.webview_state, initial_size.0, initial_size.1);
             self.push_params();
             self.apply_scale_normalization();
@@ -297,6 +344,7 @@ impl Editor for CzEditor {
     fn set_size(&mut self, width: u32, height: u32) -> bool {
         let width = width.max(MIN_WIDTH);
         let height = height.max(MIN_HEIGHT);
+        append_log_debug(&format!("CzEditor::set_size width={width} height={height}"));
         if let Ok(mut current_size) = self.current_size.lock() {
             *current_size = (width, height);
         }
@@ -313,6 +361,12 @@ impl Editor for CzEditor {
             });
         }
 
+        #[cfg(target_os = "ios")]
+        {
+            apply_webview_size(&self.webview_state, width, height)
+        }
+
+        #[cfg(not(target_os = "ios"))]
         true
     }
 
@@ -331,12 +385,12 @@ impl Editor for CzEditor {
     }
 
     fn open(&mut self, parent: RawWindowHandle, _context: PluginContext) {
-        append_log("CzEditor::open");
+        append_log(&format!("CzEditor::open parent={parent:?}"));
 
-        #[cfg(not(target_os = "macos"))]
+        #[cfg(not(any(target_os = "macos", target_os = "ios")))]
         {
             let _ = &parent;
-            append_log_debug("CzEditor::open: non-macOS build; no-op");
+            append_log_debug("CzEditor::open: unsupported platform build; no-op");
             return;
         }
 
@@ -356,6 +410,18 @@ impl Editor for CzEditor {
             };
             self.pending_parent_ns_view = Some(ns_view as usize);
             let _ = self.try_create_webview(ns_view);
+        }
+
+        #[cfg(target_os = "ios")]
+        {
+            let ui_view = match parent {
+                RawWindowHandle::UiKit(ptr) => ptr,
+                _ => {
+                    append_log_warn("CzEditor::open: unsupported iOS window handle");
+                    return;
+                }
+            };
+            let _ = self.try_create_webview(ui_view);
         }
     }
 
@@ -906,49 +972,85 @@ fn is_standalone_mode() -> bool {
 
 // ─── WebView builder ─────────────────────────────────────────────────────────
 
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+struct NativeViewWrapper(pub *mut std::ffi::c_void);
+
 #[cfg(target_os = "macos")]
-unsafe fn build_webview_from_ns_view(
-    ns_view: *mut std::ffi::c_void,
+impl raw_window_handle::HasWindowHandle for NativeViewWrapper {
+    fn window_handle(
+        &self,
+    ) -> Result<raw_window_handle::WindowHandle<'_>, raw_window_handle::HandleError> {
+        use core::ptr::NonNull;
+        use raw_window_handle::{AppKitWindowHandle, RawWindowHandle, WindowHandle};
+
+        let non_null = NonNull::new(self.0).expect("native view pointer is null");
+        let handle = AppKitWindowHandle::new(non_null);
+        Ok(unsafe { WindowHandle::borrow_raw(RawWindowHandle::AppKit(handle)) })
+    }
+}
+
+#[cfg(target_os = "macos")]
+impl raw_window_handle::HasDisplayHandle for NativeViewWrapper {
+    fn display_handle(
+        &self,
+    ) -> Result<raw_window_handle::DisplayHandle<'_>, raw_window_handle::HandleError> {
+        use raw_window_handle::{AppKitDisplayHandle, DisplayHandle, RawDisplayHandle};
+
+        let handle = AppKitDisplayHandle::new();
+        Ok(unsafe { DisplayHandle::borrow_raw(RawDisplayHandle::AppKit(handle)) })
+    }
+}
+
+#[cfg(target_os = "ios")]
+impl raw_window_handle::HasWindowHandle for NativeViewWrapper {
+    fn window_handle(
+        &self,
+    ) -> Result<raw_window_handle::WindowHandle<'_>, raw_window_handle::HandleError> {
+        use core::ptr::NonNull;
+        use raw_window_handle::{RawWindowHandle, UiKitWindowHandle, WindowHandle};
+
+        let non_null = NonNull::new(self.0).expect("native view pointer is null");
+        let handle = UiKitWindowHandle::new(non_null);
+        Ok(unsafe { WindowHandle::borrow_raw(RawWindowHandle::UiKit(handle)) })
+    }
+}
+
+#[cfg(target_os = "ios")]
+impl raw_window_handle::HasDisplayHandle for NativeViewWrapper {
+    fn display_handle(
+        &self,
+    ) -> Result<raw_window_handle::DisplayHandle<'_>, raw_window_handle::HandleError> {
+        use raw_window_handle::{DisplayHandle, RawDisplayHandle, UiKitDisplayHandle};
+
+        let handle = UiKitDisplayHandle::new();
+        Ok(unsafe { DisplayHandle::borrow_raw(RawDisplayHandle::UiKit(handle)) })
+    }
+}
+
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+unsafe impl Send for NativeViewWrapper {}
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+unsafe impl Sync for NativeViewWrapper {}
+
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+fn create_webview_builder(
     asset_source: WebAssetSource,
     shared_state: Arc<PluginSharedState>,
     params: Arc<CzPluginParams>,
     webview_state: Arc<Mutex<WebViewContainer>>,
     initial_size: (u32, u32),
-) -> (Option<wry::WebView>, Option<StandaloneWindow>) {
-    unsafe {
-        use core::ptr::NonNull;
-        use raw_window_handle::{
-            AppKitDisplayHandle, AppKitWindowHandle, DisplayHandle, HandleError, HasDisplayHandle,
-            HasWindowHandle, RawDisplayHandle, RawWindowHandle, WindowHandle,
-        };
-        use wry::dpi;
+) -> WebViewBuilder<'static> {
+    use wry::dpi;
 
-        struct NsViewWrapper(pub *mut std::ffi::c_void);
-        impl HasWindowHandle for NsViewWrapper {
-            fn window_handle(&self) -> Result<WindowHandle<'_>, HandleError> {
-                let non_null = NonNull::new(self.0).expect("ns_view pointer is null");
-                let handle = AppKitWindowHandle::new(non_null);
-                Ok(unsafe { WindowHandle::borrow_raw(RawWindowHandle::AppKit(handle)) })
-            }
-        }
-        impl HasDisplayHandle for NsViewWrapper {
-            fn display_handle(&self) -> Result<DisplayHandle<'_>, HandleError> {
-                let handle = AppKitDisplayHandle::new();
-                Ok(unsafe { DisplayHandle::borrow_raw(RawDisplayHandle::AppKit(handle)) })
-            }
-        }
-        unsafe impl Send for NsViewWrapper {}
-        unsafe impl Sync for NsViewWrapper {}
+    let webview_state_for_response = webview_state.clone();
+    let params_repush_done = Arc::new(AtomicBool::new(false));
+    let ipc_context = IpcContext::new(shared_state.clone(), params);
 
-        let webview_state_for_response = webview_state.clone();
-        let params_repush_done = Arc::new(AtomicBool::new(false));
-        let ipc_context = IpcContext::new(shared_state.clone(), params);
+    let scheme = get_instance_scheme();
+    append_log_debug(&format!("webview scheme: {scheme}"));
 
-        let scheme = get_instance_scheme();
-        append_log_debug(&format!("webview scheme: {scheme}"));
-
-        let scope_for_protocol = shared_state.telemetry.scope_buffer.clone();
-        let builder = WebViewBuilder::new()
+    let scope_for_protocol = shared_state.telemetry.scope_buffer.clone();
+    WebViewBuilder::new()
         .with_bounds(wry::Rect {
             position: dpi::LogicalPosition::new(0, 0).into(),
             size: dpi::LogicalSize::new(initial_size.0, initial_size.1).into(),
@@ -967,7 +1069,11 @@ unsafe fn build_webview_from_ns_view(
 
             if let Ok(msg) = serde_json::from_str::<serde_json::Value>(body) {
                 let id = msg.get("id").cloned().unwrap_or(serde_json::Value::Null);
-                let method_name = msg.get("method").and_then(|m| m.as_str()).unwrap_or("").to_string();
+                let method_name = msg
+                    .get("method")
+                    .and_then(|m| m.as_str())
+                    .unwrap_or("")
+                    .to_string();
 
                 let result = serde_json::from_value::<PluginIpcEnvelope>(msg)
                     .map_err(|error| format!("invalid IPC envelope: {error}"))
@@ -998,9 +1104,7 @@ unsafe fn build_webview_from_ns_view(
                     {
                         let sp = shared_state.synth.synth_params.load();
                         if let Ok(json_str) = serde_json::to_string(sp.as_ref()) {
-                            let escaped = json_str
-                                .replace('\\', "\\\\")
-                                .replace('"', "\\\"");
+                            let escaped = json_str.replace('\\', "\\\\").replace('"', "\\\"");
                             let params_script = format!(
                                 "if(typeof window.__czOnParams === 'function') {{ window.__czOnParams(\"{escaped}\"); }}"
                             );
@@ -1010,27 +1114,67 @@ unsafe fn build_webview_from_ns_view(
                 }
             }
         })
-        .with_devtools(inspector_enabled());
+        .with_devtools(inspector_enabled())
+        .with_url(format!("{}://localhost/", scheme))
+}
 
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+fn build_webview_from_parent_view(
+    parent_view: *mut std::ffi::c_void,
+    asset_source: WebAssetSource,
+    shared_state: Arc<PluginSharedState>,
+    params: Arc<CzPluginParams>,
+    webview_state: Arc<Mutex<WebViewContainer>>,
+    initial_size: (u32, u32),
+    log_label: &str,
+) -> Option<wry::WebView> {
+    let builder = create_webview_builder(
+        asset_source,
+        shared_state,
+        params,
+        webview_state,
+        initial_size,
+    );
+    let parent = NativeViewWrapper(parent_view);
+    match builder.build_as_child(&parent) {
+        Ok(webview) => {
+            append_log(&format!(
+                "{log_label}: WebView created in native parent view"
+            ));
+            Some(webview)
+        }
+        Err(error) => {
+            append_log_error(&format!("{log_label}: failed to create WebView: {error}"));
+            None
+        }
+    }
+}
+
+#[cfg(target_os = "macos")]
+unsafe fn build_webview_from_ns_view(
+    ns_view: *mut std::ffi::c_void,
+    asset_source: WebAssetSource,
+    shared_state: Arc<PluginSharedState>,
+    params: Arc<CzPluginParams>,
+    webview_state: Arc<Mutex<WebViewContainer>>,
+    initial_size: (u32, u32),
+) -> (Option<wry::WebView>, Option<StandaloneWindow>) {
+    unsafe {
         // ── DECISION POINT ──
         if parent_has_window(ns_view) {
             // BRANCH A: ns_view already has an associated NSWindow (DAW mode).
             // Embed webview as child of the existing window.
             append_log_debug("parent NSView has a real window — embedding as child");
-            let parent = NsViewWrapper(ns_view);
-            let webview = builder
-                .with_url(format!("{}://localhost/", scheme))
-                .build_as_child(&parent);
-            match webview {
-                Ok(webview) => {
-                    append_log("build_as_child returned — WebView created");
-                    (Some(webview), None)
-                }
-                Err(e) => {
-                    append_log_error(&format!("failed to create plugin WebView: {e}"));
-                    (None, None)
-                }
-            }
+            let webview = build_webview_from_parent_view(
+                ns_view,
+                asset_source,
+                shared_state,
+                params,
+                webview_state,
+                initial_size,
+                "plugin",
+            );
+            (webview, None)
         } else if is_standalone_mode() {
             // BRANCH B: standalone binary — create our own window (hides baseview
             // window from truce-standalone) and embed the WebView inside it.
@@ -1045,20 +1189,16 @@ unsafe fn build_webview_from_ns_view(
                 attempts += 1;
             }
 
-            let parent = NsViewWrapper(content_view);
-            let webview = builder
-                .with_url(format!("{}://localhost/", scheme))
-                .build_as_child(&parent);
-            match webview {
-                Ok(webview) => {
-                    append_log("standalone: WebView created in own window");
-                    (Some(webview), Some(standalone_window))
-                }
-                Err(e) => {
-                    append_log_error(&format!("standalone: failed to create plugin WebView: {e}"));
-                    (None, None)
-                }
-            }
+            let webview = build_webview_from_parent_view(
+                content_view,
+                asset_source,
+                shared_state,
+                params,
+                webview_state,
+                initial_size,
+                "standalone",
+            );
+            (webview, Some(standalone_window))
         } else {
             // BRANCH C: no window association AND not standalone — defer.
             // idle() will retry when the host window finishes setting up.
@@ -1068,6 +1208,27 @@ unsafe fn build_webview_from_ns_view(
             (None, None)
         }
     }
+}
+
+#[cfg(target_os = "ios")]
+fn build_webview_from_ui_view(
+    ui_view: *mut std::ffi::c_void,
+    asset_source: WebAssetSource,
+    shared_state: Arc<PluginSharedState>,
+    params: Arc<CzPluginParams>,
+    webview_state: Arc<Mutex<WebViewContainer>>,
+    initial_size: (u32, u32),
+) -> Option<wry::WebView> {
+    append_log_debug("UIKit parent view received - embedding WebView as child");
+    build_webview_from_parent_view(
+        ui_view,
+        asset_source,
+        shared_state,
+        params,
+        webview_state,
+        initial_size,
+        "plugin",
+    )
 }
 
 // ─── Protocol file server ────────────────────────────────────────────────────

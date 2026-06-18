@@ -43,6 +43,33 @@ private final class ScriptRecorder: JavaScriptEvaluating {
 	#expect(recorder.scripts[0].contains("New"))
 }
 
+@Test func hostSizeScriptIsQueuedUntilLifecycleIsEvaluable() {
+	let recorder = ScriptRecorder()
+	let dispatcher = WebViewScriptDispatcher(evaluator: recorder)
+
+	#expect(!dispatcher.enqueueHostSizeScript("window.__czHostSize = { width: 640 };"))
+	#expect(recorder.scripts.isEmpty)
+	#expect(dispatcher.hasPendingHostSizeScript)
+
+	dispatcher.setViewVisible(true)
+	dispatcher.setNavigationFinished(true)
+
+	#expect(recorder.scripts == ["window.__czHostSize = { width: 640 };"])
+	#expect(!dispatcher.hasPendingHostSizeScript)
+}
+
+@Test func queuedHostSizeScriptCoalescesToLatestValue() {
+	let recorder = ScriptRecorder()
+	let dispatcher = WebViewScriptDispatcher(evaluator: recorder)
+
+	_ = dispatcher.enqueueHostSizeScript("window.__czHostSize = { width: 640 };")
+	_ = dispatcher.enqueueHostSizeScript("window.__czHostSize = { width: 900 };")
+	dispatcher.setViewVisible(true)
+	dispatcher.setNavigationFinished(true)
+
+	#expect(recorder.scripts == ["window.__czHostSize = { width: 900 };"])
+}
+
 @Test func telemetryIsDroppedWhileLifecycleIsNotEvaluable() {
 	let recorder = ScriptRecorder()
 	let dispatcher = WebViewScriptDispatcher(evaluator: recorder)
