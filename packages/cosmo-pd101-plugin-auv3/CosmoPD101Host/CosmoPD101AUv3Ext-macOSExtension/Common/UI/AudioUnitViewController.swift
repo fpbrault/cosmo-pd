@@ -25,6 +25,26 @@ private final class WebViewJavaScriptEvaluator: JavaScriptEvaluating {
 import UIKit
 #endif
 
+private enum VoiceLimitSettings {
+	static let defaultValue = 8
+	static let userDefaultsKey = "com.cosmo.pd101.voiceLimit"
+
+	static func clamp(_ value: Int) -> Int {
+		max(1, min(value, 16))
+	}
+
+	static func load() -> Int {
+		let stored = UserDefaults.standard.integer(forKey: userDefaultsKey)
+		return stored == 0 ? defaultValue : clamp(stored)
+	}
+
+	static func save(_ value: Int) -> Int {
+		let clamped = clamp(value)
+		UserDefaults.standard.set(clamped, forKey: userDefaultsKey)
+		return clamped
+	}
+}
+
 public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNavigationDelegate, WKScriptMessageHandler {
 	private static let minimumWidth: CGFloat = 640
 	private static let minimumHeight: CGFloat = 480
@@ -40,20 +60,15 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	}
 	private let instanceID = UUID().uuidString
 	private var cachedVoiceLimit: Int = 0
-	private static let voiceLimitDefault: Int = 8
-	private static let voiceLimitUserDefaultsKey = "com.cosmo.pd101.voiceLimit"
 	private var voiceLimit: Int {
 		get {
 			if cachedVoiceLimit == 0 {
-				cachedVoiceLimit = UserDefaults.standard.integer(forKey: Self.voiceLimitUserDefaultsKey)
-				if cachedVoiceLimit == 0 { cachedVoiceLimit = Self.voiceLimitDefault }
+				cachedVoiceLimit = VoiceLimitSettings.load()
 			}
 			return cachedVoiceLimit
 		}
 		set {
-			let clamped = max(1, min(newValue, 16))
-			cachedVoiceLimit = clamped
-			UserDefaults.standard.set(clamped, forKey: Self.voiceLimitUserDefaultsKey)
+			cachedVoiceLimit = VoiceLimitSettings.save(newValue)
 		}
 	}
 
@@ -177,7 +192,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 	nonisolated public func createAudioUnit(with componentDescription: AudioComponentDescription) throws -> AUAudioUnit {
 		let unit = try CosmoPD101AUv3Ext_macOSExtensionAudioUnit(componentDescription: componentDescription, options: [])
-		_ = unit.setVoiceLimit(voiceLimit)
+		unit.setVoiceLimit(VoiceLimitSettings.load())
 		audioUnit = unit
 		observation = unit.observe(\.allParameterValues, options: [.new]) { _, _ in }
 		unit.paramsChangedHandler = { [weak self] json, presetName in
@@ -336,6 +351,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			let requested = methodPayload as? Int
 			if let limit = methodPayload as? Int {
 				voiceLimit = limit
+				audioUnit.setVoiceLimit(voiceLimit)
 			}
 			let applied = audioUnit.setVoiceLimit(voiceLimit)
 			os_log(
