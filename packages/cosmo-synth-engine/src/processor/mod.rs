@@ -465,6 +465,50 @@ mod tests {
         proc.active_notes.last().map(|entry| entry.note)
     }
 
+    fn dca_step(level: u8, rate: u8) -> EnvStep {
+        EnvStep {
+            level: human_level_to_raw(EnvelopeKind::Dca, level),
+            rate: human_rate_to_raw(EnvelopeKind::Dca, rate),
+            level_norm: level as f32 / 99.0,
+        }
+    }
+
+    fn configure_bright_poly_steal_patch(proc: &mut CosmoProcessor) {
+        proc.set_voice_limit(1);
+        proc.params_mut().poly_mode = PolyMode::Poly8;
+        proc.params_mut().line_select = LineSelect::L1;
+        proc.params_mut().line1.dca_base = 1.0;
+        proc.params_mut().line1.dcw_base = 1.0;
+        proc.params_mut().line1.algo = Algo::Saw;
+        proc.params_mut().line1.dca_env = StepEnvData {
+            steps: [
+                dca_step(99, 99),
+                dca_step(99, 99),
+                dca_step(99, 99),
+                dca_step(99, 99),
+                dca_step(99, 99),
+                dca_step(99, 99),
+                dca_step(99, 99),
+                dca_step(99, 99),
+            ],
+            sustain_step: 0,
+            step_count: 2,
+            loop_: false,
+        };
+    }
+
+    fn render_until_voice_sample_exceeds(proc: &mut CosmoProcessor, threshold: f32) -> f32 {
+        let mut block = [0.0_f32; 1];
+        for _ in 0..2048 {
+            proc.process(&mut block);
+            let sample = proc.voices[0].last_output_sample;
+            if sample.abs() > threshold {
+                return sample;
+            }
+        }
+        panic!("expected voice output to exceed {threshold}");
+    }
+
     fn process_until_pending_mono_retrigger_clears(proc: &mut CosmoProcessor) {
         let mut scratch = [0.0_f32; 1];
         for _ in 0..512 {
@@ -844,6 +888,56 @@ mod tests {
             "oldest sounding sustained note should be stolen first"
         );
         assert_eq!(active_voice_indices_for_note(&proc, replacement).len(), 1);
+    }
+
+    #[test]
+    fn poly_voice_steal_keeps_first_reused_sample_continuous() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        configure_bright_poly_steal_patch(&mut proc);
+
+        proc.note_on(60, utils::midi_note_to_freq(60), 1.0);
+        let previous_sample = render_until_voice_sample_exceeds(&mut proc, 0.05);
+
+        proc.note_on(67, utils::midi_note_to_freq(67), 1.0);
+
+        let mut block = [0.0_f32; 1];
+        proc.process(&mut block);
+        let first_stolen_sample = proc.voices[0].last_output_sample;
+        let delta = (first_stolen_sample - previous_sample).abs();
+
+        assert!(
+            delta <= 0.002,
+            "poly voice steal should not jump on the first reused sample (previous={previous_sample}, first={first_stolen_sample}, delta={delta})"
+        );
+        assert_eq!(proc.voices[0].note, Some(67));
+    }
+
+    #[test]
+    fn poly_voice_steal_into_quiet_new_note_fades_from_previous_output() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        configure_bright_poly_steal_patch(&mut proc);
+
+        proc.note_on(60, utils::midi_note_to_freq(60), 1.0);
+        let previous_sample = render_until_voice_sample_exceeds(&mut proc, 0.05);
+
+        proc.params_mut().line1.dca_base = 0.0;
+        proc.note_on(72, utils::midi_note_to_freq(72), 1.0);
+
+        let mut block = [0.0_f32; 1];
+        let mut max_delta = 0.0_f32;
+        let mut previous = previous_sample;
+        for _ in 0..16 {
+            proc.process(&mut block);
+            let sample = proc.voices[0].last_output_sample;
+            max_delta = max_delta.max((sample - previous).abs());
+            previous = sample;
+        }
+
+        assert!(
+            max_delta <= 0.01,
+            "quiet stolen note should fade from the previous voice output instead of jumping to silence (max_delta={max_delta})"
+        );
+        assert_eq!(proc.voices[0].note, Some(72));
     }
 
     #[test]

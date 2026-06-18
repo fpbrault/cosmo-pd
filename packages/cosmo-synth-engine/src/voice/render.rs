@@ -129,6 +129,9 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         voice.last_output_sample = 0.0;
         voice.release_tail_level = 0.0;
         voice.anti_click_fade_len = 0;
+        voice.voice_steal_fade_sample = 0.0;
+        voice.voice_steal_fade = 0;
+        voice.voice_steal_fade_len = 0;
         voice.zero_cross_stop_pending = false;
         voice.zero_cross_stop_wait = 0;
         return 0.0;
@@ -298,6 +301,18 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         voice.anti_click_attack -= 1;
     }
 
+    if voice.voice_steal_fade > 0 {
+        let fade_len = voice.voice_steal_fade_len.max(1);
+        let old_mix = voice.voice_steal_fade as f32 / fade_len as f32;
+        let new_mix = 1.0 - old_mix;
+        sample = sample * new_mix + voice.voice_steal_fade_sample * old_mix;
+        voice.voice_steal_fade -= 1;
+        if voice.voice_steal_fade == 0 {
+            voice.voice_steal_fade_sample = 0.0;
+            voice.voice_steal_fade_len = 0;
+        }
+    }
+
     sample = suppress_sample_discontinuity(
         voice.last_output_sample,
         sample,
@@ -364,6 +379,9 @@ fn finalize_voice_silence(voice: &mut Voice) -> f32 {
     voice.release_tail_level = 0.0;
     voice.anti_click_fade = 0;
     voice.anti_click_fade_len = 0;
+    voice.voice_steal_fade_sample = 0.0;
+    voice.voice_steal_fade = 0;
+    voice.voice_steal_fade_len = 0;
     voice.zero_cross_stop_pending = false;
     voice.zero_cross_stop_wait = 0;
     0.0
