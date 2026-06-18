@@ -580,6 +580,18 @@ pub extern "C" fn cosmo_pd101_ffi_reset_audio_state(
     CosmoPd101FfiStatus::Ok
 }
 
+#[unsafe(no_mangle)]
+pub extern "C" fn cosmo_pd101_ffi_set_voice_limit(
+    engine: *mut CosmoPd101FfiEngine,
+    limit: usize,
+) -> CosmoPd101FfiStatus {
+    let Ok(engine) = engine_mut(engine) else {
+        return CosmoPd101FfiStatus::NullPointer;
+    };
+    engine.processor.set_voice_limit(limit);
+    CosmoPd101FfiStatus::Ok
+}
+
 /// # Safety
 ///
 /// `engine` must be a valid, non-null pointer returned by
@@ -1154,6 +1166,75 @@ mod tests {
 
         let status = unsafe { cosmo_pd101_ffi_render_mono(engine, output.as_mut_ptr(), 16) };
         assert_eq!(status, CosmoPd101FfiStatus::InvalidArgument);
+
+        unsafe { cosmo_pd101_ffi_engine_destroy(engine) };
+    }
+
+    #[test]
+    fn ffi_set_voice_limit_rejects_null_engine() {
+        assert_eq!(
+            cosmo_pd101_ffi_set_voice_limit(ptr::null_mut(), 1),
+            CosmoPd101FfiStatus::NullPointer,
+        );
+    }
+
+    #[test]
+    fn ffi_set_voice_limit_accepts_valid_and_out_of_range_values() {
+        let engine = cosmo_pd101_ffi_engine_create(44_100.0, 64);
+        assert!(!engine.is_null());
+
+        assert_eq!(
+            cosmo_pd101_ffi_set_voice_limit(engine, 4),
+            CosmoPd101FfiStatus::Ok,
+        );
+        assert_eq!(unsafe { &*engine }.processor.active_voice_limit(), 4);
+
+        assert_eq!(
+            cosmo_pd101_ffi_set_voice_limit(engine, 0),
+            CosmoPd101FfiStatus::Ok,
+        );
+        assert_eq!(
+            unsafe { &*engine }.processor.active_voice_limit(),
+            cosmo_synth_engine::params::MIN_VOICE_LIMIT,
+        );
+
+        assert_eq!(
+            cosmo_pd101_ffi_set_voice_limit(engine, usize::MAX),
+            CosmoPd101FfiStatus::Ok,
+        );
+        assert_eq!(
+            unsafe { &*engine }.processor.active_voice_limit(),
+            cosmo_synth_engine::params::MAX_VOICES,
+        );
+
+        unsafe { cosmo_pd101_ffi_engine_destroy(engine) };
+    }
+
+    #[test]
+    fn ffi_set_voice_limit_one_reuses_single_poly_voice() {
+        let engine = cosmo_pd101_ffi_engine_create(44_100.0, 64);
+        assert!(!engine.is_null());
+
+        assert_eq!(
+            cosmo_pd101_ffi_set_voice_limit(engine, 1),
+            CosmoPd101FfiStatus::Ok,
+        );
+        assert_eq!(
+            cosmo_pd101_ffi_note_on(engine, 60, 0.0, 1.0),
+            CosmoPd101FfiStatus::Ok,
+        );
+        assert_eq!(
+            cosmo_pd101_ffi_note_on(engine, 64, 0.0, 1.0),
+            CosmoPd101FfiStatus::Ok,
+        );
+
+        let voices = unsafe { &*engine }.processor.runtime_voice_debug_state();
+        let active_notes: Vec<_> = voices
+            .iter()
+            .filter(|voice| voice.active && voice.note.is_some())
+            .map(|voice| (voice.index, voice.note))
+            .collect();
+        assert_eq!(active_notes, vec![(0, Some(64))]);
 
         unsafe { cosmo_pd101_ffi_engine_destroy(engine) };
     }

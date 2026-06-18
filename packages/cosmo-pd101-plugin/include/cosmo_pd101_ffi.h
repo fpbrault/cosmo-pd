@@ -33,6 +33,10 @@ CosmoPd101FfiEngine* cosmo_pd101_ffi_engine_create(float sample_rate, size_t max
 void cosmo_pd101_ffi_engine_destroy(CosmoPd101FfiEngine* engine);
 
 CosmoPd101FfiStatus cosmo_pd101_ffi_reset_audio_state(CosmoPd101FfiEngine* engine);
+CosmoPd101FfiStatus cosmo_pd101_ffi_set_voice_limit(
+    CosmoPd101FfiEngine* engine,
+    size_t limit
+);
 CosmoPd101FfiStatus cosmo_pd101_ffi_set_params_json(
     CosmoPd101FfiEngine* engine,
     const char* json

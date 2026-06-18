@@ -12,6 +12,7 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 	private var inputBusArrayStorage: AUAudioUnitBusArray!
 	private var engine: CosmoPd101FfiEngineRef?
 	private var maxFrames: Int = 4096
+	private var voiceLimit: Int = 8
 	private var parameterObserverToken: AUParameterObserverToken?
 	/// Full-state JSON buffered when `fullStateForDocument` is set before `allocateRenderResources`.
 	private var pendingParamsJson: String?
@@ -150,6 +151,7 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 			throw NSError(domain: NSOSStatusErrorDomain, code: Int(kAudioUnitErr_FailedInitialization))
 		}
 		os_log(.default, log: czAULog, "[CzAU] allocateRenderResources: engine created sr=%.0f frames=%d pending=%@", sampleRate, maxFrames, pendingParamsJson != nil ? "yes" : "no")
+		_ = applyVoiceLimit(reason: "allocateRenderResources")
 		if let pending = pendingParamsJson {
 			pendingParamsJson = nil
 			_ = setParamsJson(pending, notifyWebView: true)
@@ -171,6 +173,36 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 
 	public override func reset() {
 		_ = cosmo_pd101_ffi_reset_audio_state(engine)
+	}
+
+	@discardableResult
+	public func setVoiceLimit(_ limit: Int) -> Bool {
+		voiceLimit = limit
+		guard engine != nil else {
+			os_log(
+				.default,
+				log: czAULog,
+				"[CzAU] voice limit deferred requested=%d engine=NIL",
+				voiceLimit
+			)
+			return true
+		}
+		return applyVoiceLimit(reason: "setVoiceLimit")
+	}
+
+	private func applyVoiceLimit(reason: String) -> Bool {
+		let status = cosmo_pd101_ffi_set_voice_limit(engine, voiceLimit)
+		let didApply = status == CosmoPd101FfiStatus.ok.rawValue
+		os_log(
+			.default,
+			log: czAULog,
+			"[CzAU] voice limit apply reason=%{public}@ requested=%d engine=%{public}@ status=%d",
+			reason,
+			voiceLimit,
+			engine != nil ? "ok" : "NIL",
+			status
+		)
+		return didApply
 	}
 
 	public override var internalRenderBlock: AUInternalRenderBlock {
