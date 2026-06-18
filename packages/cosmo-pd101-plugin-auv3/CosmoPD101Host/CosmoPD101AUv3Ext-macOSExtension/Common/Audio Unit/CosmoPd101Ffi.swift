@@ -19,6 +19,9 @@ func cosmo_pd101_ffi_engine_destroy(_ engine: CosmoPd101FfiEngineRef?)
 @_silgen_name("cosmo_pd101_ffi_reset_audio_state")
 func cosmo_pd101_ffi_reset_audio_state(_ engine: CosmoPd101FfiEngineRef?) -> Int32
 
+@_silgen_name("cosmo_pd101_ffi_set_voice_limit")
+func cosmo_pd101_ffi_set_voice_limit(_ engine: CosmoPd101FfiEngineRef?, _ limit: Int) -> Int32
+
 @_silgen_name("cosmo_pd101_ffi_set_params_json")
 func cosmo_pd101_ffi_set_params_json(_ engine: CosmoPd101FfiEngineRef?, _ json: UnsafePointer<CChar>?) -> Int32
 
