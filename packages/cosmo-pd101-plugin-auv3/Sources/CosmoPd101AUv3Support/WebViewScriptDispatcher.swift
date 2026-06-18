@@ -111,7 +111,7 @@ public final class WebViewScriptDispatcher {
 
 	@discardableResult
 	public func sendIpcResponse(payload: [String: Any]) -> Bool {
-		guard canEvaluate() else { return false }
+		guard canDeliverIpcResponse() else { return false }
 		guard JSONSerialization.isValidJSONObject(payload),
 			let data = try? JSONSerialization.data(withJSONObject: payload),
 			let json = String(data: data, encoding: .utf8)
@@ -174,6 +174,11 @@ public final class WebViewScriptDispatcher {
 			return false
 		}
 
+		return true
+	}
+
+	private func canDeliverIpcResponse() -> Bool {
+		guard evaluator != nil, lifecycle.webContentAlive else { return false }
 		return true
 	}
 

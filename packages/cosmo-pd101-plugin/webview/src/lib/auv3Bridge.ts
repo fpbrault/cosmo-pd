@@ -139,7 +139,7 @@ function shouldSuppressWhileHostInactive(method: string) {
 function invokeAuv3<T = unknown>(
 	method: string,
 	payload?: unknown,
-	timeoutMs = 0,
+	timeoutMs = 5000,
 ): Promise<T> {
 	return new Promise<T>((resolve, reject) => {
 		if (!isAuv3HostActive() && shouldSuppressWhileHostInactive(method)) {
@@ -172,7 +172,7 @@ function invokeAuv3<T = unknown>(
 				if (!pendingRpc.delete(id)) {
 					return;
 				}
-				reject(new Error(`[auv3Bridge] ${method} timed out`));
+				reject(new Error(`[auv3Bridge] ${method} timed out (id=${id})`));
 			}, timeoutMs);
 		}
 		const msg: Record<string, unknown> = { id, method };

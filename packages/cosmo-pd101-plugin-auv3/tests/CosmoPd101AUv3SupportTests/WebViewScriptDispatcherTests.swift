@@ -82,21 +82,60 @@ private final class ScriptRecorder: JavaScriptEvaluating {
 	#expect(recorder.scripts == ["window.__czOnTransport?.('{}');"])
 }
 
-@Test func ipcResponseDoesNotEvaluateDuringResumeHold() {
+@Test func ipcResponseDeliveredDuringResumeHold() {
 	let recorder = ScriptRecorder()
-	var now = Date(timeIntervalSince1970: 100)
+	let now = Date(timeIntervalSince1970: 100)
 	let dispatcher = WebViewScriptDispatcher(evaluator: recorder, now: { now })
 	dispatcher.setViewVisible(true)
 	dispatcher.setNavigationFinished(true)
 
 	dispatcher.setHostActive(true, resumeHold: 0.25)
-	#expect(!dispatcher.sendIpcResponse(payload: ["id": 1, "result": NSNull()]))
-	#expect(recorder.scripts.isEmpty)
-
-	now = Date(timeIntervalSince1970: 100.3)
-	#expect(dispatcher.sendIpcResponse(payload: ["id": 2, "result": NSNull()]))
+	#expect(dispatcher.sendIpcResponse(payload: ["id": 1, "result": NSNull()]))
 	#expect(recorder.scripts.count == 1)
 	#expect(recorder.scripts[0].contains("__czIpcResponse"))
+}
+
+@Test func ipcResponseBlockedWhenWebContentDead() {
+	let recorder = ScriptRecorder()
+	let dispatcher = WebViewScriptDispatcher(evaluator: recorder)
+	dispatcher.setViewVisible(true)
+	dispatcher.setNavigationFinished(true)
+	dispatcher.setWebContentAlive(false)
+
+	#expect(!dispatcher.sendIpcResponse(payload: ["id": 1, "result": NSNull()]))
+	#expect(recorder.scripts.isEmpty)
+}
+
+@Test func ipcResponseBlockedWithoutEvaluator() {
+	let dispatcher = WebViewScriptDispatcher()
+	dispatcher.setViewVisible(true)
+	dispatcher.setNavigationFinished(true)
+	dispatcher.setWebContentAlive(true)
+
+	#expect(!dispatcher.sendIpcResponse(payload: ["id": 1, "result": NSNull()]))
+}
+
+@Test func ipcResponseSurvivesMissingViewVisibleAndHostInactive() {
+	let recorder = ScriptRecorder()
+	let dispatcher = WebViewScriptDispatcher(evaluator: recorder)
+	dispatcher.setWebContentAlive(true)
+
+	#expect(dispatcher.sendIpcResponse(payload: ["id": 1, "result": NSNull()]))
+	#expect(recorder.scripts.count == 1)
+	#expect(recorder.scripts[0].contains("__czIpcResponse"))
+}
+
+@Test func paramsBlockedDuringResumeHold() {
+	let recorder = ScriptRecorder()
+	let now = Date(timeIntervalSince1970: 100)
+	let dispatcher = WebViewScriptDispatcher(evaluator: recorder, now: { now })
+	dispatcher.setViewVisible(true)
+	dispatcher.setNavigationFinished(true)
+
+	dispatcher.setHostActive(true, resumeHold: 0.25)
+	#expect(!dispatcher.enqueueParams(json: #"{"volume":0.7}"#))
+	#expect(dispatcher.hasPendingParams)
+	#expect(recorder.scripts.isEmpty)
 }
 
 @Test func paramsFlushAfterResumeHoldClears() {
