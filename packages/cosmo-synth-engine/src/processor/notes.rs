@@ -63,6 +63,15 @@ impl CosmoProcessor {
         voice.zero_cross_stop_pending = false;
         voice.zero_cross_stop_wait = 0;
         voice.anti_click_attack = crate::voice::ANTI_CLICK_ATTACK_SAMPLES;
+        if was_active {
+            voice.voice_steal_fade_sample = prev_output_sample;
+            voice.voice_steal_fade = crate::voice::POLY_VOICE_STEAL_FADE_SAMPLES;
+            voice.voice_steal_fade_len = crate::voice::POLY_VOICE_STEAL_FADE_SAMPLES;
+        } else {
+            voice.voice_steal_fade_sample = 0.0;
+            voice.voice_steal_fade = 0;
+            voice.voice_steal_fade_len = 0;
+        }
         voice.last_output_sample = if was_active { prev_output_sample } else { 0.0 };
         voice.release_tail_level = 0.0;
         voice.aftertouch = 0.0;

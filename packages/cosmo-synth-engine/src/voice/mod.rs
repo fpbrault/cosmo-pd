@@ -17,6 +17,7 @@ pub(crate) const ANTI_CLICK_ATTACK_SAMPLES: u32 = 64;
 
 const SILENCE_THRESHOLD: f32 = 0.001;
 const ANTI_CLICK_FADE_SAMPLES: u32 = 64;
+pub(crate) const POLY_VOICE_STEAL_FADE_SAMPLES: u32 = 128;
 const ANTI_CLICK_FADE_MAX_SAMPLES: u32 = 1024;
 const DCW_DEZIPPER_TIME_SECONDS: f32 = 0.0015;
 const POP_SUPPRESS_DELTA_THRESHOLD: f32 = 1.2;
@@ -69,6 +70,9 @@ pub struct Voice {
     pub zero_cross_stop_pending: bool,
     pub zero_cross_stop_wait: u32,
     pub anti_click_attack: u32,
+    pub voice_steal_fade_sample: f32,
+    pub voice_steal_fade: u32,
+    pub voice_steal_fade_len: u32,
     pub smoothed_dcw1: f32,
     pub smoothed_dcw2: f32,
     pub last_output_sample: f32,
@@ -109,6 +113,9 @@ impl Voice {
             zero_cross_stop_pending: false,
             zero_cross_stop_wait: 0,
             anti_click_attack: 0,
+            voice_steal_fade_sample: 0.0,
+            voice_steal_fade: 0,
+            voice_steal_fade_len: 0,
             smoothed_dcw1: 0.0,
             smoothed_dcw2: 0.0,
             last_output_sample: 0.0,
