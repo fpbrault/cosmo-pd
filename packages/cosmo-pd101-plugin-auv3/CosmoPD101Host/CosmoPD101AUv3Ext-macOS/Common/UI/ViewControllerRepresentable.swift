@@ -7,6 +7,18 @@
 
 import SwiftUI
 
+private func configureStandaloneAuv3ViewController(_ viewController: NSObject) {
+	let fitModeSelector = NSSelectorFromString("setCosmoAuv3FitMode:")
+	if viewController.responds(to: fitModeSelector) {
+		viewController.setValue("fit-bounds", forKey: "cosmoAuv3FitMode")
+	}
+
+	let runtimeModeSelector = NSSelectorFromString("setCosmoAuv3RuntimeMode:")
+	if viewController.responds(to: runtimeModeSelector) {
+		viewController.setValue("standalone", forKey: "cosmoAuv3RuntimeMode")
+	}
+}
+
 #if os(iOS) || os(visionOS)
 
 final class FullScreenAUContainerViewController: UIViewController {
@@ -19,6 +31,7 @@ final class FullScreenAUContainerViewController: UIViewController {
     init(auViewController: UIViewController) {
         self.auViewController = auViewController
         super.init(nibName: nil, bundle: nil)
+		configureStandaloneAuv3ViewController(auViewController)
     }
 
     required init?(coder: NSCoder) {
@@ -29,10 +42,9 @@ final class FullScreenAUContainerViewController: UIViewController {
 		super.viewDidLoad()
 		view.backgroundColor = .black
 		view.insetsLayoutMarginsFromSafeArea = false
-		let selector = NSSelectorFromString("setCosmoAuv3FitMode:")
-		if auViewController.responds(to: selector) {
-			auViewController.setValue("fit-bounds", forKey: "cosmoAuv3FitMode")
-		}
+
+		configureStandaloneAuv3ViewController(auViewController)
+
 		addChild(auViewController)
         auViewController.view.frame = view.bounds
         auViewController.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -73,6 +85,9 @@ final class FullScreenAUMacContainerViewController: NSViewController {
     init(auViewController: NSViewController?) {
         self.auViewController = auViewController
         super.init(nibName: nil, bundle: nil)
+		if let auViewController {
+			configureStandaloneAuv3ViewController(auViewController)
+		}
     }
 
     required init?(coder: NSCoder) {
@@ -85,17 +100,13 @@ final class FullScreenAUMacContainerViewController: NSViewController {
         view.layer?.backgroundColor = NSColor.black.cgColor
     }
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
+	override func viewDidLoad() {
+		super.viewDidLoad()
 
-        guard let auViewController else { return }
+		guard let auViewController else { return }
+		configureStandaloneAuv3ViewController(auViewController)
 
-        let selector = NSSelectorFromString("setCosmoAuv3FitMode:")
-        if auViewController.responds(to: selector) {
-            auViewController.setValue("fit-bounds", forKey: "cosmoAuv3FitMode")
-        }
-
-        addChild(auViewController)
+		addChild(auViewController)
         let childView = auViewController.view
         childView.frame = view.bounds
         childView.autoresizingMask = [.width, .height]

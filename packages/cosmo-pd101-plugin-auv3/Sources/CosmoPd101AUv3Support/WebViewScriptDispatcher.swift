@@ -34,6 +34,7 @@ public final class WebViewScriptDispatcher {
 
 	private weak var evaluator: JavaScriptEvaluating?
 	private var lifecycle: LifecycleState
+	private var pendingHostSizeScript: String?
 	private var pendingParams: PendingParams?
 	private let now: () -> Date
 
@@ -53,6 +54,10 @@ public final class WebViewScriptDispatcher {
 
 	public var hasPendingParams: Bool {
 		pendingParams != nil
+	}
+
+	public var hasPendingHostSizeScript: Bool {
+		pendingHostSizeScript != nil
 	}
 
 	public func setEvaluator(_ evaluator: JavaScriptEvaluating?) {
@@ -98,6 +103,13 @@ public final class WebViewScriptDispatcher {
 	}
 
 	@discardableResult
+	public func enqueueHostSizeScript(_ script: String) -> Bool {
+		guard !script.isEmpty else { return false }
+		pendingHostSizeScript = script
+		return flushIfPossible()
+	}
+
+	@discardableResult
 	public func sendIpcResponse(payload: [String: Any]) -> Bool {
 		guard canEvaluate() else { return false }
 		guard JSONSerialization.isValidJSONObject(payload),
@@ -130,7 +142,16 @@ public final class WebViewScriptDispatcher {
 
 	@discardableResult
 	public func flushIfPossible() -> Bool {
-		guard canEvaluate(), let pendingParams else { return false }
+		guard canEvaluate() else { return false }
+
+		var didFlush = false
+		if let pendingHostSizeScript {
+			self.pendingHostSizeScript = nil
+			evaluator?.evaluateJavaScript(pendingHostSizeScript)
+			didFlush = true
+		}
+
+		guard let pendingParams else { return didFlush }
 		guard let script = paramsScript(json: pendingParams.json, selectedPresetName: pendingParams.selectedPresetName) else {
 			return false
 		}

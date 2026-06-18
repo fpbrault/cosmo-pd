@@ -272,8 +272,18 @@ describe("PluginPage", () => {
 		(
 			window as Window & {
 				__czRuntimeMode?: string;
+				__czHostSize?: { width: number; height: number; fitMode?: string };
 			}
 		).__czRuntimeMode = "auv3-hosted";
+		(
+			window as Window & {
+				__czHostSize?: { width: number; height: number; fitMode?: string };
+			}
+		).__czHostSize = {
+			width: 684,
+			height: 456,
+			fitMode: "fit-width",
+		};
 		mockComputeAuv3HostFitLayout.mockReturnValue({
 			aspectRatio: 1.5,
 			naturalWidth: 1368,
@@ -286,10 +296,13 @@ describe("PluginPage", () => {
 		});
 
 		const { container } = render(<PluginPage appVersion="0.2.0" />);
+		const hostedViewport = container.firstElementChild as HTMLElement;
 		const scaledFrame = container.querySelector(
 			'[style*="transform: scale(0.5)"]',
 		);
 
+		expect(hostedViewport.className).toContain("overflow-y-auto");
+		expect(hostedViewport.className).toContain("overflow-x-hidden");
 		expect(scaledFrame).toBeInstanceOf(HTMLElement);
 		expect((scaledFrame as HTMLElement).style.transform).toBe("scale(0.5)");
 		expect((scaledFrame?.parentElement as HTMLElement).style.width).toBe(
@@ -352,6 +365,7 @@ describe("PluginPage", () => {
 		(
 			window as Window & {
 				__czHostPlatform?: string;
+				__czRuntimeMode?: string;
 				__czHostSize?: {
 					width: number;
 					height: number;
@@ -359,6 +373,11 @@ describe("PluginPage", () => {
 				};
 			}
 		).__czHostPlatform = "ios";
+		(
+			window as Window & {
+				__czRuntimeMode?: string;
+			}
+		).__czRuntimeMode = "auv3-hosted";
 		(
 			window as Window & {
 				__czHostPlatform?: string;
@@ -397,6 +416,132 @@ describe("PluginPage", () => {
 					deviceLandscapeAspectRatio: 16 / 11,
 				}),
 			);
+		} finally {
+			getBoundingClientRect.mockRestore();
+		}
+	});
+
+	it("does not use AUv3 hosted layout just because the platform is iOS", () => {
+		(
+			window as Window & {
+				__czHostPlatform?: string;
+				__czHostSize?: {
+					width: number;
+					height: number;
+					deviceLandscapeAspectRatio?: number;
+					fitMode?: string;
+				};
+			}
+		).__czHostPlatform = "ios";
+		(
+			window as Window & {
+				__czHostSize?: {
+					width: number;
+					height: number;
+					deviceLandscapeAspectRatio?: number;
+					fitMode?: string;
+				};
+			}
+		).__czHostSize = {
+			width: 684,
+			height: 456,
+			deviceLandscapeAspectRatio: 16 / 11,
+			fitMode: "fit-width",
+		};
+		const getBoundingClientRect = vi
+			.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+			.mockReturnValue({
+				x: 0,
+				y: 0,
+				top: 0,
+				left: 0,
+				right: 1024,
+				bottom: 768,
+				width: 1024,
+				height: 768,
+				toJSON: () => ({}),
+			} as DOMRect);
+
+		try {
+			const { container } = render(<PluginPage appVersion="0.2.0" />);
+			const viewport = container.firstElementChild as HTMLElement;
+
+			expect(mockComputeAuv3HostFitLayout).not.toHaveBeenCalled();
+			expect(mockComputeRendererFrameLayout).toHaveBeenLastCalledWith(
+				expect.objectContaining({
+					availableWidth: 1024,
+					availableHeight: 768,
+					targetAspectRatio: undefined,
+				}),
+			);
+			expect(viewport.className).toContain("items-center");
+			expect(viewport.className).toContain("justify-center");
+		} finally {
+			getBoundingClientRect.mockRestore();
+		}
+	});
+
+	it("keeps iOS standalone runtime on the centered standalone layout path", () => {
+		(
+			window as Window & {
+				__czHostPlatform?: string;
+				__czRuntimeMode?: string;
+				__czHostSize?: {
+					width: number;
+					height: number;
+					deviceLandscapeAspectRatio?: number;
+					fitMode?: string;
+				};
+			}
+		).__czHostPlatform = "ios";
+		(
+			window as Window & {
+				__czRuntimeMode?: string;
+			}
+		).__czRuntimeMode = "standalone";
+		(
+			window as Window & {
+				__czHostSize?: {
+					width: number;
+					height: number;
+					deviceLandscapeAspectRatio?: number;
+					fitMode?: string;
+				};
+			}
+		).__czHostSize = {
+			width: 684,
+			height: 456,
+			deviceLandscapeAspectRatio: 16 / 11,
+			fitMode: "fit-bounds",
+		};
+		const getBoundingClientRect = vi
+			.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+			.mockReturnValue({
+				x: 0,
+				y: 0,
+				top: 0,
+				left: 0,
+				right: 1180,
+				bottom: 820,
+				width: 1180,
+				height: 820,
+				toJSON: () => ({}),
+			} as DOMRect);
+
+		try {
+			const { container } = render(<PluginPage appVersion="0.2.0" />);
+			const viewport = container.firstElementChild as HTMLElement;
+
+			expect(mockComputeAuv3HostFitLayout).not.toHaveBeenCalled();
+			expect(mockComputeRendererFrameLayout).toHaveBeenLastCalledWith(
+				expect.objectContaining({
+					availableWidth: 1180,
+					availableHeight: 820,
+					targetAspectRatio: undefined,
+				}),
+			);
+			expect(viewport.className).toContain("items-center");
+			expect(viewport.className).toContain("justify-center");
 		} finally {
 			getBoundingClientRect.mockRestore();
 		}

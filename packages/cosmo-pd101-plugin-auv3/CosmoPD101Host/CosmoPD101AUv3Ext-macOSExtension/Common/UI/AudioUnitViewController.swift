@@ -58,6 +58,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	}
 
 	@objc public var cosmoAuv3FitMode: String = "fit-width"
+	@objc public var cosmoAuv3RuntimeMode: String = "auv3-hosted"
 
 	nonisolated(unsafe) var audioUnit: AUAudioUnit?
 	private var webView: WKWebView?
@@ -93,6 +94,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 	public override func loadView() {
 		os_log("loadView", log: czVCLog, type: .default)
+
 		#if os(iOS)
 		view = UIView(frame: CGRect(x: 0, y: 0, width: Self.minimumWidth, height: Self.minimumHeight))
 		view.backgroundColor = .black
@@ -382,7 +384,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		)
 		configuration.userContentController.addUserScript(
 			WKUserScript(
-				source: "window.__czRuntimeMode='auv3-hosted';",
+				source: "window.__czRuntimeMode='\(cosmoAuv3RuntimeMode)';",
 				injectionTime: .atDocumentStart,
 				forMainFrameOnly: true
 			)
@@ -590,7 +592,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		}));
 		window.dispatchEvent(new Event('resize'));
 		"""
-		webView.evaluateJavaScript(script, completionHandler: nil)
+		_ = scriptDispatcher.enqueueHostSizeScript(script)
 	}
 
 	private func currentDeviceSizingInfo() -> (scale: CGFloat, landscapeAspectRatio: CGFloat) {

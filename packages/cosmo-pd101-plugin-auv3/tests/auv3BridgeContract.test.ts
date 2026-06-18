@@ -17,6 +17,10 @@ const xcodeHostAppPath = path.join(
 	packageRoot,
 	"CosmoPD101Host/CosmoPD101AUv3Ext-macOS/CosmoPD101AUv3Ext_macOSApp.swift",
 );
+const xcodeViewControllerRepresentablePath = path.join(
+	packageRoot,
+	"CosmoPD101Host/CosmoPD101AUv3Ext-macOS/Common/UI/ViewControllerRepresentable.swift",
+);
 
 const nativeEngineEventMethods = new Set([
 	"noteOn",
@@ -158,5 +162,27 @@ describe("AUv3 bridge contract", () => {
 		expect(swiftSource).toContain("deviceLandscapeAspectRatio:");
 		expect(swiftSource).toContain("cz-host-size-changed");
 		expect(swiftSource).toContain("window.dispatchEvent(new Event('resize'))");
+	});
+
+	it("keeps hosted AUv3 runtime mode as the controller default", () => {
+		const swiftSource = readText(xcodeControllerPath);
+
+		expect(swiftSource).toContain(
+			'@objc public var cosmoAuv3RuntimeMode: String = "auv3-hosted"',
+		);
+		expect(swiftSource).toContain(
+			"source: \"window.__czRuntimeMode='\\(cosmoAuv3RuntimeMode)';\"",
+		);
+	});
+
+	it("marks the containing standalone app as standalone before embedding the AU view", () => {
+		const hostAppSource = readText(xcodeViewControllerRepresentablePath);
+
+		expect(hostAppSource).toContain(
+			'viewController.setValue("fit-bounds", forKey: "cosmoAuv3FitMode")',
+		);
+		expect(hostAppSource).toContain(
+			'viewController.setValue("standalone", forKey: "cosmoAuv3RuntimeMode")',
+		);
 	});
 });

@@ -156,14 +156,11 @@ export default function PluginPage({
 	utilityExtra,
 }: PluginPageProps) {
 	const isIosHost = window.__czHostPlatform === "ios";
-	const isAuv3Platform =
-		window.__czHostPlatform === "ios" || window.__czHostPlatform === "macos";
 	const isLikelyIosDevice =
 		/iPad|iPhone|iPod/.test(window.navigator.userAgent) ||
 		(window.navigator.platform === "MacIntel" &&
 			window.navigator.maxTouchPoints > 1);
-	const isAuv3Hosted =
-		window.__czRuntimeMode === "auv3-hosted" || isAuv3Platform;
+	const isAuv3Hosted = window.__czRuntimeMode === "auv3-hosted";
 	const applyPreset = useSynthStore((s) => s.applyPreset);
 	const gatherPresetState = useSynthStore((s) => s.gatherPresetState);
 
