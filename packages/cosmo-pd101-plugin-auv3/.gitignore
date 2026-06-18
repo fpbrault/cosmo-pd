@@ -5,8 +5,5 @@ Sources/CosmoPd101AUv3/Resources/ui/*
 !Sources/CosmoPd101AUv3/Resources/ui/.gitkeep
 CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/UI/*
 !CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/UI/.gitkeep
-!CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/UI/assets/
-!CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/UI/assets/**
 **/.xcuserdata/
 **/UserInterfaceState.xcuserstate
-
