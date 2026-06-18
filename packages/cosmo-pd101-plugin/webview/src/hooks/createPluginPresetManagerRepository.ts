@@ -283,6 +283,7 @@ export function createPluginPresetManagerRepository({
 			};
 		},
 		loadEntry: async (entry) => {
+			onBeforeApplyPreset?.();
 			const result = await window.__czLoadPreset?.(entry.id);
 			return createActivationResult(
 				createSelection(entry.id, result?.presetName ?? entry.label),
@@ -362,6 +363,7 @@ export function createPluginPresetManagerRepository({
 			if (!result) {
 				return null;
 			}
+			onBeforeApplyPreset?.();
 			const activated = await window.__czLoadPreset?.(result.id);
 			return createActivationResult(
 				createSelection(result.id, activated?.presetName ?? result.name),
