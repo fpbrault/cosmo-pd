@@ -57,7 +57,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		}
 	}
 
-	@objc public var cosmoAuv3FitMode: String = "fit-width"
+	@objc public var cosmoAuv3FitMode: String = "fit-bounds"
 	@objc public var cosmoAuv3RuntimeMode: String = "auv3-hosted"
 
 	nonisolated(unsafe) var audioUnit: AUAudioUnit?

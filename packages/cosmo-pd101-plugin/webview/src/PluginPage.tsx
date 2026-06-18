@@ -156,11 +156,12 @@ export default function PluginPage({
 	utilityExtra,
 }: PluginPageProps) {
 	const isIosHost = window.__czHostPlatform === "ios";
+	const isAuv3WebView =
+		window.__czHostPlatform === "ios" || window.__czHostPlatform === "macos";
 	const isLikelyIosDevice =
 		/iPad|iPhone|iPod/.test(window.navigator.userAgent) ||
 		(window.navigator.platform === "MacIntel" &&
 			window.navigator.maxTouchPoints > 1);
-	const isAuv3Hosted = window.__czRuntimeMode === "auv3-hosted";
 	const applyPreset = useSynthStore((s) => s.applyPreset);
 	const gatherPresetState = useSynthStore((s) => s.gatherPresetState);
 
@@ -272,7 +273,7 @@ export default function PluginPage({
 			const bounds = element.getBoundingClientRect();
 			let nextLayout: PluginRendererLayout | null = null;
 
-			if (isAuv3Hosted) {
+			if (isAuv3WebView) {
 				const nativeHostSize =
 					event instanceof CustomEvent && isValidHostSize(event.detail)
 						? event.detail
@@ -288,7 +289,7 @@ export default function PluginPage({
 					deviceLandscapeAspectRatio:
 						hostBounds.deviceLandscapeAspectRatio ??
 						getScreenLandscapeAspectRatio(),
-					fitMode: hostBounds.fitMode ?? "fit-bounds",
+					fitMode: "fit-bounds",
 				});
 				nextLayout = fitLayout ? toAuv3PluginRendererLayout(fitLayout) : null;
 			} else {
@@ -338,7 +339,7 @@ export default function PluginPage({
 			window.removeEventListener("cz-host-size-changed", updateFrameSize);
 			window.visualViewport?.removeEventListener("resize", updateFrameSize);
 		};
-	}, [isAuv3Hosted, isIosHost, isLikelyIosDevice]);
+	}, [isAuv3WebView, isIosHost, isLikelyIosDevice]);
 
 	useEffect(() => {
 		if (!bridgeReady) {
@@ -454,25 +455,18 @@ export default function PluginPage({
 		width: frameWidth,
 		height: frameHeight,
 		transform: `scale(${displayScale})`,
-		transformOrigin: "center",
+		transformOrigin: "top left",
 	};
 	const auv3ZoomStyle: CSSProperties = {
 		...zoomStyle,
 		transformOrigin: "top left",
 	};
 
-	const auv3FitMode = window.__czHostSize?.fitMode ?? "fit-bounds";
-	const isAuv3FitWidth = auv3FitMode === "fit-width";
-
-	if (isAuv3Hosted) {
+	if (isAuv3WebView) {
 		return (
 			<div
 				ref={frameRef}
-				className={
-					isAuv3FitWidth
-						? "relative h-full w-full overflow-y-auto overflow-x-hidden bg-black"
-						: "relative h-full w-full overflow-hidden bg-black"
-				}
+				className="relative h-full w-full overflow-hidden bg-black"
 			>
 				<div
 					className="absolute overflow-hidden"

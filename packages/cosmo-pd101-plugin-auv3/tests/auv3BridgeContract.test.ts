@@ -168,6 +168,9 @@ describe("AUv3 bridge contract", () => {
 		const swiftSource = readText(xcodeControllerPath);
 
 		expect(swiftSource).toContain(
+			'@objc public var cosmoAuv3FitMode: String = "fit-bounds"',
+		);
+		expect(swiftSource).toContain(
 			'@objc public var cosmoAuv3RuntimeMode: String = "auv3-hosted"',
 		);
 		expect(swiftSource).toContain(
