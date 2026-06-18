@@ -228,6 +228,11 @@ pub struct PluginSharedState {
     pub midi_learn: MidiLearnService,
     /// Runtime voice limit (1-16). Read/written by IPC, consumed by audio thread.
     pub voice_limit: AtomicU8,
+    /// Set by `LoadPreset` IPC handler before publishing new params/version.
+    /// Consumed by the audio thread in `sync_runtime_params_from_host` to call
+    /// `processor.reset_audio_state()` *before* applying the new preset params.
+    /// Ordering: IPC thread stores (Release), audio thread swaps (Acquire).
+    pub preset_reset_pending: AtomicBool,
 }
 
 impl PluginSharedState {
@@ -262,6 +267,7 @@ impl PluginSharedState {
             presets: PresetService::new(preset_library.clone(), preset_session),
             midi_learn: MidiLearnService::new(midi_learn_state),
             voice_limit: AtomicU8::new(voice_limit),
+            preset_reset_pending: AtomicBool::new(false),
         }
     }
 }

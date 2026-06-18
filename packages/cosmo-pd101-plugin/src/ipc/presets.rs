@@ -146,6 +146,15 @@ pub(super) fn handle(
 
             sync_all_daw_params_from_synth(params, &new_sp);
             let rt_params = build_rt_synth_params(&new_sp);
+
+            // Signal the audio thread to reset state during the sync pass that observes
+            // this new preset snapshot. sync_runtime_params_from_host() consumes this
+            // before calling processor.set_shared_params(...).
+            context
+                .shared_state
+                .preset_reset_pending
+                .store(true, Ordering::Release);
+
             synth_params.store(Arc::new(new_sp));
             rt_synth_params.store(Arc::new(rt_params));
             synth_params_version.fetch_add(1, Ordering::Release);

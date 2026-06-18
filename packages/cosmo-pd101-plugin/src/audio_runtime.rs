@@ -355,6 +355,19 @@ impl CzPlugin {
         };
         let rt_merged = Arc::new(merged);
         self.audio.cached_rt_synth_params = rt_merged.clone();
+        if self
+            .shared_state
+            .preset_reset_pending
+            .swap(false, Ordering::Acquire)
+        {
+            // Preset change: clear old voices/FX before new params take effect.
+            // reset_audio_state() is the hard reset that stops all voices, clears
+            // sustain/mod state, and reinitializes FX. Without this, the old voices
+            // would receive the new preset params for at least one block.
+            if let Some(ref mut proc) = self.audio.processor {
+                proc.reset_audio_state();
+            }
+        }
         if let Some(ref mut proc) = self.audio.processor {
             proc.set_shared_params(rt_merged);
         }

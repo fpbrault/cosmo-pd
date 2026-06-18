@@ -91,6 +91,7 @@ fn handle_ipc_invoke(
         ),
         midi_learn: crate::midi_learn::MidiLearnService::new(midi_learn_state.clone()),
         voice_limit: std::sync::atomic::AtomicU8::new(crate::global_settings::DEFAULT_VOICE_LIMIT),
+        preset_reset_pending: std::sync::atomic::AtomicBool::new(false),
     });
     crate::ipc::IpcContext::new(shared_state, params.clone())
         .invoke_envelope(&cosmo_pd101_bridge_types::PluginIpcEnvelope { id: 0, request })?
@@ -191,6 +192,7 @@ impl CzPlugin {
         }
 
         if let Some(proc) = self.audio.processor.as_mut() {
+            proc.reset_audio_state();
             proc.set_shared_params(rt_params);
         }
     }
