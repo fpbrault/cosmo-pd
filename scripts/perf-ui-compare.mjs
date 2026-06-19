@@ -110,7 +110,9 @@ if (keys.length === 0) {
 	process.exit(1);
 }
 
-console.log(`Comparing ${keys.length} overlapping ${options.label} benchmark cases`);
+console.log(
+	`Comparing ${keys.length} overlapping ${options.label} benchmark cases`,
+);
 console.log("case\t p50 last ms\t p95 last ms\t max rt%\t sample count");
 
 let regressions = 0;

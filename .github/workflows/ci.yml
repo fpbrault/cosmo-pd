@@ -336,7 +336,11 @@ jobs:
           fi
 
           if [[ "${RUN_PLUGIN_NATIVE}" == "true" ]]; then
-            cargo run -p cosmo-pd101-plugin --release --features perf-bench --bin plugin-render-bench -- --json > "$GITHUB_WORKSPACE/target/perf/plugin/base-report.json"
+            if grep -q "perf-bench" packages/cosmo-pd101-plugin/Cargo.toml; then
+              cargo run -p cosmo-pd101-plugin --release --features perf-bench --bin plugin-render-bench -- --json > "$GITHUB_WORKSPACE/target/perf/plugin/base-report.json"
+            else
+              echo "Native plugin benchmark baseline unavailable on ${base_ref}." > "$GITHUB_WORKSPACE/target/perf/plugin/plugin-compare.md"
+            fi
           fi
 
           if [[ "${RUN_LIVEPAGE}" == "true" || "${RUN_PLUGIN_WEBVIEW}" == "true" ]]; then
@@ -344,11 +348,19 @@ jobs:
           fi
 
           if [[ "${RUN_LIVEPAGE}" == "true" ]]; then
-            bun run ./scripts/perf-livepage-benchmark.mjs --out "$GITHUB_WORKSPACE/target/perf/ui/livepage-base-report.json"
+            if grep -R "__czBenchmark" packages/cosmo-pd101 packages/cosmo-pd101/site >/dev/null 2>&1; then
+              bun run ./scripts/perf-livepage-benchmark.mjs --out "$GITHUB_WORKSPACE/target/perf/ui/livepage-base-report.json"
+            else
+              echo "Live page benchmark baseline unavailable on ${base_ref}." > "$GITHUB_WORKSPACE/target/perf/ui/livepage-compare.md"
+            fi
           fi
 
           if [[ "${RUN_PLUGIN_WEBVIEW}" == "true" ]]; then
-            bun run ./scripts/perf-web-benchmark.mjs --out "$GITHUB_WORKSPACE/target/perf/ui/plugin-webview-base-report.json"
+            if grep -R "__czBenchmark" packages/cosmo-pd101 packages/cosmo-pd101-plugin/webview >/dev/null 2>&1; then
+              bun run ./scripts/perf-web-benchmark.mjs --out "$GITHUB_WORKSPACE/target/perf/ui/plugin-webview-base-report.json"
+            else
+              echo "Plugin webview benchmark baseline unavailable on ${base_ref}." > "$GITHUB_WORKSPACE/target/perf/ui/plugin-webview-compare.md"
+            fi
           fi
         env:
           RUN_ENGINE: ${{ steps.filter.outputs.engine }}
@@ -401,6 +413,10 @@ jobs:
         if: steps.filter.outputs.livepage == 'true'
         continue-on-error: true
         run: |
+          if [[ ! -f target/perf/ui/livepage-base-report.json ]]; then
+            echo "Live page benchmark baseline unavailable on ${{ github.base_ref }}." > target/perf/ui/livepage-compare.md
+            exit 0
+          fi
           bun run ./scripts/perf-ui-compare.mjs \
             target/perf/ui/livepage-base-report.json \
             target/perf/ui/livepage-pr-report.json \
@@ -414,6 +430,10 @@ jobs:
         if: steps.filter.outputs.plugin_webview == 'true'
         continue-on-error: true
         run: |
+          if [[ ! -f target/perf/ui/plugin-webview-base-report.json ]]; then
+            echo "Plugin webview benchmark baseline unavailable on ${{ github.base_ref }}." > target/perf/ui/plugin-webview-compare.md
+            exit 0
+          fi
           bun run ./scripts/perf-ui-compare.mjs \
             target/perf/ui/plugin-webview-base-report.json \
             target/perf/ui/plugin-webview-pr-report.json \
@@ -427,6 +447,10 @@ jobs:
         if: steps.filter.outputs.plugin_native == 'true'
         continue-on-error: true
         run: |
+          if [[ ! -f target/perf/plugin/base-report.json ]]; then
+            echo "Native plugin benchmark baseline unavailable on ${{ github.base_ref }}." > target/perf/plugin/plugin-compare.md
+            exit 0
+          fi
           bun run ./scripts/perf-plugin-compare.mjs \
             target/perf/plugin/base-report.json \
             target/perf/plugin/pr-report.json \

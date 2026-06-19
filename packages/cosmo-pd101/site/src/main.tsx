@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { initI18n } from "../../src/i18n";
 import { registerSynthUiBenchmark } from "../../src/features/synth/synthUiBenchmark";
+import { initI18n } from "../../src/i18n";
 import LivePage from "./LivePage";
 import "./style.css";
 

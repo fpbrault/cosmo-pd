@@ -82,8 +82,7 @@ function summarize(values: number[]) {
 
 function findPreset(name: string) {
 	return (
-		FACTORY_PRESETS.find((preset) => preset.name === name) ??
-		FACTORY_PRESETS[0]
+		FACTORY_PRESETS.find((preset) => preset.name === name) ?? FACTORY_PRESETS[0]
 	);
 }
 
@@ -100,14 +99,15 @@ async function measureFrames(sampleCount: number): Promise<number[]> {
 
 async function runPresetApplyScenario(presetName: string): Promise<number[]> {
 	const preset = findPreset(presetName);
-	if (!preset) {
+	if (!preset?.data) {
 		return [];
 	}
+	const presetData = preset.data;
 
 	const samples: number[] = [];
 	for (let index = 0; index < 24; index += 1) {
 		const startedAt = performance.now();
-		useSynthStore.getState().applyPreset(preset.data);
+		useSynthStore.getState().applyPreset(presetData);
 		await waitForFrames(2);
 		samples.push(performance.now() - startedAt);
 	}
