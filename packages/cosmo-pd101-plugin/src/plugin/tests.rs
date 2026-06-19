@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::PathBuf;
+use std::sync::RwLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use super::*;
@@ -82,12 +83,11 @@ fn make_handler_state() -> (
 ) {
     let sp = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
     let rsp = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
-    let rms: SharedRuntimeModSources =
-        Arc::new(ArcSwap::from_pointee(RuntimeModSources::default()));
-    let rvs: SharedRuntimeVoiceStates = Arc::new(ArcSwap::from_pointee(Vec::new()));
+    let rms: SharedRuntimeModSources = Arc::new(RwLock::new(RuntimeModSources::default()));
+    let rvs: SharedRuntimeVoiceStates = Arc::new(RwLock::new(Vec::new()));
     let ts = Arc::new(TransportSnapshot::default());
     let ver = Arc::new(AtomicU64::new(0));
-    let sc: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
+    let sc: ScopeBuffer = Arc::new(RwLock::new(ScopeFrame::default()));
     let q: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
     let params = Arc::new(CzPluginParams::new());
     let ps: SharedPresetSession =
@@ -155,12 +155,11 @@ fn get_params_rpc_returns_current_synth_params() {
     initial.volume = 0.77;
     let sp: SharedSynthParams = Arc::new(ArcSwap::new(Arc::new(initial)));
     let rsp = Arc::new(ArcSwap::from_pointee(SynthParams::default()));
-    let rms: SharedRuntimeModSources =
-        Arc::new(ArcSwap::from_pointee(RuntimeModSources::default()));
-    let rvs: SharedRuntimeVoiceStates = Arc::new(ArcSwap::from_pointee(Vec::new()));
+    let rms: SharedRuntimeModSources = Arc::new(RwLock::new(RuntimeModSources::default()));
+    let rvs: SharedRuntimeVoiceStates = Arc::new(RwLock::new(Vec::new()));
     let ts = Arc::new(TransportSnapshot::default());
     let ver = Arc::new(AtomicU64::new(0));
-    let sc: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
+    let sc: ScopeBuffer = Arc::new(RwLock::new(ScopeFrame::default()));
     let q: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
     let params = Arc::new(CzPluginParams::new());
     let ps: SharedPresetSession =

@@ -395,9 +395,10 @@ impl CzPlugin {
                 .shared_state
                 .preset_reset_pending
                 .swap(false, Ordering::Acquire)
-                && let Some(ref mut proc) = self.audio.processor {
-                    proc.reset_audio_state();
-                }
+                && let Some(ref mut proc) = self.audio.processor
+            {
+                proc.reset_audio_state();
+            }
 
             if let Some(ref mut proc) = self.audio.processor {
                 proc.set_shared_params(rt_merged);
@@ -439,9 +440,10 @@ impl CzPlugin {
                 .shared_state
                 .preset_reset_pending
                 .swap(false, Ordering::Acquire)
-                && let Some(ref mut proc) = self.audio.processor {
-                    proc.reset_audio_state();
-                }
+                && let Some(ref mut proc) = self.audio.processor
+            {
+                proc.reset_audio_state();
+            }
 
             if let Some(ref mut proc) = self.audio.processor {
                 proc.set_shared_params(self.audio.cached_rt_synth_params.clone());
