@@ -1,6 +1,9 @@
 import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
 import { DEFAULT_SYNTH_PARAMS_V1 } from "@/lib/synth/bindings/synth";
-import { normalizePresetTags, type PresetTagOptions } from "@/lib/synth/presetTags";
+import {
+	normalizePresetTags,
+	type PresetTagOptions,
+} from "@/lib/synth/presetTags";
 import type { PresetSource } from "./presetSources";
 
 export const COSMO_PRESET_TOML_FORMAT = "cosmo-preset";
@@ -299,7 +302,10 @@ function normalizeEnvelopeSteps(value: unknown): unknown {
 	if (isRecord(value)) {
 		const next: Record<string, unknown> = {};
 		for (const [key, entry] of Object.entries(value)) {
-			next[key] = key === "steps" ? normalizeEnvelopeSteps(entry) : normalizeEnvelopeSteps(entry);
+			next[key] =
+				key === "steps"
+					? normalizeEnvelopeSteps(entry)
+					: normalizeEnvelopeSteps(entry);
 		}
 		if (
 			Array.isArray(next.steps) &&
@@ -364,10 +370,14 @@ export function parsePresetToml(input: string): ParsedPresetToml | null {
 	if (getString(document.root.format) !== COSMO_PRESET_TOML_FORMAT) {
 		return null;
 	}
-	if (getNumber(document.root.formatVersion) !== COSMO_PRESET_TOML_FORMAT_VERSION) {
+	if (
+		getNumber(document.root.formatVersion) !== COSMO_PRESET_TOML_FORMAT_VERSION
+	) {
 		return null;
 	}
-	if (getNumber(document.root.presetSchemaVersion) !== COSMO_PRESET_SCHEMA_VERSION) {
+	if (
+		getNumber(document.root.presetSchemaVersion) !== COSMO_PRESET_SCHEMA_VERSION
+	) {
 		return null;
 	}
 	const name = getString(document.root.name);
@@ -388,7 +398,11 @@ export function parsePresetToml(input: string): ParsedPresetToml | null {
 		author: getString(document.root.author)?.trim() ?? "",
 		description: getString(document.root.description)?.trim() ?? "",
 		tags: normalizePresetTags(
-			Array.isArray(document.root.tags) ? document.root.tags.filter((tag): tag is string => typeof tag === "string") : [],
+			Array.isArray(document.root.tags)
+				? document.root.tags.filter(
+						(tag): tag is string => typeof tag === "string",
+					)
+				: [],
 		),
 		starred: getBoolean(document.root.starred) ?? false,
 		favorite: getBoolean(document.root.favorite) ?? false,
@@ -463,7 +477,12 @@ function collectDiffSections(
 
 export function exportPresetToToml(input: PresetTomlExportInput): string {
 	const sections = new Map<string, string[]>();
-	collectDiffSections(input.data.params, DEFAULT_TOML_BASELINE_PRESET.params, ["params"], sections);
+	collectDiffSections(
+		input.data.params,
+		DEFAULT_TOML_BASELINE_PRESET.params,
+		["params"],
+		sections,
+	);
 	const lines = [
 		`format = ${escapeTomlString(COSMO_PRESET_TOML_FORMAT)}`,
 		`formatVersion = ${COSMO_PRESET_TOML_FORMAT_VERSION}`,

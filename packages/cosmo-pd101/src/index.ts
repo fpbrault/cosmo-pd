@@ -147,8 +147,8 @@ export {
 	COSMO_PRESET_TOML_FORMAT,
 	COSMO_PRESET_TOML_FORMAT_VERSION,
 	exportPresetToToml,
-	parsePresetToml,
 	type ParsedPresetToml,
+	parsePresetToml,
 } from "./lib/synth/presetTomlExchange";
 export type {
 	EnginePresetV1,

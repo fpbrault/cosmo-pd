@@ -351,20 +351,22 @@ export async function exportPreset(id: string): Promise<string | null> {
 	return exportStoredPresetToToml(normalizeStoredPreset(preset), favorite);
 }
 
-export async function importPreset(json: string): Promise<ImportedStoredPreset | null> {
+export async function importPreset(
+	json: string,
+): Promise<ImportedStoredPreset | null> {
 	try {
 		const parsedToml = parsePresetToml(json);
 		if (parsedToml) {
 			return {
 				...createStoredPreset({
-				id: parsedToml.id,
-				name: parsedToml.name,
-				data: parsedToml.data,
-				source: "user",
-				author: parsedToml.author,
-				description: parsedToml.description,
-				starred: false,
-				tags: parsedToml.tags,
+					id: parsedToml.id,
+					name: parsedToml.name,
+					data: parsedToml.data,
+					source: "user",
+					author: parsedToml.author,
+					description: parsedToml.description,
+					starred: false,
+					tags: parsedToml.tags,
 				}),
 				favorite: parsedToml.favorite,
 			};
