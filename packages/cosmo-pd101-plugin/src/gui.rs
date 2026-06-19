@@ -1245,7 +1245,7 @@ fn serve_scope_buffer(
 ) -> wry::http::Response<std::borrow::Cow<'static, [u8]>> {
     use wry::http::Response;
 
-    let frame = match scope_buffer.try_lock() {
+    let frame = match scope_buffer.try_read() {
         Ok(frame) => frame,
         Err(_) => {
             return Response::builder()

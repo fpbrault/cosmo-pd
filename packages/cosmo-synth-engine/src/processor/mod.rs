@@ -134,10 +134,15 @@ impl CosmoProcessor {
     }
 
     pub fn runtime_voice_debug_state(&self) -> Vec<RuntimeVoiceDebugState> {
-        self.voices
-            .iter()
-            .enumerate()
-            .map(|(index, voice)| RuntimeVoiceDebugState {
+        let mut out = Vec::with_capacity(MAX_VOICES);
+        self.write_runtime_voice_debug_state(&mut out);
+        out
+    }
+
+    pub fn write_runtime_voice_debug_state(&self, out: &mut Vec<RuntimeVoiceDebugState>) {
+        out.clear();
+        for (index, voice) in self.voices.iter().enumerate() {
+            out.push(RuntimeVoiceDebugState {
                 index,
                 active: !voice.is_silent,
                 is_releasing: voice.is_releasing,
@@ -199,8 +204,8 @@ impl CosmoProcessor {
                         prev_level: voice.line2_env.dca.prev_level,
                     },
                 },
-            })
-            .collect()
+            });
+        }
     }
 
     /// Copy FX-relevant fields from `self.params` into the `FxChain`.

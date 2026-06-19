@@ -28,6 +28,8 @@ use crate::runtime_state::{
 };
 #[cfg(test)]
 use arc_swap::ArcSwap;
+#[cfg(debug_assertions)]
+use assert_no_alloc::assert_no_alloc;
 use cosmo_synth_engine::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use cosmo_synth_engine::params::SynthParams;
 #[cfg(test)]
@@ -240,6 +242,20 @@ impl CzPlugin {
 
         self.apply_preset_state(Some(entry.id), Some(entry.name), params);
     }
+
+    fn process_inner(
+        &mut self,
+        buffer: &mut AudioBuffer,
+        events: &EventList,
+        context: &mut ProcessContext,
+    ) -> ProcessStatus {
+        self.shared_state
+            .telemetry
+            .transport_snapshot
+            .store(context.transport);
+        self.sync_runtime_params_from_host(events);
+        self.render_audio_block(buffer, events, context)
+    }
 }
 
 impl PluginLogic for CzPlugin {
@@ -293,12 +309,14 @@ impl PluginLogic for CzPlugin {
         events: &EventList,
         context: &mut ProcessContext,
     ) -> ProcessStatus {
-        self.shared_state
-            .telemetry
-            .transport_snapshot
-            .store(context.transport);
-        self.sync_runtime_params_from_host(events);
-        self.render_audio_block(buffer, events, context)
+        #[cfg(debug_assertions)]
+        {
+            assert_no_alloc(|| self.process_inner(buffer, events, context))
+        }
+        #[cfg(not(debug_assertions))]
+        {
+            self.process_inner(buffer, events, context)
+        }
     }
 
     fn bus_layouts() -> Vec<BusLayout> {

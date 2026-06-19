@@ -35,14 +35,16 @@ pub(super) fn handle(
             synth_params_version.load(Ordering::Acquire) as u32,
         )),
         PluginIpcRequest::GetRuntimeModSources => {
-            let sources = runtime_mod_sources.load();
-            Ok(PluginIpcResponse::GetRuntimeModSources(*sources.as_ref()))
+            let sources = runtime_mod_sources
+                .read()
+                .map_err(|_| "runtime mod sources lock poisoned".to_string())?;
+            Ok(PluginIpcResponse::GetRuntimeModSources(*sources))
         }
         PluginIpcRequest::GetRuntimeVoiceStates => {
-            let states = runtime_voice_states.load();
-            Ok(PluginIpcResponse::GetRuntimeVoiceStates(
-                states.as_ref().clone(),
-            ))
+            let states = runtime_voice_states
+                .read()
+                .map_err(|_| "runtime voice states lock poisoned".to_string())?;
+            Ok(PluginIpcResponse::GetRuntimeVoiceStates(states.clone()))
         }
         PluginIpcRequest::GetTransportInfo => {
             let response = transport_snapshot.to_response();
@@ -50,7 +52,7 @@ pub(super) fn handle(
         }
         PluginIpcRequest::GetScopeData => {
             let scope = scope_buffer
-                .lock()
+                .read()
                 .map_err(|_| "scope buffer is poisoned".to_string())?;
             let response = if scope.samples().is_empty() {
                 ScopeDataResponse {

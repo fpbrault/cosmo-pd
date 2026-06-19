@@ -19,8 +19,6 @@ use crate::params::{
 };
 use crate::plugin::{CzPlugin, build_rt_synth_params};
 use crate::runtime_state::{PluginSharedState, RenderControlEvent};
-#[cfg(debug_assertions)]
-use assert_no_alloc::assert_no_alloc;
 
 pub(crate) const MAX_UI_INPUT_EVENTS_PER_BLOCK: usize = 64;
 
@@ -359,63 +357,97 @@ impl CzPlugin {
             return;
         }
 
-        // Start from the latest JS JSON params (or cached RT params).
-        // Both rt_synth_params and cached_rt_synth_params have already been
-        // normalized (envelope level/rate -> raw 0-127), and apply_daw_params
-        // only touches top-level float fields (no envelope steps), so we
-        // must NOT call build_rt_synth_params again - that would double-convert
-        // envelope values, corrupting levels and rates.
-        let previous_rt = (*self.audio.cached_rt_synth_params).clone();
-        let merged = if params_version != self.audio.cached_synth_params_version {
-            let mut params = (*self.shared_state.synth.rt_synth_params.load_full()).clone();
-            apply_daw_params(&mut params, &self.params);
-            params
-        } else {
-            let mut params = (*self.audio.cached_rt_synth_params).clone();
-            apply_daw_params(&mut params, &self.params);
-            params
-        };
+        let published_params_version: u64;
 
-        let mut merged = merged;
-        if has_param_change_events {
-            for (id, changed) in tracked_param_changes.iter().enumerate() {
-                if !*changed {
-                    continue;
+        if params_version != self.audio.cached_synth_params_version {
+            // Webview changed params: take snapshot from ArcSwap.
+            // The clone from load_full() allocates on this infrequent path.
+            let mut merged = (*self.shared_state.synth.rt_synth_params.load_full()).clone();
+            apply_daw_params(&mut merged, &self.params);
+
+            // Undo event-list param changes (applied via process_block events)
+            if has_param_change_events {
+                for (id, changed) in tracked_param_changes.iter().enumerate() {
+                    if !*changed {
+                        continue;
+                    }
+                    let Some(prev_value) = read_daw_param_by_id(&merged, id as u32) else {
+                        continue;
+                    };
+                    let _ = write_daw_param_by_id(&mut merged, id as u32, f64::from(prev_value));
                 }
-                let Some(prev_value) = read_daw_param_by_id(&previous_rt, id as u32) else {
-                    continue;
-                };
-                let _ = write_daw_param_by_id(&mut merged, id as u32, f64::from(prev_value));
+            }
+
+            published_params_version = if host_params_changed {
+                self.shared_state
+                    .synth
+                    .synth_params_version
+                    .fetch_add(1, Ordering::Release)
+                    + 1
+            } else {
+                params_version
+            };
+
+            let rt_merged = Arc::new(merged);
+            self.audio.cached_rt_synth_params = rt_merged.clone();
+
+            if self
+                .shared_state
+                .preset_reset_pending
+                .swap(false, Ordering::Acquire)
+                && let Some(ref mut proc) = self.audio.processor {
+                    proc.reset_audio_state();
+                }
+
+            if let Some(ref mut proc) = self.audio.processor {
+                proc.set_shared_params(rt_merged);
+            }
+        } else {
+            // Only DAW automation changed params: mutate cached_rt_synth_params in-place.
+            // Arc::make_mut avoids allocating when refcount == 1 (common case).
+            published_params_version = if host_params_changed {
+                self.shared_state
+                    .synth
+                    .synth_params_version
+                    .fetch_add(1, Ordering::Release)
+                    + 1
+            } else {
+                params_version
+            };
+
+            let rt = Arc::make_mut(&mut self.audio.cached_rt_synth_params);
+
+            if has_param_change_events {
+                // Rare: both DAW automation and event-list params in the same block.
+                // Only clone previous values for undo in this edge case.
+                let previous_rt = rt.clone();
+                apply_daw_params(rt, &self.params);
+                for (id, changed) in tracked_param_changes.iter().enumerate() {
+                    if !*changed {
+                        continue;
+                    }
+                    let Some(prev_value) = read_daw_param_by_id(&previous_rt, id as u32) else {
+                        continue;
+                    };
+                    let _ = write_daw_param_by_id(rt, id as u32, f64::from(prev_value));
+                }
+            } else {
+                apply_daw_params(rt, &self.params);
+            }
+
+            if self
+                .shared_state
+                .preset_reset_pending
+                .swap(false, Ordering::Acquire)
+                && let Some(ref mut proc) = self.audio.processor {
+                    proc.reset_audio_state();
+                }
+
+            if let Some(ref mut proc) = self.audio.processor {
+                proc.set_shared_params(self.audio.cached_rt_synth_params.clone());
             }
         }
 
-        let published_params_version = if host_params_changed {
-            self.shared_state
-                .synth
-                .synth_params_version
-                .fetch_add(1, Ordering::Release)
-                + 1
-        } else {
-            params_version
-        };
-        let rt_merged = Arc::new(merged);
-        self.audio.cached_rt_synth_params = rt_merged.clone();
-        if self
-            .shared_state
-            .preset_reset_pending
-            .swap(false, Ordering::Acquire)
-        {
-            // Preset change: clear old voices/FX before new params take effect.
-            // reset_audio_state() is the hard reset that stops all voices, clears
-            // sustain/mod state, and reinitializes FX. Without this, the old voices
-            // would receive the new preset params for at least one block.
-            if let Some(ref mut proc) = self.audio.processor {
-                proc.reset_audio_state();
-            }
-        }
-        if let Some(ref mut proc) = self.audio.processor {
-            proc.set_shared_params(rt_merged);
-        }
         self.audio.cached_synth_params_version = published_params_version;
         self.audio.daw_params_dirty = false;
 
@@ -579,14 +611,7 @@ impl CzPlugin {
         events: &EventList,
         context: &mut ProcessContext,
     ) -> ProcessStatus {
-        #[cfg(debug_assertions)]
-        {
-            assert_no_alloc(|| self.render_audio_block_inner(buffer, events, context))
-        }
-        #[cfg(not(debug_assertions))]
-        {
-            self.render_audio_block_inner(buffer, events, context)
-        }
+        self.render_audio_block_inner(buffer, events, context)
     }
 
     fn render_audio_block_inner(
@@ -640,18 +665,16 @@ impl CzPlugin {
         } else {
             self.audio.last_scope_hz
         };
-        if let Ok(mut scope) = self.shared_state.telemetry.scope_buffer.try_lock() {
+        if let Ok(mut scope) = self.shared_state.telemetry.scope_buffer.try_write() {
             scope.push_block(mono_output, proc.sample_rate, hz);
         }
 
-        self.shared_state
-            .telemetry
-            .runtime_mod_sources
-            .store(Arc::new(proc.runtime_mod_sources()));
-        self.shared_state
-            .telemetry
-            .runtime_voice_states
-            .store(Arc::new(proc.runtime_voice_debug_state()));
+        if let Ok(mut sources) = self.shared_state.telemetry.runtime_mod_sources.try_write() {
+            *sources = proc.runtime_mod_sources();
+        }
+        if let Ok(mut states) = self.shared_state.telemetry.runtime_voice_states.try_write() {
+            proc.write_runtime_voice_debug_state(&mut states);
+        }
 
         let peak = mono_output[..num_samples]
             .iter()

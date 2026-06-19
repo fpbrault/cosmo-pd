@@ -1,5 +1,5 @@
 use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU32, AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 
 use arc_swap::ArcSwap;
 use cosmo_synth_engine::params::SynthParams;
@@ -18,15 +18,15 @@ pub const UI_INPUT_QUEUE_CAPACITY: usize = 1024;
 pub const MIDI_CC_QUEUE_CAPACITY: usize = 128;
 pub const RENDER_CONTROL_QUEUE_CAPACITY: usize = 256;
 
-pub type ScopeBuffer = Arc<Mutex<ScopeFrame>>;
+pub type ScopeBuffer = Arc<RwLock<ScopeFrame>>;
 pub type UiInputQueue = Arc<ArrayQueue<CosmoInputEvent>>;
 pub type MidiCcQueue = Arc<ArrayQueue<(u8, u8, u8)>>;
 pub type RenderControlQueue = Arc<ArrayQueue<RenderControlEvent>>;
 pub type SharedSynthParams = Arc<ArcSwap<SynthParams>>;
 pub type SharedRtSynthParams = Arc<ArcSwap<SynthParams>>;
 pub type SharedMidiMappingSnapshot = Arc<ArcSwap<MidiMappingSnapshot>>;
-pub type SharedRuntimeModSources = Arc<ArcSwap<RuntimeModSources>>;
-pub type SharedRuntimeVoiceStates = Arc<ArcSwap<Vec<RuntimeVoiceDebugState>>>;
+pub type SharedRuntimeModSources = Arc<RwLock<RuntimeModSources>>;
+pub type SharedRuntimeVoiceStates = Arc<RwLock<Vec<RuntimeVoiceDebugState>>>;
 pub type SharedTransportSnapshot = Arc<TransportSnapshot>;
 pub type SynthParamsVersion = Arc<AtomicU64>;
 pub type SharedPresetSession = Arc<Mutex<PresetSession>>;
@@ -47,7 +47,7 @@ pub struct RenderControlDiagnostics {
 }
 
 pub struct ScopeFrame {
-    samples: Vec<f32>,
+    samples: Box<[f32; SCOPE_CAPACITY]>,
     cursor: usize,
     sample_rate: f32,
     hz: f32,
@@ -56,7 +56,7 @@ pub struct ScopeFrame {
 impl Default for ScopeFrame {
     fn default() -> Self {
         Self {
-            samples: vec![0.0; SCOPE_CAPACITY],
+            samples: Box::new([0.0; SCOPE_CAPACITY]),
             cursor: 0,
             sample_rate: 44100.0,
             hz: 220.0,
@@ -69,17 +69,13 @@ impl ScopeFrame {
         self.sample_rate = sample_rate;
         self.hz = hz;
         for &s in mono {
-            if self.samples.len() < SCOPE_CAPACITY {
-                self.samples.push(s);
-            } else {
-                self.samples[self.cursor] = s;
-                self.cursor = (self.cursor + 1) % SCOPE_CAPACITY;
-            }
+            self.samples[self.cursor] = s;
+            self.cursor = (self.cursor + 1) % SCOPE_CAPACITY;
         }
     }
 
     pub fn samples(&self) -> &[f32] {
-        &self.samples
+        &self.samples[..]
     }
 
     pub fn sample_rate(&self) -> f32 {
@@ -91,14 +87,10 @@ impl ScopeFrame {
     }
 
     pub fn to_linear(&self) -> Vec<f32> {
-        if self.samples.len() < SCOPE_CAPACITY {
-            self.samples.clone()
-        } else {
-            let mut out = Vec::with_capacity(SCOPE_CAPACITY);
-            out.extend_from_slice(&self.samples[self.cursor..]);
-            out.extend_from_slice(&self.samples[..self.cursor]);
-            out
-        }
+        let mut out = Vec::with_capacity(SCOPE_CAPACITY);
+        out.extend_from_slice(&self.samples[self.cursor..]);
+        out.extend_from_slice(&self.samples[..self.cursor]);
+        out
     }
 }
 
@@ -272,10 +264,10 @@ impl PluginSharedState {
                 synth_params_version: Arc::new(AtomicU64::new(0)),
             },
             telemetry: RuntimeTelemetry {
-                runtime_mod_sources: Arc::new(ArcSwap::new(Arc::new(RuntimeModSources::default()))),
-                runtime_voice_states: Arc::new(ArcSwap::from_pointee(Vec::new())),
+                runtime_mod_sources: Arc::new(RwLock::new(RuntimeModSources::default())),
+                runtime_voice_states: Arc::new(RwLock::new(Vec::new())),
                 transport_snapshot: Arc::new(TransportSnapshot::default()),
-                scope_buffer: Arc::new(Mutex::new(ScopeFrame::default())),
+                scope_buffer: Arc::new(RwLock::new(ScopeFrame::default())),
             },
             ui: UiEventQueues {
                 ui_input_queue: Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY)),
