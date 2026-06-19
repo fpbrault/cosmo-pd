@@ -458,7 +458,7 @@ fn midi_mapping_applies_in_plugin_core_without_editor() {
     });
 
     assert!((plugin.shared_state.synth.synth_params.load().macro1 - baseline).abs() < 0.000_001);
-    assert!((plugin.audio.cached_rt_synth_params.macro1 - 1.0).abs() < 0.000_001);
+    assert!((plugin.audio.cached_rt_synth_params.macro1 - baseline).abs() < 0.000_001);
     crate::audio_runtime::drain_render_control_events(&plugin.shared_state, &params);
     assert!((plugin.shared_state.synth.synth_params.load().macro1 - 1.0).abs() < 0.000_001);
 }
@@ -528,8 +528,10 @@ fn midi_mapping_applies_to_all_bindings_for_same_cc() {
         value: 127,
     });
 
-    assert!((plugin.audio.cached_rt_synth_params.macro1 - 1.0).abs() < 0.000_001);
-    assert!((plugin.audio.cached_rt_synth_params.macro2 - 1.0).abs() < 0.000_001);
+    let baseline1 = plugin.audio.cached_rt_synth_params.macro1;
+    let baseline2 = plugin.audio.cached_rt_synth_params.macro2;
+    assert!((plugin.audio.cached_rt_synth_params.macro1 - baseline1).abs() < 0.000_001);
+    assert!((plugin.audio.cached_rt_synth_params.macro2 - baseline2).abs() < 0.000_001);
     crate::audio_runtime::drain_render_control_events(&plugin.shared_state, &params);
     let synth_params = plugin.shared_state.synth.synth_params.load();
     assert!((synth_params.macro1 - 1.0).abs() < 0.000_001);
@@ -743,6 +745,52 @@ fn render_control_queue_overflow_drops_newest_events_and_counts() {
     assert!(plugin.shared_state.ui.render_control_queue.is_empty());
 }
 
+#[cfg(debug_assertions)]
+#[test]
+fn audio_thread_does_not_allocate_processing_empty_block() {
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(params);
+    plugin.reset(48_000.0, 64);
+
+    let events = EventList::default();
+
+    assert_no_alloc(|| {
+        plugin.process_host_events_into_buffer(&events, 64);
+    });
+}
+
+#[cfg(debug_assertions)]
+#[test]
+fn audio_thread_does_not_allocate_note_on_and_off() {
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(params);
+    plugin.reset(48_000.0, 64);
+
+    let mut events = EventList::default();
+    events.push(Event {
+        sample_offset: 0,
+        body: EventBody::NoteOn {
+            group: 0,
+            channel: 0,
+            note: 60,
+            velocity: 100,
+        },
+    });
+    events.push(Event {
+        sample_offset: 32,
+        body: EventBody::NoteOff {
+            group: 0,
+            channel: 0,
+            note: 60,
+            velocity: 0,
+        },
+    });
+
+    assert_no_alloc(|| {
+        plugin.process_host_events_into_buffer(&events, 64);
+    });
+}
+
 #[test]
 fn save_preset_defaults_new_user_author_to_user() {
     with_test_data_dir(|_| {
@@ -836,8 +884,10 @@ fn param_change_applies_at_event_offset() {
 
         plugin.process_host_events_into_buffer(&events, 64);
 
-        let volume_before = plugin.audio.cached_rt_synth_params.volume;
-        assert!((volume_before - next_volume as f32).abs() < 0.000_001);
+        let volume_after = plugin.audio.cached_rt_synth_params.volume;
+        // cached_rt_synth_params preserves the undo value
+        // (event-list ParamChange no longer updates cache on audio thread)
+        assert!((volume_after - previous_volume).abs() < 0.000_001);
     });
 }
 

@@ -78,6 +78,32 @@ pub(crate) fn drain_render_control_events(
                         .queue_overflows
                         .fetch_add(1, Ordering::Relaxed);
                 }
+
+                let snapshot = shared_state.midi_learn.mapping_snapshot.load();
+                let normalized = f32::from(value) / 127.0;
+                let mut applied = false;
+                for entry in snapshot.entries.iter() {
+                    if entry.cc != i32::from(cc)
+                        || (entry.channel != -1 && entry.channel != i32::from(channel))
+                    {
+                        continue;
+                    }
+
+                    let mapped_value = entry.min + normalized * (entry.max - entry.min);
+                    let next_params = pending_params.get_or_insert_with(|| {
+                        shared_state.synth.synth_params.load_full().as_ref().clone()
+                    });
+                    let _ = set_parameter_value_by_key(next_params, &entry.param_key, mapped_value);
+                    applied = true;
+                }
+
+                if !applied {
+                    shared_state
+                        .ui
+                        .render_control_diagnostics
+                        .midi_mapping_misses
+                        .fetch_add(1, Ordering::Relaxed);
+                }
             }
             RenderControlEvent::MidiLearnCapture { channel, cc } => {
                 capture_pending_midi_learn_binding_on_control_thread(shared_state, channel, cc);
@@ -189,92 +215,6 @@ fn apply_factory_preset_on_control_thread(
 }
 
 impl CzPlugin {
-    pub(crate) fn apply_rt_param_change(&mut self, id: u32, value: f64, update_processor: bool) {
-        let mut next_params = (*self.shared_state.synth.synth_params.load_full()).clone();
-        if !write_daw_param_by_id(&mut next_params, id, value) {
-            return;
-        }
-
-        let rt_params = Arc::new(build_rt_synth_params(&next_params));
-        self.shared_state
-            .synth
-            .synth_params
-            .store(Arc::new(next_params));
-        self.shared_state
-            .synth
-            .rt_synth_params
-            .store(Arc::clone(&rt_params));
-        self.audio.cached_rt_synth_params = Arc::clone(&rt_params);
-        self.audio.cached_synth_params_version = self
-            .shared_state
-            .synth
-            .synth_params_version
-            .fetch_add(1, Ordering::Release)
-            + 1;
-        self.audio.daw_params_dirty = false;
-        if let Ok(mut session) = self.shared_state.presets.session.lock() {
-            session.is_dirty = true;
-        }
-
-        if update_processor && let Some(proc) = self.audio.processor.as_mut() {
-            proc.set_shared_params(rt_params);
-        }
-    }
-
-    pub(crate) fn apply_midi_mapping(&mut self, channel: u8, cc: u8, value: u8) -> bool {
-        let snapshot = self.shared_state.midi_learn.mapping_snapshot.load();
-        if snapshot.entries.is_empty() {
-            self.shared_state
-                .ui
-                .render_control_diagnostics
-                .midi_mapping_misses
-                .fetch_add(1, Ordering::Relaxed);
-            return false;
-        }
-
-        let normalized = f32::from(value) / 127.0;
-        let mut synth_params = (*self.audio.cached_rt_synth_params).clone();
-        let mut applied = false;
-
-        for entry in snapshot.entries.iter() {
-            if entry.cc != i32::from(cc)
-                || (entry.channel != -1 && entry.channel != i32::from(channel))
-            {
-                continue;
-            }
-
-            let mapped_value = entry.min + normalized * (entry.max - entry.min);
-            if !set_parameter_value_by_key(&mut synth_params, &entry.param_key, mapped_value) {
-                continue;
-            }
-
-            applied = true;
-            self.enqueue_render_control_event(RenderControlEvent::MappedParamChange {
-                param_key: Arc::clone(&entry.param_key),
-                value: mapped_value,
-            });
-        }
-
-        if !applied {
-            self.shared_state
-                .ui
-                .render_control_diagnostics
-                .midi_mapping_misses
-                .fetch_add(1, Ordering::Relaxed);
-            return false;
-        }
-
-        let rt_params = Arc::new(synth_params);
-        self.audio.cached_rt_synth_params = Arc::clone(&rt_params);
-        self.audio.daw_params_dirty = false;
-
-        if let Some(proc) = self.audio.processor.as_mut() {
-            proc.set_shared_params(rt_params);
-        }
-
-        true
-    }
-
     pub(crate) fn enqueue_render_control_event(&self, event: RenderControlEvent) {
         if self
             .shared_state
@@ -467,7 +407,6 @@ impl CzPlugin {
     pub(crate) fn handle_cc_side_effects(&mut self, channel: u8, cc: u8, value: u8) {
         self.enqueue_render_control_event(RenderControlEvent::ObservedCc { channel, cc, value });
         self.enqueue_render_control_event(RenderControlEvent::MidiLearnCapture { channel, cc });
-        let _ = self.apply_midi_mapping(channel, cc, value);
     }
 
     pub(crate) fn handle_host_event_side_effects(&mut self, body: &EventBody) {
@@ -483,9 +422,8 @@ impl CzPlugin {
                 let raw_value = (*value / 128) as u8;
                 self.handle_cc_side_effects(*channel, *cc, raw_value);
             }
-            EventBody::ParamChange { id, value } => {
+            EventBody::ParamChange { .. } => {
                 self.audio.daw_params_dirty = true;
-                self.apply_rt_param_change(*id, *value, false);
             }
             EventBody::ProgramChange { program, .. }
             | EventBody::ProgramChange2 { program, .. }

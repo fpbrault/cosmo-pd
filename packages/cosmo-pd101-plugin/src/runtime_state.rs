@@ -265,7 +265,9 @@ impl PluginSharedState {
             },
             telemetry: RuntimeTelemetry {
                 runtime_mod_sources: Arc::new(RwLock::new(RuntimeModSources::default())),
-                runtime_voice_states: Arc::new(RwLock::new(Vec::new())),
+                runtime_voice_states: Arc::new(RwLock::new(Vec::with_capacity(
+                    crate::global_settings::MAX_VOICE_LIMIT as usize,
+                ))),
                 transport_snapshot: Arc::new(TransportSnapshot::default()),
                 scope_buffer: Arc::new(RwLock::new(ScopeFrame::default())),
             },

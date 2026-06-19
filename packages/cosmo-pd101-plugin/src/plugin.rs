@@ -370,6 +370,7 @@ impl PluginLogic for CzPlugin {
     }
 
     fn state_changed(&mut self) {
+        crate::audio_runtime::drain_render_control_events(&self.shared_state, &self.params);
         if let Some(ref mut proc) = self.audio.processor {
             proc.set_shared_params(self.audio.cached_rt_synth_params.clone());
         }
