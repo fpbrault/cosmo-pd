@@ -19,6 +19,8 @@ use crate::params::{
 };
 use crate::plugin::{CzPlugin, build_rt_synth_params};
 use crate::runtime_state::{PluginSharedState, RenderControlEvent};
+#[cfg(debug_assertions)]
+use assert_no_alloc::assert_no_alloc;
 
 pub(crate) const MAX_UI_INPUT_EVENTS_PER_BLOCK: usize = 64;
 
@@ -572,6 +574,22 @@ impl CzPlugin {
     }
 
     pub(crate) fn render_audio_block(
+        &mut self,
+        buffer: &mut AudioBuffer,
+        events: &EventList,
+        context: &mut ProcessContext,
+    ) -> ProcessStatus {
+        #[cfg(debug_assertions)]
+        {
+            assert_no_alloc(|| self.render_audio_block_inner(buffer, events, context))
+        }
+        #[cfg(not(debug_assertions))]
+        {
+            self.render_audio_block_inner(buffer, events, context)
+        }
+    }
+
+    fn render_audio_block_inner(
         &mut self,
         buffer: &mut AudioBuffer,
         events: &EventList,
