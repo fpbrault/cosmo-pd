@@ -26,7 +26,7 @@ function clampRounded(value: number, min: number, max: number): number {
 	return Math.max(min, Math.min(max, Math.round(value)));
 }
 
-function rawRateToHuman(kind: EnvelopeKind, raw: number): number {
+export function rawRateToHuman(kind: EnvelopeKind, raw: number): number {
 	const b = clampRounded(raw, 0, 127);
 	switch (kind) {
 		case "dco":
@@ -44,7 +44,7 @@ function rawRateToHuman(kind: EnvelopeKind, raw: number): number {
 	}
 }
 
-function rawLevelToHuman(kind: EnvelopeKind, raw: number): number {
+export function rawLevelToHuman(kind: EnvelopeKind, raw: number): number {
 	const b = clampRounded(raw, 0, 127);
 	switch (kind) {
 		case "dco":
