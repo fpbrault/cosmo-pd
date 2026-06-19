@@ -70,6 +70,24 @@ jobs:
         run: exit 1
         shell: bash
 
+  rust-tests:
+    name: Rust Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run tests (excluding cosmo-pd101-plugin)
+        run: cargo test --workspace --exclude cosmo-pd101-plugin
+
+      - name: Run cosmo-pd101-plugin tests (single-threaded)
+        run: cargo test -p cosmo-pd101-plugin -- --test-threads=1
+
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
