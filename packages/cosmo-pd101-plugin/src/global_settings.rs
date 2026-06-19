@@ -2,10 +2,13 @@ use std::fs;
 use std::path::{Path, PathBuf};
 #[cfg(test)]
 use std::sync::Mutex;
+use std::sync::RwLock;
 
 use serde::{Deserialize, Serialize};
 
 use crate::session_state::{MidiLearnBinding, default_midi_bindings};
+
+static GLOBAL_SETTINGS_CACHE: RwLock<Option<PluginGlobalSettings>> = RwLock::new(None);
 
 const GLOBAL_SETTINGS_FILE_NAME: &str = "global_settings.json";
 
@@ -52,6 +55,11 @@ impl Default for PluginGlobalSettings {
             voice_limit: DEFAULT_VOICE_LIMIT,
         }
     }
+}
+
+#[cfg(test)]
+pub(crate) fn reset_global_settings_cache() {
+    *GLOBAL_SETTINGS_CACHE.write().unwrap() = None;
 }
 
 #[cfg(test)]
@@ -122,34 +130,73 @@ fn ensure_parent_dir(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+fn atomic_write(path: &Path, data: &[u8]) -> Result<(), String> {
+    ensure_parent_dir(path)?;
+    let tmp_path = path.with_extension("tmp");
+    std::fs::write(&tmp_path, data).map_err(|error| error.to_string())?;
+    std::fs::rename(&tmp_path, path).map_err(|error| error.to_string())?;
+    Ok(())
+}
+
 pub fn save_global_settings(settings: &PluginGlobalSettings) -> Result<(), String> {
     let path = get_global_settings_path();
-    ensure_parent_dir(&path)?;
     let json = serde_json::to_vec_pretty(settings).map_err(|error| error.to_string())?;
-    fs::write(path, json).map_err(|error| error.to_string())
+    atomic_write(&path, &json)
 }
 
 pub fn load_or_init_global_settings() -> Result<PluginGlobalSettings, String> {
-    let path = get_global_settings_path();
-    if path.exists() {
-        let bytes = fs::read(&path).map_err(|error| error.to_string())?;
-        return serde_json::from_slice(&bytes).map_err(|error| error.to_string());
+    {
+        let cache = GLOBAL_SETTINGS_CACHE.read().unwrap();
+        if let Some(ref settings) = *cache {
+            return Ok(settings.clone());
+        }
     }
 
-    let settings = PluginGlobalSettings::default();
-    save_global_settings(&settings)?;
+    let path = get_global_settings_path();
+    let settings = if path.exists() {
+        let bytes = fs::read(&path).map_err(|error| error.to_string())?;
+        serde_json::from_slice(&bytes).map_err(|error| error.to_string())?
+    } else {
+        let settings = PluginGlobalSettings::default();
+        save_global_settings(&settings)?;
+        settings
+    };
+
+    *GLOBAL_SETTINGS_CACHE.write().unwrap() = Some(settings.clone());
     Ok(settings)
 }
 
 pub fn save_voice_limit(limit: u8) -> Result<(), String> {
-    let mut settings = load_or_init_global_settings()?;
-    settings.voice_limit = limit.clamp(MIN_VOICE_LIMIT, MAX_VOICE_LIMIT);
+    let clamped = limit.clamp(MIN_VOICE_LIMIT, MAX_VOICE_LIMIT);
+
+    let cache_empty = GLOBAL_SETTINGS_CACHE.read().unwrap().is_none();
+    if cache_empty {
+        load_or_init_global_settings()?;
+    }
+
+    let settings = {
+        let mut cache = GLOBAL_SETTINGS_CACHE.write().unwrap();
+        let cached = cache.as_mut().expect("cache populated above");
+        cached.voice_limit = clamped;
+        cached.clone()
+    };
+
     save_global_settings(&settings)
 }
 
 pub fn save_midi_learn_bindings(bindings: Vec<MidiLearnBinding>) -> Result<(), String> {
-    let mut settings = load_or_init_global_settings()?;
-    settings.midi_learn_bindings = bindings;
+    let cache_empty = GLOBAL_SETTINGS_CACHE.read().unwrap().is_none();
+    if cache_empty {
+        load_or_init_global_settings()?;
+    }
+
+    let settings = {
+        let mut cache = GLOBAL_SETTINGS_CACHE.write().unwrap();
+        let cached = cache.as_mut().expect("cache populated above");
+        cached.midi_learn_bindings = bindings;
+        cached.clone()
+    };
+
     save_global_settings(&settings)
 }
 
@@ -175,10 +222,12 @@ mod tests {
         unsafe {
             std::env::set_var("COSMO_PD101_DATA_DIR", &path);
         }
+        reset_global_settings_cache();
         let result = test_fn(path.clone());
         unsafe {
             std::env::remove_var("COSMO_PD101_DATA_DIR");
         }
+        reset_global_settings_cache();
         let _ = fs::remove_dir_all(path);
         result
     }
