@@ -1,10 +1,12 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { initI18n } from "../../src/i18n";
+import { registerSynthUiBenchmark } from "../../src/features/synth/synthUiBenchmark";
 import LivePage from "./LivePage";
 import "./style.css";
 
 initI18n();
+registerSynthUiBenchmark({ mode: "livepage" });
 
 const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("Root element not found");
