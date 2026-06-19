@@ -8,7 +8,7 @@ use cosmo_synth_engine::processor::state::{RuntimeModSources, RuntimeVoiceDebugS
 use crossbeam_queue::ArrayQueue;
 use truce_core::events::TransportInfo;
 
-use crate::midi_learn::MidiLearnService;
+use crate::midi_learn::{MidiLearnService, MidiMappingSnapshot};
 use crate::preset_library::PresetLibrary;
 use crate::preset_service::PresetService;
 use cosmo_pd101_bridge_types::{EditorState, MidiLearnState, PresetSession, TransportInfoResponse};
@@ -16,12 +16,15 @@ use cosmo_pd101_bridge_types::{EditorState, MidiLearnState, PresetSession, Trans
 pub const SCOPE_CAPACITY: usize = 4096;
 pub const UI_INPUT_QUEUE_CAPACITY: usize = 1024;
 pub const MIDI_CC_QUEUE_CAPACITY: usize = 128;
+pub const RENDER_CONTROL_QUEUE_CAPACITY: usize = 256;
 
 pub type ScopeBuffer = Arc<Mutex<ScopeFrame>>;
 pub type UiInputQueue = Arc<ArrayQueue<CosmoInputEvent>>;
 pub type MidiCcQueue = Arc<ArrayQueue<(u8, u8, u8)>>;
+pub type RenderControlQueue = Arc<ArrayQueue<RenderControlEvent>>;
 pub type SharedSynthParams = Arc<ArcSwap<SynthParams>>;
 pub type SharedRtSynthParams = Arc<ArcSwap<SynthParams>>;
+pub type SharedMidiMappingSnapshot = Arc<ArcSwap<MidiMappingSnapshot>>;
 pub type SharedRuntimeModSources = Arc<ArcSwap<RuntimeModSources>>;
 pub type SharedRuntimeVoiceStates = Arc<ArcSwap<Vec<RuntimeVoiceDebugState>>>;
 pub type SharedTransportSnapshot = Arc<TransportSnapshot>;
@@ -29,6 +32,19 @@ pub type SynthParamsVersion = Arc<AtomicU64>;
 pub type SharedPresetSession = Arc<Mutex<PresetSession>>;
 pub type SharedEditorState = Arc<Mutex<Option<EditorState>>>;
 pub type SharedMidiMappings = Arc<Mutex<MidiLearnState>>;
+
+pub enum RenderControlEvent {
+    ObservedCc { channel: u8, cc: u8, value: u8 },
+    MidiLearnCapture { channel: u8, cc: u8 },
+    MappedParamChange { param_key: Arc<str>, value: f32 },
+    ProgramChangeRequest { program: u8 },
+}
+
+#[derive(Default)]
+pub struct RenderControlDiagnostics {
+    pub queue_overflows: AtomicU64,
+    pub midi_mapping_misses: AtomicU64,
+}
 
 pub struct ScopeFrame {
     samples: Vec<f32>,
@@ -212,6 +228,8 @@ pub struct RuntimeTelemetry {
 pub struct UiEventQueues {
     pub ui_input_queue: UiInputQueue,
     pub midi_cc_queue: MidiCcQueue,
+    pub render_control_queue: RenderControlQueue,
+    pub render_control_diagnostics: Arc<RenderControlDiagnostics>,
 }
 
 #[derive(Clone)]
@@ -244,6 +262,8 @@ impl PluginSharedState {
         voice_limit: u8,
     ) -> Self {
         let preset_session = Arc::new(Mutex::new(PresetSession::default()));
+        let midi_mapping_snapshot =
+            crate::midi_learn::new_shared_mapping_snapshot(&midi_learn_state);
         let midi_learn_state = Arc::new(Mutex::new(midi_learn_state));
         Self {
             synth: SynthParamState {
@@ -260,12 +280,14 @@ impl PluginSharedState {
             ui: UiEventQueues {
                 ui_input_queue: Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY)),
                 midi_cc_queue: Arc::new(ArrayQueue::new(MIDI_CC_QUEUE_CAPACITY)),
+                render_control_queue: Arc::new(ArrayQueue::new(RENDER_CONTROL_QUEUE_CAPACITY)),
+                render_control_diagnostics: Arc::new(RenderControlDiagnostics::default()),
             },
             editor: EditorSessionState {
                 editor_state: Arc::new(Mutex::new(None)),
             },
             presets: PresetService::new(preset_library.clone(), preset_session),
-            midi_learn: MidiLearnService::new(midi_learn_state),
+            midi_learn: MidiLearnService::new(midi_learn_state, midi_mapping_snapshot),
             voice_limit: AtomicU8::new(voice_limit),
             preset_reset_pending: AtomicBool::new(false),
         }

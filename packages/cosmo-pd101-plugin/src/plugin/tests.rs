@@ -38,6 +38,11 @@ fn synth_params_json(params: &SynthParams) -> serde_json::Value {
     serde_json::to_value(params).unwrap()
 }
 
+fn set_plugin_midi_learn_state(plugin: &CzPlugin, state: crate::session_state::MidiLearnState) {
+    *plugin.shared_state.midi_learn.state.lock().unwrap() = state;
+    plugin.shared_state.midi_learn.publish_mapping_snapshot();
+}
+
 #[test]
 fn debug_logs_follow_global_settings_log_level() {
     with_test_data_dir(|_| {
@@ -415,6 +420,9 @@ fn program_change_applies_factory_preset() {
         program: 0,
     });
 
+    assert!((params.volume.value() - expected.volume).abs() > 0.000_001);
+    crate::audio_runtime::drain_render_control_events(&plugin.shared_state, &params);
+
     assert!((params.volume.value() - expected.volume).abs() < 0.000_001);
     let synth_params = plugin.shared_state.synth.synth_params.load();
     assert_eq!(synth_params.line_select, expected.line_select);
@@ -430,14 +438,18 @@ fn midi_mapping_applies_in_plugin_core_without_editor() {
     let params = Arc::new(CzPluginParams::new());
     let mut plugin = CzPlugin::new(Arc::clone(&params));
     plugin.reset(48_000.0, 64);
-    *plugin.shared_state.midi_learn.state.lock().unwrap() = crate::session_state::MidiLearnState {
-        bindings: vec![crate::session_state::MidiLearnBinding {
-            param_key: "macro1".to_string(),
-            channel: 0,
-            cc: 74,
-        }],
-        ..Default::default()
-    };
+    set_plugin_midi_learn_state(
+        &plugin,
+        crate::session_state::MidiLearnState {
+            bindings: vec![crate::session_state::MidiLearnBinding {
+                param_key: "macro1".to_string(),
+                channel: 0,
+                cc: 74,
+            }],
+            ..Default::default()
+        },
+    );
+    let baseline = plugin.shared_state.synth.synth_params.load().macro1;
 
     plugin.handle_host_event(&EventBody::ControlChange {
         group: 0,
@@ -446,8 +458,10 @@ fn midi_mapping_applies_in_plugin_core_without_editor() {
         value: 127,
     });
 
-    assert!((plugin.shared_state.synth.synth_params.load().macro1 - 1.0).abs() < 0.000_001);
+    assert!((plugin.shared_state.synth.synth_params.load().macro1 - baseline).abs() < 0.000_001);
     assert!((plugin.audio.cached_rt_synth_params.macro1 - 1.0).abs() < 0.000_001);
+    crate::audio_runtime::drain_render_control_events(&plugin.shared_state, &params);
+    assert!((plugin.shared_state.synth.synth_params.load().macro1 - 1.0).abs() < 0.000_001);
 }
 
 #[test]
@@ -457,7 +471,8 @@ fn midi_mapping_matches_exact_channel() {
         let params = Arc::new(CzPluginParams::new());
         let mut plugin = CzPlugin::new(Arc::clone(&params));
         plugin.reset(48_000.0, 64);
-        *plugin.shared_state.midi_learn.state.lock().unwrap() =
+        set_plugin_midi_learn_state(
+            &plugin,
             crate::session_state::MidiLearnState {
                 bindings: vec![crate::session_state::MidiLearnBinding {
                     param_key: "macro1".to_string(),
@@ -465,7 +480,8 @@ fn midi_mapping_matches_exact_channel() {
                     cc: 74,
                 }],
                 ..Default::default()
-            };
+            },
+        );
         let baseline = plugin.shared_state.synth.synth_params.load().macro1;
 
         plugin.handle_host_event(&EventBody::ControlChange {
@@ -487,21 +503,24 @@ fn midi_mapping_applies_to_all_bindings_for_same_cc() {
     let params = Arc::new(CzPluginParams::new());
     let mut plugin = CzPlugin::new(Arc::clone(&params));
     plugin.reset(48_000.0, 64);
-    *plugin.shared_state.midi_learn.state.lock().unwrap() = crate::session_state::MidiLearnState {
-        bindings: vec![
-            crate::session_state::MidiLearnBinding {
-                param_key: "macro1".to_string(),
-                channel: 0,
-                cc: 74,
-            },
-            crate::session_state::MidiLearnBinding {
-                param_key: "macro2".to_string(),
-                channel: 0,
-                cc: 74,
-            },
-        ],
-        ..Default::default()
-    };
+    set_plugin_midi_learn_state(
+        &plugin,
+        crate::session_state::MidiLearnState {
+            bindings: vec![
+                crate::session_state::MidiLearnBinding {
+                    param_key: "macro1".to_string(),
+                    channel: 0,
+                    cc: 74,
+                },
+                crate::session_state::MidiLearnBinding {
+                    param_key: "macro2".to_string(),
+                    channel: 0,
+                    cc: 74,
+                },
+            ],
+            ..Default::default()
+        },
+    );
 
     plugin.handle_host_event(&EventBody::ControlChange {
         group: 0,
@@ -510,6 +529,9 @@ fn midi_mapping_applies_to_all_bindings_for_same_cc() {
         value: 127,
     });
 
+    assert!((plugin.audio.cached_rt_synth_params.macro1 - 1.0).abs() < 0.000_001);
+    assert!((plugin.audio.cached_rt_synth_params.macro2 - 1.0).abs() < 0.000_001);
+    crate::audio_runtime::drain_render_control_events(&plugin.shared_state, &params);
     let synth_params = plugin.shared_state.synth.synth_params.load();
     assert!((synth_params.macro1 - 1.0).abs() < 0.000_001);
     assert!((synth_params.macro2 - 1.0).abs() < 0.000_001);
@@ -520,14 +542,17 @@ fn midi_mapping_syncs_daw_backed_plugin_params() {
     let params = Arc::new(CzPluginParams::new());
     let mut plugin = CzPlugin::new(Arc::clone(&params));
     plugin.reset(48_000.0, 64);
-    *plugin.shared_state.midi_learn.state.lock().unwrap() = crate::session_state::MidiLearnState {
-        bindings: vec![crate::session_state::MidiLearnBinding {
-            param_key: "warpAAmount".to_string(),
-            channel: 0,
-            cc: 55,
-        }],
-        ..Default::default()
-    };
+    set_plugin_midi_learn_state(
+        &plugin,
+        crate::session_state::MidiLearnState {
+            bindings: vec![crate::session_state::MidiLearnBinding {
+                param_key: "warpAAmount".to_string(),
+                channel: 0,
+                cc: 55,
+            }],
+            ..Default::default()
+        },
+    );
 
     plugin.handle_host_event(&EventBody::ControlChange {
         group: 0,
@@ -535,6 +560,9 @@ fn midi_mapping_syncs_daw_backed_plugin_params() {
         cc: 55,
         value: 64,
     });
+
+    assert!((params.warp_a_amount.value() - 64.0 / 127.0).abs() > 0.000_001);
+    crate::audio_runtime::drain_render_control_events(&plugin.shared_state, &params);
 
     assert!(
         (plugin.shared_state.synth.synth_params.load().line1.dcw_base - 64.0 / 127.0).abs()
@@ -598,11 +626,14 @@ fn host_side_midi_learn_keeps_mode_and_pending_target_enabled() {
     let params = Arc::new(CzPluginParams::new());
     let mut plugin = CzPlugin::new(Arc::clone(&params));
     plugin.reset(48_000.0, 64);
-    *plugin.shared_state.midi_learn.state.lock().unwrap() = crate::session_state::MidiLearnState {
-        learn_mode: true,
-        pending_param_key: Some("macro1".to_string()),
-        ..Default::default()
-    };
+    set_plugin_midi_learn_state(
+        &plugin,
+        crate::session_state::MidiLearnState {
+            learn_mode: true,
+            pending_param_key: Some("macro1".to_string()),
+            ..Default::default()
+        },
+    );
 
     plugin.handle_host_event(&EventBody::ControlChange {
         group: 0,
@@ -614,9 +645,103 @@ fn host_side_midi_learn_keeps_mode_and_pending_target_enabled() {
     let state = plugin.shared_state.midi_learn.state.lock().unwrap().clone();
     assert!(state.learn_mode);
     assert_eq!(state.pending_param_key.as_deref(), Some("macro1"));
+    assert!(!state.bindings.iter().any(|binding| {
+        binding.param_key == "macro1" && binding.channel == 0 && binding.cc == 74
+    }));
+    crate::audio_runtime::drain_render_control_events(&plugin.shared_state, &params);
+
+    let state = plugin.shared_state.midi_learn.state.lock().unwrap().clone();
+    assert!(state.learn_mode);
+    assert_eq!(state.pending_param_key.as_deref(), Some("macro1"));
     assert!(state.bindings.iter().any(|binding| {
         binding.param_key == "macro1" && binding.channel == 0 && binding.cc == 74
     }));
+}
+
+#[test]
+fn host_side_midi_learn_persists_only_after_control_drain() {
+    with_test_data_dir(|_| {
+        clear_test_global_settings();
+        let params = Arc::new(CzPluginParams::new());
+        let mut plugin = CzPlugin::new(Arc::clone(&params));
+        plugin.reset(48_000.0, 64);
+        set_plugin_midi_learn_state(
+            &plugin,
+            crate::session_state::MidiLearnState {
+                learn_mode: true,
+                pending_param_key: Some("macro1".to_string()),
+                ..Default::default()
+            },
+        );
+
+        plugin.handle_host_event(&EventBody::ControlChange {
+            group: 0,
+            channel: 0,
+            cc: 74,
+            value: 64,
+        });
+
+        let saved = crate::global_settings::load_or_init_global_settings().unwrap();
+        assert!(!saved.midi_learn_bindings.iter().any(|binding| {
+            binding.param_key == "macro1" && binding.channel == 0 && binding.cc == 74
+        }));
+
+        crate::audio_runtime::drain_render_control_events(&plugin.shared_state, &params);
+
+        let saved = crate::global_settings::load_or_init_global_settings().unwrap();
+        assert!(saved.midi_learn_bindings.iter().any(|binding| {
+            binding.param_key == "macro1" && binding.channel == 0 && binding.cc == 74
+        }));
+    });
+}
+
+#[test]
+fn host_cc_forwarding_reaches_webview_queue_only_after_control_drain() {
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(Arc::clone(&params));
+    plugin.reset(48_000.0, 64);
+
+    plugin.handle_host_event(&EventBody::ControlChange {
+        group: 0,
+        channel: 3,
+        cc: 74,
+        value: 99,
+    });
+
+    assert!(plugin.shared_state.ui.midi_cc_queue.is_empty());
+    crate::audio_runtime::drain_render_control_events(&plugin.shared_state, &params);
+    assert_eq!(
+        plugin.shared_state.ui.midi_cc_queue.pop(),
+        Some((3, 74, 99))
+    );
+}
+
+#[test]
+fn render_control_queue_overflow_drops_newest_events_and_counts() {
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(Arc::clone(&params));
+    plugin.reset(48_000.0, 64);
+
+    for value in 0..200u8 {
+        plugin.handle_host_event(&EventBody::ControlChange {
+            group: 0,
+            channel: 0,
+            cc: 74,
+            value,
+        });
+    }
+
+    assert!(
+        plugin
+            .shared_state
+            .ui
+            .render_control_diagnostics
+            .queue_overflows
+            .load(Ordering::Acquire)
+            > 0
+    );
+    crate::audio_runtime::drain_render_control_events(&plugin.shared_state, &params);
+    assert!(plugin.shared_state.ui.render_control_queue.is_empty());
 }
 
 #[test]

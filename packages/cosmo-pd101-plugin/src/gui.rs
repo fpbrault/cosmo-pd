@@ -431,6 +431,8 @@ impl Editor for CzEditor {
     }
 
     fn idle(&mut self) {
+        crate::audio_runtime::drain_render_control_events(&self.shared_state, &self.params);
+
         #[cfg(target_os = "macos")]
         if !is_main_thread() {
             let should_schedule_main_thread_sync = self

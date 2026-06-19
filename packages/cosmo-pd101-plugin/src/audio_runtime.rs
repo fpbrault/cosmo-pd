@@ -1,10 +1,7 @@
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 
-use cosmo_synth_engine::params::{
-    MidiMappingBinding, SynthParams, apply_midi_mapping as apply_engine_midi_mapping,
-    parameter_range_for_key,
-};
+use cosmo_synth_engine::params::{SynthParams, set_parameter_value_by_key};
 use cosmo_synth_engine::processor::{
     CosmoInputEvent, CosmoProcessor, CosmoTimedInputEvent, CosmoTransportState,
 };
@@ -12,15 +9,16 @@ use truce::prelude::*;
 use truce_core::events::TransportInfo;
 use truce_core::midi::{norm_7bit, norm_pitch_bend};
 
-use crate::diagnostics::append_log_debug;
 use crate::midi_learn::persist_midi_learn_bindings;
 #[cfg(test)]
 use crate::params::resolve_vst3_midi_mapping_param_id;
 use crate::params::{
-    CzPluginParamsParamId, apply_daw_params, daw_param_key_by_id, read_current_daw_param_by_id,
-    read_daw_param_by_id, sync_all_daw_params_from_synth, write_daw_param_by_id,
+    CzPluginParams, CzPluginParamsParamId, apply_daw_params, daw_param_key_by_id,
+    read_current_daw_param_by_id, read_daw_param_by_id, sync_all_daw_params_from_synth,
+    write_daw_param_by_id,
 };
 use crate::plugin::{CzPlugin, build_rt_synth_params};
+use crate::runtime_state::{PluginSharedState, RenderControlEvent};
 
 pub(crate) const MAX_UI_INPUT_EVENTS_PER_BLOCK: usize = 64;
 
@@ -60,6 +58,136 @@ impl AudioRuntime {
     }
 }
 
+pub(crate) fn drain_render_control_events(
+    shared_state: &PluginSharedState,
+    params: &CzPluginParams,
+) {
+    let mut pending_params: Option<SynthParams> = None;
+    while let Some(event) = shared_state.ui.render_control_queue.pop() {
+        match event {
+            RenderControlEvent::ObservedCc { channel, cc, value } => {
+                if shared_state
+                    .ui
+                    .midi_cc_queue
+                    .push((channel, cc, value))
+                    .is_err()
+                {
+                    shared_state
+                        .ui
+                        .render_control_diagnostics
+                        .queue_overflows
+                        .fetch_add(1, Ordering::Relaxed);
+                }
+            }
+            RenderControlEvent::MidiLearnCapture { channel, cc } => {
+                capture_pending_midi_learn_binding_on_control_thread(shared_state, channel, cc);
+            }
+            RenderControlEvent::MappedParamChange { param_key, value } => {
+                let next_params = pending_params.get_or_insert_with(|| {
+                    shared_state.synth.synth_params.load_full().as_ref().clone()
+                });
+                let _ = set_parameter_value_by_key(next_params, &param_key, value);
+            }
+            RenderControlEvent::ProgramChangeRequest { program } => {
+                publish_pending_mapped_params(shared_state, params, &mut pending_params);
+                apply_factory_preset_on_control_thread(shared_state, params, usize::from(program));
+            }
+        }
+    }
+    publish_pending_mapped_params(shared_state, params, &mut pending_params);
+}
+
+fn capture_pending_midi_learn_binding_on_control_thread(
+    shared_state: &PluginSharedState,
+    channel: u8,
+    cc: u8,
+) {
+    let mut bindings_changed = false;
+    {
+        let Ok(mut state) = shared_state.midi_learn.state.lock() else {
+            return;
+        };
+        if state.learn_mode
+            && let Some(ref pending) = state.pending_param_key.clone()
+        {
+            state
+                .bindings
+                .retain(|binding| binding.param_key != *pending);
+            state.bindings.push(crate::session_state::MidiLearnBinding {
+                param_key: pending.clone(),
+                channel: i32::from(channel),
+                cc: i32::from(cc),
+            });
+            state.version += 1;
+            bindings_changed = true;
+        }
+    }
+
+    if bindings_changed {
+        persist_midi_learn_bindings(&shared_state.midi_learn.state);
+        shared_state.midi_learn.publish_mapping_snapshot();
+    }
+}
+
+fn publish_pending_mapped_params(
+    shared_state: &PluginSharedState,
+    params: &CzPluginParams,
+    pending_params: &mut Option<SynthParams>,
+) {
+    let Some(next_params) = pending_params.take() else {
+        return;
+    };
+    publish_synth_params_from_control_thread(shared_state, params, next_params, true);
+}
+
+fn publish_synth_params_from_control_thread(
+    shared_state: &PluginSharedState,
+    params: &CzPluginParams,
+    next_params: SynthParams,
+    mark_dirty: bool,
+) {
+    sync_all_daw_params_from_synth(params, &next_params);
+    let rt_params = Arc::new(build_rt_synth_params(&next_params));
+    shared_state.synth.synth_params.store(Arc::new(next_params));
+    shared_state
+        .synth
+        .rt_synth_params
+        .store(Arc::clone(&rt_params));
+    shared_state
+        .synth
+        .synth_params_version
+        .fetch_add(1, Ordering::Release);
+
+    if mark_dirty && let Ok(mut session) = shared_state.presets.session.lock() {
+        session.is_dirty = true;
+    }
+}
+
+fn apply_factory_preset_on_control_thread(
+    shared_state: &PluginSharedState,
+    params: &CzPluginParams,
+    index: usize,
+) {
+    let Some(next_params) = crate::ffi::factory_preset_params(index).cloned() else {
+        return;
+    };
+    let identity = crate::ffi::factory_preset_identity(index)
+        .map(|(id, name)| (id.to_string(), name.to_string()));
+
+    shared_state
+        .preset_reset_pending
+        .store(true, Ordering::Release);
+    publish_synth_params_from_control_thread(shared_state, params, next_params, false);
+
+    if let Ok(mut session) = shared_state.presets.session.lock() {
+        if let Some((preset_id, preset_name)) = identity {
+            session.active_preset_name_base = preset_name;
+            session.loaded_preset_id = Some(preset_id);
+        }
+        session.is_dirty = false;
+    }
+}
+
 impl CzPlugin {
     pub(crate) fn apply_rt_param_change(&mut self, id: u32, value: f64, update_processor: bool) {
         let mut next_params = (*self.shared_state.synth.synth_params.load_full()).clone();
@@ -94,118 +222,50 @@ impl CzPlugin {
     }
 
     pub(crate) fn apply_midi_mapping(&mut self, channel: u8, cc: u8, value: u8) -> bool {
-        let state_snapshot = self
-            .shared_state
-            .midi_learn
-            .state
-            .lock()
-            .ok()
-            .map(|guard| guard.clone());
-        let Some(state_snapshot) = state_snapshot else {
-            return false;
-        };
-        let bindings = state_snapshot
-            .bindings
-            .iter()
-            .map(|binding| MidiMappingBinding {
-                param_key: binding.param_key.as_str(),
-                channel: binding.channel,
-                cc: binding.cc,
-            })
-            .collect::<Vec<_>>();
-
-        if bindings.is_empty() {
-            append_log_debug(&format!(
-                "apply_midi_mapping miss ch={} cc={} value={} stored_mappings={:?}",
-                channel, cc, value, state_snapshot
-            ));
+        let snapshot = self.shared_state.midi_learn.mapping_snapshot.load();
+        if snapshot.entries.is_empty() {
+            self.shared_state
+                .ui
+                .render_control_diagnostics
+                .midi_mapping_misses
+                .fetch_add(1, Ordering::Relaxed);
             return false;
         }
-        let mut synth_params = (*self.shared_state.synth.synth_params.load_full()).clone();
-        let applied = apply_engine_midi_mapping(&mut synth_params, &bindings, channel, cc, value);
 
-        if !applied {
-            let incoming_channel = i32::from(channel);
-            let incoming_cc = i32::from(cc);
-            let mut cc_match_count = 0usize;
-            let mut channel_match_count = 0usize;
-            let mut omni_channel_count = 0usize;
-            let mut full_match_count = 0usize;
-            let mut invalid_param_keys: Vec<&str> = Vec::new();
-            let mut binding_sample: Vec<String> = Vec::new();
+        let normalized = f32::from(value) / 127.0;
+        let mut synth_params = (*self.audio.cached_rt_synth_params).clone();
+        let mut applied = false;
 
-            for binding in &state_snapshot.bindings {
-                let cc_match = binding.cc == incoming_cc;
-                let channel_match = binding.channel == -1 || binding.channel == incoming_channel;
-
-                if cc_match {
-                    cc_match_count += 1;
-                }
-                if channel_match {
-                    channel_match_count += 1;
-                    if binding.channel == -1 {
-                        omni_channel_count += 1;
-                    }
-                }
-                if cc_match && channel_match {
-                    full_match_count += 1;
-                    if parameter_range_for_key(&binding.param_key).is_none() {
-                        invalid_param_keys.push(binding.param_key.as_str());
-                    }
-                }
-
-                if binding_sample.len() < 8 {
-                    binding_sample.push(format!(
-                        "{}(ch={},cc={})",
-                        binding.param_key, binding.channel, binding.cc
-                    ));
-                }
+        for entry in snapshot.entries.iter() {
+            if entry.cc != i32::from(cc)
+                || (entry.channel != -1 && entry.channel != i32::from(channel))
+            {
+                continue;
             }
 
-            let reject_reason = if cc_match_count == 0 {
-                "no_cc_match"
-            } else if full_match_count == 0 {
-                "channel_mismatch"
-            } else if !invalid_param_keys.is_empty() {
-                "invalid_param_key"
-            } else {
-                "set_parameter_rejected"
-            };
+            let mapped_value = entry.min + normalized * (entry.max - entry.min);
+            if !set_parameter_value_by_key(&mut synth_params, &entry.param_key, mapped_value) {
+                continue;
+            }
 
-            append_log_debug(&format!(
-                "apply_midi_mapping miss ch={} cc={} value={} reason={} bindings={} cc_matches={} channel_matches={} omni_matches={} full_matches={} invalid_param_keys={:?} binding_sample={:?}",
-                channel,
-                cc,
-                value,
-                reject_reason,
-                state_snapshot.bindings.len(),
-                cc_match_count,
-                channel_match_count,
-                omni_channel_count,
-                full_match_count,
-                invalid_param_keys,
-                binding_sample
-            ));
+            applied = true;
+            self.enqueue_render_control_event(RenderControlEvent::MappedParamChange {
+                param_key: Arc::clone(&entry.param_key),
+                value: mapped_value,
+            });
+        }
+
+        if !applied {
+            self.shared_state
+                .ui
+                .render_control_diagnostics
+                .midi_mapping_misses
+                .fetch_add(1, Ordering::Relaxed);
             return false;
         }
 
-        let rt_params = Arc::new(build_rt_synth_params(&synth_params));
-        sync_all_daw_params_from_synth(&self.params, &synth_params);
-        self.shared_state
-            .synth
-            .synth_params
-            .store(Arc::new(synth_params));
-        self.shared_state
-            .synth
-            .rt_synth_params
-            .store(Arc::clone(&rt_params));
+        let rt_params = Arc::new(synth_params);
         self.audio.cached_rt_synth_params = Arc::clone(&rt_params);
-        self.audio.cached_synth_params_version = self
-            .shared_state
-            .synth
-            .synth_params_version
-            .fetch_add(1, Ordering::Release)
-            + 1;
         self.audio.daw_params_dirty = false;
 
         if let Some(proc) = self.audio.processor.as_mut() {
@@ -215,36 +275,19 @@ impl CzPlugin {
         true
     }
 
-    pub(crate) fn capture_pending_midi_learn_binding(&mut self, channel: u8, cc: u8) {
-        let mut bindings_changed = false;
+    pub(crate) fn enqueue_render_control_event(&self, event: RenderControlEvent) {
+        if self
+            .shared_state
+            .ui
+            .render_control_queue
+            .push(event)
+            .is_err()
         {
-            let mut state = self.shared_state.midi_learn.state.lock().unwrap();
-            if state.learn_mode
-                && let Some(ref pending) = state.pending_param_key.clone()
-            {
-                state
-                    .bindings
-                    .retain(|binding| binding.param_key != *pending);
-                state.bindings.push(crate::session_state::MidiLearnBinding {
-                    param_key: pending.clone(),
-                    channel: i32::from(channel),
-                    cc: i32::from(cc),
-                });
-                state.version += 1;
-                bindings_changed = true;
-                // TODO: remove this diagnostic once host-side learn capture behavior is verified across plugin formats.
-                append_log_debug(&format!(
-                    "host_capture_pending_midi_binding pending={} channel={} cc={} version={} bindings_count={}",
-                    pending,
-                    channel,
-                    cc,
-                    state.version,
-                    state.bindings.len()
-                ));
-            }
-        }
-        if bindings_changed {
-            persist_midi_learn_bindings(&self.shared_state.midi_learn.state);
+            self.shared_state
+                .ui
+                .render_control_diagnostics
+                .queue_overflows
+                .fetch_add(1, Ordering::Relaxed);
         }
     }
 
@@ -386,13 +429,9 @@ impl CzPlugin {
     }
 
     pub(crate) fn handle_cc_side_effects(&mut self, channel: u8, cc: u8, value: u8) {
-        self.capture_pending_midi_learn_binding(channel, cc);
+        self.enqueue_render_control_event(RenderControlEvent::ObservedCc { channel, cc, value });
+        self.enqueue_render_control_event(RenderControlEvent::MidiLearnCapture { channel, cc });
         let _ = self.apply_midi_mapping(channel, cc, value);
-        let _ = self
-            .shared_state
-            .ui
-            .midi_cc_queue
-            .push((channel, cc, value));
     }
 
     pub(crate) fn handle_host_event_side_effects(&mut self, body: &EventBody) {
@@ -400,17 +439,12 @@ impl CzPlugin {
             EventBody::ControlChange {
                 channel, cc, value, ..
             } => {
-                append_log_debug(&format!("host_cc ch={} cc={} value={}", channel, cc, value));
                 self.handle_cc_side_effects(*channel, *cc, *value);
             }
             EventBody::ControlChange2 {
                 channel, cc, value, ..
             } => {
                 let raw_value = (*value / 128) as u8;
-                append_log_debug(&format!(
-                    "host_cc2 ch={} cc={} value={} raw={}",
-                    channel, cc, value, raw_value
-                ));
                 self.handle_cc_side_effects(*channel, *cc, raw_value);
             }
             EventBody::ParamChange { id, value } => {
@@ -421,7 +455,9 @@ impl CzPlugin {
             | EventBody::ProgramChange2 { program, .. }
                 if usize::from(*program) < crate::ffi::factory_preset_count() =>
             {
-                self.apply_factory_preset(usize::from(*program));
+                self.enqueue_render_control_event(RenderControlEvent::ProgramChangeRequest {
+                    program: *program,
+                });
             }
             _ => {}
         }

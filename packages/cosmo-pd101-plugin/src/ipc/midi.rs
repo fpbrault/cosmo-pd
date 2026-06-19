@@ -56,6 +56,7 @@ pub(super) fn handle(
                 ));
             }
             persist_midi_learn_bindings(midi_learn_state);
+            context.shared_state.midi_learn.publish_mapping_snapshot();
             Ok(PluginIpcResponse::AddMidiBinding)
         }
         PluginIpcRequest::RemoveMidiBinding(binding) => {
@@ -64,6 +65,7 @@ pub(super) fn handle(
                 state.version += 1;
             }
             persist_midi_learn_bindings(midi_learn_state);
+            context.shared_state.midi_learn.publish_mapping_snapshot();
             Ok(PluginIpcResponse::RemoveMidiBinding)
         }
         PluginIpcRequest::ClearMidiLearnBindings => {
@@ -72,6 +74,7 @@ pub(super) fn handle(
                 state.version += 1;
             }
             persist_midi_learn_bindings(midi_learn_state);
+            context.shared_state.midi_learn.publish_mapping_snapshot();
             Ok(PluginIpcResponse::ClearMidiLearnBindings)
         }
         PluginIpcRequest::GetMidiLearnState => {

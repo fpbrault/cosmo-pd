@@ -81,6 +81,12 @@ fn handle_ipc_invoke(
             midi_cc_queue: Arc::new(ArrayQueue::new(
                 crate::runtime_state::MIDI_CC_QUEUE_CAPACITY,
             )),
+            render_control_queue: Arc::new(ArrayQueue::new(
+                crate::runtime_state::RENDER_CONTROL_QUEUE_CAPACITY,
+            )),
+            render_control_diagnostics: Arc::new(
+                crate::runtime_state::RenderControlDiagnostics::default(),
+            ),
         },
         editor: crate::runtime_state::EditorSessionState {
             editor_state: editor_state.clone(),
@@ -89,7 +95,15 @@ fn handle_ipc_invoke(
             preset_library.clone(),
             preset_session.clone(),
         ),
-        midi_learn: crate::midi_learn::MidiLearnService::new(midi_learn_state.clone()),
+        midi_learn: crate::midi_learn::MidiLearnService::new(
+            midi_learn_state.clone(),
+            crate::midi_learn::new_shared_mapping_snapshot(
+                &midi_learn_state
+                    .lock()
+                    .map(|state| state.clone())
+                    .unwrap_or_default(),
+            ),
+        ),
         voice_limit: std::sync::atomic::AtomicU8::new(crate::global_settings::DEFAULT_VOICE_LIMIT),
         preset_reset_pending: std::sync::atomic::AtomicBool::new(false),
     });
@@ -225,19 +239,6 @@ impl CzPlugin {
         };
 
         self.apply_preset_state(Some(entry.id), Some(entry.name), params);
-    }
-
-    pub(crate) fn apply_factory_preset(&mut self, index: usize) {
-        let Some(params) = crate::ffi::factory_preset_params(index).cloned() else {
-            return;
-        };
-        let identity = crate::ffi::factory_preset_identity(index)
-            .map(|(id, name)| (id.to_string(), name.to_string()));
-        self.apply_preset_state(
-            identity.as_ref().map(|(id, _)| id.clone()),
-            identity.as_ref().map(|(_, name)| name.clone()),
-            params,
-        );
     }
 }
 
