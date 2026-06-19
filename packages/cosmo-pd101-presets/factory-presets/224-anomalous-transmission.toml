@@ -1,0 +1,140 @@
+format = "cosmo-preset"
+formatVersion = 1
+presetSchemaVersion = 1
+id = "factory-224-anomalous-transmission"
+name = "Anomalous Transmission"
+author = "Purr Audio"
+description = "An atmospheric pad combined with an otherworldly gritty texture. Use the mod wheel to add more brightness and more grit."
+tags = ["pad"]
+starred = true
+favorite = false
+source = "cosmo-factory"
+sortIndex = 1
+
+[params]
+lineSelect = "L1+L2'"
+modMode = "normal"
+octave = 0
+frequency = 440
+volume = 1
+tempoBpm = 120
+polyMode = "poly8"
+legato = false
+velocityCurve = 0
+pitchBendRange = 2
+fxSlots = [{ type = "vibrato", params = { enabled = true, waveform = 1, rate = 44, depth = 8, delay = 60 } }, { type = "ringMod", params = { enabled = true, carrierHz = 1314.699839703029, mix = 0.11390866442815292 } }, { type = "phaser", params = { enabled = false, rate = 0.9, depth = 0.78, feedback = 0.55, mix = 0.43 } }, { type = "grainDelay", params = { enabled = true, time = 0.5, feedback = 0.36, scatter = 0.24, density = 0.5, mix = 0.23994747760052892, pitchSemitones = 12 } }, { type = "shimmerVerb", params = { enabled = true, shimmer = 0.6, space = 0.9883890616488823, mix = 0.3447110783027568 } }, { type = "loFi", params = { enabled = true, wow = 0.13686540573585912, flutter = 0.0942726908631656, degrade = 0, filter = -0.14221907585709626, crackle = 0, noise = 0.025009773860458932, saturation = 0.2448132933920403, mix = 1 } }]
+macro1 = 0
+macro2 = 0
+macro3 = 0
+macro4 = 0
+macroLabels = ["Brightness", "Timbre", "Time", "Movement"]
+
+[params.line1]
+algo = "cz101"
+algo2 = "cheby"
+algoBlend = 0.015498068049743852
+baseWaveformA = "cosine"
+baseWaveformB = "sine"
+window = "off"
+dcaBase = 1
+dcwBase = 0.6140782483889987
+modulation = 0
+detuneNote = 0
+detuneFine = 0
+octave = 0
+dcwKeyFollow = 0
+dcaKeyFollow = 0
+algoControlsA = [{ id = "preset", value = 1 }, { id = "waveform1", value = 1 }, { id = "waveform2", value = 1 }, { id = "windowFunction", value = 0 }]
+algoControlsB = [{ id = "chebyOrder", value = 0.6899295636391616 }, { id = "chebyTilt", value = 0 }, { id = "chebyWarp", value = 0 }]
+
+[params.line1.dcoEnv]
+steps = [[0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+stepCount = 1
+loop = false
+
+[params.line1.dcwEnv]
+steps = [[83, 44], [0, 13], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+stepCount = 2
+loop = false
+
+[params.line1.dcaEnv]
+steps = [[99, 53], [99, 84], [0, 25], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 1
+stepCount = 3
+loop = false
+
+[params.line2]
+algo = "cz101"
+algo2 = "cz101"
+algoBlend = 0
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+window = "off"
+dcaBase = 1
+dcwBase = 1
+modulation = 0
+detuneNote = 0
+detuneFine = 6
+octave = 1
+dcwKeyFollow = 5
+dcaKeyFollow = 5
+algoControlsA = [{ id = "preset", value = 0 }, { id = "waveform1", value = 2 }, { id = "waveform2", value = 5 }, { id = "windowFunction", value = 0 }]
+algoControlsB = [{ id = "preset", value = 4 }, { id = "waveform1", value = 5 }, { id = "waveform2", value = 5 }, { id = "windowFunction", value = 0 }]
+
+[params.line2.dcoEnv]
+steps = [[76, 99], [0, 92], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 1
+stepCount = 2
+loop = false
+
+[params.line2.dcwEnv]
+steps = [[99, 99], [23, 64], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 2
+stepCount = 3
+loop = false
+
+[params.line2.dcaEnv]
+steps = [[99, 99], [99, 84], [0, 38], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 1
+stepCount = 3
+loop = false
+
+[params.portamento]
+enabled = false
+mode = "rate"
+rate = 0
+time = 0.5
+
+[params.lfo]
+waveform = "sine"
+rate = 0.17973554939869898
+rateMode = "hz"
+syncDivision = "quarter"
+depth = 1
+symmetry = 0.5
+retrigger = false
+offset = 0
+
+[params.lfo2]
+waveform = "sine"
+rate = 5
+rateMode = "hz"
+syncDivision = "quarter"
+depth = 0
+symmetry = 0.5
+retrigger = false
+offset = 0
+
+[params.random]
+rate = 2
+
+[params.modEnv]
+attack = 0.4505868793991644
+decay = 0.1
+sustain = 0.5
+release = 0.2
+
+[params.modMatrix]
+routes = [{ source = "lfo1", destination = "ringModMix", amount = 0.12, enabled = true }, { source = "modEnv", destination = "ringModCarrierHz", amount = 0.5, enabled = true }, { source = "velocity", destination = "line1DcwBase", amount = 0.5, enabled = true }, { source = "modWheel", destination = "line1DcwBase", amount = 0.5, enabled = true }]

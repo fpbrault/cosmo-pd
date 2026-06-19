@@ -1,0 +1,129 @@
+format = "cosmo-preset"
+formatVersion = 1
+presetSchemaVersion = 1
+id = "factory-203-chants"
+name = "Chants"
+author = "Purr Audio"
+description = ""
+tags = ["brass"]
+starred = false
+favorite = false
+source = "cosmo-factory"
+
+[params]
+lineSelect = "L1+L2'"
+modMode = "normal"
+octave = 0
+frequency = 440
+volume = 1
+polyMode = "poly8"
+legato = false
+velocityCurve = 0
+pitchBendRange = 2
+fxSlots = [{ type = "phaseMod", params = { enabled = true, pmPre = true, amount = 0.08300231933593749, ratio = 2.0046417236328127 } }, { type = "junoChorus", params = { enabled = true, mode = 0, mix = 0.12263183593749996 } }, { type = "eq8Band", params = { enabled = true, gainBand1 = 3, gainBand2 = 4, gainBand3 = 3, gainBand4 = 1, gainBand5 = 0, gainBand6 = -2, gainBand7 = -4, gainBand8 = -6 } }, { type = "compressor", params = { enabled = false, thresholdDb = -21.2406005859375, ratio = 4, attackMs = 5, releaseMs = 80, makeupDb = 1.78318359375, mix = 1 } }, { type = "empty" }, { type = "delay", params = { enabled = true, time = 0.11, feedback = 0.22, mix = 0.13525512695312503, tapeMode = false, warmth = 0.2 } }]
+
+[params.line1]
+algo = "pinch"
+algo2 = "cz101"
+algoBlend = 0
+baseWaveformA = "triangle"
+baseWaveformB = "cosine"
+window = "off"
+dcaBase = 1
+dcwBase = 0.96
+modulation = 0
+detuneNote = 0
+detuneFine = 0
+octave = 0
+dcwKeyFollow = 0
+dcaKeyFollow = 0
+algoControlsA = [{ id = "pinchFocus", value = 0.20136642183576306 }, { id = "pinchAsym", value = -0.0677343749999999 }, { id = "pinchCurve", value = 0.4052343749999999 }, { id = "pinchDrive", value = 0.58357421875 }]
+algoControlsB = [{ id = "preset", value = 0 }, { id = "waveform1", value = 0 }, { id = "waveform2", value = 0 }, { id = "windowFunction", value = 0 }]
+
+[params.line1.dcoEnv]
+steps = [[66, 71], [0, 69], [0, 51], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+stepCount = 3
+loop = false
+
+[params.line1.dcwEnv]
+steps = [[99, 56], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [0, 60]]
+sustainStep = 0
+stepCount = 2
+loop = false
+
+[params.line1.dcaEnv]
+steps = [[70, 90], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [0, 60]]
+sustainStep = 1
+stepCount = 3
+loop = false
+
+[params.line2]
+algo = "pinch"
+algo2 = "cz101"
+algoBlend = 0
+baseWaveformA = "sine"
+baseWaveformB = "cosine"
+window = "off"
+dcaBase = 1
+dcwBase = 1
+modulation = 0
+detuneNote = 0
+detuneFine = 4
+octave = 0
+dcwKeyFollow = 0
+dcaKeyFollow = 0
+algoControlsA = [{ id = "pinchFocus", value = 0.5 }, { id = "pinchAsym", value = 0 }, { id = "pinchCurve", value = 0.5 }, { id = "pinchDrive", value = 0.5 }]
+algoControlsB = [{ id = "preset", value = 0 }, { id = "waveform1", value = 0 }, { id = "waveform2", value = 0 }, { id = "windowFunction", value = 0 }]
+
+[params.line2.dcoEnv]
+steps = [[0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+stepCount = 8
+loop = false
+
+[params.line2.dcwEnv]
+steps = [[99, 61], [99, 21], [99, 26], [99, 99], [99, 99], [99, 99], [99, 99], [0, 60]]
+sustainStep = 0
+stepCount = 2
+loop = false
+
+[params.line2.dcaEnv]
+steps = [[99, 90], [91, 49], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [0, 60]]
+sustainStep = 0
+stepCount = 2
+loop = false
+
+[params.portamento]
+enabled = false
+mode = "time"
+rate = 85
+time = 0.1
+
+[params.lfo]
+waveform = "sine"
+rate = 0.12460306874216127
+depth = 0.7686718561819622
+symmetry = 0
+retrigger = false
+offset = 0
+
+[params.lfo2]
+waveform = "sine"
+rate = 5
+depth = 0
+symmetry = 0.5
+retrigger = false
+offset = 0
+
+[params.random]
+rate = 2
+
+[params.modEnv]
+attack = 0.01
+decay = 0.1
+sustain = 0.5
+release = 0.2
+
+[params.modMatrix]
+routes = [{ source = "lfo1", destination = "line1AlgoParam3", amount = 0.21906247820172986, enabled = true }, { source = "lfo1", destination = "line1AlgoParam2", amount = 0.5, enabled = true }]

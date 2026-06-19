@@ -1,0 +1,129 @@
+format = "cosmo-preset"
+formatVersion = 1
+presetSchemaVersion = 1
+id = "factory-059-electronic-8"
+name = "ELECTRONIC-8"
+author = "Temple of CZ"
+description = ""
+tags = ["effect"]
+starred = false
+favorite = false
+source = "cz-factory"
+
+[params]
+lineSelect = "L1+L2'"
+modMode = "normal"
+octave = 0
+frequency = 440
+volume = 1
+polyMode = "poly8"
+legato = false
+velocityCurve = 0
+pitchBendRange = 2
+fxSlots = [{ type = "empty" }, { type = "empty" }, { type = "empty" }, { type = "vibrato", params = { enabled = true, waveform = 2, rate = 99, depth = 50, delay = 0 } }, { type = "empty" }, { type = "empty" }]
+
+[params.line1]
+algo = "cz101"
+algo2 = "cz101"
+algoBlend = 0
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+window = "off"
+dcaBase = 1
+dcwBase = 1
+modulation = 0
+detuneNote = 0
+detuneFine = 0
+octave = -1
+dcwKeyFollow = 7
+dcaKeyFollow = 7
+algoControlsA = [{ id = "preset", value = 3 }, { id = "waveform1", value = 4 }, { id = "waveform2", value = 4 }, { id = "windowFunction", value = 0 }]
+algoControlsB = [{ id = "preset", value = 3 }, { id = "waveform1", value = 4 }, { id = "waveform2", value = 4 }, { id = "windowFunction", value = 0 }]
+
+[params.line1.dcoEnv]
+steps = [[85, 72], [66, 35], [0, 35], [89, 35], [0, 35], [89, 35], [0, 50], [0, 50]]
+sustainStep = 7
+stepCount = 8
+loop = false
+
+[params.line1.dcwEnv]
+steps = [[65, 22], [45, 38], [53, 0], [40, 0], [37, 0], [25, 0], [28, 0], [0, 0]]
+sustainStep = 7
+stepCount = 8
+loop = false
+
+[params.line1.dcaEnv]
+steps = [[80, 99], [99, 99], [0, 0], [99, 99], [0, 0], [92, 90], [0, 0], [0, 0]]
+sustainStep = 7
+stepCount = 8
+loop = false
+
+[params.line2]
+algo = "cz101"
+algo2 = "cz101"
+algoBlend = 0
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+window = "off"
+dcaBase = 1
+dcwBase = 1
+modulation = 0
+detuneNote = 0
+detuneFine = -12
+octave = -1
+dcwKeyFollow = 7
+dcaKeyFollow = 7
+algoControlsA = [{ id = "preset", value = 3 }, { id = "waveform1", value = 4 }, { id = "waveform2", value = 4 }, { id = "windowFunction", value = 0 }]
+algoControlsB = [{ id = "preset", value = 3 }, { id = "waveform1", value = 4 }, { id = "waveform2", value = 4 }, { id = "windowFunction", value = 0 }]
+
+[params.line2.dcoEnv]
+steps = [[37, 62], [0, 88], [0, 50], [90, 50], [0, 50], [90, 50], [0, 50], [0, 50]]
+sustainStep = 6
+stepCount = 7
+loop = false
+
+[params.line2.dcwEnv]
+steps = [[87, 9], [5, 7], [99, 7], [0, 4], [99, 0], [0, 0], [99, 0], [0, 50]]
+sustainStep = 7
+stepCount = 8
+loop = false
+
+[params.line2.dcaEnv]
+steps = [[99, 86], [9, 38], [92, 99], [0, 50], [92, 50], [0, 50], [92, 50], [0, 50]]
+sustainStep = 7
+stepCount = 8
+loop = false
+
+[params.portamento]
+enabled = false
+mode = "time"
+rate = 0
+time = 0.1
+
+[params.lfo]
+waveform = "sine"
+rate = 5
+depth = 1
+symmetry = 0.5
+retrigger = false
+offset = 0
+
+[params.lfo2]
+waveform = "sine"
+rate = 5
+depth = 0
+symmetry = 0.5
+retrigger = false
+offset = 0
+
+[params.random]
+rate = 2
+
+[params.modEnv]
+attack = 0.009999999776482582
+decay = 0.10000000149011612
+sustain = 0.5
+release = 0.20000000298023224
+
+[params.modMatrix]
+routes = []

@@ -1,0 +1,128 @@
+format = "cosmo-preset"
+formatVersion = 1
+presetSchemaVersion = 1
+id = "factory-046-distortedguitr"
+name = "DISTORTEDGUITR"
+author = "Temple of CZ"
+description = ""
+tags = ["guitar"]
+starred = false
+favorite = false
+source = "cz-factory"
+
+[params]
+lineSelect = "L1+L1'"
+modMode = "ring"
+octave = 0
+frequency = 440
+volume = 1
+polyMode = "poly8"
+legato = false
+velocityCurve = 0
+pitchBendRange = 2
+fxSlots = [{ type = "empty" }, { type = "empty" }, { type = "empty" }, { type = "vibrato", params = { enabled = true, waveform = 1, rate = 23, depth = 6, delay = 33 } }, { type = "empty" }, { type = "empty" }]
+
+[params.line1]
+algo = "cz101"
+algo2 = "cz101"
+algoBlend = 0
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+window = "off"
+dcaBase = 1
+dcwBase = 1
+modulation = 0
+detuneNote = 0
+detuneFine = 0
+octave = 0
+dcwKeyFollow = 6
+dcaKeyFollow = 6
+algoControlsA = [{ id = "preset", value = 0 }, { id = "waveform1", value = 2 }, { id = "waveform2", value = 4 }, { id = "windowFunction", value = 0 }]
+algoControlsB = [{ id = "preset", value = 3 }, { id = "waveform1", value = 4 }, { id = "waveform2", value = 4 }, { id = "windowFunction", value = 0 }]
+
+[params.line1.dcoEnv]
+steps = [[66, 93], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+stepCount = 1
+loop = false
+
+[params.line1.dcwEnv]
+steps = [[70, 99], [99, 82], [70, 99], [37, 82], [85, 99], [0, 23], [0, 50], [0, 50]]
+sustainStep = 6
+stepCount = 7
+loop = false
+
+[params.line1.dcaEnv]
+steps = [[71, 99], [99, 95], [82, 99], [99, 80], [75, 20], [27, 58], [0, 65], [0, 50]]
+sustainStep = 4
+stepCount = 7
+loop = false
+
+[params.line2]
+algo = "cz101"
+algoBlend = 0
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+window = "off"
+dcaBase = 1
+dcwBase = 1
+modulation = 0
+detuneNote = 7
+detuneFine = 4
+octave = 1
+dcwKeyFollow = 0
+dcaKeyFollow = 0
+algoControlsA = [{ id = "preset", value = 0 }, { id = "waveform1", value = 0 }, { id = "waveform2", value = 0 }, { id = "windowFunction", value = 0 }]
+algoControlsB = []
+
+[params.line2.dcoEnv]
+steps = [[2, 99], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+stepCount = 1
+loop = false
+
+[params.line2.dcwEnv]
+steps = [[80, 99], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+stepCount = 1
+loop = false
+
+[params.line2.dcaEnv]
+steps = [[0, 99], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+stepCount = 1
+loop = false
+
+[params.portamento]
+enabled = false
+mode = "time"
+rate = 0
+time = 0.1
+
+[params.lfo]
+waveform = "sine"
+rate = 5
+depth = 1
+symmetry = 0.5
+retrigger = false
+offset = 0
+
+[params.lfo2]
+waveform = "sine"
+rate = 5
+depth = 0
+symmetry = 0.5
+retrigger = false
+offset = 0
+
+[params.random]
+rate = 2
+
+[params.modEnv]
+attack = 0.009999999776482582
+decay = 0.10000000149011612
+sustain = 0.5
+release = 0.20000000298023224
+
+[params.modMatrix]
+routes = []

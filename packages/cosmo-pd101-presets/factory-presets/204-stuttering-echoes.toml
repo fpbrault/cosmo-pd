@@ -1,0 +1,125 @@
+format = "cosmo-preset"
+formatVersion = 1
+presetSchemaVersion = 1
+id = "factory-204-stuttering-echoes"
+name = "Stuttering Echoes"
+author = "Purr Audio"
+description = ""
+tags = ["pad"]
+starred = true
+favorite = false
+source = "cosmo-factory"
+sortIndex = 2
+
+[params]
+lineSelect = "L1"
+modMode = "normal"
+octave = 0
+frequency = 440
+volume = 1
+polyMode = "poly8"
+legato = false
+pitchBendRange = 2
+fxSlots = [{ type = "chorus", params = { enabled = true, rate = 1.8, depth = 2.6, mix = 0.25855467932564874 } }, { type = "phaser", params = { enabled = true, rate = 0.35, depth = 0.45, mix = 0.25, feedback = 0.2 } }, { type = "empty" }, { type = "delay", params = { enabled = true, time = 0.34, feedback = 0.46, mix = 0.35, tapeMode = true, warmth = 0.72 } }, { type = "reverb", params = { enabled = true, mix = 0.47, space = 0.8229687554495675, predelay = 0.03, distance = 0.68, character = 0.2902343913487026 } }, { type = "compressor", params = { enabled = false, thresholdDb = -12, ratio = 4, attackMs = 5, releaseMs = 100, makeupDb = 6, mix = 1 } }]
+
+[params.line1]
+algo = "pinch"
+algo2 = "clip"
+algoBlend = 0
+baseWaveformA = "sine"
+window = "off"
+dcaBase = 1
+dcwBase = 0.72
+modulation = 0
+detuneNote = 0
+detuneFine = 0
+octave = 0
+dcwKeyFollow = 0
+dcaKeyFollow = 0
+algoControlsA = [{ id = "pinchFocus", value = 0.1 }, { id = "pinchAsym", value = 0 }, { id = "pinchCurve", value = 0.5 }, { id = "pinchDrive", value = 0.5 }]
+algoControlsB = [{ id = "clipDrive", value = 0.5 }, { id = "clipShape", value = 0.5 }, { id = "clipBias", value = 0 }, { id = "clipSoft", value = 0 }]
+
+[params.line1.dcoEnv]
+steps = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]]
+sustainStep = 1
+stepCount = 2
+loop = false
+
+[params.line1.dcwEnv]
+steps = [[99, 70], [0, 93], [99, 75], [0, 44], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 2
+stepCount = 4
+loop = true
+
+[params.line1.dcaEnv]
+steps = [[99, 75], [79, 80], [96, 75], [0, 40], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 2
+stepCount = 4
+loop = false
+
+[params.line2]
+algo = "cz101"
+algoBlend = 0
+window = "off"
+dcaBase = 1
+dcwBase = 1
+modulation = 0
+detuneNote = 0
+detuneFine = 0
+octave = 0
+dcwKeyFollow = 0
+dcaKeyFollow = 0
+algoControlsA = []
+algoControlsB = []
+
+[params.line2.dcoEnv]
+steps = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]]
+sustainStep = 1
+stepCount = 2
+loop = false
+
+[params.line2.dcwEnv]
+steps = [[99, 75], [99, 80], [99, 75], [0, 40], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 2
+stepCount = 4
+loop = false
+
+[params.line2.dcaEnv]
+steps = [[99, 75], [79, 80], [79, 75], [0, 40], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 2
+stepCount = 4
+loop = false
+
+[params.portamento]
+enabled = false
+mode = "time"
+rate = 85
+time = 0.1
+
+[params.lfo]
+waveform = "sine"
+rate = 0.0842864172799247
+depth = 0.6907139641898019
+symmetry = 0.5
+retrigger = true
+offset = 0.059453230265841456
+
+[params.lfo2]
+waveform = "sine"
+rate = 5
+depth = 0
+symmetry = 0.5
+retrigger = false
+offset = 0
+
+[params.random]
+rate = 2
+
+[params.modEnv]
+attack = 1.1107421193804057
+decay = 2.215937523841858
+sustain = 0.903105457850865
+release = 2.761523483480726
+
+[params.modMatrix]
+routes = [{ source = "velocity", destination = "line1DcwBase", amount = 0.4791015625000001, enabled = true }, { source = "lfo1", destination = "line1DcwEnvStep4Rate", amount = 0.23492187500000003, enabled = true }, { source = "macro1", destination = "line1AlgoParam1", amount = 1, enabled = true }]

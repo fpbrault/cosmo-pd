@@ -1,0 +1,139 @@
+format = "cosmo-preset"
+formatVersion = 1
+presetSchemaVersion = 1
+id = "factory-201-blissful-brass"
+name = "Blissful Brass"
+author = "Purr Audio"
+description = ""
+tags = ["brass"]
+starred = true
+favorite = false
+source = "cosmo-factory"
+sortIndex = 0
+
+[params]
+lineSelect = "L1+L1'"
+modMode = "normal"
+octave = 0
+frequency = 440
+volume = 1
+tempoBpm = 120
+polyMode = "poly8"
+legato = false
+velocityCurve = 0
+pitchBendRange = 2
+fxSlots = [{ type = "vibrato", params = { enabled = true, waveform = 1, rate = 63.58072225161961, depth = 0, delay = 0 } }, { type = "chorus", params = { enabled = true, rate = 1.4, depth = 1, mix = 0.56 } }, { type = "delay", params = { enabled = true, time = 0.34, feedback = 0.46, mix = 0, tapeMode = true, warmth = 0.72 } }, { type = "shimmerVerb", params = { enabled = true, shimmer = 0.638798828125, space = 0.6546679530824934, mix = 0 } }, { type = "empty" }, { type = "empty" }]
+macro1 = 0.6000276436392716
+macro2 = 0
+macro3 = 0
+macro4 = 0
+
+[params.line1]
+algo = "cz101"
+algo2 = "cz101"
+algoBlend = 0
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+window = "off"
+dcaBase = 1
+dcwBase = 0.81119873046875
+modulation = 0
+detuneNote = 0
+detuneFine = 0
+octave = 0
+dcwKeyFollow = 0
+dcaKeyFollow = 0
+algoControlsA = [{ id = "preset", value = 0 }, { id = "waveform1", value = 0 }, { id = "waveform2", value = 0 }, { id = "windowFunction", value = 0 }]
+algoControlsB = [{ id = "preset", value = 0 }, { id = "waveform1", value = 6 }, { id = "waveform2", value = 6 }, { id = "windowFunction", value = 1 }]
+
+[params.line1.dcoEnv]
+steps = [[0, 99], [0, 99], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+stepCount = 2
+loop = false
+
+[params.line1.dcwEnv]
+steps = [[99, 99], [0, 35], [60, 36], [36, 54], [74, 40], [0, 25], [99, 99], [0, 60]]
+sustainStep = 0
+stepCount = 2
+loop = false
+
+[params.line1.dcaEnv]
+steps = [[99, 74], [0, 58], [0, 1], [0, 1], [99, 99], [99, 99], [99, 99], [0, 60]]
+sustainStep = 0
+stepCount = 2
+loop = false
+
+[params.line2]
+algo = "pinch"
+algo2 = "cz101"
+algoBlend = 0
+baseWaveformA = "sine"
+baseWaveformB = "cosine"
+window = "off"
+dcaBase = 1
+dcwBase = 0.7401758030482701
+modulation = 0
+detuneNote = 0
+detuneFine = 0
+octave = -1
+dcwKeyFollow = 0
+dcaKeyFollow = 0
+algoControlsA = [{ id = "pinchFocus", value = 0.5 }, { id = "pinchAsym", value = 0 }, { id = "pinchCurve", value = 0.5 }, { id = "pinchDrive", value = 0.5 }]
+algoControlsB = [{ id = "preset", value = 0 }, { id = "waveform1", value = 0 }, { id = "waveform2", value = 0 }, { id = "windowFunction", value = 0 }]
+
+[params.line2.dcoEnv]
+steps = [[0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+stepCount = 8
+loop = false
+
+[params.line2.dcwEnv]
+steps = [[99, 80], [0, 99], [0, 99], [99, 99], [99, 99], [99, 99], [99, 99], [0, 60]]
+sustainStep = 0
+stepCount = 2
+loop = false
+
+[params.line2.dcaEnv]
+steps = [[99, 92], [0, 99], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [0, 60]]
+sustainStep = 0
+stepCount = 2
+loop = false
+
+[params.portamento]
+enabled = false
+mode = "time"
+rate = 85
+time = 0.1
+
+[params.lfo]
+waveform = "sine"
+rate = 2.000000000000001
+rateMode = "hz"
+syncDivision = "quarter"
+depth = 1
+symmetry = 0.5
+retrigger = false
+offset = 0
+
+[params.lfo2]
+waveform = "sine"
+rate = 5
+rateMode = "hz"
+syncDivision = "quarter"
+depth = 0
+symmetry = 0.5
+retrigger = false
+offset = 0
+
+[params.random]
+rate = 2
+
+[params.modEnv]
+attack = 0.01
+decay = 0.1
+sustain = 0.5
+release = 0.2
+
+[params.modMatrix]
+routes = [{ source = "aftertouch", destination = "line2DcwBase", amount = 0.16921875, enabled = true }, { source = "modWheel", destination = "line2DcwBase", amount = 0.25101562499999996, enabled = true }, { source = "aftertouch", destination = "line1AlgoParam1", amount = 0.5, enabled = true }, { source = "modWheel", destination = "line1AlgoParam1", amount = 0.5, enabled = true }, { source = "macro1", destination = "line1AlgoParam1", amount = 0.5, enabled = true }, { source = "macro1", destination = "line1DcwBase", amount = 0.28, enabled = true }, { source = "macro3", destination = "line1DcaEnvStep2Rate", amount = -0.21, enabled = true }, { source = "macro3", destination = "line1DcwEnvStep1Rate", amount = -0.23, enabled = true }, { source = "modWheel", destination = "vibratoDepth", amount = 0.5, enabled = true }, { source = "macro2", destination = "line2DetuneFine", amount = 0.19, enabled = true }, { source = "macro4", destination = "delayMix", amount = 0.5, enabled = true }, { source = "macro4", destination = "shimmerVerbMix", amount = 0.5, enabled = true }]

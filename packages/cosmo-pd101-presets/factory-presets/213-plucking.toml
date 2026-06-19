@@ -1,0 +1,128 @@
+format = "cosmo-preset"
+formatVersion = 1
+presetSchemaVersion = 1
+id = "factory-213-plucking"
+name = "Plucking"
+author = "Purr Audio"
+description = ""
+tags = ["keys", "pluck"]
+starred = false
+favorite = false
+source = "cosmo-factory"
+
+[params]
+lineSelect = "L2"
+modMode = "normal"
+octave = 0
+frequency = 440
+volume = 1
+polyMode = "poly8"
+legato = false
+velocityCurve = 0
+pitchBendRange = 2
+fxSlots = [{ type = "vibrato", params = { enabled = true, waveform = 1, rate = 61.60513708966119, depth = 0, delay = 160 } }, { type = "chorus", params = { enabled = false, rate = 1.8, depth = 2.6, mix = 0.56 } }, { type = "delay", params = { enabled = false, time = 0.11, feedback = 0.22, mix = 0.15787109647478376, tapeMode = false, warmth = 0.2 } }, { type = "reverb", params = { enabled = true, mix = 0.31, space = 0.58, predelay = 0.012, distance = 0.4, character = 0.74 } }, { type = "empty" }, { type = "empty" }]
+
+[params.line1]
+algo = "bend"
+algoBlend = 0
+baseWaveformA = "sine"
+baseWaveformB = "sine"
+window = "off"
+dcaBase = 1
+dcwBase = 1
+modulation = 0
+detuneNote = 0
+detuneFine = 0
+octave = -1
+dcwKeyFollow = 0
+dcaKeyFollow = 0
+algoControlsA = [{ id = "bendCurve", value = 0.5 }, { id = "bendBias", value = 0 }, { id = "bendKnee", value = 0.5 }]
+algoControlsB = []
+
+[params.line1.dcoEnv]
+steps = [[99, 66], [99, 45], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+stepCount = 2
+loop = false
+
+[params.line1.dcwEnv]
+steps = [[99, 58], [35, 68], [60, 36], [36, 54], [56, 22], [17, 26], [99, 99], [0, 60]]
+sustainStep = 4
+stepCount = 6
+loop = false
+
+[params.line1.dcaEnv]
+steps = [[99, 79], [0, 32], [0, 1], [0, 1], [99, 99], [99, 99], [99, 99], [0, 60]]
+sustainStep = 0
+stepCount = 2
+loop = false
+
+[params.line2]
+algo = "pinch"
+algo2 = "fold"
+algoBlend = 0.51
+baseWaveformA = "sine"
+baseWaveformB = "sine"
+window = "off"
+dcaBase = 1
+dcwBase = 1
+modulation = 0
+detuneNote = 0
+detuneFine = 0
+octave = -1
+dcwKeyFollow = 0
+dcaKeyFollow = 0
+algoControlsA = [{ id = "pinchFocus", value = 0.30029296875 }, { id = "pinchAsym", value = 0.3230078125 }, { id = "pinchCurve", value = 0.63693359375 }, { id = "pinchDrive", value = 0.68103515625 }]
+algoControlsB = [{ id = "foldStages", value = 0.5 }, { id = "foldTilt", value = 0 }, { id = "foldSymmetry", value = -0.070390625 }, { id = "foldSoftness", value = 0.304453125 }]
+
+[params.line2.dcoEnv]
+steps = [[0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+stepCount = 8
+loop = false
+
+[params.line2.dcwEnv]
+steps = [[90, 92], [16, 72], [29, 87], [99, 99], [99, 99], [99, 99], [99, 99], [44, 60]]
+sustainStep = 1
+stepCount = 3
+loop = false
+
+[params.line2.dcaEnv]
+steps = [[99, 99], [87, 56], [0, 23], [99, 99], [99, 99], [99, 99], [99, 99], [0, 60]]
+sustainStep = 0
+stepCount = 2
+loop = false
+
+[params.portamento]
+enabled = false
+mode = "time"
+rate = 85
+time = 0.1
+
+[params.lfo]
+waveform = "triangle"
+rate = 2.000000000000001
+depth = 1
+symmetry = 0.5
+retrigger = false
+offset = 0
+
+[params.lfo2]
+waveform = "sine"
+rate = 2.000000000000001
+depth = 1
+symmetry = 0.5
+retrigger = false
+offset = 0
+
+[params.random]
+rate = 2
+
+[params.modEnv]
+attack = 0.01
+decay = 0.1
+sustain = 0.5
+release = 0.2
+
+[params.modMatrix]
+routes = [{ source = "modWheel", destination = "vibratoDepth", amount = 0.5, enabled = true }]

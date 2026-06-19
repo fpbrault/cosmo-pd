@@ -1,0 +1,138 @@
+format = "cosmo-preset"
+formatVersion = 1
+presetSchemaVersion = 1
+id = "factory-202-bright-changes"
+name = "Bright Changes"
+author = "Purr Audio"
+description = ""
+tags = ["pad"]
+starred = false
+favorite = false
+source = "cosmo-factory"
+
+[params]
+lineSelect = "L1+L2'"
+modMode = "normal"
+octave = 0
+frequency = 440
+volume = 1
+tempoBpm = 120
+polyMode = "poly8"
+legato = false
+velocityCurve = 0
+pitchBendRange = 2
+fxSlots = [{ type = "vibrato", params = { enabled = true, waveform = 1, rate = 64.35500038777079, depth = 0, delay = 0 } }, { type = "tremolo", params = { enabled = true, rate = 6.742607525008064, depth = 0.0244873046875, waveform = 2, mix = 1 } }, { type = "chorus", params = { enabled = false, rate = 0.35, depth = 3.3994445800781254, mix = 0.44 } }, { type = "delay", params = { enabled = false, time = 0.11, feedback = 0.22, mix = 0.27, tapeMode = false, warmth = 0.2 } }, { type = "empty" }, { type = "empty" }]
+macro1 = 0.5039370078740157
+macro2 = 0
+macro3 = 0
+macro4 = 0
+
+[params.line1]
+algo = "twist"
+algo2 = "bend"
+algoBlend = 0.4749960817609515
+baseWaveformA = "sine"
+baseWaveformB = "sine"
+window = "off"
+dcaBase = 1
+dcwBase = 0.513468017578125
+modulation = 0
+detuneNote = 0
+detuneFine = 0
+octave = -1
+dcwKeyFollow = 8
+dcaKeyFollow = 8
+algoControlsA = [{ id = "twistHarmonics", value = 0.6020153172509924 }, { id = "twistDepth", value = 0.47964999880109516 }, { id = "twistPhase", value = 0 }, { id = "twistShape", value = 0.5320704664457991 }]
+algoControlsB = [{ id = "bendCurve", value = 0.5 }, { id = "bendBias", value = 0 }, { id = "bendKnee", value = 0.5 }]
+
+[params.line1.dcoEnv]
+steps = [[0, 99], [86, 27], [0, 99], [0, 21], [99, 99], [71, 15], [0, 99], [0, 17]]
+sustainStep = 7
+stepCount = 1
+loop = false
+
+[params.line1.dcwEnv]
+steps = [[99, 55], [21, 50], [82, 50], [0, 50], [56, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+stepCount = 4
+loop = false
+
+[params.line1.dcaEnv]
+steps = [[99, 87], [79, 80], [99, 79], [0, 35], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 2
+stepCount = 4
+loop = false
+
+[params.line2]
+algo = "fold"
+algo2 = "skew"
+algoBlend = 0.55732421875
+baseWaveformA = "sine"
+baseWaveformB = "sine"
+window = "off"
+dcaBase = 1
+dcwBase = 0.49362854172590814
+modulation = 0
+detuneNote = 0
+detuneFine = 3
+octave = 0
+dcwKeyFollow = 9
+dcaKeyFollow = 9
+algoControlsA = [{ id = "foldStages", value = 0.5 }, { id = "foldTilt", value = 0 }, { id = "foldSymmetry", value = 0 }, { id = "foldSoftness", value = 0 }]
+algoControlsB = [{ id = "skewBias", value = 0.2 }, { id = "skewCurve", value = 0.5 }, { id = "skewSpread", value = 0 }, { id = "skewTilt", value = 0 }]
+
+[params.line2.dcoEnv]
+steps = [[0, 99], [86, 27], [0, 99], [0, 21], [99, 99], [71, 15], [0, 99], [0, 17]]
+sustainStep = 7
+stepCount = 1
+loop = false
+
+[params.line2.dcwEnv]
+steps = [[99, 50], [21, 50], [82, 50], [0, 50], [56, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+stepCount = 4
+loop = false
+
+[params.line2.dcaEnv]
+steps = [[99, 75], [79, 80], [99, 76], [0, 40], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 2
+stepCount = 4
+loop = false
+
+[params.portamento]
+enabled = false
+mode = "time"
+rate = 85
+time = 0.1
+
+[params.lfo]
+waveform = "sine"
+rate = 2.000000000000001
+rateMode = "hz"
+syncDivision = "quarter"
+depth = 1
+symmetry = 0.5
+retrigger = false
+offset = 0
+
+[params.lfo2]
+waveform = "sine"
+rate = 2.000000000000001
+rateMode = "hz"
+syncDivision = "quarter"
+depth = 1
+symmetry = 0.5
+retrigger = false
+offset = 0
+
+[params.random]
+rate = 2
+
+[params.modEnv]
+attack = 0.01
+decay = 0.1
+sustain = 0.5
+release = 0.2
+
+[params.modMatrix]
+routes = [{ source = "modWheel", destination = "vibratoDepth", amount = 0.5, enabled = true }, { source = "macro1", destination = "line1DcwBase", amount = 0.5, enabled = true }, { source = "macro1", destination = "line2DcwBase", amount = 1, enabled = true }, { source = "macro2", destination = "line2AlgoParam2", amount = -0.5, enabled = true }, { source = "macro2", destination = "line1AlgoParam1", amount = 0.5, enabled = true }, { source = "macro3", destination = "line2DcaEnvStep4Rate", amount = -0.1, enabled = true }, { source = "macro3", destination = "line2DcwEnvStep4Rate", amount = -0.32, enabled = true }, { source = "macro3", destination = "line1DcwEnvStep4Rate", amount = -0.42, enabled = true }, { source = "macro3", destination = "line1DcaEnvStep4Rate", amount = -0.1, enabled = true }, { source = "macro4", destination = "tremoloDepth", amount = 1, enabled = true }]

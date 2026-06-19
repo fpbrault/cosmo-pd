@@ -133,20 +133,39 @@ describe("presetStorage", () => {
 		]);
 	});
 
-	it("exports and imports full stored presets", async () => {
+	it("exports and imports TOML stored presets with favorite state", async () => {
 		const stored = await saveStoredPreset({
 			name: "Export Me",
-			data: DEFAULT_PRESET,
+			data: {
+				...DEFAULT_PRESET,
+				params: { ...DEFAULT_PRESET.params, volume: 0.42 },
+			},
 			source: "user",
 			author: "Me",
 			description: "Exported with metadata.",
 			starred: true,
 			tags: ["synth", "lead"],
 		});
+		await setPresetFavorite(stored.id, true);
 
-		const json = await exportPreset(stored.id);
-		expect(json).not.toBeNull();
-		expect(await importPreset(json as string)).toEqual(stored);
+		const toml = await exportPreset(stored.id);
+		expect(toml).toContain('format = "cosmo-preset"');
+		expect(toml).toContain("favorite = true");
+		expect(await importPreset(toml as string)).toEqual(
+			expect.objectContaining({
+				id: stored.id,
+				name: stored.name,
+				author: "Me",
+				description: "Exported with metadata.",
+				starred: false,
+				favorite: true,
+				tags: ["synth", "lead"],
+				data: {
+					...DEFAULT_PRESET,
+					params: { ...DEFAULT_PRESET.params, volume: 0.42 },
+				},
+			}),
+		);
 	});
 
 	it("normalizes missing legacy descriptions to an empty string", async () => {

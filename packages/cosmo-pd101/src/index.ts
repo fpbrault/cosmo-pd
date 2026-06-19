@@ -139,6 +139,14 @@ export { FACTORY_PRESETS } from "./lib/synth/factoryCzPresets";
 export type { PluginBridgeWindowFacade } from "./lib/synth/pluginBridgeWindow";
 export type { PresetSource } from "./lib/synth/presetSources";
 export type { PresetTagOptions } from "./lib/synth/presetTags";
+export {
+	COSMO_PRESET_SCHEMA_VERSION,
+	COSMO_PRESET_TOML_FORMAT,
+	COSMO_PRESET_TOML_FORMAT_VERSION,
+	exportPresetToToml,
+	parsePresetToml,
+	type ParsedPresetToml,
+} from "./lib/synth/presetTomlExchange";
 export type {
 	EnginePresetV1,
 	FrontendPresetV1,

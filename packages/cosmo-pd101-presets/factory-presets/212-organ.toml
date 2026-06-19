@@ -1,0 +1,123 @@
+format = "cosmo-preset"
+formatVersion = 1
+presetSchemaVersion = 1
+id = "factory-212-organ"
+name = "Organ"
+author = "Purr Audio"
+description = ""
+tags = ["organ"]
+starred = false
+favorite = false
+source = "cosmo-factory"
+
+[params]
+lineSelect = "L1+L2'"
+modMode = "normal"
+octave = 0
+frequency = 440
+volume = 1
+polyMode = "poly8"
+legato = false
+pitchBendRange = 2
+fxSlots = [{ type = "chorus", params = { rate = 0.35, depth = 2.1, mix = 0.44, enabled = false } }, { type = "loFi", params = { enabled = true, degrade = 0.114, wow = 0.09, flutter = 0.038, filter = -0.31, crackle = 0.2, saturation = 0, mix = 1 } }, { type = "delay", params = { time = 0.34, feedback = 0.46, mix = 0.07347656726837153, enabled = true, tapeMode = true, warmth = 0.72 } }, { type = "empty" }, { type = "shimmerVerb", params = { enabled = true, shimmer = 0.9263281277247838, space = 0.8459179741995675, mix = 0.18874998092651363 } }, { type = "empty" }]
+
+[params.line1]
+algo = "fold"
+algoBlend = 0
+baseWaveformA = "cosine"
+window = "off"
+dcaBase = 1
+dcwBase = 0.75
+modulation = 0
+detuneNote = 0
+detuneFine = 0
+octave = 0
+dcwKeyFollow = 0
+dcaKeyFollow = 0
+algoControlsA = [{ id = "foldStages", value = 0.10796875 }, { id = "foldTilt", value = -0.0414453125 }, { id = "foldSymmetry", value = 0 }, { id = "foldSoftness", value = 0 }]
+algoControlsB = []
+
+[params.line1.dcoEnv]
+steps = [[0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 1
+stepCount = 4
+loop = false
+
+[params.line1.dcwEnv]
+steps = [[99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [22, 60]]
+sustainStep = 1
+stepCount = 3
+loop = false
+
+[params.line1.dcaEnv]
+steps = [[99, 90], [99, 99], [99, 79], [99, 99], [99, 99], [99, 99], [99, 99], [0, 71]]
+sustainStep = 1
+stepCount = 3
+loop = false
+
+[params.line2]
+algo = "cz101"
+algoBlend = 0
+window = "off"
+dcaBase = 1
+dcwBase = 1
+modulation = 0
+detuneNote = 0
+detuneFine = 0
+octave = 0
+dcwKeyFollow = 0
+dcaKeyFollow = 0
+algoControlsA = []
+algoControlsB = []
+
+[params.line2.dcoEnv]
+steps = [[0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 1
+stepCount = 4
+loop = false
+
+[params.line2.dcwEnv]
+steps = [[99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [22, 60]]
+sustainStep = 1
+stepCount = 3
+loop = false
+
+[params.line2.dcaEnv]
+steps = [[99, 90], [99, 99], [99, 79], [99, 99], [99, 99], [99, 99], [99, 99], [0, 71]]
+sustainStep = 1
+stepCount = 3
+loop = false
+
+[params.portamento]
+enabled = false
+mode = "time"
+rate = 85
+time = 0.1
+
+[params.lfo]
+waveform = "sine"
+rate = 0
+depth = 0.6303515570504326
+symmetry = 0
+retrigger = false
+offset = 0
+
+[params.lfo2]
+waveform = "sine"
+rate = 5
+depth = 0
+symmetry = 0.5
+retrigger = false
+offset = 0
+
+[params.random]
+rate = 2
+
+[params.modEnv]
+attack = 0.01
+decay = 0.1
+sustain = 0.5
+release = 0.2
+
+[params.modMatrix]
+routes = [{ source = "lfo1", destination = "line1AlgoParam2", amount = 0.5, enabled = true }]

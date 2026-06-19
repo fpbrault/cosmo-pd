@@ -1,0 +1,125 @@
+format = "cosmo-preset"
+formatVersion = 1
+presetSchemaVersion = 1
+id = "factory-205-clav"
+name = "Clav"
+author = "Purr Audio"
+description = ""
+tags = ["piano", "keys"]
+starred = true
+favorite = false
+source = "cosmo-factory"
+
+[params]
+lineSelect = "L1"
+modMode = "normal"
+octave = 0
+frequency = 440
+volume = 1
+polyMode = "poly8"
+legato = false
+pitchBendRange = 2
+fxSlots = [{ type = "phaser", params = { enabled = true, rate = 0.5, depth = 1, mix = 0.5, feedback = 0.5 } }, { type = "tremolo", params = { enabled = true, rate = 5, depth = 0.6, waveform = 1, mix = 1 } }, { type = "compressor", params = { enabled = true, thresholdDb = -23.66249983651297, ratio = 4, attackMs = 5, releaseMs = 100, makeupDb = 6, mix = 1 } }, { type = "empty" }, { type = "empty" }, { type = "empty" }]
+
+[params.line1]
+algo = "cz101"
+algoBlend = 0
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+window = "off"
+dcaBase = 1
+dcwBase = 0.71
+modulation = 0
+detuneNote = 0
+detuneFine = 0
+octave = 0
+dcwKeyFollow = 9
+dcaKeyFollow = 9
+algoControlsA = []
+algoControlsB = []
+
+[params.line1.dcoEnv]
+steps = [[0, 99], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+stepCount = 1
+loop = false
+
+[params.line1.dcwEnv]
+steps = [[99, 99], [0, 63], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+stepCount = 2
+loop = false
+
+[params.line1.dcaEnv]
+steps = [[98, 99], [99, 55], [0, 33], [0, 60], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+stepCount = 2
+loop = false
+
+[params.line2]
+algo = "twist"
+algo2 = "cz101"
+algoBlend = 0
+window = "off"
+dcaBase = 1
+dcwBase = 1
+modulation = 0
+detuneNote = 0
+detuneFine = 0
+octave = -1
+dcwKeyFollow = 9
+dcaKeyFollow = 9
+algoControlsA = [{ id = "twistHarmonics", value = 0.5 }, { id = "twistDepth", value = 0.5 }, { id = "twistPhase", value = 0 }, { id = "twistShape", value = 0.5 }]
+algoControlsB = []
+
+[params.line2.dcoEnv]
+steps = [[0, 99], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+stepCount = 1
+loop = false
+
+[params.line2.dcwEnv]
+steps = [[40, 99], [0, 99], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+stepCount = 2
+loop = false
+
+[params.line2.dcaEnv]
+steps = [[99, 99], [76, 99], [0, 38], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+stepCount = 2
+loop = false
+
+[params.portamento]
+enabled = false
+mode = "time"
+rate = 85
+time = 0.1
+
+[params.lfo]
+waveform = "sine"
+rate = 5
+depth = 0
+symmetry = 0
+retrigger = false
+offset = 0
+
+[params.lfo2]
+waveform = "sine"
+rate = 5
+depth = 0
+symmetry = 0.5
+retrigger = false
+offset = 0
+
+[params.random]
+rate = 2
+
+[params.modEnv]
+attack = 0.01
+decay = 0.1
+sustain = 0.5
+release = 0.2
+
+[params.modMatrix]
+routes = [{ source = "velocity", destination = "line1DcwBase", amount = 0.2666015625, enabled = true }]

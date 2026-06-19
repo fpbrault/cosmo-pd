@@ -1,0 +1,127 @@
+format = "cosmo-preset"
+formatVersion = 1
+presetSchemaVersion = 1
+id = "factory-010-african-drum"
+name = "AFRICAN DRUM"
+author = "Temple of CZ"
+description = ""
+tags = ["drum"]
+starred = false
+favorite = false
+source = "cz-factory"
+
+[params]
+lineSelect = "L1+L2'"
+modMode = "ring"
+octave = 0
+frequency = 440
+volume = 1
+polyMode = "poly8"
+legato = false
+velocityCurve = 0
+pitchBendRange = 2
+fxSlots = [{ type = "empty" }, { type = "empty" }, { type = "empty" }, { type = "vibrato", params = { enabled = false, waveform = 3, rate = 55, depth = 0, delay = 0 } }, { type = "empty" }, { type = "empty" }]
+
+[params.line1]
+algo = "cz101"
+algoBlend = 0
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+window = "off"
+dcaBase = 1
+dcwBase = 1
+modulation = 0
+detuneNote = 0
+detuneFine = 0
+octave = -1
+dcwKeyFollow = 0
+dcaKeyFollow = 0
+algoControlsA = [{ id = "preset", value = 7 }, { id = "waveform1", value = 6 }, { id = "waveform2", value = 6 }, { id = "windowFunction", value = 3 }]
+algoControlsB = []
+
+[params.line1.dcoEnv]
+steps = [[99, 94], [0, 99], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 1
+stepCount = 2
+loop = false
+
+[params.line1.dcwEnv]
+steps = [[99, 99], [96, 99], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 1
+stepCount = 2
+loop = false
+
+[params.line1.dcaEnv]
+steps = [[99, 99], [0, 45], [93, 30], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 1
+stepCount = 3
+loop = false
+
+[params.line2]
+algo = "cz101"
+algoBlend = 0
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+window = "off"
+dcaBase = 1
+dcwBase = 1
+modulation = 0
+detuneNote = 9
+detuneFine = 55
+octave = -1
+dcwKeyFollow = 8
+dcaKeyFollow = 8
+algoControlsA = [{ id = "preset", value = 4 }, { id = "waveform1", value = 5 }, { id = "waveform2", value = 5 }, { id = "windowFunction", value = 0 }]
+algoControlsB = []
+
+[params.line2.dcoEnv]
+steps = [[99, 99], [53, 99], [0, 13], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 2
+stepCount = 3
+loop = false
+
+[params.line2.dcwEnv]
+steps = [[99, 99], [96, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 1
+stepCount = 2
+loop = false
+
+[params.line2.dcaEnv]
+steps = [[99, 99], [35, 53], [93, 35], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 1
+stepCount = 3
+loop = false
+
+[params.portamento]
+enabled = false
+mode = "time"
+rate = 0
+time = 0.1
+
+[params.lfo]
+waveform = "sine"
+rate = 5
+depth = 1
+symmetry = 0.5
+retrigger = false
+offset = 0
+
+[params.lfo2]
+waveform = "sine"
+rate = 5
+depth = 0
+symmetry = 0.5
+retrigger = false
+offset = 0
+
+[params.random]
+rate = 2
+
+[params.modEnv]
+attack = 0.009999999776482582
+decay = 0.10000000149011612
+sustain = 0.5
+release = 0.20000000298023224
+
+[params.modMatrix]
+routes = []

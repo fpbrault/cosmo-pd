@@ -20,6 +20,8 @@ const PRESET_TAG_OPTIONS: [&str; 16] = [
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct AuthoredCzPresetFile {
+    #[serde(default)]
+    id: Option<String>,
     name: String,
     #[serde(default)]
     description: String,
@@ -34,6 +36,34 @@ struct AuthoredCzPresetFile {
     #[serde(default)]
     sort_index: Option<usize>,
     data: Value,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct AuthoredTomlPresetFile {
+    format: String,
+    format_version: u16,
+    preset_schema_version: u16,
+    id: String,
+    name: String,
+    #[serde(default)]
+    description: String,
+    #[serde(default)]
+    tags: Vec<String>,
+    #[serde(default)]
+    starred: bool,
+    #[serde(default)]
+    favorite: bool,
+    #[serde(default)]
+    source: Option<String>,
+    #[serde(default)]
+    author: Option<String>,
+    #[serde(default)]
+    sort_index: Option<usize>,
+    #[serde(default)]
+    params: Option<toml::Value>,
+    #[serde(default)]
+    data: Option<toml::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -68,6 +98,7 @@ struct FactoryPresetEntry {
 
 #[derive(Debug, Clone)]
 struct FactoryPresetSource {
+    id: String,
     name: String,
     description: String,
     tags: Vec<String>,
@@ -106,59 +137,269 @@ pub fn generate_factory_presets(workspace_root: &Path) -> Result<(), String> {
 
 fn load_presets_from_dir(dir: &Path) -> Result<Vec<FactoryPresetSource>, String> {
     let mut presets = Vec::new();
-    for path in sorted_json_files(dir)? {
+    for path in sorted_preset_files(dir)? {
         let file_name = path
             .file_name()
             .and_then(OsStr::to_str)
             .ok_or_else(|| format!("invalid preset file name: {}", path.display()))?
             .to_string();
-        let raw = fs::read_to_string(&path)
-            .map_err(|error| format!("failed to read {}: {error}", path.display()))?;
-        let authored_value: Value = serde_json::from_str(&raw)
-            .map_err(|error| format!("failed to parse {}: {error}", path.display()))?;
-        let authored: AuthoredCzPresetFile = serde_json::from_value(authored_value.clone())
-            .map_err(|error| format!("failed to decode {}: {error}", path.display()))?;
-        validate_tags(&authored.tags, &file_name)?;
-        validate_authored_preset_data(&authored.data, &file_name)?;
-        let data: SynthPresetV1 =
-            serde_json::from_value(authored.data.clone()).map_err(|error| {
-                format!(
-                    "failed to decode preset data in {}: {error}",
-                    path.display()
-                )
-            })?;
-        let canonical = serde_json::to_value(&data).map_err(|error| {
-            format!(
-                "failed to canonicalize preset data in {}: {error}",
-                path.display()
-            )
-        })?;
-        assert_no_unknown_fields(&authored.data, &canonical, "data", &file_name)?;
-        presets.push(FactoryPresetSource {
-            name: authored.name,
-            description: authored.description.trim().to_string(),
-            tags: authored.tags,
-            starred: authored.starred,
-            source: authored.source.unwrap_or_default(),
-            author: authored.author.unwrap_or_default(),
-            sort_index: authored.sort_index,
-            data,
-        });
+        presets.push(load_preset_file(&path, &file_name)?);
     }
     if presets.is_empty() {
-        return Err(format!("no preset JSON files found in {}", dir.display()));
+        return Err(format!("no preset files found in {}", dir.display()));
     }
     Ok(presets)
 }
 
-fn sorted_json_files(dir: &Path) -> Result<Vec<PathBuf>, String> {
+fn sorted_preset_files(dir: &Path) -> Result<Vec<PathBuf>, String> {
     let mut paths = fs::read_dir(dir)
         .map_err(|error| format!("failed to read preset directory {}: {error}", dir.display()))?
         .filter_map(|entry| entry.ok().map(|value| value.path()))
-        .filter(|path| path.extension().and_then(OsStr::to_str) == Some("json"))
+        .filter(|path| {
+            matches!(
+                path.extension().and_then(OsStr::to_str),
+                Some("json" | "toml")
+            )
+        })
         .collect::<Vec<_>>();
     paths.sort();
     Ok(paths)
+}
+
+fn load_preset_file(path: &Path, file_name: &str) -> Result<FactoryPresetSource, String> {
+    match path.extension().and_then(OsStr::to_str) {
+        Some("toml") => load_toml_preset_file(path, file_name),
+        Some("json") => load_json_preset_file(path, file_name),
+        _ => Err(format!("unsupported preset file: {}", path.display())),
+    }
+}
+
+fn load_json_preset_file(path: &Path, file_name: &str) -> Result<FactoryPresetSource, String> {
+    let raw = fs::read_to_string(path)
+        .map_err(|error| format!("failed to read {}: {error}", path.display()))?;
+    let authored_value: Value = serde_json::from_str(&raw)
+        .map_err(|error| format!("failed to parse {}: {error}", path.display()))?;
+    let authored: AuthoredCzPresetFile = serde_json::from_value(authored_value.clone())
+        .map_err(|error| format!("failed to decode {}: {error}", path.display()))?;
+    decode_authored_preset_source(
+        authored
+            .id
+            .unwrap_or_else(|| stable_factory_id_from_file_name(file_name)),
+        authored.name,
+        authored.description,
+        authored.tags,
+        authored.starred,
+        authored.source,
+        authored.author,
+        authored.sort_index,
+        authored.data,
+        path,
+        file_name,
+    )
+}
+
+fn load_toml_preset_file(path: &Path, file_name: &str) -> Result<FactoryPresetSource, String> {
+    let raw = fs::read_to_string(path)
+        .map_err(|error| format!("failed to read {}: {error}", path.display()))?;
+    let authored: AuthoredTomlPresetFile = toml::from_str(&raw)
+        .map_err(|error| format!("failed to parse {}: {error}", path.display()))?;
+    if authored.format != "cosmo-preset" {
+        return Err(format!("{file_name}: unsupported preset format"));
+    }
+    if authored.format_version != 1 {
+        return Err(format!("{file_name}: unsupported formatVersion"));
+    }
+    if authored.preset_schema_version != 1 {
+        return Err(format!("{file_name}: unsupported presetSchemaVersion"));
+    }
+    if authored.favorite {
+        return Err(format!(
+            "{file_name}: factory preset sources must not set favorite = true"
+        ));
+    }
+
+    let data = toml_authored_data(authored.params, authored.data, file_name)?;
+    decode_authored_preset_source(
+        authored.id,
+        authored.name,
+        authored.description,
+        authored.tags,
+        authored.starred,
+        authored.source,
+        authored.author,
+        authored.sort_index,
+        data,
+        path,
+        file_name,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn decode_authored_preset_source(
+    id: String,
+    name: String,
+    description: String,
+    tags: Vec<String>,
+    starred: bool,
+    source: Option<String>,
+    author: Option<String>,
+    sort_index: Option<usize>,
+    data: Value,
+    path: &Path,
+    file_name: &str,
+) -> Result<FactoryPresetSource, String> {
+    validate_stable_factory_id(&id, file_name)?;
+    validate_tags(&tags, file_name)?;
+    let raw_data = data.clone();
+    validate_authored_preset_data(&data, file_name)?;
+    let data: SynthPresetV1 = serde_json::from_value(data.clone()).map_err(|error| {
+        format!(
+            "failed to decode preset data in {}: {error}",
+            path.display()
+        )
+    })?;
+    let canonical = serde_json::to_value(&data).map_err(|error| {
+        format!(
+            "failed to canonicalize preset data in {}: {error}",
+            path.display()
+        )
+    })?;
+    assert_no_unknown_fields(&raw_data, &canonical, "data", file_name)?;
+    Ok(FactoryPresetSource {
+        id,
+        name,
+        description: description.trim().to_string(),
+        tags,
+        starred,
+        source: source.unwrap_or_default(),
+        author: author.unwrap_or_default(),
+        sort_index,
+        data,
+    })
+}
+
+fn stable_factory_id_from_file_name(file_name: &str) -> String {
+    let stem = Path::new(file_name)
+        .file_stem()
+        .and_then(OsStr::to_str)
+        .unwrap_or(file_name);
+    format!("factory-{stem}")
+}
+
+fn validate_stable_factory_id(id: &str, file_name: &str) -> Result<(), String> {
+    let valid = id.starts_with("factory-")
+        && id
+            .chars()
+            .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-');
+    if valid {
+        Ok(())
+    } else {
+        Err(format!(
+            "{file_name}: factory preset id must be a stable slug starting with 'factory-'"
+        ))
+    }
+}
+
+fn toml_authored_data(
+    params: Option<toml::Value>,
+    data: Option<toml::Value>,
+    file_name: &str,
+) -> Result<Value, String> {
+    if params.is_some() && data.is_some() {
+        return Err(format!(
+            "{file_name}: TOML preset must provide either params or data, not both"
+        ));
+    }
+
+    if let Some(data) = data {
+        return toml_value_to_json(data, file_name);
+    }
+
+    let mut base = serde_json::to_value(SynthPresetV1::default())
+        .map_err(|error| format!("{file_name}: failed to build preset baseline: {error}"))?;
+    let Some(params) = params else {
+        return Ok(base);
+    };
+    let patch = normalize_toml_patch(toml_value_to_json(params, file_name)?);
+    let Some(base_params) = base.get_mut("params") else {
+        return Err(format!("{file_name}: baseline preset is missing params"));
+    };
+    merge_json_patch(base_params, patch);
+    Ok(base)
+}
+
+fn toml_value_to_json(value: toml::Value, file_name: &str) -> Result<Value, String> {
+    serde_json::to_value(value)
+        .map_err(|error| format!("{file_name}: failed to convert TOML value: {error}"))
+}
+
+fn normalize_toml_patch(value: Value) -> Value {
+    match value {
+        Value::Array(items) => {
+            let normalized = items
+                .into_iter()
+                .map(normalize_toml_patch)
+                .collect::<Vec<_>>();
+            let is_step_pairs = normalized.iter().all(|item| {
+                matches!(
+                    item,
+                    Value::Array(pair)
+                        if pair.len() == 2 && pair[0].is_number() && pair[1].is_number()
+                )
+            });
+            if is_step_pairs {
+                Value::Array(
+                    normalized
+                        .into_iter()
+                        .filter_map(|item| {
+                            let Value::Array(pair) = item else {
+                                return None;
+                            };
+                            Some(serde_json::json!({
+                                "level": pair[0].clone(),
+                                "rate": pair[1].clone(),
+                            }))
+                        })
+                        .collect(),
+                )
+            } else {
+                Value::Array(normalized)
+            }
+        }
+        Value::Object(mut object) => {
+            let keys = object.keys().cloned().collect::<Vec<_>>();
+            for key in keys {
+                if let Some(entry) = object.remove(&key) {
+                    object.insert(key, normalize_toml_patch(entry));
+                }
+            }
+            if let Some(Value::Array(steps)) = object.get("steps")
+                && !object.contains_key("stepCount")
+                && steps.iter().all(Value::is_object)
+            {
+                object.insert("stepCount".to_string(), serde_json::json!(steps.len()));
+            }
+            Value::Object(object)
+        }
+        value => value,
+    }
+}
+
+fn merge_json_patch(target: &mut Value, patch: Value) {
+    match (target, patch) {
+        (Value::Object(target_object), Value::Object(patch_object)) => {
+            for (key, value) in patch_object {
+                if let Some(existing) = target_object.get_mut(&key) {
+                    merge_json_patch(existing, value);
+                } else {
+                    target_object.insert(key, value);
+                }
+            }
+        }
+        (target, patch) => {
+            *target = patch;
+        }
+    }
 }
 
 fn order_presets_for_display(mut presets: Vec<FactoryPresetSource>) -> Vec<FactoryPresetSource> {
@@ -811,12 +1052,12 @@ fn render_factory_presets_ts(presets: &[FactoryPresetSource]) -> Result<String, 
 }
 
 fn build_factory_preset(
-    index: usize,
+    _index: usize,
     preset: &FactoryPresetSource,
     sort_index: usize,
 ) -> FactoryPresetOutput {
     FactoryPresetOutput {
-        id: format!("factory-preset-{index}"),
+        id: preset.id.clone(),
         name: preset.name.clone(),
         source: preset.source.clone(),
         author: preset.author.clone(),
@@ -829,12 +1070,12 @@ fn build_factory_preset(
 }
 
 fn build_factory_entry(
-    index: usize,
+    _index: usize,
     preset: &FactoryPresetSource,
     sort_index: usize,
 ) -> FactoryPresetEntry {
     FactoryPresetEntry {
-        id: format!("factory-preset-{index}"),
+        id: preset.id.clone(),
         name: preset.name.clone(),
         source: preset.source.clone(),
         author: preset.author.clone(),
@@ -944,13 +1185,7 @@ mod tests {
     }
 
     fn default_preset_value() -> Value {
-        let fixture: Value =
-            serde_json::from_str(include_str!("../factory-presets/001-2l-pluck-brss.json"))
-                .expect("fixture preset should parse");
-        fixture
-            .get("data")
-            .cloned()
-            .expect("fixture preset should contain data")
+        serde_json::to_value(SynthPresetV1::default()).expect("default preset should serialize")
     }
 
     fn write_preset(dir: &Path, file_name: &str, data: Value) {

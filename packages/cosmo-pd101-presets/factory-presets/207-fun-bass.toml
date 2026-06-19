@@ -1,0 +1,127 @@
+format = "cosmo-preset"
+formatVersion = 1
+presetSchemaVersion = 1
+id = "factory-207-fun-bass"
+name = "Fun Bass"
+author = "Purr Audio"
+description = ""
+tags = ["bass"]
+starred = true
+favorite = false
+source = "cosmo-factory"
+
+[params]
+lineSelect = "L1"
+modMode = "normal"
+octave = 0
+frequency = 440
+volume = 1
+polyMode = "poly8"
+legato = false
+velocityCurve = 0
+pitchBendRange = 2
+fxSlots = [{ type = "empty" }, { type = "empty" }, { type = "empty" }, { type = "vibrato", params = { enabled = true, waveform = 1, rate = 60, depth = 8, delay = 34 } }, { type = "distortion", params = { enabled = false, mode = 2, drive = 0.35327392578125, tone = 0.59924560546875, mix = 0.35631591796874995 } }, { type = "compressor", params = { enabled = false, thresholdDb = -26.302734375000007, ratio = 2, attackMs = 10, releaseMs = 150, makeupDb = 3, mix = 1 } }]
+
+[params.line1]
+algo = "cz101"
+algoBlend = 0
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+window = "off"
+dcaBase = 1
+dcwBase = 1
+modulation = 0
+detuneNote = 0
+detuneFine = 0
+octave = -1
+dcwKeyFollow = 0
+dcaKeyFollow = 0
+algoControlsA = [{ id = "preset", value = 1 }, { id = "waveform1", value = 1 }, { id = "waveform2", value = 1 }, { id = "windowFunction", value = 0 }]
+algoControlsB = []
+
+[params.line1.dcoEnv]
+steps = [[0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 1
+stepCount = 2
+loop = false
+
+[params.line1.dcwEnv]
+steps = [[72, 78], [99, 64], [52, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 3
+stepCount = 4
+loop = false
+
+[params.line1.dcaEnv]
+steps = [[99, 99], [0, 99], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+stepCount = 2
+loop = false
+
+[params.line2]
+algo = "cz101"
+algoBlend = 0
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+window = "off"
+dcaBase = 1
+dcwBase = 1
+modulation = 0
+detuneNote = 0
+detuneFine = 0
+octave = -1
+dcwKeyFollow = 0
+dcaKeyFollow = 0
+algoControlsA = [{ id = "preset", value = 0 }, { id = "waveform1", value = 1 }, { id = "waveform2", value = 4 }, { id = "windowFunction", value = 0 }]
+algoControlsB = []
+
+[params.line2.dcoEnv]
+steps = [[0, 50], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]]
+sustainStep = 1
+stepCount = 2
+loop = false
+
+[params.line2.dcwEnv]
+steps = [[99, 75], [99, 80], [99, 75], [0, 40], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 2
+stepCount = 4
+loop = false
+
+[params.line2.dcaEnv]
+steps = [[99, 75], [79, 80], [79, 75], [0, 40], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 2
+stepCount = 4
+loop = false
+
+[params.portamento]
+enabled = false
+mode = "time"
+rate = 85
+time = 0.1
+
+[params.lfo]
+waveform = "sine"
+rate = 2.000000000000001
+depth = 1
+symmetry = 0.5
+retrigger = false
+offset = 0
+
+[params.lfo2]
+waveform = "sine"
+rate = 2.000000000000001
+depth = 1
+symmetry = 0.5
+retrigger = false
+offset = 0
+
+[params.random]
+rate = 2
+
+[params.modEnv]
+attack = 0.010000000000000007
+decay = 0.20000000000000015
+sustain = 0.5
+release = 0.4000000000000003
+
+[params.modMatrix]
+routes = []
