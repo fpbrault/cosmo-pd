@@ -1185,7 +1185,11 @@ mod tests {
     }
 
     fn default_preset_value() -> Value {
-        serde_json::to_value(SynthPresetV1::default()).expect("default preset should serialize")
+        let authored: AuthoredTomlPresetFile =
+            toml::from_str(include_str!("../factory-presets/001-2l-pluck-brss.toml"))
+                .expect("factory fixture should decode");
+        toml_authored_data(authored.params, authored.data, "fixture.toml")
+            .expect("factory fixture should produce valid data")
     }
 
     fn write_preset(dir: &Path, file_name: &str, data: Value) {

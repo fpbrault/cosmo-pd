@@ -15,6 +15,7 @@ import {
 	type SavePresetRequest,
 	type SynthPresetV1,
 	exportPresetToToml,
+	normalizePresetTags,
 	parsePresetToml,
 } from "@cosmo/cosmo-pd101";
 
@@ -97,7 +98,7 @@ function parseImportedPreset(
 	data: SynthPresetV1;
 	author: string;
 	description: string;
-	tags: string[];
+	tags: PresetTagOptions[];
 	favorite: boolean;
 } | null {
 	const toml = parsePresetToml(json);
@@ -107,7 +108,7 @@ function parseImportedPreset(
 			data: toml.data,
 			author: toml.author,
 			description: toml.description,
-			tags: toml.tags,
+			tags: normalizePresetTags(toml.tags),
 			favorite: toml.favorite,
 		};
 	}
@@ -126,8 +127,8 @@ function parseImportedPreset(
 				author: parsed.author,
 				description:
 					typeof parsed.description === "string" ? parsed.description : "",
-				tags: parsed.tags.filter(
-					(tag): tag is string => typeof tag === "string",
+				tags: normalizePresetTags(
+					parsed.tags.filter((tag): tag is string => typeof tag === "string"),
 				),
 				favorite: parsed.favorite === true,
 			};
@@ -366,7 +367,7 @@ export function createPluginPresetManagerRepository({
 						name: entry.name,
 						author: entry.author,
 						description: entry.description,
-						tags: entry.tags,
+						tags: normalizePresetTags(entry.tags ?? []),
 						starred: entry.starred,
 						favorite: entry.favorite,
 						data: imported.data,
