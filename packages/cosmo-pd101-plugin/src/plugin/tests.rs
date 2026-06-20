@@ -10,6 +10,7 @@ use cosmo_pd101_bridge_types::{MidiLearnBinding, PluginIpcRequest, SavePresetPay
 fn clear_test_global_settings() {
     let path = crate::global_settings::get_global_settings_path();
     let _ = fs::remove_file(path);
+    crate::global_settings::reset_global_settings_cache();
 }
 
 fn with_test_data_dir<T>(test_fn: impl FnOnce(PathBuf) -> T) -> T {
