@@ -1,8 +1,10 @@
 import {
 	type BridgeJsonValue,
 	createWebPresetManagerRepository,
+	exportPresetToToml,
 	FACTORY_PRESETS,
 	type LibraryPreset,
+	normalizePresetTags,
 	type PresetActivationResult,
 	type PresetBankBundle,
 	type PresetEntry,
@@ -12,6 +14,7 @@ import {
 	type PresetManagerSession,
 	type PresetSource,
 	type PresetTagOptions,
+	parsePresetToml,
 	type SavePresetRequest,
 	type SynthPresetV1,
 } from "@cosmo/cosmo-pd101";
@@ -95,8 +98,21 @@ function parseImportedPreset(
 	data: SynthPresetV1;
 	author: string;
 	description: string;
-	tags: string[];
+	tags: PresetTagOptions[];
+	favorite: boolean;
 } | null {
+	const toml = parsePresetToml(json);
+	if (toml) {
+		return {
+			name: toml.name,
+			data: toml.data,
+			author: toml.author,
+			description: toml.description,
+			tags: normalizePresetTags(toml.tags),
+			favorite: toml.favorite,
+		};
+	}
+
 	try {
 		const parsed = JSON.parse(json) as Record<string, unknown>;
 		if (
@@ -111,9 +127,10 @@ function parseImportedPreset(
 				author: parsed.author,
 				description:
 					typeof parsed.description === "string" ? parsed.description : "",
-				tags: parsed.tags.filter(
-					(tag): tag is string => typeof tag === "string",
+				tags: normalizePresetTags(
+					parsed.tags.filter((tag): tag is string => typeof tag === "string"),
 				),
+				favorite: parsed.favorite === true,
 			};
 		}
 
@@ -124,6 +141,7 @@ function parseImportedPreset(
 				author: "",
 				description: "",
 				tags: [],
+				favorite: false,
 			};
 		}
 
@@ -143,6 +161,7 @@ function parseImportedPreset(
 				author: "",
 				description: "",
 				tags: [],
+				favorite: false,
 			};
 		}
 	} catch {
@@ -337,6 +356,25 @@ export function createPluginPresetManagerRepository({
 			if (!result) {
 				return null;
 			}
+			const imported = parseImportedPreset(result.json, result.filename);
+			const library = await window.__czGetPresetLibrary?.();
+			const entry = library?.entries.find((candidate) => candidate.id === id);
+			if (imported && entry) {
+				return {
+					filename: `${entry.name}.toml`,
+					json: exportPresetToToml({
+						id: entry.id,
+						name: entry.name,
+						author: entry.author,
+						description: entry.description,
+						tags: normalizePresetTags(entry.tags ?? []),
+						starred: entry.starred,
+						favorite: entry.favorite,
+						source: entry.source as PresetSource,
+						data: imported.data,
+					}),
+				};
+			}
 			return {
 				filename: result.filename,
 				json: result.json,
@@ -363,6 +401,9 @@ export function createPluginPresetManagerRepository({
 			if (!result) {
 				return null;
 			}
+			if (imported.favorite) {
+				await window.__czToggleStarred?.(result.id, true);
+			}
 			onBeforeApplyPreset?.();
 			const activated = await window.__czLoadPreset?.(result.id);
 			return createActivationResult(
@@ -371,8 +412,16 @@ export function createPluginPresetManagerRepository({
 			);
 		},
 		exportCurrentState: async (name) => ({
-			filename: `${name}.json`,
-			json: JSON.stringify({ _name: name, ...gatherPresetState() }, null, 2),
+			filename: `${name}.toml`,
+			json: exportPresetToToml({
+				name,
+				author: DEFAULT_USER_PRESET_AUTHOR,
+				description: "",
+				tags: [],
+				starred: false,
+				favorite: false,
+				data: gatherPresetState(),
+			}),
 		}),
 		retryLibrary: async () => {
 			await requireHostMethod(

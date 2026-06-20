@@ -745,14 +745,26 @@ fn merge_factory_entries(
     conn: &Connection,
     factory_entries: &[PresetLibraryEntry],
 ) -> Result<(), String> {
-    conn.execute(
-        "DELETE FROM presets WHERE source IN ('cosmo-factory', 'cz-factory')",
-        [],
-    )
-    .map_err(db_err)?;
-
     for entry in factory_entries {
         upsert_entry(conn, entry)?;
+    }
+
+    let current_ids = factory_entries
+        .iter()
+        .map(|entry| entry.id.as_str())
+        .collect::<std::collections::HashSet<_>>();
+    let existing_ids = conn
+        .prepare("SELECT id FROM presets WHERE source IN ('cosmo-factory', 'cz-factory')")
+        .map_err(db_err)?
+        .query_map([], |row| row.get::<_, String>(0))
+        .map_err(db_err)?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(db_err)?;
+    for id in existing_ids {
+        if !current_ids.contains(id.as_str()) {
+            conn.execute("DELETE FROM presets WHERE id = ?1", [id.as_str()])
+                .map_err(db_err)?;
+        }
     }
 
     conn.execute(
@@ -1582,6 +1594,30 @@ mod tests {
                 .iter()
                 .any(|record| record.entry.id == "f3" && !record.favorite)
         );
+    }
+
+    #[test]
+    fn merge_factory_reconciles_stale_factory_rows_without_deleting_users() {
+        let library = open_temp_library(vec![sample_entry("factory-old"), sample_entry("f1")]);
+        let mut conn = library.open_connection().unwrap();
+        let user = user_entry("user-1");
+        upsert_entry(&conn, &user).unwrap();
+        {
+            let tx = conn.transaction().unwrap();
+            upsert_favorite(&tx, "factory-old").unwrap();
+            upsert_favorite(&tx, "f1").unwrap();
+            upsert_favorite(&tx, "user-1").unwrap();
+            tx.commit().unwrap();
+        }
+
+        merge_factory_entries(&conn, &[sample_entry("f1"), sample_entry("f2")]).unwrap();
+
+        assert!(load_entry(&conn, "factory-old").unwrap().is_none());
+        assert!(load_entry(&conn, "user-1").unwrap().is_some());
+        let favorite_ids = list_favorite_ids(&conn).unwrap();
+        assert!(!favorite_ids.iter().any(|id| id == "factory-old"));
+        assert!(favorite_ids.iter().any(|id| id == "f1"));
+        assert!(favorite_ids.iter().any(|id| id == "user-1"));
     }
 
     #[test]

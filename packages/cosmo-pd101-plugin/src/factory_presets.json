@@ -1,6 +1,6 @@
 [
 	{
-		"id": "factory-preset-0",
+		"id": "factory-201-blissful-brass",
 		"name": "Blissful Brass",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -546,7 +546,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-1",
+		"id": "factory-224-anomalous-transmission",
 		"name": "Anomalous Transmission",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -1058,7 +1058,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-2",
+		"id": "factory-204-stuttering-echoes",
 		"name": "Stuttering Echoes",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -1525,7 +1525,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-3",
+		"id": "factory-206-heavenly-flute",
 		"name": "Heavenly Flute",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -1989,7 +1989,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-4",
+		"id": "factory-205-clav",
 		"name": "Clav",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -2413,7 +2413,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-5",
+		"id": "factory-207-fun-bass",
 		"name": "Fun Bass",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -2846,7 +2846,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-6",
+		"id": "factory-208-fuzz-lead",
 		"name": "Fuzz Lead",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -3281,7 +3281,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-7",
+		"id": "factory-215-lucifers-piano",
 		"name": "Lucifer's Piano",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -3763,7 +3763,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-8",
+		"id": "factory-214-red-velvet",
 		"name": "Red Velvet",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -4197,7 +4197,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-9",
+		"id": "factory-221-tweed",
 		"name": "Tweed",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -4631,7 +4631,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-10",
+		"id": "factory-223-wow",
 		"name": "Wow",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -5060,7 +5060,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-11",
+		"id": "factory-005-12-string-1",
 		"name": "12 STRING 1",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -5511,7 +5511,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-12",
+		"id": "factory-001-2l-pluck-brss",
 		"name": "2L PLUCK+BRSS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -5962,7 +5962,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-13",
+		"id": "factory-002-2line-w-reverb",
 		"name": "2LINE W/REVERB",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -6397,7 +6397,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-14",
+		"id": "factory-003-2x-attack-8v",
 		"name": "2X ATTACK 8V",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -6832,7 +6832,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-15",
+		"id": "factory-004-8-note-piano",
 		"name": "8-NOTE PIANO",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -7266,7 +7266,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-16",
+		"id": "factory-006-abracadabra",
 		"name": "ABRACADABRA",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -7718,7 +7718,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-17",
+		"id": "factory-007-acc-piano",
 		"name": "ACC PIANO",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -8135,7 +8135,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-18",
+		"id": "factory-008-accordian",
 		"name": "ACCORDIAN",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -8586,7 +8586,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-19",
+		"id": "factory-009-accousticbass",
 		"name": "ACCOUSTICBASS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -9020,7 +9020,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-20",
+		"id": "factory-010-african-drum",
 		"name": "AFRICAN DRUM",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -9437,7 +9437,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-21",
+		"id": "factory-011-afro-perc-2",
 		"name": "AFRO-PERC. 2",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -9871,7 +9871,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-22",
+		"id": "factory-012-alien-1",
 		"name": "ALIEN 1",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -10288,7 +10288,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-23",
+		"id": "factory-013-all-too-much",
 		"name": "ALL TOO MUCH",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -10722,7 +10722,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-24",
+		"id": "factory-014-analg-subbass",
 		"name": "ANALG SUBBASS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -11173,7 +11173,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-25",
+		"id": "factory-015-analog-2",
 		"name": "ANALOG 2",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -11625,7 +11625,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-26",
+		"id": "factory-016-analog-3",
 		"name": "ANALOG 3",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -12077,7 +12077,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-27",
+		"id": "factory-017-analog-5",
 		"name": "ANALOG 5",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -12529,7 +12529,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-28",
+		"id": "factory-018-analog-6",
 		"name": "ANALOG 6",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -12964,7 +12964,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-29",
+		"id": "factory-019-analog-pluck",
 		"name": "ANALOG PLUCK",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -13400,7 +13400,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-30",
+		"id": "factory-020-analog-strngs",
 		"name": "ANALOG STRNGS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -13819,7 +13819,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-31",
+		"id": "factory-021-analog-synth-1",
 		"name": "ANALOG SYNTH 1",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -14254,7 +14254,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-32",
+		"id": "factory-022-balinese-bell",
 		"name": "BALINESE BELL",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -14705,7 +14705,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-33",
+		"id": "factory-023-banjo-tremolo",
 		"name": "BANJO TREMOLO",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -15139,7 +15139,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-34",
+		"id": "factory-024-bass3",
 		"name": "BASS3",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -15573,7 +15573,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-35",
+		"id": "factory-025-bell-piano",
 		"name": "BELL-PIANO",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -16025,7 +16025,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-36",
+		"id": "factory-026-bellflute-verb",
 		"name": "BELLFLUTE/VERB",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -16443,7 +16443,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-37",
+		"id": "factory-027-bells",
 		"name": "BELLS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -16894,7 +16894,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-38",
+		"id": "factory-028-bestclavichord",
 		"name": "BESTCLAVICHORD",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -17328,7 +17328,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-39",
+		"id": "factory-029-big-brass",
 		"name": "BIG BRASS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -17762,7 +17762,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-40",
+		"id": "factory-030-bigbass",
 		"name": "BIGBASS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -18196,7 +18196,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-41",
+		"id": "factory-031-brain-damage1",
 		"name": "BRAIN DAMAGE1",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -18630,7 +18630,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-42",
+		"id": "factory-032-brass-5ths",
 		"name": "BRASS 5THS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -19047,7 +19047,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-43",
+		"id": "factory-033-brian-s-piano",
 		"name": "BRIAN'S PIANO",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -19498,7 +19498,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-44",
+		"id": "factory-034-brss-w-trails",
 		"name": "BRSS W/TRAILS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -19915,7 +19915,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-45",
+		"id": "factory-035-brth-flte-1",
 		"name": "BRTH FLTE 1",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -20366,7 +20366,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-46",
+		"id": "factory-202-bright-changes",
 		"name": "Bright Changes",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -20899,7 +20899,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-47",
+		"id": "factory-036-cello-1",
 		"name": "CELLO 1",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -21333,7 +21333,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-48",
+		"id": "factory-037-cherylwhinestn",
 		"name": "CHERYLWHINESTN",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -21750,7 +21750,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-49",
+		"id": "factory-038-chimew-footstp",
 		"name": "CHIMEW/FOOTSTP",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -22168,7 +22168,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-50",
+		"id": "factory-039-chirp",
 		"name": "CHIRP",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -22602,7 +22602,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-51",
+		"id": "factory-040-clarinet",
 		"name": "CLARINET",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -23019,7 +23019,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-52",
+		"id": "factory-041-cool-vibes",
 		"name": "COOL VIBES",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -23436,7 +23436,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-53",
+		"id": "factory-042-crystal-3",
 		"name": "CRYSTAL 3",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -23854,7 +23854,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-54",
+		"id": "factory-203-chants",
 		"name": "Chants",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -24350,7 +24350,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-55",
+		"id": "factory-043-dark-sq-seq",
 		"name": "DARK SQ-SEQ",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -24785,7 +24785,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-56",
+		"id": "factory-044-dbl-reed",
 		"name": "DBL REED",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -25202,7 +25202,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-57",
+		"id": "factory-045-demibanjo",
 		"name": "DEMIBANJO",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -25653,7 +25653,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-58",
+		"id": "factory-046-distortedguitr",
 		"name": "DISTORTEDGUITR",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -26087,7 +26087,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-59",
+		"id": "factory-047-diva-harmonic",
 		"name": "DIVA HARMONIC",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -26504,7 +26504,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-60",
+		"id": "factory-048-double-reed",
 		"name": "DOUBLE REED",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -26955,7 +26955,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-61",
+		"id": "factory-049-dukey",
 		"name": "DUKEY",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -27389,7 +27389,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-62",
+		"id": "factory-050-dxlead1synpro",
 		"name": "DXLEAD1SYNPRO",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -27806,7 +27806,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-63",
+		"id": "factory-051-echo-fantasy",
 		"name": "ECHO FANTASY",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -28240,7 +28240,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-64",
+		"id": "factory-052-elec-bass-a",
 		"name": "ELEC. BASS A",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -28691,7 +28691,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-65",
+		"id": "factory-053-elec-bass-c",
 		"name": "ELEC. BASS C",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -29125,7 +29125,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-66",
+		"id": "factory-054-elec-bass-2",
 		"name": "ELEC.BASS 2",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -29559,7 +29559,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-67",
+		"id": "factory-055-elec-bass-3",
 		"name": "ELEC.BASS 3",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -29993,7 +29993,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-68",
+		"id": "factory-056-elec-drum",
 		"name": "ELEC.DRUM",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -30427,7 +30427,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-69",
+		"id": "factory-060-electronic-12",
 		"name": "ELECTRONIC-12",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -30878,7 +30878,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-70",
+		"id": "factory-057-electronic-4",
 		"name": "ELECTRONIC-4",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -31312,7 +31312,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-71",
+		"id": "factory-058-electronic-5",
 		"name": "ELECTRONIC-5",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -31763,7 +31763,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-72",
+		"id": "factory-059-electronic-8",
 		"name": "ELECTRONIC-8",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -32214,7 +32214,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-73",
+		"id": "factory-061-elephantbrass",
 		"name": "ELEPHANTBRASS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -32648,7 +32648,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-74",
+		"id": "factory-062-elp-full-synth",
 		"name": "ELP FULL SYNTH",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -33066,7 +33066,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-75",
+		"id": "factory-063-envfltrfatorgn",
 		"name": "ENVFLTRFATORGN",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -33483,7 +33483,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-76",
+		"id": "factory-064-fade-brass",
 		"name": "FADE BRASS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -33900,7 +33900,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-77",
+		"id": "factory-065-fasst-chords",
 		"name": "FASST CHORDS",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -34317,7 +34317,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-78",
+		"id": "factory-066-fat2",
 		"name": "FAT2",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -34734,7 +34734,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-79",
+		"id": "factory-067-filsweep5t",
 		"name": "FILSWEEP5T",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -35186,7 +35186,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-80",
+		"id": "factory-068-filt-sweep",
 		"name": "FILT SWEEP",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -35621,7 +35621,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-81",
+		"id": "factory-069-fltr-swp-reed",
 		"name": "FLTR-SWP/REED",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -36056,7 +36056,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-82",
+		"id": "factory-070-folkguitarsyn",
 		"name": "FOLKGUITARSYN",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -36473,7 +36473,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-83",
+		"id": "factory-071-frch-horn",
 		"name": "FRCH HORN",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -36907,7 +36907,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-84",
+		"id": "factory-072-froggy",
 		"name": "FROGGY",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -37358,7 +37358,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-85",
+		"id": "factory-073-good-human",
 		"name": "GOOD HUMAN",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -37776,7 +37776,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-86",
+		"id": "factory-074-guitar",
 		"name": "GUITAR",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -38193,7 +38193,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-87",
+		"id": "factory-075-ha-ha-ha",
 		"name": "HA HA HA",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -38627,7 +38627,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-88",
+		"id": "factory-076-harpsichordth",
 		"name": "HARPSICHORDTH",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -39079,7 +39079,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-89",
+		"id": "factory-209-hot-lead",
 		"name": "Hot Lead",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -39496,7 +39496,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-90",
+		"id": "factory-077-internal-1",
 		"name": "INTERNAL_1",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -39947,7 +39947,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-91",
+		"id": "factory-086-internal-10",
 		"name": "INTERNAL_10",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -40364,7 +40364,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-92",
+		"id": "factory-087-internal-11",
 		"name": "INTERNAL_11",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -40815,7 +40815,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-93",
+		"id": "factory-088-internal-12",
 		"name": "INTERNAL_12",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -41266,7 +41266,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-94",
+		"id": "factory-089-internal-13",
 		"name": "INTERNAL_13",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -41717,7 +41717,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-95",
+		"id": "factory-090-internal-14",
 		"name": "INTERNAL_14",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -42168,7 +42168,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-96",
+		"id": "factory-091-internal-15",
 		"name": "INTERNAL_15",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -42602,7 +42602,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-97",
+		"id": "factory-092-internal-16",
 		"name": "INTERNAL_16",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -43053,7 +43053,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-98",
+		"id": "factory-078-internal-2",
 		"name": "INTERNAL_2",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -43504,7 +43504,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-99",
+		"id": "factory-079-internal-3",
 		"name": "INTERNAL_3",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -43938,7 +43938,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-100",
+		"id": "factory-080-internal-4",
 		"name": "INTERNAL_4",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -44389,7 +44389,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-101",
+		"id": "factory-081-internal-5",
 		"name": "INTERNAL_5",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -44823,7 +44823,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-102",
+		"id": "factory-082-internal-6",
 		"name": "INTERNAL_6",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -45257,7 +45257,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-103",
+		"id": "factory-083-internal-7",
 		"name": "INTERNAL_7",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -45708,7 +45708,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-104",
+		"id": "factory-084-internal-8",
 		"name": "INTERNAL_8",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -46159,7 +46159,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-105",
+		"id": "factory-085-internal-9",
 		"name": "INTERNAL_9",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -46576,7 +46576,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-106",
+		"id": "factory-210-infinite-wobble",
 		"name": "Infinite Wobble",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -47024,7 +47024,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-107",
+		"id": "factory-093-jump-i",
 		"name": "JUMP I",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -47442,7 +47442,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-108",
+		"id": "factory-094-metalkey1",
 		"name": "METALKEY1",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -47876,7 +47876,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-109",
+		"id": "factory-095-moogiii",
 		"name": "MOOGIII",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -48294,7 +48294,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-110",
+		"id": "factory-211-majestic-pad",
 		"name": "Majestic Pad",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -48788,7 +48788,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-111",
+		"id": "factory-096-new-age-pluck",
 		"name": "NEW AGE PLUCK",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -49224,7 +49224,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-112",
+		"id": "factory-097-oberheim-moan",
 		"name": "OBERHEIM MOAN",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -49659,7 +49659,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-113",
+		"id": "factory-212-organ",
 		"name": "Organ",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -50090,7 +50090,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-114",
+		"id": "factory-098-pb8-9",
 		"name": "PB8_9",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -50508,7 +50508,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-115",
+		"id": "factory-099-piano-iii",
 		"name": "PIANO III",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -50925,7 +50925,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-116",
+		"id": "factory-100-piano-phase",
 		"name": "PIANO PHASE",
 		"source": "cz-factory",
 		"author": "Temple of CZ",
@@ -51359,7 +51359,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-117",
+		"id": "factory-213-plucking",
 		"name": "Plucking",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -51821,7 +51821,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-118",
+		"id": "factory-216-soft-brass",
 		"name": "Soft Brass",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -52286,7 +52286,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-119",
+		"id": "factory-217-solo-lead",
 		"name": "Solo Lead",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -52751,7 +52751,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-120",
+		"id": "factory-218-starship-1",
 		"name": "Starship 1",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -53216,7 +53216,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-121",
+		"id": "factory-219-synth-bass",
 		"name": "Synth Bass",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -53693,7 +53693,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-122",
+		"id": "factory-220-thick-bass",
 		"name": "Thick Bass",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",
@@ -54144,7 +54144,7 @@
 		}
 	},
 	{
-		"id": "factory-preset-123",
+		"id": "factory-222-waxy-pad",
 		"name": "Waxy Pad",
 		"source": "cosmo-factory",
 		"author": "Purr Audio",

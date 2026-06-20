@@ -1,0 +1,203 @@
+format = "cosmo-preset"
+id = "factory-203-chants"
+name = "Chants"
+author = "Purr Audio"
+description = ""
+tags = ["brass"]
+starred = false
+favorite = false
+source = "cosmo-factory"
+
+[params]
+czDacEnabled = false
+frequency = 440
+legato = false
+lineSelect = "L1+L2'"
+macro1 = 0
+macro2 = 0
+macro3 = 0
+macro4 = 0
+macroLabels = ["Brightness", "Timbre", "Time", "Movement"]
+modMode = "normal"
+octave = 0
+pitchBendRange = 2
+polyMode = "poly8"
+ringGain = 4
+tempoBpm = 120
+velocityCurve = 0
+volume = 1
+
+[params.line1]
+algo = "pinch"
+algo2 = "cz101"
+algoBlend = 0
+algoControlsA = [{ id = "pinchFocus", value = 0.20136642 }, { id = "pinchAsym", value = -0.067734376 }, { id = "pinchCurve", value = 0.40523437 }, { id = "pinchDrive", value = 0.58357424 }]
+algoControlsB = [{ id = "preset", value = 0 }, { id = "waveform1", value = 0 }, { id = "waveform2", value = 0 }, { id = "windowFunction", value = 0 }]
+baseWaveformA = "triangle"
+baseWaveformB = "cosine"
+dcaBase = 1
+dcaKeyFollow = 0
+dcwBase = 0.96
+dcwKeyFollow = 0
+detuneFine = 0
+detuneNote = 0
+modulation = 0
+octave = 0
+window = "off"
+
+[params.line1.dcoEnv]
+loop = false
+stepCount = 3
+steps = [[66, 71], [0, 69], [0, 51], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+
+[params.line1.dcwEnv]
+loop = false
+stepCount = 2
+steps = [[99, 56], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [0, 60]]
+sustainStep = 0
+
+[params.line1.dcaEnv]
+loop = false
+stepCount = 3
+steps = [[70, 90], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [0, 60]]
+sustainStep = 1
+
+[params.line2]
+algo = "pinch"
+algo2 = "cz101"
+algoBlend = 0
+algoControlsA = [{ id = "pinchFocus", value = 0.5 }, { id = "pinchAsym", value = 0 }, { id = "pinchCurve", value = 0.5 }, { id = "pinchDrive", value = 0.5 }]
+algoControlsB = [{ id = "preset", value = 0 }, { id = "waveform1", value = 0 }, { id = "waveform2", value = 0 }, { id = "windowFunction", value = 0 }]
+baseWaveformA = "sine"
+baseWaveformB = "cosine"
+dcaBase = 1
+dcaKeyFollow = 0
+dcwBase = 1
+dcwKeyFollow = 0
+detuneFine = 4
+detuneNote = 0
+modulation = 0
+octave = 0
+window = "off"
+
+[params.line2.dcoEnv]
+loop = false
+stepCount = 8
+steps = [[0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+
+[params.line2.dcwEnv]
+loop = false
+stepCount = 2
+steps = [[99, 61], [99, 21], [99, 26], [99, 99], [99, 99], [99, 99], [99, 99], [0, 60]]
+sustainStep = 0
+
+[params.line2.dcaEnv]
+loop = false
+stepCount = 2
+steps = [[99, 90], [91, 49], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [0, 60]]
+sustainStep = 0
+
+[params.portamento]
+enabled = false
+mode = "time"
+rate = 85
+time = 0.1
+
+[params.lfo]
+depth = 0.7686719
+offset = 0
+rate = 0.12460307
+rateMode = "hz"
+retrigger = false
+symmetry = 0
+syncDivision = "quarter"
+waveform = "sine"
+
+[params.lfo2]
+depth = 0
+offset = 0
+rate = 5
+rateMode = "hz"
+retrigger = false
+symmetry = 0.5
+syncDivision = "quarter"
+waveform = "sine"
+
+[params.random]
+rate = 2
+
+[params.modEnv]
+attack = 0.01
+decay = 0.1
+release = 0.2
+sustain = 0.5
+
+[params.fx.slot1]
+type = "phaseMod"
+
+[params.fx.slot1.params]
+amount = 0.08300232
+enabled = true
+pmPre = true
+ratio = 2.0046418
+
+[params.fx.slot2]
+type = "junoChorus"
+
+[params.fx.slot2.params]
+enabled = true
+mix = 0.12263183
+mode = 0
+
+[params.fx.slot3]
+type = "eq8Band"
+
+[params.fx.slot3.params]
+enabled = true
+gainBand1 = 3
+gainBand2 = 4
+gainBand3 = 3
+gainBand4 = 1
+gainBand5 = 0
+gainBand6 = -2
+gainBand7 = -4
+gainBand8 = -6
+
+[params.fx.slot4]
+type = "compressor"
+
+[params.fx.slot4.params]
+attackMs = 5
+enabled = false
+makeupDb = 1.7831836
+mix = 1
+ratio = 4
+releaseMs = 80
+thresholdDb = -21.2406
+
+[params.fx.slot6]
+type = "delay"
+
+[params.fx.slot6.params]
+enabled = true
+feedback = 0.22
+mix = 0.13525513
+syncDivision = "quarter"
+tapeMode = false
+time = 0.11
+timeMode = "hz"
+warmth = 0.2
+
+[[params.mod.routes]]
+source = "lfo1"
+destination = "line1AlgoParam3"
+amount = 0.21906248
+enabled = true
+
+[[params.mod.routes]]
+source = "lfo1"
+destination = "line1AlgoParam2"
+amount = 0.5
+enabled = true

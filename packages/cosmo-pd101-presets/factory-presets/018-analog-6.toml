@@ -1,0 +1,146 @@
+format = "cosmo-preset"
+id = "factory-018-analog-6"
+name = "ANALOG 6"
+author = "Temple of CZ"
+description = ""
+tags = ["synth", "lead"]
+starred = false
+favorite = false
+source = "cz-factory"
+
+[params]
+czDacEnabled = false
+frequency = 440
+legato = false
+lineSelect = "L1+L2'"
+macro1 = 0
+macro2 = 0
+macro3 = 0
+macro4 = 0
+macroLabels = ["Brightness", "Timbre", "Time", "Movement"]
+modMode = "normal"
+octave = 0
+pitchBendRange = 2
+polyMode = "poly8"
+ringGain = 4
+tempoBpm = 120
+velocityCurve = 0
+volume = 1
+
+[params.line1]
+algo = "cz101"
+algo2 = "cz101"
+algoBlend = 0
+algoControlsA = [{ id = "preset", value = 0 }, { id = "waveform1", value = 4 }, { id = "waveform2", value = 2 }, { id = "windowFunction", value = 0 }]
+algoControlsB = [{ id = "preset", value = 2 }, { id = "waveform1", value = 2 }, { id = "waveform2", value = 2 }, { id = "windowFunction", value = 0 }]
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+dcaBase = 1
+dcaKeyFollow = 0
+dcwBase = 1
+dcwKeyFollow = 0
+detuneFine = 0
+detuneNote = 0
+modulation = 0
+octave = 0
+window = "off"
+
+[params.line1.dcoEnv]
+loop = false
+stepCount = 1
+steps = [[58, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+
+[params.line1.dcwEnv]
+loop = false
+stepCount = 8
+steps = [[77, 99], [79, 12], [8, 30], [0, 15], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 7
+
+[params.line1.dcaEnv]
+loop = false
+stepCount = 8
+steps = [[99, 99], [86, 19], [65, 23], [39, 50], [0, 23], [0, 50], [0, 50], [0, 50]]
+sustainStep = 7
+
+[params.line2]
+algo = "cz101"
+algoBlend = 0
+algoControlsA = [{ id = "preset", value = 3 }, { id = "waveform1", value = 4 }, { id = "waveform2", value = 4 }, { id = "windowFunction", value = 0 }]
+algoControlsB = []
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+dcaBase = 1
+dcaKeyFollow = 0
+dcwBase = 1
+dcwKeyFollow = 0
+detuneFine = 8
+detuneNote = 0
+modulation = 0
+octave = 0
+window = "off"
+
+[params.line2.dcoEnv]
+loop = false
+stepCount = 1
+steps = [[0, 0], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+
+[params.line2.dcwEnv]
+loop = false
+stepCount = 3
+steps = [[99, 92], [62, 42], [0, 30], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 2
+
+[params.line2.dcaEnv]
+loop = false
+stepCount = 3
+steps = [[99, 90], [12, 22], [0, 86], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 2
+
+[params.portamento]
+enabled = false
+mode = "time"
+rate = 0
+time = 0.1
+
+[params.lfo]
+depth = 1
+offset = 0
+rate = 5
+rateMode = "hz"
+retrigger = false
+symmetry = 0.5
+syncDivision = "quarter"
+waveform = "sine"
+
+[params.lfo2]
+depth = 0
+offset = 0
+rate = 5
+rateMode = "hz"
+retrigger = false
+symmetry = 0.5
+syncDivision = "quarter"
+waveform = "sine"
+
+[params.random]
+rate = 2
+
+[params.modEnv]
+attack = 0.01
+decay = 0.1
+release = 0.2
+sustain = 0.5
+
+[params.fx.slot4]
+type = "vibrato"
+
+[params.fx.slot4.params]
+delay = 51
+depth = 7
+enabled = true
+rate = 44
+rate_mode = "hz"
+sync_division = "quarter"
+waveform = 1
