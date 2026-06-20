@@ -8,7 +8,11 @@ import { LIBRARY_SLIDE_TRANSITION } from "./drawerHelpers";
 const MemoPresetLibrary = memo(PresetLibrary);
 
 function downloadPresetFile(file: ExportedPresetFile) {
-	const blob = new Blob([file.json], { type: "application/json" });
+	const blob = new Blob([file.json], {
+		type: file.filename.endsWith(".toml")
+			? "application/toml"
+			: "application/json",
+	});
 	const url = URL.createObjectURL(blob);
 	const anchor = document.createElement("a");
 	anchor.href = url;

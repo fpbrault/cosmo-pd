@@ -23,6 +23,7 @@ import {
 	updateStoredPreset,
 } from "@/lib/synth/presetStorage";
 import type { PresetTagOptions } from "@/lib/synth/presetTags";
+import { exportPresetToToml } from "@/lib/synth/presetTomlExchange";
 import { buildAllPresetEntries } from "./synthPresetManagerHelpers";
 
 type CreateWebPresetManagerRepositoryOptions = {
@@ -53,8 +54,16 @@ function buildCurrentStateExport(
 	gatherPresetState: () => SynthPresetV1,
 ): ExportedPresetFile {
 	return {
-		filename: `${name}.json`,
-		json: JSON.stringify({ _name: name, ...gatherPresetState() }, null, 2),
+		filename: `${name}.toml`,
+		json: exportPresetToToml({
+			name,
+			author: DEFAULT_USER_PRESET_AUTHOR,
+			description: "",
+			tags: [],
+			starred: false,
+			favorite: false,
+			data: gatherPresetState(),
+		}),
 	};
 }
 
@@ -155,7 +164,7 @@ export function createWebPresetManagerRepository({
 			}
 			const preset = await loadStoredPreset(id);
 			return {
-				filename: `${preset?.name ?? "preset"}.json`,
+				filename: `${preset?.name ?? "preset"}.toml`,
 				json,
 			};
 		},
@@ -184,6 +193,9 @@ export function createWebPresetManagerRepository({
 				starred: importedPreset.starred,
 				tags: importedPreset.tags,
 			});
+			if (importedPreset.favorite === true) {
+				await setPresetFavorite(stored.id, true);
+			}
 			onBeforeApplyPreset?.();
 			applyPreset(stored.data);
 			return createActivationResult(createSelection(stored.id, stored.name));

@@ -1,0 +1,227 @@
+format = "cosmo-preset"
+id = "factory-224-anomalous-transmission"
+name = "Anomalous Transmission"
+author = "Purr Audio"
+description = "An atmospheric pad combined with an otherworldly gritty texture. Use the mod wheel to add more brightness and more grit."
+tags = ["pad"]
+starred = true
+favorite = false
+source = "cosmo-factory"
+sortIndex = 1
+
+[params]
+czDacEnabled = false
+frequency = 440
+legato = false
+lineSelect = "L1+L2'"
+macro1 = 0
+macro2 = 0
+macro3 = 0
+macro4 = 0
+macroLabels = ["Brightness", "Timbre", "Time", "Movement"]
+modMode = "normal"
+octave = 0
+pitchBendRange = 2
+polyMode = "poly8"
+ringGain = 4
+tempoBpm = 120
+velocityCurve = 0
+volume = 1
+
+[params.line1]
+algo = "cz101"
+algo2 = "cheby"
+algoBlend = 0.015498068
+algoControlsA = [{ id = "preset", value = 1 }, { id = "waveform1", value = 1 }, { id = "waveform2", value = 1 }, { id = "windowFunction", value = 0 }]
+algoControlsB = [{ id = "chebyOrder", value = 0.68992954 }, { id = "chebyTilt", value = 0 }, { id = "chebyWarp", value = 0 }]
+baseWaveformA = "cosine"
+baseWaveformB = "sine"
+dcaBase = 1
+dcaKeyFollow = 0
+dcwBase = 0.6140782
+dcwKeyFollow = 0
+detuneFine = 0
+detuneNote = 0
+modulation = 0
+octave = 0
+window = "off"
+
+[params.line1.dcoEnv]
+loop = false
+stepCount = 1
+steps = [[0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+
+[params.line1.dcwEnv]
+loop = false
+stepCount = 2
+steps = [[83, 44], [0, 13], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+
+[params.line1.dcaEnv]
+loop = false
+stepCount = 3
+steps = [[99, 53], [99, 84], [0, 25], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 1
+
+[params.line2]
+algo = "cz101"
+algo2 = "cz101"
+algoBlend = 0
+algoControlsA = [{ id = "preset", value = 0 }, { id = "waveform1", value = 2 }, { id = "waveform2", value = 5 }, { id = "windowFunction", value = 0 }]
+algoControlsB = [{ id = "preset", value = 4 }, { id = "waveform1", value = 5 }, { id = "waveform2", value = 5 }, { id = "windowFunction", value = 0 }]
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+dcaBase = 1
+dcaKeyFollow = 5
+dcwBase = 1
+dcwKeyFollow = 5
+detuneFine = 6
+detuneNote = 0
+modulation = 0
+octave = 1
+window = "off"
+
+[params.line2.dcoEnv]
+loop = false
+stepCount = 2
+steps = [[76, 99], [0, 92], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 1
+
+[params.line2.dcwEnv]
+loop = false
+stepCount = 3
+steps = [[99, 99], [23, 64], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 2
+
+[params.line2.dcaEnv]
+loop = false
+stepCount = 3
+steps = [[99, 99], [99, 84], [0, 38], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 1
+
+[params.portamento]
+enabled = false
+mode = "rate"
+rate = 0
+time = 0.5
+
+[params.lfo]
+depth = 1
+offset = 0
+rate = 0.17973556
+rateMode = "hz"
+retrigger = false
+symmetry = 0.5
+syncDivision = "quarter"
+waveform = "sine"
+
+[params.lfo2]
+depth = 0
+offset = 0
+rate = 5
+rateMode = "hz"
+retrigger = false
+symmetry = 0.5
+syncDivision = "quarter"
+waveform = "sine"
+
+[params.random]
+rate = 2
+
+[params.modEnv]
+attack = 0.4505869
+decay = 0.1
+release = 0.2
+sustain = 0.5
+
+[params.fx.slot1]
+type = "vibrato"
+
+[params.fx.slot1.params]
+delay = 60
+depth = 8
+enabled = true
+rate = 44
+rate_mode = "hz"
+sync_division = "quarter"
+waveform = 1
+
+[params.fx.slot2]
+type = "ringMod"
+
+[params.fx.slot2.params]
+carrierHz = 1314.6998
+enabled = true
+mix = 0.11390866
+
+[params.fx.slot3]
+type = "phaser"
+
+[params.fx.slot3.params]
+depth = 0.78
+enabled = false
+feedback = 0.55
+mix = 0.43
+rate = 0.9
+
+[params.fx.slot4]
+type = "grainDelay"
+
+[params.fx.slot4.params]
+density = 0.5
+enabled = true
+feedback = 0.36
+mix = 0.23994748
+pitchSemitones = 12
+scatter = 0.24
+syncDivision = "quarter"
+time = 0.5
+timeMode = "hz"
+
+[params.fx.slot5]
+type = "shimmerVerb"
+
+[params.fx.slot5.params]
+enabled = true
+mix = 0.34471107
+shimmer = 0.6
+space = 0.9883891
+
+[params.fx.slot6]
+type = "loFi"
+
+[params.fx.slot6.params]
+crackle = 0
+degrade = 0
+enabled = true
+filter = -0.14221908
+flutter = 0.09427269
+mix = 1
+noise = 0.025009774
+saturation = 0.2448133
+wow = 0.1368654
+
+[[params.mod.routes]]
+source = "lfo1"
+destination = "ringModMix"
+amount = 0.12
+enabled = true
+
+[[params.mod.routes]]
+source = "modEnv"
+destination = "ringModCarrierHz"
+amount = 0.5
+enabled = true
+
+[[params.mod.routes]]
+source = "velocity"
+destination = "line1DcwBase"
+amount = 0.5
+enabled = true
+
+[[params.mod.routes]]
+source = "modWheel"
+destination = "line1DcwBase"
+amount = 0.5
+enabled = true
