@@ -5,6 +5,10 @@ import {
 	normalizePresetTags,
 	type PresetTagOptions,
 } from "@/lib/synth/presetTags";
+import {
+	exportStoredPresetToToml,
+	parsePresetToml,
+} from "@/lib/synth/presetTomlExchange";
 import type { FrontendPresetV1, PresetMetadata } from "@/lib/synth/presetTypes";
 
 const DB_NAME = "cosmo-pd101-preset-storage";
@@ -12,6 +16,9 @@ const DB_VERSION = 2;
 
 export type { PresetMetadata };
 export type StoredPreset = FrontendPresetV1;
+export type ImportedStoredPreset = StoredPreset & {
+	favorite?: boolean;
+};
 
 export type CurrentPresetSession = {
 	activePresetId: string | null;
@@ -340,11 +347,31 @@ export async function exportPreset(id: string): Promise<string | null> {
 		return null;
 	}
 
-	return JSON.stringify(normalizeStoredPreset(preset), null, 2);
+	const favorite = await loadPresetFavorite(id);
+	return exportStoredPresetToToml(normalizeStoredPreset(preset), favorite);
 }
 
-export async function importPreset(json: string): Promise<StoredPreset | null> {
+export async function importPreset(
+	json: string,
+): Promise<ImportedStoredPreset | null> {
 	try {
+		const parsedToml = parsePresetToml(json);
+		if (parsedToml) {
+			return {
+				...createStoredPreset({
+					id: parsedToml.id,
+					name: parsedToml.name,
+					data: parsedToml.data,
+					source: "user",
+					author: parsedToml.author,
+					description: parsedToml.description,
+					starred: false,
+					tags: parsedToml.tags,
+				}),
+				favorite: parsedToml.favorite,
+			};
+		}
+
 		const parsed = JSON.parse(json) as Record<string, unknown>;
 		if (isStoredPreset(parsed)) {
 			return createStoredPreset(parsed);

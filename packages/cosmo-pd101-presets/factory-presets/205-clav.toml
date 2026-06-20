@@ -1,0 +1,174 @@
+format = "cosmo-preset"
+id = "factory-205-clav"
+name = "Clav"
+author = "Purr Audio"
+description = ""
+tags = ["piano", "keys"]
+starred = true
+favorite = false
+source = "cosmo-factory"
+
+[params]
+czDacEnabled = false
+frequency = 440
+legato = false
+lineSelect = "L1"
+macro1 = 0
+macro2 = 0
+macro3 = 0
+macro4 = 0
+macroLabels = ["Brightness", "Timbre", "Time", "Movement"]
+modMode = "normal"
+octave = 0
+pitchBendRange = 2
+polyMode = "poly8"
+ringGain = 4
+tempoBpm = 120
+velocityCurve = 0
+volume = 1
+
+[params.line1]
+algo = "cz101"
+algoBlend = 0
+algoControlsA = []
+algoControlsB = []
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+dcaBase = 1
+dcaKeyFollow = 9
+dcwBase = 0.71
+dcwKeyFollow = 9
+detuneFine = 0
+detuneNote = 0
+modulation = 0
+octave = 0
+window = "off"
+
+[params.line1.dcoEnv]
+loop = false
+stepCount = 1
+steps = [[0, 99], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+
+[params.line1.dcwEnv]
+loop = false
+stepCount = 2
+steps = [[99, 99], [0, 63], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+
+[params.line1.dcaEnv]
+loop = false
+stepCount = 2
+steps = [[98, 99], [99, 55], [0, 33], [0, 60], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+
+[params.line2]
+algo = "twist"
+algo2 = "cz101"
+algoBlend = 0
+algoControlsA = [{ id = "twistHarmonics", value = 0.5 }, { id = "twistDepth", value = 0.5 }, { id = "twistPhase", value = 0 }, { id = "twistShape", value = 0.5 }]
+algoControlsB = []
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+dcaBase = 1
+dcaKeyFollow = 9
+dcwBase = 1
+dcwKeyFollow = 9
+detuneFine = 0
+detuneNote = 0
+modulation = 0
+octave = -1
+window = "off"
+
+[params.line2.dcoEnv]
+loop = false
+stepCount = 1
+steps = [[0, 99], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+
+[params.line2.dcwEnv]
+loop = false
+stepCount = 2
+steps = [[40, 99], [0, 99], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+
+[params.line2.dcaEnv]
+loop = false
+stepCount = 2
+steps = [[99, 99], [76, 99], [0, 38], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+
+[params.portamento]
+enabled = false
+mode = "time"
+rate = 85
+time = 0.1
+
+[params.lfo]
+depth = 0
+offset = 0
+rate = 5
+rateMode = "hz"
+retrigger = false
+symmetry = 0
+syncDivision = "quarter"
+waveform = "sine"
+
+[params.lfo2]
+depth = 0
+offset = 0
+rate = 5
+rateMode = "hz"
+retrigger = false
+symmetry = 0.5
+syncDivision = "quarter"
+waveform = "sine"
+
+[params.random]
+rate = 2
+
+[params.modEnv]
+attack = 0.01
+decay = 0.1
+release = 0.2
+sustain = 0.5
+
+[params.fx.slot1]
+type = "phaser"
+
+[params.fx.slot1.params]
+depth = 1
+enabled = true
+feedback = 0.5
+mix = 0.5
+rate = 0.5
+
+[params.fx.slot2]
+type = "tremolo"
+
+[params.fx.slot2.params]
+depth = 0.6
+enabled = true
+mix = 1
+rate = 5
+rateMode = "hz"
+syncDivision = "quarter"
+waveform = 1
+
+[params.fx.slot3]
+type = "compressor"
+
+[params.fx.slot3.params]
+attackMs = 5
+enabled = true
+makeupDb = 6
+mix = 1
+ratio = 4
+releaseMs = 100
+thresholdDb = -23.6625
+
+[[params.mod.routes]]
+source = "velocity"
+destination = "line1DcwBase"
+amount = 0.26660156
+enabled = true

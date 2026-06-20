@@ -1,0 +1,205 @@
+format = "cosmo-preset"
+id = "factory-216-soft-brass"
+name = "Soft Brass"
+author = "Purr Audio"
+description = ""
+tags = ["brass"]
+starred = false
+favorite = false
+source = "cosmo-factory"
+
+[params]
+czDacEnabled = false
+frequency = 440
+legato = false
+lineSelect = "L1"
+macro1 = 0
+macro2 = 0
+macro3 = 0
+macro4 = 0
+macroLabels = ["Brightness", "Timbre", "Time", "Movement"]
+modMode = "normal"
+octave = 0
+pitchBendRange = 2
+polyMode = "poly8"
+ringGain = 4
+tempoBpm = 120
+velocityCurve = 0
+volume = 1
+
+[params.line1]
+algo = "bend"
+algoBlend = 0
+algoControlsA = [{ id = "bendCurve", value = 0.5 }, { id = "bendBias", value = 0 }, { id = "bendKnee", value = 0.5 }]
+algoControlsB = []
+baseWaveformA = "sine"
+baseWaveformB = "sine"
+dcaBase = 1
+dcaKeyFollow = 0
+dcwBase = 1
+dcwKeyFollow = 0
+detuneFine = 0
+detuneNote = 0
+modulation = 0
+octave = -1
+window = "off"
+
+[params.line1.dcoEnv]
+loop = false
+stepCount = 2
+steps = [[66, 67], [0, 0], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+
+[params.line1.dcwEnv]
+loop = false
+stepCount = 6
+steps = [[40, 46], [7, 39], [32, 22], [16, 35], [37, 55], [0, 18], [99, 99], [0, 60]]
+sustainStep = 4
+
+[params.line1.dcaEnv]
+loop = false
+stepCount = 2
+steps = [[99, 72], [0, 45], [0, 1], [0, 1], [99, 99], [99, 99], [99, 99], [0, 60]]
+sustainStep = 0
+
+[params.line2]
+algo = "cz101"
+algoBlend = 0
+algoControlsA = [{ id = "preset", value = 0 }, { id = "waveform1", value = 0 }, { id = "waveform2", value = 0 }, { id = "windowFunction", value = 0 }]
+algoControlsB = []
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+dcaBase = 1
+dcaKeyFollow = 0
+dcwBase = 0.69
+dcwKeyFollow = 0
+detuneFine = 0
+detuneNote = 0
+modulation = 0
+octave = -1
+window = "off"
+
+[params.line2.dcoEnv]
+loop = false
+stepCount = 8
+steps = [[0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+
+[params.line2.dcwEnv]
+loop = false
+stepCount = 8
+steps = [[99, 89], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [0, 60]]
+sustainStep = 1
+
+[params.line2.dcaEnv]
+loop = false
+stepCount = 8
+steps = [[99, 92], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [0, 60]]
+sustainStep = 1
+
+[params.portamento]
+enabled = false
+mode = "time"
+rate = 85
+time = 0.1
+
+[params.lfo]
+depth = 1
+offset = 0
+rate = 2
+rateMode = "hz"
+retrigger = false
+symmetry = 0.5
+syncDivision = "quarter"
+waveform = "sine"
+
+[params.lfo2]
+depth = 1
+offset = 0
+rate = 2
+rateMode = "hz"
+retrigger = false
+symmetry = 0.5
+syncDivision = "quarter"
+waveform = "sine"
+
+[params.random]
+rate = 2
+
+[params.modEnv]
+attack = 0.01
+decay = 0.1
+release = 0.2
+sustain = 0.5
+
+[params.fx.slot1]
+type = "junoChorus"
+
+[params.fx.slot1.params]
+enabled = true
+mix = 0.5159961
+mode = 0
+
+[params.fx.slot2]
+type = "vibrato"
+
+[params.fx.slot2.params]
+delay = 0
+depth = 0
+enabled = true
+rate = 63.580723
+rate_mode = "hz"
+sync_division = "quarter"
+waveform = 1
+
+[params.fx.slot3]
+type = "delay"
+
+[params.fx.slot3.params]
+enabled = true
+feedback = 0.46
+mix = 0.13208984
+syncDivision = "quarter"
+tapeMode = true
+time = 0.4870498
+timeMode = "hz"
+warmth = 0.30376956
+
+[params.fx.slot4]
+type = "shimmerVerb"
+
+[params.fx.slot4.params]
+enabled = true
+mix = 0.18378903
+shimmer = 0.4
+space = 0.377832
+
+[[params.mod.routes]]
+source = "aftertouch"
+destination = "line2DcwBase"
+amount = 0.16921875
+enabled = true
+
+[[params.mod.routes]]
+source = "modWheel"
+destination = "line2DcwBase"
+amount = 0.25101563
+enabled = true
+
+[[params.mod.routes]]
+source = "aftertouch"
+destination = "line1AlgoParam1"
+amount = 0.5
+enabled = true
+
+[[params.mod.routes]]
+source = "modWheel"
+destination = "line1AlgoParam1"
+amount = 0.5
+enabled = true
+
+[[params.mod.routes]]
+source = "modWheel"
+destination = "vibratoDepth"
+amount = 0.5
+enabled = true

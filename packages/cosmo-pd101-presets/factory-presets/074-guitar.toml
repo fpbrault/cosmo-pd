@@ -1,0 +1,145 @@
+format = "cosmo-preset"
+id = "factory-074-guitar"
+name = "GUITAR"
+author = "Temple of CZ"
+description = ""
+tags = ["guitar"]
+starred = false
+favorite = false
+source = "cz-factory"
+
+[params]
+czDacEnabled = false
+frequency = 440
+legato = false
+lineSelect = "L1+L1'"
+macro1 = 0
+macro2 = 0
+macro3 = 0
+macro4 = 0
+macroLabels = ["Brightness", "Timbre", "Time", "Movement"]
+modMode = "ring"
+octave = 0
+pitchBendRange = 2
+polyMode = "poly8"
+ringGain = 4
+tempoBpm = 120
+velocityCurve = 0
+volume = 1
+
+[params.line1]
+algo = "cz101"
+algoBlend = 0
+algoControlsA = [{ id = "preset", value = 0 }, { id = "waveform1", value = 0 }, { id = "waveform2", value = 0 }, { id = "windowFunction", value = 0 }]
+algoControlsB = []
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+dcaBase = 1
+dcaKeyFollow = 3
+dcwBase = 1
+dcwKeyFollow = 3
+detuneFine = 0
+detuneNote = 0
+modulation = 0
+octave = 0
+window = "off"
+
+[params.line1.dcoEnv]
+loop = false
+stepCount = 2
+steps = [[74, 99], [0, 85], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 1
+
+[params.line1.dcwEnv]
+loop = false
+stepCount = 4
+steps = [[99, 95], [25, 99], [50, 99], [0, 28], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 3
+
+[params.line1.dcaEnv]
+loop = false
+stepCount = 3
+steps = [[99, 90], [0, 25], [0, 72], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 2
+
+[params.line2]
+algo = "cz101"
+algoBlend = 0
+algoControlsA = [{ id = "preset", value = 1 }, { id = "waveform1", value = 1 }, { id = "waveform2", value = 1 }, { id = "windowFunction", value = 0 }]
+algoControlsB = []
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+dcaBase = 1
+dcaKeyFollow = 1
+dcwBase = 1
+dcwKeyFollow = 1
+detuneFine = 1
+detuneNote = 7
+modulation = 0
+octave = 0
+window = "off"
+
+[params.line2.dcoEnv]
+loop = false
+stepCount = 1
+steps = [[0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+
+[params.line2.dcwEnv]
+loop = false
+stepCount = 2
+steps = [[65, 98], [0, 38], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 1
+
+[params.line2.dcaEnv]
+loop = false
+stepCount = 2
+steps = [[99, 95], [0, 23], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 1
+
+[params.portamento]
+enabled = false
+mode = "time"
+rate = 0
+time = 0.1
+
+[params.lfo]
+depth = 1
+offset = 0
+rate = 5
+rateMode = "hz"
+retrigger = false
+symmetry = 0.5
+syncDivision = "quarter"
+waveform = "sine"
+
+[params.lfo2]
+depth = 0
+offset = 0
+rate = 5
+rateMode = "hz"
+retrigger = false
+symmetry = 0.5
+syncDivision = "quarter"
+waveform = "sine"
+
+[params.random]
+rate = 2
+
+[params.modEnv]
+attack = 0.01
+decay = 0.1
+release = 0.2
+sustain = 0.5
+
+[params.fx.slot4]
+type = "vibrato"
+
+[params.fx.slot4.params]
+delay = 69
+depth = 5
+enabled = true
+rate = 54
+rate_mode = "hz"
+sync_division = "quarter"
+waveform = 1

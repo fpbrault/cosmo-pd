@@ -1,0 +1,241 @@
+format = "cosmo-preset"
+id = "factory-202-bright-changes"
+name = "Bright Changes"
+author = "Purr Audio"
+description = ""
+tags = ["pad"]
+starred = false
+favorite = false
+source = "cosmo-factory"
+
+[params]
+czDacEnabled = false
+frequency = 440
+legato = false
+lineSelect = "L1+L2'"
+macro1 = 0.503937
+macro2 = 0
+macro3 = 0
+macro4 = 0
+macroLabels = ["Brightness", "Timbre", "Time", "Movement"]
+modMode = "normal"
+octave = 0
+pitchBendRange = 2
+polyMode = "poly8"
+ringGain = 4
+tempoBpm = 120
+velocityCurve = 0
+volume = 1
+
+[params.line1]
+algo = "twist"
+algo2 = "bend"
+algoBlend = 0.4749961
+algoControlsA = [{ id = "twistHarmonics", value = 0.6020153 }, { id = "twistDepth", value = 0.47965 }, { id = "twistPhase", value = 0 }, { id = "twistShape", value = 0.53207046 }]
+algoControlsB = [{ id = "bendCurve", value = 0.5 }, { id = "bendBias", value = 0 }, { id = "bendKnee", value = 0.5 }]
+baseWaveformA = "sine"
+baseWaveformB = "sine"
+dcaBase = 1
+dcaKeyFollow = 8
+dcwBase = 0.513468
+dcwKeyFollow = 8
+detuneFine = 0
+detuneNote = 0
+modulation = 0
+octave = -1
+window = "off"
+
+[params.line1.dcoEnv]
+loop = false
+stepCount = 1
+steps = [[0, 99], [86, 27], [0, 99], [0, 21], [99, 99], [71, 15], [0, 99], [0, 17]]
+sustainStep = 7
+
+[params.line1.dcwEnv]
+loop = false
+stepCount = 4
+steps = [[99, 55], [21, 50], [82, 50], [0, 50], [56, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+
+[params.line1.dcaEnv]
+loop = false
+stepCount = 4
+steps = [[99, 87], [79, 80], [99, 79], [0, 35], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 2
+
+[params.line2]
+algo = "fold"
+algo2 = "skew"
+algoBlend = 0.55732423
+algoControlsA = [{ id = "foldStages", value = 0.5 }, { id = "foldTilt", value = 0 }, { id = "foldSymmetry", value = 0 }, { id = "foldSoftness", value = 0 }]
+algoControlsB = [{ id = "skewBias", value = 0.2 }, { id = "skewCurve", value = 0.5 }, { id = "skewSpread", value = 0 }, { id = "skewTilt", value = 0 }]
+baseWaveformA = "sine"
+baseWaveformB = "sine"
+dcaBase = 1
+dcaKeyFollow = 9
+dcwBase = 0.49362853
+dcwKeyFollow = 9
+detuneFine = 3
+detuneNote = 0
+modulation = 0
+octave = 0
+window = "off"
+
+[params.line2.dcoEnv]
+loop = false
+stepCount = 1
+steps = [[0, 99], [86, 27], [0, 99], [0, 21], [99, 99], [71, 15], [0, 99], [0, 17]]
+sustainStep = 7
+
+[params.line2.dcwEnv]
+loop = false
+stepCount = 4
+steps = [[99, 50], [21, 50], [82, 50], [0, 50], [56, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 0
+
+[params.line2.dcaEnv]
+loop = false
+stepCount = 4
+steps = [[99, 75], [79, 80], [99, 76], [0, 40], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 2
+
+[params.portamento]
+enabled = false
+mode = "time"
+rate = 85
+time = 0.1
+
+[params.lfo]
+depth = 1
+offset = 0
+rate = 2
+rateMode = "hz"
+retrigger = false
+symmetry = 0.5
+syncDivision = "quarter"
+waveform = "sine"
+
+[params.lfo2]
+depth = 1
+offset = 0
+rate = 2
+rateMode = "hz"
+retrigger = false
+symmetry = 0.5
+syncDivision = "quarter"
+waveform = "sine"
+
+[params.random]
+rate = 2
+
+[params.modEnv]
+attack = 0.01
+decay = 0.1
+release = 0.2
+sustain = 0.5
+
+[params.fx.slot1]
+type = "vibrato"
+
+[params.fx.slot1.params]
+delay = 0
+depth = 0
+enabled = true
+rate = 64.355
+rate_mode = "hz"
+sync_division = "quarter"
+waveform = 1
+
+[params.fx.slot2]
+type = "tremolo"
+
+[params.fx.slot2.params]
+depth = 0.024487305
+enabled = true
+mix = 1
+rate = 6.7426076
+rateMode = "hz"
+syncDivision = "quarter"
+waveform = 2
+
+[params.fx.slot3]
+type = "chorus"
+
+[params.fx.slot3.params]
+depth = 3.3994446
+enabled = false
+mix = 0.44
+rate = 0.35
+
+[params.fx.slot4]
+type = "delay"
+
+[params.fx.slot4.params]
+enabled = false
+feedback = 0.22
+mix = 0.27
+syncDivision = "quarter"
+tapeMode = false
+time = 0.11
+timeMode = "hz"
+warmth = 0.2
+
+[[params.mod.routes]]
+source = "modWheel"
+destination = "vibratoDepth"
+amount = 0.5
+enabled = true
+
+[[params.mod.routes]]
+source = "macro1"
+destination = "line1DcwBase"
+amount = 0.5
+enabled = true
+
+[[params.mod.routes]]
+source = "macro1"
+destination = "line2DcwBase"
+amount = 1
+enabled = true
+
+[[params.mod.routes]]
+source = "macro2"
+destination = "line2AlgoParam2"
+amount = -0.5
+enabled = true
+
+[[params.mod.routes]]
+source = "macro2"
+destination = "line1AlgoParam1"
+amount = 0.5
+enabled = true
+
+[[params.mod.routes]]
+source = "macro3"
+destination = "line2DcaEnvStep4Rate"
+amount = -0.1
+enabled = true
+
+[[params.mod.routes]]
+source = "macro3"
+destination = "line2DcwEnvStep4Rate"
+amount = -0.32
+enabled = true
+
+[[params.mod.routes]]
+source = "macro3"
+destination = "line1DcwEnvStep4Rate"
+amount = -0.42
+enabled = true
+
+[[params.mod.routes]]
+source = "macro3"
+destination = "line1DcaEnvStep4Rate"
+amount = -0.1
+enabled = true
+
+[[params.mod.routes]]
+source = "macro4"
+destination = "tremoloDepth"
+amount = 1
+enabled = true

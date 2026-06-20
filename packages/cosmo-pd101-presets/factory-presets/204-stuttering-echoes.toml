@@ -1,0 +1,208 @@
+format = "cosmo-preset"
+id = "factory-204-stuttering-echoes"
+name = "Stuttering Echoes"
+author = "Purr Audio"
+description = ""
+tags = ["pad"]
+starred = true
+favorite = false
+source = "cosmo-factory"
+sortIndex = 2
+
+[params]
+czDacEnabled = false
+frequency = 440
+legato = false
+lineSelect = "L1"
+macro1 = 0
+macro2 = 0
+macro3 = 0
+macro4 = 0
+macroLabels = ["Brightness", "Timbre", "Time", "Movement"]
+modMode = "normal"
+octave = 0
+pitchBendRange = 2
+polyMode = "poly8"
+ringGain = 4
+tempoBpm = 120
+velocityCurve = 0
+volume = 1
+
+[params.line1]
+algo = "pinch"
+algo2 = "clip"
+algoBlend = 0
+algoControlsA = [{ id = "pinchFocus", value = 0.1 }, { id = "pinchAsym", value = 0 }, { id = "pinchCurve", value = 0.5 }, { id = "pinchDrive", value = 0.5 }]
+algoControlsB = [{ id = "clipDrive", value = 0.5 }, { id = "clipShape", value = 0.5 }, { id = "clipBias", value = 0 }, { id = "clipSoft", value = 0 }]
+baseWaveformA = "sine"
+baseWaveformB = "cosine"
+dcaBase = 1
+dcaKeyFollow = 0
+dcwBase = 0.72
+dcwKeyFollow = 0
+detuneFine = 0
+detuneNote = 0
+modulation = 0
+octave = 0
+window = "off"
+
+[params.line1.dcoEnv]
+loop = false
+stepCount = 2
+steps = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]]
+sustainStep = 1
+
+[params.line1.dcwEnv]
+loop = true
+stepCount = 4
+steps = [[99, 70], [0, 93], [99, 75], [0, 44], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 2
+
+[params.line1.dcaEnv]
+loop = false
+stepCount = 4
+steps = [[99, 75], [79, 80], [96, 75], [0, 40], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 2
+
+[params.line2]
+algo = "cz101"
+algoBlend = 0
+algoControlsA = []
+algoControlsB = []
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+dcaBase = 1
+dcaKeyFollow = 0
+dcwBase = 1
+dcwKeyFollow = 0
+detuneFine = 0
+detuneNote = 0
+modulation = 0
+octave = 0
+window = "off"
+
+[params.line2.dcoEnv]
+loop = false
+stepCount = 2
+steps = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]]
+sustainStep = 1
+
+[params.line2.dcwEnv]
+loop = false
+stepCount = 4
+steps = [[99, 75], [99, 80], [99, 75], [0, 40], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 2
+
+[params.line2.dcaEnv]
+loop = false
+stepCount = 4
+steps = [[99, 75], [79, 80], [79, 75], [0, 40], [0, 50], [0, 50], [0, 50], [0, 50]]
+sustainStep = 2
+
+[params.portamento]
+enabled = false
+mode = "time"
+rate = 85
+time = 0.1
+
+[params.lfo]
+depth = 0.69071394
+offset = 0.05945323
+rate = 0.084286414
+rateMode = "hz"
+retrigger = true
+symmetry = 0.5
+syncDivision = "quarter"
+waveform = "sine"
+
+[params.lfo2]
+depth = 0
+offset = 0
+rate = 5
+rateMode = "hz"
+retrigger = false
+symmetry = 0.5
+syncDivision = "quarter"
+waveform = "sine"
+
+[params.random]
+rate = 2
+
+[params.modEnv]
+attack = 1.1107421
+decay = 2.2159376
+release = 2.7615235
+sustain = 0.90310544
+
+[params.fx.slot1]
+type = "chorus"
+
+[params.fx.slot1.params]
+depth = 2.6
+enabled = true
+mix = 0.25855467
+rate = 1.8
+
+[params.fx.slot2]
+type = "phaser"
+
+[params.fx.slot2.params]
+depth = 0.45
+enabled = true
+feedback = 0.2
+mix = 0.25
+rate = 0.35
+
+[params.fx.slot4]
+type = "delay"
+
+[params.fx.slot4.params]
+enabled = true
+feedback = 0.46
+mix = 0.35
+syncDivision = "quarter"
+tapeMode = true
+time = 0.34
+timeMode = "hz"
+warmth = 0.72
+
+[params.fx.slot5]
+type = "reverb"
+
+[params.fx.slot5.params]
+character = 0.2902344
+distance = 0.68
+enabled = true
+mix = 0.47
+predelay = 0.03
+space = 0.8229688
+
+[params.fx.slot6]
+type = "compressor"
+
+[params.fx.slot6.params]
+attackMs = 5
+enabled = false
+makeupDb = 6
+mix = 1
+ratio = 4
+releaseMs = 100
+thresholdDb = -12
+
+[[params.mod.routes]]
+source = "velocity"
+destination = "line1DcwBase"
+amount = 0.47910157
+enabled = true
+
+[[params.mod.routes]]
+source = "lfo1"
+destination = "line1DcwEnvStep4Rate"
+amount = 0.23492187
+enabled = true
+
+[[params.mod.routes]]
+source = "macro1"
+destination = "line1AlgoParam1"
+amount = 1
+enabled = true
