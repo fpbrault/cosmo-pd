@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 #[cfg(test)]
 use std::sync::Mutex;
 use std::sync::RwLock;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use serde::{Deserialize, Serialize};
 
@@ -132,72 +133,102 @@ fn ensure_parent_dir(path: &Path) -> Result<(), String> {
 
 fn atomic_write(path: &Path, data: &[u8]) -> Result<(), String> {
     ensure_parent_dir(path)?;
-    let tmp_path = path.with_extension("tmp");
+    static WRITE_COUNTER: AtomicU64 = AtomicU64::new(0);
+    let pid = std::process::id() as u64;
+    let seq = WRITE_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let tmp_path = path.with_extension(format!("tmp_{pid}_{seq}"));
     std::fs::write(&tmp_path, data).map_err(|error| error.to_string())?;
     std::fs::rename(&tmp_path, path).map_err(|error| error.to_string())?;
     Ok(())
 }
 
-pub fn save_global_settings(settings: &PluginGlobalSettings) -> Result<(), String> {
+fn write_global_settings_to_disk(settings: &PluginGlobalSettings) -> Result<(), String> {
     let path = get_global_settings_path();
     let json = serde_json::to_vec_pretty(settings).map_err(|error| error.to_string())?;
     atomic_write(&path, &json)
 }
 
+fn read_global_settings_from_disk() -> Result<PluginGlobalSettings, String> {
+    let path = get_global_settings_path();
+    if path.exists() {
+        let bytes = fs::read(&path).map_err(|error| error.to_string())?;
+        serde_json::from_slice(&bytes).map_err(|error| error.to_string())
+    } else {
+        Ok(PluginGlobalSettings::default())
+    }
+}
+
+/// Serializes the full read/modify/write cycle under a single write lock.
+/// Cache is only updated after a successful disk write, eliminating lost-update races.
+fn update_global_settings(
+    update: impl FnOnce(&mut PluginGlobalSettings),
+) -> Result<PluginGlobalSettings, String> {
+    let mut cache_guard = GLOBAL_SETTINGS_CACHE.write().unwrap();
+
+    let mut settings: PluginGlobalSettings = match cache_guard.as_ref() {
+        Some(s) => s.clone(),
+        None => {
+            let s = read_global_settings_from_disk()?;
+            *cache_guard = Some(s.clone());
+            s
+        }
+    };
+
+    update(&mut settings);
+
+    write_global_settings_to_disk(&settings)?;
+    *cache_guard = Some(settings.clone());
+
+    Ok(settings)
+}
+
+pub fn save_global_settings(settings: &PluginGlobalSettings) -> Result<(), String> {
+    update_global_settings(|s| {
+        *s = settings.clone();
+    })?;
+    Ok(())
+}
+
 pub fn load_or_init_global_settings() -> Result<PluginGlobalSettings, String> {
+    // Fast path: cache hit under read lock.
     {
         let cache = GLOBAL_SETTINGS_CACHE.read().unwrap();
-        if let Some(ref settings) = *cache {
+        if let Some(settings) = cache.as_ref() {
             return Ok(settings.clone());
         }
     }
 
-    let path = get_global_settings_path();
-    let settings = if path.exists() {
-        let bytes = fs::read(&path).map_err(|error| error.to_string())?;
-        serde_json::from_slice(&bytes).map_err(|error| error.to_string())?
-    } else {
-        let settings = PluginGlobalSettings::default();
-        save_global_settings(&settings)?;
-        settings
-    };
+    // Slow path: acquire write lock and double-check before disk I/O.
+    // This prevents a concurrent update_global_settings from being clobbered.
+    let mut cache = GLOBAL_SETTINGS_CACHE.write().unwrap();
 
-    *GLOBAL_SETTINGS_CACHE.write().unwrap() = Some(settings.clone());
+    if let Some(settings) = cache.as_ref() {
+        return Ok(settings.clone());
+    }
+
+    let settings = read_global_settings_from_disk()?;
+
+    if !get_global_settings_path().exists() {
+        write_global_settings_to_disk(&settings)?;
+    }
+
+    *cache = Some(settings.clone());
     Ok(settings)
 }
 
 pub fn save_voice_limit(limit: u8) -> Result<(), String> {
     let clamped = limit.clamp(MIN_VOICE_LIMIT, MAX_VOICE_LIMIT);
-
-    let cache_empty = GLOBAL_SETTINGS_CACHE.read().unwrap().is_none();
-    if cache_empty {
-        load_or_init_global_settings()?;
-    }
-
-    let settings = {
-        let mut cache = GLOBAL_SETTINGS_CACHE.write().unwrap();
-        let cached = cache.as_mut().expect("cache populated above");
-        cached.voice_limit = clamped;
-        cached.clone()
-    };
-
-    save_global_settings(&settings)
+    update_global_settings(|settings| {
+        settings.voice_limit = clamped;
+    })?;
+    Ok(())
 }
 
 pub fn save_midi_learn_bindings(bindings: Vec<MidiLearnBinding>) -> Result<(), String> {
-    let cache_empty = GLOBAL_SETTINGS_CACHE.read().unwrap().is_none();
-    if cache_empty {
-        load_or_init_global_settings()?;
-    }
-
-    let settings = {
-        let mut cache = GLOBAL_SETTINGS_CACHE.write().unwrap();
-        let cached = cache.as_mut().expect("cache populated above");
-        cached.midi_learn_bindings = bindings;
-        cached.clone()
-    };
-
-    save_global_settings(&settings)
+    update_global_settings(|settings| {
+        settings.midi_learn_bindings = bindings;
+    })?;
+    Ok(())
 }
 
 #[cfg(test)]
@@ -318,6 +349,136 @@ mod tests {
             save_global_settings(&settings).unwrap();
             let loaded = load_or_init_global_settings().unwrap();
             assert_eq!(loaded.voice_limit, 4);
+        });
+    }
+
+    #[test]
+    fn save_global_settings_after_cache_init_updates_cache() {
+        with_test_data_dir(|_| {
+            load_or_init_global_settings().unwrap();
+
+            let new_settings = PluginGlobalSettings {
+                voice_limit: 12,
+                ..Default::default()
+            };
+            save_global_settings(&new_settings).unwrap();
+
+            let loaded = load_or_init_global_settings().unwrap();
+            assert_eq!(loaded.voice_limit, 12);
+        });
+    }
+
+    #[test]
+    fn save_voice_limit_and_midi_learn_preserve_each_other_sequential() {
+        with_test_data_dir(|_| {
+            save_voice_limit(4).unwrap();
+            save_midi_learn_bindings(vec![]).unwrap();
+
+            let settings = load_or_init_global_settings().unwrap();
+            assert_eq!(settings.voice_limit, 4);
+            assert!(settings.midi_learn_bindings.is_empty());
+        });
+    }
+
+    #[test]
+    fn write_failure_does_not_update_cache() {
+        let _guard = TEST_DATA_DIR_LOCK
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let path = std::env::temp_dir().join("cosmo-pd101-global-settings-readonly");
+        fs::create_dir_all(&path).unwrap();
+        unsafe {
+            std::env::set_var("COSMO_PD101_DATA_DIR", &path);
+        }
+        reset_global_settings_cache();
+
+        let original = load_or_init_global_settings().unwrap();
+
+        let mut perms = fs::metadata(&path).unwrap().permissions();
+        perms.set_readonly(true);
+        fs::set_permissions(&path, perms).unwrap();
+
+        assert!(save_voice_limit(12).is_err());
+
+        let cache = GLOBAL_SETTINGS_CACHE.read().unwrap();
+        assert_eq!(cache.as_ref().unwrap().voice_limit, original.voice_limit);
+        drop(cache);
+
+        reset_global_settings_cache();
+        let mut perms = fs::metadata(&path).unwrap().permissions();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            perms.set_mode(0o755);
+        }
+        #[cfg(not(unix))]
+        perms.set_readonly(false);
+        fs::set_permissions(&path, perms).unwrap();
+        unsafe {
+            std::env::remove_var("COSMO_PD101_DATA_DIR");
+        }
+        let _ = fs::remove_dir_all(path);
+    }
+
+    #[test]
+    fn concurrent_load_and_save_does_not_lose_updates() {
+        with_test_data_dir(|_| {
+            use std::sync::{Arc, Barrier};
+            use std::thread;
+
+            save_global_settings(&PluginGlobalSettings {
+                voice_limit: 8,
+                ..Default::default()
+            })
+            .unwrap();
+            reset_global_settings_cache();
+
+            let barrier = Arc::new(Barrier::new(2));
+
+            let t1 = {
+                let b = Arc::clone(&barrier);
+                thread::spawn(move || {
+                    b.wait();
+                    load_or_init_global_settings().unwrap()
+                })
+            };
+
+            let t2 = {
+                let b = Arc::clone(&barrier);
+                thread::spawn(move || {
+                    b.wait();
+                    save_voice_limit(4).unwrap()
+                })
+            };
+
+            t1.join().unwrap();
+            t2.join().unwrap();
+
+            let cache = GLOBAL_SETTINGS_CACHE.read().unwrap();
+            assert_eq!(cache.as_ref().unwrap().voice_limit, 4);
+        });
+    }
+
+    #[test]
+    fn save_global_settings_preserves_across_fields_sequential() {
+        with_test_data_dir(|_| {
+            save_voice_limit(4).unwrap();
+
+            let midi_bindings = vec![crate::session_state::MidiLearnBinding {
+                param_key: "macro1".to_string(),
+                channel: 0,
+                cc: 1,
+            }];
+            save_midi_learn_bindings(midi_bindings.clone()).unwrap();
+
+            let settings = load_or_init_global_settings().unwrap();
+            assert_eq!(settings.voice_limit, 4);
+            assert_eq!(settings.midi_learn_bindings, midi_bindings);
+
+            save_voice_limit(8).unwrap();
+            let settings = load_or_init_global_settings().unwrap();
+            assert_eq!(settings.voice_limit, 8);
+            assert_eq!(settings.midi_learn_bindings, midi_bindings);
         });
     }
 }
