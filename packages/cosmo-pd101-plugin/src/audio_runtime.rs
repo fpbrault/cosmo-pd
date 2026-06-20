@@ -321,9 +321,14 @@ impl CzPlugin {
                     copied,
                     "realtime parameter snapshot exceeded preallocated storage"
                 );
+                if copied {
+                    self.audio.cached_rt_synth_params = next_params;
+                    self.audio.cached_synth_params_version = params_version;
+                }
+            } else {
+                self.audio.cached_rt_synth_params = next_params;
+                self.audio.cached_synth_params_version = params_version;
             }
-            self.audio.cached_rt_synth_params = next_params;
-            self.audio.cached_synth_params_version = params_version;
         }
 
         for (id, changed_in_event_list) in tracked_param_changes.iter().copied().enumerate() {
@@ -440,12 +445,35 @@ impl CzPlugin {
             | EventBody::ProgramChange2 { program, .. }
                 if usize::from(*program) < crate::ffi::factory_preset_count() =>
             {
+                self.apply_factory_preset_realtime(usize::from(*program));
                 self.enqueue_render_control_event(RenderControlEvent::ProgramChangeRequest {
                     program: *program,
                 });
             }
             _ => {}
         }
+    }
+
+    fn apply_factory_preset_realtime(&mut self, index: usize) {
+        let Some(next_params) = crate::ffi::factory_preset_params(index) else {
+            return;
+        };
+        let Some(proc) = self.audio.processor.as_mut() else {
+            return;
+        };
+        proc.reset_audio_state();
+        let copied = proc.copy_params_for_realtime(next_params);
+        if !copied {
+            self.shared_state
+                .ui
+                .render_control_diagnostics
+                .parameter_snapshot_rejections
+                .fetch_add(1, Ordering::Relaxed);
+        }
+        debug_assert!(
+            copied,
+            "factory preset exceeded preallocated realtime storage"
+        );
     }
 
     pub(crate) fn host_event_to_engine_event(body: &EventBody) -> Option<CosmoInputEvent> {

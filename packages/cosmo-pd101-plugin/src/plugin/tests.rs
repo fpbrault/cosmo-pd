@@ -436,6 +436,31 @@ fn program_change_applies_factory_preset() {
 }
 
 #[test]
+fn program_change_is_audio_effective_before_control_drain() {
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(params);
+    plugin.reset(48_000.0, 64);
+    let current = synth_params_json(&plugin.audio.processor.as_ref().unwrap().params);
+    let (program, expected) = (0..crate::ffi::factory_preset_count())
+        .find_map(|index| {
+            let preset = crate::ffi::factory_preset_params(index)?;
+            (synth_params_json(preset) != current).then_some((index as u8, preset))
+        })
+        .expect("expected at least one factory preset to differ from defaults");
+
+    plugin.handle_host_event(&EventBody::ProgramChange {
+        group: 0,
+        channel: 0,
+        program,
+    });
+
+    assert_eq!(
+        synth_params_json(&plugin.audio.processor.as_ref().unwrap().params),
+        synth_params_json(expected)
+    );
+}
+
+#[test]
 fn midi_mapping_applies_in_plugin_core_without_editor() {
     clear_test_global_settings();
     let params = Arc::new(CzPluginParams::new());
@@ -936,6 +961,63 @@ fn audio_thread_does_not_allocate_for_ui_snapshot_and_preset_reset() {
             .preset_reset_pending
             .load(Ordering::Acquire)
     );
+    assert!((plugin.audio.processor.as_ref().unwrap().params.macro1 - 0.75).abs() < 0.000_001);
+}
+
+#[test]
+fn rejected_realtime_snapshot_is_retried_until_it_copies() {
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(params);
+    plugin.reset(48_000.0, 64);
+
+    let mut oversized = SynthParams::default();
+    oversized.macro_labels[0] = "x".repeat(300);
+    plugin
+        .shared_state
+        .synth
+        .rt_synth_params
+        .store(Arc::new(build_rt_synth_params(&oversized)));
+    plugin
+        .shared_state
+        .synth
+        .synth_params_version
+        .fetch_add(1, Ordering::Release);
+
+    let rejection = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        process_test_block(&mut plugin, &EventList::default());
+    }));
+    assert!(
+        rejection.is_err(),
+        "oversized realtime snapshots should trip the debug assertion"
+    );
+
+    assert_eq!(
+        plugin.audio.cached_synth_params_version, 0,
+        "rejected snapshots must not advance the cached version"
+    );
+    assert_eq!(
+        plugin
+            .shared_state
+            .ui
+            .render_control_diagnostics
+            .parameter_snapshot_rejections
+            .load(Ordering::Acquire),
+        1
+    );
+
+    let accepted = SynthParams {
+        macro1: 0.75,
+        ..SynthParams::default()
+    };
+    plugin
+        .shared_state
+        .synth
+        .rt_synth_params
+        .store(Arc::new(build_rt_synth_params(&accepted)));
+
+    process_test_block(&mut plugin, &EventList::default());
+
+    assert_eq!(plugin.audio.cached_synth_params_version, 1);
     assert!((plugin.audio.processor.as_ref().unwrap().params.macro1 - 0.75).abs() < 0.000_001);
 }
 

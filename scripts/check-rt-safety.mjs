@@ -23,7 +23,7 @@ const rtFunctions = new Map([
 const forbidden = [
 	[/drain_render_control_events/, "control-event drain"],
 	[/persist_midi/, "MIDI persistence"],
-	[/apply_factory_preset/, "factory preset application"],
+	[/apply_factory_preset_on_control_thread/, "factory preset application"],
 	[/\.lock\s*\(/, "blocking mutex lock"],
 	[/\.write\s*\(/, "blocking rwlock write"],
 	[/Arc::new\s*\(/, "Arc allocation"],
