@@ -1,6 +1,4 @@
 format = "cosmo-preset"
-formatVersion = 1
-presetSchemaVersion = 1
 id = "factory-224-anomalous-transmission"
 name = "Anomalous Transmission"
 author = "Purr Audio"
@@ -12,94 +10,95 @@ source = "cosmo-factory"
 sortIndex = 1
 
 [params]
-lineSelect = "L1+L2'"
-modMode = "normal"
-octave = 0
+czDacEnabled = false
 frequency = 440
-volume = 1
-tempoBpm = 120
-polyMode = "poly8"
 legato = false
-velocityCurve = 0
-pitchBendRange = 2
-fxSlots = [{ type = "vibrato", params = { enabled = true, waveform = 1, rate = 44, depth = 8, delay = 60 } }, { type = "ringMod", params = { enabled = true, carrierHz = 1314.699839703029, mix = 0.11390866442815292 } }, { type = "phaser", params = { enabled = false, rate = 0.9, depth = 0.78, feedback = 0.55, mix = 0.43 } }, { type = "grainDelay", params = { enabled = true, time = 0.5, feedback = 0.36, scatter = 0.24, density = 0.5, mix = 0.23994747760052892, pitchSemitones = 12 } }, { type = "shimmerVerb", params = { enabled = true, shimmer = 0.6, space = 0.9883890616488823, mix = 0.3447110783027568 } }, { type = "loFi", params = { enabled = true, wow = 0.13686540573585912, flutter = 0.0942726908631656, degrade = 0, filter = -0.14221907585709626, crackle = 0, noise = 0.025009773860458932, saturation = 0.2448132933920403, mix = 1 } }]
+lineSelect = "L1+L2'"
 macro1 = 0
 macro2 = 0
 macro3 = 0
 macro4 = 0
 macroLabels = ["Brightness", "Timbre", "Time", "Movement"]
+modMode = "normal"
+octave = 0
+pitchBendRange = 2
+polyMode = "poly8"
+ringGain = 4
+tempoBpm = 120
+velocityCurve = 0
+volume = 1
 
 [params.line1]
 algo = "cz101"
 algo2 = "cheby"
-algoBlend = 0.015498068049743852
+algoBlend = 0.015498068
+algoControlsA = [{ id = "preset", value = 1 }, { id = "waveform1", value = 1 }, { id = "waveform2", value = 1 }, { id = "windowFunction", value = 0 }]
+algoControlsB = [{ id = "chebyOrder", value = 0.68992954 }, { id = "chebyTilt", value = 0 }, { id = "chebyWarp", value = 0 }]
 baseWaveformA = "cosine"
 baseWaveformB = "sine"
-window = "off"
 dcaBase = 1
-dcwBase = 0.6140782483889987
-modulation = 0
-detuneNote = 0
-detuneFine = 0
-octave = 0
-dcwKeyFollow = 0
 dcaKeyFollow = 0
-algoControlsA = [{ id = "preset", value = 1 }, { id = "waveform1", value = 1 }, { id = "waveform2", value = 1 }, { id = "windowFunction", value = 0 }]
-algoControlsB = [{ id = "chebyOrder", value = 0.6899295636391616 }, { id = "chebyTilt", value = 0 }, { id = "chebyWarp", value = 0 }]
+dcwBase = 0.6140782
+dcwKeyFollow = 0
+detuneFine = 0
+detuneNote = 0
+modulation = 0
+octave = 0
+window = "off"
 
 [params.line1.dcoEnv]
+loop = false
+stepCount = 1
 steps = [[0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
 sustainStep = 0
-stepCount = 1
-loop = false
 
 [params.line1.dcwEnv]
+loop = false
+stepCount = 2
 steps = [[83, 44], [0, 13], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
 sustainStep = 0
-stepCount = 2
-loop = false
 
 [params.line1.dcaEnv]
+loop = false
+stepCount = 3
 steps = [[99, 53], [99, 84], [0, 25], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
 sustainStep = 1
-stepCount = 3
-loop = false
 
 [params.line2]
 algo = "cz101"
 algo2 = "cz101"
 algoBlend = 0
-baseWaveformA = "cosine"
-baseWaveformB = "cosine"
-window = "off"
-dcaBase = 1
-dcwBase = 1
-modulation = 0
-detuneNote = 0
-detuneFine = 6
-octave = 1
-dcwKeyFollow = 5
-dcaKeyFollow = 5
 algoControlsA = [{ id = "preset", value = 0 }, { id = "waveform1", value = 2 }, { id = "waveform2", value = 5 }, { id = "windowFunction", value = 0 }]
 algoControlsB = [{ id = "preset", value = 4 }, { id = "waveform1", value = 5 }, { id = "waveform2", value = 5 }, { id = "windowFunction", value = 0 }]
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+dcaBase = 1
+dcaKeyFollow = 5
+dcwBase = 1
+dcwKeyFollow = 5
+detuneFine = 6
+detuneNote = 0
+modulation = 0
+octave = 1
+window = "off"
 
 [params.line2.dcoEnv]
+loop = false
+stepCount = 2
 steps = [[76, 99], [0, 92], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
 sustainStep = 1
-stepCount = 2
-loop = false
 
 [params.line2.dcwEnv]
+loop = false
+stepCount = 3
 steps = [[99, 99], [23, 64], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
 sustainStep = 2
-stepCount = 3
-loop = false
 
 [params.line2.dcaEnv]
+loop = false
+stepCount = 3
 steps = [[99, 99], [99, 84], [0, 38], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
 sustainStep = 1
-stepCount = 3
-loop = false
 
 [params.portamento]
 enabled = false
@@ -108,33 +107,121 @@ rate = 0
 time = 0.5
 
 [params.lfo]
-waveform = "sine"
-rate = 0.17973554939869898
-rateMode = "hz"
-syncDivision = "quarter"
 depth = 1
-symmetry = 0.5
-retrigger = false
 offset = 0
+rate = 0.17973556
+rateMode = "hz"
+retrigger = false
+symmetry = 0.5
+syncDivision = "quarter"
+waveform = "sine"
 
 [params.lfo2]
-waveform = "sine"
+depth = 0
+offset = 0
 rate = 5
 rateMode = "hz"
-syncDivision = "quarter"
-depth = 0
-symmetry = 0.5
 retrigger = false
-offset = 0
+symmetry = 0.5
+syncDivision = "quarter"
+waveform = "sine"
 
 [params.random]
 rate = 2
 
 [params.modEnv]
-attack = 0.4505868793991644
+attack = 0.4505869
 decay = 0.1
-sustain = 0.5
 release = 0.2
+sustain = 0.5
 
-[params.modMatrix]
-routes = [{ source = "lfo1", destination = "ringModMix", amount = 0.12, enabled = true }, { source = "modEnv", destination = "ringModCarrierHz", amount = 0.5, enabled = true }, { source = "velocity", destination = "line1DcwBase", amount = 0.5, enabled = true }, { source = "modWheel", destination = "line1DcwBase", amount = 0.5, enabled = true }]
+[params.fx.slot1]
+type = "vibrato"
+
+[params.fx.slot1.params]
+delay = 60
+depth = 8
+enabled = true
+rate = 44
+rate_mode = "hz"
+sync_division = "quarter"
+waveform = 1
+
+[params.fx.slot2]
+type = "ringMod"
+
+[params.fx.slot2.params]
+carrierHz = 1314.6998
+enabled = true
+mix = 0.11390866
+
+[params.fx.slot3]
+type = "phaser"
+
+[params.fx.slot3.params]
+depth = 0.78
+enabled = false
+feedback = 0.55
+mix = 0.43
+rate = 0.9
+
+[params.fx.slot4]
+type = "grainDelay"
+
+[params.fx.slot4.params]
+density = 0.5
+enabled = true
+feedback = 0.36
+mix = 0.23994748
+pitchSemitones = 12
+scatter = 0.24
+syncDivision = "quarter"
+time = 0.5
+timeMode = "hz"
+
+[params.fx.slot5]
+type = "shimmerVerb"
+
+[params.fx.slot5.params]
+enabled = true
+mix = 0.34471107
+shimmer = 0.6
+space = 0.9883891
+
+[params.fx.slot6]
+type = "loFi"
+
+[params.fx.slot6.params]
+crackle = 0
+degrade = 0
+enabled = true
+filter = -0.14221908
+flutter = 0.09427269
+mix = 1
+noise = 0.025009774
+saturation = 0.2448133
+wow = 0.1368654
+
+[[params.mod.routes]]
+source = "lfo1"
+destination = "ringModMix"
+amount = 0.12
+enabled = true
+
+[[params.mod.routes]]
+source = "modEnv"
+destination = "ringModCarrierHz"
+amount = 0.5
+enabled = true
+
+[[params.mod.routes]]
+source = "velocity"
+destination = "line1DcwBase"
+amount = 0.5
+enabled = true
+
+[[params.mod.routes]]
+source = "modWheel"
+destination = "line1DcwBase"
+amount = 0.5
+enabled = true

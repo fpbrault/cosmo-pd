@@ -1,6 +1,4 @@
 format = "cosmo-preset"
-formatVersion = 1
-presetSchemaVersion = 1
 id = "factory-001-2l-pluck-brss"
 name = "2L PLUCK+BRSS"
 author = "Temple of CZ"
@@ -11,88 +9,95 @@ favorite = false
 source = "cz-factory"
 
 [params]
+czDacEnabled = false
+frequency = 440
+legato = false
 lineSelect = "L1+L2'"
+macro1 = 0
+macro2 = 0
+macro3 = 0
+macro4 = 0
+macroLabels = ["Brightness", "Timbre", "Time", "Movement"]
 modMode = "normal"
 octave = 0
-frequency = 440
-volume = 1
-polyMode = "poly8"
-legato = false
-velocityCurve = 0
 pitchBendRange = 2
-fxSlots = [{ type = "empty" }, { type = "empty" }, { type = "empty" }, { type = "vibrato", params = { enabled = true, waveform = 1, rate = 50, depth = 26, delay = 0 } }, { type = "empty" }, { type = "empty" }]
+polyMode = "poly8"
+ringGain = 4
+tempoBpm = 120
+velocityCurve = 0
+volume = 1
 
 [params.line1]
 algo = "cz101"
 algo2 = "cz101"
 algoBlend = 0
-baseWaveformA = "cosine"
-baseWaveformB = "cosine"
-window = "off"
-dcaBase = 1
-dcwBase = 1
-modulation = 0
-detuneNote = 0
-detuneFine = 0
-octave = 0
-dcwKeyFollow = 3
-dcaKeyFollow = 3
 algoControlsA = [{ id = "preset", value = 0 }, { id = "waveform1", value = 0 }, { id = "waveform2", value = 0 }, { id = "windowFunction", value = 0 }]
 algoControlsB = [{ id = "preset", value = 0 }, { id = "waveform1", value = 0 }, { id = "waveform2", value = 0 }, { id = "windowFunction", value = 0 }]
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+dcaBase = 1
+dcaKeyFollow = 3
+dcwBase = 1
+dcwKeyFollow = 3
+detuneFine = 0
+detuneNote = 0
+modulation = 0
+octave = 0
+window = "off"
 
 [params.line1.dcoEnv]
+loop = false
+stepCount = 1
 steps = [[0, 99], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
 sustainStep = 0
-stepCount = 1
-loop = false
 
 [params.line1.dcwEnv]
+loop = false
+stepCount = 4
 steps = [[90, 99], [50, 75], [58, 37], [0, 24], [0, 50], [0, 50], [0, 50], [0, 50]]
 sustainStep = 2
-stepCount = 4
-loop = false
 
 [params.line1.dcaEnv]
+loop = false
+stepCount = 3
 steps = [[99, 97], [99, 77], [95, 60], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
 sustainStep = 2
-stepCount = 3
-loop = false
 
 [params.line2]
 algo = "cz101"
 algo2 = "cz101"
 algoBlend = 0
-baseWaveformA = "cosine"
-baseWaveformB = "cosine"
-window = "off"
-dcaBase = 1
-dcwBase = 1
-modulation = 0
-detuneNote = 0
-detuneFine = 5
-octave = 1
-dcwKeyFollow = 1
-dcaKeyFollow = 1
 algoControlsA = [{ id = "preset", value = 0 }, { id = "waveform1", value = 4 }, { id = "waveform2", value = 2 }, { id = "windowFunction", value = 0 }]
 algoControlsB = [{ id = "preset", value = 2 }, { id = "waveform1", value = 2 }, { id = "waveform2", value = 2 }, { id = "windowFunction", value = 0 }]
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+dcaBase = 1
+dcaKeyFollow = 1
+dcwBase = 1
+dcwKeyFollow = 1
+detuneFine = 5
+detuneNote = 0
+modulation = 0
+octave = 1
+window = "off"
 
 [params.line2.dcoEnv]
+loop = false
+stepCount = 2
 steps = [[63, 88], [6, 75], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
 sustainStep = 1
-stepCount = 2
-loop = false
 
 [params.line2.dcwEnv]
+loop = false
+stepCount = 2
 steps = [[99, 99], [61, 43], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
 sustainStep = 1
-stepCount = 2
-loop = false
 
 [params.line2.dcaEnv]
+loop = false
+stepCount = 2
 steps = [[99, 70], [13, 38], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
 sustainStep = 1
-stepCount = 2
-loop = false
 
 [params.portamento]
 enabled = false
@@ -101,29 +106,42 @@ rate = 0
 time = 0.1
 
 [params.lfo]
-waveform = "sine"
-rate = 5
 depth = 1
-symmetry = 0.5
-retrigger = false
 offset = 0
+rate = 5
+rateMode = "hz"
+retrigger = false
+symmetry = 0.5
+syncDivision = "quarter"
+waveform = "sine"
 
 [params.lfo2]
-waveform = "sine"
-rate = 5
 depth = 0
-symmetry = 0.5
-retrigger = false
 offset = 0
+rate = 5
+rateMode = "hz"
+retrigger = false
+symmetry = 0.5
+syncDivision = "quarter"
+waveform = "sine"
 
 [params.random]
 rate = 2
 
 [params.modEnv]
-attack = 0.009999999776482582
-decay = 0.10000000149011612
+attack = 0.01
+decay = 0.1
+release = 0.2
 sustain = 0.5
-release = 0.20000000298023224
 
-[params.modMatrix]
-routes = []
+[params.fx.slot4]
+type = "vibrato"
+
+[params.fx.slot4.params]
+delay = 0
+depth = 26
+enabled = true
+rate = 50
+rate_mode = "hz"
+sync_division = "quarter"
+waveform = 1

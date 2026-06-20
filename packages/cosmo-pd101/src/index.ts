@@ -143,9 +143,7 @@ export {
 	type PresetTagOptions,
 } from "./lib/synth/presetTags";
 export {
-	COSMO_PRESET_SCHEMA_VERSION,
 	COSMO_PRESET_TOML_FORMAT,
-	COSMO_PRESET_TOML_FORMAT_VERSION,
 	exportPresetToToml,
 	type ParsedPresetToml,
 	parsePresetToml,

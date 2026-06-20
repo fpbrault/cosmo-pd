@@ -1,6 +1,4 @@
 format = "cosmo-preset"
-formatVersion = 1
-presetSchemaVersion = 1
 id = "factory-215-lucifers-piano"
 name = "Lucifer's Piano"
 author = "Purr Audio"
@@ -11,93 +9,94 @@ favorite = false
 source = "cosmo-factory"
 
 [params]
-lineSelect = "L1"
-modMode = "normal"
-octave = 0
+czDacEnabled = false
 frequency = 220
-volume = 1
-tempoBpm = 120
-polyMode = "poly8"
 legato = false
-velocityCurve = 0
-pitchBendRange = 2
-fxSlots = [{ type = "loFi", params = { enabled = true, wow = 0.09499762814949334, flutter = 0.07554447787912068, degrade = 0, filter = -0.46124919198004155, crackle = 0.05907483119109588, noise = 0, saturation = 0.1912548053532581, mix = 1 } }, { type = "grainDelay", params = { enabled = true, time = 0.38814319777985046, feedback = 0.53774124, scatter = 0.5814208295661272, density = 0.5996484, mix = 0.2551622864354905, pitchSemitones = -12 } }, { type = "reverb", params = { enabled = true, mix = 0.09386969696553532, space = 0.9, predelay = 0.05027916578383156, distance = 0.851069265290719, character = 0.7760985839696245 } }, { type = "empty" }, { type = "empty" }, { type = "empty" }]
+lineSelect = "L1"
 macro1 = 0
 macro2 = 0
 macro3 = 0
 macro4 = 0
 macroLabels = ["Brightness", "Timbre", "Time", "Movement"]
+modMode = "normal"
+octave = 0
+pitchBendRange = 2
+polyMode = "poly8"
+ringGain = 4
+tempoBpm = 120
+velocityCurve = 0
+volume = 1
 
 [params.line1]
 algo = "fold"
 algo2 = "bend"
 algoBlend = 0.02
-baseWaveformA = "sine"
-baseWaveformB = "sine"
-window = "off"
-dcaBase = 1
-dcwBase = 0.4246265821158886
-modulation = 0
-detuneNote = 0
-detuneFine = 0
-octave = -2
-dcwKeyFollow = 0
-dcaKeyFollow = 0
 algoControlsA = [{ id = "foldStages", value = 0.580386 }, { id = "foldTilt", value = 0 }, { id = "foldSymmetry", value = 0 }, { id = "foldSoftness", value = 0 }]
 algoControlsB = [{ id = "bendCurve", value = 0.77660155 }, { id = "bendBias", value = 0 }, { id = "bendKnee", value = 0.5 }]
+baseWaveformA = "sine"
+baseWaveformB = "sine"
+dcaBase = 1
+dcaKeyFollow = 0
+dcwBase = 0.4246266
+dcwKeyFollow = 0
+detuneFine = 0
+detuneNote = 0
+modulation = 0
+octave = -2
+window = "off"
 
 [params.line1.dcoEnv]
+loop = false
+stepCount = 2
 steps = [[66, 55], [99, 53], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
 sustainStep = 0
-stepCount = 2
-loop = false
 
 [params.line1.dcwEnv]
+loop = false
+stepCount = 2
 steps = [[82, 96], [35, 32], [60, 60], [36, 68], [56, 74], [0, 52], [99, 99], [0, 60]]
 sustainStep = 1
-stepCount = 2
-loop = false
 
 [params.line1.dcaEnv]
+loop = false
+stepCount = 2
 steps = [[99, 84], [0, 42], [0, 1], [0, 1], [99, 99], [99, 99], [99, 99], [0, 60]]
 sustainStep = 0
-stepCount = 2
-loop = false
 
 [params.line2]
 algo = "cz101"
 algoBlend = 0
-baseWaveformA = "cosine"
-baseWaveformB = "cosine"
-window = "off"
-dcaBase = 1
-dcwBase = 0.46
-modulation = 0
-detuneNote = 0
-detuneFine = 0
-octave = -2
-dcwKeyFollow = 0
-dcaKeyFollow = 0
 algoControlsA = [{ id = "preset", value = 0 }, { id = "waveform1", value = 0 }, { id = "waveform2", value = 0 }, { id = "windowFunction", value = 0 }]
 algoControlsB = []
+baseWaveformA = "cosine"
+baseWaveformB = "cosine"
+dcaBase = 1
+dcaKeyFollow = 0
+dcwBase = 0.46
+dcwKeyFollow = 0
+detuneFine = 0
+detuneNote = 0
+modulation = 0
+octave = -2
+window = "off"
 
 [params.line2.dcoEnv]
+loop = false
+stepCount = 8
 steps = [[0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50], [0, 50]]
 sustainStep = 0
-stepCount = 8
-loop = false
 
 [params.line2.dcwEnv]
+loop = false
+stepCount = 8
 steps = [[99, 80], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [0, 60]]
 sustainStep = 1
-stepCount = 8
-loop = false
 
 [params.line2.dcaEnv]
+loop = false
+stepCount = 8
 steps = [[99, 90], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [99, 99], [0, 60]]
 sustainStep = 1
-stepCount = 8
-loop = false
 
 [params.portamento]
 enabled = false
@@ -106,24 +105,24 @@ rate = 85
 time = 0.07835937
 
 [params.lfo]
-waveform = "sine"
+depth = 0.5879858
+offset = 0
 rate = 0.29609388
 rateMode = "hz"
-syncDivision = "quarter"
-depth = 0.5879858
-symmetry = 0
 retrigger = false
-offset = 0
+symmetry = 0
+syncDivision = "quarter"
+waveform = "sine"
 
 [params.lfo2]
-waveform = "sine"
+depth = 0
+offset = 0
 rate = 5
 rateMode = "hz"
-syncDivision = "quarter"
-depth = 0
-symmetry = 0.5
 retrigger = false
-offset = 0
+symmetry = 0.5
+syncDivision = "quarter"
+waveform = "sine"
 
 [params.random]
 rate = 2
@@ -131,8 +130,74 @@ rate = 2
 [params.modEnv]
 attack = 0.01
 decay = 0.1
-sustain = 0.5
 release = 0.2
+sustain = 0.5
 
-[params.modMatrix]
-routes = [{ source = "lfo1", destination = "line1DcwEnvStep1Level", amount = 0.3154297, enabled = true }, { source = "modWheel", destination = "line1DcwBase", amount = 0.47890624, enabled = true }, { source = "macro4", destination = "reverbMix", amount = 0.5, enabled = true }, { source = "macro1", destination = "line1DcwBase", amount = 0.5, enabled = true }, { source = "macro2", destination = "line1AlgoParam2", amount = -0.49, enabled = true }]
+[params.fx.slot1]
+type = "loFi"
+
+[params.fx.slot1.params]
+crackle = 0.05907483
+degrade = 0
+enabled = true
+filter = -0.4612492
+flutter = 0.07554448
+mix = 1
+noise = 0
+saturation = 0.19125481
+wow = 0.09499763
+
+[params.fx.slot2]
+type = "grainDelay"
+
+[params.fx.slot2.params]
+density = 0.5996484
+enabled = true
+feedback = 0.53774124
+mix = 0.2551623
+pitchSemitones = -12
+scatter = 0.58142084
+syncDivision = "quarter"
+time = 0.3881432
+timeMode = "hz"
+
+[params.fx.slot3]
+type = "reverb"
+
+[params.fx.slot3.params]
+character = 0.7760986
+distance = 0.8510693
+enabled = true
+mix = 0.09386969
+predelay = 0.050279167
+space = 0.9
+
+[[params.mod.routes]]
+source = "lfo1"
+destination = "line1DcwEnvStep1Level"
+amount = 0.3154297
+enabled = true
+
+[[params.mod.routes]]
+source = "modWheel"
+destination = "line1DcwBase"
+amount = 0.47890624
+enabled = true
+
+[[params.mod.routes]]
+source = "macro4"
+destination = "reverbMix"
+amount = 0.5
+enabled = true
+
+[[params.mod.routes]]
+source = "macro1"
+destination = "line1DcwBase"
+amount = 0.5
+enabled = true
+
+[[params.mod.routes]]
+source = "macro2"
+destination = "line1AlgoParam2"
+amount = -0.49
+enabled = true

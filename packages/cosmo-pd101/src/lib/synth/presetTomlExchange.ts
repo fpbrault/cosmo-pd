@@ -1,5 +1,10 @@
-import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
-import { DEFAULT_SYNTH_PARAMS_V1 } from "@/lib/synth/bindings/synth";
+import { parse } from "smol-toml";
+import type {
+	FxSlotConfig,
+	ModRoute,
+	SynthParams,
+	SynthPresetV1,
+} from "@/lib/synth/bindings/synth";
 import {
 	normalizePresetTags,
 	type PresetTagOptions,
@@ -7,14 +12,12 @@ import {
 import type { PresetSource } from "./presetSources";
 
 export const COSMO_PRESET_TOML_FORMAT = "cosmo-preset";
-export const COSMO_PRESET_TOML_FORMAT_VERSION = 1;
-export const COSMO_PRESET_SCHEMA_VERSION = 1;
 
-type TomlPrimitive = string | number | boolean;
-type TomlValue =
-	| TomlPrimitive
-	| TomlValue[]
-	| { [key: string]: TomlValue | undefined };
+type PrimitiveTomlValue = string | number | boolean;
+type SerializableTomlValue =
+	| PrimitiveTomlValue
+	| SerializableTomlValue[]
+	| { [key: string]: SerializableTomlValue | null | undefined };
 
 export type ParsedPresetToml = {
 	id?: string;
@@ -35,6 +38,8 @@ type PresetTomlExportInput = {
 	tags?: PresetTagOptions[];
 	starred?: boolean;
 	favorite?: boolean;
+	source?: PresetSource;
+	sortIndex?: number;
 	data: SynthPresetV1;
 };
 
@@ -42,246 +47,39 @@ type StoredPresetExportInput = PresetTomlExportInput & {
 	source: PresetSource;
 };
 
-type TomlDocument = {
-	root: Record<string, TomlValue | undefined>;
-	sections: Map<string, Record<string, TomlValue | undefined>>;
+type Section = {
+	path: string;
+	values: Record<string, unknown>;
 };
 
-function clonePreset(preset: SynthPresetV1): SynthPresetV1 {
-	return JSON.parse(JSON.stringify(preset)) as SynthPresetV1;
-}
+const FX_SLOT_COUNT = 6;
+const EMPTY_FX_SLOT: FxSlotConfig = { type: "empty" };
 
-const DEFAULT_TOML_BASELINE_PRESET: SynthPresetV1 = {
-	schemaVersion: 1,
-	params: DEFAULT_SYNTH_PARAMS_V1,
-};
-
-function normalizeNewlines(input: string): string {
-	return input.replace(/\r\n?/g, "\n");
-}
-
-function stripComment(line: string): string {
-	let inString = false;
-	let escaped = false;
-	for (let index = 0; index < line.length; index += 1) {
-		const char = line[index];
-		if (escaped) {
-			escaped = false;
-			continue;
-		}
-		if (char === "\\" && inString) {
-			escaped = true;
-			continue;
-		}
-		if (char === '"') {
-			inString = !inString;
-			continue;
-		}
-		if (char === "#" && !inString) {
-			return line.slice(0, index);
-		}
-	}
-	return line;
-}
-
-function splitTopLevel(input: string, separator: string): string[] {
-	const parts: string[] = [];
-	let current = "";
-	let depth = 0;
-	let inString = false;
-	let escaped = false;
-
-	for (let index = 0; index < input.length; index += 1) {
-		const char = input[index];
-		if (escaped) {
-			current += char;
-			escaped = false;
-			continue;
-		}
-		if (char === "\\" && inString) {
-			current += char;
-			escaped = true;
-			continue;
-		}
-		if (char === '"') {
-			inString = !inString;
-			current += char;
-			continue;
-		}
-		if (!inString && (char === "[" || char === "{")) {
-			depth += 1;
-		} else if (!inString && (char === "]" || char === "}")) {
-			depth -= 1;
-		}
-		if (!inString && depth === 0 && char === separator) {
-			parts.push(current.trim());
-			current = "";
-			continue;
-		}
-		current += char;
-	}
-
-	if (current.trim()) {
-		parts.push(current.trim());
-	}
-	return parts;
-}
-
-function findTopLevelEquals(input: string): number {
-	let depth = 0;
-	let inString = false;
-	let escaped = false;
-	for (let index = 0; index < input.length; index += 1) {
-		const char = input[index];
-		if (escaped) {
-			escaped = false;
-			continue;
-		}
-		if (char === "\\" && inString) {
-			escaped = true;
-			continue;
-		}
-		if (char === '"') {
-			inString = !inString;
-			continue;
-		}
-		if (!inString && (char === "[" || char === "{")) {
-			depth += 1;
-		} else if (!inString && (char === "]" || char === "}")) {
-			depth -= 1;
-		} else if (!inString && depth === 0 && char === "=") {
-			return index;
-		}
-	}
-	return -1;
-}
-
-function parseTomlString(input: string): string | null {
-	if (!input.startsWith('"') || !input.endsWith('"')) {
-		return null;
-	}
-	try {
-		return JSON.parse(input) as string;
-	} catch {
-		return null;
-	}
-}
-
-function parseTomlValue(input: string): TomlValue | null {
-	const value = input.trim();
-	const stringValue = parseTomlString(value);
-	if (stringValue !== null) {
-		return stringValue;
-	}
-	if (value === "true") {
-		return true;
-	}
-	if (value === "false") {
-		return false;
-	}
-	if (value.startsWith("[") && value.endsWith("]")) {
-		const inner = value.slice(1, -1).trim();
-		if (!inner) {
-			return [];
-		}
-		const items = splitTopLevel(inner, ",").map(parseTomlValue);
-		if (items.some((item) => item === null)) {
-			return null;
-		}
-		return items as TomlValue[];
-	}
-	if (value.startsWith("{") && value.endsWith("}")) {
-		const inner = value.slice(1, -1).trim();
-		const object: Record<string, TomlValue | undefined> = {};
-		if (!inner) {
-			return object;
-		}
-		for (const entry of splitTopLevel(inner, ",")) {
-			const equalsIndex = findTopLevelEquals(entry);
-			if (equalsIndex < 1) {
-				return null;
-			}
-			const key = entry.slice(0, equalsIndex).trim();
-			const parsed = parseTomlValue(entry.slice(equalsIndex + 1));
-			if (!key || parsed === null) {
-				return null;
-			}
-			object[key] = parsed;
-		}
-		return object;
-	}
-	if (/^[+-]?(?:\d+\.?\d*|\.\d+)$/.test(value)) {
-		const parsed = Number(value);
-		return Number.isFinite(parsed) ? parsed : null;
-	}
-	return null;
-}
-
-function parseTomlDocument(input: string): TomlDocument | null {
-	const root: Record<string, TomlValue | undefined> = {};
-	const sections = new Map<string, Record<string, TomlValue | undefined>>();
-	let current = root;
-
-	for (const rawLine of normalizeNewlines(input).split("\n")) {
-		const line = stripComment(rawLine).trim();
-		if (!line) {
-			continue;
-		}
-		if (line.startsWith("[") && line.endsWith("]")) {
-			const section = line.slice(1, -1).trim();
-			if (!section || section.includes("[") || section.includes("]")) {
-				return null;
-			}
-			current = sections.get(section) ?? {};
-			sections.set(section, current);
-			continue;
-		}
-		const equalsIndex = findTopLevelEquals(line);
-		if (equalsIndex < 1) {
-			return null;
-		}
-		const key = line.slice(0, equalsIndex).trim();
-		const parsed = parseTomlValue(line.slice(equalsIndex + 1));
-		if (!key || parsed === null) {
-			return null;
-		}
-		current[key] = parsed;
-	}
-
-	return { root, sections };
-}
-
-function getString(value: TomlValue | undefined): string | null {
-	return typeof value === "string" ? value : null;
-}
-
-function getBoolean(value: TomlValue | undefined): boolean | null {
-	return typeof value === "boolean" ? value : null;
-}
-
-function getNumber(value: TomlValue | undefined): number | null {
-	return typeof value === "number" ? value : null;
-}
+const SECTION_ORDER = [
+	"params",
+	"params.line1",
+	"params.line1.dcoEnv",
+	"params.line1.dcwEnv",
+	"params.line1.dcaEnv",
+	"params.line2",
+	"params.line2.dcoEnv",
+	"params.line2.dcwEnv",
+	"params.line2.dcaEnv",
+	"params.portamento",
+	"params.lfo",
+	"params.lfo2",
+	"params.random",
+	"params.modEnv",
+	"params.mod",
+	"params.fx",
+];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function setNestedValue(
-	target: Record<string, unknown>,
-	path: string[],
-	key: string,
-	value: TomlValue,
-) {
-	let cursor = target;
-	for (const segment of path) {
-		const next = cursor[segment];
-		if (!isRecord(next)) {
-			cursor[segment] = {};
-		}
-		cursor = cursor[segment] as Record<string, unknown>;
-	}
-	cursor[key] = value;
+function cloneJson<T>(value: T): T {
+	return JSON.parse(JSON.stringify(value)) as T;
 }
 
 function normalizeEnvelopeSteps(value: unknown): unknown {
@@ -299,38 +97,85 @@ function normalizeEnvelopeSteps(value: unknown): unknown {
 		}
 		return value.map(normalizeEnvelopeSteps);
 	}
-	if (isRecord(value)) {
-		const next: Record<string, unknown> = {};
-		for (const [key, entry] of Object.entries(value)) {
-			next[key] =
-				key === "steps"
-					? normalizeEnvelopeSteps(entry)
-					: normalizeEnvelopeSteps(entry);
-		}
-		if (
-			Array.isArray(next.steps) &&
-			typeof next.stepCount !== "number" &&
-			next.steps.every((step) => isRecord(step))
-		) {
-			next.stepCount = next.steps.length;
-		}
-		return next;
+
+	if (!isRecord(value)) {
+		return value;
 	}
-	return value;
+
+	const next: Record<string, unknown> = {};
+	for (const [key, entry] of Object.entries(value)) {
+		next[key] = normalizeEnvelopeSteps(entry);
+	}
+	if (
+		Array.isArray(next.steps) &&
+		typeof next.stepCount !== "number" &&
+		next.steps.every((step) => isRecord(step))
+	) {
+		next.stepCount = next.steps.length;
+	}
+	return next;
 }
 
-function mergePatch(target: unknown, patch: unknown): unknown {
-	if (Array.isArray(patch)) {
-		return patch;
+function normalizeFxSlots(value: unknown): FxSlotConfig[] {
+	const slots = Array.from({ length: FX_SLOT_COUNT }, () =>
+		cloneJson(EMPTY_FX_SLOT),
+	);
+	if (!isRecord(value)) {
+		return slots;
 	}
-	if (isRecord(target) && isRecord(patch)) {
-		const next: Record<string, unknown> = { ...target };
-		for (const [key, value] of Object.entries(patch)) {
-			next[key] = mergePatch(next[key], value);
+
+	for (let index = 0; index < FX_SLOT_COUNT; index += 1) {
+		const slot = value[`slot${index + 1}`];
+		if (!isRecord(slot) || typeof slot.type !== "string") {
+			continue;
 		}
-		return next;
+		if (slot.type === "empty") {
+			slots[index] = cloneJson(EMPTY_FX_SLOT);
+			continue;
+		}
+		slots[index] = {
+			type: slot.type,
+			params: isRecord(slot.params) ? cloneJson(slot.params) : {},
+		} as FxSlotConfig;
 	}
-	return patch;
+
+	return slots;
+}
+
+function normalizeModRoutes(value: unknown): ModRoute[] {
+	if (!isRecord(value) || !Array.isArray(value.routes)) {
+		return [];
+	}
+	return value.routes
+		.filter(isRecord)
+		.map((route) => cloneJson(route) as ModRoute);
+}
+
+function normalizeParsedParams(value: unknown): SynthParams | null {
+	if (!isRecord(value)) {
+		return null;
+	}
+
+	const params = normalizeEnvelopeSteps(cloneJson(value));
+	if (!isRecord(params)) {
+		return null;
+	}
+
+	const fx = params.fx;
+	const mod = params.mod;
+	delete params.fx;
+	delete params.mod;
+	params.fxSlots = normalizeFxSlots(fx);
+	params.modMatrix = { routes: normalizeModRoutes(mod) };
+
+	for (const lineKey of ["line1", "line2"]) {
+		const line = params[lineKey];
+		if (isRecord(line) && !("algo2" in line)) {
+			line.algo2 = null;
+		}
+	}
+
+	return params as SynthParams;
 }
 
 function isSynthPresetV1(value: unknown): value is SynthPresetV1 {
@@ -345,77 +190,65 @@ function isSynthPresetV1(value: unknown): value is SynthPresetV1 {
 		isRecord(params.line1) &&
 		isRecord(params.line2) &&
 		Array.isArray(params.fxSlots) &&
-		params.fxSlots.length === 6
+		params.fxSlots.length === FX_SLOT_COUNT
 	);
 }
 
-function buildPatch(document: TomlDocument): Record<string, unknown> {
-	const patch: Record<string, unknown> = {};
-	for (const [section, values] of document.sections) {
-		const path = section.split(".");
-		for (const [key, value] of Object.entries(values)) {
-			if (value !== undefined) {
-				setNestedValue(patch, path, key, value);
-			}
-		}
-	}
-	return normalizeEnvelopeSteps(patch) as Record<string, unknown>;
+function getString(value: unknown): string | null {
+	return typeof value === "string" ? value : null;
+}
+
+function getBoolean(value: unknown): boolean | null {
+	return typeof value === "boolean" ? value : null;
+}
+
+function getTags(value: unknown): PresetTagOptions[] {
+	return normalizePresetTags(
+		Array.isArray(value)
+			? value.filter((tag): tag is string => typeof tag === "string")
+			: [],
+	);
 }
 
 export function parsePresetToml(input: string): ParsedPresetToml | null {
-	const document = parseTomlDocument(input);
-	if (!document) {
-		return null;
-	}
-	if (getString(document.root.format) !== COSMO_PRESET_TOML_FORMAT) {
-		return null;
-	}
-	if (
-		getNumber(document.root.formatVersion) !== COSMO_PRESET_TOML_FORMAT_VERSION
-	) {
+	let document: unknown;
+	try {
+		document = parse(input);
+	} catch {
 		return null;
 	}
 	if (
-		getNumber(document.root.presetSchemaVersion) !== COSMO_PRESET_SCHEMA_VERSION
+		!isRecord(document) ||
+		getString(document.format) !== COSMO_PRESET_TOML_FORMAT
 	) {
 		return null;
 	}
-	const name = getString(document.root.name);
+
+	const name = getString(document.name);
 	if (!name?.trim()) {
 		return null;
 	}
 
-	const base = clonePreset(DEFAULT_TOML_BASELINE_PRESET);
-	const patch = buildPatch(document);
-	const merged = mergePatch(base, patch);
-	if (!isSynthPresetV1(merged)) {
+	const params = normalizeParsedParams(document.params);
+	const data = { schemaVersion: 1, params };
+	if (!isSynthPresetV1(data)) {
 		return null;
 	}
 
 	return {
-		id: getString(document.root.id) ?? undefined,
+		id: getString(document.id) ?? undefined,
 		name: name.trim(),
-		author: getString(document.root.author)?.trim() ?? "",
-		description: getString(document.root.description)?.trim() ?? "",
-		tags: normalizePresetTags(
-			Array.isArray(document.root.tags)
-				? document.root.tags.filter(
-						(tag): tag is string => typeof tag === "string",
-					)
-				: [],
-		),
-		starred: getBoolean(document.root.starred) ?? false,
-		favorite: getBoolean(document.root.favorite) ?? false,
-		data: merged,
+		author: getString(document.author)?.trim() ?? "",
+		description: getString(document.description)?.trim() ?? "",
+		tags: getTags(document.tags),
+		starred: getBoolean(document.starred) ?? false,
+		favorite: getBoolean(document.favorite) ?? false,
+		data,
 	};
 }
 
 function escapeTomlString(value: string): string {
 	return JSON.stringify(value);
-}
-
-function areEqual(left: unknown, right: unknown): boolean {
-	return JSON.stringify(left) === JSON.stringify(right);
 }
 
 function toTomlValue(value: unknown, path: string[] = []): string {
@@ -433,61 +266,179 @@ function toTomlValue(value: unknown, path: string[] = []): string {
 			path.at(-1) === "steps" &&
 			value.every(
 				(step) =>
-					isRecord(step) &&
-					typeof step.level === "number" &&
-					typeof step.rate === "number",
+					Array.isArray(step) &&
+					step.length === 2 &&
+					typeof step[0] === "number" &&
+					typeof step[1] === "number",
 			)
 		) {
-			return `[${value.map((step) => `[${step.level}, ${step.rate}]`).join(", ")}]`;
+			return `[${value.map(([level, rate]) => `[${level}, ${rate}]`).join(", ")}]`;
 		}
 		return `[${value.map((item) => toTomlValue(item, path)).join(", ")}]`;
 	}
 	if (isRecord(value)) {
-		return `{ ${Object.entries(value)
+		const entries = Object.entries(value).filter(
+			(([, entry]) => entry !== undefined && entry !== null) as (
+				entry: [string, unknown],
+			) => entry is [string, SerializableTomlValue],
+		);
+		return `{ ${entries
 			.map(([key, entry]) => `${key} = ${toTomlValue(entry, [...path, key])}`)
 			.join(", ")} }`;
 	}
 	return '""';
 }
 
-function collectDiffSections(
-	value: unknown,
-	base: unknown,
-	path: string[],
-	sections: Map<string, string[]>,
-) {
-	if (isRecord(value) && isRecord(base)) {
-		for (const key of Object.keys(value).sort()) {
-			collectDiffSections(value[key], base[key], [...path, key], sections);
+function isEmptyFxSlot(slot: FxSlotConfig | undefined): boolean {
+	return !slot || slot.type === "empty";
+}
+
+function encodeEnvelopeSteps(value: unknown): unknown {
+	if (Array.isArray(value)) {
+		if (
+			value.every(
+				(step) =>
+					isRecord(step) &&
+					typeof step.level === "number" &&
+					typeof step.rate === "number",
+			)
+		) {
+			return value.map((step) => [step.level, step.rate]);
 		}
-		return;
+		return value.map(encodeEnvelopeSteps);
 	}
-	if (areEqual(value, base)) {
-		return;
+	if (!isRecord(value)) {
+		return value;
 	}
-	const key = path.at(-1);
-	const section = path.slice(0, -1).join(".");
-	if (!key || !section) {
-		return;
+	const next: Record<string, unknown> = {};
+	for (const [key, entry] of Object.entries(value)) {
+		if (entry !== undefined && entry !== null) {
+			next[key] = encodeEnvelopeSteps(entry);
+		}
 	}
-	const entries = sections.get(section) ?? [];
-	entries.push(`${key} = ${toTomlValue(value, path)}`);
-	sections.set(section, entries);
+	return next;
+}
+
+function encodeFxSlots(
+	fxSlots: SynthParams["fxSlots"],
+): Record<string, unknown> {
+	const fx: Record<string, unknown> = {};
+	for (const [index, slot] of (fxSlots ?? []).entries()) {
+		if (index >= FX_SLOT_COUNT || isEmptyFxSlot(slot)) {
+			continue;
+		}
+		fx[`slot${index + 1}`] = encodeEnvelopeSteps(slot);
+	}
+	return fx;
+}
+
+function encodeParams(params: SynthParams): Record<string, unknown> {
+	const encoded = encodeEnvelopeSteps(cloneJson(params));
+	if (!isRecord(encoded)) {
+		return {};
+	}
+
+	const fxSlots = params.fxSlots;
+	const routes = params.modMatrix?.routes ?? [];
+	delete encoded.fxSlots;
+	delete encoded.modMatrix;
+
+	const fx = encodeFxSlots(fxSlots);
+	if (Object.keys(fx).length > 0) {
+		encoded.fx = fx;
+	}
+	encoded.mod = { routes: routes.map((route) => encodeEnvelopeSteps(route)) };
+
+	return encoded;
+}
+
+function sectionRank(path: string): number {
+	const index = SECTION_ORDER.indexOf(path);
+	return index === -1 ? SECTION_ORDER.length : index;
+}
+
+function sortKeys(keys: string[]): string[] {
+	return [...keys].sort((left, right) => left.localeCompare(right));
+}
+
+function collectSections(
+	path: string,
+	value: Record<string, unknown>,
+	sections: Section[],
+) {
+	const scalars: Record<string, unknown> = {};
+	const children: Array<[string, Record<string, unknown>]> = [];
+
+	for (const key of sortKeys(Object.keys(value))) {
+		const entry = value[key];
+		if (entry === undefined || entry === null) {
+			continue;
+		}
+		if (isRecord(entry)) {
+			children.push([key, entry]);
+			continue;
+		}
+		scalars[key] = entry;
+	}
+
+	if (Object.keys(scalars).length > 0) {
+		sections.push({ path, values: scalars });
+	}
+
+	for (const [key, child] of children) {
+		collectSections(`${path}.${key}`, child, sections);
+	}
+}
+
+function compareSections(left: Section, right: Section): number {
+	return (
+		sectionRank(left.path) - sectionRank(right.path) ||
+		left.path.localeCompare(right.path, undefined, { numeric: true })
+	);
+}
+
+function writeSection(section: Section): string[] {
+	const lines = [`[${section.path}]`];
+	for (const key of sortKeys(Object.keys(section.values))) {
+		const value = section.values[key];
+		if (value !== undefined && value !== null) {
+			lines.push(
+				`${key} = ${toTomlValue(value, section.path.split(".").concat(key))}`,
+			);
+		}
+	}
+	return lines;
+}
+
+function writeModRoutes(routes: unknown): string[] {
+	if (!Array.isArray(routes) || routes.length === 0) {
+		return [];
+	}
+
+	const lines: string[] = [];
+	for (const route of routes) {
+		if (!isRecord(route)) {
+			continue;
+		}
+		lines.push("[[params.mod.routes]]");
+		for (const key of ["source", "destination", "amount", "enabled"]) {
+			const value = route[key];
+			if (value !== undefined && value !== null) {
+				lines.push(
+					`${key} = ${toTomlValue(value, ["params", "mod", "routes", key])}`,
+				);
+			}
+		}
+		lines.push("");
+	}
+	if (lines.at(-1) === "") {
+		lines.pop();
+	}
+	return lines;
 }
 
 export function exportPresetToToml(input: PresetTomlExportInput): string {
-	const sections = new Map<string, string[]>();
-	collectDiffSections(
-		input.data.params,
-		DEFAULT_TOML_BASELINE_PRESET.params,
-		["params"],
-		sections,
-	);
-	const lines = [
-		`format = ${escapeTomlString(COSMO_PRESET_TOML_FORMAT)}`,
-		`formatVersion = ${COSMO_PRESET_TOML_FORMAT_VERSION}`,
-		`presetSchemaVersion = ${COSMO_PRESET_SCHEMA_VERSION}`,
-	];
+	const lines = [`format = ${escapeTomlString(COSMO_PRESET_TOML_FORMAT)}`];
 	if (input.id) {
 		lines.push(`id = ${escapeTomlString(input.id)}`);
 	}
@@ -499,13 +450,31 @@ export function exportPresetToToml(input: PresetTomlExportInput): string {
 		`starred = ${input.starred ? "true" : "false"}`,
 		`favorite = ${input.favorite ? "true" : "false"}`,
 	);
+	if (input.source) {
+		lines.push(`source = ${escapeTomlString(input.source)}`);
+	}
+	if (typeof input.sortIndex === "number") {
+		lines.push(`sortIndex = ${toTomlValue(input.sortIndex)}`);
+	}
 
-	for (const section of Array.from(sections.keys()).sort()) {
-		const entries = sections.get(section);
-		if (!entries?.length) {
-			continue;
+	const params = encodeParams(input.data.params);
+	const modRoutes = isRecord(params.mod) ? params.mod.routes : undefined;
+	if (isRecord(params.mod)) {
+		delete params.mod.routes;
+		if (Object.keys(params.mod).length === 0) {
+			delete params.mod;
 		}
-		lines.push("", `[${section}]`, ...entries.sort());
+	}
+
+	const sections: Section[] = [];
+	collectSections("params", params, sections);
+	for (const section of sections.sort(compareSections)) {
+		lines.push("", ...writeSection(section));
+	}
+
+	const routeLines = writeModRoutes(modRoutes);
+	if (routeLines.length > 0) {
+		lines.push("", ...routeLines);
 	}
 
 	return `${lines.join("\n")}\n`;
@@ -523,6 +492,7 @@ export function exportStoredPresetToToml(
 		tags: preset.tags,
 		starred: preset.source === "user" ? false : preset.starred,
 		favorite,
+		source: preset.source,
 		data: preset.data,
 	});
 }

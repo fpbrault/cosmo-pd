@@ -42,8 +42,6 @@ struct AuthoredCzPresetFile {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct AuthoredTomlPresetFile {
     format: String,
-    format_version: u16,
-    preset_schema_version: u16,
     id: String,
     name: String,
     #[serde(default)]
@@ -60,10 +58,7 @@ struct AuthoredTomlPresetFile {
     author: Option<String>,
     #[serde(default)]
     sort_index: Option<usize>,
-    #[serde(default)]
-    params: Option<toml::Value>,
-    #[serde(default)]
-    data: Option<toml::Value>,
+    params: toml::Value,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -206,19 +201,13 @@ fn load_toml_preset_file(path: &Path, file_name: &str) -> Result<FactoryPresetSo
     if authored.format != "cosmo-preset" {
         return Err(format!("{file_name}: unsupported preset format"));
     }
-    if authored.format_version != 1 {
-        return Err(format!("{file_name}: unsupported formatVersion"));
-    }
-    if authored.preset_schema_version != 1 {
-        return Err(format!("{file_name}: unsupported presetSchemaVersion"));
-    }
     if authored.favorite {
         return Err(format!(
             "{file_name}: factory preset sources must not set favorite = true"
         ));
     }
 
-    let data = toml_authored_data(authored.params, authored.data, file_name)?;
+    let data = toml_authored_data(authored.params, file_name)?;
     decode_authored_preset_source(
         authored.id,
         authored.name,
@@ -300,32 +289,12 @@ fn validate_stable_factory_id(id: &str, file_name: &str) -> Result<(), String> {
     }
 }
 
-fn toml_authored_data(
-    params: Option<toml::Value>,
-    data: Option<toml::Value>,
-    file_name: &str,
-) -> Result<Value, String> {
-    if params.is_some() && data.is_some() {
-        return Err(format!(
-            "{file_name}: TOML preset must provide either params or data, not both"
-        ));
-    }
-
-    if let Some(data) = data {
-        return toml_value_to_json(data, file_name);
-    }
-
-    let mut base = serde_json::to_value(SynthPresetV1::default())
-        .map_err(|error| format!("{file_name}: failed to build preset baseline: {error}"))?;
-    let Some(params) = params else {
-        return Ok(base);
-    };
-    let patch = normalize_toml_patch(toml_value_to_json(params, file_name)?);
-    let Some(base_params) = base.get_mut("params") else {
-        return Err(format!("{file_name}: baseline preset is missing params"));
-    };
-    merge_json_patch(base_params, patch);
-    Ok(base)
+fn toml_authored_data(params: toml::Value, file_name: &str) -> Result<Value, String> {
+    let params = normalize_toml_params(toml_value_to_json(params, file_name)?);
+    Ok(serde_json::json!({
+        "schemaVersion": 1,
+        "params": params,
+    }))
 }
 
 fn toml_value_to_json(value: toml::Value, file_name: &str) -> Result<Value, String> {
@@ -333,12 +302,12 @@ fn toml_value_to_json(value: toml::Value, file_name: &str) -> Result<Value, Stri
         .map_err(|error| format!("{file_name}: failed to convert TOML value: {error}"))
 }
 
-fn normalize_toml_patch(value: Value) -> Value {
+fn normalize_toml_value(value: Value) -> Value {
     match value {
         Value::Array(items) => {
             let normalized = items
                 .into_iter()
-                .map(normalize_toml_patch)
+                .map(normalize_toml_value)
                 .collect::<Vec<_>>();
             let is_step_pairs = normalized.iter().all(|item| {
                 matches!(
@@ -370,7 +339,7 @@ fn normalize_toml_patch(value: Value) -> Value {
             let keys = object.keys().cloned().collect::<Vec<_>>();
             for key in keys {
                 if let Some(entry) = object.remove(&key) {
-                    object.insert(key, normalize_toml_patch(entry));
+                    object.insert(key, normalize_toml_value(entry));
                 }
             }
             if let Some(Value::Array(steps)) = object.get("steps")
@@ -385,21 +354,53 @@ fn normalize_toml_patch(value: Value) -> Value {
     }
 }
 
-fn merge_json_patch(target: &mut Value, patch: Value) {
-    match (target, patch) {
-        (Value::Object(target_object), Value::Object(patch_object)) => {
-            for (key, value) in patch_object {
-                if let Some(existing) = target_object.get_mut(&key) {
-                    merge_json_patch(existing, value);
-                } else {
-                    target_object.insert(key, value);
-                }
-            }
-        }
-        (target, patch) => {
-            *target = patch;
+fn normalize_toml_params(params: Value) -> Value {
+    let Value::Object(mut params) = normalize_toml_value(params) else {
+        return serde_json::json!({});
+    };
+
+    let fx = params.remove("fx");
+    params.insert("fxSlots".to_string(), normalize_toml_fx_slots(fx));
+
+    let mod_routes = params
+        .remove("mod")
+        .and_then(|value| value.get("routes").cloned())
+        .and_then(|value| value.as_array().cloned())
+        .unwrap_or_default();
+    params.insert(
+        "modMatrix".to_string(),
+        serde_json::json!({ "routes": mod_routes }),
+    );
+
+    for line_key in ["line1", "line2"] {
+        if let Some(Value::Object(line)) = params.get_mut(line_key)
+            && !line.contains_key("algo2")
+        {
+            line.insert("algo2".to_string(), Value::Null);
         }
     }
+
+    Value::Object(params)
+}
+
+fn normalize_toml_fx_slots(fx: Option<Value>) -> Value {
+    let mut slots = (0..6)
+        .map(|_| serde_json::json!({ "type": "empty" }))
+        .collect::<Vec<_>>();
+    let Some(Value::Object(fx)) = fx else {
+        return Value::Array(slots);
+    };
+
+    for (index, slot_entry) in slots.iter_mut().enumerate().take(6) {
+        let Some(slot) = fx.get(&format!("slot{}", index + 1)) else {
+            continue;
+        };
+        if slot.get("type").and_then(Value::as_str) == Some("empty") {
+            continue;
+        }
+        *slot_entry = slot.clone();
+    }
+    Value::Array(slots)
 }
 
 fn order_presets_for_display(mut presets: Vec<FactoryPresetSource>) -> Vec<FactoryPresetSource> {
@@ -843,6 +844,16 @@ fn validate_fx_slots(data: &Value, file_name: &str) -> Result<(), String> {
                     )?;
                 }
                 FxControlKindV1::ButtonGroup => {
+                    if matches!(control.id, "timeMode" | "rateMode")
+                        && raw_value.as_str().is_some_and(is_valid_lfo_rate_mode)
+                    {
+                        continue;
+                    }
+                    if control.id == "syncDivision"
+                        && raw_value.as_str().is_some_and(is_valid_lfo_sync_division)
+                    {
+                        continue;
+                    }
                     let numeric = raw_value
                         .as_f64()
                         .or_else(|| raw_value.as_bool().map(|b| if b { 1.0 } else { 0.0 }))
@@ -880,6 +891,26 @@ fn validate_fx_slots(data: &Value, file_name: &str) -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+fn is_valid_lfo_rate_mode(value: &str) -> bool {
+    matches!(value, "hz" | "sync")
+}
+
+fn is_valid_lfo_sync_division(value: &str) -> bool {
+    matches!(
+        value,
+        "whole"
+            | "half"
+            | "quarter"
+            | "eighth"
+            | "sixteenth"
+            | "thirtySecond"
+            | "dottedQuarter"
+            | "dottedEighth"
+            | "quarterTriplet"
+            | "eighthTriplet"
+    )
 }
 
 fn validate_numeric_range(
@@ -1188,7 +1219,7 @@ mod tests {
         let authored: AuthoredTomlPresetFile =
             toml::from_str(include_str!("../factory-presets/001-2l-pluck-brss.toml"))
                 .expect("factory fixture should decode");
-        toml_authored_data(authored.params, authored.data, "fixture.toml")
+        toml_authored_data(authored.params, "fixture.toml")
             .expect("factory fixture should produce valid data")
     }
 

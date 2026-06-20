@@ -370,6 +370,7 @@ export function createPluginPresetManagerRepository({
 						tags: normalizePresetTags(entry.tags ?? []),
 						starred: entry.starred,
 						favorite: entry.favorite,
+						source: entry.source as PresetSource,
 						data: imported.data,
 					}),
 				};
