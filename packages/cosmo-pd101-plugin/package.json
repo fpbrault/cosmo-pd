@@ -20,6 +20,8 @@
 		"test:e2e": "cd webview && bun run test:e2e",
 		"test:e2e:ui": "cd webview && bun run test:e2e:ui",
 		"test:e2e:debug": "cd webview && bun run test:e2e:debug",
+		"perf:plugin": "cargo run --release --features perf-bench --bin plugin-render-bench -- --json",
+		"perf:webview": "bun run ../../scripts/perf-web-benchmark.mjs",
 		"package:release": "bun run build:web && bun run gen:factory-presets && cargo truce package",
 		"package:release:macos": "bun run build:web && bun run gen:factory-presets && cargo truce package",
 		"package:release:windows": "bun run build:web && bun run gen:factory-presets && cargo truce package",
