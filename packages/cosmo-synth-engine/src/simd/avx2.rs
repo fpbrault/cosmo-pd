@@ -169,9 +169,9 @@ mod tests {
         let a = Avx2::splat(2.0);
         let b = Avx2::splat(3.0);
 
-        assert_eq!(a.add(b).to_array(), [5.0; 4]);
-        assert_eq!(a.mul(b).to_array(), [6.0; 4]);
-        assert_eq!(b.sub(a).to_array(), [1.0; 4]);
+        assert_eq!(SimdType::add(a, b).to_array(), [5.0; 4]);
+        assert_eq!(SimdType::mul(a, b).to_array(), [6.0; 4]);
+        assert_eq!(SimdType::sub(b, a).to_array(), [1.0; 4]);
         assert_eq!(a.max(b).to_array(), [3.0; 4]);
         assert_eq!(a.min(b).to_array(), [2.0; 4]);
         assert_eq!(a.sum(), 8.0);
