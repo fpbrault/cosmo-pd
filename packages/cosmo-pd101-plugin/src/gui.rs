@@ -431,7 +431,12 @@ impl Editor for CzEditor {
     }
 
     fn idle(&mut self) {
-        crate::audio_runtime::drain_render_control_events(&self.shared_state, &self.params);
+        let control = crate::rt_safety::ControlContext::new();
+        crate::audio_runtime::drain_render_control_events(
+            &control,
+            &self.shared_state,
+            &self.params,
+        );
 
         #[cfg(target_os = "macos")]
         if !is_main_thread() {

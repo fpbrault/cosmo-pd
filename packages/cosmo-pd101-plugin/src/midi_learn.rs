@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
 use arc_swap::ArcSwap;
-use cosmo_synth_engine::params::parameter_range_for_key;
+use cosmo_synth_engine::params::{canonical_parameter_key, parameter_range_for_key};
 
 use crate::diagnostics::append_log_warn;
 use crate::runtime_state::{SharedMidiMappingSnapshot, SharedMidiMappings};
 
 #[derive(Clone)]
 pub struct MidiMappingSnapshotEntry {
-    pub param_key: Arc<str>,
+    pub param_key: &'static str,
     pub channel: i32,
     pub cc: i32,
     pub min: f32,
@@ -25,9 +25,10 @@ impl MidiMappingSnapshot {
         let entries = bindings
             .iter()
             .filter_map(|binding| {
+                let param_key = canonical_parameter_key(&binding.param_key)?;
                 let (min, max) = parameter_range_for_key(&binding.param_key)?;
                 Some(MidiMappingSnapshotEntry {
-                    param_key: Arc::from(binding.param_key.as_str()),
+                    param_key,
                     channel: binding.channel,
                     cc: binding.cc,
                     min,
@@ -54,10 +55,12 @@ impl MidiLearnService {
     }
 
     pub fn persist(&self) {
+        crate::rt_safety::assert_not_rt("persist MIDI learn bindings");
         persist_midi_learn_bindings(&self.state);
     }
 
     pub fn publish_mapping_snapshot(&self) {
+        crate::rt_safety::assert_not_rt("publish MIDI mapping snapshot");
         if let Ok(state) = self.state.lock() {
             self.mapping_snapshot
                 .store(Arc::new(MidiMappingSnapshot::from_bindings(
@@ -76,6 +79,7 @@ pub fn new_shared_mapping_snapshot(
 }
 
 pub fn persist_midi_learn_bindings(midi_learn_state: &SharedMidiMappings) {
+    crate::rt_safety::assert_not_rt("persist MIDI learn bindings");
     let bindings = midi_learn_state
         .lock()
         .map(|state| state.bindings.clone())

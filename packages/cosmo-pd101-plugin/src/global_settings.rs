@@ -183,6 +183,7 @@ fn update_global_settings(
 }
 
 pub fn save_global_settings(settings: &PluginGlobalSettings) -> Result<(), String> {
+    crate::rt_safety::assert_not_rt("save global settings");
     update_global_settings(|s| {
         *s = settings.clone();
     })?;
@@ -190,6 +191,7 @@ pub fn save_global_settings(settings: &PluginGlobalSettings) -> Result<(), Strin
 }
 
 pub fn load_or_init_global_settings() -> Result<PluginGlobalSettings, String> {
+    crate::rt_safety::assert_not_rt("load global settings");
     // Fast path: cache hit under read lock.
     {
         let cache = GLOBAL_SETTINGS_CACHE.read().unwrap();
@@ -217,6 +219,7 @@ pub fn load_or_init_global_settings() -> Result<PluginGlobalSettings, String> {
 }
 
 pub fn save_voice_limit(limit: u8) -> Result<(), String> {
+    crate::rt_safety::assert_not_rt("save voice limit");
     let clamped = limit.clamp(MIN_VOICE_LIMIT, MAX_VOICE_LIMIT);
     update_global_settings(|settings| {
         settings.voice_limit = clamped;
@@ -225,6 +228,7 @@ pub fn save_voice_limit(limit: u8) -> Result<(), String> {
 }
 
 pub fn save_midi_learn_bindings(bindings: Vec<MidiLearnBinding>) -> Result<(), String> {
+    crate::rt_safety::assert_not_rt("save MIDI learn bindings");
     update_global_settings(|settings| {
         settings.midi_learn_bindings = bindings;
     })?;

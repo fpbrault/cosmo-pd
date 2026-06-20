@@ -54,7 +54,7 @@ pub(super) fn handle(
             let scope = scope_buffer
                 .read()
                 .map_err(|_| "scope buffer is poisoned".to_string())?;
-            let response = if scope.samples().is_empty() {
+            let response = if !scope.has_data() {
                 ScopeDataResponse {
                     samples: vec![],
                     sample_rate: scope.sample_rate(),

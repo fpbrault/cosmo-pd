@@ -401,6 +401,7 @@ pub fn read_library_then<R>(
     factory_json: &str,
     f: impl FnOnce(&PresetLibrary) -> R,
 ) -> Result<R, String> {
+    crate::rt_safety::assert_not_rt("read preset library");
     let library = PresetLibrary::load_or_init(factory_json)?;
     Ok(f(&library))
 }
@@ -409,6 +410,7 @@ pub fn mutate_library_then(
     factory_json: &str,
     f: impl FnOnce(&mut PresetLibrary),
 ) -> Result<(), String> {
+    crate::rt_safety::assert_not_rt("mutate preset library");
     let mut library = PresetLibrary::load_or_init(factory_json)?;
     f(&mut library);
     Ok(())

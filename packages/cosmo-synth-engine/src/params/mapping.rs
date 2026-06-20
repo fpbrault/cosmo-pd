@@ -188,6 +188,47 @@ pub fn set_parameter_value_by_key(params: &mut SynthParams, key: &str, value: f3
     true
 }
 
+/// Returns the canonical static key accepted by realtime parameter events.
+pub fn canonical_parameter_key(key: &str) -> Option<&'static str> {
+    match key {
+        "volume" => Some("volume"),
+        "warpAAmount" => Some("warpAAmount"),
+        "warpBAmount" => Some("warpBAmount"),
+        "algoBlendA" => Some("algoBlendA"),
+        "algoBlendB" => Some("algoBlendB"),
+        "line1Level" => Some("line1Level"),
+        "line2Level" => Some("line2Level"),
+        "line1Octave" => Some("line1Octave"),
+        "line2Octave" => Some("line2Octave"),
+        "line2DetuneNote" => Some("line2DetuneNote"),
+        "line2DetuneFine" => Some("line2DetuneFine"),
+        "velocityCurve" => Some("velocityCurve"),
+        "pitchBendRange" => Some("pitchBendRange"),
+        "portamentoRate" => Some("portamentoRate"),
+        "portamentoTime" => Some("portamentoTime"),
+        "lfoRate" => Some("lfoRate"),
+        "lfoDepth" => Some("lfoDepth"),
+        "lfoSymmetry" => Some("lfoSymmetry"),
+        "lfoOffset" => Some("lfoOffset"),
+        "lfo2Rate" => Some("lfo2Rate"),
+        "lfo2Depth" => Some("lfo2Depth"),
+        "lfo2Symmetry" => Some("lfo2Symmetry"),
+        "lfo2Offset" => Some("lfo2Offset"),
+        "randomRate" => Some("randomRate"),
+        "modEnvAttack" => Some("modEnvAttack"),
+        "modEnvDecay" => Some("modEnvDecay"),
+        "modEnvSustain" => Some("modEnvSustain"),
+        "modEnvRelease" => Some("modEnvRelease"),
+        "tempoBpm" => Some("tempoBpm"),
+        "lineOctave" => Some("lineOctave"),
+        "macro1" => Some("macro1"),
+        "macro2" => Some("macro2"),
+        "macro3" => Some("macro3"),
+        "macro4" => Some("macro4"),
+        _ => None,
+    }
+}
+
 pub fn parameter_range_for_key(key: &str) -> Option<(f32, f32)> {
     if let Some(spec) = AUTOMATABLE_PARAMS.iter().find(|spec| spec.key == key) {
         return Some((spec.min, spec.max));

@@ -35,14 +35,15 @@ pub type SharedMidiMappings = Arc<Mutex<MidiLearnState>>;
 
 pub enum RenderControlEvent {
     ObservedCc { channel: u8, cc: u8, value: u8 },
-    MidiLearnCapture { channel: u8, cc: u8 },
-    MappedParamChange { param_key: Arc<str>, value: f32 },
+    MappedParamChange { param_key: &'static str, value: f32 },
     ProgramChangeRequest { program: u8 },
 }
 
 #[derive(Default)]
 pub struct RenderControlDiagnostics {
     pub queue_overflows: AtomicU64,
+    pub block_event_overflows: AtomicU64,
+    pub parameter_snapshot_rejections: AtomicU64,
     pub midi_mapping_misses: AtomicU64,
 }
 
@@ -51,6 +52,7 @@ pub struct ScopeFrame {
     cursor: usize,
     sample_rate: f32,
     hz: f32,
+    has_data: bool,
 }
 
 impl Default for ScopeFrame {
@@ -60,6 +62,7 @@ impl Default for ScopeFrame {
             cursor: 0,
             sample_rate: 44100.0,
             hz: 220.0,
+            has_data: false,
         }
     }
 }
@@ -68,10 +71,15 @@ impl ScopeFrame {
     pub fn push_block(&mut self, mono: &[f32], sample_rate: f32, hz: f32) {
         self.sample_rate = sample_rate;
         self.hz = hz;
+        self.has_data = true;
         for &s in mono {
             self.samples[self.cursor] = s;
             self.cursor = (self.cursor + 1) % SCOPE_CAPACITY;
         }
+    }
+
+    pub fn has_data(&self) -> bool {
+        self.has_data
     }
 
     pub fn samples(&self) -> &[f32] {

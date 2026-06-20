@@ -12,6 +12,7 @@ pub mod plugin;
 pub mod preset_library;
 pub mod preset_library_path;
 pub mod preset_service;
+pub mod rt_safety;
 pub mod runtime_state;
 pub mod session_state;
 

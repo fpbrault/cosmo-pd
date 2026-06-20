@@ -33,6 +33,9 @@ pub use self::state::{
     RuntimeVoiceLineState,
 };
 
+const RT_MAX_MOD_ROUTES: usize = 256;
+const RT_MAX_MACRO_LABEL_BYTES: usize = 256;
+
 #[derive(Debug, Clone, Copy)]
 struct PendingMonoRetrigger {
     note: u8,
@@ -86,7 +89,12 @@ pub struct CosmoProcessor {
 impl CosmoProcessor {
     /// Create a new processor with default parameters and FX state.
     pub fn new(sample_rate: f32) -> Self {
-        let params = Arc::new(SynthParams::default());
+        let mut initial_params = SynthParams::default();
+        initial_params.mod_matrix.routes.reserve(RT_MAX_MOD_ROUTES);
+        for label in &mut initial_params.macro_labels {
+            label.reserve(RT_MAX_MACRO_LABEL_BYTES);
+        }
+        let params = Arc::new(initial_params);
         let compiled_params = CompiledSynthParams::from_params(params.as_ref());
         let mut proc = Self {
             voices: array::from_fn(|_| Voice::new()),
@@ -238,6 +246,52 @@ impl CosmoProcessor {
         self.line1_scratch = params.line1;
         self.line2_scratch = params.line2;
         self.params = params;
+        self.rebuild_compiled_params();
+        self.update_fx();
+    }
+
+    /// Copies a control-thread snapshot into the processor's preallocated,
+    /// uniquely owned parameter storage. Returns `false` if the snapshot
+    /// exceeds the bounded realtime capacities or the storage is shared.
+    pub fn copy_params_for_realtime(&mut self, params: &SynthParams) -> bool {
+        let Some(current) = Arc::get_mut(&mut self.params) else {
+            return false;
+        };
+        if params.mod_matrix.routes.len() > current.mod_matrix.routes.capacity()
+            || params
+                .macro_labels
+                .iter()
+                .zip(&current.macro_labels)
+                .any(|(source, destination)| source.len() > destination.capacity())
+        {
+            return false;
+        }
+
+        current.clone_from(params);
+        self.refresh_parameter_caches();
+        true
+    }
+
+    /// Applies one DAW/MIDI parameter change without cloning or allocating.
+    pub fn apply_parameter_change_realtime(&mut self, param_key: &'static str, value: f32) -> bool {
+        let Some(params) = Arc::get_mut(&mut self.params) else {
+            return false;
+        };
+        if !crate::params::set_parameter_value_by_key(params, param_key, value) {
+            return false;
+        }
+
+        self.refresh_parameter_caches();
+        true
+    }
+
+    fn refresh_parameter_caches(&mut self) {
+        self.macro1 = self.params.macro1;
+        self.macro2 = self.params.macro2;
+        self.macro3 = self.params.macro3;
+        self.macro4 = self.params.macro4;
+        self.line1_scratch = self.params.line1;
+        self.line2_scratch = self.params.line2;
         self.rebuild_compiled_params();
         self.update_fx();
     }

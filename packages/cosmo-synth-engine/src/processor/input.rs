@@ -1,6 +1,4 @@
 use super::{CosmoProcessor, midi_note_to_freq};
-use crate::params::set_parameter_value_by_key;
-use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct CosmoTransportState {
@@ -45,10 +43,11 @@ pub fn apply_input_event(processor: &mut CosmoProcessor, event: CosmoInputEvent)
             _ => {}
         },
         CosmoInputEvent::ParameterChange { param_key, value } => {
-            let mut params = (*processor.params).clone();
-            if set_parameter_value_by_key(&mut params, param_key, value) {
-                processor.set_shared_params(Arc::new(params));
-            }
+            let applied = processor.apply_parameter_change_realtime(param_key, value);
+            debug_assert!(
+                applied,
+                "realtime parameter storage must remain uniquely owned"
+            );
         }
         CosmoInputEvent::PitchBend { value } => processor.set_pitch_bend(value),
         CosmoInputEvent::Aftertouch { value } => processor.set_aftertouch(value),

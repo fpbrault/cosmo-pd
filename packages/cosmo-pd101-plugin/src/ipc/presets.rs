@@ -149,7 +149,7 @@ pub(super) fn handle(
 
             // Signal the audio thread to reset state during the sync pass that observes
             // this new preset snapshot. sync_runtime_params_from_host() consumes this
-            // before calling processor.set_shared_params(...).
+            // before copying the snapshot into preallocated processor storage.
             context
                 .shared_state
                 .preset_reset_pending

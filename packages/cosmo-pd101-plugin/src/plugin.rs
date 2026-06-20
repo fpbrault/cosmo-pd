@@ -12,12 +12,13 @@ use crate::diagnostics::append_log_debug;
 use crate::diagnostics::{
     append_log, append_log_error, append_log_warn, init_panic_hook, plugin_log_path,
 };
+#[cfg(test)]
+use crate::params::CzPluginParamsParamId;
 #[cfg(any(feature = "vst3", test))]
 use crate::params::resolve_vst3_midi_mapping_param_id;
 use crate::params::{CzPluginParams, apply_daw_params, sync_all_daw_params_from_synth};
-#[cfg(test)]
-use crate::params::{CzPluginParamsParamId, read_daw_param_by_id, write_daw_param_by_id};
 use crate::preset_library::PresetLibrary;
+use crate::rt_safety::{ControlContext, RtContext};
 use crate::runtime_state::PluginSharedState;
 #[cfg(test)]
 use crate::runtime_state::{
@@ -43,6 +44,7 @@ use truce::prelude::*;
 use truce_core::events::TransportInfo;
 
 pub(crate) fn build_rt_synth_params(params: &SynthParams) -> SynthParams {
+    crate::rt_safety::assert_not_rt("build and publish realtime synth params");
     let mut rt_params = params.clone();
     normalize_synth_params_envelopes_to_raw_if_human(&mut rt_params);
     rt_params
@@ -177,6 +179,7 @@ impl CzPlugin {
         preset_name: Option<String>,
         params: SynthParams,
     ) {
+        crate::rt_safety::assert_not_rt("apply preset session state");
         sync_all_daw_params_from_synth(&self.params, &params);
 
         let rt_params = Arc::new(build_rt_synth_params(&params));
@@ -195,7 +198,7 @@ impl CzPlugin {
             .synth
             .synth_params_version
             .load(Ordering::Acquire);
-        self.audio.daw_params_dirty = false;
+        self.cache_current_daw_params();
 
         if let Ok(mut session) = self.shared_state.presets.session.lock() {
             if preset_name.is_some() || preset_id.is_some() {
@@ -209,11 +212,13 @@ impl CzPlugin {
 
         if let Some(proc) = self.audio.processor.as_mut() {
             proc.reset_audio_state();
-            proc.set_shared_params(rt_params);
+            let copied = proc.copy_params_for_realtime(rt_params.as_ref());
+            debug_assert!(copied, "preset exceeded preallocated realtime storage");
         }
     }
 
     fn apply_startup_preset_if_needed(&mut self) {
+        crate::rt_safety::assert_not_rt("apply startup preset");
         if self.startup_preset_resolved {
             return;
         }
@@ -243,18 +248,29 @@ impl CzPlugin {
         self.apply_preset_state(Some(entry.id), Some(entry.name), params);
     }
 
-    fn process_inner(
+    fn process_rt(
         &mut self,
+        rt: &RtContext,
         buffer: &mut AudioBuffer,
         events: &EventList,
         context: &mut ProcessContext,
     ) -> ProcessStatus {
+        let num_samples = buffer.num_samples();
+        if num_samples > self.audio.mono_output.len() {
+            for ch in 0..buffer.num_output_channels() {
+                buffer.output(ch).fill(0.0);
+            }
+            return ProcessStatus::Normal;
+        }
+
         self.shared_state
             .telemetry
             .transport_snapshot
             .store(context.transport);
+        self.audio.block_input_events.clear();
         self.sync_runtime_params_from_host(events);
-        self.render_audio_block(buffer, events, context)
+        self.collect_block_input_events(events, num_samples);
+        self.render_audio_block(rt, buffer, context)
     }
 }
 
@@ -278,7 +294,11 @@ impl PluginLogic for CzPlugin {
             current_params = (*self.shared_state.synth.synth_params.load_full()).clone();
         }
         let rt_params = Arc::new(build_rt_synth_params(&current_params));
-        processor.set_shared_params(Arc::clone(&rt_params));
+        let copied = processor.copy_params_for_realtime(rt_params.as_ref());
+        debug_assert!(
+            copied,
+            "reset params exceeded preallocated realtime storage"
+        );
         self.shared_state
             .synth
             .synth_params
@@ -296,7 +316,7 @@ impl PluginLogic for CzPlugin {
         processor.set_voice_limit(self.audio.voice_limit);
         self.audio.processor = Some(processor);
         self.audio.mono_output.resize(max_block_size, 0.0);
-        self.audio.daw_params_dirty = false;
+        self.cache_current_daw_params();
         self.shared_state
             .telemetry
             .transport_snapshot
@@ -309,14 +329,16 @@ impl PluginLogic for CzPlugin {
         events: &EventList,
         context: &mut ProcessContext,
     ) -> ProcessStatus {
-        #[cfg(debug_assertions)]
-        {
-            assert_no_alloc(|| self.process_inner(buffer, events, context))
-        }
-        #[cfg(not(debug_assertions))]
-        {
-            self.process_inner(buffer, events, context)
-        }
+        RtContext::enter(|rt| {
+            #[cfg(debug_assertions)]
+            {
+                assert_no_alloc(|| self.process_rt(rt, buffer, events, context))
+            }
+            #[cfg(not(debug_assertions))]
+            {
+                self.process_rt(rt, buffer, events, context)
+            }
+        })
     }
 
     fn bus_layouts() -> Vec<BusLayout> {
@@ -324,6 +346,7 @@ impl PluginLogic for CzPlugin {
     }
 
     fn save_state(&self) -> Vec<u8> {
+        crate::rt_safety::assert_not_rt("save plugin state");
         let sp = self.shared_state.synth.synth_params.load();
         let preset_session = self
             .shared_state
@@ -348,6 +371,7 @@ impl PluginLogic for CzPlugin {
     }
 
     fn load_state(&mut self, data: &[u8]) -> Result<(), StateLoadError> {
+        crate::rt_safety::assert_not_rt("load plugin state");
         let session = crate::session_state::deserialize_state(data)
             .map_err(|_| StateLoadError::Malformed("unknown state format"))?;
         self.startup_preset_resolved = true;
@@ -370,10 +394,12 @@ impl PluginLogic for CzPlugin {
     }
 
     fn state_changed(&mut self) {
-        crate::audio_runtime::drain_render_control_events(&self.shared_state, &self.params);
-        if let Some(ref mut proc) = self.audio.processor {
-            proc.set_shared_params(self.audio.cached_rt_synth_params.clone());
-        }
+        let control = ControlContext::new();
+        crate::audio_runtime::drain_render_control_events(
+            &control,
+            &self.shared_state,
+            &self.params,
+        );
     }
 
     fn editor(&self) -> Box<dyn Editor> {
