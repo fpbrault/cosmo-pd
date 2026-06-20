@@ -63,7 +63,6 @@ export type {
 export type { SynthParamKey } from "./features/synth/SynthParamController";
 export { SYNTH_PARAM_SETTERS } from "./features/synth/SynthParamController";
 export { useSynthStore } from "./features/synth/synthStore";
-export { registerSynthUiBenchmark } from "./features/synth/synthUiBenchmark";
 export type {
 	EnvTab,
 	MainPanelMode,

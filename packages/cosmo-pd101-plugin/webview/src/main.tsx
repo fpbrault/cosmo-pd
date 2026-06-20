@@ -1,4 +1,4 @@
-import { initI18n, registerSynthUiBenchmark } from "@cosmo/cosmo-pd101";
+import { initI18n } from "@cosmo/cosmo-pd101";
 import { Component, type ReactNode, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
@@ -13,7 +13,6 @@ installGlobalHostErrorHandlers();
 const IS_TEST_HARNESS = import.meta.env.VITE_TEST_HARNESS === "1";
 
 initI18n();
-registerSynthUiBenchmark({ mode: "plugin-webview" });
 postHostLog("info", "main.tsx: initI18n complete");
 
 const root = document.getElementById("root");

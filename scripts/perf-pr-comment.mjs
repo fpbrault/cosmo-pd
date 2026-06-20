@@ -7,9 +7,7 @@ const DEFAULT_HEAVY_PRESET_NAMES = ["Rise", "Flute", "Chants"];
 function parseArgs(argv) {
 	const options = {
 		engineComparePath: "",
-		livepageComparePath: "",
-		pluginWebviewComparePath: "",
-		pluginComparePath: "",
+		uiComparePath: "",
 		out: "",
 		baseRef: "main",
 	};
@@ -20,14 +18,8 @@ function parseArgs(argv) {
 		if (arg === "--engine-compare" && next) {
 			options.engineComparePath = next;
 			index += 1;
-		} else if (arg === "--livepage-compare" && next) {
-			options.livepageComparePath = next;
-			index += 1;
-		} else if (arg === "--plugin-webview-compare" && next) {
-			options.pluginWebviewComparePath = next;
-			index += 1;
-		} else if (arg === "--plugin-compare" && next) {
-			options.pluginComparePath = next;
+		} else if (arg === "--ui-compare" && next) {
+			options.uiComparePath = next;
 			index += 1;
 		} else if (arg === "--out" && next) {
 			options.out = next;
@@ -72,27 +64,20 @@ function renderSection(title, body) {
 }
 
 const options = parseArgs(process.argv.slice(2));
-const [engineCompare, livepageCompare, pluginWebviewCompare, pluginCompare] =
-	await Promise.all([
-		readOptionalText(options.engineComparePath),
-		readOptionalText(options.livepageComparePath),
-		readOptionalText(options.pluginWebviewComparePath),
-		readOptionalText(options.pluginComparePath),
-	]);
+const [engineCompare, uiCompare] = await Promise.all([
+	readOptionalText(options.engineComparePath),
+	readOptionalText(options.uiComparePath),
+]);
 
 const markdown = [
 	COMMENT_MARKER,
-	`## Performance Benchmarks vs ${options.baseRef}`,
+	`## Engine Benchmarks vs ${options.baseRef}`,
 	"",
 	`Web UI presets: \`${DEFAULT_HEAVY_PRESET_NAMES.join("`, `")}\``,
 	"",
 	renderSection("Rust Engine", engineCompare),
 	"",
-	renderSection("Live Page UI", livepageCompare),
-	"",
-	renderSection("Plugin Webview UI", pluginWebviewCompare),
-	"",
-	renderSection("Native Plugin Wrapper", pluginCompare),
+	renderSection("Web UI", uiCompare),
 	"",
 	`_Updated: ${new Date().toISOString()}_`,
 ].join("\n");
