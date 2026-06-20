@@ -1,16 +1,11 @@
 #!/usr/bin/env bun
 import { spawn, spawnSync } from "node:child_process";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-const repoRoot = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
-const pluginDir = path.join(repoRoot, "packages/cosmo-pd101-plugin");
 
 function parseArgs(argv) {
 	const options = {
 		host: "127.0.0.1",
 		port: "4173",
-		out: "target/perf/ui/plugin-webview-current.json",
+		out: "target/perf/ui/web-current.json",
 		presetNames: [],
 		scenarioIds: [],
 	};
@@ -59,7 +54,6 @@ const options = parseArgs(process.argv.slice(2));
 
 const build = spawnSync("bun", ["run", "build:web"], {
 	stdio: "inherit",
-	cwd: pluginDir,
 	shell: process.platform === "win32",
 });
 
@@ -80,7 +74,6 @@ const preview = spawn(
 	],
 	{
 		stdio: "inherit",
-		cwd: repoRoot,
 		shell: process.platform === "win32",
 	},
 );
@@ -99,7 +92,7 @@ try {
 		"run",
 		"./scripts/perf-ui-benchmark.mjs",
 		"--url",
-		baseUrl,
+		`${baseUrl}/synth-renderer`,
 		"--out",
 		options.out,
 	];
@@ -113,7 +106,6 @@ try {
 
 	const run = spawnSync("bun", runnerArgs, {
 		stdio: "inherit",
-		cwd: repoRoot,
 		shell: process.platform === "win32",
 	});
 

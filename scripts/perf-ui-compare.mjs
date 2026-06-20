@@ -1,53 +1,10 @@
 #!/usr/bin/env bun
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 
 function usage() {
 	console.error(
-		"Usage: bun run ./scripts/perf-ui-compare.mjs <baseline.json> <current.json> [--markdown-out <path>] [--fail-on-regressions] [--label <name>]",
+		"Usage: bun run ./scripts/perf-ui-compare.mjs <baseline.json> <current.json>",
 	);
-}
-
-function parseArgs(argv) {
-	const options = {
-		baselinePath: "",
-		currentPath: "",
-		markdownOutPath: "",
-		failOnRegressions: false,
-		label: "UI",
-	};
-
-	for (let index = 0; index < argv.length; index += 1) {
-		const arg = argv[index];
-		const next = argv[index + 1];
-
-		if (!options.baselinePath && !arg.startsWith("--")) {
-			options.baselinePath = arg;
-			continue;
-		}
-
-		if (!options.currentPath && !arg.startsWith("--")) {
-			options.currentPath = arg;
-			continue;
-		}
-
-		if (arg === "--markdown-out" && next) {
-			options.markdownOutPath = next;
-			index += 1;
-			continue;
-		}
-
-		if (arg === "--label" && next) {
-			options.label = next;
-			index += 1;
-			continue;
-		}
-
-		if (arg === "--fail-on-regressions") {
-			options.failOnRegressions = true;
-		}
-	}
-
-	return options;
 }
 
 function parseReport(text) {
@@ -87,15 +44,15 @@ function formatDelta(value) {
 	return `${sign}${value.toFixed(1)}%`;
 }
 
-const options = parseArgs(process.argv.slice(2));
-if (!options.baselinePath || !options.currentPath) {
+const [baselinePath, currentPath] = process.argv.slice(2);
+if (!baselinePath || !currentPath) {
 	usage();
 	process.exit(2);
 }
 
 const [baselineText, currentText] = await Promise.all([
-	readFile(options.baselinePath, "utf8"),
-	readFile(options.currentPath, "utf8"),
+	readFile(baselinePath, "utf8"),
+	readFile(currentPath, "utf8"),
 ]);
 
 const baselineMap = toCaseMap(parseReport(baselineText));
@@ -110,13 +67,10 @@ if (keys.length === 0) {
 	process.exit(1);
 }
 
-console.log(
-	`Comparing ${keys.length} overlapping ${options.label} benchmark cases`,
-);
+console.log(`Comparing ${keys.length} overlapping UI benchmark cases`);
 console.log("case\t p50 last ms\t p95 last ms\t max rt%\t sample count");
 
 let regressions = 0;
-const rows = [];
 for (const key of keys) {
 	const baseline = baselineMap.get(key);
 	const current = currentMap.get(key);
@@ -151,8 +105,6 @@ for (const key of keys) {
 		regressions += 1;
 	}
 
-	rows.push({ key, p50Delta, p95Delta, maxRtDelta, sampleDelta });
-
 	console.log(
 		`${key}\t ${formatDelta(p50Delta)}\t ${formatDelta(p95Delta)}\t ${formatDelta(maxRtDelta)}\t ${formatDelta(sampleDelta)}`,
 	);
@@ -162,25 +114,4 @@ if (regressions > 0) {
 	console.log(`\nPotential regressions detected in ${regressions} case(s).`);
 } else {
 	console.log("\nNo obvious regressions detected (>5% thresholds).");
-}
-
-if (options.markdownOutPath) {
-	const lines = [
-		`Compared ${rows.length} overlapping ${options.label} case(s).`,
-		"",
-		`Potential regressions detected in ${regressions} case(s) (>5% p50/p95/max-RT).`,
-		"",
-		"| case | p50 last ms | p95 last ms | max rt% | sample count |",
-		"|---|---:|---:|---:|---:|",
-	];
-	for (const row of rows) {
-		lines.push(
-			`| ${row.key} | ${formatDelta(row.p50Delta)} | ${formatDelta(row.p95Delta)} | ${formatDelta(row.maxRtDelta)} | ${formatDelta(row.sampleDelta)} |`,
-		);
-	}
-	await writeFile(options.markdownOutPath, `${lines.join("\n")}\n`, "utf8");
-}
-
-if (options.failOnRegressions && regressions > 0) {
-	process.exit(1);
 }
