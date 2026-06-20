@@ -454,6 +454,14 @@ impl CzPlugin {
         }
     }
 
+    /// Apply a factory preset to the audio processor without allocating.
+    ///
+    /// RT-safe: `factory_preset_params()` returns a `&'static SynthParams`
+    /// preloaded on the control thread (see `preload_factory_presets()`).
+    /// `copy_params_for_realtime()` copies into preallocated storage with
+    /// bounded capacity checks. No Arc, Vec, lock, or I/O here.
+    /// UI/session mirroring for the program change is deferred to
+    /// `drain_render_control_events()` via `ProgramChangeRequest`.
     fn apply_factory_preset_realtime(&mut self, index: usize) {
         let Some(next_params) = crate::ffi::factory_preset_params(index) else {
             return;

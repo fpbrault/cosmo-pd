@@ -2,7 +2,6 @@
 
 use std::collections::BTreeMap;
 use std::env;
-use std::sync::Arc;
 use std::time::Instant;
 
 use cosmo_synth_engine::envelope::normalize_synth_params_envelopes_to_raw_if_human;
@@ -1165,7 +1164,7 @@ fn render_pass(config: &BenchmarkConfig, scenario: &Scenario, total_samples: usi
             .into_iter()
             .map(|mut params| {
                 normalize_synth_params_envelopes_to_raw_if_human(&mut params);
-                Arc::new(params)
+                params
             })
             .collect::<Vec<_>>()
     });
@@ -1204,7 +1203,7 @@ fn render_pass(config: &BenchmarkConfig, scenario: &Scenario, total_samples: usi
             && block_index.is_multiple_of(swap_blocks)
         {
             let variant_index = (block_index / swap_blocks) % variants.len();
-            processor.set_shared_params(Arc::clone(&variants[variant_index]));
+            processor.set_shared_params(&variants[variant_index]);
         }
     }
 

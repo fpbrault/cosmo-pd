@@ -31,6 +31,16 @@ fn factory_presets() -> &'static [FactoryPresetEntry] {
     FACTORY_PRESETS.get_or_init(load_factory_presets).as_slice()
 }
 
+/// Eagerly initialize factory presets on a non-RT path.
+///
+/// Must be called before any audio callback can reach `factory_preset_params()`
+/// or `factory_preset_count()`. The lazy `OnceLock` init allocates (JSON parse +
+/// `SynthParams` deserialization), so it must not run on the audio thread.
+/// Called from `CzPlugin::new()` which executes on the control thread.
+pub(crate) fn preload_factory_presets() {
+    let _ = factory_presets();
+}
+
 pub(crate) fn factory_preset_count() -> usize {
     factory_presets().len()
 }
@@ -636,7 +646,7 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_params_json(
         let Ok(engine) = engine_ref(engine) else {
             return 0;
         };
-        let Ok(json) = serde_json::to_string(engine.processor.params.as_ref()) else {
+        let Ok(json) = serde_json::to_string(&engine.processor.params) else {
             return 0;
         };
         let bytes = json.as_bytes();
@@ -860,7 +870,7 @@ pub extern "C" fn cosmo_pd101_ffi_set_parameter_value(
         return CosmoPd101FfiStatus::InvalidArgument;
     }
 
-    let mut params = (*engine.processor.params).clone();
+    let mut params = engine.processor.params.clone();
     if !set_parameter_value(&mut params, spec.key, value.clamp(spec.min, spec.max)) {
         return CosmoPd101FfiStatus::InvalidArgument;
     }

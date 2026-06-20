@@ -145,6 +145,37 @@ impl SynthParams {
             }
         })
     }
+
+    pub fn copy_from_preserving_capacity(&mut self, source: &Self) {
+        self.line_select = source.line_select;
+        self.mod_mode = source.mod_mode;
+        self.ring_gain = source.ring_gain;
+        self.octave = source.octave;
+        self.line1 = source.line1;
+        self.line2 = source.line2;
+        self.frequency = source.frequency;
+        self.tempo_bpm = source.tempo_bpm;
+        self.volume = source.volume;
+        self.cz_dac_enabled = source.cz_dac_enabled;
+        self.poly_mode = source.poly_mode;
+        self.legato = source.legato;
+        self.portamento.clone_from(&source.portamento);
+        self.lfo.clone_from(&source.lfo);
+        self.lfo2.clone_from(&source.lfo2);
+        self.velocity_curve = source.velocity_curve;
+        self.pitch_bend_range = source.pitch_bend_range;
+        self.mod_matrix.routes.clone_from(&source.mod_matrix.routes);
+        self.random.clone_from(&source.random);
+        self.mod_env.clone_from(&source.mod_env);
+        self.fx_slots.clone_from(&source.fx_slots);
+        self.macro1 = source.macro1;
+        self.macro2 = source.macro2;
+        self.macro3 = source.macro3;
+        self.macro4 = source.macro4;
+        for (dest, src) in self.macro_labels.iter_mut().zip(source.macro_labels.iter()) {
+            dest.clone_from(src);
+        }
+    }
 }
 
 impl Default for SynthParams {

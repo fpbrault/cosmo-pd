@@ -133,6 +133,7 @@ impl CzPlugin {
 
     fn new(params: Arc<CzPluginParams>) -> Self {
         init_panic_hook();
+        crate::ffi::preload_factory_presets();
         let default_params = SynthParams::default();
         let default_rt_params = build_rt_synth_params(&default_params);
         let factory_json = include_str!(concat!(env!("OUT_DIR"), "/minified_presets.json"));

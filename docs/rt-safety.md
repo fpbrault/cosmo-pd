@@ -22,11 +22,24 @@ control-side preset/session sync for host program changes belong in
 `drain_render_control_events()`. The drain is currently called from control
 paths such as `CzEditor::idle()` and `state_changed()`. Host program changes
 still apply their factory preset to the processor immediately on the audio
-thread via a bounded snapshot copy, while UI/session mirroring remains
-eventually consistent until a control drain runs.
+thread via `apply_factory_preset_realtime()`, which uses a bounded preloaded
+snapshot copy (`factory_preset_params()` returns a `&'static SynthParams`
+preloaded on the control thread via `preload_factory_presets()`). UI/session
+mirroring remains eventually consistent until a control drain runs.
 
 The existing telemetry writers use nonblocking `try_write()` and skip the
 update on contention. Blocking `lock()` or `write()` calls remain forbidden.
+
+## Static scan and runtime tests
+
+`bun run check:rt-safety` scans the direct bodies of declared RT functions for
+forbidden operations. The scan is a backstop, not a proof — it only inspects
+direct function bodies and is not call-graph aware, so transitive allocations
+through helper functions are not detected. Runtime `assert_no_alloc` tests
+remain the source of truth for realistic callback paths. Plugin tests cover
+empty blocks, note events, `ParamChange`, host parameter polling, UI snapshots,
+preset reset, mapped CC, dense mapped CC input, host program changes through
+the real callback, and bounded `copy_params_for_realtime` snapshots.
 
 ## Audio-thread checklist
 
@@ -38,11 +51,3 @@ update on contention. Blocking `lock()` or `write()` calls remain forbidden.
 - [ ] No unbounded `Vec` growth.
 - [ ] Fixed buffers have a documented overflow policy and atomic diagnostics.
 - [ ] The full process path is covered by debug `assert_no_alloc` tests.
-
-Run `bun run check:rt-safety` for the static forbidden-operation scan. The
-normal `bun run lint` command runs it automatically. The scan only inspects the
-direct bodies of the declared RT functions, so it is a backstop rather than a
-proof and must be paired with runtime no-allocation tests. Plugin tests cover
-empty blocks, note events, `ParamChange`, host parameter polling, UI snapshots,
-preset reset, mapped CC, dense mapped CC input, and host program changes
-through the real callback.

@@ -9,6 +9,7 @@ const rtFunctions = new Map([
 			"push_block_input_event",
 			"handle_cc_side_effects",
 			"handle_host_event_side_effects",
+			"apply_factory_preset_realtime",
 			"collect_block_input_events",
 			"render_audio_block",
 		],

@@ -12,7 +12,6 @@ pub mod utils;
 pub use self::input::{CosmoInputEvent, CosmoTimedInputEvent, CosmoTransportState};
 pub use utils::midi_note_to_freq;
 
-use alloc::sync::Arc;
 use arrayvec::ArrayVec;
 use core::array;
 
@@ -62,7 +61,7 @@ pub struct CosmoProcessor {
     pub random_phase: f32,
     pub random_step: i32,
     pub random_hold: f32,
-    pub params: Arc<SynthParams>,
+    pub params: SynthParams,
     pub sample_rate: f32,
     pub pitch_bend: f32,
     pub mod_wheel: f32,
@@ -94,8 +93,7 @@ impl CosmoProcessor {
         for label in &mut initial_params.macro_labels {
             label.reserve(RT_MAX_MACRO_LABEL_BYTES);
         }
-        let params = Arc::new(initial_params);
-        let compiled_params = CompiledSynthParams::from_params(params.as_ref());
+        let compiled_params = CompiledSynthParams::from_params(&initial_params);
         let mut proc = Self {
             voices: array::from_fn(|_| Voice::new()),
             fx: FxChain::new(sample_rate),
@@ -110,7 +108,7 @@ impl CosmoProcessor {
             random_phase: 0.0,
             random_step: 0,
             random_hold: random_hold_value(0),
-            params,
+            params: initial_params,
             sample_rate,
             pitch_bend: 0.0,
             mod_wheel: 0.0,
@@ -218,66 +216,57 @@ impl CosmoProcessor {
 
     /// Copy FX-relevant fields from `self.params` into the `FxChain`.
     pub fn update_fx(&mut self) {
-        self.fx.sync_from_params(self.params.as_ref());
+        self.fx.sync_from_params(&self.params);
     }
 
     pub(crate) fn rebuild_compiled_params(&mut self) {
-        self.compiled_params = CompiledSynthParams::from_params(self.params.as_ref());
+        self.compiled_params = CompiledSynthParams::from_params(&self.params);
         self.compiled_params_dirty = false;
     }
 
     /// Copy a `SynthParams` snapshot into the processor.
     pub fn set_params(&mut self, mut params: SynthParams) {
         normalize_synth_params_envelopes_to_raw_if_human(&mut params);
-        self.set_shared_params(Arc::new(params));
+        self.set_shared_params(&params);
     }
 
-    /// Clone parameter values into the processor for non-real-time callers.
     pub fn set_params_from_ref(&mut self, params: &SynthParams) {
-        self.set_params(params.clone());
+        self.set_shared_params(params);
     }
 
-    /// Swap in a pre-normalized shared parameter snapshot without cloning.
-    pub fn set_shared_params(&mut self, params: Arc<SynthParams>) {
+    pub fn set_shared_params(&mut self, params: &SynthParams) {
         self.macro1 = params.macro1;
         self.macro2 = params.macro2;
         self.macro3 = params.macro3;
         self.macro4 = params.macro4;
         self.line1_scratch = params.line1;
         self.line2_scratch = params.line2;
-        self.params = params;
+        self.params.clone_from(params);
         self.rebuild_compiled_params();
         self.update_fx();
     }
 
-    /// Copies a control-thread snapshot into the processor's preallocated,
-    /// uniquely owned parameter storage. Returns `false` if the snapshot
-    /// exceeds the bounded realtime capacities or the storage is shared.
+    /// Copies a control-thread snapshot into the processor's preallocated
+    /// parameter storage. Returns `false` if the snapshot exceeds the
+    /// bounded realtime capacities.
     pub fn copy_params_for_realtime(&mut self, params: &SynthParams) -> bool {
-        let Some(current) = Arc::get_mut(&mut self.params) else {
-            return false;
-        };
-        if params.mod_matrix.routes.len() > current.mod_matrix.routes.capacity()
+        if params.mod_matrix.routes.len() > self.params.mod_matrix.routes.capacity()
             || params
                 .macro_labels
                 .iter()
-                .zip(&current.macro_labels)
+                .zip(&self.params.macro_labels)
                 .any(|(source, destination)| source.len() > destination.capacity())
         {
             return false;
         }
 
-        current.clone_from(params);
+        self.params.copy_from_preserving_capacity(params);
         self.refresh_parameter_caches();
         true
     }
 
-    /// Applies one DAW/MIDI parameter change without cloning or allocating.
     pub fn apply_parameter_change_realtime(&mut self, param_key: &'static str, value: f32) -> bool {
-        let Some(params) = Arc::get_mut(&mut self.params) else {
-            return false;
-        };
-        if !crate::params::set_parameter_value_by_key(params, param_key, value) {
+        if !crate::params::set_parameter_value_by_key(&mut self.params, param_key, value) {
             return false;
         }
 
@@ -299,7 +288,7 @@ impl CosmoProcessor {
     /// Mutable parameter access for non-real-time mutation paths and tests.
     pub fn params_mut(&mut self) -> &mut SynthParams {
         self.compiled_params_dirty = true;
-        Arc::make_mut(&mut self.params)
+        &mut self.params
     }
 
     fn debug_assert_note_storage_bounds(&self) {
@@ -727,7 +716,7 @@ mod tests {
             value: 2.0,
         });
 
-        proc.set_shared_params(Arc::new(params));
+        proc.set_shared_params(&params);
 
         assert_eq!(
             proc.compiled_params.line1.primary.algo_for_cycle(0),

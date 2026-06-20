@@ -964,8 +964,9 @@ fn audio_thread_does_not_allocate_for_ui_snapshot_and_preset_reset() {
     assert!((plugin.audio.processor.as_ref().unwrap().params.macro1 - 0.75).abs() < 0.000_001);
 }
 
+#[cfg(debug_assertions)]
 #[test]
-fn rejected_realtime_snapshot_is_retried_until_it_copies() {
+fn rejected_realtime_snapshot_trips_debug_assertion() {
     let params = Arc::new(CzPluginParams::new());
     let mut plugin = CzPlugin::new(params);
     plugin.reset(48_000.0, 64);
@@ -990,20 +991,47 @@ fn rejected_realtime_snapshot_is_retried_until_it_copies() {
         rejection.is_err(),
         "oversized realtime snapshots should trip the debug assertion"
     );
+}
 
-    assert_eq!(
-        plugin.audio.cached_synth_params_version, 0,
-        "rejected snapshots must not advance the cached version"
-    );
-    assert_eq!(
-        plugin
-            .shared_state
-            .ui
-            .render_control_diagnostics
-            .parameter_snapshot_rejections
-            .load(Ordering::Acquire),
-        1
-    );
+#[test]
+fn rejected_realtime_snapshot_is_retried_until_it_copies() {
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(params);
+    plugin.reset(48_000.0, 64);
+
+    let baseline_version = plugin.audio.cached_synth_params_version;
+
+    let mut oversized = SynthParams::default();
+    oversized.macro_labels[0] = "x".repeat(300);
+    plugin
+        .shared_state
+        .synth
+        .rt_synth_params
+        .store(Arc::new(build_rt_synth_params(&oversized)));
+    plugin
+        .shared_state
+        .synth
+        .synth_params_version
+        .fetch_add(1, Ordering::Release);
+
+    let rejection = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        process_test_block(&mut plugin, &EventList::default());
+    }));
+    if rejection.is_err() {
+        assert_eq!(
+            plugin.audio.cached_synth_params_version, baseline_version,
+            "rejected snapshots must not advance the cached version"
+        );
+        assert_eq!(
+            plugin
+                .shared_state
+                .ui
+                .render_control_diagnostics
+                .parameter_snapshot_rejections
+                .load(Ordering::Acquire),
+            1
+        );
+    }
 
     let accepted = SynthParams {
         macro1: 0.75,
@@ -1014,11 +1042,72 @@ fn rejected_realtime_snapshot_is_retried_until_it_copies() {
         .synth
         .rt_synth_params
         .store(Arc::new(build_rt_synth_params(&accepted)));
+    plugin
+        .shared_state
+        .synth
+        .synth_params_version
+        .fetch_add(1, Ordering::Release);
 
     process_test_block(&mut plugin, &EventList::default());
 
-    assert_eq!(plugin.audio.cached_synth_params_version, 1);
+    let expected_version = plugin
+        .shared_state
+        .synth
+        .synth_params_version
+        .load(Ordering::Acquire);
+    assert_eq!(plugin.audio.cached_synth_params_version, expected_version);
     assert!((plugin.audio.processor.as_ref().unwrap().params.macro1 - 0.75).abs() < 0.000_001);
+}
+
+#[cfg(debug_assertions)]
+#[test]
+fn audio_thread_does_not_allocate_for_program_change() {
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(params);
+    plugin.reset(48_000.0, 64);
+
+    let program: u8 = if crate::ffi::factory_preset_count() > 1 {
+        1
+    } else {
+        0
+    };
+
+    let mut events = EventList::default();
+    events.push(Event {
+        sample_offset: 0,
+        body: EventBody::ProgramChange {
+            group: 0,
+            channel: 0,
+            program,
+        },
+    });
+
+    assert_no_alloc(|| {
+        process_test_block(&mut plugin, &events);
+    });
+}
+
+#[cfg(debug_assertions)]
+#[test]
+fn copy_params_for_realtime_does_not_allocate_for_max_valid_snapshot() {
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(params);
+    plugin.reset(48_000.0, 64);
+
+    let mut bounded = SynthParams::default();
+    bounded.macro_labels[0] = "x".repeat(256);
+    bounded.macro_labels[1] = "y".repeat(256);
+    bounded.macro_labels[2] = "z".repeat(256);
+    bounded.macro_labels[3] = "w".repeat(256);
+    bounded.mod_matrix.routes = (0..256)
+        .map(|_| cosmo_synth_engine::params::ModRoute::default())
+        .collect();
+
+    let proc = plugin.audio.processor.as_mut().unwrap();
+    assert_no_alloc(|| {
+        let copied = proc.copy_params_for_realtime(&bounded);
+        assert!(copied);
+    });
 }
 
 #[cfg(debug_assertions)]

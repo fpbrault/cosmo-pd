@@ -14,7 +14,7 @@ impl CosmoProcessor {
     }
 
     pub(crate) fn start_env_release_for_voice(&mut self, voice_idx: usize) {
-        let p = self.params.as_ref();
+        let p = &self.params;
         let voice = &mut self.voices[voice_idx];
         voice.line1_env.dco.start_release(&p.line1.dco_env);
         voice.line1_env.dcw.start_release(&p.line1.dcw_env);
