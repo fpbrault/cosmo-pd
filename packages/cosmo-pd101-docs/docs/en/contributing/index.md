@@ -60,7 +60,6 @@ bun run plugin:install
 | `packages/cosmo-pd101` | Shared synth UI library (React components, hooks) |
 | `packages/cosmo-pd101-plugin` | VST3/CLAP/AUv2 plugins with webview |
 | `packages/cosmo-pd101-docs` | This documentation site |
-| `packages/xtask` | Build tooling |
 
 ## Troubleshooting
 

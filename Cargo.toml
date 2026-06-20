@@ -4,7 +4,6 @@ members = [
     "packages/cosmo-pd101-plugin",
     "packages/cosmo-pd101-bridge-types",
     "packages/cosmo-pd101-presets",
-    "packages/xtask",
 ]
 resolver = "2"
 

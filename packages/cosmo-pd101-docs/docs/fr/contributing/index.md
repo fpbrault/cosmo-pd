@@ -54,7 +54,6 @@ bun run build:plugin
 | `packages/cosmo-pd101` | Bibliothèque d'interface utilisateur partagée (composants React, hooks) |
 | `packages/cosmo-pd101-plugin` | Plugins VST3/CLAP/AUv2 avec webview |
 | `packages/cosmo-pd101-docs` | Ce site de documentation |
-| `packages/xtask` | Outils de construction |
 
 ## Dépannage
 

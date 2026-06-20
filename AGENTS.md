@@ -33,7 +33,6 @@ Bun monorepo. Main packages:
 - `packages/cosmo-pd101` — reusable synth UI/library package; exports synth-specific components, hooks, preset utilities, and SysEx utilities consumed by the plugin webview
 - `packages/cosmo-pd101-plugin` — VST3/CLAP/AUv2 plugin; contains a thin `webview/` app shell that embeds the shared `cosmo-pd101` library
 - `packages/cosmo-pd101-plugin-auv3` — AUv3 plugin host xcode project
-- `packages/xtask` — Build automation. Only used for auv3
 
 
 ### `packages/cosmo-pd101/src/`
