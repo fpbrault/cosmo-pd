@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-	rawLevelToHuman,
-	rawRateToHuman,
-} from "./envelopeConversion";
+import { rawLevelToHuman, rawRateToHuman } from "./envelopeConversion";
 
 type Ek = "dco" | "dcw" | "dca";
 

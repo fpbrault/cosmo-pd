@@ -4,9 +4,9 @@ import { useSynthStore } from "@/features/synth/synthStore";
 import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
 import { sanitizeSynthParamsForEngine } from "@/lib/synth/fxSlotSanitizer";
 import {
+	type EnvelopeKind,
 	rawLevelToHuman,
 	rawRateToHuman,
-	type EnvelopeKind,
 } from "./envelopeConversion";
 
 type UsePluginBridgeSynthEngineOptions = {
