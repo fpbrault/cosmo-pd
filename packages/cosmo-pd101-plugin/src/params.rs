@@ -243,38 +243,6 @@ pub fn daw_param_id_by_key(key: &str) -> Option<u32> {
     }
 }
 
-#[cfg(any(feature = "vst3", test))]
-pub fn resolve_vst3_midi_mapping_param_id(
-    bindings: &[crate::session_state::MidiLearnBinding],
-    bus_index: i32,
-    channel: i16,
-    cc: i16,
-) -> Option<u32> {
-    if bus_index != 0 || !(0..=15).contains(&channel) || !(0..=127).contains(&cc) {
-        return None;
-    }
-
-    let mut omni_match = None;
-
-    for binding in bindings {
-        if binding.cc != i32::from(cc) {
-            continue;
-        }
-        let Some(param_id) = daw_param_id_by_key(&binding.param_key) else {
-            continue;
-        };
-
-        if binding.channel == i32::from(channel) {
-            return Some(param_id);
-        }
-        if binding.channel == -1 && omni_match.is_none() {
-            omni_match = Some(param_id);
-        }
-    }
-
-    omni_match
-}
-
 pub fn read_daw_param_by_id(synth: &SynthParams, id: u32) -> Option<f32> {
     match id {
         x if x == CzPluginParamsParamId::Volume as u32 => Some(synth.volume),

@@ -14,8 +14,6 @@ use truce_core::midi::{norm_7bit, norm_pitch_bend};
 
 use crate::diagnostics::append_log_debug;
 use crate::midi_learn::persist_midi_learn_bindings;
-#[cfg(test)]
-use crate::params::resolve_vst3_midi_mapping_param_id;
 use crate::params::{
     CzPluginParamsParamId, apply_daw_params, daw_param_key_by_id, read_current_daw_param_by_id,
     read_daw_param_by_id, sync_all_daw_params_from_synth, write_daw_param_by_id,
@@ -246,17 +244,6 @@ impl CzPlugin {
         if bindings_changed {
             persist_midi_learn_bindings(&self.shared_state.midi_learn.state);
         }
-    }
-
-    #[cfg(test)]
-    pub(crate) fn vst3_midi_mapping_param_id(
-        &self,
-        bus_index: i32,
-        channel: i16,
-        cc: i16,
-    ) -> Option<u32> {
-        let state = self.shared_state.midi_learn.state.lock().ok()?;
-        resolve_vst3_midi_mapping_param_id(&state.bindings, bus_index, channel, cc)
     }
 
     pub(crate) fn tracked_param_changes(

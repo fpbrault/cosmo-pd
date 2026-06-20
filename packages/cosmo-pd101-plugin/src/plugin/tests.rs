@@ -544,18 +544,6 @@ fn midi_mapping_syncs_daw_backed_plugin_params() {
 }
 
 #[test]
-fn vst3_midi_mapping_resolves_default_macro_binding() {
-    clear_test_global_settings();
-    let params = Arc::new(CzPluginParams::new());
-    let plugin = CzPlugin::new(Arc::clone(&params));
-
-    assert_eq!(
-        plugin.vst3_midi_mapping_param_id(0, 0, 8),
-        Some(CzPluginParamsParamId::Macro1 as u32)
-    );
-}
-
-#[test]
 fn host_param_value_drift_updates_runtime_snapshot_and_version() {
     let params = Arc::new(CzPluginParams::new());
     let mut plugin = CzPlugin::new(Arc::clone(&params));
