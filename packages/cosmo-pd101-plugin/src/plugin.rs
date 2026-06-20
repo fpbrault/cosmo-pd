@@ -12,8 +12,6 @@ use crate::diagnostics::append_log_debug;
 use crate::diagnostics::{
     append_log, append_log_error, append_log_warn, init_panic_hook, plugin_log_path,
 };
-#[cfg(any(feature = "vst3", test))]
-use crate::params::resolve_vst3_midi_mapping_param_id;
 use crate::params::{CzPluginParams, apply_daw_params, sync_all_daw_params_from_synth};
 #[cfg(test)]
 use crate::params::{CzPluginParamsParamId, read_daw_param_by_id, write_daw_param_by_id};
@@ -367,17 +365,6 @@ impl PluginLogic for CzPlugin {
 truce::plugin! {
     logic: CzPlugin,
     params: CzPluginParams,
-}
-
-#[cfg(feature = "vst3")]
-impl truce_vst3::Vst3PluginExt for Plugin {
-    fn midi_mapping_get_param_id(&self, bus_index: i32, channel: i16, cc: i16) -> Option<u32> {
-        let _ = self;
-        let bindings = crate::global_settings::load_or_init_global_settings()
-            .map(|settings| settings.midi_learn_bindings)
-            .unwrap_or_else(|_| crate::session_state::default_midi_bindings());
-        resolve_vst3_midi_mapping_param_id(&bindings, bus_index, channel, cc)
-    }
 }
 
 // =============================================================================
