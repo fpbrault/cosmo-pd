@@ -3,6 +3,11 @@ import { useCallback, useEffect, useRef } from "react";
 import { useSynthStore } from "@/features/synth/synthStore";
 import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
 import { sanitizeSynthParamsForEngine } from "@/lib/synth/fxSlotSanitizer";
+import {
+	type EnvelopeKind,
+	rawLevelToHuman,
+	rawRateToHuman,
+} from "./envelopeConversion";
 
 type UsePluginBridgeSynthEngineOptions = {
 	enabled?: boolean;
@@ -16,47 +21,9 @@ export type PluginPresetSession = {
 	isDirty: boolean;
 };
 
-type EnvelopeKind = "dco" | "dcw" | "dca";
-
 type StepEnv = SynthPresetV1["params"]["line1"]["dcoEnv"];
 
 const PARAMS_VERSION_POLL_INTERVAL_MS = 200;
-
-function clampRounded(value: number, min: number, max: number): number {
-	return Math.max(min, Math.min(max, Math.round(value)));
-}
-
-function rawRateToHuman(kind: EnvelopeKind, raw: number): number {
-	const b = clampRounded(raw, 0, 127);
-	switch (kind) {
-		case "dco":
-			if (b === 0) return 0;
-			if (b === 127) return 99;
-			return Math.floor((b * 99) / 127) + 1;
-		case "dcw":
-			if (b <= 8) return 0;
-			if (b >= 127) return 99;
-			return Math.floor(((b - 8) * 99) / 119) + 1;
-		case "dca":
-			if (b === 0) return 0;
-			if (b >= 119) return 99;
-			return Math.floor((b * 99) / 119) + 1;
-	}
-}
-
-function rawLevelToHuman(kind: EnvelopeKind, raw: number): number {
-	const b = clampRounded(raw, 0, 127);
-	switch (kind) {
-		case "dco":
-			return b > 63 ? b - 4 : b;
-		case "dcw":
-			if (b === 0) return 0;
-			if (b === 127) return 99;
-			return Math.floor((b * 99) / 127) + 1;
-		case "dca":
-			return b === 0 ? 0 : Math.max(0, b - 28);
-	}
-}
 
 function mapEnvelope(env: StepEnv, kind: EnvelopeKind): StepEnv {
 	return {
