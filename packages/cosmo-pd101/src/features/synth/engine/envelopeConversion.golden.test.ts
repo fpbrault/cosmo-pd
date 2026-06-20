@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	rawLevelToHuman,
 	rawRateToHuman,
-} from "./pluginBridgeSynthEngineAdapter";
+} from "./envelopeConversion";
 
 type Ek = "dco" | "dcw" | "dca";
 
