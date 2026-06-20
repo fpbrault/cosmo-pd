@@ -3,7 +3,7 @@ import { readFile, writeFile } from "node:fs/promises";
 
 function usage() {
 	console.error(
-		"Usage: bun run ./scripts/perf-ui-compare.mjs <baseline.json> <current.json> [--markdown-out <path>] [--fail-on-regressions] [--label <name>]",
+		"Usage: bun run ./scripts/perf-plugin-compare.mjs <baseline.json> <current.json> [--markdown-out <path>] [--fail-on-regressions]",
 	);
 }
 
@@ -13,7 +13,6 @@ function parseArgs(argv) {
 		currentPath: "",
 		markdownOutPath: "",
 		failOnRegressions: false,
-		label: "UI",
 	};
 
 	for (let index = 0; index < argv.length; index += 1) {
@@ -36,12 +35,6 @@ function parseArgs(argv) {
 			continue;
 		}
 
-		if (arg === "--label" && next) {
-			options.label = next;
-			index += 1;
-			continue;
-		}
-
 		if (arg === "--fail-on-regressions") {
 			options.failOnRegressions = true;
 		}
@@ -59,7 +52,7 @@ function parseReport(text) {
 }
 
 function caseKey(entry) {
-	return `${String(entry?.scenario ?? "")}:${String(entry?.presetName ?? "")}`;
+	return `${String(entry?.scenario ?? "")}:${Number(entry?.blockSize ?? 0)}`;
 }
 
 function toCaseMap(report) {
@@ -100,61 +93,62 @@ const [baselineText, currentText] = await Promise.all([
 
 const baselineMap = toCaseMap(parseReport(baselineText));
 const currentMap = toCaseMap(parseReport(currentText));
-
 const keys = [...currentMap.keys()]
 	.filter((key) => baselineMap.has(key))
 	.sort();
 
 if (keys.length === 0) {
-	console.error("No overlapping cases found between reports.");
+	console.error("No overlapping plugin benchmark cases found between reports.");
 	process.exit(1);
 }
 
-console.log(
-	`Comparing ${keys.length} overlapping ${options.label} benchmark cases`,
-);
-console.log("case\t p50 last ms\t p95 last ms\t max rt%\t sample count");
+console.log(`Comparing ${keys.length} overlapping plugin benchmark cases`);
+console.log("case\t p50 ms\t p95 ms\t ns/sample\t realtime\t checksum");
 
 let regressions = 0;
 const rows = [];
 for (const key of keys) {
 	const baseline = baselineMap.get(key);
 	const current = currentMap.get(key);
-	const bP50 = readNumber(baseline, "p50LastMs");
-	const cP50 = readNumber(current, "p50LastMs");
-	const bP95 = readNumber(baseline, "p95LastMs");
-	const cP95 = readNumber(current, "p95LastMs");
-	const bMaxRt = readNumber(baseline, "maxLastRtPercent");
-	const cMaxRt = readNumber(current, "maxLastRtPercent");
-	const bSamples = readNumber(baseline, "sampleCount");
-	const cSamples = readNumber(current, "sampleCount");
+	const bP50 = readNumber(baseline, "p50Ms");
+	const cP50 = readNumber(current, "p50Ms");
+	const bP95 = readNumber(baseline, "p95Ms");
+	const cP95 = readNumber(current, "p95Ms");
+	const bNs = readNumber(baseline, "nsPerSampleP50");
+	const cNs = readNumber(current, "nsPerSampleP50");
+	const bRealtime = readNumber(baseline, "realtimeFactorP50");
+	const cRealtime = readNumber(current, "realtimeFactorP50");
+	const bChecksum = readNumber(baseline, "checksum");
+	const cChecksum = readNumber(current, "checksum");
 
 	if (
 		bP50 === null ||
 		cP50 === null ||
 		bP95 === null ||
 		cP95 === null ||
-		bMaxRt === null ||
-		cMaxRt === null ||
-		bSamples === null ||
-		cSamples === null
+		bNs === null ||
+		cNs === null ||
+		bRealtime === null ||
+		cRealtime === null ||
+		bChecksum === null ||
+		cChecksum === null
 	) {
 		continue;
 	}
 
 	const p50Delta = deltaPercent(cP50, bP50);
 	const p95Delta = deltaPercent(cP95, bP95);
-	const maxRtDelta = deltaPercent(cMaxRt, bMaxRt);
-	const sampleDelta = deltaPercent(cSamples, bSamples);
+	const nsDelta = deltaPercent(cNs, bNs);
+	const realtimeDelta = deltaPercent(cRealtime, bRealtime);
+	const checksumDelta = deltaPercent(cChecksum, bChecksum);
 
-	if (p50Delta > 5 || p95Delta > 5 || maxRtDelta > 5) {
+	if (p50Delta > 5 || p95Delta > 5 || nsDelta > 5) {
 		regressions += 1;
 	}
 
-	rows.push({ key, p50Delta, p95Delta, maxRtDelta, sampleDelta });
-
+	rows.push({ key, p50Delta, p95Delta, nsDelta, realtimeDelta, checksumDelta });
 	console.log(
-		`${key}\t ${formatDelta(p50Delta)}\t ${formatDelta(p95Delta)}\t ${formatDelta(maxRtDelta)}\t ${formatDelta(sampleDelta)}`,
+		`${key}\t ${formatDelta(p50Delta)}\t ${formatDelta(p95Delta)}\t ${formatDelta(nsDelta)}\t ${formatDelta(realtimeDelta)}\t ${formatDelta(checksumDelta)}`,
 	);
 }
 
@@ -166,16 +160,16 @@ if (regressions > 0) {
 
 if (options.markdownOutPath) {
 	const lines = [
-		`Compared ${rows.length} overlapping ${options.label} case(s).`,
+		`Compared ${rows.length} overlapping plugin case(s).`,
 		"",
-		`Potential regressions detected in ${regressions} case(s) (>5% p50/p95/max-RT).`,
+		`Potential regressions detected in ${regressions} case(s) (>5% p50/p95/ns-per-sample).`,
 		"",
-		"| case | p50 last ms | p95 last ms | max rt% | sample count |",
-		"|---|---:|---:|---:|---:|",
+		"| case | p50 ms | p95 ms | ns/sample | realtime | checksum |",
+		"|---|---:|---:|---:|---:|---:|",
 	];
 	for (const row of rows) {
 		lines.push(
-			`| ${row.key} | ${formatDelta(row.p50Delta)} | ${formatDelta(row.p95Delta)} | ${formatDelta(row.maxRtDelta)} | ${formatDelta(row.sampleDelta)} |`,
+			`| ${row.key} | ${formatDelta(row.p50Delta)} | ${formatDelta(row.p95Delta)} | ${formatDelta(row.nsDelta)} | ${formatDelta(row.realtimeDelta)} | ${formatDelta(row.checksumDelta)} |`,
 		);
 	}
 	await writeFile(options.markdownOutPath, `${lines.join("\n")}\n`, "utf8");

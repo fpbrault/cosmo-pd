@@ -256,7 +256,7 @@ jobs:
         shell: bash
 
   perf-benchmarks:
-    name: Engine Benchmarks
+    name: Performance Benchmarks
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
@@ -273,41 +273,147 @@ jobs:
           filters: |
             engine:
               - 'packages/cosmo-synth-engine/**'
+              - 'scripts/perf-engine-compare.mjs'
+              - 'scripts/perf-pr-comment.mjs'
+            livepage:
+              - 'packages/cosmo-pd101/src/**'
+              - 'packages/cosmo-pd101/site/**'
+              - 'scripts/perf-livepage-benchmark.mjs'
+              - 'scripts/perf-ui-benchmark.mjs'
+              - 'scripts/perf-ui-compare.mjs'
+              - 'scripts/perf-pr-comment.mjs'
+            plugin_webview:
+              - 'packages/cosmo-pd101/src/**'
+              - 'packages/cosmo-pd101-plugin/webview/**'
+              - 'scripts/perf-web-benchmark.mjs'
+              - 'scripts/perf-ui-benchmark.mjs'
+              - 'scripts/perf-ui-compare.mjs'
+              - 'scripts/perf-pr-comment.mjs'
+            plugin_native:
+              - 'packages/cosmo-synth-engine/**'
+              - 'packages/cosmo-pd101-plugin/src/**'
+              - 'packages/cosmo-pd101-plugin/Cargo.toml'
+              - 'scripts/perf-plugin-compare.mjs'
+              - 'scripts/perf-pr-comment.mjs'
 
-      - name: Check for engine changes
-        if: steps.filter.outputs.engine != 'true'
-        run: echo "No changes to cosmo-synth-engine, skipping benchmarks"
+      - name: Check for benchmark changes
+        if: steps.filter.outputs.engine != 'true' && steps.filter.outputs.livepage != 'true' && steps.filter.outputs.plugin_webview != 'true' && steps.filter.outputs.plugin_native != 'true'
+        run: echo "No benchmarked surfaces changed, skipping benchmarks"
 
       - name: Setup Rust nightly
-        if: steps.filter.outputs.engine == 'true'
+        if: steps.filter.outputs.engine == 'true' || steps.filter.outputs.plugin_native == 'true'
         uses: dtolnay/rust-toolchain@nightly
 
       - name: Setup Bun
-        if: steps.filter.outputs.engine == 'true'
+        if: steps.filter.outputs.engine == 'true' || steps.filter.outputs.livepage == 'true' || steps.filter.outputs.plugin_webview == 'true' || steps.filter.outputs.plugin_native == 'true'
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
-      - name: Benchmark target branch (JSON)
-        if: steps.filter.outputs.engine == 'true'
+      - name: Install dependencies
+        if: steps.filter.outputs.livepage == 'true' || steps.filter.outputs.plugin_webview == 'true'
+        run: bun install
+        shell: bash
+
+      - name: Install Playwright Chromium
+        if: steps.filter.outputs.livepage == 'true' || steps.filter.outputs.plugin_webview == 'true'
+        run: bunx playwright install chromium chromium-headless-shell --with-deps
+        shell: bash
+
+      - name: Install Linux plugin dependencies
+        if: steps.filter.outputs.plugin_native == 'true'
         run: |
-          mkdir -p target/perf/engine
+          sudo apt-get update
+          sudo apt-get install -y \
+            libayatana-appindicator3-dev \
+            libgtk-3-dev \
+            librsvg2-dev \
+            libwebkit2gtk-4.1-dev
+        shell: bash
+
+      - name: Benchmark target branch (JSON)
+        if: steps.filter.outputs.engine == 'true' || steps.filter.outputs.livepage == 'true' || steps.filter.outputs.plugin_webview == 'true' || steps.filter.outputs.plugin_native == 'true'
+        run: |
+          mkdir -p target/perf/engine target/perf/ui target/perf/plugin
           base_ref="${{ github.base_ref }}"
           base_dir="$RUNNER_TEMP/cosmo-pd-base"
           git fetch origin "$base_ref" --depth=1
           rm -rf "$base_dir"
           git worktree add --detach "$base_dir" "origin/$base_ref"
           cd "$base_dir"
-          cargo run -p cosmo-synth-engine --release --bin render-bench -- --all --json > "$GITHUB_WORKSPACE/target/perf/engine/base-report.json"
+
+          if [[ "${RUN_ENGINE}" == "true" ]]; then
+            cargo run -p cosmo-synth-engine --release --bin render-bench -- --all --json > "$GITHUB_WORKSPACE/target/perf/engine/base-report.json"
+          fi
+
+          if [[ "${RUN_PLUGIN_NATIVE}" == "true" ]]; then
+            if grep -q "perf-bench" packages/cosmo-pd101-plugin/Cargo.toml; then
+              sudo apt-get update
+              sudo apt-get install -y \
+                libayatana-appindicator3-dev \
+                libgtk-3-dev \
+                librsvg2-dev \
+                libwebkit2gtk-4.1-dev
+              cargo run -p cosmo-pd101-plugin --release --features perf-bench --bin plugin-render-bench -- --json > "$GITHUB_WORKSPACE/target/perf/plugin/base-report.json"
+            else
+              echo "Native plugin benchmark baseline unavailable on ${base_ref}." > "$GITHUB_WORKSPACE/target/perf/plugin/plugin-compare.md"
+            fi
+          fi
+
+          if [[ "${RUN_LIVEPAGE}" == "true" || "${RUN_PLUGIN_WEBVIEW}" == "true" ]]; then
+            bun install
+          fi
+
+          if [[ "${RUN_LIVEPAGE}" == "true" ]]; then
+            if grep -R "__czBenchmark" packages/cosmo-pd101 packages/cosmo-pd101/site >/dev/null 2>&1; then
+              bun run ./scripts/perf-livepage-benchmark.mjs --out "$GITHUB_WORKSPACE/target/perf/ui/livepage-base-report.json"
+            else
+              echo "Live page benchmark baseline unavailable on ${base_ref}." > "$GITHUB_WORKSPACE/target/perf/ui/livepage-compare.md"
+            fi
+          fi
+
+          if [[ "${RUN_PLUGIN_WEBVIEW}" == "true" ]]; then
+            if grep -R "__czBenchmark" packages/cosmo-pd101 packages/cosmo-pd101-plugin/webview >/dev/null 2>&1; then
+              bun run ./scripts/perf-web-benchmark.mjs --out "$GITHUB_WORKSPACE/target/perf/ui/plugin-webview-base-report.json"
+            else
+              echo "Plugin webview benchmark baseline unavailable on ${base_ref}." > "$GITHUB_WORKSPACE/target/perf/ui/plugin-webview-compare.md"
+            fi
+          fi
+        env:
+          RUN_ENGINE: ${{ steps.filter.outputs.engine }}
+          RUN_LIVEPAGE: ${{ steps.filter.outputs.livepage }}
+          RUN_PLUGIN_WEBVIEW: ${{ steps.filter.outputs.plugin_webview }}
+          RUN_PLUGIN_NATIVE: ${{ steps.filter.outputs.plugin_native }}
         shell: bash
 
       - name: Benchmark pull request head (JSON)
-        if: steps.filter.outputs.engine == 'true'
+        if: steps.filter.outputs.engine == 'true' || steps.filter.outputs.livepage == 'true' || steps.filter.outputs.plugin_webview == 'true' || steps.filter.outputs.plugin_native == 'true'
         run: |
-          cargo run -p cosmo-synth-engine --release --bin render-bench -- --all --json > target/perf/engine/pr-report.json
+          mkdir -p target/perf/engine target/perf/ui target/perf/plugin
+
+          if [[ "${RUN_ENGINE}" == "true" ]]; then
+            cargo run -p cosmo-synth-engine --release --bin render-bench -- --all --json > target/perf/engine/pr-report.json
+          fi
+
+          if [[ "${RUN_PLUGIN_NATIVE}" == "true" ]]; then
+            cargo run -p cosmo-pd101-plugin --release --features perf-bench --bin plugin-render-bench -- --json > target/perf/plugin/pr-report.json
+          fi
+
+          if [[ "${RUN_LIVEPAGE}" == "true" ]]; then
+            bun run ./scripts/perf-livepage-benchmark.mjs --out target/perf/ui/livepage-pr-report.json
+          fi
+
+          if [[ "${RUN_PLUGIN_WEBVIEW}" == "true" ]]; then
+            bun run ./scripts/perf-web-benchmark.mjs --out target/perf/ui/plugin-webview-pr-report.json
+          fi
+        env:
+          RUN_ENGINE: ${{ steps.filter.outputs.engine }}
+          RUN_LIVEPAGE: ${{ steps.filter.outputs.livepage }}
+          RUN_PLUGIN_WEBVIEW: ${{ steps.filter.outputs.plugin_webview }}
+          RUN_PLUGIN_NATIVE: ${{ steps.filter.outputs.plugin_native }}
         shell: bash
 
-      - name: Compare PR against target branch
+      - name: Compare engine benchmarks
         id: compare_engine
         if: steps.filter.outputs.engine == 'true'
         continue-on-error: true
@@ -319,24 +425,77 @@ jobs:
             --fail-on-regressions
         shell: bash
 
+      - name: Compare live page benchmarks
+        id: compare_livepage
+        if: steps.filter.outputs.livepage == 'true'
+        continue-on-error: true
+        run: |
+          if [[ ! -f target/perf/ui/livepage-base-report.json ]]; then
+            echo "Live page benchmark baseline unavailable on ${{ github.base_ref }}." > target/perf/ui/livepage-compare.md
+            exit 0
+          fi
+          bun run ./scripts/perf-ui-compare.mjs \
+            target/perf/ui/livepage-base-report.json \
+            target/perf/ui/livepage-pr-report.json \
+            --label "Live Page UI" \
+            --markdown-out target/perf/ui/livepage-compare.md \
+            --fail-on-regressions
+        shell: bash
+
+      - name: Compare plugin webview benchmarks
+        id: compare_plugin_webview
+        if: steps.filter.outputs.plugin_webview == 'true'
+        continue-on-error: true
+        run: |
+          if [[ ! -f target/perf/ui/plugin-webview-base-report.json ]]; then
+            echo "Plugin webview benchmark baseline unavailable on ${{ github.base_ref }}." > target/perf/ui/plugin-webview-compare.md
+            exit 0
+          fi
+          bun run ./scripts/perf-ui-compare.mjs \
+            target/perf/ui/plugin-webview-base-report.json \
+            target/perf/ui/plugin-webview-pr-report.json \
+            --label "Plugin Webview UI" \
+            --markdown-out target/perf/ui/plugin-webview-compare.md \
+            --fail-on-regressions
+        shell: bash
+
+      - name: Compare native plugin benchmarks
+        id: compare_plugin_native
+        if: steps.filter.outputs.plugin_native == 'true'
+        continue-on-error: true
+        run: |
+          if [[ ! -f target/perf/plugin/base-report.json ]]; then
+            echo "Native plugin benchmark baseline unavailable on ${{ github.base_ref }}." > target/perf/plugin/plugin-compare.md
+            exit 0
+          fi
+          bun run ./scripts/perf-plugin-compare.mjs \
+            target/perf/plugin/base-report.json \
+            target/perf/plugin/pr-report.json \
+            --markdown-out target/perf/plugin/plugin-compare.md \
+            --fail-on-regressions
+        shell: bash
+
       - name: Generate benchmark comment body
-        if: steps.filter.outputs.engine == 'true'
+        if: steps.filter.outputs.engine == 'true' || steps.filter.outputs.livepage == 'true' || steps.filter.outputs.plugin_webview == 'true' || steps.filter.outputs.plugin_native == 'true'
         run: |
           bun run ./scripts/perf-pr-comment.mjs \
             --engine-compare target/perf/engine/engine-compare.md \
-            --out target/perf/engine/pr-comment.md \
+            --livepage-compare target/perf/ui/livepage-compare.md \
+            --plugin-webview-compare target/perf/ui/plugin-webview-compare.md \
+            --plugin-compare target/perf/plugin/plugin-compare.md \
+            --out target/perf/pr-comment.md \
             --base-ref "${{ github.base_ref }}"
         shell: bash
 
       - name: Upsert PR benchmark comment
-        if: steps.filter.outputs.engine == 'true'
+        if: steps.filter.outputs.engine == 'true' || steps.filter.outputs.livepage == 'true' || steps.filter.outputs.plugin_webview == 'true' || steps.filter.outputs.plugin_native == 'true'
         uses: actions/github-script@v9
         with:
           script: |
             const fs = require("node:fs");
 
             const marker = "<!-- perf-benchmark-comment -->";
-            const body = fs.readFileSync("target/perf/engine/pr-comment.md", "utf8");
+            const body = fs.readFileSync("target/perf/pr-comment.md", "utf8");
             const issueNumber = context.payload.pull_request?.number;
 
             if (!issueNumber) {
@@ -375,22 +534,20 @@ jobs:
             }
 
       - name: Fail on benchmark regressions
-        if: steps.filter.outputs.engine == 'true' && steps.compare_engine.outcome == 'failure'
+        if: steps.compare_engine.outcome == 'failure' || steps.compare_livepage.outcome == 'failure' || steps.compare_plugin_webview.outcome == 'failure' || steps.compare_plugin_native.outcome == 'failure'
         run: |
           echo "Performance regression threshold exceeded."
           exit 1
         shell: bash
 
       - name: Upload benchmark artifact
-        if: steps.filter.outputs.engine == 'true'
+        if: steps.filter.outputs.engine == 'true' || steps.filter.outputs.livepage == 'true' || steps.filter.outputs.plugin_webview == 'true' || steps.filter.outputs.plugin_native == 'true'
         uses: actions/upload-artifact@v7
         with:
-          name: engine-benchmark
+          name: performance-benchmarks
           path: |
-            target/perf/engine/base-report.json
-            target/perf/engine/pr-report.json
-            target/perf/engine/engine-compare.md
-            target/perf/engine/pr-comment.md
+            target/perf/**/*.json
+            target/perf/**/*.md
 
   build-plugins:
     name: Build plugins (${{ matrix.platform }})

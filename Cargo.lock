@@ -580,6 +580,7 @@ dependencies = [
  "cocoa",
  "cosmo-pd101-bridge-types",
  "cosmo-synth-engine",
+ "criterion",
  "crossbeam-queue",
  "dirs 6.0.0",
  "dispatch2",

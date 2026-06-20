@@ -4,13 +4,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
-const pluginDir = path.join(repoRoot, "packages/cosmo-pd101-plugin");
 
 function parseArgs(argv) {
 	const options = {
 		host: "127.0.0.1",
-		port: "4173",
-		out: "target/perf/ui/plugin-webview-current.json",
+		port: "4174",
+		out: "target/perf/ui/livepage-current.json",
 		presetNames: [],
 		scenarioIds: [],
 	};
@@ -57,11 +56,15 @@ async function waitForServer(url, timeoutMs) {
 
 const options = parseArgs(process.argv.slice(2));
 
-const build = spawnSync("bun", ["run", "build:web"], {
-	stdio: "inherit",
-	cwd: pluginDir,
-	shell: process.platform === "win32",
-});
+const build = spawnSync(
+	"bun",
+	["--filter", "@cosmo/cosmo-pd101-site", "build"],
+	{
+		stdio: "inherit",
+		cwd: repoRoot,
+		shell: process.platform === "win32",
+	},
+);
 
 if (build.status !== 0) {
 	process.exit(build.status ?? 1);
@@ -71,7 +74,7 @@ const preview = spawn(
 	"bun",
 	[
 		"--filter",
-		"@cosmo/cosmo-pd101-plugin-webview",
+		"@cosmo/cosmo-pd101-site",
 		"preview",
 		"--host",
 		options.host,
