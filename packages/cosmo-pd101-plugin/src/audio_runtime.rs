@@ -78,6 +78,25 @@ pub(crate) fn drain_render_control_events(
 ) {
     crate::rt_safety::assert_not_rt("drain render control events");
     let mut pending_params: Option<SynthParams> = None;
+
+    // Non-lossy program-change mirror. The audio thread writes the latest
+    // factory preset index here (overwriting older pending changes) so queue
+    // overflow can never drop a preset/session transition. Audio is already
+    // applied RT via `apply_factory_preset_realtime`; this path mirrors to
+    // shared/UI/session state.
+    let pending_program = shared_state
+        .pending_program_change
+        .swap(0xFF, Ordering::AcqRel);
+    if pending_program != 0xFF && pending_program < crate::ffi::factory_preset_count() as u8 {
+        publish_pending_mapped_params(ctx, shared_state, params, &mut pending_params);
+        apply_factory_preset_on_control_thread(
+            ctx,
+            shared_state,
+            params,
+            usize::from(pending_program),
+        );
+    }
+
     while let Some(event) = shared_state.ui.render_control_queue.pop() {
         match event {
             RenderControlEvent::ObservedCc { channel, cc, value } => {
@@ -197,6 +216,10 @@ pub(crate) fn drain_render_control_events(
                 }
             }
             RenderControlEvent::ProgramChangeRequest { program } => {
+                // Legacy/fallback path for tests or any future code that
+                // pushes program changes through the queue directly.
+                // Production RT path uses the non-lossy
+                // `pending_program_change` slot above.
                 publish_pending_mapped_params(ctx, shared_state, params, &mut pending_params);
                 apply_factory_preset_on_control_thread(
                     ctx,
@@ -262,6 +285,13 @@ fn apply_factory_preset_on_control_thread(
     index: usize,
 ) {
     crate::rt_safety::assert_not_rt("apply factory preset");
+    // Preset is authoritative: it replaces every SynthParams field. Any
+    // drift/param-change/CC events enqueued before this slot was consumed
+    // are stale (the preset's `copy_params_for_realtime` already overwrote
+    // the processor on the audio thread). Discard them so the publish
+    // below is not later clobbered by `publish_pending_mapped_params`
+    // cloning the new preset and mutating it with the stale drift.
+    while shared_state.ui.render_control_queue.pop().is_some() {}
     let Some(next_params) = crate::ffi::factory_preset_params(index).cloned() else {
         return;
     };
@@ -501,18 +531,19 @@ impl CzPlugin {
                 }
                 self.audio.daw_params_dirty = true;
                 if let Some(param_key) = daw_param_key_by_id(*id) {
-                    // Apply to processor now so audio is effective immediately.
-                    let value_f32 = *value as f32;
-                    if let Some(proc) = self.audio.processor.as_mut() {
-                        proc.apply_parameter_change_realtime(param_key, value_f32);
-                    }
+                    // Do NOT mutate the processor here. The same ParamChange
+                    // is converted into a timed `CosmoInputEvent::ParameterChange`
+                    // by `host_event_to_engine_event` and applied at the host
+                    // `sample_offset` during `process_block`. Applying it here
+                    // would make the change block-start accurate instead of
+                    // sample-accurate and double-apply the value.
                     // Enqueue MappedParamChange so the control thread can
                     // mirror to shared state, derive UI patches (including the
                     // octave derivation) from coherent post-change params, and
                     // bump synth_params_version.
                     self.enqueue_render_control_event(RenderControlEvent::MappedParamChange {
                         param_key,
-                        value: value_f32,
+                        value: *value as f32,
                     });
                 }
             }
@@ -521,9 +552,15 @@ impl CzPlugin {
                 if usize::from(*program) < crate::ffi::factory_preset_count() =>
             {
                 self.apply_factory_preset_realtime(usize::from(*program));
-                self.enqueue_render_control_event(RenderControlEvent::ProgramChangeRequest {
-                    program: *program,
-                });
+                // Non-lossy latest-program-change slot. Older pending
+                // program changes are overwritten (last-writer-wins) so the
+                // control thread always mirrors the most recent preset even
+                // if `render_control_queue` overflows. Audio effect is
+                // already applied above; this slot drives control/UI mirror.
+                // `0xFF` is the sentinel meaning "none pending".
+                self.shared_state
+                    .pending_program_change
+                    .store(*program, Ordering::Release);
             }
             _ => {}
         }

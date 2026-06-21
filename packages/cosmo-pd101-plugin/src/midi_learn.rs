@@ -76,8 +76,8 @@ fn global_midi_bindings(initial: Vec<MidiLearnBinding>) -> Arc<SharedMidiBinding
 pub struct MidiLearnService {
     editor_state: SharedMidiMappings,
     bindings: Arc<SharedMidiBindings>,
-    /// RT-safe pending MIDI-learn capture slot. Written by the audio thread in
-    /// `capture_pending_binding_rt` (atomics only — no alloc, no lock, no
+    /// RT-safe pending MIDI-learn capture slot. Written by the audio thread
+    /// in `capture_pending_binding_rt` (no alloc, no blocking lock, no
     /// persistence). Drained by the control thread (snapshots, drain, or
     /// editor idle) via `commit_pending_capture`, which performs the actual
     /// in-memory `replace_binding` and global-settings persistence.
@@ -104,12 +104,19 @@ impl MidiLearnService {
     }
 
     pub fn snapshot(&self) -> MidiLearnState {
-        // Commit any RT-stashed pending capture before returning the snapshot.
-        // This guarantees editor/editor-less paths that read `snapshot()` see a
-        // capture performed by the audio thread without needing an explicit
-        // drain of `render_control_queue`. Persistence happens on the control
-        // thread (here), never on RT.
-        self.commit_pending_capture();
+        // Commit any RT-stashed pending capture in-memory before returning the
+        // snapshot. This guarantees editor/editor-less paths that read
+        // `snapshot()` see a capture performed by the audio thread without
+        // needing an explicit drain of `render_control_queue`.
+        //
+        // In-memory commit only — persistence to global settings is deferred
+        // to `drain_render_control_events`. The test contract is that RT
+        // capture (and any `snapshot()` reads of it) must NOT touch the disk
+        // file before the control drain, because the env-var-scoped test data
+        // dir is process-global and concurrent tests would corrupt each other.
+        // `host_side_midi_learn_persists_only_after_control_drain` relies on
+        // the disk file remaining untouched by snapshot() calls in other tests.
+        self.commit_pending_capture_in_memory();
         let mut state = self
             .editor_state
             .lock()
@@ -176,15 +183,23 @@ impl MidiLearnService {
     /// RT-safe: stash `(channel, cc)` into the pending-capture slot so the
     /// control thread can commit it later (`snapshot()` or `drain_render_control_events`).
     ///
-    /// Alloc/lock/persistence-free. Called from `handle_cc_side_effects` on RT.
-    /// No-op when learn mode is off or no pending param key is set. Stashing
-    /// overwrites any older pending capture (last-writer-wins is the intended
-    /// MIDI-learn UX).
+    /// No alloc, no persistence, no *blocking* lock. Called from
+    /// `handle_cc_side_effects` on RT. No-op when learn mode is off or no
+    /// pending param key is set. Stashing overwrites any older pending
+    /// capture (last-writer-wins is the intended MIDI-learn UX).
+    ///
+    /// NOTE: the learn-mode probe here uses a non-blocking `try_lock()`,
+    /// not a lock-free atomic. That satisfies "no blocking on RT" but is
+    /// NOT strictly lock-free. If the project RT boundary is tightened to
+    /// "no `Mutex::try_lock` calls on RT" in future, replace the probe with
+    /// an `AtomicBool learn_mode` shadow updated by `set_learn_mode`.
     pub fn capture_pending_binding_rt(&self, channel: u8, cc: u8) {
-        // Cheap atomic check: skip Mutex lock entirely when learn mode is off.
-        // The `editor_state` Mutex is NOT held here on RT — this check is
-        // best-effort and stale reads just mean an extra pending slot write
-        // that `commit_pending_capture` will discard if learn mode flipped off.
+        // Cheap atomic check: skip the Mutex probe entirely when no capture
+        // is already pending. `editor_state_try_learn_mode` then performs a
+        // best-effort non-blocking probe; contended `try_lock` returns `true`
+        // (treat as "learn mode might be on") so RT errs on the side of
+        // stashing the capture. `commit_pending_capture` re-verifies
+        // learn_mode + pending_param_key under the lock before committing.
         if !self.pending_capture_present.load(Ordering::Relaxed)
             && !self.editor_state_try_learn_mode()
         {
@@ -195,14 +210,18 @@ impl MidiLearnService {
         self.pending_capture_present.store(true, Ordering::Release);
     }
 
-    /// Control thread: drain any RT-stashed pending capture, perform the
-    /// in-memory `replace_binding`, and persist to global settings.
+    /// Control thread: drain any RT-stashed pending capture and perform the
+    /// in-memory `replace_binding`. Does NOT persist to global settings.
     /// Returns `Some(binding)` when a binding was captured and committed.
     ///
-    /// NOT RT-safe — takes the editor Mutex, may allocate the binding String,
-    /// may persist. Called from `snapshot()` and from the ObservedCc handler
-    /// in `drain_render_control_events`.
-    pub fn commit_pending_capture(&self) -> Option<MidiLearnBinding> {
+    /// NOT RT-safe — takes the editor Mutex, may allocate the binding String.
+    /// Called from `snapshot()` and as the first half of
+    /// `commit_pending_capture` (which then persists).
+    ///
+    /// Use this when callers (e.g. `snapshot()`) need to observe an in-memory
+    /// capture without forcing a disk write. The drain path should use
+    /// `commit_pending_capture()` (with persist) instead.
+    pub fn commit_pending_capture_in_memory(&self) -> Option<MidiLearnBinding> {
         if !self.pending_capture_present.swap(false, Ordering::AcqRel) {
             return None;
         }
@@ -229,14 +248,35 @@ impl MidiLearnService {
             channel: i32::from(channel),
             cc: i32::from(cc),
         };
-        if self.bindings.replace_binding(binding.clone()) {
-            self.persist();
-        }
+        // In-memory replace only; persist is the caller's responsibility.
+        self.bindings.replace_binding(binding.clone());
         Some(binding)
     }
 
+    /// Control thread: drain any RT-stashed pending capture, perform the
+    /// in-memory `replace_binding`, and persist to global settings.
+    /// Returns `Some(binding)` when a binding was captured and committed.
+    ///
+    /// NOT RT-safe — takes the editor Mutex, may allocate the binding String,
+    /// may persist. Called from the ObservedCc handler in
+    /// `drain_render_control_events`. Use `commit_pending_capture_in_memory()`
+    /// from `snapshot()` and other read paths that must not touch disk.
+    pub fn commit_pending_capture(&self) -> Option<MidiLearnBinding> {
+        let binding = self.commit_pending_capture_in_memory();
+        if binding.is_some() {
+            self.persist();
+        }
+        binding
+    }
+
     /// Best-effort non-blocking learn-mode probe for the RT path. Returns
-    /// `false` when the lock is contended or learn mode is off.
+    /// `false` only when learn mode is provably off (lock uncontended and
+    /// `learn_mode == false`). Returns `true` when either learn mode is on OR
+    /// the Mutex is contended (RT errs on the side of stashing the capture,
+    /// since `commit_pending_capture` re-checks under the lock).
+    ///
+    /// This is NOT lock-free — it calls `Mutex::try_lock`. It is non-blocking,
+    /// which satisfies "no blocking on RT" but not "no Mutex calls on RT".
     fn editor_state_try_learn_mode(&self) -> bool {
         self.editor_state
             .try_lock()

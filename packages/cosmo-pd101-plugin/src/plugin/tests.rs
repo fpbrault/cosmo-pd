@@ -803,8 +803,9 @@ fn daw_param_change_enqueues_scalar_ui_patch() {
         value: 0.42,
     });
 
-    // RT path applies the change to the processor immediately; control-thread
-    // mirror (shared params + UI patch) is enqueued and requires a drain.
+    // Audio-effective change runs through the timed engine event path inside
+    // `process_block`; the control-thread mirror (shared SynthParams +
+    // frontend UI patch) is enqueued via MappedParamChange and requires a drain.
     crate::audio_runtime::drain_render_control_events(
         &crate::rt_safety::ControlContext::new(),
         &plugin.shared_state,
@@ -834,8 +835,9 @@ fn daw_line1_octave_change_enqueues_frontend_octave_patches() {
         value: 1.0,
     });
 
-    // RT path applies the change to the processor immediately; control-thread
-    // mirror (shared params + derived frontend UI patches) requires a drain.
+    // Audio-effective change runs through the timed engine event path inside
+    // `process_block`; control-thread mirror (shared params + derived
+    // frontend UI patches) requires a drain.
     crate::audio_runtime::drain_render_control_events(
         &crate::rt_safety::ControlContext::new(),
         &plugin.shared_state,
@@ -872,8 +874,9 @@ fn daw_line2_octave_change_enqueues_frontend_detune_patch() {
         value: 2.0,
     });
 
-    // RT path applies the change to the processor immediately; control-thread
-    // mirror (shared params + derived frontend UI patch) requires a drain.
+    // Audio-effective change runs through the timed engine event path inside
+    // `process_block`; control-thread mirror (shared params + derived
+    // frontend UI patch) requires a drain.
     crate::audio_runtime::drain_render_control_events(
         &crate::rt_safety::ControlContext::new(),
         &plugin.shared_state,
