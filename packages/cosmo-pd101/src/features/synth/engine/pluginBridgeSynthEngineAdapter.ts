@@ -214,7 +214,9 @@ export function usePluginBridgeSynthEngine(
 							applyingHostParamsRef.current = true;
 							try {
 								const clean = Object.fromEntries(
-									Object.entries(changes).filter((e): e is [string, number] => e[1] != null),
+									Object.entries(changes).filter(
+										(e): e is [string, number] => e[1] != null,
+									),
 								);
 								applyHostParamChanges(clean);
 							} finally {
