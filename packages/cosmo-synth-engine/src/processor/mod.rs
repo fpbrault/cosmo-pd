@@ -274,7 +274,7 @@ impl CosmoProcessor {
         true
     }
 
-    fn refresh_parameter_caches(&mut self) {
+    pub fn refresh_parameter_caches(&mut self) {
         self.macro1 = self.params.macro1;
         self.macro2 = self.params.macro2;
         self.macro3 = self.params.macro3;

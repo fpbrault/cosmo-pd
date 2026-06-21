@@ -489,6 +489,10 @@ fn midi_mapping_applies_in_plugin_core_without_editor() {
         &plugin.shared_state,
         &params,
     );
+    // drain_render_control_events is a free fn publishing to shared state; it
+    // does not touch AudioRuntime.cached_rt_synth_params, so refresh it here
+    // (the test owns the explicit drain, so it owns the cache refresh).
+    plugin.audio.cached_rt_synth_params = plugin.shared_state.synth.rt_synth_params.load_full();
     assert!((plugin.shared_state.synth.synth_params.load().macro1 - 1.0).abs() < 0.000_001);
     assert!((plugin.audio.cached_rt_synth_params.macro1 - 1.0).abs() < 0.000_001);
     assert_eq!(
@@ -507,13 +511,30 @@ fn midi_mapping_applies_virtual_algo_control_and_publishes_full_params() {
     let mut plugin = CzPlugin::new(Arc::clone(&params));
     plugin.reset(48_000.0, 64);
 
+    // Mimic the control-thread publish invariant: synth_params + rt_synth_params
+    // + version are updated together (see ipc/synth.rs `SetParams`). The test
+    // sets line1.algo = Bend so the virtual algo control slot resolves; without
+    // publishing to rt_synth_params + bumping the version, sync_runtime_params_from_host
+    // would not copy the algo into the processor and the algo control mapping
+    // would no-op.
     let mut synth_params = (*plugin.shared_state.synth.synth_params.load_full()).clone();
     synth_params.line1.algo = cosmo_synth_engine::params::Algo::Bend;
+    let rt_params = crate::plugin::build_rt_synth_params(&synth_params);
     plugin
         .shared_state
         .synth
         .synth_params
         .store(Arc::new(synth_params));
+    plugin
+        .shared_state
+        .synth
+        .rt_synth_params
+        .store(Arc::new(rt_params));
+    plugin
+        .shared_state
+        .synth
+        .synth_params_version
+        .fetch_add(1, Ordering::Release);
     plugin
         .shared_state
         .midi_learn
@@ -534,6 +555,15 @@ fn midi_mapping_applies_virtual_algo_control_and_publishes_full_params() {
         cc: 74,
         value: 127,
     });
+
+    // RT path applies the algo control mapping to the processor immediately.
+    // Shared params + UI patch publication require an explicit control drain.
+    crate::audio_runtime::drain_render_control_events(
+        &crate::rt_safety::ControlContext::new(),
+        &plugin.shared_state,
+        &params,
+    );
+    plugin.audio.cached_rt_synth_params = plugin.shared_state.synth.rt_synth_params.load_full();
 
     let published = plugin.shared_state.synth.synth_params.load();
     let bend_bias = published
@@ -740,6 +770,11 @@ fn host_param_value_drift_updates_runtime_snapshot_and_version() {
             .load(Ordering::Acquire)
             > initial_version
     );
+    // Fix 1: cached_synth_params_version lives on AudioRuntime; audio thread is
+    // the sole writer during normal operation. After control-thread publication,
+    // the *next* process block copies the new snapshot and advances the consumed
+    // version.
+    process_test_block(&mut plugin, &EventList::default());
     assert_eq!(
         plugin.audio.cached_synth_params_version,
         plugin
@@ -768,6 +803,15 @@ fn daw_param_change_enqueues_scalar_ui_patch() {
         value: 0.42,
     });
 
+    // RT path applies the change to the processor immediately; control-thread
+    // mirror (shared params + UI patch) is enqueued and requires a drain.
+    crate::audio_runtime::drain_render_control_events(
+        &crate::rt_safety::ControlContext::new(),
+        &plugin.shared_state,
+        &params,
+    );
+    plugin.audio.cached_rt_synth_params = plugin.shared_state.synth.rt_synth_params.load_full();
+
     assert!((plugin.shared_state.synth.synth_params.load().volume - 0.42).abs() < 0.000_001);
     assert_eq!(
         drain_and_coalesce_ui_param_changes(&plugin.shared_state.ui.ui_param_change_queue),
@@ -789,6 +833,15 @@ fn daw_line1_octave_change_enqueues_frontend_octave_patches() {
         id: CzPluginParamsParamId::Line1Octave as u32,
         value: 1.0,
     });
+
+    // RT path applies the change to the processor immediately; control-thread
+    // mirror (shared params + derived frontend UI patches) requires a drain.
+    crate::audio_runtime::drain_render_control_events(
+        &crate::rt_safety::ControlContext::new(),
+        &plugin.shared_state,
+        &params,
+    );
+    plugin.audio.cached_rt_synth_params = plugin.shared_state.synth.rt_synth_params.load_full();
 
     let changes =
         drain_and_coalesce_ui_param_changes(&plugin.shared_state.ui.ui_param_change_queue);
@@ -818,6 +871,15 @@ fn daw_line2_octave_change_enqueues_frontend_detune_patch() {
         id: CzPluginParamsParamId::Line2Octave as u32,
         value: 2.0,
     });
+
+    // RT path applies the change to the processor immediately; control-thread
+    // mirror (shared params + derived frontend UI patch) requires a drain.
+    crate::audio_runtime::drain_render_control_events(
+        &crate::rt_safety::ControlContext::new(),
+        &plugin.shared_state,
+        &params,
+    );
+    plugin.audio.cached_rt_synth_params = plugin.shared_state.synth.rt_synth_params.load_full();
 
     let changes =
         drain_and_coalesce_ui_param_changes(&plugin.shared_state.ui.ui_param_change_queue);
@@ -852,7 +914,9 @@ fn host_side_midi_learn_captures_in_cc_side_effects() {
     let state = plugin.shared_state.midi_learn.snapshot();
     assert!(state.learn_mode);
     assert_eq!(state.pending_param_key.as_deref(), Some("macro1"));
-    assert!(!state.bindings.iter().any(|binding| {
+    // Per PR #322: capture happens in handle_host_event (cc_side_effects path),
+    // not in the drain. Binding exists immediately without drain.
+    assert!(state.bindings.iter().any(|binding| {
         binding.param_key == "macro1" && binding.channel == 0 && binding.cc == 74
     }));
     crate::audio_runtime::drain_render_control_events(
@@ -890,6 +954,8 @@ fn host_side_midi_learn_persists_only_after_control_drain() {
         });
 
         let saved = crate::global_settings::load_or_init_global_settings().unwrap();
+        // RT path captures the binding in-memory (so snapshot() reflects it
+        // immediately) but persistence is deferred to the control drain.
         assert!(!saved.midi_learn_bindings.iter().any(|binding| {
             binding.param_key == "macro1" && binding.channel == 0 && binding.cc == 74
         }));

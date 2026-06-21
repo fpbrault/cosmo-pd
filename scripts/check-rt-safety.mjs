@@ -19,11 +19,17 @@ const rtFunctions = new Map([
 		["copy_params_for_realtime", "apply_parameter_change_realtime"],
 	],
 	["packages/cosmo-synth-engine/src/processor/input.rs", ["apply_input_event"]],
+	[
+		"packages/cosmo-synth-engine/src/params/mapping.rs",
+		["apply_midi_mapping_binding_rt", "apply_virtual_algo_control_rt"],
+	],
 ]);
 
 const forbidden = [
 	[/drain_render_control_events/, "control-event drain"],
 	[/persist_midi/, "MIDI persistence"],
+	[/capture_pending_binding\s*\(/, "MIDI learn capture (control-thread)"],
+	[/commit_pending_capture/, "MIDI learn capture commit (control-thread)"],
 	[/apply_factory_preset_on_control_thread/, "factory preset application"],
 	[/\.lock\s*\(/, "blocking mutex lock"],
 	[/\.write\s*\(/, "blocking rwlock write"],
@@ -37,6 +43,11 @@ const forbidden = [
 	[/build_rt_synth_params/, "full realtime parameter rebuild"],
 	[/synth_params\s*\.\s*store\s*\(/, "shared synth parameter publication"],
 	[/rt_synth_params\s*\.\s*store\s*\(/, "shared RT parameter publication"],
+	[/load_full\s*\(/, "ArcSwap full load (Arc clone)"],
+	[/set_shared_params\s*\(/, "shared params clone_from (may realloc)"],
+	[/synth_params_version\s*\.\s*fetch_add\s*\(/, "version bump from RT path"],
+	[/\.to_string\s*\(/, "String allocation"],
+	[/\.to_owned\s*\(/, "owned allocation"],
 ];
 
 const extractFunction = (source, name, file) => {

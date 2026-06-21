@@ -5,7 +5,7 @@ use arrayvec::ArrayVec;
 use cosmo_pd101_bridge_types::UiAlgoControlSection;
 use cosmo_synth_engine::params::{
     AppliedMidiAlgoControlSection, AppliedMidiParamChange, AppliedMidiParamTarget, SynthParams,
-    apply_midi_mapping_binding, set_parameter_value_by_key,
+    apply_midi_mapping_binding, apply_midi_mapping_binding_rt, set_parameter_value_by_key,
 };
 use cosmo_synth_engine::processor::{
     CosmoInputEvent, CosmoProcessor, CosmoTimedInputEvent, CosmoTransportState,
@@ -15,9 +15,8 @@ use truce_core::events::TransportInfo;
 use truce_core::midi::{norm_7bit, norm_pitch_bend};
 
 use crate::params::{
-    CzPluginParams, CzPluginParamsParamId, apply_daw_params, daw_param_key_by_id,
-    read_current_daw_param_by_id, read_daw_param_by_id, sync_all_daw_params_from_synth,
-    write_daw_param_by_id,
+    CzPluginParams, CzPluginParamsParamId, daw_param_key_by_id, read_current_daw_param_by_id,
+    read_daw_param_by_id, sync_all_daw_params_from_synth,
 };
 use crate::plugin::{CzPlugin, build_rt_synth_params};
 use crate::rt_safety::ControlContext;
@@ -30,7 +29,6 @@ pub(crate) const MAX_BLOCK_INPUT_EVENTS: usize = 1024;
 
 pub struct AudioRuntime {
     pub(crate) processor: Option<CosmoProcessor>,
-    pub(crate) cached_synth_params_version: u64,
     pub(crate) cached_rt_synth_params: Arc<SynthParams>,
     pub(crate) block_input_events: ArrayVec<CosmoTimedInputEvent, MAX_BLOCK_INPUT_EVENTS>,
     pub(crate) mono_output: Vec<f32>,
@@ -38,13 +36,19 @@ pub struct AudioRuntime {
     pub(crate) last_daw_param_values: [f32; CzPlugin::TRACKED_PARAM_ID_CAPACITY],
     pub(crate) last_scope_hz: f32,
     pub(crate) voice_limit: usize,
+    /// Latest `synth_params_version` consumed by the audio processor via
+    /// `copy_params_for_realtime`. Written *only* by the audio thread after a
+    /// successful copy. The control thread must not update this value when
+    /// publishing shared params — it bumps `synth_params_version`, but audio
+    /// consumption happens here. Initial `reset()`/`apply_preset_state()` may
+    /// seed it because they initialize the processor directly.
+    pub(crate) cached_synth_params_version: u64,
 }
 
 impl AudioRuntime {
     pub fn new(default_rt_params: SynthParams) -> Self {
         Self {
             processor: None,
-            cached_synth_params_version: 0,
             cached_rt_synth_params: Arc::new(default_rt_params),
             block_input_events: ArrayVec::new(),
             mono_output: Vec::new(),
@@ -52,6 +56,7 @@ impl AudioRuntime {
             last_daw_param_values: [f32::NAN; CzPlugin::TRACKED_PARAM_ID_CAPACITY],
             last_scope_hz: 220.0,
             voice_limit: crate::global_settings::DEFAULT_VOICE_LIMIT as usize,
+            cached_synth_params_version: 0,
         }
     }
 
@@ -140,13 +145,56 @@ pub(crate) fn drain_render_control_events(
                     let _ = shared_state.ui.ui_param_change_queue.push(ui_change);
                 }
 
-                shared_state.midi_learn.capture_pending_binding(channel, cc);
+                // Control-thread commit of any RT-stashed MIDI-learn capture.
+                // Persistence happens here, never on the audio thread.
+                shared_state.midi_learn.commit_pending_capture();
             }
             RenderControlEvent::MappedParamChange { param_key, value } => {
                 let next_params = pending_params.get_or_insert_with(|| {
                     shared_state.synth.synth_params.load_full().as_ref().clone()
                 });
                 let _ = set_parameter_value_by_key(next_params, param_key, value);
+                // Derive frontend UI patches from the coherent post-change
+                // params. The webview uses a computed `line2DetuneOctave`
+                // virtual key, not the raw `line2.octave` value, so both
+                // `line1Octave` and `line2Octave` produce derived patches.
+                // Computed here (control thread) instead of pushing from RT.
+                match param_key {
+                    "line1Octave" => {
+                        let line1_oct = next_params.line1.octave;
+                        let line2_oct = next_params.line2.octave;
+                        let _ = shared_state.ui.ui_param_change_queue.push(
+                            NativeUiParamChange::Scalar {
+                                key: NativeUiParamKey::Static("lineOctave"),
+                                value: line1_oct,
+                            },
+                        );
+                        let _ = shared_state.ui.ui_param_change_queue.push(
+                            NativeUiParamChange::Scalar {
+                                key: NativeUiParamKey::Static("line2DetuneOctave"),
+                                value: line2_oct - line1_oct,
+                            },
+                        );
+                    }
+                    "line2Octave" => {
+                        let line1_oct = next_params.line1.octave;
+                        let line2_oct = next_params.line2.octave;
+                        let _ = shared_state.ui.ui_param_change_queue.push(
+                            NativeUiParamChange::Scalar {
+                                key: NativeUiParamKey::Static("line2DetuneOctave"),
+                                value: line2_oct - line1_oct,
+                            },
+                        );
+                    }
+                    _ => {
+                        let _ = shared_state.ui.ui_param_change_queue.push(
+                            NativeUiParamChange::Scalar {
+                                key: NativeUiParamKey::Static(param_key),
+                                value,
+                            },
+                        );
+                    }
+                }
             }
             RenderControlEvent::ProgramChangeRequest { program } => {
                 publish_pending_mapped_params(ctx, shared_state, params, &mut pending_params);
@@ -193,6 +241,14 @@ fn publish_synth_params_from_control_thread(
         .synth
         .synth_params_version
         .fetch_add(1, Ordering::Release);
+
+    // NOTE: do not advance `cached_synth_params_version` here. That field
+    // tracks the version *consumed* by the audio processor via
+    // `copy_params_for_realtime`. Bumping `synth_params_version` from the
+    // control thread is correct — audio will observe the new version on the
+    // next block, copy it successfully, and advance the consumed version.
+    // Only `reset()`/`apply_preset_state()` may seed the consumed version
+    // because they initialise the processor directly.
 
     if mark_dirty && let Ok(mut session) = shared_state.presets.session.lock() {
         session.is_dirty = true;
@@ -243,130 +299,6 @@ impl CzPlugin {
         }
     }
 
-    fn enqueue_static_ui_scalar(&self, key: &'static str, value: f32) {
-        let _ = self
-            .shared_state
-            .ui
-            .ui_param_change_queue
-            .push(NativeUiParamChange::Scalar {
-                key: NativeUiParamKey::Static(key),
-                value,
-            });
-    }
-
-    fn enqueue_daw_ui_param_changes(&self, id: u32, params: &SynthParams) {
-        if id == CzPluginParamsParamId::Line1Octave as u32 {
-            self.enqueue_static_ui_scalar("lineOctave", params.line1.octave);
-            self.enqueue_static_ui_scalar(
-                "line2DetuneOctave",
-                params.line2.octave - params.line1.octave,
-            );
-            return;
-        }
-        if id == CzPluginParamsParamId::Line2Octave as u32 {
-            self.enqueue_static_ui_scalar(
-                "line2DetuneOctave",
-                params.line2.octave - params.line1.octave,
-            );
-            return;
-        }
-        let (Some(key), Some(value)) = (daw_param_key_by_id(id), read_daw_param_by_id(params, id))
-        else {
-            return;
-        };
-        self.enqueue_static_ui_scalar(key, value);
-    }
-
-    pub(crate) fn apply_rt_param_change(&mut self, id: u32, value: f64, update_processor: bool) {
-        let mut next_params = (*self.shared_state.synth.synth_params.load_full()).clone();
-        if !write_daw_param_by_id(&mut next_params, id, value) {
-            return;
-        }
-
-        let rt_params = Arc::new(build_rt_synth_params(&next_params));
-        self.shared_state
-            .synth
-            .synth_params
-            .store(Arc::new(next_params));
-        self.shared_state
-            .synth
-            .rt_synth_params
-            .store(Arc::clone(&rt_params));
-        self.audio.cached_rt_synth_params = Arc::clone(&rt_params);
-        self.audio.cached_synth_params_version = self
-            .shared_state
-            .synth
-            .synth_params_version
-            .fetch_add(1, Ordering::Release)
-            + 1;
-        self.audio.daw_params_dirty = false;
-        if let Ok(mut session) = self.shared_state.presets.session.lock() {
-            session.is_dirty = true;
-        }
-
-        if update_processor && let Some(proc) = self.audio.processor.as_mut() {
-            proc.set_shared_params(&rt_params);
-        }
-    }
-
-    pub(crate) fn apply_midi_mapping(
-        &mut self,
-        channel: u8,
-        cc: u8,
-        value: u8,
-    ) -> Vec<AppliedMidiParamChange> {
-        let bindings = self.shared_state.midi_learn.bindings_snapshot();
-
-        if bindings.is_empty() {
-            return Vec::new();
-        }
-        let mut synth_params = (*self.shared_state.synth.synth_params.load_full()).clone();
-        let normalized = f32::from(value) / 127.0;
-        let mut changes = Vec::with_capacity(bindings.len());
-        for binding in bindings.iter() {
-            if let Some(change) = apply_midi_mapping_binding(
-                &mut synth_params,
-                &binding.param_key,
-                binding.channel,
-                binding.cc,
-                channel,
-                cc,
-                normalized,
-            ) {
-                changes.push(change);
-            }
-        }
-
-        if changes.is_empty() {
-            return Vec::new();
-        }
-
-        let rt_params = Arc::new(build_rt_synth_params(&synth_params));
-        sync_all_daw_params_from_synth(&self.params, &synth_params);
-        self.shared_state
-            .synth
-            .synth_params
-            .store(Arc::new(synth_params));
-        self.shared_state
-            .synth
-            .rt_synth_params
-            .store(Arc::clone(&rt_params));
-        self.audio.cached_rt_synth_params = Arc::clone(&rt_params);
-        self.audio.cached_synth_params_version = self
-            .shared_state
-            .synth
-            .synth_params_version
-            .fetch_add(1, Ordering::Release)
-            + 1;
-        self.audio.daw_params_dirty = false;
-
-        if let Some(proc) = self.audio.processor.as_mut() {
-            proc.set_shared_params(&rt_params);
-        }
-
-        changes
-    }
-
     pub(crate) fn tracked_param_changes(
         events: &EventList,
     ) -> [bool; Self::TRACKED_PARAM_ID_CAPACITY] {
@@ -395,99 +327,144 @@ impl CzPlugin {
 
     pub(crate) fn sync_runtime_params_from_host(&mut self, events: &EventList) {
         let tracked_param_changes = Self::tracked_param_changes(events);
-        let has_param_change_events = tracked_param_changes.iter().any(|changed| *changed);
         let params_version = self
             .shared_state
             .synth
             .synth_params_version
             .load(Ordering::Acquire);
-        let mut host_param_changes = [false; Self::TRACKED_PARAM_ID_CAPACITY];
-        if params_version == self.audio.cached_synth_params_version {
-            for (id, changed) in host_param_changes.iter_mut().enumerate() {
-                if tracked_param_changes[id] {
+
+        let Some(proc) = self.audio.processor.as_mut() else {
+            return;
+        };
+
+        // If shared state version advanced (e.g. after control-thread publish),
+        // copy full params from the ArcSwap Guard into processor (RT-safe:
+        // Guard is non-allocating, copy_params_for_realtime preallocated).
+        let cached_version = self.audio.cached_synth_params_version;
+        let mut snapshot_copied = false;
+        if params_version != cached_version {
+            let guard = self.shared_state.synth.rt_synth_params.load();
+            let copied = proc.copy_params_for_realtime(&guard);
+            if !copied {
+                self.shared_state
+                    .ui
+                    .render_control_diagnostics
+                    .parameter_snapshot_rejections
+                    .fetch_add(1, Ordering::Relaxed);
+                // Trip debug assertion AFTER bumping the rejection counter but
+                // BEFORE advancing cached_synth_params_version, so the snapshot
+                // remains pending and is retried on the next block.
+                debug_assert!(false, "realtime snapshot exceeded preallocated storage");
+            } else {
+                snapshot_copied = true;
+                // Only now has audio consumed this version: the processor has
+                // successfully copied the snapshot into its preallocated storage.
+                self.audio.cached_synth_params_version = params_version;
+            }
+        }
+
+        // Detect DAW drift: params whose DAW-side value differs from the
+        // processor's current params (not already covered by ParamChange events).
+        // Apply directly to processor and enqueue MappedParamChange for the
+        // control thread to mirror to shared state.
+        //
+        // Skipped immediately after a snapshot copy — the snapshot is the
+        // authoritative source and drift detection would overwrite it with
+        // stale DAW values.
+        //
+        // Note: we access `self.shared_state` directly (not via `self.enqueue_*`)
+        // because `proc` holds `&mut self.audio.processor`; disjoint-field
+        // borrows are allowed by the borrow checker.
+        if !snapshot_copied {
+            for (id, changed) in tracked_param_changes.iter().enumerate() {
+                if *changed {
                     continue;
                 }
                 let param_id = id as u32;
                 let Some(current) = read_current_daw_param_by_id(&self.params, param_id) else {
                     continue;
                 };
-                let Some(cached) =
-                    read_daw_param_by_id(&self.audio.cached_rt_synth_params, param_id)
-                else {
+                let Some(cached) = read_daw_param_by_id(&proc.params, param_id) else {
                     continue;
                 };
-                *changed = (current - cached).abs() > 0.000_001;
-            }
-        }
-        let host_params_changed = host_param_changes.iter().any(|changed| *changed);
-
-        let previous_rt = (*self.audio.cached_rt_synth_params).clone();
-        let merged = if params_version != self.audio.cached_synth_params_version {
-            let mut params = (*self.shared_state.synth.rt_synth_params.load_full()).clone();
-            apply_daw_params(&mut params, &self.params);
-            params
-        } else {
-            let mut params = (*self.audio.cached_rt_synth_params).clone();
-            apply_daw_params(&mut params, &self.params);
-            params
-        };
-
-        let mut merged = merged;
-        if has_param_change_events {
-            for (id, changed) in tracked_param_changes.iter().enumerate() {
-                if !*changed {
+                if (current - cached).abs() <= 0.000_001 {
                     continue;
                 }
-                let Some(prev_value) = read_daw_param_by_id(&previous_rt, id as u32) else {
+                let Some(param_key) = daw_param_key_by_id(param_id) else {
                     continue;
                 };
-                let _ = write_daw_param_by_id(&mut merged, id as u32, f64::from(prev_value));
+                proc.apply_parameter_change_realtime(param_key, current);
+                // Enqueue MappedParamChange so the control thread can mirror
+                // the change to shared state, derive frontend UI patches from
+                // coherent post-change params, and bump synth_params_version.
+                if self
+                    .shared_state
+                    .ui
+                    .render_control_queue
+                    .push(RenderControlEvent::MappedParamChange {
+                        param_key,
+                        value: current,
+                    })
+                    .is_err()
+                {
+                    self.shared_state
+                        .ui
+                        .render_control_diagnostics
+                        .queue_overflows
+                        .fetch_add(1, Ordering::Relaxed);
+                }
             }
         }
 
-        if host_params_changed {
-            self.shared_state
-                .synth
-                .synth_params_version
-                .fetch_add(1, Ordering::Release);
-        }
-        for (id, changed) in host_param_changes.iter().enumerate() {
-            if !*changed {
-                continue;
-            }
-            self.enqueue_daw_ui_param_changes(id as u32, &merged);
-        }
-
-        let rt_merged = Arc::new(merged);
-        self.audio.cached_rt_synth_params = rt_merged.clone();
-
-        let params_changed = params_version != self.audio.cached_synth_params_version
-            || self.audio.daw_params_dirty
-            || host_params_changed;
-        if params_changed {
-            if let Some(ref mut proc) = self.audio.processor {
-                proc.set_shared_params(&rt_merged);
-            }
-            self.audio.cached_synth_params_version = self
-                .shared_state
-                .synth
-                .synth_params_version
-                .load(Ordering::Acquire);
-        }
-
-        self.audio.daw_params_dirty = false;
-
+        // Handle preset reset (atomic bool check via swap — RT-safe).
         if self
             .shared_state
             .preset_reset_pending
             .swap(false, Ordering::Acquire)
-            && let Some(ref mut proc) = self.audio.processor
         {
             proc.reset_audio_state();
         }
     }
 
     pub(crate) fn handle_cc_side_effects(&mut self, channel: u8, cc: u8, value: u8) {
+        // Apply MIDI mapping to processor params (RT-safe path).
+        // Uses bindings() Guard (no alloc) and apply_midi_mapping_binding_rt (no alloc).
+        if let Some(proc) = self.audio.processor.as_mut() {
+            let bindings = self.shared_state.midi_learn.bindings();
+            if !bindings.is_empty() {
+                let normalized = f32::from(value) / 127.0;
+                let mut any_applied = false;
+                for binding in bindings.iter() {
+                    if apply_midi_mapping_binding_rt(
+                        &mut proc.params,
+                        &binding.param_key,
+                        binding.channel,
+                        binding.cc,
+                        channel,
+                        cc,
+                        normalized,
+                    ) {
+                        any_applied = true;
+                    }
+                }
+                if any_applied {
+                    proc.refresh_parameter_caches();
+                } else {
+                    self.shared_state
+                        .ui
+                        .render_control_diagnostics
+                        .midi_mapping_misses
+                        .fetch_add(1, Ordering::Relaxed);
+                }
+            }
+        }
+        // RT-safe: stash the CC source for MIDI-learn capture. The control
+        // thread commits it to in-memory bindings + global settings.
+        self.shared_state
+            .midi_learn
+            .capture_pending_binding_rt(channel, cc);
+        // Still enqueue ObservedCc for control-side drain (shared state mirror,
+        // UI AlgoControl change publication, MIDI learn commit/persistence).
         self.enqueue_render_control_event(RenderControlEvent::ObservedCc { channel, cc, value });
     }
 
@@ -524,9 +501,18 @@ impl CzPlugin {
                 }
                 self.audio.daw_params_dirty = true;
                 if let Some(param_key) = daw_param_key_by_id(*id) {
+                    // Apply to processor now so audio is effective immediately.
+                    let value_f32 = *value as f32;
+                    if let Some(proc) = self.audio.processor.as_mut() {
+                        proc.apply_parameter_change_realtime(param_key, value_f32);
+                    }
+                    // Enqueue MappedParamChange so the control thread can
+                    // mirror to shared state, derive UI patches (including the
+                    // octave derivation) from coherent post-change params, and
+                    // bump synth_params_version.
                     self.enqueue_render_control_event(RenderControlEvent::MappedParamChange {
                         param_key,
-                        value: *value as f32,
+                        value: value_f32,
                     });
                 }
             }
@@ -665,7 +651,19 @@ impl CzPlugin {
 
     #[cfg(test)]
     pub(crate) fn handle_host_event(&mut self, body: &EventBody) {
+        // Mirrors `process_rt` ordering only. Production path owns:
+        //   1. sync_runtime_params_from_host(&EventList::default())
+        //   2. handle_host_event_side_effects(0, body)
+        //   3. push timed engine event if applicable
+        //   4. processor.process_block(...)
+        //
+        // PER PR #316 FIX: No test-only capture_pending_binding() call, no
+        // conditional drain_render_control_events(), no cached_rt_synth_params
+        // refresh. Tests that need control-side publication must call
+        // drain_render_control_events() explicitly so the RT boundary is
+        // visible (see `midi_mapping_applies_*` and `daw_*` tests).
         self.audio.block_input_events.clear();
+        self.sync_runtime_params_from_host(&EventList::default());
         self.handle_host_event_side_effects(0, body);
         if let Some(engine_event) = Self::host_event_to_engine_event(body) {
             self.push_block_input_event(CosmoTimedInputEvent {

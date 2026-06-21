@@ -196,6 +196,32 @@ fn apply_virtual_algo_control_midi_mapping(
     })
 }
 
+/// RT-safe (non-allocating) variant: applies algo control mapping directly
+/// without building `AppliedMidiParamChange`. Returns `true` if applied.
+fn apply_virtual_algo_control_rt(
+    params: &mut SynthParams,
+    key: &str,
+    normalized_value: f32,
+) -> bool {
+    let Some(slot) = parse_algo_control_midi_slot(key) else {
+        return false;
+    };
+    let Some(target) = resolve_algo_control_slot(params, slot) else {
+        return false;
+    };
+    let mapped = target.min + normalized_value.clamp(0.0, 1.0) * (target.max - target.min);
+    let line: &mut LineParams = match target.line_index {
+        0 => &mut params.line1,
+        1 => &mut params.line2,
+        _ => return false,
+    };
+    let controls = match target.section {
+        AlgoControlSection::A => &mut line.algo_controls_a,
+        AlgoControlSection::B => &mut line.algo_controls_b,
+    };
+    upsert_algo_control_value(controls, target.control_id, mapped)
+}
+
 const AUTOMATABLE_PARAMS: &[AutomatableParamSpec] = &[
     AutomatableParamSpec {
         key: "volume",
@@ -613,6 +639,34 @@ pub fn apply_midi_mapping_binding(
     } else {
         None
     }
+}
+
+/// RT-safe (non-allocating) variant: applies a single MIDI mapping binding
+/// directly without building `AppliedMidiParamChange`. Returns `true` if applied.
+pub fn apply_midi_mapping_binding_rt(
+    params: &mut SynthParams,
+    param_key: &str,
+    binding_channel: i32,
+    binding_cc: i32,
+    channel: u8,
+    cc: u8,
+    normalized_value: f32,
+) -> bool {
+    if binding_cc != i32::from(cc)
+        || (binding_channel != -1 && binding_channel != i32::from(channel))
+    {
+        return false;
+    }
+    if apply_virtual_algo_control_rt(params, param_key, normalized_value) {
+        return true;
+    }
+    let Some((min, max)) = parameter_range_for_key(param_key) else {
+        return false;
+    };
+    let mapped = min + normalized_value.clamp(0.0, 1.0) * (max - min);
+    let step = parameter_step_for_key(param_key);
+    let quantized = quantize_midi_mapped_value(mapped, step, min);
+    set_parameter_value_by_key(params, param_key, quantized)
 }
 
 #[cfg(test)]

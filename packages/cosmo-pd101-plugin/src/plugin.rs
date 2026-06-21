@@ -111,6 +111,7 @@ fn handle_ipc_invoke(
         ),
         voice_limit: std::sync::atomic::AtomicU8::new(crate::global_settings::DEFAULT_VOICE_LIMIT),
         preset_reset_pending: std::sync::atomic::AtomicBool::new(false),
+        pending_program_change: std::sync::atomic::AtomicU8::new(0xFF),
     });
     crate::ipc::IpcContext::new(shared_state, params.clone())
         .invoke_envelope(&cosmo_pd101_bridge_types::PluginIpcEnvelope { id: 0, request })?
@@ -195,11 +196,16 @@ impl CzPlugin {
             .synth
             .synth_params_version
             .fetch_add(1, Ordering::Release);
-        self.audio.cached_synth_params_version = self
+        let version = self
             .shared_state
             .synth
             .synth_params_version
             .load(Ordering::Acquire);
+        // Preset application seeds the processor directly via
+        // `copy_params_for_realtime` below, so the consumed version is
+        // initialized here (Fix 1: only audio thread updates this field
+        // during normal operation).
+        self.audio.cached_synth_params_version = version;
         self.audio.daw_params_dirty = false;
 
         if let Ok(mut session) = self.shared_state.presets.session.lock() {
@@ -310,11 +316,12 @@ impl PluginLogic for CzPlugin {
             .rt_synth_params
             .store(Arc::clone(&rt_params));
         self.audio.cached_rt_synth_params = rt_params;
-        self.audio.cached_synth_params_version = self
+        let version = self
             .shared_state
             .synth
             .synth_params_version
             .load(Ordering::Acquire);
+        self.audio.cached_synth_params_version = version;
         processor.set_voice_limit(self.audio.voice_limit);
         self.audio.processor = Some(processor);
         self.audio.mono_output.resize(max_block_size, 0.0);

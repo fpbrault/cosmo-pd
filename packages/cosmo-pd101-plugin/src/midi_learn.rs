@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
 
 use arc_swap::ArcSwap;
@@ -14,6 +14,11 @@ struct SharedMidiBindings {
     snapshot: ArcSwap<Vec<MidiLearnBinding>>,
     version: AtomicU32,
 }
+
+/// Sentinel value packed into `pending_capture` meaning "no pending capture".
+/// A valid CC is 0-127 (7 bits), so channel (0-127) and cc (0-127) fit in
+/// 14 bits; `u32::MAX`/`u16::MAX`+1 is unreachable in normal flow.
+const NO_PENDING_CAPTURE: u32 = u32::MAX;
 
 impl SharedMidiBindings {
     fn new(bindings: Vec<MidiLearnBinding>) -> Self {
@@ -37,6 +42,10 @@ impl SharedMidiBindings {
 
     fn clear(&self) -> bool {
         self.mutate(Vec::clear)
+    }
+
+    fn bindings(&self) -> arc_swap::Guard<Arc<Vec<MidiLearnBinding>>> {
+        self.snapshot.load()
     }
 
     fn mutate(&self, update: impl FnOnce(&mut Vec<MidiLearnBinding>)) -> bool {
@@ -67,6 +76,20 @@ fn global_midi_bindings(initial: Vec<MidiLearnBinding>) -> Arc<SharedMidiBinding
 pub struct MidiLearnService {
     editor_state: SharedMidiMappings,
     bindings: Arc<SharedMidiBindings>,
+    /// RT-safe pending MIDI-learn capture slot. Written by the audio thread in
+    /// `capture_pending_binding_rt` (atomics only — no alloc, no lock, no
+    /// persistence). Drained by the control thread (snapshots, drain, or
+    /// editor idle) via `commit_pending_capture`, which performs the actual
+    /// in-memory `replace_binding` and global-settings persistence.
+    ///
+    /// Semantics: `u32::MAX` (NO_PENDING_CAPTURE) means no pending capture.
+    /// Otherwise the packed value is `(channel << 7) | cc` (both ≤ 127).
+    pending_capture: Arc<AtomicU32>,
+    /// Handshake between audio-thread write and control-thread commit. Set to
+    /// `true` by `capture_pending_binding_rt` when learn mode is active and a
+    /// capture was stashed. Cleared (back to `false`) by
+    /// `commit_pending_capture` after draining the slot.
+    pending_capture_present: Arc<AtomicBool>,
 }
 
 impl MidiLearnService {
@@ -75,10 +98,18 @@ impl MidiLearnService {
         Self {
             editor_state: Arc::new(Mutex::new(state)),
             bindings,
+            pending_capture: Arc::new(AtomicU32::new(NO_PENDING_CAPTURE)),
+            pending_capture_present: Arc::new(AtomicBool::new(false)),
         }
     }
 
     pub fn snapshot(&self) -> MidiLearnState {
+        // Commit any RT-stashed pending capture before returning the snapshot.
+        // This guarantees editor/editor-less paths that read `snapshot()` see a
+        // capture performed by the audio thread without needing an explicit
+        // drain of `render_control_queue`. Persistence happens on the control
+        // thread (here), never on RT.
+        self.commit_pending_capture();
         let mut state = self
             .editor_state
             .lock()
@@ -93,6 +124,12 @@ impl MidiLearnService {
 
     pub fn bindings_snapshot(&self) -> Arc<Vec<MidiLearnBinding>> {
         self.bindings.snapshot.load_full()
+    }
+
+    /// RT-safe accessor: returns a non-allocating `Guard` to the current bindings.
+    /// Use instead of `bindings_snapshot()` on the audio thread.
+    pub fn bindings(&self) -> arc_swap::Guard<Arc<Vec<MidiLearnBinding>>> {
+        self.bindings.bindings()
     }
 
     pub fn version(&self) -> u32 {
@@ -136,22 +173,75 @@ impl MidiLearnService {
         }
     }
 
-    pub fn capture_pending_binding(&self, channel: u8, cc: u8) -> bool {
+    /// RT-safe: stash `(channel, cc)` into the pending-capture slot so the
+    /// control thread can commit it later (`snapshot()` or `drain_render_control_events`).
+    ///
+    /// Alloc/lock/persistence-free. Called from `handle_cc_side_effects` on RT.
+    /// No-op when learn mode is off or no pending param key is set. Stashing
+    /// overwrites any older pending capture (last-writer-wins is the intended
+    /// MIDI-learn UX).
+    pub fn capture_pending_binding_rt(&self, channel: u8, cc: u8) {
+        // Cheap atomic check: skip Mutex lock entirely when learn mode is off.
+        // The `editor_state` Mutex is NOT held here on RT — this check is
+        // best-effort and stale reads just mean an extra pending slot write
+        // that `commit_pending_capture` will discard if learn mode flipped off.
+        if !self.pending_capture_present.load(Ordering::Relaxed)
+            && !self.editor_state_try_learn_mode()
+        {
+            return;
+        }
+        let packed = u32::from(channel) << 7 | u32::from(cc);
+        self.pending_capture.store(packed, Ordering::Release);
+        self.pending_capture_present.store(true, Ordering::Release);
+    }
+
+    /// Control thread: drain any RT-stashed pending capture, perform the
+    /// in-memory `replace_binding`, and persist to global settings.
+    /// Returns `Some(binding)` when a binding was captured and committed.
+    ///
+    /// NOT RT-safe — takes the editor Mutex, may allocate the binding String,
+    /// may persist. Called from `snapshot()` and from the ObservedCc handler
+    /// in `drain_render_control_events`.
+    pub fn commit_pending_capture(&self) -> Option<MidiLearnBinding> {
+        if !self.pending_capture_present.swap(false, Ordering::AcqRel) {
+            return None;
+        }
+        let packed = self
+            .pending_capture
+            .swap(NO_PENDING_CAPTURE, Ordering::AcqRel);
+        // Valid packed value is `(channel << 7) | cc` with both ≤ 127.
+        // That keeps the high 18 bits of u32 clear.
+        if packed > u32::from(u16::MAX) {
+            // Stale or corrupt packed value (shouldn't happen). Treat as no-op.
+            return None;
+        }
+        let channel = ((packed >> 7) & 0x7F) as u8;
+        let cc = (packed & 0x7F) as u8;
         let pending = self.editor_state.lock().ok().and_then(|state| {
             state
                 .learn_mode
                 .then(|| state.pending_param_key.clone())
                 .flatten()
         });
-        let Some(param_key) = pending else {
-            return false;
-        };
-        self.replace_binding(MidiLearnBinding {
+        let param_key = pending?;
+        let binding = MidiLearnBinding {
             param_key,
             channel: i32::from(channel),
             cc: i32::from(cc),
-        });
-        true
+        };
+        if self.bindings.replace_binding(binding.clone()) {
+            self.persist();
+        }
+        Some(binding)
+    }
+
+    /// Best-effort non-blocking learn-mode probe for the RT path. Returns
+    /// `false` when the lock is contended or learn mode is off.
+    fn editor_state_try_learn_mode(&self) -> bool {
+        self.editor_state
+            .try_lock()
+            .map(|state| state.learn_mode)
+            .unwrap_or(true)
     }
 
     fn persist(&self) {

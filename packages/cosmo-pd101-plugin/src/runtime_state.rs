@@ -324,6 +324,11 @@ pub struct PluginSharedState {
     /// `processor.reset_audio_state()` *before* applying the new preset params.
     /// Ordering: IPC thread stores (Release), audio thread swaps (Acquire).
     pub preset_reset_pending: AtomicBool,
+    /// Latest pending program change slot (Fix 7). Non-lossy: RT path writes
+    /// latest (overwrites older pending); control drain reads + clears.
+    /// `0xFF` = none pending. Other values are program numbers.
+    /// Ordering: RT thread stores (Release), control thread swaps (AcqRel).
+    pub pending_program_change: AtomicU8,
 }
 
 impl PluginSharedState {
@@ -364,6 +369,7 @@ impl PluginSharedState {
             midi_learn: MidiLearnService::new(midi_learn_state),
             voice_limit: AtomicU8::new(voice_limit),
             preset_reset_pending: AtomicBool::new(false),
+            pending_program_change: AtomicU8::new(0xFF),
         }
     }
 }
