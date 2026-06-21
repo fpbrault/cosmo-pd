@@ -12,6 +12,7 @@ pub mod utils;
 pub use self::input::{CosmoInputEvent, CosmoTimedInputEvent, CosmoTransportState};
 pub use utils::midi_note_to_freq;
 
+use alloc::sync::Arc;
 use arrayvec::ArrayVec;
 use core::array;
 
@@ -20,7 +21,8 @@ use crate::envelope::{EnvelopeTimingCache, normalize_synth_params_envelopes_to_r
 use crate::fx::FxChain;
 use crate::module_presets;
 use crate::params::{
-    DEFAULT_VOICE_LIMIT, FxSlotConfig, FxSlotType, LineParams, MAX_VOICES, SynthParams,
+    DEFAULT_VOICE_LIMIT, FxSlotConfig, FxSlotType, LineParams, MAX_VOICES, RealtimeParameterImpact,
+    SynthParams,
 };
 use crate::render_cache::CompiledSynthParams;
 use crate::simd::{SimdBackend, detect_simd_backend};
@@ -61,7 +63,10 @@ pub struct CosmoProcessor {
     pub random_phase: f32,
     pub random_step: i32,
     pub random_hold: f32,
-    pub params: SynthParams,
+    /// Processor-private parameter storage. This Arc is never published or
+    /// replaced: rendering holds a temporary clone for optimizer-visible
+    /// immutable access, and RT mutation requires the root to be unique.
+    params: Arc<SynthParams>,
     pub sample_rate: f32,
     pub pitch_bend: f32,
     pub mod_wheel: f32,
@@ -108,7 +113,7 @@ impl CosmoProcessor {
             random_phase: 0.0,
             random_step: 0,
             random_hold: random_hold_value(0),
-            params: initial_params,
+            params: Arc::new(initial_params),
             sample_rate,
             pitch_bend: 0.0,
             mod_wheel: 0.0,
@@ -241,7 +246,9 @@ impl CosmoProcessor {
         self.macro4 = params.macro4;
         self.line1_scratch = params.line1;
         self.line2_scratch = params.line2;
-        self.params.clone_from(params);
+        let destination = Arc::get_mut(&mut self.params)
+            .expect("processor parameter storage must be unique outside rendering");
+        destination.clone_from(params);
         self.rebuild_compiled_params();
         self.update_fx();
     }
@@ -260,18 +267,63 @@ impl CosmoProcessor {
             return false;
         }
 
-        self.params.copy_from_preserving_capacity(params);
+        let Some(destination) = Arc::get_mut(&mut self.params) else {
+            return false;
+        };
+        destination.copy_from_preserving_capacity(params);
         self.refresh_parameter_caches();
         true
     }
 
     pub fn apply_parameter_change_realtime(&mut self, param_key: &'static str, value: f32) -> bool {
-        if !crate::params::set_parameter_value_by_key(&mut self.params, param_key, value) {
+        let Some(impact) = Arc::get_mut(&mut self.params).and_then(|params| {
+            crate::params::set_parameter_value_by_key_rt(params, param_key, value)
+        }) else {
             return false;
-        }
+        };
 
-        self.refresh_parameter_caches();
+        self.apply_realtime_parameter_impact(impact);
         true
+    }
+
+    pub fn params(&self) -> &SynthParams {
+        self.params.as_ref()
+    }
+
+    /// Borrow the uniquely owned parameter storage for a bounded RT update.
+    /// Returns `None` if a render snapshot is unexpectedly still alive.
+    pub fn realtime_params_mut(&mut self) -> Option<&mut SynthParams> {
+        Arc::get_mut(&mut self.params)
+    }
+
+    pub fn apply_realtime_parameter_impact(&mut self, impact: RealtimeParameterImpact) {
+        if impact.contains(RealtimeParameterImpact::NORMALIZATION) {
+            self.compiled_params.refresh_normalization(&self.params);
+        }
+        if impact.contains(RealtimeParameterImpact::MACRO1) {
+            self.macro1 = self.params.macro1;
+        }
+        if impact.contains(RealtimeParameterImpact::MACRO2) {
+            self.macro2 = self.params.macro2;
+        }
+        if impact.contains(RealtimeParameterImpact::MACRO3) {
+            self.macro3 = self.params.macro3;
+        }
+        if impact.contains(RealtimeParameterImpact::MACRO4) {
+            self.macro4 = self.params.macro4;
+        }
+        if impact.contains(RealtimeParameterImpact::LINE1_PLAN) {
+            self.compiled_params.refresh_line1(&self.params);
+        }
+        if impact.contains(RealtimeParameterImpact::LINE2_PLAN) {
+            self.compiled_params.refresh_line2(&self.params);
+        }
+        if impact.contains(RealtimeParameterImpact::MOD_MATRIX) {
+            self.compiled_params.refresh_mod_matrix(&self.params);
+        }
+        if impact.contains(RealtimeParameterImpact::FX) {
+            self.update_fx();
+        }
     }
 
     pub fn refresh_parameter_caches(&mut self) {
@@ -288,7 +340,8 @@ impl CosmoProcessor {
     /// Mutable parameter access for non-real-time mutation paths and tests.
     pub fn params_mut(&mut self) -> &mut SynthParams {
         self.compiled_params_dirty = true;
-        &mut self.params
+        Arc::get_mut(&mut self.params)
+            .expect("processor parameter storage must be unique outside rendering")
     }
 
     fn debug_assert_note_storage_bounds(&self) {
@@ -492,6 +545,14 @@ impl CosmoProcessor {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn processor_parameter_storage_is_unique_after_rendering() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.process(&mut [0.0; 8]);
+        assert_eq!(Arc::strong_count(&proc.params), 1);
+        assert!(proc.realtime_params_mut().is_some());
+    }
     use crate::envelope_map::{EnvelopeKind, human_level_to_raw, human_rate_to_raw};
     use crate::params::{
         Algo, AlgoControlId, AlgoControlValueV1, DelayParams, EnvStep, FxSlotConfig, LineSelect,

@@ -67,6 +67,34 @@ struct ResolvedAlgoControlTarget {
     max: f32,
 }
 
+/// Derived processor state that must be refreshed after an RT parameter write.
+///
+/// The flags are intentionally engine-owned so every RT caller uses the same
+/// cache dependency map instead of rebuilding all derived state.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct RealtimeParameterImpact(u16);
+
+impl RealtimeParameterImpact {
+    pub const NONE: Self = Self(0);
+    pub const NORMALIZATION: Self = Self(1 << 0);
+    pub const MACRO1: Self = Self(1 << 1);
+    pub const MACRO2: Self = Self(1 << 2);
+    pub const MACRO3: Self = Self(1 << 3);
+    pub const MACRO4: Self = Self(1 << 4);
+    pub const LINE1_PLAN: Self = Self(1 << 5);
+    pub const LINE2_PLAN: Self = Self(1 << 6);
+    pub const FX: Self = Self(1 << 7);
+    pub const MOD_MATRIX: Self = Self(1 << 8);
+
+    pub const fn contains(self, other: Self) -> bool {
+        self.0 & other.0 != 0
+    }
+
+    pub const fn union(self, other: Self) -> Self {
+        Self(self.0 | other.0)
+    }
+}
+
 fn parse_algo_control_midi_slot(key: &str) -> Option<AlgoControlMidiSlot> {
     let suffix = key.strip_prefix("line")?;
     let (line, slot) = suffix.split_once("AlgoControl")?;
@@ -202,24 +230,27 @@ fn apply_virtual_algo_control_rt(
     params: &mut SynthParams,
     key: &str,
     normalized_value: f32,
-) -> bool {
-    let Some(slot) = parse_algo_control_midi_slot(key) else {
-        return false;
-    };
-    let Some(target) = resolve_algo_control_slot(params, slot) else {
-        return false;
-    };
+) -> Option<RealtimeParameterImpact> {
+    let slot = parse_algo_control_midi_slot(key)?;
+    let target = resolve_algo_control_slot(params, slot)?;
     let mapped = target.min + normalized_value.clamp(0.0, 1.0) * (target.max - target.min);
     let line: &mut LineParams = match target.line_index {
         0 => &mut params.line1,
         1 => &mut params.line2,
-        _ => return false,
+        _ => return None,
     };
     let controls = match target.section {
         AlgoControlSection::A => &mut line.algo_controls_a,
         AlgoControlSection::B => &mut line.algo_controls_b,
     };
-    upsert_algo_control_value(controls, target.control_id, mapped)
+    if !upsert_algo_control_value(controls, target.control_id, mapped) {
+        return None;
+    }
+    Some(if target.line_index == 0 {
+        RealtimeParameterImpact::LINE1_PLAN
+    } else {
+        RealtimeParameterImpact::LINE2_PLAN
+    })
 }
 
 const AUTOMATABLE_PARAMS: &[AutomatableParamSpec] = &[
@@ -478,6 +509,25 @@ pub fn set_parameter_value_by_key(params: &mut SynthParams, key: &str, value: f3
     true
 }
 
+/// RT setter that also reports the minimal derived-state refresh required.
+pub fn set_parameter_value_by_key_rt(
+    params: &mut SynthParams,
+    key: &str,
+    value: f32,
+) -> Option<RealtimeParameterImpact> {
+    if !set_parameter_value_by_key(params, key, value) {
+        return None;
+    }
+    Some(match key {
+        "volume" => RealtimeParameterImpact::NORMALIZATION,
+        "macro1" => RealtimeParameterImpact::MACRO1,
+        "macro2" => RealtimeParameterImpact::MACRO2,
+        "macro3" => RealtimeParameterImpact::MACRO3,
+        "macro4" => RealtimeParameterImpact::MACRO4,
+        _ => RealtimeParameterImpact::NONE,
+    })
+}
+
 /// Returns the canonical static key accepted by realtime parameter events.
 pub fn canonical_parameter_key(key: &str) -> Option<&'static str> {
     match key {
@@ -651,27 +701,63 @@ pub fn apply_midi_mapping_binding_rt(
     channel: u8,
     cc: u8,
     normalized_value: f32,
-) -> bool {
+) -> Option<RealtimeParameterImpact> {
     if binding_cc != i32::from(cc)
         || (binding_channel != -1 && binding_channel != i32::from(channel))
     {
-        return false;
+        return None;
     }
-    if apply_virtual_algo_control_rt(params, param_key, normalized_value) {
-        return true;
+    if let Some(impact) = apply_virtual_algo_control_rt(params, param_key, normalized_value) {
+        return Some(impact);
     }
-    let Some((min, max)) = parameter_range_for_key(param_key) else {
-        return false;
-    };
+    let (min, max) = parameter_range_for_key(param_key)?;
     let mapped = min + normalized_value.clamp(0.0, 1.0) * (max - min);
     let step = parameter_step_for_key(param_key);
     let quantized = quantize_midi_mapped_value(mapped, step, min);
-    set_parameter_value_by_key(params, param_key, quantized)
+    set_parameter_value_by_key_rt(params, param_key, quantized)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn realtime_scalar_writes_report_minimal_cache_impacts() {
+        let mut params = SynthParams::default();
+
+        assert_eq!(
+            set_parameter_value_by_key_rt(&mut params, "volume", 0.5),
+            Some(RealtimeParameterImpact::NORMALIZATION)
+        );
+        assert_eq!(
+            set_parameter_value_by_key_rt(&mut params, "macro3", 0.75),
+            Some(RealtimeParameterImpact::MACRO3)
+        );
+        assert_eq!(
+            set_parameter_value_by_key_rt(&mut params, "lfoRate", 4.0),
+            Some(RealtimeParameterImpact::NONE)
+        );
+        assert_eq!(
+            set_parameter_value_by_key_rt(&mut params, "line1Level", 0.25),
+            Some(RealtimeParameterImpact::NONE)
+        );
+    }
+
+    #[test]
+    fn realtime_virtual_algo_control_reports_affected_line_plan() {
+        let mut params = SynthParams::default();
+        params.line1.algo = super::super::Algo::Bend;
+        params.line2.algo = super::super::Algo::Bend;
+
+        assert_eq!(
+            apply_midi_mapping_binding_rt(&mut params, "line1AlgoControl1", 0, 74, 0, 74, 1.0,),
+            Some(RealtimeParameterImpact::LINE1_PLAN)
+        );
+        assert_eq!(
+            apply_midi_mapping_binding_rt(&mut params, "line2AlgoControl1", 0, 74, 0, 74, 1.0,),
+            Some(RealtimeParameterImpact::LINE2_PLAN)
+        );
+    }
 
     #[test]
     fn midi_mapping_applies_matching_binding() {

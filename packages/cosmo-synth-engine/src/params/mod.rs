@@ -28,9 +28,10 @@ pub use line::{
 };
 pub use mapping::{
     AppliedMidiAlgoControlSection, AppliedMidiParamChange, AppliedMidiParamTarget,
-    MidiMappingBinding, apply_midi_mapping, apply_midi_mapping_binding,
+    MidiMappingBinding, RealtimeParameterImpact, apply_midi_mapping, apply_midi_mapping_binding,
     apply_midi_mapping_binding_rt, canonical_parameter_key, is_algo_control_slot_key,
     midi_mapping_param_ranges_v1, parameter_range_for_key, set_parameter_value_by_key,
+    set_parameter_value_by_key_rt,
 };
 pub use modulation::{
     ENV_STEP_DEST_FIRST, ENV_STEP_DEST_LAST, ModDestination, ModMatrix, ModRoute, ModSource,

@@ -83,9 +83,7 @@ fn handle_ipc_invoke(
             midi_cc_queue: Arc::new(ArrayQueue::new(
                 crate::runtime_state::MIDI_CC_QUEUE_CAPACITY,
             )),
-            render_control_queue: Arc::new(ArrayQueue::new(
-                crate::runtime_state::RENDER_CONTROL_QUEUE_CAPACITY,
-            )),
+            render_control_mailbox: Arc::new(crate::runtime_state::RenderControlMailbox::default()),
             render_control_diagnostics: Arc::new(
                 crate::runtime_state::RenderControlDiagnostics::default(),
             ),
@@ -131,7 +129,8 @@ pub struct CzPlugin {
 }
 
 impl CzPlugin {
-    pub(crate) const TRACKED_PARAM_ID_CAPACITY: usize = 64;
+    pub(crate) const TRACKED_PARAM_ID_CAPACITY: usize =
+        crate::runtime_state::DAW_PARAM_MAILBOX_CAPACITY;
 
     fn new(params: Arc<CzPluginParams>) -> Self {
         init_panic_hook();

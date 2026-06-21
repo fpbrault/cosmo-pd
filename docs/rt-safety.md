@@ -27,6 +27,19 @@ snapshot copy (`factory_preset_params()` returns a `&'static SynthParams`
 preloaded on the control thread via `preload_factory_presets()`). UI/session
 mirroring remains eventually consistent until a control drain runs.
 
+Dense host automation and CC traffic is mirrored through fixed atomic
+mailboxes. Each DAW parameter and MIDI channel/CC source retains only its
+latest value until the next control drain, so repeated writes cannot overflow
+or allocate on the audio thread. `coalesced_param_updates` and
+`coalesced_cc_updates` count overwritten intermediate values; downstream UI
+queue pressure is tracked separately by `ui_queue_overflows`.
+
+The processor retains one private, preallocated `Arc<SynthParams>` root.
+Rendering temporarily clones that root to give the optimizer an immutable
+snapshot distinct from mutable DSP state. RT writes use `Arc::get_mut` only
+after the temporary render clone has been dropped, and the root is never
+published or replaced, so those writes cannot clone or free parameter storage.
+
 The existing telemetry writers use nonblocking `try_write()` and skip the
 update on contention. Blocking `lock()` or `write()` calls remain forbidden.
 

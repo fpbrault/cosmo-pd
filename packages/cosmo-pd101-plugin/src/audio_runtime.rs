@@ -4,8 +4,9 @@ use std::sync::atomic::Ordering;
 use arrayvec::ArrayVec;
 use cosmo_pd101_bridge_types::UiAlgoControlSection;
 use cosmo_synth_engine::params::{
-    AppliedMidiAlgoControlSection, AppliedMidiParamChange, AppliedMidiParamTarget, SynthParams,
-    apply_midi_mapping_binding, apply_midi_mapping_binding_rt, set_parameter_value_by_key,
+    AppliedMidiAlgoControlSection, AppliedMidiParamChange, AppliedMidiParamTarget,
+    RealtimeParameterImpact, SynthParams, apply_midi_mapping_binding,
+    apply_midi_mapping_binding_rt, set_parameter_value_by_key,
 };
 use cosmo_synth_engine::processor::{
     CosmoInputEvent, CosmoProcessor, CosmoTimedInputEvent, CosmoTransportState,
@@ -20,9 +21,7 @@ use crate::params::{
 };
 use crate::plugin::{CzPlugin, build_rt_synth_params};
 use crate::rt_safety::ControlContext;
-use crate::runtime_state::{
-    NativeUiParamChange, NativeUiParamKey, PluginSharedState, RenderControlEvent,
-};
+use crate::runtime_state::{NativeUiParamChange, NativeUiParamKey, PluginSharedState};
 
 pub(crate) const MAX_UI_INPUT_EVENTS_PER_BLOCK: usize = 64;
 pub(crate) const MAX_BLOCK_INPUT_EVENTS: usize = 1024;
@@ -97,140 +96,162 @@ pub(crate) fn drain_render_control_events(
         );
     }
 
-    while let Some(event) = shared_state.ui.render_control_queue.pop() {
-        match event {
-            RenderControlEvent::ObservedCc { channel, cc, value } => {
-                if shared_state
+    let mut param_dirty = shared_state.ui.render_control_mailbox.take_param_dirty();
+    while param_dirty != 0 {
+        let index = param_dirty.trailing_zeros() as usize;
+        param_dirty &= param_dirty - 1;
+        let Some(param_key) = daw_param_key_by_id(index as u32) else {
+            continue;
+        };
+        let value = shared_state.ui.render_control_mailbox.param_value(index);
+        let next_params = pending_params
+            .get_or_insert_with(|| shared_state.synth.synth_params.load_full().as_ref().clone());
+        let _ = set_parameter_value_by_key(next_params, param_key, value);
+        enqueue_mapped_param_ui_changes(shared_state, next_params, param_key, value);
+    }
+
+    let mut bindings = None;
+    let mut observed_cc = false;
+    for word_index in 0..crate::runtime_state::RenderControlMailbox::cc_dirty_word_count() {
+        let mut dirty = shared_state
+            .ui
+            .render_control_mailbox
+            .take_cc_dirty_word(word_index);
+        while dirty != 0 {
+            let bit_index = dirty.trailing_zeros() as usize;
+            dirty &= dirty - 1;
+            let source_index = word_index * u64::BITS as usize + bit_index;
+            let (channel, cc, value) = shared_state
+                .ui
+                .render_control_mailbox
+                .cc_source_value(source_index);
+            observed_cc = true;
+            push_midi_cc_update(shared_state, channel, cc, value);
+
+            let bindings =
+                bindings.get_or_insert_with(|| shared_state.midi_learn.bindings_snapshot());
+            let normalized = f32::from(value) / 127.0;
+            let params_ref = pending_params.get_or_insert_with(|| {
+                shared_state.synth.synth_params.load_full().as_ref().clone()
+            });
+            let mut applied = false;
+            for binding in bindings.iter() {
+                let Some(change) = apply_midi_mapping_binding(
+                    params_ref,
+                    &binding.param_key,
+                    binding.channel,
+                    binding.cc,
+                    channel,
+                    cc,
+                    normalized,
+                ) else {
+                    continue;
+                };
+                applied = true;
+                push_mapped_cc_ui_change(shared_state, change);
+            }
+            if !applied {
+                shared_state
                     .ui
-                    .midi_cc_queue
-                    .push((channel, cc, value))
-                    .is_err()
-                {
-                    shared_state
-                        .ui
-                        .render_control_diagnostics
-                        .queue_overflows
-                        .fetch_add(1, Ordering::Relaxed);
-                }
-
-                let bindings = shared_state.midi_learn.bindings_snapshot();
-                let normalized = f32::from(value) / 127.0;
-                let mut changes: Vec<AppliedMidiParamChange> = Vec::new();
-                let params_ref = pending_params.get_or_insert_with(|| {
-                    shared_state.synth.synth_params.load_full().as_ref().clone()
-                });
-                for binding in bindings.iter() {
-                    if let Some(change) = apply_midi_mapping_binding(
-                        params_ref,
-                        &binding.param_key,
-                        binding.channel,
-                        binding.cc,
-                        channel,
-                        cc,
-                        normalized,
-                    ) {
-                        changes.push(change);
-                    }
-                }
-
-                if changes.is_empty() {
-                    shared_state
-                        .ui
-                        .render_control_diagnostics
-                        .midi_mapping_misses
-                        .fetch_add(1, Ordering::Relaxed);
-                }
-
-                for change in changes {
-                    let ui_change = match change.target {
-                        AppliedMidiParamTarget::Scalar => NativeUiParamChange::Scalar {
-                            key: NativeUiParamKey::Owned(change.key),
-                            value: change.value,
-                        },
-                        AppliedMidiParamTarget::AlgoControl {
-                            line,
-                            section,
-                            control_id,
-                        } => NativeUiParamChange::AlgoControl {
-                            line,
-                            section: match section {
-                                AppliedMidiAlgoControlSection::A => UiAlgoControlSection::A,
-                                AppliedMidiAlgoControlSection::B => UiAlgoControlSection::B,
-                            },
-                            control_id,
-                            value: change.value,
-                        },
-                    };
-                    let _ = shared_state.ui.ui_param_change_queue.push(ui_change);
-                }
-
-                // Control-thread commit of any RT-stashed MIDI-learn capture.
-                // Persistence happens here, never on the audio thread.
-                shared_state.midi_learn.commit_pending_capture();
-            }
-            RenderControlEvent::MappedParamChange { param_key, value } => {
-                let next_params = pending_params.get_or_insert_with(|| {
-                    shared_state.synth.synth_params.load_full().as_ref().clone()
-                });
-                let _ = set_parameter_value_by_key(next_params, param_key, value);
-                // Derive frontend UI patches from the coherent post-change
-                // params. The webview uses a computed `line2DetuneOctave`
-                // virtual key, not the raw `line2.octave` value, so both
-                // `line1Octave` and `line2Octave` produce derived patches.
-                // Computed here (control thread) instead of pushing from RT.
-                match param_key {
-                    "line1Octave" => {
-                        let line1_oct = next_params.line1.octave;
-                        let line2_oct = next_params.line2.octave;
-                        let _ = shared_state.ui.ui_param_change_queue.push(
-                            NativeUiParamChange::Scalar {
-                                key: NativeUiParamKey::Static("lineOctave"),
-                                value: line1_oct,
-                            },
-                        );
-                        let _ = shared_state.ui.ui_param_change_queue.push(
-                            NativeUiParamChange::Scalar {
-                                key: NativeUiParamKey::Static("line2DetuneOctave"),
-                                value: line2_oct - line1_oct,
-                            },
-                        );
-                    }
-                    "line2Octave" => {
-                        let line1_oct = next_params.line1.octave;
-                        let line2_oct = next_params.line2.octave;
-                        let _ = shared_state.ui.ui_param_change_queue.push(
-                            NativeUiParamChange::Scalar {
-                                key: NativeUiParamKey::Static("line2DetuneOctave"),
-                                value: line2_oct - line1_oct,
-                            },
-                        );
-                    }
-                    _ => {
-                        let _ = shared_state.ui.ui_param_change_queue.push(
-                            NativeUiParamChange::Scalar {
-                                key: NativeUiParamKey::Static(param_key),
-                                value,
-                            },
-                        );
-                    }
-                }
-            }
-            RenderControlEvent::ProgramChangeRequest { program } => {
-                // Legacy/fallback path for tests or any future code that
-                // pushes program changes through the queue directly.
-                // Production RT path uses the non-lossy
-                // `pending_program_change` slot above.
-                publish_pending_mapped_params(ctx, shared_state, params, &mut pending_params);
-                apply_factory_preset_on_control_thread(
-                    ctx,
-                    shared_state,
-                    params,
-                    usize::from(program),
-                );
+                    .render_control_diagnostics
+                    .midi_mapping_misses
+                    .fetch_add(1, Ordering::Relaxed);
             }
         }
     }
+    if observed_cc {
+        // Commit and persist at most once per drain, never once per raw CC.
+        shared_state.midi_learn.commit_pending_capture();
+    }
     publish_pending_mapped_params(ctx, shared_state, params, &mut pending_params);
+}
+
+fn push_ui_param_change(shared_state: &PluginSharedState, change: NativeUiParamChange) {
+    if shared_state.ui.ui_param_change_queue.push(change).is_err() {
+        shared_state
+            .ui
+            .render_control_diagnostics
+            .ui_queue_overflows
+            .fetch_add(1, Ordering::Relaxed);
+    }
+}
+
+fn push_midi_cc_update(shared_state: &PluginSharedState, channel: u8, cc: u8, value: u8) {
+    if shared_state
+        .ui
+        .midi_cc_queue
+        .push((channel, cc, value))
+        .is_err()
+    {
+        shared_state
+            .ui
+            .render_control_diagnostics
+            .ui_queue_overflows
+            .fetch_add(1, Ordering::Relaxed);
+    }
+}
+
+fn push_mapped_cc_ui_change(shared_state: &PluginSharedState, change: AppliedMidiParamChange) {
+    let ui_change = match change.target {
+        AppliedMidiParamTarget::Scalar => NativeUiParamChange::Scalar {
+            key: NativeUiParamKey::Owned(change.key),
+            value: change.value,
+        },
+        AppliedMidiParamTarget::AlgoControl {
+            line,
+            section,
+            control_id,
+        } => NativeUiParamChange::AlgoControl {
+            line,
+            section: match section {
+                AppliedMidiAlgoControlSection::A => UiAlgoControlSection::A,
+                AppliedMidiAlgoControlSection::B => UiAlgoControlSection::B,
+            },
+            control_id,
+            value: change.value,
+        },
+    };
+    push_ui_param_change(shared_state, ui_change);
+}
+
+fn enqueue_mapped_param_ui_changes(
+    shared_state: &PluginSharedState,
+    params: &SynthParams,
+    param_key: &'static str,
+    value: f32,
+) {
+    match param_key {
+        "line1Octave" => {
+            push_ui_param_change(
+                shared_state,
+                NativeUiParamChange::Scalar {
+                    key: NativeUiParamKey::Static("lineOctave"),
+                    value: params.line1.octave,
+                },
+            );
+            push_ui_param_change(
+                shared_state,
+                NativeUiParamChange::Scalar {
+                    key: NativeUiParamKey::Static("line2DetuneOctave"),
+                    value: params.line2.octave - params.line1.octave,
+                },
+            );
+        }
+        "line2Octave" => push_ui_param_change(
+            shared_state,
+            NativeUiParamChange::Scalar {
+                key: NativeUiParamKey::Static("line2DetuneOctave"),
+                value: params.line2.octave - params.line1.octave,
+            },
+        ),
+        _ => push_ui_param_change(
+            shared_state,
+            NativeUiParamChange::Scalar {
+                key: NativeUiParamKey::Static(param_key),
+                value,
+            },
+        ),
+    }
 }
 
 fn publish_pending_mapped_params(
@@ -291,7 +312,7 @@ fn apply_factory_preset_on_control_thread(
     // the processor on the audio thread). Discard them so the publish
     // below is not later clobbered by `publish_pending_mapped_params`
     // cloning the new preset and mutating it with the stale drift.
-    while shared_state.ui.render_control_queue.pop().is_some() {}
+    shared_state.ui.render_control_mailbox.clear();
     let Some(next_params) = crate::ffi::factory_preset_params(index).cloned() else {
         return;
     };
@@ -312,23 +333,35 @@ fn apply_factory_preset_on_control_thread(
     }
 }
 
-impl CzPlugin {
-    pub(crate) fn enqueue_render_control_event(&self, event: RenderControlEvent) {
-        if self
-            .shared_state
+fn publish_pending_param_change(shared_state: &PluginSharedState, param_id: u32, value: f32) {
+    if shared_state
+        .ui
+        .render_control_mailbox
+        .publish_param(param_id, value)
+    {
+        shared_state
             .ui
-            .render_control_queue
-            .push(event)
-            .is_err()
-        {
-            self.shared_state
-                .ui
-                .render_control_diagnostics
-                .queue_overflows
-                .fetch_add(1, Ordering::Relaxed);
-        }
+            .render_control_diagnostics
+            .coalesced_param_updates
+            .fetch_add(1, Ordering::Relaxed);
     }
+}
 
+fn publish_observed_cc(shared_state: &PluginSharedState, channel: u8, cc: u8, value: u8) {
+    if shared_state
+        .ui
+        .render_control_mailbox
+        .publish_cc(channel, cc, value)
+    {
+        shared_state
+            .ui
+            .render_control_diagnostics
+            .coalesced_cc_updates
+            .fetch_add(1, Ordering::Relaxed);
+    }
+}
+
+impl CzPlugin {
     pub(crate) fn tracked_param_changes(
         events: &EventList,
     ) -> [bool; Self::TRACKED_PARAM_ID_CAPACITY] {
@@ -395,8 +428,8 @@ impl CzPlugin {
 
         // Detect DAW drift: params whose DAW-side value differs from the
         // processor's current params (not already covered by ParamChange events).
-        // Apply directly to processor and enqueue MappedParamChange for the
-        // control thread to mirror to shared state.
+        // Apply directly to the processor and publish the latest value to the
+        // coalescing mailbox for control-thread shared-state mirroring.
         //
         // Skipped immediately after a snapshot copy — the snapshot is the
         // authoritative source and drift detection would overwrite it with
@@ -414,7 +447,7 @@ impl CzPlugin {
                 let Some(current) = read_current_daw_param_by_id(&self.params, param_id) else {
                     continue;
                 };
-                let Some(cached) = read_daw_param_by_id(&proc.params, param_id) else {
+                let Some(cached) = read_daw_param_by_id(proc.params(), param_id) else {
                     continue;
                 };
                 if (current - cached).abs() <= 0.000_001 {
@@ -424,25 +457,10 @@ impl CzPlugin {
                     continue;
                 };
                 proc.apply_parameter_change_realtime(param_key, current);
-                // Enqueue MappedParamChange so the control thread can mirror
-                // the change to shared state, derive frontend UI patches from
-                // coherent post-change params, and bump synth_params_version.
-                if self
-                    .shared_state
-                    .ui
-                    .render_control_queue
-                    .push(RenderControlEvent::MappedParamChange {
-                        param_key,
-                        value: current,
-                    })
-                    .is_err()
-                {
-                    self.shared_state
-                        .ui
-                        .render_control_diagnostics
-                        .queue_overflows
-                        .fetch_add(1, Ordering::Relaxed);
-                }
+                // Publish the latest value so the control thread can mirror
+                // coherent params/UI state and bump synth_params_version.
+                let _ = param_key;
+                publish_pending_param_change(&self.shared_state, param_id, current);
             }
         }
 
@@ -463,10 +481,18 @@ impl CzPlugin {
             let bindings = self.shared_state.midi_learn.bindings();
             if !bindings.is_empty() {
                 let normalized = f32::from(value) / 127.0;
-                let mut any_applied = false;
+                let mut impact = RealtimeParameterImpact::NONE;
+                let Some(rt_params) = proc.realtime_params_mut() else {
+                    self.shared_state
+                        .ui
+                        .render_control_diagnostics
+                        .parameter_snapshot_rejections
+                        .fetch_add(1, Ordering::Relaxed);
+                    return;
+                };
                 for binding in bindings.iter() {
-                    if apply_midi_mapping_binding_rt(
-                        &mut proc.params,
+                    if let Some(binding_impact) = apply_midi_mapping_binding_rt(
+                        rt_params,
                         &binding.param_key,
                         binding.channel,
                         binding.cc,
@@ -474,11 +500,11 @@ impl CzPlugin {
                         cc,
                         normalized,
                     ) {
-                        any_applied = true;
+                        impact = impact.union(binding_impact);
                     }
                 }
-                if any_applied {
-                    proc.refresh_parameter_caches();
+                if impact != RealtimeParameterImpact::NONE {
+                    proc.apply_realtime_parameter_impact(impact);
                 } else {
                     self.shared_state
                         .ui
@@ -495,7 +521,7 @@ impl CzPlugin {
             .capture_pending_binding_rt(channel, cc);
         // Still enqueue ObservedCc for control-side drain (shared state mirror,
         // UI AlgoControl change publication, MIDI learn commit/persistence).
-        self.enqueue_render_control_event(RenderControlEvent::ObservedCc { channel, cc, value });
+        publish_observed_cc(&self.shared_state, channel, cc, value);
     }
 
     pub(crate) fn push_block_input_event(&mut self, event: CosmoTimedInputEvent) {
@@ -537,14 +563,10 @@ impl CzPlugin {
                     // `sample_offset` during `process_block`. Applying it here
                     // would make the change block-start accurate instead of
                     // sample-accurate and double-apply the value.
-                    // Enqueue MappedParamChange so the control thread can
-                    // mirror to shared state, derive UI patches (including the
-                    // octave derivation) from coherent post-change params, and
-                    // bump synth_params_version.
-                    self.enqueue_render_control_event(RenderControlEvent::MappedParamChange {
-                        param_key,
-                        value: *value as f32,
-                    });
+                    // Publish the latest value for coherent control-thread
+                    // shared state and derived UI patches.
+                    let _ = param_key;
+                    publish_pending_param_change(&self.shared_state, *id, *value as f32);
                 }
             }
             EventBody::ProgramChange { program, .. }
@@ -555,8 +577,8 @@ impl CzPlugin {
                 // Non-lossy latest-program-change slot. Older pending
                 // program changes are overwritten (last-writer-wins) so the
                 // control thread always mirrors the most recent preset even
-                // if `render_control_queue` overflows. Audio effect is
-                // already applied above; this slot drives control/UI mirror.
+                // regardless of other pending mirrors. Audio effect is already
+                // applied above; this slot drives control/UI state.
                 // `0xFF` is the sentinel meaning "none pending".
                 self.shared_state
                     .pending_program_change

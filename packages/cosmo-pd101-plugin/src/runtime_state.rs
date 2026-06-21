@@ -20,13 +20,16 @@ use cosmo_pd101_bridge_types::{
 pub const SCOPE_CAPACITY: usize = 4096;
 pub const UI_INPUT_QUEUE_CAPACITY: usize = 1024;
 pub const MIDI_CC_QUEUE_CAPACITY: usize = 128;
-pub const RENDER_CONTROL_QUEUE_CAPACITY: usize = 256;
 pub const UI_PARAM_CHANGE_QUEUE_CAPACITY: usize = 128;
+pub const DAW_PARAM_MAILBOX_CAPACITY: usize = 64;
+const MIDI_CHANNEL_COUNT: usize = 16;
+const MIDI_CC_COUNT: usize = 128;
+const MIDI_CC_MAILBOX_CAPACITY: usize = MIDI_CHANNEL_COUNT * MIDI_CC_COUNT;
+const MIDI_CC_DIRTY_WORDS: usize = MIDI_CC_MAILBOX_CAPACITY / u64::BITS as usize;
 
 pub type ScopeBuffer = Arc<RwLock<ScopeFrame>>;
 pub type UiInputQueue = Arc<ArrayQueue<CosmoInputEvent>>;
 pub type MidiCcQueue = Arc<ArrayQueue<(u8, u8, u8)>>;
-pub type RenderControlQueue = Arc<ArrayQueue<RenderControlEvent>>;
 
 #[derive(Debug)]
 pub enum NativeUiParamKey {
@@ -59,15 +62,89 @@ pub type SharedPresetSession = Arc<Mutex<PresetSession>>;
 pub type SharedEditorState = Arc<Mutex<Option<EditorState>>>;
 pub type SharedMidiMappings = Arc<Mutex<MidiLearnState>>;
 
-pub enum RenderControlEvent {
-    ObservedCc { channel: u8, cc: u8, value: u8 },
-    MappedParamChange { param_key: &'static str, value: f32 },
-    ProgramChangeRequest { program: u8 },
+pub struct RenderControlMailbox {
+    param_values: [AtomicU32; DAW_PARAM_MAILBOX_CAPACITY],
+    param_dirty: AtomicU64,
+    cc_values: [AtomicU8; MIDI_CC_MAILBOX_CAPACITY],
+    cc_dirty: [AtomicU64; MIDI_CC_DIRTY_WORDS],
+}
+
+impl Default for RenderControlMailbox {
+    fn default() -> Self {
+        Self {
+            param_values: std::array::from_fn(|_| AtomicU32::new(0)),
+            param_dirty: AtomicU64::new(0),
+            cc_values: std::array::from_fn(|_| AtomicU8::new(0)),
+            cc_dirty: std::array::from_fn(|_| AtomicU64::new(0)),
+        }
+    }
+}
+
+impl RenderControlMailbox {
+    pub fn publish_param(&self, param_id: u32, value: f32) -> bool {
+        let Ok(index) = usize::try_from(param_id) else {
+            return false;
+        };
+        let Some(slot) = self.param_values.get(index) else {
+            return false;
+        };
+        slot.store(value.to_bits(), Ordering::Relaxed);
+        self.param_dirty.fetch_or(1_u64 << index, Ordering::Release) & (1_u64 << index) != 0
+    }
+
+    pub fn publish_cc(&self, channel: u8, cc: u8, value: u8) -> bool {
+        let Some(index) = Self::cc_index(channel, cc) else {
+            return false;
+        };
+        self.cc_values[index].store(value, Ordering::Relaxed);
+        let word_index = index / u64::BITS as usize;
+        let bit = 1_u64 << (index % u64::BITS as usize);
+        self.cc_dirty[word_index].fetch_or(bit, Ordering::Release) & bit != 0
+    }
+
+    pub fn take_param_dirty(&self) -> u64 {
+        self.param_dirty.swap(0, Ordering::AcqRel)
+    }
+
+    pub fn param_value(&self, index: usize) -> f32 {
+        f32::from_bits(self.param_values[index].load(Ordering::Acquire))
+    }
+
+    pub fn take_cc_dirty_word(&self, word_index: usize) -> u64 {
+        self.cc_dirty[word_index].swap(0, Ordering::AcqRel)
+    }
+
+    pub fn cc_source_value(&self, index: usize) -> (u8, u8, u8) {
+        let channel = (index / MIDI_CC_COUNT) as u8;
+        let cc = (index % MIDI_CC_COUNT) as u8;
+        let value = self.cc_values[index].load(Ordering::Acquire);
+        (channel, cc, value)
+    }
+
+    pub fn clear(&self) {
+        self.param_dirty.store(0, Ordering::Release);
+        for word in &self.cc_dirty {
+            word.store(0, Ordering::Release);
+        }
+    }
+
+    pub const fn cc_dirty_word_count() -> usize {
+        MIDI_CC_DIRTY_WORDS
+    }
+
+    fn cc_index(channel: u8, cc: u8) -> Option<usize> {
+        if usize::from(channel) >= MIDI_CHANNEL_COUNT || usize::from(cc) >= MIDI_CC_COUNT {
+            return None;
+        }
+        Some(usize::from(channel) * MIDI_CC_COUNT + usize::from(cc))
+    }
 }
 
 #[derive(Default)]
 pub struct RenderControlDiagnostics {
-    pub queue_overflows: AtomicU64,
+    pub coalesced_param_updates: AtomicU64,
+    pub coalesced_cc_updates: AtomicU64,
+    pub ui_queue_overflows: AtomicU64,
     pub block_event_overflows: AtomicU64,
     pub parameter_snapshot_rejections: AtomicU64,
     pub midi_mapping_misses: AtomicU64,
@@ -299,7 +376,7 @@ pub struct RuntimeTelemetry {
 pub struct UiEventQueues {
     pub ui_input_queue: UiInputQueue,
     pub midi_cc_queue: MidiCcQueue,
-    pub render_control_queue: RenderControlQueue,
+    pub render_control_mailbox: Arc<RenderControlMailbox>,
     pub render_control_diagnostics: Arc<RenderControlDiagnostics>,
     pub ui_param_change_queue: UiParamChangeQueue,
     pub pending_param_changes_flushed_via_ipc: Arc<AtomicBool>,
@@ -357,7 +434,7 @@ impl PluginSharedState {
             ui: UiEventQueues {
                 ui_input_queue: Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY)),
                 midi_cc_queue: Arc::new(ArrayQueue::new(MIDI_CC_QUEUE_CAPACITY)),
-                render_control_queue: Arc::new(ArrayQueue::new(RENDER_CONTROL_QUEUE_CAPACITY)),
+                render_control_mailbox: Arc::new(RenderControlMailbox::default()),
                 render_control_diagnostics: Arc::new(RenderControlDiagnostics::default()),
                 ui_param_change_queue: Arc::new(ArrayQueue::new(UI_PARAM_CHANGE_QUEUE_CAPACITY)),
                 pending_param_changes_flushed_via_ipc: Arc::new(AtomicBool::new(false)),
@@ -402,5 +479,54 @@ mod tests {
 
         assert_eq!(state.synth.synth_params.load().volume, 0.42);
         assert_eq!(state.synth.synth_params_version.load(Ordering::Acquire), 1);
+    }
+
+    #[test]
+    fn render_control_mailbox_keeps_latest_param_value() {
+        let mailbox = RenderControlMailbox::default();
+        assert!(!mailbox.publish_param(3, 0.25));
+        assert!(mailbox.publish_param(3, 0.75));
+
+        assert_eq!(mailbox.take_param_dirty(), 1_u64 << 3);
+        assert_eq!(mailbox.param_value(3), 0.75);
+        assert_eq!(mailbox.take_param_dirty(), 0);
+    }
+
+    #[test]
+    fn render_control_mailbox_coalesces_per_cc_source() {
+        let mailbox = RenderControlMailbox::default();
+        assert!(!mailbox.publish_cc(2, 74, 12));
+        assert!(mailbox.publish_cc(2, 74, 99));
+        assert!(!mailbox.publish_cc(3, 74, 45));
+
+        let source_a = usize::from(2_u8) * MIDI_CC_COUNT + 74;
+        let source_b = usize::from(3_u8) * MIDI_CC_COUNT + 74;
+        let mut dirty_sources = Vec::new();
+        for word_index in 0..RenderControlMailbox::cc_dirty_word_count() {
+            let mut dirty = mailbox.take_cc_dirty_word(word_index);
+            while dirty != 0 {
+                let bit_index = dirty.trailing_zeros() as usize;
+                dirty &= dirty - 1;
+                dirty_sources.push(word_index * u64::BITS as usize + bit_index);
+            }
+        }
+
+        assert_eq!(dirty_sources, vec![source_a, source_b]);
+        assert_eq!(mailbox.cc_source_value(source_a), (2, 74, 99));
+        assert_eq!(mailbox.cc_source_value(source_b), (3, 74, 45));
+    }
+
+    #[test]
+    fn clearing_render_control_mailbox_discards_pending_mirrors() {
+        let mailbox = RenderControlMailbox::default();
+        mailbox.publish_param(1, 0.5);
+        mailbox.publish_cc(0, 1, 64);
+        mailbox.clear();
+
+        assert_eq!(mailbox.take_param_dirty(), 0);
+        assert!(
+            (0..RenderControlMailbox::cc_dirty_word_count())
+                .all(|index| mailbox.take_cc_dirty_word(index) == 0)
+        );
     }
 }

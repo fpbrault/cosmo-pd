@@ -39,6 +39,24 @@ impl CompiledSynthParams {
             line2: CompiledLinePlan::from_line(&params.line2),
         }
     }
+
+    pub fn refresh_normalization(&mut self, params: &SynthParams) {
+        self.norm = compute_norm(params);
+    }
+
+    pub fn refresh_line1(&mut self, params: &SynthParams) {
+        self.line1 = CompiledLinePlan::from_line(&params.line1);
+    }
+
+    pub fn refresh_line2(&mut self, params: &SynthParams) {
+        self.line2 = CompiledLinePlan::from_line(&params.line2);
+    }
+
+    pub fn refresh_mod_matrix(&mut self, params: &SynthParams) {
+        self.mod_cache.rebuild_routes(&params.mod_matrix);
+        self.has_active_mod_routes = params.mod_matrix.routes.iter().any(|route| route.enabled);
+        self.has_env_step_routes = self.mod_cache.has_env_step_routes;
+    }
 }
 
 impl Default for CompiledSynthParams {

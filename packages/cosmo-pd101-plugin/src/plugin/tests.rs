@@ -438,7 +438,7 @@ fn program_change_is_audio_effective_before_control_drain() {
     let params = Arc::new(CzPluginParams::new());
     let mut plugin = CzPlugin::new(params);
     plugin.reset(48_000.0, 64);
-    let current = synth_params_json(&plugin.audio.processor.as_ref().unwrap().params);
+    let current = synth_params_json(plugin.audio.processor.as_ref().unwrap().params());
     let (program, expected) = (0..crate::ffi::factory_preset_count())
         .find_map(|index| {
             let preset = crate::ffi::factory_preset_params(index)?;
@@ -453,9 +453,34 @@ fn program_change_is_audio_effective_before_control_drain() {
     });
 
     assert_eq!(
-        synth_params_json(&plugin.audio.processor.as_ref().unwrap().params),
+        synth_params_json(plugin.audio.processor.as_ref().unwrap().params()),
         synth_params_json(expected)
     );
+}
+
+#[test]
+fn program_change_discards_stale_pending_parameter_mirror() {
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(Arc::clone(&params));
+    plugin.reset(48_000.0, 64);
+    let expected = crate::ffi::factory_preset_params(0).unwrap().clone();
+
+    plugin.handle_host_event(&EventBody::ParamChange {
+        id: CzPluginParamsParamId::Volume as u32,
+        value: 0.123,
+    });
+    plugin.handle_host_event(&EventBody::ProgramChange {
+        group: 0,
+        channel: 0,
+        program: 0,
+    });
+    crate::audio_runtime::drain_render_control_events(
+        &crate::rt_safety::ControlContext::new(),
+        &plugin.shared_state,
+        &params,
+    );
+
+    assert!((plugin.shared_state.synth.synth_params.load().volume - expected.volume).abs() < 1e-6);
 }
 
 #[test]
@@ -473,7 +498,7 @@ fn midi_mapping_applies_in_plugin_core_without_editor() {
             cc: 74,
         }]);
 
-    let baseline = plugin.audio.processor.as_ref().unwrap().params.macro1;
+    let baseline = plugin.audio.processor.as_ref().unwrap().params().macro1;
 
     plugin.handle_host_event(&EventBody::ControlChange {
         group: 0,
@@ -482,7 +507,7 @@ fn midi_mapping_applies_in_plugin_core_without_editor() {
         value: 127,
     });
 
-    assert!((plugin.audio.processor.as_ref().unwrap().params.macro1 - 1.0).abs() < 0.000_001);
+    assert!((plugin.audio.processor.as_ref().unwrap().params().macro1 - 1.0).abs() < 0.000_001);
     assert!((plugin.shared_state.synth.synth_params.load().macro1 - baseline).abs() < 0.000_001);
     crate::audio_runtime::drain_render_control_events(
         &crate::rt_safety::ControlContext::new(),
@@ -664,7 +689,7 @@ fn midi_mapping_applies_to_all_bindings_for_same_cc() {
         value: 127,
     });
 
-    let rt_params = &plugin.audio.processor.as_ref().unwrap().params;
+    let rt_params = plugin.audio.processor.as_ref().unwrap().params();
     assert!((rt_params.macro1 - 1.0).abs() < 0.000_001);
     assert!((rt_params.macro2 - 1.0).abs() < 0.000_001);
 
@@ -805,7 +830,7 @@ fn daw_param_change_enqueues_scalar_ui_patch() {
 
     // Audio-effective change runs through the timed engine event path inside
     // `process_block`; the control-thread mirror (shared SynthParams +
-    // frontend UI patch) is enqueued via MappedParamChange and requires a drain.
+    // frontend UI patch) is published through the mailbox and requires a drain.
     crate::audio_runtime::drain_render_control_events(
         &crate::rt_safety::ControlContext::new(),
         &plugin.shared_state,
@@ -1002,7 +1027,7 @@ fn host_cc_forwarding_reaches_webview_queue_only_after_control_drain() {
 }
 
 #[test]
-fn render_control_queue_overflow_drops_newest_events_and_counts() {
+fn render_control_mailbox_coalesces_repeated_cc_without_losing_latest_value() {
     let params = Arc::new(CzPluginParams::new());
     let mut plugin = CzPlugin::new(Arc::clone(&params));
     plugin.reset(48_000.0, 64);
@@ -1025,21 +1050,25 @@ fn render_control_queue_overflow_drops_newest_events_and_counts() {
         });
     }
 
-    assert!(
+    assert_eq!(
         plugin
             .shared_state
             .ui
             .render_control_diagnostics
-            .queue_overflows
-            .load(Ordering::Acquire)
-            > 0
+            .coalesced_cc_updates
+            .load(Ordering::Acquire),
+        299
     );
     crate::audio_runtime::drain_render_control_events(
         &crate::rt_safety::ControlContext::new(),
         &plugin.shared_state,
         &params,
     );
-    assert!(plugin.shared_state.ui.render_control_queue.is_empty());
+    assert_eq!(
+        plugin.shared_state.ui.midi_cc_queue.pop(),
+        Some((0, 74, 43))
+    );
+    assert!(plugin.shared_state.ui.midi_cc_queue.is_empty());
 }
 
 fn process_test_block(plugin: &mut CzPlugin, events: &EventList) -> ProcessStatus {
@@ -1169,7 +1198,7 @@ fn audio_thread_does_not_allocate_for_ui_snapshot_and_preset_reset() {
             .preset_reset_pending
             .load(Ordering::Acquire)
     );
-    assert!((plugin.audio.processor.as_ref().unwrap().params.macro1 - 0.75).abs() < 0.000_001);
+    assert!((plugin.audio.processor.as_ref().unwrap().params().macro1 - 0.75).abs() < 0.000_001);
 }
 
 #[cfg(debug_assertions)]
@@ -1264,7 +1293,7 @@ fn rejected_realtime_snapshot_is_retried_until_it_copies() {
         .synth_params_version
         .load(Ordering::Acquire);
     assert_eq!(plugin.audio.cached_synth_params_version, expected_version);
-    assert!((plugin.audio.processor.as_ref().unwrap().params.macro1 - 0.75).abs() < 0.000_001);
+    assert!((plugin.audio.processor.as_ref().unwrap().params().macro1 - 0.75).abs() < 0.000_001);
 }
 
 #[cfg(debug_assertions)]
@@ -1387,6 +1416,171 @@ fn host_side_midi_learn_capture_does_not_require_queue_drain() {
 }
 
 #[test]
+#[ignore = "manual release-mode performance stress harness"]
+fn perf_dense_control_streams() {
+    use std::time::Instant;
+
+    const EVENT_COUNT: usize = 1024;
+    const WARMUP_RUNS: usize = 2;
+    const MEASURED_RUNS: usize = 7;
+
+    #[derive(Default)]
+    struct Measurements {
+        audio_ns: Vec<u128>,
+        drain_ns: Vec<u128>,
+        coalesced: u64,
+        ui_overflows: u64,
+        final_value: f32,
+    }
+
+    fn median(values: &mut [u128]) -> u128 {
+        values.sort_unstable();
+        values[values.len() / 2]
+    }
+
+    fn automation_run() -> Measurements {
+        let mut measurements = Measurements::default();
+        for run in 0..(WARMUP_RUNS + MEASURED_RUNS) {
+            let params = Arc::new(CzPluginParams::new());
+            let mut plugin = CzPlugin::new(Arc::clone(&params));
+            plugin.reset(48_000.0, 64);
+            let mut events = EventList::with_capacity(EVENT_COUNT);
+            for index in 0..EVENT_COUNT {
+                events.push(Event {
+                    sample_offset: 0,
+                    body: EventBody::ParamChange {
+                        id: CzPluginParamsParamId::Volume as u32,
+                        value: index as f64 / EVENT_COUNT as f64,
+                    },
+                });
+            }
+
+            let started = Instant::now();
+            process_test_block(&mut plugin, &events);
+            let audio_ns = started.elapsed().as_nanos();
+            let started = Instant::now();
+            crate::audio_runtime::drain_render_control_events(
+                &crate::rt_safety::ControlContext::new(),
+                &plugin.shared_state,
+                &params,
+            );
+            let drain_ns = started.elapsed().as_nanos();
+
+            if run >= WARMUP_RUNS {
+                measurements.audio_ns.push(audio_ns);
+                measurements.drain_ns.push(drain_ns);
+            }
+            measurements.coalesced += plugin
+                .shared_state
+                .ui
+                .render_control_diagnostics
+                .coalesced_param_updates
+                .load(Ordering::Relaxed);
+            measurements.ui_overflows += plugin
+                .shared_state
+                .ui
+                .render_control_diagnostics
+                .ui_queue_overflows
+                .load(Ordering::Relaxed);
+            measurements.final_value = plugin.shared_state.synth.synth_params.load().volume;
+        }
+        measurements
+    }
+
+    fn cc_run(binding_keys: &[&str]) -> Measurements {
+        let mut measurements = Measurements::default();
+        for run in 0..(WARMUP_RUNS + MEASURED_RUNS) {
+            let params = Arc::new(CzPluginParams::new());
+            let mut plugin = CzPlugin::new(Arc::clone(&params));
+            plugin.reset(48_000.0, 64);
+            plugin.shared_state.midi_learn.replace_bindings_for_test(
+                binding_keys
+                    .iter()
+                    .map(|key| crate::session_state::MidiLearnBinding {
+                        param_key: (*key).to_string(),
+                        channel: 0,
+                        cc: 74,
+                    })
+                    .collect(),
+            );
+            let mut events = EventList::with_capacity(EVENT_COUNT);
+            for index in 0..EVENT_COUNT {
+                events.push(Event {
+                    sample_offset: 0,
+                    body: EventBody::ControlChange {
+                        group: 0,
+                        channel: 0,
+                        cc: 74,
+                        value: (index % 127) as u8,
+                    },
+                });
+            }
+
+            let started = Instant::now();
+            process_test_block(&mut plugin, &events);
+            let audio_ns = started.elapsed().as_nanos();
+            let started = Instant::now();
+            crate::audio_runtime::drain_render_control_events(
+                &crate::rt_safety::ControlContext::new(),
+                &plugin.shared_state,
+                &params,
+            );
+            let drain_ns = started.elapsed().as_nanos();
+
+            if run >= WARMUP_RUNS {
+                measurements.audio_ns.push(audio_ns);
+                measurements.drain_ns.push(drain_ns);
+            }
+            measurements.coalesced += plugin
+                .shared_state
+                .ui
+                .render_control_diagnostics
+                .coalesced_cc_updates
+                .load(Ordering::Relaxed);
+            measurements.ui_overflows += plugin
+                .shared_state
+                .ui
+                .render_control_diagnostics
+                .ui_queue_overflows
+                .load(Ordering::Relaxed);
+            measurements.final_value = plugin.shared_state.synth.synth_params.load().macro1;
+        }
+        measurements
+    }
+
+    let cases = [
+        ("automation", automation_run()),
+        ("cc_one_mapping", cc_run(&["macro1"])),
+        (
+            "cc_eight_mappings",
+            cc_run(&[
+                "volume",
+                "warpAAmount",
+                "warpBAmount",
+                "line1Level",
+                "line2Level",
+                "macro1",
+                "macro2",
+                "macro3",
+            ]),
+        ),
+    ];
+
+    for (name, mut measurements) in cases {
+        let audio_ns = median(&mut measurements.audio_ns);
+        let drain_ns = median(&mut measurements.drain_ns);
+        println!(
+            "perf_dense_control_streams case={name} events={EVENT_COUNT} audio_ns={audio_ns} drain_ns={drain_ns} audio_ns_per_event={:.2} drain_ns_per_event={:.2} coalesced={} ui_overflows={} final_value={:.6}",
+            audio_ns as f64 / EVENT_COUNT as f64,
+            drain_ns as f64 / EVENT_COUNT as f64,
+            measurements.coalesced,
+            measurements.ui_overflows,
+            measurements.final_value,
+        );
+    }
+}
+
+#[test]
 fn save_preset_defaults_new_user_author_to_user() {
     with_test_data_dir(|_| {
         let (sp, rsp, rms, rvs, ts, ver, sc, q, params, ps, _pl, es, mm) = make_handler_state();
@@ -1455,7 +1649,7 @@ fn param_change_applies_at_event_offset() {
         let volume_after = plugin.audio.cached_rt_synth_params.volume;
         assert!((volume_after - previous_volume).abs() < 0.000_001);
         assert!(
-            (plugin.audio.processor.as_ref().unwrap().params.volume - next_volume as f32).abs()
+            (plugin.audio.processor.as_ref().unwrap().params().volume - next_volume as f32).abs()
                 < 0.000_001
         );
     });

@@ -1,6 +1,13 @@
+#[cfg(feature = "std")]
+use std::sync::Arc;
+
+#[cfg(not(feature = "std"))]
+use alloc::sync::Arc;
+
 use crate::dsp_utils::{lfo_output_with_symmetry, random_hold_value};
 use crate::params::{
     LfoRateMode, LfoSyncDivision, LineParams, MAX_VOICES, ModDestination, ModMatrixCache,
+    SynthParams,
 };
 use crate::render_cache::CompiledLinePlan;
 use crate::voice::{ModSources, VoiceRenderContext};
@@ -69,25 +76,24 @@ impl CosmoProcessor {
             self.rebuild_compiled_params();
         }
 
-        let manual_tempo_bpm = self.params.tempo_bpm;
-        let base_lfo1_rate = self.params.lfo.rate;
-        let lfo1_rate_mode = self.params.lfo.rate_mode;
-        let lfo1_sync_division = self.params.lfo.sync_division;
-        let lfo1_waveform = self.params.lfo.waveform;
-        let base_lfo1_symmetry = self.params.lfo.symmetry;
-        let base_lfo1_depth = self.params.lfo.depth;
-        let base_lfo1_offset = self.params.lfo.offset;
-        let base_lfo2_rate = self.params.lfo2.rate;
-        let lfo2_rate_mode = self.params.lfo2.rate_mode;
-        let lfo2_sync_division = self.params.lfo2.sync_division;
-        let lfo2_waveform = self.params.lfo2.waveform;
-        let base_lfo2_symmetry = self.params.lfo2.symmetry;
-        let base_lfo2_depth = self.params.lfo2.depth;
-        let base_lfo2_offset = self.params.lfo2.offset;
-        let base_random_rate = self.params.random.rate;
-        let line1 = self.params.line1;
-        let line2 = self.params.line2;
-        let cz_dac_enabled = self.params.cz_dac_enabled;
+        let params = Arc::clone(&self.params);
+        let p = params.as_ref();
+        let manual_tempo_bpm = p.tempo_bpm;
+        let base_lfo1_rate = p.lfo.rate;
+        let lfo1_rate_mode = p.lfo.rate_mode;
+        let lfo1_sync_division = p.lfo.sync_division;
+        let lfo1_waveform = p.lfo.waveform;
+        let base_lfo1_symmetry = p.lfo.symmetry;
+        let base_lfo1_depth = p.lfo.depth;
+        let base_lfo1_offset = p.lfo.offset;
+        let base_lfo2_rate = p.lfo2.rate;
+        let lfo2_rate_mode = p.lfo2.rate_mode;
+        let lfo2_sync_division = p.lfo2.sync_division;
+        let lfo2_waveform = p.lfo2.waveform;
+        let base_lfo2_symmetry = p.lfo2.symmetry;
+        let base_lfo2_depth = p.lfo2.depth;
+        let base_lfo2_offset = p.lfo2.offset;
+        let base_random_rate = p.random.rate;
         let sr = self.sample_rate;
         let effective_tempo_bpm = self.host_transport_tempo_bpm.unwrap_or(manual_tempo_bpm);
         self.fx.set_tempo_bpm(effective_tempo_bpm);
@@ -128,11 +134,12 @@ impl CosmoProcessor {
             if has_active_mod_routes {
                 mod_cache.compute(&pre_sources);
                 if self.fx.active_slot_count > 0 {
-                    self.fx.apply_modulated_params(&self.params, &mod_cache);
+                    self.fx.apply_modulated_params(p, &mod_cache);
                 }
             }
 
             let lfos = self.compute_lfos(
+                p,
                 &pre_sources,
                 &mod_cache,
                 has_active_mod_routes,
@@ -156,19 +163,29 @@ impl CosmoProcessor {
             );
 
             let lines = if has_active_mod_routes {
-                self.line1_scratch
-                    .apply_line1_mods(&line1, &mod_cache.values, has_env_step_routes);
-                self.line2_scratch
-                    .apply_line2_mods(&line2, &mod_cache.values, has_env_step_routes);
+                self.line1_scratch.apply_line1_mods(
+                    &p.line1,
+                    &mod_cache.values,
+                    has_env_step_routes,
+                );
+                self.line2_scratch.apply_line2_mods(
+                    &p.line2,
+                    &mod_cache.values,
+                    has_env_step_routes,
+                );
                 VoiceLinesFrame {
                     line1: self.line1_scratch,
                     line2: self.line2_scratch,
                 }
             } else {
-                VoiceLinesFrame { line1, line2 }
+                VoiceLinesFrame {
+                    line1: p.line1,
+                    line2: p.line2,
+                }
             };
 
             let mut mixed = self.render_all_voices(
+                p,
                 &lfos,
                 &lines,
                 &mod_cache,
@@ -208,7 +225,7 @@ impl CosmoProcessor {
             prev_random = lfos.random;
 
             mixed *= norm;
-            *sample_out = self.apply_fx_and_limit(mixed, sr, cz_dac_enabled);
+            *sample_out = self.apply_fx_and_limit(mixed, sr, p.cz_dac_enabled);
         }
 
         self.update_render_voice_limit();
@@ -217,6 +234,7 @@ impl CosmoProcessor {
     #[allow(clippy::too_many_arguments)]
     fn compute_lfos(
         &mut self,
+        _p: &SynthParams,
         pre_sources: &ModSources,
         mod_cache: &ModMatrixCache,
         has_active_mod_routes: bool,
@@ -360,6 +378,7 @@ impl CosmoProcessor {
     #[allow(clippy::too_many_arguments)]
     fn render_all_voices(
         &mut self,
+        p: &SynthParams,
         lfos: &LfoFrame,
         lines: &VoiceLinesFrame,
         mod_cache: &ModMatrixCache,
@@ -370,7 +389,7 @@ impl CosmoProcessor {
         line2_plan: CompiledLinePlan,
     ) -> f32 {
         let render_ctx = VoiceRenderContext {
-            p: &self.params,
+            p,
             lfo_mod_val: lfos.lfo1,
             lfo2_mod_val: lfos.lfo2,
             random_mod_val: lfos.random,
@@ -378,7 +397,7 @@ impl CosmoProcessor {
             line2_modded: &lines.line2,
             sr,
             timing: &self.envelope_timing,
-            pitch_bend_semitones: self.pitch_bend * self.params.pitch_bend_range,
+            pitch_bend_semitones: self.pitch_bend * p.pitch_bend_range,
             mod_wheel: self.mod_wheel,
             macro1: self.macro1,
             macro2: self.macro2,

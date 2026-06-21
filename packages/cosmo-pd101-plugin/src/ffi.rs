@@ -646,7 +646,7 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_params_json(
         let Ok(engine) = engine_ref(engine) else {
             return 0;
         };
-        let Ok(json) = serde_json::to_string(&engine.processor.params) else {
+        let Ok(json) = serde_json::to_string(engine.processor.params()) else {
             return 0;
         };
         let bytes = json.as_bytes();
@@ -846,7 +846,7 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_parameter_value(
         let Some(spec) = automatable_param_by_id(id) else {
             return CosmoPd101FfiStatus::InvalidArgument;
         };
-        let Some(value) = parameter_value(&engine.processor.params, spec.key) else {
+        let Some(value) = parameter_value(engine.processor.params(), spec.key) else {
             return CosmoPd101FfiStatus::InvalidArgument;
         };
         *out_value = value;
@@ -870,7 +870,7 @@ pub extern "C" fn cosmo_pd101_ffi_set_parameter_value(
         return CosmoPd101FfiStatus::InvalidArgument;
     }
 
-    let mut params = engine.processor.params.clone();
+    let mut params = engine.processor.params().clone();
     if !set_parameter_value(&mut params, spec.key, value.clamp(spec.min, spec.max)) {
         return CosmoPd101FfiStatus::InvalidArgument;
     }

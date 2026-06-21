@@ -107,7 +107,7 @@ impl MidiLearnService {
         // Commit any RT-stashed pending capture in-memory before returning the
         // snapshot. This guarantees editor/editor-less paths that read
         // `snapshot()` see a capture performed by the audio thread without
-        // needing an explicit drain of `render_control_queue`.
+        // needing an explicit drain of the render-control mailbox.
         //
         // In-memory commit only — persistence to global settings is deferred
         // to `drain_render_control_events`. The test contract is that RT
